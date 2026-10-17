@@ -23,7 +23,14 @@ fn rect_in(s: &mut Session, x: f64, y: f64, parent: Option<NodeId>) -> NodeId {
 /// A frame (0,0 300×200) holding a group of two rectangles and a loose one; and one rectangle
 /// on the page at (400, 0).
 fn scene(s: &mut Session) -> (NodeId, NodeId, [NodeId; 3], NodeId) {
-    let f = id_of(&ex(s, "frame.create", json!({"x": 0, "y": 0, "width": 300, "height": 200}))["id"]).unwrap();
+    let f = id_of(
+        &ex(
+            s,
+            "frame.create",
+            json!({"x": 0, "y": 0, "width": 300, "height": 200}),
+        )["id"],
+    )
+    .unwrap();
     let a = rect_in(s, 20.0, 20.0, Some(f));
     let b = rect_in(s, 80.0, 20.0, Some(f));
     let g = id_of(&ex(s, "object.group", json!({"ids": [a, b]}))["id"]).unwrap();
@@ -39,9 +46,12 @@ fn ev(kind: PointerKind, x: f64, y: f64, shift: bool, cmd: bool) -> PointerEvent
 }
 
 fn marquee(s: &mut Session, a: (f64, f64), b: (f64, f64), shift: bool, cmd: bool) -> Vec<NodeId> {
-    s.pointer(&ev(PointerKind::Down, a.0, a.1, shift, cmd)).unwrap();
-    s.pointer(&ev(PointerKind::Move, b.0, b.1, shift, cmd)).unwrap();
-    s.pointer(&ev(PointerKind::Up, b.0, b.1, shift, cmd)).unwrap();
+    s.pointer(&ev(PointerKind::Down, a.0, a.1, shift, cmd))
+        .unwrap();
+    s.pointer(&ev(PointerKind::Move, b.0, b.1, shift, cmd))
+        .unwrap();
+    s.pointer(&ev(PointerKind::Up, b.0, b.1, shift, cmd))
+        .unwrap();
     s.selection()
 }
 
@@ -54,13 +64,21 @@ fn sorted(mut v: Vec<NodeId>) -> Vec<NodeId> {
 fn cmd_click_selects_the_nested_layer() {
     let mut s = Session::new();
     let (_, g, [a, ..], _) = scene(&mut s);
-    s.pointer(&ev(PointerKind::Down, 30.0, 30.0, false, false)).unwrap();
-    s.pointer(&ev(PointerKind::Up, 30.0, 30.0, false, false)).unwrap();
+    s.pointer(&ev(PointerKind::Down, 30.0, 30.0, false, false))
+        .unwrap();
+    s.pointer(&ev(PointerKind::Up, 30.0, 30.0, false, false))
+        .unwrap();
     assert_eq!(s.selection(), vec![g], "a click selects the frame's child");
     ex(&mut s, "select.none", json!({}));
-    s.pointer(&ev(PointerKind::Down, 30.0, 30.0, false, true)).unwrap();
-    s.pointer(&ev(PointerKind::Up, 30.0, 30.0, false, true)).unwrap();
-    assert_eq!(s.selection(), vec![a], "Cmd/Ctrl-click goes straight to the layer");
+    s.pointer(&ev(PointerKind::Down, 30.0, 30.0, false, true))
+        .unwrap();
+    s.pointer(&ev(PointerKind::Up, 30.0, 30.0, false, true))
+        .unwrap();
+    assert_eq!(
+        s.selection(),
+        vec![a],
+        "Cmd/Ctrl-click goes straight to the layer"
+    );
 }
 
 #[test]
@@ -69,12 +87,24 @@ fn cmd_marquee_selects_nested_layers() {
     let (f, _, [a, b, c], out) = scene(&mut s);
     // From empty canvas, a plain marquee across the frame only touches top-level layers (and the
     // frame isn't fully covered).
-    assert_eq!(marquee(&mut s, (-10.0, 10.0), (500.0, 70.0), false, false), vec![out]);
+    assert_eq!(
+        marquee(&mut s, (-10.0, 10.0), (500.0, 70.0), false, false),
+        vec![out]
+    );
     // Cmd/Ctrl: the innermost layers it touches, through the frame and the group.
-    assert_eq!(sorted(marquee(&mut s, (-10.0, 10.0), (500.0, 70.0), false, true)), sorted(vec![a, b, out]));
-    assert_eq!(sorted(marquee(&mut s, (-10.0, 10.0), (100.0, 190.0), false, true)), sorted(vec![a, b, c]));
+    assert_eq!(
+        sorted(marquee(&mut s, (-10.0, 10.0), (500.0, 70.0), false, true)),
+        sorted(vec![a, b, out])
+    );
+    assert_eq!(
+        sorted(marquee(&mut s, (-10.0, 10.0), (100.0, 190.0), false, true)),
+        sorted(vec![a, b, c])
+    );
     // Only the frame's own background touched: the frame itself.
-    assert_eq!(marquee(&mut s, (350.0, 180.0), (250.0, 150.0), false, true), vec![f]);
+    assert_eq!(
+        marquee(&mut s, (350.0, 180.0), (250.0, 150.0), false, true),
+        vec![f]
+    );
 }
 
 #[test]
@@ -85,8 +115,14 @@ fn shift_marquee_toggles() {
     ex(&mut s, "select.set", json!({"ids": [out]}));
     // Touching both (starting clear of the selection's handles): the selected one comes out, the
     // other goes in.
-    assert_eq!(marquee(&mut s, (370.0, -30.0), (450.0, 150.0), true, false), vec![other]);
-    assert_eq!(sorted(marquee(&mut s, (370.0, -30.0), (450.0, 20.0), true, false)), sorted(vec![out, other]));
+    assert_eq!(
+        marquee(&mut s, (370.0, -30.0), (450.0, 150.0), true, false),
+        vec![other]
+    );
+    assert_eq!(
+        sorted(marquee(&mut s, (370.0, -30.0), (450.0, 20.0), true, false)),
+        sorted(vec![out, other])
+    );
 }
 
 #[test]
@@ -115,11 +151,18 @@ fn layers_at_a_point_list_the_stack_front_most_first() {
     let (f, g, [a, ..], _) = scene(&mut s);
     let over = rect_in(&mut s, 10.0, 10.0, Some(f));
     let out = ex(&mut s, "select.layersAt", json!({"x": 30, "y": 30}));
-    let got: Vec<(NodeId, u64)> =
-        out["layers"].as_array().unwrap().iter().map(|l| (id_of(&l["id"]).unwrap(), l["depth"].as_u64().unwrap())).collect();
+    let got: Vec<(NodeId, u64)> = out["layers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|l| (id_of(&l["id"]).unwrap(), l["depth"].as_u64().unwrap()))
+        .collect();
     assert_eq!(got, vec![(f, 0), (over, 1), (g, 1), (a, 2)]);
     assert_eq!(out["layers"][0]["type"], json!("FRAME"));
     // Nothing under empty canvas; junk is refused.
-    assert_eq!(ex(&mut s, "select.layersAt", json!({"x": 2000, "y": 2000}))["layers"], json!([]));
+    assert_eq!(
+        ex(&mut s, "select.layersAt", json!({"x": 2000, "y": 2000}))["layers"],
+        json!([])
+    );
     assert!(s.execute("select.layersAt", &json!({"x": "left"})).is_err());
 }

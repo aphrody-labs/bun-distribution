@@ -68,7 +68,11 @@ fn main() {
 
     let total = nommes + anonymes;
     #[allow(clippy::cast_precision_loss)]
-    let taux = if total == 0 { 0.0 } else { nommes as f64 * 100.0 / total as f64 };
+    let taux = if total == 0 {
+        0.0
+    } else {
+        nommes as f64 * 100.0 / total as f64
+    };
 
     println!("dump        {}", chemin.display());
     println!("cmdId       {total} declares par le binaire");
@@ -79,7 +83,9 @@ fn main() {
     if !restants.is_empty() {
         println!("\nprochaines cibles (10 premiers cmdId anonymes) :");
         for id in restants.iter().take(10) {
-            let va = handlers.get(&format!("0x{id:08X}")).map_or("?", String::as_str);
+            let va = handlers
+                .get(&format!("0x{id:08X}"))
+                .map_or("?", String::as_str);
             println!("  0x{id:08X}  handler {va}");
         }
     }

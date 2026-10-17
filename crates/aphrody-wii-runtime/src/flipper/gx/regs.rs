@@ -355,14 +355,14 @@ impl VatA {
                 } else {
                     1
                 }
-            },
+            }
             AttributeType::Index16 => {
                 if self.nrm_index3() && self.nrm_cnt() == NrmCount::Nbt {
                     6
                 } else {
                     2
                 }
-            },
+            }
         }
     }
 
@@ -1042,11 +1042,19 @@ fn sign_extend_11(val: u32) -> i32 {
 
 impl IndMtx {
     pub fn row0(&self) -> [i32; 3] {
-        [sign_extend_11(self.a), sign_extend_11(self.b), sign_extend_11(self.c)]
+        [
+            sign_extend_11(self.a),
+            sign_extend_11(self.b),
+            sign_extend_11(self.c),
+        ]
     }
 
     pub fn row1(&self) -> [i32; 3] {
-        [sign_extend_11(self.a >> 11), sign_extend_11(self.b >> 11), sign_extend_11(self.c >> 11)]
+        [
+            sign_extend_11(self.a >> 11),
+            sign_extend_11(self.b >> 11),
+            sign_extend_11(self.c >> 11),
+        ]
     }
 
     pub fn scale(&self) -> u8 {

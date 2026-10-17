@@ -1,9 +1,10 @@
 use core::mem;
 
 use crate::{
+    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
     batching::gpu_preprocessing::{GpuPreprocessingMode, GpuPreprocessingSupport},
     extract_component::{ExtractComponent, ExtractComponentPlugin},
-    extract_resource::{extract_resource, ExtractResource, ExtractResourcePlugin},
+    extract_resource::{ExtractResource, ExtractResourcePlugin, extract_resource},
     render_asset::RenderAssets,
     render_resource::TextureView,
     sync_component::SyncComponent,
@@ -15,17 +16,16 @@ use crate::{
         ResolvedCompositingSpace, RetainedViewEntity, ViewUniformOffset,
         VisibilityExtractionSystemParam,
     },
-    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
 };
 
 use bevy_app::{App, Plugin, PostStartup, PostUpdate};
 use bevy_asset::{AssetEvent, AssetEventSystems, AssetId, Assets};
 use bevy_camera::{
-    primitives::Frustum,
-    visibility::{self, RenderLayers, VisibleEntities},
     Camera, Camera2d, Camera3d, CameraMainTextureUsages, CameraOutputMode, CameraUpdateSystems,
     ClearColor, ClearColorConfig, CompositingSpace, Exposure, Hdr, ManualTextureViewHandle,
     MsaaWriteback, NormalizedRenderTarget, Projection, RenderTarget, RenderTargetInfo, Viewport,
+    primitives::Frustum,
+    visibility::{self, RenderLayers, VisibleEntities},
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
@@ -46,7 +46,7 @@ use bevy_ecs::{
 use bevy_image::Image;
 use bevy_log::warn;
 use bevy_log::warn_once;
-use bevy_math::{uvec2, vec2, Mat4, URect, UVec2, UVec4, Vec2};
+use bevy_math::{Mat4, URect, UVec2, UVec4, Vec2, uvec2, vec2};
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_reflect::prelude::*;
 use bevy_transform::components::GlobalTransform;
@@ -329,11 +329,17 @@ impl NormalizedRenderTargetExt for NormalizedRenderTarget {
 
 #[derive(Debug, thiserror::Error)]
 pub enum MissingRenderTargetInfoError {
-    #[error("RenderTarget::Window missing ({window:?}): Make sure the provided entity has a Window component.")]
+    #[error(
+        "RenderTarget::Window missing ({window:?}): Make sure the provided entity has a Window component."
+    )]
     Window { window: Entity },
-    #[error("RenderTarget::Image missing ({image:?}): Make sure the Image's usages include RenderAssetUsages::MAIN_WORLD.")]
+    #[error(
+        "RenderTarget::Image missing ({image:?}): Make sure the Image's usages include RenderAssetUsages::MAIN_WORLD."
+    )]
     Image { image: AssetId<Image> },
-    #[error("RenderTarget::TextureView missing ({texture_view:?}): make sure the texture view handle was not removed.")]
+    #[error(
+        "RenderTarget::TextureView missing ({texture_view:?}): make sure the texture view handle was not removed."
+    )]
     TextureView {
         texture_view: ManualTextureViewHandle,
     },

@@ -18,11 +18,16 @@ use crate::{EngineError, Result, Session};
 const CMD: &str = "type.createSelection";
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: CMD.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: CMD.into(),
+        msg: msg.into(),
+    }
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn antialias(p: &Value) -> Result<Option<AntiAlias>> {
@@ -34,7 +39,11 @@ fn antialias(p: &Value) -> Result<Option<AntiAlias>> {
             Some("crisp") => AntiAlias::Crisp,
             Some("strong") => AntiAlias::Strong,
             Some("smooth") => AntiAlias::Smooth,
-            _ => return Err(bad("antialias must be none, sharp, crisp, strong or smooth")),
+            _ => {
+                return Err(bad(
+                    "antialias must be none, sharp, crisp, strong or smooth",
+                ));
+            }
         }),
     })
 }
@@ -46,8 +55,13 @@ fn coverage(doc: &Document, t: &TextLayer) -> (Vec<f32>, Rect) {
     for r in &mut t.runs {
         r.style.color.alpha = 1.0;
     }
-    let mut eng = photocraft_text::shared().lock().unwrap_or_else(|e| e.into_inner());
-    let surface = eng.render(&t, doc.resolution_dpi, doc.pixel_format()).1.surface;
+    let mut eng = photocraft_text::shared()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    let surface = eng
+        .render(&t, doc.resolution_dpi, doc.pixel_format())
+        .1
+        .surface;
     let area = surface.content_bounds().intersect(&doc.bounds());
     if area.is_empty() {
         return (Vec::new(), Rect::EMPTY);
@@ -84,12 +98,16 @@ fn create_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let aa = antialias(p)?;
     let remove = match p.get("removeLayer") {
         None => false,
-        Some(v) => v.as_bool().ok_or_else(|| bad("removeLayer must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad("removeLayer must be true or false"))?,
     };
     let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
     let layer = match p.get("layer") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(LayerId(v.as_u64().ok_or_else(|| bad("layer must be a layer id"))?)),
+        Some(v) => Some(LayerId(
+            v.as_u64().ok_or_else(|| bad("layer must be a layer id"))?,
+        )),
     };
     if remove && layer.is_none() {
         return Err(bad("removeLayer needs a layer"));
@@ -106,7 +124,11 @@ fn create_selection(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let (mask, text_area) = coverage(&doc, &t);
     let selected = s.edit("Type Mask", |doc, active| {
-        let old = doc.selection.as_ref().map(|o| o.content_bounds().intersect(&doc.bounds())).unwrap_or(Rect::EMPTY);
+        let old = doc
+            .selection
+            .as_ref()
+            .map(|o| o.content_bounds().intersect(&doc.bounds()))
+            .unwrap_or(Rect::EMPTY);
         // Replace and Intersect leave nothing outside the text; Add and Subtract keep the rest.
         let area = match mode {
             SelectionMode::Add | SelectionMode::Subtract if !old.is_empty() => {
@@ -118,15 +140,28 @@ fn create_selection(s: &mut Session, p: &Value) -> Result<Value> {
             }
             _ => text_area,
         };
-        doc.selection = if area.is_empty() { None } else { sel::combine(doc.selection.as_ref(), &widen(&mask, text_area, area), area, mode) };
+        doc.selection = if area.is_empty() {
+            None
+        } else {
+            sel::combine(
+                doc.selection.as_ref(),
+                &widen(&mask, text_area, area),
+                area,
+                mode,
+            )
+        };
         if let (true, Some(id)) = (remove, layer) {
             let neighbours = crate::layer_multi_cmds::deletion_neighbours(doc, id);
             doc.remove(id).ok_or(EngineError::NoLayer(id))?;
             if doc.layers.is_empty() {
-                return Err(EngineError::Other("a document must keep at least one layer".into()));
+                return Err(EngineError::Other(
+                    "a document must keep at least one layer".into(),
+                ));
             }
             if active.is_some_and(|current| doc.layer(current).is_none()) {
-                *active = neighbours.into_iter().find(|candidate| doc.layer(*candidate).is_some());
+                *active = neighbours
+                    .into_iter()
+                    .find(|candidate| doc.layer(*candidate).is_some());
             }
         }
         Ok(doc.selection.as_ref().map(|m| m.content_bounds()))
@@ -135,7 +170,9 @@ fn create_selection(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(st) = s.active_mut() {
         st.history.set_current_label("Type Mask");
     }
-    Ok(json!({ "selected": selected.is_some(), "bounds": selected.map(|r| [r.x0, r.y0, r.x1, r.y1]) }))
+    Ok(
+        json!({ "selected": selected.is_some(), "bounds": selected.map(|r| [r.x0, r.y0, r.x1, r.y1]) }),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -157,12 +194,18 @@ mod tests {
 
     fn session() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 300, "height": 300})).unwrap();
+        s.execute("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
         s
     }
 
     fn bounds(s: &Session) -> Option<Rect> {
-        s.active().unwrap().doc.selection.as_ref().map(|m| m.content_bounds())
+        s.active()
+            .unwrap()
+            .doc
+            .selection
+            .as_ref()
+            .map(|m| m.content_bounds())
     }
 
     #[test]
@@ -172,17 +215,30 @@ mod tests {
         let text = json!({"text": "I", "x": 40, "y": 120, "size": 48});
         s.execute(CMD, text.clone()).unwrap();
         let sel = bounds(&s).expect("the glyph is selected");
-        assert_eq!(s.active().unwrap().doc.layers.len(), layers, "no layer added");
+        assert_eq!(
+            s.active().unwrap().doc.layers.len(),
+            layers,
+            "no layer added"
+        );
         // The same text as a type layer covers the same pixels.
         s.execute("edit.undo", json!({})).unwrap();
         assert!(bounds(&s).is_none(), "one undo step");
         let r = s.execute("type.create", text).unwrap();
-        let b: Vec<i32> = r["bounds"].as_array().unwrap().iter().map(|v| v.as_i64().unwrap() as i32).collect();
+        let b: Vec<i32> = r["bounds"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_i64().unwrap() as i32)
+            .collect();
         assert_eq!([sel.x0, sel.y0, sel.x1, sel.y1], [b[0], b[1], b[2], b[3]]);
 
         // Vertical: the word runs down the column, so its selection is taller than wide.
         let mut s = session();
-        s.execute(CMD, json!({"text": "HELLO", "x": 150, "y": 40, "size": 48, "orientation": "vertical"})).unwrap();
+        s.execute(
+            CMD,
+            json!({"text": "HELLO", "x": 150, "y": 40, "size": 48, "orientation": "vertical"}),
+        )
+        .unwrap();
         let v = bounds(&s).unwrap();
         assert!(v.height() > 2 * v.width(), "{v:?}");
     }
@@ -190,7 +246,13 @@ mod tests {
     #[test]
     fn bad_params_are_errors() {
         let mut s = session();
-        for p in [json!({"layer": "x"}), json!({"removeLayer": true}), json!({"operation": 3}), json!({"antialias": "blurry"}), json!({"layer": 999})] {
+        for p in [
+            json!({"layer": "x"}),
+            json!({"removeLayer": true}),
+            json!({"operation": 3}),
+            json!({"antialias": "blurry"}),
+            json!({"layer": 999}),
+        ] {
             assert!(s.execute(CMD, p.clone()).is_err(), "{p}");
         }
         assert!(Session::new().execute(CMD, json!({"text": "I"})).is_err());

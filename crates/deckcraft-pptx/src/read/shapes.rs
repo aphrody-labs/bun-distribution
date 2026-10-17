@@ -8,7 +8,9 @@ use deckcraft_geom::{Xfrm, preset};
 use deckcraft_model::style::{ColorRef, Effects, Fill};
 use deckcraft_model::table::{Cell, Row, Table};
 use deckcraft_model::text::{Anchor, TextDir};
-use deckcraft_model::{Geom, MediaClip, PhType, Placeholder, Shape, ShapeId, ShapeKind, ShapeStyle};
+use deckcraft_model::{
+    Geom, MediaClip, PhType, Placeholder, Shape, ShapeId, ShapeKind, ShapeStyle,
+};
 
 use super::{Imp, Part, dml};
 use crate::xml::El;
@@ -127,7 +129,16 @@ fn is_locked(l: &El) -> bool {
     let set: &[&str] = match l.local() {
         "grpSpLocks" => &["noGrp", "noUngrp", "noRot", "noMove", "noResize"],
         "graphicFrameLocks" => &["noGrp", "noDrilldown", "noMove", "noResize"],
-        _ => &["noGrp", "noRot", "noMove", "noResize", "noEditPoints", "noAdjustHandles", "noChangeArrowheads", "noChangeShapeType"],
+        _ => &[
+            "noGrp",
+            "noRot",
+            "noMove",
+            "noResize",
+            "noEditPoints",
+            "noAdjustHandles",
+            "noChangeArrowheads",
+            "noChangeShapeType",
+        ],
     };
     set.iter().all(|a| l.bool(a) == Some(true))
 }
@@ -135,15 +146,25 @@ fn is_locked(l: &El) -> bool {
 /// Common non-visual properties (`p:nvSpPr`, `p:nvPicPr`…).
 fn base(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, nv: Option<&El>) -> Shape {
     let c = nv.and_then(|n| n.child("cNvPr"));
-    let mut s = Shape { id: ctx.assign(imp, c.and_then(|c| c.u32("id"))), ..Default::default() };
+    let mut s = Shape {
+        id: ctx.assign(imp, c.and_then(|c| c.u32("id"))),
+        ..Default::default()
+    };
     if let Some(c) = c {
         s.name = c.attr("name").unwrap_or("").to_string();
         s.descr = c.attr("descr").unwrap_or("").to_string();
         s.title = c.attr("title").unwrap_or("").to_string();
         s.hidden = c.bool("hidden").unwrap_or(false);
-        s.click = c.child("hlinkClick").and_then(|h| dml::hyperlink(imp, part, h));
-        s.hover = c.child("hlinkHover").and_then(|h| dml::hyperlink(imp, part, h));
-        s.decorative = c.find("decorative").and_then(|d| d.bool("val")).unwrap_or(false);
+        s.click = c
+            .child("hlinkClick")
+            .and_then(|h| dml::hyperlink(imp, part, h));
+        s.hover = c
+            .child("hlinkHover")
+            .and_then(|h| dml::hyperlink(imp, part, h));
+        s.decorative = c
+            .find("decorative")
+            .and_then(|d| d.bool("val"))
+            .unwrap_or(false);
     }
     if let Some(nv) = nv {
         for e in nv.elements() {
@@ -153,7 +174,10 @@ fn base(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, nv: Option<&El>) -> Shape {
                     s.locked = e.child("spLocks").is_some_and(is_locked);
                 }
                 "cNvPicPr" | "cNvGrpSpPr" | "cNvCxnSpPr" | "cNvGraphicFramePr" => {
-                    s.locked = e.elements().find(|l| l.local().ends_with("Locks")).is_some_and(is_locked);
+                    s.locked = e
+                        .elements()
+                        .find(|l| l.local().ends_with("Locks"))
+                        .is_some_and(is_locked);
                 }
                 "nvPr" => {
                     if let Some(ph) = e.child("ph") {
@@ -175,7 +199,9 @@ fn base(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, nv: Option<&El>) -> Shape {
 
 fn preset_geom(pg: &El) -> Geom {
     let name = pg.attr("prst").unwrap_or("rect").to_string();
-    let defaults: Vec<f64> = preset::info(&name).map(|i| i.defaults.to_vec()).unwrap_or_default();
+    let defaults: Vec<f64> = preset::info(&name)
+        .map(|i| i.defaults.to_vec())
+        .unwrap_or_default();
     let mut adj = defaults;
     let mut any = false;
     if let Some(av) = pg.child("avLst") {
@@ -183,13 +209,20 @@ fn preset_geom(pg: &El) -> Geom {
             let n = gd.attr("name").unwrap_or("");
             let idx = if n == "adj" {
                 0
-            } else if let Some(k) = n.strip_prefix("adj").and_then(|k| k.parse::<usize>().ok()).filter(|k| (1..=16).contains(k)) {
+            } else if let Some(k) = n
+                .strip_prefix("adj")
+                .and_then(|k| k.parse::<usize>().ok())
+                .filter(|k| (1..=16).contains(k))
+            {
                 k - 1
             } else {
                 continue;
             };
-            let Some(v) =
-                gd.attr("fmla").and_then(|f| f.trim().strip_prefix("val")).and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite())
+            let Some(v) = gd
+                .attr("fmla")
+                .and_then(|f| f.trim().strip_prefix("val"))
+                .and_then(|v| v.trim().parse::<f64>().ok())
+                .filter(|v| v.is_finite())
             else {
                 continue;
             };
@@ -212,7 +245,9 @@ fn preset_geom(pg: &El) -> Geom {
 /// marked here with an empty custom geometry, filled in once the layouts are read
 /// (`inherit_placeholder_geometry`).
 fn mark_inherited_geometry(s: &mut Shape, pr: Option<&El>) {
-    if s.ph.is_some() && pr.is_none_or(|pr| pr.child("prstGeom").is_none() && pr.child("custGeom").is_none()) {
+    if s.ph.is_some()
+        && pr.is_none_or(|pr| pr.child("prstGeom").is_none() && pr.child("custGeom").is_none())
+    {
         s.geom = Geom::Custom { paths: vec![] };
     }
 }
@@ -225,7 +260,15 @@ fn sp_pr(imp: &mut Imp, part: &Part, s: &mut Shape, pr: &El) {
     if let Some(pg) = pr.child("prstGeom") {
         s.geom = preset_geom(pg);
     } else if let Some(cg) = pr.child("custGeom") {
-        let (w, h) = s.xfrm.map(|x| (deckcraft_geom::pt_to_emu(x.w) as f64, deckcraft_geom::pt_to_emu(x.h) as f64)).unwrap_or((21600.0, 21600.0));
+        let (w, h) = s
+            .xfrm
+            .map(|x| {
+                (
+                    deckcraft_geom::pt_to_emu(x.w) as f64,
+                    deckcraft_geom::pt_to_emu(x.h) as f64,
+                )
+            })
+            .unwrap_or((21600.0, 21600.0));
         let paths = crate::custgeom::read_cust_geom(cg, w, h);
         if !paths.is_empty() {
             s.geom = Geom::Custom { paths };
@@ -238,10 +281,16 @@ fn sp_pr(imp: &mut Imp, part: &Part, s: &mut Shape, pr: &El) {
     if let Some(fx) = pr.child("effectLst") {
         s.effects = Some(dml::effects(fx));
     }
-    let raw: String = pr.elements().filter(|c| c.is("scene3d") || c.is("sp3d")).map(|c| part.keep(c)).collect();
+    let raw: String = pr
+        .elements()
+        .filter(|c| c.is("scene3d") || c.is("sp3d"))
+        .map(|c| part.keep(c))
+        .collect();
     if !raw.is_empty() {
         let fx = s.effects.get_or_insert_with(Effects::default);
-        fx.bevel = pr.path(&["sp3d", "bevelT"]).map(|b| b.attr("prst").unwrap_or("circle").to_string());
+        fx.bevel = pr
+            .path(&["sp3d", "bevelT"])
+            .map(|b| b.attr("prst").unwrap_or("circle").to_string());
         fx.raw3d = Some(raw);
     }
 }
@@ -249,7 +298,12 @@ fn sp_pr(imp: &mut Imp, part: &Part, s: &mut Shape, pr: &El) {
 fn style(st: &El) -> ShapeStyle {
     let r = |n: &str| {
         st.child(n)
-            .map(|e| (e.u32("idx").unwrap_or(0).min(1003), dml::color(e).unwrap_or(ColorRef::scheme(SchemeSlot::Accent1))))
+            .map(|e| {
+                (
+                    e.u32("idx").unwrap_or(0).min(1003),
+                    dml::color(e).unwrap_or(ColorRef::scheme(SchemeSlot::Accent1)),
+                )
+            })
             .unwrap_or((0, ColorRef::scheme(SchemeSlot::Accent1)))
     };
     let font = st.child("fontRef");
@@ -257,7 +311,12 @@ fn style(st: &El) -> ShapeStyle {
         line_ref: r("lnRef"),
         fill_ref: r("fillRef"),
         effect_ref: r("effectRef"),
-        font_ref: (font.and_then(|f| f.attr("idx")).unwrap_or("minor").to_string(), font.and_then(dml::color)),
+        font_ref: (
+            font.and_then(|f| f.attr("idx"))
+                .unwrap_or("minor")
+                .to_string(),
+            font.and_then(dml::color),
+        ),
     }
 }
 
@@ -276,7 +335,10 @@ fn sp(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
 }
 
 fn ms(v: Option<&str>) -> u32 {
-    v.and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite()).map(|v| v.clamp(0.0, u32::MAX as f64) as u32).unwrap_or(0)
+    v.and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(0.0, u32::MAX as f64) as u32)
+        .unwrap_or(0)
 }
 
 fn pic(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
@@ -285,16 +347,27 @@ fn pic(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
         sp_pr(imp, part, &mut s, pr);
     }
     s.style = e.child("style").map(style);
-    let pf = e.child("blipFill").and_then(|b| dml::blip_fill(imp, part, b));
+    let pf = e
+        .child("blipFill")
+        .and_then(|b| dml::blip_fill(imp, part, b));
     let nvpr = e.path(&["nvPicPr", "nvPr"]);
     let vf = nvpr.and_then(|n| n.child("videoFile"));
     let af = nvpr.and_then(|n| n.child("audioFile"));
-    let p14 = nvpr.and_then(|n| n.child("extLst")).and_then(|x| x.find("media"));
+    let p14 = nvpr
+        .and_then(|n| n.child("extLst"))
+        .and_then(|x| x.find("media"));
     if vf.is_some() || af.is_some() || p14.is_some() {
-        let media = p14.and_then(|m| dml::media_ref(imp, part, m)).or_else(|| vf.or(af).and_then(|f| dml::media_ref(imp, part, f)));
+        let media = p14
+            .and_then(|m| dml::media_ref(imp, part, m))
+            .or_else(|| vf.or(af).and_then(|f| dml::media_ref(imp, part, f)));
         if let Some(media) = media {
-            let mut clip =
-                MediaClip { media, video: vf.is_some() || af.is_none(), poster: pf.as_ref().map(|p| p.media), volume: 1.0, ..Default::default() };
+            let mut clip = MediaClip {
+                media,
+                video: vf.is_some() || af.is_none(),
+                poster: pf.as_ref().map(|p| p.media),
+                volume: 1.0,
+                ..Default::default()
+            };
             if let Some(m) = p14 {
                 if let Some(t) = m.child("trim") {
                     clip.trim_start_ms = ms(t.attr("st"));
@@ -305,8 +378,11 @@ fn pic(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
                     clip.fade_out_ms = ms(f.attr("out"));
                 }
                 if let Some(l) = m.child("bmkLst") {
-                    clip.bookmarks =
-                        l.children_named("bmk").take(1000).map(|b| (b.attr("name").unwrap_or("").to_string(), ms(b.attr("time")))).collect();
+                    clip.bookmarks = l
+                        .children_named("bmk")
+                        .take(1000)
+                        .map(|b| (b.attr("name").unwrap_or("").to_string(), ms(b.attr("time"))))
+                        .collect();
                 }
             }
             s.kind = ShapeKind::Media(clip);
@@ -315,7 +391,11 @@ fn pic(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
     }
     match pf {
         Some(fill) => s.kind = ShapeKind::Picture { fill },
-        None => log::warn!("pptx: picture {} in {} has no readable image", s.name, part.name),
+        None => log::warn!(
+            "pptx: picture {} in {} has no readable image",
+            s.name,
+            part.name
+        ),
     }
     s
 }
@@ -335,7 +415,9 @@ fn grp(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El, depth: usize) -> Sha
         }
     }
     let children = sp_tree(imp, part, ctx, e, depth + 1);
-    let child = child.or_else(|| s.xfrm.map(|x| Xfrm::new(x.x, x.y, x.w, x.h))).unwrap_or_default();
+    let child = child
+        .or_else(|| s.xfrm.map(|x| Xfrm::new(x.x, x.y, x.w, x.h)))
+        .unwrap_or_default();
     s.kind = ShapeKind::Group { children, child };
     s
 }
@@ -348,8 +430,14 @@ fn cxn(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El) -> Shape {
     }
     s.style = e.child("style").map(style);
     let c = nv.and_then(|n| n.child("cNvCxnSpPr"));
-    let end = |n: &str| c.and_then(|c| c.child(n)).and_then(|x| Some((ShapeId(x.u32("id")?), x.u32("idx").unwrap_or(0))));
-    s.kind = ShapeKind::Connector { start: end("stCxn"), end: end("endCxn") };
+    let end = |n: &str| {
+        c.and_then(|c| c.child(n))
+            .and_then(|x| Some((ShapeId(x.u32("id")?), x.u32("idx").unwrap_or(0))))
+    };
+    s.kind = ShapeKind::Connector {
+        start: end("stCxn"),
+        end: end("endCxn"),
+    };
     s
 }
 
@@ -385,9 +473,15 @@ fn frame(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El, depth: usize) -> S
         e.find_all("blip", &mut pics);
         pics.into_iter().find_map(|b| dml::media_ref(imp, part, b))
     }
-    .or_else(|| gd.and_then(|g| g.find("oleObj")).and_then(|o| vml_preview(imp, part, o.attr("spid")?)));
+    .or_else(|| {
+        gd.and_then(|g| g.find("oleObj"))
+            .and_then(|o| vml_preview(imp, part, o.attr("spid")?))
+    });
     let label = if let Some(o) = gd.and_then(|g| g.find("oleObj")) {
-        o.attr("progId").or(o.attr("name")).unwrap_or("Object").to_string()
+        o.attr("progId")
+            .or(o.attr("name"))
+            .unwrap_or("Object")
+            .to_string()
     } else if uri.ends_with("/diagram") {
         "SmartArt".to_string()
     } else if uri.contains("chart") {
@@ -395,20 +489,44 @@ fn frame(imp: &mut Imp, part: &Part, ctx: &mut IdCtx, e: &El, depth: usize) -> S
     } else {
         uri.rsplit('/').next().unwrap_or("Object").to_string()
     };
-    s.kind = ShapeKind::Opaque { xml: part.keep(e), preview, label };
+    s.kind = ShapeKind::Opaque {
+        xml: part.keep(e),
+        preview,
+        label,
+    };
     s
 }
 
 /// The preview picture of an old-style embedded object (`p:oleObj spid` with no `p:pic`): the
 /// `v:imagedata` of the legacy VML drawing shape with that id, as PowerPoint 2007 wrote them.
 fn vml_preview(imp: &mut Imp, part: &Part, spid: &str) -> Option<deckcraft_model::MediaId> {
-    for rel in part.rels.items.iter().filter(|r| r.kind == "vmlDrawing" && !r.external) {
-        let Some(doc) = imp.pkg.xml(&rel.target) else { continue };
+    for rel in part
+        .rels
+        .items
+        .iter()
+        .filter(|r| r.kind == "vmlDrawing" && !r.external)
+    {
+        let Some(doc) = imp.pkg.xml(&rel.target) else {
+            continue;
+        };
         let mut shapes = vec![];
         doc.root.find_all("shape", &mut shapes);
-        let Some(img) = shapes.into_iter().find(|s| s.attr("id") == Some(spid)).and_then(|s| s.find("imagedata")) else { continue };
-        let Some(id) = img.attr("o:relid").or(img.attr("r:id")) else { continue };
-        let target = imp.pkg.rels(&rel.target).get(id).filter(|r| !r.external).map(|r| r.target.clone())?;
+        let Some(img) = shapes
+            .into_iter()
+            .find(|s| s.attr("id") == Some(spid))
+            .and_then(|s| s.find("imagedata"))
+        else {
+            continue;
+        };
+        let Some(id) = img.attr("o:relid").or(img.attr("r:id")) else {
+            continue;
+        };
+        let target = imp
+            .pkg
+            .rels(&rel.target)
+            .get(id)
+            .filter(|r| !r.external)
+            .map(|r| r.target.clone())?;
         return imp.media_for(&target);
     }
     None
@@ -419,26 +537,45 @@ fn smartart(imp: &mut Imp, part: &Part, gd: &El, frame: &Shape, depth: usize) ->
     let rel_ids = gd.child("relIds")?;
     let dm = part.rels.get(rel_ids.attr("r:dm").unwrap_or(""))?;
     let data = imp.pkg.xml(&dm.target)?;
-    let drawing_rel = data.root.find("dataModelExt").and_then(|x| x.attr("relId")).and_then(|id| part.rels.get(id)).map(|r| r.target.clone())?;
+    let drawing_rel = data
+        .root
+        .find("dataModelExt")
+        .and_then(|x| x.attr("relId"))
+        .and_then(|id| part.rels.get(id))
+        .map(|r| r.target.clone())?;
     let mut d = imp.pkg.xml(&drawing_rel)?;
     super::resolve_mc(&mut d.root, 0);
     let dpart = Part::new(imp.pkg, &drawing_rel, &d);
     let tree = d.root.child("spTree")?;
-    let mut sub = IdCtx { fresh: true, ..Default::default() };
+    let mut sub = IdCtx {
+        fresh: true,
+        ..Default::default()
+    };
     let children = sp_tree(imp, &dpart, &mut sub, tree, depth + 1);
     if children.is_empty() {
         return None;
     }
     let mut g = frame.clone();
     let x = frame.xfrm.unwrap_or_default();
-    g.kind = ShapeKind::Group { children, child: Xfrm::new(0.0, 0.0, x.w, x.h) };
+    g.kind = ShapeKind::Group {
+        children,
+        child: Xfrm::new(0.0, 0.0, x.w, x.h),
+    };
     Some(g)
 }
 
 fn table(imp: &mut Imp, part: &Part, tbl: &El) -> Table {
-    let mut t = Table { style: "none".into(), first_row: false, band_row: false, ..Default::default() };
+    let mut t = Table {
+        style: "none".into(),
+        first_row: false,
+        band_row: false,
+        ..Default::default()
+    };
     if let Some(pr) = tbl.child("tblPr") {
-        t.background = pr.elements().find(|e| e.local().ends_with("Fill") && e.local() != "noFill").and_then(|f| dml::fill_el(imp, part, f));
+        t.background = pr
+            .elements()
+            .find(|e| e.local().ends_with("Fill") && e.local() != "noFill")
+            .and_then(|f| dml::fill_el(imp, part, f));
         t.first_row = pr.bool("firstRow").unwrap_or(false);
         t.first_col = pr.bool("firstCol").unwrap_or(false);
         t.last_row = pr.bool("lastRow").unwrap_or(false);
@@ -449,16 +586,27 @@ fn table(imp: &mut Imp, part: &Part, tbl: &El) -> Table {
             // A style the file defines is drawn from its definition (by its GUID).
             // DeckCraft's own styles (written with GUIDs derived from their ids) map back to them.
             let up = id.trim().to_ascii_uppercase();
-            t.style =
-                if imp.table_style_ids.contains(&up) && !crate::tables::is_own_guid(&up) { up } else { crate::tables::style_from_guid(id.trim()) };
+            t.style = if imp.table_style_ids.contains(&up) && !crate::tables::is_own_guid(&up) {
+                up
+            } else {
+                crate::tables::style_from_guid(id.trim())
+            };
         }
     }
     t.cols = tbl
         .child("tblGrid")
-        .map(|g| g.children_named("gridCol").take(1000).map(|c| dml::pt(c, "w").unwrap_or(72.0).clamp(0.0, 20_000.0)).collect())
+        .map(|g| {
+            g.children_named("gridCol")
+                .take(1000)
+                .map(|c| dml::pt(c, "w").unwrap_or(72.0).clamp(0.0, 20_000.0))
+                .collect()
+        })
         .unwrap_or_default();
     for tr in tbl.children_named("tr").take(1000) {
-        let mut row = Row { height: dml::pt(tr, "h").unwrap_or(0.0).clamp(0.0, 20_000.0), cells: vec![] };
+        let mut row = Row {
+            height: dml::pt(tr, "h").unwrap_or(0.0).clamp(0.0, 20_000.0),
+            cells: vec![],
+        };
         for tc in tr.children_named("tc").take(1000) {
             row.cells.push(cell(imp, part, tc));
         }
@@ -484,7 +632,10 @@ fn cell(imp: &mut Imp, part: &Part, tc: &El) -> Cell {
         c.text = dml::text_body(imp, part, tx);
     }
     if let Some(pr) = tc.child("tcPr") {
-        if ["marL", "marR", "marT", "marB"].iter().any(|n| pr.has_attr(n)) {
+        if ["marL", "marR", "marT", "marB"]
+            .iter()
+            .any(|n| pr.has_attr(n))
+        {
             c.margins = Some([
                 dml::pt(pr, "marL").unwrap_or(7.2),
                 dml::pt(pr, "marR").unwrap_or(7.2),

@@ -36,7 +36,10 @@ pub const CODE_SETS: [CodeSet; 2] = [
     CodeSet {
         id: "privacy-act",
         name: "U.S. Privacy Act",
-        codes: &["(d)(5)", "(j)(1)", "(j)(2)", "(k)(1)", "(k)(2)", "(k)(3)", "(k)(4)", "(k)(5)", "(k)(6)", "(k)(7)"],
+        codes: &[
+            "(d)(5)", "(j)(1)", "(j)(2)", "(k)(1)", "(k)(2)", "(k)(3)", "(k)(4)", "(k)(5)",
+            "(k)(6)", "(k)(7)",
+        ],
     },
 ];
 
@@ -51,6 +54,12 @@ impl CodeSet {
         if let Some(bad) = picked.iter().find(|p| !self.codes.contains(p)) {
             return Err(bad);
         }
-        Ok(self.codes.iter().filter(|c| picked.contains(c)).copied().collect::<Vec<_>>().join(", "))
+        Ok(self
+            .codes
+            .iter()
+            .filter(|c| picked.contains(c))
+            .copied()
+            .collect::<Vec<_>>()
+            .join(", "))
     }
 }

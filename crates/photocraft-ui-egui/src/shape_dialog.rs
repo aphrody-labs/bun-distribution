@@ -38,8 +38,12 @@ fn pref_key(kind: &str) -> String {
 
 fn valid(key: &str, v: &Value) -> bool {
     match key {
-        "width" | "height" => v.as_f64().is_some_and(|x| x.is_finite() && (1.0..=MAX_PX).contains(&x)),
-        "starRatio" => v.as_f64().is_some_and(|x| x.is_finite() && (1.0..=100.0).contains(&x)),
+        "width" | "height" => v
+            .as_f64()
+            .is_some_and(|x| x.is_finite() && (1.0..=MAX_PX).contains(&x)),
+        "starRatio" => v
+            .as_f64()
+            .is_some_and(|x| x.is_finite() && (1.0..=100.0).contains(&x)),
         _ => v.is_boolean(),
     }
 }
@@ -47,7 +51,9 @@ fn valid(key: &str, v: &Value) -> bool {
 /// True for a press and release that never left `start` by more than a few screen pixels.
 pub fn is_click(start: [f64; 2], points: &[[f64; 3]], zoom: f32) -> bool {
     let slop = 3.0 / f64::from(zoom.max(0.01));
-    points.iter().all(|p| (p[0] - start[0]).hypot(p[1] - start[1]) <= slop)
+    points
+        .iter()
+        .all(|p| (p[0] - start[0]).hypot(p[1] - start[1]) <= slop)
 }
 
 /// Open the creation dialog of `tool` for a click at `at` (document px). `None` for a tool without
@@ -97,30 +103,56 @@ fn num(f: &Map<String, Value>, key: &str) -> Option<f64> {
 
 /// `shape.create` geometry for the dialog's values (no fill or stroke).
 pub fn geometry(f: &Map<String, Value>) -> Result<Value, String> {
-    let kind = f.get(MARK).and_then(Value::as_str).ok_or("not a Create Shape dialog")?;
-    let at = f.get("__at").and_then(Value::as_array).ok_or("the dialog has no position")?;
-    let (Some(x), Some(y)) = (at.first().and_then(Value::as_f64), at.get(1).and_then(Value::as_f64)) else {
+    let kind = f
+        .get(MARK)
+        .and_then(Value::as_str)
+        .ok_or("not a Create Shape dialog")?;
+    let at = f
+        .get("__at")
+        .and_then(Value::as_array)
+        .ok_or("the dialog has no position")?;
+    let (Some(x), Some(y)) = (
+        at.first().and_then(Value::as_f64),
+        at.get(1).and_then(Value::as_f64),
+    ) else {
         return Err("the dialog has no position".into());
     };
     let side = |key: &str, label: &str| -> Result<f64, String> {
-        num(f, key).filter(|v| (1.0..=MAX_PX).contains(v)).ok_or_else(|| format!("{label} must be between 1 and {MAX_PX} pixels"))
+        num(f, key)
+            .filter(|v| (1.0..=MAX_PX).contains(v))
+            .ok_or_else(|| format!("{label} must be between 1 and {MAX_PX} pixels"))
     };
     let (w, h) = (side("width", "Width")?, side("height", "Height")?);
-    let center = f.get("fromCenter").and_then(Value::as_bool).unwrap_or(false);
+    let center = f
+        .get("fromCenter")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     if !(x.abs() <= MAX_PX && y.abs() <= MAX_PX) {
         return Err("the shape's position is out of range".into());
     }
-    let (x0, y0) = if center { (x - w / 2.0, y - h / 2.0) } else { (x, y) };
+    let (x0, y0) = if center {
+        (x - w / 2.0, y - h / 2.0)
+    } else {
+        (x, y)
+    };
     let rect = json!([x0, y0, w, h]);
     Ok(match kind {
         "rectangle" => {
             let mut radii = [0.0; 4];
             if let Some(a) = f.get("radii").and_then(Value::as_array) {
                 for (r, v) in radii.iter_mut().zip(a) {
-                    *r = v.as_f64().filter(|v| v.is_finite()).unwrap_or(0.0).clamp(0.0, w.min(h) / 2.0);
+                    *r = v
+                        .as_f64()
+                        .filter(|v| v.is_finite())
+                        .unwrap_or(0.0)
+                        .clamp(0.0, w.min(h) / 2.0);
                 }
             }
-            if radii.iter().any(|r| *r > 0.0) { json!({"kind": "roundedRect", "rect": rect, "radii": radii}) } else { json!({"kind": "rect", "rect": rect}) }
+            if radii.iter().any(|r| *r > 0.0) {
+                json!({"kind": "roundedRect", "rect": rect, "radii": radii})
+            } else {
+                json!({"kind": "rect", "rect": rect})
+            }
         }
         "ellipse" => json!({"kind": "ellipse", "rect": rect}),
         "triangle" => json!({"kind": "polygon", "rect": rect, "sides": 3}),
@@ -139,8 +171,13 @@ pub fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value,
     match &result {
         Ok(_) => {
             if let Some(kind) = f.get(MARK).and_then(Value::as_str) {
-                let saved: Map<String, Value> = KEYS.iter().filter_map(|k| f.get(*k).map(|v| (k.to_string(), v.clone()))).collect();
-                app.session.prefs.edit(|p| p.dialogs.insert(pref_key(kind), Value::Object(saved)));
+                let saved: Map<String, Value> = KEYS
+                    .iter()
+                    .filter_map(|k| f.get(*k).map(|v| (k.to_string(), v.clone())))
+                    .collect();
+                app.session
+                    .prefs
+                    .edit(|p| p.dialogs.insert(pref_key(kind), Value::Object(saved)));
             }
         }
         Err(e) => {
@@ -154,28 +191,54 @@ pub fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value,
 fn label(ui: &mut egui::Ui, text: &str) {
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(vec2(96.0, 22.0), Sense::hover());
-    ui.painter().text(pos2(r.right() - 6.0, r.center().y), Align2::RIGHT_CENTER, text, egui::FontId::proportional(12.0), t.text_dim);
+    ui.painter().text(
+        pos2(r.right() - 6.0, r.center().y),
+        Align2::RIGHT_CENTER,
+        text,
+        egui::FontId::proportional(12.0),
+        t.text_dim,
+    );
 }
 
 pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     ui.spacing_mut().item_spacing.y = 6.0;
-    let kind = f.get(MARK).and_then(Value::as_str).unwrap_or("").to_string();
+    let kind = f
+        .get(MARK)
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     // Width and height in the ruler unit (percent of the document's side).
     let ur = &app.session.prefs().units_and_rulers;
     let (unit, ppi) = (ur.rulers, ur.point_size.per_inch());
-    let (dpi, size) = app
-        .session
-        .active()
-        .map_or((72.0, [1.0, 1.0]), |d| (f64::from(d.doc.resolution_dpi.max(1.0)), [f64::from(d.doc.size.width), f64::from(d.doc.size.height)]));
-    for (key, text, extent) in [("width", tl!("Width:"), size[0]), ("height", tl!("Height:"), size[1])] {
+    let (dpi, size) = app.session.active().map_or((72.0, [1.0, 1.0]), |d| {
+        (
+            f64::from(d.doc.resolution_dpi.max(1.0)),
+            [f64::from(d.doc.size.width), f64::from(d.doc.size.height)],
+        )
+    });
+    for (key, text, extent) in [
+        ("width", tl!("Width:"), size[0]),
+        ("height", tl!("Height:"), size[1]),
+    ] {
         ui.horizontal(|ui| {
             label(ui, text);
             let px = num(f, key).unwrap_or(100.0);
             let to_unit = |px: f64| unit.from_px(px, dpi, extent, ppi) as f32;
             let mut v = to_unit(px);
             let places = unit.decimals() as u32;
-            if crate::widgets::value_field_prec(ui, &mut v, to_unit(1.0)..=to_unit(MAX_PX), unit.suffix(), 110.0, places).changed() {
-                let px = unit.to_px(f64::from(v), dpi, extent, ppi).clamp(1.0, MAX_PX);
+            if crate::widgets::value_field_prec(
+                ui,
+                &mut v,
+                to_unit(1.0)..=to_unit(MAX_PX),
+                unit.suffix(),
+                110.0,
+                places,
+            )
+            .changed()
+            {
+                let px = unit
+                    .to_px(f64::from(v), dpi, extent, ppi)
+                    .clamp(1.0, MAX_PX);
                 f.insert(key.into(), json!((px * 1000.0).round() / 1000.0));
             }
         });
@@ -196,7 +259,15 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) 
                     for row in [[0usize, 1], [3, 2]] {
                         ui.horizontal(|ui| {
                             for i in row {
-                                if crate::widgets::value_field(ui, &mut radii[i], 0.0..=10000.0, "px", 72.0).changed() {
+                                if crate::widgets::value_field(
+                                    ui,
+                                    &mut radii[i],
+                                    0.0..=10000.0,
+                                    "px",
+                                    72.0,
+                                )
+                                .changed()
+                                {
                                     changed = Some(i);
                                 }
                             }
@@ -237,7 +308,10 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) 
     }
     ui.horizontal(|ui| {
         label(ui, "");
-        let mut center = f.get("fromCenter").and_then(Value::as_bool).unwrap_or(false);
+        let mut center = f
+            .get("fromCenter")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         if crate::widgets::checkbox(ui, &mut center, tl!("From Center")).changed() {
             f.insert("fromCenter".into(), json!(center));
         }

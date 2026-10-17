@@ -17,10 +17,15 @@ use filmcraft_bitstream::{length_prefixed_nals, unescape_rbsp};
 use filmcraft_codecs::{CodecError, DecodedFrame, Result};
 use filmcraft_h264::dpb::{Dpb, DpbEntry, Output, OutputMeta, RefMark};
 use filmcraft_h264::params::{Pps, Sps};
-use filmcraft_h264::slice::{NalHeader, Poc, PocState, SliceHeader, SliceType, is_new_picture, nal_type};
+use filmcraft_h264::slice::{
+    NalHeader, Poc, PocState, SliceHeader, SliceType, is_new_picture, nal_type,
+};
 
 use super::Accel;
-use super::ffi::{self, VAIQMatrixBufferH264, VAPictureH264, VAPictureParameterBufferH264, VASliceParameterBufferH264, pic_bits, seq_bits};
+use super::ffi::{
+    self, VAIQMatrixBufferH264, VAPictureH264, VAPictureParameterBufferH264,
+    VASliceParameterBufferH264, pic_bits, seq_bits,
+};
 
 /// A picture in the DPB: its surface, field order counts (after an MMCO 5, relative to itself) and
 /// place in decoding order.
@@ -75,7 +80,12 @@ impl<A: Accel> Front<A> {
     /// A front end for samples with `length_size`-byte NAL length prefixes whose sample entry
     /// carried `parameter_sets` (SPS / PPS NAL units), decoding into `accel`'s surfaces of
     /// `mbs` macroblocks.
-    pub fn new(accel: A, length_size: usize, mbs: (u32, u32), parameter_sets: &[Vec<u8>]) -> Result<Self> {
+    pub fn new(
+        accel: A,
+        length_size: usize,
+        mbs: (u32, u32),
+        parameter_sets: &[Vec<u8>],
+    ) -> Result<Self> {
         let mut f = Self {
             accel,
             length_size,
@@ -138,32 +148,54 @@ impl<A: Accel> Front<A> {
 
     /// Read back the pictures the DPB output, right away: a surface leaving the DPB is reused by
     /// the next picture.
-    fn read_out(&mut self, outs: Vec<Output<Surface>>, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn read_out(
+        &mut self,
+        outs: Vec<Output<Surface>>,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         for o in outs {
             let frame = self.accel.read(o.frame.index).map_err(decode_err)?;
-            frames.push(DecodedFrame { pts: o.meta.pts, frame, draft: false });
+            frames.push(DecodedFrame {
+                pts: o.meta.pts,
+                frame,
+                draft: false,
+            });
         }
         Ok(())
     }
 
     fn handle_nal(&mut self, nal: &[u8], pts: i64, frames: &mut Vec<DecodedFrame>) -> Result<()> {
-        let Some(&first) = nal.first() else { return Ok(()) };
+        let Some(&first) = nal.first() else {
+            return Ok(());
+        };
         let rest = nal.get(1..).unwrap_or_default();
         let hdr = NalHeader::parse(first).map_err(decode_err)?;
         match hdr.nal_unit_type {
             nal_type::SPS => {
                 let sps = Sps::parse(&unescape_rbsp(rest)).map_err(decode_err)?;
-                let slot = self.spss.get_mut(sps.id as usize).ok_or_else(|| decode_err("SPS id out of range"))?;
+                let slot = self
+                    .spss
+                    .get_mut(sps.id as usize)
+                    .ok_or_else(|| decode_err("SPS id out of range"))?;
                 *slot = Some(Arc::new(sps));
             }
             nal_type::PPS => {
-                let spss: Vec<Option<Sps>> = self.spss.iter().map(|s| s.as_ref().map(|s| (**s).clone())).collect();
+                let spss: Vec<Option<Sps>> = self
+                    .spss
+                    .iter()
+                    .map(|s| s.as_ref().map(|s| (**s).clone()))
+                    .collect();
                 let pps = Pps::parse(&unescape_rbsp(rest), &spss).map_err(decode_err)?;
-                let slot = self.ppss.get_mut(pps.id as usize).ok_or_else(|| decode_err("PPS id out of range"))?;
+                let slot = self
+                    .ppss
+                    .get_mut(pps.id as usize)
+                    .ok_or_else(|| decode_err("PPS id out of range"))?;
                 *slot = Some(Arc::new(pps));
             }
             nal_type::SLICE | nal_type::IDR => self.handle_slice(nal, hdr, pts, frames)?,
-            nal_type::SLICE_DPA | nal_type::SLICE_DPB | nal_type::SLICE_DPC => return Err(unsupported("data partitioning")),
+            nal_type::SLICE_DPA | nal_type::SLICE_DPB | nal_type::SLICE_DPC => {
+                return Err(unsupported("data partitioning"));
+            }
             nal_type::END_SEQ | nal_type::END_STREAM => self.submit_pending(frames)?,
             // SEI, AUD, filler, extensions: nothing to decode
             _ => {}
@@ -171,19 +203,33 @@ impl<A: Accel> Front<A> {
         Ok(())
     }
 
-    fn handle_slice(&mut self, nal: &[u8], hdr: NalHeader, pts: i64, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn handle_slice(
+        &mut self,
+        nal: &[u8],
+        hdr: NalHeader,
+        pts: i64,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         let rbsp = unescape_rbsp(nal.get(1..).unwrap_or_default());
         let (ppss, spss) = (&self.ppss, &self.spss);
         let mut found: Option<(Arc<Pps>, Arc<Sps>)> = None;
         let (sh, _, _) = SliceHeader::parse(&rbsp, hdr, |id| {
             let missing = |what: String| filmcraft_h264::Error::MissingParameterSet(what);
-            let pps = ppss.get(id as usize).and_then(Option::as_ref).ok_or_else(|| missing(format!("PPS {id}")))?;
-            let sps = spss.get(pps.sps_id as usize).and_then(Option::as_ref).ok_or_else(|| missing(format!("SPS {}", pps.sps_id)))?;
+            let pps = ppss
+                .get(id as usize)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| missing(format!("PPS {id}")))?;
+            let sps = spss
+                .get(pps.sps_id as usize)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| missing(format!("SPS {}", pps.sps_id)))?;
             found = Some((pps.clone(), sps.clone()));
             Ok((&**pps, &**sps))
         })
         .map_err(decode_err)?;
-        let Some((pps, sps)) = found else { return Err(decode_err("slice without a PPS")) };
+        let Some((pps, sps)) = found else {
+            return Err(decode_err("slice without a PPS"));
+        };
         sps.check_supported().map_err(decode_err)?;
         if pps.num_slice_groups > 1 {
             return Err(unsupported("slice groups (FMO)"));
@@ -199,26 +245,40 @@ impl<A: Accel> Front<A> {
         }
         let new_pic = match &self.pending {
             None => true,
-            Some(p) => is_new_picture(&p.first, &sh, &sps) || sh.first_mb_in_slice == 0 || !Arc::ptr_eq(&p.sps, &sps),
+            Some(p) => {
+                is_new_picture(&p.first, &sh, &sps)
+                    || sh.first_mb_in_slice == 0
+                    || !Arc::ptr_eq(&p.sps, &sps)
+            }
         };
         if new_pic {
             self.submit_pending(frames)?;
             if sh.first_mb_in_slice != 0 && self.active_sps.is_none() {
-                return Err(decode_err("stream does not start with the first slice of a picture"));
+                return Err(decode_err(
+                    "stream does not start with the first slice of a picture",
+                ));
             }
             self.start_picture(&sh, &sps, &pps, pts, frames)?;
         }
-        let Some(pending) = self.pending.as_ref() else { return Err(decode_err("slice without a started picture")) };
+        let Some(pending) = self.pending.as_ref() else {
+            return Err(decode_err("slice without a started picture"));
+        };
         if !Arc::ptr_eq(&pending.pps, &pps) {
             return Err(unsupported("a picture whose slices use different PPSs"));
         }
         let surfaces = self.accel.surfaces();
         let lists = self
             .dpb
-            .build_ref_lists(&sh, pending.poc.frame(), sps.max_frame_num(), |e| (va_ref(e, surfaces), e.mark != RefMark::Unused))
+            .build_ref_lists(&sh, pending.poc.frame(), sps.max_frame_num(), |e| {
+                (va_ref(e, surfaces), e.mark != RefMark::Unused)
+            })
             .map_err(decode_err)?;
-        if !sh.slice_type.is_intra() && (lists[0].is_empty() || (sh.slice_type.is_b() && lists[1].is_empty())) {
-            return Err(decode_err("no reference pictures available for an inter slice"));
+        if !sh.slice_type.is_intra()
+            && (lists[0].is_empty() || (sh.slice_type.is_b() && lists[1].is_empty()))
+        {
+            return Err(decode_err(
+                "no reference pictures available for an inter slice",
+            ));
         }
         // a missing reference (the software decoder conceals it with another picture) is not
         // something to hand the hardware
@@ -233,7 +293,14 @@ impl<A: Accel> Front<A> {
         Ok(())
     }
 
-    fn start_picture(&mut self, sh: &SliceHeader, sps: &Arc<Sps>, pps: &Arc<Pps>, pts: i64, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn start_picture(
+        &mut self,
+        sh: &SliceHeader,
+        sps: &Arc<Sps>,
+        pps: &Arc<Pps>,
+        pts: i64,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         if (sps.pic_width_in_mbs, sps.frame_height_in_mbs()) != self.mbs {
             return Err(unsupported("a picture size change"));
         }
@@ -241,7 +308,10 @@ impl<A: Accel> Front<A> {
             return Err(unsupported("a DPB larger than the decoder's surfaces"));
         }
         // a new SPS with another DPB size outputs and forgets what came before (as in software)
-        let changed = self.active_sps.as_ref().is_some_and(|a| a.max_dpb_frames() != sps.max_dpb_frames());
+        let changed = self
+            .active_sps
+            .as_ref()
+            .is_some_and(|a| a.max_dpb_frames() != sps.max_dpb_frames());
         let mut outs = Vec::new();
         if changed {
             self.dpb.flush(&mut outs);
@@ -255,15 +325,26 @@ impl<A: Accel> Front<A> {
             self.prev_ref_frame_num = 0;
         } else {
             let max = sps.max_frame_num();
-            if sh.frame_num != self.prev_ref_frame_num && sh.frame_num != (self.prev_ref_frame_num + 1) % max {
+            if sh.frame_num != self.prev_ref_frame_num
+                && sh.frame_num != (self.prev_ref_frame_num + 1) % max
+            {
                 self.fill_frame_num_gap(sh, sps, pts)?;
             }
         }
         self.read_out(outs, frames)?;
         let poc = self.poc_state.compute(sh, sps);
-        let target =
-            (0..self.accel.surfaces().len()).find(|&i| !self.dpb.entries.iter().any(|e| e.frame.index == i)).ok_or_else(|| decode_err("no free surface"))?;
-        self.pending = Some(Pending { target, sps: sps.clone(), pps: pps.clone(), first: sh.clone(), poc, pts, slices: Vec::new() });
+        let target = (0..self.accel.surfaces().len())
+            .find(|&i| !self.dpb.entries.iter().any(|e| e.frame.index == i))
+            .ok_or_else(|| decode_err("no free surface"))?;
+        self.pending = Some(Pending {
+            target,
+            sps: sps.clone(),
+            pps: pps.clone(),
+            first: sh.clone(),
+            poc,
+            pts,
+            slices: Vec::new(),
+        });
         Ok(())
     }
 
@@ -272,21 +353,63 @@ impl<A: Accel> Front<A> {
     /// there is none), so pictures predicted from them come out the same.
     fn fill_frame_num_gap(&mut self, sh: &SliceHeader, sps: &Arc<Sps>, pts: i64) -> Result<()> {
         let max = sps.max_frame_num();
-        let last = self.dpb.entries.iter().filter(|e| !e.non_existing).max_by_key(|e| e.frame.seq).map(|e| e.frame.index);
+        let last = self
+            .dpb
+            .entries
+            .iter()
+            .filter(|e| !e.non_existing)
+            .max_by_key(|e| e.frame.seq)
+            .map(|e| e.frame.index);
         let meta = Arc::new(output_meta(sps, pts, false));
         let poc_state = &mut self.poc_state;
         // surfaces are given afterwards, to the frames the sliding window keeps
-        let mut make = |_| (Surface { index: UNASSIGNED, top: 0, bottom: 0, seq: 0 }, 0, meta.clone());
+        let mut make = |_| {
+            (
+                Surface {
+                    index: UNASSIGNED,
+                    top: 0,
+                    bottom: 0,
+                    seq: 0,
+                },
+                0,
+                meta.clone(),
+            )
+        };
         let mut update = |frame_num| poc_state.update_gap_frame(frame_num, sps);
-        self.dpb.fill_frame_num_gap(self.prev_ref_frame_num, sh.frame_num, max, sps.max_num_ref_frames as usize, &mut make, &mut update);
+        self.dpb.fill_frame_num_gap(
+            self.prev_ref_frame_num,
+            sh.frame_num,
+            max,
+            sps.max_num_ref_frames as usize,
+            &mut make,
+            &mut update,
+        );
         self.prev_ref_frame_num = (sh.frame_num + max - 1) % max;
-        let used: Vec<usize> = self.dpb.entries.iter().map(|e| e.frame.index).filter(|&i| i != UNASSIGNED).collect();
+        let used: Vec<usize> = self
+            .dpb
+            .entries
+            .iter()
+            .map(|e| e.frame.index)
+            .filter(|&i| i != UNASSIGNED)
+            .collect();
         let mut free = (0..self.accel.surfaces().len()).filter(|i| !used.contains(i));
         let mut fills = Vec::new();
-        for e in self.dpb.entries.iter_mut().filter(|e| e.frame.index == UNASSIGNED) {
-            let index = free.next().ok_or_else(|| decode_err("no free surface for a frame_num gap"))?;
+        for e in self
+            .dpb
+            .entries
+            .iter_mut()
+            .filter(|e| e.frame.index == UNASSIGNED)
+        {
+            let index = free
+                .next()
+                .ok_or_else(|| decode_err("no free surface for a frame_num gap"))?;
             self.seq += 1;
-            e.frame = Surface { index, top: 0, bottom: 0, seq: self.seq };
+            e.frame = Surface {
+                index,
+                top: 0,
+                bottom: 0,
+                seq: self.seq,
+            };
             fills.push(index);
         }
         for index in fills {
@@ -297,13 +420,25 @@ impl<A: Accel> Front<A> {
 
     /// Decode the collected picture, then do its reference marking and DPB insertion.
     fn submit_pending(&mut self, frames: &mut Vec<DecodedFrame>) -> Result<()> {
-        let Some(p) = self.pending.take() else { return Ok(()) };
+        let Some(p) = self.pending.take() else {
+            return Ok(());
+        };
         if p.slices.is_empty() {
             return Err(decode_err("a picture without slices"));
         }
         let surfaces = self.accel.surfaces();
-        let target_id = surfaces.get(p.target).copied().ok_or_else(|| decode_err("surface out of range"))?;
-        if self.dpb.entries.iter().filter(|e| e.mark != RefMark::Unused).count() > 16 {
+        let target_id = surfaces
+            .get(p.target)
+            .copied()
+            .ok_or_else(|| decode_err("surface out of range"))?;
+        if self
+            .dpb
+            .entries
+            .iter()
+            .filter(|e| e.mark != RefMark::Unused)
+            .count()
+            > 16
+        {
             return Err(decode_err("more than 16 reference frames"));
         }
         let mut pic = picture_params(&p.sps, &p.pps, &p.first);
@@ -315,11 +450,18 @@ impl<A: Accel> Front<A> {
             BottomFieldOrderCnt: p.poc.bottom,
             va_reserved: [0; ffi::VA_PADDING_LOW],
         };
-        for (slot, e) in pic.ReferenceFrames.iter_mut().zip(self.dpb.entries.iter().filter(|e| e.mark != RefMark::Unused)) {
+        for (slot, e) in pic.ReferenceFrames.iter_mut().zip(
+            self.dpb
+                .entries
+                .iter()
+                .filter(|e| e.mark != RefMark::Unused),
+        ) {
             *slot = va_ref(e, surfaces);
         }
         let iq = iq_matrix(&p.pps);
-        self.accel.decode_h264(p.target, &pic, &iq, &p.slices).map_err(decode_err)?;
+        self.accel
+            .decode_h264(p.target, &pic, &iq, &p.slices)
+            .map_err(decode_err)?;
 
         self.poc_state.update(&p.first, &p.poc);
         let mmco5 = p.first.has_mmco5();
@@ -329,11 +471,24 @@ impl<A: Accel> Front<A> {
         // MMCO 5: the picture's order counts become relative to itself (tempPicOrderCnt, 8.2.1)
         let temp = if mmco5 { p.poc.frame() } else { 0 };
         self.seq += 1;
-        let surface = Surface { index: p.target, top: p.poc.top.wrapping_sub(temp), bottom: p.poc.bottom.wrapping_sub(temp), seq: self.seq };
+        let surface = Surface {
+            index: p.target,
+            top: p.poc.top.wrapping_sub(temp),
+            bottom: p.poc.bottom.wrapping_sub(temp),
+            seq: self.seq,
+        };
         let fpoc = if mmco5 { 0 } else { p.poc.frame() };
         let meta = Arc::new(output_meta(&p.sps, p.pts, p.first.idr));
         let mut outs = Vec::new();
-        self.dpb.store_picture(&p.first, surface, fpoc, p.sps.max_frame_num(), p.sps.max_num_ref_frames as usize, meta, &mut outs);
+        self.dpb.store_picture(
+            &p.first,
+            surface,
+            fpoc,
+            p.sps.max_frame_num(),
+            p.sps.max_num_ref_frames as usize,
+            meta,
+            &mut outs,
+        );
         self.read_out(outs, frames)
     }
 }
@@ -342,9 +497,20 @@ impl<A: Accel> Front<A> {
 fn va_ref(e: &DpbEntry<Surface>, surfaces: &[ffi::VASurfaceID]) -> VAPictureH264 {
     let long = e.mark == RefMark::Long;
     VAPictureH264 {
-        picture_id: surfaces.get(e.frame.index).copied().unwrap_or(ffi::VA_INVALID_SURFACE),
-        frame_idx: if long { e.long_term_frame_idx } else { e.frame_num },
-        flags: if long { ffi::VA_PICTURE_H264_LONG_TERM_REFERENCE } else { ffi::VA_PICTURE_H264_SHORT_TERM_REFERENCE },
+        picture_id: surfaces
+            .get(e.frame.index)
+            .copied()
+            .unwrap_or(ffi::VA_INVALID_SURFACE),
+        frame_idx: if long {
+            e.long_term_frame_idx
+        } else {
+            e.frame_num
+        },
+        flags: if long {
+            ffi::VA_PICTURE_H264_LONG_TERM_REFERENCE
+        } else {
+            ffi::VA_PICTURE_H264_SHORT_TERM_REFERENCE
+        },
         TopFieldOrderCnt: e.frame.top,
         BottomFieldOrderCnt: e.frame.bottom,
         va_reserved: [0; ffi::VA_PADDING_LOW],
@@ -391,9 +557,18 @@ pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> VAPictureParame
         | flag(pps.transform_8x8_mode, pic_bits::TRANSFORM_8X8_MODE)
         | flag(sh.field_pic, pic_bits::FIELD_PIC)
         | flag(pps.constrained_intra_pred, pic_bits::CONSTRAINED_INTRA_PRED)
-        | flag(pps.bottom_field_pic_order_in_frame_present, pic_bits::PIC_ORDER_PRESENT)
-        | flag(pps.deblocking_filter_control_present, pic_bits::DEBLOCKING_FILTER_CONTROL_PRESENT)
-        | flag(pps.redundant_pic_cnt_present, pic_bits::REDUNDANT_PIC_CNT_PRESENT)
+        | flag(
+            pps.bottom_field_pic_order_in_frame_present,
+            pic_bits::PIC_ORDER_PRESENT,
+        )
+        | flag(
+            pps.deblocking_filter_control_present,
+            pic_bits::DEBLOCKING_FILTER_CONTROL_PRESENT,
+        )
+        | flag(
+            pps.redundant_pic_cnt_present,
+            pic_bits::REDUNDANT_PIC_CNT_PRESENT,
+        )
         | flag(sh.nal_ref_idc != 0, pic_bits::REFERENCE_PIC);
     // the parsers bound these (frame size by the level limits, qp offsets to ±12, qp to 0..51)
     let narrow = |v: u32| u16::try_from(v.saturating_sub(1)).unwrap_or(u16::MAX);
@@ -422,24 +597,42 @@ pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> VAPictureParame
 
 /// The scaling matrices of `pps` (after the SPS / PPS fall-back rules), raster order.
 pub fn iq_matrix(pps: &Pps) -> VAIQMatrixBufferH264 {
-    VAIQMatrixBufferH264 { ScalingList4x4: pps.scaling.m4, ScalingList8x8: [pps.scaling.m8[0], pps.scaling.m8[1]], va_reserved: [0; ffi::VA_PADDING_LOW] }
+    VAIQMatrixBufferH264 {
+        ScalingList4x4: pps.scaling.m4,
+        ScalingList8x8: [pps.scaling.m8[0], pps.scaling.m8[1]],
+        va_reserved: [0; ffi::VA_PADDING_LOW],
+    }
 }
 
 /// The slice parameters of the slice `sh` (a `nal_len`-byte NAL unit) with reference lists `refs`.
-pub fn slice_params(sh: &SliceHeader, nal_len: usize, refs: &[Vec<VAPictureH264>; 2]) -> Result<VASliceParameterBufferH264> {
-    let bit_offset = sh.header_bits.checked_add(8).and_then(|b| u16::try_from(b).ok()).ok_or_else(|| decode_err("slice header too long"))?;
+pub fn slice_params(
+    sh: &SliceHeader,
+    nal_len: usize,
+    refs: &[Vec<VAPictureH264>; 2],
+) -> Result<VASliceParameterBufferH264> {
+    let bit_offset = sh
+        .header_bits
+        .checked_add(8)
+        .and_then(|b| u16::try_from(b).ok())
+        .ok_or_else(|| decode_err("slice header too long"))?;
     let mut s = VASliceParameterBufferH264 {
         slice_data_size: u32::try_from(nal_len).map_err(|_| decode_err("slice too large"))?,
         slice_data_offset: 0,
         slice_data_flag: ffi::VA_SLICE_DATA_FLAG_ALL,
         slice_data_bit_offset: bit_offset,
-        first_mb_in_slice: u16::try_from(sh.first_mb_in_slice).map_err(|_| decode_err("first_mb_in_slice out of range"))?,
+        first_mb_in_slice: u16::try_from(sh.first_mb_in_slice)
+            .map_err(|_| decode_err("first_mb_in_slice out of range"))?,
         slice_type: (sh.slice_type_raw % 5) as u8,
         direct_spatial_mv_pred_flag: u8::from(sh.direct_spatial_mv_pred),
-        num_ref_idx_l0_active_minus1: u8::try_from(sh.num_ref_idx_active[0].saturating_sub(1)).unwrap_or(31).min(31),
-        num_ref_idx_l1_active_minus1: u8::try_from(sh.num_ref_idx_active[1].saturating_sub(1)).unwrap_or(31).min(31),
+        num_ref_idx_l0_active_minus1: u8::try_from(sh.num_ref_idx_active[0].saturating_sub(1))
+            .unwrap_or(31)
+            .min(31),
+        num_ref_idx_l1_active_minus1: u8::try_from(sh.num_ref_idx_active[1].saturating_sub(1))
+            .unwrap_or(31)
+            .min(31),
         cabac_init_idc: u8::try_from(sh.cabac_init_idc).unwrap_or(0),
-        slice_qp_delta: i8::try_from(sh.slice_qp_delta).map_err(|_| decode_err("slice_qp_delta out of range"))?,
+        slice_qp_delta: i8::try_from(sh.slice_qp_delta)
+            .map_err(|_| decode_err("slice_qp_delta out of range"))?,
         disable_deblocking_filter_idc: u8::try_from(sh.disable_deblocking_filter_idc).unwrap_or(0),
         slice_alpha_c0_offset_div2: i8::try_from(sh.slice_alpha_c0_offset_div2).unwrap_or(0),
         slice_beta_offset_div2: i8::try_from(sh.slice_beta_offset_div2).unwrap_or(0),

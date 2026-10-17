@@ -67,7 +67,10 @@ pub struct McpServer {
 
 impl McpServer {
     pub fn new(automation: Automation) -> Self {
-        Self { automation, compact: false }
+        Self {
+            automation,
+            compact: false,
+        }
     }
 
     /// In compact mode `tools/list` returns only [`COMPACT_CORE_TOOLS`] plus `tool_search` and
@@ -101,14 +104,24 @@ impl McpServer {
     pub fn handle_line(&mut self, line: &str) -> Option<String> {
         let reply = match serde_json::from_str::<Value>(line) {
             Ok(msg) => self.handle(&msg),
-            Err(e) => Some(error(Value::Null, PARSE_ERROR, &format!("parse error: {e}"))),
+            Err(e) => Some(error(
+                Value::Null,
+                PARSE_ERROR,
+                &format!("parse error: {e}"),
+            )),
         };
         reply.map(|r| r.to_string())
     }
 
     /// Handle one parsed message. Notifications (no `id`) get no reply.
     pub fn handle(&mut self, msg: &Value) -> Option<Value> {
-        let Some(obj) = msg.as_object() else { return Some(error(Value::Null, INVALID_REQUEST, "expected a JSON-RPC request object")) };
+        let Some(obj) = msg.as_object() else {
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "expected a JSON-RPC request object",
+            ));
+        };
         let id = obj.get("id").cloned();
         let Some(method) = obj.get("method").and_then(Value::as_str) else {
             // A response to something we sent (we send no requests) or garbage.
@@ -116,7 +129,11 @@ impl McpServer {
         };
         let params = obj.get("params").cloned().unwrap_or(Value::Null);
         let id = id?; // notifications/initialized, notifications/cancelled, …: nothing to answer
-        let result = if method == "tools/call" { guarded_tool(|| self.dispatch(method, &params)) } else { self.dispatch(method, &params) };
+        let result = if method == "tools/call" {
+            guarded_tool(|| self.dispatch(method, &params))
+        } else {
+            self.dispatch(method, &params)
+        };
         Some(match result {
             Ok(result) => json!({ "jsonrpc": "2.0", "id": id, "result": result }),
             Err((code, message)) => error(id, code, &message),
@@ -127,7 +144,9 @@ impl McpServer {
         match method {
             "initialize" => {
                 let asked = params.get("protocolVersion").and_then(Value::as_str);
-                let version = asked.filter(|v| PROTOCOL_VERSIONS.contains(v)).unwrap_or(PROTOCOL_VERSIONS[0]);
+                let version = asked
+                    .filter(|v| PROTOCOL_VERSIONS.contains(v))
+                    .unwrap_or(PROTOCOL_VERSIONS[0]);
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false, "subscribe": false } },
@@ -138,24 +157,31 @@ impl McpServer {
             "ping" => Ok(json!({})),
             "tools/list" => Ok(json!({ "tools": self.tool_list() })),
             "tools/call" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "tools/call needs a tool name".to_string()))?;
+                let name = params
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "tools/call needs a tool name".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
                 if self.compact && name == TOOL_SEARCH {
-                    check_keys(name, &args, &["query", "category", "name"]).map_err(|e| (INVALID_PARAMS, e))?;
+                    check_keys(name, &args, &["query", "category", "name"])
+                        .map_err(|e| (INVALID_PARAMS, e))?;
                     return Ok(match search_tools(&args) {
                         Ok(found) => call_result(vec![Content::Json(found)]),
                         Err(message) => tool_error(&message),
                     });
                 }
                 if self.compact && name == TOOL_CALL {
-                    check_keys(name, &args, &["name", "arguments"]).map_err(|e| (INVALID_PARAMS, e))?;
+                    check_keys(name, &args, &["name", "arguments"])
+                        .map_err(|e| (INVALID_PARAMS, e))?;
                     let (inner, inner_args) = match unwrap_tool_call(&args) {
                         Ok(pair) => pair,
                         Err(message) => return Ok(tool_error(&message)),
                     };
                     return Ok(match self.automation.call(&inner, &inner_args) {
                         Ok(content) => tool_content(&inner, content),
-                        Err(ToolError::UnknownTool(t)) => tool_error(&format!("unknown tool {t:?}; use tool_search to find the right name")),
+                        Err(ToolError::UnknownTool(t)) => tool_error(&format!(
+                            "unknown tool {t:?}; use tool_search to find the right name"
+                        )),
                         Err(e) => tool_error(&e.to_string()),
                     });
                 }
@@ -170,14 +196,19 @@ impl McpServer {
                 }
                 match self.automation.call(name, &args) {
                     Ok(content) => Ok(tool_content(name, content)),
-                    Err(ToolError::UnknownTool(t)) => Err((INVALID_PARAMS, format!("unknown tool {t:?}"))),
+                    Err(ToolError::UnknownTool(t)) => {
+                        Err((INVALID_PARAMS, format!("unknown tool {t:?}")))
+                    }
                     Err(e) => Ok(tool_error(&e.to_string())),
                 }
             }
             "resources/list" => Ok(json!({ "resources": self.resource_list() })),
             "resources/templates/list" => Ok(json!({ "resourceTemplates": resource_templates() })),
             "resources/read" => {
-                let uri = params.get("uri").and_then(Value::as_str).ok_or((INVALID_PARAMS, "resources/read needs a uri".to_string()))?;
+                let uri = params
+                    .get("uri")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "resources/read needs a uri".to_string()))?;
                 self.read_resource(uri).map(|c| json!({ "contents": [c] }))
             }
             other => Err((METHOD_NOT_FOUND, format!("method not found: {other}"))),
@@ -192,7 +223,11 @@ impl McpServer {
         if !self.compact {
             return all.iter().map(tool_json).collect();
         }
-        let mut out: Vec<Value> = COMPACT_CORE_TOOLS.iter().filter_map(|n| all.iter().find(|t| t.name == *n)).map(tool_json).collect();
+        let mut out: Vec<Value> = COMPACT_CORE_TOOLS
+            .iter()
+            .filter_map(|n| all.iter().find(|t| t.name == *n))
+            .map(tool_json)
+            .collect();
         out.extend(meta_tools());
         out
     }
@@ -248,9 +283,16 @@ fn first_sentence(text: &str) -> &str {
     // ASCII lowercasing keeps byte offsets, so positions found in `lower` are valid in `text`.
     let lower = text.to_ascii_lowercase();
     let mut from = 0;
-    while let Some(i) = lower.get(from..).and_then(|rest| rest.find(". ")).map(|i| i + from) {
+    while let Some(i) = lower
+        .get(from..)
+        .and_then(|rest| rest.find(". "))
+        .map(|i| i + from)
+    {
         // "e.g. " and "i.e. " are abbreviations, not the end of the sentence.
-        if !lower.get(..i).is_some_and(|before| before.ends_with("e.g") || before.ends_with("i.e")) {
+        if !lower
+            .get(..i)
+            .is_some_and(|before| before.ends_with("e.g") || before.ends_with("i.e"))
+        {
             return text.get(..=i).unwrap_or(text);
         }
         from = i + 2;
@@ -260,8 +302,14 @@ fn first_sentence(text: &str) -> &str {
 
 /// Reject keys other than `allowed`, as the tool table does for a tool's own arguments.
 fn check_keys(tool: &str, args: &Value, allowed: &[&str]) -> Result<(), String> {
-    match args.as_object().and_then(|o| o.keys().find(|k| !allowed.contains(&k.as_str()))) {
-        Some(k) => Err(format!("{tool}: unknown argument {k:?} (expected: {})", allowed.join(", "))),
+    match args
+        .as_object()
+        .and_then(|o| o.keys().find(|k| !allowed.contains(&k.as_str())))
+    {
+        Some(k) => Err(format!(
+            "{tool}: unknown argument {k:?} (expected: {})",
+            allowed.join(", ")
+        )),
         None => Ok(()),
     }
 }
@@ -269,7 +317,9 @@ fn check_keys(tool: &str, args: &Value, allowed: &[&str]) -> Result<(), String> 
 /// `tool_search`: filter the tool table by query and category, or describe one tool in full.
 fn search_tools(args: &Value) -> Result<Value, String> {
     if !(args.is_object() || args.is_null()) {
-        return Err(format!("{TOOL_SEARCH} takes an object with optional query, category and name"));
+        return Err(format!(
+            "{TOOL_SEARCH} takes an object with optional query, category and name"
+        ));
     }
     check_keys(TOOL_SEARCH, args, &["query", "category", "name"])?;
     let text = |key: &str| match args.get(key) {
@@ -280,15 +330,25 @@ fn search_tools(args: &Value) -> Result<Value, String> {
     let (query, category, name) = (text("query")?, text("category")?, text("name")?);
     let all = crate::tools();
     if let Some(name) = name {
-        let t =
-            all.iter().find(|t| t.name == name).ok_or_else(|| format!("unknown tool {name:?}; call {TOOL_SEARCH} without name to list the tools"))?;
+        let t = all.iter().find(|t| t.name == name).ok_or_else(|| {
+            format!("unknown tool {name:?}; call {TOOL_SEARCH} without name to list the tools")
+        })?;
         return Ok(json!({ "tool": {
             "name": t.name, "title": t.title, "category": category_of(t.name), "description": t.description,
             "read_only": t.read_only, "destructive": t.destructive, "input_schema": t.input_schema,
         } }));
     }
-    let category = category.map(|c| c.trim_end_matches('_').to_lowercase()).filter(|c| !c.is_empty());
-    let words: Vec<String> = query.map(|q| q.to_lowercase().split_whitespace().map(str::to_owned).collect()).unwrap_or_default();
+    let category = category
+        .map(|c| c.trim_end_matches('_').to_lowercase())
+        .filter(|c| !c.is_empty());
+    let words: Vec<String> = query
+        .map(|q| {
+            q.to_lowercase()
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default();
     let mut categories: Vec<&str> = all.iter().map(|t| category_of(t.name)).collect();
     categories.sort_unstable();
     categories.dedup();
@@ -306,14 +366,19 @@ fn search_tools(args: &Value) -> Result<Value, String> {
 
 /// `tool_call`: the tool name and its arguments from the meta tool's own arguments.
 fn unwrap_tool_call(args: &Value) -> Result<(String, Value), String> {
-    let Some(obj) = args.as_object() else { return Err(format!("{TOOL_CALL} needs an object with name and arguments")) };
+    let Some(obj) = args.as_object() else {
+        return Err(format!(
+            "{TOOL_CALL} needs an object with name and arguments"
+        ));
+    };
     check_keys(TOOL_CALL, args, &["name", "arguments"])?;
-    let name = obj
-        .get("name")
-        .and_then(Value::as_str)
-        .ok_or_else(|| format!("{TOOL_CALL} needs the name of the tool to run; find it with {TOOL_SEARCH}"))?;
+    let name = obj.get("name").and_then(Value::as_str).ok_or_else(|| {
+        format!("{TOOL_CALL} needs the name of the tool to run; find it with {TOOL_SEARCH}")
+    })?;
     if name == TOOL_CALL || name == TOOL_SEARCH {
-        return Err(format!("{TOOL_SEARCH} and {TOOL_CALL} are called directly, not through {TOOL_CALL}"));
+        return Err(format!(
+            "{TOOL_SEARCH} and {TOOL_CALL} are called directly, not through {TOOL_CALL}"
+        ));
     }
     let inner = match obj.get("arguments") {
         None | Some(Value::Null) => Value::Null,
@@ -325,13 +390,17 @@ fn unwrap_tool_call(args: &Value) -> Result<(String, Value), String> {
 
 /// Last-resort boundary shared by every tools/call route, including compact dispatch.
 fn guarded_tool(f: impl FnOnce() -> Result<Value, (i64, String)>) -> Result<Value, (i64, String)> {
-    pdfcraft_engine::guard(f).unwrap_or_else(|message| Ok(tool_error(&format!("internal error: {message}"))))
+    pdfcraft_engine::guard(f)
+        .unwrap_or_else(|message| Ok(tool_error(&format!("internal error: {message}"))))
 }
 
 fn tool_content(name: &str, content: Vec<Content>) -> Value {
     let failed = matches!(name, "command_batch" | "doc_batch")
         && content.iter().any(|c| match c {
-            Content::Json(v) => v.get("failed").and_then(Value::as_u64).is_some_and(|n| n > 0),
+            Content::Json(v) => v
+                .get("failed")
+                .and_then(Value::as_u64)
+                .is_some_and(|n| n > 0),
             _ => false,
         });
     let mut result = call_result(content);
@@ -358,7 +427,10 @@ enum Resource {
 fn parse_uri(uri: &str) -> Option<Resource> {
     let rest = uri.strip_prefix("pdfcraft://doc/")?;
     let (path, query) = rest.split_once('?').unwrap_or((rest, ""));
-    let dpi = query.split('&').find_map(|kv| kv.strip_prefix("dpi=")).and_then(|v| v.parse::<f64>().ok());
+    let dpi = query
+        .split('&')
+        .find_map(|kv| kv.strip_prefix("dpi="))
+        .and_then(|v| v.parse::<f64>().ok());
     let parts: Vec<&str> = path.split('/').collect();
     let doc = parts.first()?.parse().ok()?;
     match parts[1..] {
@@ -385,13 +457,20 @@ fn resource_templates() -> Value {
 
 impl McpServer {
     fn resource_list(&mut self) -> Vec<Value> {
-        let docs = self.automation.call("doc_list", &json!({})).ok().and_then(|c| match c.into_iter().next() {
-            Some(Content::Json(v)) => v["documents"].as_array().cloned(),
-            _ => None,
-        });
+        let docs = self
+            .automation
+            .call("doc_list", &json!({}))
+            .ok()
+            .and_then(|c| match c.into_iter().next() {
+                Some(Content::Json(v)) => v["documents"].as_array().cloned(),
+                _ => None,
+            });
         let mut out = Vec::new();
         for d in docs.unwrap_or_default() {
-            let (id, name) = (d["doc"].as_u64().unwrap_or(0), d["name"].as_str().unwrap_or("document"));
+            let (id, name) = (
+                d["doc"].as_u64().unwrap_or(0),
+                d["name"].as_str().unwrap_or("document"),
+            );
             out.push(json!({ "uri": format!("pdfcraft://doc/{id}/info"), "name": format!("{name} (information)"), "mimeType": "application/json" }));
             out.push(json!({ "uri": format!("pdfcraft://doc/{id}/text"), "name": format!("{name} (text)"), "mimeType": "text/plain" }));
             // Pages are listed for short documents; longer ones use the templates.
@@ -417,7 +496,10 @@ impl McpServer {
             "pdfcraft://commands" => Some("command_list"),
             _ => None,
         } {
-            let content = self.automation.call(tool, &json!({})).map_err(|e| (INVALID_PARAMS, e.to_string()))?;
+            let content = self
+                .automation
+                .call(tool, &json!({}))
+                .map_err(|e| (INVALID_PARAMS, e.to_string()))?;
             let value = content
                 .into_iter()
                 .find_map(|c| match c {
@@ -428,30 +510,59 @@ impl McpServer {
             return Ok(json!({"uri":uri,"mimeType":"application/json","text":value.to_string()}));
         }
         let r = parse_uri(uri).ok_or((INVALID_PARAMS, format!("unknown resource {uri:?}")))?;
-        let call = |a: &mut Automation, tool: &str, args: Value| a.call(tool, &args).map_err(|e| (INVALID_PARAMS, e.to_string()));
-        let json_of = |c: Vec<Content>| c.into_iter().find_map(|c| if let Content::Json(v) = c { Some(v) } else { None }).unwrap_or(Value::Null);
+        let call = |a: &mut Automation, tool: &str, args: Value| {
+            a.call(tool, &args)
+                .map_err(|e| (INVALID_PARAMS, e.to_string()))
+        };
+        let json_of = |c: Vec<Content>| {
+            c.into_iter()
+                .find_map(|c| {
+                    if let Content::Json(v) = c {
+                        Some(v)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(Value::Null)
+        };
         let text_of = |v: &Value, headings: bool| {
             let pages = v["pages"].as_array().cloned().unwrap_or_default();
             let parts: Vec<String> = pages
                 .iter()
                 .map(|p| {
                     let t = p["text"].as_str().unwrap_or("");
-                    if headings { format!("Page {}\n{t}", p["page"]) } else { t.to_owned() }
+                    if headings {
+                        format!("Page {}\n{t}", p["page"])
+                    } else {
+                        t.to_owned()
+                    }
                 })
                 .collect();
             parts.join("\n\n")
         };
         Ok(match r {
             Resource::Info(doc) => {
-                let v = json_of(call(&mut self.automation, "doc_info", json!({ "doc": doc }))?);
+                let v = json_of(call(
+                    &mut self.automation,
+                    "doc_info",
+                    json!({ "doc": doc }),
+                )?);
                 json!({ "uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default() })
             }
             Resource::Text(doc) => {
-                let v = json_of(call(&mut self.automation, "text_extract", json!({ "doc": doc }))?);
+                let v = json_of(call(
+                    &mut self.automation,
+                    "text_extract",
+                    json!({ "doc": doc }),
+                )?);
                 json!({ "uri": uri, "mimeType": "text/plain", "text": text_of(&v, true) })
             }
             Resource::PageText(doc, page) => {
-                let v = json_of(call(&mut self.automation, "text_extract", json!({ "doc": doc, "pages": [page] }))?);
+                let v = json_of(call(
+                    &mut self.automation,
+                    "text_extract",
+                    json!({ "doc": doc, "pages": [page] }),
+                )?);
                 json!({ "uri": uri, "mimeType": "text/plain", "text": text_of(&v, false) })
             }
             Resource::PageImage(doc, page, dpi) => {
@@ -461,8 +572,15 @@ impl McpServer {
                 }
                 let png = call(&mut self.automation, "page_render", args)?
                     .into_iter()
-                    .find_map(|c| if let Content::Png { data, .. } = c { Some(data) } else { None });
-                let png = png.ok_or((INVALID_PARAMS, "the page could not be rendered".to_string()))?;
+                    .find_map(|c| {
+                        if let Content::Png { data, .. } = c {
+                            Some(data)
+                        } else {
+                            None
+                        }
+                    });
+                let png =
+                    png.ok_or((INVALID_PARAMS, "the page could not be rendered".to_string()))?;
                 json!({ "uri": uri, "mimeType": "image/png", "blob": base64::engine::general_purpose::STANDARD.encode(png) })
             }
         })
@@ -515,7 +633,12 @@ mod tests {
     fn conventions_panic_is_a_tool_error() {
         let r = super::guarded_tool(|| panic!("synthetic tool failure")).unwrap();
         assert_eq!(r["isError"], true);
-        assert!(r["content"][0]["text"].as_str().unwrap().contains("synthetic tool failure"));
+        assert!(
+            r["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("synthetic tool failure")
+        );
         let next = super::guarded_tool(|| Ok(serde_json::json!({"ok":true}))).unwrap();
         assert_eq!(next["ok"], true);
     }
@@ -523,20 +646,41 @@ mod tests {
     #[test]
     fn first_sentence_skips_abbreviations() {
         assert_eq!(first_sentence("Rotate pages. Undoable."), "Rotate pages.");
-        assert_eq!(first_sentence("Label pages (i.e. roman numerals). Undoable."), "Label pages (i.e. roman numerals).");
-        assert_eq!(first_sentence("Label pages (I.E. roman numerals, E.G. i, ii). Undoable."), "Label pages (I.E. roman numerals, E.G. i, ii).");
-        assert_eq!(first_sentence("Use a value, e.g. en-US, or none. Then more."), "Use a value, e.g. en-US, or none.");
+        assert_eq!(
+            first_sentence("Label pages (i.e. roman numerals). Undoable."),
+            "Label pages (i.e. roman numerals)."
+        );
+        assert_eq!(
+            first_sentence("Label pages (I.E. roman numerals, E.G. i, ii). Undoable."),
+            "Label pages (I.E. roman numerals, E.G. i, ii)."
+        );
+        assert_eq!(
+            first_sentence("Use a value, e.g. en-US, or none. Then more."),
+            "Use a value, e.g. en-US, or none."
+        );
         assert_eq!(first_sentence("No full stop here"), "No full stop here");
-        assert_eq!(first_sentence("Only an abbreviation, e.g. this"), "Only an abbreviation, e.g. this");
+        assert_eq!(
+            first_sentence("Only an abbreviation, e.g. this"),
+            "Only an abbreviation, e.g. this"
+        );
         assert_eq!(first_sentence(""), "");
-        assert_eq!(first_sentence("Zażółć gęślą, i.e. jaźń. Dalej."), "Zażółć gęślą, i.e. jaźń.");
+        assert_eq!(
+            first_sentence("Zażółć gęślą, i.e. jaźń. Dalej."),
+            "Zażółć gęślą, i.e. jaźń."
+        );
     }
 
     #[test]
     fn resource_uris_parse() {
         assert_eq!(parse_uri("pdfcraft://doc/3/info"), Some(Resource::Info(3)));
-        assert_eq!(parse_uri("pdfcraft://doc/3/page/2/image?dpi=36"), Some(Resource::PageImage(3, 2, Some(36.0))));
-        assert_eq!(parse_uri("pdfcraft://doc/3/page/2/text"), Some(Resource::PageText(3, 2)));
+        assert_eq!(
+            parse_uri("pdfcraft://doc/3/page/2/image?dpi=36"),
+            Some(Resource::PageImage(3, 2, Some(36.0)))
+        );
+        assert_eq!(
+            parse_uri("pdfcraft://doc/3/page/2/text"),
+            Some(Resource::PageText(3, 2))
+        );
         assert_eq!(parse_uri("pdfcraft://doc/x/info"), None);
         assert_eq!(parse_uri("file:///etc/passwd"), None);
     }

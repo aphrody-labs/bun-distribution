@@ -85,14 +85,18 @@ pub fn vtable_edges_into(
     let rdata_va = image_base + u64::from(rdata.virtual_address);
     let rdata_off = rdata.pointer_to_raw_data as usize;
     let rdata_len = rdata.virtual_size.min(rdata.size_of_raw_data) as usize;
-    let rdata_bytes = bytes.get(rdata_off..rdata_off + rdata_len).context(".rdata hors limites")?;
+    let rdata_bytes = bytes
+        .get(rdata_off..rdata_off + rdata_len)
+        .context(".rdata hors limites")?;
     // Lit un u64 LE à l'adresse virtuelle `va` si elle est dans `.rdata`.
     let rd_u64 = |va: u64| -> Option<u64> {
         if va < rdata_va {
             return None;
         }
         let off = (va - rdata_va) as usize;
-        rdata_bytes.get(off..off + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+        rdata_bytes
+            .get(off..off + 8)
+            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
     };
 
     // Vtables localisées par RTTI : adresse + nom de classe + namespace.
@@ -113,7 +117,9 @@ pub fn vtable_edges_into(
 
     // Fonctions connues de la cible.
     let mut known: HashSet<u64> = {
-        let mut q = db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
         q.query_map([dst_bin], |r| r.get::<_, i64>(0).map(|v| v as u64))?
             .collect::<std::result::Result<_, _>>()?
     };

@@ -1,6 +1,13 @@
 //! pdfcraft-create — create PDFs from nothing, images or text (L4). See the README.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
 
@@ -22,7 +29,13 @@ pub const LETTER: (f64, f64) = (612.0, 792.0);
 /// The largest page side PDF allows (ISO 32000-2 Annex C: 14 400 units).
 const MAX_SIDE: f64 = 14_400.0;
 
-fn add_page(doc: &mut Document, w: f64, h: f64, resources: Dict, content: Option<Vec<u8>>) -> Result<ObjRef, CreateError> {
+fn add_page(
+    doc: &mut Document,
+    w: f64,
+    h: f64,
+    resources: Dict,
+    content: Option<Vec<u8>>,
+) -> Result<ObjRef, CreateError> {
     // `Document::new_empty` always has a page tree.
     let pages = doc
         .root()
@@ -31,7 +44,10 @@ fn add_page(doc: &mut Document, w: f64, h: f64, resources: Dict, content: Option
     let mut page = Dict::new();
     page.set(b"Type".to_vec(), Object::name("Page"));
     page.set(b"Parent".to_vec(), Object::Ref(pages));
-    page.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), Object::Real(w), Object::Real(h)]));
+    page.set(
+        b"MediaBox".to_vec(),
+        Object::Array(vec![0.into(), 0.into(), Object::Real(w), Object::Real(h)]),
+    );
     page.set(b"Resources".to_vec(), Object::Dict(resources));
     if let Some(c) = content {
         let s = doc.add(Object::Stream(Stream::flate(Dict::new(), &c)));
@@ -39,7 +55,10 @@ fn add_page(doc: &mut Document, w: f64, h: f64, resources: Dict, content: Option
     }
     let r = doc.add(page);
     let _ = doc.update_dict(pages, |d| {
-        let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+        let mut kids = d
+            .get(b"Kids")
+            .and_then(|k| k.as_array().cloned())
+            .unwrap_or_default();
         kids.push(Object::Ref(r));
         d.set(b"Count".to_vec(), Object::Int(kids.len() as i64));
         d.set(b"Kids".to_vec(), Object::Array(kids));
@@ -57,7 +76,10 @@ fn set_title(doc: &mut Document, title: &str) {
 
 /// A document of `pages` empty pages of `width × height` points.
 pub fn blank(width: f64, height: f64, pages: usize) -> Result<Document, CreateError> {
-    if !(width.is_finite() && height.is_finite() && (3.0..=MAX_SIDE).contains(&width) && (3.0..=MAX_SIDE).contains(&height))
+    if !(width.is_finite()
+        && height.is_finite()
+        && (3.0..=MAX_SIDE).contains(&width)
+        && (3.0..=MAX_SIDE).contains(&height))
         || pages == 0
         || pages > 10_000
     {
@@ -95,7 +117,10 @@ fn icc_for(profile: Vec<u8>, n: usize) -> Option<Vec<u8>> {
         4 => b"CMYK",
         _ => return None,
     };
-    (profile.len() >= 128 && profile.get(36..40) == Some(b"acsp") && profile.get(16..20) == Some(space)).then_some(profile)
+    (profile.len() >= 128
+        && profile.get(36..40) == Some(b"acsp")
+        && profile.get(16..20) == Some(space))
+    .then_some(profile)
 }
 
 /// A JPEG's ICC profile from its APP2 `ICC_PROFILE` chunks: (sequence number, chunk count,
@@ -103,7 +128,11 @@ fn icc_for(profile: Vec<u8>, n: usize) -> Option<Vec<u8>> {
 fn jpeg_icc(mut chunks: Vec<(u8, u8, &[u8])>) -> Option<Vec<u8>> {
     let count = chunks.first()?.1;
     chunks.sort_by_key(|c| c.0);
-    let complete = usize::from(count) == chunks.len() && chunks.iter().zip(1..=count).all(|(c, seq)| c.0 == seq && c.1 == count);
+    let complete = usize::from(count) == chunks.len()
+        && chunks
+            .iter()
+            .zip(1..=count)
+            .all(|(c, seq)| c.0 == seq && c.1 == count);
     complete.then(|| chunks.iter().flat_map(|c| c.2.iter().copied()).collect())
 }
 
@@ -135,20 +164,30 @@ fn add_image(doc: &mut Document, img: Embedded, profiles: &mut Vec<(Vec<u8>, Obj
                 r
             }
         };
-        d.set(b"ColorSpace".to_vec(), Object::Array(vec![Object::name("ICCBased"), Object::Ref(r)]));
+        d.set(
+            b"ColorSpace".to_vec(),
+            Object::Array(vec![Object::name("ICCBased"), Object::Ref(r)]),
+        );
     }
     if let Some((m, alpha)) = img.smask {
         let mr = doc.add(Object::Stream(Stream::flate(m, &alpha)));
         d.set(b"SMask".to_vec(), Object::Ref(mr));
     }
-    let stream = if img.filtered { Stream::from_raw(d, img.data) } else { Stream::flate(d, &img.data) };
+    let stream = if img.filtered {
+        Stream::from_raw(d, img.data)
+    } else {
+        Stream::flate(d, &img.data)
+    };
     doc.add(Object::Stream(stream))
 }
 
-const JP2_SIGNATURE: &[u8] = &[0, 0, 0, 0x0C, b'j', b'P', b' ', b' ', 0x0D, 0x0A, 0x87, 0x0A];
+const JP2_SIGNATURE: &[u8] = &[
+    0, 0, 0, 0x0C, b'j', b'P', b' ', b' ', 0x0D, 0x0A, 0x87, 0x0A,
+];
 
 fn be32(b: &[u8], at: usize) -> Option<u32> {
-    b.get(at..at + 4).map(|x| u32::from_be_bytes([x[0], x[1], x[2], x[3]]))
+    b.get(at..at + 4)
+        .map(|x| u32::from_be_bytes([x[0], x[1], x[2], x[3]]))
 }
 
 fn be16(b: &[u8], at: usize) -> Option<u16> {
@@ -165,7 +204,10 @@ fn jp2_boxes(b: &[u8]) -> Vec<([u8; 4], &[u8])> {
         let (head, len) = match len {
             0 => (8, (b.len() - i) as u64),
             1 => match b.get(i + 8..i + 16) {
-                Some(x) => (16, u64::from_be_bytes([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]])),
+                Some(x) => (
+                    16,
+                    u64::from_be_bytes([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]]),
+                ),
                 None => break,
             },
             n => (8, n),
@@ -186,16 +228,31 @@ fn jpx(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
     let bad = |m: &str| CreateError::Image(name.into(), m.into());
     let mut dpi = (72.0, 72.0);
     let (w, h) = if bytes.starts_with(JP2_SIGNATURE) {
-        let header =
-            jp2_boxes(bytes).into_iter().find(|(t, _)| t == b"jp2h").map(|(_, p)| p).ok_or_else(|| bad("a JPEG 2000 file without a header"))?;
+        let header = jp2_boxes(bytes)
+            .into_iter()
+            .find(|(t, _)| t == b"jp2h")
+            .map(|(_, p)| p)
+            .ok_or_else(|| bad("a JPEG 2000 file without a header"))?;
         let inner = jp2_boxes(header);
-        let ihdr = inner.iter().find(|(t, _)| t == b"ihdr").map(|(_, p)| *p).ok_or_else(|| bad("a JPEG 2000 file without image size"))?;
+        let ihdr = inner
+            .iter()
+            .find(|(t, _)| t == b"ihdr")
+            .map(|(_, p)| *p)
+            .ok_or_else(|| bad("a JPEG 2000 file without image size"))?;
         // Capture resolution (pixels per metre), when given.
         if let Some((_, res)) = inner.iter().find(|(t, _)| t == b"res ")
-            && let Some((_, r)) = jp2_boxes(res).into_iter().find(|(t, _)| t == b"resc" || t == b"resd")
+            && let Some((_, r)) = jp2_boxes(res)
+                .into_iter()
+                .find(|(t, _)| t == b"resc" || t == b"resd")
             && r.len() >= 10
         {
-            let part = |n: u16, d: u16, e: i8| if d == 0 { 0.0 } else { n as f64 / d as f64 * 10f64.powi(e as i32) * 0.0254 };
+            let part = |n: u16, d: u16, e: i8| {
+                if d == 0 {
+                    0.0
+                } else {
+                    n as f64 / d as f64 * 10f64.powi(e as i32) * 0.0254
+                }
+            };
             let (v, hz) = (
                 part(be16(r, 0).unwrap_or(0), be16(r, 2).unwrap_or(0), r[8] as i8),
                 part(be16(r, 4).unwrap_or(0), be16(r, 6).unwrap_or(0), r[9] as i8),
@@ -204,10 +261,18 @@ fn jpx(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
                 dpi = (hz, v);
             }
         }
-        (be32(ihdr, 4).ok_or_else(|| bad("bad image header"))?, be32(ihdr, 0).ok_or_else(|| bad("bad image header"))?)
+        (
+            be32(ihdr, 4).ok_or_else(|| bad("bad image header"))?,
+            be32(ihdr, 0).ok_or_else(|| bad("bad image header"))?,
+        )
     } else {
         // SIZ: Lsiz Rsiz Xsiz Ysiz XOsiz YOsiz …
-        let (x, y, xo, yo) = (be32(bytes, 8), be32(bytes, 12), be32(bytes, 16), be32(bytes, 20));
+        let (x, y, xo, yo) = (
+            be32(bytes, 8),
+            be32(bytes, 12),
+            be32(bytes, 16),
+            be32(bytes, 20),
+        );
         match (x, y, xo, yo) {
             (Some(x), Some(y), Some(xo), Some(yo)) if x > xo && y > yo => (x - xo, y - yo),
             _ => return Err(bad("a damaged JPEG 2000 codestream")),
@@ -218,7 +283,15 @@ fn jpx(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
     }
     let mut d = Dict::new();
     d.set(b"Filter".to_vec(), Object::name("JPXDecode"));
-    Ok(Embedded { dict: d, data: bytes.to_vec(), filtered: true, smask: None, icc: None, px: (w, h), dpi })
+    Ok(Embedded {
+        dict: d,
+        data: bytes.to_vec(),
+        filtered: true,
+        smask: None,
+        icc: None,
+        px: (w, h),
+        dpi,
+    })
 }
 
 fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
@@ -251,12 +324,20 @@ fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
         if len < 2 {
             return Err(bad("invalid JPEG segment length"));
         }
-        let end = i.checked_add(len).ok_or_else(|| bad("JPEG segment length overflow"))?;
-        let seg = bytes.get(i + 2..end).ok_or_else(|| bad("truncated JPEG segment"))?;
+        let end = i
+            .checked_add(len)
+            .ok_or_else(|| bad("JPEG segment length overflow"))?;
+        let seg = bytes
+            .get(i + 2..end)
+            .ok_or_else(|| bad("truncated JPEG segment"))?;
         match marker {
             // APP0 JFIF density.
             0xE0 if seg.starts_with(b"JFIF\0") && seg.len() >= 12 => {
-                let (unit, x, y) = (seg[7], u16::from_be_bytes([seg[8], seg[9]]) as f64, u16::from_be_bytes([seg[10], seg[11]]) as f64);
+                let (unit, x, y) = (
+                    seg[7],
+                    u16::from_be_bytes([seg[8], seg[9]]) as f64,
+                    u16::from_be_bytes([seg[10], seg[11]]) as f64,
+                );
                 if x > 0.0 && y > 0.0 {
                     dpi = match unit {
                         1 => (x, y),
@@ -268,7 +349,10 @@ fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
             0xEE if seg.starts_with(b"Adobe") => adobe = true,
             // APP2 ICC profile, possibly split over several chunks.
             0xE2 => {
-                if let Some(([seq, count], data)) = seg.strip_prefix(b"ICC_PROFILE\0").and_then(|r| r.split_first_chunk::<2>()) {
+                if let Some(([seq, count], data)) = seg
+                    .strip_prefix(b"ICC_PROFILE\0")
+                    .and_then(|r| r.split_first_chunk::<2>())
+                {
                     icc_chunks.push((*seq, *count, data));
                 }
             }
@@ -276,14 +360,19 @@ fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
                 if seg.len() < 6 {
                     return Err(bad("bad frame header"));
                 }
-                size = Some((u16::from_be_bytes([seg[3], seg[4]]) as u32, u16::from_be_bytes([seg[1], seg[2]]) as u32));
+                size = Some((
+                    u16::from_be_bytes([seg[3], seg[4]]) as u32,
+                    u16::from_be_bytes([seg[1], seg[2]]) as u32,
+                ));
                 comps = seg[5];
             }
             _ => {}
         }
         i = end;
     }
-    let (w, h) = size.filter(|(w, h)| *w > 0 && *h > 0).ok_or_else(|| bad("no image size"))?;
+    let (w, h) = size
+        .filter(|(w, h)| *w > 0 && *h > 0)
+        .ok_or_else(|| bad("no image size"))?;
     let mut d = Dict::new();
     let cs = match comps {
         1 => "DeviceGray",
@@ -291,7 +380,15 @@ fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
         4 => {
             if adobe {
                 // Adobe writes CMYK JPEGs inverted.
-                d.set(b"Decode".to_vec(), Object::Array([1, 0, 1, 0, 1, 0, 1, 0].iter().map(|v| Object::Int(*v)).collect()));
+                d.set(
+                    b"Decode".to_vec(),
+                    Object::Array(
+                        [1, 0, 1, 0, 1, 0, 1, 0]
+                            .iter()
+                            .map(|v| Object::Int(*v))
+                            .collect(),
+                    ),
+                );
             }
             "DeviceCMYK"
         }
@@ -301,7 +398,15 @@ fn jpeg(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
     d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
     d.set(b"Filter".to_vec(), Object::name("DCTDecode"));
     let icc = jpeg_icc(icc_chunks);
-    Ok(Embedded { dict: d, data: bytes.to_vec(), filtered: true, smask: None, icc, px: (w, h), dpi })
+    Ok(Embedded {
+        dict: d,
+        data: bytes.to_vec(),
+        filtered: true,
+        smask: None,
+        icc,
+        px: (w, h),
+        dpi,
+    })
 }
 
 fn png_image(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
@@ -310,18 +415,28 @@ fn png_image(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
     dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let mut reader = dec.read_info().map_err(|e| bad(e.to_string()))?;
     let dpi = match reader.info().pixel_dims {
-        Some(png::PixelDimensions { xppu, yppu, unit: png::Unit::Meter }) if xppu > 0 && yppu > 0 => (xppu as f64 * 0.0254, yppu as f64 * 0.0254),
+        Some(png::PixelDimensions {
+            xppu,
+            yppu,
+            unit: png::Unit::Meter,
+        }) if xppu > 0 && yppu > 0 => (xppu as f64 * 0.0254, yppu as f64 * 0.0254),
         _ => (72.0, 72.0),
     };
     let icc = reader.info().icc_profile.as_ref().map(|p| p.to_vec());
     // The decoded size comes from the header alone, so a file of a few bytes can claim any
     // size: keep the ceiling, and ask for the memory fallibly (a failed allocation would abort
     // the whole app, and no `catch_unwind` stops that).
-    let size = reader.output_buffer_size().filter(|n| *n <= MAX_DECODED_BYTES).ok_or_else(|| bad("image too large".into()))?;
+    let size = reader
+        .output_buffer_size()
+        .filter(|n| *n <= MAX_DECODED_BYTES)
+        .ok_or_else(|| bad("image too large".into()))?;
     let mut buf = Vec::new();
-    buf.try_reserve_exact(size).map_err(|_| bad("not enough memory for this image".into()))?;
+    buf.try_reserve_exact(size)
+        .map_err(|_| bad("not enough memory for this image".into()))?;
     buf.resize(size, 0);
-    let frame = reader.next_frame(&mut buf).map_err(|e| bad(e.to_string()))?;
+    let frame = reader
+        .next_frame(&mut buf)
+        .map_err(|e| bad(e.to_string()))?;
     let (w, h) = (frame.width, frame.height);
     let data = &buf[..frame.buffer_size()];
     let (channels, cs) = match frame.color_type {
@@ -335,11 +450,17 @@ fn png_image(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
     let colour_n = if has_alpha { channels - 1 } else { channels };
     let mut colour = Vec::new();
     colour
-        .try_reserve_exact((w as usize).saturating_mul(h as usize).saturating_mul(colour_n))
+        .try_reserve_exact(
+            (w as usize)
+                .saturating_mul(h as usize)
+                .saturating_mul(colour_n),
+        )
         .map_err(|_| bad("not enough memory for this image".into()))?;
     let mut alpha = Vec::new();
     if has_alpha {
-        alpha.try_reserve_exact((w as usize).saturating_mul(h as usize)).map_err(|_| bad("not enough memory for this image".into()))?;
+        alpha
+            .try_reserve_exact((w as usize).saturating_mul(h as usize))
+            .map_err(|_| bad("not enough memory for this image".into()))?;
     }
     for px in data.chunks_exact(channels) {
         colour.extend_from_slice(&px[..colour_n]);
@@ -360,21 +481,40 @@ fn png_image(name: &str, bytes: &[u8]) -> Result<Embedded, CreateError> {
         m.set(b"BitsPerComponent".to_vec(), Object::Int(8));
         (m, alpha)
     });
-    Ok(Embedded { dict: d, data: colour, filtered: false, smask, icc, px: (w, h), dpi })
+    Ok(Embedded {
+        dict: d,
+        data: colour,
+        filtered: false,
+        smask,
+        icc,
+        px: (w, h),
+        dpi,
+    })
 }
 
 /// 8-bit RGBA pixels → an image (gray when every pixel is, with a soft mask when any pixel is
 /// not opaque).
 fn rgba_image(rgba: &[u8], (w, h): (u32, u32), dpi: (f64, f64)) -> Embedded {
-    let gray = rgba.as_chunks::<4>().0.iter().all(|p| p[0] == p[1] && p[1] == p[2]);
+    let gray = rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .all(|p| p[0] == p[1] && p[1] == p[2]);
     let opaque = rgba.as_chunks::<4>().0.iter().all(|p| p[3] == 255);
     let colour: Vec<u8> = if gray {
         rgba.as_chunks::<4>().0.iter().map(|p| p[0]).collect()
     } else {
-        rgba.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect()
+        rgba.as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect()
     };
     let mut d = Dict::new();
-    d.set(b"ColorSpace".to_vec(), Object::name(if gray { "DeviceGray" } else { "DeviceRGB" }));
+    d.set(
+        b"ColorSpace".to_vec(),
+        Object::name(if gray { "DeviceGray" } else { "DeviceRGB" }),
+    );
     d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
     let smask = (!opaque).then(|| {
         let mut m = Dict::new();
@@ -386,13 +526,22 @@ fn rgba_image(rgba: &[u8], (w, h): (u32, u32), dpi: (f64, f64)) -> Embedded {
         m.set(b"BitsPerComponent".to_vec(), Object::Int(8));
         (m, rgba.as_chunks::<4>().0.iter().map(|p| p[3]).collect())
     });
-    Embedded { dict: d, data: colour, filtered: false, smask, icc: None, px: (w, h), dpi }
+    Embedded {
+        dict: d,
+        data: colour,
+        filtered: false,
+        smask,
+        icc: None,
+        px: (w, h),
+        dpi,
+    }
 }
 
 /// BMP and GIF (the first frame), through the `image` decoders. Their resolution is not read:
 /// 72 dpi, as for images without one.
 fn decoded(name: &str, bytes: &[u8], format: image::ImageFormat) -> Result<Embedded, CreateError> {
-    let img = image::load_from_memory_with_format(bytes, format).map_err(|e| CreateError::Image(name.into(), e.to_string()))?;
+    let img = image::load_from_memory_with_format(bytes, format)
+        .map_err(|e| CreateError::Image(name.into(), e.to_string()))?;
     let rgba = img.to_rgba8();
     Ok(rgba_image(rgba.as_raw(), rgba.dimensions(), (72.0, 72.0)))
 }
@@ -412,7 +561,9 @@ fn tiff_pages(name: &str, bytes: &[u8]) -> Result<Vec<Embedded>, CreateError> {
     // enormous dimensions can't ask for unbounded memory.
     let mut limits = Limits::default();
     limits.decoding_buffer_size = MAX_DECODED_BYTES;
-    let mut dec = Decoder::new(std::io::Cursor::new(bytes)).map_err(|e| bad(e.to_string()))?.with_limits(limits);
+    let mut dec = Decoder::new(std::io::Cursor::new(bytes))
+        .map_err(|e| bad(e.to_string()))?
+        .with_limits(limits);
     let mut out = Vec::new();
     loop {
         let (w, h) = dec.dimensions().map_err(|e| bad(e.to_string()))?;
@@ -421,14 +572,19 @@ fn tiff_pages(name: &str, bytes: &[u8]) -> Result<Vec<Embedded>, CreateError> {
         let res = |t: Tag, dec: &mut Decoder<std::io::Cursor<&[u8]>>| -> f64 {
             // Resolutions are rationals.
             let v = match dec.get_tag(t) {
-                Ok(tiff::decoder::ifd::Value::Rational(n, d)) if d != 0 => f64::from(n) / f64::from(d),
+                Ok(tiff::decoder::ifd::Value::Rational(n, d)) if d != 0 => {
+                    f64::from(n) / f64::from(d)
+                }
                 Ok(other) => other.into_f64().unwrap_or(72.0),
                 Err(_) => 72.0,
             };
             let v = if unit == 3 { v * 2.54 } else { v };
             if v.is_finite() && v >= 1.0 { v } else { 72.0 }
         };
-        let dpi = (res(Tag::XResolution, &mut dec), res(Tag::YResolution, &mut dec));
+        let dpi = (
+            res(Tag::XResolution, &mut dec),
+            res(Tag::YResolution, &mut dec),
+        );
         let data = match dec.read_image().map_err(|e| bad(e.to_string()))? {
             DecodingResult::U8(v) => v,
             // 16-bit samples: keep the high byte.
@@ -441,29 +597,66 @@ fn tiff_pages(name: &str, bytes: &[u8]) -> Result<Vec<Embedded>, CreateError> {
                 let mut d = Dict::new();
                 d.set(b"ColorSpace".to_vec(), Object::name("DeviceGray"));
                 d.set(b"BitsPerComponent".to_vec(), Object::Int(1));
-                Embedded { dict: d, data, filtered: false, smask: None, icc: None, px: (w, h), dpi }
+                Embedded {
+                    dict: d,
+                    data,
+                    filtered: false,
+                    smask: None,
+                    icc: None,
+                    px: (w, h),
+                    dpi,
+                }
             }
             C::Gray(8 | 16) => {
                 let mut d = Dict::new();
                 d.set(b"ColorSpace".to_vec(), Object::name("DeviceGray"));
                 d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
-                Embedded { dict: d, data, filtered: false, smask: None, icc: None, px: (w, h), dpi }
+                Embedded {
+                    dict: d,
+                    data,
+                    filtered: false,
+                    smask: None,
+                    icc: None,
+                    px: (w, h),
+                    dpi,
+                }
             }
             C::RGB(8 | 16) => {
                 let mut d = Dict::new();
                 d.set(b"ColorSpace".to_vec(), Object::name("DeviceRGB"));
                 d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
-                Embedded { dict: d, data, filtered: false, smask: None, icc: None, px: (w, h), dpi }
+                Embedded {
+                    dict: d,
+                    data,
+                    filtered: false,
+                    smask: None,
+                    icc: None,
+                    px: (w, h),
+                    dpi,
+                }
             }
             C::CMYK(8 | 16) => {
                 let mut d = Dict::new();
                 d.set(b"ColorSpace".to_vec(), Object::name("DeviceCMYK"));
                 d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
-                Embedded { dict: d, data, filtered: false, smask: None, icc: None, px: (w, h), dpi }
+                Embedded {
+                    dict: d,
+                    data,
+                    filtered: false,
+                    smask: None,
+                    icc: None,
+                    px: (w, h),
+                    dpi,
+                }
             }
             C::RGBA(8 | 16) => rgba_image(&data, (w, h), dpi),
             C::GrayA(8 | 16) => {
-                let rgba: Vec<u8> = data.as_chunks::<2>().0.iter().flat_map(|p| [p[0], p[0], p[0], p[1]]).collect();
+                let rgba: Vec<u8> = data
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .flat_map(|p| [p[0], p[0], p[0], p[1]])
+                    .collect();
                 rgba_image(&rgba, (w, h), dpi)
             }
             other => return Err(bad(format!("{other:?} TIFF images aren't supported yet"))),
@@ -486,11 +679,15 @@ pub enum SourceKind {
 }
 
 /// File extensions Create converts to PDF (images and plain text).
-pub const CONVERTIBLE: [&str; 12] = ["png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx", "txt", "text"];
+pub const CONVERTIBLE: [&str; 12] = [
+    "png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx", "txt", "text",
+];
 
 /// A classic TIFF or a BigTIFF (version 43), in either byte order.
 fn is_tiff(bytes: &[u8]) -> bool {
-    [b"II*\0", b"MM\0*", b"II+\0", b"MM\0+"].iter().any(|m| bytes.starts_with(*m))
+    [b"II*\0", b"MM\0*", b"II+\0", b"MM\0+"]
+        .iter()
+        .any(|m| bytes.starts_with(*m))
 }
 
 /// The GIF headers `embed` decodes, so detection and conversion agree.
@@ -540,15 +737,28 @@ fn embed(name: &str, bytes: &[u8]) -> Result<Vec<Embedded>, CreateError> {
     } else if bytes.starts_with(JP2_SIGNATURE) || bytes.starts_with(&[0xFF, 0x4F, 0xFF, 0x51]) {
         Ok(vec![jpx(name, bytes)?])
     } else {
-        Err(CreateError::Image(name.into(), "use a PNG, JPEG, JPEG 2000, TIFF, GIF or BMP image".into()))
+        Err(CreateError::Image(
+            name.into(),
+            "use a PNG, JPEG, JPEG 2000, TIFF, GIF or BMP image".into(),
+        ))
     }
 }
 
 /// Embed an image file (its first page, for TIFFs) as an image XObject in `doc`. Returns the
 /// object and the image's natural size in points (from its resolution).
-pub fn image_xobject(doc: &mut Document, name: &str, bytes: &[u8]) -> Result<(ObjRef, (f64, f64)), CreateError> {
-    let img = embed(name, bytes)?.into_iter().next().ok_or_else(|| CreateError::Image(name.into(), "the file has no image".into()))?;
-    let size = (img.px.0 as f64 * 72.0 / img.dpi.0, img.px.1 as f64 * 72.0 / img.dpi.1);
+pub fn image_xobject(
+    doc: &mut Document,
+    name: &str,
+    bytes: &[u8],
+) -> Result<(ObjRef, (f64, f64)), CreateError> {
+    let img = embed(name, bytes)?
+        .into_iter()
+        .next()
+        .ok_or_else(|| CreateError::Image(name.into(), "the file has no image".into()))?;
+    let size = (
+        img.px.0 as f64 * 72.0 / img.dpi.0,
+        img.px.1 as f64 * 72.0 / img.dpi.1,
+    );
     Ok((add_image(doc, img, &mut Vec::new()), size))
 }
 
@@ -568,23 +778,37 @@ pub fn from_images(images: &[(String, Vec<u8>)]) -> Result<Document, CreateError
 }
 
 /// Create image pages with embedded resolution or a fixed dpi (72 gives one point per pixel).
-pub fn from_images_with_resolution(images: &[(String, Vec<u8>)], resolution: ImageResolution) -> Result<Document, CreateError> {
+pub fn from_images_with_resolution(
+    images: &[(String, Vec<u8>)],
+    resolution: ImageResolution,
+) -> Result<Document, CreateError> {
     if let ImageResolution::Dpi(dpi) = resolution
         && (!dpi.is_finite() || !(1.0..=1200.0).contains(&dpi))
     {
-        return Err(CreateError::Invalid("image DPI must be finite and between 1 and 1200".into()));
+        return Err(CreateError::Invalid(
+            "image DPI must be finite and between 1 and 1200".into(),
+        ));
     }
     if images.is_empty() {
         return Err(CreateError::Invalid("no images".into()));
     }
     let mut doc = Document::new_empty();
     let mut profiles = Vec::new();
-    for img in images.iter().map(|(name, bytes)| embed(name, bytes)).collect::<Result<Vec<_>, _>>()?.into_iter().flatten() {
+    for img in images
+        .iter()
+        .map(|(name, bytes)| embed(name, bytes))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+    {
         let dpi = match resolution {
             ImageResolution::Embedded => img.dpi,
             ImageResolution::Dpi(dpi) => (dpi, dpi),
         };
-        let (mut w, mut h) = (img.px.0 as f64 * 72.0 / dpi.0, img.px.1 as f64 * 72.0 / dpi.1);
+        let (mut w, mut h) = (
+            img.px.0 as f64 * 72.0 / dpi.0,
+            img.px.1 as f64 * 72.0 / dpi.1,
+        );
         // Keep huge images within the largest page PDF allows.
         let k = (MAX_SIDE / w.max(h)).min(1.0);
         w *= k;
@@ -598,7 +822,10 @@ pub fn from_images_with_resolution(images: &[(String, Vec<u8>)], resolution: Ima
         add_page(&mut doc, w, h, res, Some(content))?;
     }
     if let Some((name, _)) = images.first() {
-        set_title(&mut doc, name.rsplit_once('.').map_or(name.as_str(), |(s, _)| s));
+        set_title(
+            &mut doc,
+            name.rsplit_once('.').map_or(name.as_str(), |(s, _)| s),
+        );
     }
     Ok(doc)
 }
@@ -610,12 +837,19 @@ pub fn from_images_with_resolution(images: &[(String, Vec<u8>)], resolution: Ima
 /// otherwise the Windows code page they most likely are: 1254 (Turkish) or 1252 (Western).
 pub fn decode_text(bytes: &[u8]) -> String {
     if let Some((encoding, bom)) = encoding_rs::Encoding::for_bom(bytes) {
-        return encoding.decode_without_bom_handling(bytes.get(bom..).unwrap_or_default()).0.into_owned();
+        return encoding
+            .decode_without_bom_handling(bytes.get(bom..).unwrap_or_default())
+            .0
+            .into_owned();
     }
     if let Ok(text) = std::str::from_utf8(bytes) {
         return text.to_string();
     }
-    let encoding = if turkish_code_page(bytes) { encoding_rs::WINDOWS_1254 } else { encoding_rs::WINDOWS_1252 };
+    let encoding = if turkish_code_page(bytes) {
+        encoding_rs::WINDOWS_1254
+    } else {
+        encoding_rs::WINDOWS_1252
+    };
     encoding.decode_without_bom_handling(bytes).0.into_owned()
 }
 
@@ -623,17 +857,29 @@ pub fn decode_text(bytes: &[u8]) -> String {
 /// Of the Western languages only Icelandic and Faroese use those, and both also write á í ó ú,
 /// which Turkish never does.
 fn turkish_code_page(bytes: &[u8]) -> bool {
-    bytes.iter().any(|b| matches!(b, 0xD0 | 0xDD | 0xDE | 0xF0 | 0xFD | 0xFE))
-        && !bytes.iter().any(|b| matches!(b, 0xC1 | 0xCD | 0xD3 | 0xDA | 0xE1 | 0xED | 0xF3 | 0xFA))
+    bytes
+        .iter()
+        .any(|b| matches!(b, 0xD0 | 0xDD | 0xDE | 0xF0 | 0xFD | 0xFE))
+        && !bytes
+            .iter()
+            .any(|b| matches!(b, 0xC1 | 0xCD | 0xD3 | 0xDA | 0xE1 | 0xED | 0xF3 | 0xFA))
 }
 
 /// Plain text set in Helvetica on pages of `page` size with 1-inch margins. Text Helvetica can't
 /// draw (outside Western European) is refused with [`CreateError::Invalid`] naming the line and
 /// the character; text PdfCraft generates goes through [`from_text_escaped`] instead.
-pub fn from_text(title: &str, text: &str, page: (f64, f64), font_size: f64) -> Result<Document, CreateError> {
+pub fn from_text(
+    title: &str,
+    text: &str,
+    page: (f64, f64),
+    font_size: f64,
+) -> Result<Document, CreateError> {
     // Helvetica in WinAnsiEncoding: text it can't draw is refused with where it is, not set as `?`.
     if let Some((line, c)) = first_undrawable_line(text) {
-        return Err(CreateError::Invalid(pdfcraft_fonts::undrawable_message(&format!("the text (line {line})"), c)));
+        return Err(CreateError::Invalid(pdfcraft_fonts::undrawable_message(
+            &format!("the text (line {line})"),
+            c,
+        )));
     }
     set_text(title, text, page, font_size)
 }
@@ -641,22 +887,32 @@ pub fn from_text(title: &str, text: &str, page: (f64, f64), font_size: f64) -> R
 /// The line (1-based) and character of the first one Helvetica can't draw. Line breaks, tabs and
 /// form feeds (new pages) are layout, not drawn.
 fn first_undrawable_line(text: &str) -> Option<(usize, char)> {
-    text.split('\n').enumerate().find_map(|(i, l)| pdfcraft_fonts::first_undrawable(&l.replace('\u{c}', "")).map(|c| (i + 1, c)))
+    text.split('\n').enumerate().find_map(|(i, l)| {
+        pdfcraft_fonts::first_undrawable(&l.replace('\u{c}', "")).map(|c| (i + 1, c))
+    })
 }
 
 /// What a PDF made from text PdfCraft generated says, in its first line, about characters it
 /// wrote as `[U+XXXX]`.
-pub const ESCAPED_NOTE: &str = "Characters Helvetica can't draw are written as [U+XXXX] code points.";
+pub const ESCAPED_NOTE: &str =
+    "Characters Helvetica can't draw are written as [U+XXXX] code points.";
 
 /// [`from_text`] for text PdfCraft generates from documents (a comment summary, a compare
 /// report), which may quote any language. Each character Helvetica can't draw is written as
 /// `[U+XXXX]` instead of being refused or set as `?`, so nothing is lost, and the first line says
 /// so ([`ESCAPED_NOTE`]). Returns the document and how many characters were written that way.
-pub fn from_text_escaped(title: &str, text: &str, page: (f64, f64), font_size: f64) -> Result<(Document, usize), CreateError> {
+pub fn from_text_escaped(
+    title: &str,
+    text: &str,
+    page: (f64, f64),
+    font_size: f64,
+) -> Result<(Document, usize), CreateError> {
     let mut escaped = 0usize;
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
-        if matches!(c, '\n' | '\r' | '\u{c}') || pdfcraft_fonts::first_undrawable(c.encode_utf8(&mut [0; 4])).is_none() {
+        if matches!(c, '\n' | '\r' | '\u{c}')
+            || pdfcraft_fonts::first_undrawable(c.encode_utf8(&mut [0; 4])).is_none()
+        {
             out.push(c);
         } else {
             escaped = escaped.saturating_add(1);
@@ -670,8 +926,17 @@ pub fn from_text_escaped(title: &str, text: &str, page: (f64, f64), font_size: f
     Ok((set_text(title, &out, page, font_size)?, escaped))
 }
 
-fn set_text(title: &str, text: &str, page: (f64, f64), font_size: f64) -> Result<Document, CreateError> {
-    let size = if font_size.is_finite() && font_size > 0.0 { font_size.clamp(4.0, 72.0) } else { 11.0 };
+fn set_text(
+    title: &str,
+    text: &str,
+    page: (f64, f64),
+    font_size: f64,
+) -> Result<Document, CreateError> {
+    let size = if font_size.is_finite() && font_size > 0.0 {
+        font_size.clamp(4.0, 72.0)
+    } else {
+        11.0
+    };
     let (w, h) = page;
     let margin = 72.0;
     let line_h = size * 1.25;
@@ -680,7 +945,11 @@ fn set_text(title: &str, text: &str, page: (f64, f64), font_size: f64) -> Result
         .replace("\r\n", "\n")
         .replace('\t', "    ")
         .split('\u{c}')
-        .flat_map(|p| wrap(p, size, width).into_iter().chain(std::iter::once("\u{c}".to_string())))
+        .flat_map(|p| {
+            wrap(p, size, width)
+                .into_iter()
+                .chain(std::iter::once("\u{c}".to_string()))
+        })
         .collect();
     let per_page = (((h - 2.0 * margin) / line_h).floor() as usize).max(1);
     let mut doc = Document::new_empty();
@@ -703,7 +972,11 @@ fn set_text(title: &str, text: &str, page: (f64, f64), font_size: f64) -> Result
         }
     }
     for lines in page_lines {
-        let mut c = format!("BT /F1 {size} Tf {line_h:.3} TL {margin} {:.3} Td\n", h - margin - size).into_bytes();
+        let mut c = format!(
+            "BT /F1 {size} Tf {line_h:.3} TL {margin} {:.3} Td\n",
+            h - margin - size
+        )
+        .into_bytes();
         for l in lines {
             c.extend(literal(&win_ansi(&l)));
             c.extend_from_slice(b" Tj T*\n");

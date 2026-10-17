@@ -336,7 +336,11 @@ impl Tokens {
     /// Settings ▸ Appearance on top of a theme: the highlight colour (selections, primary buttons,
     /// the focus outline, the playhead, timecodes, drag values and track targeting) and accessible
     /// colour contrast (brighter secondary text and borders).
-    pub fn with_appearance(mut self, highlight: Option<[u8; 3]>, accessible_contrast: bool) -> Self {
+    pub fn with_appearance(
+        mut self,
+        highlight: Option<[u8; 3]>,
+        accessible_contrast: bool,
+    ) -> Self {
         if let Some([r, g, b]) = highlight {
             let c = Color32::from_rgb(r, g, b);
             // A highlight of the user's own also colours the theme's other blues: the same hue, as
@@ -400,8 +404,14 @@ pub const MENU_TEXT: Color32 = Color32::from_rgb(0xde, 0xde, 0xde);
 /// Style of the menu bar's menus and their submenus (on top of egui's own menu style).
 pub fn menu_style(s: &mut egui::Style) {
     egui::containers::menu::menu_style(s);
-    s.text_styles.insert(TextStyle::Button, FontId::new(MENU_TEXT_SIZE, FontFamily::Proportional));
-    s.text_styles.insert(TextStyle::Body, FontId::new(MENU_TEXT_SIZE, FontFamily::Proportional));
+    s.text_styles.insert(
+        TextStyle::Button,
+        FontId::new(MENU_TEXT_SIZE, FontFamily::Proportional),
+    );
+    s.text_styles.insert(
+        TextStyle::Body,
+        FontId::new(MENU_TEXT_SIZE, FontFamily::Proportional),
+    );
     s.spacing.item_spacing.y = 0.0;
     if s.visuals.dark_mode {
         s.visuals.override_text_color = Some(MENU_TEXT);
@@ -411,7 +421,12 @@ pub fn menu_style(s: &mut egui::Style) {
 /// Every font family the theme defines (fallback fonts such as the Japanese fonts are added to each
 /// of them).
 pub fn font_families() -> Vec<FontFamily> {
-    vec![FontFamily::Proportional, FontFamily::Monospace, FontFamily::Name("semibold".into()), FontFamily::Name("medium".into())]
+    vec![
+        FontFamily::Proportional,
+        FontFamily::Monospace,
+        FontFamily::Name("semibold".into()),
+        FontFamily::Name("medium".into()),
+    ]
 }
 
 /// Install the Latin UI fonts, Chinese fallback (craft-fonts or an installed face), Japanese
@@ -419,14 +434,42 @@ pub fn font_families() -> Vec<FontFamily> {
 /// egui visuals. Document names keep their glyphs in every interface language.
 pub fn install(ctx: &egui::Context, t: &Tokens) {
     let mut fonts = FontDefinitions::default();
-    fonts.font_data.insert("inter".into(), Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_REGULAR)));
-    fonts.font_data.insert("inter-medium".into(), Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_MEDIUM)));
-    fonts.font_data.insert("inter-semibold".into(), Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_SEMIBOLD)));
-    fonts.font_data.insert("jbmono".into(), Arc::new(FontData::from_static(filmcraft_text::fonts::JETBRAINS_MONO_REGULAR)));
-    fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "inter".into());
-    fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "jbmono".into());
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["inter-semibold".into(), "inter".into()]);
-    fonts.families.insert(FontFamily::Name("medium".into()), vec!["inter-medium".into(), "inter".into()]);
+    fonts.font_data.insert(
+        "inter".into(),
+        Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_REGULAR)),
+    );
+    fonts.font_data.insert(
+        "inter-medium".into(),
+        Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_MEDIUM)),
+    );
+    fonts.font_data.insert(
+        "inter-semibold".into(),
+        Arc::new(FontData::from_static(filmcraft_text::fonts::INTER_SEMIBOLD)),
+    );
+    fonts.font_data.insert(
+        "jbmono".into(),
+        Arc::new(FontData::from_static(
+            filmcraft_text::fonts::JETBRAINS_MONO_REGULAR,
+        )),
+    );
+    fonts
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "inter".into());
+    fonts
+        .families
+        .entry(FontFamily::Monospace)
+        .or_default()
+        .insert(0, "jbmono".into());
+    fonts.families.insert(
+        FontFamily::Name("semibold".into()),
+        vec!["inter-semibold".into(), "inter".into()],
+    );
+    fonts.families.insert(
+        FontFamily::Name("medium".into()),
+        vec!["inter-medium".into(), "inter".into()],
+    );
     // Japanese before Chinese: the two share code points, and Japanese text must keep Japanese
     // glyph forms; Chinese faces still cover the hanzi Japanese fonts lack
     add_craft_fonts(&mut fonts);
@@ -447,10 +490,13 @@ fn craft_font_name(f: &filmcraft_text::fonts::CraftFont) -> String {
 fn add_craft_fonts(fonts: &mut FontDefinitions) {
     let jpan: Vec<_> = filmcraft_text::fonts::craft_japanese().collect();
     for f in &jpan {
-        fonts.font_data.insert(craft_font_name(f), Arc::new(FontData::from_static(f.bytes)));
+        fonts
+            .font_data
+            .insert(craft_font_name(f), Arc::new(FontData::from_static(f.bytes)));
     }
     for (family, stack) in fonts.families.iter_mut() {
-        let heavy = matches!(family, FontFamily::Name(n) if matches!(n.as_ref(), "semibold" | "medium"));
+        let heavy =
+            matches!(family, FontFamily::Name(n) if matches!(n.as_ref(), "semibold" | "medium"));
         let mut order = jpan.clone();
         order.sort_by_key(|f| (!f.family.contains("Gothic"), (f.style == "Bold") != heavy));
         stack.extend(order.iter().map(|f| craft_font_name(f)));
@@ -461,8 +507,16 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
     let light = t.kind == ThemeKind::Light;
     // FilmCraft decides between light and dark itself (Settings ▸ Appearance ▸ Appearance Mode), so
     // egui must not switch to its other built-in style when the system appearance changes.
-    ctx.set_theme(if light { egui::Theme::Light } else { egui::Theme::Dark });
-    let mut v = if light { Visuals::light() } else { Visuals::dark() };
+    ctx.set_theme(if light {
+        egui::Theme::Light
+    } else {
+        egui::Theme::Dark
+    });
+    let mut v = if light {
+        Visuals::light()
+    } else {
+        Visuals::dark()
+    };
     v.panel_fill = t.panel_bg;
     v.window_fill = t.panel_bg;
     v.extreme_bg_color = t.field_bg;
@@ -474,9 +528,20 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
     v.window_stroke = Stroke::new(1.0, t.field_border);
     v.window_corner_radius = egui::CornerRadius::same(6);
     v.menu_corner_radius = egui::CornerRadius::same(6);
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(140) };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 16,
+        spread: 0,
+        color: Color32::from_black_alpha(140),
+    };
     v.window_shadow = v.popup_shadow;
-    for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
+    for w in [
+        &mut v.widgets.noninteractive,
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+    ] {
         w.corner_radius = egui::CornerRadius::same(t.radius_sm as u8);
     }
     v.widgets.noninteractive.bg_fill = t.panel_bg;
@@ -502,11 +567,24 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
         s.spacing.button_padding = egui::vec2(8.0, 3.0);
         s.spacing.interact_size.y = 24.0;
         s.spacing.menu_margin = egui::Margin::same(4);
-        s.text_styles.insert(TextStyle::Body, FontId::new(12.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Button, FontId::new(12.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Small, FontId::new(11.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Heading, FontId::new(15.0, FontFamily::Name("semibold".into())));
-        s.text_styles.insert(TextStyle::Monospace, FontId::new(12.0, FontFamily::Monospace));
+        s.text_styles
+            .insert(TextStyle::Body, FontId::new(12.0, FontFamily::Proportional));
+        s.text_styles.insert(
+            TextStyle::Button,
+            FontId::new(12.0, FontFamily::Proportional),
+        );
+        s.text_styles.insert(
+            TextStyle::Small,
+            FontId::new(11.0, FontFamily::Proportional),
+        );
+        s.text_styles.insert(
+            TextStyle::Heading,
+            FontId::new(15.0, FontFamily::Name("semibold".into())),
+        );
+        s.text_styles.insert(
+            TextStyle::Monospace,
+            FontId::new(12.0, FontFamily::Monospace),
+        );
         s.animation_time = 0.12;
     });
 }
@@ -534,22 +612,45 @@ mod tests {
         for (name, dark_surface, light_surface) in [
             ("active pill", dark.pill_active_bg, light.pill_active_bg),
             ("clip bar", dark.clip_bar_bg, light.clip_bar_bg),
-            ("control surface", dark.control_surface, light.control_surface),
+            (
+                "control surface",
+                dark.control_surface,
+                light.control_surface,
+            ),
             ("control well", dark.control_well, light.control_well),
             ("plot", dark.plot_bg, light.plot_bg),
-            ("keyframe plot", dark.keyframe_plot_bg, light.keyframe_plot_bg),
+            (
+                "keyframe plot",
+                dark.keyframe_plot_bg,
+                light.keyframe_plot_bg,
+            ),
             ("panner", dark.panner_bg, light.panner_bg),
-            ("caption lane", dark.caption_track_bg, light.caption_track_bg),
+            (
+                "caption lane",
+                dark.caption_track_bg,
+                light.caption_track_bg,
+            ),
             ("active toggle", dark.pressed, light.pressed),
             ("meter", dark.meter_bg, light.meter_bg),
-            ("meter readout", dark.meter_readout_bg, light.meter_readout_bg),
+            (
+                "meter readout",
+                dark.meter_readout_bg,
+                light.meter_readout_bg,
+            ),
         ] {
-            assert!(luminance(light_surface) > luminance(dark_surface), "{name} did not adapt to Light");
+            assert!(
+                luminance(light_surface) > luminance(dark_surface),
+                "{name} did not adapt to Light"
+            );
         }
         assert!(luminance(light.control_handle) < luminance(light.control_handle_bg));
         assert!(luminance(light.plot_handle) < luminance(light.plot_bg));
         assert!(luminance(light.icon_active) < luminance(light.pressed));
-        assert_eq!(Tokens::for_kind(ThemeKind::Medium).plot_bg, dark.plot_bg, "Medium keeps the established dark plot treatment");
+        assert_eq!(
+            Tokens::for_kind(ThemeKind::Medium).plot_bg,
+            dark.plot_bg,
+            "Medium keeps the established dark plot treatment"
+        );
     }
 
     #[test]
@@ -579,9 +680,14 @@ mod tests {
 
     #[test]
     fn the_default_highlight_leaves_the_theme_blues_as_designed() {
-        let default = filmcraft_engine::settings::parse_hex(filmcraft_engine::settings::DEFAULT_HIGHLIGHT);
+        let default =
+            filmcraft_engine::settings::parse_hex(filmcraft_engine::settings::DEFAULT_HIGHLIGHT);
         for k in [ThemeKind::Dark, ThemeKind::Medium, ThemeKind::Light] {
-            assert_eq!(highlight_blues(&Tokens::for_kind(k).with_appearance(default, false)), highlight_blues(&Tokens::for_kind(k)), "{k:?}");
+            assert_eq!(
+                highlight_blues(&Tokens::for_kind(k).with_appearance(default, false)),
+                highlight_blues(&Tokens::for_kind(k)),
+                "{k:?}"
+            );
         }
     }
 
@@ -590,12 +696,21 @@ mod tests {
         let pink = Color32::from_rgb(0xe0, 0x45, 0x7b);
         let t = Tokens::for_kind(ThemeKind::Dark).with_appearance(Some([0xe0, 0x45, 0x7b]), false);
         let hue = |c: Color32| egui::ecolor::HsvaGamma::from(c).h;
-        for (c, was) in highlight_blues(&t).into_iter().zip(highlight_blues(&Tokens::for_kind(ThemeKind::Dark))) {
+        for (c, was) in highlight_blues(&t)
+            .into_iter()
+            .zip(highlight_blues(&Tokens::for_kind(ThemeKind::Dark)))
+        {
             assert_ne!(c, was);
-            assert!((hue(c) - hue(pink)).abs() < 0.01, "{c:?} has the highlight's hue");
+            assert!(
+                (hue(c) - hue(pink)).abs() < 0.01,
+                "{c:?} has the highlight's hue"
+            );
         }
         let v = |c: Color32| egui::ecolor::HsvaGamma::from(c).v;
-        assert!(v(t.playhead) > v(pink) && v(t.timecode) > v(pink) && v(t.track_target) < v(pink), "lighter and darker as the default blues are");
+        assert!(
+            v(t.playhead) > v(pink) && v(t.timecode) > v(pink) && v(t.track_target) < v(pink),
+            "lighter and darker as the default blues are"
+        );
     }
 
     /// Chinese media and track names must render even when the interface stays in English.
@@ -604,9 +719,12 @@ mod tests {
     fn chinese_names_render_in_every_theme_and_font_family() {
         const CHINESE: &str = "中文旁白音乐声轨测试简体汉语繁體漢語车";
         filmcraft_text::fonts::scan_system();
-        let available = filmcraft_text::fonts::all_faces()
-            .iter()
-            .any(|f| matches!(f.info.origin, "system" | filmcraft_text::fonts::CRAFT_ORIGIN) && CHINESE.chars().all(|c| f.has_char(c)));
+        let available = filmcraft_text::fonts::all_faces().iter().any(|f| {
+            matches!(
+                f.info.origin,
+                "system" | filmcraft_text::fonts::CRAFT_ORIGIN
+            ) && CHINESE.chars().all(|c| f.has_char(c))
+        });
         if !available {
             eprintln!("SKIPPED: no craft-fonts or installed Chinese font");
             return;
@@ -614,23 +732,39 @@ mod tests {
         let ctx = egui::Context::default();
         for kind in [ThemeKind::Dark, ThemeKind::Medium, ThemeKind::Light] {
             install(&ctx, &Tokens::for_kind(kind));
-            ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+            ctx.run_ui(egui::RawInput::default(), |_| {})
+                .textures_delta
+                .clear();
             ctx.fonts_mut(|fonts| {
                 for family in font_families() {
                     let font = FontId::new(13.0, family);
-                    let missing = fonts.layout_no_wrap("\u{fffd}".into(), font.clone(), Color32::WHITE);
+                    let missing =
+                        fonts.layout_no_wrap("\u{fffd}".into(), font.clone(), Color32::WHITE);
                     let missing_uv = missing.rows[0].glyphs[0].uv_rect;
                     let names = fonts.layout_no_wrap(CHINESE.into(), font.clone(), Color32::WHITE);
-                    assert_eq!(names.rows.iter().map(|r| r.glyphs.len()).sum::<usize>(), CHINESE.chars().count());
+                    assert_eq!(
+                        names.rows.iter().map(|r| r.glyphs.len()).sum::<usize>(),
+                        CHINESE.chars().count()
+                    );
                     for glyph in names.rows.iter().flat_map(|r| &r.glyphs) {
-                        assert!(!glyph.uv_rect.is_nothing(), "empty {} in {font:?}", glyph.chr);
-                        assert_ne!(glyph.uv_rect, missing_uv, "missing {} in {kind:?} / {font:?}", glyph.chr);
+                        assert!(
+                            !glyph.uv_rect.is_nothing(),
+                            "empty {} in {font:?}",
+                            glyph.chr
+                        );
+                        assert_ne!(
+                            glyph.uv_rect, missing_uv,
+                            "missing {} in {kind:?} / {font:?}",
+                            glyph.chr
+                        );
                     }
                 }
             });
         }
         // the layouts above put glyphs in the atlas: take that update so it isn't dropped unapplied
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
     }
 
     /// Typed, pasted or IME-composed Hangul draws real glyphs, not the missing-glyph box (artcraft#2093).
@@ -638,26 +772,41 @@ mod tests {
     fn korean_text_renders_with_an_installed_korean_font() {
         const KOREAN: &str = "한국어 입력 테스트";
         filmcraft_text::fonts::scan_system();
-        let available = filmcraft_text::fonts::all_faces().iter().any(|f| f.info.origin == "system" && KOREAN.chars().all(|c| f.has_char(c)));
+        let available = filmcraft_text::fonts::all_faces()
+            .iter()
+            .any(|f| f.info.origin == "system" && KOREAN.chars().all(|c| f.has_char(c)));
         if !available {
             eprintln!("SKIPPED: no installed Korean font");
             return;
         }
         let ctx = egui::Context::default();
         install(&ctx, &Tokens::for_kind(ThemeKind::Dark));
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
         ctx.fonts_mut(|fonts| {
             for family in font_families() {
                 let font = FontId::new(13.0, family);
                 let missing = fonts.layout_no_wrap("\u{fffd}".into(), font.clone(), Color32::WHITE);
                 let missing_uv = missing.rows[0].glyphs[0].uv_rect;
                 let text = fonts.layout_no_wrap(KOREAN.into(), font.clone(), Color32::WHITE);
-                for glyph in text.rows.iter().flat_map(|r| &r.glyphs).filter(|g| g.chr != ' ') {
-                    assert_ne!(glyph.uv_rect, missing_uv, "missing {} in {font:?}", glyph.chr);
+                for glyph in text
+                    .rows
+                    .iter()
+                    .flat_map(|r| &r.glyphs)
+                    .filter(|g| g.chr != ' ')
+                {
+                    assert_ne!(
+                        glyph.uv_rect, missing_uv,
+                        "missing {} in {font:?}",
+                        glyph.chr
+                    );
                 }
             }
         });
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
     }
 
     /// Built with craft-fonts: every font family ends with the Japanese faces (BIZ UDPGothic
@@ -673,11 +822,25 @@ mod tests {
             let defs = fonts.definitions().clone();
             for (family, stack) in &defs.families {
                 // installed right-to-left faces (Hebrew is not in craft-fonts) come after the craft run
-                let stack: Vec<&String> = stack.iter().filter(|n| !crate::rtl::is_system_face(n)).collect();
-                let first = stack.iter().position(|n| n.starts_with("craft:")).unwrap_or(stack.len());
-                assert!(first > 0 && stack[first..].iter().all(|n| n.starts_with("craft:")), "{family:?}: {stack:?}");
-                let first_japanese = stack.iter().find(|n| n.starts_with("craft:BIZ") || n.starts_with("craft:Shippori"));
-                assert!(first_japanese.is_some_and(|n| n.starts_with("craft:BIZ UDPGothic")), "{family:?}: {stack:?}");
+                let stack: Vec<&String> = stack
+                    .iter()
+                    .filter(|n| !crate::rtl::is_system_face(n))
+                    .collect();
+                let first = stack
+                    .iter()
+                    .position(|n| n.starts_with("craft:"))
+                    .unwrap_or(stack.len());
+                assert!(
+                    first > 0 && stack[first..].iter().all(|n| n.starts_with("craft:")),
+                    "{family:?}: {stack:?}"
+                );
+                let first_japanese = stack
+                    .iter()
+                    .find(|n| n.starts_with("craft:BIZ") || n.starts_with("craft:Shippori"));
+                assert!(
+                    first_japanese.is_some_and(|n| n.starts_with("craft:BIZ UDPGothic")),
+                    "{family:?}: {stack:?}"
+                );
             }
             for family in [FontFamily::Proportional, FontFamily::Monospace] {
                 let font = FontId::new(13.0, family);
@@ -688,8 +851,17 @@ mod tests {
         });
         // laid out and drawn: the replacement box (U+FFFD) would show as one glyph per character
         // from the fallback face; a real face gives each character its own width
-        let galley = ctx.fonts_mut(|f| f.layout_no_wrap(JAPANESE.into(), FontId::new(13.0, FontFamily::Proportional), Color32::WHITE));
-        assert_eq!(galley.rows.iter().map(|r| r.glyphs.len()).sum::<usize>(), JAPANESE.chars().count());
+        let galley = ctx.fonts_mut(|f| {
+            f.layout_no_wrap(
+                JAPANESE.into(),
+                FontId::new(13.0, FontFamily::Proportional),
+                Color32::WHITE,
+            )
+        });
+        assert_eq!(
+            galley.rows.iter().map(|r| r.glyphs.len()).sum::<usize>(),
+            JAPANESE.chars().count()
+        );
         assert!(galley.size().x > 13.0 * 4.0, "{:?}", galley.size());
     }
 
@@ -697,15 +869,38 @@ mod tests {
     #[test]
     fn works_without_craft_fonts() {
         let ctx = installed();
-        let n = filmcraft_text::fonts::craft_japanese().count() + crate::cjk::craft_fonts().count() + crate::rtl::craft_fonts().count();
+        let n = filmcraft_text::fonts::craft_japanese().count()
+            + crate::cjk::craft_fonts().count()
+            + crate::rtl::craft_fonts().count();
         ctx.fonts_mut(|fonts| {
             let defs = fonts.definitions().clone();
-            assert_eq!(defs.font_data.keys().filter(|k| k.starts_with("craft:")).count(), n);
-            assert_eq!(defs.families[&FontFamily::Proportional].first().map(String::as_str), Some("inter"));
-            assert_eq!(defs.families[&FontFamily::Monospace].first().map(String::as_str), Some("jbmono"));
+            assert_eq!(
+                defs.font_data
+                    .keys()
+                    .filter(|k| k.starts_with("craft:"))
+                    .count(),
+                n
+            );
+            assert_eq!(
+                defs.families[&FontFamily::Proportional]
+                    .first()
+                    .map(String::as_str),
+                Some("inter")
+            );
+            assert_eq!(
+                defs.families[&FontFamily::Monospace]
+                    .first()
+                    .map(String::as_str),
+                Some("jbmono")
+            );
             assert!(fonts.has_glyph(&FontId::new(13.0, FontFamily::Proportional), 'A'));
             if n == 0 {
-                assert!(defs.families.values().flatten().all(|name| !name.starts_with("craft:")));
+                assert!(
+                    defs.families
+                        .values()
+                        .flatten()
+                        .all(|name| !name.starts_with("craft:"))
+                );
             }
         });
     }

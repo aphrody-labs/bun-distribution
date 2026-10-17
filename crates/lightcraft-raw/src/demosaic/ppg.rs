@@ -24,11 +24,26 @@ pub(crate) fn green_plane(m: &Mosaic) -> Vec<f32> {
                 *o = c;
                 continue;
             }
-            let (gn, gs, gw, ge) = (m.get(x, y - 1), m.get(x, y + 1), m.get(x - 1, y), m.get(x + 1, y));
-            let (cn, cs, cw, ce) = (m.get(x, y - 2), m.get(x, y + 2), m.get(x - 2, y), m.get(x + 2, y));
+            let (gn, gs, gw, ge) = (
+                m.get(x, y - 1),
+                m.get(x, y + 1),
+                m.get(x - 1, y),
+                m.get(x + 1, y),
+            );
+            let (cn, cs, cw, ce) = (
+                m.get(x, y - 2),
+                m.get(x, y + 2),
+                m.get(x - 2, y),
+                m.get(x + 2, y),
+            );
             let dv = (gn - gs).abs();
             let dh = (gw - ge).abs();
-            let grads = [(cn - c).abs() * 2.0 + dv, (cs - c).abs() * 2.0 + dv, (cw - c).abs() * 2.0 + dh, (ce - c).abs() * 2.0 + dh];
+            let grads = [
+                (cn - c).abs() * 2.0 + dv,
+                (cs - c).abs() * 2.0 + dv,
+                (cw - c).abs() * 2.0 + dh,
+                (ce - c).abs() * 2.0 + dh,
+            ];
             let mut best = 0;
             for i in 1..4 {
                 if grads[i] < grads[best] {
@@ -64,16 +79,22 @@ pub(crate) fn ppg(m: &Mosaic) -> Rgb32f {
                 // horizontal neighbours carry one colour, vertical the other
                 let ch = m.color(x + 1, y) as usize;
                 let cv = m.color(x, y + 1) as usize;
-                let hval = gv + ((m.get(x - 1, y) - gg(x - 1, y)) + (m.get(x + 1, y) - gg(x + 1, y))) * 0.5;
-                let vval = gv + ((m.get(x, y - 1) - gg(x, y - 1)) + (m.get(x, y + 1) - gg(x, y + 1))) * 0.5;
+                let hval = gv
+                    + ((m.get(x - 1, y) - gg(x - 1, y)) + (m.get(x + 1, y) - gg(x + 1, y))) * 0.5;
+                let vval = gv
+                    + ((m.get(x, y - 1) - gg(x, y - 1)) + (m.get(x, y + 1) - gg(x, y + 1))) * 0.5;
                 px[ch] = hval;
                 px[cv] = vval;
             } else {
                 px[own] = m.get(x, y);
                 let other = 2 - own;
                 let d = |dx: isize, dy: isize| m.get(x + dx, y + dy) - gg(x + dx, y + dy);
-                let ne = (m.get(x + 1, y - 1) - m.get(x - 1, y + 1)).abs() + (gg(x + 1, y - 1) - gv).abs() + (gg(x - 1, y + 1) - gv).abs();
-                let nw = (m.get(x - 1, y - 1) - m.get(x + 1, y + 1)).abs() + (gg(x - 1, y - 1) - gv).abs() + (gg(x + 1, y + 1) - gv).abs();
+                let ne = (m.get(x + 1, y - 1) - m.get(x - 1, y + 1)).abs()
+                    + (gg(x + 1, y - 1) - gv).abs()
+                    + (gg(x - 1, y + 1) - gv).abs();
+                let nw = (m.get(x - 1, y - 1) - m.get(x + 1, y + 1)).abs()
+                    + (gg(x - 1, y - 1) - gv).abs()
+                    + (gg(x + 1, y + 1) - gv).abs();
                 let diff = if ne < nw {
                     (d(1, -1) + d(-1, 1)) * 0.5
                 } else if nw < ne {

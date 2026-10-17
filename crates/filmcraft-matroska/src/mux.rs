@@ -143,7 +143,9 @@ pub struct MkvWriter<W: Write + Seek> {
 impl<W: Write + Seek> MkvWriter<W> {
     pub fn new(mut w: W, tracks: Vec<TrackSpec>, opts: MuxOptions) -> Result<Self> {
         if tracks.is_empty() || opts.timestamp_scale == 0 {
-            return Err(Error::Invalid("muxer needs at least one track and a non-zero timestamp scale".into()));
+            return Err(Error::Invalid(
+                "muxer needs at least one track and a non-zero timestamp scale".into(),
+            ));
         }
         let mut out = Vec::new();
         let mut h = Vec::new();
@@ -196,7 +198,11 @@ impl<W: Write + Seek> MkvWriter<W> {
                 TrackKind::Other(n) => n as u64,
             };
             el_uint(&mut e, TRACK_TYPE, ty);
-            el_uint(&mut e, FLAG_LACING, (t.kind == TrackKind::Audio && opts.lacing != LacingMode::None) as u64);
+            el_uint(
+                &mut e,
+                FLAG_LACING,
+                (t.kind == TrackKind::Audio && opts.lacing != LacingMode::None) as u64,
+            );
             if let Some(l) = &t.language {
                 el_str(&mut e, LANGUAGE, l);
             }
@@ -261,10 +267,21 @@ impl<W: Write + Seek> MkvWriter<W> {
     /// Add one frame. `pts_ns` is the presentation time (codec delay is added back for storage);
     /// frames must be supplied in the desired file order. `duration_ns` forces a BlockGroup with a
     /// BlockDuration when it differs from the track's DefaultDuration.
-    pub fn write_frame(&mut self, track: usize, pts_ns: i64, keyframe: bool, data: &[u8], duration_ns: Option<u64>) -> Result<()> {
+    pub fn write_frame(
+        &mut self,
+        track: usize,
+        pts_ns: i64,
+        keyframe: bool,
+        data: &[u8],
+        duration_ns: Option<u64>,
+    ) -> Result<()> {
         let spec = self.tracks.get(track).ok_or(Error::NoSuchTrack(track))?;
         // the Matroska ProRes mapping stores frames without the 8-byte `size`+`icpf` header
-        let data = if spec.codec_id == "V_PRORES" && data.get(4..8) == Some(b"icpf") { &data[8..] } else { data };
+        let data = if spec.codec_id == "V_PRORES" && data.get(4..8) == Some(b"icpf") {
+            &data[8..]
+        } else {
+            data
+        };
         let scale = self.opts.timestamp_scale as i64;
         let stored_ns = pts_ns + spec.codec_delay_ns as i64;
         if stored_ns < 0 {
@@ -280,8 +297,11 @@ impl<W: Write + Seek> MkvWriter<W> {
         let start_new = match self.cluster_ts {
             None => true,
             Some(cts) => {
-                let long = stored_ns - self.cluster_start_ns >= self.opts.cluster_duration_ns as i64;
-                (long && (!self.has_video || (is_video && keyframe))) || ts - cts > 30_000 || ts < cts
+                let long =
+                    stored_ns - self.cluster_start_ns >= self.opts.cluster_duration_ns as i64;
+                (long && (!self.has_video || (is_video && keyframe)))
+                    || ts - cts > 30_000
+                    || ts < cts
             }
         };
         if start_new {
@@ -295,18 +315,31 @@ impl<W: Write + Seek> MkvWriter<W> {
         if (is_video && keyframe) || (!self.has_video && !self.cued_tracks_in_cluster[track]) {
             self.cued_tracks_in_cluster[track] = true;
             let pos = self.w.stream_position()? - self.segment_data_start;
-            if self.cues.last().is_none_or(|c| c.2 != pos || c.1 != track as u64 + 1) {
+            if self
+                .cues
+                .last()
+                .is_none_or(|c| c.2 != pos || c.1 != track as u64 + 1)
+            {
                 self.cues.push((ts as u64, track as u64 + 1, pos));
             }
         }
         if lacing && explicit_dur.is_none() {
-            let same = self.pending.as_ref().is_some_and(|p| p.track == track && p.frames.len() < self.opts.max_lace_frames);
+            let same = self
+                .pending
+                .as_ref()
+                .is_some_and(|p| p.track == track && p.frames.len() < self.opts.max_lace_frames);
             if !same {
                 self.flush_pending();
             }
             match &mut self.pending {
                 Some(p) => p.frames.push(data.to_vec()),
-                None => self.pending = Some(Pending { track, ts: ts - cts, frames: vec![data.to_vec()] }),
+                None => {
+                    self.pending = Some(Pending {
+                        track,
+                        ts: ts - cts,
+                        frames: vec![data.to_vec()],
+                    })
+                }
             }
             return Ok(());
         }
@@ -338,7 +371,11 @@ impl<W: Write + Seek> MkvWriter<W> {
         write_size(&mut block, p.track as u64 + 1, 1);
         block.extend_from_slice(&(p.ts as i16).to_be_bytes());
         let n = p.frames.len();
-        let mode = if n == 1 { LacingMode::None } else { self.opts.lacing };
+        let mode = if n == 1 {
+            LacingMode::None
+        } else {
+            self.opts.lacing
+        };
         let fixed = p.frames.iter().all(|f| f.len() == p.frames[0].len());
         match mode {
             LacingMode::None => block.push(0x80),
@@ -389,7 +426,9 @@ impl<W: Write + Seek> MkvWriter<W> {
         }
         self.cluster.clear();
         self.cluster_ts = None;
-        self.cued_tracks_in_cluster.iter_mut().for_each(|c| *c = false);
+        self.cued_tracks_in_cluster
+            .iter_mut()
+            .for_each(|c| *c = false);
         Ok(())
     }
 
@@ -431,7 +470,9 @@ impl<W: Write + Seek> MkvWriter<W> {
         let mut out = Vec::new();
         el(&mut out, SEEK_HEAD, &sh);
         if out.len() + 2 > SEEK_HEAD_SPACE {
-            return Err(Error::Invalid("SeekHead does not fit its reserved space".into()));
+            return Err(Error::Invalid(
+                "SeekHead does not fit its reserved space".into(),
+            ));
         }
         let rest = SEEK_HEAD_SPACE - out.len();
         void(&mut out, rest);
@@ -467,22 +508,31 @@ mod tests {
         a.default_duration_ns = Some(10_000_000);
         let mut s = TrackSpec::new(TrackKind::Subtitle, "S_TEXT/UTF8");
         s.language = Some("fre".into());
-        let opts = MuxOptions { lacing, ..Default::default() };
+        let opts = MuxOptions {
+            lacing,
+            ..Default::default()
+        };
         let mut m = MkvWriter::new(Cursor::new(Vec::new()), vec![v, a, s], opts).unwrap();
         let mut expect = Vec::new();
         for i in 0..50i64 {
             let vf = vec![i as u8; 100 + i as usize];
-            m.write_frame(0, i * 40_000_000, i % 10 == 0, &vf, None).unwrap();
+            m.write_frame(0, i * 40_000_000, i % 10 == 0, &vf, None)
+                .unwrap();
             expect.push((0usize, i * 40, vf, i % 10 == 0));
             for k in 0..4 {
-                let n = if lacing == LacingMode::FixedOrEbml { 960 } else { 900 + (i as usize * 7 + k * 13) % 300 };
+                let n = if lacing == LacingMode::FixedOrEbml {
+                    960
+                } else {
+                    900 + (i as usize * 7 + k * 13) % 300
+                };
                 let af = vec![(i * 4 + k as i64) as u8; n];
                 let t = i * 40 + k as i64 * 10;
                 m.write_frame(1, t * 1_000_000, true, &af, None).unwrap();
                 expect.push((1, t, af, true));
             }
             if i % 20 == 5 {
-                m.write_frame(2, i * 40_000_000, true, b"hello", Some(500_000_000)).unwrap();
+                m.write_frame(2, i * 40_000_000, true, b"hello", Some(500_000_000))
+                    .unwrap();
                 expect.push((2, i * 40, b"hello".to_vec(), true));
             }
         }

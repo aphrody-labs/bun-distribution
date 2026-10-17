@@ -93,13 +93,16 @@ impl ServerRunner {
         // log goes to a file: never blocks, and still readable when the server
         // dies before becoming healthy.
         let log_path = std::env::temp_dir().join(format!("aphrody-llama-server-{port}.log"));
-        let log = std::fs::File::create(&log_path)
-            .map_err(|source| OcrError::Io { path: log_path.clone(), source })?;
+        let log = std::fs::File::create(&log_path).map_err(|source| OcrError::Io {
+            path: log_path.clone(),
+            source,
+        })?;
         command.stderr(Stdio::from(log));
 
-        let mut child = command
-            .spawn()
-            .map_err(|source| OcrError::Io { path: source_path(&source, port), source })?;
+        let mut child = command.spawn().map_err(|source| OcrError::Io {
+            path: source_path(&source, port),
+            source,
+        })?;
 
         let endpoint = format!("http://127.0.0.1:{port}");
         let client = reqwest::blocking::Client::builder()
@@ -117,7 +120,12 @@ impl ServerRunner {
             return Err(e);
         }
 
-        Ok(Self { child, endpoint, client, options })
+        Ok(Self {
+            child,
+            endpoint,
+            client,
+            options,
+        })
     }
 
     /// The endpoint this runner talks to.
@@ -179,8 +187,9 @@ impl ServerRunner {
         })?;
 
         let document = Document::parse(&content);
-        let page_text =
-            document.to_markdown().map_or(PageText::None, |markdown| PageText::Text { markdown });
+        let page_text = document
+            .to_markdown()
+            .map_or(PageText::None, |markdown| PageText::Text { markdown });
 
         Ok(PageResult {
             image: image.to_path_buf(),
@@ -239,15 +248,26 @@ fn wait_healthy(
 
 /// Read an image and encode it as a `data:` URI for the chat API.
 fn data_uri(image: &Path) -> Result<String> {
-    let bytes = std::fs::read(image)
-        .map_err(|source| OcrError::Io { path: image.to_path_buf(), source })?;
-    Ok(format!("data:{};base64,{}", mime_for(image), base64(&bytes)))
+    let bytes = std::fs::read(image).map_err(|source| OcrError::Io {
+        path: image.to_path_buf(),
+        source,
+    })?;
+    Ok(format!(
+        "data:{};base64,{}",
+        mime_for(image),
+        base64(&bytes)
+    ))
 }
 
 /// MIME type from the file extension, defaulting to JPEG.
 #[must_use]
 pub fn mime_for(path: &Path) -> &'static str {
-    match path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("png") => "image/png",
         Some("webp") => "image/webp",
         Some("bmp") => "image/bmp",
@@ -279,7 +299,11 @@ pub fn base64(bytes: &[u8]) -> String {
         } else {
             '='
         });
-        out.push(if chunk.len() > 2 { ALPHABET[(triple & 0x3F) as usize] as char } else { '=' });
+        out.push(if chunk.len() > 2 {
+            ALPHABET[(triple & 0x3F) as usize] as char
+        } else {
+            '='
+        });
     }
     out
 }

@@ -36,12 +36,16 @@ pub fn depth_of_field(img: &Image, depth: &[f32], dof: &Dof, scale: f64) -> Imag
     if dof.highlight.gain > 0.0 {
         let mut boosted = img.clone();
         boost_highlights(&mut boosted, &dof.highlight);
-        src.data.par_iter_mut().zip(boosted.data.par_iter()).zip(radius.par_iter()).for_each(|((d, b), &r)| {
-            let k = (r - 0.5).clamp(0.0, 1.0);
-            for c in 0..4 {
-                d[c] += (b[c] - d[c]) * k;
-            }
-        });
+        src.data
+            .par_iter_mut()
+            .zip(boosted.data.par_iter())
+            .zip(radius.par_iter())
+            .for_each(|((d, b), &r)| {
+                let k = (r - 0.5).clamp(0.0, 1.0);
+                for c in 0..4 {
+                    d[c] += (b[c] - d[c]) * k;
+                }
+            });
     }
     progressive_blur(&src, &dof.iris, &radius)
 }
@@ -63,7 +67,16 @@ mod tests {
         // coc = aperture · (z − focus) / z; radius = coc / 2.
         let (focus, z) = (500.0, 2000.0);
         let aperture = 2.0 * r * z / (z - focus);
-        (Dof { focus, aperture, blur_level: 1.0, iris, highlight: Highlight::default() }, vec![z as f32; 81 * 81])
+        (
+            Dof {
+                focus,
+                aperture,
+                blur_level: 1.0,
+                iris,
+                highlight: Highlight::default(),
+            },
+            vec![z as f32; 81 * 81],
+        )
     }
 
     fn lit(img: &Image) -> Vec<bool> {
@@ -73,10 +86,21 @@ mod tests {
 
     #[test]
     fn iris_shapes_match_the_classic_kernel() {
-        for (sides, rotation, roundness, aspect) in
-            [(3u32, 0.0, 0.0, 1.0), (5, 20.0, 0.0, 1.0), (6, 0.0, 0.0, 1.0), (10, 0.0, 0.5, 1.0), (4, 45.0, 0.0, 2.0), (0, 0.0, 0.0, 1.0)]
-        {
-            let iris = Iris { sides, rotation, roundness, aspect, fringe: 0.0 };
+        for (sides, rotation, roundness, aspect) in [
+            (3u32, 0.0, 0.0, 1.0),
+            (5, 20.0, 0.0, 1.0),
+            (6, 0.0, 0.0, 1.0),
+            (10, 0.0, 0.5, 1.0),
+            (4, 45.0, 0.0, 2.0),
+            (0, 0.0, 0.0, 1.0),
+        ] {
+            let iris = Iris {
+                sides,
+                rotation,
+                roundness,
+                aspect,
+                fringe: 0.0,
+            };
             let (d, depth) = dof(16.0, iris);
             let ours = lit(&depth_of_field(&dot(81), &depth, &d, 1.0));
             let classic = lit(&bokeh_blur(&dot(81), &iris, 16.0));
@@ -90,13 +114,19 @@ mod tests {
                 }
             }
             let iou = same as f64 / any as f64;
-            assert!(iou > 0.8, "{sides} sides, rotation {rotation}: overlap {iou:.2}");
+            assert!(
+                iou > 0.8,
+                "{sides} sides, rotation {rotation}: overlap {iou:.2}"
+            );
         }
     }
 
     #[test]
     fn triangle_is_not_a_disc() {
-        let iris = Iris { sides: 3, ..Default::default() };
+        let iris = Iris {
+            sides: 3,
+            ..Default::default()
+        };
         let (d, depth) = dof(16.0, iris);
         let out = lit(&depth_of_field(&dot(81), &depth, &d, 1.0));
         // One side flat (half the radius from the centre), the opposite a vertex.
@@ -106,17 +136,29 @@ mod tests {
 
     #[test]
     fn fringe_brightens_the_rim_and_highlights_bloom() {
-        let mut iris = Iris { sides: 8, ..Default::default() };
+        let mut iris = Iris {
+            sides: 8,
+            ..Default::default()
+        };
         let (mut d, depth) = dof(16.0, iris);
         let plain = depth_of_field(&dot(81), &depth, &d, 1.0);
         iris.fringe = 1.0;
         d.iris = iris;
         let rimmed = depth_of_field(&dot(81), &depth, &d, 1.0);
         let ratio = |im: &Image| im.data[40 * 81 + 40 + 14][3] / im.data[40 * 81 + 40 + 2][3];
-        assert!(ratio(&rimmed) > ratio(&plain) * 1.3, "{} vs {}", ratio(&rimmed), ratio(&plain));
+        assert!(
+            ratio(&rimmed) > ratio(&plain) * 1.3,
+            "{} vs {}",
+            ratio(&rimmed),
+            ratio(&plain)
+        );
         // Highlight gain above the threshold brightens the bloom.
         d.iris.fringe = 0.0;
-        d.highlight = Highlight { gain: 0.5, threshold: 0.5, saturation: 0.0 };
+        d.highlight = Highlight {
+            gain: 0.5,
+            threshold: 0.5,
+            saturation: 0.0,
+        };
         let bright = depth_of_field(&dot(81), &depth, &d, 1.0);
         assert!(bright.data[40 * 81 + 40][0] > plain.data[40 * 81 + 40][0] * 1.5);
     }

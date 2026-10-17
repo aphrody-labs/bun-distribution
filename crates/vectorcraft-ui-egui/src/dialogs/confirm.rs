@@ -32,7 +32,8 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 /// Ask `message` (with an optional `detail` line), both in the UI language; OK runs `command`
 /// with `params`.
 pub fn ask(app: &mut VectorcraftApp, message: &str, detail: &str, command: &str, params: Value) {
-    let fields = json!({"message": message, "detail": detail, "__command": command, "__params": params});
+    let fields =
+        json!({"message": message, "detail": detail, "__command": command, "__params": params});
     app.ui.dialog = Some(Dialog::new(KIND, fields));
 }
 
@@ -44,12 +45,19 @@ pub(super) const MESSAGE_SPEC: DialogSpec = DialogSpec { ok: None, ..SPEC };
 /// Tell the user `message` (with an optional `detail` line), both in the UI language, in a dialog
 /// they close.
 pub fn tell(app: &mut VectorcraftApp, message: &str, detail: &str) {
-    app.ui.dialog = Some(Dialog::new(MESSAGE, json!({"message": message, "detail": detail})));
+    app.ui.dialog = Some(Dialog::new(
+        MESSAGE,
+        json!({"message": message, "detail": detail}),
+    ));
 }
 
 /// Closes before running, so a dialog the command opens stays open.
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    let params = d.fields.get("__params").cloned().unwrap_or_else(|| json!({}));
+    let params = d
+        .fields
+        .get("__params")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
     app.ui.dialog = None;
     app.run(&d.str("__command"), params)
 }

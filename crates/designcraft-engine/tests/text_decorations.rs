@@ -7,8 +7,14 @@ use designcraft_pdf::{PdfOptions, export_pdf};
 use designcraft_render::{Placed, RenderOptions, Rendered, Renderer};
 
 fn document(decoration: u8, hide_first: bool, hide_second: bool) -> Document {
-    let mut d = Document::new(&NewDocument { width: 240.0, height: 240.0, facing_pages: false, ..Default::default() });
-    d.swatches.push(Swatch::color("Cyan rule", Color::rgb(0.0, 1.0, 1.0)));
+    let mut d = Document::new(&NewDocument {
+        width: 240.0,
+        height: 240.0,
+        facing_pages: false,
+        ..Default::default()
+    });
+    d.swatches
+        .push(Swatch::color("Cyan rule", Color::rgb(0.0, 1.0, 1.0)));
     let (_, sid) = d
         .add_text_frame(
             SpreadRef::Doc(0),
@@ -16,7 +22,12 @@ fn document(decoration: u8, hide_first: bool, hide_second: bool) -> Document {
             d.default_layer(),
             "HI",
             ParaFormat {
-                chars: CharAttrs { font_family: Some("Source Sans 3".into()), size: Some(72.0), fill: Some("[Black]".into()), ..Default::default() },
+                chars: CharAttrs {
+                    font_family: Some("Source Sans 3".into()),
+                    size: Some(72.0),
+                    fill: Some("[Black]".into()),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
         )
@@ -33,7 +44,14 @@ fn document(decoration: u8, hide_first: bool, hide_second: bool) -> Document {
         }
         f.over.underline = Some(decoration == 1 || decoration == 3);
         f.over.strikethrough = Some(decoration == 2);
-        f.over.underline_color = Some(if decoration == 3 { "[None]" } else { "Cyan rule" }.into());
+        f.over.underline_color = Some(
+            if decoration == 3 {
+                "[None]"
+            } else {
+                "Cyan rule"
+            }
+            .into(),
+        );
         f.over.strikethrough_color = Some("Cyan rule".into());
         f.over.underline_weight = Some(Some(18.0));
         f.over.strikethrough_weight = Some(Some(18.0));
@@ -48,11 +66,22 @@ fn raster(d: &Document, threads: u16) -> Rendered {
     let cache = Cache::new();
     let mut renderer = Renderer::new();
     renderer.threads = threads;
-    let placed = [Placed { spread: SpreadRef::Doc(0), xf: Affine::IDENTITY }];
-    let options = RenderOptions { paper: false, background: Some([255; 4]), greek_below_px: 0.0, ..Default::default() };
+    let placed = [Placed {
+        spread: SpreadRef::Doc(0),
+        xf: Affine::IDENTITY,
+    }];
+    let options = RenderOptions {
+        paper: false,
+        background: Some([255; 4]),
+        greek_below_px: 0.0,
+        ..Default::default()
+    };
     let first = renderer.render(d, &cache, &placed, 480, 480, Affine::scale(2.0), &options);
     let cached = renderer.render(d, &cache, &placed, 480, 480, Affine::scale(2.0), &options);
-    assert_eq!(first.pixels, cached.pixels, "decoration cache hits must retain paint order");
+    assert_eq!(
+        first.pixels, cached.pixels,
+        "decoration cache hits must retain paint order"
+    );
     first
 }
 
@@ -66,10 +95,19 @@ fn pdf(d: &Document) -> Rendered {
         .iter()
         .flat_map(|p| {
             let white = 255 - p.a;
-            [p.r.saturating_add(white), p.g.saturating_add(white), p.b.saturating_add(white), 255]
+            [
+                p.r.saturating_add(white),
+                p.g.saturating_add(white),
+                p.b.saturating_add(white),
+                255,
+            ]
         })
         .collect();
-    Rendered { width: 480, height: 480, pixels }
+    Rendered {
+        width: 480,
+        height: 480,
+        pixels,
+    }
 }
 
 fn dark(p: [u8; 4]) -> bool {
@@ -90,12 +128,21 @@ fn check_paint_order(render: impl Fn(&Document) -> Rendered) {
     let second_only = render(&document(0, true, false));
     let under = render(&document(1, false, false));
     let strike = render(&document(2, false, false));
-    assert_eq!(render(&document(3, false, false)).pixels, plain.pixels, "explicit None must draw no rule");
+    assert_eq!(
+        render(&document(3, false, false)).pixels,
+        plain.pixels,
+        "explicit None must draw no rule"
+    );
     let sid = *plain_doc.stories.keys().next().unwrap();
     let cs = compose_story(&plain_doc, sid, &Default::default());
     let line = &cs.frames[0].lines[0];
     let g = line.glyphs.iter().find(|g| g.byte == 1).unwrap();
-    let rect = Rect::new(g.x, line.baseline - 24.0 - 9.0, g.x + g.adv, line.baseline - 24.0 + 9.0);
+    let rect = Rect::new(
+        g.x,
+        line.baseline - 24.0 - 9.0,
+        g.x + g.adv,
+        line.baseline - 24.0 + 9.0,
+    );
     let mut cross_run = 0;
     let mut exposed = 0;
     for y in (rect.y0 * 2.0).ceil() as u32 + 2..(rect.y1 * 2.0).floor() as u32 - 2 {
@@ -104,17 +151,33 @@ fn check_paint_order(render: impl Fn(&Document) -> Rendered) {
             // loop would still cover these pixels, so the witness is stronger than one run.
             if dark(first_only.pixel(x, y)) && white(second_only.pixel(x, y)) {
                 cross_run += 1;
-                assert!(dark(under.pixel(x, y)), "underline covered an earlier run at {x},{y}: {:?}", under.pixel(x, y));
-                assert!(cyan(strike.pixel(x, y)), "strike must remain above glyphs at {x},{y}");
+                assert!(
+                    dark(under.pixel(x, y)),
+                    "underline covered an earlier run at {x},{y}: {:?}",
+                    under.pixel(x, y)
+                );
+                assert!(
+                    cyan(strike.pixel(x, y)),
+                    "strike must remain above glyphs at {x},{y}"
+                );
             }
             if white(plain.pixel(x, y)) {
                 exposed += 1;
-                assert!(cyan(under.pixel(x, y)), "the visible underline must retain its fill");
+                assert!(
+                    cyan(under.pixel(x, y)),
+                    "the visible underline must retain its fill"
+                );
             }
         }
     }
-    assert!(cross_run > 20, "fixture needs cross-run interior-ink witnesses, got {cross_run}");
-    assert!(exposed > 20, "fixture needs visible rule pixels, got {exposed}");
+    assert!(
+        cross_run > 20,
+        "fixture needs cross-run interior-ink witnesses, got {cross_run}"
+    );
+    assert!(
+        exposed > 20,
+        "fixture needs visible rule pixels, got {exposed}"
+    );
 }
 
 #[test]
@@ -153,9 +216,16 @@ fn decoration_offsets_are_centers_for_explicit_and_automatic_rules() {
             let baseline = 84.222687;
             let rules: Vec<_> = style.rules(10.0, 50.0, baseline).collect();
             assert_eq!(rules.len(), 2);
-            let expected = if automatic { [(size * 0.12, size / 14.0), (-size * 0.3, size / 14.0)] } else { [(-3.0, 12.0), (-8.0, 6.0)] };
+            let expected = if automatic {
+                [(size * 0.12, size / 14.0), (-size * 0.3, size / 14.0)]
+            } else {
+                [(-3.0, 12.0), (-8.0, 6.0)]
+            };
             for ((rule, rect), (offset, weight)) in rules.iter().zip(expected) {
-                assert!((rect.center().y - (baseline + offset)).abs() < 1e-9, "offset must locate the center: {rect:?}");
+                assert!(
+                    (rect.center().y - (baseline + offset)).abs() < 1e-9,
+                    "offset must locate the center: {rect:?}"
+                );
                 assert!((rect.height() - weight).abs() < 1e-9);
                 assert_eq!(rule.color, style.fill);
                 assert_eq!(rule.tint, 0.4);
@@ -168,7 +238,12 @@ fn decoration_offsets_are_centers_for_explicit_and_automatic_rules() {
 /// letters where the anti-aliased edges met (at fractional positions).
 #[test]
 fn an_underline_has_no_seams_between_letters() {
-    let mut d = Document::new(&NewDocument { width: 400.0, height: 120.0, facing_pages: false, ..Default::default() });
+    let mut d = Document::new(&NewDocument {
+        width: 400.0,
+        height: 120.0,
+        facing_pages: false,
+        ..Default::default()
+    });
     let chars = CharAttrs {
         font_family: Some("Source Sans 3".into()),
         size: Some(48.0),
@@ -177,28 +252,63 @@ fn an_underline_has_no_seams_between_letters() {
         underline_weight: Some(Some(6.0)),
         ..Default::default()
     };
-    d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 390.0, 110.0), d.default_layer(), "FERRUM", ParaFormat { chars, ..Default::default() })
-        .unwrap();
+    d.add_text_frame(
+        SpreadRef::Doc(0),
+        Rect::new(10.0, 10.0, 390.0, 110.0),
+        d.default_layer(),
+        "FERRUM",
+        ParaFormat {
+            chars,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let mut renderer = Renderer::new();
     renderer.threads = 0;
-    let placed = [Placed { spread: SpreadRef::Doc(0), xf: Affine::IDENTITY }];
-    let options = RenderOptions { paper: false, background: Some([255; 4]), greek_below_px: 0.0, ..Default::default() };
+    let placed = [Placed {
+        spread: SpreadRef::Doc(0),
+        xf: Affine::IDENTITY,
+    }];
+    let options = RenderOptions {
+        paper: false,
+        background: Some([255; 4]),
+        greek_below_px: 0.0,
+        ..Default::default()
+    };
     // A fractional scale puts the letters' edges between pixels.
     let (w, h) = (543u32, 163u32);
-    let img = renderer.render(&d, &Cache::new(), &placed, w, h, Affine::scale(1.3579), &options);
+    let img = renderer.render(
+        &d,
+        &Cache::new(),
+        &placed,
+        w,
+        h,
+        Affine::scale(1.3579),
+        &options,
+    );
     let px = |x: u32, y: u32| {
         let i = ((y * w + x) * 4) as usize;
-        [img.pixels[i], img.pixels[i + 1], img.pixels[i + 2], img.pixels[i + 3]]
+        [
+            img.pixels[i],
+            img.pixels[i + 1],
+            img.pixels[i + 2],
+            img.pixels[i + 3],
+        ]
     };
     // The underline's middle row: the row with the longest run of dark pixels ([Black] shows as
     // about 52 grey), then nothing lighter than its darkest pixel along it.
-    let row = (0..h).max_by_key(|&y| (0..w).filter(|&x| px(x, y)[0] < 110).count()).unwrap();
+    let row = (0..h)
+        .max_by_key(|&y| (0..w).filter(|&x| px(x, y)[0] < 110).count())
+        .unwrap();
     let dark: Vec<u32> = (0..w).filter(|&x| px(x, row)[0] < 110).collect();
     let (x0, x1) = (dark[0], *dark.last().unwrap());
     assert!(x1 - x0 > 150, "the underline spans the word: {x0}..{x1}");
     // The bar's own anti-aliased ends aside.
     let inside = x0 + 2..=x1 - 2;
     let ink = inside.clone().map(|x| px(x, row)[0]).min().unwrap();
-    let light: Vec<(u32, u8)> = inside.map(|x| (x, px(x, row)[0])).filter(|&(_, v)| v > ink + 12).collect();
+    let light: Vec<(u32, u8)> = inside
+        .map(|x| (x, px(x, row)[0]))
+        .filter(|&(_, v)| v > ink + 12)
+        .collect();
     assert!(light.is_empty(), "seams in the underline at {light:?}");
 }

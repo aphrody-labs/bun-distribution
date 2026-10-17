@@ -48,7 +48,10 @@ impl ChromiumParser {
     pub fn get_cookies_full(&self, profile: &str, host_key_like: &str) -> Result<Vec<Cookie>> {
         let cookies_path = self.user_data_path.join(profile).join("Network/Cookies");
         if !cookies_path.exists() {
-            return Err(anyhow!("Cookies file not found: {}", cookies_path.display()));
+            return Err(anyhow!(
+                "Cookies file not found: {}",
+                cookies_path.display()
+            ));
         }
         let request = FromPathRequest::new(cookies_path).include_expired(true);
         #[cfg(target_os = "windows")]
@@ -67,7 +70,12 @@ impl ChromiumParser {
 
     #[cfg(not(target_os = "windows"))]
     fn browser_id(&self) -> &'static str {
-        if self.user_data_path.to_string_lossy().to_ascii_lowercase().contains("chromium") {
+        if self
+            .user_data_path
+            .to_string_lossy()
+            .to_ascii_lowercase()
+            .contains("chromium")
+        {
             "chromium"
         } else {
             "chrome"

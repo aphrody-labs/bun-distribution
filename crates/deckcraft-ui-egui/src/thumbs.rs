@@ -10,7 +10,10 @@ use crate::theme::{self, Tokens};
 
 pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let in_master = app.session.active().is_some_and(|d| d.selection.target != Target::Slides);
+    let in_master = app
+        .session
+        .active()
+        .is_some_and(|d| d.selection.target != Target::Slides);
     egui::Panel::left("thumbs")
         .resizable(true)
         .default_size(app.ui.thumbs_width)
@@ -22,17 +25,21 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
                 master_list(app, ui);
                 return;
             }
-            egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-                ui.add_space(8.0);
-                list(app, ui);
-                ui.add_space(20.0);
-            });
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    ui.add_space(8.0);
+                    list(app, ui);
+                    ui.add_space(20.0);
+                });
         });
 }
 
 fn list(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let doc = st.doc.clone();
     let cur = st.selection.slide;
     let multi = st.selection.slides.clone();
@@ -42,8 +49,17 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
     let ppp = ui.ctx().pixels_per_point();
     let mut budget = 3u32;
     let mut rects = vec![];
-    let section_starts: Vec<(usize, usize)> =
-        doc.sections.iter().enumerate().filter_map(|(si, s)| s.slides.first().and_then(|id| doc.slide_index(*id)).map(|i| (i, si))).collect();
+    let section_starts: Vec<(usize, usize)> = doc
+        .sections
+        .iter()
+        .enumerate()
+        .filter_map(|(si, s)| {
+            s.slides
+                .first()
+                .and_then(|id| doc.slide_index(*id))
+                .map(|i| (i, si))
+        })
+        .collect();
     let mut need_more = false;
     for i in 0..doc.slides.len() {
         if let Some((_, si)) = section_starts.iter().find(|(start, _)| *start == i)
@@ -76,7 +92,10 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
                     ui.close();
                 }
                 if ui.button("Move Section Up").clicked() {
-                    let _ = app.run("section.move", json!({"index": si, "to": si.saturating_sub(1)}));
+                    let _ = app.run(
+                        "section.move",
+                        json!({"index": si, "to": si.saturating_sub(1)}),
+                    );
                     ui.close();
                 }
                 if ui.button("Move Section Down").clicked() {
@@ -100,11 +119,25 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
             if selected { t.text } else { t.text_dim },
         );
         if hidden {
-            p.line_segment([pos2(row.min.x + 8.0, img.min.y + 18.0), pos2(row.min.x + 20.0, img.min.y + 6.0)], Stroke::new(1.0, t.text_dim));
+            p.line_segment(
+                [
+                    pos2(row.min.x + 8.0, img.min.y + 18.0),
+                    pos2(row.min.x + 20.0, img.min.y + 6.0),
+                ],
+                Stroke::new(1.0, t.text_dim),
+            );
         }
-        let has_anim = doc.slides.get(i).is_some_and(|s| !s.animations.is_empty() || s.transition.as_ref().is_some_and(|tr| tr.kind != "none"));
+        let has_anim = doc.slides.get(i).is_some_and(|s| {
+            !s.animations.is_empty() || s.transition.as_ref().is_some_and(|tr| tr.kind != "none")
+        });
         if has_anim {
-            p.text(pos2(row.min.x + 14.0, img.min.y + 20.0), Align2::CENTER_TOP, "★", theme::font(10.0), t.text_faint);
+            p.text(
+                pos2(row.min.x + 14.0, img.min.y + 20.0),
+                Align2::CENTER_TOP,
+                "★",
+                theme::font(10.0),
+                t.text_faint,
+            );
         }
         let wpx = (tw * ppp).round() as u32;
         match app.textures.thumb(ui.ctx(), &doc, i, wpx, &mut budget) {
@@ -113,7 +146,11 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
                     tex.id(),
                     img,
                     Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-                    if hidden { Color32::from_white_alpha(140) } else { Color32::WHITE },
+                    if hidden {
+                        Color32::from_white_alpha(140)
+                    } else {
+                        Color32::WHITE
+                    },
                 );
             }
             None => {
@@ -122,12 +159,24 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
             }
         }
         if selected {
-            p.rect_stroke(img.expand(2.0), CornerRadius::same(4), Stroke::new(3.0, t.accent), egui::StrokeKind::Outside);
+            p.rect_stroke(
+                img.expand(2.0),
+                CornerRadius::same(4),
+                Stroke::new(3.0, t.accent),
+                egui::StrokeKind::Outside,
+            );
         } else {
             p.rect_stroke(
                 img,
                 CornerRadius::ZERO,
-                Stroke::new(if resp.hovered() { 2.0 } else { 1.0 }, if resp.hovered() { t.text_faint } else { t.border }),
+                Stroke::new(
+                    if resp.hovered() { 2.0 } else { 1.0 },
+                    if resp.hovered() {
+                        t.text_faint
+                    } else {
+                        t.border
+                    },
+                ),
                 egui::StrokeKind::Outside,
             );
         }
@@ -138,7 +187,13 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
                     let _ = app.run("slide.selectSlides", json!({"ids": [id.0], "add": true}));
                 } else if shift {
                     let (a, b) = (cur.min(i), cur.max(i));
-                    let ids: Vec<u32> = doc.slides.iter().skip(a).take(b - a + 1).map(|s| s.id.0).collect();
+                    let ids: Vec<u32> = doc
+                        .slides
+                        .iter()
+                        .skip(a)
+                        .take(b - a + 1)
+                        .map(|s| s.id.0)
+                        .collect();
                     let _ = app.run("slide.selectSlides", json!({"ids": ids}));
                     let _ = app.run("slide.go", json!({"index": i}));
                     let _ = app.run("slide.selectSlides", json!({"ids": ids}));
@@ -169,8 +224,14 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
                 }
             }
             app.thumb_drag = Some((from, to));
-            let y = rects.iter().find(|(i, _)| *i == to).map(|(_, r)| r.min.y + 2.0).or_else(|| rects.last().map(|(_, r)| r.max.y)).unwrap_or(0.0);
-            ui.painter().line_segment([pos2(26.0, y), pos2(width, y)], Stroke::new(2.0, t.accent));
+            let y = rects
+                .iter()
+                .find(|(i, _)| *i == to)
+                .map(|(_, r)| r.min.y + 2.0)
+                .or_else(|| rects.last().map(|(_, r)| r.max.y))
+                .unwrap_or(0.0);
+            ui.painter()
+                .line_segment([pos2(26.0, y), pos2(width, y)], Stroke::new(2.0, t.accent));
         }
         if ui.input(|i| i.pointer.any_released()) {
             if let Some((from, to)) = app.thumb_drag.take()
@@ -186,7 +247,13 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
     // Click on empty space below: new slide prompt.
     let (r, resp) = ui.allocate_exact_size(vec2(width, 40.0), Sense::click());
     if resp.hovered() {
-        ui.painter().text(r.center(), Align2::CENTER_CENTER, "+ New Slide", theme::font(12.0), t.text_faint);
+        ui.painter().text(
+            r.center(),
+            Align2::CENTER_CENTER,
+            "+ New Slide",
+            theme::font(12.0),
+            t.text_faint,
+        );
     }
     if resp.clicked() {
         let _ = app.run("slide.new", json!({}));
@@ -194,7 +261,14 @@ fn list(app: &mut SlideApp, ui: &mut Ui) {
 }
 
 pub fn slide_menu(app: &mut SlideApp, ui: &mut Ui, i: usize) {
-    if app.session.active().is_some_and(|d| d.selection.slide != i && !d.selection.slides.iter().any(|id| d.doc.slide_index(*id) == Some(i))) {
+    if app.session.active().is_some_and(|d| {
+        d.selection.slide != i
+            && !d
+                .selection
+                .slides
+                .iter()
+                .any(|id| d.doc.slide_index(*id) == Some(i))
+    }) {
         let _ = app.run("slide.go", json!({"index": i}));
     }
     for (l, id, p) in [
@@ -229,7 +303,12 @@ pub fn slide_menu(app: &mut SlideApp, ui: &mut Ui, i: usize) {
         let layouts: Vec<(String, u32)> = app
             .session
             .active()
-            .and_then(|d| d.doc.masters.first().map(|m| m.layouts.iter().map(|l| (l.name.clone(), l.id.0)).collect()))
+            .and_then(|d| {
+                d.doc
+                    .masters
+                    .first()
+                    .map(|m| m.layouts.iter().map(|l| (l.name.clone(), l.id.0)).collect())
+            })
             .unwrap_or_default();
         for (n, id) in layouts {
             if ui.button(n).clicked() {
@@ -246,8 +325,15 @@ pub fn slide_menu(app: &mut SlideApp, ui: &mut Ui, i: usize) {
         let _ = app.run("view.pane", json!({"pane": "background"}));
         ui.close();
     }
-    let hidden = app.session.active().and_then(|d| d.doc.slides.get(i).map(|s| s.hidden)).unwrap_or(false);
-    if ui.button(if hidden { "Show Slide" } else { "Hide Slide" }).clicked() {
+    let hidden = app
+        .session
+        .active()
+        .and_then(|d| d.doc.slides.get(i).map(|s| s.hidden))
+        .unwrap_or(false);
+    if ui
+        .button(if hidden { "Show Slide" } else { "Hide Slide" })
+        .clicked()
+    {
         let _ = app.run("slide.hide", json!({"index": i}));
         ui.close();
     }
@@ -255,60 +341,86 @@ pub fn slide_menu(app: &mut SlideApp, ui: &mut Ui, i: usize) {
 
 fn master_list(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let doc = st.doc.clone();
     let target = st.selection.target;
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        ui.add_space(8.0);
-        let width = ui.available_width();
-        for (mi, m) in doc.masters.iter().enumerate() {
-            let items: Vec<Option<usize>> = std::iter::once(None).chain((0..m.layouts.len()).map(Some)).collect();
-            for li in items {
-                let indent = if li.is_some() { 30.0 } else { 14.0 };
-                let tw = (width - indent - 14.0).max(40.0) * if li.is_some() { 0.8 } else { 1.0 };
-                let th = tw * (doc.slide_size.height / doc.slide_size.width.max(1.0)) as f32;
-                let (row, resp) = ui.allocate_exact_size(vec2(width, th + 12.0), Sense::click());
-                let img = Rect::from_min_size(pos2(row.min.x + indent, row.min.y + 4.0), vec2(tw, th));
-                let ppp = ui.ctx().pixels_per_point();
-                let px = ((tw * ppp) as u32).max(1);
-                let pic = deckcraft_render::render_layout(
-                    &doc,
-                    mi,
-                    li,
-                    &deckcraft_render::RenderOpts {
-                        scale: px as f64 / doc.slide_size.width.max(1.0),
-                        edit: true,
-                        size: Some((px, (px as f64 * doc.slide_size.height / doc.slide_size.width.max(1.0)) as u32)),
-                        ..Default::default()
-                    },
-                );
-                let tex =
-                    ui.ctx().load_texture(format!("ml-{mi}-{li:?}"), crate::textures::to_color_image(&pic, false), egui::TextureOptions::LINEAR);
-                ui.painter().image(tex.id(), img, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-                let selected = match (target, li) {
-                    (Target::Master { master }, None) => master == mi,
-                    (Target::Layout { master, layout }, Some(l)) => master == mi && layout == l,
-                    _ => false,
-                };
-                ui.painter().rect_stroke(
-                    img.expand(if selected { 2.0 } else { 0.0 }),
-                    CornerRadius::same(2),
-                    Stroke::new(if selected { 3.0 } else { 1.0 }, if selected { t.accent } else { t.border }),
-                    egui::StrokeKind::Outside,
-                );
-                let name = match li {
-                    Some(l) => m.layouts.get(l).map(|x| x.name.clone()).unwrap_or_default(),
-                    None => format!("{} Slide Master", m.name),
-                };
-                let resp = resp.on_hover_text(name);
-                if resp.clicked() {
-                    let p = match li {
-                        Some(l) => json!({"master": mi, "layout": l}),
-                        None => json!({"master": mi}),
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.add_space(8.0);
+            let width = ui.available_width();
+            for (mi, m) in doc.masters.iter().enumerate() {
+                let items: Vec<Option<usize>> = std::iter::once(None)
+                    .chain((0..m.layouts.len()).map(Some))
+                    .collect();
+                for li in items {
+                    let indent = if li.is_some() { 30.0 } else { 14.0 };
+                    let tw =
+                        (width - indent - 14.0).max(40.0) * if li.is_some() { 0.8 } else { 1.0 };
+                    let th = tw * (doc.slide_size.height / doc.slide_size.width.max(1.0)) as f32;
+                    let (row, resp) =
+                        ui.allocate_exact_size(vec2(width, th + 12.0), Sense::click());
+                    let img = Rect::from_min_size(
+                        pos2(row.min.x + indent, row.min.y + 4.0),
+                        vec2(tw, th),
+                    );
+                    let ppp = ui.ctx().pixels_per_point();
+                    let px = ((tw * ppp) as u32).max(1);
+                    let pic = deckcraft_render::render_layout(
+                        &doc,
+                        mi,
+                        li,
+                        &deckcraft_render::RenderOpts {
+                            scale: px as f64 / doc.slide_size.width.max(1.0),
+                            edit: true,
+                            size: Some((
+                                px,
+                                (px as f64 * doc.slide_size.height / doc.slide_size.width.max(1.0))
+                                    as u32,
+                            )),
+                            ..Default::default()
+                        },
+                    );
+                    let tex = ui.ctx().load_texture(
+                        format!("ml-{mi}-{li:?}"),
+                        crate::textures::to_color_image(&pic, false),
+                        egui::TextureOptions::LINEAR,
+                    );
+                    ui.painter().image(
+                        tex.id(),
+                        img,
+                        Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                        Color32::WHITE,
+                    );
+                    let selected = match (target, li) {
+                        (Target::Master { master }, None) => master == mi,
+                        (Target::Layout { master, layout }, Some(l)) => master == mi && layout == l,
+                        _ => false,
                     };
-                    let _ = app.run("view.slideMaster", p);
+                    ui.painter().rect_stroke(
+                        img.expand(if selected { 2.0 } else { 0.0 }),
+                        CornerRadius::same(2),
+                        Stroke::new(
+                            if selected { 3.0 } else { 1.0 },
+                            if selected { t.accent } else { t.border },
+                        ),
+                        egui::StrokeKind::Outside,
+                    );
+                    let name = match li {
+                        Some(l) => m.layouts.get(l).map(|x| x.name.clone()).unwrap_or_default(),
+                        None => format!("{} Slide Master", m.name),
+                    };
+                    let resp = resp.on_hover_text(name);
+                    if resp.clicked() {
+                        let p = match li {
+                            Some(l) => json!({"master": mi, "layout": l}),
+                            None => json!({"master": mi}),
+                        };
+                        let _ = app.run("view.slideMaster", p);
+                    }
                 }
             }
-        }
-    });
+        });
 }

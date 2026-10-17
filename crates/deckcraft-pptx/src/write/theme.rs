@@ -10,11 +10,24 @@ use crate::xml::{A, W};
 
 fn font_set(w: &mut W, tag: &str, f: &FontSet) {
     w.open0(tag);
-    w.empty("a:latin", A::new().a("typeface", if f.latin.is_empty() { "Arial" } else { &f.latin }));
+    w.empty(
+        "a:latin",
+        A::new().a(
+            "typeface",
+            if f.latin.is_empty() {
+                "Arial"
+            } else {
+                &f.latin
+            },
+        ),
+    );
     w.empty("a:ea", A::new().a("typeface", &f.ea));
     w.empty("a:cs", A::new().a("typeface", &f.cs));
     for sf in &f.scripts {
-        w.empty("a:font", A::new().a("script", &sf.script).a("typeface", &sf.typeface));
+        w.empty(
+            "a:font",
+            A::new().a("script", &sf.script).a("typeface", &sf.typeface),
+        );
     }
     w.close(tag);
 }
@@ -28,9 +41,25 @@ fn style_fill(f: &Fill) -> Fill {
 
 pub fn theme_xml(x: &mut Exp, o: &mut Out, t: &Theme) -> Vec<u8> {
     let mut w = W::new();
-    w.open("a:theme", A::new().a("xmlns:a", NS_A).a("xmlns:r", NS_R).a("name", if t.name.is_empty() { "Theme" } else { &t.name }));
+    w.open(
+        "a:theme",
+        A::new()
+            .a("xmlns:a", NS_A)
+            .a("xmlns:r", NS_R)
+            .a("name", if t.name.is_empty() { "Theme" } else { &t.name }),
+    );
     w.open0("a:themeElements");
-    w.open("a:clrScheme", A::new().a("name", if t.colors.name.is_empty() { &t.name } else { &t.colors.name }));
+    w.open(
+        "a:clrScheme",
+        A::new().a(
+            "name",
+            if t.colors.name.is_empty() {
+                &t.name
+            } else {
+                &t.colors.name
+            },
+        ),
+    );
     for slot in SchemeSlot::THEME {
         let tag = format!("a:{}", slot.xml_name());
         w.open0(&tag);
@@ -38,17 +67,34 @@ pub fn theme_xml(x: &mut Exp, o: &mut Out, t: &Theme) -> Vec<u8> {
         w.close(&tag);
     }
     w.close("a:clrScheme");
-    w.open("a:fontScheme", A::new().a("name", if t.fonts.name.is_empty() { &t.name } else { &t.fonts.name }));
+    w.open(
+        "a:fontScheme",
+        A::new().a(
+            "name",
+            if t.fonts.name.is_empty() {
+                &t.name
+            } else {
+                &t.fonts.name
+            },
+        ),
+    );
     font_set(&mut w, "a:majorFont", &t.fonts.major);
     font_set(&mut w, "a:minorFont", &t.fonts.minor);
     w.close("a:fontScheme");
     let d = default_format();
     let f = &t.format;
-    w.open("a:fmtScheme", A::new().a("name", if f.name.is_empty() { &t.name } else { &f.name }));
+    w.open(
+        "a:fmtScheme",
+        A::new().a("name", if f.name.is_empty() { &t.name } else { &f.name }),
+    );
     let three = |v: &[Fill], d: &[Fill]| -> Vec<Fill> {
         let mut out: Vec<Fill> = v.iter().map(style_fill).collect();
         while out.len() < 3 {
-            out.push(d.get(out.len()).cloned().unwrap_or(Fill::solid(ColorRef::scheme(SchemeSlot::PhClr))));
+            out.push(
+                d.get(out.len())
+                    .cloned()
+                    .unwrap_or(Fill::solid(ColorRef::scheme(SchemeSlot::PhClr))),
+            );
         }
         out
     };

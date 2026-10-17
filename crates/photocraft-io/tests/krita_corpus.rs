@@ -7,8 +7,11 @@
 use std::path::{Path, PathBuf};
 
 fn files(dir: &Path, ext: &str) -> Vec<PathBuf> {
-    let mut out: Vec<PathBuf> =
-        std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(ext))).collect();
+    let mut out: Vec<PathBuf> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case(ext)))
+        .collect();
     out.sort();
     out
 }
@@ -17,12 +20,18 @@ fn files(dir: &Path, ext: &str) -> Vec<PathBuf> {
 fn merged(bytes: &[u8]) -> photocraft_doc::Document {
     let zip = photocraft_format::zip::ZipReader::new(bytes).unwrap();
     let png = zip.read_by_name("mergedimage.png", 1 << 28).unwrap();
-    photocraft_io::import("mergedimage.png", &png).unwrap().document
+    photocraft_io::import("mergedimage.png", &png)
+        .unwrap()
+        .document
 }
 
 /// Largest premultiplied channel difference (0..1) between our composite and Krita's, and
 /// where it is (x, y, ours, Krita's).
-fn max_error(doc: &photocraft_doc::Document, oracle: &photocraft_doc::Document, tolerance: f32) -> (f32, f32, String) {
+fn max_error(
+    doc: &photocraft_doc::Document,
+    oracle: &photocraft_doc::Document,
+    tolerance: f32,
+) -> (f32, f32, String) {
     assert_eq!(doc.size, oracle.size);
     let ours = photocraft_compose::flatten(doc);
     let theirs = photocraft_compose::flatten(oracle);
@@ -30,11 +39,28 @@ fn max_error(doc: &photocraft_doc::Document, oracle: &photocraft_doc::Document, 
     let mut worst = (0.0f32, String::new());
     let mut over = 0usize;
     for (i, (a, b)) in ours.px.iter().zip(&theirs.px).enumerate() {
-        let e = (0..4).map(|c| if c == 3 { (a[3] - b[3]).abs() } else { (a[c] * a[3] - b[c] * b[3]).abs() }).fold(0.0f32, f32::max);
+        let e = (0..4)
+            .map(|c| {
+                if c == 3 {
+                    (a[3] - b[3]).abs()
+                } else {
+                    (a[c] * a[3] - b[c] * b[3]).abs()
+                }
+            })
+            .fold(0.0f32, f32::max);
         over += usize::from(e > tolerance);
         if e > worst.0 {
             let q = |p: &[f32; 4]| p.map(|v| (v * 255.0).round() as i32);
-            worst = (e, format!("at ({}, {}): ours {:?}, Krita {:?}", i % w, i / w, q(a), q(b)));
+            worst = (
+                e,
+                format!(
+                    "at ({}, {}): ours {:?}, Krita {:?}",
+                    i % w,
+                    i / w,
+                    q(a),
+                    q(b)
+                ),
+            );
         }
     }
     (worst.0, over as f32 / ours.px.len().max(1) as f32, worst.1)
@@ -43,14 +69,34 @@ fn max_error(doc: &photocraft_doc::Document, oracle: &photocraft_doc::Document, 
 /// Files whose difference is known: the file, the share of pixels allowed outside the tolerance,
 /// and why. Everything else must match within the tolerance everywhere.
 const KNOWN: &[(&str, f32, &str)] = &[
-    ("blend-darker_color.ora", 0.02, "Krita weighs the channels differently when it picks the darker colour; near-ties pick the other pixel"),
-    ("blend-lighter_color.ora", 0.02, "Krita weighs the channels differently when it picks the lighter colour; near-ties pick the other pixel"),
-    ("blend-hard_mix_photoshop.ora", 0.02, "a channel sum of exactly 1 goes up in Photoshop's Hard Mix (ours) and down in Krita's"),
-    ("depth-rgba-u16.ora", 1.0, "Krita blends this linear-light 16-bit document in linear light, but its ORA export stores sRGB 8-bit layers"),
+    (
+        "blend-darker_color.ora",
+        0.02,
+        "Krita weighs the channels differently when it picks the darker colour; near-ties pick the other pixel",
+    ),
+    (
+        "blend-lighter_color.ora",
+        0.02,
+        "Krita weighs the channels differently when it picks the lighter colour; near-ties pick the other pixel",
+    ),
+    (
+        "blend-hard_mix_photoshop.ora",
+        0.02,
+        "a channel sum of exactly 1 goes up in Photoshop's Hard Mix (ours) and down in Krita's",
+    ),
+    (
+        "depth-rgba-u16.ora",
+        1.0,
+        "Krita blends this linear-light 16-bit document in linear light, but its ORA export stores sRGB 8-bit layers",
+    ),
     ("blend-darker_color.kra", 0.02, "as for the .ora"),
     ("blend-lighter_color.kra", 0.02, "as for the .ora"),
     ("blend-hard_mix_photoshop.kra", 0.02, "as for the .ora"),
-    ("nodes-vector-unsupported.kra", 0.2, "vector layers are left out of .kra imports (reported); Krita's merged image has the shape"),
+    (
+        "nodes-vector-unsupported.kra",
+        0.2,
+        "vector layers are left out of .kra imports (reported); Krita's merged image has the shape",
+    ),
 ];
 
 fn run(ext: &str, tolerance: f32) {
@@ -64,23 +110,45 @@ fn run(ext: &str, tolerance: f32) {
         let r = photocraft_io::import(&name, &bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
         let (error, share, at) = max_error(&r.document, &merged(&bytes), tolerance);
         // Saving as .pcraft keeps every imported layer exactly.
-        let native = photocraft_io::export(&r.document, "copy.pcraft", &Default::default()).unwrap();
-        assert_eq!(r.document.layers, photocraft_io::import("copy.pcraft", &native.bytes).unwrap().document.layers, "{name}");
+        let native =
+            photocraft_io::export(&r.document, "copy.pcraft", &Default::default()).unwrap();
+        assert_eq!(
+            r.document.layers,
+            photocraft_io::import("copy.pcraft", &native.bytes)
+                .unwrap()
+                .document
+                .layers,
+            "{name}"
+        );
         let known = KNOWN.iter().find(|(n, ..)| *n == name);
         eprintln!(
             "{name}: {} layers, max error {:.2}/255 {at}{}{}",
             r.document.layers.len(),
             error * 255.0,
-            known.map(|(_, _, w)| format!(" ({:.1}% of pixels; known: {w})", share * 100.0)).unwrap_or_default(),
-            if r.warnings.is_empty() { String::new() } else { format!("\n    warnings: {}", r.warnings.join("; ")) }
+            known
+                .map(|(_, _, w)| format!(" ({:.1}% of pixels; known: {w})", share * 100.0))
+                .unwrap_or_default(),
+            if r.warnings.is_empty() {
+                String::new()
+            } else {
+                format!("\n    warnings: {}", r.warnings.join("; "))
+            }
         );
         if error <= tolerance {
             passed += 1;
         } else if known.is_none_or(|(_, allowed, _)| share > *allowed) {
-            failed.push(format!("{name}: {:.2}/255 on {:.2}% of pixels", error * 255.0, share * 100.0));
+            failed.push(format!(
+                "{name}: {:.2}/255 on {:.2}% of pixels",
+                error * 255.0,
+                share * 100.0
+            ));
         }
     }
-    eprintln!("{passed}/{} .{ext} files within {:.1}/255", paths.len(), tolerance * 255.0);
+    eprintln!(
+        "{passed}/{} .{ext} files within {:.1}/255",
+        paths.len(),
+        tolerance * 255.0
+    );
     assert!(failed.is_empty(), "outside tolerance: {failed:#?}");
 }
 

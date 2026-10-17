@@ -5,17 +5,31 @@ use super::*;
 use figcraft_doc::{AutoLayout, Document, NodeKind};
 
 /// An auto layout frame under `parent` (gap 10, no padding) with the given sizing.
-fn al(d: &mut Document, parent: NodeId, mode: LayoutMode, (w, h): (f64, f64), (sh, sv): (Sizing, Sizing)) -> NodeId {
-    let f = d.create(parent, NodeKind::Frame, "F", 0.0, 0.0, w, h).unwrap();
+fn al(
+    d: &mut Document,
+    parent: NodeId,
+    mode: LayoutMode,
+    (w, h): (f64, f64),
+    (sh, sv): (Sizing, Sizing),
+) -> NodeId {
+    let f = d
+        .create(parent, NodeKind::Frame, "F", 0.0, 0.0, w, h)
+        .unwrap();
     let n = d.get_mut(f).unwrap();
-    n.layout = Some(AutoLayout { mode, gap: 10.0, padding: [0.0; 4], ..Default::default() });
+    n.layout = Some(AutoLayout {
+        mode,
+        gap: 10.0,
+        padding: [0.0; 4],
+        ..Default::default()
+    });
     n.child_layout.sizing_h = sh;
     n.child_layout.sizing_v = sv;
     f
 }
 
 fn rect(d: &mut Document, parent: NodeId, w: f64, h: f64) -> NodeId {
-    d.create(parent, NodeKind::Rectangle, "R", 0.0, 0.0, w, h).unwrap()
+    d.create(parent, NodeKind::Rectangle, "R", 0.0, 0.0, w, h)
+        .unwrap()
 }
 
 fn sizing(d: &mut Document, id: NodeId, sh: Sizing, sv: Sizing) {
@@ -51,7 +65,13 @@ fn fill_text(d: &mut Document, parent: NodeId) -> NodeId {
 fn hug_parent_treats_fill_children_as_fixed() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let f = al(&mut d, p, LayoutMode::Horizontal, (10.0, 10.0), (Sizing::Hug, Sizing::Hug));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (10.0, 10.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
     rect(&mut d, f, 50.0, 20.0);
     let b = rect(&mut d, f, 30.0, 40.0);
     sizing(&mut d, b, Sizing::Fill, Sizing::Fill);
@@ -60,7 +80,13 @@ fn hug_parent_treats_fill_children_as_fixed() {
     assert_eq!(size(&d, f), (90.0, 40.0));
     assert_eq!(pos(&d, b), (60.0, 0.0, 30.0, 40.0));
     // Vertical, fill on the cross axis.
-    let g = al(&mut d, p, LayoutMode::Vertical, (10.0, 10.0), (Sizing::Hug, Sizing::Hug));
+    let g = al(
+        &mut d,
+        p,
+        LayoutMode::Vertical,
+        (10.0, 10.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
     let c = rect(&mut d, g, 60.0, 20.0);
     sizing(&mut d, c, Sizing::Fill, Sizing::Fixed);
     rect(&mut d, g, 40.0, 30.0);
@@ -74,7 +100,13 @@ fn fill_children_redistribute_when_they_hit_min_or_max() {
     let mut d = Document::new("t");
     let p = page(&d);
     // Inner width 300 after two gaps.
-    let f = al(&mut d, p, LayoutMode::Horizontal, (320.0, 50.0), (Sizing::Fixed, Sizing::Fixed));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (320.0, 50.0),
+        (Sizing::Fixed, Sizing::Fixed),
+    );
     let k: Vec<NodeId> = (0..3).map(|_| rect(&mut d, f, 10.0, 10.0)).collect();
     for c in &k {
         sizing(&mut d, *c, Sizing::Fill, Sizing::Fixed);
@@ -108,14 +140,30 @@ fn fill_text_wraps_and_the_parent_hugs_its_new_height() {
     let mut d = Document::new("t");
     let p = page(&d);
     // Vertical: the text fills the width (cross axis).
-    let f = al(&mut d, p, LayoutMode::Vertical, (200.0, 10.0), (Sizing::Fixed, Sizing::Hug));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Vertical,
+        (200.0, 10.0),
+        (Sizing::Fixed, Sizing::Hug),
+    );
     layout_mut(&mut d, f).padding = [10.0; 4];
     let t = fill_text(&mut d, f);
     // Horizontal: the text fills the width (main axis) next to a fixed rectangle.
-    let g = al(&mut d, p, LayoutMode::Horizontal, (200.0, 10.0), (Sizing::Fixed, Sizing::Hug));
+    let g = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (200.0, 10.0),
+        (Sizing::Fixed, Sizing::Hug),
+    );
     rect(&mut d, g, 50.0, 30.0);
     let t2 = fill_text(&mut d, g);
-    let m = FakeMeasure([(t, (300.0, 20.0, 15.0)), (t2, (450.0, 20.0, 15.0))].into_iter().collect());
+    let m = FakeMeasure(
+        [(t, (300.0, 20.0, 15.0)), (t2, (450.0, 20.0, 15.0))]
+            .into_iter()
+            .collect(),
+    );
     layout_frame(&mut d, f, &m);
     // 180 wide → two lines.
     assert_eq!(size(&d, t), (180.0, 40.0));
@@ -125,8 +173,20 @@ fn fill_text_wraps_and_the_parent_hugs_its_new_height() {
     assert_eq!(size(&d, t2), (140.0, 80.0));
     assert_eq!(size(&d, g), (200.0, 80.0));
     // Nested: a card that fills a fixed column hugs the text it wraps.
-    let col = al(&mut d, p, LayoutMode::Vertical, (300.0, 10.0), (Sizing::Fixed, Sizing::Hug));
-    let card = al(&mut d, col, LayoutMode::Vertical, (1.0, 1.0), (Sizing::Fill, Sizing::Hug));
+    let col = al(
+        &mut d,
+        p,
+        LayoutMode::Vertical,
+        (300.0, 10.0),
+        (Sizing::Fixed, Sizing::Hug),
+    );
+    let card = al(
+        &mut d,
+        col,
+        LayoutMode::Vertical,
+        (1.0, 1.0),
+        (Sizing::Fill, Sizing::Hug),
+    );
     layout_mut(&mut d, card).padding = [10.0; 4];
     let t3 = fill_text(&mut d, card);
     let m = FakeMeasure([(t3, (560.0, 20.0, 15.0))].into_iter().collect());
@@ -140,17 +200,41 @@ fn fill_text_wraps_and_the_parent_hugs_its_new_height() {
 fn three_levels_of_mixed_sizing_settle_in_one_pass() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let outer = al(&mut d, p, LayoutMode::Vertical, (400.0, 1.0), (Sizing::Fixed, Sizing::Hug));
+    let outer = al(
+        &mut d,
+        p,
+        LayoutMode::Vertical,
+        (400.0, 1.0),
+        (Sizing::Fixed, Sizing::Hug),
+    );
     layout_mut(&mut d, outer).padding = [10.0; 4];
     let header = rect(&mut d, outer, 1.0, 20.0);
     sizing(&mut d, header, Sizing::Fill, Sizing::Fixed);
-    let middle = al(&mut d, outer, LayoutMode::Horizontal, (1.0, 1.0), (Sizing::Fill, Sizing::Hug));
+    let middle = al(
+        &mut d,
+        outer,
+        LayoutMode::Horizontal,
+        (1.0, 1.0),
+        (Sizing::Fill, Sizing::Hug),
+    );
     let icon = rect(&mut d, middle, 50.0, 20.0);
-    let inner = al(&mut d, middle, LayoutMode::Vertical, (1.0, 1.0), (Sizing::Fill, Sizing::Hug));
+    let inner = al(
+        &mut d,
+        middle,
+        LayoutMode::Vertical,
+        (1.0, 1.0),
+        (Sizing::Fill, Sizing::Hug),
+    );
     let bar = rect(&mut d, inner, 1.0, 30.0);
     sizing(&mut d, bar, Sizing::Fill, Sizing::Fixed);
     let tag = rect(&mut d, inner, 20.0, 40.0);
-    let side = al(&mut d, middle, LayoutMode::Horizontal, (1.0, 1.0), (Sizing::Hug, Sizing::Hug));
+    let side = al(
+        &mut d,
+        middle,
+        LayoutMode::Horizontal,
+        (1.0, 1.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
     layout_mut(&mut d, side).padding = [5.0; 4];
     rect(&mut d, side, 10.0, 10.0);
     layout_page(&mut d, p, &NoMeasure);
@@ -176,13 +260,27 @@ fn three_levels_of_mixed_sizing_settle_in_one_pass() {
 fn hug_ignores_absolute_and_hidden_children() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let outer = al(&mut d, p, LayoutMode::Vertical, (1.0, 1.0), (Sizing::Hug, Sizing::Hug));
-    let f = al(&mut d, outer, LayoutMode::Horizontal, (1.0, 1.0), (Sizing::Hug, Sizing::Hug));
+    let outer = al(
+        &mut d,
+        p,
+        LayoutMode::Vertical,
+        (1.0, 1.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
+    let f = al(
+        &mut d,
+        outer,
+        LayoutMode::Horizontal,
+        (1.0, 1.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
     rect(&mut d, f, 50.0, 20.0);
     let hidden = rect(&mut d, f, 100.0, 100.0);
     d.get_mut(hidden).unwrap().visible = false;
     let b = rect(&mut d, f, 30.0, 10.0);
-    let abs = d.create(f, NodeKind::Rectangle, "Abs", 300.0, 300.0, 40.0, 40.0).unwrap();
+    let abs = d
+        .create(f, NodeKind::Rectangle, "Abs", 300.0, 300.0, 40.0, 40.0)
+        .unwrap();
     d.get_mut(abs).unwrap().child_layout.absolute = true;
     layout_page(&mut d, p, &NoMeasure);
     // No gap for the hidden child either.
@@ -198,7 +296,13 @@ fn space_between_with_one_child_starts_at_the_start() {
     let mut d = Document::new("t");
     let p = page(&d);
     for mode in [LayoutMode::Horizontal, LayoutMode::Vertical] {
-        let f = al(&mut d, p, mode, (300.0, 300.0), (Sizing::Fixed, Sizing::Fixed));
+        let f = al(
+            &mut d,
+            p,
+            mode,
+            (300.0, 300.0),
+            (Sizing::Fixed, Sizing::Fixed),
+        );
         layout_mut(&mut d, f).padding = [5.0; 4];
         layout_mut(&mut d, f).main_align = MainAlign::SpaceBetween;
         let a = rect(&mut d, f, 50.0, 50.0);
@@ -207,7 +311,11 @@ fn space_between_with_one_child_starts_at_the_start() {
         // A second child goes to the far end.
         let b = rect(&mut d, f, 50.0, 50.0);
         layout_frame(&mut d, f, &NoMeasure);
-        let far = if mode == LayoutMode::Horizontal { pos(&d, b).0 } else { pos(&d, b).1 };
+        let far = if mode == LayoutMode::Horizontal {
+            pos(&d, b).0
+        } else {
+            pos(&d, b).1
+        };
         assert_eq!(far, 245.0, "{mode:?}");
     }
 }
@@ -217,7 +325,13 @@ fn wrap_with_fill_children() {
     let mut d = Document::new("t");
     let p = page(&d);
     // Fixed height: fill height has room to fill (a frame hugging its height reads it as fixed).
-    let f = al(&mut d, p, LayoutMode::Horizontal, (200.0, 100.0), (Sizing::Fixed, Sizing::Fixed));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (200.0, 100.0),
+        (Sizing::Fixed, Sizing::Fixed),
+    );
     layout_mut(&mut d, f).wrap = true;
     let a = rect(&mut d, f, 10.0, 20.0);
     let b = rect(&mut d, f, 10.0, 20.0);
@@ -238,7 +352,13 @@ fn wrap_with_fill_children() {
     assert_eq!(pos(&d, e), (60.0, 30.0, 40.0, 30.0));
     assert_eq!(size(&d, f), (200.0, 100.0));
     // A row of nothing but fill-height children keeps their own height.
-    let g = al(&mut d, p, LayoutMode::Horizontal, (100.0, 200.0), (Sizing::Fixed, Sizing::Fixed));
+    let g = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (100.0, 200.0),
+        (Sizing::Fixed, Sizing::Fixed),
+    );
     layout_mut(&mut d, g).wrap = true;
     let tall = rect(&mut d, g, 60.0, 50.0);
     let lone = rect(&mut d, g, 60.0, 25.0);
@@ -256,10 +376,18 @@ fn wrap_with_fill_children() {
 fn padding_and_included_strokes() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let f = al(&mut d, p, LayoutMode::Horizontal, (1.0, 1.0), (Sizing::Hug, Sizing::Hug));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (1.0, 1.0),
+        (Sizing::Hug, Sizing::Hug),
+    );
     {
         let n = d.get_mut(f).unwrap();
-        n.strokes = vec![figcraft_doc::color::Paint::solid(figcraft_doc::color::Color::BLACK)];
+        n.strokes = vec![figcraft_doc::color::Paint::solid(
+            figcraft_doc::color::Color::BLACK,
+        )];
         n.stroke.weight = 5.0;
     }
     layout_mut(&mut d, f).padding = [1.0, 2.0, 3.0, 4.0];
@@ -273,10 +401,18 @@ fn padding_and_included_strokes() {
     assert_eq!(size(&d, f), (66.0, 34.0));
     assert_eq!(pos(&d, a), (9.0, 6.0, 50.0, 20.0));
     // A fixed frame: fill children share the space inside padding and the included stroke.
-    let g = al(&mut d, p, LayoutMode::Horizontal, (100.0, 50.0), (Sizing::Fixed, Sizing::Fixed));
+    let g = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (100.0, 50.0),
+        (Sizing::Fixed, Sizing::Fixed),
+    );
     {
         let n = d.get_mut(g).unwrap();
-        n.strokes = vec![figcraft_doc::color::Paint::solid(figcraft_doc::color::Color::BLACK)];
+        n.strokes = vec![figcraft_doc::color::Paint::solid(
+            figcraft_doc::color::Color::BLACK,
+        )];
         n.stroke.weight = 5.0;
     }
     layout_mut(&mut d, g).padding = [10.0; 4];
@@ -292,7 +428,13 @@ fn grid_hug_tracks_and_wrapping_text_rows() {
     use figcraft_doc::GridTrack;
     let mut d = Document::new("t");
     let p = page(&d);
-    let f = al(&mut d, p, LayoutMode::Grid, (300.0, 1.0), (Sizing::Fixed, Sizing::Hug));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Grid,
+        (300.0, 1.0),
+        (Sizing::Fixed, Sizing::Hug),
+    );
     {
         let l = layout_mut(&mut d, f);
         l.grid_columns = 2;
@@ -320,8 +462,12 @@ fn grid_hug_tracks_and_wrapping_text_rows() {
 fn fill_in_a_plain_frame_behaves_as_fixed() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "Plain", 0.0, 0.0, 200.0, 100.0).unwrap();
-    let r = d.create(f, NodeKind::Rectangle, "R", 10.0, 10.0, 50.0, 20.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "Plain", 0.0, 0.0, 200.0, 100.0)
+        .unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "R", 10.0, 10.0, 50.0, 20.0)
+        .unwrap();
     sizing(&mut d, r, Sizing::Fill, Sizing::Fill);
     layout_page(&mut d, p, &NoMeasure);
     assert_eq!(pos(&d, r), (10.0, 10.0, 50.0, 20.0));
@@ -339,7 +485,13 @@ fn fill_in_a_plain_frame_behaves_as_fixed() {
 fn coherent_sizing_rules() {
     let mut d = Document::new("t");
     let p = page(&d);
-    let f = al(&mut d, p, LayoutMode::Horizontal, (200.0, 50.0), (Sizing::Hug, Sizing::Fixed));
+    let f = al(
+        &mut d,
+        p,
+        LayoutMode::Horizontal,
+        (200.0, 50.0),
+        (Sizing::Hug, Sizing::Fixed),
+    );
     let a = rect(&mut d, f, 10.0, 10.0);
     sizing(&mut d, a, Sizing::Fill, Sizing::Fill);
     let abs = rect(&mut d, f, 10.0, 10.0);

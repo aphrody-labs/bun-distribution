@@ -106,17 +106,17 @@ impl Embedder {
         let engine = match opts.backend {
             Backend::Native => {
                 Engine::Native(Box::new(NativeBert::load(&paths.config, &paths.weights)?))
-            },
+            }
             #[cfg(feature = "candle")]
             Backend::Candle => {
                 Engine::Candle(Box::new(CandleBert::load(&paths.config, &paths.weights)?))
-            },
+            }
             #[cfg(not(feature = "candle"))]
             Backend::Candle => {
                 return Err(Error::InvalidInput(
                     "aphrody-embed was built without the `candle` feature".into(),
                 ));
-            },
+            }
         };
         let (max_positions, hidden) = match &engine {
             Engine::Native(model) => (model.dims.max_tokens, model.dims.hidden),
@@ -156,7 +156,11 @@ impl Embedder {
             engine,
             pool,
             max_seq_len,
-            batch_size: if opts.batch_size == 0 { DEFAULT_BATCH_SIZE } else { opts.batch_size },
+            batch_size: if opts.batch_size == 0 {
+                DEFAULT_BATCH_SIZE
+            } else {
+                opts.batch_size
+            },
             threads,
         })
     }
@@ -222,10 +226,12 @@ impl Embedder {
             .par_iter()
             .map(|idx| match &self.engine {
                 Engine::Native(model) => {
-                    let seqs: Vec<Sequence<'_>> =
-                        idx.iter().map(|&i| Sequence::single(encodings[i].get_ids())).collect();
+                    let seqs: Vec<Sequence<'_>> = idx
+                        .iter()
+                        .map(|&i| Sequence::single(encodings[i].get_ids()))
+                        .collect();
                     model.embed(&seqs, self.spec.pooling, parallelism)
-                },
+                }
                 #[cfg(feature = "candle")]
                 Engine::Candle(model) => model.embed(&encodings, idx, self.spec.pooling),
             })
@@ -261,14 +267,18 @@ impl Embedder {
                 }
             })
             .collect();
-        self.tokenizer.encode_batch_fast(inputs, true).map_err(|e| Error::Tokenizer(e.to_string()))
+        self.tokenizer
+            .encode_batch_fast(inputs, true)
+            .map_err(|e| Error::Tokenizer(e.to_string()))
     }
 }
 
 /// `0` means all available cores.
 pub(crate) fn resolve_threads(threads: usize) -> usize {
     match threads {
-        0 => std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1),
+        0 => std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1),
         n => n,
     }
 }
@@ -322,7 +332,11 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na <= f32::EPSILON || nb <= f32::EPSILON { 0.0 } else { dot / (na * nb) }
+    if na <= f32::EPSILON || nb <= f32::EPSILON {
+        0.0
+    } else {
+        dot / (na * nb)
+    }
 }
 
 #[cfg(test)]

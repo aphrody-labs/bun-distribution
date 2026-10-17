@@ -52,11 +52,16 @@ pub fn parse_backends(s: &str) -> Option<BackendChoice> {
 /// The choice from `LIGHTCRAFT_GPU_BACKEND` (`lightcraft`) or else `WGPU_BACKEND` (`wgpu`): the
 /// first one that parses wins; an unknown value is skipped (with a warning).
 pub fn choose(lightcraft: Option<&str>, wgpu: Option<&str>) -> BackendChoice {
-    for (name, v) in [("LIGHTCRAFT_GPU_BACKEND", lightcraft), ("WGPU_BACKEND", wgpu)] {
+    for (name, v) in [
+        ("LIGHTCRAFT_GPU_BACKEND", lightcraft),
+        ("WGPU_BACKEND", wgpu),
+    ] {
         let Some(v) = v else { continue };
         match parse_backends(v) {
             // WGPU_BACKEND is wgpu's variable: it selects backends, it never turns the GPU off
-            Some(BackendChoice::Off) if name == "WGPU_BACKEND" => log::warn!("gpu: WGPU_BACKEND={v} ignored (use LIGHTCRAFT_GPU_BACKEND=off)"),
+            Some(BackendChoice::Off) if name == "WGPU_BACKEND" => {
+                log::warn!("gpu: WGPU_BACKEND={v} ignored (use LIGHTCRAFT_GPU_BACKEND=off)")
+            }
             Some(c) => return c,
             None => log::warn!("gpu: {name}={v} names no known backend; ignored"),
         }
@@ -109,7 +114,11 @@ fn env_choice() -> BackendChoice {
 
 /// The backends of the compute device (`None`: `LIGHTCRAFT_GPU_BACKEND=off`).
 pub fn compute_backends() -> Option<Backends> {
-    resolve(env_choice(), default_compute_backends(std::env::consts::OS), wgpu::Instance::enabled_backend_features())
+    resolve(
+        env_choice(),
+        default_compute_backends(std::env::consts::OS),
+        wgpu::Instance::enabled_backend_features(),
+    )
 }
 
 /// The backends for the desktop window's renderer (eframe/egui-wgpu). The window always needs
@@ -132,7 +141,9 @@ pub fn window_backends() -> Backends {
 /// a compile error, its own validation pipelines fail, the device is lost and the window never
 /// opens. FXC is always there and compiles everything LightCraft's shaders need.
 pub fn dx12_compiler(env: Option<&str>) -> wgpu::Dx12Compiler {
-    let Some(v) = env else { return wgpu::Dx12Compiler::Fxc };
+    let Some(v) = env else {
+        return wgpu::Dx12Compiler::Fxc;
+    };
     v.parse().unwrap_or_else(|e| {
         log::warn!("gpu: WGPU_DX12_COMPILER={v} ignored: {e}");
         wgpu::Dx12Compiler::Fxc
@@ -163,7 +174,12 @@ pub fn instance_flags(flags: wgpu::InstanceFlags, env: Option<&str>) -> wgpu::In
 
 /// [`instance_flags`] with `WGPU_VALIDATION_INDIRECT_CALL` read from the environment.
 pub fn instance_flags_from_env(flags: wgpu::InstanceFlags) -> wgpu::InstanceFlags {
-    instance_flags(flags, std::env::var("WGPU_VALIDATION_INDIRECT_CALL").ok().as_deref())
+    instance_flags(
+        flags,
+        std::env::var("WGPU_VALIDATION_INDIRECT_CALL")
+            .ok()
+            .as_deref(),
+    )
 }
 
 /// `LIGHTCRAFT_GPU_BACKEND=off`.
@@ -197,7 +213,10 @@ fn arm(marker: &std::path::Path, active: &Mutex<u32>, what: &str) {
         if let Some(d) = marker.parent() {
             let _ = std::fs::create_dir_all(d);
         }
-        let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
         let _ = std::fs::write(marker, marker_text(what, secs));
     }
     *n += 1;
@@ -236,7 +255,10 @@ pub(crate) fn with_marker<T>(what: &str, f: impl FnOnce() -> T) -> T {
 
 /// Run device creation (and the kernel build that follows it) `f` under the init marker.
 pub(crate) fn with_init_marker<T>(backends: Backends, f: impl FnOnce() -> T) -> T {
-    with_marker(&format!("device and kernel creation (backends {backends:?})"), f)
+    with_marker(
+        &format!("device and kernel creation (backends {backends:?})"),
+        f,
+    )
 }
 
 /// If the init marker `path` is present — the last process died while creating the GPU device —
@@ -286,7 +308,17 @@ impl WindowRenderer {
             return Some(WindowRenderer::Glow);
         }
         match parse_backends(&s)? {
-            BackendChoice::Use(b) if [Backends::DX12, Backends::VULKAN, Backends::METAL, Backends::GL].contains(&b) => Some(WindowRenderer::Wgpu(b)),
+            BackendChoice::Use(b)
+                if [
+                    Backends::DX12,
+                    Backends::VULKAN,
+                    Backends::METAL,
+                    Backends::GL,
+                ]
+                .contains(&b) =>
+            {
+                Some(WindowRenderer::Wgpu(b))
+            }
             _ => None,
         }
     }
@@ -295,7 +327,8 @@ impl WindowRenderer {
 /// The renderer the environment forces for the window: `LIGHTCRAFT_GPU_BACKEND` (`app`), else
 /// `WGPU_BACKEND` (`wgpu`), when it names exactly one renderer.
 pub fn forced_window_renderer(app: Option<&str>, wgpu: Option<&str>) -> Option<WindowRenderer> {
-    app.and_then(WindowRenderer::parse).or_else(|| wgpu.and_then(WindowRenderer::parse))
+    app.and_then(WindowRenderer::parse)
+        .or_else(|| wgpu.and_then(WindowRenderer::parse))
 }
 
 /// The order in which the window's renderers are tried on `os`: the forced one (environment)
@@ -317,13 +350,20 @@ pub fn window_renderer_order(
         "macos" | "ios" => vec![Backends::METAL],
         _ => vec![Backends::VULKAN, Backends::GL],
     };
-    let chain = platform.into_iter().map(WindowRenderer::Wgpu).chain([WindowRenderer::Glow]);
+    let chain = platform
+        .into_iter()
+        .map(WindowRenderer::Wgpu)
+        .chain([WindowRenderer::Glow]);
     let usable = |r: &WindowRenderer| match r {
         WindowRenderer::Glow => glow,
         WindowRenderer::Wgpu(b) => !b.is_empty() && compiled.contains(*b),
     };
     let not_failed = |r: &WindowRenderer| Some(*r) != failed;
-    let candidates = forced.into_iter().chain(remembered.filter(not_failed)).chain(chain.filter(not_failed)).chain(failed);
+    let candidates = forced
+        .into_iter()
+        .chain(remembered.filter(not_failed))
+        .chain(chain.filter(not_failed))
+        .chain(failed);
     let mut out: Vec<WindowRenderer> = Vec::new();
     for r in candidates {
         if usable(&r) && !out.contains(&r) {
@@ -347,7 +387,10 @@ mod tests {
         let base = F::VALIDATION_INDIRECT_CALL | F::DEBUG;
         assert_eq!(instance_flags(base, None), F::DEBUG);
         assert_eq!(instance_flags(base, Some("0")), F::DEBUG);
-        assert_eq!(instance_flags(F::empty(), Some("1")), F::VALIDATION_INDIRECT_CALL);
+        assert_eq!(
+            instance_flags(F::empty(), Some("1")),
+            F::VALIDATION_INDIRECT_CALL
+        );
         assert_eq!(instance_flags(F::empty(), None), F::empty());
     }
     use super::*;
@@ -357,11 +400,26 @@ mod tests {
 
     #[test]
     fn parses_backend_names() {
-        assert_eq!(parse_backends("dx12"), Some(BackendChoice::Use(Backends::DX12)));
-        assert_eq!(parse_backends(" D3D12 "), Some(BackendChoice::Use(Backends::DX12)));
-        assert_eq!(parse_backends("vulkan"), Some(BackendChoice::Use(Backends::VULKAN)));
-        assert_eq!(parse_backends("vk,gl"), Some(BackendChoice::Use(Backends::VULKAN | Backends::GL)));
-        assert_eq!(parse_backends("metal"), Some(BackendChoice::Use(Backends::METAL)));
+        assert_eq!(
+            parse_backends("dx12"),
+            Some(BackendChoice::Use(Backends::DX12))
+        );
+        assert_eq!(
+            parse_backends(" D3D12 "),
+            Some(BackendChoice::Use(Backends::DX12))
+        );
+        assert_eq!(
+            parse_backends("vulkan"),
+            Some(BackendChoice::Use(Backends::VULKAN))
+        );
+        assert_eq!(
+            parse_backends("vk,gl"),
+            Some(BackendChoice::Use(Backends::VULKAN | Backends::GL))
+        );
+        assert_eq!(
+            parse_backends("metal"),
+            Some(BackendChoice::Use(Backends::METAL))
+        );
         assert_eq!(parse_backends("auto"), Some(BackendChoice::Auto));
         for off in ["off", "OFF", "none", "cpu", "0"] {
             assert_eq!(parse_backends(off), Some(BackendChoice::Off), "{off}");
@@ -373,11 +431,20 @@ mod tests {
     #[test]
     fn lightcraft_variable_wins_over_wgpu_backend() {
         assert_eq!(choose(None, None), BackendChoice::Auto);
-        assert_eq!(choose(None, Some("dx12")), BackendChoice::Use(Backends::DX12));
-        assert_eq!(choose(Some("vulkan"), Some("dx12")), BackendChoice::Use(Backends::VULKAN));
+        assert_eq!(
+            choose(None, Some("dx12")),
+            BackendChoice::Use(Backends::DX12)
+        );
+        assert_eq!(
+            choose(Some("vulkan"), Some("dx12")),
+            BackendChoice::Use(Backends::VULKAN)
+        );
         assert_eq!(choose(Some("off"), Some("dx12")), BackendChoice::Off);
         // unknown LightCraft value: WGPU_BACKEND still applies
-        assert_eq!(choose(Some("bogus"), Some("gl")), BackendChoice::Use(Backends::GL));
+        assert_eq!(
+            choose(Some("bogus"), Some("gl")),
+            BackendChoice::Use(Backends::GL)
+        );
         // WGPU_BACKEND never turns the GPU off
         assert_eq!(choose(None, Some("off")), BackendChoice::Auto);
     }
@@ -398,12 +465,27 @@ mod tests {
     #[test]
     fn dx12_compiles_with_fxc_unless_asked() {
         assert!(matches!(dx12_compiler(None), wgpu::Dx12Compiler::Fxc));
-        assert!(matches!(dx12_compiler(Some("bogus")), wgpu::Dx12Compiler::Fxc));
-        assert!(matches!(dx12_compiler(Some("FXC")), wgpu::Dx12Compiler::Fxc));
-        assert!(matches!(dx12_compiler(Some("dxc")), wgpu::Dx12Compiler::DynamicDxc { .. }));
-        assert!(matches!(dx12_compiler(Some("auto")), wgpu::Dx12Compiler::Auto));
+        assert!(matches!(
+            dx12_compiler(Some("bogus")),
+            wgpu::Dx12Compiler::Fxc
+        ));
+        assert!(matches!(
+            dx12_compiler(Some("FXC")),
+            wgpu::Dx12Compiler::Fxc
+        ));
+        assert!(matches!(
+            dx12_compiler(Some("dxc")),
+            wgpu::Dx12Compiler::DynamicDxc { .. }
+        ));
+        assert!(matches!(
+            dx12_compiler(Some("auto")),
+            wgpu::Dx12Compiler::Auto
+        ));
         if std::env::var_os("WGPU_DX12_COMPILER").is_none() {
-            assert!(matches!(backend_options().dx12.shader_compiler, wgpu::Dx12Compiler::Fxc));
+            assert!(matches!(
+                backend_options().dx12.shader_compiler,
+                wgpu::Dx12Compiler::Fxc
+            ));
         }
     }
 
@@ -413,10 +495,23 @@ mod tests {
         let def = Backends::DX12;
         assert_eq!(resolve(BackendChoice::Auto, def, compiled), Some(def));
         assert_eq!(resolve(BackendChoice::Off, def, compiled), None);
-        assert_eq!(resolve(BackendChoice::Use(Backends::VULKAN), def, compiled), Some(Backends::VULKAN));
-        assert_eq!(resolve(BackendChoice::Use(Backends::VULKAN | Backends::GL), def, compiled), Some(Backends::VULKAN));
+        assert_eq!(
+            resolve(BackendChoice::Use(Backends::VULKAN), def, compiled),
+            Some(Backends::VULKAN)
+        );
+        assert_eq!(
+            resolve(
+                BackendChoice::Use(Backends::VULKAN | Backends::GL),
+                def,
+                compiled
+            ),
+            Some(Backends::VULKAN)
+        );
         // GL isn't compiled in: the default, not an empty set (no adapter at all)
-        assert_eq!(resolve(BackendChoice::Use(Backends::GL), def, compiled), Some(def));
+        assert_eq!(
+            resolve(BackendChoice::Use(Backends::GL), def, compiled),
+            Some(def)
+        );
     }
 
     #[test]
@@ -433,7 +528,10 @@ mod tests {
         // a marker left behind by a crashed process is reported once; reading it leaves it in place
         std::fs::write(&m, "GPU device and kernel creation started (backends DX12)").unwrap();
         assert!(read_init_marker(&m).unwrap().contains("DX12"));
-        assert!(m.exists(), "read_init_marker leaves the marker for the next launch");
+        assert!(
+            m.exists(),
+            "read_init_marker leaves the marker for the next launch"
+        );
         assert!(take_init_marker(&m).unwrap().contains("DX12"));
         assert_eq!(take_init_marker(&m), None);
         assert_eq!(read_init_marker(&m), None);
@@ -445,23 +543,71 @@ mod tests {
     fn window_renderer_fallback_order() {
         use WindowRenderer::{Glow, Wgpu};
         let all = Backends::DX12 | Backends::VULKAN | Backends::GL | Backends::METAL;
-        let (dx, vk, gl) = (Wgpu(Backends::DX12), Wgpu(Backends::VULKAN), Wgpu(Backends::GL));
-        assert_eq!(window_renderer_order(None, None, None, "windows", all, true), [dx, vk, gl, Glow]);
-        assert_eq!(window_renderer_order(None, None, None, "windows", all, false), [dx, vk, gl]);
+        let (dx, vk, gl) = (
+            Wgpu(Backends::DX12),
+            Wgpu(Backends::VULKAN),
+            Wgpu(Backends::GL),
+        );
+        assert_eq!(
+            window_renderer_order(None, None, None, "windows", all, true),
+            [dx, vk, gl, Glow]
+        );
+        assert_eq!(
+            window_renderer_order(None, None, None, "windows", all, false),
+            [dx, vk, gl]
+        );
         // a build without GL
-        assert_eq!(window_renderer_order(None, None, None, "windows", Backends::DX12 | Backends::VULKAN, true), [dx, vk, Glow]);
+        assert_eq!(
+            window_renderer_order(
+                None,
+                None,
+                None,
+                "windows",
+                Backends::DX12 | Backends::VULKAN,
+                true
+            ),
+            [dx, vk, Glow]
+        );
         // remembered from the last good start goes first
-        assert_eq!(window_renderer_order(None, Some(vk), None, "windows", all, true), [vk, dx, gl, Glow]);
+        assert_eq!(
+            window_renderer_order(None, Some(vk), None, "windows", all, true),
+            [vk, dx, gl, Glow]
+        );
         // the environment wins over the remembered one
-        assert_eq!(window_renderer_order(Some(gl), Some(vk), None, "windows", all, true), [gl, vk, dx, Glow]);
-        assert_eq!(window_renderer_order(Some(Glow), None, None, "windows", all, true)[0], Glow);
+        assert_eq!(
+            window_renderer_order(Some(gl), Some(vk), None, "windows", all, true),
+            [gl, vk, dx, Glow]
+        );
+        assert_eq!(
+            window_renderer_order(Some(Glow), None, None, "windows", all, true)[0],
+            Glow
+        );
         // the last start died in DX12: tried last only (also when it was remembered)
-        assert_eq!(window_renderer_order(None, Some(dx), Some(dx), "windows", all, true), [vk, gl, Glow, dx]);
+        assert_eq!(
+            window_renderer_order(None, Some(dx), Some(dx), "windows", all, true),
+            [vk, gl, Glow, dx]
+        );
         // a forced backend that is not in the build is skipped
-        assert_eq!(window_renderer_order(Some(Wgpu(Backends::METAL)), None, None, "windows", Backends::DX12, false), [dx]);
+        assert_eq!(
+            window_renderer_order(
+                Some(Wgpu(Backends::METAL)),
+                None,
+                None,
+                "windows",
+                Backends::DX12,
+                false
+            ),
+            [dx]
+        );
         // never empty
-        assert!(!window_renderer_order(None, None, None, "windows", Backends::empty(), false).is_empty());
-        assert_eq!(window_renderer_order(None, None, None, "macos", all, true), [Wgpu(Backends::METAL), Glow]);
+        assert!(
+            !window_renderer_order(None, None, None, "windows", Backends::empty(), false)
+                .is_empty()
+        );
+        assert_eq!(
+            window_renderer_order(None, None, None, "macos", all, true),
+            [Wgpu(Backends::METAL), Glow]
+        );
     }
 
     #[test]
@@ -469,12 +615,21 @@ mod tests {
         for n in ["dx12", "vulkan", "metal", "gl", "glow"] {
             assert_eq!(WindowRenderer::parse(n).map(WindowRenderer::name), Some(n));
         }
-        assert_eq!(WindowRenderer::parse(" DX12 "), Some(WindowRenderer::Wgpu(Backends::DX12)));
+        assert_eq!(
+            WindowRenderer::parse(" DX12 "),
+            Some(WindowRenderer::Wgpu(Backends::DX12))
+        );
         for n in ["auto", "off", "vulkan,gl", "", "bogus"] {
             assert_eq!(WindowRenderer::parse(n), None, "{n}");
         }
-        assert_eq!(forced_window_renderer(Some("glow"), Some("dx12")), Some(WindowRenderer::Glow));
-        assert_eq!(forced_window_renderer(Some("auto"), Some("vulkan")), Some(WindowRenderer::Wgpu(Backends::VULKAN)));
+        assert_eq!(
+            forced_window_renderer(Some("glow"), Some("dx12")),
+            Some(WindowRenderer::Glow)
+        );
+        assert_eq!(
+            forced_window_renderer(Some("auto"), Some("vulkan")),
+            Some(WindowRenderer::Wgpu(Backends::VULKAN))
+        );
         assert_eq!(forced_window_renderer(None, None), None);
         // `glow` only concerns the window: compute keeps its default, without a warning
         assert_eq!(parse_backends("glow"), Some(BackendChoice::Auto));
@@ -510,10 +665,14 @@ mod tests {
         let m = dir.join("gpu-init.marker");
         let _ = std::fs::remove_dir_all(&dir);
         set_init_marker(Some(m.clone()));
-        let r = std::panic::catch_unwind(|| with_marker("kernel compilation", || panic!("compile")));
+        let r =
+            std::panic::catch_unwind(|| with_marker("kernel compilation", || panic!("compile")));
         set_init_marker(None);
         assert!(r.is_err());
-        assert!(!m.exists(), "the process survived, so nothing is left to report");
+        assert!(
+            !m.exists(),
+            "the process survived, so nothing is left to report"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -61,15 +61,30 @@ pub const INTRA_LAYER_ORDER: &[&[&str]] = &[&["geom", "color"], &["fonts", "rend
 
 fn intra_layer_allowed(from: &str, to: &str) -> bool {
     let (from, to) = (short_name(from), short_name(to));
-    INTRA_LAYER_ORDER.iter().any(|chain| match (chain.iter().position(|n| *n == from), chain.iter().position(|n| *n == to)) {
-        (Some(f), Some(t)) => t < f,
-        _ => false,
+    INTRA_LAYER_ORDER.iter().any(|chain| {
+        match (
+            chain.iter().position(|n| *n == from),
+            chain.iter().position(|n| *n == to),
+        ) {
+            (Some(f), Some(t)) => t < f,
+            _ => false,
+        }
     })
 }
 
 /// External crates that constitute a UI toolkit / windowing dependency.
 /// Entries ending in `*` are prefixes.
-pub const UI_CRATES: &[&str] = &["craft-ui", "egui", "eframe", "egui-wgpu", "wgpu", "winit", "egui_kittest", "rfd", "bevy*"];
+pub const UI_CRATES: &[&str] = &[
+    "craft-ui",
+    "egui",
+    "eframe",
+    "egui-wgpu",
+    "wgpu",
+    "winit",
+    "egui_kittest",
+    "rfd",
+    "bevy*",
+];
 
 /// First layer allowed to use UI crates.
 pub const UI_MIN_LAYER: u8 = 5;
@@ -113,30 +128,65 @@ pub struct Crate {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Violation {
-    Unregistered { krate: String },
-    Upward { krate: String, dep: String, from: u8, to: u8, kind: DepKind },
-    StandaloneHasWorkspaceDep { krate: String, dep: String },
-    TestkitAsNormalDep { krate: String },
-    UiBelowL6 { krate: String, dep: String, layer: u8 },
+    Unregistered {
+        krate: String,
+    },
+    Upward {
+        krate: String,
+        dep: String,
+        from: u8,
+        to: u8,
+        kind: DepKind,
+    },
+    StandaloneHasWorkspaceDep {
+        krate: String,
+        dep: String,
+    },
+    TestkitAsNormalDep {
+        krate: String,
+    },
+    UiBelowL6 {
+        krate: String,
+        dep: String,
+        layer: u8,
+    },
 }
 
 impl std::fmt::Display for Violation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Violation::Unregistered { krate } => {
-                write!(f, "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (see plan/architecture.md §3)")
+                write!(
+                    f,
+                    "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (see plan/architecture.md §3)"
+                )
             }
-            Violation::Upward { krate, dep, from, to, kind } => {
-                write!(f, "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on strictly lower layers")
+            Violation::Upward {
+                krate,
+                dep,
+                from,
+                to,
+                kind,
+            } => {
+                write!(
+                    f,
+                    "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on strictly lower layers"
+                )
             }
             Violation::StandaloneHasWorkspaceDep { krate, dep } => {
-                write!(f, "{krate}: standalone crate must not depend on workspace crate {dep}")
+                write!(
+                    f,
+                    "{krate}: standalone crate must not depend on workspace crate {dep}"
+                )
             }
             Violation::TestkitAsNormalDep { krate } => {
                 write!(f, "{krate}: cadcraft-testkit may only be a dev-dependency")
             }
             Violation::UiBelowL6 { krate, dep, layer } => {
-                write!(f, "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L6+")
+                write!(
+                    f,
+                    "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L6+"
+                )
             }
         }
     }
@@ -147,7 +197,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
     let mut out = Vec::new();
     for c in crates {
         let Some(class) = classify(&c.name) else {
-            out.push(Violation::Unregistered { krate: c.name.clone() });
+            out.push(Violation::Unregistered {
+                krate: c.name.clone(),
+            });
             continue;
         };
         if class == Class::Exempt {
@@ -161,7 +213,10 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
             }
             if d.workspace {
                 if class == Class::Standalone {
-                    out.push(Violation::StandaloneHasWorkspaceDep { krate: c.name.clone(), dep: d.name.clone() });
+                    out.push(Violation::StandaloneHasWorkspaceDep {
+                        krate: c.name.clone(),
+                        dep: d.name.clone(),
+                    });
                     continue;
                 }
                 match classify(&d.name) {
@@ -169,7 +224,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
                     None => {}
                     Some(Class::Testkit) => {
                         if d.kind != DepKind::Dev {
-                            out.push(Violation::TestkitAsNormalDep { krate: c.name.clone() });
+                            out.push(Violation::TestkitAsNormalDep {
+                                krate: c.name.clone(),
+                            });
                         }
                     }
                     Some(dc) => {
@@ -186,7 +243,11 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
                     }
                 }
             } else if layer < UI_MIN_LAYER && is_ui_crate(&d.name) {
-                out.push(Violation::UiBelowL6 { krate: c.name.clone(), dep: d.name.clone(), layer });
+                out.push(Violation::UiBelowL6 {
+                    krate: c.name.clone(),
+                    dep: d.name.clone(),
+                    layer,
+                });
             }
         }
     }
@@ -197,7 +258,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
 
 /// Build the model from `cargo metadata --format-version 1 --no-deps`.
 pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
-    let pkgs = meta["packages"].as_array().ok_or("metadata: no packages array")?;
+    let pkgs = meta["packages"]
+        .as_array()
+        .ok_or("metadata: no packages array")?;
     let members: Vec<&str> = pkgs.iter().filter_map(|p| p["name"].as_str()).collect();
     let mut out = Vec::new();
     for p in pkgs {
@@ -211,7 +274,11 @@ pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
                 _ => DepKind::Normal,
             };
             let workspace = members.contains(&dname.as_str()) || d["path"].is_string();
-            deps.push(Dep { name: dname, kind, workspace });
+            deps.push(Dep {
+                name: dname,
+                kind,
+                workspace,
+            });
         }
         out.push(Crate { name, deps });
     }
@@ -234,7 +301,17 @@ mod tests {
     use super::*;
 
     fn c(name: &str, deps: &[(&str, DepKind, bool)]) -> Crate {
-        Crate { name: name.into(), deps: deps.iter().map(|(n, k, w)| Dep { name: (*n).into(), kind: *k, workspace: *w }).collect() }
+        Crate {
+            name: name.into(),
+            deps: deps
+                .iter()
+                .map(|(n, k, w)| Dep {
+                    name: (*n).into(),
+                    kind: *k,
+                    workspace: *w,
+                })
+                .collect(),
+        }
     }
     use DepKind::*;
 
@@ -243,8 +320,17 @@ mod tests {
         let g = [
             c("cadcraft-geom", &[("kurbo", Normal, false)]),
             c("cadcraft-doc", &[("cadcraft-geom", Normal, true)]),
-            c("cadcraft-engine", &[("cadcraft-doc", Normal, true), ("cadcraft-testkit", Dev, true)]),
-            c("cadcraft-ui-egui", &[("cadcraft-engine", Normal, true), ("egui", Normal, false)]),
+            c(
+                "cadcraft-engine",
+                &[
+                    ("cadcraft-doc", Normal, true),
+                    ("cadcraft-testkit", Dev, true),
+                ],
+            ),
+            c(
+                "cadcraft-ui-egui",
+                &[("cadcraft-engine", Normal, true), ("egui", Normal, false)],
+            ),
             c("cadcraft-cli", &[("cadcraft-ui-egui", Normal, true)]),
         ];
         assert!(check(&g).is_empty(), "{:?}", check(&g));
@@ -282,9 +368,21 @@ mod tests {
 
     #[test]
     fn ui_crates_below_l6_flagged() {
-        for dep in ["craft-ui", "egui", "eframe", "winit", "egui_kittest", "rfd", "bevy_ecs", "bevy"] {
+        for dep in [
+            "craft-ui",
+            "egui",
+            "eframe",
+            "winit",
+            "egui_kittest",
+            "rfd",
+            "bevy_ecs",
+            "bevy",
+        ] {
             let v = check(&[c("cadcraft-engine", &[(dep, Normal, false)])]);
-            assert!(matches!(v[..], [Violation::UiBelowL6 { layer: 4, .. }]), "{dep}");
+            assert!(
+                matches!(v[..], [Violation::UiBelowL6 { layer: 4, .. }]),
+                "{dep}"
+            );
         }
         assert!(check(&[c("cadcraft-engine", &[("egui_extras_not", Normal, false)])]).is_empty());
         assert!(check(&[c("cadcraft-mcp", &[("winit", Normal, false)])]).is_empty());
@@ -293,7 +391,9 @@ mod tests {
     #[test]
     fn unregistered_crate_is_error() {
         let v = check(&[c("cadcraft-mystery", &[])]);
-        assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "cadcraft-mystery"));
+        assert!(
+            matches!(&v[..], [Violation::Unregistered { krate }] if krate == "cadcraft-mystery")
+        );
         assert!(v[0].to_string().contains("register"));
     }
 
@@ -308,7 +408,13 @@ mod tests {
     #[test]
     fn apps_and_xtask_exempt() {
         for app in ["cadcraft", "cadcraft-cli", "cadcraft-web", "xtask"] {
-            assert!(check(&[c(app, &[("egui", Normal, false), ("cadcraft-ui-egui", Normal, true)])]).is_empty());
+            assert!(
+                check(&[c(
+                    app,
+                    &[("egui", Normal, false), ("cadcraft-ui-egui", Normal, true)]
+                )])
+                .is_empty()
+            );
         }
     }
 

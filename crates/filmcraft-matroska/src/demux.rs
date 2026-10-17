@@ -30,7 +30,10 @@ pub struct OpenOptions {
 
 impl Default for OpenOptions {
     fn default() -> Self {
-        Self { index: true, verify_crc: false }
+        Self {
+            index: true,
+            verify_crc: false,
+        }
     }
 }
 
@@ -191,7 +194,10 @@ impl<'a, S: ByteSource + ?Sized> Io<'a, S> {
     /// Exactly `n` bytes at `pos`.
     fn read_vec(&mut self, pos: u64, n: u64) -> Result<Vec<u8>> {
         if pos.checked_add(n).is_none_or(|e| e > self.len) {
-            return Err(Error::Io(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "read past end of file")));
+            return Err(Error::Io(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "read past end of file",
+            )));
         }
         if n as usize <= WIN / 2 {
             return Ok(self.peek(pos, n as usize)?.to_vec());
@@ -207,13 +213,22 @@ impl<'a, S: ByteSource + ?Sized> Io<'a, S> {
             return Ok(None);
         }
         let b = self.peek(pos, 12)?;
-        let Some((id, il)) = read_id(b) else { return Ok(None) };
-        let Some((size, sl)) = read_size(&b[il..]) else { return Ok(None) };
+        let Some((id, il)) = read_id(b) else {
+            return Ok(None);
+        };
+        let Some((size, sl)) = read_size(&b[il..]) else {
+            return Ok(None);
+        };
         let hlen = il + sl;
         if pos + hlen as u64 > limit {
             return Ok(None);
         }
-        Ok(Some(Hdr { id, pos, size, hlen }))
+        Ok(Some(Hdr {
+            id,
+            pos,
+            size,
+            hlen,
+        }))
     }
 
     /// Scan forward from `from` for a plausible level-1 element (Cluster preferred), up to `limit`.
@@ -243,7 +258,9 @@ impl<'a, S: ByteSource + ?Sized> Io<'a, S> {
     }
 
     fn plausible(&mut self, p: u64, id: u32, limit: u64) -> Result<bool> {
-        let Some(h) = self.header(p, limit)? else { return Ok(false) };
+        let Some(h) = self.header(p, limit)? else {
+            return Ok(false);
+        };
         if h.id != id || h.overruns(limit) {
             return Ok(false);
         }
@@ -254,7 +271,9 @@ impl<'a, S: ByteSource + ?Sized> Io<'a, S> {
         let mut cp = h.data_start();
         let end = h.end(limit);
         for _ in 0..3 {
-            let Some(c) = self.header(cp, end)? else { return Ok(false) };
+            let Some(c) = self.header(cp, end)? else {
+                return Ok(false);
+            };
             if c.overruns(end) {
                 return Ok(false);
             }
@@ -274,7 +293,9 @@ impl<'a, S: ByteSource + ?Sized> Io<'a, S> {
     fn unknown_end(&mut self, data_start: u64, limit: u64) -> Result<u64> {
         let mut pos = data_start;
         while pos < limit {
-            let Some(h) = self.header(pos, limit)? else { return Ok(pos) };
+            let Some(h) = self.header(pos, limit)? else {
+                return Ok(pos);
+            };
             if is_top_level(h.id) || h.size == Size::Unknown {
                 return Ok(pos);
             }
@@ -337,13 +358,17 @@ fn parse_block<S: ByteSource + ?Sized>(
     lookup: &dyn Fn(u64) -> Option<usize>,
 ) -> Result<Option<(usize, i16, u8, Vec<(u64, u32)>)>> {
     let head = io.peek(data_start, 16.min(len as usize))?;
-    let Some((tn, tl, _)) = ebml::read_vint(head) else { return Ok(None) };
+    let Some((tn, tl, _)) = ebml::read_vint(head) else {
+        return Ok(None);
+    };
     if head.len() < tl + 3 {
         return Ok(None);
     }
     let rel = i16::from_be_bytes([head[tl], head[tl + 1]]);
     let flags = head[tl + 2];
-    let Some(track) = lookup(tn) else { return Ok(None) };
+    let Some(track) = lookup(tn) else {
+        return Ok(None);
+    };
     let hdr = (tl + 3) as u64;
     let lacing = Lacing::from_flags(flags);
     let frames = if lacing == Lacing::None {
@@ -351,7 +376,10 @@ fn parse_block<S: ByteSource + ?Sized>(
     } else {
         let body = io.read_vec(data_start + hdr, len - hdr)?;
         match parse_lacing(lacing, &body) {
-            Ok(f) => f.into_iter().map(|(o, l)| (data_start + hdr + o as u64, l as u32)).collect(),
+            Ok(f) => f
+                .into_iter()
+                .map(|(o, l)| (data_start + hdr + o as u64, l as u32))
+                .collect(),
             Err(_) => return Ok(None),
         }
     };
@@ -360,10 +388,16 @@ fn parse_block<S: ByteSource + ?Sized>(
 
 /// The `BlockAdditional` with `BlockAddID` 1 (the default ID) in a `BlockAdditions` element:
 /// (offset, size) of its data. Other IDs, empty additions and damaged children are skipped.
-fn block_addition<S: ByteSource + ?Sized>(io: &mut Io<'_, S>, start: u64, end: u64) -> Result<Option<(u64, u32)>> {
+fn block_addition<S: ByteSource + ?Sized>(
+    io: &mut Io<'_, S>,
+    start: u64,
+    end: u64,
+) -> Result<Option<(u64, u32)>> {
     let mut pos = start;
     while pos < end {
-        let Some(more) = io.header(pos, end)? else { break };
+        let Some(more) = io.header(pos, end)? else {
+            break;
+        };
         let me = more.end(end);
         if more.id == BLOCK_MORE {
             let (mut id, mut data) = (1u64, None);
@@ -374,7 +408,12 @@ fn block_addition<S: ByteSource + ?Sized>(io: &mut Io<'_, S>, start: u64, end: u
                 let len = ce.saturating_sub(c.data_start());
                 match c.id {
                     BLOCK_ADD_ID => id = ebml::uint(io.peek(c.data_start(), len.min(8) as usize)?),
-                    BLOCK_ADDITIONAL => data = u32::try_from(len).ok().filter(|&n| n > 0).map(|n| (c.data_start(), n)),
+                    BLOCK_ADDITIONAL => {
+                        data = u32::try_from(len)
+                            .ok()
+                            .filter(|&n| n > 0)
+                            .map(|n| (c.data_start(), n))
+                    }
                     _ => {}
                 }
                 p = ce;
@@ -399,7 +438,9 @@ fn parse_block_elem<S: ByteSource + ?Sized>(
     let ds = h.data_start();
     match h.id {
         SIMPLE_BLOCK => {
-            let Some((track, rel, flags, frames)) = parse_block(io, ds, end - ds, lookup)? else { return Ok(None) };
+            let Some((track, rel, flags, frames)) = parse_block(io, ds, end - ds, lookup)? else {
+                return Ok(None);
+            };
             Ok(Some(BlockRef {
                 track,
                 block_offset: h.pos,
@@ -423,14 +464,24 @@ fn parse_block_elem<S: ByteSource + ?Sized>(
                 match c.id {
                     BLOCK => block = parse_block(io, c.data_start(), ce - c.data_start(), lookup)?,
                     BLOCK_ADDITIONS => addition = block_addition(io, c.data_start(), ce)?,
-                    BLOCK_DURATION => dur = Some(ebml::uint(io.peek(c.data_start(), (ce - c.data_start()) as usize)?)),
+                    BLOCK_DURATION => {
+                        dur = Some(ebml::uint(
+                            io.peek(c.data_start(), (ce - c.data_start()) as usize)?,
+                        ))
+                    }
                     REFERENCE_BLOCK => has_ref = true,
-                    DISCARD_PADDING => pad = Some(ebml::int(io.peek(c.data_start(), (ce - c.data_start()) as usize)?)),
+                    DISCARD_PADDING => {
+                        pad = Some(ebml::int(
+                            io.peek(c.data_start(), (ce - c.data_start()) as usize)?,
+                        ))
+                    }
                     _ => {}
                 }
                 pos = ce;
             }
-            let Some((track, rel, flags, frames)) = block else { return Ok(None) };
+            let Some((track, rel, flags, frames)) = block else {
+                return Ok(None);
+            };
             // with lacing, an addition belongs to the block, not to one of its frames
             let addition = addition.filter(|_| frames.len() == 1);
             Ok(Some(BlockRef {
@@ -461,37 +512,52 @@ fn expand(b: &BlockRef, t: &Track, scale: u64, skip: u16, out: &mut impl Extend<
     };
     let scale_i = scale as i128;
     // round half away from zero
-    let to_ticks = |ns: i128| -> i64 { (if ns >= 0 { (ns + scale_i / 2) / scale_i } else { (ns - scale_i / 2) / scale_i }) as i64 };
+    let to_ticks = |ns: i128| -> i64 {
+        (if ns >= 0 {
+            (ns + scale_i / 2) / scale_i
+        } else {
+            (ns - scale_i / 2) / scale_i
+        }) as i64
+    };
     // CodecDelay is subtracted from every timestamp (RFC 9559 §5.1.4.1.25); in ticks it is rounded
     // once, so tick timestamps stay on the block grid.
     let delay_ns = t.codec_delay_ns as i128;
     let delay_ticks = to_ticks(delay_ns);
     let base_ns = b.ts as i128 * scale_i;
-    out.extend(b.frames.iter().enumerate().skip(skip as usize).map(|(i, &(offset, size))| {
-        let (start, end) = match block_ns {
-            Some(total) => ((total * i as u128 / n as u128) as i128, Some((total * (i as u128 + 1) / n as u128) as i128)),
-            None => (0, None),
-        };
-        let pts_ns = base_ns + start - delay_ns;
-        let pts = to_ticks(base_ns + start) - delay_ticks;
-        let duration = end.map_or(0, |e| (to_ticks(e) - to_ticks(start)).max(0) as u64);
-        FrameRef {
-            track: b.track,
-            offset,
-            size,
-            pts,
-            pts_ns: pts_ns as i64,
-            duration,
-            duration_ns: end.map_or(0, |e| (e - start).max(0) as u64),
-            keyframe: b.keyframe,
-            discardable: b.discardable,
-            invisible: b.invisible,
-            discard_padding: b.discard_padding,
-            block_offset: b.block_offset,
-            lace: i as u16,
-            addition: b.addition,
-        }
-    }));
+    out.extend(
+        b.frames
+            .iter()
+            .enumerate()
+            .skip(skip as usize)
+            .map(|(i, &(offset, size))| {
+                let (start, end) = match block_ns {
+                    Some(total) => (
+                        (total * i as u128 / n as u128) as i128,
+                        Some((total * (i as u128 + 1) / n as u128) as i128),
+                    ),
+                    None => (0, None),
+                };
+                let pts_ns = base_ns + start - delay_ns;
+                let pts = to_ticks(base_ns + start) - delay_ticks;
+                let duration = end.map_or(0, |e| (to_ticks(e) - to_ticks(start)).max(0) as u64);
+                FrameRef {
+                    track: b.track,
+                    offset,
+                    size,
+                    pts,
+                    pts_ns: pts_ns as i64,
+                    duration,
+                    duration_ns: end.map_or(0, |e| (e - start).max(0) as u64),
+                    keyframe: b.keyframe,
+                    discardable: b.discardable,
+                    invisible: b.invisible,
+                    discard_padding: b.discard_padding,
+                    block_offset: b.block_offset,
+                    lace: i as u16,
+                    addition: b.addition,
+                }
+            }),
+    );
 }
 
 /// Scan a whole cluster (headers only), returning its info and blocks.
@@ -517,22 +583,33 @@ fn scan_cluster<S: ByteSource + ?Sized>(
             break lim;
         }
         let Some(c) = io.header(pos, lim)? else {
-            warnings.push(format!("damaged cluster at {}: undecodable element at {pos}", h.pos));
+            warnings.push(format!(
+                "damaged cluster at {}: undecodable element at {pos}",
+                h.pos
+            ));
             break io.resync(pos + 1, limit)?.unwrap_or(limit);
         };
         if known_end.is_none() && is_top_level(c.id) {
             break pos;
         }
         if c.size == Size::Unknown || c.overruns(lim) {
-            warnings.push(format!("damaged cluster at {}: element 0x{:X} at {pos} overruns", h.pos, c.id));
-            if c.overruns(lim) && matches!(c.id, SIMPLE_BLOCK | BLOCK_GROUP) && io.len <= c.data_start() + c.size.known().unwrap_or(0) {
+            warnings.push(format!(
+                "damaged cluster at {}: element 0x{:X} at {pos} overruns",
+                h.pos, c.id
+            ));
+            if c.overruns(lim)
+                && matches!(c.id, SIMPLE_BLOCK | BLOCK_GROUP)
+                && io.len <= c.data_start() + c.size.known().unwrap_or(0)
+            {
                 break lim; // truncated file: drop the partial block
             }
             break io.resync(pos + 1, limit)?.unwrap_or(limit);
         }
         let ce = c.end(lim);
         match c.id {
-            TIMESTAMP => ts = ebml::uint(io.peek(c.data_start(), (ce - c.data_start()) as usize)?) as i64,
+            TIMESTAMP => {
+                ts = ebml::uint(io.peek(c.data_start(), (ce - c.data_start()) as usize)?) as i64
+            }
             SIMPLE_BLOCK | BLOCK_GROUP => {
                 if let Some(b) = parse_block_elem(io, &c, ce, ts, &lookup)? {
                     blocks.push(b);
@@ -542,7 +619,15 @@ fn scan_cluster<S: ByteSource + ?Sized>(
         }
         pos = ce;
     };
-    Ok((ClusterInfo { offset: h.pos, data_start: ds, end, timestamp: ts.max(0) as u64 }, blocks))
+    Ok((
+        ClusterInfo {
+            offset: h.pos,
+            data_start: ds,
+            end,
+            timestamp: ts.max(0) as u64,
+        },
+        blocks,
+    ))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -560,16 +645,24 @@ pub fn open_with<S: ByteSource>(src: S, opts: &OpenOptions) -> Result<MkvFile> {
     open_impl(&src, opts, &mut cache)
 }
 
-fn open_impl<S: ByteSource + ?Sized>(src: &S, opts: &OpenOptions, cache: &mut Cache) -> Result<MkvFile> {
+fn open_impl<S: ByteSource + ?Sized>(
+    src: &S,
+    opts: &OpenOptions,
+    cache: &mut Cache,
+) -> Result<MkvFile> {
     let mut io = Io::new(src, cache);
     let len = io.len;
     // EBML header (tolerate leading junk in the first 64 KiB)
     let start = {
         let b = io.peek(0, WIN)?;
         let magic = [0x1A, 0x45, 0xDF, 0xA3];
-        b.windows(4).position(|w| w == magic).ok_or_else(|| Error::NotMatroska("no EBML header".into()))? as u64
+        b.windows(4)
+            .position(|w| w == magic)
+            .ok_or_else(|| Error::NotMatroska("no EBML header".into()))? as u64
     };
-    let eh = io.header(start, len)?.ok_or_else(|| Error::NotMatroska("bad EBML header".into()))?;
+    let eh = io
+        .header(start, len)?
+        .ok_or_else(|| Error::NotMatroska("bad EBML header".into()))?;
     let hdr_end = eh.end(len);
     let hdr = io.read_vec(eh.data_start(), hdr_end - eh.data_start())?;
     let (mut doc_type, mut dtv, mut dtrv) = ("matroska".to_string(), 1, 1);
@@ -578,8 +671,12 @@ fn open_impl<S: ByteSource + ?Sized>(src: &S, opts: &OpenOptions, cache: &mut Ca
             DOC_TYPE => doc_type = ebml::string(e.data),
             DOC_TYPE_VERSION => dtv = ebml::uint(e.data),
             DOC_TYPE_READ_VERSION => dtrv = ebml::uint(e.data),
-            EBML_MAX_ID_LENGTH if ebml::uint(e.data) > 4 => return Err(Error::Unsupported("EBMLMaxIDLength > 4".into())),
-            EBML_MAX_SIZE_LENGTH if ebml::uint(e.data) > 8 => return Err(Error::Unsupported("EBMLMaxSizeLength > 8".into())),
+            EBML_MAX_ID_LENGTH if ebml::uint(e.data) > 4 => {
+                return Err(Error::Unsupported("EBMLMaxIDLength > 4".into()));
+            }
+            EBML_MAX_SIZE_LENGTH if ebml::uint(e.data) > 8 => {
+                return Err(Error::Unsupported("EBMLMaxSizeLength > 8".into()));
+            }
             _ => {}
         }
     }
@@ -589,7 +686,9 @@ fn open_impl<S: ByteSource + ?Sized>(src: &S, opts: &OpenOptions, cache: &mut Ca
     // Segment
     let mut pos = hdr_end;
     let seg = loop {
-        let h = io.header(pos, len)?.ok_or_else(|| Error::Invalid("no Segment".into()))?;
+        let h = io
+            .header(pos, len)?
+            .ok_or_else(|| Error::Invalid("no Segment".into()))?;
         if h.id == SEGMENT {
             break h;
         }
@@ -620,9 +719,14 @@ fn open_impl<S: ByteSource + ?Sized>(src: &S, opts: &OpenOptions, cache: &mut Ca
         warnings: Vec::new(),
     };
     if seg.overruns(len) {
-        file.warnings.push("Segment extends past end of file (truncated)".into());
+        file.warnings
+            .push("Segment extends past end of file (truncated)".into());
     }
-    let mut w = Walker { opts, parsed: HashSet::new(), blocks_seen: false };
+    let mut w = Walker {
+        opts,
+        parsed: HashSet::new(),
+        blocks_seen: false,
+    };
     w.walk(&mut io, &mut file)?;
     finish_tracks(&mut file);
     Ok(file)
@@ -635,14 +739,19 @@ struct Walker<'o> {
 }
 
 impl Walker<'_> {
-    fn walk<S: ByteSource + ?Sized>(&mut self, io: &mut Io<'_, S>, file: &mut MkvFile) -> Result<()> {
+    fn walk<S: ByteSource + ?Sized>(
+        &mut self,
+        io: &mut Io<'_, S>,
+        file: &mut MkvFile,
+    ) -> Result<()> {
         let seg_end = file.segment_end;
         let mut pos = file.segment_data_start;
         while pos < seg_end {
             let Some(h) = io.header(pos, seg_end)? else {
                 match io.resync(pos + 1, seg_end)? {
                     Some(p) => {
-                        file.warnings.push(format!("undecodable element at {pos}; resynced at {p}"));
+                        file.warnings
+                            .push(format!("undecodable element at {pos}; resynced at {p}"));
                         pos = p;
                         continue;
                     }
@@ -659,7 +768,8 @@ impl Walker<'_> {
                             break;
                         }
                     }
-                    let (ci, blocks) = scan_cluster(io, &h, seg_end, &file.tracks, &mut file.warnings)?;
+                    let (ci, blocks) =
+                        scan_cluster(io, &h, seg_end, &file.tracks, &mut file.warnings)?;
                     if self.opts.verify_crc && h.size != Size::Unknown {
                         let data = io.read_vec(h.data_start(), ci.end - h.data_start())?;
                         self.check_crc(file, h.pos, &data);
@@ -679,7 +789,10 @@ impl Walker<'_> {
                     } else if h.overruns(seg_end) && h.id != VOID {
                         match io.resync(pos + 1, seg_end)? {
                             Some(p) => {
-                                file.warnings.push(format!("oversized element 0x{:X} at {pos}; resynced at {p}", h.id));
+                                file.warnings.push(format!(
+                                    "oversized element 0x{:X} at {pos}; resynced at {p}",
+                                    h.id
+                                ));
                                 pos = p;
                             }
                             None => break,
@@ -690,7 +803,11 @@ impl Walker<'_> {
                 }
             }
         }
-        self.follow_seek_head(io, file, &[INFO, TRACKS, CUES, CHAPTERS, TAGS, ATTACHMENTS, SEEK_HEAD])?;
+        self.follow_seek_head(
+            io,
+            file,
+            &[INFO, TRACKS, CUES, CHAPTERS, TAGS, ATTACHMENTS, SEEK_HEAD],
+        )?;
         // follow a second-level SeekHead reached through the first one
         self.follow_seek_head(io, file, &[CUES, CHAPTERS, TAGS, ATTACHMENTS])?;
         file.cues.sort_by_key(|c| c.time);
@@ -698,13 +815,20 @@ impl Walker<'_> {
         Ok(())
     }
 
-    fn follow_seek_head<S: ByteSource + ?Sized>(&mut self, io: &mut Io<'_, S>, file: &mut MkvFile, ids: &[u32]) -> Result<()> {
+    fn follow_seek_head<S: ByteSource + ?Sized>(
+        &mut self,
+        io: &mut Io<'_, S>,
+        file: &mut MkvFile,
+        ids: &[u32],
+    ) -> Result<()> {
         let entries = file.seek_head.clone();
         for e in entries {
             if !ids.contains(&e.id) {
                 continue;
             }
-            let Some(abs) = file.segment_data_start.checked_add(e.position) else { continue };
+            let Some(abs) = file.segment_data_start.checked_add(e.position) else {
+                continue;
+            };
             if self.parsed.contains(&abs) || abs >= file.segment_end {
                 continue;
             }
@@ -712,7 +836,10 @@ impl Walker<'_> {
                 Some(h) if h.id == e.id => {
                     self.level1(io, file, &h, file.segment_end)?;
                 }
-                _ => file.warnings.push(format!("SeekHead entry 0x{:X} -> {abs} does not point at that element", e.id)),
+                _ => file.warnings.push(format!(
+                    "SeekHead entry 0x{:X} -> {abs} does not point at that element",
+                    e.id
+                )),
             }
         }
         Ok(())
@@ -723,16 +850,28 @@ impl Walker<'_> {
             file.crc_checked += 1;
             if !ok {
                 file.crc_errors.push(pos);
-                file.warnings.push(format!("CRC-32 mismatch in element at {pos}"));
+                file.warnings
+                    .push(format!("CRC-32 mismatch in element at {pos}"));
             }
         }
     }
 
     /// Parse a level-1 metadata element; returns its end.
-    fn level1<S: ByteSource + ?Sized>(&mut self, io: &mut Io<'_, S>, file: &mut MkvFile, h: &Hdr, limit: u64) -> Result<u64> {
-        let end = if h.size == Size::Unknown { io.unknown_end(h.data_start(), limit)? } else { h.end(limit) };
+    fn level1<S: ByteSource + ?Sized>(
+        &mut self,
+        io: &mut Io<'_, S>,
+        file: &mut MkvFile,
+        h: &Hdr,
+        limit: u64,
+    ) -> Result<u64> {
+        let end = if h.size == Size::Unknown {
+            io.unknown_end(h.data_start(), limit)?
+        } else {
+            h.end(limit)
+        };
         if h.overruns(limit) {
-            file.warnings.push(format!("element 0x{:X} at {} truncated", h.id, h.pos));
+            file.warnings
+                .push(format!("element 0x{:X} at {} truncated", h.id, h.pos));
         }
         if !self.parsed.insert(h.pos) {
             return Ok(end);
@@ -743,7 +882,10 @@ impl Walker<'_> {
         }
         let n = end - h.data_start();
         if n > MAX_META {
-            file.warnings.push(format!("element 0x{:X} at {} too large ({n} bytes); skipped", h.id, h.pos));
+            file.warnings.push(format!(
+                "element 0x{:X} at {} too large ({n} bytes); skipped",
+                h.id, h.pos
+            ));
             return Ok(end);
         }
         let data = io.read_vec(h.data_start(), n)?;
@@ -764,7 +906,13 @@ impl Walker<'_> {
         Ok(end)
     }
 
-    fn attachments<S: ByteSource + ?Sized>(&mut self, io: &mut Io<'_, S>, file: &mut MkvFile, start: u64, end: u64) -> Result<()> {
+    fn attachments<S: ByteSource + ?Sized>(
+        &mut self,
+        io: &mut Io<'_, S>,
+        file: &mut MkvFile,
+        start: u64,
+        end: u64,
+    ) -> Result<()> {
         let mut pos = start;
         while pos < end {
             let Some(h) = io.header(pos, end)? else { break };
@@ -849,7 +997,11 @@ impl MkvFile {
         if let Some(d) = self.info.duration {
             return Some((d * self.info.timestamp_scale as f64).round() as u64);
         }
-        let end = self.tracks.iter().flat_map(|t| t.samples.iter().map(|s| s.pts + s.duration as i64)).max()?;
+        let end = self
+            .tracks
+            .iter()
+            .flat_map(|t| t.samples.iter().map(|s| s.pts + s.duration as i64))
+            .max()?;
         Some((end.max(0) as u64).saturating_mul(self.info.timestamp_scale))
     }
 
@@ -860,17 +1012,29 @@ impl MkvFile {
 
     /// Index of the first track of the given kind (preferring the default flag).
     pub fn track_of_kind(&self, kind: TrackKind) -> Option<usize> {
-        let mut it = self.tracks.iter().enumerate().filter(|(_, t)| t.kind == kind);
+        let mut it = self
+            .tracks
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.kind == kind);
         let first = it.clone().next().map(|x| x.0);
         it.find(|(_, t)| t.default).map(|x| x.0).or(first)
     }
 
     /// Read sample `index` of `track` (header stripping undone).
-    pub fn read_sample<S: ByteSource + ?Sized>(&self, src: &S, track: usize, index: usize) -> Result<Vec<u8>> {
+    pub fn read_sample<S: ByteSource + ?Sized>(
+        &self,
+        src: &S,
+        track: usize,
+        index: usize,
+    ) -> Result<Vec<u8>> {
         let t = self.tracks.get(track).ok_or(Error::NoSuchTrack(track))?;
         let s = t.samples.get(index).ok_or(Error::NoSuchSample(index))?;
         if !t.frames_readable() {
-            return Err(Error::Unsupported(format!("content encoding of track {} (compression/encryption)", t.number)));
+            return Err(Error::Unsupported(format!(
+                "content encoding of track {} (compression/encryption)",
+                t.number
+            )));
         }
         let mut data = t.frame_prefix(s.size as u64);
         let at = data.len();
@@ -881,11 +1045,21 @@ impl MkvFile {
 
     /// The `BlockAdditional` (ID 1) of sample `index` of `track`, `None` when the block has none
     /// (see [`Sample::addition`]). Stored as is: header stripping applies to frames only.
-    pub fn read_sample_addition<S: ByteSource + ?Sized>(&self, src: &S, track: usize, index: usize) -> Result<Option<Vec<u8>>> {
+    pub fn read_sample_addition<S: ByteSource + ?Sized>(
+        &self,
+        src: &S,
+        track: usize,
+        index: usize,
+    ) -> Result<Option<Vec<u8>>> {
         let t = self.tracks.get(track).ok_or(Error::NoSuchTrack(track))?;
         let s = t.samples.get(index).ok_or(Error::NoSuchSample(index))?;
-        let Some((offset, size)) = s.addition else { return Ok(None) };
-        if offset.checked_add(size as u64).is_none_or(|end| end > src.len()) {
+        let Some((offset, size)) = s.addition else {
+            return Ok(None);
+        };
+        if offset
+            .checked_add(size as u64)
+            .is_none_or(|end| end > src.len())
+        {
             return Err(Error::Invalid("block addition past end of file".into()));
         }
         let mut data = vec![0; size as usize];
@@ -947,7 +1121,17 @@ impl<S: ByteSource> Demuxer<S> {
         let mut cache = Cache::default();
         let file = open_impl(&src, &opts, &mut cache)?;
         let pos = file.first_cluster.unwrap_or(file.segment_end);
-        Ok(Self { src, file, opts, cache, pos, cluster: None, pending: VecDeque::new(), skip_laces: None, done: false })
+        Ok(Self {
+            src,
+            file,
+            opts,
+            cache,
+            pos,
+            cluster: None,
+            pending: VecDeque::new(),
+            skip_laces: None,
+            done: false,
+        })
     }
 
     pub fn file(&self) -> &MkvFile {
@@ -972,7 +1156,10 @@ impl<S: ByteSource> Demuxer<S> {
         if self.file.indexed {
             return Ok(());
         }
-        let opts = OpenOptions { index: true, verify_crc: self.opts.verify_crc };
+        let opts = OpenOptions {
+            index: true,
+            verify_crc: self.opts.verify_crc,
+        };
         self.file = open_impl(&self.src, &opts, &mut self.cache)?;
         Ok(())
     }
@@ -980,12 +1167,21 @@ impl<S: ByteSource> Demuxer<S> {
     /// Keyframes of `track` (builds the index if needed).
     pub fn keyframe_index(&mut self, track: usize) -> Result<Vec<Keyframe>> {
         self.build_index()?;
-        let t = self.file.tracks.get(track).ok_or(Error::NoSuchTrack(track))?;
+        let t = self
+            .file
+            .tracks
+            .get(track)
+            .ok_or(Error::NoSuchTrack(track))?;
         Ok(t.keyframes()
             .iter()
             .map(|&k| {
                 let s = &t.samples[k as usize];
-                Keyframe { sample: k as usize, pts: s.pts, pts_ns: t.ticks_to_ns(s.pts), block_offset: s.block_offset }
+                Keyframe {
+                    sample: k as usize,
+                    pts: s.pts,
+                    pts_ns: t.ticks_to_ns(s.pts),
+                    block_offset: s.block_offset,
+                }
             })
             .collect())
     }
@@ -1011,7 +1207,11 @@ impl<S: ByteSource> Demuxer<S> {
     /// Uses the sample index when present, else Cues (refined by scanning the cued cluster), else
     /// builds the index first.
     pub fn seek(&mut self, track: usize, time_ns: i64) -> Result<SeekPoint> {
-        let t = self.file.tracks.get(track).ok_or(Error::NoSuchTrack(track))?;
+        let t = self
+            .file
+            .tracks
+            .get(track)
+            .ok_or(Error::NoSuchTrack(track))?;
         let ticks = t.ns_to_ticks(time_ns);
         if !self.file.indexed {
             let tn = t.number;
@@ -1020,9 +1220,21 @@ impl<S: ByteSource> Demuxer<S> {
                 .cues
                 .iter()
                 .filter(|c| c.time as i64 <= ticks)
-                .filter_map(|c| c.positions.iter().find(|p| p.track == tn).map(|p| (c.time, *p)))
+                .filter_map(|c| {
+                    c.positions
+                        .iter()
+                        .find(|p| p.track == tn)
+                        .map(|p| (c.time, *p))
+                })
                 .next_back()
-                .or_else(|| self.file.cues.iter().find_map(|c| c.positions.iter().find(|p| p.track == tn).map(|p| (c.time, *p))));
+                .or_else(|| {
+                    self.file.cues.iter().find_map(|c| {
+                        c.positions
+                            .iter()
+                            .find(|p| p.track == tn)
+                            .map(|p| (c.time, *p))
+                    })
+                });
             if let Some((_, cp)) = cue
                 && let Some(sp) = self.seek_via_cue(track, ticks, cp.cluster_position)?
             {
@@ -1031,10 +1243,19 @@ impl<S: ByteSource> Demuxer<S> {
             self.build_index()?;
         }
         let t = &self.file.tracks[track];
-        let k = t.keyframe_before_pts(ticks).ok_or_else(|| Error::Invalid(format!("track {} has no keyframes", t.number)))?;
+        let k = t
+            .keyframe_before_pts(ticks)
+            .ok_or_else(|| Error::Invalid(format!("track {} has no keyframes", t.number)))?;
         let s = t.samples[k];
         let c = self.file.clusters[s.cluster as usize];
-        let sp = SeekPoint { track, pts: s.pts, pts_ns: t.ticks_to_ns(s.pts), sample: Some(k), cluster_offset: c.offset, block_offset: s.block_offset };
+        let sp = SeekPoint {
+            track,
+            pts: s.pts,
+            pts_ns: t.ticks_to_ns(s.pts),
+            sample: Some(k),
+            cluster_offset: c.offset,
+            block_offset: s.block_offset,
+        };
         self.position_at(c, s.block_offset, s.lace);
         Ok(sp)
     }
@@ -1044,28 +1265,58 @@ impl<S: ByteSource> Demuxer<S> {
         self.done = false;
         self.pos = block_offset;
         let known = c.end;
-        self.cluster = Some(InCluster { ts: c.timestamp as i64, end: Some(known) });
+        self.cluster = Some(InCluster {
+            ts: c.timestamp as i64,
+            end: Some(known),
+        });
         self.skip_laces = (lace > 0).then_some((block_offset, lace));
     }
 
-    fn seek_via_cue(&mut self, track: usize, ticks: i64, cluster_position: u64) -> Result<Option<SeekPoint>> {
+    fn seek_via_cue(
+        &mut self,
+        track: usize,
+        ticks: i64,
+        cluster_position: u64,
+    ) -> Result<Option<SeekPoint>> {
         let abs = self.file.segment_data_start + cluster_position;
         let mut io = Io::new(&self.src, &mut self.cache);
-        let Some(h) = io.header(abs, self.file.segment_end)? else { return Ok(None) };
+        let Some(h) = io.header(abs, self.file.segment_end)? else {
+            return Ok(None);
+        };
         if h.id != CLUSTER {
-            self.file.warnings.push(format!("cue points at {abs}, which is not a Cluster"));
+            self.file
+                .warnings
+                .push(format!("cue points at {abs}, which is not a Cluster"));
             return Ok(None);
         }
         let mut warnings = Vec::new();
-        let (ci, blocks) = scan_cluster(&mut io, &h, self.file.segment_end, &self.file.tracks, &mut warnings)?;
+        let (ci, blocks) = scan_cluster(
+            &mut io,
+            &h,
+            self.file.segment_end,
+            &self.file.tracks,
+            &mut warnings,
+        )?;
         let t = &self.file.tracks[track];
         let mut frames = Vec::new();
         for b in blocks.iter().filter(|b| b.track == track && b.keyframe) {
             expand(b, t, self.file.info.timestamp_scale, 0, &mut frames);
         }
-        let best = frames.iter().filter(|f| f.pts <= ticks).max_by_key(|f| f.pts).or_else(|| frames.iter().min_by_key(|f| f.pts)).copied();
+        let best = frames
+            .iter()
+            .filter(|f| f.pts <= ticks)
+            .max_by_key(|f| f.pts)
+            .or_else(|| frames.iter().min_by_key(|f| f.pts))
+            .copied();
         let Some(f) = best else { return Ok(None) };
-        let sp = SeekPoint { track, pts: f.pts, pts_ns: f.pts_ns, sample: None, cluster_offset: ci.offset, block_offset: f.block_offset };
+        let sp = SeekPoint {
+            track,
+            pts: f.pts,
+            pts_ns: f.pts_ns,
+            sample: None,
+            cluster_offset: ci.offset,
+            block_offset: f.block_offset,
+        };
         self.position_at(ci, f.block_offset, f.lace);
         Ok(Some(sp))
     }
@@ -1085,7 +1336,11 @@ impl<S: ByteSource> Demuxer<S> {
 
     fn materialize(&mut self, f: FrameRef) -> Result<Packet> {
         let t = &self.file.tracks[f.track];
-        let mut data = if t.frames_readable() { t.frame_prefix(f.size as u64) } else { Vec::new() };
+        let mut data = if t.frames_readable() {
+            t.frame_prefix(f.size as u64)
+        } else {
+            Vec::new()
+        };
         let at = data.len();
         data.resize(at + f.size as usize, 0);
         let mut io = Io::new(&self.src, &mut self.cache);
@@ -1156,7 +1411,8 @@ impl<S: ByteSource> Demuxer<S> {
                 self.pos = he;
                 match h.id {
                     TIMESTAMP => {
-                        let v = ebml::uint(io.peek(h.data_start(), (he - h.data_start()) as usize)?) as i64;
+                        let v = ebml::uint(io.peek(h.data_start(), (he - h.data_start()) as usize)?)
+                            as i64;
                         self.cluster = Some(InCluster { ts: v, end: c.end });
                     }
                     SIMPLE_BLOCK | BLOCK_GROUP => {
@@ -1165,7 +1421,13 @@ impl<S: ByteSource> Demuxer<S> {
                                 Some((off, n)) if off == h.pos => n,
                                 _ => 0,
                             };
-                            expand(&b, &self.file.tracks[b.track], scale, skip, &mut self.pending);
+                            expand(
+                                &b,
+                                &self.file.tracks[b.track],
+                                scale,
+                                skip,
+                                &mut self.pending,
+                            );
                             if !self.pending.is_empty() {
                                 return Ok(true);
                             }
@@ -1189,12 +1451,19 @@ impl<S: ByteSource> Demuxer<S> {
             };
             match h.id {
                 CLUSTER => {
-                    self.cluster = Some(InCluster { ts: 0, end: h.size.known().map(|_| h.end(seg_end)) });
+                    self.cluster = Some(InCluster {
+                        ts: 0,
+                        end: h.size.known().map(|_| h.end(seg_end)),
+                    });
                     self.pos = h.data_start();
                 }
                 EBML | SEGMENT => return Ok(false),
                 _ => {
-                    self.pos = if h.size == Size::Unknown { io.unknown_end(h.data_start(), seg_end)? } else { h.end(seg_end) };
+                    self.pos = if h.size == Size::Unknown {
+                        io.unknown_end(h.data_start(), seg_end)?
+                    } else {
+                        h.end(seg_end)
+                    };
                     if self.pos <= h.pos {
                         return Ok(false);
                     }

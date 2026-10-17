@@ -34,7 +34,11 @@ pub fn guide_at(cx: &ToolContext, p: Point) -> Option<usize> {
 
 /// The pointer for a guide: it moves sideways if vertical, up and down if horizontal.
 fn guide_cursor(vertical: bool) -> Cursor {
-    if vertical { Cursor::ResizeH } else { Cursor::ResizeV }
+    if vertical {
+        Cursor::ResizeH
+    } else {
+        Cursor::ResizeV
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -74,7 +78,10 @@ impl GuideSnap {
         } else {
             None
         };
-        Self { targets, snapped: vec![] }
+        Self {
+            targets,
+            snapped: vec![],
+        }
     }
 
     /// Where a guide dragged to `v` (the x of a vertical one, the y of a horizontal one) goes:
@@ -90,7 +97,9 @@ impl GuideSnap {
         if cx.snap_to_grid {
             return vectorcraft_geom::snap::snap_to_grid(v, cx.grid_step(), 0.0);
         }
-        let Some((t, tol)) = &self.targets else { return v };
+        let Some((t, tol)) = &self.targets else {
+            return v;
+        };
         let (at, snapped) = t.snap_guide(vertical, v, cx.tol(*tol));
         self.snapped = snapped;
         at
@@ -101,7 +110,10 @@ impl GuideSnap {
         let mut o = self.snapped.clone();
         if cx.measurement_labels {
             let axis = if vertical { "X" } else { "Y" };
-            o.push(Overlay::Measure { p: pointer, text: format!("{axis}: {}", cx.len(at)) });
+            o.push(Overlay::Measure {
+                p: pointer,
+                text: format!("{axis}: {}", cx.len(at)),
+            });
         }
         o
     }
@@ -124,7 +136,13 @@ impl NewGuide {
     /// A vertical guide out of the left ruler, else a horizontal one out of the top ruler; an
     /// artboard guide of `artboard`, if any.
     pub fn new(cx: &ToolContext, vertical: bool, artboard: Option<usize>) -> Self {
-        Self { vertical, artboard, snap: GuideSnap::new(cx), at: None, pointer: Point::ZERO }
+        Self {
+            vertical,
+            artboard,
+            snap: GuideSnap::new(cx),
+            at: None,
+            pointer: Point::ZERO,
+        }
     }
 
     /// The pointer at `ev`, over the canvas or not (`on_canvas`): the actions that show the guide
@@ -133,7 +151,12 @@ impl NewGuide {
         let mut out = vec![];
         self.pointer = ev.pos;
         if on_canvas {
-            let at = self.snap.snap(cx, self.vertical, if self.vertical { ev.pos.x } else { ev.pos.y }, ev.mods.shift);
+            let at = self.snap.snap(
+                cx,
+                self.vertical,
+                if self.vertical { ev.pos.x } else { ev.pos.y },
+                ev.mods.shift,
+            );
             if self.at.is_none() {
                 out.push(Action::Begin("New Guide".into()));
             }
@@ -157,7 +180,9 @@ impl NewGuide {
 
     /// While the guide shows: the target it snapped to and its position by the pointer.
     pub fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        self.at.map(|at| self.snap.overlays(cx, self.vertical, at, self.pointer)).unwrap_or_default()
+        self.at
+            .map(|at| self.snap.overlays(cx, self.vertical, at, self.pointer))
+            .unwrap_or_default()
     }
 }
 
@@ -194,8 +219,14 @@ impl GuideEdit {
         self.snap = GuideSnap::default();
         Some(match (selected, shift) {
             (true, _) => vec![],
-            (false, true) => vec![Action::Exec("guide.select".into(), json!({ "indexes": [index], "toggle": true }))],
-            (false, false) => vec![Action::Exec("guide.select".into(), json!({ "indexes": [index] }))],
+            (false, true) => vec![Action::Exec(
+                "guide.select".into(),
+                json!({ "indexes": [index], "toggle": true }),
+            )],
+            (false, false) => vec![Action::Exec(
+                "guide.select".into(),
+                json!({ "indexes": [index] }),
+            )],
         })
     }
 
@@ -215,13 +246,19 @@ impl GuideEdit {
                     // Dropped on its ruler: the guide goes (a copy is just not made).
                     let mut out = vec![Action::Cancel];
                     if !ev.mods.alt {
-                        out.push(Action::Exec("guide.remove".into(), json!({ "index": d.index })));
+                        out.push(Action::Exec(
+                            "guide.remove".into(),
+                            json!({ "index": d.index }),
+                        ));
                     }
                     out
                 } else if d.began {
                     vec![Action::Commit]
                 } else if d.deselect {
-                    vec![Action::Exec("guide.select".into(), json!({ "indexes": [d.index], "toggle": true }))]
+                    vec![Action::Exec(
+                        "guide.select".into(),
+                        json!({ "indexes": [d.index], "toggle": true }),
+                    )]
                 } else {
                     vec![]
                 }
@@ -242,15 +279,34 @@ impl GuideEdit {
                 return out;
             }
             d.began = true;
-            out.push(Action::Begin(if ev.mods.alt { "Copy Guide" } else { "Move Guide" }.into()));
+            out.push(Action::Begin(
+                if ev.mods.alt {
+                    "Copy Guide"
+                } else {
+                    "Move Guide"
+                }
+                .into(),
+            ));
             self.snap = GuideSnap::new(cx);
         }
         let moved = p - d.start;
-        let at = self.snap.snap(cx, d.vertical, d.from + if d.vertical { moved.x } else { moved.y }, ev.mods.shift);
+        let at = self.snap.snap(
+            cx,
+            d.vertical,
+            d.from + if d.vertical { moved.x } else { moved.y },
+            ev.mods.shift,
+        );
         (d.at, d.pointer) = (at, p);
         // The other selected guides follow the pointer: vertical ones across, horizontal ones down.
-        let (dx, dy) = if d.vertical { (at - d.from, moved.y) } else { (moved.x, at - d.from) };
-        out.push(Action::Preview("guide.move".into(), json!({ "dx": dx, "dy": dy, "copy": ev.mods.alt })));
+        let (dx, dy) = if d.vertical {
+            (at - d.from, moved.y)
+        } else {
+            (moved.x, at - d.from)
+        };
+        out.push(Action::Preview(
+            "guide.move".into(),
+            json!({ "dx": dx, "dy": dy, "copy": ev.mods.alt }),
+        ));
         out
     }
 
@@ -259,12 +315,16 @@ impl GuideEdit {
         if let Some(d) = &self.drag {
             return Some(guide_cursor(d.vertical));
         }
-        guide_at(cx, p).and_then(|i| cx.doc.guides.get(i)).map(|g| guide_cursor(g.vertical))
+        guide_at(cx, p)
+            .and_then(|i| cx.doc.guides.get(i))
+            .map(|g| guide_cursor(g.vertical))
     }
 
     /// While a guide is dragged: the smart guide it snapped to and its position by the pointer.
     pub fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        let Some(d) = self.drag.filter(|d| d.began) else { return vec![] };
+        let Some(d) = self.drag.filter(|d| d.began) else {
+            return vec![];
+        };
         self.snap.overlays(cx, d.vertical, d.at, d.pointer)
     }
 }
@@ -272,7 +332,9 @@ impl GuideEdit {
 /// Is `p` off the canvas on the side of the ruler a guide comes from (the top one for a
 /// horizontal guide, the left one for a vertical guide)? Never without a window.
 fn on_ruler(cx: &ToolContext, vertical: bool, p: Point) -> bool {
-    cx.screen.and_then(|s| s.to_screen(p)).is_some_and(|(x, y)| if vertical { x < 0.0 } else { y < 0.0 })
+    cx.screen
+        .and_then(|s| s.to_screen(p))
+        .is_some_and(|(x, y)| if vertical { x < 0.0 } else { y < 0.0 })
 }
 
 #[cfg(test)]
@@ -301,8 +363,15 @@ mod tests {
         assert_eq!(guide_at(&c, Point::new(50.0, 398.0)), Some(1));
         // Where they cross, the nearer one.
         assert_eq!(guide_at(&c, Point::new(301.0, 398.0)), Some(0));
-        assert_eq!(guide_at(&c, Point::new(305.0, 50.0)), None, "beyond the 3 px tolerance");
-        let hidden = ToolContext { guides: false, ..cx(&d, &s, &p) };
+        assert_eq!(
+            guide_at(&c, Point::new(305.0, 50.0)),
+            None,
+            "beyond the 3 px tolerance"
+        );
+        let hidden = ToolContext {
+            guides: false,
+            ..cx(&d, &s, &p)
+        };
         assert_eq!(guide_at(&hidden, Point::new(300.0, 50.0)), None);
     }
 
@@ -313,17 +382,36 @@ mod tests {
         let c = cx(&d, &s, &p);
         let mut g = GuideEdit::default();
         let m = Mods::default();
-        assert_eq!(g.press(&c, &ev(PointerKind::Down, 300.0, 50.0, m)), Some(vec![Action::Exec("guide.select".into(), json!({"indexes": [0]}))]));
+        assert_eq!(
+            g.press(&c, &ev(PointerKind::Down, 300.0, 50.0, m)),
+            Some(vec![Action::Exec(
+                "guide.select".into(),
+                json!({"indexes": [0]})
+            )])
+        );
         // The tool sees the guide selected from now on.
         let mut s = s;
         s.set_guides([0]);
         let c = cx(&d, &s, &p);
-        let a = g.pointer(&c, &ev(PointerKind::Drag, 340.0, 60.0, m)).unwrap();
+        let a = g
+            .pointer(&c, &ev(PointerKind::Drag, 340.0, 60.0, m))
+            .unwrap();
         assert_eq!(a[0], Action::Begin("Move Guide".into()));
-        assert_eq!(a[1], Action::Preview("guide.move".into(), json!({"dx": 40.0, "dy": 10.0, "copy": false})));
-        assert!(matches!(g.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == "X: 340.00 pt"));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "guide.move".into(),
+                json!({"dx": 40.0, "dy": 10.0, "copy": false})
+            )
+        );
+        assert!(
+            matches!(g.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == "X: 340.00 pt")
+        );
         assert_eq!(g.cursor(&c, Point::ZERO), Some(Cursor::ResizeH));
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Up, 340.0, 60.0, m)), Some(vec![Action::Commit]));
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Up, 340.0, 60.0, m)),
+            Some(vec![Action::Commit])
+        );
         assert!(!g.busy() && g.pointer(&c, &ev(PointerKind::Drag, 0.0, 0.0, m)).is_none());
     }
 
@@ -337,21 +425,59 @@ mod tests {
             let mut g = GuideEdit::default();
             g.press(c, &ev(PointerKind::Down, 300.0, 50.0, Mods::default()));
             let a = g.pointer(c, &ev(PointerKind::Drag, x, 50.0, mods)).unwrap();
-            let Some(Action::Preview(_, v)) = a.last() else { panic!("{a:?}") };
+            let Some(Action::Preview(_, v)) = a.last() else {
+                panic!("{a:?}")
+            };
             (300.0 + v["dx"].as_f64().unwrap(), g.overlays(c))
         };
         // Smart Guides: onto the rect's right edge (x = 200), labelled.
         let (x, ov) = drag_to(&cx(&d, &s, &p), 203.0, Mods::default());
         assert_eq!(x, 200.0);
         assert!(matches!(&ov[0], Overlay::Label { .. }));
-        let off = ToolContext { smart_guides: false, ..cx(&d, &s, &p) };
+        let off = ToolContext {
+            smart_guides: false,
+            ..cx(&d, &s, &p)
+        };
         assert_eq!(drag_to(&off, 203.0, Mods::default()).0, 203.0);
         // Shift: the ruler's ticks (labels every 50 pt at 100 %, ticks every 5 pt).
-        assert_eq!(drag_to(&off, 223.0, Mods { shift: true, ..Default::default() }).0, 225.0);
-        let zoomed = ToolContext { zoom: 5.0, ..cx(&d, &s, &p) };
-        assert_eq!(drag_to(&zoomed, 223.4, Mods { shift: true, ..Default::default() }).0, 223.0, "every point at 500 %");
-        let grid = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
-        assert_eq!(drag_to(&grid, 226.0, Mods::default()).0, 225.0, "the grid's 9 pt subdivisions");
+        assert_eq!(
+            drag_to(
+                &off,
+                223.0,
+                Mods {
+                    shift: true,
+                    ..Default::default()
+                }
+            )
+            .0,
+            225.0
+        );
+        let zoomed = ToolContext {
+            zoom: 5.0,
+            ..cx(&d, &s, &p)
+        };
+        assert_eq!(
+            drag_to(
+                &zoomed,
+                223.4,
+                Mods {
+                    shift: true,
+                    ..Default::default()
+                }
+            )
+            .0,
+            223.0,
+            "every point at 500 %"
+        );
+        let grid = ToolContext {
+            snap_to_grid: true,
+            ..cx(&d, &s, &p)
+        };
+        assert_eq!(
+            drag_to(&grid, 226.0, Mods::default()).0,
+            225.0,
+            "the grid's 9 pt subdivisions"
+        );
     }
 
     /// #451: a guide dragged out of a ruler lands on the art's corners, side midpoints (its
@@ -364,20 +490,49 @@ mod tests {
         let m = Mods::default();
         let drag = |vertical: bool, v: f64| {
             let mut g = NewGuide::new(&c, vertical, None);
-            let at = if vertical { Point::new(v, 50.0) } else { Point::new(50.0, v) };
+            let at = if vertical {
+                Point::new(v, 50.0)
+            } else {
+                Point::new(50.0, v)
+            };
             let a = g.pointer(&c, &ev(PointerKind::Drag, at.x, at.y, m), true);
-            let Some(Action::Preview(cmd, p)) = a.last() else { panic!("{a:?}") };
-            assert_eq!((a[0].clone(), cmd.as_str(), &p["vertical"]), (Action::Begin("New Guide".into()), "guide.add", &json!(vertical)));
+            let Some(Action::Preview(cmd, p)) = a.last() else {
+                panic!("{a:?}")
+            };
+            assert_eq!(
+                (a[0].clone(), cmd.as_str(), &p["vertical"]),
+                (
+                    Action::Begin("New Guide".into()),
+                    "guide.add",
+                    &json!(vertical)
+                )
+            );
             let label = g.overlays(&c).iter().find_map(|o| match o {
                 Overlay::Label { text, .. } => Some(text.clone()),
                 _ => None,
             });
             (p["pos"].as_f64().unwrap(), label)
         };
-        assert_eq!(drag(true, 152.0), (150.0, Some("center".into())), "the line through the top and bottom midpoints");
-        assert_eq!(drag(false, 103.0), (100.0, Some("path".into())), "the top edge, through two corners");
-        assert_eq!(drag(true, 497.0), (500.0, Some("artboard".into())), "the artboard's right edge");
-        assert_eq!(drag(false, 248.0), (250.0, Some("center".into())), "the artboard's centre");
+        assert_eq!(
+            drag(true, 152.0),
+            (150.0, Some("center".into())),
+            "the line through the top and bottom midpoints"
+        );
+        assert_eq!(
+            drag(false, 103.0),
+            (100.0, Some("path".into())),
+            "the top edge, through two corners"
+        );
+        assert_eq!(
+            drag(true, 497.0),
+            (500.0, Some("artboard".into())),
+            "the artboard's right edge"
+        );
+        assert_eq!(
+            drag(false, 248.0),
+            (250.0, Some("center".into())),
+            "the artboard's centre"
+        );
         assert_eq!(drag(true, 320.0), (320.0, None), "nothing within reach");
     }
 
@@ -390,41 +545,101 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let drag = |c: &ToolContext| {
             let mut g = NewGuide::new(c, true, None);
-            let a = g.pointer(c, &ev(PointerKind::Drag, 497.0, 50.0, Mods::default()), true);
-            let Some(Action::Preview(_, p)) = a.last() else { panic!("{a:?}") };
+            let a = g.pointer(
+                c,
+                &ev(PointerKind::Drag, 497.0, 50.0, Mods::default()),
+                true,
+            );
+            let Some(Action::Preview(_, p)) = a.last() else {
+                panic!("{a:?}")
+            };
             (p["pos"].as_f64().unwrap(), g.overlays(c))
         };
-        let (at, ov) = drag(&ToolContext { snapping_tolerance: 2.0, ..cx(&d, &s, &p) });
-        assert_eq!((at, ov.len()), (497.0, 1), "3 px off is beyond 2: only the readout {ov:?}");
-        let (at, ov) = drag(&ToolContext { anchor_path_labels: false, measurement_labels: false, ..cx(&d, &s, &p) });
-        assert_eq!((at, ov), (500.0, vec![]), "onto the artboard's edge, nothing said");
+        let (at, ov) = drag(&ToolContext {
+            snapping_tolerance: 2.0,
+            ..cx(&d, &s, &p)
+        });
+        assert_eq!(
+            (at, ov.len()),
+            (497.0, 1),
+            "3 px off is beyond 2: only the readout {ov:?}"
+        );
+        let (at, ov) = drag(&ToolContext {
+            anchor_path_labels: false,
+            measurement_labels: false,
+            ..cx(&d, &s, &p)
+        });
+        assert_eq!(
+            (at, ov),
+            (500.0, vec![]),
+            "onto the artboard's edge, nothing said"
+        );
     }
 
     #[test]
     fn a_new_guide_is_made_on_release_over_the_canvas_only() {
         let (d, _) = doc_with_rect();
         let (s, p) = (Selection::default(), paint());
-        let c = ToolContext { smart_guides: false, snap_to_point: false, ..cx(&d, &s, &p) };
+        let c = ToolContext {
+            smart_guides: false,
+            snap_to_point: false,
+            ..cx(&d, &s, &p)
+        };
         let m = Mods::default();
         let mut g = NewGuide::new(&c, false, Some(0));
-        let preview = |pos: f64| Action::Preview("guide.add".into(), json!({"vertical": false, "pos": pos, "artboard": 0}));
+        let preview = |pos: f64| {
+            Action::Preview(
+                "guide.add".into(),
+                json!({"vertical": false, "pos": pos, "artboard": 0}),
+            )
+        };
         // Off the canvas (still over the ruler): nothing yet.
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 40.0, -5.0, m), false), vec![]);
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 40.0, 30.0, m), true), vec![Action::Begin("New Guide".into()), preview(30.0)]);
-        assert!(matches!(g.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == "Y: 30.00 pt"));
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Drag, 40.0, -5.0, m), false),
+            vec![]
+        );
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Drag, 40.0, 30.0, m), true),
+            vec![Action::Begin("New Guide".into()), preview(30.0)]
+        );
+        assert!(
+            matches!(g.overlays(&c).last(), Some(Overlay::Measure { text, .. }) if text == "Y: 30.00 pt")
+        );
         // The same place again: no new preview.
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 90.0, 30.0, m), true), vec![]);
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Drag, 90.0, 30.0, m), true),
+            vec![]
+        );
         // Back onto the ruler it goes, and comes back over the canvas.
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 40.0, -5.0, m), false), vec![Action::Cancel]);
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Drag, 40.0, -5.0, m), false),
+            vec![Action::Cancel]
+        );
         assert!(g.overlays(&c).is_empty());
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 40.0, 60.0, m), true), vec![Action::Begin("New Guide".into()), preview(60.0)]);
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Drag, 40.0, 60.0, m), true),
+            vec![Action::Begin("New Guide".into()), preview(60.0)]
+        );
         // Shift: the ruler's ticks.
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Drag, 40.0, 63.0, Mods { shift: true, ..m }), true), vec![preview(65.0)]);
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Up, 40.0, 65.0, m), true), vec![Action::Commit]);
+        assert_eq!(
+            g.pointer(
+                &c,
+                &ev(PointerKind::Drag, 40.0, 63.0, Mods { shift: true, ..m }),
+                true
+            ),
+            vec![preview(65.0)]
+        );
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Up, 40.0, 65.0, m), true),
+            vec![Action::Commit]
+        );
         // Released off the canvas: none.
         let mut g = NewGuide::new(&c, true, None);
         g.pointer(&c, &ev(PointerKind::Drag, 30.0, 40.0, m), true);
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Up, -5.0, 40.0, m), false), vec![Action::Cancel]);
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Up, -5.0, 40.0, m), false),
+            vec![Action::Cancel]
+        );
     }
 
     /// With Smart Guides off, Snap to Point pulls a dragged guide onto the anchors (within its
@@ -435,22 +650,46 @@ mod tests {
         let mut s = Selection::default();
         s.set_guides([0]);
         let p = paint();
-        let off = ToolContext { smart_guides: false, ..cx(&d, &s, &p) };
+        let off = ToolContext {
+            smart_guides: false,
+            ..cx(&d, &s, &p)
+        };
         let moved_to = |c: &ToolContext, x: f64| {
             let mut g = GuideEdit::default();
             g.press(c, &ev(PointerKind::Down, 300.0, 50.0, Mods::default()));
-            let a = g.pointer(c, &ev(PointerKind::Drag, x, 50.0, Mods::default())).unwrap();
-            let Some(Action::Preview(_, v)) = a.last() else { panic!("{a:?}") };
+            let a = g
+                .pointer(c, &ev(PointerKind::Drag, x, 50.0, Mods::default()))
+                .unwrap();
+            let Some(Action::Preview(_, v)) = a.last() else {
+                panic!("{a:?}")
+            };
             300.0 + v["dx"].as_f64().unwrap()
         };
         assert_eq!(moved_to(&off, 201.5), 200.0);
         assert_eq!(moved_to(&off, 151.0), 151.0, "the centre is no anchor");
-        assert_eq!(moved_to(&off, 203.0), 203.0, "beyond the 2 px Snap to Point distance");
-        let neither = ToolContext { snap_to_point: false, ..off };
+        assert_eq!(
+            moved_to(&off, 203.0),
+            203.0,
+            "beyond the 2 px Snap to Point distance"
+        );
+        let neither = ToolContext {
+            snap_to_point: false,
+            ..off
+        };
         assert_eq!(moved_to(&neither, 201.5), 201.5);
         let mut g = NewGuide::new(&off, true, None);
-        let a = g.pointer(&off, &ev(PointerKind::Drag, 98.5, 20.0, Mods::default()), true);
-        assert_eq!(a.last(), Some(&Action::Preview("guide.add".into(), json!({"vertical": true, "pos": 100.0}))));
+        let a = g.pointer(
+            &off,
+            &ev(PointerKind::Drag, 98.5, 20.0, Mods::default()),
+            true,
+        );
+        assert_eq!(
+            a.last(),
+            Some(&Action::Preview(
+                "guide.add".into(),
+                json!({"vertical": true, "pos": 100.0})
+            ))
+        );
     }
 
     /// #451: an artboard guide runs across its artboard only: it is picked there, and pulls a
@@ -466,15 +705,39 @@ mod tests {
             show_center_mark: false,
             show_cross_hairs: false,
         });
-        d.guides = vec![Guide { artboard: Some(id), ..Guide::new(false, 150.0) }];
+        d.guides = vec![Guide {
+            artboard: Some(id),
+            ..Guide::new(false, 150.0)
+        }];
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         assert_eq!(guide_at(&c, Point::new(700.0, 151.0)), Some(0));
-        assert_eq!(guide_at(&c, Point::new(602.0 - 4.0, 151.0)), Some(0), "within the tolerance of its end");
-        assert_eq!(guide_at(&c, Point::new(300.0, 151.0)), None, "not across the first artboard");
-        let t = Targets::snap_to_point(&ToolContext { smart_guides: false, ..c }, &[]).unwrap();
-        assert_eq!(t.snap_point(Point::new(700.0, 151.5), 2.0).0, Point::new(700.0, 150.0));
-        assert_eq!(t.snap_point(Point::new(300.0, 151.5), 2.0).0, Point::new(300.0, 151.5));
+        assert_eq!(
+            guide_at(&c, Point::new(602.0 - 4.0, 151.0)),
+            Some(0),
+            "within the tolerance of its end"
+        );
+        assert_eq!(
+            guide_at(&c, Point::new(300.0, 151.0)),
+            None,
+            "not across the first artboard"
+        );
+        let t = Targets::snap_to_point(
+            &ToolContext {
+                smart_guides: false,
+                ..c
+            },
+            &[],
+        )
+        .unwrap();
+        assert_eq!(
+            t.snap_point(Point::new(700.0, 151.5), 2.0).0,
+            Point::new(700.0, 150.0)
+        );
+        assert_eq!(
+            t.snap_point(Point::new(300.0, 151.5), 2.0).0,
+            Point::new(300.0, 151.5)
+        );
     }
 
     #[test]
@@ -484,15 +747,41 @@ mod tests {
         s.set_guides([0, 1]);
         let p = paint();
         let c = cx(&d, &s, &p);
-        let (shift, alt) = (Mods { shift: true, ..Default::default() }, Mods { alt: true, ..Default::default() });
+        let (shift, alt) = (
+            Mods {
+                shift: true,
+                ..Default::default()
+            },
+            Mods {
+                alt: true,
+                ..Default::default()
+            },
+        );
         let mut g = GuideEdit::default();
-        assert_eq!(g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, shift)), Some(vec![]));
-        let deselect = Action::Exec("guide.select".into(), json!({"indexes": [1], "toggle": true}));
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Up, 50.0, 400.0, shift)), Some(vec![deselect]));
+        assert_eq!(
+            g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, shift)),
+            Some(vec![])
+        );
+        let deselect = Action::Exec(
+            "guide.select".into(),
+            json!({"indexes": [1], "toggle": true}),
+        );
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Up, 50.0, 400.0, shift)),
+            Some(vec![deselect])
+        );
         g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, alt));
-        let a = g.pointer(&c, &ev(PointerKind::Drag, 50.0, 420.0, alt)).unwrap();
+        let a = g
+            .pointer(&c, &ev(PointerKind::Drag, 50.0, 420.0, alt))
+            .unwrap();
         assert_eq!(a[0], Action::Begin("Copy Guide".into()));
-        assert_eq!(a[1], Action::Preview("guide.move".into(), json!({"dx": 0.0, "dy": 20.0, "copy": true})));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "guide.move".into(),
+                json!({"dx": 0.0, "dy": 20.0, "copy": true})
+            )
+        );
     }
 
     #[test]
@@ -502,17 +791,36 @@ mod tests {
         let mut s = Selection::default();
         s.set_guides([1]);
         // The window shows the document from (0, 0) at 100 %: above y = 0 is the top ruler.
-        let screen = ScreenFrame { origin: Point::ZERO, right: Vec2::new(1.0, 0.0), down: Vec2::new(0.0, 1.0), size: (800.0, 600.0) };
-        let c = ToolContext { screen: Some(screen), ..cx(&d, &s, &p) };
+        let screen = ScreenFrame {
+            origin: Point::ZERO,
+            right: Vec2::new(1.0, 0.0),
+            down: Vec2::new(0.0, 1.0),
+            size: (800.0, 600.0),
+        };
+        let c = ToolContext {
+            screen: Some(screen),
+            ..cx(&d, &s, &p)
+        };
         let m = Mods::default();
         let gesture = |to: Point, mods: Mods| {
             let mut g = GuideEdit::default();
             g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, m));
             g.pointer(&c, &ev(PointerKind::Drag, to.x, to.y, mods));
-            g.pointer(&c, &ev(PointerKind::Up, to.x, to.y, mods)).unwrap()
+            g.pointer(&c, &ev(PointerKind::Up, to.x, to.y, mods))
+                .unwrap()
         };
-        assert_eq!(gesture(Point::new(50.0, -6.0), m), vec![Action::Cancel, Action::Exec("guide.remove".into(), json!({"index": 1}))]);
-        assert_eq!(gesture(Point::new(50.0, -6.0), Mods { alt: true, ..m }), vec![Action::Cancel], "a copy is just not made");
+        assert_eq!(
+            gesture(Point::new(50.0, -6.0), m),
+            vec![
+                Action::Cancel,
+                Action::Exec("guide.remove".into(), json!({"index": 1}))
+            ]
+        );
+        assert_eq!(
+            gesture(Point::new(50.0, -6.0), Mods { alt: true, ..m }),
+            vec![Action::Cancel],
+            "a copy is just not made"
+        );
         // Off the left side: not its ruler.
         assert_eq!(gesture(Point::new(-6.0, 300.0), m), vec![Action::Commit]);
         // Headless (no window): no ruler to drop it on.
@@ -520,6 +828,9 @@ mod tests {
         let c = cx(&d, &s, &p);
         g.press(&c, &ev(PointerKind::Down, 50.0, 400.0, m));
         g.pointer(&c, &ev(PointerKind::Drag, 50.0, -6.0, m));
-        assert_eq!(g.pointer(&c, &ev(PointerKind::Up, 50.0, -6.0, m)), Some(vec![Action::Commit]));
+        assert_eq!(
+            g.pointer(&c, &ev(PointerKind::Up, 50.0, -6.0, m)),
+            Some(vec![Action::Commit])
+        );
     }
 }

@@ -69,7 +69,11 @@ pub(crate) struct AutoCommand {
 impl AutoCommand {
     /// Construct an `AutoCommand` with streaming enabled by default.
     pub(crate) fn new(prompt: impl Into<String>) -> Self {
-        AutoCommand { prompt: prompt.into(), endpoint: None, stream: true }
+        AutoCommand {
+            prompt: prompt.into(),
+            endpoint: None,
+            stream: true,
+        }
     }
 
     /// Resolve the JSON-RPC endpoint that should serve this invocation,
@@ -93,7 +97,12 @@ impl AutoCommand {
     /// `Role::User` message with exactly one `Text` part.
     pub(crate) fn build_request(&self) -> SendMessageRequest {
         let message = Message::new(Role::User, vec![Part::text(self.prompt.clone())]);
-        SendMessageRequest { message, configuration: None, metadata: None, tenant: None }
+        SendMessageRequest {
+            message,
+            configuration: None,
+            metadata: None,
+            tenant: None,
+        }
     }
 }
 
@@ -147,9 +156,15 @@ fn classify_error(endpoint: &str, err: aphrody_a2a::A2AError) -> AutoCommandErro
         || msg.contains("connect error")
         || msg.contains("dns error");
     if looks_like_transport {
-        AutoCommandError::Transport { endpoint: endpoint.to_string(), source: err }
+        AutoCommandError::Transport {
+            endpoint: endpoint.to_string(),
+            source: err,
+        }
     } else {
-        AutoCommandError::Server { endpoint: endpoint.to_string(), source: err }
+        AutoCommandError::Server {
+            endpoint: endpoint.to_string(),
+            source: err,
+        }
     }
 }
 
@@ -187,23 +202,23 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
                 StreamResponse::Message(m) => {
                     emit_message_parts(&m)?;
                     wrote_anything = true;
-                },
+                }
                 StreamResponse::Task(t) => {
                     if let Some(status_msg) = t.status.message.as_ref() {
                         emit_message_parts(status_msg)?;
                         wrote_anything = true;
                     }
-                },
+                }
                 StreamResponse::StatusUpdate(ev) => {
                     if let Some(status_msg) = ev.status.message.as_ref() {
                         emit_message_parts(status_msg)?;
                         wrote_anything = true;
                     }
-                },
+                }
                 // Artifact updates carry no text-only payload guarantee on
                 // their own; the message stream events above already cover
                 // the conversational reply path. Skip silently.
-                StreamResponse::ArtifactUpdate(_) => {},
+                StreamResponse::ArtifactUpdate(_) => {}
             }
         }
 
@@ -213,18 +228,20 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
             out.flush()?;
         }
     } else {
-        let response =
-            client.send_message(&request).await.map_err(|e| classify_error(&endpoint, e))?;
+        let response = client
+            .send_message(&request)
+            .await
+            .map_err(|e| classify_error(&endpoint, e))?;
 
         match response {
             SendMessageResponse::Message(m) => {
                 emit_message_parts(&m)?;
-            },
+            }
             SendMessageResponse::Task(t) => {
                 if let Some(status_msg) = t.status.message.as_ref() {
                     emit_message_parts(status_msg)?;
                 }
-            },
+            }
         }
         let mut out = io::stdout().lock();
         out.write_all(b"\n")?;
@@ -278,10 +295,14 @@ mod tests {
 
     #[test]
     fn endpoint_resolved_from_env_var() {
-        with_env(ENV_A2A_ENDPOINT, Some("http://test-host:1234/jsonrpc"), || {
-            let cmd = AutoCommand::new("hi");
-            assert_eq!(cmd.resolved_endpoint(), "http://test-host:1234/jsonrpc");
-        });
+        with_env(
+            ENV_A2A_ENDPOINT,
+            Some("http://test-host:1234/jsonrpc"),
+            || {
+                let cmd = AutoCommand::new("hi");
+                assert_eq!(cmd.resolved_endpoint(), "http://test-host:1234/jsonrpc");
+            },
+        );
     }
 
     #[test]
@@ -317,7 +338,10 @@ mod tests {
         assert!(req.configuration.is_none());
         assert!(req.metadata.is_none());
         assert!(req.tenant.is_none());
-        assert!(!req.message.message_id.is_empty(), "auto-generated id should be non-empty");
+        assert!(
+            !req.message.message_id.is_empty(),
+            "auto-generated id should be non-empty"
+        );
     }
 
     #[test]

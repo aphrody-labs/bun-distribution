@@ -43,7 +43,9 @@ struct StoredTaskRecord {
 fn is_task_id_valid(task_id: &str) -> bool {
     !task_id.is_empty()
         && task_id.len() <= 128
-        && task_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        && task_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 /// Filesystem-backed task store. Persists each task as a JSON file.
@@ -61,7 +63,10 @@ impl FsTaskStore {
     /// Create a new filesystem store rooted at `base_dir`. The directory
     /// (and `tasks/` subdirectory) is created lazily on first write.
     pub fn new(base_dir: impl Into<PathBuf>) -> Self {
-        FsTaskStore { base_dir: base_dir.into(), write_lock: Mutex::new(()) }
+        FsTaskStore {
+            base_dir: base_dir.into(),
+            write_lock: Mutex::new(()),
+        }
     }
 
     fn tasks_dir(&self) -> PathBuf {
@@ -70,7 +75,9 @@ impl FsTaskStore {
 
     fn task_path(&self, task_id: &str) -> Result<PathBuf, A2AError> {
         if !is_task_id_valid(task_id) {
-            return Err(A2AError::invalid_params(format!("invalid task id: {task_id}")));
+            return Err(A2AError::invalid_params(format!(
+                "invalid task id: {task_id}"
+            )));
         }
         Ok(self.tasks_dir().join(format!("{task_id}.json")))
     }
@@ -93,11 +100,12 @@ impl FsTaskStore {
                     A2AError::internal(format!("failed to parse task file {}: {e}", path.display()))
                 })?;
                 Ok(Some(record))
-            },
+            }
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
-            Err(e) => {
-                Err(A2AError::internal(format!("failed to read task file {}: {e}", path.display())))
-            },
+            Err(e) => Err(A2AError::internal(format!(
+                "failed to read task file {}: {e}",
+                path.display()
+            ))),
         }
     }
 
@@ -109,7 +117,10 @@ impl FsTaskStore {
         // directory.
         let tmp_path = path.with_extension("json.tmp");
         fs::write(&tmp_path, &bytes).await.map_err(|e| {
-            A2AError::internal(format!("failed to write task tmp file {}: {e}", tmp_path.display()))
+            A2AError::internal(format!(
+                "failed to write task tmp file {}: {e}",
+                tmp_path.display()
+            ))
         })?;
         fs::rename(&tmp_path, path).await.map_err(|e| {
             A2AError::internal(format!(
@@ -129,7 +140,10 @@ impl TaskStore for FsTaskStore {
         let _guard = self.write_lock.lock().await;
         self.ensure_tasks_dir().await?;
         if self.read_record(&path).await?.is_some() {
-            return Err(A2AError::internal(format!("task already exists: {}", task.id)));
+            return Err(A2AError::internal(format!(
+                "task already exists: {}",
+                task.id
+            )));
         }
         let record = StoredTaskRecord { task, version: 1 };
         self.write_record(&path, &record).await?;
@@ -139,8 +153,10 @@ impl TaskStore for FsTaskStore {
     async fn update(&self, task: Task) -> Result<TaskVersion, A2AError> {
         let path = self.task_path(&task.id)?;
         let _guard = self.write_lock.lock().await;
-        let mut record =
-            self.read_record(&path).await?.ok_or_else(|| A2AError::task_not_found(&task.id))?;
+        let mut record = self
+            .read_record(&path)
+            .await?
+            .ok_or_else(|| A2AError::task_not_found(&task.id))?;
         record.version += 1;
         record.task = task;
         self.write_record(&path, &record).await?;
@@ -164,13 +180,13 @@ impl TaskStore for FsTaskStore {
                     page_size: req.page_size.unwrap_or(50),
                     total_size: 0,
                 });
-            },
+            }
             Err(e) => {
                 return Err(A2AError::internal(format!(
                     "failed to list tasks dir {}: {e}",
                     dir.display()
                 )));
-            },
+            }
         };
 
         while let Some(entry) = entries
@@ -182,7 +198,9 @@ impl TaskStore for FsTaskStore {
             if path.extension().and_then(|s| s.to_str()) != Some("json") {
                 continue;
             }
-            let Some(record) = self.read_record(&path).await? else { continue };
+            let Some(record) = self.read_record(&path).await? else {
+                continue;
+            };
             if let Some(ref ctx) = req.context_id
                 && record.task.context_id != *ctx
             {
@@ -202,12 +220,23 @@ impl TaskStore for FsTaskStore {
             Some(s) if s > 0 => s as usize,
             _ => 50,
         };
-        let start = req.page_token.as_deref().and_then(|t| t.parse::<usize>().ok()).unwrap_or(0);
+        let start = req
+            .page_token
+            .as_deref()
+            .and_then(|t| t.parse::<usize>().ok())
+            .unwrap_or(0);
         let total_size = tasks.len();
         let end = (start + page_size).min(total_size);
-        let page: Vec<Task> =
-            if start <= total_size { tasks[start..end].to_vec() } else { Vec::new() };
-        let next_page_token = if end < total_size { Some(end.to_string()) } else { None };
+        let page: Vec<Task> = if start <= total_size {
+            tasks[start..end].to_vec()
+        } else {
+            Vec::new()
+        };
+        let next_page_token = if end < total_size {
+            Some(end.to_string())
+        } else {
+            None
+        };
 
         let page = page
             .into_iter()
@@ -244,7 +273,11 @@ mod tests {
         Task {
             id: id.to_string(),
             context_id: ctx.to_string(),
-            status: TaskStatus { state, message: None, timestamp: None },
+            status: TaskStatus {
+                state,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
@@ -340,9 +373,15 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let store = FsTaskStore::new(tmp.path());
         for i in 0..5 {
-            store.create(make_task(&format!("t{i}"), "ctx-a", TaskState::Submitted)).await.unwrap();
+            store
+                .create(make_task(&format!("t{i}"), "ctx-a", TaskState::Submitted))
+                .await
+                .unwrap();
         }
-        store.create(make_task("other", "ctx-b", TaskState::Submitted)).await.unwrap();
+        store
+            .create(make_task("other", "ctx-b", TaskState::Submitted))
+            .await
+            .unwrap();
 
         let req = ListTasksRequest {
             context_id: Some("ctx-a".to_string()),
@@ -365,10 +404,17 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         {
             let store = FsTaskStore::new(tmp.path());
-            store.create(make_task("persist", "c", TaskState::Completed)).await.unwrap();
+            store
+                .create(make_task("persist", "c", TaskState::Completed))
+                .await
+                .unwrap();
         }
         let store2 = FsTaskStore::new(tmp.path());
-        let loaded = store2.get("persist").await.unwrap().expect("survives restart");
+        let loaded = store2
+            .get("persist")
+            .await
+            .unwrap()
+            .expect("survives restart");
         assert_eq!(loaded.status.state, TaskState::Completed);
     }
 }

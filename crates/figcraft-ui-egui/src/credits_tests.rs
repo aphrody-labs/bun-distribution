@@ -15,7 +15,11 @@ fn leak(s: String) -> &'static str {
 fn people(n: u64) -> Vec<Contributor> {
     (0..n)
         .map(|i| Contributor {
-            login: if i == 0 { "nullpointerexception" } else { leak(format!("user{i:02}")) },
+            login: if i == 0 {
+                "nullpointerexception"
+            } else {
+                leak(format!("user{i:02}"))
+            },
             display_name: None,
             real_name: None,
             prs: 100 + i,
@@ -31,7 +35,14 @@ fn people(n: u64) -> Vec<Contributor> {
 }
 
 fn model(name: &'static str, commits: u64) -> Model {
-    Model { company: "Anthropic", model: name, version: "5.5", commits, lines_added: 150_000 + commits, lines_deleted: 20_000 }
+    Model {
+        company: "Anthropic",
+        model: name,
+        version: "5.5",
+        commits,
+        lines_added: 150_000 + commits,
+        lines_deleted: 20_000,
+    }
 }
 
 /// A headless egui with FigCraft's fonts and light theme; `draw` runs inside a fixed-width column.
@@ -52,18 +63,24 @@ impl Ui {
     }
 
     fn set_view(&self, v: View) {
-        self.ctx.data_mut(|d| d.insert_temp(egui::Id::new("credits_view"), v));
+        self.ctx
+            .data_mut(|d| d.insert_temp(egui::Id::new("credits_view"), v));
     }
 
     fn view(&self) -> View {
-        self.ctx.data(|d| d.get_temp::<View>(egui::Id::new("credits_view"))).unwrap_or_default()
+        self.ctx
+            .data(|d| d.get_temp::<View>(egui::Id::new("credits_view")))
+            .unwrap_or_default()
     }
 
     /// One frame; returns the rect `draw` filled.
     fn frame(&mut self, events: Vec<Event>, mut draw: impl FnMut(&mut egui::Ui)) -> Rect {
         self.time += 1.0 / 60.0;
         let input = RawInput {
-            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(ABOUT_WIDTH + 40.0, 600.0))),
+            screen_rect: Some(Rect::from_min_size(
+                Pos2::ZERO,
+                vec2(ABOUT_WIDTH + 40.0, 600.0),
+            )),
             time: Some(self.time),
             events,
             ..Default::default()
@@ -80,7 +97,12 @@ impl Ui {
     }
 
     fn click(&mut self, at: Pos2, draw: impl Fn(&mut egui::Ui)) {
-        let press = |pressed| Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE };
+        let press = |pressed| Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
         self.frame(vec![Event::PointerMoved(at)], &draw);
         self.frame(vec![press(true)], &draw);
         self.frame(vec![press(false)], &draw);
@@ -105,12 +127,32 @@ fn every_column_fits_the_about_window() {
     let mut u = Ui::new();
     let list = people(8);
     let refs: Vec<&Contributor> = list.iter().collect();
-    let (fixed, scroll) = u.measure(|ui| (contributor_widths(ui, &refs).iter().flatten().sum::<f32>(), ui.spacing().scroll.allocated_width()));
-    assert!(fixed + scroll + NAME_MIN_W <= ABOUT_WIDTH, "contributor columns need {} pt of {ABOUT_WIDTH}", fixed + scroll + NAME_MIN_W);
-    let models: Vec<Model> = (0..8).map(|i| model(leak(format!("Claude Model {i}")), [228, 45, 6, 2, 2, 1, 1, 1][i])).collect();
+    let (fixed, scroll) = u.measure(|ui| {
+        (
+            contributor_widths(ui, &refs).iter().flatten().sum::<f32>(),
+            ui.spacing().scroll.allocated_width(),
+        )
+    });
+    assert!(
+        fixed + scroll + NAME_MIN_W <= ABOUT_WIDTH,
+        "contributor columns need {} pt of {ABOUT_WIDTH}",
+        fixed + scroll + NAME_MIN_W
+    );
+    let models: Vec<Model> = (0..8)
+        .map(|i| {
+            model(
+                leak(format!("Claude Model {i}")),
+                [228, 45, 6, 2, 2, 1, 1, 1][i],
+            )
+        })
+        .collect();
     let rows: Vec<[String; 6]> = models.iter().map(|m| model_cells(m, 482)).collect();
     let fixed = u.measure(|ui| model_widths(ui, &rows).iter().flatten().sum::<f32>());
-    assert!(fixed + scroll + NAME_MIN_W <= ABOUT_WIDTH, "model columns need {} pt of {ABOUT_WIDTH}", fixed + scroll + NAME_MIN_W);
+    assert!(
+        fixed + scroll + NAME_MIN_W <= ABOUT_WIDTH,
+        "model columns need {} pt of {ABOUT_WIDTH}",
+        fixed + scroll + NAME_MIN_W
+    );
 }
 
 #[test]
@@ -118,7 +160,10 @@ fn switching_the_contributors_view_keeps_its_size() {
     let list = people(60);
     let mut u = Ui::new();
     let mut height = |table| {
-        u.set_view(View { table, ..View::default() });
+        u.set_view(View {
+            table,
+            ..View::default()
+        });
         let mut r = Rect::NOTHING;
         for _ in 0..3 {
             r = u.frame(vec![], |ui| contributors_in(ui, &list, 1));
@@ -126,7 +171,10 @@ fn switching_the_contributors_view_keeps_its_size() {
         r.height()
     };
     let (bag, table) = (height(false), height(true));
-    assert!((bag - table).abs() < 0.5, "{bag} pt tall as a grab bag, {table} pt as a table");
+    assert!(
+        (bag - table).abs() < 0.5,
+        "{bag} pt tall as a grab bag, {table} pt as a table"
+    );
 }
 
 #[test]
@@ -134,7 +182,10 @@ fn clicking_a_header_sorts_by_it() {
     let list = people(12);
     let draw = |ui: &mut egui::Ui| contributors_in(ui, &list, 1);
     let mut u = Ui::new();
-    u.set_view(View { table: true, ..View::default() });
+    u.set_view(View {
+        table: true,
+        ..View::default()
+    });
     let mut r = Rect::NOTHING;
     for _ in 0..3 {
         r = u.frame(vec![], draw);
@@ -147,16 +198,39 @@ fn clicking_a_header_sorts_by_it() {
     let scroll = u.measure(|ui| ui.spacing().scroll.allocated_width());
     let name_w = (ABOUT_WIDTH - fixed - scroll).max(NAME_MIN_W);
     // The middle of column `i` (0 is the name).
-    let x = |i: usize| r.left() + name_w + widths.iter().skip(1).take(i - 1).flatten().sum::<f32>() + widths[i].unwrap_or(0.0) / 2.0;
-    assert_eq!((u.view().key, u.view().ascending), (SortKey::FirstCommit, true));
-    let commits = SortKey::ALL.iter().position(|k| *k == SortKey::Commits).unwrap_or(0);
+    let x = |i: usize| {
+        r.left()
+            + name_w
+            + widths.iter().skip(1).take(i - 1).flatten().sum::<f32>()
+            + widths[i].unwrap_or(0.0) / 2.0
+    };
+    assert_eq!(
+        (u.view().key, u.view().ascending),
+        (SortKey::FirstCommit, true)
+    );
+    let commits = SortKey::ALL
+        .iter()
+        .position(|k| *k == SortKey::Commits)
+        .unwrap_or(0);
     u.click(Pos2::new(x(commits), header_y), draw);
-    assert_eq!((u.view().key, u.view().ascending), (SortKey::Commits, false), "a count sorts biggest first");
+    assert_eq!(
+        (u.view().key, u.view().ascending),
+        (SortKey::Commits, false),
+        "a count sorts biggest first"
+    );
     u.click(Pos2::new(x(commits), header_y), draw);
-    assert_eq!((u.view().key, u.view().ascending), (SortKey::Commits, true), "clicking again reverses");
+    assert_eq!(
+        (u.view().key, u.view().ascending),
+        (SortKey::Commits, true),
+        "clicking again reverses"
+    );
     let last = SortKey::ALL.len() - 1;
     u.click(Pos2::new(x(last), header_y), draw);
-    assert_eq!((u.view().key, u.view().ascending), (SortKey::LastCommit, true), "a date sorts oldest first");
+    assert_eq!(
+        (u.view().key, u.view().ascending),
+        (SortKey::LastCommit, true),
+        "a date sorts oldest first"
+    );
 }
 
 #[test]
@@ -164,7 +238,10 @@ fn empty_tables_draw_a_note() {
     // What a build without contributors.json shows: no table, no panic, on every view.
     let mut u = Ui::new();
     for table in [false, true] {
-        u.set_view(View { table, ..View::default() });
+        u.set_view(View {
+            table,
+            ..View::default()
+        });
         let r = u.frame(vec![], |ui| contributors_in(ui, &[], 0));
         assert!(r.height() > 0.0 && r.height() < LIST_HEIGHT, "{r:?}");
     }
@@ -176,7 +253,9 @@ fn empty_tables_draw_a_note() {
 fn the_models_table_is_as_tall_as_its_rows() {
     let mut u = Ui::new();
     let few = [model("Claude Opus", 80)];
-    let many: Vec<Model> = (0..40).map(|i| model(leak(format!("Model {i}")), i)).collect();
+    let many: Vec<Model> = (0..40)
+        .map(|i| model(leak(format!("Model {i}")), i))
+        .collect();
     let mut h = |models: &[Model]| {
         let mut r = Rect::NOTHING;
         for _ in 0..2 {
@@ -185,7 +264,10 @@ fn the_models_table_is_as_tall_as_its_rows() {
         r.height()
     };
     let (one, lots) = (h(&few), h(&many));
-    assert!(one < 3.0 * TABLE_ROW_H + TABLE_HEADER_H, "one model takes {one} pt");
+    assert!(
+        one < 3.0 * TABLE_ROW_H + TABLE_HEADER_H,
+        "one model takes {one} pt"
+    );
     assert!(lots <= LIST_HEIGHT + 1.0, "40 models take {lots} pt");
 }
 

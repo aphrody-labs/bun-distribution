@@ -13,7 +13,12 @@ pub const MAX_AUTHOR_CHARS: usize = 255;
 /// trimmed, stripped of control characters (they can't go into the saved XML) and cut to
 /// [`MAX_AUTHOR_CHARS`]; a blank name is refused so revisions always carry an author.
 pub(crate) fn set_author(s: &mut Session, v: &Value) -> CmdResult {
-    let name: String = p::req_str(v, "name")?.trim().chars().filter(|c| !c.is_control()).take(MAX_AUTHOR_CHARS).collect();
+    let name: String = p::req_str(v, "name")?
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_AUTHOR_CHARS)
+        .collect();
     let name = name.trim_end();
     if name.is_empty() {
         return Err(CmdError::Params("`name` must not be blank".into()));
@@ -141,13 +146,18 @@ fn open(s: &mut Session, v: &Value) -> CmdResult {
     };
     let password = p::str(v, "password");
     let (mut doc, encrypted) = if let Some(data) = p::str(v, "data") {
-        let bytes = super::insert::base64_decode(data).ok_or_else(|| CmdError::Params("bad base64".into()))?;
+        let bytes = super::insert::base64_decode(data)
+            .ok_or_else(|| CmdError::Params("bad base64".into()))?;
         crate::io::open_bytes_with(path, &bytes, password).map_err(CmdError::Failed)?
     } else {
         crate::io::open_path_with(std::path::Path::new(path), password).map_err(CmdError::Failed)?
     };
     // Plain text and Markdown carry no language: they are in the editing language.
-    let ext = std::path::Path::new(path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
     if let Some(lang) = &s.editing_lang
         && matches!(ext.as_str(), "txt" | "text" | "md" | "markdown")
     {
@@ -159,7 +169,9 @@ fn open(s: &mut Session, v: &Value) -> CmdResult {
     if encrypted {
         s.password = password.map(crate::io::Password::new);
     }
-    Ok(json!({"path": path, "paragraphs": s.doc.paragraph_count(), "words": s.doc.word_count(), "encrypted": encrypted}))
+    Ok(
+        json!({"path": path, "paragraphs": s.doc.paragraph_count(), "words": s.doc.word_count(), "encrypted": encrypted}),
+    )
 }
 
 /// File › Info › Protect Document › Encrypt with Password: the password Word documents are saved
@@ -172,7 +184,11 @@ fn encrypt(s: &mut Session, v: &Value) -> CmdResult {
             wordcraft_docx::check_password(pw).map_err(|e| CmdError::Params(e.to_string()))?;
             Some(crate::io::Password::new(pw))
         }
-        _ => return Err(CmdError::Params("`password` must be a string, or null to remove the password".into())),
+        _ => {
+            return Err(CmdError::Params(
+                "`password` must be a string, or null to remove the password".into(),
+            ));
+        }
     };
     if password != s.password {
         s.password = password;
@@ -182,7 +198,10 @@ fn encrypt(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn save(s: &mut Session, v: &Value) -> CmdResult {
-    let path = match p::str(v, "path").map(std::path::PathBuf::from).or_else(|| s.path.clone()) {
+    let path = match p::str(v, "path")
+        .map(std::path::PathBuf::from)
+        .or_else(|| s.path.clone())
+    {
         Some(p) => p,
         None => {
             s.ui_requests.push(json!({"open": "saveAs"}));
@@ -191,19 +210,29 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     };
     if let Some(pw) = v.get("password").filter(|pw| !pw.is_null()) {
         let Some(pw) = pw.as_str().filter(|pw| !pw.is_empty()) else {
-            return Err(CmdError::Params("`password` must be a non-empty string (file.encrypt removes a password)".into()));
+            return Err(CmdError::Params(
+                "`password` must be a non-empty string (file.encrypt removes a password)".into(),
+            ));
         };
         if !crate::io::can_encrypt(&path.to_string_lossy()) {
-            return Err(CmdError::Params("only Word documents (.docx, .docm, .dotx, .dotm) can be saved with a password".into()));
+            return Err(CmdError::Params(
+                "only Word documents (.docx, .docm, .dotx, .dotm) can be saved with a password"
+                    .into(),
+            ));
         }
         wordcraft_docx::check_password(pw).map_err(|e| CmdError::Params(e.to_string()))?;
         s.password = Some(crate::io::Password::new(pw));
     }
     s.stamp_save();
     let password = s.password.as_ref().map(crate::io::Password::as_str);
-    crate::io::save_path_with(&path, &s.doc, password, &export_options(s, v)).map_err(CmdError::Failed)?;
+    crate::io::save_path_with(&path, &s.doc, password, &export_options(s, v))
+        .map_err(CmdError::Failed)?;
     let encrypted = password.is_some() && crate::io::can_encrypt(&path.to_string_lossy());
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
     if ["docx", "docm", "dotx", "dotm", "odt", "rtf", "json", "xml"].contains(&ext.as_str()) {
         s.path = Some(path.clone());
         s.dirty = false;
@@ -223,7 +252,10 @@ fn save_as(s: &mut Session, v: &Value) -> CmdResult {
 /// setting (`file.printMarkup`); comments as Track Changes Options show them.
 pub fn export_options(s: &Session, v: &Value) -> crate::io::ExportOptions {
     let markup = p::bool(v, "markup").unwrap_or(s.prefs.print_markup);
-    crate::io::ExportOptions { markup, comments: markup && s.prefs.markup.comments }
+    crate::io::ExportOptions {
+        markup,
+        comments: markup && s.prefs.markup.comments,
+    }
 }
 
 fn export_png(s: &mut Session, v: &Value) -> CmdResult {
@@ -231,7 +263,10 @@ fn export_png(s: &mut Session, v: &Value) -> CmdResult {
     let page = p::u64(v, "page").unwrap_or(1).max(1) as usize - 1;
     let scale = p::f32(v, "scale").unwrap_or(2.0).clamp(0.1, 8.0);
     let l = s.export_layout_with(export_options(s, v).markup);
-    let pg = l.pages.get(page).ok_or_else(|| CmdError::Params(format!("no page {}", page + 1)))?;
+    let pg = l
+        .pages
+        .get(page)
+        .ok_or_else(|| CmdError::Params(format!("no page {}", page + 1)))?;
     let img = wordcraft_render::render_page(&s.doc, pg, scale, &Default::default());
     let png = img.to_png();
     crate::io::write_file(path, &png).map_err(CmdError::Failed)?;
@@ -253,24 +288,35 @@ fn properties(s: &mut Session, v: &Value) -> CmdResult {
     set(&mut c.category, "category");
     if let Some(custom) = v.get("custom") {
         let Some(m) = custom.as_object() else {
-            return Err(CmdError::Params("`custom` must be an object of name → string or null".into()));
+            return Err(CmdError::Params(
+                "`custom` must be an object of name → string or null".into(),
+            ));
         };
         for (name, val) in m {
             if name.trim().is_empty() || name.chars().count() > MAX_CUSTOM_NAME {
-                return Err(CmdError::Params(format!("custom property names are 1–{MAX_CUSTOM_NAME} characters")));
+                return Err(CmdError::Params(format!(
+                    "custom property names are 1–{MAX_CUSTOM_NAME} characters"
+                )));
             }
             match val {
                 Value::Null => {
                     s.doc.remove_custom_prop(name);
                 }
                 Value::String(x) if x.len() <= MAX_CUSTOM_VALUE => s.doc.set_custom_prop(name, x),
-                _ => return Err(CmdError::Params(format!("custom property `{name}` must be a string (≤ {MAX_CUSTOM_VALUE} bytes) or null"))),
+                _ => {
+                    return Err(CmdError::Params(format!(
+                        "custom property `{name}` must be a string (≤ {MAX_CUSTOM_VALUE} bytes) or null"
+                    )));
+                }
             }
         }
     }
     let mut out = serde_json::to_value(&s.doc.core).unwrap_or(Value::Null);
     if let Some(o) = out.as_object_mut() {
-        o.insert("custom".into(), serde_json::to_value(&s.doc.custom_props).unwrap_or(Value::Null));
+        o.insert(
+            "custom".into(),
+            serde_json::to_value(&s.doc.custom_props).unwrap_or(Value::Null),
+        );
     }
     Ok(out)
 }
@@ -305,7 +351,8 @@ fn inspect(s: &mut Session, v: &Value) -> CmdResult {
         match &**b {
             Block::Para(p) => {
                 let style = p.props.style.clone().unwrap_or_else(|| "Normal".into());
-                let mut o = json!({"index": i, "type": "paragraph", "style": style, "len": p.len()});
+                let mut o =
+                    json!({"index": i, "type": "paragraph", "style": style, "len": p.len()});
                 if with_text {
                     o["text"] = json!(p.plain_text());
                 }
@@ -339,7 +386,13 @@ fn inspect(s: &mut Session, v: &Value) -> CmdResult {
                     .map(|r| {
                         r.cells
                             .iter()
-                            .map(|c| c.blocks.iter().filter_map(|b| b.as_para().map(|p| p.plain_text())).collect::<Vec<_>>().join("\n"))
+                            .map(|c| {
+                                c.blocks
+                                    .iter()
+                                    .filter_map(|b| b.as_para().map(|p| p.plain_text()))
+                                    .collect::<Vec<_>>()
+                                    .join("\n")
+                            })
                             .collect()
                     })
                     .collect();
@@ -366,9 +419,13 @@ fn inspect(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn paragraph(s: &mut Session, v: &Value) -> CmdResult {
-    let path: Vec<u32> = serde_json::from_value(v.get("path").cloned().unwrap_or(json!([0]))).map_err(|e| CmdError::Params(e.to_string()))?;
+    let path: Vec<u32> = serde_json::from_value(v.get("path").cloned().unwrap_or(json!([0])))
+        .map_err(|e| CmdError::Params(e.to_string()))?;
     let story = super::story_param(s, v);
-    let p = s.doc.para(story, &wordcraft_doc::Path(path)).ok_or_else(|| CmdError::Params("no paragraph there".into()))?;
+    let p = s
+        .doc
+        .para(story, &wordcraft_doc::Path(path))
+        .ok_or_else(|| CmdError::Params("no paragraph there".into()))?;
     let resolved = s.doc.styles.resolve_para(&p.props);
     Ok(json!({"paragraph": p, "resolved": resolved}))
 }
@@ -383,6 +440,8 @@ fn layout_summary(s: &mut Session, _: &Value) -> CmdResult {
             json!({"number": p.number, "w": p.w, "h": p.h, "section": p.section, "lines": lines, "firstBlock": p.first_block, "header": p.header_story, "footer": p.footer_story})
         })
         .collect();
-    let caret = l.caret_on(&s.sel.focus, s.page_hint).map(|c| json!({"page": c.page, "x": c.x, "y": c.top, "h": c.height}));
+    let caret = l
+        .caret_on(&s.sel.focus, s.page_hint)
+        .map(|c| json!({"page": c.page, "x": c.x, "y": c.top, "h": c.height}));
     Ok(json!({"pages": pages, "caret": caret, "ms": l.ms}))
 }

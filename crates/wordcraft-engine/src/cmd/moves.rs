@@ -34,7 +34,9 @@ pub fn move_sized(text: &str) -> bool {
 
 /// Every story.
 fn stories(s: &Session) -> Vec<StoryRef> {
-    std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k))).collect()
+    std::iter::once(StoryRef::Body)
+        .chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k)))
+        .collect()
 }
 
 /// Whether some text or paragraph mark carries revision `rev` as its insertion or deletion.
@@ -42,7 +44,11 @@ fn in_use(s: &Session, rev: u32) -> bool {
     stories(s).into_iter().any(|st| {
         s.doc.para_paths(st).iter().any(|path| {
             s.doc.para(st, path).is_some_and(|p| {
-                p.mark.ins == Some(rev) || p.mark.del == Some(rev) || p.runs.iter().any(|r| r.props.ins == Some(rev) || r.props.del == Some(rev))
+                p.mark.ins == Some(rev)
+                    || p.mark.del == Some(rev)
+                    || p.runs
+                        .iter()
+                        .any(|r| r.props.ins == Some(rev) || r.props.del == Some(rev))
             })
         })
     })
@@ -53,16 +59,28 @@ fn in_use(s: &Session, rev: u32) -> bool {
 /// done) when it isn't such a cut.
 pub fn cut_tracked(s: &mut Session) -> Result<bool, CmdError> {
     let (a, b) = s.sel.ordered();
-    if !s.doc.settings.track_changes || a == b || a.story != b.story || !move_sized(&s.clipboard_text) {
+    if !s.doc.settings.track_changes
+        || a == b
+        || a.story != b.story
+        || !move_sized(&s.clipboard_text)
+    {
         return Ok(false);
     }
-    s.doc.revisions.push(Revision::new(RevisionKind::Delete, s.author.clone(), now_iso()));
+    s.doc.revisions.push(Revision::new(
+        RevisionKind::Delete,
+        s.author.clone(),
+        now_iso(),
+    ));
     let rid = (s.doc.revisions.len() - 1) as u32;
     let at = track_delete_as(s, &a, &b, rid)?;
     s.sel = Selection::caret(at);
     // Only the author's own insertions were cut: they are gone, not moved.
     if in_use(s, rid) {
-        s.pending_move = Some(PendingMove { rev: rid, text: s.clipboard_text.clone(), author: s.author.clone() });
+        s.pending_move = Some(PendingMove {
+            rev: rid,
+            text: s.clipboard_text.clone(),
+            author: s.author.clone(),
+        });
     }
     Ok(true)
 }
@@ -74,20 +92,41 @@ pub fn take_paste(s: &mut Session, frag: &Fragment) -> Option<u32> {
     if m.author != s.author || frag.plain_text() != m.text || !in_use(s, m.rev) {
         return None;
     }
-    let src = s.doc.revisions.get(m.rev as usize).filter(|r| r.kind == RevisionKind::Delete && r.move_name.is_none())?;
+    let src = s
+        .doc
+        .revisions
+        .get(m.rev as usize)
+        .filter(|r| r.kind == RevisionKind::Delete && r.move_name.is_none())?;
     let date = src.date.clone();
-    let taken: BTreeSet<&str> = s.doc.revisions.iter().filter_map(|r| r.move_name.as_deref()).collect();
-    let name = (1..).map(|n: u64| format!("move{n}")).find(|n| !taken.contains(n.as_str()))?;
+    let taken: BTreeSet<&str> = s
+        .doc
+        .revisions
+        .iter()
+        .filter_map(|r| r.move_name.as_deref())
+        .collect();
+    let name = (1..)
+        .map(|n: u64| format!("move{n}"))
+        .find(|n| !taken.contains(n.as_str()))?;
     if let Some(r) = s.doc.revisions.get_mut(m.rev as usize) {
         r.move_name = Some(name.clone());
     }
-    s.doc.revisions.push(Revision { kind: RevisionKind::Insert, author: s.author.clone(), date, move_name: Some(name) });
+    s.doc.revisions.push(Revision {
+        kind: RevisionKind::Insert,
+        author: s.author.clone(),
+        date,
+        move_name: Some(name),
+    });
     Some((s.doc.revisions.len() - 1) as u32)
 }
 
 /// The move names of the insertions and deletions in `a..b` (and of the paragraph marks it
 /// covers; `caret_mark` = the mark of the paragraph at that path, for a caret before it).
-pub fn names_in(s: &Session, a: &Pos, b: &Pos, caret_mark: Option<&wordcraft_doc::Path>) -> BTreeSet<String> {
+pub fn names_in(
+    s: &Session,
+    a: &Pos,
+    b: &Pos,
+    caret_mark: Option<&wordcraft_doc::Path>,
+) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     let mut add = |r: Option<u32>| {
         if let Some(n) = s.doc.move_name(r) {
@@ -95,7 +134,9 @@ pub fn names_in(s: &Session, a: &Pos, b: &Pos, caret_mark: Option<&wordcraft_doc
         }
     };
     for path in s.doc.paths_between(a, b) {
-        let Some(p) = s.doc.para(a.story, &path) else { continue };
+        let Some(p) = s.doc.para(a.story, &path) else {
+            continue;
+        };
         let from = if path == a.path { a.off } else { 0 };
         let to = if path == b.path { b.off } else { p.len() };
         for (r, c) in p.run_ranges() {
@@ -121,9 +162,14 @@ pub fn resolve(s: &mut Session, names: &BTreeSet<String>, accept: bool) -> Resul
     let named = |s: &Session, r: Option<u32>| s.doc.move_name(r).is_some_and(|n| names.contains(n));
     for st in stories(s) {
         for path in s.doc.para_paths(st).into_iter().rev() {
-            let Some(p) = s.doc.para(st, &path) else { continue };
-            let ranges: Vec<(usize, usize, bool, bool)> =
-                p.run_ranges().map(|(r, c)| (r.start, r.end, named(s, c.ins), named(s, c.del))).filter(|(_, _, ins, del)| *ins || *del).collect();
+            let Some(p) = s.doc.para(st, &path) else {
+                continue;
+            };
+            let ranges: Vec<(usize, usize, bool, bool)> = p
+                .run_ranges()
+                .map(|(r, c)| (r.start, r.end, named(s, c.ins), named(s, c.del)))
+                .filter(|(_, _, ins, del)| *ins || *del)
+                .collect();
             let (mark_ins, mark_del) = (named(s, p.mark.ins), named(s, p.mark.del));
             if ranges.is_empty() && !mark_ins && !mark_del {
                 continue;
@@ -147,7 +193,9 @@ pub fn resolve(s: &mut Session, names: &BTreeSet<String>, accept: bool) -> Resul
                 continue;
             }
             // A moved paragraph mark that goes away joins the next paragraph to this one.
-            if ((mark_del && accept) || (mark_ins && !accept)) && super::join_next_para(s, st, &path)? {
+            if ((mark_del && accept) || (mark_ins && !accept))
+                && super::join_next_para(s, st, &path)?
+            {
                 continue;
             }
             let para = s.doc.para_mut(st, &path)?;
@@ -172,7 +220,9 @@ pub fn has_moves(doc: &wordcraft_doc::Document) -> bool {
         doc.para(StoryRef::Body, path).is_some_and(|p| {
             doc.move_name(p.mark.ins).is_some()
                 || doc.move_name(p.mark.del).is_some()
-                || p.runs.iter().any(|r| doc.move_name(r.props.ins).is_some() || doc.move_name(r.props.del).is_some())
+                || p.runs.iter().any(|r| {
+                    doc.move_name(r.props.ins).is_some() || doc.move_name(r.props.del).is_some()
+                })
         })
     })
 }
@@ -185,54 +235,94 @@ mod tests {
     use crate::Session;
 
     fn texts(s: &Session) -> Vec<String> {
-        s.doc.body.iter().filter_map(|b| b.as_para()).map(|p| p.text.clone()).collect()
+        s.doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .map(|p| p.text.clone())
+            .collect()
     }
 
     /// Three paragraphs; with Track Changes on, the second (with its mark) cut and pasted
     /// before the first.
     fn moved() -> Session {
         let mut s = Session::new(Document::new());
-        s.run("document.setText", &json!({"text": "First one.\nSecond one.\nThird one."})).unwrap();
+        s.run(
+            "document.setText",
+            &json!({"text": "First one.\nSecond one.\nThird one."}),
+        )
+        .unwrap();
         s.run("file.setAuthor", &json!({"name": "Ana"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 1, "off": 0}, "focus": {"block": 2, "off": 0}})).unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 1, "off": 0}, "focus": {"block": 2, "off": 0}}),
+        )
+        .unwrap();
         s.run("edit.cut", &json!({})).unwrap();
-        s.run("caret.set", &json!({"pos": {"block": 0, "off": 0}})).unwrap();
+        s.run("caret.set", &json!({"pos": {"block": 0, "off": 0}}))
+            .unwrap();
         s.run("edit.paste", &json!({})).unwrap();
         s
     }
 
     fn kinds(s: &mut Session) -> Vec<(String, Value)> {
         let ch = s.run("review.changes", &json!({})).unwrap();
-        ch.as_array().unwrap().iter().map(|c| (c["kind"].as_str().unwrap().to_string(), c["move"].clone())).collect()
+        ch.as_array()
+            .unwrap()
+            .iter()
+            .map(|c| (c["kind"].as_str().unwrap().to_string(), c["move"].clone()))
+            .collect()
     }
 
     #[test]
     fn a_tracked_cut_and_paste_of_a_paragraph_is_a_move() {
         let mut s = moved();
-        assert_eq!(texts(&s), ["Second one.", "First one.", "Second one.", "Third one."]);
+        assert_eq!(
+            texts(&s),
+            ["Second one.", "First one.", "Second one.", "Third one."]
+        );
         let p = |i: usize| s.doc.para_at(&Pos::body(i, 0)).unwrap().clone();
         let name = |r: Option<u32>| s.doc.move_name(r).map(str::to_string);
         let (to, from) = (p(0), p(2));
         assert_eq!(name(to.runs[0].props.ins).as_deref(), Some("move1"));
-        assert_eq!(name(to.mark.ins).as_deref(), Some("move1"), "the pasted paragraph mark is moved too");
+        assert_eq!(
+            name(to.mark.ins).as_deref(),
+            Some("move1"),
+            "the pasted paragraph mark is moved too"
+        );
         assert_eq!(name(from.runs[0].props.del).as_deref(), Some("move1"));
         assert_eq!(name(from.mark.del).as_deref(), Some("move1"));
         assert_eq!(p(1).runs[0].props.ins, None);
         let k = kinds(&mut s);
-        assert!(k.iter().all(|(k, m)| k.starts_with("move") && m == "move1"), "{k:?}");
+        assert!(
+            k.iter().all(|(k, m)| k.starts_with("move") && m == "move1"),
+            "{k:?}"
+        );
         // Saved and opened again, it is still a move.
         let back = wordcraft_docx::read(&wordcraft_docx::write(&s.doc).unwrap()).unwrap();
         let b0 = back.body[0].as_para().unwrap();
-        assert!(back.move_name(b0.runs[0].props.ins).is_some() && back.move_name(b0.mark.ins).is_some());
+        assert!(
+            back.move_name(b0.runs[0].props.ins).is_some() && back.move_name(b0.mark.ins).is_some()
+        );
         let b2 = back.body[2].as_para().unwrap();
-        assert_eq!(back.move_name(b2.runs[0].props.del), back.move_name(b0.runs[0].props.ins));
+        assert_eq!(
+            back.move_name(b2.runs[0].props.del),
+            back.move_name(b0.runs[0].props.ins)
+        );
 
         // A word is no move: a deletion and an insertion.
         let mut s = Session::new(Document::new());
-        s.run("document.setText", &json!({"text": "one two"})).unwrap();
-        s.run("review.trackChanges", &json!({"value": true})).unwrap();
-        s.run("select.range", &json!({"anchor": {"block": 0, "off": 0}, "focus": {"block": 0, "off": 4}})).unwrap();
+        s.run("document.setText", &json!({"text": "one two"}))
+            .unwrap();
+        s.run("review.trackChanges", &json!({"value": true}))
+            .unwrap();
+        s.run(
+            "select.range",
+            &json!({"anchor": {"block": 0, "off": 0}, "focus": {"block": 0, "off": 4}}),
+        )
+        .unwrap();
         s.run("edit.cut", &json!({})).unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
         s.run("edit.paste", &json!({})).unwrap();
@@ -244,7 +334,8 @@ mod tests {
     fn accepting_one_end_of_a_move_accepts_both() {
         let mut s = moved();
         // The caret in the text moved away.
-        s.run("caret.set", &json!({"pos": {"block": 2, "off": 3}})).unwrap();
+        s.run("caret.set", &json!({"pos": {"block": 2, "off": 3}}))
+            .unwrap();
         s.run("review.accept", &json!({})).unwrap();
         assert_eq!(texts(&s), ["Second one.", "First one.", "Third one."]);
         assert!(kinds(&mut s).is_empty());
@@ -254,7 +345,8 @@ mod tests {
     fn rejecting_a_move_puts_the_text_back() {
         let mut s = moved();
         // The caret in the moved text.
-        s.run("caret.set", &json!({"pos": {"block": 0, "off": 3}})).unwrap();
+        s.run("caret.set", &json!({"pos": {"block": 0, "off": 3}}))
+            .unwrap();
         s.run("review.reject", &json!({})).unwrap();
         assert_eq!(texts(&s), ["First one.", "Second one.", "Third one."]);
         assert!(kinds(&mut s).is_empty());

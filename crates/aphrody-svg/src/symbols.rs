@@ -67,7 +67,12 @@ pub struct SymbolAxes {
 
 impl Default for SymbolAxes {
     fn default() -> Self {
-        Self { fill: 0.0, weight: 400.0, grade: 0.0, optical_size: 24.0 }
+        Self {
+            fill: 0.0,
+            weight: 400.0,
+            grade: 0.0,
+            optical_size: 24.0,
+        }
     }
 }
 
@@ -90,7 +95,10 @@ impl SymbolAxes {
     pub fn cdn_variant(self) -> Option<(String, String)> {
         let exact = |v: f32, allowed: &[f32]| allowed.iter().any(|a| (v - a).abs() < f32::EPSILON);
         if !exact(self.fill, &[0.0, 1.0])
-            || !exact(self.weight, &[100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0])
+            || !exact(
+                self.weight,
+                &[100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0],
+            )
             || !exact(self.grade, &[-25.0, 0.0, 200.0])
             || !exact(self.optical_size, &[20.0, 24.0, 40.0, 48.0])
         {
@@ -134,7 +142,10 @@ pub fn cdn_path(name: &str, style: SymbolStyle, axes: SymbolAxes) -> Option<Stri
 /// `true` for a Material Symbols name: non-empty, `[a-z0-9_]` only.
 #[must_use]
 pub fn is_symbol_name(name: &str) -> bool {
-    !name.is_empty() && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
+    !name.is_empty()
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
 }
 
 /// TTF bytes of a font given as WOFF2 (decoded) or as TTF/OTF (borrowed as is).
@@ -148,8 +159,10 @@ pub fn decode_font(bytes: &[u8]) -> Result<Cow<'_, [u8]>> {
             woff2::convert_woff2_to_ttf(&mut input)
                 .map(Cow::Owned)
                 .map_err(|e| Error::Font(format!("WOFF2: {e}")))
-        },
-        Some(b"wOFF") => Err(Error::Font("WOFF1 is not supported, use WOFF2 or TTF".into())),
+        }
+        Some(b"wOFF") => Err(Error::Font(
+            "WOFF1 is not supported, use WOFF2 or TTF".into(),
+        )),
         _ => Ok(Cow::Borrowed(bytes)),
     }
 }
@@ -204,14 +217,21 @@ mod tests {
 
     #[test]
     fn cdn_variants_follow_gstatic() {
-        let v = |fill, weight, grade, optical_size| SymbolAxes { fill, weight, grade, optical_size };
+        let v = |fill, weight, grade, optical_size| SymbolAxes {
+            fill,
+            weight,
+            grade,
+            optical_size,
+        };
         assert_eq!(
             cdn_path("home", SymbolStyle::Outlined, SymbolAxes::default()).as_deref(),
             Some("s/i/short-term/release/materialsymbolsoutlined/home/default/24px.svg")
         );
         assert_eq!(
             cdn_path("home", SymbolStyle::Outlined, v(1.0, 300.0, -25.0, 48.0)).as_deref(),
-            Some("s/i/short-term/release/materialsymbolsoutlined/home/wght300gradN25fill1/48px.svg")
+            Some(
+                "s/i/short-term/release/materialsymbolsoutlined/home/wght300gradN25fill1/48px.svg"
+            )
         );
         assert_eq!(
             v(1.0, 400.0, 200.0, 20.0).cdn_variant(),
@@ -220,18 +240,35 @@ mod tests {
         assert_eq!(v(0.5, 400.0, 0.0, 24.0).cdn_variant(), None);
         assert_eq!(v(0.0, 450.0, 0.0, 24.0).cdn_variant(), None);
         assert_eq!(v(0.0, 400.0, 0.0, 32.0).cdn_variant(), None);
-        assert_eq!(cdn_path("Home", SymbolStyle::Rounded, SymbolAxes::default()), None);
-        assert_eq!(cdn_path("../x", SymbolStyle::Rounded, SymbolAxes::default()), None);
+        assert_eq!(
+            cdn_path("Home", SymbolStyle::Rounded, SymbolAxes::default()),
+            None
+        );
+        assert_eq!(
+            cdn_path("../x", SymbolStyle::Rounded, SymbolAxes::default()),
+            None
+        );
     }
 
     #[test]
     fn styles_and_fonts() {
         assert_eq!(SymbolStyle::parse("rounded"), Some(SymbolStyle::Rounded));
         assert_eq!(SymbolStyle::parse("bold"), None);
-        assert_eq!(SymbolStyle::Sharp.font_file(), "material-symbols-sharp.woff2");
+        assert_eq!(
+            SymbolStyle::Sharp.font_file(),
+            "material-symbols-sharp.woff2"
+        );
         assert!(matches!(decode_font(b"wOF2\0\0"), Err(Error::Font(_))));
         assert!(matches!(decode_font(b"wOFF"), Err(Error::Font(_))));
         assert!(matches!(decode_font(b"\0\x01\0\0"), Ok(Cow::Borrowed(_))));
-        assert!(matches!(symbol_path(b"nope", "home", SymbolAxes::default(), NumberFormat::Fixed(2)), Err(Error::Font(_))));
+        assert!(matches!(
+            symbol_path(
+                b"nope",
+                "home",
+                SymbolAxes::default(),
+                NumberFormat::Fixed(2)
+            ),
+            Err(Error::Font(_))
+        ));
     }
 }

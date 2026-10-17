@@ -9,16 +9,16 @@ use bevy_ecs::{
     system::{Commands, Query, Res},
 };
 use bevy_input_focus::tab_navigation::TabIndex;
-use bevy_picking::{cursor::EntityCursor, PickingSystems};
-use bevy_reflect::std_traits::ReflectDefault;
+use bevy_picking::{PickingSystems, cursor::EntityCursor};
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 use bevy_scene::prelude::*;
 use bevy_text::{
     EditableText, FontSourceTemplate, FontWeight, LineBreak, TextCursorStyle, TextFont, TextLayout,
     TextReadWriteMode,
 };
 use bevy_ui::{
-    px, AlignItems, BorderRadius, Display, InteractionDisabled, JustifyContent, Node, UiRect,
+    AlignItems, BorderRadius, Display, InteractionDisabled, JustifyContent, Node, UiRect, px,
 };
 use bevy_ui_widgets::TextInput;
 

@@ -74,14 +74,23 @@ pub fn tile_infos(s: &Surface, parallel: bool) -> Vec<TileInfo> {
     // rayon is a native-only dependency; the web build hashes serially.
     #[cfg(not(target_arch = "wasm32"))]
     let hashed: Vec<(usize, u64)> = if parallel {
-        distinct.par_iter().map(|(p, t)| (*p, content_hash(t))).collect()
+        distinct
+            .par_iter()
+            .map(|(p, t)| (*p, content_hash(t)))
+            .collect()
     } else {
-        distinct.iter().map(|(p, t)| (*p, content_hash(t))).collect()
+        distinct
+            .iter()
+            .map(|(p, t)| (*p, content_hash(t)))
+            .collect()
     };
     #[cfg(target_arch = "wasm32")]
     let hashed: Vec<(usize, u64)> = {
         let _ = parallel;
-        distinct.iter().map(|(p, t)| (*p, content_hash(t))).collect()
+        distinct
+            .iter()
+            .map(|(p, t)| (*p, content_hash(t)))
+            .collect()
     };
     let hash_of: HashMap<usize, u64> = hashed.into_iter().collect();
     let mut count: HashMap<u64, usize> = HashMap::new();
@@ -93,10 +102,13 @@ pub fn tile_infos(s: &Surface, parallel: bool) -> Vec<TileInfo> {
     let mut group_of: HashMap<u64, usize> = HashMap::new();
     s.tiles()
         .map(|(c, t)| {
-            let group = hash_of.get(&ptr(t)).filter(|h| count.get(h).is_some_and(|&n| n > 1)).map(|h| {
-                let next = group_of.len();
-                *group_of.entry(*h).or_insert(next)
-            });
+            let group = hash_of
+                .get(&ptr(t))
+                .filter(|h| count.get(h).is_some_and(|&n| n > 1))
+                .map(|h| {
+                    let next = group_of.len();
+                    *group_of.entry(*h).or_insert(next)
+                });
             TileInfo { coord: *c, group }
         })
         .collect()
@@ -127,27 +139,60 @@ pub fn cell_range(r: DRect) -> Option<(i32, i32, i32, i32)> {
     if r.is_empty() {
         return None;
     }
-    let (a, b) = (TileCoord::containing(r.x0, r.y0), TileCoord::containing(r.x1 - 1, r.y1 - 1));
+    let (a, b) = (
+        TileCoord::containing(r.x0, r.y0),
+        TileCoord::containing(r.x1 - 1, r.y1 - 1),
+    );
     Some((a.tx, a.ty, b.tx, b.ty))
 }
 
 fn quad(xf: &ViewXform, r: DRect) -> [egui::Pos2; 4] {
     let (x0, y0, x1, y1) = (r.x0 as f32, r.y0 as f32, r.x1 as f32, r.y1 as f32);
-    [xf.to_screen(x0, y0), xf.to_screen(x1, y0), xf.to_screen(x1, y1), xf.to_screen(x0, y1)]
+    [
+        xf.to_screen(x0, y0),
+        xf.to_screen(x1, y0),
+        xf.to_screen(x1, y1),
+        xf.to_screen(x0, y1),
+    ]
 }
 
 /// Draw the active layer's tiles of document `idx`. `visible` is the document area in view.
-pub fn paint(app: &PhotocraftApp, ctx: &egui::Context, painter: &Painter, xf: &ViewXform, idx: usize, visible: DRect) {
-    let Some(st) = app.session.documents().get(idx) else { return };
-    let Some(surface) = st.active_layer.and_then(|id| st.doc.layer(id)).and_then(|l| l.surface()) else { return };
+pub fn paint(
+    app: &PhotocraftApp,
+    ctx: &egui::Context,
+    painter: &Painter,
+    xf: &ViewXform,
+    idx: usize,
+    visible: DRect,
+) {
+    let Some(st) = app.session.documents().get(idx) else {
+        return;
+    };
+    let Some(surface) = st
+        .active_layer
+        .and_then(|id| st.doc.layer(id))
+        .and_then(|l| l.surface())
+    else {
+        return;
+    };
     let revision = st.revision;
     let mem = egui::Id::new(("pc-tile-overlay", st.doc.id.0, st.active_layer.map(|l| l.0)));
-    let cached = ctx.data(|d| d.get_temp::<Cached>(mem)).filter(|c| c.revision == revision);
+    let cached = ctx
+        .data(|d| d.get_temp::<Cached>(mem))
+        .filter(|c| c.revision == revision);
     let tiles = match cached {
         Some(c) => c.tiles,
         None => {
             let tiles = Arc::new(tile_infos(surface, !app.session.has_jobs()));
-            ctx.data_mut(|d| d.insert_temp(mem, Cached { revision, tiles: tiles.clone() }));
+            ctx.data_mut(|d| {
+                d.insert_temp(
+                    mem,
+                    Cached {
+                        revision,
+                        tiles: tiles.clone(),
+                    },
+                )
+            });
             tiles
         }
     };
@@ -157,8 +202,14 @@ pub fn paint(app: &PhotocraftApp, ctx: &egui::Context, painter: &Painter, xf: &V
     if let Some((tx0, ty0, tx1, ty1)) = cell_range(visible.intersect(&bounds)) {
         let line = Stroke::new(1.0, EMPTY_LINE);
         let edge = |t: i32| t.saturating_mul(TILE_SIZE);
-        let (top, bottom) = (bounds.y0.max(edge(ty0)) as f32, bounds.y1.min(edge(ty1.saturating_add(1))) as f32);
-        let (left, right) = (bounds.x0.max(edge(tx0)) as f32, bounds.x1.min(edge(tx1.saturating_add(1))) as f32);
+        let (top, bottom) = (
+            bounds.y0.max(edge(ty0)) as f32,
+            bounds.y1.min(edge(ty1.saturating_add(1))) as f32,
+        );
+        let (left, right) = (
+            bounds.x0.max(edge(tx0)) as f32,
+            bounds.x1.min(edge(tx1.saturating_add(1))) as f32,
+        );
         for tx in tx0..=tx1.saturating_add(1) {
             let x = edge(tx).clamp(bounds.x0, bounds.x1) as f32;
             painter.line_segment([xf.to_screen(x, top), xf.to_screen(x, bottom)], line);
@@ -182,11 +233,20 @@ pub fn paint(app: &PhotocraftApp, ctx: &egui::Context, painter: &Painter, xf: &V
         painter.add(Shape::convex_polygon(pts.clone(), fill, Stroke::NONE));
         painter.add(Shape::closed_line(pts, Stroke::new(1.0, c)));
         if size >= LABEL_MIN {
-            let mid = xf.to_screen(r.x0 as f32 + TILE_SIZE as f32 / 2.0, r.y0 as f32 + TILE_SIZE as f32 / 2.0);
+            let mid = xf.to_screen(
+                r.x0 as f32 + TILE_SIZE as f32 / 2.0,
+                r.y0 as f32 + TILE_SIZE as f32 / 2.0,
+            );
             let label = format!("{},{}", t.coord.tx, t.coord.ty);
             let font = FontId::monospace((size / 8.0).clamp(10.0, 16.0));
             // A dark drop shadow keeps the label readable over light pixels.
-            painter.text(mid + egui::vec2(1.0, 1.0), Align2::CENTER_CENTER, &label, font.clone(), Color32::from_black_alpha(180));
+            painter.text(
+                mid + egui::vec2(1.0, 1.0),
+                Align2::CENTER_CENTER,
+                &label,
+                font.clone(),
+                Color32::from_black_alpha(180),
+            );
             painter.text(mid, Align2::CENTER_CENTER, label, font, Color32::WHITE);
         }
     }
@@ -209,7 +269,11 @@ mod tests {
 
     #[test]
     fn identical_pixels_share_a_group_and_unique_tiles_have_none() {
-        for fmt in [PixelFormat::RGBA8, PixelFormat::RGBA16, PixelFormat::RGBA32F] {
+        for fmt in [
+            PixelFormat::RGBA8,
+            PixelFormat::RGBA16,
+            PixelFormat::RGBA32F,
+        ] {
             identical_pixels_share_a_group_in(fmt);
         }
     }
@@ -221,11 +285,19 @@ mod tests {
         s.fill_rect(cell(2, 0), &[1.0, 0.0, 0.0, 1.0]);
         // One shared allocation in two cells (copy-on-write), and a lone green tile.
         let blue = s.solid_tile(&[0.0, 0.0, 1.0, 1.0]);
-        s.put_tiles([(TileCoord::new(0, 1), blue.clone()), (TileCoord::new(1, 1), blue)]);
+        s.put_tiles([
+            (TileCoord::new(0, 1), blue.clone()),
+            (TileCoord::new(1, 1), blue),
+        ]);
         s.fill_rect(cell(1, 0), &[0.0, 1.0, 0.0, 1.0]);
         for parallel in [true, false] {
             let infos = tile_infos(&s, parallel);
-            let group = |tx, ty| infos.iter().find(|i| i.coord == TileCoord::new(tx, ty)).map(|i| i.group);
+            let group = |tx, ty| {
+                infos
+                    .iter()
+                    .find(|i| i.coord == TileCoord::new(tx, ty))
+                    .map(|i| i.group)
+            };
             assert_eq!(infos.len(), 5);
             assert_eq!(group(1, 0), Some(None), "green is unique");
             let (red, blue) = (group(0, 0).flatten(), group(0, 1).flatten());
@@ -252,9 +324,15 @@ mod tests {
         for g in (0..10_000).chain([usize::MAX]) {
             let h = group_hue(g);
             assert!((0.0..1.0).contains(&h), "group {g}: hue {h}");
-            assert!(!(BLUE_HUES.0..=BLUE_HUES.1).contains(&h), "group {g}: hue {h} is blue");
+            assert!(
+                !(BLUE_HUES.0..=BLUE_HUES.1).contains(&h),
+                "group {g}: hue {h} is blue"
+            );
             // Clear of the range's edges too, where hues still read as blue.
-            assert!((h - BLUE_HUES.1).abs() > 0.01 && (h - BLUE_HUES.0).abs() > 0.01, "group {g}: hue {h} is at the edge");
+            assert!(
+                (h - BLUE_HUES.1).abs() > 0.01 && (h - BLUE_HUES.0).abs() > 0.01,
+                "group {g}: hue {h} is at the edge"
+            );
         }
     }
 
@@ -266,11 +344,20 @@ mod tests {
         for fmt in [PixelFormat::RGBA8, PixelFormat::RGBA16] {
             // Every tile different, the worst case: each one is hashed and none share.
             let mut s = Surface::new(fmt);
-            let Some((tx1, ty1)) = cell_range(DRect::from_xywh(0, 0, w, h)).map(|(_, _, tx1, ty1)| (tx1, ty1)) else { return };
+            let Some((tx1, ty1)) =
+                cell_range(DRect::from_xywh(0, 0, w, h)).map(|(_, _, tx1, ty1)| (tx1, ty1))
+            else {
+                return;
+            };
             for ty in 0..=ty1 {
                 for tx in 0..=tx1 {
                     let seed = (tx * 31 + ty * 17) as usize;
-                    for (i, b) in s.tile_mut(TileCoord::new(tx, ty)).bytes_mut().iter_mut().enumerate() {
+                    for (i, b) in s
+                        .tile_mut(TileCoord::new(tx, ty))
+                        .bytes_mut()
+                        .iter_mut()
+                        .enumerate()
+                    {
                         *b = (i ^ seed) as u8;
                     }
                 }
@@ -283,7 +370,10 @@ mod tests {
                     best = best.min(t.elapsed().as_secs_f64() * 1000.0);
                 }
                 let mode = if parallel { "parallel" } else { "serial" };
-                println!("36 MP {fmt:?}, {} tiles, {mode}: {best:.1} ms", s.tile_count());
+                println!(
+                    "36 MP {fmt:?}, {} tiles, {mode}: {best:.1} ms",
+                    s.tile_count()
+                );
             }
         }
     }
@@ -293,9 +383,15 @@ mod tests {
         let t = TILE_SIZE;
         // Exactly one cell, then a partial cell past whole ones (a canvas not a multiple of it).
         assert_eq!(cell_range(cell(0, 0)), Some((0, 0, 0, 0)));
-        assert_eq!(cell_range(DRect::new(0, 0, 7 * t + t / 2, 4 * t + 1)), Some((0, 0, 7, 4)));
+        assert_eq!(
+            cell_range(DRect::new(0, 0, 7 * t + t / 2, 4 * t + 1)),
+            Some((0, 0, 7, 4))
+        );
         // One pixel either side of a cell edge, including left of the origin.
-        assert_eq!(cell_range(DRect::new(-1, t - 1, t + 1, t + 4)), Some((-1, 0, 1, 1)));
+        assert_eq!(
+            cell_range(DRect::new(-1, t - 1, t + 1, t + 4)),
+            Some((-1, 0, 1, 1))
+        );
         assert_eq!(cell_range(DRect::EMPTY), None);
     }
 }

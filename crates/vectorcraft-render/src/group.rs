@@ -31,7 +31,15 @@ pub(crate) struct Composite<'a> {
 
 impl Default for Composite<'_> {
     fn default() -> Self {
-        Self { clip: None, blend: Blend::Normal, opacity: 1.0, mask: None, isolated: false, blends: false, bounds: None }
+        Self {
+            clip: None,
+            blend: Blend::Normal,
+            opacity: 1.0,
+            mask: None,
+            isolated: false,
+            blends: false,
+            bounds: None,
+        }
     }
 }
 
@@ -53,7 +61,13 @@ impl Renderer {
     /// offscreen: over a copy of the backdrop when the group isn't isolated (possible only with
     /// no layer open around it, else it is drawn isolated), from transparency when it is (so
     /// non-isolated groups inside can copy their backdrop).
-    pub(crate) fn group(&mut self, ctx: &mut RenderContext, f: &Frame, c: Composite, draw: &mut Content) {
+    pub(crate) fn group(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        c: Composite,
+        draw: &mut Content,
+    ) {
         if c.blends
             && !c.isolated
             && c.opacity >= 1.0
@@ -79,7 +93,13 @@ impl Renderer {
         if let Some((_, rule)) = c.clip {
             ctx.set_fill_rule(fill_rule(rule));
         }
-        ctx.push_layer(c.clip.map(|(p, _)| p), Some(blend_mode(c.blend)), Some(c.opacity), c.mask, None);
+        ctx.push_layer(
+            c.clip.map(|(p, _)| p),
+            Some(blend_mode(c.blend)),
+            Some(c.opacity),
+            c.mask,
+            None,
+        );
         self.nested += 1;
         // The layer starts from transparency: no backdrop for the content.
         let backdrop = self.backdrop.take();
@@ -89,12 +109,35 @@ impl Renderer {
         ctx.pop_layer();
     }
 
-    fn group_offscreen(&mut self, ctx: &mut RenderContext, f: &Frame, c: Composite, draw: &mut Content) {
-        let Composite { clip, blend, opacity, mask, isolated, bounds, .. } = c;
-        let Some(r) = region(ctx, f, bounds) else { return };
+    fn group_offscreen(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        c: Composite,
+        draw: &mut Content,
+    ) {
+        let Composite {
+            clip,
+            blend,
+            opacity,
+            mask,
+            isolated,
+            bounds,
+            ..
+        } = c;
+        let Some(r) = region(ctx, f, bounds) else {
+            return;
+        };
         let view = Affine::translate((-(r.x as f64), -(r.y as f64))) * f.view;
-        let visible = view.inverse().transform_rect_bbox(Rect::new(0.0, 0.0, r.w as f64, r.h as f64));
-        let sub = Frame { mt: false, view, visible, ..*f };
+        let visible = view
+            .inverse()
+            .transform_rect_bbox(Rect::new(0.0, 0.0, r.w as f64, r.h as f64));
+        let sub = Frame {
+            mt: false,
+            view,
+            visible,
+            ..*f
+        };
         let backdrop = (!isolated).then(|| self.flatten(ctx, r));
         let content = self.offscreen(r, &sub, backdrop.clone(), draw);
         let at = (r.x as f64, r.y as f64);
@@ -109,7 +152,11 @@ impl Renderer {
             // The backdrop under the content, mixed with it by opacity, mask and clip: take that
             // share of the backdrop out, then add the same share of the content.
             Some(_) if blend == Blend::Normal => {
-                push(ctx, BlendMode::new(Mix::Normal, Compose::DestOut), mask.clone());
+                push(
+                    ctx,
+                    BlendMode::new(Mix::Normal, Compose::DestOut),
+                    mask.clone(),
+                );
                 ctx.set_transform(Affine::IDENTITY);
                 ctx.set_paint(peniko::Color::BLACK);
                 ctx.fill_rect(&Rect::new(at.0, at.1, at.0 + r.w as f64, at.1 + r.h as f64));
@@ -161,12 +208,22 @@ impl Renderer {
     }
 
     /// `draw` rendered into a new context of region `r` (frame `sub`), over `backdrop` if any.
-    fn offscreen(&mut self, r: Region, sub: &Frame, backdrop: Option<Arc<Pixmap>>, draw: &mut Content) -> Pixmap {
+    fn offscreen(
+        &mut self,
+        r: Region,
+        sub: &Frame,
+        backdrop: Option<Arc<Pixmap>>,
+        draw: &mut Content,
+    ) -> Pixmap {
         let mut ctx = sub.offscreen_context(r.w, r.h);
         if let Some(b) = &backdrop {
             draw_pixmap(&mut ctx, b.clone(), (0.0, 0.0));
         }
-        let outer = (std::mem::replace(&mut self.nested, 0), std::mem::replace(&mut self.backdrop, backdrop), std::mem::take(&mut self.clip_paths));
+        let outer = (
+            std::mem::replace(&mut self.nested, 0),
+            std::mem::replace(&mut self.backdrop, backdrop),
+            std::mem::take(&mut self.clip_paths),
+        );
         draw(self, &mut ctx, sub);
         (self.nested, self.backdrop, self.clip_paths) = outer;
         ctx.flush();
@@ -222,9 +279,22 @@ impl Renderer {
     /// as itself (`Plus` adds it). In a non-isolated knockout group (`backdrop`), the element is
     /// laid over the group's backdrop and cut to its shape, so it composites against the art
     /// below the group instead of the elements below it.
-    pub(crate) fn knockout_pass(&mut self, ctx: &mut RenderContext, f: &Frame, c: &Arc<Node>, compose: Compose, backdrop: Option<&Arc<Pixmap>>) {
+    pub(crate) fn knockout_pass(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        c: &Arc<Node>,
+        compose: Compose,
+        backdrop: Option<&Arc<Pixmap>>,
+    ) {
         ctx.set_transform(Affine::IDENTITY);
-        ctx.push_layer(None, Some(BlendMode::new(Mix::Normal, compose)), None, None, None);
+        ctx.push_layer(
+            None,
+            Some(BlendMode::new(Mix::Normal, compose)),
+            None,
+            None,
+            None,
+        );
         self.nested += 1;
         if let Some(b) = backdrop {
             draw_pixmap(ctx, b.clone(), (0.0, 0.0));
@@ -245,7 +315,10 @@ impl Renderer {
 pub(crate) fn draw_pixmap(ctx: &mut RenderContext, pm: Arc<Pixmap>, at: (f64, f64)) {
     let (w, h) = (pm.width() as f64, pm.height() as f64);
     ctx.set_transform(Affine::translate(at));
-    ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(pm), sampler: peniko::ImageSampler::default() });
+    ctx.set_paint(vello_cpu::Image {
+        image: vello_cpu::ImageSource::Pixmap(pm),
+        sampler: peniko::ImageSampler::default(),
+    });
     ctx.fill_rect(&Rect::new(0.0, 0.0, w, h));
     ctx.set_transform(Affine::IDENTITY);
 }
@@ -255,20 +328,43 @@ pub(crate) fn draw_pixmap(ctx: &mut RenderContext, pm: Arc<Pixmap>, at: (f64, f6
 fn region(ctx: &RenderContext, f: &Frame, bounds: Option<Rect>) -> Option<Region> {
     let full = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64);
     let r = match bounds {
-        Some(b) => f.view.transform_rect_bbox(b).inflate(2.0, 2.0).intersect(full),
+        Some(b) => f
+            .view
+            .transform_rect_bbox(b)
+            .inflate(2.0, 2.0)
+            .intersect(full),
         None => full,
     };
-    let (x0, y0, x1, y1) = (r.x0.floor().max(0.0), r.y0.floor().max(0.0), r.x1.ceil().min(full.x1), r.y1.ceil().min(full.y1));
-    (x1 > x0 && y1 > y0).then_some(Region { x: x0 as u16, y: y0 as u16, w: (x1 - x0) as u16, h: (y1 - y0) as u16 })
+    let (x0, y0, x1, y1) = (
+        r.x0.floor().max(0.0),
+        r.y0.floor().max(0.0),
+        r.x1.ceil().min(full.x1),
+        r.y1.ceil().min(full.y1),
+    );
+    (x1 > x0 && y1 > y0).then_some(Region {
+        x: x0 as u16,
+        y: y0 as u16,
+        w: (x1 - x0) as u16,
+        h: (y1 - y0) as u16,
+    })
 }
 
 /// The group's own colour from `content` (the group drawn over `backdrop`) and `alone` (drawn
 /// over transparency, for its coverage): content = group + (1 − group alpha) × backdrop, all
 /// premultiplied.
 fn remove_backdrop(mut content: Pixmap, alone: &Pixmap, backdrop: &Pixmap) -> Pixmap {
-    for ((c, a), b) in content.data_mut().iter_mut().zip(alone.data()).zip(backdrop.data()) {
+    for ((c, a), b) in content
+        .data_mut()
+        .iter_mut()
+        .zip(alone.data())
+        .zip(backdrop.data())
+    {
         let keep = 255 - a.a as u32;
-        let sub = |v: u8, bv: u8| (v as u32).saturating_sub((keep * bv as u32 + 127) / 255).min(a.a as u32) as u8;
+        let sub = |v: u8, bv: u8| {
+            (v as u32)
+                .saturating_sub((keep * bv as u32 + 127) / 255)
+                .min(a.a as u32) as u8
+        };
         (c.r, c.g, c.b, c.a) = (sub(c.r, b.r), sub(c.g, b.g), sub(c.b, b.b), a.a);
     }
     content

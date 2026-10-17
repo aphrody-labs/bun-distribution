@@ -79,7 +79,13 @@ pub(crate) struct Scan {
 /// Scan `src`: the script itself (`file` none) or a file it includes (`file`: its path inside the
 /// script's folder), with the `#includepath` folders `paths` in force at its start and its variables
 /// holding what `known` says.
-pub(crate) fn scan(src: &str, file: Option<&str>, paths: Rc<[String]>, known: &Known, acc: &mut Acc) -> Scan {
+pub(crate) fn scan(
+    src: &str,
+    file: Option<&str>,
+    paths: Rc<[String]>,
+    known: &Known,
+    acc: &mut Acc,
+) -> Scan {
     // A name written with `\u` escapes is read as the name it spells.
     let unescaped = unescape_names(src, acc);
     let src = unescaped.as_deref().unwrap_or(src);
@@ -115,7 +121,12 @@ pub(crate) fn scan(src: &str, file: Option<&str>, paths: Rc<[String]>, known: &K
     if usize::from(b.lf) + usize::from(b.crlf) + usize::from(b.cr) > 1 {
         acc.problem(report::MIXED_LINE_ENDINGS, None, file, None);
     }
-    Scan { includes, module, lines: lexer.lines(), known }
+    Scan {
+        includes,
+        module,
+        lines: lexer.lines(),
+        known,
+    }
 }
 
 /// `src` with the `\uXXXX` escapes in its names written as the characters they stand for (ECMA-262
@@ -193,7 +204,16 @@ struct Sig<'s> {
 impl<'s> Sig<'s> {
     /// The significant token `t`, after a line break when `nl` is set.
     fn of(t: &Token<'s>, nl: bool) -> Self {
-        Sig { kind: t.kind, text: t.text, line: t.line, nl, file: false, stmt: t.stmt, expr: t.expr, start: t.start }
+        Sig {
+            kind: t.kind,
+            text: t.text,
+            line: t.line,
+            nl,
+            file: false,
+            stmt: t.stmt,
+            expr: t.expr,
+            start: t.start,
+        }
     }
 
     fn is(&self, punct: &str) -> bool {
@@ -223,7 +243,10 @@ fn member_mark(s: Option<Sig>) -> bool {
 fn goes_on_after(s: Option<Sig>) -> bool {
     s.is_some_and(|s| match s.kind {
         T::Punct => !matches!(s.text, ")" | "]" | "}" | "++" | "--" | ";"),
-        T::Ident => matches!(s.text, "in" | "instanceof" | "typeof" | "new" | "delete" | "void"),
+        T::Ident => matches!(
+            s.text,
+            "in" | "instanceof" | "typeof" | "new" | "delete" | "void"
+        ),
         _ => false,
     })
 }
@@ -249,7 +272,8 @@ fn for_in(t: &Sig, h0: Option<Sig>, h1: Option<Sig>) -> bool {
 /// colon, ECMA-262 3rd edition, section 11.12), `)`, `]` or `}`, or a token on a new line that
 /// doesn't go on with the expression.
 fn ends_value(t: &Sig) -> bool {
-    (t.nl && !goes_on_with(t)) || (t.kind == T::Punct && matches!(t.text, ";" | "," | ":" | ")" | "]" | "}"))
+    (t.nl && !goes_on_with(t))
+        || (t.kind == T::Punct && matches!(t.text, ";" | "," | ":" | ")" | "]" | "}"))
 }
 
 /// Punctuators of later syntax.
@@ -257,12 +281,19 @@ const NEWER: &[&str] = &["=>", "...", "?.", "??", "**", "**=", "??=", "&&=", "||
 
 /// The compound assignment operators (ECMA-262 3rd edition, section 11.13.2): each gives the name a
 /// number or a string worked out from its old value.
-const COMPOUND: &[&str] = &["*=", "/=", "%=", "+=", "-=", "<<=", ">>=", ">>>=", "&=", "^=", "|="];
+const COMPOUND: &[&str] = &[
+    "*=", "/=", "%=", "+=", "-=", "<<=", ">>=", ">>>=", "&=", "^=", "|=",
+];
 
 /// A number in a later form: binary, octal (`0b1`, `0o7`), with separators (`1_000`) or big (`1n`).
 fn newer_number(text: &str) -> bool {
     let b = text.as_bytes();
-    text.contains('_') || (b.len() > 1 && b.last() == Some(&b'n')) || matches!((b.first(), b.get(1)), (Some(b'0'), Some(b'b' | b'B' | b'o' | b'O')))
+    text.contains('_')
+        || (b.len() > 1 && b.last() == Some(&b'n'))
+        || matches!(
+            (b.first(), b.get(1)),
+            (Some(b'0'), Some(b'b' | b'B' | b'o' | b'O'))
+        )
 }
 
 /// A string literal's value, its quotes removed and its escapes undone (`\n`, `\xHH`, `\uHHHH`,
@@ -357,7 +388,11 @@ fn platform_name(n: &str) -> bool {
 
 /// The feature of a window of type `value` (`"dialog"`, or a resource string that starts with it).
 fn window_type(value: &str) -> &'static str {
-    let word = value.trim_start().split(|c: char| c.is_whitespace() || c == '{').next().unwrap_or_default();
+    let word = value
+        .trim_start()
+        .split(|c: char| c.is_whitespace() || c == '{')
+        .next()
+        .unwrap_or_default();
     if word.eq_ignore_ascii_case("dialog") {
         "scriptui.dialog"
     } else if word.eq_ignore_ascii_case("palette") {
@@ -460,13 +495,28 @@ impl Operand {
     fn file_step(self, t: &Sig, file: bool, alias: bool) -> Operand {
         match self {
             Operand::Start if t.word("new") => Operand::New,
-            Operand::Start if file => Operand::FileName { new: false, folder: t.text == catalog::FOLDER },
-            Operand::New if file => Operand::FileName { new: true, folder: t.text == catalog::FOLDER },
+            Operand::Start if file => Operand::FileName {
+                new: false,
+                folder: t.text == catalog::FOLDER,
+            },
+            Operand::New if file => Operand::FileName {
+                new: true,
+                folder: t.text == catalog::FOLDER,
+            },
             Operand::Start if alias => Operand::Done(Held::File),
             Operand::FileName { .. } | Operand::FileDialog if t.is("(") => Operand::FileCall,
             Operand::FileName { new: false, folder } if t.is(".") => Operand::FileMember { folder },
-            Operand::FileMember { folder: true } if catalog::FOLDER_PLACES.contains(&t.text) => Operand::Done(Held::File),
-            Operand::FileMember { folder } if (if folder { catalog::FOLDER_DIALOGS } else { catalog::FILE_DIALOGS }).contains(&t.text) => {
+            Operand::FileMember { folder: true } if catalog::FOLDER_PLACES.contains(&t.text) => {
+                Operand::Done(Held::File)
+            }
+            Operand::FileMember { folder }
+                if (if folder {
+                    catalog::FOLDER_DIALOGS
+                } else {
+                    catalog::FILE_DIALOGS
+                })
+                .contains(&t.text) =>
+            {
                 Operand::FileDialog
             }
             _ => Operand::Other,
@@ -476,7 +526,10 @@ impl Operand {
     /// The operand is a File or Folder object when the `)` of its parentheses comes next: a complete
     /// one, or `new File` or `new Folder` without arguments.
     fn holds_file(&self) -> bool {
-        matches!(self, Operand::Done(Held::File) | Operand::FileName { new: true, .. })
+        matches!(
+            self,
+            Operand::Done(Held::File) | Operand::FileName { new: true, .. }
+        )
     }
 }
 
@@ -617,7 +670,8 @@ impl Brackets {
     /// Open the bracket `t`: false when `cap` brackets are kept already, and `t` is only counted.
     fn open(&mut self, t: &Sig, cap: usize) -> bool {
         if self.open.len() < cap {
-            self.open.push((t.text.chars().next().unwrap_or('('), t.line));
+            self.open
+                .push((t.text.chars().next().unwrap_or('('), t.line));
             return true;
         }
         self.overflow += 1;
@@ -758,7 +812,11 @@ impl<'s> Declarations<'s, '_, '_> {
             if (t.is(";") || for_in(&t, h0, h1)) && self.var_depth == Some(depth) {
                 self.var_depth = None;
             }
-            if t.is("=") && h0.is_some_and(|s| s.kind == T::Ident) && !member_mark(h1) && !is(h1, "@") {
+            if t.is("=")
+                && h0.is_some_and(|s| s.kind == T::Ident)
+                && !member_mark(h1)
+                && !is(h1, "@")
+            {
                 self.assign = Some(false);
             }
         }
@@ -783,7 +841,12 @@ impl<'s> Declarations<'s, '_, '_> {
                 if self.bodies.len() < self.acc.limits.nesting {
                     let index = self.out.bodies.len();
                     self.out.bodies.push((t.start, vec![]));
-                    self.bodies.push(Body { depth: self.depth(), index, names: HashSet::new(), var_depth: self.var_depth.take() });
+                    self.bodies.push(Body {
+                        depth: self.depth(),
+                        index,
+                        names: HashSet::new(),
+                        var_depth: self.var_depth.take(),
+                    });
                 } else if self.untracked.is_none() {
                     self.untracked = Some(self.depth());
                 }
@@ -820,13 +883,20 @@ impl<'s> Declarations<'s, '_, '_> {
             return;
         }
         if let Some(body) = self.bodies.last_mut() {
-            if (var || body.depth == depth) && !body.names.contains(t.text) && self.acc.room(body.names.len()) {
+            if (var || body.depth == depth)
+                && !body.names.contains(t.text)
+                && self.acc.room(body.names.len())
+            {
                 body.names.insert(t.text);
                 if let Some((_, names)) = self.out.bodies.get_mut(body.index) {
                     names.push(t.text);
                 }
             }
-        } else if function && depth == 0 && !self.out.global.contains(t.text) && self.acc.room(self.out.global.len()) {
+        } else if function
+            && depth == 0
+            && !self.out.global.contains(t.text)
+            && self.acc.room(self.out.global.len())
+        {
             self.out.global.insert(t.text);
         }
     }
@@ -912,7 +982,13 @@ struct Analyzer<'s, 'a, 'l> {
 }
 
 impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
-    fn new(acc: &'a mut Acc<'l>, file: Option<&'a str>, paths: Rc<[String]>, known: &Known, declared: Declared<'s>) -> Self {
+    fn new(
+        acc: &'a mut Acc<'l>,
+        file: Option<&'a str>,
+        paths: Rc<[String]>,
+        known: &Known,
+        declared: Declared<'s>,
+    ) -> Self {
         let global: Vec<&'s str> = declared.global.iter().copied().collect();
         let mut a = Analyzer {
             acc,
@@ -1000,7 +1076,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// This token names one of a function's parameters: it follows the `(` or a `,` of the
     /// parentheses after `function`.
     fn parameter(&self) -> bool {
-        (is(self.h[0], "(") || is(self.h[0], ",")) && self.params.as_ref().is_some_and(|(depth, _)| *depth == self.depth())
+        (is(self.h[0], "(") || is(self.h[0], ","))
+            && self
+                .params
+                .as_ref()
+                .is_some_and(|(depth, _)| *depth == self.depth())
     }
 
     fn token(&mut self, mut t: Sig<'s>) {
@@ -1011,7 +1091,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         self.settle_groups(&t);
         // A line break ends a `var` statement when it is outside the statement's brackets, and the
         // tokens on either side of it don't go on with the expression.
-        if t.nl && self.var_depth == Some(self.depth()) && !goes_on_after(self.h[0]) && !goes_on_with(&t) {
+        if t.nl
+            && self.var_depth == Some(self.depth())
+            && !goes_on_after(self.h[0])
+            && !goes_on_with(&t)
+        {
             self.var_depth = None;
         }
         self.declaration_without_value(&t);
@@ -1040,7 +1124,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// it.
     fn continue_chain(&mut self, t: &Sig<'s>) -> bool {
         let cap = self.acc.limits.echo;
-        let Some(c) = self.active.as_mut() else { return false };
+        let Some(c) = self.active.as_mut() else {
+            return false;
+        };
         if c.after_dot {
             c.after_dot = false;
             if t.kind == T::Ident {
@@ -1091,7 +1177,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         let key = c.segments == 0 && ending.is_some_and(|t| t.is(":"));
         let then = |rest: &str| rest.is_empty() || rest.starts_with(['.', '(', '[']);
         if !key {
-            let method = c.path.strip_prefix("app.").is_some_and(|rest| catalog::APP_METHODS.iter().any(|m| rest.strip_prefix(m).is_some_and(then)));
+            let method = c.path.strip_prefix("app.").is_some_and(|rest| {
+                catalog::APP_METHODS
+                    .iter()
+                    .any(|m| rest.strip_prefix(m).is_some_and(then))
+            });
             if (c.segments > 0 || c.bare) && !method {
                 self.acc.member(&c.path);
             }
@@ -1101,7 +1191,10 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                     self.acc.outside("preferences", line, None);
                 }
             }
-            if ["app.name", "app.version"].iter().any(|p| c.path.strip_prefix(p).is_some_and(then)) {
+            if ["app.name", "app.version"]
+                .iter()
+                .any(|p| c.path.strip_prefix(p).is_some_and(then))
+            {
                 self.acc.feature("hostCheck", line);
             }
         }
@@ -1171,7 +1264,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         if self.in_catch(name) {
             return;
         }
-        let Some(scope) = self.scopes.last() else { return };
+        let Some(scope) = self.scopes.last() else {
+            return;
+        };
         if scope.saved.contains_key(name) || !self.acc.room(scope.saved.len()) {
             return;
         }
@@ -1184,7 +1279,10 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// The names [`Declared`] has for the function body whose `{` starts at `start`, taken once.
     fn declared_in(&mut self, start: usize) -> Vec<&'s str> {
         let bodies = &mut self.declared.bodies;
-        while bodies.get(self.next_body).is_some_and(|(at, _)| *at < start) {
+        while bodies
+            .get(self.next_body)
+            .is_some_and(|(at, _)| *at < start)
+        {
             self.next_body += 1;
         }
         match bodies.get_mut(self.next_body) {
@@ -1198,7 +1296,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// stays as it is.
     fn hoist(&mut self, name: &str) {
         self.keep_outer(name);
-        if self.scopes.last().is_some_and(|s| s.saved.contains_key(name)) {
+        if self
+            .scopes
+            .last()
+            .is_some_and(|s| s.saved.contains_key(name))
+        {
             self.empty(name);
         }
     }
@@ -1215,13 +1317,23 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// `name` is the parameter of a `catch` block being read inside the innermost function body, or
     /// outside any function.
     fn in_catch(&self, name: &str) -> bool {
-        self.catch_names.get(name).is_some_and(|&depth| self.scopes.last().is_none_or(|s| depth > s.depth))
+        self.catch_names
+            .get(name)
+            .is_some_and(|&depth| self.scopes.last().is_none_or(|s| depth > s.depth))
     }
 
     /// What `name` holds now.
     fn saved(&self, name: &str) -> Saved {
-        let shadowed = catalog::DOM_ROOTS.iter().position(|r| *r == name).and_then(|i| self.shadowed.get(i).copied());
-        Saved { chain: self.bound.get(name).cloned(), file: self.files.contains(name), shadowed, own: self.own_names.contains(name) }
+        let shadowed = catalog::DOM_ROOTS
+            .iter()
+            .position(|r| *r == name)
+            .and_then(|i| self.shadowed.get(i).copied());
+        Saved {
+            chain: self.bound.get(name).cloned(),
+            file: self.files.contains(name),
+            shadowed,
+            own: self.own_names.contains(name),
+        }
     }
 
     /// `name` holds `saved` again.
@@ -1257,7 +1369,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// in them gets back what it held outside them, and the `var` statement a body was in goes on.
     fn close_scopes(&mut self) {
         while self.scopes.last().is_some_and(|s| self.depth() < s.depth) {
-            let Some(scope) = self.scopes.pop() else { return };
+            let Some(scope) = self.scopes.pop() else {
+                return;
+            };
             self.var_depth = scope.var_depth;
             for (name, saved) in scope.saved {
                 self.restore(name, saved);
@@ -1325,10 +1439,19 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 // The first `{` after `function` at this depth opens the function's body, and a `(`
                 // right after `function` or its name opens its parameters.
                 let body = t.text == "{" && self.function.take() == Some(self.depth());
-                let params = t.text == "(" && self.function == Some(self.depth()) && (word(self.h[0], "function") || word(self.h[1], "function"));
+                let params = t.text == "("
+                    && self.function == Some(self.depth())
+                    && (word(self.h[0], "function") || word(self.h[1], "function"));
                 // The first `{` after `catch` and its parentheses at this depth opens its block.
                 let depth = self.depth();
-                let catch = if t.text == "{" { self.catch.take().filter(|(d, _)| *d == depth).and_then(|(_, name)| name) } else { None };
+                let catch = if t.text == "{" {
+                    self.catch
+                        .take()
+                        .filter(|(d, _)| *d == depth)
+                        .and_then(|(_, name)| name)
+                } else {
+                    None
+                };
                 let file_call = t.text == "(" && self.calls_for_file();
                 if file_call && self.file_calls.len() < self.acc.limits.nesting {
                     self.file_calls.push(self.depth());
@@ -1340,16 +1463,32 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                     let saved = self.saved(&name);
                     let outer = self.catch_names.insert(name.clone(), self.depth());
                     self.empty(&name);
-                    self.catches.push(Catch { depth: self.depth(), name, saved, outer });
+                    self.catches.push(Catch {
+                        depth: self.depth(),
+                        name,
+                        saved,
+                        outer,
+                    });
                 }
                 if params {
                     // A function expression's name is the body's own, as its parameters are.
-                    self.params = Some((self.depth(), self.expression_name.take().into_iter().collect()));
+                    self.params = Some((
+                        self.depth(),
+                        self.expression_name.take().into_iter().collect(),
+                    ));
                 }
                 if body {
-                    let params = self.params.take().map(|(_, names)| names).unwrap_or_default();
+                    let params = self
+                        .params
+                        .take()
+                        .map(|(_, names)| names)
+                        .unwrap_or_default();
                     if self.scopes.len() < self.acc.limits.nesting {
-                        self.scopes.push(Scope { depth: self.depth(), saved: HashMap::new(), var_depth: self.var_depth.take() });
+                        self.scopes.push(Scope {
+                            depth: self.depth(),
+                            saved: HashMap::new(),
+                            var_depth: self.var_depth.take(),
+                        });
                         // The parameters are the body's own names, and so are the names it declares.
                         for name in params {
                             self.acc.steps = self.acc.steps.saturating_add(1);
@@ -1369,7 +1508,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                     if self.var_depth.is_some_and(|d| self.depth() < d) {
                         self.var_depth = None;
                     }
-                    if self.suspended.last().is_some_and(|c| c.wait == self.depth()) {
+                    if self
+                        .suspended
+                        .last()
+                        .is_some_and(|c| c.wait == self.depth())
+                    {
                         self.active = self.suspended.pop();
                     }
                     self.close_scopes();
@@ -1397,7 +1540,12 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         if self.brackets.close(t) {
             return true;
         }
-        self.acc.problem(report::UNEXPECTED_BRACKET, Some(t.line), self.file, Some(t.text));
+        self.acc.problem(
+            report::UNEXPECTED_BRACKET,
+            Some(t.line),
+            self.file,
+            Some(t.text),
+        );
         false
     }
 
@@ -1407,7 +1555,8 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     fn calls_for_file(&self) -> bool {
         let [h0, h1, h2, h3] = self.h;
         let platform = |s: Option<Sig>, name: &str| word(s, name) && !self.own_names.contains(name);
-        let constructor = (platform(h0, catalog::FILE) || platform(h0, catalog::FOLDER)) && !member_mark(h1);
+        let constructor =
+            (platform(h0, catalog::FILE) || platform(h0, catalog::FOLDER)) && !member_mark(h1);
         let dialog = h0.filter(|s| s.kind == T::Ident).is_some_and(|m| {
             is(h1, ".")
                 && !member_mark(h3)
@@ -1437,14 +1586,21 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// the body already has, the parameter of a `catch` block it is in, and any name outside a
     /// function keep what they hold.
     fn declaration_without_value(&mut self, t: &Sig<'s>) {
-        let Some(name) = self.h[0].filter(|s| s.kind == T::Ident) else { return };
-        let declared = word(self.h[1], "var") || (is(self.h[1], ",") && self.var_depth == Some(self.depth()));
+        let Some(name) = self.h[0].filter(|s| s.kind == T::Ident) else {
+            return;
+        };
+        let declared =
+            word(self.h[1], "var") || (is(self.h[1], ",") && self.var_depth == Some(self.depth()));
         if !declared || t.is("=") {
             return;
         }
         if self.in_catch(name.text) {
             self.declare_in_catch(name.text);
-        } else if self.scopes.last().is_some_and(|s| !s.saved.contains_key(name.text)) {
+        } else if self
+            .scopes
+            .last()
+            .is_some_and(|s| !s.saved.contains_key(name.text))
+        {
             self.keep_outer(name.text);
             self.unbind(name.text);
         }
@@ -1455,8 +1611,12 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// section 10.1.3), with no value: the parameter keeps what it holds, and after the outermost
     /// `catch` block in the body with that parameter the name holds nothing.
     fn declare_in_catch(&mut self, name: &str) {
-        let Some(&innermost) = self.catch_names.get(name) else { return };
-        let Some(scope) = self.scopes.last() else { return };
+        let Some(&innermost) = self.catch_names.get(name) else {
+            return;
+        };
+        let Some(scope) = self.scopes.last() else {
+            return;
+        };
         let body = scope.depth;
         if scope.saved.contains_key(name) || !self.acc.room(scope.saved.len()) {
             return;
@@ -1465,14 +1625,23 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         let mut depth = innermost;
         let i = loop {
             self.acc.steps = self.acc.steps.saturating_add(1);
-            let Ok(i) = self.catches.binary_search_by_key(&depth, |c| c.depth) else { return };
+            let Ok(i) = self.catches.binary_search_by_key(&depth, |c| c.depth) else {
+                return;
+            };
             match self.catches.get(i).and_then(|c| c.outer) {
                 Some(outer) if outer > body => depth = outer,
                 _ => break i,
             }
         };
-        let Some(c) = self.catches.get_mut(i) else { return };
-        let empty = Saved { chain: None, file: false, shadowed: catalog::DOM_ROOTS.contains(&name).then_some(true), own: platform_name(name) };
+        let Some(c) = self.catches.get_mut(i) else {
+            return;
+        };
+        let empty = Saved {
+            chain: None,
+            file: false,
+            shadowed: catalog::DOM_ROOTS.contains(&name).then_some(true),
+            own: platform_name(name),
+        };
         let outside = std::mem::replace(&mut c.saved, empty);
         if let Some(scope) = self.scopes.last_mut() {
             scope.saved.insert(name.to_string(), outside);
@@ -1489,8 +1658,16 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             } else if t.word("new") && !a.after_new {
                 a.after_new = true;
                 self.assign = Some(a);
-            } else if (t.word(catalog::FILE) || t.word(catalog::FOLDER)) && !self.own_names.contains(t.text) {
-                self.start_value(a.name, Operand::FileName { new: a.after_new, folder: t.text == catalog::FOLDER });
+            } else if (t.word(catalog::FILE) || t.word(catalog::FOLDER))
+                && !self.own_names.contains(t.text)
+            {
+                self.start_value(
+                    a.name,
+                    Operand::FileName {
+                        new: a.after_new,
+                        folder: t.text == catalog::FOLDER,
+                    },
+                );
             } else if !a.after_new && t.kind == T::Ident && self.files.contains(t.text) {
                 self.start_value(a.name, Operand::Done(Held::File));
             } else if !a.after_new && t.is("(") {
@@ -1521,7 +1698,10 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             // A name after `.`, `..`, `.@`, `::` or `@` is a property's or an attribute's; any other
             // name before `=` is a variable, at the start of a statement or inside an expression.
             if !member_mark(h1) && !is(h1, "@") {
-                self.assign = Some(Assign { name: name.text.to_string(), after_new: false });
+                self.assign = Some(Assign {
+                    name: name.text.to_string(),
+                    after_new: false,
+                });
             }
         }
         match self.updated(t) {
@@ -1547,10 +1727,16 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         let name = h0.filter(|s| s.kind == T::Ident)?;
         let compound = t.kind == T::Punct && COMPOUND.contains(&t.text);
         let postfix = (t.is("++") || t.is("--")) && !t.nl;
-        if (compound || postfix) && !expr_after(T::Ident, name.text) && !member_mark(h1) && !is(h1, "@") {
+        if (compound || postfix)
+            && !expr_after(T::Ident, name.text)
+            && !member_mark(h1)
+            && !is(h1, "@")
+        {
             return Some((name.text, compound));
         }
-        let prefix = h1.is_some_and(|op| (op.is("++") || op.is("--")) && (op.nl || h2.is_none_or(|s| expr_after(s.kind, s.text))));
+        let prefix = h1.is_some_and(|op| {
+            (op.is("++") || op.is("--")) && (op.nl || h2.is_none_or(|s| expr_after(s.kind, s.text)))
+        });
         (prefix && !member_mark(Some(*t)) && !t.is("[") && !t.is("(")).then_some((name.text, false))
     }
 
@@ -1559,7 +1745,16 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// `name = (`, its `(` just read: the value is read inside the parentheses.
     fn start_group(&mut self, name: String) {
         let level = self.depth();
-        self.push_group(Group { id: 0, name, base: level.saturating_sub(1), level, operand: Operand::Start, closed: false, bare: false, conds: 0 });
+        self.push_group(Group {
+            id: 0,
+            name,
+            base: level.saturating_sub(1),
+            level,
+            operand: Operand::Start,
+            closed: false,
+            bare: false,
+            conds: 0,
+        });
     }
 
     /// `name =` and the first token of a value without parentheses that may hold a File (`File`,
@@ -1567,7 +1762,16 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// operator (`name += …`), with [`Operand::Other`]: the value is read at this depth.
     fn start_value(&mut self, name: String, operand: Operand) {
         let level = self.depth();
-        self.push_group(Group { id: 0, name, base: level, level, operand, closed: false, bare: true, conds: 0 });
+        self.push_group(Group {
+            id: 0,
+            name,
+            base: level,
+            level,
+            operand,
+            closed: false,
+            bare: true,
+            conds: 0,
+        });
     }
 
     /// Read the value `g` from the next token on. Past [`crate::Limits::nesting`] values open at
@@ -1588,9 +1792,12 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// `started` is true when `t` started a member chain.
     fn group_step(&mut self, t: &Sig<'s>, started: bool, before: usize) {
         let after = self.depth();
-        let file = (t.word(catalog::FILE) || t.word(catalog::FOLDER)) && !self.own_names.contains(t.text);
+        let file =
+            (t.word(catalog::FILE) || t.word(catalog::FOLDER)) && !self.own_names.contains(t.text);
         let alias = t.kind == T::Ident && self.files.contains(t.text);
-        let Some(g) = self.groups.last_mut().filter(|g| !g.closed) else { return };
+        let Some(g) = self.groups.last_mut().filter(|g| !g.closed) else {
+            return;
+        };
         if after < g.level {
             // The `)` of the innermost pair: the operand, when complete, is the pair's value and the
             // operand of the pair around it.
@@ -1644,7 +1851,8 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// before `t`.
     fn paren_step(&mut self, t: &Sig<'s>, before: usize) {
         let after = self.depth();
-        let file = (t.word(catalog::FILE) || t.word(catalog::FOLDER)) && !self.own_names.contains(t.text);
+        let file =
+            (t.word(catalog::FILE) || t.word(catalog::FOLDER)) && !self.own_names.contains(t.text);
         let alias = t.kind == T::Ident && self.files.contains(t.text);
         if let Some(p) = self.parens.last_mut() {
             if before == p.level {
@@ -1662,8 +1870,15 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 };
             }
         }
-        if t.is("(") && t.expr && !member_mark(self.h[0]) && self.parens.len() < self.acc.limits.nesting {
-            self.parens.push(Paren { level: after, operand: Operand::Start });
+        if t.is("(")
+            && t.expr
+            && !member_mark(self.h[0])
+            && self.parens.len() < self.acc.limits.nesting
+        {
+            self.parens.push(Paren {
+                level: after,
+                operand: Operand::Start,
+            });
         }
     }
 
@@ -1671,7 +1886,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// when `t` is their `)` and their operand is a File or Folder object.
     fn close_parens(&mut self, t: &Sig<'s>) -> bool {
         let depth = self.depth();
-        self.parens.pop_if(|p| depth < p.level).is_some_and(|p| t.is(")") && p.operand.holds_file())
+        self.parens
+            .pop_if(|p| depth < p.level)
+            .is_some_and(|p| t.is(")") && p.operand.holds_file())
     }
 
     /// `t` follows the last `)` of a grouped value, or ends a value without parentheses at the depth
@@ -1683,8 +1900,13 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         let depth = self.depth();
         // A `:` that answers a `?` read inside a value without parentheses goes on with that value
         // (`f += ok ? '' : f.remove()`), and any other `:` ends it (`ok ? f = new File(p) : 0`).
-        let open = if t.is(":") && self.conds.last() == Some(&depth) { self.conds.len() } else { 0 };
-        let done = |g: &mut Group| g.closed || (g.bare && ends && g.level == depth && open <= g.conds);
+        let open = if t.is(":") && self.conds.last() == Some(&depth) {
+            self.conds.len()
+        } else {
+            0
+        };
+        let done =
+            |g: &mut Group| g.closed || (g.bare && ends && g.level == depth && open <= g.conds);
         while let Some(g) = self.groups.pop_if(done) {
             self.settle(g, ends);
         }
@@ -1697,7 +1919,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         let complete = (g.closed || g.bare) && ends;
         match g.operand {
             Operand::Done(Held::Chain(path)) if complete => self.bind(g.name, path),
-            Operand::Done(Held::File) | Operand::FileName { new: true, .. } if complete => self.hold_file(g.name),
+            Operand::Done(Held::File) | Operand::FileName { new: true, .. } if complete => {
+                self.hold_file(g.name)
+            }
             _ => self.unbind(&g.name),
         }
     }
@@ -1717,7 +1941,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// at its depth, a closing bracket around it or a `;` at its depth ends it.
     fn conditional(&mut self, t: &Sig<'s>) {
         let depth = self.depth();
-        let end = if t.is(";") { depth } else { depth.saturating_add(1) };
+        let end = if t.is(";") {
+            depth
+        } else {
+            depth.saturating_add(1)
+        };
         while self.conds.pop_if(|d| *d >= end).is_some() {}
         if t.is("?") && self.conds.len() < self.acc.limits.nesting {
             self.conds.push(depth);
@@ -1749,7 +1977,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 }
             }
             Pending::WindowType(l) => {
-                let feature = if t.kind == T::Str { window_type(&unquote(t.text, 64)) } else { "scriptui.window" };
+                let feature = if t.kind == T::Str {
+                    window_type(&unquote(t.text, 64))
+                } else {
+                    "scriptui.window"
+                };
                 self.acc.feature(feature, l);
             }
             Pending::Menu(l) => {
@@ -1790,7 +2022,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     fn open_mode(&mut self, mode: &str, line: Option<usize>) {
         if mode.eq_ignore_ascii_case("r") {
             self.acc.feature("file.read", line);
-        } else if let Some(m) = catalog::WRITE_MODES.iter().copied().find(|m| m.eq_ignore_ascii_case(mode)) {
+        } else if let Some(m) = catalog::WRITE_MODES
+            .iter()
+            .copied()
+            .find(|m| m.eq_ignore_ascii_case(mode))
+        {
             self.acc.feature("file.write", line);
             self.acc.outside("filesWritten", line, Some(m));
         }
@@ -1854,7 +2090,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 } else {
                     self.acc.feature("dollar", line);
                 }
-            } else if (of(catalog::FILE) && catalog::FILE_DIALOGS.contains(&n)) || (of(catalog::FOLDER) && catalog::FOLDER_DIALOGS.contains(&n)) {
+            } else if (of(catalog::FILE) && catalog::FILE_DIALOGS.contains(&n))
+                || (of(catalog::FOLDER) && catalog::FOLDER_DIALOGS.contains(&n))
+            {
                 self.acc.feature("file.dialog", line);
             } else if of(catalog::FOLDER) && catalog::FOLDER_PLACES.contains(&n) {
                 self.acc.feature("file.places", line);
@@ -1902,7 +2140,10 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 self.acc.declared(f.text);
             }
         }
-        if word(h0, "new") && n.starts_with(|c: char| c.is_ascii_uppercase()) && !catalog::CONSTRUCTORS.contains(&n) {
+        if word(h0, "new")
+            && n.starts_with(|c: char| c.is_ascii_uppercase())
+            && !catalog::CONSTRUCTORS.contains(&n)
+        {
             self.acc.type_name(n);
         }
         // A platform name stands for the platform's object, except where the script declares a
@@ -1929,7 +2170,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             "(" => self.call(line),
             // `Name.prototype["+"] = …` defines an operator.
             "=" => {
-                let operator = h1.filter(|s| s.kind == T::Str).is_some_and(|s| catalog::OPERATORS.contains(&unquote(s.text, 4).as_str()));
+                let operator = h1
+                    .filter(|s| s.kind == T::Str)
+                    .is_some_and(|s| catalog::OPERATORS.contains(&unquote(s.text, 4).as_str()));
                 if is(h0, "]") && operator && is(h2, "[") && word(h3, "prototype") {
                     self.acc.feature("operatorOverloading", line);
                 }
@@ -1943,13 +2186,17 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
     /// `(` after a name: a call.
     fn call(&mut self, line: Option<usize>) {
         let [h0, h1, h2, h3] = self.h;
-        let Some(callee) = h0.filter(|s| s.kind == T::Ident) else { return };
+        let Some(callee) = h0.filter(|s| s.kind == T::Ident) else {
+            return;
+        };
         let n = callee.text;
         if is(h1, ".") {
             // The receiver is a variable holding a File or Folder object (not a property of the same
             // name), or a File or Folder object made in place or held in grouping parentheses
             // ([`Sig::file`]).
-            let file = h2.is_some_and(|r| r.file || (r.kind == T::Ident && !member_mark(h3) && self.files.contains(r.text)));
+            let file = h2.is_some_and(|r| {
+                r.file || (r.kind == T::Ident && !member_mark(h3) && self.files.contains(r.text))
+            });
             if n == catalog::MENU_COMMAND {
                 self.pending = Pending::Menu(line);
             } else if n == catalog::OPEN && file {
@@ -1958,7 +2205,9 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
                 self.acc.feature("scriptui.drawing", line);
             } else if catalog::INSTANCE_DIALOGS.contains(&n) {
                 self.acc.feature("file.dialog", line);
-            } else if catalog::FOLDER_READS.contains(&n) || (file && catalog::FILE_READS.contains(&n)) {
+            } else if catalog::FOLDER_READS.contains(&n)
+                || (file && catalog::FILE_READS.contains(&n))
+            {
                 self.acc.feature("file.read", line);
             } else if file && catalog::FILE_WRITES.contains(&n) {
                 self.acc.feature("file.write", line);
@@ -1988,7 +2237,8 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         if t.text.contains(catalog::ACTION_TEXT) {
             self.acc.feature("actions", line);
         }
-        let compares = h0.is_some_and(|s| s.kind == T::Punct && matches!(s.text, "==" | "===" | "!=" | "!=="));
+        let compares =
+            h0.is_some_and(|s| s.kind == T::Punct && matches!(s.text, "==" | "===" | "!=" | "!=="));
         if compares && word(h1, "typename") && is(h2, ".") {
             let name = unquote(t.text, self.acc.limits.echo.saturating_add(1));
             self.acc.type_name(&name);
@@ -2006,7 +2256,14 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             T::Ident if word(h0, "class") && !member_mark(h1) => Some("class"),
             // `let name` declares a variable. ES3 reads `let` as a variable's name in `let = 1`,
             // `let.x` and `let in o`.
-            T::Ident if word(h0, "let") && !t.nl && !member_mark(h1) && !matches!(t.text, "in" | "instanceof") => Some("let"),
+            T::Ident
+                if word(h0, "let")
+                    && !t.nl
+                    && !member_mark(h1)
+                    && !matches!(t.text, "in" | "instanceof") =>
+            {
+                Some("let")
+            }
             T::Ident if t.text == "function" && word(h0, "async") && !t.nl => Some("async"),
             _ => None,
         };
@@ -2014,18 +2271,26 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             && self.last_newer != Some((t.line, c))
         {
             self.last_newer = Some((t.line, c));
-            self.acc.problem(report::NEWER_SYNTAX, Some(t.line), self.file, Some(c));
+            self.acc
+                .problem(report::NEWER_SYNTAX, Some(t.line), self.file, Some(c));
         }
     }
 
     /// `import` or `export` starting a statement outside any bracket, unless a call, member or
     /// property (`import(…)`, `export.x`, `import: 1`) follows: a module.
     fn module_check(&mut self, t: &Sig<'s>) {
-        if std::mem::take(&mut self.module_candidate) && !(t.kind == T::Punct && matches!(t.text, "(" | "." | "=" | ":" | "," | ")")) {
+        if std::mem::take(&mut self.module_candidate)
+            && !(t.kind == T::Punct && matches!(t.text, "(" | "." | "=" | ":" | "," | ")"))
+        {
             self.module = true;
         }
         let starts = self.h[0].is_none() || t.nl || is(self.h[0], ";") || is(self.h[0], "}");
-        if t.kind == T::Ident && matches!(t.text, "import" | "export") && self.depth() == 0 && !member_mark(self.h[0]) && starts {
+        if t.kind == T::Ident
+            && matches!(t.text, "import" | "export")
+            && self.depth() == 0
+            && !member_mark(self.h[0])
+            && starts
+        {
             self.module_candidate = true;
         }
     }
@@ -2044,8 +2309,17 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         self.acc.steps = self.acc.steps.saturating_add(1);
         let d = directives::parse(t.text);
         let Some(name) = d.known else {
-            let detail = if d.name.is_empty() { t.text.trim().to_string() } else { format!("{}{}", d.form, d.name) };
-            self.acc.problem(report::UNKNOWN_DIRECTIVE, Some(t.line), self.file, Some(&detail));
+            let detail = if d.name.is_empty() {
+                t.text.trim().to_string()
+            } else {
+                format!("{}{}", d.form, d.name)
+            };
+            self.acc.problem(
+                report::UNKNOWN_DIRECTIVE,
+                Some(t.line),
+                self.file,
+                Some(&detail),
+            );
             return;
         };
         let feature = match name {
@@ -2060,7 +2334,11 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
         match name {
             "target" => self.acc.target(d.value, t.line, self.file),
             "include" if self.includes.len() < self.acc.limits.entries => {
-                self.includes.push(IncludeRef { value: d.value.to_string(), line: t.line, paths: Rc::clone(&self.paths) });
+                self.includes.push(IncludeRef {
+                    value: d.value.to_string(),
+                    line: t.line,
+                    paths: Rc::clone(&self.paths),
+                });
             }
             "includepath" => self.paths = directives::include_paths(d.value).into(),
             _ => {}
@@ -2083,9 +2361,17 @@ impl<'s, 'a, 'l> Analyzer<'s, 'a, 'l> {
             self.acc.steps = self.acc.steps.saturating_add(1);
             let mut buf = [0; 4];
             let bracket: &str = bracket.encode_utf8(&mut buf);
-            self.acc.problem(report::UNCLOSED_BRACKET, Some(line), self.file, Some(bracket));
+            self.acc.problem(
+                report::UNCLOSED_BRACKET,
+                Some(line),
+                self.file,
+                Some(bracket),
+            );
         }
-        let known = Known { bound: std::mem::take(&mut self.bound), files: std::mem::take(&mut self.files) };
+        let known = Known {
+            bound: std::mem::take(&mut self.bound),
+            files: std::mem::take(&mut self.files),
+        };
         (std::mem::take(&mut self.includes), module, known)
     }
 }

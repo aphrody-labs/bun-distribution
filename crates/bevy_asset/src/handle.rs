@@ -5,7 +5,7 @@ use crate::{
 use alloc::sync::Arc;
 use bevy_ecs::template::{FromTemplate, SpecializeFromTemplate, Template, TemplateContext};
 use bevy_platform::{collections::Equivalent, sync::Mutex};
-use bevy_reflect::{enums::Enum, FromReflect, PartialReflect, Reflect, ReflectRef, TypePath};
+use bevy_reflect::{FromReflect, PartialReflect, Reflect, ReflectRef, TypePath, enums::Enum};
 use core::{
     any::TypeId,
     hash::{Hash, Hasher},
@@ -675,9 +675,7 @@ impl<A: Asset> TryFrom<UntypedHandle> for Handle<A> {
 /// ```
 #[macro_export]
 macro_rules! uuid_handle {
-    ($uuid:expr) => {{
-        $crate::Handle::Uuid($crate::uuid::uuid!($uuid), ::core::marker::PhantomData)
-    }};
+    ($uuid:expr) => {{ $crate::Handle::Uuid($crate::uuid::uuid!($uuid), ::core::marker::PhantomData) }};
 }
 
 #[deprecated = "Use uuid_handle! instead"]
@@ -712,7 +710,7 @@ mod tests {
     use core::hash::BuildHasher;
     use uuid::Uuid;
 
-    use crate::{tests::create_app, AssetApp, Assets, VisitAssetDependencies};
+    use crate::{AssetApp, Assets, VisitAssetDependencies, tests::create_app};
 
     use super::*;
 
@@ -860,7 +858,11 @@ mod tests {
                 let from_reflect_handle: Handle<MyAsset> =
                     FromReflect::from_reflect(&*dynamic_handle).unwrap();
 
-                assert_eq!(Arc::strong_count(strong), 4, "Converting the reflected value back to a handle should increase the strong count to 4");
+                assert_eq!(
+                    Arc::strong_count(strong),
+                    4,
+                    "Converting the reflected value back to a handle should increase the strong count to 4"
+                );
                 assert!(
                     from_reflect_handle.is_strong(),
                     "The cloned handle should still be strong"

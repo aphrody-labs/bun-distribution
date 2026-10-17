@@ -54,19 +54,28 @@ fn outline_scaled_impl(mask: &Surface, bounds: Rect, step: u32, parallel: bool) 
     #[cfg(not(target_arch = "wasm32"))]
     if parallel {
         use rayon::prelude::*;
-        grid.par_chunks_mut(w).enumerate().for_each(|(gy, row)| sample_row(gy, row));
+        grid.par_chunks_mut(w)
+            .enumerate()
+            .for_each(|(gy, row)| sample_row(gy, row));
     } else {
-        grid.chunks_mut(w).enumerate().for_each(|(gy, row)| sample_row(gy, row));
+        grid.chunks_mut(w)
+            .enumerate()
+            .for_each(|(gy, row)| sample_row(gy, row));
     }
     #[cfg(target_arch = "wasm32")]
     {
         let _ = parallel;
-        grid.chunks_mut(w).enumerate().for_each(|(gy, row)| sample_row(gy, row));
+        grid.chunks_mut(w)
+            .enumerate()
+            .for_each(|(gy, row)| sample_row(gy, row));
     }
     let inside = |x: usize, y: usize| grid[y * w + x];
     // Grid → document coordinates, clamped so coarse cells never draw outside the selection bounds.
     let r = Rect::new(gx0 * step, gy0 * step, gx1 * step, gy1 * step);
-    let (cx, cy) = (|v: i32| v.clamp(bounds.x0, bounds.x1), |v: i32| v.clamp(bounds.y0, bounds.y1));
+    let (cx, cy) = (
+        |v: i32| v.clamp(bounds.x0, bounds.x1),
+        |v: i32| v.clamp(bounds.y0, bounds.y1),
+    );
     let mut segs = Vec::new();
     // Horizontal edges between rows y-1 and y, merged along x.
     for y in 1..h {
@@ -77,7 +86,10 @@ fn outline_scaled_impl(mask: &Surface, bounds: Rect, step: u32, parallel: bool) 
                 (true, None) => run = Some(x),
                 (false, Some(x0)) => {
                     let yy = cy(r.y0 + y as i32 * step);
-                    segs.push(([cx(r.x0 + x0 as i32 * step), yy], [cx(r.x0 + x as i32 * step), yy]));
+                    segs.push((
+                        [cx(r.x0 + x0 as i32 * step), yy],
+                        [cx(r.x0 + x as i32 * step), yy],
+                    ));
                     run = None;
                 }
                 _ => {}
@@ -93,7 +105,10 @@ fn outline_scaled_impl(mask: &Surface, bounds: Rect, step: u32, parallel: bool) 
                 (true, None) => run = Some(y),
                 (false, Some(y0)) => {
                     let xx = cx(r.x0 + x as i32 * step);
-                    segs.push(([xx, cy(r.y0 + y0 as i32 * step)], [xx, cy(r.y0 + y as i32 * step)]));
+                    segs.push((
+                        [xx, cy(r.y0 + y0 as i32 * step)],
+                        [xx, cy(r.y0 + y as i32 * step)],
+                    ));
                     run = None;
                 }
                 _ => {}
@@ -141,7 +156,10 @@ mod tests {
         m.fill_rect(Rect::new(3, 5, 30, 21), &[1.0]);
         for seg in outline_scaled(&m, m.content_bounds(), 8) {
             for p in [seg.0, seg.1] {
-                assert!(p[0] >= 3 && p[0] <= 30 && p[1] >= 5 && p[1] <= 21, "{seg:?}");
+                assert!(
+                    p[0] >= 3 && p[0] <= 30 && p[1] >= 5 && p[1] <= 21,
+                    "{seg:?}"
+                );
             }
         }
     }
@@ -153,10 +171,17 @@ mod tests {
         mask.fill_rect(Rect::new(17, 21, 45, 65), &[0.0]);
         mask.fill_rect(Rect::new(73, 9, 88, 42), &[0.0]);
         for step in [1, 2, 4, 8, 16] {
-            for bounds in [mask.content_bounds(), Rect::new(13, 19, 91, 77), Rect::new(200, 200, 240, 240)] {
+            for bounds in [
+                mask.content_bounds(),
+                Rect::new(13, 19, 91, 77),
+                Rect::new(200, 200, 240, 240),
+            ] {
                 let parallel = outline_scaled(&mask, bounds, step);
                 let serial = outline_scaled_serial(&mask, bounds, step);
-                assert_eq!(serial, parallel, "outline differs at step {step}, bounds {bounds:?}");
+                assert_eq!(
+                    serial, parallel,
+                    "outline differs at step {step}, bounds {bounds:?}"
+                );
             }
         }
     }

@@ -12,7 +12,11 @@ use crate::anim::{self, Ex, Im, export_prop, import_prop};
 // ---------------------------------------------------------------- shared value converters
 
 pub(crate) fn shape_json(p: &ShapePath) -> Json {
-    let pts = |v: &[[f64; 2]]| v.iter().map(|q| json!([r(q[0]), r(q[1])])).collect::<Vec<_>>();
+    let pts = |v: &[[f64; 2]]| {
+        v.iter()
+            .map(|q| json!([r(q[0]), r(q[1])]))
+            .collect::<Vec<_>>()
+    };
     json!({"c": p.closed, "v": pts(&p.vertices), "i": pts(&p.in_tangents), "o": pts(&p.out_tangents)})
 }
 
@@ -35,7 +39,15 @@ pub(crate) fn to_path(j: &Json) -> Option<Value> {
     let pts = |k: &str| -> Vec<[f64; 2]> {
         o.get(k)
             .and_then(Json::as_array)
-            .map(|a| a.iter().map(|p| anim::nums(p).map(|v| [*v.first().unwrap_or(&0.0), *v.get(1).unwrap_or(&0.0)]).unwrap_or([0.0; 2])).collect())
+            .map(|a| {
+                a.iter()
+                    .map(|p| {
+                        anim::nums(p)
+                            .map(|v| [*v.first().unwrap_or(&0.0), *v.get(1).unwrap_or(&0.0)])
+                            .unwrap_or([0.0; 2])
+                    })
+                    .collect()
+            })
             .unwrap_or_default()
     };
     let vertices = pts("v");
@@ -75,9 +87,25 @@ pub(crate) fn gradient_flat(v: &Value) -> Json {
 pub(crate) fn to_gradient(j: &Json, ncolors: usize) -> Option<Value> {
     let v = anim::nums(j)?;
     let n = ncolors.min(v.len() / 4);
-    let colors: Vec<(f64, [f32; 4])> = (0..n).map(|i| (v[i * 4], [v[i * 4 + 1] as f32, v[i * 4 + 2] as f32, v[i * 4 + 3] as f32, 1.0])).collect();
+    let colors: Vec<(f64, [f32; 4])> = (0..n)
+        .map(|i| {
+            (
+                v[i * 4],
+                [
+                    v[i * 4 + 1] as f32,
+                    v[i * 4 + 2] as f32,
+                    v[i * 4 + 3] as f32,
+                    1.0,
+                ],
+            )
+        })
+        .collect();
     let rest = &v[n * 4..];
-    let mut opacities: Vec<(f64, f32)> = rest.chunks(2).filter(|c| c.len() == 2).map(|c| (c[0], c[1] as f32)).collect();
+    let mut opacities: Vec<(f64, f32)> = rest
+        .chunks(2)
+        .filter(|c| c.len() == 2)
+        .map(|c| (c[0], c[1] as f32))
+        .collect();
     if opacities.is_empty() {
         opacities = vec![(0.0, 1.0), (1.0, 1.0)];
     }
@@ -114,7 +142,9 @@ impl Out<'_, '_> {
         self.g.get(m).map(|p| p.value.as_f64()).unwrap_or(0.0)
     }
     fn animated(&self, m: &str) -> bool {
-        self.g.get(m).is_some_and(|p| p.is_animated() || p.has_expression())
+        self.g
+            .get(m)
+            .is_some_and(|p| p.is_animated() || p.has_expression())
     }
     fn blend(&mut self) {
         let i = self.e("blend");
@@ -122,7 +152,10 @@ impl Out<'_, '_> {
         match crate::blend_to_lottie(m) {
             Some(bm) => self.raw("bm", json!(bm)),
             None => {
-                self.ex.warn(format!("{}: blend mode {m:?} has no Lottie equivalent (Normal used)", self.label));
+                self.ex.warn(format!(
+                    "{}: blend mode {m:?} has no Lottie equivalent (Normal used)",
+                    self.label
+                ));
                 self.raw("bm", json!(0));
             }
         }
@@ -138,19 +171,38 @@ fn stroke_fields(o: &mut Out) {
     o.raw("lc", json!(o.e("cap") + 1));
     o.raw("lj", json!(o.e("join") + 1));
     o.raw("ml", json!(o.f("miter")));
-    let used = |g: Option<&PropGroup>, m: &str| g.and_then(|g| g.get(m)).is_some_and(|p| p.is_animated() || p.value.as_f64().abs() > 1e-9);
+    let used = |g: Option<&PropGroup>, m: &str| {
+        g.and_then(|g| g.get(m))
+            .is_some_and(|p| p.is_animated() || p.value.as_f64().abs() > 1e-9)
+    };
     let (taper, wave) = (o.g.sub("taper"), o.g.sub("wave"));
     if used(taper, "startLength") || used(taper, "endLength") || used(wave, "amount") {
-        let msg = format!("{}: stroke Taper and Wave have no Lottie equivalent (uniform width exported)", o.label);
+        let msg = format!(
+            "{}: stroke Taper and Wave have no Lottie equivalent (uniform width exported)",
+            o.label
+        );
         o.ex.warn(msg);
     }
     if let Some(d) = o.g.sub("dashes") {
         let dash = d.get("dash").map(|p| p.value.as_f64()).unwrap_or(0.0);
         if dash > 0.0 || d.any_animated() {
             let mut list = vec![];
-            for (n, m) in [("d", "dash"), ("g", "gap"), ("d", "dash2"), ("g", "gap2"), ("d", "dash3"), ("g", "gap3"), ("o", "offset")] {
+            for (n, m) in [
+                ("d", "dash"),
+                ("g", "gap"),
+                ("d", "dash2"),
+                ("g", "gap2"),
+                ("d", "dash3"),
+                ("g", "gap3"),
+                ("o", "offset"),
+            ] {
                 if let Some(p) = d.get(m) {
-                    let v = export_prop(o.ex, p, &anim::num, &format!("{} ▸ Dashes ▸ {}", o.label, p.name));
+                    let v = export_prop(
+                        o.ex,
+                        p,
+                        &anim::num,
+                        &format!("{} ▸ Dashes ▸ {}", o.label, p.name),
+                    );
                     list.push(json!({"n": n, "nm": p.name, "v": v}));
                 }
             }
@@ -160,7 +212,12 @@ fn stroke_fields(o: &mut Out) {
 }
 
 fn shape_transform(ex: &mut Ex, tr: &PropGroup, label: &str) -> Json {
-    let mut o = Out { ex, g: tr, o: Map::new(), label: format!("{label} ▸ Transform") };
+    let mut o = Out {
+        ex,
+        g: tr,
+        o: Map::new(),
+        label: format!("{label} ▸ Transform"),
+    };
     o.raw("ty", json!("tr"));
     o.put("a", "anchor", &anim::arr2);
     o.put("p", "position", &anim::arr2);
@@ -199,11 +256,18 @@ pub(crate) fn export_items(ex: &mut Ex, contents: &PropGroup, label: &str) -> Ve
             "zigzag" => "zz",
             "merge" => "mm",
             other => {
-                ex.warn(format!("{lbl}: shape item `{other}` has no Lottie equivalent (skipped)"));
+                ex.warn(format!(
+                    "{lbl}: shape item `{other}` has no Lottie equivalent (skipped)"
+                ));
                 continue;
             }
         };
-        let mut o = Out { ex, g, o: Map::new(), label: lbl.clone() };
+        let mut o = Out {
+            ex,
+            g,
+            o: Map::new(),
+            label: lbl.clone(),
+        };
         o.raw("ty", json!(ty));
         o.raw("nm", json!(g.name));
         if !g.enabled {
@@ -215,7 +279,10 @@ pub(crate) fn export_items(ex: &mut Ex, contents: &PropGroup, label: &str) -> Ve
         };
         match ty {
             "gr" => {
-                let items = g.sub("contents").map(|c| export_items(o.ex, c, &lbl)).unwrap_or_default();
+                let items = g
+                    .sub("contents")
+                    .map(|c| export_items(o.ex, c, &lbl))
+                    .unwrap_or_default();
                 let mut items = items;
                 let tr = match g.sub("transform") {
                     Some(t) => shape_transform(o.ex, t, &lbl),
@@ -309,8 +376,13 @@ pub(crate) fn export_items(ex: &mut Ex, contents: &PropGroup, label: &str) -> Ve
                 o.put("a", "amount", &anim::num);
                 o.raw("lj", json!(o.e("join") + 1));
                 o.raw("ml", json!(o.f("miter")));
-                if (o.f("copies") - 1.0).abs() > 1e-9 || o.animated("copies") || o.f("copyOffset") != 0.0 {
-                    o.ex.warn(format!("{lbl}: Offset Paths copies are not part of Lottie (one copy exported)"));
+                if (o.f("copies") - 1.0).abs() > 1e-9
+                    || o.animated("copies")
+                    || o.f("copyOffset") != 0.0
+                {
+                    o.ex.warn(format!(
+                        "{lbl}: Offset Paths copies are not part of Lottie (one copy exported)"
+                    ));
                 }
             }
             "pb" => o.put("a", "amount", &anim::num),
@@ -333,7 +405,13 @@ pub(crate) fn export_items(ex: &mut Ex, contents: &PropGroup, label: &str) -> Ve
 
 // ---------------------------------------------------------------- import
 
-fn set(im: &Im, g: &mut PropGroup, m: &str, j: Option<&Json>, conv: &dyn Fn(&Json) -> Option<Value>) {
+fn set(
+    im: &Im,
+    g: &mut PropGroup,
+    m: &str,
+    j: Option<&Json>,
+    conv: &dyn Fn(&Json) -> Option<Value>,
+) {
     if let (Some(j), Some(p)) = (j, g.get_mut(m)) {
         import_prop(im, j, p, conv);
     }
@@ -347,7 +425,13 @@ fn set_enum(g: &mut PropGroup, m: &str, v: u32) {
 
 fn int(j: &Json, k: &str) -> Option<i64> {
     let v = j.get(k)?;
-    v.as_i64().or_else(|| v.as_f64().map(|f| f.round() as i64)).or_else(|| v.get("k").and_then(anim::nums).and_then(|n| n.first().map(|f| f.round() as i64)))
+    v.as_i64()
+        .or_else(|| v.as_f64().map(|f| f.round() as i64))
+        .or_else(|| {
+            v.get("k")
+                .and_then(anim::nums)
+                .and_then(|n| n.first().map(|f| f.round() as i64))
+        })
 }
 
 fn import_blend(j: &Json, g: &mut PropGroup) {
@@ -414,11 +498,21 @@ pub(crate) fn import_items(im: &mut Im, ids: &mut Ids, items: &[Json]) -> Vec<Pr
         };
         let mut g = match ty {
             "gr" => {
-                let list = j.get("it").and_then(Json::as_array).cloned().unwrap_or_default();
-                let inner: Vec<Json> = list.iter().filter(|i| i.get("ty").and_then(Json::as_str) != Some("tr")).cloned().collect();
+                let list = j
+                    .get("it")
+                    .and_then(Json::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                let inner: Vec<Json> = list
+                    .iter()
+                    .filter(|i| i.get("ty").and_then(Json::as_str) != Some("tr"))
+                    .cloned()
+                    .collect();
                 let children = import_items(im, ids, &inner);
                 let mut g = build::shape_group(ids, "Group 1", children);
-                if let Some(tr) = list.iter().find(|i| i.get("ty").and_then(Json::as_str) == Some("tr"))
+                if let Some(tr) = list
+                    .iter()
+                    .find(|i| i.get("ty").and_then(Json::as_str) == Some("tr"))
                     && let Some(t) = g.sub_mut("transform")
                 {
                     import_shape_transform(im, tr, t);
@@ -481,9 +575,22 @@ pub(crate) fn import_items(im: &mut Im, ids: &mut Ids, items: &[Json]) -> Vec<Pr
             "gf" | "gs" => {
                 let radial = int(j, "t") == Some(2);
                 let mut g = if ty == "gf" {
-                    build::shape_gradient_fill(ids, radial, [0.0, 0.0], [100.0, 0.0], Gradient::default())
+                    build::shape_gradient_fill(
+                        ids,
+                        radial,
+                        [0.0, 0.0],
+                        [100.0, 0.0],
+                        Gradient::default(),
+                    )
                 } else {
-                    build::shape_gradient_stroke(ids, radial, [0.0, 0.0], [100.0, 0.0], Gradient::default(), 2.0)
+                    build::shape_gradient_stroke(
+                        ids,
+                        radial,
+                        [0.0, 0.0],
+                        [100.0, 0.0],
+                        Gradient::default(),
+                        2.0,
+                    )
                 };
                 set(im, &mut g, "opacity", j.get("o"), &anim::to_scalar);
                 set(im, &mut g, "start", j.get("s"), &anim::to_vec2);
@@ -520,7 +627,11 @@ pub(crate) fn import_items(im: &mut Im, ids: &mut Ids, items: &[Json]) -> Vec<Pr
                 let mut g = build::shape_repeater(ids, 3.0, [100.0, 0.0]);
                 set(im, &mut g, "copies", j.get("c"), &anim::to_scalar);
                 set(im, &mut g, "offset", j.get("o"), &anim::to_scalar);
-                set_enum(&mut g, "composite", if int(j, "m") == Some(1) { 1 } else { 0 });
+                set_enum(
+                    &mut g,
+                    "composite",
+                    if int(j, "m") == Some(1) { 1 } else { 0 },
+                );
                 if let (Some(tr), Some(t)) = (j.get("tr"), g.sub_mut("transform")) {
                     import_shape_transform(im, tr, t);
                 }
@@ -535,7 +646,9 @@ pub(crate) fn import_items(im: &mut Im, ids: &mut Ids, items: &[Json]) -> Vec<Pr
                     "zz" => "zigzag",
                     _ => "merge",
                 };
-                let Some(mut g) = build::shape_simple_op(ids, kind) else { continue };
+                let Some(mut g) = build::shape_simple_op(ids, kind) else {
+                    continue;
+                };
                 match ty {
                     "rd" => set(im, &mut g, "radius", j.get("r"), &anim::to_scalar),
                     "op" => {
@@ -543,7 +656,9 @@ pub(crate) fn import_items(im: &mut Im, ids: &mut Ids, items: &[Json]) -> Vec<Pr
                         if let Some(lj) = int(j, "lj") {
                             set_enum(&mut g, "join", lj.saturating_sub(1).clamp(0, 2) as u32);
                         }
-                        if let (Some(ml), Some(p)) = (j.get("ml").and_then(Json::as_f64), g.get_mut("miter")) {
+                        if let (Some(ml), Some(p)) =
+                            (j.get("ml").and_then(Json::as_f64), g.get_mut("miter"))
+                        {
                             p.value = Value::Scalar(ml);
                         }
                     }

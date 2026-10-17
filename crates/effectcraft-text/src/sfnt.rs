@@ -28,7 +28,12 @@ fn be16(b: &[u8], o: usize) -> Option<u16> {
     Some(u16::from_be_bytes([*b.get(o)?, *b.get(o + 1)?]))
 }
 fn be32(b: &[u8], o: usize) -> Option<u32> {
-    Some(u32::from_be_bytes([*b.get(o)?, *b.get(o + 1)?, *b.get(o + 2)?, *b.get(o + 3)?]))
+    Some(u32::from_be_bytes([
+        *b.get(o)?,
+        *b.get(o + 1)?,
+        *b.get(o + 2)?,
+        *b.get(o + 3)?,
+    ]))
 }
 
 fn read_at<R: Read + Seek>(r: &mut R, off: u64, len: usize) -> Option<Vec<u8>> {
@@ -43,15 +48,23 @@ fn read_at<R: Read + Seek>(r: &mut R, off: u64, len: usize) -> Option<Vec<u8>> {
 
 /// Read the names of every face in a font file (a single font or a collection).
 pub fn read_faces<R: Read + Seek>(r: &mut R) -> Vec<FaceNames> {
-    let Some(head) = read_at(r, 0, 12) else { return Vec::new() };
+    let Some(head) = read_at(r, 0, 12) else {
+        return Vec::new();
+    };
     let offsets: Vec<u32> = if &head[0..4] == b"ttcf" {
         let n = be32(&head, 8).unwrap_or(0).min(256) as usize;
-        let Some(t) = read_at(r, 12, n * 4) else { return Vec::new() };
+        let Some(t) = read_at(r, 12, n * 4) else {
+            return Vec::new();
+        };
         (0..n).filter_map(|i| be32(&t, i * 4)).collect()
     } else {
         vec![0]
     };
-    offsets.iter().enumerate().filter_map(|(i, &o)| read_face(r, o as u64, i as u32)).collect()
+    offsets
+        .iter()
+        .enumerate()
+        .filter_map(|(i, &o)| read_face(r, o as u64, i as u32))
+        .collect()
 }
 
 /// Names from in-memory font data.
@@ -84,10 +97,16 @@ fn read_face<R: Read + Seek>(r: &mut R, off: u64, index: u32) -> Option<FaceName
     let nb = read_at(r, no, nl)?;
     let get = |id: u16| name_string(&nb, id);
     let family = get(16).or_else(|| get(1))?;
-    let style = get(17).or_else(|| get(2)).unwrap_or_else(|| "Regular".into());
+    let style = get(17)
+        .or_else(|| get(2))
+        .unwrap_or_else(|| "Regular".into());
     let full_name = get(4).unwrap_or_else(|| format!("{family} {style}"));
-    let native_family = native_name(&nb, 16).or_else(|| native_name(&nb, 1)).filter(|n| *n != family);
-    let postscript = get(6).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+    let native_family = native_name(&nb, 16)
+        .or_else(|| native_name(&nb, 1))
+        .filter(|n| *n != family);
+    let postscript = get(6)
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
     let (mut weight, mut italic) = (400u16, false);
     if let Some((oo, ol)) = os2
         && let Some(ob) = read_at(r, oo, ol.min(78))
@@ -98,8 +117,22 @@ fn read_face<R: Read + Seek>(r: &mut R, off: u64, index: u32) -> Option<FaceName
     let sl = style.to_ascii_lowercase();
     italic |= sl.contains("italic") || sl.contains("oblique");
     // fvar header: version (4), axesArrayOffset (2), reserved (2), axisCount (2).
-    let variable = fvar.filter(|(_, l)| *l >= 10).and_then(|(fo, _)| read_at(r, fo, 10)).and_then(|fb| be16(&fb, 8)).is_some_and(|axes| axes > 0);
-    Some(FaceNames { index, family, style, full_name, weight, italic, native_family, postscript, variable })
+    let variable = fvar
+        .filter(|(_, l)| *l >= 10)
+        .and_then(|(fo, _)| read_at(r, fo, 10))
+        .and_then(|fb| be16(&fb, 8))
+        .is_some_and(|axes| axes > 0);
+    Some(FaceNames {
+        index,
+        family,
+        style,
+        full_name,
+        weight,
+        italic,
+        native_family,
+        postscript,
+        variable,
+    })
 }
 
 /// A Windows Unicode name-table string by id in a language other than US English.
@@ -108,13 +141,24 @@ fn native_name(b: &[u8], id: u16) -> Option<String> {
     let storage = be16(b, 4)? as usize;
     for i in 0..count {
         let r = 6 + i * 12;
-        let (plat, enc, lang, nid, len, off) =
-            (be16(b, r)?, be16(b, r + 2)?, be16(b, r + 4)?, be16(b, r + 6)?, be16(b, r + 8)? as usize, be16(b, r + 10)? as usize);
+        let (plat, enc, lang, nid, len, off) = (
+            be16(b, r)?,
+            be16(b, r + 2)?,
+            be16(b, r + 4)?,
+            be16(b, r + 6)?,
+            be16(b, r + 8)? as usize,
+            be16(b, r + 10)? as usize,
+        );
         if nid != id || plat != 3 || !(enc == 1 || enc == 10) || lang == 0x409 {
             continue;
         }
         let raw = b.get(storage + off..storage + off + len)?;
-        let u: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+        let u: Vec<u16> = raw
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+            .collect();
         let s = String::from_utf16_lossy(&u);
         if !s.trim().is_empty() {
             return Some(s);
@@ -130,22 +174,46 @@ fn name_string(b: &[u8], id: u16) -> Option<String> {
     let mut best: Option<(u8, String)> = None;
     for i in 0..count {
         let r = 6 + i * 12;
-        let (plat, enc, lang, nid, len, off) =
-            (be16(b, r)?, be16(b, r + 2)?, be16(b, r + 4)?, be16(b, r + 6)?, be16(b, r + 8)? as usize, be16(b, r + 10)? as usize);
+        let (plat, enc, lang, nid, len, off) = (
+            be16(b, r)?,
+            be16(b, r + 2)?,
+            be16(b, r + 4)?,
+            be16(b, r + 6)?,
+            be16(b, r + 8)? as usize,
+            be16(b, r + 10)? as usize,
+        );
         if nid != id {
             continue;
         }
         let raw = b.get(storage + off..storage + off + len)?;
         let (rank, s) = match plat {
             3 if enc == 1 || enc == 10 => {
-                let u: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
-                (if lang == 0x409 { 0 } else { 1 }, String::from_utf16_lossy(&u))
+                let u: Vec<u16> = raw
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                    .collect();
+                (
+                    if lang == 0x409 { 0 } else { 1 },
+                    String::from_utf16_lossy(&u),
+                )
             }
             0 => {
-                let u: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+                let u: Vec<u16> = raw
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                    .collect();
                 (2, String::from_utf16_lossy(&u))
             }
-            1 if enc == 0 => (3, raw.iter().map(|&c| if c < 128 { c as char } else { '?' }).collect()),
+            1 if enc == 0 => (
+                3,
+                raw.iter()
+                    .map(|&c| if c < 128 { c as char } else { '?' })
+                    .collect(),
+            ),
             _ => continue,
         };
         if best.as_ref().is_none_or(|(r0, _)| rank < *r0) {
@@ -172,14 +240,20 @@ mod tests {
         let n = read_faces_bytes(crate::fonts::NOTO_SERIF_REGULAR);
         assert_eq!(n[0].family, "Noto Serif");
         assert!(read_faces_bytes(b"not a font").is_empty());
-        assert!(!f[0].variable && !n[0].variable, "the bundled fonts are static");
+        assert!(
+            !f[0].variable && !n[0].variable,
+            "the bundled fonts are static"
+        );
     }
 
     /// A font file of just `name` (family, Regular) and, when `fvar` is given, an `fvar` table
     /// with that many axes (or a truncated one with `Some(None)`).
     fn names_font(family: &str, fvar: Option<Option<u16>>) -> Vec<u8> {
         let u16s = |v: &[u16]| -> Vec<u8> { v.iter().flat_map(|x| x.to_be_bytes()).collect() };
-        let strings: Vec<Vec<u8>> = [family, "Regular"].iter().map(|s| s.encode_utf16().flat_map(|u| u.to_be_bytes()).collect()).collect();
+        let strings: Vec<Vec<u8>> = [family, "Regular"]
+            .iter()
+            .map(|s| s.encode_utf16().flat_map(|u| u.to_be_bytes()).collect())
+            .collect();
         let mut name = u16s(&[0, 2, 30]);
         let mut off = 0;
         for (id, st) in strings.iter().enumerate() {
@@ -192,7 +266,14 @@ mod tests {
             Some(Some(n)) => {
                 // Header, then `n` axis records: `wght` pinned at 400 (min = default = max).
                 let mut t = u16s(&[1, 0, 16, 2, n, 20, 0, 4 + 4 * n]);
-                (0..n).for_each(|_| t.extend(b"wght".iter().copied().chain(u16s(&[0x190, 0, 0x190, 0, 0x190, 0, 0, 256]))));
+                (0..n).for_each(|_| {
+                    t.extend(
+                        b"wght"
+                            .iter()
+                            .copied()
+                            .chain(u16s(&[0x190, 0, 0x190, 0, 0x190, 0, 0, 256])),
+                    )
+                });
                 tables.push((b"fvar", t));
             }
             Some(None) => tables.push((b"fvar", u16s(&[1, 0, 16]))),
@@ -220,7 +301,11 @@ mod tests {
     #[test]
     fn detects_variable_faces_from_fvar() {
         let v = read_faces_bytes(&names_font("Var Test", Some(Some(1))));
-        assert_eq!((v.len(), v[0].family.as_str(), v[0].variable), (1, "Var Test", true), "{v:?}");
+        assert_eq!(
+            (v.len(), v[0].family.as_str(), v[0].variable),
+            (1, "Var Test", true),
+            "{v:?}"
+        );
         assert!(!read_faces_bytes(&names_font("Static Test", None))[0].variable);
         assert!(!read_faces_bytes(&names_font("No Axes", Some(Some(0))))[0].variable);
         assert!(!read_faces_bytes(&names_font("Cut", Some(None)))[0].variable);

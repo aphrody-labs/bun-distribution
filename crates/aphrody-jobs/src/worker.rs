@@ -98,7 +98,12 @@ impl JobContext {
     pub fn log(&self, level: LogLevel, message: impl Into<String>, data: serde_json::Value) {
         let _ = self.logs.append(
             &self.job_id,
-            &LogLine { at: chrono::Utc::now(), level, message: message.into(), data: Some(data) },
+            &LogLine {
+                at: chrono::Utc::now(),
+                level,
+                message: message.into(),
+                data: Some(data),
+            },
         );
     }
 }
@@ -223,7 +228,8 @@ impl Worker {
     pub async fn run_once(&self) -> Result<Option<Outcome>> {
         let kinds = self.kinds();
         let Some(job) =
-            self.store.claim_matching(&self.name, self.host.as_deref(), &kinds, self.lease)?
+            self.store
+                .claim_matching(&self.name, self.host.as_deref(), &kinds, self.lease)?
         else {
             return Ok(None);
         };
@@ -233,8 +239,14 @@ impl Worker {
             return Err(JobError::UnknownKind(job.kind.clone()));
         };
 
-        let ctx = JobContext { job_id: job.id.clone(), logs: self.logs.clone() };
-        ctx.info(format!("attempt {}/{} of `{}`", job.attempts, job.max_attempts, job.kind));
+        let ctx = JobContext {
+            job_id: job.id.clone(),
+            logs: self.logs.clone(),
+        };
+        ctx.info(format!(
+            "attempt {}/{} of `{}`",
+            job.attempts, job.max_attempts, job.kind
+        ));
 
         let lease = self
             .lease
@@ -261,7 +273,10 @@ impl Worker {
 
         // The job may have been cancelled while the handler ran. Writing a
         // result over a cancellation would make `cancel` a lie.
-        if !self.store.heartbeat_owned(&job.id, &self.name, job.attempts, self.lease)? {
+        if !self
+            .store
+            .heartbeat_owned(&job.id, &self.name, job.attempts, self.lease)?
+        {
             ctx.info("claim lost while running (cancelled, or recovered by another worker)");
             return Ok(Some(Outcome::Cancelled(job.id)));
         }
@@ -280,7 +295,7 @@ impl Worker {
                         Outcome::Cancelled(job.id)
                     },
                 ))
-            },
+            }
             Err(err) => {
                 let message = err.to_string();
                 let _ = self.logs.error(&job.id, message.clone());
@@ -300,7 +315,7 @@ impl Worker {
                 } else {
                     Outcome::Failed(job.id)
                 }))
-            },
+            }
         }
     }
 
@@ -360,13 +375,13 @@ impl Worker {
                         pending.push(Box::pin(self.run_once()));
                         submitted += 1;
                     }
-                },
-                Ok(None) => {},
+                }
+                Ok(None) => {}
                 Err(error) => {
                     if failure.is_none() {
                         failure = Some(error);
                     }
-                },
+                }
             }
         }
         failure.map_or(Ok(outcomes), Err)
@@ -386,7 +401,11 @@ impl Worker {
         loop {
             // Bound retained outcome history even when producers never stop.
             let batch_size = concurrency.get().saturating_mul(8);
-            if self.drain_parallel(batch_size, concurrency).await?.is_empty() {
+            if self
+                .drain_parallel(batch_size, concurrency)
+                .await?
+                .is_empty()
+            {
                 tokio::time::sleep(idle).await;
             }
             self.recover()?;
@@ -454,7 +473,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = JobStore::in_memory().unwrap();
         let logs = JobLogs::new(dir.path());
-        (Worker::new(store, logs, "test-worker").with_handler(Arc::new(handler)), dir)
+        (
+            Worker::new(store, logs, "test-worker").with_handler(Arc::new(handler)),
+            dir,
+        )
     }
 
     struct Slow {
@@ -510,7 +532,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("jobs.db");
         let store = JobStore::open(&path).unwrap();
-        let job = store.submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        let job = store
+            .submit(&JobSpec::new("slow", serde_json::json!({})))
+            .unwrap();
         let observer = JobStore::open(&path).unwrap();
         let (worker, _, _, finished) = slow_worker(store, dir.path());
         let observation = async {
@@ -533,7 +557,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("jobs.db");
         let store = JobStore::open(&path).unwrap();
-        let job = store.submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        let job = store
+            .submit(&JobSpec::new("slow", serde_json::json!({})))
+            .unwrap();
         let observer = JobStore::open(&path).unwrap();
         let (worker, active, _, finished) = slow_worker(store, dir.path());
         let cancellation = async {
@@ -551,20 +577,35 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let (worker, active, peak, _) = slow_worker(JobStore::in_memory().unwrap(), dir.path());
         for _ in 0..9 {
-            worker.store().submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+            worker
+                .store()
+                .submit(&JobSpec::new("slow", serde_json::json!({})))
+                .unwrap();
         }
-        let outcomes = worker.drain_parallel(7, NonZeroUsize::new(3).unwrap()).await.unwrap();
+        let outcomes = worker
+            .drain_parallel(7, NonZeroUsize::new(3).unwrap())
+            .await
+            .unwrap();
         assert_eq!(outcomes.len(), 7);
         assert_eq!(peak.load(Ordering::SeqCst), 3);
         assert_eq!(active.load(Ordering::SeqCst), 0);
         assert_eq!(worker.store().stats().unwrap().queued, 2);
-        assert!(worker.drain_parallel(0, NonZeroUsize::new(3).unwrap()).await.unwrap().is_empty());
+        assert!(
+            worker
+                .drain_parallel(0, NonZeroUsize::new(3).unwrap())
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[tokio::test]
     async fn an_empty_queue_yields_no_outcome() {
-        let (w, _dir) =
-            worker(Fixed { kind: "x", answer: Ok(serde_json::json!(1)), permanent: false });
+        let (w, _dir) = worker(Fixed {
+            kind: "x",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        });
         assert!(w.run_once().await.unwrap().is_none());
     }
 
@@ -575,9 +616,15 @@ mod tests {
             answer: Ok(serde_json::json!({ "ok": true })),
             permanent: false,
         });
-        let job = w.store().submit(&JobSpec::new("x", serde_json::json!({}))).unwrap();
+        let job = w
+            .store()
+            .submit(&JobSpec::new("x", serde_json::json!({})))
+            .unwrap();
 
-        assert_eq!(w.run_once().await.unwrap(), Some(Outcome::Succeeded(job.id.clone())));
+        assert_eq!(
+            w.run_once().await.unwrap(),
+            Some(Outcome::Succeeded(job.id.clone()))
+        );
         let done = w.store().get(&job.id).unwrap();
         assert_eq!(done.state, JobState::Succeeded);
         assert_eq!(done.result, Some(serde_json::json!({ "ok": true })));
@@ -589,13 +636,20 @@ mod tests {
 
     #[tokio::test]
     async fn a_retryable_failure_returns_the_job_to_the_queue() {
-        let (w, _dir) = worker(Fixed { kind: "x", answer: Err("busy"), permanent: false });
+        let (w, _dir) = worker(Fixed {
+            kind: "x",
+            answer: Err("busy"),
+            permanent: false,
+        });
         let job = w
             .store()
             .submit(&JobSpec::new("x", serde_json::json!({})).with_max_attempts(2))
             .unwrap();
 
-        assert_eq!(w.run_once().await.unwrap(), Some(Outcome::Retrying(job.id.clone())));
+        assert_eq!(
+            w.run_once().await.unwrap(),
+            Some(Outcome::Retrying(job.id.clone()))
+        );
         let after = w.store().get(&job.id).unwrap();
         assert_eq!(after.state, JobState::Queued);
         assert_eq!(after.last_error.as_deref(), Some("busy"));
@@ -605,23 +659,39 @@ mod tests {
     async fn a_permanent_failure_skips_the_remaining_attempts() {
         // The point of the distinction: a malformed payload must not be retried
         // three times to produce the same error three times.
-        let (w, _dir) = worker(Fixed { kind: "x", answer: Err("bad payload"), permanent: true });
+        let (w, _dir) = worker(Fixed {
+            kind: "x",
+            answer: Err("bad payload"),
+            permanent: true,
+        });
         let job = w
             .store()
             .submit(&JobSpec::new("x", serde_json::json!({})).with_max_attempts(5))
             .unwrap();
 
-        assert_eq!(w.run_once().await.unwrap(), Some(Outcome::Failed(job.id.clone())));
+        assert_eq!(
+            w.run_once().await.unwrap(),
+            Some(Outcome::Failed(job.id.clone()))
+        );
         let after = w.store().get(&job.id).unwrap();
         assert_eq!(after.state, JobState::Failed);
-        assert_eq!(after.attempts, 1, "a permanent failure must not burn the retry budget");
+        assert_eq!(
+            after.attempts, 1,
+            "a permanent failure must not burn the retry budget"
+        );
     }
 
     #[tokio::test]
     async fn an_unregistered_kind_stays_queued_without_consuming_attempts() {
-        let (w, _dir) =
-            worker(Fixed { kind: "known", answer: Ok(serde_json::json!(1)), permanent: false });
-        let job = w.store().submit(&JobSpec::new("unknown", serde_json::json!({}))).unwrap();
+        let (w, _dir) = worker(Fixed {
+            kind: "known",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        });
+        let job = w
+            .store()
+            .submit(&JobSpec::new("unknown", serde_json::json!({})))
+            .unwrap();
 
         assert_eq!(w.run_once().await.unwrap(), None);
         let after = w.store().get(&job.id).unwrap();
@@ -632,39 +702,54 @@ mod tests {
 
     #[tokio::test]
     async fn draining_stops_at_the_cap() {
-        let (w, _dir) =
-            worker(Fixed { kind: "x", answer: Ok(serde_json::json!(1)), permanent: false });
+        let (w, _dir) = worker(Fixed {
+            kind: "x",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        });
         for _ in 0..5 {
-            w.store().submit(&JobSpec::new("x", serde_json::json!({}))).unwrap();
+            w.store()
+                .submit(&JobSpec::new("x", serde_json::json!({})))
+                .unwrap();
         }
         assert_eq!(w.drain(3).await.unwrap().len(), 3);
         assert_eq!(
-            w.store().list(&ListFilter::default().state(JobState::Queued)).unwrap().len(),
+            w.store()
+                .list(&ListFilter::default().state(JobState::Queued))
+                .unwrap()
+                .len(),
             2
         );
     }
 
     #[tokio::test]
     async fn draining_an_empty_queue_returns_nothing_rather_than_spinning() {
-        let (w, _dir) =
-            worker(Fixed { kind: "x", answer: Ok(serde_json::json!(1)), permanent: false });
+        let (w, _dir) = worker(Fixed {
+            kind: "x",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        });
         assert!(w.drain(100).await.unwrap().is_empty());
     }
 
     #[test]
     fn registered_kinds_are_reported_sorted() {
         let dir = tempfile::tempdir().unwrap();
-        let w = Worker::new(JobStore::in_memory().unwrap(), JobLogs::new(dir.path()), "w")
-            .with_handler(Arc::new(Fixed {
-                kind: "ocr",
-                answer: Ok(serde_json::json!(1)),
-                permanent: false,
-            }))
-            .with_handler(Arc::new(Fixed {
-                kind: "transcribe",
-                answer: Ok(serde_json::json!(1)),
-                permanent: false,
-            }));
+        let w = Worker::new(
+            JobStore::in_memory().unwrap(),
+            JobLogs::new(dir.path()),
+            "w",
+        )
+        .with_handler(Arc::new(Fixed {
+            kind: "ocr",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        }))
+        .with_handler(Arc::new(Fixed {
+            kind: "transcribe",
+            answer: Ok(serde_json::json!(1)),
+            permanent: false,
+        }));
         assert_eq!(w.kinds(), vec!["ocr", "transcribe"]);
     }
 }

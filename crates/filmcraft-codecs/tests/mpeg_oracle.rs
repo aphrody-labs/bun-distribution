@@ -13,8 +13,12 @@ use filmcraft_codecs::MpegSource;
 use filmcraft_media::{FrameRequest, MediaError, MediaSource};
 
 /// Stereo test audio with different content per channel (tones and a chirp).
-const NOISE: &[&str] =
-    &["-f", "lavfi", "-i", "aevalsrc=exprs=0.3*sin(2*PI*441*t)+0.1*sin(2*PI*3100*t)|0.25*sin(2*PI*660*t)+0.1*sin(2*PI*(500+4000*t)*t):s=48000"];
+const NOISE: &[&str] = &[
+    "-f",
+    "lavfi",
+    "-i",
+    "aevalsrc=exprs=0.3*sin(2*PI*441*t)+0.1*sin(2*PI*3100*t)|0.25*sin(2*PI*660*t)+0.1*sin(2*PI*(500+4000*t)*t):s=48000",
+];
 
 /// A mono tone.
 const MONO: &[&str] = &["-f", "lavfi", "-i", "sine=frequency=1000:sample_rate=48000"];
@@ -24,14 +28,41 @@ fn spec(name: &str) -> Vec<String> {
     match name {
         // broadcast-style SD: interlaced MPEG-2 + MPEG-1 layer II
         "ts_mpeg2_mp2.ts" => cat(&[
-            &["-f", "lavfi", "-i", "testsrc2=size=720x576:rate=50,tinterlace=mode=interleave_top,setfield=tff"],
+            &[
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=720x576:rate=50,tinterlace=mode=interleave_top,setfield=tff",
+            ],
             NOISE,
-            &["-t", "1.2", "-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-bf", "2", "-g", "12", "-b:v", "6M", "-c:a", "mp2", "-b:a", "192k", "-f", "mpegts"],
+            &[
+                "-t",
+                "1.2",
+                "-c:v",
+                "mpeg2video",
+                "-flags",
+                "+ilme+ildct",
+                "-bf",
+                "2",
+                "-g",
+                "12",
+                "-b:v",
+                "6M",
+                "-c:a",
+                "mp2",
+                "-b:a",
+                "192k",
+                "-f",
+                "mpegts",
+            ],
         ]),
         "ts_h264_aac.ts" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"],
             NOISE,
-            &["-t", "1.2", "-c:v", "libx264", "-bf", "2", "-g", "12", "-pix_fmt", "yuv420p", "-c:a", "aac", "-aac_pns", "0", "-b:a", "128k", "-f", "mpegts"],
+            &[
+                "-t", "1.2", "-c:v", "libx264", "-bf", "2", "-g", "12", "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-aac_pns", "0", "-b:a", "128k", "-f", "mpegts",
+            ],
         ]),
         // AVCHD-style BDAV (192-byte packets): H.264 + Blu-ray LPCM
         "m2ts_h264_lpcm.m2ts" => cat(&[
@@ -111,49 +142,182 @@ fn spec(name: &str) -> Vec<String> {
         "ps_mpeg2_mp2.vob" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=720x480:rate=30000/1001"],
             NOISE,
-            &["-t", "1.2", "-c:v", "mpeg2video", "-bf", "2", "-g", "15", "-b:v", "5M", "-c:a", "mp2", "-b:a", "224k", "-f", "vob"],
+            &[
+                "-t",
+                "1.2",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-g",
+                "15",
+                "-b:v",
+                "5M",
+                "-c:a",
+                "mp2",
+                "-b:a",
+                "224k",
+                "-f",
+                "vob",
+            ],
         ]),
         "ps_mpeg2_lpcm.vob" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=720x576:rate=25"],
             NOISE,
-            &["-t", "1", "-c:v", "mpeg2video", "-bf", "2", "-c:a", "pcm_dvd", "-ac", "2", "-f", "vob"],
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-c:a",
+                "pcm_dvd",
+                "-ac",
+                "2",
+                "-f",
+                "vob",
+            ],
         ]),
         "ps_mpeg2_lpcm16.vob" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=352x288:rate=25"],
             NOISE,
-            &["-t", "0.6", "-c:v", "mpeg2video", "-c:a", "pcm_dvd", "-sample_fmt", "s16", "-ac", "2", "-f", "vob"],
+            &[
+                "-t",
+                "0.6",
+                "-c:v",
+                "mpeg2video",
+                "-c:a",
+                "pcm_dvd",
+                "-sample_fmt",
+                "s16",
+                "-ac",
+                "2",
+                "-f",
+                "vob",
+            ],
         ]),
         "ps_mpeg2_ac3.vob" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=720x576:rate=25"],
             NOISE,
-            &["-t", "1", "-c:v", "mpeg2video", "-bf", "2", "-c:a", "ac3", "-b:a", "192k", "-f", "vob"],
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-c:a",
+                "ac3",
+                "-b:a",
+                "192k",
+                "-f",
+                "vob",
+            ],
         ]),
         // ISO/IEC 11172-1 system stream
         "mpeg1_system.mpg" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=352x288:rate=25"],
             NOISE,
-            &["-t", "1.2", "-c:v", "mpeg1video", "-bf", "2", "-b:v", "1500k", "-c:a", "mp2", "-b:a", "128k", "-f", "mpeg"],
+            &[
+                "-t",
+                "1.2",
+                "-c:v",
+                "mpeg1video",
+                "-bf",
+                "2",
+                "-b:v",
+                "1500k",
+                "-c:a",
+                "mp2",
+                "-b:a",
+                "128k",
+                "-f",
+                "mpeg",
+            ],
         ]),
         // XDCAM HD422 in QuickTime (`xd5c`), MPEG-2 in MP4 (`mp4v`, esds object type 0x61) and
         // Matroska (`V_MPEG2`)
         "mov_xdcam_hd422.mov" => cat(&[
-            &["-f", "lavfi", "-i", "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff"],
-            &["-t", "0.4", "-c:v", "mpeg2video", "-pix_fmt", "yuv422p", "-flags", "+ilme+ildct", "-bf", "2", "-g", "12", "-b:v", "50M"],
+            &[
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff",
+            ],
+            &[
+                "-t",
+                "0.4",
+                "-c:v",
+                "mpeg2video",
+                "-pix_fmt",
+                "yuv422p",
+                "-flags",
+                "+ilme+ildct",
+                "-bf",
+                "2",
+                "-g",
+                "12",
+                "-b:v",
+                "50M",
+            ],
         ]),
-        "mp4_mpeg2.mp4" => cat(&[&["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"], &["-t", "0.6", "-c:v", "mpeg2video", "-bf", "2", "-g", "6"]]),
-        "mkv_mpeg2.mkv" => {
-            cat(&[&["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"], NOISE, &["-t", "0.6", "-c:v", "mpeg2video", "-bf", "2", "-g", "6", "-c:a", "mp2"]])
-        }
-        "audio.mp2" => cat(&[NOISE, &["-t", "1", "-c:a", "mp2", "-b:a", "224k", "-f", "mp2"]]),
+        "mp4_mpeg2.mp4" => cat(&[
+            &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"],
+            &["-t", "0.6", "-c:v", "mpeg2video", "-bf", "2", "-g", "6"],
+        ]),
+        "mkv_mpeg2.mkv" => cat(&[
+            &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"],
+            NOISE,
+            &[
+                "-t",
+                "0.6",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-g",
+                "6",
+                "-c:a",
+                "mp2",
+            ],
+        ]),
+        "audio.mp2" => cat(&[
+            NOISE,
+            &["-t", "1", "-c:a", "mp2", "-b:a", "224k", "-f", "mp2"],
+        ]),
         // mono MP2 at ffmpeg's default bit rate, 384 kbit/s, which ISO/IEC 11172-3 does not allow
         "audio_mono.mp2" => cat(&[MONO, &["-t", "1", "-c:a", "mp2", "-f", "mp2"]]),
-        "ts_mpeg2_mono_mp2.ts" => {
-            cat(&[&["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"], MONO, &["-t", "1", "-c:v", "mpeg2video", "-c:a", "mp2", "-f", "mpegts"]])
-        }
+        "ts_mpeg2_mono_mp2.ts" => cat(&[
+            &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"],
+            MONO,
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "mpeg2video",
+                "-c:a",
+                "mp2",
+                "-f",
+                "mpegts",
+            ],
+        ]),
         "mkv_mono_mp2.mkv" => cat(&[MONO, &["-t", "1", "-c:a", "mp2"]]),
-        "es_mpeg2.m2v" => {
-            cat(&[&["-f", "lavfi", "-i", "testsrc2=size=352x288:rate=25"], &["-t", "1", "-c:v", "mpeg2video", "-bf", "2", "-g", "9", "-f", "mpeg2video"]])
-        }
+        "es_mpeg2.m2v" => cat(&[
+            &["-f", "lavfi", "-i", "testsrc2=size=352x288:rate=25"],
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-g",
+                "9",
+                "-f",
+                "mpeg2video",
+            ],
+        ]),
         other => panic!("unknown fixture {other}"),
     }
 }
@@ -194,17 +358,38 @@ fn open(p: &Path) -> MpegSource {
 fn ffprobe_frame_pts(file: &Path) -> Option<Vec<i64>> {
     let fp = filmcraft_testkit::ffprobe_or_skip("MPEG video frame presentation timestamps")?;
     let o = std::process::Command::new(fp)
-        .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "frame=pts,best_effort_timestamp", "-of", "json"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "frame=pts,best_effort_timestamp",
+            "-of",
+            "json",
+        ])
         .arg(file)
         .output()
         .unwrap_or_else(|error| panic!("{}: cannot run ffprobe: {error}", file.display()));
-    assert!(o.status.success(), "{}: ffprobe failed: {}", file.display(), String::from_utf8_lossy(&o.stderr));
-    Some(parse_ffprobe_frame_pts(&o.stdout).unwrap_or_else(|error| panic!("{}: {error}", file.display())))
+    assert!(
+        o.status.success(),
+        "{}: ffprobe failed: {}",
+        file.display(),
+        String::from_utf8_lossy(&o.stderr)
+    );
+    Some(
+        parse_ffprobe_frame_pts(&o.stdout)
+            .unwrap_or_else(|error| panic!("{}: {error}", file.display())),
+    )
 }
 
 fn parse_ffprobe_frame_pts(bytes: &[u8]) -> Result<Vec<i64>, String> {
-    let data: serde_json::Value = serde_json::from_slice(bytes).map_err(|error| format!("invalid ffprobe JSON: {error}"))?;
-    let frames = data.get("frames").and_then(serde_json::Value::as_array).ok_or("ffprobe output is missing its frames array")?;
+    let data: serde_json::Value =
+        serde_json::from_slice(bytes).map_err(|error| format!("invalid ffprobe JSON: {error}"))?;
+    let frames = data
+        .get("frames")
+        .and_then(serde_json::Value::as_array)
+        .ok_or("ffprobe output is missing its frames array")?;
     if frames.is_empty() {
         return Err("ffprobe returned no video frames".into());
     }
@@ -212,8 +397,15 @@ fn parse_ffprobe_frame_pts(bytes: &[u8]) -> Result<Vec<i64>, String> {
         .iter()
         .enumerate()
         .map(|(index, frame)| {
-            let field = if frame.get("pts").is_some() { "pts" } else { "best_effort_timestamp" };
-            frame.get(field).and_then(serde_json::Value::as_i64).ok_or_else(|| format!("ffprobe video frame {index} is missing an integer {field}"))
+            let field = if frame.get("pts").is_some() {
+                "pts"
+            } else {
+                "best_effort_timestamp"
+            };
+            frame
+                .get(field)
+                .and_then(serde_json::Value::as_i64)
+                .ok_or_else(|| format!("ffprobe video frame {index} is missing an integer {field}"))
         })
         .collect()
 }
@@ -225,8 +417,18 @@ fn ffprobe_pts_preserve_missing_raw_timestamps_and_side_data() {
         {"best_effort_timestamp":135000,"side_data_list":[{}]},
         {"pts":138600,"best_effort_timestamp":138600}
     ]}"#;
-    assert_eq!(parse_ffprobe_frame_pts(output).unwrap(), [131400, 135000, 138600], "keep every display frame, with raw PTS preferred when present");
-    assert_eq!(parse_ffprobe_frame_pts(br#"{"frames":[{"pts":-3600},{"pts":0},{"pts":9223372036854775807}]}"#).unwrap(), [-3600, 0, i64::MAX]);
+    assert_eq!(
+        parse_ffprobe_frame_pts(output).unwrap(),
+        [131400, 135000, 138600],
+        "keep every display frame, with raw PTS preferred when present"
+    );
+    assert_eq!(
+        parse_ffprobe_frame_pts(
+            br#"{"frames":[{"pts":-3600},{"pts":0},{"pts":9223372036854775807}]}"#
+        )
+        .unwrap(),
+        [-3600, 0, i64::MAX]
+    );
 }
 
 #[test]
@@ -245,7 +447,10 @@ fn malformed_ffprobe_pts_fail_instead_of_dropping_frames() {
         r#"{"frames":[{"best_effort_timestamp":"135000"}]}"#,
         r#"{"frames":[{"pts":131400},{"best_effort_timestamp":null},{"pts":138600}]}"#,
     ] {
-        assert!(parse_ffprobe_frame_pts(output.as_bytes()).is_err(), "malformed oracle output must fail: {output}");
+        assert!(
+            parse_ffprobe_frame_pts(output.as_bytes()).is_err(),
+            "malformed oracle output must fail: {output}"
+        );
     }
 }
 
@@ -255,21 +460,33 @@ fn check_video(ff: &Path, file: &Path, tol: u16, seeks: usize) -> (u16, f64) {
     let src = open(file);
     let v = src.info().video.clone().unwrap();
     let (w, h) = (v.width as usize, v.height as usize);
-    let first = src.video_frame(FrameRequest::full(filmcraft_time::Tick::ZERO)).unwrap();
+    let first = src
+        .video_frame(FrameRequest::full(filmcraft_time::Tick::ZERO))
+        .unwrap();
     let (cw, ch, pix) = match &first.data {
-        filmcraft_frame::PixelData::Yuv8 { chroma: filmcraft_frame::Chroma::C422, .. } => (w / 2, h, "yuv422p"),
+        filmcraft_frame::PixelData::Yuv8 {
+            chroma: filmcraft_frame::Chroma::C422,
+            ..
+        } => (w / 2, h, "yuv422p"),
         _ => (w.div_ceil(2), h.div_ceil(2), "yuv420p"),
     };
     let raw = ffmpeg_frames(ff, file, pix);
     let fsize = w * h + 2 * cw * ch;
     let n = raw.len() / fsize;
     let rate = v.frame_rate;
-    assert_eq!(src.info().duration, rate.tick_of(n as i64), "{}: duration = ffmpeg's {n} frames", file.display());
+    assert_eq!(
+        src.info().duration,
+        rate.tick_of(n as i64),
+        "{}: duration = ffmpeg's {n} frames",
+        file.display()
+    );
     let frame = |i: usize| raw_planes(&raw[i * fsize..(i + 1) * fsize], w, h, cw, ch, 1);
     let (mut worst, mut sse, mut cnt) = (0u16, 0f64, 0u64);
     let mut ours = Vec::new();
     for i in 0..n {
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).unwrap();
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .unwrap();
         let p = planes(&f);
         let r = frame(i);
         let d = max_diff(&p, &r);
@@ -288,18 +505,33 @@ fn check_video(ff: &Path, file: &Path, tol: u16, seeks: usize) -> (u16, f64) {
     let mut rng = Rng(0x5EED);
     for _ in 0..seeks {
         let i = rng.below(n as u64) as usize;
-        let f = fresh.video_frame(FrameRequest::full(rate.tick_of(i as i64))).unwrap();
-        assert!(planes(&f) == ours[i], "{}: seek to frame {i} differs from the sequential decode", file.display());
+        let f = fresh
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .unwrap();
+        assert!(
+            planes(&f) == ours[i],
+            "{}: seek to frame {i} differs from the sequential decode",
+            file.display()
+        );
     }
     // presentation timestamps in display order = ffprobe's
     if let Some(fp) = ffprobe_frame_pts(file) {
         let pts = src.video_pts();
         let missing: Vec<usize> = (0..pts.len()).filter(|&i| pts[i].is_none()).collect();
-        assert!(missing.is_empty(), "{}: frames without PTS: {missing:?} (ffprobe {:?})", file.display(), &fp[..fp.len().min(12)]);
+        assert!(
+            missing.is_empty(),
+            "{}: frames without PTS: {missing:?} (ffprobe {:?})",
+            file.display(),
+            &fp[..fp.len().min(12)]
+        );
         let pts: Vec<i64> = pts.into_iter().flatten().collect();
         assert_eq!(pts, fp, "{}: frame PTS", file.display());
     }
-    let psnr = if sse == 0.0 { f64::INFINITY } else { 10.0 * (255f64 * 255.0 * cnt as f64 / sse).log10() };
+    let psnr = if sse == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (255f64 * 255.0 * cnt as f64 / sse).log10()
+    };
     (worst, psnr)
 }
 
@@ -312,7 +544,12 @@ fn check_audio(ff: &Path, file: &Path, tol: f32) -> f32 {
     let ch = a.channels as usize;
     assert_eq!(want.len() % ch, 0);
     let n = want.len() / ch;
-    assert_eq!(len as usize, n, "{}: audio samples = ffmpeg's", file.display());
+    assert_eq!(
+        len as usize,
+        n,
+        "{}: audio samples = ffmpeg's",
+        file.display()
+    );
     let buf = src.audio(start, n, a.sample_rate).unwrap();
     let mut worst = 0f32;
     for i in 0..n {
@@ -322,13 +559,19 @@ fn check_audio(ff: &Path, file: &Path, tol: f32) -> f32 {
     }
     if worst > tol {
         // where it starts, and the lag that best aligns the two (diagnostics)
-        let first_bad = (0..n * ch).find(|&k| (buf.channels[k % ch][k / ch] - want[k]).abs() > tol).map(|k| k / ch);
+        let first_bad = (0..n * ch)
+            .find(|&k| (buf.channels[k % ch][k / ch] - want[k]).abs() > tol)
+            .map(|k| k / ch);
         let best = (-4000i64..=4000)
             .map(|lag| {
                 let e: f64 = (4000..n.min(20_000))
                     .map(|i| {
                         let j = i as i64 + lag;
-                        if j < 0 || j as usize >= n { 0.0 } else { (buf.channels[0][i] as f64 - want[j as usize * ch] as f64).powi(2) }
+                        if j < 0 || j as usize >= n {
+                            0.0
+                        } else {
+                            (buf.channels[0][i] as f64 - want[j as usize * ch] as f64).powi(2)
+                        }
                     })
                     .sum();
                 (e, lag)
@@ -337,8 +580,12 @@ fn check_audio(ff: &Path, file: &Path, tol: f32) -> f32 {
         let per: Vec<String> = (0..n.min(16 * 1152))
             .step_by(1152)
             .map(|s| {
-                let e = (s..(s + 1152).min(n)).map(|i| (buf.channels[0][i] - want[i * ch]).abs()).fold(0f32, f32::max);
-                let ours = (s..(s + 1152).min(n)).map(|i| buf.channels[0][i].abs()).fold(0f32, f32::max);
+                let e = (s..(s + 1152).min(n))
+                    .map(|i| (buf.channels[0][i] - want[i * ch]).abs())
+                    .fold(0f32, f32::max);
+                let ours = (s..(s + 1152).min(n))
+                    .map(|i| buf.channels[0][i].abs())
+                    .fold(0f32, f32::max);
                 format!("{e:.3}/{ours:.3}")
             })
             .collect();
@@ -356,7 +603,11 @@ fn check_audio(ff: &Path, file: &Path, tol: f32) -> f32 {
     for c in 0..ch {
         for (k, v) in win.channels[c].iter().enumerate() {
             let i = (at - start) as usize + k;
-            assert!((v - buf.channels[c][i]).abs() <= 1e-6, "{}: random-access audio differs at {i}", file.display());
+            assert!(
+                (v - buf.channels[c][i]).abs() <= 1e-6,
+                "{}: random-access audio differs at {i}",
+                file.display()
+            );
         }
     }
     worst
@@ -370,13 +621,19 @@ fn transport_stream_mpeg2_and_mp2() {
     let v = src.info().video.clone().unwrap();
     assert_eq!(src.info().container, "MPEG-2 TS");
     assert!(v.codec.starts_with("MPEG-2 Video (Main@"), "{}", v.codec);
-    assert_eq!(v.pixel_format, "YUV 4:2:0 8-bit, interlaced (upper field first)");
+    assert_eq!(
+        v.pixel_format,
+        "YUV 4:2:0 8-bit, interlaced (upper field first)"
+    );
     assert_eq!((v.width, v.height, v.par), (720, 576, (1, 1)));
     let (worst, psnr) = check_video(&ff, &f, 4, 12);
     assert!(psnr >= 58.0, "PSNR {psnr}");
     println!("ts_mpeg2_mp2: video max diff {worst}, PSNR {psnr:.2} dB");
     let a = src.info().audio().cloned().unwrap();
-    assert_eq!((a.codec.as_str(), a.sample_rate, a.channels), ("MPEG Audio", 48_000, 2));
+    assert_eq!(
+        (a.codec.as_str(), a.sample_rate, a.channels),
+        ("MPEG Audio", 48_000, 2)
+    );
     let e = check_audio(&ff, &f, 2e-4);
     println!("ts_mpeg2_mp2: MP2 audio max error {e:.2e}");
 }
@@ -399,7 +656,10 @@ fn bdav_h264_with_lpcm_sample_exact() {
     let src = open(&f);
     assert_eq!(src.info().container, "MPEG-2 TS (BDAV/AVCHD)");
     let a = src.info().audio().cloned().unwrap();
-    assert_eq!((a.codec.as_str(), a.channels, a.bits_per_sample), ("LPCM (Blu-ray)", 2, Some(24)));
+    assert_eq!(
+        (a.codec.as_str(), a.channels, a.bits_per_sample),
+        ("LPCM (Blu-ray)", 2, Some(24))
+    );
     check_video(&ff, &f, 0, 10);
     assert_eq!(check_audio(&ff, &f, 0.0), 0.0);
 }
@@ -486,8 +746,13 @@ fn video_elementary_stream() {
     let rate = src.info().frame_rate();
     assert_eq!(src.info().duration, rate.tick_of(n as i64));
     for i in 0..n {
-        let fr = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).unwrap();
-        let d = max_diff(&planes(&fr), &raw_planes(&raw[i * fsize..(i + 1) * fsize], 352, 288, 176, 144, 1));
+        let fr = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .unwrap();
+        let d = max_diff(
+            &planes(&fr),
+            &raw_planes(&raw[i * fsize..(i + 1) * fsize], 352, 288, 176, 144, 1),
+        );
         assert!(d <= 4, "frame {i}: {d}");
     }
 }
@@ -495,7 +760,11 @@ fn video_elementary_stream() {
 #[test]
 fn mpeg2_in_quicktime_mp4_and_matroska() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    for (name, chroma) in [("mov_xdcam_hd422.mov", (2, 1)), ("mp4_mpeg2.mp4", (2, 2)), ("mkv_mpeg2.mkv", (2, 2))] {
+    for (name, chroma) in [
+        ("mov_xdcam_hd422.mov", (2, 1)),
+        ("mp4_mpeg2.mp4", (2, 2)),
+        ("mkv_mpeg2.mkv", (2, 2)),
+    ] {
         let f = make(&ff, name);
         let src = filmcraft_codecs::open_bytes(name, bytes(&f)).unwrap();
         let v = src.info().video.clone().unwrap();
@@ -506,8 +775,13 @@ fn mpeg2_in_quicktime_mp4_and_matroska() {
         let n = raw.len() / fsize;
         assert!(n >= 10, "{name}: {n} frames");
         for i in 0..n {
-            let fr = src.video_frame(FrameRequest::full(v.frame_rate.tick_of(i as i64))).unwrap();
-            let d = max_diff(&planes(&fr), &raw_planes(&raw[i * fsize..(i + 1) * fsize], w, h, cw, ch, 1));
+            let fr = src
+                .video_frame(FrameRequest::full(v.frame_rate.tick_of(i as i64)))
+                .unwrap();
+            let d = max_diff(
+                &planes(&fr),
+                &raw_planes(&raw[i * fsize..(i + 1) * fsize], w, h, cw, ch, 1),
+            );
             assert!(d <= 4, "{name}: frame {i} differs by {d}");
         }
     }
@@ -523,7 +797,13 @@ fn standalone_mp2_file() {
     let want = ffmpeg_audio_f32(&ff, &f, &[]);
     let n = want.len() / 2;
     let buf = src.audio(0, n, 48_000).unwrap();
-    let worst = (0..n).map(|i| (buf.channels[0][i] - want[2 * i]).abs().max((buf.channels[1][i] - want[2 * i + 1]).abs())).fold(0f32, f32::max);
+    let worst = (0..n)
+        .map(|i| {
+            (buf.channels[0][i] - want[2 * i])
+                .abs()
+                .max((buf.channels[1][i] - want[2 * i + 1]).abs())
+        })
+        .fold(0f32, f32::max);
     assert!(worst <= 2e-4, "{worst}");
 }
 
@@ -554,7 +834,12 @@ fn mono_mp2_at_ffmpegs_default_bit_rate() {
                 let ns = mkv.tracks.first().map_or(0, |t| t.codec_delay_ns);
                 let delay = ((ns * 48_000 + 500_000_000) / 1_000_000_000) as usize;
                 assert!(delay > 0, "{name}: no CodecDelay");
-                (delay, (-2..=2).chain(delay as i64 - 2..=delay as i64 + 2).collect())
+                (
+                    delay,
+                    (-2..=2)
+                        .chain(delay as i64 - 2..=delay as i64 + 2)
+                        .collect(),
+                )
             }
             false => (0, vec![0]),
         };
@@ -564,13 +849,18 @@ fn mono_mp2_at_ffmpegs_default_bit_rate() {
         let (worst, lag) = lags
             .into_iter()
             .map(|lag| {
-                let err = (2..n - 2).map(|i| (want[(i as i64 + lag) as usize] - buf.channels[0][i]).abs()).fold(0f32, f32::max);
+                let err = (2..n - 2)
+                    .map(|i| (want[(i as i64 + lag) as usize] - buf.channels[0][i]).abs())
+                    .fold(0f32, f32::max);
                 (err, lag)
             })
             .fold((f32::INFINITY, 0), |m, x| if x.0 < m.0 { x } else { m });
         let peak = want.iter().fold(0f32, |m, x| m.max(x.abs()));
         println!("{name}: max error {worst} at lag {lag} (CodecDelay {delay}), peak {peak}");
-        assert!(peak > 0.1 && worst <= 2e-4, "{name}: peak {peak}, max error {worst} at lag {lag}");
+        assert!(
+            peak > 0.1 && worst <= 2e-4,
+            "{name}: peak {peak}, max error {worst} at lag {lag}"
+        );
     }
 }
 
@@ -582,7 +872,9 @@ fn truncated_and_corrupt_files_never_panic() {
         let full = std::fs::read(&f).unwrap();
         let mut rng = Rng(0xC0FFEE);
         let exercise = |data: Vec<u8>, rng: &mut Rng| {
-            let Ok(s) = MpegSource::open(name, data.into()) else { return };
+            let Ok(s) = MpegSource::open(name, data.into()) else {
+                return;
+            };
             let info = s.info().clone();
             if let Some(v) = &info.video {
                 let frames = v.frame_rate.frame_at(info.duration).max(1);
@@ -612,7 +904,9 @@ fn truncated_and_corrupt_files_never_panic() {
 #[test]
 #[ignore]
 fn generate_fixtures() {
-    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("codecs mpeg fixtures") else { return };
+    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("codecs mpeg fixtures") else {
+        return;
+    };
     for name in ALL {
         let out = [dir().join(name)];
         filmcraft_testkit::fixtures::generate_and_report(&format!("codecs/{name}"), &out, || {

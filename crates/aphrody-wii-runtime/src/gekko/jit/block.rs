@@ -32,7 +32,11 @@ impl BlockSpec {
 
     #[inline(always)]
     pub fn end_pc(&self) -> u32 {
-        self.pcs.last().copied().map(|p| p.wrapping_add(4)).unwrap_or(self.start_pc)
+        self.pcs
+            .last()
+            .copied()
+            .map(|p| p.wrapping_add(4))
+            .unwrap_or(self.start_pc)
     }
 
     #[inline(always)]
@@ -73,7 +77,12 @@ pub fn discover<const SYSTEM: SystemId>(sys: &System<SYSTEM>, start_pc: u32) -> 
         pc = pc.wrapping_add(4);
     }
 
-    BlockSpec { start_pc, instrs, pcs, terminator }
+    BlockSpec {
+        start_pc,
+        instrs,
+        pcs,
+        terminator,
+    }
 }
 
 #[inline]
@@ -84,7 +93,11 @@ fn extension_target(instr: Instruction, pc: u32) -> Option<u32> {
     if instr.lk() {
         return None;
     }
-    let target = if instr.aa() { instr.li() as u32 } else { pc.wrapping_add_signed(instr.li()) };
+    let target = if instr.aa() {
+        instr.li() as u32
+    } else {
+        pc.wrapping_add_signed(instr.li())
+    };
     Some(target)
 }
 
@@ -119,8 +132,12 @@ pub fn classify_terminator(instr: Instruction) -> Option<TermKind> {
             146 => Some(TermKind::Mtmsr),
             467 => {
                 let spr_num = instr.spr_swapped() as u16;
-                if mtspr_is_block_safe(spr_num) { None } else { Some(TermKind::Mtspr) }
-            },
+                if mtspr_is_block_safe(spr_num) {
+                    None
+                } else {
+                    Some(TermKind::Mtspr)
+                }
+            }
             _ => None,
         },
         _ => None,

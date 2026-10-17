@@ -36,30 +36,52 @@ fn quote(s: &str) -> String {
 fn target(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, LayerId, Uid)> {
     if p.get("path").is_some() || p.get("prop").is_some() {
         let r = super::prop::prop_ref(s, p, cmd)?;
-        let is_path = s.project.comp(r.0).and_then(|c| c.layer(r.1)).and_then(|l| l.props.find(r.2)).is_some_and(|pr| matches!(pr.value, KV::Path(_)));
-        return if is_path { Ok(r) } else { Err(bad(cmd, "that property is not a mask or shape path")) };
+        let is_path = s
+            .project
+            .comp(r.0)
+            .and_then(|c| c.layer(r.1))
+            .and_then(|l| l.props.find(r.2))
+            .is_some_and(|pr| matches!(pr.value, KV::Path(_)));
+        return if is_path {
+            Ok(r)
+        } else {
+            Err(bad(cmd, "that property is not a mask or shape path"))
+        };
     }
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     // A selected path property.
     for (l, u) in super::selected_leaf_props(s) {
-        if comp.layer(l).and_then(|ly| ly.props.find(u)).is_some_and(|pr| matches!(pr.value, KV::Path(_))) {
+        if comp
+            .layer(l)
+            .and_then(|ly| ly.props.find(u))
+            .is_some_and(|pr| matches!(pr.value, KV::Path(_)))
+        {
             return Ok((cid, l, u));
         }
     }
     // The first path of `layer` (or of the first selected layer).
     let lid = match p.get("layer") {
         Some(_) => super::layer_p(s, p, cmd)?.1,
-        None => *s.state.selected_layers.first().ok_or_else(|| bad(cmd, "select a layer with a mask or shape path"))?,
+        None => *s
+            .state
+            .selected_layers
+            .first()
+            .ok_or_else(|| bad(cmd, "select a layer with a mask or shape path"))?,
     };
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
     let mut found = None;
     layer.props.walk("", &mut |_, pr| {
-        if found.is_none() && matches!(pr.value, KV::Path(_)) && !matches!(pr.ui, effectcraft_project::ParamUi::Hidden) {
+        if found.is_none()
+            && matches!(pr.value, KV::Path(_))
+            && !matches!(pr.ui, effectcraft_project::ParamUi::Hidden)
+        {
             found = Some(pr.uid);
         }
     });
-    found.map(|u| (cid, lid, u)).ok_or_else(|| bad(cmd, format!("`{}` has no mask or shape path", layer.name)))
+    found
+        .map(|u| (cid, lid, u))
+        .ok_or_else(|| bad(cmd, format!("`{}` has no mask or shape path", layer.name)))
 }
 
 /// What the commands need about the path: its vertices in comp space (now), the path value, the
@@ -76,10 +98,22 @@ struct PathInfo {
 fn info(s: &Session, cid: ItemId, lid: LayerId, uid: Uid, cmd: &str) -> Result<PathInfo> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let pr = layer.props.find(uid).ok_or_else(|| bad(cmd, "no such property"))?;
+    let pr = layer
+        .props
+        .find(uid)
+        .ok_or_else(|| bad(cmd, "no such property"))?;
     let t = s.time();
-    let ctx = effectcraft_render::EvalCtx { project: &s.project, comp_id: cid, comp, time: t, expr: s.expr.as_deref(), footage: Some(s.footage.as_ref()) };
-    let KV::Path(path) = ctx.value(layer, pr) else { return Err(bad(cmd, "that property is not a path")) };
+    let ctx = effectcraft_render::EvalCtx {
+        project: &s.project,
+        comp_id: cid,
+        comp,
+        time: t,
+        expr: s.expr.as_deref(),
+        footage: Some(s.footage.as_ref()),
+    };
+    let KV::Path(path) = ctx.value(layer, pr) else {
+        return Err(bad(cmd, "that property is not a path"));
+    };
     if path.vertices.is_empty() {
         return Err(bad(cmd, "the path has no vertices"));
     }
@@ -92,9 +126,21 @@ fn info(s: &Session, cid: ItemId, lid: LayerId, uid: Uid, cmd: &str) -> Result<P
             [q.x, q.y]
         })
         .collect();
-    let reference = from_other_layer(comp, layer, uid).ok_or_else(|| bad(cmd, "can't reference that path"))?;
-    let prop_name = layer.props.name_path_of(uid).and_then(|n| n.split('/').rev().nth(1).map(str::to_string)).unwrap_or_else(|| pr.name.clone());
-    Ok(PathInfo { comp_pts, path, reference, layer_name: layer.name.clone(), prop_name, span: (layer.in_point.seconds(), layer.out_point.seconds()) })
+    let reference =
+        from_other_layer(comp, layer, uid).ok_or_else(|| bad(cmd, "can't reference that path"))?;
+    let prop_name = layer
+        .props
+        .name_path_of(uid)
+        .and_then(|n| n.split('/').rev().nth(1).map(str::to_string))
+        .unwrap_or_else(|| pr.name.clone());
+    Ok(PathInfo {
+        comp_pts,
+        path,
+        reference,
+        layer_name: layer.name.clone(),
+        prop_name,
+        span: (layer.in_point.seconds(), layer.out_point.seconds()),
+    })
 }
 
 /// An expression reference to `uid` of `layer` as another layer (the nulls) sees it.
@@ -138,32 +184,66 @@ fn pin_targets(s: &Session, p: &Value, cmd: &str) -> Result<Option<(ItemId, Vec<
                 None => return Ok(None),
             },
         };
-        let all: Vec<_> =
-            s.project.comp(cid).and_then(|c| c.layer(lid)).map(|l| super::puppet::layer_pins(l).map(|g| (cid, lid, g.uid)).collect()).unwrap_or_default();
+        let all: Vec<_> = s
+            .project
+            .comp(cid)
+            .and_then(|c| c.layer(lid))
+            .map(|l| {
+                super::puppet::layer_pins(l)
+                    .map(|g| (cid, lid, g.uid))
+                    .collect()
+            })
+            .unwrap_or_default();
         if all.is_empty() {
             return Ok(None);
         }
         all
     };
-    let cid = pins.first().map(|x| x.0).ok_or_else(|| bad(cmd, "no puppet pins"))?;
+    let cid = pins
+        .first()
+        .map(|x| x.0)
+        .ok_or_else(|| bad(cmd, "no puppet pins"))?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let ctx =
-        effectcraft_render::EvalCtx { project: &s.project, comp_id: cid, comp, time: s.time(), expr: s.expr.as_deref(), footage: Some(s.footage.as_ref()) };
+    let ctx = effectcraft_render::EvalCtx {
+        project: &s.project,
+        comp_id: cid,
+        comp,
+        time: s.time(),
+        expr: s.expr.as_deref(),
+        footage: Some(s.footage.as_ref()),
+    };
     let mut out = vec![];
     for (_, lid, uid) in pins {
-        let Some(layer) = comp.layer(lid) else { continue };
-        let Some(g) = layer.props.find_group(uid) else { continue };
+        let Some(layer) = comp.layer(lid) else {
+            continue;
+        };
+        let Some(g) = layer.props.find_group(uid) else {
+            continue;
+        };
         if !PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0)).moves() {
             continue;
         }
-        let Some(pos) = g.get("position") else { continue };
+        let Some(pos) = g.get("position") else {
+            continue;
+        };
         let v = ctx.value(layer, pos).as_vec2();
         let q = ctx.layer_to_comp(layer).0.apply(vec2(v[0], v[1]));
-        let reference = from_other_layer(comp, layer, pos.uid).ok_or_else(|| bad(cmd, "can't reference that pin"))?;
-        out.push(PinRig { layer: lid, layer_name: layer.name.clone(), name: g.name.clone(), position: pos.uid, comp_pt: [q.x, q.y], reference });
+        let reference = from_other_layer(comp, layer, pos.uid)
+            .ok_or_else(|| bad(cmd, "can't reference that pin"))?;
+        out.push(PinRig {
+            layer: lid,
+            layer_name: layer.name.clone(),
+            name: g.name.clone(),
+            position: pos.uid,
+            comp_pt: [q.x, q.y],
+            reference,
+        });
     }
     if out.is_empty() {
-        return Err(bad(cmd, "no Position or Advanced puppet pins to rig (Bend, Starch and Overlap pins have no Position)"));
+        return Err(bad(
+            cmd,
+            "no Position or Advanced puppet pins to rig (Bend, Starch and Overlap pins have no Position)",
+        ));
     }
     Ok(Some((cid, out)))
 }
@@ -171,7 +251,11 @@ fn pin_targets(s: &Session, p: &Value, cmd: &str) -> Result<Option<(ItemId, Vec<
 /// A new null at `at` (comp space) named `name`, made unique in the comp (expressions find
 /// layers by name). Returns (layer id, name).
 fn new_null(s: &mut Session, cid: ItemId, name: &str, at: [f64; 2]) -> Result<(u64, String)> {
-    let taken = |n: &str| s.project.comp(cid).is_some_and(|c| c.layers.iter().any(|l| l.name == n));
+    let taken = |n: &str| {
+        s.project
+            .comp(cid)
+            .is_some_and(|c| c.layers.iter().any(|l| l.name == n))
+    };
     let mut name = name.to_string();
     let base = name.clone();
     let mut k = 2;
@@ -180,8 +264,14 @@ fn new_null(s: &mut Session, cid: ItemId, name: &str, at: [f64; 2]) -> Result<(u
         k += 1;
     }
     let r = s.execute("layer.newNull", json!({"comp": cid.0, "name": name}))?;
-    let id = r.get("layer").and_then(Value::as_u64).ok_or_else(|| EngineError::Other("no null layer".into()))?;
-    s.execute("prop.set", json!({"comp": cid.0, "layer": id, "path": "transform/position", "value": at}))?;
+    let id = r
+        .get("layer")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| EngineError::Other("no null layer".into()))?;
+    s.execute(
+        "prop.set",
+        json!({"comp": cid.0, "layer": id, "path": "transform/position", "value": at}),
+    )?;
     Ok((id, name))
 }
 
@@ -191,23 +281,46 @@ fn nulls_follow_points(s: &mut Session, p: &Value) -> Result<Value> {
         let nulls = super::app_more::grouped(s, "Nulls Follow Points", |s| {
             let mut out = vec![];
             for pin in &pins {
-                let (id, _) = new_null(s, cid, &format!("{}: {}", pin.layer_name, pin.name), pin.comp_pt)?;
-                let e = format!("var src = thisComp.layer({});\nvar p = src.toComp({});\n[p[0], p[1]]", quote(&pin.layer_name), pin.reference);
+                let (id, _) = new_null(
+                    s,
+                    cid,
+                    &format!("{}: {}", pin.layer_name, pin.name),
+                    pin.comp_pt,
+                )?;
+                let e = format!(
+                    "var src = thisComp.layer({});\nvar p = src.toComp({});\n[p[0], p[1]]",
+                    quote(&pin.layer_name),
+                    pin.reference
+                );
                 s.execute("prop.setExpression", json!({"comp": cid.0, "layer": id, "path": "transform/position", "expression": e}))?;
                 out.push(id);
             }
             Ok(out)
         })?;
-        return Ok(json!({"nulls": nulls, "pins": pins.iter().map(|p| p.position).collect::<Vec<_>>()}));
+        return Ok(
+            json!({"nulls": nulls, "pins": pins.iter().map(|p| p.position).collect::<Vec<_>>()}),
+        );
     }
     let (cid, lid, uid) = target(s, p, C)?;
     let pi = info(s, cid, lid, uid, C)?;
     let nulls = super::app_more::grouped(s, "Nulls Follow Points", |s| {
         let mut out = vec![];
         for (i, at) in pi.comp_pts.iter().enumerate() {
-            let (id, _) = new_null(s, cid, &format!("{}: {} [{}]", pi.layer_name, pi.prop_name, i + 1), *at)?;
-            let e = format!("var src = thisComp.layer({});\nvar p = src.toComp({}.points()[{i}]);\n[p[0], p[1]]", quote(&pi.layer_name), pi.reference);
-            s.execute("prop.setExpression", json!({"comp": cid.0, "layer": id, "path": "transform/position", "expression": e}))?;
+            let (id, _) = new_null(
+                s,
+                cid,
+                &format!("{}: {} [{}]", pi.layer_name, pi.prop_name, i + 1),
+                *at,
+            )?;
+            let e = format!(
+                "var src = thisComp.layer({});\nvar p = src.toComp({}.points()[{i}]);\n[p[0], p[1]]",
+                quote(&pi.layer_name),
+                pi.reference
+            );
+            s.execute(
+                "prop.setExpression",
+                json!({"comp": cid.0, "layer": id, "path": "transform/position", "expression": e}),
+            )?;
             out.push(id);
         }
         Ok(out)
@@ -221,14 +334,24 @@ fn points_follow_nulls(s: &mut Session, p: &Value) -> Result<Value> {
         let nulls = super::app_more::grouped(s, "Points Follow Nulls", |s| {
             let mut out = vec![];
             for pin in &pins {
-                let (id, name) = new_null(s, cid, &format!("{}: {}", pin.layer_name, pin.name), pin.comp_pt)?;
-                let e = format!("var n = thisComp.layer({});\nvar q = fromComp(n.toComp(n.transform.anchorPoint));\n[q[0], q[1]]", quote(&name));
+                let (id, name) = new_null(
+                    s,
+                    cid,
+                    &format!("{}: {}", pin.layer_name, pin.name),
+                    pin.comp_pt,
+                )?;
+                let e = format!(
+                    "var n = thisComp.layer({});\nvar q = fromComp(n.toComp(n.transform.anchorPoint));\n[q[0], q[1]]",
+                    quote(&name)
+                );
                 s.execute("prop.setExpression", json!({"comp": cid.0, "layer": pin.layer.0, "prop": pin.position, "expression": e}))?;
                 out.push(id);
             }
             Ok(out)
         })?;
-        return Ok(json!({"nulls": nulls, "pins": pins.iter().map(|p| p.position).collect::<Vec<_>>()}));
+        return Ok(
+            json!({"nulls": nulls, "pins": pins.iter().map(|p| p.position).collect::<Vec<_>>()}),
+        );
     }
     let (cid, lid, uid) = target(s, p, C)?;
     let pi = info(s, cid, lid, uid, C)?;
@@ -249,7 +372,10 @@ fn points_follow_nulls(s: &mut Session, p: &Value) -> Result<Value> {
             arr(&pi.path.out_tangents),
             pi.path.closed
         );
-        s.execute("prop.setExpression", json!({"comp": cid.0, "layer": lid.0, "prop": uid, "expression": e}))?;
+        s.execute(
+            "prop.setExpression",
+            json!({"comp": cid.0, "layer": lid.0, "prop": uid, "expression": e}),
+        )?;
         Ok(out)
     })?;
     Ok(json!({"nulls": nulls, "layer": lid.0, "prop": uid}))
@@ -261,11 +387,27 @@ fn trace_path(s: &mut Session, p: &Value) -> Result<Value> {
     let pi = info(s, cid, lid, uid, C)?;
     let looping = b_p(p, "loop").unwrap_or(false);
     let nid = super::app_more::grouped(s, "Trace Path", |s| {
-        let (id, _) = new_null(s, cid, &format!("Trace {}: {}", pi.layer_name, pi.prop_name), pi.comp_pts[0])?;
-        s.execute("effect.apply", json!({"comp": cid.0, "layers": [id], "effect": "ec.control.slider"}))?;
-        let fx = s.project.comp(cid).and_then(|c| c.layer(LayerId(id))).and_then(|l| l.props.group("effects/#1")).map(|g| g.uid);
+        let (id, _) = new_null(
+            s,
+            cid,
+            &format!("Trace {}: {}", pi.layer_name, pi.prop_name),
+            pi.comp_pts[0],
+        )?;
+        s.execute(
+            "effect.apply",
+            json!({"comp": cid.0, "layers": [id], "effect": "ec.control.slider"}),
+        )?;
+        let fx = s
+            .project
+            .comp(cid)
+            .and_then(|c| c.layer(LayerId(id)))
+            .and_then(|l| l.props.group("effects/#1"))
+            .map(|g| g.uid);
         if let Some(fx) = fx {
-            s.execute("prop.renameGroup", json!({"comp": cid.0, "layer": id, "prop": fx, "name": "Progress"}))?;
+            s.execute(
+                "prop.renameGroup",
+                json!({"comp": cid.0, "layer": id, "prop": fx, "name": "Progress"}),
+            )?;
         }
         let (a, b) = pi.span;
         s.execute("prop.addKey", json!({"comp": cid.0, "layer": id, "path": "effects/#1/slider", "time": a, "value": 0.0}))?;
@@ -278,7 +420,10 @@ fn trace_path(s: &mut Session, p: &Value) -> Result<Value> {
             quote(&pi.layer_name),
             pi.reference
         );
-        s.execute("prop.setExpression", json!({"comp": cid.0, "layer": id, "path": "transform/position", "expression": e}))?;
+        s.execute(
+            "prop.setExpression",
+            json!({"comp": cid.0, "layer": id, "path": "transform/position", "expression": e}),
+        )?;
         Ok(id)
     })?;
     Ok(json!({"null": nid, "layer": lid.0, "prop": uid}))

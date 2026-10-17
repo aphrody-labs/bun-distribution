@@ -28,7 +28,8 @@ impl RawImage {
             return false;
         }
         // every window position relative to the pattern
-        (0..cfa.height).all(|j| (0..cfa.width).all(|i| block_layout(cfa, i, j, k).1.iter().all(|&n| n > 0)))
+        (0..cfa.height)
+            .all(|j| (0..cfa.width).all(|i| block_layout(cfa, i, j, k).1.iter().all(|&n| n > 0)))
     }
 
     /// Like [`RawImage::develop`] at `1/k` of the size (camera RGB, white = 1.0, default crop applied,
@@ -52,22 +53,34 @@ impl RawImage {
         if !self.can_bin(k) || !self.opcodes.list3.is_empty() {
             return Ok(None);
         }
-        let Some(cfa) = &self.cfa else { return Ok(None) };
+        let Some(cfa) = &self.cfa else {
+            return Ok(None);
+        };
         let a = self.active_area;
         // bin the default crop (relative to the active area) only
         let c = self.crop.clipped(a.width, a.height);
-        let c = if c.width < k || c.height < k { crate::Rect::new(0, 0, a.width, a.height) } else { c };
+        let c = if c.width < k || c.height < k {
+            crate::Rect::new(0, 0, a.width, a.height)
+        } else {
+            c
+        };
         let (bw, bh) = (c.width / k, c.height / k);
         if bw == 0 || bh == 0 {
             return Ok(None);
         }
         // Opcode lists 1/2 need the normalised copy; plain files are normalised row by row.
-        let norm: Option<Normalized> = if self.opcodes.list1.is_empty() && self.opcodes.list2.is_empty() { None } else { Some(self.normalized()?) };
+        let norm: Option<Normalized> =
+            if self.opcodes.list1.is_empty() && self.opcodes.list2.is_empty() {
+                None
+            } else {
+                Some(self.normalized()?)
+            };
         let cfa = cfa.shifted(a.x, a.y);
         let range = self.white_at(0) - self.black.mean();
         let scale = if range > 0.0 { 1.0 / range } else { 1.0 };
-        let uniform_black =
-            self.black.delta_h.is_empty() && self.black.delta_v.is_empty() && self.black.values.iter().all(|&v| v == self.black.values[0]);
+        let uniform_black = self.black.delta_h.is_empty()
+            && self.black.delta_v.is_empty()
+            && self.black.values.iter().all(|&v| v == self.black.values[0]);
         let black0 = self.black.at(0, 0, 0, 1);
         // colour of every sample of a block, per pattern phase of the block's corner
         let (pw, ph) = (cfa.width, cfa.height);
@@ -81,47 +94,57 @@ impl RawImage {
         let wlen = bw * k;
         let mut out = Rgb32f::new(bw, bh);
         let mut mask = vec![0u8; bw * bh];
-        out.data.par_chunks_mut(bw).zip(mask.par_chunks_mut(bw)).enumerate().for_each(|(by, (row, mrow))| {
-            // the block row's k sample rows, normalised
-            let mut rows = vec![0f32; k * wlen];
-            for dy in 0..k {
-                let y = c.y + by * k + dy;
-                let dst = &mut rows[dy * wlen..(dy + 1) * wlen];
-                match (&norm, &self.data) {
-                    (Some(nm), _) => dst.copy_from_slice(&nm.data[y * nm.width + c.x..][..wlen]),
-                    (None, RawData::U16(d)) if uniform_black => {
-                        let src = &d[(a.y + y) * self.width + a.x + c.x..][..wlen];
-                        for (o, &v) in dst.iter_mut().zip(src) {
-                            *o = (v as f32 - black0) * scale;
-                        }
-                    }
-                    (None, data) => {
-                        let base = (a.y + y) * self.width + a.x + c.x;
-                        for (x, o) in dst.iter_mut().enumerate() {
-                            *o = (data.get(base + x) - self.black.at(c.x + x, y, 0, 1)) * scale;
-                        }
-                    }
-                }
-            }
-            let py = (c.y + by * k) % ph;
-            for (bx, (px, m)) in row.iter_mut().zip(mrow.iter_mut()).enumerate() {
-                let (layout, inv) = &layouts[py * pw + (c.x + bx * k) % pw];
-                let (mut sum, mut max) = ([0f32; 3], [f32::MIN; 3]);
+        out.data
+            .par_chunks_mut(bw)
+            .zip(mask.par_chunks_mut(bw))
+            .enumerate()
+            .for_each(|(by, (row, mrow))| {
+                // the block row's k sample rows, normalised
+                let mut rows = vec![0f32; k * wlen];
                 for dy in 0..k {
-                    let src = &rows[dy * wlen + bx * k..][..k];
-                    for (&v, &col) in src.iter().zip(&layout[dy * k..(dy + 1) * k]) {
-                        let col = col as usize;
-                        sum[col] += v;
-                        max[col] = max[col].max(v);
+                    let y = c.y + by * k + dy;
+                    let dst = &mut rows[dy * wlen..(dy + 1) * wlen];
+                    match (&norm, &self.data) {
+                        (Some(nm), _) => {
+                            dst.copy_from_slice(&nm.data[y * nm.width + c.x..][..wlen])
+                        }
+                        (None, RawData::U16(d)) if uniform_black => {
+                            let src = &d[(a.y + y) * self.width + a.x + c.x..][..wlen];
+                            for (o, &v) in dst.iter_mut().zip(src) {
+                                *o = (v as f32 - black0) * scale;
+                            }
+                        }
+                        (None, data) => {
+                            let base = (a.y + y) * self.width + a.x + c.x;
+                            for (x, o) in dst.iter_mut().enumerate() {
+                                *o = (data.get(base + x) - self.black.at(c.x + x, y, 0, 1)) * scale;
+                            }
+                        }
                     }
                 }
-                for ch in 0..3 {
-                    let clipped = max[ch] >= clip;
-                    px[ch] = if clipped && keep_max { max[ch] } else { sum[ch] * inv[ch] };
-                    *m |= u8::from(clipped) << ch;
+                let py = (c.y + by * k) % ph;
+                for (bx, (px, m)) in row.iter_mut().zip(mrow.iter_mut()).enumerate() {
+                    let (layout, inv) = &layouts[py * pw + (c.x + bx * k) % pw];
+                    let (mut sum, mut max) = ([0f32; 3], [f32::MIN; 3]);
+                    for dy in 0..k {
+                        let src = &rows[dy * wlen + bx * k..][..k];
+                        for (&v, &col) in src.iter().zip(&layout[dy * k..(dy + 1) * k]) {
+                            let col = col as usize;
+                            sum[col] += v;
+                            max[col] = max[col].max(v);
+                        }
+                    }
+                    for ch in 0..3 {
+                        let clipped = max[ch] >= clip;
+                        px[ch] = if clipped && keep_max {
+                            max[ch]
+                        } else {
+                            sum[ch] * inv[ch]
+                        };
+                        *m |= u8::from(clipped) << ch;
+                    }
                 }
-            }
-        });
+            });
         Ok(Some((out, mask)))
     }
 }
@@ -146,7 +169,11 @@ mod tests {
     use crate::*;
 
     fn raw_from(n: &Normalized, black: f32, white: f32) -> RawImage {
-        let data = n.data.iter().map(|&v| (v * (white - black) + black).round() as u16).collect();
+        let data = n
+            .data
+            .iter()
+            .map(|&v| (v * (white - black) + black).round() as u16)
+            .collect();
         RawImage {
             format: RawFormat::Dng,
             width: n.width,
@@ -170,8 +197,14 @@ mod tests {
 
     #[test]
     fn binning_matches_block_means_and_keeps_clipping() {
-        let img = Rgb32f::from_fn(24, 18, |x, y| [0.1 + x as f32 * 0.01, 0.2 + y as f32 * 0.01, 0.3]);
-        let mut raw = raw_from(&mosaic_from_rgb(&img, &Cfa::bayer("GRBG").unwrap()), 512.0, 16383.0);
+        let img = Rgb32f::from_fn(24, 18, |x, y| {
+            [0.1 + x as f32 * 0.01, 0.2 + y as f32 * 0.01, 0.3]
+        });
+        let mut raw = raw_from(
+            &mosaic_from_rgb(&img, &Cfa::bayer("GRBG").unwrap()),
+            512.0,
+            16383.0,
+        );
         assert!(raw.can_bin(2) && raw.can_bin(4) && !raw.can_bin(3));
         let b = raw.develop_binned(2, 0.99).unwrap().unwrap();
         assert_eq!((b.width, b.height), (12, 9));
@@ -203,7 +236,11 @@ mod tests {
     #[test]
     fn clipping_is_decided_before_averaging() {
         let img = Rgb32f::filled(64, 64, [0.3, 0.3, 0.3]);
-        let mut raw = raw_from(&mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()), 0.0, 4095.0);
+        let mut raw = raw_from(
+            &mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()),
+            0.0,
+            4095.0,
+        );
         if let RawData::U16(d) = &mut raw.data {
             // one green sample (RGGB: odd column of an even row) in every other block
             for by in 0..8 {
@@ -215,11 +252,24 @@ mod tests {
         let wb = [1.0f32; 3];
         let (mut masked, mask) = raw.develop_binned_masked(8, 0.99).unwrap().unwrap();
         assert_eq!(mask.len(), 64);
-        assert_eq!(mask.iter().filter(|&&m| m == highlight::CLIPPED_G).count(), 32);
-        assert!(mask.iter().all(|&m| m & (highlight::CLIPPED_R | highlight::CLIPPED_B) == 0));
+        assert_eq!(
+            mask.iter().filter(|&&m| m == highlight::CLIPPED_G).count(),
+            32
+        );
+        assert!(
+            mask.iter()
+                .all(|&m| m & (highlight::CLIPPED_R | highlight::CLIPPED_B) == 0)
+        );
         // the clipped block's green is its mean: (31 · 0.3 + 1) / 32
-        assert!((masked.get(0, 0)[1] - (31.0 * 0.3 + 1.0) / 32.0).abs() < 1e-3, "{:?}", masked.get(0, 0));
-        assert_eq!(highlight::reconstruct_masked(&mut masked, wb, 0.99, [1.0; 3], &mask), 32);
+        assert!(
+            (masked.get(0, 0)[1] - (31.0 * 0.3 + 1.0) / 32.0).abs() < 1e-3,
+            "{:?}",
+            masked.get(0, 0)
+        );
+        assert_eq!(
+            highlight::reconstruct_masked(&mut masked, wb, 0.99, [1.0; 3], &mask),
+            32
+        );
         let green = |img: &Rgb32f| img.data.iter().map(|p| p[1] / p[0]).fold(0.0f32, f32::max);
         // (no more than the mean itself: the clipped sample counts at the clip level)
         assert!(green(&masked) < 1.08, "green excess {}", green(&masked));
@@ -229,7 +279,11 @@ mod tests {
         highlight::reconstruct(&mut max, wb, 0.99);
         assert!(green(&max) > 3.0, "{}", green(&max));
         // without clipped samples both are the same plain means, and the mask is empty
-        let clean = raw_from(&mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()), 0.0, 4095.0);
+        let clean = raw_from(
+            &mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()),
+            0.0,
+            4095.0,
+        );
         let (a, m) = clean.develop_binned_masked(8, 0.99).unwrap().unwrap();
         assert!(m.iter().all(|&v| v == 0));
         assert!(a.data == clean.develop_binned(8, 0.99).unwrap().unwrap().data);
@@ -237,14 +291,27 @@ mod tests {
 
     #[test]
     fn binning_matches_demosaic_downscaled_on_smooth_images() {
-        let img = Rgb32f::from_fn(64, 48, |x, y| [0.2 + 0.3 * (x as f32 / 64.0), 0.4 - 0.2 * (y as f32 / 48.0), 0.25]);
-        let raw = raw_from(&mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()), 0.0, 4095.0);
+        let img = Rgb32f::from_fn(64, 48, |x, y| {
+            [
+                0.2 + 0.3 * (x as f32 / 64.0),
+                0.4 - 0.2 * (y as f32 / 48.0),
+                0.25,
+            ]
+        });
+        let raw = raw_from(
+            &mosaic_from_rgb(&img, &Cfa::bayer("RGGB").unwrap()),
+            0.0,
+            4095.0,
+        );
         let b = raw.develop_binned(2, 0.99).unwrap().unwrap();
         let full = lightcraft_raster::resample::half(&raw.develop(Method::Ahd).unwrap());
         for y in 2..b.height - 2 {
             for x in 2..b.width - 2 {
                 for c in 0..3 {
-                    assert!((b.get(x, y)[c] - full.get(x, y)[c]).abs() < 0.01, "({x},{y})");
+                    assert!(
+                        (b.get(x, y)[c] - full.get(x, y)[c]).abs() < 0.01,
+                        "({x},{y})"
+                    );
                 }
             }
         }

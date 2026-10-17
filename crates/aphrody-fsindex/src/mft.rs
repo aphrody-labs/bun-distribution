@@ -90,23 +90,33 @@ impl UsnEntry {
 }
 
 fn read_u16(buf: &[u8], at: usize) -> Option<u16> {
-    Some(u16::from_le_bytes(buf.get(at..at.checked_add(2)?)?.try_into().ok()?))
+    Some(u16::from_le_bytes(
+        buf.get(at..at.checked_add(2)?)?.try_into().ok()?,
+    ))
 }
 
 fn read_u32(buf: &[u8], at: usize) -> Option<u32> {
-    Some(u32::from_le_bytes(buf.get(at..at.checked_add(4)?)?.try_into().ok()?))
+    Some(u32::from_le_bytes(
+        buf.get(at..at.checked_add(4)?)?.try_into().ok()?,
+    ))
 }
 
 fn read_u64(buf: &[u8], at: usize) -> Option<u64> {
-    Some(u64::from_le_bytes(buf.get(at..at.checked_add(8)?)?.try_into().ok()?))
+    Some(u64::from_le_bytes(
+        buf.get(at..at.checked_add(8)?)?.try_into().ok()?,
+    ))
 }
 
 fn read_i64(buf: &[u8], at: usize) -> Option<i64> {
-    Some(i64::from_le_bytes(buf.get(at..at.checked_add(8)?)?.try_into().ok()?))
+    Some(i64::from_le_bytes(
+        buf.get(at..at.checked_add(8)?)?.try_into().ok()?,
+    ))
 }
 
 fn read_u128(buf: &[u8], at: usize) -> Option<u128> {
-    Some(u128::from_le_bytes(buf.get(at..at.checked_add(16)?)?.try_into().ok()?))
+    Some(u128::from_le_bytes(
+        buf.get(at..at.checked_add(16)?)?.try_into().ok()?,
+    ))
 }
 
 /// Decode one `USN_RECORD_V2` or `USN_RECORD_V3` at the start of `buf`.
@@ -148,8 +158,12 @@ pub fn parse_usn_record(buf: &[u8]) -> Option<(UsnEntry, usize)> {
         return None;
     }
     let name_bytes = record.get(name_off..name_off.checked_add(name_len)?)?;
-    let units: Vec<u16> =
-        name_bytes.as_chunks::<2>().0.iter().map(|&c| u16::from_le_bytes(c)).collect();
+    let units: Vec<u16> = name_bytes
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&c| u16::from_le_bytes(c))
+        .collect();
     Some((
         UsnEntry {
             frn,
@@ -218,7 +232,11 @@ impl MftTree {
 
     /// Iterate the direct children of `parent_frn` (insertion order).
     pub fn children(&self, parent_frn: u128) -> impl Iterator<Item = &UsnEntry> {
-        self.children.get(&parent_frn).into_iter().flatten().filter_map(|c| self.nodes.get(c))
+        self.children
+            .get(&parent_frn)
+            .into_iter()
+            .flatten()
+            .filter_map(|c| self.nodes.get(c))
     }
 
     /// True if `frn` designates the NTFS root directory (record number 5).
@@ -361,7 +379,13 @@ mod tests {
 
     #[test]
     fn decodes_v2_fields_and_length() {
-        let buf = v2(0x0001_0000_0000_002A, 5, 777, ATTR_HIDDEN | ATTR_SYSTEM, "pagefile.sys");
+        let buf = v2(
+            0x0001_0000_0000_002A,
+            5,
+            777,
+            ATTR_HIDDEN | ATTR_SYSTEM,
+            "pagefile.sys",
+        );
         let (e, used) = parse_usn_record(&buf).expect("v2");
         assert_eq!(used, buf.len());
         assert_eq!(e.frn, 0x0001_0000_0000_002A);
@@ -379,7 +403,10 @@ mod tests {
         let buf = v3(frn, parent, -5, ATTR_DIRECTORY, "Données été");
         let (e, used) = parse_usn_record(&buf).expect("v3");
         assert_eq!(used, buf.len());
-        assert_eq!((e.frn, e.parent_frn, e.usn, e.timestamp), (frn, parent, -5, 99));
+        assert_eq!(
+            (e.frn, e.parent_frn, e.usn, e.timestamp),
+            (frn, parent, -5, 99)
+        );
         assert_eq!(e.name, "Données été");
         assert!(e.is_dir() && !e.is_hidden() && !e.is_system());
     }
@@ -422,8 +449,14 @@ mod tests {
         t.insert(entry(31, 21, "notes.md", ATTR_HIDDEN));
         assert_eq!(t.len(), 4);
         assert_eq!(t.resolve_path(20, "C:").as_deref(), Some("C:\\Users"));
-        assert_eq!(t.resolve_path(30, "C:").as_deref(), Some("C:\\Users\\file.txt"));
-        assert_eq!(t.resolve_path(31, "C:").as_deref(), Some("C:\\Users\\me\\notes.md"));
+        assert_eq!(
+            t.resolve_path(30, "C:").as_deref(),
+            Some("C:\\Users\\file.txt")
+        );
+        assert_eq!(
+            t.resolve_path(31, "C:").as_deref(),
+            Some("C:\\Users\\me\\notes.md")
+        );
         assert!(!t.is_orphan(31));
         assert_eq!(t.resolve_path(999, "C:"), None);
         let mut kids: Vec<&str> = t.children(20).map(|e| e.name.as_str()).collect();
@@ -439,7 +472,10 @@ mod tests {
         assert_eq!(t.resolve_path(5, "C:").as_deref(), Some("C:\\"));
         t.insert(entry(40, 777, "lost.bin", 0)); // parent 777 missing
         assert!(t.is_orphan(40));
-        assert_eq!(t.resolve_path(40, "C:").as_deref(), Some("C:\\<orphan>\\lost.bin"));
+        assert_eq!(
+            t.resolve_path(40, "C:").as_deref(),
+            Some("C:\\<orphan>\\lost.bin")
+        );
         t.insert(entry(50, 51, "x", ATTR_DIRECTORY)); // 50 <-> 51 cycle
         t.insert(entry(51, 50, "y", ATTR_DIRECTORY));
         assert!(t.is_orphan(50));

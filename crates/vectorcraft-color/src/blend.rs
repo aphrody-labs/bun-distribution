@@ -101,7 +101,9 @@ pub const MASK_LUM: [f32; 3] = [0.2126, 0.7152, 0.0722];
 /// output (screen, SVG, PDF and transparency flattening) follows these formulas.
 pub fn blend_rgb(mode: BlendMode, backdrop: [f32; 3], source: [f32; 3]) -> [f32; 3] {
     use BlendMode as B;
-    let separable = |f: fn(f32, f32) -> f32| [0, 1, 2].map(|i| f(backdrop[i].clamp(0.0, 1.0), source[i].clamp(0.0, 1.0)));
+    let separable = |f: fn(f32, f32) -> f32| {
+        [0, 1, 2].map(|i| f(backdrop[i].clamp(0.0, 1.0), source[i].clamp(0.0, 1.0)))
+    };
     match mode {
         B::Normal => separable(|_, s| s),
         B::Multiply => separable(|b, s| b * s),
@@ -132,7 +134,11 @@ pub fn blend_rgb(mode: BlendMode, backdrop: [f32; 3], source: [f32; 3]) -> [f32;
             if s <= 0.5 {
                 b - (1.0 - 2.0 * s) * b * (1.0 - b)
             } else {
-                let d = if b <= 0.25 { ((16.0 * b - 12.0) * b + 4.0) * b } else { b.sqrt() };
+                let d = if b <= 0.25 {
+                    ((16.0 * b - 12.0) * b + 4.0) * b
+                } else {
+                    b.sqrt()
+                };
                 b + (2.0 * s - 1.0) * (d - b)
             }
         }),
@@ -154,8 +160,13 @@ pub fn composite(mode: BlendMode, backdrop: [f32; 4], source: [f32; 4]) -> [f32;
     if ao <= 0.0 {
         return [0.0; 4];
     }
-    let mixed = blend_rgb(mode, [backdrop[0], backdrop[1], backdrop[2]], [source[0], source[1], source[2]]);
-    let c = |i: usize| ((1.0 - ab) * source[i] + ab * mixed[i]) * as_ + (1.0 - as_) * ab * backdrop[i];
+    let mixed = blend_rgb(
+        mode,
+        [backdrop[0], backdrop[1], backdrop[2]],
+        [source[0], source[1], source[2]],
+    );
+    let c =
+        |i: usize| ((1.0 - ab) * source[i] + ab * mixed[i]) * as_ + (1.0 - as_) * ab * backdrop[i];
     [c(0) / ao, c(1) / ao, c(2) / ao, ao]
 }
 
@@ -179,7 +190,11 @@ fn screen(b: f32, s: f32) -> f32 {
 }
 
 fn hard_light(b: f32, s: f32) -> f32 {
-    if s <= 0.5 { b * 2.0 * s } else { screen(b, 2.0 * s - 1.0) }
+    if s <= 0.5 {
+        b * 2.0 * s
+    } else {
+        screen(b, 2.0 * s - 1.0)
+    }
 }
 
 fn lum(c: [f32; 3]) -> f32 {
@@ -197,10 +212,18 @@ fn clip_color(c: [f32; 3]) -> [f32; 3] {
     let (n, x) = (c[0].min(c[1]).min(c[2]), c[0].max(c[1]).max(c[2]));
     let mut c = c;
     if n < 0.0 {
-        c = if l - n > f32::EPSILON { c.map(|v| l + (v - l) * l / (l - n)) } else { c.map(|v| v.max(0.0)) };
+        c = if l - n > f32::EPSILON {
+            c.map(|v| l + (v - l) * l / (l - n))
+        } else {
+            c.map(|v| v.max(0.0))
+        };
     }
     if x > 1.0 {
-        c = if x - l > f32::EPSILON { c.map(|v| l + (v - l) * (1.0 - l) / (x - l)) } else { c.map(|v| v.min(1.0)) };
+        c = if x - l > f32::EPSILON {
+            c.map(|v| l + (v - l) * (1.0 - l) / (x - l))
+        } else {
+            c.map(|v| v.min(1.0))
+        };
     }
     c
 }
@@ -245,10 +268,21 @@ mod tests {
             (BlendMode::ColorDodge, [0.5, 0.6666667, 1.0]),
             (BlendMode::ColorBurn, [0.0, 0.0, 0.8]),
             // s ≤ ½ darkens by b(1−b)(1−2s); s > ½ lightens towards D(b).
-            (BlendMode::SoftLight, [0.2 + 0.2 * (((16.0 * 0.2 - 12.0) * 0.2 + 4.0) * 0.2 - 0.2), 0.375, 0.9]),
+            (
+                BlendMode::SoftLight,
+                [
+                    0.2 + 0.2 * (((16.0 * 0.2 - 12.0) * 0.2 + 4.0) * 0.2 - 0.2),
+                    0.375,
+                    0.9,
+                ],
+            ),
         ];
         for (m, want) in cases {
-            assert!(near(blend_rgb(m, b, s), want), "{m:?}: {:?} ≠ {want:?}", blend_rgb(m, b, s));
+            assert!(
+                near(blend_rgb(m, b, s), want),
+                "{m:?}: {:?} ≠ {want:?}",
+                blend_rgb(m, b, s)
+            );
         }
     }
 
@@ -261,9 +295,24 @@ mod tests {
         }
         assert!((lum(blend_rgb(BlendMode::Luminosity, b, s)) - lum(s)).abs() < 1e-5);
         // Greys stay finite where rounding puts their luminance just off their components.
-        for m in [BlendMode::Hue, BlendMode::Saturation, BlendMode::Color, BlendMode::Luminosity] {
-            for (b, s) in [([0.7; 3], [0.0; 3]), ([0.0; 3], [0.3; 3]), ([1.0; 3], [0.9; 3]), ([0.9; 3], [1.0; 3])] {
-                assert!(blend_rgb(m, b, s).iter().all(|v| v.is_finite() && (-1e-6..=1.0 + 1e-6).contains(v)), "{m:?} {b:?} {s:?}");
+        for m in [
+            BlendMode::Hue,
+            BlendMode::Saturation,
+            BlendMode::Color,
+            BlendMode::Luminosity,
+        ] {
+            for (b, s) in [
+                ([0.7; 3], [0.0; 3]),
+                ([0.0; 3], [0.3; 3]),
+                ([1.0; 3], [0.9; 3]),
+                ([0.9; 3], [1.0; 3]),
+            ] {
+                assert!(
+                    blend_rgb(m, b, s)
+                        .iter()
+                        .all(|v| v.is_finite() && (-1e-6..=1.0 + 1e-6).contains(v)),
+                    "{m:?} {b:?} {s:?}"
+                );
             }
         }
         // Saturation of grey is 0: a grey source desaturates the backdrop to its luminance.
@@ -280,10 +329,16 @@ mod tests {
         let (b, s) = ([0.8, 0.4, 0.2, 1.0], [0.5, 0.5, 0.5, 0.5]);
         let o = composite(BlendMode::Multiply, b, s);
         // Half of the multiplied colour over half of the backdrop.
-        assert!(near([o[0], o[1], o[2]], [0.6, 0.3, 0.15]) && o[3] == 1.0, "{o:?}");
+        assert!(
+            near([o[0], o[1], o[2]], [0.6, 0.3, 0.15]) && o[3] == 1.0,
+            "{o:?}"
+        );
         // Over a transparent backdrop the source shows unblended.
         let o = composite(BlendMode::Difference, [0.3, 0.3, 0.3, 0.0], s);
-        assert!(near([o[0], o[1], o[2]], [0.5; 3]) && (o[3] - 0.5).abs() < 1e-6, "{o:?}");
+        assert!(
+            near([o[0], o[1], o[2]], [0.5; 3]) && (o[3] - 0.5).abs() < 1e-6,
+            "{o:?}"
+        );
     }
 
     #[test]
@@ -294,7 +349,10 @@ mod tests {
         };
         let (cyan, magenta) = ([1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]);
         // Multiply adds the inks: cyan over magenta prints both.
-        assert_eq!(blend(BlendMode::Multiply, magenta, cyan), [1.0, 1.0, 0.0, 0.0]);
+        assert_eq!(
+            blend(BlendMode::Multiply, magenta, cyan),
+            [1.0, 1.0, 0.0, 0.0]
+        );
         // Screen keeps the lighter (less ink) per plate.
         assert_eq!(blend(BlendMode::Screen, magenta, cyan), [0.0; 4]);
         let (b, s) = ([0.2, 0.6, 0.1, 0.3], [0.7, 0.1, 0.5, 0.8]);
@@ -304,7 +362,10 @@ mod tests {
         }
         assert!((blend(BlendMode::Luminosity, b, s)[3] - s[3]).abs() < 1e-6);
         let back = planes_cmyk(cmyk_planes(b)[0], cmyk_planes(b)[1][0]);
-        assert!(back.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-6), "{back:?}");
+        assert!(
+            back.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-6),
+            "{back:?}"
+        );
     }
 
     #[test]

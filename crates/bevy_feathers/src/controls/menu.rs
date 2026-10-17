@@ -14,18 +14,18 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 use bevy_log::{info, warn};
-use bevy_picking::{cursor::EntityCursor, hover::Hovered, PickingSystems};
-use bevy_reflect::std_traits::ReflectDefault;
+use bevy_picking::{PickingSystems, cursor::EntityCursor, hover::Hovered};
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 use bevy_scene::prelude::*;
 use bevy_text::FontWeight;
 use bevy_ui::{
-    px, AlignItems, AlignSelf, BoxShadow, Display, FlexDirection, GlobalZIndex,
-    InteractionDisabled, JustifyContent, Node, OverrideClip, PositionType, Pressed, UiRect,
+    AlignItems, AlignSelf, BoxShadow, Display, FlexDirection, GlobalZIndex, InteractionDisabled,
+    JustifyContent, Node, OverrideClip, PositionType, Pressed, UiRect, px,
 };
 use bevy_ui_widgets::{
-    popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
     ActivateOnPress, MenuAction, MenuButton, MenuEvent, MenuFocusState, MenuItem, MenuPopup,
+    popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
 };
 
 use crate::{
@@ -41,8 +41,8 @@ use crate::{
     tokens,
 };
 use bevy_input_focus::{
-    tab_navigation::{NavAction, TabIndex},
     FocusCause, InputFocus, InputFocusSystems, InputFocusVisible,
+    tab_navigation::{NavAction, TabIndex},
 };
 
 /// Top-level menu container. This wraps the menu button and provides an anchor for the popover.

@@ -31,19 +31,25 @@ struct Site {
 /// Build a read-only site from an explicit repository root. No host execution,
 /// mutable filesystem endpoints, provider cookies or implicit privileged proxy.
 pub fn router(root: &Path, webos_url: Option<&str>) -> io::Result<Router> {
-    Ok(router_with_ui(Arc::new(Catalog::load(root)?), webos_url, ui::AppUi::for_workspace(root)?)?
-        .merge(assets::SharedAssets::for_workspace(root)?.router())
-        .merge(reference::ReferenceCorpus::for_workspace(root)?.router())
-        .merge(m3::router()))
+    Ok(router_with_ui(
+        Arc::new(Catalog::load(root)?),
+        webos_url,
+        ui::AppUi::for_workspace(root)?,
+    )?
+    .merge(assets::SharedAssets::for_workspace(root)?.router())
+    .merge(reference::ReferenceCorpus::for_workspace(root)?.router())
+    .merge(m3::router()))
 }
 
 /// Compose these product routes into the app/API server using the same snapshot.
 pub fn router_from_catalog(catalog: Arc<Catalog>, webos_url: Option<&str>) -> io::Result<Router> {
     let root = std::env::current_dir()?;
-    Ok(router_with_ui(catalog, webos_url, ui::AppUi::for_workspace(&root)?)?
-        .merge(assets::SharedAssets::for_workspace(&root)?.router())
-        .merge(reference::ReferenceCorpus::for_workspace(&root)?.router())
-        .merge(m3::router()))
+    Ok(
+        router_with_ui(catalog, webos_url, ui::AppUi::for_workspace(&root)?)?
+            .merge(assets::SharedAssets::for_workspace(&root)?.router())
+            .merge(reference::ReferenceCorpus::for_workspace(&root)?.router())
+            .merge(m3::router()),
+    )
 }
 
 fn router_with_ui(
@@ -60,12 +66,19 @@ fn router_with_ui(
                 || !url.username().is_empty()
                 || url.password().is_some()
             {
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid WebOS URL"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "invalid WebOS URL",
+                ));
             }
             Ok(url.to_string())
         })
         .transpose()?;
-    let site = Arc::new(Site { catalog, webos_url, ui });
+    let site = Arc::new(Site {
+        catalog,
+        webos_url,
+        ui,
+    });
     Ok(Router::new()
         .route("/api/docs", get(documents))
         .route("/api/templates", get(template_catalog))
@@ -96,12 +109,16 @@ pub async fn shutdown_signal() {
                     _ = tokio::signal::ctrl_c() => {},
                     _ = terminate.recv() => {},
                 }
-            },
-            Err(_) => { let _ = tokio::signal::ctrl_c().await; },
+            }
+            Err(_) => {
+                let _ = tokio::signal::ctrl_c().await;
+            }
         }
     }
     #[cfg(not(unix))]
-    { let _ = tokio::signal::ctrl_c().await; }
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }
 
 async fn app_ui(State(site): State<Arc<Site>>, uri: Uri) -> Response {
@@ -169,7 +186,9 @@ mod tests {
                 .await
                 .unwrap();
             assert_eq!(response.status(), StatusCode::OK, "{path}");
-            let body = to_bytes(response.into_body(), 2 * 1024 * 1024).await.unwrap();
+            let body = to_bytes(response.into_body(), 2 * 1024 * 1024)
+                .await
+                .unwrap();
             if path.starts_with("/api/") {
                 assert!(serde_json::from_slice::<Value>(&body).unwrap().is_array());
             } else {
@@ -180,7 +199,12 @@ mod tests {
             }
         }
         let response = app
-            .oneshot(Request::builder().uri("/api/os/processes").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/api/os/processes")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -191,7 +215,11 @@ mod tests {
         let root = fixture();
         let app = router(root.path(), None).unwrap();
         for (path, expected, mime) in [
-            ("/app.js", "canonical_bundle", "text/javascript; charset=utf-8"),
+            (
+                "/app.js",
+                "canonical_bundle",
+                "text/javascript; charset=utf-8",
+            ),
             ("/app.css", "canonical_theme", "text/css; charset=utf-8"),
             ("/fonts/icon.svg", "<svg></svg>", "image/svg+xml"),
         ] {
@@ -202,7 +230,10 @@ mod tests {
                 .unwrap();
             assert_eq!(response.status(), StatusCode::OK);
             assert_eq!(response.headers()[header::CONTENT_TYPE], mime);
-            assert_eq!(response.headers()[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
+            assert_eq!(
+                response.headers()[header::X_CONTENT_TYPE_OPTIONS],
+                "nosniff"
+            );
             assert_eq!(
                 to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
                 expected.as_bytes()
@@ -239,10 +270,18 @@ mod tests {
         assert!(router(root.path(), Some("http://user:password@localhost")).is_err());
         let app = router(root.path(), Some("http://127.0.0.1:3001")).unwrap();
         let response = app
-            .oneshot(Request::builder().uri("/webos").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/webos")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
-        assert_eq!(response.headers()[header::LOCATION], "http://127.0.0.1:3001/");
+        assert_eq!(
+            response.headers()[header::LOCATION],
+            "http://127.0.0.1:3001/"
+        );
     }
 }

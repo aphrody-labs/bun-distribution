@@ -11,7 +11,10 @@ pub struct Autoload<'a> {
 impl<'a> Autoload<'a> {
     /// Creates a new autoload block from raw data.
     pub fn new<T: Into<Cow<'a, [u8]>>>(data: T, info: AutoloadInfo) -> Self {
-        Self { data: data.into(), info }
+        Self {
+            data: data.into(),
+            info,
+        }
     }
 
     /// Returns a reference to the code of this [`Autoload`].

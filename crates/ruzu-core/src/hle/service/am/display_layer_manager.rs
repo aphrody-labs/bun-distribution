@@ -233,7 +233,9 @@ impl DisplayLayerManager {
         const DEBUG: u32 = layer_stack_bit(LayerStackId::ApplicationForDebug);
 
         match self.applet_id {
-            AppletId::Application => return DISPLAYED | SCREENSHOT | RECORDING | LAST_FRAME | DEBUG,
+            AppletId::Application => {
+                return DISPLAYED | SCREENSHOT | RECORDING | LAST_FRAME | DEBUG
+            }
             AppletId::OverlayDisplay | AppletId::QLaunch => return DISPLAYED,
             _ => {}
         }
@@ -330,7 +332,8 @@ mod tests {
             }
             manager.applet_id = AppletId::default();
             let expected = match mode {
-                LibraryAppletMode::AllForeground | LibraryAppletMode::AllForegroundInitiallyHidden => 0x15,
+                LibraryAppletMode::AllForeground
+                | LibraryAppletMode::AllForegroundInitiallyHidden => 0x15,
                 _ => 0x05,
             };
             assert_eq!(manager.get_layer_stack_mask(), expected);

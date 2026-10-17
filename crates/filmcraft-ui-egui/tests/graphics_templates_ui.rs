@@ -20,14 +20,19 @@ struct Driver {
 impl Driver {
     fn demo(data: &str) -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
-        let dir = std::env::temp_dir().join(format!("filmcraft-gfx-ui-{data}-{}", std::process::id()));
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-gfx-ui-{data}-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         session.prefs_path = Some(dir.join("prefs.json"));
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let shots = std::env::var_os("FILMCRAFT_UI_SHOTS").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if shots.is_some() {
             b = b.wgpu().with_pixels_per_point(1.0);
         }
@@ -62,10 +67,15 @@ impl Driver {
         r["result"].clone()
     }
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
     fn shot(&mut self, name: &str) {
-        let Some(dir) = self.shots.clone() else { return };
+        let Some(dir) = self.shots.clone() else {
+            return;
+        };
         self.frames(8);
         let img = self.harness.render().expect("wgpu render");
         std::fs::create_dir_all(&dir).unwrap();
@@ -73,7 +83,11 @@ impl Driver {
     }
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
     fn clips_named(&mut self, name: &str) -> Vec<u64> {
         let q = self.exec("sequence.inspect", json!({}));
@@ -93,7 +107,10 @@ impl Driver {
 fn browse_search_apply_and_edit_template_properties() {
     let mut d = Driver::demo("browse");
     d.ok("ui.set", json!({"workspace": "Captions and Graphics"}));
-    d.ok("ui.menu.invoke", json!({"id": "window.panel.EssentialGraphics"}));
+    d.ok(
+        "ui.menu.invoke",
+        json!({"id": "window.panel.EssentialGraphics"}),
+    );
     d.ok("ui.set", json!({"gfxTemplates": {"tab": "browse"}}));
     d.frames(4);
     let items = d.ids("gfxTemplates.item.");
@@ -104,19 +121,31 @@ fn browse_search_apply_and_edit_template_properties() {
     d.ok("ui.click", json!({"id": "gfxTemplates.search"}));
     d.ok("ui.type", json!({"text": "credits"}));
     d.frames(3);
-    assert_eq!(d.ids("gfxTemplates.item."), vec!["gfxTemplates.item.builtin:end-credits-roll"]);
+    assert_eq!(
+        d.ids("gfxTemplates.item."),
+        vec!["gfxTemplates.item.builtin:end-credits-roll"]
+    );
     // select and apply
     d.exec("playhead.set", json!({"seconds": 300}));
-    d.ok("ui.click", json!({"id": "gfxTemplates.item.builtin:end-credits-roll"}));
+    d.ok(
+        "ui.click",
+        json!({"id": "gfxTemplates.item.builtin:end-credits-roll"}),
+    );
     d.ok("ui.click", json!({"id": "gfxTemplates.apply"}));
     d.frames(3);
     let clips = d.clips_named("End Credits – Roll");
     assert_eq!(clips.len(), 1, "applied once");
     // the Edit tab shows the template's properties; editing one runs graphics.template.set
-    d.ok("ui.set", json!({"gfxTemplates": {"tab": "edit", "query": ""}}));
+    d.ok(
+        "ui.set",
+        json!({"gfxTemplates": {"tab": "edit", "query": ""}}),
+    );
     d.frames(3);
     let ctl = d.ids("gfxTemplates.control.");
-    assert!(ctl.contains(&"gfxTemplates.control.heading".to_string()), "{ctl:?}");
+    assert!(
+        ctl.contains(&"gfxTemplates.control.heading".to_string()),
+        "{ctl:?}"
+    );
     d.shot("templates-edit");
     d.ok("ui.click", json!({"id": "gfxTemplates.control.heading"}));
     d.ok("ui.key", json!({"key": "Cmd+A"}));
@@ -125,23 +154,42 @@ fn browse_search_apply_and_edit_template_properties() {
     let c = d.exec("graphics.template.controls", json!({"clip": clips[0]}));
     assert_eq!(c["controls"][0]["value"], "THANKS", "{c}");
     // the roll options are in Responsive Design - Time (no layer selected)
-    d.exec("graphics.selectLayer", json!({"clip": clips[0], "layers": []}));
+    d.exec(
+        "graphics.selectLayer",
+        json!({"clip": clips[0], "layers": []}),
+    );
     d.frames(3);
-    assert!(d.ids("graphics.roll.").contains(&"graphics.roll.startOffScreen".to_string()));
-    assert!(d.ids("graphics.time.").contains(&"graphics.time.intro".to_string()));
+    assert!(
+        d.ids("graphics.roll.")
+            .contains(&"graphics.roll.startOffScreen".to_string())
+    );
+    assert!(
+        d.ids("graphics.time.")
+            .contains(&"graphics.time.intro".to_string())
+    );
 }
 
 #[test]
 fn drag_template_onto_the_timeline() {
     let mut d = Driver::demo("drag");
     d.ok("ui.set", json!({"workspace": "Captions and Graphics"}));
-    d.ok("ui.menu.invoke", json!({"id": "window.panel.EssentialGraphics"}));
-    d.ok("ui.set", json!({"gfxTemplates": {"tab": "browse", "query": "tag"}}));
+    d.ok(
+        "ui.menu.invoke",
+        json!({"id": "window.panel.EssentialGraphics"}),
+    );
+    d.ok(
+        "ui.set",
+        json!({"gfxTemplates": {"tab": "browse", "query": "tag"}}),
+    );
     d.frames(4);
     let before = d.clips_named("Callout – Tag").len();
     d.ok("ui.drag", json!({"from": {"id": "gfxTemplates.item.builtin:callout-tag"}, "to": {"id": "timeline.tracks", "fx": 0.85, "fy": 0.08}, "steps": 16}));
     d.frames(4);
-    assert_eq!(d.clips_named("Callout – Tag").len(), before + 1, "dropped on the timeline");
+    assert_eq!(
+        d.clips_named("Callout – Tag").len(),
+        before + 1,
+        "dropped on the timeline"
+    );
 }
 
 #[test]
@@ -154,7 +202,10 @@ fn export_dialog_and_install_round_trip() {
     let v = d.exec("graphics.template.export", json!({}));
     assert_eq!(v["dialog"], "exportTemplate");
     d.frames(3);
-    assert!(d.ids("exportTemplate.").contains(&"exportTemplate.ok".to_string()));
+    assert!(
+        d.ids("exportTemplate.")
+            .contains(&"exportTemplate.ok".to_string())
+    );
     let st = d.ok("ui.inspect", json!({}));
     let draft = st["ui"]["gfx_templates"]["export"].clone();
     assert_eq!(draft["clip"], clip, "{draft}");
@@ -168,21 +219,42 @@ fn export_dialog_and_install_round_trip() {
     assert_eq!(list[0]["controls"][0]["kind"], "text");
     // the new template shows in Browse
     d.ok("ui.set", json!({"workspace": "Captions and Graphics"}));
-    d.ok("ui.menu.invoke", json!({"id": "window.panel.EssentialGraphics"}));
-    d.ok("ui.set", json!({"gfxTemplates": {"tab": "browse", "query": ""}}));
+    d.ok(
+        "ui.menu.invoke",
+        json!({"id": "window.panel.EssentialGraphics"}),
+    );
+    d.ok(
+        "ui.set",
+        json!({"gfxTemplates": {"tab": "browse", "query": ""}}),
+    );
     d.frames(130);
-    assert!(d.ids("gfxTemplates.item.").contains(&"gfxTemplates.item.user:ui-title".to_string()));
+    assert!(
+        d.ids("gfxTemplates.item.")
+            .contains(&"gfxTemplates.item.user:ui-title".to_string())
+    );
     // Replace Fonts dialog
     let v = d.exec("file.replaceFonts", json!({}));
     assert_eq!(v["dialog"], "replaceFonts");
     d.frames(3);
-    assert!(d.ids("replaceFonts.").contains(&"replaceFonts.ok".to_string()));
-    d.ok("ui.set", json!({"gfxTemplates": {"replace": {"from": "Inter", "to": "Noto Serif"}}}));
+    assert!(
+        d.ids("replaceFonts.")
+            .contains(&"replaceFonts.ok".to_string())
+    );
+    d.ok(
+        "ui.set",
+        json!({"gfxTemplates": {"replace": {"from": "Inter", "to": "Noto Serif"}}}),
+    );
     d.frames(2);
     d.ok("ui.click", json!({"id": "replaceFonts.ok"}));
     d.frames(2);
     let used = d.exec("graphics.fonts.used", json!({}));
-    assert!(used.as_array().unwrap().iter().any(|f| f["family"] == "Noto Serif"), "{used}");
+    assert!(
+        used.as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["family"] == "Noto Serif"),
+        "{used}"
+    );
 }
 
 #[test]
@@ -194,14 +266,24 @@ fn type_tool_selection_styles_characters() {
     d.ok("ui.set", json!({"workspace": "Captions and Graphics"}));
     d.exec("graphics.selectLayer", json!({"clip": clip, "layers": [0]}));
     // a Type-tool selection of "World" (bytes 6..11)
-    d.ok("ui.set", json!({"tool": "Type", "gfxEdit": {"clip": clip, "layer": 0, "caret": 11, "anchor": 6}}));
+    d.ok(
+        "ui.set",
+        json!({"tool": "Type", "gfxEdit": {"clip": clip, "layer": 0, "caret": 11, "anchor": 6}}),
+    );
     d.frames(3);
     d.ok("ui.click", json!({"id": "graphics.prop.faux_bold"}));
     d.frames(2);
     let l = d.exec("graphics.list", json!({"clip": clip}));
-    assert_eq!(l["layers"][0]["styles"], json!([{"start": 6, "end": 11, "fauxBold": true}]), "{l}");
+    assert_eq!(
+        l["layers"][0]["styles"],
+        json!([{"start": 6, "end": 11, "fauxBold": true}]),
+        "{l}"
+    );
     let hist = d.exec("history.list", json!({}));
-    assert_eq!(hist["undo"].as_array().unwrap().last().unwrap(), "Character Style");
+    assert_eq!(
+        hist["undo"].as_array().unwrap().last().unwrap(),
+        "Character Style"
+    );
 }
 
 /// #611: installing a file FilmCraft refuses (a ZIP — EffectCraft's template package renamed
@@ -209,7 +291,8 @@ fn type_tool_selection_styles_characters() {
 #[test]
 fn install_refused_shows_the_reason_on_the_status_bar() {
     let mut d = Driver::demo("install-refused");
-    let file = std::env::temp_dir().join(format!("filmcraft-gfx-ui-zip-{}.fcgt", std::process::id()));
+    let file =
+        std::env::temp_dir().join(format!("filmcraft-gfx-ui-zip-{}.fcgt", std::process::id()));
     std::fs::write(&file, [0x50u8, 0x4b, 0x03, 0x04]).unwrap();
     let picked = file.to_string_lossy().to_string();
     d.harness.state_mut().hooks.pick_open_file = Some(Box::new(move |_, _| Some(picked.clone())));
@@ -218,6 +301,13 @@ fn install_refused_shows_the_reason_on_the_status_bar() {
     d.ok("ui.click", json!({"id": "gfxTemplates.install"}));
     let st = d.ok("ui.inspect", json!({}));
     let _ = std::fs::remove_file(&file);
-    let msg = st["ui"]["status"].as_str().unwrap_or_default().to_lowercase();
-    assert!(msg.contains("zip archive"), "the refused install left no visible reason: {:?}", st["ui"]["status"]);
+    let msg = st["ui"]["status"]
+        .as_str()
+        .unwrap_or_default()
+        .to_lowercase();
+    assert!(
+        msg.contains("zip archive"),
+        "the refused install left no visible reason: {:?}",
+        st["ui"]["status"]
+    );
 }

@@ -4,12 +4,16 @@
 
 use effectcraft_keyframe::Value as KV;
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{FootageKind, ItemId, ItemKind, Layer, LayerSource, Node, PrimitiveKind, PropGroup, Renderer};
+use effectcraft_project::{
+    FootageKind, ItemId, ItemKind, Layer, LayerSource, Node, PrimitiveKind, PropGroup, Renderer,
+};
 use effectcraft_time::Tick;
 use serde_json::{Value, json};
 
 use super::layer::{color_p, index_p, insert_layer, insert_layer_at, place, position_p};
-use super::{CommandSpec, b_p, bad, comp_id, f_p, has_comp, has_layers, layer_mut, layer_p, layers_p, str_p};
+use super::{
+    CommandSpec, b_p, bad, comp_id, f_p, has_comp, has_layers, layer_mut, layer_p, layers_p, str_p,
+};
 use crate::{EngineError, Result, Session, cmd};
 
 // ---------------------------------------------------------------- geometry options
@@ -17,18 +21,28 @@ use crate::{EngineError, Result, Session, cmd};
 /// Add Geometry Options (Bevel Style, Bevel Depth, Hole Bevel Depth, Extrusion Depth) to a text
 /// or shape layer that has none.
 pub(crate) fn add_geometry_options(next_id: &mut u64, l: &mut Layer) {
-    if !matches!(l.source, LayerSource::Text | LayerSource::Shape) || l.props.sub("geometryOptions").is_some() {
+    if !matches!(l.source, LayerSource::Text | LayerSource::Shape)
+        || l.props.sub("geometryOptions").is_some()
+    {
         return;
     }
     let g = build::extrusion_geometry_options(&mut Ids(next_id));
     // After Transform, like After Effects.
-    let at = l.props.children.iter().position(|c| c.match_id() == "transform").map_or(l.props.children.len(), |i| i + 1);
+    let at = l
+        .props
+        .children
+        .iter()
+        .position(|c| c.match_id() == "transform")
+        .map_or(l.props.children.len(), |i| i + 1);
     l.props.children.insert(at, g.into());
 }
 
 /// Advanced 3D comps: give every text and shape layer Geometry Options.
 pub(crate) fn sync_geometry_options(proj: &mut effectcraft_project::Project, cid: ItemId) {
-    if proj.comp(cid).is_none_or(|c| c.renderer != Renderer::Advanced3D) {
+    if proj
+        .comp(cid)
+        .is_none_or(|c| c.renderer != Renderer::Advanced3D)
+    {
         return;
     }
     let mut next = proj.next_id;
@@ -41,11 +55,16 @@ pub(crate) fn sync_geometry_options(proj: &mut effectcraft_project::Project, cid
 }
 
 fn renderer_p(p: &Value, cmd: &str) -> Result<Renderer> {
-    let v = str_p(p, "renderer").or_else(|| str_p(p, "value")).ok_or_else(|| bad(cmd, "missing `renderer` (advanced3d|classic3d)"))?;
+    let v = str_p(p, "renderer")
+        .or_else(|| str_p(p, "value"))
+        .ok_or_else(|| bad(cmd, "missing `renderer` (advanced3d|classic3d)"))?;
     match v.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
         "advanced3d" | "advanced" => Ok(Renderer::Advanced3D),
         "classic3d" | "classic" => Ok(Renderer::Classic3D),
-        _ => Err(bad(cmd, format!("renderer: advanced3d|classic3d, not `{v}`"))),
+        _ => Err(bad(
+            cmd,
+            format!("renderer: advanced3d|classic3d, not `{v}`"),
+        )),
     }
 }
 
@@ -61,7 +80,11 @@ fn comp_renderer(s: &mut Session, p: &Value) -> Result<Value> {
         sync_geometry_options(proj, cid);
         Ok(())
     })?;
-    if r == Renderer::Classic3D && s.project.comp(cid).is_some_and(|c| c.layers.iter().any(|l| l.source.is_model())) {
+    if r == Renderer::Classic3D
+        && s.project
+            .comp(cid)
+            .is_some_and(|c| c.layers.iter().any(|l| l.source.is_model()))
+    {
         s.toast("Classic 3D doesn't draw 3D model layers: they show with the Advanced 3D renderer");
     }
     Ok(json!({"renderer": renderer_id(r)}))
@@ -88,8 +111,14 @@ fn use_advanced_3d(proj: &mut effectcraft_project::Project, cid: ItemId) -> Resu
 /// Tell the user when [`use_advanced_3d`] changed the comp's renderer.
 fn report_switch(s: &mut Session, cid: ItemId, switched: bool) {
     if switched {
-        let name = s.project.item(cid).map_or("the composition", |i| i.name.as_str()).to_string();
-        s.toast(format!("\"{name}\" now uses the Advanced 3D renderer, which draws 3D models"));
+        let name = s
+            .project
+            .item(cid)
+            .map_or("the composition", |i| i.name.as_str())
+            .to_string();
+        s.toast(format!(
+            "\"{name}\" now uses the Advanced 3D renderer, which draws 3D models"
+        ));
     }
 }
 
@@ -112,41 +141,102 @@ pub(crate) fn new_model(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let item = match (p.get("item"), str_p(p, "path")) {
         (Some(Value::Number(n)), _) => ItemId(n.as_u64().unwrap_or(0)),
-        (Some(Value::String(name)), _) => s.project.find_by_name(name).map(|i| i.id).ok_or_else(|| bad("layer.newModel", format!("no item `{name}`")))?,
+        (Some(Value::String(name)), _) => s
+            .project
+            .find_by_name(name)
+            .map(|i| i.id)
+            .ok_or_else(|| bad("layer.newModel", format!("no item `{name}`")))?,
         (_, Some(path)) => {
             let r = s.execute("file.import", json!({"paths": [path]}))?;
-            let id = r.get("items").and_then(|a| a.get(0)).and_then(Value::as_u64);
-            let err = r.get("errors").and_then(|e| e.get(0)).and_then(Value::as_str).unwrap_or("import failed").to_string();
+            let id = r
+                .get("items")
+                .and_then(|a| a.get(0))
+                .and_then(Value::as_u64);
+            let err = r
+                .get("errors")
+                .and_then(|e| e.get(0))
+                .and_then(Value::as_str)
+                .unwrap_or("import failed")
+                .to_string();
             ItemId(id.ok_or_else(|| bad("layer.newModel", err))?)
         }
-        _ => *s.state.project_selection.first().ok_or_else(|| bad("layer.newModel", "missing `item` or `path`"))?,
+        _ => *s
+            .state
+            .project_selection
+            .first()
+            .ok_or_else(|| bad("layer.newModel", "missing `item` or `path`"))?,
     };
-    let it = s.project.item(item).ok_or_else(|| bad("layer.newModel", "no such item"))?.clone();
-    let ItemKind::Footage(f) = &it.kind else { return Err(bad("layer.newModel", format!("`{}` is not a 3D model", it.name))) };
+    let it = s
+        .project
+        .item(item)
+        .ok_or_else(|| bad("layer.newModel", "no such item"))?
+        .clone();
+    let ItemKind::Footage(f) = &it.kind else {
+        return Err(bad(
+            "layer.newModel",
+            format!("`{}` is not a 3D model", it.name),
+        ));
+    };
     if f.kind != FootageKind::Model {
-        return Err(bad("layer.newModel", format!("`{}` is not a 3D model", it.name)));
+        return Err(bad(
+            "layer.newModel",
+            format!("`{}` is not a 3D model", it.name),
+        ));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     // Fit the model to half the comp height, and list its animation clips.
     let model = s.footage.model(item, f);
     let (scale, clips) = match &model {
         Some(m) => {
-            let ext = m.bounds().map_or(1.0, |(lo, hi)| (0..3).map(|k| hi[k] - lo[k]).fold(0.0f64, f64::max));
-            let scale = if ext > 1e-9 { comp.height as f64 * 0.5 / ext } else { 100.0 };
-            let clips = m.animations.iter().enumerate().map(|(i, a)| if a.name.is_empty() { format!("Animation {}", i + 1) } else { a.name.clone() }).collect();
+            let ext = m.bounds().map_or(1.0, |(lo, hi)| {
+                (0..3).map(|k| hi[k] - lo[k]).fold(0.0f64, f64::max)
+            });
+            let scale = if ext > 1e-9 {
+                comp.height as f64 * 0.5 / ext
+            } else {
+                100.0
+            };
+            let clips = m
+                .animations
+                .iter()
+                .enumerate()
+                .map(|(i, a)| {
+                    if a.name.is_empty() {
+                        format!("Animation {}", i + 1)
+                    } else {
+                        a.name.clone()
+                    }
+                })
+                .collect();
             (scale, clips)
         }
         None => (100.0, vec![]),
     };
     let name = str_p(p, "name").unwrap_or(&it.name).to_string();
     let fr = comp.frame_rate;
-    let start = fr.snap_nearest(f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(Tick::ZERO));
+    let start = fr.snap_nearest(
+        f_p(p, "time")
+            .map(Tick::from_seconds_f64)
+            .unwrap_or(Tick::ZERO),
+    );
     let index = index_p(p, "layer.newModel")?;
     let position = position_p(p, "layer.newModel")?;
     let (id, switched) = s.edit("New 3D Model Layer", None, |proj, st| {
-        let mut l = build::layer(proj, &comp, &name, LayerSource::Model { item }, (comp.width, comp.height), None);
+        let mut l = build::layer(
+            proj,
+            &comp,
+            &name,
+            LayerSource::Model { item },
+            (comp.width, comp.height),
+            None,
+        );
         let g = build::model_geometry_options(&mut Ids(&mut proj.next_id), scale, &clips);
-        if let Some(slot) = l.props.children.iter_mut().find(|c| c.match_id() == "geometryOptions") {
+        if let Some(slot) = l
+            .props
+            .children
+            .iter_mut()
+            .find(|c| c.match_id() == "geometryOptions")
+        {
             *slot = g.into();
         }
         l.start_time = start;
@@ -161,8 +251,20 @@ pub(crate) fn new_model(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn kind_p(p: &Value, cmd: &str) -> Result<PrimitiveKind> {
-    let k = str_p(p, "kind").or_else(|| str_p(p, "type")).ok_or_else(|| bad(cmd, "missing `kind` (cube|sphere|plane|torus|cone|cylinder)"))?;
-    PrimitiveKind::parse(k).ok_or_else(|| bad(cmd, format!("kind: cube|sphere|plane|torus|cone|cylinder, not `{k}`")))
+    let k = str_p(p, "kind")
+        .or_else(|| str_p(p, "type"))
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                "missing `kind` (cube|sphere|plane|torus|cone|cylinder)",
+            )
+        })?;
+    PrimitiveKind::parse(k).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("kind: cube|sphere|plane|torus|cone|cylinder, not `{k}`"),
+        )
+    })
 }
 
 /// Parse Material Options parameters onto a layer at comp time `t`.
@@ -192,14 +294,28 @@ fn apply_material(l: &mut Layer, p: &Value, t: Tick, cmd: &str) -> Result<usize>
             n += set_at(l, &format!("materialOptions/{k}"), t, KV::Bool(v)) as usize;
         }
     }
-    for k in ["lightTransmission", "ambient", "diffuse", "specularIntensity", "specularShininess", "metal", "metallic", "roughness"] {
+    for k in [
+        "lightTransmission",
+        "ambient",
+        "diffuse",
+        "specularIntensity",
+        "specularShininess",
+        "metal",
+        "metallic",
+        "roughness",
+    ] {
         if let Some(v) = f_p(p, k) {
             n += set_at(l, &format!("materialOptions/{k}"), t, KV::Scalar(v)) as usize;
         }
     }
     for k in ["baseColor", "emissive"] {
         if let Some(c) = color_p(p, k) {
-            n += set_at(l, &format!("materialOptions/{k}"), t, KV::Color([c[0] as f64, c[1] as f64, c[2] as f64, 1.0])) as usize;
+            n += set_at(
+                l,
+                &format!("materialOptions/{k}"),
+                t,
+                KV::Color([c[0] as f64, c[1] as f64, c[2] as f64, 1.0]),
+            ) as usize;
         }
     }
     Ok(n)
@@ -209,18 +325,45 @@ fn new_primitive(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let kind = kind_p(p, "layer.newPrimitive")?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
-    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| kind.label().to_string());
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .unwrap_or_else(|| kind.label().to_string());
     let t = super::time_p(s, p, Some(&comp));
     let (id, switched) = s.edit(&format!("New {}", kind.label()), None, |proj, st| {
-        let mut l = build::layer(proj, &comp, &name, LayerSource::Primitive { kind }, (comp.width, comp.height), None);
-        for k in ["width", "height", "depth", "radius", "tubeRadius", "segments", "rings"] {
+        let mut l = build::layer(
+            proj,
+            &comp,
+            &name,
+            LayerSource::Primitive { kind },
+            (comp.width, comp.height),
+            None,
+        );
+        for k in [
+            "width",
+            "height",
+            "depth",
+            "radius",
+            "tubeRadius",
+            "segments",
+            "rings",
+        ] {
             if let Some(v) = f_p(p, k) {
-                set_at(&mut l, &format!("geometryOptions/{k}"), t, KV::Scalar(v.max(0.0)));
+                set_at(
+                    &mut l,
+                    &format!("geometryOptions/{k}"),
+                    t,
+                    KV::Scalar(v.max(0.0)),
+                );
             }
         }
         if let Some(pos) = p.get("position").and_then(Value::as_array) {
             let g = |i: usize| pos.get(i).and_then(Value::as_f64).unwrap_or(0.0);
-            set_at(&mut l, "transform/position", t, KV::Vec3([g(0), g(1), g(2)]));
+            set_at(
+                &mut l,
+                "transform/position",
+                t,
+                KV::Vec3([g(0), g(1), g(2)]),
+            );
         }
         apply_material(&mut l, p, t, "layer.newPrimitive")?;
         let id = insert_layer(proj, st, cid, l)?;
@@ -235,13 +378,22 @@ fn new_primitive(s: &mut Session, p: &Value) -> Result<Value> {
 fn environment(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     if ids.is_empty() {
-        return Err(bad("layer.environment", "select a footage or composition layer"));
+        return Err(bad(
+            "layer.environment",
+            "select a footage or composition layer",
+        ));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     for id in &ids {
         let l = comp.layer(*id).ok_or(EngineError::NoComp)?;
         if !l.source.is_av() || l.source.is_model() {
-            return Err(bad("layer.environment", format!("`{}` can't be an environment layer (use a footage, comp or solid layer)", l.name)));
+            return Err(bad(
+                "layer.environment",
+                format!(
+                    "`{}` can't be an environment layer (use a footage, comp or solid layer)",
+                    l.name
+                ),
+            ));
         }
     }
     let on = b_p(p, "on").unwrap_or_else(|| !comp.layer(ids[0]).is_some_and(|l| l.environment));
@@ -263,7 +415,10 @@ fn environment(s: &mut Session, p: &Value) -> Result<Value> {
 fn material_set(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     if ids.is_empty() {
-        return Err(bad("material.set", "no `layers` given and no layer selected"));
+        return Err(bad(
+            "material.set",
+            "no `layers` given and no layer selected",
+        ));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let t = super::time_p(s, p, Some(&comp));
@@ -295,7 +450,12 @@ fn default_material(next: &mut u64, l: &Layer) -> Option<PropGroup> {
 }
 
 fn replace_material(l: &mut Layer, g: PropGroup) {
-    match l.props.children.iter_mut().find(|c| c.match_id() == "materialOptions") {
+    match l
+        .props
+        .children
+        .iter_mut()
+        .find(|c| c.match_id() == "materialOptions")
+    {
         Some(slot) => *slot = Node::Group(g),
         None => l.props.children.push(g.into()),
     }
@@ -304,7 +464,10 @@ fn replace_material(l: &mut Layer, g: PropGroup) {
 fn material_reset(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     if ids.is_empty() {
-        return Err(bad("material.reset", "no `layers` given and no layer selected"));
+        return Err(bad(
+            "material.reset",
+            "no `layers` given and no layer selected",
+        ));
     }
     s.edit("Reset Material", None, |proj, _| {
         let mut next = proj.next_id;
@@ -325,19 +488,29 @@ fn material_reset(s: &mut Session, p: &Value) -> Result<Value> {
 fn material_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     if ids.len() < 2 {
-        return Err(bad("material.duplicateAssign", "select the source layer first, then the layers to assign its material to"));
+        return Err(bad(
+            "material.duplicateAssign",
+            "select the source layer first, then the layers to assign its material to",
+        ));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let src = comp
         .layer(ids[0])
         .and_then(|l| l.props.sub("materialOptions"))
         .cloned()
-        .ok_or_else(|| bad("material.duplicateAssign", "the first layer has no material"))?;
+        .ok_or_else(|| {
+            bad(
+                "material.duplicateAssign",
+                "the first layer has no material",
+            )
+        })?;
     let n = s.edit("Duplicate and Assign Material", None, |proj, _| {
         let mut n = 0;
         for id in &ids[1..] {
             let l = layer_mut(proj, cid, *id)?;
-            let Some(dst) = l.props.sub("materialOptions") else { continue };
+            let Some(dst) = l.props.sub("materialOptions") else {
+                continue;
+            };
             // Property sets differ (models, primitives, cards): copy the values they share.
             let mut g = dst.clone();
             for c in g.children.iter_mut() {
@@ -359,8 +532,17 @@ fn material_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn material_reveal(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid) = layer_p(s, p, "material.revealSource")?;
-    let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
-    let LayerSource::Model { item } = l.source else { return Err(bad("material.revealSource", "the layer's material is its own (not from a model file)")) };
+    let l = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .ok_or(EngineError::NoComp)?;
+    let LayerSource::Model { item } = l.source else {
+        return Err(bad(
+            "material.revealSource",
+            "the layer's material is its own (not from a model file)",
+        ));
+    };
     s.state.project_selection = vec![item];
     Ok(json!({"item": item.0}))
 }
@@ -398,8 +580,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             new_primitive
         ),
-        cmd!("comp.renderer", "Renderer", [], None, "{renderer?: advanced3d|classic3d (omit to read), value?}", has_comp, comp_renderer),
-        cmd!("layer.environment", "Environment Layer", ["Layer"], None, "{layers?, on?}", has_layers, environment),
+        cmd!(
+            "comp.renderer",
+            "Renderer",
+            [],
+            None,
+            "{renderer?: advanced3d|classic3d (omit to read), value?}",
+            has_comp,
+            comp_renderer
+        ),
+        cmd!(
+            "layer.environment",
+            "Environment Layer",
+            ["Layer"],
+            None,
+            "{layers?, on?}",
+            has_layers,
+            environment
+        ),
         cmd!(
             "material.set",
             "Material Options",
@@ -409,8 +607,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_layers,
             material_set
         ),
-        cmd!("material.revealSource", "Reveal Material Source in Project", ["Layer", "Material"], None, "{layer?}", has_layers, material_reveal),
-        cmd!("material.reset", "Reset Material", ["Layer", "Material"], None, "{layers?}", has_model_or_layers, material_reset),
+        cmd!(
+            "material.revealSource",
+            "Reveal Material Source in Project",
+            ["Layer", "Material"],
+            None,
+            "{layer?}",
+            has_layers,
+            material_reveal
+        ),
+        cmd!(
+            "material.reset",
+            "Reset Material",
+            ["Layer", "Material"],
+            None,
+            "{layers?}",
+            has_model_or_layers,
+            material_reset
+        ),
         cmd!(
             "material.duplicateAssign",
             "Duplicate and Assign Material",

@@ -40,7 +40,11 @@ pub fn inks(doc: &Document, rect: Rect) -> Buffer {
 
 /// The starting backdrop of a document render: the inks for Multichannel, else transparent.
 pub(crate) fn backdrop(doc: &Document, rect: Rect) -> Buffer {
-    if doc.mode == photocraft_color::ColorMode::Multichannel { inks(doc, rect) } else { Buffer::transparent(rect) }
+    if doc.mode == photocraft_color::ColorMode::Multichannel {
+        inks(doc, rect)
+    } else {
+        Buffer::transparent(rect)
+    }
 }
 
 #[cfg(test)]
@@ -53,14 +57,25 @@ mod tests {
 
     #[test]
     fn inks_multiply_over_paper() {
-        let mut doc = Document::new("m", Size::new(4, 1), ColorMode::Multichannel, SampleType::U8);
+        let mut doc = Document::new(
+            "m",
+            Size::new(4, 1),
+            ColorMode::Multichannel,
+            SampleType::U8,
+        );
         let fmt = PixelFormat::new(ColorMode::Grayscale, SampleType::U8, false);
         let mut a = Surface::new(fmt);
         a.write_region(Rect::new(0, 0, 4, 1), &[0.0, 1.0, 1.0, 0.0]);
         let mut b = Surface::new(fmt);
         b.write_region(Rect::new(0, 0, 4, 1), &[0.0, 0.0, 1.0, 1.0]);
-        doc.channels.push(AlphaChannel { spot: Some((Color::rgb(0.0, 1.0, 1.0), 0.0)), ..AlphaChannel::new("Cyan", a) });
-        doc.channels.push(AlphaChannel { spot: Some((Color::rgb(1.0, 0.0, 1.0), 0.0)), ..AlphaChannel::new("Magenta", b) });
+        doc.channels.push(AlphaChannel {
+            spot: Some((Color::rgb(0.0, 1.0, 1.0), 0.0)),
+            ..AlphaChannel::new("Cyan", a)
+        });
+        doc.channels.push(AlphaChannel {
+            spot: Some((Color::rgb(1.0, 0.0, 1.0), 0.0)),
+            ..AlphaChannel::new("Magenta", b)
+        });
         let r = crate::flatten(&doc);
         assert_eq!(r.px[0], [1.0, 1.0, 1.0, 1.0]);
         assert_eq!(r.px[1], [0.0, 1.0, 1.0, 1.0]);
@@ -72,7 +87,11 @@ mod tests {
         doc.channels.push(AlphaChannel::new("Alpha", k));
         let r = crate::flatten(&doc);
         // 0.5 is stored as 128/255 in an 8-bit channel: within one 8-bit step.
-        assert!((r.px[0][0] - 0.5).abs() <= 1.0 / 255.0 && (r.px[0][1] - 0.5).abs() <= 1.0 / 255.0, "{:?}", r.px[0]);
+        assert!(
+            (r.px[0][0] - 0.5).abs() <= 1.0 / 255.0 && (r.px[0][1] - 0.5).abs() <= 1.0 / 255.0,
+            "{:?}",
+            r.px[0]
+        );
         assert_eq!(r.px[1], [0.0, 1.0, 1.0, 1.0]);
         // Other modes have no inks.
         doc.mode = ColorMode::Rgb;

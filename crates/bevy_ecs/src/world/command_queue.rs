@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use bevy_ptr::{OwningPtr, Unaligned};
 use core::{
     fmt::Debug,
-    mem::{size_of, MaybeUninit},
+    mem::{MaybeUninit, size_of},
     ptr::NonNull,
 };
 use log::warn;
@@ -20,7 +20,7 @@ use alloc::boxed::Box;
 #[cfg(feature = "std")]
 use bevy_utils::DebugName;
 #[cfg(feature = "std")]
-use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 struct CommandMeta {
     /// SAFETY: The `value` must point to a value of type `T: Command`,
@@ -215,9 +215,13 @@ impl Drop for CommandQueue {
     fn drop(&mut self) {
         if !self.bytes.is_empty() && self.warn_on_unapplied {
             if let Some(caller) = self.caller.into_option() {
-                warn!("CommandQueue has un-applied commands being dropped. Did you forget to call SystemState::apply? caller:{caller:?}");
+                warn!(
+                    "CommandQueue has un-applied commands being dropped. Did you forget to call SystemState::apply? caller:{caller:?}"
+                );
             } else {
-                warn!("CommandQueue has un-applied commands being dropped. Did you forget to call SystemState::apply?");
+                warn!(
+                    "CommandQueue has un-applied commands being dropped. Did you forget to call SystemState::apply?"
+                );
             }
         }
         // Dropping a `CommandQueueRunner` will drop all unapplied commands.

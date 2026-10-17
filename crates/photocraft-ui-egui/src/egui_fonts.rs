@@ -14,7 +14,12 @@ use egui::{FontData, FontDefinitions, FontFamily, FontTweak};
 /// A font deflated by build.rs.
 macro_rules! deflated {
     ($name:literal) => {
-        include_bytes!(concat!(env!("OUT_DIR"), "/egui_fonts/", $name, ".ttf.deflate"))
+        include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/egui_fonts/",
+            $name,
+            ".ttf.deflate"
+        ))
     };
 }
 
@@ -30,7 +35,10 @@ const MAX_FONT_BYTES: u64 = 16 << 20;
 fn inflate(deflated: &[u8]) -> Vec<u8> {
     use std::io::Read as _;
     let mut out = Vec::new();
-    match flate2::read::DeflateDecoder::new(deflated).take(MAX_FONT_BYTES + 1).read_to_end(&mut out) {
+    match flate2::read::DeflateDecoder::new(deflated)
+        .take(MAX_FONT_BYTES + 1)
+        .read_to_end(&mut out)
+    {
         Ok(_) if out.len() as u64 <= MAX_FONT_BYTES => out,
         _ => Vec::new(),
     }
@@ -40,7 +48,11 @@ fn inflate(deflated: &[u8]) -> Vec<u8> {
 /// `default_fonts`: the same faces, tweaks and family order.
 pub fn definitions() -> FontDefinitions {
     let fonts = FontDefinitions::default();
-    if fonts.font_data.is_empty() { from_deflated() } else { fonts }
+    if fonts.font_data.is_empty() {
+        from_deflated()
+    } else {
+        fonts
+    }
 }
 
 /// egui's default definitions, built from the deflated copies.
@@ -58,14 +70,30 @@ fn from_deflated() -> FontDefinitions {
             log::error!("egui default font {name} is unavailable");
             continue;
         }
-        let data = FontData::from_static(bytes).tweak(FontTweak { scale, ..Default::default() });
+        let data = FontData::from_static(bytes).tweak(FontTweak {
+            scale,
+            ..Default::default()
+        });
         fonts.font_data.insert(name.to_owned(), Arc::new(data));
     }
-    let stack = |names: &[&str]| -> Vec<String> { names.iter().filter(|n| fonts.font_data.contains_key(**n)).map(|n| (*n).to_owned()).collect() };
-    let mono = stack(&["Hack", "Ubuntu-Light", "NotoEmoji-Regular", "emoji-icon-font"]);
+    let stack = |names: &[&str]| -> Vec<String> {
+        names
+            .iter()
+            .filter(|n| fonts.font_data.contains_key(**n))
+            .map(|n| (*n).to_owned())
+            .collect()
+    };
+    let mono = stack(&[
+        "Hack",
+        "Ubuntu-Light",
+        "NotoEmoji-Regular",
+        "emoji-icon-font",
+    ]);
     let proportional = stack(&["Ubuntu-Light", "NotoEmoji-Regular", "emoji-icon-font"]);
     fonts.families.insert(FontFamily::Monospace, mono);
-    fonts.families.insert(FontFamily::Proportional, proportional);
+    fonts
+        .families
+        .insert(FontFamily::Proportional, proportional);
     fonts
 }
 
@@ -78,7 +106,10 @@ mod tests {
     #[test]
     fn deflated_fonts_match_egui_defaults() {
         let egui = FontDefinitions::default();
-        assert!(!egui.font_data.is_empty(), "test builds enable egui's default_fonts (dev-dependencies)");
+        assert!(
+            !egui.font_data.is_empty(),
+            "test builds enable egui's default_fonts (dev-dependencies)"
+        );
         assert_eq!(from_deflated(), egui);
         assert_eq!(definitions(), egui);
     }

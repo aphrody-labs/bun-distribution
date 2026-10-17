@@ -58,8 +58,8 @@ fn try_populate_records(
                 .get_physical_device_properties(physical_device)
         };
         let mut driver_properties = vk::PhysicalDeviceDriverProperties::default();
-        let mut properties2 = vk::PhysicalDeviceProperties2::default()
-            .push_next(&mut driver_properties);
+        let mut properties2 =
+            vk::PhysicalDeviceProperties2::default().push_next(&mut driver_properties);
         unsafe {
             instance
                 .instance

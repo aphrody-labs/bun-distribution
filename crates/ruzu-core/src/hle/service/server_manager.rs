@@ -18,9 +18,9 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 use std::thread::JoinHandle;
-use std::time::Instant;
 #[cfg(test)]
 use std::time::Duration;
+use std::time::Instant;
 
 use crate::core::SystemRef;
 use crate::hle::kernel::k_event::KEvent;
@@ -630,14 +630,18 @@ impl ServerManager {
                 Arc::downgrade(&self.pending_session_closures),
                 Arc::downgrade(&self.wakeup_event),
             );
-        session.server_session.lock().unwrap().manager_registration_queued = true;
-        #[cfg(test)]
-        if self.system.is_null() {
-            session
+        session
             .server_session
             .lock()
             .unwrap()
-            .set_manager_wakeup(Arc::downgrade(&self.wakeup_event));
+            .manager_registration_queued = true;
+        #[cfg(test)]
+        if self.system.is_null() {
+            session
+                .server_session
+                .lock()
+                .unwrap()
+                .set_manager_wakeup(Arc::downgrade(&self.wakeup_event));
         }
         self.link_to_deferred_list_holder(&mut session.holder);
         self.sessions.push(session);
@@ -1053,10 +1057,7 @@ impl ServerManager {
                         .kernel()
                         .map(|kernel| kernel as *const crate::hle::kernel::kernel::KernelCore)
                 };
-                (
-                    &owner.multi_wait as *const MultiWait,
-                    kernel,
-                )
+                (&owner.multi_wait as *const MultiWait, kernel)
             };
 
             // The manager is stable behind Arc<Mutex<_>> and selection_mutex
@@ -1077,7 +1078,9 @@ impl ServerManager {
                     }
                 }
                 #[cfg(not(test))]
-                { panic!("ServerManager requires a live System") }
+                {
+                    panic!("ServerManager requires a live System")
+                }
             };
             let Some(selected) = selected else {
                 continue;
@@ -1147,7 +1150,11 @@ impl ServerManager {
             self.name,
             self.ports.len(),
             self.sessions.len(),
-            if self.is_stopped() { "" } else { " of an abandoned loop" }
+            if self.is_stopped() {
+                ""
+            } else {
+                " of an abandoned loop"
+            }
         );
 
         // Clean up ports.
@@ -1686,9 +1693,11 @@ impl ServerManager {
         }
 
         let server_session_object_id = {
-            let Some(server_session_object_id) = crate::hle::kernel::k_server_port::KServerPort::accept_session_arc(
-                &self.ports[port_index].port,
-            ) else {
+            let Some(server_session_object_id) =
+                crate::hle::kernel::k_server_port::KServerPort::accept_session_arc(
+                    &self.ports[port_index].port,
+                )
+            else {
                 let holder_ptr = self.ports[port_index].holder_ptr() as *mut MultiWaitHolder;
                 self.link_holder_ptr_to_deferred_list(holder_ptr);
                 return;
@@ -2431,8 +2440,12 @@ mod tests {
             thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
             let mut ctx = HLERequestContext::new_with_thread(thread, 0x2000);
             ctx.populate_from_incoming_command_buffer(&[
-                ipc::CommandType::Request as u32, 1u32 << 31,
-                1 | (1 << 1), 0, 0, PseudoHandle::CurrentProcess as u32,
+                ipc::CommandType::Request as u32,
+                1u32 << 31,
+                1 | (1 << 1),
+                0,
+                0,
+                PseudoHandle::CurrentProcess as u32,
             ]);
             let handler = Arc::new(RoInterface::new("ldr:ro", ro.clone(), NrrKind::User));
             handler.handlers()[&4].handler_callback.unwrap()(handler.as_ref(), &mut ctx);
@@ -2441,12 +2454,18 @@ mod tests {
             let request_manager = Arc::new(Mutex::new(SessionRequestManager::new()));
             request_manager.lock().unwrap().set_session_handler(handler);
             let endpoint = Arc::new(Mutex::new(KServerSession::new()));
-            endpoint.lock().unwrap().set_manager(request_manager.clone());
+            endpoint
+                .lock()
+                .unwrap()
+                .set_manager(request_manager.clone());
             manager.register_session(endpoint.clone(), request_manager);
             // HLE wait registries can retain the endpoint beyond Session.
             retained_endpoints.push(endpoint);
             manager.destroy_session(0);
-            assert!(weak_handler.upgrade().is_none(), "closed session retained RoInterface");
+            assert!(
+                weak_handler.upgrade().is_none(),
+                "closed session retained RoInterface"
+            );
         }
     }
 

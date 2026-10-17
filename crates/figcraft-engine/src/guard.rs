@@ -13,7 +13,10 @@ pub fn run<T>(cmd: &str, f: impl FnOnce() -> Result<T>) -> Result<T> {
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "panic".to_string());
             log::error!("command `{cmd}` panicked: {msg}");
-            Err(EngineError::Internal { cmd: cmd.to_string(), msg })
+            Err(EngineError::Internal {
+                cmd: cmd.to_string(),
+                msg,
+            })
         }
     }
 }

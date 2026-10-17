@@ -18,8 +18,14 @@ pub type SharedWriteFn = std::sync::Arc<dyn Fn(&str, &[u8]) -> Result<(), String
 
 /// Writes the file at a path with what the filler it is given writes into it (atomically, as
 /// `vectorcraft_format::write_atomic_with`); callable from any thread.
-pub type SharedStreamFn =
-    std::sync::Arc<dyn Fn(&str, &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<(), String> + Send + Sync>;
+pub type SharedStreamFn = std::sync::Arc<
+    dyn Fn(
+            &str,
+            &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>,
+        ) -> Result<(), String>
+        + Send
+        + Sync,
+>;
 
 /// A writer for the work: the host's file writer (or browser download) on the UI thread, the
 /// shared one on the worker.
@@ -73,10 +79,22 @@ impl Background {
             std::thread::Builder::new()
                 .name("vectorcraft-save".into())
                 .spawn(move || {
-                    while let Ok(Task { id, work, write, scope }) = tasks.recv() {
+                    while let Ok(Task {
+                        id,
+                        work,
+                        write,
+                        scope,
+                    }) = tasks.recv()
+                    {
                         let r = scope
-                            .run(|| vectorcraft_engine::guard::catch_panic(|| work(&mut |p: &str, b: &[u8]| write(p, b))))
-                            .unwrap_or_else(|msg| Err(format!("internal error: {msg} (please report this bug)")));
+                            .run(|| {
+                                vectorcraft_engine::guard::catch_panic(|| {
+                                    work(&mut |p: &str, b: &[u8]| write(p, b))
+                                })
+                            })
+                            .unwrap_or_else(|msg| {
+                                Err(format!("internal error: {msg} (please report this bug)"))
+                            });
                         if done_tx.send((id, r)).is_err() {
                             break;
                         }
@@ -106,15 +124,29 @@ pub fn run(
     then: impl FnOnce(&mut VectorcraftApp, Result<Value, String>) -> Result<Value, String> + 'static,
 ) -> Result<Value, String> {
     let mut work: Work = Box::new(work);
-    let shared = app.services.write_shared.clone().filter(|_| enabled && app.services.download.is_none());
+    let shared = app
+        .services
+        .write_shared
+        .clone()
+        .filter(|_| enabled && app.services.download.is_none());
     if let Some(write) = shared {
         let id = app.background.next_id;
         if let Some(tx) = app.background.worker() {
-            match tx.send(Task { id, work, write, scope: ScopeHandle::capture() }) {
+            match tx.send(Task {
+                id,
+                work,
+                write,
+                scope: ScopeHandle::capture(),
+            }) {
                 Ok(()) => {
                     let bg = &mut app.background;
                     bg.next_id += 1;
-                    bg.jobs.push(Job { id, label: label.clone(), doc, then: Box::new(then) });
+                    bg.jobs.push(Job {
+                        id,
+                        label: label.clone(),
+                        doc,
+                        then: Box::new(then),
+                    });
                     let status = format!("{label}…");
                     app.status(status.clone());
                     return Ok(json!({ "background": true, "status": status }));
@@ -134,7 +166,12 @@ pub fn run(
 
 /// Apply the results that arrived (each frame).
 pub fn poll(app: &mut VectorcraftApp) {
-    while let Some(done) = app.background.worker.as_ref().and_then(|(_, rx)| rx.try_recv().ok()) {
+    while let Some(done) = app
+        .background
+        .worker
+        .as_ref()
+        .and_then(|(_, rx)| rx.try_recv().ok())
+    {
         finish(app, done);
     }
 }
@@ -143,7 +180,12 @@ pub fn poll(app: &mut VectorcraftApp) {
 /// of a document a job is reading).
 pub fn wait_all(app: &mut VectorcraftApp) {
     while !app.background.jobs.is_empty() {
-        let Some(done) = app.background.worker.as_ref().and_then(|(_, rx)| rx.recv().ok()) else {
+        let Some(done) = app
+            .background
+            .worker
+            .as_ref()
+            .and_then(|(_, rx)| rx.recv().ok())
+        else {
             // The worker is gone: its jobs can't finish.
             for job in std::mem::take(&mut app.background.jobs) {
                 apply(app, job, Err("the background worker stopped".into()));
@@ -156,7 +198,9 @@ pub fn wait_all(app: &mut VectorcraftApp) {
 }
 
 fn finish(app: &mut VectorcraftApp, (id, r): Done) {
-    let Some(i) = app.background.jobs.iter().position(|j| j.id == id) else { return };
+    let Some(i) = app.background.jobs.iter().position(|j| j.id == id) else {
+        return;
+    };
     let job = app.background.jobs.remove(i);
     apply(app, job, r);
 }

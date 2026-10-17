@@ -3,7 +3,10 @@
 use vectorcraft_geom::{Anchor, AnchorKind, Point, SubPath};
 
 use crate::contour::Loop;
-use crate::logo::{Cubic, Stats, Style, all_within, fit_open, fit_outline, resample_closed, resample_open, sample_cubics};
+use crate::logo::{
+    Cubic, Stats, Style, all_within, fit_open, fit_outline, resample_closed, resample_open,
+    sample_cubics,
+};
 use crate::subpixel::{self, Crack};
 
 fn seg_dist(p: Point, a: Point, b: Point) -> f64 {
@@ -65,7 +68,8 @@ const LEVEL_REACH: f64 = 1.6;
 /// they are junctions other regions share). The pieces next to a moved end follow it.
 fn snap_upright(segs: &mut [Cubic], closed: bool, fixed_ends: bool) {
     let n = segs.len();
-    let straight = |c: &Cubic| seg_dist(c[1], c[0], c[3]) < 1e-6 && seg_dist(c[2], c[0], c[3]) < 1e-6;
+    let straight =
+        |c: &Cubic| seg_dist(c[1], c[0], c[3]) < 1e-6 && seg_dist(c[2], c[0], c[3]) < 1e-6;
     let lines: Vec<bool> = segs.iter().map(straight).collect();
     // Anchor `i` starts piece `i`; an open chain has one more, at its end.
     let fixed = |i: usize| !closed && fixed_ends && (i == 0 || i == n);
@@ -77,7 +81,11 @@ fn snap_upright(segs: &mut [Cubic], closed: bool, fixed_ends: bool) {
             segs[i][0] = p;
             segs[i][1] += d;
         }
-        if let Some(before) = if i > 0 { Some(i - 1) } else { closed.then_some(n - 1) } {
+        if let Some(before) = if i > 0 {
+            Some(i - 1)
+        } else {
+            closed.then_some(n - 1)
+        } {
             segs[before][3] = p;
             segs[before][2] += d;
         }
@@ -105,7 +113,13 @@ fn snap_upright(segs: &mut [Cubic], closed: bool, fixed_ends: bool) {
         if (pick(a) - to).abs().max((pick(b) - to).abs()) > LEVEL_REACH {
             continue;
         }
-        let moved = |p: Point| if level { Point::new(p.x, to) } else { Point::new(to, p.y) };
+        let moved = |p: Point| {
+            if level {
+                Point::new(p.x, to)
+            } else {
+                Point::new(to, p.y)
+            }
+        };
         if !fixed(ia) {
             put(segs, ia, moved(a));
         }
@@ -115,7 +129,12 @@ fn snap_upright(segs: &mut [Cubic], closed: bool, fixed_ends: bool) {
     }
     // A straight piece has its handles on it.
     for (c, _) in segs.iter_mut().zip(&lines).filter(|(_, line)| **line) {
-        *c = [c[0], c[0] + (c[3] - c[0]) / 3.0, c[0] + (c[3] - c[0]) * (2.0 / 3.0), c[3]];
+        *c = [
+            c[0],
+            c[0] + (c[3] - c[0]) / 3.0,
+            c[0] + (c[3] - c[0]) * (2.0 / 3.0),
+            c[3],
+        ];
     }
 }
 
@@ -124,7 +143,9 @@ fn snap_upright(segs: &mut [Cubic], closed: bool, fixed_ends: bool) {
 /// leaves in the shape around it are one curve.
 pub(crate) fn fit_closed(pts: &[Point], style: &Style) -> Option<Vec<Cubic>> {
     let n = pts.len();
-    let area2: f64 = (0..n).map(|i| pts[i].x * pts[(i + 1) % n].y - pts[(i + 1) % n].x * pts[i].y).sum();
+    let area2: f64 = (0..n)
+        .map(|i| pts[i].x * pts[(i + 1) % n].y - pts[(i + 1) % n].x * pts[i].y)
+        .sum();
     let flip = area2 < 0.0;
     let mut pts = pts.to_vec();
     if flip {
@@ -136,7 +157,13 @@ pub(crate) fn fit_closed(pts: &[Point], style: &Style) -> Option<Vec<Cubic>> {
     let mut segs = fit_outline(&pts, style, &mut stats)?;
     // A fit that strayed was replaced by a plain one that nothing has checked: one that strays too
     // (a wild handle on a tiny or ragged loop) gives way to the outline's own points.
-    if stats.reverted > 0 && !all_within(&sample_cubics(&segs, 0.25), &resample_closed(&pts, 0.5).map_or_else(|| pts.clone(), |(p, _)| p), 1.5) {
+    if stats.reverted > 0
+        && !all_within(
+            &sample_cubics(&segs, 0.25),
+            &resample_closed(&pts, 0.5).map_or_else(|| pts.clone(), |(p, _)| p),
+            1.5,
+        )
+    {
         segs = polygon(&pts, style.tol);
     }
     if style.upright {
@@ -151,7 +178,9 @@ pub(crate) fn fit_closed(pts: &[Point], style: &Style) -> Option<Vec<Cubic>> {
 /// line's ends are its own).
 pub(crate) fn fit_piece(pts: &[Point], style: &Style, fixed_ends: bool) -> Vec<Cubic> {
     let n = pts.len();
-    let (Some(&first), Some(&last)) = (pts.first(), pts.last()) else { return vec![] };
+    let (Some(&first), Some(&last)) = (pts.first(), pts.last()) else {
+        return vec![];
+    };
     let flip = match before(first, last) {
         std::cmp::Ordering::Equal => n > 3 && before(pts[1], pts[n - 2]).is_gt(),
         order => order.is_gt(),
@@ -162,13 +191,21 @@ pub(crate) fn fit_piece(pts: &[Point], style: &Style, fixed_ends: bool) -> Vec<C
     }
     let mut segs = fit_open(&pts, style, &mut Stats::default());
     // Nothing else checks this fit: one that strays gives way to the piece's own points.
-    if !all_within(&sample_cubics(&segs, 0.25), &resample_open(&pts, 0.5).map_or_else(|| pts.clone(), |(p, _)| p), 1.5) {
+    if !all_within(
+        &sample_cubics(&segs, 0.25),
+        &resample_open(&pts, 0.5).map_or_else(|| pts.clone(), |(p, _)| p),
+        1.5,
+    ) {
         let mut keep = vec![false; n];
         rdp(&pts, 0, n - 1, style.tol, &mut keep);
         keep[0] = true;
         keep[n - 1] = true;
         let kept: Vec<Point> = (0..n).filter(|&i| keep[i]).map(|i| pts[i]).collect();
-        segs = kept.windows(2).filter(|p| p[0] != p[1]).map(|p| [p[0], p[0], p[1], p[1]]).collect();
+        segs = kept
+            .windows(2)
+            .filter(|p| p[0] != p[1])
+            .map(|p| [p[0], p[0], p[1], p[1]])
+            .collect();
     }
     if style.upright {
         snap_upright(&mut segs, false, fixed_ends);
@@ -213,18 +250,35 @@ pub(crate) fn fit_loop(
 /// no handles; an anchor whose two handles line up is smooth.
 pub(crate) fn subpath(segs: &[Cubic], closed: bool) -> Option<SubPath> {
     let n = segs.len();
-    let straight = |c: &Cubic| seg_dist(c[1], c[0], c[3]) < 1e-6 && seg_dist(c[2], c[0], c[3]) < 1e-6;
+    let straight =
+        |c: &Cubic| seg_dist(c[1], c[0], c[3]) < 1e-6 && seg_dist(c[2], c[0], c[3]) < 1e-6;
     let mut anchors = Vec::with_capacity(n + 1);
     for i in 0..if closed { n } else { n + 1 } {
         // The piece that arrives at this anchor and the one that leaves it.
-        let before = if i > 0 { segs.get(i - 1) } else { closed.then(|| segs.last()).flatten() };
+        let before = if i > 0 {
+            segs.get(i - 1)
+        } else {
+            closed.then(|| segs.last()).flatten()
+        };
         let after = segs.get(i);
         let p = after.map(|c| c[0]).or(before.map(|c| c[3]))?;
         let h_in = before.filter(|c| !straight(c)).map_or(p, |c| c[2]);
         let h_out = after.filter(|c| !straight(c)).map_or(p, |c| c[1]);
         let (vi, vo) = (p - h_in, h_out - p);
-        let smooth = vi.hypot() > 1e-9 && vo.hypot() > 1e-9 && vi.cross(vo).abs() < 0.07 * vi.hypot() * vo.hypot() && vi.dot(vo) > 0.0;
-        anchors.push(Anchor { p, h_in, h_out, kind: if smooth { AnchorKind::Smooth } else { AnchorKind::Corner } });
+        let smooth = vi.hypot() > 1e-9
+            && vo.hypot() > 1e-9
+            && vi.cross(vo).abs() < 0.07 * vi.hypot() * vo.hypot()
+            && vi.dot(vo) > 0.0;
+        anchors.push(Anchor {
+            p,
+            h_in,
+            h_out,
+            kind: if smooth {
+                AnchorKind::Smooth
+            } else {
+                AnchorKind::Corner
+            },
+        });
     }
     (n >= if closed { 2 } else { 1 }).then(|| SubPath::new(anchors, closed))
 }
@@ -232,8 +286,16 @@ pub(crate) fn subpath(segs: &[Cubic], closed: bool) -> Option<SubPath> {
 /// The closed outline `pts` as straight pieces within `tol` of it (Douglas–Peucker).
 fn polygon(pts: &[Point], tol: f64) -> Vec<Cubic> {
     let n = pts.len();
-    let Some(&first) = pts.first() else { return vec![] };
-    let far = (1..n).max_by(|&i, &j| pts[i].distance_squared(first).total_cmp(&pts[j].distance_squared(first))).unwrap_or(0);
+    let Some(&first) = pts.first() else {
+        return vec![];
+    };
+    let far = (1..n)
+        .max_by(|&i, &j| {
+            pts[i]
+                .distance_squared(first)
+                .total_cmp(&pts[j].distance_squared(first))
+        })
+        .unwrap_or(0);
     let mut ext = pts.to_vec();
     ext.push(first);
     let mut keep = vec![false; n + 1];
@@ -242,5 +304,14 @@ fn polygon(pts: &[Point], tol: f64) -> Vec<Cubic> {
     rdp(&ext, 0, far, tol, &mut keep);
     rdp(&ext, far, n, tol, &mut keep);
     let kept: Vec<Point> = (0..n).filter(|&i| keep[i]).map(|i| pts[i]).collect();
-    (0..kept.len()).map(|i| [kept[i], kept[i], kept[(i + 1) % kept.len()], kept[(i + 1) % kept.len()]]).collect()
+    (0..kept.len())
+        .map(|i| {
+            [
+                kept[i],
+                kept[i],
+                kept[(i + 1) % kept.len()],
+                kept[(i + 1) % kept.len()],
+            ]
+        })
+        .collect()
 }

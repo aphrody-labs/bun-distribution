@@ -44,7 +44,10 @@ pub fn apply(text: &str, opps: &mut Vec<usize>, kinsoku: bool, word_wrap: bool) 
     let next_char = |i: usize| text.get(i..).and_then(|t| t.chars().next());
     let prev_char = |i: usize| text.get(..i).and_then(|t| t.chars().next_back());
     if kinsoku {
-        opps.retain(|&i| !next_char(i).is_some_and(|c| NO_START.contains(c)) && !prev_char(i).is_some_and(|c| NO_END.contains(c)));
+        opps.retain(|&i| {
+            !next_char(i).is_some_and(|c| NO_START.contains(c))
+                && !prev_char(i).is_some_and(|c| NO_END.contains(c))
+        });
     } else {
         // Between any two East Asian characters.
         for (i, c) in text.char_indices().skip(1) {
@@ -56,7 +59,11 @@ pub fn apply(text: &str, opps: &mut Vec<usize>, kinsoku: bool, word_wrap: bool) 
     if !word_wrap {
         // Between any two letters or digits that are not East Asian (whole graphemes, so accents
         // stay with their letters).
-        let latin = |g: &str| g.chars().next().is_some_and(|c| c.is_alphanumeric() && !is_east_asian(c));
+        let latin = |g: &str| {
+            g.chars()
+                .next()
+                .is_some_and(|c| c.is_alphanumeric() && !is_east_asian(c))
+        };
         let mut prev: Option<&str> = None;
         for (i, g) in text.grapheme_indices(true) {
             if prev.is_some_and(latin) && latin(g) {
@@ -75,9 +82,19 @@ mod tests {
 
     /// Where a line may start, as the text from there to the next opportunity.
     fn breaks(text: &str, kinsoku: bool, word_wrap: bool) -> Vec<String> {
-        let mut opps: Vec<usize> = unicode_linebreak::linebreaks(text).map(|(i, _)| i).filter(|&i| i < text.len()).collect();
+        let mut opps: Vec<usize> = unicode_linebreak::linebreaks(text)
+            .map(|(i, _)| i)
+            .filter(|&i| i < text.len())
+            .collect();
         apply(text, &mut opps, kinsoku, word_wrap);
-        opps.iter().map(|&i| text.get(i..).and_then(|t| t.chars().next()).map(String::from).unwrap_or_default()).collect()
+        opps.iter()
+            .map(|&i| {
+                text.get(i..)
+                    .and_then(|t| t.chars().next())
+                    .map(String::from)
+                    .unwrap_or_default()
+            })
+            .collect()
     }
 
     #[test]
@@ -85,13 +102,22 @@ mod tests {
         let ja = "日本語、「漢字」。テスト";
         let on = breaks(ja, true, true);
         for c in ["、", "」", "。", "漢"] {
-            assert!(!on.iter().any(|s| s == c), "kinsoku: no line starts with {c}: {on:?}");
+            assert!(
+                !on.iter().any(|s| s == c),
+                "kinsoku: no line starts with {c}: {on:?}"
+            );
         }
-        assert!(on.iter().any(|s| s == "「"), "a line may start at an opening bracket: {on:?}");
+        assert!(
+            on.iter().any(|s| s == "「"),
+            "a line may start at an opening bracket: {on:?}"
+        );
         assert!(on.iter().any(|s| s == "テ"), "{on:?}");
         let off = breaks(ja, false, true);
         for c in ["、", "」", "。", "漢"] {
-            assert!(off.iter().any(|s| s == c), "kinsoku off: a line may start with {c}: {off:?}");
+            assert!(
+                off.iter().any(|s| s == c),
+                "kinsoku off: a line may start with {c}: {off:?}"
+            );
         }
         // Latin text: unchanged by kinsoku, broken anywhere without word wrap.
         let en = "Hello wonderful (world), 50%.";

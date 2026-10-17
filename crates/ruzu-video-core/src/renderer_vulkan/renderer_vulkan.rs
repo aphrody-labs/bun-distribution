@@ -286,8 +286,7 @@ impl RendererVulkan {
         let surface_handle = unsafe {
             vulkan_surface::create_surface(&instance.entry, &instance.instance, &surface_info)?
         };
-        let surface_loader =
-            ash::khr::surface::Instance::new(&instance.entry, &instance.instance);
+        let surface_loader = ash::khr::surface::Instance::new(&instance.entry, &instance.instance);
         let surface = Arc::new(std::sync::Mutex::new(OwnedSurface::new(
             surface_loader,
             surface_handle,
@@ -867,7 +866,8 @@ impl RendererBase for RendererVulkan {
         layout: FramebufferLayout,
         layer_stack: ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId,
     ) {
-        self.base_data.request_screenshot(data, callback, layout, layer_stack);
+        self.base_data
+            .request_screenshot(data, callback, layout, layer_stack);
     }
 
     fn set_guest_memory_writer(&mut self, writer: crate::renderer_base::GuestMemoryWriter) {

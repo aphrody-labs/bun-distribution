@@ -41,7 +41,13 @@ pub(crate) fn open(app: &mut PhotocraftApp) -> Option<u64> {
     let layer = st.active_layer?;
     let color = solid_fill(&st.doc, layer)?;
     let params = json!({"layer": layer.0, "document": st.doc.id.0});
-    let id = color_picker_ui::open_for_command(app, "Color Picker (Solid Color)", color.to_rgb(), COMMAND, params);
+    let id = color_picker_ui::open_for_command(
+        app,
+        "Color Picker (Solid Color)",
+        color.to_rgb(),
+        COMMAND,
+        params,
+    );
     if let Some(d) = app.ui.dialog_mut(id) {
         d.fields.insert(MARKER.into(), json!(true));
     }
@@ -60,14 +66,24 @@ fn picked(f: &Map<String, Value>, original: Color) -> Option<Color> {
 
 /// The target layer and its current fill, unless the dialog is stale (another document is
 /// active, or the layer is gone or no longer a solid-colour shape).
-fn target(app: &PhotocraftApp, f: &Map<String, Value>, idx: usize) -> Result<(LayerId, Color), String> {
+fn target(
+    app: &PhotocraftApp,
+    f: &Map<String, Value>,
+    idx: usize,
+) -> Result<(LayerId, Color), String> {
     let params = f.get("__params").ok_or("missing shape fill target")?;
     let st = app.session.documents().get(idx).ok_or("no document open")?;
     if params.get("document").and_then(Value::as_u64) != Some(st.doc.id.0) {
         return Err("the target document is no longer active".into());
     }
-    let layer = LayerId(params.get("layer").and_then(Value::as_u64).ok_or("missing shape layer")?);
-    let original = solid_fill(&st.doc, layer).ok_or("the target shape layer no longer has a solid colour fill")?;
+    let layer = LayerId(
+        params
+            .get("layer")
+            .and_then(Value::as_u64)
+            .ok_or("missing shape layer")?,
+    );
+    let original = solid_fill(&st.doc, layer)
+        .ok_or("the target shape layer no longer has a solid colour fill")?;
     Ok((layer, original))
 }
 
@@ -79,7 +95,10 @@ pub(crate) fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result
         return Ok(json!({"layer": layer.0, "unchanged": true}));
     }
     let color = picked(f, original).ok_or("not a colour")?;
-    app.run(COMMAND, json!({"layer": layer.0, "fill": [color.c[0], color.c[1], color.c[2], color.alpha]}))
+    app.run(
+        COMMAND,
+        json!({"layer": layer.0, "fill": [color.c[0], color.c[1], color.c[2], color.alpha]}),
+    )
 }
 
 /// The canvas preview while the picker is open: the document with the shape re-rendered in the
@@ -116,7 +135,15 @@ pub(crate) fn display_doc(app: &mut PhotocraftApp, idx: usize) -> Option<(Arc<Do
     }
     let key = (1 << 46) | (hash.finish() & ((1 << 40) - 1));
     let shown = Arc::new(photocraft_engine::mode_cmds::display_document(&doc).unwrap_or(doc));
-    app.shape_fill_preview = Some(Preview { document: st.doc.id, revision: st.revision, dialog: d.id, layer, color, shown: shown.clone(), key });
+    app.shape_fill_preview = Some(Preview {
+        document: st.doc.id,
+        revision: st.revision,
+        dialog: d.id,
+        layer,
+        color,
+        shown: shown.clone(),
+        key,
+    });
     Some((shown, key))
 }
 

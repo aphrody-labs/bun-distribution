@@ -38,9 +38,23 @@ pub struct AuPlugin {
 }
 
 impl AuPlugin {
-    pub(crate) fn new(inst: Instance, info: &'static PluginInfo, has_input: bool, takes_midi: bool) -> AuPlugin {
-        let ids: Vec<u32> = info.params.iter().map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX)).collect();
-        let values = info.params.iter().zip(&ids).map(|(p, &id)| inst.get_param(id).map_or(p.default, |v| p.clamp(v))).collect();
+    pub(crate) fn new(
+        inst: Instance,
+        info: &'static PluginInfo,
+        has_input: bool,
+        takes_midi: bool,
+    ) -> AuPlugin {
+        let ids: Vec<u32> = info
+            .params
+            .iter()
+            .map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX))
+            .collect();
+        let values = info
+            .params
+            .iter()
+            .zip(&ids)
+            .map(|(p, &id)| inst.get_param(id).map_or(p.default, |v| p.clamp(v)))
+            .collect();
         AuPlugin {
             inst,
             info,
@@ -71,7 +85,11 @@ impl AuPlugin {
         if !self.takes_midi || self.events.len() >= self.events.capacity() {
             return;
         }
-        let pos = self.events.iter().rposition(|q| q.time <= e.time).map_or(0, |i| i + 1);
+        let pos = self
+            .events
+            .iter()
+            .rposition(|q| q.time <= e.time)
+            .map_or(0, |i| i + 1);
         self.events.insert(pos, e);
     }
 }
@@ -82,7 +100,11 @@ impl Plugin for AuPlugin {
     }
 
     fn prepare(&mut self, sample_rate: f32, max_block: usize, channels: usize) {
-        let sr = if sample_rate.is_finite() && sample_rate > 0.0 { f64::from(sample_rate) } else { 48_000.0 };
+        let sr = if sample_rate.is_finite() && sample_rate > 0.0 {
+            f64::from(sample_rate)
+        } else {
+            48_000.0
+        };
         self.channels = channels.clamp(1, MAX_CHANNELS);
         match self.inst.configure(sr, max_block, self.channels) {
             Ok(_) => {
@@ -108,8 +130,12 @@ impl Plugin for AuPlugin {
     }
 
     fn set_param(&mut self, id: &str, value: f32) -> bool {
-        let Some(i) = self.info.params.iter().position(|p| p.id == id) else { return false };
-        let (Some(pi), Some(&aid)) = (self.info.params.get(i), self.ids.get(i)) else { return false };
+        let Some(i) = self.info.params.iter().position(|p| p.id == id) else {
+            return false;
+        };
+        let (Some(pi), Some(&aid)) = (self.info.params.get(i), self.ids.get(i)) else {
+            return false;
+        };
         let v = pi.clamp(value);
         if let Some(slot) = self.values.get_mut(i) {
             *slot = v;
@@ -151,13 +177,19 @@ impl Plugin for AuPlugin {
             if self.has_input {
                 for c in 0..au_ch {
                     let src = io.get(c.min(ch - 1)).and_then(|s| s.get(start..start + n));
-                    if let (Some(src), Some(dst)) = (src, self.inst.input_mut(c).and_then(|d| d.get_mut(..n))) {
+                    if let (Some(src), Some(dst)) =
+                        (src, self.inst.input_mut(c).and_then(|d| d.get_mut(..n)))
+                    {
                         dst.copy_from_slice(src);
                     }
                 }
             }
             let end = start + n;
-            let k = self.events.iter().position(|e| e.time as usize >= end).unwrap_or(self.events.len());
+            let k = self
+                .events
+                .iter()
+                .position(|e| e.time as usize >= end)
+                .unwrap_or(self.events.len());
             for e in self.events.iter().take(k) {
                 let offset = u32::try_from((e.time as usize).saturating_sub(start)).unwrap_or(0);
                 self.inst.midi(e.status, e.data1, e.data2, offset);
@@ -166,15 +198,21 @@ impl Plugin for AuPlugin {
             match self.inst.render(n) {
                 Ok(()) => {
                     for (c, dst) in io.iter_mut().take(ch).enumerate() {
-                        let Some(dst) = dst.get_mut(start..end) else { continue };
+                        let Some(dst) = dst.get_mut(start..end) else {
+                            continue;
+                        };
                         if ch == 1 && au_ch >= 2 {
-                            if let (Some(l), Some(r)) = (self.inst.output(0, n), self.inst.output(1, n)) {
+                            if let (Some(l), Some(r)) =
+                                (self.inst.output(0, n), self.inst.output(1, n))
+                            {
                                 for ((d, a), b) in dst.iter_mut().zip(l).zip(r) {
                                     let v = 0.5 * (a + b);
                                     *d = if v.is_finite() { v } else { 0.0 };
                                 }
                             }
-                        } else if let Some(src) = self.inst.output(c.min(au_ch.saturating_sub(1)), n) {
+                        } else if let Some(src) =
+                            self.inst.output(c.min(au_ch.saturating_sub(1)), n)
+                        {
                             for (d, &s) in dst.iter_mut().zip(src) {
                                 *d = if s.is_finite() { s } else { 0.0 };
                             }
@@ -210,7 +248,12 @@ impl Plugin for AuPlugin {
         }
         let time = u32::try_from(offset).unwrap_or(u32::MAX);
         // Velocity 0 would be a note-off.
-        self.push_event(MidiEvent { time, status: 0x90, data1: note, data2: velocity.clamp(1, 127) });
+        self.push_event(MidiEvent {
+            time,
+            status: 0x90,
+            data1: note,
+            data2: velocity.clamp(1, 127),
+        });
         if let Some(h) = self.held.get_mut(note as usize) {
             *h = true;
         }
@@ -221,7 +264,12 @@ impl Plugin for AuPlugin {
             return;
         }
         let time = u32::try_from(offset).unwrap_or(u32::MAX);
-        self.push_event(MidiEvent { time, status: 0x80, data1: note, data2: 0 });
+        self.push_event(MidiEvent {
+            time,
+            status: 0x80,
+            data1: note,
+            data2: 0,
+        });
         if let Some(h) = self.held.get_mut(note as usize) {
             *h = false;
         }
@@ -234,7 +282,12 @@ impl Plugin for AuPlugin {
             }
         }
         // CC 123: All Notes Off (catches anything the unit still sustains).
-        self.push_event(MidiEvent { time: 0, status: 0xB0, data1: 123, data2: 0 });
+        self.push_event(MidiEvent {
+            time: 0,
+            status: 0xB0,
+            data1: 123,
+            data2: 0,
+        });
     }
 
     fn save_state(&mut self) -> Option<Vec<u8>> {

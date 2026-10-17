@@ -46,15 +46,24 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn theme_named(name: &str) -> Option<deckcraft_model::Theme> {
-    deckcraft_model::theme::builtin_themes().into_iter().find(|t| t.name.eq_ignore_ascii_case(name))
+    deckcraft_model::theme::builtin_themes()
+        .into_iter()
+        .find(|t| t.name.eq_ignore_ascii_case(name))
 }
 
 fn new(s: &mut Session, p: &Value) -> Result<Value> {
-    let theme = str_param(p, "theme").and_then(theme_named).unwrap_or_default();
+    let theme = str_param(p, "theme")
+        .and_then(theme_named)
+        .unwrap_or_default();
     let size = p
         .get("size")
         .and_then(Value::as_array)
-        .and_then(|a| Some(deckcraft_geom::Size::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?)))
+        .and_then(|a| {
+            Some(deckcraft_geom::Size::new(
+                a.first()?.as_f64()?,
+                a.get(1)?.as_f64()?,
+            ))
+        })
         .filter(|s| s.width >= 1.0 && s.height >= 1.0 && s.width < 5000.0 && s.height < 5000.0)
         .unwrap_or(defaults::WIDE);
     let doc = defaults::blank_presentation(size, theme, !bool_or(p, "blank", false));
@@ -83,11 +92,16 @@ pub fn open_presentation(name: &str, bytes: &[u8]) -> Result<Presentation> {
         }
         return Ok(p);
     }
-    Err(EngineError::Other(format!("{name}: not a presentation DeckCraft can read")))
+    Err(EngineError::Other(format!(
+        "{name}: not a presentation DeckCraft can read"
+    )))
 }
 
 pub fn add_opened(s: &mut Session, name: &str, path: Option<String>, p: Presentation) -> usize {
-    let title = std::path::Path::new(name).file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| name.to_string());
+    let title = std::path::Path::new(name)
+        .file_stem()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| name.to_string());
     let missing_fonts = crate::fonts::missing_fonts(&p);
     let mut st = DocState::new(p, path, title);
     st.missing_fonts = missing_fonts;
@@ -106,12 +120,16 @@ fn open(s: &mut Session, p: &Value) -> Result<Value> {
 }
 #[cfg(target_arch = "wasm32")]
 fn open(_s: &mut Session, _p: &Value) -> Result<Value> {
-    Err(EngineError::Other("use file.openBytes in the browser".into()))
+    Err(EngineError::Other(
+        "use file.openBytes in the browser".into(),
+    ))
 }
 
 fn open_bytes(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_param(p, "name").unwrap_or("Presentation");
-    let data = str_param(p, "data").and_then(base64_decode).ok_or_else(|| bad("file.openBytes", "missing or invalid base64 `data`"))?;
+    let data = str_param(p, "data")
+        .and_then(base64_decode)
+        .ok_or_else(|| bad("file.openBytes", "missing or invalid base64 `data`"))?;
     let doc = open_presentation(name, &data)?;
     let i = add_opened(s, name, None, doc);
     Ok(json!({"document": i, "missingFonts": s.doc()?.missing_fonts}))
@@ -120,9 +138,12 @@ fn open_bytes(s: &mut Session, p: &Value) -> Result<Value> {
 /// Encode the presentation in `format` (`deckcraft`, `pptx`, `outline`).
 pub fn save_bytes(doc: &Presentation, format: &str) -> Result<Vec<u8>> {
     match format {
-        "pptx" | "potx" | "ppsx" => deckcraft_pptx::export(doc).map_err(|e| EngineError::Other(e.to_string())),
+        "pptx" | "potx" | "ppsx" => {
+            deckcraft_pptx::export(doc).map_err(|e| EngineError::Other(e.to_string()))
+        }
         "outline" | "txt" => Ok(deckcraft_format::slides_to_outline(doc).into_bytes()),
-        "pdf" => deckcraft_pdf::export(doc, &Default::default()).map_err(|e| EngineError::Other(e.to_string())),
+        "pdf" => deckcraft_pdf::export(doc, &Default::default())
+            .map_err(|e| EngineError::Other(e.to_string())),
         _ => deckcraft_format::save(doc).map_err(|e| EngineError::Other(e.to_string())),
     }
 }
@@ -131,16 +152,28 @@ pub fn save_bytes(doc: &Presentation, format: &str) -> Result<Vec<u8>> {
 /// includeHidden, textLayer, frame}` for a presentation of `count` slides. `slides` is a list of
 /// 0-based indices or a range as typed in PowerPoint's Print page (`"1-3, 5"`, 1-based).
 pub fn pdf_options(p: &Value, count: usize) -> Result<deckcraft_pdf::PdfOptions> {
-    let mut o = deckcraft_pdf::PdfOptions { layout: deckcraft_pdf::PageLayout::Slides, ..Default::default() };
+    let mut o = deckcraft_pdf::PdfOptions {
+        layout: deckcraft_pdf::PageLayout::Slides,
+        ..Default::default()
+    };
     o.layout = match str_param(p, "layout").unwrap_or("slides") {
         "notes" => deckcraft_pdf::PageLayout::Notes,
-        "handouts" => deckcraft_pdf::PageLayout::Handouts { per_page: usize_param(p, "perPage").unwrap_or(6).clamp(1, 9) as u8 },
+        "handouts" => deckcraft_pdf::PageLayout::Handouts {
+            per_page: usize_param(p, "perPage").unwrap_or(6).clamp(1, 9) as u8,
+        },
         _ => deckcraft_pdf::PageLayout::Slides,
     };
     o.dpi = f64_or(p, "dpi", o.dpi).clamp(36.0, 600.0);
     o.slides = match p.get("slides") {
-        Some(Value::Array(a)) => Some(a.iter().filter_map(|v| v.as_u64().map(|x| x as usize)).filter(|i| *i < count).collect()),
-        Some(Value::String(text)) if !text.trim().is_empty() => Some(parse_slide_range(text, count)?),
+        Some(Value::Array(a)) => Some(
+            a.iter()
+                .filter_map(|v| v.as_u64().map(|x| x as usize))
+                .filter(|i| *i < count)
+                .collect(),
+        ),
+        Some(Value::String(text)) if !text.trim().is_empty() => {
+            Some(parse_slide_range(text, count)?)
+        }
         _ => None,
     };
     o.include_hidden = bool_or(p, "includeHidden", false);
@@ -153,17 +186,32 @@ pub fn pdf_options(p: &Value, count: usize) -> Result<deckcraft_pdf::PdfOptions>
 /// `,` or `;`, ranges either way round) → 0-based indices in order, without repeats. Numbers past
 /// the last slide or a range that isn't numbers is an error, as in PowerPoint.
 pub fn parse_slide_range(text: &str, count: usize) -> Result<Vec<usize>> {
-    let invalid = || bad("file.export", format!("“{text}” isn't a valid slide range: use numbers and ranges such as 1-3, 5"));
+    let invalid = || {
+        bad(
+            "file.export",
+            format!("“{text}” isn't a valid slide range: use numbers and ranges such as 1-3, 5"),
+        )
+    };
     let mut out: Vec<usize> = vec![];
-    for part in text.split([',', ';']).map(str::trim).filter(|p| !p.is_empty()) {
+    for part in text
+        .split([',', ';'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+    {
         let (a, b) = match part.split_once('-') {
             Some((a, b)) => (a.trim(), b.trim()),
             None => (part, part),
         };
-        let (a, b) = (a.parse::<usize>().map_err(|_| invalid())?, b.parse::<usize>().map_err(|_| invalid())?);
+        let (a, b) = (
+            a.parse::<usize>().map_err(|_| invalid())?,
+            b.parse::<usize>().map_err(|_| invalid())?,
+        );
         let (lo, hi) = (a.min(b), a.max(b));
         if lo == 0 || hi > count {
-            return Err(bad("file.export", format!("the presentation has {count} slides; “{part}” is outside them")));
+            return Err(bad(
+                "file.export",
+                format!("the presentation has {count} slides; “{part}” is outside them"),
+            ));
         }
         for i in lo - 1..hi {
             if !out.contains(&i) {
@@ -179,7 +227,8 @@ pub fn parse_slide_range(text: &str, count: usize) -> Result<Vec<usize>> {
 
 /// PDF bytes for `doc` with [`pdf_options`] from `p`.
 pub fn pdf_bytes(doc: &Presentation, p: &Value) -> Result<Vec<u8>> {
-    deckcraft_pdf::export(doc, &pdf_options(p, doc.slides.len())?).map_err(|e| EngineError::Other(e.to_string()))
+    deckcraft_pdf::export(doc, &pdf_options(p, doc.slides.len())?)
+        .map_err(|e| EngineError::Other(e.to_string()))
 }
 
 pub fn format_for_path(path: &str) -> &'static str {
@@ -222,13 +271,19 @@ fn write_file(path: &str, bytes: &[u8]) -> Result<()> {
 }
 #[cfg(target_arch = "wasm32")]
 fn write_file(_path: &str, _bytes: &[u8]) -> Result<()> {
-    Err(EngineError::Other("saving to a path is not available in the browser".into()))
+    Err(EngineError::Other(
+        "saving to a path is not available in the browser".into(),
+    ))
 }
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_param(p, "path").map(String::from).or_else(|| s.active().and_then(|d| d.path.clone()));
+    let path = str_param(p, "path")
+        .map(String::from)
+        .or_else(|| s.active().and_then(|d| d.path.clone()));
     let Some(path) = path else {
-        s.ui_requests.push(crate::UiRequest::PickFile { purpose: "saveAs".into() });
+        s.ui_requests.push(crate::UiRequest::PickFile {
+            purpose: "saveAs".into(),
+        });
         return Ok(json!({"needsPath": true}));
     };
     let format = str_param(p, "format").unwrap_or(format_for_path(&path));
@@ -240,7 +295,9 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn save_as(s: &mut Session, p: &Value) -> Result<Value> {
     if str_param(p, "path").is_none() {
-        s.ui_requests.push(crate::UiRequest::PickFile { purpose: "saveAs".into() });
+        s.ui_requests.push(crate::UiRequest::PickFile {
+            purpose: "saveAs".into(),
+        });
         return Ok(json!({"needsPath": true}));
     }
     save(s, p)
@@ -254,8 +311,15 @@ fn save_bytes_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Render slide `index` (current when absent) to PNG bytes.
 pub fn render_png(doc: &Presentation, index: usize, scale: f64, edit: bool) -> (Vec<u8>, u32, u32) {
-    let img =
-        deckcraft_render::render_slide(doc, index, &deckcraft_render::RenderOpts { scale: scale.clamp(0.01, 16.0), edit, ..Default::default() });
+    let img = deckcraft_render::render_slide(
+        doc,
+        index,
+        &deckcraft_render::RenderOpts {
+            scale: scale.clamp(0.01, 16.0),
+            edit,
+            ..Default::default()
+        },
+    );
     (img.to_png(), img.width, img.height)
 }
 
@@ -265,13 +329,22 @@ fn render(s: &mut Session, p: &Value) -> Result<Value> {
     if i >= st.doc.slides.len() {
         return Err(bad("file.render", format!("no slide {i}")));
     }
-    let (png, w, h) = render_png(&st.doc, i, f64_or(p, "scale", 1.0), bool_or(p, "edit", false));
+    let (png, w, h) = render_png(
+        &st.doc,
+        i,
+        f64_or(p, "scale", 1.0),
+        bool_or(p, "edit", false),
+    );
     Ok(json!({"png": base64_encode(&png), "width": w, "height": h}))
 }
 
 fn export(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_param(p, "path").ok_or_else(|| bad("file.export", "missing `path`"))?.to_string();
-    let format = str_param(p, "format").unwrap_or(format_for_path(&path)).to_string();
+    let path = str_param(p, "path")
+        .ok_or_else(|| bad("file.export", "missing `path`"))?
+        .to_string();
+    let format = str_param(p, "format")
+        .unwrap_or(format_for_path(&path))
+        .to_string();
     let st = s.doc()?;
     let scale = f64_or(p, "scale", 2.0);
     match format.as_str() {
@@ -289,16 +362,31 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
                 let img = deckcraft_render::render_slide(
                     &st.doc,
                     *i,
-                    &deckcraft_render::RenderOpts { scale: scale.clamp(0.01, 16.0), ..Default::default() },
+                    &deckcraft_render::RenderOpts {
+                        scale: scale.clamp(0.01, 16.0),
+                        ..Default::default()
+                    },
                 );
-                let bytes = if format == "png" { img.to_png() } else { img.to_jpeg(92) };
+                let bytes = if format == "png" {
+                    img.to_png()
+                } else {
+                    img.to_jpeg(92)
+                };
                 let out = if slides.len() == 1 {
                     path.clone()
                 } else {
                     let pth = std::path::Path::new(&path);
-                    let stem = pth.file_stem().map(|x| x.to_string_lossy().to_string()).unwrap_or_else(|| "Slide".into());
-                    let ext = pth.extension().map(|x| x.to_string_lossy().to_string()).unwrap_or_else(|| format.clone());
-                    pth.with_file_name(format!("{stem}{}.{ext}", k + 1)).to_string_lossy().to_string()
+                    let stem = pth
+                        .file_stem()
+                        .map(|x| x.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "Slide".into());
+                    let ext = pth
+                        .extension()
+                        .map(|x| x.to_string_lossy().to_string())
+                        .unwrap_or_else(|| format.clone());
+                    pth.with_file_name(format!("{stem}{}.{ext}", k + 1))
+                        .to_string_lossy()
+                        .to_string()
                 };
                 write_file(&out, &bytes)?;
                 written.push(out);
@@ -323,7 +411,11 @@ fn info(s: &mut Session, _p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let doc = &st.doc;
     #[cfg(not(target_arch = "wasm32"))]
-    let bytes = st.path.as_ref().and_then(|p| std::fs::metadata(p).ok()).map(|m| m.len());
+    let bytes = st
+        .path
+        .as_ref()
+        .and_then(|p| std::fs::metadata(p).ok())
+        .map(|m| m.len());
     #[cfg(target_arch = "wasm32")]
     let bytes: Option<u64> = None;
     Ok(json!({
@@ -347,7 +439,9 @@ fn close(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn properties(s: &mut Session, p: &Value) -> Result<Value> {
-    let fields = ["title", "subject", "author", "keywords", "comments", "category", "company"];
+    let fields = [
+        "title", "subject", "author", "keywords", "comments", "category", "company",
+    ];
     if fields.iter().any(|f| p.get(*f).is_some()) {
         s.edit(|doc, _| {
             let pr = &mut doc.props;
@@ -374,7 +468,10 @@ fn properties(s: &mut Session, p: &Value) -> Result<Value> {
 fn revert(s: &mut Session, _p: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
     st.doc = st.saved_doc.clone();
-    st.history = crate::History { limit: st.history.limit, ..Default::default() };
+    st.history = crate::History {
+        limit: st.history.limit,
+        ..Default::default()
+    };
     st.revision += 1;
     ok()
 }
@@ -390,7 +487,9 @@ fn next_window(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn recovery_dir(s: &Session) -> Result<std::path::PathBuf> {
-    s.recovery_dir.clone().ok_or_else(|| EngineError::Other("no recovery folder is set".into()))
+    s.recovery_dir
+        .clone()
+        .ok_or_else(|| EngineError::Other("no recovery folder is set".into()))
 }
 
 fn recovery_save(s: &mut Session, _p: &Value) -> Result<Value> {

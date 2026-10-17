@@ -19,7 +19,14 @@ use serde_json::{Value, json};
 /// Les 81 entrées réelles : `(fieldId, index, condition, imagePath_brut, var4, var5)`.
 /// `condition` vide ⇒ la `var[2]` du dump était l'entier 0 (cas de la seule entrée 0).
 const RAW: &[(i64, i64, &str, &str, i64, i64)] = &[
-    (-826611768, 0, "", "#/menu/220_img/stadium/img_room_s90g001.g4tx", 1045184524, -1488645706),
+    (
+        -826611768,
+        0,
+        "",
+        "#/menu/220_img/stadium/img_room_s90g001.g4tx",
+        1045184524,
+        -1488645706,
+    ),
     (
         585721253,
         1,
@@ -703,7 +710,10 @@ fn stadium_comptes_reels() {
     let stadiums = parse_stadium_config(&node_fixture());
     // 81 stades, tous avec une image ; 80 portent une condition (l'entrée 0 n'en a pas).
     assert_eq!(stadiums.len(), 81, "81 entrées SOCCER_OPTION_FIELD_INFO_N");
-    assert!(stadiums.iter().all(|s| !s.image_path.is_empty()), "tous ont une image");
+    assert!(
+        stadiums.iter().all(|s| !s.image_path.is_empty()),
+        "tous ont une image"
+    );
     let avec_cond = stadiums.iter().filter(|s| !s.condition.is_empty()).count();
     assert_eq!(avec_cond, 80, "80 stades avec condition de déverrouillage");
 }
@@ -742,7 +752,10 @@ fn stadium_derniere_entree_index_non_contigu() {
     let stadiums = parse_stadium_config(&node_fixture());
     let s = stadiums.last().unwrap();
     assert_eq!(s.field_id, HashId(0x66F5_43A0));
-    assert_eq!(s.index, 90, "index in-game non contigu (90 pour la 81e entrée)");
+    assert_eq!(
+        s.index, 90,
+        "index in-game non contigu (90 pour la 81e entrée)"
+    );
     assert_eq!(s.image_path, "stadium/img_room_s06g001");
     assert_eq!(s.name, "img_room_s06g001");
 }
@@ -752,7 +765,10 @@ fn stadium_strip_image_et_nom_coherents() {
     // Port de extractImageName + name = dernier segment, vérifié sur les 81 entrées.
     let stadiums = parse_stadium_config(&node_fixture());
     for s in &stadiums {
-        assert!(s.image_path.starts_with("stadium/"), "préfixe #/menu/220_img/ retiré");
+        assert!(
+            s.image_path.starts_with("stadium/"),
+            "préfixe #/menu/220_img/ retiré"
+        );
         assert!(!s.image_path.contains("#/menu/220_img/"), "préfixe absent");
         assert!(!s.image_path.ends_with(".g4tx"), "suffixe .g4tx retiré");
         let last = s.image_path.rsplit('/').next().unwrap();

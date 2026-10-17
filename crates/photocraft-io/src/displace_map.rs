@@ -66,7 +66,12 @@ pub(super) fn parse_map(data: &[u8]) -> Option<EmbeddedMap<'_>> {
     }
     let horizontal = data.get(HEADER..HEADER.checked_add(n)?)?;
     let vertical = data.get(HEADER + n..HEADER.checked_add(n.checked_mul(2)?)?)?;
-    Some(EmbeddedMap { width, height, horizontal, vertical })
+    Some(EmbeddedMap {
+        width,
+        height,
+        horizontal,
+        vertical,
+    })
 }
 
 fn fltr_map(item: &Descriptor) -> Option<EmbeddedMap<'_>> {
@@ -101,23 +106,39 @@ pub(super) fn import_params(item: &Descriptor) -> Option<J> {
     fltr_map(item)?;
     // Neutral blending in the template: the model's own fields replace it on export.
     let mut template = item.clone();
-    let neutral = SmartFilter { command: String::new(), params: J::Null, blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+    let neutral = SmartFilter {
+        command: String::new(),
+        params: J::Null,
+        blend: photocraft_color::BlendMode::Normal,
+        opacity: 1.0,
+        visible: true,
+    };
     set(&mut template, "blendOptions", blend_options(&neutral));
     set(&mut template, "enab", Value::Boolean(true));
-    params.as_object_mut()?.insert(TEMPLATE_KEY.into(), json!(to_hex(&template.to_bytes())));
+    params
+        .as_object_mut()?
+        .insert(TEMPLATE_KEY.into(), json!(to_hex(&template.to_bytes())));
     Some(params)
 }
 
 /// The template item of `params`, checked to be a Displace filter with a readable map.
 fn template(params: &J) -> Result<Descriptor, String> {
-    let raw = params.get(TEMPLATE_KEY).ok_or("a Displace map from a file or document is not written to PSD")?;
-    let raw = raw.as_str().ok_or("the Displace PSD data must be hex text")?;
+    let raw = params
+        .get(TEMPLATE_KEY)
+        .ok_or("a Displace map from a file or document is not written to PSD")?;
+    let raw = raw
+        .as_str()
+        .ok_or("the Displace PSD data must be hex text")?;
     if raw.len() > MAX_TEMPLATE_BYTES * 2 {
         return Err("the Displace PSD data is too large".into());
     }
     let bytes = from_hex(raw).ok_or("the Displace PSD data is not valid hex")?;
-    let item = Descriptor::from_bytes(&bytes).map_err(|e| format!("the Displace PSD data is unreadable ({e})"))?;
-    if !item.class_id.is("filterFX") || int(&item, "filterID") != Some(FILTER_ID) || fltr_map(&item).is_none() {
+    let item = Descriptor::from_bytes(&bytes)
+        .map_err(|e| format!("the Displace PSD data is unreadable ({e})"))?;
+    if !item.class_id.is("filterFX")
+        || int(&item, "filterID") != Some(FILTER_ID)
+        || fltr_map(&item).is_none()
+    {
         return Err("the Displace PSD data is not a Displace filter with an embedded map".into());
     }
     Ok(item)
@@ -125,20 +146,42 @@ fn template(params: &J) -> Result<Descriptor, String> {
 
 /// The `filterFXList` item: the template with the current scales, fit and undefined areas.
 pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
-    let object = params.as_object().ok_or("Displace parameters must be an object")?;
-    if let Some(k) = object.keys().find(|k| !super::is_meta(k) && !["horizontal", "vertical", "fit", "undefinedAreas"].contains(&k.as_str())) {
-        return Err(format!("Displace setting `{k}` has no PSD equivalent next to its embedded map"));
+    let object = params
+        .as_object()
+        .ok_or("Displace parameters must be an object")?;
+    if let Some(k) = object.keys().find(|k| {
+        !super::is_meta(k)
+            && !["horizontal", "vertical", "fit", "undefinedAreas"].contains(&k.as_str())
+    }) {
+        return Err(format!(
+            "Displace setting `{k}` has no PSD equivalent next to its embedded map"
+        ));
     }
     let mut item = template(params)?;
-    let mut f = get_desc(&item, "Fltr").ok_or("the Displace PSD data has no filter")?.clone();
+    let mut f = get_desc(&item, "Fltr")
+        .ok_or("the Displace PSD data has no filter")?
+        .clone();
     let scale = |k: &str, d: f64| -> Result<Value, String> {
-        let v = params.get(k).map_or(Some(d), J::as_f64).filter(|v| v.is_finite()).ok_or(format!("Displace `{k}` must be a number"))?;
+        let v = params
+            .get(k)
+            .map_or(Some(d), J::as_f64)
+            .filter(|v| v.is_finite())
+            .ok_or(format!("Displace `{k}` must be a number"))?;
         Ok(Value::Integer(v.round().clamp(-999.0, 999.0) as i32))
     };
     let choice = |k: &str, table: &[(&[u8], &str)], d: &str| -> Result<Id, String> {
-        let v = params.get(k).map_or(Some(d), J::as_str).ok_or(format!("Displace `{k}` must be text"))?;
-        let code = table.iter().find(|(_, s)| *s == v).map(|(c, _)| *c).ok_or(format!("Displace `{k}` is not one of the PSD values"))?;
-        Ok(Id::new(std::str::from_utf8(code).map_err(|e| e.to_string())?))
+        let v = params
+            .get(k)
+            .map_or(Some(d), J::as_str)
+            .ok_or(format!("Displace `{k}` must be text"))?;
+        let code = table
+            .iter()
+            .find(|(_, s)| *s == v)
+            .map(|(c, _)| *c)
+            .ok_or(format!("Displace `{k}` is not one of the PSD values"))?;
+        Ok(Id::new(
+            std::str::from_utf8(code).map_err(|e| e.to_string())?,
+        ))
     };
     // Keep the template's enum types; only the values change.
     let set_enum = |f: &mut Descriptor, key: &str, value: Id| {
@@ -151,7 +194,11 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
     set(&mut f, "HrzS", scale("horizontal", 10.0)?);
     set(&mut f, "VrtS", scale("vertical", 10.0)?);
     set_enum(&mut f, "DspM", choice("fit", &FITS, "stretch")?);
-    set_enum(&mut f, "UndA", choice("undefinedAreas", &UNDEFINED, "repeat")?);
+    set_enum(
+        &mut f,
+        "UndA",
+        choice("undefinedAreas", &UNDEFINED, "repeat")?,
+    );
     set(&mut item, "Fltr", Value::Descriptor(f));
     Ok(item)
 }
@@ -162,12 +209,24 @@ pub(super) fn export_item(params: &J) -> Result<Descriptor, String> {
 pub fn embedded_map(params: &J) -> Option<Arc<Image>> {
     let item = template(params).ok()?;
     let m = fltr_map(&item)?;
-    let rect = Rect::new(0, 0, i32::try_from(m.width).ok()?, i32::try_from(m.height).ok()?);
+    let rect = Rect::new(
+        0,
+        0,
+        i32::try_from(m.width).ok()?,
+        i32::try_from(m.height).ok()?,
+    );
     let v = |b: u8| f32::from(b) / 255.0;
     let (ch, data) = if m.horizontal == m.vertical {
         (1, m.horizontal.iter().map(|&b| v(b)).collect())
     } else {
-        (3, m.horizontal.iter().zip(m.vertical).flat_map(|(&h, &w)| [v(h), v(w), 0.5]).collect())
+        (
+            3,
+            m.horizontal
+                .iter()
+                .zip(m.vertical)
+                .flat_map(|(&h, &w)| [v(h), v(w), 0.5])
+                .collect(),
+        )
     };
     Some(Arc::new(Image { rect, ch, data }))
 }
@@ -178,7 +237,13 @@ mod tests {
     use crate::smart_map::{UNSUPPORTED_FILTER, filter_from_item, item_for_filter};
 
     /// A `tdta` blob: `w`×`h`, horizontal plane `h_of(i)`, vertical `v_of(i)`, then `pad` zeros.
-    fn tdta(w: u32, h: u32, h_of: impl Fn(usize) -> u8, v_of: impl Fn(usize) -> u8, pad: usize) -> Vec<u8> {
+    fn tdta(
+        w: u32,
+        h: u32,
+        h_of: impl Fn(usize) -> u8,
+        v_of: impl Fn(usize) -> u8,
+        pad: usize,
+    ) -> Vec<u8> {
         let n = (w * h) as usize;
         let mut b = Vec::new();
         b.extend(h.to_le_bytes());
@@ -192,9 +257,17 @@ mod tests {
 
     /// A `filterFXList` item as Photoshop writes a Displace smart filter.
     fn item(map: Vec<u8>) -> Descriptor {
-        let e = |t: &str, v: &str| Value::Enumerated { type_id: Id::new(t), value: Id::new(v) };
+        let e = |t: &str, v: &str| Value::Enumerated {
+            type_id: Id::new(t),
+            value: Id::new(v),
+        };
         Descriptor::new("filterFX")
-            .with("Nm  ", Value::Text(photocraft_psd::descriptor::UnicodeString::new_nul("Displace...")))
+            .with(
+                "Nm  ",
+                Value::Text(photocraft_psd::descriptor::UnicodeString::new_nul(
+                    "Displace...",
+                )),
+            )
             .with(
                 "blendOptions",
                 blend_options(&SmartFilter {
@@ -215,7 +288,10 @@ mod tests {
                         .with("VrtS", Value::Integer(10))
                         .with("DspM", e("DspM", "StrF"))
                         .with("UndA", e("UndA", "RptE"))
-                        .with("DspF", Value::Alias(b"Macintosh HD:maps:displace.psd".to_vec()))
+                        .with(
+                            "DspF",
+                            Value::Alias(b"Macintosh HD:maps:displace.psd".to_vec()),
+                        )
                         .with("EmbF", Value::Boolean(true))
                         .with(MAP_KEY, Value::RawData(map)),
                 ),
@@ -243,7 +319,15 @@ mod tests {
         for len in 0..good.len() {
             assert!(parse_map(&good[..len]).is_none(), "truncated to {len}");
         }
-        let header = |h: u32, w: u32, mode: u16| [h.to_le_bytes().as_slice(), &w.to_le_bytes(), &mode.to_le_bytes(), &[0; 64]].concat();
+        let header = |h: u32, w: u32, mode: u16| {
+            [
+                h.to_le_bytes().as_slice(),
+                &w.to_le_bytes(),
+                &mode.to_le_bytes(),
+                &[0; 64],
+            ]
+            .concat()
+        };
         assert!(parse_map(&header(u32::MAX, u32::MAX, 3)).is_none());
         assert!(parse_map(&header(1 << 16, 1 << 16, 3)).is_none());
         assert!(parse_map(&header(0, 4, 3)).is_none());
@@ -266,10 +350,18 @@ mod tests {
         let f = filter_from_item(&src);
         assert_eq!(f.command, COMMAND);
         assert_eq!(
-            (f.params["horizontal"].as_f64(), f.params["fit"].as_str(), f.params["undefinedAreas"].as_str()),
+            (
+                f.params["horizontal"].as_f64(),
+                f.params["fit"].as_str(),
+                f.params["undefinedAreas"].as_str()
+            ),
             (Some(10.0), Some("stretch"), Some("repeat"))
         );
-        assert_eq!(item_for_filter(&f).unwrap(), src, "unchanged settings write the original item back");
+        assert_eq!(
+            item_for_filter(&f).unwrap(),
+            src,
+            "unchanged settings write the original item back"
+        );
         let map = embedded_map(&f.params).unwrap();
         assert_eq!((map.rect, map.ch), (Rect::new(0, 0, 4, 3), 1));
         assert_eq!(map.data[1], 20.0 / 255.0);
@@ -282,7 +374,11 @@ mod tests {
         let back = filter_from_item(&item_for_filter(&edited).unwrap());
         assert_eq!(back.command, COMMAND);
         assert_eq!(
-            (back.params["horizontal"].as_f64(), back.params["fit"].as_str(), back.params["undefinedAreas"].as_str()),
+            (
+                back.params["horizontal"].as_f64(),
+                back.params["fit"].as_str(),
+                back.params["undefinedAreas"].as_str()
+            ),
             (Some(-25.0), Some("tile"), Some("wrap"))
         );
         assert_eq!(back.opacity, 0.5);
@@ -308,9 +404,23 @@ mod tests {
         };
         let mut bad_enum = item(tdta(2, 2, |_| 0, |_| 0, 0));
         let mut f = get_desc(&bad_enum, "Fltr").unwrap().clone();
-        set(&mut f, "DspM", Value::Enumerated { type_id: Id::new("DspM"), value: Id::new("Huh?") });
+        set(
+            &mut f,
+            "DspM",
+            Value::Enumerated {
+                type_id: Id::new("DspM"),
+                value: Id::new("Huh?"),
+            },
+        );
         set(&mut bad_enum, "Fltr", Value::Descriptor(f));
-        let wrong_mode = item([tdta(2, 2, |_| 0, |_| 0, 0)[..8].to_vec(), 1u16.to_le_bytes().to_vec(), vec![0; 8]].concat());
+        let wrong_mode = item(
+            [
+                tdta(2, 2, |_| 0, |_| 0, 0)[..8].to_vec(),
+                1u16.to_le_bytes().to_vec(),
+                vec![0; 8],
+            ]
+            .concat(),
+        );
         for src in [only_alias, bad_enum, wrong_mode, item(vec![1, 2, 3])] {
             let f = filter_from_item(&src);
             assert_eq!(f.command, UNSUPPORTED_FILTER);
@@ -338,6 +448,8 @@ mod tests {
         ] {
             assert!(export_item(&p).is_err(), "{p}");
         }
-        assert!(embedded_map(&json!({TEMPLATE_KEY: "0".repeat(MAX_TEMPLATE_BYTES * 2 + 2)})).is_none());
+        assert!(
+            embedded_map(&json!({TEMPLATE_KEY: "0".repeat(MAX_TEMPLATE_BYTES * 2 + 2)})).is_none()
+        );
     }
 }

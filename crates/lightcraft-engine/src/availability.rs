@@ -50,13 +50,19 @@ pub struct Availability {
 
 impl Default for Availability {
     fn default() -> Self {
-        Self { probe: Arc::new(fs_exists), background: None, state: Arc::default() }
+        Self {
+            probe: Arc::new(fs_exists),
+            background: None,
+            state: Arc::default(),
+        }
     }
 }
 
 impl std::fmt::Debug for Availability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Availability").field("background", &self.background.is_some()).finish()
+        f.debug_struct("Availability")
+            .field("background", &self.background.is_some())
+            .finish()
     }
 }
 
@@ -96,7 +102,9 @@ impl Availability {
         let mut st = lock(&self.state);
         let now = std::time::Instant::now();
         let cached = st.known.get(path).copied();
-        if cached.is_none_or(|(_, at)| now.saturating_duration_since(at) >= RECHECK) && !st.queued.contains(path) {
+        if cached.is_none_or(|(_, at)| now.saturating_duration_since(at) >= RECHECK)
+            && !st.queued.contains(path)
+        {
             st.queued.insert(path.to_string());
             st.queue.push_back(path.to_string());
             if !st.worker {
@@ -126,32 +134,34 @@ impl Availability {
 
     fn spawn_worker(&self, wake: Waker) {
         let (state, probe) = (self.state.clone(), self.probe.clone());
-        let started = std::thread::Builder::new().name("lc-availability".into()).spawn(move || {
-            loop {
-                let path = {
-                    let mut st = lock(&state);
-                    let Some(p) = st.queue.pop_front() else {
-                        st.worker = false;
-                        return;
+        let started = std::thread::Builder::new()
+            .name("lc-availability".into())
+            .spawn(move || {
+                loop {
+                    let path = {
+                        let mut st = lock(&state);
+                        let Some(p) = st.queue.pop_front() else {
+                            st.worker = false;
+                            return;
+                        };
+                        p
                     };
-                    p
-                };
-                let ok = probe(&path);
-                let changed = {
-                    let mut st = lock(&state);
-                    st.queued.remove(&path);
-                    let prev = st.known.insert(path, (ok, std::time::Instant::now()));
-                    let changed = prev.map(|p| p.0) != Some(ok);
+                    let ok = probe(&path);
+                    let changed = {
+                        let mut st = lock(&state);
+                        st.queued.remove(&path);
+                        let prev = st.known.insert(path, (ok, std::time::Instant::now()));
+                        let changed = prev.map(|p| p.0) != Some(ok);
+                        if changed {
+                            st.generation += 1;
+                        }
+                        changed
+                    };
                     if changed {
-                        st.generation += 1;
+                        wake();
                     }
-                    changed
-                };
-                if changed {
-                    wake();
                 }
-            }
-        });
+            });
         if started.is_err() {
             // try again on the next question
             lock(&self.state).worker = false;
@@ -176,7 +186,11 @@ mod tests {
         assert_eq!(a.exists("here"), Some(true));
         assert_eq!(a.exists("gone"), Some(false));
         assert_eq!(a.exists("gone"), Some(false));
-        assert_eq!(n.load(Ordering::SeqCst), 3, "every question is a fresh check");
+        assert_eq!(
+            n.load(Ordering::SeqCst),
+            3,
+            "every question is a fresh check"
+        );
     }
 
     #[test]
@@ -200,15 +214,24 @@ mod tests {
         let t0 = std::time::Instant::now();
         assert_eq!(a.exists("here"), None, "unknown at first");
         assert_eq!(a.exists("gone"), None);
-        assert!(t0.elapsed() < Duration::from_millis(150), "the caller never waits for the probe");
+        assert!(
+            t0.elapsed() < Duration::from_millis(150),
+            "the caller never waits for the probe"
+        );
         let deadline = std::time::Instant::now() + Duration::from_secs(20);
-        while (a.exists("here").is_none() || a.exists("gone").is_none()) && std::time::Instant::now() < deadline {
+        while (a.exists("here").is_none() || a.exists("gone").is_none())
+            && std::time::Instant::now() < deadline
+        {
             std::thread::sleep(Duration::from_millis(10));
         }
         assert_eq!(a.exists("here"), Some(true));
         assert_eq!(a.exists("gone"), Some(false));
         assert!(a.is_offline("gone") && !a.is_offline("here") && !a.is_offline("unknown"));
-        assert_eq!(on_caller.load(Ordering::SeqCst), 0, "never probed on the calling thread");
+        assert_eq!(
+            on_caller.load(Ordering::SeqCst),
+            0,
+            "never probed on the calling thread"
+        );
         assert!(woke.load(Ordering::SeqCst) >= 2);
         assert!(a.generation() >= 2);
     }

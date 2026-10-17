@@ -20,7 +20,11 @@ fn decode_bc7(bytes: &[u8]) -> Result<Texture> {
     let tx = g4tx::parse(bytes).map_err(|e| anyhow::anyhow!("g4tx: {e:?}"))?;
     let t = tx.textures.first().context("texture")?;
     let dds = &bytes[t.data_offset..];
-    let off = if dds.len() >= 88 && &dds[84..88] == b"DX10" { 148 } else { 128 };
+    let off = if dds.len() >= 88 && &dds[84..88] == b"DX10" {
+        148
+    } else {
+        128
+    };
     let data = &dds[off..];
     let (w, h) = (t.width as usize, t.height as usize);
     let (bw, bh) = (w / 4, h / 4);
@@ -41,7 +45,11 @@ fn decode_bc7(bytes: &[u8]) -> Result<Texture> {
             }
         }
     }
-    Ok(Texture { width: w as u32, height: h as u32, rgba })
+    Ok(Texture {
+        width: w as u32,
+        height: h as u32,
+        rgba,
+    })
 }
 
 /// Charge un perso en `Model` texturé, pose de repos skinnée (mesh+skin+BC7+FK).
@@ -65,8 +73,9 @@ pub fn build_skinned_model(
     let parents: Vec<i16> = bones.bones.iter().map(|b| b.parent_index).collect();
     let world = g4sk::rest_world_matrices(&poses, &parents);
     let nb = poses.len();
-    let skinm: Vec<[[f32; 4]; 4]> =
-        (0..nb).map(|i| g4sk::mat_mul(&world[i], &poses[i].inverse_bind)).collect();
+    let skinm: Vec<[[f32; 4]; 4]> = (0..nb)
+        .map(|i| g4sk::mat_mul(&world[i], &poses[i].inverse_bind))
+        .collect();
 
     let sp: Vec<[f32; 3]> = (0..pos.len())
         .map(|v| {
@@ -83,7 +92,11 @@ pub fn build_skinned_model(
                 }
                 wsum += wt;
             }
-            if wsum > 0.0 { [acc[0] / wsum, acc[1] / wsum, acc[2] / wsum] } else { pos[v] }
+            if wsum > 0.0 {
+                [acc[0] / wsum, acc[1] / wsum, acc[2] / wsum]
+            } else {
+                pos[v]
+            }
         })
         .collect();
 
@@ -95,7 +108,10 @@ pub fn build_skinned_model(
         indices: geo.indices.clone(),
         texture: if has_uv { Some(0) } else { None },
     };
-    Ok(Model { primitives: vec![prim], textures: vec![tex] })
+    Ok(Model {
+        primitives: vec![prim],
+        textures: vec![tex],
+    })
 }
 
 /// Rend le personnage (pose de repos) sur un cadre `w×h`, fond dégradé. `x_off` le décale.
@@ -107,8 +123,11 @@ pub fn render_character(
     bg_top: [u8; 3],
     bg_bot: [u8; 3],
 ) -> Vec<u8> {
-    let inst =
-        Instance { model, transform: scene::mat_translate([x_off, 0.0, 0.0]), two_sided: true };
+    let inst = Instance {
+        model,
+        transform: scene::mat_translate([x_off, 0.0, 0.0]),
+        two_sided: true,
+    };
     let cam = Camera {
         eye: [0.0, 1.05, 2.7],
         target: [x_off * 0.6, 0.95, 0.0],
@@ -122,8 +141,14 @@ pub fn render_character(
 fn ground_quad(x0: f32, z0: f32, x1: f32, z1: f32, c: [u8; 3]) -> [Tri; 2] {
     let p = |x: f32, z: f32| [x, 0.0, z];
     [
-        Tri { p: [p(x0, z0), p(x1, z0), p(x1, z1)], color: c },
-        Tri { p: [p(x0, z0), p(x1, z1), p(x0, z1)], color: c },
+        Tri {
+            p: [p(x0, z0), p(x1, z0), p(x1, z1)],
+            color: c,
+        },
+        Tri {
+            p: [p(x0, z0), p(x1, z1), p(x0, z1)],
+            color: c,
+        },
     ]
 }
 
@@ -133,14 +158,26 @@ pub fn render_match_scene(model: &Model, w: u32, h: u32) -> Vec<u8> {
     // Pelouse rayée (bandes alternées de vert).
     for i in -4i32..4 {
         let (z0, z1) = (i as f32 * 1.6, (i + 1) as f32 * 1.6);
-        let c = if i.rem_euclid(2) == 0 { [34, 110, 48] } else { [28, 96, 42] };
+        let c = if i.rem_euclid(2) == 0 {
+            [34, 110, 48]
+        } else {
+            [28, 96, 42]
+        };
         pitch.extend(ground_quad(-8.0, z0, 8.0, z1, c));
     }
     // Ligne médiane blanche.
     pitch.extend(ground_quad(-8.0, -0.1, 8.0, 0.1, [220, 230, 220]));
     // Le joueur, debout au centre.
-    let inst = Instance { model, transform: scene::mat_identity(), two_sided: true };
-    let cam =
-        Camera { eye: [2.2, 2.0, 3.6], target: [0.0, 0.9, 0.0], up: [0.0, 1.0, 0.0], fov_y: 0.7 };
+    let inst = Instance {
+        model,
+        transform: scene::mat_identity(),
+        two_sided: true,
+    };
+    let cam = Camera {
+        eye: [2.2, 2.0, 3.6],
+        target: [0.0, 0.9, 0.0],
+        up: [0.0, 1.0, 0.0],
+        fov_y: 0.7,
+    };
     scene::render_scene(&pitch, &[inst], &cam, w, h, [120, 170, 230], [70, 110, 170])
 }

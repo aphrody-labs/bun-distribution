@@ -10,20 +10,32 @@ use crate::canvas::ViewXform;
 use crate::state::Tool;
 
 fn harness() -> Harness<'static, PhotocraftApp> {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.run("file.new", json!({"width": 200, "height": 100, "background": "white"})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.run(
+        "file.new",
+        json!({"width": 200, "height": 100, "background": "white"}),
+    )
+    .unwrap();
     app.sync_views();
     app.ui.tool = Tool::Brush;
-    let mut h = Harness::builder().with_size(vec2(900.0, 600.0)).build_ui_state(
-        |ui, app: &mut PhotocraftApp| {
-            let ctx = ui.ctx().clone();
-            if !ctx.fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                return;
-            }
-            egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(vec2(900.0, 600.0))
+        .build_ui_state(
+            |ui, app: &mut PhotocraftApp| {
+                let ctx = ui.ctx().clone();
+                if !ctx.fonts(|f| {
+                    f.families()
+                        .contains(&egui::FontFamily::Name("medium".into()))
+                }) {
+                    return;
+                }
+                egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
+            },
+            app,
+        );
     PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
     h.run_steps(4);
     let v = &mut h.state_mut().ui.views[0];
@@ -50,7 +62,12 @@ fn screen(h: &Harness<'static, PhotocraftApp>, x: f32, y: f32) -> Pos2 {
 
 fn button(h: &mut Harness<'static, PhotocraftApp>, x: f32, y: f32, down: bool) {
     let p = screen(h, x, y);
-    h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: down, modifiers: Modifiers::NONE });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed: down,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(1);
 }
 
@@ -62,8 +79,27 @@ fn move_to(h: &mut Harness<'static, PhotocraftApp>, x: f32, y: f32) {
 
 /// The points of the committed `paint.stroke`.
 fn committed_points(h: &Harness<'static, PhotocraftApp>) -> Vec<Vec<f64>> {
-    let (_, p) = h.state().session.journal.iter().rev().find(|(id, _)| id == "paint.stroke").cloned().expect("a committed stroke");
-    p["points"].as_array().expect("points").iter().map(|v| v.as_array().expect("point").iter().filter_map(Value::as_f64).collect()).collect()
+    let (_, p) = h
+        .state()
+        .session
+        .journal
+        .iter()
+        .rev()
+        .find(|(id, _)| id == "paint.stroke")
+        .cloned()
+        .expect("a committed stroke");
+    p["points"]
+        .as_array()
+        .expect("points")
+        .iter()
+        .map(|v| {
+            v.as_array()
+                .expect("point")
+                .iter()
+                .filter_map(Value::as_f64)
+                .collect()
+        })
+        .collect()
 }
 
 #[test]
@@ -82,7 +118,10 @@ fn moves_before_the_drag_threshold_reach_the_stroke() {
     h.run_steps(2);
     let xs: Vec<f64> = committed_points(&h).iter().map(|p| p[0]).collect();
     for x in [21.0, 22.0, 23.0] {
-        assert!(xs.iter().any(|v| (v - x).abs() < 0.01), "the move to {x} is part of the stroke: {xs:?}");
+        assert!(
+            xs.iter().any(|v| (v - x).abs() < 0.01),
+            "the move to {x} is part of the stroke: {xs:?}"
+        );
     }
 }
 
@@ -100,8 +139,14 @@ fn stroke_points_carry_increasing_times_from_zero() {
     assert!(pts.len() >= 4, "{pts:?}");
     let times: Vec<f64> = pts.iter().map(|p| *p.get(6).expect("timeMs")).collect();
     assert_eq!(times.first().copied(), Some(0.0), "{times:?}");
-    assert!(times.windows(2).all(|w| w[1] >= w[0]), "times never go back: {times:?}");
-    assert!(times.last().copied().unwrap_or(0.0) > 0.0, "time advances over the frames: {times:?}");
+    assert!(
+        times.windows(2).all(|w| w[1] >= w[0]),
+        "times never go back: {times:?}"
+    );
+    assert!(
+        times.last().copied().unwrap_or(0.0) > 0.0,
+        "time advances over the frames: {times:?}"
+    );
 }
 
 /// Points of the drag in progress after holding the pointer still for a while.
@@ -119,25 +164,54 @@ fn held_points(h: &mut Harness<'static, PhotocraftApp>) -> (usize, usize) {
 #[test]
 fn a_held_airbrush_keeps_the_stroke_clock_running() {
     let mut h = harness();
-    h.state_mut().run("tools.setBrush", json!({"buildUp": true, "smoothing": {"amount": 0.0}})).unwrap();
+    h.state_mut()
+        .run(
+            "tools.setBrush",
+            json!({"buildUp": true, "smoothing": {"amount": 0.0}}),
+        )
+        .unwrap();
     let (before, after) = held_points(&mut h);
-    assert!(after > before, "a held airbrush adds timed repeats of its point ({before} → {after})");
+    assert!(
+        after > before,
+        "a held airbrush adds timed repeats of its point ({before} → {after})"
+    );
 }
 
 #[test]
 fn a_held_plain_brush_adds_nothing() {
     let mut h = harness();
-    h.state_mut().run("tools.setBrush", json!({"buildUp": false, "smoothing": {"amount": 0.0}})).unwrap();
+    h.state_mut()
+        .run(
+            "tools.setBrush",
+            json!({"buildUp": false, "smoothing": {"amount": 0.0}}),
+        )
+        .unwrap();
     let (before, after) = held_points(&mut h);
-    assert_eq!(after, before, "nothing changes with time, so nothing is repeated");
+    assert_eq!(
+        after, before,
+        "nothing changes with time, so nothing is repeated"
+    );
 }
 
 #[test]
 fn spread_ms_spaces_a_frames_samples_after_the_last_point() {
     use crate::canvas::spread_ms;
-    assert_eq!((0..4).map(|k| spread_ms(100.0, 116.0, k, 4)).collect::<Vec<_>>(), vec![104.0, 108.0, 112.0, 116.0]);
-    assert_eq!(spread_ms(116.0, 116.0, 0, 3), 116.0, "a press frame's moves share its time");
-    assert_eq!(spread_ms(120.0, 116.0, 0, 1), 116.0, "a clock that went back never goes below now");
+    assert_eq!(
+        (0..4)
+            .map(|k| spread_ms(100.0, 116.0, k, 4))
+            .collect::<Vec<_>>(),
+        vec![104.0, 108.0, 112.0, 116.0]
+    );
+    assert_eq!(
+        spread_ms(116.0, 116.0, 0, 3),
+        116.0,
+        "a press frame's moves share its time"
+    );
+    assert_eq!(
+        spread_ms(120.0, 116.0, 0, 1),
+        116.0,
+        "a clock that went back never goes below now"
+    );
     assert_eq!(spread_ms(f64::NAN, 116.0, 0, 1), 116.0);
 }
 
@@ -145,7 +219,12 @@ fn spread_ms_spaces_a_frames_samples_after_the_last_point() {
 fn moves_in_one_frame_take_the_pressures_the_pen_reported_between_them() {
     use crate::stylus::PenSample;
     let mut h = harness();
-    let pen = |p: f32| Some(PenSample { pressure: p, ..Default::default() });
+    let pen = |p: f32| {
+        Some(PenSample {
+            pressure: p,
+            ..Default::default()
+        })
+    };
     h.state().stylus.feed.set(pen(0.2));
     move_to(&mut h, 20.0, 50.0);
     button(&mut h, 20.0, 50.0, true);
@@ -161,26 +240,48 @@ fn moves_in_one_frame_take_the_pressures_the_pen_reported_between_them() {
     button(&mut h, 50.0, 50.0, false);
     h.run_steps(2);
     let pts = committed_points(&h);
-    let tail: Vec<f64> = pts.iter().filter(|p| p[0] >= 29.0).map(|p| (p[2] * 100.0).round() / 100.0).collect();
-    assert_eq!(tail.get(..3), Some(&[0.4, 0.6, 0.8][..]), "each move keeps its own pressure: {pts:?}");
+    let tail: Vec<f64> = pts
+        .iter()
+        .filter(|p| p[0] >= 29.0)
+        .map(|p| (p[2] * 100.0).round() / 100.0)
+        .collect();
+    assert_eq!(
+        tail.get(..3),
+        Some(&[0.4, 0.6, 0.8][..]),
+        "each move keeps its own pressure: {pts:?}"
+    );
 }
 
 #[test]
 fn the_pressure_curve_shapes_the_committed_stroke() {
     use crate::stylus::PenSample;
     let mut h = harness();
-    h.state_mut().run("prefs.set", json!({"path": "tools.pressureCurve", "value": [[0.0, 0.0], [0.3, 0.6], [1.0, 1.0]]})).unwrap();
-    h.state().stylus.feed.set(Some(PenSample { pressure: 0.3, ..Default::default() }));
+    h.state_mut()
+        .run(
+            "prefs.set",
+            json!({"path": "tools.pressureCurve", "value": [[0.0, 0.0], [0.3, 0.6], [1.0, 1.0]]}),
+        )
+        .unwrap();
+    h.state().stylus.feed.set(Some(PenSample {
+        pressure: 0.3,
+        ..Default::default()
+    }));
     move_to(&mut h, 20.0, 50.0);
     button(&mut h, 20.0, 50.0, true);
     for x in [40.0, 60.0] {
-        h.state().stylus.feed.set(Some(PenSample { pressure: 0.3, ..Default::default() }));
+        h.state().stylus.feed.set(Some(PenSample {
+            pressure: 0.3,
+            ..Default::default()
+        }));
         move_to(&mut h, x, 50.0);
     }
     button(&mut h, 60.0, 50.0, false);
     h.run_steps(2);
     let pts = committed_points(&h);
-    assert!(pts.iter().all(|p| (p[2] - 0.6).abs() < 1e-3), "pen 0.3 through the curve is 0.6: {pts:?}");
+    assert!(
+        pts.iter().all(|p| (p[2] - 0.6).abs() < 1e-3),
+        "pen 0.3 through the curve is 0.6: {pts:?}"
+    );
 }
 
 /// A Brush whose size follows pen pressure, painting on a new empty layer.
@@ -188,14 +289,19 @@ fn pressure_sized_brush(h: &mut Harness<'static, PhotocraftApp>) {
     let app = h.state_mut();
     app.run("layer.new.layer", json!({})).unwrap();
     let brush = json!({"size": 40, "hardness": 1.0, "smoothing": {"amount": 0.0}, "shapeDynamics": {"enabled": true, "size": {"control": "penPressure"}}});
-    app.run("tools.setBrush", json!({ "brush": brush })).unwrap();
+    app.run("tools.setBrush", json!({ "brush": brush }))
+        .unwrap();
     h.run_steps(1);
 }
 
 /// Width in pixels of the paint on the active layer along row `y`.
 fn painted_width(h: &Harness<'static, PhotocraftApp>, y: i32) -> usize {
     let st = h.state().session.active().expect("a document");
-    let s = st.doc.layer(st.active_layer.expect("an active layer")).and_then(|l| l.surface()).expect("a raster layer");
+    let s = st
+        .doc
+        .layer(st.active_layer.expect("an active layer"))
+        .and_then(|l| l.surface())
+        .expect("a raster layer");
     (0..200).filter(|x| s.rgba(*x, y)[3] > 0.5).count()
 }
 
@@ -205,11 +311,19 @@ fn tap(h: &mut Harness<'static, PhotocraftApp>, x: f32, samples: &[Option<f32>])
     use crate::stylus::PenSample;
     move_to(h, x, 50.0);
     for p in samples {
-        h.state().stylus.feed.set(p.map(|pressure| PenSample { pressure, ..Default::default() }));
+        h.state().stylus.feed.set(p.map(|pressure| PenSample {
+            pressure,
+            ..Default::default()
+        }));
     }
     let q = screen(h, x, 50.0);
     for pressed in [true, false] {
-        h.input_mut().events.push(egui::Event::PointerButton { pos: q, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(egui::Event::PointerButton {
+            pos: q,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        });
     }
     h.run_steps(3);
 }
@@ -221,15 +335,33 @@ fn a_tap_shorter_than_a_frame_paints_at_the_pens_pressure() {
     let mut h = harness();
     pressure_sized_brush(&mut h);
     tap(&mut h, 50.0, &[Some(0.2), None]);
-    assert!((committed_points(&h)[0][2] - 0.2).abs() < 1e-3, "{:?}", committed_points(&h));
+    assert!(
+        (committed_points(&h)[0][2] - 0.2).abs() < 1e-3,
+        "{:?}",
+        committed_points(&h)
+    );
     tap(&mut h, 150.0, &[Some(0.9), None]);
-    assert!((committed_points(&h)[0][2] - 0.9).abs() < 1e-3, "{:?}", committed_points(&h));
+    assert!(
+        (committed_points(&h)[0][2] - 0.9).abs() < 1e-3,
+        "{:?}",
+        committed_points(&h)
+    );
     let st = h.state().session.active().unwrap();
-    let s = st.doc.layer(st.active_layer.unwrap()).and_then(|l| l.surface()).unwrap();
+    let s = st
+        .doc
+        .layer(st.active_layer.unwrap())
+        .and_then(|l| l.surface())
+        .unwrap();
     let width = |x0: i32, x1: i32| (x0..x1).filter(|x| s.rgba(*x, 50)[3] > 0.5).count() as f64;
     let (light, firm) = (width(0, 100), width(100, 200));
-    assert!((light / 40.0 - 0.2).abs() < 0.1, "a light tap is a small dab: {light} px");
-    assert!((firm / 40.0 - 0.9).abs() < 0.1, "a firm tap is a large dab: {firm} px");
+    assert!(
+        (light / 40.0 - 0.2).abs() < 0.1,
+        "a light tap is a small dab: {light} px"
+    );
+    assert!(
+        (firm / 40.0 - 0.9).abs() < 0.1,
+        "a firm tap is a large dab: {firm} px"
+    );
 }
 
 #[test]
@@ -238,7 +370,11 @@ fn a_tap_never_paints_at_the_lifts_zero_pressure() {
     let mut h = harness();
     pressure_sized_brush(&mut h);
     tap(&mut h, 50.0, &[Some(0.0), Some(0.6), Some(0.0)]);
-    assert!((committed_points(&h)[0][2] - 0.6).abs() < 1e-3, "{:?}", committed_points(&h));
+    assert!(
+        (committed_points(&h)[0][2] - 0.6).abs() < 1e-3,
+        "{:?}",
+        committed_points(&h)
+    );
 }
 
 #[test]
@@ -246,7 +382,12 @@ fn a_tap_over_two_frames_paints_at_the_pressure_it_reached() {
     use crate::stylus::PenSample;
     let mut h = harness();
     pressure_sized_brush(&mut h);
-    let pen = |p: f32| Some(PenSample { pressure: p, ..Default::default() });
+    let pen = |p: f32| {
+        Some(PenSample {
+            pressure: p,
+            ..Default::default()
+        })
+    };
     move_to(&mut h, 50.0, 50.0);
     h.state().stylus.feed.set(pen(0.1));
     button(&mut h, 50.0, 50.0, true);
@@ -256,7 +397,10 @@ fn a_tap_over_two_frames_paints_at_the_pressure_it_reached() {
     h.run_steps(2);
     let pts = committed_points(&h);
     assert_eq!(pts.len(), 1, "{pts:?}");
-    assert!((pts[0][2] - 0.5).abs() < 1e-3, "the tap's peak, not its first touch: {pts:?}");
+    assert!(
+        (pts[0][2] - 0.5).abs() < 1e-3,
+        "the tap's peak, not its first touch: {pts:?}"
+    );
 }
 
 #[test]
@@ -277,7 +421,12 @@ fn a_stroke_ends_at_the_last_pressure_the_pen_drew_with() {
     for lift in [None, Some(0.0)] {
         let mut h = harness();
         pressure_sized_brush(&mut h);
-        let pen = |p: f32| Some(PenSample { pressure: p, ..Default::default() });
+        let pen = |p: f32| {
+            Some(PenSample {
+                pressure: p,
+                ..Default::default()
+            })
+        };
         h.state().stylus.feed.set(pen(0.4));
         move_to(&mut h, 20.0, 50.0);
         button(&mut h, 20.0, 50.0, true);
@@ -291,19 +440,35 @@ fn a_stroke_ends_at_the_last_pressure_the_pen_drew_with() {
             let q = screen(&h, x, 50.0);
             h.input_mut().events.push(egui::Event::PointerMoved(q));
         }
-        h.state().stylus.feed.set(lift.map(|p| PenSample { pressure: p, ..Default::default() }));
+        h.state().stylus.feed.set(lift.map(|p| PenSample {
+            pressure: p,
+            ..Default::default()
+        }));
         let q = screen(&h, 60.0, 50.0);
-        h.input_mut().events.push(egui::Event::PointerButton { pos: q, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(egui::Event::PointerButton {
+            pos: q,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(3);
         let pts = committed_points(&h);
-        assert!(pts.iter().all(|p| (p[2] - 0.4).abs() < 1e-3), "lift {lift:?}: no full or zero pressure dab at the end: {pts:?}");
+        assert!(
+            pts.iter().all(|p| (p[2] - 0.4).abs() < 1e-3),
+            "lift {lift:?}: no full or zero pressure dab at the end: {pts:?}"
+        );
     }
 }
 
 #[test]
 fn releasing_a_stroke_commits_the_live_pixels_and_replays_identically() {
     let mut h = harness();
-    h.state_mut().run("tools.setBrush", json!({"brush": {"size": 14, "hardness": 0.2}, "smoothing": {"amount": 0.3}})).unwrap();
+    h.state_mut()
+        .run(
+            "tools.setBrush",
+            json!({"brush": {"size": 14, "hardness": 0.2}, "smoothing": {"amount": 0.3}}),
+        )
+        .unwrap();
     move_to(&mut h, 20.0, 50.0);
     button(&mut h, 20.0, 50.0, true);
     for (x, y) in [(40.0, 30.0), (70.0, 60.0), (110.0, 40.0), (150.0, 70.0)] {
@@ -313,18 +478,44 @@ fn releasing_a_stroke_commits_the_live_pixels_and_replays_identically() {
     h.run_steps(2);
     let app = h.state();
     let st = app.session.active().unwrap();
-    let committed = app.committed_stroke.as_ref().expect("the commit took the live stroke's pixels");
-    assert_eq!((committed.doc, committed.revision), (st.doc.id, st.revision));
+    let committed = app
+        .committed_stroke
+        .as_ref()
+        .expect("the commit took the live stroke's pixels");
+    assert_eq!(
+        (committed.doc, committed.revision),
+        (st.doc.id, st.revision)
+    );
     // Replaying the journaled command from scratch gives the same pixels.
-    let (_, p) = app.session.journal.iter().rev().find(|(id, _)| id == "paint.stroke").cloned().unwrap();
+    let (_, p) = app
+        .session
+        .journal
+        .iter()
+        .rev()
+        .find(|(id, _)| id == "paint.stroke")
+        .cloned()
+        .unwrap();
     let mut fresh = photocraft_engine::Session::new();
-    fresh.execute("file.new", json!({"width": 200, "height": 100, "background": "white"})).unwrap();
-    fresh.execute("tools.setBrush", json!({"brush": {"size": 14, "hardness": 0.2}, "smoothing": {"amount": 0.3}})).unwrap();
+    fresh
+        .execute(
+            "file.new",
+            json!({"width": 200, "height": 100, "background": "white"}),
+        )
+        .unwrap();
+    fresh
+        .execute(
+            "tools.setBrush",
+            json!({"brush": {"size": 14, "hardness": 0.2}, "smoothing": {"amount": 0.3}}),
+        )
+        .unwrap();
     fresh.execute("paint.stroke", p).unwrap();
     let a = photocraft_compose::render(&st.doc, st.doc.bounds());
     let b = photocraft_compose::render(&fresh.active().unwrap().doc, st.doc.bounds());
     assert_eq!(a.px.len(), b.px.len());
-    assert!(a.px.iter().zip(&b.px).all(|(x, y)| x == y), "live commit and replay differ");
+    assert!(
+        a.px.iter().zip(&b.px).all(|(x, y)| x == y),
+        "live commit and replay differ"
+    );
 }
 
 #[test]
@@ -332,9 +523,17 @@ fn a_committed_stroke_refreshes_only_what_each_cache_had_not_shown() {
     use crate::canvas::CommittedStroke;
     let r = |x: i32| photocraft_geom::Rect::new(x, 0, x + 10, 10);
     let c = CommittedStroke::for_test(100, vec![r(0), r(20), r(40)]);
-    assert_eq!(c.since(103), Some(photocraft_geom::Rect::EMPTY), "showed the last step: nothing");
+    assert_eq!(
+        c.since(103),
+        Some(photocraft_geom::Rect::EMPTY),
+        "showed the last step: nothing"
+    );
     assert_eq!(c.since(102), Some(r(40)), "one step behind: that step");
-    assert_eq!(c.since(0), Some(r(0).union(&r(20)).union(&r(40))), "never showed the stroke: all of it");
+    assert_eq!(
+        c.since(0),
+        Some(r(0).union(&r(20)).union(&r(40))),
+        "never showed the stroke: all of it"
+    );
     assert_eq!(c.since(99), None, "not a key of this stroke");
 }
 
@@ -344,8 +543,14 @@ fn a_committed_stroke_refreshes_only_what_each_cache_had_not_shown() {
 #[test]
 fn releasing_a_clone_stamp_stroke_commits_what_a_replay_paints() {
     let setup = |run: &mut dyn FnMut(&str, Value)| {
-        run("tools.setBrush", json!({"brush": {"size": 16, "hardness": 0.4}}));
-        run("paint.stroke", json!({"points": [[10, 20], [190, 80]], "size": 30, "hardness": 0.5, "color": "#2060c0"}));
+        run(
+            "tools.setBrush",
+            json!({"brush": {"size": 16, "hardness": 0.4}}),
+        );
+        run(
+            "paint.stroke",
+            json!({"points": [[10, 20], [190, 80]], "size": 30, "hardness": 0.5, "color": "#2060c0"}),
+        );
         run("cloneSource.set", json!({"source": [40, 30]}));
     };
     let mut h = harness();
@@ -363,16 +568,37 @@ fn releasing_a_clone_stamp_stroke_commits_what_a_replay_paints() {
     button(&mut h, 170.0, 65.0, false);
     h.run_steps(2);
     let app = h.state();
-    let (_, p) = app.session.journal.iter().rev().find(|(id, _)| id == "paint.cloneStamp").cloned().expect("a committed Clone Stamp stroke");
+    let (_, p) = app
+        .session
+        .journal
+        .iter()
+        .rev()
+        .find(|(id, _)| id == "paint.cloneStamp")
+        .cloned()
+        .expect("a committed Clone Stamp stroke");
     let committed: Vec<_> = p["points"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|q| photocraft_engine::paint::StrokePoint::new(q[0].as_f64().unwrap(), q[1].as_f64().unwrap(), q[2].as_f64().unwrap() as f32))
+        .map(|q| {
+            photocraft_engine::paint::StrokePoint::new(
+                q[0].as_f64().unwrap(),
+                q[1].as_f64().unwrap(),
+                q[2].as_f64().unwrap() as f32,
+            )
+        })
         .collect();
-    assert!(shown.len() > 1 && committed.starts_with(&shown), "live {shown:?} vs committed {committed:?}");
+    assert!(
+        shown.len() > 1 && committed.starts_with(&shown),
+        "live {shown:?} vs committed {committed:?}"
+    );
     let mut fresh = photocraft_engine::Session::new();
-    fresh.execute("file.new", json!({"width": 200, "height": 100, "background": "white"})).unwrap();
+    fresh
+        .execute(
+            "file.new",
+            json!({"width": 200, "height": 100, "background": "white"}),
+        )
+        .unwrap();
     setup(&mut |id, p| {
         fresh.execute(id, p).unwrap();
     });
@@ -381,5 +607,8 @@ fn releasing_a_clone_stamp_stroke_commits_what_a_replay_paints() {
     let a = photocraft_compose::render(&st.doc, st.doc.bounds());
     let b = photocraft_compose::render(&fresh.active().unwrap().doc, st.doc.bounds());
     assert_eq!(a.px.len(), b.px.len());
-    assert!(a.px.iter().zip(&b.px).all(|(x, y)| x == y), "live commit and replay differ");
+    assert!(
+        a.px.iter().zip(&b.px).all(|(x, y)| x == y),
+        "live commit and replay differ"
+    );
 }

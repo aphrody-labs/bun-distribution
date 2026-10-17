@@ -25,23 +25,53 @@ pub struct ReadingParams {
 
 impl ReadingColors {
     /// Black text on a white page.
-    pub const BLACK_ON_WHITE: Self =
-        Self { params: Some(ReadingParams { text: [0x00, 0x00, 0x00], background: [0xff, 0xff, 0xff], only_black: false, line_art: true }) };
+    pub const BLACK_ON_WHITE: Self = Self {
+        params: Some(ReadingParams {
+            text: [0x00, 0x00, 0x00],
+            background: [0xff, 0xff, 0xff],
+            only_black: false,
+            line_art: true,
+        }),
+    };
     /// White text on a black page.
-    pub const WHITE_ON_BLACK: Self =
-        Self { params: Some(ReadingParams { text: [0xff, 0xff, 0xff], background: [0x00, 0x00, 0x00], only_black: false, line_art: true }) };
+    pub const WHITE_ON_BLACK: Self = Self {
+        params: Some(ReadingParams {
+            text: [0xff, 0xff, 0xff],
+            background: [0x00, 0x00, 0x00],
+            only_black: false,
+            line_art: true,
+        }),
+    };
     /// Yellow text on a black page.
-    pub const YELLOW_ON_BLACK: Self =
-        Self { params: Some(ReadingParams { text: [0xff, 0xff, 0x00], background: [0x00, 0x00, 0x00], only_black: false, line_art: true }) };
+    pub const YELLOW_ON_BLACK: Self = Self {
+        params: Some(ReadingParams {
+            text: [0xff, 0xff, 0x00],
+            background: [0x00, 0x00, 0x00],
+            only_black: false,
+            line_art: true,
+        }),
+    };
     /// Green text on a black page.
-    pub const GREEN_ON_BLACK: Self =
-        Self { params: Some(ReadingParams { text: [0x00, 0xff, 0x00], background: [0x00, 0x00, 0x00], only_black: false, line_art: true }) };
+    pub const GREEN_ON_BLACK: Self = Self {
+        params: Some(ReadingParams {
+            text: [0x00, 0xff, 0x00],
+            background: [0x00, 0x00, 0x00],
+            only_black: false,
+            line_art: true,
+        }),
+    };
 
     /// Parses tool/settings input. `mode` is one of `off | black-on-white | white-on-black |
     /// yellow-on-black | green-on-black | custom`; `custom` needs `text` and `background` as
     /// `#rrggbb`; the flags override the preset defaults when given. `off` ignores colours.
     /// Errors are actionable strings.
-    pub fn parse(mode: &str, text: Option<&str>, background: Option<&str>, only_black: Option<bool>, line_art: Option<bool>) -> Result<Self, String> {
+    pub fn parse(
+        mode: &str,
+        text: Option<&str>,
+        background: Option<&str>,
+        only_black: Option<bool>,
+        line_art: Option<bool>,
+    ) -> Result<Self, String> {
         // Every mode accepts the flags: they override the preset defaults, and are the custom
         // mode's own values.
         let with_flags = |mut colors: Self| {
@@ -74,9 +104,9 @@ impl ReadingColors {
                     }),
                 })),
             },
-            other => {
-                Err(format!("unknown mode {other:?}; expected one of: off, black-on-white, white-on-black, yellow-on-black, green-on-black, custom"))
-            }
+            other => Err(format!(
+                "unknown mode {other:?}; expected one of: off, black-on-white, white-on-black, yellow-on-black, green-on-black, custom"
+            )),
         }
     }
 
@@ -113,15 +143,24 @@ impl ReadingColors {
 
 impl From<ReadingParams> for hayro::ColorReplacement {
     fn from(p: ReadingParams) -> Self {
-        hayro::ColorReplacement { text: p.text, background: p.background, only_black: p.only_black, line_art: p.line_art }
+        hayro::ColorReplacement {
+            text: p.text,
+            background: p.background,
+            only_black: p.only_black,
+            line_art: p.line_art,
+        }
     }
 }
 
 /// Parses a colour given as `#rrggbb` — exactly this shape, either case of digits. The error
 /// names the argument and the expected shape.
 fn parse_hex(name: &str, value: &str) -> Result<[u8; 3], String> {
-    let invalid = || format!("invalid {name} colour {value:?}; expected #rrggbb (six hex digits, e.g. #00ff00)");
-    let Some(digits) = value.strip_prefix('#') else { return Err(invalid()) };
+    let invalid = || {
+        format!("invalid {name} colour {value:?}; expected #rrggbb (six hex digits, e.g. #00ff00)")
+    };
+    let Some(digits) = value.strip_prefix('#') else {
+        return Err(invalid());
+    };
     if digits.len() != 6 || !digits.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err(invalid());
     }
@@ -151,7 +190,11 @@ mod tests {
         assert_eq!(off.text_hex(), None);
         assert_eq!(off.background_hex(), None);
         // `off` ignores colour and flag arguments.
-        assert_eq!(ReadingColors::parse("off", Some("zzz"), Some("#000000"), Some(true), Some(false)).unwrap(), off);
+        assert_eq!(
+            ReadingColors::parse("off", Some("zzz"), Some("#000000"), Some(true), Some(false))
+                .unwrap(),
+            off
+        );
 
         for (mode, text, background) in [
             ("black-on-white", "#000000", "#ffffff"),
@@ -162,19 +205,26 @@ mod tests {
             let colors = ReadingColors::parse(mode, None, None, None, None).unwrap();
             assert_eq!(colors.mode_name(), mode, "{mode}");
             assert_eq!(colors.text_hex().as_deref(), Some(text), "{mode}");
-            assert_eq!(colors.background_hex().as_deref(), Some(background), "{mode}");
+            assert_eq!(
+                colors.background_hex().as_deref(),
+                Some(background),
+                "{mode}"
+            );
             let params = colors.params.unwrap();
             assert!(!params.only_black && params.line_art, "{mode}");
         }
 
         // The flags override the preset defaults; a changed preset is no longer one.
-        let overridden = ReadingColors::parse("white-on-black", None, None, Some(true), Some(false)).unwrap();
+        let overridden =
+            ReadingColors::parse("white-on-black", None, None, Some(true), Some(false)).unwrap();
         let params = overridden.params.unwrap();
         assert!(params.only_black && !params.line_art);
         assert_eq!(overridden.mode_name(), "custom");
 
         // `custom` takes either case of hex and echoes lowercase.
-        let custom = ReadingColors::parse("custom", Some("#AaBbCc"), Some("#123456"), Some(true), None).unwrap();
+        let custom =
+            ReadingColors::parse("custom", Some("#AaBbCc"), Some("#123456"), Some(true), None)
+                .unwrap();
         assert_eq!(custom.mode_name(), "custom");
         assert_eq!(custom.text_hex().as_deref(), Some("#aabbcc"));
         assert_eq!(custom.background_hex().as_deref(), Some("#123456"));
@@ -195,7 +245,9 @@ mod tests {
         for bad in ["zzz", "000000", "#000", "#0000000", "#00g000", ""] {
             assert_eq!(
                 ReadingColors::parse("custom", Some(bad), Some("#000000"), None, None),
-                Err(format!("invalid text colour {bad:?}; expected #rrggbb (six hex digits, e.g. #00ff00)")),
+                Err(format!(
+                    "invalid text colour {bad:?}; expected #rrggbb (six hex digits, e.g. #00ff00)"
+                )),
                 "{bad}"
             );
         }
@@ -207,8 +259,17 @@ mod tests {
 
     #[test]
     fn parse_rejects_custom_missing_colours() {
-        assert_eq!(ReadingColors::parse("custom", None, None, None, None), Err("custom needs text and background as #rrggbb".to_string()));
-        assert_eq!(ReadingColors::parse("custom", None, Some("#000000"), None, None), Err("custom needs text as #rrggbb".to_string()));
-        assert_eq!(ReadingColors::parse("custom", Some("#000000"), None, None, None), Err("custom needs background as #rrggbb".to_string()));
+        assert_eq!(
+            ReadingColors::parse("custom", None, None, None, None),
+            Err("custom needs text and background as #rrggbb".to_string())
+        );
+        assert_eq!(
+            ReadingColors::parse("custom", None, Some("#000000"), None, None),
+            Err("custom needs text as #rrggbb".to_string())
+        );
+        assert_eq!(
+            ReadingColors::parse("custom", Some("#000000"), None, None, None),
+            Err("custom needs background as #rrggbb".to_string())
+        );
     }
 }

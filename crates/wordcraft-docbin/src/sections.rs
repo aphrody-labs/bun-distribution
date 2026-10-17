@@ -34,24 +34,39 @@ pub(crate) struct Section {
 
 /// Parse `PlcfSed` and each section's `Sepx` grpprl.
 pub(crate) fn parse(word: &[u8], table: &[u8], fib: &Fib) -> Vec<Section> {
-    let Some((fc, lcb)) = fib.pair(pair::PLCF_SED) else { return Vec::new() };
-    let Some(plc) = table.get(fc as usize..(fc as usize).saturating_add(lcb as usize)) else { return Vec::new() };
+    let Some((fc, lcb)) = fib.pair(pair::PLCF_SED) else {
+        return Vec::new();
+    };
+    let Some(plc) = table.get(fc as usize..(fc as usize).saturating_add(lcb as usize)) else {
+        return Vec::new();
+    };
     // PlcSed: aCp[n+1] u32s + aSed[n] (Sed = fn 2, fcSepx 4, fnMpr 2, fcMpr 4).
     if plc.len() < 4 || (plc.len() - 4) % 16 != 0 {
         return Vec::new();
     }
     let n = (plc.len() - 4) / 16;
-    let cp_at = |i: usize| -> Option<u32> { plc.get(i * 4..i * 4 + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])) };
+    let cp_at = |i: usize| -> Option<u32> {
+        plc.get(i * 4..i * 4 + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    };
     let mut out = Vec::with_capacity(n.min(MAX_SECTIONS));
     for i in 0..n.min(MAX_SECTIONS) {
         let Some(end_cp) = cp_at(i + 1) else { break };
         let sed_at = (n + 1) * 4 + i * 12;
-        let fc_sepx = plc.get(sed_at + 2..sed_at + 6).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])).unwrap_or(0xFFFF_FFFF);
+        let fc_sepx = plc
+            .get(sed_at + 2..sed_at + 6)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .unwrap_or(0xFFFF_FFFF);
         let mut props = SectionProps::default();
         // Sepx: cb u16, then a grpprl of section sprms.
         let mut explicit_orient = false;
-        if let Some(grpprl) =
-            word.get(fc_sepx as usize..).and_then(|sepx| sepx.get(..2).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize)).and_then(|cb| {
+        if let Some(grpprl) = word
+            .get(fc_sepx as usize..)
+            .and_then(|sepx| {
+                sepx.get(..2)
+                    .map(|b| u16::from_le_bytes([b[0], b[1]]) as usize)
+            })
+            .and_then(|cb| {
                 let at = (fc_sepx as usize).checked_add(2)?;
                 word.get(at..at.checked_add(cb)?)
             })
@@ -103,7 +118,10 @@ fn apply_section(s: &mut SectionProps, prl: &Prl) {
         S_TITLE_PAGE => s.title_page = prl.operand.first().is_some_and(|&v| v != 0),
         S_CCOLUMNS => {
             if let Some(c) = s16(prl) {
-                s.columns = Columns { count: (c as u32).saturating_add(1).min(44), ..Default::default() };
+                s.columns = Columns {
+                    count: (c as u32).saturating_add(1).min(44),
+                    ..Default::default()
+                };
             }
         }
         S_PGN_START => {
@@ -172,11 +190,18 @@ fn apply_section(s: &mut SectionProps, prl: &Prl) {
 /// six stories in the order even header, odd (default) header, even footer, odd (default)
 /// footer, first header, first footer. The CPs are relative to the header subdocument.
 pub(crate) fn header_stories(table: &[u8], fib: &Fib) -> Vec<(u32, u32)> {
-    let Some((fc, lcb)) = fib.pair(pair::PLCF_HDD) else { return Vec::new() };
-    let Some(plc) = table.get(fc as usize..(fc as usize).saturating_add(lcb as usize)) else { return Vec::new() };
+    let Some((fc, lcb)) = fib.pair(pair::PLCF_HDD) else {
+        return Vec::new();
+    };
+    let Some(plc) = table.get(fc as usize..(fc as usize).saturating_add(lcb as usize)) else {
+        return Vec::new();
+    };
     // Only the six separator stories and six per section (at most 1024) are ever used.
     let n = (lcb as usize / 4).min(6 + 6 * MAX_SECTIONS + 1);
-    let cp_at = |i: usize| -> Option<u32> { plc.get(i * 4..i * 4 + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])) };
+    let cp_at = |i: usize| -> Option<u32> {
+        plc.get(i * 4..i * 4 + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    };
     let mut stories = Vec::with_capacity(n);
     for i in 0..n.saturating_sub(1) {
         if let (Some(a), Some(b)) = (cp_at(i), cp_at(i + 1)) {

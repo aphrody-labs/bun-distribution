@@ -89,7 +89,10 @@ impl PipelineStep {
 pub fn check_pipeline(config: &PipelineConfig) -> Vec<String> {
     let mut errors = Vec::new();
     if config.schema_version != 1 {
-        errors.push(format!("pipeline: unsupported schemaVersion {}", config.schema_version));
+        errors.push(format!(
+            "pipeline: unsupported schemaVersion {}",
+            config.schema_version
+        ));
     }
     let mut seen = std::collections::BTreeSet::new();
     for stage in &config.stages {
@@ -119,8 +122,12 @@ pub fn check_pipeline(config: &PipelineConfig) -> Vec<String> {
 
 /// Workspace directory name: lowercase ASCII, digits and `-`.
 fn is_repo_name(repo: &str) -> bool {
-    repo.chars().next().is_some_and(|c| c.is_ascii_alphanumeric())
-        && repo.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    repo.chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_alphanumeric())
+        && repo
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,7 +191,7 @@ pub fn execute_step(workspace_root: &Path, step: &PipelineStep) -> StepExecution
                 exit_code: -1,
                 output: e.to_string(),
             };
-        },
+        }
     };
 
     let mut cmd = Command::new(step.runner.program()).no_window();
@@ -210,7 +217,7 @@ pub fn execute_step(workspace_root: &Path, step: &PipelineStep) -> StepExecution
                 exit_code: out.status.code().unwrap_or(-1),
                 output: combined.trim().to_string(),
             }
-        },
+        }
         Err(e) => StepExecutionResult {
             repo: step.repo.clone(),
             command: cmd_str,
@@ -274,7 +281,10 @@ mod tests {
         assert_eq!(config.stages[0].id, "format");
         assert_eq!(config.stages[0].steps[0].repo, "aphrody");
         assert_eq!(config.stages[0].steps[0].runner, Runner::Bun);
-        assert_eq!(config.stages[0].steps[0].display(), "bun run monorepo:layout");
+        assert_eq!(
+            config.stages[0].steps[0].display(),
+            "bun run monorepo:layout"
+        );
         assert!(check_pipeline(&config).is_empty());
     }
 
@@ -346,7 +356,11 @@ mod tests {
             "the root Cargo gates run through the serial Just recipes"
         );
         assert!(
-            config.stages.iter().flat_map(|stage| &stage.steps).all(|step| step.repo == "aphrody")
+            config
+                .stages
+                .iter()
+                .flat_map(|stage| &stage.steps)
+                .all(|step| step.repo == "aphrody")
         );
     }
 }

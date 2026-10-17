@@ -13,7 +13,13 @@ pub enum Pattern {
     Date,
 }
 
-pub const PATTERNS: [Pattern; 5] = [Pattern::Phone, Pattern::Email, Pattern::CreditCard, Pattern::Ssn, Pattern::Date];
+pub const PATTERNS: [Pattern; 5] = [
+    Pattern::Phone,
+    Pattern::Email,
+    Pattern::CreditCard,
+    Pattern::Ssn,
+    Pattern::Date,
+];
 
 impl Pattern {
     pub fn label(self) -> &'static str {
@@ -56,7 +62,9 @@ fn digit_run(s: &[char], start: usize, seps: &[char], max_len: usize) -> (usize,
         let c = s[i];
         if c.is_ascii_digit() {
             n += 1;
-        } else if !(seps.contains(&c) && (digit(s.get(i + 1)) || s.get(i + 1) == Some(&'(')) || (c == '(' || c == ')') && seps.contains(&c)) {
+        } else if !(seps.contains(&c) && (digit(s.get(i + 1)) || s.get(i + 1) == Some(&'('))
+            || (c == '(' || c == ')') && seps.contains(&c))
+        {
             break;
         }
         i += 1;
@@ -69,8 +77,13 @@ fn digit_run(s: &[char], start: usize, seps: &[char], max_len: usize) -> (usize,
 }
 
 fn phone(s: &[char], i: usize) -> Option<usize> {
-    let start_ok = s[i] == '+' && digit(s.get(i + 1)) || s[i] == '(' && digit(s.get(i + 1)) || s[i].is_ascii_digit();
-    if !start_ok || word(i.checked_sub(1).and_then(|p| s.get(p))) || s.get(i.wrapping_sub(1)) == Some(&'+') {
+    let start_ok = s[i] == '+' && digit(s.get(i + 1))
+        || s[i] == '(' && digit(s.get(i + 1))
+        || s[i].is_ascii_digit();
+    if !start_ok
+        || word(i.checked_sub(1).and_then(|p| s.get(p)))
+        || s.get(i.wrapping_sub(1)) == Some(&'+')
+    {
         return None;
     }
     let plus = s[i] == '+';
@@ -129,12 +142,17 @@ fn email(s: &[char], i: usize) -> Option<usize> {
     }
     let d0 = j + 1;
     let mut k = d0;
-    while k < s.len() && (address_char(s[k]) || s[k] == '-' || s[k] == '.' && s.get(k + 1).is_some_and(|c| address_char(*c))) {
+    while k < s.len()
+        && (address_char(s[k])
+            || s[k] == '-'
+            || s[k] == '.' && s.get(k + 1).is_some_and(|c| address_char(*c)))
+    {
         k += 1;
     }
     let domain: String = s[d0..k].iter().collect();
     let tld = domain.rsplit('.').next().unwrap_or("");
-    (domain.contains('.') && tld.chars().count() >= 2 && tld.chars().all(char::is_alphabetic)).then_some(k - i)
+    (domain.contains('.') && tld.chars().count() >= 2 && tld.chars().all(char::is_alphabetic))
+        .then_some(k - i)
 }
 
 fn luhn(digits: &[u32]) -> bool {
@@ -172,7 +190,8 @@ fn ssn(s: &[char], i: usize) -> Option<usize> {
     }
     let g = |from: usize, n: usize| (from..from + n).all(|k| digit(s.get(k)));
     let sep = |k: usize| matches!(s.get(k), Some('-' | ' '));
-    if !(g(i, 3) && sep(i + 3) && g(i + 4, 2) && sep(i + 6) && g(i + 7, 4)) || digit(s.get(i + 11)) {
+    if !(g(i, 3) && sep(i + 3) && g(i + 4, 2) && sep(i + 6) && g(i + 7, 4)) || digit(s.get(i + 11))
+    {
         return None;
     }
     let area: String = s[i..i + 3].iter().collect();
@@ -182,17 +201,76 @@ fn ssn(s: &[char], i: usize) -> Option<usize> {
 /// Month names the date pattern knows: English, then the languages whose dates are written
 /// "5 Ekim 2024" / "5. Oktober 2024" (day, month name, year).
 const MONTHS: [[&str; 12]; 5] = [
-    ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"],
-    ["ocak", "şubat", "mart", "nisan", "mayıs", "haziran", "temmuz", "ağustos", "eylül", "ekim", "kasım", "aralık"],
-    ["januar", "februar", "märz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"],
-    ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
-    ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"],
+    [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+    ],
+    [
+        "ocak", "şubat", "mart", "nisan", "mayıs", "haziran", "temmuz", "ağustos", "eylül", "ekim",
+        "kasım", "aralık",
+    ],
+    [
+        "januar",
+        "februar",
+        "märz",
+        "april",
+        "mai",
+        "juni",
+        "juli",
+        "august",
+        "september",
+        "oktober",
+        "november",
+        "dezember",
+    ],
+    [
+        "janvier",
+        "février",
+        "mars",
+        "avril",
+        "mai",
+        "juin",
+        "juillet",
+        "août",
+        "septembre",
+        "octobre",
+        "novembre",
+        "décembre",
+    ],
+    [
+        "gennaio",
+        "febbraio",
+        "marzo",
+        "aprile",
+        "maggio",
+        "giugno",
+        "luglio",
+        "agosto",
+        "settembre",
+        "ottobre",
+        "novembre",
+        "dicembre",
+    ],
 ];
 
 /// Abbreviations that may end in a full stop: English and Turkish ("Oca.", "Şub", "Ağu").
 const MONTH_ABBREVIATIONS: [[&str; 12]; 2] = [
-    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"],
-    ["oca", "şub", "mar", "nis", "may", "haz", "tem", "ağu", "eyl", "eki", "kas", "ara"],
+    [
+        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    ],
+    [
+        "oca", "şub", "mar", "nis", "may", "haz", "tem", "ağu", "eyl", "eki", "kas", "ara",
+    ],
 ];
 
 /// One lowercase character for `c`, with Turkish dotted and dotless i the same as i, so
@@ -221,15 +299,27 @@ fn month(s: &[char], i: usize) -> Option<usize> {
     if word(i.checked_sub(1).and_then(|p| s.get(p))) {
         return None;
     }
-    if let Some(n) = MONTHS.iter().flatten().filter_map(|m| word_at(s, i, m)).max() {
+    if let Some(n) = MONTHS
+        .iter()
+        .flatten()
+        .filter_map(|m| word_at(s, i, m))
+        .max()
+    {
         return Some(n);
     }
-    let n = MONTH_ABBREVIATIONS.iter().flatten().find_map(|m| word_at(s, i, m))?;
+    let n = MONTH_ABBREVIATIONS
+        .iter()
+        .flatten()
+        .find_map(|m| word_at(s, i, m))?;
     Some(if s.get(i + n) == Some(&'.') { n + 1 } else { n })
 }
 
 fn number(s: &[char], i: usize, min: usize, max: usize) -> Option<usize> {
-    let n = s[i.min(s.len())..].iter().take(max + 1).take_while(|c| c.is_ascii_digit()).count();
+    let n = s[i.min(s.len())..]
+        .iter()
+        .take(max + 1)
+        .take_while(|c| c.is_ascii_digit())
+        .count();
     (n >= min && n <= max).then_some(n)
 }
 
@@ -237,14 +327,24 @@ fn date(s: &[char], i: usize) -> Option<usize> {
     if word(i.checked_sub(1).and_then(|p| s.get(p))) {
         return None;
     }
-    let spaces = |k: usize| s[k.min(s.len())..].iter().take_while(|c| **c == ' ').count();
+    let spaces = |k: usize| {
+        s[k.min(s.len())..]
+            .iter()
+            .take_while(|c| **c == ' ')
+            .count()
+    };
     // Numeric: m/d/yy(yy), m-d-yyyy, d.m.yyyy, yyyy-mm-dd.
     if let Some(a) = number(s, i, 1, 4) {
         let sep = s.get(i + a).copied();
         if matches!(sep, Some('/' | '-' | '.'))
             && let Some(b) = number(s, i + a + 1, 1, 2)
             && s.get(i + a + 1 + b).copied() == sep
-            && let Some(c) = number(s, i + a + b + 2, if a == 4 { 1 } else { 2 }, if a == 4 { 2 } else { 4 })
+            && let Some(c) = number(
+                s,
+                i + a + b + 2,
+                if a == 4 { 1 } else { 2 },
+                if a == 4 { 2 } else { 4 },
+            )
             && (a <= 2 || a == 4)
             && !digit(s.get(i + a + b + 2 + c))
         {
@@ -322,31 +422,56 @@ mod tests {
 
     #[test]
     fn word_lists_are_trimmed_unique_and_bounded() {
-        assert_eq!(word_list("  John Smith \n\n\tACME\r\nJohn Smith\n  \nő ű"), ["John Smith", "ACME", "ő ű"]);
+        assert_eq!(
+            word_list("  John Smith \n\n\tACME\r\nJohn Smith\n  \nő ű"),
+            ["John Smith", "ACME", "ő ű"]
+        );
         let long = "é".repeat(MAX_WORD_CHARS + 10);
         assert_eq!(word_list(&long)[0].chars().count(), MAX_WORD_CHARS);
         let many: String = (0..MAX_WORDS + 50).map(|i| format!("w{i}\n")).collect();
         let list = word_list(&many);
-        assert_eq!((list.len(), list.last().map(String::as_str)), (MAX_WORDS, Some("w999")));
+        assert_eq!(
+            (list.len(), list.last().map(String::as_str)),
+            (MAX_WORDS, Some("w999"))
+        );
         assert!(word_list("").is_empty());
     }
 
     fn found(p: Pattern, s: &str) -> Vec<String> {
         let c: Vec<char> = s.chars().collect();
-        find(p, &c).into_iter().map(|r| c[r].iter().collect()).collect()
+        find(p, &c)
+            .into_iter()
+            .map(|r| c[r].iter().collect())
+            .collect()
     }
 
     #[test]
     fn phone_numbers() {
         assert_eq!(
-            found(Pattern::Phone, "Call (555) 123-4567 or 555.987.6543, +1 555 222 3333; not 12345 or 5551234567890"),
+            found(
+                Pattern::Phone,
+                "Call (555) 123-4567 or 555.987.6543, +1 555 222 3333; not 12345 or 5551234567890"
+            ),
             ["(555) 123-4567", "555.987.6543", "+1 555 222 3333"]
         );
         // #525: international numbers match whole; "+49" used to stay visible.
-        assert_eq!(found(Pattern::Phone, "Tel. +49 2151 123456."), ["+49 2151 123456"]);
         assert_eq!(
-            found(Pattern::Phone, "+44 20 7946 0018, +33 1 23 45 67 89, +49 (0) 2151 123456, (0211) 123456, 030 12345678, 01 23 45 67 89"),
-            ["+44 20 7946 0018", "+33 1 23 45 67 89", "+49 (0) 2151 123456", "(0211) 123456", "030 12345678", "01 23 45 67 89"]
+            found(Pattern::Phone, "Tel. +49 2151 123456."),
+            ["+49 2151 123456"]
+        );
+        assert_eq!(
+            found(
+                Pattern::Phone,
+                "+44 20 7946 0018, +33 1 23 45 67 89, +49 (0) 2151 123456, (0211) 123456, 030 12345678, 01 23 45 67 89"
+            ),
+            [
+                "+44 20 7946 0018",
+                "+33 1 23 45 67 89",
+                "+49 (0) 2151 123456",
+                "(0211) 123456",
+                "030 12345678",
+                "01 23 45 67 89"
+            ]
         );
         // Not phone numbers: day-first dates, decimals, unseparated, too short or too long.
         assert_eq!(
@@ -361,7 +486,10 @@ mod tests {
     #[test]
     fn emails() {
         assert_eq!(
-            found(Pattern::Email, "Write to ada.lovelace+pdf@example.co.uk, or bob@host (no TLD) or x@y.z."),
+            found(
+                Pattern::Email,
+                "Write to ada.lovelace+pdf@example.co.uk, or bob@host (no TLD) or x@y.z."
+            ),
             ["ada.lovelace+pdf@example.co.uk"]
         );
     }
@@ -369,19 +497,40 @@ mod tests {
     #[test]
     fn internationalized_emails() {
         assert_eq!(
-            found(Pattern::Email, "Yazın: ayşe.yılmaz@örnek.com.tr, ÇAĞLAR@ŞİRKET.COM.TR; müller@bücher.de, иван@пример.рф, josé@correo.es."),
-            ["ayşe.yılmaz@örnek.com.tr", "ÇAĞLAR@ŞİRKET.COM.TR", "müller@bücher.de", "иван@пример.рф", "josé@correo.es"]
+            found(
+                Pattern::Email,
+                "Yazın: ayşe.yılmaz@örnek.com.tr, ÇAĞLAR@ŞİRKET.COM.TR; müller@bücher.de, иван@пример.рф, josé@correo.es."
+            ),
+            [
+                "ayşe.yılmaz@örnek.com.tr",
+                "ÇAĞLAR@ŞİRKET.COM.TR",
+                "müller@bücher.de",
+                "иван@пример.рф",
+                "josé@correo.es"
+            ]
         );
         // Text in scripts without spaces stays out of the address around it.
-        assert_eq!(found(Pattern::Email, "メールはtaro@example.jpまで、联系support@example.cn谢谢"), ["taro@example.jp", "support@example.cn"]);
+        assert_eq!(
+            found(
+                Pattern::Email,
+                "メールはtaro@example.jpまで、联系support@example.cn谢谢"
+            ),
+            ["taro@example.jp", "support@example.cn"]
+        );
         // Still no address without a dot in the domain or with a one-letter or numeric TLD.
-        assert_eq!(found(Pattern::Email, "ayşe@örnek, ş@ğ.ü, kişi@alan.123, a@b.c"), Vec::<String>::new());
+        assert_eq!(
+            found(Pattern::Email, "ayşe@örnek, ş@ğ.ü, kişi@alan.123, a@b.c"),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn credit_cards_need_a_valid_checksum() {
         assert_eq!(
-            found(Pattern::CreditCard, "Visa 4111 1111 1111 1111, bad 4111 1111 1111 1112, amex 3782-822463-10005"),
+            found(
+                Pattern::CreditCard,
+                "Visa 4111 1111 1111 1111, bad 4111 1111 1111 1112, amex 3782-822463-10005"
+            ),
             ["4111 1111 1111 1111", "3782-822463-10005"]
         );
     }
@@ -389,7 +538,10 @@ mod tests {
     #[test]
     fn social_security_numbers() {
         assert_eq!(
-            found(Pattern::Ssn, "SSN 123-45-6789 and 123 45 6789; invalid 000-12-3456, 666-12-3456, 912-12-3456, 1234-56-7890"),
+            found(
+                Pattern::Ssn,
+                "SSN 123-45-6789 and 123 45 6789; invalid 000-12-3456, 666-12-3456, 912-12-3456, 1234-56-7890"
+            ),
             ["123-45-6789", "123 45 6789"]
         );
     }
@@ -397,24 +549,57 @@ mod tests {
     #[test]
     fn dates() {
         assert_eq!(
-            found(Pattern::Date, "Due 10/01/2026, 2026-10-01, 1.10.26, March 5, 2024, Jan. 7 2025 and 5 June 2023; not 10/2026 or Mayday 12"),
-            ["10/01/2026", "2026-10-01", "1.10.26", "March 5, 2024", "Jan. 7 2025", "5 June 2023"]
+            found(
+                Pattern::Date,
+                "Due 10/01/2026, 2026-10-01, 1.10.26, March 5, 2024, Jan. 7 2025 and 5 June 2023; not 10/2026 or Mayday 12"
+            ),
+            [
+                "10/01/2026",
+                "2026-10-01",
+                "1.10.26",
+                "March 5, 2024",
+                "Jan. 7 2025",
+                "5 June 2023"
+            ]
         );
     }
 
     #[test]
     fn dates_with_turkish_month_names_in_any_case() {
         assert_eq!(
-            found(Pattern::Date, "Tarih: 10 Ekim 2026, 3 Mayıs 2025, 5 Şubat 2024, 5 ŞUBAT 2024, 3 MAYIS 2025, 1 EKİM 2026 ve 9 kasım 2023."),
-            ["10 Ekim 2026", "3 Mayıs 2025", "5 Şubat 2024", "5 ŞUBAT 2024", "3 MAYIS 2025", "1 EKİM 2026", "9 kasım 2023"]
+            found(
+                Pattern::Date,
+                "Tarih: 10 Ekim 2026, 3 Mayıs 2025, 5 Şubat 2024, 5 ŞUBAT 2024, 3 MAYIS 2025, 1 EKİM 2026 ve 9 kasım 2023."
+            ),
+            [
+                "10 Ekim 2026",
+                "3 Mayıs 2025",
+                "5 Şubat 2024",
+                "5 ŞUBAT 2024",
+                "3 MAYIS 2025",
+                "1 EKİM 2026",
+                "9 kasım 2023"
+            ]
         );
         assert_eq!(
-            found(Pattern::Date, "12 Oca 2024, 7 Şub. 2025, 30 Ağu 2023, 1 ARA. 2022, 2 Haz 2021"),
-            ["12 Oca 2024", "7 Şub. 2025", "30 Ağu 2023", "1 ARA. 2022", "2 Haz 2021"]
+            found(
+                Pattern::Date,
+                "12 Oca 2024, 7 Şub. 2025, 30 Ağu 2023, 1 ARA. 2022, 2 Haz 2021"
+            ),
+            [
+                "12 Oca 2024",
+                "7 Şub. 2025",
+                "30 Ağu 2023",
+                "1 ARA. 2022",
+                "2 Haz 2021"
+            ]
         );
         // Words that only start like a month, or a month without a day and year, stay.
         assert_eq!(
-            found(Pattern::Date, "5 Martı 2024, Ekimde 2026, 3 Mayısta 2025, ara 2024, Kasım ayında, 12 Aralık, Aralık 2024"),
+            found(
+                Pattern::Date,
+                "5 Martı 2024, Ekimde 2026, 3 Mayısta 2025, ara 2024, Kasım ayında, 12 Aralık, Aralık 2024"
+            ),
             Vec::<String>::new()
         );
     }
@@ -422,16 +607,34 @@ mod tests {
     #[test]
     fn dates_with_german_french_and_italian_month_names() {
         assert_eq!(
-            found(Pattern::Date, "am 10. Oktober 2026, 3 März 2025, le 14 juillet 2024, 1 août 2023, il 25 dicembre 2022"),
-            ["10. Oktober 2026", "3 März 2025", "14 juillet 2024", "1 août 2023", "25 dicembre 2022"]
+            found(
+                Pattern::Date,
+                "am 10. Oktober 2026, 3 März 2025, le 14 juillet 2024, 1 août 2023, il 25 dicembre 2022"
+            ),
+            [
+                "10. Oktober 2026",
+                "3 März 2025",
+                "14 juillet 2024",
+                "1 août 2023",
+                "25 dicembre 2022"
+            ]
         );
         // "Mai" alone, a dotted day without a month and an unknown word are not dates.
-        assert_eq!(found(Pattern::Date, "Mai 2024, Kapitel 5. Absatz 2024, 5 Oktoberfest 2024"), Vec::<String>::new());
+        assert_eq!(
+            found(
+                Pattern::Date,
+                "Mai 2024, Kapitel 5. Absatz 2024, 5 Oktoberfest 2024"
+            ),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
     fn case_folding_keeps_one_character_per_character() {
         let s: Vec<char> = "\u{130}\u{131}I\u{15E}".chars().collect();
-        assert_eq!(s.iter().copied().map(fold).collect::<String>(), "iii\u{15F}");
+        assert_eq!(
+            s.iter().copied().map(fold).collect::<String>(),
+            "iii\u{15F}"
+        );
     }
 }

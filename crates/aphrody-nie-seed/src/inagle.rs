@@ -47,16 +47,27 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
     let src = Connection::open(&sqlite_path)
         .with_context(|| format!("ouverture de {}", sqlite_path.display()))?;
 
-    let tx = db.conn_mut().transaction().context("ouverture de transaction inagle")?;
+    let tx = db
+        .conn_mut()
+        .transaction()
+        .context("ouverture de transaction inagle")?;
 
     let mut total = 0usize;
 
     // ── inagle_characters : id = "0xXXXXXXXX", name_fr ─────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_characters", "id", "name_fr", "chara", None)
-        .unwrap_or_else(|e| {
-            warn!("inagle_characters: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_characters",
+        "id",
+        "name_fr",
+        "chara",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_characters: {e}");
+        0
+    });
 
     // ── inagle_items : id = "0xXXXXXXXX", name_fr ───────────────────────────
     total += ingest_table_simple(&src, &tx, "inagle_items", "id", "name_fr", "item", None)
@@ -80,18 +91,34 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
         });
 
     // ── inagle_auras : id = "aura_0xXXXXXXXX", name_fr ──────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_auras", "id", "name_fr", "aura", Some("aura_"))
-        .unwrap_or_else(|e| {
-            warn!("inagle_auras: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_auras",
+        "id",
+        "name_fr",
+        "aura",
+        Some("aura_"),
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_auras: {e}");
+        0
+    });
 
     // ── inagle_souls : id = "soul_0xXXXXXXXX", name_fr ──────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_souls", "id", "name_fr", "soul", Some("soul_"))
-        .unwrap_or_else(|e| {
-            warn!("inagle_souls: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_souls",
+        "id",
+        "name_fr",
+        "soul",
+        Some("soul_"),
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_souls: {e}");
+        0
+    });
 
     // ── inagle_quests : id = "0xXXXXXXXX", nom extrait du JSON (colonne data) ─
     total += ingest_quests(&src, &tx).unwrap_or_else(|e| {
@@ -107,27 +134,49 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
         });
 
     // ── inagle_passives : id = "0xXXXXXXXX", name_fr ─────────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_passives", "id", "name_fr", "passive", None)
-        .unwrap_or_else(|e| {
-            warn!("inagle_passives: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_passives",
+        "id",
+        "name_fr",
+        "passive",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_passives: {e}");
+        0
+    });
 
     // ── inagle_trophies : trophy_id = "0xXXXXXXXX", name_fr ──────────────────
-    total +=
-        ingest_table_simple(&src, &tx, "inagle_trophies", "trophy_id", "name_fr", "trophy", None)
-            .unwrap_or_else(|e| {
-                warn!("inagle_trophies: {e}");
-                0
-            });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_trophies",
+        "trophy_id",
+        "name_fr",
+        "trophy",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_trophies: {e}");
+        0
+    });
 
     // ── inagle_missions : mission_id = "0xXXXXXXXX", name_fr ─────────────────
-    total +=
-        ingest_table_simple(&src, &tx, "inagle_missions", "mission_id", "name_fr", "mission", None)
-            .unwrap_or_else(|e| {
-                warn!("inagle_missions: {e}");
-                0
-            });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_missions",
+        "mission_id",
+        "name_fr",
+        "mission",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_missions: {e}");
+        0
+    });
 
     // ── inagle_keshins : id = "0xXXXXXXXX", name_fr ──────────────────────────
     total += ingest_table_simple(&src, &tx, "inagle_keshins", "id", "name_fr", "keshin", None)
@@ -167,12 +216,19 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
     });
 
     // ── inagle_formations : id = "0xXXXXXXXX", name_fr ───────────────────────
-    total +=
-        ingest_table_simple(&src, &tx, "inagle_formations", "id", "name_fr", "formation", None)
-            .unwrap_or_else(|e| {
-                warn!("inagle_formations: {e}");
-                0
-            });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_formations",
+        "id",
+        "name_fr",
+        "formation",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_formations: {e}");
+        0
+    });
 
     // ── inagle_basara : character_id = "0xXXXXXXXX", name_localised ──────────
     total += ingest_table_simple(
@@ -190,18 +246,34 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
     });
 
     // ── inagle_stadiums : id = "0xXXXXXXXX", image_path ──────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_stadiums", "id", "image_path", "stadium", None)
-        .unwrap_or_else(|e| {
-            warn!("inagle_stadiums: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_stadiums",
+        "id",
+        "image_path",
+        "stadium",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_stadiums: {e}");
+        0
+    });
 
     // ── inagle_costumes : id = "0xXXXXXXXX", model_ref ───────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_costumes", "id", "model_ref", "costume", None)
-        .unwrap_or_else(|e| {
-            warn!("inagle_costumes: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_costumes",
+        "id",
+        "model_ref",
+        "costume",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_costumes: {e}");
+        0
+    });
 
     // ── inagle_super_tactics : crc_id = "0xXXXXXXXX", id ──────────────────────
     total += ingest_table_simple(
@@ -219,11 +291,19 @@ pub fn ingest_inagle_hashes(db: &mut Db, sqlite_dir: &Path) -> Result<usize> {
     });
 
     // ── inagle_tricks : id = "0xXXXXXXXX", trick_id_name ─────────────────────
-    total += ingest_table_simple(&src, &tx, "inagle_tricks", "id", "trick_id_name", "trick", None)
-        .unwrap_or_else(|e| {
-            warn!("inagle_tricks: {e}");
-            0
-        });
+    total += ingest_table_simple(
+        &src,
+        &tx,
+        "inagle_tricks",
+        "id",
+        "trick_id_name",
+        "trick",
+        None,
+    )
+    .unwrap_or_else(|e| {
+        warn!("inagle_tricks: {e}");
+        0
+    });
 
     // ── inagle_opponent_teams : id = "0xXXXXXXXX", team_id ────────────────────
     total += ingest_table_simple(
@@ -302,7 +382,9 @@ fn ingest_table_simple(
            AND {name_col} != ''",
     );
 
-    let mut stmt = src.prepare(&query).with_context(|| format!("préparation requête {table}"))?;
+    let mut stmt = src
+        .prepare(&query)
+        .with_context(|| format!("préparation requête {table}"))?;
 
     let rows = stmt
         .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
@@ -442,7 +524,10 @@ mod tests {
 
     #[test]
     fn strip_prefix_aura() {
-        assert_eq!(strip_id_prefix("aura_0xD67B0DE4", Some("aura_")), "0xD67B0DE4");
+        assert_eq!(
+            strip_id_prefix("aura_0xD67B0DE4", Some("aura_")),
+            "0xD67B0DE4"
+        );
         assert_eq!(strip_id_prefix("0xD67B0DE4", Some("aura_")), "0xD67B0DE4");
         assert_eq!(strip_id_prefix("0xD67B0DE4", None), "0xD67B0DE4");
     }
@@ -526,7 +611,9 @@ mod tests {
         // Vérifier la quest.
         let quest_name: String = db
             .conn()
-            .query_row("SELECT name FROM hash_name WHERE kind = 'quest'", [], |r| r.get(0))
+            .query_row("SELECT name FROM hash_name WHERE kind = 'quest'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(quest_name, "Interrogez les élèves.");
     }

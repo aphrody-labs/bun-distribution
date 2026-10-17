@@ -16,7 +16,14 @@
 //! positioned glyph runs in shape-local coordinates plus per-line caret geometry for editing:
 //! bidirectional carets with affinity, logical and visual movement, and selection as the union of
 //! visual boxes.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod bidi;
@@ -30,7 +37,10 @@ use deckcraft_fonts::script::{self, joins_following, joins_preceding};
 use deckcraft_fonts::{FontDb, FontFace, FontSlot, ScriptTag, ShapeParams};
 use deckcraft_geom::{Point, Rect};
 use deckcraft_model::resolve::{self, Ctx};
-use deckcraft_model::text::{Align, Anchor, AutoFit, BodyProps, Bullet, Caps, ParaProps, RunKind, RunProps, Spacing, Strike, TextBody, TextDir};
+use deckcraft_model::text::{
+    Align, Anchor, AutoFit, BodyProps, Bullet, Caps, ParaProps, RunKind, RunProps, Spacing, Strike,
+    TextBody, TextDir,
+};
 use deckcraft_model::{Fill, Shape};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -80,7 +90,11 @@ pub struct TextShadow {
 
 impl std::fmt::Debug for GlyphRun {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GlyphRun").field("family", &self.face.family).field("size", &self.size).field("glyphs", &self.glyphs.len()).finish()
+        f.debug_struct("GlyphRun")
+            .field("family", &self.face.family)
+            .field("size", &self.size)
+            .field("glyphs", &self.glyphs.len())
+            .finish()
     }
 }
 
@@ -163,7 +177,11 @@ pub trait Fields {
 pub struct NoFields;
 impl Fields for NoFields {
     fn field(&self, kind: &str) -> Option<String> {
-        if kind == "slidenum" { Some("1".into()) } else { None }
+        if kind == "slidenum" {
+            Some("1".into())
+        } else {
+            None
+        }
     }
 }
 
@@ -276,7 +294,14 @@ fn make_style(ctx: &Ctx, r: &RunProps, scale: f64, prompt: Option<Rgba>) -> Styl
             for s in &mut g.stops {
                 s.color = deckcraft_model::ColorRef::rgb(ctx.color(&s.color, None));
             }
-            (g.stops.first().map(|s| ctx.color(&s.color, None)).unwrap_or(Rgba::BLACK), 1.0, Some(g))
+            (
+                g.stops
+                    .first()
+                    .map(|s| ctx.color(&s.color, None))
+                    .unwrap_or(Rgba::BLACK),
+                1.0,
+                Some(g),
+            )
         }
         Some(Fill::None) => (Rgba::TRANSPARENT, 0.0, None),
         _ => (resolve::text_color(ctx, r), 1.0, None),
@@ -292,7 +317,12 @@ fn make_style(ctx: &Ctx, r: &RunProps, scale: f64, prompt: Option<Rgba>) -> Styl
     };
     let ea = slot_family(&r.font_ea, if major { "+mj-ea" } else { "+mn-ea" });
     let cs = slot_family(&r.font_cs, if major { "+mj-cs" } else { "+mn-cs" });
-    let underline = r.underline.as_deref().filter(|u| *u != "none").map(|_| r.underline_color.as_ref().map(|c| ctx.color(c, None)).unwrap_or(color));
+    let underline = r.underline.as_deref().filter(|u| *u != "none").map(|_| {
+        r.underline_color
+            .as_ref()
+            .map(|c| ctx.color(c, None))
+            .unwrap_or(color)
+    });
     let outline = r.outline.as_ref().and_then(|l| match &l.fill {
         Some(Fill::Solid { color: c }) => Some((ctx.color(c, None), l.width.unwrap_or(0.75))),
         _ => None,
@@ -318,7 +348,11 @@ fn make_style(ctx: &Ctx, r: &RunProps, scale: f64, prompt: Option<Rgba>) -> Styl
         lang: r.lang.clone().filter(|l| !l.is_empty()),
         ea,
         cs,
-        sym: r.font_sym.as_deref().map(|f| ctx.master.theme.font(f)).filter(|f| !f.trim().is_empty()),
+        sym: r
+            .font_sym
+            .as_deref()
+            .map(|f| ctx.master.theme.font(f))
+            .filter(|f| !f.trim().is_empty()),
         major,
         kern: r.kern.is_some_and(|k| k > 0.0 && size + 1e-6 >= k * scale),
     }
@@ -326,7 +360,12 @@ fn make_style(ctx: &Ctx, r: &RunProps, scale: f64, prompt: Option<Rgba>) -> Styl
 
 /// The faces to try for a cluster of `slot`/`script` in style `st`, in order: the slot's
 /// typeface, the theme's font for the script (`a:font[@script]`), then the run's Latin face.
-fn face_chain(ctx: &Ctx, st: &Style, slot: FontSlot, script: Option<ScriptTag>) -> Vec<Arc<FontFace>> {
+fn face_chain(
+    ctx: &Ctx,
+    st: &Style,
+    slot: FontSlot,
+    script: Option<ScriptTag>,
+) -> Vec<Arc<FontFace>> {
     let db = FontDb::global();
     let mut chain: Vec<Arc<FontFace>> = Vec::with_capacity(3);
     let mut push = |family: &str| {
@@ -344,7 +383,11 @@ fn face_chain(ctx: &Ctx, st: &Style, slot: FontSlot, script: Option<ScriptTag>) 
         FontSlot::Latin => {}
     }
     if let Some(sc) = script.and_then(|t| std::str::from_utf8(&t).ok().map(String::from)) {
-        let set = if st.major { &ctx.master.theme.fonts.major } else { &ctx.master.theme.fonts.minor };
+        let set = if st.major {
+            &ctx.master.theme.fonts.major
+        } else {
+            &ctx.master.theme.fonts.minor
+        };
         if let Some(f) = set.script(&sc) {
             push(f);
         }
@@ -434,7 +477,15 @@ pub fn autonum(scheme: &str, n: u32) -> String {
     }
 }
 
-fn shape_para(ctx: &Ctx, shape: &Shape, body: &TextBody, pi: usize, scale: f64, opts: &Opts, number: Option<u32>) -> ParaShaped {
+fn shape_para(
+    ctx: &Ctx,
+    shape: &Shape,
+    body: &TextBody,
+    pi: usize,
+    scale: f64,
+    opts: &Opts,
+    number: Option<u32>,
+) -> ParaShaped {
     let db = FontDb::global();
     let Some(para) = body.paragraphs.get(pi) else {
         let face = db.face("Inter", "Regular");
@@ -463,7 +514,10 @@ fn shape_para(ctx: &Ctx, shape: &Shape, body: &TextBody, pi: usize, scale: f64, 
         let t: String = match &run.kind {
             RunKind::Text => run.text.clone(),
             RunKind::Break => "\u{b}".into(),
-            RunKind::Field { field } => opts.fields.field_in(field, rp.lang.as_deref()).unwrap_or_else(|| run.text.clone()),
+            RunKind::Field { field } => opts
+                .fields
+                .field_in(field, rp.lang.as_deref())
+                .unwrap_or_else(|| run.text.clone()),
             RunKind::Math { .. } => run.text.clone(),
         };
         let si = styles.len();
@@ -472,7 +526,11 @@ fn shape_para(ctx: &Ctx, shape: &Shape, body: &TextBody, pi: usize, scale: f64, 
         text.push_str(&t);
     }
     let cells = shape_cells(ctx, &text, &char_style, &styles, &mut faces, rtl);
-    let lead = para.runs.first().map(|r| resolve::run(ctx, shape, para, &r.props)).unwrap_or_else(|| resolve::run(ctx, shape, para, &para.end_props));
+    let lead = para
+        .runs
+        .first()
+        .map(|r| resolve::run(ctx, shape, para, &r.props))
+        .unwrap_or_else(|| resolve::run(ctx, shape, para, &para.end_props));
     let lead_style = make_style(ctx, &lead, scale, opts.prompt_color);
     let lead_size = lead_style.size;
     let lead_face = lead_style.face.clone();
@@ -521,14 +579,29 @@ fn shape_para(ctx: &Ctx, shape: &Shape, body: &TextBody, pi: usize, scale: f64, 
                 rp.size = Some(lead.size.unwrap_or(18.0) * props.bullet_size.unwrap_or(1.0));
                 rp.underline = None;
                 let mut st = make_style(ctx, &rp, scale, opts.prompt_color);
-                let label = autonum(scheme, start_at.saturating_sub(1).saturating_add(number.unwrap_or(1)));
+                let label = autonum(
+                    scheme,
+                    start_at
+                        .saturating_sub(1)
+                        .saturating_add(number.unwrap_or(1)),
+                );
                 bullet_face(db, &mut st, &label);
                 Some((label, st))
             }
             _ => None,
         }
     };
-    ParaShaped { cells, styles, faces, props, lead_size, lead_face, bullet, level: para.level, rtl }
+    ParaShaped {
+        cells,
+        styles,
+        faces,
+        props,
+        lead_size,
+        lead_face,
+        bullet,
+        level: para.level,
+        rtl,
+    }
 }
 
 /// A face that draws the bullet `label` when the bullet's own can't (circled numbers ①, arrows
@@ -546,26 +619,45 @@ fn bullet_face(db: &FontDb, st: &mut Style, label: &str) {
 fn run_effects(ctx: &Ctx, r: &RunProps, scale: f64) -> Option<RunEffects> {
     let shadow = r.shadow.as_ref().filter(|s| !s.inner).map(|s| {
         let a = s.dir.to_radians();
-        TextShadow { color: ctx.color(&s.color, None), blur: s.blur.max(0.0) * scale, dx: a.cos() * s.dist * scale, dy: a.sin() * s.dist * scale }
+        TextShadow {
+            color: ctx.color(&s.color, None),
+            blur: s.blur.max(0.0) * scale,
+            dx: a.cos() * s.dist * scale,
+            dy: a.sin() * s.dist * scale,
+        }
     });
-    let glow = r.glow.as_ref().filter(|g| g.radius > 0.0).map(|g| (ctx.color(&g.color, None), g.radius * scale));
+    let glow = r
+        .glow
+        .as_ref()
+        .filter(|g| g.radius > 0.0)
+        .map(|g| (ctx.color(&g.color, None), g.radius * scale));
     (shadow.is_some() || glow.is_some()).then_some(RunEffects { shadow, glow })
 }
 
-fn shape_cells(ctx: &Ctx, text: &str, char_style: &[usize], styles: &[Style], faces: &mut Vec<Arc<FontFace>>, rtl: bool) -> Vec<Cell> {
+fn shape_cells(
+    ctx: &Ctx,
+    text: &str,
+    char_style: &[usize],
+    styles: &[Style],
+    faces: &mut Vec<Arc<FontFace>>,
+    rtl: bool,
+) -> Vec<Cell> {
     let db = FontDb::global();
     let chars: Vec<char> = text.chars().collect();
     let n = chars.len();
     // Byte offset of each character (and of the end).
     let mut byte_of: Vec<usize> = text.char_indices().map(|(b, _)| b).collect();
     byte_of.push(text.len());
-    let char_at_byte: HashMap<usize, usize> = byte_of.iter().enumerate().map(|(i, b)| (*b, i)).collect();
+    let char_at_byte: HashMap<usize, usize> =
+        byte_of.iter().enumerate().map(|(i, b)| (*b, i)).collect();
     let levels = bidi::levels(text, &chars, rtl);
     let scripts = script::resolve(&chars);
     let mut boundary = vec![false; n];
     let mut graphemes: Vec<(usize, usize)> = Vec::new();
     for (b, g) in text.grapheme_indices(true) {
-        let Some(&i) = char_at_byte.get(&b) else { continue };
+        let Some(&i) = char_at_byte.get(&b) else {
+            continue;
+        };
         if let Some(x) = boundary.get_mut(i) {
             *x = true;
         }
@@ -580,31 +672,47 @@ fn shape_cells(ctx: &Ctx, text: &str, char_style: &[usize], styles: &[Style], fa
     };
     // A face per grapheme cluster (never split between faces).
     let mut char_face = vec![0usize; n];
-    let mut chains: HashMap<(usize, FontSlot, Option<ScriptTag>), Vec<Arc<FontFace>>> = HashMap::new();
+    let mut chains: HashMap<(usize, FontSlot, Option<ScriptTag>), Vec<Arc<FontFace>>> =
+        HashMap::new();
     let mut prev: Option<Arc<FontFace>> = None;
     for &(a, b) in &graphemes {
-        let Some(cluster) = chars.get(a..b) else { continue };
+        let Some(cluster) = chars.get(a..b) else {
+            continue;
+        };
         let si = char_style.get(a).copied().unwrap_or(0);
         let Some(st) = styles.get(si) else { continue };
         let (sc, slot) = scripts.get(a).copied().unwrap_or((None, FontSlot::Latin));
         // Spaces, digits and punctuation stay in the face of the text before them when it can
         // draw them, so a phrase isn't cut into items at every space.
         // Emoji, and pictographs asked to look like text (U+FE0E), pick their own face.
-        let neutral =
-            cluster.iter().all(|c| script::script_of(*c).is_none()) && !deckcraft_fonts::is_emoji_cluster(cluster) && !cluster.contains(&'\u{FE0E}');
+        let neutral = cluster.iter().all(|c| script::script_of(*c).is_none())
+            && !deckcraft_fonts::is_emoji_cluster(cluster)
+            && !cluster.contains(&'\u{FE0E}');
         // A symbol-font character (U+F0xx) with an `a:sym` font draws in that font when it's there.
         let sym_face = st
             .sym
             .as_deref()
-            .filter(|_| cluster.first().is_some_and(|c| ('\u{F000}'..='\u{F0FF}').contains(c)))
+            .filter(|_| {
+                cluster
+                    .first()
+                    .is_some_and(|c| ('\u{F000}'..='\u{F0FF}').contains(c))
+            })
             .filter(|f| db.has_family(f))
             .map(|f| db.face(f, st.style_name))
             .filter(|f| deckcraft_fonts::covers_cluster(f, cluster));
         let face = match (sym_face, prev.as_ref()) {
             (Some(f), _) => f,
-            (None, Some(p)) if neutral && deckcraft_fonts::covers_cluster(p, cluster) && char_style.get(a.wrapping_sub(1)) == Some(&si) => p.clone(),
+            (None, Some(p))
+                if neutral
+                    && deckcraft_fonts::covers_cluster(p, cluster)
+                    && char_style.get(a.wrapping_sub(1)) == Some(&si) =>
+            {
+                p.clone()
+            }
             (None, _) => {
-                let chain = chains.entry((si, slot, sc)).or_insert_with(|| face_chain(ctx, st, slot, sc));
+                let chain = chains
+                    .entry((si, slot, sc))
+                    .or_insert_with(|| face_chain(ctx, st, slot, sc));
                 db.cascade(cluster, chain, st.style_name)
             }
         };
@@ -627,17 +735,49 @@ fn shape_cells(ctx: &Ctx, text: &str, char_style: &[usize], styles: &[Style], fa
         })
         .collect();
     // Items: maximal ranges of one level, face, script and shaping style (case mapping, language).
-    let upper = |i: usize| styles.get(char_style.get(i).copied().unwrap_or(0)).is_some_and(|st| st.caps != Caps::None);
-    let lang = |i: usize| styles.get(char_style.get(i).copied().unwrap_or(0)).and_then(|st| st.lang.as_deref());
-    let kern = |i: usize| styles.get(char_style.get(i).copied().unwrap_or(0)).is_some_and(|st| st.kern);
-    let key = |i: usize| (levels.get(i).copied(), char_face.get(i).copied(), scripts.get(i).map(|s| s.0), upper(i), lang(i), kern(i));
+    let upper = |i: usize| {
+        styles
+            .get(char_style.get(i).copied().unwrap_or(0))
+            .is_some_and(|st| st.caps != Caps::None)
+    };
+    let lang = |i: usize| {
+        styles
+            .get(char_style.get(i).copied().unwrap_or(0))
+            .and_then(|st| st.lang.as_deref())
+    };
+    let kern = |i: usize| {
+        styles
+            .get(char_style.get(i).copied().unwrap_or(0))
+            .is_some_and(|st| st.kern)
+    };
+    let key = |i: usize| {
+        (
+            levels.get(i).copied(),
+            char_face.get(i).copied(),
+            scripts.get(i).map(|s| s.0),
+            upper(i),
+            lang(i),
+            kern(i),
+        )
+    };
     let mut a = 0;
     while a < n {
         let mut b = a + 1;
         while b < n && key(b) == key(a) {
             b += 1;
         }
-        shape_item(&mut cells, styles, faces, text, &byte_of, &char_at_byte, a..b, scripts.get(a).and_then(|s| s.0), lang(a), upper(a));
+        shape_item(
+            &mut cells,
+            styles,
+            faces,
+            text,
+            &byte_of,
+            &char_at_byte,
+            a..b,
+            scripts.get(a).and_then(|s| s.0),
+            lang(a),
+            upper(a),
+        );
         a = b;
     }
     cells
@@ -650,9 +790,17 @@ const SUB_SUPER: f64 = 0.66;
 /// it: kerning only where the run asks for it (`kern`), and no standard or contextual ligatures in
 /// Latin, Greek and Cyrillic ("fi", "ffi" and Calibri's "ti" stay apart). Other scripts need
 /// their ligatures (Arabic lam-alef), and emoji sequences are joined by them.
-fn shaping_features(cells: &[Cell], styles: &[Style], script: Option<ScriptTag>) -> Vec<deckcraft_fonts::Feature> {
+fn shaping_features(
+    cells: &[Cell],
+    styles: &[Style],
+    script: Option<ScriptTag>,
+) -> Vec<deckcraft_fonts::Feature> {
     let mut f = vec![];
-    if !cells.first().and_then(|c| styles.get(c.style)).is_some_and(|st| st.kern) {
+    if !cells
+        .first()
+        .and_then(|c| styles.get(c.style))
+        .is_some_and(|st| st.kern)
+    {
         f.extend(deckcraft_fonts::feature("-kern"));
     }
     let alphabetic = matches!(script.as_ref(), Some(b"Latn" | b"Grek" | b"Cyrl"));
@@ -679,14 +827,29 @@ fn shape_item(
     lang: Option<&str>,
     upper: bool,
 ) {
-    let Some(first) = cells.get(range.start) else { return };
+    let Some(first) = cells.get(range.start) else {
+        return;
+    };
     let (fi, level) = (first.face, first.level);
     let Some(face) = faces.get(fi) else { return };
     let rtl = level % 2 == 1;
-    let (Some(&b0), Some(&b1)) = (byte_of.get(range.start), byte_of.get(range.end)) else { return };
+    let (Some(&b0), Some(&b1)) = (byte_of.get(range.start), byte_of.get(range.end)) else {
+        return;
+    };
     let features = shaping_features(cells.get(range.clone()).unwrap_or(&[]), styles, script);
-    let params = ShapeParams { features: &features, rtl, script, language: lang };
-    let glyphs = deckcraft_fonts::shape_range(face, text, b0..b1, &params, |ch| if upper { ch.to_uppercase().next().unwrap_or(ch) } else { ch });
+    let params = ShapeParams {
+        features: &features,
+        rtl,
+        script,
+        language: lang,
+    };
+    let glyphs = deckcraft_fonts::shape_range(face, text, b0..b1, &params, |ch| {
+        if upper {
+            ch.to_uppercase().next().unwrap_or(ch)
+        } else {
+            ch
+        }
+    });
     let upem = face.upem.max(1.0);
     let scale_of = |cell: &Cell| {
         let st = styles.get(cell.style);
@@ -695,35 +858,54 @@ fn shape_item(
         let size = if small { size * 0.8 } else { size };
         // Superscript and subscript glyphs are drawn at two thirds of the size, so they advance by
         // two thirds too.
-        let size = if st.is_some_and(|s| s.baseline != 0.0) { size * SUB_SUPER } else { size };
+        let size = if st.is_some_and(|s| s.baseline != 0.0) {
+            size * SUB_SUPER
+        } else {
+            size
+        };
         size / upem
     };
     // Cluster heads in this item, ascending; each cluster spans to the next head.
-    let mut heads: Vec<usize> = glyphs.iter().filter_map(|g| char_at_byte.get(&g.cluster).copied()).filter(|h| range.contains(h)).collect();
+    let mut heads: Vec<usize> = glyphs
+        .iter()
+        .filter_map(|g| char_at_byte.get(&g.cluster).copied())
+        .filter(|h| range.contains(h))
+        .collect();
     heads.sort_unstable();
     heads.dedup();
     let mut width: HashMap<usize, f64> = HashMap::new();
     let mut lig: HashMap<usize, (u32, usize)> = HashMap::new();
     for g in &glyphs {
-        let Some(&h) = char_at_byte.get(&g.cluster) else { continue };
-        let Some(cell) = cells.get_mut(h) else { continue };
+        let Some(&h) = char_at_byte.get(&g.cluster) else {
+            continue;
+        };
+        let Some(cell) = cells.get_mut(h) else {
+            continue;
+        };
         if matches!(cell.ch, '\t' | '\u{b}' | '\n') {
             continue;
         }
         let s = scale_of(cell);
         let w = width.entry(h).or_insert(0.0);
-        cell.glyphs.push((g.gid, *w + g.x_offset as f64 * s, -(g.y_offset as f64) * s));
+        cell.glyphs
+            .push((g.gid, *w + g.x_offset as f64 * s, -(g.y_offset as f64) * s));
         *w += g.x_advance as f64 * s;
         let e = lig.entry(h).or_insert((g.gid, 0));
         e.1 += 1;
     }
     for (hi, &h) in heads.iter().enumerate() {
-        let end = heads.get(hi + 1).copied().unwrap_or(range.end).min(range.end);
+        let end = heads
+            .get(hi + 1)
+            .copied()
+            .unwrap_or(range.end)
+            .min(range.end);
         let w = width.get(&h).copied().unwrap_or(0.0);
         for c in cells.get_mut(h..end).into_iter().flatten() {
             c.head = h;
         }
-        let stops: Vec<usize> = (h..end).filter(|&i| i == h || cells.get(i).is_some_and(|c| c.boundary)).collect();
+        let stops: Vec<usize> = (h..end)
+            .filter(|&i| i == h || cells.get(i).is_some_and(|c| c.boundary))
+            .collect();
         let m = stops.len().max(1);
         // Visual widths of the cluster's graphemes, left to right.
         let mut bounds = vec![0.0];
@@ -733,7 +915,12 @@ fn shape_item(
             let s = cells.get(h).map(scale_of).unwrap_or(0.0);
             let carets = deckcraft_fonts::ligature_carets(face, gid);
             if carets.len() + 1 >= m {
-                bounds.extend(carets.iter().take(m - 1).map(|c| (*c as f64 * s).clamp(0.0, w)));
+                bounds.extend(
+                    carets
+                        .iter()
+                        .take(m - 1)
+                        .map(|c| (*c as f64 * s).clamp(0.0, w)),
+                );
             }
         }
         if bounds.len() != m {
@@ -742,7 +929,8 @@ fn shape_item(
         bounds.push(w);
         for (j, &i) in stops.iter().enumerate() {
             let vj = if rtl { m - 1 - j } else { j };
-            let share = bounds.get(vj + 1).copied().unwrap_or(w) - bounds.get(vj).copied().unwrap_or(0.0);
+            let share =
+                bounds.get(vj + 1).copied().unwrap_or(w) - bounds.get(vj).copied().unwrap_or(0.0);
             if let Some(c) = cells.get_mut(i) {
                 c.adv = share.max(0.0);
             }
@@ -765,7 +953,10 @@ fn shape_item(
 /// Is `family` a symbol font (characters at U+F000 + code)?
 fn is_symbol_font(family: &str) -> bool {
     let f = family.to_ascii_lowercase();
-    f.starts_with("wingdings") || f == "symbol" || f.starts_with("webdings") || f.starts_with("marlett")
+    f.starts_with("wingdings")
+        || f == "symbol"
+        || f.starts_with("webdings")
+        || f.starts_with("marlett")
 }
 
 /// The character to draw bullet `c` with the installed symbol font `face`, when `font` names a
@@ -797,7 +988,12 @@ pub fn symbol_char(face: &FontFace, font: &str, c: char) -> Option<char> {
     }
     let plain = char::from_u32(code & 0xFF)?;
     let s = plain.to_string();
-    Some(symbol_font_char(face, &s, Some(font)).unwrap_or_else(|| map_symbol_bullet(&s, Some(font)).chars().next().unwrap_or('•')))
+    Some(symbol_font_char(face, &s, Some(font)).unwrap_or_else(|| {
+        map_symbol_bullet(&s, Some(font))
+            .chars()
+            .next()
+            .unwrap_or('•')
+    }))
 }
 
 fn map_symbol_bullet(c: &str, font: Option<&str>) -> String {
@@ -817,7 +1013,8 @@ fn map_symbol_bullet(c: &str, font: Option<&str>) -> String {
         };
         return m.to_string();
     }
-    if f.contains("wingdings") || f.contains("symbol") || ('\u{f000}'..='\u{f0ff}').contains(&first) {
+    if f.contains("wingdings") || f.contains("symbol") || ('\u{f000}'..='\u{f0ff}').contains(&first)
+    {
         let code = (first as u32) & 0xff;
         // Wingdings 2 and 3 put different shapes at the same codes.
         if f.starts_with("wingdings 2") {
@@ -951,7 +1148,11 @@ fn break_opportunities(text: &str, latin_break: bool) -> (Vec<bool>, Vec<bool>) 
     let chars: Vec<char> = text.chars().collect();
     for (i, w) in chars.windows(2).enumerate() {
         let (prev, next) = (w[0], w[1]);
-        let keep = if is_hangul(prev) && is_hangul(next) { false } else { latin_break || !matches!(prev, '/' | '\\') || next.is_whitespace() };
+        let keep = if is_hangul(prev) && is_hangul(next) {
+            false
+        } else {
+            latin_break || !matches!(prev, '/' | '\\') || next.is_whitespace()
+        };
         if !keep
             && !mandatory.get(i + 1).copied().unwrap_or(false)
             && let Some(a) = allowed.get_mut(i + 1)
@@ -986,7 +1187,11 @@ fn break_lines(
     let mut lines = vec![];
     let mut start = 0;
     if n == 0 {
-        return vec![RawLine { start: 0, end: 0, next: 0 }];
+        return vec![RawLine {
+            start: 0,
+            end: 0,
+            next: 0,
+        }];
     }
     while start < n {
         let avail = if lines.is_empty() { first_w } else { rest_w };
@@ -1003,23 +1208,37 @@ fn break_lines(
                 next = i + 1;
                 break;
             }
-            let adv = if c == '\t' { tab_advance(x0 + x, tab_stops, default_tab) } else { p.cells.get(i).map(|c| c.adv).unwrap_or(0.0) };
+            let adv = if c == '\t' {
+                tab_advance(x0 + x, tab_stops, default_tab)
+            } else {
+                p.cells.get(i).map(|c| c.adv).unwrap_or(0.0)
+            };
             let breakable = |j: usize| p.cells.get(j).is_none_or(|c| c.breakable(j));
             if i > start && allowed.get(i).copied().unwrap_or(false) && breakable(i) {
                 last_break = Some(i);
             }
             // Closing East Asian punctuation hangs past the end instead of wrapping
             // (`hangingPunct`); the line breaks after it.
-            if wrap && hang && x + adv > avail + 0.01 && x <= avail + 0.01 && is_hanging_punct(c) && i > start {
+            if wrap
+                && hang
+                && x + adv > avail + 0.01
+                && x <= avail + 0.01
+                && is_hanging_punct(c)
+                && i > start
+            {
                 end = i + 1;
                 next = i + 1;
                 break;
             }
             if wrap && x + adv > avail + 0.01 && !c.is_whitespace() && i > start {
                 // Break at the last opportunity, or force mid-word (between clusters).
-                let b = last_break
-                    .filter(|b| *b > start)
-                    .unwrap_or_else(|| (start + 1..=i).rev().find(|&j| breakable(j)).or_else(|| (i + 1..n).find(|&j| breakable(j))).unwrap_or(n));
+                let b = last_break.filter(|b| *b > start).unwrap_or_else(|| {
+                    (start + 1..=i)
+                        .rev()
+                        .find(|&j| breakable(j))
+                        .or_else(|| (i + 1..n).find(|&j| breakable(j)))
+                        .unwrap_or(n)
+                });
                 end = b;
                 next = b;
                 // Trailing spaces belong to the line but don't count.
@@ -1039,7 +1258,9 @@ fn break_lines(
         if next <= start {
             // No progress: force one char.
             let last = lines.len() - 1;
-            let to = (start + 1..n).find(|&j| p.cells.get(j).is_none_or(|c| c.breakable(j))).unwrap_or(n);
+            let to = (start + 1..n)
+                .find(|&j| p.cells.get(j).is_none_or(|c| c.breakable(j)))
+                .unwrap_or(n);
             if let Some(l) = lines.get_mut(last) {
                 l.end = to;
                 l.next = to;
@@ -1050,7 +1271,11 @@ fn break_lines(
         }
         if next == n && p.cells.last().is_some_and(|c| c.ch == '\u{b}') && start >= n {
             // A trailing line break opens an empty last line.
-            lines.push(RawLine { start: n, end: n, next: n });
+            lines.push(RawLine {
+                start: n,
+                end: n,
+                next: n,
+            });
         }
     }
     lines
@@ -1094,7 +1319,15 @@ pub fn layout(ctx: &Ctx, shape: &Shape, body: &TextBody, opts: &Opts) -> TextLay
     l
 }
 
-fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts: &Opts, scale: f64, reduce: f64) -> TextLayout {
+fn layout_scaled(
+    ctx: &Ctx,
+    shape: &Shape,
+    body: &TextBody,
+    bp: &BodyProps,
+    opts: &Opts,
+    scale: f64,
+    reduce: f64,
+) -> TextLayout {
     let r = opts.rect;
     let vert = bp.vert.unwrap_or(TextDir::Horizontal);
     let rotation = match vert {
@@ -1105,7 +1338,12 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
     // For vertical text, lay out in a box with swapped dimensions centred on the text rect.
     let r = if (rotation - 90.0).abs() < 1e-6 || (rotation - 270.0).abs() < 1e-6 {
         let c = r.center();
-        Rect::new(c.x - r.height() / 2.0, c.y - r.width() / 2.0, c.x + r.height() / 2.0, c.y + r.width() / 2.0)
+        Rect::new(
+            c.x - r.height() / 2.0,
+            c.y - r.width() / 2.0,
+            c.x + r.height() / 2.0,
+            c.y + r.width() / 2.0,
+        )
     } else {
         r
     };
@@ -1116,13 +1354,24 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
         (r.y1 - bp.inset_b.unwrap_or(3.6)).max(r.y0 + bp.inset_t.unwrap_or(3.6)),
     );
     // Text that follows a WordArt arch or circle is set on one line per paragraph.
-    let follow = bp.warp.as_deref().is_some_and(deckcraft_geom::warp::is_follow);
-    let wrap = bp.wrap.unwrap_or(true) && !follow && !matches!(bp.autofit, Some(AutoFit::Shape) if shape.text_box && !bp.wrap.unwrap_or(true));
+    let follow = bp
+        .warp
+        .as_deref()
+        .is_some_and(deckcraft_geom::warp::is_follow);
+    let wrap = bp.wrap.unwrap_or(true)
+        && !follow
+        && !matches!(bp.autofit, Some(AutoFit::Shape) if shape.text_box && !bp.wrap.unwrap_or(true));
     let ncols = bp.columns.unwrap_or(1).clamp(1, 16) as usize;
     let col_gap = bp.col_spacing.unwrap_or(0.0).max(0.0);
     let col_w = ((inner.width() - col_gap * (ncols as f64 - 1.0)) / ncols as f64).max(1.0);
 
-    let mut out = TextLayout { inner, font_scale: scale, line_reduction: reduce, rotation, ..Default::default() };
+    let mut out = TextLayout {
+        inner,
+        font_scale: scale,
+        line_reduction: reduce,
+        rotation,
+        ..Default::default()
+    };
     let mut y = 0.0;
     let mut numbering: Vec<u32> = vec![0; 9];
     let mut all_lines: Vec<(LineInfo, LinePlace, f64, Option<(String, f64, f64)>)> = vec![];
@@ -1154,23 +1403,48 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
         let margin = props.margin_left.unwrap_or(0.0).max(0.0);
         let indent = props.indent.unwrap_or(0.0);
         let mr = props.margin_right.unwrap_or(0.0).max(0.0);
-        let bullet_w = p.bullet.as_ref().map(|(s, st)| measure_str(&st.face, st.size, s).0).unwrap_or(0.0);
+        let bullet_w = p
+            .bullet
+            .as_ref()
+            .map(|(s, st)| measure_str(&st.face, st.size, s).0)
+            .unwrap_or(0.0);
         let first_x = if p.bullet.is_some() {
             let bx = (margin + indent).max(0.0);
             // A hanging bullet's text starts at the margin. When the hang reaches left of the box
             // (marL + indent < 0), PowerPoint pins the bullet to the box's edge and keeps the
             // hang: the first line's text starts at -indent (later lines stay at the margin).
             let stop = margin.max(-indent);
-            if indent < 0.0 && bx + bullet_w <= stop { stop } else { bx + bullet_w + if indent >= 0.0 { 0.0 } else { 3.0 } }
+            if indent < 0.0 && bx + bullet_w <= stop {
+                stop
+            } else {
+                bx + bullet_w + if indent >= 0.0 { 0.0 } else { 3.0 }
+            }
         } else {
             (margin + indent).max(0.0)
         };
         let rest_x = margin;
-        let tabs: Vec<f64> = props.tabs.as_ref().map(|t| t.iter().map(|s| s.pos).collect()).unwrap_or_default();
+        let tabs: Vec<f64> = props
+            .tabs
+            .as_ref()
+            .map(|t| t.iter().map(|s| s.pos).collect())
+            .unwrap_or_default();
         let first_w = (col_w - first_x - mr).max(1.0);
         let rest_w = (col_w - rest_x - mr).max(1.0);
-        let raw = break_lines(p, first_w, rest_w, wrap, &tabs, props.default_tab.unwrap_or(72.0), first_x, rest_x);
-        let before = if pi == 0 { 0.0 } else { spacing_pts(props.space_before, p.lead_size, reduce) };
+        let raw = break_lines(
+            p,
+            first_w,
+            rest_w,
+            wrap,
+            &tabs,
+            props.default_tab.unwrap_or(72.0),
+            first_x,
+            rest_x,
+        );
+        let before = if pi == 0 {
+            0.0
+        } else {
+            spacing_pts(props.space_before, p.lead_size, reduce)
+        };
         y += before.max(0.0) + prev_after;
         let first_line_idx = all_lines.len();
         for (li, rl) in raw.iter().enumerate() {
@@ -1209,7 +1483,11 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
             let mut adv = Vec::with_capacity(n);
             let mut x = 0.0;
             for c in line_cells {
-                let a = if c.ch == '\t' { tab_advance(x0 + x, &tabs, props.default_tab.unwrap_or(72.0)) } else { c.adv };
+                let a = if c.ch == '\t' {
+                    tab_advance(x0 + x, &tabs, props.default_tab.unwrap_or(72.0))
+                } else {
+                    c.adv
+                };
                 adv.push(a);
                 x += a;
             }
@@ -1254,7 +1532,11 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
             let line_w: f64 = adv.iter().sum();
             // The line box, in column coordinates: the start edge is the left one for LTR and the
             // right one (S = W - rIns) for RTL paragraphs.
-            let (box_l, box_r) = if p.rtl { (mr, col_w - x0) } else { (x0, col_w - mr) };
+            let (box_l, box_r) = if p.rtl {
+                (mr, col_w - x0)
+            } else {
+                (x0, col_w - mr)
+            };
             let left = if filled {
                 box_l
             } else {
@@ -1270,7 +1552,11 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
             };
             // Distance from the box's start edge to the text (bullets move with centred or
             // end-aligned text).
-            let content_shift = if p.rtl { box_r - (left + line_w) } else { left - box_l };
+            let content_shift = if p.rtl {
+                box_r - (left + line_w)
+            } else {
+                left - box_l
+            };
             // Rules L1 + L2: this line's visual order.
             let chars: Vec<char> = line_cells.iter().map(|c| c.ch).collect();
             let raw_levels: Vec<u8> = line_cells.iter().map(|c| c.level).collect();
@@ -1286,16 +1572,30 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                 vx += a;
             }
             let odd = |k: usize| levels.get(k).is_some_and(|l| l % 2 == 1);
-            let mut caret_x: Vec<f64> = (0..n).map(|k| edges.get(k).map(|e| if odd(k) { e.1 } else { e.0 }).unwrap_or(left)).collect();
+            let mut caret_x: Vec<f64> = (0..n)
+                .map(|k| {
+                    edges
+                        .get(k)
+                        .map(|e| if odd(k) { e.1 } else { e.0 })
+                        .unwrap_or(left)
+                })
+                .collect();
             caret_x.push(match n.checked_sub(1) {
-                Some(k) => edges.get(k).map(|e| if odd(k) { e.0 } else { e.1 }).unwrap_or(left),
+                Some(k) => edges
+                    .get(k)
+                    .map(|e| if odd(k) { e.0 } else { e.1 })
+                    .unwrap_or(left),
                 None if p.rtl => left + line_w,
                 None => left,
             });
             let bullet = if li == 0 {
                 p.bullet.as_ref().map(|(s, _)| {
                     // Centred and end-aligned text carries its bullet along.
-                    let end_aligned = if p.rtl { align == Align::Left } else { align == Align::Right };
+                    let end_aligned = if p.rtl {
+                        align == Align::Left
+                    } else {
+                        align == Align::Right
+                    };
                     let shifted = align == Align::Center || end_aligned;
                     let b = if shifted && p.cells.is_empty() {
                         content_shift + x0 - bullet_w
@@ -1339,7 +1639,11 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
     let total = y;
     out.content_height = total;
     // Columns: distribute lines by height.
-    let col_h = if ncols > 1 { inner.height() } else { f64::INFINITY };
+    let col_h = if ncols > 1 {
+        inner.height()
+    } else {
+        f64::INFINITY
+    };
     let mut col = 0usize;
     let mut col_y0 = 0.0;
     for (li, _, _, _) in all_lines.iter_mut() {
@@ -1356,8 +1660,16 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
             li.shift_x(col as f64 * (col_w + col_gap));
         }
     }
-    let used_h = if ncols > 1 { all_lines.iter().map(|(l, ..)| l.bottom).fold(0.0, f64::max) } else { total };
-    out.overflow = used_h > inner.height() + 0.5 || (ncols > 1 && all_lines.last().is_some_and(|(l, ..)| l.bottom > inner.height() + 0.5));
+    let used_h = if ncols > 1 {
+        all_lines.iter().map(|(l, ..)| l.bottom).fold(0.0, f64::max)
+    } else {
+        total
+    };
+    out.overflow = used_h > inner.height() + 0.5
+        || (ncols > 1
+            && all_lines
+                .last()
+                .is_some_and(|(l, ..)| l.bottom > inner.height() + 0.5));
     let anchor = bp.anchor.unwrap_or(Anchor::Top);
     let dy = match anchor {
         Anchor::Top | Anchor::Justified | Anchor::Distributed => 0.0,
@@ -1365,7 +1677,11 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
         Anchor::Bottom => inner.height() - used_h,
     };
     // anchorCtr: centre the block horizontally.
-    let dx = if bp.anchor_ctr.unwrap_or(false) { ((inner.width() - out.content_width) / 2.0).max(0.0) } else { 0.0 };
+    let dx = if bp.anchor_ctr.unwrap_or(false) {
+        ((inner.width() - out.content_width) / 2.0).max(0.0)
+    } else {
+        0.0
+    };
     let ox = inner.x0 + dx;
     let oy = inner.y0 + dy;
     // Emit runs, in visual order.
@@ -1374,7 +1690,9 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
         line.baseline += oy;
         line.bottom += oy;
         line.shift_x(ox);
-        let Some(p) = shaped_paras.get(line.para) else { continue };
+        let Some(p) = shaped_paras.get(line.para) else {
+            continue;
+        };
         if let Some((s, bx, by)) = bullet.take()
             && let Some((_, st)) = p.bullet.as_ref()
         {
@@ -1385,7 +1703,19 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                 color: st.color,
                 glyphs: g
                     .into_iter()
-                    .map(|(gid, x)| (gid, ox + bx + x + if line.column > 0 { line.column as f64 * (col_w + col_gap) } else { 0.0 }, by + oy))
+                    .map(|(gid, x)| {
+                        (
+                            gid,
+                            ox + bx
+                                + x
+                                + if line.column > 0 {
+                                    line.column as f64 * (col_w + col_gap)
+                                } else {
+                                    0.0
+                                },
+                            by + oy,
+                        )
+                    })
                     .collect(),
                 cells: vec![],
                 fake_bold: false,
@@ -1404,18 +1734,34 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
         let mut cur_key = (usize::MAX, usize::MAX);
         for &k in &place.order {
             let ci = line.start + k;
-            let Some(cell) = p.cells.get(ci) else { continue };
-            let Some(st) = p.styles.get(cell.style) else { continue };
-            let Some(&(cx, cx1)) = line.edges.get(k) else { continue };
+            let Some(cell) = p.cells.get(ci) else {
+                continue;
+            };
+            let Some(st) = p.styles.get(cell.style) else {
+                continue;
+            };
+            let Some(&(cx, cx1)) = line.edges.get(k) else {
+                continue;
+            };
             let base_y = line.baseline - st.baseline * st.size;
-            let size = if st.baseline != 0.0 { st.size * SUB_SUPER } else { st.size };
-            let size = if st.caps == Caps::Small && cell.ch.is_lowercase() { size * 0.8 } else { size };
+            let size = if st.baseline != 0.0 {
+                st.size * SUB_SUPER
+            } else {
+                st.size
+            };
+            let size = if st.caps == Caps::Small && cell.ch.is_lowercase() {
+                size * 0.8
+            } else {
+                size
+            };
             let key = (cell.style, cell.face);
             if key != cur_key {
                 if let Some(r) = cur.take() {
                     out.runs.push(r);
                 }
-                let Some(face) = p.faces.get(cell.face) else { continue };
+                let Some(face) = p.faces.get(cell.face) else {
+                    continue;
+                };
                 cur = Some(GlyphRun {
                     face: face.clone(),
                     size,
@@ -1439,8 +1785,8 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                 if cell.head == ci && !cell.glyphs.is_empty() {
                     // The cluster's glyphs start at its leftmost cell; kashida (right-to-left
                     // only) fills the gap on the cluster's left with tatweel glyphs.
-                    let cells_of =
-                        (k..line.end.saturating_sub(line.start)).take_while(|&j| p.cells.get(line.start + j).is_some_and(|c| c.head == ci));
+                    let cells_of = (k..line.end.saturating_sub(line.start))
+                        .take_while(|&j| p.cells.get(line.start + j).is_some_and(|c| c.head == ci));
                     let (mut cl, mut kash) = (cx, 0.0);
                     for j in cells_of {
                         cl = cl.min(line.edges.get(j).map(|e| e.0).unwrap_or(cx));
@@ -1449,11 +1795,17 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                     if kash > 0.0 {
                         let face = p.faces.get(cell.face);
                         let tg = face.map(|f| f.glyph_for('\u{0640}')).unwrap_or(0);
-                        let tw = face.map(|f| f.advance(tg) * size / f.upem.max(1.0)).unwrap_or(0.0);
+                        let tw = face
+                            .map(|f| f.advance(tg) * size / f.upem.max(1.0))
+                            .unwrap_or(0.0);
                         if tg != 0 && tw > 0.0 {
                             let count = ((kash / tw).ceil() as usize).clamp(1, 256);
                             for i in 0..count {
-                                r.glyphs.push((tg, cl + (i as f64 * tw).min((kash - tw).max(0.0)), base_y));
+                                r.glyphs.push((
+                                    tg,
+                                    cl + (i as f64 * tw).min((kash - tw).max(0.0)),
+                                    base_y,
+                                ));
                                 r.cells.push((ci, cell.ch));
                             }
                         }
@@ -1469,20 +1821,40 @@ fn layout_scaled(ctx: &Ctx, shape: &Shape, body: &TextBody, bp: &BodyProps, opts
                 continue;
             }
             if let Some(hl) = st.highlight {
-                out.decos.push(Deco { rect: Rect::new(cx, line.top, cx1, line.bottom), color: hl, behind: true, para: line.para });
+                out.decos.push(Deco {
+                    rect: Rect::new(cx, line.top, cx1, line.bottom),
+                    color: hl,
+                    behind: true,
+                    para: line.para,
+                });
             }
             if !cell.ch.is_whitespace() || st.underline.is_some() {
                 if let Some(uc) = st.underline {
                     let t = (st.size * 0.06).max(0.5);
                     let uy = line.baseline + st.size * 0.12;
-                    out.decos.push(Deco { rect: Rect::new(cx, uy, cx1, uy + t), color: uc, behind: false, para: line.para });
+                    out.decos.push(Deco {
+                        rect: Rect::new(cx, uy, cx1, uy + t),
+                        color: uc,
+                        behind: false,
+                        para: line.para,
+                    });
                 }
                 if let Some(sk) = st.strike {
                     let t = (st.size * 0.05).max(0.5);
                     let sy = line.baseline - st.size * 0.3;
-                    out.decos.push(Deco { rect: Rect::new(cx, sy, cx1, sy + t), color: st.color, behind: false, para: line.para });
+                    out.decos.push(Deco {
+                        rect: Rect::new(cx, sy, cx1, sy + t),
+                        color: st.color,
+                        behind: false,
+                        para: line.para,
+                    });
                     if sk == Strike::Double {
-                        out.decos.push(Deco { rect: Rect::new(cx, sy - t * 2.0, cx1, sy - t), color: st.color, behind: false, para: line.para });
+                        out.decos.push(Deco {
+                            rect: Rect::new(cx, sy - t * 2.0, cx1, sy - t),
+                            color: st.color,
+                            behind: false,
+                            para: line.para,
+                        });
                     }
                 }
             }
@@ -1549,10 +1921,15 @@ fn kashida_opportunities(p: &ParaShaped, start: usize, end: usize) -> Vec<usize>
             continue;
         }
         // The next grapheme on the line.
-        let Some(nx) = (i + 1..end).find(|&j| p.cells.get(j).is_some_and(|d| d.boundary)) else { continue };
+        let Some(nx) = (i + 1..end).find(|&j| p.cells.get(j).is_some_and(|d| d.boundary)) else {
+            continue;
+        };
         let Some(d) = p.cells.get(nx) else { continue };
         let same_cluster = d.head == c.head || d.head != nx;
-        let tatweel = p.faces.get(c.face).is_some_and(|f| f.glyph_for('\u{0640}') != 0);
+        let tatweel = p
+            .faces
+            .get(c.face)
+            .is_some_and(|f| f.glyph_for('\u{0640}') != 0);
         if joins_preceding(d.ch) && d.face == c.face && !same_cluster && tatweel {
             // A later join in the same word replaces the earlier one.
             if word_has {
@@ -1594,11 +1971,15 @@ impl LineInfo {
     }
     /// Leading edge (where its direction begins) of character `k` of the line.
     fn leading(&self, k: usize) -> Option<f64> {
-        self.edges.get(k).map(|e| if self.odd(k) { e.1 } else { e.0 })
+        self.edges
+            .get(k)
+            .map(|e| if self.odd(k) { e.1 } else { e.0 })
     }
     /// Trailing edge (where its direction ends) of character `k` of the line.
     fn trailing(&self, k: usize) -> Option<f64> {
-        self.edges.get(k).map(|e| if self.odd(k) { e.0 } else { e.1 })
+        self.edges
+            .get(k)
+            .map(|e| if self.odd(k) { e.0 } else { e.1 })
     }
     fn shift_x(&mut self, dx: f64) {
         for x in &mut self.caret_x {
@@ -1647,12 +2028,21 @@ impl LineInfo {
     }
     /// Caret stops left to right: (x, character offset in the paragraph, affinity).
     fn visual_stops(&self) -> Vec<(f64, usize, Affinity)> {
-        let mut gs: Vec<(f64, f64, usize, usize, bool)> =
-            self.graphemes().into_iter().filter_map(|(a, b)| self.grapheme_box(a, b).map(|(l, r)| (l, r, a, b, self.odd(a)))).collect();
+        let mut gs: Vec<(f64, f64, usize, usize, bool)> = self
+            .graphemes()
+            .into_iter()
+            .filter_map(|(a, b)| {
+                self.grapheme_box(a, b)
+                    .map(|(l, r)| (l, r, a, b, self.odd(a)))
+            })
+            .collect();
         gs.sort_by(|x, y| x.0.total_cmp(&y.0));
         let mut out: Vec<(f64, usize, Affinity)> = Vec::with_capacity(gs.len() * 2 + 1);
         let mut push = |s: (f64, usize, Affinity)| {
-            if !out.last().is_some_and(|l: &(f64, usize, Affinity)| (l.0 - s.0).abs() < 0.01 && l.1 == s.1) {
+            if !out
+                .last()
+                .is_some_and(|l: &(f64, usize, Affinity)| (l.0 - s.0).abs() < 0.01 && l.1 == s.1)
+            {
                 out.push(s);
             }
         };
@@ -1667,7 +2057,11 @@ impl LineInfo {
             }
         }
         if out.is_empty() {
-            out.push((self.caret_x.first().copied().unwrap_or(0.0), self.start, Affinity::Downstream));
+            out.push((
+                self.caret_x.first().copied().unwrap_or(0.0),
+                self.start,
+                Affinity::Downstream,
+            ));
         }
         out
     }
@@ -1715,7 +2109,11 @@ impl TextLayout {
             }
         }
         found
-            .or_else(|| self.lines.iter().rposition(|l| l.para == pos.para && l.start <= pos.ch))
+            .or_else(|| {
+                self.lines
+                    .iter()
+                    .rposition(|l| l.para == pos.para && l.start <= pos.ch)
+            })
             .or_else(|| self.lines.iter().rposition(|l| l.para == pos.para))
     }
     /// Caret line segment (x, top, bottom) in shape-local, unrotated coordinates (downstream).
@@ -1733,7 +2131,9 @@ impl TextLayout {
             Affinity::Upstream if k > 0 => l.trailing(k - 1),
             _ => None,
         };
-        let x = x.or_else(|| l.caret_x.get(k).copied()).or(l.caret_x.last().copied())?;
+        let x = x
+            .or_else(|| l.caret_x.get(k).copied())
+            .or(l.caret_x.last().copied())?;
         Some((x, l.top, l.bottom))
     }
     /// Nearest caret position for a point.
@@ -1747,7 +2147,13 @@ impl TextLayout {
         for l in &self.lines {
             if p.y >= l.top && p.y < l.bottom {
                 // In multi-column bodies pick the line whose column contains x.
-                if best.is_none() || p.x >= l.extent.0.min(l.caret_x.first().copied().unwrap_or(l.extent.0)) - 4.0 {
+                if best.is_none()
+                    || p.x
+                        >= l.extent
+                            .0
+                            .min(l.caret_x.first().copied().unwrap_or(l.extent.0))
+                            - 4.0
+                {
                     best = Some(l);
                 }
             }
@@ -1764,34 +2170,84 @@ impl TextLayout {
                 }
             }
         };
-        let mut gs: Vec<(f64, f64, usize, usize, bool)> =
-            l.graphemes().into_iter().filter_map(|(a, b)| l.grapheme_box(a, b).map(|(x0, x1)| (x0, x1, a, b, l.odd(a)))).collect();
+        let mut gs: Vec<(f64, f64, usize, usize, bool)> = l
+            .graphemes()
+            .into_iter()
+            .filter_map(|(a, b)| {
+                l.grapheme_box(a, b)
+                    .map(|(x0, x1)| (x0, x1, a, b, l.odd(a)))
+            })
+            .collect();
         if gs.is_empty() {
-            return (Pos { para: l.para, ch: l.start }, Affinity::Downstream);
+            return (
+                Pos {
+                    para: l.para,
+                    ch: l.start,
+                },
+                Affinity::Downstream,
+            );
         }
         gs.sort_by(|x, y| x.0.total_cmp(&y.0));
-        let hit = gs.iter().find(|g| p.x >= g.0 && p.x <= g.1 && g.1 > g.0).copied();
+        let hit = gs
+            .iter()
+            .find(|g| p.x >= g.0 && p.x <= g.1 && g.1 > g.0)
+            .copied();
         let (g, left_half) = match hit {
             Some(g) => (g, p.x < (g.0 + g.1) / 2.0),
             None => match (gs.first().copied(), gs.last().copied()) {
                 (Some(f), _) if p.x < f.0 => (f, true),
                 (_, Some(z)) if p.x > z.1 => (z, false),
                 // Between zero-width graphemes: the nearest one.
-                _ => match gs.iter().min_by(|a, b| ((a.0 + a.1) / 2.0 - p.x).abs().total_cmp(&((b.0 + b.1) / 2.0 - p.x).abs())).copied() {
+                _ => match gs
+                    .iter()
+                    .min_by(|a, b| {
+                        ((a.0 + a.1) / 2.0 - p.x)
+                            .abs()
+                            .total_cmp(&((b.0 + b.1) / 2.0 - p.x).abs())
+                    })
+                    .copied()
+                {
                     Some(g) => (g, p.x < (g.0 + g.1) / 2.0),
-                    None => return (Pos { para: l.para, ch: l.start }, Affinity::Downstream),
+                    None => {
+                        return (
+                            Pos {
+                                para: l.para,
+                                ch: l.start,
+                            },
+                            Affinity::Downstream,
+                        );
+                    }
                 },
             },
         };
         let (_, _, a, b, rtl) = g;
-        let (before, after) = (Pos { para: l.para, ch: l.start + a }, Pos { para: l.para, ch: l.start + b });
+        let (before, after) = (
+            Pos {
+                para: l.para,
+                ch: l.start + a,
+            },
+            Pos {
+                para: l.para,
+                ch: l.start + b,
+            },
+        );
         // The leading half of a character puts the caret before it, the trailing half after it.
-        if left_half != rtl { (before, Affinity::Downstream) } else { (after, Affinity::Upstream) }
+        if left_half != rtl {
+            (before, Affinity::Downstream)
+        } else {
+            (after, Affinity::Upstream)
+        }
     }
     /// Move a caret one grapheme: logically (`forward` = towards the end of the text, crossing
     /// paragraphs) or visually (`forward` = to the right on screen, continuing on the next or
     /// previous line in the paragraph's direction at the line's edge).
-    pub fn move_caret(&self, pos: Pos, affinity: Affinity, forward: bool, mode: MoveMode) -> (Pos, Affinity) {
+    pub fn move_caret(
+        &self,
+        pos: Pos,
+        affinity: Affinity,
+        forward: bool,
+        mode: MoveMode,
+    ) -> (Pos, Affinity) {
         if mode == MoveMode::Visual
             && let Some(li) = self.line_of_affine(pos, affinity)
             && let Some(l) = self.lines.get(li)
@@ -1802,30 +2258,68 @@ impl TextLayout {
                 .iter()
                 .position(|s| s.1 == pos.ch && s.2 == affinity)
                 .or_else(|| stops.iter().position(|s| s.1 == pos.ch))
-                .or_else(|| stops.iter().enumerate().min_by(|a, b| (a.1.0 - cur_x).abs().total_cmp(&(b.1.0 - cur_x).abs())).map(|(i, _)| i));
+                .or_else(|| {
+                    stops
+                        .iter()
+                        .enumerate()
+                        .min_by(|a, b| (a.1.0 - cur_x).abs().total_cmp(&(b.1.0 - cur_x).abs()))
+                        .map(|(i, _)| i)
+                });
             if let Some(idx) = idx {
                 let mut j = idx;
                 loop {
-                    let next = if forward { j.checked_add(1) } else { j.checked_sub(1) };
+                    let next = if forward {
+                        j.checked_add(1)
+                    } else {
+                        j.checked_sub(1)
+                    };
                     let Some(nj) = next else { break };
                     let Some(s) = stops.get(nj) else { break };
                     // Skip stops that wouldn't move the caret on screen or in the text.
                     if s.1 != pos.ch && (s.0 - cur_x).abs() > 0.01 {
-                        return (Pos { para: l.para, ch: s.1 }, s.2);
+                        return (
+                            Pos {
+                                para: l.para,
+                                ch: s.1,
+                            },
+                            s.2,
+                        );
                     }
                     j = nj;
                 }
             }
             // Off the line's edge: on to the neighbouring line in reading order.
             let logical_forward = forward != l.rtl;
-            let target = if logical_forward { li.checked_add(1) } else { li.checked_sub(1) };
+            let target = if logical_forward {
+                li.checked_add(1)
+            } else {
+                li.checked_sub(1)
+            };
             return match target.and_then(|t| self.lines.get(t)) {
-                Some(t) if logical_forward => (Pos { para: t.para, ch: t.start }, Affinity::Downstream),
-                Some(t) => (Pos { para: t.para, ch: t.end }, if t.para == l.para { Affinity::Upstream } else { Affinity::Downstream }),
+                Some(t) if logical_forward => (
+                    Pos {
+                        para: t.para,
+                        ch: t.start,
+                    },
+                    Affinity::Downstream,
+                ),
+                Some(t) => (
+                    Pos {
+                        para: t.para,
+                        ch: t.end,
+                    },
+                    if t.para == l.para {
+                        Affinity::Upstream
+                    } else {
+                        Affinity::Downstream
+                    },
+                ),
                 None => (pos, affinity),
             };
         }
-        let Some(b) = self.boundaries.get(pos.para) else { return (pos, affinity) };
+        let Some(b) = self.boundaries.get(pos.para) else {
+            return (pos, affinity);
+        };
         let len = b.len().saturating_sub(1);
         let ch = pos.ch.min(len);
         let next = if forward {
@@ -1834,11 +2328,33 @@ impl TextLayout {
             (0..ch).rev().find(|&k| b.get(k).copied().unwrap_or(true))
         };
         match next {
-            Some(k) => (Pos { para: pos.para, ch: k }, Affinity::Downstream),
-            None if forward && pos.para + 1 < self.boundaries.len() => (Pos { para: pos.para + 1, ch: 0 }, Affinity::Downstream),
+            Some(k) => (
+                Pos {
+                    para: pos.para,
+                    ch: k,
+                },
+                Affinity::Downstream,
+            ),
+            None if forward && pos.para + 1 < self.boundaries.len() => (
+                Pos {
+                    para: pos.para + 1,
+                    ch: 0,
+                },
+                Affinity::Downstream,
+            ),
             None if !forward && pos.para > 0 => {
                 let prev = pos.para - 1;
-                (Pos { para: prev, ch: self.boundaries.get(prev).map(|b| b.len().saturating_sub(1)).unwrap_or(0) }, Affinity::Downstream)
+                (
+                    Pos {
+                        para: prev,
+                        ch: self
+                            .boundaries
+                            .get(prev)
+                            .map(|b| b.len().saturating_sub(1))
+                            .unwrap_or(0),
+                    },
+                    Affinity::Downstream,
+                )
             }
             None => (Pos { para: pos.para, ch }, Affinity::Downstream),
         }
@@ -1849,8 +2365,14 @@ impl TextLayout {
         let (s, e) = if a <= b { (a, b) } else { (b, a) };
         let mut out = vec![];
         for l in &self.lines {
-            let lp = Pos { para: l.para, ch: l.start };
-            let le = Pos { para: l.para, ch: l.end };
+            let lp = Pos {
+                para: l.para,
+                ch: l.start,
+            };
+            let le = Pos {
+                para: l.para,
+                ch: l.end,
+            };
             if le < s || lp > e {
                 continue;
             }
@@ -1861,7 +2383,11 @@ impl TextLayout {
             // paragraph's end side.
             if e.para > l.para && to == l.end {
                 let end_x = l.caret_x.last().copied().unwrap_or(l.extent.1);
-                spans.push(if l.rtl { (end_x - 6.0, end_x) } else { (end_x, end_x + 6.0) });
+                spans.push(if l.rtl {
+                    (end_x - 6.0, end_x)
+                } else {
+                    (end_x, end_x + 6.0)
+                });
                 spans = merge_spans(spans);
             }
             for (x0, x1) in spans {
@@ -1882,8 +2408,14 @@ impl TextLayout {
             return out;
         }
         for l in &self.lines {
-            let lp = Pos { para: l.para, ch: l.start };
-            let le = Pos { para: l.para, ch: l.end };
+            let lp = Pos {
+                para: l.para,
+                ch: l.start,
+            };
+            let le = Pos {
+                para: l.para,
+                ch: l.end,
+            };
             if le <= s || lp >= e {
                 continue;
             }
@@ -1920,10 +2452,24 @@ impl TextLayout {
         self.line_of_affine(pos, affinity)
     }
     /// Up/Down from a caret with its affinity: the position on the line above/below nearest `x`.
-    pub fn vertical_affine(&self, pos: Pos, affinity: Affinity, down: bool, x: f64) -> (Pos, Affinity) {
-        let Some(li) = self.line_index(pos, affinity) else { return (pos, affinity) };
-        let target = if down { li.checked_add(1) } else { li.checked_sub(1) };
-        let Some(l) = target.and_then(|t| self.lines.get(t)) else { return (pos, affinity) };
+    pub fn vertical_affine(
+        &self,
+        pos: Pos,
+        affinity: Affinity,
+        down: bool,
+        x: f64,
+    ) -> (Pos, Affinity) {
+        let Some(li) = self.line_index(pos, affinity) else {
+            return (pos, affinity);
+        };
+        let target = if down {
+            li.checked_add(1)
+        } else {
+            li.checked_sub(1)
+        };
+        let Some(l) = target.and_then(|t| self.lines.get(t)) else {
+            return (pos, affinity);
+        };
         let p = Point::new(x, (l.top + l.bottom) / 2.0);
         let mut h = self.hit(p);
         if h.para != l.para {
@@ -1938,8 +2484,20 @@ impl TextLayout {
     }
     /// Start/end of the visual line a caret with this affinity is on.
     pub fn line_bounds_affine(&self, pos: Pos, affinity: Affinity) -> (Pos, Pos) {
-        match self.line_index(pos, affinity).and_then(|i| self.lines.get(i)) {
-            Some(l) => (Pos { para: l.para, ch: l.start }, Pos { para: l.para, ch: l.end }),
+        match self
+            .line_index(pos, affinity)
+            .and_then(|i| self.lines.get(i))
+        {
+            Some(l) => (
+                Pos {
+                    para: l.para,
+                    ch: l.start,
+                },
+                Pos {
+                    para: l.para,
+                    ch: l.end,
+                },
+            ),
             None => (pos, pos),
         }
     }
@@ -1947,11 +2505,27 @@ impl TextLayout {
     /// of the next line with upstream affinity (so it is still drawn on this line), else the end
     /// of the paragraph.
     pub fn line_end_caret(&self, pos: Pos, affinity: Affinity) -> (Pos, Affinity) {
-        let Some(li) = self.line_index(pos, affinity) else { return (pos, Affinity::Downstream) };
-        let Some(l) = self.lines.get(li) else { return (pos, Affinity::Downstream) };
+        let Some(li) = self.line_index(pos, affinity) else {
+            return (pos, Affinity::Downstream);
+        };
+        let Some(l) = self.lines.get(li) else {
+            return (pos, Affinity::Downstream);
+        };
         match self.lines.get(li + 1) {
-            Some(n) if n.para == l.para && n.start > l.start => (Pos { para: l.para, ch: n.start }, Affinity::Upstream),
-            _ => (Pos { para: l.para, ch: l.end }, Affinity::Downstream),
+            Some(n) if n.para == l.para && n.start > l.start => (
+                Pos {
+                    para: l.para,
+                    ch: n.start,
+                },
+                Affinity::Upstream,
+            ),
+            _ => (
+                Pos {
+                    para: l.para,
+                    ch: l.end,
+                },
+                Affinity::Downstream,
+            ),
         }
     }
     /// The caret to draw (x, top, bottom): an upstream caret after a soft wrap is drawn at the end
@@ -1977,22 +2551,58 @@ impl TextLayout {
 }
 
 /// Height the shape needs so its text fits (Resize shape to fit text): text height + insets.
-pub fn fit_height(ctx: &Ctx, shape: &Shape, body: &TextBody, rect: Rect, fields: &dyn Fields) -> f64 {
+pub fn fit_height(
+    ctx: &Ctx,
+    shape: &Shape,
+    body: &TextBody,
+    rect: Rect,
+    fields: &dyn Fields,
+) -> f64 {
     let bp = resolve::body(ctx, shape);
-    let l = layout(ctx, shape, body, &Opts { rect, fields, prompt_color: None, no_shrink: true });
+    let l = layout(
+        ctx,
+        shape,
+        body,
+        &Opts {
+            rect,
+            fields,
+            prompt_color: None,
+            no_shrink: true,
+        },
+    );
     l.content_height + bp.inset_t.unwrap_or(3.6) + bp.inset_b.unwrap_or(3.6)
 }
 
 /// Width a non-wrapping text box needs.
-pub fn fit_width(ctx: &Ctx, shape: &Shape, body: &TextBody, rect: Rect, fields: &dyn Fields) -> f64 {
+pub fn fit_width(
+    ctx: &Ctx,
+    shape: &Shape,
+    body: &TextBody,
+    rect: Rect,
+    fields: &dyn Fields,
+) -> f64 {
     let bp = resolve::body(ctx, shape);
     let wide = Rect::new(rect.x0, rect.y0, rect.x0 + 100_000.0, rect.y1);
     let mut s2 = shape.clone();
     if let Some(t) = s2.text.as_mut() {
         t.body.wrap = Some(false);
     }
-    let l = layout(ctx, &s2, body, &Opts { rect: wide, fields, prompt_color: None, no_shrink: true });
-    let w = l.lines.iter().map(|li| li.start_offset + (li.extent.1 - li.extent.0)).fold(0.0, f64::max);
+    let l = layout(
+        ctx,
+        &s2,
+        body,
+        &Opts {
+            rect: wide,
+            fields,
+            prompt_color: None,
+            no_shrink: true,
+        },
+    );
+    let w = l
+        .lines
+        .iter()
+        .map(|li| li.start_offset + (li.extent.1 - li.extent.0))
+        .fold(0.0, f64::max);
     w + bp.inset_l.unwrap_or(7.2) + bp.inset_r.unwrap_or(7.2) + 1.0
 }
 

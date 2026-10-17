@@ -13,11 +13,23 @@ const T: Duration = Duration::from_secs(20);
 const SETTLE: Duration = Duration::from_secs(120);
 
 fn editor(rules: serde_json::Value) -> Headless {
-    let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
-    let r = h.request("engine.execute", json!({"command": "dialog.smartAlbum", "params": {"name": "Dates"}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "dialog.smartAlbum", "params": {"name": "Dates"}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
-    let Some(crate::state::Dialog::SmartRules { rules: r, .. }) = &mut h.app.ui.dialog else { panic!("no rule editor") };
+    let Some(crate::state::Dialog::SmartRules { rules: r, .. }) = &mut h.app.ui.dialog else {
+        panic!("no rule editor")
+    };
     *r = serde_json::from_value(json!({"rules": rules})).unwrap();
     h.settle(SETTLE);
     h
@@ -34,8 +46,12 @@ fn has(h: &Headless, id: &str) -> bool {
 }
 
 fn value(h: &Headless, i: usize) -> serde_json::Value {
-    let Some(crate::state::Dialog::SmartRules { rules, .. }) = &h.app.ui.dialog else { panic!("no rule editor") };
-    let Some(Rule::Field { value, .. }) = rules.rules.get(i) else { panic!("no rule {i}") };
+    let Some(crate::state::Dialog::SmartRules { rules, .. }) = &h.app.ui.dialog else {
+        panic!("no rule editor")
+    };
+    let Some(Rule::Field { value, .. }) = rules.rules.get(i) else {
+        panic!("no rule {i}")
+    };
     value.clone()
 }
 
@@ -44,17 +60,26 @@ fn value(h: &Headless, i: usize) -> serde_json::Value {
 fn pick_a_day_a_month_and_a_year() {
     let mut h = editor(json!([{"field": "captureDate", "op": "is", "value": "2026-01-20"}]));
     click(&mut h, "datePicker:rules-0");
-    assert!(has(&h, "datePickerCell:2026-01-20:rules-0"), "opens on the rule's month");
+    assert!(
+        has(&h, "datePickerCell:2026-01-20:rules-0"),
+        "opens on the rule's month"
+    );
     click(&mut h, "datePickerNext:rules-0");
     click(&mut h, "datePickerCell:2026-02-14:rules-0");
     assert_eq!(value(&h, 0), json!("2026-02-14"));
-    assert!(!has(&h, "datePickerCell:2026-02-14:rules-0"), "picking closes it");
+    assert!(
+        !has(&h, "datePickerCell:2026-02-14:rules-0"),
+        "picking closes it"
+    );
     click(&mut h, "datePicker:rules-0");
     click(&mut h, "datePickerPrecision:month:rules-0");
     click(&mut h, "datePickerCell:2026-08:rules-0");
     assert_eq!(value(&h, 0), json!("2026-08"));
     click(&mut h, "datePicker:rules-0");
-    assert!(has(&h, "datePickerCell:2026-08:rules-0"), "a month opens at month precision");
+    assert!(
+        has(&h, "datePickerCell:2026-08:rules-0"),
+        "a month opens at month precision"
+    );
     click(&mut h, "datePickerPrecision:year:rules-0");
     click(&mut h, "datePickerPrev:rules-0");
     click(&mut h, "datePickerCell:2015:rules-0");
@@ -64,15 +89,24 @@ fn pick_a_day_a_month_and_a_year() {
 /// Each date of a "between" can't pass the other: the earlier one can't be picked after the later.
 #[test]
 fn between_dates_stay_in_order() {
-    let mut h = editor(json!([{"field": "captureDate", "op": "between", "value": ["2026-03", "2026-06"]}]));
+    let mut h =
+        editor(json!([{"field": "captureDate", "op": "between", "value": ["2026-03", "2026-06"]}]));
     click(&mut h, "datePicker:rules-0-a");
     click(&mut h, "datePickerCell:2026-09:rules-0-a");
-    assert_eq!(value(&h, 0), json!(["2026-03", "2026-06"]), "after the later date: not taken");
+    assert_eq!(
+        value(&h, 0),
+        json!(["2026-03", "2026-06"]),
+        "after the later date: not taken"
+    );
     click(&mut h, "datePickerCell:2026-05:rules-0-a");
     assert_eq!(value(&h, 0), json!(["2026-05", "2026-06"]));
     click(&mut h, "datePicker:rules-0-b");
     click(&mut h, "datePickerCell:2026-04:rules-0-b");
-    assert_eq!(value(&h, 0), json!(["2026-05", "2026-06"]), "before the earlier date: not taken");
+    assert_eq!(
+        value(&h, 0),
+        json!(["2026-05", "2026-06"]),
+        "before the earlier date: not taken"
+    );
     click(&mut h, "datePickerCell:2026-12:rules-0-b");
     assert_eq!(value(&h, 0), json!(["2026-05", "2026-12"]));
 }
@@ -86,7 +120,11 @@ fn an_unreadable_date_opens_on_this_month() {
     h.settle(SETTLE);
     click(&mut h, "datePicker:rules-0");
     assert!(has(&h, "datePickerCell:2026-10-09:rules-0"));
-    assert_eq!(value(&h, 0), json!("banana"), "opening doesn't change the rule");
+    assert_eq!(
+        value(&h, 0),
+        json!("banana"),
+        "opening doesn't change the rule"
+    );
 }
 
 /// Esc closes the calendar only, not the rule editor around it (and its unsaved edits).
@@ -98,7 +136,10 @@ fn escape_closes_only_the_calendar() {
     let r = h.request("ui.key", json!({"key": "Escape"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!(!has(&h, "datePickerCell:2026-01-20:rules-0"), "the calendar closed");
+    assert!(
+        !has(&h, "datePickerCell:2026-01-20:rules-0"),
+        "the calendar closed"
+    );
     assert!(h.app.ui.dialog.is_some(), "the editor stays open");
 }
 

@@ -147,7 +147,9 @@ enum Command {
 }
 
 fn parse_kv(raw: &str) -> Result<(String, String), String> {
-    let (k, v) = raw.split_once('=').ok_or_else(|| format!("expected key=value, got {raw:?}"))?;
+    let (k, v) = raw
+        .split_once('=')
+        .ok_or_else(|| format!("expected key=value, got {raw:?}"))?;
     let k = k.trim();
     if k.is_empty() || !k.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return Err(format!("invalid field name {k:?}"));
@@ -197,8 +199,13 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 out["files"] = serde_json::to_value(&rev.files)?;
             }
             Ok(out)
-        },
-        Command::Profile { home, avatar, agent_id, set } => {
+        }
+        Command::Profile {
+            home,
+            avatar,
+            agent_id,
+            set,
+        } => {
             let path = home_arg(&root, home);
             if !path.is_dir() {
                 return Err(HomeError::HomeNotFound(path));
@@ -222,8 +229,15 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 "profile": profile,
                 "avatar_path": profile.avatar_path(&path)?,
             }))
-        },
-        Command::New { name, template, agent_id, avatar, set, force } => {
+        }
+        Command::New {
+            name,
+            template,
+            agent_id,
+            avatar,
+            set,
+            force,
+        } => {
             let destination = root.new_home_path(name)?;
             let report = instantiate_template(&TemplateOptions {
                 template: template.clone(),
@@ -234,8 +248,14 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 force: *force,
             })?;
             Ok(serde_json::to_value(report)?)
-        },
-        Command::Merge { source, target, policy, no_memory_union, apply } => {
+        }
+        Command::Merge {
+            source,
+            target,
+            policy,
+            no_memory_union,
+            apply,
+        } => {
             let opts = MergeOptions {
                 policy: (*policy).into(),
                 memory_union: !no_memory_union,
@@ -243,12 +263,21 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 ..MergeOptions::new(home_arg(&root, source), home_arg(&root, target))
             };
             Ok(serde_json::to_value(merge_homes(&opts)?)?)
-        },
-        Command::Sync { a, b, policy, apply } => {
-            let report =
-                sync_homes(&home_arg(&root, a), &home_arg(&root, b), (*policy).into(), *apply)?;
+        }
+        Command::Sync {
+            a,
+            b,
+            policy,
+            apply,
+        } => {
+            let report = sync_homes(
+                &home_arg(&root, a),
+                &home_arg(&root, b),
+                (*policy).into(),
+                *apply,
+            )?;
             Ok(serde_json::to_value(report)?)
-        },
+        }
         Command::Restore { backup, home } => {
             let path = home_arg(&root, home);
             let restored = restore_backup(backup, &path)?;
@@ -257,7 +286,7 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 "restored_revision": restored.revision,
                 "files": restored.files.len(),
             }))
-        },
+        }
         Command::Rename { from, to, apply } => {
             let report = rename_home(&RenameOptions {
                 root,
@@ -266,7 +295,7 @@ fn run(cli: &Cli) -> Result<Value, HomeError> {
                 apply: *apply,
             })?;
             Ok(serde_json::to_value(report)?)
-        },
+        }
     }
 }
 
@@ -281,7 +310,7 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             let code = if e.use_stderr() { 2 } else { 0 };
             let _ = e.print();
             return code;
-        },
+        }
     };
     match run(&cli) {
         Ok(value) => {
@@ -290,11 +319,11 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
                 serde_json::to_string_pretty(&value).unwrap_or_else(|_| value.to_string())
             );
             0
-        },
+        }
         Err(e) => {
             eprintln!("aphrody agent-home: {e}");
             1
-        },
+        }
     }
 }
 
@@ -330,11 +359,29 @@ mod tests {
             "address_as=Sam",
         ])
         .unwrap();
-        assert!(made["destination"].as_str().unwrap().ends_with("users/local"));
-        let other =
-            run_args(&["--state", s, "--homes-dir", "users", "new", "other", "--template", t])
-                .unwrap();
-        assert!(other["revision"].as_str().unwrap().starts_with("sha256-v1:"));
+        assert!(
+            made["destination"]
+                .as_str()
+                .unwrap()
+                .ends_with("users/local")
+        );
+        let other = run_args(&[
+            "--state",
+            s,
+            "--homes-dir",
+            "users",
+            "new",
+            "other",
+            "--template",
+            t,
+        ])
+        .unwrap();
+        assert!(
+            other["revision"]
+                .as_str()
+                .unwrap()
+                .starts_with("sha256-v1:")
+        );
 
         let profile = run_args(&[
             "--state",
@@ -350,20 +397,44 @@ mod tests {
         assert_eq!(profile["profile"]["avatar"], "a.png");
         assert_eq!(profile["profile"]["address_as"], "Sam");
 
-        let rev = run_args(&["--state", s, "--homes-dir", "users", "revision", "local", "--files"])
-            .unwrap();
+        let rev = run_args(&[
+            "--state",
+            s,
+            "--homes-dir",
+            "users",
+            "revision",
+            "local",
+            "--files",
+        ])
+        .unwrap();
         assert!(rev["file_count"].as_u64().unwrap() >= 7);
 
         let roots = run_args(&["--state", s, "--homes-dir", "users", "roots"]).unwrap();
         assert_eq!(roots["root"]["source"], "explicit");
         assert_eq!(roots["homes"].as_array().unwrap().len(), 2);
 
-        let plan =
-            run_args(&["--state", s, "--homes-dir", "users", "merge", "local", "other"]).unwrap();
+        let plan = run_args(&[
+            "--state",
+            s,
+            "--homes-dir",
+            "users",
+            "merge",
+            "local",
+            "other",
+        ])
+        .unwrap();
         assert_eq!(plan["applied"], false);
-        let sync =
-            run_args(&["--state", s, "--homes-dir", "users", "sync", "local", "other", "--apply"])
-                .unwrap();
+        let sync = run_args(&[
+            "--state",
+            s,
+            "--homes-dir",
+            "users",
+            "sync",
+            "local",
+            "other",
+            "--apply",
+        ])
+        .unwrap();
         assert_eq!(sync["a_to_b"]["applied"], true);
 
         let renamed = run_args(&[
@@ -386,6 +457,9 @@ mod tests {
     fn kv_parser_rejects_bad_fields() {
         assert!(parse_kv("novalue").is_err());
         assert!(parse_kv("a b=c").is_err());
-        assert_eq!(parse_kv("tz=Europe/Paris").unwrap(), ("tz".into(), "Europe/Paris".into()));
+        assert_eq!(
+            parse_kv("tz=Europe/Paris").unwrap(),
+            ("tz".into(), "Europe/Paris".into())
+        );
     }
 }

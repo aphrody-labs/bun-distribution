@@ -39,35 +39,58 @@ pub fn get_position_match_factor(
     formation: &Formation,
 ) -> PositionMatch {
     if player_position.is_empty() || slot_id.is_empty() {
-        return PositionMatch { factor: 1.0, status: PositionMatchStatus::None };
+        return PositionMatch {
+            factor: 1.0,
+            status: PositionMatchStatus::None,
+        };
     }
     if slot_id.starts_with("reserve-")
         || slot_id.starts_with("manager-")
         || slot_id.starts_with("support-")
     {
-        return PositionMatch { factor: 1.0, status: PositionMatchStatus::Match };
+        return PositionMatch {
+            factor: 1.0,
+            status: PositionMatchStatus::Match,
+        };
     }
 
     let Some(slot_index) = parse_javascript_integer(&slot_id.replacen("field-", "", 1)) else {
-        return PositionMatch { factor: 1.0, status: PositionMatchStatus::None };
+        return PositionMatch {
+            factor: 1.0,
+            status: PositionMatchStatus::None,
+        };
     };
-    let Some(position) =
-        formation.positions.iter().find(|position| usize::from(position.index) == slot_index)
+    let Some(position) = formation
+        .positions
+        .iter()
+        .find(|position| usize::from(position.index) == slot_index)
     else {
-        return PositionMatch { factor: 1.0, status: PositionMatchStatus::None };
+        return PositionMatch {
+            factor: 1.0,
+            status: PositionMatchStatus::None,
+        };
     };
 
     let player = player_position.to_ascii_uppercase();
     let slot = position.role.as_str();
     if player == slot {
-        return PositionMatch { factor: 1.0, status: PositionMatchStatus::Match };
+        return PositionMatch {
+            factor: 1.0,
+            status: PositionMatchStatus::Match,
+        };
     }
     if (player == "MF" && matches!(slot, "FW" | "DF"))
         || (slot == "MF" && matches!(player.as_str(), "FW" | "DF"))
     {
-        return PositionMatch { factor: 0.85, status: PositionMatchStatus::Adjacent };
+        return PositionMatch {
+            factor: 0.85,
+            status: PositionMatchStatus::Adjacent,
+        };
     }
-    PositionMatch { factor: 0.65, status: PositionMatchStatus::Mismatch }
+    PositionMatch {
+        factor: 0.65,
+        status: PositionMatchStatus::Mismatch,
+    }
 }
 
 fn parse_javascript_integer(value: &str) -> Option<usize> {
@@ -80,7 +103,10 @@ fn parse_javascript_integer(value: &str) -> Option<usize> {
     let negative = value.starts_with('-');
     let value = value.strip_prefix(['+', '-']).unwrap_or(value);
     let digits = value.as_bytes();
-    let end = digits.iter().position(|byte| !byte.is_ascii_digit()).unwrap_or(digits.len());
+    let end = digits
+        .iter()
+        .position(|byte| !byte.is_ascii_digit())
+        .unwrap_or(digits.len());
     let number = (end > 0).then(|| value[..end].parse().ok()).flatten()?;
     (!negative || number == 0).then_some(number)
 }
@@ -142,9 +168,10 @@ pub fn recalculate_member_stats(
     let base = member.stats.unwrap_or_default();
     let level_factor = 0.2 + 0.8 * (level - 1.0) / 98.0;
     let position_factor = get_position_match_factor(&member.position, slot_id, formation).factor;
-    let element_factor = f64::from(u8::from(
-        dominant_element.is_some_and(|element| !element.is_empty() && member.element == element),
-    ));
+    let element_factor =
+        f64::from(u8::from(dominant_element.is_some_and(|element| {
+            !element.is_empty() && member.element == element
+        })));
     let element_multiplier = if element_factor == 1.0 { 1.05 } else { 1.0 };
     let harmony_multiplier = if has_harmony { 1.03 } else { 1.0 };
     // JavaScript's multiplication order is observable at half-integer rounding boundaries.
@@ -216,10 +243,15 @@ pub fn calculate_element_synergies(
 ) -> ElementSynergyInfo {
     let elements = ["Fire", "Forest", "Mountain", "Wind"];
     let mut counts = [0_usize; 4];
-    let field_members =
-        members.iter().filter(|(slot, _)| slot.starts_with("field-")).collect::<Vec<_>>();
+    let field_members = members
+        .iter()
+        .filter(|(slot, _)| slot.starts_with("field-"))
+        .collect::<Vec<_>>();
     for (_, member) in &field_members {
-        if let Some(index) = elements.iter().position(|element| *element == member.element) {
+        if let Some(index) = elements
+            .iter()
+            .position(|element| *element == member.element)
+        {
             counts[index] += 1;
         }
     }
@@ -260,22 +292,37 @@ pub fn calculate_element_synergies(
                     slot_a: slot_a.to_owned(),
                     slot_b: slot_b.to_owned(),
                     element: member_a.element.clone(),
-                    coord_a: LinkCoordinate { top: position_a.top, left: position_a.left },
-                    coord_b: LinkCoordinate { top: position_b.top, left: position_b.left },
+                    coord_a: LinkCoordinate {
+                        top: position_a.top,
+                        left: position_a.left,
+                    },
+                    coord_b: LinkCoordinate {
+                        top: position_b.top,
+                        left: position_b.left,
+                    },
                 });
             }
         }
     }
-    ElementSynergyInfo { dominant_element, has_harmony, links }
+    ElementSynergyInfo {
+        dominant_element,
+        has_harmony,
+        links,
+    }
 }
 
 fn field_position<'a>(
     slot: &str,
     formation: &'a Formation,
 ) -> Option<&'a super::formations::PositionCoord> {
-    let index = slot.strip_prefix("field-").and_then(parse_javascript_integer)?;
+    let index = slot
+        .strip_prefix("field-")
+        .and_then(parse_javascript_integer)?;
     let index = u8::try_from(index).ok()?;
-    formation.positions.iter().find(|position| position.index == index)
+    formation
+        .positions
+        .iter()
+        .find(|position| position.index == index)
 }
 
 #[cfg(test)]
@@ -307,8 +354,14 @@ mod tests {
             get_position_match_factor("GK", "field-10", &formation).status,
             PositionMatchStatus::Match
         );
-        assert_eq!(get_position_match_factor("MF", "field-0", &formation).factor, 0.85);
-        assert_eq!(get_position_match_factor("GK", "field-0", &formation).factor, 0.65);
+        assert_eq!(
+            get_position_match_factor("MF", "field-0", &formation).factor,
+            0.85
+        );
+        assert_eq!(
+            get_position_match_factor("GK", "field-0", &formation).factor,
+            0.65
+        );
         assert_eq!(
             get_position_match_factor("GK", "reserve-1", &formation).status,
             PositionMatchStatus::Match
@@ -375,7 +428,10 @@ mod tests {
         assert_eq!(synergy.dominant_element.as_deref(), Some("Fire"));
         assert!(!synergy.has_harmony);
         assert!(
-            synergy.links.iter().all(|link| link.slot_a != "field-10" && link.slot_b != "field-10")
+            synergy
+                .links
+                .iter()
+                .all(|link| link.slot_a != "field-10" && link.slot_b != "field-10")
         );
     }
 
@@ -383,10 +439,17 @@ mod tests {
     fn dominant_element_ties_keep_the_first_source_element() {
         let formation = legacy_formations().remove(0);
         let members = (0..8)
-            .map(|i| (format!("field-{i}"), member("FW", if i < 4 { "Fire" } else { "Forest" })))
+            .map(|i| {
+                (
+                    format!("field-{i}"),
+                    member("FW", if i < 4 { "Fire" } else { "Forest" }),
+                )
+            })
             .collect::<Vec<_>>();
         assert_eq!(
-            calculate_element_synergies(&members, &formation).dominant_element.as_deref(),
+            calculate_element_synergies(&members, &formation)
+                .dominant_element
+                .as_deref(),
             Some("Fire")
         );
     }

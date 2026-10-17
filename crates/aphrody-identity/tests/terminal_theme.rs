@@ -50,7 +50,11 @@ fn ansi_follows_the_m3_roles() {
     let theme = TerminalTheme::aphrody();
     for m in theme.modes() {
         assert_eq!(m.ansi[1], m.role(Role::Error), "red is the error role");
-        assert_eq!(m.ansi[5], m.role(Role::Primary), "magenta is the primary role");
+        assert_eq!(
+            m.ansi[5],
+            m.role(Role::Primary),
+            "magenta is the primary role"
+        );
         assert_eq!(m.background(), m.role(Role::Surface));
         assert_eq!(m.foreground(), m.role(Role::OnSurface));
     }
@@ -66,7 +70,12 @@ fn harmonized_hues_stay_distinct() {
         for (j, b) in hues.iter().enumerate().skip(i + 1) {
             let d = (a - b).rem_euclid(360.0);
             let d = d.min(360.0 - d);
-            assert!(d >= 30.0, "{} and {} only {d:.1}° apart", HUES[i].0, HUES[j].0);
+            assert!(
+                d >= 30.0,
+                "{} and {} only {d:.1}° apart",
+                HUES[i].0,
+                HUES[j].0
+            );
         }
     }
 }
@@ -82,7 +91,11 @@ fn every_drawn_pair_meets_its_contrast_minimum() {
     assert!(failing.is_empty(), "{failing:#?}");
     // 2 modes × (4 chrome + 15 ANSI text slots minus the background slots + Nushell fg + prompt + Rio).
     assert!(checks.len() > 150, "only {} pairs measured", checks.len());
-    assert!(checks.iter().any(|c| c.mode == "light" && c.what == "ansi.bright-black"));
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.mode == "light" && c.what == "ansi.bright-black")
+    );
 }
 
 #[test]
@@ -99,7 +112,10 @@ fn windows_terminal_json_is_valid() {
         assert!(s["brightPurple"].as_str().unwrap().starts_with('#'));
     }
     let prompt: serde_json::Value = serde_json::from_str(&theme.prompt_json()).unwrap();
-    assert_eq!(prompt["dark"]["brand"]["hex"], hex_from_argb(theme.dark.cursor()));
+    assert_eq!(
+        prompt["dark"]["brand"]["hex"],
+        hex_from_argb(theme.dark.cursor())
+    );
     assert!(prompt["light"]["cwd"]["ansi256"].as_u64().unwrap() <= 255);
 }
 
@@ -141,7 +157,11 @@ fn settings_splice_replaces_only_the_schemes() {
     assert_eq!(v["schemes"].as_array().unwrap().len(), 2);
     assert!(after.starts_with("{\n  \"a\": [1],\n  \"schemes\": [\n    {\n      \"name\""));
     assert!(after.ends_with("\n  ],\n  \"z\": true\n}\n"));
-    assert_eq!(theme.splice_wt_settings(&after).unwrap(), after, "idempotent");
+    assert_eq!(
+        theme.splice_wt_settings(&after).unwrap(),
+        after,
+        "idempotent"
+    );
 }
 
 #[test]
@@ -162,15 +182,24 @@ fn versioned_files_are_current() {
         let on_disk = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
             .replace("\r\n", "\n");
-        assert!(on_disk == text, "{rel} differs: run `aphrody identity terminal-theme`");
+        assert!(
+            on_disk == text,
+            "{rel} differs: run `aphrody identity terminal-theme`"
+        );
     }
     assert_eq!(FILES.len(), theme.files().len());
     assert!(FILES.contains(&format!("rio/themes/{RIO_THEME_DARK}.toml").as_str()));
     assert!(FILES.contains(&format!("rio/themes/{RIO_THEME_LIGHT}.toml").as_str()));
 
     let settings_path = dir.join("settings.json");
-    let settings = std::fs::read_to_string(&settings_path).unwrap().replace("\r\n", "\n");
-    assert_eq!(theme.splice_wt_settings(&settings).unwrap(), settings, "settings.json schemes");
+    let settings = std::fs::read_to_string(&settings_path)
+        .unwrap()
+        .replace("\r\n", "\n");
+    assert_eq!(
+        theme.splice_wt_settings(&settings).unwrap(),
+        settings,
+        "settings.json schemes"
+    );
     let v: serde_json::Value = serde_json::from_str(&settings).unwrap();
     let scheme = &v["profiles"]["defaults"]["colorScheme"];
     assert_eq!(scheme["dark"], WT_SCHEME_DARK);

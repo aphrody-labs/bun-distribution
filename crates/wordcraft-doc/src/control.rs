@@ -88,7 +88,11 @@ pub struct ListItem {
 
 impl ListItem {
     pub fn value(&self) -> &str {
-        if self.value.is_empty() { &self.display } else { &self.value }
+        if self.value.is_empty() {
+            &self.display
+        } else {
+            &self.value
+        }
     }
 }
 
@@ -108,7 +112,13 @@ pub enum ControlKind {
     },
     /// A check box (`w14:checkbox`): the content is the state's symbol.
     #[serde(rename_all = "camelCase")]
-    CheckBox { checked: bool, checked_char: char, checked_font: String, unchecked_char: char, unchecked_font: String },
+    CheckBox {
+        checked: bool,
+        checked_char: char,
+        checked_font: String,
+        unchecked_char: char,
+        unchecked_font: String,
+    },
     /// A list to choose from, or type into (`w:comboBox`).
     #[serde(rename_all = "camelCase")]
     ComboBox {
@@ -197,20 +207,28 @@ impl ControlKind {
     /// The list entries of a combo box or drop-down list.
     pub fn items(&self) -> Option<&Vec<ListItem>> {
         match self {
-            ControlKind::ComboBox { items, .. } | ControlKind::DropDown { items, .. } => Some(items),
+            ControlKind::ComboBox { items, .. } | ControlKind::DropDown { items, .. } => {
+                Some(items)
+            }
             _ => None,
         }
     }
     /// Typed text may go in (not a check box, drop-down list or picture).
     pub fn takes_typing(&self) -> bool {
-        !matches!(self, ControlKind::CheckBox { .. } | ControlKind::DropDown { .. } | ControlKind::Picture)
+        !matches!(
+            self,
+            ControlKind::CheckBox { .. } | ControlKind::DropDown { .. } | ControlKind::Picture
+        )
     }
     /// The text its placeholder shows by default.
     pub fn default_placeholder(&self) -> &'static str {
         match self {
             ControlKind::ComboBox { .. } | ControlKind::DropDown { .. } => "Pick an option.",
             ControlKind::Date { .. } => "Pick a date.",
-            ControlKind::CheckBox { .. } | ControlKind::Picture | ControlKind::RepeatingSection { .. } | ControlKind::RepeatingSectionItem => "",
+            ControlKind::CheckBox { .. }
+            | ControlKind::Picture
+            | ControlKind::RepeatingSection { .. }
+            | ControlKind::RepeatingSectionItem => "",
             _ => "Type here.",
         }
     }
@@ -253,11 +271,19 @@ pub struct ContentControl {
 impl ContentControl {
     pub fn new(kind: ControlKind) -> ContentControl {
         let placeholder_text = kind.default_placeholder().to_string();
-        ContentControl { kind, placeholder_text, ..Default::default() }
+        ContentControl {
+            kind,
+            placeholder_text,
+            ..Default::default()
+        }
     }
     /// The text to show while empty.
     pub fn placeholder_shown(&self) -> &str {
-        if self.placeholder_text.is_empty() { self.kind.default_placeholder() } else { &self.placeholder_text }
+        if self.placeholder_text.is_empty() {
+            self.kind.default_placeholder()
+        } else {
+            &self.placeholder_text
+        }
     }
 }
 
@@ -281,7 +307,11 @@ impl ControlWrap {
 pub enum ControlEvent<'a> {
     /// A control opens: at a `ControlStart` at byte `off` of paragraph `block`, or (`off`
     /// `None`) before table `block`.
-    Open { block: usize, off: Option<usize>, control: &'a ContentControl },
+    Open {
+        block: usize,
+        off: Option<usize>,
+        control: &'a ContentControl,
+    },
     /// The innermost open control closes: at a `ControlEnd` at `off`, or after table `block`.
     Close { block: usize, off: Option<usize> },
 }
@@ -305,23 +335,44 @@ pub fn control_events(bl: &Blocks) -> Vec<ControlEvent<'_>> {
     for (i, b) in bl.iter().enumerate() {
         match &**b {
             Block::Para(p) => {
-                if !p.objects.iter().any(|o| matches!(o, InlineObject::ControlStart { .. } | InlineObject::ControlEnd)) {
+                if !p.objects.iter().any(|o| {
+                    matches!(
+                        o,
+                        InlineObject::ControlStart { .. } | InlineObject::ControlEnd
+                    )
+                }) {
                     continue;
                 }
                 for off in p.object_offsets() {
                     match p.object_at(off) {
-                        Some(InlineObject::ControlStart { control }) => out.push(ControlEvent::Open { block: i, off: Some(off), control }),
-                        Some(InlineObject::ControlEnd) => out.push(ControlEvent::Close { block: i, off: Some(off) }),
+                        Some(InlineObject::ControlStart { control }) => {
+                            out.push(ControlEvent::Open {
+                                block: i,
+                                off: Some(off),
+                                control,
+                            })
+                        }
+                        Some(InlineObject::ControlEnd) => out.push(ControlEvent::Close {
+                            block: i,
+                            off: Some(off),
+                        }),
                         _ => {}
                     }
                 }
             }
             Block::Table(t) => {
                 for c in &t.controls.open {
-                    out.push(ControlEvent::Open { block: i, off: None, control: c });
+                    out.push(ControlEvent::Open {
+                        block: i,
+                        off: None,
+                        control: c,
+                    });
                 }
                 for _ in 0..t.controls.close.min(10_000) {
-                    out.push(ControlEvent::Close { block: i, off: None });
+                    out.push(ControlEvent::Close {
+                        block: i,
+                        off: None,
+                    });
                 }
             }
         }
@@ -363,7 +414,10 @@ pub struct ControlRange {
 impl ControlRange {
     /// The start of the content (just after the start marker).
     pub fn content_start(&self) -> Pos {
-        Pos { off: self.start.off + OBJ.len_utf8(), ..self.start.clone() }
+        Pos {
+            off: self.start.off + OBJ.len_utf8(),
+            ..self.start.clone()
+        }
     }
     /// Whether `p` is inside the control (between its markers, either edge included).
     pub fn contains(&self, p: &Pos) -> bool {
@@ -377,7 +431,13 @@ impl ControlRange {
     }
 }
 
-fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: &mut Vec<ControlRange>) {
+fn scan(
+    story: StoryRef,
+    bl: &Blocks,
+    prefix: &mut Vec<u32>,
+    depth: usize,
+    out: &mut Vec<ControlRange>,
+) {
     if depth > MAX_DEPTH {
         return;
     }
@@ -385,8 +445,17 @@ fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: 
     if !events.is_empty() {
         let (pairs, _) = pair_events(&events);
         for (o, c, d) in pairs {
-            let (Some(ControlEvent::Open { block: ob, off: Some(oo), control }), Some(ControlEvent::Close { block: cb, off: Some(co) })) =
-                (events.get(o), events.get(c))
+            let (
+                Some(ControlEvent::Open {
+                    block: ob,
+                    off: Some(oo),
+                    control,
+                }),
+                Some(ControlEvent::Close {
+                    block: cb,
+                    off: Some(co),
+                }),
+            ) = (events.get(o), events.get(c))
             else {
                 continue;
             };
@@ -395,7 +464,12 @@ fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: 
                 path.push(u32::try_from(b).unwrap_or(u32::MAX));
                 Pos::new(story, Path(path), off)
             };
-            out.push(ControlRange { control: (*control).clone(), start: at(*ob, *oo), end: at(*cb, *co), depth: d });
+            out.push(ControlRange {
+                control: (*control).clone(),
+                start: at(*ob, *oo),
+                end: at(*cb, *co),
+                depth: d,
+            });
         }
     }
     for (i, b) in bl.iter().enumerate() {
@@ -416,7 +490,13 @@ fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: 
 }
 
 /// Positions of the markers without a partner in a block list and the cells inside it.
-fn orphans(bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: &mut Vec<(Path, usize)>, tables: &mut Vec<(Path, usize, bool)>) {
+fn orphans(
+    bl: &Blocks,
+    prefix: &mut Vec<u32>,
+    depth: usize,
+    out: &mut Vec<(Path, usize)>,
+    tables: &mut Vec<(Path, usize, bool)>,
+) {
     if depth > MAX_DEPTH {
         return;
     }
@@ -470,7 +550,10 @@ fn balance_list(bl: &mut Blocks) -> usize {
     if paras.is_empty() && tables.is_empty() {
         return 0;
     }
-    let mut d = Document { body: std::mem::take(bl), ..Document::new() };
+    let mut d = Document {
+        body: std::mem::take(bl),
+        ..Document::new()
+    };
     let removed = d.remove_orphans(StoryRef::Body, paras, tables);
     *bl = d.body;
     removed
@@ -478,7 +561,9 @@ fn balance_list(bl: &mut Blocks) -> usize {
 
 impl Document {
     fn control_stories(&self) -> Vec<StoryRef> {
-        std::iter::once(StoryRef::Body).chain(self.parts.keys().map(|k| StoryRef::Part(*k))).collect()
+        std::iter::once(StoryRef::Body)
+            .chain(self.parts.keys().map(|k| StoryRef::Part(*k)))
+            .collect()
     }
 
     /// The whole content controls of a story (around paragraph content), in the order they close.
@@ -494,8 +579,12 @@ impl Document {
     pub fn control_at(&self, p: &Pos) -> Option<ControlRange> {
         let para = self.para_at(p)?;
         // Cheap test first: no controls anywhere near.
-        if !para.objects.iter().any(|o| matches!(o, InlineObject::ControlStart { .. } | InlineObject::ControlEnd))
-            && !self.story_has_controls(p.story)
+        if !para.objects.iter().any(|o| {
+            matches!(
+                o,
+                InlineObject::ControlStart { .. } | InlineObject::ControlEnd
+            )
+        }) && !self.story_has_controls(p.story)
         {
             return None;
         }
@@ -506,10 +595,17 @@ impl Document {
     }
 
     fn story_has_controls(&self, s: StoryRef) -> bool {
-        let Some(bl) = self.story(s) else { return false };
+        let Some(bl) = self.story(s) else {
+            return false;
+        };
         let mut any = false;
         for b in bl {
-            crate::edit::each_para(b, 0, &mut |p| any |= p.objects.iter().any(|o| matches!(o, InlineObject::ControlStart { .. })));
+            crate::edit::each_para(b, 0, &mut |p| {
+                any |= p
+                    .objects
+                    .iter()
+                    .any(|o| matches!(o, InlineObject::ControlStart { .. }))
+            });
             if any {
                 return true;
             }
@@ -532,13 +628,23 @@ impl Document {
         let a = r.content_start();
         let mut out = String::new();
         for path in self.paths_between(&a, &r.end) {
-            let Some(p) = self.para(a.story, &path) else { continue };
+            let Some(p) = self.para(a.story, &path) else {
+                continue;
+            };
             let from = if path == a.path { a.off } else { 0 };
-            let to = if path == r.end.path { r.end.off } else { p.len() };
+            let to = if path == r.end.path {
+                r.end.off
+            } else {
+                p.len()
+            };
             if !out.is_empty() {
                 out.push('\n');
             }
-            let mut k = p.text.get(..from).map(|t| t.chars().filter(|c| *c == OBJ).count()).unwrap_or(0);
+            let mut k = p
+                .text
+                .get(..from)
+                .map(|t| t.chars().filter(|c| *c == OBJ).count())
+                .unwrap_or(0);
             for c in p.text.get(from..to.max(from)).unwrap_or("").chars() {
                 if c == OBJ {
                     if let Some(o) = p.objects.get(k) {
@@ -577,7 +683,12 @@ impl Document {
         removed
     }
 
-    fn remove_orphans(&mut self, s: StoryRef, mut paras: Vec<(Path, usize)>, tables: Vec<(Path, usize, bool)>) -> usize {
+    fn remove_orphans(
+        &mut self,
+        s: StoryRef,
+        mut paras: Vec<(Path, usize)>,
+        tables: Vec<(Path, usize, bool)>,
+    ) -> usize {
         let mut removed = 0;
         // Last first, so earlier offsets in the same paragraph stay valid.
         paras.sort();
@@ -612,16 +723,28 @@ impl Document {
         let mut out = Vec::new();
         let paths = self.paths_between(a, b);
         let any = paths.iter().any(|p| {
-            self.para(a.story, p).is_some_and(|q| q.objects.iter().any(|o| matches!(o, InlineObject::ControlStart { .. } | InlineObject::ControlEnd)))
+            self.para(a.story, p).is_some_and(|q| {
+                q.objects.iter().any(|o| {
+                    matches!(
+                        o,
+                        InlineObject::ControlStart { .. } | InlineObject::ControlEnd
+                    )
+                })
+            })
         });
         if !any {
             return out;
         }
-        let inside = |p: &Path, off: usize| (p, off) >= (&a.path, a.off) && (p, off + OBJ.len_utf8()) <= (&b.path, b.off);
+        let inside = |p: &Path, off: usize| {
+            (p, off) >= (&a.path, a.off) && (p, off + OBJ.len_utf8()) <= (&b.path, b.off)
+        };
         // Ranges whose markers are in paragraphs.
         let ranges = self.control_ranges(a.story);
         for r in &ranges {
-            let (s, e) = (inside(&r.start.path, r.start.off), inside(&r.end.path, r.end.off));
+            let (s, e) = (
+                inside(&r.start.path, r.start.off),
+                inside(&r.end.path, r.end.off),
+            );
             if s && !e {
                 out.push((r.start.path.clone(), r.start.off));
             }
@@ -631,12 +754,22 @@ impl Document {
         }
         // Markers paired with a table wrap: their partner is never deleted with them.
         for path in &paths {
-            let Some(p) = self.para(a.story, path) else { continue };
+            let Some(p) = self.para(a.story, path) else {
+                continue;
+            };
             for off in p.object_offsets() {
-                if !inside(path, off) || !matches!(p.object_at(off), Some(InlineObject::ControlStart { .. } | InlineObject::ControlEnd)) {
+                if !inside(path, off)
+                    || !matches!(
+                        p.object_at(off),
+                        Some(InlineObject::ControlStart { .. } | InlineObject::ControlEnd)
+                    )
+                {
                     continue;
                 }
-                let paired = ranges.iter().any(|r| (r.start.path == *path && r.start.off == off) || (r.end.path == *path && r.end.off == off));
+                let paired = ranges.iter().any(|r| {
+                    (r.start.path == *path && r.start.off == off)
+                        || (r.end.path == *path && r.end.off == off)
+                });
                 if !paired && self.paired_with_table(a.story, path, off) {
                     out.push((path.clone(), off));
                 }
@@ -649,13 +782,18 @@ impl Document {
 
     /// Whether the marker at `path`/`off` is paired with a table wrap's open or close.
     fn paired_with_table(&self, s: StoryRef, path: &Path, off: usize) -> bool {
-        let Some(bl) = self.container(s, path) else { return false };
+        let Some(bl) = self.container(s, path) else {
+            return false;
+        };
         let events = control_events(bl);
         let (pairs, _) = pair_events(&events);
-        let me = events.iter().position(|e| e.block() == path.last() && e.off() == Some(off));
+        let me = events
+            .iter()
+            .position(|e| e.block() == path.last() && e.off() == Some(off));
         let Some(me) = me else { return false };
         pairs.iter().any(|(o, c, _)| {
-            (*o == me && events.get(*c).is_some_and(|e| e.off().is_none())) || (*c == me && events.get(*o).is_some_and(|e| e.off().is_none()))
+            (*o == me && events.get(*c).is_some_and(|e| e.off().is_none()))
+                || (*c == me && events.get(*o).is_some_and(|e| e.off().is_none()))
         })
     }
 
@@ -663,7 +801,9 @@ impl Document {
     /// a block-level control, goes inside it; one at the end, after a block-level control's
     /// end, goes inside it too (the control is around the whole paragraph).
     pub fn typing_pos(&self, p: &Pos) -> Pos {
-        let Some(para) = self.para_at(p) else { return p.clone() };
+        let Some(para) = self.para_at(p) else {
+            return p.clone();
+        };
         let is_start = |off: usize| matches!(para.object_at(off), Some(InlineObject::ControlStart { control }) if control.block);
         let is_end = |off: usize| matches!(para.object_at(off), Some(InlineObject::ControlEnd));
         let w = OBJ.len_utf8();
@@ -679,7 +819,12 @@ impl Document {
         if p.off == para.len() && off >= w && is_end(off - w) {
             // Step back over the trailing ends that close block-level controls.
             let ranges = self.control_ranges(p.story);
-            while off >= w && is_end(off - w) && ranges.iter().any(|r| r.end.path == p.path && r.end.off == off - w && r.control.block) {
+            while off >= w
+                && is_end(off - w)
+                && ranges
+                    .iter()
+                    .any(|r| r.end.path == p.path && r.end.off == off - w && r.control.block)
+            {
                 off -= w;
             }
             return Pos { off, ..p.clone() };

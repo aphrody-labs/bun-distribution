@@ -83,7 +83,11 @@ impl Font {
         let tx = g4tx::parse(g4tx_bytes).map_err(|e| anyhow::anyhow!("g4tx: {e:?}"))?;
         let t = tx.textures.first().context("pas de texture police")?;
         let dds = &g4tx_bytes[t.data_offset..];
-        let off = if dds.len() >= 88 && &dds[84..88] == b"DX10" { 148 } else { 128 };
+        let off = if dds.len() >= 88 && &dds[84..88] == b"DX10" {
+            148
+        } else {
+            128
+        };
         let atlas = dds[off..].to_vec();
         let (aw, ah) = (t.width as usize, t.height as usize);
         let la = LatinAtlas::from_atlas(&atlas, aw, ah, 946, metrics.dims.cell_height);
@@ -95,7 +99,13 @@ impl Default for Font {
     fn default() -> Self {
         Self {
             atlas: vec![0; 64 * 64 * 4],
-            la: LatinAtlas { spans: Vec::new(), y_base: 0, cell_h: 24, ink_top: 0, ink_h: 24 },
+            la: LatinAtlas {
+                spans: Vec::new(),
+                y_base: 0,
+                cell_h: 24,
+                ink_top: 0,
+                ink_h: 24,
+            },
             aw: 64,
         }
     }
@@ -134,7 +144,8 @@ impl Font {
     fn dessiner(&self, canvas: &mut [u8], cw: usize, x: i32, y: i32, texte: &str, fg: [u8; 4]) {
         let rendu = self.texte_rendu(texte);
         let y_cellule = y - i32::from(self.la.ink_top);
-        self.la.blit_line(&self.atlas, self.aw, canvas, cw, x, y_cellule, &rendu, fg);
+        self.la
+            .blit_line(&self.atlas, self.aw, canvas, cw, x, y_cellule, &rendu, fg);
     }
 
     /// Tronque `texte` pour qu'il tienne dans `max_px`, en terminant par « … » s'il a été coupé.
@@ -207,7 +218,10 @@ pub fn host_owned_surface() -> Vec<u8> {
 
 impl<'a> Frame<'a> {
     fn new(f: &'a Font) -> Self {
-        Self { buf: vec![0u8; W * H * 4], f }
+        Self {
+            buf: vec![0u8; W * H * 4],
+            f,
+        }
     }
     /// Cadre initialisé depuis une frame RGBA existante (ex. rendu 3D du perso en toile de fond).
     fn from_base(f: &'a Font, base: &[u8]) -> Self {
@@ -221,7 +235,12 @@ impl<'a> Frame<'a> {
         for y in 0..H {
             let t = y as f32 / H as f32;
             let mix = |a: u8, b: u8| (f32::from(a) * (1.0 - t) + f32::from(b) * t) as u8;
-            let c = [mix(top[0], bot[0]), mix(top[1], bot[1]), mix(top[2], bot[2]), 255];
+            let c = [
+                mix(top[0], bot[0]),
+                mix(top[1], bot[1]),
+                mix(top[2], bot[2]),
+                255,
+            ];
             for x in 0..W {
                 let o = (y * W + x) * 4;
                 self.buf[o..o + 4].copy_from_slice(&c);
@@ -253,7 +272,11 @@ impl<'a> Frame<'a> {
     fn text_wrapped(&mut self, x: i32, y: i32, max_w: i32, line_h: i32, s: &str, color: [u8; 4]) {
         let (mut line, mut row) = (String::new(), 0i32);
         for word in s.split_whitespace() {
-            let trial = if line.is_empty() { word.to_string() } else { format!("{line} {word}") };
+            let trial = if line.is_empty() {
+                word.to_string()
+            } else {
+                format!("{line} {word}")
+            };
             if self.f.largeur(&trial) as i32 > max_w && !line.is_empty() {
                 self.text(x, y + row * line_h, &line, color);
                 row += 1;
@@ -281,7 +304,7 @@ pub fn render_state<'a>(state: &GameState, f: &'a Font, bg: Option<&[u8]>) -> Fr
             s.text_centered(250, "INAZUMA ELEVEN", [235, 240, 255, 255]);
             s.text_centered(330, "VICTORY ROAD", [120, 200, 255, 255]);
             s.text_centered(560, "PRESS START", [200, 210, 230, 255]);
-        },
+        }
         GameState::MainMenu { sel } => return render_main_menu(*sel, f),
         GameState::Match { home, away } => {
             if bg.is_none() {
@@ -300,7 +323,7 @@ pub fn render_state<'a>(state: &GameState, f: &'a Font, bg: Option<&[u8]>) -> Fr
                 "DRAW"
             };
             s.text_centered(600, verdict, [120, 255, 160, 255]);
-        },
+        }
         GameState::Story { speaker, line } => {
             if bg.is_none() {
                 s.gradient([20, 26, 54], [8, 10, 22]);
@@ -312,8 +335,15 @@ pub fn render_state<'a>(state: &GameState, f: &'a Font, bg: Option<&[u8]>) -> Fr
             s.rect(bx0, by0, bx1, by0 + 3, [90, 200, 255, 255]);
             s.rect(bx0 + 20, by0 - 40, bx0 + 280, by0 + 2, [30, 60, 110, 235]);
             s.text(bx0 + 36, by0 - 32, speaker, [200, 235, 255, 255]);
-            s.text_wrapped(bx0 + 40, by0 + 28, bx1 - bx0 - 80, 46, line, [240, 244, 250, 255]);
-        },
+            s.text_wrapped(
+                bx0 + 40,
+                by0 + 28,
+                bx1 - bx0 - 80,
+                46,
+                line,
+                [240, 244, 250, 255],
+            );
+        }
     }
     s
 }
@@ -374,7 +404,12 @@ pub fn render_main_menu<'a>(sel: usize, f: &'a Font) -> Frame<'a> {
     // Barre supérieure de titre
     s.rect(0, 0, W as i32, 64, [16, 48, 110, 240]);
     s.rect(0, 62, W as i32, 64, [60, 180, 255, 255]);
-    s.text(32, 14, "INAZUMA ELEVEN : VICTORY ROAD", [230, 242, 255, 255]);
+    s.text(
+        32,
+        14,
+        "INAZUMA ELEVEN : VICTORY ROAD",
+        [230, 242, 255, 255],
+    );
     s.text(W as i32 - 280, 14, "MENU PRINCIPAL", [120, 200, 255, 255]);
 
     // Panneau gauche : les 9 onglets réels du jeu
@@ -389,14 +424,22 @@ pub fn render_main_menu<'a>(sel: usize, f: &'a Font) -> Frame<'a> {
     for (i, &item) in crate::MENU.iter().enumerate() {
         let y = haut_liste + i as i32 * gap;
         let hot = i == sel;
-        let bg_c = if hot { [40, 110, 200, 245] } else { [16, 24, 46, 210] };
+        let bg_c = if hot {
+            [40, 110, 200, 245]
+        } else {
+            [16, 24, 46, 210]
+        };
         s.rect(32, y, left_w, y + bh, bg_c);
         if hot {
             s.rect(32, y, 40, y + bh, [100, 220, 255, 255]);
             s.rect(left_w - 4, y, left_w, y + bh, [100, 220, 255, 255]);
         }
         let txt = f.tronquer(item, left_w - 64);
-        let color = if hot { [255, 255, 255, 255] } else { [190, 205, 225, 255] };
+        let color = if hot {
+            [255, 255, 255, 255]
+        } else {
+            [190, 205, 225, 255]
+        };
         s.text(52, y + (bh - ligne) / 2, &txt, color);
     }
 
@@ -405,25 +448,65 @@ pub fn render_main_menu<'a>(sel: usize, f: &'a Font) -> Frame<'a> {
     let right_w = W as i32 - 32 - right_x;
     let right_top = 84;
     let right_bot = H as i32 - 54;
-    s.rect(right_x, right_top, right_x + right_w, right_bot, [14, 22, 42, 230]);
-    s.rect(right_x, right_top, right_x + right_w, right_top + 4, [60, 160, 240, 255]);
+    s.rect(
+        right_x,
+        right_top,
+        right_x + right_w,
+        right_bot,
+        [14, 22, 42, 230],
+    );
+    s.rect(
+        right_x,
+        right_top,
+        right_x + right_w,
+        right_top + 4,
+        [60, 160, 240, 255],
+    );
 
     // Titre de l'onglet actif dans la carte
     let active_title = crate::MENU.get(sel).copied().unwrap_or("MENU");
-    s.text(right_x + 24, right_top + 24, active_title, [240, 245, 255, 255]);
+    s.text(
+        right_x + 24,
+        right_top + 24,
+        active_title,
+        [240, 245, 255, 255],
+    );
 
     // Description de l'onglet
     let desc = MENU_DESCRIPTIONS.get(sel).copied().unwrap_or("");
-    s.text_wrapped(right_x + 24, right_top + 70, right_w - 48, 36, desc, [180, 200, 230, 255]);
+    s.text_wrapped(
+        right_x + 24,
+        right_top + 70,
+        right_w - 48,
+        36,
+        desc,
+        [180, 200, 230, 255],
+    );
 
     // Si on est sur "Adversaires" (sel == 5), afficher les 5 modes disponibles
     if sel == 5 {
-        s.text(right_x + 24, right_top + 160, "MODES DISPONIBLES :", [100, 210, 255, 255]);
+        s.text(
+            right_x + 24,
+            right_top + 160,
+            "MODES DISPONIBLES :",
+            [100, 210, 255, 255],
+        );
         for (m_idx, &mode) in crate::MODES.iter().enumerate() {
             let my = right_top + 200 + m_idx as i32 * 38;
-            s.rect(right_x + 24, my, right_x + right_w - 24, my + 30, [20, 32, 60, 200]);
+            s.rect(
+                right_x + 24,
+                my,
+                right_x + right_w - 24,
+                my + 30,
+                [20, 32, 60, 200],
+            );
             s.rect(right_x + 24, my, right_x + 28, my + 30, [80, 160, 230, 255]);
-            s.text(right_x + 36, my + (30 - ligne) / 2, mode, [220, 235, 250, 255]);
+            s.text(
+                right_x + 36,
+                my + (30 - ligne) / 2,
+                mode,
+                [220, 235, 250, 255],
+            );
         }
     } else {
         // Décoration d'aperçu générique
@@ -437,10 +520,20 @@ pub fn render_main_menu<'a>(sel: usize, f: &'a Font) -> Frame<'a> {
         let center_x = right_x + right_w / 2;
         let lbl1 = "VFS / LEVEL-5 SYSTEM ENGINE";
         let w1 = f.largeur(lbl1) as i32;
-        s.text(center_x - w1 / 2, right_top + 240, lbl1, [70, 110, 170, 255]);
+        s.text(
+            center_x - w1 / 2,
+            right_top + 240,
+            lbl1,
+            [70, 110, 170, 255],
+        );
         let lbl2 = "Composant operationnel - Ready";
         let w2 = f.largeur(lbl2) as i32;
-        s.text(center_x - w2 / 2, right_top + 280, lbl2, [100, 170, 230, 255]);
+        s.text(
+            center_x - w2 / 2,
+            right_top + 280,
+            lbl2,
+            [100, 170, 230, 255],
+        );
     }
 
     // Barre inférieure d'aide / commandes
@@ -478,7 +571,11 @@ pub fn render_list<'a>(title: &str, items: &[&str], sel: usize, f: &'a Font) -> 
     for (i, item) in items.iter().enumerate() {
         let y = haut_liste + i as i32 * gap;
         let hot = i == sel;
-        let bg_c = if hot { [60, 130, 220, 235] } else { [16, 22, 44, 210] };
+        let bg_c = if hot {
+            [60, 130, 220, 235]
+        } else {
+            [16, 22, 44, 210]
+        };
         s.rect(70, y, W as i32 - 70, y + bh, bg_c);
         if hot {
             s.rect(70, y, 76, y + bh, [120, 220, 255, 255]);
@@ -534,10 +631,14 @@ impl CpuRenderer {
                 );
                 let mbg = character::render_match_scene(&model, W as u32, H as u32);
                 (Some(cbg), Some(mbg))
-            },
+            }
             None => (None, None),
         };
-        Ok(Self { font, char_bg, match_bg })
+        Ok(Self {
+            font,
+            char_bg,
+            match_bg,
+        })
     }
 }
 
@@ -589,7 +690,11 @@ mod tests {
     #[test]
     fn l_ascii_n_est_pas_replie() {
         for c in "AZaz09 !?,.-'\"".chars() {
-            assert_eq!(repli_ascii(c), None, "« {c} » ne doit pas passer par le repli");
+            assert_eq!(
+                repli_ascii(c),
+                None,
+                "« {c} » ne doit pas passer par le repli"
+            );
         }
     }
 

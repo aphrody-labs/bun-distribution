@@ -60,7 +60,12 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { min_word: 5, after_first: 2, before_last: 2, capitalized: true }
+        Limits {
+            min_word: 5,
+            after_first: 2,
+            before_last: 2,
+            capitalized: true,
+        }
     }
 }
 
@@ -130,7 +135,11 @@ fn core_breaks(core: &[char], lang: Lang) -> (Vec<usize>, Source) {
     }
     let dict = Dictionary::en_us();
     let s: String = core.iter().collect();
-    let from_mask = |m: u64, len: usize| (1..len.min(64)).filter(|&i| m & (1 << i) != 0).collect::<Vec<_>>();
+    let from_mask = |m: u64, len: usize| {
+        (1..len.min(64))
+            .filter(|&i| m & (1 << i) != 0)
+            .collect::<Vec<_>>()
+    };
     if let Some(m) = dict.get(&s) {
         return (from_mask(m, n), Source::Dictionary);
     }
@@ -181,12 +190,25 @@ pub fn word_breaks_in(word: &str, lang: Lang) -> (Vec<usize>, Source) {
         while b > a && is_apostrophe(chars[b - 1]) {
             b -= 1;
         }
-        let core: Vec<char> = chars[a..b].iter().map(|&c| if is_apostrophe(c) { '\'' } else { c.to_lowercase().next().unwrap_or(c) }).collect();
+        let core: Vec<char> = chars[a..b]
+            .iter()
+            .map(|&c| {
+                if is_apostrophe(c) {
+                    '\''
+                } else {
+                    c.to_lowercase().next().unwrap_or(c)
+                }
+            })
+            .collect();
         let (pts, s) = core_breaks(&core, lang);
         if src == Source::None {
             src = s;
         }
-        out.extend(pts.into_iter().filter(|&p| p > 0 && p < core.len() && core[p - 1] != '\'' && core[p] != '\'').map(|p| a + p));
+        out.extend(
+            pts.into_iter()
+                .filter(|&p| p > 0 && p < core.len() && core[p - 1] != '\'' && core[p] != '\'')
+                .map(|p| a + p),
+        );
         i = j;
     }
     (out, src)
@@ -261,7 +283,8 @@ pub fn hyphenate_word(word: &str, lim: &Limits) -> String {
 // ---------- heuristic fallback (words outside the pattern alphabet) ----------
 
 fn is_vowel(c: char) -> bool {
-    matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y') || (c.is_alphabetic() && !c.is_ascii())
+    matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y')
+        || (c.is_alphabetic() && !c.is_ascii())
 }
 
 fn onset_pair(a: char, b: char) -> bool {
@@ -288,13 +311,23 @@ fn heuristic_points(c: &[char]) -> Vec<usize> {
         let ok = if v[i - 1] && !v[i] {
             (i + 1 < n && v[i + 1]) || (i + 2 < n && onset_pair(c[i], c[i + 1]) && v[i + 2])
         } else if !v[i - 1] && !v[i] {
-            i >= 2 && v[i - 2] && i + 1 < n && v[i + 1] && !onset_pair(c[i - 1], c[i]) && c[i - 1] != c[i] || (c[i - 1] == c[i] && i >= 2 && v[i - 2])
+            i >= 2
+                && v[i - 2]
+                && i + 1 < n
+                && v[i + 1]
+                && !onset_pair(c[i - 1], c[i])
+                && c[i - 1] != c[i]
+                || (c[i - 1] == c[i] && i >= 2 && v[i - 2])
         } else {
             false
         };
         // Both parts need a sounded vowel: a trailing silent `e`, `ed` or `es` doesn't count.
         let right: String = c[i..].iter().collect();
-        let core = right.strip_suffix("ed").or_else(|| right.strip_suffix("es")).or_else(|| right.strip_suffix('e')).unwrap_or(&right);
+        let core = right
+            .strip_suffix("ed")
+            .or_else(|| right.strip_suffix("es"))
+            .or_else(|| right.strip_suffix('e'))
+            .unwrap_or(&right);
         if ok && core.chars().any(is_vowel) && core.len() > 1 && v[..i].iter().any(|x| *x) {
             out.push(i);
         }
@@ -312,8 +345,16 @@ mod tests {
 
     #[test]
     fn bundled_data_loads() {
-        assert!(Dictionary::en_us().len() > 150_000, "{}", Dictionary::en_us().len());
-        assert!(Patterns::en_us().len() > 1000, "{}", Patterns::en_us().len());
+        assert!(
+            Dictionary::en_us().len() > 150_000,
+            "{}",
+            Dictionary::en_us().len()
+        );
+        assert!(
+            Patterns::en_us().len() > 1000,
+            "{}",
+            Patterns::en_us().len()
+        );
     }
 
     #[test]
@@ -334,8 +375,15 @@ mod tests {
         assert_eq!(h("Typography"), "Ty-pog-ra-phy");
         assert_eq!(h("TYPOGRAPHY"), "TY-POG-RA-PHY");
         assert_eq!(h("COMMODI"), "COM-MO-DI");
-        let whole = Limits { capitalized: false, ..Limits::default() };
-        assert_eq!(hyphenate_word("TYPOGRAPHY", &whole), "TYPOGRAPHY", "Hyphenate Capitalized Words off");
+        let whole = Limits {
+            capitalized: false,
+            ..Limits::default()
+        };
+        assert_eq!(
+            hyphenate_word("TYPOGRAPHY", &whole),
+            "TYPOGRAPHY",
+            "Hyphenate Capitalized Words off"
+        );
         assert_eq!(h("typography,"), "ty-pog-ra-phy,");
         assert_eq!(h("“typography”"), "“ty-pog-ra-phy”");
         assert_eq!(h("typography's"), "ty-pog-ra-phy's");
@@ -364,14 +412,28 @@ mod tests {
 
     #[test]
     fn limits_are_respected() {
-        let lim = Limits { min_word: 5, after_first: 3, before_last: 3, capitalized: false };
-        for w in ["typography", "hyphenation", "justification", "Paragraph", "beautiful"] {
+        let lim = Limits {
+            min_word: 5,
+            after_first: 3,
+            before_last: 3,
+            capitalized: false,
+        };
+        for w in [
+            "typography",
+            "hyphenation",
+            "justification",
+            "Paragraph",
+            "beautiful",
+        ] {
             for p in hyphen_points(w, &lim) {
                 assert!(p >= 3 && p <= w.chars().count() - 3, "{w} {p}");
             }
         }
         assert!(hyphen_points("Paragraph", &lim).is_empty());
-        let lim = Limits { min_word: 12, ..Limits::default() };
+        let lim = Limits {
+            min_word: 12,
+            ..Limits::default()
+        };
         assert!(hyphen_points("typography", &lim).is_empty());
     }
 
@@ -381,7 +443,16 @@ mod tests {
         assert_eq!(es, Lang::for_language("es_ES").unwrap());
         let h = |w: &str| {
             let pts = hyphen_points_in(w, &Limits::default(), es);
-            w.chars().enumerate().map(|(i, c)| if pts.contains(&i) { format!("-{c}") } else { c.to_string() }).collect::<String>()
+            w.chars()
+                .enumerate()
+                .map(|(i, c)| {
+                    if pts.contains(&i) {
+                        format!("-{c}")
+                    } else {
+                        c.to_string()
+                    }
+                })
+                .collect::<String>()
         };
         assert_eq!(h("transición"), "tran-si-ción");
         assert_eq!(h("pingüino"), "pin-güino");
@@ -389,7 +460,10 @@ mod tests {
         assert_eq!(h("desesperación"), "de-ses-pe-ra-ción");
         assert_eq!(h("teatro"), "tea-tro", "a vowel run stays whole");
         assert_eq!(h("calle"), "ca-lle", "ll stays whole");
-        assert!(Lang::for_language("French").is_none(), "only languages built in");
+        assert!(
+            Lang::for_language("French").is_none(),
+            "only languages built in"
+        );
     }
 
     #[test]
@@ -399,16 +473,32 @@ mod tests {
         assert_eq!(pt, Lang::for_language("pt_BR").unwrap());
         assert_ne!(pt, Lang::for_language("Spanish").unwrap());
         // hyph-pt's own minimum: three letters after the last break.
-        let lim = Limits { before_last: 3, ..Limits::default() };
+        let lim = Limits {
+            before_last: 3,
+            ..Limits::default()
+        };
         let h = |w: &str| {
             let pts = hyphen_points_in(w, &lim, pt);
-            w.chars().enumerate().map(|(i, c)| if pts.contains(&i) { format!("-{c}") } else { c.to_string() }).collect::<String>()
+            w.chars()
+                .enumerate()
+                .map(|(i, c)| {
+                    if pts.contains(&i) {
+                        format!("-{c}")
+                    } else {
+                        c.to_string()
+                    }
+                })
+                .collect::<String>()
         };
         assert_eq!(h("matemática"), "ma-te-má-tica");
         assert_eq!(h("orientação"), "ori-en-ta-ção");
         assert_eq!(h("Universidade"), "Uni-ver-si-dade");
         assert_eq!(h("experiência"), "ex-pe-ri-ên-cia");
-        assert_eq!(h("pós-graduação"), "pós-gra-du-a-ção", "each part of a compound");
+        assert_eq!(
+            h("pós-graduação"),
+            "pós-gra-du-a-ção",
+            "each part of a compound"
+        );
     }
 
     #[test]

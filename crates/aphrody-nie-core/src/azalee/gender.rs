@@ -23,7 +23,7 @@ pub fn is_female_gender(gender: GenderValue<'_>) -> bool {
         GenderValue::Number(value) => value == 1.0,
         GenderValue::Text(value) => {
             matches!(value.to_ascii_lowercase().as_str(), "f" | "female" | "1")
-        },
+        }
         GenderValue::Missing => false,
     }
 }
@@ -35,7 +35,7 @@ pub fn is_male_gender(gender: GenderValue<'_>) -> bool {
         GenderValue::Number(value) => value == 0.0,
         GenderValue::Text(value) => {
             matches!(value.to_ascii_lowercase().as_str(), "m" | "male" | "0")
-        },
+        }
         GenderValue::Missing => true,
     }
 }

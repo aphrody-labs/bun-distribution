@@ -127,7 +127,7 @@ pub(super) unsafe fn observer_system_runner<E: EventPattern, S: ObserverSystem<E
 mod tests {
     use super::*;
     use crate::{
-        error::{ignore, FallbackErrorHandler},
+        error::{FallbackErrorHandler, ignore},
         event::Event,
         observer::On,
     };

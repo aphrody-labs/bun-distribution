@@ -3,7 +3,9 @@
 use serde_json::{Map, Value};
 use vectorcraft_geom::Point;
 use vectorcraft_tools::distort::perspective::widget::WidgetPlace;
-use vectorcraft_tools::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, settings};
+use vectorcraft_tools::{
+    Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, settings,
+};
 
 use crate::{EngineError, Prefs, Result, Session};
 
@@ -72,7 +74,9 @@ impl Session {
         // Choosing a perspective tool shows the document's perspective grid; Hide Grid hides it
         // again, the tool staying chosen.
         if matches!(id, "perspectiveGrid" | "perspectiveSelection")
-            && self.active().is_some_and(|d| !vectorcraft_tools::distort::perspective::PerspectiveGrid::current(&d.doc).visible)
+            && self.active().is_some_and(|d| {
+                !vectorcraft_tools::distort::perspective::PerspectiveGrid::current(&d.doc).visible
+            })
         {
             crate::cmd::distortcmds::silent(self, |g| g.visible = true)?;
         }
@@ -104,7 +108,11 @@ impl Session {
         if is_selection_tool(id) || matches!(id, "hand" | "zoom" | "rotateView") {
             return None;
         }
-        Some(self.last_selection_tool.unwrap_or(if edits_anchors(id) { "directSelection" } else { "selection" }))
+        Some(self.last_selection_tool.unwrap_or(if edits_anchors(id) {
+            "directSelection"
+        } else {
+            "selection"
+        }))
     }
 
     /// A press with Cmd held (Ctrl elsewhere) and any other tool than a selection tool: the
@@ -114,16 +122,26 @@ impl Session {
         if ev.kind != PointerKind::Down || !ev.mods.cmd || self.lender.is_some() {
             return *ev;
         }
-        let Some(id) = self.lent_tool(self.tool.id()) else { return *ev };
+        let Some(id) = self.lent_tool(self.tool.id()) else {
+            return *ev;
+        };
         let lent = self.make_tool(id);
         self.lender = Some(std::mem::replace(&mut self.tool, lent));
-        PointerEvent { mods: Mods { cmd: false, ..ev.mods }, ..*ev }
+        PointerEvent {
+            mods: Mods {
+                cmd: false,
+                ..ev.mods
+            },
+            ..*ev
+        }
     }
 
     /// The lent selection tool's gesture is over: the tool it was lent to is back as it was (the
     /// Pen goes on drawing its path).
     pub(crate) fn give_back_tool(&mut self, view: ViewInfo) -> Result<()> {
-        let Some(lender) = self.lender.take() else { return Ok(()) };
+        let Some(lender) = self.lender.take() else {
+            return Ok(());
+        };
         let acts = self.with_tool_cx(view, |t, cx| t.deactivate(cx));
         let r = self.apply_actions(acts);
         self.keep_tool_settings();
@@ -142,7 +160,9 @@ impl Session {
     /// Give `t` the persistent options stored for it in `prefs`.
     fn restore_tool_settings(prefs: &Prefs, t: &mut dyn Tool) {
         for (store, keys) in settings::stores(t.id()) {
-            let Some(saved) = prefs.tool_settings.get(store) else { continue };
+            let Some(saved) = prefs.tool_settings.get(store) else {
+                continue;
+            };
             for k in keys {
                 if let Some(v) = saved.get(*k) {
                     t.set_option(k, v);
@@ -170,11 +190,17 @@ impl Session {
         Self::store_tool_settings(&mut self.prefs, self.tool.as_ref());
     }
 
-    pub(crate) fn with_tool_cx<R>(&mut self, view: ViewInfo, f: impl FnOnce(&mut dyn vectorcraft_tools::Tool, &ToolContext) -> R) -> R
+    pub(crate) fn with_tool_cx<R>(
+        &mut self,
+        view: ViewInfo,
+        f: impl FnOnce(&mut dyn vectorcraft_tools::Tool, &ToolContext) -> R,
+    ) -> R
     where
         R: Default,
     {
-        let Some(st) = self.active.and_then(|i| self.docs.get(i)) else { return R::default() };
+        let Some(st) = self.active.and_then(|i| self.docs.get(i)) else {
+            return R::default();
+        };
         let (unit, stroke_unit) = (self.general_unit(), self.stroke_unit());
         let cx = ToolContext {
             doc: &st.doc,
@@ -218,7 +244,10 @@ impl Session {
             pen_rubber_band: self.prefs.pen_rubber_band,
             curvature_rubber_band: self.prefs.curvature_rubber_band,
             placeholder_text: self.prefs.placeholder_text,
-            smart_guide_color: rgb(&self.prefs.smart_guide_color, vectorcraft_tools::guides::MAGENTA),
+            smart_guide_color: rgb(
+                &self.prefs.smart_guide_color,
+                vectorcraft_tools::guides::MAGENTA,
+            ),
             alignment_guides: self.prefs.alignment_guides,
             anchor_path_labels: self.prefs.anchor_path_labels,
             measurement_labels: self.prefs.measurement_labels,
@@ -231,7 +260,11 @@ impl Session {
                 &[]
             },
             screen: view.screen,
-            plane_widget: self.prefs.perspective_widget.show.then_some(self.prefs.perspective_widget.position),
+            plane_widget: self
+                .prefs
+                .perspective_widget
+                .show
+                .then_some(self.prefs.perspective_widget.position),
         };
         let tool = &mut self.tool;
         match crate::guard::catch_panic(|| f(tool.as_mut(), &cx)) {
@@ -241,7 +274,10 @@ impl Session {
                 let id = self.tool.id();
                 self.tool = self.make_tool(id);
                 let _ = self.cancel_interaction();
-                self.tool_panic = Some(EngineError::Internal { cmd: format!("tool `{id}`"), msg });
+                self.tool_panic = Some(EngineError::Internal {
+                    cmd: format!("tool `{id}`"),
+                    msg,
+                });
                 R::default()
             }
         }
@@ -280,14 +316,28 @@ impl Session {
     /// the canvas, snapped as a moved guide is, and is made where the button is released over it
     /// (one undo step); released anywhere else, none is. With the Artboard tool it is an artboard
     /// guide of the active artboard.
-    pub fn ruler_guide(&mut self, vertical: bool, ev: &PointerEvent, on_canvas: bool, view: ViewInfo) -> Result<()> {
+    pub fn ruler_guide(
+        &mut self,
+        vertical: bool,
+        ev: &PointerEvent,
+        on_canvas: bool,
+        view: ViewInfo,
+    ) -> Result<()> {
         let g = match self.ruler_guide.take() {
             Some(g) => Some(g),
             None => {
                 let boards = self.active().map_or(0, |d| d.doc.artboards.len());
-                let active = (self.tool.id() == "artboard").then(|| self.tool.options()["active"].as_u64()).flatten();
-                let artboard = active.and_then(|i| usize::try_from(i).ok()).filter(|i| *i < boards);
-                self.with_tool_cx(view, |_, cx| Some(vectorcraft_tools::rulerguide::NewGuide::new(cx, vertical, artboard)))
+                let active = (self.tool.id() == "artboard")
+                    .then(|| self.tool.options()["active"].as_u64())
+                    .flatten();
+                let artboard = active
+                    .and_then(|i| usize::try_from(i).ok())
+                    .filter(|i| *i < boards);
+                self.with_tool_cx(view, |_, cx| {
+                    Some(vectorcraft_tools::rulerguide::NewGuide::new(
+                        cx, vertical, artboard,
+                    ))
+                })
             }
         };
         let Some(mut g) = g else { return Ok(()) };
@@ -317,7 +367,10 @@ impl Session {
     pub fn tool_key(&mut self, key: ToolKey, mods: Mods, view: ViewInfo) -> Result<Vec<UiRequest>> {
         // 1–4 pick the active perspective plane while the grid is shown.
         if let Some(plane) = self.plane_key(key) {
-            self.execute("perspective.plane.set", &serde_json::json!({ "plane": plane.id() }))?;
+            self.execute(
+                "perspective.plane.set",
+                &serde_json::json!({ "plane": plane.id() }),
+            )?;
             return Ok(vec![]);
         }
         let acts = self.with_tool_cx(view, |t, cx| t.key(cx, key, mods));
@@ -338,7 +391,12 @@ impl Session {
 
     /// IME marked text for the active tool (see `Tool::ime_preedit`; `active_chars` counts
     /// characters).
-    pub fn tool_preedit(&mut self, text: &str, active_chars: Option<std::ops::Range<usize>>, view: ViewInfo) -> Result<Vec<UiRequest>> {
+    pub fn tool_preedit(
+        &mut self,
+        text: &str,
+        active_chars: Option<std::ops::Range<usize>>,
+        view: ViewInfo,
+    ) -> Result<Vec<UiRequest>> {
         let acts = self.with_tool_cx(view, |t, cx| t.ime_preedit(cx, text, active_chars));
         self.take_tool_panic()?;
         self.apply_actions(acts)
@@ -376,8 +434,18 @@ impl Session {
         }
         if let Some(d) = self.active() {
             let w = self.prefs.perspective_widget;
-            let place = w.show.then_some(WidgetPlace { screen: view.screen.as_ref(), corner: w.position });
-            v.splice(0..0, vectorcraft_tools::distort::perspective::grid_overlays_in(&d.doc, 1.0 / view.zoom.max(1e-9), place));
+            let place = w.show.then_some(WidgetPlace {
+                screen: view.screen.as_ref(),
+                corner: w.position,
+            });
+            v.splice(
+                0..0,
+                vectorcraft_tools::distort::perspective::grid_overlays_in(
+                    &d.doc,
+                    1.0 / view.zoom.max(1e-9),
+                    place,
+                ),
+            );
         }
         v
     }
@@ -386,18 +454,27 @@ impl Session {
     /// tools' a crosshair, [`Cursor::precise`]). With Cmd held, the pointer of the selection tool a
     /// press would borrow ([`Self::lend_selection_tool`]).
     pub fn cursor(&mut self, p: Point, mods: Mods, view: ViewInfo) -> Cursor {
-        let lent = if mods.cmd && self.lender.is_none() { self.lent_tool(self.tool.id()) } else { None };
+        let lent = if mods.cmd && self.lender.is_none() {
+            self.lent_tool(self.tool.id())
+        } else {
+            None
+        };
         let c = match lent {
             Some(id) => {
                 let lent = self.make_tool(id);
                 let own = std::mem::replace(&mut self.tool, lent);
-                let c = self.with_tool_cx(view, |t, cx| t.cursor(cx, p, Mods { cmd: false, ..mods }));
+                let c =
+                    self.with_tool_cx(view, |t, cx| t.cursor(cx, p, Mods { cmd: false, ..mods }));
                 self.tool = own;
                 c
             }
             None => self.with_tool_cx(view, |t, cx| t.cursor(cx, p, mods)),
         };
-        if self.prefs.use_precise_cursors { c.precise() } else { c }
+        if self.prefs.use_precise_cursors {
+            c.precise()
+        } else {
+            c
+        }
     }
 
     pub fn tool_options(&self) -> Value {
@@ -410,7 +487,11 @@ impl Session {
 
     /// The options of tool `id`: the active tool's, or those it would have if chosen now.
     pub fn tool_options_of(&self, id: &str) -> Value {
-        if id == self.tool.id() { self.tool.options() } else { self.make_tool(id).options() }
+        if id == self.tool.id() {
+            self.tool.options()
+        } else {
+            self.make_tool(id).options()
+        }
     }
 
     /// Set options of tool `id` (default: the active tool). Another tool's persistent options are
@@ -441,9 +522,16 @@ impl Session {
         {
             return Err(format!("unknown tool `{t}`"));
         }
-        let mut values = p.get("values").and_then(Value::as_object).cloned().unwrap_or_default();
+        let mut values = p
+            .get("values")
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
         if let Some(k) = p.get("key").and_then(Value::as_str) {
-            values.insert(k.to_string(), p.get("value").cloned().unwrap_or(Value::Null));
+            values.insert(
+                k.to_string(),
+                p.get("value").cloned().unwrap_or(Value::Null),
+            );
         }
         Ok(self.set_tool_options(tool, &values))
     }
@@ -477,7 +565,9 @@ impl Session {
                 Action::Preview(cmd, p) => match self.preview(&cmd, &p) {
                     Ok(v) => {
                         if let Some(w) = v.get("warning").and_then(Value::as_str)
-                            && !ui.iter().any(|r| matches!(r, UiRequest::Status(s) if s == w))
+                            && !ui
+                                .iter()
+                                .any(|r| matches!(r, UiRequest::Status(s) if s == w))
                         {
                             ui.push(UiRequest::Status(w.to_string()));
                         }

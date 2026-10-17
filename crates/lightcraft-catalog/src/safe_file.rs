@@ -96,7 +96,9 @@ impl<W: Write> Write for Limited<W> {
 }
 
 fn parent_of(path: &Path) -> &Path {
-    path.parent().filter(|d| !d.as_os_str().is_empty()).unwrap_or(Path::new("."))
+    path.parent()
+        .filter(|d| !d.as_os_str().is_empty())
+        .unwrap_or(Path::new("."))
 }
 
 /// Make a rename or a new name in `dir` durable (POSIX). Opening a directory fails on Windows,
@@ -111,27 +113,45 @@ pub fn sync_dir(dir: &Path) {
 fn create_temp(path: &Path) -> io::Result<(PathBuf, File)> {
     static N: AtomicU64 = AtomicU64::new(0);
     if path.file_name().is_none() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("{} is not a file path", path.display())));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("{} is not a file path", path.display()),
+        ));
     }
     let dir = parent_of(path);
     for _ in 0..1000 {
-        let tmp = dir.join(format!(".lightcraft-{}-{}.tmp", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let tmp = dir.join(format!(
+            ".lightcraft-{}-{}.tmp",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         match OpenOptions::new().write(true).create_new(true).open(&tmp) {
             Ok(f) => return Ok((tmp, f)),
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
             Err(e) => return Err(e),
         }
     }
-    Err(io::Error::new(io::ErrorKind::AlreadyExists, format!("no free temp file name in {}", dir.display())))
+    Err(io::Error::new(
+        io::ErrorKind::AlreadyExists,
+        format!("no free temp file name in {}", dir.display()),
+    ))
 }
 
 /// Write a temp file next to `path` with what `fill` writes, synced to disk when `sync`. On
 /// failure the temp file is removed. Returns its path and length.
-fn write_temp(path: &Path, sync: bool, fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>) -> io::Result<(PathBuf, u64)> {
+fn write_temp(
+    path: &Path,
+    sync: bool,
+    fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>,
+) -> io::Result<(PathBuf, u64)> {
     let (tmp, file) = create_temp(path)?;
     let r = (|| {
         let limit = FAIL_AFTER.with(Cell::get);
-        let mut w = Limited { inner: io::BufWriter::with_capacity(1 << 20, file), n: 0, limit };
+        let mut w = Limited {
+            inner: io::BufWriter::with_capacity(1 << 20, file),
+            n: 0,
+            limit,
+        };
         fill(&mut w)?;
         w.flush()?;
         let n = w.n;
@@ -158,7 +178,10 @@ pub fn write_atomic(path: &Path, data: &[u8]) -> io::Result<()> {
 
 /// [`write_atomic`] with streamed content: `fill` writes it (an error aborts and leaves the old
 /// file). Returns the length written.
-pub fn write_atomic_with(path: &Path, fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>) -> io::Result<u64> {
+pub fn write_atomic_with(
+    path: &Path,
+    fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>,
+) -> io::Result<u64> {
     replace_with(path, true, fill)
 }
 
@@ -170,7 +193,11 @@ pub fn write_atomic_nosync(path: &Path, data: &[u8]) -> io::Result<()> {
 }
 
 /// Temp file (synced when `sync`) renamed over `path`, then the folder synced when `sync`.
-fn replace_with(path: &Path, sync: bool, fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>) -> io::Result<u64> {
+fn replace_with(
+    path: &Path,
+    sync: bool,
+    fill: &mut dyn FnMut(&mut dyn Write) -> io::Result<()>,
+) -> io::Result<u64> {
     let (tmp, n) = write_temp(path, sync, fill)?;
     if let Err(e) = fs::rename(&tmp, path) {
         let _ = fs::remove_file(&tmp);
@@ -191,10 +218,16 @@ pub fn write_new(path: &Path, data: &[u8]) -> io::Result<()> {
 /// [`write_new`] under the first free name of `candidates` (all in the same folder, e.g.
 /// `IMG_1.dng`, `IMG_1-2.dng`, …): the file is written once and then given the first name that
 /// is not taken. Returns that name; `AlreadyExists` when every candidate is taken.
-pub fn write_new_unique(candidates: &mut dyn Iterator<Item = PathBuf>, data: &[u8]) -> io::Result<PathBuf> {
+pub fn write_new_unique(
+    candidates: &mut dyn Iterator<Item = PathBuf>,
+    data: &[u8],
+) -> io::Result<PathBuf> {
     let mut candidates = candidates.peekable();
     let Some(first) = candidates.peek().cloned() else {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "no file name to write"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "no file name to write",
+        ));
     };
     let (tmp, _) = write_temp(&first, true, &mut |w| w.write_all(data))?;
     let r = (|| {
@@ -202,7 +235,9 @@ pub fn write_new_unique(candidates: &mut dyn Iterator<Item = PathBuf>, data: &[u
         // library photos (merges). On a local disk the read usually comes from the cache, but on a
         // network volume it can go back to the server, and next to encoding a DNG it costs little.
         if !same_content(&tmp, data)? {
-            return Err(io::Error::other("the written file reads back different (failing drive or connection?)"));
+            return Err(io::Error::other(
+                "the written file reads back different (failing drive or connection?)",
+            ));
         }
         for path in candidates.by_ref().take(100_000) {
             match publish_new(&tmp, &path) {
@@ -214,7 +249,10 @@ pub fn write_new_unique(candidates: &mut dyn Iterator<Item = PathBuf>, data: &[u
                 Err(e) => return Err(e),
             }
         }
-        Err(io::Error::new(io::ErrorKind::AlreadyExists, format!("{}: no free file name", first.display())))
+        Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("{}: no free file name", first.display()),
+        ))
     })();
     // after a hard link the temp name is a second name of the new file; after a rename it's gone
     let _ = fs::remove_file(&tmp);
@@ -229,7 +267,10 @@ fn publish_new(tmp: &Path, path: &Path) -> io::Result<()> {
         // no hard links on this volume (FAT/exFAT, some shares): check, then rename
         Err(_) => {
             if fs::symlink_metadata(path).is_ok() {
-                return Err(io::Error::new(io::ErrorKind::AlreadyExists, format!("{} exists", path.display())));
+                return Err(io::Error::new(
+                    io::ErrorKind::AlreadyExists,
+                    format!("{} exists", path.display()),
+                ));
             }
             fs::rename(tmp, path)
         }
@@ -261,7 +302,9 @@ fn same_content(path: &Path, data: &[u8]) -> io::Result<bool> {
 
 /// Do `a` and `b` name the same existing file (through links, `..`, case-insensitive names)?
 pub fn same_file(a: &Path, b: &Path) -> bool {
-    let (Ok(ma), Ok(mb)) = (fs::metadata(a), fs::metadata(b)) else { return false };
+    let (Ok(ma), Ok(mb)) = (fs::metadata(a), fs::metadata(b)) else {
+        return false;
+    };
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
@@ -273,7 +316,9 @@ pub fn same_file(a: &Path, b: &Path) -> bool {
             return false;
         }
         match (fs::canonicalize(a), fs::canonicalize(b)) {
-            (Ok(x), Ok(y)) => x == y || x.to_string_lossy().to_lowercase() == y.to_string_lossy().to_lowercase(),
+            (Ok(x), Ok(y)) => {
+                x == y || x.to_string_lossy().to_lowercase() == y.to_string_lossy().to_lowercase()
+            }
             _ => false,
         }
     }
@@ -291,7 +336,11 @@ mod tests {
     }
 
     fn names(dir: &Path) -> Vec<String> {
-        let mut v: Vec<String> = fs::read_dir(dir).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
+        let mut v: Vec<String> = fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .collect();
         v.sort();
         v
     }
@@ -318,8 +367,16 @@ mod tests {
             assert!(e.to_string().contains("injected"), "{e}");
             assert!(write_new(&d.join("new.dng"), &[1u8; 100]).is_err());
         }
-        assert_eq!(fs::read(&p).unwrap(), b"the original bytes", "the target is untouched");
-        assert_eq!(names(&d), vec!["photo.jpg"], "no temp file and no partial new file");
+        assert_eq!(
+            fs::read(&p).unwrap(),
+            b"the original bytes",
+            "the target is untouched"
+        );
+        assert_eq!(
+            names(&d),
+            vec!["photo.jpg"],
+            "no temp file and no partial new file"
+        );
         // a fill error aborts the same way
         let r = write_atomic_with(&p, &mut |w| {
             w.write_all(b"half")?;
@@ -363,9 +420,18 @@ mod tests {
         let d = temp("new");
         let p = d.join("a.dng");
         fs::write(&p, b"keep").unwrap();
-        assert_eq!(write_new(&p, b"other").unwrap_err().kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(
+            write_new(&p, b"other").unwrap_err().kind(),
+            io::ErrorKind::AlreadyExists
+        );
         assert_eq!(fs::read(&p).unwrap(), b"keep");
-        let mut c = (1..).map(|k| if k == 1 { d.join("a.dng") } else { d.join(format!("a-{k}.dng")) });
+        let mut c = (1..).map(|k| {
+            if k == 1 {
+                d.join("a.dng")
+            } else {
+                d.join(format!("a-{k}.dng"))
+            }
+        });
         let got = write_new_unique(&mut c, b"fresh").unwrap();
         assert_eq!(got, d.join("a-2.dng"));
         assert_eq!(fs::read(&got).unwrap(), b"fresh");

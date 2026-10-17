@@ -77,7 +77,12 @@ pub struct FillOpts {
 
 impl Default for FillOpts {
     fn default() -> Self {
-        FillOpts { method: FillMethod::Object, lighting: 0.0, patch: 7, seed: 1 }
+        FillOpts {
+            method: FillMethod::Object,
+            lighting: 0.0,
+            patch: 7,
+            seed: 1,
+        }
     }
 }
 
@@ -85,7 +90,8 @@ impl Default for FillOpts {
 
 #[inline]
 fn rnd(seed: u32, a: u32, b: u32) -> u32 {
-    let mut h = seed.wrapping_mul(0x9E37_79B9) ^ a.wrapping_mul(0x85EB_CA6B) ^ b.wrapping_mul(0xC2B2_AE35);
+    let mut h =
+        seed.wrapping_mul(0x9E37_79B9) ^ a.wrapping_mul(0x85EB_CA6B) ^ b.wrapping_mul(0xC2B2_AE35);
     h ^= h >> 16;
     h = h.wrapping_mul(0x7FEB_352D);
     h ^= h >> 15;
@@ -190,7 +196,12 @@ fn membrane_core(data: &mut [[f32; 4]], known: &[bool], w: usize, h: usize) {
             let (x, y) = (i % w, i / w);
             let mut s = [0.0f32; 4];
             let mut n = 0.0;
-            for (nx, ny) in [(x.wrapping_sub(1), y), (x + 1, y), (x, y.wrapping_sub(1)), (x, y + 1)] {
+            for (nx, ny) in [
+                (x.wrapping_sub(1), y),
+                (x + 1, y),
+                (x, y.wrapping_sub(1)),
+                (x, y + 1),
+            ] {
                 if nx < w && ny < h {
                     let p = data[ny * w + nx];
                     for c in 0..4 {
@@ -270,14 +281,18 @@ impl HoleSat {
         let mut s = vec![0u32; sw * (h + 1)];
         for y in 0..h {
             for x in 0..w {
-                s[(y + 1) * sw + x + 1] = hole[y * w + x] as u32 + s[y * sw + x + 1] + s[(y + 1) * sw + x] - s[y * sw + x];
+                s[(y + 1) * sw + x + 1] =
+                    hole[y * w + x] as u32 + s[y * sw + x + 1] + s[(y + 1) * sw + x]
+                        - s[y * sw + x];
             }
         }
         HoleSat { w: sw, s }
     }
     /// Hole pixels in [x0, x1) × [y0, y1).
     fn count(&self, x0: usize, y0: usize, x1: usize, y1: usize) -> u32 {
-        self.s[y1 * self.w + x1] + self.s[y0 * self.w + x0] - self.s[y0 * self.w + x1] - self.s[y1 * self.w + x0]
+        self.s[y1 * self.w + x1] + self.s[y0 * self.w + x0]
+            - self.s[y0 * self.w + x1]
+            - self.s[y1 * self.w + x0]
     }
 }
 
@@ -296,7 +311,12 @@ impl Pm<'_> {
             && y >= r
             && x + r < self.w as i64
             && y + r < self.h as i64
-            && self.sat.count((x - r) as usize, (y - r) as usize, (x + r + 1) as usize, (y + r + 1) as usize) == 0
+            && self.sat.count(
+                (x - r) as usize,
+                (y - r) as usize,
+                (x + r + 1) as usize,
+                (y + r + 1) as usize,
+            ) == 0
     }
     /// SSD between the patch at target (tx, ty) (clipped to the image) and source (sx, sy).
     fn dist(&self, tx: i64, ty: i64, sx: i64, sy: i64, cap: f32) -> f32 {
@@ -331,7 +351,14 @@ impl Pm<'_> {
 
 /// One Wexler/PatchMatch level: refine `img` (hole pixels) with `em` EM rounds, starting from the
 /// nearest-neighbour field `nnf` (per pixel, source centre; `None` = random).
-fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters: usize, patch: usize, seed: u32) {
+fn pm_level(
+    l: &mut Level,
+    nnf: &mut Vec<Option<[i32; 2]>>,
+    em: usize,
+    pm_iters: usize,
+    patch: usize,
+    seed: u32,
+) {
     let (w, h) = (l.w, l.h);
     let r = (patch / 2).min((w.min(h).saturating_sub(1)) / 2).max(1);
     // Target centres: pixels whose patch touches the hole.
@@ -343,15 +370,33 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
     let sat = HoleSat::new(&l.hole, w, h);
     // Sources: centres of fully known patches.
     let sources: Vec<[i32; 2]> = {
-        let pm = Pm { w, h, r, img: &l.img, sat: HoleSat::new(&l.hole, w, h) };
-        (0..w * h).filter(|&i| pm.valid_source((i % w) as i64, (i / w) as i64)).map(|i| [(i % w) as i32, (i / w) as i32]).collect()
+        let pm = Pm {
+            w,
+            h,
+            r,
+            img: &l.img,
+            sat: HoleSat::new(&l.hole, w, h),
+        };
+        (0..w * h)
+            .filter(|&i| pm.valid_source((i % w) as i64, (i / w) as i64))
+            .map(|i| [(i % w) as i32, (i / w) as i32])
+            .collect()
     };
     if sources.is_empty() {
         return;
     }
     nnf.resize(w * h, None);
     for e in 0..em {
-        let pm = Pm { w, h, r, img: &l.img, sat: HoleSat { w: sat.w, s: sat.s.clone() } };
+        let pm = Pm {
+            w,
+            h,
+            r,
+            img: &l.img,
+            sat: HoleSat {
+                w: sat.w,
+                s: sat.s.clone(),
+            },
+        };
         // Initialise / validate.
         let mut field: Vec<([i32; 2], f32)> = vec![([0, 0], f32::INFINITY); w * h];
         targets
@@ -360,8 +405,13 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
                 let (x, y) = ((i % w) as i64, (i / w) as i64);
                 let s = nnf[i]
                     .filter(|s| pm.valid_source(s[0] as i64, s[1] as i64))
-                    .unwrap_or_else(|| sources[rnd(seed ^ e as u32, i as u32, 0) as usize % sources.len()]);
-                (i, (s, pm.dist(x, y, s[0] as i64, s[1] as i64, f32::INFINITY)))
+                    .unwrap_or_else(|| {
+                        sources[rnd(seed ^ e as u32, i as u32, 0) as usize % sources.len()]
+                    });
+                (
+                    i,
+                    (s, pm.dist(x, y, s[0] as i64, s[1] as i64, f32::INFINITY)),
+                )
             })
             .collect::<Vec<_>>()
             .into_iter()
@@ -375,7 +425,11 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
                 .map(|y| {
                     let mut row: Vec<([i32; 2], f32)> = snap[y * w..(y + 1) * w].to_vec();
                     let mut out = vec![];
-                    let xs: Box<dyn Iterator<Item = usize>> = if fwd { Box::new(0..w) } else { Box::new((0..w).rev()) };
+                    let xs: Box<dyn Iterator<Item = usize>> = if fwd {
+                        Box::new(0..w)
+                    } else {
+                        Box::new((0..w).rev())
+                    };
                     for x in xs {
                         let i = y * w + x;
                         if !is_target[i] {
@@ -408,15 +462,25 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
                         let mut rad = w.max(h) as i64;
                         let mut k = 0u32;
                         while rad >= 1 {
-                            let a = rnd(seed.wrapping_add(it as u32 * 977 + e as u32 * 31), i as u32, k);
+                            let a = rnd(
+                                seed.wrapping_add(it as u32 * 977 + e as u32 * 31),
+                                i as u32,
+                                k,
+                            );
                             let ox = (a % (2 * rad as u32 + 1)) as i64 - rad;
                             let oy = ((a >> 16) % (2 * rad as u32 + 1)) as i64 - rad;
-                            try_c([(best[0] as i64 + ox) as i32, (best[1] as i64 + oy) as i32], &mut best, &mut bd);
+                            try_c(
+                                [(best[0] as i64 + ox) as i32, (best[1] as i64 + oy) as i32],
+                                &mut best,
+                                &mut bd,
+                            );
                             rad /= 2;
                             k += 1;
                         }
                         // And a random source anywhere (helps escape bad starts).
-                        let any = sources[rnd(seed ^ 0xABCD, i as u32, it as u32 + e as u32 * 64) as usize % sources.len()];
+                        let any = sources[rnd(seed ^ 0xABCD, i as u32, it as u32 + e as u32 * 64)
+                            as usize
+                            % sources.len()];
                         try_c(any, &mut best, &mut bd);
                         row[x] = (best, bd);
                         out.push((i, (best, bd)));
@@ -431,7 +495,11 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
             }
         }
         // Vote.
-        let mut ds: Vec<f32> = targets.iter().map(|&i| field[i].1).filter(|d| d.is_finite()).collect();
+        let mut ds: Vec<f32> = targets
+            .iter()
+            .map(|&i| field[i].1)
+            .filter(|d| d.is_finite())
+            .collect();
         ds.sort_by(f32::total_cmp);
         let sigma2 = ds.get(ds.len() * 3 / 4).copied().unwrap_or(1.0).max(1e-5);
         let ri = r as i64;
@@ -461,7 +529,14 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
                         wsum += wt;
                     }
                 }
-                (i, if wsum > 0.0 { acc.map(|v| v / wsum) } else { l.img[i] })
+                (
+                    i,
+                    if wsum > 0.0 {
+                        acc.map(|v| v / wsum)
+                    } else {
+                        l.img[i]
+                    },
+                )
             })
             .collect();
         for (i, v) in new {
@@ -476,13 +551,24 @@ fn pm_level(l: &mut Level, nnf: &mut Vec<Option<[i32; 2]>>, em: usize, pm_iters:
 /// Fill the `hole` of `img` with PatchMatch synthesis (multi-scale Wexler EM). `init`: a starting
 /// guess for the hole (e.g. the previous frame's fill warped here); with it only the finest
 /// scale is refined.
-pub fn patch_fill(img: &Image, hole: &[bool], init: Option<&Image>, patch: usize, seed: u32) -> Image {
+pub fn patch_fill(
+    img: &Image,
+    hole: &[bool],
+    init: Option<&Image>,
+    patch: usize,
+    seed: u32,
+) -> Image {
     let (w, h) = (img.width as usize, img.height as usize);
     if !hole.iter().any(|b| *b) || w == 0 || h == 0 {
         return img.clone();
     }
     let patch = patch.max(3) | 1;
-    let fine = Level { w, h, img: img.data.clone(), hole: hole.to_vec() };
+    let fine = Level {
+        w,
+        h,
+        img: img.data.clone(),
+        hole: hole.to_vec(),
+    };
     if let Some(init) = init {
         let mut l = fine;
         for (i, v) in l.img.iter_mut().enumerate() {
@@ -492,7 +578,11 @@ pub fn patch_fill(img: &Image, hole: &[bool], init: Option<&Image>, patch: usize
         }
         let mut nnf = vec![];
         pm_level(&mut l, &mut nnf, 2, 4, patch, seed);
-        return Image { width: img.width, height: img.height, data: l.img };
+        return Image {
+            width: img.width,
+            height: img.height,
+            data: l.img,
+        };
     }
     // Pyramid: stop while the image is still a few patches across.
     let mut levels = vec![fine];
@@ -549,15 +639,30 @@ pub fn patch_fill(img: &Image, hole: &[bool], init: Option<&Image>, patch: usize
                 .map(|i| {
                     let (x, y) = (i % l.w, i / l.w);
                     let ci = (y / 2).min(ch - 1) * cw + (x / 2).min(cw - 1);
-                    coarse_nnf.get(ci).copied().flatten().map(|s| [s[0] * 2 + (x % 2) as i32, s[1] * 2 + (y % 2) as i32])
+                    coarse_nnf
+                        .get(ci)
+                        .copied()
+                        .flatten()
+                        .map(|s| [s[0] * 2 + (x % 2) as i32, s[1] * 2 + (y % 2) as i32])
                 })
                 .collect();
         }
         let em = if k == top { 8 } else { 4 };
-        pm_level(&mut levels[k], &mut nnf, em, 5, patch, seed.wrapping_add(k as u32 * 101));
+        pm_level(
+            &mut levels[k],
+            &mut nnf,
+            em,
+            5,
+            patch,
+            seed.wrapping_add(k as u32 * 101),
+        );
     }
     let l = levels.swap_remove(0);
-    Image { width: img.width, height: img.height, data: l.img }
+    Image {
+        width: img.width,
+        height: img.height,
+        data: l.img,
+    }
 }
 
 // ------------------------------------------------------------------ flow-guided propagation
@@ -574,8 +679,14 @@ fn completed_flow(a: &Image, b: &Image, hole_a: &[bool], hole_b: &[bool]) -> Flo
     for (i, k) in known.iter_mut().enumerate() {
         let (c, r) = (i % f.cols, i / f.cols);
         // A tile is unreliable when any pixel within it (and a block's margin) is a hole.
-        let (x0, y0) = ((c * bs).saturating_sub(bs / 2), (r * bs).saturating_sub(bs / 2));
-        let (x1, y1) = (((c + 1) * bs + bs / 2).min(w), ((r + 1) * bs + bs / 2).min(a.height as usize));
+        let (x0, y0) = (
+            (c * bs).saturating_sub(bs / 2),
+            (r * bs).saturating_sub(bs / 2),
+        );
+        let (x1, y1) = (
+            ((c + 1) * bs + bs / 2).min(w),
+            ((r + 1) * bs + bs / 2).min(a.height as usize),
+        );
         'tile: for y in y0..y1 {
             for x in x0..x1 {
                 if hole_a[y * w + x] || hole_b[y * w + x] {
@@ -646,7 +757,13 @@ fn trace(
         let (x0, y0) = ((px - 0.5).floor() as i64, (py - 0.5).floor() as i64);
         let ok = [(x0, y0), (x0 + 1, y0), (x0, y0 + 1), (x0 + 1, y0 + 1)]
             .iter()
-            .all(|&(xx, yy)| known(k as usize, xx.clamp(0, w as i64 - 1), yy.clamp(0, h as i64 - 1)));
+            .all(|&(xx, yy)| {
+                known(
+                    k as usize,
+                    xx.clamp(0, w as i64 - 1),
+                    yy.clamp(0, h as i64 - 1),
+                )
+            });
         if ok {
             return Some((frames[k as usize].sample_bilinear_clamped(px, py), d));
         }
@@ -655,12 +772,19 @@ fn trace(
 }
 
 /// Fill a range of frames. `progress(done, total)` returns `false` to cancel (→ `None`).
-pub fn fill_sequence(input: &FillInput, o: &FillOpts, progress: &mut dyn FnMut(usize, usize) -> bool) -> Option<Vec<Image>> {
+pub fn fill_sequence(
+    input: &FillInput,
+    o: &FillOpts,
+    progress: &mut dyn FnMut(usize, usize) -> bool,
+) -> Option<Vec<Image>> {
     let n = input.frames.len();
     if n == 0 {
         return Some(vec![]);
     }
-    let (w, h) = (input.frames[0].width as usize, input.frames[0].height as usize);
+    let (w, h) = (
+        input.frames[0].width as usize,
+        input.frames[0].height as usize,
+    );
     // Steps: flows (1) + propagation (1) + per-frame synthesis (n).
     let total = n + 2;
     if o.method == FillMethod::EdgeBlend {
@@ -685,10 +809,19 @@ pub fn fill_sequence(input: &FillInput, o: &FillOpts, progress: &mut dyn FnMut(u
         }
     }
     // 1. Flows between membrane-filled neighbours, completed inside the holes.
-    let pre: Vec<Image> = frames.par_iter().zip(&holes).map(|(f, hl)| membrane_fill(f, hl)).collect();
+    let pre: Vec<Image> = frames
+        .par_iter()
+        .zip(&holes)
+        .map(|(f, hl)| membrane_fill(f, hl))
+        .collect();
     let pairs: Vec<(Flow, Flow)> = (0..n.saturating_sub(1))
         .into_par_iter()
-        .map(|i| (completed_flow(&pre[i], &pre[i + 1], &holes[i], &holes[i + 1]), completed_flow(&pre[i + 1], &pre[i], &holes[i + 1], &holes[i])))
+        .map(|i| {
+            (
+                completed_flow(&pre[i], &pre[i + 1], &holes[i], &holes[i + 1]),
+                completed_flow(&pre[i + 1], &pre[i], &holes[i + 1], &holes[i]),
+            )
+        })
         .collect();
     let (fwd, bwd): (Vec<Flow>, Vec<Flow>) = pairs.into_iter().unzip();
     if !progress(1, total) {
@@ -719,7 +852,10 @@ pub fn fill_sequence(input: &FillInput, o: &FillOpts, progress: &mut dyn FnMut(u
                     _ => None,
                 }
             };
-            let filled: Vec<(usize, [f32; 4])> = (0..w * h).filter(|&i| holes[t][i]).filter_map(|i| sample(i).map(|v| (i, v))).collect();
+            let filled: Vec<(usize, [f32; 4])> = (0..w * h)
+                .filter(|&i| holes[t][i])
+                .filter_map(|i| sample(i).map(|v| (i, v)))
+                .collect();
             for (i, v) in &filled {
                 img.data[*i] = *v;
                 left[*i] = false;
@@ -756,14 +892,26 @@ pub fn fill_sequence(input: &FillInput, o: &FillOpts, progress: &mut dyn FnMut(u
     let mut out: Vec<Option<Image>> = vec![None; n];
     let first = (0..n).find(|&t| propagated[t].1.iter().any(|b| *b));
     let Some(t0) = first else {
-        return Some(propagated.into_iter().zip(&holes).map(|((img, _), hl)| opaque_fill(img, hl)).collect());
+        return Some(
+            propagated
+                .into_iter()
+                .zip(&holes)
+                .map(|((img, _), hl)| opaque_fill(img, hl))
+                .collect(),
+        );
     };
     // Frames before t0 are complete already.
     for (t, slot) in out.iter_mut().enumerate().take(t0) {
         *slot = Some(propagated[t].0.clone());
     }
     let mut done = 2;
-    out[t0] = Some(patch_fill(&propagated[t0].0, &propagated[t0].1, None, o.patch, o.seed));
+    out[t0] = Some(patch_fill(
+        &propagated[t0].0,
+        &propagated[t0].1,
+        None,
+        o.patch,
+        o.seed,
+    ));
     done += 1;
     if !progress(done, total) {
         return None;
@@ -797,7 +945,12 @@ pub fn fill_sequence(input: &FillInput, o: &FillOpts, progress: &mut dyn FnMut(u
             return None;
         }
     }
-    Some(out.into_iter().zip(&holes).map(|(img, hl)| opaque_fill(img.unwrap_or_default(), hl)).collect())
+    Some(
+        out.into_iter()
+            .zip(&holes)
+            .map(|(img, hl)| opaque_fill(img.unwrap_or_default(), hl))
+            .collect(),
+    )
 }
 
 /// Filled pixels are opaque.
@@ -823,7 +976,11 @@ mod tests {
             for x in 0..w {
                 let fx = x as f32 + dx;
                 let s = 0.5 + 0.3 * (fx * std::f32::consts::TAU / 10.0).sin();
-                let n = hash_noise(((fx.floor() as i64).rem_euclid(20) / 4) as u32, (y % 20) / 4, 3);
+                let n = hash_noise(
+                    ((fx.floor() as i64).rem_euclid(20) / 4) as u32,
+                    (y % 20) / 4,
+                    3,
+                );
                 img.set(x, y, [s, 0.3 + 0.4 * n, 0.6 - 0.3 * s * n, 1.0]);
             }
         }
@@ -841,7 +998,9 @@ mod tests {
     }
 
     fn rect_hole(w: u32, h: u32, x0: u32, y0: u32, s: u32) -> Vec<bool> {
-        (0..w * h).map(|i| (x0..x0 + s).contains(&(i % w)) && (y0..y0 + s).contains(&(i / w))).collect()
+        (0..w * h)
+            .map(|i| (x0..x0 + s).contains(&(i % w)) && (y0..y0 + s).contains(&(i / w)))
+            .collect()
     }
 
     #[test]
@@ -856,7 +1015,11 @@ mod tests {
         }
         let hole = rect_hole(w, h, 10, 8, 14);
         let f = membrane_fill(&cut(&img, &hole), &hole);
-        assert!(psnr(&f, &img, Some(&hole)) > 40.0, "{}", psnr(&f, &img, Some(&hole)));
+        assert!(
+            psnr(&f, &img, Some(&hole)) > 40.0,
+            "{}",
+            psnr(&f, &img, Some(&hole))
+        );
     }
 
     #[test]
@@ -868,7 +1031,10 @@ mod tests {
         let mem = membrane_fill(&src, &hole);
         let pm = patch_fill(&src, &hole, None, 7, 1);
         let (pm_db, mem_db) = (psnr(&pm, &gt, Some(&hole)), psnr(&mem, &gt, Some(&hole)));
-        assert!(pm_db > mem_db + 3.0 && pm_db > 20.0, "PatchMatch {pm_db:.1} dB vs membrane {mem_db:.1} dB");
+        assert!(
+            pm_db > mem_db + 3.0 && pm_db > 20.0,
+            "PatchMatch {pm_db:.1} dB vs membrane {mem_db:.1} dB"
+        );
         // Known pixels are untouched.
         for i in 0..hole.len() {
             if !hole[i] {
@@ -890,7 +1056,14 @@ mod tests {
             holes.push(hole);
             gts.push(gt);
         }
-        (FillInput { frames, holes, references: vec![] }, gts)
+        (
+            FillInput {
+                frames,
+                holes,
+                references: vec![],
+            },
+            gts,
+        )
     }
 
     #[test]
@@ -907,7 +1080,11 @@ mod tests {
                 // Temporal consistency: on a static background the filled pixels agree between
                 // frames.
                 for t in 1..out.len() {
-                    let both: Vec<bool> = input.holes[t].iter().zip(&input.holes[t - 1]).map(|(a, b)| *a || *b).collect();
+                    let both: Vec<bool> = input.holes[t]
+                        .iter()
+                        .zip(&input.holes[t - 1])
+                        .map(|(a, b)| *a || *b)
+                        .collect();
                     let db = psnr(&out[t], &out[t - 1], Some(&both));
                     assert!(db > 30.0, "frames {}–{t} differ: {db:.1} dB", t - 1);
                 }
@@ -921,19 +1098,53 @@ mod tests {
         let (w, h) = (80u32, 60u32);
         let gt = background(w, h, 0.0);
         let hole = rect_hole(w, h, 30, 20, 14);
-        let input = FillInput { frames: vec![cut(&gt, &hole); 4], holes: vec![hole.clone(); 4], references: vec![] };
-        let surf = fill_sequence(&input, &FillOpts { method: FillMethod::Surface, ..Default::default() }, &mut |_, _| true).expect("fill");
+        let input = FillInput {
+            frames: vec![cut(&gt, &hole); 4],
+            holes: vec![hole.clone(); 4],
+            references: vec![],
+        };
+        let surf = fill_sequence(
+            &input,
+            &FillOpts {
+                method: FillMethod::Surface,
+                ..Default::default()
+            },
+            &mut |_, _| true,
+        )
+        .expect("fill");
         for t in 1..4 {
             // Surface carries one fill through: identical frames.
             assert!(psnr(&surf[t], &surf[0], Some(&hole)) > 40.0);
         }
-        let edge = fill_sequence(&input, &FillOpts { method: FillMethod::EdgeBlend, ..Default::default() }, &mut |_, _| true).expect("fill");
-        assert!(psnr(&edge[0], &membrane_fill(&input.frames[0], &hole), Some(&hole)) > 60.0);
+        let edge = fill_sequence(
+            &input,
+            &FillOpts {
+                method: FillMethod::EdgeBlend,
+                ..Default::default()
+            },
+            &mut |_, _| true,
+        )
+        .expect("fill");
+        assert!(
+            psnr(
+                &edge[0],
+                &membrane_fill(&input.frames[0], &hole),
+                Some(&hole)
+            ) > 60.0
+        );
         // A clean reference frame recovers the background exactly.
-        let mut with_ref = FillInput { frames: input.frames.clone(), holes: input.holes.clone(), references: vec![(2, gt.clone())] };
+        let mut with_ref = FillInput {
+            frames: input.frames.clone(),
+            holes: input.holes.clone(),
+            references: vec![(2, gt.clone())],
+        };
         let out = fill_sequence(&with_ref, &FillOpts::default(), &mut |_, _| true).expect("fill");
         for (t, f) in out.iter().enumerate() {
-            assert!(psnr(f, &gt, Some(&hole)) > 35.0, "frame {t}: {:.1}", psnr(f, &gt, Some(&hole)));
+            assert!(
+                psnr(f, &gt, Some(&hole)) > 35.0,
+                "frame {t}: {:.1}",
+                psnr(f, &gt, Some(&hole))
+            );
         }
         // Cancel.
         with_ref.references.clear();
@@ -955,8 +1166,25 @@ mod tests {
             }
         }
         let plain = fill_sequence(&input, &FillOpts::default(), &mut |_, _| true).expect("fill");
-        let lit = fill_sequence(&input, &FillOpts { lighting: 1.0, ..Default::default() }, &mut |_, _| true).expect("fill");
-        let score = |o: &[Image]| (0..6).map(|t| psnr(&o[t], &gts[t], Some(&input.holes[t]))).sum::<f64>();
-        assert!(score(&lit) > score(&plain), "lit {} vs plain {}", score(&lit), score(&plain));
+        let lit = fill_sequence(
+            &input,
+            &FillOpts {
+                lighting: 1.0,
+                ..Default::default()
+            },
+            &mut |_, _| true,
+        )
+        .expect("fill");
+        let score = |o: &[Image]| {
+            (0..6)
+                .map(|t| psnr(&o[t], &gts[t], Some(&input.holes[t])))
+                .sum::<f64>()
+        };
+        assert!(
+            score(&lit) > score(&plain),
+            "lit {} vs plain {}",
+            score(&lit),
+            score(&plain)
+        );
     }
 }

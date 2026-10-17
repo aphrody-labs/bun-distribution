@@ -30,11 +30,16 @@ fn jobs_wait(s: &mut Session, _: &Value) -> Result<Value> {
 // ---------------------------------------------------------------- Media Browser
 
 fn browser(s: &Session) -> Result<std::sync::Arc<dyn mb::Browser>> {
-    s.media_browser().ok_or_else(|| EngineError::Other("the Media Browser is not available in this build".into()))
+    s.media_browser().ok_or_else(|| {
+        EngineError::Other("the Media Browser is not available in this build".into())
+    })
 }
 
 fn browser_dir(s: &Session, b: &dyn mb::Browser, p: &Value) -> String {
-    str_p(p, "path").map(str::to_string).or_else(|| s.state.media_browser.folder.clone()).unwrap_or_else(|| b.home())
+    str_p(p, "path")
+        .map(str::to_string)
+        .or_else(|| s.state.media_browser.folder.clone())
+        .unwrap_or_else(|| b.home())
 }
 
 fn browser_list(s: &mut Session, p: &Value) -> Result<Value> {
@@ -42,8 +47,16 @@ fn browser_list(s: &mut Session, p: &Value) -> Result<Value> {
     let dir = browser_dir(s, b.as_ref(), p);
     let only = b_p(p, "importableOnly").unwrap_or(s.state.media_browser.importable_only);
     let entries = b.list(&dir, only).map_err(EngineError::Other)?;
-    let places: Vec<Value> = b.places().into_iter().map(|(name, path)| json!({"name": name, "path": path})).collect();
-    let actions: Vec<Value> = b.actions().into_iter().map(|(id, label)| json!({"id": id, "label": label})).collect();
+    let places: Vec<Value> = b
+        .places()
+        .into_iter()
+        .map(|(name, path)| json!({"name": name, "path": path}))
+        .collect();
+    let actions: Vec<Value> = b
+        .actions()
+        .into_iter()
+        .map(|(id, label)| json!({"id": id, "label": label}))
+        .collect();
     Ok(json!({
         "path": dir,
         "parent": b.parent(&dir),
@@ -55,13 +68,23 @@ fn browser_list(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn browser_enabled(s: &Session) -> std::result::Result<(), String> {
-    if s.media_browser().is_some() { Ok(()) } else { Err("the Media Browser is not available in this build".into()) }
+    if s.media_browser().is_some() {
+        Ok(())
+    } else {
+        Err("the Media Browser is not available in this build".into())
+    }
 }
 
 fn browser_go(s: &mut Session, p: &Value) -> Result<Value> {
     let b = browser(s)?;
     let dir = match str_p(p, "path") {
-        Some("..") => s.state.media_browser.folder.clone().and_then(|d| b.parent(&d)).unwrap_or_else(|| b.home()),
+        Some("..") => s
+            .state
+            .media_browser
+            .folder
+            .clone()
+            .and_then(|d| b.parent(&d))
+            .unwrap_or_else(|| b.home()),
         Some(d) => d.to_string(),
         None => b.home(),
     };
@@ -93,12 +116,19 @@ fn browser_favorite(s: &mut Session, p: &Value, add: bool) -> Result<Value> {
 }
 
 fn browser_import(s: &mut Session, p: &Value) -> Result<Value> {
-    let paths = p.get("paths").or(p.get("path")).cloned().ok_or_else(|| bad("mediaBrowser.import", "missing `paths`"))?;
+    let paths = p
+        .get("paths")
+        .or(p.get("path"))
+        .cloned()
+        .ok_or_else(|| bad("mediaBrowser.import", "missing `paths`"))?;
     // Files the browser still has to read (the web app's opened folders): imported when they
     // arrive.
     let list: Vec<String> = match &paths {
         Value::String(one) => vec![one.clone()],
-        Value::Array(a) => a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect(),
+        Value::Array(a) => a
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect(),
         _ => vec![],
     };
     if !browser(s)?.fetch(&list, p) {
@@ -123,8 +153,10 @@ fn file_info(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("mediaBrowser.fileInfo", "missing `path`"))?;
     let (created, modified, size) = mb::file_dates(path);
     let mut v = json!({"path": path, "kind": mb::kind_of(path), "size": size, "created": created.map(mb::iso_date), "modified": modified.map(mb::iso_date)});
-    if matches!(mb::kind_of(path), Some("video" | "image" | "audio" | "model"))
-        && let Ok(f) = s.probe_footage(path)
+    if matches!(
+        mb::kind_of(path),
+        Some("video" | "image" | "audio" | "model")
+    ) && let Ok(f) = s.probe_footage(path)
     {
         v["footage"] = mb::footage_metadata(&f);
     }
@@ -136,7 +168,12 @@ fn file_info(s: &mut Session, p: &Value) -> Result<Value> {
 fn item_ref(s: &Session, p: &Value) -> Option<ItemId> {
     match p.get("item") {
         Some(Value::Number(n)) => n.as_u64().map(ItemId),
-        Some(Value::String(name)) => s.project.items.values().find(|i| &i.name == name).map(|i| i.id),
+        Some(Value::String(name)) => s
+            .project
+            .items
+            .values()
+            .find(|i| &i.name == name)
+            .map(|i| i.id),
         _ => s.state.project_selection.first().copied(),
     }
 }
@@ -144,14 +181,21 @@ fn item_ref(s: &Session, p: &Value) -> Option<ItemId> {
 fn metadata(s: &mut Session, p: &Value) -> Result<Value> {
     let project = mb::project_metadata(&s.project, s.path.as_deref());
     let item = match item_ref(s, p) {
-        Some(id) => Some(mb::item_metadata(&s.project, s.project.item(id).ok_or_else(|| bad("item.metadata", format!("no item {}", id.0)))?)),
+        Some(id) => Some(mb::item_metadata(
+            &s.project,
+            s.project
+                .item(id)
+                .ok_or_else(|| bad("item.metadata", format!("no item {}", id.0)))?,
+        )),
         None => None,
     };
     Ok(json!({"project": project, "item": item}))
 }
 
 fn project_comment(s: &mut Session, p: &Value) -> Result<Value> {
-    let text = str_p(p, "comment").ok_or_else(|| bad("project.setProjectComment", "missing `comment`"))?.to_string();
+    let text = str_p(p, "comment")
+        .ok_or_else(|| bad("project.setProjectComment", "missing `comment`"))?
+        .to_string();
     s.edit("Project Comment", super::merge_p(p), |proj, _| {
         proj.settings.comment = text;
         Ok(())
@@ -167,7 +211,14 @@ pub fn scope_frame(s: &Session, comp: ItemId, t: Tick, max_side: u32) -> Option<
     let c = s.project.comp(comp)?;
     let long = c.width.max(c.height).max(1) as f64;
     let scale = (max_side as f64 / long).min(1.0);
-    let mut img = s.render(comp, t, RenderOpts { scale, ..Default::default() });
+    let mut img = s.render(
+        comp,
+        t,
+        RenderOpts {
+            scale,
+            ..Default::default()
+        },
+    );
     let bg = c.background;
     for p in &mut img.data {
         let k = 1.0 - p[3].clamp(0.0, 1.0);
@@ -179,15 +230,30 @@ pub fn scope_frame(s: &Session, comp: ItemId, t: Tick, max_side: u32) -> Option<
 /// Scope options from parameters.
 pub fn scope_opts(p: &Value) -> std::result::Result<(ScopeKind, ScopeOpts), String> {
     let kind = match str_p(p, "scope") {
-        Some(k) => ScopeKind::from_name(k).ok_or_else(|| format!("unknown scope `{k}`; one of {}", ScopeKind::ALL.map(|k| k.name()).join(", ")))?,
+        Some(k) => ScopeKind::from_name(k).ok_or_else(|| {
+            format!(
+                "unknown scope `{k}`; one of {}",
+                ScopeKind::ALL.map(|k| k.name()).join(", ")
+            )
+        })?,
         None => ScopeKind::WaveformRgb,
     };
     let standard = match str_p(p, "standard") {
-        Some(x) => ColorStandard::from_name(x).ok_or_else(|| format!("standard: rec601|rec709|rec2020, not `{x}`"))?,
+        Some(x) => ColorStandard::from_name(x)
+            .ok_or_else(|| format!("standard: rec601|rec709|rec2020, not `{x}`"))?,
         None => ColorStandard::Rec709,
     };
     let size = f_p(p, "size").unwrap_or(256.0).clamp(16.0, 1024.0) as u32;
-    Ok((kind, ScopeOpts { standard, float: b_p(p, "float").unwrap_or(false), clamp: b_p(p, "clamp").unwrap_or(true), width: size, height: size }))
+    Ok((
+        kind,
+        ScopeOpts {
+            standard,
+            float: b_p(p, "float").unwrap_or(false),
+            clamp: b_p(p, "clamp").unwrap_or(true),
+            width: size,
+            height: size,
+        },
+    ))
 }
 
 fn scopes_analyze(s: &mut Session, p: &Value) -> Result<Value> {
@@ -228,12 +294,49 @@ fn scopes_analyze(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         query!("jobs.list", "Background Jobs", "{}", jobs_list),
-        cmd!("jobs.cancel", "Cancel Job", [], None, "{job?: render|track|maskTrack|warp|camera|roto|task:<n>|all}", always, jobs_cancel),
+        cmd!(
+            "jobs.cancel",
+            "Cancel Job",
+            [],
+            None,
+            "{job?: render|track|maskTrack|warp|camera|roto|task:<n>|all}",
+            always,
+            jobs_cancel
+        ),
         query!("jobs.wait", "Wait for Background Jobs", "{}", jobs_wait),
-        query!("mediaBrowser.list", "List Folder", "{path?, importableOnly?}", browser_list),
-        cmd!("mediaBrowser.go", "Go to Folder", [], None, "{path?: folder | \"..\", importableOnly?}", browser_enabled, browser_go),
-        cmd!("mediaBrowser.addFavorite", "Add to Favorites", [], None, "{path?}", browser_enabled, |s, p| browser_favorite(s, p, true)),
-        cmd!("mediaBrowser.removeFavorite", "Remove from Favorites", [], None, "{path?}", browser_enabled, |s, p| browser_favorite(s, p, false)),
+        query!(
+            "mediaBrowser.list",
+            "List Folder",
+            "{path?, importableOnly?}",
+            browser_list
+        ),
+        cmd!(
+            "mediaBrowser.go",
+            "Go to Folder",
+            [],
+            None,
+            "{path?: folder | \"..\", importableOnly?}",
+            browser_enabled,
+            browser_go
+        ),
+        cmd!(
+            "mediaBrowser.addFavorite",
+            "Add to Favorites",
+            [],
+            None,
+            "{path?}",
+            browser_enabled,
+            |s, p| browser_favorite(s, p, true)
+        ),
+        cmd!(
+            "mediaBrowser.removeFavorite",
+            "Remove from Favorites",
+            [],
+            None,
+            "{path?}",
+            browser_enabled,
+            |s, p| browser_favorite(s, p, false)
+        ),
         cmd!(
             "mediaBrowser.import",
             "Import",
@@ -254,7 +357,15 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         query!("mediaBrowser.fileInfo", "File Info", "{path}", file_info),
         query!("item.metadata", "Metadata", "{item?: id|name}", metadata),
-        cmd!("project.setProjectComment", "Project Comment", [], None, "{comment}", always, project_comment),
+        cmd!(
+            "project.setProjectComment",
+            "Project Comment",
+            [],
+            None,
+            "{comment}",
+            always,
+            project_comment
+        ),
         query!(
             "scopes.analyze",
             "Lumetri Scopes",

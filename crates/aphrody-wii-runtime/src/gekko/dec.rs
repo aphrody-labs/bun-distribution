@@ -17,7 +17,11 @@ pub const fn interrupt_pending_offset() -> usize {
 
 impl Default for Decrementer {
     fn default() -> Self {
-        Self { start_cycle: 0, start_value: u32::MAX, interrupt_pending: false }
+        Self {
+            start_cycle: 0,
+            start_value: u32::MAX,
+            interrupt_pending: false,
+        }
     }
 }
 
@@ -59,8 +63,10 @@ pub fn cycles_until_underflow(value: u32) -> u64 {
 pub fn underflow_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     sys.gekko.dec.underflow(sys.scheduler.cycles);
     sys.gekko.spr.dec = u32::MAX;
-    sys.scheduler
-        .schedule_in(cycles_until_underflow(u32::MAX), crate::scheduler::Handler::DecUnderflow);
+    sys.scheduler.schedule_in(
+        cycles_until_underflow(u32::MAX),
+        crate::scheduler::Handler::DecUnderflow,
+    );
     tracing::debug!(
         cycles = sys.scheduler.cycles,
         ee = sys.gekko.msr.external_interrupt_enable(),

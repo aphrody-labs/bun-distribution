@@ -99,12 +99,14 @@ impl ImmediateBatcher {
         match self.mode {
             MODE_POINTS => self.points.push(Vertex { pos: new, color }),
             MODE_LINES if count == 2 => {
-                self.lines.push([Vertex { pos: cur, color }, Vertex { pos: new, color }]);
+                self.lines
+                    .push([Vertex { pos: cur, color }, Vertex { pos: new, color }]);
                 state_count = 0;
-            },
+            }
             MODE_LINE_STRIP if count > 1 => {
-                self.lines.push([Vertex { pos: cur, color }, Vertex { pos: new, color }]);
-            },
+                self.lines
+                    .push([Vertex { pos: cur, color }, Vertex { pos: new, color }]);
+            }
             MODE_TRIANGLES if count == 3 => {
                 self.triangles.push([
                     Vertex { pos: prev, color },
@@ -112,18 +114,22 @@ impl ImmediateBatcher {
                     Vertex { pos: new, color },
                 ]);
                 state_count = 0;
-            },
+            }
             MODE_TRIANGLE_STRIP if count > 2 => {
                 // winding alterné : compteur pair → (prev, cur) ; impair → (cur, prev)
-                let (v0, v1) = if count & 1 == 0 { (prev, cur) } else { (cur, prev) };
+                let (v0, v1) = if count & 1 == 0 {
+                    (prev, cur)
+                } else {
+                    (cur, prev)
+                };
                 self.triangles.push([
                     Vertex { pos: v0, color },
                     Vertex { pos: v1, color },
                     Vertex { pos: new, color },
                 ]);
-            },
+            }
             // modes inconnus, ou seuil de comptage non atteint : pas d'émission (état mis à jour ensuite)
-            _ => {},
+            _ => {}
         }
         if state_count > 1 {
             self.prev = self.cur;
@@ -177,7 +183,10 @@ mod tests {
         let mut b = mk(MODE_POINTS, 0);
         b.vertex([1.0, 1.0, 1.0]);
         assert_eq!(b.points.len(), 1);
-        assert_eq!(bits3(b.points[0].pos), [0x4140_0000, 0x41B8_0000, 0x4208_0000]);
+        assert_eq!(
+            bits3(b.points[0].pos),
+            [0x4140_0000, 0x41B8_0000, 0x4208_0000]
+        );
         assert_eq!(b.points[0].color, COLOR);
         assert_eq!(b.count, 1);
         assert_eq!(bits3(b.cur), [0x4140_0000, 0x41B8_0000, 0x4208_0000]);
@@ -190,7 +199,10 @@ mod tests {
         b.vertex([1.0, 1.0, 1.0]);
         assert_eq!(b.lines.len(), 1);
         assert_eq!(bits3(b.lines[0][0].pos), bits3(CUR)); // 1er sommet = cur
-        assert_eq!(bits3(b.lines[0][1].pos), [0x4140_0000, 0x41B8_0000, 0x4208_0000]); // 2e = new
+        assert_eq!(
+            bits3(b.lines[0][1].pos),
+            [0x4140_0000, 0x41B8_0000, 0x4208_0000]
+        ); // 2e = new
         assert_eq!(b.count, 0); // compteur remis à 0
         assert_eq!(bits3(b.prev), bits3(PREV)); // state_count==0, prev inchangé
     }
@@ -211,7 +223,10 @@ mod tests {
         assert_eq!(b.triangles.len(), 1);
         assert_eq!(bits3(b.triangles[0][0].pos), bits3(PREV));
         assert_eq!(bits3(b.triangles[0][1].pos), bits3(CUR));
-        assert_eq!(bits3(b.triangles[0][2].pos), [0x4140_0000, 0x41B8_0000, 0x4208_0000]);
+        assert_eq!(
+            bits3(b.triangles[0][2].pos),
+            [0x4140_0000, 0x41B8_0000, 0x4208_0000]
+        );
         assert_eq!(b.count, 0);
     }
 

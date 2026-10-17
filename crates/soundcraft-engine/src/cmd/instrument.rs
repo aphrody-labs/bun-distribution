@@ -31,14 +31,25 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn set_instrument(e: &mut Engine, p: &Value) -> Result<Value> {
-    let plugin = str_param(p, "plugin").ok_or_else(|| bad("mix.instrument", "`plugin` required"))?;
-    let info = super::clap::plugin_info(plugin).ok_or_else(|| bad("mix.instrument", format!("unknown plugin `{plugin}`")))?;
+    let plugin =
+        str_param(p, "plugin").ok_or_else(|| bad("mix.instrument", "`plugin` required"))?;
+    let info = super::clap::plugin_info(plugin)
+        .ok_or_else(|| bad("mix.instrument", format!("unknown plugin `{plugin}`")))?;
     if !info.is_instrument {
-        return Err(bad("mix.instrument", format!("`{plugin}` is not an instrument")));
+        return Err(bad(
+            "mix.instrument",
+            format!("`{plugin}` is not an instrument"),
+        ));
     }
-    let t = tracks_required(e, "mix.instrument", p)?.first().copied().ok_or_else(|| bad("mix.instrument", "no track"))?;
+    let t = tracks_required(e, "mix.instrument", p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad("mix.instrument", "no track"))?;
     if e.session().track(t).map(|tr| tr.kind) != Some(TrackKind::Instrument) {
-        return Err(bad("mix.instrument", "only instrument tracks have an instrument"));
+        return Err(bad(
+            "mix.instrument",
+            "only instrument tracks have an instrument",
+        ));
     }
     let mut ins = Insert::new(info.id);
     for pi in info.params {
@@ -52,13 +63,29 @@ fn set_instrument(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn set_instrument_param(e: &mut Engine, p: &Value) -> Result<Value> {
     let id = "mix.instrument_param";
-    let param = str_param(p, "param").ok_or_else(|| bad(id, "`param` required"))?.to_string();
-    let value = p.get("value").and_then(Value::as_f64).filter(|v| v.is_finite()).ok_or_else(|| bad(id, "`value` must be a number"))? as f32;
-    let t = tracks_required(e, id, p)?.first().copied().ok_or_else(|| bad(id, "no track"))?;
-    let ins = e.session_mut().track_mut(t).and_then(|tr| tr.instrument.as_mut()).ok_or_else(|| bad(id, "the track has no instrument"))?;
+    let param = str_param(p, "param")
+        .ok_or_else(|| bad(id, "`param` required"))?
+        .to_string();
+    let value = p
+        .get("value")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .ok_or_else(|| bad(id, "`value` must be a number"))? as f32;
+    let t = tracks_required(e, id, p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad(id, "no track"))?;
+    let ins = e
+        .session_mut()
+        .track_mut(t)
+        .and_then(|tr| tr.instrument.as_mut())
+        .ok_or_else(|| bad(id, "the track has no instrument"))?;
     // Hosted instruments keep their parameters in their own state.
-    let info = soundcraft_dsp::plugin_info(&ins.plugin).ok_or_else(|| bad(id, format!("`{}` is not a built-in instrument", ins.plugin)))?;
-    let pi = info.param(&param).ok_or_else(|| bad(id, format!("`{}` has no parameter `{param}`", info.id)))?;
+    let info = soundcraft_dsp::plugin_info(&ins.plugin)
+        .ok_or_else(|| bad(id, format!("`{}` is not a built-in instrument", ins.plugin)))?;
+    let pi = info
+        .param(&param)
+        .ok_or_else(|| bad(id, format!("`{}` has no parameter `{param}`", info.id)))?;
     let v = pi.clamp(value);
     ins.params.insert(param.clone(), v);
     Ok(json!({"track": t, "param": param, "value": v}))
@@ -76,7 +103,10 @@ mod tests {
     }
 
     fn instrument_of(e: &Engine, t: TrackId) -> Option<String> {
-        e.session().track(t).and_then(|tr| tr.instrument.as_ref()).map(|i| i.plugin.clone())
+        e.session()
+            .track(t)
+            .and_then(|tr| tr.instrument.as_ref())
+            .map(|i| i.plugin.clone())
     }
 
     #[test]
@@ -84,11 +114,24 @@ mod tests {
         let mut e = Engine::default();
         let t = track(&mut e, "instrument");
         assert_eq!(instrument_of(&e, t).as_deref(), Some("subtractive_synth"));
-        let r = e.execute("mix.instrument", &json!({"track": t.0, "plugin": "drum_synth"})).unwrap();
+        let r = e
+            .execute(
+                "mix.instrument",
+                &json!({"track": t.0, "plugin": "drum_synth"}),
+            )
+            .unwrap();
         assert_eq!(r["plugin"], "drum_synth");
         assert_eq!(instrument_of(&e, t).as_deref(), Some("drum_synth"));
-        let params = e.session().track(t).and_then(|tr| tr.instrument.as_ref()).map(|i| i.params.len());
-        assert_eq!(params, soundcraft_dsp::plugin_info("drum_synth").map(|p| p.params.len()), "every parameter at its default");
+        let params = e
+            .session()
+            .track(t)
+            .and_then(|tr| tr.instrument.as_ref())
+            .map(|i| i.params.len());
+        assert_eq!(
+            params,
+            soundcraft_dsp::plugin_info("drum_synth").map(|p| p.params.len()),
+            "every parameter at its default"
+        );
         e.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(instrument_of(&e, t).as_deref(), Some("subtractive_synth"));
     }
@@ -97,17 +140,55 @@ mod tests {
     fn sets_a_built_in_instruments_parameters() {
         let mut e = Engine::default();
         let t = track(&mut e, "instrument");
-        let r = e.execute("mix.instrument_param", &json!({"track": t.0, "param": "cutoff", "value": 5000})).unwrap();
+        let r = e
+            .execute(
+                "mix.instrument_param",
+                &json!({"track": t.0, "param": "cutoff", "value": 5000}),
+            )
+            .unwrap();
         assert_eq!(r["value"], 5000.0);
-        let r = e.execute("mix.instrument_param", &json!({"track": t.0, "param": "cutoff", "value": 1.0e9})).unwrap();
+        let r = e
+            .execute(
+                "mix.instrument_param",
+                &json!({"track": t.0, "param": "cutoff", "value": 1.0e9}),
+            )
+            .unwrap();
         assert_eq!(r["value"], 20000.0, "clamped");
-        let v = e.session().track(t).and_then(|tr| tr.instrument.as_ref()).and_then(|i| i.params.get("cutoff").copied());
+        let v = e
+            .session()
+            .track(t)
+            .and_then(|tr| tr.instrument.as_ref())
+            .and_then(|i| i.params.get("cutoff").copied());
         assert_eq!(v, Some(20000.0));
-        assert!(e.execute("mix.instrument_param", &json!({"track": t.0, "param": "nope", "value": 1})).is_err());
-        assert!(e.execute("mix.instrument_param", &json!({"track": t.0, "param": "cutoff"})).is_err());
-        assert!(e.execute("mix.instrument_param", &json!({"track": t.0, "param": "cutoff", "value": "loud"})).is_err());
+        assert!(
+            e.execute(
+                "mix.instrument_param",
+                &json!({"track": t.0, "param": "nope", "value": 1})
+            )
+            .is_err()
+        );
+        assert!(
+            e.execute(
+                "mix.instrument_param",
+                &json!({"track": t.0, "param": "cutoff"})
+            )
+            .is_err()
+        );
+        assert!(
+            e.execute(
+                "mix.instrument_param",
+                &json!({"track": t.0, "param": "cutoff", "value": "loud"})
+            )
+            .is_err()
+        );
         let audio = track(&mut e, "audio");
-        assert!(e.execute("mix.instrument_param", &json!({"track": audio.0, "param": "cutoff", "value": 1})).is_err());
+        assert!(
+            e.execute(
+                "mix.instrument_param",
+                &json!({"track": audio.0, "param": "cutoff", "value": 1})
+            )
+            .is_err()
+        );
         e.execute("edit.undo", &json!({})).unwrap();
     }
 
@@ -116,11 +197,38 @@ mod tests {
         let mut e = Engine::default();
         let inst = track(&mut e, "instrument");
         let audio = track(&mut e, "audio");
-        assert!(e.execute("mix.instrument", &json!({"track": inst.0, "plugin": "eq_7band"})).is_err(), "an effect");
-        assert!(e.execute("mix.instrument", &json!({"track": inst.0, "plugin": "vst3:00000000000000000000000000000000"})).is_err());
-        assert!(e.execute("mix.instrument", &json!({"track": inst.0})).is_err(), "no plugin");
-        assert!(e.execute("mix.instrument", &json!({"track": audio.0, "plugin": "drum_synth"})).is_err(), "an audio track");
-        assert_eq!(instrument_of(&e, inst).as_deref(), Some("subtractive_synth"));
+        assert!(
+            e.execute(
+                "mix.instrument",
+                &json!({"track": inst.0, "plugin": "eq_7band"})
+            )
+            .is_err(),
+            "an effect"
+        );
+        assert!(
+            e.execute(
+                "mix.instrument",
+                &json!({"track": inst.0, "plugin": "vst3:00000000000000000000000000000000"})
+            )
+            .is_err()
+        );
+        assert!(
+            e.execute("mix.instrument", &json!({"track": inst.0}))
+                .is_err(),
+            "no plugin"
+        );
+        assert!(
+            e.execute(
+                "mix.instrument",
+                &json!({"track": audio.0, "plugin": "drum_synth"})
+            )
+            .is_err(),
+            "an audio track"
+        );
+        assert_eq!(
+            instrument_of(&e, inst).as_deref(),
+            Some("subtractive_synth")
+        );
         assert_eq!(instrument_of(&e, audio), None);
     }
 }

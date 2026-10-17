@@ -65,8 +65,9 @@ fn respond(stream: &mut TcpStream, status: &str, body: &str) {
 fn number_field(object: &str, key: &str) -> Option<f32> {
     let rest = &object[object.find(&format!("\"{key}\""))? + key.len() + 2..];
     let rest = rest.trim_start().strip_prefix(':')?.trim_start();
-    let end =
-        rest.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-')).unwrap_or(rest.len());
+    let end = rest
+        .find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-'))
+        .unwrap_or(rest.len());
     rest[..end].parse().ok()
 }
 
@@ -106,7 +107,7 @@ fn handle(mut stream: TcpStream, ready_at: Instant, args: &[String], shared: &Mu
                 "503 Service Unavailable",
                 r#"{"error":{"message":"Loading model"}}"#,
             );
-        },
+        }
         ("GET", "/health") => respond(&mut stream, "200 OK", r#"{"status":"ok"}"#),
         ("POST", "/tokenize") => {
             // One token per whitespace-separated word of the "content" value.
@@ -115,10 +116,15 @@ fn handle(mut stream: TcpStream, ready_at: Instant, args: &[String], shared: &Mu
                 .and_then(|(_, rest)| rest.split_once('"'))
                 .and_then(|(_, rest)| rest.rsplit_once('"'))
                 .map_or("", |(content, _)| content);
-            let tokens: Vec<String> =
-                (0..content.split_whitespace().count()).map(|index| index.to_string()).collect();
-            respond(&mut stream, "200 OK", &format!("{{\"tokens\":[{}]}}", tokens.join(",")));
-        },
+            let tokens: Vec<String> = (0..content.split_whitespace().count())
+                .map(|index| index.to_string())
+                .collect();
+            respond(
+                &mut stream,
+                "200 OK",
+                &format!("{{\"tokens\":[{}]}}", tokens.join(",")),
+            );
+        }
         ("GET", "/lora-adapters") => {
             let shared = shared.lock().expect("lock");
             let items: Vec<String> = shared
@@ -133,7 +139,7 @@ fn handle(mut stream: TcpStream, ready_at: Instant, args: &[String], shared: &Mu
                 })
                 .collect();
             respond(&mut stream, "200 OK", &format!("[{}]", items.join(",")));
-        },
+        }
         ("POST", "/lora-adapters") => {
             let mut shared = shared.lock().expect("lock");
             // llama-server semantics: adapters absent from the list are disabled.
@@ -149,7 +155,7 @@ fn handle(mut stream: TcpStream, ready_at: Instant, args: &[String], shared: &Mu
                 }
             }
             respond(&mut stream, "200 OK", "{\"success\":true}");
-        },
+        }
         ("GET", "/props") => {
             let quoted: Vec<String> = args
                 .iter()
@@ -160,8 +166,12 @@ fn handle(mut stream: TcpStream, ready_at: Instant, args: &[String], shared: &Mu
                 "200 OK",
                 &format!("{{\"fake\":true,\"args\":[{}]}}", quoted.join(",")),
             );
-        },
-        _ => respond(&mut stream, "404 Not Found", r#"{"error":{"message":"not found"}}"#),
+        }
+        _ => respond(
+            &mut stream,
+            "404 Not Found",
+            r#"{"error":{"message":"not found"}}"#,
+        ),
     }
 }
 
@@ -177,9 +187,14 @@ fn main() {
     }
 
     let value_of = |flag: &str| {
-        args.iter().position(|arg| arg == flag).and_then(|index| args.get(index + 1)).cloned()
+        args.iter()
+            .position(|arg| arg == flag)
+            .and_then(|index| args.get(index + 1))
+            .cloned()
     };
-    let port: u16 = value_of("--port").and_then(|port| port.parse().ok()).unwrap_or(8080);
+    let port: u16 = value_of("--port")
+        .and_then(|port| port.parse().ok())
+        .unwrap_or(8080);
     let host = value_of("--host").unwrap_or_else(|| "127.0.0.1".to_string());
 
     if let Some(code) = value_of("--fake-exit-code").and_then(|code| code.parse::<i32>().ok()) {
@@ -187,7 +202,9 @@ fn main() {
         std::process::exit(code);
     }
 
-    let load = value_of("--fake-load-ms").and_then(|ms| ms.parse().ok()).unwrap_or(0u64);
+    let load = value_of("--fake-load-ms")
+        .and_then(|ms| ms.parse().ok())
+        .unwrap_or(0u64);
     let ready_at = Instant::now() + Duration::from_millis(load);
 
     let applied = !args.iter().any(|arg| arg == "--lora-init-without-apply");
@@ -207,7 +224,7 @@ fn main() {
                 "main: couldn't bind HTTP server socket, hostname: {host}, port: {port} ({error})"
             );
             std::process::exit(1);
-        },
+        }
     };
     eprintln!("main: fake server is listening on http://{host}:{port}");
 

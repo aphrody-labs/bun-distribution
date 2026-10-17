@@ -68,16 +68,29 @@ impl Reader<'_> {
 pub(super) fn decode(b: &[u8]) -> Option<Network> {
     let mut r = Reader { b, pos: 0 };
     let (nv, ns, nr) = (r.u32()? as usize, r.u32()? as usize, r.u32()? as usize);
-    if nv > MAX_ITEMS || ns > MAX_ITEMS || nr > MAX_ITEMS || nv * 12 + ns * 28 + nr * 8 > b.len().saturating_sub(12) {
+    if nv > MAX_ITEMS
+        || ns > MAX_ITEMS
+        || nr > MAX_ITEMS
+        || nv * 12 + ns * 28 + nr * 8 > b.len().saturating_sub(12)
+    {
         return None;
     }
     let mut net = Network::default();
     for _ in 0..nv {
-        net.vertices.push(Vertex { style: r.u32()?, x: r.f32()?, y: r.f32()? });
+        net.vertices.push(Vertex {
+            style: r.u32()?,
+            x: r.f32()?,
+            y: r.f32()?,
+        });
     }
     for _ in 0..ns {
         r.u32()?;
-        net.segments.push(Segment { a: r.index(nv)?, ta: (r.f32()?, r.f32()?), b: r.index(nv)?, tb: (r.f32()?, r.f32()?) });
+        net.segments.push(Segment {
+            a: r.index(nv)?,
+            ta: (r.f32()?, r.f32()?),
+            b: r.index(nv)?,
+            tb: (r.f32()?, r.f32()?),
+        });
     }
     let mut entries = 0usize;
     for _ in 0..nr {
@@ -89,9 +102,17 @@ pub(super) fn decode(b: &[u8]) -> Option<Network> {
             if entries > MAX_ITEMS {
                 return None;
             }
-            loops.push((0..n).map(|_| r.index(ns)).collect::<Option<Vec<usize>>>()?);
+            loops.push(
+                (0..n)
+                    .map(|_| r.index(ns))
+                    .collect::<Option<Vec<usize>>>()?,
+            );
         }
-        net.regions.push(Region { style: sw >> 1, non_zero: sw & 1 == 1, loops });
+        net.regions.push(Region {
+            style: sw >> 1,
+            non_zero: sw & 1 == 1,
+            loops,
+        });
     }
     Some(net)
 }

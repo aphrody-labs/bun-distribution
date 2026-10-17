@@ -21,9 +21,13 @@ pub(crate) struct GoogleContext {
 impl GoogleContext {
     pub(crate) fn new() -> Result<Self> {
         let vfs = Arc::new(Vfs::new().map_err(|e| miette::miette!(e.to_string()))?);
-        vfs.initialize_physical_layout().map_err(|e| miette::miette!(e.to_string()))?;
+        vfs.initialize_physical_layout()
+            .map_err(|e| miette::miette!(e.to_string()))?;
 
-        Ok(Self { vfs, version: "1.0.0-canary" })
+        Ok(Self {
+            vfs,
+            version: "1.0.0-canary",
+        })
     }
 }
 

@@ -23,7 +23,7 @@ impl Mirror {
             Err(_) => {
                 let path = PathBuf::from(value);
                 path.exists().then_some(Self::Sqlite(path))
-            },
+            }
         }
     }
 
@@ -39,21 +39,34 @@ impl Mirror {
     pub fn query(&self, sql: &str, parameters: &[Value]) -> Option<QueryResult> {
         let query = ReadQuery::parse(sql).ok()?;
         match self {
-            Self::Sqlite(path) => SqliteReadOnly::open(path).ok()?.query(&query, parameters).ok(),
+            Self::Sqlite(path) => SqliteReadOnly::open(path)
+                .ok()?
+                .query(&query, parameters)
+                .ok(),
             Self::Postgres(url) => {
-                let runtime =
-                    tokio::runtime::Builder::new_current_thread().enable_all().build().ok()?;
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .ok()?;
                 runtime.block_on(async {
                     let database = PostgresReadOnly::connect(url).await.ok()?;
                     database.query(&query, parameters).await.ok()
                 })
-            },
+            }
         }
     }
 
     /// Première cellule texte de la première ligne.
     pub fn first_text(&self, sql: &str, parameters: &[Value]) -> Option<String> {
-        match self.query(sql, parameters)?.rows.into_iter().next()?.values.into_iter().next()? {
+        match self
+            .query(sql, parameters)?
+            .rows
+            .into_iter()
+            .next()?
+            .values
+            .into_iter()
+            .next()?
+        {
             Value::Text(text) => Some(text),
             _ => None,
         }

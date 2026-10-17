@@ -56,7 +56,14 @@ pub struct FrameMotion {
 
 impl Default for FrameMotion {
     fn default() -> Self {
-        FrameMotion { t: [0.0; 2], s: [1.0, 0.0, 0.0, 0.0], h: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], inliers: 0, features: 0, points: vec![] }
+        FrameMotion {
+            t: [0.0; 2],
+            s: [1.0, 0.0, 0.0, 0.0],
+            h: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+            inliers: 0,
+            features: 0,
+            points: vec![],
+        }
     }
 }
 
@@ -138,13 +145,32 @@ pub struct Analyzer {
 
 fn round_pts(p: &[[f64; 2]], n: usize) -> Vec<[f32; 2]> {
     let step = (p.len() / n.max(1)).max(1);
-    p.iter().step_by(step).take(n).map(|q| [((q[0] * 10.0).round() / 10.0) as f32, ((q[1] * 10.0).round() / 10.0) as f32]).collect()
+    p.iter()
+        .step_by(step)
+        .take(n)
+        .map(|q| {
+            [
+                ((q[0] * 10.0).round() / 10.0) as f32,
+                ((q[1] * 10.0).round() / 10.0) as f32,
+            ]
+        })
+        .collect()
 }
 
 impl Analyzer {
     pub fn new(size: [f64; 2], opts: AnalyzeOpts) -> Analyzer {
-        let (side, want) = if opts.detailed { (640, 260) } else { (480, 160) };
-        Analyzer { opts, prev: None, frames: vec![], size, trajectories: TrackAnalyzer::with_budget(size, side, want) }
+        let (side, want) = if opts.detailed {
+            (640, 260)
+        } else {
+            (480, 160)
+        };
+        Analyzer {
+            opts,
+            prev: None,
+            frames: vec![],
+            size,
+            trajectories: TrackAnalyzer::with_budget(size, side, want),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -156,7 +182,11 @@ impl Analyzer {
 
     /// Analyse the next frame.
     pub fn push(&mut self, frame: &Frame) {
-        let (max_side, max_feat) = if self.opts.detailed { (960, 700) } else { (480, 350) };
+        let (max_side, max_feat) = if self.opts.detailed {
+            (960, 700)
+        } else {
+            (480, 350)
+        };
         let factor = analysis_factor(frame.img.width, frame.img.height, max_side);
         let pyr = GrayPyramid::from_image(frame.img, frame.offset, factor, 3);
         self.trajectories.push(frame);
@@ -167,9 +197,33 @@ impl Analyzer {
             && prev.offset == pyr.offset
         {
             let md = (prev.width().max(prev.height()) as f64 / 40.0).clamp(4.0, 16.0);
-            let feats = good_features(prev, &CornerOpts { max_features: max_feat, min_distance: md, quality: 0.01, window: 2, border: 4 }, None);
-            let q = track(prev, &pyr, &feats, None, &LkOpts { radius: 5, fb_max: 0.75, ..Default::default() });
-            let (src, dst): (Vec<[f64; 2]>, Vec<[f64; 2]>) = feats.iter().zip(&q).filter_map(|(p, q)| q.map(|q| (prev.to_layer(*p), pyr.to_layer(q)))).unzip();
+            let feats = good_features(
+                prev,
+                &CornerOpts {
+                    max_features: max_feat,
+                    min_distance: md,
+                    quality: 0.01,
+                    window: 2,
+                    border: 4,
+                },
+                None,
+            );
+            let q = track(
+                prev,
+                &pyr,
+                &feats,
+                None,
+                &LkOpts {
+                    radius: 5,
+                    fb_max: 0.75,
+                    ..Default::default()
+                },
+            );
+            let (src, dst): (Vec<[f64; 2]>, Vec<[f64; 2]>) = feats
+                .iter()
+                .zip(&q)
+                .filter_map(|(p, q)| q.map(|q| (prev.to_layer(*p), pyr.to_layer(q))))
+                .unzip();
             fm.features = src.len() as u32;
             let thr = 1.0 * factor as f64;
             let seed = self.frames.len() as u64 + 1;
@@ -186,12 +240,21 @@ impl Analyzer {
                 // Reject wild projective fits (few features): keep the similarity then.
                 let sane = m[2][0].abs() < 0.01 && m[2][1].abs() < 0.01;
                 fm.h = if sane {
-                    [m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1]]
+                    [
+                        m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
+                    ]
                 } else {
-                    [fm.s[0], -fm.s[1], fm.s[2], fm.s[1], fm.s[0], fm.s[3], 0.0, 0.0]
+                    [
+                        fm.s[0], -fm.s[1], fm.s[2], fm.s[1], fm.s[0], fm.s[3], 0.0, 0.0,
+                    ]
                 };
                 fm.inliers = f.inlier_count() as u32;
-                let inl: Vec<[f64; 2]> = dst.iter().zip(&f.inliers).filter(|(_, b)| **b).map(|(p, _)| *p).collect();
+                let inl: Vec<[f64; 2]> = dst
+                    .iter()
+                    .zip(&f.inliers)
+                    .filter(|(_, b)| **b)
+                    .map(|(p, _)| *p)
+                    .collect();
                 fm.points = round_pts(&inl, 48);
             }
         }
@@ -210,7 +273,15 @@ impl Analyzer {
                 *p = [(p[0] * 10.0).round() / 10.0, (p[1] * 10.0).round() / 10.0];
             }
         }
-        WarpAnalysis { version: 2, start, frame_duration, size: self.size, detailed: self.opts.detailed, frames: self.frames, tracks }
+        WarpAnalysis {
+            version: 2,
+            start,
+            frame_duration,
+            size: self.size,
+            detailed: self.opts.detailed,
+            frames: self.frames,
+            tracks,
+        }
     }
 }
 
@@ -250,8 +321,18 @@ pub enum Ripple {
 impl Ripple {
     pub fn mesh(self) -> MeshOpts {
         match self {
-            Ripple::Automatic => MeshOpts { cols: 12, rows: 8, alpha: 1.0, prior: 0.02 },
-            Ripple::Enhanced => MeshOpts { cols: 12, rows: 16, alpha: 0.5, prior: 0.02 },
+            Ripple::Automatic => MeshOpts {
+                cols: 12,
+                rows: 8,
+                alpha: 1.0,
+                prior: 0.02,
+            },
+            Ripple::Enhanced => MeshOpts {
+                cols: 12,
+                rows: 16,
+                alpha: 0.5,
+                prior: 0.02,
+            },
         }
     }
 }
@@ -374,7 +455,12 @@ fn convex_contains(q: &[[f64; 2]; 4], p: [f64; 2]) -> bool {
 /// outline mapped by `b`.
 pub fn valid_fraction(b: &Homography, size: [f64; 2]) -> f64 {
     let [w, h] = size;
-    let quad = [b.apply([0.0, 0.0]), b.apply([w, 0.0]), b.apply([w, h]), b.apply([0.0, h])];
+    let quad = [
+        b.apply([0.0, 0.0]),
+        b.apply([w, 0.0]),
+        b.apply([w, h]),
+        b.apply([0.0, h]),
+    ];
     // A fold or a point at infinity: nothing is valid.
     let m = b.normalized().0;
     for p in [[0.0, 0.0], [w, 0.0], [w, h], [0.0, h]] {
@@ -385,7 +471,14 @@ pub fn valid_fraction(b: &Homography, size: [f64; 2]) -> f64 {
     let c = [w / 2.0, h / 2.0];
     let fits = |s: f64| {
         let (hw, hh) = (s * w / 2.0, s * h / 2.0);
-        [[c[0] - hw, c[1] - hh], [c[0] + hw, c[1] - hh], [c[0] + hw, c[1] + hh], [c[0] - hw, c[1] + hh]].iter().all(|p| convex_contains(&quad, *p))
+        [
+            [c[0] - hw, c[1] - hh],
+            [c[0] + hw, c[1] - hh],
+            [c[0] + hw, c[1] + hh],
+            [c[0] - hw, c[1] + hh],
+        ]
+        .iter()
+        .all(|p| convex_contains(&quad, *p))
     };
     if fits(1.0) {
         return 1.0;
@@ -427,7 +520,10 @@ pub fn corrections(a: &WarpAnalysis, s: &StabSettings) -> Vec<Homography> {
     }
     let method = s.method;
     let inter: Vec<Homography> = a.frames.iter().map(|f| f.motion(method)).collect();
-    let inv: Vec<Homography> = inter.iter().map(|h| h.inverse().unwrap_or(Homography::IDENTITY)).collect();
+    let inv: Vec<Homography> = inter
+        .iter()
+        .map(|h| h.inverse().unwrap_or(Homography::IDENTITY))
+        .collect();
     let c = [a.size[0] / 2.0, a.size[1] / 2.0];
     let mut out = Vec::with_capacity(n);
     match s.result {
@@ -524,14 +620,19 @@ impl Warp {
 /// wanted positions are scaled back about their centroid.
 fn unscale(pairs: &mut [([f64; 2], [f64; 2])]) {
     let (src, dst): (Vec<[f64; 2]>, Vec<[f64; 2]>) = pairs.iter().copied().unzip();
-    let Some(h) = least_squares(Model::Similarity, &src, &dst) else { return };
+    let Some(h) = least_squares(Model::Similarity, &src, &dst) else {
+        return;
+    };
     let m = h.0;
     let k = (m[0][0] * m[1][1] - m[0][1] * m[1][0]).abs().sqrt();
     if k < 1e-6 {
         return;
     }
     let n = dst.len() as f64;
-    let c = [dst.iter().map(|q| q[0]).sum::<f64>() / n, dst.iter().map(|q| q[1]).sum::<f64>() / n];
+    let c = [
+        dst.iter().map(|q| q[0]).sum::<f64>() / n,
+        dst.iter().map(|q| q[1]).sum::<f64>() / n,
+    ];
     for (_, d) in pairs.iter_mut() {
         *d = [c[0] + (d[0] - c[0]) / k, c[1] + (d[1] - c[1]) / k];
     }
@@ -548,11 +649,23 @@ pub fn meshes(a: &WarpAnalysis, s: &StabSettings, base: &[Homography]) -> Option
     let o = s.ripple.mesh();
     let size = a.size;
     let pairs: Vec<Vec<([f64; 2], [f64; 2])>> = match s.result {
-        StabResult::NoMotion => (0..n).map(|t| a.tracks.iter().filter_map(|tr| tr.at(t as u32)).map(|p| (p, base[t].apply(p))).collect()).collect(),
+        StabResult::NoMotion => (0..n)
+            .map(|t| {
+                a.tracks
+                    .iter()
+                    .filter_map(|tr| tr.at(t as u32))
+                    .map(|p| (p, base[t].apply(p)))
+                    .collect()
+            })
+            .collect(),
         StabResult::SmoothMotion => {
             let sigma = s.sigma();
             if sigma < 0.3 {
-                return Some((0..n).map(|_| Mesh::identity(o.cols, o.rows, size)).collect());
+                return Some(
+                    (0..n)
+                        .map(|_| Mesh::identity(o.cols, o.rows, size))
+                        .collect(),
+                );
             }
             smooth_trajectories(&a.tracks, n, sigma, 9)
         }
@@ -566,7 +679,11 @@ pub fn meshes(a: &WarpAnalysis, s: &StabSettings, base: &[Homography]) -> Option
                 if s.preserve_scale && pr.len() >= 2 {
                     unscale(&mut pr);
                 }
-                if pr.len() < 6 { Mesh::from_homography(o.cols, o.rows, size, &base[t]) } else { solve_mesh(size, &o, &pr, &base[t]) }
+                if pr.len() < 6 {
+                    Mesh::from_homography(o.cols, o.rows, size, &base[t])
+                } else {
+                    solve_mesh(size, &o, &pr, &base[t])
+                }
             })
             .collect(),
     )
@@ -590,7 +707,10 @@ pub fn plan(a: &WarpAnalysis, s: &StabSettings) -> Plan {
     let margin = (s.action_safe / 100.0).clamp(0.0, 0.45);
     let need_cover = 1.0 - 2.0 * margin;
     let max_scale = (s.max_scale / 100.0).max(1.0);
-    if s.framing == Framing::StabilizeCropAutoScale && vmin * max_scale < need_cover && !b.is_empty() {
+    if s.framing == Framing::StabilizeCropAutoScale
+        && vmin * max_scale < need_cover
+        && !b.is_empty()
+    {
         // Relax the correction on frames that need more than Maximum Scale.
         let target = need_cover / max_scale;
         let n = b.len();
@@ -615,7 +735,14 @@ pub fn plan(a: &WarpAnalysis, s: &StabSettings) -> Plan {
         // Spread the relaxation smoothly (min filter, then a Gaussian of the same radius) so
         // the camera doesn't jump.
         let r = ((s.sigma() * 0.5).ceil() as usize).max(1);
-        let minf: Vec<f64> = (0..n).map(|t| lam[t.saturating_sub(r)..=(t + r).min(n - 1)].iter().copied().fold(1.0, f64::min)).collect();
+        let minf: Vec<f64> = (0..n)
+            .map(|t| {
+                lam[t.saturating_sub(r)..=(t + r).min(n - 1)]
+                    .iter()
+                    .copied()
+                    .fold(1.0, f64::min)
+            })
+            .collect();
         let sig = r as f64 / 2.0;
         let smooth: Vec<f64> = (0..n)
             .map(|t| {
@@ -629,23 +756,48 @@ pub fn plan(a: &WarpAnalysis, s: &StabSettings) -> Plan {
                 (acc / ws).min(lam[t])
             })
             .collect();
-        b = b.iter().zip(&smooth).map(|(w, l)| if *l >= 1.0 { w.clone() } else { w.relax(*l) }).collect();
+        b = b
+            .iter()
+            .zip(&smooth)
+            .map(|(w, l)| if *l >= 1.0 { w.clone() } else { w.relax(*l) })
+            .collect();
         fr = fracs(&b);
         vmin = fr.iter().copied().fold(1.0, f64::min);
     }
-    let rect = |k: f64| [c[0] - k * size[0] / 2.0, c[1] - k * size[1] / 2.0, c[0] + k * size[0] / 2.0, c[1] + k * size[1] / 2.0];
+    let rect = |k: f64| {
+        [
+            c[0] - k * size[0] / 2.0,
+            c[1] - k * size[1] / 2.0,
+            c[0] + k * size[0] / 2.0,
+            c[1] + k * size[1] / 2.0,
+        ]
+    };
     let (auto, crop) = match s.framing {
         Framing::StabilizeOnly | Framing::SynthesizeEdges => (1.0, None),
         Framing::StabilizeCrop => (1.0, Some(rect(vmin * add))),
         Framing::StabilizeCropAutoScale => {
-            let k = if vmin > 1e-6 { (need_cover / vmin).clamp(1.0, max_scale) } else { max_scale };
+            let k = if vmin > 1e-6 {
+                (need_cover / vmin).clamp(1.0, max_scale)
+            } else {
+                max_scale
+            };
             let vis = vmin * k * add;
-            (k, if vis >= 1.0 - 1e-9 { None } else { Some(rect(vis)) })
+            (
+                k,
+                if vis >= 1.0 - 1e-9 {
+                    None
+                } else {
+                    Some(rect(vis))
+                },
+            )
         }
     };
     let z = Homography::scale_about(auto, c);
     let framing = z_add.then_after(&z);
-    let warps = b.par_iter().map(|w| framing.then_after(&w.homography())).collect();
+    let warps = b
+        .par_iter()
+        .map(|w| framing.then_after(&w.homography()))
+        .collect();
     let meshes = b
         .into_iter()
         .filter_map(|w| match w {
@@ -653,7 +805,14 @@ pub fn plan(a: &WarpAnalysis, s: &StabSettings) -> Plan {
             Warp::H(_) => None,
         })
         .collect();
-    Plan { warps, meshes, framing, crop, auto_scale: auto, valid_fraction: vmin }
+    Plan {
+        warps,
+        meshes,
+        framing,
+        crop,
+        auto_scale: auto,
+        valid_fraction: vmin,
+    }
 }
 
 #[cfg(test)]
@@ -665,10 +824,21 @@ mod tests {
     /// A synthetic analysis: a slow pan plus per-frame jitter.
     fn shaky(n: usize) -> (WarpAnalysis, Vec<[f64; 2]>) {
         let pos = |k: usize| {
-            let j = [((k * 7919) % 13) as f64 - 6.0, ((k * 104729) % 11) as f64 - 5.0];
+            let j = [
+                ((k * 7919) % 13) as f64 - 6.0,
+                ((k * 104729) % 11) as f64 - 5.0,
+            ];
             [2.0 * k as f64 + j[0], 0.5 * k as f64 + j[1]]
         };
-        let mut a = WarpAnalysis { version: 1, start: 0.0, frame_duration: 1.0 / 30.0, size: [640.0, 360.0], detailed: false, frames: vec![], tracks: vec![] };
+        let mut a = WarpAnalysis {
+            version: 1,
+            start: 0.0,
+            frame_duration: 1.0 / 30.0,
+            size: [640.0, 360.0],
+            detailed: false,
+            frames: vec![],
+            tracks: vec![],
+        };
         let path: Vec<[f64; 2]> = (0..n).map(pos).collect();
         for k in 0..n {
             let mut f = FrameMotion::default();
@@ -688,7 +858,8 @@ mod tests {
         // Mean magnitude of the second difference (acceleration).
         let mut s = 0.0;
         for k in 1..p.len() - 1 {
-            s += (p[k + 1][0] - 2.0 * p[k][0] + p[k - 1][0]).hypot(p[k + 1][1] - 2.0 * p[k][1] + p[k - 1][1]);
+            s += (p[k + 1][0] - 2.0 * p[k][0] + p[k - 1][0])
+                .hypot(p[k + 1][1] - 2.0 * p[k][1] + p[k - 1][1]);
         }
         s / (p.len() - 2) as f64
     }
@@ -697,16 +868,29 @@ mod tests {
     fn smoothing_removes_jitter_and_no_motion_locks() {
         let (a, path) = shaky(90);
         // A scene point at (320, 180) on frame 0 appears at (320, 180) - path[k] on frame k.
-        let scene = |k: usize| [320.0 - path[k][0] + path[0][0], 180.0 - path[k][1] + path[0][1]];
+        let scene = |k: usize| {
+            [
+                320.0 - path[k][0] + path[0][0],
+                180.0 - path[k][1] + path[0][1],
+            ]
+        };
         let before: Vec<[f64; 2]> = (0..90).map(scene).collect();
         for method in [Method::Position, Method::Similarity, Method::Perspective] {
-            let s = StabSettings { method, framing: Framing::StabilizeOnly, ..Default::default() };
+            let s = StabSettings {
+                method,
+                framing: Framing::StabilizeOnly,
+                ..Default::default()
+            };
             let p = plan(&a, &s);
             let after: Vec<[f64; 2]> = (0..90).map(|k| p.warps[k].apply(scene(k))).collect();
             let (j0, j1) = (jitter(&before), jitter(&after));
             assert!(j1 < 0.2 * j0, "{method:?}: jitter {j0} → {j1}");
         }
-        let s = StabSettings { result: StabResult::NoMotion, framing: Framing::StabilizeOnly, ..Default::default() };
+        let s = StabSettings {
+            result: StabResult::NoMotion,
+            framing: Framing::StabilizeOnly,
+            ..Default::default()
+        };
         let p = plan(&a, &s);
         let fixed: Vec<[f64; 2]> = (0..90).map(|k| p.warps[k].apply(scene(k))).collect();
         for q in &fixed {
@@ -717,28 +901,56 @@ mod tests {
     #[test]
     fn framing_crops_and_scales() {
         let (a, _) = shaky(60);
-        let p = plan(&a, &StabSettings { framing: Framing::StabilizeCrop, ..Default::default() });
+        let p = plan(
+            &a,
+            &StabSettings {
+                framing: Framing::StabilizeCrop,
+                ..Default::default()
+            },
+        );
         let crop = p.crop.unwrap();
         assert!(p.auto_scale == 1.0 && crop[0] > 0.0 && crop[2] < 640.0);
         // Every frame covers the crop rectangle.
         for w in &p.warps {
             let inv = w.inverse().unwrap();
-            for q in [[crop[0], crop[1]], [crop[2], crop[1]], [crop[2], crop[3]], [crop[0], crop[3]]] {
+            for q in [
+                [crop[0], crop[1]],
+                [crop[2], crop[1]],
+                [crop[2], crop[3]],
+                [crop[0], crop[3]],
+            ] {
                 let s = inv.apply(q);
-                assert!(s[0] >= -1e-6 && s[1] >= -1e-6 && s[0] <= 640.0 + 1e-6 && s[1] <= 360.0 + 1e-6, "{s:?}");
+                assert!(
+                    s[0] >= -1e-6 && s[1] >= -1e-6 && s[0] <= 640.0 + 1e-6 && s[1] <= 360.0 + 1e-6,
+                    "{s:?}"
+                );
             }
         }
         let p = plan(&a, &StabSettings::default());
-        assert!(p.auto_scale > 1.0 && p.crop.is_none(), "{} {:?}", p.auto_scale, p.crop);
+        assert!(
+            p.auto_scale > 1.0 && p.crop.is_none(),
+            "{} {:?}",
+            p.auto_scale,
+            p.crop
+        );
         for w in &p.warps {
             let inv = w.inverse().unwrap();
             for q in [[0.0, 0.0], [640.0, 0.0], [640.0, 360.0], [0.0, 360.0]] {
                 let s = inv.apply(q);
-                assert!(s[0] >= -1e-3 && s[1] >= -1e-3 && s[0] <= 640.001 && s[1] <= 360.001, "{s:?}");
+                assert!(
+                    s[0] >= -1e-3 && s[1] >= -1e-3 && s[0] <= 640.001 && s[1] <= 360.001,
+                    "{s:?}"
+                );
             }
         }
         // A tight Maximum Scale relaxes the correction instead of showing borders.
-        let p = plan(&a, &StabSettings { max_scale: 101.0, ..Default::default() });
+        let p = plan(
+            &a,
+            &StabSettings {
+                max_scale: 101.0,
+                ..Default::default()
+            },
+        );
         assert!(p.auto_scale <= 1.01 + 1e-9);
         assert!(p.valid_fraction * p.auto_scale >= 0.999 || p.crop.is_some());
         let j = WarpAnalysis::from_json(&a.to_json()).unwrap();
@@ -748,7 +960,9 @@ mod tests {
     // ------------------------------------------------------------ synthetic shaky footage
 
     fn hash(i: i64, j: i64, k: i64) -> f64 {
-        let mut v = (i.wrapping_mul(73_856_093) ^ j.wrapping_mul(19_349_663) ^ k.wrapping_mul(83_492_791)) as u64;
+        let mut v = (i.wrapping_mul(73_856_093)
+            ^ j.wrapping_mul(19_349_663)
+            ^ k.wrapping_mul(83_492_791)) as u64;
         v ^= v >> 13;
         v = v.wrapping_mul(0x5bd1_e995);
         v ^= v >> 15;
@@ -780,14 +994,22 @@ mod tests {
         fn new(n: usize) -> Scene {
             let cams = (0..n)
                 .map(|t| {
-                    let j = [5.0 * (hash(t as i64, 7, 3) - 0.5), 5.0 * (hash(t as i64, 11, 5) - 0.5)];
+                    let j = [
+                        5.0 * (hash(t as i64, 7, 3) - 0.5),
+                        5.0 * (hash(t as i64, 11, 5) - 0.5),
+                    ];
                     [0.4 * t as f64 + j[0], 0.15 * t as f64 + j[1]]
                 })
                 .collect();
-            Scene { size: [320.0, 180.0], cams }
+            Scene {
+                size: [320.0, 180.0],
+                cams,
+            }
         }
         fn depth(&self, s: [f64; 2]) -> f64 {
-            1.0 + 1.2 * (-((s[0] - 160.0).powi(2) + (s[1] - 90.0).powi(2)) / (2.0 * 38.0f64.powi(2))).exp()
+            1.0 + 1.2
+                * (-((s[0] - 160.0).powi(2) + (s[1] - 90.0).powi(2)) / (2.0 * 38.0f64.powi(2)))
+                    .exp()
         }
         /// Where scene point `s` appears on frame `t`.
         fn image_of(&self, t: usize, s: [f64; 2]) -> [f64; 2] {
@@ -821,7 +1043,8 @@ mod tests {
         for gy in 0..5 {
             for gx in 0..7 {
                 let s = [70.0 + gx as f64 * 30.0, 45.0 + gy as f64 * 22.0];
-                let ys: Vec<Option<[f64; 2]>> = (0..n).map(|t| out(t, scene.image_of(t, s))).collect();
+                let ys: Vec<Option<[f64; 2]>> =
+                    (0..n).map(|t| out(t, scene.image_of(t, s))).collect();
                 for t in 6..n - 6 {
                     if let (Some(a), Some(b), Some(c)) = (ys[t - 1], ys[t], ys[t + 1]) {
                         tot += (c[0] - 2.0 * b[0] + a[0]).hypot(c[1] - 2.0 * b[1] + a[1]);
@@ -840,23 +1063,51 @@ mod tests {
         let mut an = Analyzer::new(scene.size, AnalyzeOpts::default());
         for t in 0..n {
             let img = scene.frame(t);
-            an.push(&Frame { img: &img, offset: [0.0; 2] });
+            an.push(&Frame {
+                img: &img,
+                offset: [0.0; 2],
+            });
         }
         let a = an.finish(0.0, 1.0 / 24.0);
         assert!(a.tracks.len() >= 40, "trajectories: {}", a.tracks.len());
         // The analysis round-trips with its trajectories.
         assert_eq!(WarpAnalysis::from_json(&a.to_json()).unwrap(), a);
-        let base = StabSettings { framing: Framing::StabilizeOnly, fps: 24.0, ..Default::default() };
+        let base = StabSettings {
+            framing: Framing::StabilizeOnly,
+            fps: 24.0,
+            ..Default::default()
+        };
         let before = residual_jitter(&scene, |_, x| Some(x));
-        let ppl = plan(&a, &StabSettings { method: Method::Perspective, ..base });
+        let ppl = plan(
+            &a,
+            &StabSettings {
+                method: Method::Perspective,
+                ..base
+            },
+        );
         assert!(ppl.meshes.is_empty());
         let persp = residual_jitter(&scene, |t, x| ppl.output_of(t, x));
-        let spl = plan(&a, &StabSettings { method: Method::SubspaceWarp, ..base });
+        let spl = plan(
+            &a,
+            &StabSettings {
+                method: Method::SubspaceWarp,
+                ..base
+            },
+        );
         assert_eq!(spl.meshes.len(), n);
         let sub = residual_jitter(&scene, |t, x| spl.output_of(t, x));
-        let epl = plan(&a, &StabSettings { method: Method::SubspaceWarp, ripple: Ripple::Enhanced, ..base });
+        let epl = plan(
+            &a,
+            &StabSettings {
+                method: Method::SubspaceWarp,
+                ripple: Ripple::Enhanced,
+                ..base
+            },
+        );
         let enh = residual_jitter(&scene, |t, x| epl.output_of(t, x));
-        eprintln!("jitter: before {before:.3}, perspective {persp:.3}, subspace {sub:.3}, enhanced {enh:.3}");
+        eprintln!(
+            "jitter: before {before:.3}, perspective {persp:.3}, subspace {sub:.3}, enhanced {enh:.3}"
+        );
         assert!(persp < 0.8 * before, "perspective {persp} vs {before}");
         assert!(sub < 0.6 * persp, "subspace {sub} vs perspective {persp}");
         assert!(enh < 0.6 * persp, "enhanced {enh} vs perspective {persp}");
@@ -866,7 +1117,14 @@ mod tests {
         let back = spl.source_of(10, o).unwrap();
         assert!((back[0] - q[0]).abs() < 1e-3 && (back[1] - q[1]).abs() < 1e-3);
         // Auto-scale framing covers the frame with mesh warps too.
-        let fpl = plan(&a, &StabSettings { method: Method::SubspaceWarp, fps: 24.0, ..Default::default() });
+        let fpl = plan(
+            &a,
+            &StabSettings {
+                method: Method::SubspaceWarp,
+                fps: 24.0,
+                ..Default::default()
+            },
+        );
         assert!(fpl.auto_scale >= 1.0);
         for k in [0, n / 2, n - 1] {
             for p in [[1.0, 1.0], [319.0, 1.0], [319.0, 179.0], [1.0, 179.0]] {
@@ -876,7 +1134,14 @@ mod tests {
             }
         }
         // Preserve Scale keeps working with meshes.
-        let psp = plan(&a, &StabSettings { method: Method::SubspaceWarp, preserve_scale: true, ..base });
+        let psp = plan(
+            &a,
+            &StabSettings {
+                method: Method::SubspaceWarp,
+                preserve_scale: true,
+                ..base
+            },
+        );
         assert_eq!(psp.meshes.len(), n);
     }
 }

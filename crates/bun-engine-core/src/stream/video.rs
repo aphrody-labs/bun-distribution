@@ -102,9 +102,19 @@ impl Packetizer {
         let mut header = [0u8; VIDEO_FRAME_HEADER_SIZE];
         header[0] = 0x01;
         header[1..3].copy_from_slice(&processing_latency.to_le_bytes());
-        header[3] = if key_frame { FRAME_TYPE_IDR } else { FRAME_TYPE_P };
+        header[3] = if key_frame {
+            FRAME_TYPE_IDR
+        } else {
+            FRAME_TYPE_P
+        };
         header[4..8].copy_from_slice(&(last as u32).to_le_bytes());
-        let byte_at = |i: usize| if i < VIDEO_FRAME_HEADER_SIZE { header[i] } else { encoded[i - VIDEO_FRAME_HEADER_SIZE] };
+        let byte_at = |i: usize| {
+            if i < VIDEO_FRAME_HEADER_SIZE {
+                header[i]
+            } else {
+                encoded[i - VIDEO_FRAME_HEADER_SIZE]
+            }
+        };
 
         let shard_size = PAYLOAD_OFFSET + payload_size;
         let nr_data_shards = packet_data_len.div_ceil(payload_size);
@@ -115,9 +125,15 @@ impl Packetizer {
         let mut out = Vec::new();
         for block_index in 0..nr_blocks.min(4) {
             let start = block_index * data_per_block;
-            let end = if block_index == 3 { nr_data_shards } else { ((block_index + 1) * data_per_block).min(nr_data_shards) };
+            let end = if block_index == 3 {
+                nr_data_shards
+            } else {
+                ((block_index + 1) * data_per_block).min(nr_data_shards)
+            };
             let data = end - start;
-            let parity = (data * fec_percentage / 100).max(minimum_fec_packets).min(MAX_SHARDS.saturating_sub(data));
+            let parity = (data * fec_percentage / 100)
+                .max(minimum_fec_packets)
+                .min(MAX_SHARDS.saturating_sub(data));
             let pct = parity * 100 / data;
             let mut shards = vec![vec![0u8; shard_size]; data + parity];
             for (i, global) in (start..end).enumerate() {
@@ -140,7 +156,10 @@ impl Packetizer {
                 );
                 let from = global * payload_size;
                 let len = payload_size.min(packet_data_len - from);
-                for (k, b) in shard[PAYLOAD_OFFSET..PAYLOAD_OFFSET + len].iter_mut().enumerate() {
+                for (k, b) in shard[PAYLOAD_OFFSET..PAYLOAD_OFFSET + len]
+                    .iter_mut()
+                    .enumerate()
+                {
                     *b = byte_at(from + k);
                 }
                 self.sequence_number += 1;
@@ -159,7 +178,9 @@ impl Packetizer {
                     let nv = &mut shard[NV_PACKET_OFFSET..PAYLOAD_OFFSET];
                     nv[4..8].copy_from_slice(&frame_number.to_le_bytes());
                     nv[11] = ((block_index as u8) << 4) | last_block_index;
-                    nv[12..16].copy_from_slice(&(((data + p) << 12 | data << 22 | pct << 4) as u32).to_le_bytes());
+                    nv[12..16].copy_from_slice(
+                        &(((data + p) << 12 | data << 22 | pct << 4) as u32).to_le_bytes(),
+                    );
                     self.sequence_number += 1;
                 }
             }
@@ -171,7 +192,9 @@ impl Packetizer {
     }
 
     fn seal(&mut self, mut shard: Vec<u8>, frame_number: u32) -> Vec<u8> {
-        let Some(cipher) = self.cipher.as_ref() else { return shard };
+        let Some(cipher) = self.cipher.as_ref() else {
+            return shard;
+        };
         let mut iv = [0u8; 12];
         iv[..8].copy_from_slice(&self.gcm_iv_counter.to_le_bytes());
         iv[11] = b'V';
@@ -268,7 +291,10 @@ impl Depacketizer {
                 let mut body = datagram[ENC_PREFIX_SIZE..].to_vec();
                 let nonce = Nonce::from_slice(&datagram[..12]);
                 let tag = Tag::from_slice(&datagram[16..32]);
-                if cipher.decrypt_in_place_detached(nonce, b"", &mut body, tag).is_err() {
+                if cipher
+                    .decrypt_in_place_detached(nonce, b"", &mut body, tag)
+                    .is_err()
+                {
                     self.stats.decrypt_failures += 1;
                     return;
                 }
@@ -315,19 +341,25 @@ impl Depacketizer {
             present: 0,
             done: false,
         });
-        if block.done || block.shards.len() != data + parity || block.shards[shard_index].is_some() {
+        if block.done || block.shards.len() != data + parity || block.shards[shard_index].is_some()
+        {
             return;
         }
         block.shards[shard_index] = Some(shard);
         block.present += 1;
-        let data_present = block.shards[..block.data].iter().filter(|s| s.is_some()).count();
+        let data_present = block.shards[..block.data]
+            .iter()
+            .filter(|s| s.is_some())
+            .count();
         if data_present == block.data {
             block.done = true;
         } else if block.present >= block.data {
             let decoder = self
                 .decoders
                 .entry((block.data, block.parity))
-                .or_insert_with(|| ReedSolomon::new(block.data, block.parity).expect("valid FEC geometry"));
+                .or_insert_with(|| {
+                    ReedSolomon::new(block.data, block.parity).expect("valid FEC geometry")
+                });
             if decoder.reconstruct_data(&mut block.shards).is_ok() {
                 let rebuilt = (block.data - data_present) as u32;
                 pending.recovered += rebuilt;
@@ -341,8 +373,11 @@ impl Depacketizer {
     /// Deliver complete frames in order; drop stale incomplete frames.
     fn flush(&mut self, now: Instant, out: &mut Vec<Frame>, loss: &mut bool) {
         loop {
-            let Some((&index, pending)) = self.pending.first_key_value() else { return };
-            let complete = (0..=pending.last_block).all(|b| pending.blocks.get(&b).is_some_and(|blk| blk.done));
+            let Some((&index, pending)) = self.pending.first_key_value() else {
+                return;
+            };
+            let complete = (0..=pending.last_block)
+                .all(|b| pending.blocks.get(&b).is_some_and(|blk| blk.done));
             if complete {
                 if let Some(next) = self.next_frame
                     && index != next
@@ -397,7 +432,11 @@ fn assemble(index: u32, pending: Pending, now: Instant) -> Option<Frame> {
         return None;
     }
     let (header_size, host_latency, last_len) = if data[0] == 0x01 {
-        (VIDEO_FRAME_HEADER_SIZE, u16::from_le_bytes([data[1], data[2]]), u16::from_le_bytes([data[4], data[5]]) as usize)
+        (
+            VIDEO_FRAME_HEADER_SIZE,
+            u16::from_le_bytes([data[1], data[2]]),
+            u16::from_le_bytes([data[4], data[5]]) as usize,
+        )
     } else {
         (44, 0, 0)
     };

@@ -106,11 +106,31 @@ pub enum MemError {
     #[error("lecture mémoire refusée: longueur {length} supérieure à la limite {max}")]
     InvalidLength { length: usize, max: usize },
     #[error("{op} a échoué pid={pid} addr=0x{addr:x} len={len} errno={errno}{hint}")]
-    Syscall { op: &'static str, pid: i32, addr: u64, len: usize, errno: i32, hint: &'static str },
+    Syscall {
+        op: &'static str,
+        pid: i32,
+        addr: u64,
+        len: usize,
+        errno: i32,
+        hint: &'static str,
+    },
     #[error("{op} a échoué pid={pid} addr=0x{addr:x} len={len} GetLastError={code}{hint}")]
-    Win { op: &'static str, pid: i32, addr: u64, len: usize, code: u32, hint: &'static str },
+    Win {
+        op: &'static str,
+        pid: i32,
+        addr: u64,
+        len: usize,
+        code: u32,
+        hint: &'static str,
+    },
     #[error("{op} lecture partielle pid={pid} addr=0x{addr:x} demandé={requested} lu={got}")]
-    Partial { op: &'static str, pid: i32, addr: u64, requested: usize, got: usize },
+    Partial {
+        op: &'static str,
+        pid: i32,
+        addr: u64,
+        requested: usize,
+        got: usize,
+    },
     #[error("lecture mémoire indisponible sur cette plateforme")]
     Unsupported,
 }
@@ -128,7 +148,11 @@ pub fn read(pid: i32, addr: u64, dest: &mut [u8]) -> Result<usize, MemError> {
     #[cfg(not(any(target_os = "linux", windows)))]
     {
         let _ = (pid, addr);
-        if dest.is_empty() { Ok(0) } else { Err(MemError::Unsupported) }
+        if dest.is_empty() {
+            Ok(0)
+        } else {
+            Err(MemError::Unsupported)
+        }
     }
 }
 
@@ -146,7 +170,11 @@ pub fn write(pid: i32, addr: u64, src: &[u8]) -> Result<usize, MemError> {
     #[cfg(not(any(target_os = "linux", windows)))]
     {
         let _ = (pid, addr);
-        if src.is_empty() { Ok(0) } else { Err(MemError::Unsupported) }
+        if src.is_empty() {
+            Ok(0)
+        } else {
+            Err(MemError::Unsupported)
+        }
     }
 }
 
@@ -220,9 +248,10 @@ pub fn module_regions(pid: i32, fragment: &str, all: bool) -> Vec<MapEntry> {
         return regions;
     }
     match module_range(pid, fragment) {
-        Some((base, end)) if end > base => {
-            regions.into_iter().filter(|m| m.start < end && m.end > base).collect()
-        },
+        Some((base, end)) if end > base => regions
+            .into_iter()
+            .filter(|m| m.start < end && m.end > base)
+            .collect(),
         _ => regions
             .into_iter()
             .filter(|m| m.path.to_lowercase().contains(&fragment.to_lowercase()))
@@ -236,7 +265,13 @@ pub fn read_exact(pid: i32, addr: u64, length: usize) -> Result<Vec<u8>, MemErro
     let mut buf = vec![0u8; length];
     let got = read(pid, addr, &mut buf)?;
     if got != length {
-        return Err(MemError::Partial { op: "read", pid, addr, requested: length, got });
+        return Err(MemError::Partial {
+            op: "read",
+            pid,
+            addr,
+            requested: length,
+            got,
+        });
     }
     Ok(buf)
 }
@@ -252,7 +287,9 @@ pub fn read_u32(pid: i32, addr: u64) -> Result<u32, MemError> {
 #[cfg(feature = "host")]
 pub fn read_u64(pid: i32, addr: u64) -> Result<u64, MemError> {
     let b = read_exact(pid, addr, 8)?;
-    Ok(u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
+    Ok(u64::from_le_bytes([
+        b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+    ]))
 }
 
 /// Lit un `u8`.
@@ -287,7 +324,13 @@ pub fn read_f32(pid: i32, addr: u64) -> Result<f32, MemError> {
 pub fn write_exact(pid: i32, addr: u64, src: &[u8]) -> Result<(), MemError> {
     let put = write(pid, addr, src)?;
     if put != src.len() {
-        return Err(MemError::Partial { op: "write", pid, addr, requested: src.len(), got: put });
+        return Err(MemError::Partial {
+            op: "write",
+            pid,
+            addr,
+            requested: src.len(),
+            got: put,
+        });
     }
     Ok(())
 }
@@ -350,7 +393,11 @@ pub fn resolve_chain(pid: i32, base: u64, offsets: &[i64]) -> Result<u64, MemErr
 #[must_use]
 #[cfg(feature = "host")]
 fn add_offset(addr: u64, off: i64) -> u64 {
-    if off >= 0 { addr.wrapping_add(off as u64) } else { addr.wrapping_sub(off.unsigned_abs()) }
+    if off >= 0 {
+        addr.wrapping_add(off as u64)
+    } else {
+        addr.wrapping_sub(off.unsigned_abs())
+    }
 }
 
 // ─── EAC patch (port de scripts/patch-eac.sh) ──────────────────────────────────────
@@ -373,7 +420,11 @@ pub enum EacPatchError {
     #[error("E/S sur le patch EAC : {0}")]
     Io(#[from] std::io::Error),
     #[error("octets @0x{offset:X} = {got}, attendu {want} — build de nie.exe différent, abandon")]
-    Mismatch { offset: u64, got: String, want: String },
+    Mismatch {
+        offset: u64,
+        got: String,
+        want: String,
+    },
 }
 
 /// Compte-rendu d'un patch EAC réussi.
@@ -496,7 +547,11 @@ pub fn scan_regions(
             };
             let at = m.start + (from + idx) as u64;
             let rva = base.filter(|&b| at >= b).map(|b| at - b);
-            hits.push(ScanHit { addr: at, perms: m.perms.clone(), rva });
+            hits.push(ScanHit {
+                addr: at,
+                perms: m.perms.clone(),
+                rva,
+            });
             from += idx + 1;
         }
     }
@@ -537,7 +592,11 @@ pub fn scan_regions_masked(
         for idx in pattern.find_all(&buf[..got], remaining) {
             let at = m.start + idx as u64;
             let rva = base.filter(|&b| at >= b).map(|b| at - b);
-            hits.push(ScanHit { addr: at, perms: m.perms.clone(), rva });
+            hits.push(ScanHit {
+                addr: at,
+                perms: m.perms.clone(),
+                rva,
+            });
         }
     }
     hits
@@ -610,7 +669,10 @@ mod tests {
         let mut bad = vec![0u8; size];
         bad[EAC_PATCH_OFFSET as usize] = 0xCC;
         fs::write(&bad_src, &bad).unwrap();
-        assert!(matches!(patch_eac(&bad_src, &bad_dst), Err(EacPatchError::Mismatch { .. })));
+        assert!(matches!(
+            patch_eac(&bad_src, &bad_dst),
+            Err(EacPatchError::Mismatch { .. })
+        ));
 
         let _ = fs::remove_dir_all(&dir);
     }

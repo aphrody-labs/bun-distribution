@@ -33,14 +33,25 @@ const HEADER: &str = "Scenarist_SCC V1.0";
 pub fn parse_timecode(s: &str) -> Option<i64> {
     let df = s.contains([';', '.', ',']);
     let parts: Vec<&str> = s.split([':', ';', '.', ',']).collect();
-    let [h, m, sec, f] = parts.as_slice() else { return None };
-    let n = |p: &str| if (1..=3).contains(&p.len()) { p.parse::<i64>().ok() } else { None };
+    let [h, m, sec, f] = parts.as_slice() else {
+        return None;
+    };
+    let n = |p: &str| {
+        if (1..=3).contains(&p.len()) {
+            p.parse::<i64>().ok()
+        } else {
+            None
+        }
+    };
     Some(fields_to_frames(n(h)?, n(m)?, n(sec)?, n(f)?, RATE, df))
 }
 
 pub fn format_timecode(frame: i64, drop_frame: bool) -> String {
     let (_, h, m, s, f) = frames_to_fields(frame.max(0), RATE, drop_frame);
-    format!("{h:02}:{m:02}:{s:02}{}{f:02}", if drop_frame { ';' } else { ':' })
+    format!(
+        "{h:02}:{m:02}:{s:02}{}{f:02}",
+        if drop_frame { ';' } else { ':' }
+    )
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -72,7 +83,17 @@ struct Decoder {
 }
 
 fn memory_text(m: &Memory) -> String {
-    m.iter().map(|r| r.iter().map(|c| c.unwrap_or(' ')).collect::<String>().trim().to_string()).filter(|r| !r.is_empty()).collect::<Vec<_>>().join("\n")
+    m.iter()
+        .map(|r| {
+            r.iter()
+                .map(|c| c.unwrap_or(' '))
+                .collect::<String>()
+                .trim()
+                .to_string()
+        })
+        .filter(|r| !r.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 impl Decoder {
@@ -91,7 +112,11 @@ impl Decoder {
     }
 
     fn target(&mut self) -> &mut Memory {
-        if self.mode == Mode::PopOn { &mut self.hidden } else { &mut self.displayed }
+        if self.mode == Mode::PopOn {
+            &mut self.hidden
+        } else {
+            &mut self.displayed
+        }
     }
 
     fn put(&mut self, c: char) {
@@ -210,7 +235,11 @@ impl Decoder {
         if (b1 == 0x12 || b1 == 0x13) && (0x20..=0x3f).contains(&b2) {
             // extended characters replace the preceding (fallback) character
             self.col = self.col.saturating_sub(1);
-            let set = if b1 == 0x12 { &cea608::EXT_12 } else { &cea608::EXT_13 };
+            let set = if b1 == 0x12 {
+                &cea608::EXT_12
+            } else {
+                &cea608::EXT_13
+            };
             self.put(set[(b2 - 0x20) as usize]);
             if self.mode != Mode::PopOn {
                 self.sync(f);
@@ -257,11 +286,22 @@ pub fn decode_pairs(pairs: impl IntoIterator<Item = (i64, u8, u8)>, rate: FrameR
         let end = last_frame.max(s + 1) + one_second;
         dec.cues.push((s, end, text));
     }
-    dec.cues.into_iter().map(|(s, e, text)| Cue { start: rate.tick_of(s), end: rate.tick_of(e), text, ..Default::default() }).collect()
+    dec.cues
+        .into_iter()
+        .map(|(s, e, text)| Cue {
+            start: rate.tick_of(s),
+            end: rate.tick_of(e),
+            text,
+            ..Default::default()
+        })
+        .collect()
 }
 
 pub fn parse(text: &str) -> Result<Document> {
-    let mut lines = text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty());
+    let mut lines = text
+        .lines()
+        .enumerate()
+        .filter(|(_, l)| !l.trim().is_empty());
     match lines.next() {
         Some((_, l)) if l.trim().starts_with("Scenarist_SCC") => {}
         _ => return Err(Error::NotFormat("Scenarist SCC")),
@@ -273,11 +313,15 @@ pub fn parse(text: &str) -> Result<Document> {
         let mut it = l.split_whitespace();
         let Some(tc) = it.next() else { continue };
         let Some(frame) = parse_timecode(tc) else {
-            return Err(Error::Syntax { line: n + 1, msg: format!("bad timecode \"{tc}\"") });
+            return Err(Error::Syntax {
+                line: n + 1,
+                msg: format!("bad timecode \"{tc}\""),
+            });
         };
         for (k, w) in it.enumerate() {
             let Ok(v) = u16::from_str_radix(w, 16) else {
-                doc.warnings.push(format!("line {}: bad code word \"{w}\"", n + 1));
+                doc.warnings
+                    .push(format!("line {}: bad code word \"{w}\"", n + 1));
                 continue;
             };
             let f = frame + k as i64;
@@ -290,7 +334,16 @@ pub fn parse(text: &str) -> Result<Document> {
         let end = last_frame.max(s + 1) + 30;
         dec.cues.push((s, end, text));
     }
-    doc.cues = dec.cues.into_iter().map(|(s, e, text)| Cue { start: RATE.tick_of(s), end: RATE.tick_of(e), text, ..Default::default() }).collect();
+    doc.cues = dec
+        .cues
+        .into_iter()
+        .map(|(s, e, text)| Cue {
+            start: RATE.tick_of(s),
+            end: RATE.tick_of(e),
+            text,
+            ..Default::default()
+        })
+        .collect();
     Ok(doc)
 }
 
@@ -306,7 +359,11 @@ pub fn wrap_rows(text: &str) -> Vec<String> {
         for word in line.split_whitespace() {
             let mut word = word.to_string();
             loop {
-                let need = if cur.is_empty() { word.chars().count() } else { cur.chars().count() + 1 + word.chars().count() };
+                let need = if cur.is_empty() {
+                    word.chars().count()
+                } else {
+                    cur.chars().count() + 1 + word.chars().count()
+                };
                 if need <= COLS {
                     if !cur.is_empty() {
                         cur.push(' ');
@@ -338,7 +395,12 @@ pub fn wrap_rows(text: &str) -> Vec<String> {
 fn load_pairs(text: &str) -> Vec<(u8, u8)> {
     let plain = filmcraft_project::plain_text(text);
     let rows = wrap_rows(&plain);
-    let mut out = vec![(0x14, misc::RCL), (0x14, misc::RCL), (0x14, misc::ENM), (0x14, misc::ENM)];
+    let mut out = vec![
+        (0x14, misc::RCL),
+        (0x14, misc::RCL),
+        (0x14, misc::ENM),
+        (0x14, misc::ENM),
+    ];
     let first_row = 16 - rows.len();
     for (i, row) in rows.iter().enumerate() {
         let encoded: Vec<Encoded> = row.chars().filter_map(cea608::encode_char).collect();
@@ -420,8 +482,12 @@ pub fn schedule(doc: &Document) -> BTreeMap<i64, (u8, u8)> {
         let n = load.len() as i64;
         // Doubled codes must stay adjacent, so the load is one contiguous run of free frames:
         // the latest run ending by `s`, else the first run after `cursor` (delaying the caption).
-        let run_free = |occ: &BTreeMap<i64, (u8, u8)>, b: i64| (b..b + n).all(|f| !occ.contains_key(&f));
-        let b = (cursor..=s - n).rev().find(|&b| run_free(&occ, b)).unwrap_or_else(|| (cursor..).find(|&b| run_free(&occ, b)).unwrap_or(cursor));
+        let run_free =
+            |occ: &BTreeMap<i64, (u8, u8)>, b: i64| (b..b + n).all(|f| !occ.contains_key(&f));
+        let b = (cursor..=s - n)
+            .rev()
+            .find(|&b| run_free(&occ, b))
+            .unwrap_or_else(|| (cursor..).find(|&b| run_free(&occ, b)).unwrap_or(cursor));
         for (k, p) in load.into_iter().enumerate() {
             occ.insert(b + k as i64, p);
         }
@@ -460,13 +526,23 @@ pub fn write(doc: &Document, drop_frame: bool) -> String {
         if f != last + 1
             && let Some((start, words)) = line.take()
         {
-            out.push_str(&format!("{}\t{}\n\n", format_timecode(start, drop_frame), words.join(" ")));
+            out.push_str(&format!(
+                "{}\t{}\n\n",
+                format_timecode(start, drop_frame),
+                words.join(" ")
+            ));
         }
-        line.get_or_insert_with(|| (f, Vec::new())).1.push(format!("{:04x}", word(p)));
+        line.get_or_insert_with(|| (f, Vec::new()))
+            .1
+            .push(format!("{:04x}", word(p)));
         last = f;
     }
     if let Some((start, words)) = line {
-        out.push_str(&format!("{}\t{}\n\n", format_timecode(start, drop_frame), words.join(" ")));
+        out.push_str(&format!(
+            "{}\t{}\n\n",
+            format_timecode(start, drop_frame),
+            words.join(" ")
+        ));
     }
     out
 }
@@ -481,7 +557,12 @@ mod tests {
     use super::*;
 
     fn cue(s: i64, e: i64, text: &str) -> Cue {
-        Cue { start: RATE.tick_of(s), end: RATE.tick_of(e), text: text.into(), ..Default::default() }
+        Cue {
+            start: RATE.tick_of(s),
+            end: RATE.tick_of(e),
+            text: text.into(),
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -516,26 +597,54 @@ mod tests {
     #[test]
     fn write_then_read() {
         let doc = Document {
-            cues: vec![cue(60, 120, "Hello, world!"), cue(120, 200, "Second caption\nwith two lines"), cue(260, 300, "Ñandú ♪ {x} * café “q”")],
+            cues: vec![
+                cue(60, 120, "Hello, world!"),
+                cue(120, 200, "Second caption\nwith two lines"),
+                cue(260, 300, "Ñandú ♪ {x} * café “q”"),
+            ],
             ..Default::default()
         };
         let s = write(&doc, true);
         assert!(s.starts_with("Scenarist_SCC V1.0\n\n"));
         let back = parse(&s).unwrap();
-        let got: Vec<(i64, i64, &str)> = back.cues.iter().map(|c| (RATE.frame_at(c.start), RATE.frame_at(c.end), c.text.as_str())).collect();
-        assert_eq!(got, vec![(60, 120, "Hello, world!"), (120, 200, "Second caption\nwith two lines"), (260, 300, "Ñandú ♪ {x} * café “q”")]);
+        let got: Vec<(i64, i64, &str)> = back
+            .cues
+            .iter()
+            .map(|c| {
+                (
+                    RATE.frame_at(c.start),
+                    RATE.frame_at(c.end),
+                    c.text.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (60, 120, "Hello, world!"),
+                (120, 200, "Second caption\nwith two lines"),
+                (260, 300, "Ñandú ♪ {x} * café “q”")
+            ]
+        );
     }
 
     #[test]
     fn wraps_long_lines() {
-        let rows = wrap_rows("the quick brown fox jumps over the lazy dog and keeps running far away");
+        let rows =
+            wrap_rows("the quick brown fox jumps over the lazy dog and keeps running far away");
         assert!(rows.iter().all(|r| r.chars().count() <= 32));
-        assert_eq!(rows.join(" "), "the quick brown fox jumps over the lazy dog and keeps running far away");
+        assert_eq!(
+            rows.join(" "),
+            "the quick brown fox jumps over the lazy dog and keeps running far away"
+        );
     }
 
     #[test]
     fn cue_at_zero_is_delayed_not_lost() {
-        let doc = Document { cues: vec![cue(0, 60, "Start")], ..Default::default() };
+        let doc = Document {
+            cues: vec![cue(0, 60, "Start")],
+            ..Default::default()
+        };
         let back = parse(&write(&doc, false)).unwrap();
         assert_eq!(back.cues.len(), 1);
         assert_eq!(back.cues[0].text, "Start");

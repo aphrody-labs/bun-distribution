@@ -9,7 +9,7 @@
 
 use serde_json::Value;
 
-pub use aphrody_boq::{XSSI_PREFIX, extract_chunks, parse_envelopes, strip_xssi};
+pub use aphrody_boq::{extract_chunks, parse_envelopes, strip_xssi, XSSI_PREFIX};
 
 use crate::error::{GeminiError, Result};
 
@@ -47,6 +47,9 @@ mod tests {
 
     #[test]
     fn first_envelope_maps_the_missing_envelope_to_a_parse_error() {
-        assert!(matches!(first_envelope(")]}'\n"), Err(GeminiError::Parse(_))));
+        assert!(matches!(
+            first_envelope(")]}'\n"),
+            Err(GeminiError::Parse(_))
+        ));
     }
 }

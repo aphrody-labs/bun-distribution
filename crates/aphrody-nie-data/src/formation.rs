@@ -70,7 +70,10 @@ impl Vec2 {
         if b.len() != 16 {
             return Self::ZERO;
         }
-        Self { x: le_f32_from_hex_slice(&b[0..8]), y: le_f32_from_hex_slice(&b[8..16]) }
+        Self {
+            x: le_f32_from_hex_slice(&b[0..8]),
+            y: le_f32_from_hex_slice(&b[8..16]),
+        }
     }
 }
 
@@ -123,12 +126,18 @@ impl SoccerPositionInfo {
     pub fn from_value(v: &Value) -> Option<Self> {
         Some(Self {
             position_id: field_i64(v, "positionId")?,
-            center_line_weight: v.get("centerLineWight").and_then(Value::as_f64).unwrap_or(0.0)
-                as f32,
-            offense_line_weight: v.get("offenseLineWeight").and_then(Value::as_f64).unwrap_or(0.0)
-                as f32,
-            defense_line_weight: v.get("defenseLineWeight").and_then(Value::as_f64).unwrap_or(0.0)
-                as f32,
+            center_line_weight: v
+                .get("centerLineWight")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0) as f32,
+            offense_line_weight: v
+                .get("offenseLineWeight")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0) as f32,
+            defense_line_weight: v
+                .get("defenseLineWeight")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0) as f32,
         })
     }
 }
@@ -234,8 +243,14 @@ impl SoccerFormationInfo {
         let pi = v.get("placementInfo").and_then(Value::as_array);
         Some(Self {
             form_id,
-            placement_offset: pi.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            placement_count: pi.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            placement_offset: pi
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            placement_count: pi
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
             power_offense: field_i64(v, "powerOffense").unwrap_or(0),
             power_defense: field_i64(v, "powerDefense").unwrap_or(0),
             noun_id: field_hash(v, "nounId"),
@@ -295,8 +310,14 @@ impl SoccerLineCurveInfo {
         let ci = v.get("curveInfo").and_then(Value::as_array);
         Some(Self {
             line_curve_id,
-            curve_offset: ci.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            curve_count: ci.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            curve_offset: ci
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            curve_count: ci
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }
@@ -357,7 +378,11 @@ impl FormationConfig {
 #[must_use]
 pub fn parse_formation_config(root: &Value) -> FormationConfig {
     FormationConfig {
-        positions: extract_list(root, "m_SoccerPositionInfoList", SoccerPositionInfo::from_value),
+        positions: extract_list(
+            root,
+            "m_SoccerPositionInfoList",
+            SoccerPositionInfo::from_value,
+        ),
         placements: extract_list(
             root,
             "m_SoccerFormPlacementInfoList",

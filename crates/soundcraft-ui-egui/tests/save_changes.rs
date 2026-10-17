@@ -5,15 +5,21 @@ use soundcraft_ui_egui::dialogs::Dialog;
 use soundcraft_ui_egui::{Services, SoundApp, menus};
 
 fn harness() -> Harness<'static, SoundApp> {
-    let app = SoundApp::new(soundcraft_engine::demo::demo_engine(), None, Services::default());
-    Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_ui_state(
-        |ui, app: &mut SoundApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        app,
-    )
+    let app = SoundApp::new(
+        soundcraft_engine::demo::demo_engine(),
+        None,
+        Services::default(),
+    );
+    Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_ui_state(
+            |ui, app: &mut SoundApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            app,
+        )
 }
 
 fn steps(h: &mut Harness<'_, SoundApp>) {
@@ -33,16 +39,26 @@ fn close_session(h: &mut Harness<'_, SoundApp>) {
 }
 
 fn mute_kick(h: &mut Harness<'_, SoundApp>) {
-    h.state_mut().run("mix.mute", json!({"track": "Kick"})).unwrap();
+    h.state_mut()
+        .run("mix.mute", json!({"track": "Kick"}))
+        .unwrap();
 }
 
 #[test]
 fn closing_a_modified_session_asks_first() {
     let mut h = harness();
     let tracks = h.state().engine.session().tracks.len();
-    h.state_mut().run("edit.select", json!({"tracks": ["Kick"], "start": 0, "end": 48_000})).unwrap();
+    h.state_mut()
+        .run(
+            "edit.select",
+            json!({"tracks": ["Kick"], "start": 0, "end": 48_000}),
+        )
+        .unwrap();
     close_session(&mut h);
-    assert!(h.state().dialogs.open.is_none(), "a selection alone is not a change");
+    assert!(
+        h.state().dialogs.open.is_none(),
+        "a selection alone is not a change"
+    );
     assert!(h.state().engine.session().tracks.is_empty());
 
     let mut h = harness();
@@ -77,21 +93,45 @@ fn save_in_the_question_saves_before_closing() {
     close_session(&mut h);
     click(&mut h, "Save");
     match &mut h.state_mut().dialogs.open {
-        Some(Dialog::PathPrompt { cmd, path: p, .. }) if cmd == "session.save_as" => p.clone_from(&path),
+        Some(Dialog::PathPrompt { cmd, path: p, .. }) if cmd == "session.save_as" => {
+            p.clone_from(&path)
+        }
         other => panic!("expected Save As, got {other:?}"),
     }
     steps(&mut h);
     click(&mut h, "OK");
     assert!(h.state().engine.session().tracks.is_empty());
 
-    h.state_mut().run("session.open", json!({"path": path})).unwrap();
-    assert!(h.state().engine.session().track_by_name("Kick").unwrap().mixer.mute);
-    h.state_mut().run("mix.mute", json!({"track": "Kick"})).unwrap();
+    h.state_mut()
+        .run("session.open", json!({"path": path}))
+        .unwrap();
+    assert!(
+        h.state()
+            .engine
+            .session()
+            .track_by_name("Kick")
+            .unwrap()
+            .mixer
+            .mute
+    );
+    h.state_mut()
+        .run("mix.mute", json!({"track": "Kick"}))
+        .unwrap();
     close_session(&mut h);
     click(&mut h, "Save");
     assert!(h.state().dialogs.open.is_none());
     assert!(h.state().engine.session().tracks.is_empty());
-    h.state_mut().run("session.open", json!({"path": path})).unwrap();
-    assert!(!h.state().engine.session().track_by_name("Kick").unwrap().mixer.mute);
+    h.state_mut()
+        .run("session.open", json!({"path": path}))
+        .unwrap();
+    assert!(
+        !h.state()
+            .engine
+            .session()
+            .track_by_name("Kick")
+            .unwrap()
+            .mixer
+            .mute
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }

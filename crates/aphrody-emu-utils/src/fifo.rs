@@ -33,7 +33,12 @@ where
 
         save.end_struct()?;
 
-        Ok(Fifo { buffer, len, read_pos: 0, write_pos: if len == CAPACITY { 0 } else { len } })
+        Ok(Fifo {
+            buffer,
+            len,
+            read_pos: 0,
+            write_pos: if len == CAPACITY { 0 } else { len },
+        })
     }
 }
 
@@ -97,7 +102,12 @@ where
 impl<T: Copy, const CAPACITY: usize> Fifo<T, CAPACITY> {
     #[inline]
     pub fn new() -> Self {
-        Fifo { buffer: [MaybeUninit::uninit(); CAPACITY], len: 0, read_pos: 0, write_pos: 0 }
+        Fifo {
+            buffer: [MaybeUninit::uninit(); CAPACITY],
+            len: 0,
+            read_pos: 0,
+            write_pos: 0,
+        }
     }
 
     #[inline]

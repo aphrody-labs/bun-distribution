@@ -24,20 +24,36 @@ const REFERENCE_BLACK_WHITE: u16 = 532;
 /// Whether `bytes` is a TIFF whose first image is uncompressed or PackBits YCbCr (the ones this
 /// module decodes instead of the image crate).
 pub fn sniff(bytes: &[u8]) -> bool {
-    let Ok((t, first)) = Tiff::new(bytes) else { return false };
-    let Ok((ifd, _)) = t.read_ifd(first, 0) else { return false };
+    let Ok((t, first)) = Tiff::new(bytes) else {
+        return false;
+    };
+    let Ok((ifd, _)) = t.read_ifd(first, 0) else {
+        return false;
+    };
     let num = |tag| ifd.get(tag).and_then(|e| t.uint(e).ok());
-    num(tags::PHOTOMETRIC) == Some(PHOTOMETRIC_YCBCR) && matches!(num(tags::COMPRESSION).unwrap_or(COMPRESSION_NONE), COMPRESSION_NONE | COMPRESSION_PACKBITS)
+    num(tags::PHOTOMETRIC) == Some(PHOTOMETRIC_YCBCR)
+        && matches!(
+            num(tags::COMPRESSION).unwrap_or(COMPRESSION_NONE),
+            COMPRESSION_NONE | COMPRESSION_PACKBITS
+        )
 }
 
 /// Decode the first image of a YCbCr TIFF (see [`sniff`]) to RGBA.
 pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     let bad = |what: &str| MediaError::Decode(format!("{name}: YCbCr TIFF: {what}"));
-    let unsupported = |what: &str| MediaError::Unsupported(format!("{name}: YCbCr TIFF with {what}"));
+    let unsupported =
+        |what: &str| MediaError::Unsupported(format!("{name}: YCbCr TIFF with {what}"));
     let (t, first) = Tiff::new(bytes).map_err(|_| bad("not a TIFF"))?;
-    let (ifd, _) = t.read_ifd(first, 0).map_err(|_| bad("unreadable image directory"))?;
-    let uints = |tag: u16| -> Result<Option<Vec<u64>>> { ifd.get(tag).map(|e| t.uints(e).map_err(|_| bad("unreadable field"))).transpose() };
-    let one = |tag: u16| -> Result<Option<u64>> { Ok(uints(tag)?.and_then(|v| v.first().copied())) };
+    let (ifd, _) = t
+        .read_ifd(first, 0)
+        .map_err(|_| bad("unreadable image directory"))?;
+    let uints = |tag: u16| -> Result<Option<Vec<u64>>> {
+        ifd.get(tag)
+            .map(|e| t.uints(e).map_err(|_| bad("unreadable field")))
+            .transpose()
+    };
+    let one =
+        |tag: u16| -> Result<Option<u64>> { Ok(uints(tag)?.and_then(|v| v.first().copied())) };
 
     let width = one(tags::IMAGE_WIDTH)?.ok_or_else(|| bad("no ImageWidth"))?;
     let height = one(tags::IMAGE_LENGTH)?.ok_or_else(|| bad("no ImageLength"))?;
@@ -50,7 +66,11 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     if one(tags::SAMPLES_PER_PIXEL)?.unwrap_or(1) != 3 {
         return Err(unsupported("other than three samples per pixel"));
     }
-    if uints(tags::BITS_PER_SAMPLE)?.unwrap_or_else(|| vec![1]).iter().any(|&b| b != 8) {
+    if uints(tags::BITS_PER_SAMPLE)?
+        .unwrap_or_else(|| vec![1])
+        .iter()
+        .any(|&b| b != 8)
+    {
         return Err(unsupported("other than 8 bits per sample"));
     }
     if one(tags::PLANAR_CONFIGURATION)?.unwrap_or(1) != 1 {
@@ -68,7 +88,8 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     // §21: the data units cover the image rounded up to whole units.
     let (units_x, units_y) = (width.div_ceil(sh), height.div_ceil(sv));
     let unit_len = sh * sv + 2;
-    let need = usize::try_from(units_x.saturating_mul(units_y).saturating_mul(unit_len)).map_err(|_| bad("too large"))?;
+    let need = usize::try_from(units_x.saturating_mul(units_y).saturating_mul(unit_len))
+        .map_err(|_| bad("too large"))?;
 
     let offsets = uints(tags::STRIP_OFFSETS)?.ok_or_else(|| bad("no StripOffsets"))?;
     let counts = uints(tags::STRIP_BYTE_COUNTS)?.ok_or_else(|| bad("no StripByteCounts"))?;
@@ -83,7 +104,9 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
             .and_then(|(o, l)| bytes.get(o..o.checked_add(l)?))
             .ok_or_else(|| bad("strip outside the file"))?;
         match compression {
-            COMPRESSION_NONE => units.extend_from_slice(strip.get(..need - units.len()).unwrap_or(strip)),
+            COMPRESSION_NONE => {
+                units.extend_from_slice(strip.get(..need - units.len()).unwrap_or(strip))
+            }
             _ => unpackbits(strip, &mut units, need),
         }
     }
@@ -92,18 +115,28 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     }
 
     let coeffs = match ifd.get(YCBCR_COEFFICIENTS) {
-        Some(e) => t.floats(e).map_err(|_| bad("unreadable YCbCrCoefficients"))?,
+        Some(e) => t
+            .floats(e)
+            .map_err(|_| bad("unreadable YCbCrCoefficients"))?,
         None => vec![0.299, 0.587, 0.114],
     };
-    let [lr, lg, lb] = coeffs.get(..3).and_then(|c| <[f64; 3]>::try_from(c).ok()).ok_or_else(|| bad("invalid YCbCrCoefficients"))?;
+    let [lr, lg, lb] = coeffs
+        .get(..3)
+        .and_then(|c| <[f64; 3]>::try_from(c).ok())
+        .ok_or_else(|| bad("invalid YCbCrCoefficients"))?;
     if lg.abs() < 1e-6 {
         return Err(bad("invalid YCbCrCoefficients"));
     }
     let rbw = match ifd.get(REFERENCE_BLACK_WHITE) {
-        Some(e) => t.floats(e).map_err(|_| bad("unreadable ReferenceBlackWhite"))?,
+        Some(e) => t
+            .floats(e)
+            .map_err(|_| bad("unreadable ReferenceBlackWhite"))?,
         None => vec![0.0, 255.0, 128.0, 255.0, 128.0, 255.0],
     };
-    let [yb, yw, cbb, cbw, crb, crw] = rbw.get(..6).and_then(|c| <[f64; 6]>::try_from(c).ok()).ok_or_else(|| bad("invalid ReferenceBlackWhite"))?;
+    let [yb, yw, cbb, cbw, crb, crw] = rbw
+        .get(..6)
+        .and_then(|c| <[f64; 6]>::try_from(c).ok())
+        .ok_or_else(|| bad("invalid ReferenceBlackWhite"))?;
     if (yw - yb).abs() < 1e-6 || (cbw - cbb).abs() < 1e-6 || (crw - crb).abs() < 1e-6 {
         return Err(bad("invalid ReferenceBlackWhite"));
     }
@@ -121,7 +154,11 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     let (w, h) = (width as usize, height as usize);
     let (sh, sv, units_x) = (sh as usize, sv as usize, units_x as usize);
     let mut rgba = vec![255u8; w * h * 4];
-    for (i, unit) in units.chunks_exact(sh * sv + 2).take(need / (sh * sv + 2)).enumerate() {
+    for (i, unit) in units
+        .chunks_exact(sh * sv + 2)
+        .take(need / (sh * sv + 2))
+        .enumerate()
+    {
         let (ux, uy) = (i % units_x, i / units_x);
         let (cb, cr) = (unit[sh * sv], unit[sh * sv + 1]);
         for (k, &y) in unit[..sh * sv].iter().enumerate() {
@@ -132,7 +169,12 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
             }
         }
     }
-    Ok(Raster { width: width as u32, height: height as u32, rgba, has_alpha: false })
+    Ok(Raster {
+        width: width as u32,
+        height: height as u32,
+        rgba,
+        has_alpha: false,
+    })
 }
 
 /// PackBits (TIFF 6.0 §9) from `src` appended to `out`, stopping at `limit` bytes of output or at
@@ -145,7 +187,9 @@ fn unpackbits(src: &[u8], out: &mut Vec<u8>, limit: usize) {
         p += 1;
         if n >= 0 {
             let len = n as usize + 1;
-            let Some(lit) = src.get(p..p + len) else { return };
+            let Some(lit) = src.get(p..p + len) else {
+                return;
+            };
             out.extend_from_slice(&lit[..len.min(limit - out.len())]);
             p += len;
         } else if n != -128 {

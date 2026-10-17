@@ -13,16 +13,23 @@ const ROOT_RELS: &str = r#"<?xml version="1.0" encoding="UTF-8"?><Relationships 
 pub fn zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, bytes) in entries {
-        zw.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        zw.start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         zw.write_all(bytes).unwrap();
     }
     zw.finish().unwrap().into_inner()
 }
 
 fn rels(list: &[(&str, &str, &str)]) -> String {
-    let mut s = String::from(r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"#);
+    let mut s = String::from(
+        r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">"#,
+    );
     for (id, ty, target) in list {
-        let ext = if target.starts_with("http") { r#" TargetMode="External""# } else { "" };
+        let ext = if target.starts_with("http") {
+            r#" TargetMode="External""#
+        } else {
+            ""
+        };
         s.push_str(&format!(
             r#"<Relationship Id="{id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/{ty}" Target="{target}"{ext}/>"#
         ));
@@ -33,10 +40,15 @@ fn rels(list: &[(&str, &str, &str)]) -> String {
 
 /// A package with `body` as the document body and extra (path, content) parts.
 fn docx(body: &str, doc_rels: &[(&str, &str, &str)], extra: &[(&str, &str)]) -> Vec<u8> {
-    let doc = format!(r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document {W_NS}><w:body>{body}</w:body></w:document>"#);
+    let doc = format!(
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document {W_NS}><w:body>{body}</w:body></w:document>"#
+    );
     let r = rels(doc_rels);
-    let mut entries: Vec<(&str, &[u8])> =
-        vec![("_rels/.rels", ROOT_RELS.as_bytes()), ("word/document.xml", doc.as_bytes()), ("word/_rels/document.xml.rels", r.as_bytes())];
+    let mut entries: Vec<(&str, &[u8])> = vec![
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", doc.as_bytes()),
+        ("word/_rels/document.xml.rels", r.as_bytes()),
+    ];
     for (p, c) in extra {
         entries.push((p, c.as_bytes()));
     }
@@ -54,10 +66,22 @@ fn paragraph_default_presence_survives_repeated_saves() {
     for (defaults, present, after) in [
         ("", false, None),
         ("<w:docDefaults/>", false, None),
-        ("<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val=\"22\"/></w:rPr></w:rPrDefault></w:docDefaults>", false, None),
+        (
+            "<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val=\"22\"/></w:rPr></w:rPrDefault></w:docDefaults>",
+            false,
+            None,
+        ),
         ("<w:docDefaults><w:pPrDefault/></w:docDefaults>", true, None),
-        ("<w:docDefaults><w:pPrDefault><w:pPr/></w:pPrDefault></w:docDefaults>", true, None),
-        ("<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after=\"160\"/></w:pPr></w:pPrDefault></w:docDefaults>", true, Some(8.0)),
+        (
+            "<w:docDefaults><w:pPrDefault><w:pPr/></w:pPrDefault></w:docDefaults>",
+            true,
+            None,
+        ),
+        (
+            "<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after=\"160\"/></w:pPr></w:pPrDefault></w:docDefaults>",
+            true,
+            Some(8.0),
+        ),
     ] {
         let styles = format!(
             r#"<w:styles {W_NS}>{defaults}<w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#
@@ -74,23 +98,41 @@ fn paragraph_default_presence_survives_repeated_saves() {
             assert_eq!(xml.contains("<w:pPrDefault>"), present, "{defaults}");
             d = wordcraft_docx::read(&bytes).unwrap();
             assert_eq!(d.styles.default_para.space_after, after);
-            assert_eq!(paras(&d).iter().map(|p| p.text.as_str()).collect::<Vec<_>>(), ["First", "Second"]);
+            assert_eq!(
+                paras(&d)
+                    .iter()
+                    .map(|p| p.text.as_str())
+                    .collect::<Vec<_>>(),
+                ["First", "Second"]
+            );
         }
     }
 }
 
 #[test]
 fn omitted_paragraph_defaults_can_be_edited() {
-    let styles =
-        format!(r#"<w:styles {W_NS}><w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#);
-    let mut d = wordcraft_docx::read(&docx("<w:p/>", &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+    let styles = format!(
+        r#"<w:styles {W_NS}><w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#
+    );
+    let mut d = wordcraft_docx::read(&docx(
+        "<w:p/>",
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    ))
+    .unwrap();
     assert!(!d.styles.default_para_present);
     d.styles.default_para.space_after = Some(12.0);
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
     assert!(again.styles.default_para_present);
     assert_eq!(again.styles.default_para.space_after, Some(12.0));
     let new = Document::new();
-    assert_eq!(wordcraft_docx::read(&wordcraft_docx::write(&new).unwrap()).unwrap().styles.default_para, new.styles.default_para);
+    assert_eq!(
+        wordcraft_docx::read(&wordcraft_docx::write(&new).unwrap())
+            .unwrap()
+            .styles
+            .default_para,
+        new.styles.default_para
+    );
 }
 
 fn paras(d: &Document) -> Vec<&Paragraph> {
@@ -113,11 +155,27 @@ fn single_entry_toc_keeps_formatted_result_and_nested_page_field() {
     );
     let p = paras(&d);
     assert_eq!(p[0].plain_text(), "Contents");
-    assert_eq!(p[0].objects, vec![InlineObject::Field { instr: r#"TOC \o "1-1" \h"#.into(), result: String::new(), locked: true, code: false }]);
+    assert_eq!(
+        p[0].objects,
+        vec![InlineObject::Field {
+            instr: r#"TOC \o "1-1" \h"#.into(),
+            result: String::new(),
+            locked: true,
+            code: false
+        }]
+    );
     assert_eq!(p[1].plain_text(), "Intro\t1");
     assert_eq!(p[1].props_of_char(0).bold, Some(true));
     assert_eq!(p[1].props_of_char(0).link.as_deref(), Some("#_Toc1"));
-    assert_eq!(p[1].objects, vec![InlineObject::Field { instr: r#"PAGEREF _Toc1 \h"#.into(), result: "1".into(), locked: false, code: false }]);
+    assert_eq!(
+        p[1].objects,
+        vec![InlineObject::Field {
+            instr: r#"PAGEREF _Toc1 \h"#.into(),
+            result: "1".into(),
+            locked: false,
+            code: false
+        }]
+    );
 }
 
 #[test]
@@ -135,16 +193,48 @@ fn toc_complex_field_spanning_paragraphs() {
     let p = paras(&d);
     assert_eq!(p.len(), 5);
     assert_eq!(p[0].text, "\u{FFFC}Intro\t\u{FFFC}");
-    assert_eq!(p[0].objects[0], InlineObject::FieldStart { instr: r#"TOC \o "1-3" \h \z \u"#.into(), locked: false });
-    assert_eq!(p[0].objects[1], InlineObject::Field { instr: r#"PAGEREF _Toc1 \h"#.into(), result: "1".into(), locked: false, code: false });
+    assert_eq!(
+        p[0].objects[0],
+        InlineObject::FieldStart {
+            instr: r#"TOC \o "1-3" \h \z \u"#.into(),
+            locked: false
+        }
+    );
+    assert_eq!(
+        p[0].objects[1],
+        InlineObject::Field {
+            instr: r#"PAGEREF _Toc1 \h"#.into(),
+            result: "1".into(),
+            locked: false,
+            code: false
+        }
+    );
     assert_eq!(p[0].props_of_char(3).link.as_deref(), Some("#_Toc1"));
     assert_eq!(p[0].props.style.as_deref(), Some("TOC1"));
     assert_eq!(p[1].text, "Body\t2");
     assert_eq!(p[1].props_of_char(0).link.as_deref(), Some("#_Toc2"));
     assert_eq!(p[2].objects, vec![InlineObject::FieldEnd]);
-    assert_eq!(p[3].objects, vec![InlineObject::BookmarkStart { name: "_Toc1".into() }, InlineObject::BookmarkEnd { name: "_Toc1".into() }]);
+    assert_eq!(
+        p[3].objects,
+        vec![
+            InlineObject::BookmarkStart {
+                name: "_Toc1".into()
+            },
+            InlineObject::BookmarkEnd {
+                name: "_Toc1".into()
+            }
+        ]
+    );
     assert_eq!(p[4].plain_text(), "Page 7");
-    assert_eq!(p[4].objects[0], InlineObject::Field { instr: "PAGE".into(), result: "7".into(), locked: false, code: false });
+    assert_eq!(
+        p[4].objects[0],
+        InlineObject::Field {
+            instr: "PAGE".into(),
+            result: "7".into(),
+            locked: false,
+            code: false
+        }
+    );
     // And it writes back out and reads the same.
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
     assert_eq!(again.body, d.body);
@@ -166,15 +256,39 @@ fn hyperlink_runs_and_wrappers() {
     let d = wordcraft_docx::read(&bytes).unwrap();
     let p = paras(&d);
     // The content control around "C" is kept (zero-width markers in the text).
-    assert_eq!(p[0].plain_text(), "siteXABC\u{F04A}\u{2011}\u{AD}\n\u{C}\u{E} e&T");
-    assert!(matches!(p[0].objects.first(), Some(InlineObject::ControlStart { .. })));
-    assert_eq!(p[0].props_of_char(0).link.as_deref(), Some("https://example.org/"));
+    assert_eq!(
+        p[0].plain_text(),
+        "siteXABC\u{F04A}\u{2011}\u{AD}\n\u{C}\u{E} e&T"
+    );
+    assert!(matches!(
+        p[0].objects.first(),
+        Some(InlineObject::ControlStart { .. })
+    ));
+    assert_eq!(
+        p[0].props_of_char(0).link.as_deref(),
+        Some("https://example.org/")
+    );
     assert_eq!(p[0].props_of_char(0).style.as_deref(), Some("Hyperlink"));
-    assert_eq!(p[0].props_of_char(4).link.as_deref(), Some("https://example.org/#frag"));
+    assert_eq!(
+        p[0].props_of_char(4).link.as_deref(),
+        Some("https://example.org/#frag")
+    );
     let sym_off = p[0].text.find('\u{F04A}').unwrap();
-    assert_eq!(p[0].props_of_char(sym_off).font.as_deref(), Some("Wingdings"));
+    assert_eq!(
+        p[0].props_of_char(sym_off).font.as_deref(),
+        Some("Wingdings")
+    );
     let t = p[0].props_of_char(p[0].text.len() - 1);
-    assert_eq!((t.bold, t.italic, t.caps, t.strike, t.color), (Some(false), Some(false), Some(false), Some(true), Some(TextColor::Auto)));
+    assert_eq!(
+        (t.bold, t.italic, t.caps, t.strike, t.color),
+        (
+            Some(false),
+            Some(false),
+            Some(false),
+            Some(true),
+            Some(TextColor::Auto)
+        )
+    );
     assert_eq!(p[1].plain_text(), "in block sdt");
 }
 
@@ -195,7 +309,10 @@ fn symbol_font_text_reads_as_unicode_and_round_trips_unchanged() {
     assert_eq!(p[0].plain_text(), "Done \u{F0FC}J\u{F061}\u{F061}");
     // …read (copied, exported as text) as the symbols shown.
     assert_eq!(p[0].shown_text(), "Done \u{2713}\u{263A}\u{3B1}\u{2714}");
-    assert_eq!(d.shown_text(wordcraft_doc::StoryRef::Body), "Done \u{2713}\u{263A}\u{3B1}\u{2714}");
+    assert_eq!(
+        d.shown_text(wordcraft_doc::StoryRef::Body),
+        "Done \u{2713}\u{263A}\u{3B1}\u{2714}"
+    );
     // A round trip keeps the original characters and fonts.
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
     let q = paras(&again);
@@ -216,7 +333,14 @@ fn alternate_content_choice_and_fallback() {
     let d = read_body(body);
     let p = paras(&d);
     match &p[0].objects[0] {
-        InlineObject::Shape { kind, w, h, float, story, .. } => {
+        InlineObject::Shape {
+            kind,
+            w,
+            h,
+            float,
+            story,
+            ..
+        } => {
             assert_eq!((*kind, *w, *h), (ShapeKind::TextBox, 72.0, 36.0));
             assert_eq!(float.wrap, Wrap::Square);
             assert_eq!(float.x, 10.0);
@@ -241,20 +365,38 @@ fn table_look_bitmask_and_legacy_merges() {
 <w:tbl><w:tblPr><w:tblLook w:firstRow="0" w:lastRow="1" w:firstColumn="1" w:lastColumn="0" w:noHBand="1" w:noVBand="0"/></w:tblPr><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>
 <w:p/>"#;
     let d = read_body(body);
-    let Block::Table(t) = &*d.body[0] else { panic!() };
+    let Block::Table(t) = &*d.body[0] else {
+        panic!()
+    };
     assert_eq!(t.props.width_pct, Some(100.0));
     assert_eq!(t.props.align, Some(Align::Center));
     let l = t.props.look;
-    assert!(l.header_row && l.first_column && l.banded_rows && !l.banded_columns && !l.total_row && !l.last_column);
+    assert!(
+        l.header_row
+            && l.first_column
+            && l.banded_rows
+            && !l.banded_columns
+            && !l.total_row
+            && !l.last_column
+    );
     assert_eq!(t.rows[0].cells.len(), 2);
     assert_eq!(t.rows[0].cells[0].span(), 2);
     assert_eq!(t.rows[0].cells[1].props.vmerge, VMerge::Restart);
     assert_eq!(t.rows[1].cells[1].props.vmerge, VMerge::Continue);
     assert_eq!(t.rows[1].props.height, Some(20.0));
     assert_eq!(t.grid, vec![100.0, 100.0, 100.0]);
-    let Block::Table(t2) = &*d.body[1] else { panic!() };
+    let Block::Table(t2) = &*d.body[1] else {
+        panic!()
+    };
     let l = t2.props.look;
-    assert!(!l.header_row && l.total_row && l.first_column && !l.last_column && !l.banded_rows && l.banded_columns);
+    assert!(
+        !l.header_row
+            && l.total_row
+            && l.first_column
+            && !l.last_column
+            && !l.banded_rows
+            && l.banded_columns
+    );
 }
 
 #[test]
@@ -320,18 +462,28 @@ fn styles_numbering_settings_notes_comments_from_parts() {
     assert!(h.builtin && h.quick);
     assert_eq!(h.chr.font.as_deref(), Some("Major Face"));
     assert!(d.styles.get("Normal").is_some());
-    assert_eq!(d.styles.get("Fancy").unwrap().based_on, None, "self-reference dropped");
+    assert_eq!(
+        d.styles.get("Fancy").unwrap().based_on,
+        None,
+        "self-reference dropped"
+    );
     assert!(!d.styles.get("Fancy").unwrap().builtin);
     assert_eq!(d.styles.default_chr.font.as_deref(), Some("Minor Face"));
     assert_eq!(d.styles.default_chr.size, Some(11.0));
     let g = d.styles.get("Grid").unwrap().table.as_ref().unwrap();
     assert_eq!(g.header_fill, Some(wordcraft_doc::Rgb(0x44, 0x72, 0xC4)));
     assert_eq!(g.header_chr.bold, Some(true));
-    assert_eq!(d.settings.theme_colors[4], wordcraft_doc::Rgb(0x44, 0x72, 0xC4));
+    assert_eq!(
+        d.settings.theme_colors[4],
+        wordcraft_doc::Rgb(0x44, 0x72, 0xC4)
+    );
     assert_eq!(d.settings.major_font, "Major Face");
     // Numbering.
     let lv = d.numbering.level(2, 0).unwrap();
-    assert_eq!((lv.start, lv.text.as_str(), lv.indent, lv.hanging, lv.align), (3, "%1)", 36.0, 18.0, Align::Right));
+    assert_eq!(
+        (lv.start, lv.text.as_str(), lv.indent, lv.hanging, lv.align),
+        (3, "%1)", 36.0, 18.0, Align::Right)
+    );
     let lv1 = d.numbering.level(2, 1).unwrap();
     assert_eq!(lv1.chr.font.as_deref(), Some("Courier New"));
     assert_eq!(lv1.suffix, wordcraft_doc::numbering::LevelSuffix::Space);
@@ -339,26 +491,60 @@ fn styles_numbering_settings_notes_comments_from_parts() {
     // Settings.
     assert!(d.settings.track_changes && d.settings.even_odd_headers);
     assert_eq!(d.settings.default_tab, 35.4);
-    assert_eq!(d.settings.footnote_format, wordcraft_doc::section::NumFormat::LowerRoman);
+    assert_eq!(
+        d.settings.footnote_format,
+        wordcraft_doc::section::NumFormat::LowerRoman
+    );
     // A hostile start is clamped, an unknown position left out.
     let fp = d.settings.footnote_pr;
-    assert_eq!((fp.pos, fp.num_start, fp.num_restart), (None, Some(1), Some(wordcraft_doc::section::NoteRestart::EachPage)));
+    assert_eq!(
+        (fp.pos, fp.num_start, fp.num_restart),
+        (
+            None,
+            Some(1),
+            Some(wordcraft_doc::section::NoteRestart::EachPage)
+        )
+    );
     // Body.
     let p = paras(&d);
     assert_eq!(p[0].props.style.as_deref(), Some("1"));
-    assert_eq!(p[0].props.numbering, Some(wordcraft_doc::props::NumRef { num: 2, level: 1 }));
+    assert_eq!(
+        p[0].props.numbering,
+        Some(wordcraft_doc::props::NumRef { num: 2, level: 1 })
+    );
     assert_eq!(p[0].props_of_char(4).font.as_deref(), Some("Major Face"));
     match &p[0].objects[..] {
-        [InlineObject::CommentStart { id: 5 }, InlineObject::NoteRef { kind: NoteKind::Footnote, id, .. }, InlineObject::CommentEnd { id: 5 }] => {
+        [
+            InlineObject::CommentStart { id: 5 },
+            InlineObject::NoteRef {
+                kind: NoteKind::Footnote,
+                id,
+                ..
+            },
+            InlineObject::CommentEnd { id: 5 },
+        ] => {
             let note = d.parts.get(id).unwrap().blocks[0].as_para().unwrap();
             assert_eq!(note.text, format!("{} Note text", wordcraft_doc::para::OBJ));
-            assert_eq!(note.objects, vec![InlineObject::NoteRef { kind: NoteKind::Footnote, id: *id, custom: String::new() }]);
+            assert_eq!(
+                note.objects,
+                vec![InlineObject::NoteRef {
+                    kind: NoteKind::Footnote,
+                    id: *id,
+                    custom: String::new()
+                }]
+            );
         }
         o => panic!("{o:?}"),
     }
     let c = d.comments.get(&5).unwrap();
     assert_eq!((c.author.as_str(), c.initials.as_str()), ("Zed", "Z"));
-    assert_eq!(d.parts.get(&c.part).unwrap().blocks[0].as_para().unwrap().text, "Look");
+    assert_eq!(
+        d.parts.get(&c.part).unwrap().blocks[0]
+            .as_para()
+            .unwrap()
+            .text,
+        "Look"
+    );
     assert_eq!(p[1].props.style.as_deref(), Some("Normal"));
     assert_eq!(p[1].text, "newold");
     assert_eq!(d.revisions.len(), 2);
@@ -370,7 +556,10 @@ fn styles_numbering_settings_notes_comments_from_parts() {
     assert_eq!((s.page_w, s.page_h), (841.9, 595.3));
     assert!(!s.title_page);
     let hid = s.headers.default.unwrap();
-    assert_eq!(d.parts.get(&hid).unwrap().blocks[0].as_para().unwrap().text, "H");
+    assert_eq!(
+        d.parts.get(&hid).unwrap().blocks[0].as_para().unwrap().text,
+        "H"
+    );
     assert_eq!(d.core.title, "Doc Title");
     assert_eq!(d.core.revision, 3);
 }
@@ -385,7 +574,11 @@ fn table_style_whole_table_shading_and_margins() {
  <w:style w:type="table" w:styleId="Whole"><w:name w:val="Whole"/><w:basedOn w:val="Base"/><w:rPr><w:b/></w:rPr><w:tblStylePr w:type="wholeTable"><w:pPr><w:jc w:val="center"/></w:pPr><w:rPr><w:color w:val="1F4E79"/></w:rPr><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="DDEBF7"/></w:tcPr></w:tblStylePr><w:tblStylePr w:type="bogus"/><w:tblStylePr/></w:style>
 </w:styles>"#
     );
-    let bytes = docx("<w:p/>", &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)]);
+    let bytes = docx(
+        "<w:p/>",
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    );
     let d = wordcraft_docx::read(&bytes).unwrap();
     let base = d.styles.get("Base").unwrap();
     let parts = base.table.as_ref().unwrap();
@@ -394,14 +587,27 @@ fn table_style_whole_table_shading_and_margins() {
     let whole = d.styles.get("Whole").unwrap();
     assert_eq!(whole.para.align, Some(Align::Center));
     assert_eq!(whole.chr.bold, Some(true));
-    assert_eq!(whole.chr.color, Some(TextColor::Rgb(wordcraft_doc::Rgb(0x1F, 0x4E, 0x79))));
-    assert_eq!(whole.table.as_ref().unwrap().fill, Some(wordcraft_doc::Rgb(0xDD, 0xEB, 0xF7)));
+    assert_eq!(
+        whole.chr.color,
+        Some(TextColor::Rgb(wordcraft_doc::Rgb(0x1F, 0x4E, 0x79)))
+    );
+    assert_eq!(
+        whole.table.as_ref().unwrap().fill,
+        Some(wordcraft_doc::Rgb(0xDD, 0xEB, 0xF7))
+    );
     assert_eq!(whole.table.as_ref().unwrap().cell_margins, None);
     let merged = d.styles.table_style("Whole").unwrap();
     assert_eq!(merged.para.space_after, Some(0.0), "from Base");
     assert_eq!(merged.para.align, Some(Align::Center));
-    assert_eq!(merged.parts.fill, Some(wordcraft_doc::Rgb(0xDD, 0xEB, 0xF7)));
-    assert_eq!(merged.parts.cell_margins, Some([1.0, 14.4, 0.0, 14.4]), "from Base");
+    assert_eq!(
+        merged.parts.fill,
+        Some(wordcraft_doc::Rgb(0xDD, 0xEB, 0xF7))
+    );
+    assert_eq!(
+        merged.parts.cell_margins,
+        Some([1.0, 14.4, 0.0, 14.4]),
+        "from Base"
+    );
 }
 
 /// Word starts every note with a `w:footnoteRef` / `w:endnoteRef` mark: the note's own number.
@@ -425,17 +631,35 @@ fn note_marks_reference_their_own_note() {
         note("footnote", "footnoteRef", "Footnote", 1, "First."),
         note("footnote", "footnoteRef", "Footnote", 3, "Third."),
     );
-    let endnotes = format!(r#"<w:endnotes {W_NS}>{}{}</w:endnotes>"#, sep("endnote"), note("endnote", "endnoteRef", "Endnote", 1, "End."));
+    let endnotes = format!(
+        r#"<w:endnotes {W_NS}>{}{}</w:endnotes>"#,
+        sep("endnote"),
+        note("endnote", "endnoteRef", "Endnote", 1, "End.")
+    );
     // A mark outside a note (here in the body) refers to nothing.
     let body = r#"<w:p><w:r><w:footnoteRef/><w:t>A</w:t></w:r><w:r><w:footnoteReference w:id="1"/></w:r><w:r><w:footnoteReference w:id="2"/></w:r><w:r><w:footnoteReference w:id="3"/></w:r><w:r><w:endnoteReference w:id="1"/></w:r></w:p>"#;
     let bytes = docx(
         body,
-        &[("rId1", "footnotes", "footnotes.xml"), ("rId2", "endnotes", "endnotes.xml")],
-        &[("word/footnotes.xml", &footnotes), ("word/endnotes.xml", &endnotes)],
+        &[
+            ("rId1", "footnotes", "footnotes.xml"),
+            ("rId2", "endnotes", "endnotes.xml"),
+        ],
+        &[
+            ("word/footnotes.xml", &footnotes),
+            ("word/endnotes.xml", &endnotes),
+        ],
     );
     let d = wordcraft_docx::read(&bytes).unwrap();
     let p = paras(&d)[0];
-    assert_eq!(p.text.chars().filter(|c| *c == wordcraft_doc::para::OBJ).count(), 4, "{:?}", p.objects);
+    assert_eq!(
+        p.text
+            .chars()
+            .filter(|c| *c == wordcraft_doc::para::OBJ)
+            .count(),
+        4,
+        "{:?}",
+        p.objects
+    );
     let refs: Vec<(NoteKind, u32)> = p
         .objects
         .iter()
@@ -447,9 +671,21 @@ fn note_marks_reference_their_own_note() {
     let first_para = |id: u32| d.parts.get(&id).unwrap().blocks[0].as_para().unwrap();
     for (kind, id) in [refs[0], refs[2], refs[3]] {
         let n = first_para(id);
-        assert_eq!(n.objects, vec![InlineObject::NoteRef { kind, id, custom: String::new() }], "note {id}");
+        assert_eq!(
+            n.objects,
+            vec![InlineObject::NoteRef {
+                kind,
+                id,
+                custom: String::new()
+            }],
+            "note {id}"
+        );
         assert!(n.text.starts_with(wordcraft_doc::para::OBJ), "{:?}", n.text);
-        let style = if kind == NoteKind::Footnote { "FootnoteReference" } else { "EndnoteReference" };
+        let style = if kind == NoteKind::Footnote {
+            "FootnoteReference"
+        } else {
+            "EndnoteReference"
+        };
         assert_eq!(n.props_of_char(0).style.as_deref(), Some(style));
     }
     assert_eq!(first_para(refs[0].1).plain_text(), " First.");
@@ -468,10 +704,21 @@ fn empty_tbl_borders_elements_leave_sides_unset() {
         r#"<w:styles {W_NS}><w:style w:type="table" w:styleId="TS"><w:name w:val="TS"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="2" w:color="000000"/><w:left w:val="single" w:sz="2" w:color="000000"/><w:bottom w:val="single" w:sz="2" w:color="000000"/><w:right w:val="single" w:sz="2" w:color="000000"/><w:insideH w:val="single" w:sz="2" w:color="000000"/><w:insideV w:val="single" w:sz="2" w:color="000000"/></w:tblBorders></w:tblPr></w:style></w:styles>"#
     );
     let body = r#"<w:tbl><w:tblPr><w:tblStyle w:val="TS"/><w:tblBorders></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="4000"/><w:gridCol w:w="4000"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcBorders></w:tcBorders></w:tcPr><w:p/></w:tc><w:tc><w:tcPr><w:tcBorders></w:tcBorders></w:tcPr><w:p/></w:tc></w:tr></w:tbl>"#;
-    let d = wordcraft_docx::read(&docx(body, &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+    let d = wordcraft_docx::read(&docx(
+        body,
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    ))
+    .unwrap();
     let t = d.body.iter().find_map(|b| b.as_table()).unwrap();
-    assert_eq!(t.props.borders, Some(wordcraft_doc::props::Borders::default()));
-    assert_eq!(t.rows[0].cells[0].props.borders, Some(wordcraft_doc::props::Borders::default()));
+    assert_eq!(
+        t.props.borders,
+        Some(wordcraft_doc::props::Borders::default())
+    );
+    assert_eq!(
+        t.rows[0].cells[0].props.borders,
+        Some(wordcraft_doc::props::Borders::default())
+    );
     let parts = d.styles.get("TS").unwrap().table.clone().unwrap();
     let b = parts.borders.unwrap();
     assert!(b.top.is_some() && b.between.is_some() && b.inside_v.is_some());
@@ -485,7 +732,10 @@ fn vml_image_and_inline_drawing() {
 <w:r><w:drawing><wp:inline><wp:extent cx="1270000" cy="635000"/><wp:docPr id="3" name="P" descr="alt text"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:blipFill><a:blip r:embed="rIdImg"/><a:srcRect l="10000"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>
 <w:r><w:drawing><wp:inline><wp:extent cx="1" cy="1"/><a:graphic><a:graphicData><pic:pic><pic:blipFill><a:blip r:embed="rIdMissing"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>"#;
     let doc = format!(r#"<w:document {W_NS}><w:body>{body}</w:body></w:document>"#);
-    let r = rels(&[("rIdImg", "image", "media/pic.png"), ("rIdMissing", "image", "media/nope.png")]);
+    let r = rels(&[
+        ("rIdImg", "image", "media/pic.png"),
+        ("rIdMissing", "image", "media/nope.png"),
+    ]);
     let bytes = zip(&[
         ("_rels/.rels", ROOT_RELS.as_bytes()),
         ("word/document.xml", doc.as_bytes()),
@@ -496,9 +746,31 @@ fn vml_image_and_inline_drawing() {
     let p = paras(&d);
     assert_eq!(p[0].objects.len(), 2);
     match (&p[0].objects[0], &p[0].objects[1]) {
-        (InlineObject::Image { media: m1, w: w1, h: h1, alt: a1, .. }, InlineObject::Image { media: m2, w: w2, h: h2, alt: a2, crop, .. }) => {
-            assert_eq!((m1.as_str(), *w1, *h1, a1.as_str()), ("pic.png", 72.0, 36.0, "vml pic"));
-            assert_eq!((m2.as_str(), *w2, *h2, a2.as_str()), ("pic.png", 100.0, 50.0, "alt text"));
+        (
+            InlineObject::Image {
+                media: m1,
+                w: w1,
+                h: h1,
+                alt: a1,
+                ..
+            },
+            InlineObject::Image {
+                media: m2,
+                w: w2,
+                h: h2,
+                alt: a2,
+                crop,
+                ..
+            },
+        ) => {
+            assert_eq!(
+                (m1.as_str(), *w1, *h1, a1.as_str()),
+                ("pic.png", 72.0, 36.0, "vml pic")
+            );
+            assert_eq!(
+                (m2.as_str(), *w2, *h2, a2.as_str()),
+                ("pic.png", 100.0, 50.0, "alt text")
+            );
             assert_eq!(crop[0], 0.1);
         }
         o => panic!("{o:?}"),
@@ -517,13 +789,25 @@ fn chart_and_diagram_drawings_are_graphic_objects() {
     let body = format!(
         "<w:p>{}{}</w:p>",
         drawing("http://schemas.openxmlformats.org/drawingml/2006/chart", ""),
-        drawing("http://schemas.openxmlformats.org/drawingml/2006/diagram", r#"<a:blip r:embed="rIdImg"/>"#)
+        drawing(
+            "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+            r#"<a:blip r:embed="rIdImg"/>"#
+        )
     );
     let d = read_body(&body);
     let p = paras(&d);
     assert_eq!(p[0].objects.len(), 2);
     match (&p[0].objects[0], &p[0].objects[1]) {
-        (InlineObject::Graphic { w: w1, h: h1, alt, graphic: g1, .. }, InlineObject::Graphic { graphic: g2, .. }) => {
+        (
+            InlineObject::Graphic {
+                w: w1,
+                h: h1,
+                alt,
+                graphic: g1,
+                ..
+            },
+            InlineObject::Graphic { graphic: g2, .. },
+        ) => {
             assert_eq!((*w1, *h1, alt.as_str()), (216.0, 144.0, "sales"));
             assert_eq!(g1.kind, wordcraft_doc::graphic::GraphicKind::Chart);
             assert_eq!(g2.kind, wordcraft_doc::graphic::GraphicKind::Diagram);
@@ -541,22 +825,42 @@ fn a_chart_part_is_built_once_and_only_through_a_chart_relationship() {
             r#"<w:r><w:drawing><wp:inline><wp:extent cx="2743200" cy="1828800"/><wp:docPr id="5" name="G"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="{id}"/></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"#
         )
     };
-    let body = format!("<w:p>{}{}{}</w:p>", drawing("rIdChart"), drawing("rIdChart"), drawing("rIdNotChart"));
+    let body = format!(
+        "<w:p>{}{}{}</w:p>",
+        drawing("rIdChart"),
+        drawing("rIdChart"),
+        drawing("rIdNotChart")
+    );
     let bytes = docx(
         &body,
-        &[("rIdChart", "chart", "charts/chart1.xml"), ("rIdNotChart", "image", "charts/chart1.xml")],
+        &[
+            ("rIdChart", "chart", "charts/chart1.xml"),
+            ("rIdNotChart", "image", "charts/chart1.xml"),
+        ],
         &[("word/charts/chart1.xml", chart)],
     );
     let d = wordcraft_docx::read(&bytes).unwrap();
     let graphics: Vec<_> = paras(&d)[0]
         .objects
         .iter()
-        .filter_map(|o| if let InlineObject::Graphic { graphic, .. } = o { Some(graphic.clone()) } else { None })
+        .filter_map(|o| {
+            if let InlineObject::Graphic { graphic, .. } = o {
+                Some(graphic.clone())
+            } else {
+                None
+            }
+        })
         .collect();
     assert_eq!(graphics.len(), 3);
     assert!(!graphics[0].items.is_empty(), "the chart is drawn");
-    assert!(std::sync::Arc::ptr_eq(&graphics[0], &graphics[1]), "one build for both references");
-    assert!(graphics[2].items.is_empty(), "an image relationship is not a chart");
+    assert!(
+        std::sync::Arc::ptr_eq(&graphics[0], &graphics[1]),
+        "one build for both references"
+    );
+    assert!(
+        graphics[2].items.is_empty(),
+        "an image relationship is not a chart"
+    );
 }
 
 #[test]
@@ -567,7 +871,10 @@ fn strict_namespace_and_bad_numbers() {
 <w:tbl><w:tblGrid><w:gridCol w:w="-5"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:gridSpan w:val="99999"/></w:tcPr><w:p/></w:tc></w:tr></w:tbl>
 <w:sectPr><w:pgSz w:w="0" w:h="x"/><w:cols w:num="-3"/><w:pgNumType w:start="-1" w:fmt="klingon"/></w:sectPr>
 </w:body></w:document>"#;
-    let bytes = zip(&[("_rels/.rels", ROOT_RELS.as_bytes()), ("word/document.xml", doc.as_bytes())]);
+    let bytes = zip(&[
+        ("_rels/.rels", ROOT_RELS.as_bytes()),
+        ("word/document.xml", doc.as_bytes()),
+    ]);
     let d = wordcraft_docx::read(&bytes).unwrap();
     let p = paras(&d);
     assert_eq!(p[0].text, "strict");
@@ -579,7 +886,9 @@ fn strict_namespace_and_bad_numbers() {
     assert_eq!(c.size, None);
     assert_eq!(c.scale, Some(600.0));
     assert_eq!(c.color, None);
-    let Block::Table(t) = &*d.body[1] else { panic!() };
+    let Block::Table(t) = &*d.body[1] else {
+        panic!()
+    };
     assert_eq!(t.rows[0].cells[0].span(), 63);
     assert_eq!(d.last_section.page_w, 612.0);
     assert_eq!(d.last_section.columns.count, 1);
@@ -598,8 +907,26 @@ fn unbalanced_fields_and_markers() {
     let d = read_body(body);
     let p = paras(&d);
     assert_eq!(p[0].text, "a");
-    assert_eq!(p[1].objects, vec![InlineObject::Field { instr: "IF X = \"y\"".into(), result: String::new(), locked: false, code: false }]);
-    assert_eq!(p[2].objects, vec![InlineObject::BookmarkStart { name: "between".into() }, InlineObject::BookmarkEnd { name: "between".into() }]);
+    assert_eq!(
+        p[1].objects,
+        vec![InlineObject::Field {
+            instr: "IF X = \"y\"".into(),
+            result: String::new(),
+            locked: false,
+            code: false
+        }]
+    );
+    assert_eq!(
+        p[2].objects,
+        vec![
+            InlineObject::BookmarkStart {
+                name: "between".into()
+            },
+            InlineObject::BookmarkEnd {
+                name: "between".into()
+            }
+        ]
+    );
     assert_eq!(p[2].plain_text(), "after");
 }
 
@@ -611,7 +938,11 @@ fn header_self_reference_and_escaping_targets() {
     let hdr_rels = rels(&[("rId1", "header", "header1.xml")]);
     let body = r#"<w:p><w:r><w:drawing><wp:inline><a:graphic><a:graphicData><pic:pic><pic:blipFill><a:blip r:embed="rIdEvil"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:headerReference w:type="even" r:id="rIdH"/><w:footerReference w:type="first" r:id="rIdNone"/></w:sectPr>"#;
     let doc = format!(r#"<w:document {W_NS}><w:body>{body}</w:body></w:document>"#);
-    let r = rels(&[("rIdH", "header", "header1.xml"), ("rIdEvil", "image", "../../../../etc/passwd"), ("rIdNone", "footer", "missing.xml")]);
+    let r = rels(&[
+        ("rIdH", "header", "header1.xml"),
+        ("rIdEvil", "image", "../../../../etc/passwd"),
+        ("rIdNone", "footer", "missing.xml"),
+    ]);
     let bytes = zip(&[
         ("_rels/.rels", ROOT_RELS.as_bytes()),
         ("word/document.xml", doc.as_bytes()),
@@ -633,7 +964,12 @@ fn with_settings(settings: Option<&str>) -> Document {
         None => read_body(body),
         Some(inner) => {
             let s = format!(r#"<w:settings {W_NS}>{inner}</w:settings>"#);
-            wordcraft_docx::read(&docx(body, &[("rId1", "settings", "settings.xml")], &[("word/settings.xml", &s)])).unwrap()
+            wordcraft_docx::read(&docx(
+                body,
+                &[("rId1", "settings", "settings.xml")],
+                &[("word/settings.xml", &s)],
+            ))
+            .unwrap()
         }
     }
 }
@@ -641,19 +977,36 @@ fn with_settings(settings: Option<&str>) -> Document {
 #[test]
 fn compatibility_mode_is_read_and_defaults_to_word_2007() {
     let compat = |v: &str| {
-        format!(r#"<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="{v}"/></w:compat>"#)
+        format!(
+            r#"<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="{v}"/></w:compat>"#
+        )
     };
     assert_eq!(with_settings(Some(&compat("15"))).settings.compat_mode, 15);
     assert_eq!(with_settings(Some(&compat("14"))).settings.compat_mode, 14);
     // Unnamed, out of range or junk values.
-    assert_eq!(with_settings(Some("<w:compat/>")).settings.compat_mode, wordcraft_doc::LEGACY_COMPAT_MODE);
-    assert_eq!(with_settings(None).settings.compat_mode, wordcraft_doc::LEGACY_COMPAT_MODE);
+    assert_eq!(
+        with_settings(Some("<w:compat/>")).settings.compat_mode,
+        wordcraft_doc::LEGACY_COMPAT_MODE
+    );
+    assert_eq!(
+        with_settings(None).settings.compat_mode,
+        wordcraft_doc::LEGACY_COMPAT_MODE
+    );
     assert_eq!(with_settings(Some(&compat("-3"))).settings.compat_mode, 11);
-    assert_eq!(with_settings(Some(&compat("99999"))).settings.compat_mode, 99);
-    assert_eq!(with_settings(Some(&compat("abc"))).settings.compat_mode, wordcraft_doc::LEGACY_COMPAT_MODE);
+    assert_eq!(
+        with_settings(Some(&compat("99999"))).settings.compat_mode,
+        99
+    );
+    assert_eq!(
+        with_settings(Some(&compat("abc"))).settings.compat_mode,
+        wordcraft_doc::LEGACY_COMPAT_MODE
+    );
     // Another vendor's setting of the same name is ignored.
     let other = r#"<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="urn:example" w:val="15"/></w:compat>"#;
-    assert_eq!(with_settings(Some(other)).settings.compat_mode, wordcraft_doc::LEGACY_COMPAT_MODE);
+    assert_eq!(
+        with_settings(Some(other)).settings.compat_mode,
+        wordcraft_doc::LEGACY_COMPAT_MODE
+    );
 }
 
 #[test]
@@ -663,8 +1016,14 @@ fn line_rule_is_read_case_insensitively() {
         r#"<w:p><w:pPr><w:spacing w:line="280" w:lineRule="atleast"/></w:pPr><w:r><w:t>x</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:line="300" w:lineRule="EXACT"/></w:pPr></w:p>"#,
     );
     let p = paras(&d);
-    assert_eq!(p[0].props.line_spacing, Some(wordcraft_doc::props::LineSpacing::AtLeast(14.0)));
-    assert_eq!(p[1].props.line_spacing, Some(wordcraft_doc::props::LineSpacing::Exactly(15.0)));
+    assert_eq!(
+        p[0].props.line_spacing,
+        Some(wordcraft_doc::props::LineSpacing::AtLeast(14.0))
+    );
+    assert_eq!(
+        p[1].props.line_spacing,
+        Some(wordcraft_doc::props::LineSpacing::Exactly(15.0))
+    );
 }
 
 #[test]
@@ -673,7 +1032,15 @@ fn char_border_reads_and_nil_resolves_off() {
         r#"<w:p><w:r><w:rPr><w:bdr w:val="single" w:sz="8" w:space="1" w:color="FF0000"/></w:rPr><w:t>a</w:t></w:r><w:r><w:rPr><w:bdr w:val="nil"/></w:rPr><w:t>b</w:t></w:r></w:p>"#,
     );
     let p = paras(&d)[0];
-    assert_eq!(p.props_of_char(0).border, Some(Border { style: BorderStyle::Single, width: 1.0, color: Some(Rgb(0xFF, 0, 0)), space: 1.0 }));
+    assert_eq!(
+        p.props_of_char(0).border,
+        Some(Border {
+            style: BorderStyle::Single,
+            width: 1.0,
+            color: Some(Rgb(0xFF, 0, 0)),
+            space: 1.0
+        })
+    );
     let nil = p.props_of_char(1);
     assert_eq!(nil.border.map(|b| b.style), Some(BorderStyle::None));
     assert_eq!(d.styles.resolve_char(None, nil).border, None);
@@ -699,18 +1066,50 @@ fn anchor_alignment_reference_areas_and_distances() {
     );
     let d = read_body(&body);
     let p = paras(&d);
-    let floats: Vec<_> =
-        p[0].objects.iter().filter_map(|o| if let InlineObject::Shape { float, .. } = o { Some(float.clone()) } else { None }).collect();
-    let [a, b] = floats.as_slice() else { panic!("{floats:?}") };
-    assert_eq!((a.h_rel, a.h_align, a.v_rel, a.v_align, a.y), (Anchor::Margin, Some(FloatAlign::Center), Anchor::TopMargin, None, -1.0));
+    let floats: Vec<_> = p[0]
+        .objects
+        .iter()
+        .filter_map(|o| {
+            if let InlineObject::Shape { float, .. } = o {
+                Some(float.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+    let [a, b] = floats.as_slice() else {
+        panic!("{floats:?}")
+    };
+    assert_eq!(
+        (a.h_rel, a.h_align, a.v_rel, a.v_align, a.y),
+        (
+            Anchor::Margin,
+            Some(FloatAlign::Center),
+            Anchor::TopMargin,
+            None,
+            -1.0
+        )
+    );
     assert_eq!((a.dist, a.dist_top, a.dist_bottom), (9.0, 2.0, 4.0));
-    assert_eq!((b.h_rel, b.h_align, b.x, b.v_rel, b.v_align), (Anchor::LeftMargin, None, 5.0, Anchor::Line, Some(FloatAlign::End)));
+    assert_eq!(
+        (b.h_rel, b.h_align, b.x, b.v_rel, b.v_align),
+        (
+            Anchor::LeftMargin,
+            None,
+            5.0,
+            Anchor::Line,
+            Some(FloatAlign::End)
+        )
+    );
     assert_eq!((b.dist, b.dist_top, b.dist_bottom), (0.0, 0.0, 0.0));
 }
 
 #[test]
 fn documents_without_a_compatibility_mode_are_laid_out_as_word_2007() {
-    assert_eq!(read_body("<w:p/>").settings.compat_mode, wordcraft_doc::LEGACY_COMPAT_MODE);
+    assert_eq!(
+        read_body("<w:p/>").settings.compat_mode,
+        wordcraft_doc::LEGACY_COMPAT_MODE
+    );
 }
 
 #[test]
@@ -724,10 +1123,19 @@ fn style_rfonts_without_ascii_inherits_doc_defaults_font() {
 </w:styles>"#
     );
     let body = r#"<w:p><w:r><w:t>Plain</w:t></w:r></w:p><w:p><w:r><w:rPr><w:rFonts w:hint="eastAsia" w:eastAsia="SimSun"/></w:rPr><w:t>漢字</w:t></w:r></w:p>"#;
-    let d = wordcraft_docx::read(&docx(body, &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+    let d = wordcraft_docx::read(&docx(
+        body,
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    ))
+    .unwrap();
     assert_eq!(d.styles.get("Normal").unwrap().chr.font, None);
     let ps = paras(&d);
-    let font = |p: &Paragraph| d.styles.resolve_char(p.props.style.as_deref(), &p.runs[0].props).font;
+    let font = |p: &Paragraph| {
+        d.styles
+            .resolve_char(p.props.style.as_deref(), &p.runs[0].props)
+            .font
+    };
     assert_eq!(font(ps[0]), "Calibri");
     assert_eq!(font(ps[1]), "SimSun");
 }
@@ -752,9 +1160,15 @@ fn absolute_vml_text_box_in_header_floats() {
 <w:p><w:r><w:pict><v:rect style="position:absolute;margin-left:12pt;margin-top:-6pt;width:1in;height:36pt;z-index:3;mso-position-horizontal:center;mso-position-horizontal-relative:margin;mso-position-vertical-relative:top-margin-area;mso-wrap-distance-left:9pt;mso-wrap-distance-bottom:4pt"><v:textbox><w:txbxContent><w:p><w:r><w:t>square</w:t></w:r></w:p></w:txbxContent></v:textbox><w10:wrap type="square"/></v:rect></w:pict></w:r>
 <w:r><w:pict><v:shape style="position:absolute;margin-left:1in;margin-top:2pt;width:72pt;height:20pt;z-index:5"><v:textbox><w:txbxContent><w:p><w:r><w:t>front</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>
 <w:r><w:pict><v:shape style="width:72pt;height:20pt"><v:textbox><w:txbxContent><w:p><w:r><w:t>inline</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r></w:p>""##;
-    let header = format!(r#"<w:hdr {W_NS} {w10}><w:p><w:r><w:t>Header label</w:t></w:r></w:p>{boxes}</w:hdr>"#);
+    let header = format!(
+        r#"<w:hdr {W_NS} {w10}><w:p><w:r><w:t>Header label</w:t></w:r></w:p>{boxes}</w:hdr>"#
+    );
     let body = r#"<w:p><w:r><w:t>Body</w:t></w:r></w:p><w:sectPr><w:headerReference w:type="default" r:id="rIdH"/></w:sectPr>"#;
-    let bytes = docx(body, &[("rIdH", "header", "header1.xml")], &[("word/header1.xml", &header)]);
+    let bytes = docx(
+        body,
+        &[("rIdH", "header", "header1.xml")],
+        &[("word/header1.xml", &header)],
+    );
     let check = |d: &Document| {
         let hid = d.last_section.headers.default.unwrap();
         let blocks = &d.parts.get(&hid).unwrap().blocks;
@@ -763,25 +1177,77 @@ fn absolute_vml_text_box_in_header_floats() {
             .filter_map(|b| b.as_para())
             .flat_map(|p| &p.objects)
             .filter_map(|o| {
-                if let InlineObject::Shape { kind, w, h, float, story, .. } = o { Some((*kind, *w, *h, float.clone(), *story)) } else { None }
+                if let InlineObject::Shape {
+                    kind,
+                    w,
+                    h,
+                    float,
+                    story,
+                    ..
+                } = o
+                {
+                    Some((*kind, *w, *h, float.clone(), *story))
+                } else {
+                    None
+                }
             })
             .collect();
-        let [(k0, w0, h0, f0, s0), (_, w1, h1, f1, _), (_, _, _, f2, _), (_, _, _, f3, _)] = shapes.as_slice() else { panic!("{shapes:?}") };
+        let [
+            (k0, w0, h0, f0, s0),
+            (_, w1, h1, f1, _),
+            (_, _, _, f2, _),
+            (_, _, _, f3, _),
+        ] = shapes.as_slice()
+        else {
+            panic!("{shapes:?}")
+        };
         assert_eq!(*k0, ShapeKind::TextBox);
-        assert!((w0 - 405.0).abs() < 0.01 && (h0 - 491.4).abs() < 0.01, "{w0} x {h0}");
-        assert_eq!((f0.wrap, f0.h_rel, f0.v_rel, f0.h_align, f0.v_align), (Wrap::BehindText, Anchor::Page, Anchor::Page, None, None));
-        assert!(f0.x.abs() < 0.01 && (f0.y - 80.0).abs() < 0.01, "offset {} {}", f0.x, f0.y);
-        let text = d.parts.get(&s0.unwrap()).unwrap().blocks[0].as_para().unwrap().text.clone();
+        assert!(
+            (w0 - 405.0).abs() < 0.01 && (h0 - 491.4).abs() < 0.01,
+            "{w0} x {h0}"
+        );
+        assert_eq!(
+            (f0.wrap, f0.h_rel, f0.v_rel, f0.h_align, f0.v_align),
+            (Wrap::BehindText, Anchor::Page, Anchor::Page, None, None)
+        );
+        assert!(
+            f0.x.abs() < 0.01 && (f0.y - 80.0).abs() < 0.01,
+            "offset {} {}",
+            f0.x,
+            f0.y
+        );
+        let text = d.parts.get(&s0.unwrap()).unwrap().blocks[0]
+            .as_para()
+            .unwrap()
+            .text
+            .clone();
         assert_eq!(text, "WATERMARK");
         assert_eq!((*w1, *h1), (72.0, 36.0));
         assert_eq!(
             (f1.wrap, f1.h_rel, f1.h_align, f1.v_rel, f1.v_align),
-            (Wrap::Square, Anchor::Margin, Some(FloatAlign::Center), Anchor::TopMargin, None)
+            (
+                Wrap::Square,
+                Anchor::Margin,
+                Some(FloatAlign::Center),
+                Anchor::TopMargin,
+                None
+            )
         );
-        assert!((f1.y + 6.0).abs() < 0.01 && (f1.dist - 9.0).abs() < 0.01 && (f1.dist_bottom - 4.0).abs() < 0.01, "{f1:?}");
+        assert!(
+            (f1.y + 6.0).abs() < 0.01
+                && (f1.dist - 9.0).abs() < 0.01
+                && (f1.dist_bottom - 4.0).abs() < 0.01,
+            "{f1:?}"
+        );
         // No wrap element: in front of the text, relative to the column and paragraph.
-        assert_eq!((f2.wrap, f2.h_rel, f2.v_rel), (Wrap::InFrontOfText, Anchor::Column, Anchor::Paragraph));
-        assert!((f2.x - 72.0).abs() < 0.01 && (f2.y - 2.0).abs() < 0.01, "{f2:?}");
+        assert_eq!(
+            (f2.wrap, f2.h_rel, f2.v_rel),
+            (Wrap::InFrontOfText, Anchor::Column, Anchor::Paragraph)
+        );
+        assert!(
+            (f2.x - 72.0).abs() < 0.01 && (f2.y - 2.0).abs() < 0.01,
+            "{f2:?}"
+        );
         // Not absolutely positioned: still inline.
         assert_eq!(f3.wrap, Wrap::Inline);
     };
@@ -796,10 +1262,20 @@ fn hostile_vml_style_values_stay_finite() {
     let body = r#"<w:p><w:r><w:pict><v:shape style="position:ABSOLUTE;margin-left:1e39pt;left:-1e39pt;margin-top:NaNpt;top:;width:-5pt;height:1e30in;z-index:99999999999999999999999;mso-position-horizontal:bogus;mso-wrap-distance-left:-3pt;mso-wrap-distance-top:1e9pt;;:;position"><v:textbox><w:txbxContent><w:p/></w:txbxContent></v:textbox></v:shape></w:pict></w:r></w:p>"#;
     let d = read_body(body);
     let p = paras(&d);
-    let Some(InlineObject::Shape { w, h, float, .. }) = p[0].objects.first() else { panic!("{:?}", p[0].objects) };
+    let Some(InlineObject::Shape { w, h, float, .. }) = p[0].objects.first() else {
+        panic!("{:?}", p[0].objects)
+    };
     assert_eq!(float.wrap, Wrap::InFrontOfText);
-    assert!([*w, *h, float.x, float.y, float.dist, float.dist_top].iter().all(|v| v.is_finite()), "{w} {h} {float:?}");
-    assert_eq!((float.h_align, float.dist, float.dist_top), (None, 0.0, 1584.0));
+    assert!(
+        [*w, *h, float.x, float.y, float.dist, float.dist_top]
+            .iter()
+            .all(|v| v.is_finite()),
+        "{w} {h} {float:?}"
+    );
+    assert_eq!(
+        (float.h_align, float.dist, float.dist_top),
+        (None, 0.0, 1584.0)
+    );
 }
 
 // ---- charts and OLE objects written back (#319) ----
@@ -846,7 +1322,13 @@ fn unzip(bytes: &[u8]) -> std::collections::BTreeMap<String, Vec<u8>> {
 }
 
 fn text(files: &std::collections::BTreeMap<String, Vec<u8>>, name: &str) -> String {
-    String::from_utf8(files.get(name).unwrap_or_else(|| panic!("no {name} in {:?}", files.keys())).clone()).unwrap()
+    String::from_utf8(
+        files
+            .get(name)
+            .unwrap_or_else(|| panic!("no {name} in {:?}", files.keys()))
+            .clone(),
+    )
+    .unwrap()
 }
 
 /// Values of attribute `attr` on the elements named `el` (in written order).
@@ -854,14 +1336,32 @@ fn attr_values(xml: &str, el: &str, attr: &str) -> Vec<String> {
     let start = |s: &str| format!(" {}", s.split('>').next().unwrap_or(""));
     xml.split(&format!("<{el} "))
         .skip(1)
-        .filter_map(|s| start(s).split(&format!(" {attr}=\"")).nth(1)?.split('"').next().map(str::to_string))
+        .filter_map(|s| {
+            start(s)
+                .split(&format!(" {attr}=\""))
+                .nth(1)?
+                .split('"')
+                .next()
+                .map(str::to_string)
+        })
         .collect()
 }
 
 /// (type, target) of relationship `id` in a relationships part.
 fn rel(rels: &str, id: &str) -> (String, String) {
-    let r = rels.split("<Relationship ").find(|r| r.contains(&format!("Id=\"{id}\""))).unwrap_or_else(|| panic!("no {id} in {rels}"));
-    let get = |a: &str| r.split(&format!("{a}=\"")).nth(1).unwrap().split('"').next().unwrap().to_string();
+    let r = rels
+        .split("<Relationship ")
+        .find(|r| r.contains(&format!("Id=\"{id}\"")))
+        .unwrap_or_else(|| panic!("no {id} in {rels}"));
+    let get = |a: &str| {
+        r.split(&format!("{a}=\""))
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap()
+            .to_string()
+    };
     (get("Type"), get("Target"))
 }
 
@@ -892,18 +1392,33 @@ fn check_chart(files: &std::collections::BTreeMap<String, Vec<u8>>, rid: &str) -
     let (kind, wb) = rel(&chart_rels, "rId1");
     assert!(kind.ends_with("/package"), "{kind}");
     let wb = part_at(dir, &wb);
-    assert_eq!(files.get(&wb).map(Vec::as_slice), Some(WORKBOOK.as_bytes()), "{wb}");
+    assert_eq!(
+        files.get(&wb).map(Vec::as_slice),
+        Some(WORKBOOK.as_bytes()),
+        "{wb}"
+    );
     let (kind, colors) = rel(&chart_rels, "rId2");
     assert!(kind.ends_with("/chartColorStyle"), "{kind}");
     assert_eq!(text(files, &part_at(dir, &colors)), COLORS_XML);
     let types = text(files, "[Content_Types].xml");
-    assert!(types.contains(&format!(r#"PartName="/{chart}" ContentType="{CT_CHART}""#)), "{types}");
-    assert!(types.contains(&format!(r#"PartName="/{wb}" ContentType="{CT_XLSX}""#)), "{types}");
+    assert!(
+        types.contains(&format!(r#"PartName="/{chart}" ContentType="{CT_CHART}""#)),
+        "{types}"
+    );
+    assert!(
+        types.contains(&format!(r#"PartName="/{wb}" ContentType="{CT_XLSX}""#)),
+        "{types}"
+    );
     chart
 }
 
 fn graphics(d: &Document) -> Vec<InlineObject> {
-    paras(d).iter().flat_map(|p| p.objects.iter()).filter(|o| matches!(o, InlineObject::Graphic { .. })).cloned().collect()
+    paras(d)
+        .iter()
+        .flat_map(|p| p.objects.iter())
+        .filter(|o| matches!(o, InlineObject::Graphic { .. }))
+        .cloned()
+        .collect()
 }
 
 #[test]
@@ -920,7 +1435,9 @@ fn chart_round_trips_with_its_parts() {
     // Read back: still drawn, and a second save still carries it.
     let back = wordcraft_docx::read(&out).unwrap();
     let g = graphics(&back);
-    let [InlineObject::Graphic { w, graphic, .. }] = g.as_slice() else { panic!("{g:?}") };
+    let [InlineObject::Graphic { w, graphic, .. }] = g.as_slice() else {
+        panic!("{g:?}")
+    };
     assert_eq!(*w, 216.0);
     assert!(!graphic.items.is_empty() && graphic.source.is_some());
     let again = unzip(&wordcraft_docx::write(&back).unwrap());
@@ -932,21 +1449,46 @@ fn chart_round_trips_with_its_parts() {
 fn moved_and_copied_chart_keeps_its_parts() {
     let d = wordcraft_docx::read(&chart_docx()).unwrap();
     let g = graphics(&d);
-    let [InlineObject::Graphic { alt, graphic, .. }] = g.as_slice() else { panic!("{g:?}") };
+    let [InlineObject::Graphic { alt, graphic, .. }] = g.as_slice() else {
+        panic!("{g:?}")
+    };
     // Resized and dragged to float on the page in WordCraft, then copied and pasted.
-    let float = wordcraft_doc::para::Float { wrap: Wrap::Square, h_rel: Anchor::Page, v_rel: Anchor::Page, x: 36.0, y: 18.0, ..Default::default() };
-    let moved = InlineObject::Graphic { w: 288.0, h: 144.0, alt: alt.clone(), float, graphic: graphic.clone() };
+    let float = wordcraft_doc::para::Float {
+        wrap: Wrap::Square,
+        h_rel: Anchor::Page,
+        v_rel: Anchor::Page,
+        x: 36.0,
+        y: 18.0,
+        ..Default::default()
+    };
+    let moved = InlineObject::Graphic {
+        w: 288.0,
+        h: 144.0,
+        alt: alt.clone(),
+        float,
+        graphic: graphic.clone(),
+    };
     let mut p = Paragraph::new();
-    p.insert_object(0, moved.clone(), &Default::default()).unwrap();
-    p.insert_object(p.len(), moved, &Default::default()).unwrap();
+    p.insert_object(0, moved.clone(), &Default::default())
+        .unwrap();
+    p.insert_object(p.len(), moved, &Default::default())
+        .unwrap();
     let mut doc = d.clone();
     doc.body = vec![wordcraft_doc::para_block(p)];
 
     let out = wordcraft_docx::write(&doc).unwrap();
     let files = unzip(&out);
     let body = text(&files, "word/document.xml");
-    assert_eq!(attr_values(&body, "wp:extent", "cx"), ["3657600", "3657600"], "the new size");
-    assert_eq!(body.matches("<wp:posOffset>457200</wp:posOffset>").count(), 2, "the new position");
+    assert_eq!(
+        attr_values(&body, "wp:extent", "cx"),
+        ["3657600", "3657600"],
+        "the new size"
+    );
+    assert_eq!(
+        body.matches("<wp:posOffset>457200</wp:posOffset>").count(),
+        2,
+        "the new position"
+    );
     let ids = attr_values(&body, "c:chart", "r:id");
     assert_eq!(ids.len(), 2);
     let charts: Vec<String> = ids.iter().map(|id| check_chart(&files, id)).collect();
@@ -956,7 +1498,12 @@ fn moved_and_copied_chart_keeps_its_parts() {
     let g = graphics(&back);
     assert_eq!(g.len(), 2);
     for o in &g {
-        let InlineObject::Graphic { w, float, graphic, .. } = o else { panic!() };
+        let InlineObject::Graphic {
+            w, float, graphic, ..
+        } = o
+        else {
+            panic!()
+        };
         assert_eq!((*w, float.wrap, float.x), (288.0, Wrap::Square, 36.0));
         assert!(!graphic.items.is_empty() && graphic.source.is_some());
     }
@@ -970,11 +1517,23 @@ fn ole_object_round_trips() {
     let types = r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="png" ContentType="image/png"/><Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/></Types>"#;
     let bytes = docx(
         body,
-        &[("rId8", "image", "media/image1.png"), ("rId9", "oleObject", "embeddings/oleObject1.bin")],
-        &[("[Content_Types].xml", types), ("word/media/image1.png", picture), ("word/embeddings/oleObject1.bin", ole)],
+        &[
+            ("rId8", "image", "media/image1.png"),
+            ("rId9", "oleObject", "embeddings/oleObject1.bin"),
+        ],
+        &[
+            ("[Content_Types].xml", types),
+            ("word/media/image1.png", picture),
+            ("word/embeddings/oleObject1.bin", ole),
+        ],
     );
     let d = wordcraft_docx::read(&bytes).unwrap();
-    let Some(InlineObject::Image { w, ole: Some(_), .. }) = paras(&d)[0].objects.first() else { panic!("{:?}", paras(&d)[0].objects) };
+    let Some(InlineObject::Image {
+        w, ole: Some(_), ..
+    }) = paras(&d)[0].objects.first()
+    else {
+        panic!("{:?}", paras(&d)[0].objects)
+    };
     assert_eq!(*w, 72.0);
 
     // Resized in WordCraft.
@@ -988,24 +1547,47 @@ fn ole_object_round_trips() {
     let files = unzip(&out);
     let body = text(&files, "word/document.xml");
     let rels = text(&files, "word/_rels/document.xml.rels");
-    assert_eq!(attr_values(&body, "v:shape", "style"), ["width:144pt;height:72pt"]);
-    let [ole_id] = attr_values(&body, "o:OLEObject", "r:id").try_into().unwrap();
+    assert_eq!(
+        attr_values(&body, "v:shape", "style"),
+        ["width:144pt;height:72pt"]
+    );
+    let [ole_id] = attr_values(&body, "o:OLEObject", "r:id")
+        .try_into()
+        .unwrap();
     let (kind, target) = rel(&rels, &ole_id);
     assert!(kind.ends_with("/oleObject"), "{kind}");
     let ole_part = part_at("word", &target);
-    assert_eq!(files.get(&ole_part).map(Vec::as_slice), Some(ole.as_bytes()));
+    assert_eq!(
+        files.get(&ole_part).map(Vec::as_slice),
+        Some(ole.as_bytes())
+    );
     assert!(
         text(&files, "[Content_Types].xml")
             .contains(&format!(r#"PartName="/{ole_part}" ContentType="application/vnd.openxmlformats-officedocument.oleObject""#))
     );
-    let [pic_id] = attr_values(&body, "v:imagedata", "r:id").try_into().unwrap();
+    let [pic_id] = attr_values(&body, "v:imagedata", "r:id")
+        .try_into()
+        .unwrap();
     let (kind, target) = rel(&rels, &pic_id);
     assert!(kind.ends_with("/image"), "{kind}");
-    assert_eq!(files.get(&part_at("word", &target)).map(Vec::as_slice), Some(picture.as_bytes()));
-    assert!(!body.contains("<w:drawing>"), "the object, not a plain picture");
+    assert_eq!(
+        files.get(&part_at("word", &target)).map(Vec::as_slice),
+        Some(picture.as_bytes())
+    );
+    assert!(
+        !body.contains("<w:drawing>"),
+        "the object, not a plain picture"
+    );
 
     let back = wordcraft_docx::read(&out).unwrap();
-    assert!(matches!(paras(&back)[0].objects.first(), Some(InlineObject::Image { w: 144.0, ole: Some(_), .. })));
+    assert!(matches!(
+        paras(&back)[0].objects.first(),
+        Some(InlineObject::Image {
+            w: 144.0,
+            ole: Some(_),
+            ..
+        })
+    ));
 }
 
 #[test]
@@ -1023,22 +1605,50 @@ fn hostile_embedded_relationships_stay_bounded() {
     let bytes = docx(
         &body,
         &[("rId7", "chart", "charts/chart1.xml")],
-        &[("word/charts/chart1.xml", CHART_XML), ("word/charts/_rels/chart1.xml.rels", chart_rels)],
+        &[
+            ("word/charts/chart1.xml", CHART_XML),
+            ("word/charts/_rels/chart1.xml.rels", chart_rels),
+        ],
     );
     let d = wordcraft_docx::read(&bytes).unwrap();
     let g = graphics(&d);
     assert_eq!(g.len(), 2);
-    let sources: Vec<bool> = g.iter().map(|o| matches!(o, InlineObject::Graphic { graphic, .. } if graphic.source.is_some())).collect();
-    assert_eq!(sources, [true, false], "a dangling id can't be written back");
+    let sources: Vec<bool> = g
+        .iter()
+        .map(|o| matches!(o, InlineObject::Graphic { graphic, .. } if graphic.source.is_some()))
+        .collect();
+    assert_eq!(
+        sources,
+        [true, false],
+        "a dangling id can't be written back"
+    );
     let files = unzip(&wordcraft_docx::write(&d).unwrap());
     let body = text(&files, "word/document.xml");
     let [id] = attr_values(&body, "c:chart", "r:id").try_into().unwrap();
-    let chart = part_at("word", &rel(&text(&files, "word/_rels/document.xml.rels"), &id).1);
+    let chart = part_at(
+        "word",
+        &rel(&text(&files, "word/_rels/document.xml.rels"), &id).1,
+    );
     let rels = text(&files, "word/charts/_rels/chart1.xml.rels");
-    assert_eq!(rel(&rels, "rId1").1, "chart1.xml", "its relationship to itself, to the same written part");
-    assert!(!rels.contains("document.xml") && !rels.contains("gone.bin") && rels.matches("Id=\"rId4\"").count() <= 1, "{rels}");
+    assert_eq!(
+        rel(&rels, "rId1").1,
+        "chart1.xml",
+        "its relationship to itself, to the same written part"
+    );
+    assert!(
+        !rels.contains("document.xml")
+            && !rels.contains("gone.bin")
+            && rels.matches("Id=\"rId4\"").count() <= 1,
+        "{rels}"
+    );
     assert_eq!(text(&files, &chart), CHART_XML);
-    assert_eq!(files.keys().filter(|k| k.starts_with("word/charts/") && !k.contains("_rels")).count(), 1);
+    assert_eq!(
+        files
+            .keys()
+            .filter(|k| k.starts_with("word/charts/") && !k.contains("_rels"))
+            .count(),
+        1
+    );
 }
 
 /// A group as Word saves one (in `mc:AlternateContent`, needing `wpg`): its members' space
@@ -1053,7 +1663,18 @@ fn word_group_with_nested_group() {
 </wpg:grpSp></wpg:wgp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict/></mc:Fallback></mc:AlternateContent></w:r></w:p>"#;
     let d = read_body(body);
     let p = paras(&d);
-    let InlineObject::Group { w, h, float, ch_w, ch_h, children, .. } = &p[0].objects[0] else { panic!("{:?}", p[0].objects) };
+    let InlineObject::Group {
+        w,
+        h,
+        float,
+        ch_w,
+        ch_h,
+        children,
+        ..
+    } = &p[0].objects[0]
+    else {
+        panic!("{:?}", p[0].objects)
+    };
     assert_eq!((*w, *h, *ch_w, *ch_h), (200.0, 100.0, 200.0, 100.0));
     assert_eq!(float.wrap, Wrap::Square);
     let got: Vec<(f32, f32, ShapeKind, f32, f32)> = children
@@ -1063,12 +1684,21 @@ fn word_group_with_nested_group() {
             o => panic!("{o:?}"),
         })
         .collect();
-    assert_eq!(got, [(0.0, 0.0, ShapeKind::Rectangle, 100.0, 50.0), (110.0, 60.0, ShapeKind::Ellipse, 20.0, 10.0)]);
+    assert_eq!(
+        got,
+        [
+            (0.0, 0.0, ShapeKind::Rectangle, 100.0, 50.0),
+            (110.0, 60.0, ShapeKind::Ellipse, 20.0, 10.0)
+        ]
+    );
 }
 
 /// The first object of the first paragraph, made mutable.
 fn first_object(doc: &mut Document) -> &mut InlineObject {
-    let Some(wordcraft_doc::Block::Para(p)) = doc.body.first_mut().map(std::sync::Arc::make_mut) else { panic!("a paragraph") };
+    let Some(wordcraft_doc::Block::Para(p)) = doc.body.first_mut().map(std::sync::Arc::make_mut)
+    else {
+        panic!("a paragraph")
+    };
     p.objects.first_mut().expect("an object")
 }
 
@@ -1080,28 +1710,50 @@ fn rotated_ole_objects_round_trip() {
     let picture = "\u{89}PNG stand-in";
     let ole = "\u{d0}\u{cf} opaque OLE storage";
     let types = r#"<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="png" ContentType="image/png"/><Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/></Types>"#;
-    let parts = [("[Content_Types].xml", types), ("word/media/image1.png", picture), ("word/embeddings/oleObject1.bin", ole)];
-    let doc_rels = [("rId8", "image", "media/image1.png"), ("rId9", "oleObject", "embeddings/oleObject1.bin")];
+    let parts = [
+        ("[Content_Types].xml", types),
+        ("word/media/image1.png", picture),
+        ("word/embeddings/oleObject1.bin", ole),
+    ];
+    let doc_rels = [
+        ("rId8", "image", "media/image1.png"),
+        ("rId9", "oleObject", "embeddings/oleObject1.bin"),
+    ];
     let spin = |o: &InlineObject| o.frame().map(|f| f.2.spin()).unwrap();
 
     // VML: read turned, written with the new turn.
     let vml = r##"<w:p><w:r><w:object w:dxaOrig="1440" w:dyaOrig="720"><v:shape id="_x0000_i1025" type="#_x0000_t75" style="width:72pt;height:36pt;rotation:30;flip:x" o:ole=""><v:imagedata r:id="rId8" o:title=""/></v:shape><o:OLEObject Type="Embed" ProgID="Package" ShapeID="_x0000_i1025" DrawAspect="Content" ObjectID="_1000000001" r:id="rId9"/></w:object></w:r></w:p>"##;
     let mut d = wordcraft_docx::read(&docx(vml, &doc_rels, &parts)).unwrap();
-    assert_eq!(spin(&paras(&d)[0].objects[0]), wordcraft_geom::Spin::new(30.0, true, false));
+    assert_eq!(
+        spin(&paras(&d)[0].objects[0]),
+        wordcraft_geom::Spin::new(30.0, true, false)
+    );
     if let Some(f) = first_object(&mut d).float_mut() {
         f.set_spin(wordcraft_geom::Spin::new(45.0, false, true));
     }
     let out = wordcraft_docx::write(&d).unwrap();
     let body = text(&unzip(&out), "word/document.xml");
-    assert_eq!(attr_values(&body, "v:shape", "style"), ["width:72pt;height:36pt;rotation:45;flip:y"]);
+    assert_eq!(
+        attr_values(&body, "v:shape", "style"),
+        ["width:72pt;height:36pt;rotation:45;flip:y"]
+    );
     let back = wordcraft_docx::read(&out).unwrap();
-    assert!(matches!(&paras(&back)[0].objects[0], InlineObject::Image { ole: Some(_), .. }));
-    assert_eq!(spin(&paras(&back)[0].objects[0]), wordcraft_geom::Spin::new(45.0, false, true));
+    assert!(matches!(
+        &paras(&back)[0].objects[0],
+        InlineObject::Image { ole: Some(_), .. }
+    ));
+    assert_eq!(
+        spin(&paras(&back)[0].objects[0]),
+        wordcraft_geom::Spin::new(45.0, false, true)
+    );
 
     // DrawingML: the picture's `a:xfrm` and the drawing's effect extent follow the turn.
     let dml = r##"<w:p><w:r><w:object w:dxaOrig="1440" w:dyaOrig="720"><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="914400" cy="457200"/><wp:docPr id="7" name="Object 7"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name=""/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId8"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm flipH="1"><a:off x="0" y="0"/><a:ext cx="914400" cy="457200"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing><o:OLEObject Type="Embed" ProgID="Package" DrawAspect="Content" ObjectID="_1000000002" r:id="rId9"/></w:object></w:r></w:p>"##;
     let mut d = wordcraft_docx::read(&docx(dml, &doc_rels, &parts)).unwrap();
-    assert_eq!(spin(&paras(&d)[0].objects[0]), wordcraft_geom::Spin::new(0.0, true, false));
+    assert_eq!(
+        spin(&paras(&d)[0].objects[0]),
+        wordcraft_geom::Spin::new(0.0, true, false)
+    );
     if let Some(f) = first_object(&mut d).float_mut() {
         f.set_spin(wordcraft_geom::Spin::new(90.0, true, false));
     }
@@ -1114,9 +1766,16 @@ fn rotated_ole_objects_round_trip() {
     assert_eq!(attr_values(&body, "wp:effectExtent", "t"), ["228600"]);
     let back = wordcraft_docx::read(&out).unwrap();
     let o = &paras(&back)[0].objects[0];
-    assert!(matches!(o, InlineObject::Image { ole: Some(_), .. }), "{o:?}");
+    assert!(
+        matches!(o, InlineObject::Image { ole: Some(_), .. }),
+        "{o:?}"
+    );
     assert_eq!(spin(o), wordcraft_geom::Spin::new(90.0, true, false));
-    assert_eq!(o.frame().unwrap().2.effect, [0.0; 4], "the rotated overhang is not kept as effects room");
+    assert_eq!(
+        o.frame().unwrap().2.effect,
+        [0.0; 4],
+        "the rotated overhang is not kept as effects room"
+    );
 }
 
 /// Issue #41: tracked formatting changes (ECMA-376 §17.13.5) survive open and save — run,
@@ -1132,24 +1791,67 @@ fn formatting_revisions_round_trip() {
 <w:p/>
 <w:sectPr><w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/><w:sectPrChange w:id="12" w:author="Carol" w:date="2026-10-02T00:00:00Z"><w:sectPr><w:pgSz w:w="12240" w:h="15840"/></w:sectPr></w:sectPrChange></w:sectPr>"#;
     let d = read_body(body);
-    let rev = |i: u32| d.revisions.get(i as usize).map(|r| (r.kind, r.author.as_str(), r.date.as_str()));
+    let rev = |i: u32| {
+        d.revisions
+            .get(i as usize)
+            .map(|r| (r.kind, r.author.as_str(), r.date.as_str()))
+    };
     let p = paras(&d);
     let runs: Vec<_> = p[0].run_ranges().map(|(r, c)| (r, c.clone())).collect();
     assert_eq!(runs.len(), 3);
     let alice = runs[1].1.fmt_change.as_deref().expect("Alice's rPrChange");
-    assert_eq!(rev(alice.rev), Some((wordcraft_doc::RevisionKind::Format, "Alice", "2026-10-01T00:00:00Z")));
+    assert_eq!(
+        rev(alice.rev),
+        Some((
+            wordcraft_doc::RevisionKind::Format,
+            "Alice",
+            "2026-10-01T00:00:00Z"
+        ))
+    );
     assert_eq!((runs[1].1.bold, alice.old.bold), (Some(true), None));
     let bob = runs[2].1.fmt_change.as_deref().expect("Bob's rPrChange");
-    assert_eq!((bob.old.italic, bob.old.size, bob.old.fmt_change.is_none()), (Some(true), Some(12.0), true), "a nested change is dropped");
+    assert_eq!(
+        (bob.old.italic, bob.old.size, bob.old.fmt_change.is_none()),
+        (Some(true), Some(12.0), true),
+        "a nested change is dropped"
+    );
     assert!(runs[0].1.fmt_change.is_none());
     let pc = p[1].props.fmt_change.as_deref().expect("pPrChange");
-    assert_eq!((p[1].props.align, pc.old.align, pc.old.indent_left), (Some(Align::Center), None, Some(36.0)));
-    assert_eq!(p[1].props.num_change.as_deref().map(|n| n.original.as_str()), Some("1."));
+    assert_eq!(
+        (p[1].props.align, pc.old.align, pc.old.indent_left),
+        (Some(Align::Center), None, Some(36.0))
+    );
+    assert_eq!(
+        p[1].props
+            .num_change
+            .as_deref()
+            .map(|n| n.original.as_str()),
+        Some("1.")
+    );
     assert!(p[1].mark.fmt_change.is_some());
-    let Some(Block::Table(t)) = d.body.get(2).map(|b| &**b) else { panic!("table") };
-    assert_eq!(t.props.fmt_change.as_deref().map(|c| c.old.align), Some(None));
-    assert_eq!(t.rows[0].props.fmt_change.as_deref().map(|c| c.old.cant_split), Some(false));
-    assert_eq!(t.rows[0].cells[0].props.fmt_change.as_deref().map(|c| c.old.shading), Some(None));
+    let Some(Block::Table(t)) = d.body.get(2).map(|b| &**b) else {
+        panic!("table")
+    };
+    assert_eq!(
+        t.props.fmt_change.as_deref().map(|c| c.old.align),
+        Some(None)
+    );
+    assert_eq!(
+        t.rows[0]
+            .props
+            .fmt_change
+            .as_deref()
+            .map(|c| c.old.cant_split),
+        Some(false)
+    );
+    assert_eq!(
+        t.rows[0].cells[0]
+            .props
+            .fmt_change
+            .as_deref()
+            .map(|c| c.old.shading),
+        Some(None)
+    );
     let sc = d.last_section.fmt_change.as_deref().expect("sectPrChange");
     assert_eq!((d.last_section.landscape, sc.old.landscape), (true, false));
     assert_eq!(rev(sc.rev).map(|r| r.1), Some("Carol"));
@@ -1158,7 +1860,8 @@ fn formatting_revisions_round_trip() {
     let bytes = wordcraft_docx::write(&d).unwrap();
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).unwrap();
     let mut xml = String::new();
-    std::io::Read::read_to_string(&mut zip.by_name("word/document.xml").unwrap(), &mut xml).unwrap();
+    std::io::Read::read_to_string(&mut zip.by_name("word/document.xml").unwrap(), &mut xml)
+        .unwrap();
     for (tag, parent) in [
         ("w:rPrChange", "</w:rPr></w:rPrChange></w:rPr>"),
         ("w:pPrChange", "</w:pPr></w:pPrChange></w:pPr>"),
@@ -1170,9 +1873,16 @@ fn formatting_revisions_round_trip() {
         assert!(xml.contains(&format!("<{tag} w:id=")), "{tag}: {xml}");
         assert!(xml.contains(parent), "{tag} last: {xml}");
     }
-    assert!(xml.contains(r#"<w:numberingChange w:id="#) && xml.contains(r#"w:original="1."/></w:numPr>"#), "{xml}");
+    assert!(
+        xml.contains(r#"<w:numberingChange w:id="#)
+            && xml.contains(r#"w:original="1."/></w:numPr>"#),
+        "{xml}"
+    );
     assert!(xml.contains(r#"<w:b/><w:rPrChange w:id="#), "{xml}");
-    assert!(!xml.contains("<w:bCs"), "Saving must not add an absent complex-script bold: {xml}");
+    assert!(
+        !xml.contains("<w:bCs"),
+        "Saving must not add an absent complex-script bold: {xml}"
+    );
     let again = wordcraft_docx::read(&bytes).unwrap();
     assert_eq!(again.body, d.body);
     assert_eq!(again.last_section, d.last_section);
@@ -1186,8 +1896,14 @@ fn themed_docx(body: &str, styles: &str, settings: Option<&str>) -> Document {
     let styles = format!(
         r#"<w:styles {W_NS}><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>{styles}</w:styles>"#
     );
-    let mut doc_rels = vec![("rId1", "styles", "styles.xml"), ("rId2", "theme", "theme/theme1.xml")];
-    let mut extra = vec![("word/styles.xml", styles.as_str()), ("word/theme/theme1.xml", theme)];
+    let mut doc_rels = vec![
+        ("rId1", "styles", "styles.xml"),
+        ("rId2", "theme", "theme/theme1.xml"),
+    ];
+    let mut extra = vec![
+        ("word/styles.xml", styles.as_str()),
+        ("word/theme/theme1.xml", theme),
+    ];
     let settings = settings.map(|s| format!(r#"<w:settings {W_NS}>{s}</w:settings>"#));
     if let Some(s) = &settings {
         doc_rels.push(("rId3", "settings", "settings.xml"));
@@ -1214,36 +1930,74 @@ fn theme_colour_wins_over_the_fixed_colour() {
     let p = paras(&d);
     let at = |i: usize| p[1].props_of_char(i);
     // Colours Word writes into w:val next to these theme colours (Grid Table and heading styles).
-    assert!(near(at(0).color, Rgb(0x8E, 0xAA, 0xDB)), "{:?}", at(0).color);
-    assert!(near(at(1).color, Rgb(0xB4, 0xC6, 0xE7)), "{:?}", at(1).color);
-    assert!(near(at(2).color, Rgb(0xD9, 0xE2, 0xF3)), "{:?}", at(2).color);
-    assert!(near(at(3).color, Rgb(0x1F, 0x37, 0x63)), "{:?}", at(3).color);
-    assert!(near(at(4).color, Rgb(0xC4, 0x59, 0x11)), "{:?}", at(4).color);
+    assert!(
+        near(at(0).color, Rgb(0x8E, 0xAA, 0xDB)),
+        "{:?}",
+        at(0).color
+    );
+    assert!(
+        near(at(1).color, Rgb(0xB4, 0xC6, 0xE7)),
+        "{:?}",
+        at(1).color
+    );
+    assert!(
+        near(at(2).color, Rgb(0xD9, 0xE2, 0xF3)),
+        "{:?}",
+        at(2).color
+    );
+    assert!(
+        near(at(3).color, Rgb(0x1F, 0x37, 0x63)),
+        "{:?}",
+        at(3).color
+    );
+    assert!(
+        near(at(4).color, Rgb(0xC4, 0x59, 0x11)),
+        "{:?}",
+        at(4).color
+    );
     // text2 maps to dk2 without a w:clrSchemeMapping; hyperlink to hlink.
     assert_eq!(at(5).color, Some(TextColor::Rgb(Rgb(0x44, 0x54, 0x6A))));
     assert_eq!(at(6).color, Some(TextColor::Rgb(Rgb(0x05, 0x63, 0xC1))));
     let fill = at(7).shading.unwrap();
-    assert!(near(Some(TextColor::Rgb(fill)), Rgb(0xFB, 0xE4, 0xD5)), "{fill:?}");
+    assert!(
+        near(Some(TextColor::Rgb(fill)), Rgb(0xFB, 0xE4, 0xD5)),
+        "{fill:?}"
+    );
 }
 
 #[test]
 fn theme_colours_follow_the_colour_scheme_mapping() {
     // Styles are read before settings; the mapping still applies to them.
-    let styles =
-        r#"<w:style w:type="character" w:styleId="T1"><w:name w:val="T1"/><w:rPr><w:color w:val="000000" w:themeColor="text1"/></w:rPr></w:style>"#;
+    let styles = r#"<w:style w:type="character" w:styleId="T1"><w:name w:val="T1"/><w:rPr><w:color w:val="000000" w:themeColor="text1"/></w:rPr></w:style>"#;
     let body = r#"<w:p><w:r><w:rPr><w:rStyle w:val="T1"/></w:rPr><w:t>a</w:t></w:r><w:r><w:rPr><w:color w:val="000000" w:themeColor="background1"/></w:rPr><w:t>b</w:t></w:r><w:r><w:rPr><w:color w:val="000000" w:themeColor="dark1"/></w:rPr><w:t>c</w:t></w:r></w:p>"#;
     let mapping = r#"<w:clrSchemeMapping w:bg1="dark1" w:t1="accent2" w:bg2="light2" w:t2="dark2" w:accent1="accent1" w:accent2="accent2" w:accent3="accent3" w:accent4="accent4" w:accent5="accent5" w:accent6="accent6" w:hyperlink="hyperlink" w:followedHyperlink="followedHyperlink"/>"#;
     let d = themed_docx(body, styles, Some(mapping));
-    assert_eq!(d.styles.get("T1").unwrap().chr.color, Some(TextColor::Rgb(Rgb(0xED, 0x7D, 0x31))));
+    assert_eq!(
+        d.styles.get("T1").unwrap().chr.color,
+        Some(TextColor::Rgb(Rgb(0xED, 0x7D, 0x31)))
+    );
     let p = paras(&d);
-    assert_eq!(p[0].props_of_char(1).color, Some(TextColor::Rgb(Rgb(0, 0, 0))), "background1 → dark1");
-    assert_eq!(p[0].props_of_char(2).color, Some(TextColor::Rgb(Rgb(0, 0, 0))), "dark1 isn't remapped");
+    assert_eq!(
+        p[0].props_of_char(1).color,
+        Some(TextColor::Rgb(Rgb(0, 0, 0))),
+        "background1 → dark1"
+    );
+    assert_eq!(
+        p[0].props_of_char(2).color,
+        Some(TextColor::Rgb(Rgb(0, 0, 0))),
+        "dark1 isn't remapped"
+    );
 }
 
 #[test]
 fn theme_colour_without_a_theme_keeps_the_fixed_colour() {
-    let d = read_body(r#"<w:p><w:r><w:rPr><w:color w:val="00FF00" w:themeColor="accent1" w:themeShade="BF"/></w:rPr><w:t>a</w:t></w:r></w:p>"#);
-    assert_eq!(paras(&d)[0].props_of_char(0).color, Some(TextColor::Rgb(Rgb(0, 0xFF, 0))));
+    let d = read_body(
+        r#"<w:p><w:r><w:rPr><w:color w:val="00FF00" w:themeColor="accent1" w:themeShade="BF"/></w:rPr><w:t>a</w:t></w:r></w:p>"#,
+    );
+    assert_eq!(
+        paras(&d)[0].props_of_char(0).color,
+        Some(TextColor::Rgb(Rgb(0, 0xFF, 0)))
+    );
 }
 
 #[test]
@@ -1252,7 +2006,10 @@ fn theme_font_wins_over_the_fixed_font() {
     let body = r#"<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>H</w:t></w:r></w:p>
 <w:p><w:r><w:rPr><w:rFonts w:hAnsi="Arial" w:hAnsiTheme="minorHAnsi"/></w:rPr><w:t>a</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:asciiTheme="minorHAnsi"/></w:rPr><w:t>b</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsiTheme="majorHAnsi"/></w:rPr><w:t>c</w:t></w:r></w:p>"#;
     let d = themed_docx(body, styles, None);
-    assert_eq!(d.styles.get("Heading1").unwrap().chr.font.as_deref(), Some("Major Face"));
+    assert_eq!(
+        d.styles.get("Heading1").unwrap().chr.font.as_deref(),
+        Some("Major Face")
+    );
     let p = paras(&d);
     assert_eq!(p[1].props_of_char(0).font.as_deref(), Some("Minor Face"));
     assert_eq!(p[1].props_of_char(1).font.as_deref(), Some("Minor Face"));
@@ -1274,11 +2031,28 @@ fn move_revisions_round_trip() {
     let check = |d: &Document| {
         let p = paras(d);
         let name = |r: Option<u32>| d.move_name(r).map(str::to_string);
-        assert_eq!(name(p[0].mark.ins).as_deref(), Some("move1"), "a moved paragraph mark");
+        assert_eq!(
+            name(p[0].mark.ins).as_deref(),
+            Some("move1"),
+            "a moved paragraph mark"
+        );
         let to = p[0].runs[0].props.ins;
-        assert_eq!((name(to).as_deref(), d.revisions[to.unwrap() as usize].kind), (Some("move1"), RevisionKind::Insert));
-        let from = p[1].run_ranges().find(|(_, c)| c.del.is_some()).map(|(_, c)| c.del).unwrap();
-        assert_eq!((name(from).as_deref(), d.revisions[from.unwrap() as usize].kind), (Some("move1"), RevisionKind::Delete));
+        assert_eq!(
+            (name(to).as_deref(), d.revisions[to.unwrap() as usize].kind),
+            (Some("move1"), RevisionKind::Insert)
+        );
+        let from = p[1]
+            .run_ranges()
+            .find(|(_, c)| c.del.is_some())
+            .map(|(_, c)| c.del)
+            .unwrap();
+        assert_eq!(
+            (
+                name(from).as_deref(),
+                d.revisions[from.unwrap() as usize].kind
+            ),
+            (Some("move1"), RevisionKind::Delete)
+        );
         assert_eq!(d.revisions[from.unwrap() as usize].author, "Ana");
         // Hostile ends: each is a plain revision, still tracked.
         for (r, c) in p[2].run_ranges() {
@@ -1290,12 +2064,24 @@ fn move_revisions_round_trip() {
     check(&d);
     let out = wordcraft_docx::write(&d).unwrap();
     let xml = text(&unzip(&out), "word/document.xml");
-    assert_eq!(attr_values(&xml, "w:moveFromRangeStart", "w:name"), ["move1"]);
+    assert_eq!(
+        attr_values(&xml, "w:moveFromRangeStart", "w:name"),
+        ["move1"]
+    );
     assert_eq!(attr_values(&xml, "w:moveToRangeStart", "w:name"), ["move1"]);
     assert_eq!(attr_values(&xml, "w:moveToRangeStart", "w:author"), ["Ana"]);
-    assert_eq!(attr_values(&xml, "w:moveToRangeStart", "w:id"), attr_values(&xml, "w:moveToRangeEnd", "w:id"));
-    assert_eq!(attr_values(&xml, "w:moveFromRangeStart", "w:id"), attr_values(&xml, "w:moveFromRangeEnd", "w:id"));
-    assert!(xml.contains("<w:moveFrom ") && !xml.contains("<w:delText xml:space=\"preserve\">Moved"), "moved-away text stays in w:t");
+    assert_eq!(
+        attr_values(&xml, "w:moveToRangeStart", "w:id"),
+        attr_values(&xml, "w:moveToRangeEnd", "w:id")
+    );
+    assert_eq!(
+        attr_values(&xml, "w:moveFromRangeStart", "w:id"),
+        attr_values(&xml, "w:moveFromRangeEnd", "w:id")
+    );
+    assert!(
+        xml.contains("<w:moveFrom ") && !xml.contains("<w:delText xml:space=\"preserve\">Moved"),
+        "moved-away text stays in w:t"
+    );
     // The range around the moved paragraph includes its mark: it ends in the next paragraph.
     let to_start = xml.find("<w:moveToRangeStart").unwrap();
     let to_end = xml.find("<w:moveToRangeEnd").unwrap();
@@ -1311,23 +2097,45 @@ fn note_separators_and_continuation_notice_round_trip() {
         r#"<w:footnotes {W_NS}><w:footnote w:type="separator" w:id="-1"><w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:t xml:space="preserve">More: </w:t></w:r><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:type="continuationNotice" w:id="1"><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:t>(continued)</w:t></w:r></w:p></w:footnote><w:footnote w:id="2"><w:p><w:r><w:footnoteRef/></w:r><w:r><w:t xml:space="preserve"> The note.</w:t></w:r></w:p></w:footnote></w:footnotes>"#
     );
     let body = r#"<w:p><w:r><w:t>Text</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p>"#;
-    let bytes = docx(body, &[("rId1", "footnotes", "footnotes.xml")], &[("word/footnotes.xml", &footnotes)]);
+    let bytes = docx(
+        body,
+        &[("rId1", "footnotes", "footnotes.xml")],
+        &[("word/footnotes.xml", &footnotes)],
+    );
     let check = |d: &Document| {
         let s = &d.footnote_separators;
-        let first = |b: &Option<wordcraft_doc::Blocks>| b.as_ref().unwrap()[0].as_para().unwrap().clone();
+        let first =
+            |b: &Option<wordcraft_doc::Blocks>| b.as_ref().unwrap()[0].as_para().unwrap().clone();
         let sep = first(&s.separator);
-        assert_eq!(sep.objects.iter().map(InlineObject::as_note_separator).collect::<Vec<_>>(), vec![Some(false)]);
+        assert_eq!(
+            sep.objects
+                .iter()
+                .map(InlineObject::as_note_separator)
+                .collect::<Vec<_>>(),
+            vec![Some(false)]
+        );
         assert_eq!(sep.props.space_after, Some(0.0));
         let cont = first(&s.continuation_separator);
         assert_eq!(cont.plain_text(), "More: ");
-        assert_eq!(cont.objects.iter().map(InlineObject::as_note_separator).collect::<Vec<_>>(), vec![Some(true)]);
+        assert_eq!(
+            cont.objects
+                .iter()
+                .map(InlineObject::as_note_separator)
+                .collect::<Vec<_>>(),
+            vec![Some(true)]
+        );
         let notice = first(&s.continuation_notice);
         assert_eq!(notice.plain_text(), "(continued)");
         assert_eq!(notice.props.align, Some(Align::Right));
         assert!(d.endnote_separators.is_empty());
         // The note itself is read as before.
-        let InlineObject::NoteRef { id, .. } = paras(d)[0].objects[0] else { panic!() };
-        assert_eq!(d.parts[&id].blocks[0].as_para().unwrap().plain_text(), " The note.");
+        let InlineObject::NoteRef { id, .. } = paras(d)[0].objects[0] else {
+            panic!()
+        };
+        assert_eq!(
+            d.parts[&id].blocks[0].as_para().unwrap().plain_text(),
+            " The note."
+        );
         assert_eq!(d.parts.len(), 1, "special notes aren't notes");
     };
     let d = wordcraft_docx::read(&bytes).unwrap();
@@ -1341,13 +2149,26 @@ fn note_separators_and_continuation_notice_round_trip() {
         xml
     };
     let notes = part("word/footnotes.xml");
-    for (kind, id) in [("separator", "-1"), ("continuationSeparator", "0"), ("continuationNotice", "1")] {
-        assert!(notes.contains(&format!(r#"<w:footnote w:type="{kind}" w:id="{id}">"#)), "{kind}: {notes}");
+    for (kind, id) in [
+        ("separator", "-1"),
+        ("continuationSeparator", "0"),
+        ("continuationNotice", "1"),
+    ] {
+        assert!(
+            notes.contains(&format!(r#"<w:footnote w:type="{kind}" w:id="{id}">"#)),
+            "{kind}: {notes}"
+        );
     }
-    assert!(notes.contains(r#"<w:footnote w:id="2">"#), "the note follows the notice: {notes}");
+    assert!(
+        notes.contains(r#"<w:footnote w:id="2">"#),
+        "the note follows the notice: {notes}"
+    );
     assert!(part("word/document.xml").contains(r#"<w:footnoteReference w:id="2"/>"#));
     let settings = part("word/settings.xml");
-    assert!(settings.contains(r#"<w:footnote w:id="-1"/><w:footnote w:id="0"/><w:footnote w:id="1"/>"#), "{settings}");
+    assert!(
+        settings.contains(r#"<w:footnote w:id="-1"/><w:footnote w:id="0"/><w:footnote w:id="1"/>"#),
+        "{settings}"
+    );
     check(&wordcraft_docx::read(&out).unwrap());
 }
 
@@ -1358,7 +2179,9 @@ fn east_asian_number_formats_read_label_and_round_trip() {
     use wordcraft_doc::numbering::Counters;
     use wordcraft_doc::section::NumFormat;
     let lvl = |i: u8, fmt: &str, text: &str| {
-        format!(r#"<w:lvl w:ilvl="{i}"><w:start w:val="1"/><w:numFmt w:val="{fmt}"/><w:suff w:val="nothing"/><w:lvlText w:val="{text}"/></w:lvl>"#)
+        format!(
+            r#"<w:lvl w:ilvl="{i}"><w:start w:val="1"/><w:numFmt w:val="{fmt}"/><w:suff w:val="nothing"/><w:lvlText w:val="{text}"/></w:lvl>"#
+        )
     };
     let levels = [
         lvl(0, "chineseCounting", "%1、"),
@@ -1372,11 +2195,23 @@ fn east_asian_number_formats_read_label_and_round_trip() {
     let numbering = format!(
         r#"<w:numbering {W_NS}><w:abstractNum w:abstractNumId="0">{levels}</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>"#
     );
-    let item = |lv: u8| format!(r#"<w:p><w:pPr><w:numPr><w:ilvl w:val="{lv}"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>x</w:t></w:r></w:p>"#);
+    let item = |lv: u8| {
+        format!(
+            r#"<w:p><w:pPr><w:numPr><w:ilvl w:val="{lv}"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>x</w:t></w:r></w:p>"#
+        )
+    };
     let body: String = [0, 0, 0, 1, 2, 3, 4, 5].map(item).concat();
-    let bytes = docx(&body, &[("rId1", "numbering", "numbering.xml")], &[("word/numbering.xml", &numbering)]);
+    let bytes = docx(
+        &body,
+        &[("rId1", "numbering", "numbering.xml")],
+        &[("word/numbering.xml", &numbering)],
+    );
     let d = wordcraft_docx::read(&bytes).unwrap();
-    let formats = |d: &Document| (0..6).map(|i| d.numbering.level(1, i).map(|l| l.format)).collect::<Vec<_>>();
+    let formats = |d: &Document| {
+        (0..6)
+            .map(|i| d.numbering.level(1, i).map(|l| l.format))
+            .collect::<Vec<_>>()
+    };
     let want = [
         NumFormat::ChineseCounting,
         NumFormat::ChineseCountingThousand,
@@ -1387,11 +2222,21 @@ fn east_asian_number_formats_read_label_and_round_trip() {
     ]
     .map(Some);
     assert_eq!(formats(&d), want);
-    assert_eq!(d.numbering.level(1, 0).map(|l| (l.indent, l.hanging)), Some((0.0, 0.0)));
+    assert_eq!(
+        d.numbering.level(1, 0).map(|l| (l.indent, l.hanging)),
+        Some((0.0, 0.0))
+    );
     let mut c = Counters::default();
-    let labels: Vec<String> =
-        paras(&d).iter().filter_map(|p| p.props.numbering).filter_map(|n| c.next_label(&d.numbering, n.num, n.level)).map(|l| l.0).collect();
-    assert_eq!(labels, ["一、", "二、", "三、", "第一章", "（壱）", "①", "1.", "1."]);
+    let labels: Vec<String> = paras(&d)
+        .iter()
+        .filter_map(|p| p.props.numbering)
+        .filter_map(|n| c.next_label(&d.numbering, n.num, n.level))
+        .map(|l| l.0)
+        .collect();
+    assert_eq!(
+        labels,
+        ["一、", "二、", "三、", "第一章", "（壱）", "①", "1.", "1."]
+    );
     // Saved and read again, every format is the one the file had (hebrew1 too, which shows as
     // decimal for now).
     let out = wordcraft_docx::write(&d).unwrap();
@@ -1406,10 +2251,23 @@ fn bookmark_around_final_table_keeps_its_end() {
     let body = r#"<w:bookmarkStart w:id="7" w:name="TableRange"/><w:tbl><w:tblPr/><w:tblGrid><w:gridCol w:w="1440"/></w:tblGrid><w:tr><w:tc><w:tcPr/><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:bookmarkEnd w:id="7"/><w:sectPr/>"#;
     let d = read_body(body);
     let marks = |d: &Document| {
-        let Block::Table(t) = &*d.body[0] else { panic!("{:?}", d.body[0]) };
-        t.rows[0].cells[0].blocks[0].as_para().unwrap().objects.clone()
+        let Block::Table(t) = &*d.body[0] else {
+            panic!("{:?}", d.body[0])
+        };
+        t.rows[0].cells[0].blocks[0]
+            .as_para()
+            .unwrap()
+            .objects
+            .clone()
     };
-    let want = vec![InlineObject::BookmarkStart { name: "TableRange".into() }, InlineObject::BookmarkEnd { name: "TableRange".into() }];
+    let want = vec![
+        InlineObject::BookmarkStart {
+            name: "TableRange".into(),
+        },
+        InlineObject::BookmarkEnd {
+            name: "TableRange".into(),
+        },
+    ];
     assert_eq!(marks(&d), want);
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
     assert_eq!(marks(&again), want);
@@ -1423,8 +2281,18 @@ fn includepicture_keeps_its_embedded_picture() {
     let png: &[u8] = b"\x89PNG\r\n\x1a\nstand-in";
     let pic = r#"<w:r><w:drawing><wp:inline><wp:extent cx="914400" cy="914400"/><wp:docPr id="1" name="P"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:blipFill><a:blip r:embed="rIdPic"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"#;
     let cases = [
-        (format!(r#"<w:fldSimple w:instr="INCLUDEPICTURE &quot;picture.png&quot;">{pic}</w:fldSimple>"#), false),
-        (format!(r#"<w:fldSimple w:instr="INCLUDEPICTURE &quot;picture.png&quot;" w:fldLock="1">{pic}</w:fldSimple>"#), true),
+        (
+            format!(
+                r#"<w:fldSimple w:instr="INCLUDEPICTURE &quot;picture.png&quot;">{pic}</w:fldSimple>"#
+            ),
+            false,
+        ),
+        (
+            format!(
+                r#"<w:fldSimple w:instr="INCLUDEPICTURE &quot;picture.png&quot;" w:fldLock="1">{pic}</w:fldSimple>"#
+            ),
+            true,
+        ),
         (
             format!(
                 r#"<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> INCLUDEPICTURE "picture.png" </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>{pic}<w:r><w:fldChar w:fldCharType="end"/></w:r>"#
@@ -1433,7 +2301,11 @@ fn includepicture_keeps_its_embedded_picture() {
         ),
     ];
     for (field, locked) in cases {
-        let bytes = docx(&format!("<w:p>{field}</w:p><w:sectPr/>"), &[("rIdPic", "image", "media/picture.png")], &[]);
+        let bytes = docx(
+            &format!("<w:p>{field}</w:p><w:sectPr/>"),
+            &[("rIdPic", "image", "media/picture.png")],
+            &[],
+        );
         let bytes = {
             // `docx` takes text parts; add the picture bytes as a binary part.
             let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
@@ -1445,14 +2317,25 @@ fn includepicture_keeps_its_embedded_picture() {
                 entries.push((f.name().to_string(), v));
             }
             entries.push(("word/media/picture.png".into(), png.to_vec()));
-            zip(&entries.iter().map(|(n, v)| (n.as_str(), v.as_slice())).collect::<Vec<_>>())
+            zip(&entries
+                .iter()
+                .map(|(n, v)| (n.as_str(), v.as_slice()))
+                .collect::<Vec<_>>())
         };
         let check = |d: &Document| {
             let p = paras(d);
             let objs = &p[0].objects;
             assert_eq!(objs.len(), 3, "{objs:?}");
-            assert_eq!(objs[0], InlineObject::FieldStart { instr: "INCLUDEPICTURE \"picture.png\"".into(), locked });
-            let InlineObject::Image { media, .. } = &objs[1] else { panic!("{objs:?}") };
+            assert_eq!(
+                objs[0],
+                InlineObject::FieldStart {
+                    instr: "INCLUDEPICTURE \"picture.png\"".into(),
+                    locked
+                }
+            );
+            let InlineObject::Image { media, .. } = &objs[1] else {
+                panic!("{objs:?}")
+            };
             assert_eq!(d.media.get(media).unwrap().as_slice(), png);
             assert_eq!(objs[2], InlineObject::FieldEnd);
         };
@@ -1505,19 +2388,74 @@ fn theme_styled_connectors_and_callout_boxes_keep_their_paint() {
     let objs = &paras(&d)[0].objects;
     assert_eq!(objs.len(), 5);
     let shape = |i: usize| match &objs[i] {
-        InlineObject::Shape { kind, fill, stroke, stroke_width, extra, story, .. } => {
-            (*kind, *fill, *stroke, *stroke_width, extra.arrow_end, story.is_some())
-        }
+        InlineObject::Shape {
+            kind,
+            fill,
+            stroke,
+            stroke_width,
+            extra,
+            story,
+            ..
+        } => (
+            *kind,
+            *fill,
+            *stroke,
+            *stroke_width,
+            extra.arrow_end,
+            story.is_some(),
+        ),
         o => panic!("{o:?}"),
     };
-    assert_eq!(shape(0), (ShapeKind::StraightConnector, None, Some(theme[7]), 0.5, true, false));
-    assert_eq!(shape(1), (ShapeKind::TextBox, Some(theme[1]), Some(Rgb(0, 0, 0)), 0.5, false, true));
-    assert_eq!(shape(2), (ShapeKind::Rectangle, Some(theme[4]), Some(theme[4]), 1.0, false, false));
-    assert_eq!(shape(3), (ShapeKind::ElbowConnector, None, Some(theme[5]), 0.5, false, false));
+    assert_eq!(
+        shape(0),
+        (
+            ShapeKind::StraightConnector,
+            None,
+            Some(theme[7]),
+            0.5,
+            true,
+            false
+        )
+    );
+    assert_eq!(
+        shape(1),
+        (
+            ShapeKind::TextBox,
+            Some(theme[1]),
+            Some(Rgb(0, 0, 0)),
+            0.5,
+            false,
+            true
+        )
+    );
+    assert_eq!(
+        shape(2),
+        (
+            ShapeKind::Rectangle,
+            Some(theme[4]),
+            Some(theme[4]),
+            1.0,
+            false,
+            false
+        )
+    );
+    assert_eq!(
+        shape(3),
+        (
+            ShapeKind::ElbowConnector,
+            None,
+            Some(theme[5]),
+            0.5,
+            false,
+            false
+        )
+    );
     assert_eq!(shape(4).0, ShapeKind::RoundedRectangle);
     // The themed outline and the arrowhead survive saving.
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
-    assert!(matches!(&paras(&again)[0].objects[0], InlineObject::Shape { stroke, extra, .. } if *stroke == Some(theme[7]) && extra.arrow_end));
+    assert!(
+        matches!(&paras(&again)[0].objects[0], InlineObject::Shape { stroke, extra, .. } if *stroke == Some(theme[7]) && extra.arrow_end)
+    );
 }
 
 /// #611: legacy VML lines and rectangles (documents without DrawingML).
@@ -1529,14 +2467,39 @@ fn vml_lines_and_rectangles() {
     let objs = &paras(&d)[0].objects;
     assert_eq!(objs.len(), 2, "{objs:?}");
     match &objs[0] {
-        InlineObject::Shape { kind: ShapeKind::Line, w, h, stroke, stroke_width, float, extra, .. } => {
-            assert_eq!((*w, *h, *stroke, *stroke_width), (30.0, 40.0, Some(Rgb(0x44, 0x72, 0xC4)), 0.5));
-            assert_eq!((float.x, float.y, float.flip_h, float.flip_v), (10.0, 20.0, false, true));
+        InlineObject::Shape {
+            kind: ShapeKind::Line,
+            w,
+            h,
+            stroke,
+            stroke_width,
+            float,
+            extra,
+            ..
+        } => {
+            assert_eq!(
+                (*w, *h, *stroke, *stroke_width),
+                (30.0, 40.0, Some(Rgb(0x44, 0x72, 0xC4)), 0.5)
+            );
+            assert_eq!(
+                (float.x, float.y, float.flip_h, float.flip_v),
+                (10.0, 20.0, false, true)
+            );
             assert!(extra.arrow_end && !extra.arrow_start);
         }
         o => panic!("{o:?}"),
     }
-    assert!(matches!(&objs[1], InlineObject::Shape { kind: ShapeKind::Rectangle, fill: Some(Rgb(255, 0, 0)), stroke: None, w: 30.0, h: 20.0, .. }));
+    assert!(matches!(
+        &objs[1],
+        InlineObject::Shape {
+            kind: ShapeKind::Rectangle,
+            fill: Some(Rgb(255, 0, 0)),
+            stroke: None,
+            w: 30.0,
+            h: 20.0,
+            ..
+        }
+    ));
 }
 
 /// #743: a cover page from Word: a group holding a rectangle filled through its style, a
@@ -1546,8 +2509,18 @@ fn vml_lines_and_rectangles() {
 #[test]
 fn cover_page_group_fills_freeforms_and_text_box_margins() {
     let style = r#"<wps:style><a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="50000"/></a:schemeClr></a:lnRef><a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef><a:effectRef idx="0"><a:schemeClr val="accent1"/></a:effectRef><a:fontRef idx="minor"><a:schemeClr val="lt1"/></a:fontRef></wps:style>"#;
-    let member = |id: u32, txbox: bool, off: (u32, u32), ext: (u32, u32), geom: &str, paint: &str, inner: &str| {
-        let nv = if txbox { r#"<wps:cNvSpPr txBox="1"/>"# } else { "<wps:cNvSpPr/>" };
+    let member = |id: u32,
+                  txbox: bool,
+                  off: (u32, u32),
+                  ext: (u32, u32),
+                  geom: &str,
+                  paint: &str,
+                  inner: &str| {
+        let nv = if txbox {
+            r#"<wps:cNvSpPr txBox="1"/>"#
+        } else {
+            "<wps:cNvSpPr/>"
+        };
         format!(
             r#"<wps:wsp><wps:cNvPr id="{id}" name="Member {id}"/>{nv}<wps:spPr><a:xfrm><a:off x="{}" y="{}"/><a:ext cx="{}" cy="{}"/></a:xfrm>{geom}{paint}</wps:spPr>{style}{inner}</wps:wsp>"#,
             off.0, off.1, ext.0, ext.1
@@ -1557,7 +2530,15 @@ fn cover_page_group_fills_freeforms_and_text_box_margins() {
     let band = r#"<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst><a:path w="100" h="100"><a:moveTo><a:pt x="0" y="100"/></a:moveTo><a:lnTo><a:pt x="100" y="0"/></a:lnTo><a:lnTo><a:pt x="100" y="100"/></a:lnTo><a:close/></a:path></a:pathLst></a:custGeom>"#;
     let title = r#"<wps:txbx><w:txbxContent><w:p><w:r><w:t>Cover Title</w:t></w:r></w:p></w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t"><a:noAutofit/></wps:bodyPr>"#;
     let members = [
-        member(11, false, (0, 0), (5486400, 5486400), rect, r#"<a:ln><a:noFill/></a:ln>"#, "<wps:bodyPr/>"),
+        member(
+            11,
+            false,
+            (0, 0),
+            (5486400, 5486400),
+            rect,
+            r#"<a:ln><a:noFill/></a:ln>"#,
+            "<wps:bodyPr/>",
+        ),
         member(
             12,
             false,
@@ -1567,7 +2548,15 @@ fn cover_page_group_fills_freeforms_and_text_box_margins() {
             r#"<a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:ln><a:noFill/></a:ln>"#,
             "<wps:bodyPr/>",
         ),
-        member(13, true, (457200, 457200), (4572000, 1828800), rect, r#"<a:noFill/><a:ln><a:noFill/></a:ln>"#, title),
+        member(
+            13,
+            true,
+            (457200, 457200),
+            (4572000, 1828800),
+            rect,
+            r#"<a:noFill/><a:ln><a:noFill/></a:ln>"#,
+            title,
+        ),
     ]
     .concat();
     let group = format!(
@@ -1586,23 +2575,52 @@ fn cover_page_group_fills_freeforms_and_text_box_margins() {
     let check = |d: &Document| {
         let theme = &d.settings.theme_colors;
         let objs = &paras(d)[0].objects;
-        let InlineObject::Group { children, .. } = &objs[0] else { panic!("{:?}", objs[0]) };
+        let InlineObject::Group { children, .. } = &objs[0] else {
+            panic!("{:?}", objs[0])
+        };
         assert_eq!(children.len(), 3);
         let shape = |i: usize| match &children[i].obj {
-            InlineObject::Shape { kind, fill, freeform, story, .. } => (*kind, *fill, freeform.is_some(), *story),
+            InlineObject::Shape {
+                kind,
+                fill,
+                freeform,
+                story,
+                ..
+            } => (*kind, *fill, freeform.is_some(), *story),
             o => panic!("{o:?}"),
         };
         let (kind, fill, free, _) = shape(0);
-        assert_eq!((kind, fill, free), (ShapeKind::Rectangle, Some(theme[4]), false), "the style's accent fill");
+        assert_eq!(
+            (kind, fill, free),
+            (ShapeKind::Rectangle, Some(theme[4]), false),
+            "the style's accent fill"
+        );
         let (kind, fill, free, _) = shape(1);
-        assert_eq!((kind, fill, free), (ShapeKind::Freeform, Some(theme[1]), true), "a freeform in a group keeps its outline");
+        assert_eq!(
+            (kind, fill, free),
+            (ShapeKind::Freeform, Some(theme[1]), true),
+            "a freeform in a group keeps its outline"
+        );
         let (kind, _, _, story) = shape(2);
         assert_eq!(kind, ShapeKind::TextBox);
         let body = d.parts[&story.unwrap()].body;
-        assert_eq!((body.inset, body.auto_fit), (Some([0; 4]), false), "the title box has no margins");
-        let InlineObject::Shape { story: Some(sub), .. } = &objs[1] else { panic!("{:?}", objs[1]) };
+        assert_eq!(
+            (body.inset, body.auto_fit),
+            (Some([0; 4]), false),
+            "the title box has no margins"
+        );
+        let InlineObject::Shape {
+            story: Some(sub), ..
+        } = &objs[1]
+        else {
+            panic!("{:?}", objs[1])
+        };
         let body = d.parts[sub].body;
-        assert_eq!((body.inset, body.auto_fit), (Some([0, 12700, 0, 0]), true), "the subtitle resizes to fit its text");
+        assert_eq!(
+            (body.inset, body.auto_fit),
+            (Some([0, 12700, 0, 0]), true),
+            "the subtitle resizes to fit its text"
+        );
     };
     let d = read_body(&format!("<w:p>{group}{subtitle}</w:p>"));
     check(&d);
@@ -1612,7 +2630,10 @@ fn cover_page_group_fills_freeforms_and_text_box_margins() {
 #[test]
 fn embedded_fonts_survive_a_round_trip() {
     let table = r#"<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:font w:name="Roboto"><w:embedRegular r:id="rId1"/><w:embedBold r:id="rId2"/></w:font></w:fonts>"#;
-    let table_rels = rels(&[("rId1", "font", "fonts/Roboto-regular.ttf"), ("rId2", "font", "fonts/Roboto-bold.ttf")]);
+    let table_rels = rels(&[
+        ("rId1", "font", "fonts/Roboto-regular.ttf"),
+        ("rId2", "font", "fonts/Roboto-bold.ttf"),
+    ]);
     let bytes = docx(
         "<w:p><w:r><w:t>Hi</w:t></w:r></w:p>",
         &[("rId9", "fontTable", "fontTable.xml")],
@@ -1626,14 +2647,26 @@ fn embedded_fonts_survive_a_round_trip() {
     let out = wordcraft_docx::write(&wordcraft_docx::read(&bytes).unwrap()).unwrap();
     let files = unzip(&out);
     assert_eq!(text(&files, "word/fontTable.xml"), table);
-    assert_eq!(text(&files, "word/fonts/Roboto-regular.ttf"), "regular font bytes");
-    assert_eq!(text(&files, "word/fonts/Roboto-bold.ttf"), "bold font bytes");
+    assert_eq!(
+        text(&files, "word/fonts/Roboto-regular.ttf"),
+        "regular font bytes"
+    );
+    assert_eq!(
+        text(&files, "word/fonts/Roboto-bold.ttf"),
+        "bold font bytes"
+    );
     let table_rels = text(&files, "word/_rels/fontTable.xml.rels");
-    assert!(table_rels.contains(r#"Id="rId1""#) && table_rels.contains("fonts/Roboto-regular.ttf"), "{table_rels}");
+    assert!(
+        table_rels.contains(r#"Id="rId1""#) && table_rels.contains("fonts/Roboto-regular.ttf"),
+        "{table_rels}"
+    );
     assert!(text(&files, "word/_rels/document.xml.rels").contains("fontTable.xml"));
     // A second save keeps them too.
     let again = unzip(&wordcraft_docx::write(&wordcraft_docx::read(&out).unwrap()).unwrap());
-    assert_eq!(text(&again, "word/fonts/Roboto-bold.ttf"), "bold font bytes");
+    assert_eq!(
+        text(&again, "word/fonts/Roboto-bold.ttf"),
+        "bold font bytes"
+    );
 }
 
 // ---- native Word ink: opaque preservation, never re-encoded as WordCraft freeforms ----
@@ -1657,7 +2690,10 @@ fn ink_docx(fallback: bool, alias: bool) -> Vec<u8> {
     };
     let body = format!("<w:p><w:r><w:t>Original</w:t></w:r></w:p><w:p><w:r>{markup}</w:r></w:p>");
     let mut relationships = vec![("rInk", "customXml", "ink/ink1.xml")];
-    let mut extra = vec![("[Content_Types].xml", INK_TYPES), ("word/ink/ink1.xml", INK_XML)];
+    let mut extra = vec![
+        ("[Content_Types].xml", INK_TYPES),
+        ("word/ink/ink1.xml", INK_XML),
+    ];
     if fallback {
         relationships.push(("rPreview", "image", "media/preview.png"));
         extra.push(("word/media/preview.png", "original preview bytes"));
@@ -1667,12 +2703,16 @@ fn ink_docx(fallback: bool, alias: bool) -> Vec<u8> {
 
 fn check_ink(files: &std::collections::BTreeMap<String, Vec<u8>>) -> String {
     let body = text(files, "word/document.xml");
-    let [id] = attr_values(&body, "w14:contentPart", "r:id").try_into().unwrap_or_else(|_| panic!("ink reference lost: {body}"));
+    let [id] = attr_values(&body, "w14:contentPart", "r:id")
+        .try_into()
+        .unwrap_or_else(|_| panic!("ink reference lost: {body}"));
     let (kind, target) = rel(&text(files, "word/_rels/document.xml.rels"), &id);
     assert!(kind.ends_with("/customXml"));
     let part = part_at("word", &target);
     assert_eq!(text(files, &part), INK_XML);
-    assert!(text(files, "[Content_Types].xml").contains(&format!(r#"PartName="/{part}" ContentType="application/inkml+xml""#)));
+    assert!(text(files, "[Content_Types].xml").contains(&format!(
+        r#"PartName="/{part}" ContentType="application/inkml+xml""#
+    )));
     part
 }
 
@@ -1681,10 +2721,15 @@ fn native_ink_survives_unrelated_edit_and_two_saves() {
     let mut d = wordcraft_docx::read(&ink_docx(false, false)).unwrap();
     let g = graphics(&d);
     assert_eq!(g.len(), 1, "native ink must remain a model object");
-    let InlineObject::Graphic { graphic, .. } = &g[0] else { panic!() };
+    let InlineObject::Graphic { graphic, .. } = &g[0] else {
+        panic!()
+    };
     assert_eq!(graphic.kind.noun(), "ink");
     assert!(graphic.source.is_some());
-    assert!(!graphic.items.is_empty(), "a missing preview must not silently leave a blank frame");
+    assert!(
+        !graphic.items.is_empty(),
+        "a missing preview must not silently leave a blank frame"
+    );
     let p = std::sync::Arc::make_mut(&mut d.body[0]);
     let Block::Para(p) = p else { panic!() };
     p.delete(0, p.len()).unwrap();
@@ -1705,7 +2750,9 @@ fn native_ink_keeps_alternate_content_and_preview_with_renamed_prefixes() {
         let mut d = wordcraft_docx::read(&ink_docx(true, alias)).unwrap();
         let g = graphics(&d);
         assert_eq!(g.len(), 1, "fallback must not replace native ink");
-        let InlineObject::Graphic { graphic, .. } = &g[0] else { panic!() };
+        let InlineObject::Graphic { graphic, .. } = &g[0] else {
+            panic!()
+        };
         assert!(
             graphic.items.iter().any(|item| matches!(item, wordcraft_doc::graphic::GraphicItem::Image { media, .. } if d.media.contains_key(media)))
         );
@@ -1715,10 +2762,15 @@ fn native_ink_keeps_alternate_content_and_preview_with_renamed_prefixes() {
             check_ink(&files);
             let body = text(&files, "word/document.xml");
             assert!(body.contains("<mc:AlternateContent>") && body.contains("<mc:Fallback>"));
-            let [id] = attr_values(&body, "v:imagedata", "r:id").try_into().unwrap();
+            let [id] = attr_values(&body, "v:imagedata", "r:id")
+                .try_into()
+                .unwrap();
             let (kind, target) = rel(&text(&files, "word/_rels/document.xml.rels"), &id);
             assert!(kind.ends_with("/image"));
-            assert_eq!(text(&files, &part_at("word", &target)), "original preview bytes");
+            assert_eq!(
+                text(&files, &part_at("word", &target)),
+                "original preview bytes"
+            );
             d = wordcraft_docx::read(&out).unwrap();
             assert_eq!(graphics(&d).len(), 1);
         }
@@ -1730,20 +2782,35 @@ fn native_ink_missing_part_uses_available_fallback() {
     let bytes = ink_docx(true, true);
     let mut files = unzip(&bytes);
     files.remove("word/ink/ink1.xml");
-    let entries: Vec<_> = files.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect();
+    let entries: Vec<_> = files
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
     let d = wordcraft_docx::read(&zip(&entries)).unwrap();
     assert!(graphics(&d).is_empty());
-    assert!(paras(&d).iter().flat_map(|p| &p.objects).any(|o| matches!(o, InlineObject::Image { .. })));
+    assert!(
+        paras(&d)
+            .iter()
+            .flat_map(|p| &p.objects)
+            .any(|o| matches!(o, InlineObject::Image { .. }))
+    );
     let files = unzip(&wordcraft_docx::write(&d).unwrap());
     assert!(!text(&files, "word/document.xml").contains("w14:contentPart"));
-    assert!(files.values().any(|bytes| bytes == b"original preview bytes"));
+    assert!(
+        files
+            .values()
+            .any(|bytes| bytes == b"original preview bytes")
+    );
 }
 
 #[test]
 fn native_ink_missing_optional_preview_keeps_native_part() {
     let mut files = unzip(&ink_docx(true, false));
     files.remove("word/media/preview.png");
-    let entries: Vec<_> = files.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect();
+    let entries: Vec<_> = files
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
     let d = wordcraft_docx::read(&zip(&entries)).unwrap();
     assert_eq!(graphics(&d).len(), 1);
     let files = unzip(&wordcraft_docx::write(&d).unwrap());
@@ -1755,18 +2822,33 @@ fn native_ink_missing_optional_preview_keeps_native_part() {
 fn native_ink_requires_the_bound_namespace_and_ink_content_type() {
     for wrong_namespace in [true, false] {
         let mut files = unzip(&ink_docx(true, false));
-        let name = if wrong_namespace { "word/document.xml" } else { "[Content_Types].xml" };
+        let name = if wrong_namespace {
+            "word/document.xml"
+        } else {
+            "[Content_Types].xml"
+        };
         let old = text(&files, name);
         let changed = if wrong_namespace {
-            old.replace(&format!(r#"xmlns:wpi="{INK_NS}""#), r#"xmlns:wpi="urn:future:unsupported""#)
+            old.replace(
+                &format!(r#"xmlns:wpi="{INK_NS}""#),
+                r#"xmlns:wpi="urn:future:unsupported""#,
+            )
         } else {
             old.replace("application/inkml+xml", "application/xml")
         };
         files.insert(name.into(), changed.into_bytes());
-        let entries: Vec<_> = files.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect();
+        let entries: Vec<_> = files
+            .iter()
+            .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+            .collect();
         let d = wordcraft_docx::read(&zip(&entries)).unwrap();
         assert!(graphics(&d).is_empty());
-        assert!(paras(&d).iter().flat_map(|p| &p.objects).any(|o| matches!(o, InlineObject::Image { .. })));
+        assert!(
+            paras(&d)
+                .iter()
+                .flat_map(|p| &p.objects)
+                .any(|o| matches!(o, InlineObject::Image { .. }))
+        );
     }
 }
 
@@ -1774,32 +2856,62 @@ fn native_ink_requires_the_bound_namespace_and_ink_content_type() {
 fn native_ink_copies_have_independent_parts_and_current_frames() {
     let mut d = wordcraft_docx::read(&ink_docx(true, false)).unwrap();
     let [mut object] = graphics(&d).try_into().unwrap();
-    let InlineObject::Graphic { w, h, float, .. } = &mut object else { panic!() };
+    let InlineObject::Graphic { w, h, float, .. } = &mut object else {
+        panic!()
+    };
     (*w, *h) = (288.0, 144.0);
-    *float = wordcraft_doc::para::Float { wrap: Wrap::Square, h_rel: Anchor::Page, v_rel: Anchor::Page, x: 72.0, y: 36.0, ..Default::default() };
+    *float = wordcraft_doc::para::Float {
+        wrap: Wrap::Square,
+        h_rel: Anchor::Page,
+        v_rel: Anchor::Page,
+        x: 72.0,
+        y: 36.0,
+        ..Default::default()
+    };
     let mut p = Paragraph::new();
-    p.insert_object(0, object.clone(), &Default::default()).unwrap();
-    p.insert_object(p.len(), object, &Default::default()).unwrap();
+    p.insert_object(0, object.clone(), &Default::default())
+        .unwrap();
+    p.insert_object(p.len(), object, &Default::default())
+        .unwrap();
     d.body = vec![wordcraft_doc::para_block(p)];
     let out = wordcraft_docx::write(&d).unwrap();
     let files = unzip(&out);
     let body = text(&files, "word/document.xml");
     let ids = attr_values(&body, "w14:contentPart", "r:id");
     assert_eq!(ids.len(), 2);
-    let parts: Vec<_> = ids.iter().map(|id| part_at("word", &rel(&text(&files, "word/_rels/document.xml.rels"), id).1)).collect();
+    let parts: Vec<_> = ids
+        .iter()
+        .map(|id| {
+            part_at(
+                "word",
+                &rel(&text(&files, "word/_rels/document.xml.rels"), id).1,
+            )
+        })
+        .collect();
     assert_ne!(parts[0], parts[1]);
     for part in parts {
         assert_eq!(text(&files, &part), INK_XML);
     }
-    assert_eq!(attr_values(&body, "wp:extent", "cx"), ["3657600", "3657600"]);
+    assert_eq!(
+        attr_values(&body, "wp:extent", "cx"),
+        ["3657600", "3657600"]
+    );
     assert_eq!(attr_values(&body, "a:ext", "cx"), ["3657600", "3657600"]);
-    assert_eq!(attr_values(&body, "v:shape", "style"), ["width:288pt;height:144pt", "width:288pt;height:144pt"]);
-    assert_eq!(body.matches("<wp:posOffset>914400</wp:posOffset>").count(), 2);
+    assert_eq!(
+        attr_values(&body, "v:shape", "style"),
+        ["width:288pt;height:144pt", "width:288pt;height:144pt"]
+    );
+    assert_eq!(
+        body.matches("<wp:posOffset>914400</wp:posOffset>").count(),
+        2
+    );
     let back = wordcraft_docx::read(&out).unwrap();
     let g = graphics(&back);
     assert_eq!(g.len(), 2);
     for object in g {
-        let InlineObject::Graphic { w, h, float, .. } = object else { panic!() };
+        let InlineObject::Graphic { w, h, float, .. } = object else {
+            panic!()
+        };
         assert_eq!((w, h, float.x, float.y), (288.0, 144.0, 72.0, 36.0));
     }
 }
@@ -1807,9 +2919,18 @@ fn native_ink_copies_have_independent_parts_and_current_frames() {
 #[test]
 fn native_ink_markup_limit_does_not_write_a_dangling_reference() {
     let mut files = unzip(&ink_docx(false, false));
-    let body = text(&files, "word/document.xml").replace("<a:graphicData ", &format!(r#"<a:graphicData padding="{}" "#, "x".repeat(1024 * 1024 + 1)));
+    let body = text(&files, "word/document.xml").replace(
+        "<a:graphicData ",
+        &format!(
+            r#"<a:graphicData padding="{}" "#,
+            "x".repeat(1024 * 1024 + 1)
+        ),
+    );
     files.insert("word/document.xml".into(), body.into_bytes());
-    let entries: Vec<_> = files.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect();
+    let entries: Vec<_> = files
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
     let d = wordcraft_docx::read(&zip(&entries)).unwrap();
     let files = unzip(&wordcraft_docx::write(&d).unwrap());
     assert!(!text(&files, "word/document.xml").contains("w14:contentPart"));
@@ -1819,17 +2940,32 @@ fn native_ink_markup_limit_does_not_write_a_dangling_reference() {
 fn native_ink_preserves_inner_transform_and_rotation_padding_on_unrelated_saves() {
     let mut files = unzip(&ink_docx(false, false));
     let body = text(&files, "word/document.xml")
-        .replace("<wp:docPr", r#"<wp:effectExtent l="55468" t="512668" r="55468" b="512668"/><wp:docPr"#)
+        .replace(
+            "<wp:docPr",
+            r#"<wp:effectExtent l="55468" t="512668" r="55468" b="512668"/><wp:docPr"#,
+        )
         .replace("<q:xfrm>", r#"<q:xfrm rot="2700000">"#)
-        .replace(r#"<a:off x="0" y="0"/><a:ext cx="1828800" cy="914400"/>"#, r#"<a:off x="127000" y="254000"/><a:ext cx="914400" cy="457200"/>"#);
+        .replace(
+            r#"<a:off x="0" y="0"/><a:ext cx="1828800" cy="914400"/>"#,
+            r#"<a:off x="127000" y="254000"/><a:ext cx="914400" cy="457200"/>"#,
+        );
     files.insert("word/document.xml".into(), body.into_bytes());
-    let entries: Vec<_> = files.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect();
+    let entries: Vec<_> = files
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
     let mut d = wordcraft_docx::read(&zip(&entries)).unwrap();
     for _ in 0..2 {
         let [object] = graphics(&d).try_into().unwrap();
-        let InlineObject::Graphic { float, .. } = object else { panic!() };
+        let InlineObject::Graphic { float, .. } = object else {
+            panic!()
+        };
         assert_eq!(float.spin().deg, 45.0);
-        assert!(float.effect.iter().all(|v| v.abs() < 0.001), "rotation padding is not counted twice: {:?}", float.effect);
+        assert!(
+            float.effect.iter().all(|v| v.abs() < 0.001),
+            "rotation padding is not counted twice: {:?}",
+            float.effect
+        );
         let out = wordcraft_docx::write(&d).unwrap();
         let files = unzip(&out);
         check_ink(&files);
@@ -1855,8 +2991,11 @@ fn toc_entry_links_lose_the_hyperlink_style() {
             r#"<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve">{instr}</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>{inner}</w:p><w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>"#
         )
     };
-    let link =
-        |t: &str| format!(r#"<w:hyperlink w:anchor="_Toc1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>{t}</w:t></w:r></w:hyperlink>"#);
+    let link = |t: &str| {
+        format!(
+            r#"<w:hyperlink w:anchor="_Toc1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>{t}</w:t></w:r></w:hyperlink>"#
+        )
+    };
     let body = [
         field(r#" TOC \o "1-3" \h \z \u "#, &link("entry")),
         field(" TOC ", r#"<w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t>styled</w:t></w:r>"#),
@@ -1865,15 +3004,39 @@ fn toc_entry_links_lose_the_hyperlink_style() {
         r#"<w:p><w:bookmarkStart w:id="1" w:name="_Toc1"/><w:r><w:t>Target</w:t></w:r><w:bookmarkEnd w:id="1"/></w:p>"#.to_string(),
     ]
     .concat();
-    let d = wordcraft_docx::read(&docx(&body, &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+    let d = wordcraft_docx::read(&docx(
+        &body,
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    ))
+    .unwrap();
     let run = |word: &str| {
-        paras(&d).into_iter().find_map(|p| p.text.find(word).map(|at| p.props_of_char(at).clone())).unwrap_or_else(|| panic!("no run with {word}"))
+        paras(&d)
+            .into_iter()
+            .find_map(|p| p.text.find(word).map(|at| p.props_of_char(at).clone()))
+            .unwrap_or_else(|| panic!("no run with {word}"))
     };
     let entry = run("entry");
-    assert_eq!((entry.style.as_deref(), entry.link.as_deref()), (None, Some("#_Toc1")), "a TOC entry: plain, still a link");
-    assert_eq!(run("styled").style.as_deref(), Some("Hyperlink"), "not in a hyperlink: kept");
-    assert_eq!(run("quoted").style.as_deref(), Some("Hyperlink"), "another field: kept");
-    assert_eq!(run("plain").style.as_deref(), Some("Hyperlink"), "outside fields: kept");
+    assert_eq!(
+        (entry.style.as_deref(), entry.link.as_deref()),
+        (None, Some("#_Toc1")),
+        "a TOC entry: plain, still a link"
+    );
+    assert_eq!(
+        run("styled").style.as_deref(),
+        Some("Hyperlink"),
+        "not in a hyperlink: kept"
+    );
+    assert_eq!(
+        run("quoted").style.as_deref(),
+        Some("Hyperlink"),
+        "another field: kept"
+    );
+    assert_eq!(
+        run("plain").style.as_deref(),
+        Some("Hyperlink"),
+        "outside fields: kept"
+    );
 }
 
 /// A style or paragraph whose `w:numPr` gives only a level (`w:ilvl`) takes the list from its
@@ -1894,18 +3057,53 @@ fn a_list_level_without_a_list_takes_the_style_s_list() {
     let body = r#"<w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t>three</w:t></w:r></w:p>
         <w:p><w:pPr><w:pStyle w:val="Heading2"/><w:numPr><w:ilvl w:val="2"/></w:numPr></w:pPr><w:r><w:t>direct level</w:t></w:r></w:p>
         <w:p><w:pPr><w:numPr><w:ilvl w:val="1"/></w:numPr></w:pPr><w:r><w:t>no list anywhere</w:t></w:r></w:p>"#;
-    let d = wordcraft_docx::read(&docx(body, &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
-    let num = |id: &str| d.styles.get(id).and_then(|s| s.para.numbering).map(|n| (n.num, n.level));
-    assert_eq!(num("Heading3"), Some((15, 2)), "Heading 3 is level 3 of Heading 2's list");
-    assert_eq!(num("Heading4"), Some((15, 3)), "through two level-only styles");
+    let d = wordcraft_docx::read(&docx(
+        body,
+        &[("rId1", "styles", "styles.xml")],
+        &[("word/styles.xml", &styles)],
+    ))
+    .unwrap();
+    let num = |id: &str| {
+        d.styles
+            .get(id)
+            .and_then(|s| s.para.numbering)
+            .map(|n| (n.num, n.level))
+    };
+    assert_eq!(
+        num("Heading3"),
+        Some((15, 2)),
+        "Heading 3 is level 3 of Heading 2's list"
+    );
+    assert_eq!(
+        num("Heading4"),
+        Some((15, 3)),
+        "through two level-only styles"
+    );
     assert_eq!(num("Loose"), None, "no list in the chain: no numbering");
     let p = paras(&d);
-    assert_eq!(d.styles.resolve_para(&p[0].props).numbering.map(|n| (n.num, n.level)), Some((15, 2)));
-    assert_eq!(p[1].props.numbering.map(|n| (n.num, n.level)), Some((15, 2)), "a paragraph's own level, its style's list");
+    assert_eq!(
+        d.styles
+            .resolve_para(&p[0].props)
+            .numbering
+            .map(|n| (n.num, n.level)),
+        Some((15, 2))
+    );
+    assert_eq!(
+        p[1].props.numbering.map(|n| (n.num, n.level)),
+        Some((15, 2)),
+        "a paragraph's own level, its style's list"
+    );
     assert_eq!(p[2].props.numbering, None);
     // Saved and read again it is an ordinary list reference.
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
-    assert_eq!(again.styles.get("Heading3").and_then(|s| s.para.numbering).map(|n| (n.num, n.level)), Some((15, 2)));
+    assert_eq!(
+        again
+            .styles
+            .get("Heading3")
+            .and_then(|s| s.para.numbering)
+            .map(|n| (n.num, n.level)),
+        Some((15, 2))
+    );
 }
 
 /// `w:hideMark` on a cell is read and written back (it was dropped, and the empty rows NIH's
@@ -1917,7 +3115,11 @@ fn cell_hide_mark_reads_and_round_trips() {
         d.body
             .iter()
             .find_map(|b| {
-                if let wordcraft_doc::Block::Table(t) = &**b { Some(t.rows[0].cells.iter().map(|c| c.props.hide_mark).collect()) } else { None }
+                if let wordcraft_doc::Block::Table(t) = &**b {
+                    Some(t.rows[0].cells.iter().map(|c| c.props.hide_mark).collect())
+                } else {
+                    None
+                }
             })
             .unwrap()
     };
@@ -1941,18 +3143,41 @@ fn text_frames_read_and_round_trip() {
     let p = paras(&d);
     let f = p[0].props.frame.clone().expect("a frame");
     assert_eq!(
-        (f.wrap.as_str(), f.v_anchor.as_str(), f.h_anchor.as_str(), f.x_align.as_deref(), f.y),
+        (
+            f.wrap.as_str(),
+            f.v_anchor.as_str(),
+            f.h_anchor.as_str(),
+            f.x_align.as_deref(),
+            f.y
+        ),
         ("around", "text", "margin", Some("center"), 0.05)
     );
     let g = p[1].props.frame.clone().expect("a frame");
-    assert_eq!((g.w, g.h, g.h_exact, g.h_space, g.wrap.as_str(), g.x, g.y), (Some(144.0), Some(36.0), true, 9.0, "notBeside", 72.0, 144.0));
-    let cap = p.iter().find(|q| q.props.drop_cap.is_some()).expect("the drop cap");
+    assert_eq!(
+        (g.w, g.h, g.h_exact, g.h_space, g.wrap.as_str(), g.x, g.y),
+        (Some(144.0), Some(36.0), true, 9.0, "notBeside", 72.0, 144.0)
+    );
+    let cap = p
+        .iter()
+        .find(|q| q.props.drop_cap.is_some())
+        .expect("the drop cap");
     assert!(cap.props.frame.is_none(), "a drop cap stays a drop cap");
-    let junk = p.iter().find(|q| q.text.contains("junk")).and_then(|q| q.props.frame.clone()).expect("a frame");
-    assert_eq!((junk.wrap.as_str(), junk.h_anchor.as_str(), junk.w, junk.x), ("auto", "page", None, 0.0), "unknown values fall back");
+    let junk = p
+        .iter()
+        .find(|q| q.text.contains("junk"))
+        .and_then(|q| q.props.frame.clone())
+        .expect("a frame");
+    assert_eq!(
+        (junk.wrap.as_str(), junk.h_anchor.as_str(), junk.w, junk.x),
+        ("auto", "page", None, 0.0),
+        "unknown values fall back"
+    );
     let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
     let q = paras(&again);
     assert_eq!(q[0].props.frame, p[0].props.frame);
     assert_eq!(q[1].props.frame, p[1].props.frame);
-    assert!(q.iter().any(|x| x.props.drop_cap == Some(2) && x.props.frame.is_none()));
+    assert!(
+        q.iter()
+            .any(|x| x.props.drop_cap == Some(2) && x.props.frame.is_none())
+    );
 }

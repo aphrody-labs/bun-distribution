@@ -384,6 +384,9 @@ fn announce_pads(pads: Query<(&Gamepad, Option<&Name>), Added<Gamepad>>, mut she
             .vendor_id()
             .map(|v| format!(" ({v:04x})"))
             .unwrap_or_default();
-        shell.toast(text::tf("toast.controller", &[("name", &format!("{name}{vendor}"))]));
+        shell.toast(text::tf(
+            "toast.controller",
+            &[("name", &format!("{name}{vendor}"))],
+        ));
     }
 }

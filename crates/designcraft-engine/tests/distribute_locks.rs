@@ -17,25 +17,49 @@ fn fixture(horizontal: bool, locks: [bool; 4]) -> (Session, Vec<u64>) {
     let mut ids = Vec::new();
     for (i, (&start, &size)) in STARTS.iter().zip(&SIZES).enumerate() {
         let cross = 40.0 + i as f64 * 35.0;
-        let rect = if horizontal { [start, cross, start + size, cross + 25.0] } else { [cross, start, cross + 25.0, start + size] };
+        let rect = if horizontal {
+            [start, cross, start + size, cross + 25.0]
+        } else {
+            [cross, start, cross + 25.0, start + size]
+        };
         let graphic = i == 1 || i == 2;
         let created =
             s.execute("frame.create", &json!({"rect": rect, "content": if graphic {"unassigned"} else {"text"}, "text": "Keep this text"})).unwrap();
         let id = created["id"].as_u64().unwrap();
         ids.push(id);
         if graphic {
-            s.execute("file.place", &json!({"frame": id, "base64": PIXEL, "name": "pixel.png"})).unwrap();
+            s.execute(
+                "file.place",
+                &json!({"frame": id, "base64": PIXEL, "name": "pixel.png"}),
+            )
+            .unwrap();
         }
     }
     // An unselected control must retain all geometry and content too.
-    s.execute("frame.create", &json!({"rect": [400, 400, 450, 450], "content": "text", "text": "Outside selection"})).unwrap();
-    s.execute("object.fill", &json!({"ids": ids, "swatch": "[Black]", "tint": 0.5})).unwrap();
-    let locked: Vec<u64> = ids.iter().zip(locks).filter_map(|(&id, lock)| lock.then_some(id)).collect();
+    s.execute(
+        "frame.create",
+        &json!({"rect": [400, 400, 450, 450], "content": "text", "text": "Outside selection"}),
+    )
+    .unwrap();
+    s.execute(
+        "object.fill",
+        &json!({"ids": ids, "swatch": "[Black]", "tint": 0.5}),
+    )
+    .unwrap();
+    let locked: Vec<u64> = ids
+        .iter()
+        .zip(locks)
+        .filter_map(|(&id, lock)| lock.then_some(id))
+        .collect();
     if !locked.is_empty() {
         s.execute("object.lock", &json!({"ids": locked})).unwrap();
     }
     // Layers selection may include locked items. Deliberately avoid geometric order.
-    s.execute("selection.set", &json!({"ids": [ids[3], ids[1], ids[0], ids[2]]})).unwrap();
+    s.execute(
+        "selection.set",
+        &json!({"ids": [ids[3], ids[1], ids[0], ids[2]]}),
+    )
+    .unwrap();
     assert!(!s.doc().unwrap().doc.assets.is_empty());
     s.doc().unwrap().doc.check().unwrap();
     (s, ids)
@@ -52,7 +76,13 @@ fn modes() -> [(Value, [f64; 4]); 3] {
     ]
 }
 
-fn check_distribution(horizontal: bool, mut params: Value, positions: [f64; 4], locks: [bool; 4], explicit_ids: bool) {
+fn check_distribution(
+    horizontal: bool,
+    mut params: Value,
+    positions: [f64; 4],
+    locks: [bool; 4],
+    explicit_ids: bool,
+) {
     let (mut s, ids) = fixture(horizontal, locks);
     params["axis"] = json!(if horizontal { "horizontal" } else { "vertical" });
     if explicit_ids {
@@ -65,7 +95,11 @@ fn check_distribution(horizontal: bool, mut params: Value, positions: [f64; 4], 
     for (i, &id) in ids.iter().enumerate() {
         if !locks[i] {
             let delta = positions[i] - STARTS[i];
-            let translation = if horizontal { (delta, 0.0) } else { (0.0, delta) };
+            let translation = if horizontal {
+                (delta, 0.0)
+            } else {
+                (0.0, delta)
+            };
             let item = expected.item_mut(ItemId(id)).unwrap();
             item.xf = Affine::translate(translation) * item.xf;
         }
@@ -76,9 +110,17 @@ fn check_distribution(horizontal: bool, mut params: Value, positions: [f64; 4], 
         let item = after.item(ItemId(id)).unwrap();
         let b = item.bounds();
         let start = if horizontal { b.x0 } else { b.y0 };
-        assert_eq!(start, if locks[i] { STARTS[i] } else { positions[i] }, "item {i}: {params}, locks={locks:?}");
+        assert_eq!(
+            start,
+            if locks[i] { STARTS[i] } else { positions[i] },
+            "item {i}: {params}, locks={locks:?}"
+        );
         if locks[i] {
-            assert_eq!(item, before.item(ItemId(id)).unwrap(), "locked item's transform, path, content and flags are unchanged");
+            assert_eq!(
+                item,
+                before.item(ItemId(id)).unwrap(),
+                "locked item's transform, path, content and flags are unchanged"
+            );
         }
     }
     // Only the specified translations may change: all paths, sizes, other-axis coordinates,
@@ -102,9 +144,21 @@ fn distribute_preserves_locked_items_and_moves_unlocked_controls() {
     for horizontal in [true, false] {
         for (params, positions) in modes() {
             // Locked interior object still participates in the numeric reference calculation.
-            check_distribution(horizontal, params.clone(), positions, [false, true, false, false], false);
+            check_distribution(
+                horizontal,
+                params.clone(),
+                positions,
+                [false, true, false, false],
+                false,
+            );
             // Locked endpoints and an interior object; only the unlocked interior control moves.
-            check_distribution(horizontal, params, positions, [true, true, false, true], true);
+            check_distribution(
+                horizontal,
+                params,
+                positions,
+                [true, true, false, true],
+                true,
+            );
         }
     }
 }

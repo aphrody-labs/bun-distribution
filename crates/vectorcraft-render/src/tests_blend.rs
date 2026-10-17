@@ -19,7 +19,15 @@ const PAIRS: [([u8; 3], [u8; 3]); 6] = [
 ];
 
 fn rect(d: &mut Document, r: Rect, rgb: [u8; 3]) -> Node {
-    Node::path(d.alloc_id(), shapes::rectangle(r), Appearance::basic(Paint::solid(Color::rgb8(rgb[0], rgb[1], rgb[2])), Paint::None, 0.0))
+    Node::path(
+        d.alloc_id(),
+        shapes::rectangle(r),
+        Appearance::basic(
+            Paint::solid(Color::rgb8(rgb[0], rgb[1], rgb[2])),
+            Paint::None,
+            0.0,
+        ),
+    )
 }
 
 /// Where the blend is set: on the object, on its fill, or on a group around it.
@@ -38,7 +46,8 @@ fn doc(mode: Blend, level: Level, backdrop: [u8; 3], source: [u8; 3]) -> Documen
     match level {
         Level::Object => top.blend = mode,
         Level::Fill => {
-            if let Some(vectorcraft_doc::AppearanceItem::Fill(f)) = top.appearance.items.first_mut() {
+            if let Some(vectorcraft_doc::AppearanceItem::Fill(f)) = top.appearance.items.first_mut()
+            {
                 f.blend = mode;
             }
         }
@@ -65,7 +74,9 @@ pub(crate) fn expected(mode: Blend, backdrop: [u8; 3], source: [u8; 3]) -> [u8; 
 
 /// Whether `a` is within `tol`/255 of `b` in every channel.
 pub(crate) fn within(a: [u8; 3], b: [u8; 3], tol: i32) -> bool {
-    a.iter().zip(b).all(|(x, y)| (*x as i32 - y as i32).abs() <= tol)
+    a.iter()
+        .zip(b)
+        .all(|(x, y)| (*x as i32 - y as i32).abs() <= tol)
 }
 
 /// Tolerance of `mode` on screen: 1/255, except Exclusion, which the rasteriser's 8-bit pipeline
@@ -80,7 +91,15 @@ fn every_mode_matches_the_reference_formulas() {
     for mode in Blend::ALL {
         for level in [Level::Object, Level::Fill, Level::Group] {
             for (b, s) in PAIRS {
-                let px = r.render(&doc(mode, level, b, s), 20, 20, Affine::IDENTITY, &RenderOptions::default()).pixel(10, 10);
+                let px = r
+                    .render(
+                        &doc(mode, level, b, s),
+                        20,
+                        20,
+                        Affine::IDENTITY,
+                        &RenderOptions::default(),
+                    )
+                    .pixel(10, 10);
                 let want = expected(mode, b, s);
                 assert!(
                     within([px[0], px[1], px[2]], want, tolerance(mode)) && px[3] == 255,
@@ -99,11 +118,23 @@ fn a_translucent_source_mixes_the_blend_by_its_opacity() {
         let mut d = doc(mode, Level::Object, b, s);
         let top = d.layers[0].children().unwrap()[1].id;
         d.node_mut(top).unwrap().opacity = 0.6;
-        let px = r.render(&d, 20, 20, Affine::IDENTITY, &RenderOptions::default()).pixel(10, 10);
-        let f = |c: [u8; 3], a: f32| [c[0] as f32 / 255.0, c[1] as f32 / 255.0, c[2] as f32 / 255.0, a];
+        let px = r
+            .render(&d, 20, 20, Affine::IDENTITY, &RenderOptions::default())
+            .pixel(10, 10);
+        let f = |c: [u8; 3], a: f32| {
+            [
+                c[0] as f32 / 255.0,
+                c[1] as f32 / 255.0,
+                c[2] as f32 / 255.0,
+                a,
+            ]
+        };
         let o = vectorcraft_color::blend::composite(mode, f(b, 1.0), f(s, 0.6));
         let want = [o[0], o[1], o[2]].map(|v| (v * 255.0).round() as u8);
         // The opacity is one more 8-bit step.
-        assert!(within([px[0], px[1], px[2]], want, tolerance(mode) + 1), "{mode:?}: {px:?}, want {want:?}");
+        assert!(
+            within([px[0], px[1], px[2]], want, tolerance(mode) + 1),
+            "{mode:?}: {px:?}, want {want:?}"
+        );
     }
 }

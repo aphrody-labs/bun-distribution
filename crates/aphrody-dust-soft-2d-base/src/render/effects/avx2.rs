@@ -1,5 +1,5 @@
 use crate::{Buffers, RenderingData};
-use aphrody_dust_core::gpu::{SCREEN_WIDTH, Scanline};
+use aphrody_dust_core::gpu::{Scanline, SCREEN_WIDTH};
 use core::{
     arch::x86_64::*,
     mem::transmute,
@@ -278,14 +278,20 @@ pub unsafe fn apply_brightness<D: RenderingData>(scanline_buffer: &mut Scanline<
                 let scanline_ptr = scanline_buffer.0.as_mut_ptr().add(i) as *mut __m256i;
                 let pixels = _mm256_load_si256(scanline_ptr);
                 let offset = offset!(_mm256_xor_si256(brightness_incr_max, pixels));
-                _mm256_store_si256(scanline_ptr, rgb6_to_rgba8(_mm256_add_epi32(pixels, offset)));
+                _mm256_store_si256(
+                    scanline_ptr,
+                    rgb6_to_rgba8(_mm256_add_epi32(pixels, offset)),
+                );
             }
         } else {
             for i in (0..SCREEN_WIDTH).step_by(8) {
                 let scanline_ptr = scanline_buffer.0.as_mut_ptr().add(i) as *mut __m256i;
                 let pixels = _mm256_load_si256(scanline_ptr);
                 let offset = offset!(pixels);
-                _mm256_store_si256(scanline_ptr, rgb6_to_rgba8(_mm256_sub_epi32(pixels, offset)));
+                _mm256_store_si256(
+                    scanline_ptr,
+                    rgb6_to_rgba8(_mm256_sub_epi32(pixels, offset)),
+                );
             }
         }
     } else {

@@ -1,7 +1,11 @@
 use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
-use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-use kinovi_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
-use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
+use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{
+    PrepareFileUploadArgs, prepare_file_upload,
+};
+use kinovi_web_client::requests::upload_file::upload_file::{UploadFileArgs, upload_file};
+use url_utils::extension::extract_extension_from_url::{
+    ExtractExtensions, extract_extension_from_url_str,
+};
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -15,30 +19,30 @@ use crate::utils::download_file::download_file;
 /// image, but keeping the two helpers separate lets each side evolve
 /// independently and makes intent clear at call sites.
 pub(crate) async fn upload_to_kinovi_web(
-  session: &KinoviWebSession,
-  source_url: &str,
+    session: &KinoviWebSession,
+    source_url: &str,
 ) -> Result<String, ArtcraftRouterError> {
-  let extension = extract_extension_from_url_str(source_url, &ExtractExtensions::All)
-    .map(|ext| ext.without_period().to_string())
-    .unwrap_or_else(|| "jpg".to_string());
+    let extension = extract_extension_from_url_str(source_url, &ExtractExtensions::All)
+        .map(|ext| ext.without_period().to_string())
+        .unwrap_or_else(|| "jpg".to_string());
 
-  let file_bytes = download_file(source_url).await?;
+    let file_bytes = download_file(source_url).await?;
 
-  let prepare_response = prepare_file_upload(PrepareFileUploadArgs {
-    session,
-    extension,
-    host_override: None,
-  })
+    let prepare_response = prepare_file_upload(PrepareFileUploadArgs {
+        session,
+        extension,
+        host_override: None,
+    })
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
-  let upload_response = upload_file(UploadFileArgs {
-    upload_url: prepare_response.upload_url,
-    file_bytes,
-    host_override: None,
-  })
+    let upload_response = upload_file(UploadFileArgs {
+        upload_url: prepare_response.upload_url,
+        file_bytes,
+        host_override: None,
+    })
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
-  Ok(upload_response.public_url)
+    Ok(upload_response.public_url)
 }

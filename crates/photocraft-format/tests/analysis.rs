@@ -7,7 +7,11 @@ use photocraft_format::*;
 #[test]
 fn measurement_and_notes_roundtrip_and_default_when_absent() {
     let mut doc = Document::new("a", Size::new(40, 30), ColorMode::Rgb, SampleType::U16);
-    doc.measurement.scale = MeasurementScale { pixel_length: 72.0, logical_length: 1.0, units: "inches".into() };
+    doc.measurement.scale = MeasurementScale {
+        pixel_length: 72.0,
+        logical_length: 1.0,
+        units: "inches".into(),
+    };
     doc.measurement.count_groups = vec![CountGroup {
         name: "Cells".into(),
         color: Color::rgb(0.0, 0.5, 1.0),
@@ -16,7 +20,11 @@ fn measurement_and_notes_roundtrip_and_default_when_absent() {
         visible: true,
         points: vec![[1.0, 2.0], [5.5, 6.5]],
     }];
-    doc.measurement.ruler = Some(Ruler { start: [1.0, 1.0], end: [30.0, 20.0], protractor: Some([1.0, 25.0]) });
+    doc.measurement.ruler = Some(Ruler {
+        start: [1.0, 1.0],
+        end: [30.0, 20.0],
+        protractor: Some([1.0, 25.0]),
+    });
     doc.notes = vec![Note {
         author: "A".into(),
         text: "Fix the sky\nplease".into(),

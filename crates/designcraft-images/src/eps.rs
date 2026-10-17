@@ -5,7 +5,8 @@
 /// An EPS file (plain, or DOS EPS with a binary header)?
 pub fn is_eps(bytes: &[u8]) -> bool {
     bytes.starts_with(&[0xC5, 0xD0, 0xD3, 0xC6])
-        || (bytes.starts_with(b"%!PS-Adobe") && String::from_utf8_lossy(&bytes[..bytes.len().min(64)]).contains("EPSF"))
+        || (bytes.starts_with(b"%!PS-Adobe")
+            && String::from_utf8_lossy(&bytes[..bytes.len().min(64)]).contains("EPSF"))
 }
 
 fn u32le(b: &[u8], at: usize) -> Option<usize> {
@@ -15,8 +16,14 @@ fn u32le(b: &[u8], at: usize) -> Option<usize> {
 /// The PostScript section and the TIFF preview (DOS EPS).
 fn sections(bytes: &[u8]) -> (&[u8], Option<&[u8]>) {
     if bytes.starts_with(&[0xC5, 0xD0, 0xD3, 0xC6]) {
-        let ps = u32le(bytes, 4).zip(u32le(bytes, 8)).and_then(|(o, l)| bytes.get(o..o.checked_add(l)?)).unwrap_or(&[]);
-        let tiff = u32le(bytes, 20).zip(u32le(bytes, 24)).filter(|(o, l)| *o > 0 && *l > 0).and_then(|(o, l)| bytes.get(o..o.checked_add(l)?));
+        let ps = u32le(bytes, 4)
+            .zip(u32le(bytes, 8))
+            .and_then(|(o, l)| bytes.get(o..o.checked_add(l)?))
+            .unwrap_or(&[]);
+        let tiff = u32le(bytes, 20)
+            .zip(u32le(bytes, 24))
+            .filter(|(o, l)| *o > 0 && *l > 0)
+            .and_then(|(o, l)| bytes.get(o..o.checked_add(l)?));
         return (ps, tiff);
     }
     (bytes, None)
@@ -28,7 +35,11 @@ pub fn bounding_box(bytes: &[u8]) -> Option<[f64; 4]> {
     let head = String::from_utf8_lossy(&ps[..ps.len().min(64 * 1024)]);
     let read = |key: &str| {
         head.lines().find_map(|l| {
-            let v: Vec<f64> = l.strip_prefix(key)?.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            let v: Vec<f64> = l
+                .strip_prefix(key)?
+                .split_whitespace()
+                .filter_map(|t| t.parse().ok())
+                .collect();
             (v.len() == 4 && v[2] > v[0] && v[3] > v[1]).then(|| [v[0], v[1], v[2], v[3]])
         })
     };
@@ -45,14 +56,24 @@ pub fn eps_proxy(bytes: &[u8]) -> Option<(Vec<u8>, (f64, f64))> {
     {
         return Some((tiff.to_vec(), (w, h)));
     }
-    let (pw, ph) = ((w * 2.0).round().clamp(2.0, 4000.0) as u32, (h * 2.0).round().clamp(2.0, 4000.0) as u32);
+    let (pw, ph) = (
+        (w * 2.0).round().clamp(2.0, 4000.0) as u32,
+        (h * 2.0).round().clamp(2.0, 4000.0) as u32,
+    );
     let mut img = image::RgbaImage::from_pixel(pw, ph, image::Rgba([228, 228, 228, 255]));
     // Diagonals and a border mark it as a stand-in.
     let n = pw.max(ph);
     for i in 0..n {
-        let (x, y) = ((i as f64 / n as f64 * pw as f64) as u32, (i as f64 / n as f64 * ph as f64) as u32);
+        let (x, y) = (
+            (i as f64 / n as f64 * pw as f64) as u32,
+            (i as f64 / n as f64 * ph as f64) as u32,
+        );
         for (px, py) in [(x, y), (x, ph - 1 - y.min(ph - 1))] {
-            img.put_pixel(px.min(pw - 1), py.min(ph - 1), image::Rgba([150, 150, 150, 255]));
+            img.put_pixel(
+                px.min(pw - 1),
+                py.min(ph - 1),
+                image::Rgba([150, 150, 150, 255]),
+            );
         }
     }
     for x in 0..pw {
@@ -64,7 +85,9 @@ pub fn eps_proxy(bytes: &[u8]) -> Option<(Vec<u8>, (f64, f64))> {
         img.put_pixel(pw - 1, y, image::Rgba([150, 150, 150, 255]));
     }
     let mut out = Vec::new();
-    image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).ok()?;
+    image::DynamicImage::ImageRgba8(img)
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .ok()?;
     Some((out, (w, h)))
 }
 
@@ -82,9 +105,16 @@ mod tests {
         assert_eq!(crate::pixel_size(&png), Some((201, 101)));
         // DOS EPS with a TIFF preview: the preview is the proxy.
         let mut tiff = Vec::new();
-        image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(10, 5, image::Rgba([255, 0, 0, 255])))
-            .write_to(&mut std::io::Cursor::new(&mut tiff), image::ImageFormat::Tiff)
-            .unwrap();
+        image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+            10,
+            5,
+            image::Rgba([255, 0, 0, 255]),
+        ))
+        .write_to(
+            &mut std::io::Cursor::new(&mut tiff),
+            image::ImageFormat::Tiff,
+        )
+        .unwrap();
         let mut dos = vec![0xC5, 0xD0, 0xD3, 0xC6];
         let ps_off = 30usize;
         let tiff_off = ps_off + eps.len();

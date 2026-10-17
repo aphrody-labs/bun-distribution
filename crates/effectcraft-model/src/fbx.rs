@@ -23,7 +23,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::obj::srgb_to_linear;
-use crate::{AlphaMode, Mat4, Material, Mesh, Model, ModelError, Node, Primitive, Result, TexRef, Texture, perr, vec3};
+use crate::{
+    AlphaMode, Mat4, Material, Mesh, Model, ModelError, Node, Primitive, Result, TexRef, Texture,
+    perr, vec3,
+};
 
 /// The binary file's magic (`Kaydara FBX Binary`, two spaces, NUL, 0x1A, 0x00).
 pub const BINARY_MAGIC: &[u8] = b"Kaydara FBX Binary  \0\x1a\0";
@@ -115,7 +118,9 @@ impl FbxNode {
         for p in &self.props {
             match p {
                 Prop::Ints(v) => out.extend_from_slice(v),
-                Prop::Floats(v) => out.extend(v.iter().filter(|f| f.is_finite()).map(|&f| f as i64)),
+                Prop::Floats(v) => {
+                    out.extend(v.iter().filter(|f| f.is_finite()).map(|&f| f as i64))
+                }
                 p => out.extend(p.as_i64()),
             }
         }
@@ -126,7 +131,11 @@ impl FbxNode {
 /// Read an FBX file (binary or ASCII) into its top-level nodes and the file version
 /// (e.g. 7400).
 pub fn read(bytes: &[u8]) -> Result<(u32, Vec<FbxNode>)> {
-    if bytes.starts_with(BINARY_MAGIC) { read_binary(bytes) } else { read_ascii(&String::from_utf8_lossy(bytes)) }
+    if bytes.starts_with(BINARY_MAGIC) {
+        read_binary(bytes)
+    } else {
+        read_ascii(&String::from_utf8_lossy(bytes))
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -140,8 +149,13 @@ struct Bin<'a> {
 
 impl Bin<'_> {
     fn take(&self, pos: &mut usize, n: usize) -> Result<&[u8]> {
-        let end = pos.checked_add(n).ok_or_else(|| perr("FBX: offset overflow"))?;
-        let s = self.d.get(*pos..end).ok_or_else(|| perr(format!("FBX: truncated at byte {pos}")))?;
+        let end = pos
+            .checked_add(n)
+            .ok_or_else(|| perr("FBX: offset overflow"))?;
+        let s = self
+            .d
+            .get(*pos..end)
+            .ok_or_else(|| perr(format!("FBX: truncated at byte {pos}")))?;
         *pos = end;
         Ok(s)
     }
@@ -155,7 +169,11 @@ impl Bin<'_> {
         Ok(u32::from_le_bytes(self.arr(pos)?))
     }
     fn offset(&self, pos: &mut usize) -> Result<u64> {
-        if self.wide { Ok(u64::from_le_bytes(self.arr(pos)?)) } else { Ok(self.u32(pos)? as u64) }
+        if self.wide {
+            Ok(u64::from_le_bytes(self.arr(pos)?))
+        } else {
+            Ok(self.u32(pos)? as u64)
+        }
     }
     fn to_usize(v: u64) -> Result<usize> {
         usize::try_from(v).map_err(|_| perr("FBX: offset out of range"))
@@ -191,23 +209,42 @@ impl Bin<'_> {
         }
         let name = String::from_utf8_lossy(self.take(pos, nlen)?).into_owned();
         let pstart = *pos;
-        let pend = pstart.checked_add(plen).filter(|&e| e <= end).ok_or_else(|| perr(format!("FBX: `{name}`: property list past the record")))?;
+        let pend = pstart
+            .checked_add(plen)
+            .filter(|&e| e <= end)
+            .ok_or_else(|| perr(format!("FBX: `{name}`: property list past the record")))?;
         // Every property is at least one byte, so a count above the list length is corrupt.
         if nprops > plen as u64 {
-            return Err(perr(format!("FBX: `{name}`: {nprops} properties in {plen} bytes")));
+            return Err(perr(format!(
+                "FBX: `{name}`: {nprops} properties in {plen} bytes"
+            )));
         }
         let mut props = Vec::with_capacity(nprops as usize);
         for _ in 0..nprops {
             props.push(self.prop(pos, pend)?);
         }
         *pos = pend;
-        let children = if *pos < end { self.list(pos, end, depth + 1)? } else { vec![] };
+        let children = if *pos < end {
+            self.list(pos, end, depth + 1)?
+        } else {
+            vec![]
+        };
         *pos = end;
-        Ok(Some(FbxNode { name, props, children }))
+        Ok(Some(FbxNode {
+            name,
+            props,
+            children,
+        }))
     }
 
     fn prop(&self, pos: &mut usize, pend: usize) -> Result<Prop> {
-        let sub = Bin { d: self.d.get(..pend).ok_or_else(|| perr("FBX: truncated property"))?, wide: self.wide };
+        let sub = Bin {
+            d: self
+                .d
+                .get(..pend)
+                .ok_or_else(|| perr("FBX: truncated property"))?,
+            wide: self.wide,
+        };
         let t = sub.arr::<1>(pos)?[0];
         Ok(match t {
             b'Y' => Prop::Int(i16::from_le_bytes(sub.arr(pos)?) as i64),
@@ -233,19 +270,49 @@ impl Bin<'_> {
                     b'f' | b'i' => 4,
                     _ => 1,
                 };
-                let want = len.checked_mul(size).filter(|&n| n <= MAX_ARRAY_BYTES).ok_or_else(|| perr("FBX: array too large"))?;
+                let want = len
+                    .checked_mul(size)
+                    .filter(|&n| n <= MAX_ARRAY_BYTES)
+                    .ok_or_else(|| perr("FBX: array too large"))?;
                 let data = sub.take(pos, clen)?;
                 let raw = match enc {
                     0 => data.to_vec(),
-                    1 => miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(data, want).map_err(|e| perr(format!("FBX: array zlib: {e:?}")))?,
+                    1 => miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(data, want)
+                        .map_err(|e| perr(format!("FBX: array zlib: {e:?}")))?,
                     e => return Err(perr(format!("FBX: unknown array encoding {e}"))),
                 };
-                let raw = raw.get(..want).ok_or_else(|| perr("FBX: array shorter than its length"))?;
+                let raw = raw
+                    .get(..want)
+                    .ok_or_else(|| perr("FBX: array shorter than its length"))?;
                 match t {
-                    b'f' => Prop::Floats(raw.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c) as f64).collect()),
-                    b'd' => Prop::Floats(raw.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect()),
-                    b'l' => Prop::Ints(raw.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c)).collect()),
-                    b'i' => Prop::Ints(raw.as_chunks::<4>().0.iter().map(|c| i32::from_le_bytes(*c) as i64).collect()),
+                    b'f' => Prop::Floats(
+                        raw.as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|c| f32::from_le_bytes(*c) as f64)
+                            .collect(),
+                    ),
+                    b'd' => Prop::Floats(
+                        raw.as_chunks::<8>()
+                            .0
+                            .iter()
+                            .map(|c| f64::from_le_bytes(*c))
+                            .collect(),
+                    ),
+                    b'l' => Prop::Ints(
+                        raw.as_chunks::<8>()
+                            .0
+                            .iter()
+                            .map(|c| i64::from_le_bytes(*c))
+                            .collect(),
+                    ),
+                    b'i' => Prop::Ints(
+                        raw.as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|c| i32::from_le_bytes(*c) as i64)
+                            .collect(),
+                    ),
                     _ => Prop::Ints(raw.iter().map(|&b| (b != 0) as i64).collect()),
                 }
             }
@@ -265,8 +332,15 @@ fn object_name(b: &[u8]) -> String {
 
 fn read_binary(bytes: &[u8]) -> Result<(u32, Vec<FbxNode>)> {
     let mut pos = BINARY_MAGIC.len();
-    let version = Bin { d: bytes, wide: false }.u32(&mut pos)?;
-    let bin = Bin { d: bytes, wide: version >= 7500 };
+    let version = Bin {
+        d: bytes,
+        wide: false,
+    }
+    .u32(&mut pos)?;
+    let bin = Bin {
+        d: bytes,
+        wide: version >= 7500,
+    };
     let mut nodes = vec![];
     while pos < bytes.len() {
         match bin.record(&mut pos, 0) {
@@ -331,7 +405,9 @@ fn tokenize(text: &str) -> Vec<Tok> {
                         break;
                     }
                 }
-                out.push(Tok::Val(Prop::Str(text.get(start..end).unwrap_or("").replace("&quot;", "\""))));
+                out.push(Tok::Val(Prop::Str(
+                    text.get(start..end).unwrap_or("").replace("&quot;", "\""),
+                )));
             }
             _ => {
                 let start = i;
@@ -375,7 +451,10 @@ fn ascii_list(toks: &[Tok], i: &mut usize, depth: usize) -> Result<Vec<FbxNode>>
         match t {
             Tok::Close if depth > 0 => return Ok(out),
             Tok::Key(name) => {
-                let mut node = FbxNode { name: name.clone(), ..FbxNode::default() };
+                let mut node = FbxNode {
+                    name: name.clone(),
+                    ..FbxNode::default()
+                };
                 loop {
                     match toks.get(*i) {
                         Some(Tok::Val(v)) => node.props.push(v.clone()),
@@ -430,7 +509,10 @@ impl<'a> Props70<'a> {
         Props70(m)
     }
     fn values(&self, name: &str) -> Vec<f64> {
-        self.0.get(name).map(|e| e.props.iter().skip(4).filter_map(Prop::as_f64).collect()).unwrap_or_default()
+        self.0
+            .get(name)
+            .map(|e| e.props.iter().skip(4).filter_map(Prop::as_f64).collect())
+            .unwrap_or_default()
     }
     fn f(&self, name: &str) -> Option<f64> {
         self.values(name).first().copied().filter(|v| v.is_finite())
@@ -445,7 +527,11 @@ impl<'a> Props70<'a> {
 
 /// An Euler rotation (degrees) in FBX rotation order (`eEulerXYZ` = 0 rotates about X first).
 fn euler(d: [f64; 3], order: i64) -> Mat4 {
-    let (x, y, z) = (Mat4::rotate_x(d[0]), Mat4::rotate_y(d[1]), Mat4::rotate_z(d[2]));
+    let (x, y, z) = (
+        Mat4::rotate_x(d[0]),
+        Mat4::rotate_y(d[1]),
+        Mat4::rotate_z(d[2]),
+    );
     match order {
         1 => y * z * x,
         2 => x * z * y,
@@ -464,8 +550,14 @@ fn translate(t: [f64; 3]) -> Mat4 {
 fn model_local(p: &Props70) -> Mat4 {
     let order = p.f("RotationOrder").map_or(0, |o| o as i64);
     let active = p.f("RotationActive").is_some_and(|a| a != 0.0);
-    let (pre, post) =
-        if active { (euler(p.v3("PreRotation", [0.0; 3]), 0), euler(p.v3("PostRotation", [0.0; 3]), 0).transpose()) } else { (Mat4::IDENTITY, Mat4::IDENTITY) };
+    let (pre, post) = if active {
+        (
+            euler(p.v3("PreRotation", [0.0; 3]), 0),
+            euler(p.v3("PostRotation", [0.0; 3]), 0).transpose(),
+        )
+    } else {
+        (Mat4::IDENTITY, Mat4::IDENTITY)
+    };
     let rp = p.v3("RotationPivot", [0.0; 3]);
     let sp = p.v3("ScalingPivot", [0.0; 3]);
     let s = p.v3("Lcl Scaling", [1.0; 3]);
@@ -534,18 +626,38 @@ struct LayerData {
 }
 
 impl LayerData {
-    fn of(geom: &FbxNode, element: &str, data: &str, index: &str, width: usize) -> Option<LayerData> {
+    fn of(
+        geom: &FbxNode,
+        element: &str,
+        data: &str,
+        index: &str,
+        width: usize,
+    ) -> Option<LayerData> {
         let e = geom.child(element)?;
-        let mapping = match e.child("MappingInformationType").and_then(|m| m.str_at(0)).unwrap_or("ByPolygonVertex") {
+        let mapping = match e
+            .child("MappingInformationType")
+            .and_then(|m| m.str_at(0))
+            .unwrap_or("ByPolygonVertex")
+        {
             "ByPolygonVertex" => Mapping::PolygonVertex,
             "ByVertex" | "ByVertice" | "ByControlPoint" => Mapping::Vertex,
             "ByPolygon" => Mapping::Polygon,
             "AllSame" => Mapping::AllSame,
             _ => return None,
         };
-        let reference = e.child("ReferenceInformationType").and_then(|m| m.str_at(0)).unwrap_or("Direct");
-        let index = (reference != "Direct").then(|| e.child(index).map(FbxNode::ints)).flatten();
-        Some(LayerData { mapping, data: e.child(data)?.floats(), index, width })
+        let reference = e
+            .child("ReferenceInformationType")
+            .and_then(|m| m.str_at(0))
+            .unwrap_or("Direct");
+        let index = (reference != "Direct")
+            .then(|| e.child(index).map(FbxNode::ints))
+            .flatten();
+        Some(LayerData {
+            mapping,
+            data: e.child(data)?.floats(),
+            index,
+            width,
+        })
     }
     fn get(&self, pv: usize, v: usize, poly: usize) -> Option<&[f64]> {
         let i = match self.mapping {
@@ -573,13 +685,28 @@ fn f32s<const N: usize>(s: &[f64]) -> [f32; N] {
 
 /// A Mesh geometry with its polygons triangulated; `materials[k]` is the model-level material
 /// index of the geometry's material slot `k`.
-fn build_mesh(name: &str, geom: &FbxNode, materials: &[usize], with_normal_maps: &dyn Fn(usize) -> bool) -> Option<Mesh> {
-    let positions: Vec<[f32; 3]> = geom.child("Vertices")?.floats().as_chunks::<3>().0.iter().map(|c| f32s::<3>(c)).collect();
+fn build_mesh(
+    name: &str,
+    geom: &FbxNode,
+    materials: &[usize],
+    with_normal_maps: &dyn Fn(usize) -> bool,
+) -> Option<Mesh> {
+    let positions: Vec<[f32; 3]> = geom
+        .child("Vertices")?
+        .floats()
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .map(|c| f32s::<3>(c))
+        .collect();
     let pvi = geom.child("PolygonVertexIndex")?.ints();
     let normals = LayerData::of(geom, "LayerElementNormal", "Normals", "NormalsIndex", 3);
     let uvs = LayerData::of(geom, "LayerElementUV", "UV", "UVIndex", 2);
     let mats = geom.child("LayerElementMaterial").and_then(|e| {
-        let mapping = e.child("MappingInformationType").and_then(|m| m.str_at(0)).unwrap_or("AllSame");
+        let mapping = e
+            .child("MappingInformationType")
+            .and_then(|m| m.str_at(0))
+            .unwrap_or("AllSame");
         let ids = e.child("Materials")?.ints();
         Some((mapping == "ByPolygon", ids))
     });
@@ -602,25 +729,50 @@ fn build_mesh(name: &str, geom: &FbxNode, materials: &[usize], with_normal_maps:
             continue;
         }
         let slot = mats.as_ref().and_then(|(by_poly, ids)| {
-            let k = if *by_poly { *ids.get(p_index)? } else { *ids.first()? };
+            let k = if *by_poly {
+                *ids.get(p_index)?
+            } else {
+                *ids.first()?
+            };
             materials.get(usize::try_from(k).ok()?).copied()
         });
         let slot = slot.or_else(|| materials.first().copied());
         let at = match prims.iter().position(|p| p.0 == slot) {
             Some(i) => i,
             None => {
-                prims.push((slot, Primitive { material: slot, ..Default::default() }, HashMap::new(), vec![]));
+                prims.push((
+                    slot,
+                    Primitive {
+                        material: slot,
+                        ..Default::default()
+                    },
+                    HashMap::new(),
+                    vec![],
+                ));
                 prims.len() - 1
             }
         };
-        let Some((_, prim, map, need)) = prims.get_mut(at) else { continue };
+        let Some((_, prim, map, need)) = prims.get_mut(at) else {
+            continue;
+        };
         let mut ids = Vec::with_capacity(poly_corners.len());
         for &(pv, v) in &poly_corners {
-            let n = normals.as_ref().and_then(|l| l.get(pv, v, p_index)).map(f32s::<3>);
-            let t = uvs.as_ref().and_then(|l| l.get(pv, v, p_index)).map(f32s::<2>);
-            let key: Key = (v as u32, n.unwrap_or([f32::NAN; 3]).map(f32::to_bits), t.unwrap_or([f32::NAN; 2]).map(f32::to_bits));
+            let n = normals
+                .as_ref()
+                .and_then(|l| l.get(pv, v, p_index))
+                .map(f32s::<3>);
+            let t = uvs
+                .as_ref()
+                .and_then(|l| l.get(pv, v, p_index))
+                .map(f32s::<2>);
+            let key: Key = (
+                v as u32,
+                n.unwrap_or([f32::NAN; 3]).map(f32::to_bits),
+                t.unwrap_or([f32::NAN; 2]).map(f32::to_bits),
+            );
             let id = *map.entry(key).or_insert_with(|| {
-                prim.positions.push(positions.get(v).copied().unwrap_or_default());
+                prim.positions
+                    .push(positions.get(v).copied().unwrap_or_default());
                 prim.normals.push(n.unwrap_or_default());
                 prim.uvs.push(t.unwrap_or_default());
                 need.push(n.is_none());
@@ -632,7 +784,10 @@ fn build_mesh(name: &str, geom: &FbxNode, materials: &[usize], with_normal_maps:
             prim.indices.extend([ids[0], ids[i - 1], ids[i]]);
         }
     }
-    let mut mesh = Mesh { name: name.to_string(), primitives: vec![] };
+    let mut mesh = Mesh {
+        name: name.to_string(),
+        primitives: vec![],
+    };
     for (_, mut p, _, need) in prims {
         if p.indices.is_empty() {
             continue;
@@ -665,7 +820,10 @@ fn build_mesh(name: &str, geom: &FbxNode, materials: &[usize], with_normal_maps:
 /// Lambert/Phong surface properties onto metallic-roughness.
 fn material(name: &str, node: &FbxNode) -> Material {
     let p = Props70::of(node);
-    let phong = node.child("ShadingModel").and_then(|s| s.str_at(0)).is_some_and(|s| s.eq_ignore_ascii_case("phong"));
+    let phong = node
+        .child("ShadingModel")
+        .and_then(|s| s.str_at(0))
+        .is_some_and(|s| s.eq_ignore_ascii_case("phong"));
     let factor = p.f("DiffuseFactor").unwrap_or(1.0);
     let d = p.v3("DiffuseColor", p.v3("Diffuse", [0.8; 3]));
     let alpha = match p.f("Opacity") {
@@ -680,7 +838,11 @@ fn material(name: &str, node: &FbxNode) -> Material {
     let e = p.v3("EmissiveColor", [0.0; 3]);
     let ef = p.f("EmissiveFactor").unwrap_or(1.0);
     let roughness = if phong {
-        let ns = p.f("ShininessExponent").or_else(|| p.f("Shininess")).unwrap_or(20.0).max(0.0);
+        let ns = p
+            .f("ShininessExponent")
+            .or_else(|| p.f("Shininess"))
+            .unwrap_or(20.0)
+            .max(0.0);
         (2.0 / (ns + 2.0)).sqrt() as f32
     } else {
         1.0
@@ -691,7 +853,11 @@ fn material(name: &str, node: &FbxNode) -> Material {
         metallic: 0.0,
         roughness,
         emissive: e.map(|c| srgb_to_linear((c * ef).clamp(0.0, 1.0) as f32)),
-        alpha_mode: if alpha < 0.999 { AlphaMode::Blend } else { AlphaMode::Opaque },
+        alpha_mode: if alpha < 0.999 {
+            AlphaMode::Blend
+        } else {
+            AlphaMode::Opaque
+        },
         ..Material::default()
     }
 }
@@ -730,25 +896,47 @@ fn short_name(full: &str) -> &str {
 pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<Model> {
     let (version, doc) = read(bytes)?;
     if version != 0 && version < 7000 {
-        return Err(ModelError::Unsupported(format!("FBX {}.{} (only FBX 7.x files are read)", version / 1000, version % 1000 / 100)));
+        return Err(ModelError::Unsupported(format!(
+            "FBX {}.{} (only FBX 7.x files are read)",
+            version / 1000,
+            version % 1000 / 100
+        )));
     }
     let top = |name: &str| doc.iter().find(|n| n.name == name);
     let objects = top("Objects").ok_or_else(|| perr("FBX: no Objects section"))?;
-    let by_id: HashMap<i64, &FbxNode> = objects.children.iter().filter_map(|o| Some((o.prop(0)?.as_i64()?, o))).collect();
+    let by_id: HashMap<i64, &FbxNode> = objects
+        .children
+        .iter()
+        .filter_map(|o| Some((o.prop(0)?.as_i64()?, o)))
+        .collect();
     let kind = |id: i64| by_id.get(&id).map(|n| n.name.as_str());
 
     // Connections: (child, parent, property) in file order.
     let mut links: Vec<(i64, i64, Option<&str>)> = vec![];
     if let Some(c) = top("Connections") {
         for e in c.children_named("C") {
-            let (Some(a), Some(b)) = (e.prop(1).and_then(Prop::as_i64), e.prop(2).and_then(Prop::as_i64)) else { continue };
+            let (Some(a), Some(b)) = (
+                e.prop(1).and_then(Prop::as_i64),
+                e.prop(2).and_then(Prop::as_i64),
+            ) else {
+                continue;
+            };
             links.push((a, b, e.str_at(3)));
         }
     }
 
-    let model_ids: Vec<i64> = objects.children.iter().filter(|o| o.name == "Model").filter_map(|o| o.prop(0)?.as_i64()).collect();
+    let model_ids: Vec<i64> = objects
+        .children
+        .iter()
+        .filter(|o| o.name == "Model")
+        .filter_map(|o| o.prop(0)?.as_i64())
+        .collect();
     let mut node_of: HashMap<i64, usize> = HashMap::new();
-    let mut nodes = vec![Node { name: "FBX axes".into(), matrix: Some(axis_matrix(top("GlobalSettings"))), ..Node::default() }];
+    let mut nodes = vec![Node {
+        name: "FBX axes".into(),
+        matrix: Some(axis_matrix(top("GlobalSettings"))),
+        ..Node::default()
+    }];
     for &id in &model_ids {
         if node_of.contains_key(&id) {
             continue;
@@ -756,7 +944,11 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
         let Some(o) = by_id.get(&id) else { continue };
         let name = short_name(o.str_at(1).unwrap_or("")).to_string();
         node_of.insert(id, nodes.len());
-        nodes.push(Node { name, matrix: Some(model_local(&Props70::of(o))), ..Node::default() });
+        nodes.push(Node {
+            name,
+            matrix: Some(model_local(&Props70::of(o))),
+            ..Node::default()
+        });
     }
 
     // Hierarchy: the first Model→Model link is the parent; anything else hangs off the root.
@@ -786,17 +978,20 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
         }
         let t = (|| {
             let tex = by_id.get(&tid)?;
-            let embedded = links.iter().filter(|l| l.1 == tid && kind(l.0) == Some("Video")).find_map(|l| {
-                let content = by_id.get(&l.0)?.child("Content")?;
-                match content.props.first()? {
-                    Prop::Bytes(b) if !b.is_empty() => Some(b.clone()),
-                    Prop::Str(_) => {
-                        let s: String = content.props.iter().filter_map(Prop::as_str).collect();
-                        base64(&s).filter(|b| !b.is_empty())
+            let embedded = links
+                .iter()
+                .filter(|l| l.1 == tid && kind(l.0) == Some("Video"))
+                .find_map(|l| {
+                    let content = by_id.get(&l.0)?.child("Content")?;
+                    match content.props.first()? {
+                        Prop::Bytes(b) if !b.is_empty() => Some(b.clone()),
+                        Prop::Str(_) => {
+                            let s: String = content.props.iter().filter_map(Prop::as_str).collect();
+                            base64(&s).filter(|b| !b.is_empty())
+                        }
+                        _ => None,
                     }
-                    _ => None,
-                }
-            });
+                });
             let bytes = embedded.or_else(|| {
                 ["RelativeFilename", "FileName"].iter().find_map(|k| {
                     let f = tex.child(k)?.str_at(0)?.replace('\\', "/");
@@ -810,13 +1005,19 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
         texture_of.insert(tid, t);
         t
     };
-    let mut material_index = |mid: i64, materials: &mut Vec<Material>, textures: &mut Vec<Arc<Texture>>| -> Option<usize> {
+    let mut material_index = |mid: i64,
+                              materials: &mut Vec<Material>,
+                              textures: &mut Vec<Arc<Texture>>|
+     -> Option<usize> {
         if let Some(&m) = material_of.get(&mid) {
             return Some(m);
         }
         let node = by_id.get(&mid)?;
         let mut m = material(short_name(node.str_at(1).unwrap_or("")), node);
-        for &(tid, _, prop) in links.iter().filter(|l| l.1 == mid && kind(l.0) == Some("Texture")) {
+        for &(tid, _, prop) in links
+            .iter()
+            .filter(|l| l.1 == mid && kind(l.0) == Some("Texture"))
+        {
             let slot = match prop {
                 Some("DiffuseColor") => &mut m.base_color_tex,
                 Some("NormalMap") => &mut m.normal_tex,
@@ -838,20 +1039,42 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
     // One mesh per Model with Mesh geometry (material slots are per Model).
     let mut meshes: Vec<Mesh> = vec![];
     for &id in &model_ids {
-        let Some(&ni) = node_of.get(&id) else { continue };
-        let Some(gid) = links.iter().find(|l| l.1 == id && kind(l.0) == Some("Geometry")).map(|l| l.0) else { continue };
-        let Some(geom) = by_id.get(&gid) else { continue };
-        let mats: Vec<usize> =
-            links.iter().filter(|l| l.1 == id && kind(l.0) == Some("Material")).filter_map(|l| material_index(l.0, &mut materials, &mut textures)).collect();
+        let Some(&ni) = node_of.get(&id) else {
+            continue;
+        };
+        let Some(gid) = links
+            .iter()
+            .find(|l| l.1 == id && kind(l.0) == Some("Geometry"))
+            .map(|l| l.0)
+        else {
+            continue;
+        };
+        let Some(geom) = by_id.get(&gid) else {
+            continue;
+        };
+        let mats: Vec<usize> = links
+            .iter()
+            .filter(|l| l.1 == id && kind(l.0) == Some("Material"))
+            .filter_map(|l| material_index(l.0, &mut materials, &mut textures))
+            .collect();
         let normal_mapped: Vec<bool> = materials.iter().map(|m| m.normal_tex.is_some()).collect();
         let name = nodes.get(ni).map(|n| n.name.clone()).unwrap_or_default();
-        let Some(mesh) = build_mesh(&name, geom, &mats, &|m| normal_mapped.get(m).copied().unwrap_or(false)) else { continue };
+        let Some(mesh) = build_mesh(&name, geom, &mats, &|m| {
+            normal_mapped.get(m).copied().unwrap_or(false)
+        }) else {
+            continue;
+        };
         meshes.push(mesh);
         let mesh_index = meshes.len() - 1;
         let geo = by_id.get(&id).and_then(|o| geometric(&Props70::of(o)));
         match geo {
             Some(matrix) => {
-                nodes.push(Node { name: format!("{name} geometry"), matrix: Some(matrix), mesh: Some(mesh_index), ..Node::default() });
+                nodes.push(Node {
+                    name: format!("{name} geometry"),
+                    matrix: Some(matrix),
+                    mesh: Some(mesh_index),
+                    ..Node::default()
+                });
                 let gi = nodes.len() - 1;
                 if let Some(n) = nodes.get_mut(ni) {
                     n.children.push(gi);
@@ -867,7 +1090,14 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
     if meshes.is_empty() {
         return Err(perr("FBX file without meshes"));
     }
-    Ok(Model { meshes, nodes, roots: vec![0], materials, textures, ..Model::default() })
+    Ok(Model {
+        meshes,
+        nodes,
+        roots: vec![0],
+        materials,
+        textures,
+        ..Model::default()
+    })
 }
 
 #[cfg(test)]

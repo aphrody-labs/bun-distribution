@@ -4,7 +4,14 @@
 //! The pipeline evaluates it; the catalog stores it; presets, copy/paste, sync, versions and history
 //! are operations on it. Numeric sliders are addressed by id through [`controls`].
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod controls;
 pub mod presets;
@@ -95,7 +102,13 @@ impl DevelopSettings {
             d.reset_section(Section::Curve);
         }
         if off("color") {
-            for section in [Section::Color, Section::Mixer, Section::BwMix, Section::Grading, Section::PointColor] {
+            for section in [
+                Section::Color,
+                Section::Mixer,
+                Section::BwMix,
+                Section::Grading,
+                Section::PointColor,
+            ] {
                 d.reset_section(section);
             }
             d.point_colors.clear();
@@ -110,7 +123,11 @@ impl DevelopSettings {
     /// section is switched off or the value is not a number.
     pub fn denoise_amount(&self) -> f32 {
         let a = self.enhance.denoise;
-        if a.is_finite() && self.enhance.denoise_enabled() && self.section_enabled("detail") { (a / 100.0).clamp(0.0, 1.0) as f32 } else { 0.0 }
+        if a.is_finite() && self.enhance.denoise_enabled() && self.section_enabled("detail") {
+            (a / 100.0).clamp(0.0, 1.0) as f32
+        } else {
+            0.0
+        }
     }
 
     pub fn set_section_enabled(&mut self, section: &str, on: bool) {
@@ -185,7 +202,11 @@ mod tests {
         assert_eq!(s.wb.scale, WbScale::Legacy);
         assert_eq!(s.to_json()["wb"], old["wb"]);
         assert_eq!(DevelopSettings::default().wb.scale, WbScale::Legacy);
-        assert!(DevelopSettings::default().to_json()["wb"].get("scale").is_none());
+        assert!(
+            DevelopSettings::default().to_json()["wb"]
+                .get("scale")
+                .is_none()
+        );
         // written on the Kelvin scale: said so, and read back
         let mut k = s.clone();
         k.wb.scale = WbScale::Kelvin;
@@ -201,27 +222,56 @@ mod tests {
         let mut base = DevelopSettings::default();
         base.wb.scale = WbScale::Kelvin;
         // an old preset's white balance lands on Kelvin settings: it keeps its relative meaning
-        let out = apply_partial(&base, &json!({"wb": {"mode": "custom", "temp": 5800.0}}), 1.0);
+        let out = apply_partial(
+            &base,
+            &json!({"wb": {"mode": "custom", "temp": 5800.0}}),
+            1.0,
+        );
         assert_eq!((out.wb.scale, out.wb.temp), (WbScale::Legacy, 5800.0));
         let out = apply_partial(&base, &json!({"wb": {"tint": 12.0}}), 1.0);
         assert_eq!(out.wb.scale, WbScale::Legacy);
         // one that says Kelvin stays Kelvin; a mode alone leaves the scale as it was
-        let out = apply_partial(&base, &json!({"wb": {"mode": "custom", "temp": 5800.0, "scale": "kelvin"}}), 1.0);
+        let out = apply_partial(
+            &base,
+            &json!({"wb": {"mode": "custom", "temp": 5800.0, "scale": "kelvin"}}),
+            1.0,
+        );
         assert_eq!(out.wb.scale, WbScale::Kelvin);
         let out = apply_partial(&base, &json!({"wb": {"mode": "cloudy"}}), 1.0);
         assert_eq!(out.wb.scale, WbScale::Kelvin);
         let out = apply_partial(&base, &json!({"light": {"exposure": 1.0}}), 1.0);
         assert_eq!(out.wb.scale, WbScale::Kelvin);
         // the plain merge (`develop.merge`) follows the same rule
-        assert_eq!(base.merged(&json!({"wb": {"temp": 5800.0}})).unwrap().wb.scale, WbScale::Legacy);
-        assert_eq!(base.merged(&json!({"wb": {"temp": 5800.0, "scale": "kelvin"}})).unwrap().wb.scale, WbScale::Kelvin);
-        assert_eq!(base.merged(&json!({"wb": {"mode": "auto"}})).unwrap().wb.scale, WbScale::Kelvin);
+        assert_eq!(
+            base.merged(&json!({"wb": {"temp": 5800.0}}))
+                .unwrap()
+                .wb
+                .scale,
+            WbScale::Legacy
+        );
+        assert_eq!(
+            base.merged(&json!({"wb": {"temp": 5800.0, "scale": "kelvin"}}))
+                .unwrap()
+                .wb
+                .scale,
+            WbScale::Kelvin
+        );
+        assert_eq!(
+            base.merged(&json!({"wb": {"mode": "auto"}}))
+                .unwrap()
+                .wb
+                .scale,
+            WbScale::Kelvin
+        );
     }
 
     #[test]
     fn default_hdr_is_not_serialized_so_existing_hashes_stay() {
         let s = DevelopSettings::default();
-        assert!(s.to_json().get("hdr").is_none(), "HDR off must not change the settings JSON or hash64");
+        assert!(
+            s.to_json().get("hdr").is_none(),
+            "HDR off must not change the settings JSON or hash64"
+        );
         let mut on = s.clone();
         on.hdr.enabled = true;
         assert!(on.to_json().get("hdr").is_some());
@@ -231,7 +281,11 @@ mod tests {
 
     #[test]
     fn hdr_peak_is_finite_for_a_non_finite_headroom() {
-        let mut h = Hdr { enabled: true, max_ev: f64::NAN, ..Hdr::default() };
+        let mut h = Hdr {
+            enabled: true,
+            max_ev: f64::NAN,
+            ..Hdr::default()
+        };
         assert_eq!(h.peak(), (Hdr::DEFAULT_MAX_EV as f32).exp2());
         h.max_ev = f64::INFINITY;
         assert_eq!(h.peak(), (Hdr::DEFAULT_MAX_EV as f32).exp2());
@@ -241,7 +295,8 @@ mod tests {
 
     #[test]
     fn missing_fields_take_defaults_and_unknown_ignored() {
-        let s = DevelopSettings::from_json(&json!({"light": {"exposure": 0.5}, "futureThing": 3})).unwrap();
+        let s = DevelopSettings::from_json(&json!({"light": {"exposure": 0.5}, "futureThing": 3}))
+            .unwrap();
         assert_eq!(s.light.exposure, 0.5);
         assert_eq!(s.grading.blending, 50.0);
     }
@@ -249,7 +304,9 @@ mod tests {
     #[test]
     fn merge_partial() {
         let s = DevelopSettings::default();
-        let m = s.merged(&json!({"light": {"contrast": 20}, "effects": {"clarity": 10}})).unwrap();
+        let m = s
+            .merged(&json!({"light": {"contrast": 20}, "effects": {"clarity": 10}}))
+            .unwrap();
         assert_eq!(m.light.contrast, 20.0);
         assert_eq!(m.effects.clarity, 10.0);
         assert_eq!(m.light.exposure, 0.0);

@@ -49,8 +49,10 @@ fn main() {
     let mut langues = vec![String::from("fr"), String::from("ja"), String::from("en")];
     let mut max = 40usize;
     if let Some(i) = args.iter().position(|a| a == "--lang") {
-        langues =
-            args.get(i + 1).map(|s| s.split(',').map(str::to_string).collect()).unwrap_or(langues);
+        langues = args
+            .get(i + 1)
+            .map(|s| s.split(',').map(str::to_string).collect())
+            .unwrap_or(langues);
         args.drain(i..=i + 1);
     }
     if let Some(i) = args.iter().position(|a| a == "--max") {
@@ -67,7 +69,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
 
     // hash → (langue → texte), pour montrer les traductions côte à côte.
@@ -78,7 +80,9 @@ fn main() {
         total += entrees.len();
         for (h, t, fichier) in entrees {
             if t.to_lowercase().contains(&motif) {
-                let e = trouves.entry(h).or_insert_with(|| (BTreeMap::new(), fichier));
+                let e = trouves
+                    .entry(h)
+                    .or_insert_with(|| (BTreeMap::new(), fichier));
                 e.0.insert(langue.clone(), t);
             }
         }

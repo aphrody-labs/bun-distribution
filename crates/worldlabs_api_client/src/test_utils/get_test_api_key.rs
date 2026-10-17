@@ -5,6 +5,6 @@ const API_KEY_FILE: &str = "/Users/bt/Artcraft/credentials/world_labs_api_key.tx
 
 #[cfg(test)]
 pub(crate) fn get_test_api_key() -> AnyhowResult<WorldLabsApiCreds> {
-  let api_key = std::fs::read_to_string(API_KEY_FILE)?.trim().to_string();
-  Ok(WorldLabsApiCreds::new(api_key))
+    let api_key = std::fs::read_to_string(API_KEY_FILE)?.trim().to_string();
+    Ok(WorldLabsApiCreds::new(api_key))
 }

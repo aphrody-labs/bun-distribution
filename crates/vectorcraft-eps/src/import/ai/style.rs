@@ -36,8 +36,15 @@ use super::obj::V;
 use super::paint;
 
 /// The filters a plain style may chain.
-const PLAIN: [&str; 7] =
-    ["Chain Style Filter", "Stack Style Filter", "Stroke Style Filter", "Fill Style Filter", "Conduit Filter", "Blend Style Filter", GLOW];
+const PLAIN: [&str; 7] = [
+    "Chain Style Filter",
+    "Stack Style Filter",
+    "Stroke Style Filter",
+    "Fill Style Filter",
+    "Conduit Filter",
+    "Blend Style Filter",
+    GLOW,
+];
 const GLOW: &str = "Adobe Outer Glow"; // brand-ok: the filter's name in the files
 const SHADOW: &str = "Adobe Drop Shadow"; // brand-ok: the filter's name in the files
 
@@ -135,8 +142,13 @@ pub(super) fn art_styles(data: &[u8]) -> HashMap<String, ArtStyle> {
                     finish(name.take(), &mut filters);
                     operands.clear();
                 }
-                b"Name" if name.is_none() && filters.is_empty() => name = operands.iter().rev().find_map(V::text),
-                b"Filter" => filters.push(Filter { name: operands.iter().rev().find_map(V::text).unwrap_or_default(), ..Filter::default() }),
+                b"Name" if name.is_none() && filters.is_empty() => {
+                    name = operands.iter().rev().find_map(V::text)
+                }
+                b"Filter" => filters.push(Filter {
+                    name: operands.iter().rev().find_map(V::text).unwrap_or_default(),
+                    ..Filter::default()
+                }),
                 b"Visible" => {
                     if let Some(f) = filters.last_mut() {
                         f.visible = operands.iter().rev().find_map(V::num) != Some(0.0);
@@ -151,10 +163,12 @@ pub(super) fn art_styles(data: &[u8]) -> HashMap<String, ArtStyle> {
                         continue;
                     }
                     // The key follows: `value /Real (key) ,`.
-                    if let (Some(value), Some(Tok::Str(key))) = (value, lex.next_token().map(|t| t.tok))
+                    if let (Some(value), Some(Tok::Str(key))) =
+                        (value, lex.next_token().map(|t| t.tok))
                         && let Some(f) = filters.last_mut()
                     {
-                        f.params.insert(String::from_utf8_lossy(&key).into_owned(), value);
+                        f.params
+                            .insert(String::from_utf8_lossy(&key).into_owned(), value);
                     }
                     continue;
                 }
@@ -174,8 +188,11 @@ pub(super) fn art_styles(data: &[u8]) -> HashMap<String, ArtStyle> {
                 if op == ";"
                     && let Some(values) = dict_array.take()
                 {
-                    if let (Some(Tok::Str(key)), Some(f)) = (lex.next_token().map(|t| t.tok), filters.last_mut()) {
-                        f.arrays.insert(String::from_utf8_lossy(&key).into_owned(), values);
+                    if let (Some(Tok::Str(key)), Some(f)) =
+                        (lex.next_token().map(|t| t.tok), filters.last_mut())
+                    {
+                        f.arrays
+                            .insert(String::from_utf8_lossy(&key).into_owned(), values);
                     }
                     operands.clear();
                     continue;
@@ -183,7 +200,12 @@ pub(super) fn art_styles(data: &[u8]) -> HashMap<String, ArtStyle> {
                 if let Some(f) = filters.last_mut() {
                     paint_op(f, op, &operands);
                 }
-                if op == "," || op == ";" || op.starts_with('X') || op.starts_with('B') || op.len() <= 2 {
+                if op == ","
+                    || op == ";"
+                    || op.starts_with('X')
+                    || op.starts_with('B')
+                    || op.len() <= 2
+                {
                     operands.clear();
                 }
                 continue;
@@ -203,14 +225,20 @@ fn paint_op(f: &mut Filter, op: &str, vals: &[V]) {
     let last = vals.iter().rev().find_map(V::num);
     match op {
         "Xa" | "k" | "g" | "x" | "Xk" | "XA" | "K" | "G" | "X" | "XK" => {
-            let Some((p, _)) = paint::color_op(op, vals) else { return };
+            let Some((p, _)) = paint::color_op(op, vals) else {
+                return;
+            };
             if op.ends_with(|c: char| c.is_ascii_lowercase()) {
                 f.fill = Some(p);
             } else {
                 f.stroke = Some(p);
             }
         }
-        "w" => f.width = last.filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(f.width),
+        "w" => {
+            f.width = last
+                .filter(|v| v.is_finite() && *v >= 0.0)
+                .unwrap_or(f.width)
+        }
         "J" => {
             f.cap = match last.map(|v| v as i64) {
                 Some(1) => LineCap::Round,
@@ -225,14 +253,28 @@ fn paint_op(f: &mut Filter, op: &str, vals: &[V]) {
                 _ => LineJoin::Miter,
             }
         }
-        "M" => f.miter = last.filter(|v| v.is_finite() && *v >= 1.0).unwrap_or(f.miter).min(500.0),
+        "M" => {
+            f.miter = last
+                .filter(|v| v.is_finite() && *v >= 1.0)
+                .unwrap_or(f.miter)
+                .min(500.0)
+        }
         "d" => {
             let pattern: Vec<f64> = vals
                 .iter()
                 .rev()
-                .find_map(|v| if let V::Arr(a) = v { Some(a.iter().filter_map(V::num).collect()) } else { None })
+                .find_map(|v| {
+                    if let V::Arr(a) = v {
+                        Some(a.iter().filter_map(V::num).collect())
+                    } else {
+                        None
+                    }
+                })
                 .unwrap_or_default();
-            f.dash = (!pattern.is_empty() && pattern.len() <= 64 && pattern.iter().all(|v| v.is_finite() && *v >= 0.0)).then(|| Dash {
+            f.dash = (!pattern.is_empty()
+                && pattern.len() <= 64
+                && pattern.iter().all(|v| v.is_finite() && *v >= 0.0))
+            .then(|| Dash {
                 pattern,
                 offset: last.filter(|v| v.is_finite()).unwrap_or(0.0),
                 ..Dash::default()
@@ -256,7 +298,10 @@ fn width_profile(arrays: &HashMap<String, Vec<f64>>) -> Option<WidthProfile> {
     let side = |key: &str| arrays.get(key).filter(|w| w.len() == at.len());
     let (left, right) = match (side("BSLeftWidthsArray"), side("BSRightWidthsArray")) {
         (Some(left), Some(right)) => (left, right),
-        _ => (side("BSCenteredWidthsArray")?, side("BSCenteredWidthsArray")?),
+        _ => (
+            side("BSCenteredWidthsArray")?,
+            side("BSCenteredWidthsArray")?,
+        ),
     };
     if at.len() > 1024 {
         return None;
@@ -270,13 +315,20 @@ fn width_profile(arrays: &HashMap<String, Vec<f64>>) -> Option<WidthProfile> {
         .map(|((t, l), r)| (t.clamp(0.0, 1.0), l.max(0.0), r.max(0.0)))
         .collect();
     points.sort_by(|a, b| a.0.total_cmp(&b.0));
-    let uniform = points.iter().all(|(_, l, r)| (l - 1.0).abs() < 1e-9 && (r - 1.0).abs() < 1e-9);
+    let uniform = points
+        .iter()
+        .all(|(_, l, r)| (l - 1.0).abs() < 1e-9 && (r - 1.0).abs() < 1e-9);
     (!uniform).then_some(WidthProfile { points })
 }
 
 fn style(filters: &[Filter]) -> ArtStyle {
     let count = |name: &str| filters.iter().filter(|f| f.name == name).count();
-    let painted = filters.iter().rposition(|f| matches!(f.name.as_str(), "Stroke Style Filter" | "Fill Style Filter" | "Conduit Filter"));
+    let painted = filters.iter().rposition(|f| {
+        matches!(
+            f.name.as_str(),
+            "Stroke Style Filter" | "Fill Style Filter" | "Conduit Filter"
+        )
+    });
     let mut plain = count("Stroke Style Filter") <= 1 && count("Fill Style Filter") <= 1;
     let mut effects = vec![];
     let mut items = vec![];
@@ -290,7 +342,11 @@ fn style(filters: &[Filter]) -> ArtStyle {
             },
             // Dashes aligned to corners and path ends draw as the look's pieces: a solid end at each end
             // and the pattern, fitted, between them.
-            "Stroke Style Filter" if f.paints.0 && f.params.get("BSDashAdj").is_some_and(|v| *v != 0.0) => plain = false,
+            "Stroke Style Filter"
+                if f.paints.0 && f.params.get("BSDashAdj").is_some_and(|v| *v != 0.0) =>
+            {
+                plain = false
+            }
             "Stroke Style Filter" if f.paints.0 => match &f.stroke {
                 Some(p) if !f.gradient => items.push(StyleItem::Stroke {
                     paint: p.clone(),
@@ -321,8 +377,14 @@ fn style(filters: &[Filter]) -> ArtStyle {
             continue;
         }
         let param = |k: &str| f.params.get(k).copied();
-        let mode = |default: usize| super::read::blend_name(param("blnd").map_or(default, |v| v.max(0.0) as usize));
-        let color = f.fill.as_ref().and_then(Paint::color).unwrap_or(vectorcraft_color::Color::BLACK);
+        let mode = |default: usize| {
+            super::read::blend_name(param("blnd").map_or(default, |v| v.max(0.0) as usize))
+        };
+        let color = f
+            .fill
+            .as_ref()
+            .and_then(Paint::color)
+            .unwrap_or(vectorcraft_color::Color::BLACK);
         match f.name.as_str() {
             // `blur`'s scale isn't publicly documented: read as the Gaussian's σ, an effect's blur being 2σ.
             GLOW => effects.push(Effect {
@@ -349,7 +411,11 @@ fn style(filters: &[Filter]) -> ArtStyle {
             _ => {}
         }
     }
-    ArtStyle { plain, items, effects }
+    ArtStyle {
+        plain,
+        items,
+        effects,
+    }
 }
 
 #[cfg(test)]
@@ -367,9 +433,14 @@ mod tests {
         let styles = art_styles(data);
         let style = &styles["Tapered"];
         assert!(style.plain);
-        let [StyleItem::Stroke { width, profile, .. }] = style.items.as_slice() else { panic!("{:?}", style.items) };
+        let [StyleItem::Stroke { width, profile, .. }] = style.items.as_slice() else {
+            panic!("{:?}", style.items)
+        };
         assert_eq!(*width, 30.0);
-        assert_eq!(profile.as_ref().map(|p| p.points.clone()), Some(vec![(0.0, 1.0, 1.0), (1.0, 0.1, 0.1)]));
+        assert_eq!(
+            profile.as_ref().map(|p| p.points.clone()),
+            Some(vec![(0.0, 1.0, 1.0), (1.0, 0.1, 0.1)])
+        );
     }
 
     #[test]
@@ -389,8 +460,13 @@ mod tests {
         let data = b"/KnownStyle :\n(Shade) /Name ,\n/ActiveStyle :\n/CompoundFilter :\n(Chain Style Filter) 0 0 /Filter ,\n1 /Visible ,\n\
             /BasicFilter :\n(Adobe Drop Shadow) 1 0 /Filter ,\n1 /Visible ,\n/Dictionary : /NotRecorded ,\n7 /Real (horz) ,\n7 /Real (vert) ,\n; /Dict ;\n /Part ,\n;\n";
         let styles = art_styles(data);
-        let [shadow] = styles["Shade"].effects.as_slice() else { panic!("{:?}", styles["Shade"]) };
-        assert_eq!((shadow.params["x"].as_f64(), shadow.params["y"].as_f64()), (Some(7.0), Some(7.0)));
+        let [shadow] = styles["Shade"].effects.as_slice() else {
+            panic!("{:?}", styles["Shade"])
+        };
+        assert_eq!(
+            (shadow.params["x"].as_f64(), shadow.params["y"].as_f64()),
+            (Some(7.0), Some(7.0))
+        );
     }
 
     #[test]
@@ -400,9 +476,18 @@ mod tests {
         assert_eq!(f.dash.map(|d| d.offset), Some(0.0));
         // Positions outside 0..=1 and out of order, a negative width, a non-finite one.
         let arrays = HashMap::from([
-            ("BSVariableWidthTValuesArray".to_string(), vec![1.5, -0.2, 0.5, 0.7]),
-            ("BSCenteredWidthsArray".to_string(), vec![-1.0, 2.0, 0.5, f64::INFINITY]),
+            (
+                "BSVariableWidthTValuesArray".to_string(),
+                vec![1.5, -0.2, 0.5, 0.7],
+            ),
+            (
+                "BSCenteredWidthsArray".to_string(),
+                vec![-1.0, 2.0, 0.5, f64::INFINITY],
+            ),
         ]);
-        assert_eq!(width_profile(&arrays).map(|p| p.points), Some(vec![(0.0, 2.0, 2.0), (0.5, 0.5, 0.5), (1.0, 0.0, 0.0)]));
+        assert_eq!(
+            width_profile(&arrays).map(|p| p.points),
+            Some(vec![(0.0, 2.0, 2.0), (0.5, 0.5, 0.5), (1.0, 0.0, 0.0)])
+        );
     }
 }

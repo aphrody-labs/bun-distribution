@@ -113,7 +113,10 @@ const SOUNDS: [(&str, &str); 6] = [
 ];
 
 fn lookup(table: &[(&'static str, &'static str)], key: &str) -> Option<&'static str> {
-    table.iter().find(|(code, _)| *code == key).map(|(_, name)| *name)
+    table
+        .iter()
+        .find(|(code, _)| *code == key)
+        .map(|(_, name)| *name)
 }
 
 /// Semantic classification of an output path `cpk/<tree>/[data/]<domain>/<sub>/...`.
@@ -152,16 +155,32 @@ pub fn classify(path: &str, tree: &str) -> Classification {
                 "Other"
             };
             let entity = non_empty(sub).map(|code| {
-                lookup(&RACES, &code).or_else(|| lookup(&ROSTER, &code)).map_or(code, str::to_owned)
+                lookup(&RACES, &code)
+                    .or_else(|| lookup(&ROSTER, &code))
+                    .map_or(code, str::to_owned)
             });
             (Some(kind.to_owned()), entity)
-        },
-        "skill" => (lookup(&SKILLS, sub).map(str::to_owned).or_else(|| non_empty(sub)), None),
-        "sound" => (lookup(&SOUNDS, sub).map(str::to_owned).or_else(|| non_empty(sub)), None),
+        }
+        "skill" => (
+            lookup(&SKILLS, sub)
+                .map(str::to_owned)
+                .or_else(|| non_empty(sub)),
+            None,
+        ),
+        "sound" => (
+            lookup(&SOUNDS, sub)
+                .map(str::to_owned)
+                .or_else(|| non_empty(sub)),
+            None,
+        ),
         "ui" | "effect" | "stage" | "demo" => (non_empty(sub), None),
         _ => (None, None),
     };
-    Classification { domain: domain.to_owned(), subdomain, entity }
+    Classification {
+        domain: domain.to_owned(),
+        subdomain,
+        entity,
+    }
 }
 
 /// Category and extension of an indexed output, as the Python `index` command assigns them.
@@ -194,7 +213,10 @@ pub fn index_path(out: &Path) -> PathBuf {
 }
 
 fn sql(error: rusqlite::Error) -> ReError {
-    ReError::ParseError { context: "dbxv2_index", details: error.to_string() }
+    ReError::ParseError {
+        context: "dbxv2_index",
+        details: error.to_string(),
+    }
 }
 
 /// `index`: rebuild `<out>/index/dbxv2_index.db` from every `<out>/cpk/<tree>`.
@@ -217,8 +239,9 @@ pub fn build_index(out: &Path) -> Result<Value> {
                  VALUES(?,?,?,?,?,?,?,?,?)",
             )
             .map_err(sql)?;
-        let mut insert_string =
-            transaction.prepare("INSERT INTO strings(dir,file,text) VALUES(?,?,?)").map_err(sql)?;
+        let mut insert_string = transaction
+            .prepare("INSERT INTO strings(dir,file,text) VALUES(?,?,?)")
+            .map_err(sql)?;
         let mut trees: Vec<PathBuf> = fs::read_dir(out.join("cpk"))
             .into_iter()
             .flatten()
@@ -228,12 +251,23 @@ pub fn build_index(out: &Path) -> Result<Value> {
             .collect();
         trees.sort();
         for tree in trees {
-            let tree_name = tree.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+            let tree_name = tree
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default();
             for path in crate::game::convert::walk_files(&tree, &|_| true)? {
-                let name = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
-                let Some((category, extension)) = output_category(&name) else { continue };
-                let relative =
-                    path.strip_prefix(out).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+                let name = path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let Some((category, extension)) = output_category(&name) else {
+                    continue;
+                };
+                let relative = path
+                    .strip_prefix(out)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .replace('\\', "/");
                 let semantic = classify(&relative, &tree_name);
                 let bytes = fs::metadata(&path)?.len() as i64;
                 insert_asset
@@ -255,9 +289,16 @@ pub fn build_index(out: &Path) -> Result<Value> {
                         .ok()
                         .and_then(|raw| serde_json::from_slice(&raw).ok())
                         .unwrap_or(Value::Null);
-                    for text in parsed.get("strings").and_then(Value::as_array).into_iter().flatten() {
+                    for text in parsed
+                        .get("strings")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                    {
                         if let Some(text) = text.as_str() {
-                            insert_string.execute(params![tree_name, name, text]).map_err(sql)?;
+                            insert_string
+                                .execute(params![tree_name, name, text])
+                                .map_err(sql)?;
                             strings += 1;
                         }
                     }
@@ -274,7 +315,10 @@ fn open_existing(out: &Path) -> Result<Connection> {
     if !database.exists() {
         return Err(ReError::ParseError {
             context: "dbxv2_index",
-            details: format!("index missing: {} (run `bunre dbxv2 index` first)", database.display()),
+            details: format!(
+                "index missing: {} (run `bunre dbxv2 index` first)",
+                database.display()
+            ),
         });
     }
     Connection::open(database).map_err(sql)
@@ -286,12 +330,16 @@ pub fn reclassify(out: &Path) -> Result<Value> {
     let existing: Vec<String> = connection
         .prepare("PRAGMA table_info(asset)")
         .and_then(|mut statement| {
-            statement.query_map([], |row| row.get::<_, String>(1))?.collect::<rusqlite::Result<_>>()
+            statement
+                .query_map([], |row| row.get::<_, String>(1))?
+                .collect::<rusqlite::Result<_>>()
         })
         .map_err(sql)?;
     for column in ["domain", "subdomain", "entity"] {
         if !existing.iter().any(|name| name == column) {
-            connection.execute(&format!("ALTER TABLE asset ADD COLUMN {column} TEXT"), []).map_err(sql)?;
+            connection
+                .execute(&format!("ALTER TABLE asset ADD COLUMN {column} TEXT"), [])
+                .map_err(sql)?;
         }
     }
     connection
@@ -303,7 +351,9 @@ pub fn reclassify(out: &Path) -> Result<Value> {
     let rows: Vec<(i64, String, String)> = connection
         .prepare("SELECT id,path,dir FROM asset")
         .and_then(|mut statement| {
-            statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?.collect()
+            statement
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+                .collect()
         })
         .map_err(sql)?;
     let transaction = connection.transaction().map_err(sql)?;
@@ -313,11 +363,21 @@ pub fn reclassify(out: &Path) -> Result<Value> {
             .map_err(sql)?;
         for (id, path, tree) in &rows {
             let semantic = classify(path, tree);
-            update.execute(params![semantic.domain, semantic.subdomain, semantic.entity, id]).map_err(sql)?;
+            update
+                .execute(params![
+                    semantic.domain,
+                    semantic.subdomain,
+                    semantic.entity,
+                    id
+                ])
+                .map_err(sql)?;
         }
     }
     transaction.commit().map_err(sql)?;
-    let domains = grouped(&connection, "SELECT domain,count(*) FROM asset GROUP BY domain ORDER BY 2 DESC")?;
+    let domains = grouped(
+        &connection,
+        "SELECT domain,count(*) FROM asset GROUP BY domain ORDER BY 2 DESC",
+    )?;
     Ok(json!({ "classified": rows.len(), "domains": domains }))
 }
 
@@ -327,7 +387,10 @@ fn grouped(connection: &Connection, query: &str) -> Result<Vec<Value>> {
         .and_then(|mut statement| {
             statement
                 .query_map([], |row| {
-                    Ok(json!([row.get::<_, Option<String>>(0)?, row.get::<_, i64>(1)?]))
+                    Ok(json!([
+                        row.get::<_, Option<String>>(0)?,
+                        row.get::<_, i64>(1)?
+                    ]))
                 })?
                 .collect()
         })
@@ -381,11 +444,16 @@ pub fn stats(out: &Path) -> Result<Value> {
         &connection,
         "SELECT ext,count(*) FROM asset WHERE category='gameplay' GROUP BY ext ORDER BY 2 DESC",
     )?;
-    let trees =
-        grouped(&connection, "SELECT dir,count(*) FROM asset GROUP BY dir ORDER BY 2 DESC LIMIT 10")?;
-    let strings: i64 =
-        connection.query_row("SELECT count(*) FROM strings", [], |row| row.get(0)).map_err(sql)?;
-    Ok(json!({ "categories": categories, "gameplay": gameplay, "topDirs": trees, "strings": strings }))
+    let trees = grouped(
+        &connection,
+        "SELECT dir,count(*) FROM asset GROUP BY dir ORDER BY 2 DESC LIMIT 10",
+    )?;
+    let strings: i64 = connection
+        .query_row("SELECT count(*) FROM strings", [], |row| row.get(0))
+        .map_err(sql)?;
+    Ok(
+        json!({ "categories": categories, "gameplay": gameplay, "topDirs": trees, "strings": strings }),
+    )
 }
 
 #[cfg(test)]

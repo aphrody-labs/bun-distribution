@@ -328,7 +328,7 @@ all_tuples!(
 #[cfg(test)]
 mod tests {
     use crate::{
-        system::{assert_is_system, In, InMut, InRef, IntoSystem, StaticSystemInput, System},
+        system::{In, InMut, InRef, IntoSystem, StaticSystemInput, System, assert_is_system},
         world::World,
     };
 

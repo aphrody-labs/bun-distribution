@@ -3,8 +3,9 @@
 //! `prototypeDevice`, `prototypeBackgrounds` and `prototypeStartNodeID`.
 
 use figcraft_doc::proto::{
-    Action, ConditionalBlock, DeviceRotation, Direction, Easing, Expr, ExprOp, Interaction, KeyMods, MAX_ACTION_DEPTH, MAX_EXPR_DEPTH, Overflow,
-    OverlayPosition, PrototypeSettings, ScrollPosition, Transition, Trigger, gamepad_button,
+    Action, ConditionalBlock, DeviceRotation, Direction, Easing, Expr, ExprOp, Interaction,
+    KeyMods, MAX_ACTION_DEPTH, MAX_EXPR_DEPTH, Overflow, OverlayPosition, PrototypeSettings,
+    ScrollPosition, Transition, Trigger, gamepad_button,
 };
 use figcraft_doc::{Node, NodeId, VariableType, VariableValue};
 use serde_json::{Value, json};
@@ -46,18 +47,27 @@ pub(super) fn scrolling(n: &mut Node, j: &Value) {
 /// A page's prototype device (and its rotation) and background, when the file sets them.
 pub(super) fn page_settings(c: &Value) -> Option<PrototypeSettings> {
     let device = c.get("prototypeDevice").filter(|d| d.is_object());
-    let background = list(c, "prototypeBackgrounds").first().and_then(color).filter(|b| b.a > 0.0);
+    let background = list(c, "prototypeBackgrounds")
+        .first()
+        .and_then(color)
+        .filter(|b| b.a > 0.0);
     if device.is_none() && background.is_none() {
         return None;
     }
     let mut s = PrototypeSettings::default();
     if let Some(d) = device {
         s.device = device_name(d).to_string();
-        s.rotation = text(d, "rotation").and_then(DeviceRotation::parse).unwrap_or_default();
+        s.rotation = text(d, "rotation")
+            .and_then(DeviceRotation::parse)
+            .unwrap_or_default();
         // A custom size keeps its screen (turned: its sides swap, as it doesn't turn here).
         if let Some((w, h)) = custom_size(d) {
             s.device = PrototypeSettings::CUSTOM_DEVICE.into();
-            s.custom_size = if s.rotation == DeviceRotation::Landscape { [h, w] } else { [w, h] };
+            s.custom_size = if s.rotation == DeviceRotation::Landscape {
+                [h, w]
+            } else {
+                [w, h]
+            };
             s.rotation = DeviceRotation::Portrait;
         }
     }
@@ -73,18 +83,27 @@ fn custom_size(d: &Value) -> Option<(f64, f64)> {
         return None;
     }
     let s = d.get("size")?;
-    Some((PrototypeSettings::custom_side(num(s, "width")?)?, PrototypeSettings::custom_side(num(s, "height")?)?))
+    Some((
+        PrototypeSettings::custom_side(num(s, "width")?)?,
+        PrototypeSettings::custom_side(num(s, "height")?)?,
+    ))
 }
 
 /// The closest of our device frames: preset identifiers by the device family they name, unknown
 /// presets (and custom sizes without a usable size) by their shorter side.
 fn device_name(d: &Value) -> &'static str {
-    let size = d.get("size").and_then(|s| Some((num(s, "width")?, num(s, "height")?)));
+    let size = d
+        .get("size")
+        .and_then(|s| Some((num(s, "width")?, num(s, "height")?)));
     let by_size = || match size {
         Some((w, h)) if w > 0.0 && h > 0.0 => {
             let (short, long) = (w.min(h), w.max(h));
             if short <= 500.0 {
-                if long >= 900.0 { "iPhone 16 Pro Max" } else { "iPhone 16" }
+                if long >= 900.0 {
+                    "iPhone 16 Pro Max"
+                } else {
+                    "iPhone 16"
+                }
             } else if long <= 1400.0 && long / short < 1.55 {
                 // Tablets are squarer than laptop and desktop screens.
                 "iPad mini"
@@ -96,7 +115,9 @@ fn device_name(d: &Value) -> &'static str {
     };
     match text(d, "type") {
         Some("PRESET") => {
-            let id = text(d, "presetIdentifier").unwrap_or("").to_ascii_uppercase();
+            let id = text(d, "presetIdentifier")
+                .unwrap_or("")
+                .to_ascii_uppercase();
             let has = |words: &[&str]| words.iter().any(|w| id.contains(w));
             if has(&["IPAD", "TABLET", "GALAXY_TAB", "SURFACE_PRO"]) {
                 "iPad mini"
@@ -107,7 +128,11 @@ fn device_name(d: &Value) -> &'static str {
             } else if has(&["ANDROID", "PIXEL", "GALAXY"]) {
                 "Android Compact"
             } else if has(&["IPHONE"]) {
-                if has(&["MAX", "PLUS"]) { "iPhone 16 Pro Max" } else { "iPhone 16" }
+                if has(&["MAX", "PLUS"]) {
+                    "iPhone 16 Pro Max"
+                } else {
+                    "iPhone 16"
+                }
             } else {
                 by_size()
             }
@@ -130,11 +155,20 @@ impl Ctx<'_> {
 
     fn legacy_transition(&mut self, j: &Value) -> Option<Interaction> {
         let dest = self.dest(text(j, "transitionNodeID")?)?;
-        let ms = num(j, "transitionDuration").map(|d| d.clamp(0.0, MAX_MS) as u32).unwrap_or(0);
+        let ms = num(j, "transitionDuration")
+            .map(|d| d.clamp(0.0, MAX_MS) as u32)
+            .unwrap_or(0);
         Some(Interaction {
             trigger: Trigger::OnClick,
-            actions: vec![Action::Navigate { dest, preserve_scroll: false }],
-            transition: if ms > 0 { Transition::Dissolve } else { Transition::Instant },
+            actions: vec![Action::Navigate {
+                dest,
+                preserve_scroll: false,
+            }],
+            transition: if ms > 0 {
+                Transition::Dissolve
+            } else {
+                Transition::Instant
+            },
             duration_ms: if ms > 0 { ms } else { DEFAULT_MS },
             easing: easing_type(text(j, "transitionEasing"), None),
             delay_ms: 0,
@@ -145,7 +179,10 @@ impl Ctx<'_> {
         let t = it.get("trigger").filter(|t| t.is_object())?;
         let trigger = self.trigger(t)?;
         // Mouse enter, leave, down and up wait before they act (`.fig` files name it `timeout`).
-        let delay_ms = num(t, "delay").or_else(|| num(t, "timeout")).filter(|d| d.is_finite()).map_or(0, |d| d.clamp(0.0, MAX_MS) as u32);
+        let delay_ms = num(t, "delay")
+            .or_else(|| num(t, "timeout"))
+            .filter(|d| d.is_finite())
+            .map_or(0, |d| d.clamp(0.0, MAX_MS) as u32);
         let mut actions = Vec::new();
         let mut transition: Option<&Value> = None;
         for a in list(it, "actions") {
@@ -159,7 +196,14 @@ impl Ctx<'_> {
             Some(t) => self.transition(t),
             None => (Transition::Instant, DEFAULT_MS, Easing::default()),
         };
-        let mut it = Interaction { trigger, actions, transition, duration_ms, easing, delay_ms };
+        let mut it = Interaction {
+            trigger,
+            actions,
+            transition,
+            duration_ms,
+            easing,
+            delay_ms,
+        };
         if it.delay_secs() == 0.0 {
             it.delay_ms = 0;
         }
@@ -172,13 +216,18 @@ impl Ctx<'_> {
             Some("ON_HOVER") => Some(Trigger::OnHover),
             Some("ON_PRESS") => Some(Trigger::OnPress),
             Some("ON_DRAG") => Some(Trigger::OnDrag),
-            Some("AFTER_TIMEOUT") => Some(Trigger::AfterDelay { ms: num(t, "timeout").unwrap_or(0.0).clamp(0.0, MAX_MS) as u32 }),
+            Some("AFTER_TIMEOUT") => Some(Trigger::AfterDelay {
+                ms: num(t, "timeout").unwrap_or(0.0).clamp(0.0, MAX_MS) as u32,
+            }),
             Some("MOUSE_ENTER") => Some(Trigger::MouseEnter),
             Some("MOUSE_LEAVE") => Some(Trigger::MouseLeave),
             Some("MOUSE_DOWN") => Some(Trigger::MouseDown),
             Some("MOUSE_UP") => Some(Trigger::MouseUp),
             Some(ty @ ("ON_KEY_DOWN" | "ON_KEY_UP")) => {
-                let codes: Vec<f64> = list(t, "keyCodes").iter().filter_map(Value::as_f64).collect();
+                let codes: Vec<f64> = list(t, "keyCodes")
+                    .iter()
+                    .filter_map(Value::as_f64)
+                    .collect();
                 // Controllers: their codes read as standard-layout button indices; one button each.
                 if text(t, "device").is_some_and(|d| d != "KEYBOARD") {
                     let button = match codes.as_slice() {
@@ -192,7 +241,12 @@ impl Ctx<'_> {
                     }
                     return button.map(|b| Trigger::KeyPress { key: b.to_string() });
                 }
-                let Some(key) = codes.iter().rev().find(|c| modifier(**c).is_none()).and_then(|c| key_name(*c)) else {
+                let Some(key) = codes
+                    .iter()
+                    .rev()
+                    .find(|c| modifier(**c).is_none())
+                    .and_then(|c| key_name(*c))
+                else {
                     self.warn("key triggers without a supported key were skipped");
                     return None;
                 };
@@ -224,11 +278,23 @@ impl Ctx<'_> {
     }
 
     /// Append the action `a` maps to (a lone conditional block without a condition is inlined).
-    fn action<'v>(&mut self, a: &'v Value, out: &mut Vec<Action>, transition: &mut Option<&'v Value>, depth: usize) {
+    fn action<'v>(
+        &mut self,
+        a: &'v Value,
+        out: &mut Vec<Action>,
+        transition: &mut Option<&'v Value>,
+        depth: usize,
+    ) {
         let mapped = match text(a, "type") {
             Some("BACK") => Some(Action::Back),
             Some("CLOSE") => Some(Action::CloseOverlay),
-            Some("URL") => text(a, "url").filter(|u| !u.trim().is_empty()).map(|u| Action::OpenUrl { url: u.chars().take(MAX_URL).collect() }),
+            Some("URL") => {
+                text(a, "url")
+                    .filter(|u| !u.trim().is_empty())
+                    .map(|u| Action::OpenUrl {
+                        url: u.chars().take(MAX_URL).collect(),
+                    })
+            }
             Some("NODE") => {
                 let mapped = self.node_action(a);
                 if mapped.is_some() && transition.is_none() {
@@ -266,7 +332,12 @@ impl Ctx<'_> {
 
     /// If / else if / else blocks; skipped whole when a condition can't be imported (running the
     /// wrong branch would be worse than none).
-    fn conditional<'v>(&mut self, blocks: &'v [Value], transition: &mut Option<&'v Value>, depth: usize) -> Option<Action> {
+    fn conditional<'v>(
+        &mut self,
+        blocks: &'v [Value],
+        transition: &mut Option<&'v Value>,
+        depth: usize,
+    ) -> Option<Action> {
         let mut out = Vec::new();
         for b in blocks.iter().take(MAX_BLOCKS) {
             let condition = match b.get("condition").filter(|c| !c.is_null()) {
@@ -290,7 +361,9 @@ impl Ctx<'_> {
                 break;
             }
         }
-        out.iter().any(|b| !b.actions.is_empty()).then_some(Action::Conditional { blocks: out })
+        out.iter()
+            .any(|b| !b.actions.is_empty())
+            .then_some(Action::Conditional { blocks: out })
     }
 
     fn node_action(&mut self, a: &Value) -> Option<Action> {
@@ -299,17 +372,31 @@ impl Ctx<'_> {
             return None;
         };
         Some(match text(a, "navigation") {
-            Some("NAVIGATE") | None => {
-                Action::Navigate { dest, preserve_scroll: a.get("preserveScrollPosition").and_then(Value::as_bool).unwrap_or(false) }
-            }
+            Some("NAVIGATE") | None => Action::Navigate {
+                dest,
+                preserve_scroll: a
+                    .get("preserveScrollPosition")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            },
             Some("SWAP") => Action::SwapOverlay { dest },
-            Some("SCROLL_TO") => Action::ScrollTo { dest, offset: [0.0, 0.0] },
+            Some("SCROLL_TO") => Action::ScrollTo {
+                dest,
+                offset: [0.0, 0.0],
+            },
             Some("CHANGE_TO") => Action::ChangeTo { dest },
             Some("OVERLAY") => {
-                let meta = text(a, "destinationId").and_then(|d| self.overlay_meta.get(d)).copied();
-                let position = meta.and_then(|m| text(m, "overlayPositionType")).and_then(overlay_position).unwrap_or_default();
+                let meta = text(a, "destinationId")
+                    .and_then(|d| self.overlay_meta.get(d))
+                    .copied();
+                let position = meta
+                    .and_then(|m| text(m, "overlayPositionType"))
+                    .and_then(overlay_position)
+                    .unwrap_or_default();
                 // Overlays close on a click outside unless the destination says otherwise.
-                let close_on_outside = meta.and_then(|m| text(m, "overlayBackgroundInteraction")).is_none_or(|i| i == "CLOSE_ON_CLICK_OUTSIDE");
+                let close_on_outside = meta
+                    .and_then(|m| text(m, "overlayBackgroundInteraction"))
+                    .is_none_or(|i| i == "CLOSE_ON_CLICK_OUTSIDE");
                 let background = meta
                     .and_then(|m| m.get("overlayBackground"))
                     .filter(|b| text(b, "type") == Some("SOLID_COLOR"))
@@ -322,7 +409,13 @@ impl Ctx<'_> {
                     .and_then(|v| Some([num(v, "x")?, num(v, "y")?]))
                     .filter(|o| o.iter().all(|c| c.is_finite()))
                     .map(|o| o.map(|c| c.clamp(-MAX_OFFSET, MAX_OFFSET)));
-                Action::OpenOverlay { dest, position, close_on_outside, background, offset }
+                Action::OpenOverlay {
+                    dest,
+                    position,
+                    close_on_outside,
+                    background,
+                    offset,
+                }
             }
             Some(_) => {
                 self.warn("prototype navigations of unknown types were skipped");
@@ -332,8 +425,11 @@ impl Ctx<'_> {
     }
 
     fn set_variable(&mut self, a: &Value) -> Option<Action> {
-        let Some((id, kind)) = text(a, "variableId").and_then(|v| self.var_kinds.get_key_value(v)) else {
-            self.warn("set-variable actions on variables that aren't in the variables JSON were skipped");
+        let Some((id, kind)) = text(a, "variableId").and_then(|v| self.var_kinds.get_key_value(v))
+        else {
+            self.warn(
+                "set-variable actions on variables that aren't in the variables JSON were skipped",
+            );
             return None;
         };
         let (variable, kind) = (id.clone(), *kind);
@@ -341,14 +437,21 @@ impl Ctx<'_> {
             self.warn("set-variable actions without a value were skipped");
             return None;
         };
-        let dynamic = data.get("value").is_some_and(|v| variables::alias(v).is_some()) || expr_parts(data).is_some();
+        let dynamic = data
+            .get("value")
+            .is_some_and(|v| variables::alias(v).is_some())
+            || expr_parts(data).is_some();
         if dynamic {
             // A variable reference or an expression, computed when the action runs.
             let Some(expr) = self.expr(data, 0) else {
                 self.warn("set-variable actions with values that can't be evaluated were skipped");
                 return None;
             };
-            return Some(Action::SetVariable { variable, value: Value::Null, expr: Some(expr) });
+            return Some(Action::SetVariable {
+                variable,
+                value: Value::Null,
+                expr: Some(expr),
+            });
         }
         let value = match data.get("value").and_then(|v| variables::value(kind, v)) {
             Some(VariableValue::Color(c)) => json!(c.to_css_hex()),
@@ -356,19 +459,33 @@ impl Ctx<'_> {
             Some(VariableValue::String(s)) => json!(s),
             Some(VariableValue::Boolean(b)) => json!(b),
             Some(VariableValue::Alias(_)) | None => {
-                self.warn("set-variable actions with values that don't fit the variable were skipped");
+                self.warn(
+                    "set-variable actions with values that don't fit the variable were skipped",
+                );
                 return None;
             }
         };
-        Some(Action::SetVariable { variable, value, expr: None })
+        Some(Action::SetVariable {
+            variable,
+            value,
+            expr: None,
+        })
     }
 
     fn set_variable_mode(&mut self, a: &Value) -> Option<Action> {
         let collection = text(a, "variableCollectionId");
         let mode = text(a, "variableModeId");
         match (collection, mode) {
-            (Some(c), Some(m)) if self.var_modes.get(c).is_some_and(|modes| modes.iter().any(|x| x == m)) => {
-                Some(Action::SetVariableMode { collection: c.to_string(), mode: m.to_string() })
+            (Some(c), Some(m))
+                if self
+                    .var_modes
+                    .get(c)
+                    .is_some_and(|modes| modes.iter().any(|x| x == m)) =>
+            {
+                Some(Action::SetVariableMode {
+                    collection: c.to_string(),
+                    mode: m.to_string(),
+                })
             }
             _ => {
                 self.warn("set-variable-mode actions on collections or modes that aren't in the variables JSON were skipped");
@@ -409,7 +526,10 @@ impl Ctx<'_> {
             if args.is_empty() || args.len() > MAX_ARGS {
                 return None;
             }
-            let args = args.iter().map(|x| self.expr(x, depth + 1)).collect::<Option<Vec<Expr>>>()?;
+            let args = args
+                .iter()
+                .map(|x| self.expr(x, depth + 1))
+                .collect::<Option<Vec<Expr>>>()?;
             return Some(Expr::op(op, args));
         }
         let v = data.get("value")?;
@@ -420,7 +540,10 @@ impl Ctx<'_> {
             }
             return Some(Expr::var(id));
         }
-        let kind = match text(data, "resolvedType").or_else(|| text(data, "type")).and_then(variables::kind_of) {
+        let kind = match text(data, "resolvedType")
+            .or_else(|| text(data, "type"))
+            .and_then(variables::kind_of)
+        {
             Some(k) => k,
             // Untyped: from the JSON value itself.
             None => match v {
@@ -437,15 +560,27 @@ impl Ctx<'_> {
     /// collection's modes): the variable's value in that mode.
     fn mode_lookup(&mut self, args: &[Value]) -> Option<Expr> {
         let parts = match args {
-            [var, mode] => var.get("value").and_then(variables::alias).zip(mode.get("value").and_then(Value::as_str)),
+            [var, mode] => var
+                .get("value")
+                .and_then(variables::alias)
+                .zip(mode.get("value").and_then(Value::as_str)),
             _ => None,
         };
         let vars = &self.doc.variables;
-        let found = parts.filter(|(id, _)| self.var_kinds.contains_key(*id)).and_then(|(id, mode)| {
-            let v = vars.get(id)?;
-            let m = vars.collection(&v.collection)?.modes.iter().find(|m| m.id == mode)?;
-            Some(Expr::InMode { variable: v.id.clone(), mode: m.id.clone() })
-        });
+        let found = parts
+            .filter(|(id, _)| self.var_kinds.contains_key(*id))
+            .and_then(|(id, mode)| {
+                let v = vars.get(id)?;
+                let m = vars
+                    .collection(&v.collection)?
+                    .modes
+                    .iter()
+                    .find(|m| m.id == mode)?;
+                Some(Expr::InMode {
+                    variable: v.id.clone(),
+                    mode: m.id.clone(),
+                })
+            });
         if found.is_none() {
             self.warn("variable mode lookups in prototype expressions that aren't a variable and one of its modes were skipped");
         }
@@ -487,8 +622,13 @@ impl Ctx<'_> {
 
 /// The function name and arguments of an `EXPRESSION` value.
 fn expr_parts(data: &Value) -> Option<(&str, &[Value])> {
-    let e = data.get("value").filter(|v| v.get("expressionFunction").is_some())?;
-    Some((text(e, "expressionFunction")?, list(e, "expressionArguments")))
+    let e = data
+        .get("value")
+        .filter(|v| v.get("expressionFunction").is_some())?;
+    Some((
+        text(e, "expressionFunction")?,
+        list(e, "expressionArguments"),
+    ))
 }
 
 /// An easing curve by its type name, with custom parameters from `e`.
@@ -508,9 +648,12 @@ fn easing_type(ty: Option<&str>, e: Option<&Value>) -> Easing {
         Some("CUSTOM_CUBIC_BEZIER") => {
             let b = |k: &str| field("easingFunctionCubicBezier", k);
             match (b("x1"), b("y1"), b("x2"), b("y2")) {
-                (Some(x1), Some(y1), Some(x2), Some(y2)) => {
-                    Easing::CustomBezier { x1: x1.clamp(0.0, 1.0), y1: y1.clamp(-10.0, 10.0), x2: x2.clamp(0.0, 1.0), y2: y2.clamp(-10.0, 10.0) }
-                }
+                (Some(x1), Some(y1), Some(x2), Some(y2)) => Easing::CustomBezier {
+                    x1: x1.clamp(0.0, 1.0),
+                    y1: y1.clamp(-10.0, 10.0),
+                    x2: x2.clamp(0.0, 1.0),
+                    y2: y2.clamp(-10.0, 10.0),
+                },
                 _ => Easing::CUSTOM_BEZIER,
             }
         }
@@ -518,7 +661,11 @@ fn easing_type(ty: Option<&str>, e: Option<&Value>) -> Easing {
             let s = |k: &str| field("easingFunctionSpring", k);
             match (s("mass"), s("stiffness"), s("damping")) {
                 (Some(m), Some(k), Some(d)) if m > 0.0 && k > 0.0 && d >= 0.0 => {
-                    Easing::CustomSpring { mass: m.min(1e4), stiffness: k.min(1e6), damping: d.min(1e6) }
+                    Easing::CustomSpring {
+                        mass: m.min(1e4),
+                        stiffness: k.min(1e6),
+                        damping: d.min(1e6),
+                    }
                 }
                 _ => Easing::CUSTOM_SPRING,
             }

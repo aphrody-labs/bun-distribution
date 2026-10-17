@@ -36,8 +36,8 @@ fn normalize(p: &Path) -> PathBuf {
         match comp {
             Component::ParentDir => {
                 out.pop();
-            },
-            Component::CurDir => {},
+            }
+            Component::CurDir => {}
             other => out.push(other.as_os_str()),
         }
     }
@@ -61,7 +61,10 @@ impl WorkspaceGuard {
     pub fn new(root: impl AsRef<Path>) -> Self {
         let root = root.as_ref();
         let canonical = std::fs::canonicalize(root).unwrap_or_else(|_| normalize(root));
-        Self { root: canonical, max_bytes: MAX_WORKSPACE_BOOTSTRAP_FILE_BYTES }
+        Self {
+            root: canonical,
+            max_bytes: MAX_WORKSPACE_BOOTSTRAP_FILE_BYTES,
+        }
     }
 
     /// Override the per-file byte cap (defaults to 2 MiB).
@@ -99,7 +102,10 @@ impl WorkspaceGuard {
         if contained_in(&normalized, &self.root) {
             Ok(normalized)
         } else {
-            Err(HomeError::PathEscape { path: normalized, root: self.root.clone() })
+            Err(HomeError::PathEscape {
+                path: normalized,
+                root: self.root.clone(),
+            })
         }
     }
 
@@ -122,7 +128,11 @@ impl WorkspaceGuard {
             return Ok(None);
         }
         if meta.len() > self.max_bytes {
-            return Err(HomeError::FileTooLarge { path, size: meta.len(), cap: self.max_bytes });
+            return Err(HomeError::FileTooLarge {
+                path,
+                size: meta.len(),
+                cap: self.max_bytes,
+            });
         }
         match std::fs::read_to_string(&path) {
             Ok(s) => Ok(Some(s)),
@@ -157,7 +167,11 @@ mod tests {
     fn rejects_absolute_outside_root() {
         let td = tempdir().unwrap();
         let guard = WorkspaceGuard::new(td.path());
-        let outside = if cfg!(windows) { "C:\\Windows\\system.ini" } else { "/etc/hosts" };
+        let outside = if cfg!(windows) {
+            "C:\\Windows\\system.ini"
+        } else {
+            "/etc/hosts"
+        };
         let err = guard.resolve(outside).unwrap_err();
         assert!(matches!(err, HomeError::PathEscape { .. }));
     }
@@ -174,7 +188,10 @@ mod tests {
         let td = tempdir().unwrap();
         std::fs::write(td.path().join("SOUL.md"), "persona").unwrap();
         let guard = WorkspaceGuard::new(td.path());
-        assert_eq!(guard.read_to_string("SOUL.md").unwrap().as_deref(), Some("persona"));
+        assert_eq!(
+            guard.read_to_string("SOUL.md").unwrap().as_deref(),
+            Some("persona")
+        );
     }
 
     #[test]
@@ -183,6 +200,13 @@ mod tests {
         std::fs::write(td.path().join("BIG.md"), "0123456789").unwrap();
         let guard = WorkspaceGuard::new(td.path()).with_max_bytes(4);
         let err = guard.read_to_string("BIG.md").unwrap_err();
-        assert!(matches!(err, HomeError::FileTooLarge { size: 10, cap: 4, .. }));
+        assert!(matches!(
+            err,
+            HomeError::FileTooLarge {
+                size: 10,
+                cap: 4,
+                ..
+            }
+        ));
     }
 }

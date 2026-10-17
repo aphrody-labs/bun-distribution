@@ -6,7 +6,9 @@ use std::process::Command;
 #[ignore = "requires the local reference game VFS; uses synthetic observation bytes"]
 fn observed_native_state_reaches_real_menu_callbacks_without_hiding_missing_inputs() {
     let game = aphrody_nie_formats::vfs::resolve_game_dir();
-    assert!(aphrody_nie_formats::vfs::donnees_disponibles(game.join("data")));
+    assert!(aphrody_nie_formats::vfs::donnees_disponibles(
+        game.join("data")
+    ));
     let directory =
         std::env::temp_dir().join(format!("nie-native-state-gate-{}", std::process::id()));
     std::fs::create_dir_all(&directory).unwrap();
@@ -18,7 +20,11 @@ fn observed_native_state_reaches_real_menu_callbacks_without_hiding_missing_inpu
     .unwrap();
     let mut reports = Vec::new();
     for inject in [false, true] {
-        let output = directory.join(if inject { "injected.json" } else { "absent.json" });
+        let output = directory.join(if inject {
+            "injected.json"
+        } else {
+            "absent.json"
+        });
         let mut command = Command::new(env!("CARGO_BIN_EXE_aphrody-nie-game"));
         command
             .arg("--game-dir")
@@ -34,7 +40,10 @@ fn observed_native_state_reaches_real_menu_callbacks_without_hiding_missing_inpu
             serde_json::from_slice(&std::fs::read(&output).unwrap()).unwrap();
         let report = document["runtimeSummary"].clone();
         assert!(report["menuEventsDispatched"].as_u64().unwrap() > 0);
-        assert_eq!(report["menuEventsDispatched"], report["menuEventsSucceeded"]);
+        assert_eq!(
+            report["menuEventsDispatched"],
+            report["menuEventsSucceeded"]
+        );
         reports.push(report);
         std::fs::remove_file(output).unwrap();
     }

@@ -13,7 +13,13 @@ use crate::state::Dialog;
 /// The dialog kind of Symbol Options.
 pub const KIND: &str = "symbolOptions";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Symbol Options").into(), body, confirm, min_width: 320.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Symbol Options").into(),
+    body,
+    confirm,
+    min_width: 320.0,
+    ..DialogSpec::FORM
+};
 
 /// Open Symbol Options to name a new symbol made from the selection.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {

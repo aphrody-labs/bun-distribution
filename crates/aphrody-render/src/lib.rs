@@ -138,10 +138,10 @@ pub const fn renderer_for_surface(kind: SurfaceKind, policy: RenderPolicy) -> Su
         (SurfaceKind::InteractiveWeb, _) => SurfaceRenderer::WebView,
         (SurfaceKind::NativeCanvas | SurfaceKind::NativeScene3d, RenderPolicy::CpuOnly) => {
             SurfaceRenderer::Cpu
-        },
+        }
         (SurfaceKind::NativeCanvas | SurfaceKind::NativeScene3d, _) if gpu => {
             SurfaceRenderer::NativeGpu
-        },
+        }
         (SurfaceKind::NativeCanvas | SurfaceKind::NativeScene3d, _) => SurfaceRenderer::Cpu,
         (SurfaceKind::Headless, _) => SurfaceRenderer::Cpu,
     }
@@ -309,14 +309,14 @@ pub const fn select_backend(config: &RenderConfig) -> Option<Backend> {
                 [Backend::Cpu] | [] => None,
                 [first, ..] => Some(*first),
             }
-        },
+        }
         RenderPolicy::CpuOnly => {
             if backend_compiled(Backend::Cpu) {
                 Some(Backend::Cpu)
             } else {
                 None
             }
-        },
+        }
         RenderPolicy::Auto => {
             if let Some(preferred) = config.preferred {
                 if backend_compiled(preferred) {
@@ -333,7 +333,7 @@ pub const fn select_backend(config: &RenderConfig) -> Option<Backend> {
                 index += 1;
             }
             None
-        },
+        }
     }
 }
 
@@ -355,8 +355,12 @@ pub const fn backend_compiled(backend: Backend) -> bool {
         // and only for the platforms that API exists on.
         Backend::Dx12 => cfg!(all(feature = "gpu", windows)),
         Backend::Vulkan => {
-            cfg!(all(feature = "gpu", not(target_arch = "wasm32"), not(target_vendor = "apple")))
-        },
+            cfg!(all(
+                feature = "gpu",
+                not(target_arch = "wasm32"),
+                not(target_vendor = "apple")
+            ))
+        }
         Backend::Metal => cfg!(all(feature = "gpu", target_vendor = "apple")),
         Backend::WebGpu | Backend::WebGl => cfg!(all(feature = "gpu", target_arch = "wasm32")),
     }
@@ -382,8 +386,10 @@ mod tests {
         let order = backend_order();
         assert_eq!(order.last(), Some(&Backend::Cpu));
         assert!(order.len() >= 2 && order.iter().all(|b| backend_compiled(*b)));
-        let required =
-            RenderConfig { policy: RenderPolicy::GpuRequired, ..RenderConfig::default() };
+        let required = RenderConfig {
+            policy: RenderPolicy::GpuRequired,
+            ..RenderConfig::default()
+        };
         assert_eq!(select_backend(&required), Some(order[0]));
         assert_eq!(
             renderer_for_surface(SurfaceKind::NativeScene3d, RenderPolicy::Auto),
@@ -398,7 +404,10 @@ mod tests {
     #[cfg(not(feature = "gpu"))]
     #[test]
     fn gpu_policy_does_not_fabricate_a_backend() {
-        let config = RenderConfig { policy: RenderPolicy::GpuRequired, ..RenderConfig::default() };
+        let config = RenderConfig {
+            policy: RenderPolicy::GpuRequired,
+            ..RenderConfig::default()
+        };
         assert_eq!(select_backend(&config), None);
         assert!(!backend_compiled(Backend::Vulkan));
     }

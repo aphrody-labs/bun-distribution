@@ -43,7 +43,10 @@ fn run_json(args: &[String], stdin: &str, files_json: &str) -> Result<String, St
         serde_json::from_str(files_json)
             .map_err(|e| format!("files must be a JSON object of strings: {e}"))?
     };
-    let mut io = MemoryIo { stdin: stdin.to_string(), files };
+    let mut io = MemoryIo {
+        stdin: stdin.to_string(),
+        files,
+    };
     let out = run_args(args, &mut io);
     serde_json::to_string(&serde_json::json!({
         "code": out.code,
@@ -59,7 +62,11 @@ mod tests {
 
     #[test]
     fn runs_a_command_and_reports_json() {
-        let args = ["toolcall".to_string(), "repair".to_string(), "-".to_string()];
+        let args = [
+            "toolcall".to_string(),
+            "repair".to_string(),
+            "-".to_string(),
+        ];
         let out: serde_json::Value =
             serde_json::from_str(&run_json(&args, "{'a': 1}", "").unwrap()).unwrap();
         assert_eq!(out["code"], 0);
@@ -68,7 +75,11 @@ mod tests {
 
     #[test]
     fn files_and_errors() {
-        let args = ["html".to_string(), "markdown".to_string(), "a.html".to_string()];
+        let args = [
+            "html".to_string(),
+            "markdown".to_string(),
+            "a.html".to_string(),
+        ];
         let out: serde_json::Value =
             serde_json::from_str(&run_json(&args, "", r#"{"a.html":"<h1>T</h1>"}"#).unwrap())
                 .unwrap();

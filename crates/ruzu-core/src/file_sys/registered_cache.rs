@@ -296,16 +296,33 @@ pub trait ContentProvider: Send + Sync {
         if program_index == 0 || program_index > u8::MAX as u64 {
             return None;
         }
-        if !self.list_entries_filter(Some(TitleType::Application),
-            Some(ContentRecordType::Meta), Some(program_id)).is_empty() {
+        if !self
+            .list_entries_filter(
+                Some(TitleType::Application),
+                Some(ContentRecordType::Meta),
+                Some(program_id),
+            )
+            .is_empty()
+        {
             return None;
         }
-        if (!self.list_entries_filter(Some(TitleType::Application),
-            Some(ContentRecordType::Meta), Some(application_id)).is_empty()
+        if (!self
+            .list_entries_filter(
+                Some(TitleType::Application),
+                Some(ContentRecordType::Meta),
+                Some(application_id),
+            )
+            .is_empty()
             && self.has_entry(program_id, ContentRecordType::Program))
-            || (!self.list_entries_filter(Some(TitleType::Update),
-                Some(ContentRecordType::Meta), Some(get_update_title_id(application_id))).is_empty()
-                && self.has_entry(get_update_title_id(program_id), ContentRecordType::Program)) {
+            || (!self
+                .list_entries_filter(
+                    Some(TitleType::Update),
+                    Some(ContentRecordType::Meta),
+                    Some(get_update_title_id(application_id)),
+                )
+                .is_empty()
+                && self.has_entry(get_update_title_id(program_id), ContentRecordType::Program))
+        {
             Some(application_id)
         } else {
             None
@@ -1399,13 +1416,18 @@ impl ContentProviderUnion {
         let full_path = file.get_full_path().replace('\\', "/");
         let components: Vec<_> = full_path.split('/').collect();
         // A split archive's VFS name is "00"; the NCA name is its parent.
-        let end = components.iter().rposition(|name| {
-            name.is_ascii() && follows_nca_id_format(name)
-        })?;
-        let start = components[..end].iter().rposition(|name| *name == "registered")
+        let end = components
+            .iter()
+            .rposition(|name| name.is_ascii() && follows_nca_id_format(name))?;
+        let start = components[..end]
+            .iter()
+            .rposition(|name| *name == "registered")
             .unwrap_or(end);
         let relative = &components[start..=end];
-        if relative.iter().any(|part| part.is_empty() || *part == "." || *part == ".." || part.contains(':')) {
+        if relative
+            .iter()
+            .any(|part| part.is_empty() || *part == "." || *part == ".." || part.contains(':'))
+        {
             return None;
         }
         let root = match slot {
@@ -2166,18 +2188,44 @@ mod manual_content_provider_tests {
                 let mut provider = ManualContentProvider::new();
                 for (flag, title_type, record, title) in [
                     (1, TitleType::Application, ContentRecordType::Meta, base),
-                    (2, TitleType::Application, ContentRecordType::Program, program),
-                    (4, TitleType::Update, ContentRecordType::Meta, get_update_title_id(base)),
-                    (8, TitleType::Update, ContentRecordType::Program, get_update_title_id(program)),
+                    (
+                        2,
+                        TitleType::Application,
+                        ContentRecordType::Program,
+                        program,
+                    ),
+                    (
+                        4,
+                        TitleType::Update,
+                        ContentRecordType::Meta,
+                        get_update_title_id(base),
+                    ),
+                    (
+                        8,
+                        TitleType::Update,
+                        ContentRecordType::Program,
+                        get_update_title_id(program),
+                    ),
                     (16, TitleType::Application, ContentRecordType::Meta, program),
                 ] {
-                    if flags & flag != 0 { provider.add_entry(title_type, record, title, file("content")); }
+                    if flags & flag != 0 {
+                        provider.add_entry(title_type, record, title, file("content"));
+                    }
                 }
-                let expected = if (1..=255).contains(&index) && flags & 16 == 0
-                    && (flags & 3 == 3 || flags & 12 == 12) { Some(base) } else { None };
+                let expected = if (1..=255).contains(&index)
+                    && flags & 16 == 0
+                    && (flags & 3 == 3 || flags & 12 == 12)
+                {
+                    Some(base)
+                } else {
+                    None
+                };
                 let provider: &dyn ContentProvider = &provider;
-                assert_eq!(provider.get_parent_application_id(program), expected,
-                    "index={index:x} flags={flags:05b}");
+                assert_eq!(
+                    provider.get_parent_application_id(program),
+                    expected,
+                    "index={index:x} flags={flags:05b}"
+                );
             }
         }
     }
@@ -2187,11 +2235,31 @@ mod manual_content_provider_tests {
         let base = 0x0100_0000_0000_0000;
         let program = base + 1;
         let mut provider = ManualContentProvider::new();
-        provider.add_entry(TitleType::Application, ContentRecordType::Meta, base, file("parent"));
-        provider.add_entry(TitleType::Application, ContentRecordType::Program, program, file("program"));
-        provider.add_entry(TitleType::Update, ContentRecordType::Meta, program, file("update"));
+        provider.add_entry(
+            TitleType::Application,
+            ContentRecordType::Meta,
+            base,
+            file("parent"),
+        );
+        provider.add_entry(
+            TitleType::Application,
+            ContentRecordType::Program,
+            program,
+            file("program"),
+        );
+        provider.add_entry(
+            TitleType::Update,
+            ContentRecordType::Meta,
+            program,
+            file("update"),
+        );
         assert_eq!(provider.get_parent_application_id(program), Some(base));
-        provider.add_entry(TitleType::Application, ContentRecordType::Meta, program, file("own"));
+        provider.add_entry(
+            TitleType::Application,
+            ContentRecordType::Meta,
+            program,
+            file("own"),
+        );
         assert_eq!(provider.get_parent_application_id(program), None);
     }
 
@@ -2292,10 +2360,18 @@ mod manual_content_provider_tests {
     #[test]
     fn document_content_paths_use_catalogued_nca_names_and_storage_roots() {
         let mut manual = ManualContentProvider::new();
-        manual.add_entry(TitleType::Application, ContentRecordType::HtmlDocument, 42,
-            file("0123456789abcdef0123456789abcdef.nca"));
-        manual.add_entry(TitleType::Application, ContentRecordType::HtmlDocument, 43,
-            file("not-a-content-id.nca"));
+        manual.add_entry(
+            TitleType::Application,
+            ContentRecordType::HtmlDocument,
+            42,
+            file("0123456789abcdef0123456789abcdef.nca"),
+        );
+        manual.add_entry(
+            TitleType::Application,
+            ContentRecordType::HtmlDocument,
+            43,
+            file("not-a-content-id.nca"),
+        );
         let mut union = ContentProviderUnion::new();
         for (slot, root) in [
             (ContentProviderUnionSlot::SysNAND, "@SystemContent"),
@@ -2303,11 +2379,19 @@ mod manual_content_provider_tests {
             (ContentProviderUnionSlot::SDMC, "@SdCardContent"),
             (ContentProviderUnionSlot::FrontendManual, "@UserContent"),
         ] {
-            unsafe { union.set_slot(slot, &mut manual); }
-            assert_eq!(union.get_entry_content_path(slot, 42, ContentRecordType::HtmlDocument),
-                Some(format!("{root}://0123456789abcdef0123456789abcdef.nca")));
-            assert!(union.get_entry_content_path(slot, 43, ContentRecordType::HtmlDocument).is_none());
-            assert!(union.get_entry_content_path(slot, 42, ContentRecordType::LegalInformation).is_none());
+            unsafe {
+                union.set_slot(slot, &mut manual);
+            }
+            assert_eq!(
+                union.get_entry_content_path(slot, 42, ContentRecordType::HtmlDocument),
+                Some(format!("{root}://0123456789abcdef0123456789abcdef.nca"))
+            );
+            assert!(union
+                .get_entry_content_path(slot, 43, ContentRecordType::HtmlDocument)
+                .is_none());
+            assert!(union
+                .get_entry_content_path(slot, 42, ContentRecordType::LegalInformation)
+                .is_none());
         }
     }
 }

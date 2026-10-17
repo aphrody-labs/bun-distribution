@@ -140,12 +140,21 @@ mod scm {
             )
         };
         if ok == 0 {
-            bail!("QueryServiceStatusEx({name}): {}", io::Error::last_os_error());
+            bail!(
+                "QueryServiceStatusEx({name}): {}",
+                io::Error::last_os_error()
+            );
         }
         let failure = sized(
             // SAFETY: the buffer pointer and size describe a live allocation (or are null/0).
             |buffer, size, needed| unsafe {
-                QueryServiceConfig2W(service, SERVICE_CONFIG_FAILURE_ACTIONS, buffer, size, needed)
+                QueryServiceConfig2W(
+                    service,
+                    SERVICE_CONFIG_FAILURE_ACTIONS,
+                    buffer,
+                    size,
+                    needed,
+                )
             },
             &format!("QueryServiceConfig2W({name})"),
         )?;
@@ -200,13 +209,18 @@ mod scm {
                 )
             };
             if ok == 0 {
-                bail!("ChangeServiceConfigW({name}): {}", io::Error::last_os_error());
+                bail!(
+                    "ChangeServiceConfigW({name}): {}",
+                    io::Error::last_os_error()
+                );
             }
             done.push(format!("démarrage {} -> Auto", before.start_mode));
         }
         if restart_on_failure && !before.failure_restart {
-            let mut actions = FAILURE_RESTART_DELAYS_MS
-                .map(|delay| SC_ACTION { Type: SC_ACTION_RESTART, Delay: delay });
+            let mut actions = FAILURE_RESTART_DELAYS_MS.map(|delay| SC_ACTION {
+                Type: SC_ACTION_RESTART,
+                Delay: delay,
+            });
             let info = SERVICE_FAILURE_ACTIONSW {
                 dwResetPeriod: FAILURE_RESET_SECONDS,
                 lpRebootMsg: std::ptr::null_mut(),
@@ -223,7 +237,10 @@ mod scm {
                 )
             };
             if ok == 0 {
-                bail!("ChangeServiceConfig2W({name}): {}", io::Error::last_os_error());
+                bail!(
+                    "ChangeServiceConfig2W({name}): {}",
+                    io::Error::last_os_error()
+                );
             }
             done.push("actions d'échec: redémarrage 5 s/5 s/60 s".to_owned());
         }

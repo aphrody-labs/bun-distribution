@@ -461,7 +461,10 @@ async fn vps_netboot(
     }
     manager.set_netboot(service_name, mode).await?;
     let task = manager.reboot(service_name, true).await?;
-    println!("Netboot {} appliqué, redémarrage envoyé (Task ID: {task:?}).", mode.as_str());
+    println!(
+        "Netboot {} appliqué, redémarrage envoyé (Task ID: {task:?}).",
+        mode.as_str()
+    );
     Ok(())
 }
 
@@ -482,7 +485,7 @@ impl OvhCommand {
                     );
                 }
                 Ok(())
-            },
+            }
             OvhCommand::Status { profile } => {
                 let p = profile.as_deref();
                 match load_profile_credentials(p) {
@@ -494,14 +497,14 @@ impl OvhCommand {
                         println!("Mode d'authentification: {}", client.auth_mode().label());
                         println!("Endpoint: {}", client.base_url());
                         println!("Décalage d'horloge OVH: {}s", drift);
-                    },
+                    }
                     Err(e) => {
                         println!("Profil: {}", p.unwrap_or("défaut"));
                         println!("Statut: NON CONFIGURÉ ({e})");
-                    },
+                    }
                 }
                 Ok(())
-            },
+            }
             OvhCommand::Dns { subcommand } => match subcommand {
                 OvhDnsSubcommand::Zones { profile } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
@@ -513,34 +516,60 @@ impl OvhCommand {
                         println!("  - {z}");
                     }
                     Ok(())
-                },
+                }
                 OvhDnsSubcommand::Info { zone, profile } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
                     let info = dns.get_zone(zone).await?;
                     println!("Zone: {}", info.name);
-                    println!("DNSSEC: {}", if info.dnssec_supported { "supporté" } else { "non" });
+                    println!(
+                        "DNSSEC: {}",
+                        if info.dnssec_supported {
+                            "supporté"
+                        } else {
+                            "non"
+                        }
+                    );
                     println!("Serveurs de noms: {}", info.name_servers.join(", "));
                     Ok(())
-                },
-                OvhDnsSubcommand::Records { zone, r#type, profile } => {
+                }
+                OvhDnsSubcommand::Records {
+                    zone,
+                    r#type,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
                     let records = dns.list_records(zone, r#type.as_deref()).await?;
-                    println!("{:<8} {:<6} {:<24} {:<8} CIBLE", "ID", "TYPE", "SOUS-DOMAINE", "TTL");
+                    println!(
+                        "{:<8} {:<6} {:<24} {:<8} CIBLE",
+                        "ID", "TYPE", "SOUS-DOMAINE", "TTL"
+                    );
                     println!("{:-<8} {:-<6} {:-<24} {:-<8} {:-<30}", "", "", "", "", "");
                     for r in records {
-                        let sub = if r.sub_domain.is_empty() { "@" } else { &r.sub_domain };
+                        let sub = if r.sub_domain.is_empty() {
+                            "@"
+                        } else {
+                            &r.sub_domain
+                        };
                         println!(
                             "{:<8} {:<6} {:<24} {:<8} {}",
                             r.id, r.field_type, sub, r.ttl, r.target
                         );
                     }
                     Ok(())
-                },
-                OvhDnsSubcommand::Add { zone, r#type, subdomain, target, ttl, apply, profile } => {
+                }
+                OvhDnsSubcommand::Add {
+                    zone,
+                    r#type,
+                    subdomain,
+                    target,
+                    ttl,
+                    apply,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
@@ -551,13 +580,20 @@ impl OvhCommand {
                         println!("Passez --apply pour exécuter la modification.");
                         return Ok(());
                     }
-                    let res = dns.add_record(zone, r#type, subdomain, target, *ttl, true).await?;
+                    let res = dns
+                        .add_record(zone, r#type, subdomain, target, *ttl, true)
+                        .await?;
                     if let Some(r) = res {
                         println!("Enregistrement créé avec succès (ID: {}).", r.id);
                     }
                     Ok(())
-                },
-                OvhDnsSubcommand::Delete { zone, record_id, apply, profile } => {
+                }
+                OvhDnsSubcommand::Delete {
+                    zone,
+                    record_id,
+                    apply,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
@@ -571,8 +607,12 @@ impl OvhCommand {
                     dns.delete_record(zone, *record_id, true).await?;
                     println!("Enregistrement {record_id} supprimé et zone rafraîchie.");
                     Ok(())
-                },
-                OvhDnsSubcommand::Refresh { zone, apply, profile } => {
+                }
+                OvhDnsSubcommand::Refresh {
+                    zone,
+                    apply,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let dns = DnsManager::new(&client);
@@ -586,8 +626,14 @@ impl OvhCommand {
                     dns.refresh_zone(zone).await?;
                     println!("Zone '{zone}' rafraîchie avec succès.");
                     Ok(())
-                },
-                OvhDnsSubcommand::SetA { zone, target_ip, subdomains, apply, profile } => {
+                }
+                OvhDnsSubcommand::SetA {
+                    zone,
+                    target_ip,
+                    subdomains,
+                    apply,
+                    profile,
+                } => {
                     target_ip
                         .parse::<std::net::Ipv4Addr>()
                         .context("A record target must be an IPv4 address")?;
@@ -607,13 +653,15 @@ impl OvhCommand {
                         println!("Passez --apply pour exécuter.");
                         return Ok(());
                     }
-                    let updated = dns.set_a_subdomains(zone, target_ip, &selected, true).await?;
+                    let updated = dns
+                        .set_a_subdomains(zone, target_ip, &selected, true)
+                        .await?;
                     println!(
                         "Bascule A effectuée avec succès ({} enregistrements sélectionnés ; identifiants et TTL conservés).",
                         updated.len()
                     );
                     Ok(())
-                },
+                }
                 OvhDnsSubcommand::Audit { zone, profile } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
@@ -622,9 +670,16 @@ impl OvhCommand {
                     println!("Rapport d'audit DNS: {}", report.zone);
                     println!(
                         "DNSSEC: {}",
-                        if report.dnssec_activated { "ACTIVÉ" } else { "DÉSACTIVÉ" }
+                        if report.dnssec_activated {
+                            "ACTIVÉ"
+                        } else {
+                            "DÉSACTIVÉ"
+                        }
                     );
-                    println!("Anycast: {}", if report.has_dns_anycast { "OUI" } else { "NON" });
+                    println!(
+                        "Anycast: {}",
+                        if report.has_dns_anycast { "OUI" } else { "NON" }
+                    );
                     println!("Total enregistrements: {}", report.total_records);
                     if !report.missing_production_subdomains.is_empty() {
                         println!("Sous-domaines de production manquants:");
@@ -639,13 +694,15 @@ impl OvhCommand {
                         }
                     }
                     Ok(())
-                },
-                OvhDnsSubcommand::Export { zone, output, profile } => {
-                    ops::dns_export(profile.as_deref(), zone, output.as_deref()).await
-                },
+                }
+                OvhDnsSubcommand::Export {
+                    zone,
+                    output,
+                    profile,
+                } => ops::dns_export(profile.as_deref(), zone, output.as_deref()).await,
                 OvhDnsSubcommand::Backup { dir, profile } => {
                     ops::dns_backup(profile.as_deref(), dir).await
-                },
+                }
             },
             OvhCommand::Vps { subcommand } => match subcommand {
                 OvhVpsSubcommand::List { profile } => {
@@ -658,8 +715,11 @@ impl OvhCommand {
                         println!("  - {s}");
                     }
                     Ok(())
-                },
-                OvhVpsSubcommand::Info { service_name, profile } => {
+                }
+                OvhVpsSubcommand::Info {
+                    service_name,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -681,8 +741,16 @@ impl OvhCommand {
                         billing.status,
                         billing.service_id,
                         billing.expiration,
-                        if billing.automatic_renew { "automatique" } else { "manuel" },
-                        if billing.delete_at_expiration { "OUI" } else { "non" }
+                        if billing.automatic_renew {
+                            "automatique"
+                        } else {
+                            "manuel"
+                        },
+                        if billing.delete_at_expiration {
+                            "OUI"
+                        } else {
+                            "non"
+                        }
                     );
                     if billing.status == "expired" {
                         println!(
@@ -690,8 +758,11 @@ impl OvhCommand {
                         );
                     }
                     Ok(())
-                },
-                OvhVpsSubcommand::Ips { service_name, profile } => {
+                }
+                OvhVpsSubcommand::Ips {
+                    service_name,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -706,8 +777,11 @@ impl OvhCommand {
                         );
                     }
                     Ok(())
-                },
-                OvhVpsSubcommand::Status { service_name, profile } => {
+                }
+                OvhVpsSubcommand::Status {
+                    service_name,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -720,7 +794,7 @@ impl OvhCommand {
                                 billing.expiration,
                                 billing.service_id
                             );
-                        },
+                        }
                         Err(error) => return Err(error),
                     };
                     println!("VPS: {service_name}");
@@ -728,7 +802,7 @@ impl OvhCommand {
                     println!("Ping: {}", if status.ping { "OK" } else { "ÉCHEC" });
                     println!("Up: {}", if status.up { "OUI" } else { "NON" });
                     Ok(())
-                },
+                }
                 OvhVpsSubcommand::Console {
                     service_name,
                     show,
@@ -741,7 +815,11 @@ impl OvhCommand {
                     let (client, used) =
                         ops::client_for_vps(profile.as_deref(), service_name).await?;
                     let url = VpsManager::new(&client).console_url(service_name).await?;
-                    let shown = if *show { url.clone() } else { vps::redact_console_url(&url) };
+                    let shown = if *show {
+                        url.clone()
+                    } else {
+                        vps::redact_console_url(&url)
+                    };
                     println!("Console KVM {service_name} (profil {used}): {shown}");
                     if *open {
                         let input = console::ConsoleInput {
@@ -752,24 +830,42 @@ impl OvhCommand {
                         println!("{}", console::open(&url, &input)?);
                     }
                     Ok(())
-                },
-                OvhVpsSubcommand::Rescue { service_name, apply, profile } => {
-                    vps_netboot(profile.as_deref(), service_name, vps::NetbootMode::Rescue, *apply)
-                        .await
-                },
-                OvhVpsSubcommand::Netboot { service_name, mode, apply, profile } => match mode {
+                }
+                OvhVpsSubcommand::Rescue {
+                    service_name,
+                    apply,
+                    profile,
+                } => {
+                    vps_netboot(
+                        profile.as_deref(),
+                        service_name,
+                        vps::NetbootMode::Rescue,
+                        *apply,
+                    )
+                    .await
+                }
+                OvhVpsSubcommand::Netboot {
+                    service_name,
+                    mode,
+                    apply,
+                    profile,
+                } => match mode {
                     Some(mode) => {
                         vps_netboot(profile.as_deref(), service_name, *mode, *apply).await
-                    },
+                    }
                     None => {
                         let (client, used) =
                             ops::client_for_vps(profile.as_deref(), service_name).await?;
                         let mode = VpsManager::new(&client).netboot(service_name).await?;
                         println!("VPS {service_name} (profil {used}): netboot {mode}");
                         Ok(())
-                    },
+                    }
                 },
-                OvhVpsSubcommand::Tasks { service_name, json, profile } => {
+                OvhVpsSubcommand::Tasks {
+                    service_name,
+                    json,
+                    profile,
+                } => {
                     let (client, used) =
                         ops::client_for_vps(profile.as_deref(), service_name).await?;
                     let tasks = VpsManager::new(&client).tasks(service_name).await?;
@@ -785,8 +881,12 @@ impl OvhCommand {
                         );
                     }
                     Ok(())
-                },
-                OvhVpsSubcommand::Reboot { service_name, apply, profile } => {
+                }
+                OvhVpsSubcommand::Reboot {
+                    service_name,
+                    apply,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -796,10 +896,17 @@ impl OvhCommand {
                         return Ok(());
                     }
                     let task_id = vps.reboot(service_name, true).await?;
-                    println!("Tâche de redémarrage envoyée avec succès (Task ID: {:?}).", task_id);
+                    println!(
+                        "Tâche de redémarrage envoyée avec succès (Task ID: {:?}).",
+                        task_id
+                    );
                     Ok(())
-                },
-                OvhVpsSubcommand::Start { service_name, apply, profile } => {
+                }
+                OvhVpsSubcommand::Start {
+                    service_name,
+                    apply,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -809,10 +916,19 @@ impl OvhCommand {
                         return Ok(());
                     }
                     let task_id = vps.start(service_name).await?;
-                    println!("Tâche de démarrage envoyée avec succès (Task ID: {:?}).", task_id);
+                    println!(
+                        "Tâche de démarrage envoyée avec succès (Task ID: {:?}).",
+                        task_id
+                    );
                     Ok(())
-                },
-                OvhVpsSubcommand::Renew { service_name, period, apply, pay, profile } => {
+                }
+                OvhVpsSubcommand::Renew {
+                    service_name,
+                    period,
+                    apply,
+                    pay,
+                    profile,
+                } => {
                     let client = ops::client_for(profile.as_deref())?;
                     let billing = VpsManager::new(&client).billing(service_name).await?;
                     println!(
@@ -831,7 +947,7 @@ impl OvhCommand {
                         },
                     )
                     .await
-                },
+                }
                 OvhVpsSubcommand::SetDeleteAtExpiration {
                     service_name,
                     preserve,
@@ -861,8 +977,13 @@ impl OvhCommand {
                     vps.set_delete_at_expiration(service_name, !flag).await?;
                     println!("deleteAtExpiration={} défini pour {}", !flag, service_name);
                     Ok(())
-                },
-                OvhVpsSubcommand::Watch { service_name, alerts_only, notify, profile } => {
+                }
+                OvhVpsSubcommand::Watch {
+                    service_name,
+                    alerts_only,
+                    notify,
+                    profile,
+                } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
                     let vps = VpsManager::new(&client);
@@ -913,16 +1034,24 @@ impl OvhCommand {
                     }
 
                     std::process::exit(exit_code);
-                },
+                }
             },
             OvhCommand::Auth { subcommand } => match subcommand {
                 OvhAuthSubcommand::Status { json, profile } => {
                     ops::auth_status(profile.as_deref(), *json).await
-                },
+                }
             },
-            OvhCommand::Services { profile, json, subcommand } => match subcommand {
+            OvhCommand::Services {
+                profile,
+                json,
+                subcommand,
+            } => match subcommand {
                 None => ops::services_list(profile.as_deref(), *json).await,
-                Some(OvhServicesSubcommand::Watch { days, alerts_only, notify }) => {
+                Some(OvhServicesSubcommand::Watch {
+                    days,
+                    alerts_only,
+                    notify,
+                }) => {
                     // Exit codes: 0 healthy, 1 alerts, 2 error.
                     match ops::services_watch(profile.as_deref(), *days, *alerts_only, *notify)
                         .await
@@ -931,10 +1060,15 @@ impl OvhCommand {
                         Err(error) => {
                             eprintln!("Erreur: {error:#}");
                             std::process::exit(2);
-                        },
+                        }
                     }
-                },
-                Some(OvhServicesSubcommand::Renew { service, period, apply, pay }) => {
+                }
+                Some(OvhServicesSubcommand::Renew {
+                    service,
+                    period,
+                    apply,
+                    pay,
+                }) => {
                     ops::services_renew(
                         profile.as_deref(),
                         service,
@@ -943,22 +1077,34 @@ impl OvhCommand {
                         *pay,
                     )
                     .await
-                },
+                }
             },
             OvhCommand::Domain { subcommand } => match subcommand {
                 OvhDomainSubcommand::List { json, profile } => {
                     ops::domain_list(profile.as_deref(), *json).await
-                },
-                OvhDomainSubcommand::Info { domain, json, profile } => {
-                    ops::domain_info(profile.as_deref(), domain, *json).await
-                },
-                OvhDomainSubcommand::Renew { domain, period, apply, pay, profile } => {
+                }
+                OvhDomainSubcommand::Info {
+                    domain,
+                    json,
+                    profile,
+                } => ops::domain_info(profile.as_deref(), domain, *json).await,
+                OvhDomainSubcommand::Renew {
+                    domain,
+                    period,
+                    apply,
+                    pay,
+                    profile,
+                } => {
                     ops::domain_renew(profile.as_deref(), domain, period.as_deref(), *apply, *pay)
                         .await
-                },
-                OvhDomainSubcommand::Autorenew { domain, on, off, apply, profile } => {
-                    ops::domain_autorenew(profile.as_deref(), domain, *on, *off, *apply).await
-                },
+                }
+                OvhDomainSubcommand::Autorenew {
+                    domain,
+                    on,
+                    off,
+                    apply,
+                    profile,
+                } => ops::domain_autorenew(profile.as_deref(), domain, *on, *off, *apply).await,
                 OvhDomainSubcommand::Nameservers {
                     domain,
                     hosts,
@@ -974,7 +1120,7 @@ impl OvhCommand {
                         *ds_cache_expired,
                     )
                     .await
-                },
+                }
                 OvhDomainSubcommand::Dnssec {
                     domain,
                     disable_hosted,
@@ -986,16 +1132,20 @@ impl OvhCommand {
                     ops::domain_dnssec(
                         profile.as_deref(),
                         domain,
-                        &ops::DnssecChange { disable_hosted: *disable_hosted, keys, apply: *apply },
+                        &ops::DnssecChange {
+                            disable_hosted: *disable_hosted,
+                            keys,
+                            apply: *apply,
+                        },
                         *json,
                     )
                     .await
-                },
+                }
             },
             OvhCommand::Iam { subcommand } => match subcommand {
                 OvhIamSubcommand::Sync { apply, profile } => {
                     ops::iam_sync(profile.as_deref(), *apply).await
-                },
+                }
             },
             OvhCommand::Email { subcommand } => match subcommand {
                 OvhEmailSubcommand::Domain { domain, profile } => {
@@ -1007,7 +1157,7 @@ impl OvhCommand {
                     println!("Statut: {}", d.status);
                     println!("Offre: {}", d.offer);
                     Ok(())
-                },
+                }
                 OvhEmailSubcommand::Redirections { domain, profile } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
@@ -1019,7 +1169,7 @@ impl OvhCommand {
                         println!("{:<12} {:<30} -> {}", r.id, r.from, r.to);
                     }
                     Ok(())
-                },
+                }
                 OvhEmailSubcommand::Audit { domain, profile } => {
                     let creds = load_profile_credentials(profile.as_deref())?;
                     let client = OvhClient::new(creds)?;
@@ -1028,8 +1178,14 @@ impl OvhCommand {
                     println!("Audit délivrabilité email: {}", report.domain);
                     println!("Statut global: {}", report.status);
                     println!("MX valide: {}", if report.mx_valid { "OUI" } else { "NON" });
-                    println!("SPF valide: {}", if report.spf_valid { "OUI" } else { "NON" });
-                    println!("DMARC valide: {}", if report.dmarc_valid { "OUI" } else { "NON" });
+                    println!(
+                        "SPF valide: {}",
+                        if report.spf_valid { "OUI" } else { "NON" }
+                    );
+                    println!(
+                        "DMARC valide: {}",
+                        if report.dmarc_valid { "OUI" } else { "NON" }
+                    );
                     println!(
                         "Sélecteurs DKIM: {} trouvés ({})",
                         report.dkim_selectors_count,
@@ -1042,7 +1198,7 @@ impl OvhCommand {
                         }
                     }
                     Ok(())
-                },
+                }
             },
         }
     }
@@ -1056,7 +1212,10 @@ mod tests {
     #[test]
     fn test_sha1_hex_computation() {
         assert_eq!(sha1_hex(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
-        assert_eq!(sha1_hex("aphrody"), "1a9c55099105fe738f75ed2b220beaf809702dd8");
+        assert_eq!(
+            sha1_hex("aphrody"),
+            "1a9c55099105fe738f75ed2b220beaf809702dd8"
+        );
     }
 
     #[test]
@@ -1127,7 +1286,9 @@ consumer_key = ck_ini
             "OVH GET /vps/x/status -> HTTP 460: {{\"message\":\"This service is expired\"}}"
         );
         assert!(is_expired_error(&error));
-        assert!(!is_expired_error(&anyhow::anyhow!("OVH GET /vps -> HTTP 403: denied")));
+        assert!(!is_expired_error(&anyhow::anyhow!(
+            "OVH GET /vps -> HTTP 403: denied"
+        )));
     }
 
     #[test]
@@ -1137,11 +1298,20 @@ consumer_key = ck_ini
         let status = Harness::try_parse_from(["ovh", "auth", "status", "--json"]).unwrap();
         assert_matches!(
             status.command,
-            OvhCommand::Auth { subcommand: OvhAuthSubcommand::Status { json: true, .. } }
+            OvhCommand::Auth {
+                subcommand: OvhAuthSubcommand::Status { json: true, .. }
+            }
         );
 
         let list = Harness::try_parse_from(["ovh", "services", "--json"]).unwrap();
-        assert_matches!(list.command, OvhCommand::Services { json: true, subcommand: None, .. });
+        assert_matches!(
+            list.command,
+            OvhCommand::Services {
+                json: true,
+                subcommand: None,
+                ..
+            }
+        );
 
         let watch = Harness::try_parse_from([
             "ovh",
@@ -1217,7 +1387,11 @@ consumer_key = ck_ini
         assert_matches!(
             renew.command,
             OvhCommand::Domain {
-                subcommand: OvhDomainSubcommand::Renew { apply: true, pay: false, .. }
+                subcommand: OvhDomainSubcommand::Renew {
+                    apply: true,
+                    pay: false,
+                    ..
+                }
             }
         );
         assert!(Harness::try_parse_from(["ovh", "domain", "renew", "a.com", "--pay"]).is_err());
@@ -1319,7 +1493,9 @@ consumer_key = ck_ini
         let sync = Harness::try_parse_from(["ovh", "iam", "sync"]).unwrap();
         assert_matches!(
             sync.command,
-            OvhCommand::Iam { subcommand: OvhIamSubcommand::Sync { apply: false, .. } }
+            OvhCommand::Iam {
+                subcommand: OvhIamSubcommand::Sync { apply: false, .. }
+            }
         );
         assert!(Harness::try_parse_from(["ovh", "iam", "sync", "--apply"]).is_ok());
 
@@ -1328,7 +1504,12 @@ consumer_key = ck_ini
                 .unwrap();
         assert_matches!(
             export.command,
-            OvhCommand::Dns { subcommand: OvhDnsSubcommand::Export { output: Some(_), .. } }
+            OvhCommand::Dns {
+                subcommand: OvhDnsSubcommand::Export {
+                    output: Some(_),
+                    ..
+                }
+            }
         );
         assert!(Harness::try_parse_from(["ovh", "dns", "backup", "--dir", "/tmp/z"]).is_ok());
         assert!(Harness::try_parse_from(["ovh", "dns", "backup"]).is_err());
@@ -1361,7 +1542,9 @@ consumer_key = ck_ini
         let rescue = Harness::try_parse_from(["ovh", "vps", "rescue", "vps-1"]).unwrap();
         assert_matches!(
             rescue.command,
-            OvhCommand::Vps { subcommand: OvhVpsSubcommand::Rescue { apply: false, .. } }
+            OvhCommand::Vps {
+                subcommand: OvhVpsSubcommand::Rescue { apply: false, .. }
+            }
         );
         let netboot =
             Harness::try_parse_from(["ovh", "vps", "netboot", "vps-1", "local", "--apply"])
@@ -1379,7 +1562,9 @@ consumer_key = ck_ini
         let tasks = Harness::try_parse_from(["ovh", "vps", "tasks", "vps-1", "--json"]).unwrap();
         assert_matches!(
             tasks.command,
-            OvhCommand::Vps { subcommand: OvhVpsSubcommand::Tasks { json: true, .. } }
+            OvhCommand::Vps {
+                subcommand: OvhVpsSubcommand::Tasks { json: true, .. }
+            }
         );
     }
 
@@ -1440,7 +1625,11 @@ consumer_key = ck_ini
         assert_matches!(
             watch.command,
             OvhCommand::Vps {
-                subcommand: OvhVpsSubcommand::Watch { service_name: None, alerts_only: false, .. }
+                subcommand: OvhVpsSubcommand::Watch {
+                    service_name: None,
+                    alerts_only: false,
+                    ..
+                }
             }
         );
 

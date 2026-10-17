@@ -86,7 +86,9 @@ fn validate(request: &PassiveListRequest) -> anyhow::Result<(String, u32, u32)> 
         query.len() <= 256 && !query.chars().any(char::is_control),
         "invalid passive query"
     );
-    for value in [request.category.as_deref(), request.boost_type.as_deref()].into_iter().flatten()
+    for value in [request.category.as_deref(), request.boost_type.as_deref()]
+        .into_iter()
+        .flatten()
     {
         anyhow::ensure!(
             value.len() <= 128 && !value.chars().any(char::is_control),
@@ -129,7 +131,9 @@ fn summary(row: &Row<'_>) -> rusqlite::Result<PassiveSummary> {
 
 fn read_all(conn: &Connection) -> anyhow::Result<Vec<PassiveSummary>> {
     let mut statement = conn.prepare("SELECT id,name_fr,name_en,name_ja,description_fr,description_en,description_ja,type,image_url,data,category,boost_type,stat_boost,effect_value FROM inagle_passives")?;
-    Ok(statement.query_map([], summary)?.collect::<Result<Vec<_>, _>>()?)
+    Ok(statement
+        .query_map([], summary)?
+        .collect::<Result<Vec<_>, _>>()?)
 }
 
 /// List mirror passive rows with text/category filters and stable pagination.
@@ -142,7 +146,10 @@ pub fn list_passives(
     let mut rows = read_all(conn)?
         .into_iter()
         .filter(|row| {
-            request.category.as_deref().is_none_or(|value| row.category.as_deref() == Some(value))
+            request
+                .category
+                .as_deref()
+                .is_none_or(|value| row.category.as_deref() == Some(value))
                 && request
                     .boost_type
                     .as_deref()
@@ -162,7 +169,11 @@ pub fn list_passives(
         .collect::<Vec<_>>();
     rows.sort_by_key(|row| {
         (
-            row.name_fr.clone().or_else(|| row.name_en.clone()).unwrap_or_default().to_lowercase(),
+            row.name_fr
+                .clone()
+                .or_else(|| row.name_en.clone())
+                .unwrap_or_default()
+                .to_lowercase(),
             row.id.clone(),
         )
     });
@@ -209,7 +220,10 @@ pub fn get_passive(conn: &Connection, identifier: &str) -> anyhow::Result<Option
             })?
             .collect::<Result<Vec<_>, _>>()?;
     }
-    Ok(Some(PassiveDetail { passive, generation }))
+    Ok(Some(PassiveDetail {
+        passive,
+        generation,
+    }))
 }
 
 /// Read the global scaling rule table separately; it has no passive foreign key in the schema.
@@ -270,7 +284,10 @@ mod tests {
         assert_eq!(
             list_passives(
                 &conn,
-                &PassiveListRequest { query: Some("ps001".into()), ..Default::default() }
+                &PassiveListRequest {
+                    query: Some("ps001".into()),
+                    ..Default::default()
+                }
             )
             .unwrap()
             .total,

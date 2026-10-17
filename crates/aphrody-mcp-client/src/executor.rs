@@ -66,7 +66,15 @@ impl McpToolExecutor {
             .clone()
             .unwrap_or_else(|| format!("Tool `{}` from MCP server `{server_name}`", tool.name));
 
-        Self::new(server_name, &tool.name, exposed_name, desc, &tool.input_schema, client, exposure)
+        Self::new(
+            server_name,
+            &tool.name,
+            exposed_name,
+            desc,
+            &tool.input_schema,
+            client,
+            exposure,
+        )
     }
 
     /// Build an executor with a custom alias name (e.g. `web_search` instead of
@@ -81,7 +89,15 @@ impl McpToolExecutor {
         client: McpClientHandle,
         exposure: ToolExposure,
     ) -> Self {
-        Self::new(server_name, upstream_name, alias_name, description, schema, client, exposure)
+        Self::new(
+            server_name,
+            upstream_name,
+            alias_name,
+            description,
+            schema,
+            client,
+            exposure,
+        )
     }
 
     /// Configure a custom pre-execution safety level for this tool.
@@ -119,12 +135,13 @@ impl ToolExecutor for McpToolExecutor {
             "Executing MCP tool call"
         );
 
-        let result =
-            self.client.call_tool(&self.upstream_tool_name, arguments).await.map_err(|err| {
-                ToolError::Execution {
-                    tool: self.definition.name.clone(),
-                    message: err.to_string(),
-                }
+        let result = self
+            .client
+            .call_tool(&self.upstream_tool_name, arguments)
+            .await
+            .map_err(|err| ToolError::Execution {
+                tool: self.definition.name.clone(),
+                message: err.to_string(),
             })?;
 
         let mut text_parts = Vec::new();
@@ -137,11 +154,15 @@ impl ToolExecutor for McpToolExecutor {
             match item {
                 McpContent::Text { text } => {
                     text_parts.push(text);
-                },
+                }
                 McpContent::Image { data, mime_type } => {
                     images.push(ToolImage::new(mime_type, data));
-                },
-                McpContent::Resource { uri, mime_type, text } => {
+                }
+                McpContent::Resource {
+                    uri,
+                    mime_type,
+                    text,
+                } => {
                     let mut res_desc = String::new();
                     if let Some(u) = uri {
                         res_desc.push_str(&format!("Resource: {u}"));
@@ -153,7 +174,7 @@ impl ToolExecutor for McpToolExecutor {
                         res_desc.push_str(&format!("\n{t}"));
                     }
                     text_parts.push(res_desc);
-                },
+                }
             }
         }
 

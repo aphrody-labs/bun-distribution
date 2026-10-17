@@ -11,17 +11,31 @@ use hayro::hayro_syntax::object::{Array, Dict, Name, ObjectIdentifier};
 /// (object number, name, on by default) of each layer.
 fn ocgs(pdf: &Pdf) -> Vec<(i32, String, bool)> {
     let xref = pdf.xref();
-    let Some(cat) = xref.get::<Dict<'_>>(xref.root_id()) else { return vec![] };
-    let Some(ocp) = cat.get::<Dict<'_>>(b"OCProperties") else { return vec![] };
-    let Some(list) = ocp.get::<Array<'_>>(b"OCGs") else { return vec![] };
+    let Some(cat) = xref.get::<Dict<'_>>(xref.root_id()) else {
+        return vec![];
+    };
+    let Some(ocp) = cat.get::<Dict<'_>>(b"OCProperties") else {
+        return vec![];
+    };
+    let Some(list) = ocp.get::<Array<'_>>(b"OCGs") else {
+        return vec![];
+    };
     let cfg = ocp.get::<Dict<'_>>(b"D");
     let ids_in = |key: &[u8]| -> Vec<i32> {
         cfg.as_ref()
             .and_then(|c| c.get::<Array<'_>>(key))
-            .map(|a| a.raw_iter().filter_map(|o| o.as_obj_ref()).map(|r| r.obj_number).collect())
+            .map(|a| {
+                a.raw_iter()
+                    .filter_map(|o| o.as_obj_ref())
+                    .map(|r| r.obj_number)
+                    .collect()
+            })
             .unwrap_or_default()
     };
-    let base_off = cfg.as_ref().and_then(|c| c.get::<Name<'_>>(b"BaseState")).is_some_and(|n| n.as_ref() == b"OFF");
+    let base_off = cfg
+        .as_ref()
+        .and_then(|c| c.get::<Name<'_>>(b"BaseState"))
+        .is_some_and(|n| n.as_ref() == b"OFF");
     let (on, off) = (ids_in(b"ON"), ids_in(b"OFF"));
     list.raw_iter()
         .filter_map(|o| o.as_obj_ref())
@@ -31,7 +45,11 @@ fn ocgs(pdf: &Pdf) -> Vec<(i32, String, bool)> {
                 .get::<hayro::hayro_syntax::object::String<'_>>(b"Name")
                 .map(|s| String::from_utf8_lossy(s.as_bytes()).to_string())
                 .unwrap_or_default();
-            let visible = if base_off { on.contains(&r.obj_number) } else { !off.contains(&r.obj_number) };
+            let visible = if base_off {
+                on.contains(&r.obj_number)
+            } else {
+                !off.contains(&r.obj_number)
+            };
             Some((r.obj_number, name, visible))
         })
         .collect()
@@ -39,7 +57,9 @@ fn ocgs(pdf: &Pdf) -> Vec<(i32, String, bool)> {
 
 /// The layers of a placed PDF: (name, visible by default).
 pub fn pdf_layers(bytes: &[u8]) -> Vec<(String, bool)> {
-    Pdf::new(Arc::new(bytes.to_vec())).map(|p| ocgs(&p).into_iter().map(|(_, n, v)| (n, v)).collect()).unwrap_or_default()
+    Pdf::new(Arc::new(bytes.to_vec()))
+        .map(|p| ocgs(&p).into_iter().map(|(_, n, v)| (n, v)).collect())
+        .unwrap_or_default()
 }
 
 /// `bytes` with exactly the layers named in `hidden` off (the others on). `None` when the file
@@ -54,7 +74,11 @@ pub fn pdf_hide_layers(bytes: &[u8], hidden: &[String]) -> Option<Vec<u8>> {
     let cat = xref.get::<Dict<'_>>(xref.root_id())?;
     let pages = cat.get_ref(b"Pages")?;
     let all: Vec<String> = layers.iter().map(|(n, _, _)| format!("{n} 0 R")).collect();
-    let off: Vec<String> = layers.iter().filter(|(_, name, _)| hidden.contains(name)).map(|(n, _, _)| format!("{n} 0 R")).collect();
+    let off: Vec<String> = layers
+        .iter()
+        .filter(|(_, name, _)| hidden.contains(name))
+        .map(|(n, _, _)| format!("{n} 0 R"))
+        .collect();
     // A new catalog under a fresh object number, with the original's page tree.
     let root = 9_999_000;
     let mut out = bytes.to_vec();
@@ -75,7 +99,10 @@ pub fn pdf_hide_layers(bytes: &[u8], hidden: &[String]) -> Option<Vec<u8>> {
     let xref_at = out.len();
     let prev = {
         let tail = String::from_utf8_lossy(&bytes[bytes.len().saturating_sub(64)..]).to_string();
-        tail.rsplit("startxref").next().and_then(|t| t.split_whitespace().next()).and_then(|n| n.parse::<usize>().ok())?
+        tail.rsplit("startxref")
+            .next()
+            .and_then(|t| t.split_whitespace().next())
+            .and_then(|n| n.parse::<usize>().ok())?
     };
     out.extend_from_slice(
         format!("xref\n{root} 1\n{at:010} 00000 n\r\ntrailer\n<</Size {}/Root {root} 0 R/Prev {prev}>>\nstartxref\n{xref_at}\n%%EOF\n", root + 1)
@@ -97,7 +124,9 @@ pub(crate) fn layered(data: &Arc<Vec<u8>>, hidden: &[String]) -> Arc<Vec<u8>> {
     if map.len() > 64 {
         map.clear();
     }
-    let v = pdf_hide_layers(data, hidden).map(Arc::new).unwrap_or_else(|| data.clone());
+    let v = pdf_hide_layers(data, hidden)
+        .map(Arc::new)
+        .unwrap_or_else(|| data.clone());
     map.insert(key, v.clone());
     v
 }

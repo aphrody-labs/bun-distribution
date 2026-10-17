@@ -20,9 +20,9 @@ use crate::hle::service::ns::language::{
     get_application_language_priority_list, get_supported_language_flag, ApplicationLanguage,
 };
 use crate::hle::service::ns::ns_results::RESULT_APPLICATION_LANGUAGE_NOT_FOUND;
+use crate::hle::service::os::event::Event;
 use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
 use crate::hle::service::set::settings_server::get_language_code_from_index;
-use crate::hle::service::os::event::Event;
 
 fn sanitize_jpeg_image_size(image: &mut Vec<u8>) {
     const MAX_JPEG_IMAGE_SIZE: usize = 0x20000;
@@ -38,10 +38,18 @@ fn sanitize_jpeg_image_size(image: &mut Vec<u8>) {
         let input = decoded.to_rgb8();
         let linear = |v: u8| {
             let v = f64::from(v) / 255.0;
-            if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+            if v <= 0.04045 {
+                v / 12.92
+            } else {
+                ((v + 0.055) / 1.055).powf(2.4)
+            }
         };
         let srgb = |v: f64| {
-            let v = if v <= 0.0031308 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 };
+            let v = if v <= 0.0031308 {
+                v * 12.92
+            } else {
+                1.055 * v.powf(1.0 / 2.4) - 0.055
+            };
             (v * 255.0).round().clamp(0.0, 255.0) as u8
         };
         let mut output = image::RgbImage::new(PROFILE_DIMENSIONS, PROFILE_DIMENSIONS);
@@ -64,7 +72,8 @@ fn sanitize_jpeg_image_size(image: &mut Vec<u8>) {
         }
         let mut encoded = Vec::new();
         if let Err(error) = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut encoded, 90)
-            .encode_image(&output) {
+            .encode_image(&output)
+        {
             log::error!("Failed to resize JPEG: {error}");
             return;
         }
@@ -76,7 +85,8 @@ fn sanitize_jpeg_image_size(image: &mut Vec<u8>) {
 // Mechanical counterpart of ListApplicationTitle's vector<u64> + memcpy:
 // keep byte decoding local to its upstream owner and independent of host endian.
 fn decode_application_ids(bytes: &[u8]) -> Vec<u64> {
-    bytes.chunks_exact(8)
+    bytes
+        .chunks_exact(8)
         .map(|bytes| u64::from_le_bytes(bytes.try_into().unwrap()))
         .collect()
 }
@@ -154,18 +164,28 @@ impl IAsyncValue {
 }
 
 impl SessionRequestHandler for IAsyncValue {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         self.handle_sync_request_impl(ctx)
     }
 
-    fn service_name(&self) -> &str { "IAsyncValue" }
+    fn service_name(&self) -> &str {
+        "IAsyncValue"
+    }
 }
 
 impl ServiceFramework for IAsyncValue {
-    fn get_service_name(&self) -> &str { self.service_name() }
-    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> { &self.handlers }
-    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> { &self.handlers_tipc }
+    fn get_service_name(&self) -> &str {
+        self.service_name()
+    }
+    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers
+    }
+    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers_tipc
+    }
 }
 
 /// Application control source.
@@ -228,11 +248,27 @@ impl IReadOnlyApplicationControlDataInterface {
                 None,
                 "SelectApplicationDesiredLanguage",
             ),
-            (commands::LIST_APPLICATION_TITLE, Some(Self::list_application_title), "ListApplicationTitle"),
-            (5, Some(Self::get_application_control_data2_handler), "GetApplicationControlData"),
+            (
+                commands::LIST_APPLICATION_TITLE,
+                Some(Self::list_application_title),
+                "ListApplicationTitle",
+            ),
+            (
+                5,
+                Some(Self::get_application_control_data2_handler),
+                "GetApplicationControlData",
+            ),
             (10, Some(Self::list_application_icon), "ListApplicationIcon"),
-            (19, Some(Self::get_application_control_data3_handler), "GetApplicationControlData"),
-            (23, Some(Self::get_application_control_data3_handler), "GetApplicationControlData"),
+            (
+                19,
+                Some(Self::get_application_control_data3_handler),
+                "GetApplicationControlData",
+            ),
+            (
+                23,
+                Some(Self::get_application_control_data3_handler),
+                "GetApplicationControlData",
+            ),
         ]);
         Self {
             system,
@@ -384,23 +420,31 @@ impl IReadOnlyApplicationControlDataInterface {
 
     // Mechanical extraction of the identical preparation in upstream Data2/Data3;
     // metadata ownership and all buffer work remain in this upstream module.
-    fn prepare_control_data(&self, flag1: u8, application_id: u64, out: &mut [u8])
-        -> Result<u32, ResultCode>
-    {
-        let control = if self.system.is_null() { (None, None) } else {
+    fn prepare_control_data(
+        &self,
+        flag1: u8,
+        application_id: u64,
+        out: &mut [u8],
+    ) -> Result<u32, ResultCode> {
+        let control = if self.system.is_null() {
+            (None, None)
+        } else {
             let system = self.system.get();
             let controller = system.get_filesystem_controller();
             let controller = controller.lock().unwrap();
             match system.get_content_provider() {
                 Some(provider) => {
                     let provider = provider.lock().unwrap();
-                    PatchManager::new(application_id, &controller, &*provider).get_control_metadata()
+                    PatchManager::new(application_id, &controller, &*provider)
+                        .get_control_metadata()
                 }
                 None => (None, None),
             }
         };
         let nacp_size = std::mem::size_of::<RawNACP>();
-        if out.len() < nacp_size { return Err(crate::hle::result::RESULT_UNKNOWN); }
+        if out.len() < nacp_size {
+            return Err(crate::hle::result::RESULT_UNKNOWN);
+        }
         out.fill(0);
         if let Some(nacp) = control.0 {
             let bytes = nacp.get_raw_bytes();
@@ -413,7 +457,9 @@ impl IReadOnlyApplicationControlDataInterface {
             if size > 0 {
                 icon_data.resize(size, 0);
                 icon.read(&mut icon_data, size, 0);
-                if flag1 == 1 { sanitize_jpeg_image_size(&mut icon_data); }
+                if flag1 == 1 {
+                    sanitize_jpeg_image_size(&mut icon_data);
+                }
             }
         }
         let count = icon_data.len().min(out.len() - nacp_size);
@@ -421,21 +467,34 @@ impl IReadOnlyApplicationControlDataInterface {
         Ok((nacp_size + icon_data.len()) as u32)
     }
 
-    pub fn get_application_control_data2(&self, _source: u8, flag1: u8, _flag2: u8,
-        application_id: u64, out: &mut [u8]) -> Result<u64, ResultCode>
-    {
+    pub fn get_application_control_data2(
+        &self,
+        _source: u8,
+        flag1: u8,
+        _flag2: u8,
+        application_id: u64,
+        out: &mut [u8],
+    ) -> Result<u64, ResultCode> {
         let size = self.prepare_control_data(flag1, application_id, out)?;
         Ok((u64::from(size) << 32) | u64::from(flag1))
     }
 
-    pub fn get_application_control_data3(&self, _source: u8, flag1: u8, _flag2: u8,
-        application_id: u64, out: &mut [u8]) -> Result<[u32; 3], ResultCode>
-    {
+    pub fn get_application_control_data3(
+        &self,
+        _source: u8,
+        flag1: u8,
+        _flag2: u8,
+        application_id: u64,
+        out: &mut [u8],
+    ) -> Result<[u32; 3], ResultCode> {
         let size = self.prepare_control_data(flag1, application_id, out)?;
         Ok([0x10001, if flag1 == 1 { 0x10001 } else { 0 }, size])
     }
 
-    fn get_application_control_data2_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_control_data2_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         let mut rp = RequestParser::new(ctx);
         // CMIF packs three u8 fields, then aligns application_id to eight bytes.
@@ -443,8 +502,13 @@ impl IReadOnlyApplicationControlDataInterface {
         rp.pop_u32();
         let application_id = rp.pop_u64();
         let mut output = vec![0; ctx.get_write_buffer_size(0)];
-        match service.get_application_control_data2(flags as u8, (flags >> 8) as u8,
-            (flags >> 16) as u8, application_id, &mut output) {
+        match service.get_application_control_data2(
+            flags as u8,
+            (flags >> 8) as u8,
+            (flags >> 16) as u8,
+            application_id,
+            &mut output,
+        ) {
             Ok(size) => {
                 ctx.write_buffer(&output, 0);
                 let mut rb = ResponseBuilder::new(ctx, 4, 0, 0);
@@ -458,20 +522,30 @@ impl IReadOnlyApplicationControlDataInterface {
         }
     }
 
-    fn get_application_control_data3_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_control_data3_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         let mut rp = RequestParser::new(ctx);
         let flags = rp.pop_u32();
         rp.pop_u32();
         let application_id = rp.pop_u64();
         let mut output = vec![0; ctx.get_write_buffer_size(0)];
-        match service.get_application_control_data3(flags as u8, (flags >> 8) as u8,
-            (flags >> 16) as u8, application_id, &mut output) {
+        match service.get_application_control_data3(
+            flags as u8,
+            (flags >> 8) as u8,
+            (flags >> 16) as u8,
+            application_id,
+            &mut output,
+        ) {
             Ok(words) => {
                 ctx.write_buffer(&output, 0);
                 let mut rb = ResponseBuilder::new(ctx, 5, 0, 0);
                 rb.push_result(RESULT_SUCCESS);
-                for word in words { rb.push_u32(word); }
+                for word in words {
+                    rb.push_u32(word);
+                }
             }
             Err(result) => {
                 let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
@@ -490,24 +564,43 @@ impl IReadOnlyApplicationControlDataInterface {
             process.get_transfer_memory_by_object_id(id)
         });
         let result = (|| -> Result<usize, ResultCode> {
-            let Some(transfer_memory) = transfer_memory else { return Ok(0); };
+            let Some(transfer_memory) = transfer_memory else {
+                return Ok(0);
+            };
             let (owner, address, capacity) = {
                 let transfer = transfer_memory.lock().unwrap();
-                (transfer.get_owner(), transfer.get_source_address(), transfer.get_size())
+                (
+                    transfer.get_owner(),
+                    transfer.get_source_address(),
+                    transfer.get_size(),
+                )
             };
-            let Some(owner) = owner else { return Ok(0); };
-            if application_ids.is_empty() { return Ok(0); }
-            let memory = owner.lock().unwrap().get_memory()
+            let Some(owner) = owner else {
+                return Ok(0);
+            };
+            if application_ids.is_empty() {
+                return Ok(0);
+            }
+            let memory = owner
+                .lock()
+                .unwrap()
+                .get_memory()
                 .ok_or(crate::hle::result::RESULT_UNKNOWN)?;
             // Keep the owner and transfer object alive, but neither lock across
             // metadata lookup or writes. Check BEFORE writing, unlike upstream.
             let mut out_length = 0usize;
             let mut write = |bytes: &[u8]| -> Result<(), ResultCode> {
-                let end = out_length.checked_add(bytes.len())
+                let end = out_length
+                    .checked_add(bytes.len())
                     .filter(|end| *end <= capacity)
                     .ok_or(crate::hle::result::RESULT_UNKNOWN)?;
-                address.checked_add(end as u64).ok_or(crate::hle::result::RESULT_UNKNOWN)?;
-                memory.lock().unwrap().write_block(address + out_length as u64, bytes);
+                address
+                    .checked_add(end as u64)
+                    .ok_or(crate::hle::result::RESULT_UNKNOWN)?;
+                memory
+                    .lock()
+                    .unwrap()
+                    .write_block(address + out_length as u64, bytes);
                 out_length = end;
                 Ok(())
             };
@@ -517,11 +610,15 @@ impl IReadOnlyApplicationControlDataInterface {
             for application_id in &application_ids {
                 let controller = system.get_filesystem_controller();
                 let controller = controller.lock().unwrap();
-                let size = system.get_content_provider().and_then(|provider| {
-                    let provider = provider.lock().unwrap();
-                    PatchManager::new(*application_id, &controller, &*provider)
-                        .get_control_metadata().1
-                }).map_or(0, |icon| icon.get_size());
+                let size = system
+                    .get_content_provider()
+                    .and_then(|provider| {
+                        let provider = provider.lock().unwrap();
+                        PatchManager::new(*application_id, &controller, &*provider)
+                            .get_control_metadata()
+                            .1
+                    })
+                    .map_or(0, |icon| icon.get_size());
                 // Missing icons have an explicit zero length rather than
                 // retaining stale bytes in the guest's transfer buffer.
                 drop(controller);
@@ -534,7 +631,8 @@ impl IReadOnlyApplicationControlDataInterface {
                     system.get_content_provider().and_then(|provider| {
                         let provider = provider.lock().unwrap();
                         PatchManager::new(*application_id, &controller, &*provider)
-                            .get_control_metadata().1
+                            .get_control_metadata()
+                            .1
                     })
                 };
                 if let Some(icon) = icon {
@@ -572,7 +670,8 @@ impl IReadOnlyApplicationControlDataInterface {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         let app_ids_buffer = ctx.read_buffer(0);
         let application_ids = decode_application_ids(&app_ids_buffer);
-        const TITLE_ENTRY_SIZE: usize = std::mem::size_of::<crate::file_sys::control_metadata::LanguageEntry>();
+        const TITLE_ENTRY_SIZE: usize =
+            std::mem::size_of::<crate::file_sys::control_metadata::LanguageEntry>();
         let total_data_size = application_ids.len() * TITLE_ENTRY_SIZE;
 
         // Retain the object after releasing the requesting process's handle-table
@@ -617,9 +716,10 @@ impl IReadOnlyApplicationControlDataInterface {
                         entry_bytes[..0x200].copy_from_slice(&entry.application_name);
                         entry_bytes[0x200..].copy_from_slice(&entry.developer_name);
                     }
-                    memory.lock().unwrap().write_block(
-                        address + (index * TITLE_ENTRY_SIZE) as u64, &entry_bytes,
-                    );
+                    memory
+                        .lock()
+                        .unwrap()
+                        .write_block(address + (index * TITLE_ENTRY_SIZE) as u64, &entry_bytes);
                 }
             }
         }
@@ -737,7 +837,9 @@ impl IReadOnlyApplicationControlDataInterface {
 }
 
 impl SessionRequestHandler for IReadOnlyApplicationControlDataInterface {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, ctx)
     }
@@ -774,8 +876,17 @@ mod tests {
         bytes.extend_from_slice(&[0xAA, 0xBB, 0xCC]);
         assert_eq!(decode_application_ids(&bytes), ids);
         assert!(decode_application_ids(&bytes[..7]).is_empty());
-        assert_eq!(std::mem::size_of::<crate::file_sys::control_metadata::LanguageEntry>(), 0x300);
-        assert_eq!(std::mem::offset_of!(crate::file_sys::control_metadata::LanguageEntry, developer_name), 0x200);
+        assert_eq!(
+            std::mem::size_of::<crate::file_sys::control_metadata::LanguageEntry>(),
+            0x300
+        );
+        assert_eq!(
+            std::mem::offset_of!(
+                crate::file_sys::control_metadata::LanguageEntry,
+                developer_name
+            ),
+            0x200
+        );
     }
 
     #[test]
@@ -804,8 +915,13 @@ mod tests {
     fn title_listing_is_registered_and_requires_an_event_export_context() {
         let service = IReadOnlyApplicationControlDataInterface::new(SystemRef::null());
         let mut ctx = HLERequestContext::new();
-        service.handlers[&commands::LIST_APPLICATION_TITLE].handler_callback.unwrap()(&service, &mut ctx);
-        assert_eq!(ctx.command_buffer()[6], crate::hle::result::RESULT_UNKNOWN.0);
+        service.handlers[&commands::LIST_APPLICATION_TITLE]
+            .handler_callback
+            .unwrap()(&service, &mut ctx);
+        assert_eq!(
+            ctx.command_buffer()[6],
+            crate::hle::result::RESULT_UNKNOWN.0
+        );
         assert!(ctx.outgoing_copy_objects.is_empty());
     }
 
@@ -814,18 +930,29 @@ mod tests {
         let service = IReadOnlyApplicationControlDataInterface::new(SystemRef::null());
         for flag in [0, 1, 2, 255] {
             let mut output = vec![0xaa; 0x4010];
-            assert_eq!(service.get_application_control_data2(2, flag, 255,
-                0x1234_5678_9abc_def0, &mut output).unwrap(), (0x4000u64 << 32) | u64::from(flag));
+            assert_eq!(
+                service
+                    .get_application_control_data2(2, flag, 255, 0x1234_5678_9abc_def0, &mut output)
+                    .unwrap(),
+                (0x4000u64 << 32) | u64::from(flag)
+            );
             assert!(output.iter().all(|byte| *byte == 0));
             output.fill(0xaa);
-            assert_eq!(service.get_application_control_data3(2, flag, 255,
-                0x1234_5678_9abc_def0, &mut output).unwrap(),
-                [0x10001, if flag == 1 { 0x10001 } else { 0 }, 0x4000]);
+            assert_eq!(
+                service
+                    .get_application_control_data3(2, flag, 255, 0x1234_5678_9abc_def0, &mut output)
+                    .unwrap(),
+                [0x10001, if flag == 1 { 0x10001 } else { 0 }, 0x4000]
+            );
             assert!(output.iter().all(|byte| *byte == 0));
         }
         let mut short = vec![0xaa; 0x3fff];
-        assert!(service.get_application_control_data2(0, 1, 0, 0, &mut short).is_err());
-        assert!(service.get_application_control_data3(0, 1, 0, 0, &mut short).is_err());
+        assert!(service
+            .get_application_control_data2(0, 1, 0, 0, &mut short)
+            .is_err());
+        assert!(service
+            .get_application_control_data3(0, 1, 0, 0, &mut short)
+            .is_err());
         assert!(short.iter().all(|byte| *byte == 0xaa));
         for command in [5, 10, 13, 19, 23] {
             assert!(service.handlers[&command].handler_callback.is_some());
@@ -838,8 +965,12 @@ mod tests {
         for command in [5, 19, 23] {
             let mut ctx = HLERequestContext::new();
             // source=2, flag1=1, flag2=0xab, then poisoned alignment padding.
-            ctx.command_buffer_mut()[2..6].copy_from_slice(
-                &[0xffab_0102, 0xdddd_dddd, 0x9abc_def0, 0x1234_5678]);
+            ctx.command_buffer_mut()[2..6].copy_from_slice(&[
+                0xffab_0102,
+                0xdddd_dddd,
+                0x9abc_def0,
+                0x1234_5678,
+            ]);
             ctx.set_buffer_b_descriptors_for_test(vec![crate::hle::ipc::BufferDescriptorABW {
                 size_bits_0_31: 0x4000,
                 address_bits_0_31: 0,
@@ -864,7 +995,8 @@ mod tests {
         let input = image::RgbImage::from_pixel(174, 174, image::Rgb([120, 120, 120]));
         let mut jpeg = Vec::new();
         image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 90)
-            .encode_image(&input).unwrap();
+            .encode_image(&input)
+            .unwrap();
         let original = jpeg.clone();
         sanitize_jpeg_image_size(&mut jpeg);
         assert_eq!(jpeg, original); // No needless re-encoding.
@@ -884,12 +1016,15 @@ mod tests {
         }
         let mut jpeg = Vec::new();
         image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 100)
-            .encode_image(&input).unwrap();
+            .encode_image(&input)
+            .unwrap();
         sanitize_jpeg_image_size(&mut jpeg);
         let output = image::load_from_memory(&jpeg).unwrap().to_rgb8();
         assert_eq!(output.dimensions(), (174, 174));
         for pixel in output.pixels() {
-            for channel in pixel.0 { assert!((184..=192).contains(&channel), "{pixel:?}"); }
+            for channel in pixel.0 {
+                assert!((184..=192).contains(&channel), "{pixel:?}");
+            }
         }
     }
 

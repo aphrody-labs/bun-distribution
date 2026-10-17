@@ -10,17 +10,25 @@ use lightcraft_ui_egui::{
 };
 
 fn harness(view: ViewMode, right: RightPanel) -> Harness<'static, LightcraftApp> {
-    let mut app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let mut app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     app.ui.left_panel = true;
     app.ui.view = view;
     app.ui.right = right;
-    let mut h = Harness::builder().with_size(vec2(1500.0, 950.0)).build_ui_state(
-        |ui, app: &mut LightcraftApp| {
-            app.logic(&ui.ctx().clone());
-            app.ui(ui);
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(vec2(1500.0, 950.0))
+        .build_ui_state(
+            |ui, app: &mut LightcraftApp| {
+                app.logic(&ui.ctx().clone());
+                app.ui(ui);
+            },
+            app,
+        );
     h.run_steps(10);
     h
 }
@@ -60,22 +68,43 @@ fn audit(h: &Harness<'_, LightcraftApp>, place: &str) -> Vec<String> {
         }
         count += 1;
         let name = n.label().unwrap_or_default();
-        let name = if name.trim().is_empty() { n.value().unwrap_or_default() } else { name };
+        let name = if name.trim().is_empty() {
+            n.value().unwrap_or_default()
+        } else {
+            name
+        };
         if name.trim().is_empty() {
-            problems.push(format!("{place}: unnamed {role:?} at {:?}", n.bounding_box()));
+            problems.push(format!(
+                "{place}: unnamed {role:?} at {:?}",
+                n.bounding_box()
+            ));
         }
-        if role == Role::Slider && (n.numeric_value().is_none() || n.min_numeric_value().is_none() || n.max_numeric_value().is_none()) {
+        if role == Role::Slider
+            && (n.numeric_value().is_none()
+                || n.min_numeric_value().is_none()
+                || n.max_numeric_value().is_none())
+        {
             problems.push(format!("{place}: slider {name:?} lacks value/range"));
         }
     }
-    assert!(count > 5, "{place}: the tree has interactive nodes ({count})");
+    assert!(
+        count > 5,
+        "{place}: the tree has interactive nodes ({count})"
+    );
     problems
 }
 
 #[test]
 fn every_interactive_node_has_a_name_in_every_view_and_tool() {
     let mut problems = Vec::new();
-    for view in [ViewMode::PhotoGrid, ViewMode::SquareGrid, ViewMode::Detail, ViewMode::Compare, ViewMode::Survey, ViewMode::Reference] {
+    for view in [
+        ViewMode::PhotoGrid,
+        ViewMode::SquareGrid,
+        ViewMode::Detail,
+        ViewMode::Compare,
+        ViewMode::Survey,
+        ViewMode::Reference,
+    ] {
         let h = harness(view, RightPanel::None);
         problems.extend(audit(&h, &format!("{view:?}")));
     }
@@ -117,7 +146,12 @@ fn every_interactive_node_has_a_name_in_every_view_and_tool() {
         }
         h.run_steps(6);
         problems.extend(audit(&h, dialog));
-        let windows = h.root().children_recursive().map(|n| n.accesskit_node()).filter(|n| n.role() == Role::Window).count();
+        let windows = h
+            .root()
+            .children_recursive()
+            .map(|n| n.accesskit_node())
+            .filter(|n| n.role() == Role::Window)
+            .count();
         let untitled = h
             .root()
             .children_recursive()
@@ -125,12 +159,19 @@ fn every_interactive_node_has_a_name_in_every_view_and_tool() {
             .filter(|n| n.role() == Role::Window && n.label().unwrap_or_default().trim().is_empty())
             .count();
         if untitled > 0 {
-            problems.push(format!("{dialog}: {untitled} of {windows} windows have no title"));
+            problems.push(format!(
+                "{dialog}: {untitled} of {windows} windows have no title"
+            ));
         }
     }
     problems.sort();
     problems.dedup();
-    assert!(problems.is_empty(), "{} accessibility problems:\n{}", problems.len(), problems.join("\n"));
+    assert!(
+        problems.is_empty(),
+        "{} accessibility problems:\n{}",
+        problems.len(),
+        problems.join("\n")
+    );
 }
 
 fn slider_value(h: &Harness<'_, LightcraftApp>, name: &str) -> Option<f64> {
@@ -149,16 +190,21 @@ fn screen_reader_increment_moves_a_slider() {
     let target = h
         .root()
         .children_recursive()
-        .find(|n| n.accesskit_node().role() == Role::Slider && n.accesskit_node().label().as_deref() == Some("Exposure"))
+        .find(|n| {
+            n.accesskit_node().role() == Role::Slider
+                && n.accesskit_node().label().as_deref() == Some("Exposure")
+        })
         .unwrap()
         .accesskit_node()
         .locate();
-    h.event(egui::Event::AccessKitActionRequest(egui::accesskit::ActionRequest {
-        action: egui::accesskit::Action::Increment,
-        target_node: target.0,
-        target_tree: target.1,
-        data: None,
-    }));
+    h.event(egui::Event::AccessKitActionRequest(
+        egui::accesskit::ActionRequest {
+            action: egui::accesskit::Action::Increment,
+            target_node: target.0,
+            target_tree: target.1,
+            data: None,
+        },
+    ));
     h.run_steps(4);
     let after = slider_value(&h, "Exposure").unwrap();
     assert!(after > before, "{before} -> {after}");
@@ -174,16 +220,24 @@ fn canvas_tool_sliders_are_reachable_with_tab() {
         for _ in 0..300 {
             h.key_press(egui::Key::Tab);
             h.run_steps(1);
-            let focused = h.root().children_recursive().map(|n| n.accesskit_node()).find(|n| n.is_focused() && n.role() == Role::Slider);
+            let focused = h
+                .root()
+                .children_recursive()
+                .map(|n| n.accesskit_node())
+                .find(|n| n.is_focused() && n.role() == Role::Slider);
             if let Some(n) = focused {
                 reached = Some((n.label().unwrap_or_default(), n.numeric_value()));
                 break;
             }
         }
-        let (name, before) = reached.unwrap_or_else(|| panic!("{right:?}: no slider takes the focus with Tab"));
+        let (name, before) =
+            reached.unwrap_or_else(|| panic!("{right:?}: no slider takes the focus with Tab"));
         h.key_press(egui::Key::ArrowUp);
         h.run_steps(4);
         let after = slider_value(&h, &name);
-        assert_ne!(before, after, "{right:?}: ArrowUp on the Tab-focused {name:?}");
+        assert_ne!(
+            before, after,
+            "{right:?}: ArrowUp on the Tab-focused {name:?}"
+        );
     }
 }

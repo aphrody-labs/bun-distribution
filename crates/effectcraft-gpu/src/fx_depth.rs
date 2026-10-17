@@ -20,7 +20,13 @@ use crate::context::{Enc, GpuImage, Params};
 use crate::effects::{GBuf, gaussian_blur};
 
 /// Compute entry points in `fx_depth.wgsl`.
-pub(crate) const KERNELS: &[&str] = &["fxd_lookup", "fxd_point", "fxd_dof_f", "fxd_dof_level", "fxd_avg"];
+pub(crate) const KERNELS: &[&str] = &[
+    "fxd_lookup",
+    "fxd_point",
+    "fxd_dof_f",
+    "fxd_dof_level",
+    "fxd_avg",
+];
 
 /// Effect ids implemented here.
 pub(crate) const IDS: &[&str] = &[
@@ -75,10 +81,22 @@ fn aux_texture(e: &mut Enc, a: &AuxChannels, planes: [Option<&[f32]>; 4]) -> Opt
 
 /// Resample an aux texture onto the buffer grid (nearest; `fill` outside the aux image),
 /// sampling each buffer pixel at sub-pixel position `at`.
-fn lookup(e: &mut Enc, b: &GBuf, a: &AuxChannels, tex: &GpuImage, at: [f64; 2], fill: [f32; 4]) -> GpuImage {
+fn lookup(
+    e: &mut Enc,
+    b: &GBuf,
+    a: &AuxChannels,
+    tex: &GpuImage,
+    at: [f64; 2],
+    fill: [f32; 4],
+) -> GpuImage {
     let inv = 1.0 / b.scale.max(1e-9);
     let mut p = Params::default();
-    p.f[0] = [b.offset[0] as f32, b.offset[1] as f32, inv as f32, a.scale as f32];
+    p.f[0] = [
+        b.offset[0] as f32,
+        b.offset[1] as f32,
+        inv as f32,
+        a.scale as f32,
+    ];
     p.f[1] = [at[0] as f32, at[1] as f32, 0.0, 0.0];
     p.f[2] = fill;
     let out = e.scratch(b.img.width, b.img.height);
@@ -96,7 +114,9 @@ fn point(e: &mut Enc, p: &Params, b: GBuf, plane: &GpuImage) -> Option<GBuf> {
 
 fn channel_extract(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let pr = ctx.params;
-    let get3 = |n: [&[&str]; 3]| -> Option<[&[f32]; 3]> { Some([a.find(n[0])?, a.find(n[1])?, a.find(n[2])?]) };
+    let get3 = |n: [&[&str]; 3]| -> Option<[&[f32]; 3]> {
+        Some([a.find(n[0])?, a.find(n[1])?, a.find(n[2])?])
+    };
     let u = ["UV.U", "U", "uv.x"];
     let v = ["UV.V", "V", "uv.y"];
     // (planes, mode): mode 0 grey (lv), 1 UV (lv on R, G; B = 0), 2 normals (lv of ×0.5 + 0.5),
@@ -106,15 +126,47 @@ fn channel_extract(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Op
         1 => (a.object_id().map(|c| [c, c, c])?, 0),
         7 => (a.material_id().map(|c| [c, c, c])?, 0),
         4 => (a.coverage().map(|c| [c, c, c])?, 0),
-        2 => (get3([&u, &v, &["UV.W", "W", "uv.z"]]).or_else(|| Some([a.find(&u)?, a.find(&v)?, a.find(&v)?]))?, 1),
-        3 => (get3([&["N.X", "Normal.X", "normals.x"], &["N.Y", "Normal.Y", "normals.y"], &["N.Z", "Normal.Z", "normals.z"]])?, 2),
-        5 => (get3([&["BG.R", "Background.R"], &["BG.G", "Background.G"], &["BG.B", "Background.B"]])?, 3),
+        2 => (
+            get3([&u, &v, &["UV.W", "W", "uv.z"]])
+                .or_else(|| Some([a.find(&u)?, a.find(&v)?, a.find(&v)?]))?,
+            1,
+        ),
+        3 => (
+            get3([
+                &["N.X", "Normal.X", "normals.x"],
+                &["N.Y", "Normal.Y", "normals.y"],
+                &["N.Z", "Normal.Z", "normals.z"],
+            ])?,
+            2,
+        ),
+        5 => (
+            get3([
+                &["BG.R", "Background.R"],
+                &["BG.G", "Background.G"],
+                &["BG.B", "Background.B"],
+            ])?,
+            3,
+        ),
         _ => (get3([&["R"], &["G"], &["B"]])?, 4),
     };
-    let tex = aux_texture(e, a, [Some(planes[0]), Some(planes[1]), Some(planes[2]), None])?;
+    let tex = aux_texture(
+        e,
+        a,
+        [Some(planes[0]), Some(planes[1]), Some(planes[2]), None],
+    )?;
     let mut p = op(0);
-    p.u[0] = [0, mode, pr.b("clampOutput") as u32, pr.b("invertDepthMap") as u32];
-    p.f[0] = [pr.f("blackPoint") as f32, pr.f("whitePoint") as f32, 0.0, 0.0];
+    p.u[0] = [
+        0,
+        mode,
+        pr.b("clampOutput") as u32,
+        pr.b("invertDepthMap") as u32,
+    ];
+    p.f[0] = [
+        pr.f("blackPoint") as f32,
+        pr.f("whitePoint") as f32,
+        0.0,
+        0.0,
+    ];
     if !pr.b("antialias") {
         let plane = lookup(e, &b, a, &tex, [0.5, 0.5], [0.0; 4]);
         return point(e, &p, b, &plane);
@@ -146,24 +198,44 @@ fn channel_extract(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Op
 fn depth_plane(e: &mut Enc, b: &GBuf, a: &AuxChannels) -> Option<GpuImage> {
     let z = a.depth()?;
     let tex = aux_texture(e, a, [Some(z), None, None, None])?;
-    Some(lookup(e, b, a, &tex, [0.5, 0.5], [BACKGROUND_DEPTH, 0.0, 0.0, 0.0]))
+    Some(lookup(
+        e,
+        b,
+        a,
+        &tex,
+        [0.5, 0.5],
+        [BACKGROUND_DEPTH, 0.0, 0.0, 0.0],
+    ))
 }
 
 fn depth_matte(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
-    let Some(plane) = depth_plane(e, &b, a) else { return if a.depth().is_none() { Some(b) } else { None } };
+    let Some(plane) = depth_plane(e, &b, a) else {
+        return if a.depth().is_none() { Some(b) } else { None };
+    };
     let mut p = op(1);
     p.u[0][1] = ctx.params.b("invert") as u32;
-    p.f[0] = [ctx.params.f("depth") as f32, ctx.params.f("feather").max(0.0) as f32, 0.0, 0.0];
+    p.f[0] = [
+        ctx.params.f("depth") as f32,
+        ctx.params.f("feather").max(0.0) as f32,
+        0.0,
+        0.0,
+    ];
     point(e, &p, b, &plane)
 }
 
 fn fog(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let pr = ctx.params;
-    let Some(plane) = depth_plane(e, &b, a) else { return if a.depth().is_none() { Some(b) } else { None } };
+    let Some(plane) = depth_plane(e, &b, a) else {
+        return if a.depth().is_none() { Some(b) } else { None };
+    };
     let contrib = (pr.f("layerContribution") / 100.0) as f32;
     let grad = if contrib > 0.0 && matches!(pr.get("gradientLayer"), Some(Value::Layer(Some(_)))) {
         ctx.layer_param("gradientLayer", true).map(|o| {
-            let cpu = Buf { img: Image::new(b.img.width, b.img.height), offset: b.offset, scale: b.scale };
+            let cpu = Buf {
+                img: Image::new(b.img.width, b.img.height),
+                offset: b.offset,
+                scale: b.scale,
+            };
             effectcraft_effects::util::fit_layer(ctx, &cpu, &o, true)
         })
     } else {
@@ -176,10 +248,17 @@ fn fog(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let fc = pr.color("fogColor");
     let mut p = op(2);
     p.u[0] = [2, pr.b("foggyBackground") as u32, grad.is_some() as u32, 0];
-    p.f[0] = [pr.f("fogStartDepth") as f32, pr.f("fogEndDepth") as f32, (pr.f("fogOpacity") / 100.0) as f32, (pr.f("scatteringDensity") / 100.0) as f32];
+    p.f[0] = [
+        pr.f("fogStartDepth") as f32,
+        pr.f("fogEndDepth") as f32,
+        (pr.f("fogOpacity") / 100.0) as f32,
+        (pr.f("scatteringDensity") / 100.0) as f32,
+    ];
     p.f[1] = [fc[0], fc[1], fc[2], contrib];
     p.f[2][0] = BACKGROUND_DEPTH;
-    let Some(g) = grad else { return point(e, &p, b, &plane) };
+    let Some(g) = grad else {
+        return point(e, &p, b, &plane);
+    };
     // The gradient's factor joins the depth plane (G) first: kernels read two images.
     let mut q = op(3);
     q.f[0][0] = contrib;
@@ -205,13 +284,22 @@ fn depth_of_field(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Opt
     let stack: Vec<GpuImage> = (0..LEVELS)
         .map(|k| {
             let r = max_r * k as f32 / (LEVELS - 1) as f32;
-            if r < 0.3 { b.img.clone() } else { gaussian_blur(e, &b.img, (r / 2.0) as f64, (r / 2.0) as f64, true) }
+            if r < 0.3 {
+                b.img.clone()
+            } else {
+                gaussian_blur(e, &b.img, (r / 2.0) as f64, (r / 2.0) as f64, true)
+            }
         })
         .collect();
     // Per-pixel stack position, then each level pair writes its own pixels.
     let mut p = Params::default();
     let gamma = 2f32.powf((50.0 - pr.f("focalBias") as f32) / 25.0);
-    p.f[0] = [pr.f("focalPlane") as f32, pr.f("focalPlaneThickness").max(0.0) as f32, max_r, gamma];
+    p.f[0] = [
+        pr.f("focalPlane") as f32,
+        pr.f("focalPlaneThickness").max(0.0) as f32,
+        max_r,
+        gamma,
+    ];
     p.u[0][0] = LEVELS as u32;
     let fpl = e.scratch(w, h);
     e.pixels("fxd_dof_f", &p, &plane, None, &fpl, None);
@@ -220,7 +308,14 @@ fn depth_of_field(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Opt
     for k in 0..LEVELS - 1 {
         let mut q = Params::default();
         q.u[0] = [k as u32, row_len, LEVELS as u32, 0];
-        e.pixels("fxd_dof_level", &q, &stack[k], Some(&stack[k + 1]), &out, Some(&rows));
+        e.pixels(
+            "fxd_dof_level",
+            &q,
+            &stack[k],
+            Some(&stack[k + 1]),
+            &out,
+            Some(&rows),
+        );
     }
     Some(GBuf { img: out, ..b })
 }
@@ -228,13 +323,23 @@ fn depth_of_field(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Opt
 // ---------------------------------------------------------------- ID Matte / IDentifier
 
 fn id_plane(a: &AuxChannels, which: u32) -> Option<&[f32]> {
-    if which == 1 { a.material_id() } else { a.object_id() }
+    if which == 1 {
+        a.material_id()
+    } else {
+        a.object_id()
+    }
 }
 
 fn id_matte(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let pr = ctx.params;
-    let Some(ids) = id_plane(a, pr.e("auxChannel")) else { return Some(b) };
-    let cov = if pr.b("useCoverage") { a.coverage() } else { None };
+    let Some(ids) = id_plane(a, pr.e("auxChannel")) else {
+        return Some(b);
+    };
+    let cov = if pr.b("useCoverage") {
+        a.coverage()
+    } else {
+        None
+    };
     let tex = aux_texture(e, a, [Some(ids), cov, None, None])?;
     let plane = lookup(e, &b, a, &tex, [0.5, 0.5], [0.0; 4]);
     let (w, h) = (b.img.width, b.img.height);
@@ -254,7 +359,9 @@ fn id_matte(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GB
 
 fn identifier(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let pr = ctx.params;
-    let Some(ids) = id_plane(a, pr.e("channelType")) else { return Some(b) };
+    let Some(ids) = id_plane(a, pr.e("channelType")) else {
+        return Some(b);
+    };
     let max_id = ids.iter().cloned().fold(1.0f32, f32::max);
     let tex = aux_texture(e, a, [Some(ids), None, None, None])?;
     let plane = lookup(e, &b, a, &tex, [0.5, 0.5], [0.0; 4]);
@@ -273,15 +380,28 @@ fn cryptomatte(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option
         return Some(b);
     }
     let want = effectcraft_effects::CRYPTO_LAYERS[(pr.e("layer") as usize).min(2)];
-    let layer = layers.iter().find(|l| l.as_str() == want || l.ends_with(want)).unwrap_or(&layers[0]).clone();
-    let manifest = a.manifests.iter().find(|(l, _)| *l == layer).map(|(_, m)| m.as_slice());
+    let layer = layers
+        .iter()
+        .find(|l| l.as_str() == want || l.ends_with(want))
+        .unwrap_or(&layers[0])
+        .clone();
+    let manifest = a
+        .manifests
+        .iter()
+        .find(|(l, _)| *l == layer)
+        .map(|(_, m)| m.as_slice());
     let sel = effectcraft_effects::selection_hashes(pr.s("selection"), manifest);
     // Per aux pixel: coverage-weighted ID colours (RGB) and the selection's coverage (A).
     let n = (a.width * a.height) as usize;
     let mut img = Image::new(a.width, a.height);
     for (i, px) in img.data.iter_mut().enumerate().take(n) {
         let ranks = a.crypto_ranks(&layer, i);
-        let m: f32 = ranks.iter().filter(|(id, c)| *c > 0.0 && sel.contains(&id.to_bits())).map(|(_, c)| *c).sum::<f32>().clamp(0.0, 1.0);
+        let m: f32 = ranks
+            .iter()
+            .filter(|(id, c)| *c > 0.0 && sel.contains(&id.to_bits()))
+            .map(|(_, c)| *c)
+            .sum::<f32>()
+            .clamp(0.0, 1.0);
         let mut c = [0.0f32; 3];
         for (id, cov) in &ranks {
             let k = effectcraft_effects::id_color(*id);
@@ -312,12 +432,37 @@ fn extractor(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: Option<&AuxChannels>) -> 
         "A" | "ALPHA" => Some(3),
         _ => None,
     };
-    let src_ch: Vec<Option<&[f32]>> = names.iter().map(|n| a.and_then(|a| if n.trim().is_empty() { None } else { a.get(n.trim()) })).collect();
-    if src_ch.iter().all(Option::is_none) && bp == 0.0 && wp == 1.0 && !unmult && names.iter().enumerate().all(|(k, n)| own(n) == Some(k as u32)) {
+    let src_ch: Vec<Option<&[f32]>> = names
+        .iter()
+        .map(|n| {
+            a.and_then(|a| {
+                if n.trim().is_empty() {
+                    None
+                } else {
+                    a.get(n.trim())
+                }
+            })
+        })
+        .collect();
+    if src_ch.iter().all(Option::is_none)
+        && bp == 0.0
+        && wp == 1.0
+        && !unmult
+        && names
+            .iter()
+            .enumerate()
+            .all(|(k, n)| own(n) == Some(k as u32))
+    {
         return Some(b);
     }
     // Per output channel: 0..3 = the layer's own channel, 4 = aux, 5 = default (0, alpha 1).
-    let sources: [u32; 4] = std::array::from_fn(|k| if src_ch[k].is_some() { 4 } else { own(names[k]).unwrap_or(5) });
+    let sources: [u32; 4] = std::array::from_fn(|k| {
+        if src_ch[k].is_some() {
+            4
+        } else {
+            own(names[k]).unwrap_or(5)
+        }
+    });
     let plane = match a {
         Some(a) if src_ch.iter().any(Option::is_some) => {
             let tex = aux_texture(e, a, [src_ch[0], src_ch[1], src_ch[2], src_ch[3]])?;

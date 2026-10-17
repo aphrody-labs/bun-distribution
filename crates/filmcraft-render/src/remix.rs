@@ -63,7 +63,16 @@ impl Remix {
             _ => None,
         };
         let (xfade, pieces) = match plan {
-            Some(p) => (Tick(p.xfade), p.pieces.iter().map(|p| TickPiece { src: Tick(p.src), len: Tick(p.len) }).collect()),
+            Some(p) => (
+                Tick(p.xfade),
+                p.pieces
+                    .iter()
+                    .map(|p| TickPiece {
+                        src: Tick(p.src),
+                        len: Tick(p.len),
+                    })
+                    .collect(),
+            ),
             None => (Tick::ZERO, Vec::new()),
         };
         Some(Remix {
@@ -78,14 +87,51 @@ impl Remix {
 
     /// The hidden effect instance that stores this remix.
     pub fn to_effect(&self) -> EffectInstance {
-        let plan = dsp::Plan { pieces: self.pieces.iter().map(|p| Piece { src: p.src.0, len: p.len.0 }).collect(), xfade: self.xfade.0 };
+        let plan = dsp::Plan {
+            pieces: self
+                .pieces
+                .iter()
+                .map(|p| Piece {
+                    src: p.src.0,
+                    len: p.len.0,
+                })
+                .collect(),
+            xfade: self.xfade.0,
+        };
         let mut params = BTreeMap::new();
-        params.insert("target".to_string(), Param::new(ParamValue::Float(self.target.0 as f64)));
-        params.insert("segments".to_string(), Param::new(ParamValue::Float(self.segments)));
-        params.insert("variations".to_string(), Param::new(ParamValue::Float(self.variations)));
-        params.insert("original".to_string(), Param::new(ParamValue::Float(self.original.0 as f64)));
-        params.insert("plan".to_string(), Param::new(ParamValue::Text(if self.pieces.is_empty() { String::new() } else { plan.to_text() })));
-        EffectInstance { effect: EFFECT.to_string(), enabled: true, params, masks: Vec::new(), post_fader: false, essential: false, layer: None }
+        params.insert(
+            "target".to_string(),
+            Param::new(ParamValue::Float(self.target.0 as f64)),
+        );
+        params.insert(
+            "segments".to_string(),
+            Param::new(ParamValue::Float(self.segments)),
+        );
+        params.insert(
+            "variations".to_string(),
+            Param::new(ParamValue::Float(self.variations)),
+        );
+        params.insert(
+            "original".to_string(),
+            Param::new(ParamValue::Float(self.original.0 as f64)),
+        );
+        params.insert(
+            "plan".to_string(),
+            Param::new(ParamValue::Text(if self.pieces.is_empty() {
+                String::new()
+            } else {
+                plan.to_text()
+            })),
+        );
+        EffectInstance {
+            effect: EFFECT.to_string(),
+            enabled: true,
+            params,
+            masks: Vec::new(),
+            post_fader: false,
+            essential: false,
+            layer: None,
+        }
     }
 
     /// Store this remix on `item` (replacing an earlier one).
@@ -106,9 +152,15 @@ impl Remix {
         for p in &self.pieces {
             let a = d.to_units_floor(r);
             d += p.len;
-            pieces.push(Piece { src: p.src.to_units_floor(r), len: d.to_units_floor(r) - a });
+            pieces.push(Piece {
+                src: p.src.to_units_floor(r),
+                len: d.to_units_floor(r) - a,
+            });
         }
-        dsp::Plan { pieces, xfade: self.xfade.to_units_floor(r) }
+        dsp::Plan {
+            pieces,
+            xfade: self.xfade.to_units_floor(r),
+        }
     }
 }
 
@@ -127,7 +179,13 @@ pub fn is_remixed(item: &TrackItem) -> bool {
 /// Audio of a remixed clip for clip-relative timeline samples `[rel0, rel0 + n)` at rate `sr`,
 /// reading the media through `read(media_sample, len)`. `None` when the clip is not remixed (the
 /// caller then reads the media linearly). Speed and reverse do not apply to remixed clips.
-pub fn read(item: &TrackItem, read: &dyn Fn(i64, usize) -> Option<AudioBuffer>, rel0: i64, n: usize, sr: u32) -> Option<AudioBuffer> {
+pub fn read(
+    item: &TrackItem,
+    read: &dyn Fn(i64, usize) -> Option<AudioBuffer>,
+    rel0: i64,
+    n: usize,
+    sr: u32,
+) -> Option<AudioBuffer> {
     if !is_remixed(item) {
         return None;
     }
@@ -136,7 +194,10 @@ pub fn read(item: &TrackItem, read: &dyn Fn(i64, usize) -> Option<AudioBuffer>, 
         return None;
     }
     let plan = rm.plan_at(sr);
-    let channels = read(plan.pieces[0].src, 1).map(|b| b.channel_count()).unwrap_or(2).max(1);
+    let channels = read(plan.pieces[0].src, 1)
+        .map(|b| b.channel_count())
+        .unwrap_or(2)
+        .max(1);
     let mut rd = |s: i64, len: usize| -> Vec<Vec<f32>> {
         let mut b = read(s, len).map(|b| b.channels).unwrap_or_default();
         b.resize(channels, Vec::new());
@@ -146,7 +207,10 @@ pub fn read(item: &TrackItem, read: &dyn Fn(i64, usize) -> Option<AudioBuffer>, 
         b
     };
     let out = dsp::render(&plan, rel0, n, channels, &mut rd);
-    Some(AudioBuffer { sample_rate: sr, channels: out })
+    Some(AudioBuffer {
+        sample_rate: sr,
+        channels: out,
+    })
 }
 
 #[cfg(test)]
@@ -164,8 +228,19 @@ mod tests {
 
     fn source(m: i64, len: usize) -> Option<AudioBuffer> {
         // a ramp: sample value = media sample index / 1e5 (silence outside 0 … 48 000)
-        let ch: Vec<f32> = (0..len as i64).map(|k| if (0..48_000).contains(&(m + k)) { (m + k) as f32 / 1e5 } else { 0.0 }).collect();
-        Some(AudioBuffer { sample_rate: 48_000, channels: vec![ch.clone(), ch] })
+        let ch: Vec<f32> = (0..len as i64)
+            .map(|k| {
+                if (0..48_000).contains(&(m + k)) {
+                    (m + k) as f32 / 1e5
+                } else {
+                    0.0
+                }
+            })
+            .collect();
+        Some(AudioBuffer {
+            sample_rate: 48_000,
+            channels: vec![ch.clone(), ch],
+        })
     }
 
     fn remix() -> Remix {
@@ -176,7 +251,16 @@ mod tests {
             variations: 50.0,
             original: s(1.0),
             xfade: s(0.002),
-            pieces: vec![TickPiece { src: s(0.0), len: s(0.25) }, TickPiece { src: s(0.65), len: s(0.35) }],
+            pieces: vec![
+                TickPiece {
+                    src: s(0.0),
+                    len: s(0.25),
+                },
+                TickPiece {
+                    src: s(0.65),
+                    len: s(0.35),
+                },
+            ],
         }
     }
 
@@ -193,7 +277,10 @@ mod tests {
         r.store(&mut it);
         assert_eq!(it.effects.len(), 1);
         assert_eq!(Remix::of(&it), Some(r.clone()));
-        assert!(it.effects[0].def().is_none(), "no definition: hidden from panels and the fx chain");
+        assert!(
+            it.effects[0].def().is_none(),
+            "no definition: hidden from panels and the fx chain"
+        );
         assert_eq!(take(&mut it), Some(r));
         assert!(it.effects.is_empty());
     }

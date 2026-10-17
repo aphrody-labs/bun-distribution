@@ -80,14 +80,17 @@ pub fn specs() -> Vec<CommandSpec> {
     ]
 }
 
-const NOT_FREEFORM: &str = "the paint is not a freeform gradient (apply one with paint.editGradient {kind: \"freeform\"})";
+const NOT_FREEFORM: &str =
+    "the paint is not a freeform gradient (apply one with paint.editGradient {kind: \"freeform\"})";
 
 impl Session {
     /// The selected freeform point (`paint.freeform.selectPoint`), while the gradient it was
     /// selected on is still the one behind the active proxy. Callers check it against the point
     /// count (an undo can remove points).
     pub fn selected_freeform_point(&self) -> Option<usize> {
-        self.freeform_point.filter(|(_, owner)| *owner == StopOwner::of(self)).map(|(i, _)| i)
+        self.freeform_point
+            .filter(|(_, owner)| *owner == StopOwner::of(self))
+            .map(|(i, _)| i)
     }
 
     /// The freeform gradient behind the Fill (`stroke` false) or Stroke proxy, its points in
@@ -113,12 +116,18 @@ struct Space {
 
 /// The `opacity` / `spread` convention: 0..1, or a percentage above 1.
 fn fraction(v: &Value, key: &str) -> std::result::Result<f32, String> {
-    let x = v.as_f64().ok_or_else(|| format!("`{key}` must be a number"))?;
+    let x = v
+        .as_f64()
+        .ok_or_else(|| format!("`{key}` must be a number"))?;
     Ok((if x > 1.0 { x / 100.0 } else { x }).clamp(0.0, 1.0) as f32)
 }
 
 /// Apply the `at` (mapped by `to_paint`), `color`, `opacity` and `spread` fields of `v` to `pt`.
-fn point_fields(v: &Value, pt: &mut FreeformPoint, to_paint: Affine) -> std::result::Result<(), String> {
+fn point_fields(
+    v: &Value,
+    pt: &mut FreeformPoint,
+    to_paint: Affine,
+) -> std::result::Result<(), String> {
     if v.get("at").is_some() {
         pt.at = to_paint * point_param(v, "at").ok_or("`at` must be [x, y]")?;
     }
@@ -138,21 +147,33 @@ fn point_fields(v: &Value, pt: &mut FreeformPoint, to_paint: Affine) -> std::res
 /// lines?: [[index, …]], mode?}`; points in the paint's space). Lossless for
 /// `vectorcraft_tools::params::freeform_json`.
 pub(crate) fn parse_freeform(v: &Value) -> std::result::Result<Freeform, String> {
-    let points = v.get("points").and_then(Value::as_array).ok_or("`freeform.points` must be an array")?;
+    let points = v
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or("`freeform.points` must be an array")?;
     let mut f = Freeform::default();
     for (i, pv) in points.iter().enumerate() {
-        let (Some(at), Some(color)) = (point_param(pv, "at"), pv.get("color").and_then(color_value)) else {
-            return Err(format!("freeform point {i} needs `at` [x, y] and a valid `color`"));
+        let (Some(at), Some(color)) =
+            (point_param(pv, "at"), pv.get("color").and_then(color_value))
+        else {
+            return Err(format!(
+                "freeform point {i} needs `at` [x, y] and a valid `color`"
+            ));
         };
         let mut pt = FreeformPoint::new(at, color);
-        point_fields(pv, &mut pt, Affine::IDENTITY).map_err(|e| format!("freeform point {i}: {e}"))?;
+        point_fields(pv, &mut pt, Affine::IDENTITY)
+            .map_err(|e| format!("freeform point {i}: {e}"))?;
         f.points.push(pt);
     }
     if let Some(lines) = v.get("lines") {
-        let lines = lines.as_array().ok_or("`freeform.lines` must be an array")?;
+        let lines = lines
+            .as_array()
+            .ok_or("`freeform.lines` must be an array")?;
         for (i, l) in lines.iter().enumerate() {
-            let ix = point_indices(l).ok_or_else(|| format!("freeform line {i} must be an array of point indices"))?;
-            f.add_line(ix).map_err(|e| format!("freeform line {i}: {e}"))?;
+            let ix = point_indices(l)
+                .ok_or_else(|| format!("freeform line {i} must be an array of point indices"))?;
+            f.add_line(ix)
+                .map_err(|e| format!("freeform line {i}: {e}"))?;
         }
     }
     if let Some(m) = str_param(v, "mode") {
@@ -168,7 +189,12 @@ pub(crate) fn parse_mode(m: &str) -> std::result::Result<FreeformMode, String> {
 /// Run `f` on the freeform gradient behind the proxy of each target (the selection, or `ids`),
 /// as one undo step; returns what it returned for the first. An unplaced gradient gets the
 /// automatic points it shows first, and the stops follow the points' colours.
-fn edit<R>(s: &mut Session, p: &Value, cmd: &str, mut f: impl FnMut(&mut Freeform, Space) -> std::result::Result<R, String>) -> Result<R> {
+fn edit<R>(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    mut f: impl FnMut(&mut Freeform, Space) -> std::result::Result<R, String>,
+) -> Result<R> {
     let item = item_target(s, p, cmd)?;
     let stroke = edits_stroke(s, p, item, !s.fill_active)?;
     let item = item.of_kind(s, !stroke);
@@ -178,13 +204,26 @@ fn edit<R>(s: &mut Session, p: &Value, cmd: &str, mut f: impl FnMut(&mut Freefor
     }
     let mut first = None;
     let mut apply = |paint: &mut Paint, b: Rect, to_doc: Affine| -> Result<()> {
-        let Paint::Gradient(g) = paint else { return Err(bad(cmd, NOT_FREEFORM)) };
+        let Paint::Gradient(g) = paint else {
+            return Err(bad(cmd, NOT_FREEFORM));
+        };
         if g.gradient.kind != GradientKind::Freeform {
             return Err(bad(cmd, NOT_FREEFORM));
         }
-        let to_paint = if to_doc == Affine::IDENTITY { to_doc } else { to_doc.inverse() };
+        let to_paint = if to_doc == Affine::IDENTITY {
+            to_doc
+        } else {
+            to_doc.inverse()
+        };
         let mut ff = g.freeform_on(b).into_owned();
-        let r = f(&mut ff, Space { to_paint, scale: spread_scale(b) }).map_err(|e| bad(cmd, e))?;
+        let r = f(
+            &mut ff,
+            Space {
+                to_paint,
+                scale: spread_scale(b),
+            },
+        )
+        .map_err(|e| bad(cmd, e))?;
         g.set_freeform(ff);
         g.swatch = None;
         first.get_or_insert(r);
@@ -205,13 +244,26 @@ fn edit<R>(s: &mut Session, p: &Value, cmd: &str, mut f: impl FnMut(&mut Freefor
             return Ok(());
         }
         let b = item_paint_bounds(n, index, !stroke).ok_or_else(|| bad(cmd, NOT_FREEFORM))?;
-        let paint =
-            if stroke { n.appearance.stroke_at_mut(index).map(|l| &mut l.paint) } else { n.appearance.fill_at_mut(index).map(|l| &mut l.paint) };
-        apply(paint.ok_or_else(|| bad(cmd, NOT_FREEFORM))?, b, Affine::IDENTITY)
+        let paint = if stroke {
+            n.appearance.stroke_at_mut(index).map(|l| &mut l.paint)
+        } else {
+            n.appearance.fill_at_mut(index).map(|l| &mut l.paint)
+        };
+        apply(
+            paint.ok_or_else(|| bad(cmd, NOT_FREEFORM))?,
+            b,
+            Affine::IDENTITY,
+        )
     })?;
     let r = first.ok_or_else(|| bad(cmd, NOT_FREEFORM))?;
     // The edited gradient is the last one used (`paint.lastGradient`).
-    let shown = s.doc()?.doc.node(ids[0]).map(|n| super::paint::proxy_paint(n, stroke, item.resolve(&n.appearance, !stroke, cmd).ok().flatten()));
+    let shown = s.doc()?.doc.node(ids[0]).map(|n| {
+        super::paint::proxy_paint(
+            n,
+            stroke,
+            item.resolve(&n.appearance, !stroke, cmd).ok().flatten(),
+        )
+    });
     if let Some(p) = shown {
         s.remember_paint(&p);
     }
@@ -221,13 +273,25 @@ fn edit<R>(s: &mut Session, p: &Value, cmd: &str, mut f: impl FnMut(&mut Freefor
 /// The `index` param, else the selected point.
 fn point_index(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
     match p.get("index") {
-        Some(v) => v.as_u64().map(|i| i as usize).ok_or_else(|| bad(cmd, "`index` must be a point index")),
-        None => s.selected_freeform_point().ok_or_else(|| bad(cmd, "no point selected (give `index`)")),
+        Some(v) => v
+            .as_u64()
+            .map(|i| i as usize)
+            .ok_or_else(|| bad(cmd, "`index` must be a point index")),
+        None => s
+            .selected_freeform_point()
+            .ok_or_else(|| bad(cmd, "no point selected (give `index`)")),
     }
 }
 
 fn check_index(f: &Freeform, i: usize) -> std::result::Result<(), String> {
-    if i < f.points.len() { Ok(()) } else { Err(format!("no point {i} (the gradient has {})", f.points.len())) }
+    if i < f.points.len() {
+        Ok(())
+    } else {
+        Err(format!(
+            "no point {i} (the gradient has {})",
+            f.points.len()
+        ))
+    }
 }
 
 fn add_point(s: &mut Session, p: &Value) -> Result<Value> {
@@ -241,7 +305,10 @@ fn add_point(s: &mut Session, p: &Value) -> Result<Value> {
     let index = edit(s, p, C, |f, sp| {
         let q = sp.to_paint * at;
         let (color, opacity) = f.sample(q, sp.scale);
-        let mut pt = FreeformPoint { opacity, ..FreeformPoint::new(q, color) };
+        let mut pt = FreeformPoint {
+            opacity,
+            ..FreeformPoint::new(q, color)
+        };
         point_fields(p, &mut pt, sp.to_paint)?;
         let i = f.add_point(pt);
         if let Some(from) = join {
@@ -268,7 +335,11 @@ fn delete_point(s: &mut Session, p: &Value) -> Result<Value> {
     let i = point_index(s, p, C)?;
     edit(s, p, C, |f, _| {
         check_index(f, i)?;
-        if f.remove_point(i) { Ok(()) } else { Err("a freeform gradient keeps at least one point".into()) }
+        if f.remove_point(i) {
+            Ok(())
+        } else {
+            Err("a freeform gradient keeps at least one point".into())
+        }
     })?;
     // The points after it moved down one.
     let sel = s.selected_freeform_point().and_then(|j| match j.cmp(&i) {
@@ -282,7 +353,10 @@ fn delete_point(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn add_line(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "paint.freeform.addLine";
-    let points = p.get("points").and_then(point_indices).ok_or_else(|| bad(C, "`points` must be an array of point indices"))?;
+    let points = p
+        .get("points")
+        .and_then(point_indices)
+        .ok_or_else(|| bad(C, "`points` must be an array of point indices"))?;
     let line = edit(s, p, C, |f, _| f.add_line(points.clone()))?;
     Ok(json!({ "line": line }))
 }
@@ -292,7 +366,10 @@ fn split_line(s: &mut Session, p: &Value) -> Result<Value> {
     let line = index_param(p, "line", C)?;
     let segment = index_param(p, "segment", C)?;
     let t = f64_or(p, "t", 0.5);
-    let index = edit(s, p, C, |f, _| f.split_line(line, segment, t).ok_or_else(|| format!("no segment {segment} on line {line}")))?;
+    let index = edit(s, p, C, |f, _| {
+        f.split_line(line, segment, t)
+            .ok_or_else(|| format!("no segment {segment} on line {line}"))
+    })?;
     s.select_freeform_point(Some(index));
     Ok(json!({ "index": index }))
 }
@@ -303,8 +380,13 @@ fn select_point(s: &mut Session, p: &Value) -> Result<Value> {
         None => return Err(bad(C, "missing `index` (a point index, or null to clear)")),
         Some(Value::Null) => None,
         Some(v) => {
-            let i = v.as_u64().ok_or_else(|| bad(C, "`index` must be a whole number or null"))? as usize;
-            let (f, _) = s.proxy_freeform(!s.fill_active).ok_or_else(|| bad(C, NOT_FREEFORM))?;
+            let i = v
+                .as_u64()
+                .ok_or_else(|| bad(C, "`index` must be a whole number or null"))?
+                as usize;
+            let (f, _) = s
+                .proxy_freeform(!s.fill_active)
+                .ok_or_else(|| bad(C, NOT_FREEFORM))?;
             check_index(&f, i).map_err(|e| bad(C, e))?;
             Some(i)
         }
@@ -316,8 +398,14 @@ fn select_point(s: &mut Session, p: &Value) -> Result<Value> {
 fn get(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "paint.freeform.get";
     let stroke = bool_or(p, "stroke", !s.fill_active);
-    let (f, _) = s.proxy_freeform(stroke).ok_or_else(|| bad(C, NOT_FREEFORM))?;
-    let selected = if stroke != s.fill_active { s.selected_freeform_point().filter(|i| *i < f.points.len()) } else { None };
+    let (f, _) = s
+        .proxy_freeform(stroke)
+        .ok_or_else(|| bad(C, NOT_FREEFORM))?;
+    let selected = if stroke != s.fill_active {
+        s.selected_freeform_point().filter(|i| *i < f.points.len())
+    } else {
+        None
+    };
     let mut v = vectorcraft_tools::params::freeform_json(&f);
     v["selected"] = json!(selected);
     Ok(v)
@@ -335,11 +423,22 @@ mod tests {
             {"at": [50, 0], "color": "#00ff00"},
             {"at": [100, 0], "color": "#0000ff"}
         ]);
-        for lines in [json!([[0, "broken", 2]]), json!([[0, -1, 2]]), json!([[0, 1.5, 2]]), json!([{"points": [0, 1]}]), json!("not an array")] {
+        for lines in [
+            json!([[0, "broken", 2]]),
+            json!([[0, -1, 2]]),
+            json!([[0, 1.5, 2]]),
+            json!([{"points": [0, 1]}]),
+            json!("not an array"),
+        ] {
             let value = json!({"points": points, "lines": lines, "mode": "lines"});
-            assert!(parse_freeform(&value).is_err(), "invalid lines accepted: {value}");
+            assert!(
+                parse_freeform(&value).is_err(),
+                "invalid lines accepted: {value}"
+            );
         }
-        let good = parse_freeform(&json!({"points": points, "lines": [[0, 1, 2]], "mode": "lines"})).unwrap();
+        let good =
+            parse_freeform(&json!({"points": points, "lines": [[0, 1, 2]], "mode": "lines"}))
+                .unwrap();
         assert_eq!(good.lines, vec![vec![0, 1, 2]]);
     }
 }

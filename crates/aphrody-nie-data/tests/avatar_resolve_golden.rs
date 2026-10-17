@@ -62,7 +62,10 @@ fn non_geometric_profile_fields_round_trip_through_the_rust_owner() {
     };
     let result = resolve_avatar(
         &catalog(),
-        &AvatarState { profile: profile.clone(), ..AvatarState::default() },
+        &AvatarState {
+            profile: profile.clone(),
+            ..AvatarState::default()
+        },
     )
     .unwrap();
     assert_eq!(result.profile, profile);
@@ -71,15 +74,39 @@ fn non_geometric_profile_fields_round_trip_through_the_rust_owner() {
 #[test]
 fn invalid_profile_values_are_rejected_instead_of_becoming_decorative_state() {
     for profile in [
-        AvatarProfile { name: "x".repeat(33), ..AvatarProfile::default() },
-        AvatarProfile { element: Some(4), ..AvatarProfile::default() },
-        AvatarProfile { main_position: Some(0), ..AvatarProfile::default() },
-        AvatarProfile { shirt_number: Some(100), ..AvatarProfile::default() },
-        AvatarProfile { voice: Some(0), ..AvatarProfile::default() },
-        AvatarProfile { kick: Some(280), ..AvatarProfile::default() },
+        AvatarProfile {
+            name: "x".repeat(33),
+            ..AvatarProfile::default()
+        },
+        AvatarProfile {
+            element: Some(4),
+            ..AvatarProfile::default()
+        },
+        AvatarProfile {
+            main_position: Some(0),
+            ..AvatarProfile::default()
+        },
+        AvatarProfile {
+            shirt_number: Some(100),
+            ..AvatarProfile::default()
+        },
+        AvatarProfile {
+            voice: Some(0),
+            ..AvatarProfile::default()
+        },
+        AvatarProfile {
+            kick: Some(280),
+            ..AvatarProfile::default()
+        },
     ] {
         assert!(matches!(
-            resolve_avatar(&catalog(), &AvatarState { profile, ..AvatarState::default() }),
+            resolve_avatar(
+                &catalog(),
+                &AvatarState {
+                    profile,
+                    ..AvatarState::default()
+                }
+            ),
             Err(AvatarResolveError::InvalidState { .. })
         ));
     }
@@ -88,10 +115,17 @@ fn invalid_profile_values_are_rejected_instead_of_becoming_decorative_state() {
 #[test]
 fn gender_and_explicit_morphology_use_the_same_body_and_head_index() {
     let catalog = catalog();
-    let mut state = AvatarState { gender: 1, ..AvatarState::default() };
+    let mut state = AvatarState {
+        gender: 1,
+        ..AvatarState::default()
+    };
     let female = resolve_avatar(&catalog, &state).unwrap();
     assert_eq!(
-        (female.morphology.as_str(), female.morphology_index, female.skeleton.as_str()),
+        (
+            female.morphology.as_str(),
+            female.morphology_index,
+            female.skeleton.as_str()
+        ),
         ("female", 1, "sk_female")
     );
     assert_eq!(female.pieces[1].name, "female_nose1");
@@ -99,7 +133,11 @@ fn gender_and_explicit_morphology_use_the_same_body_and_head_index() {
     state.selections.insert(17, "body-small".into());
     let small = resolve_avatar(&catalog, &state).unwrap();
     assert_eq!(
-        (small.morphology.as_str(), small.morphology_index, small.skeleton.as_str()),
+        (
+            small.morphology.as_str(),
+            small.morphology_index,
+            small.skeleton.as_str()
+        ),
         ("small", 2, "sk_small")
     );
     assert_eq!(small.pieces[1].name, "small_nose1");
@@ -128,7 +166,11 @@ fn selection_ids_survive_category_part_and_face_list_reordering() {
 fn composition_preserves_secondary_hair_and_deduplicates_sorted_face_layers() {
     let result = resolve_avatar(&catalog(), &AvatarState::default()).unwrap();
     assert_eq!(
-        result.pieces.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+        result
+            .pieces
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect::<Vec<_>>(),
         ["sk_male", "male_nose1", "front", "back"]
     );
     assert_eq!(result.face_layers, ["00_face/skin", "01_eye/eye"]);
@@ -144,12 +186,19 @@ fn composition_preserves_secondary_hair_and_deduplicates_sorted_face_layers() {
 #[test]
 fn custom_colors_override_palettes_and_missing_measured_rgb_is_explicit() {
     let mut catalog = catalog();
-    let mut state = AvatarState { height: Some(14), ..AvatarState::default() };
+    let mut state = AvatarState {
+        height: Some(14),
+        ..AvatarState::default()
+    };
     state.palette_selections.extend([(3, 0), (4, 0), (6, 0)]);
     state.custom_colors.insert(4, "bc1234".into());
     let result = resolve_avatar(&catalog, &state).unwrap();
     assert_eq!(
-        (result.skin_color.as_deref(), result.iris_color.as_deref(), result.hair_color.as_deref()),
+        (
+            result.skin_color.as_deref(),
+            result.iris_color.as_deref(),
+            result.hair_color.as_deref()
+        ),
         (Some("AABBCC"), Some("123456"), Some("BC1234"))
     );
     assert_eq!(result.height, Some(14));
@@ -168,19 +217,40 @@ fn custom_colors_override_palettes_and_missing_measured_rgb_is_explicit() {
 fn invalid_explicit_settings_do_not_fall_back_to_a_different_avatar() {
     let catalog = catalog();
     let cases = [
-        AvatarState { gender: 2, ..AvatarState::default() },
-        AvatarState { morphology: 99, ..AvatarState::default() },
-        AvatarState { height: Some(15), ..AvatarState::default() },
-        AvatarState { selections: [(4, "missing".into())].into(), ..AvatarState::default() },
-        AvatarState { selections: [(999, "missing".into())].into(), ..AvatarState::default() },
-        AvatarState { palette_selections: [(3, 10)].into(), ..AvatarState::default() },
+        AvatarState {
+            gender: 2,
+            ..AvatarState::default()
+        },
+        AvatarState {
+            morphology: 99,
+            ..AvatarState::default()
+        },
+        AvatarState {
+            height: Some(15),
+            ..AvatarState::default()
+        },
+        AvatarState {
+            selections: [(4, "missing".into())].into(),
+            ..AvatarState::default()
+        },
+        AvatarState {
+            selections: [(999, "missing".into())].into(),
+            ..AvatarState::default()
+        },
+        AvatarState {
+            palette_selections: [(3, 10)].into(),
+            ..AvatarState::default()
+        },
         AvatarState {
             custom_colors: [(4, "FF0000&evil=1".into())].into(),
             ..AvatarState::default()
         },
     ];
     for state in cases {
-        assert!(resolve_avatar(&catalog, &state).is_err(), "invalid state accepted: {state:?}");
+        assert!(
+            resolve_avatar(&catalog, &state).is_err(),
+            "invalid state accepted: {state:?}"
+        );
     }
 }
 
@@ -193,8 +263,13 @@ fn unsafe_catalogue_paths_and_ambiguous_ids_are_rejected() {
         "data/common/chr/_face/20_EDIT/_hairF/nested/front.g4md",
     ] {
         let mut catalog = catalog();
-        catalog.categories.iter_mut().find(|c| c.setting_type == 4).unwrap().parts[0].models =
-            vec![path.into()];
+        catalog
+            .categories
+            .iter_mut()
+            .find(|c| c.setting_type == 4)
+            .unwrap()
+            .parts[0]
+            .models = vec![path.into()];
         assert!(matches!(
             resolve_avatar(&catalog, &AvatarState::default()),
             Err(AvatarResolveError::InvalidResource { .. })
@@ -211,7 +286,10 @@ fn unsafe_catalogue_paths_and_ambiguous_ids_are_rejected() {
 #[test]
 fn unknown_face_mapping_is_not_silently_replaced_by_the_first_head() {
     let mut catalog = catalog();
-    catalog.base_models.faces.retain(|f| f.nose_type != "nose_type_01");
+    catalog
+        .base_models
+        .faces
+        .retain(|f| f.nose_type != "nose_type_01");
     assert!(matches!(
         resolve_avatar(&catalog, &AvatarState::default()),
         Err(AvatarResolveError::MissingResource { .. })
@@ -239,7 +317,12 @@ fn unsupported_presets_and_approximate_deformations_do_not_change_geometry() {
     let catalog = catalog();
     let baseline = resolve_avatar(&catalog, &AvatarState::default()).unwrap();
     let state = AvatarState {
-        selections: [(1, "preset".into()), (2, "shape".into()), (19, "collar".into())].into(),
+        selections: [
+            (1, "preset".into()),
+            (2, "shape".into()),
+            (19, "collar".into()),
+        ]
+        .into(),
         ..AvatarState::default()
     };
     let result = resolve_avatar(&catalog, &state).unwrap();
@@ -249,7 +332,12 @@ fn unsupported_presets_and_approximate_deformations_do_not_change_geometry() {
             |w| w.code == AvatarWarningCode::UnsupportedSetting && w.category == Some(setting)
         ));
     }
-    assert!(result.warnings.iter().any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe));
+    assert!(
+        result
+            .warnings
+            .iter()
+            .any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe)
+    );
     let json = serde_json::to_value(&result).unwrap();
     assert!(json.get("faceShape").is_none());
     assert!(json.get("clothingCuts").is_none());
@@ -258,12 +346,22 @@ fn unsupported_presets_and_approximate_deformations_do_not_change_geometry() {
 #[test]
 fn native_preset_ids_select_exact_parts_and_manual_choices_override_the_recipe() {
     let mut catalog = catalog();
-    let preset_part =
-        &mut catalog.categories.iter_mut().find(|c| c.setting_type == 1).unwrap().parts[0];
+    let preset_part = &mut catalog
+        .categories
+        .iter_mut()
+        .find(|c| c.setting_type == 1)
+        .unwrap()
+        .parts[0];
     preset_part.resource = "preset_fixture".into();
-    let preset_id =
-        format!("{:08X}", aphrody_nie_data::unlock_condition::crc32_str(&preset_part.resource));
-    let hair = catalog.categories.iter_mut().find(|c| c.setting_type == 4).unwrap();
+    let preset_id = format!(
+        "{:08X}",
+        aphrody_nie_data::unlock_condition::crc32_str(&preset_part.resource)
+    );
+    let hair = catalog
+        .categories
+        .iter_mut()
+        .find(|c| c.setting_type == 4)
+        .unwrap();
     hair.parts[0].id = "AAAABBBB".into();
     hair.parts[1].id = "CCCCDDDD".into();
     catalog.presets.push(AvatarPreset {
@@ -276,12 +374,19 @@ fn native_preset_ids_select_exact_parts_and_manual_choices_override_the_recipe()
             part_id: Some("CCCCDDDD".into()),
         }],
     });
-    let mut state =
-        AvatarState { selections: [(1, "preset".into())].into(), ..AvatarState::default() };
+    let mut state = AvatarState {
+        selections: [(1, "preset".into())].into(),
+        ..AvatarState::default()
+    };
     let result = resolve_avatar(&catalog, &state).unwrap();
     assert!(result.pieces.iter().any(|p| p.name == "back_only"));
     assert!(!result.pieces.iter().any(|p| p.name == "front"));
-    assert!(!result.warnings.iter().any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe));
+    assert!(
+        !result
+            .warnings
+            .iter()
+            .any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe)
+    );
     state.selections.insert(4, "AAAABBBB".into());
     let result = resolve_avatar(&catalog, &state).unwrap();
     assert!(result.pieces.iter().any(|p| p.name == "front"));
@@ -312,9 +417,20 @@ fn real_catalogue_resolves_all_eight_morphologies_and_seven_noses() {
     let bytes = std::fs::read(path).unwrap();
     let catalog: AvatarCatalog = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(catalog.categories.len(), 20);
-    assert_eq!(catalog.categories.iter().map(|c| c.parts.len()).sum::<usize>(), 502);
+    assert_eq!(
+        catalog
+            .categories
+            .iter()
+            .map(|c| c.parts.len())
+            .sum::<usize>(),
+        502
+    );
     assert_eq!(catalog.base_models.morphologies.len(), 8);
-    let noses = catalog.categories.iter().find(|c| c.setting_type == 9).unwrap();
+    let noses = catalog
+        .categories
+        .iter()
+        .find(|c| c.setting_type == 9)
+        .unwrap();
     assert_eq!(noses.parts.len(), 7);
     let mut measured = 0;
     let mut unresolved_face_variants = 0;
@@ -331,12 +447,19 @@ fn real_catalogue_resolves_all_eight_morphologies_and_seven_noses() {
             assert_eq!(result.morphology_index, morphology);
             assert_eq!(result.pieces[0].directory, "_bodySK");
             assert_eq!(result.pieces[1].directory, "_facebase");
-            assert!(result.pieces[1].name.ends_with(&format!("nose{:02}", nose.item_no)));
+            assert!(
+                result.pieces[1]
+                    .name
+                    .ends_with(&format!("nose{:02}", nose.item_no))
+            );
             assert!(result.pieces.iter().any(|p| p.directory == "_hairF"));
             assert!(result.pieces.iter().any(|p| p.directory == "_hairB"));
             assert_eq!(result.face_layers.len(), 6);
             unresolved_face_variants += usize::from(
-                result.warnings.iter().any(|w| w.code == AvatarWarningCode::UnresolvedFaceVariant),
+                result
+                    .warnings
+                    .iter()
+                    .any(|w| w.code == AvatarWarningCode::UnresolvedFaceVariant),
             );
             measured += 1;
         }
@@ -384,13 +507,33 @@ fn real_presets_keep_all_native_part_ids_and_preset_01_changes_the_composition()
         .iter()
         .find(|p| p.resource == "preset_01_normal")
         .unwrap();
-    let state =
-        AvatarState { selections: [(1, preset_part.id.clone())].into(), ..AvatarState::default() };
+    let state = AvatarState {
+        selections: [(1, preset_part.id.clone())].into(),
+        ..AvatarState::default()
+    };
     let result = resolve_avatar(&catalog, &state).unwrap();
-    assert!(result.pieces.iter().any(|p| p.directory == "_hairB" && p.name == "hairB003"));
-    assert!(result.face_layers.contains(&"02_pupil/pupil_05".to_string()));
-    assert!(result.face_layers.contains(&"04_eyebrow/eyebrow_01".to_string()));
-    assert!(!result.warnings.iter().any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe));
+    assert!(
+        result
+            .pieces
+            .iter()
+            .any(|p| p.directory == "_hairB" && p.name == "hairB003")
+    );
+    assert!(
+        result
+            .face_layers
+            .contains(&"02_pupil/pupil_05".to_string())
+    );
+    assert!(
+        result
+            .face_layers
+            .contains(&"04_eyebrow/eyebrow_01".to_string())
+    );
+    assert!(
+        !result
+            .warnings
+            .iter()
+            .any(|w| w.code == AvatarWarningCode::UnresolvedPresetRecipe)
+    );
     eprintln!(
         "Verified {links} exact native part links in {rows} rows / 38 presets; preset_01 applies hair, pupil and eyebrow resources"
     );

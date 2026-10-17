@@ -7,7 +7,10 @@
 
 use std::sync::Arc;
 
-use designcraft_doc::{Align, Cell, CellStroke, Document, ItemId, ParaProps, RowHeightMode, Table, TextFrameOptions, VerticalJustification};
+use designcraft_doc::{
+    Align, Cell, CellStroke, Document, ItemId, ParaProps, RowHeightMode, Table, TextFrameOptions,
+    VerticalJustification,
+};
 use designcraft_geom::{Point, Rect};
 
 use crate::{ComposeOptions, ComposedStory, Cursor, FrameSpec, Line};
@@ -104,7 +107,13 @@ impl CellLineExtent {
 }
 
 /// Compose a cell story at width `w` (content space, top-left at the origin).
-fn compose_cell(doc: &Document, cell: &Cell, w: f64, opts: &ComposeOptions, left_page: bool) -> CellLayout {
+fn compose_cell(
+    doc: &Document,
+    cell: &Cell,
+    w: f64,
+    opts: &ComposeOptions,
+    left_page: bool,
+) -> CellLayout {
     let spec = FrameSpec {
         id: ItemId(0),
         area: Rect::new(0.0, 0.0, w.max(1.0), 1.0e6),
@@ -122,23 +131,38 @@ fn compose_cell(doc: &Document, cell: &Cell, w: f64, opts: &ComposeOptions, left
         .frames
         .first()
         .map(|f| {
-            let mut extents: Vec<_> = f.lines.iter().map(|l| CellLineExtent { baseline: l.baseline, bottom: l.baseline + l.descent }).collect();
+            let mut extents: Vec<_> = f
+                .lines
+                .iter()
+                .map(|l| CellLineExtent {
+                    baseline: l.baseline,
+                    bottom: l.baseline + l.descent,
+                })
+                .collect();
             // Line metrics include baseline shifts and super/subscript. Include the final
             // geometry of in-flow objects too, but leave custom anchors out of text flow.
             for object in &f.objects {
-                if cell.text.objects.get(object.index).is_some_and(|o| !matches!(o.position, designcraft_doc::AnchorPosition::Custom { .. }))
-                    && let Some(extent) = extents.get_mut(object.line)
+                if cell.text.objects.get(object.index).is_some_and(|o| {
+                    !matches!(o.position, designcraft_doc::AnchorPosition::Custom { .. })
+                }) && let Some(extent) = extents.get_mut(object.line)
                 {
                     extent.bottom = extent.bottom.max(object.origin.y + object.size.1);
                 }
             }
-            extents.iter().map(|e| e.fit_height(cell.insets[2])).collect()
+            extents
+                .iter()
+                .map(|e| e.fit_height(cell.insets[2]))
+                .collect()
         })
         .unwrap_or_default();
     // Check all lines: a large descender or lowered inline object on an earlier line can
     // extend below the final baseline when leading is fixed.
     let content_h = line_heights.iter().copied().fold(0.0, f64::max);
-    CellLayout { text: Arc::new(cs), content_h, line_heights }
+    CellLayout {
+        text: Arc::new(cs),
+        content_h,
+        line_heights,
+    }
 }
 
 /// Lay out `table` (anchored at byte `anchor` of paragraph `pi`) from the cursor. Returns false
@@ -164,7 +188,11 @@ pub(crate) fn place_table(
     // Column widths: scaled to fit the measure.
     let avail = (col.width() - pp.left_indent - pp.right_indent).max(1.0);
     let natural = table.width();
-    let k = if natural > avail && natural > 0.0 { avail / natural } else { 1.0 };
+    let k = if natural > avail && natural > 0.0 {
+        avail / natural
+    } else {
+        1.0
+    };
     let widths: Vec<f64> = table.columns.iter().map(|c| c.width * k).collect();
     let total_w: f64 = widths.iter().sum();
     let x_off = pp.left_indent
@@ -208,7 +236,10 @@ pub(crate) fn place_table(
         .map(|(r, row)| match row.mode {
             RowHeightMode::Exactly => row.height.max(0.0),
             RowHeightMode::AtLeast => {
-                let content = (0..nc).filter(|&c| is_owner(r, c) && table.cells[r * nc + c].row_span <= 1).map(|c| need(r, c)).fold(0.0, f64::max);
+                let content = (0..nc)
+                    .filter(|&c| is_owner(r, c) && table.cells[r * nc + c].row_span <= 1)
+                    .map(|c| need(r, c))
+                    .fold(0.0, f64::max);
                 content.max(row.height)
             }
         })
@@ -224,7 +255,9 @@ pub(crate) fn place_table(
             let have: f64 = heights[r..end].iter().sum();
             let n = need(r, c);
             if n > have
-                && let Some(i) = (r..end).rev().find(|&i| table.rows[i].mode == RowHeightMode::AtLeast)
+                && let Some(i) = (r..end)
+                    .rev()
+                    .find(|&i| table.rows[i].mode == RowHeightMode::AtLeast)
             {
                 heights[i] += n - have;
             }
@@ -265,7 +298,10 @@ pub(crate) fn place_table(
     let mut first_frag = true;
     let mut body_placed = 0usize;
     let mut top = y;
-    let place_rows = |rows: std::ops::Range<usize>, y: &mut f64, repeated: bool, frag_rows: &mut Vec<(usize, f64, bool)>| {
+    let place_rows = |rows: std::ops::Range<usize>,
+                      y: &mut f64,
+                      repeated: bool,
+                      frag_rows: &mut Vec<(usize, f64, bool)>| {
         for r in rows {
             frag_rows.push((r, *y, repeated));
             *y += heights[r];
@@ -281,7 +317,11 @@ pub(crate) fn place_table(
         let gh = sum(r, ge);
         let at_col_top = cur.last_baseline.is_none() && (top - col.y0).abs() < 1e-6;
         if y + gh + footer_h <= col.y1 + 0.01 || (body_placed == 0 && at_col_top) {
-            if y + gh + footer_h > col.y1 + 0.01 && body_placed == 0 && at_col_top && y + gh > col.y1 + 0.01 {
+            if y + gh + footer_h > col.y1 + 0.01
+                && body_placed == 0
+                && at_col_top
+                && y + gh > col.y1 + 0.01
+            {
                 // A row group taller than an empty column can never fit.
                 return false;
             }
@@ -295,7 +335,24 @@ pub(crate) fn place_table(
             if o.repeat_footer {
                 place_rows(body_end..nr, &mut y, true, &mut frag_rows);
             }
-            emit(table, anchor, pi, &frag_rows, &heights, &colx, col.x0 + x_off, top, y, first_frag, false, &layouts, &owners, cur, col, out);
+            emit(
+                table,
+                anchor,
+                pi,
+                &frag_rows,
+                &heights,
+                &colx,
+                col.x0 + x_off,
+                top,
+                y,
+                first_frag,
+                false,
+                &layouts,
+                &owners,
+                cur,
+                col,
+                out,
+            );
             first_frag = false;
         }
         let was_first = first_frag;
@@ -316,7 +373,24 @@ pub(crate) fn place_table(
         }
     }
     place_rows(body_end..nr, &mut y, false, &mut frag_rows);
-    emit(table, anchor, pi, &frag_rows, &heights, &colx, col.x0 + x_off, top, y, first_frag, true, &layouts, &owners, cur, col, out);
+    emit(
+        table,
+        anchor,
+        pi,
+        &frag_rows,
+        &heights,
+        &colx,
+        col.x0 + x_off,
+        top,
+        y,
+        first_frag,
+        true,
+        &layouts,
+        &owners,
+        cur,
+        col,
+        out,
+    );
     cur.last_baseline = Some(y);
     cur.last_descent = 0.0;
     cur.pending = o.space_after;
@@ -378,8 +452,15 @@ fn emit(
             } else {
                 None
             };
-            let Some(lay) = layouts.get(r * nc + c).and_then(Option::as_ref) else { continue };
-            let clip = Rect::new(rect.x0 + cell.insets[1], rect.y0 + cell.insets[0], rect.x1 - cell.insets[3], rect.y1 - cell.insets[2]);
+            let Some(lay) = layouts.get(r * nc + c).and_then(Option::as_ref) else {
+                continue;
+            };
+            let clip = Rect::new(
+                rect.x0 + cell.insets[1],
+                rect.y0 + cell.insets[0],
+                rect.x1 - cell.insets[3],
+                rect.y1 - cell.insets[2],
+            );
             let space = clip.height() - lay.content_h;
             let dy = match cell.vj {
                 VerticalJustification::Center if space > 0.0 => space / 2.0,
@@ -391,14 +472,21 @@ fn emit(
             if overset && let Some(f) = text.frames.first() {
                 // Use the same baseline/bounds test as auto-growth, and retain a prefix:
                 // overset text cannot reappear after a line that did not fit.
-                let keep = lay.line_heights.iter().take_while(|h| **h <= clip.height() + 0.01).count();
+                let keep = lay
+                    .line_heights
+                    .iter()
+                    .take_while(|h| **h <= clip.height() + 0.01)
+                    .count();
                 let overset_at = f.lines.get(keep).map(|l| l.range.start);
                 let mut t = (*text).clone();
                 if let Some(frame) = t.frames.first_mut() {
                     frame.lines.truncate(keep);
                     frame.objects.retain(|o| o.line < keep);
                     frame.tables.retain(|table| table.line < keep);
-                    frame.range.end = frame.lines.last().map_or(frame.range.start, |l| l.range.end);
+                    frame.range.end = frame
+                        .lines
+                        .last()
+                        .map_or(frame.range.start, |l| l.range.end);
                 }
                 if let Some(at) = overset_at {
                     t.overset_at = Some(at);
@@ -472,9 +560,18 @@ fn boundary_stroke<'a>(
     after_side: usize,
     pattern: Option<&'a CellStroke>,
 ) -> Option<(&'a CellStroke, i32, EdgeSource)> {
-    let supplied = |cell: &Cell, side: usize| cell.stroke_defined[side] || cell.border_overrides[side] || cell.stroke_priorities[side] != 0;
-    let rank =
-        |cell: &Cell, side: usize| (cell.stroke_priorities[side], supplied(cell, side), supplied(cell, side) && cell.strokes[side].is_visible());
+    let supplied = |cell: &Cell, side: usize| {
+        cell.stroke_defined[side]
+            || cell.border_overrides[side]
+            || cell.stroke_priorities[side] != 0
+    };
+    let rank = |cell: &Cell, side: usize| {
+        (
+            cell.stroke_priorities[side],
+            supplied(cell, side),
+            supplied(cell, side) && cell.strokes[side].is_visible(),
+        )
+    };
     let (owner, cell, side, outer) = match (before, after) {
         (Some((ao, a)), Some((bo, b))) => {
             // Table patterns supply missing interior edges; cell styles and local edits
@@ -491,16 +588,28 @@ fn boundary_stroke<'a>(
             // unspecified: prefer supplied formatting, then a visible supplied rule.
             // Metadata-free native / legacy cells retain lower/right top/left ownership,
             // including explicit None already stored there by older native editing code.
-            if rank(a, before_side) > rank(b, after_side) { (ao, a, before_side, false) } else { (bo, b, after_side, false) }
+            if rank(a, before_side) > rank(b, after_side) {
+                (ao, a, before_side, false)
+            } else {
+                (bo, b, after_side, false)
+            }
         }
         (Some((owner, a)), None) => (owner, a, before_side, true),
         (None, Some((owner, b))) => (owner, b, after_side, true),
         (None, None) => return None,
     };
     if outer && !cell.border_overrides[side] {
-        Some((table.options.border_for(side), 0, EdgeSource::Cell(owner, side)))
+        Some((
+            table.options.border_for(side),
+            0,
+            EdgeSource::Cell(owner, side),
+        ))
     } else {
-        Some((&cell.strokes[side], cell.stroke_priorities[side], EdgeSource::Cell(owner, side)))
+        Some((
+            &cell.strokes[side],
+            cell.stroke_priorities[side],
+            EdgeSource::Cell(owner, side),
+        ))
     }
 }
 
@@ -525,7 +634,14 @@ fn push_boundary_stroke(
     {
         last.b = b;
     } else {
-        strokes.push((StrokeSeg { a, b, stroke: stroke.clone() }, priority));
+        strokes.push((
+            StrokeSeg {
+                a,
+                b,
+                stroke: stroke.clone(),
+            },
+            priority,
+        ));
     }
     *previous = Some(source);
 }
@@ -548,22 +664,44 @@ fn fragment_strokes(
         let &(r, c) = owners.get(r.checked_mul(nc)?.checked_add(c)?)?;
         Some(((r, c), table.cell(r, c)?))
     };
-    let x = |c: usize| colx.get(c).map(|&offset| if rtl { right - offset } else { x0 + offset });
+    let x = |c: usize| {
+        colx.get(c)
+            .map(|&offset| if rtl { right - offset } else { x0 + offset })
+    };
     // Uniform active groups do not depend on which shared edge starts the pattern. Keep
     // nonuniform and skipped patterns intact in the model until their phase is verified.
-    let row_stroke = table.options.row_strokes.as_ref().filter(|p| p.skip_first == 0 && p.skip_last == 0).and_then(|p| p.uniform_stroke());
-    let column_stroke = table.options.column_strokes.as_ref().filter(|p| p.skip_first == 0 && p.skip_last == 0).and_then(|p| p.uniform_stroke());
+    let row_stroke = table
+        .options
+        .row_strokes
+        .as_ref()
+        .filter(|p| p.skip_first == 0 && p.skip_last == 0)
+        .and_then(|p| p.uniform_stroke());
+    let column_stroke = table
+        .options
+        .column_strokes
+        .as_ref()
+        .filter(|p| p.skip_first == 0 && p.skip_last == 0)
+        .and_then(|p| p.uniform_stroke());
     let body = table.body_rows();
     let mut strokes = Vec::new();
     for boundary in 0..=rows.len() {
         let before = boundary.checked_sub(1).and_then(|r| rows.get(r));
         let after = rows.get(boundary);
         let y = after.map_or(bottom, |row| row.1);
-        let pattern =
-            if before.is_some_and(|row| body.contains(&row.0)) && after.is_some_and(|row| body.contains(&row.0)) { row_stroke } else { None };
+        let pattern = if before.is_some_and(|row| body.contains(&row.0))
+            && after.is_some_and(|row| body.contains(&row.0))
+        {
+            row_stroke
+        } else {
+            None
+        };
         let mut previous = None;
         for physical_col in 0..nc {
-            let c = if rtl { nc - physical_col - 1 } else { physical_col };
+            let c = if rtl {
+                nc - physical_col - 1
+            } else {
+                physical_col
+            };
             let above = before.and_then(|row| owner(row.0, c));
             let below = after.and_then(|row| owner(row.0, c));
             let pair = (above.map(|v| v.0), below.map(|v| v.0));
@@ -571,9 +709,17 @@ fn fragment_strokes(
                 previous = None;
                 continue;
             }
-            let (Some(a), Some(b)) = (x(c), x(c + 1)) else { continue };
+            let (Some(a), Some(b)) = (x(c), x(c + 1)) else {
+                continue;
+            };
             let edge = boundary_stroke(table, above, below, 2, 0, pattern);
-            push_boundary_stroke(&mut strokes, &mut previous, Point::new(a.min(b), y), Point::new(a.max(b), y), edge);
+            push_boundary_stroke(
+                &mut strokes,
+                &mut previous,
+                Point::new(a.min(b), y),
+                Point::new(a.max(b), y),
+                edge,
+            );
         }
     }
     for boundary in 0..=nc {
@@ -582,15 +728,38 @@ fn fragment_strokes(
         for &(r, y, _) in rows {
             let before = boundary.checked_sub(1).and_then(|c| owner(r, c));
             let after = (boundary < nc).then(|| owner(r, boundary)).flatten();
-            let (left, right) = if rtl { (after, before) } else { (before, after) };
+            let (left, right) = if rtl {
+                (after, before)
+            } else {
+                (before, after)
+            };
             let pair = (left.map(|v| v.0), right.map(|v| v.0));
             if pair.0 == pair.1 {
                 previous = None;
                 continue;
             }
-            let Some(&height) = heights.get(r) else { continue };
-            let edge = boundary_stroke(table, left, right, 3, 1, if body.contains(&r) { column_stroke } else { None });
-            push_boundary_stroke(&mut strokes, &mut previous, Point::new(x, y), Point::new(x, y + height), edge);
+            let Some(&height) = heights.get(r) else {
+                continue;
+            };
+            let edge = boundary_stroke(
+                table,
+                left,
+                right,
+                3,
+                1,
+                if body.contains(&r) {
+                    column_stroke
+                } else {
+                    None
+                },
+            );
+            push_boundary_stroke(
+                &mut strokes,
+                &mut previous,
+                Point::new(x, y),
+                Point::new(x, y + height),
+                edge,
+            );
         }
     }
     // Shared edges have a single winner; retain the documented priority at crossings too.
@@ -619,7 +788,12 @@ pub fn hit_cell(cs: &ComposedStory, fi: usize, p: Point) -> Option<(u64, usize, 
 }
 
 /// Frame index and placed cell for a cell address (the first, non-repeated occurrence).
-pub fn find_cell(cs: &ComposedStory, table: u64, row: usize, col: usize) -> Option<(usize, &TableFrag, &PlacedCell)> {
+pub fn find_cell(
+    cs: &ComposedStory,
+    table: u64,
+    row: usize,
+    col: usize,
+) -> Option<(usize, &TableFrag, &PlacedCell)> {
     let mut found = None;
     for (fi, ft) in cs.frames.iter().enumerate() {
         for t in ft.tables.iter().filter(|t| t.table == table) {
@@ -636,7 +810,13 @@ pub fn find_cell(cs: &ComposedStory, table: u64, row: usize, col: usize) -> Opti
 
 /// Caret geometry for byte `pos` of a cell's story, in frame inner space:
 /// (frame index, x, baseline, ascent, descent).
-pub fn cell_caret(cs: &ComposedStory, table: u64, row: usize, col: usize, pos: usize) -> Option<(usize, f64, f64, f64, f64)> {
+pub fn cell_caret(
+    cs: &ComposedStory,
+    table: u64,
+    row: usize,
+    col: usize,
+    pos: usize,
+) -> Option<(usize, f64, f64, f64, f64)> {
     let (fi, _, c) = find_cell(cs, table, row, col)?;
     match crate::caret(&c.text, pos) {
         Some((_, x, bl, a, d)) => Some((fi, x + c.origin.x, bl + c.origin.y, a, d)),
@@ -647,7 +827,10 @@ pub fn cell_caret(cs: &ComposedStory, table: u64, row: usize, col: usize, pos: u
 #[cfg(test)]
 mod height_tests {
     use super::*;
-    use designcraft_doc::{AnchorPosition, AnchoredObject, CellRange, LayerId, ParaFormat, Position, SpreadRef, build::NewDocument};
+    use designcraft_doc::{
+        AnchorPosition, AnchoredObject, CellRange, LayerId, ParaFormat, Position, SpreadRef,
+        build::NewDocument,
+    };
 
     fn text_cell(text: &str, bottom: f64) -> Cell {
         let mut cell = Cell::with_text(text, ParaFormat::default());
@@ -661,13 +844,27 @@ mod height_tests {
     }
 
     fn measure(cell: &Cell, width: f64) -> CellLayout {
-        compose_cell(&Document::new(&NewDocument::default()), cell, width, &ComposeOptions::default(), false)
+        compose_cell(
+            &Document::new(&NewDocument::default()),
+            cell,
+            width,
+            &ComposeOptions::default(),
+            false,
+        )
     }
 
     fn compose_table(table: Table, height: f64) -> ComposedStory {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        let (_, sid) = doc.add_text_frame(SpreadRef::Doc(0), Rect::new(0.0, 0.0, 200.0, height), layer, "", ParaFormat::default()).unwrap();
+        let (_, sid) = doc
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(0.0, 0.0, 200.0, height),
+                layer,
+                "",
+                ParaFormat::default(),
+            )
+            .unwrap();
         doc.story_mut(sid).unwrap().insert_table(0, table);
         crate::compose_story(&doc, sid, &ComposeOptions::default())
     }
@@ -680,7 +877,15 @@ mod height_tests {
 
     fn object(position: AnchorPosition) -> AnchoredObject {
         let path = designcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 12.0, 30.0));
-        AnchoredObject::new(designcraft_doc::Item::new(ItemId(0), LayerId(0), designcraft_doc::Shape::Rectangle, path), position)
+        AnchoredObject::new(
+            designcraft_doc::Item::new(
+                ItemId(0),
+                LayerId(0),
+                designcraft_doc::Shape::Rectangle,
+                path,
+            ),
+            position,
+        )
     }
 
     #[test]
@@ -718,7 +923,8 @@ mod height_tests {
     #[test]
     fn multiline_cells_keep_leading_and_paragraph_spacing() {
         let mut cell = text_cell("gyp\njqp", 8.5);
-        cell.text.format_paras(0..3, |p| p.para.space_after = Some(6.0));
+        cell.text
+            .format_paras(0..3, |p| p.para.space_after = Some(6.0));
         let layout = measure(&cell, 92.0);
         let lines = &layout.text.frames[0].lines;
         assert_eq!(lines.len(), 2);
@@ -730,13 +936,21 @@ mod height_tests {
         assert!((placed.rect.height() - expected).abs() < 1e-6);
         let wrapped = measure(&text_cell("gyp gyp gyp gyp gyp gyp gyp gyp", 8.5), 30.0);
         assert!(wrapped.text.frames[0].lines.len() > 2);
-        assert!((wrapped.content_h - wrapped.text.frames[0].lines.last().unwrap().baseline).abs() < 1e-6);
+        assert!(
+            (wrapped.content_h - wrapped.text.frames[0].lines.last().unwrap().baseline).abs()
+                < 1e-6
+        );
     }
 
     #[test]
     fn small_insets_still_contain_descenders_and_shifted_text() {
         for bottom in [0.0, 1.0] {
-            for (shift, position) in [(0.0, Position::Normal), (-15.0, Position::Normal), (0.0, Position::Superscript), (0.0, Position::Subscript)] {
+            for (shift, position) in [
+                (0.0, Position::Normal),
+                (-15.0, Position::Normal),
+                (0.0, Position::Superscript),
+                (0.0, Position::Subscript),
+            ] {
                 let mut cell = text_cell("gyp", bottom);
                 cell.text.format_chars(0..3, |f| {
                     f.over.baseline_shift = Some(shift);
@@ -760,7 +974,11 @@ mod height_tests {
         let layout = measure(&cell, 92.0);
         let first_height = 17.0 + layout.text.frames[0].lines[0].baseline;
         let full_height = 17.0 + layout.text.frames[0].lines[1].baseline;
-        for (height, count, overset) in [(full_height, 2, false), (first_height, 1, true), (first_height - 1.0, 0, true)] {
+        for (height, count, overset) in [
+            (full_height, 2, false),
+            (first_height, 1, true),
+            (first_height - 1.0, 0, true),
+        ] {
             let mut table = single_table(cell.clone());
             table.rows[0].mode = RowHeightMode::Exactly;
             table.rows[0].height = height;
@@ -770,7 +988,10 @@ mod height_tests {
             assert_eq!(placed.overset, overset);
             assert_eq!(placed.text.frames[0].lines.len(), count);
             if overset {
-                assert_eq!(placed.text.overset_at, Some(layout.text.frames[0].lines[count].range.start));
+                assert_eq!(
+                    placed.text.overset_at,
+                    Some(layout.text.frames[0].lines[count].range.start)
+                );
             }
         }
     }
@@ -792,8 +1013,11 @@ mod height_tests {
     #[test]
     fn earlier_lowered_line_controls_height_and_cannot_be_skipped_on_overset() {
         let mut cell = text_cell("gyp\njqp", 8.5);
-        cell.text.format_chars(0..cell.text.len(), |f| f.over.leading = Some(designcraft_doc::Leading::Points(6.0)));
-        cell.text.format_chars(0..3, |f| f.over.baseline_shift = Some(-30.0));
+        cell.text.format_chars(0..cell.text.len(), |f| {
+            f.over.leading = Some(designcraft_doc::Leading::Points(6.0))
+        });
+        cell.text
+            .format_chars(0..3, |f| f.over.baseline_shift = Some(-30.0));
         let layout = measure(&cell, 92.0);
         let lines = &layout.text.frames[0].lines;
         assert_eq!(lines.len(), 2);
@@ -810,7 +1034,10 @@ mod height_tests {
         let composed = compose_table(table, 200.0);
         let placed = composed.frames[0].tables[0].cell(0, 0).unwrap();
         assert!(placed.overset);
-        assert!(placed.text.frames[0].lines.is_empty(), "a later fitting line cannot reappear after the first line oversets");
+        assert!(
+            placed.text.frames[0].lines.is_empty(),
+            "a later fitting line cannot reappear after the first line oversets"
+        );
     }
 
     #[test]
@@ -833,9 +1060,11 @@ mod height_tests {
     #[test]
     fn vertical_alignment_uses_baseline_fit_without_losing_descenders() {
         for bottom in [0.0, 8.5] {
-            for (vj, expected_shift) in
-                [(VerticalJustification::Top, 0.0), (VerticalJustification::Center, 10.0), (VerticalJustification::Bottom, 20.0)]
-            {
+            for (vj, expected_shift) in [
+                (VerticalJustification::Top, 0.0),
+                (VerticalJustification::Center, 10.0),
+                (VerticalJustification::Bottom, 20.0),
+            ] {
                 let mut cell = text_cell("gyp", bottom);
                 cell.vj = vj;
                 let layout = measure(&cell, 92.0);
@@ -862,7 +1091,10 @@ mod height_tests {
         table.merge(CellRange::new(0, 0, 1, 0)).unwrap();
         table.rows[0].mode = RowHeightMode::Exactly;
         table.rows[0].height = 3.0;
-        table.cells[0] = Cell { row_span: 2, ..cell };
+        table.cells[0] = Cell {
+            row_span: 2,
+            ..cell
+        };
         let composed = compose_table(table, 200.0);
         let placed = composed.frames[0].tables[0].cell(0, 0).unwrap();
         assert!((placed.rect.height() - expected).abs() < 1e-6);
@@ -873,7 +1105,8 @@ mod height_tests {
     #[test]
     fn lowered_inline_objects_are_contained_but_custom_anchors_stay_out_of_flow() {
         let mut cell = text_cell("gyp", 8.5);
-        cell.text.insert_object(0, object(AnchorPosition::Inline { y_offset: -40.0 }));
+        cell.text
+            .insert_object(0, object(AnchorPosition::Inline { y_offset: -40.0 }));
         let composed = compose_table(single_table(cell), 200.0);
         let placed = composed.frames[0].tables[0].cell(0, 0).unwrap();
         let object = &placed.text.frames[0].objects[0];
@@ -904,9 +1137,11 @@ mod height_tests {
         for nested in [false, true] {
             let mut cell = text_cell("gyp\nHidden", 8.5);
             if nested {
-                cell.text.insert_table(4, single_table(text_cell("nested", 8.5)));
+                cell.text
+                    .insert_table(4, single_table(text_cell("nested", 8.5)));
             } else {
-                cell.text.insert_object(4, object(AnchorPosition::Inline { y_offset: 0.0 }));
+                cell.text
+                    .insert_object(4, object(AnchorPosition::Inline { y_offset: 0.0 }));
             }
             let mut table = single_table(cell);
             table.rows[0].mode = RowHeightMode::Exactly;
@@ -929,7 +1164,15 @@ mod border_tests {
     fn compose_table(table: Table) -> ComposedStory {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        let (_, sid) = doc.add_text_frame(SpreadRef::Doc(0), Rect::new(0.0, 0.0, 120.0, 200.0), layer, "", ParaFormat::default()).unwrap();
+        let (_, sid) = doc
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(0.0, 0.0, 120.0, 200.0),
+                layer,
+                "",
+                ParaFormat::default(),
+            )
+            .unwrap();
         doc.story_mut(sid).unwrap().insert_table(0, table);
         crate::compose_story(&doc, sid, &ComposeOptions::default())
     }
@@ -941,19 +1184,41 @@ mod border_tests {
         table.cell_mut(0, 0).unwrap().strokes = std::array::from_fn(|_| CellStroke::none());
         let native = compose_table(table.clone());
         let strokes = &native.frames[0].tables[0].strokes;
-        assert_eq!(strokes.len(), 4, "default cells still use all four table borders");
+        assert_eq!(
+            strokes.len(),
+            4,
+            "default cells still use all four table borders"
+        );
         assert!(strokes.iter().all(|s| s.stroke.weight == 2.0));
 
         let cell = table.cell_mut(0, 0).unwrap();
         cell.border_overrides = [true, true, true, false];
-        cell.strokes[2] = CellStroke { weight: 3.0, ..Default::default() };
+        cell.strokes[2] = CellStroke {
+            weight: 3.0,
+            ..Default::default()
+        };
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
-        assert_eq!(fragment.strokes.len(), 2, "top and left None overrides suppress borders");
-        let bottom = fragment.strokes.iter().find(|s| s.a.y == fragment.rect.y1 && s.b.y == fragment.rect.y1).unwrap();
+        assert_eq!(
+            fragment.strokes.len(),
+            2,
+            "top and left None overrides suppress borders"
+        );
+        let bottom = fragment
+            .strokes
+            .iter()
+            .find(|s| s.a.y == fragment.rect.y1 && s.b.y == fragment.rect.y1)
+            .unwrap();
         assert_eq!(bottom.stroke.weight, 3.0);
-        let right = fragment.strokes.iter().find(|s| s.a.x == fragment.rect.x1 && s.b.x == fragment.rect.x1).unwrap();
-        assert_eq!(right.stroke.weight, 2.0, "unoverridden right edge keeps the table border");
+        let right = fragment
+            .strokes
+            .iter()
+            .find(|s| s.a.x == fragment.rect.x1 && s.b.x == fragment.rect.x1)
+            .unwrap();
+        assert_eq!(
+            right.stroke.weight, 2.0,
+            "unoverridden right edge keeps the table border"
+        );
     }
 
     #[test]
@@ -983,9 +1248,19 @@ mod border_tests {
         table
     }
 
-    fn set_rule(table: &mut Table, row: usize, col: usize, side: usize, weight: f64, priority: i32) {
+    fn set_rule(
+        table: &mut Table,
+        row: usize,
+        col: usize,
+        side: usize,
+        weight: f64,
+        priority: i32,
+    ) {
         let cell = table.cell_mut(row, col).unwrap();
-        cell.strokes[side] = CellStroke { weight, ..Default::default() };
+        cell.strokes[side] = CellStroke {
+            weight,
+            ..Default::default()
+        };
         cell.stroke_defined[side] = true;
         cell.stroke_priorities[side] = priority;
     }
@@ -993,9 +1268,18 @@ mod border_tests {
     fn assert_no_overlapping_rules(fragment: &TableFrag) {
         for (i, a) in fragment.strokes.iter().enumerate() {
             for b in &fragment.strokes[i + 1..] {
-                let horizontal_overlap = a.a.y == a.b.y && a.a.y == b.a.y && b.a.y == b.b.y && a.a.x.max(b.a.x) < a.b.x.min(b.b.x);
-                let vertical_overlap = a.a.x == a.b.x && a.a.x == b.a.x && b.a.x == b.b.x && a.a.y.max(b.a.y) < a.b.y.min(b.b.y);
-                assert!(!horizontal_overlap && !vertical_overlap, "duplicate shared edge: {a:?}, {b:?}");
+                let horizontal_overlap = a.a.y == a.b.y
+                    && a.a.y == b.a.y
+                    && b.a.y == b.b.y
+                    && a.a.x.max(b.a.x) < a.b.x.min(b.b.x);
+                let vertical_overlap = a.a.x == a.b.x
+                    && a.a.x == b.a.x
+                    && b.a.x == b.b.x
+                    && a.a.y.max(b.a.y) < a.b.y.min(b.b.y);
+                assert!(
+                    !horizontal_overlap && !vertical_overlap,
+                    "duplicate shared edge: {a:?}, {b:?}"
+                );
             }
         }
     }
@@ -1016,8 +1300,16 @@ mod border_tests {
         let fragment = &composed.frames[0].tables[0];
         let y = fragment.cell(0, 0).unwrap().rect.y1;
         assert_eq!(fragment.strokes.len(), 3);
-        assert!(fragment.strokes.iter().all(|s| s.a.y == y && s.b.y == y && s.stroke.weight == 1.0));
-        assert_eq!(fragment.strokes.iter().map(|s| s.b.x - s.a.x).sum::<f64>(), 100.0);
+        assert!(
+            fragment
+                .strokes
+                .iter()
+                .all(|s| s.a.y == y && s.b.y == y && s.stroke.weight == 1.0)
+        );
+        assert_eq!(
+            fragment.strokes.iter().map(|s| s.b.x - s.a.x).sum::<f64>(),
+            100.0
+        );
         assert_no_overlapping_rules(fragment);
     }
 
@@ -1036,7 +1328,10 @@ mod border_tests {
         assert_eq!(horizontal.stroke.weight, 3.0);
         let vertical = &fragment.strokes[1];
         assert_eq!(vertical.a.x, vertical.b.x);
-        assert_eq!(vertical.stroke.weight, 2.0, "higher priority draws last at a crossing");
+        assert_eq!(
+            vertical.stroke.weight, 2.0,
+            "higher priority draws last at a crossing"
+        );
         assert_no_overlapping_rules(fragment);
     }
 
@@ -1050,9 +1345,15 @@ mod border_tests {
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 2);
-        assert_eq!(fragment.strokes[0].stroke.weight, 4.0, "priority -2 draws before -1");
+        assert_eq!(
+            fragment.strokes[0].stroke.weight, 4.0,
+            "priority -2 draws before -1"
+        );
         assert_eq!(fragment.strokes[0].a.x, fragment.strokes[0].b.x);
-        assert_eq!(fragment.strokes[1].stroke.weight, 3.0, "priority -1 wins over -2");
+        assert_eq!(
+            fragment.strokes[1].stroke.weight, 3.0,
+            "priority -1 wins over -2"
+        );
         assert_eq!(fragment.strokes[1].a.y, fragment.strokes[1].b.y);
         assert_no_overlapping_rules(fragment);
     }
@@ -1063,17 +1364,29 @@ mod border_tests {
         set_rule(&mut table, 0, 0, 2, 3.0, -1);
         assert_eq!(table.cell(1, 0).unwrap().stroke_priorities, [0; 4]);
         let composed = compose_table(table.clone());
-        assert!(composed.frames[0].tables[0].strokes.is_empty(), "priority zero None suppresses priority -1");
+        assert!(
+            composed.frames[0].tables[0].strokes.is_empty(),
+            "priority zero None suppresses priority -1"
+        );
         table.cell_mut(1, 0).unwrap().strokes[0] = CellStroke::default();
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 1);
-        assert_eq!(fragment.strokes[0].stroke.weight, 1.0, "the priority-zero native rule wins over priority -1");
+        assert_eq!(
+            fragment.strokes[0].stroke.weight, 1.0,
+            "the priority-zero native rule wins over priority -1"
+        );
     }
 
     #[test]
     fn higher_priority_zero_or_none_suppresses_a_visible_shared_rule() {
-        for invisible in [CellStroke::none(), CellStroke { color: designcraft_color::swatch::NONE.into(), ..Default::default() }] {
+        for invisible in [
+            CellStroke::none(),
+            CellStroke {
+                color: designcraft_color::swatch::NONE.into(),
+                ..Default::default()
+            },
+        ] {
             let mut table = rule_table(2, 2, 0, 0);
             set_rule(&mut table, 0, 0, 2, 3.0, 7);
             set_rule(&mut table, 1, 0, 0, 0.0, 8);
@@ -1094,39 +1407,71 @@ mod border_tests {
         upper.strokes[2] = CellStroke::none();
         upper.stroke_defined[2] = true;
         let composed = compose_table(table.clone());
-        assert!(composed.frames[0].tables[0].strokes.is_empty(), "explicit zero beats a missing edge's one-point default");
+        assert!(
+            composed.frames[0].tables[0].strokes.is_empty(),
+            "explicit zero beats a missing edge's one-point default"
+        );
         table.cell_mut(0, 0).unwrap().stroke_defined[2] = false;
         let composed = compose_table(table);
-        assert_eq!(composed.frames[0].tables[0].strokes.len(), 1, "a missing zero cannot suppress the opposite visible default");
+        assert_eq!(
+            composed.frames[0].tables[0].strokes.len(),
+            1,
+            "a missing zero cannot suppress the opposite visible default"
+        );
     }
 
     #[test]
     fn specified_zero_priority_outer_edges_keep_per_side_table_borders() {
-        for direction in [designcraft_doc::TextDirection::LeftToRight, designcraft_doc::TextDirection::RightToLeft] {
+        for direction in [
+            designcraft_doc::TextDirection::LeftToRight,
+            designcraft_doc::TextDirection::RightToLeft,
+        ] {
             let mut table = rule_table(1, 1, 0, 0);
             table.options.direction = direction;
-            table.options.borders = std::array::from_fn(|i| Some(CellStroke { weight: (i + 1) as f64, ..Default::default() }));
+            table.options.borders = std::array::from_fn(|i| {
+                Some(CellStroke {
+                    weight: (i + 1) as f64,
+                    ..Default::default()
+                })
+            });
             table.cell_mut(0, 0).unwrap().stroke_defined = [true; 4];
             let composed = compose_table(table);
             let fragment = &composed.frames[0].tables[0];
             assert_eq!(fragment.strokes.len(), 4);
             for rule in &fragment.strokes {
                 let expected = if rule.a.y == rule.b.y {
-                    if rule.a.y == fragment.rect.y0 { 1.0 } else { 3.0 }
+                    if rule.a.y == fragment.rect.y0 {
+                        1.0
+                    } else {
+                        3.0
+                    }
                 } else if rule.a.x == fragment.rect.x0 {
                     2.0
                 } else {
                     4.0
                 };
-                assert_eq!(rule.stroke.weight, expected, "priority-zero cell values do not override perimeter formatting");
+                assert_eq!(
+                    rule.stroke.weight, expected,
+                    "priority-zero cell values do not override perimeter formatting"
+                );
             }
             assert_no_overlapping_rules(fragment);
         }
     }
 
     fn uniform_pattern(weight: f64) -> designcraft_doc::AltStrokes {
-        let stroke = CellStroke { weight, ..Default::default() };
-        designcraft_doc::AltStrokes { first: 1, next: 1, first_stroke: stroke.clone(), next_stroke: stroke, skip_first: 0, skip_last: 0 }
+        let stroke = CellStroke {
+            weight,
+            ..Default::default()
+        };
+        designcraft_doc::AltStrokes {
+            first: 1,
+            next: 1,
+            first_stroke: stroke.clone(),
+            next_stroke: stroke,
+            skip_first: 0,
+            skip_last: 0,
+        }
     }
 
     #[test]
@@ -1137,7 +1482,10 @@ mod border_tests {
         table.options.border.weight = 2.0;
         let composed = compose_table(table.clone());
         let fragment = &composed.frames[0].tables[0];
-        assert!(!fragment.strokes.is_empty(), "table perimeter remains visible");
+        assert!(
+            !fragment.strokes.is_empty(),
+            "table perimeter remains visible"
+        );
         assert!(fragment.strokes.iter().all(|s| {
             s.stroke.weight == 2.0
                 && ((s.a.x == s.b.x && (s.a.x == fragment.rect.x0 || s.a.x == fragment.rect.x1))
@@ -1149,7 +1497,11 @@ mod border_tests {
         set_rule(&mut table, 0, 1, 1, 4.0, 0);
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
-        assert_eq!(fragment.strokes.len(), 2, "supplied cell strokes override the table patterns");
+        assert_eq!(
+            fragment.strokes.len(),
+            2,
+            "supplied cell strokes override the table patterns"
+        );
         assert!(fragment.strokes.iter().any(|s| s.stroke.weight == 3.0));
         assert!(fragment.strokes.iter().any(|s| s.stroke.weight == 4.0));
         assert_no_overlapping_rules(fragment);
@@ -1163,15 +1515,32 @@ mod border_tests {
         table.options.column_strokes = Some(uniform_pattern(3.0));
         let composed = compose_table(table.clone());
         let fragment = &composed.frames[0].tables[0];
-        assert_eq!(fragment.strokes.len(), 2, "a table pattern stays continuous across cell boundaries");
-        assert!(fragment.strokes.iter().any(|s| s.stroke.weight == 2.0 && s.b.x - s.a.x == 100.0));
-        assert!(fragment.strokes.iter().any(|s| s.stroke.weight == 3.0 && s.b.y - s.a.y == fragment.rect.height()));
+        assert_eq!(
+            fragment.strokes.len(),
+            2,
+            "a table pattern stays continuous across cell boundaries"
+        );
+        assert!(
+            fragment
+                .strokes
+                .iter()
+                .any(|s| s.stroke.weight == 2.0 && s.b.x - s.a.x == 100.0)
+        );
+        assert!(
+            fragment
+                .strokes
+                .iter()
+                .any(|s| s.stroke.weight == 3.0 && s.b.y - s.a.y == fragment.rect.height())
+        );
         for cell in &mut table.cells {
             cell.strokes = std::array::from_fn(|_| CellStroke::none());
             cell.stroke_defined = [true; 4];
         }
         let composed = compose_table(table);
-        assert!(composed.frames[0].tables[0].strokes.is_empty(), "explicit cell None is stronger than table patterns");
+        assert!(
+            composed.frames[0].tables[0].strokes.is_empty(),
+            "explicit cell None is stronger than table patterns"
+        );
     }
 
     #[test]
@@ -1185,9 +1554,26 @@ mod border_tests {
         let header = fragment.cell(0, 0).unwrap().rect;
         let body = fragment.cell(1, 0).unwrap().rect;
         let footer = fragment.cell(3, 0).unwrap().rect;
-        assert!(fragment.strokes.iter().any(|s| s.a == Point::new(header.x1, header.y0) && s.b == Point::new(header.x1, header.y1)));
-        assert!(fragment.strokes.iter().any(|s| s.a == Point::new(footer.x1, footer.y0) && s.b == Point::new(footer.x1, footer.y1)));
-        assert!(!fragment.strokes.iter().any(|s| s.a.y == body.y1 && s.b.y == body.y1));
+        assert!(
+            fragment
+                .strokes
+                .iter()
+                .any(|s| s.a == Point::new(header.x1, header.y0)
+                    && s.b == Point::new(header.x1, header.y1))
+        );
+        assert!(
+            fragment
+                .strokes
+                .iter()
+                .any(|s| s.a == Point::new(footer.x1, footer.y0)
+                    && s.b == Point::new(footer.x1, footer.y1))
+        );
+        assert!(
+            !fragment
+                .strokes
+                .iter()
+                .any(|s| s.a.y == body.y1 && s.b.y == body.y1)
+        );
         assert!(!fragment.strokes.iter().any(|s| s.a == Point::new(body.x1, body.y0) && s.b == Point::new(body.x1, body.y1)));
         assert_no_overlapping_rules(fragment);
     }
@@ -1217,7 +1603,11 @@ mod border_tests {
         let mut table = Table::new(77, 2, 2, 0, 0, 100.0);
         table.options.border = CellStroke::none();
         let composed = compose_table(table.clone());
-        assert_eq!(composed.frames[0].tables[0].strokes.len(), 4, "unmodified native grid control");
+        assert_eq!(
+            composed.frames[0].tables[0].strokes.len(),
+            4,
+            "unmodified native grid control"
+        );
         // The metadata arrays also default to zero/false when reading legacy JSON. Older
         // native table.setCell code changed these strokes without setting any metadata.
         table.cell_mut(1, 0).unwrap().strokes[0] = CellStroke::none();
@@ -1227,9 +1617,19 @@ mod border_tests {
         assert_eq!(fragment.strokes.len(), 2);
         let hidden_top = fragment.cell(1, 0).unwrap().rect;
         let hidden_left = fragment.cell(0, 1).unwrap().rect;
-        assert!(!fragment.strokes.iter().any(|s| s.a == Point::new(hidden_top.x0, hidden_top.y0) && s.b == Point::new(hidden_top.x1, hidden_top.y0)));
         assert!(
-            !fragment.strokes.iter().any(|s| s.a == Point::new(hidden_left.x0, hidden_left.y0) && s.b == Point::new(hidden_left.x0, hidden_left.y1))
+            !fragment
+                .strokes
+                .iter()
+                .any(|s| s.a == Point::new(hidden_top.x0, hidden_top.y0)
+                    && s.b == Point::new(hidden_top.x1, hidden_top.y0))
+        );
+        assert!(
+            !fragment
+                .strokes
+                .iter()
+                .any(|s| s.a == Point::new(hidden_left.x0, hidden_left.y0)
+                    && s.b == Point::new(hidden_left.x0, hidden_left.y1))
         );
         assert_no_overlapping_rules(fragment);
     }
@@ -1259,8 +1659,16 @@ mod border_tests {
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 2);
-        let upper = fragment.strokes.iter().find(|s| s.stroke.weight == 2.0).unwrap();
-        let lower = fragment.strokes.iter().find(|s| s.stroke.weight == 1.0).unwrap();
+        let upper = fragment
+            .strokes
+            .iter()
+            .find(|s| s.stroke.weight == 2.0)
+            .unwrap();
+        let lower = fragment
+            .strokes
+            .iter()
+            .find(|s| s.stroke.weight == 1.0)
+            .unwrap();
         assert_eq!(upper.a, Point::new(50.0, fragment.rect.y0));
         assert_eq!(upper.b, lower.a);
         assert_eq!(lower.b, Point::new(50.0, fragment.rect.y1));
@@ -1277,8 +1685,16 @@ mod border_tests {
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 2);
-        let left = fragment.strokes.iter().find(|s| s.stroke.weight == 2.0).unwrap();
-        let right = fragment.strokes.iter().find(|s| s.stroke.weight == 1.0).unwrap();
+        let left = fragment
+            .strokes
+            .iter()
+            .find(|s| s.stroke.weight == 2.0)
+            .unwrap();
+        let right = fragment
+            .strokes
+            .iter()
+            .find(|s| s.stroke.weight == 1.0)
+            .unwrap();
         let y = fragment.cell(0, 0).unwrap().rect.y1;
         assert_eq!(left.a, Point::new(fragment.rect.x0, y));
         assert_eq!(left.b, right.a);
@@ -1289,13 +1705,22 @@ mod border_tests {
     #[test]
     fn merged_winning_dashed_edge_stays_continuous_across_losing_neighbors() {
         let mut table = rule_table(2, 2, 0, 0);
-        table.columns.iter_mut().for_each(|column| column.width = 45.0);
+        table
+            .columns
+            .iter_mut()
+            .for_each(|column| column.width = 45.0);
         table.merge(CellRange::new(1, 0, 1, 1)).unwrap();
         set_rule(&mut table, 1, 0, 0, 1.0, 1);
-        table.cell_mut(1, 0).unwrap().strokes[0].kind = designcraft_doc::StrokeType::Dashed { pattern: vec![6.0, 4.0] };
+        table.cell_mut(1, 0).unwrap().strokes[0].kind = designcraft_doc::StrokeType::Dashed {
+            pattern: vec![6.0, 4.0],
+        };
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
-        assert_eq!(fragment.strokes.len(), 1, "one winning source edge must retain one dash phase");
+        assert_eq!(
+            fragment.strokes.len(),
+            1,
+            "one winning source edge must retain one dash phase"
+        );
         let rule = &fragment.strokes[0];
         let merged = fragment.cell(1, 0).unwrap().rect;
         assert_eq!(rule.a, Point::new(merged.x0, merged.y0));
@@ -1312,8 +1737,14 @@ mod border_tests {
         let composed = compose_table(table);
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 4);
-        assert_eq!(fragment.strokes.iter().filter(|s| s.a.y == s.b.y).count(), 2);
-        assert_eq!(fragment.strokes.iter().filter(|s| s.a.x == s.b.x).count(), 2);
+        assert_eq!(
+            fragment.strokes.iter().filter(|s| s.a.y == s.b.y).count(),
+            2
+        );
+        assert_eq!(
+            fragment.strokes.iter().filter(|s| s.a.x == s.b.x).count(),
+            2
+        );
         assert_no_overlapping_rules(fragment);
     }
 
@@ -1333,7 +1764,11 @@ mod border_tests {
         let fragment = &composed.frames[0].tables[0];
         assert_eq!(fragment.strokes.len(), 3);
         for (x, weight) in [(0.0, 6.0), (70.0, 2.0), (100.0, 5.0)] {
-            let rule = fragment.strokes.iter().find(|s| s.a.x == x && s.b.x == x).unwrap();
+            let rule = fragment
+                .strokes
+                .iter()
+                .find(|s| s.a.x == x && s.b.x == x)
+                .unwrap();
             assert_eq!(rule.stroke.weight, weight);
         }
         assert_no_overlapping_rules(fragment);
@@ -1342,13 +1777,32 @@ mod border_tests {
     fn compose_two_fragments(table: Table, height: f64) -> ComposedStory {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        let (first, sid) = doc.add_text_frame(SpreadRef::Doc(0), Rect::new(0.0, 0.0, 120.0, height), layer, "", ParaFormat::default()).unwrap();
-        let (second, _) =
-            doc.add_text_frame(SpreadRef::Doc(0), Rect::new(0.0, 200.0, 120.0, 200.0 + height), layer, "", ParaFormat::default()).unwrap();
+        let (first, sid) = doc
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(0.0, 0.0, 120.0, height),
+                layer,
+                "",
+                ParaFormat::default(),
+            )
+            .unwrap();
+        let (second, _) = doc
+            .add_text_frame(
+                SpreadRef::Doc(0),
+                Rect::new(0.0, 200.0, 120.0, 200.0 + height),
+                layer,
+                "",
+                ParaFormat::default(),
+            )
+            .unwrap();
         doc.thread(first, second).unwrap();
         doc.story_mut(sid).unwrap().insert_table(0, table);
         let composed = crate::compose_story(&doc, sid, &ComposeOptions::default());
-        assert!(!composed.is_overset(), "overset at {:?}", composed.overset_at);
+        assert!(
+            !composed.is_overset(),
+            "overset at {:?}",
+            composed.overset_at
+        );
         assert_eq!(composed.frames[0].tables.len(), 1);
         assert_eq!(composed.frames[1].tables.len(), 1);
         composed
@@ -1371,8 +1825,16 @@ mod border_tests {
             assert_eq!(header.repeated, i == 1);
             assert_eq!(footer.repeated, i == 0);
             assert_eq!(fragment.strokes.len(), 2);
-            let header_rules: Vec<_> = fragment.strokes.iter().filter(|s| s.a.y == header.rect.y1 && s.b.y == header.rect.y1).collect();
-            let footer_rules: Vec<_> = fragment.strokes.iter().filter(|s| s.a.y == footer.rect.y0 && s.b.y == footer.rect.y0).collect();
+            let header_rules: Vec<_> = fragment
+                .strokes
+                .iter()
+                .filter(|s| s.a.y == header.rect.y1 && s.b.y == header.rect.y1)
+                .collect();
+            let footer_rules: Vec<_> = fragment
+                .strokes
+                .iter()
+                .filter(|s| s.a.y == footer.rect.y0 && s.b.y == footer.rect.y0)
+                .collect();
             assert_eq!(header_rules.len(), 1);
             assert!(header_rules.iter().all(|s| s.stroke.weight == 1.0));
             assert_eq!(footer_rules.len(), 1);

@@ -59,13 +59,13 @@ pub fn basis_buffer_to_image(
                 || image_info.m_orig_height != image0_info.m_orig_height)
         {
             return Err(TextureError::UnsupportedTextureFormat(format!(
-                    "Basis file with multiple 2D textures with different sizes not supported. Image {} {}x{}, image 0 {}x{}",
-                    image_index,
-                    image_info.m_orig_width,
-                    image_info.m_orig_height,
-                    image0_info.m_orig_width,
-                    image0_info.m_orig_height,
-                )));
+                "Basis file with multiple 2D textures with different sizes not supported. Image {} {}x{}, image 0 {}x{}",
+                image_index,
+                image_info.m_orig_width,
+                image_info.m_orig_height,
+                image0_info.m_orig_width,
+                image0_info.m_orig_height,
+            )));
         }
         let mip_level_count = transcoder.image_level_count(buffer, image_index);
         if mip_level_count != image0_mip_level_count {
@@ -112,7 +112,7 @@ pub fn basis_buffer_to_image(
         basis_texture_type => {
             return Err(TextureError::UnsupportedTextureFormat(format!(
                 "{basis_texture_type:?}",
-            )))
+            )));
         }
     };
     image.data = Some(transcoded);

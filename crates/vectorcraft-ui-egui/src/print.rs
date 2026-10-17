@@ -29,7 +29,8 @@ pub struct PrintJob<'a> {
 }
 
 /// Submission callable from the desktop background worker.
-pub type SharedPrintFn = std::sync::Arc<dyn Fn(&PrintJob<'_>) -> Result<String, String> + Send + Sync>;
+pub type SharedPrintFn =
+    std::sync::Arc<dyn Fn(&PrintJob<'_>) -> Result<String, String> + Send + Sync>;
 
 /// The platform's printing ([`crate::Services::print`]).
 pub trait PrintService {
@@ -54,7 +55,12 @@ pub trait PrintService {
 
 /// `print.printers`: the system's printers, and what the print service offers.
 pub fn printers(app: &mut VectorcraftApp) -> Value {
-    let (printers, setup) = app.services.print.as_mut().map(|s| (s.printers(), s.has_setup())).unwrap_or_default();
+    let (printers, setup) = app
+        .services
+        .print
+        .as_mut()
+        .map(|s| (s.printers(), s.has_setup()))
+        .unwrap_or_default();
     json!({ "printers": printers, "service": app.services.print.is_some(), "setup": setup })
 }
 
@@ -65,8 +71,11 @@ pub fn printers(app: &mut VectorcraftApp) -> Value {
 /// the same way.
 pub fn run(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
     let s = |k: &str| p.get(k).and_then(Value::as_str).map(str::to_string);
-    let postscript = s("format").as_deref() == Some("postscript") || s("path").is_some_and(|path| fileio::extension(&path) == "ps");
-    let to_file = p.get("toFile").and_then(Value::as_bool).unwrap_or(false) || s("path").is_some() || postscript;
+    let postscript = s("format").as_deref() == Some("postscript")
+        || s("path").is_some_and(|path| fileio::extension(&path) == "ps");
+    let to_file = p.get("toFile").and_then(Value::as_bool).unwrap_or(false)
+        || s("path").is_some()
+        || postscript;
     let mut q = json!({});
     for k in ["settings", "format", "level", "flattenerPreset"] {
         if let Some(v) = p.get(k).filter(|v| !v.is_null()) {
@@ -81,18 +90,28 @@ pub fn run(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
         if let Some(path) = s("path") {
             q["path"] = json!(path);
         }
-        let (path, mut v) = io::run_to_file(app, "file.print", if postscript { "ps" } else { "pdf" }, q)?;
+        let (path, mut v) =
+            io::run_to_file(app, "file.print", if postscript { "ps" } else { "pdf" }, q)?;
         io::report_saved(app, &path, &v);
         if !to_file {
-            app.ui.status.push_str(" (printing isn't available here: the job was saved as a PDF)");
+            app.ui
+                .status
+                .push_str(" (printing isn't available here: the job was saved as a PDF)");
         }
         v["path"] = json!(path);
         v["printed"] = json!(false);
         return Ok(v);
     }
-    let mut v = app.session.execute("file.print", &q).map_err(|e| e.to_string())?;
+    let mut v = app
+        .session
+        .execute("file.print", &q)
+        .map_err(|e| e.to_string())?;
     let data = v.as_object_mut().and_then(|o| o.remove("dataBase64"));
-    let pdf = data.as_ref().and_then(Value::as_str).and_then(vectorcraft_format::base64_decode).ok_or("the print job has no data")?;
+    let pdf = data
+        .as_ref()
+        .and_then(Value::as_str)
+        .and_then(vectorcraft_format::base64_decode)
+        .ok_or("the print job has no data")?;
     let title = app.session.active().map(|d| d.title()).unwrap_or_default();
     let printer = s("printer").filter(|n| !n.is_empty());
     let service = app.services.print.as_mut().ok_or("no print service")?;
@@ -104,11 +123,21 @@ pub fn run(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
             format!("Printing {title}"),
             None,
             move |_| {
-                submit(&PrintJob { printer: printer.as_deref(), title: &title, pdf: &pdf }).map(|note| json!({ "note": note, "printer": printer }))
+                submit(&PrintJob {
+                    printer: printer.as_deref(),
+                    title: &title,
+                    pdf: &pdf,
+                })
+                .map(|note| json!({ "note": note, "printer": printer }))
             },
             move |app, result| {
                 let receipt = result?;
-                app.status(receipt.get("note").and_then(Value::as_str).unwrap_or_default());
+                app.status(
+                    receipt
+                        .get("note")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default(),
+                );
                 Ok(json!({ "printer": receipt["printer"], "printed": true }))
             },
         )?;
@@ -125,7 +154,11 @@ pub fn run(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
         }
         return Ok(v);
     }
-    let done = service.print(&PrintJob { printer: printer.as_deref(), title: &title, pdf: &pdf })?;
+    let done = service.print(&PrintJob {
+        printer: printer.as_deref(),
+        title: &title,
+        pdf: &pdf,
+    })?;
     app.status(done);
     v["printer"] = json!(printer);
     v["printed"] = json!(true);

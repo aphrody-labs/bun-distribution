@@ -1,11 +1,11 @@
-use super::{prepare::PathtracerAccumulationTexture, Pathtracer};
+use super::{Pathtracer, prepare::PathtracerAccumulationTexture};
 use bevy_camera::Camera;
 use bevy_ecs::{
     change_detection::DetectChanges,
     system::{Commands, Query},
     world::Ref,
 };
-use bevy_render::{sync_world::RenderEntity, Extract};
+use bevy_render::{Extract, sync_world::RenderEntity};
 use bevy_transform::components::GlobalTransform;
 
 pub fn extract_pathtracer(

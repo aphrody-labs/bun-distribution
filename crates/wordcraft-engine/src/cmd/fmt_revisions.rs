@@ -24,7 +24,10 @@ use crate::Session;
 fn records(id: &str) -> bool {
     !(id.starts_with("review.accept")
         || id.starts_with("review.reject")
-        || matches!(id, "review.compare" | "review.combine" | "edit.undo" | "edit.redo")
+        || matches!(
+            id,
+            "review.compare" | "review.combine" | "edit.undo" | "edit.redo"
+        )
         || id.starts_with("file."))
 }
 
@@ -45,11 +48,18 @@ impl Recorder<'_> {
         if let Some(r) = self.rid {
             return r;
         }
-        let found = self.revisions.iter().rposition(|r| r.kind == RevisionKind::Format && r.author == self.author && r.date == self.date);
+        let found = self.revisions.iter().rposition(|r| {
+            r.kind == RevisionKind::Format && r.author == self.author && r.date == self.date
+        });
         let r = match found {
             Some(i) => i as u32,
             None => {
-                self.revisions.push(Revision { kind: RevisionKind::Format, author: self.author.clone(), date: self.date.clone(), move_name: None });
+                self.revisions.push(Revision {
+                    kind: RevisionKind::Format,
+                    author: self.author.clone(),
+                    date: self.date.clone(),
+                    move_name: None,
+                });
                 self.revisions.len().saturating_sub(1) as u32
             }
         };
@@ -58,7 +68,9 @@ impl Recorder<'_> {
     }
 
     fn own(&self, rev: u32) -> bool {
-        self.before.get(rev as usize).is_some_and(|r| r.author == self.author)
+        self.before
+            .get(rev as usize)
+            .is_some_and(|r| r.author == self.author)
     }
 
     /// The tracked change `after` should carry, given the props `before` the command (`f` strips
@@ -102,7 +114,10 @@ impl Recorder<'_> {
         while let (Some((x, pb)), Some((y, pa))) = (rb.get(i), ra.get(j)) {
             let (from, to) = (x.start.max(y.start), x.end.min(y.end));
             // Formatting text the author is inserting themselves changes the insertion, as in Word.
-            let own_insert = pa.ins.and_then(|i| self.revisions.get(i as usize)).is_some_and(|r| r.author == self.author);
+            let own_insert = pa
+                .ins
+                .and_then(|i| self.revisions.get(i as usize))
+                .is_some_and(|r| r.author == self.author);
             if from < to
                 && !own_insert
                 && let Some(want) = self.change(*pb, *pa, CharProps::formatting, |c| &c.fmt_change)
@@ -149,7 +164,9 @@ impl Recorder<'_> {
                     }
                 }
                 (Block::Table(tb), Block::Table(ta)) if tb.rows.len() == ta.rows.len() => {
-                    let Block::Table(ta) = Arc::make_mut(a) else { continue };
+                    let Block::Table(ta) = Arc::make_mut(a) else {
+                        continue;
+                    };
                     for (rb, ra) in tb.rows.iter().zip(ta.rows.iter_mut()) {
                         if rb.cells.len() != ra.cells.len() {
                             continue;
@@ -173,7 +190,13 @@ pub(crate) fn record(s: &mut Session, id: &str, before: &Document) {
     }
     let author = s.author.clone();
     let doc = &mut s.doc;
-    let mut r = Recorder { author, date: super::now_iso(), before: &before.revisions, revisions: &mut doc.revisions, rid: None };
+    let mut r = Recorder {
+        author,
+        date: super::now_iso(),
+        before: &before.revisions,
+        revisions: &mut doc.revisions,
+        rid: None,
+    };
     r.blocks(&before.body, &mut doc.body, 0);
     for (k, pb) in &before.parts {
         if let Some(pa) = doc.parts.get_mut(k) {
@@ -184,15 +207,31 @@ pub(crate) fn record(s: &mut Session, id: &str, before: &Document) {
 
 /// Compare Documents: record how paragraph `new` (the revised version, same text) is formatted
 /// differently from `old` as tracked formatting changes by `author`.
-pub(crate) fn compare_formatting(old: &Paragraph, new: &mut Paragraph, revisions: &mut Vec<Revision>, author: &str, date: &str) {
-    let mut r = Recorder { author: author.to_string(), date: date.to_string(), before: &[], revisions, rid: None };
+pub(crate) fn compare_formatting(
+    old: &Paragraph,
+    new: &mut Paragraph,
+    revisions: &mut Vec<Revision>,
+    author: &str,
+    date: &str,
+) {
+    let mut r = Recorder {
+        author: author.to_string(),
+        date: date.to_string(),
+        before: &[],
+        revisions,
+        rid: None,
+    };
     r.para(old, new);
 }
 
 /// The properties a change sets, as the Style Inspector lists them: `[{"prop", "value"}]` in
 /// field order; a switch turned off is `false`, a value removed is `null`.
 pub fn diff<T: Serialize>(old: &T, new: &T) -> Vec<Value> {
-    let (Ok(Value::Object(o)), Ok(Value::Object(n))) = (serde_json::to_value(old), serde_json::to_value(new)) else { return Vec::new() };
+    let (Ok(Value::Object(o)), Ok(Value::Object(n))) =
+        (serde_json::to_value(old), serde_json::to_value(new))
+    else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for (k, v) in &n {
         if o.get(k) != Some(v) {
@@ -209,18 +248,32 @@ pub fn diff<T: Serialize>(old: &T, new: &T) -> Vec<Value> {
 
 /// The properties a run's (or paragraph mark's) change set.
 pub fn char_diff(c: &CharProps) -> Vec<Value> {
-    c.fmt_change.as_ref().map(|ch| diff(&ch.old.formatting(), &c.formatting())).unwrap_or_default()
+    c.fmt_change
+        .as_ref()
+        .map(|ch| diff(&ch.old.formatting(), &c.formatting()))
+        .unwrap_or_default()
 }
 
 /// The properties a paragraph's change set.
 pub fn para_diff(p: &ParaProps) -> Vec<Value> {
-    p.fmt_change.as_ref().map(|ch| diff(&ch.old.formatting(), &p.formatting())).unwrap_or_default()
+    p.fmt_change
+        .as_ref()
+        .map(|ch| diff(&ch.old.formatting(), &p.formatting()))
+        .unwrap_or_default()
 }
 
 /// A section's change: the properties it set.
 pub fn section_diff(s: &SectionProps) -> Vec<Value> {
-    let strip = |s: &SectionProps| SectionProps { fmt_change: None, headers: Default::default(), footers: Default::default(), ..s.clone() };
-    s.fmt_change.as_ref().map(|ch| diff(&strip(&ch.old), &strip(s))).unwrap_or_default()
+    let strip = |s: &SectionProps| SectionProps {
+        fmt_change: None,
+        headers: Default::default(),
+        footers: Default::default(),
+        ..s.clone()
+    };
+    s.fmt_change
+        .as_ref()
+        .map(|ch| diff(&strip(&ch.old), &strip(s)))
+        .unwrap_or_default()
 }
 
 /// "Formatted: Bold, Not italic, Size: 14" — the change in plain English, for agents.
@@ -243,7 +296,11 @@ pub fn describe(props: &[Value]) -> String {
             }
         })
         .collect();
-    if items.is_empty() { "Formatted".into() } else { format!("Formatted: {}", items.join(", ")) }
+    if items.is_empty() {
+        "Formatted".into()
+    } else {
+        format!("Formatted: {}", items.join(", "))
+    }
 }
 
 /// `indentLeft` → `Indent left`.
@@ -264,16 +321,25 @@ fn words(s: &str) -> String {
 
 /// Accept (drop the record) or reject (restore the old formatting) a run's change.
 pub fn resolve_char(c: &mut CharProps, accept: bool) {
-    let Some(ch) = c.fmt_change.take() else { return };
+    let Some(ch) = c.fmt_change.take() else {
+        return;
+    };
     if !accept {
-        *c = CharProps { link: c.link.take(), ins: c.ins, del: c.del, ..ch.old.formatting() };
+        *c = CharProps {
+            link: c.link.take(),
+            ins: c.ins,
+            del: c.del,
+            ..ch.old.formatting()
+        };
     }
 }
 
 /// Accept or reject a paragraph's change (its list numbering change goes with it).
 pub fn resolve_para(p: &mut ParaProps, accept: bool) {
     p.num_change = None;
-    let Some(ch) = p.fmt_change.take() else { return };
+    let Some(ch) = p.fmt_change.take() else {
+        return;
+    };
     if !accept {
         *p = ch.old.formatting();
     }
@@ -317,30 +383,51 @@ pub fn resolve_containers(blocks: &mut Blocks, accept: bool, depth: usize) {
 /// Accept or reject a table's own change (not its rows' or cells').
 pub fn resolve_table(t: &mut Table, accept: bool) {
     if let Some(ch) = t.props.fmt_change.take().filter(|_| !accept) {
-        t.props = TableProps { fmt_change: None, ..ch.old };
+        t.props = TableProps {
+            fmt_change: None,
+            ..ch.old
+        };
     }
 }
 
 /// Accept or reject a row's change.
 pub fn resolve_row(r: &mut Row, accept: bool) {
     if let Some(ch) = r.props.fmt_change.take().filter(|_| !accept) {
-        r.props = RowProps { fmt_change: None, ..ch.old };
+        r.props = RowProps {
+            fmt_change: None,
+            ..ch.old
+        };
     }
 }
 
 /// Accept or reject a cell's change. Merges are the table's structure, not formatting: they stay.
 pub fn resolve_cell(c: &mut Cell, accept: bool) {
     if let Some(ch) = c.props.fmt_change.take().filter(|_| !accept) {
-        c.props = CellProps { fmt_change: None, span: c.props.span, vmerge: c.props.vmerge, ..ch.old };
+        c.props = CellProps {
+            fmt_change: None,
+            span: c.props.span,
+            vmerge: c.props.vmerge,
+            ..ch.old
+        };
     }
 }
 
 /// Accept or reject a section's change (its headers and footers stay).
 pub fn resolve_section(s: &mut SectionProps, accept: bool) {
-    let Some(ch) = s.fmt_change.take() else { return };
+    let Some(ch) = s.fmt_change.take() else {
+        return;
+    };
     if !accept {
-        let (headers, footers) = (std::mem::take(&mut s.headers), std::mem::take(&mut s.footers));
-        *s = SectionProps { headers, footers, fmt_change: None, ..ch.old };
+        let (headers, footers) = (
+            std::mem::take(&mut s.headers),
+            std::mem::take(&mut s.footers),
+        );
+        *s = SectionProps {
+            headers,
+            footers,
+            fmt_change: None,
+            ..ch.old
+        };
     }
 }
 
@@ -348,18 +435,51 @@ pub fn resolve_section(s: &mut SectionProps, accept: bool) {
 pub fn table_diff(t: &TableProps) -> Vec<Value> {
     t.fmt_change
         .as_ref()
-        .map(|ch| diff(&TableProps { fmt_change: None, ..ch.old.clone() }, &TableProps { fmt_change: None, ..t.clone() }))
+        .map(|ch| {
+            diff(
+                &TableProps {
+                    fmt_change: None,
+                    ..ch.old.clone()
+                },
+                &TableProps {
+                    fmt_change: None,
+                    ..t.clone()
+                },
+            )
+        })
         .unwrap_or_default()
 }
 pub fn row_diff(r: &RowProps) -> Vec<Value> {
     r.fmt_change
         .as_ref()
-        .map(|ch| diff(&RowProps { fmt_change: None, ..ch.old.clone() }, &RowProps { fmt_change: None, ..r.clone() }))
+        .map(|ch| {
+            diff(
+                &RowProps {
+                    fmt_change: None,
+                    ..ch.old.clone()
+                },
+                &RowProps {
+                    fmt_change: None,
+                    ..r.clone()
+                },
+            )
+        })
         .unwrap_or_default()
 }
 pub fn cell_diff(c: &CellProps) -> Vec<Value> {
     c.fmt_change
         .as_ref()
-        .map(|ch| diff(&CellProps { fmt_change: None, ..ch.old.clone() }, &CellProps { fmt_change: None, ..c.clone() }))
+        .map(|ch| {
+            diff(
+                &CellProps {
+                    fmt_change: None,
+                    ..ch.old.clone()
+                },
+                &CellProps {
+                    fmt_change: None,
+                    ..c.clone()
+                },
+            )
+        })
         .unwrap_or_default()
 }

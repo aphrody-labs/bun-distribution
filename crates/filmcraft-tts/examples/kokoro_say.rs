@@ -4,7 +4,8 @@
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let a: Vec<String> = std::env::args().collect();
-    let (Some(dir), Some(voice), Some(ph), Some(out)) = (a.get(1), a.get(2), a.get(3), a.get(4)) else {
+    let (Some(dir), Some(voice), Some(ph), Some(out)) = (a.get(1), a.get(2), a.get(3), a.get(4))
+    else {
         eprintln!("usage: kokoro_say <model dir> <voice.pt> <phonemes> <out.wav> [speed]");
         std::process::exit(2);
     };

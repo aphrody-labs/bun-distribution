@@ -84,7 +84,10 @@ const F: Fixture = Fixture {
 };
 
 const FIXTURES: &[Fixture] = &[
-    Fixture { name: "native_hooks", ..F },
+    Fixture {
+        name: "native_hooks",
+        ..F
+    },
     Fixture {
         name: "coding_style_guide",
         args_json: r#"{"topic":"rust"}"#,
@@ -109,14 +112,24 @@ const FIXTURES: &[Fixture] = &[
         network_dependent: true,
         ..F
     },
-    Fixture { name: "auth_extract", args_json: "{}", windows_only: true, ..F },
+    Fixture {
+        name: "auth_extract",
+        args_json: "{}",
+        windows_only: true,
+        ..F
+    },
     Fixture {
         name: "chrome_autopsy",
         args_json: r#"{"pid":4,"size":64}"#,
         windows_only: true,
         ..F
     },
-    Fixture { name: "start_dashboard", args_json: r#"{"port":0}"#, side_effect: true, ..F },
+    Fixture {
+        name: "start_dashboard",
+        args_json: r#"{"port":0}"#,
+        side_effect: true,
+        ..F
+    },
     Fixture {
         name: "bxc_scrape",
         args_json: r#"{"url":"https://example.com/","selector":"h1"}"#,
@@ -251,7 +264,10 @@ async fn main() -> Result<()> {
     )
     .await?;
     let init = recv(&mut reader, timeout).await.context("initialize")?;
-    let server_info = init.pointer("/result/serverInfo").cloned().unwrap_or(Value::Null);
+    let server_info = init
+        .pointer("/result/serverInfo")
+        .cloned()
+        .unwrap_or(Value::Null);
     let proto = init
         .pointer("/result/protocolVersion")
         .and_then(Value::as_str)
@@ -259,10 +275,18 @@ async fn main() -> Result<()> {
         .to_string();
 
     // ── 2. initialized notification ──────────────────────────────────
-    send(&mut writer, &json!({ "jsonrpc": "2.0", "method": "notifications/initialized" })).await?;
+    send(
+        &mut writer,
+        &json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }),
+    )
+    .await?;
 
     // ── 3. tools/list ────────────────────────────────────────────────
-    send(&mut writer, &json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" })).await?;
+    send(
+        &mut writer,
+        &json!({ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }),
+    )
+    .await?;
     let listed = recv(&mut reader, timeout).await.context("tools/list")?;
     let tools = listed
         .pointer("/result/tools")
@@ -349,14 +373,16 @@ async fn main() -> Result<()> {
                 fail += 1;
                 report_lines.push(entry);
                 continue;
-            },
+            }
         };
         let elapsed = started.elapsed().as_millis();
         latencies_ms.push(elapsed);
         entry["latency_ms"] = json!(elapsed);
 
-        let is_error =
-            response.pointer("/result/isError").and_then(Value::as_bool).unwrap_or(false);
+        let is_error = response
+            .pointer("/result/isError")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let jsonrpc_error = response.get("error").cloned();
 
         if let Some(err) = jsonrpc_error {
@@ -482,7 +508,7 @@ async fn wait_with_timeout(child: &mut Child, dur: std::time::Duration) -> Resul
         Err(_) => {
             let _ = child.kill().await;
             Ok(())
-        },
+        }
     }
 }
 
@@ -508,7 +534,11 @@ fn resolve_binary(explicit: Option<&Path>) -> Result<PathBuf> {
             return Ok(p);
         }
     }
-    let exe_name = if cfg!(windows) { "aphrody.exe" } else { "aphrody" };
+    let exe_name = if cfg!(windows) {
+        "aphrody.exe"
+    } else {
+        "aphrody"
+    };
     if let Ok(path) = which(exe_name) {
         return Ok(path);
     }
@@ -524,7 +554,10 @@ fn resolve_binary(explicit: Option<&Path>) -> Result<PathBuf> {
         "aarch64-unknown-linux-gnu",
         "aarch64-apple-darwin",
     ] {
-        let p = PathBuf::from("target").join(triple).join("release").join(exe_name);
+        let p = PathBuf::from("target")
+            .join(triple)
+            .join("release")
+            .join(exe_name);
         if p.exists() {
             return Ok(p);
         }
@@ -551,7 +584,9 @@ fn which(name: &str) -> Result<PathBuf> {
 }
 
 fn home_dir() -> Option<PathBuf> {
-    std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).map(PathBuf::from)
+    std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .map(PathBuf::from)
 }
 
 async fn write_report(path: &Path, lines: &[Value]) -> Result<()> {

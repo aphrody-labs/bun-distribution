@@ -23,7 +23,10 @@ use crate::file_cmds::{join, native_doc, stem, write_file};
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 fn other(e: impl std::fmt::Display) -> EngineError {
     EngineError::Other(e.to_string())
@@ -128,7 +131,11 @@ impl Default for WebSettings {
 
 fn hex3(s: &str) -> Option<[f32; 3]> {
     let s = s.trim_start_matches('#');
-    let b = |i: usize| u8::from_str_radix(s.get(i..i + 2)?, 16).ok().map(|v| f32::from(v) / 255.0);
+    let b = |i: usize| {
+        u8::from_str_radix(s.get(i..i + 2)?, 16)
+            .ok()
+            .map(|v| f32::from(v) / 255.0)
+    };
     (s.len() == 6).then_some(())?;
     Some([b(0)?, b(2)?, b(4)?])
 }
@@ -142,13 +149,22 @@ impl WebSettings {
     /// partly transparent pixels instead of lightening them towards white (#4115). Formats
     /// without transparency still go over white.
     pub fn from_params(p: &Value, cmd: &str) -> Result<Self> {
-        let mut st = WebSettings { matte: None, ..WebSettings::default() };
+        let mut st = WebSettings {
+            matte: None,
+            ..WebSettings::default()
+        };
         if let Some(preset) = p.get("preset").and_then(Value::as_str) {
-            st = preset_settings(preset).ok_or_else(|| bad(cmd, format!("unknown preset `{preset}`")))?;
+            st = preset_settings(preset)
+                .ok_or_else(|| bad(cmd, format!("unknown preset `{preset}`")))?;
         }
         let s = |k: &str| p.get(k).and_then(Value::as_str);
         if let Some(f) = s("format") {
-            st.format = WebFormat::from_id(f).ok_or_else(|| bad(cmd, format!("unknown format `{f}` (gif|png8|png24|jpeg|wbmp)")))?;
+            st.format = WebFormat::from_id(f).ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("unknown format `{f}` (gif|png8|png24|jpeg|wbmp)"),
+                )
+            })?;
         }
         if let Some(k) = s("palette") {
             st.palette = match k {
@@ -158,7 +174,10 @@ impl WebSettings {
                 })?,
             };
         }
-        if let Some(n) = crate::commands::int(p, "colors").filter(|v| *v > 0).map(|v| v as u64) {
+        if let Some(n) = crate::commands::int(p, "colors")
+            .filter(|v| *v > 0)
+            .map(|v| v as u64)
+        {
             st.colors = (n as usize).clamp(2, 256);
         }
         if let Some(d) = s("dither") {
@@ -167,7 +186,12 @@ impl WebSettings {
                 "diffusion" => Dither::Diffusion,
                 "pattern" => Dither::Pattern,
                 "noise" => Dither::Noise,
-                d => return Err(bad(cmd, format!("unknown dither `{d}` (none|diffusion|pattern|noise)"))),
+                d => {
+                    return Err(bad(
+                        cmd,
+                        format!("unknown dither `{d}` (none|diffusion|pattern|noise)"),
+                    ));
+                }
             };
         }
         if let Some(a) = p.get("ditherAmount").and_then(Value::as_f64) {
@@ -178,7 +202,10 @@ impl WebSettings {
         }
         match s("matte") {
             Some("none") => st.matte = None,
-            Some(c) => st.matte = Some(hex3(c).ok_or_else(|| bad(cmd, "matte is \"none\" or \"#rrggbb\""))?),
+            Some(c) => {
+                st.matte =
+                    Some(hex3(c).ok_or_else(|| bad(cmd, "matte is \"none\" or \"#rrggbb\""))?)
+            }
             None => {}
         }
         for (k, slot) in [
@@ -204,15 +231,28 @@ impl WebSettings {
                 "copyright" => WebMetadata::Copyright,
                 "copyrightAndContact" | "contact" => WebMetadata::CopyrightAndContact,
                 "all" | "allExceptCameraInfo" => WebMetadata::All,
-                m => return Err(bad(cmd, format!("unknown metadata `{m}` (none|copyright|copyrightAndContact|all)"))),
+                m => {
+                    return Err(bad(
+                        cmd,
+                        format!("unknown metadata `{m}` (none|copyright|copyrightAndContact|all)"),
+                    ));
+                }
             };
         }
         if let Some(table) = p.get("colorTable") {
-            let table = table.as_array().filter(|a| (1..=256).contains(&a.len())).ok_or_else(|| bad(cmd, "colorTable must contain 1–256 #rrggbb colours"))?;
+            let table = table
+                .as_array()
+                .filter(|a| (1..=256).contains(&a.len()))
+                .ok_or_else(|| bad(cmd, "colorTable must contain 1–256 #rrggbb colours"))?;
             st.color_table = Some(
                 table
                     .iter()
-                    .map(|v| v.as_str().and_then(hex3).map(|c| c.map(to8)).ok_or_else(|| bad(cmd, "colorTable entries must be #rrggbb colours")))
+                    .map(|v| {
+                        v.as_str()
+                            .and_then(hex3)
+                            .map(|c| c.map(to8))
+                            .ok_or_else(|| bad(cmd, "colorTable entries must be #rrggbb colours"))
+                    })
                     .collect::<Result<Vec<_>>>()?,
             );
         }
@@ -220,11 +260,27 @@ impl WebSettings {
             let edits = edits
                 .as_object()
                 .filter(|m| m.len() <= 256)
-                .ok_or_else(|| bad(cmd, "colorTableEdits must be an object of palette indices to #rrggbb colours"))?;
-            let table = st.color_table.as_ref().ok_or_else(|| bad(cmd, "colorTableEdits requires colorTable"))?;
+                .ok_or_else(|| {
+                    bad(
+                        cmd,
+                        "colorTableEdits must be an object of palette indices to #rrggbb colours",
+                    )
+                })?;
+            let table = st
+                .color_table
+                .as_ref()
+                .ok_or_else(|| bad(cmd, "colorTableEdits requires colorTable"))?;
             for (index, value) in edits {
-                let index = index.parse::<usize>().ok().filter(|i| *i < table.len()).ok_or_else(|| bad(cmd, "colorTableEdits index is outside colorTable"))?;
-                let color = value.as_str().and_then(hex3).map(|c| c.map(to8)).ok_or_else(|| bad(cmd, "colorTableEdits values must be #rrggbb colours"))?;
+                let index = index
+                    .parse::<usize>()
+                    .ok()
+                    .filter(|i| *i < table.len())
+                    .ok_or_else(|| bad(cmd, "colorTableEdits index is outside colorTable"))?;
+                let color = value
+                    .as_str()
+                    .and_then(hex3)
+                    .map(|c| c.map(to8))
+                    .ok_or_else(|| bad(cmd, "colorTableEdits values must be #rrggbb colours"))?;
                 st.color_table_edits.insert(index, color);
             }
         }
@@ -264,14 +320,20 @@ impl WebSettings {
             WebMetadata::CopyrightAndContact => "copyrightAndContact",
             WebMetadata::All => "all",
         };
-        let matte = self.matte.map_or("none".to_string(), |c| format!("#{:02x}{:02x}{:02x}", to8(c[0]), to8(c[1]), to8(c[2])));
+        let matte = self.matte.map_or("none".to_string(), |c| {
+            format!("#{:02x}{:02x}{:02x}", to8(c[0]), to8(c[1]), to8(c[2]))
+        });
         let mut p = json!({"format": format, "palette": palette, "colors": self.colors, "dither": dither, "ditherAmount": (self.dither_amount * 100.0).round(), "transparency": self.transparency, "matte": matte, "interlaced": self.interlaced, "webSnap": (self.web_snap * 100.0).round(), "quality": self.quality, "progressive": self.progressive, "optimized": self.optimized, "embedIcc": self.embed_icc, "metadata": metadata, "convertToSrgb": self.convert_to_srgb});
         if let Some(table) = &self.color_table {
             p["colorTable"] = json!(table.iter().map(|c| rgb_hex(*c)).collect::<Vec<_>>());
         }
         if !self.color_table_edits.is_empty() {
-            p["colorTableEdits"] =
-                json!(self.color_table_edits.iter().map(|(i, c)| (i.to_string(), rgb_hex(*c))).collect::<std::collections::BTreeMap<_, _>>());
+            p["colorTableEdits"] = json!(
+                self.color_table_edits
+                    .iter()
+                    .map(|(i, c)| (i.to_string(), rgb_hex(*c)))
+                    .collect::<std::collections::BTreeMap<_, _>>()
+            );
         }
         p
     }
@@ -303,7 +365,11 @@ pub fn preset_settings(name: &str) -> Option<WebSettings> {
     let gif = |colors: usize, dither: bool| WebSettings {
         format: WebFormat::Gif,
         colors,
-        dither: if dither { Dither::Diffusion } else { Dither::None },
+        dither: if dither {
+            Dither::Diffusion
+        } else {
+            Dither::None
+        },
         ..WebSettings::default()
     };
     Some(match name {
@@ -313,14 +379,44 @@ pub fn preset_settings(name: &str) -> Option<WebSettings> {
         "GIF 32 No Dither" => gif(32, false),
         "GIF 64 Dithered" => gif(64, true),
         "GIF 64 No Dither" => gif(64, false),
-        "GIF Restrictive" => WebSettings { palette: PaletteKind::Web, ..gif(256, true) },
-        "JPEG High" => WebSettings { format: WebFormat::Jpeg, quality: 60, ..d },
-        "JPEG Low" => WebSettings { format: WebFormat::Jpeg, quality: 10, ..d },
-        "JPEG Medium" => WebSettings { format: WebFormat::Jpeg, quality: 30, ..d },
-        "JPEG Maximum" => WebSettings { format: WebFormat::Jpeg, quality: 100, ..d },
-        "JPEG Very High" => WebSettings { format: WebFormat::Jpeg, quality: 80, ..d },
-        "PNG-24" => WebSettings { format: WebFormat::Png24, ..d },
-        "PNG-8 128 Dithered" => WebSettings { format: WebFormat::Png8, colors: 128, ..d },
+        "GIF Restrictive" => WebSettings {
+            palette: PaletteKind::Web,
+            ..gif(256, true)
+        },
+        "JPEG High" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: 60,
+            ..d
+        },
+        "JPEG Low" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: 10,
+            ..d
+        },
+        "JPEG Medium" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: 30,
+            ..d
+        },
+        "JPEG Maximum" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: 100,
+            ..d
+        },
+        "JPEG Very High" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: 80,
+            ..d
+        },
+        "PNG-24" => WebSettings {
+            format: WebFormat::Png24,
+            ..d
+        },
+        "PNG-8 128 Dithered" => WebSettings {
+            format: WebFormat::Png8,
+            colors: 128,
+            ..d
+        },
         _ => return None,
     })
 }
@@ -338,10 +434,16 @@ pub fn web_document(doc: &Document, p: &Value, st: &WebSettings) -> Result<(Docu
     }
     if st.convert_to_srgb && doc.icc_profile.is_some() {
         // Documents without a profile are treated as sRGB already.
-        tmp.execute("edit.convertToProfile", json!({"profile": "srgb", "intent": "perceptual"}))?;
+        tmp.execute(
+            "edit.convertToProfile",
+            json!({"profile": "srgb", "intent": "perceptual"}),
+        )?;
     }
     let (w0, h0) = (f64::from(doc.size.width), f64::from(doc.size.height));
-    let pct = p.get("percent").and_then(Value::as_f64).filter(|v| *v > 0.0);
+    let pct = p
+        .get("percent")
+        .and_then(Value::as_f64)
+        .filter(|v| *v > 0.0);
     let w = p.get("width").and_then(Value::as_f64).filter(|v| *v > 0.0);
     let h = p.get("height").and_then(Value::as_f64).filter(|v| *v > 0.0);
     let (nw, nh) = match (pct, w, h) {
@@ -353,8 +455,14 @@ pub fn web_document(doc: &Document, p: &Value, st: &WebSettings) -> Result<(Docu
     };
     let (nw, nh) = (nw.round().max(1.0), nh.round().max(1.0));
     if (nw - w0).abs() >= 1.0 || (nh - h0).abs() >= 1.0 {
-        let resample = p.get("resample").and_then(Value::as_str).unwrap_or("bicubic");
-        tmp.execute("image.imageSize", json!({"width": nw, "height": nh, "resample": resample}))?;
+        let resample = p
+            .get("resample")
+            .and_then(Value::as_str)
+            .unwrap_or("bicubic");
+        tmp.execute(
+            "image.imageSize",
+            json!({"width": nw, "height": nh, "resample": resample}),
+        )?;
     }
     let out = (*tmp.active().ok_or(EngineError::NoDocument)?.doc).clone();
     Ok((out, nw / w0, nh / h0))
@@ -396,11 +504,15 @@ pub fn web_xmp(doc: &Document, m: WebMetadata) -> Option<String> {
                 keys.extend(["author", "authorTitle"]);
             }
             for k in keys {
-                if let Some(v) = info.get(k).filter(|v| v.as_str().is_some_and(|s| !s.is_empty()) || v.is_array()) {
+                if let Some(v) = info
+                    .get(k)
+                    .filter(|v| v.as_str().is_some_and(|s| !s.is_empty()) || v.is_array())
+                {
                     keep.insert(k.into(), v.clone());
                 }
             }
-            (!keep.is_empty()).then(|| crate::file_cmds::write_file_info(None, &Value::Object(keep)))
+            (!keep.is_empty())
+                .then(|| crate::file_cmds::write_file_info(None, &Value::Object(keep)))
         }
     }
 }
@@ -408,20 +520,42 @@ pub fn web_xmp(doc: &Document, m: WebMetadata) -> Option<String> {
 /// Optimises `rect` of `px` (straight RGBA, `bw` wide) with `st`. `preview` also returns what
 /// the file looks like (the dialog's panes); exports skip it.
 #[allow(clippy::too_many_arguments)]
-pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: Option<&[u8]>, xmp: Option<&str>, dpi: f32, preview: bool) -> Result<Optimized> {
-    if bw == 0 || rect.x0 < 0 || rect.y0 < 0 || rect.is_empty() || rect.x1 as usize > bw || (rect.y1 as usize).checked_mul(bw).is_none_or(|end| end > px.len())
+pub fn optimize(
+    px: &[[f32; 4]],
+    bw: usize,
+    rect: Rect,
+    st: &WebSettings,
+    icc: Option<&[u8]>,
+    xmp: Option<&str>,
+    dpi: f32,
+    preview: bool,
+) -> Result<Optimized> {
+    if bw == 0
+        || rect.x0 < 0
+        || rect.y0 < 0
+        || rect.is_empty()
+        || rect.x1 as usize > bw
+        || (rect.y1 as usize)
+            .checked_mul(bw)
+            .is_none_or(|end| end > px.len())
     {
         return Err(other("slice is outside the pixel buffer"));
     }
     let (w, h) = (rect.width() as usize, rect.height() as usize);
     let row = |y: i32| {
         let o = y as usize * bw;
-        px.get(o + rect.x0 as usize..o + rect.x1 as usize).unwrap_or(&[])
+        px.get(o + rect.x0 as usize..o + rect.x1 as usize)
+            .unwrap_or(&[])
     };
     let region = || (rect.y0..rect.y1).flat_map(row);
     let matte = st.matte.unwrap_or([1.0, 1.0, 1.0]);
     let over = |p: &[f32; 4]| -> [f32; 4] {
-        [p[0] * p[3] + matte[0] * (1.0 - p[3]), p[1] * p[3] + matte[1] * (1.0 - p[3]), p[2] * p[3] + matte[2] * (1.0 - p[3]), 1.0]
+        [
+            p[0] * p[3] + matte[0] * (1.0 - p[3]),
+            p[1] * p[3] + matte[1] * (1.0 - p[3]),
+            p[2] * p[3] + matte[2] * (1.0 - p[3]),
+            1.0,
+        ]
     };
     let (ww, hh) = (w as u32, h as u32);
     let e = |e: photocraft_codecs::CodecError| other(e);
@@ -439,18 +573,41 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
                 data.extend_from_slice(&[to8(q[0]), to8(q[1]), to8(q[2]), to8(q[3])][..k]);
             }
             if preview {
-                look = if alpha { data.clone() } else { data.as_chunks::<3>().0.iter().flat_map(|c| [c[0], c[1], c[2], 255]).collect() };
+                look = if alpha {
+                    data.clone()
+                } else {
+                    data.as_chunks::<3>()
+                        .0
+                        .iter()
+                        .flat_map(|c| [c[0], c[1], c[2], 255])
+                        .collect()
+                };
             }
-            let layout = if alpha { photocraft_codecs::ChannelLayout::Rgba } else { photocraft_codecs::ChannelLayout::Rgb };
-            let meta = photocraft_codecs::Metadata { dpi: Some((dpi, dpi)), xmp: xmp.map(str::to_string), ..Default::default() };
-            let img = photocraft_codecs::Image::from_u8(ww, hh, layout, data).map_err(e)?.with_icc(icc.map(<[u8]>::to_vec)).with_meta(meta);
+            let layout = if alpha {
+                photocraft_codecs::ChannelLayout::Rgba
+            } else {
+                photocraft_codecs::ChannelLayout::Rgb
+            };
+            let meta = photocraft_codecs::Metadata {
+                dpi: Some((dpi, dpi)),
+                xmp: xmp.map(str::to_string),
+                ..Default::default()
+            };
+            let img = photocraft_codecs::Image::from_u8(ww, hh, layout, data)
+                .map_err(e)?
+                .with_icc(icc.map(<[u8]>::to_vec))
+                .with_meta(meta);
             let opts = photocraft_codecs::EncodeOptions {
                 png_interlaced: st.interlaced,
                 embed_icc: icc.is_some(),
                 embed_metadata: xmp.is_some(),
                 ..Default::default()
             };
-            (photocraft_codecs::encode(&img, photocraft_codecs::Format::Png, &opts).map_err(e)?, None)
+            (
+                photocraft_codecs::encode(&img, photocraft_codecs::Format::Png, &opts)
+                    .map_err(e)?,
+                None,
+            )
         }
         WebFormat::Jpeg => {
             let mut rgb = Vec::with_capacity(w * h * 3);
@@ -460,13 +617,34 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
             }
             // Save for Web's 0–100 quality → encoder 1–100.
             let q = st.quality.max(1);
-            let bytes = photocraft_codecs::web::encode_jpeg_rgb8(ww, hh, &rgb, q, st.progressive, st.optimized, icc.filter(|_| st.embed_icc), Some(dpi), xmp)
-                .map_err(e)?;
+            let bytes = photocraft_codecs::web::encode_jpeg_rgb8(
+                ww,
+                hh,
+                &rgb,
+                q,
+                st.progressive,
+                st.optimized,
+                icc.filter(|_| st.embed_icc),
+                Some(dpi),
+                xmp,
+            )
+            .map_err(e)?;
             if preview {
                 // The preview shows the compression artefacts.
                 look = match photocraft_codecs::decode(&bytes) {
-                    Ok(img) => img.convert(photocraft_codecs::ChannelLayout::Rgba, photocraft_codecs::SampleType::U8).data().to_vec(),
-                    Err(_) => rgb.as_chunks::<3>().0.iter().flat_map(|c| [c[0], c[1], c[2], 255]).collect(),
+                    Ok(img) => img
+                        .convert(
+                            photocraft_codecs::ChannelLayout::Rgba,
+                            photocraft_codecs::SampleType::U8,
+                        )
+                        .data()
+                        .to_vec(),
+                    Err(_) => rgb
+                        .as_chunks::<3>()
+                        .0
+                        .iter()
+                        .flat_map(|c| [c[0], c[1], c[2], 255])
+                        .collect(),
                 };
             }
             (bytes, None)
@@ -486,9 +664,21 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
             quantize::to_bitmap(&mut gray, w, method);
             let white: Vec<bool> = gray.iter().map(|v| *v > 0.5).collect();
             if preview {
-                look = white.iter().flat_map(|b| if *b { [255, 255, 255, 255] } else { [0, 0, 0, 255] }).collect();
+                look = white
+                    .iter()
+                    .flat_map(|b| {
+                        if *b {
+                            [255, 255, 255, 255]
+                        } else {
+                            [0, 0, 0, 255]
+                        }
+                    })
+                    .collect();
             }
-            (photocraft_codecs::web::encode_wbmp(ww, hh, &white).map_err(e)?, Some(2))
+            (
+                photocraft_codecs::web::encode_wbmp(ww, hh, &white).map_err(e)?,
+                Some(2),
+            )
         }
         WebFormat::Gif | WebFormat::Png8 => {
             let transparent = st.transparency && region().any(|p| p[3] < 0.5);
@@ -504,17 +694,32 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
                     }
                 })
                 .collect();
-            let room = if transparent { st.colors.saturating_sub(1).max(2) } else { st.colors };
+            let room = if transparent {
+                st.colors.saturating_sub(1).max(2)
+            } else {
+                st.colors
+            };
             let mut pal = if let Some(table) = &st.color_table {
                 if table.is_empty() || table.len() > if transparent { 255 } else { 256 } {
-                    return Err(other("colorTable has too many entries for this image's transparency"));
+                    return Err(other(
+                        "colorTable has too many entries for this image's transparency",
+                    ));
                 }
                 table.clone()
             } else {
                 // Large images: build adaptive palettes from an even ~1 MP sample (Exact needs all).
                 let n_opaque = work.iter().filter(|p| p[3] >= 0.5).count();
-                let step = if n_opaque > 1 << 20 && st.palette != PaletteKind::Exact { n_opaque / (1 << 20) + 1 } else { 1 };
-                let mut src: Vec<[f32; 4]> = work.iter().filter(|p| p[3] >= 0.5).step_by(step).copied().collect();
+                let step = if n_opaque > 1 << 20 && st.palette != PaletteKind::Exact {
+                    n_opaque / (1 << 20) + 1
+                } else {
+                    1
+                };
+                let mut src: Vec<[f32; 4]> = work
+                    .iter()
+                    .filter(|p| p[3] >= 0.5)
+                    .step_by(step)
+                    .copied()
+                    .collect();
                 if src.is_empty() {
                     src = work.clone();
                 }
@@ -532,7 +737,10 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
             if transparent {
                 pal.truncate(255);
             }
-            let first = pal.first().copied().ok_or_else(|| other("empty colour table"))?;
+            let first = pal
+                .first()
+                .copied()
+                .ok_or_else(|| other("empty colour table"))?;
             color_table = pal.clone();
             let t = transparent.then(|| {
                 pal.push(first);
@@ -541,7 +749,10 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
             transparent_index = t;
             let idx = quantize_rows(&mut work, w, &pal, st.dither, st.dither_amount, t);
             for (index, color) in &st.color_table_edits {
-                let slot = pal.get_mut(*index).filter(|_| Some(*index) != t).ok_or_else(|| other("colour edit is outside the opaque palette"))?;
+                let slot = pal
+                    .get_mut(*index)
+                    .filter(|_| Some(*index) != t)
+                    .ok_or_else(|| other("colour edit is outside the opaque palette"))?;
                 *slot = *color;
             }
             if preview {
@@ -549,13 +760,19 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
                     .iter()
                     .flat_map(|k| {
                         let c = pal.get(*k as usize).copied().unwrap_or(first);
-                        [c[0], c[1], c[2], if Some(*k as usize) == t { 0 } else { 255 }]
+                        [
+                            c[0],
+                            c[1],
+                            c[2],
+                            if Some(*k as usize) == t { 0 } else { 255 },
+                        ]
                     })
                     .collect();
             }
             let tt = t.map(|v| v as u8);
             let bytes = if st.format == WebFormat::Gif {
-                photocraft_codecs::web::encode_gif_indexed(ww, hh, &idx, &pal, tt, st.interlaced).map_err(e)?
+                photocraft_codecs::web::encode_gif_indexed(ww, hh, &idx, &pal, tt, st.interlaced)
+                    .map_err(e)?
             } else {
                 photocraft_codecs::encode_png_indexed(ww, hh, &idx, &pal, tt, None).map_err(e)?
             };
@@ -565,7 +782,17 @@ pub fn optimize(px: &[[f32; 4]], bw: usize, rect: Rect, st: &WebSettings, icc: O
             (bytes, Some(pal.len()))
         }
     };
-    Ok(Optimized { bytes, ext: st.format.ext(), width: ww, height: hh, colors, color_table, transparent_index, indices, preview: look })
+    Ok(Optimized {
+        bytes,
+        ext: st.format.ext(),
+        width: ww,
+        height: hh,
+        colors,
+        color_table,
+        transparent_index,
+        indices,
+        preview: look,
+    })
 }
 
 /// Nearest palette entry through a lazily filled 6-bit-per-channel inverse colour map: each
@@ -579,7 +806,11 @@ struct InverseMap<'a> {
 
 impl<'a> InverseMap<'a> {
     fn new(pal: &'a [[u8; 3]], t: Option<usize>) -> Self {
-        InverseMap { pal, t, lut: vec![u16::MAX; 1 << 18] }
+        InverseMap {
+            pal,
+            t,
+            lut: vec![u16::MAX; 1 << 18],
+        }
     }
     #[inline]
     fn get(&mut self, c: [f32; 3]) -> usize {
@@ -606,7 +837,8 @@ impl<'a> InverseMap<'a> {
 }
 
 fn hash01(x: usize, y: usize) -> f32 {
-    let mut h = (x as u32).wrapping_mul(0x8da6_b343) ^ (y as u32).wrapping_mul(0xd816_3841) ^ 0x2545_f491;
+    let mut h =
+        (x as u32).wrapping_mul(0x8da6_b343) ^ (y as u32).wrapping_mul(0xd816_3841) ^ 0x2545_f491;
     h ^= h >> 13;
     h = h.wrapping_mul(0x5bd1_e995);
     h ^= h >> 15;
@@ -616,14 +848,29 @@ fn hash01(x: usize, y: usize) -> f32 {
 /// Palette mapping with dithering (Floyd–Steinberg diffusion, 8×8 Bayer pattern, noise), like
 /// `algo::quantize::quantize` but through [`InverseMap`]. `y0` keeps patterns continuous across
 /// bands. Pixels with alpha < ½ take index `t`.
-fn quantize_band(px: &mut [[f32; 4]], w: usize, y0: usize, pal: &[[u8; 3]], dither: Dither, amount: f32, t: Option<usize>) -> Vec<u8> {
+fn quantize_band(
+    px: &mut [[f32; 4]],
+    w: usize,
+    y0: usize,
+    pal: &[[u8; 3]],
+    dither: Dither,
+    amount: f32,
+    t: Option<usize>,
+) -> Vec<u8> {
     let h = px.len() / w.max(1);
     let mut map = InverseMap::new(pal, t);
     let mut idx = vec![0u8; px.len()];
     let opaque_n = pal.len() - usize::from(t.is_some());
     let spread = (1.0 / (opaque_n as f32).cbrt().max(1.0)).min(0.5) * amount.clamp(0.0, 1.0);
     let a = amount.clamp(0.0, 1.0);
-    let mut cur = vec![[0.0f32; 3]; if dither == Dither::Diffusion { w + 2 } else { 0 }];
+    let mut cur = vec![
+        [0.0f32; 3];
+        if dither == Dither::Diffusion {
+            w + 2
+        } else {
+            0
+        }
+    ];
     let mut next = cur.clone();
     for y in 0..h {
         if dither == Dither::Diffusion {
@@ -672,7 +919,14 @@ fn quantize_band(px: &mut [[f32; 4]], w: usize, y0: usize, pal: &[[u8; 3]], dith
 
 /// [`quantize_band`] over the whole image, in parallel bands of 64 rows when the dither is
 /// position-independent. Error diffusion carries error down the image, so it stays sequential.
-fn quantize_rows(px: &mut [[f32; 4]], w: usize, pal: &[[u8; 3]], dither: Dither, amount: f32, t: Option<usize>) -> Vec<u8> {
+fn quantize_rows(
+    px: &mut [[f32; 4]],
+    w: usize,
+    pal: &[[u8; 3]],
+    dither: Dither,
+    amount: f32,
+    t: Option<usize>,
+) -> Vec<u8> {
     let h = px.len() / w.max(1);
     if dither == Dither::Diffusion || h < 128 || cfg!(target_arch = "wasm32") {
         return quantize_band(px, w, 0, pal, dither, amount, t);
@@ -685,7 +939,9 @@ fn quantize_rows(px: &mut [[f32; 4]], w: usize, pal: &[[u8; 3]], dither: Dither,
         px.par_chunks_mut(band)
             .zip(idx.par_chunks_mut(band))
             .enumerate()
-            .for_each(|(i, (p, out))| out.copy_from_slice(&quantize_band(p, w, i * 64, pal, dither, amount, t)));
+            .for_each(|(i, (p, out))| {
+                out.copy_from_slice(&quantize_band(p, w, i * 64, pal, dither, amount, t))
+            });
         idx
     }
     // Single-threaded on wasm (the early return above always takes this path there).
@@ -695,7 +951,16 @@ fn quantize_rows(px: &mut [[f32; 4]], w: usize, pal: &[[u8; 3]], dither: Dither,
 
 /// A file-name-safe slice name.
 fn slice_file(name: &str) -> String {
-    let s: String = name.chars().map(|c| if c.is_alphanumeric() || matches!(c, '-' | '_') { c } else { '_' }).collect();
+    let s: String = name
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || matches!(c, '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     let s = if s.is_empty() { "slice".into() } else { s };
     portable_generated_stem(s)
 }
@@ -703,11 +968,18 @@ fn slice_file(name: &str) -> String {
 /// Generated filenames should remain usable on Windows even when a document or slice is named
 /// after a reserved device. Caller-supplied path components are still rejected below.
 fn portable_generated_stem(stem: String) -> String {
-    if is_windows_device_asset_name(&stem) { format!("{stem}_") } else { stem }
+    if is_windows_device_asset_name(&stem) {
+        format!("{stem}_")
+    } else {
+        stem
+    }
 }
 
 fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// Imported slice URLs are document data. Only ordinary web/contact links and relative links
@@ -723,7 +995,9 @@ fn safe_slice_url(url: &str) -> bool {
     let scheme = url.get(..colon).unwrap_or_default().to_ascii_lowercase();
     let rest = url.get(colon + 1..).unwrap_or_default();
     match scheme.as_str() {
-        "http" | "https" | "ftp" | "ftps" => rest.strip_prefix("//").is_some_and(|host| !host.is_empty() && !host.starts_with('/')),
+        "http" | "https" | "ftp" | "ftps" => rest
+            .strip_prefix("//")
+            .is_some_and(|host| !host.is_empty() && !host.starts_with('/')),
         "mailto" | "tel" => !rest.is_empty(),
         _ => false,
     }
@@ -738,7 +1012,8 @@ fn web_images_folder(images: &str, cmd: &str) -> Result<String> {
     if trimmed.is_empty() {
         return Err(bad(cmd, "imagesFolder must be a relative folder name"));
     }
-    let parts = asset_path_components(trimmed).map_err(|e| bad(cmd, format!("imagesFolder: {e}")))?;
+    let parts =
+        asset_path_components(trimmed).map_err(|e| bad(cmd, format!("imagesFolder: {e}")))?;
     Ok(parts.join("/"))
 }
 
@@ -768,7 +1043,13 @@ fn scale_rect(r: Rect, sx: f64, sy: f64) -> Rect {
 
 /// The HTML table for `cells` (rect, td body) over a `w`×`h` image: one column per distinct x
 /// edge, one row per y edge, colspan/rowspan per slice, and a spacer row fixing column widths.
-fn html_table(title: &str, w: u32, h: u32, cells: &[(Rect, String, String)], spacer: Option<&str>) -> String {
+fn html_table(
+    title: &str,
+    w: u32,
+    h: u32,
+    cells: &[(Rect, String, String)],
+    spacer: Option<&str>,
+) -> String {
     let mut xs: Vec<i32> = cells.iter().flat_map(|(r, _, _)| [r.x0, r.x1]).collect();
     let mut ys: Vec<i32> = cells.iter().flat_map(|(r, _, _)| [r.y0, r.y1]).collect();
     xs.sort_unstable();
@@ -814,14 +1095,22 @@ fn html_table(title: &str, w: u32, h: u32, cells: &[(Rect, String, String)], spa
             s.push_str(&td);
         }
         if let Some(sp) = spacer {
-            s.push_str(&format!("\t\t<td>\n\t\t\t<img src=\"{}\" width=\"1\" height=\"{}\" alt=\"\"></td>\n", html_escape(sp), ys[j + 1] - ys[j]));
+            s.push_str(&format!(
+                "\t\t<td>\n\t\t\t<img src=\"{}\" width=\"1\" height=\"{}\" alt=\"\"></td>\n",
+                html_escape(sp),
+                ys[j + 1] - ys[j]
+            ));
         }
         s.push_str("\t</tr>\n");
     }
     if let Some(sp) = spacer {
         s.push_str("\t<tr>\n");
         for i in 0..nc {
-            s.push_str(&format!("\t\t<td>\n\t\t\t<img src=\"{}\" width=\"{}\" height=\"1\" alt=\"\"></td>\n", html_escape(sp), xs[i + 1] - xs[i]));
+            s.push_str(&format!(
+                "\t\t<td>\n\t\t\t<img src=\"{}\" width=\"{}\" height=\"1\" alt=\"\"></td>\n",
+                html_escape(sp),
+                xs[i + 1] - xs[i]
+            ));
         }
         s.push_str("\t\t<td></td>\n\t</tr>\n");
     }
@@ -838,7 +1127,11 @@ fn save_for_web(s: &mut Session, p: &Value) -> Result<Value> {
 /// The writer receives every image, spacer and HTML file. A write error stops the export;
 /// only a complete export remembers its settings and fires the export event. A custom writer
 /// that targets the local filesystem must enforce its own path confinement.
-pub fn save_for_web_with_writer(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u8]) -> Result<()>) -> Result<Value> {
+pub fn save_for_web_with_writer(
+    s: &mut Session,
+    p: &Value,
+    write: &mut dyn FnMut(&str, &[u8]) -> Result<()>,
+) -> Result<Value> {
     save_for_web_impl(s, p, write, false)
 }
 
@@ -857,7 +1150,12 @@ fn remember_web_settings(s: &mut Session, cmd: &str, settings: &Value) {
     });
 }
 
-fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u8]) -> Result<()>, native_paths: bool) -> Result<Value> {
+fn save_for_web_impl(
+    s: &mut Session,
+    p: &Value,
+    write: &mut dyn FnMut(&str, &[u8]) -> Result<()>,
+    native_paths: bool,
+) -> Result<Value> {
     let cmd = "file.export.saveForWebLegacy";
     if let Some(authorize) = s.authorize {
         authorize(cmd, p)?;
@@ -876,7 +1174,10 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
     let dpi = wdoc.resolution_dpi;
     let all = slices::resolve(&doc);
     let pick = p.get("slices").and_then(Value::as_str).unwrap_or("all");
-    let numbers: Option<Vec<u64>> = p.get("numbers").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).collect());
+    let numbers: Option<Vec<u64>> = p
+        .get("numbers")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).collect());
     let chosen: Vec<&ResolvedSlice> = all
         .iter()
         .filter(|r| match (&numbers, pick) {
@@ -885,8 +1186,14 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
             _ => true,
         })
         .collect();
-    let single = p.get("path").and_then(Value::as_str).filter(|v| !v.is_empty());
-    let dir = p.get("dir").and_then(Value::as_str).filter(|v| !v.is_empty());
+    let single = p
+        .get("path")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty());
+    let dir = p
+        .get("dir")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty());
     let mut last_web = p.clone();
     // A trusted-markup decision applies to this export only, never to another document opened
     // with the dialog's remembered settings.
@@ -895,24 +1202,62 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
     }
     // Estimate only (the dialog's annotations): the whole image, or each chosen slice.
     if single.is_none() && dir.is_none() {
-        let o = optimize(&buf.px, bw, wdoc.bounds(), &st, icc, xmp.as_deref(), dpi, false)?;
+        let o = optimize(
+            &buf.px,
+            bw,
+            wdoc.bounds(),
+            &st,
+            icc,
+            xmp.as_deref(),
+            dpi,
+            false,
+        )?;
         return Ok(
             json!({"format": o.ext, "bytes": o.bytes.len(), "width": o.width, "height": o.height, "colors": o.colors, "colorTable": o.color_table.iter().map(|c| rgb_hex(*c)).collect::<Vec<_>>(), "transparentIndex": o.transparent_index}),
         );
     }
-    if let Some(path) = single.filter(|_| dir.is_none() && (all.len() == 1 || p.get("slices").is_none())) {
-        let o = optimize(&buf.px, bw, wdoc.bounds(), &st, icc, xmp.as_deref(), dpi, false)?;
+    if let Some(path) =
+        single.filter(|_| dir.is_none() && (all.len() == 1 || p.get("slices").is_none()))
+    {
+        let o = optimize(
+            &buf.px,
+            bw,
+            wdoc.bounds(),
+            &st,
+            icc,
+            xmp.as_deref(),
+            dpi,
+            false,
+        )?;
         write(path, &o.bytes)?;
         remember_web_settings(s, cmd, &last_web);
         s.file_menu.last_web = Some(last_web);
         crate::automate_cmds::fire_event(s, "export");
-        return Ok(json!({"files": [path], "bytes": o.bytes.len(), "width": o.width, "height": o.height, "colors": o.colors}));
+        return Ok(
+            json!({"files": [path], "bytes": o.bytes.len(), "width": o.width, "height": o.height, "colors": o.colors}),
+        );
     }
-    let dir =
-        dir.map(str::to_string).or_else(|| single.and_then(|f| std::path::Path::new(f).parent().map(|d| d.to_string_lossy().into_owned()))).unwrap_or_default();
+    let dir = dir
+        .map(str::to_string)
+        .or_else(|| {
+            single.and_then(|f| {
+                std::path::Path::new(f)
+                    .parent()
+                    .map(|d| d.to_string_lossy().into_owned())
+            })
+        })
+        .unwrap_or_default();
     let html = p.get("html").and_then(Value::as_bool).unwrap_or(false);
-    let images = web_images_folder(p.get("imagesFolder").and_then(Value::as_str).unwrap_or("images"), cmd)?;
-    let trusted_slice_html = p.get("trustedSliceHtml").and_then(Value::as_bool).unwrap_or(false);
+    let images = web_images_folder(
+        p.get("imagesFolder")
+            .and_then(Value::as_str)
+            .unwrap_or("images"),
+        cmd,
+    )?;
+    let trusted_slice_html = p
+        .get("trustedSliceHtml")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let base = portable_generated_stem(single.map(stem).unwrap_or_else(|| slices::base_name(&doc)));
     let mut files = Vec::new();
     let mut cells: Vec<(Rect, String, String)> = Vec::new();
@@ -934,7 +1279,9 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
         name
     };
     // Stacking order: later stored slices are on top (auto slices never overlap anything).
-    let z = |r: &ResolvedSlice| r.id.and_then(|id| doc.slices.list.iter().position(|sl| sl.id == id));
+    let z = |r: &ResolvedSlice| {
+        r.id.and_then(|id| doc.slices.list.iter().position(|sl| sl.id == id))
+    };
     for r in &chosen {
         let rect = scale_rect(r.rect, sx, sy).intersect(&wdoc.bounds());
         if rect.is_empty() {
@@ -943,7 +1290,11 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
         // In the HTML table a slice shows only where no slice above covers it; that visible part
         // is cut into rectangles, each its own cell (and image), as Photoshop's subslices.
         let pieces = if html {
-            let above: Vec<Rect> = chosen.iter().filter(|o| z(o) > z(r)).map(|o| scale_rect(o.rect, sx, sy).intersect(&wdoc.bounds())).collect();
+            let above: Vec<Rect> = chosen
+                .iter()
+                .filter(|o| z(o) > z(r))
+                .map(|o| scale_rect(o.rect, sx, sy).intersect(&wdoc.bounds()))
+                .collect();
             slices::auto_slices(rect, &above)
         } else {
             vec![rect]
@@ -955,26 +1306,57 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
                 let text = if k > 0 {
                     String::new()
                 } else {
-                    stored.map(|s| if trusted_slice_html && s.cell_text_is_html { s.cell_text.clone() } else { html_escape(&s.cell_text) }).unwrap_or_default()
+                    stored
+                        .map(|s| {
+                            if trusted_slice_html && s.cell_text_is_html {
+                                s.cell_text.clone()
+                            } else {
+                                html_escape(&s.cell_text)
+                            }
+                        })
+                        .unwrap_or_default()
                 };
-                let bg = stored.and_then(|s| s.background).map(|c| format!(" bgcolor=\"#{:02X}{:02X}{:02X}\"", c[1], c[2], c[3])).unwrap_or_default();
+                let bg = stored
+                    .and_then(|s| s.background)
+                    .map(|c| format!(" bgcolor=\"#{:02X}{:02X}{:02X}\"", c[1], c[2], c[3]))
+                    .unwrap_or_default();
                 cells.push((piece, bg, text));
                 continue;
             }
             let o = optimize(&buf.px, bw, piece, &st, icc, xmp.as_deref(), dpi, false)?;
-            let stem = if split { format!("{}_{:02}", slice_file(&r.name), k + 1) } else { slice_file(&r.name) };
+            let stem = if split {
+                format!("{}_{:02}", slice_file(&r.name), k + 1)
+            } else {
+                slice_file(&r.name)
+            };
             let name = unique(&stem, o.ext);
-            let rel = if images.is_empty() { name.clone() } else { format!("{images}/{name}") };
+            let rel = if images.is_empty() {
+                name.clone()
+            } else {
+                format!("{images}/{name}")
+            };
             let out = join(&dir, &rel);
             write(&web_derived_path(&dir, &rel, native_paths)?, &o.bytes)?;
             total += o.bytes.len();
             files.push(out);
             let alt = stored.map_or(String::new(), |s| html_escape(&s.alt));
-            let img = format!("\n\t\t\t<img src=\"{}\" width=\"{}\" height=\"{}\" alt=\"{alt}\">", html_escape(&rel), piece.width(), piece.height());
+            let img = format!(
+                "\n\t\t\t<img src=\"{}\" width=\"{}\" height=\"{}\" alt=\"{alt}\">",
+                html_escape(&rel),
+                piece.width(),
+                piece.height()
+            );
             let body = match stored.filter(|s| safe_slice_url(&s.url)) {
                 Some(s) => {
-                    let target = if s.target.is_empty() { String::new() } else { format!(" target=\"{}\"", html_escape(&s.target)) };
-                    format!("\n\t\t\t<a href=\"{}\"{target}>{img}</a>", html_escape(&s.url))
+                    let target = if s.target.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" target=\"{}\"", html_escape(&s.target))
+                    };
+                    format!(
+                        "\n\t\t\t<a href=\"{}\"{target}>{img}</a>",
+                        html_escape(&s.url)
+                    )
                 }
                 None => img,
             };
@@ -984,20 +1366,45 @@ fn save_for_web_impl(s: &mut Session, p: &Value, write: &mut dyn FnMut(&str, &[u
     let mut html_path = None;
     if html {
         let grid = cells.len() > 1;
-        let spacer = grid.then(|| if images.is_empty() { "spacer.gif".to_string() } else { format!("{images}/spacer.gif") });
+        let spacer = grid.then(|| {
+            if images.is_empty() {
+                "spacer.gif".to_string()
+            } else {
+                format!("{images}/spacer.gif")
+            }
+        });
         if let Some(sp) = &spacer {
-            let gif = photocraft_codecs::web::encode_gif_indexed(1, 1, &[0], &[[0, 0, 0]], Some(0), false).map_err(other)?;
+            let gif = photocraft_codecs::web::encode_gif_indexed(
+                1,
+                1,
+                &[0],
+                &[[0, 0, 0]],
+                Some(0),
+                false,
+            )
+            .map_err(other)?;
             write(&web_derived_path(&dir, sp, native_paths)?, &gif)?;
         }
-        let page = html_table(&base, wdoc.size.width, wdoc.size.height, &cells, spacer.as_deref());
+        let page = html_table(
+            &base,
+            wdoc.size.width,
+            wdoc.size.height,
+            &cells,
+            spacer.as_deref(),
+        );
         let hp = join(&dir, &format!("{base}.html"));
-        write(&web_derived_path(&dir, &format!("{base}.html"), native_paths)?, page.as_bytes())?;
+        write(
+            &web_derived_path(&dir, &format!("{base}.html"), native_paths)?,
+            page.as_bytes(),
+        )?;
         html_path = Some(hp);
     }
     remember_web_settings(s, cmd, &last_web);
     s.file_menu.last_web = Some(last_web);
     crate::automate_cmds::fire_event(s, "export");
-    Ok(json!({"files": files, "html": html_path, "bytes": total, "slices": chosen.len(), "width": wdoc.size.width, "height": wdoc.size.height}))
+    Ok(
+        json!({"files": files, "html": html_path, "bytes": total, "slices": chosen.len(), "width": wdoc.size.width, "height": wdoc.size.height}),
+    )
 }
 
 // ---------- Export Preferences / Quick Export ----------
@@ -1019,7 +1426,8 @@ fn export_preferences(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if !values.is_empty() {
-        s.execute("prefs.set", json!({"values": values})).map_err(|e| bad(cmd, e.to_string()))?;
+        s.execute("prefs.set", json!({"values": values}))
+            .map_err(|e| bad(cmd, e.to_string()))?;
     }
     Ok(json!({"section": "export", "values": s.prefs().get("export").unwrap_or(Value::Null)}))
 }
@@ -1029,23 +1437,44 @@ fn export_preferences(s: &mut Session, p: &Value) -> Result<Value> {
 fn quick_export(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "file.export.quickExport";
     let prefs = s.prefs().export.clone();
-    let fmt = serde_json::to_value(prefs.quick_export_format).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_else(|| "png".into());
+    let fmt = serde_json::to_value(prefs.quick_export_format)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_else(|| "png".into());
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let doc = d.doc.clone();
-    let path = match p.get("path").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    let path = match p
+        .get("path")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         Some(v) => v.to_string(),
         None => {
-            let same = serde_json::to_value(prefs.quick_export_location).ok().and_then(|v| v.as_str().map(str::to_string)).is_some_and(|v| v == "sameFolder");
+            let same = serde_json::to_value(prefs.quick_export_location)
+                .ok()
+                .and_then(|v| v.as_str().map(str::to_string))
+                .is_some_and(|v| v == "sameFolder");
             match (&d.path, same) {
                 (Some(dp), true) => {
-                    let dir = std::path::Path::new(dp).parent().map(|d| d.to_string_lossy().into_owned()).unwrap_or_default();
+                    let dir = std::path::Path::new(dp)
+                        .parent()
+                        .map(|d| d.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     join(&dir, &format!("{}.{fmt}", stem(dp)))
                 }
-                _ => return Err(bad(cmd, "missing `path` (Export Preferences › Location is \"ask\", or the document was never saved)")),
+                _ => {
+                    return Err(bad(
+                        cmd,
+                        "missing `path` (Export Preferences › Location is \"ask\", or the document was never saved)",
+                    ));
+                }
             }
         }
     };
-    let metadata = serde_json::to_value(prefs.metadata).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
+    let metadata = serde_json::to_value(prefs.metadata)
+        .ok()
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_default();
     let mut o = serde_json::Map::new();
     o.insert(
         "metadata".into(),
@@ -1072,8 +1501,19 @@ fn quick_export(s: &mut Session, p: &Value) -> Result<Value> {
             // WebP uses the regular exporter. Its optional quality is in the Photoshop-style
             // 0–12 save scale: invert that mapping so the codec receives the chosen 1–100.
             // Keeping quality absent preserves the historical lossless Quick Export behavior.
-            let (wdoc, _, _) = web_document(&doc, &json!({}), &WebSettings { convert_to_srgb: prefs.convert_to_srgb, ..Default::default() })?;
-            let quality = if prefs.webp_lossless { None } else { Some((f64::from(prefs.webp_quality.clamp(1, 100)) - 1.0) * 12.0 / 99.0) };
+            let (wdoc, _, _) = web_document(
+                &doc,
+                &json!({}),
+                &WebSettings {
+                    convert_to_srgb: prefs.convert_to_srgb,
+                    ..Default::default()
+                },
+            )?;
+            let quality = if prefs.webp_lossless {
+                None
+            } else {
+                Some((f64::from(prefs.webp_quality.clamp(1, 100)) - 1.0) * 12.0 / 99.0)
+            };
             let warnings = crate::file_cmds::save_doc(&wdoc, &path, quality)?;
             crate::automate_cmds::fire_event(s, "export");
             return Ok(json!({"path": path, "format": fmt, "warnings": warnings}));
@@ -1145,19 +1585,31 @@ fn unit_px(tok: &str, dpi: f64) -> Option<Option<f64>> {
     } else {
         (tok, 1.0)
     };
-    num.trim().parse::<f64>().ok().filter(|v| *v > 0.0).map(|v| Some(v * k))
+    num.trim()
+        .parse::<f64>()
+        .ok()
+        .filter(|v| *v > 0.0)
+        .map(|v| Some(v * k))
 }
 
 /// `200%` or `WxH` (units px/in/cm/mm, `?` wildcard) at the start of `item`; returns the size and
 /// the rest.
 fn parse_size(item: &str, dpi: f64) -> (Option<f64>, Option<f64>, Option<f64>, &str) {
     let item = item.trim();
-    let (first, rest) = item.split_once(char::is_whitespace).map_or((item, ""), |(a, b)| (a, b.trim()));
-    if let Some(pc) = first.strip_suffix('%').and_then(|n| n.parse::<f64>().ok()).filter(|v| *v > 0.0) {
+    let (first, rest) = item
+        .split_once(char::is_whitespace)
+        .map_or((item, ""), |(a, b)| (a, b.trim()));
+    if let Some(pc) = first
+        .strip_suffix('%')
+        .and_then(|n| n.parse::<f64>().ok())
+        .filter(|v| *v > 0.0)
+    {
         return (Some(pc / 100.0), None, None, rest);
     }
     // "100x50", "2in x 1in", "?x100"
-    if let Some((w, h)) = first.split_once(['x', 'X']).filter(|(w, h)| !w.is_empty() && !h.is_empty())
+    if let Some((w, h)) = first
+        .split_once(['x', 'X'])
+        .filter(|(w, h)| !w.is_empty() && !h.is_empty())
         && let (Some(w), Some(h)) = (unit_px(w, dpi), unit_px(h, dpi))
     {
         return (None, w, h, rest);
@@ -1180,12 +1632,17 @@ pub fn parse_asset_name(name: &str, dpi: f64) -> Vec<AssetSpec> {
     for item in name.split([',', '+']) {
         let (scale, width, height, rest) = parse_size(item, dpi);
         let file = rest.trim();
-        let Some((stem_part, ext)) = file.rsplit_once('.') else { continue };
+        let Some((stem_part, ext)) = file.rsplit_once('.') else {
+            continue;
+        };
         if stem_part.is_empty() {
             continue;
         }
         let ext_l = ext.to_ascii_lowercase();
-        let (format, quality, out_ext) = if let Some(q) = ext_l.strip_prefix("jpeg").or_else(|| ext_l.strip_prefix("jpg")) {
+        let (format, quality, out_ext) = if let Some(q) = ext_l
+            .strip_prefix("jpeg")
+            .or_else(|| ext_l.strip_prefix("jpg"))
+        {
             let q = q.trim();
             let quality = if q.is_empty() {
                 None
@@ -1198,7 +1655,15 @@ pub fn parse_asset_name(name: &str, dpi: f64) -> Vec<AssetSpec> {
             if !q.is_empty() && quality.is_none() {
                 continue;
             }
-            ("jpg".to_string(), quality, if ext_l.starts_with("jpeg") { "jpeg" } else { "jpg" })
+            (
+                "jpg".to_string(),
+                quality,
+                if ext_l.starts_with("jpeg") {
+                    "jpeg"
+                } else {
+                    "jpg"
+                },
+            )
         } else {
             match ext_l.as_str() {
                 "png" | "png32" => ("png32".to_string(), None, "png"),
@@ -1209,7 +1674,14 @@ pub fn parse_asset_name(name: &str, dpi: f64) -> Vec<AssetSpec> {
                 _ => continue,
             }
         };
-        out.push(AssetSpec { file: format!("{stem_part}.{out_ext}"), format, quality, scale, width, height });
+        out.push(AssetSpec {
+            file: format!("{stem_part}.{out_ext}"),
+            format,
+            quality,
+            scale,
+            width,
+            height,
+        });
     }
     out
 }
@@ -1228,30 +1700,78 @@ pub fn parse_defaults(name: &str, dpi: f64) -> Option<Vec<AssetDefault>> {
             Some(i) => (tail[..=i].to_string(), tail[i + 1..].to_string()),
             None => (String::new(), tail.to_string()),
         };
-        if scale.is_none() && width.is_none() && height.is_none() && folder.is_empty() && suffix.is_empty() {
+        if scale.is_none()
+            && width.is_none()
+            && height.is_none()
+            && folder.is_empty()
+            && suffix.is_empty()
+        {
             continue;
         }
-        v.push(AssetDefault { scale, width, height, folder, suffix });
+        v.push(AssetDefault {
+            scale,
+            width,
+            height,
+            folder,
+            suffix,
+        });
     }
     Some(v)
 }
 
 fn asset_settings(spec: &AssetSpec) -> WebSettings {
-    let base = WebSettings { transparency: true, matte: None, metadata: WebMetadata::None, ..WebSettings::default() };
+    let base = WebSettings {
+        transparency: true,
+        matte: None,
+        metadata: WebMetadata::None,
+        ..WebSettings::default()
+    };
     match spec.format.as_str() {
-        "jpg" => WebSettings { format: WebFormat::Jpeg, quality: spec.quality.unwrap_or(90), matte: Some([1.0, 1.0, 1.0]), ..base },
-        "png8" => WebSettings { format: WebFormat::Png8, dither: Dither::None, ..base },
-        "png24" => WebSettings { format: WebFormat::Png24, transparency: false, matte: Some([1.0, 1.0, 1.0]), ..base },
-        "gif" => WebSettings { format: WebFormat::Gif, dither: Dither::None, ..base },
-        _ => WebSettings { format: WebFormat::Png24, ..base },
+        "jpg" => WebSettings {
+            format: WebFormat::Jpeg,
+            quality: spec.quality.unwrap_or(90),
+            matte: Some([1.0, 1.0, 1.0]),
+            ..base
+        },
+        "png8" => WebSettings {
+            format: WebFormat::Png8,
+            dither: Dither::None,
+            ..base
+        },
+        "png24" => WebSettings {
+            format: WebFormat::Png24,
+            transparency: false,
+            matte: Some([1.0, 1.0, 1.0]),
+            ..base
+        },
+        "gif" => WebSettings {
+            format: WebFormat::Gif,
+            dither: Dither::None,
+            ..base
+        },
+        _ => WebSettings {
+            format: WebFormat::Png24,
+            ..base
+        },
     }
 }
 
 fn is_windows_device_asset_name(component: &str) -> bool {
-    let stem = component.split('.').next().unwrap_or(component).trim_end_matches(' ').to_ascii_uppercase();
-    matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL" | "CLOCK$" | "CONIN$" | "CONOUT$")
-        || stem.strip_prefix("COM").is_some_and(|n| matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"))
-        || stem.strip_prefix("LPT").is_some_and(|n| matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"))
+    let stem = component
+        .split('.')
+        .next()
+        .unwrap_or(component)
+        .trim_end_matches(' ')
+        .to_ascii_uppercase();
+    matches!(
+        stem.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CLOCK$" | "CONIN$" | "CONOUT$"
+    ) || stem
+        .strip_prefix("COM")
+        .is_some_and(|n| matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"))
+        || stem
+            .strip_prefix("LPT")
+            .is_some_and(|n| matches!(n, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"))
 }
 
 /// Layer names and `default` folders are document data, so reject unsafe output components.
@@ -1269,7 +1789,9 @@ fn asset_path_components(relative: &str) -> Result<Vec<&str>> {
             || part.contains('\0')
             || is_windows_device_asset_name(part)
         {
-            return Err(other(format!("asset path {relative:?} has an unsafe component {part:?}")));
+            return Err(other(format!(
+                "asset path {relative:?} has an unsafe component {part:?}"
+            )));
         }
         parts.push(part);
     }
@@ -1289,42 +1811,61 @@ fn asset_output_path(dir: &str, relative: &str) -> Result<(String, String)> {
     for part in &parts {
         reported.push(part);
     }
-    let file = parts.pop().ok_or_else(|| other(format!("asset path {relative:?} is empty")))?;
+    let file = parts
+        .pop()
+        .ok_or_else(|| other(format!("asset path {relative:?} is empty")))?;
     let chosen_root: std::path::PathBuf = std::path::Path::new(dir).components().collect();
-    std::fs::create_dir_all(&chosen_root).map_err(|e| other(format!("asset output directory {dir:?}: {e}")))?;
+    std::fs::create_dir_all(&chosen_root)
+        .map_err(|e| other(format!("asset output directory {dir:?}: {e}")))?;
     // The caller chose this root, so a symlink to an existing directory is intentional. All
     // document-derived components below it are checked against its canonical target.
-    let root = std::fs::canonicalize(&chosen_root).map_err(|e| other(format!("asset output directory {dir:?}: {e}")))?;
+    let root = std::fs::canonicalize(&chosen_root)
+        .map_err(|e| other(format!("asset output directory {dir:?}: {e}")))?;
     let mut parent = root.clone();
     for part in parts {
         parent.push(part);
         match std::fs::symlink_metadata(&parent) {
             Ok(meta) if meta.file_type().is_symlink() => {
-                return Err(other(format!("asset path {relative:?} crosses a symlink at {}", parent.display())));
+                return Err(other(format!(
+                    "asset path {relative:?} crosses a symlink at {}",
+                    parent.display()
+                )));
             }
             Ok(meta) if !meta.is_dir() => {
-                return Err(other(format!("asset path {relative:?} has a non-directory at {}", parent.display())));
+                return Err(other(format!(
+                    "asset path {relative:?} has a non-directory at {}",
+                    parent.display()
+                )));
             }
             Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                std::fs::create_dir(&parent).map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
+                std::fs::create_dir(&parent)
+                    .map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
             }
             Err(e) => return Err(other(format!("asset folder {}: {e}", parent.display()))),
         }
-        let actual = std::fs::canonicalize(&parent).map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
+        let actual = std::fs::canonicalize(&parent)
+            .map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
         if !actual.starts_with(&root) {
-            return Err(other(format!("asset path {relative:?} escapes output directory {dir:?}")));
+            return Err(other(format!(
+                "asset path {relative:?} escapes output directory {dir:?}"
+            )));
         }
         parent = actual;
     }
-    let parent = std::fs::canonicalize(&parent).map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
+    let parent = std::fs::canonicalize(&parent)
+        .map_err(|e| other(format!("asset folder {}: {e}", parent.display())))?;
     if !parent.starts_with(&root) {
-        return Err(other(format!("asset path {relative:?} escapes output directory {dir:?}")));
+        return Err(other(format!(
+            "asset path {relative:?} escapes output directory {dir:?}"
+        )));
     }
     let output = parent.join(file);
     match std::fs::symlink_metadata(&output) {
         Ok(meta) if meta.file_type().is_symlink() => {
-            return Err(other(format!("asset path {relative:?} points to a symlink")));
+            return Err(other(format!(
+                "asset path {relative:?} points to a symlink"
+            )));
         }
         Ok(meta) if !meta.is_file() => {
             return Err(other(format!("asset path {relative:?} is not a file")));
@@ -1333,7 +1874,10 @@ fn asset_output_path(dir: &str, relative: &str) -> Result<(String, String)> {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
         Err(e) => return Err(other(format!("asset path {relative:?}: {e}"))),
     }
-    Ok((output.to_string_lossy().into_owned(), reported.to_string_lossy().into_owned()))
+    Ok((
+        output.to_string_lossy().into_owned(),
+        reported.to_string_lossy().into_owned(),
+    ))
 }
 
 /// Exports every asset named by `doc`'s layers into `dir`. Returns (files, errors).
@@ -1362,7 +1906,10 @@ pub fn generate_assets(doc: &Document, dir: &str) -> (Vec<String>, Vec<Value>) {
     for (id, spec) in &jobs {
         for v in &variants {
             let r = (|| -> Result<String> {
-                let (name_stem, ext) = spec.file.rsplit_once('.').unwrap_or((spec.file.as_str(), "png"));
+                let (name_stem, ext) = spec
+                    .file
+                    .rsplit_once('.')
+                    .unwrap_or((spec.file.as_str(), "png"));
                 let rel = format!("{}{}{}.{ext}", v.folder, name_stem, v.suffix);
                 asset_path_components(&rel)?;
                 let mut one = crate::layer_menu_cmds::layer_document(doc, *id)?;
@@ -1388,14 +1935,30 @@ pub fn generate_assets(doc: &Document, dir: &str) -> (Vec<String>, Vec<Value>) {
                 }
                 let st = asset_settings(spec);
                 let p = json!({"width": tw.round().max(1.0), "height": th.round().max(1.0)});
-                let (wdoc, _, _) = web_document(&one, &p, &WebSettings { convert_to_srgb: true, ..st.clone() })?;
+                let (wdoc, _, _) = web_document(
+                    &one,
+                    &p,
+                    &WebSettings {
+                        convert_to_srgb: true,
+                        ..st.clone()
+                    },
+                )?;
                 if spec.format == "webp" {
                     let (out, reported) = asset_output_path(dir, &rel)?;
                     crate::file_cmds::save_doc(&wdoc, &out, None)?;
                     return Ok(reported);
                 }
                 let buf = photocraft_compose::flatten(&wdoc);
-                let o = optimize(&buf.px, wdoc.size.width as usize, wdoc.bounds(), &st, None, None, wdoc.resolution_dpi, false)?;
+                let o = optimize(
+                    &buf.px,
+                    wdoc.size.width as usize,
+                    wdoc.bounds(),
+                    &st,
+                    None,
+                    None,
+                    wdoc.resolution_dpi,
+                    false,
+                )?;
                 let (out, reported) = asset_output_path(dir, &rel)?;
                 write_file(&out, &o.bytes)?;
                 Ok(reported)
@@ -1412,7 +1975,10 @@ pub fn generate_assets(doc: &Document, dir: &str) -> (Vec<String>, Vec<Value>) {
 /// `<document folder>/<document name>-assets`.
 pub fn assets_dir(doc_path: &str) -> String {
     let p = std::path::Path::new(doc_path);
-    let dir = p.parent().map(|d| d.to_string_lossy().into_owned()).unwrap_or_default();
+    let dir = p
+        .parent()
+        .map(|d| d.to_string_lossy().into_owned())
+        .unwrap_or_default();
     join(&dir, &format!("{}-assets", stem(doc_path)))
 }
 
@@ -1429,7 +1995,11 @@ fn image_assets(s: &mut Session, p: &Value) -> Result<Value> {
         s.file_menu.image_assets.retain(|x| *x != id);
     }
     let d = s.active().ok_or(EngineError::NoDocument)?;
-    let dir = p.get("dir").and_then(Value::as_str).map(str::to_string).or_else(|| d.path.as_deref().map(assets_dir));
+    let dir = p
+        .get("dir")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| d.path.as_deref().map(assets_dir));
     if !on {
         return Ok(json!({"enabled": false}));
     }
@@ -1438,7 +2008,9 @@ fn image_assets(s: &mut Session, p: &Value) -> Result<Value> {
             let (files, errors) = generate_assets(&d.doc, &dir);
             Ok(json!({"enabled": true, "dir": dir, "files": files, "errors": errors}))
         }
-        _ => Ok(json!({"enabled": true, "dir": null, "files": [], "note": "assets are written when the document is saved"})),
+        _ => Ok(
+            json!({"enabled": true, "dir": null, "files": [], "note": "assets are written when the document is saved"}),
+        ),
     }
 }
 
@@ -1456,11 +2028,22 @@ pub fn on_saved(s: &Session, index: usize) -> Option<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     macro_rules! spec {
         ($id:expr, $label:expr, $menu:expr, $sc:expr, $params:expr, $enabled:expr, $run:expr) => {
-            CommandSpec { id: $id, label: $label, menu: $menu, shortcut: $sc, params: $params, enabled: $enabled, journal: true, run: $run }
+            CommandSpec {
+                id: $id,
+                label: $label,
+                menu: $menu,
+                shortcut: $sc,
+                params: $params,
+                enabled: $enabled,
+                journal: true,
+                run: $run,
+            }
         };
     }
     fn has_doc(s: &Session) -> std::result::Result<(), String> {
-        s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+        s.active()
+            .map(|_| ())
+            .ok_or_else(|| "no document open".into())
     }
     vec![
         spec!(

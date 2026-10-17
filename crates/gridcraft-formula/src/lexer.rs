@@ -57,9 +57,21 @@ fn is_word_char(c: char) -> bool {
 /// reference and not a name ending in a dot.
 fn is_range_end(w: &str) -> bool {
     let s = w.strip_prefix('$').unwrap_or(w);
-    let (letters, rest) = s.split_at(s.find(|c: char| !c.is_ascii_alphabetic()).unwrap_or(s.len()));
-    let digits = if letters.is_empty() { rest } else { rest.strip_prefix('$').unwrap_or(rest) };
-    letters.len() <= 3 && if digits.is_empty() { !letters.is_empty() && rest.is_empty() } else { digits.bytes().all(|b| b.is_ascii_digit()) }
+    let (letters, rest) = s.split_at(
+        s.find(|c: char| !c.is_ascii_alphabetic())
+            .unwrap_or(s.len()),
+    );
+    let digits = if letters.is_empty() {
+        rest
+    } else {
+        rest.strip_prefix('$').unwrap_or(rest)
+    };
+    letters.len() <= 3
+        && if digits.is_empty() {
+            !letters.is_empty() && rest.is_empty()
+        } else {
+            digits.bytes().all(|b| b.is_ascii_digit())
+        }
 }
 
 /// Whether `c` can start the second end of a range after `:.` (`A1:.E10`, `A:.$C`, `1:.5`).
@@ -84,7 +96,13 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
     while i < n {
         let start = pos_of(i);
         let Some(c) = ch(i) else { break };
-        let push = |out: &mut Vec<Token>, tok: Tok, end_i: usize| out.push(Token { tok, start, end: pos_of(end_i) });
+        let push = |out: &mut Vec<Token>, tok: Tok, end_i: usize| {
+            out.push(Token {
+                tok,
+                start,
+                end: pos_of(end_i),
+            })
+        };
         match c {
             ' ' | '\t' | '\n' | '\r' => {
                 let mut j = i;
@@ -99,7 +117,12 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 let mut j = i + 1;
                 loop {
                     match ch(j) {
-                        None => return Err(LexError { msg: "unterminated text".into(), pos: start }),
+                        None => {
+                            return Err(LexError {
+                                msg: "unterminated text".into(),
+                                pos: start,
+                            });
+                        }
                         Some('"') if ch(j + 1) == Some('"') => {
                             s.push('"');
                             j += 2;
@@ -123,7 +146,12 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 let mut j = i + 1;
                 loop {
                     match ch(j) {
-                        None => return Err(LexError { msg: "unterminated sheet name".into(), pos: start }),
+                        None => {
+                            return Err(LexError {
+                                msg: "unterminated sheet name".into(),
+                                pos: start,
+                            });
+                        }
                         Some('\'') if ch(j + 1) == Some('\'') => {
                             s.push('\'');
                             j += 2;
@@ -139,7 +167,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                     }
                 }
                 if ch(j) != Some('!') {
-                    return Err(LexError { msg: "expected ! after sheet name".into(), pos: pos_of(j) });
+                    return Err(LexError {
+                        msg: "expected ! after sheet name".into(),
+                        pos: pos_of(j),
+                    });
                 }
                 let (a, b) = match s.split_once(':') {
                     Some((a, b)) => (a.to_string(), Some(b.to_string())),
@@ -148,7 +179,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 push(&mut out, Tok::Sheet(a, b), j + 1);
                 i = j + 1;
             }
-            '#' if out.last().is_some_and(|t: &Token| t.end == start && matches!(t.tok, Tok::Word(_))) => {
+            '#' if out
+                .last()
+                .is_some_and(|t: &Token| t.end == start && matches!(t.tok, Tok::Word(_))) =>
+            {
                 // Spill range operator right after a reference: `A1#`.
                 push(&mut out, Tok::Op("#"), i + 1);
                 i += 1;
@@ -159,12 +193,21 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 let mut found = None;
                 for e in CellError::ALL {
                     let t = e.as_str();
-                    if rest.len() >= t.len() && rest.get(..t.len()).is_some_and(|p| p.eq_ignore_ascii_case(t)) {
+                    if rest.len() >= t.len()
+                        && rest
+                            .get(..t.len())
+                            .is_some_and(|p| p.eq_ignore_ascii_case(t))
+                    {
                         found = Some(e);
                         break;
                     }
                 }
-                let Some(e) = found else { return Err(LexError { msg: "unknown error literal".into(), pos: start }) };
+                let Some(e) = found else {
+                    return Err(LexError {
+                        msg: "unknown error literal".into(),
+                        pos: start,
+                    });
+                };
                 let len = e.as_str().chars().count();
                 // `#REF!A1` style is not valid; `#REF!` is an error literal.
                 push(&mut out, Tok::Error(e), i + len);
@@ -176,7 +219,12 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 let mut j = i;
                 loop {
                     match ch(j) {
-                        None => return Err(LexError { msg: "unbalanced [".into(), pos: start }),
+                        None => {
+                            return Err(LexError {
+                                msg: "unbalanced [".into(),
+                                pos: start,
+                            });
+                        }
                         Some('\'') => j += 2, // escape char inside struct refs
                         Some('[') => {
                             depth += 1;
@@ -192,7 +240,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                         Some(_) => j += 1,
                     }
                 }
-                let inner = src.get(pos_of(i + 1)..pos_of(j.saturating_sub(1))).unwrap_or("").to_string();
+                let inner = src
+                    .get(pos_of(i + 1)..pos_of(j.saturating_sub(1)))
+                    .unwrap_or("")
+                    .to_string();
                 push(&mut out, Tok::Struct(inner), j);
                 i = j;
             }
@@ -206,7 +257,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                     i += 2;
                 }
             }
-            c if c.is_ascii_digit() || (c == locale.decimal_separator() && ch(i + 1).is_some_and(|d| d.is_ascii_digit())) => {
+            c if c.is_ascii_digit()
+                || (c == locale.decimal_separator()
+                    && ch(i + 1).is_some_and(|d| d.is_ascii_digit())) =>
+            {
                 // Number, unless it is a row range like 1:3 (handled by parser via Word) — numbers
                 // followed by ':' and digits are row refs: lex as Word.
                 let mut j = i;
@@ -232,7 +286,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 };
                 // A word like "1A" can't happen in valid formulas; numbers then.
                 if is_row_ref {
-                    let w: String = chars.get(i..j).map(|s| s.iter().map(|c| c.1).collect()).unwrap_or_default();
+                    let w: String = chars
+                        .get(i..j)
+                        .map(|s| s.iter().map(|c| c.1).collect())
+                        .unwrap_or_default();
                     push(&mut out, Tok::Word(w), j);
                     i = j;
                     continue;
@@ -259,7 +316,10 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 let v: f64 = text
                     .replace(locale.decimal_separator(), ".")
                     .parse()
-                    .map_err(|_| LexError { msg: format!("bad number `{text}`"), pos: start })?;
+                    .map_err(|_| LexError {
+                        msg: format!("bad number `{text}`"),
+                        pos: start,
+                    })?;
                 push(&mut out, Tok::Number(v), j);
                 i = j;
             }
@@ -281,7 +341,9 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 push(&mut out, Tok::RBrace, i + 1);
                 i += 1;
             }
-            c if (array_depth == 0 && c == locale.list_separator()) || (array_depth > 0 && c == locale.array_column_separator()) => {
+            c if (array_depth == 0 && c == locale.list_separator())
+                || (array_depth > 0 && c == locale.array_column_separator()) =>
+            {
                 push(&mut out, Tok::Comma, i + 1);
                 i += 1;
             }
@@ -327,26 +389,40 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
             }
             c if is_word_char(c) => {
                 let mut j = i;
-                while ch(j).is_some_and(|c| is_word_char(c) && !(array_depth > 0 && c == locale.array_column_separator())) {
+                while ch(j).is_some_and(|c| {
+                    is_word_char(c) && !(array_depth > 0 && c == locale.array_column_separator())
+                }) {
                     j += 1;
                 }
-                let w: String = chars.get(i..j).map(|s| s.iter().map(|c| c.1).collect()).unwrap_or_default();
+                let w: String = chars
+                    .get(i..j)
+                    .map(|s| s.iter().map(|c| c.1).collect())
+                    .unwrap_or_default();
                 if ch(j) == Some('!') {
                     push(&mut out, Tok::Sheet(w, None), j + 1);
                     i = j + 1;
                 } else if ch(j) == Some(':') && {
                     // Sheet1:Sheet3!A1 — look ahead for word then '!'
                     let mut k = j + 1;
-                    while ch(k).is_some_and(|c| is_word_char(c) && !(array_depth > 0 && c == locale.array_column_separator())) {
+                    while ch(k).is_some_and(|c| {
+                        is_word_char(c)
+                            && !(array_depth > 0 && c == locale.array_column_separator())
+                    }) {
                         k += 1;
                     }
                     k > j + 1 && ch(k) == Some('!')
                 } {
                     let mut k = j + 1;
-                    while ch(k).is_some_and(|c| is_word_char(c) && !(array_depth > 0 && c == locale.array_column_separator())) {
+                    while ch(k).is_some_and(|c| {
+                        is_word_char(c)
+                            && !(array_depth > 0 && c == locale.array_column_separator())
+                    }) {
                         k += 1;
                     }
-                    let w2: String = chars.get(j + 1..k).map(|s| s.iter().map(|c| c.1).collect()).unwrap_or_default();
+                    let w2: String = chars
+                        .get(j + 1..k)
+                        .map(|s| s.iter().map(|c| c.1).collect())
+                        .unwrap_or_default();
                     push(&mut out, Tok::Sheet(w, Some(w2)), k + 1);
                     i = k + 1;
                 } else if ch(j) == Some('(') {
@@ -358,7 +434,11 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                 } else if w.eq_ignore_ascii_case("FALSE") && ch(j) != Some('[') {
                     push(&mut out, Tok::Bool(false), j);
                     i = j;
-                } else if w.len() > 1 && w.ends_with('.') && ch(j) == Some(':') && is_range_end(w.get(..w.len() - 1).unwrap_or("")) {
+                } else if w.len() > 1
+                    && w.ends_with('.')
+                    && ch(j) == Some(':')
+                    && is_range_end(w.get(..w.len() - 1).unwrap_or(""))
+                {
                     // `A1.:E10`: the dot belongs to the trim operator, lexed next.
                     let w = w.get(..w.len() - 1).unwrap_or("").to_string();
                     push(&mut out, Tok::Word(w), j - 1);
@@ -368,9 +448,18 @@ pub fn tokenize_locale(src: &str, locale: crate::FormulaLocale) -> Result<Vec<To
                     i = j;
                 }
             }
-            other => return Err(LexError { msg: format!("unexpected character `{other}`"), pos: start }),
+            other => {
+                return Err(LexError {
+                    msg: format!("unexpected character `{other}`"),
+                    pos: start,
+                });
+            }
         }
     }
-    out.push(Token { tok: Tok::Eof, start: src.len(), end: src.len() });
+    out.push(Token {
+        tok: Tok::Eof,
+        start: src.len(),
+        end: src.len(),
+    });
     Ok(out)
 }

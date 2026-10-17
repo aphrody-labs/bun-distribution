@@ -108,7 +108,11 @@ impl SearchWordInfo {
         if search_word_id.is_zero() {
             return None;
         }
-        Some(Self { search_word_id, sort_order: node.int(1), secondary_hash: node.hash(2) })
+        Some(Self {
+            search_word_id,
+            sort_order: node.int(1),
+            secondary_hash: node.hash(2),
+        })
     }
 }
 
@@ -130,7 +134,9 @@ impl TexBasePath {
     #[must_use]
     pub fn from_value(v: &Value) -> Option<Self> {
         let base_path = field_str(v, "basePath")?;
-        Some(Self { base_path: owned(base_path) })
+        Some(Self {
+            base_path: owned(base_path),
+        })
     }
 }
 
@@ -233,8 +239,14 @@ impl InfoBookmarkData {
             folder_name_id: field_hash(v, "folderNameId"),
             thumbnail_tex_name: field_hash(v, "thumbnailTexName"),
             thumbnail_tex_file_name: owned(field_str(v, "thumbnailTexFileName").unwrap_or("")),
-            folder_item_offset: bfil.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            folder_item_count: bfil.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            folder_item_offset: bfil
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            folder_item_count: bfil
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }

@@ -54,7 +54,11 @@ fn rawnind_bayer() -> Known {
         size_bytes: 57_700_134,
         sha256: "d71b5f1e727c85a359e6f74dca9e2016c9d8fc3e2f7ac3e9b347d80ceca969af".into(),
     };
-    Known { manifest, download: Some(download), entry: Some("model_bayer.onnx") }
+    Known {
+        manifest,
+        download: Some(download),
+        entry: Some("model_bayer.onnx"),
+    }
 }
 
 /// Every model LightCraft knows.
@@ -76,7 +80,10 @@ pub fn find(id: &str) -> Option<Known> {
 
 /// The known model whose `.onnx` has this SHA-256.
 pub fn by_sha256(sha256: &str) -> Option<DenoiserManifest> {
-    all().into_iter().map(|k| k.manifest).find(|m| m.sha256.as_deref() == Some(sha256))
+    all()
+        .into_iter()
+        .map(|k| k.manifest)
+        .find(|m| m.sha256.as_deref() == Some(sha256))
 }
 
 #[cfg(test)]
@@ -91,8 +98,16 @@ mod tests {
         validate(&rawnind_bayer().manifest).unwrap();
         for (i, k) in all.iter().enumerate() {
             validate(&k.manifest).unwrap();
-            assert!(all.iter().skip(i + 1).all(|o| o.manifest.id != k.manifest.id), "unique ids");
-            assert!(!k.manifest.licence.name.is_empty() && !k.manifest.licence.notice.is_empty(), "terms are shown before use");
+            assert!(
+                all.iter()
+                    .skip(i + 1)
+                    .all(|o| o.manifest.id != k.manifest.id),
+                "unique ids"
+            );
+            assert!(
+                !k.manifest.licence.name.is_empty() && !k.manifest.licence.notice.is_empty(),
+                "terms are shown before use"
+            );
             if let Some(d) = &k.download {
                 assert_eq!(d.id, k.manifest.id);
                 assert!(d.url.starts_with("https://") && d.sha256.len() == 64 && d.size_bytes > 0);
@@ -104,11 +119,19 @@ mod tests {
                 assert!(k.download.is_none(), "{}", k.manifest.id);
             }
         }
-        assert_eq!(find("rawnind-bayer").is_some(), cfg!(feature = "rawnind-model"));
+        assert_eq!(
+            find("rawnind-bayer").is_some(),
+            cfg!(feature = "rawnind-model")
+        );
         assert!(find("nothing").is_none());
         assert_eq!(
-            by_sha256("da27509dab6a2915da67e988acd86cf71f9d5bbc8d1aa0ed32933578a887b901").map(|m| m.id),
-            if cfg!(feature = "rawnind-model") { Some("rawnind-bayer".into()) } else { None }
+            by_sha256("da27509dab6a2915da67e988acd86cf71f9d5bbc8d1aa0ed32933578a887b901")
+                .map(|m| m.id),
+            if cfg!(feature = "rawnind-model") {
+                Some("rawnind-bayer".into())
+            } else {
+                None
+            }
         );
     }
 }
@@ -124,5 +147,7 @@ pub struct Download {
 }
 
 pub fn host(url: &str) -> &str {
-    url.strip_prefix("https://").and_then(|r| r.split('/').next()).unwrap_or("")
+    url.strip_prefix("https://")
+        .and_then(|r| r.split('/').next())
+        .unwrap_or("")
 }

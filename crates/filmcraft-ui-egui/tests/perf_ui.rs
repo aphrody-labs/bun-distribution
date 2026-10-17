@@ -20,10 +20,15 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -53,14 +58,26 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     /// The frame due in the Program monitor: `shown` at the project's revision and the playhead.
     fn due(&self, shown: FrameKey) -> FrameKey {
         let s = &self.harness.state().session;
-        let frame = s.active_sequence().unwrap().settings.frame_rate.frame_at(s.playhead());
-        FrameKey { frame, revision: s.revision, ..shown }
+        let frame = s
+            .active_sequence()
+            .unwrap()
+            .settings
+            .frame_rate
+            .frame_at(s.playhead());
+        FrameKey {
+            frame,
+            revision: s.revision,
+            ..shown
+        }
     }
 
     /// Wait (without a UI pass) until the frame workers have `key` ready.
@@ -99,21 +116,36 @@ fn perf_stats_reports_playback_frames_and_decode() {
     }
     let v = d.ok("perf.stats", json!({}));
     for (section, keys) in [
-        ("decode", &["cacheHitRate", "samplesDecoded", "decodeMs"][..]),
+        (
+            "decode",
+            &["cacheHitRate", "samplesDecoded", "decodeMs"][..],
+        ),
         ("playback", &["shown", "dropped", "dropRate"][..]),
-        ("frames", &["jobs", "cancelled", "requestHitRate", "workers", "queued"][..]),
+        (
+            "frames",
+            &["jobs", "cancelled", "requestHitRate", "workers", "queued"][..],
+        ),
         ("ui", &["fps", "frameMs"][..]),
     ] {
         for k in keys {
             assert!(!v[section][k].is_null(), "{section}.{k} missing in {v}");
         }
     }
-    assert!(v["frames"]["decodeMs"]["p95"].is_number() && v["frames"]["renderMs"]["mean"].is_number(), "{v}");
-    assert!(v["frames"]["jobs"].as_u64().unwrap() > 0, "the monitor rendered frames: {v}");
+    assert!(
+        v["frames"]["decodeMs"]["p95"].is_number() && v["frames"]["renderMs"]["mean"].is_number(),
+        "{v}"
+    );
+    assert!(
+        v["frames"]["jobs"].as_u64().unwrap() > 0,
+        "the monitor rendered frames: {v}"
+    );
     assert_eq!(v["playback"]["playing"], json!(false));
     // the same through the command id (what MCP `command_run` sends in bridge mode)
     let c = d.ok("engine.execute", json!({"command": "perf.stats"}));
-    assert!(c["frames"]["workers"].as_u64().unwrap() >= 1 && c["decode"].is_object(), "{c}");
+    assert!(
+        c["frames"]["workers"].as_u64().unwrap() >= 1 && c["decode"].is_object(),
+        "{c}"
+    );
 }
 
 /// A value dragged in Effect Controls changes on every UI pass, so the frame the monitor asks for
@@ -123,21 +155,36 @@ fn perf_stats_reports_playback_frames_and_decode() {
 #[test]
 fn program_monitor_follows_a_value_that_changes_every_pass() {
     let mut d = Driver::demo();
-    let clip = d.exec("sequence.inspect", json!({}))["video"][0]["items"][0]["clip"].as_u64().unwrap();
+    let clip = d.exec("sequence.inspect", json!({}))["video"][0]["items"][0]["clip"]
+        .as_u64()
+        .unwrap();
     d.exec("playhead.set", json!({"seconds": 1.0}));
     let at_rest = d.settled();
     let mut before = at_rest;
     for i in 1..=12 {
         // one change and one UI pass, as a mouse move while dragging the value
-        d.exec("effects.setParam", json!({"clip": clip, "effect": "motion", "param": "scale", "value": 100.0 - i as f64}));
+        d.exec(
+            "effects.setParam",
+            json!({"clip": clip, "effect": "motion", "param": "scale", "value": 100.0 - i as f64}),
+        );
         let due = d.due(at_rest);
-        assert_ne!(due.revision, before.revision, "each change is a new revision");
+        assert_ne!(
+            due.revision, before.revision,
+            "each change is a new revision"
+        );
         let shown = d.harness.state().program_picture().unwrap();
-        assert!(shown.revision >= before.revision, "change {i}: the picture is at most one change behind, shown {shown:?}, due {due:?}");
+        assert!(
+            shown.revision >= before.revision,
+            "change {i}: the picture is at most one change behind, shown {shown:?}, due {due:?}"
+        );
         d.ready(due);
         before = due;
     }
-    assert_eq!(d.settled().revision, before.revision, "at rest the picture is the frame due");
+    assert_eq!(
+        d.settled().revision,
+        before.revision,
+        "at rest the picture is the frame due"
+    );
 }
 
 /// The same for a scrub, backwards: every pass asks for an earlier frame, and no cached frame
@@ -153,7 +200,10 @@ fn program_monitor_follows_a_backward_scrub() {
         let due = d.due(at_rest);
         assert_eq!(due.frame, 60 - i * 3);
         let shown = d.harness.state().program_picture().unwrap();
-        assert!(shown.frame <= before.frame, "step {i}: the picture is at most one step behind, shown {shown:?}, due {due:?}");
+        assert!(
+            shown.frame <= before.frame,
+            "step {i}: the picture is at most one step behind, shown {shown:?}, due {due:?}"
+        );
         d.ready(due);
         before = due;
     }
@@ -180,12 +230,20 @@ fn a_newer_revision_keeps_the_frame_being_rendered() {
     let seq = app.session.state.active_sequence.unwrap();
     let rate = app.session.active_sequence().unwrap().settings.frame_rate;
     let frame = rate.frame_at(filmcraft_time::Tick::from_seconds_f64(15.0));
-    let key = |revision| FrameKey { target: Target::Sequence(seq), frame, size: 1000, revision, draft: false };
+    let key = |revision| FrameKey {
+        target: Target::Sequence(seq),
+        frame,
+        size: 1000,
+        revision,
+        draft: false,
+    };
     let project = app.session.project.clone();
     idle();
-    app.frames.request(key(9001), rate.tick_of(frame), 1.0, &project, 0);
+    app.frames
+        .request(key(9001), rate.tick_of(frame), 1.0, &project, 0);
     idle(); // a worker has taken it
-    app.frames.request(key(9002), rate.tick_of(frame), 1.0, &project, 0);
+    app.frames
+        .request(key(9002), rate.tick_of(frame), 1.0, &project, 0);
     // both arrive, in either order: the one that was rendering was not cancelled for the newer
     d.ready(key(9002));
     d.ready(key(9001));

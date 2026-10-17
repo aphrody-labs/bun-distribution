@@ -36,7 +36,7 @@ pub fn open_file<P: AsRef<Path>>(path: P) -> Result<File, FileError> {
                 io::ErrorKind::NotFound => return FileNotFoundSnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     };
     Ok(file)
 }
@@ -53,7 +53,7 @@ pub fn create_file<P: AsRef<Path>>(path: P) -> Result<File, FileError> {
                 io::ErrorKind::NotFound => return FileParentNotFoundSnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     };
     Ok(file)
 }
@@ -77,7 +77,7 @@ pub fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, FileError> {
                 io::ErrorKind::OutOfMemory => return FileOutOfMemorySnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     };
     Ok(bytes)
 }
@@ -94,7 +94,7 @@ pub fn write_file<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) -> Resul
                 io::ErrorKind::AlreadyExists => AlreadyExistsSnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     }
 }
 
@@ -110,7 +110,7 @@ pub fn read_to_string<P: AsRef<Path>>(path: P) -> Result<String, FileError> {
                 io::ErrorKind::OutOfMemory => return FileOutOfMemorySnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     };
     Ok(string)
 }
@@ -127,7 +127,7 @@ pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<ReadDir, FileError> {
                 io::ErrorKind::OutOfMemory => return DirOutOfMemorySnafu { path }.fail(),
                 _ => Err(err)?,
             }
-        },
+        }
     };
     Ok(dir)
 }

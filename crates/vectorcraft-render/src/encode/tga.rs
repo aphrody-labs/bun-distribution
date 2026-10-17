@@ -22,7 +22,14 @@ impl Default for TgaOptions {
 impl TgaOptions {
     /// Why these options can't be written, if they can't.
     pub fn check(&self) -> Result<(), String> {
-        if DEPTHS.contains(&self.depth) { Ok(()) } else { Err(format!("Targa depth {}: 16, 24 or 32 bits per pixel", self.depth)) }
+        if DEPTHS.contains(&self.depth) {
+            Ok(())
+        } else {
+            Err(format!(
+                "Targa depth {}: 16, 24 or 32 bits per pixel",
+                self.depth
+            ))
+        }
     }
 }
 
@@ -31,7 +38,9 @@ impl TgaOptions {
 pub fn encode(rgba: &[u8], width: u32, height: u32, o: &TgaOptions) -> Result<Vec<u8>, String> {
     o.check()?;
     let (Ok(w16), Ok(h16)) = (u16::try_from(width), u16::try_from(height)) else {
-        return Err(format!("{width} × {height} pixels is too large for Targa (at most 65535 pixels a side): lower the resolution"));
+        return Err(format!(
+            "{width} × {height} pixels is too large for Targa (at most 65535 pixels a side): lower the resolution"
+        ));
     };
     let (w, h) = (usize::from(w16), usize::from(h16));
     if w == 0 || h == 0 || w * h * 4 != rgba.len() {

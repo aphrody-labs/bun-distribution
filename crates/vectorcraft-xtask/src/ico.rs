@@ -49,7 +49,10 @@ pub fn run(args: &[&str]) -> Result<(), String> {
     if inputs.is_empty() {
         return Err("usage: cargo xtask ico <out.ico> <png>...".into());
     }
-    let pngs = inputs.iter().map(|p| std::fs::read(p).map_err(|e| format!("{p}: {e}"))).collect::<Result<Vec<_>, _>>()?;
+    let pngs = inputs
+        .iter()
+        .map(|p| std::fs::read(p).map_err(|e| format!("{p}: {e}")))
+        .collect::<Result<Vec<_>, _>>()?;
     std::fs::write(Path::new(out), pack(&pngs)?).map_err(|e| format!("{out}: {e}"))
 }
 

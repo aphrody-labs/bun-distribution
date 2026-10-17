@@ -15,13 +15,19 @@ use crate::theme::Tokens;
 /// applied comp.
 pub fn target(app: &PhotocraftApp) -> Option<u32> {
     let doc = &app.session.active()?.doc;
-    app.ui.layer_comp_selected.filter(|id| doc.comp(*id).is_some()).or(doc.last_applied_comp.filter(|id| doc.comp(*id).is_some()))
+    app.ui
+        .layer_comp_selected
+        .filter(|id| doc.comp(*id).is_some())
+        .or(doc.last_applied_comp.filter(|id| doc.comp(*id).is_some()))
 }
 
 /// The row's warning triangle: Clear Layer Comp Warning for that comp only (Photoshop keeps
 /// Clear All Layer Comp Warnings as a separate command).
 fn clear_warning_action(comp: u32) -> (&'static str, Value) {
-    ("layerComp.updateWarnings", json!({"clear": true, "comp": comp}))
+    (
+        "layerComp.updateWarnings",
+        json!({"clear": true, "comp": comp}),
+    )
 }
 
 fn run(app: &mut PhotocraftApp, id: &str, p: Value) {
@@ -34,7 +40,11 @@ fn run(app: &mut PhotocraftApp, id: &str, p: Value) {
 pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(st) = app.session.active() else {
-        ui.label(egui::RichText::new(tl!("No document")).color(t.text_faint).size(11.5));
+        ui.label(
+            egui::RichText::new(tl!("No document"))
+                .color(t.text_faint)
+                .size(11.5),
+        );
         return;
     };
     let doc = st.doc.clone();
@@ -158,10 +168,28 @@ pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     let has = !doc.layer_comps.is_empty();
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 2.0;
-        if crate::icons::button(ui, "chevrons-left", 24.0, false, tl!("Apply previous selected layer comp")).clicked() && has {
+        if crate::icons::button(
+            ui,
+            "chevrons-left",
+            24.0,
+            false,
+            tl!("Apply previous selected layer comp"),
+        )
+        .clicked()
+            && has
+        {
             action = Some(("layerComp.previous", json!({})));
         }
-        if crate::icons::button(ui, "chevrons-right", 24.0, false, tl!("Apply next selected layer comp")).clicked() && has {
+        if crate::icons::button(
+            ui,
+            "chevrons-right",
+            24.0,
+            false,
+            tl!("Apply next selected layer comp"),
+        )
+        .clicked()
+            && has
+        {
             action = Some(("layerComp.next", json!({})));
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -170,10 +198,19 @@ pub fn panel(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
             {
                 action = Some(("layerComp.delete", json!({"comp": id})));
             }
-            if crate::icons::button(ui, "file-plus", 24.0, false, tl!("Create new layer comp")).clicked() {
+            if crate::icons::button(ui, "file-plus", 24.0, false, tl!("Create new layer comp"))
+                .clicked()
+            {
                 action = Some(("layerComp.new", json!({})));
             }
-            if crate::icons::button(ui, "rotate-cw", 24.0, false, tl!("Update layer comp (visibility, position and appearance)")).clicked()
+            if crate::icons::button(
+                ui,
+                "rotate-cw",
+                24.0,
+                false,
+                tl!("Update layer comp (visibility, position and appearance)"),
+            )
+            .clicked()
                 && let Some(id) = selected
             {
                 action = Some(("layerComp.update", json!({"comp": id})));
@@ -201,16 +238,31 @@ mod tests {
     fn warning_icon_clears_only_its_own_comp() {
         // Regression for #4197.
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
-        let layer = s.execute("layer.new.layer", json!({})).unwrap()["layer"].as_u64().unwrap();
-        let c1 = s.execute("layerComp.new", json!({"name": "One"})).unwrap()["comp"].as_u64().unwrap() as u32;
-        let c2 = s.execute("layerComp.new", json!({"name": "Two"})).unwrap()["comp"].as_u64().unwrap() as u32;
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
+        let layer = s.execute("layer.new.layer", json!({})).unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let c1 = s.execute("layerComp.new", json!({"name": "One"})).unwrap()["comp"]
+            .as_u64()
+            .unwrap() as u32;
+        let c2 = s.execute("layerComp.new", json!({"name": "Two"})).unwrap()["comp"]
+            .as_u64()
+            .unwrap() as u32;
         s.execute("layer.delete", json!({"layer": layer})).unwrap();
         let (id, p) = clear_warning_action(c1);
         assert_eq!(p["comp"], c1);
         s.execute(id, p).unwrap();
         let doc = &s.active().unwrap().doc;
         assert!(doc.comp(c1).unwrap().missing_layers(doc).is_empty());
-        assert_eq!(doc.comp(c2).unwrap().missing_layers(doc).iter().map(|l| l.0).collect::<Vec<_>>(), vec![layer]);
+        assert_eq!(
+            doc.comp(c2)
+                .unwrap()
+                .missing_layers(doc)
+                .iter()
+                .map(|l| l.0)
+                .collect::<Vec<_>>(),
+            vec![layer]
+        );
     }
 }

@@ -28,7 +28,10 @@ use crate::{
 /// Sanitize identique à wiki-service.ts `sanitizeFilter` :
 /// retire `%`, `,`, `(`, `)`, `.`, `*`, `\` — mais PAS `_` (IDs d'auras).
 pub fn sanitize_filter(input: &str) -> String {
-    input.chars().filter(|&c| !matches!(c, '%' | ',' | '(' | ')' | '.' | '*' | '\\')).collect()
+    input
+        .chars()
+        .filter(|&c| !matches!(c, '%' | ',' | '(' | ')' | '.' | '*' | '\\'))
+        .collect()
 }
 
 // ─── Personnage ───────────────────────────────────────────────────────────────
@@ -242,12 +245,25 @@ pub fn get_character(conn: &Connection, id: &str) -> anyhow::Result<Option<Chara
 /// Extrait les blocs de stats lv1/lv50/lv99 depuis le JSON fusionné.
 fn extract_stats_from_merged(
     merged: &Value,
-) -> (Option<StatBlock>, Option<StatBlock>, Option<StatBlock>, Option<StatBlock>) {
+) -> (
+    Option<StatBlock>,
+    Option<StatBlock>,
+    Option<StatBlock>,
+    Option<StatBlock>,
+) {
     let stats_obj = merged.get("stats");
-    let lv1 = stats_obj.and_then(|s| s.get("lv1")).and_then(StatBlock::from_json);
-    let lv30 = stats_obj.and_then(|s| s.get("lv30")).and_then(StatBlock::from_json);
-    let lv50 = stats_obj.and_then(|s| s.get("lv50")).and_then(StatBlock::from_json);
-    let lv99 = stats_obj.and_then(|s| s.get("lv99")).and_then(StatBlock::from_json);
+    let lv1 = stats_obj
+        .and_then(|s| s.get("lv1"))
+        .and_then(StatBlock::from_json);
+    let lv30 = stats_obj
+        .and_then(|s| s.get("lv30"))
+        .and_then(StatBlock::from_json);
+    let lv50 = stats_obj
+        .and_then(|s| s.get("lv50"))
+        .and_then(StatBlock::from_json);
+    let lv99 = stats_obj
+        .and_then(|s| s.get("lv99"))
+        .and_then(StatBlock::from_json);
     (lv1, lv30, lv50, lv99)
 }
 
@@ -260,9 +276,14 @@ fn extract_skills_from_merged(merged: &Value) -> Vec<SkillSlot> {
             arr.iter()
                 .filter_map(|entry| {
                     let skill_id = entry.get("skillId")?.as_str()?.to_string();
-                    let learn_level =
-                        entry.get("learnLevel").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-                    Some(SkillSlot { skill_id, learn_level })
+                    let learn_level = entry
+                        .get("learnLevel")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0) as u32;
+                    Some(SkillSlot {
+                        skill_id,
+                        learn_level,
+                    })
                 })
                 .collect()
         })
@@ -345,7 +366,10 @@ fn get_auras_for_character(
         .map(|arr| {
             arr.iter()
                 .filter_map(|entry| {
-                    entry.get("skillId").and_then(|v| v.as_str()).map(|s| s.to_lowercase())
+                    entry
+                        .get("skillId")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase())
                 })
                 .collect()
         })
@@ -400,7 +424,11 @@ fn get_auras_for_character(
                         .or(a_name_en)
                         .or(a_name_ja)
                         .unwrap_or_else(|| "Inconnu".to_string());
-                    results.push(AuraSummary { id: aid, name, aura_type: aura_type.to_string() });
+                    results.push(AuraSummary {
+                        id: aid,
+                        name,
+                        aura_type: aura_type.to_string(),
+                    });
                     found = true;
                     break;
                 }
@@ -506,15 +534,27 @@ fn skill_row_map(row: &rusqlite::Row<'_>) -> rusqlite::Result<SkillProfile> {
 
     let category = category_fr
         .as_deref()
-        .or_else(|| merged.get("categoryName").and_then(|cn| cn.get("fr").and_then(|v| v.as_str())))
+        .or_else(|| {
+            merged
+                .get("categoryName")
+                .and_then(|cn| cn.get("fr").and_then(|v| v.as_str()))
+        })
         .or_else(|| merged.get("category").and_then(|v| v.as_str()))
         .map(crate::model::category_fr_to_en);
 
     // description fallbacks depuis merged
-    let desc_fr = description_fr
-        .or_else(|| merged.get("desc_FR").and_then(|v| v.as_str()).map(str::to_string));
-    let desc_en = description_en
-        .or_else(|| merged.get("desc_EN").and_then(|v| v.as_str()).map(str::to_string));
+    let desc_fr = description_fr.or_else(|| {
+        merged
+            .get("desc_FR")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
+    let desc_en = description_en.or_else(|| {
+        merged
+            .get("desc_EN")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
 
     Ok(SkillProfile {
         id,
@@ -557,7 +597,9 @@ fn lookup_skill_values(main: &[Value], passives: &[Value], auras: &[Value], quer
         values
             .iter()
             .find(|value| {
-                fields.iter().any(|field| value.get(field).and_then(Value::as_str) == Some(query))
+                fields
+                    .iter()
+                    .any(|field| value.get(field).and_then(Value::as_str) == Some(query))
             })
             .cloned()
     };
@@ -590,11 +632,13 @@ fn lookup_skill_values(main: &[Value], passives: &[Value], auras: &[Value], quer
         auras
             .iter()
             .filter(|aura| {
-                ["displayName", "name_FR", "desc_FR"].into_iter().any(|field| {
-                    aura.get(field)
-                        .and_then(Value::as_str)
-                        .is_some_and(|name| name.to_lowercase().contains(&query))
-                })
+                ["displayName", "name_FR", "desc_FR"]
+                    .into_iter()
+                    .any(|field| {
+                        aura.get(field)
+                            .and_then(Value::as_str)
+                            .is_some_and(|name| name.to_lowercase().contains(&query))
+                    })
             })
             .take(5)
             .map(|aura| {
@@ -676,7 +720,10 @@ fn item_row_map(row: &rusqlite::Row<'_>) -> rusqlite::Result<ItemProfile> {
     let merged = merge_data_sheet(data.as_deref(), sheet_data.as_deref());
 
     // Prix : depuis sheet_data.price (la colonne price contient des sort IDs, pas de vrais prix)
-    let price = merged.get("price").and_then(|v| v.as_i64()).or(price_col.filter(|_| false)); // on ignore la colonne price brute comme le TS
+    let price = merged
+        .get("price")
+        .and_then(|v| v.as_i64())
+        .or(price_col.filter(|_| false)); // on ignore la colonne price brute comme le TS
 
     // Shops : colonne shops (JSON array) ou sheet_data.shops
     let shops = parse_shops(shops_col.as_deref(), &merged);
@@ -762,16 +809,20 @@ fn parse_shops(shops_col: Option<&str>, merged: &Value) -> Vec<String> {
         && let Ok(val) = serde_json::from_str::<Value>(s)
     {
         if let Some(arr) = val.as_array() {
-            let names: Vec<String> =
-                arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect();
+            let names: Vec<String> = arr
+                .iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect();
             if !names.is_empty() {
                 return names;
             }
         }
         // shops peut être {"fr": [...], "en": [...]}
         if let Some(fr) = val.get("fr").and_then(|v| v.as_array()) {
-            let names: Vec<String> =
-                fr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect();
+            let names: Vec<String> = fr
+                .iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect();
             if !names.is_empty() {
                 return names;
             }
@@ -780,8 +831,16 @@ fn parse_shops(shops_col: Option<&str>, merged: &Value) -> Vec<String> {
     // Fallback merged.shops
     merged
         .get("shops")
-        .and_then(|s| s.get("fr").and_then(|v| v.as_array()).or_else(|| s.as_array()))
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .and_then(|s| {
+            s.get("fr")
+                .and_then(|v| v.as_array())
+                .or_else(|| s.as_array())
+        })
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -841,7 +900,11 @@ fn team_row_map(row: &rusqlite::Row<'_>) -> rusqlite::Result<TeamProfile> {
     let kits = merged
         .get("kits")
         .and_then(|k| k.as_object())
-        .map(|obj| obj.values().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|obj| {
+            obj.values()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
 
     // Seasons depuis data.seasons (objet {V: 7, IE1: 1, ...})
@@ -875,12 +938,14 @@ pub fn lookup_team_legacy(
         .map_err(|e| anyhow::anyhow!("canonical team corpus not found: {e}"))?;
     let corpus: Vec<Value> = serde_json::from_slice(&bytes)
         .map_err(|e| anyhow::anyhow!("invalid canonical team corpus: {e}"))?;
-    let payloads =
-        query_rows(conn, "SELECT id, COALESCE(data, sheet_data) FROM inagle_teams", &[], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })?
-        .into_iter()
-        .collect::<std::collections::HashMap<_, _>>();
+    let payloads = query_rows(
+        conn,
+        "SELECT id, COALESCE(data, sheet_data) FROM inagle_teams",
+        &[],
+        |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+    )?
+    .into_iter()
+    .collect::<std::collections::HashMap<_, _>>();
     let teams = corpus
         .iter()
         .filter_map(|team| team.get("teamId").and_then(Value::as_str))
@@ -894,8 +959,9 @@ pub fn lookup_team_legacy(
 }
 
 fn lookup_team_values(teams: &[Value], query: &str) -> Value {
-    if let Some(team) =
-        teams.iter().find(|team| team.get("teamId").and_then(Value::as_str) == Some(query))
+    if let Some(team) = teams
+        .iter()
+        .find(|team| team.get("teamId").and_then(Value::as_str) == Some(query))
     {
         return team.clone();
     }
@@ -946,7 +1012,12 @@ pub fn skill_name_by_id(conn: &Connection, skill_id: &str) -> String {
         conn,
         "SELECT name_fr, name_en FROM inagle_skills WHERE id = ?1 LIMIT 1",
         &[&q as &dyn rusqlite::ToSql],
-        |row| Ok((row.get::<_, Option<String>>(0)?, row.get::<_, Option<String>>(1)?)),
+        |row| {
+            Ok((
+                row.get::<_, Option<String>>(0)?,
+                row.get::<_, Option<String>>(1)?,
+            ))
+        },
     )
     .ok()
     .flatten()
@@ -963,7 +1034,12 @@ pub fn skill_name_by_id(conn: &Connection, skill_id: &str) -> String {
         "SELECT name_fr, name_en FROM inagle_skills \
          WHERE UPPER(json_extract(data, '$.skillID')) = UPPER(?1) LIMIT 1",
         &[&q as &dyn rusqlite::ToSql],
-        |row| Ok((row.get::<_, Option<String>>(0)?, row.get::<_, Option<String>>(1)?)),
+        |row| {
+            Ok((
+                row.get::<_, Option<String>>(0)?,
+                row.get::<_, Option<String>>(1)?,
+            ))
+        },
     )
     .ok()
     .flatten()
@@ -1030,7 +1106,10 @@ pub fn compare_characters(
                             .and_then(Value::as_i64)
                     }),
                     cost: details.and_then(|value| {
-                        value.get("cost").or_else(|| value.get("tp")).and_then(Value::as_i64)
+                        value
+                            .get("cost")
+                            .or_else(|| value.get("tp"))
+                            .and_then(Value::as_i64)
                     }),
                     element: details.and_then(|value| compare_localized_name(value, "elementName")),
                     category: details
@@ -1051,7 +1130,11 @@ pub fn compare_characters(
         }
     };
 
-    Ok(CompareResult { level, chara1: slot(&p1), chara2: slot(&p2) })
+    Ok(CompareResult {
+        level,
+        chara1: slot(&p1),
+        chara2: slot(&p2),
+    })
 }
 
 fn select_compare_variant(
@@ -1087,8 +1170,9 @@ fn select_compare_variant(
                 .unwrap_or_default(),
         )
     });
-    let first_variant =
-        variants.first().ok_or_else(|| anyhow::anyhow!("raw variant unavailable for {query}"))?;
+    let first_variant = variants
+        .first()
+        .ok_or_else(|| anyhow::anyhow!("raw variant unavailable for {query}"))?;
     let mut profile = get_character(conn, &first_variant.param_id)?
         .ok_or_else(|| anyhow::anyhow!("mirror variant unavailable for {query}"))?;
     profile.chara_id.clone_from(&base.id);
@@ -1135,7 +1219,9 @@ fn find_compare_base<'a>(
 ) -> Option<&'a RawCompareBase> {
     let query = query.trim().to_lowercase();
     let mut ordered = variants.iter().filter_map(|variant| {
-        bases.iter().find(|base| base.id.eq_ignore_ascii_case(&variant.base_id))
+        bases
+            .iter()
+            .find(|base| base.id.eq_ignore_ascii_case(&variant.base_id))
     });
     let exact = ordered.clone().find(|base| {
         base.id.to_lowercase() == query
@@ -1179,25 +1265,45 @@ fn load_compare_bases(data_root: &Path) -> anyhow::Result<Vec<RawCompareBase>> {
                     .or(name_ja.as_deref())
                     .unwrap_or("unknown"),
             );
-            RawCompareBase { id, internal_code, name_fr, name_en, name_ja, slug }
+            RawCompareBase {
+                id,
+                internal_code,
+                name_fr,
+                name_en,
+                name_ja,
+                slug,
+            }
         })
         .collect())
 }
 
 fn collect_compare_bases(value: &Value, bases: &mut Vec<(String, String, String)>) {
     if let Some(object) = value.as_object() {
-        let is_base = object.get("name").and_then(Value::as_str).is_some_and(|name| {
-            (name.starts_with("CHARA_BASE_INFO_") || name.starts_with("CHARA_BASE_BATTLE_"))
-                && name
-                    .rsplit('_')
-                    .next()
-                    .is_some_and(|index| index.chars().all(|character| character.is_ascii_digit()))
-        });
+        let is_base = object
+            .get("name")
+            .and_then(Value::as_str)
+            .is_some_and(|name| {
+                (name.starts_with("CHARA_BASE_INFO_") || name.starts_with("CHARA_BASE_BATTLE_"))
+                    && name.rsplit('_').next().is_some_and(|index| {
+                        index.chars().all(|character| character.is_ascii_digit())
+                    })
+            });
         if is_base && let Some(variables) = object.get("variables").and_then(Value::as_array) {
-            let integer =
-                |index: usize| variables.get(index)?.get("value")?.as_str()?.parse::<i64>().ok();
-            let string =
-                |index: usize| variables.get(index)?.get("value")?.as_str().map(str::to_string);
+            let integer = |index: usize| {
+                variables
+                    .get(index)?
+                    .get("value")?
+                    .as_str()?
+                    .parse::<i64>()
+                    .ok()
+            };
+            let string = |index: usize| {
+                variables
+                    .get(index)?
+                    .get("value")?
+                    .as_str()
+                    .map(str::to_string)
+            };
             if let (Some(id), Some(internal_code), Some(name_hash)) =
                 (integer(0), string(1), integer(3))
             {
@@ -1218,7 +1324,10 @@ fn load_compare_names(
     data_root: &Path,
     locale: &str,
 ) -> anyhow::Result<std::collections::HashMap<String, String>> {
-    let path = data_root.join("common/text").join(locale).join("chara_text.cfg.bin.json");
+    let path = data_root
+        .join("common/text")
+        .join(locale)
+        .join("chara_text.cfg.bin.json");
     let root: Value = serde_json::from_slice(&std::fs::read(path)?)?;
     let mut names = std::collections::HashMap::new();
     collect_compare_names(&root, &mut names);
@@ -1281,12 +1390,14 @@ fn versioned_config(directory: &Path, prefix: &str) -> anyhow::Result<std::path:
         .filter_map(Result::ok)
         .map(|entry| entry.path())
         .filter(|path| {
-            path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
-                name.strip_prefix(prefix)
-                    .and_then(|version| version.chars().next())
-                    .is_some_and(|first| first.is_ascii_digit())
-                    && name.ends_with(".cfg.bin.json")
-            })
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.strip_prefix(prefix)
+                        .and_then(|version| version.chars().next())
+                        .is_some_and(|first| first.is_ascii_digit())
+                        && name.ends_with(".cfg.bin.json")
+                })
         })
         .max()
         .ok_or_else(|| anyhow::anyhow!("{prefix} corpus not found in {}", directory.display()))
@@ -1303,17 +1414,27 @@ fn load_compare_variants(data_root: &Path) -> anyhow::Result<Vec<RawCompareVaria
 
 fn collect_compare_variants(value: &Value, variants: &mut Vec<RawCompareVariant>) {
     if let Some(object) = value.as_object() {
-        let is_param = object.get("name").and_then(Value::as_str).is_some_and(|name| {
-            name.starts_with("CHARA_PARAM_INFO_") && !name.contains("LIST") && !name.contains("BEG")
-        });
+        let is_param = object
+            .get("name")
+            .and_then(Value::as_str)
+            .is_some_and(|name| {
+                name.starts_with("CHARA_PARAM_INFO_")
+                    && !name.contains("LIST")
+                    && !name.contains("BEG")
+            });
         if is_param
             && let Some(values) =
-                object.get("variables").and_then(Value::as_array).map(|variables| {
-                    variables
-                        .iter()
-                        .filter_map(|variable| variable.get("value")?.as_str()?.parse::<i64>().ok())
-                        .collect::<Vec<_>>()
-                })
+                object
+                    .get("variables")
+                    .and_then(Value::as_array)
+                    .map(|variables| {
+                        variables
+                            .iter()
+                            .filter_map(|variable| {
+                                variable.get("value")?.as_str()?.parse::<i64>().ok()
+                            })
+                            .collect::<Vec<_>>()
+                    })
             && values.len() >= 8
         {
             let mut skills = Vec::new();
@@ -1371,7 +1492,9 @@ fn compare_playable_skills(
 }
 
 fn load_compare_skills(data_root: &Path) -> anyhow::Result<Vec<Value>> {
-    Ok(serde_json::from_slice(&std::fs::read(data_root.join("all-gamedata/skills.json"))?)?)
+    Ok(serde_json::from_slice(&std::fs::read(
+        data_root.join("all-gamedata/skills.json"),
+    )?)?)
 }
 
 fn load_compare_aura_ids(data_root: &Path) -> anyhow::Result<std::collections::HashSet<String>> {
@@ -1379,7 +1502,12 @@ fn load_compare_aura_ids(data_root: &Path) -> anyhow::Result<std::collections::H
         serde_json::from_slice(&std::fs::read(data_root.join("all-gamedata/auras.json"))?)?;
     Ok(values
         .iter()
-        .filter_map(|value| value.get("auraId").and_then(Value::as_str).map(str::to_string))
+        .filter_map(|value| {
+            value
+                .get("auraId")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
         .collect())
 }
 
@@ -1391,7 +1519,11 @@ fn compare_skill_name(value: &Value) -> Option<String> {
 
 fn compare_localized_name(value: &Value, field: &str) -> Option<String> {
     let names = value.get(field)?;
-    names.get("fr").or_else(|| names.get("en")).and_then(Value::as_str).map(str::to_string)
+    names
+        .get("fr")
+        .or_else(|| names.get("en"))
+        .and_then(Value::as_str)
+        .map(str::to_string)
 }
 
 fn compare_position_code(position: &str) -> String {
@@ -1450,7 +1582,12 @@ pub fn search_all(
     )?;
     for (id, name_fr, name_en, position) in chars {
         let name = name_fr.or(name_en).unwrap_or_else(|| id.clone());
-        results.push(SearchResult { entity_type: "chara".to_string(), id, name, extra: position });
+        results.push(SearchResult {
+            entity_type: "chara".to_string(),
+            id,
+            name,
+            extra: position,
+        });
     }
 
     // Skills
@@ -1472,7 +1609,12 @@ pub fn search_all(
     )?;
     for (id, name_fr, name_en, cat) in skills {
         let name = name_fr.or(name_en).unwrap_or_else(|| id.clone());
-        results.push(SearchResult { entity_type: "skill".to_string(), id, name, extra: cat });
+        results.push(SearchResult {
+            entity_type: "skill".to_string(),
+            id,
+            name,
+            extra: cat,
+        });
     }
 
     // Items
@@ -1494,7 +1636,12 @@ pub fn search_all(
     )?;
     for (id, name_fr, name_en, cat) in items {
         let name = name_fr.or(name_en).unwrap_or_else(|| id.clone());
-        results.push(SearchResult { entity_type: "item".to_string(), id, name, extra: cat });
+        results.push(SearchResult {
+            entity_type: "item".to_string(),
+            id,
+            name,
+            extra: cat,
+        });
     }
 
     // Teams
@@ -1516,25 +1663,37 @@ pub fn search_all(
     )?;
     for (id, name_fr, name_en, series) in teams {
         let name = name_fr.or(name_en).unwrap_or_else(|| id.clone());
-        results.push(SearchResult { entity_type: "team".to_string(), id, name, extra: series });
+        results.push(SearchResult {
+            entity_type: "team".to_string(),
+            id,
+            name,
+            extra: series,
+        });
     }
 
     // Auras / Keshins / Souls
-    for (table, entity_type) in
-        &[("inagle_auras", "aura"), ("inagle_keshins", "keshin"), ("inagle_souls", "soul")]
-    {
+    for (table, entity_type) in &[
+        ("inagle_auras", "aura"),
+        ("inagle_keshins", "keshin"),
+        ("inagle_souls", "soul"),
+    ] {
         let sql = format!(
             "SELECT id, name_fr, name_en FROM {table}
              WHERE id = ?1 OR name_fr LIKE ?2 OR name_en LIKE ?2
              ORDER BY name_fr ASC LIMIT 5"
         );
-        let rows = query_rows(conn, &sql, &[&q as &dyn rusqlite::ToSql, &like_pat], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, Option<String>>(1)?,
-                row.get::<_, Option<String>>(2)?,
-            ))
-        })?;
+        let rows = query_rows(
+            conn,
+            &sql,
+            &[&q as &dyn rusqlite::ToSql, &like_pat],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, Option<String>>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            },
+        )?;
         for (id, name_fr, name_en) in rows {
             let name = name_fr.or(name_en).unwrap_or_else(|| id.clone());
             results.push(SearchResult {
@@ -1574,14 +1733,17 @@ pub fn check_readonly_sql(sql: &str) -> anyhow::Result<()> {
 pub fn exec_readonly_sql(conn: &Connection, sql: &str) -> anyhow::Result<Vec<serde_json::Value>> {
     check_readonly_sql(sql)?;
 
-    let mut stmt = conn.prepare(sql).map_err(|e| anyhow::anyhow!("préparation SQL : {e}"))?;
+    let mut stmt = conn
+        .prepare(sql)
+        .map_err(|e| anyhow::anyhow!("préparation SQL : {e}"))?;
     anyhow::ensure!(
         stmt.readonly(),
         "requête non autorisée : SQLite indique que cette instruction peut modifier la base"
     );
     let col_count = stmt.column_count();
-    let col_names: Vec<String> =
-        (0..col_count).map(|i| stmt.column_name(i).unwrap_or("col").to_string()).collect();
+    let col_names: Vec<String> = (0..col_count)
+        .map(|i| stmt.column_name(i).unwrap_or("col").to_string())
+        .collect();
 
     let rows = stmt
         .query_map([], |row| {
@@ -1597,7 +1759,7 @@ pub fn exec_readonly_sql(conn: &Connection, sql: &str) -> anyhow::Result<Vec<ser
                     rusqlite::types::Value::Text(s) => serde_json::Value::String(s),
                     rusqlite::types::Value::Blob(b) => {
                         serde_json::Value::String(format!("<blob {} bytes>", b.len()))
-                    },
+                    }
                 };
                 obj.insert(name.clone(), jval);
             }
@@ -1659,8 +1821,15 @@ pub fn exec_readonly_sql_page(
 
     check_readonly_sql(sql)?;
     let mut statement = connection.prepare(sql)?;
-    anyhow::ensure!(statement.readonly(), "SQLite rejected the query as non-read-only");
-    let columns = statement.column_names().into_iter().map(str::to_owned).collect::<Vec<_>>();
+    anyhow::ensure!(
+        statement.readonly(),
+        "SQLite rejected the query as non-read-only"
+    );
+    let columns = statement
+        .column_names()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
     let mut cursor = statement.query([])?;
     let mut rows = Vec::new();
     let mut truncated = false;
@@ -1677,16 +1846,16 @@ pub fn exec_readonly_sql_page(
                     if options.hexadecimal_integer_columns.contains(column) =>
                 {
                     Value::String(format!("0x{value:x}"))
-                },
+                }
                 ValueRef::Integer(value)
                     if (-(1_i64 << 53) + 1..=(1_i64 << 53) - 1).contains(&value) =>
                 {
                     Value::Number(value.into())
-                },
+                }
                 ValueRef::Integer(value) => Value::String(value.to_string()),
-                ValueRef::Real(value) => {
-                    serde_json::Number::from_f64(value).map(Value::Number).unwrap_or(Value::Null)
-                },
+                ValueRef::Real(value) => serde_json::Number::from_f64(value)
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null),
                 ValueRef::Text(value) => Value::String(String::from_utf8_lossy(value).into_owned()),
                 ValueRef::Blob(value) => Value::String(format!("<blob {} bytes>", value.len())),
             };
@@ -1694,7 +1863,11 @@ pub fn exec_readonly_sql_page(
         }
         rows.push(Value::Object(object));
     }
-    Ok(SqliteQueryPage { rows, truncated, columns })
+    Ok(SqliteQueryPage {
+        rows,
+        truncated,
+        columns,
+    })
 }
 
 // ─── Random Team ─────────────────────────────────────────────────────────────
@@ -1770,7 +1943,11 @@ pub fn random_team(
         if element_db.is_some() || playstyle_db.is_some() {
             let filtered_sql = format!(
                 "{base_sql}{}{}",
-                if element_db.is_some() { " AND element = ?2" } else { "" },
+                if element_db.is_some() {
+                    " AND element = ?2"
+                } else {
+                    ""
+                },
                 match (element_db, playstyle_db) {
                     (Some(_), Some(_)) => " AND json_extract(sheet_data, '$.playstyle') = ?3",
                     (None, Some(_)) => " AND json_extract(sheet_data, '$.playstyle') = ?2",
@@ -1784,8 +1961,10 @@ pub fn random_team(
             if let Some(playstyle) = playstyle_db {
                 values.push(playstyle.to_string());
             }
-            let params: Vec<&dyn rusqlite::ToSql> =
-                values.iter().map(|value| value as &dyn rusqlite::ToSql).collect();
+            let params: Vec<&dyn rusqlite::ToSql> = values
+                .iter()
+                .map(|value| value as &dyn rusqlite::ToSql)
+                .collect();
             let filtered = query_rows(conn, &filtered_sql, &params, |row| {
                 Ok((
                     row.get::<_, String>(0)?,
@@ -1819,13 +1998,18 @@ pub fn random_team(
         }
 
         // Fallback sans filtre
-        query_rows(conn, base_sql, &[&position as &dyn rusqlite::ToSql], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, Option<String>>(2)?,
-            ))
-        })
+        query_rows(
+            conn,
+            base_sql,
+            &[&position as &dyn rusqlite::ToSql],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            },
+        )
     };
 
     // Sélection aléatoire de n éléments depuis un pool (sans remise)
@@ -1893,7 +2077,14 @@ pub fn random_team(
     )?;
 
     // Ligne SQL d'un coordinateur : (game_id, name_ja, role, ?, ?).
-    type CoordRow = (i64, String, Option<String>, Option<String>, Option<String>, Option<String>);
+    type CoordRow = (
+        i64,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    );
     let mut coaches: Vec<_> = all_coords
         .iter()
         .filter(|(_, _, _, _, role, _)| {
@@ -1922,8 +2113,9 @@ pub fn random_team(
     };
 
     let coach = pick_coord(&mut coaches, &mut rng);
-    let managers: Vec<RandomTeamCoord> =
-        (0..3).filter_map(|_| pick_coord(&mut mgrs, &mut rng)).collect();
+    let managers: Vec<RandomTeamCoord> = (0..3)
+        .filter_map(|_| pick_coord(&mut mgrs, &mut rng))
+        .collect();
 
     Ok(RandomTeam {
         seed,
@@ -1966,7 +2158,7 @@ pub fn team_build_list(conn: &Connection) -> anyhow::Result<Vec<TeamBuildEntry>>
         Err(_) => {
             // La table inagle_team_build peut ne pas exister dans certains miroirs
             Ok(Vec::new())
-        },
+        }
         Ok(rows) => {
             let entries = rows
                 .into_iter()
@@ -1976,11 +2168,18 @@ pub fn team_build_list(conn: &Connection) -> anyhow::Result<Vec<TeamBuildEntry>>
                     let data = data_str
                         .and_then(|s| serde_json::from_str(&s).ok())
                         .unwrap_or(serde_json::Value::Object(Default::default()));
-                    TeamBuildEntry { id, name, slot: None, position, element, data }
+                    TeamBuildEntry {
+                        id,
+                        name,
+                        slot: None,
+                        position,
+                        element,
+                        data,
+                    }
                 })
                 .collect();
             Ok(entries)
-        },
+        }
     }
 }
 
@@ -2012,8 +2211,15 @@ pub fn team_build_calc(conn: &Connection, id: &str) -> anyhow::Result<Option<Tea
             let data = data_str
                 .and_then(|s| serde_json::from_str(&s).ok())
                 .unwrap_or(serde_json::Value::Object(Default::default()));
-            Ok(Some(TeamBuildEntry { id: id_val, name, slot: None, position, element, data }))
-        },
+            Ok(Some(TeamBuildEntry {
+                id: id_val,
+                name,
+                slot: None,
+                position,
+                element,
+                data,
+            }))
+        }
     }
 }
 
@@ -2030,10 +2236,11 @@ pub fn status_report(
     let file_size = std::fs::metadata(&path)
         .map(|meta| format_megabytes(meta.len()))
         .unwrap_or_else(|_| "0.00 MB".to_string());
-    let tables =
-        conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='table'", [], |row| {
-            row.get::<_, i64>(0).map(|v| v as u64)
-        })?;
+    let tables = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table'",
+        [],
+        |row| row.get::<_, i64>(0).map(|v| v as u64),
+    )?;
     let character_count = conn.query_row("SELECT COUNT(*) FROM inagle_characters", [], |row| {
         row.get::<_, i64>(0).map(|v| v as u64)
     })?;
@@ -2078,27 +2285,42 @@ pub fn status_report(
 
 fn redis_status(url: &str) -> RedisStatus {
     let started = Instant::now();
-    let result = redis::Client::open(url).and_then(|client| client.get_connection()).and_then(
-        |mut connection| {
+    let result = redis::Client::open(url)
+        .and_then(|client| client.get_connection())
+        .and_then(|mut connection| {
             use redis::Commands;
             connection.get::<_, Option<String>>("status:ping")
-        },
-    );
+        });
     let latency = format!("{:.2}ms", started.elapsed().as_secs_f64() * 1000.0);
     match result {
-        Ok(_) => RedisStatus { healthy: true, latency, error: None },
-        Err(error) => RedisStatus { healthy: false, latency, error: Some(error.to_string()) },
+        Ok(_) => RedisStatus {
+            healthy: true,
+            latency,
+            error: None,
+        },
+        Err(error) => RedisStatus {
+            healthy: false,
+            latency,
+            error: Some(error.to_string()),
+        },
     }
 }
 
 fn git_output(args: &[&str]) -> Option<String> {
     let output = Command::new("git").args(args).output().ok()?;
-    output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim_end().to_string())
+    output.status.success().then(|| {
+        String::from_utf8_lossy(&output.stdout)
+            .trim_end()
+            .to_string()
+    })
 }
 
 fn proc_memory_kib() -> (u64, u64) {
     let status = std::fs::read_to_string("/proc/self/status").unwrap_or_default();
-    (proc_status_kib(&status, "VmData:"), proc_status_kib(&status, "VmRSS:"))
+    (
+        proc_status_kib(&status, "VmData:"),
+        proc_status_kib(&status, "VmRSS:"),
+    )
 }
 
 fn proc_status_kib(status: &str, field: &str) -> u64 {
@@ -2112,7 +2334,10 @@ fn proc_status_kib(status: &str, field: &str) -> u64 {
 
 fn system_memory_kib() -> (u64, u64) {
     let meminfo = std::fs::read_to_string("/proc/meminfo").unwrap_or_default();
-    (proc_status_kib(&meminfo, "MemTotal:"), proc_status_kib(&meminfo, "MemFree:"))
+    (
+        proc_status_kib(&meminfo, "MemTotal:"),
+        proc_status_kib(&meminfo, "MemFree:"),
+    )
 }
 
 fn format_megabytes(bytes: u64) -> String {
@@ -2245,7 +2470,10 @@ pub fn search_dialogues(
                 });
             let matches_speaker = speaker_query.as_ref().is_none_or(|query| {
                 dialogue.speaker.as_ref().is_some_and(|speaker| {
-                    speaker.chara_id.as_deref().is_some_and(|id| id.to_lowercase() == *query)
+                    speaker
+                        .chara_id
+                        .as_deref()
+                        .is_some_and(|id| id.to_lowercase() == *query)
                         || speaker.names.as_ref().is_some_and(|names| {
                             [&names.fr, &names.en, &names.ja].into_iter().any(|value| {
                                 value
@@ -2290,17 +2518,19 @@ pub fn redis_cmd(
 ) -> anyhow::Result<Option<Value>> {
     use redis::Commands;
     let client = redis::Client::open(url).map_err(|e| anyhow::anyhow!("connexion Redis : {e}"))?;
-    let mut conn =
-        client.get_connection().map_err(|e| anyhow::anyhow!("Redis get_connection : {e}"))?;
+    let mut conn = client
+        .get_connection()
+        .map_err(|e| anyhow::anyhow!("Redis get_connection : {e}"))?;
 
     match cmd.to_lowercase().as_str() {
         "get" => {
-            let result: Option<String> =
-                conn.get(key).map_err(|e| anyhow::anyhow!("Redis GET : {e}"))?;
+            let result: Option<String> = conn
+                .get(key)
+                .map_err(|e| anyhow::anyhow!("Redis GET : {e}"))?;
             Ok(result.map(|serialized| {
                 serde_json::from_str(&serialized).unwrap_or(Value::String(serialized))
             }))
-        },
+        }
         "set" => {
             let v = val.ok_or_else(|| anyhow::anyhow!("valeur requise pour set"))?;
             let parsed =
@@ -2309,12 +2539,16 @@ pub fn redis_cmd(
             conn.set_ex::<_, _, ()>(key, serialized, 3_600)
                 .map_err(|e| anyhow::anyhow!("Redis SET : {e}"))?;
             Ok(Some(Value::Bool(true)))
-        },
+        }
         "del" => {
-            conn.del::<_, ()>(key).map_err(|e| anyhow::anyhow!("Redis DEL : {e}"))?;
+            conn.del::<_, ()>(key)
+                .map_err(|e| anyhow::anyhow!("Redis DEL : {e}"))?;
             Ok(Some(Value::Bool(true)))
-        },
-        other => anyhow::bail!("commande Redis inconnue : '{}'. Utiliser : get / set / del", other),
+        }
+        other => anyhow::bail!(
+            "commande Redis inconnue : '{}'. Utiliser : get / set / del",
+            other
+        ),
     }
 }
 
@@ -2327,7 +2561,7 @@ pub fn re_function_report(
     let predicate = match (name, vaddr) {
         (Some(name), _) if !name.trim().is_empty() => {
             format!("name LIKE '%{}%'", name.replace('\'', "''"))
-        },
+        }
         (_, Some(vaddr)) => format!("vaddr = {vaddr}"),
         _ => anyhow::bail!("re_function requires name or vaddr"),
     };
@@ -2407,14 +2641,29 @@ mod tests {
         let connection = rusqlite::Connection::open_in_memory().unwrap();
         connection.execute_batch("CREATE TABLE inagle_skills(id TEXT,name_fr TEXT,name_en TEXT,name_ja TEXT,category TEXT,element TEXT,power_max TEXT,power_min TEXT,tp_cost TEXT,description_fr TEXT,description_en TEXT,internal_code TEXT,is_hyper TEXT,data TEXT,sheet_data TEXT);
             INSERT INTO inagle_skills(id,internal_code,data) VALUES('who00200','who00200','{\"skillID\":\"0x0D368F6B\"}'),('invalid','invalid','\\N');").unwrap();
-        assert_eq!(get_skill(&connection, "0x0D368F6B").unwrap().unwrap().id, "who00200");
-        assert_eq!(get_skill(&connection, "who00200").unwrap().unwrap().id, "who00200");
-        assert_eq!(get_skill(&connection, "0x0d368f6b").unwrap().unwrap().id, "who00200");
+        assert_eq!(
+            get_skill(&connection, "0x0D368F6B").unwrap().unwrap().id,
+            "who00200"
+        );
+        assert_eq!(
+            get_skill(&connection, "who00200").unwrap().unwrap().id,
+            "who00200"
+        );
+        assert_eq!(
+            get_skill(&connection, "0x0d368f6b").unwrap().unwrap().id,
+            "who00200"
+        );
         assert!(get_skill(&connection, "missing").unwrap().is_none());
         connection
-            .execute("INSERT INTO inagle_skills(id,data) VALUES('0x0D368F6B','{}')", [])
+            .execute(
+                "INSERT INTO inagle_skills(id,data) VALUES('0x0D368F6B','{}')",
+                [],
+            )
             .unwrap();
-        assert_eq!(get_skill(&connection, "0x0D368F6B").unwrap().unwrap().id, "0x0D368F6B");
+        assert_eq!(
+            get_skill(&connection, "0x0D368F6B").unwrap().unwrap().id,
+            "0x0D368F6B"
+        );
     }
 
     #[test]
@@ -2424,9 +2673,18 @@ mod tests {
 
     #[test]
     fn interpolation_uses_the_two_documented_segments() {
-        let lv1 = StatBlock { kick: 1, ..StatBlock::default() };
-        let lv50 = StatBlock { kick: 50, ..StatBlock::default() };
-        let lv99 = StatBlock { kick: 99, ..StatBlock::default() };
+        let lv1 = StatBlock {
+            kick: 1,
+            ..StatBlock::default()
+        };
+        let lv50 = StatBlock {
+            kick: 50,
+            ..StatBlock::default()
+        };
+        let lv99 = StatBlock {
+            kick: 99,
+            ..StatBlock::default()
+        };
 
         assert_eq!(interpolate_stats(lv1, lv50, lv99, 1).kick, 1);
         assert_eq!(interpolate_stats(lv1, lv50, lv99, 50).kick, 50);
@@ -2436,9 +2694,18 @@ mod tests {
 
     #[test]
     fn partial_stat_curve_ignores_lv50_like_legacy_azalee() {
-        let lv1 = StatBlock { kick: 1, ..StatBlock::default() };
-        let misleading_lv50 = StatBlock { kick: 500, ..StatBlock::default() };
-        let lv99 = StatBlock { kick: 99, ..StatBlock::default() };
+        let lv1 = StatBlock {
+            kick: 1,
+            ..StatBlock::default()
+        };
+        let misleading_lv50 = StatBlock {
+            kick: 500,
+            ..StatBlock::default()
+        };
+        let lv99 = StatBlock {
+            kick: 99,
+            ..StatBlock::default()
+        };
 
         assert_eq!(
             interpolate_stat_curve(Some(lv1), None, Some(misleading_lv50), Some(lv99), 50).kick,
@@ -2513,7 +2780,10 @@ mod tests {
                 {"id": "item-2", "name": "Crampons bleus"}
             ])
         );
-        assert_eq!(lookup_item_legacy(&conn, "missing").expect("missing item"), json!([]));
+        assert_eq!(
+            lookup_item_legacy(&conn, "missing").expect("missing item"),
+            json!([])
+        );
     }
 
     #[test]
@@ -2547,12 +2817,18 @@ mod tests {
         let passives = passives.as_array().expect("passive fixture");
         let auras = auras.as_array().expect("aura fixture");
 
-        assert_eq!(lookup_skill_values(main, passives, auras, "passive-id")["name_FR"], "Passif");
+        assert_eq!(
+            lookup_skill_values(main, passives, auras, "passive-id")["name_FR"],
+            "Passif"
+        );
         let matches = lookup_skill_values(main, passives, auras, "Fire");
         assert_eq!(matches.as_array().map(Vec::len), Some(3));
         assert_eq!(matches[0]["skillType"], "main");
         assert_eq!(matches[2]["skillType"], "aura");
-        assert_eq!(lookup_skill_values(main, passives, auras, "missing"), json!([]));
+        assert_eq!(
+            lookup_skill_values(main, passives, auras, "missing"),
+            json!([])
+        );
     }
 
     #[test]
@@ -2563,12 +2839,16 @@ mod tests {
 
         assert!(check_readonly_sql("WITH selected AS (SELECT 1) SELECT * FROM selected").is_ok());
         assert!(
-            exec_readonly_sql(&conn, "WITH selected AS (SELECT 1) DELETE FROM sample RETURNING id")
-                .is_err()
+            exec_readonly_sql(
+                &conn,
+                "WITH selected AS (SELECT 1) DELETE FROM sample RETURNING id"
+            )
+            .is_err()
         );
         assert!(exec_readonly_sql(&conn, "PRAGMA user_version = 7").is_err());
         assert_eq!(
-            conn.query_row("SELECT COUNT(*) FROM sample", [], |row| row.get::<_, i64>(0))
+            conn.query_row("SELECT COUNT(*) FROM sample", [], |row| row
+                .get::<_, i64>(0))
                 .expect("count rows"),
             1
         );
@@ -2600,7 +2880,12 @@ mod tests {
         )
         .expect("read-only page");
 
-        assert_eq!(page.columns, ["vaddr", "safe", "big", "ratio", "name", "payload", "missing"]);
+        assert_eq!(
+            page.columns,
+            [
+                "vaddr", "safe", "big", "ratio", "name", "payload", "missing"
+            ]
+        );
         assert_eq!(
             page.rows,
             vec![json!({
@@ -2615,8 +2900,12 @@ mod tests {
         );
         assert!(page.truncated);
         assert!(
-            exec_readonly_sql_page(&conn, "DELETE FROM sample", SqliteQueryOptions::re_database(1))
-                .is_err()
+            exec_readonly_sql_page(
+                &conn,
+                "DELETE FROM sample",
+                SqliteQueryOptions::re_database(1)
+            )
+            .is_err()
         );
     }
 }

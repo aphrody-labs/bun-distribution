@@ -50,8 +50,14 @@ use crate::hash::HashId;
 /// Lit un champ paire `[offset, count]` (`(0, 0)` si absent ou mal formé).
 fn pair(v: &Value, key: &str) -> (i64, i64) {
     let arr = v.get(key).and_then(Value::as_array);
-    let off = arr.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0);
-    let cnt = arr.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0);
+    let off = arr
+        .and_then(|a| a.first())
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+    let cnt = arr
+        .and_then(|a| a.get(1))
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     (off, cnt)
 }
 
@@ -192,7 +198,10 @@ impl LoginBonusRewardItem {
         if item_id.is_zero() {
             return None;
         }
-        Some(Self { item_id, item_num: field_i64(v, "item_num").unwrap_or(0) })
+        Some(Self {
+            item_id,
+            item_num: field_i64(v, "item_num").unwrap_or(0),
+        })
     }
 }
 
@@ -250,7 +259,11 @@ impl LoginBonusInfo {
             return None;
         }
         let (reward_offset, reward_count) = pair(v, "reward_list");
-        Some(Self { id_crc, reward_offset, reward_count })
+        Some(Self {
+            id_crc,
+            reward_offset,
+            reward_count,
+        })
     }
 }
 
@@ -277,7 +290,11 @@ pub struct AdventCalendarConfig {
 #[must_use]
 pub fn parse_advent_calendar_config(root: &Value) -> AdventCalendarConfig {
     AdventCalendarConfig {
-        calendar: extract_list(root, "m_AdventCalendarInfoList", AdventCalendarInfo::from_value),
+        calendar: extract_list(
+            root,
+            "m_AdventCalendarInfoList",
+            AdventCalendarInfo::from_value,
+        ),
         news: extract_list(root, "m_NewsInfoList", NewsInfo::from_value),
         login_bonus_reward_items: extract_list(
             root,
@@ -521,7 +538,11 @@ impl DeliveryListData {
     /// Parse un noeud `DELIVERY_INFO_DATA_*`.
     #[must_use]
     pub fn from_node(node: Node<'_>) -> Self {
-        Self { item_id_crc: node.hash(0), num: node.int(1), sub_id_crc: node.hash(2) }
+        Self {
+            item_id_crc: node.hash(0),
+            num: node.int(1),
+            sub_id_crc: node.hash(2),
+        }
     }
 }
 

@@ -55,7 +55,10 @@ pub(crate) fn estimate_prompt_overhead(system: Option<&str>, tools: &[ToolDecl])
 /// Estimate the token footprint of a conversation history.
 #[must_use]
 pub fn estimate_history_tokens(history: &[ChatMessage]) -> u64 {
-    history.iter().map(estimate_message_tokens).fold(0, u64::saturating_add)
+    history
+        .iter()
+        .map(estimate_message_tokens)
+        .fold(0, u64::saturating_add)
 }
 
 /// Return true when `message` is a structural checkpoint emitted here.
@@ -78,7 +81,9 @@ pub(crate) fn compact_history(
         return None;
     }
 
-    let context_window = context_window.unwrap_or(DEFAULT_CONTEXT_WINDOW_TOKENS).max(256);
+    let context_window = context_window
+        .unwrap_or(DEFAULT_CONTEXT_WINDOW_TOKENS)
+        .max(256);
     let safe_ceiling = context_window.saturating_mul(90) / 100;
     let trigger = configured_trigger
         .filter(|limit| *limit > 0)
@@ -104,7 +109,10 @@ pub(crate) fn compact_history(
     let removed_tokens = estimate_history_tokens(&removed);
     let summary = structural_summary(&removed, retained.len(), removed_tokens, &fingerprint);
     let mut replacement = Vec::with_capacity(retained.len() + 1);
-    replacement.push(ChatMessage { role: Role::User, parts: vec![Part::Text(summary)] });
+    replacement.push(ChatMessage {
+        role: Role::User,
+        parts: vec![Part::Text(summary)],
+    });
     replacement.extend(retained);
     let tokens_after = estimate_history_tokens(&replacement);
     if tokens_after >= tokens_before {
@@ -144,7 +152,11 @@ fn recent_suffix_start(history: &[ChatMessage], target_tokens: u64) -> usize {
 }
 
 fn estimate_message_tokens(message: &ChatMessage) -> u64 {
-    let parts = message.parts.iter().map(estimate_part_tokens).fold(0, u64::saturating_add);
+    let parts = message
+        .parts
+        .iter()
+        .map(estimate_part_tokens)
+        .fold(0, u64::saturating_add);
     parts.saturating_add(8)
 }
 
@@ -154,11 +166,16 @@ fn estimate_part_tokens(part: &Part) -> u64 {
         Part::Image(image) => estimate_text_tokens(&image.to_url()),
         Part::Reasoning { text, opaque } => {
             estimate_text_tokens(text).saturating_add(estimate_text_tokens(&opaque.to_string()))
-        },
+        }
         Part::FunctionCall { id, name, args } => estimate_text_tokens(id)
             .saturating_add(estimate_text_tokens(name))
             .saturating_add(estimate_text_tokens(&args.to_string())),
-        Part::FunctionResponse { id, name, response, images } => {
+        Part::FunctionResponse {
+            id,
+            name,
+            response,
+            images,
+        } => {
             let images = images
                 .iter()
                 .map(|image| estimate_text_tokens(&image.to_url()))
@@ -167,7 +184,7 @@ fn estimate_part_tokens(part: &Part) -> u64 {
                 .saturating_add(estimate_text_tokens(name))
                 .saturating_add(estimate_text_tokens(&response.to_string()))
                 .saturating_add(images)
-        },
+        }
     }
 }
 
@@ -255,8 +272,13 @@ fn preview(message: &ChatMessage) -> String {
             Part::Reasoning { text, .. } => format!("reasoning={text}"),
             Part::FunctionCall { id, name, args } => {
                 format!("function_call id={id} name={name} args={args}")
-            },
-            Part::FunctionResponse { id, name, response, images } => format!(
+            }
+            Part::FunctionResponse {
+                id,
+                name,
+                response,
+                images,
+            } => format!(
                 "function_response id={id} name={name} response={response} images={}",
                 images.len()
             ),
@@ -280,7 +302,10 @@ mod tests {
     #[test]
     fn recent_suffix_keeps_model_call_with_consecutive_tool_responses() {
         let history = vec![
-            ChatMessage { role: Role::User, parts: vec![Part::Text("old request".repeat(100))] },
+            ChatMessage {
+                role: Role::User,
+                parts: vec![Part::Text("old request".repeat(100))],
+            },
             ChatMessage {
                 role: Role::Model,
                 parts: vec![
@@ -290,11 +315,19 @@ mod tests {
             },
             ChatMessage {
                 role: Role::Tool,
-                parts: vec![Part::function_response("call-1", "first", json!({"ok": true}))],
+                parts: vec![Part::function_response(
+                    "call-1",
+                    "first",
+                    json!({"ok": true}),
+                )],
             },
             ChatMessage {
                 role: Role::Tool,
-                parts: vec![Part::function_response("call-2", "second", json!({"ok": true}))],
+                parts: vec![Part::function_response(
+                    "call-2",
+                    "second",
+                    json!({"ok": true}),
+                )],
             },
         ];
 
@@ -304,9 +337,18 @@ mod tests {
     #[test]
     fn forced_compaction_never_expands_a_short_history() {
         let mut history = vec![
-            ChatMessage { role: Role::User, parts: vec![Part::Text("one".into())] },
-            ChatMessage { role: Role::Model, parts: vec![Part::Text("two".into())] },
-            ChatMessage { role: Role::User, parts: vec![Part::Text("three".into())] },
+            ChatMessage {
+                role: Role::User,
+                parts: vec![Part::Text("one".into())],
+            },
+            ChatMessage {
+                role: Role::Model,
+                parts: vec![Part::Text("two".into())],
+            },
+            ChatMessage {
+                role: Role::User,
+                parts: vec![Part::Text("three".into())],
+            },
         ];
         let original = history.clone();
 

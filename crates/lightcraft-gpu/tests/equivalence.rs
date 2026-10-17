@@ -7,7 +7,8 @@
 use std::sync::Arc;
 
 use lightcraft_develop::{
-    BrushStroke, DevelopSettings, Mask, MaskComponent, MaskOp, MaskShape, Process, Spot, Treatment, VignetteStyle, WbMode, Wheel,
+    BrushStroke, DevelopSettings, Mask, MaskComponent, MaskOp, MaskShape, Process, Spot, Treatment,
+    VignetteStyle, WbMode, Wheel,
 };
 use lightcraft_geom::{Orientation, Point, Rect};
 use lightcraft_pipeline::{Quality, RenderRequest, SourceInfo, StageCache, render};
@@ -35,19 +36,53 @@ fn camera_tone_and_relative_wb() {
         [x, 1.0 - (-2.0 * x).exp()]
     }))
     .unwrap();
-    let info = SourceInfo { raw: true, relative_wb: true, camera_tone: Some(curve), ..Default::default() };
+    let info = SourceInfo {
+        raw: true,
+        relative_wb: true,
+        camera_tone: Some(curve),
+        ..Default::default()
+    };
     let mut s = DevelopSettings::default();
-    check("camera tone neutral", &src, &info, &s, &RenderRequest::fit(320, 240));
+    check(
+        "camera tone neutral",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(320, 240),
+    );
     s.light.exposure = 1.0;
     s.light.contrast = 40.0;
     s.wb.mode = WbMode::Custom;
     s.wb.temp = 8000.0;
-    check("camera tone edited", &src, &info, &s, &RenderRequest::fit(320, 240));
+    check(
+        "camera tone edited",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(320, 240),
+    );
     // a camera chroma curve: richer shadows, highlights bleached toward white
-    let curve = curve.with_chroma([1.4, 1.3, 1.1, 1.0, 0.7, 0.4, 0.25, 0.2]).unwrap();
-    let info = SourceInfo { camera_tone: Some(curve), ..info };
-    check("camera chroma curve", &src, &info, &DevelopSettings::default(), &RenderRequest::fit(320, 240));
-    check("camera chroma curve edited", &src, &info, &s, &RenderRequest::fit(320, 240));
+    let curve = curve
+        .with_chroma([1.4, 1.3, 1.1, 1.0, 0.7, 0.4, 0.25, 0.2])
+        .unwrap();
+    let info = SourceInfo {
+        camera_tone: Some(curve),
+        ..info
+    };
+    check(
+        "camera chroma curve",
+        &src,
+        &info,
+        &DevelopSettings::default(),
+        &RenderRequest::fit(320, 240),
+    );
+    check(
+        "camera chroma curve edited",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(320, 240),
+    );
 }
 
 fn scene(i: usize, w: usize, h: usize) -> Arc<Rgb32f> {
@@ -70,12 +105,26 @@ fn diff(a: &Rgba8, b: &Rgba8) -> (f64, u8, f64) {
     (sum as f64 / n, max, over as f64 / n)
 }
 
-fn check(name: &str, src: &Arc<Rgb32f>, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest) -> (f64, u8) {
+fn check(
+    name: &str,
+    src: &Arc<Rgb32f>,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+) -> (f64, u8) {
     let cpu = render(src, info, s, req).image;
     let gpu = lightcraft_gpu::render(src, info, s, req, None).expect("gpu render");
     let (mean, max, over) = diff(&cpu, &gpu.image);
-    eprintln!("{name:<28} {}x{}  mean {mean:.4}  max {max}  >1: {:.4}%", cpu.width, cpu.height, over * 100.0);
-    assert!(mean < MEAN_LSB && max <= MAX_LSB, "{name}: mean {mean:.4} LSB, max {max} LSB");
+    eprintln!(
+        "{name:<28} {}x{}  mean {mean:.4}  max {max}  >1: {:.4}%",
+        cpu.width,
+        cpu.height,
+        over * 100.0
+    );
+    assert!(
+        mean < MEAN_LSB && max <= MAX_LSB,
+        "{name}: mean {mean:.4} LSB, max {max} LSB"
+    );
     (mean, max)
 }
 
@@ -111,12 +160,27 @@ fn banded_full_size_render_matches() {
             name: None,
             op: MaskOp::Add,
             invert: false,
-            shape: MaskShape::Linear { start: Point::new(0.5, 0.0), end: Point::new(0.5, 0.9) },
+            shape: MaskShape::Linear {
+                start: Point::new(0.5, 0.0),
+                end: Point::new(0.5, 0.9),
+            },
         }],
-        adjust: lightcraft_develop::LocalAdjustments { exposure: -0.6, ..Default::default() },
+        adjust: lightcraft_develop::LocalAdjustments {
+            exposure: -0.6,
+            ..Default::default()
+        },
         ..Default::default()
     }];
-    check("banded 3000×2000", &src, &SourceInfo { raw: true, ..Default::default() }, &s, &RenderRequest::fit(w, h));
+    check(
+        "banded 3000×2000",
+        &src,
+        &SourceInfo {
+            raw: true,
+            ..Default::default()
+        },
+        &s,
+        &RenderRequest::fit(w, h),
+    );
 }
 
 fn cases() -> Vec<(&'static str, Edit)> {
@@ -151,8 +215,22 @@ fn cases() -> Vec<(&'static str, Edit)> {
                     range: 80.0,
                     ..Default::default()
                 },
-                PointColor { lum: 0.5, chroma: 0.12, hue: 270.0, variance: -60.0, sat_shift: 40.0, hue_range: 80.0, ..Default::default() },
-                PointColor { lum: 0.4, chroma: 0.01, hue: 0.0, lum_shift: -30.0, ..Default::default() },
+                PointColor {
+                    lum: 0.5,
+                    chroma: 0.12,
+                    hue: 270.0,
+                    variance: -60.0,
+                    sat_shift: 40.0,
+                    hue_range: 80.0,
+                    ..Default::default()
+                },
+                PointColor {
+                    lum: 0.4,
+                    chroma: 0.01,
+                    hue: 0.0,
+                    lum_shift: -30.0,
+                    ..Default::default()
+                },
             ];
         }),
         ("b&w mix", |s| {
@@ -161,20 +239,45 @@ fn cases() -> Vec<(&'static str, Edit)> {
             s.bw_mix.red = -30.0;
         }),
         ("colour grading", |s| {
-            s.grading.shadows = Wheel { hue: 220.0, sat: 40.0, lum: -10.0 };
-            s.grading.highlights = Wheel { hue: 40.0, sat: 30.0, lum: 10.0 };
-            s.grading.global = Wheel { hue: 300.0, sat: 10.0, lum: 0.0 };
+            s.grading.shadows = Wheel {
+                hue: 220.0,
+                sat: 40.0,
+                lum: -10.0,
+            };
+            s.grading.highlights = Wheel {
+                hue: 40.0,
+                sat: 30.0,
+                lum: 10.0,
+            };
+            s.grading.global = Wheel {
+                hue: 300.0,
+                sat: 10.0,
+                lum: 0.0,
+            };
             s.grading.blending = 70.0;
             s.grading.balance = 20.0;
         }),
         ("tone curves", |s| {
             s.curve.highlights = -30.0;
             s.curve.shadows = 25.0;
-            s.curve.master = vec![Point::new(0.0, 0.05), Point::new(0.5, 0.55), Point::new(1.0, 0.95)];
-            s.curve.blue = vec![Point::new(0.0, 0.0), Point::new(0.5, 0.45), Point::new(1.0, 1.0)];
+            s.curve.master = vec![
+                Point::new(0.0, 0.05),
+                Point::new(0.5, 0.55),
+                Point::new(1.0, 0.95),
+            ];
+            s.curve.blue = vec![
+                Point::new(0.0, 0.0),
+                Point::new(0.5, 0.45),
+                Point::new(1.0, 1.0),
+            ];
         }),
         ("tone curves + refine saturation", |s| {
-            s.curve.master = vec![Point::new(0.0, 0.0), Point::new(0.25, 0.15), Point::new(0.75, 0.88), Point::new(1.0, 1.0)];
+            s.curve.master = vec![
+                Point::new(0.0, 0.0),
+                Point::new(0.25, 0.15),
+                Point::new(0.75, 0.88),
+                Point::new(1.0, 1.0),
+            ];
             s.curve.lights = 30.0;
             s.curve.refine_saturation = 20.0;
         }),
@@ -237,9 +340,17 @@ fn cases() -> Vec<(&'static str, Edit)> {
                         name: None,
                         op: MaskOp::Add,
                         invert: false,
-                        shape: MaskShape::Linear { start: Point::new(0.5, 0.0), end: Point::new(0.5, 0.6) },
+                        shape: MaskShape::Linear {
+                            start: Point::new(0.5, 0.0),
+                            end: Point::new(0.5, 0.6),
+                        },
                     }],
-                    adjust: lightcraft_develop::LocalAdjustments { exposure: -0.8, temp: -30.0, saturation: 20.0, ..Default::default() },
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        exposure: -0.8,
+                        temp: -30.0,
+                        saturation: 20.0,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Mask {
@@ -248,13 +359,23 @@ fn cases() -> Vec<(&'static str, Edit)> {
                             name: None,
                             op: MaskOp::Add,
                             invert: false,
-                            shape: MaskShape::Radial { center: Point::new(0.4, 0.6), rx: 0.25, ry: 0.15, angle: 20.0, feather: 60.0, invert: false },
+                            shape: MaskShape::Radial {
+                                center: Point::new(0.4, 0.6),
+                                rx: 0.25,
+                                ry: 0.15,
+                                angle: 20.0,
+                                feather: 60.0,
+                                invert: false,
+                            },
                         },
                         MaskComponent {
                             name: None,
                             op: MaskOp::Intersect,
                             invert: true,
-                            shape: MaskShape::Linear { start: Point::new(0.0, 0.0), end: Point::new(1.0, 1.0) },
+                            shape: MaskShape::Linear {
+                                start: Point::new(0.0, 0.0),
+                                end: Point::new(1.0, 1.0),
+                            },
                         },
                     ],
                     adjust: lightcraft_develop::LocalAdjustments {
@@ -272,21 +393,38 @@ fn cases() -> Vec<(&'static str, Edit)> {
         }),
         ("masks (brush + ranges)", |s| {
             let stroke = BrushStroke {
-                points: vec![Point::new(0.1, 0.3), Point::new(0.5, 0.4), Point::new(0.8, 0.35)],
+                points: vec![
+                    Point::new(0.1, 0.3),
+                    Point::new(0.5, 0.4),
+                    Point::new(0.8, 0.35),
+                ],
                 size: 0.04,
                 flow: 60.0,
                 ..Default::default()
             };
-            let erase = BrushStroke { points: vec![Point::new(0.5, 0.4)], size: 0.03, erase: true, ..Default::default() };
+            let erase = BrushStroke {
+                points: vec![Point::new(0.5, 0.4)],
+                size: 0.03,
+                erase: true,
+                ..Default::default()
+            };
             s.masks = vec![
                 Mask {
                     components: vec![MaskComponent {
                         name: None,
                         op: MaskOp::Add,
                         invert: false,
-                        shape: MaskShape::Brush { strokes: vec![stroke, erase] },
+                        shape: MaskShape::Brush {
+                            strokes: vec![stroke, erase],
+                        },
                     }],
-                    adjust: lightcraft_develop::LocalAdjustments { exposure: 0.7, whites: 20.0, blacks: -20.0, dehaze: 30.0, ..Default::default() },
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        exposure: 0.7,
+                        whites: 20.0,
+                        blacks: -20.0,
+                        dehaze: 30.0,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Mask {
@@ -294,9 +432,19 @@ fn cases() -> Vec<(&'static str, Edit)> {
                         name: None,
                         op: MaskOp::Add,
                         invert: false,
-                        shape: MaskShape::LuminanceRange { lo: 0.5, hi: 0.8, lo_feather: 0.1, hi_feather: 0.1 },
+                        shape: MaskShape::LuminanceRange {
+                            lo: 0.5,
+                            hi: 0.8,
+                            lo_feather: 0.1,
+                            hi_feather: 0.1,
+                        },
                     }],
-                    adjust: lightcraft_develop::LocalAdjustments { highlights: -50.0, texture: 30.0, sharpness: 40.0, ..Default::default() },
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        highlights: -50.0,
+                        texture: 30.0,
+                        sharpness: 40.0,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Mask {
@@ -304,9 +452,16 @@ fn cases() -> Vec<(&'static str, Edit)> {
                         name: None,
                         op: MaskOp::Add,
                         invert: false,
-                        shape: MaskShape::ColorRange { samples: vec![[0.6, -0.05, -0.08]], refine: 50.0 },
+                        shape: MaskShape::ColorRange {
+                            samples: vec![[0.6, -0.05, -0.08]],
+                            refine: 50.0,
+                        },
                     }],
-                    adjust: lightcraft_develop::LocalAdjustments { saturation: 40.0, tint: 20.0, ..Default::default() },
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        saturation: 40.0,
+                        tint: 20.0,
+                        ..Default::default()
+                    },
                     invert: true,
                     ..Default::default()
                 },
@@ -316,42 +471,105 @@ fn cases() -> Vec<(&'static str, Edit)> {
             s.masks = vec![
                 Mask {
                     components: vec![
-                        MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: MaskShape::Sky },
+                        MaskComponent {
+                            name: None,
+                            op: MaskOp::Add,
+                            invert: false,
+                            shape: MaskShape::Sky,
+                        },
                         MaskComponent {
                             name: None,
                             op: MaskOp::Subtract,
                             invert: false,
-                            shape: MaskShape::Radial { center: Point::new(0.7, 0.2), rx: 0.1, ry: 0.1, angle: 0.0, feather: 30.0, invert: false },
+                            shape: MaskShape::Radial {
+                                center: Point::new(0.7, 0.2),
+                                rx: 0.1,
+                                ry: 0.1,
+                                angle: 0.0,
+                                feather: 30.0,
+                                invert: false,
+                            },
                         },
                     ],
-                    adjust: lightcraft_develop::LocalAdjustments { exposure: -0.5, dehaze: 40.0, amount: 70.0, ..Default::default() },
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        exposure: -0.5,
+                        dehaze: 40.0,
+                        amount: 70.0,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Mask {
-                    components: vec![MaskComponent { name: None, op: MaskOp::Intersect, invert: false, shape: MaskShape::Subject }],
-                    adjust: lightcraft_develop::LocalAdjustments { exposure: 0.5, ..Default::default() },
+                    components: vec![MaskComponent {
+                        name: None,
+                        op: MaskOp::Intersect,
+                        invert: false,
+                        shape: MaskShape::Subject,
+                    }],
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        exposure: 0.5,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Mask {
-                    components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: true, shape: MaskShape::Background }],
-                    adjust: lightcraft_develop::LocalAdjustments { saturation: -60.0, ..Default::default() },
+                    components: vec![MaskComponent {
+                        name: None,
+                        op: MaskOp::Add,
+                        invert: true,
+                        shape: MaskShape::Background,
+                    }],
+                    adjust: lightcraft_develop::LocalAdjustments {
+                        saturation: -60.0,
+                        ..Default::default()
+                    },
                     invert: true,
                     ..Default::default()
                 },
             ];
         }),
         ("masks (local noise, moiré, defringe)", |s| {
-            let radial = MaskShape::Radial { center: Point::new(0.4, 0.6), rx: 0.3, ry: 0.25, angle: 0.0, feather: 50.0, invert: false };
-            let linear = MaskShape::Linear { start: Point::new(0.5, 0.0), end: Point::new(0.5, 0.7) };
+            let radial = MaskShape::Radial {
+                center: Point::new(0.4, 0.6),
+                rx: 0.3,
+                ry: 0.25,
+                angle: 0.0,
+                feather: 50.0,
+                invert: false,
+            };
+            let linear = MaskShape::Linear {
+                start: Point::new(0.5, 0.0),
+                end: Point::new(0.5, 0.7),
+            };
             let m = |shape, adjust| Mask {
-                components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape }],
+                components: vec![MaskComponent {
+                    name: None,
+                    op: MaskOp::Add,
+                    invert: false,
+                    shape,
+                }],
                 adjust,
                 ..Default::default()
             };
             use lightcraft_develop::LocalAdjustments as L;
             s.masks = vec![
-                m(radial, L { noise: 80.0, moire: 60.0, defringe: 100.0, ..Default::default() }),
-                m(linear, L { noise: -60.0, moire: -40.0, ..Default::default() }),
+                m(
+                    radial,
+                    L {
+                        noise: 80.0,
+                        moire: 60.0,
+                        defringe: 100.0,
+                        ..Default::default()
+                    },
+                ),
+                m(
+                    linear,
+                    L {
+                        noise: -60.0,
+                        moire: -40.0,
+                        ..Default::default()
+                    },
+                ),
             ];
         }),
         ("masks (auto mask brush)", |s| {
@@ -370,8 +588,17 @@ fn cases() -> Vec<(&'static str, Edit)> {
                 st(&[(0.5, 0.58)], true, true),
             ];
             s.masks = vec![Mask {
-                components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: MaskShape::Brush { strokes } }],
-                adjust: lightcraft_develop::LocalAdjustments { exposure: 1.0, saturation: -50.0, ..Default::default() },
+                components: vec![MaskComponent {
+                    name: None,
+                    op: MaskOp::Add,
+                    invert: false,
+                    shape: MaskShape::Brush { strokes },
+                }],
+                adjust: lightcraft_develop::LocalAdjustments {
+                    exposure: 1.0,
+                    saturation: -50.0,
+                    ..Default::default()
+                },
                 ..Default::default()
             }];
         }),
@@ -384,7 +611,12 @@ fn cases() -> Vec<(&'static str, Edit)> {
             s.calibration.blue_hue = 25.0;
         }),
         ("spots + defringe (cpu stage)", |s| {
-            s.spots = vec![Spot { points: vec![Point::new(0.3, 0.3)], size: 0.03, source_offset: Some(Point::new(0.1, 0.0)), ..Default::default() }];
+            s.spots = vec![Spot {
+                points: vec![Point::new(0.3, 0.3)],
+                size: 0.03,
+                source_offset: Some(Point::new(0.1, 0.0)),
+                ..Default::default()
+            }];
             s.optics.defringe_purple_amount = 5.0;
         }),
     ]
@@ -396,7 +628,10 @@ fn gpu_matches_cpu() {
         return;
     }
     let src = scene(0, 960, 640);
-    let raw = SourceInfo { raw: true, ..Default::default() };
+    let raw = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let req = RenderRequest::fit(720, 720);
     let mut worst = (0.0f64, 0u8);
     for (name, edit) in cases() {
@@ -417,8 +652,16 @@ fn clipped_highlights_stay_neutral_on_both() {
         return;
     }
     let wb = [2.4f32, 1.0, 1.6];
-    let look = lightcraft_color::Mat3([[0.42, 0.548, 0.04], [0.246, 0.728, 0.033], [-0.247, 0.679, 0.447]]);
-    let luma = |c: [f64; 3]| (0..3).map(|i| c[i] * f64::from(lightcraft_color::LUMA_2020[i])).sum::<f64>();
+    let look = lightcraft_color::Mat3([
+        [0.42, 0.548, 0.04],
+        [0.246, 0.728, 0.033],
+        [-0.247, 0.679, 0.447],
+    ]);
+    let luma = |c: [f64; 3]| {
+        (0..3)
+            .map(|i| c[i] * f64::from(lightcraft_color::LUMA_2020[i]))
+            .sum::<f64>()
+    };
     let n = look.inverse().unwrap().apply([1.0; 3]);
     let white = n.map(|v| (v * luma(look.apply([1.0; 3])) / luma(look.apply(n))) as f32);
     // a grey wall with a fully clipped light, a light clipped in green only, and a dark bar with a purple fringe
@@ -443,20 +686,38 @@ fn clipped_highlights_stay_neutral_on_both() {
         let c = [p[0] * wb[0], p[1] * wb[1], p[2] * wb[2]];
         std::array::from_fn(|i| (m[i][0] * c[0] + m[i][1] * c[1] + m[i][2] * c[2]).max(0.0))
     }));
-    let info = SourceInfo { raw: true, ..Default::default() };
+    let info = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let req = RenderRequest::fit(320, 240);
     let mut h100 = DevelopSettings::default();
     h100.light.highlights = -100.0;
     let mut issue = DevelopSettings::default();
     let l = &mut issue.light;
-    (l.exposure, l.contrast, l.highlights, l.shadows, l.whites, l.blacks) = (-0.88, 5.0, -75.0, 52.0, 6.0, -37.0);
-    for (name, s) in [("clipped highlights -100", h100), ("clipped highlights #523", issue)] {
+    (
+        l.exposure,
+        l.contrast,
+        l.highlights,
+        l.shadows,
+        l.whites,
+        l.blacks,
+    ) = (-0.88, 5.0, -75.0, 52.0, 6.0, -37.0);
+    for (name, s) in [
+        ("clipped highlights -100", h100),
+        ("clipped highlights #523", issue),
+    ] {
         check(name, &src, &info, &s, &req);
         let cpu = render(&src, &info, &s, &req).image;
-        let gpu = lightcraft_gpu::render(&src, &info, &s, &req, None).expect("gpu render").image;
+        let gpu = lightcraft_gpu::render(&src, &info, &s, &req, None)
+            .expect("gpu render")
+            .image;
         for (who, img) in [("CPU", &cpu), ("GPU", &gpu)] {
             let p = img.get(90, 120);
-            assert!(p[1] < 250 && p[0].max(p[1]).max(p[2]) - p[0].min(p[1]).min(p[2]) <= 1, "{name} {who}: clipped light {p:?}");
+            assert!(
+                p[1] < 250 && p[0].max(p[1]).max(p[2]) - p[0].min(p[1]).min(p[2]) <= 1,
+                "{name} {who}: clipped light {p:?}"
+            );
         }
     }
 }
@@ -468,15 +729,46 @@ fn rendered_sources_and_other_scenes() {
     }
     // A display-referred source (JPEG-like: display tone map) and other scenes / sizes / draft.
     let jpeg = SourceInfo::default();
-    for (i, (w, h)) in [(3usize, (800usize, 533usize)), (5, (640, 960)), (7, (1200, 800))] {
+    for (i, (w, h)) in [
+        (3usize, (800usize, 533usize)),
+        (5, (640, 960)),
+        (7, (1200, 800)),
+    ] {
         let src = scene(i, w, h);
         let mut s = DevelopSettings::default();
         typical(&mut s);
         s.color.vibrance = 25.0;
-        check(&format!("scene {i} display-referred"), &src, &jpeg, &s, &RenderRequest::fit(700, 700));
-        let draft = RenderRequest { quality: Quality::Draft, ..RenderRequest::fit(500, 500) };
-        check(&format!("scene {i} draft"), &src, &SourceInfo { raw: true, ..Default::default() }, &s, &draft);
-        check(&format!("scene {i} full size"), &src, &SourceInfo { raw: true, ..Default::default() }, &s, &RenderRequest::fit(w, h));
+        check(
+            &format!("scene {i} display-referred"),
+            &src,
+            &jpeg,
+            &s,
+            &RenderRequest::fit(700, 700),
+        );
+        let draft = RenderRequest {
+            quality: Quality::Draft,
+            ..RenderRequest::fit(500, 500)
+        };
+        check(
+            &format!("scene {i} draft"),
+            &src,
+            &SourceInfo {
+                raw: true,
+                ..Default::default()
+            },
+            &s,
+            &draft,
+        );
+        check(
+            &format!("scene {i} full size"),
+            &src,
+            &SourceInfo {
+                raw: true,
+                ..Default::default()
+            },
+            &s,
+            &RenderRequest::fit(w, h),
+        );
     }
 }
 
@@ -486,11 +778,22 @@ fn geometry_variants() {
         return;
     }
     let src = scene(2, 900, 600);
-    let raw = SourceInfo { raw: true, ..Default::default() };
+    let raw = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     use Orientation::*;
-    for o in [Normal, Rotate90, Rotate180, Rotate270, FlipH, Transverse, FlipV, Transpose] {
-        for (crop, req) in [(false, RenderRequest::fit(900, 900)), (true, RenderRequest::fit(500, 500))] {
-            let mut s = DevelopSettings { orientation: o, ..Default::default() };
+    for o in [
+        Normal, Rotate90, Rotate180, Rotate270, FlipH, Transverse, FlipV, Transpose,
+    ] {
+        for (crop, req) in [
+            (false, RenderRequest::fit(900, 900)),
+            (true, RenderRequest::fit(500, 500)),
+        ] {
+            let mut s = DevelopSettings {
+                orientation: o,
+                ..Default::default()
+            };
             if crop {
                 s.crop.geometry.rect = Rect::new(0.2, 0.1, 0.9, 0.8);
                 s.crop.geometry.angle = -4.0;
@@ -508,27 +811,53 @@ fn embedded_lens_perspective_edges_match() {
     }
     use lightcraft_develop::{EmbeddedLens, EmbeddedVignette, EmbeddedWarp};
     let src = scene(2, 900, 600);
-    let raw = SourceInfo { raw: true, ..Default::default() };
+    let raw = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     // The unrotated case includes a position only 0.000035 px outside the edge.
     // f32 classification previously sampled the photo instead of blank canvas.
     // Embedded DNG lens corrections (per-plane warp + vignette) with manual CA.
     let lens = EmbeddedLens {
         warp: Some(EmbeddedWarp {
-            planes: [[1.0, -0.03, 0.01, 0.0, 0.001, -0.002], [1.0, -0.028, 0.01, 0.0, 0.001, -0.002], [1.0, -0.026, 0.01, 0.0, 0.001, -0.002]],
+            planes: [
+                [1.0, -0.03, 0.01, 0.0, 0.001, -0.002],
+                [1.0, -0.028, 0.01, 0.0, 0.001, -0.002],
+                [1.0, -0.026, 0.01, 0.0, 0.001, -0.002],
+            ],
             center: Point::new(0.52, 0.48),
             radius: 0.6,
         }),
-        vignette: Some(EmbeddedVignette { k: [0.4, -0.1, 0.02, 0.0, 0.0], center: Point::new(0.5, 0.5), radius: 0.6 }),
+        vignette: Some(EmbeddedVignette {
+            k: [0.4, -0.1, 0.02, 0.0, 0.0],
+            center: Point::new(0.5, 0.5),
+            radius: 0.6,
+        }),
         stages: Default::default(),
     };
-    let info = SourceInfo { lens: Some(lens), ..raw };
+    let info = SourceInfo {
+        lens: Some(lens),
+        ..raw
+    };
     let mut s = DevelopSettings::default();
     s.optics.lens_profile = true;
     s.optics.ca_red = 30.0;
     s.geometry.horizontal = -15.0;
-    check("embedded lens + perspective", &src, &info, &s, &RenderRequest::fit(700, 700));
+    check(
+        "embedded lens + perspective",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(700, 700),
+    );
     s.orientation = Orientation::Rotate270;
-    check("embedded lens rotated", &src, &info, &s, &RenderRequest::fit(700, 700));
+    check(
+        "embedded lens rotated",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(700, 700),
+    );
 }
 
 #[test]
@@ -538,7 +867,10 @@ fn cached_renders_match_uncached() {
     }
     // Slider drags reuse device-resident stages: the result must equal a fresh render.
     let src = scene(1, 900, 600);
-    let info = SourceInfo { raw: true, ..Default::default() };
+    let info = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let cache = StageCache::default();
     let req = RenderRequest::fit(640, 640);
     let mut s = DevelopSettings::default();
@@ -561,16 +893,28 @@ fn highlights_shadows_base_matches_on_every_process() {
     if !gpu() {
         return;
     }
-    let raw = SourceInfo { raw: true, ..Default::default() };
+    let raw = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let src = scene(0, 2400, 1600);
     let cache = StageCache::default();
     for &(w, h) in &[(720, 480), (2400, 1600)] {
         let req = RenderRequest::fit(w, h);
         for p in Process::ALL {
-            let mut s = DevelopSettings { process: p.version(), ..DevelopSettings::default() };
+            let mut s = DevelopSettings {
+                process: p.version(),
+                ..DevelopSettings::default()
+            };
             s.light.highlights = -100.0;
             s.light.shadows = 60.0;
-            check(&format!("{p:?} highlights/shadows {w}"), &src, &raw, &s, &req);
+            check(
+                &format!("{p:?} highlights/shadows {w}"),
+                &src,
+                &raw,
+                &s,
+                &req,
+            );
             typical(&mut s);
             check(&format!("{p:?} typical {w}"), &src, &raw, &s, &req);
             s.masks = vec![Mask {
@@ -578,15 +922,25 @@ fn highlights_shadows_base_matches_on_every_process() {
                     name: None,
                     op: MaskOp::Add,
                     invert: false,
-                    shape: MaskShape::Linear { start: Point::new(0.5, 0.0), end: Point::new(0.5, 0.9) },
+                    shape: MaskShape::Linear {
+                        start: Point::new(0.5, 0.0),
+                        end: Point::new(0.5, 0.9),
+                    },
                 }],
-                adjust: lightcraft_develop::LocalAdjustments { highlights: -70.0, shadows: 40.0, ..Default::default() },
+                adjust: lightcraft_develop::LocalAdjustments {
+                    highlights: -70.0,
+                    shadows: 40.0,
+                    ..Default::default()
+                },
                 ..Default::default()
             }];
             check(&format!("{p:?} local highlights {w}"), &src, &raw, &s, &req);
         }
         for p in [Process::V1, Process::V2, Process::V1, Process::V2] {
-            let mut s = DevelopSettings { process: p.version(), ..DevelopSettings::default() };
+            let mut s = DevelopSettings {
+                process: p.version(),
+                ..DevelopSettings::default()
+            };
             s.light.highlights = -100.0;
             let warm = lightcraft_gpu::render(&src, &raw, &s, &req, Some(&cache)).expect("gpu");
             let fresh = lightcraft_gpu::render(&src, &raw, &s, &req, None).expect("gpu");
@@ -602,28 +956,60 @@ fn overlays_match() {
     }
     // Diagnostic overlays run on the finished 8-bit image, after either renderer.
     let src = scene(0, 900, 600);
-    let raw = SourceInfo { raw: true, ..Default::default() };
-    let s = DevelopSettings {
-        point_colors: vec![lightcraft_develop::PointColor { lum: 0.6, chroma: 0.05, hue: 300.0, hue_shift: 50.0, range: 90.0, ..Default::default() }],
+    let raw = SourceInfo {
+        raw: true,
         ..Default::default()
     };
-    let req = RenderRequest { overlay: lightcraft_pipeline::Overlay::PointColorRange(0), ..RenderRequest::fit(640, 640) };
+    let s = DevelopSettings {
+        point_colors: vec![lightcraft_develop::PointColor {
+            lum: 0.6,
+            chroma: 0.05,
+            hue: 300.0,
+            hue_shift: 50.0,
+            range: 90.0,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    let req = RenderRequest {
+        overlay: lightcraft_pipeline::Overlay::PointColorRange(0),
+        ..RenderRequest::fit(640, 640)
+    };
     check("point color range overlay", &src, &raw, &s, &req);
     // Visualize Spots is a binary threshold of a high-pass: a 1-LSB difference near the threshold
     // flips a pixel, so compare the share of differing pixels instead of LSBs.
     let s = DevelopSettings::default();
     for t in [20u8, 50, 90] {
-        let req = RenderRequest { overlay: lightcraft_pipeline::Overlay::Spots(t), ..RenderRequest::fit(640, 640) };
+        let req = RenderRequest {
+            overlay: lightcraft_pipeline::Overlay::Spots(t),
+            ..RenderRequest::fit(640, 640)
+        };
         let cpu = render(&src, &raw, &s, &req).image;
-        let gpu = lightcraft_gpu::render(&src, &raw, &s, &req, None).expect("gpu").image;
-        let differ = cpu.data.iter().zip(&gpu.data).filter(|(a, b)| a != b).count() as f64 / cpu.data.len() as f64;
+        let gpu = lightcraft_gpu::render(&src, &raw, &s, &req, None)
+            .expect("gpu")
+            .image;
+        let differ = cpu
+            .data
+            .iter()
+            .zip(&gpu.data)
+            .filter(|(a, b)| a != b)
+            .count() as f64
+            / cpu.data.len() as f64;
         let white = cpu.data.iter().filter(|p| p[0] == 255).count() as f64 / cpu.data.len() as f64;
-        eprintln!("visualize spots t={t:<3}          white {:.3}%  differing {:.4}%", white * 100.0, differ * 100.0);
+        eprintln!(
+            "visualize spots t={t:<3}          white {:.3}%  differing {:.4}%",
+            white * 100.0,
+            differ * 100.0
+        );
         assert!(differ < 0.002, "spots t={t}: {differ}");
     }
     // Mask overlays: the alpha the GPU evaluated (or, for a hidden mask, the CPU's) drawn the same way.
     let mut s = DevelopSettings::default();
-    let stroke = BrushStroke { points: vec![Point::new(0.2, 0.3), Point::new(0.6, 0.5)], size: 0.05, ..Default::default() };
+    let stroke = BrushStroke {
+        points: vec![Point::new(0.2, 0.3), Point::new(0.6, 0.5)],
+        size: 0.05,
+        ..Default::default()
+    };
     s.masks = vec![
         Mask {
             id: 1,
@@ -631,13 +1017,27 @@ fn overlays_match() {
                 name: None,
                 op: MaskOp::Add,
                 invert: false,
-                shape: MaskShape::Radial { center: Point::new(0.4, 0.6), rx: 0.25, ry: 0.15, angle: 20.0, feather: 60.0, invert: false },
+                shape: MaskShape::Radial {
+                    center: Point::new(0.4, 0.6),
+                    rx: 0.25,
+                    ry: 0.15,
+                    angle: 20.0,
+                    feather: 60.0,
+                    invert: false,
+                },
             }],
             ..Default::default()
         },
         Mask {
             id: 2,
-            components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: MaskShape::Brush { strokes: vec![stroke] } }],
+            components: vec![MaskComponent {
+                name: None,
+                op: MaskOp::Add,
+                invert: false,
+                shape: MaskShape::Brush {
+                    strokes: vec![stroke],
+                },
+            }],
             ..Default::default()
         },
         Mask {
@@ -647,18 +1047,39 @@ fn overlays_match() {
                 name: None,
                 op: MaskOp::Add,
                 invert: false,
-                shape: MaskShape::Linear { start: Point::new(0.5, 0.0), end: Point::new(0.5, 0.6) },
+                shape: MaskShape::Linear {
+                    start: Point::new(0.5, 0.0),
+                    end: Point::new(0.5, 0.6),
+                },
             }],
             ..Default::default()
         },
     ];
     s.masks[0].adjust.exposure = 0.5;
     use lightcraft_pipeline::{MaskView, Overlay};
-    for (id, view) in
-        [(1, MaskView::Color), (2, MaskView::ColorOnBw), (2, MaskView::WhiteOnBlack), (3, MaskView::ImageOnWhite), (1, MaskView::ImageOnBlack)]
-    {
-        let req = RenderRequest { overlay: Overlay::Mask { id, view, color: [230, 30, 40], opacity: 50 }, ..RenderRequest::fit(640, 640) };
-        check(&format!("mask {id} overlay {}", view.name()), &src, &raw, &s, &req);
+    for (id, view) in [
+        (1, MaskView::Color),
+        (2, MaskView::ColorOnBw),
+        (2, MaskView::WhiteOnBlack),
+        (3, MaskView::ImageOnWhite),
+        (1, MaskView::ImageOnBlack),
+    ] {
+        let req = RenderRequest {
+            overlay: Overlay::Mask {
+                id,
+                view,
+                color: [230, 30, 40],
+                opacity: 50,
+            },
+            ..RenderRequest::fit(640, 640)
+        };
+        check(
+            &format!("mask {id} overlay {}", view.name()),
+            &src,
+            &raw,
+            &s,
+            &req,
+        );
     }
 }
 
@@ -669,7 +1090,9 @@ fn red_eye_matches() {
     }
     // A face-like patch with a red pupil (left) and a glowing pet pupil (right).
     let src = Arc::new(Rgb32f::from_fn(800, 400, |x, y| {
-        let d = |cx: f32, cy: f32| ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt();
+        let d = |cx: f32, cy: f32| {
+            ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt()
+        };
         if d(250.0, 200.0) < 20.0 {
             [0.55, 0.05, 0.04]
         } else if d(560.0, 190.0) < 24.0 {
@@ -682,7 +1105,13 @@ fn red_eye_matches() {
     }));
     let info = SourceInfo::default();
     let eyes = vec![
-        lightcraft_develop::RedEye { center: Point::new(0.31, 0.5), rx: 0.06, ry: 0.05, darken: 70.0, ..Default::default() },
+        lightcraft_develop::RedEye {
+            center: Point::new(0.31, 0.5),
+            rx: 0.06,
+            ry: 0.05,
+            darken: 70.0,
+            ..Default::default()
+        },
         lightcraft_develop::RedEye {
             center: Point::new(0.7, 0.48),
             rx: 0.06,
@@ -693,20 +1122,54 @@ fn red_eye_matches() {
             ..Default::default()
         },
     ];
-    let s = DevelopSettings { red_eye: eyes.clone(), ..Default::default() };
-    check("red + pet eye", &src, &info, &s, &RenderRequest::fit(800, 800));
-    let g = lightcraft_gpu::render(&src, &info, &s, &RenderRequest::fit(800, 800), None).expect("gpu").image;
+    let s = DevelopSettings {
+        red_eye: eyes.clone(),
+        ..Default::default()
+    };
+    check(
+        "red + pet eye",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(800, 800),
+    );
+    let g = lightcraft_gpu::render(&src, &info, &s, &RenderRequest::fit(800, 800), None)
+        .expect("gpu")
+        .image;
     let (red, pet) = (g.data[200 * 800 + 250], g.data[190 * 800 + 560]);
-    assert!(red[0] < 80 && red[0].abs_diff(red[1]) < 10, "red pupil fixed on the GPU: {red:?}");
-    assert!(pet[1] < 80 && pet[0].abs_diff(pet[1]) < 5, "pet pupil darkened on the GPU: {pet:?}");
-    check("red + pet eye (small)", &src, &info, &s, &RenderRequest::fit(300, 300));
+    assert!(
+        red[0] < 80 && red[0].abs_diff(red[1]) < 10,
+        "red pupil fixed on the GPU: {red:?}"
+    );
+    assert!(
+        pet[1] < 80 && pet[0].abs_diff(pet[1]) < 5,
+        "pet pupil darkened on the GPU: {pet:?}"
+    );
+    check(
+        "red + pet eye (small)",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(300, 300),
+    );
     // with a spot the scene-linear stage runs on the CPU (eyes included)
     let s = DevelopSettings {
         red_eye: eyes,
-        spots: vec![Spot { points: vec![Point::new(0.1, 0.2)], size: 0.02, source_offset: Some(Point::new(0.05, 0.0)), ..Default::default() }],
+        spots: vec![Spot {
+            points: vec![Point::new(0.1, 0.2)],
+            size: 0.02,
+            source_offset: Some(Point::new(0.05, 0.0)),
+            ..Default::default()
+        }],
         ..Default::default()
     };
-    check("red eye + spot (cpu stage)", &src, &info, &s, &RenderRequest::fit(600, 600));
+    check(
+        "red eye + spot (cpu stage)",
+        &src,
+        &info,
+        &s,
+        &RenderRequest::fit(600, 600),
+    );
 }
 
 fn saturated(s: &mut DevelopSettings) {
@@ -727,12 +1190,21 @@ fn output_spaces_match() {
     // its encoding curve, on both renderers. Saturated edits push colours to the gamut edges.
     use lightcraft_pipeline::OutputSpace;
     let src = scene(0, 900, 600);
-    let raw = SourceInfo { raw: true, ..Default::default() };
+    let raw = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     for space in OutputSpace::ALL {
-        for (name, edit) in [("typical", typical as Edit), ("saturated + curves + grain", saturated as Edit)] {
+        for (name, edit) in [
+            ("typical", typical as Edit),
+            ("saturated + curves + grain", saturated as Edit),
+        ] {
             let mut s = DevelopSettings::default();
             edit(&mut s);
-            let req = RenderRequest { space, ..RenderRequest::fit(640, 640) };
+            let req = RenderRequest {
+                space,
+                ..RenderRequest::fit(640, 640)
+            };
             check(&format!("{space:?} {name}"), &src, &raw, &s, &req);
         }
     }
@@ -746,15 +1218,30 @@ fn tint_directions_match_cpu_for_raw_and_rendered_sources() {
     let src = Arc::new(Rgb32f::filled(64, 64, [0.18; 3]));
     for info in [
         SourceInfo::default(),
-        SourceInfo { raw: true, relative_wb: true, ..Default::default() },
-        SourceInfo { raw: true, as_shot_temp: 4200.0, as_shot_tint: 15.0, ..Default::default() },
+        SourceInfo {
+            raw: true,
+            relative_wb: true,
+            ..Default::default()
+        },
+        SourceInfo {
+            raw: true,
+            as_shot_temp: 4200.0,
+            as_shot_tint: 15.0,
+            ..Default::default()
+        },
     ] {
         for delta in [-50.0, 50.0] {
             let mut s = DevelopSettings::default();
             s.wb.mode = WbMode::Custom;
             s.wb.temp = info.as_shot_temp;
             s.wb.tint = info.as_shot_tint + delta;
-            check("tint direction", &src, &info, &s, &RenderRequest::fit(64, 64));
+            check(
+                "tint direction",
+                &src,
+                &info,
+                &s,
+                &RenderRequest::fit(64, 64),
+            );
         }
     }
 }
@@ -768,9 +1255,20 @@ fn windows_match() {
     }
     use lightcraft_pipeline::PixelWindow;
     let src = scene(1, 960, 640);
-    let info = SourceInfo { raw: true, ..Default::default() };
-    let win = PixelWindow { x: 1200, y: 800, w: 640, h: 480 };
-    let req = RenderRequest { window: Some(win), ..RenderRequest::fit(3000, 2000) };
+    let info = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
+    let win = PixelWindow {
+        x: 1200,
+        y: 800,
+        w: 640,
+        h: 480,
+    };
+    let req = RenderRequest {
+        window: Some(win),
+        ..RenderRequest::fit(3000, 2000)
+    };
     let mut cases = cases();
     cases.push(("vignette at the corner", |s| {
         s.vignette.amount = -80.0;
@@ -796,7 +1294,15 @@ fn windows_match() {
     let mut s = DevelopSettings::default();
     s.vignette.amount = -80.0;
     s.vignette.midpoint = 10.0;
-    let corner = RenderRequest { window: Some(PixelWindow { x: 2360, y: 1520, w: 640, h: 480 }), ..RenderRequest::fit(3000, 2000) };
+    let corner = RenderRequest {
+        window: Some(PixelWindow {
+            x: 2360,
+            y: 1520,
+            w: 640,
+            h: 480,
+        }),
+        ..RenderRequest::fit(3000, 2000)
+    };
     check("window: vignette corner", &src, &info, &s, &corner);
 }
 
@@ -815,13 +1321,28 @@ fn a_window_does_not_keep_the_whole_source_on_the_device() {
     }
     use lightcraft_pipeline::PixelWindow;
     let src = scene(1, 6000, 4000);
-    let info = SourceInfo { raw: true, ..Default::default() };
+    let info = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let stages = StageCache::default();
     let s = DevelopSettings::default();
-    let req = RenderRequest { window: Some(PixelWindow { x: 2000, y: 1500, w: 640, h: 480 }), ..RenderRequest::fit(6000, 4000) };
+    let req = RenderRequest {
+        window: Some(PixelWindow {
+            x: 2000,
+            y: 1500,
+            w: 640,
+            h: 480,
+        }),
+        ..RenderRequest::fit(6000, 4000)
+    };
     let _ = lightcraft_gpu::render(&src, &info, &s, &req, Some(&stages)).expect("gpu render");
     let held = lightcraft_gpu::stage_bytes(&stages);
-    assert!(held < 100 << 20, "the view's GPU stages hold {} MiB for a 640×480 window", held >> 20);
+    assert!(
+        held < 100 << 20,
+        "the view's GPU stages hold {} MiB for a 640×480 window",
+        held >> 20
+    );
     // …and the next tick of a drag reuses what is there
     let mut s2 = s.clone();
     s2.light.exposure = 0.5;
@@ -841,19 +1362,51 @@ fn windows_of_a_big_photo_share_one_uploaded_source() {
     }
     use lightcraft_pipeline::PixelWindow;
     let src = scene(1, 6000, 4000);
-    let info = SourceInfo { raw: true, ..Default::default() };
+    let info = SourceInfo {
+        raw: true,
+        ..Default::default()
+    };
     let s = DevelopSettings::default();
     let (after, before) = (StageCache::default(), StageCache::default());
-    let at = |x: usize| RenderRequest { window: Some(PixelWindow { x, y: 1500, w: 640, h: 480 }), ..RenderRequest::fit(6000, 4000) };
+    let at = |x: usize| RenderRequest {
+        window: Some(PixelWindow {
+            x,
+            y: 1500,
+            w: 640,
+            h: 480,
+        }),
+        ..RenderRequest::fit(6000, 4000)
+    };
     let start = lightcraft_gpu::source_uploads();
-    for (cache, x) in [(&after, 1000), (&after, 1256), (&after, 1512), (&before, 1512), (&before, 1768)] {
+    for (cache, x) in [
+        (&after, 1000),
+        (&after, 1256),
+        (&after, 1512),
+        (&before, 1512),
+        (&before, 1768),
+    ] {
         lightcraft_gpu::render(&src, &info, &s, &at(x), Some(cache)).expect("gpu render");
     }
-    assert_eq!(lightcraft_gpu::source_uploads() - start, 1, "one upload for five windows of two views");
-    assert!(lightcraft_gpu::shared_source_bytes() >= 280_000_000, "{}", lightcraft_gpu::shared_source_bytes());
-    assert!(lightcraft_gpu::stage_bytes(&after) < 100 << 20, "and it is not in the views' stages");
+    assert_eq!(
+        lightcraft_gpu::source_uploads() - start,
+        1,
+        "one upload for five windows of two views"
+    );
+    assert!(
+        lightcraft_gpu::shared_source_bytes() >= 280_000_000,
+        "{}",
+        lightcraft_gpu::shared_source_bytes()
+    );
+    assert!(
+        lightcraft_gpu::stage_bytes(&after) < 100 << 20,
+        "and it is not in the views' stages"
+    );
     lightcraft_gpu::trim_pool(0);
-    assert_eq!(lightcraft_gpu::shared_source_bytes(), 0, "an idle app gives it back");
+    assert_eq!(
+        lightcraft_gpu::shared_source_bytes(),
+        0,
+        "an idle app gives it back"
+    );
     lightcraft_gpu::render(&src, &info, &s, &at(1000), Some(&after)).expect("gpu render");
     assert_eq!(lightcraft_gpu::source_uploads() - start, 2);
 }

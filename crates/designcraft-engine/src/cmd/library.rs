@@ -28,7 +28,8 @@ impl Library {
     fn save(&self) -> Result<()> {
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(p) = &self.path {
-            let bytes = serde_json::to_vec_pretty(self).map_err(|e| crate::EngineError::Other(e.to_string()))?;
+            let bytes = serde_json::to_vec_pretty(self)
+                .map_err(|e| crate::EngineError::Other(e.to_string()))?;
             crate::atomic::write_file(p, &bytes)?;
         }
         Ok(())
@@ -36,7 +37,11 @@ impl Library {
 }
 
 fn has_library(s: &Session) -> std::result::Result<(), String> {
-    if s.library.is_some() { Ok(()) } else { Err("no library open".into()) }
+    if s.library.is_some() {
+        Ok(())
+    } else {
+        Err("no library open".into())
+    }
 }
 
 fn no_library() -> crate::EngineError {
@@ -101,9 +106,19 @@ pub fn specs() -> Vec<CommandSpec> {
             "{index, spread?, x?, y?} — at its original position unless x/y (top-left) are given",
             has_doc,
             |s, p| {
-                let lib = s.library.as_ref().ok_or_else(|| bad("library.place", "no library open"))?;
-                let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad("library.place", "`index` required"))? as usize;
-                let it = lib.items.get(i).ok_or_else(|| bad("library.place", format!("no item {i}")))?;
+                let lib = s
+                    .library
+                    .as_ref()
+                    .ok_or_else(|| bad("library.place", "no library open"))?;
+                let i = p
+                    .get("index")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| bad("library.place", "`index` required"))?
+                    as usize;
+                let it = lib
+                    .items
+                    .get(i)
+                    .ok_or_else(|| bad("library.place", format!("no item {i}")))?;
                 let q = super::with_param(p, "base64", json!(it.snippet));
                 super::file::snippet_place(s, &q)
             }
@@ -144,7 +159,11 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             |s, p| {
                 let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-                let (_, snip) = s.conveyor.get(i).cloned().ok_or_else(|| bad("conveyor.place", "the conveyor is empty"))?;
+                let (_, snip) = s
+                    .conveyor
+                    .get(i)
+                    .cloned()
+                    .ok_or_else(|| bad("conveyor.place", "the conveyor is empty"))?;
                 let q = super::with_param(p, "base64", json!(super::file::base64_encode(&snip)));
                 let r = super::file::snippet_place(s, &q)?;
                 if !p.get("keep").and_then(Value::as_bool).unwrap_or(false) {
@@ -180,13 +199,19 @@ mod tests {
         s.execute("file.new", &json!({})).unwrap();
         s.execute("library.new", &json!({"path": path})).unwrap();
         let r = s.execute("frame.create", &json!({"rect": [72, 72, 172, 122], "content": "text", "text": "Logo", "caret": false})).unwrap();
-        s.execute("library.add", &json!({"name": "Logo block"})).unwrap();
+        s.execute("library.add", &json!({"name": "Logo block"}))
+            .unwrap();
         // A fresh session opens the saved library and places the item into another document.
         let mut t = Session::new();
         t.execute("file.new", &json!({})).unwrap();
         t.execute("library.open", &json!({"path": path})).unwrap();
-        assert_eq!(t.execute("library.list", &json!({})).unwrap()[0]["name"], "Logo block");
-        let placed = t.execute("library.place", &json!({"index": 0, "x": 300, "y": 300})).unwrap();
+        assert_eq!(
+            t.execute("library.list", &json!({})).unwrap()[0]["name"],
+            "Logo block"
+        );
+        let placed = t
+            .execute("library.place", &json!({"index": 0, "x": 300, "y": 300}))
+            .unwrap();
         let id = designcraft_doc::ItemId(placed["ids"][0].as_u64().unwrap());
         let d = &t.doc().unwrap().doc;
         let it = d.item(id).unwrap();
@@ -195,7 +220,13 @@ mod tests {
         assert_eq!(d.stories[&sid].text, "Logo");
         let _ = r;
         t.execute("library.remove", &json!({"index": 0})).unwrap();
-        assert!(t.execute("library.list", &json!({})).unwrap().as_array().unwrap().is_empty());
+        assert!(
+            t.execute("library.list", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -205,15 +236,42 @@ mod tests {
         s.execute("file.new", &json!({"pages": 2})).unwrap();
         let a = s.execute("frame.create", &json!({"rect": [72, 72, 172, 122], "content": "text", "text": "Reused", "caret": false})).unwrap()["id"]
             .clone();
-        let b = s.execute("frame.create", &json!({"rect": [200, 72, 260, 122]})).unwrap()["id"].clone();
-        assert_eq!(s.execute("conveyor.collect", &json!({"ids": [a, b]})).unwrap()["count"], 2);
-        let r = s.execute("conveyor.place", &json!({"spread": 1, "x": 300, "y": 300})).unwrap();
+        let b = s
+            .execute("frame.create", &json!({"rect": [200, 72, 260, 122]}))
+            .unwrap()["id"]
+            .clone();
+        assert_eq!(
+            s.execute("conveyor.collect", &json!({"ids": [a, b]}))
+                .unwrap()["count"],
+            2
+        );
+        let r = s
+            .execute("conveyor.place", &json!({"spread": 1, "x": 300, "y": 300}))
+            .unwrap();
         let id = designcraft_doc::ItemId(r["ids"][0].as_u64().unwrap());
         let d = &s.doc().unwrap().doc;
         assert_eq!(d.item(id).unwrap().bounds().x0, 300.0);
-        assert!(d.find(id).is_some_and(|l| l.spread == designcraft_doc::SpreadRef::Doc(1)));
-        assert_eq!(s.execute("conveyor.list", &json!({})).unwrap().as_array().unwrap().len(), 1, "placed objects leave the conveyor");
+        assert!(
+            d.find(id)
+                .is_some_and(|l| l.spread == designcraft_doc::SpreadRef::Doc(1))
+        );
+        assert_eq!(
+            s.execute("conveyor.list", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
+            1,
+            "placed objects leave the conveyor"
+        );
         s.execute("conveyor.place", &json!({"keep": true})).unwrap();
-        assert_eq!(s.execute("conveyor.list", &json!({})).unwrap().as_array().unwrap().len(), 1);
+        assert_eq!(
+            s.execute("conveyor.list", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
     }
 }

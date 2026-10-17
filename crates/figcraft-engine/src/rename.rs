@@ -41,17 +41,35 @@ struct Ctx<'a> {
 impl BatchRename {
     /// `find` (empty: none) as text or, with `regex`, a regular expression, replaced by `replace`;
     /// then `pattern` for the whole name; numbers from `start` (default 1).
-    pub fn new(find: Option<&str>, regex: bool, replace: &str, pattern: Option<&str>, start: Option<f64>) -> Result<Self, String> {
+    pub fn new(
+        find: Option<&str>,
+        regex: bool,
+        replace: &str,
+        pattern: Option<&str>,
+        start: Option<f64>,
+    ) -> Result<Self, String> {
         let find = match find.filter(|f| !f.is_empty()) {
             None => None,
-            Some(f) if f.chars().count() > MAX_FIND => return Err(format!("the match is longer than {MAX_FIND} characters")),
-            Some(f) if regex => {
-                Some(Find::Regex(regex::RegexBuilder::new(f).size_limit(1 << 20).build().map_err(|e| format!("invalid regular expression: {e}"))?))
+            Some(f) if f.chars().count() > MAX_FIND => {
+                return Err(format!("the match is longer than {MAX_FIND} characters"));
             }
+            Some(f) if regex => Some(Find::Regex(
+                regex::RegexBuilder::new(f)
+                    .size_limit(1 << 20)
+                    .build()
+                    .map_err(|e| format!("invalid regular expression: {e}"))?,
+            )),
             Some(f) => Some(Find::Text(f.to_string())),
         };
-        let start = start.filter(|s| s.is_finite()).map_or(1, |s| s.clamp(0.0, 1e12).round() as u64);
-        Ok(Self { find, replace: replace.to_string(), pattern: pattern.map(str::to_string), start })
+        let start = start
+            .filter(|s| s.is_finite())
+            .map_or(1, |s| s.clamp(0.0, 1e12).round() as u64);
+        Ok(Self {
+            find,
+            replace: replace.to_string(),
+            pattern: pattern.map(str::to_string),
+            start,
+        })
     }
 
     /// The new name of layer `k` of `n` (stacking order, bottom first), now `name`.
@@ -66,8 +84,22 @@ impl BatchRename {
                 for (i, _) in name.match_indices(f.as_str()) {
                     let end = i + f.len();
                     out.push_str(name.get(last..i).unwrap_or_default());
-                    let (before, after) = (name.get(..i).unwrap_or_default(), name.get(end..).unwrap_or_default());
-                    expand(&self.replace, &Ctx { matched: f, before, after, groups: None, up, down }, &mut out);
+                    let (before, after) = (
+                        name.get(..i).unwrap_or_default(),
+                        name.get(end..).unwrap_or_default(),
+                    );
+                    expand(
+                        &self.replace,
+                        &Ctx {
+                            matched: f,
+                            before,
+                            after,
+                            groups: None,
+                            up,
+                            down,
+                        },
+                        &mut out,
+                    );
                     last = end;
                 }
                 out.push_str(name.get(last..).unwrap_or_default());
@@ -79,8 +111,22 @@ impl BatchRename {
                 for caps in re.captures_iter(name) {
                     let Some(m) = caps.get(0) else { continue };
                     out.push_str(name.get(last..m.start()).unwrap_or_default());
-                    let (before, after) = (name.get(..m.start()).unwrap_or_default(), name.get(m.end()..).unwrap_or_default());
-                    expand(&self.replace, &Ctx { matched: m.as_str(), before, after, groups: Some(&caps), up, down }, &mut out);
+                    let (before, after) = (
+                        name.get(..m.start()).unwrap_or_default(),
+                        name.get(m.end()..).unwrap_or_default(),
+                    );
+                    expand(
+                        &self.replace,
+                        &Ctx {
+                            matched: m.as_str(),
+                            before,
+                            after,
+                            groups: Some(&caps),
+                            up,
+                            down,
+                        },
+                        &mut out,
+                    );
                     last = m.end();
                 }
                 out.push_str(name.get(last..).unwrap_or_default());
@@ -89,7 +135,18 @@ impl BatchRename {
         };
         if let Some(p) = &self.pattern {
             let mut whole = String::new();
-            expand(p, &Ctx { matched: &out, before: "", after: "", groups: None, up, down }, &mut whole);
+            expand(
+                p,
+                &Ctx {
+                    matched: &out,
+                    before: "",
+                    after: "",
+                    groups: None,
+                    up,
+                    down,
+                },
+                &mut whole,
+            );
             out = whole;
         }
         match out.char_indices().nth(MAX_NAME) {
@@ -102,7 +159,10 @@ impl BatchRename {
     pub fn plan(&self, doc: &Document, ids: &[NodeId]) -> Vec<(NodeId, String)> {
         let ids = crate::cmd::edit::z_sorted(doc, ids);
         let n = ids.len();
-        ids.iter().enumerate().filter_map(|(k, i)| doc.node(*i).map(|node| (*i, self.apply(&node.name, k, n)))).collect()
+        ids.iter()
+            .enumerate()
+            .filter_map(|(k, i)| doc.node(*i).map(|node| (*i, self.apply(&node.name, k, n))))
+            .collect()
     }
 }
 
@@ -129,8 +189,11 @@ fn expand(template: &str, c: &Ctx, out: &mut String) {
                 out.push_str(&format!("{v:0w$}", w = width.min(MAX_PAD)));
                 continue;
             }
-            Some(d @ '1'..='9') => match c.groups.filter(|g| (d as usize - '0' as usize) < g.len()) {
-                Some(g) => out.push_str(g.get(d as usize - '0' as usize).map_or("", |m| m.as_str())),
+            Some(d @ '1'..='9') => match c.groups.filter(|g| (d as usize - '0' as usize) < g.len())
+            {
+                Some(g) => {
+                    out.push_str(g.get(d as usize - '0' as usize).map_or("", |m| m.as_str()))
+                }
                 // Not a group of this match: the code stays as typed.
                 None => {
                     out.push('$');

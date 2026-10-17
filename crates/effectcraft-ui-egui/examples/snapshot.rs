@@ -29,7 +29,14 @@ struct Args {
 }
 
 fn parse_args() -> Result<Args, String> {
-    let mut a = Args { out: "ui.png".into(), size: (1680.0, 1020.0), scale: 2.0, settle: 1.5, demo: true, steps: Vec::new() };
+    let mut a = Args {
+        out: "ui.png".into(),
+        size: (1680.0, 1020.0),
+        scale: 2.0,
+        settle: 1.5,
+        demo: true,
+        steps: Vec::new(),
+    };
     let mut it = std::env::args().skip(1);
     while let Some(arg) = it.next() {
         let mut val = || it.next().ok_or_else(|| format!("{arg} needs a value"));
@@ -38,17 +45,28 @@ fn parse_args() -> Result<Args, String> {
             "--size" => {
                 let v = val()?;
                 let (w, h) = v.split_once('x').ok_or("--size WxH")?;
-                a.size = (w.parse().map_err(|_| "bad width")?, h.parse().map_err(|_| "bad height")?);
+                a.size = (
+                    w.parse().map_err(|_| "bad width")?,
+                    h.parse().map_err(|_| "bad height")?,
+                );
             }
             "--scale" => a.scale = val()?.parse().map_err(|_| "bad --scale")?,
             "--settle" => a.settle = val()?.parse().map_err(|_| "bad --settle")?,
             "--empty" => a.demo = false,
-            "--step" => a.steps.push(serde_json::from_str(&val()?).map_err(|e| format!("--step: {e}"))?),
+            "--step" => a
+                .steps
+                .push(serde_json::from_str(&val()?).map_err(|e| format!("--step: {e}"))?),
             "--script" => {
                 let path = val()?;
                 let text = std::fs::read_to_string(&path).map_err(|e| format!("{path}: {e}"))?;
-                for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with("//")) {
-                    a.steps.push(serde_json::from_str(line).map_err(|e| format!("{path}: {e}: {line}"))?);
+                for line in text
+                    .lines()
+                    .map(str::trim)
+                    .filter(|l| !l.is_empty() && !l.starts_with("//"))
+                {
+                    a.steps.push(
+                        serde_json::from_str(line).map_err(|e| format!("{path}: {e}: {line}"))?,
+                    );
                 }
             }
             "-h" | "--help" => {
@@ -82,7 +100,10 @@ fn settle(h: &mut Harness<'_, EffectcraftApp>, secs: f64) {
 fn snap(h: &mut Harness<'_, EffectcraftApp>, path: &str) -> Result<(), String> {
     let img = h.render()?;
     img.save(path).map_err(|e| format!("{path}: {e}"))?;
-    println!("{}", json!({"snapshot": path, "width": img.width(), "height": img.height()}));
+    println!(
+        "{}",
+        json!({"snapshot": path, "width": img.width(), "height": img.height()})
+    );
     Ok(())
 }
 
@@ -117,8 +138,14 @@ fn main() {
         // Pointer input straight into the harness (menus and popups need real input events):
         // {"method":"pointer","params":{"x":237,"y":12,"click":true}}
         if method == "pointer" {
-            let pos = egui::pos2(params["x"].as_f64().unwrap_or(0.0) as f32, params["y"].as_f64().unwrap_or(0.0) as f32);
-            harness.input_mut().events.push(egui::Event::PointerMoved(pos));
+            let pos = egui::pos2(
+                params["x"].as_f64().unwrap_or(0.0) as f32,
+                params["y"].as_f64().unwrap_or(0.0) as f32,
+            );
+            harness
+                .input_mut()
+                .events
+                .push(egui::Event::PointerMoved(pos));
             if params["click"].as_bool() == Some(true) {
                 for pressed in [true, false] {
                     harness.input_mut().events.push(egui::Event::PointerButton {
@@ -134,7 +161,11 @@ fn main() {
             continue;
         }
         let (reply_tx, reply_rx) = mpsc::channel();
-        let _ = tx.send(ControlRequest { method: method.clone(), params, reply: reply_tx });
+        let _ = tx.send(ControlRequest {
+            method: method.clone(),
+            params,
+            reply: reply_tx,
+        });
         // Requests are answered on a later frame (some wait for input to be processed).
         let deadline = Instant::now() + Duration::from_secs(10);
         let reply = loop {

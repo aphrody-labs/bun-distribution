@@ -2,7 +2,13 @@
 //! dynamic-loading mode: open one core plugin (`bun_emu_<core>.dll`, `bun_emu_<core>.so`)
 //! with [`BunEmuHost::new`] or [`BunEmuHost::from_library`]. The safe API is the `bun-emu-host`
 //! crate.
-#![allow(non_camel_case_types, non_upper_case_globals, non_snake_case, clippy::all, unsafe_op_in_unsafe_fn)]
+#![allow(
+    non_camel_case_types,
+    non_upper_case_globals,
+    non_snake_case,
+    clippy::all,
+    unsafe_op_in_unsafe_fn
+)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 

@@ -206,7 +206,10 @@ pub struct InteractionResponse {
 
 impl InteractionResponse {
     pub fn pong() -> Self {
-        Self { kind: 1, data: None }
+        Self {
+            kind: 1,
+            data: None,
+        }
     }
 
     pub fn message(content: impl Into<String>) -> Self {
@@ -234,7 +237,11 @@ impl InteractionResponse {
     pub fn embed(embed: Embed) -> Self {
         Self {
             kind: 4,
-            data: Some(InteractionResponseData { content: None, embeds: vec![embed], flags: None }),
+            data: Some(InteractionResponseData {
+                content: None,
+                embeds: vec![embed],
+                flags: None,
+            }),
         }
     }
 }

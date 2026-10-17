@@ -10,7 +10,8 @@
 use std::collections::BTreeSet;
 
 use photocraft_paint::{
-    BrushPreset, BrushSettings, Control, DualBrush, Dynamic, GrayTile, MaskMode, MixerSettings, Pattern, PatternStyle, Pose, ShapeDynamics, TipShape, Transfer,
+    BrushPreset, BrushSettings, Control, DualBrush, Dynamic, GrayTile, MaskMode, MixerSettings,
+    Pattern, PatternStyle, Pose, ShapeDynamics, TipShape, Transfer,
 };
 use photocraft_psd::abr::{self, AbrFile, AbrSample, LegacyTip};
 use photocraft_psd::descriptor::{Descriptor, Value};
@@ -39,13 +40,22 @@ pub fn read_abr(bytes: &[u8], group: &str) -> Result<AbrImport, String> {
 
 /// [`read_abr`] that checks `ctl` before each brush (and reports progress): a cancelled import
 /// fails with "cancelled".
-pub fn read_abr_with(bytes: &[u8], group: &str, ctl: &photocraft_raster::Interrupt) -> Result<AbrImport, String> {
+pub fn read_abr_with(
+    bytes: &[u8],
+    group: &str,
+    ctl: &photocraft_raster::Interrupt,
+) -> Result<AbrImport, String> {
     let f = abr::parse(bytes).map_err(|e| format!("not a readable brush file (.abr): {e}"))?;
     // Parsing is the small part; mapping (tip decoding) reports 10–100 %.
     ctl.progress(0.1);
     let cancel = || ctl.cancelled();
     let progress = |p: f32| ctl.progress(0.1 + 0.9 * p);
-    map_file_with(&f, group, &photocraft_raster::Interrupt::new(&cancel, &progress)).map_err(|e| e.to_string())
+    map_file_with(
+        &f,
+        group,
+        &photocraft_raster::Interrupt::new(&cancel, &progress),
+    )
+    .map_err(|e| e.to_string())
 }
 
 /// Map a parsed file.
@@ -55,10 +65,27 @@ pub fn map_file(f: &AbrFile, group: &str) -> AbrImport {
 }
 
 /// [`map_file`] that checks `ctl` before each brush.
-pub fn map_file_with(f: &AbrFile, group: &str, ctl: &photocraft_raster::Interrupt) -> Result<AbrImport, photocraft_raster::Cancelled> {
-    let mut out = AbrImport { version: f.version, warnings: f.warnings.clone(), ..Default::default() };
-    let mut m = Mapper { file: f, warnings: BTreeSet::new(), unknown: BTreeSet::new() };
-    let total = f.legacy.len().max(f.samples.len()).max(f.presets.len()).max(1) as f32;
+pub fn map_file_with(
+    f: &AbrFile,
+    group: &str,
+    ctl: &photocraft_raster::Interrupt,
+) -> Result<AbrImport, photocraft_raster::Cancelled> {
+    let mut out = AbrImport {
+        version: f.version,
+        warnings: f.warnings.clone(),
+        ..Default::default()
+    };
+    let mut m = Mapper {
+        file: f,
+        warnings: BTreeSet::new(),
+        unknown: BTreeSet::new(),
+    };
+    let total = f
+        .legacy
+        .len()
+        .max(f.samples.len())
+        .max(f.presets.len())
+        .max(1) as f32;
     let step = |i: usize| -> Result<(), photocraft_raster::Cancelled> {
         ctl.check()?;
         ctl.progress(i as f32 / total);
@@ -67,10 +94,23 @@ pub fn map_file_with(f: &AbrFile, group: &str, ctl: &photocraft_raster::Interrup
     if !f.legacy.is_empty() {
         for (i, b) in f.legacy.iter().enumerate() {
             step(i)?;
-            let spacing = if b.spacing == 0 { 0.25 } else { f32::from(b.spacing) / 100.0 };
-            let base = BrushSettings { pressure_size: false, spacing, ..Default::default() };
+            let spacing = if b.spacing == 0 {
+                0.25
+            } else {
+                f32::from(b.spacing) / 100.0
+            };
+            let base = BrushSettings {
+                pressure_size: false,
+                spacing,
+                ..Default::default()
+            };
             let (brush, default_name) = match &b.tip {
-                LegacyTip::Computed { diameter, hardness, angle, roundness } => (
+                LegacyTip::Computed {
+                    diameter,
+                    hardness,
+                    angle,
+                    roundness,
+                } => (
                     BrushSettings {
                         size: f32::from((*diameter).max(1)),
                         hardness: (f32::from(*hardness) / 100.0).clamp(0.0, 1.0),
@@ -82,18 +122,43 @@ pub fn map_file_with(f: &AbrFile, group: &str, ctl: &photocraft_raster::Interrup
                 ),
                 LegacyTip::Sampled(s) => {
                     let (tip, size) = m.tip(s);
-                    (BrushSettings { size, tip, aliased: !b.anti_alias, ..base }, format!("Sampled Brush {}", i + 1))
+                    (
+                        BrushSettings {
+                            size,
+                            tip,
+                            aliased: !b.anti_alias,
+                            ..base
+                        },
+                        format!("Sampled Brush {}", i + 1),
+                    )
                 }
             };
-            let name = if b.name.trim().is_empty() { default_name } else { b.name.trim().to_string() };
-            out.presets.push(BrushPreset { name, brush, builtin: false, group: group.to_string(), folder: Vec::new(), captures: Default::default() });
+            let name = if b.name.trim().is_empty() {
+                default_name
+            } else {
+                b.name.trim().to_string()
+            };
+            out.presets.push(BrushPreset {
+                name,
+                brush,
+                builtin: false,
+                group: group.to_string(),
+                folder: Vec::new(),
+                captures: Default::default(),
+            });
         }
     } else if f.presets.is_empty() {
         // Tips without a settings section (early v6 files): one preset per tip.
         for (i, s) in f.samples.iter().enumerate() {
             step(i)?;
             let (tip, size) = m.tip(s);
-            let brush = BrushSettings { pressure_size: false, spacing: 0.25, size, tip, ..Default::default() };
+            let brush = BrushSettings {
+                pressure_size: false,
+                spacing: 0.25,
+                size,
+                tip,
+                ..Default::default()
+            };
             out.presets.push(BrushPreset {
                 name: format!("Sampled Brush {}", i + 1),
                 brush,
@@ -106,23 +171,38 @@ pub fn map_file_with(f: &AbrFile, group: &str, ctl: &photocraft_raster::Interrup
     } else {
         for (i, d) in f.presets.iter().enumerate() {
             step(i)?;
-            let name = text(d, "Nm  ").filter(|n| !n.trim().is_empty()).map(|n| n.trim().to_string()).unwrap_or_else(|| format!("Brush {}", i + 1));
+            let name = text(d, "Nm  ")
+                .filter(|n| !n.trim().is_empty())
+                .map(|n| n.trim().to_string())
+                .unwrap_or_else(|| format!("Brush {}", i + 1));
             match m.preset(d) {
                 // The file's folders nest inside `group`, as Photoshop nests them inside a folder
                 // named after the imported file.
                 Some(brush) => {
                     let folder = f.folders.get(i).cloned().unwrap_or_default();
-                    out.presets.push(BrushPreset { name, brush, builtin: false, group: group.to_string(), folder, captures: Default::default() });
+                    out.presets.push(BrushPreset {
+                        name,
+                        brush,
+                        builtin: false,
+                        group: group.to_string(),
+                        folder,
+                        captures: Default::default(),
+                    });
                 }
                 None => {
-                    m.warnings.insert(format!("\"{name}\": its sampled tip is missing from the file; skipped"));
+                    m.warnings.insert(format!(
+                        "\"{name}\": its sampled tip is missing from the file; skipped"
+                    ));
                 }
             }
         }
     }
     out.warnings.extend(m.warnings);
     if !m.unknown.is_empty() {
-        out.warnings.push(format!("settings without a PhotoCraft equivalent were ignored: {}", m.unknown.into_iter().collect::<Vec<_>>().join(", ")));
+        out.warnings.push(format!(
+            "settings without a PhotoCraft equivalent were ignored: {}",
+            m.unknown.into_iter().collect::<Vec<_>>().join(", ")
+        ));
     }
     ctl.progress(1.0);
     Ok(out)
@@ -167,7 +247,9 @@ fn obj<'a>(d: &'a Descriptor, k: &str) -> Option<&'a Descriptor> {
 }
 fn enum_value(d: &Descriptor, k: &str) -> Option<String> {
     match get(d, k)? {
-        Value::Enumerated { value, .. } => Some(String::from_utf8_lossy(value.as_bytes()).to_string()),
+        Value::Enumerated { value, .. } => {
+            Some(String::from_utf8_lossy(value.as_bytes()).to_string())
+        }
         _ => None,
     }
 }
@@ -263,14 +345,28 @@ impl Mapper<'_> {
         let v = s.to_unit();
         let (w, h, v) = fit(s.width, s.height, v, MAX_TIP_EDGE);
         if (w, h) != (s.width, s.height) {
-            self.warnings.insert(format!("tips larger than {MAX_TIP_EDGE} px were downsampled"));
+            self.warnings.insert(format!(
+                "tips larger than {MAX_TIP_EDGE} px were downsampled"
+            ));
         }
-        let data = v.iter().map(|x| (x.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16).collect();
-        (TipShape::Sampled(GrayTile { width: w, height: h, data }), s.width.max(s.height) as f32)
+        let data = v
+            .iter()
+            .map(|x| (x.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16)
+            .collect();
+        (
+            TipShape::Sampled(GrayTile {
+                width: w,
+                height: h,
+                data,
+            }),
+            s.width.max(s.height) as f32,
+        )
     }
 
     fn dynamic(&mut self, d: Option<&Descriptor>) -> Dynamic {
-        let Some(d) = d else { return Dynamic::default() };
+        let Some(d) = d else {
+            return Dynamic::default();
+        };
         let control = match num(d, "bVTy").unwrap_or(0.0) as i64 {
             1 => Control::Fade,
             2 => Control::PenPressure,
@@ -279,7 +375,8 @@ impl Mapper<'_> {
             5 => Control::InitialDirection,
             6 => Control::Direction,
             7 => {
-                self.warnings.insert("\"Initial Rotation\" control mapped to Rotation".into());
+                self.warnings
+                    .insert("\"Initial Rotation\" control mapped to Rotation".into());
                 Control::Rotation
             }
             8 => Control::Rotation,
@@ -301,7 +398,12 @@ impl Mapper<'_> {
             return Some((TipShape::Round, None));
         }
         let id = text(t, "sampledData").unwrap_or_default();
-        let s = self.file.samples.iter().find(|s| s.id == id).or_else(|| self.file.samples.first().filter(|_| self.file.samples.len() == 1))?;
+        let s = self.file.samples.iter().find(|s| s.id == id).or_else(|| {
+            self.file
+                .samples
+                .first()
+                .filter(|_| self.file.samples.len() == 1)
+        })?;
         let (tip, size) = self.tip(s);
         Some((tip, Some(size)))
     }
@@ -309,14 +411,27 @@ impl Mapper<'_> {
     fn pattern(&mut self, t: &Descriptor) -> Pattern {
         let id = text(t, "Idnt").unwrap_or_default();
         let name = text(t, "Nm  ").unwrap_or_default();
-        let found =
-            self.file.patterns.iter().find(|p| !id.is_empty() && p.id == id).or_else(|| self.file.patterns.iter().find(|p| !name.is_empty() && p.name == name));
+        let found = self
+            .file
+            .patterns
+            .iter()
+            .find(|p| !id.is_empty() && p.id == id)
+            .or_else(|| {
+                self.file
+                    .patterns
+                    .iter()
+                    .find(|p| !name.is_empty() && p.name == name)
+            });
         match found.and_then(pattern_tile) {
             Some(tile) => Pattern::Tile(tile),
             None => {
                 let label = if name.is_empty() { id } else { name };
                 self.warnings.insert(format!("texture pattern \"{label}\" is not embedded in the file; a procedural paper texture stands in"));
-                Pattern::Procedural { style: PatternStyle::Paper, size: 128, seed: 1 }
+                Pattern::Procedural {
+                    style: PatternStyle::Paper,
+                    size: 128,
+                    seed: 1,
+                }
             }
         }
     }
@@ -335,7 +450,10 @@ impl Mapper<'_> {
         m.load = load.unwrap_or(m.load).clamp(0.0, 1.0);
         m.mix = mix.unwrap_or(m.mix).clamp(0.0, 1.0);
         m.flow = pct(to, "flow").unwrap_or(m.flow).clamp(0.0, 1.0);
-        if let Some(v) = ["sampleMerged", "useAllLayers", "sampleAllLayers", "Mrgd"].iter().find_map(|k| boolean(to, k)) {
+        if let Some(v) = ["sampleMerged", "useAllLayers", "sampleAllLayers", "Mrgd"]
+            .iter()
+            .find_map(|k| boolean(to, k))
+        {
             m.sample_all_layers = v;
         }
     }
@@ -347,11 +465,19 @@ impl Mapper<'_> {
                 self.unknown.insert(k);
             }
         }
-        let mut b = BrushSettings { pressure_size: false, spacing: 0.25, ..Default::default() };
+        let mut b = BrushSettings {
+            pressure_size: false,
+            spacing: 0.25,
+            ..Default::default()
+        };
         if let Some(t) = obj(d, "Brsh") {
             let (tip, sampled_size) = self.tip_shape(t)?;
             b.tip = tip;
-            b.size = num(t, "Dmtr").map(|v| v as f32).or(sampled_size).unwrap_or(b.size).clamp(1.0, 5000.0);
+            b.size = num(t, "Dmtr")
+                .map(|v| v as f32)
+                .or(sampled_size)
+                .unwrap_or(b.size)
+                .clamp(1.0, 5000.0);
             if let Some(v) = pct(t, "Hrdn") {
                 b.hardness = v.clamp(0.0, 1.0);
             }
@@ -366,9 +492,13 @@ impl Mapper<'_> {
         // Shape Dynamics.
         if boolean(d, "useTipDynamics") == Some(true) {
             let mut size = self.dynamic(obj(d, "szVr"));
-            size.minimum = pct(d, "minimumDiameter").unwrap_or(size.minimum).clamp(0.0, 1.0);
+            size.minimum = pct(d, "minimumDiameter")
+                .unwrap_or(size.minimum)
+                .clamp(0.0, 1.0);
             let mut roundness = self.dynamic(obj(d, "roundnessDynamics"));
-            roundness.minimum = pct(d, "minimumRoundness").unwrap_or(roundness.minimum).clamp(0.0, 1.0);
+            roundness.minimum = pct(d, "minimumRoundness")
+                .unwrap_or(roundness.minimum)
+                .clamp(0.0, 1.0);
             b.shape_dynamics = ShapeDynamics {
                 enabled: true,
                 size,
@@ -395,7 +525,8 @@ impl Mapper<'_> {
             t.each_tip = boolean(d, "TxtC").unwrap_or(false);
             t.invert = boolean(d, "InvT").unwrap_or(false);
             t.scale = pct(d, "textureScale").unwrap_or(1.0).clamp(0.01, 10.0);
-            t.brightness = (num(d, "textureBrightness").unwrap_or(0.0) / 150.0).clamp(-1.0, 1.0) as f32;
+            t.brightness =
+                (num(d, "textureBrightness").unwrap_or(0.0) / 150.0).clamp(-1.0, 1.0) as f32;
             // Photoshop's -50..100 onto the model's -1..1 (negative and positive scale apart).
             let c = num(d, "textureContrast").unwrap_or(0.0);
             t.contrast = (if c < 0.0 { c / 50.0 } else { c / 100.0 }).clamp(-1.0, 1.0) as f32;
@@ -410,16 +541,27 @@ impl Mapper<'_> {
         }
         b.protect_texture = boolean(d, "protectTexture").unwrap_or(false);
         // Dual Brush.
-        if let Some(db) = obj(d, "dualBrush").filter(|db| boolean(db, "useDualBrush") == Some(true)) {
-            let mut dual = DualBrush { enabled: true, ..Default::default() };
+        if let Some(db) = obj(d, "dualBrush").filter(|db| boolean(db, "useDualBrush") == Some(true))
+        {
+            let mut dual = DualBrush {
+                enabled: true,
+                ..Default::default()
+            };
             if let Some(t) = obj(db, "Brsh") {
                 match self.tip_shape(t) {
                     Some((tip, sampled_size)) => {
                         dual.tip = tip;
-                        dual.size = num(t, "Dmtr").map(|v| v as f32).or(sampled_size).unwrap_or(dual.size).clamp(1.0, 5000.0);
+                        dual.size = num(t, "Dmtr")
+                            .map(|v| v as f32)
+                            .or(sampled_size)
+                            .unwrap_or(dual.size)
+                            .clamp(1.0, 5000.0);
                     }
                     None => {
-                        self.warnings.insert("a dual brush tip is missing from the file; a round tip stands in".into());
+                        self.warnings.insert(
+                            "a dual brush tip is missing from the file; a round tip stands in"
+                                .into(),
+                        );
                     }
                 }
                 dual.hardness = pct(t, "Hrdn").unwrap_or(1.0).clamp(0.0, 1.0);
@@ -467,7 +609,8 @@ impl Mapper<'_> {
                 tilt_y: (num(d, "brushPoseTiltY").unwrap_or(0.0) * 0.9).clamp(-90.0, 90.0) as f32,
                 rotation: num(d, "brushPoseAngle").unwrap_or(0.0).rem_euclid(360.0) as f32,
                 pressure: pct(d, "brushPosePressure").unwrap_or(1.0).clamp(0.0, 1.0),
-                override_tilt: boolean(d, "overridePoseTiltX").unwrap_or(false) || boolean(d, "overridePoseTiltY").unwrap_or(false),
+                override_tilt: boolean(d, "overridePoseTiltX").unwrap_or(false)
+                    || boolean(d, "overridePoseTiltY").unwrap_or(false),
                 override_rotation: boolean(d, "overridePoseAngle").unwrap_or(false),
                 override_pressure: boolean(d, "overridePosePressure").unwrap_or(false),
             };
@@ -503,7 +646,8 @@ impl Mapper<'_> {
             }
             self.mixer_options(to, &mut b.mixer);
             if mask_blend_is_set(to) {
-                self.warnings.insert("tool blend modes stored with presets are not applied".into());
+                self.warnings
+                    .insert("tool blend modes stored with presets are not applied".into());
             }
         }
         Some(b)
@@ -520,12 +664,25 @@ fn fit(w: u32, h: u32, v: Vec<f32>, max: u32) -> (u32, u32, Vec<f32>) {
         return (w, h, v);
     }
     let k = (w.max(h) as f32 / max as f32).max(1.0);
-    let (nw, nh) = (((w as f32 / k).round() as u32).clamp(1, max), ((h as f32 / k).round() as u32).clamp(1, max));
+    let (nw, nh) = (
+        ((w as f32 / k).round() as u32).clamp(1, max),
+        ((h as f32 / k).round() as u32).clamp(1, max),
+    );
     let mut out = vec![0.0f32; nw as usize * nh as usize];
     for y in 0..nh {
-        let (y0, y1) = ((y * h / nh) as usize, (((y + 1) * h / nh) as usize).max((y * h / nh) as usize + 1).min(h as usize));
+        let (y0, y1) = (
+            (y * h / nh) as usize,
+            (((y + 1) * h / nh) as usize)
+                .max((y * h / nh) as usize + 1)
+                .min(h as usize),
+        );
         for x in 0..nw {
-            let (x0, x1) = ((x * w / nw) as usize, (((x + 1) * w / nw) as usize).max((x * w / nw) as usize + 1).min(w as usize));
+            let (x0, x1) = (
+                (x * w / nw) as usize,
+                (((x + 1) * w / nw) as usize)
+                    .max((x * w / nw) as usize + 1)
+                    .min(w as usize),
+            );
             let (mut sum, mut n) = (0.0, 0usize);
             for yy in y0..y1 {
                 for xx in x0..x1 {
@@ -552,8 +709,20 @@ fn pattern_tile(p: &PsdPattern) -> Option<GrayTile> {
         let ch = p.channels.get(c)?;
         Some(match p.depth {
             8 => ch.iter().take(n).map(|&b| f32::from(b) / 255.0).collect(),
-            16 => ch.as_chunks::<2>().0.iter().take(n).map(|b| f32::from(u16::from_be_bytes(*b)) / 65535.0).collect(),
-            32 => ch.as_chunks::<4>().0.iter().take(n).map(|b| f32::from_be_bytes(*b).clamp(0.0, 1.0)).collect(),
+            16 => ch
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .take(n)
+                .map(|b| f32::from(u16::from_be_bytes(*b)) / 65535.0)
+                .collect(),
+            32 => ch
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .take(n)
+                .map(|b| f32::from_be_bytes(*b).clamp(0.0, 1.0))
+                .collect(),
             _ => return None,
         })
         .filter(|v: &Vec<f32>| v.len() == n)
@@ -561,7 +730,9 @@ fn pattern_tile(p: &PsdPattern) -> Option<GrayTile> {
     let gray: Vec<f32> = match p.mode {
         3 => {
             let (r, g, b) = (plane(0)?, plane(1)?, plane(2)?);
-            (0..n).map(|i| 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i]).collect()
+            (0..n)
+                .map(|i| 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i])
+                .collect()
         }
         2 => {
             let pal = p.palette.as_deref()?;
@@ -583,7 +754,14 @@ fn pattern_tile(p: &PsdPattern) -> Option<GrayTile> {
         _ => plane(0)?,
     };
     let (w, h, gray) = fit(w, h, gray, MAX_PATTERN_EDGE);
-    Some(GrayTile { width: w, height: h, data: gray.iter().map(|x| (x.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16).collect() })
+    Some(GrayTile {
+        width: w,
+        height: h,
+        data: gray
+            .iter()
+            .map(|x| (x.clamp(0.0, 1.0) * 65535.0 + 0.5) as u16)
+            .collect(),
+    })
 }
 
 #[cfg(test)]

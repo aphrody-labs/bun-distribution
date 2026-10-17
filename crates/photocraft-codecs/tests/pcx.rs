@@ -1,4 +1,7 @@
-use photocraft_codecs::{ChannelLayout, CodecError, Format, SampleType, caps, decode, decode_as, detect, encode, from_extension};
+use photocraft_codecs::{
+    ChannelLayout, CodecError, Format, SampleType, caps, decode, decode_as, detect, encode,
+    from_extension,
+};
 
 fn header(bits: u8, planes: u8, width: u16, height: u16, stride: u16) -> Vec<u8> {
     let mut b = vec![0u8; 128];
@@ -31,7 +34,10 @@ fn pcx_is_readable_but_not_writable() {
     assert_eq!(from_extension("archive.PCX"), Some(Format::Pcx));
     assert!(caps(Format::Pcx).read && !caps(Format::Pcx).write);
     let img = photocraft_codecs::Image::from_u8(1, 1, ChannelLayout::Rgb, vec![0, 0, 0]).unwrap();
-    assert!(matches!(encode(&img, Format::Pcx, &Default::default()), Err(CodecError::Unsupported { .. })));
+    assert!(matches!(
+        encode(&img, Format::Pcx, &Default::default()),
+        Err(CodecError::Unsupported { .. })
+    ));
 }
 
 #[test]
@@ -78,7 +84,10 @@ fn decodes_4bit_and_monochrome_palettes() {
 #[test]
 fn rejects_truncated_and_overshooting_rle_without_panicking() {
     let mut b = header(8, 3, 2, 1, 2);
-    assert!(decode_as(Format::Pcx, &b).is_err(), "header alone is truncated");
+    assert!(
+        decode_as(Format::Pcx, &b).is_err(),
+        "header alone is truncated"
+    );
     b.extend([0xc5, 0xff]); // a five-pixel run cannot cross a two-byte row
     assert!(decode_as(Format::Pcx, &b).is_err());
     let mut b = header(8, 3, 2, 1, 2);
@@ -93,8 +102,17 @@ fn rejects_truncated_and_overshooting_rle_without_panicking() {
 fn refuses_headers_that_exceed_allocation_budget() {
     let mut b = header(8, 3, 3000, 3000, 3000);
     // The default decoder rejects the allocation before reading any scanline.
-    let opts = photocraft_codecs::DecodeOptions { limits: photocraft_codecs::Limits { max_alloc: 1024, ..Default::default() }, ..Default::default() };
-    assert!(matches!(photocraft_codecs::decode_as_with(Format::Pcx, &b, &opts), Err(CodecError::LimitExceeded(_))));
+    let opts = photocraft_codecs::DecodeOptions {
+        limits: photocraft_codecs::Limits {
+            max_alloc: 1024,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    assert!(matches!(
+        photocraft_codecs::decode_as_with(Format::Pcx, &b, &opts),
+        Err(CodecError::LimitExceeded(_))
+    ));
     b[2] = 0;
     assert_eq!(detect(&b), None, "unsupported uncompressed encoding");
 }

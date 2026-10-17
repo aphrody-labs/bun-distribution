@@ -13,7 +13,8 @@ use vectorcraft_doc::ImageBlob;
 use vectorcraft_doc::cmyk::{Inks, MAX_CMYK_PIXELS, jpeg_components};
 
 /// A CMYK image read as RGB: why.
-pub(crate) const UNREAD: &str = "CMYK images whose samples couldn't be read in CMYK were imported in RGB";
+pub(crate) const UNREAD: &str =
+    "CMYK images whose samples couldn't be read in CMYK were imported in RGB";
 
 /// The Decode array of a JPEG kept as it is.
 const INVERTED: [(f32, f32); 4] = [(1.0, 0.0); 4];
@@ -29,11 +30,17 @@ fn cmyk_space(d: &Dict<'_>) -> bool {
     if let Some(n) = d.get::<Name<'_>>(cs) {
         return matches!(n.as_ref(), b"DeviceCMYK" | b"CMYK");
     }
-    let Some(a) = d.get::<Array<'_>>(cs) else { return false };
+    let Some(a) = d.get::<Array<'_>>(cs) else {
+        return false;
+    };
     let mut it = a.flex_iter();
     match it.next::<Name<'_>>() {
         Some(n) if n.as_ref() == b"CalCMYK" => true,
-        Some(n) if n.as_ref() == b"ICCBased" => it.next::<Stream<'_>>().and_then(|s| s.dict().get::<u8>(b"N")) == Some(4),
+        Some(n) if n.as_ref() == b"ICCBased" => {
+            it.next::<Stream<'_>>()
+                .and_then(|s| s.dict().get::<u8>(b"N"))
+                == Some(4)
+        }
         _ => false,
     }
 }
@@ -41,7 +48,9 @@ fn cmyk_space(d: &Dict<'_>) -> bool {
 /// Each component's Decode range (`[0 1]` each when the array is missing or malformed).
 fn decode_ranges(d: &Dict<'_>) -> [(f32, f32); 4] {
     let mut out = [(0.0, 1.0); 4];
-    let Some(a) = d.get::<Array<'_>>(key(d, b"Decode", b"D")) else { return out };
+    let Some(a) = d.get::<Array<'_>>(key(d, b"Decode", b"D")) else {
+        return out;
+    };
     let v: Vec<f32> = a.iter::<f32>().collect();
     if v.len() == 8 && v.iter().all(|x| x.is_finite()) {
         for (o, p) in out.iter_mut().zip(v.as_chunks::<2>().0) {
@@ -53,7 +62,11 @@ fn decode_ranges(d: &Dict<'_>) -> [(f32, f32); 4] {
 
 /// The image `st` (`width` × `height` pixels) in CMYK: `Ok(None)` when it isn't a CMYK image,
 /// `Err` (a warning) when it is one that is read as RGB.
-pub(crate) fn cmyk(st: &Stream<'_>, width: u32, height: u32) -> Result<Option<ImageBlob>, &'static str> {
+pub(crate) fn cmyk(
+    st: &Stream<'_>,
+    width: u32,
+    height: u32,
+) -> Result<Option<ImageBlob>, &'static str> {
     let d = st.dict();
     if !cmyk_space(d) {
         return Ok(None);
@@ -66,7 +79,9 @@ pub(crate) fn cmyk(st: &Stream<'_>, width: u32, height: u32) -> Result<Option<Im
             return Ok(Some(ImageBlob::new("image/jpeg", raw.into_owned())));
         }
     }
-    let bpc = d.get::<u8>(key(d, b"BitsPerComponent", b"BPC")).unwrap_or(8);
+    let bpc = d
+        .get::<u8>(key(d, b"BitsPerComponent", b"BPC"))
+        .unwrap_or(8);
     if !matches!(bpc, 8 | 16) {
         return Err(UNREAD);
     }
@@ -75,9 +90,20 @@ pub(crate) fn cmyk(st: &Stream<'_>, width: u32, height: u32) -> Result<Option<Im
         return Err(UNREAD);
     }
     let size = usize::from(bpc / 8);
-    let params = ImageDecodeParams { is_indexed: false, bpc: Some(bpc), num_components: Some(4), target_dimension: None, width, height };
-    let Ok(decoded) = st.decoded_image(&params) else { return Err(UNREAD) };
-    let Some(raw) = decoded.data.get(..n as usize * 4 * size) else { return Err(UNREAD) };
+    let params = ImageDecodeParams {
+        is_indexed: false,
+        bpc: Some(bpc),
+        num_components: Some(4),
+        target_dimension: None,
+        width,
+        height,
+    };
+    let Ok(decoded) = st.decoded_image(&params) else {
+        return Err(UNREAD);
+    };
+    let Some(raw) = decoded.data.get(..n as usize * 4 * size) else {
+        return Err(UNREAD);
+    };
     let value = |s: &[u8]| match *s {
         [hi, lo] => u16::from_be_bytes([hi, lo]) as f32 / 65535.0,
         [v] => v as f32 / 255.0,
@@ -85,13 +111,22 @@ pub(crate) fn cmyk(st: &Stream<'_>, width: u32, height: u32) -> Result<Option<Im
     };
     let inks = raw
         .chunks_exact(size * 4)
-        .flat_map(|px| px.chunks_exact(size).zip(ranges).map(|(s, (lo, hi))| ((lo + value(s) * (hi - lo)).clamp(0.0, 1.0) * 255.0).round() as u8))
+        .flat_map(|px| {
+            px.chunks_exact(size).zip(ranges).map(|(s, (lo, hi))| {
+                ((lo + value(s) * (hi - lo)).clamp(0.0, 1.0) * 255.0).round() as u8
+            })
+        })
         .collect();
-    Inks::new(width, height, inks).and_then(|i| ImageBlob::cmyk_tiff(&i)).map(Some).ok_or(UNREAD)
+    Inks::new(width, height, inks)
+        .and_then(|i| ImageBlob::cmyk_tiff(&i))
+        .map(Some)
+        .ok_or(UNREAD)
 }
 
 /// Does the image carry its own transparency (a soft mask, a stencil mask or a colour key)?
 pub(crate) fn has_mask(st: &Stream<'_>) -> bool {
     let d = st.dict();
-    d.contains_key(b"SMask") || d.contains_key(b"Mask") || d.get::<u8>(b"SMaskInData").is_some_and(|v| v != 0)
+    d.contains_key(b"SMask")
+        || d.contains_key(b"Mask")
+        || d.get::<u8>(b"SMaskInData").is_some_and(|v| v != 0)
 }

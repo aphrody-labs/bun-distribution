@@ -29,7 +29,10 @@ use std::fmt::Write as _;
 use std::path::{Component, Path};
 use std::sync::Arc;
 
-use gridcraft_model::{Preserved, PreservedPart, PreservedRel, PreservedSheet, PreservedXml, Sheet, Visibility, Workbook};
+use gridcraft_model::{
+    Preserved, PreservedPart, PreservedRel, PreservedSheet, PreservedXml, Sheet, Visibility,
+    Workbook,
+};
 use quick_xml::events::attributes::Attribute;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::name::QName;
@@ -79,18 +82,36 @@ const NS_REL_STRICT: &str = "http://purl.oclc.org/ooxml/officeDocument/relations
 const CT_VML: &str = "application/vnd.openxmlformats-officedocument.vmlDrawing";
 
 /// Relationship kinds (last segment of the type) kept from the package root.
-const PACKAGE_ROOTS: &[&str] = &["custom-properties", "extensibility", "webextensiontaskpanes"];
+const PACKAGE_ROOTS: &[&str] = &[
+    "custom-properties",
+    "extensibility",
+    "webextensiontaskpanes",
+];
 /// Relationship kinds kept from the workbook without a workbook element.
 const WORKBOOK_ROOTS: &[&str] = &["customXml", "connections", "xmlMaps"];
 /// Relationship kinds kept from a sheet without a sheet element.
 const SHEET_ROOTS: &[&str] = &["queryTable", "tableSingleCells"];
 /// Sheet relationship kinds that mean the sheet XML may hold elements worth keeping.
-const SHEET_ELEMENT_KINDS: &[&str] = &["oleObject", "ctrlProp", "control", "image", "package", "printerSettings"];
+const SHEET_ELEMENT_KINDS: &[&str] = &[
+    "oleObject",
+    "ctrlProp",
+    "control",
+    "image",
+    "package",
+    "printerSettings",
+];
 /// Attributes of `<fileVersion>` (CT_FileVersion).
-const FILE_VERSION_ATTRS: &[&str] = &["appName", "lastEdited", "lowestEdited", "rupBuild", "codeName"];
+const FILE_VERSION_ATTRS: &[&str] = &[
+    "appName",
+    "lastEdited",
+    "lowestEdited",
+    "rupBuild",
+    "codeName",
+];
 /// The workbook extension listing the calculation features the saved values were computed with.
 const CALC_FEATURES_URI: &str = "{B58B0392-4F1F-4190-BB64-5DF3571DCE5F}";
-const NS_CALC_FEATURES: &str = "http://schemas.microsoft.com/office/spreadsheetml/2018/calcfeatures";
+const NS_CALC_FEATURES: &str =
+    "http://schemas.microsoft.com/office/spreadsheetml/2018/calcfeatures";
 /// Kept sheet elements, in schema order (all after `<legacyDrawing>`, before `<tableParts>`).
 const SHEET_SLOTS: &[&str] = &["picture", "oleObjects", "controls"];
 
@@ -141,7 +162,15 @@ const REWRITTEN: &[&str] = &[
 
 /// Relationship kinds a chart sheet reaches that are otherwise rewritten: its drawing, chart and
 /// their style, colour and shape parts are kept byte for byte (the chart sheet is not modelled).
-const CHART_SHEET_GRAPH: &[&str] = &["chartsheet", "drawing", "chart", "chartex", "chartstyle", "chartcolorstyle", "chartusershapes"];
+const CHART_SHEET_GRAPH: &[&str] = &[
+    "chartsheet",
+    "drawing",
+    "chart",
+    "chartex",
+    "chartstyle",
+    "chartcolorstyle",
+    "chartusershapes",
+];
 
 /// Part-name prefixes (lower case) GridCraft's writer never produces: kept parts there keep their
 /// original names. Anything else is renamed so it can't collide with written parts.
@@ -175,7 +204,11 @@ fn rewritten(r: &PreservedRel) -> bool {
 
 fn rels_part_name(part: &str) -> String {
     let (dir, file) = package::split_dir(part);
-    if dir.is_empty() { format!("_rels/{file}.rels") } else { format!("{dir}/_rels/{file}.rels") }
+    if dir.is_empty() {
+        format!("_rels/{file}.rels")
+    } else {
+        format!("{dir}/_rels/{file}.rels")
+    }
 }
 
 /// A part's relationships with full type URIs. `Ok(vec![])` when it has none; an error when the
@@ -194,12 +227,20 @@ fn raw_rels(cx: &mut Ctx<'_>, part: &str) -> Result<Vec<PreservedRel>, String> {
         if out.len() >= MAX_RELS {
             return Err(format!("{name}: too many relationships"));
         }
-        let (Some(id), Some(target)) = (r.attr("Id"), r.attr("Target")) else { continue };
-        let external = r.attr("TargetMode").is_some_and(|m| m.eq_ignore_ascii_case("External"));
+        let (Some(id), Some(target)) = (r.attr("Id"), r.attr("Target")) else {
+            continue;
+        };
+        let external = r
+            .attr("TargetMode")
+            .is_some_and(|m| m.eq_ignore_ascii_case("External"));
         out.push(PreservedRel {
             id: id.to_string(),
             rel_type: r.attr("Type").unwrap_or("").to_string(),
-            target: if external { target.to_string() } else { package::resolve(dir, target) },
+            target: if external {
+                target.to_string()
+            } else {
+                package::resolve(dir, target)
+            },
             external,
         });
     }
@@ -210,13 +251,26 @@ fn raw_rels(cx: &mut Ctx<'_>, part: &str) -> Result<Vec<PreservedRel>, String> {
 
 /// The `<sheet>` entries of the workbook that are chart sheets, each with the number of worksheets
 /// (model sheets) before it.
-fn chart_sheet_entries<'a>(wb_xml: &'a xml::El, wb_rels: &[PreservedRel], file_to_model: &[Option<usize>]) -> Vec<(usize, &'a xml::El)> {
+fn chart_sheet_entries<'a>(
+    wb_xml: &'a xml::El,
+    wb_rels: &[PreservedRel],
+    file_to_model: &[Option<usize>],
+) -> Vec<(usize, &'a xml::El)> {
     let mut out = vec![];
     let mut worksheets = 0usize;
-    for (i, se) in wb_xml.child("sheets").into_iter().flat_map(|s| s.kids("sheet")).enumerate() {
+    for (i, se) in wb_xml
+        .child("sheets")
+        .into_iter()
+        .flat_map(|s| s.kids("sheet"))
+        .enumerate()
+    {
         if file_to_model.get(i).copied().flatten().is_some() {
             worksheets += 1;
-        } else if se.attr("id").and_then(|id| wb_rels.iter().find(|r| r.id == id)).is_some_and(|r| is_kind(r, &["chartsheet"])) {
+        } else if se
+            .attr("id")
+            .and_then(|id| wb_rels.iter().find(|r| r.id == id))
+            .is_some_and(|r| is_kind(r, &["chartsheet"]))
+        {
             out.push((worksheets, se));
         }
     }
@@ -244,12 +298,20 @@ impl KeptReader {
             parts_left: MAX_KEPT_PARTS,
         };
         if let Ok(root) = raw_rels(cx, "")
-            && root.iter().any(|r| r.rel_type.starts_with("http://purl.oclc.org/"))
+            && root
+                .iter()
+                .any(|r| r.rel_type.starts_with("http://purl.oclc.org/"))
         {
             k.on = false;
             k.strict = true;
         }
-        match cx.pkg.read_limited("[Content_Types].xml", MAX_META).ok().flatten().and_then(|b| xml::parse(&b).ok()) {
+        match cx
+            .pkg
+            .read_limited("[Content_Types].xml", MAX_META)
+            .ok()
+            .flatten()
+            .and_then(|b| xml::parse(&b).ok())
+        {
             Some(types) => {
                 for d in types.kids("Default") {
                     if let (Some(e), Some(t)) = (d.attr("Extension"), d.attr("ContentType")) {
@@ -279,11 +341,22 @@ impl KeptReader {
 
     /// The parts reachable from `root` that aren't in `seen` yet. Fails (and keeps nothing) when the
     /// graph reaches rewritten content, a missing or damaged part, or a size limit.
-    fn closure(&mut self, cx: &mut Ctx<'_>, root: &PreservedRel, seen: &HashSet<String>, through: &[&str]) -> Result<Vec<PreservedPart>, String> {
+    fn closure(
+        &mut self,
+        cx: &mut Ctx<'_>,
+        root: &PreservedRel,
+        seen: &HashSet<String>,
+        through: &[&str],
+    ) -> Result<Vec<PreservedPart>, String> {
         if root.external {
             return Ok(vec![]);
         }
-        let blocked = |r: &PreservedRel| rewritten(r) && !through.iter().any(|k| k.eq_ignore_ascii_case(kind(&r.rel_type)));
+        let blocked = |r: &PreservedRel| {
+            rewritten(r)
+                && !through
+                    .iter()
+                    .any(|k| k.eq_ignore_ascii_case(kind(&r.rel_type)))
+        };
         if blocked(root) {
             return Err(format!("it refers to {}", kind(&root.rel_type)));
         }
@@ -302,7 +375,9 @@ impl KeptReader {
             if parts.len() >= self.parts_left {
                 return Err("it has too many parts".into());
             }
-            let content_type = self.content_type(&name).ok_or_else(|| format!("{name} has no content type"))?;
+            let content_type = self
+                .content_type(&name)
+                .ok_or_else(|| format!("{name} has no content type"))?;
             let data = match cx.pkg.read_limited(&name, MAX_KEPT_PART) {
                 Ok(Some(d)) => d,
                 Ok(None) => return Err(format!("{name} is missing")),
@@ -319,7 +394,12 @@ impl KeptReader {
                 }
                 queue.push_back((r.target.clone(), depth + 1));
             }
-            parts.push(PreservedPart { name, content_type, data: Arc::from(data), rels });
+            parts.push(PreservedPart {
+                name,
+                content_type,
+                data: Arc::from(data),
+                rels,
+            });
         }
         self.budget = self.budget.saturating_sub(bytes);
         self.parts_left = self.parts_left.saturating_sub(parts.len());
@@ -327,7 +407,13 @@ impl KeptReader {
     }
 
     /// Keeps a set of relationships (all or nothing) and the parts behind them.
-    fn keep(&mut self, cx: &mut Ctx<'_>, p: &mut Preserved, roots: &[PreservedRel], seen: &mut HashSet<String>) -> Result<(), String> {
+    fn keep(
+        &mut self,
+        cx: &mut Ctx<'_>,
+        p: &mut Preserved,
+        roots: &[PreservedRel],
+        seen: &mut HashSet<String>,
+    ) -> Result<(), String> {
         self.keep_through(cx, p, roots, seen, &[])
     }
 
@@ -358,11 +444,20 @@ impl KeptReader {
     }
 
     /// Package-root and workbook-level content.
-    pub fn workbook(&mut self, cx: &mut Ctx<'_>, wb_part: &str, wb_xml: &xml::El, file_to_model: &[Option<usize>]) -> Option<Arc<Preserved>> {
+    pub fn workbook(
+        &mut self,
+        cx: &mut Ctx<'_>,
+        wb_part: &str,
+        wb_xml: &xml::El,
+        file_to_model: &[Option<usize>],
+    ) -> Option<Arc<Preserved>> {
         if !self.on {
             let wb_rels = raw_rels(cx, wb_part).unwrap_or_default();
             for (_, se) in chart_sheet_entries(wb_xml, &wb_rels, file_to_model) {
-                cx.warn(format!("chart sheet \"{}\" was skipped and is not kept on save", se.attr("name").unwrap_or("")));
+                cx.warn(format!(
+                    "chart sheet \"{}\" was skipped and is not kept on save",
+                    se.attr("name").unwrap_or("")
+                ));
             }
             if self.strict {
                 cx.warn("unmodelled content of a Strict Open XML workbook (custom XML, links, controls…) is not kept on save");
@@ -387,15 +482,30 @@ impl KeptReader {
         let wb_rels = raw_rels(cx, wb_part).unwrap_or_default();
         for r in wb_rels.iter().filter(|r| is_kind(r, WORKBOOK_ROOTS)) {
             if let Err(why) = self.keep(cx, &mut p, std::slice::from_ref(r), &mut seen) {
-                cx.warn(format!("{} part {} was dropped: {why}", kind(&r.rel_type), r.target));
+                cx.warn(format!(
+                    "{} part {} was dropped: {why}",
+                    kind(&r.rel_type),
+                    r.target
+                ));
             }
         }
         // Chart sheets: the sheet entry (name, state, position) plus the chart sheet part and the
         // drawing, chart, style and colour parts behind it.
         for (worksheets, se) in chart_sheet_entries(wb_xml, &wb_rels, file_to_model) {
             let name = se.attr("name").unwrap_or("").to_string();
-            let Some(r) = se.attr("id").and_then(|id| wb_rels.iter().find(|r| r.id == id)) else { continue };
-            match self.keep_through(cx, &mut p, std::slice::from_ref(r), &mut seen, CHART_SHEET_GRAPH) {
+            let Some(r) = se
+                .attr("id")
+                .and_then(|id| wb_rels.iter().find(|r| r.id == id))
+            else {
+                continue;
+            };
+            match self.keep_through(
+                cx,
+                &mut p,
+                std::slice::from_ref(r),
+                &mut seen,
+                CHART_SHEET_GRAPH,
+            ) {
                 Ok(()) => p.sheets.push(PreservedSheet {
                     name,
                     visibility: match se.attr("state") {
@@ -411,11 +521,24 @@ impl KeptReader {
         }
         // Links to external workbooks: `[1]` in formulas is the position in <externalReferences>,
         // so they are kept all together or not at all.
-        let ids: Vec<&str> =
-            wb_xml.child("externalReferences").map(|e| e.kids("externalReference").filter_map(|x| x.attr("id")).collect()).unwrap_or_default();
+        let ids: Vec<&str> = wb_xml
+            .child("externalReferences")
+            .map(|e| {
+                e.kids("externalReference")
+                    .filter_map(|x| x.attr("id"))
+                    .collect()
+            })
+            .unwrap_or_default();
         if !ids.is_empty() {
-            let roots: Option<Vec<PreservedRel>> =
-                ids.iter().map(|id| wb_rels.iter().find(|r| r.id == *id && is_kind(r, &["externalLink"])).cloned()).collect();
+            let roots: Option<Vec<PreservedRel>> = ids
+                .iter()
+                .map(|id| {
+                    wb_rels
+                        .iter()
+                        .find(|r| r.id == *id && is_kind(r, &["externalLink"]))
+                        .cloned()
+                })
+                .collect();
             let kept = match roots {
                 Some(roots) => self.keep(cx, &mut p, &roots, &mut seen),
                 None => Err("a link has no part".into()),
@@ -427,8 +550,13 @@ impl KeptReader {
                         let _ = write!(x, "<externalReference r:id=\"{}\"/>", esc_attr(id));
                     }
                     x.push_str("</externalReferences>");
-                    p.elements.push(PreservedXml { slot: "externalReferences".into(), xml: x });
-                    cx.warn("links to external workbooks were kept; they are not followed or refreshed");
+                    p.elements.push(PreservedXml {
+                        slot: "externalReferences".into(),
+                        xml: x,
+                    });
+                    cx.warn(
+                        "links to external workbooks were kept; they are not followed or refreshed",
+                    );
                 }
                 Err(why) => cx.warn(format!("links to external workbooks were dropped: {why}")),
             }
@@ -443,19 +571,32 @@ impl KeptReader {
                 }
             }
             x.push_str("/>");
-            p.elements.push(PreservedXml { slot: "fileVersion".into(), xml: x });
+            p.elements.push(PreservedXml {
+                slot: "fileVersion".into(),
+                xml: x,
+            });
         }
         let calc_features = wb_xml
             .child("extLst")
-            .and_then(|l| l.kids("ext").find(|e| e.attr("uri").is_some_and(|u| u.eq_ignore_ascii_case(CALC_FEATURES_URI))))
+            .and_then(|l| {
+                l.kids("ext").find(|e| {
+                    e.attr("uri")
+                        .is_some_and(|u| u.eq_ignore_ascii_case(CALC_FEATURES_URI))
+                })
+            })
             .and_then(|e| e.child("calcFeatures"));
         if let Some(c) = calc_features {
-            let mut x = format!("<ext uri=\"{CALC_FEATURES_URI}\" xmlns:xcalcf=\"{NS_CALC_FEATURES}\"><xcalcf:calcFeatures>");
+            let mut x = format!(
+                "<ext uri=\"{CALC_FEATURES_URI}\" xmlns:xcalcf=\"{NS_CALC_FEATURES}\"><xcalcf:calcFeatures>"
+            );
             for name in c.kids("feature").filter_map(|f| f.attr("name")) {
                 let _ = write!(x, "<xcalcf:feature name=\"{}\"/>", esc_attr(name));
             }
             x.push_str("</xcalcf:calcFeatures></ext>");
-            p.elements.push(PreservedXml { slot: "ext".into(), xml: x });
+            p.elements.push(PreservedXml {
+                slot: "ext".into(),
+                xml: x,
+            });
         }
         (!p.is_empty()).then(|| Arc::new(p))
     }
@@ -476,7 +617,10 @@ impl KeptReader {
         let mut seen = HashSet::new();
         for r in rels.iter().filter(|r| is_kind(r, SHEET_ROOTS)) {
             if let Err(why) = self.keep(cx, &mut p, std::slice::from_ref(r), &mut seen) {
-                cx.warn(format!("sheet \"{name}\": {} was dropped: {why}", kind(&r.rel_type)));
+                cx.warn(format!(
+                    "sheet \"{name}\": {} was dropped: {why}",
+                    kind(&r.rel_type)
+                ));
             }
         }
         if rels.iter().any(|r| is_kind(r, SHEET_ELEMENT_KINDS)) {
@@ -485,22 +629,39 @@ impl KeptReader {
         (!p.is_empty()).then(|| Arc::new(p))
     }
 
-    fn sheet_elements(&mut self, cx: &mut Ctx<'_>, part: &str, name: &str, rels: &[PreservedRel], p: &mut Preserved, seen: &mut HashSet<String>) {
+    fn sheet_elements(
+        &mut self,
+        cx: &mut Ctx<'_>,
+        part: &str,
+        name: &str,
+        rels: &[PreservedRel],
+        p: &mut Preserved,
+        seen: &mut HashSet<String>,
+    ) {
         let scan = match cx.pkg.read(part) {
             Ok(Some(bytes)) => scan_sheet(&bytes),
             _ => None,
         };
         let Some(scan) = scan else {
-            cx.warn(format!("sheet \"{name}\": controls and embedded objects could not be read and were dropped"));
+            cx.warn(format!(
+                "sheet \"{name}\": controls and embedded objects could not be read and were dropped"
+            ));
             return;
         };
         // Printer settings (a binary part per sheet) hang off <pageSetup r:id>.
         if let Some(id) = scan.page_setup.as_deref()
-            && let Some(r) = rels.iter().find(|r| r.id == id && is_kind(r, &["printerSettings"]))
+            && let Some(r) = rels
+                .iter()
+                .find(|r| r.id == id && is_kind(r, &["printerSettings"]))
         {
             match self.keep(cx, p, std::slice::from_ref(r), seen) {
-                Ok(()) => p.elements.push(PreservedXml { slot: "pageSetup".into(), xml: r.id.clone() }),
-                Err(why) => cx.warn(format!("sheet \"{name}\": printer settings were dropped: {why}")),
+                Ok(()) => p.elements.push(PreservedXml {
+                    slot: "pageSetup".into(),
+                    xml: r.id.clone(),
+                }),
+                Err(why) => cx.warn(format!(
+                    "sheet \"{name}\": printer settings were dropped: {why}"
+                )),
             }
         }
         let mut frags = scan.fragments;
@@ -512,7 +673,9 @@ impl KeptReader {
                     p.vml = Some(vml);
                 }
                 Err(why) => {
-                    cx.warn(format!("sheet \"{name}\": controls and embedded objects were dropped: {why}"));
+                    cx.warn(format!(
+                        "sheet \"{name}\": controls and embedded objects were dropped: {why}"
+                    ));
                     frags.retain(|(slot, _)| slot == "picture");
                 }
             }
@@ -524,7 +687,10 @@ impl KeptReader {
                 Some(id.to_string())
             })
             .is_some();
-            let roots: Option<Vec<PreservedRel>> = ids.iter().map(|id| rels.iter().find(|r| r.id == *id).cloned()).collect();
+            let roots: Option<Vec<PreservedRel>> = ids
+                .iter()
+                .map(|id| rels.iter().find(|r| r.id == *id).cloned())
+                .collect();
             let kept = match (ok, roots) {
                 (true, Some(roots)) => self.keep(cx, p, &roots, seen),
                 (false, _) => Err("its XML is damaged".into()),
@@ -535,7 +701,10 @@ impl KeptReader {
                 Err(why) => cx.warn(format!("sheet \"{name}\": {slot} were dropped: {why}")),
             }
         }
-        if p.elements.iter().any(|e| e.slot == "oleObjects" || e.slot == "controls") {
+        if p.elements
+            .iter()
+            .any(|e| e.slot == "oleObjects" || e.slot == "controls")
+        {
             cx.warn(format!("sheet \"{name}\": embedded objects and form controls are not shown; they are kept for saving"));
         } else {
             p.vml = None;
@@ -551,7 +720,9 @@ impl KeptReader {
         rid: Option<&str>,
         seen: &mut HashSet<String>,
     ) -> Result<(PreservedPart, Vec<PreservedPart>), String> {
-        let rel = rid.and_then(|id| rels.iter().find(|r| r.id == id && !r.external)).ok_or("the sheet has no VML drawing")?;
+        let rel = rid
+            .and_then(|id| rels.iter().find(|r| r.id == id && !r.external))
+            .ok_or("the sheet has no VML drawing")?;
         // Charged to the kept total like any other part: many sheets can point at one highly
         // compressed VML drawing, and each keeps its own copy.
         if self.budget == 0 {
@@ -565,13 +736,19 @@ impl KeptReader {
             Err(e) => return Err(e.to_string()),
         };
         self.budget = self.budget.saturating_sub(data.len());
-        let text = String::from_utf8(data).map_err(|_| "the VML drawing is not UTF-8".to_string())?;
+        let text =
+            String::from_utf8(data).map_err(|_| "the VML drawing is not UTF-8".to_string())?;
         let text = strip_notes(&text);
         let vrels = raw_rels(cx, &rel.target)?;
         let mut q = Preserved::default();
         let roots: Vec<PreservedRel> = vrels.iter().filter(|r| !r.external).cloned().collect();
         self.keep(cx, &mut q, &roots, seen)?;
-        let vml = PreservedPart { name: rel.target.clone(), content_type: CT_VML.into(), data: Arc::from(text.into_bytes()), rels: vrels };
+        let vml = PreservedPart {
+            name: rel.target.clone(),
+            content_type: CT_VML.into(),
+            data: Arc::from(text.into_bytes()),
+            rels: vrels,
+        };
         Ok((vml, q.parts))
     }
 }
@@ -592,7 +769,11 @@ fn scan_sheet(bytes: &[u8]) -> Option<SheetScan> {
     let text = std::str::from_utf8(&data).ok()?;
     let mut reader = Reader::from_str(text);
     let mut decls: Vec<(String, String)> = vec![];
-    let mut out = SheetScan { fragments: vec![], legacy_drawing: None, page_setup: None };
+    let mut out = SheetScan {
+        fragments: vec![],
+        legacy_drawing: None,
+        page_setup: None,
+    };
     let mut in_root = false;
     loop {
         let start = usize::try_from(reader.buffer_position()).ok()?;
@@ -602,7 +783,8 @@ fn scan_sheet(bytes: &[u8]) -> Option<SheetScan> {
                 in_root = true;
                 for a in e.attributes().with_checks(false).flatten() {
                     if let Some(p) = a.key.as_ref().strip_prefix(b"xmlns:")
-                        && let (Ok(p), Ok(v)) = (std::str::from_utf8(p), std::str::from_utf8(&a.value))
+                        && let (Ok(p), Ok(v)) =
+                            (std::str::from_utf8(p), std::str::from_utf8(&a.value))
                         && !v.contains('"')
                     {
                         decls.push((p.to_string(), v.to_string()));
@@ -618,7 +800,10 @@ fn scan_sheet(bytes: &[u8]) -> Option<SheetScan> {
                 }
                 reader.read_to_end(e.name()).ok()?;
                 let end = usize::try_from(reader.buffer_position()).ok()?;
-                let wanted = matches!(local.as_slice(), b"picture" | b"oleObjects" | b"controls" | b"AlternateContent");
+                let wanted = matches!(
+                    local.as_slice(),
+                    b"picture" | b"oleObjects" | b"controls" | b"AlternateContent"
+                );
                 if wanted && end.saturating_sub(start) <= MAX_FRAGMENT {
                     let frag = text.get(start..end)?;
                     push_fragment(&mut out, frag, &local, &decls);
@@ -634,7 +819,8 @@ fn scan_sheet(bytes: &[u8]) -> Option<SheetScan> {
                         out.legacy_drawing = id;
                     }
                 } else if local == b"picture"
-                    && let Some(frag) = text.get(start..usize::try_from(reader.buffer_position()).ok()?)
+                    && let Some(frag) =
+                        text.get(start..usize::try_from(reader.buffer_position()).ok()?)
                 {
                     push_fragment(&mut out, frag, &local, &decls);
                 }
@@ -659,7 +845,9 @@ fn push_fragment(out: &mut SheetScan, frag: &str, local: &[u8], decls: &[(String
     let frag = with_decls(frag, decls);
     let slot = if local == b"AlternateContent" {
         // The kept element is the one the first choice holds.
-        let Ok(el) = xml::parse(frag.as_bytes()) else { return };
+        let Ok(el) = xml::parse(frag.as_bytes()) else {
+            return;
+        };
         match el.child("Choice").and_then(|c| c.children.first()) {
             Some(c) => c.name.clone(),
             None => return,
@@ -674,31 +862,51 @@ fn push_fragment(out: &mut SheetScan, frag: &str, local: &[u8], decls: &[(String
 
 /// Adds the root's namespace declarations a fragment doesn't declare itself.
 fn with_decls(frag: &str, decls: &[(String, String)]) -> String {
-    let Some(name_end) = frag.char_indices().skip(1).find(|(_, c)| c.is_whitespace() || *c == '/' || *c == '>').map(|(i, _)| i) else {
+    let Some(name_end) = frag
+        .char_indices()
+        .skip(1)
+        .find(|(_, c)| c.is_whitespace() || *c == '/' || *c == '>')
+        .map(|(i, _)| i)
+    else {
         return frag.to_string();
     };
-    let head = frag.get(..frag.find('>').unwrap_or(frag.len())).unwrap_or("");
+    let head = frag
+        .get(..frag.find('>').unwrap_or(frag.len()))
+        .unwrap_or("");
     let mut add = String::new();
     for (p, v) in decls {
         if !head.contains(&format!("xmlns:{p}=")) {
             let _ = write!(add, " xmlns:{p}=\"{v}\"");
         }
     }
-    format!("{}{add}{}", frag.get(..name_end).unwrap_or(""), frag.get(name_end..).unwrap_or(""))
+    format!(
+        "{}{add}{}",
+        frag.get(..name_end).unwrap_or(""),
+        frag.get(name_end..).unwrap_or("")
+    )
 }
 
 /// Byte ranges of the `<v:shape …>…</v:shape>` (or self-closed) elements in VML text.
 fn shape_spans(vml: &str) -> Vec<(usize, usize)> {
     let mut spans = vec![];
     let mut from = 0;
-    while let Some(i) = vml.get(from..).and_then(|s| s.find("<v:shape")).map(|i| i + from) {
+    while let Some(i) = vml
+        .get(from..)
+        .and_then(|s| s.find("<v:shape"))
+        .map(|i| i + from)
+    {
         let after = i + "<v:shape".len();
-        let is_shape = vml.get(after..).and_then(|s| s.chars().next()).is_some_and(|c| c.is_whitespace() || c == '>' || c == '/');
+        let is_shape = vml
+            .get(after..)
+            .and_then(|s| s.chars().next())
+            .is_some_and(|c| c.is_whitespace() || c == '>' || c == '/');
         if !is_shape {
             from = after;
             continue;
         }
-        let Some(tag_end) = vml.get(i..).and_then(|s| s.find('>')).map(|j| i + j + 1) else { break };
+        let Some(tag_end) = vml.get(i..).and_then(|s| s.find('>')).map(|j| i + j + 1) else {
+            break;
+        };
         let end = if vml.get(..tag_end).is_some_and(|t| t.ends_with("/>")) {
             tag_end
         } else {
@@ -732,7 +940,12 @@ fn strip_notes(vml: &str) -> String {
 fn shape_numbers(vml: &str) -> Vec<u64> {
     vml.match_indices("_x0000_s")
         .filter_map(|(i, m)| {
-            let digits: String = vml.get(i + m.len()..)?.chars().take_while(char::is_ascii_digit).take(18).collect();
+            let digits: String = vml
+                .get(i + m.len()..)?
+                .chars()
+                .take_while(char::is_ascii_digit)
+                .take(18)
+                .collect();
             digits.parse().ok()
         })
         .collect()
@@ -741,7 +954,9 @@ fn shape_numbers(vml: &str) -> Vec<u64> {
 /// Kept VML (controls, OLE objects) plus GridCraft's note shapes: the notes get ids in a fresh
 /// shape block so they can't collide with the kept shapes the sheet XML refers to.
 fn merge_vml(kept: &str, ours: &str) -> String {
-    let Some(close) = kept.rfind("</xml>") else { return ours.to_string() };
+    let Some(close) = kept.rfind("</xml>") else {
+        return ours.to_string();
+    };
     let block = shape_numbers(kept).into_iter().max().unwrap_or(0) / 1024 + 1;
     let mut add = String::new();
     if !kept.contains("id=\"_x0000_t202\"")
@@ -753,9 +968,19 @@ fn merge_vml(kept: &str, ours: &str) -> String {
     for (k, (a, b)) in shape_spans(ours).into_iter().enumerate() {
         let shape = ours.get(a..b).unwrap_or("");
         let id = block.saturating_mul(1024).saturating_add(1 + k as u64);
-        match (shape.find("id=\"_x0000_s"), shape.find("id=\"_x0000_s").and_then(|i| shape.get(i + 4..)?.find('"').map(|j| i + 4 + j))) {
+        match (
+            shape.find("id=\"_x0000_s"),
+            shape
+                .find("id=\"_x0000_s")
+                .and_then(|i| shape.get(i + 4..)?.find('"').map(|j| i + 4 + j)),
+        ) {
             (Some(i), Some(j)) => {
-                let _ = write!(add, "{}id=\"_x0000_s{id}\"{}", shape.get(..i).unwrap_or(""), shape.get(j + 1..).unwrap_or(""));
+                let _ = write!(
+                    add,
+                    "{}id=\"_x0000_s{id}\"{}",
+                    shape.get(..i).unwrap_or(""),
+                    shape.get(j + 1..).unwrap_or("")
+                );
             }
             _ => add.push_str(shape),
         }
@@ -763,7 +988,10 @@ fn merge_vml(kept: &str, ours: &str) -> String {
     let mut head = kept.get(..close).unwrap_or("").to_string();
     // Claim the block in the drawing's id map.
     if let Some(i) = head.find("<o:idmap")
-        && let Some(d) = head.get(i..).and_then(|s| s.find("data=\"")).map(|d| i + d + "data=\"".len())
+        && let Some(d) = head
+            .get(i..)
+            .and_then(|s| s.find("data=\""))
+            .map(|d| i + d + "data=\"".len())
         && let Some(e) = head.get(d..).and_then(|s| s.find('"')).map(|e| d + e)
     {
         head.insert_str(e, &format!(",{block}"));
@@ -804,11 +1032,16 @@ pub fn map_rel_ids(x: &str, map: &mut dyn FnMut(&str) -> Option<String>) -> Opti
     String::from_utf8(writer.into_inner()).ok()
 }
 
-fn map_start(e: &BytesStart<'_>, prefixes: &mut HashSet<Vec<u8>>, map: &mut dyn FnMut(&str) -> Option<String>) -> Option<BytesStart<'static>> {
+fn map_start(
+    e: &BytesStart<'_>,
+    prefixes: &mut HashSet<Vec<u8>>,
+    map: &mut dyn FnMut(&str) -> Option<String>,
+) -> Option<BytesStart<'static>> {
     for a in e.attributes().with_checks(false) {
         let a = a.ok()?;
         if let Some(p) = a.key.as_ref().strip_prefix(b"xmlns:")
-            && (a.value.as_ref() == NS_REL.as_bytes() || a.value.as_ref() == NS_REL_STRICT.as_bytes())
+            && (a.value.as_ref() == NS_REL.as_bytes()
+                || a.value.as_ref() == NS_REL_STRICT.as_bytes())
         {
             prefixes.insert(p.to_vec());
         }
@@ -818,13 +1051,22 @@ fn map_start(e: &BytesStart<'_>, prefixes: &mut HashSet<Vec<u8>>, map: &mut dyn 
     for a in e.attributes().with_checks(false) {
         let a = a.ok()?;
         let key = a.key.as_ref();
-        let is_rel = !key.starts_with(b"xmlns") && a.key.prefix().is_some_and(|p| prefixes.contains(p.as_ref()));
+        let is_rel = !key.starts_with(b"xmlns")
+            && a.key
+                .prefix()
+                .is_some_and(|p| prefixes.contains(p.as_ref()));
         if is_rel {
             let old = std::str::from_utf8(&a.value).ok()?;
             let new = map(old)?;
-            out.push_attribute(Attribute { key: QName(key), value: Cow::Owned(esc_attr(&new).into_bytes()) });
+            out.push_attribute(Attribute {
+                key: QName(key),
+                value: Cow::Owned(esc_attr(&new).into_bytes()),
+            });
         } else {
-            out.push_attribute(Attribute { key: QName(key), value: a.value.clone() });
+            out.push_attribute(Attribute {
+                key: QName(key),
+                value: a.value.clone(),
+            });
         }
     }
     Some(out)
@@ -855,11 +1097,19 @@ impl KeptOut {
             Some((s, e)) => (s, format!(".{e}")),
             None => (file, String::new()),
         };
-        let stem = if own { format!("{stem}_") } else { "kept".to_string() };
+        let stem = if own {
+            format!("{stem}_")
+        } else {
+            "kept".to_string()
+        };
         loop {
             self.n = self.n.saturating_add(1);
             let file = format!("{stem}{}{ext}", self.n);
-            let cand = if dir.is_empty() { file } else { format!("{dir}/{file}") };
+            let cand = if dir.is_empty() {
+                file
+            } else {
+                format!("{dir}/{file}")
+            };
             if self.used.insert(cand.to_ascii_lowercase()) || self.n == u32::MAX {
                 return cand;
             }
@@ -871,21 +1121,33 @@ impl KeptOut {
 type NameMap = HashMap<String, String>;
 
 fn rel_target(r: &PreservedRel, names: &NameMap) -> Option<String> {
-    if r.external { Some(r.target.clone()) } else { names.get(&normalize(&r.target)).map(|n| format!("/{n}")) }
+    if r.external {
+        Some(r.target.clone())
+    } else {
+        names.get(&normalize(&r.target)).map(|n| format!("/{n}"))
+    }
 }
 
 /// A kept part's relationships, ids unchanged, targets renamed.
 fn part_rels_xml(rels: &[PreservedRel], names: &NameMap) -> String {
-    let mut s = format!("{XML_DECL}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
+    let mut s = format!(
+        "{XML_DECL}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+    );
     for r in rels {
-        let Some(target) = rel_target(r, names) else { continue };
+        let Some(target) = rel_target(r, names) else {
+            continue;
+        };
         let _ = write!(
             s,
             "<Relationship Id=\"{}\" Type=\"{}\" Target=\"{}\"{}/>",
             esc_attr(&r.id),
             esc_attr(&r.rel_type),
             esc_attr(&target),
-            if r.external { " TargetMode=\"External\"" } else { "" }
+            if r.external {
+                " TargetMode=\"External\""
+            } else {
+                ""
+            }
         );
     }
     s.push_str("</Relationships>");
@@ -895,17 +1157,25 @@ fn part_rels_xml(rels: &[PreservedRel], names: &NameMap) -> String {
 fn write_parts(out: &mut Out, parts: &[PreservedPart]) -> NameMap {
     let mut names = NameMap::new();
     for p in parts {
-        names.entry(normalize(&p.name)).or_insert_with(|| out.kept.claim(&p.name));
+        names
+            .entry(normalize(&p.name))
+            .or_insert_with(|| out.kept.claim(&p.name));
     }
     let mut written = HashSet::new();
     for p in parts {
-        let Some(new) = names.get(&normalize(&p.name)).cloned() else { continue };
+        let Some(new) = names.get(&normalize(&p.name)).cloned() else {
+            continue;
+        };
         if !written.insert(new.clone()) {
             continue;
         }
         out.part(&new, Some(&p.content_type), p.data.to_vec());
         if !p.rels.is_empty() {
-            out.part(&rels_part_name(&new), None, part_rels_xml(&p.rels, &names).into_bytes());
+            out.part(
+                &rels_part_name(&new),
+                None,
+                part_rels_xml(&p.rels, &names).into_bytes(),
+            );
         }
     }
     names
@@ -953,14 +1223,23 @@ impl WorkbookKept {
     /// (`i` = the number of sheets for those that come last); `id` numbers them from `first_id`.
     pub fn sheet_entries(&self, i: usize, last: bool, mut id: usize) -> (String, usize) {
         let mut x = String::new();
-        for s in self.sheets.iter().filter(|s| if last { s.before >= i } else { s.before == i }) {
+        for s in self
+            .sheets
+            .iter()
+            .filter(|s| if last { s.before >= i } else { s.before == i })
+        {
             let state = match s.visibility {
                 Visibility::Visible => "",
                 Visibility::Hidden => " state=\"hidden\"",
                 Visibility::VeryHidden => " state=\"veryHidden\"",
             };
             let name: String = s.name.chars().take(31).collect();
-            let _ = write!(x, "<sheet name=\"{}\" sheetId=\"{id}\"{state} r:id=\"{}\"/>", esc_attr(&name), esc_attr(&s.rid));
+            let _ = write!(
+                x,
+                "<sheet name=\"{}\" sheetId=\"{id}\"{state} r:id=\"{}\"/>",
+                esc_attr(&name),
+                esc_attr(&s.rid)
+            );
             id += 1;
         }
         (x, id)
@@ -969,7 +1248,8 @@ impl WorkbookKept {
 
 /// The part names reachable from `root` through kept parts' relationships (normalized).
 fn reachable(p: &Preserved, root: &PreservedRel) -> HashSet<String> {
-    let by_name: HashMap<String, &PreservedPart> = p.parts.iter().map(|q| (normalize(&q.name), q)).collect();
+    let by_name: HashMap<String, &PreservedPart> =
+        p.parts.iter().map(|q| (normalize(&q.name), q)).collect();
     let mut seen = HashSet::new();
     let mut queue = VecDeque::from([normalize(&root.target)]);
     while let Some(n) = queue.pop_front() {
@@ -977,7 +1257,12 @@ fn reachable(p: &Preserved, root: &PreservedRel) -> HashSet<String> {
             continue;
         }
         if let Some(q) = by_name.get(&n) {
-            queue.extend(q.rels.iter().filter(|r| !r.external).map(|r| normalize(&r.target)));
+            queue.extend(
+                q.rels
+                    .iter()
+                    .filter(|r| !r.external)
+                    .map(|r| normalize(&r.target)),
+            );
         }
     }
     seen
@@ -1040,38 +1325,73 @@ pub(crate) fn sheet_names_in(formula: &str) -> Vec<String> {
 /// that exist under the same names (the chart is kept as it was, so a series on a deleted or
 /// renamed sheet would be left pointing at nothing), and no worksheet may have taken its name.
 fn chart_sheet_usable(wb: &Workbook, p: &Preserved, s: &PreservedSheet) -> bool {
-    let same = |a: &str, b: &str| a.chars().take(31).collect::<String>().eq_ignore_ascii_case(&b.chars().take(31).collect::<String>());
+    let same = |a: &str, b: &str| {
+        a.chars()
+            .take(31)
+            .collect::<String>()
+            .eq_ignore_ascii_case(&b.chars().take(31).collect::<String>())
+    };
     if wb.sheets.iter().any(|w| same(&w.name, &s.name)) {
         return false;
     }
-    let Some(root) = p.rels.iter().find(|r| r.id == s.rel_id) else { return false };
+    let Some(root) = p.rels.iter().find(|r| r.id == s.rel_id) else {
+        return false;
+    };
     let parts = reachable(p, root);
     let mut formulas = vec![];
-    for q in p.parts.iter().filter(|q| parts.contains(&normalize(&q.name)) && q.content_type.contains("chart")) {
+    for q in p
+        .parts
+        .iter()
+        .filter(|q| parts.contains(&normalize(&q.name)) && q.content_type.contains("chart"))
+    {
         if let Ok(x) = xml::parse(&q.data) {
             chart_formulas(&x, &mut formulas);
         }
     }
-    formulas.iter().flat_map(|f| sheet_names_in(f)).all(|n| wb.sheets.iter().any(|w| same(&w.name, &n)))
+    formulas
+        .iter()
+        .flat_map(|f| sheet_names_in(f))
+        .all(|n| wb.sheets.iter().any(|w| same(&w.name, &n)))
 }
 
 /// Writes the workbook's kept parts and relationships. Chart sheets that can't be written back
 /// (see [`chart_sheet_usable`]) are left out with the parts only they reach.
 pub fn write_workbook(wb: &Workbook, wb_rels: &mut Rels, out: &mut Out) -> WorkbookKept {
-    let Some(p) = wb.preserved.as_deref() else { return WorkbookKept::default() };
-    let (live, dropped): (Vec<&PreservedSheet>, Vec<&PreservedSheet>) = p.sheets.iter().partition(|s| chart_sheet_usable(wb, p, s));
+    let Some(p) = wb.preserved.as_deref() else {
+        return WorkbookKept::default();
+    };
+    let (live, dropped): (Vec<&PreservedSheet>, Vec<&PreservedSheet>) =
+        p.sheets.iter().partition(|s| chart_sheet_usable(wb, p, s));
     let root_of = |s: &PreservedSheet| p.rels.iter().find(|r| r.id == s.rel_id);
     let dropped_ids: HashSet<&str> = dropped.iter().map(|s| s.rel_id.as_str()).collect();
     // Parts reached only by dropped chart sheets go with them.
-    let mut gone: HashSet<String> = dropped.iter().filter_map(|s| root_of(s)).flat_map(|r| reachable(p, r)).collect();
+    let mut gone: HashSet<String> = dropped
+        .iter()
+        .filter_map(|s| root_of(s))
+        .flat_map(|r| reachable(p, r))
+        .collect();
     if !gone.is_empty() {
-        let others = p.rels.iter().filter(|r| !dropped_ids.contains(r.id.as_str())).flat_map(|r| reachable(p, r));
+        let others = p
+            .rels
+            .iter()
+            .filter(|r| !dropped_ids.contains(r.id.as_str()))
+            .flat_map(|r| reachable(p, r));
         for n in others {
             gone.remove(&n);
         }
     }
-    let parts: Vec<PreservedPart> = p.parts.iter().filter(|q| !gone.contains(&normalize(&q.name))).cloned().collect();
-    let rels: Vec<PreservedRel> = p.rels.iter().filter(|r| !dropped_ids.contains(r.id.as_str())).cloned().collect();
+    let parts: Vec<PreservedPart> = p
+        .parts
+        .iter()
+        .filter(|q| !gone.contains(&normalize(&q.name)))
+        .cloned()
+        .collect();
+    let rels: Vec<PreservedRel> = p
+        .rels
+        .iter()
+        .filter(|r| !dropped_ids.contains(r.id.as_str()))
+        .cloned()
+        .collect();
     let names = write_parts(out, &parts);
     let ids = attach(wb_rels, &rels, &names);
     for r in &p.package_rels {
@@ -1080,18 +1400,36 @@ pub fn write_workbook(wb: &Workbook, wb_rels: &mut Rels, out: &mut Out) -> Workb
         }
     }
     WorkbookKept {
-        elements: p.elements.iter().filter(|e| e.slot == "externalReferences").filter_map(|e| remap(&e.xml, &ids)).collect(),
+        elements: p
+            .elements
+            .iter()
+            .filter(|e| e.slot == "externalReferences")
+            .filter_map(|e| remap(&e.xml, &ids))
+            .collect(),
         sheets: live
             .iter()
-            .filter_map(|s| Some(KeptSheet { before: s.before, name: s.name.clone(), visibility: s.visibility, rid: ids.get(&s.rel_id)?.clone() }))
+            .filter_map(|s| {
+                Some(KeptSheet {
+                    before: s.before,
+                    name: s.name.clone(),
+                    visibility: s.visibility,
+                    rid: ids.get(&s.rel_id)?.clone(),
+                })
+            })
             .collect(),
     }
 }
 
 /// The workbook's kept elements of `slot` that refer to no part (`fileVersion`, `ext`).
 pub fn workbook_elements(wb: &Workbook, slot: &str) -> String {
-    let Some(p) = wb.preserved.as_deref() else { return String::new() };
-    p.elements.iter().filter(|e| e.slot == slot).map(|e| e.xml.as_str()).collect()
+    let Some(p) = wb.preserved.as_deref() else {
+        return String::new();
+    };
+    p.elements
+        .iter()
+        .filter(|e| e.slot == slot)
+        .map(|e| e.xml.as_str())
+        .collect()
 }
 
 /// Adds the kept package-root relationships (custom properties…) to `_rels/.rels`.
@@ -1111,10 +1449,20 @@ pub struct SheetKept<'a> {
 impl<'a> SheetKept<'a> {
     /// Writes the sheet's kept parts and adds their relationships to the sheet's.
     pub fn write(sheet: &'a Sheet, rels: &mut Rels, out: &mut Out) -> SheetKept<'a> {
-        let Some(p) = sheet.preserved.as_deref() else { return SheetKept { p: None, names: NameMap::new(), ids: HashMap::new() } };
+        let Some(p) = sheet.preserved.as_deref() else {
+            return SheetKept {
+                p: None,
+                names: NameMap::new(),
+                ids: HashMap::new(),
+            };
+        };
         let names = write_parts(out, &p.parts);
         let ids = attach(rels, &p.rels, &names);
-        SheetKept { p: Some(p), names, ids }
+        SheetKept {
+            p: Some(p),
+            names,
+            ids,
+        }
     }
 
     fn vml(&self) -> Option<&'a PreservedPart> {
@@ -1123,7 +1471,11 @@ impl<'a> SheetKept<'a> {
 
     fn write_vml_rels(&self, vml: &PreservedPart, name: &str, out: &mut Out) {
         if !vml.rels.is_empty() {
-            out.part(&rels_part_name(name), None, part_rels_xml(&vml.rels, &self.names).into_bytes());
+            out.part(
+                &rels_part_name(name),
+                None,
+                part_rels_xml(&vml.rels, &self.names).into_bytes(),
+            );
         }
     }
 
@@ -1151,7 +1503,9 @@ impl<'a> SheetKept<'a> {
 
     /// The kept sheet elements, in schema order.
     pub fn elements(&self) -> String {
-        let Some(p) = self.p else { return String::new() };
+        let Some(p) = self.p else {
+            return String::new();
+        };
         let mut s = String::new();
         for slot in SHEET_SLOTS {
             for e in p.elements.iter().filter(|e| e.slot == *slot) {
@@ -1209,10 +1563,15 @@ impl Folder {
         if !dir.is_absolute() {
             return None;
         }
-        let mut f = Folder { root: String::new(), names: vec![] };
+        let mut f = Folder {
+            root: String::new(),
+            names: vec![],
+        };
         for c in dir.components() {
             match c {
-                Component::Prefix(_) | Component::RootDir => f.root.push_str(&c.as_os_str().to_string_lossy()),
+                Component::Prefix(_) | Component::RootDir => {
+                    f.root.push_str(&c.as_os_str().to_string_lossy())
+                }
                 Component::CurDir => {}
                 Component::ParentDir => {
                     f.names.pop();
@@ -1232,7 +1591,11 @@ fn rebase(target: &str, from: &Folder, to: &Folder) -> Option<String> {
     }
     // Each name as the file system knows it, and as it is written in a target. Names taken from
     // the original target keep their spelling.
-    let mut path: Vec<(String, String)> = from.names.iter().map(|n| (n.clone(), encode_name(n))).collect();
+    let mut path: Vec<(String, String)> = from
+        .names
+        .iter()
+        .map(|n| (n.clone(), encode_name(n)))
+        .collect();
     for seg in target.split(['/', '\\']) {
         match seg {
             "" | "." => {}
@@ -1248,16 +1611,28 @@ fn rebase(target: &str, from: &Folder, to: &Folder) -> Option<String> {
         let names: Vec<&str> = path.iter().map(|(name, _)| name.as_str()).collect();
         return Some(format!("file:///{}{}", from.root, names.join(sep)));
     }
-    let common = to.names.iter().zip(&path).take(folders).take_while(|(a, (b, _))| *a == b).count();
+    let common = to
+        .names
+        .iter()
+        .zip(&path)
+        .take(folders)
+        .take_while(|(a, (b, _))| *a == b)
+        .count();
     let up = "../".repeat(to.names.len().saturating_sub(common));
-    let down: Vec<&str> = path.iter().skip(common).map(|(_, written)| written.as_str()).collect();
+    let down: Vec<&str> = path
+        .iter()
+        .skip(common)
+        .map(|(_, written)| written.as_str())
+        .collect();
     Some(format!("{up}{}", down.join("/")))
 }
 
 /// Not empty, no root, no scheme or drive (`file:`, `http:`, `C:`).
 fn is_relative_path(target: &str) -> bool {
     let scheme = target.split_once(':').is_some_and(|(s, _)| {
-        s.starts_with(|c: char| c.is_ascii_alphabetic()) && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+        s.starts_with(|c: char| c.is_ascii_alphabetic())
+            && s.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
     });
     !target.is_empty() && !target.starts_with(['/', '\\']) && !scheme
 }
@@ -1282,7 +1657,10 @@ fn decode_name(seg: &str) -> String {
     let mut out = Vec::with_capacity(b.len());
     let mut i = 0;
     while let Some(&c) = b.get(i) {
-        let hex = b.get(i + 1..i + 3).and_then(|h| std::str::from_utf8(h).ok()).and_then(|h| u8::from_str_radix(h, 16).ok());
+        let hex = b
+            .get(i + 1..i + 3)
+            .and_then(|h| std::str::from_utf8(h).ok())
+            .and_then(|h| u8::from_str_radix(h, 16).ok());
         match hex {
             Some(byte) if c == b'%' => {
                 out.push(byte);

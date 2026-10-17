@@ -17,14 +17,14 @@ use bevy_light::{
 };
 use bevy_mesh::{Mesh2d, Mesh3d};
 #[cfg(feature = "render")]
-use bevy_pbr::{wireframe::Wireframe, DistanceFog, Lightmap};
+use bevy_pbr::{DistanceFog, Lightmap, wireframe::Wireframe};
 use bevy_picking::pointer::PointerId;
 use bevy_platform::collections::HashMap;
 use bevy_sprite::{Sprite, Text2d};
 use bevy_text::TextSpan;
 use bevy_ui::{
-    widget::{ImageNode, Text, ViewportNode},
     Node,
+    widget::{ImageNode, Text, ViewportNode},
 };
 use bevy_ui_widgets::Button;
 use bevy_window::{Monitor, Window};

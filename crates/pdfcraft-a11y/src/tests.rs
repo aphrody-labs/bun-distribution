@@ -13,11 +13,19 @@ fn pdf(bodies: &[String], trailer: &str) -> Document {
         out.extend_from_slice(format!("{} 0 obj\n{b}\nendobj\n", i + 1).as_bytes());
     }
     let xref = out.len();
-    out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!("xref\n0 {}\n0000000000 65535 f \n", bodies.len() + 1).as_bytes(),
+    );
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer << /Size {} /Root 1 0 R {trailer} >>\nstartxref\n{xref}\n%%EOF\n", bodies.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer << /Size {} /Root 1 0 R {trailer} >>\nstartxref\n{xref}\n%%EOF\n",
+            bodies.len() + 1
+        )
+        .as_bytes(),
+    );
     Document::open(Arc::new(out)).unwrap()
 }
 
@@ -30,7 +38,11 @@ fn status(r: &Report, rule: Rule) -> Status {
 }
 
 fn failed(r: &Report) -> Vec<Rule> {
-    r.results.iter().filter(|x| x.status == Status::Failed).map(|x| x.rule).collect()
+    r.results
+        .iter()
+        .filter(|x| x.status == Status::Failed)
+        .map(|x| x.rule)
+        .collect()
 }
 
 const FONT: &str = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
@@ -50,13 +62,29 @@ fn autotag_text_writes_marked_content_and_parent_tree_across_pages() {
         "",
     );
     let result = autotag_text(&mut doc).unwrap();
-    assert_eq!(result, AutoTagResult { pages: 2, paragraphs: 3 });
+    assert_eq!(
+        result,
+        AutoTagResult {
+            pages: 2,
+            paragraphs: 3
+        }
+    );
     let catalog = doc.get(doc.root().unwrap());
-    let root = catalog.as_dict().unwrap().reference(b"StructTreeRoot").unwrap();
+    let root = catalog
+        .as_dict()
+        .unwrap()
+        .reference(b"StructTreeRoot")
+        .unwrap();
     let tree = doc.get(root);
     let parent_tree = tree.as_dict().unwrap().reference(b"ParentTree").unwrap();
     let numbers = doc.get(parent_tree);
-    let entries = numbers.as_dict().unwrap().get(b"Nums").unwrap().as_array().unwrap();
+    let entries = numbers
+        .as_dict()
+        .unwrap()
+        .get(b"Nums")
+        .unwrap()
+        .as_array()
+        .unwrap();
     assert_eq!(entries.len(), 4);
     assert_eq!(entries[0].as_int(), Some(0));
     assert_eq!(entries[2].as_int(), Some(1));
@@ -65,7 +93,9 @@ fn autotag_text_writes_marked_content_and_parent_tree_across_pages() {
     for page in pdfcraft_model::pages(&doc) {
         let content = page.dict.get(b"Contents").unwrap();
         let stream = doc.resolve(content);
-        let Object::Stream(stream) = &*stream else { panic!("marked page content") };
+        let Object::Stream(stream) = &*stream else {
+            panic!("marked page content")
+        };
         let text = String::from_utf8(stream.decoded_strict().unwrap()).unwrap();
         assert!(text.contains("/P <</MCID 0>> BDC"), "{text}");
         assert!(text.contains("EMC"), "{text}");
@@ -73,10 +103,14 @@ fn autotag_text_writes_marked_content_and_parent_tree_across_pages() {
     let report = check(&doc, &Options::default());
     assert_eq!(status(&report, Rule::TaggedPdf), Status::Passed);
     assert_eq!(status(&report, Rule::TaggedContent), Status::Passed);
-    let bytes = pdfcraft_cos::write_incremental(&doc, &pdfcraft_cos::SaveOptions::default()).unwrap();
+    let bytes =
+        pdfcraft_cos::write_incremental(&doc, &pdfcraft_cos::SaveOptions::default()).unwrap();
     let reopened = Document::open(Arc::new(bytes)).unwrap();
     assert_eq!(tags(&reopened).len(), 4);
-    assert_eq!(status(&check(&reopened, &Options::default()), Rule::TaggedContent), Status::Passed);
+    assert_eq!(
+        status(&check(&reopened, &Options::default()), Rule::TaggedContent),
+        Status::Passed
+    );
 }
 
 #[test]
@@ -91,9 +125,20 @@ fn autotag_text_refuses_paint_and_does_not_modify_the_document() {
         ],
         "",
     );
-    assert!(matches!(autotag_text(&mut doc), Err(AutoTagError::Unsupported { .. })));
-    assert!(!doc.get(doc.root().unwrap()).as_dict().unwrap().contains(b"StructTreeRoot"));
-    assert_eq!(autotag_text(&mut pdf(&good(), "")), Err(AutoTagError::AlreadyTagged));
+    assert!(matches!(
+        autotag_text(&mut doc),
+        Err(AutoTagError::Unsupported { .. })
+    ));
+    assert!(
+        !doc.get(doc.root().unwrap())
+            .as_dict()
+            .unwrap()
+            .contains(b"StructTreeRoot")
+    );
+    assert_eq!(
+        autotag_text(&mut pdf(&good(), "")),
+        Err(AutoTagError::AlreadyTagged)
+    );
 }
 
 #[test]
@@ -110,14 +155,35 @@ fn an_untagged_document_fails_the_document_rules() {
     );
     let r = check(&doc, &Options::default());
     assert_eq!(r.results.len(), 32);
-    assert_eq!(failed(&r), [Rule::TaggedPdf, Rule::PrimaryLanguage, Rule::Title, Rule::TaggedContent]);
-    assert_eq!(status(&r, Rule::ColorContrast), Status::Skipped, "off by default");
+    assert_eq!(
+        failed(&r),
+        [
+            Rule::TaggedPdf,
+            Rule::PrimaryLanguage,
+            Rule::Title,
+            Rule::TaggedContent
+        ]
+    );
+    assert_eq!(
+        status(&r, Rule::ColorContrast),
+        Status::Skipped,
+        "off by default"
+    );
     assert_eq!(status(&r, Rule::LogicalReadingOrder), Status::Manual);
     assert_eq!(status(&r, Rule::ImageOnly), Status::Passed);
     assert_eq!(r.result(Rule::TaggedPdf).unwrap().findings.len(), 2);
     // Only the chosen rules run.
-    let only = check(&doc, &Options { rules: [Rule::Title].into(), pages: None });
-    assert_eq!((only.count(Status::Failed), only.count(Status::Skipped)), (1, 31));
+    let only = check(
+        &doc,
+        &Options {
+            rules: [Rule::Title].into(),
+            pages: None,
+        },
+    );
+    assert_eq!(
+        (only.count(Status::Failed), only.count(Status::Skipped)),
+        (1, 31)
+    );
 }
 
 /// A tagged document that passes every automatic rule.
@@ -163,8 +229,22 @@ fn good() -> Vec<String> {
 fn a_well_tagged_document_passes() {
     let doc = pdf(&good(), "/Info 8 0 R");
     let r = check(&doc, &Options::default());
-    assert!(failed(&r).is_empty(), "{:?}", r.results.iter().filter(|x| x.status == Status::Failed).collect::<Vec<_>>());
-    assert_eq!((r.count(Status::Manual), r.count(Status::Skipped), r.count(Status::Passed)), (5, 1, 26));
+    assert!(
+        failed(&r).is_empty(),
+        "{:?}",
+        r.results
+            .iter()
+            .filter(|x| x.status == Status::Failed)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        (
+            r.count(Status::Manual),
+            r.count(Status::Skipped),
+            r.count(Status::Passed)
+        ),
+        (5, 1, 26)
+    );
 }
 
 #[test]
@@ -203,7 +283,11 @@ fn structure_problems_are_found() {
     assert_eq!(got, want);
     let h = &r.result(Rule::HeadingNesting).unwrap().findings[0].message;
     assert!(h.contains("H3") && h.contains("H1"), "{h}");
-    assert!(r.result(Rule::TableRegularity).unwrap().findings[0].message.contains("between 1 and 2"));
+    assert!(
+        r.result(Rule::TableRegularity).unwrap().findings[0]
+            .message
+            .contains("between 1 and 2")
+    );
 }
 
 #[test]
@@ -214,21 +298,38 @@ fn row_and_column_spans_keep_a_table_regular() {
          << /S /TR /K [ << /S /TH /A << /O /Table /RowSpan 2 >> /K 0 >> << /S /TH /A [ << /O /Table /ColSpan 2 >> ] /K 1 >> ] >> \
          << /S /TR /K [ << /S /TD /K 2 >> << /S /TD /K 3 >> ] >> ] >> ] >>"
         .into();
-    let r = check(&pdf(&objs, "/Info 8 0 R"), &Options { rules: [Rule::TableRegularity].into(), pages: None });
-    assert_eq!(status(&r, Rule::TableRegularity), Status::Passed, "{:?}", r.result(Rule::TableRegularity));
+    let r = check(
+        &pdf(&objs, "/Info 8 0 R"),
+        &Options {
+            rules: [Rule::TableRegularity].into(),
+            pages: None,
+        },
+    );
+    assert_eq!(
+        status(&r, Rule::TableRegularity),
+        Status::Passed,
+        "{:?}",
+        r.result(Rule::TableRegularity)
+    );
 }
 
 /// A tagged document whose structure tree is the Document element `document` (object 3).
 fn structure_doc(objects: &[String]) -> Document {
-    let mut objs = vec!["<< /Type /Catalog /StructTreeRoot 2 0 R >>".to_string(), "<< /Type /StructTreeRoot /K 3 0 R >>".to_string()];
+    let mut objs = vec![
+        "<< /Type /Catalog /StructTreeRoot 2 0 R >>".to_string(),
+        "<< /Type /StructTreeRoot /K 3 0 R >>".to_string(),
+    ];
     objs.extend_from_slice(objects);
     pdf(&objs, "")
 }
 
 #[test]
 fn reachable_tag_properties_round_trip_and_reject_unrelated_objects() {
-    let mut doc =
-        structure_doc(&["<< /S /Document /K [4 0 R] >>".into(), "<< /S /Figure /T (Old) /Alt (A chart) >>".into(), "<< /S /Figure >>".into()]);
+    let mut doc = structure_doc(&[
+        "<< /S /Document /K [4 0 R] >>".into(),
+        "<< /S /Figure /T (Old) /Alt (A chart) >>".into(),
+        "<< /S /Figure >>".into(),
+    ]);
     let tag = pdfcraft_cos::ObjRef::new(4, 0);
     let listed = tags(&doc);
     assert_eq!(listed.len(), 2);
@@ -251,24 +352,59 @@ fn reachable_tag_properties_round_trip_and_reject_unrelated_objects() {
     assert_eq!(edited.language.as_deref(), Some("en-GB"));
     set_tag_property(&mut doc, tag, TagProperty::Title, None).unwrap();
     assert_eq!(tags(&doc)[1].title, None);
-    assert!(matches!(set_tag_property(&mut doc, tag, TagProperty::Type, None), Err(TagError::InvalidType)));
-    assert!(matches!(set_tag_property(&mut doc, tag, TagProperty::Type, Some("bad type")), Err(TagError::InvalidType)));
-    assert!(matches!(set_tag_property(&mut doc, pdfcraft_cos::ObjRef::new(5, 0), TagProperty::Title, Some("No")), Err(TagError::NotATag(_))));
-    assert!(matches!(set_tag_property(&mut doc, pdfcraft_cos::ObjRef::new(4, 1), TagProperty::Title, Some("No")), Err(TagError::NotATag(_))));
+    assert!(matches!(
+        set_tag_property(&mut doc, tag, TagProperty::Type, None),
+        Err(TagError::InvalidType)
+    ));
+    assert!(matches!(
+        set_tag_property(&mut doc, tag, TagProperty::Type, Some("bad type")),
+        Err(TagError::InvalidType)
+    ));
+    assert!(matches!(
+        set_tag_property(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(5, 0),
+            TagProperty::Title,
+            Some("No")
+        ),
+        Err(TagError::NotATag(_))
+    ));
+    assert!(matches!(
+        set_tag_property(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(4, 1),
+            TagProperty::Title,
+            Some("No")
+        ),
+        Err(TagError::NotATag(_))
+    ));
 }
 
 #[test]
 fn tag_hierarchy_keeps_indirect_parent_through_inline_tags() {
-    let doc = structure_doc(&["<< /S /Document /K 4 0 R >>".into(), "<< /S /Sect /K << /S /Div /K 5 0 R >> >>".into(), "<< /S /Figure >>".into()]);
+    let doc = structure_doc(&[
+        "<< /S /Document /K 4 0 R >>".into(),
+        "<< /S /Sect /K << /S /Div /K 5 0 R >> >>".into(),
+        "<< /S /Figure >>".into(),
+    ]);
     let listed = tags(&doc);
     assert_eq!(
-        listed.iter().map(|t| (t.object.num, t.parent.map(|p| p.num), t.depth)).collect::<Vec<_>>(),
+        listed
+            .iter()
+            .map(|t| (t.object.num, t.parent.map(|p| p.num), t.depth))
+            .collect::<Vec<_>>(),
         [(3, None, 0), (4, Some(3), 1), (5, Some(4), 2)]
     );
 }
 
 fn checked(doc: &Document, rules: &[Rule]) -> Report {
-    check(doc, &Options { rules: rules.iter().copied().collect(), pages: None })
+    check(
+        doc,
+        &Options {
+            rules: rules.iter().copied().collect(),
+            pages: None,
+        },
+    )
 }
 
 #[test]
@@ -284,7 +420,11 @@ fn figures_and_tables_past_the_old_element_cut_off_are_checked() {
     let doc = structure_doc(&[format!("<< /S /Document /K [{}] >>", kids.join(" "))]);
     let r = checked(&doc, &[Rule::FiguresAltText, Rule::TableRegularity]);
     assert_eq!(r.result(Rule::FiguresAltText).unwrap().findings.len(), 1);
-    assert!(r.result(Rule::TableRegularity).unwrap().findings[0].message.contains("between 1 and 2"));
+    assert!(
+        r.result(Rule::TableRegularity).unwrap().findings[0]
+            .message
+            .contains("between 1 and 2")
+    );
 }
 
 #[test]
@@ -292,7 +432,13 @@ fn findings_are_listed_in_document_order_not_in_the_order_they_close() {
     // Each element has alternate text but no content. The outer ones close last.
     let doc = structure_doc(&["<< /S /Document /K [ << /S /Sect /Alt (a) /K [ << /S /P /Alt (b) /K [ << /S /Div /Alt (c) >> ] >> ] >> ] >>".into()]);
     let r = checked(&doc, &[Rule::AltTextAssociated]);
-    let kinds: Vec<&str> = r.result(Rule::AltTextAssociated).unwrap().findings.iter().map(|f| f.message.split(' ').next().unwrap_or("")).collect();
+    let kinds: Vec<&str> = r
+        .result(Rule::AltTextAssociated)
+        .unwrap()
+        .findings
+        .iter()
+        .map(|f| f.message.split(' ').next().unwrap_or(""))
+        .collect();
     assert_eq!(kinds, ["Sect", "P", "Div"]);
 }
 
@@ -304,7 +450,11 @@ fn a_rule_lists_its_first_findings_and_counts_the_rest() {
     let found = &r.result(Rule::FiguresAltText).unwrap().findings;
     assert_eq!(found.len(), 201);
     assert_eq!(found[200].message, "… and 100 more");
-    assert!(found[..200].iter().all(|f| f.message == "Figure element: no alternate text"));
+    assert!(
+        found[..200]
+            .iter()
+            .all(|f| f.message == "Figure element: no alternate text")
+    );
 }
 
 #[test]
@@ -321,7 +471,10 @@ fn cycles_shared_kids_and_missing_kids_are_read_once() {
 
 #[test]
 fn structure_findings_identify_indirect_elements_without_guessing_inline_objects() {
-    let doc = structure_doc(&["<< /S /Document /K [4 0 R << /S /Figure >>] >>".into(), "<< /S /Figure >>".into()]);
+    let doc = structure_doc(&[
+        "<< /S /Document /K [4 0 R << /S /Figure >>] >>".into(),
+        "<< /S /Figure >>".into(),
+    ]);
     let r = checked(&doc, &[Rule::FiguresAltText]);
     let found = &r.result(Rule::FiguresAltText).unwrap().findings;
     assert_eq!(found.len(), 2);
@@ -334,7 +487,9 @@ fn nesting_is_read_to_the_depth_limit_and_no_further() {
     // Sections, each the kid of the one before, ending in a figure without alternate text. The
     // figure is at depth `sections`; the walk reads depths up to 256.
     let figure_within = |sections: usize| {
-        let mut objs: Vec<String> = (0..sections).map(|i| format!("<< /S /Sect /K {} 0 R >>", 4 + i)).collect();
+        let mut objs: Vec<String> = (0..sections)
+            .map(|i| format!("<< /S /Sect /K {} 0 R >>", 4 + i))
+            .collect();
         objs.push("<< /S /Figure >>".into());
         let r = checked(&structure_doc(&objs), &[Rule::FiguresAltText]);
         r.result(Rule::FiguresAltText).unwrap().findings.len()
@@ -345,9 +500,18 @@ fn nesting_is_read_to_the_depth_limit_and_no_further() {
 
 #[test]
 fn arrays_nested_deeper_than_the_limit_are_not_read() {
-    let nested = |n: usize| format!("<< /S /Document /K {}<< /S /Figure >>{} >>", "[".repeat(n), "]".repeat(n));
+    let nested = |n: usize| {
+        format!(
+            "<< /S /Document /K {}<< /S /Figure >>{} >>",
+            "[".repeat(n),
+            "]".repeat(n)
+        )
+    };
     let shallow = checked(&structure_doc(&[nested(100)]), &[Rule::FiguresAltText]);
-    assert_eq!(shallow.result(Rule::FiguresAltText).unwrap().findings.len(), 1);
+    assert_eq!(
+        shallow.result(Rule::FiguresAltText).unwrap().findings.len(),
+        1
+    );
     let deep = checked(&structure_doc(&[nested(300)]), &[Rule::FiguresAltText]);
     assert_eq!(deep.result(Rule::FiguresAltText).unwrap().findings.len(), 0);
 }
@@ -355,8 +519,13 @@ fn arrays_nested_deeper_than_the_limit_are_not_read() {
 #[test]
 fn a_long_list_of_marked_content_counts_as_content() {
     // The first paragraph holds 20,000 marked-content items, so its alternate text has content.
-    let items = (0..20_000).map(|i| i.to_string()).collect::<Vec<_>>().join(" ");
-    let doc = structure_doc(&[format!("<< /S /Document /K [ << /S /P /Alt (a) /K [{items}] >> << /S /P /Alt (b) >> ] >>")]);
+    let items = (0..20_000)
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let doc = structure_doc(&[format!(
+        "<< /S /Document /K [ << /S /P /Alt (a) /K [{items}] >> << /S /P /Alt (b) >> ] >>"
+    )]);
     let r = checked(&doc, &[Rule::AltTextAssociated]);
     assert_eq!(r.result(Rule::AltTextAssociated).unwrap().findings.len(), 1);
 }
@@ -370,7 +539,10 @@ fn huge_spans_do_not_size_the_table() {
     )]);
     let r = checked(&doc, &[Rule::TableRegularity]);
     let found = &r.result(Rule::TableRegularity).unwrap().findings;
-    assert_eq!(found[0].message, "Table element: rows have between 1 and 20000000 columns");
+    assert_eq!(
+        found[0].message,
+        "Table element: rows have between 1 and 20000000 columns"
+    );
 }
 
 #[test]
@@ -383,7 +555,10 @@ fn row_spans_carry_past_their_row() {
     )]);
     let r = checked(&doc, &[Rule::TableRegularity]);
     let found = &r.result(Rule::TableRegularity).unwrap().findings;
-    assert_eq!(found[0].message, "Table element: rows have between 3000 and 6000 columns");
+    assert_eq!(
+        found[0].message,
+        "Table element: rows have between 3000 and 6000 columns"
+    );
 }
 
 #[test]
@@ -396,7 +571,10 @@ fn spans_that_are_not_positive_integers_read_as_one() {
             .into(),
     ]);
     let r = checked(&doc, &[Rule::TableRegularity]);
-    assert_eq!(r.result(Rule::TableRegularity).unwrap().findings[0].message, "Table element: rows have between 4 and 5 columns");
+    assert_eq!(
+        r.result(Rule::TableRegularity).unwrap().findings[0].message,
+        "Table element: rows have between 4 and 5 columns"
+    );
 }
 
 #[test]
@@ -410,21 +588,51 @@ fn page_content_and_annotation_problems_are_found() {
     let r = check(&pdf(&objs, "/Info 8 0 R"), &Options::default());
     let mut got = failed(&r);
     got.sort();
-    assert_eq!(got, [Rule::TaggedContent, Rule::TaggedAnnotations, Rule::TabOrder, Rule::FieldDescriptions]);
-    assert_eq!(r.result(Rule::TaggedContent).unwrap().findings[0].message, "Page 1: 1 untagged content item");
-    assert!(r.result(Rule::FieldDescriptions).unwrap().findings[0].message.contains("\"name\""));
-    assert_eq!(r.result(Rule::TaggedAnnotations).unwrap().findings[0].bbox, Some([20.0, 20.0, 80.0, 40.0]));
-    assert_eq!(r.result(Rule::FieldDescriptions).unwrap().findings[0].bbox, Some([20.0, 60.0, 120.0, 80.0]));
+    assert_eq!(
+        got,
+        [
+            Rule::TaggedContent,
+            Rule::TaggedAnnotations,
+            Rule::TabOrder,
+            Rule::FieldDescriptions
+        ]
+    );
+    assert_eq!(
+        r.result(Rule::TaggedContent).unwrap().findings[0].message,
+        "Page 1: 1 untagged content item"
+    );
+    assert!(
+        r.result(Rule::FieldDescriptions).unwrap().findings[0]
+            .message
+            .contains("\"name\"")
+    );
+    assert_eq!(
+        r.result(Rule::TaggedAnnotations).unwrap().findings[0].bbox,
+        Some([20.0, 20.0, 80.0, 40.0])
+    );
+    assert_eq!(
+        r.result(Rule::FieldDescriptions).unwrap().findings[0].bbox,
+        Some([20.0, 60.0, 120.0, 80.0])
+    );
 }
 
 #[test]
 fn annotation_findings_only_locate_valid_rectangles() {
-    let cases = [("[80 40 20 20]", Some([20.0, 20.0, 80.0, 40.0])), ("[20 20 20 40]", None), ("[20 20 80]", None), ("[20 20 80 (bad)]", None)];
+    let cases = [
+        ("[80 40 20 20]", Some([20.0, 20.0, 80.0, 40.0])),
+        ("[20 20 20 40]", None),
+        ("[20 20 80]", None),
+        ("[20 20 80 (bad)]", None),
+    ];
     for (rect, expected) in cases {
         let mut objs = good();
         objs[8] = format!("<< /Type /Annot /Subtype /Link /Rect {rect} >>");
         let r = checked(&pdf(&objs, "/Info 8 0 R"), &[Rule::TaggedAnnotations]);
-        assert_eq!(r.result(Rule::TaggedAnnotations).unwrap().findings[0].bbox, expected, "{rect}");
+        assert_eq!(
+            r.result(Rule::TaggedAnnotations).unwrap().findings[0].bbox,
+            expected,
+            "{rect}"
+        );
     }
 }
 
@@ -442,7 +650,10 @@ fn scans_identity_fonts_and_long_documents() {
         ],
         "",
     );
-    assert_eq!(status(&check(&doc, &Options::default()), Rule::ImageOnly), Status::Failed);
+    assert_eq!(
+        status(&check(&doc, &Options::default()), Rule::ImageOnly),
+        Status::Failed
+    );
     // An Identity-H font without ToUnicode; 21 pages without bookmarks.
     let mut objs = vec![
         "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
@@ -457,11 +668,24 @@ fn scans_identity_fonts_and_long_documents() {
     let r = check(&pdf(&objs, ""), &Options::default());
     assert_eq!(status(&r, Rule::Bookmarks), Status::Failed);
     let enc = r.result(Rule::CharacterEncoding).unwrap();
-    assert_eq!((enc.status, enc.findings.len()), (Status::Failed, 1), "each font once");
+    assert_eq!(
+        (enc.status, enc.findings.len()),
+        (Status::Failed, 1),
+        "each font once"
+    );
     assert!(enc.findings[0].message.contains("Custom"));
     // A page range limits the page rules.
-    let some = check(&pdf(&objs, ""), &Options { pages: Some(vec![3]), ..Options::default() });
-    assert_eq!(some.result(Rule::CharacterEncoding).unwrap().findings[0].page, Some(3));
+    let some = check(
+        &pdf(&objs, ""),
+        &Options {
+            pages: Some(vec![3]),
+            ..Options::default()
+        },
+    );
+    assert_eq!(
+        some.result(Rule::CharacterEncoding).unwrap().findings[0].page,
+        Some(3)
+    );
 }
 
 #[test]
@@ -470,25 +694,56 @@ fn rules_have_ids_and_the_report_lists_them() {
     for r in Rule::ALL {
         assert_eq!(Rule::from_id(r.id()), Some(r));
     }
-    let per: Vec<usize> = Category::ALL.iter().map(|c| Rule::ALL.iter().filter(|r| r.category() == *c).count()).collect();
+    let per: Vec<usize> = Category::ALL
+        .iter()
+        .map(|c| Rule::ALL.iter().filter(|r| r.category() == *c).count())
+        .collect();
     assert_eq!(per, [8, 9, 2, 5, 5, 2, 1]);
     let doc = pdf(&good(), "/Info 8 0 R");
     let report = check(&doc, &Options::default());
     let html = report_html(&report, "a<b>.pdf", "2026-10-02", "en", &in_english);
-    assert!(html.contains("a&lt;b&gt;.pdf") && html.contains("Accessibility permission flag") && html.contains("Needs manual check: 5"));
+    assert!(
+        html.contains("a&lt;b&gt;.pdf")
+            && html.contains("Accessibility permission flag")
+            && html.contains("Needs manual check: 5")
+    );
     assert!(html.contains("<h3>Headings</h3>"));
     // In another language every word of ours is said in it, down to the `lang`; the file name is the
     // file's own and stays as it is.
-    let other = report_html(&report, "a<b>.pdf", "2026-10-02", "es", &|w| format!("«{w}»"));
-    assert!(other.contains("<html lang=\"es\">") && other.contains("<h3>«Headings»</h3>") && other.contains("a&lt;b&gt;.pdf"));
-    assert!(!other.contains(">Headings<"), "an English heading is left in the report: {other}");
-    let manual_only = Report { results: vec![RuleResult { rule: Rule::LogicalReadingOrder, status: Status::Manual, findings: Vec::new() }] };
+    let other = report_html(&report, "a<b>.pdf", "2026-10-02", "es", &|w| {
+        format!("«{w}»")
+    });
+    assert!(
+        other.contains("<html lang=\"es\">")
+            && other.contains("<h3>«Headings»</h3>")
+            && other.contains("a&lt;b&gt;.pdf")
+    );
+    assert!(
+        !other.contains(">Headings<"),
+        "an English heading is left in the report: {other}"
+    );
+    let manual_only = Report {
+        results: vec![RuleResult {
+            rule: Rule::LogicalReadingOrder,
+            status: Status::Manual,
+            findings: Vec::new(),
+        }],
+    };
     let manual_html = report_html(&manual_only, "review.pdf", "2026-10-02", "en", &in_english);
     assert!(manual_html.contains("<p>Needs manual check: 1</p>"));
     assert!(!manual_html.contains("no problems"));
-    let all_passed = Report { results: vec![RuleResult { rule: Rule::LogicalReadingOrder, status: Status::Passed, findings: Vec::new() }] };
+    let all_passed = Report {
+        results: vec![RuleResult {
+            rule: Rule::LogicalReadingOrder,
+            status: Status::Passed,
+            findings: Vec::new(),
+        }],
+    };
     let passed_html = report_html(&all_passed, "review.pdf", "2026-10-02", "en", &in_english);
-    assert!(passed_html.contains("<p>The checker found no problems in this document.</p>"), "{passed_html}");
+    assert!(
+        passed_html.contains("<p>The checker found no problems in this document.</p>"),
+        "{passed_html}"
+    );
 }
 
 fn figures_doc() -> Document {
@@ -519,11 +774,26 @@ fn figures_are_listed_with_their_alt_text_and_place() {
     let doc = figures_doc();
     let f = figures(&doc);
     assert_eq!(f.len(), 2, "role-mapped Photo counts");
-    assert_eq!((f[0].page, f[0].alt.as_deref(), f[0].bbox), (Some(0), None, Some([10.0, 150.0, 50.0, 170.0])));
-    assert_eq!((f[1].alt.as_deref(), f[1].bbox), (Some("A bar"), Some([100.0, 100.0, 150.0, 130.0])));
-    let report = check(&doc, &Options { rules: [Rule::FiguresAltText].into(), pages: None });
+    assert_eq!(
+        (f[0].page, f[0].alt.as_deref(), f[0].bbox),
+        (Some(0), None, Some([10.0, 150.0, 50.0, 170.0]))
+    );
+    assert_eq!(
+        (f[1].alt.as_deref(), f[1].bbox),
+        (Some("A bar"), Some([100.0, 100.0, 150.0, 130.0]))
+    );
+    let report = check(
+        &doc,
+        &Options {
+            rules: [Rule::FiguresAltText].into(),
+            pages: None,
+        },
+    );
     let finding = &report.result(Rule::FiguresAltText).unwrap().findings[0];
-    assert_eq!((finding.object, finding.page, finding.bbox), (Some(f[0].obj), Some(0), f[0].bbox));
+    assert_eq!(
+        (finding.object, finding.page, finding.bbox),
+        (Some(f[0].obj), Some(0), f[0].bbox)
+    );
 }
 
 #[test]
@@ -532,21 +802,64 @@ fn sibling_tags_move_in_reading_order_without_changing_content() {
     let before: Vec<_> = tags(&doc).into_iter().map(|tag| tag.object.num).collect();
     assert_eq!(before, [6, 7, 8]);
     let content = doc.get(pdfcraft_cos::ObjRef::new(4, 0));
-    move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 0), pdfcraft_cos::ObjRef::new(7, 0), TagPlacement::Before).unwrap();
-    assert_eq!(tags(&doc).into_iter().map(|tag| tag.object.num).collect::<Vec<_>>(), [6, 8, 7]);
-    assert_eq!(doc.get(pdfcraft_cos::ObjRef::new(4, 0)), content, "page content stays unchanged");
+    move_tag(
+        &mut doc,
+        pdfcraft_cos::ObjRef::new(8, 0),
+        pdfcraft_cos::ObjRef::new(7, 0),
+        TagPlacement::Before,
+    )
+    .unwrap();
     assert_eq!(
-        move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 0), pdfcraft_cos::ObjRef::new(7, 0), TagPlacement::Before),
+        tags(&doc)
+            .into_iter()
+            .map(|tag| tag.object.num)
+            .collect::<Vec<_>>(),
+        [6, 8, 7]
+    );
+    assert_eq!(
+        doc.get(pdfcraft_cos::ObjRef::new(4, 0)),
+        content,
+        "page content stays unchanged"
+    );
+    assert_eq!(
+        move_tag(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(8, 0),
+            pdfcraft_cos::ObjRef::new(7, 0),
+            TagPlacement::Before
+        ),
         Err(TagError::AlreadyThere)
     );
-    move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 0), pdfcraft_cos::ObjRef::new(7, 0), TagPlacement::After).unwrap();
-    assert_eq!(tags(&doc).into_iter().map(|tag| tag.object.num).collect::<Vec<_>>(), [6, 7, 8]);
+    move_tag(
+        &mut doc,
+        pdfcraft_cos::ObjRef::new(8, 0),
+        pdfcraft_cos::ObjRef::new(7, 0),
+        TagPlacement::After,
+    )
+    .unwrap();
     assert_eq!(
-        move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 0), pdfcraft_cos::ObjRef::new(6, 0), TagPlacement::Before),
+        tags(&doc)
+            .into_iter()
+            .map(|tag| tag.object.num)
+            .collect::<Vec<_>>(),
+        [6, 7, 8]
+    );
+    assert_eq!(
+        move_tag(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(8, 0),
+            pdfcraft_cos::ObjRef::new(6, 0),
+            TagPlacement::Before
+        ),
         Err(TagError::NotSiblings)
     );
     assert_eq!(
-        move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 1), pdfcraft_cos::ObjRef::new(7, 0), TagPlacement::Before),
+        move_tag(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(8, 1),
+            pdfcraft_cos::ObjRef::new(7, 0),
+            TagPlacement::Before
+        ),
         Err(TagError::NotSiblings)
     );
     doc.update_dict(pdfcraft_cos::ObjRef::new(6, 0), |d| {
@@ -561,7 +874,12 @@ fn sibling_tags_move_in_reading_order_without_changing_content() {
     })
     .unwrap();
     assert_eq!(
-        move_tag(&mut doc, pdfcraft_cos::ObjRef::new(8, 0), pdfcraft_cos::ObjRef::new(7, 0), TagPlacement::After),
+        move_tag(
+            &mut doc,
+            pdfcraft_cos::ObjRef::new(8, 0),
+            pdfcraft_cos::ObjRef::new(7, 0),
+            TagPlacement::After
+        ),
         Err(TagError::AmbiguousChildren)
     );
 }
@@ -572,23 +890,46 @@ fn setting_alt_text_and_marking_decorative() {
     let f = figures(&doc);
     set_alt(&mut doc, f[0].obj, Some("  A grey square ")).unwrap();
     assert_eq!(figures(&doc)[0].alt.as_deref(), Some("A grey square"));
-    let r = check(&doc, &Options { rules: [Rule::FiguresAltText].into(), pages: None });
-    assert_eq!(r.result(Rule::FiguresAltText).unwrap().status, Status::Passed);
+    let r = check(
+        &doc,
+        &Options {
+            rules: [Rule::FiguresAltText].into(),
+            pages: None,
+        },
+    );
+    assert_eq!(
+        r.result(Rule::FiguresAltText).unwrap().status,
+        Status::Passed
+    );
     set_alt(&mut doc, f[0].obj, None).unwrap();
     assert_eq!(figures(&doc)[0].alt, None);
-    assert_eq!(set_alt(&mut doc, pdfcraft_cos::ObjRef::new(6, 0), Some("x")), Err(AltError::NotAFigure(6)));
+    assert_eq!(
+        set_alt(&mut doc, pdfcraft_cos::ObjRef::new(6, 0), Some("x")),
+        Err(AltError::NotAFigure(6))
+    );
     // Decorative: the figure leaves the tags and its content becomes an artifact.
     mark_decorative(&mut doc, f[0].obj).unwrap();
     let left = figures(&doc);
     assert_eq!(left.len(), 1);
     assert_eq!(left[0].alt.as_deref(), Some("A bar"));
-    let r = check(&doc, &Options { rules: [Rule::FiguresAltText, Rule::TaggedContent].into(), pages: None });
+    let r = check(
+        &doc,
+        &Options {
+            rules: [Rule::FiguresAltText, Rule::TaggedContent].into(),
+            pages: None,
+        },
+    );
     assert_eq!(failed(&r), Vec::<Rule>::new(), "{:?}", r.results);
     let pages = pdfcraft_model::pages(&doc);
     let c = doc.resolve(pages[0].dict.get(b"Contents").unwrap());
-    let pdfcraft_cos::Object::Stream(c) = &*c else { panic!("one content stream") };
+    let pdfcraft_cos::Object::Stream(c) = &*c else {
+        panic!("one content stream")
+    };
     let text = String::from_utf8(c.decoded().unwrap()).unwrap();
-    assert!(text.contains("/Artifact BMC") && !text.contains("/MCID 0"), "{text}");
+    assert!(
+        text.contains("/Artifact BMC") && !text.contains("/MCID 0"),
+        "{text}"
+    );
 }
 
 fn ref_(n: u32) -> Option<pdfcraft_cos::ObjRef> {
@@ -628,7 +969,10 @@ fn headings_doc() -> Vec<String> {
 #[test]
 fn headings_are_found_with_their_levels_titles_and_pages() {
     let doc = pdf(&headings_doc(), "");
-    let found: Vec<_> = headings(&doc).into_iter().map(|h| (h.title, h.level, h.page, h.obj)).collect();
+    let found: Vec<_> = headings(&doc)
+        .into_iter()
+        .map(|h| (h.title, h.level, h.page, h.obj))
+        .collect();
     assert_eq!(
         found,
         [
@@ -689,7 +1033,10 @@ fn wordings_are_complete() {
             }
         }
     }
-    assert!(missing.is_empty(), "add these to WORDINGS, and a translation of each to every interface: {missing:#?}");
+    assert!(
+        missing.is_empty(),
+        "add these to WORDINGS, and a translation of each to every interface: {missing:#?}"
+    );
 }
 
 /// Every word the report page says of its own is listed in `REPORT_WORDS`, and every word on that
@@ -706,10 +1053,22 @@ fn report_words_are_complete() {
         said.push(&rest[..end]);
         rest = &rest[end..];
     }
-    let missing: Vec<&&str> = said.iter().filter(|word| !REPORT_WORDS.contains(word)).collect();
-    assert!(missing.is_empty(), "add these to REPORT_WORDS, and a translation of each to every interface: {missing:#?}");
-    let unsaid: Vec<&&str> = REPORT_WORDS.iter().filter(|word| !said.contains(word)).collect();
-    assert!(unsaid.is_empty(), "REPORT_WORDS lists words the page no longer says: {unsaid:#?}");
+    let missing: Vec<&&str> = said
+        .iter()
+        .filter(|word| !REPORT_WORDS.contains(word))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "add these to REPORT_WORDS, and a translation of each to every interface: {missing:#?}"
+    );
+    let unsaid: Vec<&&str> = REPORT_WORDS
+        .iter()
+        .filter(|word| !said.contains(word))
+        .collect();
+    assert!(
+        unsaid.is_empty(),
+        "REPORT_WORDS lists words the page no longer says: {unsaid:#?}"
+    );
 }
 
 /// `say` puts the values in, and what it puts in is never read as a hole of its own: a document that
@@ -718,7 +1077,10 @@ fn report_words_are_complete() {
 fn say_fills_holes_once() {
     let values = [("{p}", "7".to_string()), ("{}", "{p} {n}".to_string())];
     assert_eq!(
-        say("Font {} on page {p} doesn't map its characters to Unicode", &values),
+        say(
+            "Font {} on page {p} doesn't map its characters to Unicode",
+            &values
+        ),
         "Font {p} {n} on page 7 doesn't map its characters to Unicode"
     );
     // A hole with nothing for it, and a brace with nothing closing it, are left as they stand.
@@ -729,10 +1091,30 @@ fn say_fills_holes_once() {
 /// filled, and still hands the interface the two wordings to translate.
 #[test]
 fn a_nested_finding_says_itself() {
-    let values = vec![("{min}", "1".to_string()), ("{max}", "2".to_string()), ("{ty}", "Table".to_string()), ("{p}", "3".to_string())];
-    let f = Finding::nested(Some(2), "{ty} element on page {p}: {what}", "rows have between {min} and {max} columns", values);
-    assert_eq!(f.message, "Table element on page 3: rows have between 1 and 2 columns");
-    assert_eq!(f.said(&in_english), f.message, "saying it in English is the message");
+    let values = vec![
+        ("{min}", "1".to_string()),
+        ("{max}", "2".to_string()),
+        ("{ty}", "Table".to_string()),
+        ("{p}", "3".to_string()),
+    ];
+    let f = Finding::nested(
+        Some(2),
+        "{ty} element on page {p}: {what}",
+        "rows have between {min} and {max} columns",
+        values,
+    );
+    assert_eq!(
+        f.message,
+        "Table element on page 3: rows have between 1 and 2 columns"
+    );
+    assert_eq!(
+        f.said(&in_english),
+        f.message,
+        "saying it in English is the message"
+    );
     // Both wordings are translated, each on its own, and the document's words are left alone.
-    assert_eq!(f.said(&|w: &str| format!("«{w}»")), "«Table element on page 3: «rows have between 1 and 2 columns»»");
+    assert_eq!(
+        f.said(&|w: &str| format!("«{w}»")),
+        "«Table element on page 3: «rows have between 1 and 2 columns»»"
+    );
 }

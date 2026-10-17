@@ -41,18 +41,30 @@ impl Tok {
 
 enum Item {
     Tok(Tok),
-    Group { open: Tok, inner: Vec<Item>, close: Option<Tok> },
+    Group {
+        open: Tok,
+        inner: Vec<Item>,
+        close: Option<Tok>,
+    },
 }
 
 impl Item {
     fn tok(&self) -> Option<&Tok> {
-        if let Item::Tok(t) = self { Some(t) } else { None }
+        if let Item::Tok(t) = self {
+            Some(t)
+        } else {
+            None
+        }
     }
     fn is(&self, p: &str) -> bool {
         self.tok().is_some_and(|t| t.is(p))
     }
     fn group(&self) -> Option<&str> {
-        if let Item::Group { open, .. } = self { Some(open.text.as_str()) } else { None }
+        if let Item::Group { open, .. } = self {
+            Some(open.text.as_str())
+        } else {
+            None
+        }
     }
     fn ws(&self) -> &str {
         match self {
@@ -105,8 +117,9 @@ const PREFIX_KW: &[&str] = &["typeof", "void", "delete", "await", "new"];
 const HEADER_KW: &[&str] = &["if", "while", "for", "switch", "catch", "with"];
 
 const PUNCT: &[&str] = &[
-    ">>>=", "...", "===", "!==", "**=", "<<=", ">>=", ">>>", "&&=", "||=", "??=", "=>", "==", "!=", "<=", ">=", "&&", "||", "??", "?.", "++", "--", "+=", "-=",
-    "*=", "/=", "%=", "&=", "|=", "^=", "**", "<<", ">>",
+    ">>>=", "...", "===", "!==", "**=", "<<=", ">>=", ">>>", "&&=", "||=", "??=", "=>", "==", "!=",
+    "<=", ">=", "&&", "||", "??", "?.", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
+    "**", "<<", ">>",
 ];
 
 fn is_ident_start(c: char) -> bool {
@@ -165,7 +178,10 @@ fn skip_template(c: &[char], mut i: usize) -> usize {
 }
 
 fn skip_number(c: &[char], mut i: usize) -> usize {
-    if c[i] == '0' && c.get(i + 1).is_some_and(|x| matches!(x, 'x' | 'X' | 'b' | 'B' | 'o' | 'O')) {
+    if c[i] == '0'
+        && c.get(i + 1)
+            .is_some_and(|x| matches!(x, 'x' | 'X' | 'b' | 'B' | 'o' | 'O'))
+    {
         i += 2;
         while i < c.len() && (c[i].is_ascii_alphanumeric() || c[i] == '_') {
             i += 1;
@@ -180,7 +196,10 @@ fn skip_number(c: &[char], mut i: usize) -> usize {
         } else if x == '.' && !seen_dot {
             seen_dot = true;
             i += 1;
-        } else if (x == 'e' || x == 'E') && c.get(i + 1).is_some_and(|y| y.is_ascii_digit() || *y == '+' || *y == '-') {
+        } else if (x == 'e' || x == 'E')
+            && c.get(i + 1)
+                .is_some_and(|y| y.is_ascii_digit() || *y == '+' || *y == '-')
+        {
             i += 2;
             while i < c.len() && c[i].is_ascii_digit() {
                 i += 1;
@@ -268,7 +287,9 @@ fn tokenize(src: &str) -> (Vec<Tok>, String) {
         } else if ch == '`' {
             i = skip_template(&c, i);
             Kind::Template
-        } else if ch.is_ascii_digit() || (ch == '.' && c.get(i + 1).is_some_and(|d| d.is_ascii_digit())) {
+        } else if ch.is_ascii_digit()
+            || (ch == '.' && c.get(i + 1).is_some_and(|d| d.is_ascii_digit()))
+        {
             i = skip_number(&c, i);
             Kind::Num
         } else if is_ident_start(ch) {
@@ -284,7 +305,12 @@ fn tokenize(src: &str) -> (Vec<Tok>, String) {
             Kind::Punct
         };
         let nl = ws.contains('\n');
-        out.push(Tok { kind, text: c[start..i].iter().collect(), ws: std::mem::take(&mut ws), nl });
+        out.push(Tok {
+            kind,
+            text: c[start..i].iter().collect(),
+            ws: std::mem::take(&mut ws),
+            nl,
+        });
     }
     (out, ws)
 }
@@ -310,14 +336,22 @@ fn build(toks: Vec<Tok>) -> Vec<Item> {
             && let Some((open, parent)) = stack.pop()
         {
             let inner = std::mem::replace(&mut cur, parent);
-            cur.push(Item::Group { open, inner, close: Some(t) });
+            cur.push(Item::Group {
+                open,
+                inner,
+                close: Some(t),
+            });
         } else {
             cur.push(Item::Tok(t));
         }
     }
     while let Some((open, parent)) = stack.pop() {
         let inner = std::mem::replace(&mut cur, parent);
-        cur.push(Item::Group { open, inner, close: None });
+        cur.push(Item::Group {
+            open,
+            inner,
+            close: None,
+        });
     }
     cur
 }
@@ -331,7 +365,10 @@ struct Piece {
 
 fn raw(item: &Item) -> Piece {
     match item {
-        Item::Tok(t) => Piece { ws: t.ws.clone(), body: t.text.clone() },
+        Item::Tok(t) => Piece {
+            ws: t.ws.clone(),
+            body: t.text.clone(),
+        },
         Item::Group { open, inner, close } => {
             let mut body = open.text.clone();
             body.push_str(&rewrite_seq(inner));
@@ -339,7 +376,10 @@ fn raw(item: &Item) -> Piece {
                 body.push_str(&c.ws);
                 body.push_str(&c.text);
             }
-            Piece { ws: open.ws.clone(), body }
+            Piece {
+                ws: open.ws.clone(),
+                body,
+            }
         }
     }
 }
@@ -373,10 +413,20 @@ fn operand(items: &[Item], i: usize) -> Option<(Piece, usize)> {
                 format!("__neg({}{})", inner.ws, inner.body)
             }
         } else {
-            let sep = if t.kind == Kind::Ident && inner.ws.is_empty() { " " } else { "" };
+            let sep = if t.kind == Kind::Ident && inner.ws.is_empty() {
+                " "
+            } else {
+                ""
+            };
             format!("{}{sep}{}{}", t.text, inner.ws, inner.body)
         };
-        return Some((Piece { ws: t.ws.clone(), body }, j));
+        return Some((
+            Piece {
+                ws: t.ws.clone(),
+                body,
+            },
+            j,
+        ));
     }
     let mut p = raw(first);
     let mut j = i + 1;
@@ -386,7 +436,11 @@ fn operand(items: &[Item], i: usize) -> Option<(Piece, usize)> {
             push(&mut p, &items[j]);
             j += 1;
         }
-        if items.get(j).and_then(Item::tok).is_some_and(|t| t.kind == Kind::Ident) {
+        if items
+            .get(j)
+            .and_then(Item::tok)
+            .is_some_and(|t| t.kind == Kind::Ident)
+        {
             push(&mut p, &items[j]);
             j += 1;
         }
@@ -400,7 +454,8 @@ fn operand(items: &[Item], i: usize) -> Option<(Piece, usize)> {
     // Postfix: member access, calls, indexing, tagged templates, `x++`.
     while let Some(it) = items.get(j) {
         let member = it.is(".") || it.is("?.");
-        let call = matches!(it.group(), Some("(" | "[")) || it.tok().is_some_and(|t| t.kind == Kind::Template);
+        let call = matches!(it.group(), Some("(" | "["))
+            || it.tok().is_some_and(|t| t.kind == Kind::Template);
         let incr = (it.is("++") || it.is("--")) && !it.nl();
         if !(member || call || incr) {
             break;
@@ -409,7 +464,8 @@ fn operand(items: &[Item], i: usize) -> Option<(Piece, usize)> {
         j += 1;
         if member
             && let Some(n) = items.get(j)
-            && (n.tok().is_some_and(|t| t.kind == Kind::Ident) || matches!(n.group(), Some("(" | "[")))
+            && (n.tok().is_some_and(|t| t.kind == Kind::Ident)
+                || matches!(n.group(), Some("(" | "[")))
         {
             push(&mut p, n);
             j += 1;
@@ -449,7 +505,10 @@ fn fold(operands: Vec<Piece>, ops: Vec<(String, String)>) -> Piece {
     let mut terms: Vec<Piece> = Vec::new();
     let mut add_ops: Vec<(String, String)> = Vec::new();
     let mut it = operands.into_iter();
-    let mut acc = it.next().unwrap_or(Piece { ws: String::new(), body: String::new() });
+    let mut acc = it.next().unwrap_or(Piece {
+        ws: String::new(),
+        body: String::new(),
+    });
     for ((op, ws), rhs) in ops.into_iter().zip(it) {
         if op == "+" || op == "-" {
             terms.push(acc);
@@ -461,7 +520,10 @@ fn fold(operands: Vec<Piece>, ops: Vec<(String, String)>) -> Piece {
     }
     terms.push(acc);
     let mut it = terms.into_iter();
-    let mut acc = it.next().unwrap_or(Piece { ws: String::new(), body: String::new() });
+    let mut acc = it.next().unwrap_or(Piece {
+        ws: String::new(),
+        body: String::new(),
+    });
     for ((op, ws), rhs) in add_ops.into_iter().zip(it) {
         acc = bin(acc, &op, &ws, rhs);
     }
@@ -477,7 +539,9 @@ fn bin(a: Piece, op: &str, op_ws: &str, b: Piece) -> Piece {
 }
 
 fn is_arith(item: &Item) -> bool {
-    item.tok().is_some_and(|t| t.kind == Kind::Punct && matches!(t.text.as_str(), "+" | "-" | "*" | "/" | "%"))
+    item.tok().is_some_and(|t| {
+        t.kind == Kind::Punct && matches!(t.text.as_str(), "+" | "-" | "*" | "/" | "%")
+    })
 }
 
 /// Parse `operand (op operand)*` from `i`.
@@ -486,7 +550,9 @@ fn chain(items: &[Item], i: usize) -> Option<(Piece, usize)> {
     let mut operands = vec![first];
     let mut ops = Vec::new();
     while let Some(op) = items.get(j).filter(|x| is_arith(x)).and_then(Item::tok) {
-        let Some((rhs, k)) = operand(items, j + 1) else { break };
+        let Some((rhs, k)) = operand(items, j + 1) else {
+            break;
+        };
         ops.push((op.text.clone(), op.ws.clone()));
         operands.push(rhs);
         j = k;
@@ -502,7 +568,13 @@ fn assignment_end(items: &[Item], i: usize) -> usize {
         if it.is(";") || it.is(",") {
             break;
         }
-        if j > i && it.nl() && !items.get(j - 1).is_some_and(|p| p.tok().is_some_and(|t| t.kind == Kind::Punct && !t.is(")") && !t.is("]"))) {
+        if j > i
+            && it.nl()
+            && !items.get(j - 1).is_some_and(|p| {
+                p.tok()
+                    .is_some_and(|t| t.kind == Kind::Punct && !t.is(")") && !t.is("]"))
+            })
+        {
             break;
         }
         j += 1;
@@ -515,7 +587,9 @@ fn rewrite_seq(items: &[Item]) -> String {
     let mut i = 0;
     while i < items.len() {
         let it = &items[i];
-        if it.tok().is_some_and(|t| t.is_kw(HEADER_KW)) && items.get(i + 1).and_then(Item::group) == Some("(") {
+        if it.tok().is_some_and(|t| t.is_kw(HEADER_KW))
+            && items.get(i + 1).and_then(Item::group) == Some("(")
+        {
             push_piece(&mut out, raw(it));
             push_piece(&mut out, raw(&items[i + 1]));
             i += 2;
@@ -524,7 +598,9 @@ fn rewrite_seq(items: &[Item]) -> String {
         if let Some((p, j)) = chain(items, i) {
             // Compound assignment: `x += v` → `x = __add(x, (v))` (the target is evaluated twice,
             // which only matters for targets with side effects).
-            if let Some(op) = items.get(j).and_then(Item::tok).filter(|t| t.kind == Kind::Punct && matches!(t.text.as_str(), "+=" | "-=" | "*=" | "/=")) {
+            if let Some(op) = items.get(j).and_then(Item::tok).filter(|t| {
+                t.kind == Kind::Punct && matches!(t.text.as_str(), "+=" | "-=" | "*=" | "/=")
+            }) {
                 let end = assignment_end(items, j + 1);
                 let rhs = rewrite_seq(&items[j + 1..end]);
                 let h = helper(&op.text[..1]).unwrap_or("__add");
@@ -590,7 +666,10 @@ impl Level {
     }
 }
 
-const ASSIGN: &[&str] = &["=", "+=", "-=", "*=", "/=", "%=", "**=", "<<=", ">>=", ">>>=", "&=", "|=", "^=", "&&=", "||=", "??="];
+const ASSIGN: &[&str] = &[
+    "=", "+=", "-=", "*=", "/=", "%=", "**=", "<<=", ">>=", ">>>=", "&=", "|=", "^=", "&&=", "||=",
+    "??=",
+];
 
 /// Can `t` end an expression statement (so a line break after it may end the statement)?
 fn ends_value(t: &Tok) -> bool {
@@ -653,7 +732,12 @@ fn substitutions(template: &str) -> Vec<String> {
                     }
                     j += 1;
                 }
-                out.push(c.get(start..j.min(c.len())).unwrap_or_default().iter().collect());
+                out.push(
+                    c.get(start..j.min(c.len()))
+                        .unwrap_or_default()
+                        .iter()
+                        .collect(),
+                );
                 i = j + 1;
             }
             _ => i += 1,
@@ -695,7 +779,10 @@ fn too_nested_from(toks: &[Tok], base: usize) -> bool {
             {
                 l.chain = l.chain.saturating_add(LIGHT);
             }
-            levels.push(Level { array: t.text == "[", ..Level::default() });
+            levels.push(Level {
+                array: t.text == "[",
+                ..Level::default()
+            });
         } else if p && matches!(t.text.as_str(), ")" | "]" | "}") {
             if levels.len() > 1 {
                 levels.pop();
@@ -708,7 +795,9 @@ fn too_nested_from(toks: &[Tok], base: usize) -> bool {
                 l.chain = l.commas.saturating_mul(LIGHT);
             } else if t.is_kw(&["else"]) {
                 l.elses += 1;
-            } else if (p && (matches!(t.text.as_str(), "?" | ":" | "=>" | "**" | "||") || ASSIGN.contains(&t.text.as_str())))
+            } else if (p
+                && (matches!(t.text.as_str(), "?" | ":" | "=>" | "**" | "||")
+                    || ASSIGN.contains(&t.text.as_str())))
                 || t.is_kw(&["if", "while", "for", "with", "do"])
             {
                 l.chain = l.chain.saturating_add(HEAVY);
@@ -720,11 +809,16 @@ fn too_nested_from(toks: &[Tok], base: usize) -> bool {
                 inner = inner_depth(&t.text);
             }
         }
-        let is_prefix = (p && matches!(t.text.as_str(), "!" | "~" | "-" | "+" | "++" | "--")) || t.is_kw(&["typeof", "void", "delete", "new", "await"]);
+        let is_prefix = (p && matches!(t.text.as_str(), "!" | "~" | "-" | "+" | "++" | "--"))
+            || t.is_kw(&["typeof", "void", "delete", "new", "await"]);
         prefix = if is_prefix { prefix + 1 } else { 0 };
-        let mut cost = (levels.len() - 1 + prefix + inner).saturating_mul(LEVEL).saturating_add(base);
+        let mut cost = (levels.len() - 1 + prefix + inner)
+            .saturating_mul(LEVEL)
+            .saturating_add(base);
         for l in &levels {
-            cost = cost.saturating_add(l.chain).saturating_add(l.elses.saturating_mul(HEAVY));
+            cost = cost
+                .saturating_add(l.chain)
+                .saturating_add(l.elses.saturating_mul(HEAVY));
         }
         if cost > MAX_NESTING * LEVEL {
             return true;
@@ -733,9 +827,13 @@ fn too_nested_from(toks: &[Tok], base: usize) -> bool {
         // above bounds this recursion).
         if t.kind == Kind::Template
             && t.text.contains("${")
-            && substitutions(&t.text)
-                .iter()
-                .any(|sub| too_nested_from(&tokenize(sub).0, cost.saturating_sub(inner.saturating_mul(LEVEL)).saturating_add(LEVEL)))
+            && substitutions(&t.text).iter().any(|sub| {
+                too_nested_from(
+                    &tokenize(sub).0,
+                    cost.saturating_sub(inner.saturating_mul(LEVEL))
+                        .saturating_add(LEVEL),
+                )
+            })
         {
             return true;
         }
@@ -759,7 +857,9 @@ pub fn check_nesting(src: &str) -> Result<(), String> {
 }
 
 fn too_deep() -> String {
-    format!("Error: expression is nested too deeply (more than {MAX_NESTING} levels of brackets, or too long a chain of operators)")
+    format!(
+        "Error: expression is nested too deeply (more than {MAX_NESTING} levels of brackets, or too long a chain of operators)"
+    )
 }
 
 /// Rewrite an expression's source for array-aware arithmetic. Line breaks are preserved.
@@ -778,7 +878,10 @@ pub fn rewrite(src: &str) -> String {
 }
 
 fn throw_too_deep() -> String {
-    format!("throw new RangeError({:?})", too_deep().trim_start_matches("Error: "))
+    format!(
+        "throw new RangeError({:?})",
+        too_deep().trim_start_matches("Error: ")
+    )
 }
 
 #[cfg(test)]
@@ -801,17 +904,32 @@ mod tests {
 
     #[test]
     fn calls_members_and_groups() {
-        assert_eq!(n(&rewrite("f(a+b)[0] / 2")), n("__div(f(__add(a, b))[0],  2)"));
-        assert_eq!(n(&rewrite("thisComp.layer(\"A\").transform.position[0] + 1")), n("__add(thisComp.layer(\"A\").transform.position[0],  1)"));
-        assert_eq!(n(&rewrite("x = a ? b + 1 : c")), n("x = a ? __add(b,  1) : c"));
-        assert_eq!(n(&rewrite("if (a) -b; else c")), n("if (a) __neg(b); else c"));
+        assert_eq!(
+            n(&rewrite("f(a+b)[0] / 2")),
+            n("__div(f(__add(a, b))[0],  2)")
+        );
+        assert_eq!(
+            n(&rewrite("thisComp.layer(\"A\").transform.position[0] + 1")),
+            n("__add(thisComp.layer(\"A\").transform.position[0],  1)")
+        );
+        assert_eq!(
+            n(&rewrite("x = a ? b + 1 : c")),
+            n("x = a ? __add(b,  1) : c")
+        );
+        assert_eq!(
+            n(&rewrite("if (a) -b; else c")),
+            n("if (a) __neg(b); else c")
+        );
         assert_eq!(n(&rewrite("return -x")), n("return __neg(x)"));
     }
 
     #[test]
     fn strings_regex_comments_and_lines() {
         assert_eq!(n(&rewrite("'a+b' + \"c\"")), n("__add('a+b',  \"c\")"));
-        assert_eq!(n(&rewrite("s.replace(/a+b/g, '')")), n("s.replace(/a+b/g, '')"));
+        assert_eq!(
+            n(&rewrite("s.replace(/a+b/g, '')")),
+            n("s.replace(/a+b/g, '')")
+        );
         assert_eq!(n(&rewrite("a // x + y\n+ b")), n("__add(a,  \n b)"));
         assert_eq!(rewrite("a /* + */ * b").matches("__mul").count(), 1);
         assert_eq!(rewrite("x\n\n+ 1").lines().count(), 3);
@@ -821,8 +939,14 @@ mod tests {
     #[test]
     fn compound_assignment_and_functions() {
         assert_eq!(n(&rewrite("x += [1, 0];")), n("x = __add(x, ( [1, 0]));"));
-        assert_eq!(n(&rewrite("function f(a) { return a * 2 }")), n("function f(a) { return __mul(a,  2) }"));
-        assert_eq!(n(&rewrite("var g = (a) => a - 1")), n("var g = (a) => __sub(a,  1)"));
+        assert_eq!(
+            n(&rewrite("function f(a) { return a * 2 }")),
+            n("function f(a) { return __mul(a,  2) }")
+        );
+        assert_eq!(
+            n(&rewrite("var g = (a) => a - 1")),
+            n("var g = (a) => __sub(a,  1)")
+        );
         assert_eq!(n(&rewrite("typeof a + 'x'")), n("__add(typeof a,  'x')"));
         assert_eq!(n(&rewrite("i++ + 1")), n("__add(i++,  1)"));
         assert_eq!(n(&rewrite("2 ** 3 * 2")), n("__mul(2 ** 3,  2)"));
@@ -840,7 +964,11 @@ mod tests {
             for src in [parens, unclosed, sum, nots] {
                 assert!(rewrite(&src).starts_with("throw new RangeError("), "{n}");
                 assert!(check_nesting(&src).is_err());
-                assert!(crate::check_syntax(&src).unwrap_err().contains("nested too deeply"));
+                assert!(
+                    crate::check_syntax(&src)
+                        .unwrap_err()
+                        .contains("nested too deeply")
+                );
             }
         }
         let ok = "(".repeat(MAX_NESTING - 2) + "a + b" + &")".repeat(MAX_NESTING - 2);
@@ -879,27 +1007,69 @@ mod tests {
         for (open, close) in chains {
             for n in [2_000, 100_000] {
                 let src = open.repeat(n) + "1" + &close.repeat(n);
-                assert!(rewrite(&src).starts_with("throw new RangeError("), "{open} × {n}");
-                assert!(crate::check_syntax(&src).unwrap_err().contains("nested too deeply"), "{open} × {n}");
+                assert!(
+                    rewrite(&src).starts_with("throw new RangeError("),
+                    "{open} × {n}"
+                );
+                assert!(
+                    crate::check_syntax(&src)
+                        .unwrap_err()
+                        .contains("nested too deeply"),
+                    "{open} × {n}"
+                );
             }
         }
         // A chain inside one template substitution (the template is one token to the rewriter).
         let src = format!("`${{{}1}}`", "x??".repeat(100_000));
-        assert!(crate::check_syntax(&src).unwrap_err().contains("nested too deeply"));
+        assert!(
+            crate::check_syntax(&src)
+                .unwrap_err()
+                .contains("nested too deeply")
+        );
     }
 
     #[test]
     fn long_real_expressions_still_parse() {
         let lines = |n: usize, line: &str| vec![line; n].join("\n");
-        let else_ifs = (0..200).map(|i| format!("if (time < {i}) {i}; else ")).collect::<String>() + "0";
-        let numbers = format!("[{}][0]", (0..5000).map(|i| i.to_string()).collect::<Vec<_>>().join(", "));
-        let points = format!("createPath([{}], [], [], true)", (0..500).map(|i| format!("[{i}, {}]", i * 2)).collect::<Vec<_>>().join(", "));
-        let object = format!("var o = {{{}}}; o.k0", (0..200).map(|i| format!("k{i}: time > {i} ? {i} : -{i}")).collect::<Vec<_>>().join(", "));
-        let program = "var x = 0\n".to_string() + &lines(300, "x = x + thisComp.layer(1).transform.position[0] * 2 - 1") + "\nx";
+        let else_ifs = (0..200)
+            .map(|i| format!("if (time < {i}) {i}; else "))
+            .collect::<String>()
+            + "0";
+        let numbers = format!(
+            "[{}][0]",
+            (0..5000)
+                .map(|i| i.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        let points = format!(
+            "createPath([{}], [], [], true)",
+            (0..500)
+                .map(|i| format!("[{i}, {}]", i * 2))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        let object = format!(
+            "var o = {{{}}}; o.k0",
+            (0..200)
+                .map(|i| format!("k{i}: time > {i} ? {i} : -{i}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        let program = "var x = 0\n".to_string()
+            + &lines(
+                300,
+                "x = x + thisComp.layer(1).transform.position[0] * 2 - 1",
+            )
+            + "\nx";
         let ifs = "var y = 0\n".to_string() + &lines(300, "if (time > 1) y = y + 1") + "\ny";
-        let chained = vec!["thisComp.layer(1).transform.position.valueAtTime(time - 0.1)[0]"; 30].join(" + ");
-        let template = "`${thisLayer.name}: ${Math.floor(time * 10) / 10} s, ${`${index}`} {}`".to_string();
-        for src in [else_ifs, numbers, points, object, program, ifs, chained, template] {
+        let chained =
+            vec!["thisComp.layer(1).transform.position.valueAtTime(time - 0.1)[0]"; 30].join(" + ");
+        let template =
+            "`${thisLayer.name}: ${Math.floor(time * 10) / 10} s, ${`${index}`} {}`".to_string();
+        for src in [
+            else_ifs, numbers, points, object, program, ifs, chained, template,
+        ] {
             assert!(check_nesting(&src).is_ok(), "{}", &src[..80]);
             assert!(crate::check_syntax(&src).is_ok(), "{}", &src[..80]);
         }

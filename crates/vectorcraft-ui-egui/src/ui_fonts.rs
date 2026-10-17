@@ -58,11 +58,13 @@ impl UiFonts {
         {
             let (tx, rx) = std::sync::mpsc::channel();
             let repaint = ctx.clone();
-            let spawned = std::thread::Builder::new().name("ui-font-fallback".into()).spawn(move || {
-                // The receiver is gone only when the app is.
-                let _ = tx.send(find());
-                repaint.request_repaint();
-            });
+            let spawned = std::thread::Builder::new()
+                .name("ui-font-fallback".into())
+                .spawn(move || {
+                    // The receiver is gone only when the app is.
+                    let _ = tx.send(find());
+                    repaint.request_repaint();
+                });
             if spawned.is_ok() {
                 self.pending = Some(rx);
             }
@@ -88,7 +90,9 @@ impl UiFonts {
         let mut note = |text: &str| {
             // Most UI text is ASCII, which the UI fonts cover.
             if !text.is_ascii() {
-                chars.extend(text.chars().filter(|c| !c.is_ascii() && !c.is_whitespace() && !c.is_control() && !seen.contains(c)));
+                chars.extend(text.chars().filter(|c| {
+                    !c.is_ascii() && !c.is_whitespace() && !c.is_control() && !seen.contains(c)
+                }));
             }
         };
         ctx.graphics(|g| {
@@ -104,14 +108,21 @@ impl UiFonts {
         chars.sort_unstable();
         chars.dedup();
         let font = FontId::new(13.0, FontFamily::Proportional);
-        let missing: Vec<char> = ctx.fonts_mut(|f| chars.iter().copied().filter(|c| !f.has_glyph(&font, *c)).collect());
+        let missing: Vec<char> = ctx.fonts_mut(|f| {
+            chars
+                .iter()
+                .copied()
+                .filter(|c| !f.has_glyph(&font, *c))
+                .collect()
+        });
         self.seen.extend(chars);
         missing
     }
 
     /// Add `faces` to every egui family, after the fonts it has.
     fn install(&mut self, ctx: &egui::Context, faces: &[Arc<FontFace>]) {
-        let families: Vec<FontFamily> = ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
+        let families: Vec<FontFamily> =
+            ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
         for face in faces {
             let name = format!("{} {} #{}", face.family, face.style, face.face_index());
             if !self.added.insert(name.clone()) {
@@ -120,9 +131,22 @@ impl UiFonts {
             // The face's file data, shared with the process-wide font database (which keeps every
             // face it loads for the session) instead of copied: one handle is leaked per font added.
             let face: &'static FontFace = Box::leak(Box::new(face.clone()));
-            let data = FontData { index: face.face_index(), ..FontData::from_static(face.file_data()) };
-            let families = families.iter().map(|family| InsertFontFamily { family: family.clone(), priority: FontPriority::Lowest }).collect();
-            ctx.add_font(FontInsert { name, data, families });
+            let data = FontData {
+                index: face.face_index(),
+                ..FontData::from_static(face.file_data())
+            };
+            let families = families
+                .iter()
+                .map(|family| InsertFontFamily {
+                    family: family.clone(),
+                    priority: FontPriority::Lowest,
+                })
+                .collect();
+            ctx.add_font(FontInsert {
+                name,
+                data,
+                families,
+            });
         }
         if !faces.is_empty() {
             ctx.request_repaint();
@@ -175,8 +199,13 @@ mod tests {
 
     #[test]
     fn japanese_renders_with_the_craft_fonts_without_installed_fonts() {
-        if !vectorcraft_text::CRAFT_FONTS.iter().any(|f| f.is_japanese()) {
-            eprintln!("skipped: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout to run it)");
+        if !vectorcraft_text::CRAFT_FONTS
+            .iter()
+            .any(|f| f.is_japanese())
+        {
+            eprintln!(
+                "skipped: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout to run it)"
+            );
             return;
         }
         let text = "日本語の文字";
@@ -185,18 +214,44 @@ mod tests {
         let mut fonts = UiFonts::default();
         frame(&ctx, &mut fonts, text);
         // Real glyphs (no tofu) in every family from the first frame, with no installed font looked for.
-        assert!(fonts.pending.is_none() && fonts.added.is_empty(), "no system-font search");
-        let families: Vec<FontFamily> = ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
+        assert!(
+            fonts.pending.is_none() && fonts.added.is_empty(),
+            "no system-font search"
+        );
+        let families: Vec<FontFamily> =
+            ctx.fonts(|f| f.definitions().families.keys().cloned().collect());
         for family in families {
-            let stack = ctx.fonts(|f| f.definitions().families.get(&family).cloned().unwrap_or_default());
-            assert!(stack.last().is_some_and(|n| n.starts_with("craft-fonts ")), "{family:?}: craft-fonts last: {stack:?}");
+            let stack = ctx.fonts(|f| {
+                f.definitions()
+                    .families
+                    .get(&family)
+                    .cloned()
+                    .unwrap_or_default()
+            });
+            assert!(
+                stack.last().is_some_and(|n| n.starts_with("craft-fonts ")),
+                "{family:?}: craft-fonts last: {stack:?}"
+            );
             for c in text.chars() {
-                assert!(ctx.fonts_mut(|f| f.has_glyph(&FontId::new(13.0, family.clone()), c)), "{family:?} draws {c}");
+                assert!(
+                    ctx.fonts_mut(|f| f.has_glyph(&FontId::new(13.0, family.clone()), c)),
+                    "{family:?} draws {c}"
+                );
             }
         }
         // The UI prefers BIZ UDPGothic.
-        let stack = ctx.fonts(|f| f.definitions().families.get(&FontFamily::Proportional).cloned().unwrap_or_default());
-        let first = stack.iter().find(|n| n.starts_with("craft-fonts ")).cloned().unwrap_or_default();
+        let stack = ctx.fonts(|f| {
+            f.definitions()
+                .families
+                .get(&FontFamily::Proportional)
+                .cloned()
+                .unwrap_or_default()
+        });
+        let first = stack
+            .iter()
+            .find(|n| n.starts_with("craft-fonts "))
+            .cloned()
+            .unwrap_or_default();
         assert_eq!(first, "craft-fonts BIZ UDPGothic Regular", "{stack:?}");
     }
 
@@ -211,8 +266,12 @@ mod tests {
         fonts.finish(&ctx);
         frame(&ctx, &mut fonts, "日本語の文字 Layer 1");
         if vectorcraft_text::CRAFT_FONTS.is_empty() {
-            let names: Vec<String> = ctx.fonts(|f| f.definitions().font_data.keys().cloned().collect());
-            assert!(names.iter().all(|n| !n.starts_with("craft-fonts")), "{names:?}");
+            let names: Vec<String> =
+                ctx.fonts(|f| f.definitions().font_data.keys().cloned().collect());
+            assert!(
+                names.iter().all(|n| !n.starts_with("craft-fonts")),
+                "{names:?}"
+            );
         }
         assert!(has_glyph(&ctx, 'L'));
     }
@@ -228,7 +287,10 @@ mod tests {
         fonts.finish(&ctx);
         // The fonts arrive with the next frame.
         frame(&ctx, &mut fonts, text);
-        let installed: Vec<char> = text.chars().filter(|c| !c.is_ascii() && FontDb::global().face_covering(*c).is_some()).collect();
+        let installed: Vec<char> = text
+            .chars()
+            .filter(|c| !c.is_ascii() && FontDb::global().face_covering(*c).is_some())
+            .collect();
         if installed.is_empty() {
             eprintln!("no installed font covers {text}: nothing to check");
             return;

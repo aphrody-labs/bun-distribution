@@ -9,7 +9,14 @@
 //!
 //! The pipeline's working space is **linear Rec.2020, D65** ([`WORKING`]).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod cct;
 pub mod perceptual;
@@ -51,7 +58,8 @@ impl Mat3 {
     }
     pub fn determinant(&self) -> f64 {
         let m = &self.0;
-        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
     }
     pub fn inverse(&self) -> Option<Mat3> {
@@ -62,14 +70,30 @@ impl Mat3 {
         let m = &self.0;
         let i = 1.0 / d;
         Some(Mat3([
-            [(m[1][1] * m[2][2] - m[1][2] * m[2][1]) * i, (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * i, (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * i],
-            [(m[1][2] * m[2][0] - m[1][0] * m[2][2]) * i, (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * i, (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * i],
-            [(m[1][0] * m[2][1] - m[1][1] * m[2][0]) * i, (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * i, (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * i],
+            [
+                (m[1][1] * m[2][2] - m[1][2] * m[2][1]) * i,
+                (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * i,
+                (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * i,
+            ],
+            [
+                (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * i,
+                (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * i,
+                (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * i,
+            ],
+            [
+                (m[1][0] * m[2][1] - m[1][1] * m[2][0]) * i,
+                (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * i,
+                (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * i,
+            ],
         ]))
     }
     pub fn transpose(&self) -> Mat3 {
         let m = &self.0;
-        Mat3([[m[0][0], m[1][0], m[2][0]], [m[0][1], m[1][1], m[2][1]], [m[0][2], m[1][2], m[2][2]]])
+        Mat3([
+            [m[0][0], m[1][0], m[2][0]],
+            [m[0][1], m[1][1], m[2][1]],
+            [m[0][2], m[1][2], m[2][2]],
+        ])
     }
     /// As f32 (row-major), for kernels.
     pub fn to_f32(&self) -> [[f32; 3]; 3] {
@@ -94,7 +118,11 @@ impl Xy {
     }
     pub fn from_xyz(v: [f64; 3]) -> Xy {
         let s = v[0] + v[1] + v[2];
-        if s <= 0.0 { D65 } else { Xy::new(v[0] / s, v[1] / s) }
+        if s <= 0.0 {
+            D65
+        } else {
+            Xy::new(v[0] / s, v[1] / s)
+        }
     }
 }
 
@@ -111,15 +139,42 @@ pub struct RgbSpace {
     pub white: Xy,
 }
 
-pub const SRGB: RgbSpace = RgbSpace { name: "sRGB", r: Xy::new(0.64, 0.33), g: Xy::new(0.30, 0.60), b: Xy::new(0.15, 0.06), white: D65 };
-pub const DISPLAY_P3: RgbSpace =
-    RgbSpace { name: "Display P3", r: Xy::new(0.680, 0.320), g: Xy::new(0.265, 0.690), b: Xy::new(0.150, 0.060), white: D65 };
-pub const REC2020: RgbSpace = RgbSpace { name: "Rec.2020", r: Xy::new(0.708, 0.292), g: Xy::new(0.170, 0.797), b: Xy::new(0.131, 0.046), white: D65 };
-pub const PROPHOTO: RgbSpace =
-    RgbSpace { name: "ProPhoto RGB", r: Xy::new(0.734699, 0.265301), g: Xy::new(0.159597, 0.840403), b: Xy::new(0.036598, 0.000105), white: D50 };
+pub const SRGB: RgbSpace = RgbSpace {
+    name: "sRGB",
+    r: Xy::new(0.64, 0.33),
+    g: Xy::new(0.30, 0.60),
+    b: Xy::new(0.15, 0.06),
+    white: D65,
+};
+pub const DISPLAY_P3: RgbSpace = RgbSpace {
+    name: "Display P3",
+    r: Xy::new(0.680, 0.320),
+    g: Xy::new(0.265, 0.690),
+    b: Xy::new(0.150, 0.060),
+    white: D65,
+};
+pub const REC2020: RgbSpace = RgbSpace {
+    name: "Rec.2020",
+    r: Xy::new(0.708, 0.292),
+    g: Xy::new(0.170, 0.797),
+    b: Xy::new(0.131, 0.046),
+    white: D65,
+};
+pub const PROPHOTO: RgbSpace = RgbSpace {
+    name: "ProPhoto RGB",
+    r: Xy::new(0.734699, 0.265301),
+    g: Xy::new(0.159597, 0.840403),
+    b: Xy::new(0.036598, 0.000105),
+    white: D50,
+};
 /// The 1998 "Adobe RGB" primaries (a public colour-space definition; name used descriptively).
-pub const ADOBE_RGB: RgbSpace =
-    RgbSpace { name: "Adobe RGB (1998) compatible", r: Xy::new(0.64, 0.33), g: Xy::new(0.21, 0.71), b: Xy::new(0.15, 0.06), white: D65 };
+pub const ADOBE_RGB: RgbSpace = RgbSpace {
+    name: "Adobe RGB (1998) compatible",
+    r: Xy::new(0.64, 0.33),
+    g: Xy::new(0.21, 0.71),
+    b: Xy::new(0.15, 0.06),
+    white: D65,
+};
 
 /// The develop pipeline's working space: linear Rec.2020 / D65.
 pub const WORKING: RgbSpace = REC2020;
@@ -130,8 +185,14 @@ impl RgbSpace {
     /// file, leave the primaries unscaled instead of panicking.
     pub fn to_xyz(&self) -> Mat3 {
         let p = [self.r.to_xyz(), self.g.to_xyz(), self.b.to_xyz()];
-        let m = Mat3([[p[0][0], p[1][0], p[2][0]], [p[0][1], p[1][1], p[2][1]], [p[0][2], p[1][2], p[2][2]]]);
-        let s = m.inverse().map_or([1.0; 3], |inv| inv.apply(self.white.to_xyz()));
+        let m = Mat3([
+            [p[0][0], p[1][0], p[2][0]],
+            [p[0][1], p[1][1], p[2][1]],
+            [p[0][2], p[1][2], p[2][2]],
+        ]);
+        let s = m
+            .inverse()
+            .map_or([1.0; 3], |inv| inv.apply(self.white.to_xyz()));
         m.mul(&Mat3::diag(s[0], s[1], s[2]))
     }
     /// Inverse of [`to_xyz`](Self::to_xyz); the identity for degenerate primaries.
@@ -150,7 +211,11 @@ impl RgbSpace {
 }
 
 /// The Bradford cone-response matrix (XYZ → sharpened cones) that [`bradford`] adapts in.
-pub const BRADFORD: Mat3 = Mat3([[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]]);
+pub const BRADFORD: Mat3 = Mat3([
+    [0.8951, 0.2664, -0.1614],
+    [-0.7502, 1.7135, 0.0367],
+    [0.0389, -0.0685, 1.0296],
+]);
 
 /// Bradford chromatic adaptation matrix (XYZ → XYZ) from white `src` to white `dst`.
 pub fn bradford(src: Xy, dst: Xy) -> Mat3 {
@@ -160,8 +225,11 @@ pub fn bradford(src: Xy, dst: Xy) -> Mat3 {
     let s = BRADFORD.apply(src.to_xyz());
     let d = BRADFORD.apply(dst.to_xyz());
     // a constant, invertible matrix: the fallback (no adaptation) can't happen
-    let Some(inv) = BRADFORD.inverse() else { return Mat3::IDENTITY };
-    inv.mul(&Mat3::diag(d[0] / s[0], d[1] / s[1], d[2] / s[2])).mul(&BRADFORD)
+    let Some(inv) = BRADFORD.inverse() else {
+        return Mat3::IDENTITY;
+    };
+    inv.mul(&Mat3::diag(d[0] / s[0], d[1] / s[1], d[2] / s[2]))
+        .mul(&BRADFORD)
 }
 
 /// Rec.2020 luminance weights as f32 (hot path).
@@ -199,10 +267,18 @@ mod tests {
     #[test]
     fn srgb_matrix_matches_standard() {
         let m = SRGB.to_xyz();
-        let want = [[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]];
+        let want = [
+            [0.4124, 0.3576, 0.1805],
+            [0.2126, 0.7152, 0.0722],
+            [0.0193, 0.1192, 0.9505],
+        ];
         for i in 0..3 {
             for j in 0..3 {
-                assert!((m.0[i][j] - want[i][j]).abs() < 2e-4, "{i}{j} {}", m.0[i][j]);
+                assert!(
+                    (m.0[i][j] - want[i][j]).abs() < 2e-4,
+                    "{i}{j} {}",
+                    m.0[i][j]
+                );
             }
         }
     }
@@ -210,7 +286,11 @@ mod tests {
     #[test]
     fn rec2020_luma() {
         let l = REC2020.luma();
-        assert!((l[0] - 0.2627).abs() < 1e-3 && (l[1] - 0.6780).abs() < 1e-3 && (l[2] - 0.0593).abs() < 1e-3);
+        assert!(
+            (l[0] - 0.2627).abs() < 1e-3
+                && (l[1] - 0.6780).abs() < 1e-3
+                && (l[2] - 0.0593).abs() < 1e-3
+        );
     }
 
     #[test]
@@ -228,7 +308,9 @@ mod tests {
         let a = SRGB.to_space(&PROPHOTO);
         let b = PROPHOTO.to_space(&SRGB);
         let v = b.apply(a.apply([0.2, 0.5, 0.9]));
-        assert!((v[0] - 0.2).abs() < 1e-9 && (v[1] - 0.5).abs() < 1e-9 && (v[2] - 0.9).abs() < 1e-9);
+        assert!(
+            (v[0] - 0.2).abs() < 1e-9 && (v[1] - 0.5).abs() < 1e-9 && (v[2] - 0.9).abs() < 1e-9
+        );
     }
 
     #[test]

@@ -19,7 +19,14 @@ use crate::context::{Enc, GpuImage, Params};
 use crate::effects::GBuf;
 
 /// Compute entry points in `fx_vr.wgsl`.
-pub(crate) const KERNELS: &[&str] = &["fxv_convert", "fxv_box_h", "fxv_box_v", "fxv_point", "fxv_gen", "fxv_wrap_pad"];
+pub(crate) const KERNELS: &[&str] = &[
+    "fxv_convert",
+    "fxv_box_h",
+    "fxv_box_v",
+    "fxv_point",
+    "fxv_gen",
+    "fxv_wrap_pad",
+];
 
 /// Effect ids implemented here.
 pub(crate) const IDS: &[&str] = &[
@@ -52,7 +59,18 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
         "ec.vr.spheretoplane" => {
             let m = rot(ctx, "tilt", "pan", "roll");
             let fov = ctx.params.f("horizontalFov") as f32;
-            per_eye(e, &b.img, layout(ctx), |e, img, _| Some(convert(e, img, (0, 360.0), (5, fov), &m, img.width, img.height, None)))?
+            per_eye(e, &b.img, layout(ctx), |e, img, _| {
+                Some(convert(
+                    e,
+                    img,
+                    (0, 360.0),
+                    (5, fov),
+                    &m,
+                    img.width,
+                    img.height,
+                    None,
+                ))
+            })?
         }
         "ec.vr.planetosphere" => {
             let fov = ctx.params.f("scale").clamp(1.0, 179.0);
@@ -60,7 +78,16 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
             let feather = (ctx.params.f("feather") / 100.0).clamp(0.0, 1.0);
             let t = (fov / 2.0).to_radians().tan();
             let (w, h) = (b.img.width, b.img.height);
-            convert(e, &b.img, (5, fov as f32), (0, 360.0), &m, w, h, (feather > 0.0).then_some([feather as f32, t as f32]))
+            convert(
+                e,
+                &b.img,
+                (5, fov as f32),
+                (0, 360.0),
+                &m,
+                w,
+                h,
+                (feather > 0.0).then_some([feather as f32, t as f32]),
+            )
         }
         "ec.vr.chromaticaberrations" => chromatic(e, ctx, &b.img)?,
         "ec.vr.colorgradients" => gradients(e, ctx, &b.img)?,
@@ -85,7 +112,12 @@ fn eyes(w: u32, h: u32, layout: u32) -> Vec<(u32, u32, u32, u32)> {
 }
 
 /// vr::per_eye: run `f` on each eye's own image and reassemble.
-fn per_eye(e: &mut Enc, img: &GpuImage, layout: u32, mut f: impl FnMut(&mut Enc, &GpuImage, usize) -> Option<GpuImage>) -> Option<GpuImage> {
+fn per_eye(
+    e: &mut Enc,
+    img: &GpuImage,
+    layout: u32,
+    mut f: impl FnMut(&mut Enc, &GpuImage, usize) -> Option<GpuImage>,
+) -> Option<GpuImage> {
     let rects = eyes(img.width, img.height, layout);
     if rects.len() == 1 {
         return f(e, img, 0);
@@ -103,7 +135,8 @@ fn per_eye(e: &mut Enc, img: &GpuImage, layout: u32, mut f: impl FnMut(&mut Enc,
 }
 
 fn rot(ctx: &EffectCtx, t: &str, p: &str, r: &str) -> [[f32; 3]; 3] {
-    effectcraft_effects::vr_rotation(ctx.params.f(t), ctx.params.f(p), ctx.params.f(r)).map(|r| r.map(|v| v as f32))
+    effectcraft_effects::vr_rotation(ctx.params.f(t), ctx.params.f(p), ctx.params.f(r))
+        .map(|r| r.map(|v| v as f32))
 }
 
 fn put_matrix(p: &mut Params, at: usize, m: &[[f32; 3]; 3]) {
@@ -116,7 +149,16 @@ fn put_matrix(p: &mut Params, at: usize, m: &[[f32; 3]; 3]) {
 /// output direction → source direction = mᵀ · d. `feather` = (feather, tan(fov / 2)) for VR
 /// Plane to Sphere's edge.
 #[allow(clippy::too_many_arguments)]
-fn convert(e: &mut Enc, src: &GpuImage, from: (u32, f32), to: (u32, f32), m: &[[f32; 3]; 3], w: u32, h: u32, feather: Option<[f32; 2]>) -> GpuImage {
+fn convert(
+    e: &mut Enc,
+    src: &GpuImage,
+    from: (u32, f32),
+    to: (u32, f32),
+    m: &[[f32; 3]; 3],
+    w: u32,
+    h: u32,
+    feather: Option<[f32; 2]>,
+) -> GpuImage {
     let mut p = Params::default();
     p.u[0] = [from.0, to.0, feather.is_some() as u32, 0];
     p.f[0] = [from.1, to.1, 0.0, 0.0];
@@ -136,21 +178,43 @@ fn rotate(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     }
     let mut m = rot(ctx, "tilt", "pan", "roll");
     if pr.b("invertRotation") {
-        m = [[m[0][0], m[1][0], m[2][0]], [m[0][1], m[1][1], m[2][1]], [m[0][2], m[1][2], m[2][2]]];
+        m = [
+            [m[0][0], m[1][0], m[2][0]],
+            [m[0][1], m[1][1], m[2][1]],
+            [m[0][2], m[1][2], m[2][2]],
+        ];
     }
-    per_eye(e, img, layout(ctx), |e, img, _| Some(convert(e, img, (0, 360.0), (0, 360.0), &m, img.width, img.height, None)))
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(convert(
+            e,
+            img,
+            (0, 360.0),
+            (0, 360.0),
+            &m,
+            img.width,
+            img.height,
+            None,
+        ))
+    })
 }
 
 fn converter(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let pr = ctx.params;
     let from = (pr.e("sourceProjection"), pr.f("sourceHorizontalFov"));
     let to = (pr.e("targetProjection"), pr.f("targetHorizontalFov"));
-    if from.0 == to.0 && (!matches!(from.0, 4 | 5) || from.1 == to.1) && pr.f("tilt") == 0.0 && pr.f("pan") == 0.0 && pr.f("roll") == 0.0 {
+    if from.0 == to.0
+        && (!matches!(from.0, 4 | 5) || from.1 == to.1)
+        && pr.f("tilt") == 0.0
+        && pr.f("pan") == 0.0
+        && pr.f("roll") == 0.0
+    {
         return Some(img.clone());
     }
     let m = rot(ctx, "tilt", "pan", "roll");
     let (from, to) = ((from.0, from.1 as f32), (to.0, to.1 as f32));
-    per_eye(e, img, layout(ctx), |e, img, _| Some(convert(e, img, from, to, &m, img.width, img.height, None)))
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(convert(e, img, from, to, &m, img.width, img.height, None))
+    })
 }
 
 // ---------------------------------------------------------------- seam-aware blur
@@ -168,7 +232,9 @@ fn sphere_blur(e: &mut Enc, img: &GpuImage, sigma: f64) -> GpuImage {
         let rows: Vec<f32> = (0..h)
             .map(|y| {
                 let lat = (0.5 - (y as f64 + 0.5) / h as f64) * std::f64::consts::PI;
-                let rr = ((r as f64) / lat.cos().max(1e-3)).round().min((w / 2) as f64) as usize;
+                let rr = ((r as f64) / lat.cos().max(1e-3))
+                    .round()
+                    .min((w / 2) as f64) as usize;
                 // box_row_wrap's own limit.
                 let rr = if w == 0 { 0 } else { rr.min((w - 1) / 2) };
                 rr as f32
@@ -181,7 +247,15 @@ fn sphere_blur(e: &mut Enc, img: &GpuImage, sigma: f64) -> GpuImage {
         let mut p = Params::default();
         p.u[0][0] = 256;
         let out = e.scratch(cur.width, cur.height);
-        e.dispatch("fxv_box_h", &p, &cur, None, &out, Some(&buf), (cur.height.div_ceil(64), cur.width.div_ceil(256)));
+        e.dispatch(
+            "fxv_box_h",
+            &p,
+            &cur,
+            None,
+            &out,
+            Some(&buf),
+            (cur.height.div_ceil(64), cur.width.div_ceil(256)),
+        );
         cur = out;
     }
     for &r in &radii {
@@ -192,7 +266,15 @@ fn sphere_blur(e: &mut Enc, img: &GpuImage, sigma: f64) -> GpuImage {
         let mut p = Params::default();
         p.u[0] = [block, r as u32, 0, 0];
         let out = e.scratch(cur.width, cur.height);
-        e.dispatch("fxv_box_v", &p, &cur, None, &out, None, (cur.width.div_ceil(64), cur.height.div_ceil(block)));
+        e.dispatch(
+            "fxv_box_v",
+            &p,
+            &cur,
+            None,
+            &out,
+            None,
+            (cur.width.div_ceil(64), cur.height.div_ceil(block)),
+        );
         cur = out;
     }
     cur
@@ -215,7 +297,9 @@ fn blur(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage, scale: f64) -> Option<GpuI
     if s < 0.1 {
         return Some(img.clone());
     }
-    per_eye(e, img, layout(ctx), |e, img, _| Some(sphere_blur(e, img, s)))
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(sphere_blur(e, img, s))
+    })
 }
 
 fn sharpen(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage, scale: f64) -> Option<GpuImage> {
@@ -242,7 +326,12 @@ fn glow(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage, scale: f64) -> Option<GpuI
     let tc = pr.color("tintColor");
     let mut hp = op(0);
     hp.u[0][1] = pr.b("useTintColor") as u32;
-    hp.f[0] = [pr.f("luminanceThreshold") as f32 / 100.0, pr.f("glowSaturation") as f32 / 100.0, 0.0, 0.0];
+    hp.f[0] = [
+        pr.f("luminanceThreshold") as f32 / 100.0,
+        pr.f("glowSaturation") as f32 / 100.0,
+        0.0,
+        0.0,
+    ];
     hp.f[1] = [tc[0], tc[1], tc[2], 0.0];
     let mut add = op(1);
     add.f[0][0] = bright;
@@ -262,7 +351,9 @@ fn denoise(e: &mut Enc, ctx: &EffectCtx, b: &GBuf) -> Option<GpuImage> {
     let r = ((1.0 + level * 4.0) * b.scale).max(1.0) as usize;
     if pr.e("noiseType") == 1 {
         let mr = ((level * 3.0 * b.scale).round() as usize).max(1);
-        return per_eye(e, &b.img, layout(ctx), |e, img, _| Some(crate::fx_noise::median_image(e, img, mr, false)));
+        return per_eye(e, &b.img, layout(ctx), |e, img, _| {
+            Some(crate::fx_noise::median_image(e, img, mr, false))
+        });
     }
     let eps = (level * level * 0.02) as f32;
     let detail = (pr.f("detail") / 100.0).clamp(0.0, 1.0) as f32;
@@ -306,7 +397,12 @@ fn blend(i: u32) -> (u32, u32) {
 
 fn chromatic(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let pr = ctx.params;
-    let k = [pr.f("aberrationRed"), pr.f("aberrationGreen"), pr.f("aberrationBlue")].map(|v| (v / 100.0 * 0.1) as f32);
+    let k = [
+        pr.f("aberrationRed"),
+        pr.f("aberrationGreen"),
+        pr.f("aberrationBlue"),
+    ]
+    .map(|v| (v / 100.0 * 0.1) as f32);
     if k.iter().all(|v| *v == 0.0) {
         return Some(img.clone());
     }
@@ -314,9 +410,16 @@ fn chromatic(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let c = [r[0][2], r[1][2], r[2][2]].map(|v| v as f32);
     let mut p = op(0);
     p.u[0][1] = pr.b("falloffInvert") as u32;
-    p.f[0] = [k[0], k[1], k[2], (pr.f("falloff") / 100.0).clamp(0.0, 1.0) as f32];
+    p.f[0] = [
+        k[0],
+        k[1],
+        k[2],
+        (pr.f("falloff") / 100.0).clamp(0.0, 1.0) as f32,
+    ];
     p.f[1] = [c[0], c[1], c[2], 0.0];
-    per_eye(e, img, layout(ctx), |e, img, _| Some(gen_pass(e, &p, img, None)))
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(gen_pass(e, &p, img, None))
+    })
 }
 
 fn gen_pass(e: &mut Enc, p: &Params, img: &GpuImage, data: Option<&wgpu::Buffer>) -> GpuImage {
@@ -336,7 +439,14 @@ fn gradients(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
         let pt = pr.v2(&format!("point{i}"));
         let dir = effectcraft_effects::vr_equi_dir(pt[0], pt[1], lw, lh);
         let c = pr.color(&format!("color{i}"));
-        d.extend([dir[0] as f32, dir[1] as f32, dir[2] as f32, c[0], c[1], c[2]]);
+        d.extend([
+            dir[0] as f32,
+            dir[1] as f32,
+            dir[2] as f32,
+            c[0],
+            c[1],
+            c[2],
+        ]);
     }
     if d.is_empty() {
         return Some(img.clone());
@@ -344,9 +454,16 @@ fn gradients(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let (none, mode) = blend(pr.e("blendingMode"));
     let mut p = op(1);
     p.u[0] = [1, (d.len() / 6) as u32, none, mode];
-    p.f[0] = [pr.f("blend").max(0.1) as f32, (pr.f("opacity") / 100.0) as f32, 0.0, 0.0];
+    p.f[0] = [
+        pr.f("blend").max(0.1) as f32,
+        (pr.f("opacity") / 100.0) as f32,
+        0.0,
+        0.0,
+    ];
     let buf = e.data(&d);
-    per_eye(e, img, layout(ctx), |e, img, _| Some(gen_pass(e, &p, img, Some(&buf))))
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(gen_pass(e, &p, img, Some(&buf)))
+    })
 }
 
 fn fractal(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
@@ -357,16 +474,32 @@ fn fractal(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let (none, mode) = blend(pr.e("blendingMode"));
     let mut p = op(2);
     p.u[0] = [2, pr.e("fractalType"), none, mode];
-    p.u[1] = [octaves.ceil() as u32, pr.f("randomSeed") as u32, pr.b("invert") as u32, 0];
+    p.u[1] = [
+        octaves.ceil() as u32,
+        pr.f("randomSeed") as u32,
+        pr.b("invert") as u32,
+        0,
+    ];
     p.f[0] = [
         pr.f("contrast") as f32 / 100.0,
         pr.f("brightness") as f32 / 100.0,
         (g("subSettings/subInfluence", 50.0) / 100.0).clamp(0.0, 1.0) as f32,
         (g("subSettings/subScaling", 50.0) / 100.0).clamp(0.1, 1.0) as f32,
     ];
-    p.f[1] = [4.0 / scale, (pr.f("evolution") / 360.0) as f32, (pr.f("opacity") / 100.0) as f32, octaves.fract() as f32];
-    put_matrix(&mut p, 2, &rot(ctx, "transform/tilt", "transform/pan", "transform/roll"));
-    per_eye(e, img, layout(ctx), |e, img, _| Some(gen_pass(e, &p, img, None)))
+    p.f[1] = [
+        4.0 / scale,
+        (pr.f("evolution") / 360.0) as f32,
+        (pr.f("opacity") / 100.0) as f32,
+        octaves.fract() as f32,
+    ];
+    put_matrix(
+        &mut p,
+        2,
+        &rot(ctx, "transform/tilt", "transform/pan", "transform/roll"),
+    );
+    per_eye(e, img, layout(ctx), |e, img, _| {
+        Some(gen_pass(e, &p, img, None))
+    })
 }
 
 fn glitch(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
@@ -378,10 +511,17 @@ fn glitch(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
     let g = |id: &str, d: f64| pr.get(id).map(|v| v.as_f64()).unwrap_or(d);
     let rate = pr.f("distortionRate").max(0.0);
     let geo = pr.f("geometricDistortion") / 100.0 * amp;
-    let (hdisp, vdisp) = (g("geometric/horizontalDisplacement", 100.0) / 100.0, g("geometric/verticalDisplacement", 0.0) / 100.0);
+    let (hdisp, vdisp) = (
+        g("geometric/horizontalDisplacement", 100.0) / 100.0,
+        g("geometric/verticalDisplacement", 0.0) / 100.0,
+    );
     let complexity = pr.f("distortionComplexity").clamp(1.0, 100.0);
     let rgb = pr.f("colorDistortion") / 100.0 * amp;
-    let offs = [g("color/redOffset", -1.0), g("color/greenOffset", 0.0), g("color/blueOffset", 1.0)];
+    let offs = [
+        g("color/redOffset", -1.0),
+        g("color/greenOffset", 0.0),
+        g("color/blueOffset", 1.0),
+    ];
     let scan = (pr.f("scanlines") / 100.0 * amp) as f32;
     let spacing = g("scanlineSpacing", 2.0).round().max(2.0) as usize;
     let seed = (pr.f("randomSeed") as u32) ^ ctx.seed;
@@ -406,8 +546,16 @@ fn glitch(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
             let at = |s: u32| {
                 let r0 = hash_noise(band, s, seed ^ (eye as u32 * 977));
                 let on = r0 < 0.35;
-                let shift = if on { (hash_noise(band, s + 1, seed) as f64 * 2.0 - 1.0) * geo } else { 0.0 };
-                let split = if on { rgb * w * 0.01 * (1.0 + hash_noise(band, s + 2, seed) as f64) } else { 0.0 };
+                let shift = if on {
+                    (hash_noise(band, s + 1, seed) as f64 * 2.0 - 1.0) * geo
+                } else {
+                    0.0
+                };
+                let split = if on {
+                    rgb * w * 0.01 * (1.0 + hash_noise(band, s + 2, seed) as f64)
+                } else {
+                    0.0
+                };
                 (shift, split)
             };
             let (s0, p0) = at(slot);
@@ -417,8 +565,17 @@ fn glitch(e: &mut Enc, ctx: &EffectCtx, img: &GpuImage) -> Option<GpuImage> {
             } else {
                 (s0, p0)
             };
-            let dark = if y % spacing == 0 { 1.0 - scan * 0.5 } else { 1.0 };
-            d.extend([(shift * w * 0.15 * hdisp) as f32, (shift * h * 0.15 * vdisp) as f32, split as f32, dark]);
+            let dark = if y % spacing == 0 {
+                1.0 - scan * 0.5
+            } else {
+                1.0
+            };
+            d.extend([
+                (shift * w * 0.15 * hdisp) as f32,
+                (shift * h * 0.15 * vdisp) as f32,
+                split as f32,
+                dark,
+            ]);
         }
         let buf = e.data(&d);
         let mut p = op(3);

@@ -65,7 +65,10 @@ impl BoostSpritTableInfo {
         if table_index == 0 && sprite_hash.is_zero() {
             return None;
         }
-        Some(Self { table_index, sprite_hash })
+        Some(Self {
+            table_index,
+            sprite_hash,
+        })
     }
 }
 
@@ -163,7 +166,10 @@ impl BoostPlayerGrpInfoRefConfig {
         if config_count == 0 {
             return None;
         }
-        Some(Self { config_offset: node.int(0), config_count })
+        Some(Self {
+            config_offset: node.int(0),
+            config_count,
+        })
     }
 }
 
@@ -275,5 +281,10 @@ pub fn parse_boost_grp_config(root: &Value) -> BoostGrpConfig {
         }
     });
 
-    BoostGrpConfig { sprit_table, configs, groups, ref_configs }
+    BoostGrpConfig {
+        sprit_table,
+        configs,
+        groups,
+        ref_configs,
+    }
 }

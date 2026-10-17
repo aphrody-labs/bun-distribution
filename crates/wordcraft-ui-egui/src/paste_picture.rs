@@ -15,7 +15,11 @@ use crate::WordApp;
 /// What the host found on the system clipboard.
 pub enum ClipboardPicture {
     /// Straight (not premultiplied) RGBA8 pixels, row by row.
-    Pixels { width: usize, height: usize, rgba: Vec<u8> },
+    Pixels {
+        width: usize,
+        height: usize,
+        rgba: Vec<u8>,
+    },
     /// An encoded picture (PNG, JPEG, GIF, WebP, BMP) as another program offered it.
     Encoded(Vec<u8>),
     /// Copied files (a file manager's Copy); the pictures among them are inserted.
@@ -40,9 +44,13 @@ pub fn png_from_rgba(width: usize, height: usize, rgba: Vec<u8>) -> Result<Vec<u
     if width == 0 || height == 0 {
         return Err("the clipboard picture is empty".into());
     }
-    let pixels = width.checked_mul(height).filter(|&n| width <= MAX_SIDE && height <= MAX_SIDE && n <= MAX_PIXELS);
+    let pixels = width
+        .checked_mul(height)
+        .filter(|&n| width <= MAX_SIDE && height <= MAX_SIDE && n <= MAX_PIXELS);
     let Some(pixels) = pixels else {
-        return Err(format!("the clipboard picture is too large to paste ({width} × {height} pixels)"));
+        return Err(format!(
+            "the clipboard picture is too large to paste ({width} × {height} pixels)"
+        ));
     };
     if Some(rgba.len()) != pixels.checked_mul(4) {
         return Err("the clipboard picture is damaged (its size doesn't match its pixels)".into());
@@ -52,12 +60,15 @@ pub fn png_from_rgba(width: usize, height: usize, rgba: Vec<u8>) -> Result<Vec<u
     };
     let img = image::RgbaImage::from_raw(w, h, rgba).ok_or("the clipboard picture is damaged")?;
     let mut png = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).map_err(|e| format!("couldn't read the clipboard picture: {e}"))?;
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(|e| format!("couldn't read the clipboard picture: {e}"))?;
     Ok(png)
 }
 
 fn is_picture_file(path: &Path) -> bool {
-    path.extension().and_then(|e| e.to_str()).is_some_and(|e| IMAGE_EXTS.iter().any(|x| x.eq_ignore_ascii_case(e)))
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| IMAGE_EXTS.iter().any(|x| x.eq_ignore_ascii_case(e)))
 }
 
 /// Pasted text that is only paths or `file://` addresses of picture files — what file managers
@@ -66,11 +77,17 @@ pub fn names_picture_files(text: &str) -> bool {
     if text.len() > 64 << 10 {
         return false;
     }
-    let mut lines = text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).peekable();
+    let mut lines = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .peekable();
     lines.peek().is_some()
         && lines.take(MAX_FILES + 1).enumerate().all(|(i, l)| {
             let path = l.strip_prefix("file://").unwrap_or(l);
-            i < MAX_FILES && (l.starts_with("file://") || Path::new(path).is_absolute()) && is_picture_file(Path::new(path))
+            i < MAX_FILES
+                && (l.starts_with("file://") || Path::new(path).is_absolute())
+                && is_picture_file(Path::new(path))
         })
 }
 
@@ -79,8 +96,15 @@ pub fn names_picture_files(text: &str) -> bool {
 pub(crate) fn paste(app: &mut WordApp) -> Option<Result<Value, String>> {
     let picture = app.services.clipboard_picture.as_ref()?()?;
     let r = match picture {
-        ClipboardPicture::Pixels { width, height, rgba } => match png_from_rgba(width, height, rgba) {
-            Ok(png) => app.execute("insert.picture", json!({"data": wordcraft_engine::cmd::insert::base64_encode(&png)})),
+        ClipboardPicture::Pixels {
+            width,
+            height,
+            rgba,
+        } => match png_from_rgba(width, height, rgba) {
+            Ok(png) => app.execute(
+                "insert.picture",
+                json!({"data": wordcraft_engine::cmd::insert::base64_encode(&png)}),
+            ),
             Err(e) => {
                 log::warn!("clipboard picture: {e}");
                 app.status(e.clone());
@@ -92,7 +116,10 @@ pub(crate) fn paste(app: &mut WordApp) -> Option<Result<Value, String>> {
             app.status(e.clone());
             Err(e)
         }
-        ClipboardPicture::Encoded(bytes) => app.execute("insert.picture", json!({"data": wordcraft_engine::cmd::insert::base64_encode(&bytes)})),
+        ClipboardPicture::Encoded(bytes) => app.execute(
+            "insert.picture",
+            json!({"data": wordcraft_engine::cmd::insert::base64_encode(&bytes)}),
+        ),
         ClipboardPicture::Unreadable(why) => {
             let e = format!("the picture on the clipboard couldn't be read: {why}");
             log::warn!("clipboard picture: {e}");
@@ -100,7 +127,11 @@ pub(crate) fn paste(app: &mut WordApp) -> Option<Result<Value, String>> {
             Err(e)
         }
         ClipboardPicture::Files(files) => {
-            let files: Vec<PathBuf> = files.into_iter().filter(|p| is_picture_file(p)).take(MAX_FILES).collect();
+            let files: Vec<PathBuf> = files
+                .into_iter()
+                .filter(|p| is_picture_file(p))
+                .take(MAX_FILES)
+                .collect();
             if files.is_empty() {
                 return None;
             }
@@ -128,12 +159,21 @@ pub(crate) fn paste(app: &mut WordApp) -> Option<Result<Value, String>> {
 /// Paste Special to offer. `None` when there is none, or it is too large or unreadable.
 pub(crate) fn clipboard_png(app: &WordApp) -> Option<Vec<u8>> {
     match app.services.clipboard_picture.as_ref()?()? {
-        ClipboardPicture::Pixels { width, height, rgba } => png_from_rgba(width, height, rgba).ok(),
+        ClipboardPicture::Pixels {
+            width,
+            height,
+            rgba,
+        } => png_from_rgba(width, height, rgba).ok(),
         ClipboardPicture::Encoded(bytes) => Some(bytes),
         ClipboardPicture::Files(files) => {
-            let path = files.into_iter().take(MAX_FILES).find(|p| is_picture_file(p))?;
+            let path = files
+                .into_iter()
+                .take(MAX_FILES)
+                .find(|p| is_picture_file(p))?;
             let size = std::fs::metadata(&path).ok()?.len();
-            if size > MAX_FILE_BYTES.min(wordcraft_engine::cmd::paste::MAX_PICTURE_BYTES as u64 / 4 * 3) {
+            if size
+                > MAX_FILE_BYTES.min(wordcraft_engine::cmd::paste::MAX_PICTURE_BYTES as u64 / 4 * 3)
+            {
                 return None;
             }
             std::fs::read(path).ok()
@@ -155,21 +195,38 @@ mod tests {
     use wordcraft_engine::Session;
 
     fn app_with(picture: impl Fn() -> Option<ClipboardPicture> + 'static) -> WordApp {
-        let services = Services { clipboard_picture: Some(Box::new(picture)), ..Default::default() };
+        let services = Services {
+            clipboard_picture: Some(Box::new(picture)),
+            ..Default::default()
+        };
         WordApp::new(Session::new(wordcraft_doc::Document::new()), services)
     }
 
     fn pictures(a: &mut WordApp) -> usize {
-        a.session.run("arrange.selectionPane", &json!({})).unwrap().as_array().map(|x| x.len()).unwrap_or(0)
+        a.session
+            .run("arrange.selectionPane", &json!({}))
+            .unwrap()
+            .as_array()
+            .map(|x| x.len())
+            .unwrap_or(0)
     }
 
     /// Paste with only a picture on the clipboard inserts it at its natural size, one undo step.
     #[test]
     fn paste_inserts_clipboard_pixels() {
-        let mut a = app_with(|| Some(ClipboardPicture::Pixels { width: 40, height: 20, rgba: vec![200; 40 * 20 * 4] }));
+        let mut a = app_with(|| {
+            Some(ClipboardPicture::Pixels {
+                width: 40,
+                height: 20,
+                rgba: vec![200; 40 * 20 * 4],
+            })
+        });
         let r = a.run("edit.paste", json!({})).unwrap();
         // 96 ppi: 40 × 20 px is 30 × 15 pt.
-        assert_eq!((r["width"].as_f64(), r["height"].as_f64()), (Some(30.0), Some(15.0)));
+        assert_eq!(
+            (r["width"].as_f64(), r["height"].as_f64()),
+            (Some(30.0), Some(15.0))
+        );
         assert_eq!(pictures(&mut a), 1);
         let media = a.session.doc.media.values().next().unwrap();
         assert_eq!(wordcraft_render::image_size(media), Some((40, 20)));
@@ -177,9 +234,19 @@ mod tests {
         assert_eq!(pictures(&mut a), 0);
         // Pasted text that names picture files only becomes pictures when files were copied.
         // `/tmp/…` has no drive, so it isn't absolute on Windows.
-        let abs = if cfg!(windows) { r"C:\tmp\b.JPG" } else { "/tmp/b.JPG" };
-        assert!(names_picture_files(&format!("file:///home/me/shot%201.png\n{abs}\n")));
-        assert!(!names_picture_files("see /tmp/b.png") && !names_picture_files("notes.txt") && !names_picture_files(""));
+        let abs = if cfg!(windows) {
+            r"C:\tmp\b.JPG"
+        } else {
+            "/tmp/b.JPG"
+        };
+        assert!(names_picture_files(&format!(
+            "file:///home/me/shot%201.png\n{abs}\n"
+        )));
+        assert!(
+            !names_picture_files("see /tmp/b.png")
+                && !names_picture_files("notes.txt")
+                && !names_picture_files("")
+        );
     }
 
     /// Hostile clipboard sizes are refused without inserting anything (or allocating for them).
@@ -190,12 +257,25 @@ mod tests {
         assert!(png_from_rgba(10_000, 10_000, Vec::new()).is_err());
         assert!(png_from_rgba(4, 4, vec![0; 63]).is_err());
         assert!(png_from_rgba(0, 4, Vec::new()).is_err());
-        let mut a = app_with(|| Some(ClipboardPicture::Pixels { width: 1 << 40, height: 1 << 40, rgba: Vec::new() }));
+        let mut a = app_with(|| {
+            Some(ClipboardPicture::Pixels {
+                width: 1 << 40,
+                height: 1 << 40,
+                rgba: Vec::new(),
+            })
+        });
         assert!(a.run("edit.paste", json!({})).is_err());
         assert_eq!(pictures(&mut a), 0);
         // Copied files that aren't pictures leave Paste to the usual clipboard.
-        let mut a = app_with(|| Some(ClipboardPicture::Files(vec![PathBuf::from("/tmp/notes.txt")])));
-        assert_eq!(a.run("edit.paste", json!({})).unwrap_err(), "the clipboard is empty");
+        let mut a = app_with(|| {
+            Some(ClipboardPicture::Files(vec![PathBuf::from(
+                "/tmp/notes.txt",
+            )]))
+        });
+        assert_eq!(
+            a.run("edit.paste", json!({})).unwrap_err(),
+            "the clipboard is empty"
+        );
     }
 
     /// The ribbon and context-menu Paste commands send no text; the system clipboard's text is
@@ -204,7 +284,13 @@ mod tests {
     fn paste_without_text_reads_the_system_clipboard() {
         let services = Services {
             clipboard_text: Some(Box::new(|| Some("outside".to_string()))),
-            clipboard_picture: Some(Box::new(|| Some(ClipboardPicture::Pixels { width: 4, height: 4, rgba: vec![200; 4 * 4 * 4] }))),
+            clipboard_picture: Some(Box::new(|| {
+                Some(ClipboardPicture::Pixels {
+                    width: 4,
+                    height: 4,
+                    rgba: vec![200; 4 * 4 * 4],
+                })
+            })),
             ..Default::default()
         };
         let mut a = WordApp::new(Session::new(wordcraft_doc::Document::new()), services);
@@ -213,10 +299,18 @@ mod tests {
         a.run("edit.pasteMerge", json!({})).unwrap();
         assert_eq!(pictures(&mut a), 0);
         let focus = a.session.sel.focus.clone();
-        assert_eq!(a.session.doc.para_at(&focus).map(|p| p.text.clone()), Some("outside".repeat(3)));
+        assert_eq!(
+            a.session.doc.para_at(&focus).map(|p| p.text.clone()),
+            Some("outside".repeat(3))
+        );
         // Paste Special offers the clipboard's text too.
         let r = a.run("edit.pasteSpecial", json!({})).unwrap();
-        assert!(r["formats"].as_array().is_some_and(|f| f.iter().any(|x| x["id"] == "text")), "{r}");
+        assert!(
+            r["formats"]
+                .as_array()
+                .is_some_and(|f| f.iter().any(|x| x["id"] == "text")),
+            "{r}"
+        );
     }
 
     /// Ribbon Paste after copying a picture file in a file manager inserts the picture, not its
@@ -228,7 +322,9 @@ mod tests {
         let (text, file) = (path.to_string_lossy().into_owned(), path.clone());
         let services = Services {
             clipboard_text: Some(Box::new(move || Some(text.clone()))),
-            clipboard_picture: Some(Box::new(move || Some(ClipboardPicture::Files(vec![file.clone()])))),
+            clipboard_picture: Some(Box::new(move || {
+                Some(ClipboardPicture::Files(vec![file.clone()]))
+            })),
             ..Default::default()
         };
         let mut a = WordApp::new(Session::new(wordcraft_doc::Document::new()), services);
@@ -237,6 +333,12 @@ mod tests {
         r.unwrap();
         assert_eq!(pictures(&mut a), 1);
         let focus = a.session.sel.focus.clone();
-        assert_eq!(a.session.doc.para_at(&focus).map(|p| p.text.contains("wc-ribbon-paste")), Some(false));
+        assert_eq!(
+            a.session
+                .doc
+                .para_at(&focus)
+                .map(|p| p.text.contains("wc-ribbon-paste")),
+            Some(false)
+        );
     }
 }

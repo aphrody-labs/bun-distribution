@@ -4,14 +4,25 @@
 use filmcraft_interchange::{ExportOptions, Format, Imported, Report, export, import};
 use filmcraft_media::{Generator, MediaKind};
 use filmcraft_project::{
-    ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, Project, SequenceSettings, TrackKind, Transition, TransitionAlign, TransitionId, find_effect,
+    ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, Project, SequenceSettings, TrackKind,
+    Transition, TransitionAlign, TransitionId, find_effect,
 };
 use filmcraft_time::{FrameRate, Tick, TimeRange};
 
-pub fn media_info(name: &str, video: bool, audio: bool, rate: FrameRate, secs: i64) -> filmcraft_media::MediaInfo {
+pub fn media_info(
+    name: &str,
+    video: bool,
+    audio: bool,
+    rate: FrameRate,
+    secs: i64,
+) -> filmcraft_media::MediaInfo {
     filmcraft_media::MediaInfo {
         name: name.into(),
-        kind: if video { MediaKind::Movie } else { MediaKind::AudioOnly },
+        kind: if video {
+            MediaKind::Movie
+        } else {
+            MediaKind::AudioOnly
+        },
         duration: Tick(secs * filmcraft_time::TICKS_PER_SECOND),
         video: video.then(|| filmcraft_media::VideoStreamInfo {
             width: 1920,
@@ -26,7 +37,12 @@ pub fn media_info(name: &str, video: bool, audio: bool, rate: FrameRate, secs: i
             hdr: None,
         }),
         audio_streams: audio
-            .then(|| filmcraft_media::AudioStreamInfo { sample_rate: 48_000, channels: 2, codec: "aac".into(), bits_per_sample: None })
+            .then(|| filmcraft_media::AudioStreamInfo {
+                sample_rate: 48_000,
+                channels: 2,
+                codec: "aac".into(),
+                bits_per_sample: None,
+            })
             .into_iter()
             .collect(),
         container: "mp4".into(),
@@ -78,14 +94,35 @@ pub fn generator(p: &mut Project, name: &str, g: Generator) -> ItemId {
 }
 
 pub fn sequence(p: &mut Project, name: &str, rate: FrameRate, df: bool) -> ItemId {
-    let settings = SequenceSettings { frame_rate: rate, drop_frame: df, ..Default::default() };
+    let settings = SequenceSettings {
+        frame_rate: rate,
+        drop_frame: df,
+        ..Default::default()
+    };
     p.new_sequence(name, settings, 3, 4, None)
 }
 
 /// Place a clip (frames at the sequence rate). Returns its id.
-pub fn clip(p: &mut Project, seq: ItemId, kind: TrackKind, track: usize, item: ItemId, start: i64, dur: i64, src: i64) -> ClipId {
+pub fn clip(
+    p: &mut Project,
+    seq: ItemId,
+    kind: TrackKind,
+    track: usize,
+    item: ItemId,
+    start: i64,
+    dur: i64,
+    src: i64,
+) -> ClipId {
     let rate = p.sequence(seq).unwrap().settings.frame_rate;
-    let ti = p.make_track_item(item, kind, rate.tick_of(start), TimeRange::new(rate.tick_of(src), rate.tick_of(dur)), rate).unwrap();
+    let ti = p
+        .make_track_item(
+            item,
+            kind,
+            rate.tick_of(start),
+            TimeRange::new(rate.tick_of(src), rate.tick_of(dur)),
+            rate,
+        )
+        .unwrap();
     let id = ti.id;
     let t = &mut p.sequence_mut(seq).unwrap().tracks_mut(kind)[track];
     t.items.push(ti);
@@ -184,7 +221,11 @@ pub fn structure(p: &Project, seq: ItemId, kind: TrackKind) -> Vec<Tr> {
                     dur: i.duration,
                     src: i.frame_hold.unwrap_or(i.source_in),
                     media: media_key(p, i.item),
-                    speed: if i.frame_hold.is_some() { "hold".into() } else { format!("{:.3}", i.speed) },
+                    speed: if i.frame_hold.is_some() {
+                        "hold".into()
+                    } else {
+                        format!("{:.3}", i.speed)
+                    },
                     reverse: i.reverse,
                     enabled: i.enabled,
                 })
@@ -230,10 +271,16 @@ pub fn links(p: &Project, seq: ItemId) -> Vec<Vec<(u8, usize, usize)>> {
     v
 }
 
-pub fn roundtrip(p: &Project, seq: ItemId, format: Format, opts: &ExportOptions) -> (Imported, String, Report) {
+pub fn roundtrip(
+    p: &Project,
+    seq: ItemId,
+    format: Format,
+    opts: &ExportOptions,
+) -> (Imported, String, Report) {
     let (bytes, _rep) = export(p, seq, format, opts).expect("export");
     let text = String::from_utf8(bytes.clone()).unwrap();
-    let (imp, rep) = import(&bytes, format, None).unwrap_or_else(|e| panic!("import failed: {e}\n{text}"));
+    let (imp, rep) =
+        import(&bytes, format, None).unwrap_or_else(|e| panic!("import failed: {e}\n{text}"));
     (imp, text, rep)
 }
 

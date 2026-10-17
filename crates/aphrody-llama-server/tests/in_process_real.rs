@@ -21,7 +21,10 @@ fn turn() -> ChatTurn {
             role: Role::User,
             parts: vec![Part::Text("Reply with the single word: ready".to_string())],
         }],
-        options: TurnOptions { max_output_tokens: Some(16), ..TurnOptions::default() },
+        options: TurnOptions {
+            max_output_tokens: Some(16),
+            ..TurnOptions::default()
+        },
         ..ChatTurn::default()
     }
 }
@@ -33,7 +36,10 @@ async fn in_process_model_streams_text_and_serves_openai() {
     let engine = InProcessLlama::load(
         &model,
         "smoke",
-        LoadOptions { ctx: Some(2048), ..LoadOptions::default() },
+        LoadOptions {
+            ctx: Some(2048),
+            ..LoadOptions::default()
+        },
     )
     .await
     .expect("load model in process");
@@ -44,17 +50,22 @@ async fn in_process_model_streams_text_and_serves_openai() {
         match event.expect("stream event") {
             ModelStreamEvent::TextDelta(delta) => text.push_str(&delta),
             ModelStreamEvent::Completed { .. } => completed = true,
-            _ => {},
+            _ => {}
         }
     }
     eprintln!("in-process reply: {text:?}");
     assert!(completed, "stream must complete");
     assert!(!text.trim().is_empty(), "model produced no text");
 
-    let server = InProcessServer::start(engine).await.expect("loopback server");
-    let health = reqwest::get(format!("{}/health", server.base_url().trim_end_matches("/v1")))
+    let server = InProcessServer::start(engine)
         .await
-        .expect("health request");
+        .expect("loopback server");
+    let health = reqwest::get(format!(
+        "{}/health",
+        server.base_url().trim_end_matches("/v1")
+    ))
+    .await
+    .expect("health request");
     assert!(health.status().is_success());
 }
 
@@ -65,7 +76,11 @@ fn tiny_png() -> Vec<u8> {
         for &byte in bytes {
             crc ^= u32::from(byte);
             for _ in 0..8 {
-                crc = if crc & 1 == 1 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+                crc = if crc & 1 == 1 {
+                    (crc >> 1) ^ 0xEDB8_8320
+                } else {
+                    crc >> 1
+                };
             }
         }
         !crc
@@ -82,7 +97,11 @@ fn tiny_png() -> Vec<u8> {
     for _ in 0..h {
         raw.extend([0_u8]); // filter: none
         for x in 0..w {
-            raw.extend(if x < w / 2 { [220, 20, 20] } else { [20, 20, 220] });
+            raw.extend(if x < w / 2 {
+                [220, 20, 20]
+            } else {
+                [20, 20, 220]
+            });
         }
     }
     let mut z = vec![0x78, 0x01];
@@ -132,11 +151,18 @@ async fn in_process_vision_reads_an_image() {
     let engine = InProcessLlama::load(
         &model,
         "vision",
-        LoadOptions { ctx: Some(4096), mmproj: Some(mmproj.into()), ..LoadOptions::default() },
+        LoadOptions {
+            ctx: Some(4096),
+            mmproj: Some(mmproj.into()),
+            ..LoadOptions::default()
+        },
     )
     .await
     .expect("load model and projector");
-    assert!(engine.capabilities().images, "a loaded vision projector must advertise images");
+    assert!(
+        engine.capabilities().images,
+        "a loaded vision projector must advertise images"
+    );
 
     let png = base64::engine::general_purpose::STANDARD.encode(tiny_png());
     let turn = ChatTurn {
@@ -156,10 +182,15 @@ async fn in_process_vision_reads_an_image() {
     };
     let text = reply(&engine, turn).await;
     eprintln!("vision reply: {text:?}");
-    assert!(!text.trim().is_empty(), "model produced no text for the image");
+    assert!(
+        !text.trim().is_empty(),
+        "model produced no text for the image"
+    );
 
     // The same image through the loopback OpenAI endpoint (data: URL).
-    let server = InProcessServer::start(engine).await.expect("loopback server");
+    let server = InProcessServer::start(engine)
+        .await
+        .expect("loopback server");
     let response: serde_json::Value = reqwest::Client::new()
         .post(format!("{}/chat/completions", server.base_url()))
         .json(&serde_json::json!({
@@ -192,7 +223,10 @@ async fn in_process_lora_adapter_loads_and_generates() {
         "lora",
         LoadOptions {
             ctx: Some(2048),
-            lora: vec![LoraSpec { path: lora.into(), scale: 1.0 }],
+            lora: vec![LoraSpec {
+                path: lora.into(),
+                scale: 1.0,
+            }],
             ..LoadOptions::default()
         },
     )

@@ -60,7 +60,12 @@ pub struct AudioOutput {
 
 impl AudioOutput {
     pub fn from_prefs(p: &effectcraft_engine::prefs::Prefs) -> AudioOutput {
-        AudioOutput { device: p.audio.output_device.clone(), left: p.audio.output_left, right: p.audio.output_right, rate: p.audio.preview_sample_rate }
+        AudioOutput {
+            device: p.audio.output_device.clone(),
+            left: p.audio.output_left,
+            right: p.audio.output_right,
+            rate: p.audio.preview_sample_rate,
+        }
     }
 }
 
@@ -90,12 +95,15 @@ impl AudioFeed {
             real = n;
         }
         out[real..].iter_mut().for_each(|o| *o = 0.0);
-        self.consumed.fetch_add((real / 2) as u64, Ordering::Relaxed);
+        self.consumed
+            .fetch_add((real / 2) as u64, Ordering::Relaxed);
         for (c, v) in pk.into_iter().enumerate() {
             // Rust 1.99 renamed `fetch_update` to `try_update`; keep the old name while the
             // workspace supports Rust 1.95 (`rust-version`).
             #[allow(deprecated)]
-            let _ = self.peak[c].fetch_update(Ordering::Relaxed, Ordering::Relaxed, |old| (v > f32::from_bits(old)).then_some(v.to_bits()));
+            let _ = self.peak[c].fetch_update(Ordering::Relaxed, Ordering::Relaxed, |old| {
+                (v > f32::from_bits(old)).then_some(v.to_bits())
+            });
         }
     }
 
@@ -123,7 +131,10 @@ impl AudioFeed {
 
     /// Peak |sample| per channel since the last call (resets them).
     pub fn take_peaks(&self) -> [f32; 2] {
-        [f32::from_bits(self.peak[0].swap(0, Ordering::Relaxed)), f32::from_bits(self.peak[1].swap(0, Ordering::Relaxed))]
+        [
+            f32::from_bits(self.peak[0].swap(0, Ordering::Relaxed)),
+            f32::from_bits(self.peak[1].swap(0, Ordering::Relaxed)),
+        ]
     }
 
     pub fn finished(&self) -> bool {
@@ -145,7 +156,12 @@ impl PlaySpan {
     /// Span for comp times: start, work area [wa, wb).
     pub fn new(start: Tick, wa: Tick, wb: Tick, looping: bool, rate: u32) -> PlaySpan {
         let r = rate as i64;
-        PlaySpan { start: start.to_units_floor(r), wa: wa.to_units_floor(r), wb: wb.to_units_floor(r).max(wa.to_units_floor(r) + 1), looping }
+        PlaySpan {
+            start: start.to_units_floor(r),
+            wa: wa.to_units_floor(r),
+            wb: wb.to_units_floor(r).max(wa.to_units_floor(r) + 1),
+            looping,
+        }
     }
 }
 
@@ -157,7 +173,11 @@ pub fn clock_sample(span: &PlaySpan, consumed: u64, latency: u64) -> i64 {
     if s < span.wb {
         return s;
     }
-    if span.looping { span.wa + (s - span.wb).rem_euclid((span.wb - span.wa).max(1)) } else { span.wb - 1 }
+    if span.looping {
+        span.wa + (s - span.wb).rem_euclid((span.wb - span.wa).max(1))
+    } else {
+        span.wb - 1
+    }
 }
 
 /// Comp time of sample index `s` at `rate` Hz.
@@ -188,7 +208,11 @@ pub struct AudioPlayback {
 /// Audio kept queued ahead of the device: ~200 ms (a feeder thread tops it up continuously);
 /// wasm32 tops it up once per UI frame, so it keeps ~350 ms to ride out slow frames.
 fn queue_target(rate: u32) -> usize {
-    if cfg!(target_arch = "wasm32") { rate as usize * 7 / 20 } else { rate as usize / 5 }
+    if cfg!(target_arch = "wasm32") {
+        rate as usize * 7 / 20
+    } else {
+        rate as usize / 5
+    }
 }
 
 impl AudioPlayback {
@@ -207,13 +231,25 @@ impl AudioPlayback {
         mix_rate: u32,
     ) -> Result<AudioPlayback, String> {
         let rate = device.sample_rate().max(8000);
-        let mix = if mix_rate == 0 { rate } else { mix_rate.clamp(8000, 192_000) };
+        let mix = if mix_rate == 0 {
+            rate
+        } else {
+            mix_rate.clamp(8000, 192_000)
+        };
         let span = PlaySpan::new(start, wa, wb, looping, rate);
         let feed = Arc::new(AudioFeed::default());
         let stop = Arc::new(AtomicBool::new(false));
         if cfg!(target_arch = "wasm32") {
             // The device takes samples only in `pump`, which fills the queue first.
-            let mut p = AudioPlayback { feed: feed.clone(), device, stop, thread: None, feeder: Some((src, comp, span.start, mix)), rate, span };
+            let mut p = AudioPlayback {
+                feed: feed.clone(),
+                device,
+                stop,
+                thread: None,
+                feeder: Some((src, comp, span.start, mix)),
+                rate,
+                span,
+            };
             p.device.start(feed)?;
             p.pump();
             return Ok(p);
@@ -240,7 +276,15 @@ impl AudioPlayback {
                 .map_err(|e| e.to_string())?
         };
         device.start(feed.clone())?;
-        Ok(AudioPlayback { feed, device, stop, thread: Some(thread), feeder: None, rate, span })
+        Ok(AudioPlayback {
+            feed,
+            device,
+            stop,
+            thread: Some(thread),
+            feeder: None,
+            rate,
+            span,
+        })
     }
 
     /// Every UI frame while playing: on wasm32 mix ahead into the feed (what the feeder thread
@@ -248,7 +292,8 @@ impl AudioPlayback {
     pub fn pump(&mut self) {
         if let Some((src, comp, cursor, mix)) = &mut self.feeder {
             let target = queue_target(self.rate);
-            while self.feed.queued_frames() < target && !self.feed.finished.load(Ordering::Relaxed) {
+            while self.feed.queued_frames() < target && !self.feed.finished.load(Ordering::Relaxed)
+            {
                 *cursor = feed_block(src, *comp, &self.feed, &self.span, *cursor, self.rate, *mix);
             }
         }
@@ -257,7 +302,11 @@ impl AudioPlayback {
 
     /// The comp sample index audible now.
     pub fn clock(&self) -> i64 {
-        clock_sample(&self.span, self.feed.consumed(), self.device.latency_frames())
+        clock_sample(
+            &self.span,
+            self.feed.consumed(),
+            self.device.latency_frames(),
+        )
     }
 
     pub fn finished(&self) -> bool {
@@ -281,7 +330,15 @@ impl Drop for AudioPlayback {
 
 /// Mix one block at `cursor` into the feed; returns the next cursor (wrapping or finishing at
 /// the work-area end).
-fn feed_block(src: &RenderSource, comp: ItemId, feed: &AudioFeed, span: &PlaySpan, cursor: i64, rate: u32, mix: u32) -> i64 {
+fn feed_block(
+    src: &RenderSource,
+    comp: ItemId,
+    feed: &AudioFeed,
+    span: &PlaySpan,
+    cursor: i64,
+    rate: u32,
+    mix: u32,
+) -> i64 {
     let mut cursor = cursor;
     if cursor >= span.wb {
         if !span.looping {
@@ -291,15 +348,31 @@ fn feed_block(src: &RenderSource, comp: ItemId, feed: &AudioFeed, span: &PlaySpa
         cursor = span.wa;
     }
     let n = ((span.wb - cursor) as usize).min(BLOCK);
-    feed.push(&mix_block(src, comp, sample_time(cursor, rate), n, rate, mix));
+    feed.push(&mix_block(
+        src,
+        comp,
+        sample_time(cursor, rate),
+        n,
+        rate,
+        mix,
+    ));
     cursor + n as i64
 }
 
 /// `n` stereo frames of `comp`'s mix from comp time `t` at the device `rate`, mixed at `mix` Hz
 /// (resampled when they differ).
 fn mix_block(src: &RenderSource, comp: ItemId, t: Tick, n: usize, rate: u32, mix: u32) -> Vec<f32> {
-    let render =
-        |frames: usize, at: u32| effectcraft_engine::render::audio::mix_comp(&src.project, src.footage.as_ref(), src.expr.as_deref(), comp, t, frames, at);
+    let render = |frames: usize, at: u32| {
+        effectcraft_engine::render::audio::mix_comp(
+            &src.project,
+            src.footage.as_ref(),
+            src.expr.as_deref(),
+            comp,
+            t,
+            frames,
+            at,
+        )
+    };
     if mix == rate {
         return render(n, rate);
     }
@@ -325,21 +398,40 @@ impl AudioScrub {
         let rate = device.sample_rate().max(8000);
         let feed = Arc::new(AudioFeed::default());
         device.start(feed.clone())?;
-        Ok(AudioScrub { feed, device, rate, last: None, last_used: now })
+        Ok(AudioScrub {
+            feed,
+            device,
+            rate,
+            last: None,
+            last_used: now,
+        })
     }
 
     /// Play the frame of `comp` at `t` (one frame long, 30–100 ms) unless it was the last one
     /// played. Returns whether a snippet was queued.
-    pub fn play(&mut self, src: &RenderSource, comp: ItemId, t: Tick, mix_rate: u32, now: f64) -> bool {
+    pub fn play(
+        &mut self,
+        src: &RenderSource,
+        comp: ItemId,
+        t: Tick,
+        mix_rate: u32,
+        now: f64,
+    ) -> bool {
         self.last_used = now;
-        let Some(c) = src.project.comp(comp) else { return false };
+        let Some(c) = src.project.comp(comp) else {
+            return false;
+        };
         let frame = c.frame_rate.frame_at(t);
         if self.last == Some((comp, frame)) {
             return false;
         }
         self.last = Some((comp, frame));
         let rate = self.rate;
-        let mix = if mix_rate == 0 { rate } else { mix_rate.clamp(8000, 192_000) };
+        let mix = if mix_rate == 0 {
+            rate
+        } else {
+            mix_rate.clamp(8000, 192_000)
+        };
         let n = (c.frame_duration().seconds().clamp(0.03, 0.1) * rate as f64) as usize;
         let mut buf = mix_block(src, comp, c.frame_rate.tick_of(frame), n, rate, mix);
         // 3 ms fades: no clicks where snippets meet.
@@ -402,7 +494,13 @@ pub struct Meter {
 
 impl Default for Meter {
     fn default() -> Self {
-        Meter { level_db: [METER_FLOOR; 2], peak_db: [METER_FLOOR; 2], peak_at: [0.0; 2], clipped: [false; 2], last: 0.0 }
+        Meter {
+            level_db: [METER_FLOOR; 2],
+            peak_db: [METER_FLOOR; 2],
+            peak_at: [0.0; 2],
+            clipped: [false; 2],
+            last: 0.0,
+        }
     }
 }
 
@@ -413,13 +511,21 @@ const PEAK_HOLD: f64 = 1.5;
 const FALL_DB_PER_S: f32 = 30.0;
 
 pub fn to_db(v: f32) -> f32 {
-    if v <= 1e-6 { METER_FLOOR } else { (20.0 * v.log10()).max(METER_FLOOR) }
+    if v <= 1e-6 {
+        METER_FLOOR
+    } else {
+        (20.0 * v.log10()).max(METER_FLOOR)
+    }
 }
 
 impl Meter {
     /// Feed the peaks measured since the last update at wall time `now` (seconds).
     pub fn update(&mut self, peaks: [f32; 2], now: f64) {
-        let dt = if self.last > 0.0 { (now - self.last).clamp(0.0, 0.5) as f32 } else { 0.0 };
+        let dt = if self.last > 0.0 {
+            (now - self.last).clamp(0.0, 0.5) as f32
+        } else {
+            0.0
+        };
         self.last = now;
         for c in 0..2 {
             let db = to_db(peaks[c]);
@@ -436,7 +542,10 @@ impl Meter {
 
     /// Anything to animate (levels still falling)?
     pub fn active(&self) -> bool {
-        self.level_db.iter().chain(self.peak_db.iter()).any(|d| *d > METER_FLOOR)
+        self.level_db
+            .iter()
+            .chain(self.peak_db.iter())
+            .any(|d| *d > METER_FLOOR)
     }
 }
 
@@ -446,14 +555,22 @@ mod tests {
 
     #[test]
     fn clock_follows_consumed_frames_and_loops() {
-        let span = PlaySpan { start: 4800, wa: 0, wb: 48000, looping: true };
+        let span = PlaySpan {
+            start: 4800,
+            wa: 0,
+            wb: 48000,
+            looping: true,
+        };
         assert_eq!(clock_sample(&span, 0, 0), 4800);
         // Latency holds the clock back until the device has played through its buffer.
         assert_eq!(clock_sample(&span, 512, 1024), 4800);
         assert_eq!(clock_sample(&span, 2048, 1024), 4800 + 1024);
         // Wrap at the work-area end.
         assert_eq!(clock_sample(&span, 48000 - 4800 + 100, 0), 100);
-        let once = PlaySpan { looping: false, ..span };
+        let once = PlaySpan {
+            looping: false,
+            ..span
+        };
         assert_eq!(clock_sample(&once, 100_000, 0), 47999);
     }
 
@@ -465,7 +582,13 @@ mod tests {
         assert_eq!(frame_of_sample(1599, 48000, fps), 0);
         assert_eq!(frame_of_sample(1600, 48000, fps), 1);
         assert_eq!(frame_of_sample(48000 * 2, 48000, fps), 60);
-        let span = PlaySpan::new(Tick::from_seconds_f64(1.0), Tick::ZERO, Tick::from_seconds_f64(2.0), true, 48000);
+        let span = PlaySpan::new(
+            Tick::from_seconds_f64(1.0),
+            Tick::ZERO,
+            Tick::from_seconds_f64(2.0),
+            true,
+            48000,
+        );
         assert_eq!((span.start, span.wa, span.wb), (48000, 0, 96000));
         // 29.97: frame boundaries are fractional in samples.
         let ntsc = FrameRate::new(30000, 1001);
@@ -491,7 +614,9 @@ mod tests {
     #[test]
     fn starting_audio_does_not_wait_for_slow_footage() {
         use effectcraft_engine::color::Label;
-        use effectcraft_engine::project::{Comp, Footage, FootageKind, ItemKind, LayerSource, Project, build};
+        use effectcraft_engine::project::{
+            Comp, Footage, FootageKind, ItemKind, LayerSource, Project, build,
+        };
         use effectcraft_engine::render::FootageSource;
         use effectcraft_engine::render::cache::LayerCache;
         use std::time::{Duration, Instant};
@@ -502,11 +627,26 @@ mod tests {
             opened: Mutex<bool>,
         }
         impl FootageSource for Slow {
-            fn frame(&self, _: ItemId, _: &Footage, _: Tick) -> Option<Arc<effectcraft_engine::raster::Image>> {
+            fn frame(
+                &self,
+                _: ItemId,
+                _: &Footage,
+                _: Tick,
+            ) -> Option<Arc<effectcraft_engine::raster::Image>> {
                 None
             }
-            fn audio(&self, _: ItemId, _: &Footage, _: Tick, frames: usize, _: u32) -> Option<Vec<f32>> {
-                let mut opened = self.opened.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            fn audio(
+                &self,
+                _: ItemId,
+                _: &Footage,
+                _: Tick,
+                frames: usize,
+                _: u32,
+            ) -> Option<Vec<f32>> {
+                let mut opened = self
+                    .opened
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 if !*opened {
                     std::thread::sleep(self.delay);
                     *opened = true;
@@ -527,16 +667,36 @@ mod tests {
         }
 
         let mut p = Project::default();
-        let footage =
-            Footage { path: "long.flac".into(), kind: FootageKind::Audio, duration: Tick::from_seconds_f64(600.0), has_audio: true, ..Default::default() };
-        let item = p.add_item("long.flac", Label::SeaFoam, None, ItemKind::Footage(footage));
+        let footage = Footage {
+            path: "long.flac".into(),
+            kind: FootageKind::Audio,
+            duration: Tick::from_seconds_f64(600.0),
+            has_audio: true,
+            ..Default::default()
+        };
+        let item = p.add_item(
+            "long.flac",
+            Label::SeaFoam,
+            None,
+            ItemKind::Footage(footage),
+        );
         let mut comp = Comp::new(64, 36, FrameRate::new(30, 1), Tick::from_seconds_f64(10.0));
-        let layer = build::layer(&mut p, &comp, "long.flac", LayerSource::Footage { item }, (0, 0), None);
+        let layer = build::layer(
+            &mut p,
+            &comp,
+            "long.flac",
+            LayerSource::Footage { item },
+            (0, 0),
+            None,
+        );
         comp.layers = vec![layer];
         let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.into()));
         let src = RenderSource {
             project: Arc::new(p),
-            footage: Arc::new(Slow { delay: Duration::from_secs(2), opened: Mutex::new(false) }),
+            footage: Arc::new(Slow {
+                delay: Duration::from_secs(2),
+                opened: Mutex::new(false),
+            }),
             expr: None,
             layer_cache: Arc::new(LayerCache::default()),
             gpu: None,
@@ -544,13 +704,29 @@ mod tests {
             disk: None,
         };
         let t = Instant::now();
-        let mut playback =
-            AudioPlayback::start(Box::new(Device), src, cid, Tick::ZERO, Tick::ZERO, Tick::from_seconds_f64(10.0), true, 0).expect("the preview starts");
-        assert!(t.elapsed() < Duration::from_secs(1), "start waited {:?} for the footage", t.elapsed());
+        let mut playback = AudioPlayback::start(
+            Box::new(Device),
+            src,
+            cid,
+            Tick::ZERO,
+            Tick::ZERO,
+            Tick::from_seconds_f64(10.0),
+            true,
+            0,
+        )
+        .expect("the preview starts");
+        assert!(
+            t.elapsed() < Duration::from_secs(1),
+            "start waited {:?} for the footage",
+            t.elapsed()
+        );
         assert_eq!(playback.clock(), 0, "the clock waits for the sound");
         // The feeder thread delivers it once the footage is open.
         while playback.feed.queued_frames() == 0 {
-            assert!(t.elapsed() < Duration::from_secs(30), "the feeder never delivered");
+            assert!(
+                t.elapsed() < Duration::from_secs(30),
+                "the feeder never delivered"
+            );
             std::thread::sleep(Duration::from_millis(10));
         }
         let mut out = [0.0f32; 8];

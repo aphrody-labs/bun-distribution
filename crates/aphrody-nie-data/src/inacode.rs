@@ -160,7 +160,9 @@ impl InacodeCommentSetIdData {
     /// Parse une entrée `INACODE_COMMENT_SET_ID_DATA`.
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { id_crc: field_hash(v, "idCrc") }
+        Self {
+            id_crc: field_hash(v, "idCrc"),
+        }
     }
 }
 
@@ -223,7 +225,10 @@ impl InacodeSelectionData {
     /// Parse une entrée `INACODE_SELECTION_DATA`.
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { index: field_i64(v, "index").unwrap_or(0), text: field_hash(v, "text") }
+        Self {
+            index: field_i64(v, "index").unwrap_or(0),
+            text: field_hash(v, "text"),
+        }
     }
 }
 
@@ -239,7 +244,9 @@ impl InacodeMentionData {
     /// Parse une entrée `INACODE_MENTION_DATA`.
     #[must_use]
     pub fn from_value(v: &Value) -> Self {
-        Self { chara_id_crc: field_hash(v, "charaIdCrc") }
+        Self {
+            chara_id_crc: field_hash(v, "charaIdCrc"),
+        }
     }
 }
 
@@ -364,9 +371,14 @@ impl InacodeConfig {
 fn field_range(v: &Value, key: &str) -> InacodeRange {
     let arr = v.get(key).and_then(Value::as_array);
     let read = |i: usize| -> i16 {
-        arr.and_then(|a| a.get(i)).and_then(Value::as_i64).unwrap_or(0) as i16
+        arr.and_then(|a| a.get(i))
+            .and_then(Value::as_i64)
+            .unwrap_or(0) as i16
     };
-    InacodeRange { offset: read(0), count: read(1) }
+    InacodeRange {
+        offset: read(0),
+        count: read(1),
+    }
 }
 
 /// Parse un `inacode_config_*.cfg.bin` désérialisé (forme iecode `{ "lists": [...] }`),
@@ -379,7 +391,10 @@ pub fn parse_inacode_config(root: &Value) -> InacodeConfig {
         cfg.stamps = values.iter().map(InacodeStampData::from_value).collect();
     }
     if let Some(values) = list_values(root, "m_InacodeAuthorNameDataList") {
-        cfg.authors = values.iter().map(InacodeAuthorNameData::from_value).collect();
+        cfg.authors = values
+            .iter()
+            .map(InacodeAuthorNameData::from_value)
+            .collect();
     }
     if let Some(values) = list_values(root, "m_InacodePhotoImgDataList") {
         cfg.photo_imgs = values.iter().map(InacodePhotoImgData::from_value).collect();
@@ -388,13 +403,19 @@ pub fn parse_inacode_config(root: &Value) -> InacodeConfig {
         cfg.members = values.iter().map(InacodeMemberData::from_value).collect();
     }
     if let Some(values) = list_values(root, "m_InacodeCommentSetIdDataList") {
-        cfg.comment_set_ids = values.iter().map(InacodeCommentSetIdData::from_value).collect();
+        cfg.comment_set_ids = values
+            .iter()
+            .map(InacodeCommentSetIdData::from_value)
+            .collect();
     }
     if let Some(values) = list_values(root, "m_InacodeRoomDataList") {
         cfg.rooms = values.iter().map(InacodeRoomData::from_value).collect();
     }
     if let Some(values) = list_values(root, "m_InacodeSelectionDataList") {
-        cfg.selections = values.iter().map(InacodeSelectionData::from_value).collect();
+        cfg.selections = values
+            .iter()
+            .map(InacodeSelectionData::from_value)
+            .collect();
     }
     if let Some(values) = list_values(root, "m_InacodeMentionDataList") {
         cfg.mentions = values.iter().map(InacodeMentionData::from_value).collect();
@@ -403,7 +424,10 @@ pub fn parse_inacode_config(root: &Value) -> InacodeConfig {
         cfg.comments = values.iter().map(InacodeCommentData::from_value).collect();
     }
     if let Some(values) = list_values(root, "m_InacodeCommentSetDataList") {
-        cfg.comment_sets = values.iter().map(InacodeCommentSetData::from_value).collect();
+        cfg.comment_sets = values
+            .iter()
+            .map(InacodeCommentSetData::from_value)
+            .collect();
     }
 
     cfg

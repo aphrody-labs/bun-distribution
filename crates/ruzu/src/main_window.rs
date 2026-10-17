@@ -52,25 +52,37 @@ fn select_pro_controller_for_docked_mode(hid: &parking_lot::Mutex<hid_core::hid_
     use hid_core::hid_types::{NpadIdType, NpadStyleIndex};
     let (handheld, player) = {
         let hid = hid.lock();
-        (hid.get_emulated_controller(NpadIdType::Handheld),
-         hid.get_emulated_controller(NpadIdType::Player1))
+        (
+            hid.get_emulated_controller(NpadIdType::Handheld),
+            hid.get_emulated_controller(NpadIdType::Player1),
+        )
     };
     use hid_core::hid_core::with_controller;
     with_controller(&handheld, |handheld| handheld.disconnect());
-    with_controller(&player, |player| player.set_npad_style_index(NpadStyleIndex::Fullkey));
+    with_controller(&player, |player| {
+        player.set_npad_style_index(NpadStyleIndex::Fullkey)
+    });
     with_controller(&player, |player| player.connect(false));
 }
 
 /// MainWindow::OnMute; the action refreshes the GTK volume label afterwards.
 fn on_mute(values: &mut common::settings::Values) {
-    values.audio_muted.set_value(!*values.audio_muted.get_value());
+    values
+        .audio_muted
+        .set_value(!*values.audio_muted.get_value());
 }
 
 /// MainWindow::OnDecreaseVolume. The thresholds deliberately differ from Up.
 fn on_decrease_volume(values: &mut common::settings::Values) {
     values.audio_muted.set_value(false);
     let volume = *values.volume.get_value() as i32;
-    let step = if volume <= 6 { 1 } else if volume <= 30 { 2 } else { 5 };
+    let step = if volume <= 6 {
+        1
+    } else if volume <= 30 {
+        2
+    } else {
+        5
+    };
     values.volume.set_value((volume - step).max(0) as u8);
 }
 
@@ -78,7 +90,13 @@ fn on_decrease_volume(values: &mut common::settings::Values) {
 fn on_increase_volume(values: &mut common::settings::Values) {
     values.audio_muted.set_value(false);
     let volume = *values.volume.get_value() as i32;
-    let step = if volume < 6 { 1 } else if volume < 30 { 2 } else { 5 };
+    let step = if volume < 6 {
+        1
+    } else if volume < 30 {
+        2
+    } else {
+        5
+    };
     values.volume.set_value((volume + step) as u8);
 }
 
@@ -92,22 +110,36 @@ mod audio_hotkey_tests {
         let hid = parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new());
         let handheld = hid.lock().get_emulated_controller(NpadIdType::Handheld);
         let player = hid.lock().get_emulated_controller(NpadIdType::Player1);
-        handheld.lock().set_npad_style_index(NpadStyleIndex::Handheld);
+        handheld
+            .lock()
+            .set_npad_style_index(NpadStyleIndex::Handheld);
         handheld.lock().connect(false);
         player.lock().disconnect();
         assert!(handheld.lock().is_connected(false));
         select_pro_controller_for_docked_mode(&hid);
         assert!(!handheld.lock().is_connected(false));
         assert!(player.lock().is_connected(false));
-        assert_eq!(player.lock().get_npad_style_index(false), NpadStyleIndex::Fullkey);
+        assert_eq!(
+            player.lock().get_npad_style_index(false),
+            NpadStyleIndex::Fullkey
+        );
     }
 
     #[test]
     fn volume_shortcuts_match_upstream_steps_clamping_and_unmute() {
         let mut values = common::settings::Values::default();
-        for (start, down, up) in [(0, 0, 1), (5, 4, 6), (6, 5, 8),
-            (7, 5, 9), (29, 27, 31), (30, 28, 35), (31, 26, 36),
-            (100, 95, 105), (199, 194, 200), (200, 195, 200)] {
+        for (start, down, up) in [
+            (0, 0, 1),
+            (5, 4, 6),
+            (6, 5, 8),
+            (7, 5, 9),
+            (29, 27, 31),
+            (30, 28, 35),
+            (31, 26, 36),
+            (100, 95, 105),
+            (199, 194, 200),
+            (200, 195, 200),
+        ] {
             values.volume.set_value(start);
             values.audio_muted.set_value(true);
             on_decrease_volume(&mut values);
@@ -132,8 +164,11 @@ mod audio_hotkey_tests {
 fn try_tas_ui_status(
     input: &RefCell<input_common::main_common::InputSubsystem>,
 ) -> Result<
-    Option<(input_common::drivers::tas_input::TasState, usize,
-        [usize; input_common::drivers::tas_input::PLAYER_NUMBER])>,
+    Option<(
+        input_common::drivers::tas_input::TasState,
+        usize,
+        [usize; input_common::drivers::tas_input::PLAYER_NUMBER],
+    )>,
     std::cell::BorrowError,
 > {
     let tas = input.try_borrow()?.get_tas();
@@ -151,7 +186,10 @@ mod tas_reentrancy_tests {
         assert!(try_tas_ui_status(&input).is_err());
         drop(pumping);
         assert_eq!(try_tas_ui_status(&input).unwrap(), None);
-        assert!(input.try_borrow_mut().is_ok(), "snapshot must not retain a borrow across GTK calls");
+        assert!(
+            input.try_borrow_mut().is_ok(),
+            "snapshot must not retain a borrow across GTK calls"
+        );
     }
 
     #[test]
@@ -261,12 +299,24 @@ enum StopConfirmation {
 // LinkActionShortcut gates only controller activation. connect_shortcut's
 // direct connections and the three explicitly tas_allowed actions remain live.
 fn controller_hotkey_allowed(name: &str, tas_running: bool) -> bool {
-    !tas_running || matches!(name,
-        "TAS Start/Stop" | "TAS Record" | "TAS Reset" | "Exit Fullscreen"
-        | "Change Adapting Filter" | "Change Docked Mode" | "Change GPU Mode"
-        | "Audio Mute/Unmute" | "Audio Volume Down" | "Audio Volume Up"
-        | "Toggle Framerate Limit" | "Toggle Turbo Speed" | "Toggle Slow Speed"
-        | "Toggle Renderdoc Capture")
+    !tas_running
+        || matches!(
+            name,
+            "TAS Start/Stop"
+                | "TAS Record"
+                | "TAS Reset"
+                | "Exit Fullscreen"
+                | "Change Adapting Filter"
+                | "Change Docked Mode"
+                | "Change GPU Mode"
+                | "Audio Mute/Unmute"
+                | "Audio Volume Down"
+                | "Audio Volume Up"
+                | "Toggle Framerate Limit"
+                | "Toggle Turbo Speed"
+                | "Toggle Slow Speed"
+                | "Toggle Renderdoc Capture"
+        )
 }
 
 fn stop_confirmation(setting: ConfirmStop, exit_locked: bool) -> StopConfirmation {
@@ -567,7 +617,8 @@ pub struct GMainWindow {
     /// (upstream holds `ConfigureDialog` on the stack across `exec()`).
     configure_dialog: RefCell<Option<Rc<crate::configuration::ConfigureDialog>>>,
     controller_hotkeys: RefCell<Vec<crate::hotkeys::ControllerShortcut>>,
-    configure_per_game: RefCell<Option<Rc<crate::configuration::configure_per_game::ConfigurePerGame>>>,
+    configure_per_game:
+        RefCell<Option<Rc<crate::configuration::configure_per_game::ConfigurePerGame>>>,
     /// Handle to the game list, so it can be rescanned when the configured
     /// directories change.
     game_list: RefCell<Option<crate::game_list::GameListHandle>>,
@@ -619,8 +670,15 @@ struct RenderHandles {
 #[cfg(target_os = "linux")]
 impl RenderHandles {
     fn set_hidden(&self, hidden: bool) {
-        if let Some(window) = &self.wayland { window.set_hidden(hidden); }
-        else { crate::render_window_x11::set_render_window_hidden(self.display as _, self.child_window as _, hidden); }
+        if let Some(window) = &self.wayland {
+            window.set_hidden(hidden);
+        } else {
+            crate::render_window_x11::set_render_window_hidden(
+                self.display as _,
+                self.child_window as _,
+                hidden,
+            );
+        }
     }
 }
 
@@ -689,15 +747,30 @@ struct LoadingEventMailbox {
 }
 
 fn mouse_constraint_target(
-    position: (f64, f64), size: (f64, f64), layout: &FramebufferLayout,
-    mouse_enabled: bool, from_motion: bool,
+    position: (f64, f64),
+    size: (f64, f64),
+    layout: &FramebufferLayout,
+    mouse_enabled: bool,
+    from_motion: bool,
 ) -> (f64, f64) {
-    if !mouse_enabled { return ((size.0 / 2.0).floor(), (size.1 / 2.0).floor()); }
-    if !from_motion { return (position.0.clamp(0.0, size.0), position.1.clamp(0.0, size.1)); }
+    if !mouse_enabled {
+        return ((size.0 / 2.0).floor(), (size.1 / 2.0).floor());
+    }
+    if !from_motion {
+        return (position.0.clamp(0.0, size.0), position.1.clamp(0.0, size.1));
+    }
     let sx = size.0 / layout.width as f64;
     let sy = size.1 / layout.height as f64;
-    (position.0.clamp(layout.screen.left as f64 * sx, layout.screen.right.saturating_sub(1) as f64 * sx),
-     position.1.clamp(layout.screen.top as f64 * sy, layout.screen.bottom.saturating_sub(1) as f64 * sy))
+    (
+        position.0.clamp(
+            layout.screen.left as f64 * sx,
+            layout.screen.right.saturating_sub(1) as f64 * sx,
+        ),
+        position.1.clamp(
+            layout.screen.top as f64 * sy,
+            layout.screen.bottom.saturating_sub(1) as f64 * sy,
+        ),
+    )
 }
 
 impl LoadingEventMailbox {
@@ -950,10 +1023,14 @@ mod fullscreen_hotkey_tests {
     #[cfg(target_os = "linux")]
     #[ignore = "requires native Wayland and isolated XDG directories; run alone"]
     fn wayland_window_mode_preserves_live_surface() {
-        assert!(std::env::var_os("RUZU_WAYLAND_TEST_ISOLATED").is_some(),
-            "Run only on an isolated nested compositor or VM; this test triggered a Mutter crash");
+        assert!(
+            std::env::var_os("RUZU_WAYLAND_TEST_ISOLATED").is_some(),
+            "Run only on an isolated nested compositor or VM; this test triggered a Mutter crash"
+        );
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.WaylandHostTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.WaylandHostTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         crate::uisettings::with_mut(|values| values.single_window_mode.set_value(true));
         let main = GMainWindow::new_for_direct_game(&app);
@@ -962,23 +1039,46 @@ mod fullscreen_hotkey_tests {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         while !main.render_host_ready() {
             assert!(std::time::Instant::now() < deadline);
-            while context.pending() { context.iteration(false); }
+            while context.pending() {
+                context.iteration(false);
+            }
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
-        let window = crate::render_window_wayland::WaylandRenderWindow::new(main.window.upcast_ref(),
-            (0.0, 0.0, 64.0, 64.0), false).unwrap();
+        let window = crate::render_window_wayland::WaylandRenderWindow::new(
+            main.window.upcast_ref(),
+            (0.0, 0.0, 64.0, 64.0),
+            false,
+        )
+        .unwrap();
         let info = window.window_info.clone();
         let surface = info.render_surface;
         *main.render.borrow_mut() = Some(RenderHandles {
-            emu_window: crate::emu_window::GtkEmuWindow::from_window_info(info, window.drawable_size),
-            child_window: 0, display: 0, colormap: 0, wayland: Some(window),
+            emu_window: crate::emu_window::GtkEmuWindow::from_window_info(
+                info,
+                window.drawable_size,
+            ),
+            child_window: 0,
+            display: 0,
+            colormap: 0,
+            wayland: Some(window),
         });
         for single in [false, true, false, true] {
             assert_eq!(main.switch_render_host(single), single);
             assert!(main.detached_render_host.borrow().is_none());
-            while context.pending() { context.iteration(false); }
+            while context.pending() {
+                context.iteration(false);
+            }
             main.maybe_resize_render();
-            assert_eq!(main.render.borrow().as_ref().unwrap().emu_window.window_info().render_surface, surface);
+            assert_eq!(
+                main.render
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .emu_window
+                    .window_info()
+                    .render_surface,
+                surface
+            );
         }
         main.render.borrow_mut().take();
         main.window.destroy();
@@ -990,11 +1090,16 @@ mod fullscreen_hotkey_tests {
         #[cfg(target_os = "linux")]
         gtk::gdk::set_allowed_backends("x11");
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.StartupMaximizeTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.StartupMaximizeTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         crate::uisettings::save_main_window_state(crate::uisettings::WindowGeometry {
-            width: 1100, height: 800, maximized: false,
-        }).unwrap();
+            width: 1100,
+            height: 800,
+            maximized: false,
+        })
+        .unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
         main.present();
         let context = glib::MainContext::default();
@@ -1006,9 +1111,18 @@ mod fullscreen_hotkey_tests {
             }
         };
         pump();
-        let surface = main.window.surface().unwrap().downcast::<gtk::gdk::Toplevel>().unwrap();
-        assert!(surface.state().contains(gtk::gdk::ToplevelState::MAXIMIZED),
-            "native state: {:?}, GTK maximized: {}", surface.state(), main.window.is_maximized());
+        let surface = main
+            .window
+            .surface()
+            .unwrap()
+            .downcast::<gtk::gdk::Toplevel>()
+            .unwrap();
+        assert!(
+            surface.state().contains(gtk::gdk::ToplevelState::MAXIMIZED),
+            "native state: {:?}, GTK maximized: {}",
+            surface.state(),
+            main.window.is_maximized()
+        );
         main.window.unmaximize();
         pump();
         assert!(!surface.state().contains(gtk::gdk::ToplevelState::MAXIMIZED));
@@ -1023,10 +1137,14 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn main_geometry_restores_and_does_not_save_fullscreen_size() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.MainGeometryTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.MainGeometryTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let original = crate::uisettings::WindowGeometry {
-            width: 1100, height: 800, maximized: false,
+            width: 1100,
+            height: 800,
+            maximized: false,
         };
         crate::uisettings::save_main_window_state(original).unwrap();
         crate::uisettings::with_mut(|values| values.single_window_mode.set_value(true));
@@ -1039,21 +1157,32 @@ mod fullscreen_hotkey_tests {
         *main.pre_fullscreen_state.borrow_mut() = Some((main.window.clone().upcast(), false));
         main.window.set_default_size(1920, 1080);
         main.save_main_window_geometry();
-        assert_eq!(crate::uisettings::restore_main_window_state().unwrap(), Some(original));
+        assert_eq!(
+            crate::uisettings::restore_main_window_state().unwrap(),
+            Some(original)
+        );
         main.pre_fullscreen_state.borrow_mut().take();
         main.window.set_default_size(1200, 850);
         // Native Quit must use the real close callback, not app.quit().
         main.window.present();
         gio::prelude::ActionGroupExt::activate_action(&app, "quit", None);
-        assert_eq!(crate::uisettings::restore_main_window_state().unwrap(), Some(
-            crate::uisettings::WindowGeometry { width: 1200, height: 850, maximized: false }));
+        assert_eq!(
+            crate::uisettings::restore_main_window_state().unwrap(),
+            Some(crate::uisettings::WindowGeometry {
+                width: 1200,
+                height: 850,
+                maximized: false
+            })
+        );
     }
 
     #[test]
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn detached_host_boot_presentation_and_idle_close_preserve_saved_mode() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.DetachedBootTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.DetachedBootTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         crate::uisettings::with_mut(|values| values.single_window_mode.set_value(false));
         let main = GMainWindow::new_for_direct_game(&app);
@@ -1077,7 +1206,9 @@ mod fullscreen_hotkey_tests {
         gio::prelude::ActionGroupExt::activate_action(&app, "exit", None);
         assert!(main.detached_render_host.borrow().is_none());
         assert!(!app.windows().contains(&host));
-        assert!(!crate::uisettings::with(|values| *values.single_window_mode.get_value()));
+        assert!(!crate::uisettings::with(|values| *values
+            .single_window_mode
+            .get_value()));
     }
 
     #[test]
@@ -1086,18 +1217,27 @@ mod fullscreen_hotkey_tests {
     fn window_mode_preserves_live_native_child() {
         use x11::xlib;
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.NativeHostTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.NativeHostTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         crate::uisettings::with_mut(|values| values.single_window_mode.set_value(true));
         let main = GMainWindow::new_for_direct_game(&app);
         let x11 = gdk4_x11::X11Display::open(None).unwrap();
         main.window.set_display(&x11);
         gtk::prelude::WidgetExt::realize(&main.window);
-        let embedded = crate::render_window_x11::attach_render_window(main.window.upcast_ref(),
-            Some((0.0, 0.0, 64.0, 64.0))).unwrap();
+        let embedded = crate::render_window_x11::attach_render_window(
+            main.window.upcast_ref(),
+            Some((0.0, 0.0, 64.0, 64.0)),
+        )
+        .unwrap();
         *main.render.borrow_mut() = Some(RenderHandles {
-            emu_window: crate::emu_window::GtkEmuWindow::from_window_info(Default::default(), embedded.drawable_size),
-            child_window: embedded.window as usize, display: embedded.display as usize,
+            emu_window: crate::emu_window::GtkEmuWindow::from_window_info(
+                Default::default(),
+                embedded.drawable_size,
+            ),
+            child_window: embedded.window as usize,
+            display: embedded.display as usize,
             colormap: embedded.colormap,
             wayland: None,
         });
@@ -1108,17 +1248,38 @@ mod fullscreen_hotkey_tests {
             let mut children = std::ptr::null_mut();
             let mut count = 0;
             unsafe {
-                assert_ne!(xlib::XQueryTree(embedded.display.cast(), embedded.window,
-                    &mut root, &mut parent, &mut children, &mut count), 0);
-                if !children.is_null() { xlib::XFree(children.cast()); }
+                assert_ne!(
+                    xlib::XQueryTree(
+                        embedded.display.cast(),
+                        embedded.window,
+                        &mut root,
+                        &mut parent,
+                        &mut children,
+                        &mut count
+                    ),
+                    0
+                );
+                if !children.is_null() {
+                    xlib::XFree(children.cast());
+                }
             }
             let surface = main.render_host().0.surface().unwrap();
-            assert_eq!(parent, surface.downcast::<gdk4_x11::X11Surface>().unwrap().xid());
-            assert_eq!(main.render.borrow().as_ref().unwrap().child_window, embedded.window as usize);
+            assert_eq!(
+                parent,
+                surface.downcast::<gdk4_x11::X11Surface>().unwrap().xid()
+            );
+            assert_eq!(
+                main.render.borrow().as_ref().unwrap().child_window,
+                embedded.window as usize
+            );
         }
         assert!(main.detached_render_host.borrow().is_none());
         main.render.borrow_mut().take();
-        crate::render_window_x11::destroy_render_window(embedded.display, embedded.window, embedded.colormap);
+        crate::render_window_x11::destroy_render_window(
+            embedded.display,
+            embedded.window,
+            embedded.colormap,
+        );
         main.window.destroy();
     }
 
@@ -1126,27 +1287,43 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn switching_render_hosts_moves_loading_widget_without_changing_launcher() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.WindowModeTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.WindowModeTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
         let launcher_parent = main.stack.parent().unwrap();
         for iteration in 0..4 {
             gio::prelude::ActionGroupExt::activate_action(&app, "single_window_mode", None);
             assert!(main.detached_render_host.borrow().is_some());
-            assert!(!crate::uisettings::with(|values| *values.single_window_mode.get_value()));
+            assert!(!crate::uisettings::with(|values| *values
+                .single_window_mode
+                .get_value()));
             main.update_fullscreen_chrome(true);
-            if let Some(menu) = main.menu_bar.as_ref() { assert!(menu.get_visible()); }
+            if let Some(menu) = main.menu_bar.as_ref() {
+                assert!(menu.get_visible());
+            }
             let (window, area) = main.render_host();
             assert_ne!(window, main.window.clone().upcast::<gtk::Window>());
-            if iteration > 0 { assert_eq!(window.default_size(), (1600, 900)); }
+            if iteration > 0 {
+                assert_eq!(window.default_size(), (1600, 900));
+            }
             let launcher_size = main.window.default_size();
-            for (action, height) in [("reset_window_size_720", 720), ("reset_window_size_900", 900), ("reset_window_size_1080", 1080)] {
-                common::settings::values_mut().aspect_ratio.set_value(common::settings_enums::AspectRatio::R4_3);
+            for (action, height) in [
+                ("reset_window_size_720", 720),
+                ("reset_window_size_900", 900),
+                ("reset_window_size_1080", 1080),
+            ] {
+                common::settings::values_mut()
+                    .aspect_ratio
+                    .set_value(common::settings_enums::AspectRatio::R4_3);
                 gio::prelude::ActionGroupExt::activate_action(&app, action, None);
                 assert_eq!(window.default_size(), (height * 4 / 3, height));
                 assert_eq!(main.window.default_size(), launcher_size);
             }
-            common::settings::values_mut().aspect_ratio.set_value(common::settings_enums::AspectRatio::Stretch);
+            common::settings::values_mut()
+                .aspect_ratio
+                .set_value(common::settings_enums::AspectRatio::Stretch);
             gio::prelude::ActionGroupExt::activate_action(&app, "reset_window_size_900", None);
             assert_eq!(window.default_size(), (1600, 900));
             assert_eq!(main.loading_screen.widget().parent(), Some(area));
@@ -1155,15 +1332,30 @@ mod fullscreen_hotkey_tests {
             assert_eq!(main.render_host().0, window);
             gio::prelude::ActionGroupExt::activate_action(&app, "single_window_mode", None);
             assert!(main.detached_render_host.borrow().is_none());
-            assert!(crate::uisettings::with(|values| *values.single_window_mode.get_value()));
-            let saved = crate::uisettings::restore_render_window_state().unwrap().unwrap();
+            assert!(crate::uisettings::with(|values| *values
+                .single_window_mode
+                .get_value()));
+            let saved = crate::uisettings::restore_render_window_state()
+                .unwrap()
+                .unwrap();
             assert_eq!((saved.width, saved.height), (1600, 900));
             main.update_fullscreen_chrome(true);
-            if let Some(menu) = main.menu_bar.as_ref() { assert!(!menu.get_visible()); }
+            if let Some(menu) = main.menu_bar.as_ref() {
+                assert!(!menu.get_visible());
+            }
             main.update_fullscreen_chrome(false);
-            assert_eq!(main.loading_screen.widget().parent(), Some(main.stack.clone().upcast()));
-            assert_eq!(main.stack.visible_child_name().as_deref(), Some(PAGE_GAME_LIST));
-            assert_eq!(main.render_host().0, main.window.clone().upcast::<gtk::Window>());
+            assert_eq!(
+                main.loading_screen.widget().parent(),
+                Some(main.stack.clone().upcast())
+            );
+            assert_eq!(
+                main.stack.visible_child_name().as_deref(),
+                Some(PAGE_GAME_LIST)
+            );
+            assert_eq!(
+                main.render_host().0,
+                main.window.clone().upcast::<gtk::Window>()
+            );
         }
         main.window.destroy();
     }
@@ -1172,24 +1364,34 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn render_page_transition_rejects_stale_sessions_and_preserves_launcher() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.RenderPageTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.RenderPageTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
         let emu = crate::emu_window::GtkEmuWindow::from_window_info(Default::default(), (64, 64));
         let shown = emu.shown_state();
         // Null native handles exercise GTK state without a GPU or visible window.
         *main.render.borrow_mut() = Some(RenderHandles {
-            emu_window: emu, child_window: 0,
-            #[cfg(target_os = "linux")] display: 0,
-            #[cfg(target_os = "linux")] colormap: 0,
-            #[cfg(target_os = "linux")] wayland: None,
-            #[cfg(target_os = "macos")] metal_layer: 0,
+            emu_window: emu,
+            child_window: 0,
+            #[cfg(target_os = "linux")]
+            display: 0,
+            #[cfg(target_os = "linux")]
+            colormap: 0,
+            #[cfg(target_os = "linux")]
+            wayland: None,
+            #[cfg(target_os = "macos")]
+            metal_layer: 0,
         });
         main.session_generation.set(7);
         main.show_loading_screen();
         main.show_render_page(6);
         assert!(!main.render_page_visible.get());
-        assert_eq!(main.stack.visible_child_name().as_deref(), Some(PAGE_LOADING));
+        assert_eq!(
+            main.stack.visible_child_name().as_deref(),
+            Some(PAGE_LOADING)
+        );
         let render_available_during_notify = Rc::new(Cell::new(false));
         let notification = main.stack.connect_visible_child_name_notify({
             let main = Rc::downgrade(&main);
@@ -1203,15 +1405,24 @@ mod fullscreen_hotkey_tests {
         assert!(render_available_during_notify.get());
         main.stack.disconnect(notification);
         assert!(main.render_page_visible.get());
-        assert_eq!(main.stack.visible_child_name().as_deref(), Some(PAGE_RENDER));
+        assert_eq!(
+            main.stack.visible_child_name().as_deref(),
+            Some(PAGE_RENDER)
+        );
         let detached = gtk::Window::new();
         let area = gtk::Box::new(gtk::Orientation::Vertical, 0);
         detached.set_child(Some(&area));
-        *main.detached_render_host.borrow_mut() = Some(DetachedRenderHost { window: detached.clone(), area });
+        *main.detached_render_host.borrow_mut() = Some(DetachedRenderHost {
+            window: detached.clone(),
+            area,
+        });
         main.install_render_visibility_handlers(&detached);
         main.show_render_page(7);
         assert!(main.render_page_visible.get());
-        assert_eq!(main.stack.visible_child_name().as_deref(), Some(PAGE_GAME_LIST));
+        assert_eq!(
+            main.stack.visible_child_name().as_deref(),
+            Some(PAGE_GAME_LIST)
+        );
         gtk::prelude::WidgetExt::realize(&main.window);
         gtk::prelude::WidgetExt::realize(&detached);
         shown.store(true, std::sync::atomic::Ordering::SeqCst);
@@ -1231,7 +1442,9 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn render_host_selection_keeps_launcher_separate() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.RenderHostTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.RenderHostTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
         let (window, area) = main.render_host();
@@ -1241,13 +1454,17 @@ mod fullscreen_hotkey_tests {
         let backdrop = gtk::Box::new(gtk::Orientation::Vertical, 0);
         detached.set_child(Some(&backdrop));
         *main.detached_render_host.borrow_mut() = Some(DetachedRenderHost {
-            window: detached.clone(), area: backdrop.clone(),
+            window: detached.clone(),
+            area: backdrop.clone(),
         });
         assert!(!main.render_host_ready());
         let (window, area) = main.render_host();
         assert_eq!(window, detached);
         assert_eq!(area, backdrop.upcast::<gtk::Widget>());
-        assert!(main.stack.parent().is_some(), "launcher stays in its original hierarchy");
+        assert!(
+            main.stack.parent().is_some(),
+            "launcher stays in its original hierarchy"
+        );
         assert!(!main.is_render_input_source(Some(main.window.clone().upcast())));
         assert!(main.is_render_input_source(Some(detached.clone().upcast())));
         assert!(!main.is_render_input_source(None));
@@ -1255,17 +1472,30 @@ mod fullscreen_hotkey_tests {
         let focus = |window: &gtk::Window| {
             let controllers = window.observe_controllers();
             (0..controllers.n_items())
-                .filter_map(|i| controllers.item(i).and_downcast::<gtk::EventControllerFocus>())
-                .next().unwrap()
+                .filter_map(|i| {
+                    controllers
+                        .item(i)
+                        .and_downcast::<gtk::EventControllerFocus>()
+                })
+                .next()
+                .unwrap()
         };
         *main.mouse_constrain_timer.borrow_mut() = Some(glib::timeout_add_local(
-            std::time::Duration::from_secs(60), || panic!("cancelled timer fired")));
+            std::time::Duration::from_secs(60),
+            || panic!("cancelled timer fired"),
+        ));
         focus(main.window.upcast_ref()).emit_by_name::<()>("leave", &[]);
-        assert!(main.mouse_constrain_timer.borrow().is_some(), "launcher focus must not clear render input");
+        assert!(
+            main.mouse_constrain_timer.borrow().is_some(),
+            "launcher focus must not clear render input"
+        );
         focus(&detached).emit_by_name::<()>("leave", &[]);
         assert!(main.mouse_constrain_timer.borrow().is_none());
         main.detached_render_host.borrow_mut().take();
-        assert_eq!(main.render_host().0, main.window.clone().upcast::<gtk::Window>());
+        assert_eq!(
+            main.render_host().0,
+            main.window.clone().upcast::<gtk::Window>()
+        );
         assert!(main.is_render_input_source(Some(main.window.clone().upcast())));
         assert!(!main.is_render_input_source(Some(detached.clone().upcast())));
         detached.destroy();
@@ -1276,10 +1506,14 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn mouse_panning_action_and_focus_cleanup() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.MousePanningTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.MousePanningTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
-        common::settings::values_mut().mouse_panning.set_value(false);
+        common::settings::values_mut()
+            .mouse_panning
+            .set_value(false);
         gio::prelude::ActionGroupExt::activate_action(&app, "toggle_mouse_panning", None);
         assert!(*common::settings::values().mouse_panning.get_value());
         // A launcher/inactive window must not acquire the pointer.
@@ -1288,13 +1522,20 @@ mod fullscreen_hotkey_tests {
         assert!(!main.constrain_mouse(false));
         let install_timer = || {
             *main.mouse_constrain_timer.borrow_mut() = Some(glib::timeout_add_local(
-                std::time::Duration::from_secs(60), || panic!("cancelled timer fired")));
+                std::time::Duration::from_secs(60),
+                || panic!("cancelled timer fired"),
+            ));
         };
         install_timer();
         let controllers = main.window.observe_controllers();
         let focus = (0..controllers.n_items())
-            .filter_map(|i| controllers.item(i).and_downcast::<gtk::EventControllerFocus>())
-            .next().unwrap();
+            .filter_map(|i| {
+                controllers
+                    .item(i)
+                    .and_downcast::<gtk::EventControllerFocus>()
+            })
+            .next()
+            .unwrap();
         focus.emit_by_name::<()>("leave", &[]);
         assert!(main.mouse_constrain_timer.borrow().is_none());
         install_timer();
@@ -1304,7 +1545,10 @@ mod fullscreen_hotkey_tests {
         install_timer();
         assert!(!main.begin_stop_game()); // No running session, still cancels.
         assert!(main.mouse_constrain_timer.borrow().is_none());
-        let modal = gtk::Window::builder().transient_for(&main.window).modal(true).build();
+        let modal = gtk::Window::builder()
+            .transient_for(&main.window)
+            .modal(true)
+            .build();
         modal.set_visible(true);
         assert!(crate::hotkeys::owner_blocked_by_modal(&main.window));
         modal.set_visible(false);
@@ -1317,7 +1561,9 @@ mod fullscreen_hotkey_tests {
     #[ignore = "requires GTK display and isolated XDG directories; run alone"]
     fn main_window_capture_dispatches_configured_shortcuts_once_per_press() {
         gtk::init().unwrap();
-        let app = Application::builder().application_id("org.ruzu.KeyboardCaptureTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.KeyboardCaptureTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         let main = GMainWindow::new_for_direct_game(&app);
         let calls = Rc::new(std::cell::Cell::new(0));
@@ -1328,36 +1574,62 @@ mod fullscreen_hotkey_tests {
         });
         app.add_action(&action);
         crate::uisettings::with_mut(|values| {
-            values.shortcuts.retain(|shortcut| shortcut.name == "Audio Volume Up");
+            values
+                .shortcuts
+                .retain(|shortcut| shortcut.name == "Audio Volume Up");
             values.shortcuts[0].keyseq = "Ctrl+F12".into();
             values.shortcuts[0].repeat = false;
         });
         let controllers = main.window.observe_controllers();
         let keys = (0..controllers.n_items())
-            .filter_map(|i| controllers.item(i).and_downcast::<gtk::EventControllerKey>())
+            .filter_map(|i| {
+                controllers
+                    .item(i)
+                    .and_downcast::<gtk::EventControllerKey>()
+            })
             .find(|controller| controller.propagation_phase() == gtk::PropagationPhase::Capture)
             .expect("production capture handler");
-        let press = || keys.emit_by_name::<bool>("key-pressed", &[
-            &gtk::gdk::Key::F12, &96u32, &gtk::gdk::ModifierType::CONTROL_MASK,
-        ]);
+        let press = || {
+            keys.emit_by_name::<bool>(
+                "key-pressed",
+                &[
+                    &gtk::gdk::Key::F12,
+                    &96u32,
+                    &gtk::gdk::ModifierType::CONTROL_MASK,
+                ],
+            )
+        };
         assert!(press(), "configured action must stop input propagation");
         assert!(press());
         assert_eq!(calls.get(), 1);
         // Releasing Control first must not prevent release bookkeeping.
-        keys.emit_by_name::<()>("key-released", &[
-            &gtk::gdk::Key::F12, &96u32, &gtk::gdk::ModifierType::empty(),
-        ]);
+        keys.emit_by_name::<()>(
+            "key-released",
+            &[
+                &gtk::gdk::Key::F12,
+                &96u32,
+                &gtk::gdk::ModifierType::empty(),
+            ],
+        );
         assert!(press());
         assert_eq!(calls.get(), 2);
         crate::uisettings::with_mut(|values| values.shortcuts[0].repeat = true);
         assert!(press());
         assert_eq!(calls.get(), 3);
         action.set_enabled(false);
-        assert!(press(), "already consumed press stays consumed after disable");
+        assert!(
+            press(),
+            "already consumed press stays consumed after disable"
+        );
         assert_eq!(calls.get(), 3);
         let focus = (0..controllers.n_items())
-            .filter_map(|i| controllers.item(i).and_downcast::<gtk::EventControllerFocus>())
-            .next().unwrap();
+            .filter_map(|i| {
+                controllers
+                    .item(i)
+                    .and_downcast::<gtk::EventControllerFocus>()
+            })
+            .next()
+            .unwrap();
         focus.emit_by_name::<()>("leave", &[]);
         action.set_enabled(true);
         crate::uisettings::with_mut(|values| values.shortcuts[0].repeat = false);
@@ -1367,16 +1639,30 @@ mod fullscreen_hotkey_tests {
         let detached = main.render_host().0;
         let detached_controllers = detached.observe_controllers();
         let detached_keys = (0..detached_controllers.n_items())
-            .filter_map(|i| detached_controllers.item(i).and_downcast::<gtk::EventControllerKey>())
+            .filter_map(|i| {
+                detached_controllers
+                    .item(i)
+                    .and_downcast::<gtk::EventControllerKey>()
+            })
             .find(|controller| controller.propagation_phase() == gtk::PropagationPhase::Capture)
             .expect("detached production capture handler");
-        assert!(detached_keys.emit_by_name::<bool>("key-pressed", &[
-            &gtk::gdk::Key::F12, &96u32, &gtk::gdk::ModifierType::CONTROL_MASK,
-        ]));
+        assert!(detached_keys.emit_by_name::<bool>(
+            "key-pressed",
+            &[
+                &gtk::gdk::Key::F12,
+                &96u32,
+                &gtk::gdk::ModifierType::CONTROL_MASK,
+            ]
+        ));
         assert_eq!(calls.get(), 5);
-        detached_keys.emit_by_name::<()>("key-released", &[
-            &gtk::gdk::Key::F12, &96u32, &gtk::gdk::ModifierType::empty(),
-        ]);
+        detached_keys.emit_by_name::<()>(
+            "key-released",
+            &[
+                &gtk::gdk::Key::F12,
+                &96u32,
+                &gtk::gdk::ModifierType::empty(),
+            ],
+        );
         assert!(main.switch_render_host(true));
         focus.emit_by_name::<()>("leave", &[]);
         assert!(press());
@@ -1494,10 +1780,21 @@ mod stop_confirmation_tests {
         for &(name, _) in crate::hotkeys::HOTKEY_ACTIONS {
             assert!(controller_hotkey_allowed(name, false), "{name}");
         }
-        for name in ["Stop Emulation", "Load File", "Configure", "Capture Screenshot"] {
+        for name in [
+            "Stop Emulation",
+            "Load File",
+            "Configure",
+            "Capture Screenshot",
+        ] {
             assert!(!controller_hotkey_allowed(name, true), "{name}");
         }
-        for name in ["TAS Start/Stop", "TAS Record", "TAS Reset", "Audio Volume Up", "Toggle Turbo Speed"] {
+        for name in [
+            "TAS Start/Stop",
+            "TAS Record",
+            "TAS Reset",
+            "Audio Volume Up",
+            "Toggle Turbo Speed",
+        ] {
             assert!(controller_hotkey_allowed(name, true), "{name}");
         }
     }
@@ -1716,26 +2013,44 @@ mod render_pointer_tests {
     fn mouse_panning_centers_without_guest_mouse_emulation() {
         let layout = default_frame_layout(2560, 1440);
         for from_motion in [false, true] {
-            assert_eq!(mouse_constraint_target((-40.0, 900.0), (1281.0, 721.0),
-                &layout, false, from_motion), (640.0, 360.0));
+            assert_eq!(
+                mouse_constraint_target(
+                    (-40.0, 900.0),
+                    (1281.0, 721.0),
+                    &layout,
+                    false,
+                    from_motion
+                ),
+                (640.0, 360.0)
+            );
         }
     }
 
     #[test]
     fn mouse_emulation_clips_motion_to_scaled_screen_but_leave_to_widget() {
         let layout = FramebufferLayout {
-            width: 2048, height: 1536,
-            screen: Rectangle::new(0, 192, 2048, 1344), is_srgb: false,
+            width: 2048,
+            height: 1536,
+            screen: Rectangle::new(0, 192, 2048, 1344),
+            is_srgb: false,
         };
         let size = (1024.0, 768.0);
-        assert_eq!(mouse_constraint_target((-20.0, 0.0), size, &layout, true, true),
-            (0.0, 96.0));
-        assert_eq!(mouse_constraint_target((1100.0, 900.0), size, &layout, true, true),
-            (1023.5, 671.5));
-        assert_eq!(mouse_constraint_target((1100.0, 900.0), size, &layout, true, false),
-            (1024.0, 768.0));
-        assert_eq!(mouse_constraint_target((400.0, 300.0), size, &layout, true, true),
-            (400.0, 300.0));
+        assert_eq!(
+            mouse_constraint_target((-20.0, 0.0), size, &layout, true, true),
+            (0.0, 96.0)
+        );
+        assert_eq!(
+            mouse_constraint_target((1100.0, 900.0), size, &layout, true, true),
+            (1023.5, 671.5)
+        );
+        assert_eq!(
+            mouse_constraint_target((1100.0, 900.0), size, &layout, true, false),
+            (1024.0, 768.0)
+        );
+        assert_eq!(
+            mouse_constraint_target((400.0, 300.0), size, &layout, true, true),
+            (400.0, 300.0)
+        );
     }
 
     #[test]
@@ -1824,7 +2139,9 @@ impl GMainWindow {
             } else {
                 common::settings_enums::RendererBackend::OpenGlGlsl
             };
-            common::settings::values_mut().renderer_backend.set_value(fallback);
+            common::settings::values_mut()
+                .renderer_backend
+                .set_value(fallback);
         }
         let idle_title = idle_window_title();
         let geometry = crate::uisettings::restore_main_window_state()
@@ -1833,7 +2150,9 @@ impl GMainWindow {
                 None
             })
             .unwrap_or(crate::uisettings::WindowGeometry {
-                width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, maximized: false,
+                width: DEFAULT_WIDTH,
+                height: DEFAULT_HEIGHT,
+                maximized: false,
             });
         let window = ApplicationWindow::builder()
             .application(app)
@@ -1851,11 +2170,15 @@ impl GMainWindow {
         let startup_maximize_pending = Cell::new(true);
         window.connect_map(move |window| {
             if startup_maximize_pending.replace(false) {
-                glib::idle_add_local_once(glib::clone!(#[weak] window, move || {
-                    if !window.is_fullscreen() {
-                        window.maximize();
+                glib::idle_add_local_once(glib::clone!(
+                    #[weak]
+                    window,
+                    move || {
+                        if !window.is_fullscreen() {
+                            window.maximize();
+                        }
                     }
-                }));
+                ));
             }
         });
 
@@ -1994,7 +2317,8 @@ impl GMainWindow {
                 crate::uisettings::restore_render_window_state().unwrap_or_else(|error| {
                     log::warn!("Cannot restore render window geometry: {error}");
                     None
-                })),
+                }),
+            ),
             room_member,
             announce_multiplayer_session: Arc::new(
                 network::announce_multiplayer_session::AnnounceMultiplayerSession::new(
@@ -2048,7 +2372,12 @@ impl GMainWindow {
                 // Native X children paint above GTK's parent surface. Restore
                 // only a still-live, visible render page, never a stopped game.
                 #[cfg(target_os = "linux")]
-                if let Some(render) = this.render.borrow().as_ref().filter(|_| this.detached_render_host.borrow().is_none()) {
+                if let Some(render) = this
+                    .render
+                    .borrow()
+                    .as_ref()
+                    .filter(|_| this.detached_render_host.borrow().is_none())
+                {
                     render.set_hidden(hidden || !this.render_page_visible.get());
                 };
             }));
@@ -2173,15 +2502,27 @@ impl GMainWindow {
             this.window.upcast_ref(),
             &this.hid_core,
             &this.input_subsystem,
-            glib::clone!(#[weak] this, #[upgrade_or] false, move || {
-                let idle = this.session.borrow().is_none();
-                idle
-            }),
-            glib::clone!(#[weak] this, #[upgrade_or] false, move |key| {
-                // Clone the handle: activation can reenter the main window.
-                let list = this.game_list.borrow().clone();
-                list.is_some_and(|list| list.controller_key(key))
-            }),
+            glib::clone!(
+                #[weak]
+                this,
+                #[upgrade_or]
+                false,
+                move || {
+                    let idle = this.session.borrow().is_none();
+                    idle
+                }
+            ),
+            glib::clone!(
+                #[weak]
+                this,
+                #[upgrade_or]
+                false,
+                move |key| {
+                    // Clone the handle: activation can reenter the main window.
+                    let list = this.game_list.borrow().clone();
+                    list.is_some_and(|list| list.controller_key(key))
+                }
+            ),
         );
 
         // Upstream calls `show()` before checking decryption components. An
@@ -2331,8 +2672,11 @@ impl GMainWindow {
         // MainWindow::closeEvent, not quit the loop or close a secondary host.
         for name in ["exit", "quit"] {
             let action = gio::SimpleAction::new(name, None);
-            action.connect_activate(glib::clone!(#[weak(rename_to = this)] self,
-                move |_, _| this.window.close()));
+            action.connect_activate(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_, _| this.window.close()
+            ));
             app.add_action(&action);
         }
         let install_file_nand = gio::SimpleAction::new("install_file_nand", None);
@@ -2354,7 +2698,8 @@ impl GMainWindow {
         app.add_action(&empty_recent_files_action());
         let recent = gio::SimpleAction::new("open_recent_file", Some(glib::VariantTy::STRING));
         recent.connect_activate(glib::clone!(
-            #[weak(rename_to = this)] self,
+            #[weak(rename_to = this)]
+            self,
             move |_, target| {
                 if let Some(path) = target.and_then(|target| target.get::<String>()) {
                     this.on_menu_recent_file(path);
@@ -2364,7 +2709,8 @@ impl GMainWindow {
         app.add_action(&recent);
         let clear = gio::SimpleAction::new("clear_recent_files", None);
         clear.connect_activate(glib::clone!(
-            #[weak(rename_to = this)] self,
+            #[weak(rename_to = this)]
+            self,
             move |_, _| {
                 crate::uisettings::with_mut(|values| values.recent_files.clear());
                 this.update_recent_files();
@@ -2377,7 +2723,10 @@ impl GMainWindow {
             #[weak(rename_to = this)]
             self,
             move |_, _| {
-                if *common::settings::values().enable_renderdoc_hotkey.get_value() {
+                if *common::settings::values()
+                    .enable_renderdoc_hotkey
+                    .get_value()
+                {
                     if let Some(session) = this.session.borrow().as_ref() {
                         session.toggle_renderdoc_capture();
                     }
@@ -2387,7 +2736,8 @@ impl GMainWindow {
         app.add_action(&renderdoc);
         let mouse_panning = gio::SimpleAction::new("toggle_mouse_panning", None);
         mouse_panning.connect_activate(glib::clone!(
-            #[weak(rename_to = this)] self,
+            #[weak(rename_to = this)]
+            self,
             move |_, _| {
                 // MainWindow::InitializeHotkeys: the driver reads this live.
                 // GTK motion tracking is installed for the render area's lifetime.
@@ -2405,8 +2755,14 @@ impl GMainWindow {
 
         for (name, change) in [
             ("audio_mute", on_mute as fn(&mut common::settings::Values)),
-            ("audio_volume_down", on_decrease_volume as fn(&mut common::settings::Values)),
-            ("audio_volume_up", on_increase_volume as fn(&mut common::settings::Values)),
+            (
+                "audio_volume_down",
+                on_decrease_volume as fn(&mut common::settings::Values),
+            ),
+            (
+                "audio_volume_up",
+                on_increase_volume as fn(&mut common::settings::Values),
+            ),
         ] {
             let action = gio::SimpleAction::new(name, None);
             let bar = Rc::clone(&self.status_bar);
@@ -2420,9 +2776,18 @@ impl GMainWindow {
         // Upstream InitializeHotkeys calls these Settings-owned transitions;
         // the status timer reads the new speed mode on its next refresh.
         for (name, toggle) in [
-            ("toggle_framerate_limit", common::settings::toggle_standard_mode as fn()),
-            ("toggle_turbo_speed", common::settings::toggle_turbo_mode as fn()),
-            ("toggle_slow_speed", common::settings::toggle_slow_mode as fn()),
+            (
+                "toggle_framerate_limit",
+                common::settings::toggle_standard_mode as fn(),
+            ),
+            (
+                "toggle_turbo_speed",
+                common::settings::toggle_turbo_mode as fn(),
+            ),
+            (
+                "toggle_slow_speed",
+                common::settings::toggle_slow_mode as fn(),
+            ),
         ] {
             let action = gio::SimpleAction::new(name, None);
             action.connect_activate(move |_, _| toggle());
@@ -2564,13 +2929,24 @@ impl GMainWindow {
         use ruzu_core::frontend::framebuffer_layout::{screen_docked, screen_undocked};
         self.register_fullscreen_actions(app);
         for (name, width, height) in [
-            ("reset_window_size_720", screen_undocked::WIDTH, screen_undocked::HEIGHT),
+            (
+                "reset_window_size_720",
+                screen_undocked::WIDTH,
+                screen_undocked::HEIGHT,
+            ),
             ("reset_window_size_900", 1600, 900),
-            ("reset_window_size_1080", screen_docked::WIDTH, screen_docked::HEIGHT),
+            (
+                "reset_window_size_1080",
+                screen_docked::WIDTH,
+                screen_docked::HEIGHT,
+            ),
         ] {
             let action = gio::SimpleAction::new(name, None);
-            action.connect_activate(glib::clone!(#[weak(rename_to = this)] self,
-                move |_, _| this.reset_window_size(width, height)));
+            action.connect_activate(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_, _| this.reset_window_size(width, height)
+            ));
             app.add_action(&action);
         }
 
@@ -2578,17 +2954,22 @@ impl GMainWindow {
             "single_window_mode",
             crate::uisettings::with(|values| *values.single_window_mode.get_value()),
         );
-        single_window.connect_activate(glib::clone!(#[weak(rename_to = this)] self,
+        single_window.connect_activate(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
             move |action, _| {
                 let enabled = this.detached_render_host.borrow().is_some();
                 if this.switch_render_host(enabled) {
                     action.set_state(&enabled.to_variant());
-                    crate::uisettings::with_mut(|values| values.single_window_mode.set_value(enabled));
+                    crate::uisettings::with_mut(|values| {
+                        values.single_window_mode.set_value(enabled)
+                    });
                     persist_view_settings();
                 } else {
                     log::error!("Cannot change the native render window parent");
                 }
-            }));
+            }
+        ));
         app.add_action(&single_window);
         let embedded = crate::uisettings::with(|values| *values.single_window_mode.get_value());
         if !self.switch_render_host(embedded) {
@@ -2631,14 +3012,19 @@ impl GMainWindow {
             }
         ));
         app.add_action(&show_status);
-        let show_perf = stateful_boolean_action("show_perf_overlay",
-            crate::uisettings::with(|values| *values.show_perf_overlay.get_value()));
+        let show_perf = stateful_boolean_action(
+            "show_perf_overlay",
+            crate::uisettings::with(|values| *values.show_perf_overlay.get_value()),
+        );
         show_perf.connect_activate(glib::clone!(
-            #[weak(rename_to = this)] self,
+            #[weak(rename_to = this)]
+            self,
             move |action, _| {
                 let visible = toggle_boolean_action(action);
                 crate::uisettings::with_mut(|values| values.show_perf_overlay.set_value(visible));
-                if let Some(overlay) = this.perf_overlay.borrow().as_ref() { overlay.set_visible(visible); }
+                if let Some(overlay) = this.perf_overlay.borrow().as_ref() {
+                    overlay.set_visible(visible);
+                }
                 persist_view_settings();
             }
         ));
@@ -2646,16 +3032,31 @@ impl GMainWindow {
     }
 
     fn create_performance_overlay(self: &Rc<Self>) {
-        if self.perf_overlay.borrow().is_some() { return; }
-        let overlay = crate::render::performance_overlay::PerformanceOverlay::new(&self.window,
-            glib::clone!(#[weak(rename_to = this)] self, move || {
-                crate::uisettings::with_mut(|values| values.show_perf_overlay.set_value(false));
-                if let Some(action) = this.window.application().and_then(|app| app.lookup_action("show_perf_overlay")).and_downcast::<gio::SimpleAction>() {
-                    action.set_state(&false.to_variant());
+        if self.perf_overlay.borrow().is_some() {
+            return;
+        }
+        let overlay = crate::render::performance_overlay::PerformanceOverlay::new(
+            &self.window,
+            glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                move || {
+                    crate::uisettings::with_mut(|values| values.show_perf_overlay.set_value(false));
+                    if let Some(action) = this
+                        .window
+                        .application()
+                        .and_then(|app| app.lookup_action("show_perf_overlay"))
+                        .and_downcast::<gio::SimpleAction>()
+                    {
+                        action.set_state(&false.to_variant());
+                    }
+                    persist_view_settings();
                 }
-                persist_view_settings();
-            }));
-        overlay.set_visible(crate::uisettings::with(|values| *values.show_perf_overlay.get_value()));
+            ),
+        );
+        overlay.set_visible(crate::uisettings::with(|values| {
+            *values.show_perf_overlay.get_value()
+        }));
         *self.perf_overlay.borrow_mut() = Some(overlay);
     }
 
@@ -2675,13 +3076,23 @@ impl GMainWindow {
         let render_width = (height as f32 / ratio) as i32;
         let extra_height = if self.detached_render_host.borrow().is_none() {
             let menu_height = self.menu_bar.as_ref().map_or(0, |menu| menu.height())
-                + self.inline_menu_bar.as_ref().map_or(0, |menu| menu.height());
-            let status_height = if crate::uisettings::with(|values| *values.show_status_bar.get_value()) {
-                self.status_bar.widget().height()
-            } else { 0 };
+                + self
+                    .inline_menu_bar
+                    .as_ref()
+                    .map_or(0, |menu| menu.height());
+            let status_height =
+                if crate::uisettings::with(|values| *values.show_status_bar.get_value()) {
+                    self.status_bar.widget().height()
+                } else {
+                    0
+                };
             menu_height + status_height
-        } else { 0 };
-        self.render_host().0.set_default_size(render_width, height as i32 + extra_height);
+        } else {
+            0
+        };
+        self.render_host()
+            .0
+            .set_default_size(render_width, height as i32 + extra_height);
     }
 
     fn register_fullscreen_actions(self: &Rc<Self>, app: &Application) {
@@ -2778,8 +3189,8 @@ impl GMainWindow {
         // provides Eden's monitor-covering borderless behavior as well; a
         // maximized window leaves the taskbar visible. No GPU-exclusive mode
         // is requested by this GTK operation.
-        let native_fullscreen = cfg!(target_os = "windows")
-            || uses_exclusive_fullscreen(mode, display_uses_wayland());
+        let native_fullscreen =
+            cfg!(target_os = "windows") || uses_exclusive_fullscreen(mode, display_uses_wayland());
         if fullscreen {
             if native_fullscreen {
                 window.set_fullscreened(true);
@@ -2814,17 +3225,24 @@ impl GMainWindow {
     }
 
     fn install_fullscreen_handler(self: &Rc<Self>, window: &gtk::Window) {
-        window.connect_fullscreened_notify(glib::clone!(#[weak(rename_to = this)] self,
+        window.connect_fullscreened_notify(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
             move |window| {
-                if !this.is_render_input_source(Some(window.clone().upcast())) { return; }
+                if !this.is_render_input_source(Some(window.clone().upcast())) {
+                    return;
+                }
                 let fullscreen = window.is_fullscreen();
                 if let Some(app) = this.window.application() {
                     this.set_fullscreen_action_state(&app, fullscreen);
                 }
                 crate::uisettings::with_mut(|values| values.fullscreen.set_value(fullscreen));
                 this.update_fullscreen_chrome(fullscreen);
-                if !fullscreen { this.restore_pre_fullscreen_state(); }
-            }));
+                if !fullscreen {
+                    this.restore_pre_fullscreen_state();
+                }
+            }
+        ));
     }
 
     fn update_fullscreen_chrome(&self, fullscreen: bool) {
@@ -2870,7 +3288,9 @@ impl GMainWindow {
     /// preserving them keeps imported bindings and newly captured bindings in
     /// the same key space.
     fn install_input_handlers(self: &Rc<Self>, window: &gtk::Window) {
-        let shortcut_state = Rc::new(RefCell::new(crate::hotkeys::KeyboardShortcutState::default()));
+        let shortcut_state = Rc::new(RefCell::new(
+            crate::hotkeys::KeyboardShortcutState::default(),
+        ));
         let focus = gtk::EventControllerFocus::new();
         focus.connect_leave(glib::clone!(
             #[strong]
@@ -2906,10 +3326,16 @@ impl GMainWindow {
                         crate::hotkeys::KeyboardShortcutEvent::Activate(action) => {
                             // Release the state borrow before callbacks can open
                             // dialogs, lose focus or stop the current session.
-                            gio::prelude::ActionGroupExt::activate_action(&app, action.strip_prefix("app.").unwrap(), None);
+                            gio::prelude::ActionGroupExt::activate_action(
+                                &app,
+                                action.strip_prefix("app.").unwrap(),
+                                None,
+                            );
                             return glib::Propagation::Stop;
                         }
-                        crate::hotkeys::KeyboardShortcutEvent::Suppressed => return glib::Propagation::Stop,
+                        crate::hotkeys::KeyboardShortcutEvent::Suppressed => {
+                            return glib::Propagation::Stop
+                        }
                         crate::hotkeys::KeyboardShortcutEvent::Unhandled => {}
                     }
                 }
@@ -2951,7 +3377,9 @@ impl GMainWindow {
                 if shortcut_state.borrow_mut().release(keycode) {
                     return;
                 }
-                if !this.is_render_input_source(controller.widget()) { return; }
+                if !this.is_render_input_source(controller.widget()) {
+                    return;
+                }
                 if this.session.borrow().is_none()
                     && this.stack.visible_child_name().as_deref() == Some(PAGE_GAME_LIST)
                     && crate::game_list::navigation_key_for_gdk(keyval).is_some()
@@ -2973,7 +3401,9 @@ impl GMainWindow {
             #[weak(rename_to = this)]
             self,
             move |gesture, _press_count, x, y| {
-                if !this.is_render_input_source(gesture.widget()) { return; }
+                if !this.is_render_input_source(gesture.widget()) {
+                    return;
+                }
                 this.on_mouse_button_pressed(gesture.current_button(), x, y);
                 this.on_mouse_activity();
             }
@@ -2982,7 +3412,9 @@ impl GMainWindow {
             #[weak(rename_to = this)]
             self,
             move |gesture, _press_count, _x, _y| {
-                if !this.is_render_input_source(gesture.widget()) { return; }
+                if !this.is_render_input_source(gesture.widget()) {
+                    return;
+                }
                 this.on_mouse_button_released(gesture.current_button());
             }
         ));
@@ -2994,16 +3426,22 @@ impl GMainWindow {
             #[weak(rename_to = this)]
             self,
             move |controller, x, y| {
-                if !this.is_render_input_source(controller.widget()) { return; }
+                if !this.is_render_input_source(controller.widget()) {
+                    return;
+                }
                 this.on_mouse_motion(x, y);
                 this.on_mouse_activity();
             }
         ));
-        motion.connect_leave(glib::clone!(#[weak(rename_to = this)] self, move |controller| {
-            if this.is_render_input_source(controller.widget()) {
-                this.start_mouse_constraint();
+        motion.connect_leave(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |controller| {
+                if this.is_render_input_source(controller.widget()) {
+                    this.start_mouse_constraint();
+                }
             }
-        }));
+        ));
         window.add_controller(motion);
 
         let scroll = gtk::EventControllerScroll::new(
@@ -3016,7 +3454,9 @@ impl GMainWindow {
             #[upgrade_or]
             glib::Propagation::Proceed,
             move |controller, dx, dy| {
-                if !this.is_render_input_source(controller.widget()) { return glib::Propagation::Proceed; }
+                if !this.is_render_input_source(controller.widget()) {
+                    return glib::Propagation::Proceed;
+                }
                 this.on_mouse_wheel(dx, dy);
                 glib::Propagation::Proceed
             }
@@ -3054,9 +3494,9 @@ impl GMainWindow {
     fn hide_mouse_cursor(&self) {
         let active = self.render_page_visible.get();
         let enabled = crate::uisettings::with(|values| *values.hide_mouse.get_value());
-        self.render_host().1.set_cursor_from_name(
-            should_hide_mouse(active, enabled).then_some("none"),
-        );
+        self.render_host()
+            .1
+            .set_cursor_from_name(should_hide_mouse(active, enabled).then_some("none"));
     }
 
     /// MainWindow::OnMouseActivity.
@@ -3179,21 +3619,37 @@ impl GMainWindow {
     }
 
     fn stop_mouse_constraint(&self) {
-        if let Some(timer) = self.mouse_constrain_timer.borrow_mut().take() { timer.remove(); }
+        if let Some(timer) = self.mouse_constrain_timer.borrow_mut().take() {
+            timer.remove();
+        }
     }
 
     fn start_mouse_constraint(self: &Rc<Self>) {
-        if self.mouse_constrain_timer.borrow().is_some() || !self.render_host().0.is_active()
+        if self.mouse_constrain_timer.borrow().is_some()
+            || !self.render_host().0.is_active()
             || !self.render_page_visible.get()
             || self.shutdown_dialog.borrow().is_some()
-            || !*common::settings::values().mouse_panning.get_value() { return; }
-        let timer = glib::timeout_add_local(std::time::Duration::from_millis(10),
-            glib::clone!(#[weak(rename_to = this)] self, #[upgrade_or] glib::ControlFlow::Break, move || {
-                if this.constrain_mouse(false) { glib::ControlFlow::Continue } else {
-                    this.mouse_constrain_timer.borrow_mut().take();
-                    glib::ControlFlow::Break
+            || !*common::settings::values().mouse_panning.get_value()
+        {
+            return;
+        }
+        let timer = glib::timeout_add_local(
+            std::time::Duration::from_millis(10),
+            glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                #[upgrade_or]
+                glib::ControlFlow::Break,
+                move || {
+                    if this.constrain_mouse(false) {
+                        glib::ControlFlow::Continue
+                    } else {
+                        this.mouse_constrain_timer.borrow_mut().take();
+                        glib::ControlFlow::Break
+                    }
                 }
-            }));
+            ),
+        );
         *self.mouse_constrain_timer.borrow_mut() = Some(timer);
     }
 
@@ -3202,48 +3658,101 @@ impl GMainWindow {
     fn constrain_mouse(&self, from_motion: bool) -> bool {
         let mouse_enabled = {
             let settings = common::settings::values();
-            if !*settings.mouse_panning.get_value() { return false; }
+            if !*settings.mouse_panning.get_value() {
+                return false;
+            }
             *settings.mouse_enabled.get_value()
         };
         let (window, area) = self.render_host();
-        if !window.is_active() || !self.render_page_visible.get() { return false; }
+        if !window.is_active() || !self.render_page_visible.get() {
+            return false;
+        }
         // GTK can retain the parent's active flag while presenting a modal;
         // never pull the pointer away from its controls during that transition.
         if self.shutdown_dialog.borrow().is_some()
-            || crate::hotkeys::owner_blocked_by_modal(&window) { return false; }
+            || crate::hotkeys::owner_blocked_by_modal(&window)
+        {
+            return false;
+        }
         let render = self.render.borrow();
-        let Some(handles) = render.as_ref() else { return false; };
+        let Some(handles) = render.as_ref() else {
+            return false;
+        };
         // Wayland deliberately forbids global pointer warping. GTK continues
         // to deliver ordinary motion/touch through the empty child input region.
         #[cfg(target_os = "linux")]
-        if handles.wayland.is_some() { return false; }
+        if handles.wayland.is_some() {
+            return false;
+        }
         let layout_owner = handles.emu_window.framebuffer_layout();
-        let Ok(layout) = layout_owner.read() else { return false; };
+        let Ok(layout) = layout_owner.read() else {
+            return false;
+        };
         let (width, height) = (area.width() as f64, area.height() as f64);
-        if width <= 0.0 || height <= 0.0 || layout.width == 0 || layout.height == 0
-            || layout.screen.right <= layout.screen.left || layout.screen.bottom <= layout.screen.top
-        { return false; }
+        if width <= 0.0
+            || height <= 0.0
+            || layout.width == 0
+            || layout.height == 0
+            || layout.screen.right <= layout.screen.left
+            || layout.screen.bottom <= layout.screen.top
+        {
+            return false;
+        }
         #[cfg(target_os = "linux")]
-        let position = unsafe { crate::render_window_x11::render_pointer_position(handles.display as _, handles.child_window as _) };
+        let position = unsafe {
+            crate::render_window_x11::render_pointer_position(
+                handles.display as _,
+                handles.child_window as _,
+            )
+        };
         #[cfg(target_os = "windows")]
-        let position = unsafe { crate::render_window_windows::render_pointer_position(handles.child_window as _) };
+        let position = unsafe {
+            crate::render_window_windows::render_pointer_position(handles.child_window as _)
+        };
         #[cfg(target_os = "macos")]
-        let position = unsafe { crate::render_window::render_pointer_position(handles.child_window as _) };
+        let position =
+            unsafe { crate::render_window::render_pointer_position(handles.child_window as _) };
         #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
         let position: Option<(f64, f64)> = None;
-        let Some((x, y)) = position else { return false; };
+        let Some((x, y)) = position else {
+            return false;
+        };
         #[cfg(not(target_os = "macos"))]
-        let (x, y) = (x * width / layout.width as f64, y * height / layout.height as f64);
-        let (target_x, target_y) = mouse_constraint_target((x, y), (width, height), &layout, mouse_enabled, from_motion);
-        if (target_x - x).abs() < 0.5 && (target_y - y).abs() < 0.5 { return false; }
+        let (x, y) = (
+            x * width / layout.width as f64,
+            y * height / layout.height as f64,
+        );
+        let (target_x, target_y) =
+            mouse_constraint_target((x, y), (width, height), &layout, mouse_enabled, from_motion);
+        if (target_x - x).abs() < 0.5 && (target_y - y).abs() < 0.5 {
+            return false;
+        }
         #[cfg(not(target_os = "macos"))]
-        let (target_x, target_y) = ((target_x * layout.width as f64 / width).round() as i32, (target_y * layout.height as f64 / height).round() as i32);
+        let (target_x, target_y) = (
+            (target_x * layout.width as f64 / width).round() as i32,
+            (target_y * layout.height as f64 / height).round() as i32,
+        );
         #[cfg(target_os = "linux")]
-        return unsafe { crate::render_window_x11::warp_render_pointer(handles.display as _, handles.child_window as _, target_x, target_y) };
+        return unsafe {
+            crate::render_window_x11::warp_render_pointer(
+                handles.display as _,
+                handles.child_window as _,
+                target_x,
+                target_y,
+            )
+        };
         #[cfg(target_os = "windows")]
-        return unsafe { crate::render_window_windows::warp_render_pointer(handles.child_window as _, target_x, target_y) };
+        return unsafe {
+            crate::render_window_windows::warp_render_pointer(
+                handles.child_window as _,
+                target_x,
+                target_y,
+            )
+        };
         #[cfg(target_os = "macos")]
-        return unsafe { crate::render_window::warp_render_pointer(handles.child_window as _, target_x, target_y) };
+        return unsafe {
+            crate::render_window::warp_render_pointer(handles.child_window as _, target_x, target_y)
+        };
         #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
         false
     }
@@ -3340,7 +3849,12 @@ impl GMainWindow {
                 MISSING_KEYS_DETAIL,
                 "No",
                 "Yes",
-                Some(crate::util::controller_navigation::ControllerNavigation::for_interface(&self.hid_core, &self.input_subsystem)),
+                Some(
+                    crate::util::controller_navigation::ControllerNavigation::for_interface(
+                        &self.hid_core,
+                        &self.input_subsystem,
+                    ),
+                ),
                 glib::clone!(
                     #[weak(rename_to = this)]
                     self,
@@ -3348,10 +3862,14 @@ impl GMainWindow {
                     hide_warning,
                     move |install| {
                         crate::uisettings::with_mut(|values| {
-                            values.hide_missing_keys_warning.set_value(hide_warning.is_active());
+                            values
+                                .hide_missing_keys_warning
+                                .set_value(hide_warning.is_active());
                         });
                         if let Err(error) = crate::configuration::qt_config::save_view_values() {
-                            log::warn!("Could not persist the missing keys warning preference: {error}");
+                            log::warn!(
+                                "Could not persist the missing keys warning preference: {error}"
+                            );
                         }
                         if install {
                             this.on_install_decryption_keys_then(glib::clone!(
@@ -3365,7 +3883,9 @@ impl GMainWindow {
                     }
                 ),
             );
-            dialog.message_area().downcast::<gtk::Box>()
+            dialog
+                .message_area()
+                .downcast::<gtk::Box>()
                 .expect("MessageDialog message area is a GtkBox")
                 .append(&hide_warning);
         } else {
@@ -4100,18 +4620,21 @@ impl GMainWindow {
             if this.session.borrow().is_some() || this.profile_selection_pending.get() {
                 return;
             }
-            this.boot_game_with_parameters(path, crate::boot::BootParameters {
-                applet: FrontendAppletParameters {
-                    program_id,
-                    applet_id,
-                    applet_type: AppletType::LibraryApplet,
-                    launch_type: LaunchType::FrontendInitiated,
-                    program_index: 0,
-                    previous_program_index: -1,
+            this.boot_game_with_parameters(
+                path,
+                crate::boot::BootParameters {
+                    applet: FrontendAppletParameters {
+                        program_id,
+                        applet_id,
+                        applet_type: AppletType::LibraryApplet,
+                        launch_type: LaunchType::FrontendInitiated,
+                        program_index: 0,
+                        previous_program_index: -1,
+                    },
+                    cabinet_mode,
+                    use_global_configuration: false,
                 },
-                cabinet_mode,
-                use_global_configuration: false,
-            });
+            );
         });
     }
 
@@ -4199,24 +4722,34 @@ impl GMainWindow {
     /// so retain the ordering with a continuation, without retaining HID locks.
     fn on_toggle_docked_mode(self: &Rc<Self>) {
         use hid_core::hid_types::NpadIdType;
-        if self.configure_dialog.borrow().is_some() || self.docked_mode_change_pending.replace(true) {
+        if self.configure_dialog.borrow().is_some() || self.docked_mode_change_pending.replace(true)
+        {
             return;
         }
         let was_docked = common::settings::is_docked_mode(&common::settings::values());
-        let handheld = self.hid_core.lock().get_emulated_controller(NpadIdType::Handheld);
+        let handheld = self
+            .hid_core
+            .lock()
+            .get_emulated_controller(NpadIdType::Handheld);
         let replace_handheld = !was_docked && handheld.lock().is_connected(false);
         let generation = self.session_generation.get();
         let weak = Rc::downgrade(self);
         let finish = move || {
             let Some(this) = weak.upgrade() else { return };
             this.docked_mode_change_pending.set(false);
-            if this.session_generation.get() != generation { return; }
+            if this.session_generation.get() != generation {
+                return;
+            }
             if replace_handheld {
                 select_pro_controller_for_docked_mode(&this.hid_core);
             }
-            common::settings::values_mut().use_docked_mode.set_value(if was_docked {
-                common::settings_enums::ConsoleMode::Handheld
-            } else { common::settings_enums::ConsoleMode::Docked });
+            common::settings::values_mut()
+                .use_docked_mode
+                .set_value(if was_docked {
+                    common::settings_enums::ConsoleMode::Handheld
+                } else {
+                    common::settings_enums::ConsoleMode::Docked
+                });
             this.status_bar.refresh();
             if let Some(session) = this.session.borrow().as_ref() {
                 let _ = session.docked_mode_changed(was_docked, !was_docked);
@@ -4249,8 +4782,11 @@ impl GMainWindow {
         // GTK calls. A waiting writer can make a recursive RwLock read block.
         let (docked, up_factor, aspect) = {
             let values = common::settings::values();
-            (common::settings::is_docked_mode(&values), values.resolution_info.up_factor,
-                *values.aspect_ratio.get_value())
+            (
+                common::settings::is_docked_mode(&values),
+                values.resolution_info.up_factor,
+                *values.aspect_ratio.get_value(),
+            )
         };
         let mut height = crate::uisettings::with(|ui| *ui.screenshot_height.get_value());
         if height == 0 {
@@ -4359,37 +4895,63 @@ impl GMainWindow {
     }
 
     #[cfg(any(unix, windows))]
-    fn input_session_command(&self, command: crate::input_session::Command) -> Result<serde_json::Value, String> {
+    fn input_session_command(
+        &self,
+        command: crate::input_session::Command,
+    ) -> Result<serde_json::Value, String> {
         use crate::input_session::Command;
         use hid_core::hid_types::NpadIdType;
         use serde_json::json;
         match command {
             Command::Buttons { ids, pressed } => {
-                if pressed && self.session.borrow().is_none() { return Err("no emulation session".into()) }
+                if pressed && self.session.borrow().is_none() {
+                    return Err("no emulation session".into());
+                }
                 let mut input = self.input_subsystem.borrow_mut();
-                let pad = input.get_virtual_gamepad_mut().ok_or("virtual gamepad unavailable")?;
-                for id in ids { pad.set_button_state_by_id(0, id, pressed); }
+                let pad = input
+                    .get_virtual_gamepad_mut()
+                    .ok_or("virtual gamepad unavailable")?;
+                for id in ids {
+                    pad.set_button_state_by_id(0, id, pressed);
+                }
                 Ok(json!({"pressed": pressed}))
             }
             Command::Capture(path) => {
                 let accepted = self.session.borrow().as_ref().is_some_and(|session| {
                     session.capture_screenshot(path.clone(), default_frame_layout(960, 540))
                 });
-                if !accepted { return Err("no active screenshot receiver".into()) }
+                if !accepted {
+                    return Err("no active screenshot receiver".into());
+                }
                 Ok(json!({"queued": path}))
             }
             Command::Status => {
-                let controller = self.hid_core.lock().get_emulated_controller(NpadIdType::Player1);
+                let controller = self
+                    .hid_core
+                    .lock()
+                    .get_emulated_controller(NpadIdType::Player1);
                 let controller = controller.lock();
-                let buttons: Vec<bool> = controller.get_buttons_values().iter().map(|value| value.value).collect();
-                let performance = self.session.borrow().as_ref().and_then(EmulationSession::perf_stats)
-                    .map(|stats| json!({"game_fps": stats.average_game_fps,
+                let buttons: Vec<bool> = controller
+                    .get_buttons_values()
+                    .iter()
+                    .map(|value| value.value)
+                    .collect();
+                let performance = self
+                    .session
+                    .borrow()
+                    .as_ref()
+                    .and_then(EmulationSession::perf_stats)
+                    .map(|stats| {
+                        json!({"game_fps": stats.average_game_fps,
                         "emulation_speed": stats.emulation_speed,
-                        "system_fps": stats.system_fps, "frame_seconds": stats.frametime}));
-                Ok(json!({"pid": std::process::id(), "has_session": self.session.borrow().is_some(),
+                        "system_fps": stats.system_fps, "frame_seconds": stats.frametime})
+                    });
+                Ok(
+                    json!({"pid": std::process::id(), "has_session": self.session.borrow().is_some(),
                     "program_id": self.session.borrow().as_ref().and_then(EmulationSession::program_id),
                     "generation": self.session_generation.get(), "buttons": buttons,
-                    "performance": performance}))
+                    "performance": performance}),
+                )
             }
         }
     }
@@ -4427,7 +4989,10 @@ impl GMainWindow {
             return;
         }
         self.refresh_tas_ui();
-        if !*common::settings::values().tas_show_recording_dialog.get_value() {
+        if !*common::settings::values()
+            .tas_show_recording_dialog
+            .get_value()
+        {
             tas.lock().save_recording(true);
             return;
         }
@@ -4541,7 +5106,8 @@ impl GMainWindow {
             Arc::clone(&self.hid_core),
             self.session.borrow().is_none(),
         );
-        let previous_docked = Cell::new(common::settings::is_docked_mode(&common::settings::values()));
+        let previous_docked =
+            Cell::new(common::settings::is_docked_mode(&common::settings::values()));
         dialog.connect_applied(glib::clone!(
             #[weak(rename_to = this)]
             self,
@@ -4594,34 +5160,53 @@ impl GMainWindow {
         let configured = crate::uisettings::with(|values| values.shortcuts.clone());
         let mut bindings = self.controller_hotkeys.borrow_mut();
         if bindings.is_empty() {
-            let controller = self.hid_core.lock().get_emulated_controller(hid_core::hid_types::NpadIdType::Player1);
+            let controller = self
+                .hid_core
+                .lock()
+                .get_emulated_controller(hid_core::hid_types::NpadIdType::Player1);
             let tas = self.input_subsystem.borrow().get_tas();
             for &(name, action) in crate::hotkeys::HOTKEY_ACTIONS {
-                let window: glib::SendWeakRef<gtk::ApplicationWindow> = self.window.downgrade().into();
+                let window: glib::SendWeakRef<gtk::ApplicationWindow> =
+                    self.window.downgrade().into();
                 let tas = tas.clone();
-                bindings.push(crate::hotkeys::ControllerShortcut::new(Arc::clone(&controller), move || {
-                    let window = window.clone();
-                    let tas = tas.clone();
-                    // Like Qt::QueuedConnection, never run GUI or emulation
-                    // actions on the input-driver thread.
-                    glib::idle_add_once(move || {
-                        let Some(window) = window.upgrade() else { return; };
-                        let running_tas = tas.as_ref().is_some_and(|tas| {
-                            tas.lock().get_status().0 != input_common::drivers::tas_input::TasState::Stopped
-                        });
-                        if !controller_hotkey_allowed(name, running_tas) { return; }
-                        if let Some(app) = window.application() {
-                            let action = action.strip_prefix("app.").unwrap();
-                            if app.lookup_action(action).is_some_and(|action| action.is_enabled()) {
-                                gio::prelude::ActionGroupExt::activate_action(&app, action, None);
+                bindings.push(crate::hotkeys::ControllerShortcut::new(
+                    Arc::clone(&controller),
+                    move || {
+                        let window = window.clone();
+                        let tas = tas.clone();
+                        // Like Qt::QueuedConnection, never run GUI or emulation
+                        // actions on the input-driver thread.
+                        glib::idle_add_once(move || {
+                            let Some(window) = window.upgrade() else {
+                                return;
+                            };
+                            let running_tas = tas.as_ref().is_some_and(|tas| {
+                                tas.lock().get_status().0
+                                    != input_common::drivers::tas_input::TasState::Stopped
+                            });
+                            if !controller_hotkey_allowed(name, running_tas) {
+                                return;
                             }
-                        }
-                    });
-                }));
+                            if let Some(app) = window.application() {
+                                let action = action.strip_prefix("app.").unwrap();
+                                if app
+                                    .lookup_action(action)
+                                    .is_some_and(|action| action.is_enabled())
+                                {
+                                    gio::prelude::ActionGroupExt::activate_action(
+                                        &app, action, None,
+                                    );
+                                }
+                            }
+                        });
+                    },
+                ));
             }
         }
         for (binding, &(name, _)) in bindings.iter().zip(crate::hotkeys::HOTKEY_ACTIONS) {
-            let key = configured.iter().find(|shortcut| shortcut.name == name)
+            let key = configured
+                .iter()
+                .find(|shortcut| shortcut.name == name)
                 .map_or("", |shortcut| shortcut.controller_keyseq.as_str());
             binding.set_key(key);
         }
@@ -4638,19 +5223,39 @@ impl GMainWindow {
             dialog.present();
             return;
         }
-        let Some(title_id) = self.session.borrow().as_ref().and_then(|session| session.program_id()) else {
+        let Some(title_id) = self
+            .session
+            .borrow()
+            .as_ref()
+            .and_then(|session| session.program_id())
+        else {
             return;
         };
-        let Some(path) = self.current_game_path.borrow().clone() else { return; };
+        let Some(path) = self.current_game_path.borrow().clone() else {
+            return;
+        };
         use crate::configuration::configure_per_game::{ConfigurePerGame, GameProperties};
-        let Some(properties) = GameProperties::load_from_file(title_id, std::path::Path::new(&path)) else {
-            crate::gtk_compat::show_warning(Some(&self.window), "Properties", "Could not read game metadata.");
+        let Some(properties) =
+            GameProperties::load_from_file(title_id, std::path::Path::new(&path))
+        else {
+            crate::gtk_compat::show_warning(
+                Some(&self.window),
+                "Properties",
+                "Could not read game metadata.",
+            );
             return;
         };
-        let dialog = ConfigurePerGame::new(Some(self.window.upcast_ref()), properties, Arc::clone(&self.hid_core), false);
-        let previous_docked = Cell::new(common::settings::is_docked_mode(&common::settings::values()));
+        let dialog = ConfigurePerGame::new(
+            Some(self.window.upcast_ref()),
+            properties,
+            Arc::clone(&self.hid_core),
+            false,
+        );
+        let previous_docked =
+            Cell::new(common::settings::is_docked_mode(&common::settings::values()));
         dialog.connect_applied(glib::clone!(
-            #[weak(rename_to = this)] self,
+            #[weak(rename_to = this)]
+            self,
             move || {
                 let docked = common::settings::is_docked_mode(&common::settings::values());
                 let previous = previous_docked.replace(docked);
@@ -4669,8 +5274,11 @@ impl GMainWindow {
             }
         ));
         dialog.connect_closed(glib::clone!(
-            #[weak(rename_to = this)] self,
-            move || { this.configure_per_game.borrow_mut().take(); }
+            #[weak(rename_to = this)]
+            self,
+            move || {
+                this.configure_per_game.borrow_mut().take();
+            }
         ));
         dialog.present();
         *self.configure_per_game.borrow_mut() = Some(dialog);
@@ -4679,8 +5287,8 @@ impl GMainWindow {
     /// MainWindow::OnConfigure's reset branch. The dialog has stopped input
     /// configuration and closed without applying any pending page values.
     fn reset_configuration(self: &Rc<Self>) -> std::io::Result<()> {
-        use common::fs::path_util::{get_ruzu_path, RuzuPath};
         use crate::configuration::qt_config as config;
+        use common::fs::path_util::{get_ruzu_path, RuzuPath};
         reset_configuration_files(
             &get_ruzu_path(RuzuPath::ConfigDir),
             &get_ruzu_path(RuzuPath::CacheDir),
@@ -4725,9 +5333,18 @@ impl GMainWindow {
             crate::hotkeys::apply_accelerators(&app);
             for (name, enabled) in [
                 ("single_window_mode", embedded),
-                ("show_filter_bar", crate::uisettings::with(|v| *v.show_filter_bar.get_value())),
-                ("show_status_bar", crate::uisettings::with(|v| *v.show_status_bar.get_value())),
-                ("show_perf_overlay", crate::uisettings::with(|v| *v.show_perf_overlay.get_value())),
+                (
+                    "show_filter_bar",
+                    crate::uisettings::with(|v| *v.show_filter_bar.get_value()),
+                ),
+                (
+                    "show_status_bar",
+                    crate::uisettings::with(|v| *v.show_status_bar.get_value()),
+                ),
+                (
+                    "show_perf_overlay",
+                    crate::uisettings::with(|v| *v.show_perf_overlay.get_value()),
+                ),
             ] {
                 if let Some(action) = app.lookup_action(name).and_downcast::<gio::SimpleAction>() {
                     action.set_state(&enabled.to_variant());
@@ -4742,15 +5359,23 @@ impl GMainWindow {
         self.window.set_decorated(true);
         self.update_fullscreen_chrome(false);
         if let Some(overlay) = self.perf_overlay.borrow().as_ref() {
-            overlay.set_visible(crate::uisettings::with(|values| *values.show_perf_overlay.get_value()));
+            overlay.set_visible(crate::uisettings::with(|values| {
+                *values.show_perf_overlay.get_value()
+            }));
         }
         self.show_mouse_cursor();
         if let Some(game_list) = self.game_list.borrow().as_ref() {
-            game_list.set_filter_visible(crate::uisettings::with(|v| *v.show_filter_bar.get_value()));
+            game_list
+                .set_filter_visible(crate::uisettings::with(|v| *v.show_filter_bar.get_value()));
             game_list.reload();
         }
         crate::gamemode::stop();
-        if self.session.borrow().as_ref().is_some_and(|session| !session.is_paused()) {
+        if self
+            .session
+            .borrow()
+            .as_ref()
+            .is_some_and(|session| !session.is_paused())
+        {
             crate::gamemode::start();
         }
         Ok(())
@@ -4903,7 +5528,9 @@ impl GMainWindow {
         description.set_wrap(true);
         description.set_xalign(0.0);
         content.append(&description);
-        content.append(&crate::configuration::shared_widget::popup_safe_dropdown(&choices));
+        content.append(&crate::configuration::shared_widget::popup_safe_dropdown(
+            &choices,
+        ));
         dialog.add_button(&crate::i18n::tr("Cancel"), gtk::ResponseType::Cancel);
         dialog.add_button(&crate::i18n::tr("OK"), gtk::ResponseType::Accept);
 
@@ -5191,7 +5818,9 @@ impl GMainWindow {
                 &crate::i18n::tr("File not found"),
                 &crate::i18n::tr_args("File \"%1\" not found", &[filepath.clone()]),
             );
-            crate::uisettings::with_mut(|values| values.recent_files.retain(|path| path != &filepath));
+            crate::uisettings::with_mut(|values| {
+                values.recent_files.retain(|path| path != &filepath)
+            });
             self.update_recent_files();
         }
     }
@@ -5204,8 +5833,9 @@ impl GMainWindow {
         if self.profile_selection_pending.get() {
             return;
         }
-        if parameters.applet.program_id == 0 || parameters.applet.program_id
-            > ruzu_core::hle::service::am::am_types::AppletProgramId::MaxProgramId as u64
+        if parameters.applet.program_id == 0
+            || parameters.applet.program_id
+                > ruzu_core::hle::service::am::am_types::AppletProgramId::MaxProgramId as u64
         {
             self.store_recent_file(&filepath);
         }
@@ -5260,7 +5890,10 @@ impl GMainWindow {
         target: crate::util::game::ShortcutTarget,
     ) {
         #[cfg(target_os = "macos")]
-        let arguments = format!("-g {}", gtk::glib::shell_quote(&game_path).to_string_lossy());
+        let arguments = format!(
+            "-g {}",
+            gtk::glib::shell_quote(&game_path).to_string_lossy()
+        );
         #[cfg(not(target_os = "macos"))]
         let arguments = format!("-g \"{game_path}\"");
         crate::util::game::create_shortcut(
@@ -5373,10 +6006,8 @@ impl GMainWindow {
             )
         });
 
-        let Some(layer) = crate::render_window::attach_metal_layer(
-            &render_host,
-            render_rect,
-        ) else {
+        let Some(layer) = crate::render_window::attach_metal_layer(&render_host, render_rect)
+        else {
             log::error!("Cannot boot: failed to embed render surface");
             return;
         };
@@ -5435,9 +6066,13 @@ impl GMainWindow {
                 }
                 Some(LoadingEvent::FirstFrame) => {
                     this.create_performance_overlay();
-                    loading.on_load_complete(glib::clone!(#[weak] this, move || {
-                        this.show_render_page(session_generation);
-                    }));
+                    loading.on_load_complete(glib::clone!(
+                        #[weak]
+                        this,
+                        move || {
+                            this.show_render_page(session_generation);
+                        }
+                    ));
                 }
                 Some(LoadingEvent::Failed { message, detail }) => {
                     this.on_emulation_stopped(Some((message, detail)));
@@ -5553,34 +6188,65 @@ impl GMainWindow {
             )
         });
 
-        let is_wayland = render_host.surface().is_some_and(|surface| surface.is::<gdk4_wayland::WaylandSurface>());
-        let (window_info, drawable_size, display, child_window, colormap, wayland, opengl_source) = if is_wayland {
-            let rect = render_rect.unwrap_or((0.0, 0.0, render_host.width() as f64, render_host.height() as f64));
-            let window = match crate::render_window_wayland::WaylandRenderWindow::new(&render_host, rect, true) {
-                Ok(window) => window,
-                Err(error) => {
-                    log::error!("Cannot create Wayland render surface: {error}");
-                    self.alert("Unable to start the game", &error);
+        let is_wayland = render_host
+            .surface()
+            .is_some_and(|surface| surface.is::<gdk4_wayland::WaylandSurface>());
+        let (window_info, drawable_size, display, child_window, colormap, wayland, opengl_source) =
+            if is_wayland {
+                let rect = render_rect.unwrap_or((
+                    0.0,
+                    0.0,
+                    render_host.width() as f64,
+                    render_host.height() as f64,
+                ));
+                let window = match crate::render_window_wayland::WaylandRenderWindow::new(
+                    &render_host,
+                    rect,
+                    true,
+                ) {
+                    Ok(window) => window,
+                    Err(error) => {
+                        log::error!("Cannot create Wayland render surface: {error}");
+                        self.alert("Unable to start the game", &error);
+                        return;
+                    }
+                };
+                let source = window
+                    .opengl_source()
+                    .map(crate::boot::OpenGLContextSource::Egl);
+                (
+                    window.window_info.clone(),
+                    window.drawable_size,
+                    0,
+                    0,
+                    0,
+                    Some(window),
+                    source,
+                )
+            } else {
+                let Some(embedded) = render::attach_render_window(&render_host, render_rect) else {
+                    self.alert("Unable to start the game", "ruzu could not create its embedded X11 render surface. Ensure XWayland is available and restart the application.");
                     return;
-                }
+                };
+                render::set_render_window_hidden(embedded.display, embedded.window, true);
+                let info = WindowSystemInfo {
+                    type_: WindowSystemType::X11,
+                    display_connection: embedded.display as usize,
+                    render_surface: embedded.window as usize,
+                    render_surface_scale: embedded.scale,
+                };
+                (
+                    info,
+                    embedded.drawable_size,
+                    embedded.display as usize,
+                    embedded.window as usize,
+                    embedded.colormap,
+                    None,
+                    embedded
+                        .glx_context_source
+                        .map(crate::boot::OpenGLContextSource::from_glx),
+                )
             };
-            let source = window.opengl_source().map(crate::boot::OpenGLContextSource::Egl);
-            (window.window_info.clone(), window.drawable_size, 0, 0, 0, Some(window), source)
-        } else {
-            let Some(embedded) = render::attach_render_window(&render_host, render_rect) else {
-                self.alert("Unable to start the game", "ruzu could not create its embedded X11 render surface. Ensure XWayland is available and restart the application.");
-                return;
-            };
-            render::set_render_window_hidden(embedded.display, embedded.window, true);
-            let info = WindowSystemInfo {
-                type_: WindowSystemType::X11,
-                display_connection: embedded.display as usize,
-                render_surface: embedded.window as usize,
-                render_surface_scale: embedded.scale,
-            };
-            (info, embedded.drawable_size, embedded.display as usize, embedded.window as usize,
-                embedded.colormap, None, embedded.glx_context_source.map(crate::boot::OpenGLContextSource::from_glx))
-        };
         let emu = GtkEmuWindow::from_window_info(window_info, drawable_size);
         let window_info = emu.window_info().clone();
         let shown_state = emu.shown_state();
@@ -5588,7 +6254,10 @@ impl GMainWindow {
 
         *self.render.borrow_mut() = Some(RenderHandles {
             emu_window: emu,
-            display, child_window, colormap, wayland,
+            display,
+            child_window,
+            colormap,
+            wayland,
         });
         self.render_geometry.set(None);
 
@@ -5626,9 +6295,13 @@ impl GMainWindow {
                 }
                 Some(LoadingEvent::FirstFrame) => {
                     this.create_performance_overlay();
-                    loading.on_load_complete(glib::clone!(#[weak] this, move || {
-                        this.show_render_page(session_generation);
-                    }));
+                    loading.on_load_complete(glib::clone!(
+                        #[weak]
+                        this,
+                        move || {
+                            this.show_render_page(session_generation);
+                        }
+                    ));
                 }
                 Some(LoadingEvent::Failed { message, detail }) => {
                     this.on_emulation_stopped(Some((message, detail)));
@@ -5743,9 +6416,7 @@ impl GMainWindow {
                 rect.height() as f64,
             )
         });
-        let Some(embedded) =
-            render::attach_render_window(&render_host, render_rect)
-        else {
+        let Some(embedded) = render::attach_render_window(&render_host, render_rect) else {
             log::error!("Cannot boot: failed to embed a Win32 render surface");
             self.alert(
                 "Unable to start the game",
@@ -5805,9 +6476,13 @@ impl GMainWindow {
                 }
                 Some(LoadingEvent::FirstFrame) => {
                     this.create_performance_overlay();
-                    loading.on_load_complete(glib::clone!(#[weak] this, move || {
-                        this.show_render_page(session_generation);
-                    }));
+                    loading.on_load_complete(glib::clone!(
+                        #[weak]
+                        this,
+                        move || {
+                            this.show_render_page(session_generation);
+                        }
+                    ));
                 }
                 Some(LoadingEvent::Failed { message, detail }) => {
                     this.on_emulation_stopped(Some((message, detail)));
@@ -5890,15 +6565,29 @@ impl GMainWindow {
     /// must succeed before changing the selected GTK owner or destroying it.
     fn reparent_render_to(&self, destination: &gtk::Window) -> bool {
         let render = self.render.borrow();
-        let Some(handles) = render.as_ref() else { return true; };
+        let Some(handles) = render.as_ref() else {
+            return true;
+        };
         #[cfg(target_os = "linux")]
-        return if let Some(window) = &handles.wayland { window.reparent(destination) }
-        else { crate::render_window_x11::reparent_render_window(
-            destination, handles.display as *mut _, handles.child_window as _) };
+        return if let Some(window) = &handles.wayland {
+            window.reparent(destination)
+        } else {
+            crate::render_window_x11::reparent_render_window(
+                destination,
+                handles.display as *mut _,
+                handles.child_window as _,
+            )
+        };
         #[cfg(target_os = "windows")]
-        return crate::render_window_windows::reparent_render_window(destination, handles.child_window as _);
+        return crate::render_window_windows::reparent_render_window(
+            destination,
+            handles.child_window as _,
+        );
         #[cfg(target_os = "macos")]
-        return crate::render_window::reparent_render_window(destination, handles.child_window as *mut _);
+        return crate::render_window::reparent_render_window(
+            destination,
+            handles.child_window as *mut _,
+        );
         #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
         false
     }
@@ -5906,9 +6595,16 @@ impl GMainWindow {
     /// GTK part of MainWindow::ToggleWindowMode. The caller updates/persists
     /// the checkable setting only after this transition succeeds.
     fn switch_render_host(self: &Rc<Self>, single_window: bool) -> bool {
-        if single_window == self.detached_render_host.borrow().is_none() { return true; }
+        if single_window == self.detached_render_host.borrow().is_none() {
+            return true;
+        }
         #[cfg(target_os = "linux")]
-        if self.render.borrow().as_ref().is_some_and(|render| render.wayland.is_some()) {
+        if self
+            .render
+            .borrow()
+            .as_ref()
+            .is_some_and(|render| render.wayland.is_some())
+        {
             // Reject before touching fullscreen, input or either GTK host.
             // See WaylandRenderWindow::reparent for the compositor failure.
             log::warn!("Stop emulation before changing window mode on native Wayland");
@@ -5918,7 +6614,9 @@ impl GMainWindow {
         let fullscreen = self.pre_fullscreen_state.borrow().is_some();
         // Restore the old host before moving the surface; otherwise its saved
         // maximize state would accidentally be restored onto the new host.
-        if fullscreen { self.set_fullscreen(false); }
+        if fullscreen {
+            self.set_fullscreen(false);
+        }
         let changed = self.switch_render_host_inner(single_window);
         if fullscreen {
             self.set_fullscreen(true);
@@ -5934,17 +6632,24 @@ impl GMainWindow {
         self.stop_mouse_constraint();
         self.release_all_input();
         if single_window {
-            if !self.reparent_render_to(self.window.upcast_ref()) { return false; }
+            if !self.reparent_render_to(self.window.upcast_ref()) {
+                return false;
+            }
             let previous = self.detached_render_host.borrow_mut().take().unwrap();
-            self.software_keyboard_frontend.set_parent(self.window.upcast_ref());
-            self.error_applet_frontend.set_parent(self.window.upcast_ref());
+            self.software_keyboard_frontend
+                .set_parent(self.window.upcast_ref());
+            self.error_applet_frontend
+                .set_parent(self.window.upcast_ref());
             self.place_loading_screen();
             previous.window.destroy();
         } else {
             let geometry = self.saved_render_window_geometry.get().unwrap_or(
                 crate::uisettings::WindowGeometry {
-                    width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT, maximized: false,
-                });
+                    width: DEFAULT_WIDTH,
+                    height: DEFAULT_HEIGHT,
+                    maximized: false,
+                },
+            );
             let window = gtk::Window::builder()
                 .application(&self.window.application().expect("main application"))
                 .display(&gtk::prelude::WidgetExt::display(&self.window))
@@ -5954,7 +6659,9 @@ impl GMainWindow {
                 .build();
             #[cfg(target_os = "windows")]
             preserve_native_maximized_size(&window);
-            if geometry.maximized { window.maximize(); }
+            if geometry.maximized {
+                window.maximize();
+            }
             let area = gtk::Box::new(gtk::Orientation::Vertical, 0);
             area.add_css_class("ruzu-render-bg");
             area.set_hexpand(true);
@@ -5969,25 +6676,42 @@ impl GMainWindow {
             self.install_input_handlers(&window);
             self.install_render_visibility_handlers(&window);
             self.install_fullscreen_handler(&window);
-            window.connect_close_request(glib::clone!(#[weak(rename_to = this)] self,
-                #[upgrade_or] glib::Propagation::Stop, move |window| {
+            window.connect_close_request(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                #[upgrade_or]
+                glib::Propagation::Stop,
+                move |window| {
                     if this.session.borrow().is_some() {
                         this.on_stop_game();
                     } else {
                         window.set_visible(false);
                     }
                     glib::Propagation::Stop
-                }));
-            window.connect_is_active_notify(glib::clone!(#[weak(rename_to = this)] self, move |_| {
-                glib::idle_add_local_once(glib::clone!(#[weak] this,
-                    move || this.on_app_focus_state_changed()));
-            }));
+                }
+            ));
+            window.connect_is_active_notify(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_| {
+                    glib::idle_add_local_once(glib::clone!(
+                        #[weak]
+                        this,
+                        move || this.on_app_focus_state_changed()
+                    ));
+                }
+            ));
             #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
-            area.add_tick_callback(glib::clone!(#[weak(rename_to = this)] self,
-                #[upgrade_or] glib::ControlFlow::Break, move |_, _| {
+            area.add_tick_callback(glib::clone!(
+                #[weak(rename_to = this)]
+                self,
+                #[upgrade_or]
+                glib::ControlFlow::Break,
+                move |_, _| {
                     this.maybe_resize_render();
                     glib::ControlFlow::Continue
-                }));
+                }
+            ));
             *self.detached_render_host.borrow_mut() = Some(DetachedRenderHost { window, area });
             let parent = self.render_host().0;
             self.software_keyboard_frontend.set_parent(&parent);
@@ -6011,16 +6735,25 @@ impl GMainWindow {
     fn place_loading_screen(&self) {
         let widget = self.loading_screen.widget();
         if let Some(parent) = widget.parent() {
-            if let Some(stack) = parent.downcast_ref::<gtk::Stack>() { stack.remove(widget); }
-            else if let Some(container) = parent.downcast_ref::<gtk::Box>() { container.remove(widget); }
+            if let Some(stack) = parent.downcast_ref::<gtk::Stack>() {
+                stack.remove(widget);
+            } else if let Some(container) = parent.downcast_ref::<gtk::Box>() {
+                container.remove(widget);
+            }
         }
         if let Some(host) = self.detached_render_host.borrow().as_ref() {
             host.area.append(widget);
             self.stack.set_visible_child_name(PAGE_GAME_LIST);
         } else {
             self.stack.add_named(widget, Some(PAGE_LOADING));
-            self.stack.set_visible_child_name(if self.render_page_visible.get() { PAGE_RENDER }
-                else if self.session.borrow().is_some() { PAGE_LOADING } else { PAGE_GAME_LIST });
+            self.stack
+                .set_visible_child_name(if self.render_page_visible.get() {
+                    PAGE_RENDER
+                } else if self.session.borrow().is_some() {
+                    PAGE_LOADING
+                } else {
+                    PAGE_GAME_LIST
+                });
         }
     }
 
@@ -6030,9 +6763,15 @@ impl GMainWindow {
     }
 
     fn present_render_host_for_boot(&self) {
-        let window = self.detached_render_host.borrow().as_ref().map(|host| host.window.clone());
+        let window = self
+            .detached_render_host
+            .borrow()
+            .as_ref()
+            .map(|host| host.window.clone());
         if let Some(window) = window {
-            if !window.get_visible() { window.present(); }
+            if !window.get_visible() {
+                window.present();
+            }
         }
     }
 
@@ -6041,14 +6780,22 @@ impl GMainWindow {
     /// than persisting the temporary borderless-fullscreen rectangle.
     fn save_main_window_geometry(&self) {
         if self.window.is_fullscreen()
-            || self.pre_fullscreen_state.borrow().as_ref().is_some_and(|(window, _)|
-                window == self.window.upcast_ref::<gtk::Window>()) {
+            || self
+                .pre_fullscreen_state
+                .borrow()
+                .as_ref()
+                .is_some_and(|(window, _)| window == self.window.upcast_ref::<gtk::Window>())
+        {
             return;
         }
         let (width, height) = self.window.default_size();
-        if width <= 0 || height <= 0 { return; }
+        if width <= 0 || height <= 0 {
+            return;
+        }
         let geometry = crate::uisettings::WindowGeometry {
-            width, height, maximized: self.window.is_maximized(),
+            width,
+            height,
+            maximized: self.window.is_maximized(),
         };
         if let Err(error) = crate::uisettings::save_main_window_state(geometry) {
             log::warn!("Cannot save main window geometry: {error}");
@@ -6058,15 +6805,25 @@ impl GMainWindow {
     /// BackupGeometry / SaveWindowState for the detached GTK host. GTK's
     /// default-size properties retain the normal size while maximized.
     fn save_render_window_geometry(&self) {
-        if self.pre_fullscreen_state.borrow().is_some() { return; }
+        if self.pre_fullscreen_state.borrow().is_some() {
+            return;
+        }
         let geometry = {
             let host = self.detached_render_host.borrow();
-            let Some(host) = host.as_ref() else { return; };
-            if host.window.is_fullscreen() { return; }
+            let Some(host) = host.as_ref() else {
+                return;
+            };
+            if host.window.is_fullscreen() {
+                return;
+            }
             let (width, height) = host.window.default_size();
-            if width <= 0 || height <= 0 { return; }
+            if width <= 0 || height <= 0 {
+                return;
+            }
             crate::uisettings::WindowGeometry {
-                width, height, maximized: host.window.is_maximized(),
+                width,
+                height,
+                maximized: host.window.is_maximized(),
             }
         };
         self.saved_render_window_geometry.set(Some(geometry));
@@ -6078,23 +6835,35 @@ impl GMainWindow {
     /// GRenderWindow::IsShown follows the render host, not the launcher when
     /// detached. Map/unmap signals from an inactive host must not pause video.
     fn install_render_visibility_handlers(self: &Rc<Self>, window: &gtk::Window) {
-        window.connect_map(glib::clone!(#[weak(rename_to = this)] self, move |window| {
-            if !this.is_render_input_source(Some(window.clone().upcast())) { return; }
-            #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
-            {
-                this.render_geometry.set(None);
-                this.maybe_resize_render();
+        window.connect_map(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |window| {
+                if !this.is_render_input_source(Some(window.clone().upcast())) {
+                    return;
+                }
+                #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
+                {
+                    this.render_geometry.set(None);
+                    this.maybe_resize_render();
+                }
+                if let Some(handles) = this.render.borrow().as_ref() {
+                    handles.emu_window.set_shown(true);
+                };
             }
-            if let Some(handles) = this.render.borrow().as_ref() {
-                handles.emu_window.set_shown(true);
-            };
-        }));
-        window.connect_unmap(glib::clone!(#[weak(rename_to = this)] self, move |window| {
-            if !this.is_render_input_source(Some(window.clone().upcast())) { return; }
-            if let Some(handles) = this.render.borrow().as_ref() {
-                handles.emu_window.set_shown(false);
-            };
-        }));
+        ));
+        window.connect_unmap(glib::clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |window| {
+                if !this.is_render_input_source(Some(window.clone().upcast())) {
+                    return;
+                }
+                if let Some(handles) = this.render.borrow().as_ref() {
+                    handles.emu_window.set_shown(false);
+                };
+            }
+        ));
     }
 
     fn is_render_input_source(&self, source: Option<gtk::Widget>) -> bool {
@@ -6151,7 +6920,12 @@ impl GMainWindow {
     /// window to the stack's new bounds and rebuild the frame layout.
     #[cfg(target_os = "linux")]
     fn maybe_resize_render(&self) {
-        if let Some(window) = self.render.borrow().as_ref().and_then(|handles| handles.wayland.as_ref()) {
+        if let Some(window) = self
+            .render
+            .borrow()
+            .as_ref()
+            .and_then(|handles| handles.wayland.as_ref())
+        {
             window.dispatch_pending();
         }
         let (render_host, render_area) = self.render_host();
@@ -6179,13 +6953,16 @@ impl GMainWindow {
             rect.width() as f64,
             rect.height() as f64,
         );
-        let size = if let Some(window) = &handles.wayland { window.resize(gr) } else {
+        let size = if let Some(window) = &handles.wayland {
+            window.resize(gr)
+        } else {
             crate::render_window_x11::resize_render_window(
-            &render_host,
-            handles.display as *mut _,
-            handles.child_window as u64,
-            gr,
-        ) };
+                &render_host,
+                handles.display as *mut _,
+                handles.child_window as u64,
+                gr,
+            )
+        };
         if let Some((dw, dh)) = size {
             self.render_geometry.set(Some(geometry));
             handles.emu_window.update_framebuffer_layout(dw, dh);
@@ -6273,7 +7050,9 @@ impl GMainWindow {
         if self.session_generation.get() != generation || self.shutdown_dialog.borrow().is_some() {
             return;
         }
-        if self.render.borrow().is_none() { return; }
+        if self.render.borrow().is_none() {
+            return;
+        }
         self.render_page_visible.set(true);
         if self.detached_render_host.borrow().is_some() {
             self.stack.set_visible_child_name(PAGE_GAME_LIST);
@@ -6287,40 +7066,70 @@ impl GMainWindow {
             return;
         }
         let render = self.render.borrow();
-        let Some(handles) = render.as_ref() else { return; };
+        let Some(handles) = render.as_ref() else {
+            return;
+        };
         #[cfg(target_os = "linux")]
-        handles.set_hidden(self.detached_render_host.borrow().is_none() && crate::util::inline_menu::render_suppressed());
+        handles.set_hidden(
+            self.detached_render_host.borrow().is_none()
+                && crate::util::inline_menu::render_suppressed(),
+        );
         #[cfg(target_os = "windows")]
         crate::render_window_windows::set_render_window_hidden(handles.child_window as _, false);
         #[cfg(target_os = "macos")]
         crate::render_window::set_render_view_hidden(handles.child_window as *mut _, false);
-        handles.emu_window.set_shown(self.render_host().0.is_mapped());
+        handles
+            .emu_window
+            .set_shown(self.render_host().0.is_mapped());
     }
 
     /// Upstream MainWindow::OnAppFocusStateChanged. GTK windows include modal
     /// frontend dialogs, so moving focus within Ruzu is not backgrounding it.
     fn on_app_focus_state_changed(&self) {
-        let Some(paused) = self.session.borrow().as_ref().map(EmulationSession::is_paused) else {
+        let Some(paused) = self
+            .session
+            .borrow()
+            .as_ref()
+            .map(EmulationSession::is_paused)
+        else {
             return;
         };
-        let active = gtk::Window::list_toplevels().iter()
+        let active = gtk::Window::list_toplevels()
+            .iter()
             .filter_map(|widget| widget.downcast_ref::<gtk::Window>())
             .any(|window| window.is_active());
-        let (pause_background, mute_background) = crate::uisettings::with(|v| (
-            *v.pause_when_in_background.get_value(),
-            *v.mute_when_in_background.get_value(),
-        ));
-        let (pause, auto_pause) = background_setting_transition(active, pause_background, paused, self.auto_paused.get());
+        let (pause_background, mute_background) = crate::uisettings::with(|v| {
+            (
+                *v.pause_when_in_background.get_value(),
+                *v.mute_when_in_background.get_value(),
+            )
+        });
+        let (pause, auto_pause) =
+            background_setting_transition(active, pause_background, paused, self.auto_paused.get());
         if pause != paused {
-            if pause { self.on_pause_game(); } else { self.on_start_game(); }
-            if self.session.borrow().as_ref().is_some_and(|session| session.is_paused() == pause) {
+            if pause {
+                self.on_pause_game();
+            } else {
+                self.on_start_game();
+            }
+            if self
+                .session
+                .borrow()
+                .as_ref()
+                .is_some_and(|session| session.is_paused() == pause)
+            {
                 self.auto_paused.set(auto_pause);
             }
         } else {
             self.auto_paused.set(auto_pause);
         }
         let mut values = common::settings::values_mut();
-        let (muted, auto_mute) = background_setting_transition(active, mute_background, *values.audio_muted.get_value(), self.auto_muted.get());
+        let (muted, auto_mute) = background_setting_transition(
+            active,
+            mute_background,
+            *values.audio_muted.get_value(),
+            self.auto_muted.get(),
+        );
         values.audio_muted.set_value(muted);
         self.auto_muted.set(auto_mute);
         drop(values);
@@ -6524,7 +7333,8 @@ impl GMainWindow {
         self.reset_software_keyboard();
 
         if let Some(app) = self.window.application() {
-            if self.pre_fullscreen_state.borrow().is_some() || self.render_host().0.is_fullscreen() {
+            if self.pre_fullscreen_state.borrow().is_some() || self.render_host().0.is_fullscreen()
+            {
                 self.set_fullscreen_action_state(&app, false);
                 crate::uisettings::with_mut(|values| values.fullscreen.set_value(false));
                 self.set_fullscreen(false);
@@ -6556,7 +7366,11 @@ impl GMainWindow {
         let restore_activation = !self.close_confirmed.get()
             && (self.window.is_active()
                 || self.render_host().0.is_active()
-                || self.shutdown_dialog.borrow().as_ref().is_some_and(|dialog| dialog.is_active()));
+                || self
+                    .shutdown_dialog
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|dialog| dialog.is_active()));
         self.finalize_camera();
         self.stop_mouse_constraint();
         if self.pre_fullscreen_state.borrow().is_some() {
@@ -6597,7 +7411,10 @@ impl GMainWindow {
             #[cfg(target_os = "linux")]
             if handles.wayland.is_none() {
                 crate::render_window_x11::destroy_render_window(
-                    handles.display as *mut _, handles.child_window as u64, handles.colormap);
+                    handles.display as *mut _,
+                    handles.child_window as u64,
+                    handles.colormap,
+                );
             }
             #[cfg(target_os = "macos")]
             crate::render_window::set_render_view_hidden(handles.child_window as *mut _, true);
@@ -6680,7 +7497,9 @@ impl GMainWindow {
         };
         let weak = Rc::downgrade(self);
         let timer = glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
-            let Some(this) = weak.upgrade() else { return glib::ControlFlow::Break; };
+            let Some(this) = weak.upgrade() else {
+                return glib::ControlFlow::Break;
+            };
             if !*common::settings::values().enable_ir_sensor.get_value() {
                 this.camera_timer.borrow_mut().take();
                 return glib::ControlFlow::Break;
@@ -6689,7 +7508,7 @@ impl GMainWindow {
             let height = driver.get_image_height();
             match capture.frame(width, height) {
                 Ok(Some(pixels)) => driver.set_camera_data(width, height, &pixels),
-                Ok(None) => {},
+                Ok(None) => {}
                 Err(error) => {
                     log::error!("Infrared camera capture stopped: {error}");
                     this.camera_timer.borrow_mut().take();
@@ -6765,7 +7584,9 @@ impl GMainWindow {
                     drop(session);
                     this.status_bar
                         .update_performance(results, shaders_building);
-                    if let (Some(results), Some(overlay)) = (results, this.perf_overlay.borrow().as_ref()) {
+                    if let (Some(results), Some(overlay)) =
+                        (results, this.perf_overlay.borrow().as_ref())
+                    {
                         overlay.update_stats(&results);
                     }
                     this.refresh_tas_ui();
@@ -7169,14 +7990,14 @@ pub fn check_dark_mode() -> bool {
     }
     #[cfg(not(target_os = "windows"))]
     {
-    if let Some(prefers_dark) = portal_color_scheme() {
-        return prefers_dark;
-    }
+        if let Some(prefers_dark) = portal_color_scheme() {
+            return prefers_dark;
+        }
 
-    gtk::Settings::default()
-        .and_then(|settings| settings.gtk_theme_name())
-        .map(|name| name.to_lowercase().ends_with("-dark"))
-        .unwrap_or(false)
+        gtk::Settings::default()
+            .and_then(|settings| settings.gtk_theme_name())
+            .map(|name| name.to_lowercase().ends_with("-dark"))
+            .unwrap_or(false)
     }
 }
 
@@ -7184,13 +8005,21 @@ pub fn check_dark_mode() -> bool {
 fn windows_apps_prefer_dark() -> bool {
     use windows_sys::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD};
     let key: Vec<u16> = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize\0"
-        .encode_utf16().collect();
+        .encode_utf16()
+        .collect();
     let name: Vec<u16> = "AppsUseLightTheme\0".encode_utf16().collect();
     let mut value = 1u32;
     let mut size = std::mem::size_of::<u32>() as u32;
     let status = unsafe {
-        RegGetValueW(HKEY_CURRENT_USER, key.as_ptr(), name.as_ptr(), RRF_RT_REG_DWORD,
-            std::ptr::null_mut(), (&mut value as *mut u32).cast(), &mut size)
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            key.as_ptr(),
+            name.as_ptr(),
+            RRF_RT_REG_DWORD,
+            std::ptr::null_mut(),
+            (&mut value as *mut u32).cast(),
+            &mut size,
+        )
     };
     windows_theme_is_dark(status, value)
 }
@@ -7327,13 +8156,26 @@ pub fn update_ui_theme() {
 #[cfg(target_os = "windows")]
 fn apply_windows_title_bar_dark_mode(hwnd: windows_sys::Win32::Foundation::HWND, enabled: bool) {
     use windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute;
-    if hwnd.is_null() { return; }
+    if hwnd.is_null() {
+        return;
+    }
     let value = i32::from(enabled);
     unsafe {
-        if DwmSetWindowAttribute(hwnd, 20, (&value as *const i32).cast(), size_of::<i32>() as u32) >= 0 {
+        if DwmSetWindowAttribute(
+            hwnd,
+            20,
+            (&value as *const i32).cast(),
+            size_of::<i32>() as u32,
+        ) >= 0
+        {
             return;
         }
-        DwmSetWindowAttribute(hwnd, 19, (&value as *const i32).cast(), size_of::<i32>() as u32);
+        DwmSetWindowAttribute(
+            hwnd,
+            19,
+            (&value as *const i32).cast(),
+            size_of::<i32>() as u32,
+        );
     }
 }
 
@@ -7380,7 +8222,9 @@ fn apply_global_dark_titlebar(dark: bool) {
     }
     for index in 0..windows.n_items() {
         if let Some(window) = windows.item(index).and_downcast::<gtk::Window>() {
-            if install { attach(&window); }
+            if install {
+                attach(&window);
+            }
             apply_current(&window);
         }
     }
@@ -7398,28 +8242,47 @@ thread_local! {
 /// Only compensate scaling missing from GTK; do not apply native DPI twice.
 #[cfg(any(target_os = "windows", test))]
 fn automatic_font_percent(dpi: u32, surface_scale: f64, font_dpi: f64) -> u32 {
-    if dpi == 0 || !surface_scale.is_finite() || surface_scale <= 0.0 { return 100; }
-    let font_dpi = if font_dpi.is_finite() && font_dpi > 0.0 { font_dpi } else { 96.0 };
-    (100.0 * dpi as f64 / (surface_scale * font_dpi)).round().clamp(50.0, 200.0) as u32
+    if dpi == 0 || !surface_scale.is_finite() || surface_scale <= 0.0 {
+        return 100;
+    }
+    let font_dpi = if font_dpi.is_finite() && font_dpi > 0.0 {
+        font_dpi
+    } else {
+        96.0
+    };
+    (100.0 * dpi as f64 / (surface_scale * font_dpi))
+        .round()
+        .clamp(50.0, 200.0) as u32
 }
 
 pub(crate) fn automatic_interface_font_scale(window: Option<&gtk::Window>) -> u32 {
     #[cfg(target_os = "windows")]
     {
-        let target = window.cloned().or_else(|| gtk::Window::list_toplevels().into_iter()
-            .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
-            .find(|window| window.is_active() && window.surface().is_some())
-            .or_else(|| gtk::Window::list_toplevels().into_iter()
+        let target = window.cloned().or_else(|| {
+            gtk::Window::list_toplevels()
+                .into_iter()
                 .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
-                .find(|window| window.surface().is_some())));
+                .find(|window| window.is_active() && window.surface().is_some())
+                .or_else(|| {
+                    gtk::Window::list_toplevels()
+                        .into_iter()
+                        .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
+                        .find(|window| window.surface().is_some())
+                })
+        });
         if let Some(surface) = target.and_then(|w| w.surface()) {
-            let dpi = unsafe { windows_sys::Win32::UI::HiDpi::GetDpiForWindow(windows_surface_handle(&surface)) };
-            let font_dpi = gtk::Settings::default().map_or(-1.0, |s| s.gtk_xft_dpi() as f64 / 1024.0);
+            let dpi = unsafe {
+                windows_sys::Win32::UI::HiDpi::GetDpiForWindow(windows_surface_handle(&surface))
+            };
+            let font_dpi =
+                gtk::Settings::default().map_or(-1.0, |s| s.gtk_xft_dpi() as f64 / 1024.0);
             // Runtime lookup retains the GTK 4.6 minimum while using a true
             // fractional scale when supported by a newer GDK backend.
             let scale = if surface.find_property("scale").is_some() {
                 surface.property::<f64>("scale")
-            } else { surface.scale_factor() as f64 };
+            } else {
+                surface.scale_factor() as f64
+            };
             return automatic_font_percent(dpi, scale, font_dpi);
         }
     }
@@ -7429,7 +8292,9 @@ pub(crate) fn automatic_interface_font_scale(window: Option<&gtk::Window>) -> u3
 }
 
 fn watch_interface_font_scale() {
-    if UI_FONT_WATCHING.with(|watching| watching.replace(true)) { return; }
+    if UI_FONT_WATCHING.with(|watching| watching.replace(true)) {
+        return;
+    }
     fn attach(window: &gtk::Window) {
         window.connect_realize(|_| refresh_interface_font_scale());
         window.connect_map(|_| refresh_interface_font_scale());
@@ -7437,11 +8302,15 @@ fn watch_interface_font_scale() {
     let windows = gtk::Window::toplevels();
     windows.connect_items_changed(|windows, start, _, count| {
         for index in start..start + count {
-            if let Some(window) = windows.item(index).and_downcast::<gtk::Window>() { attach(&window); }
+            if let Some(window) = windows.item(index).and_downcast::<gtk::Window>() {
+                attach(&window);
+            }
         }
     });
     for index in 0..windows.n_items() {
-        if let Some(window) = windows.item(index).and_downcast::<gtk::Window>() { attach(&window); }
+        if let Some(window) = windows.item(index).and_downcast::<gtk::Window>() {
+            attach(&window);
+        }
     }
     // GTK Win32 truncates 125/150/175% to scale-factor=1, so scale-factor
     // notifications alone cannot detect moves between these monitors.
@@ -7453,8 +8322,12 @@ fn watch_interface_font_scale() {
 }
 
 fn refresh_interface_font_scale() {
-    let (automatic, manual) = crate::uisettings::with(|v| (*v.font_scale_auto.get_value(), *v.font_scale.get_value()));
-    if !automatic { install_ui_font_scale(manual); return; }
+    let (automatic, manual) =
+        crate::uisettings::with(|v| (*v.font_scale_auto.get_value(), *v.font_scale.get_value()));
+    if !automatic {
+        install_ui_font_scale(manual);
+        return;
+    }
     let windows = gtk::Window::toplevels();
     let mut percentages = std::collections::BTreeSet::new();
     for index in 0..windows.n_items() {
@@ -7462,9 +8335,13 @@ fn refresh_interface_font_scale() {
             let percent = automatic_interface_font_scale(Some(&window));
             let class = format!("ruzu-auto-font-{percent}");
             for old in window.css_classes() {
-                if old.starts_with("ruzu-auto-font-") && old != class { window.remove_css_class(&old); }
+                if old.starts_with("ruzu-auto-font-") && old != class {
+                    window.remove_css_class(&old);
+                }
             }
-            if !window.has_css_class(&class) { window.add_css_class(&class); }
+            if !window.has_css_class(&class) {
+                window.add_css_class(&class);
+            }
             percentages.insert(percent);
         }
     }
@@ -7472,9 +8349,16 @@ fn refresh_interface_font_scale() {
 }
 
 fn automatic_interface_font_css(percentages: std::collections::BTreeSet<u32>) -> String {
-    percentages.into_iter().filter(|p| *p != 100).map(|p|
-        format!(".ruzu-auto-font-{p}, .ruzu-auto-font-{p} * {{ font-size: {:.2}rem; }}\n", p as f64 / 100.0)
-    ).collect::<String>()
+    percentages
+        .into_iter()
+        .filter(|p| *p != 100)
+        .map(|p| {
+            format!(
+                ".ruzu-auto-font-{p}, .ruzu-auto-font-{p} * {{ font-size: {:.2}rem; }}\n",
+                p as f64 / 100.0
+            )
+        })
+        .collect::<String>()
 }
 
 /// GTK frontend extension based on GIMP app/gui/themes.c, themes_apply_theme.
@@ -7490,13 +8374,19 @@ fn install_ui_font_scale(percent: u32) {
 }
 
 fn replace_interface_font_css(css: &str) {
-    let Some(display) = gtk::gdk::Display::default() else { return; };
+    let Some(display) = gtk::gdk::Display::default() else {
+        return;
+    };
     let changed = UI_FONT_SIGNATURE.with(|signature| {
-        if *signature.borrow() == css { return false; }
+        if *signature.borrow() == css {
+            return false;
+        }
         *signature.borrow_mut() = css.to_owned();
         true
     });
-    if !changed { return; }
+    if !changed {
+        return;
+    }
     UI_FONT_CSS.with(|slot| {
         if let Some(previous) = slot.borrow_mut().take() {
             gtk::style_context_remove_provider_for_display(&display, &previous);
@@ -7505,7 +8395,10 @@ fn replace_interface_font_css(css: &str) {
             let provider = gtk::CssProvider::new();
             provider.load_from_data(css);
             gtk::style_context_add_provider_for_display(
-                &display, &provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 3);
+                &display,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 3,
+            );
             *slot.borrow_mut() = Some(provider);
         }
     });
@@ -7517,9 +8410,15 @@ mod interface_font_tests {
 
     #[test]
     fn automatic_font_compensates_fractional_dpi_without_double_scaling() {
-        for (dpi, scale, expected) in [(96, 1.0, 100), (120, 1.0, 125),
-            (144, 1.0, 150), (168, 1.0, 175), (192, 2.0, 100),
-            (240, 2.0, 125), (288, 3.0, 100)] {
+        for (dpi, scale, expected) in [
+            (96, 1.0, 100),
+            (120, 1.0, 125),
+            (144, 1.0, 150),
+            (168, 1.0, 175),
+            (192, 2.0, 100),
+            (240, 2.0, 125),
+            (288, 3.0, 100),
+        ] {
             assert_eq!(automatic_font_percent(dpi, scale, 96.0), expected);
         }
         assert_eq!(automatic_font_percent(144, 1.5, 96.0), 100);
@@ -7531,7 +8430,10 @@ mod interface_font_tests {
     #[test]
     fn interface_font_scale_is_relative_bounded_and_resettable() {
         assert_eq!(interface_font_css(100), None);
-        assert_eq!(interface_font_css(150).as_deref(), Some("* { font-size: 1.50rem; }"));
+        assert_eq!(
+            interface_font_css(150).as_deref(),
+            Some("* { font-size: 1.50rem; }")
+        );
         assert_eq!(interface_font_css(0), interface_font_css(50));
         assert_eq!(interface_font_css(u32::MAX), interface_font_css(200));
     }
@@ -7546,7 +8448,9 @@ mod interface_font_tests {
         }
         gtk::init().unwrap();
         // Do not measure an intermediate font size during theme transitions.
-        gtk::Settings::default().unwrap().set_gtk_enable_animations(false);
+        gtk::Settings::default()
+            .unwrap()
+            .set_gtk_enable_animations(false);
         let window = gtk::Window::new();
         let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let label = gtk::Label::new(Some("Interface text"));
@@ -7571,11 +8475,15 @@ mod interface_font_tests {
         dialog.present();
         fn find_label(widget: &gtk::Widget) -> Option<gtk::Label> {
             if let Some(label) = widget.downcast_ref::<gtk::Label>() {
-                if label.text() == "Interface text" { return Some(label.clone()); }
+                if label.text() == "Interface text" {
+                    return Some(label.clone());
+                }
             }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(label) = find_label(&widget) { return Some(label); }
+                if let Some(label) = find_label(&widget) {
+                    return Some(label);
+                }
                 child = widget.next_sibling();
             }
             None
@@ -7587,22 +8495,35 @@ mod interface_font_tests {
             install_ui_font_scale(percent);
             let main_loop = glib::MainLoop::new(None, false);
             let done = main_loop.clone();
-            glib::timeout_add_local_once(std::time::Duration::from_millis(100), move || done.quit());
+            glib::timeout_add_local_once(std::time::Duration::from_millis(100), move || {
+                done.quit()
+            });
             main_loop.run();
             let height = label.layout().pixel_size().1;
-            eprintln!("percent={percent}: label={height}, button={}, menu={}, dialog={}",
-                button_label.layout().pixel_size().1, menu_label.layout().pixel_size().1,
-                dialog_label.layout().pixel_size().1);
-            assert_eq!(button_label.layout().pixel_size().1, height,
-                "nesting must not multiply relative font sizes");
-            heights.push([height, menu_label.layout().pixel_size().1,
-                dialog_label.layout().pixel_size().1]);
+            eprintln!(
+                "percent={percent}: label={height}, button={}, menu={}, dialog={}",
+                button_label.layout().pixel_size().1,
+                menu_label.layout().pixel_size().1,
+                dialog_label.layout().pixel_size().1
+            );
+            assert_eq!(
+                button_label.layout().pixel_size().1,
+                height,
+                "nesting must not multiply relative font sizes"
+            );
+            heights.push([
+                height,
+                menu_label.layout().pixel_size().1,
+                dialog_label.layout().pixel_size().1,
+            ]);
         }
         // Simulate two monitors: only the first window (and its popup) needs
         // fractional compensation. A global gtk-xft-dpi change would fail this.
         window.add_css_class("ruzu-auto-font-150");
         dialog.add_css_class("ruzu-auto-font-100");
-        replace_interface_font_css(&automatic_interface_font_css([100, 150].into_iter().collect()));
+        replace_interface_font_css(&automatic_interface_font_css(
+            [100, 150].into_iter().collect(),
+        ));
         let main_loop = glib::MainLoop::new(None, false);
         let done = main_loop.clone();
         glib::timeout_add_local_once(std::time::Duration::from_millis(100), move || done.quit());
@@ -7624,16 +8545,23 @@ mod interface_font_tests {
 }
 
 fn install_ui_theme_css(theme: &str) {
-    let Some(display) = gtk::gdk::Display::default() else { return; };
+    let Some(display) = gtk::gdk::Display::default() else {
+        return;
+    };
     UI_THEME_CSS.with(|slot| {
         if let Some(previous) = slot.borrow_mut().take() {
             gtk::style_context_remove_provider_for_display(&display, &previous);
         }
         if matches!(theme, "qdarkstyle_midnight_blue" | "colorful_midnight_blue") {
             let provider = gtk::CssProvider::new();
-            provider.load_from_data(include_str!("../resources/qt_themes/qdarkstyle_midnight_blue/style.css"));
-            gtk::style_context_add_provider_for_display(&display, &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 2);
+            provider.load_from_data(include_str!(
+                "../resources/qt_themes/qdarkstyle_midnight_blue/style.css"
+            ));
+            gtk::style_context_add_provider_for_display(
+                &display,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 2,
+            );
             *slot.borrow_mut() = Some(provider);
         }
     });
@@ -7657,10 +8585,15 @@ fn should_hide_mouse(render_visible: bool, enabled: bool) -> bool {
 
 // Files owned by MainWindow::OnConfigure's defaults reset. Never traverse
 // a symlink at a reset target, which might refer to another emulator's data.
-fn reset_configuration_files(config_dir: &std::path::Path, cache_dir: &std::path::Path) -> std::io::Result<()> {
+fn reset_configuration_files(
+    config_dir: &std::path::Path,
+    cache_dir: &std::path::Path,
+) -> std::io::Result<()> {
     for root in [config_dir, cache_dir] {
         if std::fs::symlink_metadata(root).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
-            return Err(std::io::Error::other("Refusing to reset a linked configuration/cache directory"));
+            return Err(std::io::Error::other(
+                "Refusing to reset a linked configuration/cache directory",
+            ));
         }
     }
     for (path, directory, keep_directory) in [
@@ -7701,9 +8634,9 @@ mod reset_configuration_tests {
         assert!(super::MENU_ACTION_NAMES.contains(&"load_home_menu"));
         assert!(super::APPLET_ACTIONS.contains(&"load_home_menu"));
         assert!(!super::RUNNING_ACTIONS.contains(&"load_home_menu"));
-        assert!(super::MENU_UI.contains(
-            "<attribute name=\"action\">app.load_home_menu</attribute>"
-        ));
+        assert!(
+            super::MENU_UI.contains("<attribute name=\"action\">app.load_home_menu</attribute>")
+        );
     }
 
     #[test]
@@ -7720,7 +8653,12 @@ mod reset_configuration_tests {
         let root = tempfile::tempdir().unwrap();
         let config = root.path().join("config");
         let cache = root.path().join("cache");
-        for directory in [config.join("custom"), config.join("input"), cache.join("game_list"), cache.join("shader")] {
+        for directory in [
+            config.join("custom"),
+            config.join("input"),
+            cache.join("game_list"),
+            cache.join("shader"),
+        ] {
             std::fs::create_dir_all(&directory).unwrap();
             std::fs::write(directory.join("synthetic"), "preserve or remove by owner").unwrap();
         }
@@ -7748,7 +8686,10 @@ mod reset_configuration_tests {
         std::os::unix::fs::symlink(&source, config.join("custom")).unwrap();
         reset_configuration_files(&config, &root.path().join("cache")).unwrap();
         assert!(source.join("synthetic").exists());
-        assert!(!std::fs::symlink_metadata(config.join("custom")).unwrap().file_type().is_symlink());
+        assert!(!std::fs::symlink_metadata(config.join("custom"))
+            .unwrap()
+            .file_type()
+            .is_symlink());
     }
 
     #[cfg(unix)]
@@ -7761,7 +8702,10 @@ mod reset_configuration_tests {
         let link = root.path().join("linked-config");
         std::os::unix::fs::symlink(&source, &link).unwrap();
         assert!(reset_configuration_files(&link, &root.path().join("cache")).is_err());
-        assert_eq!(std::fs::read_to_string(source.join("qt-config.ini")).unwrap(), "keep");
+        assert_eq!(
+            std::fs::read_to_string(source.join("qt-config.ini")).unwrap(),
+            "keep"
+        );
     }
 }
 
@@ -7777,20 +8721,37 @@ mod blue_accent_theme_tests {
         let errors = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
         let provider = gtk::CssProvider::new();
         let captured = errors.clone();
-        provider.connect_parsing_error(move |_, _, error| captured.borrow_mut().push(error.to_string()));
-        provider.load_from_data(include_str!("../resources/qt_themes/qdarkstyle_midnight_blue/style.css"));
+        provider.connect_parsing_error(move |_, _, error| {
+            captured.borrow_mut().push(error.to_string())
+        });
+        provider.load_from_data(include_str!(
+            "../resources/qt_themes/qdarkstyle_midnight_blue/style.css"
+        ));
         assert!(errors.borrow().is_empty(), "{:?}", errors.borrow());
         let window = gtk::Window::new();
-        for theme in ["Dark", "Midnight Blue", "Midnight Blue Colorful", "Default", "Midnight Blue", "Dark"] {
+        for theme in [
+            "Dark",
+            "Midnight Blue",
+            "Midnight Blue Colorful",
+            "Default",
+            "Midnight Blue",
+            "Dark",
+        ] {
             crate::uisettings::with_mut(|v| v.theme.set_value(theme.into()));
             super::update_ui_theme();
             let midnight = theme.starts_with("Midnight");
             super::UI_THEME_CSS.with(|slot| assert_eq!(slot.borrow().is_some(), midnight));
             if midnight {
-                assert_eq!(window.style_context().lookup_color("theme_bg_color"),
-                    Some(gtk::gdk::RGBA::parse("#19232D").unwrap()));
-                assert_eq!(window.style_context().lookup_color("theme_selected_bg_color"),
-                    Some(gtk::gdk::RGBA::parse("#1464A0").unwrap()));
+                assert_eq!(
+                    window.style_context().lookup_color("theme_bg_color"),
+                    Some(gtk::gdk::RGBA::parse("#19232D").unwrap())
+                );
+                assert_eq!(
+                    window
+                        .style_context()
+                        .lookup_color("theme_selected_bg_color"),
+                    Some(gtk::gdk::RGBA::parse("#1464A0").unwrap())
+                );
             }
         }
         window.close();
@@ -7815,7 +8776,10 @@ mod blue_accent_theme_tests {
             crate::uisettings::with_mut(|v| v.theme.set_value("Default".into()));
             super::update_ui_theme();
             assert_eq!(settings.gtk_theme_name(), original_name);
-            assert_eq!(settings.is_gtk_application_prefer_dark_theme(), original_dark);
+            assert_eq!(
+                settings.is_gtk_application_prefer_dark_theme(),
+                original_dark
+            );
         }
     }
 
@@ -8000,14 +8964,22 @@ fn update_recent_files_menu(section: &gio::Menu, files: &[String]) {
     section.remove_all();
     let recent = gio::Menu::new();
     for (index, path) in files.iter().take(MAX_RECENT_FILES_ITEM).enumerate() {
-        let filename = std::path::Path::new(path).file_name()
-            .map(|name| name.to_string_lossy()).unwrap_or_else(|| path.as_str().into());
-        let item = gio::MenuItem::new(Some(&format!("_{}. {}", index + 1, filename.replace('_', "__"))), None);
+        let filename = std::path::Path::new(path)
+            .file_name()
+            .map(|name| name.to_string_lossy())
+            .unwrap_or_else(|| path.as_str().into());
+        let item = gio::MenuItem::new(
+            Some(&format!("_{}. {}", index + 1, filename.replace('_', "__"))),
+            None,
+        );
         item.set_action_and_target_value(Some("app.open_recent_file"), Some(&path.to_variant()));
         recent.append_item(&item);
     }
     let clear = gio::Menu::new();
-    clear.append(Some(&crate::i18n::tr("_Clear Recent Files")), Some("app.clear_recent_files"));
+    clear.append(
+        Some(&crate::i18n::tr("_Clear Recent Files")),
+        Some("app.clear_recent_files"),
+    );
     recent.append_section(None, &clear);
     section.append_submenu(Some(&crate::i18n::tr("_Recent Files")), &recent);
 }
@@ -8024,7 +8996,13 @@ mod recent_files_tests {
         assert_eq!(files.len(), 10);
         assert_eq!(files[0], "/homebrew/demo5.nro");
         assert_eq!(files[1], "/homebrew/demo0.nro");
-        assert_eq!(files.iter().filter(|path| *path == "/homebrew/demo5.nro").count(), 1);
+        assert_eq!(
+            files
+                .iter()
+                .filter(|path| *path == "/homebrew/demo5.nro")
+                .count(),
+            1
+        );
         store_recent_file(&mut files, "/homebrew/new.nro");
         assert_eq!(files[0], "/homebrew/new.nro");
         assert_eq!(files[1], "/homebrew/demo5.nro");
@@ -8038,14 +9016,36 @@ mod recent_files_tests {
         update_recent_files_menu(&section, &[path.clone()]);
         let menu = section.item_link(0, gio::MENU_LINK_SUBMENU).unwrap();
         assert_eq!(menu.n_items(), 2);
-        assert_eq!(menu.item_attribute_value(0, "label", None).unwrap().get::<String>().unwrap(),
-            "_1. Free__Demo & friends.nro");
-        assert_eq!(menu.item_attribute_value(0, "target", None).unwrap().get::<String>().unwrap(), path);
-        assert_eq!(menu.item_attribute_value(0, "action", None).unwrap().get::<String>().unwrap(),
-            "app.open_recent_file");
+        assert_eq!(
+            menu.item_attribute_value(0, "label", None)
+                .unwrap()
+                .get::<String>()
+                .unwrap(),
+            "_1. Free__Demo & friends.nro"
+        );
+        assert_eq!(
+            menu.item_attribute_value(0, "target", None)
+                .unwrap()
+                .get::<String>()
+                .unwrap(),
+            path
+        );
+        assert_eq!(
+            menu.item_attribute_value(0, "action", None)
+                .unwrap()
+                .get::<String>()
+                .unwrap(),
+            "app.open_recent_file"
+        );
         let clear = menu.item_link(1, gio::MENU_LINK_SECTION).unwrap();
-        assert_eq!(clear.item_attribute_value(0, "action", None).unwrap().get::<String>().unwrap(),
-            "app.clear_recent_files");
+        assert_eq!(
+            clear
+                .item_attribute_value(0, "action", None)
+                .unwrap()
+                .get::<String>()
+                .unwrap(),
+            "app.clear_recent_files"
+        );
     }
 
     #[test]
@@ -8053,9 +9053,9 @@ mod recent_files_tests {
         let action = empty_recent_files_action();
         assert_eq!(action.name(), "recent_files");
         assert!(!action.is_enabled());
-        let label = MENU_UI.find(
-            "<attribute name=\"label\" translatable=\"yes\">_Recent Files</attribute>",
-        ).unwrap();
+        let label = MENU_UI
+            .find("<attribute name=\"label\" translatable=\"yes\">_Recent Files</attribute>")
+            .unwrap();
         let before = &MENU_UI[..label];
         assert!(before.trim_end().ends_with("<item>"));
         let entry = MENU_UI[label..].split_once("</item>").unwrap().0;
@@ -8094,13 +9094,23 @@ mod recent_files_tests {
 
         let label = find_label(popover.upcast_ref()).expect("Recent Files menu item");
         assert!(!label.is_sensitive());
-        crate::uisettings::with_mut(|values| values.recent_files = vec!["/homebrew/brick.nro".into()]);
+        crate::uisettings::with_mut(|values| {
+            values.recent_files = vec!["/homebrew/brick.nro".into()]
+        });
         let populated = build_menu_model();
         let file = populated.item_link(0, gio::MENU_LINK_SUBMENU).unwrap();
         let section = file.item_link(2, gio::MENU_LINK_SECTION).unwrap();
-        let submenu = section.item_link(0, gio::MENU_LINK_SUBMENU).expect("populated history submenu");
-        assert_eq!(submenu.item_attribute_value(0, "target", None).unwrap().get::<String>().unwrap(),
-            "/homebrew/brick.nro");
+        let submenu = section
+            .item_link(0, gio::MENU_LINK_SUBMENU)
+            .expect("populated history submenu");
+        assert_eq!(
+            submenu
+                .item_attribute_value(0, "target", None)
+                .unwrap()
+                .get::<String>()
+                .unwrap(),
+            "/homebrew/brick.nro"
+        );
         crate::uisettings::with_mut(|values| values.recent_files.clear());
         let cleared = build_menu_model();
         let file = cleared.item_link(0, gio::MENU_LINK_SUBMENU).unwrap();
@@ -8117,8 +9127,12 @@ mod recent_files_tests {
 #[cfg(target_os = "windows")]
 fn preserve_native_maximized_size(window: &gtk::Window) {
     window.connect_realize(|window| {
-        let Some(surface) = window.surface() else { return; };
-        let Ok(toplevel) = surface.clone().dynamic_cast::<gtk::gdk::Toplevel>() else { return; };
+        let Some(surface) = window.surface() else {
+            return;
+        };
+        let Ok(toplevel) = surface.clone().dynamic_cast::<gtk::gdk::Toplevel>() else {
+            return;
+        };
         // GTK 4.22 Win32: when Windows itself restores a maximized HWND (restore
         // button, caption double-click, drag from the caption), GDK keeps the
         // work-area size and ignores every later resize, so dragging an edge
@@ -8131,23 +9145,44 @@ fn preserve_native_maximized_size(window: &gtk::Window) {
             let was_zoomed = std::cell::Cell::new(false);
             surface.connect_layout(move |surface, _, _| {
                 let hwnd = windows_surface_handle(surface);
-                if hwnd.is_null() { return; }
-                let zoomed = unsafe { windows_sys::Win32::UI::WindowsAndMessaging::IsZoomed(hwnd) } != 0;
-                if !was_zoomed.replace(zoomed) || zoomed { return; }
-                let Some(window) = weak.upgrade() else { return; };
-                if window.is_fullscreen() { return; }
+                if hwnd.is_null() {
+                    return;
+                }
+                let zoomed =
+                    unsafe { windows_sys::Win32::UI::WindowsAndMessaging::IsZoomed(hwnd) } != 0;
+                if !was_zoomed.replace(zoomed) || zoomed {
+                    return;
+                }
+                let Some(window) = weak.upgrade() else {
+                    return;
+                };
+                if window.is_fullscreen() {
+                    return;
+                }
                 let weak = window.downgrade();
                 let restored_surface = surface.downgrade();
                 gtk::glib::idle_add_local_once(move || {
-                    let Some(window) = weak.upgrade() else { return; };
-                    let Some(surface) = restored_surface.upgrade() else { return; };
-                    if !window.is_mapped() || window.is_fullscreen()
-                        || window.surface().as_ref() != Some(&surface) { return; }
+                    let Some(window) = weak.upgrade() else {
+                        return;
+                    };
+                    let Some(surface) = restored_surface.upgrade() else {
+                        return;
+                    };
+                    if !window.is_mapped()
+                        || window.is_fullscreen()
+                        || window.surface().as_ref() != Some(&surface)
+                    {
+                        return;
+                    }
                     let hwnd = windows_surface_handle(&surface);
-                    if hwnd.is_null() || unsafe {
-                        windows_sys::Win32::UI::WindowsAndMessaging::IsZoomed(hwnd) != 0
-                            || windows_sys::Win32::UI::WindowsAndMessaging::IsIconic(hwnd) != 0
-                    } { return; }
+                    if hwnd.is_null()
+                        || unsafe {
+                            windows_sys::Win32::UI::WindowsAndMessaging::IsZoomed(hwnd) != 0
+                                || windows_sys::Win32::UI::WindowsAndMessaging::IsIconic(hwnd) != 0
+                        }
+                    {
+                        return;
+                    }
                     window.unmaximize();
                 });
             });
@@ -8163,17 +9198,31 @@ fn preserve_native_maximized_size(window: &gtk::Window) {
             let end = child.margin_end();
             let weak = window.downgrade();
             surface.connect_layout(move |surface, width, height| {
-                let Some(window) = weak.upgrade() else { return; };
-                let Some(child) = window.child() else { return; };
+                let Some(window) = weak.upgrade() else {
+                    return;
+                };
+                let Some(child) = window.child() else {
+                    return;
+                };
                 let hwnd = windows_surface_handle(surface);
-                let mut rect = windows_sys::Win32::Foundation::RECT { left: 0, top: 0, right: 0, bottom: 0 };
+                let mut rect = windows_sys::Win32::Foundation::RECT {
+                    left: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                };
                 if !hwnd.is_null()
                     && unsafe { windows_sys::Win32::UI::WindowsAndMessaging::IsIconic(hwnd) } == 0
-                    && unsafe { windows_sys::Win32::UI::WindowsAndMessaging::GetClientRect(hwnd, &mut rect) } != 0
-                    && rect.right > rect.left && rect.bottom > rect.top
+                    && unsafe {
+                        windows_sys::Win32::UI::WindowsAndMessaging::GetClientRect(hwnd, &mut rect)
+                    } != 0
+                    && rect.right > rect.left
+                    && rect.bottom > rect.top
                 {
                     let scale = surface.scale_factor().max(1);
-                    child.set_margin_bottom(bottom + (height - (rect.bottom - rect.top) / scale).max(0));
+                    child.set_margin_bottom(
+                        bottom + (height - (rect.bottom - rect.top) / scale).max(0),
+                    );
                     child.set_margin_end(end + (width - (rect.right - rect.left) / scale).max(0));
                 }
             });
@@ -8188,22 +9237,44 @@ fn preserve_native_maximized_size(window: &gtk::Window) {
         ) {
             use windows_sys::Win32::UI::WindowsAndMessaging::{GetClientRect, IsIconic, IsZoomed};
             let weak = &*data.cast::<gtk::glib::WeakRef<gtk::Window>>();
-            let Some(window) = weak.upgrade() else { return; };
-            if window.is_fullscreen() { return; }
-            let Some(surface) = window.surface() else { return; };
+            let Some(window) = weak.upgrade() else {
+                return;
+            };
+            if window.is_fullscreen() {
+                return;
+            }
+            let Some(surface) = window.surface() else {
+                return;
+            };
             let hwnd = windows_surface_handle(&surface);
-            if hwnd.is_null() || unsafe { IsZoomed(hwnd) == 0 || IsIconic(hwnd) != 0 } { return; }
-            let mut rect = windows_sys::Win32::Foundation::RECT { left: 0, top: 0, right: 0, bottom: 0 };
-            if unsafe { GetClientRect(hwnd, &mut rect) } != 0 && rect.right > rect.left && rect.bottom > rect.top {
+            if hwnd.is_null() || unsafe { IsZoomed(hwnd) == 0 || IsIconic(hwnd) != 0 } {
+                return;
+            }
+            let mut rect = windows_sys::Win32::Foundation::RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
+            if unsafe { GetClientRect(hwnd, &mut rect) } != 0
+                && rect.right > rect.left
+                && rect.bottom > rect.top
+            {
                 let scale = surface.scale_factor().max(1);
-                gtk::gdk::ffi::gdk_toplevel_size_set_size(size,
-                    (rect.right - rect.left) / scale, (rect.bottom - rect.top) / scale);
+                gtk::gdk::ffi::gdk_toplevel_size_set_size(
+                    size,
+                    (rect.right - rect.left) / scale,
+                    (rect.bottom - rect.top) / scale,
+                );
             }
         }
         unsafe {
             gtk::glib::signal::connect_raw(
-                toplevel.as_ptr().cast(), c"compute-size".as_ptr(),
-                Some(std::mem::transmute::<*const (), unsafe extern "C" fn()>(compute_size as *const ())),
+                toplevel.as_ptr().cast(),
+                c"compute-size".as_ptr(),
+                Some(std::mem::transmute::<*const (), unsafe extern "C" fn()>(
+                    compute_size as *const (),
+                )),
                 Box::into_raw(Box::new(window.downgrade())),
             );
         }
@@ -8214,7 +9285,9 @@ fn preserve_native_maximized_size(window: &gtk::Window) {
 fn windows_surface_handle(surface: &gtk::gdk::Surface) -> windows_sys::Win32::Foundation::HWND {
     #[link(name = "gtk-4")]
     extern "C" {
-        fn gdk_win32_surface_get_handle(surface: *mut std::ffi::c_void) -> windows_sys::Win32::Foundation::HWND;
+        fn gdk_win32_surface_get_handle(
+            surface: *mut std::ffi::c_void,
+        ) -> windows_sys::Win32::Foundation::HWND;
     }
     unsafe { gdk_win32_surface_get_handle(surface.as_ptr().cast()) }
 }
@@ -8227,18 +9300,23 @@ mod maximized_menu_tests {
     #[ignore = "requires a Windows GTK display and an isolated process"]
     fn native_restore_allows_resize_without_remaximizing() {
         use windows_sys::Win32::UI::WindowsAndMessaging::{
-            GetWindowRect, IsZoomed, SendMessageW, SetWindowPos, ShowWindow,
-            SC_RESTORE, SW_RESTORE, SWP_NOACTIVATE, SWP_NOZORDER, WM_SYSCOMMAND,
+            GetWindowRect, IsZoomed, SendMessageW, SetWindowPos, ShowWindow, SC_RESTORE,
+            SWP_NOACTIVATE, SWP_NOZORDER, SW_RESTORE, WM_SYSCOMMAND,
         };
         crate::configure_windows_native_decorations();
         crate::configure_windows_gsk_renderer();
         gtk::init().unwrap();
-        let window = gtk::Window::builder().default_width(800).default_height(600).build();
+        let window = gtk::Window::builder()
+            .default_width(800)
+            .default_height(600)
+            .build();
         preserve_native_maximized_size(&window);
         let settle = || {
             let main_loop = gtk::glib::MainLoop::new(None, false);
             let done = main_loop.clone();
-            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(300), move || done.quit());
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(300), move || {
+                done.quit()
+            });
             main_loop.run();
         };
         window.maximize();
@@ -8267,14 +9345,37 @@ mod maximized_menu_tests {
             }
             settle();
             assert!(!window.is_maximized());
-            assert!(!remaximized.get(), "restore must not temporarily maximize again");
-            assert_ne!(unsafe { SetWindowPos(hwnd, std::ptr::null_mut(), 150, 150, 1100, 700,
-                SWP_NOACTIVATE | SWP_NOZORDER) }, 0);
+            assert!(
+                !remaximized.get(),
+                "restore must not temporarily maximize again"
+            );
+            assert_ne!(
+                unsafe {
+                    SetWindowPos(
+                        hwnd,
+                        std::ptr::null_mut(),
+                        150,
+                        150,
+                        1100,
+                        700,
+                        SWP_NOACTIVATE | SWP_NOZORDER,
+                    )
+                },
+                0
+            );
             settle();
-            let mut rect = windows_sys::Win32::Foundation::RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            let mut rect = windows_sys::Win32::Foundation::RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
             assert_ne!(unsafe { GetWindowRect(hwnd, &mut rect) }, 0);
-            assert_eq!((rect.right - rect.left, rect.bottom - rect.top), (1100, 700),
-                "GDK must accept native resizing after restore");
+            assert_eq!(
+                (rect.right - rect.left, rect.bottom - rect.top),
+                (1100, 700),
+                "GDK must accept native resizing after restore"
+            );
             watching.set(false);
             window.maximize();
             settle();
@@ -8290,25 +9391,36 @@ mod maximized_menu_tests {
         gtk::init().unwrap();
         let directory = tempfile::tempdir().unwrap();
         common::fs::path_util::set_app_directory(directory.path().to_str().unwrap());
-        let app = Application::builder().application_id("org.ruzu.StopFocusTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.StopFocusTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         init_app_menu(&app);
         let main = GMainWindow::new_for_direct_game(&app);
         let settle = || {
             let main_loop = glib::MainLoop::new(None, false);
             let done = main_loop.clone();
-            glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || done.quit());
+            glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || {
+                done.quit()
+            });
             main_loop.run();
         };
-        use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, SetForegroundWindow};
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            GetForegroundWindow, SetForegroundWindow,
+        };
         main.window.present();
         settle();
         let hwnd = windows_surface_handle(&main.window.surface().unwrap());
-        assert_ne!(unsafe { SetForegroundWindow(hwnd) }, 0, "test must start in foreground");
+        assert_ne!(
+            unsafe { SetForegroundWindow(hwnd) },
+            0,
+            "test must start in foreground"
+        );
         settle();
         assert_eq!(unsafe { GetForegroundWindow() }, hwnd);
         *main.shutdown_dialog.borrow_mut() = Some(
-            crate::overlay_dialog::OverlayDialog::closing_software(&main.window));
+            crate::overlay_dialog::OverlayDialog::closing_software(&main.window),
+        );
         settle();
         assert!(main.shutdown_dialog.borrow().as_ref().unwrap().is_active());
         main.on_emulation_stopped(None);
@@ -8317,7 +9429,8 @@ mod maximized_menu_tests {
         assert_eq!(unsafe { GetForegroundWindow() }, hwnd);
 
         *main.shutdown_dialog.borrow_mut() = Some(
-            crate::overlay_dialog::OverlayDialog::closing_software(&main.window));
+            crate::overlay_dialog::OverlayDialog::closing_software(&main.window),
+        );
         settle();
         // Stand in for another application's window after a deliberate Alt+Tab.
         let other = gtk::Window::builder().title("Other window").build();
@@ -8343,7 +9456,9 @@ mod maximized_menu_tests {
         gtk::init().unwrap();
         let directory = tempfile::tempdir().unwrap();
         common::fs::path_util::set_app_directory(directory.path().to_str().unwrap());
-        let app = Application::builder().application_id("org.ruzu.MaximizedMenuTest").build();
+        let app = Application::builder()
+            .application_id("org.ruzu.MaximizedMenuTest")
+            .build();
         app.register(None::<&gio::Cancellable>).unwrap();
         init_app_menu(&app);
         apply_global_dark_titlebar(true);
@@ -8354,18 +9469,30 @@ mod maximized_menu_tests {
         let settle = || {
             let main_loop = gtk::glib::MainLoop::new(None, false);
             let done = main_loop.clone();
-            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || done.quit());
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || {
+                done.quit()
+            });
             main_loop.run();
         };
         settle();
         #[link(name = "gtk-4")]
         extern "C" {
-            fn gdk_win32_surface_get_handle(surface: *mut std::ffi::c_void) -> windows_sys::Win32::Foundation::HWND;
+            fn gdk_win32_surface_get_handle(
+                surface: *mut std::ffi::c_void,
+            ) -> windows_sys::Win32::Foundation::HWND;
         }
-        use windows_sys::Win32::UI::WindowsAndMessaging::{SendMessageW, IsZoomed, GetWindowRect, WM_SYSCOMMAND, SC_MAXIMIZE};
-        let hwnd = unsafe { gdk_win32_surface_get_handle(window.surface().unwrap().as_ptr().cast()) };
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            GetWindowRect, IsZoomed, SendMessageW, SC_MAXIMIZE, WM_SYSCOMMAND,
+        };
+        let hwnd =
+            unsafe { gdk_win32_surface_get_handle(window.surface().unwrap().as_ptr().cast()) };
         let native_rect = || {
-            let mut rect = windows_sys::Win32::Foundation::RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            let mut rect = windows_sys::Win32::Foundation::RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
             assert_ne!(unsafe { GetWindowRect(hwnd, &mut rect) }, 0);
             (rect.left, rect.top, rect.right, rect.bottom)
         };
@@ -8379,14 +9506,27 @@ mod maximized_menu_tests {
             assert!(bar.is_mapped(), "status bar must be mapped");
             let bounds = bar.compute_bounds(&window).unwrap();
             let surface = window.surface().unwrap();
-            let mut client = windows_sys::Win32::Foundation::RECT { left: 0, top: 0, right: 0, bottom: 0 };
-            unsafe { windows_sys::Win32::UI::WindowsAndMessaging::GetClientRect(hwnd, &mut client); }
+            let mut client = windows_sys::Win32::Foundation::RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
+            unsafe {
+                windows_sys::Win32::UI::WindowsAndMessaging::GetClientRect(hwnd, &mut client);
+            }
             assert!(bounds.height() > 0.0 && bounds.y() >= 0.0);
-            assert!(bounds.y() + bounds.height() <= (client.bottom / surface.scale_factor()) as f32,
-                "status bar {bounds:?} must fit in native client height {} at scale {}", client.bottom, surface.scale_factor());
+            assert!(
+                bounds.y() + bounds.height() <= (client.bottom / surface.scale_factor()) as f32,
+                "status bar {bounds:?} must fit in native client height {} at scale {}",
+                client.bottom,
+                surface.scale_factor()
+            );
         };
         // Exercise native maximize, as with the titlebar button, not just GTK's API.
-        unsafe { SendMessageW(hwnd, WM_SYSCOMMAND, SC_MAXIMIZE as usize, 0); }
+        unsafe {
+            SendMessageW(hwnd, WM_SYSCOMMAND, SC_MAXIMIZE as usize, 0);
+        }
         settle();
         let before = window.is_maximized();
         assert_status_visible();
@@ -8394,16 +9534,31 @@ mod maximized_menu_tests {
         let native_dark = |window: &gtk::Window| {
             let hwnd = windows_surface_handle(&window.surface().unwrap());
             let mut value = 0i32;
-            let result = unsafe { windows_sys::Win32::Graphics::Dwm::DwmGetWindowAttribute(
-                hwnd, 20, (&mut value as *mut i32).cast(), size_of::<i32>() as u32) };
+            let result = unsafe {
+                windows_sys::Win32::Graphics::Dwm::DwmGetWindowAttribute(
+                    hwnd,
+                    20,
+                    (&mut value as *mut i32).cast(),
+                    size_of::<i32>() as u32,
+                )
+            };
             assert!(result >= 0, "DWM dark-mode query failed: {result:#x}");
             value != 0
         };
-        assert!(native_dark(window.upcast_ref()), "new main window must inherit dark titlebar");
-        let dialog = gtk::Window::builder().transient_for(&window).title("Titlebar regression").build();
+        assert!(
+            native_dark(window.upcast_ref()),
+            "new main window must inherit dark titlebar"
+        );
+        let dialog = gtk::Window::builder()
+            .transient_for(&window)
+            .title("Titlebar regression")
+            .build();
         dialog.present();
         settle();
-        assert!(native_dark(&dialog), "new dialogs must inherit dark titlebars");
+        assert!(
+            native_dark(&dialog),
+            "new dialogs must inherit dark titlebars"
+        );
         apply_global_dark_titlebar(false);
         assert!(!native_dark(window.upcast_ref()));
         assert!(!native_dark(&dialog));
@@ -8412,7 +9567,11 @@ mod maximized_menu_tests {
         assert!(native_dark(&dialog));
         dialog.destroy();
         settle();
-        assert_eq!(native_rect(), rect_before, "theme changes must not alter maximized geometry");
+        assert_eq!(
+            native_rect(),
+            rect_before,
+            "theme changes must not alter maximized geometry"
+        );
         let item = menubar.first_child().unwrap();
         let activated = item.activate();
         settle();
@@ -8423,46 +9582,83 @@ mod maximized_menu_tests {
         let mut child = item.first_child();
         let mut popup_visible = false;
         while let Some(widget) = child {
-            if widget.is::<gtk::Popover>() && widget.is_mapped() { popup_visible = true; }
+            if widget.is::<gtk::Popover>() && widget.is_mapped() {
+                popup_visible = true;
+            }
             child = widget.next_sibling();
         }
         assert!(before, "test window must initially be maximized");
         assert!(activated && popup_visible, "File menu must be open");
         assert!(after, "opening File must preserve maximized state");
         assert!(native_after, "native HWND must remain maximized");
-        assert_eq!(rect_after, rect_before, "opening File must not move or shrink the maximized native window");
+        assert_eq!(
+            rect_after, rect_before,
+            "opening File must not move or shrink the maximized native window"
+        );
         let mut menu = menubar.first_child();
         while let Some(item) = menu {
             item.activate();
             settle();
-            assert_eq!(native_rect(), rect_before, "switching menus must preserve maximized geometry");
+            assert_eq!(
+                native_rect(),
+                rect_before,
+                "switching menus must preserve maximized geometry"
+            );
             let mut child = item.first_child();
             while let Some(widget) = child {
-                if let Some(popover) = widget.downcast_ref::<gtk::Popover>() { popover.popdown(); }
+                if let Some(popover) = widget.downcast_ref::<gtk::Popover>() {
+                    popover.popdown();
+                }
                 child = widget.next_sibling();
             }
             settle();
-            assert_eq!(native_rect(), rect_before, "closing menus must preserve maximized geometry");
+            assert_eq!(
+                native_rect(),
+                rect_before,
+                "closing menus must preserve maximized geometry"
+            );
             assert_status_visible();
             menu = item.next_sibling();
         }
-        unsafe { SendMessageW(hwnd, WM_SYSCOMMAND, windows_sys::Win32::UI::WindowsAndMessaging::SC_RESTORE as usize, 0); }
+        unsafe {
+            SendMessageW(
+                hwnd,
+                WM_SYSCOMMAND,
+                windows_sys::Win32::UI::WindowsAndMessaging::SC_RESTORE as usize,
+                0,
+            );
+        }
         settle();
         assert!(!window.is_maximized());
-        assert_eq!(native_rect(), normal_rect, "native restore must recover the original normal geometry");
+        assert_eq!(
+            native_rect(),
+            normal_rect,
+            "native restore must recover the original normal geometry"
+        );
         assert_status_visible();
         window.maximize();
         settle();
-        assert_eq!(native_rect(), rect_before, "GTK maximize must retain native geometry too");
+        assert_eq!(
+            native_rect(),
+            rect_before,
+            "GTK maximize must retain native geometry too"
+        );
         assert_status_visible();
         main.set_fullscreen(true);
         settle();
         assert!(window.is_fullscreen());
-        assert!(!main.status_bar.widget().is_mapped(), "fullscreen intentionally hides status bar");
+        assert!(
+            !main.status_bar.widget().is_mapped(),
+            "fullscreen intentionally hides status bar"
+        );
         main.set_fullscreen(false);
         settle();
         assert!(window.is_maximized());
-        assert_eq!(native_rect(), rect_before, "leaving fullscreen must restore maximized geometry");
+        assert_eq!(
+            native_rect(),
+            rect_before,
+            "leaving fullscreen must restore maximized geometry"
+        );
         assert_status_visible();
         // Exercise actual GTK stylesheet replacement, not just DWM attributes,
         // with the launcher page hidden as it is during emulation.
@@ -8473,17 +9669,29 @@ mod maximized_menu_tests {
             update_ui_theme();
             settle();
             assert_status_visible();
-            crate::gtk_compat::ask_question(Some(&window), "Ruzu",
-                "Are you sure you want to close ruzu?", "Cancel", "Close ruzu", |_| {});
+            crate::gtk_compat::ask_question(
+                Some(&window),
+                "Ruzu",
+                "Are you sure you want to close ruzu?",
+                "Cancel",
+                "Close ruzu",
+                |_| {},
+            );
             settle();
             let dialogs = gtk::Window::toplevels();
-            let question = (0..dialogs.n_items()).find_map(|index|
-                dialogs.item(index).and_downcast::<gtk::MessageDialog>()).unwrap();
-            assert_eq!(native_dark(question.upcast_ref()), native_dark(window.upcast_ref()),
-                "confirmation titlebar must match {theme}");
-            assert_eq!(question.style_context().lookup_color("theme_bg_color"),
+            let question = (0..dialogs.n_items())
+                .find_map(|index| dialogs.item(index).and_downcast::<gtk::MessageDialog>())
+                .unwrap();
+            assert_eq!(
+                native_dark(question.upcast_ref()),
+                native_dark(window.upcast_ref()),
+                "confirmation titlebar must match {theme}"
+            );
+            assert_eq!(
+                question.style_context().lookup_color("theme_bg_color"),
                 window.style_context().lookup_color("theme_bg_color"),
-                "confirmation palette must match {theme}");
+                "confirmation palette must match {theme}"
+            );
             question.response(gtk::ResponseType::Cancel);
             settle();
         }
@@ -8504,7 +9712,8 @@ fn build_menu_model_for_state(
     let menu_ui = menu_ui_for_state(state, is_paused);
     let translated = crate::i18n::translate_builder_xml(&menu_ui);
     let builder = gtk::Builder::from_string(&translated);
-    let recent = builder.object::<gio::Menu>("recent-files-section")
+    let recent = builder
+        .object::<gio::Menu>("recent-files-section")
         .expect("recent files section present");
     let files = crate::uisettings::with(|values| values.recent_files.clone());
     update_recent_files_menu(&recent, &files);

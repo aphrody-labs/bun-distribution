@@ -17,12 +17,12 @@
 pub mod ray_cast;
 
 use crate::{
-    backend::{ray::RayMap, HitData, PointerHits},
-    prelude::*,
     PickingSystems,
+    backend::{HitData, PointerHits, ray::RayMap},
+    prelude::*,
 };
 use bevy_app::prelude::*;
-use bevy_camera::{visibility::RenderLayers, Camera};
+use bevy_camera::{Camera, visibility::RenderLayers};
 use bevy_ecs::prelude::*;
 use bevy_reflect::prelude::*;
 use ray_cast::{MeshRayCast, MeshRayCastSettings, RayCastVisibility};

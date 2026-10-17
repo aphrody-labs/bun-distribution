@@ -44,7 +44,11 @@ pub struct KeysState {
 
 impl Default for KeysState {
     fn default() -> Self {
-        Self { maximized: None, saved_heights: None, icon_columns: 1 }
+        Self {
+            maximized: None,
+            saved_heights: None,
+            icon_columns: 1,
+        }
     }
 }
 
@@ -57,78 +61,288 @@ macro_rules! uic {
 /// Frontend commands added for keyboard parity. Panel-scoped keys are in the shortcut tables
 /// (`FILMCRAFT_PANEL`), so they have no application-wide default here.
 pub const COMMANDS: &[UiCommand] = &[
-    uic!("window.maximizeFrame", "Maximize or Restore Active Frame", [], Some("Shift+`")),
-    uic!("window.maximizeFrameUnderCursor", "Maximize or Restore Frame Under Cursor", [], Some("`")),
-    uic!("window.toggleFullScreen", "Toggle Full Screen", [], Some("Ctrl+`")),
-    uic!("window.nextPanel", "Select Next Panel", [], Some("Ctrl+Shift+.")),
-    uic!("window.prevPanel", "Select Previous Panel", [], Some("Ctrl+Shift+,")),
-    uic!("window.toggleMonitorFocus", "Toggle Source/Program Monitor Focus", [], None),
+    uic!(
+        "window.maximizeFrame",
+        "Maximize or Restore Active Frame",
+        [],
+        Some("Shift+`")
+    ),
+    uic!(
+        "window.maximizeFrameUnderCursor",
+        "Maximize or Restore Frame Under Cursor",
+        [],
+        Some("`")
+    ),
+    uic!(
+        "window.toggleFullScreen",
+        "Toggle Full Screen",
+        [],
+        Some("Ctrl+`")
+    ),
+    uic!(
+        "window.nextPanel",
+        "Select Next Panel",
+        [],
+        Some("Ctrl+Shift+.")
+    ),
+    uic!(
+        "window.prevPanel",
+        "Select Previous Panel",
+        [],
+        Some("Ctrl+Shift+,")
+    ),
+    uic!(
+        "window.toggleMonitorFocus",
+        "Toggle Source/Program Monitor Focus",
+        [],
+        None
+    ),
     uic!("window.openSearch", "Open Search", [], Some("Cmd+Shift+F")),
-    uic!("panel.selectFindBox", "Select Find Box", [], Some("Shift+F")),
-    uic!("window.workspace.learning", "Learning", ["Window", "Workspaces"], Some("Alt+Shift+7")),
-    uic!("window.workspace.review", "Review", ["Window", "Workspaces"], Some("Alt+Shift+8")),
-    uic!("view.programZoom100", "Zoom Program Monitor to 100%", [], Some("Cmd+Shift+1")),
-    uic!("view.programZoomFit", "Zoom Program Monitor to Fit", [], Some("Cmd+Shift+0")),
-    uic!("view.sourceZoom100", "Zoom Source Monitor to 100%", [], Some("Cmd+Alt+Shift+1")),
-    uic!("view.sourceZoomFit", "Zoom Source Monitor to Fit", [], Some("Cmd+Alt+Shift+0")),
-    uic!("playback.inToOutPreroll", "Play In to Out with Preroll/Postroll", [], Some("Shift+Space")),
-    uic!("playback.toOut", "Play from Playhead to Out Point", [], Some("Ctrl+Space")),
-    uic!("timeline.expandAllTracks", "Expand All Tracks", [], Some("Shift+=")),
-    uic!("timeline.minimizeAllTracks", "Minimize All Tracks", [], Some("Shift+-")),
-    uic!("timeline.increaseVideoHeight", "Increase Video Tracks Height", [], None),
-    uic!("timeline.decreaseVideoHeight", "Decrease Video Tracks Height", [], None),
-    uic!("timeline.increaseAudioHeight", "Increase Audio Tracks Height", [], None),
-    uic!("timeline.decreaseAudioHeight", "Decrease Audio Tracks Height", [], None),
+    uic!(
+        "panel.selectFindBox",
+        "Select Find Box",
+        [],
+        Some("Shift+F")
+    ),
+    uic!(
+        "window.workspace.learning",
+        "Learning",
+        ["Window", "Workspaces"],
+        Some("Alt+Shift+7")
+    ),
+    uic!(
+        "window.workspace.review",
+        "Review",
+        ["Window", "Workspaces"],
+        Some("Alt+Shift+8")
+    ),
+    uic!(
+        "view.programZoom100",
+        "Zoom Program Monitor to 100%",
+        [],
+        Some("Cmd+Shift+1")
+    ),
+    uic!(
+        "view.programZoomFit",
+        "Zoom Program Monitor to Fit",
+        [],
+        Some("Cmd+Shift+0")
+    ),
+    uic!(
+        "view.sourceZoom100",
+        "Zoom Source Monitor to 100%",
+        [],
+        Some("Cmd+Alt+Shift+1")
+    ),
+    uic!(
+        "view.sourceZoomFit",
+        "Zoom Source Monitor to Fit",
+        [],
+        Some("Cmd+Alt+Shift+0")
+    ),
+    uic!(
+        "playback.inToOutPreroll",
+        "Play In to Out with Preroll/Postroll",
+        [],
+        Some("Shift+Space")
+    ),
+    uic!(
+        "playback.toOut",
+        "Play from Playhead to Out Point",
+        [],
+        Some("Ctrl+Space")
+    ),
+    uic!(
+        "timeline.expandAllTracks",
+        "Expand All Tracks",
+        [],
+        Some("Shift+=")
+    ),
+    uic!(
+        "timeline.minimizeAllTracks",
+        "Minimize All Tracks",
+        [],
+        Some("Shift+-")
+    ),
+    uic!(
+        "timeline.increaseVideoHeight",
+        "Increase Video Tracks Height",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.decreaseVideoHeight",
+        "Decrease Video Tracks Height",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.increaseAudioHeight",
+        "Increase Audio Tracks Height",
+        [],
+        None
+    ),
+    uic!(
+        "timeline.decreaseAudioHeight",
+        "Decrease Audio Tracks Height",
+        [],
+        None
+    ),
     uic!("timeline.nextScreen", "Show Next Screen", [], None),
     uic!("timeline.prevScreen", "Show Previous Screen", [], None),
     uic!("projectPanel.viewList", "List", [], None),
     uic!("projectPanel.viewIcon", "Icon", [], None),
     uic!("projectPanel.toggleView", "Toggle View", [], None),
     uic!("projectPanel.hoverScrub", "Hover Scrub", [], None),
-    uic!("projectPanel.thumbnailLarger", "Thumbnail Size Next", [], None),
-    uic!("projectPanel.thumbnailSmaller", "Thumbnail Size Previous", [], None),
+    uic!(
+        "projectPanel.thumbnailLarger",
+        "Thumbnail Size Next",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.thumbnailSmaller",
+        "Thumbnail Size Previous",
+        [],
+        None
+    ),
     uic!("projectPanel.moveUp", "Move Selection Up", [], None),
     uic!("projectPanel.moveDown", "Move Selection Down", [], None),
     uic!("projectPanel.moveLeft", "Move Selection Left", [], None),
     uic!("projectPanel.moveRight", "Move Selection Right", [], None),
     uic!("projectPanel.moveHome", "Move Selection Home", [], None),
     uic!("projectPanel.moveEnd", "Move Selection End", [], None),
-    uic!("projectPanel.movePageUp", "Move Selection Page Up", [], None),
-    uic!("projectPanel.movePageDown", "Move Selection Page Down", [], None),
+    uic!(
+        "projectPanel.movePageUp",
+        "Move Selection Page Up",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.movePageDown",
+        "Move Selection Page Down",
+        [],
+        None
+    ),
     uic!("projectPanel.extendUp", "Extend Selection Up", [], None),
     uic!("projectPanel.extendDown", "Extend Selection Down", [], None),
     uic!("projectPanel.extendLeft", "Extend Selection Left", [], None),
-    uic!("projectPanel.extendRight", "Extend Selection Right", [], None),
+    uic!(
+        "projectPanel.extendRight",
+        "Extend Selection Right",
+        [],
+        None
+    ),
     uic!("projectPanel.markIn", "Mark In (Hover Scrub)", [], None),
     uic!("projectPanel.markOut", "Mark Out (Hover Scrub)", [], None),
     uic!("projectPanel.rename", "Rename", [], None),
     uic!("projectPanel.openBin", "Open Bin", [], None),
     uic!("projectPanel.up", "Up One Level", [], None),
     uic!("projectPanel.closeBinTab", "Close Bin", [], None),
-    uic!("projectPanel.metadataDisplay", "Metadata Display…", [], None),
-    uic!("projectPanel.saveViewPresetAs", "Save As New View Preset", [], None),
-    uic!("projectPanel.manageViewPresets", "Manage Saved View Presets", [], None),
-    uic!("projectPanel.freeformOptions", "Freeform View Options…", [], None),
-    uic!("projectPanel.saveArrangement", "Save Arrangement…", [], None),
-    uic!("projectPanel.revealProject", "Reveal Project in Finder…", [], None),
-    uic!("projectPanel.newPanel", "New Project Panel", ["Window"], None),
+    uic!(
+        "projectPanel.metadataDisplay",
+        "Metadata Display…",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.saveViewPresetAs",
+        "Save As New View Preset",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.manageViewPresets",
+        "Manage Saved View Presets",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.freeformOptions",
+        "Freeform View Options…",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.saveArrangement",
+        "Save Arrangement…",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.revealProject",
+        "Reveal Project in Finder…",
+        [],
+        None
+    ),
+    uic!(
+        "projectPanel.newPanel",
+        "New Project Panel",
+        ["Window"],
+        None
+    ),
     uic!("textPanel.prevWord", "Navigate to Previous Word", [], None),
     uic!("textPanel.nextWord", "Navigate to Next Word", [], None),
-    uic!("textPanel.selectPrevWord", "Select to Previous Word", [], None),
+    uic!(
+        "textPanel.selectPrevWord",
+        "Select to Previous Word",
+        [],
+        None
+    ),
     uic!("textPanel.selectNextWord", "Select to Next Word", [], None),
     uic!("textPanel.prevLine", "Navigate to Previous Line", [], None),
     uic!("textPanel.nextLine", "Navigate to Next Line", [], None),
-    uic!("textPanel.selectPrevLine", "Select to Previous Line", [], None),
+    uic!(
+        "textPanel.selectPrevLine",
+        "Select to Previous Line",
+        [],
+        None
+    ),
     uic!("textPanel.selectNextLine", "Select to Next Line", [], None),
-    uic!("textPanel.segmentStart", "Navigate to Start of Segment", [], None),
-    uic!("textPanel.segmentEnd", "Navigate to End of Segment", [], None),
-    uic!("textPanel.selectToSegmentStart", "Select to Segment Start", [], None),
-    uic!("textPanel.selectToSegmentEnd", "Select to Segment End", [], None),
+    uic!(
+        "textPanel.segmentStart",
+        "Navigate to Start of Segment",
+        [],
+        None
+    ),
+    uic!(
+        "textPanel.segmentEnd",
+        "Navigate to End of Segment",
+        [],
+        None
+    ),
+    uic!(
+        "textPanel.selectToSegmentStart",
+        "Select to Segment Start",
+        [],
+        None
+    ),
+    uic!(
+        "textPanel.selectToSegmentEnd",
+        "Select to Segment End",
+        [],
+        None
+    ),
     uic!("textPanel.delete", "Delete", [], None),
     uic!("textPanel.rippleDelete", "Ripple Delete", [], None),
-    uic!("textPanel.showProgramTranscript", "Show Program Transcript", [], None),
-    uic!("graphics.beginTextEditing", "Begin Text Editing for a Graphic Layer", [], Some("Cmd+Alt+'")),
-    uic!("help.filmcraftHelp", "FilmCraft Help…", ["Help"], Some("F1")),
+    uic!(
+        "textPanel.showProgramTranscript",
+        "Show Program Transcript",
+        [],
+        None
+    ),
+    uic!(
+        "graphics.beginTextEditing",
+        "Begin Text Editing for a Graphic Layer",
+        [],
+        Some("Cmd+Alt+'")
+    ),
+    uic!(
+        "help.filmcraftHelp",
+        "FilmCraft Help…",
+        ["Help"],
+        Some("F1")
+    ),
     uic!("app.quit", "Quit FilmCraft", [], Some("Cmd+Q")),
 ];
 
@@ -140,15 +354,24 @@ const MIN_TRACK_H: f32 = 24.0;
 const MAX_TRACK_H: f32 = 240.0;
 
 /// Run a keyboard UI command; None when `id` is not one of them.
-pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn route(
+    app: &mut FilmcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     if !COMMANDS.iter().any(|c| c.id == id) {
         return None;
     }
     let r = match id {
         "window.maximizeFrame" => Ok(toggle_maximize(app, app.ui.focused)),
         "window.maximizeFrameUnderCursor" => {
-            let p =
-                params.get("panel").and_then(Value::as_str).and_then(PanelKind::from_name).or_else(|| panel_under_pointer(app, ctx)).unwrap_or(app.ui.focused);
+            let p = params
+                .get("panel")
+                .and_then(Value::as_str)
+                .and_then(PanelKind::from_name)
+                .or_else(|| panel_under_pointer(app, ctx))
+                .unwrap_or(app.ui.focused);
             Ok(toggle_maximize(app, p))
         }
         "window.toggleFullScreen" => {
@@ -158,7 +381,11 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
         }
         "window.nextPanel" | "window.prevPanel" => Ok(cycle_panel(app, id == "window.nextPanel")),
         "window.toggleMonitorFocus" => {
-            let p = if app.ui.focused == PanelKind::Program { PanelKind::Source } else { PanelKind::Program };
+            let p = if app.ui.focused == PanelKind::Program {
+                PanelKind::Source
+            } else {
+                PanelKind::Program
+            };
             app.show_panel(p);
             Ok(json!({"focused": p.title()}))
         }
@@ -168,12 +395,23 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
         }
         "panel.selectFindBox" => Ok(focus_find_box(app, ctx)),
         "window.workspace.learning" | "window.workspace.review" => {
-            let name = if id.ends_with("learning") { "Learning" } else { "Review" };
+            let name = if id.ends_with("learning") {
+                "Learning"
+            } else {
+                "Review"
+            };
             app.set_workspace(name);
             Ok(json!({"workspace": name}))
         }
-        "view.programZoom100" | "view.programZoomFit" | "view.sourceZoom100" | "view.sourceZoomFit" => {
-            let v = if id.starts_with("view.program") { &mut app.ui.program } else { &mut app.ui.source };
+        "view.programZoom100"
+        | "view.programZoomFit"
+        | "view.sourceZoom100"
+        | "view.sourceZoomFit" => {
+            let v = if id.starts_with("view.program") {
+                &mut app.ui.program
+            } else {
+                &mut app.ui.source
+            };
             v.zoom = id.ends_with("100").then_some(1.0);
             v.pan = [0.0, 0.0];
             Ok(json!({"zoom": v.zoom}))
@@ -192,11 +430,24 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
                 play_range(app, false)
             }
         }
-        "timeline.expandAllTracks" | "timeline.minimizeAllTracks" => Ok(all_heights(app, id == "timeline.expandAllTracks")),
-        "timeline.increaseVideoHeight" | "timeline.decreaseVideoHeight" | "timeline.increaseAudioHeight" | "timeline.decreaseAudioHeight" => {
-            let d = if id.contains("increase") { HEIGHT_STEP } else { -HEIGHT_STEP };
+        "timeline.expandAllTracks" | "timeline.minimizeAllTracks" => {
+            Ok(all_heights(app, id == "timeline.expandAllTracks"))
+        }
+        "timeline.increaseVideoHeight"
+        | "timeline.decreaseVideoHeight"
+        | "timeline.increaseAudioHeight"
+        | "timeline.decreaseAudioHeight" => {
+            let d = if id.contains("increase") {
+                HEIGHT_STEP
+            } else {
+                -HEIGHT_STEP
+            };
             let tv = &mut app.ui.timeline;
-            let h = if id.contains("Video") { &mut tv.video_track_h } else { &mut tv.audio_track_h };
+            let h = if id.contains("Video") {
+                &mut tv.video_track_h
+            } else {
+                &mut tv.audio_track_h
+            };
             *h = (*h + d).clamp(MIN_TRACK_H, MAX_TRACK_H);
             Ok(json!({"videoTrackHeight": tv.video_track_h, "audioTrackHeight": tv.audio_track_h}))
         }
@@ -204,7 +455,11 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
             let tv = &mut app.ui.timeline;
             let w = (app.last_timeline_width.max(200.0) - tv.header_w) as f64;
             let page = w / tv.pps.max(1e-6);
-            let d = if id == "timeline.nextScreen" { page } else { -page };
+            let d = if id == "timeline.nextScreen" {
+                page
+            } else {
+                -page
+            };
             tv.target_scroll = (tv.target_scroll + d).max(0.0);
             Ok(json!({"scroll": tv.target_scroll}))
         }
@@ -217,10 +472,12 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             Ok(Value::Null)
         }
-        _ if id.starts_with("projectPanel.") => match crate::panels::project::route(app, ctx, &id["projectPanel.".len()..], params) {
-            Some(r) => r,
-            None => project_panel(app, &id["projectPanel.".len()..]),
-        },
+        _ if id.starts_with("projectPanel.") => {
+            match crate::panels::project::route(app, ctx, &id["projectPanel.".len()..], params) {
+                Some(r) => r,
+                None => project_panel(app, &id["projectPanel.".len()..]),
+            }
+        }
         _ if id.starts_with("textPanel.") => text_panel(app, &id["textPanel.".len()..]),
         _ => return None,
     };
@@ -235,7 +492,9 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
 /// Maximize `p`, or restore the layout when a panel is maximized (also the panel menu's Maximize /
 /// Restore Frame). A maximized panel that has since been closed counts as restored.
 pub(crate) fn toggle_maximize(app: &mut FilmcraftApp, p: PanelKind) -> Value {
-    let current = app.ui.keys.maximized.filter(|q| app.ui.dock.contains(*q) || app.ui.floating.iter().any(|g| g.panels.contains(q)));
+    let current = app.ui.keys.maximized.filter(|q| {
+        app.ui.dock.contains(*q) || app.ui.floating.iter().any(|g| g.panels.contains(q))
+    });
     app.ui.keys.maximized = if current.is_some() { None } else { Some(p) };
     if let Some(p) = app.ui.keys.maximized {
         let _ = app.apply_dock(craft_ui::docking::Action::Activate { panel: p });
@@ -248,8 +507,13 @@ pub(crate) fn toggle_maximize(app: &mut FilmcraftApp, p: PanelKind) -> Value {
 fn panel_under_pointer(app: &FilmcraftApp, ctx: &egui::Context) -> Option<PanelKind> {
     let pos = ctx.input(|i| i.pointer.latest_pos())?;
     app.auto.query("panel.").into_iter().rev().find_map(|e| {
-        let r = egui::Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3]));
-        r.contains(pos).then(|| PanelKind::from_name(&e.id["panel.".len()..])).flatten()
+        let r = egui::Rect::from_min_size(
+            egui::pos2(e.rect[0], e.rect[1]),
+            egui::vec2(e.rect[2], e.rect[3]),
+        );
+        r.contains(pos)
+            .then(|| PanelKind::from_name(&e.id["panel.".len()..]))
+            .flatten()
     })
 }
 
@@ -257,8 +521,17 @@ fn panel_under_pointer(app: &FilmcraftApp, ctx: &egui::Context) -> Option<PanelK
 fn visible_panels(app: &FilmcraftApp) -> Vec<PanelKind> {
     let mut all = Vec::new();
     app.ui.dock.panels(&mut all);
-    let mut visible: Vec<_> = all.into_iter().filter(|p| app.ui.dock.is_visible(*p) && !p.compact()).collect();
-    visible.extend(app.ui.floating.iter().filter_map(|group| group.panels.get(group.active).copied()).filter(|panel| !panel.compact()));
+    let mut visible: Vec<_> = all
+        .into_iter()
+        .filter(|p| app.ui.dock.is_visible(*p) && !p.compact())
+        .collect();
+    visible.extend(
+        app.ui
+            .floating
+            .iter()
+            .filter_map(|group| group.panels.get(group.active).copied())
+            .filter(|panel| !panel.compact()),
+    );
     visible
 }
 
@@ -268,7 +541,11 @@ fn cycle_panel(app: &mut FilmcraftApp, next: bool) -> Value {
         return Value::Null;
     }
     let i = v.iter().position(|p| *p == app.ui.focused).unwrap_or(0);
-    let j = if next { (i + 1) % v.len() } else { (i + v.len() - 1) % v.len() };
+    let j = if next {
+        (i + 1) % v.len()
+    } else {
+        (i + v.len() - 1) % v.len()
+    };
     app.ui.focused = v[j];
     json!({"focused": v[j].title()})
 }
@@ -276,9 +553,18 @@ fn cycle_panel(app: &mut FilmcraftApp, next: bool) -> Value {
 /// Ask the focused panel's search field for keyboard focus (`widgets::search_field` takes it).
 fn focus_find_box(app: &mut FilmcraftApp, ctx: &egui::Context) -> Value {
     let p = app.ui.focused;
-    let rect =
-        app.auto.find(&format!("panel.{}", p.id())).map(|e| egui::Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3])));
-    ctx.data_mut(|d| d.insert_temp(egui::Id::new(FOCUS_SEARCH), rect.unwrap_or(egui::Rect::EVERYTHING)));
+    let rect = app.auto.find(&format!("panel.{}", p.id())).map(|e| {
+        egui::Rect::from_min_size(
+            egui::pos2(e.rect[0], e.rect[1]),
+            egui::vec2(e.rect[2], e.rect[3]),
+        )
+    });
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            egui::Id::new(FOCUS_SEARCH),
+            rect.unwrap_or(egui::Rect::EVERYTHING),
+        )
+    });
     json!({"panel": p.title()})
 }
 
@@ -288,7 +574,9 @@ pub const FOCUS_SEARCH: &str = "fc-focus-search";
 /// Called by search fields: take focus when Select Find Box targets the panel they sit in.
 pub fn take_search_focus(ui: &egui::Ui, field: egui::Rect, resp: &egui::Response) {
     let id = egui::Id::new(FOCUS_SEARCH);
-    let Some(panel) = ui.ctx().data(|d| d.get_temp::<egui::Rect>(id)) else { return };
+    let Some(panel) = ui.ctx().data(|d| d.get_temp::<egui::Rect>(id)) else {
+        return;
+    };
     if panel.contains(field.center()) {
         resp.request_focus();
         ui.ctx().data_mut(|d| d.remove::<egui::Rect>(id));
@@ -303,15 +591,27 @@ fn play_range(app: &mut FilmcraftApp, preroll: bool) -> Result<Value, String> {
     let end = seq.mark_out.map(|o| o + fd).unwrap_or(seq.duration());
     let start = if preroll {
         let i = seq.mark_in.unwrap_or(filmcraft_time::Tick::ZERO);
-        let pre = filmcraft_time::Tick::from_seconds_f64(app.session.prefs.playback.preroll_seconds);
+        let pre =
+            filmcraft_time::Tick::from_seconds_f64(app.session.prefs.playback.preroll_seconds);
         (i - pre).max(filmcraft_time::Tick::ZERO)
     } else {
         app.session.playhead()
     };
-    let stop = if preroll { end + filmcraft_time::Tick::from_seconds_f64(app.session.prefs.playback.postroll_seconds) } else { end };
+    let stop = if preroll {
+        end + filmcraft_time::Tick::from_seconds_f64(app.session.prefs.playback.postroll_seconds)
+    } else {
+        end
+    };
     // Plain marked playback includes Out but stops after its frame. Extended
     // preroll/postroll playback retains its existing boundary behavior.
-    let rest_at = if preroll { None } else { Some(seq.mark_out.unwrap_or((end - fd).max(filmcraft_time::Tick::ZERO))) };
+    let rest_at = if preroll {
+        None
+    } else {
+        Some(
+            seq.mark_out
+                .unwrap_or((end - fd).max(filmcraft_time::Tick::ZERO)),
+        )
+    };
     app.session.set_playhead(start);
     app.play(1.0);
     app.playback.stop_at = Some(stop);
@@ -340,7 +640,10 @@ fn all_heights(app: &mut FilmcraftApp, expand: bool) -> Value {
 }
 
 fn begin_text_editing(app: &mut FilmcraftApp) -> Result<Value, String> {
-    let list = app.session.execute("graphics.list", json!({})).map_err(|e| e.to_string())?;
+    let list = app
+        .session
+        .execute("graphics.list", json!({}))
+        .map_err(|e| e.to_string())?;
     let layers = list["layers"].as_array().cloned().unwrap_or_default();
     let is_text = |l: &Value| l["kind"] == json!("text");
     let pick = app
@@ -348,14 +651,31 @@ fn begin_text_editing(app: &mut FilmcraftApp) -> Result<Value, String> {
         .state
         .graphic_layers
         .first()
-        .and_then(|i| layers.iter().find(|l| l["layer"].as_u64() == Some(*i as u64) && is_text(l)))
+        .and_then(|i| {
+            layers
+                .iter()
+                .find(|l| l["layer"].as_u64() == Some(*i as u64) && is_text(l))
+        })
         .or_else(|| layers.iter().rev().find(|l| is_text(l)))
         .ok_or("the graphic has no text layer")?;
-    let (clip, layer) = (list["clip"].as_u64().unwrap_or(0), pick["layer"].as_u64().unwrap_or(0) as usize);
+    let (clip, layer) = (
+        list["clip"].as_u64().unwrap_or(0),
+        pick["layer"].as_u64().unwrap_or(0) as usize,
+    );
     let len = pick["text"].as_str().map_or(0, str::len);
-    app.session.execute("graphics.selectLayer", json!({"clip": clip, "layers": [layer]})).map_err(|e| e.to_string())?;
+    app.session
+        .execute(
+            "graphics.selectLayer",
+            json!({"clip": clip, "layers": [layer]}),
+        )
+        .map_err(|e| e.to_string())?;
     // like Premiere, the whole text is selected so typing replaces it
-    app.ui.gfx_edit = Some(crate::state::GfxEdit { clip, layer, caret: len, anchor: 0 });
+    app.ui.gfx_edit = Some(crate::state::GfxEdit {
+        clip,
+        layer,
+        caret: len,
+        anchor: 0,
+    });
     app.show_panel(PanelKind::Program);
     Ok(json!({"clip": clip, "layer": layer}))
 }
@@ -387,7 +707,9 @@ fn project_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
         }
         "hoverScrub" => {
             let on = !app.session.prefs.project_panel.hover_scrub;
-            app.session.execute("project.view.set", json!({"hoverScrub": on})).map_err(|e| e.to_string())?;
+            app.session
+                .execute("project.view.set", json!({"hoverScrub": on}))
+                .map_err(|e| e.to_string())?;
             return Ok(json!({"hoverScrub": on}));
         }
         "thumbnailLarger" | "thumbnailSmaller" => {
@@ -397,9 +719,13 @@ fn project_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
             let size = (v.icon_size * f).clamp(48.0, 400.0);
             match inst {
                 crate::panels::project::Inst::Main => {
-                    app.session.execute("project.view.set", json!({"iconSize": size})).map_err(|e| e.to_string())?;
+                    app.session
+                        .execute("project.view.set", json!({"iconSize": size}))
+                        .map_err(|e| e.to_string())?;
                 }
-                crate::panels::project::Inst::Tab(k) => app.ui.project_panel.tabs[k].icon_size = size,
+                crate::panels::project::Inst::Tab(k) => {
+                    app.ui.project_panel.tabs[k].icon_size = size
+                }
             }
             return Ok(json!({"iconSize": size}));
         }
@@ -411,8 +737,13 @@ fn project_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
     }
     let sel = app.session.state.project_selection.clone();
     let last = sel.last().and_then(|s| items.iter().position(|i| i == s));
-    let icon = crate::panels::project::view_of(app, crate::panels::project::shown_inst(app)).mode != ViewMode::List;
-    let cols = if icon { app.ui.keys.icon_columns.max(1) as i64 } else { 1 };
+    let icon = crate::panels::project::view_of(app, crate::panels::project::shown_inst(app)).mode
+        != ViewMode::List;
+    let cols = if icon {
+        app.ui.keys.icon_columns.max(1) as i64
+    } else {
+        1
+    };
     let page = 10i64;
     let n = items.len() as i64;
     let (step, extend): (Option<i64>, bool) = match op {
@@ -447,7 +778,10 @@ fn project_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
         }
     } as usize;
     let mut new_sel: Vec<filmcraft_project::ItemId> = if extend {
-        let anchor = sel.first().and_then(|s| items.iter().position(|i| i == s)).unwrap_or(target);
+        let anchor = sel
+            .first()
+            .and_then(|s| items.iter().position(|i| i == s))
+            .unwrap_or(target);
         let (a, b) = (anchor.min(target), anchor.max(target));
         let mut v: Vec<_> = items[a..=b].to_vec();
         // keep the anchor first and the moving end last
@@ -460,7 +794,9 @@ fn project_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
     };
     new_sel.dedup();
     let ids: Vec<u64> = new_sel.iter().map(|i| i.0).collect();
-    app.session.execute("project.select", json!({"items": ids})).map_err(|e| e.to_string())?;
+    app.session
+        .execute("project.select", json!({"items": ids}))
+        .map_err(|e| e.to_string())?;
     Ok(json!({"items": ids}))
 }
 
@@ -475,8 +811,14 @@ fn text_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
     if app.ui.text_tab != "Transcript" {
         // the Captions tab: Delete / Ripple Delete act on the selected captions
         return match op {
-            "delete" => app.session.execute("edit.clear", json!({})).map_err(|e| e.to_string()),
-            "rippleDelete" => app.session.execute("edit.rippleDelete", json!({})).map_err(|e| e.to_string()),
+            "delete" => app
+                .session
+                .execute("edit.clear", json!({}))
+                .map_err(|e| e.to_string()),
+            "rippleDelete" => app
+                .session
+                .execute("edit.rippleDelete", json!({}))
+                .map_err(|e| e.to_string()),
             _ => Ok(Value::Null),
         };
     }
@@ -485,16 +827,26 @@ fn text_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
         return Err("the sequence has no transcript".into());
     }
     let n = words.len();
-    let paras = filmcraft_edit::transcript::paragraphs(&words, filmcraft_time::Tick::from_seconds_f64(1.5));
+    let paras =
+        filmcraft_edit::transcript::paragraphs(&words, filmcraft_time::Tick::from_seconds_f64(1.5));
     let para_of = |i: usize| paras.iter().position(|p| p.contains(&i)).unwrap_or(0);
     // a selection left over from a longer transcript (e.g. after `transcript.extract` over the control channel) counts as none, as when drawing
-    let (anchor, cur) = app.ui.transcript_sel.filter(|(a, b)| *a < n && *b < n).unwrap_or_else(|| {
-        let i = filmcraft_edit::transcript::word_at(&words, app.session.playhead()).unwrap_or(0);
-        (i, i)
-    });
+    let (anchor, cur) = app
+        .ui
+        .transcript_sel
+        .filter(|(a, b)| *a < n && *b < n)
+        .unwrap_or_else(|| {
+            let i =
+                filmcraft_edit::transcript::word_at(&words, app.session.playhead()).unwrap_or(0);
+            (i, i)
+        });
     let line = |i: usize, d: i64| -> usize {
         let p = para_of(i) as i64 + d;
-        if p < 0 { 0 } else { paras.get(p as usize).map_or(n - 1, |r| r.start) }
+        if p < 0 {
+            0
+        } else {
+            paras.get(p as usize).map_or(n - 1, |r| r.start)
+        }
     };
     let (to, extend) = match op {
         "prevWord" => (cur.saturating_sub(1), false),
@@ -510,9 +862,18 @@ fn text_panel(app: &mut FilmcraftApp, op: &str) -> Result<Value, String> {
         "selectToSegmentStart" => (paras[para_of(cur)].start, true),
         "selectToSegmentEnd" => (paras[para_of(cur)].end - 1, true),
         "delete" | "rippleDelete" => {
-            let Some((a, b)) = app.ui.transcript_sel else { return Err("select text in the transcript".into()) };
-            let cmd = if op == "delete" { "transcript.lift" } else { "transcript.extract" };
-            let r = app.session.execute(cmd, json!({"from": a.min(b), "to": a.max(b)})).map_err(|e| e.to_string())?;
+            let Some((a, b)) = app.ui.transcript_sel else {
+                return Err("select text in the transcript".into());
+            };
+            let cmd = if op == "delete" {
+                "transcript.lift"
+            } else {
+                "transcript.extract"
+            };
+            let r = app
+                .session
+                .execute(cmd, json!({"from": a.min(b), "to": a.max(b)}))
+                .map_err(|e| e.to_string())?;
             app.ui.transcript_sel = None;
             return Ok(r);
         }
@@ -539,16 +900,29 @@ mod transcript_selection_tests {
             .enumerate()
             .map(|(i, w)| json!({"text": w, "start": tk(0.5 + i as f64 * 0.5), "end": tk(0.9 + i as f64 * 0.5)}))
             .collect();
-        session.execute("transcript.set", json!({"item": a.item.0, "transcript": {"language": "en", "words": words}})).unwrap();
+        session
+            .execute(
+                "transcript.set",
+                json!({"item": a.item.0, "transcript": {"language": "en", "words": words}}),
+            )
+            .unwrap();
         let mut app = crate::FilmcraftApp::new(session);
         app.ui.text_tab = "Transcript".into();
         app.ui.transcript_sel = Some((3, 3));
         // the transcript shrinks behind the panel's back, as with `transcript.extract` over the control channel
-        app.session.execute("transcript.extract", json!({"from": 0, "to": 1})).unwrap();
-        assert_eq!(filmcraft_engine::transcript::sequence_words(&app.session).len(), 2);
+        app.session
+            .execute("transcript.extract", json!({"from": 0, "to": 1}))
+            .unwrap();
+        assert_eq!(
+            filmcraft_engine::transcript::sequence_words(&app.session).len(),
+            2
+        );
         let r = super::text_panel(&mut app, "prevWord").unwrap();
         let (sa, sb) = app.ui.transcript_sel.unwrap();
-        assert!(sa < 2 && sb < 2, "selection {sa}..{sb} outside the 2-word transcript");
+        assert!(
+            sa < 2 && sb < 2,
+            "selection {sa}..{sb} outside the 2-word transcript"
+        );
         assert_eq!(r["word"], json!(sb));
     }
 }

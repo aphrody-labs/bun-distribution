@@ -35,7 +35,9 @@ impl ProofLang {
     /// The proofing language of a BCP 47 tag (`pl-PL`, `en_GB`, `PL`…). Only the primary subtag
     /// counts. No tag (or an empty one) is English, WordCraft's default editing language.
     pub fn from_tag(tag: Option<&str>) -> ProofLang {
-        let Some(tag) = tag.map(str::trim).filter(|t| !t.is_empty()) else { return ProofLang::En };
+        let Some(tag) = tag.map(str::trim).filter(|t| !t.is_empty()) else {
+            return ProofLang::En;
+        };
         let primary = tag.split(['-', '_']).next().unwrap_or("");
         if primary.eq_ignore_ascii_case("en") || primary.eq_ignore_ascii_case("eng") {
             ProofLang::En
@@ -72,7 +74,12 @@ impl ProofLang {
 /// a 2–8 letter language (or `x`/`i` for private and grandfathered tags). `_` becomes `-`.
 pub fn normalize_tag(tag: &str) -> Option<String> {
     let tag = tag.trim();
-    if tag.is_empty() || tag.len() > 35 || !tag.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+    if tag.is_empty()
+        || tag.len() > 35
+        || !tag
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
         return None;
     }
     let parts: Vec<&str> = tag.split(['-', '_']).collect();
@@ -86,7 +93,10 @@ pub fn normalize_tag(tag: &str) -> Option<String> {
     }
     let letters = |p: &str| p.chars().all(|c| c.is_ascii_alphabetic());
     // After a singleton (`x-…` private use, `u-…` extensions) subtags are lower case.
-    let singleton = parts.iter().position(|p| p.len() == 1).unwrap_or(usize::MAX);
+    let singleton = parts
+        .iter()
+        .position(|p| p.len() == 1)
+        .unwrap_or(usize::MAX);
     let out: Vec<String> = parts
         .iter()
         .enumerate()
@@ -98,7 +108,9 @@ pub fn normalize_tag(tag: &str) -> Option<String> {
             } else if i > 0 && p.len() == 4 && letters(p) {
                 let lower = p.to_ascii_lowercase();
                 let mut c = lower.chars();
-                c.next().map(|f| f.to_ascii_uppercase().to_string() + c.as_str()).unwrap_or_default() // script
+                c.next()
+                    .map(|f| f.to_ascii_uppercase().to_string() + c.as_str())
+                    .unwrap_or_default() // script
             } else {
                 p.to_ascii_lowercase()
             }
@@ -119,15 +131,39 @@ mod tests {
         assert_eq!(normalize_tag("zh-hant-tw").as_deref(), Some("zh-Hant-TW"));
         assert_eq!(normalize_tag("es-419").as_deref(), Some("es-419"));
         assert_eq!(normalize_tag("x-none").as_deref(), Some("x-none"));
-        assert_eq!(normalize_tag("de-DE-u-co-PHONEBK").as_deref(), Some("de-DE-u-co-phonebk"));
-        for bad in ["", " ", "p", "1pl", "pl--PL", "pl PL", "pl-PL;", "polski język", "-pl", "pl-", "abcdefghi", &"a".repeat(40)] {
+        assert_eq!(
+            normalize_tag("de-DE-u-co-PHONEBK").as_deref(),
+            Some("de-DE-u-co-phonebk")
+        );
+        for bad in [
+            "",
+            " ",
+            "p",
+            "1pl",
+            "pl--PL",
+            "pl PL",
+            "pl-PL;",
+            "polski język",
+            "-pl",
+            "pl-",
+            "abcdefghi",
+            &"a".repeat(40),
+        ] {
             assert_eq!(normalize_tag(bad), None, "{bad:?}");
         }
     }
 
     #[test]
     fn tags_resolve() {
-        for t in ["pl", "pl-PL", "PL-pl", "pl_PL", "pl_PL.UTF-8", " pl-PL ", "pol"] {
+        for t in [
+            "pl",
+            "pl-PL",
+            "PL-pl",
+            "pl_PL",
+            "pl_PL.UTF-8",
+            " pl-PL ",
+            "pol",
+        ] {
             assert_eq!(ProofLang::from_tag(Some(t)), ProofLang::Pl, "{t}");
         }
         for t in ["pt", "pt-BR", "PT_br", "pt-BR.UTF-8", " pt-PT ", "por"] {
@@ -152,6 +188,9 @@ mod tests {
         assert!(ProofLang::Pt.is_proofed() && !ProofLang::Other.is_proofed());
         assert_eq!(ProofLang::Pl.code(), "pl");
         assert_eq!(ProofLang::Pt.code(), "pt");
-        assert!(ProofLang::PROOFED.contains(&ProofLang::Pt), "every proofed language is listed");
+        assert!(
+            ProofLang::PROOFED.contains(&ProofLang::Pt),
+            "every proofed language is listed"
+        );
     }
 }

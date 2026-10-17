@@ -76,18 +76,45 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Swatch>, AseError> {
         let name = b.name()?;
         let model = b.take(4)?.to_vec();
         let color = match &model[..] {
-            b"CMYK" => Color::Cmyk { c: b.f32()?, m: b.f32()?, y: b.f32()?, k: b.f32()? },
-            b"RGB " => Color::Rgb { r: b.f32()?, g: b.f32()?, b: b.f32()? },
+            b"CMYK" => Color::Cmyk {
+                c: b.f32()?,
+                m: b.f32()?,
+                y: b.f32()?,
+                k: b.f32()?,
+            },
+            b"RGB " => Color::Rgb {
+                r: b.f32()?,
+                g: b.f32()?,
+                b: b.f32()?,
+            },
             b"Gray" => Color::Gray { k: 1.0 - b.f32()? },
             b"LAB " => {
                 let (l, a, bb) = (b.f32()?, b.f32()?, b.f32()?);
-                let [r, g, bl] = cms::lab::lab_to_srgb(cms::Lab { l: l * 100.0, a, b: bb });
-                Color::Rgb { r: r.clamp(0.0, 1.0), g: g.clamp(0.0, 1.0), b: bl.clamp(0.0, 1.0) }
+                let [r, g, bl] = cms::lab::lab_to_srgb(cms::Lab {
+                    l: l * 100.0,
+                    a,
+                    b: bb,
+                });
+                Color::Rgb {
+                    r: r.clamp(0.0, 1.0),
+                    g: g.clamp(0.0, 1.0),
+                    b: bl.clamp(0.0, 1.0),
+                }
             }
             _ => continue,
         };
-        let color_type = if b.u16().unwrap_or(2) == 1 { ColorType::Spot } else { ColorType::Process };
-        out.push(Swatch { name, value: SwatchValue::Color { color, color_type }, locked: false, named: true, hidden: false });
+        let color_type = if b.u16().unwrap_or(2) == 1 {
+            ColorType::Spot
+        } else {
+            ColorType::Process
+        };
+        out.push(Swatch {
+            name,
+            value: SwatchValue::Color { color, color_type },
+            locked: false,
+            named: true,
+            hidden: false,
+        });
     }
     Ok(out)
 }
@@ -96,7 +123,9 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Swatch>, AseError> {
 pub fn write(swatches: &[Swatch]) -> Vec<u8> {
     let mut blocks: Vec<Vec<u8>> = Vec::new();
     for s in swatches {
-        let SwatchValue::Color { color, color_type } = &s.value else { continue };
+        let SwatchValue::Color { color, color_type } = &s.value else {
+            continue;
+        };
         if s.locked || s.hidden {
             continue;
         }
@@ -115,7 +144,14 @@ pub fn write(swatches: &[Swatch]) -> Vec<u8> {
         for v in vals {
             b.extend(v.to_bits().to_be_bytes());
         }
-        b.extend((if *color_type == ColorType::Spot { 1u16 } else { 2 }).to_be_bytes());
+        b.extend(
+            (if *color_type == ColorType::Spot {
+                1u16
+            } else {
+                2
+            })
+            .to_be_bytes(),
+        );
         blocks.push(b);
     }
     let mut out = Vec::new();
@@ -140,19 +176,42 @@ mod tests {
         let sw = vec![
             Swatch {
                 name: "Sky".into(),
-                value: SwatchValue::Color { color: Color::Rgb { r: 0.2, g: 0.5, b: 1.0 }, color_type: ColorType::Process },
+                value: SwatchValue::Color {
+                    color: Color::Rgb {
+                        r: 0.2,
+                        g: 0.5,
+                        b: 1.0,
+                    },
+                    color_type: ColorType::Process,
+                },
                 locked: false,
                 named: true,
                 hidden: false,
             },
             Swatch {
                 name: "PANTONE-ish 1".into(),
-                value: SwatchValue::Color { color: Color::Cmyk { c: 0.0, m: 0.5, y: 1.0, k: 0.0 }, color_type: ColorType::Spot },
+                value: SwatchValue::Color {
+                    color: Color::Cmyk {
+                        c: 0.0,
+                        m: 0.5,
+                        y: 1.0,
+                        k: 0.0,
+                    },
+                    color_type: ColorType::Spot,
+                },
                 locked: false,
                 named: true,
                 hidden: false,
             },
-            Swatch { name: "[Paper]".into(), value: SwatchValue::Paper { color: Color::WHITE }, locked: true, named: true, hidden: false },
+            Swatch {
+                name: "[Paper]".into(),
+                value: SwatchValue::Paper {
+                    color: Color::WHITE,
+                },
+                locked: true,
+                named: true,
+                hidden: false,
+            },
         ];
         let bytes = write(&sw);
         let back = read(&bytes).unwrap();
@@ -188,7 +247,12 @@ mod tests {
         let w = read(&f).unwrap();
         assert_eq!(w.len(), 1);
         assert_eq!(w[0].name, "W");
-        let SwatchValue::Color { color, .. } = &w[0].value else { panic!() };
-        assert!(color.to_rgb().iter().all(|v| *v > 0.98), "Lab white: {color:?}");
+        let SwatchValue::Color { color, .. } = &w[0].value else {
+            panic!()
+        };
+        assert!(
+            color.to_rgb().iter().all(|v| *v > 0.98),
+            "Lab white: {color:?}"
+        );
     }
 }

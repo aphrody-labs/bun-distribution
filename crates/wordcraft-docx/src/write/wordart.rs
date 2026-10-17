@@ -13,7 +13,9 @@ fn pct(v: f32) -> String {
 }
 
 fn ang(deg: f32) -> String {
-    n((wordcraft_geom::finite(deg).rem_euclid(360.0) * 60_000.0).round().clamp(0.0, 21_599_999.0) as i64)
+    n((wordcraft_geom::finite(deg).rem_euclid(360.0) * 60_000.0)
+        .round()
+        .clamp(0.0, 21_599_999.0) as i64)
 }
 
 fn len(pt: f32) -> String {
@@ -34,7 +36,10 @@ fn color(w: &mut W, c: Rgb, transparency: f32) {
 fn fill(w: &mut W, f: &TextFill) {
     match f {
         TextFill::None => w.empty("w14:noFill", &[]),
-        TextFill::Solid { color: c, transparency } => {
+        TextFill::Solid {
+            color: c,
+            transparency,
+        } => {
             w.open("w14:solidFill", &[]);
             color(w, *c, *transparency);
             w.close("w14:solidFill");
@@ -100,7 +105,15 @@ pub fn rpr_effects(w: &mut W, fx: &TextEffects) {
         );
     }
     if let Some(o) = fx.outline {
-        w.open("w14:textOutline", &[("w14:w", &len(o.width)), ("w14:cap", "flat"), ("w14:cmpd", "sng"), ("w14:algn", "ctr")]);
+        w.open(
+            "w14:textOutline",
+            &[
+                ("w14:w", &len(o.width)),
+                ("w14:cap", "flat"),
+                ("w14:cmpd", "sng"),
+                ("w14:algn", "ctr"),
+            ],
+        );
         match o.color {
             Some(c) => {
                 w.open("w14:solidFill", &[]);

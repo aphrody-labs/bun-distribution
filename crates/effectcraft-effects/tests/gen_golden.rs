@@ -15,7 +15,10 @@
 //!
 //! `GEN_GOLDEN_PRINT=1` prints the table (to re-pin after an intended change).
 
-use effectcraft_effects::{Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, MaskShape, Params, apply, default_value, find};
+use effectcraft_effects::{
+    Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, MaskShape, Params, apply, default_value,
+    find,
+};
 use effectcraft_keyframe::Value;
 use effectcraft_raster::Image;
 
@@ -39,7 +42,11 @@ fn layer(hdr: bool) -> Image {
                 1.0
             };
             let gain = if hdr && x < 20 { 1.6 } else { 1.0 };
-            let c = [u * gain, v * gain, (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain];
+            let c = [
+                u * gain,
+                v * gain,
+                (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain,
+            ];
             img.set(x, y, [c[0] * a, c[1] * a, c[2] * a, a]);
         }
     }
@@ -61,7 +68,14 @@ fn map() -> Image {
 struct Host;
 impl EffectHost for Host {
     fn layer(&self, _: u64, _: bool) -> Option<LayerPixels> {
-        Some(LayerPixels { buf: Buf { img: map(), offset: [0.0; 2], scale: 1.0 }, size: [W as f64, H as f64] })
+        Some(LayerPixels {
+            buf: Buf {
+                img: map(),
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+            size: [W as f64, H as f64],
+        })
     }
     fn audio(&self, _: u64, start: f64, frames: usize, rate: u32) -> Option<Vec<f32>> {
         // Two tones plus a chirp, stereo interleaved.
@@ -69,7 +83,8 @@ impl EffectHost for Host {
             (0..frames)
                 .flat_map(|i| {
                     let t = start + i as f64 / rate as f64;
-                    let l = 0.5 * (t * 440.0 * std::f64::consts::TAU).sin() + 0.2 * (t * 1300.0 * std::f64::consts::TAU).sin();
+                    let l = 0.5 * (t * 440.0 * std::f64::consts::TAU).sin()
+                        + 0.2 * (t * 1300.0 * std::f64::consts::TAU).sin();
                     let r = 0.4 * (t * (200.0 + 300.0 * t) * std::f64::consts::TAU).sin();
                     [l as f32, r as f32]
                 })
@@ -87,9 +102,30 @@ fn masks() -> Vec<MaskShape> {
         })
         .collect();
     vec![
-        MaskShape { name: "Mask 1".into(), points: pent, closed: true, inverted: false },
-        MaskShape { name: "Mask 2".into(), points: vec![[6.3, 5.1], [58.2, 7.7], [55.4, 43.6], [9.1, 40.2]], closed: true, inverted: false },
-        MaskShape { name: "Mask 3".into(), points: vec![[4.2, 30.3], [18.7, 12.4], [33.1, 28.9], [47.6, 9.8], [60.2, 25.5]], closed: false, inverted: false },
+        MaskShape {
+            name: "Mask 1".into(),
+            points: pent,
+            closed: true,
+            inverted: false,
+        },
+        MaskShape {
+            name: "Mask 2".into(),
+            points: vec![[6.3, 5.1], [58.2, 7.7], [55.4, 43.6], [9.1, 40.2]],
+            closed: true,
+            inverted: false,
+        },
+        MaskShape {
+            name: "Mask 3".into(),
+            points: vec![
+                [4.2, 30.3],
+                [18.7, 12.4],
+                [33.1, 28.9],
+                [47.6, 9.8],
+                [60.2, 25.5],
+            ],
+            closed: false,
+            inverted: false,
+        },
     ]
 }
 
@@ -118,17 +154,42 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.obsolete.lightning",
             vec![
                 vec![],
-                vec![("branching", n(0.9)), ("rebranching", n(0.6)), ("detailLevel", n(4.0)), ("blendingMode", e(1)), ("pullForce", n(40.0))],
-                vec![("blendingMode", e(2)), ("rerunAtEachFrame", b(true)), ("fixedEndpoint", b(true)), ("coreWidth", n(0.8))],
+                vec![
+                    ("branching", n(0.9)),
+                    ("rebranching", n(0.6)),
+                    ("detailLevel", n(4.0)),
+                    ("blendingMode", e(1)),
+                    ("pullForce", n(40.0)),
+                ],
+                vec![
+                    ("blendingMode", e(2)),
+                    ("rerunAtEachFrame", b(true)),
+                    ("fixedEndpoint", b(true)),
+                    ("coreWidth", n(0.8)),
+                ],
             ],
         ),
         (
             "ec.generate.advancedlightning",
             vec![
                 vec![],
-                vec![("lightningType", e(4)), ("forking", n(60.0)), ("decayMainCore", b(true)), ("expertSettings/coreDrain", n(40.0))],
-                vec![("alphaObstacle", n(6.0)), ("compositeOnOriginal", b(false)), ("expertSettings/fractalType", e(2)), ("glowSettings/glowRadius", n(10.0))],
-                vec![("lightningType", e(7)), ("alphaObstacle", n(-4.0)), ("expertSettings/forkVariation", n(50.0))],
+                vec![
+                    ("lightningType", e(4)),
+                    ("forking", n(60.0)),
+                    ("decayMainCore", b(true)),
+                    ("expertSettings/coreDrain", n(40.0)),
+                ],
+                vec![
+                    ("alphaObstacle", n(6.0)),
+                    ("compositeOnOriginal", b(false)),
+                    ("expertSettings/fractalType", e(2)),
+                    ("glowSettings/glowRadius", n(10.0)),
+                ],
+                vec![
+                    ("lightningType", e(7)),
+                    ("alphaObstacle", n(-4.0)),
+                    ("expertSettings/forkVariation", n(50.0)),
+                ],
             ],
         ),
         (
@@ -142,7 +203,11 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                     ("waveStroke/profile", e(4)),
                     ("waveMotion/velocity", n(20.0)),
                 ],
-                vec![("waveType", e(1)), ("imageContour/sourceLayer", Value::Layer(Some(MAP))), ("waveStroke/fadeOutTime", n(1.0))],
+                vec![
+                    ("waveType", e(1)),
+                    ("imageContour/sourceLayer", Value::Layer(Some(MAP))),
+                    ("waveStroke/fadeOutTime", n(1.0)),
+                ],
                 vec![
                     ("waveType", e(2)),
                     ("waveMask/mask", n(1.0)),
@@ -156,73 +221,177 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.generate.vegas",
             vec![
                 vec![],
-                vec![("stroke", e(1)), ("path", n(3.0)), ("blendMode", e(2)), ("segments", n(12.0)), ("randomPhase", b(true))],
-                vec![("inputLayer", Value::Layer(Some(MAP))), ("blendMode", e(3)), ("shorterContoursHave", e(1)), ("threshold", n(30.0))],
+                vec![
+                    ("stroke", e(1)),
+                    ("path", n(3.0)),
+                    ("blendMode", e(2)),
+                    ("segments", n(12.0)),
+                    ("randomPhase", b(true)),
+                ],
+                vec![
+                    ("inputLayer", Value::Layer(Some(MAP))),
+                    ("blendMode", e(3)),
+                    ("shorterContoursHave", e(1)),
+                    ("threshold", n(30.0)),
+                ],
             ],
         ),
         (
             "ec.generate.stroke",
             vec![
                 vec![],
-                vec![("allMasks", b(true)), ("spacing", n(80.0)), ("paintStyle", e(1)), ("end", n(70.0)), ("brushSize", n(6.0))],
-                vec![("path", n(3.0)), ("paintStyle", e(2)), ("start", n(20.0)), ("brushHardness", n(10.0))],
+                vec![
+                    ("allMasks", b(true)),
+                    ("spacing", n(80.0)),
+                    ("paintStyle", e(1)),
+                    ("end", n(70.0)),
+                    ("brushSize", n(6.0)),
+                ],
+                vec![
+                    ("path", n(3.0)),
+                    ("paintStyle", e(2)),
+                    ("start", n(20.0)),
+                    ("brushHardness", n(10.0)),
+                ],
             ],
         ),
         (
             "ec.generate.scribble",
             vec![
                 vec![],
-                vec![("scribble", e(1)), ("fillType", e(2)), ("edgeOptions/endCap", e(2)), ("edgeOptions/join", e(1)), ("composite", e(0))],
-                vec![("mask", n(2.0)), ("fillType", e(1)), ("edgeOptions/join", e(2)), ("wiggleType", e(2)), ("end", n(60.0)), ("composite", e(2))],
+                vec![
+                    ("scribble", e(1)),
+                    ("fillType", e(2)),
+                    ("edgeOptions/endCap", e(2)),
+                    ("edgeOptions/join", e(1)),
+                    ("composite", e(0)),
+                ],
+                vec![
+                    ("mask", n(2.0)),
+                    ("fillType", e(1)),
+                    ("edgeOptions/join", e(2)),
+                    ("wiggleType", e(2)),
+                    ("end", n(60.0)),
+                    ("composite", e(2)),
+                ],
             ],
         ),
-        ("ec.generate.writeon", vec![vec![], vec![("brushPosition", pt(20.0, 30.0)), ("brushSize", n(14.0)), ("paintStyle", e(1))]]),
+        (
+            "ec.generate.writeon",
+            vec![
+                vec![],
+                vec![
+                    ("brushPosition", pt(20.0, 30.0)),
+                    ("brushSize", n(14.0)),
+                    ("paintStyle", e(1)),
+                ],
+            ],
+        ),
         (
             "ec.generate.paintbucket",
             vec![
                 vec![],
-                vec![("fillPoint", pt(10.0, 10.0)), ("fillSelector", e(1)), ("tolerance", n(60.0)), ("stroke", e(4)), ("strokeWidth", n(4.0))],
-                vec![("fillPoint", pt(40.0, 20.0)), ("fillSelector", e(2)), ("stroke", e(1)), ("color", c(0.2, 0.9, 0.4))],
-                vec![("stroke", e(2)), ("spreadRadius", n(2.5)), ("tolerance", n(120.0)), ("viewThreshold", b(false))],
+                vec![
+                    ("fillPoint", pt(10.0, 10.0)),
+                    ("fillSelector", e(1)),
+                    ("tolerance", n(60.0)),
+                    ("stroke", e(4)),
+                    ("strokeWidth", n(4.0)),
+                ],
+                vec![
+                    ("fillPoint", pt(40.0, 20.0)),
+                    ("fillSelector", e(2)),
+                    ("stroke", e(1)),
+                    ("color", c(0.2, 0.9, 0.4)),
+                ],
+                vec![
+                    ("stroke", e(2)),
+                    ("spreadRadius", n(2.5)),
+                    ("tolerance", n(120.0)),
+                    ("viewThreshold", b(false)),
+                ],
             ],
         ),
         (
             "ec.generate.eyedropperfill",
             vec![
                 vec![],
-                vec![("samplePoint", pt(12.0, 30.0)), ("sampleRadius", n(6.0)), ("averagePixelColors", e(3)), ("blendWithOriginal", n(30.0))],
-                vec![("sampleRadius", n(9.0)), ("averagePixelColors", e(1)), ("maintainOriginalAlpha", b(true))],
+                vec![
+                    ("samplePoint", pt(12.0, 30.0)),
+                    ("sampleRadius", n(6.0)),
+                    ("averagePixelColors", e(3)),
+                    ("blendWithOriginal", n(30.0)),
+                ],
+                vec![
+                    ("sampleRadius", n(9.0)),
+                    ("averagePixelColors", e(1)),
+                    ("maintainOriginalAlpha", b(true)),
+                ],
             ],
         ),
         (
             "ec.generate.audiospectrum",
             vec![
                 vec![("audioLayer", Value::Layer(Some(MAP)))],
-                vec![("audioLayer", Value::Layer(Some(MAP))), ("displayOptions", e(1)), ("sideOptions", e(2)), ("compositeOnOriginal", b(true))],
-                vec![("audioLayer", Value::Layer(Some(MAP))), ("displayOptions", e(2)), ("path", n(3.0)), ("usePolarPath", b(false))],
+                vec![
+                    ("audioLayer", Value::Layer(Some(MAP))),
+                    ("displayOptions", e(1)),
+                    ("sideOptions", e(2)),
+                    ("compositeOnOriginal", b(true)),
+                ],
+                vec![
+                    ("audioLayer", Value::Layer(Some(MAP))),
+                    ("displayOptions", e(2)),
+                    ("path", n(3.0)),
+                    ("usePolarPath", b(false)),
+                ],
             ],
         ),
         (
             "ec.generate.audiowaveform",
             vec![
                 vec![("audioLayer", Value::Layer(Some(MAP)))],
-                vec![("audioLayer", Value::Layer(Some(MAP))), ("displayOptions", e(0)), ("waveformOptions", e(2)), ("usePolarPath", b(true))],
-                vec![("audioLayer", Value::Layer(Some(MAP))), ("displayOptions", e(2)), ("path", n(1.0)), ("compositeOnOriginal", b(true))],
+                vec![
+                    ("audioLayer", Value::Layer(Some(MAP))),
+                    ("displayOptions", e(0)),
+                    ("waveformOptions", e(2)),
+                    ("usePolarPath", b(true)),
+                ],
+                vec![
+                    ("audioLayer", Value::Layer(Some(MAP))),
+                    ("displayOptions", e(2)),
+                    ("path", n(1.0)),
+                    ("compositeOnOriginal", b(true)),
+                ],
             ],
         ),
         (
             "ec.obsolete.basictext",
             vec![
                 vec![],
-                vec![("text", Value::Str("Hi\nthere".into())), ("fillAndStroke/displayOptions", e(2)), ("alignment", e(0)), ("size", n(14.0))],
-                vec![("fillAndStroke/displayOptions", e(3)), ("fillAndStroke/strokeWidth", n(5.0)), ("compositeOnOriginal", b(true))],
+                vec![
+                    ("text", Value::Str("Hi\nthere".into())),
+                    ("fillAndStroke/displayOptions", e(2)),
+                    ("alignment", e(0)),
+                    ("size", n(14.0)),
+                ],
+                vec![
+                    ("fillAndStroke/displayOptions", e(3)),
+                    ("fillAndStroke/strokeWidth", n(5.0)),
+                    ("compositeOnOriginal", b(true)),
+                ],
             ],
         ),
         (
             "ec.obsolete.pathtext",
             vec![
                 vec![],
-                vec![("pathOptions/shapeType", e(1)), ("advanced/visibleCharacters", n(2.5)), ("advanced/fadeTime", n(50.0)), ("character/size", n(14.0))],
+                vec![
+                    ("pathOptions/shapeType", e(1)),
+                    ("advanced/visibleCharacters", n(2.5)),
+                    ("advanced/fadeTime", n(50.0)),
+                    ("character/size", n(14.0)),
+                ],
                 vec![
                     ("pathOptions/customPath", n(3.0)),
                     ("fillAndStroke/displayOptions", e(2)),
@@ -235,16 +404,33 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.key.innerouter",
             vec![
                 vec![("foreground", e(1))],
-                vec![("foreground", e(1)), ("background", e(2)), ("edgeFeather", n(3.0)), ("edgeThin", n(1.5))],
-                vec![("foreground", e(1)), ("singleMaskHighlightRadius", n(4.0)), ("invertExtraction", b(true)), ("blendWithOriginal", n(20.0))],
+                vec![
+                    ("foreground", e(1)),
+                    ("background", e(2)),
+                    ("edgeFeather", n(3.0)),
+                    ("edgeThin", n(1.5)),
+                ],
+                vec![
+                    ("foreground", e(1)),
+                    ("singleMaskHighlightRadius", n(4.0)),
+                    ("invertExtraction", b(true)),
+                    ("blendWithOriginal", n(20.0)),
+                ],
             ],
         ),
         (
             "ec.color.colorlink",
             vec![
                 vec![],
-                vec![("sampleSource", e(2)), ("clip", n(10.0)), ("blendingMode", e(3))],
-                vec![("sourceLayer", Value::Layer(Some(MAP))), ("sampleSource", e(1))],
+                vec![
+                    ("sampleSource", e(2)),
+                    ("clip", n(10.0)),
+                    ("blendingMode", e(3)),
+                ],
+                vec![
+                    ("sourceLayer", Value::Layer(Some(MAP))),
+                    ("sampleSource", e(1)),
+                ],
                 vec![("sampleSource", e(9)), ("opacity", n(70.0))],
             ],
         ),
@@ -272,7 +458,13 @@ fn fnv(img: &Image) -> u64 {
 fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
     let spec = find(id).unwrap_or_else(|| panic!("no effect {id}"));
     let size = [W as f64, H as f64];
-    let mut params = Params { values: spec.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: spec
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (k, v) in set {
         assert!(params.values.contains_key(*k), "{id}: unknown param {k}");
         params.values.insert(k.to_string(), v.clone());
@@ -282,23 +474,49 @@ fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
         img.clamp01();
         img.quantize(255.0);
     }
-    let mut buf = Buf { img, offset: [0.0; 2], scale: 1.0 };
+    let mut buf = Buf {
+        img,
+        offset: [0.0; 2],
+        scale: 1.0,
+    };
     if half {
         // A half-resolution preview buffer padded by 3 px.
         let (w2, h2) = (W / 2, H / 2);
         let mut small = Image::new(w2, h2);
         for y in 0..h2 {
             for x in 0..w2 {
-                small.set(x, y, buf.img.sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0));
+                small.set(
+                    x,
+                    y,
+                    buf.img
+                        .sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0),
+                );
             }
         }
-        buf = Buf { img: small, offset: [0.0; 2], scale: 0.5 };
+        buf = Buf {
+            img: small,
+            offset: [0.0; 2],
+            scale: 0.5,
+        };
         buf.pad(3);
     }
     let host = Host;
     let masks = masks();
-    let env = EffectEnv { host: Some(&host), masks: &masks, frame_rate: 30.0, comp_time: time, ..Default::default() };
-    let ctx = EffectCtx { params: &params, time, layer_size: size, seed: 1, adjustment: false, env };
+    let env = EffectEnv {
+        host: Some(&host),
+        masks: &masks,
+        frame_rate: 30.0,
+        comp_time: time,
+        ..Default::default()
+    };
+    let ctx = EffectCtx {
+        params: &params,
+        time,
+        layer_size: size,
+        seed: 1,
+        adjustment: false,
+        env,
+    };
     let mut out = apply(spec, &ctx, buf).img;
     if bpc8 {
         out.clamp01();
@@ -315,7 +533,11 @@ fn hashes() -> Vec<(String, u64)> {
             for (bpc8, half) in [(true, false), (false, false), (false, true)] {
                 for t in TIMES {
                     let img = render(id, set, t, bpc8, half);
-                    let name = format!("{id}/{si}/{}{}/t{t}", if bpc8 { "8bpc" } else { "32bpc" }, if half { "/half" } else { "" });
+                    let name = format!(
+                        "{id}/{si}/{}{}/t{t}",
+                        if bpc8 { "8bpc" } else { "32bpc" },
+                        if half { "/half" } else { "" }
+                    );
                     v.push((name, fnv(&img)));
                 }
             }
@@ -340,7 +562,9 @@ fn audio_spectrum_uses_linear_frequency_and_amplitude() {
                 (0..frames)
                     .flat_map(|i| {
                         let t = start + i as f64 / rate as f64;
-                        let sample = (self.amplitude * (t * self.frequency * std::f64::consts::TAU).sin()) as f32;
+                        let sample = (self.amplitude
+                            * (t * self.frequency * std::f64::consts::TAU).sin())
+                            as f32;
                         [sample, sample]
                     })
                     .collect(),
@@ -350,7 +574,13 @@ fn audio_spectrum_uses_linear_frequency_and_amplitude() {
     let id = "ec.generate.audiospectrum";
     let spec = find(id).unwrap();
     let size = [320.0, 100.0];
-    let mut params = Params { values: spec.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: spec
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (key, value) in [
         ("audioLayer", Value::Layer(Some(MAP))),
         ("startPoint", pt(0.0, 50.0)),
@@ -363,28 +593,66 @@ fn audio_spectrum_uses_linear_frequency_and_amplitude() {
     ] {
         params.values.insert(key.to_string(), value);
     }
-    let buf = Buf { img: Image::new(320, 100), offset: [0.0; 2], scale: 1.0 };
+    let buf = Buf {
+        img: Image::new(320, 100),
+        offset: [0.0; 2],
+        scale: 1.0,
+    };
     for (frequency, expected_band) in [(375.0, 8), (750.0, 16), (1125.0, 24)] {
         let mut peaks = Vec::new();
         for amplitude in [0.0, 0.125, 0.25] {
-            let host = Tone { frequency, amplitude };
-            let env = EffectEnv { host: Some(&host), comp_time: 1.0, ..Default::default() };
-            let ctx = EffectCtx { params: &params, time: 1.0, layer_size: size, seed: 1, adjustment: false, env };
+            let host = Tone {
+                frequency,
+                amplitude,
+            };
+            let env = EffectEnv {
+                host: Some(&host),
+                comp_time: 1.0,
+                ..Default::default()
+            };
+            let ctx = EffectCtx {
+                params: &params,
+                time: 1.0,
+                layer_size: size,
+                seed: 1,
+                adjustment: false,
+                env,
+            };
             let plan = effectcraft_effects::marks_plan(id, &ctx, &buf).unwrap();
             assert_eq!(plan.segs.len(), 33);
-            let heights: Vec<f64> = plan.segs.iter().map(|seg| (seg.b[1] - seg.a[1]).abs()).collect();
+            let heights: Vec<f64> = plan
+                .segs
+                .iter()
+                .map(|seg| (seg.b[1] - seg.a[1]).abs())
+                .collect();
             assert!(heights.iter().all(|height| height.is_finite()));
             if amplitude == 0.0 {
-                assert!(heights.iter().all(|height| *height == 0.0), "silence has no bar height");
+                assert!(
+                    heights.iter().all(|height| *height == 0.0),
+                    "silence has no bar height"
+                );
                 continue;
             }
-            let (band, height) = heights.iter().enumerate().max_by(|(_, a), (_, b)| a.total_cmp(b)).unwrap();
-            assert_eq!(band, expected_band, "{frequency} Hz uses its linear frequency position");
+            let (band, height) = heights
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.total_cmp(b))
+                .unwrap();
+            assert_eq!(
+                band, expected_band,
+                "{frequency} Hz uses its linear frequency position"
+            );
             // A windowed pure tone retains its amplitude, allowing for the finite Hann window.
-            assert!((height - amplitude * 40.0).abs() < 0.01, "{frequency} Hz at {amplitude}: height {height}");
+            assert!(
+                (height - amplitude * 40.0).abs() < 0.01,
+                "{frequency} Hz at {amplitude}: height {height}"
+            );
             peaks.push(*height);
         }
-        assert!((peaks[1] - 2.0 * peaks[0]).abs() < 1e-6, "doubling the signal doubles the height: {peaks:?}");
+        assert!(
+            (peaks[1] - 2.0 * peaks[0]).abs() < 1e-6,
+            "doubling the signal doubles the height: {peaks:?}"
+        );
     }
 }
 
@@ -415,68 +683,182 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.obsolete.lightning/0/8bpc/t1.3", 0xb2221364c0defe9b),
     ("ec.obsolete.lightning/0/32bpc/t0.4", 0x828cc4e53d579af7),
     ("ec.obsolete.lightning/0/32bpc/t1.3", 0x15770238cde9e766),
-    ("ec.obsolete.lightning/0/32bpc/half/t0.4", 0xf64f2b87fa9a09d3),
-    ("ec.obsolete.lightning/0/32bpc/half/t1.3", 0x625a00bd52fde5aa),
+    (
+        "ec.obsolete.lightning/0/32bpc/half/t0.4",
+        0xf64f2b87fa9a09d3,
+    ),
+    (
+        "ec.obsolete.lightning/0/32bpc/half/t1.3",
+        0x625a00bd52fde5aa,
+    ),
     ("ec.obsolete.lightning/1/8bpc/t0.4", 0xa7c8cb94beebca84),
     ("ec.obsolete.lightning/1/8bpc/t1.3", 0x6e583b1d1f455099),
     ("ec.obsolete.lightning/1/32bpc/t0.4", 0x2ffd973cc7de98f7),
     ("ec.obsolete.lightning/1/32bpc/t1.3", 0x8f35e6018cac57d7),
-    ("ec.obsolete.lightning/1/32bpc/half/t0.4", 0x96c14e911783f8d6),
-    ("ec.obsolete.lightning/1/32bpc/half/t1.3", 0x620ee605f56c2068),
+    (
+        "ec.obsolete.lightning/1/32bpc/half/t0.4",
+        0x96c14e911783f8d6,
+    ),
+    (
+        "ec.obsolete.lightning/1/32bpc/half/t1.3",
+        0x620ee605f56c2068,
+    ),
     ("ec.obsolete.lightning/2/8bpc/t0.4", 0x119e5cedac21cd9b),
     ("ec.obsolete.lightning/2/8bpc/t1.3", 0x04b775fba837ddce),
     ("ec.obsolete.lightning/2/32bpc/t0.4", 0xfee767091adac4ce),
     ("ec.obsolete.lightning/2/32bpc/t1.3", 0x2ae26f9670c93751),
-    ("ec.obsolete.lightning/2/32bpc/half/t0.4", 0x99111f77bf26704f),
-    ("ec.obsolete.lightning/2/32bpc/half/t1.3", 0x8eb781efc14183c3),
-    ("ec.generate.advancedlightning/0/8bpc/t0.4", 0x5a53bf1e0236225d),
-    ("ec.generate.advancedlightning/0/8bpc/t1.3", 0x5a53bf1e0236225d),
-    ("ec.generate.advancedlightning/0/32bpc/t0.4", 0x6817bf5b3583e0a0),
-    ("ec.generate.advancedlightning/0/32bpc/t1.3", 0x6817bf5b3583e0a0),
-    ("ec.generate.advancedlightning/0/32bpc/half/t0.4", 0x5dcc055f6cca9922),
-    ("ec.generate.advancedlightning/0/32bpc/half/t1.3", 0x5dcc055f6cca9922),
-    ("ec.generate.advancedlightning/1/8bpc/t0.4", 0xf07f11457fa683d0),
-    ("ec.generate.advancedlightning/1/8bpc/t1.3", 0xf07f11457fa683d0),
-    ("ec.generate.advancedlightning/1/32bpc/t0.4", 0x1b21531df9187431),
-    ("ec.generate.advancedlightning/1/32bpc/t1.3", 0x1b21531df9187431),
-    ("ec.generate.advancedlightning/1/32bpc/half/t0.4", 0xf1032a0a9345edf1),
-    ("ec.generate.advancedlightning/1/32bpc/half/t1.3", 0xf1032a0a9345edf1),
-    ("ec.generate.advancedlightning/2/8bpc/t0.4", 0x62b5d179f05c6a4c),
-    ("ec.generate.advancedlightning/2/8bpc/t1.3", 0x62b5d179f05c6a4c),
-    ("ec.generate.advancedlightning/2/32bpc/t0.4", 0x192256fe81f73975),
-    ("ec.generate.advancedlightning/2/32bpc/t1.3", 0x192256fe81f73975),
-    ("ec.generate.advancedlightning/2/32bpc/half/t0.4", 0x953dd51008c3ce31),
-    ("ec.generate.advancedlightning/2/32bpc/half/t1.3", 0x953dd51008c3ce31),
-    ("ec.generate.advancedlightning/3/8bpc/t0.4", 0x57b6ad61bd3d89e0),
-    ("ec.generate.advancedlightning/3/8bpc/t1.3", 0x57b6ad61bd3d89e0),
-    ("ec.generate.advancedlightning/3/32bpc/t0.4", 0x7e7c9d20e94c8b6c),
-    ("ec.generate.advancedlightning/3/32bpc/t1.3", 0x7e7c9d20e94c8b6c),
-    ("ec.generate.advancedlightning/3/32bpc/half/t0.4", 0xa37940f5a490a0fe),
-    ("ec.generate.advancedlightning/3/32bpc/half/t1.3", 0xa37940f5a490a0fe),
+    (
+        "ec.obsolete.lightning/2/32bpc/half/t0.4",
+        0x99111f77bf26704f,
+    ),
+    (
+        "ec.obsolete.lightning/2/32bpc/half/t1.3",
+        0x8eb781efc14183c3,
+    ),
+    (
+        "ec.generate.advancedlightning/0/8bpc/t0.4",
+        0x5a53bf1e0236225d,
+    ),
+    (
+        "ec.generate.advancedlightning/0/8bpc/t1.3",
+        0x5a53bf1e0236225d,
+    ),
+    (
+        "ec.generate.advancedlightning/0/32bpc/t0.4",
+        0x6817bf5b3583e0a0,
+    ),
+    (
+        "ec.generate.advancedlightning/0/32bpc/t1.3",
+        0x6817bf5b3583e0a0,
+    ),
+    (
+        "ec.generate.advancedlightning/0/32bpc/half/t0.4",
+        0x5dcc055f6cca9922,
+    ),
+    (
+        "ec.generate.advancedlightning/0/32bpc/half/t1.3",
+        0x5dcc055f6cca9922,
+    ),
+    (
+        "ec.generate.advancedlightning/1/8bpc/t0.4",
+        0xf07f11457fa683d0,
+    ),
+    (
+        "ec.generate.advancedlightning/1/8bpc/t1.3",
+        0xf07f11457fa683d0,
+    ),
+    (
+        "ec.generate.advancedlightning/1/32bpc/t0.4",
+        0x1b21531df9187431,
+    ),
+    (
+        "ec.generate.advancedlightning/1/32bpc/t1.3",
+        0x1b21531df9187431,
+    ),
+    (
+        "ec.generate.advancedlightning/1/32bpc/half/t0.4",
+        0xf1032a0a9345edf1,
+    ),
+    (
+        "ec.generate.advancedlightning/1/32bpc/half/t1.3",
+        0xf1032a0a9345edf1,
+    ),
+    (
+        "ec.generate.advancedlightning/2/8bpc/t0.4",
+        0x62b5d179f05c6a4c,
+    ),
+    (
+        "ec.generate.advancedlightning/2/8bpc/t1.3",
+        0x62b5d179f05c6a4c,
+    ),
+    (
+        "ec.generate.advancedlightning/2/32bpc/t0.4",
+        0x192256fe81f73975,
+    ),
+    (
+        "ec.generate.advancedlightning/2/32bpc/t1.3",
+        0x192256fe81f73975,
+    ),
+    (
+        "ec.generate.advancedlightning/2/32bpc/half/t0.4",
+        0x953dd51008c3ce31,
+    ),
+    (
+        "ec.generate.advancedlightning/2/32bpc/half/t1.3",
+        0x953dd51008c3ce31,
+    ),
+    (
+        "ec.generate.advancedlightning/3/8bpc/t0.4",
+        0x57b6ad61bd3d89e0,
+    ),
+    (
+        "ec.generate.advancedlightning/3/8bpc/t1.3",
+        0x57b6ad61bd3d89e0,
+    ),
+    (
+        "ec.generate.advancedlightning/3/32bpc/t0.4",
+        0x7e7c9d20e94c8b6c,
+    ),
+    (
+        "ec.generate.advancedlightning/3/32bpc/t1.3",
+        0x7e7c9d20e94c8b6c,
+    ),
+    (
+        "ec.generate.advancedlightning/3/32bpc/half/t0.4",
+        0xa37940f5a490a0fe,
+    ),
+    (
+        "ec.generate.advancedlightning/3/32bpc/half/t1.3",
+        0xa37940f5a490a0fe,
+    ),
     ("ec.generate.radiowaves/0/8bpc/t0.4", 0xbc3643b8af12c44b),
     ("ec.generate.radiowaves/0/8bpc/t1.3", 0x703e948dc562e132),
     ("ec.generate.radiowaves/0/32bpc/t0.4", 0x2b0db208ee7517c1),
     ("ec.generate.radiowaves/0/32bpc/t1.3", 0x7b32484a1fec7db3),
-    ("ec.generate.radiowaves/0/32bpc/half/t0.4", 0x166c2672959953cb),
-    ("ec.generate.radiowaves/0/32bpc/half/t1.3", 0x5820255022c11f22),
+    (
+        "ec.generate.radiowaves/0/32bpc/half/t0.4",
+        0x166c2672959953cb,
+    ),
+    (
+        "ec.generate.radiowaves/0/32bpc/half/t1.3",
+        0x5820255022c11f22,
+    ),
     ("ec.generate.radiowaves/1/8bpc/t0.4", 0x7b74eaa4d0501c4e),
     ("ec.generate.radiowaves/1/8bpc/t1.3", 0xcab53207ecf01165),
     ("ec.generate.radiowaves/1/32bpc/t0.4", 0x433e2457d21bfe74),
     ("ec.generate.radiowaves/1/32bpc/t1.3", 0x2b2c3b2284170a7d),
-    ("ec.generate.radiowaves/1/32bpc/half/t0.4", 0x9752bb53cb40c823),
-    ("ec.generate.radiowaves/1/32bpc/half/t1.3", 0x8641d37e339914fe),
+    (
+        "ec.generate.radiowaves/1/32bpc/half/t0.4",
+        0x9752bb53cb40c823,
+    ),
+    (
+        "ec.generate.radiowaves/1/32bpc/half/t1.3",
+        0x8641d37e339914fe,
+    ),
     ("ec.generate.radiowaves/2/8bpc/t0.4", 0x8ad88caae775ea83),
     ("ec.generate.radiowaves/2/8bpc/t1.3", 0x1f32a9a4a45ff7b3),
     ("ec.generate.radiowaves/2/32bpc/t0.4", 0xe2b8332b96a1c76e),
     ("ec.generate.radiowaves/2/32bpc/t1.3", 0x60f6e6b2a4f5e466),
-    ("ec.generate.radiowaves/2/32bpc/half/t0.4", 0x60e6c05f8f8fe967),
-    ("ec.generate.radiowaves/2/32bpc/half/t1.3", 0x6fcd7f86aedfbf1d),
+    (
+        "ec.generate.radiowaves/2/32bpc/half/t0.4",
+        0x60e6c05f8f8fe967,
+    ),
+    (
+        "ec.generate.radiowaves/2/32bpc/half/t1.3",
+        0x6fcd7f86aedfbf1d,
+    ),
     ("ec.generate.radiowaves/3/8bpc/t0.4", 0xa52d7f06548c7d3c),
     ("ec.generate.radiowaves/3/8bpc/t1.3", 0x7a3a0bed3bdd53cf),
     ("ec.generate.radiowaves/3/32bpc/t0.4", 0xbcab47ad7445c601),
     ("ec.generate.radiowaves/3/32bpc/t1.3", 0x940a18e2bd95f75e),
-    ("ec.generate.radiowaves/3/32bpc/half/t0.4", 0xb485746038429450),
-    ("ec.generate.radiowaves/3/32bpc/half/t1.3", 0xcf62c191e2aa8cc4),
+    (
+        "ec.generate.radiowaves/3/32bpc/half/t0.4",
+        0xb485746038429450,
+    ),
+    (
+        "ec.generate.radiowaves/3/32bpc/half/t1.3",
+        0xcf62c191e2aa8cc4,
+    ),
     ("ec.generate.vegas/0/8bpc/t0.4", 0x5e58d44254e9101b),
     ("ec.generate.vegas/0/8bpc/t1.3", 0x5e58d44254e9101b),
     ("ec.generate.vegas/0/32bpc/t0.4", 0xe18712686e402759),
@@ -547,99 +929,213 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.generate.paintbucket/0/8bpc/t1.3", 0x41390203c012ade6),
     ("ec.generate.paintbucket/0/32bpc/t0.4", 0x2cc586c148219d9d),
     ("ec.generate.paintbucket/0/32bpc/t1.3", 0x2cc586c148219d9d),
-    ("ec.generate.paintbucket/0/32bpc/half/t0.4", 0x0e8eedcff76d46c6),
-    ("ec.generate.paintbucket/0/32bpc/half/t1.3", 0x0e8eedcff76d46c6),
+    (
+        "ec.generate.paintbucket/0/32bpc/half/t0.4",
+        0x0e8eedcff76d46c6,
+    ),
+    (
+        "ec.generate.paintbucket/0/32bpc/half/t1.3",
+        0x0e8eedcff76d46c6,
+    ),
     ("ec.generate.paintbucket/1/8bpc/t0.4", 0x7577e2e528aa3ab9),
     ("ec.generate.paintbucket/1/8bpc/t1.3", 0x7577e2e528aa3ab9),
     ("ec.generate.paintbucket/1/32bpc/t0.4", 0x62b69ad0e2b4dfd8),
     ("ec.generate.paintbucket/1/32bpc/t1.3", 0x62b69ad0e2b4dfd8),
-    ("ec.generate.paintbucket/1/32bpc/half/t0.4", 0xf5ea3b0a7ac224ed),
-    ("ec.generate.paintbucket/1/32bpc/half/t1.3", 0xf5ea3b0a7ac224ed),
+    (
+        "ec.generate.paintbucket/1/32bpc/half/t0.4",
+        0xf5ea3b0a7ac224ed,
+    ),
+    (
+        "ec.generate.paintbucket/1/32bpc/half/t1.3",
+        0xf5ea3b0a7ac224ed,
+    ),
     ("ec.generate.paintbucket/2/8bpc/t0.4", 0x530d0a248dc22c72),
     ("ec.generate.paintbucket/2/8bpc/t1.3", 0x530d0a248dc22c72),
     ("ec.generate.paintbucket/2/32bpc/t0.4", 0xe1b655f8815e1357),
     ("ec.generate.paintbucket/2/32bpc/t1.3", 0xe1b655f8815e1357),
-    ("ec.generate.paintbucket/2/32bpc/half/t0.4", 0xb95b3b205255cd7e),
-    ("ec.generate.paintbucket/2/32bpc/half/t1.3", 0xb95b3b205255cd7e),
+    (
+        "ec.generate.paintbucket/2/32bpc/half/t0.4",
+        0xb95b3b205255cd7e,
+    ),
+    (
+        "ec.generate.paintbucket/2/32bpc/half/t1.3",
+        0xb95b3b205255cd7e,
+    ),
     ("ec.generate.paintbucket/3/8bpc/t0.4", 0xa7485b7277e03e66),
     ("ec.generate.paintbucket/3/8bpc/t1.3", 0xa7485b7277e03e66),
     ("ec.generate.paintbucket/3/32bpc/t0.4", 0xc8e06c6eed30448b),
     ("ec.generate.paintbucket/3/32bpc/t1.3", 0xc8e06c6eed30448b),
-    ("ec.generate.paintbucket/3/32bpc/half/t0.4", 0xfe0d6223c876db05),
-    ("ec.generate.paintbucket/3/32bpc/half/t1.3", 0xfe0d6223c876db05),
+    (
+        "ec.generate.paintbucket/3/32bpc/half/t0.4",
+        0xfe0d6223c876db05,
+    ),
+    (
+        "ec.generate.paintbucket/3/32bpc/half/t1.3",
+        0xfe0d6223c876db05,
+    ),
     ("ec.generate.eyedropperfill/0/8bpc/t0.4", 0x86248fa83ab166d5),
     ("ec.generate.eyedropperfill/0/8bpc/t1.3", 0x86248fa83ab166d5),
-    ("ec.generate.eyedropperfill/0/32bpc/t0.4", 0x5e9ef63fca8086d5),
-    ("ec.generate.eyedropperfill/0/32bpc/t1.3", 0x5e9ef63fca8086d5),
-    ("ec.generate.eyedropperfill/0/32bpc/half/t0.4", 0x1b6649c0688d829d),
-    ("ec.generate.eyedropperfill/0/32bpc/half/t1.3", 0x1b6649c0688d829d),
+    (
+        "ec.generate.eyedropperfill/0/32bpc/t0.4",
+        0x5e9ef63fca8086d5,
+    ),
+    (
+        "ec.generate.eyedropperfill/0/32bpc/t1.3",
+        0x5e9ef63fca8086d5,
+    ),
+    (
+        "ec.generate.eyedropperfill/0/32bpc/half/t0.4",
+        0x1b6649c0688d829d,
+    ),
+    (
+        "ec.generate.eyedropperfill/0/32bpc/half/t1.3",
+        0x1b6649c0688d829d,
+    ),
     ("ec.generate.eyedropperfill/1/8bpc/t0.4", 0x8fd6bb78816570cc),
     ("ec.generate.eyedropperfill/1/8bpc/t1.3", 0x8fd6bb78816570cc),
-    ("ec.generate.eyedropperfill/1/32bpc/t0.4", 0x30d8489019c071fe),
-    ("ec.generate.eyedropperfill/1/32bpc/t1.3", 0x30d8489019c071fe),
-    ("ec.generate.eyedropperfill/1/32bpc/half/t0.4", 0x13a90c31c89568ea),
-    ("ec.generate.eyedropperfill/1/32bpc/half/t1.3", 0x13a90c31c89568ea),
+    (
+        "ec.generate.eyedropperfill/1/32bpc/t0.4",
+        0x30d8489019c071fe,
+    ),
+    (
+        "ec.generate.eyedropperfill/1/32bpc/t1.3",
+        0x30d8489019c071fe,
+    ),
+    (
+        "ec.generate.eyedropperfill/1/32bpc/half/t0.4",
+        0x13a90c31c89568ea,
+    ),
+    (
+        "ec.generate.eyedropperfill/1/32bpc/half/t1.3",
+        0x13a90c31c89568ea,
+    ),
     ("ec.generate.eyedropperfill/2/8bpc/t0.4", 0xbfe145e68fb67e0f),
     ("ec.generate.eyedropperfill/2/8bpc/t1.3", 0xbfe145e68fb67e0f),
-    ("ec.generate.eyedropperfill/2/32bpc/t0.4", 0x500e27795935722a),
-    ("ec.generate.eyedropperfill/2/32bpc/t1.3", 0x500e27795935722a),
-    ("ec.generate.eyedropperfill/2/32bpc/half/t0.4", 0x480fd6a293c6597c),
-    ("ec.generate.eyedropperfill/2/32bpc/half/t1.3", 0x480fd6a293c6597c),
+    (
+        "ec.generate.eyedropperfill/2/32bpc/t0.4",
+        0x500e27795935722a,
+    ),
+    (
+        "ec.generate.eyedropperfill/2/32bpc/t1.3",
+        0x500e27795935722a,
+    ),
+    (
+        "ec.generate.eyedropperfill/2/32bpc/half/t0.4",
+        0x480fd6a293c6597c,
+    ),
+    (
+        "ec.generate.eyedropperfill/2/32bpc/half/t1.3",
+        0x480fd6a293c6597c,
+    ),
     // Linear frequency bands and amplitude from 581326ec; all other effects retain their hashes.
     ("ec.generate.audiospectrum/0/8bpc/t0.4", 0x07be49f76890493c),
     ("ec.generate.audiospectrum/0/8bpc/t1.3", 0xc0109e19c3958517),
     ("ec.generate.audiospectrum/0/32bpc/t0.4", 0x24fe2e48cc432c1f),
     ("ec.generate.audiospectrum/0/32bpc/t1.3", 0x9bdbf835e7d42f78),
-    ("ec.generate.audiospectrum/0/32bpc/half/t0.4", 0x445e16a81e313a40),
-    ("ec.generate.audiospectrum/0/32bpc/half/t1.3", 0x88849fde30e6b048),
+    (
+        "ec.generate.audiospectrum/0/32bpc/half/t0.4",
+        0x445e16a81e313a40,
+    ),
+    (
+        "ec.generate.audiospectrum/0/32bpc/half/t1.3",
+        0x88849fde30e6b048,
+    ),
     ("ec.generate.audiospectrum/1/8bpc/t0.4", 0xf95a769e610688cc),
     ("ec.generate.audiospectrum/1/8bpc/t1.3", 0x7df3a63a59a10c38),
     ("ec.generate.audiospectrum/1/32bpc/t0.4", 0x53f3e442e240599b),
     ("ec.generate.audiospectrum/1/32bpc/t1.3", 0x213066492a32f6a8),
-    ("ec.generate.audiospectrum/1/32bpc/half/t0.4", 0x38ceb79d523c7402),
-    ("ec.generate.audiospectrum/1/32bpc/half/t1.3", 0x7d63c37d260eb112),
+    (
+        "ec.generate.audiospectrum/1/32bpc/half/t0.4",
+        0x38ceb79d523c7402,
+    ),
+    (
+        "ec.generate.audiospectrum/1/32bpc/half/t1.3",
+        0x7d63c37d260eb112,
+    ),
     ("ec.generate.audiospectrum/2/8bpc/t0.4", 0x73c15c41ad557cec),
     ("ec.generate.audiospectrum/2/8bpc/t1.3", 0x0bb38170a3fbb6fd),
     ("ec.generate.audiospectrum/2/32bpc/t0.4", 0x2ac65e1ca97db691),
     ("ec.generate.audiospectrum/2/32bpc/t1.3", 0xa8be6d0571415ab0),
-    ("ec.generate.audiospectrum/2/32bpc/half/t0.4", 0x318b82f955d58300),
-    ("ec.generate.audiospectrum/2/32bpc/half/t1.3", 0x4775b23a8cc7c6c6),
+    (
+        "ec.generate.audiospectrum/2/32bpc/half/t0.4",
+        0x318b82f955d58300,
+    ),
+    (
+        "ec.generate.audiospectrum/2/32bpc/half/t1.3",
+        0x4775b23a8cc7c6c6,
+    ),
     ("ec.generate.audiowaveform/0/8bpc/t0.4", 0x68a7733a023bc9f1),
     ("ec.generate.audiowaveform/0/8bpc/t1.3", 0x57e13a1aaa458b14),
     ("ec.generate.audiowaveform/0/32bpc/t0.4", 0xb78e946d794b5ade),
     ("ec.generate.audiowaveform/0/32bpc/t1.3", 0x2acdbc2a2558c847),
-    ("ec.generate.audiowaveform/0/32bpc/half/t0.4", 0x99da8b92d697e171),
-    ("ec.generate.audiowaveform/0/32bpc/half/t1.3", 0xdfe01c4d3368ea92),
+    (
+        "ec.generate.audiowaveform/0/32bpc/half/t0.4",
+        0x99da8b92d697e171,
+    ),
+    (
+        "ec.generate.audiowaveform/0/32bpc/half/t1.3",
+        0xdfe01c4d3368ea92,
+    ),
     ("ec.generate.audiowaveform/1/8bpc/t0.4", 0x5f463552fd80eda6),
     ("ec.generate.audiowaveform/1/8bpc/t1.3", 0x4e724e55141cb0e2),
     ("ec.generate.audiowaveform/1/32bpc/t0.4", 0xcba797b9142cc9bc),
     ("ec.generate.audiowaveform/1/32bpc/t1.3", 0x1efc192f83ff114f),
-    ("ec.generate.audiowaveform/1/32bpc/half/t0.4", 0x5f81670776ddb569),
-    ("ec.generate.audiowaveform/1/32bpc/half/t1.3", 0xf56e5d8f8445125f),
+    (
+        "ec.generate.audiowaveform/1/32bpc/half/t0.4",
+        0x5f81670776ddb569,
+    ),
+    (
+        "ec.generate.audiowaveform/1/32bpc/half/t1.3",
+        0xf56e5d8f8445125f,
+    ),
     ("ec.generate.audiowaveform/2/8bpc/t0.4", 0xb9fb312b8553ee47),
     ("ec.generate.audiowaveform/2/8bpc/t1.3", 0x08640b88a8496eb1),
     ("ec.generate.audiowaveform/2/32bpc/t0.4", 0x12a7502643511c69),
     ("ec.generate.audiowaveform/2/32bpc/t1.3", 0xc5f3b7bc698f6328),
-    ("ec.generate.audiowaveform/2/32bpc/half/t0.4", 0x2409e86ae0f5e841),
-    ("ec.generate.audiowaveform/2/32bpc/half/t1.3", 0x5518084e651af2c6),
+    (
+        "ec.generate.audiowaveform/2/32bpc/half/t0.4",
+        0x2409e86ae0f5e841,
+    ),
+    (
+        "ec.generate.audiowaveform/2/32bpc/half/t1.3",
+        0x5518084e651af2c6,
+    ),
     ("ec.obsolete.basictext/0/8bpc/t0.4", 0x97a4c8907a44ab03),
     ("ec.obsolete.basictext/0/8bpc/t1.3", 0x97a4c8907a44ab03),
     ("ec.obsolete.basictext/0/32bpc/t0.4", 0x79bfd2ba4e76c65e),
     ("ec.obsolete.basictext/0/32bpc/t1.3", 0x79bfd2ba4e76c65e),
-    ("ec.obsolete.basictext/0/32bpc/half/t0.4", 0xd1c0bf17ed973ec3),
-    ("ec.obsolete.basictext/0/32bpc/half/t1.3", 0xd1c0bf17ed973ec3),
+    (
+        "ec.obsolete.basictext/0/32bpc/half/t0.4",
+        0xd1c0bf17ed973ec3,
+    ),
+    (
+        "ec.obsolete.basictext/0/32bpc/half/t1.3",
+        0xd1c0bf17ed973ec3,
+    ),
     ("ec.obsolete.basictext/1/8bpc/t0.4", 0xa3457f3a34ff4655),
     ("ec.obsolete.basictext/1/8bpc/t1.3", 0xa3457f3a34ff4655),
     ("ec.obsolete.basictext/1/32bpc/t0.4", 0x2583d7ce25436fe8),
     ("ec.obsolete.basictext/1/32bpc/t1.3", 0x2583d7ce25436fe8),
-    ("ec.obsolete.basictext/1/32bpc/half/t0.4", 0x2c08ade06e4e7bbc),
-    ("ec.obsolete.basictext/1/32bpc/half/t1.3", 0x2c08ade06e4e7bbc),
+    (
+        "ec.obsolete.basictext/1/32bpc/half/t0.4",
+        0x2c08ade06e4e7bbc,
+    ),
+    (
+        "ec.obsolete.basictext/1/32bpc/half/t1.3",
+        0x2c08ade06e4e7bbc,
+    ),
     ("ec.obsolete.basictext/2/8bpc/t0.4", 0xfce091451c0ac93a),
     ("ec.obsolete.basictext/2/8bpc/t1.3", 0xfce091451c0ac93a),
     ("ec.obsolete.basictext/2/32bpc/t0.4", 0x86cd4111d46f6bf8),
     ("ec.obsolete.basictext/2/32bpc/t1.3", 0x86cd4111d46f6bf8),
-    ("ec.obsolete.basictext/2/32bpc/half/t0.4", 0xe8c740683bcf309f),
-    ("ec.obsolete.basictext/2/32bpc/half/t1.3", 0xe8c740683bcf309f),
+    (
+        "ec.obsolete.basictext/2/32bpc/half/t0.4",
+        0xe8c740683bcf309f,
+    ),
+    (
+        "ec.obsolete.basictext/2/32bpc/half/t1.3",
+        0xe8c740683bcf309f,
+    ),
     ("ec.obsolete.pathtext/0/8bpc/t0.4", 0x70ca391f2e77dd8b),
     ("ec.obsolete.pathtext/0/8bpc/t1.3", 0x70ca391f2e77dd8b),
     ("ec.obsolete.pathtext/0/32bpc/t0.4", 0x98faf5dd968c859b),

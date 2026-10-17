@@ -77,7 +77,11 @@ pub(crate) struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { seasonality: Season::Detect, interpolate: true, aggregate: Aggregate::Average }
+        Options {
+            seasonality: Season::Detect,
+            interpolate: true,
+            aggregate: Aggregate::Average,
+        }
     }
 }
 
@@ -141,7 +145,12 @@ enum Axis {
     Linear { t0: f64, step: f64 },
     /// Whole-day dates a constant number of calendar months apart, all on the same day of the
     /// month (`day = Some(d)`) or all on the last day of their month (`day = None`).
-    Months { sys: DateSystem, month0: i64, step: i64, day: Option<u32> },
+    Months {
+        sys: DateSystem,
+        month0: i64,
+        step: i64,
+        day: Option<u32>,
+    },
 }
 
 fn month_parts(sys: DateSystem, t: f64) -> Option<(i64, f64)> {
@@ -149,14 +158,22 @@ fn month_parts(sys: DateSystem, t: f64) -> Option<(i64, f64)> {
     if d.day == 0 {
         return None;
     }
-    Some((i64::from(d.year) * 12 + i64::from(d.month) - 1, f64::from(d.day)))
+    Some((
+        i64::from(d.year) * 12 + i64::from(d.month) - 1,
+        f64::from(d.day),
+    ))
 }
 
 impl Axis {
     fn position(&self, t: f64) -> Option<f64> {
         match *self {
             Axis::Linear { t0, step } => Some((t - t0) / step),
-            Axis::Months { sys, month0, step, day } => {
+            Axis::Months {
+                sys,
+                month0,
+                step,
+                day,
+            } => {
                 let d = datetime_from_serial(sys, t.floor())?;
                 if d.day == 0 {
                     return None;
@@ -186,8 +203,13 @@ fn gcd(mut a: i64, mut b: i64) -> i64 {
 /// The axis of sorted, distinct time stamps: a constant step (missing points allowed) or, for
 /// dates, a constant number of calendar months.
 fn detect_axis(times: &[f64], sys: DateSystem) -> R<Axis> {
-    let (Some(&t0), Some(&t1)) = (times.first(), times.get(1)) else { return Err(CellError::Num) };
-    let step = times.windows(2).map(|w| w.get(1).copied().unwrap_or(t1) - w.first().copied().unwrap_or(t0)).fold(f64::INFINITY, f64::min);
+    let (Some(&t0), Some(&t1)) = (times.first(), times.get(1)) else {
+        return Err(CellError::Num);
+    };
+    let step = times
+        .windows(2)
+        .map(|w| w.get(1).copied().unwrap_or(t1) - w.first().copied().unwrap_or(t0))
+        .fold(f64::INFINITY, f64::min);
     if step.is_finite() && step > 0.0 {
         let even = times.windows(2).all(|w| match (w.first(), w.get(1)) {
             (Some(a), Some(b)) => {
@@ -244,7 +266,12 @@ fn detect_axis(times: &[f64], sys: DateSystem) -> R<Axis> {
     if g <= 0 {
         return Err(CellError::Num);
     }
-    Ok(Axis::Months { sys, month0, step: g, day })
+    Ok(Axis::Months {
+        sys,
+        month0,
+        step: g,
+        day,
+    })
 }
 
 /// An evenly spaced series built from a values/timeline pair.
@@ -281,14 +308,23 @@ fn aggregate(kind: Aggregate, xs: &mut [f64]) -> Option<f64> {
             xs.sort_by(|a, b| a.total_cmp(b));
             let k = xs.len() / 2;
             let hi = xs.get(k).copied()?;
-            if xs.len() % 2 == 1 { Some(hi) } else { Some((xs.get(k.checked_sub(1)?).copied()? + hi) / 2.0) }
+            if xs.len() % 2 == 1 {
+                Some(hi)
+            } else {
+                Some((xs.get(k.checked_sub(1)?).copied()? + hi) / 2.0)
+            }
         }
     }
 }
 
 /// Builds the series: pairs values with time stamps, sorts, aggregates duplicates, checks the
 /// step and completes missing points.
-pub(crate) fn series(values: &Value, timeline: &Value, opts: &Options, sys: DateSystem) -> R<Series> {
+pub(crate) fn series(
+    values: &Value,
+    timeline: &Value,
+    opts: &Options,
+    sys: DateSystem,
+) -> R<Series> {
     let va = as_array(values);
     let ta = as_array(timeline);
     if va.data.len() != ta.data.len() {
@@ -325,7 +361,9 @@ pub(crate) fn series(values: &Value, timeline: &Value, opts: &Options, sys: Date
         return Err(CellError::Num);
     }
     let axis = detect_axis(&times, sys)?;
-    let (Some(&first), Some(&last)) = (times.first(), times.last()) else { return Err(CellError::Num) };
+    let (Some(&first), Some(&last)) = (times.first(), times.last()) else {
+        return Err(CellError::Num);
+    };
     let span = axis.position(last).ok_or(CellError::Num)?.round();
     if !(span >= 1.0 && span < MAX_POINTS as f64) {
         return Err(CellError::Num);
@@ -362,7 +400,11 @@ pub(crate) fn series(values: &Value, timeline: &Value, opts: &Options, sys: Date
     if known == 0 || (len - known) as f64 > MAX_MISSING * len as f64 {
         return Err(CellError::Num);
     }
-    let y = if opts.interpolate { interpolate(&slots) } else { slots.iter().map(|s| s.unwrap_or(0.0)).collect() };
+    let y = if opts.interpolate {
+        interpolate(&slots)
+    } else {
+        slots.iter().map(|s| s.unwrap_or(0.0)).collect()
+    };
     let step = match axis {
         Axis::Linear { step, .. } => step,
         Axis::Months { .. } => (last - first) / span,
@@ -381,7 +423,11 @@ fn interpolate(slots: &[Option<f64>]) -> Vec<f64> {
             prev = Some((i, *v));
             continue;
         }
-        let next = slots.iter().enumerate().skip(i + 1).find_map(|(j, s)| s.map(|v| (j, v)));
+        let next = slots
+            .iter()
+            .enumerate()
+            .skip(i + 1)
+            .find_map(|(j, s)| s.map(|v| (j, v)));
         out.push(match (prev, next) {
             (Some((a, va)), Some((b, vb))) => va + (vb - va) * (i - a) as f64 / (b - a) as f64,
             (Some((_, v)), None) | (None, Some((_, v))) => v,
@@ -413,10 +459,15 @@ impl Timeline {
         let axis = detect_axis(&sorted, sys).ok()?;
         let last = axis.position(*sorted.last()?)?.round();
         // Like the functions, at most 30% of the points may be missing.
-        if !(0.0..MAX_POINTS as f64).contains(&last) || (last + 1.0 - sorted.len() as f64) > MAX_MISSING * (last + 1.0) {
+        if !(0.0..MAX_POINTS as f64).contains(&last)
+            || (last + 1.0 - sorted.len() as f64) > MAX_MISSING * (last + 1.0)
+        {
             return None;
         }
-        Some(Timeline { axis, last: last as i64 })
+        Some(Timeline {
+            axis,
+            last: last as i64,
+        })
     }
 
     /// Steps from the last time stamp to `t` (fractional between steps, negative before it).
@@ -433,10 +484,19 @@ impl Timeline {
                 let t = t0 + pos as f64 * step;
                 t.is_finite().then_some(t)
             }
-            Axis::Months { sys, month0, step, day } => {
+            Axis::Months {
+                sys,
+                month0,
+                step,
+                day,
+            } => {
                 let month = month0.checked_add(pos.checked_mul(step)?)?;
                 let (y, m) = (month.div_euclid(12), month.rem_euclid(12) + 1);
-                let dim = i64::from(days_in_month_in(sys, i32::try_from(y).ok()?, u32::try_from(m).ok()?));
+                let dim = i64::from(days_in_month_in(
+                    sys,
+                    i32::try_from(y).ok()?,
+                    u32::try_from(m).ok()?,
+                ));
                 let d = day.map_or(dim, |d| i64::from(d).min(dim));
                 if y < 1900 {
                     return None;
@@ -454,7 +514,10 @@ impl Timeline {
 /// Residuals of the least-squares line through `y` (x = 0, 1, 2…).
 fn detrend(y: &[f64]) -> Vec<f64> {
     let (a, b) = line(y.iter().enumerate().map(|(i, v)| (i as f64, *v)));
-    y.iter().enumerate().map(|(i, v)| v - (a + b * i as f64)).collect()
+    y.iter()
+        .enumerate()
+        .map(|(i, v)| v - (a + b * i as f64))
+        .collect()
 }
 
 /// (intercept, slope) of the least-squares line through the points (slope 0 for one point).
@@ -492,13 +555,22 @@ pub(crate) fn detect_season(y: &[f64]) -> usize {
     }
     let max_lag = (n / 2).min(MAX_SEASON);
     let acf: Vec<f64> = (0..=max_lag.saturating_add(1).min(n.saturating_sub(1)))
-        .map(|k| r.iter().skip(k).zip(r.iter()).map(|(a, b)| a * b).sum::<f64>() / var)
+        .map(|k| {
+            r.iter()
+                .skip(k)
+                .zip(r.iter())
+                .map(|(a, b)| a * b)
+                .sum::<f64>()
+                / var
+        })
         .collect();
     let bound = 2.0 / (n as f64).sqrt();
     let mut best = 0usize;
     let mut best_r = bound;
     for k in 2..=max_lag {
-        let (Some(&prev), Some(&here)) = (acf.get(k - 1), acf.get(k)) else { break };
+        let (Some(&prev), Some(&here)) = (acf.get(k - 1), acf.get(k)) else {
+            break;
+        };
         let next = acf.get(k + 1).copied().unwrap_or(f64::NEG_INFINITY);
         if here > prev && here >= next && here > best_r {
             best = k;
@@ -536,7 +608,9 @@ fn initial_states(y: &[f64], m: usize) -> Init {
                 acc += v;
                 prefix.push(acc);
             }
-            let sum = |a: usize, b: usize| prefix.get(b).copied().unwrap_or(0.0) - prefix.get(a).copied().unwrap_or(0.0);
+            let sum = |a: usize, b: usize| {
+                prefix.get(b).copied().unwrap_or(0.0) - prefix.get(a).copied().unwrap_or(0.0)
+            };
             let h = m / 2;
             let mut totals = vec![0.0; m];
             let mut counts = vec![0usize; m];
@@ -544,10 +618,13 @@ fn initial_states(y: &[f64], m: usize) -> Init {
                 let ma = if m % 2 == 1 {
                     sum(t - h, t + h + 1) / m as f64
                 } else {
-                    let ends = w.get(t - h).copied().unwrap_or(0.0) + w.get(t + h).copied().unwrap_or(0.0);
+                    let ends =
+                        w.get(t - h).copied().unwrap_or(0.0) + w.get(t + h).copied().unwrap_or(0.0);
                     (sum(t - h + 1, t + h) + ends / 2.0) / m as f64
                 };
-                if let (Some(tot), Some(c), Some(v)) = (totals.get_mut(t % m), counts.get_mut(t % m), w.get(t)) {
+                if let (Some(tot), Some(c), Some(v)) =
+                    (totals.get_mut(t % m), counts.get_mut(t % m), w.get(t))
+                {
                     *tot += v - ma;
                     *c += 1;
                 }
@@ -578,11 +655,19 @@ fn initial_states(y: &[f64], m: usize) -> Init {
     }
     let k = n.min(INIT_POINTS);
     let adjusted = y.iter().take(k).enumerate().map(|(t, v)| {
-        let s = if m >= 2 { season.get(t % m).copied().unwrap_or(0.0) } else { 0.0 };
+        let s = if m >= 2 {
+            season.get(t % m).copied().unwrap_or(0.0)
+        } else {
+            0.0
+        };
         ((t + 1) as f64, v - s)
     });
     let (level, trend) = line(adjusted);
-    Init { level, trend, season }
+    Init {
+        level,
+        trend,
+        season,
+    }
 }
 
 /// Smoothing parameters (α, β, γ).
@@ -617,7 +702,12 @@ fn filter(y: &[f64], init: &Init, p: Params, mut errors: Option<&mut Vec<f64>>) 
             errs.push(e);
         }
     }
-    State { level: l, trend: b, season, sse }
+    State {
+        level: l,
+        trend: b,
+        season,
+        sse,
+    }
 }
 
 fn objective(y: &[f64], init: &Init, p: Params) -> f64 {
@@ -670,9 +760,23 @@ fn optimise(y: &[f64], init: &Init) -> Params {
     };
     for _ in 0..NM_ITERATIONS {
         simplex.sort_by(|a, b| a.1.total_cmp(&b.1));
-        let (Some(&lo), Some(&hi)) = (simplex.first(), simplex.last()) else { break };
-        let second = simplex.len().checked_sub(2).and_then(|i| simplex.get(i)).map_or(hi.1, |s| s.1);
-        let size = simplex.iter().map(|s| s.0.iter().zip(lo.0).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max)).fold(0.0, f64::max);
+        let (Some(&lo), Some(&hi)) = (simplex.first(), simplex.last()) else {
+            break;
+        };
+        let second = simplex
+            .len()
+            .checked_sub(2)
+            .and_then(|i| simplex.get(i))
+            .map_or(hi.1, |s| s.1);
+        let size = simplex
+            .iter()
+            .map(|s| {
+                s.0.iter()
+                    .zip(lo.0)
+                    .map(|(a, b)| (a - b).abs())
+                    .fold(0.0, f64::max)
+            })
+            .fold(0.0, f64::max);
         if (hi.1 - lo.1).abs() <= 1e-12 * lo.1.abs() + 1e-300 || size < 1e-7 {
             break;
         }
@@ -688,13 +792,21 @@ fn optimise(y: &[f64], init: &Init) -> Params {
         let replace = if fr < lo.1 {
             let expanded = lerp(c, hi.0, -2.0);
             let fe = f(expanded);
-            Some(if fe < fr { (expanded, fe) } else { (reflected, fr) })
+            Some(if fe < fr {
+                (expanded, fe)
+            } else {
+                (reflected, fr)
+            })
         } else if fr < second {
             Some((reflected, fr))
         } else {
             let contracted = lerp(c, hi.0, 0.5);
             let fc = f(contracted);
-            if fc < hi.1 { Some((contracted, fc)) } else { None }
+            if fc < hi.1 {
+                Some((contracted, fc))
+            } else {
+                None
+            }
         };
         match replace {
             Some(v) => {
@@ -733,7 +845,15 @@ pub(crate) fn fit(y: &[f64], m: usize) -> Fit {
     let mut errors = Vec::with_capacity(y.len());
     let state = filter(y, &init, p, Some(&mut errors));
     let [alpha, beta, gamma] = p;
-    Fit { alpha, beta, gamma, m, n: y.len(), state, errors }
+    Fit {
+        alpha,
+        beta,
+        gamma,
+        m,
+        n: y.len(),
+        state,
+        errors,
+    }
 }
 
 impl Fit {
@@ -751,7 +871,11 @@ impl Fit {
     pub fn forecast(&self, h: f64) -> f64 {
         let lo = h.floor();
         let a = self.at(lo);
-        if h == lo { a } else { a + (h - lo) * (self.at(lo + 1.0) - a) }
+        if h == lo {
+            a
+        } else {
+            a + (h - lo) * (self.at(lo + 1.0) - a)
+        }
     }
 
     /// Standard deviation of the forecast error `h` steps ahead.
@@ -760,7 +884,8 @@ impl Fit {
         let k = (h.ceil().max(1.0)) - 1.0;
         let (a, b, g) = (self.alpha, self.alpha * self.beta, self.gamma);
         // Σ_{j=1}^{k} (a + b·j)² + seasonal terms, in closed form.
-        let mut sum = k * a * a + a * b * k * (k + 1.0) + b * b * k * (k + 1.0) * (2.0 * k + 1.0) / 6.0;
+        let mut sum =
+            k * a * a + a * b * k * (k + 1.0) + b * b * k * (k + 1.0) * (2.0 * k + 1.0) / 6.0;
         if self.m > 0 {
             let m = self.m as f64;
             let q = (k / m).floor();
@@ -780,7 +905,12 @@ struct Prepared {
 }
 
 fn prepare(a: &[Arg], c: C, values: usize, timeline: usize, opts: Options) -> R<Prepared> {
-    let series = series(&arg(a, values)?.value, &arg(a, timeline)?.value, &opts, c.date_system())?;
+    let series = series(
+        &arg(a, values)?.value,
+        &arg(a, timeline)?.value,
+        &opts,
+        c.date_system(),
+    )?;
     let m = match opts.seasonality {
         Season::Detect => detect_season(&series.y),
         Season::None => 0,
@@ -847,7 +977,10 @@ fn forecast_ets_stat(a: &[Arg], c: C) -> R<Value> {
         2 => f.beta,
         3 => f.gamma,
         4 => {
-            let naive: Vec<f64> = y.windows(2).filter_map(|w| Some((w.get(1)? - w.first()?).abs())).collect();
+            let naive: Vec<f64> = y
+                .windows(2)
+                .filter_map(|w| Some((w.get(1)? - w.first()?).abs()))
+                .collect();
             let d = naive.iter().sum::<f64>() / naive.len().max(1) as f64;
             if d == 0.0 {
                 return Err(CellError::Div0);
@@ -936,21 +1069,54 @@ mod tests {
     /// y = 3 + 2t plus a four-step season, over `n` points.
     fn seasonal(n: usize) -> Vec<f64> {
         let pattern = [4.0, -2.0, 7.0, -9.0];
-        (1..=n).map(|t| 3.0 + 2.0 * t as f64 + pattern[(t - 1) % 4]).collect()
+        (1..=n)
+            .map(|t| 3.0 + 2.0 * t as f64 + pattern[(t - 1) % 4])
+            .collect()
     }
 
     #[test]
     fn straight_line_forecasts_exactly() {
         let ys: Vec<f64> = (1..=20).map(|t| 3.0 + 2.0 * t as f64).collect();
         let ts = timeline(20);
-        close_tol(ev("FORECAST.ETS", vec![n(25.0), range(&ys), range(&ts)]), 53.0, 1e-9);
-        close_tol(ev("FORECAST.ETS", vec![n(20.5), range(&ys), range(&ts), n(0.0)]), 44.0, 1e-9);
-        close(ev("FORECAST.ETS.SEASONALITY", vec![range(&ys), range(&ts)]), 0.0);
-        close_tol(ev("FORECAST.ETS.CONFINT", vec![n(25.0), range(&ys), range(&ts)]), 0.0, 1e-9);
-        close(ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(8.0)]), 1.0);
-        close_tol(ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(6.0)]), 0.0, 1e-9);
+        close_tol(
+            ev("FORECAST.ETS", vec![n(25.0), range(&ys), range(&ts)]),
+            53.0,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(20.5), range(&ys), range(&ts), n(0.0)],
+            ),
+            44.0,
+            1e-9,
+        );
+        close(
+            ev("FORECAST.ETS.SEASONALITY", vec![range(&ys), range(&ts)]),
+            0.0,
+        );
+        close_tol(
+            ev(
+                "FORECAST.ETS.CONFINT",
+                vec![n(25.0), range(&ys), range(&ts)],
+            ),
+            0.0,
+            1e-9,
+        );
+        close(
+            ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(8.0)]),
+            1.0,
+        );
+        close_tol(
+            ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(6.0)]),
+            0.0,
+            1e-9,
+        );
         // Target dates are lifted over arrays.
-        let v = ev("FORECAST.ETS", vec![av(row(&[21.0, 22.0])), range(&ys), range(&ts)]);
+        let v = ev(
+            "FORECAST.ETS",
+            vec![av(row(&[21.0, 22.0])), range(&ys), range(&ts)],
+        );
         let r = rows_of(&v);
         close_tol(r[0][0].clone(), 45.0, 1e-9);
         close_tol(r[0][1].clone(), 47.0, 1e-9);
@@ -960,22 +1126,44 @@ mod tests {
     fn seasonal_series_is_detected_and_continued() {
         let ys = seasonal(24);
         let ts = timeline(24);
-        close(ev("FORECAST.ETS.SEASONALITY", vec![range(&ys), range(&ts)]), 4.0);
+        close(
+            ev("FORECAST.ETS.SEASONALITY", vec![range(&ys), range(&ts)]),
+            4.0,
+        );
         // t = 27 is the third position of the pattern: 3 + 54 + 7.
-        close_tol(ev("FORECAST.ETS", vec![n(27.0), range(&ys), range(&ts)]), 64.0, 1e-7);
-        close_tol(ev("FORECAST.ETS", vec![n(28.0), range(&ys), range(&ts), n(4.0)]), 50.0, 1e-7);
+        close_tol(
+            ev("FORECAST.ETS", vec![n(27.0), range(&ys), range(&ts)]),
+            64.0,
+            1e-7,
+        );
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(28.0), range(&ys), range(&ts), n(4.0)],
+            ),
+            50.0,
+            1e-7,
+        );
         // Timeline order does not matter.
         let mut rev_y = ys.clone();
         let mut rev_t = ts.clone();
         rev_y.reverse();
         rev_t.reverse();
-        close_tol(ev("FORECAST.ETS", vec![n(27.0), range(&rev_y), range(&rev_t)]), 64.0, 1e-7);
+        close_tol(
+            ev("FORECAST.ETS", vec![n(27.0), range(&rev_y), range(&rev_t)]),
+            64.0,
+            1e-7,
+        );
     }
 
     #[test]
     fn noisy_series_statistics_are_consistent() {
         // A seasonal series with deterministic pseudo-noise.
-        let ys: Vec<f64> = seasonal(48).iter().enumerate().map(|(i, v)| v + ((i * 37 % 11) as f64 - 5.0) * 0.4).collect();
+        let ys: Vec<f64> = seasonal(48)
+            .iter()
+            .enumerate()
+            .map(|(i, v)| v + ((i * 37 % 11) as f64 - 5.0) * 0.4)
+            .collect();
         let ts = timeline(48);
         let stat = |k: f64| match ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(k)]) {
             Value::Number(x) => x,
@@ -986,12 +1174,18 @@ mod tests {
         }
         let (mase, smape, mae, rmse) = (stat(4.0), stat(5.0), stat(6.0), stat(7.0));
         assert!(mae > 0.0 && rmse >= mae && mase > 0.0 && smape > 0.0 && smape < 2.0);
-        let conf = |t: f64, c: f64| match ev("FORECAST.ETS.CONFINT", vec![n(t), range(&ys), range(&ts), n(c)]) {
+        let conf = |t: f64, c: f64| match ev(
+            "FORECAST.ETS.CONFINT",
+            vec![n(t), range(&ys), range(&ts), n(c)],
+        ) {
             Value::Number(x) => x,
             other => panic!("confint: {other:?}"),
         };
         assert!(conf(49.0, 0.95) > 0.0);
-        assert!(conf(60.0, 0.95) > conf(49.0, 0.95), "the interval widens with the horizon");
+        assert!(
+            conf(60.0, 0.95) > conf(49.0, 0.95),
+            "the interval widens with the horizon"
+        );
         assert!(conf(49.0, 0.99) > conf(49.0, 0.95));
         // The forecast stays close to the noise-free continuation.
         match ev("FORECAST.ETS", vec![n(51.0), range(&ys), range(&ts)]) {
@@ -1012,19 +1206,66 @@ mod tests {
         }
         let ys: Vec<f64> = (0..24).map(|i| 100.0 + 5.0 * i as f64).collect();
         // 2026-01-01 = 46023, 2026-03-01 = 46082.
-        close_tol(ev("FORECAST.ETS", vec![n(46023.0), range(&ys), range(&ts), n(0.0)]), 220.0, 1e-9);
-        close_tol(ev("FORECAST.ETS", vec![n(46082.0), range(&ys), range(&ts), n(0.0)]), 230.0, 1e-9);
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(46023.0), range(&ys), range(&ts), n(0.0)],
+            ),
+            220.0,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(46082.0), range(&ys), range(&ts), n(0.0)],
+            ),
+            230.0,
+            1e-9,
+        );
         // Missing points are interpolated (or zero with data_completion 0).
         let gaps_t: Vec<f64> = [1.0, 2.0, 4.0, 5.0, 6.0, 8.0, 9.0, 10.0].to_vec();
         let gaps_y: Vec<f64> = gaps_t.iter().map(|t| 10.0 * t).collect();
-        close_tol(ev("FORECAST.ETS", vec![n(12.0), range(&gaps_y), range(&gaps_t), n(0.0)]), 120.0, 1e-9);
-        assert_ne!(ev("FORECAST.ETS", vec![n(12.0), range(&gaps_y), range(&gaps_t), n(0.0), n(0.0)]), Value::Number(120.0));
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(12.0), range(&gaps_y), range(&gaps_t), n(0.0)],
+            ),
+            120.0,
+            1e-9,
+        );
+        assert_ne!(
+            ev(
+                "FORECAST.ETS",
+                vec![n(12.0), range(&gaps_y), range(&gaps_t), n(0.0), n(0.0)]
+            ),
+            Value::Number(120.0)
+        );
         // Duplicate time stamps are averaged by default, summed with aggregation 7.
         let dup_t = [1.0, 2.0, 2.0, 3.0, 4.0, 5.0];
         let dup_y = [2.0, 3.0, 5.0, 6.0, 8.0, 10.0];
-        close_tol(ev("FORECAST.ETS", vec![n(6.0), range(&dup_y), range(&dup_t), n(0.0)]), 12.0, 1e-9);
-        close_tol(ev("FORECAST.ETS.STAT", vec![range(&dup_y), range(&dup_t), n(8.0)]), 1.0, 1e-12);
-        assert_ne!(ev("FORECAST.ETS", vec![n(6.0), range(&dup_y), range(&dup_t), n(0.0), n(1.0), n(7.0)]), Value::Number(12.0));
+        close_tol(
+            ev(
+                "FORECAST.ETS",
+                vec![n(6.0), range(&dup_y), range(&dup_t), n(0.0)],
+            ),
+            12.0,
+            1e-9,
+        );
+        close_tol(
+            ev(
+                "FORECAST.ETS.STAT",
+                vec![range(&dup_y), range(&dup_t), n(8.0)],
+            ),
+            1.0,
+            1e-12,
+        );
+        assert_ne!(
+            ev(
+                "FORECAST.ETS",
+                vec![n(6.0), range(&dup_y), range(&dup_t), n(0.0), n(1.0), n(7.0)]
+            ),
+            Value::Number(12.0)
+        );
     }
 
     #[test]
@@ -1035,9 +1276,19 @@ mod tests {
         // Target before the end of the timeline.
         is_err(ets(vec![n(5.0), range(&ys), range(&ts)]), CellError::Num);
         // Timeline and values of different sizes.
-        is_err(ets(vec![n(13.0), range(&ys), range(&ts[..11])]), CellError::NA);
+        is_err(
+            ets(vec![n(13.0), range(&ys), range(&ts[..11])]),
+            CellError::NA,
+        );
         // No constant step.
-        is_err(ets(vec![n(5.0), range(&[1.0, 2.0, 3.0]), range(&[1.0, 2.0, 4.5])]), CellError::Num);
+        is_err(
+            ets(vec![
+                n(5.0),
+                range(&[1.0, 2.0, 3.0]),
+                range(&[1.0, 2.0, 4.5]),
+            ]),
+            CellError::Num,
+        );
         // Seasonality, completion, aggregation out of range.
         for (i, bad) in [(3, 8761.0), (3, -1.0), (4, 2.0), (5, 8.0)] {
             let mut args = vec![n(13.0), range(&ys), range(&ts), n(1.0), n(1.0), n(0.0)];
@@ -1045,23 +1296,73 @@ mod tests {
             is_err(ets(args), CellError::Num);
         }
         // More than 30% of the points missing.
-        is_err(ets(vec![n(30.0), range(&[1.0, 2.0, 3.0]), range(&[1.0, 2.0, 20.0])]), CellError::Num);
+        is_err(
+            ets(vec![
+                n(30.0),
+                range(&[1.0, 2.0, 3.0]),
+                range(&[1.0, 2.0, 20.0]),
+            ]),
+            CellError::Num,
+        );
         // Text time stamps; errors propagate.
-        is_err(ets(vec![n(13.0), range(&[1.0, 2.0]), rf(arr(vec![vec![nv(1.0)], vec![tv("x")]]))]), CellError::Value);
-        is_err(ets(vec![n(13.0), rf(arr(vec![vec![nv(1.0)], vec![Value::Error(CellError::Div0)]])), range(&[1.0, 2.0])]), CellError::Div0);
+        is_err(
+            ets(vec![
+                n(13.0),
+                range(&[1.0, 2.0]),
+                rf(arr(vec![vec![nv(1.0)], vec![tv("x")]])),
+            ]),
+            CellError::Value,
+        );
+        is_err(
+            ets(vec![
+                n(13.0),
+                rf(arr(vec![
+                    vec![nv(1.0)],
+                    vec![Value::Error(CellError::Div0)],
+                ])),
+                range(&[1.0, 2.0]),
+            ]),
+            CellError::Div0,
+        );
         // Confidence level outside (0, 1); statistic type outside 1–8.
-        is_err(ev("FORECAST.ETS.CONFINT", vec![n(13.0), range(&ys), range(&ts), n(1.0)]), CellError::Num);
-        is_err(ev("FORECAST.ETS.CONFINT", vec![n(13.0), range(&ys), range(&ts), n(0.0)]), CellError::Num);
-        is_err(ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(9.0)]), CellError::Num);
-        is_err(ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(0.0)]), CellError::Num);
+        is_err(
+            ev(
+                "FORECAST.ETS.CONFINT",
+                vec![n(13.0), range(&ys), range(&ts), n(1.0)],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev(
+                "FORECAST.ETS.CONFINT",
+                vec![n(13.0), range(&ys), range(&ts), n(0.0)],
+            ),
+            CellError::Num,
+        );
+        is_err(
+            ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(9.0)]),
+            CellError::Num,
+        );
+        is_err(
+            ev("FORECAST.ETS.STAT", vec![range(&ys), range(&ts), n(0.0)]),
+            CellError::Num,
+        );
         // Hostile spans: a huge gap is rejected before anything is allocated.
-        is_err(ets(vec![n(1e15), range(&[1.0, 2.0, 3.0]), range(&[0.0, 1.0, 1e12])]), CellError::Num);
+        is_err(
+            ets(vec![
+                n(1e15),
+                range(&[1.0, 2.0, 3.0]),
+                range(&[0.0, 1.0, 1e12]),
+            ]),
+            CellError::Num,
+        );
         is_err(ets(vec![n(1e308), range(&ys), range(&ts)]), CellError::Num);
     }
 
     #[test]
     fn timelines_continue_past_their_last_point() {
-        let tl = Timeline::detect(&[3.0, 1.0, 2.0, 2.0, 5.0], DateSystem::D1900).expect("numeric step");
+        let tl =
+            Timeline::detect(&[3.0, 1.0, 2.0, 2.0, 5.0], DateSystem::D1900).expect("numeric step");
         assert_eq!(tl.after_last(1), Some(6.0));
         assert_eq!(tl.steps_after_last(8.5), Some(3.5));
         // Month ends: 2024-01-31 (45322), 2024-02-29 (45351), 2024-03-31 (45382).
@@ -1069,7 +1370,10 @@ mod tests {
         assert_eq!(tl.after_last(1), Some(45412.0)); // 2024-04-30
         assert_eq!(tl.steps_after_last(45412.0), Some(1.0));
         assert!(Timeline::detect(&[1.0, 2.0, 4.5], DateSystem::D1900).is_none());
-        assert!(Timeline::detect(&[1.0, 2.0, 9.0], DateSystem::D1900).is_none(), "too many missing points");
+        assert!(
+            Timeline::detect(&[1.0, 2.0, 9.0], DateSystem::D1900).is_none(),
+            "too many missing points"
+        );
         assert!(Timeline::detect(&[1.0], DateSystem::D1900).is_none());
         assert!(Timeline::detect(&[1.0, f64::NAN], DateSystem::D1900).is_none());
     }

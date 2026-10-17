@@ -25,7 +25,15 @@ impl Default for StrokeOptions {
 
 impl From<&ShapeStroke> for StrokeOptions {
     fn from(s: &ShapeStroke) -> Self {
-        Self { align: s.align, cap: s.cap, join: s.join, miter_limit: s.miter_limit, dashes: s.dashes.clone(), dash_offset: s.dash_offset, opacity: s.opacity }
+        Self {
+            align: s.align,
+            cap: s.cap,
+            join: s.join,
+            miter_limit: s.miter_limit,
+            dashes: s.dashes.clone(),
+            dash_offset: s.dash_offset,
+            opacity: s.opacity,
+        }
     }
 }
 
@@ -75,7 +83,12 @@ impl StrokeOptions {
     }
 
     fn valid(&self) -> bool {
-        self.stroke(3.0, photocraft_doc::Fill::Solid(photocraft_doc::Color::BLACK)).validate().is_ok()
+        self.stroke(
+            3.0,
+            photocraft_doc::Fill::Solid(photocraft_doc::Color::BLACK),
+        )
+        .validate()
+        .is_ok()
     }
 }
 
@@ -96,37 +109,69 @@ pub fn paint_shape_preview(painter: &egui::Painter, shape: &photocraft_doc::Shap
     }
     let id = egui::Id::new("shape-drag-render");
     let cached = painter.ctx().data(|d| d.get_temp::<DragCache>(id));
-    let cache = cached.filter(|c| c.shape == *shape && c.clip == clip).or_else(|| {
-        let scale = (2048.0 / clip.width().max(clip.height()).max(1.0)).min(1.0);
-        let mut proxy = shape.clone();
-        let tr = photocraft_geom::Affine { m: [scale as f64, 0.0, 0.0, scale as f64, -(clip.left() * scale) as f64, -(clip.top() * scale) as f64] };
-        proxy.path = proxy.path.transform(&tr);
-        if let Some(stroke) = proxy.stroke.as_mut() {
-            stroke.width *= scale;
-        }
-        let canvas = photocraft_geom::Rect::from_size(photocraft_geom::Size::new((clip.width() * scale).ceil() as u32, (clip.height() * scale).ceil() as u32));
-        let compiled = photocraft_vector::CompiledShape::new(&proxy, photocraft_vector::DEFAULT_TOLERANCE, canvas);
-        let bounds = compiled.bounds()?.intersect(&canvas);
-        if bounds.is_empty() {
-            return None;
-        }
-        let rgba = compiled.render_rgba(bounds);
-        let bytes: Vec<u8> = rgba.iter().flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)).collect();
-        let texture = painter.ctx().load_texture(
-            "shape-drag",
-            egui::ColorImage::from_rgba_unmultiplied([bounds.width() as usize, bounds.height() as usize], &bytes),
-            egui::TextureOptions::LINEAR,
-        );
-        let screen = |x: i32, y: i32| clip.min + vec2(x as f32, y as f32) / scale;
-        Some(DragCache {
-            shape: shape.clone(),
-            clip,
-            image_rect: egui::Rect::from_min_max(screen(bounds.x0, bounds.y0), screen(bounds.x1, bounds.y1)),
-            texture,
-        })
-    });
+    let cache = cached
+        .filter(|c| c.shape == *shape && c.clip == clip)
+        .or_else(|| {
+            let scale = (2048.0 / clip.width().max(clip.height()).max(1.0)).min(1.0);
+            let mut proxy = shape.clone();
+            let tr = photocraft_geom::Affine {
+                m: [
+                    scale as f64,
+                    0.0,
+                    0.0,
+                    scale as f64,
+                    -(clip.left() * scale) as f64,
+                    -(clip.top() * scale) as f64,
+                ],
+            };
+            proxy.path = proxy.path.transform(&tr);
+            if let Some(stroke) = proxy.stroke.as_mut() {
+                stroke.width *= scale;
+            }
+            let canvas = photocraft_geom::Rect::from_size(photocraft_geom::Size::new(
+                (clip.width() * scale).ceil() as u32,
+                (clip.height() * scale).ceil() as u32,
+            ));
+            let compiled = photocraft_vector::CompiledShape::new(
+                &proxy,
+                photocraft_vector::DEFAULT_TOLERANCE,
+                canvas,
+            );
+            let bounds = compiled.bounds()?.intersect(&canvas);
+            if bounds.is_empty() {
+                return None;
+            }
+            let rgba = compiled.render_rgba(bounds);
+            let bytes: Vec<u8> = rgba
+                .iter()
+                .flat_map(|p| p.map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8))
+                .collect();
+            let texture = painter.ctx().load_texture(
+                "shape-drag",
+                egui::ColorImage::from_rgba_unmultiplied(
+                    [bounds.width() as usize, bounds.height() as usize],
+                    &bytes,
+                ),
+                egui::TextureOptions::LINEAR,
+            );
+            let screen = |x: i32, y: i32| clip.min + vec2(x as f32, y as f32) / scale;
+            Some(DragCache {
+                shape: shape.clone(),
+                clip,
+                image_rect: egui::Rect::from_min_max(
+                    screen(bounds.x0, bounds.y0),
+                    screen(bounds.x1, bounds.y1),
+                ),
+                texture,
+            })
+        });
     if let Some(cache) = cache {
-        painter.image(cache.texture.id(), cache.image_rect, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        painter.image(
+            cache.texture.id(),
+            cache.image_rect,
+            egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
         painter.ctx().data_mut(|d| d.insert_temp(id, cache));
     }
 }
@@ -147,8 +192,11 @@ pub(super) fn mark_rendered(ctx: &egui::Context, key: &str) {
 /// A hidden options row or collapsed Appearance section no longer owns input.
 /// Called after all options bars and Properties windows have had a chance to draw.
 pub(crate) fn finish_frame(app: &mut crate::PhotocraftApp, ctx: &egui::Context) {
-    let Some(e) = &app.ui.stroke_editor else { return };
-    let shown = ctx.data(|d| d.get_temp::<u64>(egui::Id::new(("shape-stroke-rendered", e.key.as_str()))));
+    let Some(e) = &app.ui.stroke_editor else {
+        return;
+    };
+    let shown =
+        ctx.data(|d| d.get_temp::<u64>(egui::Id::new(("shape-stroke-rendered", e.key.as_str()))));
     if shown != Some(ctx.cumulative_pass_nr()) {
         editor::close_children(ctx, &e.key);
         app.ui.stroke_editor = None;
@@ -163,10 +211,14 @@ struct CanvasDismissal {
 
 /// Pressing the canvas dismisses this popup and consumes that entire gesture. In particular,
 /// its release must not open a shape-size dialog or commit a shape dragged behind the popup.
-pub(crate) fn dismiss_from_canvas(app: &mut crate::PhotocraftApp, response: &egui::Response) -> bool {
+pub(crate) fn dismiss_from_canvas(
+    app: &mut crate::PhotocraftApp,
+    response: &egui::Response,
+) -> bool {
     let ctx = &response.ctx;
     let frame = ctx.cumulative_frame_nr();
-    let was_open = app.ui.stroke_editor.is_some() || ctx.data(|d| d.get_temp::<u64>(open_frame_id())) == Some(frame);
+    let was_open = app.ui.stroke_editor.is_some()
+        || ctx.data(|d| d.get_temp::<u64>(open_frame_id())) == Some(frame);
     let (pressed, down) = ctx.input(|i| (i.pointer.any_pressed(), i.pointer.any_down()));
     let dismiss = was_open && pressed && response.contains_pointer();
     if dismiss && let Some(e) = app.ui.stroke_editor.take() {
@@ -174,7 +226,9 @@ pub(crate) fn dismiss_from_canvas(app: &mut crate::PhotocraftApp, response: &egu
         ctx.request_repaint();
     }
     ctx.data_mut(|d| {
-        let state = d.get_temp_mut_or_default::<CanvasDismissal>(egui::Id::new("shape-stroke-canvas-dismissal"));
+        let state = d.get_temp_mut_or_default::<CanvasDismissal>(egui::Id::new(
+            "shape-stroke-canvas-dismissal",
+        ));
         state.held |= dismiss;
         let consumed = state.held || state.consumed_frame == Some(frame);
         if consumed {
@@ -187,7 +241,9 @@ pub(crate) fn dismiss_from_canvas(app: &mut crate::PhotocraftApp, response: &egu
 
 /// Drop a popup whose source disappeared or changed outside this editor (including Undo).
 pub(crate) fn sync_editor(app: &mut crate::PhotocraftApp, ctx: &egui::Context) {
-    let Some(e) = &app.ui.stroke_editor else { return };
+    let Some(e) = &app.ui.stroke_editor else {
+        return;
+    };
     let valid = if let Some((doc, layer)) = e.target {
         app.session.active().is_some_and(|st| {
             let locks = st.doc.effective_locks(layer);
@@ -196,14 +252,23 @@ pub(crate) fn sync_editor(app: &mut crate::PhotocraftApp, ctx: &egui::Context) {
                 && !locks.all
                 && !locks.pixels
                 && st.doc.layer(layer).is_some_and(|l| match &l.content {
-                    photocraft_doc::LayerContent::Shape(shape) => shape.stroke.as_ref().map(StrokeOptions::from).unwrap_or_default() == e.original,
+                    photocraft_doc::LayerContent::Shape(shape) => {
+                        shape
+                            .stroke
+                            .as_ref()
+                            .map(StrokeOptions::from)
+                            .unwrap_or_default()
+                            == e.original
+                    }
                     _ => false,
                 })
         })
     } else {
         let tool = app.ui.tool;
         ((e.key == "tool-stroke" && crate::vector_ui::is_shape_tool(tool))
-            || (e.key == "pen-stroke" && tool == crate::state::Tool::Pen && app.ui.tool_options.vector_mode == "shape"))
+            || (e.key == "pen-stroke"
+                && tool == crate::state::Tool::Pen
+                && app.ui.tool_options.vector_mode == "shape"))
             && app.ui.tool_options.shape_stroke == e.original
     };
     if !valid {

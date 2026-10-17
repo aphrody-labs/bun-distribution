@@ -1,9 +1,9 @@
 use bevy_core_pipeline::FullscreenShader;
 
 use super::{
-    downsampling_pipeline::BloomUniforms, Bloom, BloomCompositeMode, BLOOM_TEXTURE_FORMAT,
+    BLOOM_TEXTURE_FORMAT, Bloom, BloomCompositeMode, downsampling_pipeline::BloomUniforms,
 };
-use bevy_asset::{load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, load_embedded_asset};
 use bevy_ecs::{
     prelude::{Component, Entity},
     resource::Resource,

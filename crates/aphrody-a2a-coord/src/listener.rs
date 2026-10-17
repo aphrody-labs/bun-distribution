@@ -45,7 +45,11 @@ pub fn router(cfg: &ListenerConfig) -> Router {
 
 /// Build the HTTP surface with all A2A files scoped to one Home Agent profile.
 pub fn router_for_profile(cfg: &ListenerConfig, profile_root: &std::path::Path) -> Router {
-    router_with_token(cfg, Mailbox::for_profile_root(profile_root), crate::auth::token())
+    router_with_token(
+        cfg,
+        Mailbox::for_profile_root(profile_root),
+        crate::auth::token(),
+    )
 }
 
 fn router_with_token(cfg: &ListenerConfig, mailbox: Mailbox, token: Option<String>) -> Router {
@@ -96,7 +100,10 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox, requires_bearer: 
 
     Router::new()
         .merge(coord)
-        .merge(crate::bridge::a2a_router(state_mailbox, cfg.manifest.id.clone()))
+        .merge(crate::bridge::a2a_router(
+            state_mailbox,
+            cfg.manifest.id.clone(),
+        ))
         .merge(crate::task_api::task_api_router(
             task_api_root,
             None, // The outer listener layer authenticates every private route.
@@ -140,8 +147,11 @@ mod auth_tests {
     async fn every_private_binding_rejects_missing_and_wrong_bearers() {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let app =
-            coord_router(&config(root.path()), private.path(), Some("test-credential".into()));
+        let app = coord_router(
+            &config(root.path()),
+            private.path(),
+            Some("test-credential".into()),
+        );
         for (method, path) in [
             ("POST", "/"),
             ("POST", "/a2a"),
@@ -157,9 +167,16 @@ mod auth_tests {
                 if let Some(credential) = credential {
                     request = request.header("authorization", credential);
                 }
-                let response =
-                    app.clone().oneshot(request.body(Body::empty()).unwrap()).await.unwrap();
-                assert_eq!(response.status(), StatusCode::UNAUTHORIZED, "{method} {path}");
+                let response = app
+                    .clone()
+                    .oneshot(request.body(Body::empty()).unwrap())
+                    .await
+                    .unwrap();
+                assert_eq!(
+                    response.status(),
+                    StatusCode::UNAUTHORIZED,
+                    "{method} {path}"
+                );
             }
         }
         for path in ["/ping", "/.well-known/agent-card.json"] {
@@ -185,7 +202,11 @@ mod auth_tests {
                     Mailbox::new(cfg.manifest.coord_dir(root.path())),
                     token.clone(),
                 ),
-                router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), token.clone()),
+                router_with_token(
+                    &cfg,
+                    Mailbox::for_profile_root(profile.path()),
+                    token.clone(),
+                ),
                 coord_router(&cfg, profile.path(), token.clone()),
             ];
             for app in apps {
@@ -200,14 +221,19 @@ mod auth_tests {
                     .await
                     .unwrap();
                 assert_eq!(response.status(), StatusCode::OK);
-                let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024).await.unwrap();
+                let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+                    .await
+                    .unwrap();
                 let card: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
                 if token.is_some() {
                     assert_eq!(
                         card["securitySchemes"]["bearer"]["httpAuthSecurityScheme"]["scheme"],
                         "Bearer"
                     );
-                    assert_eq!(card["securityRequirements"], serde_json::json!([{ "bearer": [] }]));
+                    assert_eq!(
+                        card["securityRequirements"],
+                        serde_json::json!([{ "bearer": [] }])
+                    );
                     assert!(
                         !String::from_utf8(bytes.to_vec())
                             .unwrap()
@@ -219,12 +245,21 @@ mod auth_tests {
                 }
                 let response = app
                     .clone()
-                    .oneshot(Request::builder().uri("/coord").body(Body::empty()).unwrap())
+                    .oneshot(
+                        Request::builder()
+                            .uri("/coord")
+                            .body(Body::empty())
+                            .unwrap(),
+                    )
                     .await
                     .unwrap();
                 assert_eq!(
                     response.status(),
-                    if token.is_some() { StatusCode::UNAUTHORIZED } else { StatusCode::OK }
+                    if token.is_some() {
+                        StatusCode::UNAUTHORIZED
+                    } else {
+                        StatusCode::OK
+                    }
                 );
                 if let Some(token) = &token {
                     let response = app
@@ -257,9 +292,11 @@ mod auth_tests {
             assert_ne!(cfg.bind.port(), 0);
             assert_eq!(cfg.bind, listener.local_addr().unwrap());
             let app = match variant {
-                0 => {
-                    router_with_token(&cfg, Mailbox::new(cfg.manifest.coord_dir(root.path())), None)
-                },
+                0 => router_with_token(
+                    &cfg,
+                    Mailbox::new(cfg.manifest.coord_dir(root.path())),
+                    None,
+                ),
                 1 => router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), None),
                 _ => coord_router(&cfg, profile.path(), None),
             };
@@ -318,8 +355,11 @@ mod auth_tests {
     async fn authenticated_tasks_use_the_explicit_private_directory() {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let app =
-            coord_router(&config(root.path()), private.path(), Some("test-credential".into()));
+        let app = coord_router(
+            &config(root.path()),
+            private.path(),
+            Some("test-credential".into()),
+        );
         let request = Request::builder()
             .method("POST")
             .uri("/coord/aphrody/tasks")
@@ -327,8 +367,16 @@ mod auth_tests {
             .header("content-type", "application/json")
             .body(Body::from(r#"{"id":"owned-task","body":"private"}"#))
             .unwrap();
-        assert_eq!(app.clone().oneshot(request).await.unwrap().status(), StatusCode::CREATED);
-        assert!(private.path().join("agents/aphrody/tasks/owned-task.json").is_file());
+        assert_eq!(
+            app.clone().oneshot(request).await.unwrap().status(),
+            StatusCode::CREATED
+        );
+        assert!(
+            private
+                .path()
+                .join("agents/aphrody/tasks/owned-task.json")
+                .is_file()
+        );
         assert!(!root.path().join(".coord").exists());
         let request = Request::builder()
             .uri("/tasks")
@@ -368,15 +416,27 @@ mod auth_tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
-        assert!(value.get("error").is_none(), "protocol probe failed: {value}");
+        assert!(
+            value.get("error").is_none(),
+            "protocol probe failed: {value}"
+        );
         let task_id = value["result"]["task"]["id"]
             .as_str()
             .or_else(|| value["result"]["id"].as_str())
             .expect("completed protocol task");
-        assert!(private.path().join("a2a/tasks").join(format!("{task_id}.json")).is_file());
+        assert!(
+            private
+                .path()
+                .join("a2a/tasks")
+                .join(format!("{task_id}.json"))
+                .is_file()
+        );
         let response = coord_router(&cfg, private.path(), None)
             .oneshot(
-                Request::builder().uri(format!("/tasks/{task_id}")).body(Body::empty()).unwrap(),
+                Request::builder()
+                    .uri(format!("/tasks/{task_id}"))
+                    .body(Body::empty())
+                    .unwrap(),
             )
             .await
             .unwrap();
@@ -478,8 +538,11 @@ mod auth_tests {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(root.path().join(".coord/shared")).unwrap();
-        std::fs::write(root.path().join(".coord/shared/branch"), "private-branch-detail\n")
-            .unwrap();
+        std::fs::write(
+            root.path().join(".coord/shared/branch"),
+            "private-branch-detail\n",
+        )
+        .unwrap();
         let response = coord_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder().method("POST").uri("/")
@@ -526,7 +589,10 @@ mod auth_tests {
         assert!(status.contains("shared checkout branch mismatch"));
         assert!(!status.contains("private-branch-detail"));
         assert_eq!(
-            FsTaskStore::new(private.path().join("a2a")).get("failure-task").await.unwrap(),
+            FsTaskStore::new(private.path().join("a2a"))
+                .get("failure-task")
+                .await
+                .unwrap(),
             Some(failed)
         );
     }
@@ -541,7 +607,11 @@ mod auth_tests {
         other_store.create(outside.clone()).await.unwrap();
         let mut interrupted = Vec::new();
         for index in 0..103 {
-            let state = if index % 2 == 0 { TaskState::Submitted } else { TaskState::Working };
+            let state = if index % 2 == 0 {
+                TaskState::Submitted
+            } else {
+                TaskState::Working
+            };
             let task = saved_task(&format!("interrupted-{index:03}"), state);
             store.create(task.clone()).await.unwrap();
             interrupted.push(task);
@@ -554,7 +624,10 @@ mod auth_tests {
         for task in &suspended {
             store.create(task.clone()).await.unwrap();
         }
-        assert_eq!(reconcile_interrupted_tasks(private.path()).await.unwrap(), 103);
+        assert_eq!(
+            reconcile_interrupted_tasks(private.path()).await.unwrap(),
+            103
+        );
         let reopened = FsTaskStore::new(private.path().join("a2a"));
         for task in interrupted {
             let failed = reopened.get(&task.id).await.unwrap().unwrap();
@@ -569,7 +642,10 @@ mod auth_tests {
             assert_eq!(reopened.get(&task.id).await.unwrap(), Some(task));
         }
         assert_eq!(other_store.get(&outside.id).await.unwrap(), Some(outside));
-        assert_eq!(reconcile_interrupted_tasks(private.path()).await.unwrap(), 0);
+        assert_eq!(
+            reconcile_interrupted_tasks(private.path()).await.unwrap(),
+            0
+        );
     }
 
     #[tokio::test]
@@ -587,9 +663,15 @@ mod auth_tests {
         assert!(serve(cfg.clone()).await.is_err());
         assert_eq!(store.get(&working.id).await.unwrap(), Some(working.clone()));
         assert!(
-            serve_with_options(cfg, ServeOptions { coord_dir: Some(coord), ..Default::default() },)
-                .await
-                .is_err()
+            serve_with_options(
+                cfg,
+                ServeOptions {
+                    coord_dir: Some(coord),
+                    ..Default::default()
+                },
+            )
+            .await
+            .is_err()
         );
         assert_eq!(store.get(&working.id).await.unwrap(), Some(working));
     }
@@ -623,7 +705,10 @@ mod auth_tests {
         let value: serde_json::Value =
             serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
                 .unwrap();
-        assert_eq!(value["error"]["code"], aphrody_a2a::error_code::TASK_NOT_CANCELABLE);
+        assert_eq!(
+            value["error"]["code"],
+            aphrody_a2a::error_code::TASK_NOT_CANCELABLE
+        );
         assert_eq!(store.get(&task.id).await.unwrap(), Some(task));
     }
 
@@ -671,10 +756,14 @@ async fn handle_ping() -> impl IntoResponse {
 async fn handle_msg(State(state): State<AppState>, Json(env): Json<Envelope>) -> impl IntoResponse {
     let short = env.from.split('@').next().unwrap_or("unknown").to_string();
     match state.mailbox.append(&short, &env) {
-        Ok(()) => (StatusCode::OK, Json(serde_json::json!({ "ok": true, "id": env.id }))),
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": e.to_string() })))
-        },
+        Ok(()) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "ok": true, "id": env.id })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        ),
     }
 }
 
@@ -683,7 +772,9 @@ async fn handle_coord(
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
     let proxy = CoordProxy::new(state.mailbox.inbox_path("aphrody"));
-    let accept = headers.get(axum::http::header::ACCEPT).and_then(|v| v.to_str().ok());
+    let accept = headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|v| v.to_str().ok());
     match proxy.handle_get_coord(accept).await {
         Ok(resp) => (
             StatusCode::from_u16(resp.status).unwrap_or(StatusCode::OK),
@@ -691,10 +782,11 @@ async fn handle_coord(
             axum::body::Body::from_stream(resp.body),
         )
             .into_response(),
-        Err(e) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": e.to_string() })))
-                .into_response()
-        },
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response(),
     }
 }
 
@@ -832,21 +924,21 @@ async fn bind_unix(
                         "Unix listener is already active",
                     )
                     .into());
-                },
+                }
                 Err(error)
                     if matches!(
                         error.kind(),
                         std::io::ErrorKind::ConnectionRefused | std::io::ErrorKind::NotFound
-                    ) => {},
+                    ) => {}
                 Err(error) => return Err(error.into()),
             }
-        },
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
     }
     match std::fs::remove_file(path) {
-        Ok(()) => {},
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
         Err(e) => return Err(e.into()),
     }
     let listener = tokio::net::UnixListener::bind(path)?;
@@ -870,10 +962,15 @@ pub async fn serve_with_options(
         return Err("--unix is not supported on this platform".into());
     }
     let token = crate::auth::token();
-    let coord_dir =
-        opts.coord_dir.clone().unwrap_or_else(|| cfg.manifest.coord_dir(&cfg.repo_root));
-    let tcp_listener =
-        if opts.no_tcp { None } else { Some(bind_tcp(&mut cfg, token.as_deref()).await?) };
+    let coord_dir = opts
+        .coord_dir
+        .clone()
+        .unwrap_or_else(|| cfg.manifest.coord_dir(&cfg.repo_root));
+    let tcp_listener = if opts.no_tcp {
+        None
+    } else {
+        Some(bind_tcp(&mut cfg, token.as_deref()).await?)
+    };
     #[cfg(unix)]
     let unix_listener = match opts.unix.as_deref() {
         Some(path) => Some(bind_unix(path).await?),
@@ -924,9 +1021,14 @@ pub fn run_tick(
     let peer = opts.peer.as_deref().unwrap_or("winclean");
     let peer_last = mailbox.read_last(peer)?;
     let kind = opts.kind.as_deref().unwrap_or("ping");
-    let subject = opts.subject.clone().unwrap_or_else(|| format!("coord tick {}", opts.iteration));
-    let mut body =
-        opts.body.clone().unwrap_or_else(|| format!("Tick {} from {side}.", opts.iteration));
+    let subject = opts
+        .subject
+        .clone()
+        .unwrap_or_else(|| format!("coord tick {}", opts.iteration));
+    let mut body = opts
+        .body
+        .clone()
+        .unwrap_or_else(|| format!("Tick {} from {side}.", opts.iteration));
     if let Some(ref last) = peer_last {
         body.push_str(&format!(" Last peer id={} kind={}.", last.id, last.kind));
     }

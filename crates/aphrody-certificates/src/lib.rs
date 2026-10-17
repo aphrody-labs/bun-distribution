@@ -27,7 +27,10 @@ pub struct IssueOptions {
 
 impl IssueOptions {
     pub fn validate(&self) -> Result<()> {
-        ensure!(self.hostname == HOSTNAME, "only vps.aphrody.com is authorized");
+        ensure!(
+            self.hostname == HOSTNAME,
+            "only vps.aphrody.com is authorized"
+        );
         ensure!(self.agree_tos, "explicit --agree-tos is required");
         ensure!(
             (30..=300).contains(&self.propagation_seconds),
@@ -75,8 +78,11 @@ pub async fn issue(options: &IssueOptions) -> Result<CertificateMetadata> {
     options.validate()?;
     let root = storage::output_directory(&options.output, &options.workspace)?;
     let lock_path = root.join("issuance.lock");
-    let lock_file =
-        fs::OpenOptions::new().write(true).create_new(true).open(&lock_path).map_err(|_| {
+    let lock_file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&lock_path)
+        .map_err(|_| {
             anyhow!("issuance lock exists or cannot be created; inspect before recovering")
         })?;
     let _lock = Lock(lock_path);
@@ -99,20 +105,28 @@ async fn issue_inner(
     root: &std::path::Path,
     dns: &DnsManager<'_>,
 ) -> Result<CertificateMetadata> {
-    let account_name =
-        if options.production { "account-production.json" } else { "account-staging.json" };
+    let account_name = if options.production {
+        "account-production.json"
+    } else {
+        "account-staging.json"
+    };
     let account_path = root.join(account_name);
     let account = if account_path.exists() {
         ensure!(
-            !fs::symlink_metadata(&account_path)?.file_type().is_symlink(),
+            !fs::symlink_metadata(&account_path)?
+                .file_type()
+                .is_symlink(),
             "symlink account refused"
         );
         Account::builder()?
             .from_credentials(serde_json::from_slice(&fs::read(account_path)?)?)
             .await?
     } else {
-        let issuer =
-            if options.production { LetsEncrypt::Production } else { LetsEncrypt::Staging };
+        let issuer = if options.production {
+            LetsEncrypt::Production
+        } else {
+            LetsEncrypt::Staging
+        };
         let (account, credentials) = Account::builder()?
             .create(
                 &NewAccount {
@@ -149,7 +163,9 @@ async fn issue_inner(
         let target = challenge.key_authorization().dns_value();
         let existing = dns.list_records(ZONE, None).await?;
         ensure!(
-            !existing.iter().any(|r| r.sub_domain == TXT_NAME && r.field_type != "TXT"),
+            !existing
+                .iter()
+                .any(|r| r.sub_domain == TXT_NAME && r.field_type != "TXT"),
             "challenge name has a conflicting non-TXT record"
         );
         // Existing identical values are borrowed, never owned or removed.
@@ -171,8 +187,14 @@ async fn issue_inner(
                 .add_record(ZONE, "TXT", TXT_NAME, &target, 60, true)
                 .await?
                 .ok_or_else(|| anyhow!("native DNS owner returned no applied record"))?;
-            let receipt = OwnedRecord { id: record.id, target };
-            ensure!(owns(&record, &receipt), "native DNS returned unexpected record");
+            let receipt = OwnedRecord {
+                id: record.id,
+                target,
+            };
+            ensure!(
+                owns(&record, &receipt),
+                "native DNS returned unexpected record"
+            );
             storage::save(root, "challenge-owned.json", &serde_json::to_vec(&receipt)?)?;
             fs::remove_file(root.join("challenge-intent.json"))?;
         }
@@ -193,7 +215,11 @@ async fn issue_inner(
     let directory = root.join(&generation);
     fs::create_dir(&directory)?;
     let directory = storage::output_directory(&directory, &options.workspace)?;
-    storage::save(&directory, "private-key.pem", key.serialize_pem().as_bytes())?;
+    storage::save(
+        &directory,
+        "private-key.pem",
+        key.serialize_pem().as_bytes(),
+    )?;
     storage::save(&directory, "fullchain.pem", certificate.as_bytes())?;
     let metadata = CertificateMetadata {
         hostname: HOSTNAME.to_owned(),
@@ -217,7 +243,11 @@ async fn backup_zone(dns: &DnsManager<'_>, root: &std::path::Path) -> Result<()>
         storage::hash(&fs::read(root.join(&name))?) == storage::hash(text.as_bytes()),
         "zone backup checksum mismatch"
     );
-    storage::save(root, &format!("{name}.sha256"), storage::hash(text.as_bytes()).as_bytes())?;
+    storage::save(
+        root,
+        &format!("{name}.sha256"),
+        storage::hash(text.as_bytes()).as_bytes(),
+    )?;
     Ok(())
 }
 
@@ -230,11 +260,17 @@ async fn cleanup(dns: &DnsManager<'_>, root: &std::path::Path) -> Result<()> {
     if !path.exists() {
         return Ok(());
     }
-    ensure!(!fs::symlink_metadata(&path)?.file_type().is_symlink(), "symlink receipt refused");
+    ensure!(
+        !fs::symlink_metadata(&path)?.file_type().is_symlink(),
+        "symlink receipt refused"
+    );
     let receipt: OwnedRecord = serde_json::from_slice(&fs::read(&path)?)?;
     let records = dns.list_records(ZONE, Some("TXT")).await?;
     if let Some(record) = records.iter().find(|r| r.id == receipt.id) {
-        ensure!(owns(record, &receipt), "owned DNS record changed; deletion refused");
+        ensure!(
+            owns(record, &receipt),
+            "owned DNS record changed; deletion refused"
+        );
         backup_zone(dns, root).await?;
         dns.delete_record(ZONE, receipt.id, true).await?;
     }
@@ -285,7 +321,10 @@ mod tests {
     }
     #[test]
     fn cleanup_requires_exact_ownership() {
-        let receipt = OwnedRecord { id: 42, target: "digest".into() };
+        let receipt = OwnedRecord {
+            id: 42,
+            target: "digest".into(),
+        };
         let mut record = DnsRecord {
             id: 42,
             zone: ZONE.into(),

@@ -11,7 +11,7 @@ use core::{
 #[cfg(feature = "bevy_reflect")]
 use {
     crate::reflect::ReflectResource,
-    bevy_reflect::{std_traits::ReflectDefault, Reflect},
+    bevy_reflect::{Reflect, std_traits::ReflectDefault},
 };
 
 /// A message collection that represents the messages that occurred within the last two

@@ -233,8 +233,13 @@ impl WiimoteState {
     }
 
     pub(super) fn set_accel(&mut self, accel: Option<[f32; 3]>) {
-        self.accel_override =
-            accel.map(|g| [encode_wiimote_g(g[0]), encode_wiimote_g(g[1]), encode_wiimote_g(g[2])]);
+        self.accel_override = accel.map(|g| {
+            [
+                encode_wiimote_g(g[0]),
+                encode_wiimote_g(g[1]),
+                encode_wiimote_g(g[2]),
+            ]
+        });
     }
 
     pub(super) fn tick_motion(&mut self) {
@@ -252,7 +257,11 @@ impl WiimoteState {
         if self.shake_active {
             self.shake_phase = (self.shake_phase + SHAKE_PHASE_STEP) % (2.0 * std::f32::consts::PI);
             let g = SHAKE_AMPLITUDE_G * self.shake_phase.sin();
-            self.accel = [encode_wiimote_g(g), encode_wiimote_g(g), encode_wiimote_g(1.0 + g)];
+            self.accel = [
+                encode_wiimote_g(g),
+                encode_wiimote_g(g),
+                encode_wiimote_g(1.0 + g),
+            ];
             self.dirty = true;
         } else {
             self.shake_phase = 0.0;
@@ -288,27 +297,27 @@ impl WiimoteState {
 
         let mut r = vec![HID_PREFIX_INPUT, mode as u8, bb0, bb1];
         match mode {
-            ReportMode::Core => {},
+            ReportMode::Core => {}
             ReportMode::CoreAccel => r.extend_from_slice(&accel),
             ReportMode::CoreExt8 => self.append_nunchuk_ext_padded(&mut r, 8),
             ReportMode::CoreAccelIrExt => {
                 r.extend_from_slice(&accel);
                 r.extend_from_slice(&self::pack_ir_extended(&self.ir_objects()));
-            },
+            }
             ReportMode::CoreExt19 => self.append_nunchuk_ext_padded(&mut r, 19),
             ReportMode::CoreAccelExt16 => {
                 r.extend_from_slice(&accel);
                 self.append_nunchuk_ext_padded(&mut r, 16);
-            },
+            }
             ReportMode::CoreIrBasicExt9 => {
                 r.extend_from_slice(&self::pack_ir_basic(&self.ir_objects()));
                 self.append_nunchuk_ext_padded(&mut r, 9);
-            },
+            }
             ReportMode::CoreAccelIrBasicExt6 => {
                 r.extend_from_slice(&accel);
                 r.extend_from_slice(&self::pack_ir_basic(&self.ir_objects()));
                 r.extend_from_slice(&self.nunchuk_extension_bytes());
-            },
+            }
         }
         r
     }
@@ -372,7 +381,10 @@ impl WiimoteState {
         let body = &packet[2..];
 
         let Some(report_id) = OutputReportId::from_u8(raw_id) else {
-            tracing::warn!(report_id = format!("{raw_id:#04x}"), "ignored Wiimote output report");
+            tracing::warn!(
+                report_id = format!("{raw_id:#04x}"),
+                "ignored Wiimote output report"
+            );
             return Vec::new();
         };
 
@@ -388,7 +400,7 @@ impl WiimoteState {
             OutputReportId::PlayerLeds => {
                 self.leds = body.first().copied().unwrap_or(0) >> 4;
                 self::trivial_ack(self.button_bytes(), raw_id)
-            },
+            }
             OutputReportId::DataReportingMode if body.len() >= 2 => {
                 self.continuous = (body[0] & 0x04) != 0;
                 let Some(mode) = ReportMode::from_u8(body[1]) else {
@@ -407,15 +419,15 @@ impl WiimoteState {
                 );
 
                 self::trivial_ack(self.button_bytes(), raw_id)
-            },
+            }
             OutputReportId::IrCameraEnable => {
                 self.ir_enabled_pin1 = body.first().is_some_and(|&b| (b & 0x04) != 0);
                 self::trivial_ack(self.button_bytes(), raw_id)
-            },
+            }
             OutputReportId::StatusInformationRequest => {
                 tracing::debug!("Wiimote status requested");
                 vec![self.make_status_report()]
-            },
+            }
             OutputReportId::WriteMemoryAndRegisters if body.len() >= 5 => {
                 let address = self::decode_mem_address(body);
 
@@ -434,7 +446,7 @@ impl WiimoteState {
                 }
 
                 self::trivial_ack(self.button_bytes(), raw_id)
-            },
+            }
             OutputReportId::ReadMemoryAndRegisters if body.len() >= 6 => {
                 let address_space = body[0] & 0x06;
                 let address = self::decode_mem_address(body);
@@ -448,11 +460,11 @@ impl WiimoteState {
                 );
 
                 self.read_memory_response(address_space, address, size)
-            },
+            }
             OutputReportId::IrCameraEnable2 => {
                 self.ir_enabled_pin2 = body.first().is_some_and(|&b| (b & 0x04) != 0);
                 self::trivial_ack(self.button_bytes(), raw_id)
-            },
+            }
             // Body too short for the variant's required fields.
             _ => Vec::new(),
         }
@@ -524,7 +536,8 @@ impl WiimoteState {
             let chunk_addr = (address as u16) + offset as u16;
             let mut chunk_data: [u8; 16] = [0; 16];
             chunk_data[..chunk].copy_from_slice(&backing[start..end]);
-            self.nunchuk_cipher.encrypt(&mut chunk_data[..chunk], chunk_addr as u32);
+            self.nunchuk_cipher
+                .encrypt(&mut chunk_data[..chunk], chunk_addr as u32);
 
             out.push(self.read_chunk_report(chunk_addr, &chunk_data[..chunk], 0));
 
@@ -618,7 +631,12 @@ fn pack_ir_basic(objects: &[Option<(u16, u16)>; 4]) -> [u8; 10] {
 }
 
 fn split_ir_coords(x: u16, y: u16) -> (u8, u8, u8, u8) {
-    (x as u8, ((x >> 8) & 0x03) as u8, y as u8, ((y >> 8) & 0x03) as u8)
+    (
+        x as u8,
+        ((x >> 8) & 0x03) as u8,
+        y as u8,
+        ((y >> 8) & 0x03) as u8,
+    )
 }
 
 fn pack_ir_basic_pair(out: &mut [u8], p1: Option<(u16, u16)>, p2: Option<(u16, u16)>) {
@@ -660,7 +678,14 @@ fn decode_mem_address(body: &[u8]) -> u32 {
 
 #[inline(always)]
 fn trivial_ack(button_bytes: [u8; 2], report_id: u8) -> Vec<Vec<u8>> {
-    vec![vec![HID_PREFIX_INPUT, 0x22, button_bytes[0], button_bytes[1], report_id, 0x00]]
+    vec![vec![
+        HID_PREFIX_INPUT,
+        0x22,
+        button_bytes[0],
+        button_bytes[1],
+        report_id,
+        0x00,
+    ]]
 }
 
 impl WiimoteState {
@@ -686,7 +711,7 @@ impl WiimoteState {
                 w.bool(true);
                 w.u16(x);
                 w.u16(y);
-            },
+            }
             None => w.bool(false),
         }
 
@@ -696,7 +721,7 @@ impl WiimoteState {
             Some(accel) => {
                 w.bool(true);
                 w.pod(&accel);
-            },
+            }
             None => w.bool(false),
         }
 
@@ -726,7 +751,11 @@ impl WiimoteState {
         self.nunchuk_key_valid = r.u16()?;
         self.nunchuk_cipher = r.pod()?;
 
-        self.ir_pointer = if r.bool()? { Some((r.u16()?, r.u16()?)) } else { None };
+        self.ir_pointer = if r.bool()? {
+            Some((r.u16()?, r.u16()?))
+        } else {
+            None
+        };
 
         self.accel = r.pod()?;
 
@@ -764,7 +793,10 @@ mod tests {
         let acks = wiimote.handle_output_report(&[0xA2, 0x12, 0x04, 0x31]);
         assert_eq!(acks, vec![vec![0xA1, 0x22, 0x00, 0x08, 0x12, 0x00]]);
         assert!(wiimote.continuous);
-        assert_eq!(wiimote.make_input_report(), [0xA1, 0x31, 0x00, 0x08, 0x80, 0x80, 0xB3]);
+        assert_eq!(
+            wiimote.make_input_report(),
+            [0xA1, 0x31, 0x00, 0x08, 0x80, 0x80, 0xB3]
+        );
 
         let acks = wiimote.handle_output_report(&[0xA2, 0x12, 0x00, 0x33]);
         assert_eq!(acks, vec![vec![0xA1, 0x22, 0x00, 0x08, 0x12, 0x00]]);

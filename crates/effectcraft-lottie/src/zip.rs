@@ -6,7 +6,11 @@ fn crc32(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= b as u32;
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
         }
     }
     !crc
@@ -75,13 +79,31 @@ pub fn store(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
 pub fn read_stored(data: &[u8]) -> Vec<(String, Vec<u8>)> {
     let mut out = vec![];
     let mut i = 0usize;
-    let u16_at = |p: usize| data.get(p..p + 2).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize);
-    let u32_at = |p: usize| data.get(p..p + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize);
+    let u16_at = |p: usize| {
+        data.get(p..p + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]) as usize)
+    };
+    let u32_at = |p: usize| {
+        data.get(p..p + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize)
+    };
     while u32_at(i) == Some(0x0403_4b50) {
-        let (Some(method), Some(size), Some(nlen), Some(xlen)) = (u16_at(i + 8), u32_at(i + 18), u16_at(i + 26), u16_at(i + 28)) else { break };
+        let (Some(method), Some(size), Some(nlen), Some(xlen)) = (
+            u16_at(i + 8),
+            u32_at(i + 18),
+            u16_at(i + 26),
+            u16_at(i + 28),
+        ) else {
+            break;
+        };
         let name_start = i + 30;
         let body = name_start + nlen + xlen;
-        let (Some(name), Some(bytes)) = (data.get(name_start..name_start + nlen), data.get(body..body + size)) else { break };
+        let (Some(name), Some(bytes)) = (
+            data.get(name_start..name_start + nlen),
+            data.get(body..body + size),
+        ) else {
+            break;
+        };
         if method == 0 {
             out.push((String::from_utf8_lossy(name).to_string(), bytes.to_vec()));
         }
@@ -95,7 +117,10 @@ mod tests {
     #[test]
     fn crc_and_roundtrip() {
         assert_eq!(super::crc32(b"123456789"), 0xCBF4_3926);
-        let z = super::store(&[("a.json".into(), b"{}".to_vec()), ("b/c.txt".into(), b"hello".to_vec())]);
+        let z = super::store(&[
+            ("a.json".into(), b"{}".to_vec()),
+            ("b/c.txt".into(), b"hello".to_vec()),
+        ]);
         let back = super::read_stored(&z);
         assert_eq!(back.len(), 2);
         assert_eq!(back[1].0, "b/c.txt");

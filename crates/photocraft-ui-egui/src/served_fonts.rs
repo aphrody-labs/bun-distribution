@@ -5,7 +5,9 @@
 use std::sync::{Mutex, PoisonError};
 
 use photocraft_doc::{DocId, LayerContent, LayerId, TextLayer};
-pub use photocraft_text::served::{ServedFont, add_families, add_fonts, parse_manifest, request_for_languages, take_requests};
+pub use photocraft_text::served::{
+    ServedFont, add_families, add_fonts, parse_manifest, request_for_languages, take_requests,
+};
 
 use crate::PhotocraftApp;
 
@@ -34,31 +36,43 @@ pub fn install(app: &mut PhotocraftApp, delivered: Vec<(String, Vec<u8>)>) {
                 }
             }
         }
-        let mut eng = photocraft_text::shared().lock().unwrap_or_else(PoisonError::into_inner);
+        let mut eng = photocraft_text::shared()
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         for (family, bytes) in delivered {
             let added = eng.fonts.register_font_data(bytes);
             if !added.contains(&family) {
-                log::warn!("a served font file listed as {family:?} registers {added:?}; the family in fonts/manifest.txt must be the font's own");
+                log::warn!(
+                    "a served font file listed as {family:?} registers {added:?}; the family in fonts/manifest.txt must be the font's own"
+                );
             }
         }
     }
     if !layers.is_empty() {
         let busy = app.session.refresh_type_layers(&layers);
-        PENDING.lock().unwrap_or_else(PoisonError::into_inner).extend(busy);
+        PENDING
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .extend(busy);
     }
 }
 
 /// Should the layer be redrawn when `families` arrive: it uses one of them, or its text is in a
 /// script one of them is the served fallback for?
 fn redraws_for(t: &TextLayer, families: &[String]) -> bool {
-    uses_family(t, families) || families.iter().any(|f| photocraft_text::served::falls_back_to(&t.text, f))
+    uses_family(t, families)
+        || families
+            .iter()
+            .any(|f| photocraft_text::served::falls_back_to(&t.text, f))
 }
 
 /// Does the layer use one of `families`, by name or through the PostScript name a PSD gave?
 fn uses_family(t: &TextLayer, families: &[String]) -> bool {
     t.char_runs().iter().any(|r| {
         families.contains(&r.style.font_family)
-            || r.style.postscript_name.as_deref().is_some_and(|ps| families.contains(&photocraft_text::fonts::guess_from_postscript(ps).family))
+            || r.style.postscript_name.as_deref().is_some_and(|ps| {
+                families.contains(&photocraft_text::fonts::guess_from_postscript(ps).family)
+            })
     })
 }
 
@@ -68,13 +82,25 @@ mod tests {
 
     #[test]
     fn a_layer_uses_a_family_by_name_or_postscript_name() {
-        let t = TextLayer { text: "Hi".into(), font_family: "Open Sans".into(), ..Default::default() };
+        let t = TextLayer {
+            text: "Hi".into(),
+            font_family: "Open Sans".into(),
+            ..Default::default()
+        };
         assert!(uses_family(&t, &["Open Sans".into()]));
         assert!(!uses_family(&t, &["Lato".into()]));
-        let mut psd = TextLayer { text: "Hi".into(), font_family: "Inter".into(), ..Default::default() };
+        let mut psd = TextLayer {
+            text: "Hi".into(),
+            font_family: "Inter".into(),
+            ..Default::default()
+        };
         psd.runs = vec![photocraft_doc::text::TextRun {
             len: 2,
-            style: photocraft_doc::text::CharStyle { font_family: "Inter".into(), postscript_name: Some("Lato-Bold".into()), ..Default::default() },
+            style: photocraft_doc::text::CharStyle {
+                font_family: "Inter".into(),
+                postscript_name: Some("Lato-Bold".into()),
+                ..Default::default()
+            },
         }];
         assert!(uses_family(&psd, &["Lato".into()]));
     }
@@ -83,10 +109,22 @@ mod tests {
     fn a_layer_in_a_script_redraws_when_that_scripts_fallback_arrives() {
         // Thai: other tests use other scripts (the served catalog is process-wide).
         let thai = "Served Test Thai";
-        photocraft_text::served::add_fonts(&parse_manifest(&format!("{thai} | Regular | fonts/t/T.ttf | Thai\n")).0);
-        let layer = |text: &str| TextLayer { text: text.into(), font_family: "Inter".into(), ..Default::default() };
-        assert!(redraws_for(&layer("สวัสดี"), &[thai.into()]), "Thai text set in Inter falls back to it");
+        photocraft_text::served::add_fonts(
+            &parse_manifest(&format!("{thai} | Regular | fonts/t/T.ttf | Thai\n")).0,
+        );
+        let layer = |text: &str| TextLayer {
+            text: text.into(),
+            font_family: "Inter".into(),
+            ..Default::default()
+        };
+        assert!(
+            redraws_for(&layer("สวัสดี"), &[thai.into()]),
+            "Thai text set in Inter falls back to it"
+        );
         assert!(!redraws_for(&layer("hello"), &[thai.into()]));
-        assert!(redraws_for(&layer("hello"), &["Inter".into()]), "and a layer still redraws for its own family");
+        assert!(
+            redraws_for(&layer("hello"), &["Inter".into()]),
+            "and a layer still redraws for its own family"
+        );
     }
 }

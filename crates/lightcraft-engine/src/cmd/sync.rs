@@ -7,7 +7,10 @@ use crate::sync::{SyncChoice, scan, synchronize};
 use crate::{Result, Session};
 
 fn path(p: &Value, c: &str) -> Result<String> {
-    str_param(p, "path").filter(|d| !d.trim().is_empty()).map(str::to_string).ok_or_else(|| bad(c, "missing `path`"))
+    str_param(p, "path")
+        .filter(|d| !d.trim().is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| bad(c, "missing `path`"))
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -53,9 +56,16 @@ fn sync(s: &mut Session, p: &Value) -> Result<Value> {
     let changes = match s.take_folder_changes(&path) {
         Some(c) => c,
         // the person agreed to what a scan showed: never act on something else
-        None if bool_or(p, "scanned", false) => return Err(bad(C, format!("{path} changed since it was scanned: scan again"))),
+        None if bool_or(p, "scanned", false) => {
+            return Err(bad(
+                C,
+                format!("{path} changed since it was scanned: scan again"),
+            ));
+        }
         None => scan(s, &path, bool_or(p, "disk", false)).map_err(|e| bad(C, e.to_string()))?,
     };
     let r = synchronize(s, changes, choice)?;
-    Ok(json!({"imported": r.imported, "relinked": r.relinked, "removed": r.removed, "read": r.read, "failed": r.failed}))
+    Ok(
+        json!({"imported": r.imported, "relinked": r.relinked, "removed": r.removed, "read": r.read, "failed": r.failed}),
+    )
 }

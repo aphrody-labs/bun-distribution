@@ -16,12 +16,12 @@ pub use lens_distortion::{LensDistortion, LensDistortionUniform};
 pub use vignette::{Vignette, VignetteUniform};
 
 use crate::effect_stack::chromatic_aberration::{
-    DefaultChromaticAberrationLut, DEFAULT_CHROMATIC_ABERRATION_LUT_DATA,
+    DEFAULT_CHROMATIC_ABERRATION_LUT_DATA, DefaultChromaticAberrationLut,
 };
 
 use bevy_app::{App, Plugin};
 use bevy_asset::{
-    embedded_asset, load_embedded_asset, AssetServer, Assets, Handle, RenderAssetUsages,
+    AssetServer, Assets, Handle, RenderAssetUsages, embedded_asset, load_embedded_asset,
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
@@ -34,32 +34,32 @@ use bevy_ecs::{
 };
 use bevy_image::Image;
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     extract_component::ExtractComponentPlugin,
     render_asset::RenderAssets,
     render_resource::{
-        binding_types::{sampler, texture_2d, uniform_buffer},
         BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedRenderPipelineId, ColorTargetState, ColorWrites, DynamicUniformBuffer, Extent3d,
         FilterMode, FragmentState, MipmapFilterMode, Operations, PipelineCache,
         RenderPassColorAttachment, RenderPassDescriptor, RenderPipelineDescriptor, Sampler,
         SamplerBindingType, SamplerDescriptor, ShaderStages, SpecializedRenderPipeline,
         SpecializedRenderPipelines, TextureDimension, TextureFormat, TextureSampleType,
+        binding_types::{sampler, texture_2d, uniform_buffer},
     },
     renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery},
     texture::GpuImage,
     view::{ExtractedView, ViewTarget},
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
-use bevy_shader::{load_shader_library, Shader};
+use bevy_shader::{Shader, load_shader_library};
 use bevy_utils::prelude::default;
 
 use crate::{bloom::bloom, dof::depth_of_field};
 use bevy_core_pipeline::{
+    FullscreenShader,
     schedule::{Core2d, Core3d},
     tonemapping::tonemapping,
-    FullscreenShader,
 };
 
 /// A plugin that implements a built-in postprocessing stack with some common

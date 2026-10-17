@@ -40,12 +40,18 @@ pub struct WebGpuViewer {
 impl WebGpuViewer {
     /// Initialise une surface WebGPU compatible avec le canvas ; échec sans fallback.
     pub async fn create(canvas: HtmlCanvasElement) -> Result<WebGpuViewer, JsValue> {
-        Ok(Self { inner: WebViewer::new(canvas).await.map_err(js_error)? })
+        Ok(Self {
+            inner: WebViewer::new(canvas).await.map_err(js_error)?,
+        })
     }
 
     /// Avatar canvas composited over the native menu's independent VFS layers.
     pub async fn create_transparent(canvas: HtmlCanvasElement) -> Result<WebGpuViewer, JsValue> {
-        Ok(Self { inner: WebViewer::with_transparency(canvas, true).await.map_err(js_error)? })
+        Ok(Self {
+            inner: WebViewer::with_transparency(canvas, true)
+                .await
+                .map_err(js_error)?,
+        })
     }
 
     /// Charge/remplace un modèle GLB normalisé (positions monde, textures PNG embarquées).
@@ -144,7 +150,9 @@ impl WebGpuViewer {
         let Some(axe) = axe_depuis(axis) else {
             return Vec::new();
         };
-        self.inner.gizmo_drag(axe, from_x, from_y, to_x, to_y).map_or_else(Vec::new, |d| d.to_vec())
+        self.inner
+            .gizmo_drag(axe, from_x, from_y, to_x, to_y)
+            .map_or_else(Vec::new, |d| d.to_vec())
     }
 
     /// Affiche ou masque le fil de fer du modèle.
@@ -158,7 +166,8 @@ impl WebGpuViewer {
     /// `JsValue`, ce qui coûterait à l'appelant une vérification de type pour une valeur qu'il
     /// teste déjà.
     pub fn select(&mut self, id: &str) {
-        self.inner.select(if id.is_empty() { None } else { Some(id) });
+        self.inner
+            .select(if id.is_empty() { None } else { Some(id) });
     }
 
     /// L'objet sélectionné, chaîne vide s'il n'y en a pas.

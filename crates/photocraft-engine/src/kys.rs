@@ -45,24 +45,48 @@ pub fn parse(text: &str) -> Result<KysSet, String> {
         return Err("not a keyboard shortcut set (.kys): larger than 4 MiB".into());
     }
     let text = text.trim_start_matches('\u{feff}');
-    let doc = roxmltree::Document::parse(text).map_err(|e| format!("not a keyboard shortcut set (.kys): {e}"))?;
+    let doc = roxmltree::Document::parse(text)
+        .map_err(|e| format!("not a keyboard shortcut set (.kys): {e}"))?;
     let root = doc.root_element();
     if root.tag_name().name() != "photoshop-keyboard-shortcuts" {
-        return Err("not a keyboard shortcut set (.kys): no <photoshop-keyboard-shortcuts> root".into());
+        return Err(
+            "not a keyboard shortcut set (.kys): no <photoshop-keyboard-shortcuts> root".into(),
+        );
     }
-    let name = root.attribute("filename").map(|f| f.rsplit(['=', '/']).next().unwrap_or(f).trim()).filter(|n| !n.is_empty()).map(str::to_string);
-    let mut set = KysSet { name, ..Default::default() };
+    let name = root
+        .attribute("filename")
+        .map(|f| f.rsplit(['=', '/']).next().unwrap_or(f).trim())
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
+    let mut set = KysSet {
+        name,
+        ..Default::default()
+    };
     for node in root.children().filter(|n| n.is_element()) {
         match node.tag_name().name() {
             "command" => {
-                let Some(name) = node.attribute("name").map(str::trim).filter(|n| !n.is_empty()) else { continue };
+                let Some(name) = node
+                    .attribute("name")
+                    .map(str::trim)
+                    .filter(|n| !n.is_empty())
+                else {
+                    continue;
+                };
                 let shortcuts: Vec<String> = node
                     .children()
                     .filter(|n| n.is_element() && n.tag_name().name() == "shortcut")
-                    .filter_map(|n| n.text().map(str::trim).filter(|t| !t.is_empty()).map(str::to_string))
+                    .filter_map(|n| {
+                        n.text()
+                            .map(str::trim)
+                            .filter(|t| !t.is_empty())
+                            .map(str::to_string)
+                    })
                     .collect();
                 if !shortcuts.is_empty() {
-                    set.commands.push(KysCommand { name: name.to_string(), shortcuts });
+                    set.commands.push(KysCommand {
+                        name: name.to_string(),
+                        shortcuts,
+                    });
                 }
             }
             "tool" if node.text().is_some_and(|t| !t.trim().is_empty()) => set.tool_keys += 1,
@@ -104,7 +128,11 @@ pub fn command_candidates() -> Vec<Candidate> {
     crate::command_specs()
         .iter()
         .filter(|c| !c.menu.is_empty())
-        .map(|c| Candidate { id: c.id.to_string(), label: c.label.to_string(), default: c.shortcut.map(str::to_string) })
+        .map(|c| Candidate {
+            id: c.id.to_string(),
+            label: c.label.to_string(),
+            default: c.shortcut.map(str::to_string),
+        })
         .collect()
 }
 
@@ -130,10 +158,18 @@ pub fn plan(candidates: impl IntoIterator<Item = Candidate>, set: &KysSet) -> Pl
             continue;
         };
         plan.alternates += row.shortcuts.len().saturating_sub(1);
-        let imported: Vec<String> = row.shortcuts.iter().filter_map(|s| normalize_shortcut(s)).collect();
+        let imported: Vec<String> = row
+            .shortcuts
+            .iter()
+            .filter_map(|s| normalize_shortcut(s))
+            .collect();
         let pick = candidates
             .iter()
-            .find(|(_, d)| d.as_deref().and_then(normalize_shortcut).is_some_and(|d| imported.contains(&d)))
+            .find(|(_, d)| {
+                d.as_deref()
+                    .and_then(normalize_shortcut)
+                    .is_some_and(|d| imported.contains(&d))
+            })
             .or_else(|| candidates.iter().find(|(_, d)| d.is_some()))
             .or_else(|| candidates.first());
         if let Some((id, default)) = pick {
@@ -162,7 +198,11 @@ mod tests {
 ";
 
     fn c(id: &str, label: &str, default: Option<&str>) -> Candidate {
-        Candidate { id: id.into(), label: label.into(), default: default.map(str::to_string) }
+        Candidate {
+            id: id.into(),
+            label: label.into(),
+            default: default.map(str::to_string),
+        }
     }
 
     #[test]
@@ -171,7 +211,12 @@ mod tests {
         assert_eq!(set.name.as_deref(), Some("texcuts"));
         assert_eq!(set.tool_keys, 1);
         let p = plan(
-            [c("layer.newLevels", "Levels…", None), c("image.levels", "Levels…", Some("Cmd+L")), c("edit.undo", "Undo", Some("Cmd+Z")), c("odd", "Odd", None)],
+            [
+                c("layer.newLevels", "Levels…", None),
+                c("image.levels", "Levels…", Some("Cmd+L")),
+                c("edit.undo", "Undo", Some("Cmd+Z")),
+                c("odd", "Odd", None),
+            ],
             &set,
         );
         assert_eq!(p.set.get("image.levels").map(String::as_str), Some("Cmd+L"));
@@ -183,8 +228,15 @@ mod tests {
 
     #[test]
     fn oversized_input_is_refused_before_parsing() {
-        let big = format!("<photoshop-keyboard-shortcuts>{}</photoshop-keyboard-shortcuts>", " ".repeat(MAX_BYTES));
+        let big = format!(
+            "<photoshop-keyboard-shortcuts>{}</photoshop-keyboard-shortcuts>",
+            " ".repeat(MAX_BYTES)
+        );
         assert!(parse(&big).unwrap_err().contains("4 MiB"));
-        assert!(parse("<other/>").unwrap_err().contains("not a keyboard shortcut set"));
+        assert!(
+            parse("<other/>")
+                .unwrap_err()
+                .contains("not a keyboard shortcut set")
+        );
     }
 }

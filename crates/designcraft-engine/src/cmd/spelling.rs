@@ -27,57 +27,105 @@ pub fn specs() -> Vec<CommandSpec> {
                     .to_string();
                 let plain = w.replace('~', "").to_lowercase();
                 s.edit(|d, _| {
-                    d.hyphenation_exceptions.retain(|e| e.replace('~', "").to_lowercase() != plain);
+                    d.hyphenation_exceptions
+                        .retain(|e| e.replace('~', "").to_lowercase() != plain);
                     d.hyphenation_exceptions.push(w.clone());
                     Ok(Value::Null)
                 })
             }
         ),
-        cmd!("hyphenation.removeException", "Remove Hyphenation Exception", [], None, "{word} (with or without ~)", has_doc, |s, p| {
-            let plain = str_param(p, "word").unwrap_or("").replace('~', "").to_lowercase();
-            s.edit(|d, _| {
-                d.hyphenation_exceptions.retain(|e| e.replace('~', "").to_lowercase() != plain);
-                Ok(Value::Null)
-            })
-        }),
+        cmd!(
+            "hyphenation.removeException",
+            "Remove Hyphenation Exception",
+            [],
+            None,
+            "{word} (with or without ~)",
+            has_doc,
+            |s, p| {
+                let plain = str_param(p, "word")
+                    .unwrap_or("")
+                    .replace('~', "")
+                    .to_lowercase();
+                s.edit(|d, _| {
+                    d.hyphenation_exceptions
+                        .retain(|e| e.replace('~', "").to_lowercase() != plain);
+                    Ok(Value::Null)
+                })
+            }
+        ),
         cmd!(query "hyphenation.list", "Hyphenation Exceptions", [], None, "{} → [word]", has_doc, |s, _| Ok(serde_json::to_value(&s.doc()?.doc.hyphenation_exceptions).unwrap_or_default())),
-        cmd!("spelling.setWords", "User Dictionary", [], None, "{words: [word]} — replace the document's user dictionary", has_doc, |s, p| {
-            let mut words: Vec<String> = p
-                .get("words")
-                .and_then(Value::as_array)
-                .ok_or_else(|| bad("spelling.setWords", "`words` required"))?
-                .iter()
-                .filter_map(Value::as_str)
-                .map(|w| w.trim().to_lowercase())
-                .filter(|w| !w.is_empty())
-                .collect();
-            words.sort();
-            words.dedup();
-            s.edit(|d, _| {
-                d.user_words = words.clone();
-                Ok(json!({"words": words.len()}))
-            })
-        }),
+        cmd!(
+            "spelling.setWords",
+            "User Dictionary",
+            [],
+            None,
+            "{words: [word]} — replace the document's user dictionary",
+            has_doc,
+            |s, p| {
+                let mut words: Vec<String> = p
+                    .get("words")
+                    .and_then(Value::as_array)
+                    .ok_or_else(|| bad("spelling.setWords", "`words` required"))?
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(|w| w.trim().to_lowercase())
+                    .filter(|w| !w.is_empty())
+                    .collect();
+                words.sort();
+                words.dedup();
+                s.edit(|d, _| {
+                    d.user_words = words.clone();
+                    Ok(json!({"words": words.len()}))
+                })
+            }
+        ),
         cmd!(query "spelling.words", "User Dictionary Words", [], None, "{} → [word]", has_doc, |s, _| Ok(json!(s.doc()?.doc.user_words))),
-        cmd!("spelling.addWord", "Add to Dictionary", ["Edit", "Spelling"], None, "{word}", has_doc, |s, p| {
-            let w = str_param(p, "word").ok_or_else(|| bad("spelling.addWord", "missing word"))?.to_lowercase();
-            s.edit(|d, _| {
-                if !d.user_words.contains(&w) {
-                    d.user_words.push(w.clone());
-                }
-                Ok(Value::Null)
-            })
-        }),
-        cmd!("spelling.change", "Change", [], None, "{story, start, end, to}", has_doc, |s, p| {
-            let sid = StoryId(p.get("story").and_then(Value::as_u64).ok_or_else(|| bad("spelling.change", "missing story"))?);
-            let (a, b) = (p.get("start").and_then(Value::as_u64).unwrap_or(0) as usize, p.get("end").and_then(Value::as_u64).unwrap_or(0) as usize);
-            let to = str_param(p, "to").unwrap_or("").to_string();
-            s.edit(|d, _| {
-                let st = d.story_mut(sid).ok_or(designcraft_doc::DocError::NoStory(sid))?;
-                st.replace(a.min(st.len())..b.min(st.len()), &to);
-                Ok(Value::Null)
-            })
-        }),
+        cmd!(
+            "spelling.addWord",
+            "Add to Dictionary",
+            ["Edit", "Spelling"],
+            None,
+            "{word}",
+            has_doc,
+            |s, p| {
+                let w = str_param(p, "word")
+                    .ok_or_else(|| bad("spelling.addWord", "missing word"))?
+                    .to_lowercase();
+                s.edit(|d, _| {
+                    if !d.user_words.contains(&w) {
+                        d.user_words.push(w.clone());
+                    }
+                    Ok(Value::Null)
+                })
+            }
+        ),
+        cmd!(
+            "spelling.change",
+            "Change",
+            [],
+            None,
+            "{story, start, end, to}",
+            has_doc,
+            |s, p| {
+                let sid = StoryId(
+                    p.get("story")
+                        .and_then(Value::as_u64)
+                        .ok_or_else(|| bad("spelling.change", "missing story"))?,
+                );
+                let (a, b) = (
+                    p.get("start").and_then(Value::as_u64).unwrap_or(0) as usize,
+                    p.get("end").and_then(Value::as_u64).unwrap_or(0) as usize,
+                );
+                let to = str_param(p, "to").unwrap_or("").to_string();
+                s.edit(|d, _| {
+                    let st = d
+                        .story_mut(sid)
+                        .ok_or(designcraft_doc::DocError::NoStory(sid))?;
+                    st.replace(a.min(st.len())..b.min(st.len()), &to);
+                    Ok(Value::Null)
+                })
+            }
+        ),
     ]
 }
 
@@ -161,14 +209,21 @@ pub fn suggest(dict: &Dictionary, w: &str) -> Vec<String> {
 }
 
 /// Misspelled words of a story: byte ranges (acronyms skipped; the user dictionary counts).
-pub fn misspellings(doc: &designcraft_doc::Document, story: &designcraft_doc::Story, user: &[String]) -> Vec<std::ops::Range<usize>> {
+pub fn misspellings(
+    doc: &designcraft_doc::Document,
+    story: &designcraft_doc::Story,
+    user: &[String],
+) -> Vec<std::ops::Range<usize>> {
     // Text in other languages isn't checked against the English dictionary.
     let foreign: Vec<std::ops::Range<usize>> = {
         story
             .runs()
             .filter(|(r, f)| {
                 let pi = story.para_at(r.start.min(story.len()));
-                let base = doc.styles.resolve_para(&story.paras[pi.min(story.paras.len().saturating_sub(1))]).1;
+                let base = doc
+                    .styles
+                    .resolve_para(&story.paras[pi.min(story.paras.len().saturating_sub(1))])
+                    .1;
                 !designcraft_compose::is_english(&doc.styles.resolve_char(&base, f).language)
             })
             .map(|(r, _)| r)
@@ -187,14 +242,20 @@ pub fn misspellings(doc: &designcraft_doc::Document, story: &designcraft_doc::St
         let start = bytes[i].0;
         let mut j = i;
         while j < bytes.len()
-            && (bytes[j].1.is_alphabetic() || ((bytes[j].1 == '\'' || bytes[j].1 == '’') && j + 1 < bytes.len() && bytes[j + 1].1.is_alphabetic()))
+            && (bytes[j].1.is_alphabetic()
+                || ((bytes[j].1 == '\'' || bytes[j].1 == '’')
+                    && j + 1 < bytes.len()
+                    && bytes[j + 1].1.is_alphabetic()))
         {
             j += 1;
         }
         let end = bytes.get(j).map(|b| b.0).unwrap_or(text.len());
         let word = &text[start..end];
         let acronym = word.chars().all(|c| c.is_uppercase()) && word.chars().count() <= 5;
-        if !acronym && !foreign.iter().any(|r| r.contains(&start)) && !known(dict, user, &word.to_lowercase()) {
+        if !acronym
+            && !foreign.iter().any(|r| r.contains(&start))
+            && !known(dict, user, &word.to_lowercase())
+        {
             out.push(start..end);
         }
         i = j.max(i + 1);
@@ -206,7 +267,10 @@ fn check(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let d = &st.doc;
     let dict = Dictionary::en_us();
-    let want_sugg = p.get("suggestions").and_then(Value::as_bool).unwrap_or(true);
+    let want_sugg = p
+        .get("suggestions")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     let stories: Vec<StoryId> = match p.get("story").and_then(Value::as_u64) {
         Some(id) => vec![StoryId(id)],
         None => d.stories.keys().copied().collect(),
@@ -216,7 +280,11 @@ fn check(s: &mut Session, p: &Value) -> Result<Value> {
         let Some(story) = d.story(sid) else { continue };
         for r in misspellings(d, story, &d.user_words) {
             let word = &story.text[r.clone()];
-            let sugg = if want_sugg { suggest(dict, &word.to_lowercase()) } else { vec![] };
+            let sugg = if want_sugg {
+                suggest(dict, &word.to_lowercase())
+            } else {
+                vec![]
+            };
             out.push(json!({"story": sid.0, "start": r.start, "end": r.end, "word": word, "suggestions": sugg}));
         }
     }
@@ -233,7 +301,15 @@ mod tests {
         if d.is_empty() {
             return; // data not bundled in this build
         }
-        for w in ["typography", "pages", "composed", "arranging", "quickly", "layouts", "stopped"] {
+        for w in [
+            "typography",
+            "pages",
+            "composed",
+            "arranging",
+            "quickly",
+            "layouts",
+            "stopped",
+        ] {
             assert!(known(d, &[], w), "{w}");
         }
         assert!(!known(d, &[], "typograpy"));
@@ -245,11 +321,22 @@ mod tests {
     fn user_dictionary_replaces_and_counts() {
         let mut s = Session::new();
         s.execute("file.new", &serde_json::json!({})).unwrap();
-        s.execute("spelling.setWords", &serde_json::json!({"words": ["Zorbo", " zorbo", "", "Quux"]})).unwrap();
-        assert_eq!(s.execute("spelling.words", &serde_json::json!({})).unwrap(), serde_json::json!(["quux", "zorbo"]));
+        s.execute(
+            "spelling.setWords",
+            &serde_json::json!({"words": ["Zorbo", " zorbo", "", "Quux"]}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.execute("spelling.words", &serde_json::json!({})).unwrap(),
+            serde_json::json!(["quux", "zorbo"])
+        );
         let mut story = designcraft_doc::Story::new(designcraft_doc::StoryId(1));
         story.insert(0, "zorbo qwzx");
-        let bad = misspellings(&s.doc().unwrap().doc, &story, &s.doc().unwrap().doc.user_words);
+        let bad = misspellings(
+            &s.doc().unwrap().doc,
+            &story,
+            &s.doc().unwrap().doc.user_words,
+        );
         assert_eq!(bad, vec![6..10]);
     }
 
@@ -260,11 +347,30 @@ mod tests {
         s.execute("frame.create", &json!({"rect": [36, 36, 300, 200], "content": "text", "text": "Thw quick brown fox jumpd over the NASA dog."}))
             .unwrap();
         let r = s.execute("spelling.check", &json!({})).unwrap();
-        let words: Vec<&str> = r.as_array().unwrap().iter().map(|m| m["word"].as_str().unwrap()).collect();
+        let words: Vec<&str> = r
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| m["word"].as_str().unwrap())
+            .collect();
         assert_eq!(words, vec!["Thw", "jumpd"]);
-        assert!(r[0]["suggestions"].as_array().unwrap().iter().any(|v| v == "the"));
-        s.execute("spelling.addWord", &json!({"word": "jumpd"})).unwrap();
-        assert_eq!(s.execute("spelling.check", &json!({})).unwrap().as_array().unwrap().len(), 1);
+        assert!(
+            r[0]["suggestions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|v| v == "the")
+        );
+        s.execute("spelling.addWord", &json!({"word": "jumpd"}))
+            .unwrap();
+        assert_eq!(
+            s.execute("spelling.check", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
     }
 }
 
@@ -291,12 +397,36 @@ mod hyphenation_exception_tests {
         s.execute("file.new", &json!({})).unwrap();
         let r = s.execute("frame.create", &json!({"rect": [72, 72, 172, 400], "content": "text", "text": "a internationalization"})).unwrap();
         let sid = designcraft_doc::StoryId(r["story"].as_u64().unwrap());
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("type.para", &json!({"hyphenate": true, "hyphLastWord": true})).unwrap();
-        s.execute("hyphenation.addException", &json!({"word": "in~ternationalization"})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "type.para",
+            &json!({"hyphenate": true, "hyphLastWord": true}),
+        )
+        .unwrap();
+        s.execute(
+            "hyphenation.addException",
+            &json!({"word": "in~ternationalization"}),
+        )
+        .unwrap();
         assert_eq!(first_line(&s, sid), "a in-", "the only break allowed");
-        s.execute("hyphenation.addException", &json!({"word": "internationalization"})).unwrap();
-        assert_eq!(s.execute("hyphenation.list", &json!({})).unwrap().as_array().unwrap().len(), 1, "replaces the earlier entry");
+        s.execute(
+            "hyphenation.addException",
+            &json!({"word": "internationalization"}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.execute("hyphenation.list", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
+            1,
+            "replaces the earlier entry"
+        );
         assert!(!first_line(&s, sid).ends_with('-'), "never hyphenated");
     }
 }

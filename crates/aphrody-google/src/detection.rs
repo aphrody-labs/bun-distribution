@@ -109,7 +109,10 @@ pub fn detect_google_specifics(
         (has("flutter") || has("flt-"), "Flutter detected"),
         (has("firebase"), "Firebase detected"),
         (has("google-cloud") || has("gcp"), "GCP signals detected"),
-        (has("kubernetes") || has("k8s"), "Kubernetes signals detected"),
+        (
+            has("kubernetes") || has("k8s"),
+            "Kubernetes signals detected",
+        ),
         (has("golang") || has("go.dev"), "Go signals detected"),
     ] {
         if found {
@@ -148,7 +151,11 @@ pub fn detect_google_specifics(
     if url.contains("udm=14") {
         evidence.push("Classic Web View (udm=14) enforced".to_owned());
     }
-    let has_header = |name: &str| headers.iter().any(|(key, _)| key.eq_ignore_ascii_case(name));
+    let has_header = |name: &str| {
+        headers
+            .iter()
+            .any(|(key, _)| key.eq_ignore_ascii_case(name))
+    };
     let header_value = |name: &str| {
         headers
             .iter()
@@ -164,12 +171,18 @@ pub fn detect_google_specifics(
 
     let mut products = Vec::new();
     for (found, product) in [
-        (has("gemini") || hostname.contains("gemini.google"), "Gemini"),
+        (
+            has("gemini") || hostname.contains("gemini.google"),
+            "Gemini",
+        ),
         (has("bard.google"), "Bard"),
         (has("vertex") || has("aistudio"), "Vertex AI"),
         (has("generativelanguage"), "Generative Language API"),
         (has("firebase") || has("firebase-app"), "Firebase"),
-        (has("googletagmanager") || has("gtm.js"), "Google Tag Manager"),
+        (
+            has("googletagmanager") || has("gtm.js"),
+            "Google Tag Manager",
+        ),
         (has("gtag.js") || has("analytics.js"), "Google Analytics"),
         (has("adsense"), "AdSense"),
         (has("doubleclick"), "DoubleClick"),
@@ -227,7 +240,10 @@ pub fn google_to_tech(detection: &GoogleDetection) -> Vec<DetectedTech> {
     let mut add = |name: &str, categories: &[&str]| {
         technologies.push(DetectedTech {
             name: name.to_owned(),
-            categories: categories.iter().map(|category| (*category).to_owned()).collect(),
+            categories: categories
+                .iter()
+                .map(|category| (*category).to_owned())
+                .collect(),
         });
     };
     if detection.is_google_owned {
@@ -327,7 +343,10 @@ pub fn suggest_google_strategy(detection: &GoogleDetection, url: &str) -> Google
             "Gemini detected → curl profile; interactive mode is Aphrody OS Obscura/Tauri"
                 .to_owned(),
         );
-    } else if matches!(detection.framework, GoogleFramework::Wiz | GoogleFramework::Angular) {
+    } else if matches!(
+        detection.framework,
+        GoogleFramework::Wiz | GoogleFramework::Angular
+    ) {
         wait_for = GoogleWaitFor::WaitHydration;
         rationale.push(format!(
             "Google SPA framework ({}) → profile=http + wait-hydration",
@@ -342,8 +361,14 @@ pub fn suggest_google_strategy(detection: &GoogleDetection, url: &str) -> Google
         rationale.push(
             "Google anti-bot detected → curl profile; no browser subprocess fallback".to_owned(),
         );
-    } else if matches!(detection.hosting, GoogleHosting::Firebase | GoogleHosting::CloudRun) {
-        rationale.push(format!("Google PaaS ({}) → profile=http", detection.hosting.as_str()));
+    } else if matches!(
+        detection.hosting,
+        GoogleHosting::Firebase | GoogleHosting::CloudRun
+    ) {
+        rationale.push(format!(
+            "Google PaaS ({}) → profile=http",
+            detection.hosting.as_str()
+        ));
     }
     GoogleStrategy {
         profile: "http".to_owned(),
@@ -351,8 +376,12 @@ pub fn suggest_google_strategy(detection: &GoogleDetection, url: &str) -> Google
         block_resources: ["image", "media", "font"].map(str::to_owned).to_vec(),
         is_spa: detection.framework != GoogleFramework::None,
         has_anti_bot: detection.has_anti_bot,
-        shape: if detection.framework == GoogleFramework::None { "static-html" } else { "spa" }
-            .to_owned(),
+        shape: if detection.framework == GoogleFramework::None {
+            "static-html"
+        } else {
+            "spa"
+        }
+        .to_owned(),
         rationale,
     }
 }
@@ -371,7 +400,11 @@ mod tests {
         assert!(detection.is_google_owned);
         assert_eq!(detection.framework, GoogleFramework::Wiz);
         assert_eq!(detection.products, ["Gemini", "Firebase"]);
-        assert!(google_to_tech(&detection).iter().any(|tech| tech.name == "Wiz (Google Internal)"));
+        assert!(
+            google_to_tech(&detection)
+                .iter()
+                .any(|tech| tech.name == "Wiz (Google Internal)")
+        );
     }
 
     #[test]
@@ -386,7 +419,10 @@ mod tests {
         );
         assert!(!detection.is_google_owned);
         assert!(detection.has_anti_bot);
-        assert_eq!(detection.anti_bot_kind, Some(AntiBotKind::RecaptchaEnterprise));
+        assert_eq!(
+            detection.anti_bot_kind,
+            Some(AntiBotKind::RecaptchaEnterprise)
+        );
     }
 
     #[test]

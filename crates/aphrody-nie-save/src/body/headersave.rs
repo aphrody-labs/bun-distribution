@@ -301,7 +301,10 @@ pub struct HeaderSave {
 fn read_u32_le(b: &[u8], off: usize) -> Result<u32, SaveError> {
     b.get(off..off + 4)
         .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
-        .ok_or(SaveError::TooShort { got: b.len(), need: off + 4 })
+        .ok_or(SaveError::TooShort {
+            got: b.len(),
+            need: off + 4,
+        })
 }
 
 /// Lit un u32 en big-endian à l'offset `off` dans `b`.
@@ -309,7 +312,10 @@ fn read_u32_le(b: &[u8], off: usize) -> Result<u32, SaveError> {
 fn read_u32_be(b: &[u8], off: usize) -> Result<u32, SaveError> {
     b.get(off..off + 4)
         .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
-        .ok_or(SaveError::TooShort { got: b.len(), need: off + 4 })
+        .ok_or(SaveError::TooShort {
+            got: b.len(),
+            need: off + 4,
+        })
 }
 
 /// Décode 8 octets au format horodatage natif IEVR.
@@ -317,7 +323,10 @@ fn read_u32_be(b: &[u8], off: usize) -> Result<u32, SaveError> {
 /// Format : `[u16_LE year][u8 month][u8 day][u8 hour][u8 min][u8 sec][u8 zero]`
 fn decode_datetime(data: &[u8]) -> Result<NativeDateTime, SaveError> {
     if data.len() < 8 {
-        return Err(SaveError::TooShort { got: data.len(), need: 8 });
+        return Err(SaveError::TooShort {
+            got: data.len(),
+            need: 8,
+        });
     }
     Ok(NativeDateTime {
         year: u16::from_le_bytes([data[0], data[1]]),
@@ -334,7 +343,10 @@ fn decode_datetime(data: &[u8]) -> Result<NativeDateTime, SaveError> {
 fn read_null_term_string(b: &[u8], off: usize, buf_len: usize) -> Result<String, SaveError> {
     let end = off + buf_len;
     if end > b.len() {
-        return Err(SaveError::TooShort { got: b.len(), need: end });
+        return Err(SaveError::TooShort {
+            got: b.len(),
+            need: end,
+        });
     }
     let raw = &b[off..end];
     let nul_pos = raw.iter().position(|&c| c == 0).unwrap_or(buf_len);
@@ -408,7 +420,10 @@ pub fn parse_headersave(body: &[u8]) -> Result<HeaderSave, SaveError> {
     // 1. Vérification de la taille minimale
     // -----------------------------------------------------------------------
     if body.len() < HEADERSAVE_MIN_LEN {
-        return Err(SaveError::TooShort { got: body.len(), need: HEADERSAVE_MIN_LEN });
+        return Err(SaveError::TooShort {
+            got: body.len(),
+            need: HEADERSAVE_MIN_LEN,
+        });
     }
 
     // -----------------------------------------------------------------------
@@ -530,7 +545,7 @@ pub fn parse_headersave(body: &[u8]) -> Result<HeaderSave, SaveError> {
                     // Fallback : recherche par hash
                     find_tlv_data_offset(body, TS_SCAN_START, HASH_SAVE_TIMESTAMP, TS_SCAN_MAX)
                         .ok_or(SaveError::Corrupt("hash save_timestamp introuvable"))?
-                },
+                }
             }
         } else {
             find_tlv_data_offset(body, TS_SCAN_START, HASH_SAVE_TIMESTAMP, TS_SCAN_MAX)
@@ -538,7 +553,10 @@ pub fn parse_headersave(body: &[u8]) -> Result<HeaderSave, SaveError> {
         };
 
         if data_off + 8 > body.len() {
-            return Err(SaveError::TooShort { got: body.len(), need: data_off + 8 });
+            return Err(SaveError::TooShort {
+                got: body.len(),
+                need: data_off + 8,
+            });
         }
         decode_datetime(&body[data_off..data_off + 8])?
     };
@@ -568,7 +586,10 @@ pub fn parse_headersave(body: &[u8]) -> Result<HeaderSave, SaveError> {
         };
 
         if data_off + PLAYER_BUF_LEN > body.len() {
-            return Err(SaveError::TooShort { got: body.len(), need: data_off + PLAYER_BUF_LEN });
+            return Err(SaveError::TooShort {
+                got: body.len(),
+                need: data_off + PLAYER_BUF_LEN,
+            });
         }
 
         let buf = &body[data_off..data_off + PLAYER_BUF_LEN];

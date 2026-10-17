@@ -28,14 +28,20 @@ fn has_device() -> bool {
 fn words(bytes: &[u8]) -> Vec<u32> {
     let (chunks, rest) = bytes.as_chunks::<4>();
     assert!(rest.is_empty());
-    chunks.iter().map(|chunk| u32::from_le_bytes(*chunk)).collect()
+    chunks
+        .iter()
+        .map(|chunk| u32::from_le_bytes(*chunk))
+        .collect()
 }
 
 #[test]
 fn report_lists_the_selected_adapter() {
     let report = hub::report();
     let json = serde_json::to_value(&report).unwrap();
-    assert!(json.get("adapters").is_some_and(serde_json::Value::is_array));
+    assert!(
+        json.get("adapters")
+            .is_some_and(serde_json::Value::is_array)
+    );
     if let Some(selected) = &report.selected {
         assert!(report.adapters.iter().any(|a| a.name == selected.name));
         assert!(report.limits.is_some());
@@ -90,7 +96,10 @@ fn invalid_shader_is_an_error_not_a_panic() {
         workgroups: [1, 1, 1],
         data: &[0; 4],
     });
-    assert!(matches!(missing_entry, Err(HubError::Gpu(_))), "{missing_entry:?}");
+    assert!(
+        matches!(missing_entry, Err(HubError::Gpu(_))),
+        "{missing_entry:?}"
+    );
 
     // The device still works after both errors.
     let ok = hub::run_wgsl(WgslJob {
@@ -113,10 +122,22 @@ fn job_bounds_are_checked_before_touching_the_gpu() {
         workgroups,
         data,
     };
-    assert!(matches!(hub::run_wgsl(job(&[], [1, 1, 1])), Err(HubError::InvalidJob(_))));
-    assert!(matches!(hub::run_wgsl(job(&[0, 0, 0], [1, 1, 1])), Err(HubError::InvalidJob(_))));
-    assert!(matches!(hub::run_wgsl(job(&[0; 4], [0, 1, 1])), Err(HubError::InvalidJob(_))));
-    assert!(matches!(hub::run_wgsl(job(&[0; 4], [u32::MAX, 1, 1])), Err(HubError::InvalidJob(_))));
+    assert!(matches!(
+        hub::run_wgsl(job(&[], [1, 1, 1])),
+        Err(HubError::InvalidJob(_))
+    ));
+    assert!(matches!(
+        hub::run_wgsl(job(&[0, 0, 0], [1, 1, 1])),
+        Err(HubError::InvalidJob(_))
+    ));
+    assert!(matches!(
+        hub::run_wgsl(job(&[0; 4], [0, 1, 1])),
+        Err(HubError::InvalidJob(_))
+    ));
+    assert!(matches!(
+        hub::run_wgsl(job(&[0; 4], [u32::MAX, 1, 1])),
+        Err(HubError::InvalidJob(_))
+    ));
 }
 
 #[cfg(feature = "cuda")]
@@ -125,7 +146,10 @@ fn cuda_reports_its_state_without_panicking() {
     use aphrody_gpu_backend::cuda::{self, CudaJob};
 
     let report = cuda::report();
-    assert_eq!(hub::report().cuda.as_ref().map(|r| r.driver_loaded), Some(report.driver_loaded));
+    assert_eq!(
+        hub::report().cuda.as_ref().map(|r| r.driver_loaded),
+        Some(report.driver_loaded)
+    );
     let job = CudaJob {
         source: r#"extern "C" __global__ void twice(float *data, unsigned int n) {
             unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -142,7 +166,10 @@ fn cuda_reports_its_state_without_panicking() {
         assert_eq!(cuda::run_cuda(job).unwrap(), vec![2.0, 4.0, 7.0]);
     }
     assert!(matches!(
-        cuda::run_cuda(CudaJob { kernel: "bad name", ..job }),
+        cuda::run_cuda(CudaJob {
+            kernel: "bad name",
+            ..job
+        }),
         Err(HubError::InvalidJob(_))
     ));
 }

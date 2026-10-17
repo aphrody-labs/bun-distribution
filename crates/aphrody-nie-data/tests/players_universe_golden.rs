@@ -269,7 +269,10 @@ fn chara_set_data_et_universe_set() {
     assert_eq!(us.star_sign_offset, 0);
     assert_eq!(us.star_sign_count, 30);
     // 1er signe de l'univers.
-    assert_eq!(cfg.universe_star_signs[0].star_sign_id_crc, HashId(0xCED5_BE45));
+    assert_eq!(
+        cfg.universe_star_signs[0].star_sign_id_crc,
+        HashId(0xCED5_BE45)
+    );
 }
 
 #[test]
@@ -283,7 +286,10 @@ fn accesseurs_offset_count() {
     assert_eq!(rates[0].rarity_type, 2);
     // charas_of(rate0) → [0,4] mais la fixture n'a que 3 personnages → tranche bornée vide.
     let charas = cfg.charas_of(&rates[0]);
-    assert!(charas.is_empty(), "plage hors bornes → tranche vide (saturée)");
+    assert!(
+        charas.is_empty(),
+        "plage hors bornes → tranche vide (saturée)"
+    );
 
     // Petit config synthétique aux vraies valeurs, plages valides.
     let mini = json!({ "lists": [
@@ -345,13 +351,32 @@ fn comptes_listes_vrai_dump() {
     assert_eq!(cfg.star_key_routes.len(), 240, "m_starKeyRouteInfoList");
     assert_eq!(cfg.stars.len(), 30, "m_starInfoList");
     assert_eq!(cfg.star_keys.len(), 240, "m_starKeyInfoList");
-    assert_eq!(cfg.universe_star_signs.len(), 30, "m_universeStarSignInfoList");
-    assert_eq!(cfg.universe_star_sign_sets.len(), 1, "m_universeStarSignSetDataList");
+    assert_eq!(
+        cfg.universe_star_signs.len(),
+        30,
+        "m_universeStarSignInfoList"
+    );
+    assert_eq!(
+        cfg.universe_star_sign_sets.len(),
+        1,
+        "m_universeStarSignSetDataList"
+    );
     assert_eq!(cfg.star_signs.len(), 30, "m_starSignInfoList");
     assert_eq!(cfg.star_sign_charas.len(), 5010, "m_starSignCharaInfoList");
-    assert_eq!(cfg.star_sign_rarity_rates.len(), 90, "m_starSignRarityRateInfoList");
-    assert_eq!(cfg.star_sign_chara_sets.len(), 30, "m_starSignCharaSetDataList");
+    assert_eq!(
+        cfg.star_sign_rarity_rates.len(),
+        90,
+        "m_starSignRarityRateInfoList"
+    );
+    assert_eq!(
+        cfg.star_sign_chara_sets.len(),
+        30,
+        "m_starSignCharaSetDataList"
+    );
     // Spot-check profond cohérent avec la fixture embarquée.
     assert_eq!(cfg.stars[0].star_name_hash, HashId(0x193E_6BEA));
-    assert_eq!(cfg.star_sign_charas[5009].chara_param_id, HashId(0x2DB0_BE2E));
+    assert_eq!(
+        cfg.star_sign_charas[5009].chara_param_id,
+        HashId(0x2DB0_BE2E)
+    );
 }

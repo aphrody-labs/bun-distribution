@@ -129,7 +129,8 @@ impl SteamFriends018 {
 
     /// Sets a rich presence key-value pair for the local player.
     pub fn set_rich_presence(&mut self, key: &str, value: &str) {
-        self.local_rich_presence.insert(key.to_string(), value.to_string());
+        self.local_rich_presence
+            .insert(key.to_string(), value.to_string());
     }
 
     /// Clears local rich presence.
@@ -166,7 +167,11 @@ impl SteamFriends018 {
 
     /// Accepts an incoming invite by ID, returning the target Inacode.
     pub fn accept_invite(&mut self, invite_id: &str) -> Option<String> {
-        if let Some(pos) = self.incoming_invites.iter().position(|i| i.invite_id == invite_id) {
+        if let Some(pos) = self
+            .incoming_invites
+            .iter()
+            .position(|i| i.invite_id == invite_id)
+        {
             let invite = self.incoming_invites.remove(pos);
             Some(invite.destination_inacode)
         } else {
@@ -177,7 +182,10 @@ impl SteamFriends018 {
     /// Returns list of currently online or in-game friends.
     #[must_use]
     pub fn get_online_friends(&self) -> Vec<&SteamFriend> {
-        self.friends.values().filter(|f| !matches!(f.state, PersonaState::Offline)).collect()
+        self.friends
+            .values()
+            .filter(|f| !matches!(f.state, PersonaState::Offline))
+            .collect()
     }
 }
 
@@ -189,7 +197,10 @@ mod tests {
     fn test_steam_friends_presence_and_invites() {
         let mut sf = SteamFriends018::new(76561198000000001, "Axel Blaze".into());
         sf.set_rich_presence("status", "Exploring Kizuna Town");
-        assert_eq!(sf.local_rich_presence.get("status").unwrap(), "Exploring Kizuna Town");
+        assert_eq!(
+            sf.local_rich_presence.get("status").unwrap(),
+            "Exploring Kizuna Town"
+        );
 
         let friend = SteamFriend {
             steam_id: 76561198000000002,

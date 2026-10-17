@@ -17,11 +17,19 @@ fn doc(below: bool, effects: Vec<Effect>) -> Document {
     let mut d = Document::new(200.0, 200.0);
     let sq = |d: &mut Document, x: f64, hex: &str| {
         let fill = Paint::solid(Color::from_hex(hex).unwrap());
-        Arc::new(Node::path(d.alloc_id(), shapes::rectangle(Rect::new(x, 20.0, x + 40.0, 60.0)), Appearance::basic(fill, Paint::None, 0.0)))
+        Arc::new(Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(x, 20.0, x + 40.0, 60.0)),
+            Appearance::basic(fill, Paint::None, 0.0),
+        ))
     };
     let (a, b) = (sq(&mut d, 20.0, "#ff0000"), sq(&mut d, 100.0, "#0000ff"));
     let mut g = Node::group(d.alloc_id(), vec![a, b]);
-    g.appearance.items.push(AppearanceItem::Fill(FillLayer::new(Paint::solid(Color::from_hex("#00ff00").unwrap()))));
+    g.appearance
+        .items
+        .push(AppearanceItem::Fill(FillLayer::new(Paint::solid(
+            Color::from_hex("#00ff00").unwrap(),
+        ))));
     if below {
         g.appearance.set_contents_at(1);
     }
@@ -37,7 +45,10 @@ fn a_group_fill_exports_as_paths_over_or_under_the_members() {
     // Two green paths, one per member, after both members.
     assert_eq!(svg.matches("fill=\"#00ff00\"").count(), 2, "{svg}");
     let green = svg.find("#00ff00").unwrap();
-    assert!(svg.find("#ff0000").unwrap() < green && svg.find("#0000ff").unwrap() < green, "{svg}");
+    assert!(
+        svg.find("#ff0000").unwrap() < green && svg.find("#0000ff").unwrap() < green,
+        "{svg}"
+    );
     // Below the contents: before them.
     let svg = export(&doc(true, vec![]), &ExportOptions::default());
     let green = svg.rfind("#00ff00").unwrap();
@@ -46,15 +57,36 @@ fn a_group_fill_exports_as_paths_over_or_under_the_members() {
 
 #[test]
 fn group_effects_bake_into_the_members_and_filter_the_group() {
-    let fx = |id: &str, params| Effect { id: id.into(), params, visible: true };
-    let svg =
-        export(&doc(false, vec![fx("distort.transform", json!({"moveV": 100})), fx("stylize.dropShadow", json!({}))]), &ExportOptions::default());
+    let fx = |id: &str, params| Effect {
+        id: id.into(),
+        params,
+        visible: true,
+    };
+    let svg = export(
+        &doc(
+            false,
+            vec![
+                fx("distort.transform", json!({"moveV": 100})),
+                fx("stylize.dropShadow", json!({})),
+            ],
+        ),
+        &ExportOptions::default(),
+    );
     // One filter around the whole group (one combined shadow).
     assert_eq!(svg.matches("<filter ").count(), 1, "{svg}");
     let open = svg.find("<g filter=\"url(#").expect("a filter group");
-    assert!(svg[open..].contains("#ff0000") && svg[open..].contains("#0000ff") && svg[open..].contains("#00ff00"), "{svg}");
+    assert!(
+        svg[open..].contains("#ff0000")
+            && svg[open..].contains("#0000ff")
+            && svg[open..].contains("#00ff00"),
+        "{svg}"
+    );
     // The members moved down by 100 pt.
-    let doc = vectorcraft_effects::bake_document(&doc(false, vec![fx("distort.transform", json!({"moveV": 100}))])).unwrap();
+    let doc = vectorcraft_effects::bake_document(&doc(
+        false,
+        vec![fx("distort.transform", json!({"moveV": 100}))],
+    ))
+    .unwrap();
     let g = &doc.layers[0].children().unwrap()[0];
     let b = g.geometric_bounds().unwrap();
     assert!((b.y0 - 120.0).abs() < 1e-6, "{b:?}");

@@ -52,23 +52,38 @@ pub struct PendingWrite {
 
 impl std::fmt::Debug for PendingWrite {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PendingWrite").field("path", &self.path).finish()
+        f.debug_struct("PendingWrite")
+            .field("path", &self.path)
+            .finish()
     }
 }
 
 impl PendingWrite {
-    pub fn spawn(path: PathBuf, work: impl FnOnce() -> std::io::Result<()> + Send + 'static) -> std::io::Result<PendingWrite> {
-        let h = std::thread::Builder::new().name("autosave".into()).spawn(work)?;
-        Ok(PendingWrite { path, handle: std::sync::Arc::new(std::sync::Mutex::new(Some(h))) })
+    pub fn spawn(
+        path: PathBuf,
+        work: impl FnOnce() -> std::io::Result<()> + Send + 'static,
+    ) -> std::io::Result<PendingWrite> {
+        let h = std::thread::Builder::new()
+            .name("autosave".into())
+            .spawn(work)?;
+        Ok(PendingWrite {
+            path,
+            handle: std::sync::Arc::new(std::sync::Mutex::new(Some(h))),
+        })
     }
     pub fn is_finished(&self) -> bool {
-        self.handle.lock().map(|h| h.as_ref().is_none_or(|h| h.is_finished())).unwrap_or(true)
+        self.handle
+            .lock()
+            .map(|h| h.as_ref().is_none_or(|h| h.is_finished()))
+            .unwrap_or(true)
     }
     /// Wait for the write; its result (`Ok` if already collected).
     pub fn join(&self) -> std::io::Result<()> {
         let h = self.handle.lock().ok().and_then(|mut h| h.take());
         match h {
-            Some(h) => h.join().unwrap_or_else(|_| Err(std::io::Error::other("auto-save thread panicked"))),
+            Some(h) => h
+                .join()
+                .unwrap_or_else(|_| Err(std::io::Error::other("auto-save thread panicked"))),
             None => Ok(()),
         }
     }
@@ -76,7 +91,9 @@ impl PendingWrite {
 
 /// File-name stem of a project (`/a/Intro.ecproj` → `Intro`; untitled → `Untitled Project`).
 pub fn project_stem(path: Option<&str>) -> String {
-    path.and_then(|p| Path::new(p).file_stem()).map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Untitled Project".into())
+    path.and_then(|p| Path::new(p).file_stem())
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Untitled Project".into())
 }
 
 /// `<stem> auto-save N.ecproj`.
@@ -109,17 +126,35 @@ pub fn existing(dir: &Path, stem: &str) -> Vec<(u32, PathBuf, std::time::SystemT
 }
 
 /// [`existing`] through `fs`.
-pub fn existing_in(fs: &dyn FileOps, dir: &Path, stem: &str) -> Vec<(u32, PathBuf, std::time::SystemTime)> {
-    let mut v: Vec<_> = fs.list(dir).into_iter().filter_map(|(name, m)| Some((slot_of(stem, &name)?, dir.join(&name), m))).collect();
+pub fn existing_in(
+    fs: &dyn FileOps,
+    dir: &Path,
+    stem: &str,
+) -> Vec<(u32, PathBuf, std::time::SystemTime)> {
+    let mut v: Vec<_> = fs
+        .list(dir)
+        .into_iter()
+        .filter_map(|(name, m)| Some((slot_of(stem, &name)?, dir.join(&name), m)))
+        .collect();
     v.sort_by_key(|x| x.0);
     v
 }
 
 /// The slot to write next: after `last` (this session), else after the newest file on disk,
 /// wrapping at `max`.
-pub fn next_slot(existing: &[(u32, PathBuf, std::time::SystemTime)], last: Option<u32>, max: u32) -> u32 {
+pub fn next_slot(
+    existing: &[(u32, PathBuf, std::time::SystemTime)],
+    last: Option<u32>,
+    max: u32,
+) -> u32 {
     let max = max.max(1);
-    let after = last.or_else(|| existing.iter().filter(|e| e.0 <= max).max_by_key(|e| (e.2, e.0)).map(|e| e.0));
+    let after = last.or_else(|| {
+        existing
+            .iter()
+            .filter(|e| e.0 <= max)
+            .max_by_key(|e| (e.2, e.0))
+            .map(|e| e.0)
+    });
     match after {
         Some(n) => n % max + 1,
         None => 1,
@@ -127,7 +162,13 @@ pub fn next_slot(existing: &[(u32, PathBuf, std::time::SystemTime)], last: Optio
 }
 
 /// Write one auto-save of `json` for the project at `project` and rotate. Returns its path.
-pub fn write(prefs: &Prefs, project: Option<&str>, fallback: Option<&Path>, last_slot: Option<u32>, json: &str) -> std::io::Result<(PathBuf, u32)> {
+pub fn write(
+    prefs: &Prefs,
+    project: Option<&str>,
+    fallback: Option<&Path>,
+    last_slot: Option<u32>,
+    json: &str,
+) -> std::io::Result<(PathBuf, u32)> {
     write_in(&StdFiles, prefs, project, fallback, last_slot, json)
 }
 
@@ -165,15 +206,26 @@ impl WritePlan {
 }
 
 /// Pick the next auto-save slot (without writing anything).
-pub fn plan_in(fs: &dyn FileOps, prefs: &Prefs, project: Option<&str>, fallback: Option<&Path>, last_slot: Option<u32>) -> std::io::Result<WritePlan> {
-    let dir = folder(prefs, project, fallback).ok_or_else(|| std::io::Error::other("no auto-save folder for an untitled project"))?;
+pub fn plan_in(
+    fs: &dyn FileOps,
+    prefs: &Prefs,
+    project: Option<&str>,
+    fallback: Option<&Path>,
+    last_slot: Option<u32>,
+) -> std::io::Result<WritePlan> {
+    let dir = folder(prefs, project, fallback)
+        .ok_or_else(|| std::io::Error::other("no auto-save folder for an untitled project"))?;
     let stem = project_stem(project);
     let max = prefs.auto_save.max_versions.max(1);
     let have = existing_in(fs, &dir, &stem);
     let slot = next_slot(&have, last_slot, max);
     let path = dir.join(file_name(&stem, slot));
     // Max versions lowered: drop slots above it.
-    let stale = have.into_iter().filter(|(n, _, _)| *n > max).map(|(_, p, _)| p).collect();
+    let stale = have
+        .into_iter()
+        .filter(|(n, _, _)| *n > max)
+        .map(|(_, p, _)| p)
+        .collect();
     Ok(WritePlan { path, slot, stale })
 }
 
@@ -183,9 +235,17 @@ pub fn latest(prefs: &Prefs, project: Option<&str>, fallback: Option<&Path>) -> 
 }
 
 /// [`latest`] through `fs`.
-pub fn latest_in(fs: &dyn FileOps, prefs: &Prefs, project: Option<&str>, fallback: Option<&Path>) -> Option<PathBuf> {
+pub fn latest_in(
+    fs: &dyn FileOps,
+    prefs: &Prefs,
+    project: Option<&str>,
+    fallback: Option<&Path>,
+) -> Option<PathBuf> {
     let dir = folder(prefs, project, fallback)?;
-    existing_in(fs, &dir, &project_stem(project)).into_iter().max_by_key(|e| e.2).map(|e| e.1)
+    existing_in(fs, &dir, &project_stem(project))
+        .into_iter()
+        .max_by_key(|e| e.2)
+        .map(|e| e.1)
 }
 
 /// What the crash-recovery sentinel records.
@@ -214,16 +274,37 @@ pub struct Recovery {
 /// At launch: report an unclean previous exit (a leftover sentinel), then start this run's
 /// sentinel.
 pub fn begin(store: &dyn ConfigStore, prefs: &Prefs) -> Option<Recovery> {
-    let found = store.read(SENTINEL).map(|t| serde_json::from_str::<Sentinel>(&t).unwrap_or_default());
-    let _ = store.write(SENTINEL, &serde_json::to_string(&Sentinel { pid: pid(), ..Default::default() }).unwrap_or_default());
+    let found = store
+        .read(SENTINEL)
+        .map(|t| serde_json::from_str::<Sentinel>(&t).unwrap_or_default());
+    let _ = store.write(
+        SENTINEL,
+        &serde_json::to_string(&Sentinel {
+            pid: pid(),
+            ..Default::default()
+        })
+        .unwrap_or_default(),
+    );
     let s = found?;
     let fallback = store.dir();
     let autosave = s
         .autosave
         .clone()
         .filter(|p| store.files().is_file(Path::new(p)))
-        .or_else(|| latest_in(store.files(), prefs, s.project.as_deref(), fallback.as_deref()).map(|p| p.to_string_lossy().to_string()));
-    Some(Recovery { project: s.project, autosave, dirty: s.dirty })
+        .or_else(|| {
+            latest_in(
+                store.files(),
+                prefs,
+                s.project.as_deref(),
+                fallback.as_deref(),
+            )
+            .map(|p| p.to_string_lossy().to_string())
+        });
+    Some(Recovery {
+        project: s.project,
+        autosave,
+        dirty: s.dirty,
+    })
 }
 
 /// This process id (0 where processes don't exist, e.g. the browser).
@@ -248,14 +329,25 @@ pub fn end(store: &dyn ConfigStore) {
 /// → `Intro 3.ecproj` (skipping names that exist; the extension, `.ecprojx` too, is kept).
 pub fn increment_path(path: &str, exists: impl Fn(&str) -> bool) -> String {
     let p = Path::new(path);
-    let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-    let ext = p.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_else(|| EXT.to_string());
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let ext = p
+        .extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_else(|| EXT.to_string());
     let (base, mut n) = match stem.rsplit_once(' ') {
-        Some((b, n)) if !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()) => (b.to_string(), n.parse::<u32>().unwrap_or(1) + 1),
+        Some((b, n)) if !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()) => {
+            (b.to_string(), n.parse::<u32>().unwrap_or(1) + 1)
+        }
         _ => (stem.clone(), 2),
     };
     loop {
-        let cand = p.with_file_name(format!("{base} {n}.{ext}")).to_string_lossy().to_string();
+        let cand = p
+            .with_file_name(format!("{base} {n}.{ext}"))
+            .to_string_lossy()
+            .to_string();
         if !exists(&cand) {
             return cand;
         }

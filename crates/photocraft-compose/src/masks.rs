@@ -17,7 +17,11 @@ use photocraft_raster::Surface;
 // A U16 mask keeps substantially smaller cached tiles than F32 while adding at most
 // 1/65535 quantization error. Mask values are normalized coverage, so this is finer than
 // the final 8-bit display/composite precision.
-const FORMAT: PixelFormat = PixelFormat { mode: ColorMode::Grayscale, sample: SampleType::U16, alpha: false };
+const FORMAT: PixelFormat = PixelFormat {
+    mode: ColorMode::Grayscale,
+    sample: SampleType::U16,
+    alpha: false,
+};
 
 struct CacheEntry {
     surface: Surface,
@@ -46,7 +50,15 @@ impl Cache {
         Some(entry.surface.clone())
     }
 
-    fn insert(&mut self, key: u64, surface: Surface, pixel_input: Option<Surface>, bytes: usize, budget: usize, generation: u64) {
+    fn insert(
+        &mut self,
+        key: u64,
+        surface: Surface,
+        pixel_input: Option<Surface>,
+        bytes: usize,
+        budget: usize,
+        generation: u64,
+    ) {
         // A large result can still be used by its caller without keeping it globally. A purge
         // also invalidates admission by computations that were already running.
         if bytes > budget || generation != self.generation {
@@ -56,14 +68,29 @@ impl Cache {
             self.bytes = self.bytes.saturating_sub(previous.bytes);
         }
         while self.map.len() >= CAPACITY || self.bytes > budget.saturating_sub(bytes) {
-            let Some(old) = self.map.iter().min_by_key(|(_, entry)| entry.tick).map(|(&key, _)| key) else { break };
+            let Some(old) = self
+                .map
+                .iter()
+                .min_by_key(|(_, entry)| entry.tick)
+                .map(|(&key, _)| key)
+            else {
+                break;
+            };
             if let Some(entry) = self.map.remove(&old) {
                 self.bytes = self.bytes.saturating_sub(entry.bytes);
             }
         }
         self.bytes = self.bytes.saturating_add(bytes);
         self.tick = self.tick.saturating_add(1);
-        self.map.insert(key, CacheEntry { surface, tick: self.tick, bytes, _pixel_input: pixel_input });
+        self.map.insert(
+            key,
+            CacheEntry {
+                surface,
+                tick: self.tick,
+                bytes,
+                _pixel_input: pixel_input,
+            },
+        );
     }
 
     fn clear(&mut self) -> usize {
@@ -113,21 +140,42 @@ fn lookup(c: &Mutex<Cache>, k: u64) -> CachedMask {
 
 /// The slot's surface, built once by whichever caller gets there first. `build` returns the
 /// mask and the pixel-mask input its key was made from (kept alive by the cache entry).
-fn finish_mask(c: &Mutex<Cache>, k: u64, slot: &Arc<OnceLock<Surface>>, generation: u64, build: impl FnOnce() -> (Surface, Option<Surface>)) -> Surface {
+fn finish_mask(
+    c: &Mutex<Cache>,
+    k: u64,
+    slot: &Arc<OnceLock<Surface>>,
+    generation: u64,
+    build: impl FnOnce() -> (Surface, Option<Surface>),
+) -> Surface {
     slot.get_or_init(|| {
         // Never hold the global cache mutex while rasterizing or feathering.
         let (surface, pixel_input) = build();
         let bytes = entry_bytes(&surface, pixel_input.as_ref());
         let mut c = c.lock().unwrap_or_else(|e| e.into_inner());
-        if c.in_flight.get(&k).and_then(Weak::upgrade).is_some_and(|active| Arc::ptr_eq(&active, slot)) {
-            c.insert(k, surface.clone(), pixel_input, bytes, CACHE_BUDGET, generation);
+        if c.in_flight
+            .get(&k)
+            .and_then(Weak::upgrade)
+            .is_some_and(|active| Arc::ptr_eq(&active, slot))
+        {
+            c.insert(
+                k,
+                surface.clone(),
+                pixel_input,
+                bytes,
+                CACHE_BUDGET,
+                generation,
+            );
         }
         surface
     })
     .clone()
 }
 
-fn cached_mask(c: &Mutex<Cache>, k: u64, build: impl FnOnce() -> (Surface, Option<Surface>)) -> Surface {
+fn cached_mask(
+    c: &Mutex<Cache>,
+    k: u64,
+    build: impl FnOnce() -> (Surface, Option<Surface>),
+) -> Surface {
     match lookup(c, k) {
         CachedMask::Hit(surface) => surface,
         CachedMask::Pending(slot, generation) => finish_mask(c, k, &slot, generation, build),
@@ -135,7 +183,11 @@ fn cached_mask(c: &Mutex<Cache>, k: u64, build: impl FnOnce() -> (Surface, Optio
 }
 
 fn surface_bytes(surface: &Surface) -> usize {
-    surface.tiles().fold(surface.default_bytes().len(), |bytes, (_, tile)| bytes.saturating_add(tile.bytes().len()))
+    surface
+        .tiles()
+        .fold(surface.default_bytes().len(), |bytes, (_, tile)| {
+            bytes.saturating_add(tile.bytes().len())
+        })
 }
 
 fn entry_bytes(surface: &Surface, pixel_input: Option<&Surface>) -> usize {
@@ -175,7 +227,11 @@ fn key(layer: &Layer, canvas: Rect) -> u64 {
 /// psd-tools corpus (layer_mask_data.psd, mask-parameters-no-real-channel.psd: sigma = feather
 /// beats 0.33, 0.5, 0.7, 1.3 and 1.6 times it).
 pub fn feather_sigma(px: f32) -> f32 {
-    if px.is_finite() { (px * FEATHER_SIGMA).clamp(0.0, MAX_FEATHER_SIGMA) } else { 0.0 }
+    if px.is_finite() {
+        (px * FEATHER_SIGMA).clamp(0.0, MAX_FEATHER_SIGMA)
+    } else {
+        0.0
+    }
 }
 
 const FEATHER_SIGMA: f32 = 1.0;
@@ -184,8 +240,14 @@ const MAX_FEATHER_SIGMA: f32 = 1000.0 * FEATHER_SIGMA;
 
 /// Whether `layer` has an enabled mask with a feather (rendered through [`combined_mask`]).
 pub fn has_feather(layer: &Layer) -> bool {
-    layer.mask.as_ref().is_some_and(|m| m.enabled && feather_sigma(m.feather) > 0.0)
-        || layer.vector_mask.as_ref().is_some_and(|v| v.enabled && feather_sigma(v.feather) > 0.0)
+    layer
+        .mask
+        .as_ref()
+        .is_some_and(|m| m.enabled && feather_sigma(m.feather) > 0.0)
+        || layer
+            .vector_mask
+            .as_ref()
+            .is_some_and(|v| v.enabled && feather_sigma(v.feather) > 0.0)
 }
 
 /// Apply one of the three box passes to a single line. `scratch` preserves the input while
@@ -194,7 +256,9 @@ fn blur_line(line: &mut [f32], scratch: &mut [f32], r: usize) {
     if line.is_empty() {
         return;
     }
-    let Ok(radius) = isize::try_from(r) else { return };
+    let Ok(radius) = isize::try_from(r) else {
+        return;
+    };
     scratch.copy_from_slice(line);
     let get = |i: isize| scratch[i.clamp(0, scratch.len() as isize - 1) as usize];
     let mut acc: f32 = (-radius..=radius).map(get).sum();
@@ -226,7 +290,10 @@ fn blur_rows(v: &mut [f32], w: usize, r: usize) {
     let threads = if cfg!(target_arch = "wasm32") || v.len() < 1 << 16 {
         1
     } else {
-        std::thread::available_parallelism().map_or(1, |n| n.get()).clamp(1, 16).min(h.max(1))
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .clamp(1, 16)
+            .min(h.max(1))
     };
     if threads == 1 {
         blur_rows_chunk(v, w, r);
@@ -321,24 +388,43 @@ pub fn combined_mask(layer: &Layer, canvas: Rect) -> Option<Surface> {
     if !layer.vector_mask.as_ref().is_some_and(|v| v.enabled) && !has_feather(layer) {
         return None;
     }
-    Some(cached_mask(cache(), key(layer, canvas), || (build_mask(layer, canvas), layer.mask.as_ref().map(|m| m.surface.clone()))))
+    Some(cached_mask(cache(), key(layer, canvas), || {
+        (
+            build_mask(layer, canvas),
+            layer.mask.as_ref().map(|m| m.surface.clone()),
+        )
+    }))
 }
 
 fn build_mask(layer: &Layer, canvas: Rect) -> Surface {
     let vm = layer.vector_mask.as_ref().filter(|v| v.enabled);
     let pixel = layer.mask.as_ref().filter(|m| m.enabled);
-    let (sv, sp) = (vm.map_or(0.0, |v| feather_sigma(v.feather)), pixel.map_or(0.0, |m| feather_sigma(m.feather)));
+    let (sv, sp) = (
+        vm.map_or(0.0, |v| feather_sigma(v.feather)),
+        pixel.map_or(0.0, |m| feather_sigma(m.feather)),
+    );
     let compiled = vm.map(photocraft_vector::CompiledVectorMask::new);
     // Far outside the path the vector mask is constant.
     let far = Rect::from_xywh(canvas.x0 - 1_000_000, canvas.y0 - 1_000_000, 1, 1);
-    let v_out = compiled.as_ref().map_or(1.0, |vm| vm.render_sequential(far)[0]);
+    let v_out = compiled
+        .as_ref()
+        .map_or(1.0, |vm| vm.render_sequential(far)[0]);
     let p_def = pixel.map_or(1.0, |m| {
         let d = m.surface.default_pixel().first().copied().unwrap_or(1.0);
         1.0 - m.density * (1.0 - d)
     });
     let grow = |r: Rect, sigma: f32| {
         let m = (sigma * 3.0).ceil() as i32 + 2;
-        if r.is_empty() { r } else { Rect::new(r.x0.saturating_sub(m), r.y0.saturating_sub(m), r.x1.saturating_add(m), r.y1.saturating_add(m)) }
+        if r.is_empty() {
+            r
+        } else {
+            Rect::new(
+                r.x0.saturating_sub(m),
+                r.y0.saturating_sub(m),
+                r.x1.saturating_add(m),
+                r.y1.saturating_add(m),
+            )
+        }
     };
     // Where the product can differ from `p_def × v_out`: the path's bounds, plus the pixel
     // mask's painted tiles when the vector mask lets them through outside the path, each grown
@@ -437,15 +523,24 @@ mod tests {
                     })
                 })
                 .collect();
-            handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<_>>()
+            handles
+                .into_iter()
+                .map(|handle| handle.join().unwrap())
+                .collect::<Vec<_>>()
         });
         assert_eq!(builds.load(Ordering::SeqCst), 1);
-        assert!(outputs.iter().all(|surface| Arc::ptr_eq(surface.tiles().next().unwrap().1, outputs[0].tiles().next().unwrap().1)));
+        assert!(outputs.iter().all(|surface| Arc::ptr_eq(
+            surface.tiles().next().unwrap().1,
+            outputs[0].tiles().next().unwrap().1
+        )));
 
         // Evicting the retained result cannot make existing callers build again.
         c.lock().unwrap().map.clear();
         let again = finish_mask(&c, 7, &slots[0], 0, || panic!("rebuilt an active slot"));
-        assert!(Arc::ptr_eq(again.tiles().next().unwrap().1, outputs[0].tiles().next().unwrap().1));
+        assert!(Arc::ptr_eq(
+            again.tiles().next().unwrap().1,
+            outputs[0].tiles().next().unwrap().1
+        ));
         drop(slots);
         let next = pending(&c, 8);
         assert_eq!(c.lock().unwrap().in_flight.len(), 1);
@@ -476,7 +571,10 @@ mod tests {
                 let surface = cached_mask(c, 2, test_surface);
                 second_tx.send(surface.sample_channel(0, 0, 0)).unwrap();
             });
-            assert!((second_rx.recv_timeout(Duration::from_secs(5)).unwrap() - 0.5).abs() <= 1.0 / f32::from(u16::MAX));
+            assert!(
+                (second_rx.recv_timeout(Duration::from_secs(5)).unwrap() - 0.5).abs()
+                    <= 1.0 / f32::from(u16::MAX)
+            );
             release_tx.send(()).unwrap();
             first.join().unwrap();
             second.join().unwrap();
@@ -493,14 +591,19 @@ mod tests {
         let old_surface = finish_mask(&c, 1, &old, 0, test_surface);
         assert!(c.lock().unwrap().map.is_empty());
         let current_surface = finish_mask(&c, 1, &current, 0, test_surface);
-        assert!(!Arc::ptr_eq(old_surface.tiles().next().unwrap().1, current_surface.tiles().next().unwrap().1));
+        assert!(!Arc::ptr_eq(
+            old_surface.tiles().next().unwrap().1,
+            current_surface.tiles().next().unwrap().1
+        ));
         assert_eq!(c.lock().unwrap().map.len(), 1);
     }
 
     #[test]
     fn a_purge_during_a_shared_build_keeps_the_cache_empty() {
         let c = Mutex::new(Cache::default());
-        let CachedMask::Pending(slot, generation) = lookup(&c, 1) else { panic!("expected a cold mask") };
+        let CachedMask::Pending(slot, generation) = lookup(&c, 1) else {
+            panic!("expected a cold mask")
+        };
         c.lock().unwrap().clear();
         finish_mask(&c, 1, &slot, generation, test_surface);
         assert!(c.lock().unwrap().map.is_empty());
@@ -527,9 +630,15 @@ mod tests {
                     })
                 })
                 .collect();
-            handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<_>>()
+            handles
+                .into_iter()
+                .map(|handle| handle.join().unwrap())
+                .collect::<Vec<_>>()
         });
-        assert!(outputs.iter().all(|surface| Arc::ptr_eq(surface.tiles().next().unwrap().1, outputs[0].tiles().next().unwrap().1)));
+        assert!(outputs.iter().all(|surface| Arc::ptr_eq(
+            surface.tiles().next().unwrap().1,
+            outputs[0].tiles().next().unwrap().1
+        )));
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -543,20 +652,40 @@ mod tests {
         let handle = std::thread::spawn(move || {
             let canvas = Rect::new(0, 0, 512, 512);
             let mut layer = Layer::raster("rayon vector mask", PixelFormat::RGBA8);
-            let mut mask = VectorMask::new(photocraft_vector::shapes::ellipse(8.0, 8.0, 496.0, 496.0));
+            let mut mask =
+                VectorMask::new(photocraft_vector::shapes::ellipse(8.0, 8.0, 496.0, 496.0));
             mask.feather = 8.0;
             layer.vector_mask = Some(mask);
-            let pool = rayon::ThreadPoolBuilder::new().num_threads(2).build().unwrap();
-            let outputs: Vec<_> = pool.install(|| (0..8).into_par_iter().map(|_| combined_mask(&layer, canvas).unwrap()).collect());
-            assert!(outputs.iter().all(|surface| Arc::ptr_eq(surface.tiles().next().unwrap().1, outputs[0].tiles().next().unwrap().1)));
+            let pool = rayon::ThreadPoolBuilder::new()
+                .num_threads(2)
+                .build()
+                .unwrap();
+            let outputs: Vec<_> = pool.install(|| {
+                (0..8)
+                    .into_par_iter()
+                    .map(|_| combined_mask(&layer, canvas).unwrap())
+                    .collect()
+            });
+            assert!(outputs.iter().all(|surface| Arc::ptr_eq(
+                surface.tiles().next().unwrap().1,
+                outputs[0].tiles().next().unwrap().1
+            )));
             tx.send(()).unwrap();
         });
-        rx.recv_timeout(Duration::from_secs(10)).expect("mask initializer deadlocked inside Rayon");
+        rx.recv_timeout(Duration::from_secs(10))
+            .expect("mask initializer deadlocked inside Rayon");
         handle.join().unwrap();
     }
 
     fn one_tile(sample: SampleType) -> Surface {
-        let mut surface = Surface::with_default(PixelFormat { mode: ColorMode::Grayscale, sample, alpha: false }, &[1.0]);
+        let mut surface = Surface::with_default(
+            PixelFormat {
+                mode: ColorMode::Grayscale,
+                sample,
+                alpha: false,
+            },
+            &[1.0],
+        );
         surface.fill_rect(Rect::new(0, 0, 1, 1), &[0.0]);
         surface
     }
@@ -568,13 +697,19 @@ mod tests {
             let mut input = one_tile(sample);
             input.fill_rect(Rect::new(1024, 1024, 1025, 1025), &[0.0]);
             let tile_pixels = (photocraft_geom::TILE_SIZE * photocraft_geom::TILE_SIZE) as usize;
-            let expected = tile_pixels * (SampleType::F32.bytes() + 2 * sample.bytes()) + SampleType::F32.bytes() + sample.bytes();
+            let expected = tile_pixels * (SampleType::F32.bytes() + 2 * sample.bytes())
+                + SampleType::F32.bytes()
+                + sample.bytes();
             let bytes = entry_bytes(&result, Some(&input));
             assert_eq!(bytes, expected, "{sample:?}");
             let mut cache = Cache::default();
             cache.insert(1, result.clone(), None, bytes, bytes * 2, cache.generation);
             cache.insert(2, result.clone(), None, bytes, bytes * 2, cache.generation);
-            assert_eq!(cache.bytes, bytes * 2, "shared tiles are conservatively charged per entry");
+            assert_eq!(
+                cache.bytes,
+                bytes * 2,
+                "shared tiles are conservatively charged per entry"
+            );
         }
     }
 
@@ -599,10 +734,24 @@ mod tests {
         let bytes = entry_bytes(&surface, None);
         let mut cache = Cache::default();
         for key in 0..CAPACITY as u64 {
-            cache.insert(key, surface.clone(), None, bytes, CACHE_BUDGET, cache.generation);
+            cache.insert(
+                key,
+                surface.clone(),
+                None,
+                bytes,
+                CACHE_BUDGET,
+                cache.generation,
+            );
         }
         assert!(cache.get(0).is_some());
-        cache.insert(CAPACITY as u64, surface, None, bytes, CACHE_BUDGET, cache.generation);
+        cache.insert(
+            CAPACITY as u64,
+            surface,
+            None,
+            bytes,
+            CACHE_BUDGET,
+            cache.generation,
+        );
         assert_eq!(cache.map.len(), CAPACITY);
         assert!(cache.get(1).is_none());
         assert!(cache.get(0).is_some());
@@ -636,9 +785,23 @@ mod tests {
         let first_tile = first.tiles().next().unwrap().1.clone();
         let second_tile = second.tiles().next().unwrap().1.clone();
         let mut cache = Cache::default();
-        cache.insert(1, first.clone(), None, first_bytes, CACHE_BUDGET, cache.generation);
+        cache.insert(
+            1,
+            first.clone(),
+            None,
+            first_bytes,
+            CACHE_BUDGET,
+            cache.generation,
+        );
         assert_eq!(Arc::strong_count(&first_tile), 3);
-        cache.insert(1, second.clone(), None, second_bytes, CACHE_BUDGET, cache.generation);
+        cache.insert(
+            1,
+            second.clone(),
+            None,
+            second_bytes,
+            CACHE_BUDGET,
+            cache.generation,
+        );
         assert_eq!(cache.bytes, second_bytes);
         assert_eq!(cache.map.len(), 1);
         assert_eq!(Arc::strong_count(&first_tile), 2);
@@ -658,7 +821,14 @@ mod tests {
         assert!(cache.get(1).is_none());
         let generation_before_purge = cache.generation;
         cache.clear();
-        cache.insert(1, surface.clone(), None, bytes, CACHE_BUDGET, generation_before_purge);
+        cache.insert(
+            1,
+            surface.clone(),
+            None,
+            bytes,
+            CACHE_BUDGET,
+            generation_before_purge,
+        );
         assert!(cache.map.is_empty());
         assert_eq!(cache.bytes, 0);
         cache.insert(1, surface, None, bytes, CACHE_BUDGET, cache.generation);
@@ -681,28 +851,51 @@ mod tests {
             drop(first);
             // No document/undo snapshot shares the input. Previously this write could
             // reuse the original tile address and return the old cached white mask.
-            layer.mask.as_mut().unwrap().surface.fill_rect(canvas, &[0.0]);
+            layer
+                .mask
+                .as_mut()
+                .unwrap()
+                .surface
+                .fill_rect(canvas, &[0.0]);
             let edited = combined_mask(&layer, canvas).unwrap();
             assert_eq!(edited.sample_channel(32, 32, 0), 0.0, "{sample:?}");
 
-            layer.mask.as_mut().unwrap().surface.fill_rect(canvas, &[0.5]);
+            layer
+                .mask
+                .as_mut()
+                .unwrap()
+                .surface
+                .fill_rect(canvas, &[0.5]);
             let repainted = combined_mask(&layer, canvas).unwrap();
-            assert!((repainted.sample_channel(32, 32, 0) - 0.5).abs() < 0.005, "{sample:?}");
+            assert!(
+                (repainted.sample_channel(32, 32, 0) - 0.5).abs() < 0.005,
+                "{sample:?}"
+            );
             let warm = combined_mask(&layer, canvas).unwrap();
-            assert!(repainted.tiles().zip(warm.tiles()).all(|((_, a), (_, b))| Arc::ptr_eq(a, b)));
+            assert!(
+                repainted
+                    .tiles()
+                    .zip(warm.tiles())
+                    .all(|((_, a), (_, b))| Arc::ptr_eq(a, b))
+            );
         }
     }
 
     #[test]
     fn parallel_gaussian_matches_the_sequential_reference() {
         let (w, h, sigma): (usize, usize, f32) = (320, 256, 13.0);
-        let mut parallel: Vec<_> = (0..w * h).map(|i| ((i * 37 % 1009) as f32) / 1008.0).collect();
+        let mut parallel: Vec<_> = (0..w * h)
+            .map(|i| ((i * 37 % 1009) as f32) / 1008.0)
+            .collect();
         let mut sequential = parallel.clone();
         let ideal = (12.0 * sigma * sigma / 3.0 + 1.0).sqrt();
         let r = (((ideal.floor() as usize) | 1).max(1) - 1) / 2;
         gaussian_sequential(&mut sequential, w, h, r);
         gaussian(&mut parallel, w, h, sigma);
-        assert_eq!(parallel, sequential, "parallel blur must retain the exact per-line arithmetic");
+        assert_eq!(
+            parallel, sequential,
+            "parallel blur must retain the exact per-line arithmetic"
+        );
     }
 
     #[test]
@@ -713,7 +906,9 @@ mod tests {
         let (w, h, sigma): (usize, usize, f32) = (6336, 7920, 1000.0);
         let ideal = (12.0 * sigma * sigma / 3.0 + 1.0).sqrt();
         let r = (((ideal.floor() as usize) | 1).max(1) - 1) / 2;
-        let source: Vec<_> = (0..w * h).map(|i| ((i * 37 % 1009) as f32) / 1008.0).collect();
+        let source: Vec<_> = (0..w * h)
+            .map(|i| ((i * 37 % 1009) as f32) / 1008.0)
+            .collect();
         let mut sequential = source.clone();
         let start = Instant::now();
         gaussian_sequential(&mut sequential, w, h, r);
@@ -734,15 +929,28 @@ mod tests {
         let tile_count = w.div_ceil(tile) * h.div_ceil(tile);
         let tile_pixels = tile * tile;
         let one_entry = tile_count * tile_pixels * (SampleType::U8.bytes() + FORMAT.sample.bytes());
-        assert!(one_entry.saturating_mul(5) <= CACHE_BUDGET, "five reported-size masks must fit");
+        assert!(
+            one_entry.saturating_mul(5) <= CACHE_BUDGET,
+            "five reported-size masks must fit"
+        );
 
         let mut cache = Cache::default();
         let surface = Surface::new(FORMAT);
         for key in 0..5 {
-            cache.insert(key, surface.clone(), None, one_entry, CACHE_BUDGET, cache.generation);
+            cache.insert(
+                key,
+                surface.clone(),
+                None,
+                one_entry,
+                CACHE_BUDGET,
+                cache.generation,
+            );
         }
         for key in 0..5 {
-            assert!(cache.get(key).is_some(), "mask {key} was evicted before the next plan");
+            assert!(
+                cache.get(key).is_some(),
+                "mask {key} was evicted before the next plan"
+            );
         }
     }
 
@@ -752,7 +960,11 @@ mod tests {
         let pts = [(5.0, 5.0), (30.0, 6.0), (20.0, 28.0)];
         let knots = pts.iter().map(|&(x, y)| Knot::corner(x, y)).collect();
         let mut path = Path::default();
-        path.subpaths.push(Subpath { knots, closed: true, ..Default::default() });
+        path.subpaths.push(Subpath {
+            knots,
+            closed: true,
+            ..Default::default()
+        });
         let mut vm = VectorMask::new(path);
         vm.density = 0.9;
         l.vector_mask = Some(vm);
@@ -765,7 +977,11 @@ mod tests {
             assert!((a - b).abs() <= 1.0 / f32::from(u16::MAX));
         }
         let again = combined_mask(&l, canvas).unwrap();
-        assert!(s.tiles().zip(again.tiles()).all(|(a, b)| Arc::ptr_eq(a.1, b.1)));
+        assert!(
+            s.tiles()
+                .zip(again.tiles())
+                .all(|(a, b)| Arc::ptr_eq(a.1, b.1))
+        );
         l.vector_mask = None;
         assert!(combined_mask(&l, canvas).is_none());
     }
@@ -773,9 +989,16 @@ mod tests {
     #[test]
     fn hostile_path_coordinates_do_not_overflow() {
         let mut l = Layer::raster("l", PixelFormat::RGBA8);
-        let knots = [(-1.0e30, -1.0e30), (1.0e30, 0.0), (0.0, 1.0e30)].iter().map(|&(x, y)| Knot::corner(x, y)).collect();
+        let knots = [(-1.0e30, -1.0e30), (1.0e30, 0.0), (0.0, 1.0e30)]
+            .iter()
+            .map(|&(x, y)| Knot::corner(x, y))
+            .collect();
         let mut path = Path::default();
-        path.subpaths.push(Subpath { knots, closed: true, ..Default::default() });
+        path.subpaths.push(Subpath {
+            knots,
+            closed: true,
+            ..Default::default()
+        });
         l.vector_mask = Some(VectorMask::new(path));
         let _ = combined_mask(&l, Rect::new(0, 0, 8, 8));
     }

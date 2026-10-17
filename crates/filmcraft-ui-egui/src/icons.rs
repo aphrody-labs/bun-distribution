@@ -156,7 +156,11 @@ impl Pen16<'_> {
     /// on screen (the three lines of the menu mark get the same two gaps).
     fn snap(&self, v: f32, centre: f32, mid: bool) -> f32 {
         let ppp = self.painter.pixels_per_point();
-        let half = if mid && (self.stroke_w() * ppp).round() as i32 % 2 == 1 { 0.5 } else { 0.0 };
+        let half = if mid && (self.stroke_w() * ppp).round() as i32 % 2 == 1 {
+            0.5
+        } else {
+            0.0
+        };
         let base = (centre * ppp).round() + half;
         (base + ((v - centre) * ppp).round()) / ppp
     }
@@ -205,20 +209,37 @@ impl Pen16<'_> {
     }
     fn fill(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|(x, y)| self.p(*x, *y)).collect();
-        self.painter.add(PathShape::convex_polygon(v, self.color, Stroke::NONE));
+        self.painter
+            .add(PathShape::convex_polygon(v, self.color, Stroke::NONE));
     }
     fn circle(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_stroke(self.p(x, y), r * self.s(), Stroke::new(self.stroke_w(), self.color));
+        self.painter.circle_stroke(
+            self.p(x, y),
+            r * self.s(),
+            Stroke::new(self.stroke_w(), self.color),
+        );
     }
     fn dot(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_filled(self.p(x, y), r * self.s(), self.color);
+        self.painter
+            .circle_filled(self.p(x, y), r * self.s(), self.color);
     }
     fn rect(&self, x0: f32, y0: f32, x1: f32, y1: f32) {
-        let r = Rect::from_min_max(self.snap_pos(self.p(x0, y0), true, true), self.snap_pos(self.p(x1, y1), true, true));
-        self.painter.rect_stroke(r, 1.0 * self.s(), Stroke::new(self.stroke_w(), self.color), egui::StrokeKind::Middle);
+        let r = Rect::from_min_max(
+            self.snap_pos(self.p(x0, y0), true, true),
+            self.snap_pos(self.p(x1, y1), true, true),
+        );
+        self.painter.rect_stroke(
+            r,
+            1.0 * self.s(),
+            Stroke::new(self.stroke_w(), self.color),
+            egui::StrokeKind::Middle,
+        );
     }
     fn rect_fill(&self, x0: f32, y0: f32, x1: f32, y1: f32) {
-        let r = Rect::from_min_max(self.snap_pos(self.p(x0, y0), false, false), self.snap_pos(self.p(x1, y1), false, false));
+        let r = Rect::from_min_max(
+            self.snap_pos(self.p(x0, y0), false, false),
+            self.snap_pos(self.p(x1, y1), false, false),
+        );
         self.painter.rect_filled(r, 0.8 * self.s(), self.color);
     }
     fn arc(&self, cx: f32, cy: f32, r: f32, a0: f32, a1: f32) {
@@ -235,17 +256,46 @@ impl Pen16<'_> {
 
 /// Paint `icon` centred in `rect`.
 pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
-    let pen = Pen16 { painter, rect, color, width: 1.25 };
+    let pen = Pen16 {
+        painter,
+        rect,
+        color,
+        width: 1.25,
+    };
     use Icon::*;
     match icon {
-        Selection => pen.fill(&[(4.0, 2.0), (4.0, 13.0), (6.8, 10.4), (8.8, 14.6), (10.4, 13.9), (8.5, 9.8), (12.2, 9.6)]),
+        Selection => pen.fill(&[
+            (4.0, 2.0),
+            (4.0, 13.0),
+            (6.8, 10.4),
+            (8.8, 14.6),
+            (10.4, 13.9),
+            (8.5, 9.8),
+            (12.2, 9.6),
+        ]),
         TrackSelectFwd => {
-            pen.fill(&[(2.0, 3.0), (2.0, 11.0), (4.0, 9.2), (5.4, 12.2), (6.6, 11.6), (5.3, 8.7), (7.8, 8.5)]);
+            pen.fill(&[
+                (2.0, 3.0),
+                (2.0, 11.0),
+                (4.0, 9.2),
+                (5.4, 12.2),
+                (6.6, 11.6),
+                (5.3, 8.7),
+                (7.8, 8.5),
+            ]);
             pen.fill(&[(8.5, 4.5), (11.0, 7.0), (8.5, 9.5)]);
             pen.fill(&[(11.5, 4.5), (14.0, 7.0), (11.5, 9.5)]);
         }
         TrackSelectBack => {
-            pen.fill(&[(14.0, 3.0), (14.0, 11.0), (12.0, 9.2), (10.6, 12.2), (9.4, 11.6), (10.7, 8.7), (8.2, 8.5)]);
+            pen.fill(&[
+                (14.0, 3.0),
+                (14.0, 11.0),
+                (12.0, 9.2),
+                (10.6, 12.2),
+                (9.4, 11.6),
+                (10.7, 8.7),
+                (8.2, 8.5),
+            ]);
             pen.fill(&[(7.5, 4.5), (5.0, 7.0), (7.5, 9.5)]);
             pen.fill(&[(4.5, 4.5), (2.0, 7.0), (4.5, 9.5)]);
         }
@@ -302,7 +352,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.fill(&[(14.5, 8.0), (12.0, 6.0), (12.0, 10.0)]);
         }
         Pen => {
-            pen.closed(&[(8.0, 2.0), (12.0, 9.0), (9.5, 13.5), (6.5, 13.5), (4.0, 9.0)]);
+            pen.closed(&[
+                (8.0, 2.0),
+                (12.0, 9.0),
+                (9.5, 13.5),
+                (6.5, 13.5),
+                (4.0, 9.0),
+            ]);
             pen.line(&[(8.0, 2.0), (8.0, 8.0)]);
             pen.dot(8.0, 9.0, 1.0);
         }
@@ -312,7 +368,18 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(5.0, 8.5), (5.0, 4.0), (6.5, 3.2), (7.3, 4.0), (7.3, 7.5)]);
             pen.line(&[(7.3, 4.0), (7.3, 2.8), (8.8, 2.2), (9.6, 3.0), (9.6, 7.5)]);
             pen.line(&[(9.6, 3.6), (11.0, 3.2), (11.9, 4.0), (11.9, 8.0)]);
-            pen.line(&[(11.9, 5.5), (13.0, 5.3), (13.6, 6.0), (13.6, 10.0), (11.5, 14.0), (6.5, 14.0), (3.0, 10.0), (2.5, 8.5), (3.5, 7.8), (5.0, 8.5)]);
+            pen.line(&[
+                (11.9, 5.5),
+                (13.0, 5.3),
+                (13.6, 6.0),
+                (13.6, 10.0),
+                (11.5, 14.0),
+                (6.5, 14.0),
+                (3.0, 10.0),
+                (2.5, 8.5),
+                (3.5, 7.8),
+                (5.0, 8.5),
+            ]);
         }
         Zoom => {
             pen.circle(6.8, 6.8, 4.3);
@@ -339,7 +406,19 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.fill(&[(3.5, 3.5), (10.0, 8.0), (3.5, 12.5)]);
         }
         GoToIn => {
-            pen.line(&[(5.0, 3.0), (4.0, 3.0), (3.5, 3.5), (3.5, 6.0), (3.0, 7.0), (2.0, 8.0), (3.0, 9.0), (3.5, 10.0), (3.5, 12.5), (4.0, 13.0), (5.0, 13.0)]);
+            pen.line(&[
+                (5.0, 3.0),
+                (4.0, 3.0),
+                (3.5, 3.5),
+                (3.5, 6.0),
+                (3.0, 7.0),
+                (2.0, 8.0),
+                (3.0, 9.0),
+                (3.5, 10.0),
+                (3.5, 12.5),
+                (4.0, 13.0),
+                (5.0, 13.0),
+            ]);
             pen.fill(&[(13.0, 3.5), (6.0, 8.0), (13.0, 12.5)]);
         }
         GoToOut => {
@@ -388,7 +467,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             (7.5, 13.5),
             (5.5, 13.5),
         ]),
-        Marker => pen.fill(&[(4.0, 2.5), (12.0, 2.5), (12.0, 9.5), (8.0, 13.5), (4.0, 9.5)]),
+        Marker => pen.fill(&[
+            (4.0, 2.5),
+            (12.0, 2.5),
+            (12.0, 9.5),
+            (8.0, 13.5),
+            (4.0, 9.5),
+        ]),
         Insert => {
             pen.rect(2.0, 5.0, 14.0, 13.0);
             pen.fill(&[(5.5, 1.5), (10.5, 1.5), (8.0, 5.5)]);
@@ -412,7 +497,16 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(9.5, 10.75), (10.5, 10.75)]);
         }
         Camera => {
-            pen.closed(&[(2.0, 5.0), (5.0, 5.0), (6.0, 3.5), (10.0, 3.5), (11.0, 5.0), (14.0, 5.0), (14.0, 12.5), (2.0, 12.5)]);
+            pen.closed(&[
+                (2.0, 5.0),
+                (5.0, 5.0),
+                (6.0, 3.5),
+                (10.0, 3.5),
+                (11.0, 5.0),
+                (14.0, 5.0),
+                (14.0, 12.5),
+                (2.0, 12.5),
+            ]);
             pen.circle(8.0, 8.7, 2.3);
         }
         Loop => {
@@ -428,14 +522,31 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(3.0, 8.0), (13.0, 8.0)]);
         }
         Eye | EyeOff => {
-            pen.line(&[(1.5, 8.0), (4.0, 5.0), (8.0, 3.8), (12.0, 5.0), (14.5, 8.0), (12.0, 11.0), (8.0, 12.2), (4.0, 11.0), (1.5, 8.0)]);
+            pen.line(&[
+                (1.5, 8.0),
+                (4.0, 5.0),
+                (8.0, 3.8),
+                (12.0, 5.0),
+                (14.5, 8.0),
+                (12.0, 11.0),
+                (8.0, 12.2),
+                (4.0, 11.0),
+                (1.5, 8.0),
+            ]);
             pen.circle(8.0, 8.0, 2.0);
             if icon == EyeOff {
                 pen.line(&[(2.5, 13.5), (13.5, 2.5)]);
             }
         }
         Speaker | Mute => {
-            pen.fill(&[(2.0, 6.0), (5.0, 6.0), (9.0, 2.5), (9.0, 13.5), (5.0, 10.0), (2.0, 10.0)]);
+            pen.fill(&[
+                (2.0, 6.0),
+                (5.0, 6.0),
+                (9.0, 2.5),
+                (9.0, 13.5),
+                (5.0, 10.0),
+                (2.0, 10.0),
+            ]);
             if icon == Mute {
                 pen.line(&[(10.5, 6.0), (14.0, 10.0)]);
                 pen.line(&[(14.0, 6.0), (10.5, 10.0)]);
@@ -463,7 +574,14 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.arc(8.0, 8.0, 4.5, 0.0, 180.0);
             pen.line(&[(8.0, 12.5), (8.0, 14.5)]);
         }
-        Folder => pen.closed(&[(1.5, 4.0), (6.0, 4.0), (7.5, 5.5), (14.5, 5.5), (14.5, 13.0), (1.5, 13.0)]),
+        Folder => pen.closed(&[
+            (1.5, 4.0),
+            (6.0, 4.0),
+            (7.5, 5.5),
+            (14.5, 5.5),
+            (14.5, 13.0),
+            (1.5, 13.0),
+        ]),
         Film => {
             pen.rect(2.0, 3.0, 14.0, 13.0);
             for y in [5.0, 8.0, 11.0] {
@@ -486,7 +604,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         }
         Image => {
             pen.rect(2.0, 3.0, 14.0, 13.0);
-            pen.line(&[(2.5, 12.0), (6.0, 8.0), (9.0, 11.0), (11.0, 9.0), (13.5, 12.0)]);
+            pen.line(&[
+                (2.5, 12.0),
+                (6.0, 8.0),
+                (9.0, 11.0),
+                (11.0, 9.0),
+                (13.5, 12.0),
+            ]);
             pen.dot(10.5, 6.0, 1.1);
         }
         Search => {
@@ -511,7 +635,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.rect(10.0, 2.0, 14.0, 6.0);
         }
         NewItem => {
-            pen.closed(&[(3.0, 2.0), (10.0, 2.0), (13.0, 5.0), (13.0, 14.0), (3.0, 14.0)]);
+            pen.closed(&[
+                (3.0, 2.0),
+                (10.0, 2.0),
+                (13.0, 5.0),
+                (13.0, 14.0),
+                (3.0, 14.0),
+            ]);
             pen.line(&[(8.0, 6.0), (8.0, 11.0)]);
             pen.line(&[(5.5, 8.5), (10.5, 8.5)]);
         }
@@ -589,7 +719,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.circle(8.0, 8.0, 2.2);
             for i in 0..8 {
                 let a = (i as f32 * 45.0).to_radians();
-                pen.line(&[(8.0 + 4.0 * a.cos(), 8.0 + 4.0 * a.sin()), (8.0 + 6.0 * a.cos(), 8.0 + 6.0 * a.sin())]);
+                pen.line(&[
+                    (8.0 + 4.0 * a.cos(), 8.0 + 4.0 * a.sin()),
+                    (8.0 + 6.0 * a.cos(), 8.0 + 6.0 * a.sin()),
+                ]);
             }
             pen.circle(8.0, 8.0, 4.2);
         }
@@ -654,7 +787,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(3.0, 5.0), (13.0, 5.0)]);
             pen.line(&[(3.0, 11.0), (13.0, 11.0)]);
             pen.line(&[(8.0, 2.0), (6.0, 5.0), (5.5, 8.0), (6.0, 11.0), (8.0, 14.0)]);
-            pen.line(&[(8.0, 2.0), (10.0, 5.0), (10.5, 8.0), (10.0, 11.0), (8.0, 14.0)]);
+            pen.line(&[
+                (8.0, 2.0),
+                (10.0, 5.0),
+                (10.5, 8.0),
+                (10.0, 11.0),
+                (8.0, 14.0),
+            ]);
         }
         Code => {
             pen.line(&[(5.0, 4.0), (1.5, 8.0), (5.0, 12.0)]);
@@ -662,7 +801,16 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(9.5, 2.5), (6.5, 13.5)]);
         }
         Sparkle => {
-            pen.fill(&[(8.0, 1.5), (9.5, 6.5), (14.5, 8.0), (9.5, 9.5), (8.0, 14.5), (6.5, 9.5), (1.5, 8.0), (6.5, 6.5)]);
+            pen.fill(&[
+                (8.0, 1.5),
+                (9.5, 6.5),
+                (14.5, 8.0),
+                (9.5, 9.5),
+                (8.0, 14.5),
+                (6.5, 9.5),
+                (1.5, 8.0),
+                (6.5, 6.5),
+            ]);
         }
         Grid => {
             pen.rect(2.0, 2.0, 14.0, 14.0);
@@ -680,7 +828,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         }
         Offline => {
             pen.line(&[(7.0, 4.0), (4.5, 4.0), (2.5, 6.0), (2.5, 7.5), (4.0, 9.0)]);
-            pen.line(&[(9.0, 12.0), (11.5, 12.0), (13.5, 10.0), (13.5, 8.5), (12.0, 7.0)]);
+            pen.line(&[
+                (9.0, 12.0),
+                (11.5, 12.0),
+                (13.5, 10.0),
+                (13.5, 8.5),
+                (12.0, 7.0),
+            ]);
             pen.line(&[(5.5, 2.0), (6.5, 0.8)]);
             pen.line(&[(10.5, 14.0), (9.5, 15.2)]);
             pen.line(&[(3.0, 1.5), (3.5, 2.8)]);
@@ -748,7 +902,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             for i in 0..8 {
                 let a = (i as f32 * 45.0).to_radians();
                 let (c, s) = (a.cos(), a.sin());
-                pen.line(&[(8.0 + 4.6 * c, 8.0 + 4.6 * s), (8.0 + 6.2 * c, 8.0 + 6.2 * s)]);
+                pen.line(&[
+                    (8.0 + 4.6 * c, 8.0 + 4.6 * s),
+                    (8.0 + 6.2 * c, 8.0 + 6.2 * s),
+                ]);
             }
         }
         Moon => {
@@ -760,12 +917,20 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
                     (cx + r * a.cos(), cy + r * a.sin())
                 })
             };
-            let pts: Vec<(f32, f32)> = arc(8.0, 8.5, 5.5, 8.56, 261.44).chain(arc(11.2, 5.3, 4.6, 209.12, 60.88).skip(1)).collect();
+            let pts: Vec<(f32, f32)> = arc(8.0, 8.5, 5.5, 8.56, 261.44)
+                .chain(arc(11.2, 5.3, 4.6, 209.12, 60.88).skip(1))
+                .collect();
             pen.closed(&pts);
         }
         Eyedropper => {
             // a pipette: bulb at the top right, glass tube running to a tip at the bottom left
-            pen.closed(&[(10.0, 4.5), (11.5, 3.0), (13.0, 3.0), (13.0, 4.5), (11.5, 6.0)]);
+            pen.closed(&[
+                (10.0, 4.5),
+                (11.5, 3.0),
+                (13.0, 3.0),
+                (13.0, 4.5),
+                (11.5, 6.0),
+            ]);
             pen.line(&[(8.2, 6.2), (10.8, 8.8)]);
             pen.line(&[(9.5, 7.5), (3.5, 12.5)]);
             pen.line(&[(3.5, 12.5), (2.5, 13.5)]);
@@ -774,7 +939,14 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
 }
 
 /// An icon button: returns the response; `active` draws the selected state.
-pub fn button(ui: &mut egui::Ui, icon: Icon, size: f32, active: bool, t: &crate::theme::Tokens, tooltip: &str) -> egui::Response {
+pub fn button(
+    ui: &mut egui::Ui,
+    icon: Icon,
+    size: f32,
+    active: bool,
+    t: &crate::theme::Tokens,
+    tooltip: &str,
+) -> egui::Response {
     let (rect, resp) = ui.allocate_exact_size(vec2(size, size), egui::Sense::click());
     let bg = if resp.is_pointer_button_down_on() {
         Some(t.pressed)
@@ -794,7 +966,11 @@ pub fn button(ui: &mut egui::Ui, icon: Icon, size: f32, active: bool, t: &crate:
         t.icon
     };
     paint(ui.painter(), rect.shrink(size * 0.2), icon, col);
-    if tooltip.is_empty() { resp } else { resp.on_hover_text(tooltip) }
+    if tooltip.is_empty() {
+        resp
+    } else {
+        resp.on_hover_text(tooltip)
+    }
 }
 
 #[cfg(test)]
@@ -913,7 +1089,12 @@ mod tests {
         let mut shapes = Vec::new();
         for _ in 0..2 {
             let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
-                paint(ui.painter(), Rect::from_min_size(pos2(10.3, 7.7), vec2(size, size)), icon, Color32::WHITE);
+                paint(
+                    ui.painter(),
+                    Rect::from_min_size(pos2(10.3, 7.7), vec2(size, size)),
+                    icon,
+                    Color32::WHITE,
+                );
             });
             out.textures_delta.clear();
             shapes = out.shapes.into_iter().map(|c| c.shape).collect();
@@ -930,8 +1111,13 @@ mod tests {
     }
 
     fn on_grid(v: f32, ppp: f32, width_px: f32) -> bool {
-        let want = if width_px.round() as i32 % 2 == 1 { 0.5 } else { 0.0 };
-        ((v * ppp).fract().abs() - want).abs() < 1e-3 || ((v * ppp).fract().abs() - (1.0 - want)).abs() < 1e-3
+        let want = if width_px.round() as i32 % 2 == 1 {
+            0.5
+        } else {
+            0.0
+        };
+        ((v * ppp).fract().abs() - want).abs() < 1e-3
+            || ((v * ppp).fract().abs() - (1.0 - want)).abs() < 1e-3
     }
 
     /// Every straight line of every icon covers whole device pixels at 1x and 2x (no half-pixel
@@ -943,20 +1129,33 @@ mod tests {
                 for &icon in ALL {
                     for shape in drawn(icon, ppp, size) {
                         if let Shape::Path(p) = shape {
-                            if p.stroke.width == 0.0 || matches!(p.stroke.color, ColorMode::Solid(c) if c == Color32::TRANSPARENT) {
+                            if p.stroke.width == 0.0
+                                || matches!(p.stroke.color, ColorMode::Solid(c) if c == Color32::TRANSPARENT)
+                            {
                                 continue;
                             }
                             let w = p.stroke.width * ppp;
-                            assert!((w - w.round()).abs() < 1e-3 && w >= 1.0, "{icon:?} at {ppp}x size {size}: width {w} px");
+                            assert!(
+                                (w - w.round()).abs() < 1e-3 && w >= 1.0,
+                                "{icon:?} at {ppp}x size {size}: width {w} px"
+                            );
                             let n = p.points.len();
                             let segs = if p.closed { n } else { n - 1 };
                             for i in 0..segs {
                                 let (a, b) = (p.points[i], p.points[(i + 1) % n]);
                                 if (a.y - b.y).abs() < 1e-4 {
-                                    assert!(on_grid(a.y, ppp, w), "{icon:?} at {ppp}x size {size}: horizontal line at y {} px", a.y * ppp);
+                                    assert!(
+                                        on_grid(a.y, ppp, w),
+                                        "{icon:?} at {ppp}x size {size}: horizontal line at y {} px",
+                                        a.y * ppp
+                                    );
                                 }
                                 if (a.x - b.x).abs() < 1e-4 {
-                                    assert!(on_grid(a.x, ppp, w), "{icon:?} at {ppp}x size {size}: vertical line at x {} px", a.x * ppp);
+                                    assert!(
+                                        on_grid(a.x, ppp, w),
+                                        "{icon:?} at {ppp}x size {size}: vertical line at x {} px",
+                                        a.x * ppp
+                                    );
                                 }
                             }
                         }
@@ -973,11 +1172,20 @@ mod tests {
             for &size in &[16.0, 13.0, 9.6, 12.0] {
                 let ys: Vec<f32> = drawn(Icon::Hamburger, ppp, size)
                     .into_iter()
-                    .filter_map(|s| if let Shape::Path(p) = s { Some(p.points[0].y * ppp) } else { None })
+                    .filter_map(|s| {
+                        if let Shape::Path(p) = s {
+                            Some(p.points[0].y * ppp)
+                        } else {
+                            None
+                        }
+                    })
                     .collect();
                 assert_eq!(ys.len(), 3);
                 let (g1, g2) = (ys[1] - ys[0], ys[2] - ys[1]);
-                assert!((g1 - g2).abs() < 1e-3 && g1 >= 2.0, "{ppp}x size {size}: gaps {g1} and {g2} px");
+                assert!(
+                    (g1 - g2).abs() < 1e-3 && g1 >= 2.0,
+                    "{ppp}x size {size}: gaps {g1} and {g2} px"
+                );
             }
         }
     }

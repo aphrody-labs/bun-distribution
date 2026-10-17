@@ -27,11 +27,17 @@ pub const RAW: &str = "filter.cameraRaw";
 pub const LENS_BATCH: &str = "file.automate.lensCorrection";
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn num(p: &Value, k: &str, d: f64) -> f64 {
-    p.get(k).and_then(Value::as_f64).filter(|v| v.is_finite()).unwrap_or(d)
+    p.get(k)
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .unwrap_or(d)
 }
 
 fn flag(p: &Value, k: &str, d: bool) -> bool {
@@ -41,7 +47,12 @@ fn flag(p: &Value, k: &str, d: bool) -> bool {
 // ---------- params ----------
 
 /// Lens Correction settings from params; `exif` resolves `"profile":"auto"`.
-pub fn lens_params(cmd: &str, p: &Value, frame: Rect, info: Option<&exif::CameraInfo>) -> Result<LensCorrection> {
+pub fn lens_params(
+    cmd: &str,
+    p: &Value,
+    frame: Rect,
+    info: Option<&exif::CameraInfo>,
+) -> Result<LensCorrection> {
     let mut lc = LensCorrection {
         correct_distortion: flag(p, "correctDistortion", true),
         correct_vignette: flag(p, "correctVignette", true),
@@ -57,23 +68,49 @@ pub fn lens_params(cmd: &str, p: &Value, frame: Rect, info: Option<&exif::Camera
         scale: num(p, "scale", 100.0).clamp(50.0, 150.0),
         ..Default::default()
     };
-    lc.edge = match p.get("edge").and_then(Value::as_str).unwrap_or("transparency") {
+    lc.edge = match p
+        .get("edge")
+        .and_then(Value::as_str)
+        .unwrap_or("transparency")
+    {
         "transparency" => EdgeMode::Transparency,
         "edgeExtension" | "extension" => EdgeMode::Extension,
         "black" => EdgeMode::Color([0.0, 0.0, 0.0, 1.0]),
         "white" => EdgeMode::Color([1.0, 1.0, 1.0, 1.0]),
-        "background" | "color" => EdgeMode::Color(crate::commands::color_param(p, "edgeColor", [0.0, 0.0, 0.0, 1.0])),
-        other => return Err(bad(cmd, format!("unknown edge `{other}` (transparency|edgeExtension|black|white|color)"))),
+        "background" | "color" => EdgeMode::Color(crate::commands::color_param(
+            p,
+            "edgeColor",
+            [0.0, 0.0, 0.0, 1.0],
+        )),
+        other => {
+            return Err(bad(
+                cmd,
+                format!("unknown edge `{other}` (transparency|edgeExtension|black|white|color)"),
+            ));
+        }
     };
     let focal = num(p, "focalLength", 0.0);
     lc.profile = match p.get("profile").and_then(Value::as_str).unwrap_or("none") {
         "none" | "" => None,
-        "generic" => Some(lens::generic_profile(if focal > 0.0 { focal } else { 50.0 })),
-        "auto" => info.and_then(|i| i.focal_length_35mm.or(i.focal_length)).or((focal > 0.0).then_some(focal)).map(lens::generic_profile),
-        other => return Err(bad(cmd, format!("unknown profile `{other}` (none|auto|generic)"))),
+        "generic" => Some(lens::generic_profile(if focal > 0.0 {
+            focal
+        } else {
+            50.0
+        })),
+        "auto" => info
+            .and_then(|i| i.focal_length_35mm.or(i.focal_length))
+            .or((focal > 0.0).then_some(focal))
+            .map(lens::generic_profile),
+        other => {
+            return Err(bad(
+                cmd,
+                format!("unknown profile `{other}` (none|auto|generic)"),
+            ));
+        }
     };
     if let Some(Value::Array(line)) = p.get("straighten") {
-        let pt = |v: &Value| -> Option<[f64; 2]> { Some([v.get(0)?.as_f64()?, v.get(1)?.as_f64()?]) };
+        let pt =
+            |v: &Value| -> Option<[f64; 2]> { Some([v.get(0)?.as_f64()?, v.get(1)?.as_f64()?]) };
         let (Some(a), Some(b)) = (line.first().and_then(pt), line.get(1).and_then(pt)) else {
             return Err(bad(cmd, "`straighten` is [[x0,y0],[x1,y1]]"));
         };
@@ -97,7 +134,13 @@ fn resolved_lens_params(p: &Value, lc: &LensCorrection) -> Value {
         match &lc.profile {
             Some(pr) => {
                 m.insert("profile".into(), json!("generic"));
-                let f = pr.name.trim_start_matches("Generic Lens (").split(' ').next().and_then(|v| v.parse::<f64>().ok()).unwrap_or(50.0);
+                let f = pr
+                    .name
+                    .trim_start_matches("Generic Lens (")
+                    .split(' ')
+                    .next()
+                    .and_then(|v| v.parse::<f64>().ok())
+                    .unwrap_or(50.0);
                 m.insert("focalLength".into(), json!(f));
             }
             None => {
@@ -112,7 +155,11 @@ fn resolved_lens_params(p: &Value, lc: &LensCorrection) -> Value {
 pub fn wide_params(cmd: &str, p: &Value, info: Option<&exif::CameraInfo>) -> Result<WideAngle> {
     let mut wa: WideAngle = serde_json::from_value(p.clone())
         .map_err(|e| bad(cmd, format!("bad params: {e} (constraints: [{{\"a\":[x,y],\"b\":[x,y],\"orientation\":\"free|horizontal|vertical\"}}])")))?;
-    if wa.constraints.iter().any(|c| c.a.iter().chain(&c.b).any(|v| !v.is_finite())) {
+    if wa
+        .constraints
+        .iter()
+        .any(|c| c.a.iter().chain(&c.b).any(|v| !v.is_finite()))
+    {
         return Err(bad(cmd, "constraint points must be finite"));
     }
     wa.scale = wa.scale.clamp(50.0, 150.0);
@@ -139,7 +186,8 @@ pub fn raw_params(cmd: &str, p: &Value) -> Result<CameraRaw> {
     if let Value::Object(m) = &mut q {
         m.remove("layer");
     }
-    let mut cr: CameraRaw = serde_json::from_value(q).map_err(|e| bad(cmd, format!("bad params: {e}")))?;
+    let mut cr: CameraRaw =
+        serde_json::from_value(q).map_err(|e| bad(cmd, format!("bad params: {e}")))?;
     // The noise stages turn these straight into a guided-filter radius and a
     // blur sigma, so an out-of-range value means unbounded work. Clamp to the
     // documented 0..100 (part of #707).
@@ -160,7 +208,9 @@ pub const MAX_RAW_PIXELS: u64 = 400_000_000;
 /// The number of pixels in `area` if Camera Raw can develop it in one pass.
 fn raw_pixels(area: Rect) -> Option<usize> {
     let n = u64::from(area.width()) * u64::from(area.height());
-    (n <= MAX_RAW_PIXELS).then(|| usize::try_from(n).ok()).flatten()
+    (n <= MAX_RAW_PIXELS)
+        .then(|| usize::try_from(n).ok())
+        .flatten()
 }
 
 fn rgba_region(surf: &Surface, area: Rect, len: usize) -> Vec<[f32; 4]> {
@@ -178,7 +228,9 @@ pub fn camera_raw_surface(surf: &Surface, area: Rect, p: &CameraRaw) -> Surface 
     if area.is_empty() || p.is_identity() {
         return surf.clone();
     }
-    let Some(len) = raw_pixels(area) else { return surf.clone() };
+    let Some(len) = raw_pixels(area) else {
+        return surf.clone();
+    };
     let fmt = surf.format();
     let (w, h) = (area.width() as usize, area.height() as usize);
     let mut px = rgba_region(surf, area, len);
@@ -203,7 +255,11 @@ pub fn camera_raw_surface(surf: &Surface, area: Rect, p: &CameraRaw) -> Surface 
 fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
     let area = old.content_bounds().union(&new.content_bounds());
     let fmt = new.format();
-    let old = if old.format() == fmt { old.clone() } else { old.convert(fmt) };
+    let old = if old.format() == fmt {
+        old.clone()
+    } else {
+        old.convert(fmt)
+    };
     let mut out = new.clone();
     if area.is_empty() {
         return out;
@@ -212,8 +268,15 @@ fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
     let (o, w) = (old.read_region(area), new.read_region(area));
     let aw = area.width() as usize;
     let mut r = vec![0.0f32; o.len()];
-    for (i, ((op, np), rp)) in o.chunks_exact(n).zip(w.chunks_exact(n)).zip(r.chunks_exact_mut(n)).enumerate() {
-        let k = sel.sample_channel(area.x0 + (i % aw) as i32, area.y0 + (i / aw) as i32, 0).clamp(0.0, 1.0);
+    for (i, ((op, np), rp)) in o
+        .chunks_exact(n)
+        .zip(w.chunks_exact(n))
+        .zip(r.chunks_exact_mut(n))
+        .enumerate()
+    {
+        let k = sel
+            .sample_channel(area.x0 + (i % aw) as i32, area.y0 + (i / aw) as i32, 0)
+            .clamp(0.0, 1.0);
         if !fmt.alpha {
             for c in 0..n {
                 rp[c] = op[c] + (np[c] - op[c]) * k;
@@ -236,9 +299,22 @@ fn mix_by_selection(old: &Surface, new: &Surface, sel: &Surface) -> Surface {
 /// Smart-filter hook: re-applies a stored filter of this module (`None` for other ids).
 pub fn apply_to_surface(id: &str, params: &Value, surf: &Surface, canvas: Rect) -> Option<Surface> {
     match id {
-        LENS => Some(lens::correct(surf, canvas, &lens_params(id, params, canvas, None).ok()?)),
-        WIDE => Some(wideangle::apply(surf, canvas, &wide_params(id, params, None).ok()?, Interp::Bicubic)),
-        RAW => Some(camera_raw_surface(surf, canvas, &raw_params(id, params).ok()?)),
+        LENS => Some(lens::correct(
+            surf,
+            canvas,
+            &lens_params(id, params, canvas, None).ok()?,
+        )),
+        WIDE => Some(wideangle::apply(
+            surf,
+            canvas,
+            &wide_params(id, params, None).ok()?,
+            Interp::Bicubic,
+        )),
+        RAW => Some(camera_raw_surface(
+            surf,
+            canvas,
+            &raw_params(id, params).ok()?,
+        )),
         _ => None,
     }
 }
@@ -248,7 +324,10 @@ pub fn apply_to_surface(id: &str, params: &Value, surf: &Surface, canvas: Rect) 
 fn target(s: &Session, p: &Value) -> Result<LayerId> {
     match p.get("layer").and_then(Value::as_u64) {
         Some(v) => Ok(LayerId(v)),
-        None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into())),
+        None => s
+            .active()
+            .and_then(|d| d.active_layer)
+            .ok_or(EngineError::Other("no active layer".into())),
     }
 }
 
@@ -262,7 +341,11 @@ fn filterable(s: &Session) -> std::result::Result<(), String> {
     match &d.doc.layer(id).ok_or("no active layer")?.content {
         LayerContent::Raster(_) => Ok(()),
         LayerContent::Smart(sm) if sm.cache.is_some() => Ok(()),
-        other => Err(format!("filters need a pixel layer (active layer is {} {} layer)", other.article(), other.kind_name())),
+        other => Err(format!(
+            "filters need a pixel layer (active layer is {} {} layer)",
+            other.article(),
+            other.kind_name()
+        )),
     }
 }
 
@@ -271,13 +354,22 @@ fn raw_enabled(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
     match d.doc.mode {
         ColorMode::Rgb | ColorMode::Grayscale => Ok(()),
-        m => Err(format!("Camera Raw Filter needs an RGB or Grayscale document (this one is {m:?})")),
+        m => Err(format!(
+            "Camera Raw Filter needs an RGB or Grayscale document (this one is {m:?})"
+        )),
     }
 }
 
 /// Runs `f` on the target layer (pixel layer edited in place inside the selection; smart object
 /// gets a smart filter with `stored` params).
-fn run_filter(s: &mut Session, cmd: &str, label: &str, stored: Value, float_bg: bool, f: &dyn Fn(&Surface, Rect) -> Surface) -> Result<LayerId> {
+fn run_filter(
+    s: &mut Session,
+    cmd: &str,
+    label: &str,
+    stored: Value,
+    float_bg: bool,
+    f: &dyn Fn(&Surface, Rect) -> Surface,
+) -> Result<LayerId> {
     let id = target(s, &stored)?;
     let mut stored = stored;
     if let Value::Object(m) = &mut stored {
@@ -290,11 +382,20 @@ fn run_filter(s: &mut Session, cmd: &str, label: &str, stored: Value, float_bg: 
         let background = doc.is_background(id);
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if let LayerContent::Smart(_) = l.content {
-            let sf = SmartFilter { command: cmd.to_string(), params: stored.clone(), blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+            let sf = SmartFilter {
+                command: cmd.to_string(),
+                params: stored.clone(),
+                blend: photocraft_color::BlendMode::Normal,
+                opacity: 1.0,
+                visible: true,
+            };
             return crate::smart_cmds::add_smart_filter(doc, id, sf, selection.as_ref());
         }
         if locks.all || locks.pixels {
-            return Err(EngineError::Other(format!("layer \"{}\" is locked", l.name)));
+            return Err(EngineError::Other(format!(
+                "layer \"{}\" is locked",
+                l.name
+            )));
         }
         // A Background layer gains transparency when the edge mode exposes it (as in Photoshop).
         if float_bg && background {
@@ -322,9 +423,17 @@ fn lens_correction(s: &mut Session, p: &Value) -> Result<Value> {
     let lc = lens_params(LENS, p, frame, info.as_ref())?;
     let stored = resolved_lens_params(p, &lc);
     let t0 = Stopwatch::start();
-    let id =
-        run_filter(s, LENS, "Lens Correction", stored.clone(), matches!(lc.edge, EdgeMode::Transparency), &|surf, canvas| lens::correct(surf, canvas, &lc))?;
-    Ok(json!({"layer": id.0, "profile": lc.profile.as_ref().map(|p| p.name.clone()), "angle": lc.angle, "scale": lc.scale, "params": stored, "ms": t0.ms()}))
+    let id = run_filter(
+        s,
+        LENS,
+        "Lens Correction",
+        stored.clone(),
+        matches!(lc.edge, EdgeMode::Transparency),
+        &|surf, canvas| lens::correct(surf, canvas, &lc),
+    )?;
+    Ok(
+        json!({"layer": id.0, "profile": lc.profile.as_ref().map(|p| p.name.clone()), "angle": lc.angle, "scale": lc.scale, "params": stored, "ms": t0.ms()}),
+    )
 }
 
 fn adaptive_wide_angle(s: &mut Session, p: &Value) -> Result<Value> {
@@ -339,15 +448,26 @@ fn adaptive_wide_angle(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(l) = p.get("layer") {
         stored["layer"] = l.clone();
     }
-    let interp = Interp::parse(p.get("interpolation").and_then(Value::as_str).unwrap_or("bicubic"));
-    let id = run_filter(s, WIDE, "Adaptive Wide Angle", stored.clone(), true, &|surf, canvas| {
-        let tris = mesh.triangles();
-        if canvas == frame {
-            photocraft_algo::warp::warp_triangles(surf, canvas, &mesh.verts, &tris, interp)
-        } else {
-            wideangle::apply(surf, canvas, &wa, interp)
-        }
-    })?;
+    let interp = Interp::parse(
+        p.get("interpolation")
+            .and_then(Value::as_str)
+            .unwrap_or("bicubic"),
+    );
+    let id = run_filter(
+        s,
+        WIDE,
+        "Adaptive Wide Angle",
+        stored.clone(),
+        true,
+        &|surf, canvas| {
+            let tris = mesh.triangles();
+            if canvas == frame {
+                photocraft_algo::warp::warp_triangles(surf, canvas, &mesh.verts, &tris, interp)
+            } else {
+                wideangle::apply(surf, canvas, &wa, interp)
+            }
+        },
+    )?;
     let model = match cam.model {
         wideangle::WideModel::Fisheye => "fisheye",
         wideangle::WideModel::Perspective => "perspective",
@@ -375,20 +495,30 @@ fn adaptive_wide_angle(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn encoding_gamma(doc: &Document) -> f32 {
     use photocraft_cms::Builtin;
     let profile = crate::color_cmds::document_profile(doc);
-    [(Builtin::ProPhotoCompat, 1.8), (Builtin::AdobeRgbCompat, 563.0 / 256.0), (Builtin::LinearSrgb, 1.0)]
-        .into_iter()
-        .find(|(b, _)| profile.same_colors(b.profile()))
-        .map_or(0.0, |(_, g)| g)
+    [
+        (Builtin::ProPhotoCompat, 1.8),
+        (Builtin::AdobeRgbCompat, 563.0 / 256.0),
+        (Builtin::LinearSrgb, 1.0),
+    ]
+    .into_iter()
+    .find(|(b, _)| profile.same_colors(b.profile()))
+    .map_or(0.0, |(_, g)| g)
 }
 
 fn camera_raw_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     // The document's transfer curve goes with the settings, so a Smart Filter keeps it.
     let mut p = p.clone();
     if p.get("encodingGamma").is_none()
-        && let Some(g) = s.active().map(|d| encoding_gamma(&d.doc)).filter(|g| *g > 0.0)
+        && let Some(g) = s
+            .active()
+            .map(|d| encoding_gamma(&d.doc))
+            .filter(|g| *g > 0.0)
         && let Value::Object(m) = &mut p
     {
-        m.insert("encodingGamma".into(), json!((f64::from(g) * 1e4).round() / 1e4));
+        m.insert(
+            "encodingGamma".into(),
+            json!((f64::from(g) * 1e4).round() / 1e4),
+        );
     }
     let p = &p;
     let cr = raw_params(RAW, p)?;
@@ -399,23 +529,45 @@ fn camera_raw_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     if !cr.is_identity() {
         let d = s.active().ok_or(EngineError::NoDocument)?;
         let id = target(s, p)?;
-        let area = d.doc.layer(id).and_then(Layer::surface).map_or(d.doc.bounds(), |sf| d.doc.bounds().union(&sf.content_bounds()));
+        let area = d
+            .doc
+            .layer(id)
+            .and_then(Layer::surface)
+            .map_or(d.doc.bounds(), |sf| {
+                d.doc.bounds().union(&sf.content_bounds())
+            });
         if raw_pixels(area).is_none() {
             return Err(bad(
                 RAW,
-                format!("the image is too large for Camera Raw ({}×{} px; max {} megapixels)", area.width(), area.height(), MAX_RAW_PIXELS / 1_000_000),
+                format!(
+                    "the image is too large for Camera Raw ({}×{} px; max {} megapixels)",
+                    area.width(),
+                    area.height(),
+                    MAX_RAW_PIXELS / 1_000_000
+                ),
             ));
         }
     }
     let t0 = Stopwatch::start();
-    let id = run_filter(s, RAW, "Camera Raw Filter", p.clone(), false, &|surf, canvas| camera_raw_surface(surf, canvas.union(&surf.content_bounds()), &cr))?;
+    let id = run_filter(
+        s,
+        RAW,
+        "Camera Raw Filter",
+        p.clone(),
+        false,
+        &|surf, canvas| camera_raw_surface(surf, canvas.union(&surf.content_bounds()), &cr),
+    )?;
     Ok(json!({"layer": id.0, "identity": cr.is_identity(), "ms": t0.ms()}))
 }
 
 fn lens_batch(s: &mut Session, p: &Value) -> Result<Value> {
     let inputs = crate::file_cmds::batch_inputs(p, LENS_BATCH)?;
     let output = crate::file_cmds::str_param(p, "output", LENS_BATCH)?.to_string();
-    let format = p.get("format").and_then(Value::as_str).unwrap_or("same").to_string();
+    let format = p
+        .get("format")
+        .and_then(Value::as_str)
+        .unwrap_or("same")
+        .to_string();
     let mut params = p.clone();
     if let Value::Object(m) = &mut params {
         for k in ["input", "files", "output", "format", "quality"] {
@@ -424,13 +576,20 @@ fn lens_batch(s: &mut Session, p: &Value) -> Result<Value> {
         // Batch default: the EXIF-driven profile, as Photoshop's dialog suggests.
         m.entry("profile").or_insert(json!("auto"));
     }
-    let r = crate::file_cmds::process_files(&inputs, &output, &format, crate::file_cmds::SaveOpts::from_params(s, p, LENS_BATCH)?, "", &|scratch| {
-        if scratch.active().is_some_and(|d| d.doc.layers.len() > 1) {
-            scratch.execute("layer.flattenImage", json!({}))?;
-        }
-        scratch.execute(LENS, params.clone())?;
-        Ok(())
-    });
+    let r = crate::file_cmds::process_files(
+        &inputs,
+        &output,
+        &format,
+        crate::file_cmds::SaveOpts::from_params(s, p, LENS_BATCH)?,
+        "",
+        &|scratch| {
+            if scratch.active().is_some_and(|d| d.doc.layers.len() > 1) {
+                scratch.execute("layer.flattenImage", json!({}))?;
+            }
+            scratch.execute(LENS, params.clone())?;
+            Ok(())
+        },
+    );
     Ok(r)
 }
 
@@ -487,15 +646,28 @@ mod tests {
 
     fn session(depth: u32) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 120, "height": 80, "depth": depth})).unwrap();
-        s.execute("layer.new.layer", json!({"name": "grid"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 120, "height": 80, "depth": depth}),
+        )
+        .unwrap();
+        s.execute("layer.new.layer", json!({"name": "grid"}))
+            .unwrap();
         s.edit("grid", |doc, active| {
-            let surf = doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap();
+            let surf = doc
+                .layer_mut(active.unwrap())
+                .unwrap()
+                .surface_mut()
+                .unwrap();
             let fmt = surf.format();
             for y in 0..80 {
                 for x in 0..120 {
                     let v = if x % 12 < 2 || y % 12 < 2 { 0.9 } else { 0.35 };
-                    surf.write_pixel(x, y, &photocraft_raster::from_rgba(&fmt, [v, v * 0.9, v * 0.7, 1.0]));
+                    surf.write_pixel(
+                        x,
+                        y,
+                        &photocraft_raster::from_rgba(&fmt, [v, v * 0.9, v * 0.7, 1.0]),
+                    );
                 }
             }
             Ok(())
@@ -506,7 +678,12 @@ mod tests {
 
     fn active_px(s: &Session, x: i32, y: i32) -> [f32; 4] {
         let d = s.active().unwrap();
-        d.doc.layer(d.active_layer.unwrap()).unwrap().surface().unwrap().rgba(x, y)
+        d.doc
+            .layer(d.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .rgba(x, y)
     }
 
     #[test]
@@ -515,26 +692,41 @@ mod tests {
             let mut s = session(depth);
             assert!(s.is_enabled(LENS));
             let before = active_px(&s, 1, 1);
-            let r = s.execute(LENS, json!({"distortion": -40, "vignetteAmount": -50})).unwrap();
+            let r = s
+                .execute(LENS, json!({"distortion": -40, "vignetteAmount": -50}))
+                .unwrap();
             assert!(r["ms"].as_f64().is_some());
             let after = active_px(&s, 1, 1);
-            assert!(after[3] < 0.5, "depth {depth}: corner cleared by transparency edge: {after:?}");
+            assert!(
+                after[3] < 0.5,
+                "depth {depth}: corner cleared by transparency edge: {after:?}"
+            );
             s.undo();
             assert_eq!(active_px(&s, 1, 1), before);
         }
         // EXIF-driven auto profile.
         let mut s = session(8);
         s.edit("exif", |doc, _| {
-            doc.metadata.exif =
-                Some(std::sync::Arc::new(exif::build(&exif::CameraInfo { focal_length: Some(16.0), focal_length_35mm: Some(24.0), ..Default::default() })));
+            doc.metadata.exif = Some(std::sync::Arc::new(exif::build(&exif::CameraInfo {
+                focal_length: Some(16.0),
+                focal_length_35mm: Some(24.0),
+                ..Default::default()
+            })));
             Ok(())
         })
         .unwrap();
-        let r = s.execute(LENS, json!({"profile": "auto", "autoScale": true, "edge": "edgeExtension"})).unwrap();
+        let r = s
+            .execute(
+                LENS,
+                json!({"profile": "auto", "autoScale": true, "edge": "edgeExtension"}),
+            )
+            .unwrap();
         assert_eq!(r["params"]["profile"], "generic");
         assert_eq!(r["params"]["focalLength"], 24.0);
         assert!(r["scale"].as_f64().unwrap() >= 100.0);
-        let r = s.execute(LENS, json!({"straighten": [[0, 0], [100, 5]]})).unwrap();
+        let r = s
+            .execute(LENS, json!({"straighten": [[0, 0], [100, 5]]}))
+            .unwrap();
         assert!((r["angle"].as_f64().unwrap() + 2.862).abs() < 0.01, "{r}");
         assert!(s.execute(LENS, json!({"edge": "rainbow"})).is_err());
         assert!(s.execute(LENS, json!({"profile": "zeiss"})).is_err());
@@ -543,11 +735,16 @@ mod tests {
     #[test]
     fn lens_correction_as_smart_filter() {
         let mut s = session(8);
-        s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap();
-        let r = s.execute(LENS, json!({"vignetteAmount": 80, "edge": "edgeExtension"})).unwrap();
+        s.execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap();
+        let r = s
+            .execute(LENS, json!({"vignetteAmount": 80, "edge": "edgeExtension"}))
+            .unwrap();
         let d = s.active().unwrap();
         let l = d.doc.layer(LayerId(r["layer"].as_u64().unwrap())).unwrap();
-        let LayerContent::Smart(sm) = &l.content else { panic!("smart") };
+        let LayerContent::Smart(sm) = &l.content else {
+            panic!("smart")
+        };
         assert_eq!(sm.smart_filters.len(), 1);
         assert_eq!(sm.smart_filters[0].command, LENS);
         let corner = active_px(&s, 3, 3);
@@ -562,11 +759,16 @@ mod tests {
             .unwrap();
         assert_eq!(r["model"], "fisheye");
         assert!(r["residual"].as_f64().unwrap() < 2.0, "{r}");
-        assert!(s.execute(WIDE, json!({"constraints": [{"a": [0, 0]}]})).is_err());
+        assert!(
+            s.execute(WIDE, json!({"constraints": [{"a": [0, 0]}]}))
+                .is_err()
+        );
         // Smart filter re-render.
         let mut s = session(16);
-        s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap();
-        s.execute(WIDE, json!({"model": "perspective", "scale": 90})).unwrap();
+        s.execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap();
+        s.execute(WIDE, json!({"model": "perspective", "scale": 90}))
+            .unwrap();
         assert!(active_px(&s, 1, 1)[3] < 0.5);
     }
 
@@ -576,14 +778,22 @@ mod tests {
             let mut s = session(depth);
             assert!(s.is_enabled(RAW));
             let before = active_px(&s, 60, 40);
-            s.execute(RAW, json!({"exposure": 1.0, "vibrance": 30, "clarity": 20})).unwrap();
+            s.execute(RAW, json!({"exposure": 1.0, "vibrance": 30, "clarity": 20}))
+                .unwrap();
             let after = active_px(&s, 60, 40);
-            assert!(after[1] > before[1] + 0.05, "depth {depth}: {before:?} → {after:?}");
+            assert!(
+                after[1] > before[1] + 0.05,
+                "depth {depth}: {before:?} → {after:?}"
+            );
             s.undo();
         }
         // Selection limits it.
         let mut s = session(8);
-        s.execute("select.rect", json!({"x": 0, "y": 0, "width": 60, "height": 80})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 0, "y": 0, "width": 60, "height": 80}),
+        )
+        .unwrap();
         let inside_before = active_px(&s, 10, 40);
         let outside_before = active_px(&s, 100, 40);
         s.execute(RAW, json!({"exposure": -1.0})).unwrap();
@@ -591,14 +801,34 @@ mod tests {
         assert_eq!(active_px(&s, 100, 40), outside_before);
         assert!(s.execute(RAW, json!({"exposure": "bright"})).is_err());
         let legacy_curve = json!([[0, 0], [60, 40], [60, 200], [255, 255]]);
-        assert!(s.execute(RAW, json!({"pointCurve": legacy_curve})).is_err(), "new curves are validated");
+        assert!(
+            s.execute(RAW, json!({"pointCurve": legacy_curve})).is_err(),
+            "new curves are validated"
+        );
         // A curve an older editor saved must still re-apply as a Smart Filter.
-        let surf = s.active().unwrap().doc.layer(s.active().unwrap().active_layer.unwrap()).unwrap().surface().unwrap().clone();
-        let stored = apply_to_surface(RAW, &json!({"pointCurve": legacy_curve, "exposure": 1.0}), &surf, Rect::new(0, 0, 120, 80));
-        assert!(stored.is_some(), "a stored legacy curve must not drop the whole filter");
+        let surf = s
+            .active()
+            .unwrap()
+            .doc
+            .layer(s.active().unwrap().active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .clone();
+        let stored = apply_to_surface(
+            RAW,
+            &json!({"pointCurve": legacy_curve, "exposure": 1.0}),
+            &surf,
+            Rect::new(0, 0, 120, 80),
+        );
+        assert!(
+            stored.is_some(),
+            "a stored legacy curve must not drop the whole filter"
+        );
         // Smart filter.
         let mut s = session(8);
-        s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap();
+        s.execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap();
         s.execute(RAW, json!({"saturation": -100})).unwrap();
         let p = active_px(&s, 60, 40);
         assert!((p[0] - p[2]).abs() < 0.01, "{p:?}");
@@ -609,10 +839,13 @@ mod tests {
         // A raw opens in ProPhoto (gamma 1.8): the filter keeps that with its settings, so Whites,
         // Blacks, Shadows and Highlights work on the same light as when it was applied.
         let mut s = session(16);
-        s.execute("edit.assignProfile", json!({"profile": "prophoto-compat"})).unwrap();
+        s.execute("edit.assignProfile", json!({"profile": "prophoto-compat"}))
+            .unwrap();
         assert_eq!(encoding_gamma(&s.active().unwrap().doc), 1.8);
-        s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap();
-        s.execute(RAW, json!({"shadows": 40, "whites": -30})).unwrap();
+        s.execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap();
+        s.execute(RAW, json!({"shadows": 40, "whites": -30}))
+            .unwrap();
         let d = s.active().unwrap();
         let filters = match &d.doc.layer(d.active_layer.unwrap()).unwrap().content {
             LayerContent::Smart(so) => so.smart_filters.clone(),
@@ -622,7 +855,8 @@ mod tests {
         // sRGB documents use the sRGB curve, the default, and store nothing.
         let mut s = session(8);
         assert_eq!(encoding_gamma(&s.active().unwrap().doc), 0.0);
-        s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap();
+        s.execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap();
         s.execute(RAW, json!({"shadows": 40})).unwrap();
         let d = s.active().unwrap();
         if let LayerContent::Smart(so) = &d.doc.layer(d.active_layer.unwrap()).unwrap().content {
@@ -635,14 +869,27 @@ mod tests {
         // #962: `area.width() * area.height()` overflowed u32 on a legal 65536×65536 canvas,
         // so `run` panicked and dispatch reported an internal error.
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8, "background": "transparent"})).unwrap();
-        s.execute("image.canvasSize", json!({"width": 65536, "height": 65536, "extensionColor": "transparent"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 8, "height": 8, "background": "transparent"}),
+        )
+        .unwrap();
+        s.execute(
+            "image.canvasSize",
+            json!({"width": 65536, "height": 65536, "extensionColor": "transparent"}),
+        )
+        .unwrap();
         let err = s.execute(RAW, json!({"exposure": 1})).unwrap_err();
         assert!(matches!(err, EngineError::BadParams { .. }), "{err}");
         assert!(err.to_string().contains("too large"), "{err}");
         // The surface function itself never overflows either: an oversized area is left alone.
         let d = s.active().unwrap();
-        let surf = d.doc.layer(d.active_layer.unwrap()).unwrap().surface().unwrap();
+        let surf = d
+            .doc
+            .layer(d.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap();
         let cr = raw_params(RAW, &json!({"exposure": 1})).unwrap();
         let out = camera_raw_surface(surf, Rect::from_xywh(0, 0, 65536, 65536), &cr);
         assert_eq!(out.content_bounds(), surf.content_bounds());
@@ -661,7 +908,8 @@ mod tests {
         s.execute("layer.flattenImage", json!({})).unwrap();
         for k in 0..2 {
             let path = dir.join("in").join(format!("shot{k}.png"));
-            crate::file_cmds::save_doc(&s.active().unwrap().doc, path.to_str().unwrap(), None).unwrap();
+            crate::file_cmds::save_doc(&s.active().unwrap().doc, path.to_str().unwrap(), None)
+                .unwrap();
         }
         let r = s
             .execute(

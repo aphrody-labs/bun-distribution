@@ -86,19 +86,24 @@ impl ToolExecutor for UpdatePlanTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let plan_text = arguments.get("plan").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let plan_text = arguments
+            .get("plan")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "update_plan".to_string(),
                 message: "missing required argument `plan` (string)".to_string(),
-            }
-        })?;
+            })?;
 
-        let step_text =
-            arguments.get("current_step").and_then(JsonValue::as_str).map(ToOwned::to_owned);
+        let step_text = arguments
+            .get("current_step")
+            .and_then(JsonValue::as_str)
+            .map(ToOwned::to_owned);
 
         // Count checklist items:
-        let completed =
-            plan_text.lines().filter(|l| l.contains("[x]") || l.contains("[X]")).count();
+        let completed = plan_text
+            .lines()
+            .filter(|l| l.contains("[x]") || l.contains("[X]"))
+            .count();
         let pending = plan_text.lines().filter(|l| l.contains("[ ]")).count();
 
         // Update state:

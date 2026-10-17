@@ -31,7 +31,14 @@
 //! Pages are sized in points, one point per pixel of the document. For print ([`PdfOptions::print`],
 //! see [`print`]): a bleed around each page, crop and bleed marks, MediaBox / BleedBox / TrimBox,
 //! and CMYK colour.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod draw;
 pub mod print;
@@ -58,7 +65,13 @@ pub struct PdfOptions {
 
 impl Default for PdfOptions {
     fn default() -> Self {
-        Self { outline_text: false, raster_scale: 2.0, title: None, print: PrintSettings::default(), area: None }
+        Self {
+            outline_text: false,
+            raster_scale: 2.0,
+            title: None,
+            print: PrintSettings::default(),
+            area: None,
+        }
     }
 }
 
@@ -80,7 +93,11 @@ pub enum PdfError {
 pub const MAX_PAGE_SIDE: f64 = 200_000.0;
 
 /// One page per id, each sized to the node's export bounds (a clipping frame's box).
-pub fn export_pdf(doc: &Document, pages: &[NodeId], opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
+pub fn export_pdf(
+    doc: &Document,
+    pages: &[NodeId],
+    opts: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
     let groups: Vec<Vec<NodeId>> = pages.iter().map(|p| vec![*p]).collect();
     export_groups(doc, &groups, opts)
 }
@@ -92,7 +109,11 @@ pub fn export_nodes_pdf(doc: &Document, ids: &[NodeId]) -> Result<Vec<u8>, PdfEr
 
 /// One page per group of ids. For print, a page of one frame is trimmed to the frame's box (its
 /// shadows and outside strokes go into the bleed).
-pub fn export_groups(doc: &Document, groups: &[Vec<NodeId>], opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
+pub fn export_groups(
+    doc: &Document,
+    groups: &[Vec<NodeId>],
+    opts: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
     let mut pages: Vec<(Vec<NodeId>, Rect)> = Vec::new();
     for g in groups.iter().filter(|g| !g.is_empty()) {
         let mut bounds: Option<Rect> = None;
@@ -106,12 +127,18 @@ pub fn export_groups(doc: &Document, groups: &[Vec<NodeId>], opts: &PdfOptions) 
         }
         let first = g.first().copied().unwrap_or(NodeId(0));
         let frame = match g.as_slice() {
-            [one] if opts.print.extends_page() && doc.node(*one).is_some_and(|n| n.kind.is_frame_like()) => {
-                doc.world_bounds(*one).filter(|b| rect_finite(*b) && b.width() > 0.0 && b.height() > 0.0)
+            [one]
+                if opts.print.extends_page()
+                    && doc.node(*one).is_some_and(|n| n.kind.is_frame_like()) =>
+            {
+                doc.world_bounds(*one)
+                    .filter(|b| rect_finite(*b) && b.width() > 0.0 && b.height() > 0.0)
             }
             _ => None,
         };
-        let area = opts.area.filter(|a| groups.len() == 1 && rect_finite(*a) && a.width() > 0.0 && a.height() > 0.0);
+        let area = opts.area.filter(|a| {
+            groups.len() == 1 && rect_finite(*a) && a.width() > 0.0 && a.height() > 0.0
+        });
         let b = area.or(frame).or(bounds).ok_or(PdfError::NoBounds(first))?;
         let grow = 2.0 * print::Sheet::new(b.width(), b.height(), &opts.print).margin;
         if b.width() + grow > MAX_PAGE_SIDE || b.height() + grow > MAX_PAGE_SIDE {
@@ -125,7 +152,14 @@ pub fn export_groups(doc: &Document, groups: &[Vec<NodeId>], opts: &PdfOptions) 
     match write(doc, &pages, opts) {
         Err(e) if !opts.outline_text => {
             log::warn!("PDF export with embedded fonts failed ({e}); retrying with outlined text");
-            write(doc, &pages, &PdfOptions { outline_text: true, ..opts.clone() })
+            write(
+                doc,
+                &pages,
+                &PdfOptions {
+                    outline_text: true,
+                    ..opts.clone()
+                },
+            )
         }
         r => r,
     }
@@ -155,9 +189,15 @@ fn rect_finite(r: Rect) -> bool {
     r.x0.is_finite() && r.y0.is_finite() && r.x1.is_finite() && r.y1.is_finite()
 }
 
-fn write(doc: &Document, pages: &[(Vec<NodeId>, Rect)], opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
+fn write(
+    doc: &Document,
+    pages: &[(Vec<NodeId>, Rect)],
+    opts: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
     let mut pdf = krilla::Document::new();
-    let mut meta = krilla::metadata::Metadata::new().creator("FigCraft".into()).producer("FigCraft".into());
+    let mut meta = krilla::metadata::Metadata::new()
+        .creator("FigCraft".into())
+        .producer("FigCraft".into());
     if let Some(t) = opts.title.as_ref().filter(|t| !t.trim().is_empty()) {
         meta = meta.title(t.clone());
     }
@@ -169,11 +209,16 @@ fn write(doc: &Document, pages: &[(Vec<NodeId>, Rect)], opts: &PdfOptions) -> Re
         let (w, h) = (b.width().max(1.0), b.height().max(1.0));
         // The page's trim on a sheet grown by the bleed and the marks.
         let sheet = print::Sheet::new(w, h, print);
-        let size = krilla::geom::Size::from_wh(sheet.width as f32, sheet.height as f32).ok_or(PdfError::TooLarge(sheet.width, sheet.height))?;
+        let size = krilla::geom::Size::from_wh(sheet.width as f32, sheet.height as f32)
+            .ok_or(PdfError::TooLarge(sheet.width, sheet.height))?;
         let mut settings = krilla::page::PageSettings::new(size);
         if print.extends_page() {
-            let k = |r: Rect| krilla::geom::Rect::from_ltrb(r.x0 as f32, r.y0 as f32, r.x1 as f32, r.y1 as f32);
-            settings = settings.with_bleed_box(k(sheet.bleed_box())).with_trim_box(k(sheet.trim));
+            let k = |r: Rect| {
+                krilla::geom::Rect::from_ltrb(r.x0 as f32, r.y0 as f32, r.x1 as f32, r.y1 as f32)
+            };
+            settings = settings
+                .with_bleed_box(k(sheet.bleed_box()))
+                .with_trim_box(k(sheet.trim));
         }
         let mut page = pdf.start_page_with(settings);
         let mut s = page.surface();
@@ -187,7 +232,11 @@ fn write(doc: &Document, pages: &[(Vec<NodeId>, Rect)], opts: &PdfOptions) -> Re
         // Nothing is drawn past the bleed (the marks live there).
         let clipped = print.extends_page() && sheet.push_bleed_clip(&mut s);
         for id in ids {
-            let parent_xf = doc.node(*id).and_then(|n| n.parent).map(|p| doc.world_transform(p)).unwrap_or(Affine::IDENTITY);
+            let parent_xf = doc
+                .node(*id)
+                .and_then(|n| n.parent)
+                .map(|p| doc.world_transform(p))
+                .unwrap_or(Affine::IDENTITY);
             ex.node(&mut s, *id, ex.page_origin * parent_xf, 0, false);
         }
         if clipped {

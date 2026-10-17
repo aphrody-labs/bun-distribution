@@ -80,7 +80,11 @@ fn node_fixture() -> serde_json::Value {
 #[test]
 fn performance_config_compte_16_entrees() {
     let perfs = parse_performance_config(&node_fixture());
-    assert_eq!(perfs.len(), 16, "m_soccerPerformanceConfigList = 16 valeurs (dump VFS)");
+    assert_eq!(
+        perfs.len(),
+        16,
+        "m_soccerPerformanceConfigList = 16 valeurs (dump VFS)"
+    );
 }
 
 #[test]
@@ -95,16 +99,28 @@ fn performance_entree_0_champs_complets() {
         "textureFilePath brut"
     );
     assert_eq!(p.texture_id, HashId(0x31D1_8379), "textureId");
-    assert_eq!(p.valid_cond, "AAAAABgFNRftNPcACgEoAAYCNBboJ68yAAAAAXg=", "validCond brut");
+    assert_eq!(
+        p.valid_cond, "AAAAABgFNRftNPcACgEoAAYCNBboJ68yAAAAAXg=",
+        "validCond brut"
+    );
 }
 
 #[test]
 fn performance_image_name_extrait_comme_inagle() {
     let perfs = parse_performance_config(&node_fixture());
     // extractImageName : retire "#/menu/220_img/" et ".g4tx" (première occurrence).
-    assert_eq!(perfs[0].image_name(), "performance_img/img_performance_type_01");
-    assert_eq!(perfs[6].image_name(), "performance_img/img_performance_type_08");
-    assert_eq!(perfs[15].image_name(), "performance_img/img_performance_type_17");
+    assert_eq!(
+        perfs[0].image_name(),
+        "performance_img/img_performance_type_01"
+    );
+    assert_eq!(
+        perfs[6].image_name(),
+        "performance_img/img_performance_type_08"
+    );
+    assert_eq!(
+        perfs[15].image_name(),
+        "performance_img/img_performance_type_17"
+    );
 }
 
 #[test]
@@ -113,14 +129,21 @@ fn performance_entree_6_saut_de_type_07() {
     let perfs = parse_performance_config(&node_fixture());
     let p = &perfs[6];
     assert_eq!(p.performance_id, HashId(0x6F34_9F0B));
-    assert_eq!(p.texture_file_path, "#/menu/220_img/performance_img/img_performance_type_08.g4tx");
+    assert_eq!(
+        p.texture_file_path,
+        "#/menu/220_img/performance_img/img_performance_type_08.g4tx"
+    );
 }
 
 #[test]
 fn performance_derniere_entree() {
     let perfs = parse_performance_config(&node_fixture());
     let p = &perfs[15];
-    assert_eq!(p.performance_id, HashId(0xE690_B3DB), "performanceId dernière entrée");
+    assert_eq!(
+        p.performance_id,
+        HashId(0xE690_B3DB),
+        "performanceId dernière entrée"
+    );
     assert_eq!(p.event_id, HashId(0xD424_2515), "eventId");
     assert_eq!(p.event_name_text_id, HashId(0x52FD_C933), "eventNameTextId");
     assert_eq!(p.texture_id, HashId(0xC1A9_170D), "textureId");
@@ -132,8 +155,14 @@ fn performance_find_by_id() {
     let found =
         find_performance(&perfs, HashId(0x888C_B20C)).expect("performance 0x888CB20C trouvée");
     assert_eq!(found.texture_id, HashId(0xAFB5_16DA));
-    assert_eq!(found.image_name(), "performance_img/img_performance_type_06");
-    assert!(find_performance(&perfs, HashId(0xDEAD_BEEF)).is_none(), "id inconnu → None");
+    assert_eq!(
+        found.image_name(),
+        "performance_img/img_performance_type_06"
+    );
+    assert!(
+        find_performance(&perfs, HashId(0xDEAD_BEEF)).is_none(),
+        "id inconnu → None"
+    );
 }
 
 #[test]

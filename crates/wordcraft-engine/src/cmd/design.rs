@@ -13,37 +13,79 @@ pub const THEMES: &[(&str, &str, &str, [Rgb; 6])] = &[
         "Craft",
         styles::HEADING_FONT,
         styles::BODY_FONT,
-        [Rgb(0x15, 0x60, 0x82), Rgb(0xE9, 0x71, 0x32), Rgb(0x19, 0x6B, 0x24), Rgb(0x0F, 0x9E, 0xD5), Rgb(0xA0, 0x2B, 0x93), Rgb(0x4E, 0xA7, 0x2E)],
+        [
+            Rgb(0x15, 0x60, 0x82),
+            Rgb(0xE9, 0x71, 0x32),
+            Rgb(0x19, 0x6B, 0x24),
+            Rgb(0x0F, 0x9E, 0xD5),
+            Rgb(0xA0, 0x2B, 0x93),
+            Rgb(0x4E, 0xA7, 0x2E),
+        ],
     ),
     (
         "Studio",
         "Georgia",
         "Georgia",
-        [Rgb(0x8C, 0x2F, 0x39), Rgb(0xC9, 0x8B, 0x2E), Rgb(0x3E, 0x5C, 0x76), Rgb(0x6B, 0x8F, 0x71), Rgb(0x9A, 0x6F, 0xB0), Rgb(0x4A, 0x4A, 0x4A)],
+        [
+            Rgb(0x8C, 0x2F, 0x39),
+            Rgb(0xC9, 0x8B, 0x2E),
+            Rgb(0x3E, 0x5C, 0x76),
+            Rgb(0x6B, 0x8F, 0x71),
+            Rgb(0x9A, 0x6F, 0xB0),
+            Rgb(0x4A, 0x4A, 0x4A),
+        ],
     ),
     (
         "Gallery",
         "Helvetica Neue",
         "Helvetica Neue",
-        [Rgb(0x22, 0x22, 0x22), Rgb(0xE6, 0x39, 0x46), Rgb(0x45, 0x7B, 0x9D), Rgb(0x1D, 0x35, 0x57), Rgb(0xA8, 0xDA, 0xDC), Rgb(0xF4, 0xA2, 0x61)],
+        [
+            Rgb(0x22, 0x22, 0x22),
+            Rgb(0xE6, 0x39, 0x46),
+            Rgb(0x45, 0x7B, 0x9D),
+            Rgb(0x1D, 0x35, 0x57),
+            Rgb(0xA8, 0xDA, 0xDC),
+            Rgb(0xF4, 0xA2, 0x61),
+        ],
     ),
     (
         "Atelier",
         "Palatino",
         "Palatino",
-        [Rgb(0x6D, 0x59, 0x7A), Rgb(0xB5, 0x65, 0x76), Rgb(0xE5, 0x6B, 0x6F), Rgb(0xEA, 0xAC, 0x8B), Rgb(0x35, 0x50, 0x70), Rgb(0x8E, 0x9A, 0xAF)],
+        [
+            Rgb(0x6D, 0x59, 0x7A),
+            Rgb(0xB5, 0x65, 0x76),
+            Rgb(0xE5, 0x6B, 0x6F),
+            Rgb(0xEA, 0xAC, 0x8B),
+            Rgb(0x35, 0x50, 0x70),
+            Rgb(0x8E, 0x9A, 0xAF),
+        ],
     ),
     (
         "Darkroom",
         "Futura",
         "Avenir Next",
-        [Rgb(0x26, 0x46, 0x53), Rgb(0x2A, 0x9D, 0x8F), Rgb(0xE9, 0xC4, 0x6A), Rgb(0xF4, 0xA2, 0x61), Rgb(0xE7, 0x6F, 0x51), Rgb(0x5E, 0x54, 0x8E)],
+        [
+            Rgb(0x26, 0x46, 0x53),
+            Rgb(0x2A, 0x9D, 0x8F),
+            Rgb(0xE9, 0xC4, 0x6A),
+            Rgb(0xF4, 0xA2, 0x61),
+            Rgb(0xE7, 0x6F, 0x51),
+            Rgb(0x5E, 0x54, 0x8E),
+        ],
     ),
     (
         "Sketchbook",
         "Gill Sans",
         "Gill Sans",
-        [Rgb(0x58, 0x81, 0x57), Rgb(0x3A, 0x5A, 0x40), Rgb(0xA3, 0xB1, 0x8A), Rgb(0xDA, 0xD7, 0xCD), Rgb(0x34, 0x4E, 0x41), Rgb(0xBC, 0x6C, 0x25)],
+        [
+            Rgb(0x58, 0x81, 0x57),
+            Rgb(0x3A, 0x5A, 0x40),
+            Rgb(0xA3, 0xB1, 0x8A),
+            Rgb(0xDA, 0xD7, 0xCD),
+            Rgb(0x34, 0x4E, 0x41),
+            Rgb(0xBC, 0x6C, 0x25),
+        ],
     ),
 ];
 
@@ -106,7 +148,9 @@ fn set_fonts(s: &mut Session, heading: &str, body: &str) {
 
 fn set_accent(s: &mut Session, accent: Rgb) {
     for st in &mut s.doc.styles.styles {
-        if st.id.starts_with("Heading") && st.id.len() == 8 && st.id.as_bytes().get(7).is_some_and(|d| *d <= b'5')
+        if st.id.starts_with("Heading")
+            && st.id.len() == 8
+            && st.id.as_bytes().get(7).is_some_and(|d| *d <= b'5')
             || st.id == "IntenseQuote"
             || st.id == "IntenseEmphasis"
             || st.id == "IntenseReference"
@@ -126,7 +170,10 @@ fn set_accent(s: &mut Session, accent: Rgb) {
 
 fn theme(s: &mut Session, v: &Value) -> CmdResult {
     let name = p::req_str(v, "name")?;
-    let t = THEMES.iter().find(|t| t.0.eq_ignore_ascii_case(name)).ok_or_else(|| CmdError::Params(format!("unknown theme `{name}`")))?;
+    let t = THEMES
+        .iter()
+        .find(|t| t.0.eq_ignore_ascii_case(name))
+        .ok_or_else(|| CmdError::Params(format!("unknown theme `{name}`")))?;
     set_fonts(s, t.1, t.2);
     set_accent(s, t.3[0]);
     s.doc.settings.theme_name = t.0.into();
@@ -142,9 +189,20 @@ fn theme(s: &mut Session, v: &Value) -> CmdResult {
 
 fn style_set(s: &mut Session, v: &Value) -> CmdResult {
     let name = p::req_str(v, "name")?;
-    let accent = s.doc.settings.theme_colors.get(4).copied().unwrap_or(styles::HEADING_BLUE);
+    let accent = s
+        .doc
+        .settings
+        .theme_colors
+        .get(4)
+        .copied()
+        .unwrap_or(styles::HEADING_BLUE);
     let mut fresh = wordcraft_doc::StyleSheet::builtin();
-    let line = Border { style: BorderStyle::Single, width: 0.75, color: Some(accent), space: 1.0 };
+    let line = Border {
+        style: BorderStyle::Single,
+        width: 0.75,
+        color: Some(accent),
+        space: 1.0,
+    };
     for st in &mut fresh.styles {
         let heading = st.id.starts_with("Heading") || st.id == "Title";
         match name {
@@ -152,7 +210,12 @@ fn style_set(s: &mut Session, v: &Value) -> CmdResult {
                 st.chr.color = Some(TextColor::Rgb(Rgb(0x26, 0x26, 0x26)));
                 st.chr.bold = Some(true);
             }
-            "lines" if st.id == "Heading1" || st.id == "Title" => st.para.borders = Some(Borders { bottom: Some(line), ..Default::default() }),
+            "lines" if st.id == "Heading1" || st.id == "Title" => {
+                st.para.borders = Some(Borders {
+                    bottom: Some(line),
+                    ..Default::default()
+                })
+            }
             "shaded" if st.id == "Heading1" => {
                 st.para.shading = Some(accent);
                 st.chr.color = Some(TextColor::Rgb(Rgb::WHITE));
@@ -169,11 +232,21 @@ fn style_set(s: &mut Session, v: &Value) -> CmdResult {
         }
     }
     // Keep custom styles and fonts.
-    let customs: Vec<_> = s.doc.styles.styles.iter().filter(|x| !x.builtin).cloned().collect();
+    let customs: Vec<_> = s
+        .doc
+        .styles
+        .styles
+        .iter()
+        .filter(|x| !x.builtin)
+        .cloned()
+        .collect();
     fresh.styles.extend(customs);
     fresh.default_chr.font = s.doc.styles.default_chr.font.clone();
     s.doc.styles = fresh;
-    let (h, b) = (s.doc.settings.major_font.clone(), s.doc.settings.minor_font.clone());
+    let (h, b) = (
+        s.doc.settings.major_font.clone(),
+        s.doc.settings.minor_font.clone(),
+    );
     set_fonts(s, &h, &b);
     set_accent(s, accent);
     sel_result(s)
@@ -217,13 +290,24 @@ fn watermark(s: &mut Session, v: &Value) -> CmdResult {
 /// Page borders of the caret's section (or every section with `applyTo: "document"`).
 fn page_borders(s: &mut Session, v: &Value) -> CmdResult {
     let borders = match v.get("sides") {
-        Some(sides) => Some(super::para::border_sides(sides, 24.0, 24.0)?).filter(Borders::any_visible),
+        Some(sides) => {
+            Some(super::para::border_sides(sides, 24.0, 24.0)?).filter(Borders::any_visible)
+        }
         None => {
             let kind = p::str(v, "kind").unwrap_or("box");
             let width = p::f32(v, "width").unwrap_or(1.0).clamp(0.25, 6.0);
             let color = p::str(v, "color").and_then(Rgb::parse);
-            let style = p::str(v, "style").map(BorderStyle::from_ooxml).unwrap_or(BorderStyle::Single);
-            (kind != "none").then(|| Borders::box_(Border { style, width, color, space: 24.0 }))
+            let style = p::str(v, "style")
+                .map(BorderStyle::from_ooxml)
+                .unwrap_or(BorderStyle::Single);
+            (kind != "none").then(|| {
+                Borders::box_(Border {
+                    style,
+                    width,
+                    color,
+                    space: 24.0,
+                })
+            })
         }
     };
     let blocks: Vec<usize> = match p::str(v, "applyTo") {

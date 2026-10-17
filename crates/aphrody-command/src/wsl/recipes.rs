@@ -13,7 +13,13 @@ pub enum Target {
     Distro,
 }
 impl Target {
-    pub const ALL: [Self; 5] = [Self::Kernel, Self::Mainline, Self::Wslg, Self::Wsl, Self::Distro];
+    pub const ALL: [Self; 5] = [
+        Self::Kernel,
+        Self::Mainline,
+        Self::Wslg,
+        Self::Wsl,
+        Self::Distro,
+    ];
     pub fn name(self) -> &'static str {
         match self {
             Self::Kernel => "kernel",
@@ -35,7 +41,13 @@ pub struct Step {
 }
 impl Step {
     pub fn new(name: &str, program: impl Into<PathBuf>, args: Vec<String>, cwd: PathBuf) -> Self {
-        Self { name: name.into(), program: program.into(), args, cwd, env: BTreeMap::new() }
+        Self {
+            name: name.into(),
+            program: program.into(),
+            args,
+            cwd,
+            env: BTreeMap::new(),
+        }
     }
 }
 pub fn plan(config: &Config, target: Target) -> Result<Vec<Step>> {
@@ -86,20 +98,31 @@ pub fn plan(config: &Config, target: Target) -> Result<Vec<Step>> {
                 config.distro_packages()?.join(","),
             ];
             args.extend(config.distro.repositories.iter().map(|r| {
-                format!("{}|{}|{}|{}|{}", r.name, r.url, r.suite, r.components, r.fingerprint)
+                format!(
+                    "{}|{}|{}|{}|{}",
+                    r.name, r.url, r.suite, r.components, r.fingerprint
+                )
             }));
             args
-        },
+        }
     };
     let (program, script) = match target {
-        Target::Kernel | Target::Mainline => {
-            (PathBuf::from("bash"), Some(config.script("build-wsl-kernel.sh")))
-        },
-        Target::Wslg => (PathBuf::from("python3"), Some(config.script("build-wslg.py"))),
-        Target::Wsl => {
-            (crate::wsl::windows_executable("WindowsPowerShell/v1.0/powershell.exe"), None)
-        },
-        Target::Distro => (PathBuf::from("sudo"), Some(config.script("build-wsl-distro.sh"))),
+        Target::Kernel | Target::Mainline => (
+            PathBuf::from("bash"),
+            Some(config.script("build-wsl-kernel.sh")),
+        ),
+        Target::Wslg => (
+            PathBuf::from("python3"),
+            Some(config.script("build-wslg.py")),
+        ),
+        Target::Wsl => (
+            crate::wsl::windows_executable("WindowsPowerShell/v1.0/powershell.exe"),
+            None,
+        ),
+        Target::Distro => (
+            PathBuf::from("sudo"),
+            Some(config.script("build-wsl-distro.sh")),
+        ),
     };
     let mut complete = Vec::new();
     if target == Target::Distro {
@@ -109,5 +132,10 @@ pub fn plan(config: &Config, target: Target) -> Result<Vec<Step>> {
         complete.push(path(&script));
     }
     complete.extend(args);
-    Ok(vec![Step::new(target.name(), program, complete, config.workspace.clone())])
+    Ok(vec![Step::new(
+        target.name(),
+        program,
+        complete,
+        config.workspace.clone(),
+    )])
 }

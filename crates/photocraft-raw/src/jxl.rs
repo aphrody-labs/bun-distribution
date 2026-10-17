@@ -18,38 +18,69 @@ use crate::error::{RawError, Result};
 
 /// The browser build has no JPEG XL decoder (see the module docs).
 #[cfg(target_arch = "wasm32")]
-pub(crate) fn decode(_src: &[u8], _w: usize, _h: usize, _samples: usize, _bits: u32, _limits: &Limits) -> Result<Vec<u16>> {
-    Err(RawError::unsupported("JPEG XL-compressed DNG (DNG 1.7) can't be opened in the browser version of PhotoCraft; open it in the desktop app"))
+pub(crate) fn decode(
+    _src: &[u8],
+    _w: usize,
+    _h: usize,
+    _samples: usize,
+    _bits: u32,
+    _limits: &Limits,
+) -> Result<Vec<u16>> {
+    Err(RawError::unsupported(
+        "JPEG XL-compressed DNG (DNG 1.7) can't be opened in the browser version of PhotoCraft; open it in the desktop app",
+    ))
 }
 
 /// Decodes one segment into `w * h * samples` interleaved samples at `bits` per sample (the
 /// TIFF BitsPerSample, which DNG requires the codestream's bit depth to match).
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn decode(src: &[u8], w: usize, h: usize, samples: usize, bits: u32, limits: &Limits) -> Result<Vec<u16>> {
+pub(crate) fn decode(
+    src: &[u8],
+    w: usize,
+    h: usize,
+    samples: usize,
+    bits: u32,
+    limits: &Limits,
+) -> Result<Vec<u16>> {
     limits.check(w as u64, h as u64, samples as u64 * 2)?;
     // jxl-oxide decodes into f32/i32 planes: allow a few times the output size, and never more
     // than the caller's per-buffer limit.
-    let budget = (w as u64).saturating_mul(h as u64).saturating_mul(samples as u64).saturating_mul(16).min(limits.max_alloc);
+    let budget = (w as u64)
+        .saturating_mul(h as u64)
+        .saturating_mul(samples as u64)
+        .saturating_mul(16)
+        .min(limits.max_alloc);
     let budget = usize::try_from(budget).unwrap_or(usize::MAX);
     guarded(|| {
-        let image =
-            JxlImage::builder().alloc_tracker(AllocTracker::with_limit(budget)).read(src).map_err(|e| RawError::malformed(format!("JPEG XL raw data: {e}")))?;
+        let image = JxlImage::builder()
+            .alloc_tracker(AllocTracker::with_limit(budget))
+            .read(src)
+            .map_err(|e| RawError::malformed(format!("JPEG XL raw data: {e}")))?;
         let (jw, jh) = (image.width() as usize, image.height() as usize);
         if (jw, jh) != (w, h) {
-            return Err(RawError::malformed(format!("JPEG XL raw tile is {jw}x{jh}, expected {w}x{h}")));
+            return Err(RawError::malformed(format!(
+                "JPEG XL raw tile is {jw}x{jh}, expected {w}x{h}"
+            )));
         }
-        let render = image.render_frame(0).map_err(|e| RawError::malformed(format!("JPEG XL raw data: {e}")))?;
+        let render = image
+            .render_frame(0)
+            .map_err(|e| RawError::malformed(format!("JPEG XL raw data: {e}")))?;
         let mut stream = render.stream_no_alpha();
         let channels = stream.channels() as usize;
         if channels != samples {
-            return Err(RawError::unsupported(format!("JPEG XL raw tile with {channels} channels for {samples} samples per pixel")));
+            return Err(RawError::unsupported(format!(
+                "JPEG XL raw tile with {channels} channels for {samples} samples per pixel"
+            )));
         }
         // Orientation is applied by the stream; DNG tiles are stored upright, so anything else
         // would not fit the tile grid.
         if (stream.width() as usize, stream.height() as usize) != (w, h) {
             return Err(RawError::unsupported("rotated JPEG XL raw tile"));
         }
-        let n = w.checked_mul(h).and_then(|p| p.checked_mul(samples)).ok_or_else(|| RawError::malformed("JPEG XL raw tile is too large"))?;
+        let n = w
+            .checked_mul(h)
+            .and_then(|p| p.checked_mul(samples))
+            .ok_or_else(|| RawError::malformed("JPEG XL raw tile is too large"))?;
         let mut out = vec![0u16; n];
         if stream.write_to_buffer(&mut out) != n {
             return Err(RawError::malformed("JPEG XL raw data is truncated"));
@@ -68,5 +99,9 @@ pub(crate) fn decode(src: &[u8], w: usize, h: usize, samples: usize, bits: u32, 
 
 #[cfg(not(target_arch = "wasm32"))]
 fn guarded<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
-    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or_else(|_| Err(RawError::malformed("the JPEG XL decoder failed on this file")))
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or_else(|_| {
+        Err(RawError::malformed(
+            "the JPEG XL decoder failed on this file",
+        ))
+    })
 }

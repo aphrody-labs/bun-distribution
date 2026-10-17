@@ -9,7 +9,10 @@
 use photocraft_geom::Rect;
 
 use super::gmm::{DEFAULT_REG, Gmm};
-use super::{FREE, HARD_BG, HARD_FG, Region, RgbImage, Sampler, contrast_beta, data_costs, grid_cut, subsample};
+use super::{
+    FREE, HARD_BG, HARD_FG, Region, RgbImage, Sampler, contrast_beta, data_costs, grid_cut,
+    subsample,
+};
 
 /// Definite background.
 pub const BG: u8 = 0;
@@ -50,8 +53,14 @@ pub fn grabcut(img: &RgbImage, trimap: &mut [u8], iters: usize) -> Option<(Gmm, 
         }
         let (fs, bs) = (subsample(&fs, MAX_SAMPLES), subsample(&bs, MAX_SAMPLES));
         let (fg, bg) = match &models {
-            None => (Gmm::fit(&fs, K, DEFAULT_REG)?, Gmm::fit(&bs, K, DEFAULT_REG)?),
-            Some((f, b)) => (f.refit(&fs).unwrap_or_else(|| f.clone()), b.refit(&bs).unwrap_or_else(|| b.clone())),
+            None => (
+                Gmm::fit(&fs, K, DEFAULT_REG)?,
+                Gmm::fit(&bs, K, DEFAULT_REG)?,
+            ),
+            Some((f, b)) => (
+                f.refit(&fs).unwrap_or_else(|| f.clone()),
+                b.refit(&bs).unwrap_or_else(|| b.clone()),
+            ),
         };
         let (cf, cb) = data_costs(img, &fg, &bg);
         let cut = grid_cut(img, &cf, &cb, &fixed, GAMMA, beta);
@@ -74,7 +83,12 @@ pub fn grabcut(img: &RgbImage, trimap: &mut [u8], iters: usize) -> Option<(Gmm, 
 /// Object Selection (rectangle mode): GrabCut initialised from `rect` (outside = background,
 /// inside = probable foreground). Runs on a working copy of about `work_px` pixels, then re-cuts
 /// the boundary at full resolution. `canvas` bounds the analysis.
-pub fn object_select(sampler: &dyn Sampler, canvas: Rect, rect: Rect, work_px: usize) -> Option<Region> {
+pub fn object_select(
+    sampler: &dyn Sampler,
+    canvas: Rect,
+    rect: Rect,
+    work_px: usize,
+) -> Option<Region> {
     let rect = rect.intersect(&canvas);
     if rect.width() < 2 || rect.height() < 2 {
         return None;
@@ -87,7 +101,10 @@ pub fn object_select(sampler: &dyn Sampler, canvas: Rect, rect: Rect, work_px: u
     let mut trimap = vec![BG; lw * lh];
     // Working pixel (x, y) covers doc pixels [x0 + x·step, …); its centre decides inside/outside.
     let inside = |x: usize, y: usize| {
-        let (cx, cy) = (window.x0 + (x * step + step / 2) as i32, window.y0 + (y * step + step / 2) as i32);
+        let (cx, cy) = (
+            window.x0 + (x * step + step / 2) as i32,
+            window.y0 + (y * step + step / 2) as i32,
+        );
         rect.contains(cx, cy)
     };
     let mut any_bg = false;
@@ -131,7 +148,13 @@ pub const OBJECT_AT_WORK_PX: usize = 60_000;
 /// foreground, the cursor definite foreground, outside the box definite background), the part
 /// connected to the cursor is kept and the boundary is re-cut at full resolution, as the
 /// rectangle mode does.
-pub fn object_at(sampler: &dyn Sampler, canvas: Rect, x: f32, y: f32, work_px: usize) -> Option<Region> {
+pub fn object_at(
+    sampler: &dyn Sampler,
+    canvas: Rect,
+    x: f32,
+    y: f32,
+    work_px: usize,
+) -> Option<Region> {
     if canvas.width() < 4 || canvas.height() < 4 || !x.is_finite() || !y.is_finite() {
         return None;
     }
@@ -146,7 +169,10 @@ pub fn object_at(sampler: &dyn Sampler, canvas: Rect, x: f32, y: f32, work_px: u
         return None;
     }
     // Lightly smoothed, so noise and texture don't stop the growth; edges survive.
-    let lab: Vec<[f32; 3]> = box3(&box3(&img.px, w, h), w, h).iter().map(|c| super::slic::rgb_to_lab(*c)).collect();
+    let lab: Vec<[f32; 3]> = box3(&box3(&img.px, w, h), w, h)
+        .iter()
+        .map(|c| super::slic::rgb_to_lab(*c))
+        .collect();
     let sx = (((px - canvas.x0) as usize) / step).min(w - 1);
     let sy = (((py - canvas.y0) as usize) / step).min(h - 1);
     let grown = grow_similar(&lab, w, h, sx, sy);
@@ -163,7 +189,12 @@ pub fn object_at(sampler: &dyn Sampler, canvas: Rect, x: f32, y: f32, work_px: u
         }
     }
     let pad = ((x1 - x0).max(y1 - y0) / 6).max(2);
-    let (bx0, by0, bx1, by1) = (x0.saturating_sub(pad), y0.saturating_sub(pad), (x1 + pad).min(w), (y1 + pad).min(h));
+    let (bx0, by0, bx1, by1) = (
+        x0.saturating_sub(pad),
+        y0.saturating_sub(pad),
+        (x1 + pad).min(w),
+        (y1 + pad).min(h),
+    );
     let mut trimap = vec![BG; w * h];
     let mut any_bg = false;
     for yy in 0..h {
@@ -209,16 +240,29 @@ pub fn object_at(sampler: &dyn Sampler, canvas: Rect, x: f32, y: f32, work_px: u
 fn grow_similar(lab: &[[f32; 3]], w: usize, h: usize, sx: usize, sy: usize) -> Vec<bool> {
     const MEAN_DIST: f32 = 32.0;
     const EDGE_STEP: f32 = 10.0;
-    let d = |a: [f32; 3], b: [f32; 3]| ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt();
+    let d = |a: [f32; 3], b: [f32; 3]| {
+        ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+    };
     let mut out = vec![false; w * h];
-    let Some(&seed) = lab.get(sy * w + sx) else { return out };
+    let Some(&seed) = lab.get(sy * w + sx) else {
+        return out;
+    };
     let (mut sum, mut n) = ([seed[0] as f64, seed[1] as f64, seed[2] as f64], 1.0f64);
     let mut stack = vec![(sx, sy)];
     out[sy * w + sx] = true;
     while let Some((x, y)) = stack.pop() {
         let c = lab[y * w + x];
-        let mean = [(sum[0] / n) as f32, (sum[1] / n) as f32, (sum[2] / n) as f32];
-        let nbrs = [(x.wrapping_sub(1), y), (x + 1, y), (x, y.wrapping_sub(1)), (x, y + 1)];
+        let mean = [
+            (sum[0] / n) as f32,
+            (sum[1] / n) as f32,
+            (sum[2] / n) as f32,
+        ];
+        let nbrs = [
+            (x.wrapping_sub(1), y),
+            (x + 1, y),
+            (x, y.wrapping_sub(1)),
+            (x, y + 1),
+        ];
         for (nx, ny) in nbrs {
             if nx >= w || ny >= h {
                 continue;
@@ -230,7 +274,11 @@ fn grow_similar(lab: &[[f32; 3]], w: usize, h: usize, sx: usize, sy: usize) -> V
             let q = lab[i];
             if d(q, c) <= EDGE_STEP && d(q, mean) <= MEAN_DIST {
                 out[i] = true;
-                sum = [sum[0] + q[0] as f64, sum[1] + q[1] as f64, sum[2] + q[2] as f64];
+                sum = [
+                    sum[0] + q[0] as f64,
+                    sum[1] + q[1] as f64,
+                    sum[2] + q[2] as f64,
+                ];
                 n += 1.0;
                 stack.push((nx, ny));
             }

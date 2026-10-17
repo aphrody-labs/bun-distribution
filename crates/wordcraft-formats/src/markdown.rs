@@ -28,13 +28,19 @@ pub fn import(text: &str) -> Document {
 /// Parse Markdown text into the flow model.
 pub fn parse(text: &str) -> model::Flow {
     let text = text.strip_prefix('\u{FEFF}').unwrap_or(text);
-    let lines: Vec<String> = text.split('\n').map(|l| expand_tabs(l.trim_end_matches('\r'))).collect();
+    let lines: Vec<String> = text
+        .split('\n')
+        .map(|l| expand_tabs(l.trim_end_matches('\r')))
+        .collect();
     let mut blocks = parse_blocks(&lines, 0, 0);
     // A leading "Title" from front matter isn't supported; a first-level heading stays a heading.
     if blocks.is_empty() {
         blocks.push(FBlock::Para(Para::default()));
     }
-    model::Flow { blocks, meta: Default::default() }
+    model::Flow {
+        blocks,
+        meta: Default::default(),
+    }
 }
 
 /// Leading tabs → spaces (tab stops of 4); the rest of the line is kept.
@@ -140,7 +146,15 @@ struct Marker {
 fn list_marker(t: &str) -> Option<Marker> {
     let first = t.chars().next()?;
     let (m, len) = if matches!(first, '-' | '+' | '*') {
-        (Marker { ordered: false, ch: first, len: 1, start: 1 }, 1)
+        (
+            Marker {
+                ordered: false,
+                ch: first,
+                len: 1,
+                start: 1,
+            },
+            1,
+        )
     } else {
         let digits = t.chars().take_while(|c| c.is_ascii_digit()).count();
         if !(1..=9).contains(&digits) {
@@ -151,16 +165,32 @@ fn list_marker(t: &str) -> Option<Marker> {
             return None;
         }
         let start = t.get(..digits)?.parse::<u32>().unwrap_or(1);
-        (Marker { ordered: true, ch: d, len: digits + 1, start }, digits + 1)
+        (
+            Marker {
+                ordered: true,
+                ch: d,
+                len: digits + 1,
+                start,
+            },
+            digits + 1,
+        )
     };
     let rest = t.get(len..)?;
-    if rest.is_empty() || rest.starts_with(' ') { Some(m) } else { None }
+    if rest.is_empty() || rest.starts_with(' ') {
+        Some(m)
+    } else {
+        None
+    }
 }
 
 fn split_row(l: &str) -> Vec<String> {
     let t = l.trim();
     let t = t.strip_prefix('|').unwrap_or(t);
-    let t = if t.ends_with('|') && !t.ends_with("\\|") { &t[..t.len() - 1] } else { t };
+    let t = if t.ends_with('|') && !t.ends_with("\\|") {
+        &t[..t.len() - 1]
+    } else {
+        t
+    };
     let mut cells = Vec::new();
     let mut cur = String::new();
     let mut chars = t.chars().peekable();
@@ -216,7 +246,9 @@ fn interrupts(l: &str) -> bool {
         || thematic_break(t)
         || fence(t).is_some()
         || t.starts_with('>')
-        || list_marker(t).is_some_and(|m| (!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or("")))
+        || list_marker(t).is_some_and(|m| {
+            (!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or(""))
+        })
 }
 
 fn flush_para(lines: &mut Vec<String>, out: &mut Vec<FBlock>, depth: usize) {
@@ -225,7 +257,10 @@ fn flush_para(lines: &mut Vec<String>, out: &mut Vec<FBlock>, depth: usize) {
     }
     let text = join_lines(lines);
     lines.clear();
-    let p = Para { inlines: parse_inlines(&text, &Fmt::default(), depth), ..Default::default() };
+    let p = Para {
+        inlines: parse_inlines(&text, &Fmt::default(), depth),
+        ..Default::default()
+    };
     out.push(FBlock::Para(p));
 }
 
@@ -328,7 +363,10 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
             while let Some(l) = lines.get(i) {
                 i += 1;
                 let lt = l.trim_start();
-                if indent(l) < 4 && fence(lt).is_some_and(|(c, n)| c == fc && n >= fl) && lt.trim_start_matches(fc).trim().is_empty() {
+                if indent(l) < 4
+                    && fence(lt).is_some_and(|(c, n)| c == fc && n >= fl)
+                    && lt.trim_start_matches(fc).trim().is_empty()
+                {
                     break;
                 }
                 out.push(code_para(strip_indent(l, ind)));
@@ -343,7 +381,10 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
                 if indent(l) < 4 && lt.starts_with('>') {
                     let s = &lt[1..];
                     inner.push(s.strip_prefix(' ').unwrap_or(s).to_string());
-                } else if !is_blank(l) && !interrupts(l) && inner.last().is_some_and(|x| !is_blank(x)) {
+                } else if !is_blank(l)
+                    && !interrupts(l)
+                    && inner.last().is_some_and(|x| !is_blank(x))
+                {
                     inner.push(l.clone());
                 } else {
                     break;
@@ -374,10 +415,23 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
             if head.len() == aligns.len() {
                 let mut table = FTable::default();
                 let cell = |s: &str, header: bool, a: Option<Align>| {
-                    let p = Para { align: a, inlines: parse_inlines(s, &Fmt::default(), depth), ..Default::default() };
-                    Cell { blocks: vec![FBlock::Para(p)], header, ..Default::default() }
+                    let p = Para {
+                        align: a,
+                        inlines: parse_inlines(s, &Fmt::default(), depth),
+                        ..Default::default()
+                    };
+                    Cell {
+                        blocks: vec![FBlock::Para(p)],
+                        header,
+                        ..Default::default()
+                    }
                 };
-                table.rows.push(head.iter().zip(&aligns).map(|(s, a)| cell(s, true, *a)).collect());
+                table.rows.push(
+                    head.iter()
+                        .zip(&aligns)
+                        .map(|(s, a)| cell(s, true, *a))
+                        .collect(),
+                );
                 i += 2;
                 while let Some(l) = lines.get(i) {
                     if is_blank(l) || !l.contains('|') || interrupts(l) {
@@ -385,7 +439,13 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
                     }
                     let mut cells = split_row(l);
                     cells.resize(aligns.len(), String::new());
-                    table.rows.push(cells.iter().zip(&aligns).map(|(s, a)| cell(s, false, *a)).collect());
+                    table.rows.push(
+                        cells
+                            .iter()
+                            .zip(&aligns)
+                            .map(|(s, a)| cell(s, false, *a))
+                            .collect(),
+                    );
                     i += 1;
                 }
                 out.push(FBlock::Table(table));
@@ -393,7 +453,8 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
             }
         }
         if let Some(m) = list_marker(t)
-            && (para.is_empty() || ((!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or(""))))
+            && (para.is_empty()
+                || ((!m.ordered || m.start == 1) && !is_blank(t.get(m.len..).unwrap_or(""))))
         {
             flush_para(&mut para, &mut out, depth);
             i = parse_list(lines, i, depth, level, &mut out);
@@ -407,8 +468,16 @@ fn parse_blocks(lines: &[String], depth: usize, level: u8) -> Vec<FBlock> {
 }
 
 /// Parse a list starting at `lines[i]`; returns the index after it.
-fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut Vec<FBlock>) -> usize {
-    let Some(first) = lines.get(i).and_then(|l| list_marker(l.trim_start())) else { return i + 1 };
+fn parse_list(
+    lines: &[String],
+    mut i: usize,
+    depth: usize,
+    level: u8,
+    out: &mut Vec<FBlock>,
+) -> usize {
+    let Some(first) = lines.get(i).and_then(|l| list_marker(l.trim_start())) else {
+        return i + 1;
+    };
     while let Some(line) = lines.get(i) {
         let ind = indent(line);
         if ind >= 4 {
@@ -421,9 +490,19 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         }
         let after = t.get(m.len..).unwrap_or("");
         let spaces = indent(after);
-        let content_indent = if is_blank(after) || spaces > 4 { ind + m.len + 1 } else { ind + m.len + spaces };
-        let mut item: Vec<String> =
-            vec![if is_blank(after) { String::new() } else { after.get(spaces.min(4).min(after.len())..).unwrap_or("").to_string() }];
+        let content_indent = if is_blank(after) || spaces > 4 {
+            ind + m.len + 1
+        } else {
+            ind + m.len + spaces
+        };
+        let mut item: Vec<String> = vec![if is_blank(after) {
+            String::new()
+        } else {
+            after
+                .get(spaces.min(4).min(after.len())..)
+                .unwrap_or("")
+                .to_string()
+        }];
         if spaces > 4 {
             item[0] = after.get(1..).unwrap_or("").to_string();
         }
@@ -433,7 +512,10 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
                 item.push(String::new());
             } else if indent(l) >= content_indent {
                 item.push(strip_indent(l, content_indent).to_string());
-            } else if item.last().is_some_and(|x| !is_blank(x)) && !interrupts(l) && list_marker(l.trim_start()).is_none() {
+            } else if item.last().is_some_and(|x| !is_blank(x))
+                && !interrupts(l)
+                && list_marker(l.trim_start()).is_none()
+            {
                 // Lazy continuation of the item's paragraph.
                 item.push(l.trim_start().to_string());
             } else {
@@ -445,7 +527,10 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         while item.len() > 1 && item.last().is_some_and(|x| x.is_empty()) {
             item.pop();
         }
-        let li = ListInfo { ordered: first.ordered, level: level.min(8) };
+        let li = ListInfo {
+            ordered: first.ordered,
+            level: level.min(8),
+        };
         let inner = if depth >= MAX_NEST {
             let mut p = Para::default();
             p.push_text(&item.join(" "), &Fmt::default());
@@ -455,7 +540,10 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         };
         let mut placed = false;
         if inner.is_empty() {
-            out.push(FBlock::Para(Para { list: Some(li), ..Default::default() }));
+            out.push(FBlock::Para(Para {
+                list: Some(li),
+                ..Default::default()
+            }));
             placed = true;
         }
         for b in inner {
@@ -479,7 +567,10 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
                 FBlock::Para(p) => {
                     if !placed {
                         // The item starts with a nested list: give it an empty first line.
-                        out.push(FBlock::Para(Para { list: Some(li), ..Default::default() }));
+                        out.push(FBlock::Para(Para {
+                            list: Some(li),
+                            ..Default::default()
+                        }));
                         placed = true;
                     }
                     out.push(FBlock::Para(p));
@@ -492,9 +583,11 @@ fn parse_list(lines: &[String], mut i: usize, depth: usize, level: u8, out: &mut
         }
         // Blank lines between items.
         while lines.get(i).is_some_and(|l| is_blank(l)) {
-            let next_is_item = lines
-                .get(i + 1)
-                .is_some_and(|l| indent(l) < 4 && list_marker(l.trim_start()).is_some_and(|m| m.ordered == first.ordered && m.ch == first.ch));
+            let next_is_item = lines.get(i + 1).is_some_and(|l| {
+                indent(l) < 4
+                    && list_marker(l.trim_start())
+                        .is_some_and(|m| m.ordered == first.ordered && m.ch == first.ch)
+            });
             if !next_is_item {
                 return i;
             }
@@ -516,7 +609,15 @@ enum Emph {
 enum Node {
     Text(String, Fmt),
     Inl(Inline),
-    Delim { ch: char, orig: usize, left: usize, open: bool, close: bool, opens: Vec<Emph>, closes: Vec<Emph> },
+    Delim {
+        ch: char,
+        orig: usize,
+        left: usize,
+        open: bool,
+        close: bool,
+        opens: Vec<Emph>,
+        closes: Vec<Emph>,
+    },
 }
 
 fn is_punct(c: char) -> bool {
@@ -555,7 +656,10 @@ fn matching_bracket(s: &str, open: usize, max: usize) -> Option<usize> {
         match c {
             b'\\' => i += 1,
             b'`' => {
-                let n = b.get(i..).map(|r| r.iter().take_while(|x| **x == b'`').count()).unwrap_or(1);
+                let n = b
+                    .get(i..)
+                    .map(|r| r.iter().take_while(|x| **x == b'`').count())
+                    .unwrap_or(1);
                 if let Some(end) = find_backticks(s, i + n, n) {
                     i = end + n - 1;
                 } else {
@@ -582,7 +686,10 @@ fn find_backticks(s: &str, from: usize, n: usize) -> Option<usize> {
     let mut i = from;
     while let Some(&c) = b.get(i) {
         if c == b'`' {
-            let k = b.get(i..).map(|r| r.iter().take_while(|x| **x == b'`').count()).unwrap_or(1);
+            let k = b
+                .get(i..)
+                .map(|r| r.iter().take_while(|x| **x == b'`').count())
+                .unwrap_or(1);
             if k == n {
                 return Some(i);
             }
@@ -643,7 +750,11 @@ fn link_dest(s: &str, at: usize) -> Option<(String, usize)> {
         let r = s.get(i..)?;
         i += r.len() - r.trim_start().len();
     }
-    if s.get(i..)?.starts_with(')') { Some((unescape(&dest), i + 1)) } else { None }
+    if s.get(i..)?.starts_with(')') {
+        Some((unescape(&dest), i + 1))
+    } else {
+        None
+    }
 }
 
 fn unescape(s: &str) -> String {
@@ -679,7 +790,9 @@ fn tag_attr(tag: &str, name: &str) -> Option<String> {
                 let end = inner.find(q)?;
                 tag.get(off..off + end)?.to_string()
             } else {
-                let end = v.find(|c: char| c.is_whitespace() || c == '>').unwrap_or(v.len());
+                let end = v
+                    .find(|c: char| c.is_whitespace() || c == '>')
+                    .unwrap_or(v.len());
                 let off = tag.len() - v.len();
                 tag.get(off..off + end)?.to_string()
             });
@@ -723,11 +836,18 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
             }
             b'`' => {
                 flush!();
-                let n = b.get(i..).map(|r| r.iter().take_while(|x| **x == b'`').count()).unwrap_or(1);
+                let n = b
+                    .get(i..)
+                    .map(|r| r.iter().take_while(|x| **x == b'`').count())
+                    .unwrap_or(1);
                 match find_backticks(s, i + n, n) {
                     Some(end) => {
                         let mut code = s.get(i + n..end).unwrap_or("").replace('\n', " ");
-                        if code.len() >= 2 && code.starts_with(' ') && code.ends_with(' ') && !code.trim().is_empty() {
+                        if code.len() >= 2
+                            && code.starts_with(' ')
+                            && code.ends_with(' ')
+                            && !code.trim().is_empty()
+                        {
                             code = code[1..code.len() - 1].to_string();
                         }
                         let mut f = base.clone();
@@ -745,18 +865,37 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
             b'*' | b'_' | b'~' => {
                 flush!();
                 let ch = c as char;
-                let n = b.get(i..).map(|r| r.iter().take_while(|x| **x == c).count()).unwrap_or(1);
-                let before = s.get(..i).and_then(|r| r.chars().next_back()).unwrap_or(' ');
+                let n = b
+                    .get(i..)
+                    .map(|r| r.iter().take_while(|x| **x == c).count())
+                    .unwrap_or(1);
+                let before = s
+                    .get(..i)
+                    .and_then(|r| r.chars().next_back())
+                    .unwrap_or(' ');
                 let after = s.get(i + n..).and_then(|r| r.chars().next()).unwrap_or(' ');
-                let lf = !after.is_whitespace() && (!is_punct(after) || before.is_whitespace() || is_punct(before));
-                let rf = !before.is_whitespace() && (!is_punct(before) || after.is_whitespace() || is_punct(after));
+                let lf = !after.is_whitespace()
+                    && (!is_punct(after) || before.is_whitespace() || is_punct(before));
+                let rf = !before.is_whitespace()
+                    && (!is_punct(before) || after.is_whitespace() || is_punct(after));
                 let (open, close) = match ch {
-                    '_' => (lf && (!rf || is_punct(before)), rf && (!lf || is_punct(after))),
+                    '_' => (
+                        lf && (!rf || is_punct(before)),
+                        rf && (!lf || is_punct(after)),
+                    ),
                     '~' if n != 2 => (false, false),
                     _ => (lf, rf),
                 };
                 if open || close {
-                    nodes.push(Node::Delim { ch, orig: n, left: n, open, close, opens: Vec::new(), closes: Vec::new() });
+                    nodes.push(Node::Delim {
+                        ch,
+                        orig: n,
+                        left: n,
+                        open,
+                        close,
+                        opens: Vec::new(),
+                        closes: Vec::new(),
+                    });
                 } else {
                     push_text(&mut nodes, s.get(i..i + n).unwrap_or(""), base);
                 }
@@ -768,7 +907,8 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
                 let open = if img { i + 1 } else { i };
                 let parsed = if b.get(open) == Some(&b'[') && scan_budget > 0 {
                     let found = matching_bracket(s, open, scan_budget);
-                    scan_budget = scan_budget.saturating_sub(found.map_or(scan_budget, |close| close - open));
+                    scan_budget =
+                        scan_budget.saturating_sub(found.map_or(scan_budget, |close| close - open));
                     found.and_then(|close| {
                         // A destination that does not parse may have been read to the end of the text.
                         scan_budget = scan_budget.saturating_sub(s.len().saturating_sub(close));
@@ -783,7 +923,13 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
                         flush!();
                         let alt: String = parse_inlines(&inner, &Fmt::default(), depth + 1)
                             .iter()
-                            .filter_map(|x| if let Inline::Text(t, _) = x { Some(t.as_str()) } else { None })
+                            .filter_map(|x| {
+                                if let Inline::Text(t, _) = x {
+                                    Some(t.as_str())
+                                } else {
+                                    None
+                                }
+                            })
                             .collect();
                         match model::data_uri(&dest).and_then(|d| make_img(d, None, None, &alt)) {
                             Some(im) => nodes.push(Node::Inl(Inline::Image(im))),
@@ -812,11 +958,17 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
                 let lower = inner.to_ascii_lowercase();
                 let is_auto = !inner.is_empty()
                     && !inner.contains([' ', '<', '\n'])
-                    && (inner.contains("://") || lower.starts_with("mailto:") || (inner.contains('@') && !inner.contains('/')));
+                    && (inner.contains("://")
+                        || lower.starts_with("mailto:")
+                        || (inner.contains('@') && !inner.contains('/')));
                 if is_auto {
                     flush!();
                     let mut f = base.clone();
-                    f.link = Some(if inner.contains('@') && !inner.contains(':') { format!("mailto:{inner}") } else { inner.to_string() });
+                    f.link = Some(if inner.contains('@') && !inner.contains(':') {
+                        format!("mailto:{inner}")
+                    } else {
+                        inner.to_string()
+                    });
                     push_text(&mut nodes, inner, &f);
                     i += inner.len() + 2;
                     text_start = i;
@@ -825,7 +977,11 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
                     push_text(&mut nodes, "\n", base);
                     i += inner.len() + 2;
                     text_start = i;
-                } else if lower.starts_with("a ") && rest.get(inner.len() + 1..).is_some_and(|r| r.to_ascii_lowercase().starts_with("</a>")) {
+                } else if lower.starts_with("a ")
+                    && rest
+                        .get(inner.len() + 1..)
+                        .is_some_and(|r| r.to_ascii_lowercase().starts_with("</a>"))
+                {
                     flush!();
                     if let Some(name) = tag_attr(inner, "id").or_else(|| tag_attr(inner, "name")) {
                         nodes.push(Node::Inl(Inline::Anchor(name)));
@@ -838,7 +994,10 @@ fn tokenize(s: &str, base: &Fmt, depth: usize) -> Vec<Node> {
             }
             b'&' => {
                 let rest = s.get(i..).unwrap_or("");
-                match within(rest, 33).find(';').and_then(|k| decode_entity(rest.get(1..k)?).map(|ch| (ch, k))) {
+                match within(rest, 33)
+                    .find(';')
+                    .and_then(|k| decode_entity(rest.get(1..k)?).map(|ch| (ch, k)))
+                {
                     Some((ch, k)) => {
                         flush!();
                         push_text(&mut nodes, &ch, base);
@@ -883,7 +1042,13 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
     let mut bottom = [[[None::<usize>; 2]; 3]; 3];
     for c in 0..nodes.len() {
         let (ch, corig, copen, cclose) = match nodes.get(c) {
-            Some(Node::Delim { ch, orig, open, close, .. }) => (*ch, *orig, *open, *close),
+            Some(Node::Delim {
+                ch,
+                orig,
+                open,
+                close,
+                ..
+            }) => (*ch, *orig, *open, *close),
             _ => continue,
         };
         if cclose {
@@ -895,20 +1060,35 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
                 if cleft == 0 {
                     break;
                 }
-                let bot = bottom.get(emph_index(ch)).and_then(|x| x.get(corig % 3)).and_then(|x| x.get(copen as usize)).copied().flatten();
+                let bot = bottom
+                    .get(emph_index(ch))
+                    .and_then(|x| x.get(corig % 3))
+                    .and_then(|x| x.get(copen as usize))
+                    .copied()
+                    .flatten();
                 let mut found = None;
                 for (k, &o) in stack.iter().enumerate().rev() {
                     if bot.is_some_and(|b| o <= b) {
                         break;
                     }
-                    if let Some(Node::Delim { ch: och, orig: oorig, left: oleft, open: oopen, close: oclose, .. }) = nodes.get(o) {
+                    if let Some(Node::Delim {
+                        ch: och,
+                        orig: oorig,
+                        left: oleft,
+                        open: oopen,
+                        close: oclose,
+                        ..
+                    }) = nodes.get(o)
+                    {
                         if *och != ch || !*oopen || *oleft == 0 {
                             continue;
                         }
                         if ch == '~' && (*oleft < 2 || cleft < 2) {
                             continue;
                         }
-                        let odd = (*oclose || copen) && (oorig + corig) % 3 == 0 && !(oorig % 3 == 0 && corig % 3 == 0);
+                        let odd = (*oclose || copen)
+                            && (oorig + corig) % 3 == 0
+                            && !(oorig % 3 == 0 && corig % 3 == 0);
                         if odd {
                             continue;
                         }
@@ -917,7 +1097,11 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
                     }
                 }
                 let Some((k, o, oleft)) = found else {
-                    if let Some(slot) = bottom.get_mut(emph_index(ch)).and_then(|x| x.get_mut(corig % 3)).and_then(|x| x.get_mut(copen as usize)) {
+                    if let Some(slot) = bottom
+                        .get_mut(emph_index(ch))
+                        .and_then(|x| x.get_mut(corig % 3))
+                        .and_then(|x| x.get_mut(copen as usize))
+                    {
                         *slot = Some(c.saturating_sub(1));
                     }
                     break;
@@ -955,27 +1139,33 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
     // Flatten.
     let mut out: Vec<Inline> = Vec::new();
     let (mut em, mut strong, mut strike) = (0usize, 0usize, 0usize);
-    let push = |out: &mut Vec<Inline>, t: &str, f: &Fmt, em: usize, strong: usize, strike: usize| {
-        if t.is_empty() {
-            return;
-        }
-        let mut f = f.clone();
-        f.italic |= em > 0;
-        f.bold |= strong > 0;
-        f.strike |= strike > 0;
-        if let Some(Inline::Text(pt, pf)) = out.last_mut()
-            && *pf == f
-        {
-            pt.push_str(t);
-            return;
-        }
-        out.push(Inline::Text(t.to_string(), f));
-    };
+    let push =
+        |out: &mut Vec<Inline>, t: &str, f: &Fmt, em: usize, strong: usize, strike: usize| {
+            if t.is_empty() {
+                return;
+            }
+            let mut f = f.clone();
+            f.italic |= em > 0;
+            f.bold |= strong > 0;
+            f.strike |= strike > 0;
+            if let Some(Inline::Text(pt, pf)) = out.last_mut()
+                && *pf == f
+            {
+                pt.push_str(t);
+                return;
+            }
+            out.push(Inline::Text(t.to_string(), f));
+        };
     let base_of = |nodes: &[Node], k: usize| -> Fmt {
         // Delimiter literals take the formatting (link, …) of neighbouring text.
         for j in (0..k).rev() {
             if let Some(Node::Text(_, f)) = nodes.get(j) {
-                return Fmt { bold: false, italic: false, strike: false, ..f.clone() };
+                return Fmt {
+                    bold: false,
+                    italic: false,
+                    strike: false,
+                    ..f.clone()
+                };
             }
         }
         Fmt::default()
@@ -985,7 +1175,13 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
             Node::Text(t, f) => push(&mut out, t, f, em, strong, strike),
             Node::Inl(Inline::Text(t, f)) => push(&mut out, t, f, em, strong, strike),
             Node::Inl(other) => out.push(other.clone()),
-            Node::Delim { ch, left, opens, closes, .. } => {
+            Node::Delim {
+                ch,
+                left,
+                opens,
+                closes,
+                ..
+            } => {
                 for e in closes {
                     match e {
                         Emph::Em => em = em.saturating_sub(1),
@@ -1043,12 +1239,18 @@ fn escape_line_start(s: String) -> String {
         || thematic_break(t)
         || {
             let d = t.chars().take_while(|c| c.is_ascii_digit()).count();
-            d > 0 && t.get(d..).is_some_and(|r| r.starts_with(". ") || r.starts_with(") ") || r == "." || r == ")")
+            d > 0
+                && t.get(d..).is_some_and(|r| {
+                    r.starts_with(". ") || r.starts_with(") ") || r == "." || r == ")"
+                })
         };
     if !needs {
         return s;
     }
-    if let Some(d) = t.find(['.', ')']).filter(|_| t.starts_with(|c: char| c.is_ascii_digit())) {
+    if let Some(d) = t
+        .find(['.', ')'])
+        .filter(|_| t.starts_with(|c: char| c.is_ascii_digit()))
+    {
         return format!("{}{}\\{}", &s[..lead], &t[..d], &t[d..]);
     }
     format!("{}\\{}", &s[..lead], t)
@@ -1066,7 +1268,14 @@ fn code_span(t: &str) -> String {
         }
     }
     let ticks = "`".repeat(longest + 1);
-    let pad = if t.starts_with('`') || t.ends_with('`') || (t.starts_with(' ') && t.ends_with(' ') && !t.trim().is_empty()) { " " } else { "" };
+    let pad = if t.starts_with('`')
+        || t.ends_with('`')
+        || (t.starts_with(' ') && t.ends_with(' ') && !t.trim().is_empty())
+    {
+        " "
+    } else {
+        ""
+    };
     format!("{ticks}{pad}{t}{pad}{ticks}")
 }
 
@@ -1090,7 +1299,12 @@ fn inlines_md(inlines: &[Inline]) -> String {
                     let core = t.trim_matches([' ', '\t', '\n']);
                     let lead = &t[..t.len() - t.trim_start_matches([' ', '\t', '\n']).len()];
                     let trail = &t[t.trim_end_matches([' ', '\t', '\n']).len()..];
-                    let plain = Fmt { bold: false, italic: false, strike: false, ..f.clone() };
+                    let plain = Fmt {
+                        bold: false,
+                        italic: false,
+                        strike: false,
+                        ..f.clone()
+                    };
                     if !lead.is_empty() {
                         pieces.push((lead.to_string(), plain.clone(), None));
                     }
@@ -1106,13 +1320,28 @@ fn inlines_md(inlines: &[Inline]) -> String {
             }
             Inline::Image(img) => {
                 let name = format!("image.{}", img.ext);
-                pieces.push((String::new(), Fmt::default(), Some(format!("![{}]({})", escape(&img.alt), name))));
+                pieces.push((
+                    String::new(),
+                    Fmt::default(),
+                    Some(format!("![{}]({})", escape(&img.alt), name)),
+                ));
             }
             Inline::Anchor(a) => {
-                let safe: String = a.chars().filter(|c| c.is_alphanumeric() || matches!(c, '_' | '-' | '.' | ':')).collect();
-                pieces.push((String::new(), Fmt::default(), Some(format!("<a id=\"{safe}\"></a>"))));
+                let safe: String = a
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
+                    .collect();
+                pieces.push((
+                    String::new(),
+                    Fmt::default(),
+                    Some(format!("<a id=\"{safe}\"></a>")),
+                ));
             }
-            Inline::Figure(alt) => pieces.push((String::new(), Fmt::default(), Some(format!("![{}]()", escape(alt))))),
+            Inline::Figure(alt) => pieces.push((
+                String::new(),
+                Fmt::default(),
+                Some(format!("![{}]()", escape(alt))),
+            )),
             Inline::Equation { .. } => {}
         }
     }
@@ -1126,7 +1355,10 @@ fn inlines_md(inlines: &[Inline]) -> String {
     };
     for (text, f, raw) in pieces {
         // Links are the outermost construct; a script or other non-web target is plain text.
-        let f_link = f.link.clone().filter(|l| wordcraft_doc::link::is_safe_href(l));
+        let f_link = f
+            .link
+            .clone()
+            .filter(|l| wordcraft_doc::link::is_safe_href(l));
         if f_link != link || raw.is_some() {
             close_all(&mut out, &mut stack);
             if let Some(l) = &link {
@@ -1142,8 +1374,15 @@ fn inlines_md(inlines: &[Inline]) -> String {
                 link = Some(l);
             }
         }
-        let want: Vec<Mark> =
-            [(f.bold, Mark::Bold), (f.italic, Mark::Italic), (f.strike, Mark::Strike)].iter().filter(|x| x.0).map(|x| x.1).collect();
+        let want: Vec<Mark> = [
+            (f.bold, Mark::Bold),
+            (f.italic, Mark::Italic),
+            (f.strike, Mark::Strike),
+        ]
+        .iter()
+        .filter(|x| x.0)
+        .map(|x| x.1)
+        .collect();
         // Close until the stack is a prefix of what we want.
         while let Some(pos) = stack.iter().position(|m| !want.contains(m)) {
             while stack.len() > pos {
@@ -1172,7 +1411,11 @@ fn inlines_md(inlines: &[Inline]) -> String {
 }
 
 fn link_target(l: &str) -> String {
-    if l.contains([' ', '(', ')', '<', '>']) { format!("<{}>", l.replace(['<', '>', '\n'], "")) } else { l.to_string() }
+    if l.contains([' ', '(', ')', '<', '>']) {
+        format!("<{}>", l.replace(['<', '>', '\n'], ""))
+    } else {
+        l.to_string()
+    }
 }
 
 fn marker(m: Mark) -> &'static str {
@@ -1190,12 +1433,30 @@ fn table_md(t: &FTable, out: &mut Vec<String>) {
         for b in &c.blocks {
             match b {
                 FBlock::Para(p) => parts.push(inlines_md(&p.inlines).replace("\\\n", "<br>")),
-                FBlock::Table(inner) => parts.push(escape(&inner.rows.iter().flat_map(|r| r.iter().map(Cell::text)).collect::<Vec<_>>().join(" "))),
+                FBlock::Table(inner) => parts.push(escape(
+                    &inner
+                        .rows
+                        .iter()
+                        .flat_map(|r| r.iter().map(Cell::text))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                )),
             }
         }
         parts.join("<br>").replace('\n', " ")
     };
-    let align_of = |c: &Cell| c.blocks.iter().find_map(|b| if let FBlock::Para(p) = b { Some(p.align) } else { None }).flatten();
+    let align_of = |c: &Cell| {
+        c.blocks
+            .iter()
+            .find_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p.align)
+                } else {
+                    None
+                }
+            })
+            .flatten()
+    };
     let row_md = |r: &Vec<Cell>| -> Vec<String> {
         let mut v: Vec<String> = Vec::new();
         for c in r {
@@ -1267,7 +1528,11 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                     lines.push(q.text());
                     i += 1;
                 }
-                let longest = lines.iter().map(|l| l.chars().filter(|c| *c == '`').count()).max().unwrap_or(0);
+                let longest = lines
+                    .iter()
+                    .map(|l| l.chars().filter(|c| *c == '`').count())
+                    .max()
+                    .unwrap_or(0);
                 let fence = "`".repeat(3.max(longest + 1).min(64));
                 out.push(fence.clone());
                 out.extend(lines);
@@ -1294,14 +1559,23 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                         for d in counters.iter_mut().skip(lv + 1) {
                             *d = 0;
                         }
-                        let marker = if li.ordered { format!("{}.", n.unwrap_or(1)) } else { "-".to_string() };
+                        let marker = if li.ordered {
+                            format!("{}.", n.unwrap_or(1))
+                        } else {
+                            "-".to_string()
+                        };
                         let pad = " ".repeat(4 * lv);
                         let cont = " ".repeat(4 * lv + marker.len() + 1);
                         let body = body.replace("\\\n", &format!("\\\n{cont}"));
-                        let body = if p.kind == Kind::Code { code_span(&p.text()) } else { body };
+                        let body = if p.kind == Kind::Code {
+                            code_span(&p.text())
+                        } else {
+                            body
+                        };
                         out.push(format!("{pad}{marker} {body}").trim_end().to_string());
                         prev_list = true;
-                        let next_is_list = matches!(blocks.get(i + 1), Some(FBlock::Para(q)) if q.list.is_some());
+                        let next_is_list =
+                            matches!(blocks.get(i + 1), Some(FBlock::Para(q)) if q.list.is_some());
                         if !next_is_list {
                             out.push(String::new());
                         }
@@ -1309,7 +1583,11 @@ fn write_blocks(blocks: &[FBlock], out: &mut Vec<String>) {
                     None => {
                         prev_list = false;
                         let line = match p.kind {
-                            Kind::Heading(n) => format!("{} {}", "#".repeat(n.clamp(1, 6) as usize), body.replace("\\\n", " ")),
+                            Kind::Heading(n) => format!(
+                                "{} {}",
+                                "#".repeat(n.clamp(1, 6) as usize),
+                                body.replace("\\\n", " ")
+                            ),
                             Kind::Title => format!("# {}", body.replace("\\\n", " ")),
                             Kind::Rule => "---".to_string(),
                             Kind::Quote => {
@@ -1343,34 +1621,82 @@ mod tests {
     }
 
     fn spans(s: &str) -> Vec<(String, bool, bool)> {
-        inl(s).into_iter().filter_map(|i| if let Inline::Text(t, f) = i { Some((t, f.bold, f.italic)) } else { None }).collect()
+        inl(s)
+            .into_iter()
+            .filter_map(|i| {
+                if let Inline::Text(t, f) = i {
+                    Some((t, f.bold, f.italic))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     #[test]
     fn emphasis() {
-        assert_eq!(spans("a *b* c"), vec![("a ".into(), false, false), ("b".into(), false, true), (" c".into(), false, false)]);
+        assert_eq!(
+            spans("a *b* c"),
+            vec![
+                ("a ".into(), false, false),
+                ("b".into(), false, true),
+                (" c".into(), false, false)
+            ]
+        );
         assert_eq!(spans("**b**"), vec![("b".into(), true, false)]);
         assert_eq!(spans("***x***"), vec![("x".into(), true, true)]);
-        assert_eq!(spans("*a **b** c*"), vec![("a ".into(), false, true), ("b".into(), true, true), (" c".into(), false, true)]);
-        assert_eq!(spans("snake_case_name"), vec![("snake_case_name".into(), false, false)]);
+        assert_eq!(
+            spans("*a **b** c*"),
+            vec![
+                ("a ".into(), false, true),
+                ("b".into(), true, true),
+                (" c".into(), false, true)
+            ]
+        );
+        assert_eq!(
+            spans("snake_case_name"),
+            vec![("snake_case_name".into(), false, false)]
+        );
         assert_eq!(spans("2 * 3 * 4"), vec![("2 * 3 * 4".into(), false, false)]);
-        assert_eq!(spans("**unclosed"), vec![("**unclosed".into(), false, false)]);
+        assert_eq!(
+            spans("**unclosed"),
+            vec![("**unclosed".into(), false, false)]
+        );
         let s = inl("~~gone~~");
         assert!(matches!(&s[0], Inline::Text(t, f) if t == "gone" && f.strike));
     }
 
     #[test]
     fn links_code_escapes() {
-        let s = inl("see [the *site*](http://x.org \"T\") and `a*b*` \\*lit\\* &amp; <https://y.com>");
+        let s =
+            inl("see [the *site*](http://x.org \"T\") and `a*b*` \\*lit\\* &amp; <https://y.com>");
         let link: Vec<_> = s
             .iter()
-            .filter_map(|i| if let Inline::Text(t, f) = i { f.link.as_ref().map(|l| (t.clone(), l.clone(), f.italic)) } else { None })
+            .filter_map(|i| {
+                if let Inline::Text(t, f) = i {
+                    f.link.as_ref().map(|l| (t.clone(), l.clone(), f.italic))
+                } else {
+                    None
+                }
+            })
             .collect();
         assert_eq!(link[0], ("the ".into(), "http://x.org".into(), false));
         assert_eq!(link[1], ("site".into(), "http://x.org".into(), true));
         assert!(link.iter().any(|l| l.1 == "https://y.com"));
-        assert!(s.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "a*b*" && f.code)));
-        let text: String = s.iter().filter_map(|i| if let Inline::Text(t, _) = i { Some(t.as_str()) } else { None }).collect();
+        assert!(
+            s.iter()
+                .any(|i| matches!(i, Inline::Text(t, f) if t == "a*b*" && f.code))
+        );
+        let text: String = s
+            .iter()
+            .filter_map(|i| {
+                if let Inline::Text(t, _) = i {
+                    Some(t.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert!(text.contains("*lit* & "), "{text}");
     }
 
@@ -1383,7 +1709,12 @@ mod tests {
             .blocks
             .iter()
             .map(|b| match b {
-                FBlock::Para(p) => format!("{:?}{:?}:{}", p.kind, p.list.map(|l| (l.ordered, l.level)), p.text()),
+                FBlock::Para(p) => format!(
+                    "{:?}{:?}:{}",
+                    p.kind,
+                    p.list.map(|l| (l.ordered, l.level)),
+                    p.text()
+                ),
                 FBlock::Table(t) => format!("table{}", t.rows.len()),
             })
             .collect();
@@ -1409,7 +1740,9 @@ mod tests {
         p.push_text("1. not a list *really*", &Fmt::default());
         let md = escape_line_start(inlines_md(&p.inlines));
         let back = parse(&md);
-        let FBlock::Para(q) = &back.blocks[0] else { panic!() };
+        let FBlock::Para(q) = &back.blocks[0] else {
+            panic!()
+        };
         assert_eq!(q.text(), "1. not a list *really*");
         assert!(q.list.is_none());
     }

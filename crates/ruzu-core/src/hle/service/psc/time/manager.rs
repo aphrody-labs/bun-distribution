@@ -40,7 +40,8 @@ pub struct TimeManager {
     pub alarms: Alarms,
     pub local_system_clock_context_writer: Arc<Mutex<LocalSystemClockContextWriter>>,
     pub network_system_clock_context_writer: Arc<Mutex<NetworkSystemClockContextWriter>>,
-    pub ephemeral_network_clock_context_writer: Arc<Mutex<EphemeralNetworkSystemClockContextWriter>>,
+    pub ephemeral_network_clock_context_writer:
+        Arc<Mutex<EphemeralNetworkSystemClockContextWriter>>,
 }
 
 impl TimeManager {
@@ -137,7 +138,8 @@ impl TimeManager {
         });
         let ephemeral_network_clock_context_writer =
             EphemeralNetworkSystemClockContextWriter::new();
-        let local_system_clock_context_writer = Arc::new(Mutex::new(local_system_clock_context_writer));
+        let local_system_clock_context_writer =
+            Arc::new(Mutex::new(local_system_clock_context_writer));
         let network_system_clock_context_writer =
             Arc::new(Mutex::new(network_system_clock_context_writer));
         let ephemeral_network_clock_context_writer =

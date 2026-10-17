@@ -26,7 +26,8 @@ pub fn arm_asimd_vqmovn(ir: &mut A32IREmitter, inst: &DecodedArm) -> bool {
     let result = if op {
         ir.ir().vector_unsigned_saturated_narrow(esize, reg_m)
     } else {
-        ir.ir().vector_signed_saturated_narrow_to_signed(esize, reg_m)
+        ir.ir()
+            .vector_signed_saturated_narrow_to_signed(esize, reg_m)
     };
     ir.set_vector(d, result);
     true

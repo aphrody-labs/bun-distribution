@@ -6,13 +6,25 @@ use photocraft_codecs::*;
 use proptest::prelude::*;
 
 fn tight() -> DecodeOptions {
-    DecodeOptions { limits: Limits { max_width: 4096, max_height: 4096, max_pixels: 1 << 22, max_alloc: 64 << 20 }, ..Default::default() }
+    DecodeOptions {
+        limits: Limits {
+            max_width: 4096,
+            max_height: 4096,
+            max_pixels: 1 << 22,
+            max_alloc: 64 << 20,
+        },
+        ..Default::default()
+    }
 }
 
 fn samples() -> Vec<(Format, Vec<u8>)> {
     let mut v = Vec::new();
     for f in rw_formats() {
-        for (l, s) in [(ChannelLayout::Rgba, SampleType::U8), (ChannelLayout::Gray, SampleType::U16), (ChannelLayout::Rgb, SampleType::F32)] {
+        for (l, s) in [
+            (ChannelLayout::Rgba, SampleType::U8),
+            (ChannelLayout::Gray, SampleType::U16),
+            (ChannelLayout::Rgb, SampleType::F32),
+        ] {
             let mut img = synth(19, 13, l, s, 11, 0.3);
             img.icc = Some(sample_icc(300));
             img.meta.exif = Some(sample_exif());
@@ -24,15 +36,40 @@ fn samples() -> Vec<(Format, Vec<u8>)> {
     // single picture and a grid of tiles.
     #[cfg(all(feature = "corpus", feature = "heif"))]
     for name in ["rgb-strips-96.heic", "checker-1024.heic"] {
-        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/heif/heic-rs").join(name);
-        let bytes = std::fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()));
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../corpus/heif/heic-rs")
+            .join(name);
+        let bytes = std::fs::read(&p)
+            .unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()));
         v.push((Format::Heif, bytes));
     }
     // Extra variants: interlaced PNG, ASCII PNM, CMYK JPEG.
     let img = synth(19, 13, ChannelLayout::Rgb, SampleType::U8, 1, 0.3);
-    v.push((Format::Png, encode(&img, Format::Png, &EncodeOptions { png_interlaced: true, ..Default::default() }).unwrap()));
-    v.push((Format::Pnm, b"P3\n2 2\n255\n0 1 2 3 4 5 6 7 8 9 10 11\n".to_vec()));
-    v.push((Format::Jpeg, encode(&synth(19, 13, ChannelLayout::Cmyk, SampleType::U8, 1, 0.3), Format::Jpeg, &EncodeOptions::default()).unwrap()));
+    v.push((
+        Format::Png,
+        encode(
+            &img,
+            Format::Png,
+            &EncodeOptions {
+                png_interlaced: true,
+                ..Default::default()
+            },
+        )
+        .unwrap(),
+    ));
+    v.push((
+        Format::Pnm,
+        b"P3\n2 2\n255\n0 1 2 3 4 5 6 7 8 9 10 11\n".to_vec(),
+    ));
+    v.push((
+        Format::Jpeg,
+        encode(
+            &synth(19, 13, ChannelLayout::Cmyk, SampleType::U8, 1, 0.3),
+            Format::Jpeg,
+            &EncodeOptions::default(),
+        )
+        .unwrap(),
+    ));
     v
 }
 
@@ -60,7 +97,17 @@ fn truncated_files_mostly_error() {
     // Chopping off the second half must not silently succeed for formats
     // with length-checked rasters.
     for (f, bytes) in samples() {
-        if matches!(f, Format::Png | Format::Pnm | Format::Fits | Format::Dpx | Format::Qoi | Format::OpenExr | Format::Tiff | Format::Bmp) {
+        if matches!(
+            f,
+            Format::Png
+                | Format::Pnm
+                | Format::Fits
+                | Format::Dpx
+                | Format::Qoi
+                | Format::OpenExr
+                | Format::Tiff
+                | Format::Bmp
+        ) {
             let r = decode_as_with(f, &bytes[..bytes.len() / 2], &tight());
             assert!(r.is_err(), "{f:?} decoded half a file");
         }
@@ -151,15 +198,27 @@ fn pnm_valid_variants() {
     assert_eq!(img.sample_type(), SampleType::U16);
     assert_eq!(img.to_u16_samples().unwrap(), vec![0, 65535]);
     let img = decode(b"P3\n1 1\n255\n1 2 3\n").unwrap();
-    assert_eq!((img.layout(), img.data()), (ChannelLayout::Rgb, &[1u8, 2, 3][..]));
-    let img = decode(b"P7\nWIDTH 1\nHEIGHT 1\nDEPTH 2\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n\x10\x20").unwrap();
-    assert_eq!((img.layout(), img.data()), (ChannelLayout::GrayA, &[0x10u8, 0x20][..]));
+    assert_eq!(
+        (img.layout(), img.data()),
+        (ChannelLayout::Rgb, &[1u8, 2, 3][..])
+    );
+    let img = decode(
+        b"P7\nWIDTH 1\nHEIGHT 1\nDEPTH 2\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n\x10\x20",
+    )
+    .unwrap();
+    assert_eq!(
+        (img.layout(), img.data()),
+        (ChannelLayout::GrayA, &[0x10u8, 0x20][..])
+    );
     let mut pfm = b"PF\n1 2\n1.0\n".to_vec(); // big-endian, bottom-up
     for v in [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0] {
         pfm.extend_from_slice(&v.to_be_bytes());
     }
     let img = decode(&pfm).unwrap();
-    assert_eq!(img.to_f32_samples().unwrap(), vec![4.0, 5.0, 6.0, 1.0, 2.0, 3.0]);
+    assert_eq!(
+        img.to_f32_samples().unwrap(),
+        vec![4.0, 5.0, 6.0, 1.0, 2.0, 3.0]
+    );
 }
 
 #[test]
@@ -168,8 +227,13 @@ fn jpeg_marker_garbage() {
         &[0xFF, 0xD8, 0xFF],
         &[0xFF, 0xD8, 0xFF, 0xE0, 0x00],
         &[0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x01],
-        &[0xFF, 0xD8, 0xFF, 0xE2, 0x00, 0x10, b'I', b'C', b'C', b'_', b'P', b'R', b'O', b'F', b'I', b'L', b'E', 0, 1, 1],
-        &[0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0xFF, 0xFF, 0xFF, 0xFF, 3, 0, 0, 0],
+        &[
+            0xFF, 0xD8, 0xFF, 0xE2, 0x00, 0x10, b'I', b'C', b'C', b'_', b'P', b'R', b'O', b'F',
+            b'I', b'L', b'E', 0, 1, 1,
+        ],
+        &[
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0xFF, 0xFF, 0xFF, 0xFF, 3, 0, 0, 0,
+        ],
         &[0xFF, 0xD8, 0xFF, 0xD9],
     ];
     for c in cases {

@@ -20,7 +20,11 @@ pub enum Platform {
 impl Platform {
     /// The platform this build runs on (the web build asks the browser instead, in the UI).
     pub const fn current() -> Self {
-        if cfg!(target_os = "macos") { Self::Mac } else { Self::Other }
+        if cfg!(target_os = "macos") {
+            Self::Mac
+        } else {
+            Self::Other
+        }
     }
 }
 
@@ -103,7 +107,14 @@ pub struct Binding {
 
 impl Binding {
     const fn new(group: Group, id: &'static str, mac: &'static [&'static str]) -> Self {
-        Self { group, id, label: "", mac, other: &[], context: Context::Canvas }
+        Self {
+            group,
+            id,
+            label: "",
+            mac,
+            other: &[],
+            context: Context::Canvas,
+        }
     }
     /// Different keys on Windows and Linux.
     const fn win(mut self, keys: &'static [&'static str]) -> Self {
@@ -332,28 +343,78 @@ pub static KEYS: &[Binding] = &[
 /// dispatched from here): (group, label, macOS keys, Windows/Linux keys).
 pub static GESTURES: &[(Group, &str, &str, &str)] = &[
     (Tools, "Pan the canvas", "Space drag", "Space+drag"),
-    (Tools, "Pan with nothing selected (Shift: farther)", "← ↑ → ↓", "← ↑ → ↓"),
-    (Tools, "Place a shape or frame (its tool chosen)", "↵", "Enter"),
-    (Zoom, "Zoom tool: click to zoom in, drag an area", "Hold Z", "Hold Z"),
+    (
+        Tools,
+        "Pan with nothing selected (Shift: farther)",
+        "← ↑ → ↓",
+        "← ↑ → ↓",
+    ),
+    (
+        Tools,
+        "Place a shape or frame (its tool chosen)",
+        "↵",
+        "Enter",
+    ),
+    (
+        Zoom,
+        "Zoom tool: click to zoom in, drag an area",
+        "Hold Z",
+        "Hold Z",
+    ),
     (Zoom, "Zoom tool: zoom out", "Hold ⌥Z", "Hold Alt+Z"),
     (Zoom, "Zoom around the pointer", "⌘ scroll", "Ctrl+scroll"),
     (Selection, "Deep select", "⌘ click", "Ctrl+click"),
     (Selection, "Measure to the selection", "Hold ⌥", "Hold Alt"),
     (Edit, "Duplicate by dragging", "⌥ drag", "Alt+drag"),
     (Transform, "Nudge (Shift: big nudge)", "← ↑ → ↓", "← ↑ → ↓"),
-    (Transform, "Resize by the nudge amount", "⌘ arrows", "Ctrl+arrows"),
+    (
+        Transform,
+        "Resize by the nudge amount",
+        "⌘ arrows",
+        "Ctrl+arrows",
+    ),
     (Transform, "Opacity 10%…90%, 0: 100%", "1…9, 0", "1…9, 0"),
-    (Transform, "Exact opacity (4 then 5: 45%)", "Two digits", "Two digits"),
-    (Transform, "Suspend snapping while dragging", "Hold ⌃ or ⌘", "Hold Ctrl"),
-    (Prototype, "Presenting: next frame", "→, Space or N", "→, Space or N"),
+    (
+        Transform,
+        "Exact opacity (4 then 5: 45%)",
+        "Two digits",
+        "Two digits",
+    ),
+    (
+        Transform,
+        "Suspend snapping while dragging",
+        "Hold ⌃ or ⌘",
+        "Hold Ctrl",
+    ),
+    (
+        Prototype,
+        "Presenting: next frame",
+        "→, Space or N",
+        "→, Space or N",
+    ),
     (Prototype, "Presenting: previous frame", "←", "←"),
     (Prototype, "Presenting: restart", "R", "R"),
     (Prototype, "Presenting: cycle the size options", "Z", "Z"),
     (Prototype, "Presenting: comments", "C or ⇧C", "C or Shift+C"),
     (Prototype, "Presenting: full screen", "F", "F"),
-    (View, "Next or previous control in the focused region", "⇥ / ⇧⇥", "Tab / Shift+Tab"),
-    (View, "Move along the toolbar or the layer rows", "← → ↑ ↓", "← → ↑ ↓"),
-    (View, "Back to the canvas from a focused region", "Esc", "Esc"),
+    (
+        View,
+        "Next or previous control in the focused region",
+        "⇥ / ⇧⇥",
+        "Tab / Shift+Tab",
+    ),
+    (
+        View,
+        "Move along the toolbar or the layer rows",
+        "← → ↑ ↓",
+        "← → ↑ ↓",
+    ),
+    (
+        View,
+        "Back to the canvas from a focused region",
+        "Esc",
+        "Esc",
+    ),
 ];
 
 /// Modifier keys held (as pressed: on Windows and Linux Ctrl may come as `cmd`, `ctrl` or both).
@@ -424,8 +485,10 @@ pub fn normalize(name: &str) -> Option<(&str, bool)> {
     }
 }
 
-const NAMED: &[&str] =
-    &["Tab", "Space", "PageUp", "PageDown", "Home", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"];
+const NAMED: &[&str] = &[
+    "Tab", "Space", "PageUp", "PageDown", "Home", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7",
+    "F8", "F9", "F10", "F11", "F12",
+];
 
 /// Parse a binding (`Shift+Cmd+K`) into its modifiers and canonical key.
 pub fn parse(spec: &str) -> Option<(Mods, &str)> {
@@ -454,25 +517,46 @@ fn same_mods(platform: Platform, want: Mods, got: Mods) -> bool {
     match platform {
         Platform::Mac => want == got,
         // Cmd and Ctrl are one key here.
-        Platform::Other => want.shift == got.shift && want.alt == got.alt && (want.cmd || want.ctrl) == (got.cmd || got.ctrl),
+        Platform::Other => {
+            want.shift == got.shift
+                && want.alt == got.alt
+                && (want.cmd || want.ctrl) == (got.cmd || got.ctrl)
+        }
     }
 }
 
 /// Whether a binding fires for `key` with these modifiers on `platform`.
 pub fn matches(spec: &str, platform: Platform, key: &str, mods: Mods) -> bool {
-    let Some((key, shift)) = normalize(key) else { return false };
-    let mods = Mods { shift: mods.shift || shift, ..mods };
-    parse(spec).is_some_and(|(want, k)| k.eq_ignore_ascii_case(key) && same_mods(platform, want, mods))
+    let Some((key, shift)) = normalize(key) else {
+        return false;
+    };
+    let mods = Mods {
+        shift: mods.shift || shift,
+        ..mods
+    };
+    parse(spec)
+        .is_some_and(|(want, k)| k.eq_ignore_ascii_case(key) && same_mods(platform, want, mods))
 }
 
 /// The binding `key` with these modifiers fires in `context` on `platform`.
-pub fn lookup(platform: Platform, context: Context, key: &str, mods: Mods) -> Option<&'static Binding> {
-    KEYS.iter().filter(|b| b.live_in(context)).find(|b| b.keys(platform).iter().any(|s| matches(s, platform, key, mods)))
+pub fn lookup(
+    platform: Platform,
+    context: Context,
+    key: &str,
+    mods: Mods,
+) -> Option<&'static Binding> {
+    KEYS.iter().filter(|b| b.live_in(context)).find(|b| {
+        b.keys(platform)
+            .iter()
+            .any(|s| matches(s, platform, key, mods))
+    })
 }
 
 /// A command's keys on `platform` (all its bindings, the menu's first).
 pub fn bindings(id: &str, platform: Platform) -> impl Iterator<Item = &'static str> {
-    KEYS.iter().filter(move |b| b.id == id).flat_map(move |b| b.keys(platform).iter().copied())
+    KEYS.iter()
+        .filter(move |b| b.id == id)
+        .flat_map(move |b| b.keys(platform).iter().copied())
 }
 
 /// The key a menu shows for a command on `platform`.
@@ -527,7 +611,12 @@ pub fn display(spec: &str, platform: Platform) -> String {
         }
         out.push_str(key);
     } else {
-        for (on, name) in [(m.ctrl || m.cmd, "Ctrl"), (m.alt, "Alt"), (m.shift, "Shift"), (!key.is_empty(), key)] {
+        for (on, name) in [
+            (m.ctrl || m.cmd, "Ctrl"),
+            (m.alt, "Alt"),
+            (m.shift, "Shift"),
+            (!key.is_empty(), key),
+        ] {
             if on {
                 if !out.is_empty() {
                     out.push('+');

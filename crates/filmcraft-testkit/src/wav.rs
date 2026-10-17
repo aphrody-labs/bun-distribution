@@ -6,7 +6,10 @@ use std::path::Path;
 pub fn encode_f32(channels: &[&[f32]], sample_rate: u32) -> Vec<u8> {
     let nch = channels.len().max(1) as u16;
     let frames = channels.first().map_or(0, |c| c.len());
-    assert!(channels.iter().all(|c| c.len() == frames), "channels must have equal lengths");
+    assert!(
+        channels.iter().all(|c| c.len() == frames),
+        "channels must have equal lengths"
+    );
     let data_len = (frames * nch as usize * 4) as u32;
     let mut v = Vec::with_capacity(44 + data_len as usize);
     v.extend_from_slice(b"RIFF");

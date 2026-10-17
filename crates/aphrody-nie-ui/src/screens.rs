@@ -252,8 +252,20 @@ pub const CAPTURES: [Capture; 33] = [
         Some("chronicle_map"),
         DocumentedFamily
     ),
-    capture!("main_menu.png", "main_menu", MainMenu, None, DocumentedExact),
-    capture!("options.png", "options", CameraOptionMenu, None, ConfigAndVisual),
+    capture!(
+        "main_menu.png",
+        "main_menu",
+        MainMenu,
+        None,
+        DocumentedExact
+    ),
+    capture!(
+        "options.png",
+        "options",
+        CameraOptionMenu,
+        None,
+        ConfigAndVisual
+    ),
     capture!(
         "controls.png",
         "controls",
@@ -261,9 +273,27 @@ pub const CAPTURES: [Capture; 33] = [
         Some("controller_settings"),
         ConfigAndVisual
     ),
-    capture!("trophy_gallery.png", "trophy_gallery", GalleryMenu, None, DocumentedFamily),
-    capture!("pause_controls.png", "pause_controls", PauseMenu, None, DictionaryAndVisual),
-    capture!("story_mode.png", "story_mode", StoryModeTopMenu, None, DocumentedExact),
+    capture!(
+        "trophy_gallery.png",
+        "trophy_gallery",
+        GalleryMenu,
+        None,
+        DocumentedFamily
+    ),
+    capture!(
+        "pause_controls.png",
+        "pause_controls",
+        PauseMenu,
+        None,
+        DictionaryAndVisual
+    ),
+    capture!(
+        "story_mode.png",
+        "story_mode",
+        StoryModeTopMenu,
+        None,
+        DocumentedExact
+    ),
     capture!(
         "avatar_edit_top.png",
         "avatar_edit_top",
@@ -306,8 +336,20 @@ pub const CAPTURES: [Capture; 33] = [
         Some("chara_edit_name"),
         DocumentedFamily
     ),
-    capture!("main_menu_alt.png", "main_menu_alt", MainMenu, None, DocumentedExact),
-    capture!("event_calendar.png", "event_calendar", AdventCalendarMenu, None, DocumentedExact),
+    capture!(
+        "main_menu_alt.png",
+        "main_menu_alt",
+        MainMenu,
+        None,
+        DocumentedExact
+    ),
+    capture!(
+        "event_calendar.png",
+        "event_calendar",
+        AdventCalendarMenu,
+        None,
+        DocumentedExact
+    ),
     capture!("shop.png", "shop", ShopMenu, None, DocumentedExact),
     capture!(
         "chronicle_shop.png",
@@ -316,8 +358,20 @@ pub const CAPTURES: [Capture; 33] = [
         Some("chronicle_shop"),
         DocumentedFamily
     ),
-    capture!("chronicle_mode.png", "chronicle_mode", ChronicleModeTopMenu, None, DocumentedExact),
-    capture!("player_universe.png", "player_universe", PlayersUniverseMenu, None, DocumentedExact),
+    capture!(
+        "chronicle_mode.png",
+        "chronicle_mode",
+        ChronicleModeTopMenu,
+        None,
+        DocumentedExact
+    ),
+    capture!(
+        "player_universe.png",
+        "player_universe",
+        PlayersUniverseMenu,
+        None,
+        DocumentedExact
+    ),
     capture!(
         "player_roster.png",
         "player_roster",
@@ -349,7 +403,9 @@ pub fn find(screen: &str) -> Option<Capture> {
 
 /// Les captures d'un écran canonique, dans l'ordre du manifeste.
 pub fn of_screen(screen: CanonicalScreen) -> impl Iterator<Item = Capture> {
-    CAPTURES.into_iter().filter(move |c| c.canonical_screen == screen)
+    CAPTURES
+        .into_iter()
+        .filter(move |c| c.canonical_screen == screen)
 }
 
 /// Le dossier des captures : `NIE_MENU_CAPTURES` s'il est posé et non vide, sinon
@@ -391,7 +447,10 @@ pub fn captures_dir_if_present() -> Option<PathBuf> {
 pub fn png_size(header: &[u8]) -> Result<(u32, u32), String> {
     const SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
     if header.len() < 24 {
-        return Err(format!("{} octets : en-tête PNG tronqué (24 attendus)", header.len()));
+        return Err(format!(
+            "{} octets : en-tête PNG tronqué (24 attendus)",
+            header.len()
+        ));
     }
     if header[..8] != SIGNATURE {
         return Err("signature PNG absente".into());
@@ -425,17 +484,32 @@ mod tests {
         assert_eq!(fichiers.len(), 33);
         assert_eq!(ecrans.len(), 33);
         for c in CAPTURES {
-            assert_eq!(c.file, format!("{}.png", c.screen), "{} : file ≠ screen.png", c.screen);
+            assert_eq!(
+                c.file,
+                format!("{}.png", c.screen),
+                "{} : file ≠ screen.png",
+                c.screen
+            );
         }
     }
 
     #[test]
     fn les_14_ecrans_canoniques_sont_tous_captures_et_nommes_sans_doublon() {
-        let noms: BTreeSet<&str> = CanonicalScreen::ALL.iter().map(|c| c.manifest_name()).collect();
+        let noms: BTreeSet<&str> = CanonicalScreen::ALL
+            .iter()
+            .map(|c| c.manifest_name())
+            .collect();
         assert_eq!(noms.len(), 14);
         for s in CanonicalScreen::ALL {
-            assert_eq!(CanonicalScreen::from_manifest_name(s.manifest_name()), Some(s));
-            assert!(of_screen(s).next().is_some(), "{} : aucune capture", s.manifest_name());
+            assert_eq!(
+                CanonicalScreen::from_manifest_name(s.manifest_name()),
+                Some(s)
+            );
+            assert!(
+                of_screen(s).next().is_some(),
+                "{} : aucune capture",
+                s.manifest_name()
+            );
         }
         let distincts: BTreeSet<CanonicalScreen> =
             CAPTURES.iter().map(|c| c.canonical_screen).collect();
@@ -454,7 +528,9 @@ mod tests {
     fn find_et_of_screen_retrouvent_le_menu_principal() {
         assert_eq!(find("main_menu").map(|c| c.file), Some("main_menu.png"));
         assert_eq!(find("inconnu"), None);
-        let principal: Vec<&str> = of_screen(CanonicalScreen::MainMenu).map(|c| c.screen).collect();
+        let principal: Vec<&str> = of_screen(CanonicalScreen::MainMenu)
+            .map(|c| c.screen)
+            .collect();
         assert_eq!(principal, ["main_menu", "main_menu_alt"]);
     }
 
@@ -484,20 +560,40 @@ mod tests {
         let texte = std::fs::read_to_string(dir.join("manifest.json")).expect("manifest lisible");
         let json: serde_json::Value = serde_json::from_str(&texte).expect("manifest JSON");
         assert_eq!(json["schema_version"], 1);
-        assert_eq!(json["image_dimensions"], serde_json::json!([IMAGE_SIZE.0, IMAGE_SIZE.1]));
+        assert_eq!(
+            json["image_dimensions"],
+            serde_json::json!([IMAGE_SIZE.0, IMAGE_SIZE.1])
+        );
         let entries = json["entries"].as_array().expect("entries[]");
-        assert_eq!(entries.len(), CAPTURES.len(), "le manifeste n'a plus 33 entrées");
+        assert_eq!(
+            entries.len(),
+            CAPTURES.len(),
+            "le manifeste n'a plus 33 entrées"
+        );
         for (i, (e, c)) in entries.iter().zip(CAPTURES.iter()).enumerate() {
             let lu = Capture {
-                file: Box::leak(e["file"].as_str().expect("file").to_owned().into_boxed_str()),
+                file: Box::leak(
+                    e["file"]
+                        .as_str()
+                        .expect("file")
+                        .to_owned()
+                        .into_boxed_str(),
+                ),
                 screen: Box::leak(
-                    e["screen"].as_str().expect("screen").to_owned().into_boxed_str(),
+                    e["screen"]
+                        .as_str()
+                        .expect("screen")
+                        .to_owned()
+                        .into_boxed_str(),
                 ),
                 canonical_screen: CanonicalScreen::from_manifest_name(
                     e["canonical_screen"].as_str().expect("canonical_screen"),
                 )
                 .unwrap_or_else(|| {
-                    panic!("entrée {i} : canonical_screen inconnu {}", e["canonical_screen"])
+                    panic!(
+                        "entrée {i} : canonical_screen inconnu {}",
+                        e["canonical_screen"]
+                    )
                 }),
                 visual_subscreen: e["visual_subscreen"]
                     .as_str()
@@ -543,13 +639,23 @@ mod tests {
         let texte = std::fs::read_to_string(dir.join("manifest.json")).expect("manifest lisible");
         let json: serde_json::Value = serde_json::from_str(&texte).expect("manifest JSON");
         let mut documentes: BTreeSet<String> = BTreeSet::new();
-        for r in json["lua_analysis"]["documented_roots"].as_array().expect("documented_roots") {
+        for r in json["lua_analysis"]["documented_roots"]
+            .as_array()
+            .expect("documented_roots")
+        {
             documentes.insert(r.as_str().expect("racine").to_owned());
         }
-        for r in json["runtime_matrix"]["results"].as_array().expect("runtime_matrix.results") {
+        for r in json["runtime_matrix"]["results"]
+            .as_array()
+            .expect("runtime_matrix.results")
+        {
             documentes.insert(r["screen"].as_str().expect("screen").to_owned());
         }
-        assert!(documentes.len() >= 14, "le manifeste documente {} familles", documentes.len());
+        assert!(
+            documentes.len() >= 14,
+            "le manifeste documente {} familles",
+            documentes.len()
+        );
         for s in CanonicalScreen::ALL {
             assert!(
                 documentes.contains(s.manifest_name()),

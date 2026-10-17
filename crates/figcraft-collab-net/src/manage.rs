@@ -7,8 +7,9 @@
 use std::time::Duration;
 
 use figcraft_collab::message::{
-    self, Access, Admin, AdminReply, ClientMsg, HostInfo, LibraryReply, LibraryReq, Manage, NewLink, OpenHosting, OpenLibrary, OpenPlugins, PROTOCOL,
-    PluginReply, PluginReq, Resolve, ServerMsg,
+    self, Access, Admin, AdminReply, ClientMsg, HostInfo, LibraryReply, LibraryReq, Manage,
+    NewLink, OpenHosting, OpenLibrary, OpenPlugins, PROTOCOL, PluginReply, PluginReq, Resolve,
+    ServerMsg,
 };
 use figcraft_engine::live::{Shared, SharedLink};
 use tungstenite::{Bytes, Message, WebSocket};
@@ -21,17 +22,31 @@ type Ws = WebSocket<Duplex>;
 /// Send `requests` to the server at `server` with its `key`; the replies, in order. Fails when the
 /// server can't be reached, refuses the key or closes the connection (a request it can't do is a
 /// [`AdminReply::Failed`] reply, not an error). Never echoes the key.
-pub fn request(server: &Endpoint, key: &str, requests: Vec<Admin>, limits: &NetLimits, timeout: Duration) -> Result<Vec<AdminReply>, String> {
+pub fn request(
+    server: &Endpoint,
+    key: &str,
+    requests: Vec<Admin>,
+    limits: &NetLimits,
+    timeout: Duration,
+) -> Result<Vec<AdminReply>, String> {
     let admin = |m: ServerMsg| match m {
         ServerMsg::Admin(r) => Some(*r),
         _ => None,
     };
-    let manage = Manage { protocol: PROTOCOL, key: key.to_string(), client_version: env!("CARGO_PKG_VERSION").to_string() };
+    let manage = Manage {
+        protocol: PROTOCOL,
+        key: key.to_string(),
+        client_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
     let mut ws = connect(server, limits, timeout)?;
     send(&mut ws, &ClientMsg::Manage(manage))?;
     match reply(&mut ws, limits, admin)? {
         AdminReply::Ready => {}
-        other => return Err(format!("the server answered {other:?} instead of letting this connection manage files")),
+        other => {
+            return Err(format!(
+                "the server answered {other:?} instead of letting this connection manage files"
+            ));
+        }
     }
     let mut replies = Vec::with_capacity(requests.len());
     for r in requests {
@@ -59,7 +74,12 @@ pub fn hosting(
         ServerMsg::Admin(r) => Some(*r),
         _ => None,
     };
-    let open = OpenHosting { protocol: PROTOCOL, client_version: message::client_version(), file: file.to_string(), owner: owner.to_string() };
+    let open = OpenHosting {
+        protocol: PROTOCOL,
+        client_version: message::client_version(),
+        file: file.to_string(),
+        owner: owner.to_string(),
+    };
     let mut ws = connect(server, limits, timeout)?;
     send(&mut ws, &ClientMsg::OpenHosting(open))?;
     let info = match reply(&mut ws, limits, |m| match m {
@@ -68,7 +88,10 @@ pub fn hosting(
     }) {
         Ok(i) => i,
         Err(e) if e.contains("couldn't be read") => {
-            return Err(format!("{} takes files only with its key (it is older than this app): add ?key=… to the address", server.display()));
+            return Err(format!(
+                "{} takes files only with its key (it is older than this app): add ?key=… to the address",
+                server.display()
+            ));
         }
         Err(e) => return Err(e),
     };
@@ -85,8 +108,17 @@ pub fn hosting(
 /// token. Fails with the server's own words when it knows no such code (or the address tried too
 /// many: the error starts with [`REFUSED`]); a server older than join codes can't read the
 /// question ("couldn't be read").
-pub fn resolve(server: &Endpoint, code: &str, limits: &NetLimits, timeout: Duration) -> Result<(String, String), String> {
-    let ask = Resolve { protocol: PROTOCOL, client_version: message::client_version(), code: code.to_string() };
+pub fn resolve(
+    server: &Endpoint,
+    code: &str,
+    limits: &NetLimits,
+    timeout: Duration,
+) -> Result<(String, String), String> {
+    let ask = Resolve {
+        protocol: PROTOCOL,
+        client_version: message::client_version(),
+        code: code.to_string(),
+    };
     let mut ws = connect(server, limits, timeout)?;
     send(&mut ws, &ClientMsg::Resolve(ask))?;
     let answer = reply(&mut ws, limits, |m| match m {
@@ -116,54 +148,105 @@ pub fn share(
         Some(key) => request(server, key, requests, limits, timeout),
         None => hosting(server, file, owner, requests, limits, timeout).map(|(_, replies)| replies),
     };
-    let link = |access: Access| Admin::CreateLink { file: file.to_string(), access, label: format!("Shared ({})", access.id()) };
-    let mut requests: Vec<Admin> = revoke.iter().map(|id| Admin::Revoke { file: file.to_string(), link: id.clone() }).collect();
-    requests.extend(create.then(|| [link(Access::Edit), link(Access::View)]).into_iter().flatten());
+    let link = |access: Access| Admin::CreateLink {
+        file: file.to_string(),
+        access,
+        label: format!("Shared ({})", access.id()),
+    };
+    let mut requests: Vec<Admin> = revoke
+        .iter()
+        .map(|id| Admin::Revoke {
+            file: file.to_string(),
+            link: id.clone(),
+        })
+        .collect();
+    requests.extend(
+        create
+            .then(|| [link(Access::Edit), link(Access::View)])
+            .into_iter()
+            .flatten(),
+    );
     let mut made = Vec::new();
     for reply in ask(requests)? {
         match reply {
             AdminReply::Link(l) => made.push(l),
             // A link that is gone already is as revoked as it gets.
-            AdminReply::Failed { reason } if made.is_empty() && reason.contains("no such link") => {}
+            AdminReply::Failed { reason } if made.is_empty() && reason.contains("no such link") => {
+            }
             AdminReply::Failed { reason } => return Err(reason),
             _ => {}
         }
     }
     let (Some(view), Some(edit)) = (made.pop(), made.pop()) else {
-        return if create { Err("the server didn't make the links".into()) } else { Ok(None) };
+        return if create {
+            Err("the server didn't make the links".into())
+        } else {
+            Ok(None)
+        };
     };
     // Their codes, on a connection of its own: a server from before join codes can't read the
     // request and closes it (the links are shared without codes then).
-    let code = |token: &str| Admin::Code { file: file.to_string(), token: token.to_string() };
+    let code = |token: &str| Admin::Code {
+        file: file.to_string(),
+        token: token.to_string(),
+    };
     let mut codes = ask(vec![code(&edit.token), code(&view.token)])
         .map_err(|e| log::info!("live session: no join codes from {}: {e}", server.display()))
         .unwrap_or_default()
         .into_iter()
-        .map(|r| if let AdminReply::Code { code } = r { Some(code) } else { None });
+        .map(|r| {
+            if let AdminReply::Code { code } = r {
+                Some(code)
+            } else {
+                None
+            }
+        });
     let mut shared = |l: NewLink| SharedLink {
-        link: Invite { server: server.clone(), file: file.to_string(), token: l.token }.link(),
+        link: Invite {
+            server: server.clone(),
+            file: file.to_string(),
+            token: l.token,
+        }
+        .link(),
         id: l.link.id,
         code: codes.next().flatten(),
     };
     let edit = shared(edit);
-    Ok(Some(Shared { edit, view: Some(shared(view)) }))
+    Ok(Some(Shared {
+        edit,
+        view: Some(shared(view)),
+    }))
 }
 
 /// Send one library request about the file behind share link `link`; the reply. Fails when the
 /// link isn't one, the server can't be reached or refuses the link (a request it can't do is a
 /// [`LibraryReply::Failed`] reply). Never echoes the link.
-pub fn library(link: &str, req: LibraryReq, limits: &NetLimits, timeout: Duration) -> Result<LibraryReply, String> {
+pub fn library(
+    link: &str,
+    req: LibraryReq,
+    limits: &NetLimits,
+    timeout: Duration,
+) -> Result<LibraryReply, String> {
     let lib = |m: ServerMsg| match m {
         ServerMsg::Library(r) => Some(*r),
         _ => None,
     };
     let invite = Invite::parse(link)?;
-    let open = OpenLibrary { protocol: PROTOCOL, file: invite.file, token: invite.token, client_version: env!("CARGO_PKG_VERSION").to_string() };
+    let open = OpenLibrary {
+        protocol: PROTOCOL,
+        file: invite.file,
+        token: invite.token,
+        client_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
     let mut ws = connect(&invite.server, limits, timeout)?;
     send(&mut ws, &ClientMsg::OpenLibrary(open))?;
     match reply(&mut ws, limits, lib)? {
         LibraryReply::Ready { .. } => {}
-        other => return Err(format!("the server answered {other:?} instead of opening the library")),
+        other => {
+            return Err(format!(
+                "the server answered {other:?} instead of opening the library"
+            ));
+        }
     }
     send(&mut ws, &ClientMsg::Library(req))?;
     let r = reply(&mut ws, limits, lib)?;
@@ -175,20 +258,39 @@ pub fn library(link: &str, req: LibraryReq, limits: &NetLimits, timeout: Duratio
 /// browsing); the reply. Fails when the server can't be reached, refuses the key or has no
 /// directory (an older server); a request it can't do is a [`PluginReply::Failed`] reply. Never
 /// echoes the key.
-pub fn plugins(server: &Endpoint, key: &str, req: PluginReq, limits: &NetLimits, timeout: Duration) -> Result<PluginReply, String> {
+pub fn plugins(
+    server: &Endpoint,
+    key: &str,
+    req: PluginReq,
+    limits: &NetLimits,
+    timeout: Duration,
+) -> Result<PluginReply, String> {
     let pick = |m: ServerMsg| match m {
         ServerMsg::Plugins(r) => Some(*r),
         _ => None,
     };
-    let open = OpenPlugins { protocol: PROTOCOL, key: key.to_string(), client_version: env!("CARGO_PKG_VERSION").to_string() };
+    let open = OpenPlugins {
+        protocol: PROTOCOL,
+        key: key.to_string(),
+        client_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
     let mut ws = connect(server, limits, timeout)?;
     send(&mut ws, &ClientMsg::OpenPlugins(open))?;
     match reply(&mut ws, limits, pick) {
         Ok(PluginReply::Ready { .. }) => {}
         // An older server can't read the request at all.
-        Err(e) if e.contains("couldn't be read") => return Err(format!("{} has no plugin directory (update the server)", server.display())),
+        Err(e) if e.contains("couldn't be read") => {
+            return Err(format!(
+                "{} has no plugin directory (update the server)",
+                server.display()
+            ));
+        }
         Err(e) => return Err(e),
-        Ok(other) => return Err(format!("the server answered {other:?} instead of opening its plugin directory")),
+        Ok(other) => {
+            return Err(format!(
+                "the server answered {other:?} instead of opening its plugin directory"
+            ));
+        }
     }
     send(&mut ws, &ClientMsg::Plugins(req))?;
     let r = reply(&mut ws, limits, pick)?;
@@ -200,9 +302,20 @@ pub fn plugins(server: &Endpoint, key: &str, req: PluginReq, limits: &NetLimits,
 /// server a while to keep).
 fn connect(server: &Endpoint, limits: &NetLimits, timeout: Duration) -> Result<Ws, String> {
     let (stream, _, _) = open(server, timeout, limits)?;
-    let (ws, _) = tungstenite::client::client_with_config(server.url(), stream, Some(config(limits.max_server_message)))
-        .map_err(|e| format!("{} doesn't answer as a FigCraft server: {e}", server.display()))?;
-    ws.get_ref().set_read_timeout(Some(limits.idle_timeout)).map_err(|e| e.to_string())?;
+    let (ws, _) = tungstenite::client::client_with_config(
+        server.url(),
+        stream,
+        Some(config(limits.max_server_message)),
+    )
+    .map_err(|e| {
+        format!(
+            "{} doesn't answer as a FigCraft server: {e}",
+            server.display()
+        )
+    })?;
+    ws.get_ref()
+        .set_read_timeout(Some(limits.idle_timeout))
+        .map_err(|e| e.to_string())?;
     Ok(ws)
 }
 
@@ -214,26 +327,38 @@ fn close(mut ws: Ws) {
 
 fn send(ws: &mut Ws, msg: &ClientMsg) -> Result<(), String> {
     let bytes = message::encode(msg).map_err(|e| e.to_string())?;
-    ws.send(Message::Binary(Bytes::from(bytes))).map_err(|e| format!("the connection to the server dropped ({e})"))
+    ws.send(Message::Binary(Bytes::from(bytes)))
+        .map_err(|e| format!("the connection to the server dropped ({e})"))
 }
 
 /// How an error starts when the server said no (then its reason), rather than not answering.
 pub(crate) const REFUSED: &str = "the server refused: ";
 
 /// The next answer `pick` takes, or why there is none.
-fn reply<T>(ws: &mut Ws, limits: &NetLimits, pick: impl Fn(ServerMsg) -> Option<T>) -> Result<T, String> {
+fn reply<T>(
+    ws: &mut Ws,
+    limits: &NetLimits,
+    pick: impl Fn(ServerMsg) -> Option<T>,
+) -> Result<T, String> {
     loop {
         return match ws.read() {
-            Ok(Message::Binary(b)) => match message::decode::<ServerMsg>(&b, limits.max_server_message) {
-                Ok(ServerMsg::Refused { reason }) => Err(format!("{REFUSED}{reason}")),
-                Ok(ServerMsg::Pong) => continue,
-                Ok(m) => pick(m).ok_or_else(|| "the server sent something other than an answer".into()),
-                Err(e) => Err(format!("the server sent a message this version can't read ({e})")),
-            },
-            Ok(Message::Close(f)) => Err(match f.map(|f| f.reason.to_string()).filter(|r| !r.is_empty()) {
-                Some(r) => format!("the server closed the connection: {r}"),
-                None => "the server closed the connection".into(),
-            }),
+            Ok(Message::Binary(b)) => {
+                match message::decode::<ServerMsg>(&b, limits.max_server_message) {
+                    Ok(ServerMsg::Refused { reason }) => Err(format!("{REFUSED}{reason}")),
+                    Ok(ServerMsg::Pong) => continue,
+                    Ok(m) => pick(m)
+                        .ok_or_else(|| "the server sent something other than an answer".into()),
+                    Err(e) => Err(format!(
+                        "the server sent a message this version can't read ({e})"
+                    )),
+                }
+            }
+            Ok(Message::Close(f)) => Err(
+                match f.map(|f| f.reason.to_string()).filter(|r| !r.is_empty()) {
+                    Some(r) => format!("the server closed the connection: {r}"),
+                    None => "the server closed the connection".into(),
+                },
+            ),
             Ok(Message::Text(_)) => Err("the server sent a text message".into()),
             Ok(_) => continue,
             Err(e) => Err(format!("no answer from the server ({e})")),

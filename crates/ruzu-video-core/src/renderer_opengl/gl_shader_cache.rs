@@ -518,7 +518,9 @@ impl ShaderCache {
             Box::new(|file, env| {
                 let key = read_compute_pipeline_key(file)?;
                 if env.has_ambiguous_depth_stencil_formats() {
-                    log::debug!("Deferring cached OpenGL compute shader with legacy depth/stencil metadata");
+                    log::debug!(
+                        "Deferring cached OpenGL compute shader with legacy depth/stencil metadata"
+                    );
                     return Ok(());
                 }
                 compute_entries.borrow_mut().push((key, env));
@@ -526,7 +528,10 @@ impl ShaderCache {
             }),
             Box::new(|file, envs| {
                 let key = read_graphics_pipeline_key(file)?;
-                if envs.iter().any(FileEnvironment::has_ambiguous_depth_stencil_formats) {
+                if envs
+                    .iter()
+                    .any(FileEnvironment::has_ambiguous_depth_stencil_formats)
+                {
                     log::debug!("Deferring cached OpenGL graphics shaders with legacy depth/stencil metadata");
                     return Ok(());
                 }

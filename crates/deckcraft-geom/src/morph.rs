@@ -38,7 +38,10 @@ fn close(c: &mut Contour) {
 }
 
 fn pen(cur: &mut Option<Contour>, start: Point) -> &mut Contour {
-    cur.get_or_insert_with(|| Contour { closed: false, pts: vec![start] })
+    cur.get_or_insert_with(|| Contour {
+        closed: false,
+        pts: vec![start],
+    })
 }
 
 fn keep(c: Contour, out: &mut Vec<Contour>) {
@@ -60,13 +63,17 @@ pub fn contours(path: &BezPath) -> Vec<Contour> {
                     keep(c, &mut out);
                 }
                 start = p;
-                cur = Some(Contour { closed: false, pts: vec![p] });
+                cur = Some(Contour {
+                    closed: false,
+                    pts: vec![p],
+                });
             }
             PathEl::LineTo(p) => line_to(&mut pen(&mut cur, start).pts, p),
             PathEl::QuadTo(q, p) => {
                 let c = pen(&mut cur, start);
                 if let Some(&a) = c.pts.last() {
-                    c.pts.extend([a.lerp(q, 2.0 / 3.0), p.lerp(q, 2.0 / 3.0), p]);
+                    c.pts
+                        .extend([a.lerp(q, 2.0 / 3.0), p.lerp(q, 2.0 / 3.0), p]);
                 }
             }
             PathEl::CurveTo(a, b, p) => pen(&mut cur, start).pts.extend([a, b, p]),
@@ -133,11 +140,15 @@ fn refine(c: &Contour, n: usize) -> Contour {
     if have >= n || have == 0 {
         return c.clone();
     }
-    let curves: Vec<&[Point]> = (0..have).filter_map(|k| c.pts.get(3 * k..3 * k + 4)).collect();
+    let curves: Vec<&[Point]> = (0..have)
+        .filter_map(|k| c.pts.get(3 * k..3 * k + 4))
+        .collect();
     let len: Vec<f64> = curves.iter().map(|q| curve_length(q) + 1e-9).collect();
     let mut parts = vec![1usize; curves.len()];
     for _ in 0..n - have {
-        let share = |k: usize| len.get(k).copied().unwrap_or(0.0) / parts.get(k).copied().unwrap_or(1) as f64;
+        let share = |k: usize| {
+            len.get(k).copied().unwrap_or(0.0) / parts.get(k).copied().unwrap_or(1) as f64
+        };
         let best = (1..curves.len()).fold(0, |b, k| if share(k) > share(b) { k } else { b });
         if let Some(p) = parts.get_mut(best) {
             *p += 1;
@@ -148,7 +159,10 @@ fn refine(c: &Contour, n: usize) -> Contour {
     for (q, p) in curves.iter().zip(&parts) {
         split_curve(q, *p, &mut out);
     }
-    Contour { closed: c.closed, pts: out }
+    Contour {
+        closed: c.closed,
+        pts: out,
+    }
 }
 
 const MIN_CURVES: usize = 12;
@@ -164,7 +178,11 @@ fn curves_for(na: usize, nb: usize) -> usize {
         if y == 0 { x } else { gcd(y, x % y) }
     }
     let hi = na.max(nb).max(1);
-    let mut n = if na > 0 && nb > 0 { (na / gcd(na, nb)).saturating_mul(nb) } else { hi };
+    let mut n = if na > 0 && nb > 0 {
+        (na / gcd(na, nb)).saturating_mul(nb)
+    } else {
+        hi
+    };
     if n > MAX_CURVES {
         n = hi;
     }
@@ -173,7 +191,9 @@ fn curves_for(na: usize, nb: usize) -> usize {
 
 /// Box around all points, handles included.
 fn bounds<'a>(pts: impl IntoIterator<Item = &'a Point>) -> Option<Rect> {
-    pts.into_iter().fold(None, |r: Option<Rect>, p| Some(r.map_or(Rect::from_points(*p, *p), |r| r.union_pt(*p))))
+    pts.into_iter().fold(None, |r: Option<Rect>, p| {
+        Some(r.map_or(Rect::from_points(*p, *p), |r| r.union_pt(*p)))
+    })
 }
 
 fn center(pts: &[Point]) -> Point {
@@ -182,7 +202,11 @@ fn center(pts: &[Point]) -> Point {
 
 /// The same contour, starting at anchor `s`, optionally run backwards.
 fn turn(pts: &[Point], s: usize, back: bool) -> Vec<Point> {
-    let q: Vec<Point> = if back { pts.iter().rev().copied().collect() } else { pts.to_vec() };
+    let q: Vec<Point> = if back {
+        pts.iter().rev().copied().collect()
+    } else {
+        pts.to_vec()
+    };
     if s == 0 {
         return q;
     }
@@ -199,11 +223,19 @@ fn turn(pts: &[Point], s: usize, back: bool) -> Vec<Point> {
 /// (`b` if it is closed, else `a`) gets the start that lets the points travel least. Both sides are
 /// compared around their own centre, so where the shapes are does not matter.
 fn match_pair(a: &Contour, b: &Contour, back: bool) -> (Contour, Contour, f64) {
-    let bp = if back { turn(&b.pts, 0, true) } else { b.pts.clone() };
+    let bp = if back {
+        turn(&b.pts, 0, true)
+    } else {
+        b.pts.clone()
+    };
     let turn_a = !b.closed && a.closed;
     let (fixed, free) = if turn_a { (&bp, &a.pts) } else { (&a.pts, &bp) };
     let (fc, gc) = (center(fixed), center(free));
-    let tries = if turn_a || b.closed { free.len().saturating_sub(1) / 3 } else { 1 };
+    let tries = if turn_a || b.closed {
+        free.len().saturating_sub(1) / 3
+    } else {
+        1
+    };
     let mut best = free.clone();
     let mut best_cost = f64::INFINITY;
     for s in (0..tries.max(1)).step_by(tries.div_ceil(MAX_TRIES).max(1)) {
@@ -220,17 +252,41 @@ fn match_pair(a: &Contour, b: &Contour, back: bool) -> (Contour, Contour, f64) {
             best = q;
         }
     }
-    let (pa, pb) = if turn_a { (best, bp) } else { (a.pts.clone(), best) };
-    (Contour { closed: a.closed, pts: pa }, Contour { closed: b.closed, pts: pb }, best_cost)
+    let (pa, pb) = if turn_a {
+        (best, bp)
+    } else {
+        (a.pts.clone(), best)
+    };
+    (
+        Contour {
+            closed: a.closed,
+            pts: pa,
+        },
+        Contour {
+            closed: b.closed,
+            pts: pb,
+        },
+        best_cost,
+    )
 }
 
 /// Where a contour without partner shrinks to (or grows from): the spot at the same place relative
 /// to the other outline's box, or its own centre without one.
 fn place(c: &Contour, from: Option<Rect>, to: Option<Rect>) -> Point {
     let p = center(&c.pts);
-    let (Some(from), Some(to)) = (from, to) else { return p };
-    let fx = if from.width() > 0.0 { (p.x - from.x0) / from.width() } else { 0.5 };
-    let fy = if from.height() > 0.0 { (p.y - from.y0) / from.height() } else { 0.5 };
+    let (Some(from), Some(to)) = (from, to) else {
+        return p;
+    };
+    let fx = if from.width() > 0.0 {
+        (p.x - from.x0) / from.width()
+    } else {
+        0.5
+    };
+    let fy = if from.height() > 0.0 {
+        (p.y - from.y0) / from.height()
+    } else {
+        0.5
+    };
     Point::new(to.x0 + to.width() * fx, to.y0 + to.height() * fy)
 }
 
@@ -238,13 +294,21 @@ fn place(c: &Contour, from: Option<Rect>, to: Option<Rect>) -> Point {
 /// contour pair. Contours pair up in order; one without partner meets a point (see [`place`];
 /// `ba`/`bb` are the boxes of the whole outlines). Whether `b` runs backwards is decided once for all
 /// its contours: turning single ones around would change which areas a nonzero fill covers.
-pub fn align(a: &[Contour], b: &[Contour], ba: Option<Rect>, bb: Option<Rect>) -> (Vec<Contour>, Vec<Contour>) {
+pub fn align(
+    a: &[Contour],
+    b: &[Contour],
+    ba: Option<Rect>,
+    bb: Option<Rect>,
+) -> (Vec<Contour>, Vec<Contour>) {
     // (a, b, either side a point).
     let mut pairs: Vec<(Contour, Contour, bool)> = Vec::new();
     for k in 0..a.len().max(b.len()) {
         let (ca, cb) = (a.get(k), b.get(k));
         let n = curves_for(ca.map_or(0, Contour::curves), cb.map_or(0, Contour::curves));
-        let point = |c: &Contour, from, to, closed| Contour { closed, pts: vec![place(c, from, to); 1 + 3 * n] };
+        let point = |c: &Contour, from, to, closed| Contour {
+            closed,
+            pts: vec![place(c, from, to); 1 + 3 * n],
+        };
         match (ca, cb) {
             (Some(x), Some(y)) => pairs.push((refine(x, n), refine(y, n), false)),
             (Some(x), None) => pairs.push((refine(x, n), point(x, ba, bb, x.closed), true)),
@@ -258,7 +322,14 @@ pub fn align(a: &[Contour], b: &[Contour], ba: Option<Rect>, bb: Option<Rect>) -
         for (x, y, point) in &pairs {
             if *point {
                 xs.push(x.clone());
-                ys.push(if back { Contour { closed: y.closed, pts: turn(&y.pts, 0, true) } } else { y.clone() });
+                ys.push(if back {
+                    Contour {
+                        closed: y.closed,
+                        pts: turn(&y.pts, 0, true),
+                    }
+                } else {
+                    y.clone()
+                });
             } else {
                 let (mx, my, c) = match_pair(x, y, back);
                 xs.push(mx);
@@ -301,7 +372,11 @@ pub struct GeometryMorph {
 }
 
 fn look(s: &SubPath) -> Look {
-    Look { fill: s.fill, stroke: s.stroke, even_odd: s.even_odd }
+    Look {
+        fill: s.fill,
+        stroke: s.stroke,
+        even_odd: s.even_odd,
+    }
 }
 
 /// How strongly a sub-path of a morphed geometry shows: its fill and its outline, 0..1.
@@ -318,7 +393,15 @@ pub struct Fade {
 fn layers(a: Option<Look>, b: Option<Look>, t: f64) -> Vec<(Look, Fade)> {
     let (a, b) = match (a, b) {
         (Some(a), Some(b)) if a != b => (a, b),
-        (Some(x), _) | (None, Some(x)) => return vec![(x, Fade { fill: 1.0, stroke: 1.0 })],
+        (Some(x), _) | (None, Some(x)) => {
+            return vec![(
+                x,
+                Fade {
+                    fill: 1.0,
+                    stroke: 1.0,
+                },
+            )];
+        }
         (None, None) => return vec![],
     };
     let side = |on_a: bool, on_b: bool| match (on_a, on_b) {
@@ -330,11 +413,39 @@ fn layers(a: Option<Look>, b: Option<Look>, t: f64) -> Vec<(Look, Fade)> {
     let (stroke, line) = (a.stroke || b.stroke, side(a.stroke, b.stroke));
     let (fa, fb) = (a.fill != FillMode::None, b.fill != FillMode::None);
     if fa && fb {
-        let (under, over, alpha) = if a.even_odd || !b.even_odd { (a, b, t) } else { (b, a, 1.0 - t) };
-        vec![(Look { stroke, ..under }, Fade { fill: 1.0, stroke: line }), (Look { stroke: false, ..over }, Fade { fill: alpha, stroke: 0.0 })]
+        let (under, over, alpha) = if a.even_odd || !b.even_odd {
+            (a, b, t)
+        } else {
+            (b, a, 1.0 - t)
+        };
+        vec![
+            (
+                Look { stroke, ..under },
+                Fade {
+                    fill: 1.0,
+                    stroke: line,
+                },
+            ),
+            (
+                Look {
+                    stroke: false,
+                    ..over
+                },
+                Fade {
+                    fill: alpha,
+                    stroke: 0.0,
+                },
+            ),
+        ]
     } else {
         let filled = if fa { a } else { b };
-        vec![(Look { stroke, ..filled }, Fade { fill: side(fa, fb), stroke: line })]
+        vec![(
+            Look { stroke, ..filled },
+            Fade {
+                fill: side(fa, fb),
+                stroke: line,
+            },
+        )]
     }
 }
 
@@ -347,17 +458,32 @@ impl GeometryMorph {
         let bb = bounds(cb.iter().flatten().flat_map(|c| &c.pts));
         let mut parts = Vec::new();
         for k in 0..a.paths.len().max(b.paths.len()) {
-            let (xa, xb) = (ca.get(k).map(Vec::as_slice).unwrap_or(&[]), cb.get(k).map(Vec::as_slice).unwrap_or(&[]));
+            let (xa, xb) = (
+                ca.get(k).map(Vec::as_slice).unwrap_or(&[]),
+                cb.get(k).map(Vec::as_slice).unwrap_or(&[]),
+            );
             let (pa, pb) = align(xa, xb, ba, bb);
-            parts.push(Part { a: a.paths.get(k).map(look), b: b.paths.get(k).map(look), ca: pa, cb: pb });
+            parts.push(Part {
+                a: a.paths.get(k).map(look),
+                b: b.paths.get(k).map(look),
+                ca: pa,
+                cb: pb,
+            });
         }
-        GeometryMorph { parts, text: (a.text_rect, b.text_rect) }
+        GeometryMorph {
+            parts,
+            text: (a.text_rect, b.text_rect),
+        }
     }
 
     /// The geometry at `t` (0..1), with a [`Fade`] for each of its sub-paths. The points of `a` are
     /// first scaled by `sa` and those of `b` by `sb`, to bring both into the current box.
     pub fn at(&self, t: f64, sa: Vec2, sb: Vec2) -> (Geometry, Vec<Fade>) {
-        let t = if t.is_finite() { t.clamp(0.0, 1.0) } else { 0.0 };
+        let t = if t.is_finite() {
+            t.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let scale = |p: Point, s: Vec2| Point::new(p.x * s.x, p.y * s.y);
         let (mut paths, mut fades) = (Vec::new(), Vec::new());
         for part in &self.parts {
@@ -367,19 +493,40 @@ impl GeometryMorph {
                 .zip(&part.cb)
                 .map(|(x, y)| Contour {
                     closed: x.closed && y.closed,
-                    pts: x.pts.iter().zip(&y.pts).map(|(p, q)| scale(*p, sa).lerp(scale(*q, sb), t)).collect(),
+                    pts: x
+                        .pts
+                        .iter()
+                        .zip(&y.pts)
+                        .map(|(p, q)| scale(*p, sa).lerp(scale(*q, sb), t))
+                        .collect(),
                 })
                 .collect();
             let path = to_path(&cs);
             for (lk, fade) in layers(part.a, part.b, t) {
-                paths.push(SubPath { path: path.clone(), fill: lk.fill, stroke: lk.stroke, even_odd: lk.even_odd });
+                paths.push(SubPath {
+                    path: path.clone(),
+                    fill: lk.fill,
+                    stroke: lk.stroke,
+                    even_odd: lk.even_odd,
+                });
                 fades.push(fade);
             }
         }
         let r = |r: Rect, s: Vec2| Rect::new(r.x0 * s.x, r.y0 * s.y, r.x1 * s.x, r.y1 * s.y);
         let (ta, tb) = (r(self.text.0, sa), r(self.text.1, sb));
-        let text_rect = Rect::from_points(ta.origin().lerp(tb.origin(), t), Point::new(ta.x1, ta.y1).lerp(Point::new(tb.x1, tb.y1), t));
-        (Geometry { paths, text_rect, handles: vec![], sites: vec![] }, fades)
+        let text_rect = Rect::from_points(
+            ta.origin().lerp(tb.origin(), t),
+            Point::new(ta.x1, ta.y1).lerp(Point::new(tb.x1, tb.y1), t),
+        );
+        (
+            Geometry {
+                paths,
+                text_rect,
+                handles: vec![],
+                sites: vec![],
+            },
+            fades,
+        )
     }
 }
 
@@ -394,7 +541,10 @@ mod tests {
     }
 
     fn near(a: Rect, b: Rect) -> bool {
-        (a.x0 - b.x0).abs() < 1e-6 && (a.y0 - b.y0).abs() < 1e-6 && (a.x1 - b.x1).abs() < 1e-6 && (a.y1 - b.y1).abs() < 1e-6
+        (a.x0 - b.x0).abs() < 1e-6
+            && (a.y0 - b.y0).abs() < 1e-6
+            && (a.x1 - b.x1).abs() < 1e-6
+            && (a.y1 - b.y1).abs() < 1e-6
     }
 
     #[test]
@@ -415,14 +565,30 @@ mod tests {
         assert_eq!(cs[0].pts[1], Point::new(1.0, 0.0));
         assert_eq!(cs[0].pts.last(), cs[0].pts.first());
         let end = Point::new(5.0, 5.0);
-        assert_eq!(cs[1].pts, vec![Point::ZERO, Point::ZERO.lerp(end, 1.0 / 3.0), Point::ZERO.lerp(end, 2.0 / 3.0), end]);
+        assert_eq!(
+            cs[1].pts,
+            vec![
+                Point::ZERO,
+                Point::ZERO.lerp(end, 1.0 / 3.0),
+                Point::ZERO.lerp(end, 2.0 / 3.0),
+                end
+            ]
+        );
         // The lone move_to at the end makes no contour, and the path comes back the same.
         assert_eq!(contours(&to_path(&cs)), cs);
     }
 
     #[test]
     fn refine_splits_the_longest_curves_and_keeps_the_shape() {
-        let c = Contour { closed: false, pts: vec![Point::ZERO, Point::new(1.0, 0.0), Point::new(2.0, 0.0), Point::new(3.0, 0.0)] };
+        let c = Contour {
+            closed: false,
+            pts: vec![
+                Point::ZERO,
+                Point::new(1.0, 0.0),
+                Point::new(2.0, 0.0),
+                Point::new(3.0, 0.0),
+            ],
+        };
         let mut long = c.clone();
         line_to(&mut long.pts, Point::new(3.0, 30.0));
         let r = refine(&long, 5);
@@ -441,32 +607,52 @@ mod tests {
 
     #[test]
     fn ellipse_turns_into_a_star_and_lands_exactly() {
-        let (a, b) = (build("ellipse", 100.0, 100.0, &[]).unwrap(), build("star5", 200.0, 100.0, &[]).unwrap());
+        let (a, b) = (
+            build("ellipse", 100.0, 100.0, &[]).unwrap(),
+            build("star5", 200.0, 100.0, &[]).unwrap(),
+        );
         let m = GeometryMorph::new(&a, &b);
         let one = Vec2::new(1.0, 1.0);
         assert!(near(bbox(&m.at(0.0, one, one).0), bbox(&a)));
         assert!(near(bbox(&m.at(1.0, one, one).0), bbox(&b)));
         let mid = m.at(0.5, one, one).0;
         assert_eq!(mid.paths.len(), 1);
-        assert!(mid.paths[0].path.elements().iter().all(|e| e.end_point().is_none_or(|p| p.is_finite())));
+        assert!(
+            mid.paths[0]
+                .path
+                .elements()
+                .iter()
+                .all(|e| e.end_point().is_none_or(|p| p.is_finite()))
+        );
         // Non-finite progress is the start.
         assert!(near(bbox(&m.at(f64::NAN, one, one).0), bbox(&a)));
     }
 
     #[test]
     fn triangle_does_not_twist_into_a_circle() {
-        let (a, b) = (build("triangle", 100.0, 100.0, &[]).unwrap(), build("ellipse", 100.0, 100.0, &[]).unwrap());
+        let (a, b) = (
+            build("triangle", 100.0, 100.0, &[]).unwrap(),
+            build("ellipse", 100.0, 100.0, &[]).unwrap(),
+        );
         let ca = contours(&a.paths[0].path);
         let cb = contours(&b.paths[0].path);
         let (x, y) = align(&ca, &cb, None, None);
         // Every point travels less than the shapes are wide: no point crosses to the other side.
-        let far = x[0].pts.iter().zip(&y[0].pts).map(|(p, q)| p.distance(*q)).fold(0.0, f64::max);
+        let far = x[0]
+            .pts
+            .iter()
+            .zip(&y[0].pts)
+            .map(|(p, q)| p.distance(*q))
+            .fold(0.0, f64::max);
         assert!(far < 60.0, "{far}");
     }
 
     #[test]
     fn extra_sub_paths_grow_out_of_a_point() {
-        let (a, b) = (build("rect", 100.0, 100.0, &[]).unwrap(), build("cube", 100.0, 100.0, &[]).unwrap());
+        let (a, b) = (
+            build("rect", 100.0, 100.0, &[]).unwrap(),
+            build("cube", 100.0, 100.0, &[]).unwrap(),
+        );
         assert!(b.paths.len() > 1);
         let m = GeometryMorph::new(&a, &b);
         let one = Vec2::new(1.0, 1.0);
@@ -477,10 +663,23 @@ mod tests {
             assert!(r.width() < 1e-9 && r.height() < 1e-9, "{r:?}");
         }
         // Looks switch at the midpoint: the cube's shaded faces show from there on.
-        assert_eq!(m.at(1.0, one, one).0.paths.iter().map(|s| s.fill).collect::<Vec<_>>(), b.paths.iter().map(|s| s.fill).collect::<Vec<_>>());
+        assert_eq!(
+            m.at(1.0, one, one)
+                .0
+                .paths
+                .iter()
+                .map(|s| s.fill)
+                .collect::<Vec<_>>(),
+            b.paths.iter().map(|s| s.fill).collect::<Vec<_>>()
+        );
         // And the other way round, the faces shrink away.
         let back = GeometryMorph::new(&b, &a).at(1.0, one, one).0;
-        assert!(back.paths.iter().skip(1).all(|sp| sp.path.bounding_box().area() < 1e-9));
+        assert!(
+            back.paths
+                .iter()
+                .skip(1)
+                .all(|sp| sp.path.bounding_box().area() < 1e-9)
+        );
     }
 
     #[test]
@@ -488,52 +687,125 @@ mod tests {
         let one = Vec2::new(1.0, 1.0);
         let fades = |a: &Geometry, b: &Geometry, t: f64| {
             let (g, f) = GeometryMorph::new(a, b).at(t, one, one);
-            g.paths.iter().zip(f).map(|(s, f)| (s.fill, s.even_odd, s.stroke, f.fill, f.stroke)).collect::<Vec<_>>()
+            g.paths
+                .iter()
+                .zip(f)
+                .map(|(s, f)| (s.fill, s.even_odd, s.stroke, f.fill, f.stroke))
+                .collect::<Vec<_>>()
         };
         // A filled rectangle into a line: the fill fades out, the outline stays.
-        let (r, line) = (build("rect", 100.0, 100.0, &[]).unwrap(), build("line", 100.0, 0.0, &[]).unwrap());
-        assert_eq!(fades(&r, &line, 0.25), [(FillMode::Norm, false, true, 0.75, 1.0)]);
-        assert_eq!(fades(&line, &r, 0.25), [(FillMode::Norm, false, true, 0.25, 1.0)]);
+        let (r, line) = (
+            build("rect", 100.0, 100.0, &[]).unwrap(),
+            build("line", 100.0, 0.0, &[]).unwrap(),
+        );
+        assert_eq!(
+            fades(&r, &line, 0.25),
+            [(FillMode::Norm, false, true, 0.75, 1.0)]
+        );
+        assert_eq!(
+            fades(&line, &r, 0.25),
+            [(FillMode::Norm, false, true, 0.25, 1.0)]
+        );
         // A donut into a circle: the donut (even-odd) lies underneath, the circle fades in over its hole.
-        let (d, e) = (build("donut", 100.0, 100.0, &[]).unwrap(), build("ellipse", 100.0, 100.0, &[]).unwrap());
+        let (d, e) = (
+            build("donut", 100.0, 100.0, &[]).unwrap(),
+            build("ellipse", 100.0, 100.0, &[]).unwrap(),
+        );
         assert!(d.paths[0].even_odd && !e.paths[0].even_odd);
-        assert_eq!(fades(&d, &e, 0.25), [(FillMode::Norm, true, true, 1.0, 1.0), (FillMode::Norm, false, false, 0.25, 0.0)]);
-        assert_eq!(fades(&e, &d, 0.25), [(FillMode::Norm, true, true, 1.0, 1.0), (FillMode::Norm, false, false, 0.75, 0.0)]);
+        assert_eq!(
+            fades(&d, &e, 0.25),
+            [
+                (FillMode::Norm, true, true, 1.0, 1.0),
+                (FillMode::Norm, false, false, 0.25, 0.0)
+            ]
+        );
+        assert_eq!(
+            fades(&e, &d, 0.25),
+            [
+                (FillMode::Norm, true, true, 1.0, 1.0),
+                (FillMode::Norm, false, false, 0.75, 0.0)
+            ]
+        );
         // Same looks: one layer, fully there.
-        assert_eq!(fades(&e, &r, 0.5), [(FillMode::Norm, false, true, 1.0, 1.0)]);
+        assert_eq!(
+            fades(&e, &r, 0.5),
+            [(FillMode::Norm, false, true, 1.0, 1.0)]
+        );
     }
 
     #[test]
     fn scales_bring_both_sides_into_the_current_box() {
-        let (a, b) = (build("rect", 10.0, 10.0, &[]).unwrap(), build("ellipse", 40.0, 20.0, &[]).unwrap());
+        let (a, b) = (
+            build("rect", 10.0, 10.0, &[]).unwrap(),
+            build("ellipse", 40.0, 20.0, &[]).unwrap(),
+        );
         let m = GeometryMorph::new(&a, &b);
         // Current box 20 x 20: a scaled up twice, b to half the width.
         let g = m.at(0.0, Vec2::new(2.0, 2.0), Vec2::new(0.5, 1.0)).0;
         assert!(near(bbox(&g), Rect::new(0.0, 0.0, 20.0, 20.0)));
-        assert!(near(g.text_rect, Rect::new(a.text_rect.x0 * 2.0, a.text_rect.y0 * 2.0, a.text_rect.x1 * 2.0, a.text_rect.y1 * 2.0)));
+        assert!(near(
+            g.text_rect,
+            Rect::new(
+                a.text_rect.x0 * 2.0,
+                a.text_rect.y0 * 2.0,
+                a.text_rect.x1 * 2.0,
+                a.text_rect.y1 * 2.0
+            )
+        ));
         let g = m.at(1.0, Vec2::new(2.0, 2.0), Vec2::new(0.5, 1.0)).0;
         assert!(near(bbox(&g), Rect::new(0.0, 0.0, 20.0, 20.0)));
     }
 
     #[test]
     fn empty_and_degenerate_geometries_do_not_crash() {
-        let empty = Geometry { paths: vec![], text_rect: Rect::ZERO, handles: vec![], sites: vec![] };
+        let empty = Geometry {
+            paths: vec![],
+            text_rect: Rect::ZERO,
+            handles: vec![],
+            sites: vec![],
+        };
         let r = build("rect", 10.0, 10.0, &[]).unwrap();
         let line = build("line", 10.0, 0.0, &[]).unwrap();
         let mut nan = BezPath::new();
         nan.move_to((f64::NAN, 0.0));
         nan.line_to((1.0, 1.0));
-        let bad = Geometry { paths: vec![SubPath { path: nan, fill: FillMode::Norm, stroke: true, even_odd: false }], ..empty.clone() };
-        for (x, y) in [(&empty, &empty), (&empty, &r), (&r, &empty), (&r, &line), (&line, &r), (&bad, &r), (&r, &bad)] {
+        let bad = Geometry {
+            paths: vec![SubPath {
+                path: nan,
+                fill: FillMode::Norm,
+                stroke: true,
+                even_odd: false,
+            }],
+            ..empty.clone()
+        };
+        for (x, y) in [
+            (&empty, &empty),
+            (&empty, &r),
+            (&r, &empty),
+            (&r, &line),
+            (&line, &r),
+            (&bad, &r),
+            (&r, &bad),
+        ] {
             for t in [0.0, 0.5, 1.0, f64::INFINITY] {
-                let g = GeometryMorph::new(x, y).at(t, Vec2::new(1.0, 1.0), Vec2::new(0.0, 1e300)).0;
+                let g = GeometryMorph::new(x, y)
+                    .at(t, Vec2::new(1.0, 1.0), Vec2::new(0.0, 1e300))
+                    .0;
                 // At most two layers per sub-path pair.
                 assert!(g.paths.len() <= 2 * x.paths.len().max(y.paths.len()));
             }
         }
         // A rectangle into a line: the line is open, so the morph ends open.
-        let g = GeometryMorph::new(&r, &line).at(1.0, Vec2::new(1.0, 1.0), Vec2::new(1.0, 1.0)).0;
-        assert!(!g.paths[0].path.elements().iter().any(|e| matches!(e, PathEl::ClosePath)));
+        let g = GeometryMorph::new(&r, &line)
+            .at(1.0, Vec2::new(1.0, 1.0), Vec2::new(1.0, 1.0))
+            .0;
+        assert!(
+            !g.paths[0]
+                .path
+                .elements()
+                .iter()
+                .any(|e| matches!(e, PathEl::ClosePath))
+        );
     }
 
     #[test]

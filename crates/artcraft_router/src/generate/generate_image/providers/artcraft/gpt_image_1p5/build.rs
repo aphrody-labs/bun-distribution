@@ -8,10 +8,10 @@ use crate::generate::generate_image::providers::artcraft::build_common::build_ar
 use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::request::ArtcraftGptImage1p5RequestState;
 
 pub fn build_artcraft_gpt_image_1p5(
-  builder: GenerateImageRequestBuilder,
+    builder: GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::GptImage1p5)?;
-  Ok(ImageGenerationDraftOrRequest::Request(
-    ImageGenerationRequest::ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState { request }),
-  ))
+    let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::GptImage1p5)?;
+    Ok(ImageGenerationDraftOrRequest::Request(
+        ImageGenerationRequest::ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState { request }),
+    ))
 }

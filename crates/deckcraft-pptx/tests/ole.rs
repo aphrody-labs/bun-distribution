@@ -54,7 +54,10 @@ fn ole_deck(spid_in_vml: &str) -> Vec<u8> {
     with_parts(
         &[
             ("ppt/drawings/vmlDrawing1.vml", vml.into_bytes()),
-            ("ppt/drawings/_rels/vmlDrawing1.vml.rels", vml_rels.as_bytes().to_vec()),
+            (
+                "ppt/drawings/_rels/vmlDrawing1.vml.rels",
+                vml_rels.as_bytes().to_vec(),
+            ),
             ("ppt/media/preview.png", png()),
             ("ppt/media/other.png", vec![1, 2, 3]),
             ("ppt/embeddings/oleObject1.bin", vec![0; 16]),
@@ -77,7 +80,11 @@ fn ole_deck(spid_in_vml: &str) -> Vec<u8> {
 
 fn object_preview(bytes: &[u8]) -> Option<Vec<u8>> {
     let p = deckcraft_pptx::import(bytes).expect("import");
-    let s = p.slides[0].shapes.iter().find(|s| s.name == "Object 3").expect("object");
+    let s = p.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Object 3")
+        .expect("object");
     match &s.kind {
         ShapeKind::Opaque { preview, label, .. } => {
             assert_eq!(label, "PowerPoint.Slide.8");
@@ -89,7 +96,11 @@ fn object_preview(bytes: &[u8]) -> Option<Vec<u8>> {
 
 #[test]
 fn an_old_ole_object_shows_its_vml_preview() {
-    assert_eq!(object_preview(&ole_deck("_x0000_s681987")), Some(png()), "the VML shape with the object's spid");
+    assert_eq!(
+        object_preview(&ole_deck("_x0000_s681987")),
+        Some(png()),
+        "the VML shape with the object's spid"
+    );
 }
 
 #[test]

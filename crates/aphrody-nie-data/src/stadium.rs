@@ -79,7 +79,9 @@ impl Stadium {
 /// Port de `extractImageName` (inagle) : `replace` JS ne retire que la **première**
 /// occurrence, d'où `replacen(.., 1)`.
 fn extract_image_name(texture_path: &str) -> String {
-    texture_path.replacen("#/menu/220_img/", "", 1).replacen(".g4tx", "", 1)
+    texture_path
+        .replacen("#/menu/220_img/", "", 1)
+        .replacen(".g4tx", "", 1)
 }
 
 /// Parse un noeud `SOCCER_OPTION_FIELD_INFO_N`. `None` si aucune image de stade n'est trouvée.
@@ -119,7 +121,13 @@ fn parse_field_entry(node: Node<'_>) -> Option<Stadium> {
         _ => field_id.to_hex(),
     };
 
-    Some(Stadium { field_id, index, image_path, condition, name })
+    Some(Stadium {
+        field_id,
+        index,
+        image_path,
+        condition,
+        name,
+    })
 }
 
 /// Parse tous les stades de `soccer_game_option.cfg.bin.json`.

@@ -37,11 +37,51 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             propagate
         ),
-        cmd!("roto.span", "Set Segmentation Span", [], None, "{layer?, effect?, start?, end? (layer frames)}", has_comp, span),
-        cmd!("roto.freeze", "Freeze", [], None, "{layer?, effect?, wait?}", has_comp, freeze),
-        cmd!("roto.unfreeze", "Unfreeze", [], None, "{layer?, effect?}", has_comp, unfreeze),
-        cmd!("roto.clearStrokes", "Remove Roto Brush Strokes", [], None, "{layer?, effect?, frame? (only this layer frame), kind?}", has_comp, clear_strokes),
-        cmd!("roto.cancel", "Stop Roto Brush", [], None, "{}", is_running, |s, _| Ok(json!({"stopped": s.stop_roto()}))),
+        cmd!(
+            "roto.span",
+            "Set Segmentation Span",
+            [],
+            None,
+            "{layer?, effect?, start?, end? (layer frames)}",
+            has_comp,
+            span
+        ),
+        cmd!(
+            "roto.freeze",
+            "Freeze",
+            [],
+            None,
+            "{layer?, effect?, wait?}",
+            has_comp,
+            freeze
+        ),
+        cmd!(
+            "roto.unfreeze",
+            "Unfreeze",
+            [],
+            None,
+            "{layer?, effect?}",
+            has_comp,
+            unfreeze
+        ),
+        cmd!(
+            "roto.clearStrokes",
+            "Remove Roto Brush Strokes",
+            [],
+            None,
+            "{layer?, effect?, frame? (only this layer frame), kind?}",
+            has_comp,
+            clear_strokes
+        ),
+        cmd!(
+            "roto.cancel",
+            "Stop Roto Brush",
+            [],
+            None,
+            "{}",
+            is_running,
+            |s, _| Ok(json!({"stopped": s.stop_roto()}))
+        ),
         cmd!(
             "roto.options",
             "Roto Brush Options",
@@ -61,7 +101,11 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn is_running(s: &Session) -> std::result::Result<(), String> {
-    if s.is_roto_running() { Ok(()) } else { Err("no Roto Brush job is running".into()) }
+    if s.is_roto_running() {
+        Ok(())
+    } else {
+        Err("no Roto Brush job is running".into())
+    }
 }
 
 /// The Roto Brush instance targeted by `p`: `layer` / `effect` (uid, name or 1-based index),
@@ -70,7 +114,9 @@ pub(crate) fn roto_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, Layer
     let cid = super::comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let candidates: Vec<LayerId> = match p.get("layer") {
-        Some(v) => vec![super::resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no layer {v}")))?],
+        Some(v) => {
+            vec![super::resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no layer {v}")))?]
+        }
         None => {
             let mut v: Vec<LayerId> = s.state.selected_props.iter().map(|(l, _)| *l).collect();
             v.extend(s.state.selected_layers.iter().copied());
@@ -79,18 +125,26 @@ pub(crate) fn roto_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, Layer
         }
     };
     for lid in candidates {
-        let Some(fxg) = comp.layer(lid).and_then(Layer::effects) else { continue };
+        let Some(fxg) = comp.layer(lid).and_then(Layer::effects) else {
+            continue;
+        };
         let g = match p.get("effect") {
             Some(Value::Number(n)) => {
                 let n = n.as_u64().unwrap_or(0);
-                fxg.groups().find(|g| g.uid == n).or_else(|| fxg.groups().nth((n as usize).saturating_sub(1)))
+                fxg.groups()
+                    .find(|g| g.uid == n)
+                    .or_else(|| fxg.groups().nth((n as usize).saturating_sub(1)))
             }
             Some(Value::String(name)) => fxg.groups().find(|g| &g.name == name),
             _ => s
                 .state
                 .selected_props
                 .iter()
-                .find_map(|(l, u)| (*l == lid).then(|| fxg.groups().find(|g| g.uid == *u && is_roto(g))).flatten())
+                .find_map(|(l, u)| {
+                    (*l == lid)
+                        .then(|| fxg.groups().find(|g| g.uid == *u && is_roto(g)))
+                        .flatten()
+                })
                 .or_else(|| fxg.groups().find(|g| is_roto(g))),
         };
         if let Some(g) = g.filter(|g| is_roto(g)) {
@@ -100,12 +154,22 @@ pub(crate) fn roto_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, Layer
             break;
         }
     }
-    Err(bad(cmd, "no Roto Brush & Refine Edge effect found (paint a stroke with the Roto Brush tool first)"))
+    Err(bad(
+        cmd,
+        "no Roto Brush & Refine Edge effect found (paint a stroke with the Roto Brush tool first)",
+    ))
 }
 
 fn group(s: &Session, cid: ItemId, lid: LayerId, uid: Uid) -> Result<(&Layer, &PropGroup)> {
-    let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
-    let g = l.props.find_group(uid).ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
+    let l = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .ok_or(EngineError::NoComp)?;
+    let g = l
+        .props
+        .find_group(uid)
+        .ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
     Ok((l, g))
 }
 
@@ -118,10 +182,20 @@ fn frozen_of(g: &PropGroup) -> bool {
 }
 
 /// Write an instance's data (one undo step).
-fn write_data(s: &mut Session, label: &str, cid: ItemId, lid: LayerId, uid: Uid, d: &RotoData) -> Result<()> {
+fn write_data(
+    s: &mut Session,
+    label: &str,
+    cid: ItemId,
+    lid: LayerId,
+    uid: Uid,
+    d: &RotoData,
+) -> Result<()> {
     let j = d.to_json();
     s.edit(label, None, |proj, _| {
-        let g = layer_mut(proj, cid, lid)?.props.find_group_mut(uid).ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
+        let g = layer_mut(proj, cid, lid)?
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
         if let Some(pr) = g.get_mut(fx::STROKES) {
             pr.value = KV::Str(j);
         }
@@ -140,11 +214,19 @@ fn frame_p(s: &Session, p: &Value, cid: ItemId, layer: &Layer) -> i64 {
 }
 
 fn points_p(p: &Value, cmd: &str) -> Result<Vec<[f64; 2]>> {
-    let raw = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(cmd, "missing `points` [[x, y], …] (layer pixels)"))?;
+    let raw = p
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, "missing `points` [[x, y], …] (layer pixels)"))?;
     let mut v = vec![];
     for q in raw {
-        let a = q.as_array().ok_or_else(|| bad(cmd, "each point is [x, y]"))?;
-        let (Some(x), Some(y)) = (a.first().and_then(Value::as_f64), a.get(1).and_then(Value::as_f64)) else {
+        let a = q
+            .as_array()
+            .ok_or_else(|| bad(cmd, "each point is [x, y]"))?;
+        let (Some(x), Some(y)) = (
+            a.first().and_then(Value::as_f64),
+            a.get(1).and_then(Value::as_f64),
+        ) else {
             return Err(bad(cmd, "each point is [x, y]"));
         };
         v.push([x, y]);
@@ -162,54 +244,100 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
         Err(_) => layer_p(s, p, cmd)?,
     };
     let kind = match str_p(p, "kind") {
-        Some(k) => StrokeKind::from_name(k).ok_or_else(|| bad(cmd, format!("unknown kind `{k}` (fg | bg | refine | refineErase)")))?,
+        Some(k) => StrokeKind::from_name(k).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown kind `{k}` (fg | bg | refine | refineErase)"),
+            )
+        })?,
         None => StrokeKind::Fg,
     };
     let points = points_p(p, cmd)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or_else(|| bad(cmd, "no layer"))?;
     if !layer.has_video() || layer.switches.adjustment || layer.effects().is_none() {
-        return Err(bad(cmd, "the Roto Brush works on footage, solid and composition layers"));
+        return Err(bad(
+            cmd,
+            "the Roto Brush works on footage, solid and composition layers",
+        ));
     }
     let frame = frame_p(s, p, cid, layer);
     let limits = rt::frame_limits(comp, layer);
     if frame < limits[0] || frame > limits[1] {
-        return Err(bad(cmd, format!("frame {frame} is outside the layer ({}–{})", limits[0], limits[1])));
+        return Err(bad(
+            cmd,
+            format!(
+                "frame {frame} is outside the layer ({}–{})",
+                limits[0], limits[1]
+            ),
+        ));
     }
     let o = &s.state.roto;
-    let def_r = if matches!(kind, StrokeKind::Refine | StrokeKind::RefineErase) { o.refine_diameter / 2.0 } else { o.diameter / 2.0 };
+    let def_r = if matches!(kind, StrokeKind::Refine | StrokeKind::RefineErase) {
+        o.refine_diameter / 2.0
+    } else {
+        o.diameter / 2.0
+    };
     let radius = f_p(p, "radius").unwrap_or(def_r).clamp(0.5, 2500.0);
     let size = rt::layer_size(&s.project, comp, layer);
     // The instance: the requested / first one, else a new one.
-    let existing = roto_p(s, p, cmd).ok().filter(|(c, l, _)| *c == cid && *l == lid).map(|x| x.2);
+    let existing = roto_p(s, p, cmd)
+        .ok()
+        .filter(|(c, l, _)| *c == cid && *l == lid)
+        .map(|x| x.2);
     if let Some(uid) = existing {
         let (_, g) = group(s, cid, lid, uid)?;
         if frozen_of(g) {
-            return Err(bad(cmd, "the Roto Brush is frozen: Unfreeze it to edit strokes"));
+            return Err(bad(
+                cmd,
+                "the Roto Brush is frozen: Unfreeze it to edit strokes",
+            ));
         }
     }
     if existing.is_none() && !kind.is_segmentation() {
-        return Err(bad(cmd, "draw a foreground stroke with the Roto Brush tool first"));
+        return Err(bad(
+            cmd,
+            "draw a foreground stroke with the Roto Brush tool first",
+        ));
     }
-    let st = Stroke { kind, frame, radius, points };
-    let label = if kind.is_segmentation() { "Roto Brush Stroke" } else { "Refine Edge Stroke" };
+    let st = Stroke {
+        kind,
+        frame,
+        radius,
+        points,
+    };
+    let label = if kind.is_segmentation() {
+        "Roto Brush Stroke"
+    } else {
+        "Refine Edge Stroke"
+    };
     let (uid, d) = s.edit(label, None, |proj, _| {
         let mut next = proj.next_id;
         let l = layer_mut(proj, cid, lid)?;
-        let fxg = l.props.sub_mut("effects").ok_or_else(|| bad(cmd, "this layer has no effects"))?;
+        let fxg = l
+            .props
+            .sub_mut("effects")
+            .ok_or_else(|| bad(cmd, "this layer has no effects"))?;
         let uid = match existing {
             Some(u) => u,
             None => {
-                let spec = effectcraft_effects::find(fx::ID).ok_or_else(|| EngineError::Other("Roto Brush effect missing".into()))?;
+                let spec = effectcraft_effects::find(fx::ID)
+                    .ok_or_else(|| EngineError::Other("Roto Brush effect missing".into()))?;
                 let n = fxg.groups().filter(|g| is_roto(g)).count();
-                let name = if n == 0 { spec.name.to_string() } else { format!("{} {}", spec.name, n + 1) };
+                let name = if n == 0 {
+                    spec.name.to_string()
+                } else {
+                    format!("{} {}", spec.name, n + 1)
+                };
                 let g = effectcraft_effects::instantiate(spec, &mut Ids(&mut next), &name, size);
                 let u = g.uid;
                 fxg.children.push(g.into());
                 u
             }
         };
-        let g = fxg.find_group_mut(uid).ok_or_else(|| bad(cmd, "effect gone"))?;
+        let g = fxg
+            .find_group_mut(uid)
+            .ok_or_else(|| bad(cmd, "effect gone"))?;
         let mut d = data_of(g);
         d.add(st, fx::DEFAULT_SPAN, limits);
         if let Some(pr) = g.get_mut(fx::STROKES) {
@@ -218,7 +346,12 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
         proj.next_id = proj.next_id.max(next);
         Ok((uid, d))
     })?;
-    if !s.state.selected_props.iter().any(|(l, u)| *l == lid && *u == uid) {
+    if !s
+        .state
+        .selected_props
+        .iter()
+        .any(|(l, u)| *l == lid && *u == uid)
+    {
         s.state.selected_layers = vec![lid];
     }
     Ok(json!({
@@ -231,7 +364,12 @@ fn propagate(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "roto.propagate";
     let (cid, lid, uid) = roto_p(s, p, cmd)?;
     let dir = match str_p(p, "direction") {
-        Some(d) => Direction::from_name(d).ok_or_else(|| bad(cmd, format!("unknown direction `{d}` (forward | backward | both)")))?,
+        Some(d) => Direction::from_name(d).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown direction `{d}` (forward | backward | both)"),
+            )
+        })?,
         None => Direction::Both,
     };
     if let Some(to) = f_p(p, "to") {
@@ -246,13 +384,18 @@ fn propagate(s: &mut Session, p: &Value) -> Result<Value> {
         d.span[1] = d.span[1].max(to);
         if d.span != before {
             if frozen_of(g) {
-                return Err(bad(cmd, "the Roto Brush is frozen: Unfreeze it to change the span"));
+                return Err(bad(
+                    cmd,
+                    "the Roto Brush is frozen: Unfreeze it to change the span",
+                ));
             }
             write_data(s, "Extend Segmentation Span", cid, lid, uid, &d)?;
         }
     }
     let wait = b_p(p, "wait").unwrap_or(false);
-    let n = s.start_roto(cid, lid, uid, RotoTask::Propagate, dir, wait).map_err(|e| bad(cmd, e))?;
+    let n = s
+        .start_roto(cid, lid, uid, RotoTask::Propagate, dir, wait)
+        .map_err(|e| bad(cmd, e))?;
     let mut out = json!({"layer": lid.0, "effect": uid, "frames": n, "running": s.is_roto_running(), "progress": s.roto_progress()});
     if wait {
         out["status"] = status(s, &json!({"layer": lid.0, "effect": uid, "comp": cid.0}))?;
@@ -265,7 +408,10 @@ fn span(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid, uid) = roto_p(s, p, cmd)?;
     let (l, g) = group(s, cid, lid, uid)?;
     if frozen_of(g) {
-        return Err(bad(cmd, "the Roto Brush is frozen: Unfreeze it to change the span"));
+        return Err(bad(
+            cmd,
+            "the Roto Brush is frozen: Unfreeze it to change the span",
+        ));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let lim = rt::frame_limits(comp, l);
@@ -287,9 +433,13 @@ fn freeze(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "roto.freeze";
     let (cid, lid, uid) = roto_p(s, p, cmd)?;
     let wait = b_p(p, "wait").unwrap_or(false);
-    let n = s.start_roto(cid, lid, uid, RotoTask::Freeze, Direction::Both, wait).map_err(|e| bad(cmd, e))?;
+    let n = s
+        .start_roto(cid, lid, uid, RotoTask::Freeze, Direction::Both, wait)
+        .map_err(|e| bad(cmd, e))?;
     let (_, g) = group(s, cid, lid, uid)?;
-    Ok(json!({"layer": lid.0, "effect": uid, "frames": n, "running": s.is_roto_running(), "frozen": frozen_of(g), "progress": s.roto_progress()}))
+    Ok(
+        json!({"layer": lid.0, "effect": uid, "frames": n, "running": s.is_roto_running(), "frozen": frozen_of(g), "progress": s.roto_progress()}),
+    )
 }
 
 fn unfreeze(s: &mut Session, p: &Value) -> Result<Value> {
@@ -300,7 +450,10 @@ fn unfreeze(s: &mut Session, p: &Value) -> Result<Value> {
         return Ok(json!({"layer": lid.0, "effect": uid, "frozen": false}));
     }
     s.edit("Unfreeze", None, |proj, _| {
-        let g = layer_mut(proj, cid, lid)?.props.find_group_mut(uid).ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
+        let g = layer_mut(proj, cid, lid)?
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| EngineError::Other("the effect is gone".into()))?;
         if let Some(pr) = g.get_mut(FROZEN) {
             pr.value = KV::Str(String::new());
         }
@@ -314,33 +467,54 @@ fn clear_strokes(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid, uid) = roto_p(s, p, cmd)?;
     let (_, g) = group(s, cid, lid, uid)?;
     if frozen_of(g) {
-        return Err(bad(cmd, "the Roto Brush is frozen: Unfreeze it to edit strokes"));
+        return Err(bad(
+            cmd,
+            "the Roto Brush is frozen: Unfreeze it to edit strokes",
+        ));
     }
     let mut d = data_of(g);
     let frame = f_p(p, "frame").map(|f| f.round() as i64);
     let kind = match str_p(p, "kind") {
-        Some(k) => Some(StrokeKind::from_name(k).ok_or_else(|| bad(cmd, format!("unknown kind `{k}`")))?),
+        Some(k) => {
+            Some(StrokeKind::from_name(k).ok_or_else(|| bad(cmd, format!("unknown kind `{k}`")))?)
+        }
         None => None,
     };
     let n0 = d.strokes.len();
-    d.strokes.retain(|st| !(frame.is_none_or(|f| st.frame == f) && kind.is_none_or(|k| st.kind == k)));
+    d.strokes
+        .retain(|st| !(frame.is_none_or(|f| st.frame == f) && kind.is_none_or(|k| st.kind == k)));
     if d.strokes.iter().all(|s| !s.kind.is_segmentation()) {
         d.base = None;
-    } else if d.base.is_some_and(|b| !d.strokes.iter().any(|s| s.frame == b && s.kind.is_segmentation())) {
+    } else if d.base.is_some_and(|b| {
+        !d.strokes
+            .iter()
+            .any(|s| s.frame == b && s.kind.is_segmentation())
+    }) {
         // The base moves to the earliest remaining stroked frame.
-        d.base = d.strokes.iter().filter(|s| s.kind.is_segmentation()).map(|s| s.frame).min();
+        d.base = d
+            .strokes
+            .iter()
+            .filter(|s| s.kind.is_segmentation())
+            .map(|s| s.frame)
+            .min();
     }
     let removed = n0 - d.strokes.len();
     if removed > 0 {
         write_data(s, "Remove Roto Brush Strokes", cid, lid, uid, &d)?;
     }
-    Ok(json!({"layer": lid.0, "effect": uid, "removed": removed, "strokes": d.strokes.len(), "base": d.base}))
+    Ok(
+        json!({"layer": lid.0, "effect": uid, "removed": removed, "strokes": d.strokes.len(), "base": d.base}),
+    )
 }
 
 fn options(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "roto.options";
     let mut o: RotoOptions = s.state.roto.clone();
-    for (k, f) in [("diameter", &mut o.diameter as &mut f64), ("refineDiameter", &mut o.refine_diameter), ("overlayOpacity", &mut o.overlay_opacity)] {
+    for (k, f) in [
+        ("diameter", &mut o.diameter as &mut f64),
+        ("refineDiameter", &mut o.refine_diameter),
+        ("overlayOpacity", &mut o.overlay_opacity),
+    ] {
         if let Some(v) = f_p(p, k) {
             *f = v;
         }
@@ -349,10 +523,16 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
     o.refine_diameter = o.refine_diameter.clamp(1.0, 5000.0);
     o.overlay_opacity = o.overlay_opacity.clamp(0.0, 100.0);
     if let Some(v) = str_p(p, "view") {
-        let v = VIEWS.iter().find(|x| x.eq_ignore_ascii_case(v)).ok_or_else(|| bad(cmd, format!("unknown view `{v}` ({})", VIEWS.join(" | "))))?;
+        let v = VIEWS
+            .iter()
+            .find(|x| x.eq_ignore_ascii_case(v))
+            .ok_or_else(|| bad(cmd, format!("unknown view `{v}` ({})", VIEWS.join(" | "))))?;
         o.view = v.to_string();
     }
-    for (k, c) in [("overlayColor", &mut o.overlay_color), ("boundaryColor", &mut o.boundary_color)] {
+    for (k, c) in [
+        ("overlayColor", &mut o.overlay_color),
+        ("boundaryColor", &mut o.boundary_color),
+    ] {
         if let Some(a) = p.get(k).and_then(Value::as_array) {
             if a.len() < 3 {
                 return Err(bad(cmd, format!("`{k}` is [r, g, b] (0–1)")));
@@ -371,9 +551,10 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn status(s: &mut Session, p: &Value) -> Result<Value> {
     s.poll_roto(false);
-    let mut out =
-        json!({"running": s.is_roto_running(), "progress": s.roto_progress(), "banner": s.roto_progress().map(|p| p.banner()), "options": s.state.roto});
-    let Ok((cid, lid, uid)) = roto_p(s, p, "roto.status") else { return Ok(out) };
+    let mut out = json!({"running": s.is_roto_running(), "progress": s.roto_progress(), "banner": s.roto_progress().map(|p| p.banner()), "options": s.state.roto});
+    let Ok((cid, lid, uid)) = roto_p(s, p, "roto.status") else {
+        return Ok(out);
+    };
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let (layer, g) = group(s, cid, lid, uid)?;
     let (layer, g) = (layer.clone(), g.clone());
@@ -399,8 +580,21 @@ fn status(s: &mut Session, p: &Value) -> Result<Value> {
         let seg = match chain.keys.get(&frame).and_then(|k| fx::cached(*k, 1.0)) {
             Some(sg) => Some(sg),
             None if compute => {
-                let index = layer.effects().and_then(|f| f.groups().position(|x| x.uid == uid)).unwrap_or(0);
-                let mut src = rt::FrameSource::new(&s.project, s.footage.as_ref(), s.expr.as_deref(), &s.layer_cache, cid, &comp, &layer, index, size);
+                let index = layer
+                    .effects()
+                    .and_then(|f| f.groups().position(|x| x.uid == uid))
+                    .unwrap_or(0);
+                let mut src = rt::FrameSource::new(
+                    &s.project,
+                    s.footage.as_ref(),
+                    s.expr.as_deref(),
+                    &s.layer_cache,
+                    cid,
+                    &comp,
+                    &layer,
+                    index,
+                    size,
+                );
                 chain.ensure(frame, &mut |f| src.get(f), &|| false)
             }
             None => None,
@@ -413,12 +607,22 @@ fn status(s: &mut Session, p: &Value) -> Result<Value> {
             if want_matte {
                 out["matte"] = json!(rle::encode(&sg.matte));
             }
-            if let Some(gt) = p.get("compareTo").and_then(Value::as_str).and_then(rle::decode) {
+            if let Some(gt) = p
+                .get("compareTo")
+                .and_then(Value::as_str)
+                .and_then(rle::decode)
+            {
                 out["iou"] = json!(iou(&sg.matte, &gt));
             }
         }
     }
     let computed = s.roto_computed(cid, lid, uid);
-    out["computed"] = json!(computed.iter().filter(|(_, c)| **c).map(|(f, _)| *f).collect::<Vec<_>>());
+    out["computed"] = json!(
+        computed
+            .iter()
+            .filter(|(_, c)| **c)
+            .map(|(f, _)| *f)
+            .collect::<Vec<_>>()
+    );
     Ok(out)
 }

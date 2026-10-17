@@ -25,7 +25,12 @@ pub struct ScopesState {
 
 impl Default for ScopesState {
     fn default() -> Self {
-        ScopesState { scope: "waveformRgb".into(), standard: "rec709".into(), float: false, clamp: true }
+        ScopesState {
+            scope: "waveformRgb".into(),
+            standard: "rec709".into(),
+            float: false,
+            clamp: true,
+        }
     }
 }
 
@@ -50,33 +55,77 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let y = rect.min.y + 6.0;
     let labels: Vec<&str> = ScopeKind::ALL.iter().map(|k| k.label()).collect();
     let cur = ScopeKind::ALL.iter().position(|k| *k == kind).unwrap_or(0);
-    if let Some(i) = kit::dropdown(app, ui, Rect::from_min_size(pos2(x, y), vec2(150.0, 20.0)), "scopes.kind", &labels, cur) {
+    if let Some(i) = kit::dropdown(
+        app,
+        ui,
+        Rect::from_min_size(pos2(x, y), vec2(150.0, 20.0)),
+        "scopes.kind",
+        &labels,
+        cur,
+    ) {
         st.scope = ScopeKind::ALL[i].name().into();
     }
     x += 158.0;
-    let si = ColorStandard::ALL.iter().position(|c| *c == standard).unwrap_or(1);
-    if let Some(i) = kit::dropdown(app, ui, Rect::from_min_size(pos2(x, y), vec2(90.0, 20.0)), "scopes.standard", &STANDARDS, si) {
+    let si = ColorStandard::ALL
+        .iter()
+        .position(|c| *c == standard)
+        .unwrap_or(1);
+    if let Some(i) = kit::dropdown(
+        app,
+        ui,
+        Rect::from_min_size(pos2(x, y), vec2(90.0, 20.0)),
+        "scopes.standard",
+        &STANDARDS,
+        si,
+    ) {
         st.standard = ColorStandard::ALL[i].name().into();
     }
     x += 98.0;
-    if let Some(i) = kit::dropdown(app, ui, Rect::from_min_size(pos2(x, y), vec2(70.0, 20.0)), "scopes.scale", &["8 Bit", "Float"], usize::from(st.float)) {
+    if let Some(i) = kit::dropdown(
+        app,
+        ui,
+        Rect::from_min_size(pos2(x, y), vec2(70.0, 20.0)),
+        "scopes.scale",
+        &["8 Bit", "Float"],
+        usize::from(st.float),
+    ) {
         st.float = i == 1;
     }
     x += 78.0;
     // Narrow panels: Clamp Signal on a second row.
-    let (cx, cy, top) = if x + 110.0 > rect.max.x { (rect.min.x + 8.0, y + 26.0, 60.0) } else { (x, y, 34.0) };
-    st.clamp = kit::checkbox(app, ui, pos2(cx, cy + 2.0), "scopes.clamp", "Clamp Signal", st.clamp);
+    let (cx, cy, top) = if x + 110.0 > rect.max.x {
+        (rect.min.x + 8.0, y + 26.0, 60.0)
+    } else {
+        (x, y, 34.0)
+    };
+    st.clamp = kit::checkbox(
+        app,
+        ui,
+        pos2(cx, cy + 2.0),
+        "scopes.clamp",
+        "Clamp Signal",
+        st.clamp,
+    );
     if st != app.ui.scopes {
         app.ui.scopes = st.clone();
     }
-    let area = Rect::from_min_max(pos2(rect.min.x + 8.0, rect.min.y + top), pos2(rect.max.x - 8.0, rect.max.y - 8.0));
+    let area = Rect::from_min_max(
+        pos2(rect.min.x + 8.0, rect.min.y + top),
+        pos2(rect.max.x - 8.0, rect.max.y - 8.0),
+    );
     if area.width() < 40.0 || area.height() < 40.0 {
         return;
     }
     p.rect_filled(area, 2.0, Color32::from_rgb(0x10, 0x10, 0x10));
     app.auto.add("scopes.plot", area, kind.label());
     let Some(cid) = app.session.active_comp_id() else {
-        p.text(area.center(), Align2::CENTER_CENTER, tr("Open a composition to see its scopes"), Tokens::ui(12.0), t.text_faint);
+        p.text(
+            area.center(),
+            Align2::CENTER_CENTER,
+            tr("Open a composition to see its scopes"),
+            Tokens::ui(12.0),
+            t.text_faint,
+        );
         return;
     };
     // Plot rectangle: square for vectorscopes.
@@ -91,22 +140,47 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         standard,
         float: st.float,
         clamp: st.clamp,
-        width: if kind.is_vectorscope() { size } else { (plot.width() as u32).clamp(64, 768) },
-        height: if kind.is_vectorscope() { size } else { (plot.height() as u32).clamp(32, 512) },
+        width: if kind.is_vectorscope() {
+            size
+        } else {
+            (plot.width() as u32).clamp(64, 768)
+        },
+        height: if kind.is_vectorscope() {
+            size
+        } else {
+            (plot.height() as u32).clamp(32, 512)
+        },
     };
     let time = app.session.time();
-    let key = (app.session.revision, cid.0, time.0, format!("{}{}{}{}{}x{}", st.scope, st.standard, st.float, st.clamp, o.width, o.height), 0);
+    let key = (
+        app.session.revision,
+        cid.0,
+        time.0,
+        format!(
+            "{}{}{}{}{}x{}",
+            st.scope, st.standard, st.float, st.clamp, o.width, o.height
+        ),
+        0,
+    );
     let ctx = ui.ctx().clone();
     let id = egui::Id::new("scopes-cache");
     let cached: Option<Cached> = ctx.data(|d| d.get_temp(id));
     let cached = match cached {
         Some(c) if c.key == key => c,
         _ => {
-            let Some(frame) = scope_frame(&app.session, cid, time, 480) else { return };
+            let Some(frame) = scope_frame(&app.session, cid, time, 480) else {
+                return;
+            };
             let scope = scopes::compute(&frame, kind, &o);
             let tex = (kind != ScopeKind::Histogram).then(|| {
-                let mono = matches!(kind, ScopeKind::WaveformLuma | ScopeKind::VectorscopeYuv | ScopeKind::VectorscopeHls);
-                let img = egui::ColorImage::from_rgba_unmultiplied([scope.width as usize, scope.height as usize], &tint(&scope, mono));
+                let mono = matches!(
+                    kind,
+                    ScopeKind::WaveformLuma | ScopeKind::VectorscopeYuv | ScopeKind::VectorscopeHls
+                );
+                let img = egui::ColorImage::from_rgba_unmultiplied(
+                    [scope.width as usize, scope.height as usize],
+                    &tint(&scope, mono),
+                );
                 ctx.load_texture("lumetri-scope", img, egui::TextureOptions::LINEAR)
             });
             let c = Cached { key, scope, tex };
@@ -116,7 +190,12 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     };
     graticule(&p, plot, kind, &o, &t);
     if let Some(tex) = &cached.tex {
-        p.image(tex.id(), plot, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        p.image(
+            tex.id(),
+            plot,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     } else {
         histogram(&p, plot, &cached.scope);
     }
@@ -152,10 +231,25 @@ fn graticule(p: &egui::Painter, plot: Rect, kind: ScopeKind, o: &ScopeOpts, t: &
         }
         p.line_segment([pos2(plot.min.x, c.y), pos2(plot.max.x, c.y)], line);
         p.line_segment([pos2(c.x, plot.min.y), pos2(c.x, plot.max.y)], line);
-        for (name, [u, v]) in scopes::vector_targets(o.standard, kind == ScopeKind::VectorscopeHls) {
-            let q = pos2(plot.min.x + (u + 0.5) * plot.width(), plot.min.y + (0.5 - v) * plot.height());
-            p.rect_stroke(Rect::from_center_size(q, vec2(8.0, 8.0)), 0.0, Stroke::new(1.0, Color32::from_rgb(0xc8, 0x6a, 0x6a)), egui::StrokeKind::Middle);
-            p.text(q + vec2(7.0, -7.0), Align2::LEFT_BOTTOM, name, Tokens::ui(10.0), t.text_dim);
+        for (name, [u, v]) in scopes::vector_targets(o.standard, kind == ScopeKind::VectorscopeHls)
+        {
+            let q = pos2(
+                plot.min.x + (u + 0.5) * plot.width(),
+                plot.min.y + (0.5 - v) * plot.height(),
+            );
+            p.rect_stroke(
+                Rect::from_center_size(q, vec2(8.0, 8.0)),
+                0.0,
+                Stroke::new(1.0, Color32::from_rgb(0xc8, 0x6a, 0x6a)),
+                egui::StrokeKind::Middle,
+            );
+            p.text(
+                q + vec2(7.0, -7.0),
+                Align2::LEFT_BOTTOM,
+                name,
+                Tokens::ui(10.0),
+                t.text_dim,
+            );
         }
         return;
     }
@@ -163,12 +257,26 @@ fn graticule(p: &egui::Painter, plot: Rect, kind: ScopeKind, o: &ScopeOpts, t: &
         return;
     }
     let (lo, hi) = o.range();
-    let marks: &[f32] = if o.float { &[-0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25] } else { &[0.0, 0.25, 0.5, 0.75, 1.0] };
+    let marks: &[f32] = if o.float {
+        &[-0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25]
+    } else {
+        &[0.0, 0.25, 0.5, 0.75, 1.0]
+    };
     for v in marks {
         let y = plot.max.y - (v - lo) / (hi - lo) * plot.height();
         p.line_segment([pos2(plot.min.x, y), pos2(plot.max.x, y)], line);
-        let label = if o.float { format!("{v:.2}") } else { format!("{}", (v * 255.0).round() as i32) };
-        p.text(pos2(plot.min.x - 4.0, y), Align2::RIGHT_CENTER, label, Tokens::ui(9.5), t.text_faint);
+        let label = if o.float {
+            format!("{v:.2}")
+        } else {
+            format!("{}", (v * 255.0).round() as i32)
+        };
+        p.text(
+            pos2(plot.min.x - 4.0, y),
+            Align2::RIGHT_CENTER,
+            label,
+            Tokens::ui(9.5),
+            t.text_faint,
+        );
     }
     if matches!(kind, ScopeKind::ParadeRgb | ScopeKind::ParadeYuv) {
         for k in 1..3 {
@@ -180,7 +288,13 @@ fn graticule(p: &egui::Painter, plot: Rect, kind: ScopeKind, o: &ScopeOpts, t: &
 
 fn histogram(p: &egui::Painter, plot: Rect, s: &Scope) {
     let bars = scopes::histogram_bars(s);
-    let max = bars.iter().flat_map(|b| b.iter()).copied().max().unwrap_or(1).max(1) as f32;
+    let max = bars
+        .iter()
+        .flat_map(|b| b.iter())
+        .copied()
+        .max()
+        .unwrap_or(1)
+        .max(1) as f32;
     let cols = [
         Color32::from_rgba_unmultiplied(230, 70, 70, 150),
         Color32::from_rgba_unmultiplied(70, 220, 90, 150),
@@ -188,10 +302,21 @@ fn histogram(p: &egui::Painter, plot: Rect, s: &Scope) {
     ];
     let n = bars[0].len().max(1) as f32;
     for (c, b) in bars.iter().enumerate() {
-        let pts: Vec<egui::Pos2> =
-            b.iter().enumerate().map(|(i, v)| pos2(plot.min.x + i as f32 / n * plot.width(), plot.max.y - (*v as f32 / max).sqrt() * plot.height())).collect();
+        let pts: Vec<egui::Pos2> = b
+            .iter()
+            .enumerate()
+            .map(|(i, v)| {
+                pos2(
+                    plot.min.x + i as f32 / n * plot.width(),
+                    plot.max.y - (*v as f32 / max).sqrt() * plot.height(),
+                )
+            })
+            .collect();
         for (i, q) in pts.iter().enumerate() {
-            p.line_segment([pos2(q.x, plot.max.y), *q], Stroke::new((plot.width() / n).max(1.0), cols[c].gamma_multiply(0.5)));
+            p.line_segment(
+                [pos2(q.x, plot.max.y), *q],
+                Stroke::new((plot.width() / n).max(1.0), cols[c].gamma_multiply(0.5)),
+            );
             if i > 0 {
                 p.line_segment([pts[i - 1], *q], Stroke::new(1.0, cols[c]));
             }

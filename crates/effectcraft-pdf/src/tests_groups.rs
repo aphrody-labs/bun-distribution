@@ -13,7 +13,9 @@ fn near(a: [f32; 4], b: [f32; 4]) -> bool {
 fn group_page(page: &str, gs: &str, group: &str, content: &str) -> Doc {
     let bytes = page_pdf(
         page,
-        &format!("/ExtGState << /GS << {gs} >> /M << /BM /Multiply >> /H << /ca 0.5 >> >> /XObject << /Fm 10 0 R >>"),
+        &format!(
+            "/ExtGState << /GS << {gs} >> /M << /BM /Multiply >> /H << /ca 0.5 >> >> /XObject << /Fm 10 0 R >>"
+        ),
         vec![(
             10,
             format!(
@@ -31,53 +33,131 @@ fn group_page(page: &str, gs: &str, group: &str, content: &str) -> Doc {
 fn group_alpha_applies_to_the_combined_result() {
     let content = "1 0 0 rg 0 0 100 100 re f 0 0 1 rg 50 0 100 100 re f";
     // A transparency group: the overlap is blue at half opacity (no red shows through).
-    let doc = group_page("/GS gs /Fm Do", "/ca 0.5", "/Group << /S /Transparency >>", content);
+    let doc = group_page(
+        "/GS gs /Fm Do",
+        "/ca 0.5",
+        "/Group << /S /Transparency >>",
+        content,
+    );
     let img = render(&doc);
-    assert!(near(img.get(75, 50), [0.0, 0.0, 0.5, 0.5]), "{:?}", img.get(75, 50));
-    assert!(near(img.get(25, 50), [0.5, 0.0, 0.0, 0.5]), "{:?}", img.get(25, 50));
+    assert!(
+        near(img.get(75, 50), [0.0, 0.0, 0.5, 0.5]),
+        "{:?}",
+        img.get(75, 50)
+    );
+    assert!(
+        near(img.get(25, 50), [0.5, 0.0, 0.0, 0.5]),
+        "{:?}",
+        img.get(25, 50)
+    );
     // A plain form: each rectangle at half opacity.
     let doc = group_page("/GS gs /Fm Do", "/ca 0.5", "", content);
     let img = render(&doc);
-    assert!(near(img.get(75, 50), [0.25, 0.0, 0.5, 0.75]), "{:?}", img.get(75, 50));
+    assert!(
+        near(img.get(75, 50), [0.25, 0.0, 0.5, 0.75]),
+        "{:?}",
+        img.get(75, 50)
+    );
 }
 
 #[test]
 fn knockout_groups_composite_with_the_initial_backdrop() {
     // Red, then half-opaque blue over it: knocked out, the overlap shows only the blue.
     let content = "1 0 0 rg 0 0 100 100 re f /H gs 0 0 1 rg 50 0 100 100 re f";
-    let ko = group_page("/Fm Do", "", "/Group << /S /Transparency /I true /K true >>", content);
+    let ko = group_page(
+        "/Fm Do",
+        "",
+        "/Group << /S /Transparency /I true /K true >>",
+        content,
+    );
     let img = render(&ko);
-    assert!(near(img.get(75, 50), [0.0, 0.0, 0.5, 0.5]), "knockout {:?}", img.get(75, 50));
-    assert!(near(img.get(25, 50), [1.0, 0.0, 0.0, 1.0]), "{:?}", img.get(25, 50));
-    let plain = group_page("/Fm Do", "", "/Group << /S /Transparency /I true >>", content);
+    assert!(
+        near(img.get(75, 50), [0.0, 0.0, 0.5, 0.5]),
+        "knockout {:?}",
+        img.get(75, 50)
+    );
+    assert!(
+        near(img.get(25, 50), [1.0, 0.0, 0.0, 1.0]),
+        "{:?}",
+        img.get(25, 50)
+    );
+    let plain = group_page(
+        "/Fm Do",
+        "",
+        "/Group << /S /Transparency /I true >>",
+        content,
+    );
     let img = render(&plain);
-    assert!(near(img.get(75, 50), [0.5, 0.0, 0.5, 1.0]), "plain {:?}", img.get(75, 50));
+    assert!(
+        near(img.get(75, 50), [0.5, 0.0, 0.5, 1.0]),
+        "plain {:?}",
+        img.get(75, 50)
+    );
     // Non-isolated knockout over a white page: the overlap is half blue over the page.
-    let ko_bd = group_page("1 g 0 0 200 100 re f /Fm Do", "", "/Group << /S /Transparency /K true >>", content);
+    let ko_bd = group_page(
+        "1 g 0 0 200 100 re f /Fm Do",
+        "",
+        "/Group << /S /Transparency /K true >>",
+        content,
+    );
     let img = render(&ko_bd);
-    assert!(near(img.get(75, 50), [0.5, 0.5, 1.0, 1.0]), "non-isolated knockout {:?}", img.get(75, 50));
+    assert!(
+        near(img.get(75, 50), [0.5, 0.5, 1.0, 1.0]),
+        "non-isolated knockout {:?}",
+        img.get(75, 50)
+    );
 }
 
 #[test]
 fn isolated_and_non_isolated_groups_with_blend_modes() {
     // Yellow page; the group multiplies cyan over it at half group opacity.
     let content = "/M gs 0 1 1 rg 0 0 200 100 re f";
-    let non = group_page("1 1 0 rg 0 0 200 100 re f /GS gs /Fm Do", "/ca 0.5", "/Group << /S /Transparency >>", content);
+    let non = group_page(
+        "1 1 0 rg 0 0 200 100 re f /GS gs /Fm Do",
+        "/ca 0.5",
+        "/Group << /S /Transparency >>",
+        content,
+    );
     let img = render(&non);
     // yellow × cyan = green, half over yellow.
-    assert!(near(img.get(100, 50), [0.5, 1.0, 0.0, 1.0]), "non-isolated {:?}", img.get(100, 50));
-    let iso = group_page("1 1 0 rg 0 0 200 100 re f /GS gs /Fm Do", "/ca 0.5", "/Group << /S /Transparency /I true >>", content);
+    assert!(
+        near(img.get(100, 50), [0.5, 1.0, 0.0, 1.0]),
+        "non-isolated {:?}",
+        img.get(100, 50)
+    );
+    let iso = group_page(
+        "1 1 0 rg 0 0 200 100 re f /GS gs /Fm Do",
+        "/ca 0.5",
+        "/Group << /S /Transparency /I true >>",
+        content,
+    );
     let img = render(&iso);
     // Isolated: multiply against nothing = cyan, half over yellow.
-    assert!(near(img.get(100, 50), [0.5, 1.0, 0.5, 1.0]), "isolated {:?}", img.get(100, 50));
+    assert!(
+        near(img.get(100, 50), [0.5, 1.0, 0.5, 1.0]),
+        "isolated {:?}",
+        img.get(100, 50)
+    );
 }
 
 #[test]
 fn blend_modes_inside_clips_reach_the_backdrop() {
-    let bytes = page_pdf("1 1 0 rg 0 0 200 100 re f q 0 0 100 100 re W n /M gs 0 1 1 rg 0 0 200 100 re f Q", "/ExtGState << /M << /BM /Multiply >> >>", vec![]);
+    let bytes = page_pdf(
+        "1 1 0 rg 0 0 200 100 re f q 0 0 100 100 re W n /M gs 0 1 1 rg 0 0 200 100 re f Q",
+        "/ExtGState << /M << /BM /Multiply >> >>",
+        vec![],
+    );
     let img = render(&parse(&bytes).unwrap());
-    assert!(near(img.get(50, 50), [0.0, 1.0, 0.0, 1.0]), "{:?}", img.get(50, 50));
-    assert!(near(img.get(150, 50), [1.0, 1.0, 0.0, 1.0]), "{:?}", img.get(150, 50));
+    assert!(
+        near(img.get(50, 50), [0.0, 1.0, 0.0, 1.0]),
+        "{:?}",
+        img.get(50, 50)
+    );
+    assert!(
+        near(img.get(150, 50), [1.0, 1.0, 0.0, 1.0]),
+        "{:?}",
+        img.get(150, 50)
+    );
 }
 
 #[test]
@@ -95,7 +175,10 @@ fn soft_mask_applies_to_the_masked_group_result() {
     );
     let img = render(&parse(&bytes).unwrap());
     let p = img.get(75, 50);
-    assert!((p[3] - 0.5).abs() < 0.02 && p[0] < 0.02 && (p[2] - 0.5).abs() < 0.02, "{p:?}");
+    assert!(
+        (p[3] - 0.5).abs() < 0.02 && p[0] < 0.02 && (p[2] - 0.5).abs() < 0.02,
+        "{p:?}"
+    );
 }
 
 /// The ink bounding box `(x0, y0, x1, y1)` of a render (pixels with alpha > 0.5).
@@ -143,11 +226,20 @@ fn vertical_metrics_w2_and_dw2() {
     // /W2: a 2 em advance and vx 250.
     let w2 = doc(&format!("/W2 [{h} [-2000 250 880]]"));
     assert_eq!(w2.1, base.1, "the first glyph's top stays: {base:?} {w2:?}");
-    assert!(((w2.3 - base.3) - 20).abs() <= 1, "second glyph 20 pt lower: {base:?} {w2:?}");
-    assert!(((w2.0 - base.0) - 2).abs() <= 1, "vx 250 vs 350 → 2 pt right: {base:?} {w2:?}");
+    assert!(
+        ((w2.3 - base.3) - 20).abs() <= 1,
+        "second glyph 20 pt lower: {base:?} {w2:?}"
+    );
+    assert!(
+        ((w2.0 - base.0) - 2).abs() <= 1,
+        "vx 250 vs 350 → 2 pt right: {base:?} {w2:?}"
+    );
     // The range form gives the same; /DW2 with vy 780 draws the glyphs 2 pt higher.
     let range = doc(&format!("/W2 [{h} {h} -2000 250 880]"));
     assert_eq!(range, w2);
     let dw2 = doc("/DW2 [780 -1000]");
-    assert!(((base.1 - dw2.1) - 2).abs() <= 1, "vy 780 → 2 pt higher: {base:?} {dw2:?}");
+    assert!(
+        ((base.1 - dw2.1) - 2).abs() <= 1,
+        "vy 780 → 2 pt higher: {base:?} {dw2:?}"
+    );
 }

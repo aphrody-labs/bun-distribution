@@ -164,7 +164,7 @@ impl FifoRecorder {
             RecorderState::Waiting => {
                 self.snapshot_state(gp, is_wii);
                 self.state = RecorderState::Recording;
-            },
+            }
             RecorderState::Recording => {
                 let Some(end) = self.last_xfb_copy_end.take() else {
                     return;
@@ -173,8 +173,9 @@ impl FifoRecorder {
 
                 let mut frame = std::mem::take(&mut self.cur_frame);
                 let tail_data = frame.fifo_data.split_off(end);
-                let split =
-                    frame.memory_updates.partition_point(|u| (u.fifo_position as usize) < end);
+                let split = frame
+                    .memory_updates
+                    .partition_point(|u| (u.fifo_position as usize) < end);
                 let tail_updates = frame
                     .memory_updates
                     .split_off(split)
@@ -196,8 +197,8 @@ impl FifoRecorder {
 
                 self.file.frames.push(frame);
                 self.frames_recorded += 1;
-            },
-            RecorderState::Done => {},
+            }
+            RecorderState::Done => {}
         }
     }
 
@@ -205,7 +206,9 @@ impl FifoRecorder {
         self.file.is_wii = is_wii;
         self.file.bp_mem[..BP_REG_SIZE].copy_from_slice(&gp.bp_regs[..BP_REG_SIZE]);
         self.file.cp_mem[..CP_REG_SIZE].copy_from_slice(&gp.cp_regs[..CP_REG_SIZE]);
-        self.file.xf_mem.copy_from_slice(&gp.xf_mem[..dff::XF_MEM_SIZE]);
+        self.file
+            .xf_mem
+            .copy_from_slice(&gp.xf_mem[..dff::XF_MEM_SIZE]);
         let regs = &gp.xf_mem[dff::XF_MEM_SIZE..dff::XF_MEM_SIZE + dff::XF_REGS_SIZE];
         self.file.xf_regs.copy_from_slice(regs);
 

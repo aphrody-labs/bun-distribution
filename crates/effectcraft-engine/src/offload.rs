@@ -144,13 +144,42 @@ impl WorkerJob {
     pub fn target(&self) -> Option<(ItemId, LayerId, Uid)> {
         match *self {
             WorkerJob::Render { .. } => None,
-            WorkerJob::Warp { comp, layer, effect }
-            | WorkerJob::WarpPlan { comp, layer, effect, .. }
-            | WorkerJob::Camera { comp, layer, effect }
-            | WorkerJob::RotoFreeze { comp, layer, effect }
-            | WorkerJob::RotoPropagate { comp, layer, effect, .. } => Some((comp, layer, effect)),
-            WorkerJob::Track { comp, layer, tracker, .. } => Some((comp, layer, tracker)),
-            WorkerJob::MaskTrack { comp, layer, mask, .. } => Some((comp, layer, mask)),
+            WorkerJob::Warp {
+                comp,
+                layer,
+                effect,
+            }
+            | WorkerJob::WarpPlan {
+                comp,
+                layer,
+                effect,
+                ..
+            }
+            | WorkerJob::Camera {
+                comp,
+                layer,
+                effect,
+            }
+            | WorkerJob::RotoFreeze {
+                comp,
+                layer,
+                effect,
+            }
+            | WorkerJob::RotoPropagate {
+                comp,
+                layer,
+                effect,
+                ..
+            } => Some((comp, layer, effect)),
+            WorkerJob::Track {
+                comp,
+                layer,
+                tracker,
+                ..
+            } => Some((comp, layer, tracker)),
+            WorkerJob::MaskTrack {
+                comp, layer, mask, ..
+            } => Some((comp, layer, mask)),
             WorkerJob::ContentFill { ref plan } => Some((plan.comp, plan.layer, 0)),
         }
     }
@@ -244,12 +273,17 @@ pub struct SegData {
 
 impl SegData {
     pub fn new(key: u64, seg: &effectcraft_track::roto::FrameSeg) -> SegData {
-        SegData { key, data: effectcraft_track::roto::rle::base64_encode(&seg.to_bytes()) }
+        SegData {
+            key,
+            data: effectcraft_track::roto::rle::base64_encode(&seg.to_bytes()),
+        }
     }
 
     /// Put the segmentation into this instance's cache (what the Roto Brush effect renders from).
     pub fn store(&self) -> bool {
-        let Some(seg) = effectcraft_track::roto::rle::base64_decode(&self.data).and_then(|b| effectcraft_track::roto::FrameSeg::from_bytes(&b)) else {
+        let Some(seg) = effectcraft_track::roto::rle::base64_decode(&self.data)
+            .and_then(|b| effectcraft_track::roto::FrameSeg::from_bytes(&b))
+        else {
             return false;
         };
         effectcraft_effects::roto::store(self.key, 1.0, Arc::new(seg));
@@ -259,8 +293,11 @@ impl SegData {
 
 /// The full-resolution segmentations of `keys` that are cached here and not in `sent` yet.
 pub fn segs_to_send(keys: &[u64], sent: &mut std::collections::HashSet<u64>) -> Vec<SegData> {
-    let new: Vec<(u64, Arc<effectcraft_track::roto::FrameSeg>)> =
-        keys.iter().filter(|k| !sent.contains(k)).filter_map(|k| effectcraft_effects::roto::cached(*k, 1.0).map(|s| (*k, s))).collect();
+    let new: Vec<(u64, Arc<effectcraft_track::roto::FrameSeg>)> = keys
+        .iter()
+        .filter(|k| !sent.contains(k))
+        .filter_map(|k| effectcraft_effects::roto::cached(*k, 1.0).map(|s| (*k, s)))
+        .collect();
     new.into_iter()
         .map(|(k, s)| {
             sent.insert(k);
@@ -302,7 +339,11 @@ pub fn footage_files(p: &Project) -> Vec<String> {
         .items
         .values()
         .filter_map(|i| match &i.kind {
-            ItemKind::Footage(f) if !f.path.is_empty() => Some(std::iter::once(f.path.clone()).chain(f.sequence.iter().cloned()).collect::<Vec<_>>()),
+            ItemKind::Footage(f) if !f.path.is_empty() => Some(
+                std::iter::once(f.path.clone())
+                    .chain(f.sequence.iter().cloned())
+                    .collect::<Vec<_>>(),
+            ),
             _ => None,
         })
         .flatten()
@@ -361,12 +402,25 @@ pub(crate) fn job_accel() -> Option<Arc<dyn Accelerator>> {
 /// Render options of an analysis's input frames: 100 %; with an accelerator, the project's
 /// renderer (Mercury GPU Acceleration: its GPU effects on the device; Software Only: the CPU).
 pub(crate) fn analysis_opts(accel: Option<&dyn Accelerator>) -> RenderOpts {
-    RenderOpts { scale: 1.0, backend: if accel.is_some() { Backend::Auto } else { Backend::Cpu }, ..Default::default() }
+    RenderOpts {
+        scale: 1.0,
+        backend: if accel.is_some() {
+            Backend::Auto
+        } else {
+            Backend::Cpu
+        },
+        ..Default::default()
+    }
 }
 
 /// A render in passes ([`effectcraft_render::passes::in_passes`]): its value.
-pub(crate) async fn in_passes<'a, T>(accel: Option<&'a dyn Accelerator>, render: impl FnMut(Option<&'a dyn Accelerator>) -> T) -> T {
-    effectcraft_render::passes::in_passes(accel, render).await.value
+pub(crate) async fn in_passes<'a, T>(
+    accel: Option<&'a dyn Accelerator>,
+    render: impl FnMut(Option<&'a dyn Accelerator>) -> T,
+) -> T {
+    effectcraft_render::passes::in_passes(accel, render)
+        .await
+        .value
 }
 
 /// `work()` while the next frame renders (`fetch`): side by side on the thread pool, or — with
@@ -402,7 +456,11 @@ pub(crate) fn run_or_queue(f: impl Future<Output = ()> + 'static) {
 /// Await the analyses [`run_or_queue`] queued, then let the session apply their results.
 async fn drain(s: &mut Session) {
     loop {
-        let next = QUEUED.with(|q| q.borrow_mut().as_mut().and_then(|v| (!v.is_empty()).then(|| v.remove(0))));
+        let next = QUEUED.with(|q| {
+            q.borrow_mut()
+                .as_mut()
+                .and_then(|v| (!v.is_empty()).then(|| v.remove(0)))
+        });
         match next {
             Some(f) => f.await,
             None => break,
@@ -445,7 +503,9 @@ pub async fn run_request_async(s: &mut Session, req: WorkerRequest, post: &Post)
                 post(WorkerReply::Failed { error: e });
             }
         }
-        Err(e) => post(WorkerReply::Failed { error: format!("project: {e}") }),
+        Err(e) => post(WorkerReply::Failed {
+            error: format!("project: {e}"),
+        }),
     }
     QUEUED.with(|q| *q.borrow_mut() = None);
     JOB_ACCEL.with(|a| *a.borrow_mut() = None);
@@ -457,7 +517,10 @@ async fn run_job(s: &mut Session, job: WorkerJob, post: Post) -> Result<(), Stri
     let target = job.target();
     match job {
         WorkerJob::Render { items } => {
-            let exporter = s.exporter.clone().ok_or("export is not available in this build")?;
+            let exporter = s
+                .exporter
+                .clone()
+                .ok_or("export is not available in this build")?;
             let shared = JobShared::default();
             // Item updates and progress go out as they happen (progress at most every 100 ms).
             let last = Cell::new(None::<web_time::Instant>);
@@ -468,29 +531,83 @@ async fn run_job(s: &mut Session, job: WorkerJob, post: Post) -> Result<(), Stri
                 }
                 if force || last.get().is_none_or(|t| t.elapsed().as_millis() >= 100) {
                     last.set(Some(web_time::Instant::now()));
-                    post(WorkerReply::Render { state: sh.snapshot() });
+                    post(WorkerReply::Render {
+                        state: sh.snapshot(),
+                    });
                 }
             };
-            crate::render_queue::run_items(s, exporter, items, &shared, &mut |sh| notify(sh, false)).await;
+            crate::render_queue::run_items(s, exporter, items, &shared, &mut |sh| {
+                notify(sh, false)
+            })
+            .await;
             notify(&shared, true);
             Ok(())
         }
-        WorkerJob::Warp { comp, layer, effect } => analysis(s, kind, target, post, |s| s.start_warp(comp, layer, effect, true).map(|_| ())).await,
-        WorkerJob::WarpPlan { comp, layer, effect, time } => {
-            let r = warp_plan(s, comp, layer, effect, time).ok_or("the Warp Stabilizer is not analysed")?;
-            post(r);
-            Ok(())
-        }
-        WorkerJob::Camera { comp, layer, effect } => analysis(s, kind, target, post, |s| s.start_camera(comp, layer, effect, true).map(|_| ())).await,
-        WorkerJob::RotoFreeze { comp, layer, effect } => {
+        WorkerJob::Warp {
+            comp,
+            layer,
+            effect,
+        } => {
             analysis(s, kind, target, post, |s| {
-                s.start_roto(comp, layer, effect, crate::roto::RotoTask::Freeze, crate::roto::Direction::Both, true).map(|_| ())
+                s.start_warp(comp, layer, effect, true).map(|_| ())
             })
             .await
         }
-        WorkerJob::RotoPropagate { comp, layer, effect, direction } => propagate(s, comp, layer, effect, direction, post).await,
+        WorkerJob::WarpPlan {
+            comp,
+            layer,
+            effect,
+            time,
+        } => {
+            let r = warp_plan(s, comp, layer, effect, time)
+                .ok_or("the Warp Stabilizer is not analysed")?;
+            post(r);
+            Ok(())
+        }
+        WorkerJob::Camera {
+            comp,
+            layer,
+            effect,
+        } => {
+            analysis(s, kind, target, post, |s| {
+                s.start_camera(comp, layer, effect, true).map(|_| ())
+            })
+            .await
+        }
+        WorkerJob::RotoFreeze {
+            comp,
+            layer,
+            effect,
+        } => {
+            analysis(s, kind, target, post, |s| {
+                s.start_roto(
+                    comp,
+                    layer,
+                    effect,
+                    crate::roto::RotoTask::Freeze,
+                    crate::roto::Direction::Both,
+                    true,
+                )
+                .map(|_| ())
+            })
+            .await
+        }
+        WorkerJob::RotoPropagate {
+            comp,
+            layer,
+            effect,
+            direction,
+        } => propagate(s, comp, layer, effect, direction, post).await,
         WorkerJob::ContentFill { plan } => fill(s, *plan, post).await,
-        WorkerJob::Track { comp, layer, tracker, direction, settings, points, times } => {
+        WorkerJob::Track {
+            comp,
+            layer,
+            tracker,
+            direction,
+            settings,
+            points,
+            times,
+        } => {
             analysis(s, kind, target, post, |s| {
                 let work = crate::tracking::Work {
                     project: s.project.clone(),
@@ -507,7 +624,15 @@ async fn run_job(s: &mut Session, job: WorkerJob, post: Post) -> Result<(), Stri
             })
             .await
         }
-        WorkerJob::MaskTrack { comp, layer, mask, direction, path, method, times } => {
+        WorkerJob::MaskTrack {
+            comp,
+            layer,
+            mask,
+            direction,
+            path,
+            method,
+            times,
+        } => {
             analysis(s, kind, target, post, |s| {
                 let work = crate::mask_track::MaskWork {
                     project: s.project.clone(),
@@ -519,7 +644,11 @@ async fn run_job(s: &mut Session, job: WorkerJob, post: Post) -> Result<(), Stri
                     path,
                     method,
                     times,
-                    face_model: if method.is_face() { s.models.face() } else { None },
+                    face_model: if method.is_face() {
+                        s.models.face()
+                    } else {
+                        None
+                    },
                 };
                 s.start_mask_track(work, mask, direction, true)
             })
@@ -531,7 +660,11 @@ async fn run_job(s: &mut Session, job: WorkerJob, post: Post) -> Result<(), Stri
 /// Content-Aware Fill in a worker: the layer's frames render on the worker's GPU (in passes),
 /// the files are written through the session's services (the browser: back to the page's
 /// storage) and the plan comes back for the page to add the fill layer.
-async fn fill(s: &mut Session, plan: crate::commands::content_fill::FillPlan, post: Post) -> Result<(), String> {
+async fn fill(
+    s: &mut Session,
+    plan: crate::commands::content_fill::FillPlan,
+    post: Post,
+) -> Result<(), String> {
     let p = post.clone();
     let mut last = None::<web_time::Instant>;
     let mut progress = move |done: u64, total: u64| {
@@ -554,14 +687,27 @@ async fn fill(s: &mut Session, plan: crate::commands::content_fill::FillPlan, po
         &mut |_| {},
     )
     .await?;
-    post(WorkerReply::Fill { plan: Box::new(plan), files });
+    post(WorkerReply::Fill {
+        plan: Box::new(plan),
+        files,
+    });
     Ok(())
 }
 
 /// Roto Brush propagation in a worker: the segmentations stream back (at most every 250 ms)
 /// as they are computed, so stopping the job keeps what was propagated.
-async fn propagate(s: &mut Session, comp: ItemId, layer: LayerId, effect: Uid, dir: crate::roto::Direction, post: Post) -> Result<(), String> {
-    let keys: Vec<u64> = s.roto_chain(comp, layer, effect).map(|c| c.keys.values().copied().collect()).ok_or("no Roto Brush strokes")?;
+async fn propagate(
+    s: &mut Session,
+    comp: ItemId,
+    layer: LayerId,
+    effect: Uid,
+    dir: crate::roto::Direction,
+    post: Post,
+) -> Result<(), String> {
+    let keys: Vec<u64> = s
+        .roto_chain(comp, layer, effect)
+        .map(|c| c.keys.values().copied().collect())
+        .ok_or("no Roto Brush strokes")?;
     let sent = Rc::new(RefCell::new(std::collections::HashSet::new()));
     let (p, k2, s2) = (post.clone(), keys.clone(), sent.clone());
     let mut last = None::<web_time::Instant>;
@@ -577,7 +723,14 @@ async fn propagate(s: &mut Session, comp: ItemId, layer: LayerId, effect: Uid, d
     });
     s.events.clear();
     with_hook(hook, async {
-        let r = s.start_roto(comp, layer, effect, crate::roto::RotoTask::Propagate, dir, true);
+        let r = s.start_roto(
+            comp,
+            layer,
+            effect,
+            crate::roto::RotoTask::Propagate,
+            dir,
+            true,
+        );
         drain(s).await;
         r
     })
@@ -587,7 +740,10 @@ async fn propagate(s: &mut Session, comp: ItemId, layer: LayerId, effect: Uid, d
         post(WorkerReply::Segs { segs });
     }
     if let Some(e) = s.events.iter().find_map(|e| match e {
-        Event::Toast { message, error: true } => Some(message.clone()),
+        Event::Toast {
+            message,
+            error: true,
+        } => Some(message.clone()),
         _ => None,
     }) {
         return Err(e);
@@ -629,15 +785,28 @@ async fn analysis(
             _ => None,
         })
         .unwrap_or_default();
-    let failed = s.events.iter().any(|e| matches!(e, Event::Toast { error: true, .. }));
+    let failed = s
+        .events
+        .iter()
+        .any(|e| matches!(e, Event::Toast { error: true, .. }));
     if failed {
         return Err(message);
     }
     if s.revision == rev && kind != JobKind::Track && kind != JobKind::MaskTrack {
         // Nothing written (e.g. the analysis was empty).
-        return Err(if message.is_empty() { "nothing was analysed".into() } else { message });
+        return Err(if message.is_empty() {
+            "nothing was analysed".into()
+        } else {
+            message
+        });
     }
-    let group = s.project.comp(comp).and_then(|c| c.layer(layer)).and_then(|l| l.props.find_group(uid)).cloned().ok_or("the analysed property is gone")?;
+    let group = s
+        .project
+        .comp(comp)
+        .and_then(|c| c.layer(layer))
+        .and_then(|l| l.props.find_group(uid))
+        .cloned()
+        .ok_or("the analysed property is gone")?;
     // The stabilization plan too (before the group, so the page has it once it shows the
     // analysis): solving it would otherwise stall the page at its first `warp.status`.
     if kind == JobKind::Warp
@@ -645,20 +814,34 @@ async fn analysis(
     {
         post(r);
     }
-    post(WorkerReply::Group { comp, layer, group: Box::new(group), message });
+    post(WorkerReply::Group {
+        comp,
+        layer,
+        group: Box::new(group),
+        message,
+    });
     Ok(())
 }
 
 /// The Warp Stabilizer plan summary of (comp, layer, effect) with its settings at comp time `t`
 /// (computing the plan), as a reply.
-fn warp_plan(s: &Session, comp: ItemId, layer: LayerId, effect: Uid, t: Tick) -> Option<WorkerReply> {
+fn warp_plan(
+    s: &Session,
+    comp: ItemId,
+    layer: LayerId,
+    effect: Uid,
+    t: Tick,
+) -> Option<WorkerReply> {
     let c = s.project.comp(comp)?;
     let l = c.layer(layer)?;
     let g = l.props.find_group(effect)?;
     let ctx = effectcraft_render::EvalCtx::new(&s.project, comp, c, t);
     let params = effectcraft_effects::flatten_params(g, &mut |pr| ctx.value(l, pr));
     let (key, summary) = effectcraft_effects::warp_stab::summary(&params)?;
-    Some(WorkerReply::WarpPlan { key, summary: Box::new((*summary).clone()) })
+    Some(WorkerReply::WarpPlan {
+        key,
+        summary: Box::new((*summary).clone()),
+    })
 }
 
 // ---------------------------------------------------------------- UI side
@@ -677,12 +860,22 @@ pub struct OffloadProgress {
 
 /// Frames per second of `done` frames in `elapsed` seconds.
 pub(crate) fn rate(done: u64, elapsed: f64) -> f64 {
-    if elapsed > 0.0 { done as f64 / elapsed } else { 0.0 }
+    if elapsed > 0.0 {
+        done as f64 / elapsed
+    } else {
+        0.0
+    }
 }
 
 impl OffloadProgress {
     pub(crate) fn track(&self) -> crate::tracking::TrackProgress {
-        crate::tracking::TrackProgress { done: self.done, total: self.total, elapsed: self.elapsed, fps: rate(self.done, self.elapsed), ..Default::default() }
+        crate::tracking::TrackProgress {
+            done: self.done,
+            total: self.total,
+            elapsed: self.elapsed,
+            fps: rate(self.done, self.elapsed),
+            ..Default::default()
+        }
     }
 }
 
@@ -716,7 +909,9 @@ impl Session {
 
     /// The offloaded analysis of `kind`, if one runs.
     pub fn offloaded(&self, kind: JobKind) -> Option<&OffloadedJob> {
-        self.offloaded.iter().find(|j| j.kind == kind && !j.progress.finished)
+        self.offloaded
+            .iter()
+            .find(|j| j.kind == kind && !j.progress.finished)
     }
 
     /// Send an analysis to the worker.
@@ -729,7 +924,12 @@ impl Session {
         }
         let id = next_id();
         let inbox = Arc::new(Inbox::default());
-        let req = WorkerRequest { id, project: self.project.to_json(), files: footage_files(&self.project), job };
+        let req = WorkerRequest {
+            id,
+            project: self.project.to_json(),
+            files: footage_files(&self.project),
+            job,
+        };
         off.start(req, inbox.clone())?;
         self.offloaded.push(OffloadedJob {
             id,
@@ -742,14 +942,22 @@ impl Session {
             segs: 0,
             started: web_time::Instant::now(),
         });
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
         Ok(())
     }
 
     /// Cancel the offloaded analysis of `kind` (nothing is written).
     pub fn cancel_offloaded(&mut self, kind: JobKind) -> bool {
         let off = self.offload.clone();
-        let Some(j) = self.offloaded.iter_mut().find(|j| j.kind == kind && !j.progress.finished) else { return false };
+        let Some(j) = self
+            .offloaded
+            .iter_mut()
+            .find(|j| j.kind == kind && !j.progress.finished)
+        else {
+            return false;
+        };
         if let Some(off) = off {
             off.cancel(j.id);
         }
@@ -778,9 +986,16 @@ impl Session {
                         j.progress.done = done;
                         j.progress.total = total;
                     }
-                    WorkerReply::Group { comp, layer, group, message } => results.push((j.kind, comp, layer, group, message)),
+                    WorkerReply::Group {
+                        comp,
+                        layer,
+                        group,
+                        message,
+                    } => results.push((j.kind, comp, layer, group, message)),
                     WorkerReply::Fill { plan, files } => fills.push((plan, files)),
-                    WorkerReply::WarpPlan { key, summary } => effectcraft_effects::warp_stab::store_summary(key, *summary),
+                    WorkerReply::WarpPlan { key, summary } => {
+                        effectcraft_effects::warp_stab::store_summary(key, *summary)
+                    }
                     WorkerReply::Segs { segs } => {
                         for sd in &segs {
                             sd.store();
@@ -797,8 +1012,14 @@ impl Session {
         for (plan, files) in fills {
             let n = files.len();
             match crate::commands::content_fill::apply_plan(self, &plan, files) {
-                Ok(_) => self.events.push(Event::Toast { message: format!("Content-Aware Fill: {n} frame(s) filled"), error: false }),
-                Err(e) => self.events.push(Event::Toast { message: format!("Content-Aware Fill: {e}"), error: true }),
+                Ok(_) => self.events.push(Event::Toast {
+                    message: format!("Content-Aware Fill: {n} frame(s) filled"),
+                    error: false,
+                }),
+                Err(e) => self.events.push(Event::Toast {
+                    message: format!("Content-Aware Fill: {e}"),
+                    error: true,
+                }),
             }
         }
         for (kind, comp, layer, group, message) in results {
@@ -808,13 +1029,23 @@ impl Session {
                     .comp_mut(comp)
                     .and_then(|c| c.layer_mut(layer))
                     .and_then(|l| l.props.find_group_mut(uid))
-                    .ok_or_else(|| crate::EngineError::Other("the analysed property was removed during the analysis".into()))?;
+                    .ok_or_else(|| {
+                        crate::EngineError::Other(
+                            "the analysed property was removed during the analysis".into(),
+                        )
+                    })?;
                 *g = *group;
                 Ok(())
             });
             match r {
-                Ok(()) => self.events.push(Event::Toast { message, error: false }),
-                Err(e) => self.events.push(Event::Toast { message: format!("{}: {e}", kind.label()), error: true }),
+                Ok(()) => self.events.push(Event::Toast {
+                    message,
+                    error: false,
+                }),
+                Err(e) => self.events.push(Event::Toast {
+                    message: format!("{}: {e}", kind.label()),
+                    error: true,
+                }),
             }
         }
         let mut done = vec![];
@@ -826,17 +1057,38 @@ impl Session {
         });
         for (kind, p, segs) in done {
             changed = true;
-            self.offload_log.push((kind, p.error.clone().or_else(|| p.cancelled.then(|| "stopped".to_string()))));
+            self.offload_log.push((
+                kind,
+                p.error
+                    .clone()
+                    .or_else(|| p.cancelled.then(|| "stopped".to_string())),
+            ));
             if self.offload_log.len() > 32 {
                 self.offload_log.remove(0);
             }
             if let Some(e) = p.error {
-                self.events.push(Event::Toast { message: format!("{}: {e}", kind.label()), error: true });
+                self.events.push(Event::Toast {
+                    message: format!("{}: {e}", kind.label()),
+                    error: true,
+                });
             } else if p.cancelled {
-                let kept = if segs > 0 { format!(" ({segs} frame(s) kept)") } else { String::new() };
-                self.events.push(Event::Toast { message: format!("{} stopped{kept}", kind.label()), error: false });
+                let kept = if segs > 0 {
+                    format!(" ({segs} frame(s) kept)")
+                } else {
+                    String::new()
+                };
+                self.events.push(Event::Toast {
+                    message: format!("{} stopped{kept}", kind.label()),
+                    error: false,
+                });
             } else if kind == JobKind::RotoPropagate {
-                self.events.push(Event::Toast { message: format!("Roto Brush: propagated {} frame(s) in {:.1} s", segs, p.elapsed), error: false });
+                self.events.push(Event::Toast {
+                    message: format!(
+                        "Roto Brush: propagated {} frame(s) in {:.1} s",
+                        segs, p.elapsed
+                    ),
+                    error: false,
+                });
             }
             // Rendered frames depend on the result (an analysis' group, the segmentation cache);
             // not on a plan summary (`warp.status` only).
@@ -857,9 +1109,14 @@ impl Session {
             match r {
                 WorkerReply::Render { state } => {
                     let fin = crate::render_queue::lock(&shared.state).finished;
-                    *crate::render_queue::lock(&shared.state) = JobState { finished: fin, ..state };
+                    *crate::render_queue::lock(&shared.state) = JobState {
+                        finished: fin,
+                        ..state
+                    };
                 }
-                WorkerReply::Item { update } => crate::render_queue::lock(&shared.updates).push(update),
+                WorkerReply::Item { update } => {
+                    crate::render_queue::lock(&shared.updates).push(update)
+                }
                 WorkerReply::Failed { error } => {
                     log::warn!("render worker: {error}");
                     let cur = crate::render_queue::lock(&shared.state).current;
@@ -894,17 +1151,42 @@ mod tests {
     #[test]
     fn protocol_round_trips() {
         let mut s = Session::default();
-        s.execute("file.openDemoProject", serde_json::json!({})).unwrap();
+        s.execute("file.openDemoProject", serde_json::json!({}))
+            .unwrap();
         let comp = s.active_comp_id().unwrap();
         s.execute("renderQueue.add", serde_json::json!({})).unwrap();
         let item = s.project.render_queue[0].clone();
         let reqs = [
-            WorkerJob::Render { items: vec![vec![(item.clone(), "/out.gif".into())]] },
-            WorkerJob::Warp { comp, layer: LayerId(3), effect: 9 },
-            WorkerJob::WarpPlan { comp, layer: LayerId(3), effect: 9, time: Tick::from_seconds_f64(0.5) },
-            WorkerJob::RotoFreeze { comp, layer: LayerId(3), effect: 9 },
-            WorkerJob::Camera { comp, layer: LayerId(3), effect: 9 },
-            WorkerJob::RotoPropagate { comp, layer: LayerId(3), effect: 9, direction: crate::roto::Direction::Forward },
+            WorkerJob::Render {
+                items: vec![vec![(item.clone(), "/out.gif".into())]],
+            },
+            WorkerJob::Warp {
+                comp,
+                layer: LayerId(3),
+                effect: 9,
+            },
+            WorkerJob::WarpPlan {
+                comp,
+                layer: LayerId(3),
+                effect: 9,
+                time: Tick::from_seconds_f64(0.5),
+            },
+            WorkerJob::RotoFreeze {
+                comp,
+                layer: LayerId(3),
+                effect: 9,
+            },
+            WorkerJob::Camera {
+                comp,
+                layer: LayerId(3),
+                effect: 9,
+            },
+            WorkerJob::RotoPropagate {
+                comp,
+                layer: LayerId(3),
+                effect: 9,
+                direction: crate::roto::Direction::Forward,
+            },
             WorkerJob::Track {
                 comp,
                 layer: LayerId(1),
@@ -913,7 +1195,12 @@ mod tests {
                 settings: TrackerSettings::default(),
                 points: vec![PointValues {
                     uid: 5,
-                    spec: effectcraft_track::PointSpec { center: [1.0, 2.0], feature_size: [3.0, 4.0], search_offset: [0.5, 0.0], search_size: [9.0, 9.0] },
+                    spec: effectcraft_track::PointSpec {
+                        center: [1.0, 2.0],
+                        feature_size: [3.0, 4.0],
+                        search_offset: [0.5, 0.0],
+                        search_size: [9.0, 9.0],
+                    },
                     attach_offset: [0.25, -1.0],
                 }],
                 times: vec![Tick::ZERO, Tick::from_seconds_f64(0.5)],
@@ -945,7 +1232,12 @@ mod tests {
         ];
         for job in reqs {
             let kind = job.kind();
-            let req = WorkerRequest { id: 42, project: s.project.to_json(), files: footage_files(&s.project), job };
+            let req = WorkerRequest {
+                id: 42,
+                project: s.project.to_json(),
+                files: footage_files(&s.project),
+                job,
+            };
             let t = round(&req);
             assert!(t.contains("\"kind\":"), "{kind:?}");
             let back: WorkerRequest = serde_json::from_str(&t).unwrap();
@@ -954,9 +1246,29 @@ mod tests {
         }
         let g = s.active_comp().unwrap().layers[0].props.clone();
         for r in [
-            WorkerReply::Render { state: JobState { current: Some(3), done: 4, total: 10, items_total: 1, ..Default::default() } },
-            WorkerReply::Item { update: ItemUpdate::Started { id: 3, unix: 1_700_000_000 } },
-            WorkerReply::Item { update: ItemUpdate::Finished { id: 3, status: RenderStatus::Failed("x".into()), seconds: 1.5, output: Some("/a.gif".into()) } },
+            WorkerReply::Render {
+                state: JobState {
+                    current: Some(3),
+                    done: 4,
+                    total: 10,
+                    items_total: 1,
+                    ..Default::default()
+                },
+            },
+            WorkerReply::Item {
+                update: ItemUpdate::Started {
+                    id: 3,
+                    unix: 1_700_000_000,
+                },
+            },
+            WorkerReply::Item {
+                update: ItemUpdate::Finished {
+                    id: 3,
+                    status: RenderStatus::Failed("x".into()),
+                    seconds: 1.5,
+                    output: Some("/a.gif".into()),
+                },
+            },
             WorkerReply::Progress { done: 1, total: 2 },
             WorkerReply::WarpPlan {
                 key: [1, u64::MAX],
@@ -967,8 +1279,18 @@ mod tests {
                     valid_fraction: 0.9,
                 }),
             },
-            WorkerReply::Group { comp, layer: LayerId(1), group: Box::new(g), message: "ok".into() },
-            WorkerReply::Segs { segs: vec![SegData::new(5, &effectcraft_track::roto::FrameSeg::empty(4, 3))] },
+            WorkerReply::Group {
+                comp,
+                layer: LayerId(1),
+                group: Box::new(g),
+                message: "ok".into(),
+            },
+            WorkerReply::Segs {
+                segs: vec![SegData::new(
+                    5,
+                    &effectcraft_track::roto::FrameSeg::empty(4, 3),
+                )],
+            },
             WorkerReply::Fill {
                 plan: Box::new(crate::commands::content_fill::FillPlan {
                     comp,
@@ -985,7 +1307,9 @@ mod tests {
                 }),
                 files: vec!["/Fill/Clip_Fill_1/fill_00000.png".into()],
             },
-            WorkerReply::Failed { error: "boom".into() },
+            WorkerReply::Failed {
+                error: "boom".into(),
+            },
             WorkerReply::Done,
         ] {
             let t = round(&r);
@@ -998,9 +1322,17 @@ mod tests {
     struct Inline;
     impl Offload for Inline {
         fn start(&self, req: WorkerRequest, inbox: Arc<Inbox>) -> Result<(), String> {
-            let req: WorkerRequest = serde_json::from_str(&serde_json::to_string(&req).unwrap()).unwrap();
-            let mut w = Session { exporter: Some(Arc::new(crate::rq_tests::MockExporter { log: Default::default() })), ..Default::default() };
-            let post: Post = Rc::new(move |r| inbox.push(serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap()));
+            let req: WorkerRequest =
+                serde_json::from_str(&serde_json::to_string(&req).unwrap()).unwrap();
+            let mut w = Session {
+                exporter: Some(Arc::new(crate::rq_tests::MockExporter {
+                    log: Default::default(),
+                })),
+                ..Default::default()
+            };
+            let post: Post = Rc::new(move |r| {
+                inbox.push(serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap())
+            });
             run_request(&mut w, req, &post);
             Ok(())
         }
@@ -1010,21 +1342,35 @@ mod tests {
     #[test]
     fn render_runs_through_the_offload() {
         let mut s = Session {
-            exporter: Some(Arc::new(crate::rq_tests::MockExporter { log: Default::default() })),
+            exporter: Some(Arc::new(crate::rq_tests::MockExporter {
+                log: Default::default(),
+            })),
             offload: Some(Arc::new(Inline)),
             ..Default::default()
         };
-        s.execute("file.openDemoProject", serde_json::json!({})).unwrap();
-        s.execute("renderQueue.add", serde_json::json!({"output": "/x.gif"})).unwrap();
+        s.execute("file.openDemoProject", serde_json::json!({}))
+            .unwrap();
+        s.execute("renderQueue.add", serde_json::json!({"output": "/x.gif"}))
+            .unwrap();
         let ids = s.start_render(false).unwrap();
         // (the inline offload has replied already; replies are applied when polled)
         s.poll_render();
         assert!(s.render_job.is_none());
-        let it = s.project.render_queue.iter().find(|i| i.id == ids[0]).unwrap();
+        let it = s
+            .project
+            .render_queue
+            .iter()
+            .find(|i| i.id == ids[0])
+            .unwrap();
         assert_eq!(it.status, RenderStatus::Done, "{:?}", it.status);
-        assert!(it.last_output.as_deref().is_some_and(|o| o.ends_with("x.gif")));
+        assert!(
+            it.last_output
+                .as_deref()
+                .is_some_and(|o| o.ends_with("x.gif"))
+        );
         // `wait` renders inline.
-        s.execute("renderQueue.add", serde_json::json!({"output": "/y.gif"})).unwrap();
+        s.execute("renderQueue.add", serde_json::json!({"output": "/y.gif"}))
+            .unwrap();
         s.start_render(true).unwrap();
         assert!(s.render_job.is_none() || s.render_job.as_ref().unwrap().remote.is_none());
     }
@@ -1033,9 +1379,15 @@ mod tests {
     struct InlineWith(Arc<dyn effectcraft_render::FootageSource>);
     impl Offload for InlineWith {
         fn start(&self, req: WorkerRequest, inbox: Arc<Inbox>) -> Result<(), String> {
-            let req: WorkerRequest = serde_json::from_str(&serde_json::to_string(&req).unwrap()).unwrap();
-            let mut w = Session { footage: self.0.clone(), ..Default::default() };
-            let post: Post = Rc::new(move |r| inbox.push(serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap()));
+            let req: WorkerRequest =
+                serde_json::from_str(&serde_json::to_string(&req).unwrap()).unwrap();
+            let mut w = Session {
+                footage: self.0.clone(),
+                ..Default::default()
+            };
+            let post: Post = Rc::new(move |r| {
+                inbox.push(serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap())
+            });
             run_request(&mut w, req, &post);
             Ok(())
         }
@@ -1065,26 +1417,57 @@ mod tests {
         s.execute("track.motion", serde_json::json!({})).unwrap();
         s.execute("track.setPoint", serde_json::json!({"point": 1, "center": pose(0).0, "featureSize": [36, 36], "searchSize": [80, 80]})).unwrap();
         let undo = s.history.undo.len();
-        s.execute("track.analyze", serde_json::json!({"direction": "forward"})).unwrap();
-        assert!(s.is_tracking() && s.track_job.is_none(), "offloaded, not on a thread");
+        s.execute("track.analyze", serde_json::json!({"direction": "forward"}))
+            .unwrap();
+        assert!(
+            s.is_tracking() && s.track_job.is_none(),
+            "offloaded, not on a thread"
+        );
         assert!(s.track_progress().is_some());
         assert!(s.poll_offload());
         assert!(!s.is_tracking() && s.offloaded.is_empty());
         let l = s.active_comp().unwrap().layer(clip).unwrap();
-        let tp = l.trackers().next().unwrap().0.track_points().next().unwrap().clone();
+        let tp = l
+            .trackers()
+            .next()
+            .unwrap()
+            .0
+            .track_points()
+            .next()
+            .unwrap()
+            .clone();
         let fc = tp.get("featureCenter").unwrap();
         assert_eq!(fc.keys.len(), 25);
         let v = fc.value_at(crate::tests_track::frame_time(12)).as_vec2();
-        assert!((v[0] - pose(12).0[0]).abs() < 0.3 && (v[1] - pose(12).0[1]).abs() < 0.3, "{v:?}");
+        assert!(
+            (v[0] - pose(12).0[0]).abs() < 0.3 && (v[1] - pose(12).0[1]).abs() < 0.3,
+            "{v:?}"
+        );
         assert_eq!(s.history.undo.len(), undo + 1);
         assert_eq!(s.history.undo.last().unwrap().0, "Analyze Track");
         assert!(s.events.iter().any(|e| matches!(e, Event::Toast { message, error: false } if message.starts_with("Tracked"))));
         assert!(s.undo());
         let l = s.active_comp().unwrap().layer(clip).unwrap();
-        assert!(l.trackers().next().unwrap().0.track_points().next().unwrap().get("featureCenter").unwrap().keys.is_empty());
+        assert!(
+            l.trackers()
+                .next()
+                .unwrap()
+                .0
+                .track_points()
+                .next()
+                .unwrap()
+                .get("featureCenter")
+                .unwrap()
+                .keys
+                .is_empty()
+        );
         // `wait` runs inline.
         s.redo();
-        s.execute("track.analyze", serde_json::json!({"direction": "forward", "wait": true})).ok();
+        s.execute(
+            "track.analyze",
+            serde_json::json!({"direction": "forward", "wait": true}),
+        )
+        .ok();
         assert!(s.offloaded.is_empty());
     }
 
@@ -1093,28 +1476,43 @@ mod tests {
         let (mut s, _, _) = crate::tests_track::setup(crate::tests_track::patch_frames(pose));
         let off = Arc::new(Hanging::default());
         s.offload = Some(off.clone());
-        s.exporter = Some(Arc::new(crate::rq_tests::MockExporter { log: Default::default() }));
+        s.exporter = Some(Arc::new(crate::rq_tests::MockExporter {
+            log: Default::default(),
+        }));
         // Analysis: stopping drops the job, nothing is written.
         s.execute("track.motion", serde_json::json!({})).unwrap();
         let rev = s.revision;
         s.execute("track.analyze", serde_json::json!({})).unwrap();
         assert!(s.is_tracking());
-        assert!(s.execute("track.analyze", serde_json::json!({})).is_err(), "one at a time");
+        assert!(
+            s.execute("track.analyze", serde_json::json!({})).is_err(),
+            "one at a time"
+        );
         assert!(s.stop_track());
         s.poll_offload();
         assert!(!s.is_tracking());
         assert_eq!(off.0.lock().unwrap().len(), 1);
-        assert!(s.events.iter().any(|e| matches!(e, Event::Toast { message, .. } if message.contains("stopped"))));
+        assert!(
+            s.events
+                .iter()
+                .any(|e| matches!(e, Event::Toast { message, .. } if message.contains("stopped")))
+        );
         assert!(s.revision > rev);
         // Render: the queued items become User Stopped.
-        s.execute("renderQueue.add", serde_json::json!({"output": "/a.gif"})).unwrap();
+        s.execute("renderQueue.add", serde_json::json!({"output": "/a.gif"}))
+            .unwrap();
         let ids = s.start_render(false).unwrap();
         assert!(s.is_rendering());
         assert!(s.stop_render());
         s.poll_render();
         assert!(!s.is_rendering());
         assert_eq!(off.0.lock().unwrap().len(), 2);
-        let it = s.project.render_queue.iter().find(|i| i.id == ids[0]).unwrap();
+        let it = s
+            .project
+            .render_queue
+            .iter()
+            .find(|i| i.id == ids[0])
+            .unwrap();
         assert_eq!(it.status, RenderStatus::UserStopped);
     }
 
@@ -1123,10 +1521,13 @@ mod tests {
         report(1, 2); // no hook: nothing happens
         let seen = Rc::new(RefCell::new(vec![]));
         let s2 = seen.clone();
-        effectcraft_render::passes::block_on(with_hook(Box::new(move |d, t| s2.borrow_mut().push((d, t))), async {
-            report(1, 3);
-            report(2, 3);
-        }));
+        effectcraft_render::passes::block_on(with_hook(
+            Box::new(move |d, t| s2.borrow_mut().push((d, t))),
+            async {
+                report(1, 3);
+                report(2, 3);
+            },
+        ));
         report(3, 3);
         assert_eq!(*seen.borrow(), vec![(1, 3), (2, 3)]);
     }

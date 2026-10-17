@@ -17,17 +17,28 @@ pub(crate) struct Ui {
 
 impl Ui {
     pub(crate) fn new(s: Session) -> Self {
-        let mut u = Self { ctx: egui::Context::default(), app: FigApp::new(s, Box::new(NoServices)), time: 0.0 };
+        let mut u = Self {
+            ctx: egui::Context::default(),
+            app: FigApp::new(s, Box::new(NoServices)),
+            time: 0.0,
+        };
         u.frames(3, Vec::new);
         u
     }
 
     pub(crate) fn frame(&mut self, events: Vec<Event>) {
         self.time += 1.0 / 60.0;
-        let input =
-            RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))), time: Some(self.time), events, ..Default::default() };
+        let input = RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))),
+            time: Some(self.time),
+            events,
+            ..Default::default()
+        };
         let app = &mut self.app;
-        self.ctx.run_ui(input, |ui| app.ui(ui)).textures_delta.clear();
+        self.ctx
+            .run_ui(input, |ui| app.ui(ui))
+            .textures_delta
+            .clear();
     }
 
     pub(crate) fn frames(&mut self, n: usize, events: impl Fn() -> Vec<Event>) {
@@ -45,7 +56,9 @@ impl Ui {
 
     /// The preview pane's window on screen.
     pub(crate) fn pane(&self) -> Rect {
-        self.ctx.memory(|m| m.area_rect(crate::present::pane_id())).expect("the pane is open")
+        self.ctx
+            .memory(|m| m.area_rect(crate::present::pane_id()))
+            .expect("the pane is open")
     }
 
     /// The pane's player state (`ui.inspect` → `preview`).
@@ -60,12 +73,23 @@ impl Ui {
     pub(crate) fn button(&mut self, p: Pos2, pressed: bool) {
         self.frame(vec![
             Event::PointerMoved(p),
-            Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() },
+            Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: Default::default(),
+            },
         ]);
     }
 
     pub(crate) fn key(&mut self, at: Pos2, key: Key) {
-        let k = |pressed| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers: Default::default() };
+        let k = |pressed| Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
         self.frame(vec![Event::PointerMoved(at), k(true), k(false)]);
     }
 }
@@ -80,12 +104,36 @@ pub(crate) fn setup() -> (Ui, NodeId, NodeId, NodeId) {
     let mut s = Session::new();
     let ex = |s: &mut Session, c: &str, p: Value| s.execute(c, &p).unwrap();
     ex(&mut s, "proto.settings", json!({"device": "iPhone 16"}));
-    let a = id(&ex(&mut s, "node.create", json!({"type": "frame", "name": "A", "x": 0, "y": 0, "width": 393, "height": 2000})));
-    ex(&mut s, "node.set", json!({"id": a, "props": {"overflow": "vertical"}}));
-    let card = id(&ex(&mut s, "node.create", json!({"type": "rectangle", "parent": a, "x": 20, "y": 100, "width": 200, "height": 100})));
-    let bar = id(&ex(&mut s, "node.create", json!({"type": "rectangle", "parent": a, "x": 0, "y": 1940, "width": 393, "height": 60})));
-    ex(&mut s, "node.set", json!({"id": bar, "props": {"scrollPosition": "fixed", "constraints": {"vertical": "bottom"}}}));
-    let b = id(&ex(&mut s, "node.create", json!({"type": "frame", "name": "B", "x": 500, "y": 0, "width": 393, "height": 852})));
+    let a = id(&ex(
+        &mut s,
+        "node.create",
+        json!({"type": "frame", "name": "A", "x": 0, "y": 0, "width": 393, "height": 2000}),
+    ));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": a, "props": {"overflow": "vertical"}}),
+    );
+    let card = id(&ex(
+        &mut s,
+        "node.create",
+        json!({"type": "rectangle", "parent": a, "x": 20, "y": 100, "width": 200, "height": 100}),
+    ));
+    let bar = id(&ex(
+        &mut s,
+        "node.create",
+        json!({"type": "rectangle", "parent": a, "x": 0, "y": 1940, "width": 393, "height": 60}),
+    ));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": bar, "props": {"scrollPosition": "fixed", "constraints": {"vertical": "bottom"}}}),
+    );
+    let b = id(&ex(
+        &mut s,
+        "node.create",
+        json!({"type": "frame", "name": "B", "x": 500, "y": 0, "width": 393, "height": 852}),
+    ));
     ex(&mut s, "select.set", json!({"ids": [card]}));
     (Ui::new(s), a, b, card)
 }
@@ -93,9 +141,16 @@ pub(crate) fn setup() -> (Ui, NodeId, NodeId, NodeId) {
 #[test]
 fn preview_pane_opens_follows_edits_and_the_selection() {
     let (mut u, a, b, card) = setup();
-    assert_eq!(u.run("proto.preview", json!({}))["start"], json!(a), "the selected layer's frame");
+    assert_eq!(
+        u.run("proto.preview", json!({}))["start"],
+        json!(a),
+        "the selected layer's frame"
+    );
     let pane = u.pane();
-    assert!(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0)).contains_rect(pane), "{pane:?}");
+    assert!(
+        Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0)).contains_rect(pane),
+        "{pane:?}"
+    );
     assert_eq!(u.preview()["current"], json!(a));
     assert_eq!(u.preview()["device"], "iPhone 16");
     // Edits show live.
@@ -105,11 +160,18 @@ fn preview_pane_opens_follows_edits_and_the_selection() {
     let before = u.app.session.doc().unwrap().world_bounds(card).unwrap();
     u.key(pane.center(), Key::ArrowRight);
     assert_eq!(u.preview()["current"], json!(b));
-    assert_eq!(u.app.session.doc().unwrap().world_bounds(card).unwrap(), before);
+    assert_eq!(
+        u.app.session.doc().unwrap().world_bounds(card).unwrap(),
+        before
+    );
     // Away from the pane the editor has the keyboard.
     u.key(pos2(600.0, 450.0), Key::ArrowRight);
     assert_eq!(u.preview()["current"], json!(b));
-    assert_ne!(u.app.session.doc().unwrap().world_bounds(card).unwrap(), before, "nudged");
+    assert_ne!(
+        u.app.session.doc().unwrap().world_bounds(card).unwrap(),
+        before,
+        "nudged"
+    );
     // Selecting another top-level frame in the editor shows it.
     u.run("select.set", json!({"ids": [b]}));
     assert_eq!(u.preview()["current"], json!(b));
@@ -180,7 +242,13 @@ fn full_window_presenter_shares_the_player() {
     let (mut u, a, ..) = setup();
     u.run("proto.present", json!({"start": a}));
     assert_eq!(u.app.inspect()["presenter"]["current"], json!(a));
-    crate::control::handle(&mut u.app, &u.ctx, "ui.set", &json!({"presentScroll": [0, 5000]})).unwrap();
+    crate::control::handle(
+        &mut u.app,
+        &u.ctx,
+        "ui.set",
+        &json!({"presentScroll": [0, 5000]}),
+    )
+    .unwrap();
     assert_eq!(u.app.inspect()["presenter"]["scroll"], json!([0.0, 1148.0]));
     u.frame(vec![]);
     u.key(pos2(700.0, 450.0), Key::Escape);
@@ -190,5 +258,14 @@ fn full_window_presenter_shares_the_player() {
     assert_eq!(u.preview()["current"], json!(a));
     crate::control::handle(&mut u.app, &u.ctx, "ui.set", &json!({"preview": false})).unwrap();
     assert!(u.app.ui.preview.is_none());
-    assert!(crate::control::handle(&mut u.app, &u.ctx, "ui.set", &json!({"presentScroll": [0, 1]})).is_err(), "nothing presented");
+    assert!(
+        crate::control::handle(
+            &mut u.app,
+            &u.ctx,
+            "ui.set",
+            &json!({"presentScroll": [0, 1]})
+        )
+        .is_err(),
+        "nothing presented"
+    );
 }

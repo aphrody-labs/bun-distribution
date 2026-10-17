@@ -26,12 +26,22 @@ impl Layout {
         if greens != 2 || red + blue != 3 {
             return None;
         }
-        Some(Layout { dx: red % 2, dy: red / 2 })
+        Some(Layout {
+            dx: red % 2,
+            dy: red / 2,
+        })
     }
 
     /// The cell grid's origin: `-1` along an axis whose first red sample is at 1, so that cell 0 starts on a red column or row.
     fn origin(self) -> (isize, isize) {
-        (isize::try_from(self.dx).unwrap_or(isize::MAX).saturating_neg(), isize::try_from(self.dy).unwrap_or(isize::MAX).saturating_neg())
+        (
+            isize::try_from(self.dx)
+                .unwrap_or(isize::MAX)
+                .saturating_neg(),
+            isize::try_from(self.dy)
+                .unwrap_or(isize::MAX)
+                .saturating_neg(),
+        )
     }
 
     /// Cells across and down covering a `width × height` mosaic.
@@ -43,7 +53,10 @@ impl Layout {
     /// The mosaic position of cell `(cx, cy)`'s top-left sample (may lie outside the picture).
     pub fn position(self, cx: isize, cy: isize) -> (isize, isize) {
         let (ox, oy) = self.origin();
-        (ox.saturating_add(cx.saturating_mul(2)), oy.saturating_add(cy.saturating_mul(2)))
+        (
+            ox.saturating_add(cx.saturating_mul(2)),
+            oy.saturating_add(cy.saturating_mul(2)),
+        )
     }
 }
 
@@ -65,9 +78,22 @@ pub fn reflect(i: isize, n: usize) -> usize {
 /// Pack the `tile × tile` cells whose top-left cell is `(cx0, cy0)` into `out` as four planes `[R, G1, G2, B]`
 /// (`4 · tile²` values, NCHW). G1 is the green beside the red sample, G2 the green under it. Samples outside
 /// the picture are mirrored. Returns `false` (and writes nothing) when the sizes do not fit.
-pub fn pack_tile(mosaic: &[f32], width: usize, height: usize, layout: Layout, cx0: isize, cy0: isize, tile: usize, out: &mut [f32]) -> bool {
-    let Some(plane) = tile.checked_mul(tile) else { return false };
-    let Some(values) = plane.checked_mul(4) else { return false };
+pub fn pack_tile(
+    mosaic: &[f32],
+    width: usize,
+    height: usize,
+    layout: Layout,
+    cx0: isize,
+    cy0: isize,
+    tile: usize,
+    out: &mut [f32],
+) -> bool {
+    let Some(plane) = tile.checked_mul(tile) else {
+        return false;
+    };
+    let Some(values) = plane.checked_mul(4) else {
+        return false;
+    };
     if width == 0
         || height == 0
         || tile == 0
@@ -78,11 +104,21 @@ pub fn pack_tile(mosaic: &[f32], width: usize, height: usize, layout: Layout, cx
     {
         return false;
     }
-    let Ok(last) = isize::try_from(tile - 1) else { return false };
+    let Ok(last) = isize::try_from(tile - 1) else {
+        return false;
+    };
     let (ox, oy) = layout.origin();
     for (start, origin) in [(cx0, ox), (cy0, oy)] {
-        if start.checked_mul(2).and_then(|v| v.checked_add(origin)).is_none()
-            || start.checked_add(last).and_then(|v| v.checked_mul(2)).and_then(|v| v.checked_add(origin)).and_then(|v| v.checked_add(1)).is_none()
+        if start
+            .checked_mul(2)
+            .and_then(|v| v.checked_add(origin))
+            .is_none()
+            || start
+                .checked_add(last)
+                .and_then(|v| v.checked_mul(2))
+                .and_then(|v| v.checked_add(origin))
+                .and_then(|v| v.checked_add(1))
+                .is_none()
         {
             return false;
         }
@@ -90,11 +126,15 @@ pub fn pack_tile(mosaic: &[f32], width: usize, height: usize, layout: Layout, cx
     // the four samples of a cell, as (dx, dy) from its top-left sample
     const SUB: [(isize, isize); 4] = [(0, 0), (1, 0), (0, 1), (1, 1)];
     for (p, &(sx, sy)) in SUB.iter().enumerate() {
-        let Some(dst) = out.get_mut(p * plane..(p + 1) * plane) else { return false };
+        let Some(dst) = out.get_mut(p * plane..(p + 1) * plane) else {
+            return false;
+        };
         for (j, row) in dst.chunks_exact_mut(tile).enumerate() {
             let (_, y) = layout.position(cx0, cy0 + j as isize);
             let ry = reflect(y + sy, height);
-            let Some(src) = mosaic.get(ry * width..(ry + 1) * width) else { return false };
+            let Some(src) = mosaic.get(ry * width..(ry + 1) * width) else {
+                return false;
+            };
             for (i, v) in row.iter_mut().enumerate() {
                 let (x, _) = layout.position(cx0 + i as isize, cy0);
                 *v = src.get(reflect(x + sx, width)).copied().unwrap_or(0.0);
@@ -112,7 +152,13 @@ mod tests {
     fn hostile_sizes_and_positions_never_panic_or_write_output() {
         let layout = Layout::from_cell([0, 1, 1, 2]).unwrap();
         let mut out = [7.0; 4];
-        for (w, h, tile, x) in [(usize::MAX, 2, 1, 0), (1, 1, usize::MAX, 0), (1, 1, 0, 0), (1, 1, 1, isize::MAX), (1, 1, 1, isize::MIN)] {
+        for (w, h, tile, x) in [
+            (usize::MAX, 2, 1, 0),
+            (1, 1, usize::MAX, 0),
+            (1, 1, 0, 0),
+            (1, 1, 1, isize::MAX),
+            (1, 1, 1, isize::MIN),
+        ] {
             assert!(!pack_tile(&[0.5], w, h, layout, x, 0, tile, &mut out));
             assert_eq!(out, [7.0; 4]);
         }
@@ -121,15 +167,30 @@ mod tests {
                 assert!(reflect(i, n) < n);
             }
         }
-        assert_eq!(layout.cells(usize::MAX, usize::MAX), (usize::MAX / 2 + 1, usize::MAX / 2 + 1));
+        assert_eq!(
+            layout.cells(usize::MAX, usize::MAX),
+            (usize::MAX / 2 + 1, usize::MAX / 2 + 1)
+        );
     }
 
     #[test]
     fn layouts_from_cells() {
-        assert_eq!(Layout::from_cell([0, 1, 1, 2]), Some(Layout { dx: 0, dy: 0 }));
-        assert_eq!(Layout::from_cell([1, 0, 2, 1]), Some(Layout { dx: 1, dy: 0 }));
-        assert_eq!(Layout::from_cell([1, 2, 0, 1]), Some(Layout { dx: 0, dy: 1 }));
-        assert_eq!(Layout::from_cell([2, 1, 1, 0]), Some(Layout { dx: 1, dy: 1 }));
+        assert_eq!(
+            Layout::from_cell([0, 1, 1, 2]),
+            Some(Layout { dx: 0, dy: 0 })
+        );
+        assert_eq!(
+            Layout::from_cell([1, 0, 2, 1]),
+            Some(Layout { dx: 1, dy: 0 })
+        );
+        assert_eq!(
+            Layout::from_cell([1, 2, 0, 1]),
+            Some(Layout { dx: 0, dy: 1 })
+        );
+        assert_eq!(
+            Layout::from_cell([2, 1, 1, 0]),
+            Some(Layout { dx: 1, dy: 1 })
+        );
         // not Bayer: two reds, a missing blue, greens on the wrong diagonal
         assert_eq!(Layout::from_cell([0, 0, 1, 2]), None);
         assert_eq!(Layout::from_cell([0, 1, 2, 1]), None);
@@ -146,7 +207,11 @@ mod tests {
         assert_eq!(reflect(5, 0), 0);
         assert_eq!(reflect(5, 1), 0);
         for i in -40..60 {
-            assert_eq!(reflect(i, 11) % 2, (i.rem_euclid(2)) as usize, "parity at {i}");
+            assert_eq!(
+                reflect(i, 11) % 2,
+                (i.rem_euclid(2)) as usize,
+                "parity at {i}"
+            );
         }
     }
 
@@ -156,14 +221,19 @@ mod tests {
         for cell in [[0u8, 1, 1, 2], [1, 0, 2, 1], [1, 2, 0, 1], [2, 1, 1, 0]] {
             let layout = Layout::from_cell(cell).unwrap();
             let (w, h) = (10usize, 8usize);
-            let mosaic: Vec<f32> = (0..w * h).map(|i| [10.0, 20.0, 30.0][cell[(i / w % 2) * 2 + i % w % 2] as usize]).collect();
+            let mosaic: Vec<f32> = (0..w * h)
+                .map(|i| [10.0, 20.0, 30.0][cell[(i / w % 2) * 2 + i % w % 2] as usize])
+                .collect();
             let (nx, ny) = layout.cells(w, h);
             let tile = nx.max(ny);
             let mut out = vec![0.0; 4 * tile * tile];
             assert!(pack_tile(&mosaic, w, h, layout, 0, 0, tile, &mut out));
             let plane = tile * tile;
             for (p, want) in [10.0, 20.0, 20.0, 30.0].into_iter().enumerate() {
-                assert!(out[p * plane..(p + 1) * plane].iter().all(|&v| v == want), "layout {cell:?} plane {p}");
+                assert!(
+                    out[p * plane..(p + 1) * plane].iter().all(|&v| v == want),
+                    "layout {cell:?} plane {p}"
+                );
             }
         }
     }
@@ -174,7 +244,16 @@ mod tests {
         let (w, h) = (4, 4);
         let mosaic: Vec<f32> = (0..16).map(|i| i as f32).collect();
         let mut out = vec![0.0; 4 * 4];
-        assert!(pack_tile(&mosaic, w, h, Layout { dx: 0, dy: 0 }, 0, 0, 2, &mut out));
+        assert!(pack_tile(
+            &mosaic,
+            w,
+            h,
+            Layout { dx: 0, dy: 0 },
+            0,
+            0,
+            2,
+            &mut out
+        ));
         // cell (0,0): R = site (0,0)=0, G1 = site (1,0)=1, G2 = site (0,1)=4, B = site (1,1)=5
         assert_eq!([out[0], out[4], out[8], out[12]], [0.0, 1.0, 4.0, 5.0]);
         // cell (1,0): sites (2,0)=2, (3,0)=3, (2,1)=6, (3,1)=7
@@ -184,8 +263,35 @@ mod tests {
     #[test]
     fn packing_rejects_wrong_sizes() {
         let mut out = vec![0.0; 16];
-        assert!(!pack_tile(&[0.0; 15], 4, 4, Layout { dx: 0, dy: 0 }, 0, 0, 2, &mut out));
-        assert!(!pack_tile(&[0.0; 16], 4, 4, Layout { dx: 0, dy: 0 }, 0, 0, 3, &mut out));
-        assert!(!pack_tile(&[], 0, 0, Layout { dx: 0, dy: 0 }, 0, 0, 2, &mut out));
+        assert!(!pack_tile(
+            &[0.0; 15],
+            4,
+            4,
+            Layout { dx: 0, dy: 0 },
+            0,
+            0,
+            2,
+            &mut out
+        ));
+        assert!(!pack_tile(
+            &[0.0; 16],
+            4,
+            4,
+            Layout { dx: 0, dy: 0 },
+            0,
+            0,
+            3,
+            &mut out
+        ));
+        assert!(!pack_tile(
+            &[],
+            0,
+            0,
+            Layout { dx: 0, dy: 0 },
+            0,
+            0,
+            2,
+            &mut out
+        ));
     }
 }

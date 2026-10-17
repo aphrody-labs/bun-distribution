@@ -14,7 +14,11 @@ pub fn peaks_path(folder: &Path, path: &str, bins: u32) -> Option<PathBuf> {
     let meta = std::fs::metadata(path).ok()?;
     let mut h = std::collections::hash_map::DefaultHasher::new();
     (path, meta.len(), meta.modified().ok()).hash(&mut h);
-    Some(folder.join("Peaks").join(format!("{:016x}_{bins}.ecpk", h.finish())))
+    Some(
+        folder
+            .join("Peaks")
+            .join(format!("{:016x}_{bins}.ecpk", h.finish())),
+    )
 }
 
 /// Read a stored summary.
@@ -24,7 +28,13 @@ pub fn load_peaks(file: &Path) -> Option<Vec<[f32; 4]>> {
         return None;
     }
     let f = |c: &[u8]| f32::from_le_bytes([c[0], c[1], c[2], c[3]]);
-    Some(b.as_chunks::<16>().0.iter().map(|c| [f(&c[0..4]), f(&c[4..8]), f(&c[8..12]), f(&c[12..16])]).collect())
+    Some(
+        b.as_chunks::<16>()
+            .0
+            .iter()
+            .map(|c| [f(&c[0..4]), f(&c[4..8]), f(&c[8..12]), f(&c[12..16])])
+            .collect(),
+    )
 }
 
 /// Store a summary (atomically: written beside, then renamed).

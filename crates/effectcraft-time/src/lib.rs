@@ -7,7 +7,14 @@
 //!
 //! Timecode (SMPTE drop/non-drop, frames, feet+frames, samples) is only a *display* of ticks.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -17,7 +24,9 @@ use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 pub const TICKS_PER_SECOND: i64 = 254_016_000_000;
 
 /// A point or duration in time, in ticks.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 #[serde(transparent)]
 pub struct Tick(pub i64);
 
@@ -38,7 +47,9 @@ impl Tick {
     }
     /// Exact conversion from a count of `units` at `per_second` (e.g. samples at 48 000).
     pub fn from_units(units: i64, per_second: i64) -> Tick {
-        Tick(clamp128((units as i128 * TICKS_PER_SECOND as i128) / nonzero(per_second)))
+        Tick(clamp128(
+            (units as i128 * TICKS_PER_SECOND as i128) / nonzero(per_second),
+        ))
     }
     /// Floor conversion to a count of units at `per_second`.
     pub fn to_units_floor(self, per_second: i64) -> i64 {
@@ -46,7 +57,9 @@ impl Tick {
     }
     /// Conversion from a rational timestamp `pts * num / den` seconds (container timebases).
     pub fn from_rational(pts: i64, num: i64, den: i64) -> Tick {
-        let t = (pts as i128).saturating_mul(num as i128).saturating_mul(TICKS_PER_SECOND as i128);
+        let t = (pts as i128)
+            .saturating_mul(num as i128)
+            .saturating_mul(TICKS_PER_SECOND as i128);
         Tick(clamp128(t.div_euclid(nonzero(den))))
     }
     /// Inverse of [`Tick::from_rational`], floored to the timebase.
@@ -67,7 +80,9 @@ impl Tick {
     }
     /// Scale by a rational factor (`num/den`), flooring.
     pub fn mul_ratio(self, num: i64, den: i64) -> Tick {
-        Tick(clamp128((self.0 as i128 * num as i128).div_euclid(nonzero(den))))
+        Tick(clamp128(
+            (self.0 as i128 * num as i128).div_euclid(nonzero(den)),
+        ))
     }
 }
 
@@ -123,7 +138,10 @@ impl TimeRange {
         Self { start, duration }
     }
     pub fn from_bounds(start: Tick, end: Tick) -> Self {
-        Self { start, duration: end - start }
+        Self {
+            start,
+            duration: end - start,
+        }
     }
     pub fn end(&self) -> Tick {
         self.start + self.duration
@@ -158,16 +176,28 @@ impl Default for FrameRate {
 }
 
 impl FrameRate {
-    pub const FPS_23_976: FrameRate = FrameRate { num: 24000, den: 1001 };
+    pub const FPS_23_976: FrameRate = FrameRate {
+        num: 24000,
+        den: 1001,
+    };
     pub const FPS_24: FrameRate = FrameRate { num: 24, den: 1 };
     pub const FPS_25: FrameRate = FrameRate { num: 25, den: 1 };
-    pub const FPS_29_97: FrameRate = FrameRate { num: 30000, den: 1001 };
+    pub const FPS_29_97: FrameRate = FrameRate {
+        num: 30000,
+        den: 1001,
+    };
     pub const FPS_30: FrameRate = FrameRate { num: 30, den: 1 };
     pub const FPS_48: FrameRate = FrameRate { num: 48, den: 1 };
     pub const FPS_50: FrameRate = FrameRate { num: 50, den: 1 };
-    pub const FPS_59_94: FrameRate = FrameRate { num: 60000, den: 1001 };
+    pub const FPS_59_94: FrameRate = FrameRate {
+        num: 60000,
+        den: 1001,
+    };
     pub const FPS_60: FrameRate = FrameRate { num: 60, den: 1 };
-    pub const FPS_119_88: FrameRate = FrameRate { num: 120000, den: 1001 };
+    pub const FPS_119_88: FrameRate = FrameRate {
+        num: 120000,
+        den: 1001,
+    };
     pub const FPS_120: FrameRate = FrameRate { num: 120, den: 1 };
 
     /// Rates offered in sequence settings (common composition presets).
@@ -188,7 +218,10 @@ impl FrameRate {
     pub fn new(num: i64, den: i64) -> Self {
         // Magnitudes can be 2^63 for i64::MIN; keep them unsigned and divide in i128.
         let g = gcd(num.unsigned_abs(), den.unsigned_abs()).max(1) as i128;
-        FrameRate { num: (num as i128 / g) as i64, den: (den as i128 / g) as i64 }
+        FrameRate {
+            num: (num as i128 / g) as i64,
+            den: (den as i128 / g) as i64,
+        }
     }
 
     /// Closest standard rate for a float (e.g. from a container's average rate).
@@ -207,24 +240,35 @@ impl FrameRate {
 
     /// Exact duration of one frame (rounded down only for exotic rates).
     pub fn frame_duration(self) -> Tick {
-        Tick(clamp128((TICKS_PER_SECOND as i128 * self.den as i128) / nonzero(self.num)))
+        Tick(clamp128(
+            (TICKS_PER_SECOND as i128 * self.den as i128) / nonzero(self.num),
+        ))
     }
 
     /// Index of the frame containing `t` (floor).
     pub fn frame_at(self, t: Tick) -> i64 {
-        clamp128((t.0 as i128 * self.num as i128).div_euclid(TICKS_PER_SECOND as i128 * nonzero(self.den)))
+        clamp128(
+            (t.0 as i128 * self.num as i128)
+                .div_euclid(TICKS_PER_SECOND as i128 * nonzero(self.den)),
+        )
     }
 
     /// First tick belonging to frame `f` (ceiling at a fractional tick boundary).
     /// Common broadcast rates have exact integer boundaries. For other rates, flooring would
     /// put the returned tick in frame `f - 1`, since [`Self::frame_at`] floors its frame index.
     pub fn tick_of(self, f: i64) -> Tick {
-        let n = (f as i128).saturating_mul(TICKS_PER_SECOND as i128).saturating_mul(self.den as i128);
+        let n = (f as i128)
+            .saturating_mul(TICKS_PER_SECOND as i128)
+            .saturating_mul(self.den as i128);
         let d = nonzero(self.num);
         // The only signed division overflow (MIN / -1) has a positive result beyond i128.
         let q = n.checked_div_euclid(d).unwrap_or(i128::MAX);
         let r = n.checked_rem_euclid(d).unwrap_or(0);
-        Tick(clamp128(if d > 0 && r != 0 { q.saturating_add(1) } else { q }))
+        Tick(clamp128(if d > 0 && r != 0 {
+            q.saturating_add(1)
+        } else {
+            q
+        }))
     }
 
     /// Snap `t` down to a frame boundary.
@@ -295,8 +339,14 @@ pub enum TimeDisplay {
 }
 
 impl TimeDisplay {
-    pub const ALL: [TimeDisplay; 6] =
-        [TimeDisplay::Timecode, TimeDisplay::Feet35, TimeDisplay::Feet16, TimeDisplay::Frames, TimeDisplay::AudioSamples, TimeDisplay::Seconds];
+    pub const ALL: [TimeDisplay; 6] = [
+        TimeDisplay::Timecode,
+        TimeDisplay::Feet35,
+        TimeDisplay::Feet16,
+        TimeDisplay::Frames,
+        TimeDisplay::AudioSamples,
+        TimeDisplay::Seconds,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             TimeDisplay::Timecode => "Timecode",
@@ -316,7 +366,11 @@ fn df_params(rate: FrameRate) -> (i64, i64) {
 }
 
 /// Convert a frame count to SMPTE fields `(negative, h, m, s, f)`.
-pub fn frames_to_fields(frame: i64, rate: FrameRate, drop_frame: bool) -> (bool, i64, i64, i64, i64) {
+pub fn frames_to_fields(
+    frame: i64,
+    rate: FrameRate,
+    drop_frame: bool,
+) -> (bool, i64, i64, i64, i64) {
     let neg = frame < 0;
     let mut n = frame.saturating_abs();
     let (drop, base) = df_params(rate);
@@ -340,7 +394,10 @@ pub fn frames_to_fields(frame: i64, rate: FrameRate, drop_frame: bool) -> (bool,
 /// Convert SMPTE fields back to a frame count.
 pub fn fields_to_frames(h: i64, m: i64, s: i64, f: i64, rate: FrameRate, drop_frame: bool) -> i64 {
     let (drop, base) = df_params(rate);
-    let secs = h.saturating_mul(3600).saturating_add(m.saturating_mul(60)).saturating_add(s);
+    let secs = h
+        .saturating_mul(3600)
+        .saturating_add(m.saturating_mul(60))
+        .saturating_add(s);
     let mut n = secs.saturating_mul(base).saturating_add(f);
     if drop_frame && rate.supports_drop_frame() {
         let total_min = h.saturating_mul(60).saturating_add(m);
@@ -355,7 +412,10 @@ pub fn format_timecode_frames(frame: i64, rate: FrameRate, drop_frame: bool) -> 
     let (neg, h, m, s, f) = frames_to_fields(frame, rate, df);
     let sep = if df { ';' } else { ':' };
     let fw = if rate.timecode_base() >= 100 { 3 } else { 2 };
-    format!("{}{h:02}{sep}{m:02}{sep}{s:02}{sep}{f:0fw$}", if neg { "-" } else { "" })
+    format!(
+        "{}{h:02}{sep}{m:02}{sep}{s:02}{sep}{f:0fw$}",
+        if neg { "-" } else { "" }
+    )
 }
 
 /// Format a frame count the way After Effects displays the current time: hours not padded
@@ -365,25 +425,48 @@ pub fn format_timecode_ae(frame: i64, rate: FrameRate, drop_frame: bool) -> Stri
     let (neg, h, m, s, f) = frames_to_fields(frame, rate, df);
     let sep = if df { ';' } else { ':' };
     let fw = if rate.timecode_base() >= 100 { 3 } else { 2 };
-    format!("{}{h}{sep}{m:02}{sep}{s:02}{sep}{f:0fw$}", if neg { "-" } else { "" })
+    format!(
+        "{}{h}{sep}{m:02}{sep}{s:02}{sep}{f:0fw$}",
+        if neg { "-" } else { "" }
+    )
 }
 
 /// Format a tick according to a display mode.
-pub fn format_time(t: Tick, rate: FrameRate, drop_frame: bool, display: TimeDisplay, sample_rate: i64) -> String {
+pub fn format_time(
+    t: Tick,
+    rate: FrameRate,
+    drop_frame: bool,
+    display: TimeDisplay,
+    sample_rate: i64,
+) -> String {
     let frame = rate.frame_at(t);
     match display {
         TimeDisplay::Timecode => format_timecode_frames(frame, rate, drop_frame),
         TimeDisplay::Frames => format!("{frame}"),
         TimeDisplay::Feet35 | TimeDisplay::Feet16 => {
-            let per_ft = if display == TimeDisplay::Feet35 { 16 } else { 40 };
+            let per_ft = if display == TimeDisplay::Feet35 {
+                16
+            } else {
+                40
+            };
             let neg = frame < 0;
             let a = frame.unsigned_abs();
-            format!("{}{}+{:02}", if neg { "-" } else { "" }, a / per_ft, a % per_ft)
+            format!(
+                "{}{}+{:02}",
+                if neg { "-" } else { "" },
+                a / per_ft,
+                a % per_ft
+            )
         }
         TimeDisplay::AudioSamples => {
             let secs = t.0.div_euclid(TICKS_PER_SECOND);
             let rem = Tick(t.0.rem_euclid(TICKS_PER_SECOND)).to_units_floor(sample_rate);
-            format!("{:02}:{:02}:{:02}:{rem:05}", secs / 3600, (secs / 60) % 60, secs % 60)
+            format!(
+                "{:02}:{:02}:{:02}:{rem:05}",
+                secs / 3600,
+                (secs / 60) % 60,
+                secs % 60
+            )
         }
         TimeDisplay::Seconds => format!("{:.3}", t.seconds()),
     }
@@ -404,7 +487,12 @@ impl std::error::Error for ParseError {}
 /// - `01:02:03:04`, `01;02;03;04`, `1.2.3.4` (any of `:;.,` separators),
 /// - bare digits are read right-aligned as `HHMMSSFF` (`1000` = 00:00:10:00),
 /// - a leading `+`/`-` makes the value relative to `current` (`+15` = 15 frames later, `-1.00` = 1 s earlier).
-pub fn parse_timecode(input: &str, rate: FrameRate, drop_frame: bool, current: i64) -> Result<i64, ParseError> {
+pub fn parse_timecode(
+    input: &str,
+    rate: FrameRate,
+    drop_frame: bool,
+    current: i64,
+) -> Result<i64, ParseError> {
     let s = input.trim();
     if s.is_empty() {
         return Err(ParseError("empty timecode".into()));
@@ -422,7 +510,11 @@ pub fn parse_timecode(input: &str, rate: FrameRate, drop_frame: bool, current: i
         }
         // Right-aligned pairs: "12345" -> [1, 23, 45]; relative bare numbers are frames.
         if rel.is_some() {
-            vec![digits.parse().map_err(|_| ParseError("number too large".into()))?]
+            vec![
+                digits
+                    .parse()
+                    .map_err(|_| ParseError("number too large".into()))?,
+            ]
         } else {
             let mut v = Vec::new();
             let b = digits.as_bytes();
@@ -438,7 +530,14 @@ pub fn parse_timecode(input: &str, rate: FrameRate, drop_frame: bool, current: i
     } else {
         parts
             .iter()
-            .map(|p| if p.is_empty() { Ok(0) } else { p.parse::<i64>().map_err(|_| ParseError(format!("bad field `{p}`"))) })
+            .map(|p| {
+                if p.is_empty() {
+                    Ok(0)
+                } else {
+                    p.parse::<i64>()
+                        .map_err(|_| ParseError(format!("bad field `{p}`")))
+                }
+            })
             .collect::<Result<_, _>>()?
     };
     if nums.len() > 4 {
@@ -497,7 +596,8 @@ pub fn parse_feet_frames(input: &str, per_foot: i64, current: i64) -> Result<i64
         if !t.bytes().all(|b| b.is_ascii_digit()) {
             return Err(bad());
         }
-        t.parse::<i64>().map_err(|_| ParseError("number too large".into()))
+        t.parse::<i64>()
+            .map_err(|_| ParseError("number too large".into()))
     };
     if s.is_empty() {
         return Err(ParseError("empty feet+frames".into()));
@@ -510,7 +610,10 @@ pub fn parse_feet_frames(input: &str, per_foot: i64, current: i64) -> Result<i64
     match body.rfind('+') {
         Some(i) => {
             let (feet, frames) = (num(&body[..i])?, num(&body[i + 1..])?);
-            let v = feet.checked_mul(per_foot.max(1)).and_then(|v| v.checked_add(frames)).ok_or_else(|| ParseError("number too large".into()))?;
+            let v = feet
+                .checked_mul(per_foot.max(1))
+                .and_then(|v| v.checked_add(frames))
+                .ok_or_else(|| ParseError("number too large".into()))?;
             // A sign before feet+frames is the sign of the count, not a relative move.
             Ok(if sign < 0 { -v } else { v })
         }
@@ -533,14 +636,26 @@ mod tests {
 
     #[test]
     fn frame_rate_constructors_accept_extreme_numbers() {
-        assert_eq!(FrameRate::new(i64::MIN, 1), FrameRate { num: i64::MIN, den: 1 });
-        assert_eq!(FrameRate::new(i64::MIN, i64::MIN), FrameRate { num: -1, den: -1 });
+        assert_eq!(
+            FrameRate::new(i64::MIN, 1),
+            FrameRate {
+                num: i64::MIN,
+                den: 1
+            }
+        );
+        assert_eq!(
+            FrameRate::new(i64::MIN, i64::MIN),
+            FrameRate { num: -1, den: -1 }
+        );
         assert_eq!(FrameRate::new(0, i64::MIN), FrameRate { num: 0, den: -1 });
         assert_eq!(FrameRate::new(i64::MIN, 0), FrameRate { num: -1, den: 0 });
         assert_eq!(FrameRate::new(0, 0), FrameRate { num: 0, den: 0 });
         assert_eq!(FrameRate::from_f64(f64::NAN), FrameRate { num: 0, den: 1 });
         for fps in [f64::NEG_INFINITY, -1e308, -9.2e18, f64::INFINITY, 1e308] {
-            assert_eq!(FrameRate::from_f64(fps), FrameRate::new((fps * 1000.0).round() as i64, 1000));
+            assert_eq!(
+                FrameRate::from_f64(fps),
+                FrameRate::new((fps * 1000.0).round() as i64, 1000)
+            );
         }
     }
 
@@ -549,7 +664,14 @@ mod tests {
         // `layer.timing {"delta": -1e308}` over the control channel overflowed `snap_nearest`;
         // a timecode field holding `99999999999999:00:00:00` overflowed the parser.
         let r = FrameRate::FPS_29_97;
-        for s in [1e308, -1e308, f64::INFINITY, f64::NEG_INFINITY, f64::NAN, 9.2e18] {
+        for s in [
+            1e308,
+            -1e308,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NAN,
+            9.2e18,
+        ] {
             let t = Tick::from_seconds_f64(s);
             assert!(t >= Tick::MIN && t <= Tick::MAX);
             let _ = r.snap_nearest(t) + t - t;
@@ -568,16 +690,33 @@ mod tests {
         assert!(parse_feet_frames("+9223372036854775807", 16, 1).is_ok());
         // A zero rate or timebase (from a damaged file) doesn't divide by zero.
         let z = FrameRate { num: 0, den: 0 };
-        let _ = (z.frame_duration(), z.frame_at(Tick(5)), z.tick_of(3), z.snap_nearest(Tick(7)), z.timecode_base());
-        let _ = (Tick::from_units(5, 0), Tick::from_rational(1, 1, 0), Tick(5).to_rational_floor(0, 1), Tick(5).mul_ratio(1, 0));
-        let huge = FrameRate { num: i64::MAX, den: 1 };
+        let _ = (
+            z.frame_duration(),
+            z.frame_at(Tick(5)),
+            z.tick_of(3),
+            z.snap_nearest(Tick(7)),
+            z.timecode_base(),
+        );
+        let _ = (
+            Tick::from_units(5, 0),
+            Tick::from_rational(1, 1, 0),
+            Tick(5).to_rational_floor(0, 1),
+            Tick(5).mul_ratio(1, 0),
+        );
+        let huge = FrameRate {
+            num: i64::MAX,
+            den: 1,
+        };
         let _ = format_timecode_frames(i64::MAX, huge, false);
     }
     #[test]
     fn hostile_rates_format_and_parse_without_panicking() {
         for rate in [
             FrameRate::new(i64::MIN, -1),
-            FrameRate { num: 1, den: i64::MIN },
+            FrameRate {
+                num: 1,
+                den: i64::MIN,
+            },
             FrameRate::new(i64::MIN, i64::MIN),
             FrameRate { num: 0, den: 0 },
             FrameRate { num: -30, den: 1 },
@@ -586,17 +725,36 @@ mod tests {
             assert_eq!(format_timecode_frames(0, rate, false), "00:00:00:00");
             assert_eq!(parse_timecode("0:0:0:0", rate, false, 0).unwrap(), 0);
         }
-        for rate in [FrameRate { num: i64::MAX, den: 1 }, FrameRate { num: i64::MAX, den: 1001 }] {
-            let expected = ((i128::from(rate.num) + i128::from(rate.den) - 1) / i128::from(rate.den)) as i64;
+        for rate in [
+            FrameRate {
+                num: i64::MAX,
+                den: 1,
+            },
+            FrameRate {
+                num: i64::MAX,
+                den: 1001,
+            },
+        ] {
+            let expected =
+                ((i128::from(rate.num) + i128::from(rate.den) - 1) / i128::from(rate.den)) as i64;
             assert_eq!(rate.timecode_base(), expected);
         }
     }
 
     #[test]
     fn negative_relative_min_field_saturates_in_the_requested_direction() {
-        assert_eq!(parse_timecode("-0:0:0:-9223372036854775808", FrameRate::FPS_30, false, 0).unwrap(), i64::MAX);
-        assert_eq!(parse_timecode("+0:0:0:-9223372036854775808", FrameRate::FPS_30, false, 0).unwrap(), i64::MIN);
-        assert_eq!(parse_timecode("-1", FrameRate::FPS_30, false, i64::MIN).unwrap(), i64::MIN);
+        assert_eq!(
+            parse_timecode("-0:0:0:-9223372036854775808", FrameRate::FPS_30, false, 0).unwrap(),
+            i64::MAX
+        );
+        assert_eq!(
+            parse_timecode("+0:0:0:-9223372036854775808", FrameRate::FPS_30, false, 0).unwrap(),
+            i64::MIN
+        );
+        assert_eq!(
+            parse_timecode("-1", FrameRate::FPS_30, false, i64::MIN).unwrap(),
+            i64::MIN
+        );
     }
 
     #[test]
@@ -604,7 +762,11 @@ mod tests {
         for rate in FrameRate::COMMON {
             for frame in [-10_000, -1, 0, 1, 10_000] {
                 let text = format_timecode_frames(frame, rate, false);
-                assert_eq!(parse_timecode(&text, rate, false, 0).unwrap(), frame, "{rate}: {text}");
+                assert_eq!(
+                    parse_timecode(&text, rate, false, 0).unwrap(),
+                    frame,
+                    "{rate}: {text}"
+                );
             }
         }
     }
@@ -615,9 +777,16 @@ mod tests {
     fn every_common_rate_is_exact() {
         for r in FrameRate::COMMON {
             let d = r.frame_duration();
-            assert_eq!(d.0 as i128 * r.num as i128, TICKS_PER_SECOND as i128 * r.den as i128, "{r}");
+            assert_eq!(
+                d.0 as i128 * r.num as i128,
+                TICKS_PER_SECOND as i128 * r.den as i128,
+                "{r}"
+            );
         }
-        for sr in SAMPLE_RATES.iter().chain(&[8000, 11025, 16000, 22050, 176_400]) {
+        for sr in SAMPLE_RATES
+            .iter()
+            .chain(&[8000, 11025, 16000, 22050, 176_400])
+        {
             assert_eq!(TICKS_PER_SECOND % sr, 0, "{sr}");
         }
     }
@@ -643,8 +812,13 @@ mod tests {
     fn common_rate_boundaries_keep_their_exact_ticks() {
         for rate in FrameRate::COMMON {
             for frame in [-10_000, -1, 0, 1, 10_000] {
-                let expected = frame as i128 * TICKS_PER_SECOND as i128 * rate.den as i128 / rate.num as i128;
-                assert_eq!(rate.tick_of(frame), Tick(expected as i64), "{rate}, frame {frame}");
+                let expected =
+                    frame as i128 * TICKS_PER_SECOND as i128 * rate.den as i128 / rate.num as i128;
+                assert_eq!(
+                    rate.tick_of(frame),
+                    Tick(expected as i64),
+                    "{rate}, frame {frame}"
+                );
                 assert_eq!(rate.frame_at(rate.tick_of(frame) - Tick(1)), frame - 1);
             }
         }
@@ -653,17 +827,43 @@ mod tests {
     #[test]
     fn extreme_frame_boundaries_saturate_without_overflowing() {
         for rate in [
-            FrameRate { num: 1, den: i64::MAX },
-            FrameRate { num: -1, den: i64::MAX },
-            FrameRate { num: i64::MAX, den: i64::MAX },
-            FrameRate { num: 0, den: i64::MAX },
+            FrameRate {
+                num: 1,
+                den: i64::MAX,
+            },
+            FrameRate {
+                num: -1,
+                den: i64::MAX,
+            },
+            FrameRate {
+                num: i64::MAX,
+                den: i64::MAX,
+            },
+            FrameRate {
+                num: 0,
+                den: i64::MAX,
+            },
         ] {
             for frame in [i64::MIN, i64::MAX] {
                 let _ = rate.tick_of(frame);
             }
         }
-        assert_eq!(FrameRate { num: 1, den: i64::MAX }.tick_of(i64::MAX), Tick(i64::MAX));
-        assert_eq!(FrameRate { num: 1, den: i64::MAX }.tick_of(i64::MIN), Tick(i64::MIN));
+        assert_eq!(
+            FrameRate {
+                num: 1,
+                den: i64::MAX
+            }
+            .tick_of(i64::MAX),
+            Tick(i64::MAX)
+        );
+        assert_eq!(
+            FrameRate {
+                num: 1,
+                den: i64::MAX
+            }
+            .tick_of(i64::MIN),
+            Tick(i64::MIN)
+        );
     }
 
     #[test]
@@ -687,7 +887,10 @@ mod tests {
         assert_eq!(parse_timecode("1.00", r, false, 0).unwrap(), 25);
         assert_eq!(parse_timecode("+15", r, false, 100).unwrap(), 115);
         assert_eq!(parse_timecode("-1.00", r, false, 100).unwrap(), 75);
-        assert_eq!(parse_timecode("00;01;00;02", FrameRate::FPS_29_97, true, 0).unwrap(), 1800);
+        assert_eq!(
+            parse_timecode("00;01;00;02", FrameRate::FPS_29_97, true, 0).unwrap(),
+            1800
+        );
         assert!(parse_timecode("abc", r, false, 0).is_err());
     }
 
@@ -698,7 +901,16 @@ mod tests {
         assert_eq!(format_time(t, r, false, TimeDisplay::Feet35, 48000), "2+08");
         assert_eq!(format_time(t, r, false, TimeDisplay::Feet16, 48000), "1+00");
         assert_eq!(format_time(t, r, false, TimeDisplay::Frames, 48000), "40");
-        assert_eq!(format_time(Tick::from_units(48_001, 48_000), r, false, TimeDisplay::AudioSamples, 48000), "00:00:01:00001");
+        assert_eq!(
+            format_time(
+                Tick::from_units(48_001, 48_000),
+                r,
+                false,
+                TimeDisplay::AudioSamples,
+                48000
+            ),
+            "00:00:01:00001"
+        );
     }
 
     #[test]
@@ -774,7 +986,11 @@ mod tests {
         assert_eq!(parse_feet_frames("0012+07", 16, 0), Ok(199));
         assert_eq!(parse_feet_frames("2+15", 40, 0), Ok(95));
         assert_eq!(parse_feet_frames("-1+04", 16, 0), Ok(-20));
-        assert_eq!(parse_feet_frames("1+20", 16, 0), Ok(36), "frames may overflow a foot");
+        assert_eq!(
+            parse_feet_frames("1+20", 16, 0),
+            Ok(36),
+            "frames may overflow a foot"
+        );
         assert_eq!(parse_feet_frames("250", 16, 0), Ok(250));
         assert_eq!(parse_feet_frames("+10", 16, 100), Ok(110));
         assert_eq!(parse_feet_frames("-10", 16, 100), Ok(90));

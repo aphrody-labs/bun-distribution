@@ -125,9 +125,19 @@ impl McpProxySubsystem {
         spec: PluginSpec<'_>,
         occupied: &HashSet<String>,
     ) -> Result<Option<Arc<dyn SystemSubsystem>>, String> {
-        let PluginSpec { name, description, env, binary, args, child_env } = spec;
+        let PluginSpec {
+            name,
+            description,
+            env,
+            binary,
+            args,
+            child_env,
+        } = spec;
         let explicit = std::env::var(env).ok();
-        if explicit.as_deref().is_some_and(|value| value.trim().is_empty()) {
+        if explicit
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        {
             return Ok(None);
         }
         let (path, args) = match explicit.as_ref() {
@@ -143,7 +153,7 @@ impl McpProxySubsystem {
             Err(error) if explicit.is_none() => {
                 eprintln!("aphrody-kernel: optional plugin {binary} unavailable: {error}");
                 return Ok(None);
-            },
+            }
             Err(error) => return Err(error),
         };
         name.clone_into(&mut plugin.name);
@@ -169,9 +179,13 @@ impl McpProxySubsystem {
         args: &[String],
         env: &[(String, String)],
     ) -> Result<Self, String> {
-        let mut child = tokio::process::Command::new(command).no_window()
+        let mut child = tokio::process::Command::new(command)
+            .no_window()
             .args(args)
-            .envs(env.iter().map(|(key, value)| (key.as_str(), value.as_str())))
+            .envs(
+                env.iter()
+                    .map(|(key, value)| (key.as_str(), value.as_str())),
+            )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -179,7 +193,10 @@ impl McpProxySubsystem {
             .spawn()
             .map_err(|error| format!("spawn MCP provider {command}: {error}"))?;
         let stdin = child.stdin.take().ok_or("MCP provider stdin unavailable")?;
-        let stdout = child.stdout.take().ok_or("MCP provider stdout unavailable")?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or("MCP provider stdout unavailable")?;
         let process = Arc::new(Mutex::new(ProcessState {
             _child: child,
             stdin,
@@ -218,7 +235,10 @@ impl McpProxySubsystem {
             for tool in tools {
                 let definition = provider_tool(tool)?;
                 if !names.insert(definition.name.clone()) {
-                    return Err(format!("MCP provider listed duplicate tool: {}", definition.name));
+                    return Err(format!(
+                        "MCP provider listed duplicate tool: {}",
+                        definition.name
+                    ));
                 }
                 proxy.tools.push(definition);
             }
@@ -229,7 +249,7 @@ impl McpProxySubsystem {
                         return Err("MCP provider repeated a tools/list cursor".into());
                     }
                     params = json!({"cursor": cursor});
-                },
+                }
                 _ => return Err("MCP provider returned an invalid tools/list cursor".into()),
             }
         }
@@ -242,7 +262,11 @@ impl McpProxySubsystem {
     async fn write_line(state: &mut ProcessState, value: &Value) -> Result<(), String> {
         let mut line = serde_json::to_vec(value).map_err(|error| error.to_string())?;
         line.push(b'\n');
-        state.stdin.write_all(&line).await.map_err(|error| error.to_string())?;
+        state
+            .stdin
+            .write_all(&line)
+            .await
+            .map_err(|error| error.to_string())?;
         state.stdin.flush().await.map_err(|error| error.to_string())
     }
 
@@ -276,7 +300,11 @@ impl McpProxySubsystem {
             loop {
                 // Preserve partial framing when the caller cancels this future.
                 // A later request can finish and discard the earlier ID's reply.
-                let ProcessState { stdout, response_buffer, .. } = &mut *state;
+                let ProcessState {
+                    stdout,
+                    response_buffer,
+                    ..
+                } = &mut *state;
                 if let Err(error) = read_frame(stdout, response_buffer, MAX_MCP_FRAME).await {
                     state.disconnected = true;
                     let _ = state._child.start_kill();
@@ -310,14 +338,17 @@ impl McpProxySubsystem {
                 state.disconnected = true;
                 let _ = state._child.start_kill();
                 Err(format!("MCP {method} timed out"))
-            },
+            }
         }
     }
 
     async fn notify(&self, method: &str, params: Value) -> Result<(), String> {
         let mut state = self.process.lock().await;
-        Self::write_line(&mut state, &json!({"jsonrpc":"2.0","method":method,"params":params}))
-            .await
+        Self::write_line(
+            &mut state,
+            &json!({"jsonrpc":"2.0","method":method,"params":params}),
+        )
+        .await
     }
 }
 
@@ -329,11 +360,17 @@ pub(crate) fn provider_tool(tool: &Value) -> Result<ToolDefinition, String> {
         .ok_or("MCP provider listed a tool without a name")?;
     let mut definition = ToolDefinition::new(
         name,
-        tool.get("description").and_then(Value::as_str).unwrap_or_default(),
-        tool.get("inputSchema").cloned().unwrap_or_else(|| json!({"type":"object"})),
+        tool.get("description")
+            .and_then(Value::as_str)
+            .unwrap_or_default(),
+        tool.get("inputSchema")
+            .cloned()
+            .unwrap_or_else(|| json!({"type":"object"})),
     );
-    definition.read_only =
-        tool.pointer("/annotations/readOnlyHint").and_then(Value::as_bool).unwrap_or(false);
+    definition.read_only = tool
+        .pointer("/annotations/readOnlyHint")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     Ok(definition)
 }
 
@@ -426,7 +463,11 @@ mod tests {
         .unwrap();
         assert!(read.read_only);
         assert_eq!(read.to_mcp()["annotations"]["readOnlyHint"], true);
-        assert!(!provider_tool(&serde_json::json!({"name": "write"})).unwrap().read_only);
+        assert!(
+            !provider_tool(&serde_json::json!({"name": "write"}))
+                .unwrap()
+                .read_only
+        );
         assert!(provider_tool(&serde_json::json!({"name": ""})).is_err());
     }
 
@@ -452,13 +493,20 @@ printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"wrong":true}}' '{"jsonrpc":"2.
 read -r request
 printf '%s\n' '{"jsonrpc":"2.0","id":4,"result":{"wrong":true}}' '{"jsonrpc":"2.0","id":5,"result":{"value":42}}'
 "#).unwrap();
-        let provider =
-            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        let provider = McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()])
+            .await
+            .unwrap();
         assert_eq!(provider.tools().len(), 2);
         assert!(provider.tools()[0].read_only);
         assert!(!provider.tools()[1].read_only);
-        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 41);
-        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 42);
+        assert_eq!(
+            provider.call("probe", serde_json::json!({})).await.unwrap()["value"],
+            41
+        );
+        assert_eq!(
+            provider.call("probe", serde_json::json!({})).await.unwrap()["value"],
+            42
+        );
     }
 
     #[cfg(unix)]
@@ -483,8 +531,9 @@ done
 "#,
         )
         .unwrap();
-        let provider =
-            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        let provider = McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()])
+            .await
+            .unwrap();
         let error = provider
             .request_with_timeout(
                 "tools/call",
@@ -494,7 +543,10 @@ done
             .await
             .unwrap_err();
         assert!(error.contains("timed out"));
-        let next = provider.call("probe", serde_json::json!({})).await.unwrap_err();
+        let next = provider
+            .call("probe", serde_json::json!({}))
+            .await
+            .unwrap_err();
         assert!(next.to_string().contains("disconnected"));
     }
 
@@ -521,15 +573,19 @@ printf '%s\n' '{"jsonrpc":"2.0","id":4,"result":{"value":42}}'
 "#,
         )
         .unwrap();
-        let provider =
-            McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()]).await.unwrap();
+        let provider = McpProxySubsystem::spawn("sh", &[script.to_string_lossy().into_owned()])
+            .await
+            .unwrap();
         let cancelled = tokio::time::timeout(
             std::time::Duration::from_millis(50),
             provider.call("probe", serde_json::json!({})),
         )
         .await;
         assert!(cancelled.is_err());
-        assert_eq!(provider.call("probe", serde_json::json!({})).await.unwrap()["value"], 42);
+        assert_eq!(
+            provider.call("probe", serde_json::json!({})).await.unwrap()["value"],
+            42
+        );
     }
 
     #[cfg(unix)]
@@ -606,6 +662,10 @@ printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[],"nextCursor":"again"
     #[tokio::test]
     async fn explicit_missing_provider_still_reports_an_error() {
         let command = "aphrody-kernel-no-such-mcp-provider-46a80fb9";
-        assert!(McpProxySubsystem::configured_provider(Some(command.into())).await.is_err());
+        assert!(
+            McpProxySubsystem::configured_provider(Some(command.into()))
+                .await
+                .is_err()
+        );
     }
 }

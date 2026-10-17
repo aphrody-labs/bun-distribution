@@ -3,5 +3,7 @@
 //! `cargo run -p aphrody-identity --features net --example charger -- symbol:home --svg`.
 
 fn main() {
-    std::process::exit(aphrody_identity::charger_main(std::env::args_os().collect()));
+    std::process::exit(aphrody_identity::charger_main(
+        std::env::args_os().collect(),
+    ));
 }

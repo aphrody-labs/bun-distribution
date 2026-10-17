@@ -37,7 +37,14 @@
 //! for processor ↔ controller messaging may lose those messages), sidechain (aux buses are kept
 //! inactive) and 64-bit processing.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod scan;
 
@@ -243,7 +250,13 @@ mod tests {
     #[test]
     fn ids_parse() {
         let id = "vst3:0123456789ABCDEFfedcba9876543210";
-        assert_eq!(parse_id(id), Some([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10]));
+        assert_eq!(
+            parse_id(id),
+            Some([
+                0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54,
+                0x32, 0x10
+            ])
+        );
         assert_eq!(parse_id("vst3:"), None);
         assert_eq!(parse_id("vst3:0123"), None);
         assert_eq!(parse_id("vst3:0123456789ABCDEF0123456789ABCDEG"), None);
@@ -262,7 +275,8 @@ mod tests {
 
     #[test]
     fn garbage_files_are_errors_not_crashes() {
-        let d = std::env::temp_dir().join(format!("soundcraft-vst3-garbage-{}", std::process::id()));
+        let d =
+            std::env::temp_dir().join(format!("soundcraft-vst3-garbage-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         let arch = if cfg!(target_os = "macos") {
             "MacOS"
@@ -279,11 +293,25 @@ mod tests {
             "Bundle.so"
         };
         std::fs::create_dir_all(d.join(format!("Bundle.vst3/Contents/{arch}"))).unwrap();
-        std::fs::write(d.join("garbage.vst3"), b"\x7fELF this is not a plugin \x00\x01\x02").unwrap();
+        std::fs::write(
+            d.join("garbage.vst3"),
+            b"\x7fELF this is not a plugin \x00\x01\x02",
+        )
+        .unwrap();
         std::fs::write(d.join("empty.vst3"), b"").unwrap();
-        std::fs::write(d.join(format!("Bundle.vst3/Contents/{arch}/{exe}")), [0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3]).unwrap();
+        std::fs::write(
+            d.join(format!("Bundle.vst3/Contents/{arch}/{exe}")),
+            [0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3],
+        )
+        .unwrap();
         std::fs::create_dir_all(d.join("NoBinary.vst3/Contents")).unwrap();
-        for f in ["garbage.vst3", "empty.vst3", "Bundle.vst3", "NoBinary.vst3", "missing.vst3"] {
+        for f in [
+            "garbage.vst3",
+            "empty.vst3",
+            "Bundle.vst3",
+            "NoBinary.vst3",
+            "missing.vst3",
+        ] {
             assert!(load_bundle(&d.join(f)).is_err(), "{f}");
         }
         assert!(scan_paths(std::slice::from_ref(&d)).is_empty());
@@ -301,7 +329,14 @@ mod tests {
         let lib = if cfg!(target_os = "macos") || cfg!(windows) {
             None
         } else {
-            ["/lib/x86_64-linux-gnu/libz.so.1", "/usr/lib/libz.so.1", "/lib64/libz.so.1"].iter().map(PathBuf::from).find(|p| p.exists())
+            [
+                "/lib/x86_64-linux-gnu/libz.so.1",
+                "/usr/lib/libz.so.1",
+                "/lib64/libz.so.1",
+            ]
+            .iter()
+            .map(PathBuf::from)
+            .find(|p| p.exists())
         };
         let Some(lib) = lib else { return };
         let d = std::env::temp_dir().join(format!("soundcraft-vst3-nolib-{}", std::process::id()));

@@ -6,11 +6,16 @@ use std::collections::BTreeMap;
 
 use effectcraft_keyframe::{Interp, Keyframe, Value as KV};
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{GroupKind, Layer, LayerId, LayerSource, Node, Project, PropGroup, Property, Uid};
+use effectcraft_project::{
+    GroupKind, Layer, LayerId, LayerSource, Node, Project, PropGroup, Property, Uid,
+};
 use effectcraft_time::Tick;
 use serde_json::{Value, json};
 
-use super::{CommandSpec, bad, frontend, has_comp, has_keys, has_layers, layer_mut, layers_p, match_path_of, selected_leaf_props, str_p};
+use super::{
+    CommandSpec, bad, frontend, has_comp, has_keys, has_layers, layer_mut, layers_p, match_path_of,
+    selected_leaf_props, str_p,
+};
 use crate::{EngineError, KeyRef, Result, Session, cmd};
 
 /// Preset file format version tag (`*.ecpreset`, JSON).
@@ -18,13 +23,22 @@ pub const PRESET_TAG: &str = "effectcraftAnimationPreset";
 
 fn has_selected_props(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if selected_leaf_props(s).is_empty() && selected_effects(s).is_empty() { Err("select properties or effects first".into()) } else { Ok(()) }
+    if selected_leaf_props(s).is_empty() && selected_effects(s).is_empty() {
+        Err("select properties or effects first".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_text_layer(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let c = s.active_comp().ok_or("no composition")?;
-    if s.state.selected_layers.iter().filter_map(|l| c.layer(*l)).any(|l| l.props.group("text/animators").is_some()) {
+    if s.state
+        .selected_layers
+        .iter()
+        .filter_map(|l| c.layer(*l))
+        .any(|l| l.props.group("text/animators").is_some())
+    {
         Ok(())
     } else {
         Err("select a text layer".into())
@@ -33,7 +47,9 @@ fn has_text_layer(s: &Session) -> std::result::Result<(), String> {
 
 /// Selected effect groups (layer, effect group).
 fn selected_effects(s: &Session) -> Vec<(LayerId, PropGroup)> {
-    let Some(c) = s.active_comp() else { return vec![] };
+    let Some(c) = s.active_comp() else {
+        return vec![];
+    };
     s.state
         .selected_props
         .iter()
@@ -48,7 +64,9 @@ fn selected_effects(s: &Session) -> Vec<(LayerId, PropGroup)> {
 // ---------------------------------------------------------------- presets
 
 fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("anim.savePreset", "missing `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("anim.savePreset", "missing `path`"))?
+        .to_string();
     let comp = s.active_comp().ok_or(EngineError::NoComp)?;
     let t = s.time();
     let effects: Vec<(LayerId, PropGroup)> = selected_effects(s);
@@ -57,17 +75,29 @@ fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
     for (lid, uid) in selected_leaf_props(s) {
         let Some(l) = comp.layer(lid) else { continue };
         // Properties inside a saved effect travel with the effect.
-        if l.effects().is_some_and(|fx| fx.groups().any(|g| effect_uids.contains(&g.uid) && g.find(uid).is_some())) {
+        if l.effects().is_some_and(|fx| {
+            fx.groups()
+                .any(|g| effect_uids.contains(&g.uid) && g.find(uid).is_some())
+        }) {
             continue;
         }
-        let (Some(pr), Some(mp)) = (l.props.find(uid), match_path_of(&l.props, uid)) else { continue };
+        let (Some(pr), Some(mp)) = (l.props.find(uid), match_path_of(&l.props, uid)) else {
+            continue;
+        };
         props.push((l.layer_time(t), mp, pr.clone()));
     }
     if props.is_empty() && effects.is_empty() {
-        return Err(bad("anim.savePreset", "select properties or effects to save"));
+        return Err(bad(
+            "anim.savePreset",
+            "select properties or effects to save",
+        ));
     }
     // Key times are stored relative to the earliest key so the preset applies at the CTI.
-    let first = props.iter().flat_map(|(_, _, pr)| pr.keys.iter().map(|k| k.time)).min().unwrap_or(Tick::ZERO);
+    let first = props
+        .iter()
+        .flat_map(|(_, _, pr)| pr.keys.iter().map(|k| k.time))
+        .min()
+        .unwrap_or(Tick::ZERO);
     let props_json: Vec<Value> = props
         .iter()
         .map(|(_, mp, pr)| {
@@ -78,13 +108,21 @@ fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
             json!({"path": mp, "value": pr.value, "keys": pr.keys, "expression": pr.expr})
         })
         .collect();
-    let fx_json: Vec<Value> = effects.iter().map(|(_, g)| serde_json::to_value(g).unwrap_or_default()).collect();
-    let name = str_p(p, "name")
-        .map(str::to_string)
-        .unwrap_or_else(|| std::path::Path::new(&path).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default());
+    let fx_json: Vec<Value> = effects
+        .iter()
+        .map(|(_, g)| serde_json::to_value(g).unwrap_or_default())
+        .collect();
+    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| {
+        std::path::Path::new(&path)
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default()
+    });
     let doc = json!({PRESET_TAG: 1, "name": name, "properties": props_json, "effects": fx_json});
     let text = serde_json::to_string_pretty(&doc).unwrap_or_default();
-    s.services.write_file(&path, text.as_bytes()).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    s.services
+        .write_file(&path, text.as_bytes())
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     Ok(json!({"path": path, "properties": props.len(), "effects": effects.len()}))
 }
 
@@ -92,13 +130,25 @@ fn apply_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let doc: Value = match (p.get("preset"), str_p(p, "path")) {
         (Some(v), _) => v.clone(),
         (None, Some(path)) => {
-            let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
-            serde_json::from_slice(&bytes).map_err(|e| bad("anim.applyPreset", format!("not a preset: {e}")))?
+            let bytes = s
+                .services
+                .read_file(path)
+                .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+            serde_json::from_slice(&bytes)
+                .map_err(|e| bad("anim.applyPreset", format!("not a preset: {e}")))?
         }
-        _ => return Err(bad("anim.applyPreset", "missing `path` (or inline `preset`)")),
+        _ => {
+            return Err(bad(
+                "anim.applyPreset",
+                "missing `path` (or inline `preset`)",
+            ));
+        }
     };
     if doc.get(PRESET_TAG).is_none() {
-        return Err(bad("anim.applyPreset", "not an EffectCraft animation preset"));
+        return Err(bad(
+            "anim.applyPreset",
+            "not an EffectCraft animation preset",
+        ));
     }
     let (cid, ids) = layers_p(s, p)?;
     if ids.is_empty() {
@@ -110,8 +160,14 @@ fn apply_preset(s: &mut Session, p: &Value) -> Result<Value> {
         s.save_prefs();
         s.prefs_revision += 1;
     }
-    let effects: Vec<PropGroup> =
-        doc["effects"].as_array().map(|a| a.iter().filter_map(|v| serde_json::from_value(v.clone()).ok()).collect()).unwrap_or_default();
+    let effects: Vec<PropGroup> = doc["effects"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| serde_json::from_value(v.clone()).ok())
+                .collect()
+        })
+        .unwrap_or_default();
     let props: Vec<(String, Property)> = doc["properties"]
         .as_array()
         .map(|a| {
@@ -119,8 +175,11 @@ fn apply_preset(s: &mut Session, p: &Value) -> Result<Value> {
                 .filter_map(|v| {
                     let path = v["path"].as_str()?.to_string();
                     let value: KV = serde_json::from_value(v["value"].clone()).ok()?;
-                    let keys: Vec<Keyframe> = serde_json::from_value(v["keys"].clone()).unwrap_or_default();
-                    let expr = serde_json::from_value(v["expression"].clone()).ok().flatten();
+                    let keys: Vec<Keyframe> =
+                        serde_json::from_value(v["keys"].clone()).unwrap_or_default();
+                    let expr = serde_json::from_value(v["expression"].clone())
+                        .ok()
+                        .flatten();
                     let mut pr = Property::new(0, "", "", value);
                     pr.keys = keys;
                     pr.expr = expr;
@@ -148,7 +207,10 @@ fn apply_preset(s: &mut Session, p: &Value) -> Result<Value> {
             }
             for (path, src) in &props {
                 match l.props.prop_mut(path) {
-                    Some(pr) if std::mem::discriminant(&pr.value) == std::mem::discriminant(&src.value) => {
+                    Some(pr)
+                        if std::mem::discriminant(&pr.value)
+                            == std::mem::discriminant(&src.value) =>
+                    {
                         pr.value = src.value.clone();
                         pr.keys = src
                             .keys
@@ -188,7 +250,9 @@ fn add_keyframe(s: &mut Session, _: &Value) -> Result<Value> {
         for (lid, uid) in &targets {
             let l = layer_mut(proj, cid, *lid)?;
             let lt = l.layer_time(t);
-            let Some(pr) = l.props.find_mut(*uid) else { continue };
+            let Some(pr) = l.props.find_mut(*uid) else {
+                continue;
+            };
             if pr.static_only {
                 continue;
             }
@@ -237,24 +301,37 @@ fn exponential_scale(s: &mut Session, _: &Value) -> Result<Value> {
     s.edit("Exponential Scale", None, |proj, st| {
         for (lid, uid, a, b) in &work {
             let l = layer_mut(proj, cid, *lid)?;
-            let Some(pr) = l.props.find_mut(*uid) else { continue };
+            let Some(pr) = l.props.find_mut(*uid) else {
+                continue;
+            };
             let (va, vb) = (pr.value_at(*a).as_vec3(), pr.value_at(*b).as_vec3());
             pr.keys.retain(|k| k.time <= *a || k.time >= *b);
             let n = ((*b - *a).0 / fd.0.max(1)).max(1);
             for i in 0..=n {
                 let u = i as f64 / n as f64;
                 let t = if i == n { *b } else { *a + Tick(fd.0 * i) };
-                let f = |x: f64, y: f64| if x.abs() < 1e-9 || y.abs() < 1e-9 || x.signum() != y.signum() { x + (y - x) * u } else { x * (y / x).powf(u) };
+                let f = |x: f64, y: f64| {
+                    if x.abs() < 1e-9 || y.abs() < 1e-9 || x.signum() != y.signum() {
+                        x + (y - x) * u
+                    } else {
+                        x * (y / x).powf(u)
+                    }
+                };
                 let v = [f(va[0], vb[0]), f(va[1], vb[1]), f(va[2], vb[2])];
                 let mut k = Keyframe::new(t, KV::Vec3(v));
                 k.in_interp = Interp::Linear;
                 k.out_interp = Interp::Linear;
                 effectcraft_keyframe::set_key(&mut pr.keys, k);
-                st.selected_keys.push(KeyRef { layer: *lid, prop: *uid, time: t });
+                st.selected_keys.push(KeyRef {
+                    layer: *lid,
+                    prop: *uid,
+                    time: t,
+                });
             }
             done += 1;
         }
-        st.selected_keys.sort_by_key(|k| (k.layer.0, k.prop, k.time));
+        st.selected_keys
+            .sort_by_key(|k| (k.layer.0, k.prop, k.time));
         st.selected_keys.dedup();
         Ok(())
     })?;
@@ -272,7 +349,10 @@ fn remove_all_animators(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     s.edit("Remove All Text Animators", None, |proj, _| {
         for lid in &ids {
-            if let Some(a) = layer_mut(proj, cid, *lid)?.props.group_mut("text/animators") {
+            if let Some(a) = layer_mut(proj, cid, *lid)?
+                .props
+                .group_mut("text/animators")
+            {
                 a.children.clear();
             }
         }
@@ -293,7 +373,9 @@ fn modified(pr: &Property, group: &str, default_anchor: [f64; 2], comp_center: [
     let near = |a: &[f64], b: &[f64]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-6);
     match (group, pr.match_id.as_str()) {
         ("transform", "anchor") => !near(&v.as_vec2(), &default_anchor),
-        ("transform", "position") => !near(&v.as_vec2(), &comp_center) || v.as_vec3()[2].abs() > 1e-6,
+        ("transform", "position") => {
+            !near(&v.as_vec2(), &comp_center) || v.as_vec3()[2].abs() > 1e-6
+        }
         // Separate Dimensions: X and Y Position default to the comp centre.
         ("transform", "positionX") => (v.as_f64() - comp_center[0]).abs() > 1e-6,
         ("transform", "positionY") => (v.as_f64() - comp_center[1]).abs() > 1e-6,
@@ -316,15 +398,22 @@ fn default_group(top: &PropGroup, l: &Layer, fresh: &Layer) -> Option<PropGroup>
         "transform" if !camera_or_light => return None,
         // Added to a layer after it is made (a source with audio, an Advanced 3D comp).
         "audio" => build::audio(&mut ids),
-        "geometryOptions" if matches!(l.source, LayerSource::Text | LayerSource::Shape) => build::extrusion_geometry_options(&mut ids),
-        "transform" | "cameraOptions" | "lightOptions" | "materialOptions" | "geometryOptions" | "text" => fresh.props.sub(&top.match_id)?.clone(),
+        "geometryOptions" if matches!(l.source, LayerSource::Text | LayerSource::Shape) => {
+            build::extrusion_geometry_options(&mut ids)
+        }
+        "transform" | "cameraOptions" | "lightOptions" | "materialOptions" | "geometryOptions"
+        | "text" => fresh.props.sub(&top.match_id)?.clone(),
         _ => return None,
     };
     match top.match_id.as_str() {
         // Source Text and the animators are the layer's content, not options with a default.
-        "text" => g.children.retain(|c| matches!(c.match_id(), "pathOptions" | "moreOptions")),
+        "text" => g
+            .children
+            .retain(|c| matches!(c.match_id(), "pathOptions" | "moreOptions")),
         // A model's scale and clip come from its file.
-        "geometryOptions" if matches!(l.source, LayerSource::Model { .. }) => g.children.retain(|c| !matches!(c.match_id(), "unitScale" | "animation")),
+        "geometryOptions" if matches!(l.source, LayerSource::Model { .. }) => g
+            .children
+            .retain(|c| !matches!(c.match_id(), "unitScale" | "animation")),
         _ => {}
     }
     Some(g)
@@ -336,7 +425,11 @@ fn changed_from(g: &PropGroup, default: &PropGroup, out: &mut Vec<Uid>) {
     for c in &g.children {
         match c {
             Node::Prop(pr) => {
-                if default.get(&pr.match_id).is_some_and(|d| d.value != pr.value) && !out.contains(&pr.uid) {
+                if default
+                    .get(&pr.match_id)
+                    .is_some_and(|d| d.value != pr.value)
+                    && !out.contains(&pr.uid)
+                {
                     out.push(pr.uid);
                 }
             }
@@ -353,7 +446,11 @@ fn reveal(s: &mut Session, p: &Value) -> Result<Value> {
     let kind = str_p(p, "kind").unwrap_or("keyframes").to_string();
     let cid = super::comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let layers: Vec<LayerId> = if s.state.selected_layers.is_empty() { comp.layers.iter().map(|l| l.id).collect() } else { s.state.selected_layers.clone() };
+    let layers: Vec<LayerId> = if s.state.selected_layers.is_empty() {
+        comp.layers.iter().map(|l| l.id).collect()
+    } else {
+        s.state.selected_layers.clone()
+    };
     let mut out = vec![];
     for lid in &layers {
         let Some(l) = comp.layer(*lid) else { continue };
@@ -373,14 +470,25 @@ fn reveal(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         // Modified: a fresh layer of the same kind gives the defaults to compare against.
-        let fresh = (kind == "modified").then(|| build::layer(&mut Project::default(), comp, "", l.source.clone(), (w, h), None));
+        let fresh = (kind == "modified").then(|| {
+            build::layer(
+                &mut Project::default(),
+                comp,
+                "",
+                l.source.clone(),
+                (w, h),
+                None,
+            )
+        });
         let camera_or_light = matches!(l.source, LayerSource::Camera | LayerSource::Light { .. });
         for top in l.props.groups() {
             let hit = |pr: &Property| match kind.as_str() {
                 "keyframes" => pr.is_animated(),
                 "animation" => pr.is_animated() || pr.has_expression(),
                 // A camera's or light's Transform is compared with a fresh one's below.
-                _ if camera_or_light && top.match_id == "transform" => pr.is_animated() || pr.expr.is_some(),
+                _ if camera_or_light && top.match_id == "transform" => {
+                    pr.is_animated() || pr.expr.is_some()
+                }
                 _ => modified(pr, &top.match_id, anchor, center),
             };
             let mut found = vec![];
@@ -407,28 +515,45 @@ fn reveal(s: &mut Session, p: &Value) -> Result<Value> {
                 // Every layer style counts in full, like an effect; so does each overridden
                 // Essential Property.
                 if top.match_id == effectcraft_project::styles::GROUP {
-                    found.extend(top.groups().filter(|g| g.match_id != effectcraft_project::styles::BLENDING).map(|g| g.uid));
+                    found.extend(
+                        top.groups()
+                            .filter(|g| g.match_id != effectcraft_project::styles::BLENDING)
+                            .map(|g| g.uid),
+                    );
                 }
                 if let GroupKind::Essential { overridden } = &top.kind {
                     for u in overridden {
-                        if !found.contains(u) && (top.find(*u).is_some() || top.find_group(*u).is_some()) {
+                        if !found.contains(u)
+                            && (top.find(*u).is_some() || top.find_group(*u).is_some())
+                        {
                             found.push(*u);
                         }
                     }
                 }
             }
-            out.extend(found.into_iter().map(|u| json!({"layer": lid.0, "prop": u})));
+            out.extend(
+                found
+                    .into_iter()
+                    .map(|u| json!({"layer": lid.0, "prop": u})),
+            );
         }
     }
     let layers: Vec<u64> = layers.iter().map(|l| l.0).collect();
-    frontend(s, "timeline.revealProps", &json!({"props": out, "kind": kind, "layers": layers}))?;
+    frontend(
+        s,
+        "timeline.revealProps",
+        &json!({"props": out, "kind": kind, "layers": layers}),
+    )?;
     Ok(json!({"props": out}))
 }
 
 /// Is `g` an effect/mask group kind (used by tests).
 #[allow(dead_code)]
 pub(crate) fn is_indexed(g: &PropGroup) -> bool {
-    matches!(g.kind, GroupKind::Indexed | GroupKind::Mask { .. } | GroupKind::Effect { .. })
+    matches!(
+        g.kind,
+        GroupKind::Indexed | GroupKind::Mask { .. } | GroupKind::Effect { .. }
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -442,8 +567,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selected_props,
             save_preset
         ),
-        cmd!("anim.applyPreset", "Apply Animation Preset...", ["Animation"], None, "{path | preset, layers?}", has_layers, apply_preset),
-        cmd!("anim.addKeyframe", "Add Keyframe", ["Animation"], None, "{} — keys the selected properties at the CTI", has_selected_props, add_keyframe),
+        cmd!(
+            "anim.applyPreset",
+            "Apply Animation Preset...",
+            ["Animation"],
+            None,
+            "{path | preset, layers?}",
+            has_layers,
+            apply_preset
+        ),
+        cmd!(
+            "anim.addKeyframe",
+            "Add Keyframe",
+            ["Animation"],
+            None,
+            "{} — keys the selected properties at the CTI",
+            has_selected_props,
+            add_keyframe
+        ),
         cmd!(
             "keys.exponentialScale",
             "Exponential Scale",
@@ -453,8 +594,32 @@ pub fn specs() -> Vec<CommandSpec> {
             has_keys,
             exponential_scale
         ),
-        cmd!("text.addSelector", "Add Text Selector", [], None, "{layer?, animator?: uid|index, kind: range|wiggly|expression}", has_text_layer, add_selector),
-        cmd!("text.removeAllAnimators", "Remove All Text Animators", ["Animation"], None, "{layers?}", has_text_layer, remove_all_animators),
-        cmd!("anim.reveal", "Reveal Properties", [], None, "{kind: keyframes|animation|modified}", has_comp, reveal),
+        cmd!(
+            "text.addSelector",
+            "Add Text Selector",
+            [],
+            None,
+            "{layer?, animator?: uid|index, kind: range|wiggly|expression}",
+            has_text_layer,
+            add_selector
+        ),
+        cmd!(
+            "text.removeAllAnimators",
+            "Remove All Text Animators",
+            ["Animation"],
+            None,
+            "{layers?}",
+            has_text_layer,
+            remove_all_animators
+        ),
+        cmd!(
+            "anim.reveal",
+            "Reveal Properties",
+            [],
+            None,
+            "{kind: keyframes|animation|modified}",
+            has_comp,
+            reveal
+        ),
     ]
 }

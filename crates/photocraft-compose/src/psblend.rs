@@ -16,7 +16,11 @@ use photocraft_color::blend::{self as generic, BlendMode};
 
 fn vivid_light_ps(cb: f32, cs: f32) -> f32 {
     if cs <= 0.5 {
-        if cs <= 0.0 { 0.0 } else { 1.0 - ((1.0 - cb) / (2.0 * cs)).min(1.0) }
+        if cs <= 0.0 {
+            0.0
+        } else {
+            1.0 - ((1.0 - cb) / (2.0 * cs)).min(1.0)
+        }
     } else if cs >= 1.0 {
         1.0
     } else {
@@ -68,7 +72,11 @@ fn vivid_light_generic(cb: f32, cs: f32) -> f32 {
 }
 
 fn hard_mix_ps(cb: f32, cs: f32) -> f32 {
-    if vivid_light_generic(cb, cs) >= 0.5 - 1e-6 { 1.0 } else { 0.0 }
+    if vivid_light_generic(cb, cs) >= 0.5 - 1e-6 {
+        1.0
+    } else {
+        0.0
+    }
 }
 
 thread_local! {
@@ -146,11 +154,14 @@ pub fn blend_rgb_fill(mode: BlendMode, cb: [f32; 3], cs: [f32; 3], fill: f32) ->
     if f >= 1.0 || !fill_is_special(mode) {
         return blend_rgb(mode, cb, cs);
     }
-    let toward = |neutral: f32| -> [f32; 3] { std::array::from_fn(|i| neutral + (cs[i] - neutral) * f) };
+    let toward =
+        |neutral: f32| -> [f32; 3] { std::array::from_fn(|i| neutral + (cs[i] - neutral) * f) };
     match mode {
         // Hard Mix at Fill f: (cb − f·(1 − cs)) / (1 − f), clamped. At f = 1 it is the hard
         // threshold (cb + cs ≥ 1), at f = 0 the backdrop.
-        BlendMode::HardMix => std::array::from_fn(|i| ((cb[i] - f * (1.0 - cs[i])) / (1.0 - f)).clamp(0.0, 1.0)),
+        BlendMode::HardMix => {
+            std::array::from_fn(|i| ((cb[i] - f * (1.0 - cs[i])) / (1.0 - f)).clamp(0.0, 1.0))
+        }
         BlendMode::ColorBurn | BlendMode::LinearBurn => blend_rgb(mode, cb, toward(1.0)),
         BlendMode::VividLight | BlendMode::LinearLight => blend_rgb(mode, cb, toward(0.5)),
         _ => blend_rgb(mode, cb, toward(0.0)),
@@ -161,9 +172,22 @@ pub fn blend_rgb_fill(mode: BlendMode, cb: [f32; 3], cs: [f32; 3], fill: f32) ->
 /// as coverage, as before. For the special eight below 100% Fill, coverage over the backdrop is
 /// `opacity` and the blend is [`blend_rgb_fill`]; over transparency, Fill stays coverage, so a
 /// layer over nothing looks as it did.
-pub fn composite_fill(mode: BlendMode, backdrop: [f32; 4], source: [f32; 4], opacity: f32, fill: f32, gamma: f32) -> [f32; 4] {
+pub fn composite_fill(
+    mode: BlendMode,
+    backdrop: [f32; 4],
+    source: [f32; 4],
+    opacity: f32,
+    fill: f32,
+    gamma: f32,
+) -> [f32; 4] {
     if fill >= 1.0 || !fill_is_special(mode) {
-        return composite_gamma(mode, backdrop, source, opacity * fill.clamp(0.0, 1.0), gamma);
+        return composite_gamma(
+            mode,
+            backdrop,
+            source,
+            opacity * fill.clamp(0.0, 1.0),
+            gamma,
+        );
     }
     let ab = backdrop[3];
     let over = source[3] * opacity;
@@ -178,13 +202,22 @@ pub fn composite_fill(mode: BlendMode, backdrop: [f32; 4], source: [f32; 4], opa
     let cb = [backdrop[0], backdrop[1], backdrop[2]];
     let cs = [source[0], source[1], source[2]];
     let b = blend_rgb_fill(mode, cb, cs, fill);
-    let (wb, wbs, ws) = (ab * (1.0 - over) / ao, ab * over / ao, (1.0 - ab) * alone / ao);
+    let (wb, wbs, ws) = (
+        ab * (1.0 - over) / ao,
+        ab * over / ao,
+        (1.0 - ab) * alone / ao,
+    );
     let mut out = [0.0f32; 4];
     for i in 0..3 {
         out[i] = if gamma == 1.0 {
             wb * cb[i] + wbs * b[i] + ws * cs[i]
         } else {
-            text_decode(wb * text_encode(cb[i], gamma) + wbs * text_encode(b[i], gamma) + ws * text_encode(cs[i], gamma), gamma)
+            text_decode(
+                wb * text_encode(cb[i], gamma)
+                    + wbs * text_encode(b[i], gamma)
+                    + ws * text_encode(cs[i], gamma),
+                gamma,
+            )
         };
     }
     out[3] = ao;
@@ -246,7 +279,12 @@ fn normal_rgb(backdrop: [f32; 4], source: [f32; 4], as_: f32, ao: f32) -> [f32; 
     }
     let kb = backdrop[3] * (1.0 - as_);
     let inv = 1.0 / ao;
-    [(kb * backdrop[0] + as_ * source[0]) * inv, (kb * backdrop[1] + as_ * source[1]) * inv, (kb * backdrop[2] + as_ * source[2]) * inv, ao]
+    [
+        (kb * backdrop[0] + as_ * source[0]) * inv,
+        (kb * backdrop[1] + as_ * source[1]) * inv,
+        (kb * backdrop[2] + as_ * source[2]) * inv,
+        ao,
+    ]
 }
 
 /// Photoshop's "Blend Text Colors Using Gamma" (Color Settings › Advanced, on at 1.45 by
@@ -256,7 +294,8 @@ fn normal_rgb(backdrop: [f32; 4], source: [f32; 4], as_: f32, ao: f32) -> [f32; 
 /// over grey is 57/255 in red, an encoded mix gives 40).
 pub const TEXT_GAMMA: f32 = 1.45;
 
-static TEXT_GAMMA_SETTING: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0x3fb9_999a); // 1.45f32
+static TEXT_GAMMA_SETTING: std::sync::atomic::AtomicU32 =
+    std::sync::atomic::AtomicU32::new(0x3fb9_999a); // 1.45f32
 
 /// Sets Color Settings › "Blend Text Colors Using Gamma" (1 = off). It is an application
 /// setting, not stored in documents (1 here means switched off: a plain mix of the encoded
@@ -266,7 +305,11 @@ static TEXT_GAMMA_SETTING: std::sync::atomic::AtomicU32 = std::sync::atomic::Ato
 /// that composites a type layer, so such tests belong in their own test binary (see
 /// `crates/engine/tests/text_gamma.rs`).
 pub fn set_text_gamma(gamma: f32) {
-    let g = if gamma.is_finite() { gamma.clamp(1.0, 2.2) } else { TEXT_GAMMA };
+    let g = if gamma.is_finite() {
+        gamma.clamp(1.0, 2.2)
+    } else {
+        TEXT_GAMMA
+    };
     TEXT_GAMMA_SETTING.store(g.to_bits(), std::sync::atomic::Ordering::Relaxed);
 }
 
@@ -293,7 +336,13 @@ pub fn text_decode(v: f32, gamma: f32) -> f32 {
 
 /// [`composite`] with the coverage mix done in the text blending space of `gamma`
 /// ([`text_encode`]; `gamma == 1` is [`composite`], the setting switched off).
-pub fn composite_gamma(mode: BlendMode, backdrop: [f32; 4], source: [f32; 4], opacity: f32, gamma: f32) -> [f32; 4] {
+pub fn composite_gamma(
+    mode: BlendMode,
+    backdrop: [f32; 4],
+    source: [f32; 4],
+    opacity: f32,
+    gamma: f32,
+) -> [f32; 4] {
     if gamma == 1.0 {
         return composite(mode, backdrop, source, opacity);
     }
@@ -325,14 +374,47 @@ mod tests {
     #[test]
     fn text_gamma_lightens_dark_edges() {
         // 69 % blue (0, 51, 153) over grey 129: Photoshop shows (57, 80, 146).
-        let r = composite_gamma(BlendMode::Normal, [129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0, 1.0], [0.0, 0.2, 0.6, 0.686], 1.0, TEXT_GAMMA);
-        assert!((r[0] * 255.0 - 57.0).abs() < 1.0 && (r[1] * 255.0 - 80.0).abs() < 1.0 && (r[2] * 255.0 - 146.0).abs() < 1.0, "{r:?}");
+        let r = composite_gamma(
+            BlendMode::Normal,
+            [129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0, 1.0],
+            [0.0, 0.2, 0.6, 0.686],
+            1.0,
+            TEXT_GAMMA,
+        );
+        assert!(
+            (r[0] * 255.0 - 57.0).abs() < 1.0
+                && (r[1] * 255.0 - 80.0).abs() < 1.0
+                && (r[2] * 255.0 - 146.0).abs() < 1.0,
+            "{r:?}"
+        );
         // Near-opaque edges stay dark: 94 % coverage shows (13, 57, 152) (a v^1.45 mix gives 19 red).
-        let r = composite_gamma(BlendMode::Normal, [129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0, 1.0], [0.0, 0.2, 0.6, 0.937], 1.0, TEXT_GAMMA);
-        assert!((r[0] * 255.0 - 13.0).abs() < 1.0 && (r[1] * 255.0 - 57.0).abs() < 1.0 && (r[2] * 255.0 - 152.0).abs() < 1.0, "{r:?}");
+        let r = composite_gamma(
+            BlendMode::Normal,
+            [129.0 / 255.0, 129.0 / 255.0, 129.0 / 255.0, 1.0],
+            [0.0, 0.2, 0.6, 0.937],
+            1.0,
+            TEXT_GAMMA,
+        );
+        assert!(
+            (r[0] * 255.0 - 13.0).abs() < 1.0
+                && (r[1] * 255.0 - 57.0).abs() < 1.0
+                && (r[2] * 255.0 - 152.0).abs() < 1.0,
+            "{r:?}"
+        );
         assert_eq!(
-            composite_gamma(BlendMode::Multiply, [0.2, 0.4, 0.6, 0.7], [0.5, 0.1, 0.9, 0.5], 0.8, 1.0),
-            composite(BlendMode::Multiply, [0.2, 0.4, 0.6, 0.7], [0.5, 0.1, 0.9, 0.5], 0.8)
+            composite_gamma(
+                BlendMode::Multiply,
+                [0.2, 0.4, 0.6, 0.7],
+                [0.5, 0.1, 0.9, 0.5],
+                0.8,
+                1.0
+            ),
+            composite(
+                BlendMode::Multiply,
+                [0.2, 0.4, 0.6, 0.7],
+                [0.5, 0.1, 0.9, 0.5],
+                0.8
+            )
         );
     }
 
@@ -352,17 +434,36 @@ mod tests {
             (BlendMode::HardMix, [245, 225, 165]),
             (BlendMode::Difference, [150, 60, 10]),
         ];
-        let px = |c: [u8; 3]| [f32::from(c[0]) / 255.0, f32::from(c[1]) / 255.0, f32::from(c[2]) / 255.0, 1.0];
+        let px = |c: [u8; 3]| {
+            [
+                f32::from(c[0]) / 255.0,
+                f32::from(c[1]) / 255.0,
+                f32::from(c[2]) / 255.0,
+                1.0,
+            ]
+        };
         let (b, t) = (px([200, 150, 100]), px([100, 180, 220]));
         for (mode, want) in measured {
             let got = composite_fill(mode, b, t, 1.0, 128.0 / 255.0, 1.0);
             for i in 0..3 {
-                assert!((got[i] * 255.0 - f32::from(want[i])).abs() <= 1.5, "{mode:?} channel {i}: {} vs Photoshop {}", got[i] * 255.0, want[i]);
+                assert!(
+                    (got[i] * 255.0 - f32::from(want[i])).abs() <= 1.5,
+                    "{mode:?} channel {i}: {} vs Photoshop {}",
+                    got[i] * 255.0,
+                    want[i]
+                );
             }
             // At 100% Fill it is the plain blend; at 0% the backdrop.
-            assert_eq!(composite_fill(mode, b, t, 1.0, 1.0, 1.0), composite(mode, b, t, 1.0), "{mode:?}");
+            assert_eq!(
+                composite_fill(mode, b, t, 1.0, 1.0, 1.0),
+                composite(mode, b, t, 1.0),
+                "{mode:?}"
+            );
             let none = composite_fill(mode, b, t, 1.0, 0.0, 1.0);
-            assert!((0..3).all(|i| (none[i] - b[i]).abs() < 1e-5), "{mode:?} at Fill 0: {none:?}");
+            assert!(
+                (0..3).all(|i| (none[i] - b[i]).abs() < 1e-5),
+                "{mode:?} at Fill 0: {none:?}"
+            );
         }
         // A second measurement: Background #3c78b4, layer #d25a1e at Fill 25% (64/255) and 75%
         // (191/255). Hard Mix at 75% is 3 levels off in red: dividing by 1 − f = 0.25 magnifies
@@ -393,10 +494,16 @@ mod tests {
             }
         }
         // Other modes keep Fill as coverage, like Opacity.
-        assert_eq!(composite_fill(BlendMode::Multiply, b, t, 0.8, 0.5, 1.0), composite(BlendMode::Multiply, b, t, 0.4));
+        assert_eq!(
+            composite_fill(BlendMode::Multiply, b, t, 0.8, 0.5, 1.0),
+            composite(BlendMode::Multiply, b, t, 0.4)
+        );
         // Over transparency Fill is still coverage for the special eight.
         let r = composite_fill(BlendMode::LinearDodge, [0.0; 4], t, 1.0, 0.5, 1.0);
-        assert!((r[3] - 0.5).abs() < 1e-6 && (r[0] - t[0]).abs() < 1e-6, "{r:?}");
+        assert!(
+            (r[3] - 0.5).abs() < 1e-6 && (r[0] - t[0]).abs() < 1e-6,
+            "{r:?}"
+        );
     }
 
     #[test]
@@ -440,13 +547,21 @@ mod tests {
     #[test]
     fn other_modes_delegate() {
         for m in BlendMode::LAYER_MODES {
-            if matches!(m, BlendMode::VividLight | BlendMode::HardMix | BlendMode::ColorBurn | BlendMode::ColorDodge) {
+            if matches!(
+                m,
+                BlendMode::VividLight
+                    | BlendMode::HardMix
+                    | BlendMode::ColorBurn
+                    | BlendMode::ColorDodge
+            ) {
                 continue;
             }
             let (cb, cs) = ([0.2, 0.5, 0.9], [0.7, 0.1, 0.4]);
             assert_eq!(blend_rgb(m, cb, cs), generic::blend_rgb(m, cb, cs));
-            let (a, b) =
-                (composite(m, [0.2, 0.5, 0.9, 0.7], [0.7, 0.1, 0.4, 0.6], 0.8), generic::composite(m, [0.2, 0.5, 0.9, 0.7], [0.7, 0.1, 0.4, 0.6], 0.8));
+            let (a, b) = (
+                composite(m, [0.2, 0.5, 0.9, 0.7], [0.7, 0.1, 0.4, 0.6], 0.8),
+                generic::composite(m, [0.2, 0.5, 0.9, 0.7], [0.7, 0.1, 0.4, 0.6], 0.8),
+            );
             for c in 0..4 {
                 assert!((a[c] - b[c]).abs() < 1e-6, "{m:?} {a:?} {b:?}");
             }
@@ -472,7 +587,10 @@ mod tests {
             let generic = generic::composite(mode, backdrop, source, 1.0);
             let photoshop = composite(mode, backdrop, source, 1.0);
             for channel in 0..4 {
-                assert!((generic[channel] - photoshop[channel]).abs() < 1e-6, "{mode:?} Cb={cb} Cs={cs}: {generic:?} != {photoshop:?}");
+                assert!(
+                    (generic[channel] - photoshop[channel]).abs() < 1e-6,
+                    "{mode:?} Cb={cb} Cs={cs}: {generic:?} != {photoshop:?}"
+                );
             }
         }
     }

@@ -233,10 +233,26 @@ impl FspSrv {
                 (820, None, "GetContentStorageInfoIndex"),
                 (830, None, "EncryptStreamPlaySaveData"),
                 (831, None, "DecryptStreamPlaySaveData"),
-                (32, Some(Self::extend_save_data_file_system_handler), "ExtendSaveDataFileSystem"),
-                (57, Some(Self::read_save_data_file_system_extra_data_by_save_data_space_id_handler), "ReadSaveDataFileSystemExtraDataBySaveDataSpaceId"),
-                (67, Some(Self::find_save_data_with_filter_handler), "FindSaveDataWithFilter"),
-                (83, Some(Self::open_save_data_transfer_prohibiter_handler), "OpenSaveDataTransferProhibiter"),
+                (
+                    32,
+                    Some(Self::extend_save_data_file_system_handler),
+                    "ExtendSaveDataFileSystem",
+                ),
+                (
+                    57,
+                    Some(Self::read_save_data_file_system_extra_data_by_save_data_space_id_handler),
+                    "ReadSaveDataFileSystemExtraDataBySaveDataSpaceId",
+                ),
+                (
+                    67,
+                    Some(Self::find_save_data_with_filter_handler),
+                    "FindSaveDataWithFilter",
+                ),
+                (
+                    83,
+                    Some(Self::open_save_data_transfer_prohibiter_handler),
+                    "OpenSaveDataTransferProhibiter",
+                ),
                 (
                     23,
                     Some(Self::create_save_data_file_system_by_system_save_data_id_handler),
@@ -257,9 +273,21 @@ impl FspSrv {
                     Some(Self::open_sd_card_file_system_handler),
                     "OpenSdCardFileSystem",
                 ),
-                (8, Some(Self::open_file_system_with_id_handler), "OpenFileSystemWithId"),
-                (7, Some(Self::open_file_system_with_patch_handler), "OpenFileSystemWithPatch"),
-                (10, Some(Self::open_file_system_with_id_and_attributes_handler), "OpenFileSystemWithIdAndAttributes"),
+                (
+                    8,
+                    Some(Self::open_file_system_with_id_handler),
+                    "OpenFileSystemWithId",
+                ),
+                (
+                    7,
+                    Some(Self::open_file_system_with_patch_handler),
+                    "OpenFileSystemWithPatch",
+                ),
+                (
+                    10,
+                    Some(Self::open_file_system_with_id_and_attributes_handler),
+                    "OpenFileSystemWithIdAndAttributes",
+                ),
                 (
                     51,
                     Some(Self::open_save_data_file_system_handler),
@@ -387,7 +415,10 @@ impl FspSrv {
         rb.push_ipc_interface(object);
     }
 
-    fn open_file_system_with_patch_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn open_file_system_with_patch_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
         // CMIF aligns the u64 program ID to eight bytes after FileSystemProxyType.
         let mut input = RequestParser::new(ctx);
@@ -396,26 +427,43 @@ impl FspSrv {
         let program_id = input.pop_u64();
         match service.open_file_system_with_patch(fs_type, program_id) {
             Ok(directory) => {
-                let size_getter = service.fsc.as_ref().map_or_else(
-                    Self::make_default_size_getter,
-                    |fsc| Self::make_size_getter_from_storage_id(Arc::clone(fsc), StorageId::NandUser),
+                let size_getter =
+                    service
+                        .fsc
+                        .as_ref()
+                        .map_or_else(Self::make_default_size_getter, |fsc| {
+                            Self::make_size_getter_from_storage_id(
+                                Arc::clone(fsc),
+                                StorageId::NandUser,
+                            )
+                        });
+                Self::push_interface_response(
+                    ctx,
+                    Arc::new(IFileSystem::new(directory, size_getter)),
                 );
-                Self::push_interface_response(ctx, Arc::new(IFileSystem::new(directory, size_getter)));
             }
             Err(error) => Self::push_error_with_null_interface(ctx, error.raw()),
         }
     }
 
-    fn open_file_system_with_patch(&self, fs_type: u8, program_id: u64)
-        -> Result<crate::file_sys::vfs::vfs_types::VirtualDir, common::ResultCode>
-    {
+    fn open_file_system_with_patch(
+        &self,
+        fs_type: u8,
+        program_id: u64,
+    ) -> Result<crate::file_sys::vfs::vfs_types::VirtualDir, common::ResultCode> {
         // Upstream supports Manual only. Return a protocol error for absent
         // content instead of constructing an interface over a null directory.
         if fs_type != super::fsp_types::FileSystemProxyType::Manual as u8 {
             return Err(crate::file_sys::errors::RESULT_INVALID_ARGUMENT);
         }
-        let romfs = self.romfs_controller.lock().unwrap().as_ref()
-            .and_then(|controller| controller.open_patched_romfs(program_id, ContentRecordType::HtmlDocument))
+        let romfs = self
+            .romfs_controller
+            .lock()
+            .unwrap()
+            .as_ref()
+            .and_then(|controller| {
+                controller.open_patched_romfs(program_id, ContentRecordType::HtmlDocument)
+            })
             .ok_or(crate::file_sys::errors::RESULT_PATH_NOT_FOUND)?;
         crate::file_sys::romfs::extract_romfs(Some(romfs))
             .ok_or(crate::file_sys::errors::RESULT_PATH_NOT_FOUND)
@@ -427,20 +475,45 @@ impl FspSrv {
         service.open_file_system_with_id_response(ctx, input.fs_type, input.program_id, 0);
     }
 
-    fn open_file_system_with_id_and_attributes_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn open_file_system_with_id_and_attributes_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
-        let input = RequestParser::new(ctx).pop_raw::<OpenFileSystemWithIdAndAttributesParameters>();
-        service.open_file_system_with_id_response(ctx, input.fs_type, input.program_id, input.attributes);
+        let input =
+            RequestParser::new(ctx).pop_raw::<OpenFileSystemWithIdAndAttributesParameters>();
+        service.open_file_system_with_id_response(
+            ctx,
+            input.fs_type,
+            input.program_id,
+            input.attributes,
+        );
     }
 
-    fn open_file_system_with_id_response(&self, ctx: &mut HLERequestContext, fs_type: u32, program_id: u64, attributes: u8) {
+    fn open_file_system_with_id_response(
+        &self,
+        ctx: &mut HLERequestContext,
+        fs_type: u32,
+        program_id: u64,
+        attributes: u8,
+    ) {
         let bytes = ctx.read_buffer(0);
-        let path = bytes.iter().take(0x301).position(|byte| *byte == 0)
+        let path = bytes
+            .iter()
+            .take(0x301)
+            .position(|byte| *byte == 0)
             .and_then(|end| std::str::from_utf8(&bytes[..end]).ok());
-        let result = path.ok_or(crate::file_sys::errors::RESULT_INVALID_PATH)
+        let result = path
+            .ok_or(crate::file_sys::errors::RESULT_INVALID_PATH)
             .and_then(|path| self.open_file_system_with_id(fs_type, program_id, attributes, path));
         match result {
-            Ok(directory) => Self::push_interface_response(ctx, Arc::new(IFileSystem::new(directory, Self::make_default_size_getter()))),
+            Ok(directory) => Self::push_interface_response(
+                ctx,
+                Arc::new(IFileSystem::new(
+                    directory,
+                    Self::make_default_size_getter(),
+                )),
+            ),
             Err(error) => {
                 log::warn!("OpenFileSystemWithId failed: type={fs_type}, id={program_id:016x}, attributes={attributes:#x}, path={path:?}, result={:#x}", error.raw());
                 Self::push_error_with_null_interface(ctx, error.raw());
@@ -452,40 +525,74 @@ impl FspSrv {
     /// catalogued NCA identified by NS's guest path, never a host filesystem path.
     /// This slice supports document/control/data RomFS mounts. Other filesystem
     /// kinds fail explicitly, rather than returning success without an object.
-    fn open_file_system_with_id(&self, fs_type: u32, program_id: u64, attributes: u8, path: &str)
-        -> Result<crate::file_sys::vfs::vfs_types::VirtualDir, common::ResultCode>
-    {
-        use crate::file_sys::content_archive::{NCA, NCAContentType};
-        use crate::file_sys::errors::{RESULT_INVALID_ARGUMENT, RESULT_NOT_IMPLEMENTED, RESULT_PATH_NOT_FOUND};
+    fn open_file_system_with_id(
+        &self,
+        fs_type: u32,
+        program_id: u64,
+        attributes: u8,
+        path: &str,
+    ) -> Result<crate::file_sys::vfs::vfs_types::VirtualDir, common::ResultCode> {
+        use crate::file_sys::content_archive::{NCAContentType, NCA};
+        use crate::file_sys::errors::{
+            RESULT_INVALID_ARGUMENT, RESULT_NOT_IMPLEMENTED, RESULT_PATH_NOT_FOUND,
+        };
         use crate::file_sys::partition_filesystem::ResultStatus;
         use crate::file_sys::registered_cache::{get_base_title_id, get_update_title_id};
 
-        if attributes & !0xf != 0 { return Err(RESULT_INVALID_ARGUMENT); }
+        if attributes & !0xf != 0 {
+            return Err(RESULT_INVALID_ARGUMENT);
+        }
         let expected = match fs_type {
             3 => NCAContentType::Control,
             4 => NCAContentType::Manual,
             6 => NCAContentType::Data,
             _ => return Err(RESULT_NOT_IMPLEMENTED),
         };
-        let provider = self.content_provider.as_ref().ok_or(RESULT_PATH_NOT_FOUND)?.lock().unwrap();
+        let provider = self
+            .content_provider
+            .as_ref()
+            .ok_or(RESULT_PATH_NOT_FOUND)?
+            .lock()
+            .unwrap();
         for (slot, entry) in provider.list_entries_filter_origin(None, None, None, None) {
-            if program_id != 0 && entry.title_id != program_id
-                && entry.title_id != get_update_title_id(program_id) { continue; }
-            if provider.get_entry_content_path(slot, entry.title_id, entry.record_type).as_deref() != Some(path) { continue; }
-            let raw = provider.get_entry_raw_from_slot(slot, entry.title_id, entry.record_type)
+            if program_id != 0
+                && entry.title_id != program_id
+                && entry.title_id != get_update_title_id(program_id)
+            {
+                continue;
+            }
+            if provider
+                .get_entry_content_path(slot, entry.title_id, entry.record_type)
+                .as_deref()
+                != Some(path)
+            {
+                continue;
+            }
+            let raw = provider
+                .get_entry_raw_from_slot(slot, entry.title_id, entry.record_type)
                 .ok_or(RESULT_PATH_NOT_FOUND)?;
             let base_id = get_base_title_id(entry.title_id);
-            let base = (base_id != entry.title_id).then(|| provider.get_entry(base_id, entry.record_type)).flatten();
+            let base = (base_id != entry.title_id)
+                .then(|| provider.get_entry(base_id, entry.record_type))
+                .flatten();
             let nca = NCA::new(raw, base.as_ref());
             if nca.get_status() != ResultStatus::Success {
-                log::warn!("OpenFileSystemWithId: NCA {path} failed: {:?}", nca.get_status());
+                log::warn!(
+                    "OpenFileSystemWithId: NCA {path} failed: {:?}",
+                    nca.get_status()
+                );
                 return Err(RESULT_PATH_NOT_FOUND);
             }
-            if nca.get_type() != expected && !(fs_type == 6 && nca.get_type() == NCAContentType::PublicData) {
+            if nca.get_type() != expected
+                && !(fs_type == 6 && nca.get_type() == NCAContentType::PublicData)
+            {
                 return Err(RESULT_INVALID_ARGUMENT);
             }
-            let directory = crate::file_sys::romfs::extract_romfs(nca.get_romfs()).ok_or(RESULT_PATH_NOT_FOUND)?;
-            log::info!("OpenFileSystemWithId: mounted {path}, type={fs_type}, id={program_id:016x}");
+            let directory = crate::file_sys::romfs::extract_romfs(nca.get_romfs())
+                .ok_or(RESULT_PATH_NOT_FOUND)?;
+            log::info!(
+                "OpenFileSystemWithId: mounted {path}, type={fs_type}, id={program_id:016x}"
+            );
             return Ok(directory);
         }
         Err(RESULT_PATH_NOT_FOUND)
@@ -987,7 +1094,11 @@ impl FspSrv {
                 .unwrap()
                 .as_ref()
                 .and_then(|controller| {
-                    controller.open_patched_romfs_with_program_index(program_id, program_index, ContentRecordType::Program)
+                    controller.open_patched_romfs_with_program_index(
+                        program_id,
+                        program_index,
+                        ContentRecordType::Program,
+                    )
                 });
 
         let Some(patched_romfs) = patched_romfs else {
@@ -1052,7 +1163,10 @@ impl FspSrv {
         ResponseBuilder::new(ctx, 2, 0, 0).push_result(RESULT_SUCCESS);
     }
 
-    fn read_save_data_file_system_extra_data_by_save_data_space_id_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn read_save_data_file_system_extra_data_by_save_data_space_id_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let bytes = vec![0; ctx.get_write_buffer_size(0)];
         ctx.write_buffer(&bytes, 0);
         ResponseBuilder::new(ctx, 2, 0, 0).push_result(RESULT_SUCCESS);
@@ -1068,8 +1182,12 @@ impl FspSrv {
         rb.push_i64(0);
     }
 
-    fn open_save_data_transfer_prohibiter_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let child = Arc::new(super::save_data_transfer_prohibiter::ISaveDataTransferProhibiter::new());
+    fn open_save_data_transfer_prohibiter_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
+        let child =
+            Arc::new(super::save_data_transfer_prohibiter::ISaveDataTransferProhibiter::new());
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 1);
         rb.push_result(RESULT_SUCCESS);
         rb.push_ipc_interface(child);
@@ -1100,7 +1218,9 @@ impl FspSrv {
 }
 
 impl SessionRequestHandler for FspSrv {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, context: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, context)
     }
@@ -1152,8 +1272,11 @@ mod tests {
     #[test]
     fn stpl_prerequisite_fsp_command_names() {
         let service = FspSrv::new();
-        for (id, name) in [(820, "GetContentStorageInfoIndex"),
-            (830, "EncryptStreamPlaySaveData"), (831, "DecryptStreamPlaySaveData")] {
+        for (id, name) in [
+            (820, "GetContentStorageInfoIndex"),
+            (830, "EncryptStreamPlaySaveData"),
+            (831, "DecryptStreamPlaySaveData"),
+        ] {
             let info = &service.handlers()[&id];
             assert_eq!(info.name, name);
             assert!(info.handler_callback.is_none());
@@ -1167,8 +1290,10 @@ mod tests {
         let manager = Arc::new(StdMutex::new(SessionRequestManager::new()));
         manager.lock().unwrap().set_session_handler(service.clone());
         manager.lock().unwrap().convert_to_domain();
-        for (kind, expected) in [(4, crate::file_sys::errors::RESULT_PATH_NOT_FOUND),
-            (0, crate::file_sys::errors::RESULT_INVALID_ARGUMENT)] {
+        for (kind, expected) in [
+            (4, crate::file_sys::errors::RESULT_PATH_NOT_FOUND),
+            (0, crate::file_sys::errors::RESULT_INVALID_ARGUMENT),
+        ] {
             let mut ctx = HLERequestContext::new();
             ctx.set_session_request_manager(manager.clone());
             // Full CMIF request, including dirty words where a missing output
@@ -1184,7 +1309,11 @@ mod tests {
             ctx.write_to_outgoing_command_buffer();
             assert_eq!(ctx.command_buffer()[10], expected.raw());
             assert_eq!(ctx.command_buffer()[4], 1, "one output interface slot");
-            assert_eq!(ctx.command_buffer()[12], 0, "null interface, never a stale ID");
+            assert_eq!(
+                ctx.command_buffer()[12],
+                0,
+                "null interface, never a stale ID"
+            );
             assert_eq!(manager.lock().unwrap().domain_handler_count(), 1);
         }
     }
@@ -1192,13 +1321,26 @@ mod tests {
     #[test]
     fn document_mount_ipc_layouts_match_libnx() {
         assert_eq!(std::mem::size_of::<OpenFileSystemWithIdParameters>(), 16);
-        assert_eq!(std::mem::offset_of!(OpenFileSystemWithIdParameters, program_id), 8);
-        assert_eq!(std::mem::size_of::<OpenFileSystemWithIdAndAttributesParameters>(), 16);
-        assert_eq!(std::mem::offset_of!(OpenFileSystemWithIdAndAttributesParameters, fs_type), 4);
-        assert_eq!(std::mem::offset_of!(OpenFileSystemWithIdAndAttributesParameters, program_id), 8);
+        assert_eq!(
+            std::mem::offset_of!(OpenFileSystemWithIdParameters, program_id),
+            8
+        );
+        assert_eq!(
+            std::mem::size_of::<OpenFileSystemWithIdAndAttributesParameters>(),
+            16
+        );
+        assert_eq!(
+            std::mem::offset_of!(OpenFileSystemWithIdAndAttributesParameters, fs_type),
+            4
+        );
+        assert_eq!(
+            std::mem::offset_of!(OpenFileSystemWithIdAndAttributesParameters, program_id),
+            8
+        );
         let mut ctx = HLERequestContext::new();
         ctx.command_buffer_mut()[2..6].copy_from_slice(&[0xa5a5a50f, 4, 0x12345678, 0x01000000]);
-        let parsed = RequestParser::new(&ctx).pop_raw::<OpenFileSystemWithIdAndAttributesParameters>();
+        let parsed =
+            RequestParser::new(&ctx).pop_raw::<OpenFileSystemWithIdAndAttributesParameters>();
         assert_eq!(parsed.attributes, 15);
         assert_eq!(parsed.fs_type, 4);
         assert_eq!(parsed.program_id, 0x0100000012345678);
@@ -1206,21 +1348,34 @@ mod tests {
         for command in [8, 10] {
             let mut ctx = HLERequestContext::new();
             service.handlers[&command].handler_callback.unwrap()(&service, &mut ctx);
-            assert_eq!(ctx.command_buffer()[6], crate::file_sys::errors::RESULT_INVALID_PATH.raw());
+            assert_eq!(
+                ctx.command_buffer()[6],
+                crate::file_sys::errors::RESULT_INVALID_PATH.raw()
+            );
         }
     }
 
     #[test]
     fn document_mount_never_opens_a_host_path_or_missing_content() {
         let service = FspSrv::new();
-        for path in ["C:/Windows/win.ini", "@UserContent://../secret.nca", "@UserContent://missing.nca"] {
-            assert_eq!(service.open_file_system_with_id(4, 42, 0, path).err(),
-                Some(crate::file_sys::errors::RESULT_PATH_NOT_FOUND));
+        for path in [
+            "C:/Windows/win.ini",
+            "@UserContent://../secret.nca",
+            "@UserContent://missing.nca",
+        ] {
+            assert_eq!(
+                service.open_file_system_with_id(4, 42, 0, path).err(),
+                Some(crate::file_sys::errors::RESULT_PATH_NOT_FOUND)
+            );
         }
-        assert_eq!(service.open_file_system_with_id(4, 42, 0x80, "").err(),
-            Some(crate::file_sys::errors::RESULT_INVALID_ARGUMENT));
-        assert_eq!(service.open_file_system_with_id(7, 42, 0, "").err(),
-            Some(crate::file_sys::errors::RESULT_NOT_IMPLEMENTED));
+        assert_eq!(
+            service.open_file_system_with_id(4, 42, 0x80, "").err(),
+            Some(crate::file_sys::errors::RESULT_INVALID_ARGUMENT)
+        );
+        assert_eq!(
+            service.open_file_system_with_id(7, 42, 0, "").err(),
+            Some(crate::file_sys::errors::RESULT_NOT_IMPLEMENTED)
+        );
     }
 
     #[test]
@@ -1230,9 +1385,16 @@ mod tests {
             let mut ctx = HLERequestContext::new();
             service.handlers[&command].handler_callback.unwrap()(&service, &mut ctx);
             let mut expected = HLERequestContext::new();
-            let mut rb = ResponseBuilder::new(&mut expected, if command == 67 { 4 } else { 2 }, 0, 0);
-            rb.push_result(if command == 67 { ResultCode::new(RESULT_TARGET_NOT_FOUND.raw()) } else { RESULT_SUCCESS });
-            if command == 67 { rb.push_i64(0); }
+            let mut rb =
+                ResponseBuilder::new(&mut expected, if command == 67 { 4 } else { 2 }, 0, 0);
+            rb.push_result(if command == 67 {
+                ResultCode::new(RESULT_TARGET_NOT_FOUND.raw())
+            } else {
+                RESULT_SUCCESS
+            });
+            if command == 67 {
+                rb.push_i64(0);
+            }
             drop(rb);
             assert_eq!(ctx.command_buffer(), expected.command_buffer());
         }

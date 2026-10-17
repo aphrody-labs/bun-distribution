@@ -31,11 +31,22 @@ impl EncoderConfig {
             Profile::Hqx | Profile::R444 => 10,
             _ => 8,
         };
-        EncoderConfig { profile, width, height, bit_depth, color_volume: ColorVolume::Bt709, par: (0, 0) }
+        EncoderConfig {
+            profile,
+            width,
+            height,
+            bit_depth,
+            color_volume: ColorVolume::Bt709,
+            par: (0, 0),
+        }
     }
 
     pub fn chroma(&self) -> ChromaFormat {
-        if self.profile == Profile::R444 { ChromaFormat::Yuv444 } else { ChromaFormat::Yuv422 }
+        if self.profile == Profile::R444 {
+            ChromaFormat::Yuv444
+        } else {
+            ChromaFormat::Yuv422
+        }
     }
 }
 
@@ -68,7 +79,10 @@ impl Encoder {
 
     pub fn with_config(cfg: EncoderConfig) -> Result<Encoder> {
         if cfg.width == 0 || cfg.height == 0 || cfg.width > 16384 || cfg.height > 16384 {
-            return Err(Error::Input(format!("unsupported raster {}x{}", cfg.width, cfg.height)));
+            return Err(Error::Input(format!(
+                "unsupported raster {}x{}",
+                cfg.width, cfg.height
+            )));
         }
         if cfg.chroma() == ChromaFormat::Yuv422 && !cfg.width.is_multiple_of(2) {
             return Err(Error::Input("4:2:2 needs an even width".into()));
@@ -78,12 +92,24 @@ impl Encoder {
             _ => cfg.bit_depth == 8,
         };
         if !ok_depth {
-            return Err(Error::Input(format!("{} does not support {}-bit", cfg.profile.name(), cfg.bit_depth)));
+            return Err(Error::Input(format!(
+                "{} does not support {}-bit",
+                cfg.profile.name(),
+                cfg.bit_depth
+            )));
         }
-        let info = cid_info(cfg.profile.cid()).ok_or_else(|| Error::Input(format!("no compression table for {}", cfg.profile.name())))?;
+        let info = cid_info(cfg.profile.cid()).ok_or_else(|| {
+            Error::Input(format!("no compression table for {}", cfg.profile.name()))
+        })?;
         let frame_size = cfg.profile.frame_size(cfg.width, cfg.height);
         let header_size = header::header_size_for(cfg.height);
-        Ok(Encoder { cfg, info, frame_size, header_size, last_q: 8 })
+        Ok(Encoder {
+            cfg,
+            info,
+            frame_size,
+            header_size,
+            last_q: 8,
+        })
     }
 
     pub fn config(&self) -> &EncoderConfig {
@@ -100,18 +126,30 @@ impl Encoder {
     pub fn encode(&mut self, f: &Frame) -> Result<Vec<u8>> {
         let cfg = &self.cfg;
         if f.width != cfg.width || f.height != cfg.height {
-            return Err(Error::Input(format!("frame is {}x{}, encoder is {}x{}", f.width, f.height, cfg.width, cfg.height)));
+            return Err(Error::Input(format!(
+                "frame is {}x{}, encoder is {}x{}",
+                f.width, f.height, cfg.width, cfg.height
+            )));
         }
         if f.chroma != cfg.chroma() {
-            return Err(Error::Input(format!("{:?} input for {}", f.chroma, cfg.profile.name())));
+            return Err(Error::Input(format!(
+                "{:?} input for {}",
+                f.chroma,
+                cfg.profile.name()
+            )));
         }
         if !(8..=16).contains(&f.bit_depth) {
-            return Err(Error::Input(format!("unsupported input depth {}", f.bit_depth)));
+            return Err(Error::Input(format!(
+                "unsupported input depth {}",
+                f.bit_depth
+            )));
         }
         let n = f.width as usize * f.height as usize;
         let cn = f.chroma_width() as usize * f.chroma_height() as usize;
         if f.y.len() != n || f.cb.len() != cn || f.cr.len() != cn {
-            return Err(Error::Input("plane sizes do not match the frame geometry".into()));
+            return Err(Error::Input(
+                "plane sizes do not match the frame geometry".into(),
+            ));
         }
         let prep = self.prepare(f);
         let vlc = vlc(self.info.vlc);
@@ -122,10 +160,30 @@ impl Encoder {
 
     fn mb_layout(&self) -> &'static [(u8, u8, u8)] {
         match self.cfg.chroma() {
-            ChromaFormat::Yuv444 => {
-                &[(0, 0, 0), (0, 8, 0), (1, 0, 0), (1, 8, 0), (2, 0, 0), (2, 8, 0), (0, 0, 8), (0, 8, 8), (1, 0, 8), (1, 8, 8), (2, 0, 8), (2, 8, 8)]
-            }
-            _ => &[(0, 0, 0), (0, 8, 0), (1, 0, 0), (2, 0, 0), (0, 0, 8), (0, 8, 8), (1, 0, 8), (2, 0, 8)],
+            ChromaFormat::Yuv444 => &[
+                (0, 0, 0),
+                (0, 8, 0),
+                (1, 0, 0),
+                (1, 8, 0),
+                (2, 0, 0),
+                (2, 8, 0),
+                (0, 0, 8),
+                (0, 8, 8),
+                (1, 0, 8),
+                (1, 8, 8),
+                (2, 0, 8),
+                (2, 8, 8),
+            ],
+            _ => &[
+                (0, 0, 0),
+                (0, 8, 0),
+                (1, 0, 0),
+                (2, 0, 0),
+                (0, 0, 8),
+                (0, 8, 8),
+                (1, 0, 8),
+                (2, 0, 8),
+            ],
         }
     }
 
@@ -141,16 +199,34 @@ impl Encoder {
         let inv_scale = if depth == 12 { 0.25f32 } else { 1.0 };
         let p = self.info.p as f32;
         let w = self.info.weights;
-        let cmbw = if cfg.chroma() == ChromaFormat::Yuv444 { 16 } else { 8 };
+        let cmbw = if cfg.chroma() == ChromaFormat::Yuv444 {
+            16
+        } else {
+            8
+        };
         let planes: [(&[u16], usize, usize, usize); 3] = [
             (&f.y, f.width as usize, f.height as usize, 16),
-            (&f.cb, f.chroma_width() as usize, f.chroma_height() as usize, cmbw),
-            (&f.cr, f.chroma_width() as usize, f.chroma_height() as usize, cmbw),
+            (
+                &f.cb,
+                f.chroma_width() as usize,
+                f.chroma_height() as usize,
+                cmbw,
+            ),
+            (
+                &f.cr,
+                f.chroma_width() as usize,
+                f.chroma_height() as usize,
+                cmbw,
+            ),
         ];
         let sample = |pl: usize, x: usize, y: usize| -> f32 {
             let (d, pw, ph, _) = planes[pl];
             let v = d[y.min(ph - 1) * pw + x.min(pw - 1)] as i32;
-            let v = if shift >= 0 { v << shift } else { (v + (1 << (-shift - 1))) >> -shift };
+            let v = if shift >= 0 {
+                v << shift
+            } else {
+                (v + (1 << (-shift - 1))) >> -shift
+            };
             v.min((1 << depth) - 1) as f32 - mid
         };
         let do_row = |s: usize| -> Vec<[f32; 64]> {
@@ -205,7 +281,13 @@ impl Encoder {
                 dc_bits[s * nw + mb] = bits;
             }
         }
-        Prepared { nw, ns, nblk, t, dc_bits }
+        Prepared {
+            nw,
+            ns,
+            nblk,
+            t,
+            dc_bits,
+        }
     }
 
     /// Per-macroblock qsf values whose coded frame fits `budget_bits`.
@@ -221,7 +303,13 @@ impl Encoder {
             bits
         };
         let frame_bits = |q: u32| -> u64 {
-            let row = |s: usize| -> u64 { row_bytes((0..prep.nw).map(|m| mb_bits(s * prep.nw + m, q) as u64).sum()) * 8 };
+            let row = |s: usize| -> u64 {
+                row_bytes(
+                    (0..prep.nw)
+                        .map(|m| mb_bits(s * prep.nw + m, q) as u64)
+                        .sum(),
+                ) * 8
+            };
             #[cfg(feature = "threads")]
             {
                 use rayon::prelude::*;
@@ -250,7 +338,11 @@ impl Encoder {
             }
             while hi - lo > 1 {
                 let m = (lo + hi) / 2;
-                if frame_bits(m) <= budget_bits { hi = m } else { lo = m }
+                if frame_bits(m) <= budget_bits {
+                    hi = m
+                } else {
+                    lo = m
+                }
             }
         }
         let q = hi;
@@ -258,7 +350,13 @@ impl Encoder {
         let mut qs = vec![q; nmb];
         if q > 1 {
             // refine: one finer step per macroblock while the budget allows
-            let mut row_bits: Vec<u64> = (0..prep.ns).map(|s| (0..prep.nw).map(|m| mb_bits(s * prep.nw + m, q) as u64).sum()).collect();
+            let mut row_bits: Vec<u64> = (0..prep.ns)
+                .map(|s| {
+                    (0..prep.nw)
+                        .map(|m| mb_bits(s * prep.nw + m, q) as u64)
+                        .sum()
+                })
+                .collect();
             let mut total: u64 = row_bits.iter().map(|&b| row_bytes(b) * 8).sum();
             let cur: Vec<u32> = (0..nmb).map(|mb| mb_bits(mb, q)).collect();
             let finer: Vec<u32> = (0..nmb).map(|mb| mb_bits(mb, q - 1)).collect();
@@ -373,7 +471,11 @@ fn row_bytes(bits: u64) -> u64 {
 
 #[inline]
 fn dc_eta(e: i32) -> u32 {
-    if e == 0 { 0 } else { 32 - e.unsigned_abs().leading_zeros() }
+    if e == 0 {
+        0
+    } else {
+        32 - e.unsigned_abs().leading_zeros()
+    }
 }
 
 /// Quantised amplitude (≥ 1) of a pre-divided magnitude `|t| ≥ q`: the nearest reconstruction

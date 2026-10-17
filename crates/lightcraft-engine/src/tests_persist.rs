@@ -32,7 +32,10 @@ impl Flaky {
     fn crash_copy(&self) -> Flaky {
         let m = MemStore::new();
         *m.files.lock().unwrap() = self.files.files.lock().unwrap().clone();
-        Flaky { files: m, ..Default::default() }
+        Flaky {
+            files: m,
+            ..Default::default()
+        }
     }
 }
 
@@ -62,7 +65,12 @@ impl Store for Flaky {
 
 fn open(store: &Flaky, seed: bool) -> Session {
     let mut s = Session::new();
-    let stores = LibraryStores { dir: "flaky".into(), catalog: Box::new(store.clone()), files: Box::new(MemStore::new()), on_disk: false };
+    let stores = LibraryStores {
+        dir: "flaky".into(),
+        catalog: Box::new(store.clone()),
+        files: Box::new(MemStore::new()),
+        on_disk: false,
+    };
     s.open_library_in(stores, seed).unwrap();
     s
 }
@@ -79,7 +87,9 @@ fn failed_append_fails_the_command_and_is_retried() {
     assert!(matches!(e, EngineError::NotSaved(_)), "{e:?}");
     let msg = e.to_string();
     assert!(
-        msg.starts_with("saved in memory but not written to disk: ") && msg.contains("disk full") && msg.ends_with("LightCraft will retry"),
+        msg.starts_with("saved in memory but not written to disk: ")
+            && msg.contains("disk full")
+            && msg.ends_with("LightCraft will retry"),
         "{msg}"
     );
     // applied in memory, undoable, queued
@@ -90,17 +100,30 @@ fn failed_append_fails_the_command_and_is_retried() {
     // their own result)
     let info = s.execute("library.info", &json!({})).unwrap();
     assert_eq!(info["unsavedOps"], 1, "{info}");
-    assert!(info["unsavedError"].as_str().unwrap().contains("disk full"), "{info}");
-    s.execute("library.select", &json!({"ids": [id.0]})).unwrap();
+    assert!(
+        info["unsavedError"].as_str().unwrap().contains("disk full"),
+        "{info}"
+    );
+    s.execute("library.select", &json!({"ids": [id.0]}))
+        .unwrap();
     // a second change fails too; both stay queued, in order
-    let e = s.execute("photo.flag", &json!({"flag": "pick"})).unwrap_err();
+    let e = s
+        .execute("photo.flag", &json!({"flag": "pick"}))
+        .unwrap_err();
     assert!(matches!(e, EngineError::NotSaved(_)));
     assert_eq!(s.unsaved().map(|u| u.0), Some(2));
     // the frame loop backs off instead of retrying every frame
     s.persist_if_dirty();
     assert_eq!(s.unsaved().map(|u| u.0), Some(2));
     // a crash now loses only the unsaved changes; the earlier ones are on disk
-    assert_eq!(open(&store.crash_copy(), true).catalog.photo(id).unwrap().rating, 1);
+    assert_eq!(
+        open(&store.crash_copy(), true)
+            .catalog
+            .photo(id)
+            .unwrap()
+            .rating,
+        1
+    );
 
     // the disk comes back: the next save writes the whole queue
     store.set_failing(false);
@@ -124,7 +147,10 @@ fn failed_append_of_undo_is_reported_and_retried() {
     let before = s.catalog.photo(id).unwrap().rating;
     s.execute("photo.rate", &json!({"rating": 3})).unwrap();
     store.set_failing(true);
-    assert!(matches!(s.execute("edit.undo", &json!({})), Err(EngineError::NotSaved(_))));
+    assert!(matches!(
+        s.execute("edit.undo", &json!({})),
+        Err(EngineError::NotSaved(_))
+    ));
     assert_eq!(s.catalog.photo(id).unwrap().rating, before);
     store.set_failing(false);
     s.persist().unwrap();
@@ -135,14 +161,23 @@ fn failed_append_of_undo_is_reported_and_retried() {
 /// A failed compaction is not a failed command: the command's own records were appended.
 #[test]
 fn failed_snapshot_does_not_fail_the_command() {
-    let store = Flaky { snapshots_only: true, ..Default::default() };
+    let store = Flaky {
+        snapshots_only: true,
+        ..Default::default()
+    };
     let mut s = open(&store, false);
-    s.library.as_mut().unwrap().journal_mut().policy = SnapshotPolicy { max_records: 1, max_bytes: u64::MAX };
+    s.library.as_mut().unwrap().journal_mut().policy = SnapshotPolicy {
+        max_records: 1,
+        max_bytes: u64::MAX,
+    };
     store.set_failing(true);
     s.execute("album.create", &json!({"name": "A"})).unwrap();
     s.execute("album.create", &json!({"name": "B"})).unwrap();
     assert_eq!(s.unsaved(), None);
-    assert!(s.library.as_ref().unwrap().last_error.is_some(), "the compaction failure is reported");
+    assert!(
+        s.library.as_ref().unwrap().last_error.is_some(),
+        "the compaction failure is reported"
+    );
     drop(s);
     store.set_failing(false);
     assert_eq!(open(&store, false).catalog.albums().count(), 2);
@@ -152,12 +187,21 @@ fn failed_snapshot_does_not_fail_the_command() {
 /// closing snapshot (a fresh file), and reports success; they are not appended again later.
 #[test]
 fn close_saves_queued_changes_in_the_snapshot_when_appends_fail() {
-    let store = Flaky { appends_only: true, ..Default::default() };
+    let store = Flaky {
+        appends_only: true,
+        ..Default::default()
+    };
     let mut s = open(&store, true);
     let id = s.selection.active.unwrap();
     store.set_failing(true);
-    assert!(matches!(s.execute("photo.rate", &json!({"rating": 4})), Err(EngineError::NotSaved(_))));
-    assert!(matches!(s.execute("photo.flag", &json!({"flag": "pick"})), Err(EngineError::NotSaved(_))));
+    assert!(matches!(
+        s.execute("photo.rate", &json!({"rating": 4})),
+        Err(EngineError::NotSaved(_))
+    ));
+    assert!(matches!(
+        s.execute("photo.flag", &json!({"flag": "pick"})),
+        Err(EngineError::NotSaved(_))
+    ));
     assert_eq!(s.unsaved().map(|u| u.0), Some(2));
     s.close_library().unwrap();
     assert_eq!(s.unsaved(), None);

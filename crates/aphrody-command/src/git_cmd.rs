@@ -267,7 +267,14 @@ pub(crate) enum SourceAction {
 
 pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
     match action {
-        GitAction::Inspect { path, log, hotspots, window, against, pretty } => {
+        GitAction::Inspect {
+            path,
+            log,
+            hotspots,
+            window,
+            against,
+            pretty,
+        } => {
             let snapshot = inspect_repository(&path).map_err(to_report)?;
             let history = repository_history(
                 &path,
@@ -280,14 +287,19 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             )
             .map_err(to_report)?;
             let mut value = serde_json::to_value(snapshot).map_err(to_report)?;
-            if let (Some(object), Value::Object(extra)) =
-                (value.as_object_mut(), serde_json::to_value(history).map_err(to_report)?)
-            {
+            if let (Some(object), Value::Object(extra)) = (
+                value.as_object_mut(),
+                serde_json::to_value(history).map_err(to_report)?,
+            ) {
                 object.extend(extra);
             }
             emit(&value, pretty)?;
-        },
-        GitAction::Repo { repository, path, pretty } => {
+        }
+        GitAction::Repo {
+            repository,
+            path,
+            pretty,
+        } => {
             let repository = match repository {
                 Some(value) => GitHubRepository::parse(&value).map_err(to_report)?,
                 None => inspect_repository(path)
@@ -298,8 +310,14 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             let client = GitHubClient::from_env().map_err(to_report)?;
             let metadata = client.repository(&repository).await.map_err(to_report)?;
             emit(&metadata, pretty)?;
-        },
-        GitAction::Api { method, route, body, apply, pretty } => {
+        }
+        GitAction::Api {
+            method,
+            route,
+            body,
+            apply,
+            pretty,
+        } => {
             let method = ApiMethod::from_str(&method).map_err(to_report)?;
             let body = body.as_deref().map(read_json).transpose()?;
             if method.is_mutating() && !apply {
@@ -315,12 +333,18 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 )?;
             } else {
                 let client = GitHubClient::from_env().map_err(to_report)?;
-                let response =
-                    client.request(method, &route, body.as_ref()).await.map_err(to_report)?;
+                let response = client
+                    .request(method, &route, body.as_ref())
+                    .await
+                    .map_err(to_report)?;
                 emit(&serde_json::to_value(response).map_err(to_report)?, pretty)?;
             }
-        },
-        GitAction::Graphql { payload, apply, pretty } => {
+        }
+        GitAction::Graphql {
+            payload,
+            apply,
+            pretty,
+        } => {
             let payload = read_json(&payload)?;
             let is_mutation = graphql_may_mutate(&payload);
             if is_mutation && !apply {
@@ -337,9 +361,18 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 let response = client.graphql(&payload).await.map_err(to_report)?;
                 emit(&response, pretty)?;
             }
-        },
-        GitAction::Install { repositories, source_ref, apply, pretty } => {
-            let mode = if apply { InstallMode::Apply } else { InstallMode::Plan };
+        }
+        GitAction::Install {
+            repositories,
+            source_ref,
+            apply,
+            pretty,
+        } => {
+            let mode = if apply {
+                InstallMode::Apply
+            } else {
+                InstallMode::Plan
+            };
             let outcomes = repositories
                 .into_iter()
                 .map(|repository| {
@@ -347,17 +380,33 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 })
                 .collect::<miette::Result<Vec<_>>>()?;
             emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
-        },
-        GitAction::Audit { owner, source_ref, include_forks, pretty } => {
+        }
+        GitAction::Audit {
+            owner,
+            source_ref,
+            include_forks,
+            pretty,
+        } => {
             let client = GitHubClient::from_env().map_err(to_report)?;
             let outcomes = audit_ecosystem_workflows(&client, &owner, &source_ref, include_forks)
                 .await
                 .map_err(to_report)?;
             emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
-        },
-        GitAction::Rollout { owner, repositories, source_ref, include_forks, apply, pretty } => {
+        }
+        GitAction::Rollout {
+            owner,
+            repositories,
+            source_ref,
+            include_forks,
+            apply,
+            pretty,
+        } => {
             let client = GitHubClient::from_env().map_err(to_report)?;
-            let mode = if apply { InstallMode::Apply } else { InstallMode::Plan };
+            let mode = if apply {
+                InstallMode::Apply
+            } else {
+                InstallMode::Plan
+            };
             let outcomes = rollout_ecosystem_workflows(
                 &client,
                 &owner,
@@ -369,7 +418,7 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             .await
             .map_err(to_report)?;
             emit(&serde_json::to_value(outcomes).map_err(to_report)?, pretty)?;
-        },
+        }
         GitAction::Ingest {
             source,
             max_size,
@@ -401,7 +450,10 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             let ingest_result =
                 aphrody_git::ingest_remote(source.trim(), &options).map_err(to_report)?;
             if json {
-                emit(&serde_json::to_value(&ingest_result).map_err(to_report)?, true)?;
+                emit(
+                    &serde_json::to_value(&ingest_result).map_err(to_report)?,
+                    true,
+                )?;
             } else {
                 let context = ingest_result.full_context();
                 if let Some(out_path) = output {
@@ -419,17 +471,29 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                     print!("{context}");
                 }
             }
-        },
-        GitAction::Search { query, limit, digest, json } => {
-            let report =
-                aphrody_git::search_github_docs(&query, limit, digest).await.map_err(to_report)?;
+        }
+        GitAction::Search {
+            query,
+            limit,
+            digest,
+            json,
+        } => {
+            let report = aphrody_git::search_github_docs(&query, limit, digest)
+                .await
+                .map_err(to_report)?;
             if json {
                 emit(&serde_json::to_value(&report).map_err(to_report)?, true)?;
             } else {
                 println!("{}", report.to_markdown());
             }
-        },
-        GitAction::Source { action, path, source_root, apply, pretty } => {
+        }
+        GitAction::Source {
+            action,
+            path,
+            source_root,
+            apply,
+            pretty,
+        } => {
             if matches!(action, SourceAction::Sync) {
                 let mut command = std::process::Command::new("bun");
                 command
@@ -442,8 +506,9 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 if apply {
                     command.arg("--apply");
                 }
-                let status =
-                    command.status().map_err(|error| miette::miette!("run bun: {error}"))?;
+                let status = command
+                    .status()
+                    .map_err(|error| miette::miette!("run bun: {error}"))?;
                 if !status.success() {
                     return Err(miette::miette!("upstream-sources sync failed ({status})"));
                 }
@@ -455,8 +520,14 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             if matches!(action, SourceAction::Verify) && !report.is_healthy() {
                 return Err(miette::miette!("upstream sources are not all healthy"));
             }
-        },
-        GitAction::Upstream { action, id, arg, path, pretty } => {
+        }
+        GitAction::Upstream {
+            action,
+            id,
+            arg,
+            path,
+            pretty,
+        } => {
             let entries = aphrody_git::upstream::catalogue(&path).map_err(to_report)?;
             if matches!(action, UpstreamAction::List) {
                 emit(&serde_json::to_value(&entries).map_err(to_report)?, pretty)?;
@@ -471,19 +542,19 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 UpstreamAction::Info => aphrody_git::upstream::info(&client, entry).await,
                 UpstreamAction::Tree => {
                     aphrody_git::upstream::tree(&client, entry, arg.as_deref().unwrap_or("")).await
-                },
+                }
                 UpstreamAction::Read => {
                     let file = arg.ok_or_else(|| miette::miette!("`read` needs a file path"))?;
                     aphrody_git::upstream::read(&client, entry, &file).await
-                },
+                }
                 UpstreamAction::Search => {
                     let query = arg.ok_or_else(|| miette::miette!("`search` needs a query"))?;
                     aphrody_git::upstream::search(&client, entry, &query).await
-                },
+                }
             }
             .map_err(to_report)?;
             emit(&value, pretty)?;
-        },
+        }
         GitAction::Attribution {
             repo,
             branch,
@@ -511,7 +582,11 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             if canonical_author {
                 command.arg("--canonical-author");
             }
-            command.arg("--author-name").arg(&author_name).arg("--author-email").arg(&author_email);
+            command
+                .arg("--author-name")
+                .arg(&author_name)
+                .arg("--author-email")
+                .arg(&author_email);
             if apply {
                 command.arg("--apply");
             }
@@ -519,9 +594,11 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 .status()
                 .map_err(|error| miette::miette!("run bun git-attribution: {error}"))?;
             if !status.success() {
-                return Err(miette::miette!("git attribution check/strip failed ({status})"));
+                return Err(miette::miette!(
+                    "git attribution check/strip failed ({status})"
+                ));
             }
-        },
+        }
         GitAction::CleanPublic { root } => {
             let mut command = std::process::Command::new("bun");
             command
@@ -535,7 +612,7 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
             if !status.success() {
                 return Err(miette::miette!("clean-public-ai check failed ({status})"));
             }
-        },
+        }
     }
     Ok(())
 }
@@ -561,9 +638,12 @@ fn graphql_may_mutate(payload: &Value) -> bool {
 }
 
 fn emit(value: &Value, pretty: bool) -> miette::Result<()> {
-    let rendered =
-        if pretty { serde_json::to_string_pretty(value) } else { serde_json::to_string(value) }
-            .map_err(|error| miette::miette!("serialize JSON: {error}"))?;
+    let rendered = if pretty {
+        serde_json::to_string_pretty(value)
+    } else {
+        serde_json::to_string(value)
+    }
+    .map_err(|error| miette::miette!("serialize JSON: {error}"))?;
     println!("{rendered}");
     Ok(())
 }
@@ -578,13 +658,17 @@ mod tests {
 
     #[test]
     fn graphql_mutation_gate_is_conservative() {
-        assert!(graphql_may_mutate(&json!({"extensions": {"persistedQuery": {}}})));
+        assert!(graphql_may_mutate(
+            &json!({"extensions": {"persistedQuery": {}}})
+        ));
         assert!(graphql_may_mutate(&json!({
             "query": "# operation follows\nmutation Update { addStar(input: {}) { clientMutationId } }"
         })));
         assert!(graphql_may_mutate(&json!({
             "query": "query Read { viewer { login } } mutation Write { __typename }"
         })));
-        assert!(!graphql_may_mutate(&json!({"query": "{ viewer { login } }"})));
+        assert!(!graphql_may_mutate(
+            &json!({"query": "{ viewer { login } }"})
+        ));
     }
 }

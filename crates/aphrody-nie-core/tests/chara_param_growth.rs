@@ -86,8 +86,10 @@ mod tests {
     /// Construit un `serde_json::Value` mimant un noeud `CHARA_PARAM_INFO_1`
     /// depuis les valeurs brutes.
     fn fixture_node() -> serde_json::Value {
-        let variables: Vec<_> =
-            RAW.iter().map(|v| json!({ "type": "Int", "value": v.to_string() })).collect();
+        let variables: Vec<_> = RAW
+            .iter()
+            .map(|v| json!({ "type": "Int", "value": v.to_string() }))
+            .collect();
         json!({
             "entries": [{
                 "name": "CHARA_PARAM_INFO_1",
@@ -101,12 +103,25 @@ mod tests {
     fn chara_param_info_1() -> aphrody_nie_data::chara_param::CharaParam {
         let root = fixture_node();
         let mut params = parse_all_chara_params(&root);
-        assert_eq!(params.len(), 1, "fixture doit produire exactement un CharaParam");
+        assert_eq!(
+            params.len(),
+            1,
+            "fixture doit produire exactement un CharaParam"
+        );
         let cp = params.remove(0);
         // Vérifications de cohérence du fixture (garde anti-régression).
-        assert_eq!(cp.main_position, 2, "CHARA_PARAM_INFO_1 : main_position = 2 (FW)");
-        assert_eq!(cp.sub_position, 4, "CHARA_PARAM_INFO_1 : sub_position = 4 (DF)");
-        assert_eq!(cp.growth_pattern, 0, "CHARA_PARAM_INFO_1 : growth_pattern = 0");
+        assert_eq!(
+            cp.main_position, 2,
+            "CHARA_PARAM_INFO_1 : main_position = 2 (FW)"
+        );
+        assert_eq!(
+            cp.sub_position, 4,
+            "CHARA_PARAM_INFO_1 : sub_position = 4 (DF)"
+        );
+        assert_eq!(
+            cp.growth_pattern, 0,
+            "CHARA_PARAM_INFO_1 : growth_pattern = 0"
+        );
         cp
     }
 
@@ -249,7 +264,10 @@ mod tests {
         };
 
         // Vérification des champs extraits du dump réel.
-        assert_eq!(cp_reel.main_position, 2, "dump réel : main_position = 2 (FW)");
+        assert_eq!(
+            cp_reel.main_position, 2,
+            "dump réel : main_position = 2 (FW)"
+        );
         assert_eq!(cp_reel.sub_position, 4, "dump réel : sub_position = 4 (DF)");
         assert_eq!(cp_reel.growth_pattern, 0, "dump réel : growth_pattern = 0");
 

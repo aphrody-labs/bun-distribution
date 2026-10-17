@@ -127,11 +127,27 @@ mod tests {
         d.swatches.push(swatch);
         d.swatch_groups.truncate(1);
         d.graphic_styles.truncate(2);
-        d.char_styles.push(TextStyleDef { name: "Emphasis".into(), attrs: json!({"size": 14}).as_object().cloned().unwrap_or_default() });
-        d.para_styles.push(TextStyleDef { name: "Body".into(), attrs: Default::default() });
-        d.saved_selections.push(SavedSelection { name: "Saved".into(), objects: vec![NodeId(1)] });
-        d.variables.variables.push(Variable { name: "Name".into(), kind: VariableKind::Text });
-        d.variables.bindings.entry(NodeId(1)).or_default().insert("Name".into());
+        d.char_styles.push(TextStyleDef {
+            name: "Emphasis".into(),
+            attrs: json!({"size": 14}).as_object().cloned().unwrap_or_default(),
+        });
+        d.para_styles.push(TextStyleDef {
+            name: "Body".into(),
+            attrs: Default::default(),
+        });
+        d.saved_selections.push(SavedSelection {
+            name: "Saved".into(),
+            objects: vec![NodeId(1)],
+        });
+        d.variables.variables.push(Variable {
+            name: "Name".into(),
+            kind: VariableKind::Text,
+        });
+        d.variables
+            .bindings
+            .entry(NodeId(1))
+            .or_default()
+            .insert("Name".into());
         d.unknown.insert("foreign".into(), json!({"keep": [1, 2]}));
         d
     }
@@ -142,20 +158,45 @@ mod tests {
         let d = doc_with_resources();
         let v = serde_json::to_value(&d).unwrap();
         assert_eq!(v["swatches"], serde_json::to_value(&*d.swatches).unwrap());
-        assert_eq!(v["swatch_groups"], serde_json::to_value(&*d.swatch_groups).unwrap());
-        assert_eq!(v["graphic_styles"], serde_json::to_value(&*d.graphic_styles).unwrap());
-        assert_eq!(v["char_styles"], json!([{"name": "Emphasis", "attrs": {"size": 14}}]));
+        assert_eq!(
+            v["swatch_groups"],
+            serde_json::to_value(&*d.swatch_groups).unwrap()
+        );
+        assert_eq!(
+            v["graphic_styles"],
+            serde_json::to_value(&*d.graphic_styles).unwrap()
+        );
+        assert_eq!(
+            v["char_styles"],
+            json!([{"name": "Emphasis", "attrs": {"size": 14}}])
+        );
         assert_eq!(v["para_styles"], json!([{"name": "Body", "attrs": {}}]));
-        assert_eq!(v["saved_selections"], json!([{"name": "Saved", "objects": [1]}]));
-        assert_eq!(v["variables"], json!({"variables": [{"name": "Name", "kind": "text"}], "bindings": {"1": ["Name"]}}));
+        assert_eq!(
+            v["saved_selections"],
+            json!([{"name": "Saved", "objects": [1]}])
+        );
+        assert_eq!(
+            v["variables"],
+            json!({"variables": [{"name": "Name", "kind": "text"}], "bindings": {"1": ["Name"]}})
+        );
         assert_eq!(v["unknown"], json!({"foreign": {"keep": [1, 2]}}));
         let text = serde_json::to_string(&d).unwrap();
         let back: Document = serde_json::from_str(&text).unwrap();
         assert_eq!(back, d);
-        assert_eq!(serde_json::to_string(&back).unwrap(), text, "saving again gives the same bytes");
+        assert_eq!(
+            serde_json::to_string(&back).unwrap(),
+            text,
+            "saving again gives the same bytes"
+        );
         // Empty ones are left out, as before.
         let v = serde_json::to_value(Document::new(10.0, 10.0)).unwrap();
-        for k in ["char_styles", "para_styles", "saved_selections", "variables", "unknown"] {
+        for k in [
+            "char_styles",
+            "para_styles",
+            "saved_selections",
+            "variables",
+            "unknown",
+        ] {
             assert!(v.get(k).is_none(), "{k} is left out when empty");
         }
     }
@@ -165,10 +206,20 @@ mod tests {
     fn copies_share_resources_until_changed() {
         let a = doc_with_resources();
         let mut b = a.clone();
-        assert!(super::Shared::ptr_eq(&a.swatches, &b.swatches) && super::Shared::ptr_eq(&a.unknown, &b.unknown));
+        assert!(
+            super::Shared::ptr_eq(&a.swatches, &b.swatches)
+                && super::Shared::ptr_eq(&a.unknown, &b.unknown)
+        );
         b.swatches.pop();
         assert!(!super::Shared::ptr_eq(&a.swatches, &b.swatches));
-        assert_eq!(a.swatches.len(), b.swatches.len() + 1, "the other copy keeps its own");
-        assert!(super::Shared::ptr_eq(&a.graphic_styles, &b.graphic_styles), "the rest stays shared");
+        assert_eq!(
+            a.swatches.len(),
+            b.swatches.len() + 1,
+            "the other copy keeps its own"
+        );
+        assert!(
+            super::Shared::ptr_eq(&a.graphic_styles, &b.graphic_styles),
+            "the rest stays shared"
+        );
     }
 }

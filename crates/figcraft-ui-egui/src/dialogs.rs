@@ -26,7 +26,11 @@ pub(crate) fn floating<'a>(title: &'a str, ctx: &Context) -> egui::Window<'a> {
     egui::Window::new(title)
         .collapsible(false)
         .resizable(false)
-        .frame(egui::Frame::window(&ctx.global_style()).fill(t.panel).inner_margin(egui::Margin::same(20)))
+        .frame(
+            egui::Frame::window(&ctx.global_style())
+                .fill(t.panel)
+                .inner_margin(egui::Margin::same(20)),
+        )
 }
 
 /// The About window's tabs.
@@ -55,19 +59,36 @@ pub const ABOUT_WIDTH: f32 = 640.0;
 
 /// The About window's tab row, drawn like the Design / Prototype tabs of the right panel.
 /// A row of tabs (the About window's, the shortcuts panel's): the current one highlighted.
-pub(crate) fn tab_strip<T: Copy + PartialEq>(ui: &mut egui::Ui, t: &Tokens, tabs: &[T], label: fn(T) -> &'static str, current: &mut T) {
+pub(crate) fn tab_strip<T: Copy + PartialEq>(
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    tabs: &[T],
+    label: fn(T) -> &'static str,
+    current: &mut T,
+) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 2.0;
         for &tab in tabs {
             let label = label(tab);
             let active = *current == tab;
-            let galley = ui.painter().layout_no_wrap(label.into(), semibold(11.0), if active { t.text } else { t.text_secondary });
-            let (r, resp) = ui.allocate_exact_size(vec2(galley.size().x + 16.0, 24.0), Sense::click());
-            resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, active, label));
+            let galley = ui.painter().layout_no_wrap(
+                label.into(),
+                semibold(11.0),
+                if active { t.text } else { t.text_secondary },
+            );
+            let (r, resp) =
+                ui.allocate_exact_size(vec2(galley.size().x + 16.0, 24.0), Sense::click());
+            resp.widget_info(|| {
+                egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, active, label)
+            });
             if active || resp.hovered() {
                 ui.painter().rect_filled(r, CornerRadius::same(5), t.hover);
             }
-            ui.painter().galley(egui::pos2(r.min.x + 8.0, r.center().y - galley.size().y / 2.0), galley, t.text);
+            ui.painter().galley(
+                egui::pos2(r.min.x + 8.0, r.center().y - galley.size().y / 2.0),
+                galley,
+                t.text,
+            );
             if resp.clicked() {
                 *current = tab;
             }
@@ -83,7 +104,10 @@ fn about_body(ui: &mut egui::Ui, t: &Tokens) {
         icons::paint(ui.painter(), r.shrink(10.0), Icon::Logo, Color32::WHITE);
         ui.vertical(|ui| {
             ui.label(RichText::new("FigCraft").font(semibold(18.0)));
-            ui.label(RichText::new(trf("Version {version}", &[("version", &VERSION)])).color(t.text_secondary));
+            ui.label(
+                RichText::new(trf("Version {version}", &[("version", &VERSION)]))
+                    .color(t.text_secondary),
+            );
         });
     });
     ui.add_space(12.0);
@@ -91,11 +115,18 @@ fn about_body(ui: &mut egui::Ui, t: &Tokens) {
         "Interface design and prototyping. A free, open-source, clean-room design tool written from scratch in Rust, part of the ArtCraft Crafting Apps.",
     ));
     ui.add_space(8.0);
-    ui.hyperlink_to("getartcraft.com/apps/figcraft", "https://getartcraft.com/apps/figcraft");
+    ui.hyperlink_to(
+        "getartcraft.com/apps/figcraft",
+        "https://getartcraft.com/apps/figcraft",
+    );
     ui.hyperlink_to(tr("Join us on Discord"), "https://discord.gg/artcraft");
     ui.add_space(8.0);
     ui.label(
-        RichText::new(tr("Dual-licensed MIT OR Apache-2.0. Made by the ArtCraft team and community.")).color(t.text_secondary).font(regular(11.0)),
+        RichText::new(tr(
+            "Dual-licensed MIT OR Apache-2.0. Made by the ArtCraft team and community.",
+        ))
+        .color(t.text_secondary)
+        .font(regular(11.0)),
     );
 }
 
@@ -114,10 +145,19 @@ pub fn keys(app: &mut FigApp, ctx: &Context) {
     if !open || !ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
         return;
     }
-    if u.color_profile.take().is_some() || u.find.take().is_some() || u.batch_rename.take().is_some() {
+    if u.color_profile.take().is_some()
+        || u.find.take().is_some()
+        || u.batch_rename.take().is_some()
+    {
         return;
     }
-    for flag in [&mut u.confirm_close, &mut u.export_preview, &mut u.shortcuts_panel, &mut u.preferences, &mut u.about] {
+    for flag in [
+        &mut u.confirm_close,
+        &mut u.export_preview,
+        &mut u.shortcuts_panel,
+        &mut u.preferences,
+        &mut u.about,
+    ] {
         if std::mem::take(flag) {
             return;
         }
@@ -128,16 +168,24 @@ pub fn show(app: &mut FigApp, ctx: &Context) {
     let t = Tokens::get(ctx);
     if app.ui.about {
         let mut open = true;
-        window(tr("About FigCraft"), ctx).open(&mut open).show(ctx, |ui| {
-            ui.set_width(ABOUT_WIDTH);
-            tab_strip(ui, &t, &AboutTab::ALL, AboutTab::label, &mut app.ui.about_tab);
-            ui.add_space(12.0);
-            match app.ui.about_tab {
-                AboutTab::About => about_body(ui, &t),
-                AboutTab::Contributors => crate::credits::contributors_ui(ui),
-                AboutTab::Models => crate::credits::models_ui(ui),
-            }
-        });
+        window(tr("About FigCraft"), ctx)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                ui.set_width(ABOUT_WIDTH);
+                tab_strip(
+                    ui,
+                    &t,
+                    &AboutTab::ALL,
+                    AboutTab::label,
+                    &mut app.ui.about_tab,
+                );
+                ui.add_space(12.0);
+                match app.ui.about_tab {
+                    AboutTab::About => about_body(ui, &t),
+                    AboutTab::Contributors => crate::credits::contributors_ui(ui),
+                    AboutTab::Models => crate::credits::models_ui(ui),
+                }
+            });
         if !open {
             app.ui.about = false;
         }
@@ -253,8 +301,16 @@ pub fn show(app: &mut FigApp, ctx: &Context) {
             .resizable(false)
             .show(ctx, |ui| {
                 ui.set_width(280.0);
-                ui.add(egui::TextEdit::singleline(&mut find).hint_text(tr("Find")).desired_width(260.0));
-                ui.add(egui::TextEdit::singleline(&mut replace).hint_text(tr("Replace with")).desired_width(260.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut find)
+                        .hint_text(tr("Find"))
+                        .desired_width(260.0),
+                );
+                ui.add(
+                    egui::TextEdit::singleline(&mut replace)
+                        .hint_text(tr("Replace with"))
+                        .desired_width(260.0),
+                );
                 ui.horizontal(|ui| {
                     if ui.button(tr("Find")).clicked() {
                         action = Some(false);
@@ -268,9 +324,15 @@ pub fn show(app: &mut FigApp, ctx: &Context) {
             && !find.is_empty()
         {
             let r = if rep {
-                app.run("edit.findReplace", json!({"find": find, "replace": replace, "layerNames": false}))
+                app.run(
+                    "edit.findReplace",
+                    json!({"find": find, "replace": replace, "layerNames": false}),
+                )
             } else {
-                app.run("edit.findReplace", json!({"find": find, "layerNames": true}))
+                app.run(
+                    "edit.findReplace",
+                    json!({"find": find, "layerNames": true}),
+                )
             };
             if let Some(v) = r {
                 let n = v["matches"].as_array().map(|a| a.len()).unwrap_or(0);
@@ -315,7 +377,11 @@ const PREVIEW_ROWS: usize = 5;
 pub(crate) fn open_batch_rename(app: &mut FigApp, ids: &[NodeId]) {
     let Ok(doc) = app.session.doc() else { return };
     let ids = figcraft_engine::cmd::edit::z_sorted(doc, ids);
-    app.ui.batch_rename = Some(BatchRenameUi { ids, start: 1, ..Default::default() });
+    app.ui.batch_rename = Some(BatchRenameUi {
+        ids,
+        start: 1,
+        ..Default::default()
+    });
 }
 
 /// The rename the fields describe: a match replaced, or (no match) the whole name.
@@ -333,10 +399,18 @@ pub(crate) fn batch_rename_params(b: &BatchRenameUi) -> serde_json::Value {
 /// Rename layers: Match, Rename to with buttons for the current name and numbers, where numbers
 /// start, a preview of the first new names, then one `object.batchRename`.
 fn batch_rename_dialog(app: &mut FigApp, ctx: &Context) {
-    let Some(mut b) = app.ui.batch_rename.clone() else { return };
+    let Some(mut b) = app.ui.batch_rename.clone() else {
+        return;
+    };
     let t = Tokens::get(ctx);
     let find = (!b.find.is_empty()).then_some(b.find.as_str());
-    let rename = figcraft_engine::rename::BatchRename::new(find, b.regex, &b.to, find.is_none().then_some(b.to.as_str()), Some(f64::from(b.start)));
+    let rename = figcraft_engine::rename::BatchRename::new(
+        find,
+        b.regex,
+        &b.to,
+        find.is_none().then_some(b.to.as_str()),
+        Some(f64::from(b.start)),
+    );
     let n = b.ids.len();
     let ready = rename.is_ok() && !(b.find.is_empty() && b.to.is_empty());
     let preview: Vec<(String, String)> = match (&rename, app.session.doc()) {
@@ -345,59 +419,81 @@ fn batch_rename_dialog(app: &mut FigApp, ctx: &Context) {
             .iter()
             .enumerate()
             .take(PREVIEW_ROWS)
-            .filter_map(|(k, i)| doc.node(*i).map(|node| (node.name.clone(), r.apply(&node.name, k, n))))
+            .filter_map(|(k, i)| {
+                doc.node(*i)
+                    .map(|node| (node.name.clone(), r.apply(&node.name, k, n)))
+            })
             .collect(),
         _ => Vec::new(),
     };
     let mut open = true;
     let mut cancel = false;
     let mut apply = false;
-    window(tr("Rename layers"), ctx).id(egui::Id::new("Rename layers")).open(&mut open).show(ctx, |ui| {
-        ui.set_width(320.0);
-        ui.label(RichText::new(trn("{n} layers", n, &[])).color(t.text_secondary));
-        ui.add_space(6.0);
-        ui.add(egui::TextEdit::singleline(&mut b.find).hint_text(tr("Match (empty: the whole name)")).desired_width(300.0));
-        if crate::widgets::checkbox(ui, b.regex, tr("Regular expression")) {
-            b.regex = !b.regex;
-        }
-        let to = ui.add(egui::TextEdit::singleline(&mut b.to).hint_text(tr("Rename to")).desired_width(300.0));
-        ui.horizontal(|ui| {
-            for (label, code) in [(tr("Current name"), "$&"), (tr("Number ↑"), "$n"), (tr("Number ↓"), "$N")] {
-                if ui.button(label).clicked() {
-                    b.to.push_str(code);
-                    to.request_focus();
+    window(tr("Rename layers"), ctx)
+        .id(egui::Id::new("Rename layers"))
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.set_width(320.0);
+            ui.label(RichText::new(trn("{n} layers", n, &[])).color(t.text_secondary));
+            ui.add_space(6.0);
+            ui.add(
+                egui::TextEdit::singleline(&mut b.find)
+                    .hint_text(tr("Match (empty: the whole name)"))
+                    .desired_width(300.0),
+            );
+            if crate::widgets::checkbox(ui, b.regex, tr("Regular expression")) {
+                b.regex = !b.regex;
+            }
+            let to = ui.add(
+                egui::TextEdit::singleline(&mut b.to)
+                    .hint_text(tr("Rename to"))
+                    .desired_width(300.0),
+            );
+            ui.horizontal(|ui| {
+                for (label, code) in [
+                    (tr("Current name"), "$&"),
+                    (tr("Number ↑"), "$n"),
+                    (tr("Number ↓"), "$N"),
+                ] {
+                    if ui.button(label).clicked() {
+                        b.to.push_str(code);
+                        to.request_focus();
+                    }
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label(tr("Start ascending from / stop descending at"));
+                ui.add(egui::DragValue::new(&mut b.start).range(0..=1_000_000));
+            });
+            ui.add_space(8.0);
+            match &rename {
+                Err(e) => {
+                    ui.label(RichText::new(e).color(t.danger));
+                }
+                Ok(_) => {
+                    for (old, new) in &preview {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new(old).color(t.text_secondary));
+                            ui.label("→");
+                            ui.label(new);
+                        });
+                    }
+                    if ready && n > PREVIEW_ROWS {
+                        ui.label(
+                            RichText::new(trn("and {n} more", n - PREVIEW_ROWS, &[]))
+                                .color(t.text_secondary),
+                        );
+                    }
                 }
             }
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                cancel = crate::widgets::button(ui, tr("Cancel"), false, true).clicked();
+                let enter = to.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+                apply = (crate::widgets::button(ui, tr("Rename"), true, ready).clicked() || enter)
+                    && ready;
+            });
         });
-        ui.horizontal(|ui| {
-            ui.label(tr("Start ascending from / stop descending at"));
-            ui.add(egui::DragValue::new(&mut b.start).range(0..=1_000_000));
-        });
-        ui.add_space(8.0);
-        match &rename {
-            Err(e) => {
-                ui.label(RichText::new(e).color(t.danger));
-            }
-            Ok(_) => {
-                for (old, new) in &preview {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new(old).color(t.text_secondary));
-                        ui.label("→");
-                        ui.label(new);
-                    });
-                }
-                if ready && n > PREVIEW_ROWS {
-                    ui.label(RichText::new(trn("and {n} more", n - PREVIEW_ROWS, &[])).color(t.text_secondary));
-                }
-            }
-        }
-        ui.add_space(8.0);
-        ui.horizontal(|ui| {
-            cancel = crate::widgets::button(ui, tr("Cancel"), false, true).clicked();
-            let enter = to.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-            apply = (crate::widgets::button(ui, tr("Rename"), true, ready).clicked() || enter) && ready;
-        });
-    });
     if apply {
         app.run("object.batchRename", batch_rename_params(&b));
     }
@@ -407,7 +503,9 @@ fn batch_rename_dialog(app: &mut FigApp, ctx: &Context) {
 /// File ▸ Color profile: pick sRGB or Display P3, then keep the colours' appearance (convert the
 /// values) or keep the values (reinterpret them in the new space).
 fn color_profile_dialog(app: &mut FigApp, ctx: &Context) {
-    let Some(mut chosen) = app.ui.color_profile else { return };
+    let Some(mut chosen) = app.ui.color_profile else {
+        return;
+    };
     let Ok(current) = app.session.doc().map(|d| d.color_profile) else {
         app.ui.color_profile = None;
         return;
@@ -457,20 +555,38 @@ fn color_profile_dialog(app: &mut FigApp, ctx: &Context) {
     });
     app.ui.color_profile = open.then_some(chosen);
     if let Some(convert) = apply {
-        app.run("file.colorProfile", json!({"profile": chosen.id(), "convert": convert}));
+        app.run(
+            "file.colorProfile",
+            json!({"profile": chosen.id(), "convert": convert}),
+        );
         app.ui.color_profile = None;
     }
 }
 
 /// Save the whole file as `.fig`; the toast says how much was left out.
 fn save_fig(app: &mut FigApp, name: &str) {
-    let Some(p) = app.services.pick_save(tr("Export"), &format!("{name}.fig"), &["fig"]) else { return };
-    let file = p.file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_default();
-    if let Some(r) = app.run("file.export", json!({"format": "fig", "path": p.to_string_lossy()})) {
+    let Some(p) = app
+        .services
+        .pick_save(tr("Export"), &format!("{name}.fig"), &["fig"])
+    else {
+        return;
+    };
+    let file = p
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_default();
+    if let Some(r) = app.run(
+        "file.export",
+        json!({"format": "fig", "path": p.to_string_lossy()}),
+    ) {
         let left_out = r["warnings"].as_array().map_or(0, Vec::len);
         app.toast(match left_out {
             0 => trf("Exported {name}", &[("name", &file)]),
-            n => trn("Exported {name}; {n} kinds of content were left out", n, &[("name", &file)]),
+            n => trn(
+                "Exported {name}; {n} kinds of content were left out",
+                n,
+                &[("name", &file)],
+            ),
         });
     }
 }
@@ -496,12 +612,27 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
         return;
     };
     let (doc, page) = (ds.doc.clone(), ds.page);
-    let ids = if sel.is_empty() { doc.node(page).map(|p| p.children.clone()).unwrap_or_default() } else { sel.clone() };
+    let ids = if sel.is_empty() {
+        doc.node(page)
+            .map(|p| p.children.clone())
+            .unwrap_or_default()
+    } else {
+        sel.clone()
+    };
     // With nothing selected, every layer on the page that has export settings.
-    let with_settings = if sel.is_empty() { exportable_layers(&doc, page) } else { sel };
+    let with_settings = if sel.is_empty() {
+        exportable_layers(&doc, page)
+    } else {
+        sel
+    };
     let jobs = export_jobs(&doc, &with_settings);
     let print = app.ui.pdf_print;
-    let preset = |size: f64, format| ExportSetting { size: ExportSize::Scale { value: size }, format, print, ..Default::default() };
+    let preset = |size: f64, format| ExportSetting {
+        size: ExportSize::Scale { value: size },
+        format,
+        print,
+        ..Default::default()
+    };
     let presets = [
         preset(1.0, ExportFormat::Png),
         preset(2.0, ExportFormat::Png),
@@ -520,7 +651,10 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
         let divider = |ui: &mut egui::Ui| {
             ui.add_space(10.0);
             let (r, _) = ui.allocate_exact_size(vec2(320.0, 1.0), Sense::hover());
-            ui.painter().line_segment([r.left_center(), r.right_center()], Stroke::new(1.0, t.border));
+            ui.painter().line_segment(
+                [r.left_center(), r.right_center()],
+                Stroke::new(1.0, t.border),
+            );
             ui.add_space(10.0);
         };
         let row = |ui: &mut egui::Ui, label: &str| {
@@ -528,7 +662,13 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
             if resp.hovered() {
                 ui.painter().rect_filled(r, CornerRadius::same(5), t.hover);
             }
-            ui.painter().text(r.left_center() + vec2(10.0, 0.0), Align2::LEFT_CENTER, label, regular(12.0), t.text);
+            ui.painter().text(
+                r.left_center() + vec2(10.0, 0.0),
+                Align2::LEFT_CENTER,
+                label,
+                regular(12.0),
+                t.text,
+            );
             resp.clicked()
         };
         if !jobs.is_empty() {
@@ -541,7 +681,11 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
                 caption(ui, &trn("and {n} more", jobs.len() - SHOWN, &[]));
             }
             ui.add_space(6.0);
-            let layers = jobs.iter().map(|j| j.id).collect::<std::collections::BTreeSet<_>>().len();
+            let layers = jobs
+                .iter()
+                .map(|j| j.id)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len();
             let label = trn("Export {n} layers", layers, &[]);
             if crate::widgets::button(ui, &label, true, true).clicked() {
                 choice = Some(ExportChoice::Layers);
@@ -551,7 +695,11 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
         caption(ui, &trn("{n} layers as one file", ids.len(), &[]));
         ui.add_space(4.0);
         for p in &presets {
-            let label = if p.format.is_raster() { format!("{} @{}", p.format.label(), p.size.label()) } else { p.format.label().to_string() };
+            let label = if p.format.is_raster() {
+                format!("{} @{}", p.format.label(), p.size.label())
+            } else {
+                p.format.label().to_string()
+            };
             if row(ui, &label) {
                 choice = Some(ExportChoice::Once(p.clone()));
             }
@@ -559,7 +707,9 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
         // The PDF preset's print options.
         ui.add_space(6.0);
         caption(ui, tr("PDF print options"));
-        if let Some(next) = crate::export_panel::print_options(ui, egui::Id::new("export_dialog_print"), &print) {
+        if let Some(next) =
+            crate::export_panel::print_options(ui, egui::Id::new("export_dialog_print"), &print)
+        {
             app.ui.pdf_print = next;
         }
         divider(ui);
@@ -568,12 +718,17 @@ fn export_dialog(app: &mut FigApp, ctx: &Context) {
         if row(ui, tr(".fig (experimental)")) {
             choice = Some(ExportChoice::Fig);
         }
-        caption(ui, tr("Other apps may not open every .fig file exported here."));
+        caption(
+            ui,
+            tr("Other apps may not open every .fig file exported here."),
+        );
     });
     let close = choice.is_some() || !open;
     match choice {
         Some(ExportChoice::Layers) => export_layers(app, &with_settings, false),
-        Some(ExportChoice::Once(s)) if !ids.is_empty() => save_one(app, &ids, &s, &suggested_name(&doc, &ids, &s, "Export")),
+        Some(ExportChoice::Once(s)) if !ids.is_empty() => {
+            save_one(app, &ids, &s, &suggested_name(&doc, &ids, &s, "Export"))
+        }
         Some(ExportChoice::Once(_)) => app.toast(tr("Nothing to export")),
         Some(ExportChoice::Fig) => save_fig(app, &doc.name),
         None => {}

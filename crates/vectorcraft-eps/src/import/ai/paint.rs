@@ -22,7 +22,9 @@
 use std::collections::HashMap;
 
 use kurbo::{Affine, Point, Vec2};
-use vectorcraft_color::gradient::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
+use vectorcraft_color::gradient::{
+    Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop,
+};
 use vectorcraft_color::{Color, Paint};
 
 use super::obj::V;
@@ -51,7 +53,10 @@ pub(super) fn color_op(op: &str, vals: &[V]) -> Option<(Paint, Option<Named>)> {
         "g" => Some((Paint::solid(Color::gray(1.0 - unit(*nums.last()?))), None)),
         "k" => {
             let [c, m, y, k] = last(4)? else { return None };
-            Some((Paint::solid(Color::cmyk(unit(*c), unit(*m), unit(*y), unit(*k))), None))
+            Some((
+                Paint::solid(Color::cmyk(unit(*c), unit(*m), unit(*y), unit(*k))),
+                None,
+            ))
         }
         "xa" => {
             let [r, g, b] = last(3)? else { return None };
@@ -69,27 +74,59 @@ pub(super) fn color_op(op: &str, vals: &[V]) -> Option<(Paint, Option<Named>)> {
 fn named(vals: &[V], rgb: Option<bool>) -> Option<(Paint, Option<Named>)> {
     let at = vals.iter().rposition(|v| matches!(v, V::Str(_)))?;
     let name = vals.get(at)?.text()?;
-    let before: Vec<f32> = vals.get(..at)?.iter().filter_map(V::num).map(|v| v as f32).collect();
-    let after: Vec<f32> = vals.get(at + 1..)?.iter().filter_map(V::num).map(|v| v as f32).collect();
+    let before: Vec<f32> = vals
+        .get(..at)?
+        .iter()
+        .filter_map(V::num)
+        .map(|v| v as f32)
+        .collect();
+    let after: Vec<f32> = vals
+        .get(at + 1..)?
+        .iter()
+        .filter_map(V::num)
+        .map(|v| v as f32)
+        .collect();
     let unit = |v: f32| v.clamp(0.0, 1.0);
     let tint = 1.0 - unit(*after.first()?);
     let n = before.len();
     let kind = after.get(1).copied();
     let color = if rgb.unwrap_or(kind == Some(1.0)) {
-        let [r, g, b] = before.get(n.checked_sub(3)?..)? else { return None };
+        let [r, g, b] = before.get(n.checked_sub(3)?..)? else {
+            return None;
+        };
         Color::rgb(unit(*r), unit(*g), unit(*b))
     } else if rgb.is_none() && kind == Some(2.0) {
         // Type 2: a colour defined in Lab, its L a b values after the CMYK equivalent (#1032).
-        let [l, a, b] = before.get(n.checked_sub(3)?..)? else { return None };
-        Color::lab(l.clamp(0.0, 100.0), a.clamp(-128.0, 127.0), b.clamp(-128.0, 127.0))
+        let [l, a, b] = before.get(n.checked_sub(3)?..)? else {
+            return None;
+        };
+        Color::lab(
+            l.clamp(0.0, 100.0),
+            a.clamp(-128.0, 127.0),
+            b.clamp(-128.0, 127.0),
+        )
     } else {
         // The CMYK values come first (an RGB equivalent may follow them).
         let from = if n >= 7 { n - 7 } else { n.checked_sub(4)? };
-        let [c, m, y, k] = before.get(from..from + 4)? else { return None };
+        let [c, m, y, k] = before.get(from..from + 4)? else {
+            return None;
+        };
         Color::cmyk(unit(*c), unit(*m), unit(*y), unit(*k))
     };
-    let paint = Paint::Solid { color: color.tinted(tint), swatch: Some(name.clone()), tint };
-    Some((paint, Some(Named { name, color, tint, spot: true })))
+    let paint = Paint::Solid {
+        color: color.tinted(tint),
+        swatch: Some(name.clone()),
+        tint,
+    };
+    Some((
+        paint,
+        Some(Named {
+            name,
+            color,
+            tint,
+            spot: true,
+        }),
+    ))
 }
 
 /// The colour of a gradient stop's colour values and style.
@@ -124,10 +161,22 @@ pub(super) struct GradientDef {
 impl GradientDef {
     /// `(name) type stops Bd`.
     pub fn begin(vals: &[V]) -> Option<Self> {
-        let name = vals.iter().find_map(|v| if let V::Str(_) = v { v.text() } else { None })?;
+        let name = vals
+            .iter()
+            .find_map(|v| if let V::Str(_) = v { v.text() } else { None })?;
         let nums: Vec<f64> = vals.iter().filter_map(V::num).collect();
-        let kind = if nums.first().copied() == Some(1.0) { GradientKind::Radial } else { GradientKind::Linear };
-        Some(Self { name, gradient: Gradient { kind, stops: vec![] } })
+        let kind = if nums.first().copied() == Some(1.0) {
+            GradientKind::Radial
+        } else {
+            GradientKind::Linear
+        };
+        Some(Self {
+            name,
+            gradient: Gradient {
+                kind,
+                stops: vec![],
+            },
+        })
     }
 
     /// A stop (`Bs`).
@@ -137,12 +186,29 @@ impl GradientDef {
         }
         let n = vals.len();
         let num = |i: usize| vals.get(i).and_then(V::num);
-        let (Some(ramp), Some(mid)) = (n.checked_sub(1).and_then(num), n.checked_sub(2).and_then(num)) else { return };
+        let (Some(ramp), Some(mid)) = (
+            n.checked_sub(1).and_then(num),
+            n.checked_sub(2).and_then(num),
+        ) else {
+            return;
+        };
         // Newer stops have an opacity and the marker 6 before the midpoint.
         let newer = n >= 5 && n.checked_sub(3).and_then(num) == Some(6.0);
-        let (style_at, opacity) = if newer { (n.checked_sub(5), n.checked_sub(4).and_then(num).unwrap_or(1.0)) } else { (n.checked_sub(3), 1.0) };
-        let (Some(style_at), Some(style)) = (style_at, style_at.and_then(num)) else { return };
-        let Some((color, named)) = stop_color(style, vals.get(..style_at).unwrap_or_default()) else { return };
+        let (style_at, opacity) = if newer {
+            (
+                n.checked_sub(5),
+                n.checked_sub(4).and_then(num).unwrap_or(1.0),
+            )
+        } else {
+            (n.checked_sub(3), 1.0)
+        };
+        let (Some(style_at), Some(style)) = (style_at, style_at.and_then(num)) else {
+            return;
+        };
+        let Some((color, named)) = stop_color(style, vals.get(..style_at).unwrap_or_default())
+        else {
+            return;
+        };
         let mut stop = GradientStop::new((ramp / 100.0).clamp(0.0, 1.0) as f32, color);
         stop.opacity = opacity.clamp(0.0, 1.0) as f32;
         stop.midpoint = (mid / 100.0).clamp(0.13, 0.87) as f32;
@@ -160,10 +226,18 @@ impl GradientDef {
         }
         // Stops are listed along the ramp from either end: listed downwards they're reversed, so
         // stops sharing a ramp point keep their order (and each its midpoint, to the next stop).
-        if self.gradient.stops.first().zip(self.gradient.stops.last()).is_some_and(|(first, last)| first.offset > last.offset) {
+        if self
+            .gradient
+            .stops
+            .first()
+            .zip(self.gradient.stops.last())
+            .is_some_and(|(first, last)| first.offset > last.offset)
+        {
             self.gradient.stops.reverse();
         }
-        self.gradient.stops.sort_by(|a, b| a.offset.total_cmp(&b.offset));
+        self.gradient
+            .stops
+            .sort_by(|a, b| a.offset.total_cmp(&b.offset));
         Some((self.name, self.gradient))
     }
 }
@@ -196,14 +270,25 @@ pub(super) fn affine(n: &[f64]) -> Option<Affine> {
 impl Instance {
     pub fn begin(vals: &[V]) -> Self {
         let stroke = vals.iter().filter_map(V::num).next_back() == Some(1.0);
-        Self { stroke, length: 1.0, ..Self::default() }
+        Self {
+            stroke,
+            length: 1.0,
+            ..Self::default()
+        }
     }
 
     /// `flag (name) x y angle length a b c d tx ty Bg`.
     pub fn bg(&mut self, vals: &[V]) {
-        let Some(at) = vals.iter().rposition(|v| matches!(v, V::Str(_))) else { return };
+        let Some(at) = vals.iter().rposition(|v| matches!(v, V::Str(_))) else {
+            return;
+        };
         self.name = vals.get(at).and_then(V::text);
-        let n: Vec<f64> = vals.get(at + 1..).unwrap_or_default().iter().filter_map(V::num).collect();
+        let n: Vec<f64> = vals
+            .get(at + 1..)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(V::num)
+            .collect();
         if let [x, y, angle, length, m @ ..] = n.as_slice() {
             self.origin = Point::new(*x, *y);
             self.angle = *angle;
@@ -215,7 +300,9 @@ impl Instance {
     /// The matrix of `a b c d tx ty Bm` or `Xm`, when it can be inverted.
     fn matrix(vals: &[V]) -> Option<Affine> {
         let n: Vec<f64> = vals.iter().filter_map(V::num).collect();
-        n.get(n.len().saturating_sub(6)..).and_then(affine).filter(|m| m.determinant().abs() > 1e-12)
+        n.get(n.len().saturating_sub(6)..)
+            .and_then(affine)
+            .filter(|m| m.determinant().abs() > 1e-12)
     }
 
     /// `a b c d tx ty Bm`: one for each pair of stops next to each other.
@@ -246,7 +333,9 @@ impl Instance {
         // `Xm` maps the unit circle (or vector) to the art, `Bg`'s origin, angle and length already
         // in it, and so does a radial's `Bm`: files whose PDF part draws the radial draw it through
         // that `Bm` alone, whatever `Bg` holds. The highlight is an offset from the centre in art space.
-        let unit = self.xm.or(self.bm.filter(|_| radial).map(|(first, _)| first));
+        let unit = self
+            .xm
+            .or(self.bm.filter(|_| radial).map(|(first, _)| first));
         // A skewed matrix leaves `along` and `across` oblique: a linear ramp runs along the normal to
         // its isolines (`across`), and a radial's ellipse is set by the matrix's principal axes.
         let through = |m: Affine, origin: Point, dir: Vec2| {
@@ -263,12 +352,21 @@ impl Instance {
         };
         let (start, end, aspect, focal) = match (unit, self.bm) {
             (Some(unit), _) => {
-                let (start, end, aspect) = through(to_doc * unit, Point::ORIGIN, Vec2::new(1.0, 0.0));
-                (start, end, aspect, to_doc * (unit * Point::ORIGIN + self.hilight))
+                let (start, end, aspect) =
+                    through(to_doc * unit, Point::ORIGIN, Vec2::new(1.0, 0.0));
+                (
+                    start,
+                    end,
+                    aspect,
+                    to_doc * (unit * Point::ORIGIN + self.hilight),
+                )
             }
             // A linear gradient's `Bm`s alone: they run from its first stop to its last.
             (None, Some((first, last))) => {
-                let (a, b) = (to_doc * first * Point::ORIGIN, to_doc * last * Point::new(1.0, 0.0));
+                let (a, b) = (
+                    to_doc * first * Point::ORIGIN,
+                    to_doc * last * Point::new(1.0, 0.0),
+                );
                 let from = gradient.stops.first().map_or(0.0, |s| f64::from(s.offset));
                 let to = gradient.stops.last().map_or(1.0, |s| f64::from(s.offset));
                 let whole = (b - a) / (to - from).max(1e-6);
@@ -279,7 +377,8 @@ impl Instance {
             (None, None) => {
                 let m = to_doc * self.bg;
                 let a = self.angle.to_radians();
-                let (start, end, aspect) = through(m, self.origin, Vec2::new(a.cos(), a.sin()) * self.length);
+                let (start, end, aspect) =
+                    through(m, self.origin, Vec2::new(a.cos(), a.sin()) * self.length);
                 (start, end, aspect, m * (self.origin + self.hilight))
             }
         };
@@ -287,20 +386,39 @@ impl Instance {
             return None;
         }
         let aspect = aspect.clamp(0.01, 100.0);
-        let focal = (self.hilight.hypot() > 1e-9).then_some(focal).filter(|p| p.is_finite());
-        let geom = GradientGeom { start, end, aspect, focal: if radial { focal } else { None } };
+        let focal = (self.hilight.hypot() > 1e-9)
+            .then_some(focal)
+            .filter(|p| p.is_finite());
+        let geom = GradientGeom {
+            start,
+            end,
+            aspect,
+            focal: if radial { focal } else { None },
+        };
         let angle = -(end - start).atan2().to_degrees();
-        Some(Paint::Gradient(Box::new(GradientPaint { geom: Some(geom), angle, swatch: Some(name.clone()), ..GradientPaint::new(gradient) })))
+        Some(Paint::Gradient(Box::new(GradientPaint {
+            geom: Some(geom),
+            angle,
+            swatch: Some(name.clone()),
+            ..GradientPaint::new(gradient)
+        })))
     }
 }
 
 /// The semi-axes of the ellipse the unit circle maps to under the linear map with columns `u` and `v`,
 /// the major one first.
 fn principal_axes(u: Vec2, v: Vec2) -> (Vec2, Vec2) {
-    let (xx, yy, xy) = (u.x * u.x + v.x * v.x, u.y * u.y + v.y * v.y, u.x * u.y + v.x * v.y);
+    let (xx, yy, xy) = (
+        u.x * u.x + v.x * v.x,
+        u.y * u.y + v.y * v.y,
+        u.x * u.y + v.x * v.y,
+    );
     let angle = 0.5 * (2.0 * xy).atan2(xx - yy);
     let spread = (0.25 * (xx - yy).powi(2) + xy * xy).sqrt();
-    let (major, minor) = ((0.5 * (xx + yy) + spread).sqrt(), (0.5 * (xx + yy) - spread).max(0.0).sqrt());
+    let (major, minor) = (
+        (0.5 * (xx + yy) + spread).sqrt(),
+        (0.5 * (xx + yy) - spread).max(0.0).sqrt(),
+    );
     let axis = Vec2::new(angle.cos(), angle.sin());
     (axis * major, Vec2::new(-axis.y, axis.x) * minor)
 }
@@ -326,14 +444,23 @@ mod tests {
         let named = named.unwrap();
         assert_eq!(named.name, "MySpot");
         assert!((named.tint - 0.6).abs() < 1e-6);
-        assert!(matches!(p, Paint::Solid { swatch: Some(_), .. }));
+        assert!(matches!(
+            p,
+            Paint::Solid {
+                swatch: Some(_),
+                ..
+            }
+        ));
         assert!(color_op("k", &nums(&[1.0])).is_none());
         // A global process colour: CMYK (type 0) or RGB (type 1), not an ink.
         let mut v = nums(&[0.0, 0.0, 0.0, 1.0]);
         v.extend([V::Str(b"K100".to_vec()), V::Num(0.4), V::Num(0.0)]);
         let (p, named) = color_op("XK", &v).unwrap();
         let named = named.unwrap();
-        assert_eq!((named.name.as_str(), named.color, named.spot), ("K100", Color::cmyk(0.0, 0.0, 0.0, 1.0), false));
+        assert_eq!(
+            (named.name.as_str(), named.color, named.spot),
+            ("K100", Color::cmyk(0.0, 0.0, 0.0, 1.0), false)
+        );
         assert!((named.tint - 0.6).abs() < 1e-6);
         assert!(
             matches!(p, Paint::Solid { swatch: Some(s), tint, color: Color::Cmyk { k, .. } } if s == "K100" && (tint - 0.6).abs() < 1e-6 && (k - 0.6).abs() < 1e-6)
@@ -347,18 +474,29 @@ mod tests {
         v.extend([V::Str(b"Plum Ink".to_vec()), V::Num(0.0), V::Num(2.0)]);
         let (p, named) = color_op("Xx", &v).unwrap();
         let named = named.unwrap();
-        assert_eq!((named.color, named.spot, named.tint), (Color::lab(32.9412, 45.0, -18.0), true, 1.0));
+        assert_eq!(
+            (named.color, named.spot, named.tint),
+            (Color::lab(32.9412, 45.0, -18.0), true, 1.0)
+        );
         assert_eq!(p.color(), Some(Color::lab(32.9412, 45.0, -18.0)));
         v[8] = V::Num(0.25);
         let (_, named) = color_op("XX", &v).unwrap();
-        assert_eq!(named.map(|n| (n.color, n.tint)), Some((Color::lab(32.9412, 45.0, -18.0), 0.75)));
+        assert_eq!(
+            named.map(|n| (n.color, n.tint)),
+            Some((Color::lab(32.9412, 45.0, -18.0), 0.75))
+        );
     }
 
     #[test]
     fn gradient_definition_and_instance() {
         let mut d = GradientDef::begin(&[V::Str(b"G".to_vec()), V::Num(1.0), V::Num(2.0)]).unwrap();
         let mut spots = vec![];
-        d.stop(&nums(&[0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.5, 6.0, 30.0, 100.0]), &mut spots);
+        d.stop(
+            &nums(&[
+                0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.5, 6.0, 30.0, 100.0,
+            ]),
+            &mut spots,
+        );
         d.stop(&nums(&[0.81, 0.0, 1.0, 6.0, 50.0, 0.0]), &mut spots);
         let (name, g) = d.finish().unwrap();
         assert_eq!(name, "G");
@@ -369,10 +507,14 @@ mod tests {
         let defs = HashMap::from([(name, g)]);
         let mut i = Instance::begin(&[]);
         let mut bg = vec![V::Num(1.0), V::Str(b"G".to_vec())];
-        bg.extend(nums(&[100.0, 100.0, 0.0, 50.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]));
+        bg.extend(nums(&[
+            100.0, 100.0, 0.0, 50.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+        ]));
         i.bg(&bg);
         i.bm(&nums(&[50.0, 0.0, 0.0, -50.0, 100.0, 100.0]));
-        let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else { panic!() };
+        let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else {
+            panic!()
+        };
         let geom = gp.geom.unwrap();
         assert_eq!(geom.start, Point::new(100.0, 100.0));
         assert_eq!(geom.end, Point::new(150.0, 100.0));
@@ -383,9 +525,14 @@ mod tests {
         i.bg(&bg);
         i.xm(&nums(&[40.0, 0.0, 0.0, -40.0, 10.0, 10.0]));
         i.bm(&nums(&[5.0, 0.0, 0.0, -40.0, 30.0, 10.0]));
-        let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else { panic!() };
+        let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else {
+            panic!()
+        };
         let geom = gp.geom.unwrap();
-        assert_eq!((geom.start, geom.end), (Point::new(10.0, 10.0), Point::new(50.0, 10.0)));
+        assert_eq!(
+            (geom.start, geom.end),
+            (Point::new(10.0, 10.0), Point::new(50.0, 10.0))
+        );
     }
 
     /// A linear gradient of three stops as newer files place it: `Bg` with numbers that aren't in
@@ -394,13 +541,18 @@ mod tests {
     fn a_linear_gradient_runs_its_whole_ramp_not_its_last_part() {
         let mut d = GradientDef::begin(&[V::Str(b"L".to_vec()), V::Num(0.0), V::Num(3.0)]).unwrap();
         for ramp in [100.0, 60.0, 20.0] {
-            d.stop(&nums(&[0.2, 0.4, 0.6, 0.0, 1.0, 1.0, 6.0, 50.0, ramp]), &mut vec![]);
+            d.stop(
+                &nums(&[0.2, 0.4, 0.6, 0.0, 1.0, 1.0, 6.0, 50.0, ramp]),
+                &mut vec![],
+            );
         }
         let defs = HashMap::from([d.finish().unwrap()]);
         let instance = |xm: bool| {
             let mut i = Instance::begin(&[]);
             let mut bg = vec![V::Num(1.0), V::Str(b"L".to_vec())];
-            bg.extend(nums(&[0.3, -0.2, -90.0, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]));
+            bg.extend(nums(&[
+                0.3, -0.2, -90.0, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+            ]));
             i.bg(&bg);
             if xm {
                 i.xm(&nums(&[0.0, -200.0, -30.0, 0.0, 10.0, 300.0]));
@@ -408,13 +560,19 @@ mod tests {
             // From the stop at 20 to the one at 60, then on to the one at 100.
             i.bm(&nums(&[0.0, -80.0, -30.0, 0.0, 10.0, 260.0]));
             i.bm(&nums(&[0.0, -80.0, -30.0, 0.0, 10.0, 180.0]));
-            let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else { panic!() };
+            let Some(Paint::Gradient(gp)) = i.paint(&defs, Affine::IDENTITY) else {
+                panic!()
+            };
             gp.geom.unwrap()
         };
         for xm in [true, false] {
             let geom = instance(xm);
             // (The stops' offsets are `f32`.)
-            assert!(geom.start.distance(Point::new(10.0, 300.0)) < 1e-5 && geom.end.distance(Point::new(10.0, 100.0)) < 1e-5, "{xm}: {geom:?}");
+            assert!(
+                geom.start.distance(Point::new(10.0, 300.0)) < 1e-5
+                    && geom.end.distance(Point::new(10.0, 100.0)) < 1e-5,
+                "{xm}: {geom:?}"
+            );
             assert_eq!((geom.aspect, geom.focal), (1.0, None));
         }
     }

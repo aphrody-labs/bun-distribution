@@ -21,17 +21,32 @@ pub fn parse_list(text: &str) -> Result<Vec<Listed<'_>>, String> {
         }
         let fields: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [when, family, style] = fields.as_slice() else {
-            return Err(format!("web-fonts.txt line {}: expected `when | family | style`", i + 1));
+            return Err(format!(
+                "web-fonts.txt line {}: expected `when | family | style`",
+                i + 1
+            ));
         };
         let startup = match *when {
             "startup" => true,
             "background" => false,
-            other => return Err(format!("web-fonts.txt line {}: `{other}` is neither startup nor background", i + 1)),
+            other => {
+                return Err(format!(
+                    "web-fonts.txt line {}: `{other}` is neither startup nor background",
+                    i + 1
+                ));
+            }
         };
         if family.is_empty() || style.is_empty() {
-            return Err(format!("web-fonts.txt line {}: empty family or style", i + 1));
+            return Err(format!(
+                "web-fonts.txt line {}: empty family or style",
+                i + 1
+            ));
         }
-        out.push(Listed { startup, family, style });
+        out.push(Listed {
+            startup,
+            family,
+            style,
+        });
     }
     Ok(out)
 }
@@ -61,7 +76,12 @@ pub fn sri(hex: &str) -> Option<String> {
     if hex.len() != 64 {
         return None;
     }
-    let bytes: Option<Vec<u8>> = (0..32).map(|i| hex.get(2 * i..2 * i + 2).and_then(|h| u8::from_str_radix(h, 16).ok())).collect();
+    let bytes: Option<Vec<u8>> = (0..32)
+        .map(|i| {
+            hex.get(2 * i..2 * i + 2)
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
+        })
+        .collect();
     Some(format!("sha256-{}", base64(&bytes?)))
 }
 
@@ -79,9 +99,15 @@ mod tests {
 
     #[test]
     fn base64_matches_rfc_4648_vectors() {
-        for (input, want) in
-            [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")]
-        {
+        for (input, want) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
             assert_eq!(base64(input.as_bytes()), want, "{input:?}");
         }
     }
@@ -89,7 +115,10 @@ mod tests {
     #[test]
     fn sri_of_the_empty_files_sha256() {
         let empty = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-        assert_eq!(sri(empty).as_deref(), Some("sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="));
+        assert_eq!(
+            sri(empty).as_deref(),
+            Some("sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=")
+        );
         assert_eq!(sri("abc"), None);
         assert_eq!(sri(&"zz".repeat(32)), None);
     }
@@ -97,18 +126,32 @@ mod tests {
     #[test]
     fn url_is_relative_and_content_addressed() {
         let sha = "63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e";
-        assert_eq!(url(sha, "fonts/noto-sans-arabic/NotoSansArabic.ttf"), "fonts/63111b5b2e074dd4/NotoSansArabic.ttf");
+        assert_eq!(
+            url(sha, "fonts/noto-sans-arabic/NotoSansArabic.ttf"),
+            "fonts/63111b5b2e074dd4/NotoSansArabic.ttf"
+        );
         assert!(!url(sha, "x.ttf").starts_with('/'));
     }
 
     #[test]
     fn list_parsing() {
-        let l = parse_list("# c\n\nstartup | Noto Sans Arabic | Regular\nbackground | Amiri | Bold Italic\n").unwrap();
+        let l = parse_list(
+            "# c\n\nstartup | Noto Sans Arabic | Regular\nbackground | Amiri | Bold Italic\n",
+        )
+        .unwrap();
         assert_eq!(
             l,
             [
-                Listed { startup: true, family: "Noto Sans Arabic", style: "Regular" },
-                Listed { startup: false, family: "Amiri", style: "Bold Italic" }
+                Listed {
+                    startup: true,
+                    family: "Noto Sans Arabic",
+                    style: "Regular"
+                },
+                Listed {
+                    startup: false,
+                    family: "Amiri",
+                    style: "Bold Italic"
+                }
             ]
         );
         assert!(parse_list("soon | A | B").unwrap_err().contains("line 1"));

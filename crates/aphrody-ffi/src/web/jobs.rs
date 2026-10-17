@@ -57,7 +57,9 @@ fn registry() -> &'static Registry {
 fn lock_jobs(reg: &Registry) -> MutexGuard<'_, HashMap<u64, JobState>> {
     // A panic while holding the lock cannot leave the map half-updated (every
     // mutation is a single insert/replace/remove), so poisoning is ignorable.
-    reg.jobs.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    reg.jobs
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn complete(id: u64, output: String) {
@@ -160,10 +162,14 @@ where
     // saturation rather than enqueue unbounded futures and thread stacks.
     if reg
         .local_in_flight
-        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| (count < 64).then_some(count + 1))
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+            (count < 64).then_some(count + 1)
+        })
         .is_err()
     {
-        return resolved(error_json_string("native workflow executor saturated (64 jobs)"));
+        return resolved(error_json_string(
+            "native workflow executor saturated (64 jobs)",
+        ));
     }
     lock_jobs(reg).insert(id, JobState::LocalPending(cancel));
     let deadline = (timeout_ms != 0)
@@ -191,7 +197,11 @@ where
                 }
             })
         };
-        if capture { crate::native::capture_job(execute) } else { execute() }
+        if capture {
+            crate::native::capture_job(execute)
+        } else {
+            execute()
+        }
     });
     rt.spawn(async move {
         let output = match work.await {
@@ -259,11 +269,11 @@ pub extern "C" fn web_internal_job_cancel(id: u64) -> i32 {
         Some(JobState::LocalPending(cancel)) => {
             let _ = cancel.send(());
             1
-        },
+        }
         Some(JobState::Pending(Some(abort))) => {
             abort.abort();
             1
-        },
+        }
         Some(_) => 1,
         None => 0,
     })
@@ -279,7 +289,9 @@ mod tests {
         for _ in 0..500 {
             let ptr = web_internal_job_take(id);
             if !ptr.is_null() {
-                let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+                let value = unsafe { CStr::from_ptr(ptr) }
+                    .to_string_lossy()
+                    .into_owned();
                 unsafe { crate::web_internal_free_string(ptr) };
                 return value;
             }
@@ -295,7 +307,11 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(30)).await;
             "{\"ok\":true}".to_string()
         });
-        assert_eq!(web_internal_job_status(id), 0, "job must be pending right after submit");
+        assert_eq!(
+            web_internal_job_status(id),
+            0,
+            "job must be pending right after submit"
+        );
         assert!(web_internal_job_take(id).is_null());
         assert_eq!(wait_for(id), "{\"ok\":true}");
         assert!(web_internal_job_completed_seq() > seq);
@@ -336,7 +352,9 @@ mod tests {
     fn unknown_job_yields_error_payload() {
         let ptr = web_internal_job_take(u64::MAX);
         assert!(!ptr.is_null());
-        let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        let value = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
         unsafe { crate::web_internal_free_string(ptr) };
         assert!(value.contains("unknown job"));
     }
@@ -379,7 +397,10 @@ mod tests {
             }
             std::thread::sleep(Duration::from_millis(2));
         }
-        assert!(stopped.load(Ordering::SeqCst), "cancellation must drop the local future");
+        assert!(
+            stopped.load(Ordering::SeqCst),
+            "cancellation must drop the local future"
+        );
         assert_eq!(web_internal_job_status(id), -1);
     }
 

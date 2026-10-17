@@ -49,7 +49,9 @@ impl Default for RegisterBank {
 
 impl RegisterBank {
     pub const fn new() -> Self {
-        Self { words: [0; REGISTER_COUNT] }
+        Self {
+            words: [0; REGISTER_COUNT],
+        }
     }
 
     pub fn read(&self, register: u16) -> Option<u32> {
@@ -66,7 +68,10 @@ pub struct CommandProcessor<'a> {
 
 impl<'a> CommandProcessor<'a> {
     pub const fn new(words: &'a [u32]) -> Self {
-        Self { writes: RegisterWrites::new(words), terminal: None }
+        Self {
+            writes: RegisterWrites::new(words),
+            terminal: None,
+        }
     }
 
     /// Execute at most budget register writes. The callback receives every write,
@@ -92,22 +97,36 @@ impl<'a> CommandProcessor<'a> {
                     if let Some(word) = registers.words.get_mut(usize::from(write.register)) {
                         let previous = *word;
                         *word = write.apply(previous);
-                        effect(RegisterEffect { write, previous, current: *word });
+                        effect(RegisterEffect {
+                            write,
+                            previous,
+                            current: *word,
+                        });
                         count += 1;
-                        if write.register == 0x10 { Some(ExecutionStatus::Finalized) } else { None }
+                        if write.register == 0x10 {
+                            Some(ExecutionStatus::Finalized)
+                        } else {
+                            None
+                        }
                     } else {
                         Some(ExecutionStatus::Failed(ExecutionError::InvalidRegister(
                             write.register,
                         )))
                     }
-                },
+                }
             };
             if let Some(status) = status {
                 self.terminal = Some(status);
-                return ExecutionReport { writes: count, status };
+                return ExecutionReport {
+                    writes: count,
+                    status,
+                };
             }
         }
-        ExecutionReport { writes: count, status: ExecutionStatus::BudgetExhausted }
+        ExecutionReport {
+            writes: count,
+            status: ExecutionStatus::BudgetExhausted,
+        }
     }
 }
 
@@ -118,21 +137,30 @@ mod tests {
 
     #[test]
     fn resumes_inside_packet_and_delivers_masked_side_effects() {
-        let words =
-            [0xaabbccdd, command_header(0x100, 5, false) | (2 << 20), 0x11223344, 0x55667788];
+        let words = [
+            0xaabbccdd,
+            command_header(0x100, 5, false) | (2 << 20),
+            0x11223344,
+            0x55667788,
+        ];
         let mut processor = CommandProcessor::new(&words);
         let mut bank = RegisterBank::new();
         let mut events = [None; 3];
         for event in &mut events {
             assert_eq!(
-                processor.run(&mut bank, 1, |value| *event = Some(value)).status,
+                processor
+                    .run(&mut bank, 1, |value| *event = Some(value))
+                    .status,
                 ExecutionStatus::BudgetExhausted
             );
         }
         assert_eq!(bank.read(0x100), Some(0x00660088));
         assert_eq!(events[1].unwrap().previous, 0x00bb00dd);
         assert_eq!(events[1].unwrap().current, 0x00220044);
-        assert_eq!(processor.run(&mut bank, 1, |_| panic!()).status, ExecutionStatus::Complete);
+        assert_eq!(
+            processor.run(&mut bank, 1, |_| panic!()).status,
+            ExecutionStatus::Complete
+        );
         assert_eq!(processor.run(&mut bank, 1, |_| panic!()).writes, 0);
     }
 
@@ -150,26 +178,46 @@ mod tests {
         assert_eq!(result.status, ExecutionStatus::Finalized);
         assert_eq!(strobes, 1);
         assert_eq!(crate::gpu::RegisterWrites::new(&words).count(), 2);
-        assert_eq!(finalize_commands(&mut words[..3], 0), Err(CommandError::BufferTooSmall));
-        assert_eq!(finalize_commands(&mut words, 1), Err(CommandError::UnalignedCommandOffset));
+        assert_eq!(
+            finalize_commands(&mut words[..3], 0),
+            Err(CommandError::BufferTooSmall)
+        );
+        assert_eq!(
+            finalize_commands(&mut words, 1),
+            Err(CommandError::UnalignedCommandOffset)
+        );
         assert_eq!(finalize_commands(&mut words, 2), Ok(4));
     }
 
     #[test]
     fn finalization_is_terminal_at_budget_boundary_and_ignores_trailing_data() {
-        let words =
-            [7, command_header(0x10, 15, false), 42, command_header(0x100, 15, false), 0xdeadbeef];
+        let words = [
+            7,
+            command_header(0x10, 15, false),
+            42,
+            command_header(0x100, 15, false),
+            0xdeadbeef,
+        ];
         let mut bank = RegisterBank::new();
         let mut processor = CommandProcessor::new(&words);
         let result = processor.run(&mut bank, 1, |event| {
             assert_eq!(event.write.register, 0x10);
         });
-        assert_eq!(result, ExecutionReport { writes: 1, status: ExecutionStatus::Finalized });
+        assert_eq!(
+            result,
+            ExecutionReport {
+                writes: 1,
+                status: ExecutionStatus::Finalized
+            }
+        );
         assert_eq!(bank.read(0x100), Some(0));
         for budget in [0, 1, 100] {
             assert_eq!(
                 processor.run(&mut bank, budget, |_| panic!()),
-                ExecutionReport { writes: 0, status: ExecutionStatus::Finalized }
+                ExecutionReport {
+                    writes: 0,
+                    status: ExecutionStatus::Finalized
+                }
             );
         }
     }
@@ -182,7 +230,10 @@ mod tests {
         let result = processor.run(&mut bank, 10, |_| {});
         assert_eq!(result.writes, 1);
         assert_eq!(bank.read(0x2ff), Some(7));
-        assert_eq!(result.status, ExecutionStatus::Failed(ExecutionError::InvalidRegister(0x300)));
+        assert_eq!(
+            result.status,
+            ExecutionStatus::Failed(ExecutionError::InvalidRegister(0x300))
+        );
         assert_eq!(processor.run(&mut bank, 10, |_| panic!()).writes, 0);
     }
 

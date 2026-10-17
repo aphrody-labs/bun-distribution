@@ -8,7 +8,8 @@ use std::path::{Path, PathBuf};
 /// `$XDG_CONFIG_HOME/wordcraft` or `~/.config/wordcraft`.
 pub fn settings_dir() -> Option<PathBuf> {
     if cfg!(target_os = "macos") {
-        std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/WordCraft"))
+        std::env::var_os("HOME")
+            .map(|h| PathBuf::from(h).join("Library/Application Support/WordCraft"))
     } else if cfg!(windows) {
         std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("WordCraft"))
     } else {
@@ -22,8 +23,14 @@ pub fn settings_dir() -> Option<PathBuf> {
 /// The `instance-id=` value of a `/.flatpak-info` file, only when it is `[A-Za-z0-9_-]+` (it
 /// becomes part of a file name).
 pub fn parse_instance_id(info: &str) -> Option<String> {
-    let v = info.lines().find_map(|l| l.strip_prefix("instance-id="))?.trim();
-    (!v.is_empty() && v.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')).then(|| v.to_string())
+    let v = info
+        .lines()
+        .find_map(|l| l.strip_prefix("instance-id="))?
+        .trim();
+    (!v.is_empty()
+        && v.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'))
+    .then(|| v.to_string())
 }
 
 /// The Flatpak instance id, or `None` outside Flatpak.
@@ -51,8 +58,14 @@ mod tests {
 
     #[test]
     fn instance_id_only_safe_values() {
-        assert_eq!(parse_instance_id("[Instance]\ninstance-id=abc_123-X\n").as_deref(), Some("abc_123-X"));
-        assert_eq!(parse_instance_id("instance-id= 42 \n").as_deref(), Some("42"));
+        assert_eq!(
+            parse_instance_id("[Instance]\ninstance-id=abc_123-X\n").as_deref(),
+            Some("abc_123-X")
+        );
+        assert_eq!(
+            parse_instance_id("instance-id= 42 \n").as_deref(),
+            Some("42")
+        );
         // It ends up in a file name.
         assert_eq!(parse_instance_id("instance-id=../etc\n"), None);
         assert_eq!(parse_instance_id("instance-id=a/b\n"), None);
@@ -65,9 +78,18 @@ mod tests {
     #[test]
     fn key_file_per_instance() {
         let dir = Path::new("/settings/wordcraft");
-        assert_eq!(key_path_for(dir, Some("1234"), 7981), dir.join("control-key.1234"));
-        assert_eq!(key_path_for(dir, None, 7981), dir.join("control-key.local-7981"));
-        assert_eq!(key_path_for(dir, None, 7982), dir.join("control-key.local-7982"));
+        assert_eq!(
+            key_path_for(dir, Some("1234"), 7981),
+            dir.join("control-key.1234")
+        );
+        assert_eq!(
+            key_path_for(dir, None, 7981),
+            dir.join("control-key.local-7981")
+        );
+        assert_eq!(
+            key_path_for(dir, None, 7982),
+            dir.join("control-key.local-7982")
+        );
         if instance_id().is_none() {
             assert_eq!(key_path(dir, 7981), dir.join("control-key.local-7981"));
         }
@@ -77,7 +99,11 @@ mod tests {
     fn settings_dir_is_the_apps_folder() {
         if let Some(d) = settings_dir() {
             let name = d.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            assert!(name == "wordcraft" || name == "WordCraft", "{}", d.display());
+            assert!(
+                name == "wordcraft" || name == "WordCraft",
+                "{}",
+                d.display()
+            );
         }
     }
 }

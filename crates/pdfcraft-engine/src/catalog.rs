@@ -44,8 +44,18 @@ pub struct ToolGroup {
     pub sections: &'static [ToolSection],
 }
 
-const fn item(label: &'static str, icon: &'static str, command: &'static str, availability: Availability) -> ToolItem {
-    ToolItem { label, icon, command, availability }
+const fn item(
+    label: &'static str,
+    icon: &'static str,
+    command: &'static str,
+    availability: Availability,
+) -> ToolItem {
+    ToolItem {
+        label,
+        icon,
+        command,
+        availability,
+    }
 }
 
 use Availability::{Planned, Provider, Ready};
@@ -70,7 +80,12 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Export to",
             items: &[
                 item("Microsoft Word (.docx)", "file-text", "export.docx", Ready),
-                item("Spreadsheet (.xlsx)", "grid-3x3", "export.xlsx", Planned("M10")),
+                item(
+                    "Spreadsheet (.xlsx)",
+                    "grid-3x3",
+                    "export.xlsx",
+                    Planned("M10"),
+                ),
                 item("Presentation (.pptx)", "presentation", "export.pptx", Ready),
                 item("Image (PNG)", "image", "export.image", Ready),
                 item("Export all images", "image", "export.all_images", Ready),
@@ -99,8 +114,18 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 item("Date", "clock-3", "sign.fill.date", Ready),
                 item("Signature", "signature", "sign.fill.signature", Ready),
                 item("Initials", "signature", "sign.fill.initials", Ready),
-                item("Change signature", "signature", "sign.fill.signature.change", Ready),
-                item("Change initials", "signature", "sign.fill.initials.change", Ready),
+                item(
+                    "Change signature",
+                    "signature",
+                    "sign.fill.signature.change",
+                    Ready,
+                ),
+                item(
+                    "Change initials",
+                    "signature",
+                    "sign.fill.initials.change",
+                    Ready,
+                ),
             ],
         }],
     },
@@ -125,7 +150,12 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             ToolSection {
                 title: "Add content",
                 items: &[
-                    item("Edit text & images", "text-cursor-input", "edit.edit_text", Ready),
+                    item(
+                        "Edit text & images",
+                        "text-cursor-input",
+                        "edit.edit_text",
+                        Ready,
+                    ),
                     item("Text", "type", "edit.text", Ready),
                     item("Image", "image-plus", "edit.image", Ready),
                     item("Header and footer", "heading", "edit.header_footer", Ready),
@@ -164,7 +194,10 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         hue: BLUE,
         badge: None,
         availability: Ready,
-        sections: &[ToolSection { title: "Combine", items: &[item("Add files to combine", "files", "page.combine", Ready)] }],
+        sections: &[ToolSection {
+            title: "Combine",
+            items: &[item("Add files to combine", "files", "page.combine", Ready)],
+        }],
     },
     ToolGroup {
         id: "organize",
@@ -189,11 +222,21 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             ToolSection {
                 title: "More",
                 items: &[
-                    item("Set page boxes", "square-dashed-mouse-pointer", "page.boxes", Ready),
+                    item(
+                        "Set page boxes",
+                        "square-dashed-mouse-pointer",
+                        "page.boxes",
+                        Ready,
+                    ),
                     item("Crop pages", "crop", "page.crop", Ready),
                     item("Duplicate pages", "copy-plus", "page.duplicate", Ready),
                     item("Page labels", "tag", "page.number", Ready),
-                    item("Page transitions", "presentation", "page.transitions", Planned("M4")),
+                    item(
+                        "Page transitions",
+                        "presentation",
+                        "page.transitions",
+                        Planned("M4"),
+                    ),
                 ],
             },
         ],
@@ -250,9 +293,24 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             items: &[
                 item("In this file", "scan-text", "ocr.recognize", Ready),
                 item("In multiple files", "files", "ocr.recognize_batch", Ready),
-                item("Enhance scanned file", "sparkles", "ocr.enhance", Planned("M10")),
-                item("Enhance camera image", "camera", "ocr.enhance_camera", Ready),
-                item("Correct recognized text", "text-select", "ocr.correct", Planned("M10")),
+                item(
+                    "Enhance scanned file",
+                    "sparkles",
+                    "ocr.enhance",
+                    Planned("M10"),
+                ),
+                item(
+                    "Enhance camera image",
+                    "camera",
+                    "ocr.enhance_camera",
+                    Ready,
+                ),
+                item(
+                    "Correct recognized text",
+                    "text-select",
+                    "ocr.correct",
+                    Planned("M10"),
+                ),
             ],
         }],
     },
@@ -268,14 +326,29 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 title: "Protect",
                 items: &[
                     item("Protect with password", "lock", "protect.password", Ready),
-                    item("Remove hidden information", "eye-off", "protect.remove_hidden", Ready),
+                    item(
+                        "Remove hidden information",
+                        "eye-off",
+                        "protect.remove_hidden",
+                        Ready,
+                    ),
                 ],
             },
             ToolSection {
                 title: "Advanced options",
                 items: &[
-                    item("Encrypt with certificate", "file-lock-2", "protect.certificate", Planned("M8")),
-                    item("Security properties", "shield-check", "protect.properties", Ready),
+                    item(
+                        "Encrypt with certificate",
+                        "file-lock-2",
+                        "protect.certificate",
+                        Planned("M8"),
+                    ),
+                    item(
+                        "Security properties",
+                        "shield-check",
+                        "protect.properties",
+                        Ready,
+                    ),
                     item("Remove security", "lock-open", "protect.remove", Ready),
                 ],
             },
@@ -291,9 +364,19 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         sections: &[ToolSection {
             title: "Redact",
             items: &[
-                item("Redact text and images", "rectangle-horizontal", "redact.mark", Ready),
+                item(
+                    "Redact text and images",
+                    "rectangle-horizontal",
+                    "redact.mark",
+                    Ready,
+                ),
                 item("Redact pages", "file-x", "redact.pages", Ready),
-                item("Find text and redact", "file-search", "redact.search", Ready),
+                item(
+                    "Find text and redact",
+                    "file-search",
+                    "redact.search",
+                    Ready,
+                ),
                 item("Set properties", "settings-2", "redact.properties", Ready),
                 item("Sanitize document", "sparkles", "redact.sanitize", Ready),
             ],
@@ -310,8 +393,18 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Optimize",
             items: &[
                 item("Reduce file size", "file-down", "optimize.reduce", Ready),
-                item("Advanced optimization", "settings-2", "optimize.advanced", Ready),
-                item("Audit space usage", "gauge", "optimize.audit", Planned("M11")),
+                item(
+                    "Advanced optimization",
+                    "settings-2",
+                    "optimize.advanced",
+                    Ready,
+                ),
+                item(
+                    "Audit space usage",
+                    "gauge",
+                    "optimize.audit",
+                    Planned("M11"),
+                ),
             ],
         }],
     },
@@ -329,9 +422,19 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                     item("Field list", "list", "form.fields", Ready),
                     item("Detect form fields", "scan", "form.detect", Ready),
                     item("Clear form", "eraser", "form.clear", Ready),
-                    item("Field properties", "settings-2", "form.field.properties", Ready),
+                    item(
+                        "Field properties",
+                        "settings-2",
+                        "form.field.properties",
+                        Ready,
+                    ),
                     item("Tab order by rows", "rows-3", "form.tab_order.row", Ready),
-                    item("Tab order by columns", "columns-3", "form.tab_order.column", Ready),
+                    item(
+                        "Tab order by columns",
+                        "columns-3",
+                        "form.tab_order.column",
+                        Ready,
+                    ),
                     item("Flatten form fields", "layers", "form.flatten", Ready),
                     item("Import data", "file-input", "form.import_data", Ready),
                     item("Export data", "file-output", "form.export_data", Ready),
@@ -348,7 +451,12 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                     item("Button", "square", "form.add.button", Ready),
                     item("Image field", "image", "form.add.image", Ready),
                     item("Date field", "clock-3", "form.add.date", Ready),
-                    item("Digital signature", "signature", "form.add.signature", Ready),
+                    item(
+                        "Digital signature",
+                        "signature",
+                        "form.add.signature",
+                        Ready,
+                    ),
                 ],
             },
         ],
@@ -360,7 +468,10 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         hue: PURPLE,
         badge: None,
         availability: Ready,
-        sections: &[ToolSection { title: "Stamps", items: &[item("Stamp palette", "stamp", "comment.stamp", Ready)] }],
+        sections: &[ToolSection {
+            title: "Stamps",
+            items: &[item("Stamp palette", "stamp", "comment.stamp", Ready)],
+        }],
     },
     ToolGroup {
         id: "certificate",
@@ -374,9 +485,24 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             items: &[
                 item("Digitally sign", "signature", "sign.digital", Ready),
                 item("Timestamp", "clock-3", "sign.timestamp", Planned("M9")),
-                item("Validate all signatures", "badge-check", "sign.validate", Ready),
-                item("Certify (visible signature)", "badge-check", "sign.certify", Ready),
-                item("Certify (invisible signature)", "badge-check", "sign.certify_invisible", Ready),
+                item(
+                    "Validate all signatures",
+                    "badge-check",
+                    "sign.validate",
+                    Ready,
+                ),
+                item(
+                    "Certify (visible signature)",
+                    "badge-check",
+                    "sign.certify",
+                    Ready,
+                ),
+                item(
+                    "Certify (invisible signature)",
+                    "badge-check",
+                    "sign.certify_invisible",
+                    Ready,
+                ),
             ],
         }],
     },
@@ -390,12 +516,37 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         sections: &[ToolSection {
             title: "Print production",
             items: &[
-                item("Output preview", "layers", "prepress.output_preview", Planned("M11")),
+                item(
+                    "Output preview",
+                    "layers",
+                    "prepress.output_preview",
+                    Planned("M11"),
+                ),
                 item("Preflight", "file-check", "preflight.run", Planned("M11")),
-                item("Convert colors", "palette", "prepress.convert_colors", Planned("M11")),
-                item("Set page boxes", "square-dashed-mouse-pointer", "page.boxes", Ready),
-                item("Add printer marks", "ruler", "prepress.marks", Planned("M11")),
-                item("Fix hairlines", "minus", "prepress.hairlines", Planned("M11")),
+                item(
+                    "Convert colors",
+                    "palette",
+                    "prepress.convert_colors",
+                    Planned("M11"),
+                ),
+                item(
+                    "Set page boxes",
+                    "square-dashed-mouse-pointer",
+                    "page.boxes",
+                    Ready,
+                ),
+                item(
+                    "Add printer marks",
+                    "ruler",
+                    "prepress.marks",
+                    Planned("M11"),
+                ),
+                item(
+                    "Fix hairlines",
+                    "minus",
+                    "prepress.hairlines",
+                    Planned("M11"),
+                ),
             ],
         }],
     },
@@ -415,8 +566,18 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 item("Drawing scale", "ruler", "measure.scale", Ready),
                 item("Measurement information", "ruler", "measure.info", Ready),
                 item("Snapping", "ruler", "measure.snap", Ready),
-                item("Export measurements", "file-output", "measure.export", Ready),
-                item("Geospatial location", "compass", "measure.geo", Planned("M12")),
+                item(
+                    "Export measurements",
+                    "file-output",
+                    "measure.export",
+                    Ready,
+                ),
+                item(
+                    "Geospatial location",
+                    "compass",
+                    "measure.geo",
+                    Planned("M12"),
+                ),
             ],
         }],
     },
@@ -427,7 +588,15 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         hue: PINK,
         badge: None,
         availability: Ready,
-        sections: &[ToolSection { title: "Compare", items: &[item("Select files to compare", "git-compare", "doc.compare", Ready)] }],
+        sections: &[ToolSection {
+            title: "Compare",
+            items: &[item(
+                "Select files to compare",
+                "git-compare",
+                "doc.compare",
+                Ready,
+            )],
+        }],
     },
     ToolGroup {
         id: "actions",
@@ -440,10 +609,30 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Actions list",
             items: &[
                 item("Action Wizard", "list-checks", "actions.wizard", Ready),
-                item("Make accessible", "accessibility", "actions.make_accessible", Planned("M13")),
-                item("Prepare for distribution", "send", "actions.distribution", Ready),
-                item("Optimize scanned documents", "scan-text", "actions.optimize_scans", Ready),
-                item("Archive documents", "file-check", "actions.archive", Planned("M13")),
+                item(
+                    "Make accessible",
+                    "accessibility",
+                    "actions.make_accessible",
+                    Planned("M13"),
+                ),
+                item(
+                    "Prepare for distribution",
+                    "send",
+                    "actions.distribution",
+                    Ready,
+                ),
+                item(
+                    "Optimize scanned documents",
+                    "scan-text",
+                    "actions.optimize_scans",
+                    Ready,
+                ),
+                item(
+                    "Archive documents",
+                    "file-check",
+                    "actions.archive",
+                    Planned("M13"),
+                ),
             ],
         }],
     },
@@ -458,12 +647,32 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Accessibility",
             items: &[
                 item("Automatically tag PDF", "tag", "a11y.autotag", Ready),
-                item("Change reading options", "book-open", "a11y.reading_options", Ready),
-                item("Check for accessibility", "accessibility", "a11y.check", Ready),
-                item("Open accessibility report", "file-text", "a11y.report", Ready),
+                item(
+                    "Change reading options",
+                    "book-open",
+                    "a11y.reading_options",
+                    Ready,
+                ),
+                item(
+                    "Check for accessibility",
+                    "accessibility",
+                    "a11y.check",
+                    Ready,
+                ),
+                item(
+                    "Open accessibility report",
+                    "file-text",
+                    "a11y.report",
+                    Ready,
+                ),
                 item("Add alternate text", "image", "a11y.alt_text", Ready),
                 item("Tags panel", "tag", "a11y.tags", Ready),
-                item("Fix reading order", "list-ordered", "a11y.reading_order", Planned("M12")),
+                item(
+                    "Fix reading order",
+                    "list-ordered",
+                    "a11y.reading_order",
+                    Planned("M12"),
+                ),
             ],
         }],
     },
@@ -478,8 +687,18 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Standards",
             items: &[
                 item("Save as PDF/A", "file-check", "standards.pdfa", Ready),
-                item("Save as PDF/X", "file-check", "standards.pdfx", Planned("M11")),
-                item("Save as PDF/UA", "accessibility", "standards.pdfua", Planned("M11")),
+                item(
+                    "Save as PDF/X",
+                    "file-check",
+                    "standards.pdfx",
+                    Planned("M11"),
+                ),
+                item(
+                    "Save as PDF/UA",
+                    "accessibility",
+                    "standards.pdfua",
+                    Planned("M11"),
+                ),
                 item("Preflight", "file-check", "preflight.run", Planned("M11")),
             ],
         }],
@@ -491,7 +710,15 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         hue: GREEN,
         badge: None,
         availability: Planned("M12"),
-        sections: &[ToolSection { title: "Index", items: &[item("Manage embedded index", "file-search", "search.index", Planned("M12"))] }],
+        sections: &[ToolSection {
+            title: "Index",
+            items: &[item(
+                "Manage embedded index",
+                "file-search",
+                "search.index",
+                Planned("M12"),
+            )],
+        }],
     },
     ToolGroup {
         id: "javascript",
@@ -504,8 +731,18 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "JavaScript",
             items: &[
                 item("Console", "braces", "js.console", Planned("M6")),
-                item("Document JavaScripts", "file-text", "js.document", Planned("M6")),
-                item("Document actions", "list-checks", "js.actions", Planned("M6")),
+                item(
+                    "Document JavaScripts",
+                    "file-text",
+                    "js.document",
+                    Planned("M6"),
+                ),
+                item(
+                    "Document actions",
+                    "list-checks",
+                    "js.actions",
+                    Planned("M6"),
+                ),
             ],
         }],
     },
@@ -520,7 +757,12 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Bring your own model (off by default)",
             items: &[
                 item("Summarize", "sparkles", "ai.summary", Provider),
-                item("Ask about this document", "message-circle-reply", "ai.ask", Provider),
+                item(
+                    "Ask about this document",
+                    "message-circle-reply",
+                    "ai.ask",
+                    Provider,
+                ),
                 item("Translate", "languages", "ai.translate", Provider),
             ],
         }],
@@ -541,7 +783,11 @@ mod tests {
         let mut seen = HashSet::new();
         for g in TOOL_GROUPS {
             assert!(seen.insert(g.id), "duplicate group id {}", g.id);
-            assert!(g.sections.iter().any(|s| !s.items.is_empty()), "{} has no items", g.id);
+            assert!(
+                g.sections.iter().any(|s| !s.items.is_empty()),
+                "{} has no items",
+                g.id
+            );
         }
     }
 

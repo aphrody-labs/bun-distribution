@@ -16,9 +16,27 @@ fn project_with_a_title() -> (Project, ItemId) {
     let mut p = Project::new("Titles");
     let s = sequence(&mut p, "Cut", RATE, false);
     let a = media(&mut p, "/m/a.mov", true, true, RATE);
-    let graphic = p.add_item("Graphic", Label::Rose, ItemKind::Graphic { width: 1920, height: 1080, rate: RATE }, None);
-    let layer =
-        p.add_item("Adjustment Layer", Label::Iris, ItemKind::AdjustmentLayer { width: 1920, height: 1080, rate: RATE, duration: RATE.tick_of(240) }, None);
+    let graphic = p.add_item(
+        "Graphic",
+        Label::Rose,
+        ItemKind::Graphic {
+            width: 1920,
+            height: 1080,
+            rate: RATE,
+        },
+        None,
+    );
+    let layer = p.add_item(
+        "Adjustment Layer",
+        Label::Iris,
+        ItemKind::AdjustmentLayer {
+            width: 1920,
+            height: 1080,
+            rate: RATE,
+            duration: RATE.tick_of(240),
+        },
+        None,
+    );
     clip(&mut p, s, TrackKind::Video, 0, a, 0, 48, 0);
     let adj = clip(&mut p, s, TrackKind::Video, 0, layer, 48, 24, 0);
     let title = clip(&mut p, s, TrackKind::Video, 1, graphic, 12, 24, 0);
@@ -46,14 +64,24 @@ fn every_format_names_the_title_and_the_adjustment_layer_it_cannot_carry() {
     for format in [Format::Fcp7Xml, Format::Fcpxml, Format::Otio, Format::Aaf] {
         let (_, report) = export_report(&p, s, format);
         for clip in [TITLE, LAYER] {
-            let named: Vec<_> = report.warnings().filter(|e| e.message.starts_with(clip)).collect();
-            assert_eq!(named.len(), 1, "{format:?} names {clip} once, as a warning: {report}");
+            let named: Vec<_> = report
+                .warnings()
+                .filter(|e| e.message.starts_with(clip))
+                .collect();
+            assert_eq!(
+                named.len(),
+                1,
+                "{format:?} names {clip} once, as a warning: {report}"
+            );
             assert_eq!(named[0].count, 1);
         }
     }
     // an EDL holds one video track: V1 by default (the layer), V2 when asked (the title)
     let (_, report) = export_report(&p, s, Format::Edl);
-    assert!(report.mentions(LAYER) && !report.mentions(TITLE), "{report}");
+    assert!(
+        report.mentions(LAYER) && !report.mentions(TITLE),
+        "{report}"
+    );
     let mut opts = ExportOptions::default();
     opts.edl.video_track = Some(1);
     let (_, report) = export(&p, s, Format::Edl, &opts).unwrap();
@@ -63,12 +91,25 @@ fn every_format_names_the_title_and_the_adjustment_layer_it_cannot_carry() {
 #[test]
 fn two_titles_are_two_report_lines() {
     let (mut p, s) = project_with_a_title();
-    let graphic = p.items.values().find(|i| matches!(i.kind, ItemKind::Graphic { .. })).map(|i| i.id).unwrap();
+    let graphic = p
+        .items
+        .values()
+        .find(|i| matches!(i.kind, ItemKind::Graphic { .. }))
+        .map(|i| i.id)
+        .unwrap();
     let second = clip(&mut p, s, TrackKind::Video, 1, graphic, 40, 10, 0);
-    p.sequence_mut(s).unwrap().find_item_mut(second).unwrap().1.name = "Closing".into();
+    p.sequence_mut(s)
+        .unwrap()
+        .find_item_mut(second)
+        .unwrap()
+        .1
+        .name = "Closing".into();
     for format in [Format::Fcp7Xml, Format::Fcpxml, Format::Otio, Format::Aaf] {
         let (_, report) = export_report(&p, s, format);
-        assert!(report.mentions(TITLE) && report.mentions("graphic clip \"Closing\" at frame 40"), "{format:?}: {report}");
+        assert!(
+            report.mentions(TITLE) && report.mentions("graphic clip \"Closing\" at frame 40"),
+            "{format:?}: {report}"
+        );
     }
 }
 
@@ -78,9 +119,18 @@ fn a_sequence_without_such_clips_reports_nothing_about_them() {
     let s = sequence(&mut p, "Cut", RATE, false);
     let a = media(&mut p, "/m/a.mov", true, true, RATE);
     clip(&mut p, s, TrackKind::Video, 0, a, 0, 48, 0);
-    for format in [Format::Fcp7Xml, Format::Fcpxml, Format::Otio, Format::Edl, Format::Aaf] {
+    for format in [
+        Format::Fcp7Xml,
+        Format::Fcpxml,
+        Format::Otio,
+        Format::Edl,
+        Format::Aaf,
+    ] {
         let (_, report) = export_report(&p, s, format);
-        assert!(!report.mentions("graphic clip") && !report.mentions("adjustment layer"), "{format:?}: {report}");
+        assert!(
+            !report.mentions("graphic clip") && !report.mentions("adjustment layer"),
+            "{format:?}: {report}"
+        );
     }
 }
 
@@ -94,18 +144,36 @@ fn the_reports_match_what_an_import_gives_back() {
             .filter_map(|i| i.as_sequence())
             .flat_map(|q| q.all_tracks())
             .flat_map(|t| &t.items)
-            .filter(|c| matches!(q.item(c.item).map(|i| &i.kind), Some(ItemKind::Graphic { .. })))
+            .filter(|c| {
+                matches!(
+                    q.item(c.item).map(|i| &i.kind),
+                    Some(ItemKind::Graphic { .. })
+                )
+            })
             .count()
     };
     assert_eq!(graphics(&p), 1);
     for format in [Format::Fcp7Xml, Format::Fcpxml, Format::Otio] {
         let (bytes, _) = export_report(&p, s, format);
-        let (imported, _) = import(&bytes, format, None).unwrap_or_else(|e| panic!("{format:?}: {e}"));
+        let (imported, _) =
+            import(&bytes, format, None).unwrap_or_else(|e| panic!("{format:?}: {e}"));
         assert_eq!(graphics(&imported.project), 0, "{format:?}");
         let seq = only_seq(&imported);
-        let names: Vec<String> = imported.project.sequence(seq).unwrap().video_tracks.iter().flat_map(|t| &t.items).map(|c| c.name.clone()).collect();
+        let names: Vec<String> = imported
+            .project
+            .sequence(seq)
+            .unwrap()
+            .video_tracks
+            .iter()
+            .flat_map(|t| &t.items)
+            .map(|c| c.name.clone())
+            .collect();
         // "not read back" (the XML formats) / "read back as offline media" (OTIO)
-        assert_eq!(names.iter().any(|n| n.starts_with("Opening")), format == Format::Otio, "{format:?}: {names:?}");
+        assert_eq!(
+            names.iter().any(|n| n.starts_with("Opening")),
+            format == Format::Otio,
+            "{format:?}: {names:?}"
+        );
     }
 }
 
@@ -117,12 +185,26 @@ fn fcp7_import_reports_a_clip_item_whose_file_is_not_defined() {
     let (bytes, _) = export_report(&p, s, Format::Fcp7Xml);
     let (imported, report) = import(&bytes, Format::Fcp7Xml, None).unwrap();
     for name in ["Opening \"line\"", "Grade"] {
-        let line = format!("clip \"{name}\" refers to a file the document does not define; skipped");
-        assert_eq!(report.warnings().filter(|e| e.message == line).count(), 1, "{report}");
+        let line =
+            format!("clip \"{name}\" refers to a file the document does not define; skipped");
+        assert_eq!(
+            report.warnings().filter(|e| e.message == line).count(),
+            1,
+            "{report}"
+        );
     }
     let seq = imported.project.sequence(only_seq(&imported)).unwrap();
-    let names: Vec<&str> = seq.video_tracks.iter().flat_map(|t| &t.items).map(|c| c.name.as_str()).collect();
-    assert_eq!(names, ["a.mov"], "the clip with media is imported as before");
+    let names: Vec<&str> = seq
+        .video_tracks
+        .iter()
+        .flat_map(|t| &t.items)
+        .map(|c| c.name.as_str())
+        .collect();
+    assert_eq!(
+        names,
+        ["a.mov"],
+        "the clip with media is imported as before"
+    );
     // a hand-written reference to a file id that is never defined
     let doc = r#"<?xml version="1.0" encoding="UTF-8"?>
 <xmeml version="4"><sequence id="s"><name>Cut</name><duration>48</duration><rate><timebase>24</timebase><ntsc>FALSE</ntsc></rate>
@@ -131,9 +213,21 @@ fn fcp7_import_reports_a_clip_item_whose_file_is_not_defined() {
   <clipitem id="c2"><name>real</name><start>24</start><end>48</end><in>0</in><out>24</out><file id="f1"><name>real.mov</name><pathurl>real.mov</pathurl></file></clipitem>
 </track></video></media></sequence></xmeml>"#;
     let (imported, report) = import(doc.as_bytes(), Format::Fcp7Xml, None).unwrap();
-    assert!(report.mentions("clip \"ghost\" refers to a file the document does not define; skipped"), "{report}");
+    assert!(
+        report.mentions("clip \"ghost\" refers to a file the document does not define; skipped"),
+        "{report}"
+    );
     assert!(!report.mentions("\"real\""), "{report}");
-    assert_eq!(imported.project.sequence(only_seq(&imported)).unwrap().video_tracks[0].items.len(), 1);
+    assert_eq!(
+        imported
+            .project
+            .sequence(only_seq(&imported))
+            .unwrap()
+            .video_tracks[0]
+            .items
+            .len(),
+        1
+    );
     // a document whose files are all defined says nothing of the kind
     let mut plain = Project::new("Plain");
     let s = sequence(&mut plain, "Cut", RATE, false);

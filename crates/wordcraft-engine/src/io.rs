@@ -28,13 +28,18 @@ pub const OPEN_EXTS: &[&str] = &[
     "json",
 ];
 /// Formats WordCraft saves (Save As).
-pub const SAVE_EXTS: &[&str] = &["docx", "docm", "dotx", "dotm", "pdf", "txt", "md", "html", "rtf", "odt", "tex", "png", "json", "xml"];
+pub const SAVE_EXTS: &[&str] = &[
+    "docx", "docm", "dotx", "dotm", "pdf", "txt", "md", "html", "rtf", "odt", "tex", "png", "json",
+    "xml",
+];
 
 /// The extension of a file name or path, lower-case; empty when the file name has none (a dot
 /// in a folder name doesn't count).
 fn ext_of(name: &str) -> String {
     let file = name.rsplit(['/', '\\']).next().unwrap_or(name);
-    file.rsplit_once('.').map(|(_, ext)| ext.to_ascii_lowercase()).unwrap_or_default()
+    file.rsplit_once('.')
+        .map(|(_, ext)| ext.to_ascii_lowercase())
+        .unwrap_or_default()
 }
 
 /// Is `ext` one of Word's package formats (.docx/.docm/.dotx/.dotm), which save without loss?
@@ -103,10 +108,19 @@ pub fn open_bytes(name: &str, bytes: &[u8]) -> Result<Document, String> {
 /// password ([MS-OFFCRYPTO] agile encryption) is decrypted with `password` first. Also says
 /// whether the file was encrypted. Without the password needed the error satisfies
 /// [`needs_password`]; with a wrong one, [`wrong_password`].
-pub fn open_bytes_with(name: &str, bytes: &[u8], password: Option<&str>) -> Result<(Document, bool), String> {
+pub fn open_bytes_with(
+    name: &str,
+    bytes: &[u8],
+    password: Option<&str>,
+) -> Result<(Document, bool), String> {
     let ext = ext_of(name);
-    if matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "doc" | "dot") && wordcraft_docx::is_encrypted(bytes) {
-        let mut doc = wordcraft_docx::read_with_password(bytes, password).map_err(|e| e.to_string())?;
+    if matches!(
+        ext.as_str(),
+        "docx" | "docm" | "dotx" | "dotm" | "doc" | "dot"
+    ) && wordcraft_docx::is_encrypted(bytes)
+    {
+        let mut doc =
+            wordcraft_docx::read_with_password(bytes, password).map_err(|e| e.to_string())?;
         doc.ensure_nonempty();
         return Ok((doc, true));
     }
@@ -128,7 +142,11 @@ pub fn open_bytes_with(name: &str, bytes: &[u8], password: Option<&str>) -> Resu
 
 /// The narrowest text width of the document's sections, points: what a picture must fit.
 pub(crate) fn text_width(doc: &Document) -> f32 {
-    doc.sections().iter().map(|(_, sp)| sp.text_width()).fold(f32::INFINITY, f32::min).clamp(36.0, 4000.0)
+    doc.sections()
+        .iter()
+        .map(|(_, sp)| sp.text_width())
+        .fold(f32::INFINITY, f32::min)
+        .clamp(36.0, 4000.0)
 }
 
 /// Shrink inline pictures wider than `max_w` to it, keeping their proportions. Layout keeps a
@@ -192,23 +210,43 @@ fn signature_contradicts(ext: &str, bytes: &[u8]) -> bool {
 /// opened by what it holds, as Word does: a Word document or RTF file by its signature, any
 /// other text through the plain-text import with encoding detection (#569). Anything else is
 /// refused with a clear error rather than shown as garbage.
-fn open_by_content(name: &str, ext: &str, bytes: &[u8], password: Option<&str>) -> Result<(Document, bool), String> {
+fn open_by_content(
+    name: &str,
+    ext: &str,
+    bytes: &[u8],
+    password: Option<&str>,
+) -> Result<(Document, bool), String> {
     const ZIP: &[u8] = b"PK\x03\x04";
     const OLE: &[u8] = &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
     let (mut doc, encrypted) = if bytes.starts_with(OLE) && wordcraft_docx::is_encrypted(bytes) {
-        (wordcraft_docx::read_with_password(bytes, password).map_err(|e| e.to_string())?, true)
+        (
+            wordcraft_docx::read_with_password(bytes, password).map_err(|e| e.to_string())?,
+            true,
+        )
     } else if bytes.starts_with(ZIP) {
-        (wordcraft_docx::read(bytes).map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?, false)
+        (
+            wordcraft_docx::read(bytes)
+                .map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?,
+            false,
+        )
     } else if bytes.starts_with(OLE) {
-        (wordcraft_docbin::read(bytes).map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?, false)
+        (
+            wordcraft_docbin::read(bytes)
+                .map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?,
+            false,
+        )
     } else if bytes.starts_with(b"{\\rtf") {
         (wordcraft_formats::rtf::import(bytes)?, false)
     } else if wordcraft_formats::txt::is_text(bytes) {
         (wordcraft_formats::txt::import(bytes), false)
     } else if ext.is_empty() {
-        return Err(format!("{name}: not a document or text file WordCraft can open"));
+        return Err(format!(
+            "{name}: not a document or text file WordCraft can open"
+        ));
     } else {
-        return Err(format!("{name}: unsupported format `.{ext}` (not a document or text file)"));
+        return Err(format!(
+            "{name}: unsupported format `.{ext}` (not a document or text file)"
+        ));
     };
     doc.ensure_nonempty();
     Ok((doc, encrypted))
@@ -220,13 +258,21 @@ pub fn save_bytes(name: &str, doc: &Document) -> Result<Vec<u8>, String> {
 }
 
 /// [`save_bytes`] with export options (Print Markup).
-pub fn save_bytes_opts(name: &str, doc: &Document, opts: &ExportOptions) -> Result<Vec<u8>, String> {
+pub fn save_bytes_opts(
+    name: &str,
+    doc: &Document,
+    opts: &ExportOptions,
+) -> Result<Vec<u8>, String> {
     let ext = ext_of(name);
     match ext.as_str() {
         // List paragraphs get their label and a tab, as in Word's plain-text save.
         "txt" | "text" => {
             let bytes = wordcraft_formats::txt::export(doc);
-            Ok(if opts.markup && opts.comments { wordcraft_formats::comments::append("txt", doc, bytes) } else { bytes })
+            Ok(if opts.markup && opts.comments {
+                wordcraft_formats::comments::append("txt", doc, bytes)
+            } else {
+                bytes
+            })
         }
         "json" => serde_json::to_vec_pretty(doc).map_err(|e| e.to_string()),
         other => match crate::io_ext::save(other, doc, opts) {
@@ -238,10 +284,17 @@ pub fn save_bytes_opts(name: &str, doc: &Document, opts: &ExportOptions) -> Resu
 
 /// [`save_bytes`], encrypted with `password` when there is one and the format is a Word package
 /// (other formats are copies and are written as they are).
-pub fn save_bytes_with(name: &str, doc: &Document, password: Option<&str>, opts: &ExportOptions) -> Result<Vec<u8>, String> {
+pub fn save_bytes_with(
+    name: &str,
+    doc: &Document,
+    password: Option<&str>,
+    opts: &ExportOptions,
+) -> Result<Vec<u8>, String> {
     let bytes = save_bytes_opts(name, doc, opts)?;
     match password {
-        Some(pw) if can_encrypt(name) => wordcraft_docx::encrypt(&bytes, pw).map_err(|e| e.to_string()),
+        Some(pw) if can_encrypt(name) => {
+            wordcraft_docx::encrypt(&bytes, pw).map_err(|e| e.to_string())
+        }
         _ => Ok(bytes),
     }
 }
@@ -252,7 +305,10 @@ pub fn open_path(path: &std::path::Path) -> Result<Document, String> {
 
 /// [`open_path`] for a file that may be password-protected (see [`open_bytes_with`]).
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open_path_with(path: &std::path::Path, password: Option<&str>) -> Result<(Document, bool), String> {
+pub fn open_path_with(
+    path: &std::path::Path,
+    password: Option<&str>,
+) -> Result<(Document, bool), String> {
     crate::file_access::check_read(&path.to_string_lossy())?;
     let meta = std::fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if meta.len() > 2 << 30 {
@@ -263,7 +319,10 @@ pub fn open_path_with(path: &std::path::Path, password: Option<&str>) -> Result<
     if matches!(ext_of(&name).as_str(), "html" | "htm" | "xhtml") {
         // Pictures referenced by a relative path load from beside the HTML file.
         let images = LocalImages::new(path.parent().unwrap_or(std::path::Path::new("")));
-        let mut doc = wordcraft_formats::html::import_with(&wordcraft_formats::html::decode(&bytes), &|src| images.load(src));
+        let mut doc = wordcraft_formats::html::import_with(
+            &wordcraft_formats::html::decode(&bytes),
+            &|src| images.load(src),
+        );
         fit_pictures(&mut doc);
         doc.ensure_nonempty();
         return Ok((doc, false));
@@ -302,15 +361,29 @@ impl LocalImages {
     }
 
     pub(crate) fn with_limits(dir: &std::path::Path, max_file: u64, budget: u64) -> LocalImages {
-        let dir = if dir.as_os_str().is_empty() { std::path::Path::new(".") } else { dir };
-        LocalImages { dir: std::fs::canonicalize(dir).ok(), max_file, left: std::cell::Cell::new(budget), cache: Default::default() }
+        let dir = if dir.as_os_str().is_empty() {
+            std::path::Path::new(".")
+        } else {
+            dir
+        };
+        LocalImages {
+            dir: std::fs::canonicalize(dir).ok(),
+            max_file,
+            left: std::cell::Cell::new(budget),
+            cache: Default::default(),
+        }
     }
 
     /// Bytes of the file `src` names, or `None` when it isn't a regular file inside the folder,
     /// is too large, or the budget is spent.
     pub(crate) fn load(&self, src: &str) -> Option<std::sync::Arc<Vec<u8>>> {
         let path = self.resolve(src)?;
-        let cached = self.cache.borrow().iter().find(|(p, _)| *p == path).map(|(_, d)| d.clone());
+        let cached = self
+            .cache
+            .borrow()
+            .iter()
+            .find(|(p, _)| *p == path)
+            .map(|(_, d)| d.clone());
         if let Some(data) = cached {
             self.charge(data.len())?;
             return Some(data);
@@ -340,12 +413,22 @@ impl LocalImages {
     /// The canonical path `src` names, if it's inside the folder.
     fn resolve(&self, src: &str) -> Option<std::path::PathBuf> {
         let src = src.split(['#', '?']).next().unwrap_or("");
-        if src.is_empty() || src.starts_with("//") || src.split_once(':').is_some_and(|(scheme, _)| !scheme.contains('/')) {
+        if src.is_empty()
+            || src.starts_with("//")
+            || src
+                .split_once(':')
+                .is_some_and(|(scheme, _)| !scheme.contains('/'))
+        {
             return None;
         }
         let rel = String::from_utf8(wordcraft_formats::model::percent_decode(src)).ok()?;
         let rel = std::path::Path::new(&rel);
-        if rel.components().any(|c| matches!(c, std::path::Component::Prefix(_) | std::path::Component::RootDir)) {
+        if rel.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::Prefix(_) | std::path::Component::RootDir
+            )
+        }) {
             return None;
         }
         let dir = self.dir.as_ref()?;
@@ -371,7 +454,9 @@ fn read_regular_file(path: &std::path::Path, limit: u64) -> Option<Vec<u8>> {
         return None;
     }
     let mut out = Vec::with_capacity(usize::try_from(meta.len().min(limit)).unwrap_or(0));
-    file.take(limit.saturating_add(1)).read_to_end(&mut out).ok()?;
+    file.take(limit.saturating_add(1))
+        .read_to_end(&mut out)
+        .ok()?;
     Some(out)
 }
 
@@ -385,7 +470,9 @@ pub fn read_file(path: &str) -> Result<Vec<u8>, String> {
 
 #[cfg(target_arch = "wasm32")]
 pub fn read_file(path: &str) -> Result<Vec<u8>, String> {
-    Err(format!("{path}: files are opened through the browser on the web"))
+    Err(format!(
+        "{path}: files are opened through the browser on the web"
+    ))
 }
 
 /// [`read_file`] for a file that must be a regular file of at most `max` bytes, checked before
@@ -398,7 +485,10 @@ pub fn read_file_capped(path: &str, max: u64, what: &str) -> Result<Vec<u8>, Str
         return Err(format!("{path}: not a file"));
     }
     if meta.len() > max {
-        return Err(format!("{path}: the {what} is larger than {} MB", max >> 20));
+        return Err(format!(
+            "{path}: the {what} is larger than {} MB",
+            max >> 20
+        ));
     }
     std::fs::read(path).map_err(|e| format!("{path}: {e}"))
 }
@@ -412,12 +502,20 @@ pub fn write_file(path: &str, bytes: &[u8]) -> Result<(), String> {
 
 #[cfg(target_arch = "wasm32")]
 pub fn write_file(path: &str, _bytes: &[u8]) -> Result<(), String> {
-    Err(format!("{path}: files are saved through the browser on the web"))
+    Err(format!(
+        "{path}: files are saved through the browser on the web"
+    ))
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn open_path_with(path: &std::path::Path, _password: Option<&str>) -> Result<(Document, bool), String> {
-    Err(format!("{}: files are opened through the browser on the web", path.display()))
+pub fn open_path_with(
+    path: &std::path::Path,
+    _password: Option<&str>,
+) -> Result<(Document, bool), String> {
+    Err(format!(
+        "{}: files are opened through the browser on the web",
+        path.display()
+    ))
 }
 
 pub fn save_path(path: &std::path::Path, doc: &Document) -> Result<(), String> {
@@ -426,15 +524,28 @@ pub fn save_path(path: &std::path::Path, doc: &Document) -> Result<(), String> {
 
 /// [`save_path`], encrypted with `password` as [`save_bytes_with`] does.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn save_path_with(path: &std::path::Path, doc: &Document, password: Option<&str>, opts: &ExportOptions) -> Result<(), String> {
+pub fn save_path_with(
+    path: &std::path::Path,
+    doc: &Document,
+    password: Option<&str>,
+    opts: &ExportOptions,
+) -> Result<(), String> {
     crate::file_access::check_write(&path.to_string_lossy())?;
     let bytes = save_bytes_with(&path.to_string_lossy(), doc, password, opts)?;
     safe_save::write(path, &bytes).map_err(|e| format!("{}: {e}", path.display()))
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn save_path_with(path: &std::path::Path, _doc: &Document, _password: Option<&str>, _opts: &ExportOptions) -> Result<(), String> {
-    Err(format!("{}: files are saved through the browser on the web", path.display()))
+pub fn save_path_with(
+    path: &std::path::Path,
+    _doc: &Document,
+    _password: Option<&str>,
+    _opts: &ExportOptions,
+) -> Result<(), String> {
+    Err(format!(
+        "{}: files are saved through the browser on the web",
+        path.display()
+    ))
 }
 
 /// Decode text bytes: UTF-8 (with or without BOM), UTF-16 LE/BE (BOM or sniffed), else

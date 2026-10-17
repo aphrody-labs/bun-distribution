@@ -8,7 +8,10 @@ use clap::Parser;
 use crate::Generator;
 
 #[derive(Parser)]
-#[command(version, about = "Generate bindgen bindings with top-level dynamic loading")]
+#[command(
+    version,
+    about = "Generate bindgen bindings with top-level dynamic loading"
+)]
 struct Args {
     #[arg(long)]
     header: PathBuf,
@@ -55,14 +58,14 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return i32::from(error.use_stderr()) * 2;
-        },
+        }
     };
     match run(args) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("aphrody-bindgen: {error:#}");
             1
-        },
+        }
     }
 }
 

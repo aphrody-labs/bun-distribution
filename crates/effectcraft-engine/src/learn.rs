@@ -66,7 +66,11 @@ fn step(s: S) -> Step {
         target: s.target.map(str::to_string),
         accepts: s.accepts.iter().map(|a| a.to_string()).collect(),
         when: s.when,
-        show: s.show.into_iter().map(|(c, p)| (c.to_string(), p)).collect(),
+        show: s
+            .show
+            .into_iter()
+            .map(|(c, p)| (c.to_string(), p))
+            .collect(),
     }
 }
 
@@ -323,12 +327,16 @@ pub fn target_matches(pattern: &str, id: &str) -> bool {
     let mut rest = id;
     for (i, part) in parts.iter().enumerate() {
         if i == 0 {
-            let Some(r) = rest.strip_prefix(part) else { return false };
+            let Some(r) = rest.strip_prefix(part) else {
+                return false;
+            };
             rest = r;
         } else if i == parts.len() - 1 {
             return rest.ends_with(part);
         } else {
-            let Some(at) = rest.find(part) else { return false };
+            let Some(at) = rest.find(part) else {
+                return false;
+            };
             rest = &rest[at + part.len()..];
         }
     }
@@ -355,7 +363,9 @@ impl Session {
         if id.starts_with("learn.") {
             return;
         }
-        let Some((t, i)) = self.learn_current() else { return };
+        let Some((t, i)) = self.learn_current() else {
+            return;
+        };
         let Some(st) = t.steps.get(i) else { return };
         if st.accepts.iter().any(|a| a == id) && params_match(&st.when, params) {
             self.learn_goto(&t, i + 1);
@@ -404,32 +414,57 @@ fn list(_: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn start(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = str_p(p, "id").or_else(|| str_p(p, "tutorial")).ok_or_else(|| bad("learn.start", "missing `id`"))?;
-    let t = find(id).ok_or_else(|| bad("learn.start", format!("unknown tutorial `{id}` (see learn.list)")))?;
-    s.learn = Some(Progress { tutorial: t.id.clone(), step: 0, done: false });
+    let id = str_p(p, "id")
+        .or_else(|| str_p(p, "tutorial"))
+        .ok_or_else(|| bad("learn.start", "missing `id`"))?;
+    let t = find(id).ok_or_else(|| {
+        bad(
+            "learn.start",
+            format!("unknown tutorial `{id}` (see learn.list)"),
+        )
+    })?;
+    s.learn = Some(Progress {
+        tutorial: t.id.clone(),
+        step: 0,
+        done: false,
+    });
     Ok(state_json(s))
 }
 
 fn step_cmd(s: &mut Session, p: &Value) -> Result<Value> {
-    let (t, i) = s.learn_current().ok_or_else(|| bad("learn.step", "no tutorial is running (learn.start)"))?;
+    let (t, i) = s
+        .learn_current()
+        .ok_or_else(|| bad("learn.step", "no tutorial is running (learn.start)"))?;
     match str_p(p, "action").unwrap_or("next") {
         "next" => s.learn_goto(&t, i + 1),
         "back" | "prev" | "previous" => s.learn_goto(&t, i.saturating_sub(1)),
         "goto" => {
-            let n = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad("learn.step", "goto needs `index`"))?;
+            let n = p
+                .get("index")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| bad("learn.step", "goto needs `index`"))?;
             s.learn_goto(&t, n as usize);
         }
         "showMe" | "show" => {
-            let st = t.steps.get(i).ok_or_else(|| bad("learn.step", "the tutorial is finished"))?;
+            let st = t
+                .steps
+                .get(i)
+                .ok_or_else(|| bad("learn.step", "the tutorial is finished"))?;
             for (c, params) in &st.show {
-                s.execute(c, params.clone()).map_err(|e| bad("learn.step", format!("Show me: {c}: {e}")))?;
+                s.execute(c, params.clone())
+                    .map_err(|e| bad("learn.step", format!("Show me: {c}: {e}")))?;
             }
             // Steps whose commands don't complete them (or reading steps) still move on.
             if s.learn.as_ref().is_some_and(|p| p.step == i) {
                 s.learn_goto(&t, i + 1);
             }
         }
-        a => return Err(bad("learn.step", format!("action must be next|back|showMe|goto, not `{a}`"))),
+        a => {
+            return Err(bad(
+                "learn.step",
+                format!("action must be next|back|showMe|goto, not `{a}`"),
+            ));
+        }
     }
     Ok(state_json(s))
 }
@@ -441,12 +476,36 @@ fn stop(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        query!("learn.list", "Learn Tutorials", "{} → [{id, title, summary, minutes, steps}]", list),
-        query!("learn.state", "Tutorial State", "{} → {tutorial, step, steps, done, current: {title, text, target, accepts}} | null", |s, _| Ok(state_json(
-            s
-        ))),
-        cmd!("learn.start", "Start Tutorial", [], None, "{id}", always, start),
-        cmd!("learn.step", "Tutorial Step", [], None, "{action?: next|back|showMe|goto, index?}", always, step_cmd),
+        query!(
+            "learn.list",
+            "Learn Tutorials",
+            "{} → [{id, title, summary, minutes, steps}]",
+            list
+        ),
+        query!(
+            "learn.state",
+            "Tutorial State",
+            "{} → {tutorial, step, steps, done, current: {title, text, target, accepts}} | null",
+            |s, _| Ok(state_json(s))
+        ),
+        cmd!(
+            "learn.start",
+            "Start Tutorial",
+            [],
+            None,
+            "{id}",
+            always,
+            start
+        ),
+        cmd!(
+            "learn.step",
+            "Tutorial Step",
+            [],
+            None,
+            "{action?: next|back|showMe|goto, index?}",
+            always,
+            step_cmd
+        ),
         cmd!("learn.stop", "Close Tutorial", [], None, "{}", always, stop),
     ]
 }
@@ -457,12 +516,24 @@ mod tests {
 
     #[test]
     fn targets_match_with_wildcards() {
-        assert!(target_matches("timeline.layer.*.row", "timeline.layer.12.row"));
-        assert!(!target_matches("timeline.layer.*.row", "timeline.layer.12.bar"));
+        assert!(target_matches(
+            "timeline.layer.*.row",
+            "timeline.layer.12.row"
+        ));
+        assert!(!target_matches(
+            "timeline.layer.*.row",
+            "timeline.layer.12.bar"
+        ));
         assert!(target_matches("menu.File", "menu.File"));
         assert!(!target_matches("menu.File", "menu.File.2"));
-        assert_eq!(resolve_target("timeline.layer.{layer}.twirl", Some(7)), "timeline.layer.7.twirl");
-        assert_eq!(resolve_target("timeline.layer.{layer}.twirl", None), "timeline.layer.*.twirl");
+        assert_eq!(
+            resolve_target("timeline.layer.{layer}.twirl", Some(7)),
+            "timeline.layer.7.twirl"
+        );
+        assert_eq!(
+            resolve_target("timeline.layer.{layer}.twirl", None),
+            "timeline.layer.*.twirl"
+        );
     }
 
     #[test]
@@ -471,9 +542,18 @@ mod tests {
             assert!(!t.steps.is_empty(), "{}", t.id);
             for st in &t.steps {
                 for c in st.accepts.iter().chain(st.show.iter().map(|(c, _)| c)) {
-                    assert!(crate::commands::find(c).is_some(), "{}: unknown command {c}", t.id);
+                    assert!(
+                        crate::commands::find(c).is_some(),
+                        "{}: unknown command {c}",
+                        t.id
+                    );
                 }
-                assert!(!st.show.is_empty(), "{}: `{}` has no Show me", t.id, st.title);
+                assert!(
+                    !st.show.is_empty(),
+                    "{}: `{}` has no Show me",
+                    t.id,
+                    st.title
+                );
             }
         }
     }
@@ -485,10 +565,15 @@ mod tests {
             s.execute("learn.start", json!({"id": id})).unwrap();
             let n = find(id).unwrap().steps.len();
             for i in 0..n {
-                let st = s.execute("learn.step", json!({"action": "showMe"})).unwrap_or_else(|e| panic!("{id} step {i}: {e}"));
+                let st = s
+                    .execute("learn.step", json!({"action": "showMe"}))
+                    .unwrap_or_else(|e| panic!("{id} step {i}: {e}"));
                 assert_eq!(st["step"], json!(i + 1), "{id}: {st}");
             }
-            assert_eq!(s.execute("learn.state", json!({})).unwrap()["done"], json!(true));
+            assert_eq!(
+                s.execute("learn.state", json!({})).unwrap()["done"],
+                json!(true)
+            );
         }
     }
 
@@ -497,7 +582,8 @@ mod tests {
         let mut s = Session::default();
         let list = s.execute("learn.list", json!({})).unwrap();
         assert_eq!(list.as_array().unwrap().len(), 3);
-        s.execute("learn.start", json!({"id": "animate-title"})).unwrap();
+        s.execute("learn.start", json!({"id": "animate-title"}))
+            .unwrap();
         // Unrelated commands don't advance.
         s.execute("file.openDemoProject", json!({})).unwrap();
         assert_eq!(s.learn.as_ref().unwrap().step, 0);
@@ -507,7 +593,10 @@ mod tests {
         assert_eq!(s.learn.as_ref().unwrap().step, 2);
         let cur = s.execute("learn.state", json!({})).unwrap();
         let lid = s.state.selected_layers[0].0;
-        assert_eq!(cur["current"]["target"], json!(format!("timeline.layer.{lid}.twirl")));
+        assert_eq!(
+            cur["current"]["target"],
+            json!(format!("timeline.layer.{lid}.twirl"))
+        );
         // Back and Next.
         s.execute("learn.step", json!({"action": "back"})).unwrap();
         assert_eq!(s.learn.as_ref().unwrap().step, 1);
@@ -515,8 +604,10 @@ mod tests {
         assert_eq!(s.learn.as_ref().unwrap().step, 2);
         // A matching command with the wrong parameters doesn't complete a `when` step.
         s.execute("learn.start", json!({"id": "3d-scene"})).unwrap();
-        s.execute("learn.step", json!({"action": "goto", "index": 2})).unwrap();
-        s.execute("layer.setSwitch", json!({"switch": "shy", "value": true})).ok();
+        s.execute("learn.step", json!({"action": "goto", "index": 2}))
+            .unwrap();
+        s.execute("layer.setSwitch", json!({"switch": "shy", "value": true}))
+            .ok();
         assert_eq!(s.learn.as_ref().unwrap().step, 2);
         s.execute("learn.stop", json!({})).unwrap();
         assert!(s.learn.is_none());

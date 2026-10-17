@@ -23,7 +23,9 @@ pub fn system_lang() -> Lang {
 }
 
 fn resolve(tags: &[String]) -> Lang {
-    tags.iter().find_map(|tag| lang_from_tag(tag)).unwrap_or(Lang::EN)
+    tags.iter()
+        .find_map(|tag| lang_from_tag(tag))
+        .unwrap_or(Lang::EN)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -33,7 +35,10 @@ fn bounded_tags(tags: impl IntoIterator<Item = String>) -> Vec<String> {
         .filter(|tag| {
             !tag.trim().is_empty()
                 && tag.len() <= MAX_SYSTEM_TAG_BYTES
-                && tag.trim().bytes().all(|c| c.is_ascii_alphanumeric() || matches!(c, b'-' | b'_' | b'.' | b'@'))
+                && tag
+                    .trim()
+                    .bytes()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'-' | b'_' | b'.' | b'@'))
         })
         .map(|tag| tag.trim().to_owned())
         .collect()
@@ -72,7 +77,8 @@ pub(super) fn with_system_tags<R>(tags: &[&str], run: impl FnOnce() -> R) -> R {
             TEST_SYSTEM_TAGS.set(std::mem::take(&mut self.0));
         }
     }
-    let _restore = Restore(TEST_SYSTEM_TAGS.replace(tags.iter().map(|tag| (*tag).to_owned()).collect()));
+    let _restore =
+        Restore(TEST_SYSTEM_TAGS.replace(tags.iter().map(|tag| (*tag).to_owned()).collect()));
     run()
 }
 
@@ -111,8 +117,13 @@ mod tests {
         with_system_tags(&["ko-KR"], || {
             with_system_tags(&["fr-FR"], || assert_eq!(system_lang().code(), "fr"));
             assert_eq!(system_lang().code(), "ko");
-            std::thread::spawn(|| assert_eq!(system_lang(), Lang::EN)).join().expect("locale test thread");
-            assert!(std::panic::catch_unwind(|| with_system_tags(&["ja-JP"], || panic!("test unwind"))).is_err());
+            std::thread::spawn(|| assert_eq!(system_lang(), Lang::EN))
+                .join()
+                .expect("locale test thread");
+            assert!(
+                std::panic::catch_unwind(|| with_system_tags(&["ja-JP"], || panic!("test unwind")))
+                    .is_err()
+            );
             assert_eq!(system_lang().code(), "ko");
         });
         assert_eq!(system_lang(), Lang::EN);
@@ -121,10 +132,26 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn native_locale_results_are_bounded_and_trimmed() {
-        assert_eq!(bounded_tags(["  fr-CA  ".into(), "".into(), " ".into(), "fr-\0".into(), "x".repeat(129)]), ["fr-CA"]);
-        assert_eq!(bounded_tags(std::iter::repeat_n("en-US".into(), 100)).len(), MAX_SYSTEM_TAGS);
+        assert_eq!(
+            bounded_tags([
+                "  fr-CA  ".into(),
+                "".into(),
+                " ".into(),
+                "fr-\0".into(),
+                "x".repeat(129)
+            ]),
+            ["fr-CA"]
+        );
+        assert_eq!(
+            bounded_tags(std::iter::repeat_n("en-US".into(), 100)).len(),
+            MAX_SYSTEM_TAGS
+        );
         let detected = detect_system_tags();
         assert!(detected.len() <= MAX_SYSTEM_TAGS);
-        assert!(detected.iter().all(|tag| !tag.is_empty() && tag.len() <= MAX_SYSTEM_TAG_BYTES));
+        assert!(
+            detected
+                .iter()
+                .all(|tag| !tag.is_empty() && tag.len() <= MAX_SYSTEM_TAG_BYTES)
+        );
     }
 }

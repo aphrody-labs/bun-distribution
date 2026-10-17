@@ -15,12 +15,14 @@ trailer << /Root 1 0 R >>
 %%EOF";
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, FIXTURE.to_vec()).unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, FIXTURE.to_vec()).unwrap();
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -33,10 +35,16 @@ fn marks(h: &Harness<'static, PdfCraftApp>) -> Vec<MarkKind> {
 #[test]
 fn header_and_footer_dialog_inserts_tokens_and_applies_to_a_subset() {
     let mut h = harness();
-    assert!(!h.state_mut().execute("edit.header_footer.remove"), "nothing to remove yet");
+    assert!(
+        !h.state_mut().execute("edit.header_footer.remove"),
+        "nothing to remove yet"
+    );
     assert!(h.state_mut().execute("edit.header_footer"));
     h.run_steps(3);
-    assert_eq!(h.state().dialog, Some(Dialog::Marks(MarkKind::HeaderFooter)));
+    assert_eq!(
+        h.state().dialog,
+        Some(Dialog::Marks(MarkKind::HeaderFooter))
+    );
     // The center footer box takes the page-number token.
     h.state_mut().marks_draft.focused_box = 4;
     h.get_by_label("Insert Page Number").click();
@@ -63,7 +71,11 @@ fn watermark_and_background_dialogs() {
     let mut h = harness();
     h.state_mut().execute("edit.watermark");
     h.run_steps(2);
-    assert!(h.query_by(|n| n.label().as_deref() == Some("OK") && n.is_disabled()).is_some(), "OK waits for text");
+    assert!(
+        h.query_by(|n| n.label().as_deref() == Some("OK") && n.is_disabled())
+            .is_some(),
+        "OK waits for text"
+    );
     h.get_by_label("Offset from centre");
     h.state_mut().marks_draft.wm.text = "DRAFT".into();
     h.run_steps(2);
@@ -84,9 +96,16 @@ fn backgrounds_and_watermarks_from_a_file() {
     h.get_by_label("File").click();
     h.run_steps(2);
     h.get_by_label("No file chosen");
-    assert!(h.query_by(|n| n.label().as_deref() == Some("OK") && n.is_disabled()).is_some(), "OK waits for a file");
+    assert!(
+        h.query_by(|n| n.label().as_deref() == Some("OK") && n.is_disabled())
+            .is_some(),
+        "OK waits for a file"
+    );
     // (Browse… opens the system picker; the test supplies the file directly.)
-    h.state_mut().marks_draft.file = Some(("letterhead.pdf".into(), std::sync::Arc::new(FIXTURE.to_vec())));
+    h.state_mut().marks_draft.file = Some((
+        "letterhead.pdf".into(),
+        std::sync::Arc::new(FIXTURE.to_vec()),
+    ));
     h.run_steps(2);
     h.get_by_label("Page number");
     h.get_by_label("Scale relative to target page");
@@ -94,5 +113,8 @@ fn backgrounds_and_watermarks_from_a_file() {
     h.run_steps(3);
     assert_eq!(marks(&h), vec![MarkKind::Background]);
     let s = h.state();
-    assert_eq!(s.session.get(s.views[0].id).unwrap().can_undo(), Some("Add background"));
+    assert_eq!(
+        s.session.get(s.views[0].id).unwrap().can_undo(),
+        Some("Add background")
+    );
 }

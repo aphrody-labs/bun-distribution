@@ -174,7 +174,7 @@ fn title_of(name: &str) -> String {
                 chars.next().map_or_else(String::new, |first| {
                     first.to_uppercase().collect::<String>() + chars.as_str()
                 })
-            },
+            }
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -312,7 +312,10 @@ pub(crate) fn list_resources() -> ListResourcesResult {
 /// Reads a resource; `tools` is the live `tools/list` used for the catalog.
 pub(crate) fn read_resource(uri: &str, tools: &[Tool]) -> Option<ReadResourceResult> {
     let (mime, text) = match uri {
-        GUIDE_URI => ("text/markdown", format!("# Aphrody tools\n\n{USAGE_GUIDE}\n")),
+        GUIDE_URI => (
+            "text/markdown",
+            format!("# Aphrody tools\n\n{USAGE_GUIDE}\n"),
+        ),
         CATALOG_URI => {
             let catalog: Vec<Value> = tools
                 .iter()
@@ -325,8 +328,11 @@ pub(crate) fn read_resource(uri: &str, tools: &[Tool]) -> Option<ReadResourceRes
                     })
                 })
                 .collect();
-            ("application/json", serde_json::to_string_pretty(&catalog).ok()?)
-        },
+            (
+                "application/json",
+                serde_json::to_string_pretty(&catalog).ok()?,
+            )
+        }
         _ => return None,
     };
     serde_json::from_value(json!({ "contents": [{ "uri": uri, "mimeType": mime, "text": text }] }))
@@ -478,8 +484,14 @@ mod tests {
 
     #[test]
     fn version_negotiation_echoes_known_versions() {
-        assert_eq!(negotiate(&ProtocolVersion::V_2025_06_18), ProtocolVersion::V_2025_06_18);
-        assert_eq!(negotiate(&ProtocolVersion::V_2024_11_05), ProtocolVersion::V_2024_11_05);
+        assert_eq!(
+            negotiate(&ProtocolVersion::V_2025_06_18),
+            ProtocolVersion::V_2025_06_18
+        );
+        assert_eq!(
+            negotiate(&ProtocolVersion::V_2024_11_05),
+            ProtocolVersion::V_2024_11_05
+        );
     }
 
     #[test]
@@ -497,14 +509,19 @@ mod tests {
     #[test]
     fn legacy_tools_list_keeps_its_wire_shape() {
         let original = ListToolsResult::with_all_items(Vec::new());
-        for version in
-            [None, Some(ProtocolVersion::V_2024_11_05), Some(ProtocolVersion::V_2025_11_25)]
-        {
+        for version in [
+            None,
+            Some(ProtocolVersion::V_2024_11_05),
+            Some(ProtocolVersion::V_2025_11_25),
+        ] {
             let result = cacheable_result(original.clone(), version);
             assert_eq!(result, original);
             let mut response = rmcp::model::ServerResult::ListToolsResult(result);
             response.strip_result_type_for_legacy_peer();
-            assert_eq!(serde_json::to_value(response).unwrap(), json!({ "tools": [] }));
+            assert_eq!(
+                serde_json::to_value(response).unwrap(),
+                json!({ "tools": [] })
+            );
         }
     }
 
@@ -536,8 +553,11 @@ mod tests {
                 version.clone(),
             ))
             .unwrap(),
-            serde_json::to_value(cacheable_result(read_resource(GUIDE_URI, &[]).unwrap(), version))
-                .unwrap(),
+            serde_json::to_value(cacheable_result(
+                read_resource(GUIDE_URI, &[]).unwrap(),
+                version,
+            ))
+            .unwrap(),
         ];
         for result in results {
             assert_eq!(result["resultType"], "complete");
@@ -566,6 +586,10 @@ mod tests {
         let mut args = serde_json::Map::new();
         args.insert("topic".into(), json!("tokio"));
         let prompt = get_prompt("research", Some(&args)).expect("prompt");
-        assert!(serde_json::to_string(&prompt).unwrap().contains("Research: tokio"));
+        assert!(
+            serde_json::to_string(&prompt)
+                .unwrap()
+                .contains("Research: tokio")
+        );
     }
 }

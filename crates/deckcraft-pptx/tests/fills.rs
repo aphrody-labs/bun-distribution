@@ -43,7 +43,10 @@ fn deck() -> Vec<u8> {
         id,
         name: "Textured".into(),
         xfrm: Some(Xfrm::new(10.0, 10.0, 200.0, 100.0)),
-        fill: Some(Fill::Picture(PictureFill { media, ..Default::default() })),
+        fill: Some(Fill::Picture(PictureFill {
+            media,
+            ..Default::default()
+        })),
         ..Default::default()
     });
     deckcraft_pptx::export(&p).expect("export")
@@ -51,7 +54,11 @@ fn deck() -> Vec<u8> {
 
 fn textured_mode(bytes: &[u8]) -> PictureMode {
     let q = deckcraft_pptx::import(bytes).expect("import");
-    let s = q.slides[0].shapes.iter().find(|s| s.name == "Textured").expect("shape");
+    let s = q.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Textured")
+        .expect("shape");
     match &s.fill {
         Some(Fill::Picture(pf)) => pf.mode.clone(),
         other => panic!("{other:?}"),
@@ -67,16 +74,27 @@ fn a_shape_picture_fill_without_stretch_or_tile_tiles() {
         assert!(!s.contains("<a:stretch"), "the test deck lost its stretch");
         s
     });
-    assert!(matches!(textured_mode(&bare), PictureMode::Tile { sx, sy, .. } if sx == 1.0 && sy == 1.0));
+    assert!(
+        matches!(textured_mode(&bare), PictureMode::Tile { sx, sy, .. } if sx == 1.0 && sy == 1.0)
+    );
     // An explicit stretch is still a stretch.
-    assert!(matches!(textured_mode(&deck()), PictureMode::Stretch { .. }));
+    assert!(matches!(
+        textured_mode(&deck()),
+        PictureMode::Stretch { .. }
+    ));
 }
 
 /// `s` without the first `open`…`close` span inside a `blipFill`.
 fn regex_free_strip(s: &str, open: &str, close: &str) -> String {
-    let Some(b) = s.find("<a:blipFill") else { return s.to_string() };
-    let Some(i) = s[b..].find(open).map(|i| i + b) else { return s.to_string() };
-    let Some(j) = s[i..].find(close).map(|j| j + i + close.len()) else { return s.to_string() };
+    let Some(b) = s.find("<a:blipFill") else {
+        return s.to_string();
+    };
+    let Some(i) = s[b..].find(open).map(|i| i + b) else {
+        return s.to_string();
+    };
+    let Some(j) = s[i..].find(close).map(|j| j + i + close.len()) else {
+        return s.to_string();
+    };
     format!("{}{}", &s[..i], &s[j..])
 }
 
@@ -88,18 +106,31 @@ fn a_gradient_without_stops_is_saved_without_stops() {
     let mut p = defaults::new_presentation(None);
     let id = ShapeId(p.alloc_id());
     let first = p.slides[0].id;
-    let own = Gradient { stops: vec![], shape: GradientShape::Linear { angle: 45.0, scaled: true }, rotate_with_shape: true };
+    let own = Gradient {
+        stops: vec![],
+        shape: GradientShape::Linear {
+            angle: 45.0,
+            scaled: true,
+        },
+        rotate_with_shape: true,
+    };
     p.slide_mut(first).expect("slide").shapes.push(Shape {
         id,
         name: "Styled".into(),
         xfrm: Some(Xfrm::new(10.0, 10.0, 200.0, 100.0)),
         fill: Some(Fill::Gradient(own.clone())),
-        style: Some(deckcraft_model::ShapeStyle::accent(deckcraft_color::SchemeSlot::Accent1)),
+        style: Some(deckcraft_model::ShapeStyle::accent(
+            deckcraft_color::SchemeSlot::Accent1,
+        )),
         ..Default::default()
     });
     let bytes = deckcraft_pptx::export(&p).expect("export");
     let q = deckcraft_pptx::import(&bytes).expect("import");
-    let s = q.slides[0].shapes.iter().find(|s| s.name == "Styled").expect("shape");
+    let s = q.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Styled")
+        .expect("shape");
     assert_eq!(s.fill, Some(Fill::Gradient(own)));
 }
 
@@ -113,10 +144,19 @@ fn a_fill_overlay_round_trips() {
         blend: "mult".into(),
         fill: Fill::Gradient(Gradient {
             stops: vec![
-                GradientStop { pos: 0.0, color: deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent1) },
-                GradientStop { pos: 1.0, color: deckcraft_model::ColorRef::rgb(deckcraft_color::Rgba::rgb(10, 20, 30)) },
+                GradientStop {
+                    pos: 0.0,
+                    color: deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent1),
+                },
+                GradientStop {
+                    pos: 1.0,
+                    color: deckcraft_model::ColorRef::rgb(deckcraft_color::Rgba::rgb(10, 20, 30)),
+                },
             ],
-            shape: GradientShape::Linear { angle: 4.5, scaled: true },
+            shape: GradientShape::Linear {
+                angle: 4.5,
+                scaled: true,
+            },
             rotate_with_shape: true,
         }),
     };
@@ -124,12 +164,24 @@ fn a_fill_overlay_round_trips() {
         id,
         name: "Overlaid".into(),
         xfrm: Some(Xfrm::new(10.0, 10.0, 200.0, 100.0)),
-        fill: Some(Fill::solid(deckcraft_model::ColorRef::rgb(deckcraft_color::Rgba::WHITE))),
-        effects: Some(deckcraft_model::Effects { fill_overlay: Some(overlay.clone()), ..Default::default() }),
+        fill: Some(Fill::solid(deckcraft_model::ColorRef::rgb(
+            deckcraft_color::Rgba::WHITE,
+        ))),
+        effects: Some(deckcraft_model::Effects {
+            fill_overlay: Some(overlay.clone()),
+            ..Default::default()
+        }),
         ..Default::default()
     });
     let bytes = deckcraft_pptx::export(&p).expect("export");
     let q = deckcraft_pptx::import(&bytes).expect("import");
-    let s = q.slides[0].shapes.iter().find(|s| s.name == "Overlaid").expect("shape");
-    assert_eq!(s.effects.as_ref().and_then(|e| e.fill_overlay.clone()), Some(overlay));
+    let s = q.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Overlaid")
+        .expect("shape");
+    assert_eq!(
+        s.effects.as_ref().and_then(|e| e.fill_overlay.clone()),
+        Some(overlay)
+    );
 }

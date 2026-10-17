@@ -156,7 +156,10 @@ fn haptic_find_by_id() {
     let Some(cfg) = load_haptic() else { return };
     let found = cfg.find_by_id(HashId(0x559B_F570));
     assert!(found.is_some());
-    assert_eq!(found.unwrap().res_path, "#/debug/input/vibration/MachineGun_Vibration.wav");
+    assert_eq!(
+        found.unwrap().res_path,
+        "#/debug/input/vibration/MachineGun_Vibration.wav"
+    );
 }
 
 // ─── vibration_def ──────────────────────────────────────────────────────────────
@@ -221,7 +224,11 @@ fn vibration_derniere_avec_wav() {
 fn vibration_wavpath_compte() {
     let Some(cfg) = load_vibration() else { return };
     // 16 des 63 entrées ont un wavPath non vide dans le dump réel.
-    let n = cfg.vibrations.iter().filter(|v| !v.wav_path.is_empty()).count();
+    let n = cfg
+        .vibrations
+        .iter()
+        .filter(|v| !v.wav_path.is_empty())
+        .count();
     assert_eq!(n, 16);
 }
 

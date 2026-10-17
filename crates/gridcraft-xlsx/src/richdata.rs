@@ -24,7 +24,10 @@ const MAX_PIXELS: u64 = 16_000_000;
 
 /// Header dimensions bound decode allocations in consumers. Full decoding is left to the UI.
 fn image_type(data: &[u8]) -> Option<(&'static str, &'static str)> {
-    let dimensions = if data.len() >= 33 && data.starts_with(b"\x89PNG\r\n\x1a\n") && data.get(8..16)? == b"\0\0\0\rIHDR" {
+    let dimensions = if data.len() >= 33
+        && data.starts_with(b"\x89PNG\r\n\x1a\n")
+        && data.get(8..16)? == b"\0\0\0\rIHDR"
+    {
         let w = u32::from_be_bytes(data.get(16..20)?.try_into().ok()?);
         let h = u32::from_be_bytes(data.get(20..24)?.try_into().ok()?);
         Some((w, h, "image/png", "png"))
@@ -34,7 +37,8 @@ fn image_type(data: &[u8]) -> Option<(&'static str, &'static str)> {
         None
     };
     let (w, h, mime, ext) = dimensions?;
-    (w > 0 && h > 0 && w <= 8192 && h <= 8192 && u64::from(w) * u64::from(h) <= MAX_PIXELS).then_some((mime, ext))
+    (w > 0 && h > 0 && w <= 8192 && h <= 8192 && u64::from(w) * u64::from(h) <= MAX_PIXELS)
+        .then_some((mime, ext))
 }
 
 fn jpeg_dimensions(data: &[u8]) -> Option<(u32, u32)> {
@@ -54,7 +58,9 @@ fn jpeg_dimensions(data: &[u8]) -> Option<(u32, u32)> {
         if marker == 0x01 || (0xd0..=0xd7).contains(&marker) {
             continue;
         }
-        let len = usize::from(u16::from_be_bytes(data.get(offset..offset.checked_add(2)?)?.try_into().ok()?));
+        let len = usize::from(u16::from_be_bytes(
+            data.get(offset..offset.checked_add(2)?)?.try_into().ok()?,
+        ));
         let end = offset.checked_add(len)?;
         if len < 2 || end > data.len() {
             return None;
@@ -73,11 +79,18 @@ fn part(cx: &mut Ctx<'_>, rels: &[Rel], kind: &str) -> Option<String> {
     let mut target: Option<String> = None;
     for rel in rels.iter().filter(|rel| rel.kind == kind) {
         if rel.external {
-            cx.warn(format!("external {kind} relationship is unsupported; cell pictures may be missing"));
+            cx.warn(format!(
+                "external {kind} relationship is unsupported; cell pictures may be missing"
+            ));
             return None;
         }
-        if target.as_ref().is_some_and(|old| normalize(old) != normalize(&rel.target)) {
-            cx.warn(format!("conflicting {kind} relationships; cell pictures may be missing"));
+        if target
+            .as_ref()
+            .is_some_and(|old| normalize(old) != normalize(&rel.target))
+        {
+            cx.warn(format!(
+                "conflicting {kind} relationships; cell pictures may be missing"
+            ));
             return None;
         }
         target = Some(rel.target.clone());
@@ -90,7 +103,10 @@ fn read_xml(cx: &mut Ctx<'_>, path: &str, root: &str) -> Result<Option<El>, IoEr
         Ok(Some(bytes)) => bytes,
         Err(error @ IoError::TooLarge(_)) => return Err(error),
         other => {
-            cx.warn(format!("missing or damaged cell-picture part {path}: {}", other.err().map(|e| e.to_string()).unwrap_or_default()));
+            cx.warn(format!(
+                "missing or damaged cell-picture part {path}: {}",
+                other.err().map(|e| e.to_string()).unwrap_or_default()
+            ));
             return Ok(None);
         }
     };
@@ -106,22 +122,48 @@ fn read_xml(cx: &mut Ctx<'_>, path: &str, root: &str) -> Result<Option<El>, IoEr
 fn entries<'a>(cx: &mut Ctx<'_>, el: &'a El, child: &'a str) -> Result<Vec<&'a El>, IoError> {
     let entries: Vec<_> = el.kids(child).take(MAX_RECORDS + 1).collect();
     if entries.len() > MAX_RECORDS {
-        return Err(IoError::TooLarge("too many cell-picture metadata records".into()));
+        return Err(IoError::TooLarge(
+            "too many cell-picture metadata records".into(),
+        ));
     }
-    if el.attr("count").is_some() && el.attr_u32("count").map(|n| n as usize) != Some(entries.len()) {
-        cx.warn(format!("cell-picture {} count does not match its records", el.name));
+    if el.attr("count").is_some() && el.attr_u32("count").map(|n| n as usize) != Some(entries.len())
+    {
+        cx.warn(format!(
+            "cell-picture {} count does not match its records",
+            el.name
+        ));
     }
     Ok(entries)
 }
 
 /// Resolves every value-metadata block without assuming the indices at each layer coincide.
-pub fn read(cx: &mut Ctx<'_>, workbook_rels: &[Rel]) -> Result<Vec<Option<Arc<CellPicture>>>, IoError> {
-    let Some(metadata_path) = part(cx, workbook_rels, "sheetMetadata") else { return Ok(vec![]) };
-    let Some(metadata) = read_xml(cx, &metadata_path, "metadata")? else { return Ok(vec![]) };
-    let Some(types) = metadata.child("metadataTypes") else { return Ok(vec![]) };
+pub fn read(
+    cx: &mut Ctx<'_>,
+    workbook_rels: &[Rel],
+) -> Result<Vec<Option<Arc<CellPicture>>>, IoError> {
+    let Some(metadata_path) = part(cx, workbook_rels, "sheetMetadata") else {
+        return Ok(vec![]);
+    };
+    let Some(metadata) = read_xml(cx, &metadata_path, "metadata")? else {
+        return Ok(vec![]);
+    };
+    let Some(types) = metadata.child("metadataTypes") else {
+        return Ok(vec![]);
+    };
     let types = entries(cx, types, "metadataType")?;
-    let Some(type_id) = types.iter().position(|el| el.attr("name") == Some("XLRICHVALUE")).map(|n| n + 1) else { return Ok(vec![]) };
-    if types.iter().filter(|el| el.attr("name") == Some("XLRICHVALUE")).count() != 1 {
+    let Some(type_id) = types
+        .iter()
+        .position(|el| el.attr("name") == Some("XLRICHVALUE"))
+        .map(|n| n + 1)
+    else {
+        return Ok(vec![]);
+    };
+    if types
+        .iter()
+        .filter(|el| el.attr("name") == Some("XLRICHVALUE"))
+        .count()
+        != 1
+    {
         cx.warn("duplicate XLRICHVALUE metadata types; cell pictures were not loaded");
         return Ok(vec![]);
     }
@@ -133,13 +175,24 @@ pub fn read(cx: &mut Ctx<'_>, workbook_rels: &[Rel]) -> Result<Vec<Option<Arc<Ce
         return Ok(vec![]);
     };
     rels.extend(cx.pkg.rels(&data_path)?);
-    let (Some(structure_path), Some(image_rels_path)) = (part(cx, &rels, "rdRichValueStructure"), part(cx, &rels, "richValueRel")) else {
-        cx.warn("missing rich-value structure or image relationships; cell pictures were not loaded");
+    let (Some(structure_path), Some(image_rels_path)) = (
+        part(cx, &rels, "rdRichValueStructure"),
+        part(cx, &rels, "richValueRel"),
+    ) else {
+        cx.warn(
+            "missing rich-value structure or image relationships; cell pictures were not loaded",
+        );
         return Ok(vec![]);
     };
-    let Some(data) = read_xml(cx, &data_path, "rvData")? else { return Ok(vec![]) };
-    let Some(structures) = read_xml(cx, &structure_path, "rvStructures")? else { return Ok(vec![]) };
-    let Some(image_rel_list) = read_xml(cx, &image_rels_path, "richValueRels")? else { return Ok(vec![]) };
+    let Some(data) = read_xml(cx, &data_path, "rvData")? else {
+        return Ok(vec![]);
+    };
+    let Some(structures) = read_xml(cx, &structure_path, "rvStructures")? else {
+        return Ok(vec![]);
+    };
+    let Some(image_rel_list) = read_xml(cx, &image_rels_path, "richValueRels")? else {
+        return Ok(vec![]);
+    };
     let image_rels = cx.pkg.rels(&image_rels_path)?;
     let structures = entries(cx, &structures, "s")?;
     let image_rel_list = entries(cx, &image_rel_list, "rel")?;
@@ -148,13 +201,24 @@ pub fn read(cx: &mut Ctx<'_>, workbook_rels: &[Rel]) -> Result<Vec<Option<Arc<Ce
     let mut cache = HashMap::new();
     let mut total = 0usize;
     for value in values {
-        let picture = read_value(cx, value, &structures, &image_rel_list, &image_rels, &mut cache, &mut total)?;
+        let picture = read_value(
+            cx,
+            value,
+            &structures,
+            &image_rel_list,
+            &image_rels,
+            &mut cache,
+            &mut total,
+        )?;
         if picture.is_none() {
             cx.warn("some rich values are unsupported or malformed; their scalar fallbacks were retained (cell pictures may be missing)");
         }
         pictures.push(picture);
     }
-    let Some(future) = metadata.kids("futureMetadata").find(|el| el.attr("name") == Some("XLRICHVALUE")) else {
+    let Some(future) = metadata
+        .kids("futureMetadata")
+        .find(|el| el.attr("name") == Some("XLRICHVALUE"))
+    else {
         cx.warn("missing XLRICHVALUE future metadata; cell pictures were not loaded");
         return Ok(vec![]);
     };
@@ -163,13 +227,20 @@ pub fn read(cx: &mut Ctx<'_>, workbook_rels: &[Rel]) -> Result<Vec<Option<Arc<Ce
         .map(|block| {
             block
                 .child("extLst")
-                .and_then(|el| el.kids("ext").find(|ext| ext.attr("uri").is_some_and(|uri| uri.eq_ignore_ascii_case(RICH_EXT))))
+                .and_then(|el| {
+                    el.kids("ext").find(|ext| {
+                        ext.attr("uri")
+                            .is_some_and(|uri| uri.eq_ignore_ascii_case(RICH_EXT))
+                    })
+                })
                 .and_then(|ext| ext.child("rvb"))
                 .and_then(|rvb| rvb.attr_u32("i"))
                 .map(|n| n as usize)
         })
         .collect();
-    let Some(blocks) = metadata.child("valueMetadata") else { return Ok(vec![]) };
+    let Some(blocks) = metadata.child("valueMetadata") else {
+        return Ok(vec![]);
+    };
     let blocks = entries(cx, blocks, "bk")?;
     Ok(blocks
         .into_iter()
@@ -197,7 +268,9 @@ fn read_value(
     cache: &mut HashMap<(String, String), Arc<CellPicture>>,
     total: &mut usize,
 ) -> Result<Option<Arc<CellPicture>>, IoError> {
-    let Some(structure) = value.attr_u32("s").and_then(|n| structures.get(n as usize)) else { return Ok(None) };
+    let Some(structure) = value.attr_u32("s").and_then(|n| structures.get(n as usize)) else {
+        return Ok(None);
+    };
     if structure.attr("t") != Some("_localImage") {
         return Ok(None);
     }
@@ -207,7 +280,10 @@ fn read_value(
         return Ok(None);
     }
     let lookup = |name: &str, ty: &str| {
-        let mut matches = keys.iter().zip(&values).filter(|(k, _)| k.attr("n") == Some(name));
+        let mut matches = keys
+            .iter()
+            .zip(&values)
+            .filter(|(k, _)| k.attr("n") == Some(name));
         let (key, value) = matches.next()?;
         (matches.next().is_none() && key.attr("t") == Some(ty)).then_some(value.text.as_str())
     };
@@ -219,7 +295,9 @@ fn read_value(
         return Ok(None);
     };
     let mut matches = image_rels.iter().filter(|rel| rel.id == rel_id);
-    let Some(rel) = matches.next() else { return Ok(None) };
+    let Some(rel) = matches.next() else {
+        return Ok(None);
+    };
     if matches.next().is_some() || rel.kind != "image" || rel.external {
         cx.warn("a cell picture has an external or invalid image relationship; kept its scalar fallback");
         return Ok(None);
@@ -249,7 +327,11 @@ fn read_value(
         return Ok(None);
     }
     *total += data.len();
-    let picture = Arc::new(CellPicture { data, mime: mime.to_string(), alt });
+    let picture = Arc::new(CellPicture {
+        data,
+        mime: mime.to_string(),
+        alt,
+    });
     cache.insert(key, picture.clone());
     Ok(Some(picture))
 }
@@ -284,22 +366,33 @@ pub fn write(out: &mut Out, workbook_rels: &mut Rels) -> Result<(), IoError> {
     }
     let count = pictures.len();
     let mut data = format!("{XML_DECL}<rvData xmlns=\"{NS_RICH}\" count=\"{count}\">");
-    let mut rel_list = format!("{XML_DECL}<richValueRels xmlns=\"{NS_IMAGE_REL}\" xmlns:r=\"{NS_REL}\">");
+    let mut rel_list =
+        format!("{XML_DECL}<richValueRels xmlns=\"{NS_IMAGE_REL}\" xmlns:r=\"{NS_REL}\">");
     let mut image_rels = Rels::default();
     let mut total = 0usize;
     for (i, picture) in pictures.iter().enumerate() {
         total = total.saturating_add(picture.data.len());
         if picture.data.len() as u64 > MAX_IMAGE || total > MAX_IMAGES_TOTAL {
-            return Err(IoError::TooLarge("cell pictures exceed the 16 MiB image or 128 MiB workbook limit".into()));
+            return Err(IoError::TooLarge(
+                "cell pictures exceed the 16 MiB image or 128 MiB workbook limit".into(),
+            ));
         }
         let (mime, ext) = image_type(&picture.data)
             .ok_or_else(|| IoError::Format("cell pictures must be PNG/JPEG with at most 8192 pixels per side and 16 million pixels".into()))?;
         let image_name = format!("cellImage{}.{}", i + 1, ext);
         out.default_type(ext, mime);
-        out.part(&format!("xl/media/{image_name}"), None, picture.data.clone());
+        out.part(
+            &format!("xl/media/{image_name}"),
+            None,
+            picture.data.clone(),
+        );
         let rid = image_rels.add("image", &format!("../media/{image_name}"));
         let _ = write!(rel_list, "<rel r:id=\"{rid}\"/>");
-        let _ = write!(data, "<rv s=\"0\"><v>{i}</v><v>5</v><v>{}</v></rv>", esc(&picture.alt));
+        let _ = write!(
+            data,
+            "<rv s=\"0\"><v>{i}</v><v>5</v><v>{}</v></rv>",
+            esc(&picture.alt)
+        );
     }
     data.push_str("</rvData>");
     rel_list.push_str("</richValueRels>");
@@ -329,7 +422,11 @@ pub fn write(out: &mut Out, workbook_rels: &mut Rels) -> Result<(), IoError> {
         out.part(&format!("xl/richData/{name}"), Some(content_type), bytes);
         workbook_rels.add_uri(relation, &format!("richData/{name}"));
     }
-    out.part("xl/richData/_rels/richValueRel.xml.rels", None, image_rels.xml().into_bytes());
+    out.part(
+        "xl/richData/_rels/richValueRel.xml.rels",
+        None,
+        image_rels.xml().into_bytes(),
+    );
     out.part(
         "xl/metadata.xml",
         Some("application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml"),
@@ -351,9 +448,15 @@ fn metadata(count: usize, dynamic: bool) -> String {
     if dynamic {
         xml.push_str("<futureMetadata name=\"XLDAPR\" count=\"1\"><bk><extLst><ext uri=\"{BDBB8CDC-FA1E-496E-A857-3C3F30C029C3}\"><xda:dynamicArrayProperties fDynamic=\"1\" fCollapsed=\"0\"/></ext></extLst></bk></futureMetadata>");
     }
-    let _ = write!(xml, "<futureMetadata name=\"XLRICHVALUE\" count=\"{count}\">");
+    let _ = write!(
+        xml,
+        "<futureMetadata name=\"XLRICHVALUE\" count=\"{count}\">"
+    );
     for i in 0..count {
-        let _ = write!(xml, "<bk><extLst><ext uri=\"{RICH_EXT}\"><rv:rvb i=\"{i}\"/></ext></extLst></bk>");
+        let _ = write!(
+            xml,
+            "<bk><extLst><ext uri=\"{RICH_EXT}\"><rv:rvb i=\"{i}\"/></ext></extLst></bk>"
+        );
     }
     xml.push_str("</futureMetadata>");
     if dynamic {

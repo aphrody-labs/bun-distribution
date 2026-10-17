@@ -126,7 +126,9 @@ impl Pruner<'_> {
         if self.glyph_budget_exhausted {
             return;
         }
-        let Some(fonts) = resources.get(b"Font").map(|f| self.doc.resolve(f)) else { return };
+        let Some(fonts) = resources.get(b"Font").map(|f| self.doc.resolve(f)) else {
+            return;
+        };
         let Some(fonts) = fonts.as_dict() else { return };
         // Bound discovery too, but don't spend the glyph-graph budget repeatedly examining an
         // ordinary shared font catalog on every page of a large document.
@@ -140,7 +142,12 @@ impl Pruner<'_> {
             }
             let font_ref = font.as_ref();
             let resolved = self.doc.resolve(font);
-            let Some(font) = resolved.as_dict().filter(|f| f.name(b"Subtype") == Some(b"Type3")) else { continue };
+            let Some(font) = resolved
+                .as_dict()
+                .filter(|f| f.name(b"Subtype") == Some(b"Type3"))
+            else {
+                continue;
+            };
             if let Some(glyph_resources) = font.get(b"Resources") {
                 if let Some(r) = font_ref
                     && !self.glyph_fonts.insert(r)
@@ -191,8 +198,12 @@ impl Pruner<'_> {
             }
             let Some(name) = op.name(0) else { continue };
             self.used.entry(key).or_default().insert(name.to_vec());
-            let Some(r) = xobjects.get(name).and_then(Object::as_ref) else { continue };
-            let Object::Stream(s) = &*self.doc.get(r) else { continue };
+            let Some(r) = xobjects.get(name).and_then(Object::as_ref) else {
+                continue;
+            };
+            let Object::Stream(s) = &*self.doc.get(r) else {
+                continue;
+            };
             if s.dict.name(b"Subtype") != Some(b"Form") {
                 continue;
             }
@@ -245,7 +256,11 @@ fn content_bytes(doc: &Document, contents: &Object) -> Option<Vec<u8>> {
 /// The resources of a page (as `walk` reports them) with their owner.
 fn resolve_resources(doc: &Document, resources: &Object, page: ObjRef) -> Option<(Dict, Owner)> {
     match resources {
-        Object::Ref(r) => doc.get(*r).as_dict().cloned().map(|d| (d, Owner::Resources(*r))),
+        Object::Ref(r) => doc
+            .get(*r)
+            .as_dict()
+            .cloned()
+            .map(|d| (d, Owner::Resources(*r))),
         Object::Dict(d) => Some((d.clone(), Owner::Page(page))),
         _ => None,
     }
@@ -253,7 +268,11 @@ fn resolve_resources(doc: &Document, resources: &Object, page: ObjRef) -> Option
 
 /// Drop the entries `names` never draws. Returns how many were removed.
 fn drop_unused(xobjects: &mut Dict, names: &HashSet<Vec<u8>>) -> usize {
-    let unused: Vec<Vec<u8>> = xobjects.iter().map(|(k, _)| k.clone()).filter(|k| !names.contains(k)).collect();
+    let unused: Vec<Vec<u8>> = xobjects
+        .iter()
+        .map(|(k, _)| k.clone())
+        .filter(|k| !names.contains(k))
+        .collect();
     for k in &unused {
         xobjects.remove(k);
     }
@@ -261,7 +280,11 @@ fn drop_unused(xobjects: &mut Dict, names: &HashSet<Vec<u8>>) -> usize {
 }
 
 /// Filter the dictionary `key` names to `names`.
-fn filter_at(doc: &mut Document, key: XKey, names: &HashSet<Vec<u8>>) -> Result<usize, OrganizeError> {
+fn filter_at(
+    doc: &mut Document,
+    key: XKey,
+    names: &HashSet<Vec<u8>>,
+) -> Result<usize, OrganizeError> {
     match key {
         XKey::XObject(r) => {
             let mut removed = 0;
@@ -269,12 +292,18 @@ fn filter_at(doc: &mut Document, key: XKey, names: &HashSet<Vec<u8>>) -> Result<
             Ok(removed)
         }
         XKey::Resources(r) => {
-            let Some(d) = doc.get(r).as_dict().cloned() else { return Ok(0) };
-            let Some(x) = d.get(b"XObject") else { return Ok(0) };
+            let Some(d) = doc.get(r).as_dict().cloned() else {
+                return Ok(0);
+            };
+            let Some(x) = d.get(b"XObject") else {
+                return Ok(0);
+            };
             if x.as_ref().is_some() {
                 return Ok(0); // recorded as XObject(r) instead
             }
-            let Some(mut xd) = doc.resolve(x).as_dict().cloned() else { return Ok(0) };
+            let Some(mut xd) = doc.resolve(x).as_dict().cloned() else {
+                return Ok(0);
+            };
             let removed = drop_unused(&mut xd, names);
             if removed > 0 {
                 doc.update_dict(r, |d| d.set(b"XObject".to_vec(), Object::Dict(xd.clone())))?;
@@ -282,21 +311,33 @@ fn filter_at(doc: &mut Document, key: XKey, names: &HashSet<Vec<u8>>) -> Result<
             Ok(removed)
         }
         XKey::Page(p) => {
-            let Some(pd) = doc.get(p).as_dict().cloned() else { return Ok(0) };
-            let Some(res) = pd.get(b"Resources") else { return Ok(0) };
+            let Some(pd) = doc.get(p).as_dict().cloned() else {
+                return Ok(0);
+            };
+            let Some(res) = pd.get(b"Resources") else {
+                return Ok(0);
+            };
             if res.as_ref().is_some() {
                 return Ok(0); // recorded as Resources(r) instead
             }
-            let Some(mut rd) = doc.resolve(res).as_dict().cloned() else { return Ok(0) };
-            let Some(x) = rd.get(b"XObject") else { return Ok(0) };
+            let Some(mut rd) = doc.resolve(res).as_dict().cloned() else {
+                return Ok(0);
+            };
+            let Some(x) = rd.get(b"XObject") else {
+                return Ok(0);
+            };
             if x.as_ref().is_some() {
                 return Ok(0);
             }
-            let Some(mut xd) = doc.resolve(x).as_dict().cloned() else { return Ok(0) };
+            let Some(mut xd) = doc.resolve(x).as_dict().cloned() else {
+                return Ok(0);
+            };
             let removed = drop_unused(&mut xd, names);
             if removed > 0 {
                 rd.set(b"XObject".to_vec(), Object::Dict(xd));
-                doc.update_dict(p, |d| d.set(b"Resources".to_vec(), Object::Dict(rd.clone())))?;
+                doc.update_dict(p, |d| {
+                    d.set(b"Resources".to_vec(), Object::Dict(rd.clone()))
+                })?;
             }
             Ok(removed)
         }
@@ -316,10 +357,18 @@ pub(crate) fn prune_unused_xobjects(doc: &mut Document) -> Result<usize, Organiz
         glyph_fonts: HashSet::new(),
     };
     for (page, attrs) in &pages {
-        let Some(res) = attrs.get(b"Resources") else { continue };
-        let Some((res_dict, owner)) = resolve_resources(pruner.doc, res, *page) else { continue };
-        let Some(pd) = pruner.doc.get(*page).as_dict().cloned() else { continue };
-        let Some(contents) = pd.get(b"Contents").cloned() else { continue };
+        let Some(res) = attrs.get(b"Resources") else {
+            continue;
+        };
+        let Some((res_dict, owner)) = resolve_resources(pruner.doc, res, *page) else {
+            continue;
+        };
+        let Some(pd) = pruner.doc.get(*page).as_dict().cloned() else {
+            continue;
+        };
+        let Some(contents) = pd.get(b"Contents").cloned() else {
+            continue;
+        };
         match content_bytes(pruner.doc, &contents) {
             Some(data) if data.is_empty() => {}
             Some(data) => pruner.content(&data, &res_dict, owner, 0),
@@ -329,7 +378,12 @@ pub(crate) fn prune_unused_xobjects(doc: &mut Document) -> Result<usize, Organiz
             }
         }
     }
-    let Pruner { used, unsure, glyph_budget_exhausted, .. } = pruner;
+    let Pruner {
+        used,
+        unsure,
+        glyph_budget_exhausted,
+        ..
+    } = pruner;
     if glyph_budget_exhausted {
         return Ok(0);
     }

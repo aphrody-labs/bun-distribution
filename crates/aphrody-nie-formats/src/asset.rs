@@ -109,7 +109,9 @@ pub fn cpk_preview_kind(ext: &str) -> CpkPreviewKind {
         CpkPreviewKind::Model
     } else if matches_ignore_ascii_case(
         ext,
-        &["txt", "json", "xml", "csv", "lua", "cfg", "ini", "yml", "yaml"],
+        &[
+            "txt", "json", "xml", "csv", "lua", "cfg", "ini", "yml", "yaml",
+        ],
     ) {
         CpkPreviewKind::Text
     } else if matches_ignore_ascii_case(ext, &["bin", "objbin", "fxbin", "mevbin"]) {
@@ -149,7 +151,9 @@ pub fn texture_route_stem(path: &str) -> String {
 }
 
 fn matches_ignore_ascii_case(value: &str, candidates: &[&str]) -> bool {
-    candidates.iter().any(|candidate| value.eq_ignore_ascii_case(candidate))
+    candidates
+        .iter()
+        .any(|candidate| value.eq_ignore_ascii_case(candidate))
 }
 
 #[cfg(test)]
@@ -161,8 +165,14 @@ mod tests {
         assert_eq!(cpk_asset_kind("G4TX"), CpkAssetKind::Image);
         assert_eq!(cpk_asset_kind("g4mg"), CpkAssetKind::Model);
         assert_eq!(cpk_asset_kind("bin"), CpkAssetKind::Raw);
-        assert_eq!(cpk_asset_kind_for_path("data/dx11/menu/icon.g4tx"), CpkAssetKind::Image);
-        assert_eq!(cpk_asset_kind_for_path("data/common/chr/a.g4md"), CpkAssetKind::Model);
+        assert_eq!(
+            cpk_asset_kind_for_path("data/dx11/menu/icon.g4tx"),
+            CpkAssetKind::Image
+        );
+        assert_eq!(
+            cpk_asset_kind_for_path("data/common/chr/a.g4md"),
+            CpkAssetKind::Model
+        );
     }
 
     #[test]
@@ -182,7 +192,10 @@ mod tests {
     fn extracts_extension_and_texture_stem_without_security_cleanup() {
         assert_eq!(extension("data/dx11/menu/icon.g4tx"), Some("g4tx"));
         assert_eq!(extension("data/no-extension"), None);
-        assert_eq!(texture_route_stem("data/dx11/menu/icon.g4tx"), "dx11/menu/icon");
+        assert_eq!(
+            texture_route_stem("data/dx11/menu/icon.g4tx"),
+            "dx11/menu/icon"
+        );
         assert_eq!(texture_route_stem("dx11/menu/ICON.G4TX"), "dx11/menu/ICON");
         assert_eq!(texture_route_stem("dx11/menu/Icon.G4tX"), "dx11/menu/Icon");
         assert_eq!(texture_route_stem("../escape.g4tx"), "../escape");

@@ -83,7 +83,8 @@ fn color(argb: u32) -> Color {
 /// baseline of packages/bun-os-platform/themes), resolved by the platform layer: variant,
 /// contrast, mode, role overrides and OS high contrast all come from it.
 fn platform_theme() -> &'static bun_os_platform::theme::ThemeFile {
-    static FILE: std::sync::OnceLock<bun_os_platform::theme::ThemeFile> = std::sync::OnceLock::new();
+    static FILE: std::sync::OnceLock<bun_os_platform::theme::ThemeFile> =
+        std::sync::OnceLock::new();
     FILE.get_or_init(|| {
         let paths = bun_os_platform::paths::Paths::discover();
         let settings = bun_os_platform::paths::Settings::read(&paths);
@@ -106,7 +107,11 @@ impl Scheme {
     pub fn from_seed(seed: u32) -> Self {
         let file = platform_theme();
         // Art seeds apply only when the theme opts into dynamic color.
-        let seed = if file.color.dynamic.as_deref() == Some("none") { theme_seed() } else { seed };
+        let seed = if file.color.dynamic.as_deref() == Some("none") {
+            theme_seed()
+        } else {
+            seed
+        };
         let tokens = bun_os_platform::theme::Tokens::resolve(
             file,
             bun_os_platform::theme::ResolveOptions {
@@ -132,7 +137,10 @@ impl Scheme {
         for (c, o) in colors.iter_mut().zip(other.colors) {
             *c = c.mix(&o, t);
         }
-        Self { seed: other.seed, colors }
+        Self {
+            seed: other.seed,
+            colors,
+        }
     }
 }
 
@@ -182,7 +190,12 @@ impl Theme {
         }
         self.t = (self.t + dt / RETINT_SECONDS).min(1.0);
         // `md.sys.motion.easing.emphasized` as its CSS form, cubic-bezier(0.2, 0, 0, 1).
-        let curve = CubicBezier { x1: 0.2, y1: 0.0, x2: 0.0, y2: 1.0 };
+        let curve = CubicBezier {
+            x1: 0.2,
+            y1: 0.0,
+            x2: 0.0,
+            y2: 1.0,
+        };
         self.current = self.from.mix(&self.to, curve.eval(self.t));
         true
     }

@@ -74,7 +74,9 @@ impl Arrangement {
         if !(p.x.is_finite() && p.y.is_finite()) {
             return None;
         }
-        self.regions.iter().position(|r| r.bounds.contains(p) && r.path.winding(p) != 0)
+        self.regions
+            .iter()
+            .position(|r| r.bounds.contains(p) && r.path.winding(p) != 0)
     }
 
     fn is_for(&self, doc: &Arc<Document>, uid: u64, ids: &[NodeId]) -> bool {
@@ -86,11 +88,19 @@ impl Arrangement {
 /// boolean groups and text, outside instances and boolean groups (whose structure is fixed).
 fn usable(doc: &Document, id: NodeId) -> bool {
     let Some(n) = doc.node(id) else { return false };
-    let kind_ok = n.kind.is_shape() || matches!(n.kind, NodeKind::BooleanOp { .. } | NodeKind::Text(_));
+    let kind_ok =
+        n.kind.is_shape() || matches!(n.kind, NodeKind::BooleanOp { .. } | NodeKind::Text(_));
     kind_ok
         && n.visible
         && !n.locked
-        && !doc.ancestors(id).iter().any(|a| doc.node(*a).is_some_and(|x| matches!(x.kind, NodeKind::Instance { .. } | NodeKind::BooleanOp { .. })))
+        && !doc.ancestors(id).iter().any(|a| {
+            doc.node(*a).is_some_and(|x| {
+                matches!(
+                    x.kind,
+                    NodeKind::Instance { .. } | NodeKind::BooleanOp { .. }
+                )
+            })
+        })
 }
 
 /// The shapes `ids` stand for (groups contribute their shapes), bottom to top.
@@ -123,13 +133,16 @@ fn world_area(doc: &Document, part: Part) -> Option<(BezPath, bool)> {
     let (mut p, rule) = if part.stroke {
         figcraft_render::stroke_fill(doc, n).map(|(p, rule)| ((*p).clone(), rule))?
     } else {
-        if !(figcraft_doc::geometry::is_closed(n) || matches!(n.kind, NodeKind::BooleanOp { .. } | NodeKind::Text(_))) {
+        if !(figcraft_doc::geometry::is_closed(n)
+            || matches!(n.kind, NodeKind::BooleanOp { .. } | NodeKind::Text(_)))
+        {
             return None;
         }
         figcraft_render::node_outline(doc, n)?
     };
     p.apply_affine(doc.world_transform(part.id));
-    (!p.elements().is_empty() && figcraft_pathops::finite(&p)).then_some((p, rule == figcraft_render::FillRule::EvenOdd))
+    (!p.elements().is_empty() && figcraft_pathops::finite(&p))
+        .then_some((p, rule == figcraft_render::FillRule::EvenOdd))
 }
 
 /// Flatten a region outline to polygons for drawing (tolerance relative to its size).
@@ -167,13 +180,19 @@ fn compute(doc: Arc<Document>, uid: u64, ids: &[NodeId]) -> Result<Arrangement> 
             sources.push(id);
         }
     }
-    let faces = figcraft_pathops::faces(&inputs).map_err(|e| EngineError::Other(format!("shape builder: {e}")))?;
+    let faces = figcraft_pathops::faces(&inputs)
+        .map_err(|e| EngineError::Other(format!("shape builder: {e}")))?;
     let mut regions: Vec<Region> = faces
         .into_iter()
         .filter(|f| f.path.area().abs() > 1e-4)
         .map(|f| {
             let bounds = f.path.bounding_box();
-            let covering: Vec<Part> = f.cover.iter().rev().filter_map(|i| parts.get(*i).copied()).collect();
+            let covering: Vec<Part> = f
+                .cover
+                .iter()
+                .rev()
+                .filter_map(|i| parts.get(*i).copied())
+                .collect();
             let mut by: Vec<NodeId> = Vec::new();
             for p in &covering {
                 if !by.contains(&p.id) {
@@ -191,8 +210,20 @@ fn compute(doc: Arc<Document>, uid: u64, ids: &[NodeId]) -> Result<Arrangement> 
         })
         .collect();
     // Reading order: top to bottom, then left to right.
-    regions.sort_by(|a, b| a.bounds.y0.total_cmp(&b.bounds.y0).then(a.bounds.x0.total_cmp(&b.bounds.x0)));
-    Ok(Arrangement { doc, uid, ids: ids.to_vec(), sources, parts, regions })
+    regions.sort_by(|a, b| {
+        a.bounds
+            .y0
+            .total_cmp(&b.bounds.y0)
+            .then(a.bounds.x0.total_cmp(&b.bounds.x0))
+    });
+    Ok(Arrangement {
+        doc,
+        uid,
+        ids: ids.to_vec(),
+        sources,
+        parts,
+        regions,
+    })
 }
 
 /// The arrangement of `ids` (default: the selection), from the cache when the document and the
@@ -200,7 +231,12 @@ fn compute(doc: Arc<Document>, uid: u64, ids: &[NodeId]) -> Result<Arrangement> 
 pub fn arrangement(s: &mut Session, ids: &[NodeId]) -> Result<Arc<Arrangement>> {
     let ds = s.ds()?;
     let (doc, uid) = (ds.doc.clone(), ds.uid);
-    if let Some(a) = s.tool.shape_builder.as_ref().filter(|a| a.is_for(&doc, uid, ids)) {
+    if let Some(a) = s
+        .tool
+        .shape_builder
+        .as_ref()
+        .filter(|a| a.is_for(&doc, uid, ids))
+    {
         return Ok(a.clone());
     }
     let a = Arc::new(compute(doc, uid, ids)?);
@@ -211,7 +247,11 @@ pub fn arrangement(s: &mut Session, ids: &[NodeId]) -> Result<Arc<Arrangement>> 
 /// The cached arrangement of the selection, if it is up to date (for drawing).
 pub fn current(s: &Session) -> Option<Arc<Arrangement>> {
     let ds = s.ds().ok()?;
-    s.tool.shape_builder.as_ref().filter(|a| a.is_for(&ds.doc, ds.uid, &ds.selection)).cloned()
+    s.tool
+        .shape_builder
+        .as_ref()
+        .filter(|a| a.is_for(&ds.doc, ds.uid, &ds.selection))
+        .cloned()
 }
 
 /// Region indices from `regions: [i, ...]` and `points: [[x, y], ...]`, first pick first.
@@ -223,7 +263,11 @@ fn picked(p: &Value, a: &Arrangement) -> Vec<usize> {
         }
     };
     if let Some(Value::Array(v)) = get(p, "regions") {
-        for i in v.iter().filter_map(f64_of).filter(|x| *x >= 0.0 && x.fract() == 0.0 && *x < 1e9) {
+        for i in v
+            .iter()
+            .filter_map(f64_of)
+            .filter(|x| *x >= 0.0 && x.fract() == 0.0 && *x < 1e9)
+        {
             add(i as usize);
         }
     }
@@ -257,9 +301,12 @@ fn network_from(path: &BezPath, to_local: Affine) -> Option<VectorNetwork> {
 fn reshape(doc: &mut Document, id: NodeId, area: &BezPath) -> Result<()> {
     let w = doc.world_transform(id);
     if !(w.determinant().is_finite() && w.determinant().abs() > 1e-12) {
-        return Err(EngineError::Other("can't reshape a layer scaled to nothing".into()));
+        return Err(EngineError::Other(
+            "can't reshape a layer scaled to nothing".into(),
+        ));
     }
-    let net = network_from(area, w.inverse()).ok_or_else(|| EngineError::Other("invalid geometry".into()))?;
+    let net = network_from(area, w.inverse())
+        .ok_or_else(|| EngineError::Other("invalid geometry".into()))?;
     // A boolean group's operands go with it.
     if matches!(doc.get(id)?.kind, NodeKind::BooleanOp { .. }) {
         for c in doc.get(id)?.children.clone() {
@@ -283,23 +330,40 @@ fn create_merged(doc: &mut Document, style: Part, area: &BezPath) -> Result<Node
         src.styles.fill = src.styles.stroke.take();
     }
     let style = style.id;
-    let parent = src.parent.ok_or_else(|| EngineError::Other("no parent".into()))?;
+    let parent = src
+        .parent
+        .ok_or_else(|| EngineError::Other("no parent".into()))?;
     let pw = doc.world_transform(parent);
     if !(pw.determinant().is_finite() && pw.determinant().abs() > 1e-12) {
-        return Err(EngineError::Other("can't place a shape in a container scaled to nothing".into()));
+        return Err(EngineError::Other(
+            "can't place a shape in a container scaled to nothing".into(),
+        ));
     }
-    let mut net = network_from(area, pw.inverse()).ok_or_else(|| EngineError::Other("invalid geometry".into()))?;
-    let bb = net.bounds().ok_or_else(|| EngineError::Other("empty region".into()))?;
+    let mut net = network_from(area, pw.inverse())
+        .ok_or_else(|| EngineError::Other("invalid geometry".into()))?;
+    let bb = net
+        .bounds()
+        .ok_or_else(|| EngineError::Other("empty region".into()))?;
     net.translate(-bb.x0, -bb.y0);
     let id = doc.alloc_id();
-    let mut v = Node::new(id, NodeKind::Vector { network: net }, src.name.clone(), bb.width(), bb.height());
+    let mut v = Node::new(
+        id,
+        NodeKind::Vector { network: net },
+        src.name.clone(),
+        bb.width(),
+        bb.height(),
+    );
     v.transform = Affine::translate((bb.x0, bb.y0));
     v.fills = src.fills;
     v.strokes = src.strokes;
     v.stroke = src.stroke;
     v.effects = src.effects;
     v.opacity = src.opacity;
-    v.blend = if matches!(src.blend, figcraft_color::BlendMode::PassThrough) { figcraft_color::BlendMode::Normal } else { src.blend };
+    v.blend = if matches!(src.blend, figcraft_color::BlendMode::PassThrough) {
+        figcraft_color::BlendMode::Normal
+    } else {
+        src.blend
+    };
     // In an auto layout frame the new shape stays over its region instead of joining the flow.
     v.child_layout.absolute = doc.get(parent)?.layout.is_some();
     let index = doc.index_in_parent(style).map(|i| i + 1);
@@ -313,21 +377,34 @@ fn apply(s: &mut Session, cmd: &str, p: &Value, merge: bool) -> Result<Value> {
     let a = arrangement(s, &ids)?;
     let pick = picked(p, &a);
     if pick.is_empty() {
-        return Err(bad(cmd, "no region picked: pass `regions` (indexes from shapeBuilder.regions) or `points` inside regions"));
+        return Err(bad(
+            cmd,
+            "no region picked: pass `regions` (indexes from shapeBuilder.regions) or `points` inside regions",
+        ));
     }
     let regions: Vec<&Region> = pick.iter().filter_map(|i| a.regions.get(*i)).collect();
-    let touched_parts: BTreeSet<Part> = regions.iter().flat_map(|r| r.parts.iter().copied()).collect();
+    let touched_parts: BTreeSet<Part> = regions
+        .iter()
+        .flat_map(|r| r.parts.iter().copied())
+        .collect();
     let touched: BTreeSet<NodeId> = touched_parts.iter().map(|p| p.id).collect();
     // Merging every region of a single shape would only replace it with a copy of itself.
-    let whole_shape =
-        touched.len() == 1 && a.regions.iter().enumerate().all(|(i, r)| pick.contains(&i) || !r.sources.iter().any(|x| touched.contains(x)));
+    let whole_shape = touched.len() == 1
+        && a.regions
+            .iter()
+            .enumerate()
+            .all(|(i, r)| pick.contains(&i) || !r.sources.iter().any(|x| touched.contains(x)));
     if merge && whole_shape {
         return Ok(json!({"id": null, "changed": [], "removed": [], "regions": pick}));
     }
     let doc = s.doc_mut()?;
     let created = if merge {
-        let area = figcraft_pathops::union_faces(regions.iter().map(|r| &r.path)).map_err(|e| EngineError::Other(e.to_string()))?;
-        let style = regions.first().and_then(|r| r.parts.first().copied()).ok_or_else(|| bad(cmd, "the region has no shape"))?;
+        let area = figcraft_pathops::union_faces(regions.iter().map(|r| &r.path))
+            .map_err(|e| EngineError::Other(e.to_string()))?;
+        let style = regions
+            .first()
+            .and_then(|r| r.parts.first().copied())
+            .ok_or_else(|| bad(cmd, "the region has no shape"))?;
         Some(create_merged(doc, style, &area)?)
     } else {
         None
@@ -335,19 +412,34 @@ fn apply(s: &mut Session, cmd: &str, p: &Value, merge: bool) -> Result<Value> {
     // What part `part` keeps: the regions it covers that weren't picked, as one area (`None`:
     // nothing).
     let kept = |part: Part| -> Result<Option<BezPath>> {
-        let keep: Vec<&BezPath> =
-            a.regions.iter().enumerate().filter(|(i, r)| !pick.contains(i) && r.parts.contains(&part)).map(|(_, r)| &r.path).collect();
+        let keep: Vec<&BezPath> = a
+            .regions
+            .iter()
+            .enumerate()
+            .filter(|(i, r)| !pick.contains(i) && r.parts.contains(&part))
+            .map(|(_, r)| &r.path)
+            .collect();
         if keep.is_empty() {
             return Ok(None);
         }
-        let area = figcraft_pathops::union_faces(keep).map_err(|e| EngineError::Other(e.to_string()))?;
+        let area =
+            figcraft_pathops::union_faces(keep).map_err(|e| EngineError::Other(e.to_string()))?;
         Ok((!area.elements().is_empty()).then_some(area))
     };
     let mut removed = Vec::new();
     let mut changed = Vec::new();
     let mut outlined: Vec<(NodeId, NodeId)> = Vec::new();
     for src in a.sources.iter().copied().filter(|i| touched.contains(i)) {
-        let (fill, stroke) = (Part { id: src, stroke: false }, Part { id: src, stroke: true });
+        let (fill, stroke) = (
+            Part {
+                id: src,
+                stroke: false,
+            },
+            Part {
+                id: src,
+                stroke: true,
+            },
+        );
         // The stroke becomes an outline of its own (what's left of it), the shape loses it.
         if a.parts.contains(&stroke) {
             if let Some(area) = kept(stroke)? {
@@ -380,7 +472,11 @@ fn apply(s: &mut Session, cmd: &str, p: &Value, merge: bool) -> Result<Value> {
     // The selection stays (minus what went, plus the outlines of selected strokes) and gains the
     // new shape unless a selected group already holds it, so the tool keeps working on the same
     // shapes.
-    let mut sel: Vec<NodeId> = ids.iter().copied().filter(|i| !removed.contains(i)).collect();
+    let mut sel: Vec<NodeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| !removed.contains(i))
+        .collect();
     for (src, o) in &outlined {
         if ids.contains(src) {
             sel.push(*o);
@@ -393,7 +489,9 @@ fn apply(s: &mut Session, cmd: &str, p: &Value, merge: bool) -> Result<Value> {
     }
     s.set_selection(sel);
     let outlines: Vec<NodeId> = outlined.iter().map(|(_, o)| *o).collect();
-    Ok(json!({"id": created, "changed": changed, "removed": removed, "outlines": outlines, "regions": pick}))
+    Ok(
+        json!({"id": created, "changed": changed, "removed": removed, "outlines": outlines, "regions": pick}),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -438,19 +536,25 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             |s, p| apply(s, "shapeBuilder.remove", p, false)
         ),
-        spec!("shapeBuilder.mode", "Shape builder mode", "{mode: merge|remove} (what a click does; Alt does the other)", false, |s, p| {
-            let remove = match string(p, "mode").as_deref() {
-                Some("merge") => false,
-                Some("remove") => true,
-                _ => return Err(bad("shapeBuilder.mode", "mode: merge or remove")),
-            };
-            s.tool.builder_remove = remove;
-            s.tool.overlay.builder_remove = remove;
-            if let Ok(ds) = s.ds_mut() {
-                ds.revision += 1;
+        spec!(
+            "shapeBuilder.mode",
+            "Shape builder mode",
+            "{mode: merge|remove} (what a click does; Alt does the other)",
+            false,
+            |s, p| {
+                let remove = match string(p, "mode").as_deref() {
+                    Some("merge") => false,
+                    Some("remove") => true,
+                    _ => return Err(bad("shapeBuilder.mode", "mode: merge or remove")),
+                };
+                s.tool.builder_remove = remove;
+                s.tool.overlay.builder_remove = remove;
+                if let Ok(ds) = s.ds_mut() {
+                    ds.revision += 1;
+                }
+                Ok(json!({"mode": if remove { "remove" } else { "merge" }}))
             }
-            Ok(json!({"mode": if remove { "remove" } else { "merge" }}))
-        }),
+        ),
     ]
 }
 
@@ -476,7 +580,10 @@ impl Session {
         let at = |p: Point| arr.as_ref().and_then(|a| a.region_at(p));
         let remove = ev.alt != self.tool.builder_remove;
         self.tool.overlay.cursor = Cursor::Crosshair;
-        let before = (self.tool.overlay.builder_regions.clone(), self.tool.overlay.builder_remove);
+        let before = (
+            self.tool.overlay.builder_regions.clone(),
+            self.tool.overlay.builder_remove,
+        );
         match ev.kind {
             // While a gesture runs, the collected regions stay highlighted.
             PointerKind::Hover if !matches!(self.tool.gesture, Gesture::ShapeBuild { .. }) => {
@@ -486,13 +593,22 @@ impl Session {
             PointerKind::Down => {
                 let picked: Vec<usize> = at(ev.p()).into_iter().collect();
                 self.tool.overlay.builder_regions = picked.clone();
-                self.tool.gesture = Gesture::ShapeBuild { picked, remove, start: ev.p(), last: ev.p() };
+                self.tool.gesture = Gesture::ShapeBuild {
+                    picked,
+                    remove,
+                    start: ev.p(),
+                    last: ev.p(),
+                };
             }
             PointerKind::Move => {
-                let Gesture::ShapeBuild { picked, last, .. } = &mut self.tool.gesture else { return Ok(()) };
+                let Gesture::ShapeBuild { picked, last, .. } = &mut self.tool.gesture else {
+                    return Ok(());
+                };
                 // Sample the stroke every few screen pixels so fast drags don't skip regions.
                 let (from, to) = (*last, ev.p());
-                let steps = ((to - from).hypot() * ev.zoom.max(1e-6) / 3.0).ceil().clamp(1.0, 500.0) as usize;
+                let steps = ((to - from).hypot() * ev.zoom.max(1e-6) / 3.0)
+                    .ceil()
+                    .clamp(1.0, 500.0) as usize;
                 for k in 1..=steps {
                     if let Some(i) = at(from.lerp(to, k as f64 / steps as f64))
                         && !picked.contains(&i)
@@ -505,14 +621,26 @@ impl Session {
             }
             // A double click arrives instead of the second click's release.
             PointerKind::Up | PointerKind::DoubleClick => {
-                let Gesture::ShapeBuild { picked, remove, start, .. } = std::mem::take(&mut self.tool.gesture) else { return Ok(()) };
+                let Gesture::ShapeBuild {
+                    picked,
+                    remove,
+                    start,
+                    ..
+                } = std::mem::take(&mut self.tool.gesture)
+                else {
+                    return Ok(());
+                };
                 self.tool.overlay.builder_regions.clear();
                 if picked.is_empty() {
                     if (ev.p() - start).hypot() * ev.zoom < 3.0 {
                         self.builder_select(ev);
                     }
                 } else {
-                    let cmd = if remove { "shapeBuilder.remove" } else { "shapeBuilder.merge" };
+                    let cmd = if remove {
+                        "shapeBuilder.remove"
+                    } else {
+                        "shapeBuilder.merge"
+                    };
                     self.execute(cmd, &json!({"ids": sel, "regions": picked}))?;
                 }
             }
@@ -522,7 +650,11 @@ impl Session {
             Gesture::ShapeBuild { remove, .. } => *remove,
             _ => remove,
         };
-        if before != (self.tool.overlay.builder_regions.clone(), self.tool.overlay.builder_remove)
+        if before
+            != (
+                self.tool.overlay.builder_regions.clone(),
+                self.tool.overlay.builder_remove,
+            )
             && let Ok(ds) = self.ds_mut()
         {
             ds.revision += 1;
@@ -534,7 +666,9 @@ impl Session {
     fn builder_select(&mut self, ev: &PointerEvent) {
         let Ok(ds) = self.ds() else { return };
         let (doc, page, mut sel) = (ds.doc.clone(), ds.page, ds.selection.clone());
-        let Some(leaf) = self.hit(&doc, page, ev.p(), 2.0 / ev.zoom.max(1e-6)) else { return };
+        let Some(leaf) = self.hit(&doc, page, ev.p(), 2.0 / ev.zoom.max(1e-6)) else {
+            return;
+        };
         let t = figcraft_doc::geometry::select_target(&doc, leaf, &sel, ev.cmd);
         if ev.shift {
             if let Some(i) = sel.iter().position(|x| *x == t) {

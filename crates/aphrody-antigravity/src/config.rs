@@ -116,7 +116,11 @@ fn home_dir() -> Result<PathBuf, ConfigError> {
     #[cfg(not(target_os = "windows"))]
     let primary = "HOME";
 
-    let fallback = if primary == "HOME" { "USERPROFILE" } else { "HOME" };
+    let fallback = if primary == "HOME" {
+        "USERPROFILE"
+    } else {
+        "HOME"
+    };
 
     if let Some(p) = std::env::var_os(primary).filter(|v| !v.is_empty()) {
         return Ok(PathBuf::from(p));
@@ -124,13 +128,17 @@ fn home_dir() -> Result<PathBuf, ConfigError> {
     if let Some(p) = std::env::var_os(fallback).filter(|v| !v.is_empty()) {
         return Ok(PathBuf::from(p));
     }
-    Err(ConfigError::Unsupported("neither HOME nor USERPROFILE is set"))
+    Err(ConfigError::Unsupported(
+        "neither HOME nor USERPROFILE is set",
+    ))
 }
 
 /// No filesystem on `wasm32`; the home directory cannot be resolved.
 #[cfg(target_arch = "wasm32")]
 fn home_dir() -> Result<PathBuf, ConfigError> {
-    Err(ConfigError::Unsupported("home directory resolution is unavailable on wasm32"))
+    Err(ConfigError::Unsupported(
+        "home directory resolution is unavailable on wasm32",
+    ))
 }
 
 impl GeminiConfig {
@@ -240,8 +248,14 @@ mod tests {
         let cfg = GeminiConfig::from_json_str(SAMPLE).unwrap();
         assert_eq!(cfg.permissions, ["command(*)", "unsandboxed(*)", "mcp(*)"]);
         assert_eq!(cfg.browser_js_execution_policy.as_deref(), Some("TURBO"));
-        assert_eq!(cfg.extra.get("telemetryEnabled"), Some(&serde_json::json!(false)));
-        assert_eq!(cfg.extra.get("futureSetting"), Some(&serde_json::json!({"nested": [1, 2, 3]})));
+        assert_eq!(
+            cfg.extra.get("telemetryEnabled"),
+            Some(&serde_json::json!(false))
+        );
+        assert_eq!(
+            cfg.extra.get("futureSetting"),
+            Some(&serde_json::json!({"nested": [1, 2, 3]}))
+        );
     }
 
     #[test]
@@ -282,7 +296,10 @@ mod tests {
         assert_eq!(original, loaded);
 
         // Unknown keys preserved end-to-end through the filesystem.
-        assert_eq!(loaded.extra.get("telemetryEnabled"), Some(&serde_json::json!(false)));
+        assert_eq!(
+            loaded.extra.get("telemetryEnabled"),
+            Some(&serde_json::json!(false))
+        );
         assert_eq!(
             loaded.extra.get("futureSetting"),
             Some(&serde_json::json!({"nested": [1, 2, 3]}))

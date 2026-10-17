@@ -166,7 +166,7 @@ impl Morphology {
             // and the alphabetical tie-break hands back the wrong one.
             Some(gender) if gender == query.gender => score += 2,
             None => score += 1,
-            Some(_) => {},
+            Some(_) => {}
         }
         score
     }

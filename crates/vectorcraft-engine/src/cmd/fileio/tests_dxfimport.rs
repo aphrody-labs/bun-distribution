@@ -89,7 +89,11 @@ fn plan() -> Vec<u8> {
         (0, "ENDSEC"),
         (0, "EOF"),
     ];
-    pairs.iter().map(|(c, v)| format!("{c:>3}\n{v}\n")).collect::<String>().into_bytes()
+    pairs
+        .iter()
+        .map(|(c, v)| format!("{c:>3}\n{v}\n"))
+        .collect::<String>()
+        .into_bytes()
 }
 
 fn open(s: &mut Session, bytes: &[u8], extra: Value) -> crate::Result<Value> {
@@ -101,7 +105,13 @@ fn open(s: &mut Session, bytes: &[u8], extra: Value) -> crate::Result<Value> {
 }
 
 fn layer_names(s: &Session) -> Vec<String> {
-    s.doc().unwrap().doc.layers.iter().filter_map(|l| l.name.clone()).collect()
+    s.doc()
+        .unwrap()
+        .doc
+        .layers
+        .iter()
+        .filter_map(|l| l.name.clone())
+        .collect()
 }
 
 fn leaves(s: &Session) -> Vec<Node> {
@@ -120,15 +130,27 @@ const MM: f64 = 72.0 / 25.4;
 fn document_open_reads_a_dxf_drawing() {
     let mut s = Session::new();
     let r = open(&mut s, &plan(), json!({})).unwrap();
-    assert_eq!((r["format"].as_str(), r["title"].as_str()), (Some("dxf"), Some("plan.dxf")));
+    assert_eq!(
+        (r["format"].as_str(), r["title"].as_str()),
+        (Some("dxf"), Some("plan.dxf"))
+    );
     assert_eq!(layer_names(&s), ["Walls", "Notes"]);
     let st = s.doc().unwrap();
     // Millimetres at 1:1, the artboard the art's size.
     let board = st.doc.artboards[0].rect;
-    assert!((board.width() - 200.0 * MM).abs() < 1e-6 && (board.height() - 100.0 * MM).abs() < 1e-6, "{board:?}");
+    assert!(
+        (board.width() - 200.0 * MM).abs() < 1e-6 && (board.height() - 100.0 * MM).abs() < 1e-6,
+        "{board:?}"
+    );
     assert_eq!(st.doc.units, vectorcraft_doc::Unit::Millimeters);
     assert_eq!(st.doc.symbols.len(), 1, "the block is a symbol");
-    assert_eq!(leaves(&s).iter().filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. })).count(), 2);
+    assert_eq!(
+        leaves(&s)
+            .iter()
+            .filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. }))
+            .count(),
+        2
+    );
     assert!(st.doc.layers[1].locked, "Notes is locked");
     // Saving asks for a name: DXF opens as artwork, it isn't written back.
     assert!(st.path.is_none());
@@ -137,16 +159,33 @@ fn document_open_reads_a_dxf_drawing() {
 #[test]
 fn document_open_takes_the_dxf_options() {
     let mut s = Session::new();
-    open(&mut s, &plan(), json!({"dxf": {"fit": true, "mergeLayers": true}})).unwrap();
+    open(
+        &mut s,
+        &plan(),
+        json!({"dxf": {"fit": true, "mergeLayers": true}}),
+    )
+    .unwrap();
     assert_eq!(layer_names(&s), ["Layer 1"]);
     let board = s.doc().unwrap().doc.artboards[0].rect;
-    assert_eq!((board.width(), board.height()), (792.0, 612.0), "fitted to a landscape letter page");
+    assert_eq!(
+        (board.width(), board.height()),
+        (792.0, 612.0),
+        "fitted to a landscape letter page"
+    );
     open(&mut s, &plan(), json!({"dxf": {"unit": "cm", "scale": 1}})).unwrap();
     let board = s.doc().unwrap().doc.artboards[0].rect;
-    assert!((board.width() - 200.0 * MM * 10.0).abs() < 1e-6, "1 cm = 1 unit: {board:?}");
+    assert!(
+        (board.width() - 200.0 * MM * 10.0).abs() < 1e-6,
+        "1 cm = 1 unit: {board:?}"
+    );
     open(&mut s, &plan(), json!({"dxf": {"layout": "Layout1"}})).unwrap();
     assert_eq!(leaves(&s).len(), 1, "the paper layout's line");
-    for bad in [json!({"dxf": {"unit": "furlong"}}), json!({"dxf": {"scale": 0}}), json!({"dxf": {"layout": "Sheet 9"}}), json!({"dxf": 3})] {
+    for bad in [
+        json!({"dxf": {"unit": "furlong"}}),
+        json!({"dxf": {"scale": 0}}),
+        json!({"dxf": {"layout": "Sheet 9"}}),
+        json!({"dxf": 3}),
+    ] {
         assert!(open(&mut s, &plan(), bad.clone()).is_err(), "{bad}");
     }
 }
@@ -154,12 +193,17 @@ fn document_open_takes_the_dxf_options() {
 #[test]
 fn dxf_info_lists_layouts_layers_and_units() {
     let mut s = Session::new();
-    let r = s.execute("document.dxfInfo", &json!({"dataBase64": b64(&plan())})).unwrap();
+    let r = s
+        .execute("document.dxfInfo", &json!({"dataBase64": b64(&plan())}))
+        .unwrap();
     assert_eq!(r["version"], "2000");
     assert_eq!(r["units"], "Millimeters");
     assert_eq!(r["layouts"], json!(["Model", "Layout1"]));
     assert_eq!(r["layers"], json!(["Walls", "Notes"]));
-    assert_eq!((r["unit"].as_str(), r["scale"].as_f64()), (Some("Millimeters"), Some(1.0)));
+    assert_eq!(
+        (r["unit"].as_str(), r["scale"].as_f64()),
+        (Some("Millimeters"), Some(1.0))
+    );
 }
 
 #[test]
@@ -169,7 +213,10 @@ fn binary_dxf_says_to_save_it_as_ascii() {
     bytes.extend([0u8; 64]);
     let e = open(&mut s, &bytes, json!({})).unwrap_err().to_string();
     assert!(e.contains("binary DXF") && e.contains("ASCII"), "{e}");
-    let e = s.execute("document.dxfInfo", &json!({"dataBase64": b64(&bytes)})).unwrap_err().to_string();
+    let e = s
+        .execute("document.dxfInfo", &json!({"dataBase64": b64(&bytes)}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("binary DXF"), "{e}");
 }
 
@@ -178,7 +225,11 @@ fn dxf_is_readable_and_detected_by_content() {
     let f = format("dxf").unwrap();
     assert!(f.read && f.write);
     assert!(OPEN_EXTS.contains(&"dxf") && PLACE_EXTS.contains(&"dxf"));
-    assert_eq!(detect("drawing.txt", &plan()).map(|f| f.id), Some("dxf"), "the content tells");
+    assert_eq!(
+        detect("drawing.txt", &plan()).map(|f| f.id),
+        Some("dxf"),
+        "the content tells"
+    );
     let mut s = Session::new();
     let r = s.execute("document.formats", &json!({})).unwrap();
     assert!(r["readable"].as_array().unwrap().contains(&json!("dxf")));
@@ -187,7 +238,8 @@ fn dxf_is_readable_and_detected_by_content() {
 /// A document of one 600 × 400 artboard.
 fn page() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 600, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 600, "height": 400}))
+        .unwrap();
     s
 }
 
@@ -198,9 +250,20 @@ fn placed(s: &mut Session, dxf: Value) -> (Value, Rect) {
     }
     let undo = s.doc().unwrap().history.undo.len();
     let r = s.execute("file.place", &p).unwrap();
-    assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1, "one undo step");
+    assert_eq!(
+        s.doc().unwrap().history.undo.len(),
+        undo + 1,
+        "one undo step"
+    );
     let id = vectorcraft_doc::NodeId(r["ids"][0].as_u64().unwrap());
-    let b = s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap();
+    let b = s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .geometric_bounds()
+        .unwrap();
     (r, b)
 }
 
@@ -211,33 +274,66 @@ fn file_place_puts_a_drawing_in_as_one_group() {
     assert_eq!(r["format"], "dxf");
     let st = s.doc().unwrap();
     let id = vectorcraft_doc::NodeId(r["ids"][0].as_u64().unwrap());
-    assert!(matches!(st.doc.node(id).unwrap().kind, NodeKind::Group { clip: false, .. }));
+    assert!(matches!(
+        st.doc.node(id).unwrap().kind,
+        NodeKind::Group { clip: false, .. }
+    ));
     assert_eq!(st.doc.symbols.len(), 1, "its symbol joins the document");
     // Centred on the artboard at 1:1.
-    assert!((b.center().x - 300.0).abs() < 0.5 && (b.center().y - 200.0).abs() < 0.5, "{b:?}");
+    assert!(
+        (b.center().x - 300.0).abs() < 0.5 && (b.center().y - 200.0).abs() < 0.5,
+        "{b:?}"
+    );
     assert!((b.width() - 200.0 * MM).abs() < 1.0, "{b:?}");
     // Fit: the artboard's size.
     let (_, b) = placed(&mut s, json!({"fit": true}));
-    assert!((b.width() - 600.0).abs() < 1.0 && (b.center().y - 200.0).abs() < 0.5, "{b:?}");
+    assert!(
+        (b.width() - 600.0).abs() < 1.0 && (b.center().y - 200.0).abs() < 0.5,
+        "{b:?}"
+    );
     // Not centred: the drawing's origin on the artboard's bottom-left corner.
     let (_, b) = placed(&mut s, json!({"center": false, "unit": "pt", "scale": 1}));
-    assert!((b.x0 - 0.0).abs() < 0.5 && (b.y1 - 400.0).abs() < 0.5, "{b:?}");
+    assert!(
+        (b.x0 - 0.0).abs() < 0.5 && (b.y1 - 400.0).abs() < 0.5,
+        "{b:?}"
+    );
 }
 
 #[test]
 fn a_drawing_export_writes_opens_again() {
     let mut s = page();
     s.execute("paint.setFill", &json!({"none": true})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 200, "height": 100})).unwrap();
-    s.execute("shape.ellipse", &json!({"x": 350, "y": 100, "width": 100, "height": 100})).unwrap();
-    let r = s.execute("document.export", &json!({"format": "dxf", "unit": "pt"})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 100, "y": 100, "width": 200, "height": 100}),
+    )
+    .unwrap();
+    s.execute(
+        "shape.ellipse",
+        &json!({"x": 350, "y": 100, "width": 100, "height": 100}),
+    )
+    .unwrap();
+    let r = s
+        .execute("document.export", &json!({"format": "dxf", "unit": "pt"}))
+        .unwrap();
     let bytes = vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap();
-    let r = open(&mut s, &bytes, json!({"dxf": {"unit": "pt", "scale": 1, "center": false}})).unwrap();
+    let r = open(
+        &mut s,
+        &bytes,
+        json!({"dxf": {"unit": "pt", "scale": 1, "center": false}}),
+    )
+    .unwrap();
     assert_eq!(r["format"], "dxf");
-    let all: Vec<Rect> = leaves(&s).iter().filter_map(|n| n.geometric_bounds()).collect();
+    let all: Vec<Rect> = leaves(&s)
+        .iter()
+        .filter_map(|n| n.geometric_bounds())
+        .collect();
     assert_eq!(all.len(), 2, "{all:?}");
     let h = s.doc().unwrap().doc.artboards[0].rect.height();
     // The export's origin is the artboard's bottom-left: the art keeps its place above it.
     let union = all.iter().copied().reduce(|a, b| a.union(b)).unwrap();
-    assert!((union.width() - 350.0).abs() < 2.0 && (union.y1 - h + 200.0).abs() < 2.0, "{union:?} on {h}");
+    assert!(
+        (union.width() - 350.0).abs() < 2.0 && (union.y1 - h + 200.0).abs() < 2.0,
+        "{union:?} on {h}"
+    );
 }

@@ -72,9 +72,12 @@ pub fn decode(audio: &[u8]) -> Result<DecodedWav, WavError> {
 
     while pos + 8 <= audio.len() {
         let chunk_id = &audio[pos..pos + 4];
-        let chunk_size =
-            u32::from_le_bytes([audio[pos + 4], audio[pos + 5], audio[pos + 6], audio[pos + 7]])
-                as usize;
+        let chunk_size = u32::from_le_bytes([
+            audio[pos + 4],
+            audio[pos + 5],
+            audio[pos + 6],
+            audio[pos + 7],
+        ]) as usize;
         pos += 8;
 
         if chunk_id == b"fmt " {
@@ -131,7 +134,7 @@ pub fn decode(audio: &[u8]) -> Result<DecodedWav, WavError> {
                 .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 32_768.0)
                 .collect();
             downmix(interleaved, channels)
-        },
+        }
         32 => {
             if !pcm.len().is_multiple_of(4) {
                 return Err(WavError(
@@ -145,15 +148,18 @@ pub fn decode(audio: &[u8]) -> Result<DecodedWav, WavError> {
                 .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
                 .collect();
             downmix(interleaved, channels)
-        },
+        }
         bps => {
             return Err(WavError(format!(
                 "unsupported bits_per_sample {bps} (accepted: 16 or 32)"
             )));
-        },
+        }
     };
 
-    Ok(DecodedWav { samples, sample_rate })
+    Ok(DecodedWav {
+        samples,
+        sample_rate,
+    })
 }
 
 /// Average interleaved channels down to mono. A single channel passes through
@@ -162,9 +168,15 @@ fn downmix(interleaved: Vec<f32>, channels: usize) -> Vec<f32> {
     if channels <= 1 {
         return interleaved;
     }
-    #[expect(clippy::cast_precision_loss, reason = "channel counts are 1..=8 in practice")]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "channel counts are 1..=8 in practice"
+    )]
     let divisor = channels as f32;
-    interleaved.chunks_exact(channels).map(|frame| frame.iter().sum::<f32>() / divisor).collect()
+    interleaved
+        .chunks_exact(channels)
+        .map(|frame| frame.iter().sum::<f32>() / divisor)
+        .collect()
 }
 
 /// Reinterpret a buffer as raw little-endian `f32` samples.
@@ -214,7 +226,10 @@ pub fn encode_pcm16(samples: &[f32], sample_rate: u32) -> Vec<u8> {
     out.extend_from_slice(&data_len.to_le_bytes());
     for &s in samples {
         let clamped = s.clamp(-1.0, 1.0);
-        #[expect(clippy::cast_possible_truncation, reason = "clamped to i16 range just above")]
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "clamped to i16 range just above"
+        )]
         let value = (clamped * 32_767.0) as i16;
         out.extend_from_slice(&value.to_le_bytes());
     }
@@ -232,7 +247,10 @@ pub fn decode_any(audio: &[u8]) -> Result<DecodedWav, WavError> {
         return decode(audio);
     }
     as_raw_f32(audio)
-        .map(|samples| DecodedWav { samples, sample_rate: WHISPER_SAMPLE_RATE })
+        .map(|samples| DecodedWav {
+            samples,
+            sample_rate: WHISPER_SAMPLE_RATE,
+        })
         .ok_or_else(|| WavError("unrecognised audio: neither WAV nor raw little-endian f32".into()))
 }
 
@@ -261,8 +279,10 @@ mod tests {
 
     #[test]
     fn decodes_16_bit_mono_and_keeps_the_rate() {
-        let payload: Vec<u8> =
-            [0i16, 16_384, -16_384, 32_767].iter().flat_map(|s| s.to_le_bytes()).collect();
+        let payload: Vec<u8> = [0i16, 16_384, -16_384, 32_767]
+            .iter()
+            .flat_map(|s| s.to_le_bytes())
+            .collect();
         let decoded = decode(&wav(16, 1, 16_000, &payload)).unwrap();
         assert_eq!(decoded.sample_rate, 16_000);
         assert_eq!(decoded.samples.len(), 4);
@@ -273,8 +293,10 @@ mod tests {
     #[test]
     fn stereo_is_averaged_down_to_mono() {
         // Two frames: (1.0, -1.0) then (0.5, 0.5) -> 0.0 then 0.5.
-        let payload: Vec<u8> =
-            [32_767i16, -32_767, 16_384, 16_384].iter().flat_map(|s| s.to_le_bytes()).collect();
+        let payload: Vec<u8> = [32_767i16, -32_767, 16_384, 16_384]
+            .iter()
+            .flat_map(|s| s.to_le_bytes())
+            .collect();
         let decoded = decode(&wav(16, 2, 16_000, &payload)).unwrap();
         assert_eq!(decoded.samples.len(), 2);
         assert!(decoded.samples[0].abs() < 1e-3, "{:?}", decoded.samples);
@@ -283,7 +305,10 @@ mod tests {
 
     #[test]
     fn an_auxiliary_chunk_before_data_is_skipped() {
-        let payload: Vec<u8> = [1000i16, -1000].iter().flat_map(|s| s.to_le_bytes()).collect();
+        let payload: Vec<u8> = [1000i16, -1000]
+            .iter()
+            .flat_map(|s| s.to_le_bytes())
+            .collect();
         let mut w = wav(16, 1, 16_000, &payload);
         // Splice a LIST chunk of odd size right after `fmt `, to also exercise
         // the RIFF pad byte.
@@ -340,7 +365,10 @@ mod tests {
     fn decode_any_routes_on_the_riff_signature() {
         let wav_bytes = encode_pcm16(&[0.5], WHISPER_SAMPLE_RATE);
         assert_eq!(decode_any(&wav_bytes).unwrap().samples.len(), 1);
-        assert_eq!(decode_any(&0.5f32.to_le_bytes()).unwrap().samples, vec![0.5]);
+        assert_eq!(
+            decode_any(&0.5f32.to_le_bytes()).unwrap().samples,
+            vec![0.5]
+        );
         assert!(decode_any(&[1u8, 2, 3]).is_err());
     }
 }

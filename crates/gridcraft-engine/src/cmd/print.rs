@@ -72,7 +72,10 @@ pub fn paper_size(name: &str) -> (f32, f32) {
 }
 
 fn known_paper(name: &str) -> Option<(f32, f32)> {
-    let n = name.trim().to_ascii_lowercase().replace([' ', '-', '_'], "");
+    let n = name
+        .trim()
+        .to_ascii_lowercase()
+        .replace([' ', '-', '_'], "");
     Some(match n.as_str() {
         "letter" | "usletter" => (612.0, 792.0),
         "legal" | "uslegal" => (612.0, 1008.0),
@@ -120,7 +123,10 @@ impl SheetLayout {
     }
     pub(crate) fn avail(&self) -> (f32, f32) {
         let [l, r, t, b, ..] = self.margins;
-        ((self.page_w - l - r).max(36.0), (self.page_h - t - b).max(36.0))
+        (
+            (self.page_w - l - r).max(36.0),
+            (self.page_h - t - b).max(36.0),
+        )
     }
 }
 
@@ -137,13 +143,28 @@ impl PrintOptions {
         let all_sheets = match str_param(p, "sheets") {
             None | Some("active") => false,
             Some("all") | Some("workbook") => true,
-            Some(other) => return Err(bad(cmd, format!("`sheets` must be active or all, not `{other}`"))),
+            Some(other) => {
+                return Err(bad(
+                    cmd,
+                    format!("`sheets` must be active or all, not `{other}`"),
+                ));
+            }
         };
-        let range = match str_param(p, "range").map(str::trim).filter(|r| !r.is_empty()) {
-            Some(r) => Some(RangeRef::parse(split_sheet(r).1).ok_or_else(|| bad(cmd, format!("not a range: `{r}`")))?),
+        let range = match str_param(p, "range")
+            .map(str::trim)
+            .filter(|r| !r.is_empty())
+        {
+            Some(r) => Some(
+                RangeRef::parse(split_sheet(r).1)
+                    .ok_or_else(|| bad(cmd, format!("not a range: `{r}`")))?,
+            ),
             None => None,
         };
-        Ok(PrintOptions { all_sheets, range, fit_to_page: bool_param(p, "fitToPage") })
+        Ok(PrintOptions {
+            all_sheets,
+            range,
+            fit_to_page: bool_param(p, "fitToPage"),
+        })
     }
 }
 
@@ -157,7 +178,10 @@ pub fn print_range(sh: &Sheet) -> Option<RangeRef> {
     let mut grow = |a: &Anchor| {
         let x = sh.col_left(a.cell.col) + a.dx as f64;
         let y = sh.row_top(a.cell.row) + a.dy as f64;
-        let end = CellRef::new(sh.row_at(y + a.height.max(0.0) as f64), sh.col_at(x + a.width.max(0.0) as f64));
+        let end = CellRef::new(
+            sh.row_at(y + a.height.max(0.0) as f64),
+            sh.col_at(x + a.width.max(0.0) as f64),
+        );
         let ar = RangeRef::new(a.cell, end);
         r = Some(r.map_or(ar, |u| u.union(&ar)));
     };
@@ -181,14 +205,23 @@ fn trim_full(sh: &Sheet, r: RangeRef) -> RangeRef {
         return r;
     }
     match sh.used_range() {
-        Some(u) => r.intersection(&RangeRef::new(CellRef::new(0, 0), u.end)).unwrap_or(RangeRef::cell(r.start)),
+        Some(u) => r
+            .intersection(&RangeRef::new(CellRef::new(0, 0), u.end))
+            .unwrap_or(RangeRef::cell(r.start)),
         None => RangeRef::cell(r.start),
     }
 }
 
 /// Splits `start..=end` into bands whose sizes fit `avail(band_start)`; `breaks` force a new
 /// band before a line. Stops after `cap` bands.
-fn bands(start: u32, end: u32, size: impl Fn(u32) -> f32, avail: impl Fn(u32) -> f32, breaks: &[u32], cap: usize) -> Vec<(u32, u32)> {
+fn bands(
+    start: u32,
+    end: u32,
+    size: impl Fn(u32) -> f32,
+    avail: impl Fn(u32) -> f32,
+    breaks: &[u32],
+    cap: usize,
+) -> Vec<(u32, u32)> {
     let mut out = Vec::new();
     let mut cur = start;
     let mut used = 0.0f32;
@@ -227,14 +260,27 @@ fn title_span(t: Option<(u32, u32)>, max: u32) -> Option<(u32, u32)> {
 }
 
 /// Paginates one sheet.
-pub fn layout_sheet(wb: &Workbook, si: usize, opts: &PrintOptions, range_override: Option<RangeRef>) -> Option<SheetLayout> {
+pub fn layout_sheet(
+    wb: &Workbook,
+    si: usize,
+    opts: &PrintOptions,
+    range_override: Option<RangeRef>,
+) -> Option<SheetLayout> {
     let sh = wb.sheet(si)?;
     let st = sh.print.clone();
     let (mut pw, mut ph) = paper_size(&st.paper);
     if st.orientation == Orientation::Landscape {
         std::mem::swap(&mut pw, &mut ph);
     }
-    let inch = |i: usize| st.margins.get(i).copied().filter(|v| v.is_finite()).unwrap_or(0.5).clamp(0.0, 20.0) * 72.0;
+    let inch = |i: usize| {
+        st.margins
+            .get(i)
+            .copied()
+            .filter(|v| v.is_finite())
+            .unwrap_or(0.5)
+            .clamp(0.0, 20.0)
+            * 72.0
+    };
     let mut margins = [inch(0), inch(1), inch(2), inch(3), inch(4), inch(5)];
     // Keep at least an inch of printable space.
     for (a, b, total) in [(0usize, 1usize, pw), (2, 3, ph)] {
@@ -252,7 +298,11 @@ pub fn layout_sheet(wb: &Workbook, si: usize, opts: &PrintOptions, range_overrid
     let title_rows = title_span(st.title_rows, MAX_ROWS);
     let title_cols = title_span(st.title_cols, MAX_COLS);
     let digits = format!("{}", area.end.row + 1).len() as f32;
-    let (heading_w, heading_h) = if st.headings { (10.0 + 7.0 * digits, sh.default_row_height.clamp(10.0, 60.0)) } else { (0.0, 0.0) };
+    let (heading_w, heading_h) = if st.headings {
+        (10.0 + 7.0 * digits, sh.default_row_height.clamp(10.0, 60.0))
+    } else {
+        (0.0, 0.0)
+    };
     let fit = match opts.fit_to_page {
         Some(true) => Some((1u16, 1u16)),
         Some(false) => None,
@@ -290,15 +340,29 @@ pub fn layout_sheet(wb: &Workbook, si: usize, opts: &PrintOptions, range_overrid
     };
     match fit {
         Some((fw, fh)) => {
-            let total_w: f32 = (area.start.col..=area.end.col).map(|c| sh.col_width(c)).sum::<f32>() + heading_w;
+            let total_w: f32 = (area.start.col..=area.end.col)
+                .map(|c| sh.col_width(c))
+                .sum::<f32>()
+                + heading_w;
             let total_h: f32 = if area.height() > 200_000 {
                 f32::INFINITY
             } else {
-                (area.start.row..=area.end.row).map(|r| sh.row_height(r)).sum::<f32>() + heading_h
+                (area.start.row..=area.end.row)
+                    .map(|r| sh.row_height(r))
+                    .sum::<f32>()
+                    + heading_h
             };
             let (aw, ah) = lay.avail();
-            let sw = if fw > 0 { aw * fw as f32 / (total_w * PX_TO_PT).max(1.0) } else { f32::INFINITY };
-            let sh_ = if fh > 0 { ah * fh as f32 / (total_h * PX_TO_PT).max(1.0) } else { f32::INFINITY };
+            let sw = if fw > 0 {
+                aw * fw as f32 / (total_w * PX_TO_PT).max(1.0)
+            } else {
+                f32::INFINITY
+            };
+            let sh_ = if fh > 0 {
+                ah * fh as f32 / (total_h * PX_TO_PT).max(1.0)
+            } else {
+                f32::INFINITY
+            };
             lay.scale = sw.min(sh_).min(1.0).clamp(0.1, 1.0);
             for _ in 0..40 {
                 paginate(&mut lay, false);
@@ -318,13 +382,25 @@ pub fn layout_sheet(wb: &Workbook, si: usize, opts: &PrintOptions, range_overrid
 /// Splits a layout's area into row and column bands that fit its pages (at most `cap` of each),
 /// honouring manual breaks (when `lay.manual_breaks`), print headings and repeated titles. The
 /// one pagination rule shared by printing, PDF export, Page Break Preview and Page Layout view.
-pub(crate) fn split_bands(sh: &Sheet, lay: &SheetLayout, cap: usize) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
+pub(crate) fn split_bands(
+    sh: &Sheet,
+    lay: &SheetLayout,
+    cap: usize,
+) -> (Vec<(u32, u32)>, Vec<(u32, u32)>) {
     let k = lay.k();
     let (aw, ah) = lay.avail();
     let (aw, ah) = (aw / k, ah / k);
     let st = &lay.settings;
-    let mut rb: Vec<u32> = if lay.manual_breaks { st.row_breaks.clone() } else { vec![] };
-    let mut cb: Vec<u32> = if lay.manual_breaks { st.col_breaks.clone() } else { vec![] };
+    let mut rb: Vec<u32> = if lay.manual_breaks {
+        st.row_breaks.clone()
+    } else {
+        vec![]
+    };
+    let mut cb: Vec<u32> = if lay.manual_breaks {
+        st.col_breaks.clone()
+    } else {
+        vec![]
+    };
     rb.sort_unstable();
     cb.sort_unstable();
     let (title_rows, title_cols) = (lay.title_rows, lay.title_cols);
@@ -341,8 +417,22 @@ pub(crate) fn split_bands(sh: &Sheet, lay: &SheetLayout, cap: usize) -> (Vec<(u3
         }
     };
     let area = lay.area;
-    let rows = bands(area.start.row, area.end.row, |r| sh.row_height(r), |start| (ah - lay.heading_h - title_h(start)).max(1.0), &rb, cap);
-    let cols = bands(area.start.col, area.end.col, |c| sh.col_width(c), |start| (aw - lay.heading_w - title_w(start)).max(1.0), &cb, cap);
+    let rows = bands(
+        area.start.row,
+        area.end.row,
+        |r| sh.row_height(r),
+        |start| (ah - lay.heading_h - title_h(start)).max(1.0),
+        &rb,
+        cap,
+    );
+    let cols = bands(
+        area.start.col,
+        area.end.col,
+        |c| sh.col_width(c),
+        |start| (aw - lay.heading_w - title_w(start)).max(1.0),
+        &cb,
+        cap,
+    );
     (rows, cols)
 }
 
@@ -351,7 +441,12 @@ pub fn layouts(wb: &Workbook, opts: &PrintOptions) -> Vec<SheetLayout> {
     let mut out = Vec::new();
     let mut pages = 0usize;
     let sheets: Vec<usize> = if opts.all_sheets {
-        (0..wb.sheets.len()).filter(|i| wb.sheet(*i).is_some_and(|s| s.visibility == Visibility::Visible)).collect()
+        (0..wb.sheets.len())
+            .filter(|i| {
+                wb.sheet(*i)
+                    .is_some_and(|s| s.visibility == Visibility::Visible)
+            })
+            .collect()
     } else {
         vec![wb.active_sheet]
     };
@@ -359,8 +454,15 @@ pub fn layouts(wb: &Workbook, opts: &PrintOptions) -> Vec<SheetLayout> {
         if pages >= MAX_PAGES {
             break;
         }
-        let ovr = if si == wb.active_sheet { opts.range } else { None };
-        if opts.all_sheets && ovr.is_none() && wb.sheet(si).is_some_and(|s| print_range(s).is_none()) {
+        let ovr = if si == wb.active_sheet {
+            opts.range
+        } else {
+            None
+        };
+        if opts.all_sheets
+            && ovr.is_none()
+            && wb.sheet(si).is_some_and(|s| print_range(s).is_none())
+        {
             continue;
         }
         if let Some(mut l) = layout_sheet(wb, si, opts, ovr) {
@@ -425,7 +527,10 @@ pub fn split_header_footer(spec: &str) -> [String; 3] {
             ('&', Some('R' | 'r')) => cur = 2,
             ('&', Some('"')) => {
                 // &"Font,Style" is kept whole.
-                let end = chars[i + 2..].iter().position(|ch| *ch == '"').map_or(chars.len(), |p| i + 3 + p);
+                let end = chars[i + 2..]
+                    .iter()
+                    .position(|ch| *ch == '"')
+                    .map_or(chars.len(), |p| i + 3 + p);
                 out[sec].extend(&chars[i..end.min(chars.len())]);
                 i = end;
                 continue;
@@ -469,7 +574,10 @@ pub fn codes_to_fields(raw: &str) -> String {
         }
         // A dangling `&` at the end is dropped (printing ignores it too).
         if let Some(n) = it.next() {
-            match HF_FIELDS.iter().find(|(code, _)| *code == n.to_ascii_uppercase()) {
+            match HF_FIELDS
+                .iter()
+                .find(|(code, _)| *code == n.to_ascii_uppercase())
+            {
                 Some((_, field)) => out.push_str(field),
                 None => {
                     out.push('&');
@@ -552,7 +660,11 @@ pub fn expand_header_footer(spec: &str, cx: &HfContext) -> [HfSection; 3] {
                 if let Some(&sign) = chars.get(i)
                     && (sign == '+' || sign == '-')
                 {
-                    let digits: String = chars[i + 1..].iter().take_while(|d| d.is_ascii_digit()).take(6).collect();
+                    let digits: String = chars[i + 1..]
+                        .iter()
+                        .take_while(|d| d.is_ascii_digit())
+                        .take(6)
+                        .collect();
                     if let Ok(d) = digits.parse::<i64>() {
                         n = if sign == '+' { n + d } else { n - d };
                         i += 1 + digits.len();
@@ -582,7 +694,15 @@ pub fn expand_header_footer(spec: &str, cx: &HfContext) -> [HfSection; 3] {
                 i += rest.chars().count() + 1;
             }
             d if d.is_ascii_digit() => {
-                let digits: String = std::iter::once(d).chain(chars[i..].iter().copied().take_while(|c| c.is_ascii_digit())).take(3).collect();
+                let digits: String = std::iter::once(d)
+                    .chain(
+                        chars[i..]
+                            .iter()
+                            .copied()
+                            .take_while(|c| c.is_ascii_digit()),
+                    )
+                    .take(3)
+                    .collect();
                 i += digits.len() - 1;
                 if let Ok(v) = digits.parse::<f32>() {
                     sec.size = Some(v.clamp(1.0, 409.0));
@@ -631,7 +751,13 @@ struct Look {
     cf: Option<crate::cf::CfLook>,
 }
 
-fn cell_look(wb: &Workbook, si: usize, sh: &Sheet, c: CellRef, cf: &mut Option<crate::cf::CfCache>) -> Look {
+fn cell_look(
+    wb: &Workbook,
+    si: usize,
+    sh: &Sheet,
+    c: CellRef,
+    cf: &mut Option<crate::cf::CfCache>,
+) -> Look {
     let mut style = match sh.table_at(c) {
         Some(t) => crate::tables::table_cell_style(wb, si, t, c),
         None => wb.styles.get(sh.style_id(c)).clone(),
@@ -673,7 +799,11 @@ fn cell_look(wb: &Workbook, si: usize, sh: &Sheet, c: CellRef, cf: &mut Option<c
     if let Some(rgb) = cfl.as_ref().and_then(|l| l.scale_fill) {
         fill = Some(rgb);
     }
-    Look { style, fill, cf: cfl }
+    Look {
+        style,
+        fill,
+        cf: cfl,
+    }
 }
 
 /// PDF measurement for chart layout.
@@ -681,7 +811,15 @@ struct PdfMeasure;
 
 impl gridcraft_chart::Measure for PdfMeasure {
     fn text_width(&self, text: &str, size: f32, bold: bool) -> f32 {
-        gridcraft_pdf::text_width(if bold { Font::HelveticaBold } else { Font::Helvetica }, size, text)
+        gridcraft_pdf::text_width(
+            if bold {
+                Font::HelveticaBold
+            } else {
+                Font::Helvetica
+            },
+            size,
+            text,
+        )
     }
 }
 
@@ -698,7 +836,9 @@ impl Xf {
         (self.ox + x * self.k, self.oy + y * self.k)
     }
     fn pts(&self, pts: &[[f32; 2]]) -> Vec<[f32; 2]> {
-        pts.iter().map(|q| [self.ox + q[0] * self.k, self.oy + q[1] * self.k]).collect()
+        pts.iter()
+            .map(|q| [self.ox + q[0] * self.k, self.oy + q[1] * self.k])
+            .collect()
     }
 }
 
@@ -708,7 +848,15 @@ fn draw_prims(pg: &mut Page, prims: &[gridcraft_chart::Prim], xf: Xf) {
     let k = xf.k;
     for p in prims {
         match p {
-            Prim::Rect { x, y, w, h, fill, stroke, .. } => {
+            Prim::Rect {
+                x,
+                y,
+                w,
+                h,
+                fill,
+                stroke,
+                ..
+            } => {
                 let (px, py) = xf.p(*x, *y);
                 if let Some(f) = fill {
                     pg.fill_rect(px, py, w * k, h * k, blend(*f));
@@ -717,31 +865,89 @@ fn draw_prims(pg: &mut Page, prims: &[gridcraft_chart::Prim], xf: Xf) {
                     pg.rect_stroke(px, py, w * k, h * k, (lw * k).max(0.1), blend(*c));
                 }
             }
-            Prim::Line { pts, color, width, dash } => {
-                let d = if *dash { vec![3.0 * k, 2.0 * k] } else { vec![] };
+            Prim::Line {
+                pts,
+                color,
+                width,
+                dash,
+            } => {
+                let d = if *dash {
+                    vec![3.0 * k, 2.0 * k]
+                } else {
+                    vec![]
+                };
                 pg.polyline(&xf.pts(pts), (width * k).max(0.1), blend(*color), &d);
             }
             Prim::Polygon { pts, fill, stroke } => {
-                pg.polygon(&xf.pts(pts), Some(blend(*fill)), stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))));
+                pg.polygon(
+                    &xf.pts(pts),
+                    Some(blend(*fill)),
+                    stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))),
+                );
             }
-            Prim::Wedge { cx, cy, r_outer, r_inner, a0, a1, fill, stroke } => {
+            Prim::Wedge {
+                cx,
+                cy,
+                r_outer,
+                r_inner,
+                a0,
+                a1,
+                fill,
+                stroke,
+            } => {
                 let span = (a1 - a0).abs().min(std::f32::consts::TAU);
                 let n = ((span / (std::f32::consts::PI / 36.0)).ceil() as usize).clamp(2, 400);
                 let at = |a: f32, r: f32| [cx + r * a.sin(), cy - r * a.cos()];
-                let mut pts: Vec<[f32; 2]> = (0..=n).map(|i| at(a0 + (a1 - a0) * i as f32 / n as f32, *r_outer)).collect();
+                let mut pts: Vec<[f32; 2]> = (0..=n)
+                    .map(|i| at(a0 + (a1 - a0) * i as f32 / n as f32, *r_outer))
+                    .collect();
                 if *r_inner > 0.0 {
-                    pts.extend((0..=n).rev().map(|i| at(a0 + (a1 - a0) * i as f32 / n as f32, *r_inner)));
+                    pts.extend(
+                        (0..=n)
+                            .rev()
+                            .map(|i| at(a0 + (a1 - a0) * i as f32 / n as f32, *r_inner)),
+                    );
                 } else {
                     pts.push([*cx, *cy]);
                 }
-                pg.polygon(&xf.pts(&pts), Some(blend(*fill)), stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))));
+                pg.polygon(
+                    &xf.pts(&pts),
+                    Some(blend(*fill)),
+                    stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))),
+                );
             }
-            Prim::Circle { cx, cy, r, fill, stroke } => {
+            Prim::Circle {
+                cx,
+                cy,
+                r,
+                fill,
+                stroke,
+            } => {
                 let (px, py) = xf.p(*cx, *cy);
-                pg.circle(px, py, r * k, fill.map(blend), stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))));
+                pg.circle(
+                    px,
+                    py,
+                    r * k,
+                    fill.map(blend),
+                    stroke.map(|(c, w)| (blend(c), (w * k).max(0.1))),
+                );
             }
-            Prim::Text { x, y, text, size, color, bold, align, valign, rotation } => {
-                let font = if *bold { Font::HelveticaBold } else { Font::Helvetica };
+            Prim::Text {
+                x,
+                y,
+                text,
+                size,
+                color,
+                bold,
+                align,
+                valign,
+                rotation,
+            } => {
+                let font = if *bold {
+                    Font::HelveticaBold
+                } else {
+                    Font::Helvetica
+                };
                 let size = size * k;
                 let w = gridcraft_pdf::text_width(font, size, text);
                 let dx = match align {
@@ -754,9 +960,21 @@ fn draw_prims(pg: &mut Page, prims: &[gridcraft_chart::Prim], xf: Xf) {
                     V::Middle => size * 0.35,
                     V::Bottom => -size * 0.21,
                 };
-                let (sn, cs) = if rotation.is_finite() { rotation.sin_cos() } else { (0.0, 1.0) };
+                let (sn, cs) = if rotation.is_finite() {
+                    rotation.sin_cos()
+                } else {
+                    (0.0, 1.0)
+                };
                 let (ax, ay) = xf.p(*x, *y);
-                pg.text_rotated(ax + dx * cs - dy * sn, ay + dx * sn + dy * cs, size, font, blend(*color), text, *rotation);
+                pg.text_rotated(
+                    ax + dx * cs - dy * sn,
+                    ay + dx * sn + dy * cs,
+                    size,
+                    font,
+                    blend(*color),
+                    text,
+                    *rotation,
+                );
             }
         }
     }
@@ -770,7 +988,11 @@ fn wrap_lines(text: &str, font: Font, size: f32, width: f32) -> Vec<String> {
     for para in text.split('\n') {
         let mut line = String::new();
         for word in para.split(' ') {
-            let cand = if line.is_empty() { word.to_string() } else { format!("{line} {word}") };
+            let cand = if line.is_empty() {
+                word.to_string()
+            } else {
+                format!("{line} {word}")
+            };
             if line.is_empty() || gridcraft_pdf::text_width(font, size, &cand) <= width {
                 line = cand;
             } else {
@@ -782,7 +1004,10 @@ fn wrap_lines(text: &str, font: Font, size: f32, width: f32) -> Vec<String> {
                 let mut cut = String::new();
                 let mut rest = String::new();
                 for ch in line.chars() {
-                    if rest.is_empty() && gridcraft_pdf::text_width(font, size, &format!("{cut}{ch}")) <= width || cut.is_empty() {
+                    if rest.is_empty()
+                        && gridcraft_pdf::text_width(font, size, &format!("{cut}{ch}")) <= width
+                        || cut.is_empty()
+                    {
                         cut.push(ch);
                     } else {
                         rest.push(ch);
@@ -820,24 +1045,40 @@ struct Block<'a> {
 impl Block<'_> {
     fn x(&self, col: u32) -> f32 {
         if col >= self.cols.0 && col <= self.cols.1 + 1 {
-            return self.xs.get((col - self.cols.0) as usize).copied().unwrap_or(0.0);
+            return self
+                .xs
+                .get((col - self.cols.0) as usize)
+                .copied()
+                .unwrap_or(0.0);
         }
         let x0 = self.xs.first().copied().unwrap_or(0.0);
         x0 + ((self.sh.col_left(col) - self.sh.col_left(self.cols.0)) as f32) * self.k
     }
     fn y(&self, row: u32) -> f32 {
         if row >= self.rows.0 && row <= self.rows.1 + 1 {
-            return self.ys.get((row - self.rows.0) as usize).copied().unwrap_or(0.0);
+            return self
+                .ys
+                .get((row - self.rows.0) as usize)
+                .copied()
+                .unwrap_or(0.0);
         }
         let y0 = self.ys.first().copied().unwrap_or(0.0);
         y0 + ((self.sh.row_top(row) - self.sh.row_top(self.rows.0)) as f32) * self.k
     }
     fn rect(&self, r: RangeRef) -> (f32, f32, f32, f32) {
         let (x0, y0) = (self.x(r.start.col), self.y(r.start.row));
-        (x0, y0, self.x(r.end.col.saturating_add(1)) - x0, self.y(r.end.row.saturating_add(1)) - y0)
+        (
+            x0,
+            y0,
+            self.x(r.end.col.saturating_add(1)) - x0,
+            self.y(r.end.row.saturating_add(1)) - y0,
+        )
     }
     fn range(&self) -> RangeRef {
-        RangeRef::new(CellRef::new(self.rows.0, self.cols.0), CellRef::new(self.rows.1, self.cols.1))
+        RangeRef::new(
+            CellRef::new(self.rows.0, self.cols.0),
+            CellRef::new(self.rows.1, self.cols.1),
+        )
     }
 }
 
@@ -847,13 +1088,26 @@ fn border_dash(style: BorderStyle, k: f32) -> Vec<f32> {
         BorderStyle::Dashed | BorderStyle::MediumDashed => vec![4.0 * u, 2.0 * u],
         BorderStyle::Dotted => vec![1.0 * u, 1.0 * u],
         BorderStyle::Hair => vec![0.75 * u, 0.75 * u],
-        BorderStyle::DashDot | BorderStyle::MediumDashDot | BorderStyle::SlantDashDot => vec![4.0 * u, 1.5 * u, 1.0 * u, 1.5 * u],
-        BorderStyle::DashDotDot | BorderStyle::MediumDashDotDot => vec![4.0 * u, 1.5 * u, 1.0 * u, 1.5 * u, 1.0 * u, 1.5 * u],
+        BorderStyle::DashDot | BorderStyle::MediumDashDot | BorderStyle::SlantDashDot => {
+            vec![4.0 * u, 1.5 * u, 1.0 * u, 1.5 * u]
+        }
+        BorderStyle::DashDotDot | BorderStyle::MediumDashDotDot => {
+            vec![4.0 * u, 1.5 * u, 1.0 * u, 1.5 * u, 1.0 * u, 1.5 * u]
+        }
         _ => vec![],
     }
 }
 
-fn draw_border(pg: &mut Page, b: &BorderLine, wb: &Workbook, x0: f32, y0: f32, x1: f32, y1: f32, k: f32) {
+fn draw_border(
+    pg: &mut Page,
+    b: &BorderLine,
+    wb: &Workbook,
+    x0: f32,
+    y0: f32,
+    x1: f32,
+    y1: f32,
+    k: f32,
+) {
     if b.is_none() {
         return;
     }
@@ -861,7 +1115,11 @@ fn draw_border(pg: &mut Page, b: &BorderLine, wb: &Workbook, x0: f32, y0: f32, x
     if b.style == BorderStyle::Double {
         let off = 1.0 * k;
         let lw = (0.75 * k).max(0.2);
-        let (dx, dy) = if (y0 - y1).abs() < 0.001 { (0.0, off) } else { (off, 0.0) };
+        let (dx, dy) = if (y0 - y1).abs() < 0.001 {
+            (0.0, off)
+        } else {
+            (off, 0.0)
+        };
         pg.stroke_line(x0 - dx, y0 - dy, x1 - dx, y1 - dy, lw, color);
         pg.stroke_line(x0 + dx, y0 + dy, x1 + dx, y1 + dy, lw, color);
         return;
@@ -871,26 +1129,46 @@ fn draw_border(pg: &mut Page, b: &BorderLine, wb: &Workbook, x0: f32, y0: f32, x
 }
 
 fn font_for(style: &Style) -> Font {
-    Font::styled(Font::family_for(&style.font.name), style.font.bold, style.font.italic)
+    Font::styled(
+        Font::family_for(&style.font.name),
+        style.font.bold,
+        style.font.italic,
+    )
 }
 
 /// Draws the cells of a block: fills, gridlines, data bars, borders and text.
 fn draw_block(pg: &mut Page, b: &Block, gridlines: bool, cf: &mut Option<crate::cf::CfCache>) {
-    let (bx, by) = (b.xs.first().copied().unwrap_or(0.0), b.ys.first().copied().unwrap_or(0.0));
-    let (bw, bh) = (b.xs.last().copied().unwrap_or(bx) - bx, b.ys.last().copied().unwrap_or(by) - by);
+    let (bx, by) = (
+        b.xs.first().copied().unwrap_or(0.0),
+        b.ys.first().copied().unwrap_or(0.0),
+    );
+    let (bw, bh) = (
+        b.xs.last().copied().unwrap_or(bx) - bx,
+        b.ys.last().copied().unwrap_or(by) - by,
+    );
     if bw <= 0.0 || bh <= 0.0 {
         return;
     }
     let block = b.range();
     let sh = b.sh;
-    let merges: Vec<RangeRef> = sh.merges.iter().filter(|m| m.intersects(&block)).copied().collect();
+    let merges: Vec<RangeRef> = sh
+        .merges
+        .iter()
+        .filter(|m| m.intersects(&block))
+        .copied()
+        .collect();
     let covered = |c: CellRef| merges.iter().any(|m| m.contains(c));
     // Cells worth visiting.
     let cells: Vec<CellRef> = if block.count() <= DENSE_BLOCK {
         block.iter().filter(|c| !covered(*c)).collect()
     } else {
         let mut set: Vec<CellRef> = sh.cells.iter_range(block).map(|(c, _)| c).collect();
-        set.extend(sh.spill.range(block.start..=block.end).map(|(c, _)| *c).filter(|c| block.contains(*c)));
+        set.extend(
+            sh.spill
+                .range(block.start..=block.end)
+                .map(|(c, _)| *c)
+                .filter(|c| block.contains(*c)),
+        );
         set.sort_unstable();
         set.dedup();
         set.retain(|c| !covered(*c));
@@ -952,7 +1230,14 @@ fn draw_block(pg: &mut Page, b: &Block, gridlines: bool, cf: &mut Option<crate::
             pg.fill_rect(x, y, w, h, [255, 255, 255]);
         }
         if merged && gridlines {
-            pg.rect_stroke(x, y, w, h, (0.35 * b.scale).clamp(0.1, 0.5), [0xB0, 0xB0, 0xB0]);
+            pg.rect_stroke(
+                x,
+                y,
+                w,
+                h,
+                (0.35 * b.scale).clamp(0.1, 0.5),
+                [0xB0, 0xB0, 0xB0],
+            );
         }
         if let Some((frac, rgb, _)) = l.cf.as_ref().and_then(|cf| cf.bar) {
             let pad = 1.5 * b.k;
@@ -969,8 +1254,14 @@ fn draw_block(pg: &mut Page, b: &Block, gridlines: bool, cf: &mut Option<crate::
         let bd = &l.style.borders;
         let (right, bottom) = match merges.iter().find(|m| m.start == *c).filter(|_| merged) {
             Some(m) => (
-                b.wb.styles.get(sh.style_id(CellRef::new(m.start.row, m.end.col))).borders.right,
-                b.wb.styles.get(sh.style_id(CellRef::new(m.end.row, m.start.col))).borders.bottom,
+                b.wb.styles
+                    .get(sh.style_id(CellRef::new(m.start.row, m.end.col)))
+                    .borders
+                    .right,
+                b.wb.styles
+                    .get(sh.style_id(CellRef::new(m.end.row, m.start.col)))
+                    .borders
+                    .bottom,
             ),
             None => (bd.right, bd.bottom),
         };
@@ -1004,22 +1295,39 @@ fn draw_cell_picture(pg: &mut Page, data: &[u8], rect: (f32, f32, f32, f32), k: 
     if w <= 0.0 || h <= 0.0 || data.len() > 16 * 1024 * 1024 {
         return;
     }
-    let Some((iw, ih)) = crate::io::image_size(data) else { return };
+    let Some((iw, ih)) = crate::io::image_size(data) else {
+        return;
+    };
     if iw == 0 || ih == 0 || iw > 8192 || ih > 8192 || u64::from(iw) * u64::from(ih) > 16_000_000 {
         return;
     }
-    let Ok(mut reader) = image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format() else { return };
+    let Ok(mut reader) = image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format()
+    else {
+        return;
+    };
     let mut limits = image::Limits::default();
     limits.max_image_width = Some(8192);
     limits.max_image_height = Some(8192);
     limits.max_alloc = Some(64 * 1024 * 1024);
     reader.limits(limits);
     let Ok(image) = reader.decode() else { return };
-    let image =
-        image.thumbnail(((w / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32, ((h / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32).to_rgba8();
+    let image = image
+        .thumbnail(
+            ((w / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32,
+            ((h / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32,
+        )
+        .to_rgba8();
     let fit = (w / iw as f32).min(h / ih as f32);
     let (pw, ph) = (iw as f32 * fit, ih as f32 * fit);
-    pg.image_rgba(x + pad + (w - pw) / 2.0, y + pad + (h - ph) / 2.0, pw, ph, image.as_raw(), image.width(), image.height());
+    pg.image_rgba(
+        x + pad + (w - pw) / 2.0,
+        y + pad + (h - ph) / 2.0,
+        pw,
+        ph,
+        image.as_raw(),
+        image.width(),
+        image.height(),
+    );
 }
 
 /// Is a cell free for text to overflow into?
@@ -1033,7 +1341,9 @@ fn center_across_width(styles: &StyleTable, sh: &Sheet, c: CellRef, merges: &[Ra
     let mut col = c.col + 1;
     while col < MAX_COLS && ext < 20_000.0 {
         let nc = CellRef::new(c.row, col);
-        if !empty_for_overflow(sh, nc, merges) || styles.get(sh.style_id(nc)).align.h != HAlign::CenterAcross {
+        if !empty_for_overflow(sh, nc, merges)
+            || styles.get(sh.style_id(nc)).align.h != HAlign::CenterAcross
+        {
             break;
         }
         ext += sh.col_width(col);
@@ -1042,7 +1352,16 @@ fn center_across_width(styles: &StyleTable, sh: &Sheet, c: CellRef, merges: &[Ra
     ext
 }
 
-fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f32, f32), merged: bool, merges: &[RangeRef], limits: (f32, f32)) {
+fn draw_text(
+    pg: &mut Page,
+    b: &Block,
+    c: CellRef,
+    l: &Look,
+    rect: (f32, f32, f32, f32),
+    merged: bool,
+    merges: &[RangeRef],
+    limits: (f32, f32),
+) {
     let (x, y, w, h) = rect;
     let sh = b.sh;
     let wb = b.wb;
@@ -1061,8 +1380,16 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
     let avail = (w - 2.0 * pad - indent).max(0.0);
     let code = st.num_fmt.as_str();
     let formatted = crate::display::format(&v, code, wb);
-    let mut color = formatted.color.map(numfmt_rgb).or_else(|| rgb_of(st.font.color, wb)).unwrap_or([0, 0, 0]);
-    if l.cf.as_ref().and_then(|x| x.style.as_ref()).is_some_and(|s| s.font.color != Color::Auto) {
+    let mut color = formatted
+        .color
+        .map(numfmt_rgb)
+        .or_else(|| rgb_of(st.font.color, wb))
+        .unwrap_or([0, 0, 0]);
+    if l.cf
+        .as_ref()
+        .and_then(|x| x.style.as_ref())
+        .is_some_and(|s| s.font.color != Color::Auto)
+    {
         color = rgb_of(st.font.color, wb).unwrap_or(color);
     }
     let is_num = matches!(v, Value::Number(_));
@@ -1074,7 +1401,8 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
     {
         let digit = gridcraft_pdf::text_width(font, size, "0").max(0.1);
         let max_chars = (avail / digit).floor().max(1.0) as usize;
-        gridcraft_numfmt::format_general_fit(n, max_chars.min(11)).unwrap_or_else(|| "#".repeat(max_chars.min(255)))
+        gridcraft_numfmt::format_general_fit(n, max_chars.min(11))
+            .unwrap_or_else(|| "#".repeat(max_chars.min(255)))
     } else {
         crate::display::cell_text(wb, sh, c)
     };
@@ -1121,15 +1449,27 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
     let n = lines.len().max(1) as f32;
     let first_baseline = match st.align.v {
         VAlign::Top => y + pad + size * 0.8,
-        VAlign::Center | VAlign::Justify | VAlign::Distributed => y + (h - n * line_h) / 2.0 + line_h * 0.5 + size * 0.33,
+        VAlign::Center | VAlign::Justify | VAlign::Distributed => {
+            y + (h - n * line_h) / 2.0 + line_h * 0.5 + size * 0.33
+        }
         VAlign::Bottom => y + h - pad - size * 0.22 - (n - 1.0) * line_h,
     };
     // Overflow into empty neighbours (single-line text, not merged).
     // Center Across Selection spans the empty Center Across cells to its right; the text stays within that run.
     let spans = st.align.h == HAlign::CenterAcross && !wrap && !merged && rot == 0;
-    let across = if spans { center_across_width(&wb.styles, sh, c, merges) * b.k } else { 0.0 };
+    let across = if spans {
+        center_across_width(&wb.styles, sh, c, merges) * b.k
+    } else {
+        0.0
+    };
     let (mut clip_l, mut clip_r) = (x, x + w + across);
-    if !wrap && !merged && !is_num && rot.abs() != 90 && across <= 0.0 && tw + 2.0 * pad + indent > w {
+    if !wrap
+        && !merged
+        && !is_num
+        && rot.abs() != 90
+        && across <= 0.0
+        && tw + 2.0 * pad + indent > w
+    {
         let need = tw + 2.0 * pad + indent - w;
         let grow = |dir: i64, mut need: f32| -> f32 {
             let mut ext = 0.0;
@@ -1172,7 +1512,10 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
         for (i, t) in lines.iter().enumerate() {
             let i = i as f32;
             let (ox, oy) = if deg > 0.0 {
-                (x + pad + size * 0.8 * deg.to_radians().sin() + i * line_h, y + h - pad)
+                (
+                    x + pad + size * 0.8 * deg.to_radians().sin() + i * line_h,
+                    y + h - pad,
+                )
             } else {
                 (x + pad + (last - i) * line_h, y + pad + size * 0.8)
             };
@@ -1212,12 +1555,22 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
         if st.font.underline != Underline::None {
             let uw = (size * 0.06).max(0.2);
             pg.stroke_line(lx, ly + size * 0.12, lx + lw, ly + size * 0.12, uw, color);
-            if matches!(st.font.underline, Underline::Double | Underline::DoubleAccounting) {
+            if matches!(
+                st.font.underline,
+                Underline::Double | Underline::DoubleAccounting
+            ) {
                 pg.stroke_line(lx, ly + size * 0.24, lx + lw, ly + size * 0.24, uw, color);
             }
         }
         if st.font.strike {
-            pg.stroke_line(lx, ly - size * 0.3, lx + lw, ly - size * 0.3, (size * 0.06).max(0.2), color);
+            pg.stroke_line(
+                lx,
+                ly - size * 0.3,
+                lx + lw,
+                ly - size * 0.3,
+                (size * 0.06).max(0.2),
+                color,
+            );
         }
     }
     pg.restore();
@@ -1225,7 +1578,12 @@ fn draw_text(pg: &mut Page, b: &Block, c: CellRef, l: &Look, rect: (f32, f32, f3
 
 /// Sheet pixel rectangle of an anchor.
 fn anchor_rect(sh: &Sheet, a: &Anchor) -> (f64, f64, f64, f64) {
-    (sh.col_left(a.cell.col) + a.dx as f64, sh.row_top(a.cell.row) + a.dy as f64, a.width.max(0.0) as f64, a.height.max(0.0) as f64)
+    (
+        sh.col_left(a.cell.col) + a.dx as f64,
+        sh.row_top(a.cell.row) + a.dy as f64,
+        a.width.max(0.0) as f64,
+        a.height.max(0.0) as f64,
+    )
 }
 
 /// Decodes an embedded picture to RGBA, downscaled to at most `max_w`×`max_h` pixels.
@@ -1235,7 +1593,11 @@ fn decode_image(data: &[u8], max_w: u32, max_h: u32) -> Option<(Vec<u8>, u32, u3
         return None;
     }
     let img = image::load_from_memory(data).ok()?;
-    let img = if img.width() > max_w.max(1) || img.height() > max_h.max(1) { img.thumbnail(max_w.max(1), max_h.max(1)) } else { img };
+    let img = if img.width() > max_w.max(1) || img.height() > max_h.max(1) {
+        img.thumbnail(max_w.max(1), max_h.max(1))
+    } else {
+        img
+    };
     let rgba = img.to_rgba8();
     let (pw, ph) = (rgba.width(), rgba.height());
     Some((rgba.into_raw(), pw, ph))
@@ -1245,11 +1607,29 @@ fn decode_image(data: &[u8], max_w: u32, max_h: u32) -> Option<(Vec<u8>, u32, u3
 fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) {
     let block = b.range();
     let (sx0, sy0) = (sh.col_left(block.start.col), sh.row_top(block.start.row));
-    let (sx1, sy1) = (sh.col_left(block.end.col.saturating_add(1)), sh.row_top(block.end.row.saturating_add(1)));
-    let (bx, by) = (b.xs.first().copied().unwrap_or(0.0), b.ys.first().copied().unwrap_or(0.0));
-    let (bw, bh) = (b.xs.last().copied().unwrap_or(bx) - bx, b.ys.last().copied().unwrap_or(by) - by);
-    let visible = |r: (f64, f64, f64, f64)| r.2 > 0.0 && r.3 > 0.0 && r.0 < sx1 && r.0 + r.2 > sx0 && r.1 < sy1 && r.1 + r.3 > sy0;
-    let place = |r: (f64, f64, f64, f64)| (bx + ((r.0 - sx0) as f32) * b.k, by + ((r.1 - sy0) as f32) * b.k, r.2 as f32 * b.k, r.3 as f32 * b.k);
+    let (sx1, sy1) = (
+        sh.col_left(block.end.col.saturating_add(1)),
+        sh.row_top(block.end.row.saturating_add(1)),
+    );
+    let (bx, by) = (
+        b.xs.first().copied().unwrap_or(0.0),
+        b.ys.first().copied().unwrap_or(0.0),
+    );
+    let (bw, bh) = (
+        b.xs.last().copied().unwrap_or(bx) - bx,
+        b.ys.last().copied().unwrap_or(by) - by,
+    );
+    let visible = |r: (f64, f64, f64, f64)| {
+        r.2 > 0.0 && r.3 > 0.0 && r.0 < sx1 && r.0 + r.2 > sx0 && r.1 < sy1 && r.1 + r.3 > sy0
+    };
+    let place = |r: (f64, f64, f64, f64)| {
+        (
+            bx + ((r.0 - sx0) as f32) * b.k,
+            by + ((r.1 - sy0) as f32) * b.k,
+            r.2 as f32 * b.k,
+            r.3 as f32 * b.k,
+        )
+    };
     pg.save();
     pg.clip_rect(bx, by, bw, bh);
     for sp in &sh.sparklines {
@@ -1263,8 +1643,23 @@ fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) 
         let color = rgb_of(sp.color, wb).unwrap_or([0x15, 0x60, 0x82]);
         let (x, y, w, h) = b.rect(RangeRef::cell(sp.cell));
         let (wpx, hpx) = (w / b.k, h / b.k);
-        let prims = gridcraft_chart::render_sparkline(sp.kind, &vals, [color[0], color[1], color[2], 255], sp.markers, wpx, hpx);
-        draw_prims(pg, &prims, Xf { ox: x, oy: y, k: b.k });
+        let prims = gridcraft_chart::render_sparkline(
+            sp.kind,
+            &vals,
+            [color[0], color[1], color[2], 255],
+            sp.markers,
+            wpx,
+            hpx,
+        );
+        draw_prims(
+            pg,
+            &prims,
+            Xf {
+                ox: x,
+                oy: y,
+                k: b.k,
+            },
+        );
     }
     for im in &sh.images {
         let r = anchor_rect(sh, &im.anchor);
@@ -1273,7 +1668,10 @@ fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) 
         }
         let (x, y, w, h) = place(r);
         // About 150 dpi is plenty for print.
-        let (mw, mh) = (((w / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32, ((h / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32);
+        let (mw, mh) = (
+            ((w / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32,
+            ((h / 72.0) * 150.0).ceil().clamp(1.0, 4000.0) as u32,
+        );
         if let Some((px, pw, ph)) = decode_image(&im.data, mw, mh) {
             pg.image_rgba(x, y, w, h, &px, pw, ph);
         }
@@ -1285,30 +1683,42 @@ fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) 
         }
         let (x, y, w, h) = place(r);
         let fill = rgb_of(shp.fill, wb);
-        let line = rgb_of(shp.line, wb).filter(|_| !shp.format.no_line).map(|c| (c, (0.75 * b.k).max(0.25)));
+        let line = rgb_of(shp.line, wb)
+            .filter(|_| !shp.format.no_line)
+            .map(|c| (c, (0.75 * b.k).max(0.25)));
         match shp.kind {
             ShapeKind::Ellipse => {
                 let pts: Vec<[f32; 2]> = (0..72)
                     .map(|i| {
                         let a = i as f32 / 72.0 * std::f32::consts::TAU;
-                        [x + w / 2.0 + w / 2.0 * a.cos(), y + h / 2.0 + h / 2.0 * a.sin()]
+                        [
+                            x + w / 2.0 + w / 2.0 * a.cos(),
+                            y + h / 2.0 + h / 2.0 * a.sin(),
+                        ]
                     })
                     .collect();
                 pg.polygon(&pts, fill, line);
             }
-            ShapeKind::Triangle => pg.polygon(&[[x + w / 2.0, y], [x + w, y + h], [x, y + h]], fill, line),
+            ShapeKind::Triangle => {
+                pg.polygon(&[[x + w / 2.0, y], [x + w, y + h], [x, y + h]], fill, line)
+            }
             ShapeKind::Line | ShapeKind::Arrow => {
                 let c = line.map(|l| l.0).or(fill).unwrap_or([0, 0, 0]);
                 pg.stroke_line(x, y, x + w, y + h, (1.0 * b.k).max(0.3), c);
                 if shp.kind == ShapeKind::Arrow {
                     let ang = h.atan2(w);
                     let al = 8.0 * b.k;
-                    let p = |da: f32| [x + w - al * (ang + da).cos(), y + h - al * (ang + da).sin()];
+                    let p =
+                        |da: f32| [x + w - al * (ang + da).cos(), y + h - al * (ang + da).sin()];
                     pg.polygon(&[[x + w, y + h], p(0.4), p(-0.4)], Some(c), None);
                 }
             }
             _ => {
-                pg.polygon(&[[x, y], [x + w, y], [x + w, y + h], [x, y + h]], fill, line);
+                pg.polygon(
+                    &[[x, y], [x + w, y], [x + w, y + h], [x, y + h]],
+                    fill,
+                    line,
+                );
             }
         }
         if !shp.text.is_empty() {
@@ -1316,10 +1726,25 @@ fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) 
             let fm = &shp.format;
             let text_box = shp.kind == ShapeKind::TextBox;
             let size = fm.font_size.unwrap_or(11.0).clamp(1.0, 4000.0) * b.scale;
-            let font = Font::styled(Font::family_for(fm.font.as_deref().unwrap_or("")), fm.bold, fm.italic);
-            let color = fm.text_color.and_then(|c| rgb_of(c, wb)).unwrap_or([0, 0, 0]);
-            let align = fm.align.unwrap_or(if text_box { ShapeTextAlign::Left } else { ShapeTextAlign::Center });
-            let anchor = fm.anchor.unwrap_or(if text_box { ShapeTextAnchor::Top } else { ShapeTextAnchor::Middle });
+            let font = Font::styled(
+                Font::family_for(fm.font.as_deref().unwrap_or("")),
+                fm.bold,
+                fm.italic,
+            );
+            let color = fm
+                .text_color
+                .and_then(|c| rgb_of(c, wb))
+                .unwrap_or([0, 0, 0]);
+            let align = fm.align.unwrap_or(if text_box {
+                ShapeTextAlign::Left
+            } else {
+                ShapeTextAlign::Center
+            });
+            let anchor = fm.anchor.unwrap_or(if text_box {
+                ShapeTextAnchor::Top
+            } else {
+                ShapeTextAnchor::Middle
+            });
             let lines = wrap_lines(&shp.text, font, size, (w - 4.0 * b.k).max(size));
             let block_h = lines.len().min(500) as f32 * size * 1.2;
             let mut yy = match anchor {
@@ -1347,12 +1772,27 @@ fn draw_objects(pg: &mut Page, wb: &Workbook, si: usize, sh: &Sheet, b: &Block) 
         let (x, y, _, _) = place(r);
         let data = gridcraft_chart::resolve(wb, si, ch);
         let prims = gridcraft_chart::render(ch, &data, r.2 as f32, r.3 as f32, &PdfMeasure);
-        draw_prims(pg, &prims, Xf { ox: x, oy: y, k: b.k });
+        draw_prims(
+            pg,
+            &prims,
+            Xf {
+                ox: x,
+                oy: y,
+                k: b.k,
+            },
+        );
     }
     pg.restore();
 }
 
-fn draw_headings(pg: &mut Page, b: &Block, col_heads: bool, row_heads: bool, at: (f32, f32), size: (f32, f32)) {
+fn draw_headings(
+    pg: &mut Page,
+    b: &Block,
+    col_heads: bool,
+    row_heads: bool,
+    at: (f32, f32),
+    size: (f32, f32),
+) {
     let fill = [0xF2, 0xF2, 0xF2];
     let line = [0xA0, 0xA0, 0xA0];
     let fsize = 9.0 * b.scale.max(0.1);
@@ -1368,7 +1808,14 @@ fn draw_headings(pg: &mut Page, b: &Block, col_heads: bool, row_heads: bool, at:
             pg.rect_stroke(x0, y, x1 - x0, size.1, lw, line);
             let t = gridcraft_core::col_to_letters(col);
             let tw = gridcraft_pdf::text_width(Font::Helvetica, fsize, &t);
-            pg.text(x0 + (x1 - x0 - tw) / 2.0, y + size.1 / 2.0 + fsize * 0.35, fsize, Font::Helvetica, [0x40, 0x40, 0x40], &t);
+            pg.text(
+                x0 + (x1 - x0 - tw) / 2.0,
+                y + size.1 / 2.0 + fsize * 0.35,
+                fsize,
+                Font::Helvetica,
+                [0x40, 0x40, 0x40],
+                &t,
+            );
         }
     }
     if row_heads {
@@ -1382,16 +1829,31 @@ fn draw_headings(pg: &mut Page, b: &Block, col_heads: bool, row_heads: bool, at:
             pg.rect_stroke(x, y0, size.0, y1 - y0, lw, line);
             let t = (row + 1).to_string();
             let tw = gridcraft_pdf::text_width(Font::Helvetica, fsize, &t);
-            pg.text(x + (size.0 - tw) / 2.0, y0 + (y1 - y0) / 2.0 + fsize * 0.35, fsize, Font::Helvetica, [0x40, 0x40, 0x40], &t);
+            pg.text(
+                x + (size.0 - tw) / 2.0,
+                y0 + (y1 - y0) / 2.0 + fsize * 0.35,
+                fsize,
+                Font::Helvetica,
+                [0x40, 0x40, 0x40],
+                &t,
+            );
         }
     }
 }
 
-fn draw_header_footer(pg: &mut Page, lay: &SheetLayout, which: gridcraft_model::HfPage, cx: &HfContext) {
+fn draw_header_footer(
+    pg: &mut Page,
+    lay: &SheetLayout,
+    which: gridcraft_model::HfPage,
+    cx: &HfContext,
+) {
     let [l, r, _, _, hm, fm] = lay.margins;
     let pw = lay.page_w;
     let ph = lay.page_h;
-    for (spec, header) in [(lay.settings.hf(which, false), true), (lay.settings.hf(which, true), false)] {
+    for (spec, header) in [
+        (lay.settings.hf(which, false), true),
+        (lay.settings.hf(which, true), false),
+    ] {
         if spec.is_empty() {
             continue;
         }
@@ -1411,7 +1873,11 @@ fn draw_header_footer(pg: &mut Page, lay: &SheetLayout, which: gridcraft_model::
                     1 => (pw - lw) / 2.0,
                     _ => pw - r - lw,
                 };
-                let y = if header { hm + size * 0.8 + j as f32 * size * 1.2 } else { ph - fm - size * 0.22 - (n - 1.0 - j as f32) * size * 1.2 };
+                let y = if header {
+                    hm + size * 0.8 + j as f32 * size * 1.2
+                } else {
+                    ph - fm - size * 0.22 - (n - 1.0 - j as f32) * size * 1.2
+                };
                 pg.text(x, y, size, font, [0, 0, 0], line);
             }
         }
@@ -1419,7 +1885,16 @@ fn draw_header_footer(pg: &mut Page, lay: &SheetLayout, which: gridcraft_model::
 }
 
 /// Builds a block for rows × cols positioned at (x, y) on the page.
-fn make_block<'a>(wb: &'a Workbook, si: usize, sh: &'a Sheet, rows: (u32, u32), cols: (u32, u32), x: f32, y: f32, lay: &SheetLayout) -> Block<'a> {
+fn make_block<'a>(
+    wb: &'a Workbook,
+    si: usize,
+    sh: &'a Sheet,
+    rows: (u32, u32),
+    cols: (u32, u32),
+    x: f32,
+    y: f32,
+    lay: &SheetLayout,
+) -> Block<'a> {
     let k = lay.k();
     let mut xs = Vec::with_capacity((cols.1 - cols.0 + 2) as usize);
     let mut acc = x;
@@ -1435,7 +1910,17 @@ fn make_block<'a>(wb: &'a Workbook, si: usize, sh: &'a Sheet, rows: (u32, u32), 
         acc += sh.row_height(r) * k;
         ys.push(acc);
     }
-    Block { wb, si, sh, rows, cols, xs, ys, k, scale: lay.scale }
+    Block {
+        wb,
+        si,
+        sh,
+        rows,
+        cols,
+        xs,
+        ys,
+        k,
+        scale: lay.scale,
+    }
 }
 
 /// Segments of a page along one axis: repeated titles (before the band) then the band.
@@ -1451,31 +1936,67 @@ fn segments(titles: Option<(u32, u32)>, band: (u32, u32)) -> Vec<(u32, u32)> {
 }
 
 fn seg_size(sh: &Sheet, seg: (u32, u32), rows: bool) -> f32 {
-    if rows { (seg.0..=seg.1).map(|r| sh.row_height(r)).sum() } else { (seg.0..=seg.1).map(|c| sh.col_width(c)).sum() }
+    if rows {
+        (seg.0..=seg.1).map(|r| sh.row_height(r)).sum()
+    } else {
+        (seg.0..=seg.1).map(|c| sh.col_width(c)).sum()
+    }
 }
 
 /// Renders laid-out sheets to a PDF.
-pub fn render_pdf(wb: &Workbook, layouts: &[SheetLayout], file: &str, path: &str) -> (Vec<u8>, usize) {
+pub fn render_pdf(
+    wb: &Workbook,
+    layouts: &[SheetLayout],
+    file: &str,
+    path: &str,
+) -> (Vec<u8>, usize) {
     let mut doc = PdfDoc::new();
-    doc.info.title = if wb.props.title.is_empty() { file.to_string() } else { wb.props.title.clone() };
+    doc.info.title = if wb.props.title.is_empty() {
+        file.to_string()
+    } else {
+        wb.props.title.clone()
+    };
     doc.info.author = wb.props.author.clone();
     let total: usize = layouts.iter().map(|l| l.pages.len()).sum();
     let (date, time) = hf_date_time(wb);
     let mut page_no = 0usize;
     for lay in layouts {
-        let Some(sh) = wb.sheet(lay.sheet) else { continue };
-        let mut cf = if sh.cond_formats.is_empty() { None } else { Some(crate::cf::CfCache::new()) };
+        let Some(sh) = wb.sheet(lay.sheet) else {
+            continue;
+        };
+        let mut cf = if sh.cond_formats.is_empty() {
+            None
+        } else {
+            Some(crate::cf::CfCache::new())
+        };
         let k = lay.k();
         let (aw, ah) = lay.avail();
         for (pi, (ri, ci)) in lay.pages.iter().enumerate() {
             page_no += 1;
-            let (Some(rband), Some(cband)) = (lay.row_bands.get(*ri).copied(), lay.col_bands.get(*ci).copied()) else { continue };
+            let (Some(rband), Some(cband)) = (
+                lay.row_bands.get(*ri).copied(),
+                lay.col_bands.get(*ci).copied(),
+            ) else {
+                continue;
+            };
             let rsegs = segments(lay.title_rows, rband);
             let csegs = segments(lay.title_cols, cband);
-            let content_w = (lay.heading_w + csegs.iter().map(|s| seg_size(sh, *s, false)).sum::<f32>()) * k;
-            let content_h = (lay.heading_h + rsegs.iter().map(|s| seg_size(sh, *s, true)).sum::<f32>()) * k;
-            let ox = lay.margins[0] + if lay.settings.center_h { ((aw - content_w) / 2.0).max(0.0) } else { 0.0 };
-            let oy = lay.margins[2] + if lay.settings.center_v { ((ah - content_h) / 2.0).max(0.0) } else { 0.0 };
+            let content_w =
+                (lay.heading_w + csegs.iter().map(|s| seg_size(sh, *s, false)).sum::<f32>()) * k;
+            let content_h =
+                (lay.heading_h + rsegs.iter().map(|s| seg_size(sh, *s, true)).sum::<f32>()) * k;
+            let ox = lay.margins[0]
+                + if lay.settings.center_h {
+                    ((aw - content_w) / 2.0).max(0.0)
+                } else {
+                    0.0
+                };
+            let oy = lay.margins[2]
+                + if lay.settings.center_v {
+                    ((ah - content_h) / 2.0).max(0.0)
+                } else {
+                    0.0
+                };
             let pg = doc.add_page(lay.page_w, lay.page_h);
             let mut y = oy + lay.heading_h * k;
             let mut body: Option<Block> = None;
@@ -1485,7 +2006,14 @@ pub fn render_pdf(wb: &Workbook, layouts: &[SheetLayout], file: &str, path: &str
                     let b = make_block(wb, lay.sheet, sh, *rs, *cs, x, y, lay);
                     draw_block(pg, &b, lay.settings.gridlines, &mut cf);
                     if lay.settings.headings {
-                        draw_headings(pg, &b, rsi == 0, csi == 0, (ox, oy), (lay.heading_w * k, lay.heading_h * k));
+                        draw_headings(
+                            pg,
+                            &b,
+                            rsi == 0,
+                            csi == 0,
+                            (ox, oy),
+                            (lay.heading_w * k, lay.heading_h * k),
+                        );
                     }
                     x += seg_size(sh, *cs, false) * k;
                     if rsi + 1 == rsegs.len() && csi + 1 == csegs.len() {
@@ -1500,7 +2028,14 @@ pub fn render_pdf(wb: &Workbook, layouts: &[SheetLayout], file: &str, path: &str
             if lay.settings.headings {
                 let fill = [0xF2, 0xF2, 0xF2];
                 pg.fill_rect(ox, oy, lay.heading_w * k, lay.heading_h * k, fill);
-                pg.rect_stroke(ox, oy, lay.heading_w * k, lay.heading_h * k, 0.3, [0xA0, 0xA0, 0xA0]);
+                pg.rect_stroke(
+                    ox,
+                    oy,
+                    lay.heading_w * k,
+                    lay.heading_h * k,
+                    0.3,
+                    [0xA0, 0xA0, 0xA0],
+                );
             }
             let cx = HfContext {
                 page: page_no,
@@ -1535,13 +2070,16 @@ pub(crate) fn export_pdf(s: &mut Session, p: &Json) -> Result<Json> {
             crate::io::write_file(path, &bytes)?;
             Ok(json!({"pages": pages, "bytes": bytes.len(), "path": path}))
         }
-        None => Ok(json!({"pages": pages, "bytes": bytes.len(), "base64": crate::io::base64_encode(&bytes)})),
+        None => Ok(
+            json!({"pages": pages, "bytes": bytes.len(), "base64": crate::io::base64_encode(&bytes)}),
+        ),
     }
 }
 
 fn print(s: &mut Session, p: &Json) -> Result<Json> {
     let (bytes, pages) = build_pdf(s, p, "file.print")?;
-    let mut out = json!({"pages": pages, "bytes": bytes.len(), "base64": crate::io::base64_encode(&bytes)});
+    let mut out =
+        json!({"pages": pages, "bytes": bytes.len(), "base64": crate::io::base64_encode(&bytes)});
     if let Some(path) = str_param(p, "path").filter(|x| !x.is_empty()) {
         crate::io::write_file(path, &bytes)?;
         out["path"] = json!(path);
@@ -1556,10 +2094,15 @@ fn print_preview(s: &mut Session, p: &Json) -> Result<Json> {
     let mut list = Vec::new();
     let mut n = 0usize;
     for lay in &lays {
-        let name = d.wb.sheet(lay.sheet).map(|s| s.name.clone()).unwrap_or_default();
+        let name =
+            d.wb.sheet(lay.sheet)
+                .map(|s| s.name.clone())
+                .unwrap_or_default();
         for (ri, ci) in &lay.pages {
             n += 1;
-            let (Some(rb), Some(cb)) = (lay.row_bands.get(*ri), lay.col_bands.get(*ci)) else { continue };
+            let (Some(rb), Some(cb)) = (lay.row_bands.get(*ri), lay.col_bands.get(*ci)) else {
+                continue;
+            };
             let r = RangeRef::new(CellRef::new(rb.0, cb.0), CellRef::new(rb.1, cb.1));
             list.push(json!({
                 "page": n,
@@ -1576,8 +2119,10 @@ fn print_preview(s: &mut Session, p: &Json) -> Result<Json> {
         }
     }
     if let Some(page) = u32_param(p, "page") {
-        let one =
-            list.get((page as usize).saturating_sub(1)).cloned().ok_or_else(|| bad("file.printPreview", format!("there are only {n} pages")))?;
+        let one = list
+            .get((page as usize).saturating_sub(1))
+            .cloned()
+            .ok_or_else(|| bad("file.printPreview", format!("there are only {n} pages")))?;
         return Ok(json!({"pages": n, "page": one}));
     }
     Ok(json!({"pages": n, "pageList": list}))
@@ -1590,7 +2135,12 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
         None => None,
         Some("portrait") => Some(Orientation::Portrait),
         Some("landscape") => Some(Orientation::Landscape),
-        Some(o) => return Err(bad(CMD, format!("orientation must be portrait or landscape, not `{o}`"))),
+        Some(o) => {
+            return Err(bad(
+                CMD,
+                format!("orientation must be portrait or landscape, not `{o}`"),
+            ));
+        }
     };
     let paper = match str_param(p, "paper") {
         None => None,
@@ -1601,10 +2151,16 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
     };
     let margin_src = p.get("margins").filter(|m| m.is_object()).unwrap_or(p);
     let mut margins: [Option<f32>; 6] = [None; 6];
-    for (i, key) in ["left", "right", "top", "bottom", "header", "footer"].iter().enumerate() {
+    for (i, key) in ["left", "right", "top", "bottom", "header", "footer"]
+        .iter()
+        .enumerate()
+    {
         if let Some(v) = f64_param(margin_src, key).or_else(|| f64_param(p, key)) {
             if !v.is_finite() || v < 0.0 {
-                return Err(bad(CMD, format!("margin `{key}` must be a non-negative number of inches")));
+                return Err(bad(
+                    CMD,
+                    format!("margin `{key}` must be a non-negative number of inches"),
+                ));
             }
             margins[i] = Some(v.min(20.0) as f32);
         }
@@ -1615,7 +2171,8 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
             Some(Json::Null) => Ok(Some(None)),
             Some(Json::String(t)) if t.trim().is_empty() => Ok(Some(None)),
             Some(Json::String(t)) => {
-                let r = RangeRef::parse(split_sheet(t).1).ok_or_else(|| bad(CMD, format!("`{key}` is not a row range: `{t}`")))?;
+                let r = RangeRef::parse(split_sheet(t).1)
+                    .ok_or_else(|| bad(CMD, format!("`{key}` is not a row range: `{t}`")))?;
                 Ok(Some(Some((r.start.row, r.end.row))))
             }
             Some(_) => Err(bad(CMD, format!("`{key}` must be text like \"1:2\""))),
@@ -1627,7 +2184,8 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
             Some(Json::Null) => Ok(Some(None)),
             Some(Json::String(t)) if t.trim().is_empty() => Ok(Some(None)),
             Some(Json::String(t)) => {
-                let r = RangeRef::parse(split_sheet(t).1).ok_or_else(|| bad(CMD, format!("`{key}` is not a column range: `{t}`")))?;
+                let r = RangeRef::parse(split_sheet(t).1)
+                    .ok_or_else(|| bad(CMD, format!("`{key}` is not a column range: `{t}`")))?;
                 Ok(Some(Some((r.start.col, r.end.col))))
             }
             Some(_) => Err(bad(CMD, format!("`{key}` must be text like \"A:B\""))),
@@ -1639,13 +2197,19 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
         None => None,
         Some(Json::Null) => Some(None),
         Some(Json::String(t)) if t.trim().is_empty() => Some(None),
-        Some(Json::String(t)) => Some(Some(RangeRef::parse(split_sheet(t).1).ok_or_else(|| bad(CMD, format!("`printArea` is not a range: `{t}`")))?)),
+        Some(Json::String(t)) => Some(Some(
+            RangeRef::parse(split_sheet(t).1)
+                .ok_or_else(|| bad(CMD, format!("`printArea` is not a range: `{t}`")))?,
+        )),
         Some(_) => return Err(bad(CMD, "`printArea` must be a range like \"A1:F50\"")),
     };
     let row_breaks: Option<Vec<u32>> = p.get("rowBreaks").and_then(Json::as_array).map(|a| {
         let mut v: Vec<u32> = a
             .iter()
-            .filter_map(|x| x.as_u64().or_else(|| x.as_str().and_then(|t| t.trim().parse().ok())))
+            .filter_map(|x| {
+                x.as_u64()
+                    .or_else(|| x.as_str().and_then(|t| t.trim().parse().ok()))
+            })
             .filter(|r| *r >= 2 && *r <= MAX_ROWS as u64)
             .map(|r| r as u32 - 1)
             .take(1026)
@@ -1659,7 +2223,10 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
             .iter()
             .filter_map(|x| match x {
                 Json::String(t) => gridcraft_core::letters_to_col(t.trim().trim_start_matches('$')),
-                Json::Number(n) => n.as_u64().filter(|c| *c >= 2 && *c <= MAX_COLS as u64).map(|c| c as u32 - 1),
+                Json::Number(n) => n
+                    .as_u64()
+                    .filter(|c| *c >= 2 && *c <= MAX_COLS as u64)
+                    .map(|c| c as u32 - 1),
                 _ => None,
             })
             .filter(|c| *c >= 1)
@@ -1669,13 +2236,25 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
         v.dedup();
         v
     });
-    let scale = f64_param(p, "scale").filter(|v| v.is_finite()).map(|v| v.clamp(10.0, 400.0).round() as u16);
-    let fit_w = p.get("fitWidth").map(|v| v.as_u64().unwrap_or(0).min(32767) as u16);
-    let fit_h = p.get("fitHeight").map(|v| v.as_u64().unwrap_or(0).min(32767) as u16);
+    let scale = f64_param(p, "scale")
+        .filter(|v| v.is_finite())
+        .map(|v| v.clamp(10.0, 400.0).round() as u16);
+    let fit_w = p
+        .get("fitWidth")
+        .map(|v| v.as_u64().unwrap_or(0).min(32767) as u16);
+    let fit_h = p
+        .get("fitHeight")
+        .map(|v| v.as_u64().unwrap_or(0).min(32767) as u16);
     let fit_page = bool_param(p, "fitToPage");
     let header = str_param(p, "header").map(|t| t.chars().take(255).collect::<String>());
     let footer = str_param(p, "footer").map(|t| t.chars().take(255).collect::<String>());
-    let flags = [("centerH", 0usize), ("centerV", 1), ("gridlines", 2), ("headings", 3)].map(|(k, i)| (i, bool_param(p, k)));
+    let flags = [
+        ("centerH", 0usize),
+        ("centerV", 1),
+        ("gridlines", 2),
+        ("headings", 3),
+    ]
+    .map(|(k, i)| (i, bool_param(p, k)));
     edit(s, |cx| {
         let pr = &mut cx.sheet_mut(si)?.print;
         if let Some(o) = orientation {
@@ -1735,7 +2314,12 @@ fn page_setup(s: &mut Session, p: &Json) -> Result<Json> {
         }
         Ok(())
     })?;
-    let pr = s.doc()?.wb.sheet(si).map(|sh| sh.print.clone()).unwrap_or_default();
+    let pr = s
+        .doc()?
+        .wb
+        .sheet(si)
+        .map(|sh| sh.print.clone())
+        .unwrap_or_default();
     Ok(serde_json::to_value(&pr).unwrap_or(Json::Null))
 }
 
@@ -1763,21 +2347,59 @@ mod tests {
     fn header_sections_split_join_and_field_names() {
         let spec = "&L&\"Arial,Bold\"Sales &&Co&CPage &P of &N&R&D";
         let parts = split_header_footer(spec);
-        assert_eq!(parts, ["&\"Arial,Bold\"Sales &&Co".to_string(), "Page &P of &N".into(), "&D".into()]);
+        assert_eq!(
+            parts,
+            [
+                "&\"Arial,Bold\"Sales &&Co".to_string(),
+                "Page &P of &N".into(),
+                "&D".into()
+            ]
+        );
         assert_eq!(join_header_footer(&parts), spec);
         // Text before any section code is the centre section, as when printing.
-        assert_eq!(split_header_footer("Report"), [String::new(), "Report".into(), String::new()]);
-        assert_eq!(codes_to_fields("Page &P of &N, &A (&F) &&"), "Page &[Page] of &[Pages], &[Tab] (&[File]) &&");
-        assert_eq!(fields_to_codes("Page &[Page] of &[Pages], &[Tab] (&[File]) &&"), "Page &P of &N, &A (&F) &&");
+        assert_eq!(
+            split_header_footer("Report"),
+            [String::new(), "Report".into(), String::new()]
+        );
+        assert_eq!(
+            codes_to_fields("Page &P of &N, &A (&F) &&"),
+            "Page &[Page] of &[Pages], &[Tab] (&[File]) &&"
+        );
+        assert_eq!(
+            fields_to_codes("Page &[Page] of &[Pages], &[Tab] (&[File]) &&"),
+            "Page &P of &N, &A (&F) &&"
+        );
         // A dangling ampersand stays literal instead of eating the next section's code.
         assert_eq!(fields_to_codes("R&"), "R&&");
         let joined = join_header_footer(&[fields_to_codes("R&"), "x".into(), String::new()]);
         assert_eq!(split_header_footer(&joined)[0], "R&&");
-        let cx = HfContext { page: 2, pages: 5, sheet: "Data".into(), ..Default::default() };
-        let out = expand_header_footer(&join_header_footer(&[String::new(), fields_to_codes("&[Page] / &[Pages]"), fields_to_codes("&[Tab]")]), &cx);
-        assert_eq!((out[1].text.as_str(), out[2].text.as_str()), ("2 / 5", "Data"));
+        let cx = HfContext {
+            page: 2,
+            pages: 5,
+            sheet: "Data".into(),
+            ..Default::default()
+        };
+        let out = expand_header_footer(
+            &join_header_footer(&[
+                String::new(),
+                fields_to_codes("&[Page] / &[Pages]"),
+                fields_to_codes("&[Tab]"),
+            ]),
+            &cx,
+        );
+        assert_eq!(
+            (out[1].text.as_str(), out[2].text.as_str()),
+            ("2 / 5", "Data")
+        );
         // Hostile input never panics.
-        for t in ["&", "&\"", "&\"unterminated", "&&&", "&[Pag", "\u{1F600}&[Page]"] {
+        for t in [
+            "&",
+            "&\"",
+            "&\"unterminated",
+            "&&&",
+            "&[Pag",
+            "\u{1F600}&[Page]",
+        ] {
             let _ = join_header_footer(&split_header_footer(t));
             let _ = fields_to_codes(&codes_to_fields(t));
         }
@@ -1794,32 +2416,86 @@ mod tests {
     #[test]
     fn header_footer_section_edits_are_undoable_and_views_are_per_sheet() {
         let mut s = s();
-        s.execute("pageLayout.headerFooter", json!({"header": "&LLeft&RRight"})).unwrap();
-        let r = s.execute("pageLayout.headerFooter", json!({"part": "header", "section": "center", "text": "Page &[Page] of &[Pages]"})).unwrap();
+        s.execute(
+            "pageLayout.headerFooter",
+            json!({"header": "&LLeft&RRight"}),
+        )
+        .unwrap();
+        let r = s
+            .execute(
+                "pageLayout.headerFooter",
+                json!({"part": "header", "section": "center", "text": "Page &[Page] of &[Pages]"}),
+            )
+            .unwrap();
         assert_eq!(r["header"], "&LLeft&CPage &P of &N&RRight");
-        s.execute("pageLayout.headerFooter", json!({"part": "footer", "section": "right", "text": "&[Date]"})).unwrap();
+        s.execute(
+            "pageLayout.headerFooter",
+            json!({"part": "footer", "section": "right", "text": "&[Date]"}),
+        )
+        .unwrap();
         assert_eq!(s.doc().unwrap().wb.sheet(0).unwrap().print.footer, "&R&D");
         s.execute("edit.undo", json!({})).unwrap();
         s.execute("edit.undo", json!({})).unwrap();
-        assert_eq!(s.doc().unwrap().wb.sheet(0).unwrap().print.header, "&LLeft&RRight");
-        assert!(s.execute("pageLayout.headerFooter", json!({"part": "middle", "text": "x"})).is_err());
-        assert!(s.execute("pageLayout.headerFooter", json!({"section": "top"})).is_err());
+        assert_eq!(
+            s.doc().unwrap().wb.sheet(0).unwrap().print.header,
+            "&LLeft&RRight"
+        );
+        assert!(
+            s.execute(
+                "pageLayout.headerFooter",
+                json!({"part": "middle", "text": "x"})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute("pageLayout.headerFooter", json!({"section": "top"}))
+                .is_err()
+        );
         let long = "x".repeat(1000);
-        s.execute("pageLayout.headerFooter", json!({"part": "header", "section": "left", "text": long})).unwrap();
-        assert!(s.doc().unwrap().wb.sheet(0).unwrap().print.header.chars().count() <= 255);
+        s.execute(
+            "pageLayout.headerFooter",
+            json!({"part": "header", "section": "left", "text": long}),
+        )
+        .unwrap();
+        assert!(
+            s.doc()
+                .unwrap()
+                .wb
+                .sheet(0)
+                .unwrap()
+                .print
+                .header
+                .chars()
+                .count()
+                <= 255
+        );
         // The view is per sheet and doesn't dirty a clean workbook.
         let mut fresh = Session::new();
         fresh.new_workbook();
         fresh.execute("home.insertSheet", json!({})).unwrap();
         fresh.doc_mut().unwrap().saved = fresh.doc().unwrap().wb.clone();
-        fresh.execute("view.pageLayout", json!({"sheet": 0})).unwrap();
+        fresh
+            .execute("view.pageLayout", json!({"sheet": 0}))
+            .unwrap();
         let wb = &fresh.doc().unwrap().wb;
-        assert_eq!((wb.sheet(0).unwrap().view, wb.sheet(1).unwrap().view), (SheetViewMode::PageLayout, SheetViewMode::Normal));
-        assert!(!fresh.doc().unwrap().is_dirty(), "switching views is not an edit");
+        assert_eq!(
+            (wb.sheet(0).unwrap().view, wb.sheet(1).unwrap().view),
+            (SheetViewMode::PageLayout, SheetViewMode::Normal)
+        );
+        assert!(
+            !fresh.doc().unwrap().is_dirty(),
+            "switching views is not an edit"
+        );
         s.execute("view.pageLayout", json!({"sheet": 0})).unwrap();
         s.execute("view.normal", json!({"sheet": 0})).unwrap();
-        assert_eq!(s.doc().unwrap().wb.sheet(0).unwrap().view, SheetViewMode::Normal);
-        assert_eq!(s.execute("view.ruler", json!({"on": false})).unwrap()["on"], false);
+        assert_eq!(
+            s.doc().unwrap().wb.sheet(0).unwrap().view,
+            SheetViewMode::Normal
+        );
+        assert_eq!(
+            s.execute("view.ruler", json!({"on": false})).unwrap()["on"],
+            false
+        );
         assert!(s.hide_ruler);
         assert_eq!(s.execute("view.ruler", json!({})).unwrap()["on"], true);
     }
@@ -1828,7 +2504,8 @@ mod tests {
     fn page_count_300_rows_letter_portrait() {
         let mut s = s();
         let rows: Vec<Vec<Json>> = (1..=300).map(|i| vec![json!(i)]).collect();
-        s.execute("range.setValues", json!({"range": "A1", "values": rows})).unwrap();
+        s.execute("range.setValues", json!({"range": "A1", "values": rows}))
+            .unwrap();
         // 684pt of printable height / 15pt rows = 45 rows per page → 7 pages.
         let (pdf, pages) = pdf_of(&mut s, json!({}));
         assert_eq!(pages, 7);
@@ -1838,17 +2515,29 @@ mod tests {
         assert_eq!(pv["pages"], 7);
         assert_eq!(pv["pageList"][0]["rows"], "1:45");
         assert_eq!(pv["pageList"][1]["rows"], "46:90");
-        assert_eq!(s.execute("file.printPreview", json!({"page": 7})).unwrap()["page"]["rows"], "271:300");
+        assert_eq!(
+            s.execute("file.printPreview", json!({"page": 7})).unwrap()["page"]["rows"],
+            "271:300"
+        );
         assert!(s.execute("file.printPreview", json!({"page": 8})).is_err());
         // Landscape: 504pt / 15 = 33 rows per page → 10 pages.
-        s.execute("pageLayout.pageSetup", json!({"orientation": "landscape"})).unwrap();
+        s.execute("pageLayout.pageSetup", json!({"orientation": "landscape"}))
+            .unwrap();
         assert_eq!(pdf_of(&mut s, json!({})).1, 10);
         // Fit to one page.
         assert_eq!(pdf_of(&mut s, json!({"fitToPage": true})).1, 1);
-        s.execute("pageLayout.pageSetup", json!({"fitWidth": 1, "fitHeight": 2, "orientation": "portrait"})).unwrap();
+        s.execute(
+            "pageLayout.pageSetup",
+            json!({"fitWidth": 1, "fitHeight": 2, "orientation": "portrait"}),
+        )
+        .unwrap();
         assert_eq!(pdf_of(&mut s, json!({})).1, 2);
         // Manual break and repeated title rows.
-        s.execute("pageLayout.pageSetup", json!({"scale": 100, "rowBreaks": [11], "titleRows": "1:1"})).unwrap();
+        s.execute(
+            "pageLayout.pageSetup",
+            json!({"scale": 100, "rowBreaks": [11], "titleRows": "1:1"}),
+        )
+        .unwrap();
         let pv = s.execute("file.printPreview", json!({})).unwrap();
         assert_eq!(pv["pageList"][0]["rows"], "1:10");
         // Title row takes one line on later pages: 44 body rows.
@@ -1858,8 +2547,11 @@ mod tests {
     #[test]
     fn wide_sheet_goes_down_then_over() {
         let mut s = s();
-        let rows: Vec<Vec<Json>> = (0..60).map(|r| (0..15).map(|c| json!(r * 100 + c)).collect()).collect();
-        s.execute("range.setValues", json!({"range": "A1", "values": rows})).unwrap();
+        let rows: Vec<Vec<Json>> = (0..60)
+            .map(|r| (0..15).map(|c| json!(r * 100 + c)).collect())
+            .collect();
+        s.execute("range.setValues", json!({"range": "A1", "values": rows}))
+            .unwrap();
         let pv = s.execute("file.printPreview", json!({})).unwrap();
         // 511.2pt / 48pt = 10 columns per page; 45 rows per page.
         assert_eq!(pv["pages"], 4);
@@ -1871,8 +2563,13 @@ mod tests {
     #[test]
     fn first_and_even_pages_print_their_own_headers() {
         let mut s = s();
-        s.execute("range.setValues", json!({"range": "A1", "values": [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]})).unwrap();
-        s.execute("pageLayout.pageSetup", json!({"rowBreaks": [2, 4]})).unwrap();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]}),
+        )
+        .unwrap();
+        s.execute("pageLayout.pageSetup", json!({"rowBreaks": [2, 4]}))
+            .unwrap();
         let r = s
             .execute(
                 "pageLayout.headerFooter",
@@ -1882,22 +2579,54 @@ mod tests {
         assert_eq!(r["firstHeader"], "&CCover");
         let (pdf, pages) = pdf_of(&mut s, json!({}));
         assert_eq!(pages, 3);
-        assert!(contains(&pdf, "(Cover) Tj") && contains(&pdf, "(Even 2) Tj") && contains(&pdf, "(Odd 3) Tj"));
-        assert!(!contains(&pdf, "(Odd 1) Tj"), "the first page has its own header");
+        assert!(
+            contains(&pdf, "(Cover) Tj")
+                && contains(&pdf, "(Even 2) Tj")
+                && contains(&pdf, "(Odd 3) Tj")
+        );
+        assert!(
+            !contains(&pdf, "(Odd 1) Tj"),
+            "the first page has its own header"
+        );
         // One section of the even-page footer, edited in place.
-        s.execute("pageLayout.headerFooter", json!({"page": "even", "part": "footer", "section": "right", "text": "&[Tab]"})).unwrap();
-        assert_eq!(s.doc().unwrap().wb.sheet(0).unwrap().print.even_footer, "&R&A");
-        assert!(s.execute("pageLayout.headerFooter", json!({"page": "last", "part": "header", "text": "x"})).is_err());
+        s.execute(
+            "pageLayout.headerFooter",
+            json!({"page": "even", "part": "footer", "section": "right", "text": "&[Tab]"}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.doc().unwrap().wb.sheet(0).unwrap().print.even_footer,
+            "&R&A"
+        );
+        assert!(
+            s.execute(
+                "pageLayout.headerFooter",
+                json!({"page": "last", "part": "header", "text": "x"})
+            )
+            .is_err()
+        );
         // Turned off, every page prints the odd header again.
-        s.execute("pageLayout.headerFooter", json!({"differentFirst": false, "differentOddEven": false})).unwrap();
+        s.execute(
+            "pageLayout.headerFooter",
+            json!({"differentFirst": false, "differentOddEven": false}),
+        )
+        .unwrap();
         let (pdf, _) = pdf_of(&mut s, json!({}));
-        assert!(contains(&pdf, "(Odd 1) Tj") && contains(&pdf, "(Odd 2) Tj") && !contains(&pdf, "(Cover) Tj"));
+        assert!(
+            contains(&pdf, "(Odd 1) Tj")
+                && contains(&pdf, "(Odd 2) Tj")
+                && !contains(&pdf, "(Cover) Tj")
+        );
     }
 
     #[test]
     fn pdf_contains_text_and_header_codes_expand() {
         let mut s = s();
-        s.execute("range.setValues", json!({"range": "A1", "values": [["Quarterly Report", null], ["Total", 1234.5]]})).unwrap();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [["Quarterly Report", null], ["Total", 1234.5]]}),
+        )
+        .unwrap();
         s.execute("home.bold", json!({"range": "A1"})).unwrap();
         s.execute(
             "pageLayout.pageSetup",
@@ -1921,7 +2650,10 @@ mod tests {
             time: "9:00 AM".into(),
             ..Default::default()
         };
-        let [l, c, r] = expand_header_footer("&L&\"Arial,Bold\"&A &D&C&14&BTitle && more&RP&P+1/&N &T", &cx);
+        let [l, c, r] = expand_header_footer(
+            "&L&\"Arial,Bold\"&A &D&C&14&BTitle && more&RP&P+1/&N &T",
+            &cx,
+        );
         assert_eq!(l.text, "Data 1/2/2026");
         assert!(l.bold);
         assert_eq!(c.text, "Title & more");
@@ -1935,11 +2667,14 @@ mod tests {
     #[test]
     fn export_writes_file() {
         let mut s = s();
-        s.execute("cell.set", json!({"cell": "B2", "input": "hello"})).unwrap();
+        s.execute("cell.set", json!({"cell": "B2", "input": "hello"}))
+            .unwrap();
         let dir = std::env::temp_dir().join(format!("gridcraft-print-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("out.pdf");
-        let r = s.execute("file.exportPdf", json!({"path": path.to_str().unwrap()})).unwrap();
+        let r = s
+            .execute("file.exportPdf", json!({"path": path.to_str().unwrap()}))
+            .unwrap();
         assert_eq!(r["pages"], 1);
         let bytes = std::fs::read(&path).unwrap();
         assert!(bytes.starts_with(b"%PDF-"));
@@ -1952,11 +2687,14 @@ mod tests {
     #[test]
     fn save_as_pdf_writes_a_pdf_and_keeps_the_workbook_file() {
         let mut s = s();
-        s.execute("cell.set", json!({"cell": "B2", "input": "hello"})).unwrap();
+        s.execute("cell.set", json!({"cell": "B2", "input": "hello"}))
+            .unwrap();
         let dir = std::env::temp_dir().join(format!("gridcraft-save-pdf-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("Out.PDF");
-        let r = s.execute("file.saveAs", json!({"path": path.to_str().unwrap()})).unwrap();
+        let r = s
+            .execute("file.saveAs", json!({"path": path.to_str().unwrap()}))
+            .unwrap();
         assert_eq!(r["pages"], 1);
         let bytes = std::fs::read(&path).unwrap();
         assert!(bytes.starts_with(b"%PDF-"));
@@ -1972,34 +2710,68 @@ mod tests {
         let mut s = Session::new();
         s.execute("file.new", json!({"sample": "sales"})).unwrap();
         s.execute("range.setValues", json!({"range": "H1", "values": [["A long piece of text that overflows into neighbours"]]})).unwrap();
-        s.execute("cell.set", json!({"cell": "H3", "input": "Wrapped text across several lines in a narrow cell"})).unwrap();
-        s.execute("home.wrapText", json!({"range": "H3"})).unwrap_or_default();
-        s.execute("selection.set", json!({"range": "J5:K6"})).unwrap();
+        s.execute(
+            "cell.set",
+            json!({"cell": "H3", "input": "Wrapped text across several lines in a narrow cell"}),
+        )
+        .unwrap();
+        s.execute("home.wrapText", json!({"range": "H3"}))
+            .unwrap_or_default();
+        s.execute("selection.set", json!({"range": "J5:K6"}))
+            .unwrap();
         s.execute("home.mergeCenter", json!({})).unwrap();
-        s.execute("cell.set", json!({"cell": "J5", "input": "Merged"})).unwrap();
-        s.execute("home.borders", json!({"range": "J5:K6", "preset": "outside", "style": "thick"})).unwrap_or_default();
+        s.execute("cell.set", json!({"cell": "J5", "input": "Merged"}))
+            .unwrap();
+        s.execute(
+            "home.borders",
+            json!({"range": "J5:K6", "preset": "outside", "style": "thick"}),
+        )
+        .unwrap_or_default();
         let (pdf, pages) = pdf_of(&mut s, json!({"sheets": "all"}));
         assert!(pages >= 1);
         assert!(contains(&pdf, "(Merged) Tj"));
-        assert!(contains(&pdf, "(A long piece of text that overflows into neighbours) Tj"));
+        assert!(contains(
+            &pdf,
+            "(A long piece of text that overflows into neighbours) Tj"
+        ));
     }
 
     #[test]
     fn charts_and_images_are_drawn() {
         let mut s = s();
-        s.execute("range.setValues", json!({"range": "A1", "values": [["Fruit", "Qty"], ["Apples", 3], ["Pears", 5]]})).unwrap();
-        s.execute("insert.chart", json!({"range": "A1:B3", "type": "pie"})).unwrap_or_default();
-        s.execute("insert.chart", json!({"range": "A1:B3"})).unwrap_or_default();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [["Fruit", "Qty"], ["Apples", 3], ["Pears", 5]]}),
+        )
+        .unwrap();
+        s.execute("insert.chart", json!({"range": "A1:B3", "type": "pie"}))
+            .unwrap_or_default();
+        s.execute("insert.chart", json!({"range": "A1:B3"}))
+            .unwrap_or_default();
         // A 2×2 PNG with transparency.
         let mut png = Vec::new();
-        let img = image::RgbaImage::from_raw(2, 2, vec![255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 255, 0, 0, 0, 0]).unwrap();
-        image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let img = image::RgbaImage::from_raw(
+            2,
+            2,
+            vec![255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 255, 0, 0, 0, 0],
+        )
+        .unwrap();
+        image::DynamicImage::ImageRgba8(img)
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
         let d = s.doc_mut().unwrap();
         let wb = std::sync::Arc::make_mut(&mut d.wb);
         let id = wb.next_object_id();
         wb.sheet_mut(0).unwrap().images.push(Image {
             id,
-            anchor: Anchor { cell: CellRef::new(5, 5), dx: 0.0, dy: 0.0, width: 40.0, height: 40.0, mode: gridcraft_model::AnchorMode::MoveAndSize },
+            anchor: Anchor {
+                cell: CellRef::new(5, 5),
+                dx: 0.0,
+                dy: 0.0,
+                width: 40.0,
+                height: 40.0,
+                mode: gridcraft_model::AnchorMode::MoveAndSize,
+            },
             data: png,
             mime: "image/png".into(),
             alt: String::new(),
@@ -2032,21 +2804,43 @@ mod tests {
         assert_eq!(r["col_breaks"], json!([2]));
         let sh = s.doc().unwrap().wb.active().unwrap().print.clone();
         assert_eq!(sh.print_area, RangeRef::parse("A1:D20"));
-        s.execute("pageLayout.pageSetup", json!({"printArea": ""})).unwrap();
+        s.execute("pageLayout.pageSetup", json!({"printArea": ""}))
+            .unwrap();
         assert_eq!(s.doc().unwrap().wb.active().unwrap().print.print_area, None);
-        assert!(s.execute("pageLayout.pageSetup", json!({"paper": "Napkin"})).is_err());
-        assert!(s.execute("pageLayout.pageSetup", json!({"orientation": "sideways"})).is_err());
+        assert!(
+            s.execute("pageLayout.pageSetup", json!({"paper": "Napkin"}))
+                .is_err()
+        );
+        assert!(
+            s.execute("pageLayout.pageSetup", json!({"orientation": "sideways"}))
+                .is_err()
+        );
         // Undoable as one step.
         s.execute("edit.undo", json!({})).unwrap();
-        assert!(s.doc().unwrap().wb.active().unwrap().print.print_area.is_some());
+        assert!(
+            s.doc()
+                .unwrap()
+                .wb
+                .active()
+                .unwrap()
+                .print
+                .print_area
+                .is_some()
+        );
     }
 
     #[test]
     fn hostile_settings_never_panic_and_cap_pages() {
         let mut s = s();
-        s.execute("cell.set", json!({"cell": "XFD1048576", "input": "far"})).unwrap();
-        s.execute("cell.set", json!({"cell": "A1", "input": "near"})).unwrap();
-        s.execute("pageLayout.pageSetup", json!({"scale": 400, "margins": {"left": 20, "right": 20, "top": 20, "bottom": 20}})).unwrap();
+        s.execute("cell.set", json!({"cell": "XFD1048576", "input": "far"}))
+            .unwrap();
+        s.execute("cell.set", json!({"cell": "A1", "input": "near"}))
+            .unwrap();
+        s.execute(
+            "pageLayout.pageSetup",
+            json!({"scale": 400, "margins": {"left": 20, "right": 20, "top": 20, "bottom": 20}}),
+        )
+        .unwrap();
         let pv = s.execute("file.printPreview", json!({})).unwrap();
         assert!(pv["pages"].as_u64().unwrap() <= MAX_PAGES as u64);
         assert_eq!(pv["pages"].as_u64().unwrap(), MAX_PAGES as u64);
@@ -2056,19 +2850,31 @@ mod tests {
             .unwrap();
         let pv = s.execute("file.printPreview", json!({})).unwrap();
         assert!(pv["pages"].as_u64().unwrap() <= MAX_PAGES as u64);
-        assert!(s.execute("file.exportPdf", json!({"range": "A1:C3"})).is_ok());
-        assert!(s.execute("file.exportPdf", json!({"range": "nope"})).is_err());
-        assert!(s.execute("file.exportPdf", json!({"sheets": "some"})).is_err());
+        assert!(
+            s.execute("file.exportPdf", json!({"range": "A1:C3"}))
+                .is_ok()
+        );
+        assert!(
+            s.execute("file.exportPdf", json!({"range": "nope"}))
+                .is_err()
+        );
+        assert!(
+            s.execute("file.exportPdf", json!({"sheets": "some"}))
+                .is_err()
+        );
         // Empty workbook still prints one blank page.
         let mut e = Session::new();
         e.new_workbook();
         let r = e.execute("file.exportPdf", json!({})).unwrap();
         assert_eq!(r["pages"], 1);
-        let r = e.execute("file.exportPdf", json!({"sheets": "all"})).unwrap();
+        let r = e
+            .execute("file.exportPdf", json!({"sheets": "all"}))
+            .unwrap();
         assert_eq!(r["pages"], 1);
         // Weird row sizes and huge fonts.
         s.execute("pageLayout.pageSetup", json!({"fitToPage": false, "scale": 10, "printArea": "A1:B3", "titleRows": "", "titleCols": ""})).unwrap();
-        s.execute("home.fontSize", json!({"range": "A1", "size": 409})).unwrap_or_default();
+        s.execute("home.fontSize", json!({"range": "A1", "size": 409}))
+            .unwrap_or_default();
         assert!(s.execute("file.exportPdf", json!({})).is_ok());
     }
 
@@ -2081,7 +2887,10 @@ mod tests {
             let bytes = crate::io::base64_decode(r["base64"].as_str().unwrap()).unwrap();
             assert!(bytes.starts_with(b"%PDF-"));
         }
-        assert!(s.take_ui_requests().is_empty(), "a programmatic call never queues a dialog");
+        assert!(
+            s.take_ui_requests().is_empty(),
+            "a programmatic call never queues a dialog"
+        );
         // Headless callers (CLI, MCP) get the same bytes, not an error.
         assert!(s.execute_headless("file.exportPdf", json!({})).is_ok());
         // With no workbook open it is a clear error, not a panic.
@@ -2096,12 +2905,21 @@ mod tests {
         let b = bands(0, 9, |_| 10.0, |_| 35.0, &[5], 100);
         assert_eq!(b, vec![(0, 2), (3, 4), (5, 7), (8, 9)]);
         // A line larger than the page gets its own band.
-        let b = bands(0, 2, |r| if r == 1 { 100.0 } else { 10.0 }, |_| 35.0, &[], 100);
+        let b = bands(
+            0,
+            2,
+            |r| if r == 1 { 100.0 } else { 10.0 },
+            |_| 35.0,
+            &[],
+            100,
+        );
         assert_eq!(b, vec![(0, 0), (1, 1), (2, 2)]);
         assert_eq!(bands(0, 1_000_000, |_| 10.0, |_| 5.0, &[], 3).len(), 3);
         let w = wrap_lines("the quick brown fox jumps", Font::Helvetica, 10.0, 50.0);
         assert!(w.len() >= 2);
-        assert!(w.iter().all(|l| gridcraft_pdf::text_width(Font::Helvetica, 10.0, l) <= 50.0 || !l.contains(' ')));
+        assert!(w.iter().all(
+            |l| gridcraft_pdf::text_width(Font::Helvetica, 10.0, l) <= 50.0 || !l.contains(' ')
+        ));
         let w = wrap_lines("Supercalifragilistic", Font::Helvetica, 10.0, 20.0);
         assert!(w.len() > 2);
     }
@@ -2109,14 +2927,23 @@ mod tests {
     #[test]
     fn center_across_spans_following_empty_center_across_cells() {
         let mut styles = StyleTable::default();
-        let across = styles.intern(Style { align: Alignment { h: HAlign::CenterAcross, ..Alignment::default() }, ..Style::default() });
+        let across = styles.intern(Style {
+            align: Alignment {
+                h: HAlign::CenterAcross,
+                ..Alignment::default()
+            },
+            ..Style::default()
+        });
         let mut sh = Sheet::new("S");
         for col in 0..3 {
             sh.set_style(CellRef::new(0, col), across);
         }
         sh.set_value(CellRef::new(0, 0), Value::Text("Title".into()));
         let a1 = CellRef::new(0, 0);
-        assert_eq!(center_across_width(&styles, &sh, a1, &[]), sh.col_width(1) + sh.col_width(2));
+        assert_eq!(
+            center_across_width(&styles, &sh, a1, &[]),
+            sh.col_width(1) + sh.col_width(2)
+        );
         sh.set_value(CellRef::new(0, 2), Value::Text("x".into()));
         assert_eq!(center_across_width(&styles, &sh, a1, &[]), sh.col_width(1));
         let merged = [RangeRef::new(CellRef::new(0, 1), CellRef::new(1, 1))];
@@ -2128,20 +2955,40 @@ mod tests {
         // Upright headers over narrow columns (mark sheets) combine rotation with Wrap Text.
         let mut s = s();
         let header = "Term 1 : Drama : Continuous Assessment";
-        s.execute("range.setValues", json!({"range": "A1", "values": [[header, header]]})).unwrap();
-        s.execute("home.wrapText", json!({"range": "A1:B1", "on": true})).unwrap();
-        s.execute("home.orientation", json!({"range": "A1", "angle": "up"})).unwrap();
-        s.execute("home.orientation", json!({"range": "B1", "angle": "down"})).unwrap();
-        s.execute("home.columnWidth", json!({"cols": "A:B", "chars": 6})).unwrap();
-        s.execute("home.rowHeight", json!({"rows": "1:1", "height": 267})).unwrap();
+        s.execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [[header, header]]}),
+        )
+        .unwrap();
+        s.execute("home.wrapText", json!({"range": "A1:B1", "on": true}))
+            .unwrap();
+        s.execute("home.orientation", json!({"range": "A1", "angle": "up"}))
+            .unwrap();
+        s.execute("home.orientation", json!({"range": "B1", "angle": "down"}))
+            .unwrap();
+        s.execute("home.columnWidth", json!({"cols": "A:B", "chars": 6}))
+            .unwrap();
+        s.execute("home.rowHeight", json!({"rows": "1:1", "height": 267}))
+            .unwrap();
         let (pdf, _) = pdf_of(&mut s, json!({}));
         let pdf = String::from_utf8_lossy(&pdf);
         // The page holds only these two cells, so every text block on it is a piece of a header.
-        let blocks: Vec<&str> = pdf.split("BT\n").skip(1).filter(|b| b.contains(" Tj")).collect();
+        let blocks: Vec<&str> = pdf
+            .split("BT\n")
+            .skip(1)
+            .filter(|b| b.contains(" Tj"))
+            .collect();
         let up = blocks.iter().filter(|b| b.contains("\n0 1 -1 0 ")).count();
         let down = blocks.iter().filter(|b| b.contains("\n0 -1 1 0 ")).count();
         // Every piece of both headers is rotated, each wrapped along the row height into a few long lines.
-        assert_eq!(up + down, blocks.len(), "a header line printed flat: {blocks:?}");
-        assert!((1..=3).contains(&up) && (1..=3).contains(&down), "up {up}, down {down}: {blocks:?}");
+        assert_eq!(
+            up + down,
+            blocks.len(),
+            "a header line printed flat: {blocks:?}"
+        );
+        assert!(
+            (1..=3).contains(&up) && (1..=3).contains(&down),
+            "up {up}, down {down}: {blocks:?}"
+        );
     }
 }

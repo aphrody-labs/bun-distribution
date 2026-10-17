@@ -23,7 +23,9 @@ pub fn arm_asimd_vshll(ir: &mut A32IREmitter, inst: &DecodedArm) -> bool {
     } else {
         ir.ir().vector_sign_extend(esize, reg_m)
     };
-    let result = ir.ir().vector_logical_shift_left(esize * 2, extended, shift_amount as u8);
+    let result = ir
+        .ir()
+        .vector_logical_shift_left(esize * 2, extended, shift_amount as u8);
     ir.set_vector(d, result);
     true
 }
@@ -47,10 +49,34 @@ pub fn arm_asimd_vcvt_fixed(ir: &mut A32IREmitter, inst: &DecodedArm) -> bool {
     let reg_m = ir.get_vector(m);
     use crate::common::fp::rounding_mode::RoundingMode;
     let result = match (to_fixed, u) {
-        (true, false) => ir.ir().fp_vector_to_signed_fixed(32, reg_m, fbits, RoundingMode::TowardsZero as u8, false),
-        (true, true) => ir.ir().fp_vector_to_unsigned_fixed(32, reg_m, fbits, RoundingMode::TowardsZero as u8, false),
-        (false, false) => ir.ir().fp_vector_from_signed_fixed(32, reg_m, fbits, RoundingMode::ToNearestTieEven as u8, false),
-        (false, true) => ir.ir().fp_vector_from_unsigned_fixed(32, reg_m, fbits, RoundingMode::ToNearestTieEven as u8, false),
+        (true, false) => ir.ir().fp_vector_to_signed_fixed(
+            32,
+            reg_m,
+            fbits,
+            RoundingMode::TowardsZero as u8,
+            false,
+        ),
+        (true, true) => ir.ir().fp_vector_to_unsigned_fixed(
+            32,
+            reg_m,
+            fbits,
+            RoundingMode::TowardsZero as u8,
+            false,
+        ),
+        (false, false) => ir.ir().fp_vector_from_signed_fixed(
+            32,
+            reg_m,
+            fbits,
+            RoundingMode::ToNearestTieEven as u8,
+            false,
+        ),
+        (false, true) => ir.ir().fp_vector_from_unsigned_fixed(
+            32,
+            reg_m,
+            fbits,
+            RoundingMode::ToNearestTieEven as u8,
+            false,
+        ),
     };
     ir.set_vector(d, result);
     true
@@ -367,7 +393,11 @@ mod tests {
                 let mut ir = A32IREmitter::with_location(&mut block, loc);
                 assert!(!arm_asimd_vshll(&mut ir, &decoded));
             }
-            let raised = block.instructions.iter().find(|inst| inst.opcode == Opcode::A32ExceptionRaised).unwrap();
+            let raised = block
+                .instructions
+                .iter()
+                .find(|inst| inst.opcode == Opcode::A32ExceptionRaised)
+                .unwrap();
             assert_eq!(raised.args[1], Value::ImmU64(exception.as_u32() as u64));
         }
     }
@@ -395,7 +425,11 @@ mod tests {
                 let mut ir = A32IREmitter::with_location(&mut block, loc);
                 assert!(!arm_asimd_vcvt_fixed(&mut ir, &decoded));
             }
-            let raised = block.instructions.iter().find(|inst| inst.opcode == Opcode::A32ExceptionRaised).unwrap();
+            let raised = block
+                .instructions
+                .iter()
+                .find(|inst| inst.opcode == Opcode::A32ExceptionRaised)
+                .unwrap();
             assert_eq!(raised.args[1], Value::ImmU64(exception.as_u32() as u64));
         }
     }

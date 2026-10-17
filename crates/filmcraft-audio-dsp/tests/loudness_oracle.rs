@@ -36,10 +36,20 @@ fn ffmpeg_ebur128(ff: &Path, wav: &Path) -> Vec<Frame> {
     let out = Command::new(ff)
         .args(["-hide_banner", "-nostats", "-v", "error", "-i"])
         .arg(wav)
-        .args(["-af", "ebur128=peak=true:metadata=1,ametadata=mode=print:file=-", "-f", "null", "-"])
+        .args([
+            "-af",
+            "ebur128=peak=true:metadata=1,ametadata=mode=print:file=-",
+            "-f",
+            "null",
+            "-",
+        ])
         .output()
         .expect("run ffmpeg");
-    assert!(out.status.success(), "ffmpeg ebur128 failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "ffmpeg ebur128 failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let mut frames = Vec::new();
     let mut cur: Option<Frame> = None;
     for line in String::from_utf8_lossy(&out.stdout).lines() {
@@ -48,7 +58,13 @@ fn ffmpeg_ebur128(ff: &Path, wav: &Path) -> Vec<Frame> {
             cur = Some(Frame::default());
             continue;
         }
-        let (Some(f), Some((k, v))) = (cur.as_mut(), line.strip_prefix("lavfi.r128.").and_then(|l| l.split_once('='))) else { continue };
+        let (Some(f), Some((k, v))) = (
+            cur.as_mut(),
+            line.strip_prefix("lavfi.r128.")
+                .and_then(|l| l.split_once('=')),
+        ) else {
+            continue;
+        };
         let v: f64 = v.trim().parse().unwrap_or(f64::NAN);
         match k {
             "M" => f.m = v,
@@ -92,7 +108,13 @@ struct Report {
 
 /// Measure `chans` with both meters and check the tolerances. `tp_truth`: the analytic true peak
 /// (dBTP) when known; it then replaces ffmpeg as the true-peak reference.
-fn compare(ff: &Path, name: &'static str, chans: &[Vec<f32>], sr: u32, tp_truth: Option<f64>) -> Report {
+fn compare(
+    ff: &Path,
+    name: &'static str,
+    chans: &[Vec<f32>],
+    sr: u32,
+    tp_truth: Option<f64>,
+) -> Report {
     let dir = filmcraft_testkit::fixtures_dir("audio-dsp/loudness");
     let wav = dir.join(format!("{name}_{sr}.wav"));
     let tmp = filmcraft_testkit::temp_path(&wav);
@@ -101,19 +123,34 @@ fn compare(ff: &Path, name: &'static str, chans: &[Vec<f32>], sr: u32, tp_truth:
     let frames = ffmpeg_ebur128(ff, &tmp);
     let _ = std::fs::remove_file(&tmp);
     let (per, meter) = ours(chans, sr);
-    assert!(frames.len() + 1 >= per.len() && !frames.is_empty(), "{name}: ffmpeg gave {} frames, we have {} blocks", frames.len(), per.len());
+    assert!(
+        frames.len() + 1 >= per.len() && !frames.is_empty(),
+        "{name}: ffmpeg gave {} frames, we have {} blocks",
+        frames.len(),
+        per.len()
+    );
     let (mut max_dm, mut max_ds, mut n_m, mut n_s) = (0f64, 0f64, 0, 0);
     for (k, (f, (m, s))) in frames.iter().zip(&per).enumerate() {
         let full_blocks = k + 1;
         if full_blocks >= 4 && f.m > -70.0 {
             let d = (f.m - m).abs();
-            assert!(d <= TOL_MS, "{name}: momentary at {:.1} s: ffmpeg {:.3}, ours {m:.3}", full_blocks as f64 / 10.0, f.m);
+            assert!(
+                d <= TOL_MS,
+                "{name}: momentary at {:.1} s: ffmpeg {:.3}, ours {m:.3}",
+                full_blocks as f64 / 10.0,
+                f.m
+            );
             max_dm = max_dm.max(d);
             n_m += 1;
         }
         if full_blocks >= 30 && f.s > -70.0 {
             let d = (f.s - s).abs();
-            assert!(d <= TOL_MS, "{name}: short-term at {:.1} s: ffmpeg {:.3}, ours {s:.3}", full_blocks as f64 / 10.0, f.s);
+            assert!(
+                d <= TOL_MS,
+                "{name}: short-term at {:.1} s: ffmpeg {:.3}, ours {s:.3}",
+                full_blocks as f64 / 10.0,
+                f.s
+            );
             max_ds = max_ds.max(d);
             n_s += 1;
         }
@@ -133,14 +170,37 @@ fn compare(ff: &Path, name: &'static str, chans: &[Vec<f32>], sr: u32, tp_truth:
         r.i.0, r.i.1, r.lra.0, r.lra.1, r.tp.0, r.tp.1, r.max_dm, r.max_ds
     );
     assert!(n_m > 0, "{name}: no momentary values compared");
-    assert!((r.i.0 - r.i.1).abs() <= TOL_I, "{name}: integrated ours {:.3} vs ffmpeg {:.3}", r.i.0, r.i.1);
-    assert!((r.lra.0 - r.lra.1).abs() <= TOL_LRA, "{name}: LRA ours {:.3} vs ffmpeg {:.3}", r.lra.0, r.lra.1);
+    assert!(
+        (r.i.0 - r.i.1).abs() <= TOL_I,
+        "{name}: integrated ours {:.3} vs ffmpeg {:.3}",
+        r.i.0,
+        r.i.1
+    );
+    assert!(
+        (r.lra.0 - r.lra.1).abs() <= TOL_LRA,
+        "{name}: LRA ours {:.3} vs ffmpeg {:.3}",
+        r.lra.0,
+        r.lra.1
+    );
     match tp_truth {
         Some(t) => {
-            eprintln!("{name}: analytic true peak {t:.3} dBTP: ours off by {:+.3} dB, ffmpeg off by {:+.3} dB", r.tp.0 - t, r.tp.1 - t);
-            assert!((r.tp.0 - t).abs() <= TOL_TP_DB, "{name}: true peak ours {:.3} vs analytic {t:.3} dBTP", r.tp.0);
+            eprintln!(
+                "{name}: analytic true peak {t:.3} dBTP: ours off by {:+.3} dB, ffmpeg off by {:+.3} dB",
+                r.tp.0 - t,
+                r.tp.1 - t
+            );
+            assert!(
+                (r.tp.0 - t).abs() <= TOL_TP_DB,
+                "{name}: true peak ours {:.3} vs analytic {t:.3} dBTP",
+                r.tp.0
+            );
         }
-        None => assert!((r.tp.0 - r.tp.1).abs() <= TOL_TP_DB, "{name}: true peak ours {:.3} vs ffmpeg {:.3} dBTP", r.tp.0, r.tp.1),
+        None => assert!(
+            (r.tp.0 - r.tp.1).abs() <= TOL_TP_DB,
+            "{name}: true peak ours {:.3} vs ffmpeg {:.3} dBTP",
+            r.tp.0,
+            r.tp.1
+        ),
     }
     r
 }
@@ -162,13 +222,16 @@ fn db(x: f64) -> f64 {
 }
 
 fn sine(freq: f64, amp: f64, sr: u32, secs: f64, phase: f64) -> Vec<f32> {
-    (0..(secs * sr as f64) as usize).map(|i| (amp * (2.0 * PI * freq * i as f64 / sr as f64 + phase).sin()) as f32).collect()
+    (0..(secs * sr as f64) as usize)
+        .map(|i| (amp * (2.0 * PI * freq * i as f64 / sr as f64 + phase).sin()) as f32)
+        .collect()
 }
 
 /// Pink noise (Paul Kellet's refined filter on white noise), scaled to `amp` RMS-ish.
 fn pink(sr: u32, secs: f64, amp: f64, seed: u64) -> Vec<f32> {
     let mut r = Rng(seed);
-    let (mut b0, mut b1, mut b2, mut b3, mut b4, mut b5, mut b6) = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    let (mut b0, mut b1, mut b2, mut b3, mut b4, mut b5, mut b6) =
+        (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     (0..(secs * sr as f64) as usize)
         .map(|_| {
             let w = r.next();
@@ -209,7 +272,9 @@ fn speech(sr: u32, secs: f64, seed: u64) -> Vec<f32> {
                 if f > sr as f64 / 2.2 {
                     break;
                 }
-                let formant = (-((f - f1) / 200.0).powi(2)).exp() + 0.5 * (-((f - f2) / 300.0).powi(2)).exp() + 0.05;
+                let formant = (-((f - f1) / 200.0).powi(2)).exp()
+                    + 0.5 * (-((f - f2) / 300.0).powi(2)).exp()
+                    + 0.05;
                 v += formant * (2.0 * PI * f * t).sin() / h as f64;
             }
             out[pos + i] = (0.3 * phrase_gain * env * v + 0.003 * r.next()) as f32;
@@ -236,7 +301,13 @@ fn loudness_matches_ffmpeg_ebur128() {
     reports.push(compare(&ff, "sine_997", &[s.clone(), s], sr, Some(-20.0)));
 
     // 2. Independent pink noise per channel.
-    reports.push(compare(&ff, "pink_noise", &[pink(sr, 15.0, 0.5, 1), pink(sr, 15.0, 0.5, 2)], sr, None));
+    reports.push(compare(
+        &ff,
+        "pink_noise",
+        &[pink(sr, 15.0, 0.5, 1), pink(sr, 15.0, 0.5, 2)],
+        sr,
+        None,
+    ));
 
     // 3. Speech-like bursts and pauses (exercises the relative gate and LRA).
     let sp = speech(sr, 25.0, 7);
@@ -264,14 +335,32 @@ fn loudness_matches_ffmpeg_ebur128() {
 
     // 5. Inter-sample peaks: fs/4 at 45° phase, 0 dBFS true peak but −3 dBFS sample peak.
     let x = sine(sr as f64 / 4.0, 0.9, sr, 5.0, PI / 4.0);
-    reports.push(compare(&ff, "intersample_peak", &[x.clone(), x], sr, Some(20.0 * 0.9f64.log10())));
+    reports.push(compare(
+        &ff,
+        "intersample_peak",
+        &[x.clone(), x],
+        sr,
+        Some(20.0 * 0.9f64.log10()),
+    ));
 
     // 6. Mono speech-like at 44.1 kHz (K-weighting derived for another rate; true peak at 4×).
     let sr2 = 44_100;
-    reports.push(compare(&ff, "speech_mono_44k", &[speech(sr2, 20.0, 11)], sr2, None));
+    reports.push(compare(
+        &ff,
+        "speech_mono_44k",
+        &[speech(sr2, 20.0, 11)],
+        sr2,
+        None,
+    ));
 
     // 7. Pink noise at 96 kHz (2× true-peak oversampling).
-    reports.push(compare(&ff, "pink_noise_96k", &[pink(96_000, 8.0, 0.4, 21), pink(96_000, 8.0, 0.4, 22)], 96_000, None));
+    reports.push(compare(
+        &ff,
+        "pink_noise_96k",
+        &[pink(96_000, 8.0, 0.4, 21), pink(96_000, 8.0, 0.4, 22)],
+        96_000,
+        None,
+    ));
 
     let worst = |f: fn(&Report) -> f64| reports.iter().map(f).fold(0f64, f64::max);
     eprintln!(

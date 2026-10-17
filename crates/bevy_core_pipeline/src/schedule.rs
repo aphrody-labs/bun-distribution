@@ -56,8 +56,8 @@ pub enum Core3dSystems {
 
 impl Core3d {
     pub fn base_schedule() -> Schedule {
-        use bevy_ecs::schedule::ScheduleBuildSettings;
         use Core3dSystems::*;
+        use bevy_ecs::schedule::ScheduleBuildSettings;
 
         let mut schedule = Schedule::new(Self);
 
@@ -95,8 +95,8 @@ pub enum Core2dSystems {
 
 impl Core2d {
     pub fn base_schedule() -> Schedule {
-        use bevy_ecs::schedule::ScheduleBuildSettings;
         use Core2dSystems::*;
+        use bevy_ecs::schedule::ScheduleBuildSettings;
 
         let mut schedule = Schedule::new(Self);
 

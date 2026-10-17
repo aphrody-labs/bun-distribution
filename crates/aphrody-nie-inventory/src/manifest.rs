@@ -32,23 +32,74 @@ struct KnownMagic {
 /// The list covers CRIWARE container formats (CPK, USM, AWB, ACB, HCA) plus
 /// common media-container magics likely to appear in a Level-5 asset catalog.
 const KNOWN_MAGICS: &[KnownMagic] = &[
-    KnownMagic { bytes: *b"@UTF", label: "@UTF (CRIWARE table)" },
-    KnownMagic { bytes: *b"CPK ", label: "CPK  (CRIWARE CPK archive)" },
-    KnownMagic { bytes: *b"CRID", label: "CRID (CRIWARE USM video)" },
-    KnownMagic { bytes: *b"CRIF", label: "CRIF (CRIWARE generic)" },
-    KnownMagic { bytes: *b"AFS2", label: "AFS2 (CRIWARE AWB audio bank)" },
-    KnownMagic { bytes: *b"@ACB", label: "@ACB (CRIWARE audio cue bank)" },
-    KnownMagic { bytes: *b"HCA\0", label: "HCA\\0 (CRIWARE HCA audio)" },
-    KnownMagic { bytes: [0x89, b'P', b'N', b'G'], label: "\\x89PNG (PNG image)" },
-    KnownMagic { bytes: *b"RIFF", label: "RIFF (WAV/AVI container)" },
-    KnownMagic { bytes: *b"OggS", label: "OggS (Ogg bitstream)" },
-    KnownMagic { bytes: *b"fLaC", label: "fLaC (FLAC audio)" },
-    KnownMagic { bytes: [0xFF, 0xFE, 0x00, 0x00], label: "UTF-32 LE BOM" },
-    KnownMagic { bytes: [0xFF, 0xFE, 0x00, 0x00], label: "UTF-32 LE BOM" },
-    KnownMagic { bytes: [0xEF, 0xBB, 0xBF, 0x00], label: "UTF-8 BOM + null" },
-    KnownMagic { bytes: [0x1F, 0x8B, 0x08, 0x00], label: "gzip stream (CM=8)" },
-    KnownMagic { bytes: *b"PK\x03\x04", label: "PK\\x03\\x04 (ZIP local file)" },
-    KnownMagic { bytes: [0x00, 0x00, 0x00, 0x00], label: "null-quad (padding / unset)" },
+    KnownMagic {
+        bytes: *b"@UTF",
+        label: "@UTF (CRIWARE table)",
+    },
+    KnownMagic {
+        bytes: *b"CPK ",
+        label: "CPK  (CRIWARE CPK archive)",
+    },
+    KnownMagic {
+        bytes: *b"CRID",
+        label: "CRID (CRIWARE USM video)",
+    },
+    KnownMagic {
+        bytes: *b"CRIF",
+        label: "CRIF (CRIWARE generic)",
+    },
+    KnownMagic {
+        bytes: *b"AFS2",
+        label: "AFS2 (CRIWARE AWB audio bank)",
+    },
+    KnownMagic {
+        bytes: *b"@ACB",
+        label: "@ACB (CRIWARE audio cue bank)",
+    },
+    KnownMagic {
+        bytes: *b"HCA\0",
+        label: "HCA\\0 (CRIWARE HCA audio)",
+    },
+    KnownMagic {
+        bytes: [0x89, b'P', b'N', b'G'],
+        label: "\\x89PNG (PNG image)",
+    },
+    KnownMagic {
+        bytes: *b"RIFF",
+        label: "RIFF (WAV/AVI container)",
+    },
+    KnownMagic {
+        bytes: *b"OggS",
+        label: "OggS (Ogg bitstream)",
+    },
+    KnownMagic {
+        bytes: *b"fLaC",
+        label: "fLaC (FLAC audio)",
+    },
+    KnownMagic {
+        bytes: [0xFF, 0xFE, 0x00, 0x00],
+        label: "UTF-32 LE BOM",
+    },
+    KnownMagic {
+        bytes: [0xFF, 0xFE, 0x00, 0x00],
+        label: "UTF-32 LE BOM",
+    },
+    KnownMagic {
+        bytes: [0xEF, 0xBB, 0xBF, 0x00],
+        label: "UTF-8 BOM + null",
+    },
+    KnownMagic {
+        bytes: [0x1F, 0x8B, 0x08, 0x00],
+        label: "gzip stream (CM=8)",
+    },
+    KnownMagic {
+        bytes: *b"PK\x03\x04",
+        label: "PK\\x03\\x04 (ZIP local file)",
+    },
+    KnownMagic {
+        bytes: [0x00, 0x00, 0x00, 0x00],
+        label: "null-quad (padding / unset)",
+    },
 ];
 
 // ── Public types ───────────────────────────────────────────────────────────
@@ -136,8 +187,12 @@ pub fn probe(path: &Path) -> anyhow::Result<ManifestProbe> {
     let mut magic_candidates: Vec<MagicHit> = Vec::new();
     if data.len() >= 4 {
         'outer: for offset in 0..=(data.len() - 4) {
-            let window: [u8; 4] =
-                [data[offset], data[offset + 1], data[offset + 2], data[offset + 3]];
+            let window: [u8; 4] = [
+                data[offset],
+                data[offset + 1],
+                data[offset + 2],
+                data[offset + 3],
+            ];
             for km in KNOWN_MAGICS {
                 if km.bytes == window {
                     magic_candidates.push(MagicHit {
@@ -203,7 +258,11 @@ impl ManifestProbe {
             self.size_bytes,
             self.size_bytes as f64 / 1_048_576.0
         )?;
-        writeln!(w, "  entropy        : {:.6} bits/byte", self.entropy_bits_per_byte)?;
+        writeln!(
+            w,
+            "  entropy        : {:.6} bits/byte",
+            self.entropy_bits_per_byte
+        )?;
 
         let entropy_label = if self.entropy_bits_per_byte > 7.5 {
             "HIGH — likely compressed or encrypted"
@@ -222,7 +281,11 @@ impl ManifestProbe {
         writeln!(w, "\n--- tail (last 256 bytes, hex) ---")?;
         write_hex_dump(&mut w, &self.tail_hex, 32)?;
 
-        writeln!(w, "\n--- magic hits ({} total, cap 4096) ---", self.magic_candidates.len())?;
+        writeln!(
+            w,
+            "\n--- magic hits ({} total, cap 4096) ---",
+            self.magic_candidates.len()
+        )?;
         if self.magic_candidates.is_empty() {
             writeln!(w, "  (none)")?;
         } else {
@@ -238,7 +301,10 @@ impl ManifestProbe {
             }
         }
 
-        writeln!(w, "\n--- aligned_offsets_8 (4-byte BE in [1 MiB, 64 MiB]) ---")?;
+        writeln!(
+            w,
+            "\n--- aligned_offsets_8 (4-byte BE in [1 MiB, 64 MiB]) ---"
+        )?;
         if self.aligned_offsets_8.is_empty() {
             writeln!(w, "  (none)")?;
         } else {
@@ -278,7 +344,9 @@ fn shannon_entropy(data: &[u8]) -> f64 {
 
 /// Render four bytes as printable ASCII; replace non-printable bytes with `'.'`.
 fn bytes_to_printable_ascii(b: &[u8; 4]) -> String {
-    b.iter().map(|&c| if c.is_ascii_graphic() { c as char } else { '.' }).collect()
+    b.iter()
+        .map(|&c| if c.is_ascii_graphic() { c as char } else { '.' })
+        .collect()
 }
 
 /// Write `hex_str` as grouped rows of `cols` hex pairs (cols*2 hex chars per line),
@@ -316,7 +384,11 @@ fn write_hex_dump(w: &mut impl Write, hex_str: &str, cols: usize) -> io::Result<
         while hi < hex_end {
             let pair = &hex_str[hi..hi + 2];
             let val = u8::from_str_radix(pair, 16).unwrap_or(b'.');
-            let ch = if val.is_ascii_graphic() { val as char } else { '.' };
+            let ch = if val.is_ascii_graphic() {
+                val as char
+            } else {
+                '.'
+            };
             write!(w, "{ch}")?;
             hi += 2;
         }
@@ -349,10 +421,14 @@ mod tests {
     fn entropy_of_random_is_near_8() {
         // Deterministic pseudo-random sequence using Knuth's multiplicative hash
         // constant.  The distribution approximates uniform over [0, 255].
-        let buf: Vec<u8> =
-            (0u32..1024).map(|i| (i.wrapping_mul(2_654_435_761) % 256) as u8).collect();
+        let buf: Vec<u8> = (0u32..1024)
+            .map(|i| (i.wrapping_mul(2_654_435_761) % 256) as u8)
+            .collect();
         let h = entropy_of(&buf);
-        assert!(h > 7.0, "pseudo-random buffer should have entropy > 7.0, got {h:.6}");
+        assert!(
+            h > 7.0,
+            "pseudo-random buffer should have entropy > 7.0, got {h:.6}"
+        );
     }
 
     #[test]
@@ -372,13 +448,21 @@ mod tests {
         let result = probe(&tmp_path).expect("probe should succeed on temp file");
         std::fs::remove_file(&tmp_path).ok();
 
-        let utf_hits: Vec<_> = result.magic_candidates.iter().filter(|h| h.offset == 512).collect();
+        let utf_hits: Vec<_> = result
+            .magic_candidates
+            .iter()
+            .filter(|h| h.offset == 512)
+            .collect();
 
         assert!(
             !utf_hits.is_empty(),
             "expected at least one magic hit at offset 512, got: {:?}",
             result.magic_candidates
         );
-        assert_eq!(utf_hits[0].magic, [b'@', b'U', b'T', b'F'], "hit magic bytes must be @UTF");
+        assert_eq!(
+            utf_hits[0].magic,
+            [b'@', b'U', b'T', b'F'],
+            "hit magic bytes must be @UTF"
+        );
     }
 }

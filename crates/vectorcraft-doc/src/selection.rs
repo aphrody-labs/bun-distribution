@@ -72,7 +72,8 @@ impl Selection {
         self.clear();
         // What `add` per id does after a clear, without its linear duplicate check per id.
         let mut seen = std::collections::HashSet::new();
-        self.objects.extend(ids.into_iter().filter(|id| seen.insert(*id)));
+        self.objects
+            .extend(ids.into_iter().filter(|id| seen.insert(*id)));
     }
     pub fn add(&mut self, id: NodeId) {
         self.target = None;
@@ -119,7 +120,11 @@ impl Selection {
         }
     }
     pub fn toggle(&mut self, id: NodeId) {
-        if self.contains(id) { self.remove(id) } else { self.add(id) }
+        if self.contains(id) {
+            self.remove(id)
+        } else {
+            self.add(id)
+        }
     }
     /// Are some (not all) anchors of `id` direct-selected?
     pub fn partial(&self, id: NodeId) -> Option<&BTreeSet<AnchorRef>> {
@@ -127,7 +132,11 @@ impl Selection {
     }
     /// The objects selected whole: those with no direct-selected anchors.
     pub fn whole(&self) -> Vec<NodeId> {
-        self.objects.iter().copied().filter(|id| !self.anchors.contains_key(id)).collect()
+        self.objects
+            .iter()
+            .copied()
+            .filter(|id| !self.anchors.contains_key(id))
+            .collect()
     }
     /// With direct-selected anchors, what a transform of them measures from: the box around those
     /// anchors and the objects selected whole (`visual`: with their strokes). `None` without any.
@@ -137,39 +146,83 @@ impl Selection {
         }
         let mut acc = doc.bounds_of(&self.whole(), visual);
         for (id, set) in &self.anchors {
-            let Some(NodeKind::Path { path, .. }) = doc.node(*id).map(|n| &n.kind) else { continue };
-            for a in set.iter().filter_map(|&(si, ai)| path.subpaths.get(si)?.anchors.get(ai)) {
-                acc = vectorcraft_geom::union_opt(acc, Some(vectorcraft_geom::Rect::from_points(a.p, a.p)));
+            let Some(NodeKind::Path { path, .. }) = doc.node(*id).map(|n| &n.kind) else {
+                continue;
+            };
+            for a in set
+                .iter()
+                .filter_map(|&(si, ai)| path.subpaths.get(si)?.anchors.get(ai))
+            {
+                acc = vectorcraft_geom::union_opt(
+                    acc,
+                    Some(vectorcraft_geom::Rect::from_points(a.p, a.p)),
+                );
             }
         }
         acc
     }
     /// Which direction handles belong to selected segments; both for an anchor selection.
-    pub fn handle_sides(&self, id: NodeId, si: usize, ai: usize, sp: &vectorcraft_geom::SubPath) -> (bool, bool) {
-        let Some(segments) = self.segments.get(&id) else { return (true, true) };
-        let previous = ai.checked_sub(1).or_else(|| sp.closed.then_some(sp.segment_count()).and_then(|n| n.checked_sub(1)));
-        (previous.is_some_and(|i| segments.contains(&(si, i))), segments.contains(&(si, ai)))
+    pub fn handle_sides(
+        &self,
+        id: NodeId,
+        si: usize,
+        ai: usize,
+        sp: &vectorcraft_geom::SubPath,
+    ) -> (bool, bool) {
+        let Some(segments) = self.segments.get(&id) else {
+            return (true, true);
+        };
+        let previous = ai.checked_sub(1).or_else(|| {
+            sp.closed
+                .then_some(sp.segment_count())
+                .and_then(|n| n.checked_sub(1))
+        });
+        (
+            previous.is_some_and(|i| segments.contains(&(si, i))),
+            segments.contains(&(si, ai)),
+        )
     }
     /// Drop ids that no longer exist or are no longer editable.
     pub fn prune(&mut self, doc: &Document) {
         // Every id this looks up, found in one walk of the tree.
-        let ids = self.objects.iter().chain(self.anchors.keys()).chain(self.segments.keys()).copied().chain(self.key).chain(self.target);
+        let ids = self
+            .objects
+            .iter()
+            .chain(self.anchors.keys())
+            .chain(self.segments.keys())
+            .copied()
+            .chain(self.key)
+            .chain(self.target);
         let found = doc.index_paths(ids);
         self.objects.retain(|id| found.contains_key(id));
         self.anchors.retain(|id, _| found.contains_key(id));
         self.segments.retain(|id, refs| {
-            let Some(path) = found.get(id).and_then(|p| doc.node_at(p)).and_then(|n| n.path_data()) else { return false };
-            refs.retain(|&(si, seg)| path.subpaths.get(si).is_some_and(|sp| seg < sp.segment_count()));
+            let Some(path) = found
+                .get(id)
+                .and_then(|p| doc.node_at(p))
+                .and_then(|n| n.path_data())
+            else {
+                return false;
+            };
+            refs.retain(|&(si, seg)| {
+                path.subpaths
+                    .get(si)
+                    .is_some_and(|sp| seg < sp.segment_count())
+            });
             !refs.is_empty() && self.objects.contains(id) && self.anchors.contains_key(id)
         });
         // The key object stays while another selected object lies outside it.
-        let keep = self.key.and_then(|k| found.get(&k)).and_then(|p| doc.node_at(p)).is_some_and(|n| {
-            let mut inside = BTreeSet::new();
-            n.walk(&mut |c| {
-                inside.insert(c.id);
+        let keep = self
+            .key
+            .and_then(|k| found.get(&k))
+            .and_then(|p| doc.node_at(p))
+            .is_some_and(|n| {
+                let mut inside = BTreeSet::new();
+                n.walk(&mut |c| {
+                    inside.insert(c.id);
+                });
+                self.objects.iter().any(|o| !inside.contains(o))
             });
-            self.objects.iter().any(|o| !inside.contains(o))
-        });
         if !keep {
             self.key = None;
         }
@@ -178,13 +231,19 @@ impl Selection {
         }
         self.slices.retain(|id| doc.is_slice(*id));
         // Guides on a hidden or locked layer can't stay selected.
-        self.guides.retain(|i| doc.guides.get(*i).is_some_and(|g| doc.guide_editable(g)));
+        self.guides
+            .retain(|i| doc.guides.get(*i).is_some_and(|g| doc.guide_editable(g)));
     }
     /// Deselect the objects that are hidden or locked, themselves or through a group or layer
     /// around them (and so the key object when it is one): hidden or locked art can't stay
     /// selected.
     pub fn deselect_uneditable(&mut self, doc: &Document) {
-        let uneditable: HashSet<NodeId> = self.objects.iter().copied().filter(|o| !doc.is_editable(*o)).collect();
+        let uneditable: HashSet<NodeId> = self
+            .objects
+            .iter()
+            .copied()
+            .filter(|o| !doc.is_editable(*o))
+            .collect();
         if uneditable.is_empty() {
             return;
         }

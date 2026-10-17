@@ -21,5 +21,9 @@ static INSTR_TABLE_ARM9: [fn(&mut Context, u16); 0x400] =
 #[inline]
 pub(super) fn handle_instr<const ARM9: bool>(ctx: &mut Context, instr: u16) {
     let index = (instr >> 6) as usize;
-    (if ARM9 { INSTR_TABLE_ARM9[index] } else { INSTR_TABLE_ARM7[index] })(ctx, instr);
+    (if ARM9 {
+        INSTR_TABLE_ARM9[index]
+    } else {
+        INSTR_TABLE_ARM7[index]
+    })(ctx, instr);
 }

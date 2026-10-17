@@ -39,19 +39,34 @@ fn parse_headersave_ancres_validees() {
     let hs = parse_headersave(&headersave_blob.body).expect("parse_headersave échoué");
 
     // --- Champs d'en-tête global ---
-    assert_eq!(hs.format_version, EXPECTED_FORMAT_VERSION, "format_version incorrect");
+    assert_eq!(
+        hs.format_version, EXPECTED_FORMAT_VERSION,
+        "format_version incorrect"
+    );
     assert_eq!(hs.max_slots, EXPECTED_MAX_SLOTS, "max_slots incorrect");
     assert_eq!(hs.used_slots, EXPECTED_USED_SLOTS, "used_slots incorrect");
     assert!(hs.used_slots <= hs.max_slots, "used_slots > max_slots");
 
     // --- Horodatage de sauvegarde ---
-    assert!(!hs.save_timestamp.is_unset(), "save_timestamp est unset (attendu 2026-02-21)");
-    assert_eq!(hs.save_timestamp.year, EXPECTED_SAVE_YEAR, "année incorrecte");
-    assert_eq!(hs.save_timestamp.month, EXPECTED_SAVE_MONTH, "mois incorrect");
+    assert!(
+        !hs.save_timestamp.is_unset(),
+        "save_timestamp est unset (attendu 2026-02-21)"
+    );
+    assert_eq!(
+        hs.save_timestamp.year, EXPECTED_SAVE_YEAR,
+        "année incorrecte"
+    );
+    assert_eq!(
+        hs.save_timestamp.month, EXPECTED_SAVE_MONTH,
+        "mois incorrect"
+    );
     assert_eq!(hs.save_timestamp.day, EXPECTED_SAVE_DAY, "jour incorrect");
 
     // --- Ancres joueur ---
-    assert_eq!(hs.player_name, EXPECTED_PLAYER_NAME, "player_name incorrect");
+    assert_eq!(
+        hs.player_name, EXPECTED_PLAYER_NAME,
+        "player_name incorrect"
+    );
     assert_eq!(hs.level_str, EXPECTED_LEVEL_STR, "level_str incorrect");
     assert_eq!(hs.unique_id, EXPECTED_UNIQUE_ID, "unique_id incorrect");
 
@@ -64,14 +79,22 @@ fn parse_headersave_ancres_validees() {
     assert!(active_count > 0, "aucun slot actif trouvé");
 
     // Le slot TYPE-B avec l'horodatage 2026-05-08T12:41:54 doit exister
-    let type_b_with_dt = hs
-        .slots
-        .iter()
-        .find(|s| s.slot_datetime.as_ref().is_some_and(|dt| dt.year == 2026 && !dt.is_unset()));
-    assert!(type_b_with_dt.is_some(), "aucun slot TYPE-B avec horodatage 2026 trouvé");
+    let type_b_with_dt = hs.slots.iter().find(|s| {
+        s.slot_datetime
+            .as_ref()
+            .is_some_and(|dt| dt.year == 2026 && !dt.is_unset())
+    });
+    assert!(
+        type_b_with_dt.is_some(),
+        "aucun slot TYPE-B avec horodatage 2026 trouvé"
+    );
 
     // body_opaque doit contenir le body complet
-    assert_eq!(hs.body_opaque.len(), headersave_blob.body.len(), "body_opaque taille incorrecte");
+    assert_eq!(
+        hs.body_opaque.len(),
+        headersave_blob.body.len(),
+        "body_opaque taille incorrecte"
+    );
 
     // Sortie terse (format nie convention : clé=val)
     println!(

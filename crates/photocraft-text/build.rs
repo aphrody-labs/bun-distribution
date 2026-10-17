@@ -24,13 +24,19 @@ fn main() {
     println!("cargo::rerun-if-env-changed=CRAFT_FONTS_REQUIRED");
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
     let mut src = String::from("pub static CRAFT_FONTS: &[CraftFont] = &[\n");
-    if let Some(dir) = std::env::var_os("CRAFT_FONTS_DIR").filter(|d| !d.is_empty() && !wasm).map(PathBuf::from) {
+    if let Some(dir) = std::env::var_os("CRAFT_FONTS_DIR")
+        .filter(|d| !d.is_empty() && !wasm)
+        .map(PathBuf::from)
+    {
         match craft_fonts(&dir) {
             Ok(entries) => src.push_str(&entries),
             Err(e) if std::env::var_os("CRAFT_FONTS_REQUIRED").is_some() => {
                 println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!(
+                "cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}",
+                dir.display()
+            ),
         }
     }
     src.push_str("];\n");
@@ -44,11 +50,17 @@ fn main() {
 /// Deflate the bundled fonts into `OUT_DIR/fonts/` (`fonts::BUNDLED` includes them).
 fn deflate_bundled_fonts() {
     use std::io::Write as _;
-    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/photocraft/fonts");
+    let src =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/photocraft/fonts");
     let out = PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("fonts");
     let result = (|| -> std::io::Result<()> {
         std::fs::create_dir_all(&out)?;
-        for name in ["Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf", "JetBrainsMono-Regular.ttf"] {
+        for name in [
+            "Inter-Regular.ttf",
+            "Inter-Medium.ttf",
+            "Inter-SemiBold.ttf",
+            "JetBrainsMono-Regular.ttf",
+        ] {
             let path = src.join(name);
             println!("cargo::rerun-if-changed={}", path.display());
             let mut z = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
@@ -58,7 +70,10 @@ fn deflate_bundled_fonts() {
         Ok(())
     })();
     if let Err(e) = result {
-        println!("cargo::error=deflating the bundled fonts in {}: {e}", src.display());
+        println!(
+            "cargo::error=deflating the bundled fonts in {}: {e}",
+            src.display()
+        );
     }
 }
 
@@ -66,16 +81,27 @@ fn deflate_bundled_fonts() {
 fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
     let manifest = dir.join("fonts/manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let text = std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
+    let text =
+        std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let mut out = String::new();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
         };
-        let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
+        let path = dir
+            .join(file)
+            .canonicalize()
+            .map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
-        let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
+        let scripts: Vec<String> = scripts
+            .split(',')
+            .map(|s| format!("{:?}", s.trim()))
+            .collect();
         let _ = writeln!(
             out,
             "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",

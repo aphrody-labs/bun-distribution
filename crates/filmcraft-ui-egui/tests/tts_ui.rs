@@ -17,11 +17,21 @@ struct Driver {
 impl Driver {
     fn demo(scratch: &str) -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
-        session.execute("file.projectSettings.scratchDisks", json!({"captured": scratch})).expect("scratch disk");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
+        session
+            .execute(
+                "file.projectSettings.scratchDisks",
+                json!({"captured": scratch}),
+            )
+            .expect("scratch disk");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -56,7 +66,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -91,7 +104,11 @@ impl Driver {
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     fn narration_clips(&mut self) -> Vec<u64> {
@@ -100,7 +117,12 @@ impl Driver {
         for t in seq["audio"].as_array().into_iter().flatten() {
             for it in t["items"].as_array().into_iter().flatten() {
                 let id = it["clip"].as_u64().unwrap();
-                if self.call("engine.execute", json!({"command": "tts.inspect", "params": {"clip": id}}))["ok"] == json!(true) {
+                if self.call(
+                    "engine.execute",
+                    json!({"command": "tts.inspect", "params": {"clip": id}}),
+                )["ok"]
+                    == json!(true)
+                {
                     out.push(id);
                 }
             }
@@ -125,7 +147,18 @@ fn write_add_click_to_edit_and_save_in_place() {
     // the panel opens beside Properties, leaving the Program monitor visible
     assert!(!d.ids("program.").is_empty(), "Program monitor still shown");
     let ids = d.ids("tts.");
-    for id in ["tts.language", "tts.voice", "tts.hearVoice", "tts.advanced", "tts.pitch", "tts.pace", "tts.text", "tts.addPause", "tts.preview", "tts.save"] {
+    for id in [
+        "tts.language",
+        "tts.voice",
+        "tts.hearVoice",
+        "tts.advanced",
+        "tts.pitch",
+        "tts.pace",
+        "tts.text",
+        "tts.addPause",
+        "tts.preview",
+        "tts.save",
+    ] {
         assert!(ids.iter().any(|i| i == id), "missing {id} in {ids:?}");
     }
     // type a script and add a pause
@@ -136,7 +169,10 @@ fn write_add_click_to_edit_and_save_in_place() {
     d.ok("ui.key", json!({"key": "End"}));
     d.type_text("Goodbye.");
     let text = d.draft()["text"].as_str().unwrap().to_string();
-    assert!(text.starts_with("Hello from the panel. [pause 1s]") && text.ends_with("Goodbye."), "{text:?}");
+    assert!(
+        text.starts_with("Hello from the panel. [pause 1s]") && text.ends_with("Goodbye."),
+        "{text:?}"
+    );
     // add it to the timeline
     d.exec("playhead.set", json!({"seconds": 1.0}));
     d.click("tts.save");
@@ -147,8 +183,16 @@ fn write_add_click_to_edit_and_save_in_place() {
     let clip = clips[0];
     let n = d.exec("tts.inspect", json!({"clip": clip}));
     assert_eq!(n["narration"]["text"].as_str().unwrap(), text);
-    assert_eq!(d.ui()["selection"], json!([clip]), "the new clip is selected");
-    assert_eq!(d.draft()["loadedFrom"][0], json!(clip), "the panel now edits it");
+    assert_eq!(
+        d.ui()["selection"],
+        json!([clip]),
+        "the new clip is selected"
+    );
+    assert_eq!(
+        d.draft()["loadedFrom"][0],
+        json!(clip),
+        "the panel now edits it"
+    );
     // deselect and start fresh, then click the clip on the timeline: the panel loads it back
     d.exec("edit.deselectAll", json!({}));
     d.frames(3);
@@ -160,7 +204,11 @@ fn write_add_click_to_edit_and_save_in_place() {
     d.ok("ui.click", json!({"x": at["x"], "y": at["y"]}));
     d.frames(4);
     assert_eq!(d.ui()["selection"], json!([clip]));
-    assert_eq!(d.draft()["text"].as_str().unwrap(), text, "clicking the clip loads its script");
+    assert_eq!(
+        d.draft()["text"].as_str().unwrap(),
+        text,
+        "clicking the clip loads its script"
+    );
     // change the script and save: same clip, new audio, one undo step
     let before = d.exec("tts.inspect", json!({"clip": clip}))["item"].clone();
     d.click("tts.text");
@@ -169,14 +217,25 @@ fn write_add_click_to_edit_and_save_in_place() {
     d.click("tts.save");
     d.settle();
     let after = d.exec("tts.inspect", json!({"clip": clip}));
-    assert_eq!(after["narration"]["text"], "A new script for the same clip.");
+    assert_eq!(
+        after["narration"]["text"],
+        "A new script for the same clip."
+    );
     assert_ne!(after["item"], before);
     assert_eq!(d.narration_clips(), vec![clip]);
     let hist = d.exec("history.list", json!({}));
-    assert_eq!(hist["undo"].as_array().unwrap().last().unwrap(), "Edit Narration");
+    assert_eq!(
+        hist["undo"].as_array().unwrap().last().unwrap(),
+        "Edit Narration"
+    );
     d.exec("edit.undo", json!({}));
     d.frames(3);
-    assert_eq!(d.exec("tts.inspect", json!({"clip": clip}))["narration"]["text"].as_str().unwrap(), text);
+    assert_eq!(
+        d.exec("tts.inspect", json!({"clip": clip}))["narration"]["text"]
+            .as_str()
+            .unwrap(),
+        text
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -192,8 +251,14 @@ fn settings_controls_and_hear_this_voice() {
     // Hear this voice runs a preview (the headless harness has no audio output: a status line)
     d.click("tts.hearVoice");
     d.settle();
-    let status = d.ui()["ui"]["status"].as_str().unwrap_or_default().to_string();
-    assert!(status.contains("audio output") || status.is_empty(), "{status}");
+    let status = d.ui()["ui"]["status"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        status.contains("audio output") || status.is_empty(),
+        "{status}"
+    );
     // Advanced folds away and back
     assert_eq!(d.draft()["advancedOpen"], true);
     d.click("tts.advanced");

@@ -18,7 +18,11 @@ pub struct GrpcTransport {
 }
 
 fn normalize_grpc_endpoint(endpoint: &str) -> String {
-    if endpoint.contains("://") { endpoint.to_string() } else { format!("http://{endpoint}") }
+    if endpoint.contains("://") {
+        endpoint.to_string()
+    } else {
+        format!("http://{endpoint}")
+    }
 }
 
 impl GrpcTransport {
@@ -73,7 +77,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_send_message_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response = client.send_message(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .send_message(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         pbconv::from_proto_send_message_response(response.get_ref())
             .ok_or_else(|| A2AError::internal("empty SendMessageResponse payload"))
     }
@@ -86,8 +93,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_send_message_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response =
-            client.send_streaming_message(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .send_streaming_message(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         let stream = response.into_inner().map(|item| match item {
             Ok(proto_sr) => pbconv::from_proto_stream_response(&proto_sr)
                 .ok_or_else(|| A2AError::internal("empty StreamResponse payload")),
@@ -104,7 +113,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_get_task_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response = client.get_task(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .get_task(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         Ok(pbconv::from_proto_task(response.get_ref()))
     }
 
@@ -116,7 +128,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_list_tasks_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response = client.list_tasks(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .list_tasks(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         Ok(pbconv::from_proto_list_tasks_response(response.get_ref()))
     }
 
@@ -128,7 +143,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_cancel_task_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response = client.cancel_task(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .cancel_task(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         Ok(pbconv::from_proto_task(response.get_ref()))
     }
 
@@ -140,8 +158,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_subscribe_to_task_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response =
-            client.subscribe_to_task(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .subscribe_to_task(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         let stream = response.into_inner().map(|item| match item {
             Ok(proto_sr) => pbconv::from_proto_stream_response(&proto_sr)
                 .ok_or_else(|| A2AError::internal("empty StreamResponse payload")),
@@ -162,7 +182,9 @@ impl Transport for GrpcTransport {
             .create_task_push_notification_config(grpc_req)
             .await
             .map_err(|s| status_to_a2a_error(&s))?;
-        Ok(pbconv::from_proto_task_push_notification_config(response.get_ref()))
+        Ok(pbconv::from_proto_task_push_notification_config(
+            response.get_ref(),
+        ))
     }
 
     async fn get_push_config(
@@ -177,7 +199,9 @@ impl Transport for GrpcTransport {
             .get_task_push_notification_config(grpc_req)
             .await
             .map_err(|s| status_to_a2a_error(&s))?;
-        Ok(pbconv::from_proto_task_push_notification_config(response.get_ref()))
+        Ok(pbconv::from_proto_task_push_notification_config(
+            response.get_ref(),
+        ))
     }
 
     async fn list_push_configs(
@@ -218,8 +242,10 @@ impl Transport for GrpcTransport {
         let proto_req = pbconv::to_proto_get_extended_agent_card_request(req);
         let grpc_req = make_request(params, proto_req);
         let mut client = self.client();
-        let response =
-            client.get_extended_agent_card(grpc_req).await.map_err(|s| status_to_a2a_error(&s))?;
+        let response = client
+            .get_extended_agent_card(grpc_req)
+            .await
+            .map_err(|s| status_to_a2a_error(&s))?;
         Ok(pbconv::from_proto_agent_card(response.get_ref()))
     }
 
@@ -248,7 +274,9 @@ impl GrpcTransportFactory {
 
     #[cfg(feature = "rustls")]
     pub fn with_rustls_config(config: std::sync::Arc<tokio_rustls::rustls::ClientConfig>) -> Self {
-        GrpcTransportFactory { tls_config: Some(config) }
+        GrpcTransportFactory {
+            tls_config: Some(config),
+        }
     }
 }
 
@@ -262,9 +290,13 @@ impl Default for GrpcTransportFactory {
 fn server_name_from_url(
     url: &str,
 ) -> Result<tokio_rustls::rustls::pki_types::ServerName<'static>, A2AError> {
-    let uri: http::Uri =
-        url.parse().map_err(|e| A2AError::internal(format!("invalid URL: {e}")))?;
-    let host = uri.host().ok_or_else(|| A2AError::internal("URL has no host"))?.to_string();
+    let uri: http::Uri = url
+        .parse()
+        .map_err(|e| A2AError::internal(format!("invalid URL: {e}")))?;
+    let host = uri
+        .host()
+        .ok_or_else(|| A2AError::internal("URL has no host"))?
+        .to_string();
     tokio_rustls::rustls::pki_types::ServerName::try_from(host)
         .map_err(|e| A2AError::internal(format!("invalid server name: {e}")))
 }
@@ -317,13 +349,22 @@ mod tests {
 
     #[test]
     fn test_normalize_grpc_endpoint_adds_http_scheme() {
-        assert_eq!(normalize_grpc_endpoint("127.0.0.1:50051"), "http://127.0.0.1:50051");
+        assert_eq!(
+            normalize_grpc_endpoint("127.0.0.1:50051"),
+            "http://127.0.0.1:50051"
+        );
     }
 
     #[test]
     fn test_normalize_grpc_endpoint_preserves_existing_scheme() {
-        assert_eq!(normalize_grpc_endpoint("http://127.0.0.1:50051"), "http://127.0.0.1:50051");
-        assert_eq!(normalize_grpc_endpoint("https://example.com:443"), "https://example.com:443");
+        assert_eq!(
+            normalize_grpc_endpoint("http://127.0.0.1:50051"),
+            "http://127.0.0.1:50051"
+        );
+        assert_eq!(
+            normalize_grpc_endpoint("https://example.com:443"),
+            "https://example.com:443"
+        );
     }
 
     #[test]
@@ -337,7 +378,10 @@ mod tests {
     fn test_service_params_to_metadata_ascii() {
         let mut params = ServiceParams::new();
         params.insert("x-custom".to_string(), vec!["value1".to_string()]);
-        params.insert("x-multi".to_string(), vec!["a".to_string(), "b".to_string()]);
+        params.insert(
+            "x-multi".to_string(),
+            vec!["a".to_string(), "b".to_string()],
+        );
         let metadata = service_params_to_metadata(&params);
         assert!(metadata.get("x-custom").is_some());
     }
@@ -391,7 +435,9 @@ mod tests {
         fn self_signed_ca_pem() -> Vec<u8> {
             let mut params = rcgen::CertificateParams::new(Vec::<String>::new()).unwrap();
             params.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
-            params.distinguished_name.push(rcgen::DnType::CommonName, "Test CA");
+            params
+                .distinguished_name
+                .push(rcgen::DnType::CommonName, "Test CA");
             let key = rcgen::KeyPair::generate().unwrap();
             let cert = params.self_signed(&key).unwrap();
             cert.pem().into_bytes()

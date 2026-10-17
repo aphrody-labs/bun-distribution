@@ -14,35 +14,71 @@ use super::viewer::{ViewerMap, layer_at, layer_quad};
 use crate::EffectcraftApp;
 
 /// While something is dragged over the viewer, show where it goes; drop it on release.
-pub(crate) fn show(app: &mut EffectcraftApp, ui: &egui::Ui, painter: &egui::Painter, map: &ViewerMap, ectx: &EvalCtx) {
+pub(crate) fn show(
+    app: &mut EffectcraftApp,
+    ui: &egui::Ui,
+    painter: &egui::Painter,
+    map: &ViewerMap,
+    ectx: &EvalCtx,
+) {
     let ctx = ui.ctx().clone();
-    let Some(payload) = egui::DragAndDrop::payload::<DragPayload>(&ctx) else { return };
+    let Some(payload) = egui::DragAndDrop::payload::<DragPayload>(&ctx) else {
+        return;
+    };
     if matches!(*payload, DragPayload::Property { .. }) {
         return;
     }
-    let Some(ptr) = ctx.input(|i| i.pointer.hover_pos()).filter(|_| ui.rect_contains_pointer(map.area)) else { return };
+    let Some(ptr) = ctx
+        .input(|i| i.pointer.hover_pos())
+        .filter(|_| ui.rect_contains_pointer(map.area))
+    else {
+        return;
+    };
     let stroke = Stroke::new(2.0, app.tokens.accent);
     let at = map.to_comp(ptr);
     let actions: Vec<(&str, Value)> = match payload.as_ref() {
         DragPayload::Effect(effect) => layer_at(ectx, at)
             .map(|l| {
                 if let Some((_, q, _)) = layer_quad(ectx, l) {
-                    painter.add(egui::Shape::closed_line(q.iter().map(|c| map.to_screen(*c)).collect(), stroke));
+                    painter.add(egui::Shape::closed_line(
+                        q.iter().map(|c| map.to_screen(*c)).collect(),
+                        stroke,
+                    ));
                 }
-                ("effect.apply", json!({"effect": effect, "layers": [l.id.0]}))
+                (
+                    "effect.apply",
+                    json!({"effect": effect, "layers": [l.id.0]}),
+                )
             })
             .into_iter()
             .collect(),
         DragPayload::Item(item) => {
             // The layer's frame, centred on the pointer.
-            if let Some([w, h]) = app.session.project.item(ItemId(*item)).and_then(|it| frame_size(&it.kind, ectx.comp.pixel_aspect)) {
-                painter.rect_stroke(Rect::from_center_size(ptr, vec2(w, h) * map.zoom), 0.0, Stroke::new(1.0, app.tokens.accent), StrokeKind::Middle);
+            if let Some([w, h]) = app
+                .session
+                .project
+                .item(ItemId(*item))
+                .and_then(|it| frame_size(&it.kind, ectx.comp.pixel_aspect))
+            {
+                painter.rect_stroke(
+                    Rect::from_center_size(ptr, vec2(w, h) * map.zoom),
+                    0.0,
+                    Stroke::new(1.0, app.tokens.accent),
+                    StrokeKind::Middle,
+                );
             }
             // New layers go above the current selection, so insert in reverse
             // to preserve the order of the dragged Project items.
-            crate::panels::project_drop_items(app, *item).into_iter().rev().map(|item| ("layer.addItem", json!({"item": item, "position": at}))).collect()
+            crate::panels::project_drop_items(app, *item)
+                .into_iter()
+                .rev()
+                .map(|item| ("layer.addItem", json!({"item": item, "position": at})))
+                .collect()
         }
-        DragPayload::Files(paths) => vec![("mediaBrowser.import", json!({"paths": paths, "addToComp": true, "position": at}))],
+        DragPayload::Files(paths) => vec![(
+            "mediaBrowser.import",
+            json!({"paths": paths, "addToComp": true, "position": at}),
+        )],
         DragPayload::Property { .. } => vec![],
     };
     if actions.first().is_some_and(|(id, _)| *id != "effect.apply") {
@@ -66,6 +102,10 @@ fn frame_size(kind: &ItemKind, comp_pixel_aspect: f64) -> Option<[f32; 2]> {
         ItemKind::Solid(s) => (s.width, s.height, s.pixel_aspect),
         _ => return None,
     };
-    let stretch = if comp_pixel_aspect > 0.0 && pixel_aspect > 0.0 { pixel_aspect / comp_pixel_aspect } else { 1.0 };
+    let stretch = if comp_pixel_aspect > 0.0 && pixel_aspect > 0.0 {
+        pixel_aspect / comp_pixel_aspect
+    } else {
+        1.0
+    };
     (w > 0 && h > 0).then_some([(w as f64 * stretch) as f32, h as f32])
 }

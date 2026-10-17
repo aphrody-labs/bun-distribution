@@ -17,7 +17,9 @@ fn zeroed(len: usize) -> Vec<u16> {
     if len >= POOL_MIN_LEN {
         let found = {
             let mut pool = PLANE_POOL.lock().unwrap_or_else(|e| e.into_inner());
-            pool.iter().position(|v| v.capacity() >= len && v.capacity() <= 2 * len).map(|i| pool.swap_remove(i))
+            pool.iter()
+                .position(|v| v.capacity() >= len && v.capacity() <= 2 * len)
+                .map(|i| pool.swap_remove(i))
         };
         if let Some(mut v) = found {
             v.clear();
@@ -44,7 +46,13 @@ impl Clone for Plane {
     fn clone(&self) -> Plane {
         let mut data = zeroed(self.data.len());
         data.copy_from_slice(&self.data);
-        Plane { data, stride: self.stride, rows: self.rows, ox: self.ox, oy: self.oy }
+        Plane {
+            data,
+            stride: self.stride,
+            rows: self.rows,
+            ox: self.ox,
+            oy: self.oy,
+        }
     }
 }
 
@@ -63,11 +71,23 @@ impl Drop for Plane {
 
 impl Plane {
     pub fn new(width: usize, height: usize) -> Plane {
-        Plane { data: zeroed(width * height), stride: width, rows: height, ox: 0, oy: 0 }
+        Plane {
+            data: zeroed(width * height),
+            stride: width,
+            rows: height,
+            ox: 0,
+            oy: 0,
+        }
     }
     /// A `width` x `height` region with its top-left sample at frame position (ox, oy).
     pub fn region(ox: usize, oy: usize, width: usize, height: usize) -> Plane {
-        Plane { data: zeroed(width * height), stride: width, rows: height, ox, oy }
+        Plane {
+            data: zeroed(width * height),
+            stride: width,
+            rows: height,
+            ox,
+            oy,
+        }
     }
     #[inline(always)]
     pub fn at(&self, x: usize, y: usize) -> u16 {
@@ -117,12 +137,19 @@ impl Plane {
         // First row of `rest`.
         let mut y = 0usize;
         for &(start, end) in ranges {
-            let skip = start.saturating_sub(y).saturating_mul(stride).min(rest.len());
+            let skip = start
+                .saturating_sub(y)
+                .saturating_mul(stride)
+                .min(rest.len());
             rest = std::mem::take(&mut rest).split_at_mut(skip).1;
             y = y.saturating_add(skip / stride);
             let len = end.saturating_sub(y).saturating_mul(stride).min(rest.len());
             let (band, tail) = std::mem::take(&mut rest).split_at_mut(len);
-            out.push(RowBand { data: band, stride, y0: oy.saturating_add(y) });
+            out.push(RowBand {
+                data: band,
+                stride,
+                y0: oy.saturating_add(y),
+            });
             y = y.saturating_add(len / stride);
             rest = tail;
         }
@@ -166,7 +193,14 @@ pub struct FrameBuf {
 impl FrameBuf {
     /// Allocate a frame for a coded area of `width` x `height` luma samples (rounded up to the
     /// 128x128 superblock grid plus 160 samples of slack for blocks extending past the edge).
-    pub fn new(width: usize, height: usize, num_planes: usize, subsampling_x: usize, subsampling_y: usize, bit_depth: u8) -> FrameBuf {
+    pub fn new(
+        width: usize,
+        height: usize,
+        num_planes: usize,
+        subsampling_x: usize,
+        subsampling_y: usize,
+        bit_depth: u8,
+    ) -> FrameBuf {
         let aw = width.div_ceil(128) * 128 + 160;
         let ah = height.div_ceil(128) * 128 + 160;
         let mut planes: [Plane; 3] = Default::default();
@@ -174,7 +208,15 @@ impl FrameBuf {
         for p in planes.iter_mut().take(num_planes).skip(1) {
             *p = Plane::new(aw >> subsampling_x, ah >> subsampling_y);
         }
-        FrameBuf { planes, num_planes, subsampling_x, subsampling_y, bit_depth, width, height }
+        FrameBuf {
+            planes,
+            num_planes,
+            subsampling_x,
+            subsampling_y,
+            bit_depth,
+            width,
+            height,
+        }
     }
 
     /// The region of a frame of this geometry covering luma samples [x0, x1) x [y0, y1)
@@ -182,7 +224,11 @@ impl FrameBuf {
     pub fn region_like(&self, x0: usize, y0: usize, x1: usize, y1: usize) -> FrameBuf {
         let mut planes: [Plane; 3] = Default::default();
         for (p, pl) in planes.iter_mut().enumerate().take(self.num_planes) {
-            let (sx, sy) = if p == 0 { (0, 0) } else { (self.subsampling_x, self.subsampling_y) };
+            let (sx, sy) = if p == 0 {
+                (0, 0)
+            } else {
+                (self.subsampling_x, self.subsampling_y)
+            };
             let full = &self.planes[p];
             let (px0, py0) = (x0 >> sx, y0 >> sy);
             let px1 = (x1 >> sx).min(full.stride);
@@ -207,15 +253,28 @@ impl FrameBuf {
         let chroma: Vec<(usize, usize)> = luma.iter().map(|&(s, e)| (s >> ssy, e >> ssy)).collect();
         let [p0, p1, p2] = &mut self.planes;
         let (b1, b2) = (p1.row_bands(&chroma), p2.row_bands(&chroma));
-        p0.row_bands(luma).into_iter().zip(b1).zip(b2).map(|((y, u), v)| [y, u, v]).collect()
+        p0.row_bands(luma)
+            .into_iter()
+            .zip(b1)
+            .zip(b2)
+            .map(|((y, u), v)| [y, u, v])
+            .collect()
     }
 
     pub fn plane_width(&self, plane: usize) -> usize {
-        if plane == 0 { self.width } else { (self.width + self.subsampling_x) >> self.subsampling_x }
+        if plane == 0 {
+            self.width
+        } else {
+            (self.width + self.subsampling_x) >> self.subsampling_x
+        }
     }
 
     pub fn plane_height(&self, plane: usize) -> usize {
-        if plane == 0 { self.height } else { (self.height + self.subsampling_y) >> self.subsampling_y }
+        if plane == 0 {
+            self.height
+        } else {
+            (self.height + self.subsampling_y) >> self.subsampling_y
+        }
     }
 }
 
@@ -229,7 +288,10 @@ pub struct Mv {
 impl Mv {
     pub const ZERO: Mv = Mv { row: 0, col: 0 };
     pub fn new(row: i32, col: i32) -> Mv {
-        Mv { row: row as i16, col: col as i16 }
+        Mv {
+            row: row as i16,
+            col: col as i16,
+        }
     }
 }
 
@@ -277,7 +339,15 @@ impl MiInfo {
     }
 
     /// Storage for the w x h mode info units at (ox, oy) of a cols x rows frame.
-    pub fn region(cols: usize, rows: usize, ox: usize, oy: usize, w: usize, h: usize, palette: bool) -> MiInfo {
+    pub fn region(
+        cols: usize,
+        rows: usize,
+        ox: usize,
+        oy: usize,
+        w: usize,
+        h: usize,
+        palette: bool,
+    ) -> MiInfo {
         let n = w * h;
         let np = if palette { n } else { 0 };
         MiInfo {
@@ -312,7 +382,10 @@ impl MiInfo {
 
     #[inline(always)]
     pub fn idx(&self, row: usize, col: usize) -> usize {
-        debug_assert!(col >= self.ox && col < self.ox + self.stride && row >= self.oy, "mode info ({row}, {col}) outside the stored region");
+        debug_assert!(
+            col >= self.ox && col < self.ox + self.stride && row >= self.oy,
+            "mode info ({row}, {col}) outside the stored region"
+        );
         (row - self.oy) * self.stride + col - self.ox
     }
 
@@ -331,8 +404,10 @@ impl MiInfo {
         for k in (0..2).filter(|&k| !self.palette_size[k].is_empty()) {
             for y in 0..h {
                 let d = dst.idx(self.oy + y, self.ox);
-                dst.palette_size[k][d..d + w].copy_from_slice(&self.palette_size[k][y * w..(y + 1) * w]);
-                dst.palette_colors[k][d..d + w].copy_from_slice(&self.palette_colors[k][y * w..(y + 1) * w]);
+                dst.palette_size[k][d..d + w]
+                    .copy_from_slice(&self.palette_size[k][y * w..(y + 1) * w]);
+                dst.palette_colors[k][d..d + w]
+                    .copy_from_slice(&self.palette_colors[k][y * w..(y + 1) * w]);
             }
         }
     }
@@ -353,7 +428,10 @@ mod tests {
             *v = (i / 8) as u16;
         }
         let bands = p.row_bands(&[(0, 8), (8, 16), (16, usize::MAX)]);
-        assert_eq!(bands.iter().map(rows).collect::<Vec<_>>(), [(0, 8), (8, 8), (16, 4)]);
+        assert_eq!(
+            bands.iter().map(rows).collect::<Vec<_>>(),
+            [(0, 8), (8, 8), (16, 4)]
+        );
         // Each band's row y holds the samples of plane row y.
         for mut b in bands {
             let y = b.y0 + 1;
@@ -361,16 +439,34 @@ mod tests {
         }
         // Gaps between bands (the loop filter's even / odd turns).
         let bands = p.row_bands(&[(0, 4), (10, 14), (18, 30)]);
-        assert_eq!(bands.iter().map(rows).collect::<Vec<_>>(), [(0, 4), (10, 4), (18, 2)]);
+        assert_eq!(
+            bands.iter().map(rows).collect::<Vec<_>>(),
+            [(0, 4), (10, 4), (18, 2)]
+        );
     }
 
     #[test]
     fn row_bands_never_overlap_or_panic() {
         let mut p = Plane::new(4, 10);
         // Overlapping, descending and out-of-range ranges are cut to what is left.
-        let bands = p.row_bands(&[(2, 6), (4, 8), (1, 3), (9, 2), (50, 60), (usize::MAX, usize::MAX)]);
-        assert_eq!(bands.iter().map(rows).collect::<Vec<_>>(), [(2, 4), (6, 2), (8, 0), (9, 0), (10, 0), (10, 0)]);
+        let bands = p.row_bands(&[
+            (2, 6),
+            (4, 8),
+            (1, 3),
+            (9, 2),
+            (50, 60),
+            (usize::MAX, usize::MAX),
+        ]);
+        assert_eq!(
+            bands.iter().map(rows).collect::<Vec<_>>(),
+            [(2, 4), (6, 2), (8, 0), (9, 0), (10, 0), (10, 0)]
+        );
         let mut empty = Plane::default();
-        assert!(empty.row_bands(&[(0, 64), (64, usize::MAX)]).iter().all(|b| b.data.is_empty()));
+        assert!(
+            empty
+                .row_bands(&[(0, 64), (64, usize::MAX)])
+                .iter()
+                .all(|b| b.data.is_empty())
+        );
     }
 }

@@ -7,7 +7,11 @@ const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 pub fn encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
-        let b = [chunk.first().copied().unwrap_or(0), chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk.first().copied().unwrap_or(0),
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         for i in 0..4 {
             if i <= chunk.len() {
@@ -64,7 +68,9 @@ pub mod opt {
         let s = Option::<String>::deserialize(d)?;
         match s {
             None => Ok(None),
-            Some(s) => super::decode(&s).map(Some).ok_or_else(|| serde::de::Error::custom("invalid base64")),
+            Some(s) => super::decode(&s)
+                .map(Some)
+                .ok_or_else(|| serde::de::Error::custom("invalid base64")),
         }
     }
 }
@@ -73,7 +79,14 @@ pub mod opt {
 mod tests {
     #[test]
     fn roundtrip() {
-        for data in [&b""[..], b"a", b"ab", b"abc", b"hello world", &[0, 255, 128, 7]] {
+        for data in [
+            &b""[..],
+            b"a",
+            b"ab",
+            b"abc",
+            b"hello world",
+            &[0, 255, 128, 7],
+        ] {
             assert_eq!(super::decode(&super::encode(data)).unwrap(), data);
         }
         assert_eq!(super::encode(b"Man"), "TWFu");

@@ -13,12 +13,18 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+    s.execute("file.new", &json!({"width": 800, "height": 600}))
+        .unwrap();
     s
 }
 
 fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64) -> NodeId {
-    let r = s.execute("shape.rectangle", &json!({"x": x, "y": y, "width": w, "height": h})).unwrap();
+    let r = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": y, "width": w, "height": h}),
+        )
+        .unwrap();
     NodeId(r["id"].as_u64().unwrap())
 }
 
@@ -31,7 +37,12 @@ fn set_fill(s: &mut Session, id: NodeId, c: Color) {
 }
 
 fn ids(v: &Value) -> Vec<NodeId> {
-    v["ids"].as_array().unwrap().iter().map(|x| NodeId(x.as_u64().unwrap())).collect()
+    v["ids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| NodeId(x.as_u64().unwrap()))
+        .collect()
 }
 
 fn node(s: &Session, id: NodeId) -> Node {
@@ -53,7 +64,8 @@ fn two(s: &mut Session) -> (NodeId, NodeId) {
     let b = rect(s, 50.0, 0.0, 100.0, 100.0);
     set_fill(s, a, Color::rgb(1.0, 0.0, 0.0));
     set_fill(s, b, Color::rgb(0.0, 0.0, 1.0));
-    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [a.0, b.0]}))
+        .unwrap();
     (a, b)
 }
 
@@ -68,16 +80,28 @@ fn layer_children(s: &Session) -> usize {
 fn shape_builder_drag_merges_touched_regions() {
     let mut s = session();
     two(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[25, 50], [75, 50]]})).unwrap();
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[25, 50], [75, 50]]}),
+        )
+        .unwrap();
     assert_eq!(r["regions"], 2);
     let out = ids(&r);
     assert_eq!(out.len(), 2, "merged shape + remaining part of B");
     let merged = NodeId(r["merged"].as_u64().unwrap());
-    assert!((area(&s, merged) - 10000.0).abs() < 1.0, "{}", area(&s, merged));
+    assert!(
+        (area(&s, merged) - 10000.0).abs() < 1.0,
+        "{}",
+        area(&s, merged)
+    );
     let rest = out.iter().copied().find(|i| *i != merged).unwrap();
     assert!((area(&s, rest) - 5000.0).abs() < 1.0);
     // Merged shape takes the fill of the object under the drag start (A, red).
-    assert_eq!(node(&s, merged).appearance.fill_paint(), Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+    assert_eq!(
+        node(&s, merged).appearance.fill_paint(),
+        Paint::solid(Color::rgb(1.0, 0.0, 0.0))
+    );
     assert_eq!(layer_children(&s), 2);
 }
 
@@ -85,14 +109,19 @@ fn shape_builder_drag_merges_touched_regions() {
 fn shape_builder_click_splits_out_one_region() {
     let mut s = session();
     two(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[75, 50]]})).unwrap();
+    let r = s
+        .execute("shapeBuilder.merge", &json!({"points": [[75, 50]]}))
+        .unwrap();
     let out = ids(&r);
     assert_eq!(out.len(), 3);
     let total: f64 = out.iter().map(|i| area(&s, *i)).sum();
     assert!((total - 15000.0).abs() < 1.0, "{total}");
     let merged = NodeId(r["merged"].as_u64().unwrap());
     // Overlap is covered by B on top → blue.
-    assert_eq!(node(&s, merged).appearance.fill_paint(), Paint::solid(Color::rgb(0.0, 0.0, 1.0)));
+    assert_eq!(
+        node(&s, merged).appearance.fill_paint(),
+        Paint::solid(Color::rgb(0.0, 0.0, 1.0))
+    );
     let bb = node(&s, merged).geometric_bounds().unwrap();
     assert!((bb.x0 - 50.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6);
 }
@@ -101,7 +130,12 @@ fn shape_builder_click_splits_out_one_region() {
 fn shape_builder_erase_deletes_regions() {
     let mut s = session();
     two(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[75, 50]], "erase": true})).unwrap();
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[75, 50]], "erase": true}),
+        )
+        .unwrap();
     assert!(r["merged"].is_null());
     let out = ids(&r);
     assert_eq!(out.len(), 2);
@@ -115,14 +149,25 @@ fn shape_builder_fill_option_and_untouched_shapes_kept() {
     let mut s = session();
     let (a, b) = two(&mut s);
     let c = rect(&mut s, 300.0, 300.0, 50.0, 50.0);
-    let r = s.execute("shapeBuilder.merge", &json!({"ids": [a.0, b.0, c.0], "points": [[25, 50], [125, 50]], "fill": "#00ff00"})).unwrap();
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"ids": [a.0, b.0, c.0], "points": [[25, 50], [125, 50]], "fill": "#00ff00"}),
+        )
+        .unwrap();
     let out = ids(&r);
     assert_eq!(out.len(), 2, "one merged + the untouched square");
     let merged = NodeId(r["merged"].as_u64().unwrap());
     assert!((area(&s, merged) - 15000.0).abs() < 1.0);
-    assert_eq!(node(&s, merged).appearance.fill_paint(), Paint::solid(Color::from_hex("#00ff00").unwrap()));
+    assert_eq!(
+        node(&s, merged).appearance.fill_paint(),
+        Paint::solid(Color::from_hex("#00ff00").unwrap())
+    );
     let sq = out.iter().copied().find(|i| *i != merged).unwrap();
-    assert_eq!(node(&s, sq).geometric_bounds().unwrap(), Rect::new(300.0, 300.0, 350.0, 350.0));
+    assert_eq!(
+        node(&s, sq).geometric_bounds().unwrap(),
+        Rect::new(300.0, 300.0, 350.0, 350.0)
+    );
     assert_eq!(outline(&node(&s, sq)).0.anchor_count(), 4);
 }
 
@@ -131,12 +176,22 @@ fn shape_builder_miss_is_an_error_and_undo_restores() {
     let mut s = session();
     let (a, b) = two(&mut s);
     let undo_before = s.doc().unwrap().history.undo.len();
-    assert!(s.execute("shapeBuilder.merge", &json!({"points": [[500, 500]]})).is_err());
+    assert!(
+        s.execute("shapeBuilder.merge", &json!({"points": [[500, 500]]}))
+            .is_err()
+    );
     assert_eq!(s.doc().unwrap().history.undo.len(), undo_before);
-    s.execute("shapeBuilder.merge", &json!({"points": [[25, 50], [75, 50]]})).unwrap();
+    s.execute(
+        "shapeBuilder.merge",
+        &json!({"points": [[25, 50], [75, 50]]}),
+    )
+    .unwrap();
     s.execute("edit.undo", &json!({})).unwrap();
     assert!(s.doc().unwrap().doc.node(a).is_some() && s.doc().unwrap().doc.node(b).is_some());
-    assert!(s.execute("shapeBuilder.merge", &json!({"points": []})).is_err());
+    assert!(
+        s.execute("shapeBuilder.merge", &json!({"points": []}))
+            .is_err()
+    );
     assert!(s.execute("shapeBuilder.merge", &json!({})).is_err());
 }
 
@@ -149,7 +204,10 @@ fn shape_builder_regions_query() {
     assert_eq!(regs.len(), 3);
     let total: f64 = regs.iter().map(|x| x["area"].as_f64().unwrap()).sum();
     assert!((total - 15000.0).abs() < 1.0);
-    assert!(regs.iter().any(|x| x["sources"].as_array().unwrap().len() == 2));
+    assert!(
+        regs.iter()
+            .any(|x| x["sources"].as_array().unwrap().len() == 2)
+    );
 }
 
 #[test]
@@ -159,24 +217,42 @@ fn shape_builder_tool_drives_the_command() {
     let v = ViewInfo::default();
     s.select_tool("shapeBuilder", v).unwrap();
     assert_eq!(s.tool_id(), "shapeBuilder");
-    s.pointer(&PointerEvent::new(PointerKind::Move, 75.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Move, 75.0, 50.0), v)
+        .unwrap();
     assert!(!s.overlays(v).is_empty(), "hover highlight");
-    s.pointer(&PointerEvent::new(PointerKind::Down, 25.0, 50.0), v).unwrap();
-    s.pointer(&PointerEvent::new(PointerKind::Drag, 75.0, 50.0), v).unwrap();
-    s.pointer(&PointerEvent::new(PointerKind::Up, 75.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 25.0, 50.0), v)
+        .unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Drag, 75.0, 50.0), v)
+        .unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Up, 75.0, 50.0), v)
+        .unwrap();
     assert_eq!(layer_children(&s), 2);
     assert_eq!(s.journal.last().unwrap().0, "shapeBuilder.merge");
     // Alt-click deletes a region.
-    let alt = Mods { alt: true, ..Default::default() };
-    s.pointer(&PointerEvent::new(PointerKind::Down, 125.0, 50.0).with_mods(alt), v).unwrap();
-    s.pointer(&PointerEvent::new(PointerKind::Up, 125.0, 50.0).with_mods(alt), v).unwrap();
+    let alt = Mods {
+        alt: true,
+        ..Default::default()
+    };
+    s.pointer(
+        &PointerEvent::new(PointerKind::Down, 125.0, 50.0).with_mods(alt),
+        v,
+    )
+    .unwrap();
+    s.pointer(
+        &PointerEvent::new(PointerKind::Up, 125.0, 50.0).with_mods(alt),
+        v,
+    )
+    .unwrap();
     assert_eq!(layer_children(&s), 1);
 }
 
 /// The first and last stop colours of a gradient paint.
 fn gradient_ends(p: &Paint) -> Option<([f32; 3], [f32; 3])> {
     let Paint::Gradient(g) = p else { return None };
-    Some((g.gradient.stops.first()?.color.to_rgb(), g.gradient.stops.last()?.color.to_rgb()))
+    Some((
+        g.gradient.stops.first()?.color.to_rgb(),
+        g.gradient.stops.last()?.color.to_rgb(),
+    ))
 }
 
 #[test]
@@ -189,29 +265,73 @@ fn shape_builder_cuts_gradient_shapes_from_a_pdf_along_their_outlines() {
             x0 + 200
         )
     };
-    let diamond = |x0: u32| format!("q {x0} 100 m {} 160 l {} 100 l {} 40 l h W n", x0 + 100, x0 + 200, x0 + 100);
+    let diamond = |x0: u32| {
+        format!(
+            "q {x0} 100 m {} 160 l {} 100 l {} 40 l h W n",
+            x0 + 100,
+            x0 + 200,
+            x0 + 100
+        )
+    };
     let page = PdfPage {
-        resources: format!("/Shading << /Sh0 {} /Sh1 {} >>", shading(100, "1 0 0", "1 1 0"), shading(200, "0 0 1", "0 1 1")),
-        ..PdfPage::new(500.0, 200.0, &format!("{} /Sh0 sh Q {} /Sh1 sh Q", diamond(100), diamond(200)))
+        resources: format!(
+            "/Shading << /Sh0 {} /Sh1 {} >>",
+            shading(100, "1 0 0", "1 1 0"),
+            shading(200, "0 0 1", "0 1 1")
+        ),
+        ..PdfPage::new(
+            500.0,
+            200.0,
+            &format!("{} /Sh0 sh Q {} /Sh1 sh Q", diamond(100), diamond(200)),
+        )
     };
     let bytes = pdf(&[page], None);
     let mut s = Session::new();
-    s.execute("document.open", &json!({"name": "diamonds.pdf", "dataBase64": vectorcraft_format::base64_encode(&bytes)})).unwrap();
+    s.execute(
+        "document.open",
+        &json!({"name": "diamonds.pdf", "dataBase64": vectorcraft_format::base64_encode(&bytes)}),
+    )
+    .unwrap();
     s.execute("select.all", &json!({})).unwrap();
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[250, 100]]})).unwrap();
-    let mut pieces: Vec<(f64, Rect, Paint)> =
-        ids(&r).into_iter().map(|i| (area(&s, i), node(&s, i).geometric_bounds().unwrap(), node(&s, i).appearance.fill_paint())).collect();
+    let r = s
+        .execute("shapeBuilder.merge", &json!({"points": [[250, 100]]}))
+        .unwrap();
+    let mut pieces: Vec<(f64, Rect, Paint)> = ids(&r)
+        .into_iter()
+        .map(|i| {
+            (
+                area(&s, i),
+                node(&s, i).geometric_bounds().unwrap(),
+                node(&s, i).appearance.fill_paint(),
+            )
+        })
+        .collect();
     pieces.sort_by(|a, b| a.1.x0.total_cmp(&b.1.x0));
-    let near = |a: Rect, b: Rect| [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1].iter().all(|v| v.abs() < 0.01);
-    let [(left, lb, lp), (mid, mb, mp), (right, rb, rp)] = pieces.as_slice() else { panic!("three pieces: {pieces:?}") };
+    let near = |a: Rect, b: Rect| {
+        [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1]
+            .iter()
+            .all(|v| v.abs() < 0.01)
+    };
+    let [(left, lb, lp), (mid, mb, mp), (right, rb, rp)] = pieces.as_slice() else {
+        panic!("three pieces: {pieces:?}")
+    };
     // What is left of each diamond, and the diamond where they overlap: not their bounding boxes.
-    assert!((left - 9000.0).abs() < 1.0 && (mid - 3000.0).abs() < 1.0 && (right - 9000.0).abs() < 1.0, "{pieces:?}");
+    assert!(
+        (left - 9000.0).abs() < 1.0 && (mid - 3000.0).abs() < 1.0 && (right - 9000.0).abs() < 1.0,
+        "{pieces:?}"
+    );
     assert!(near(*lb, Rect::new(100.0, 40.0, 250.0, 160.0)), "{lb:?}");
     assert!(near(*mb, Rect::new(200.0, 70.0, 300.0, 130.0)), "{mb:?}");
     assert!(near(*rb, Rect::new(250.0, 40.0, 400.0, 160.0)), "{rb:?}");
     // Each keeps its gradient; the overlap takes the front diamond's.
-    let (first, second) = (Some(([1.0, 0.0, 0.0], [1.0, 1.0, 0.0])), Some(([0.0, 0.0, 1.0], [0.0, 1.0, 1.0])));
-    assert_eq!((gradient_ends(lp), gradient_ends(mp), gradient_ends(rp)), (first, second, second));
+    let (first, second) = (
+        Some(([1.0, 0.0, 0.0], [1.0, 1.0, 0.0])),
+        Some(([0.0, 0.0, 1.0], [0.0, 1.0, 1.0])),
+    );
+    assert_eq!(
+        (gradient_ends(lp), gradient_ends(mp), gradient_ends(rp)),
+        (first, second, second)
+    );
 }
 
 /// A red 100 × 100 square crossed by a stroke-only vertical line at x = 50, both selected.
@@ -219,7 +339,8 @@ fn square_and_line(s: &mut Session) -> (NodeId, NodeId) {
     let a = rect(s, 0.0, 0.0, 100.0, 100.0);
     set_fill(s, a, Color::rgb(1.0, 0.0, 0.0));
     let l = line(s, (50.0, -20.0), (50.0, 120.0));
-    s.execute("select.set", &json!({"ids": [a.0, l.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [a.0, l.0]}))
+        .unwrap();
     (a, l)
 }
 
@@ -252,24 +373,47 @@ fn shape_builder_line_splits_a_shape_into_regions() {
 fn shape_builder_click_on_a_side_of_a_line_splits_the_shape() {
     let mut s = session();
     square_and_line(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[25, 50]]})).unwrap();
+    let r = s
+        .execute("shapeBuilder.merge", &json!({"points": [[25, 50]]}))
+        .unwrap();
     assert_eq!(r["regions"], 1);
     let out = ids(&r);
     let merged = NodeId(r["merged"].as_u64().unwrap());
-    assert_eq!(node(&s, merged).geometric_bounds().unwrap(), Rect::new(0.0, 0.0, 50.0, 100.0));
-    assert_eq!(node(&s, merged).appearance.fill_paint(), Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
-    let closed: Vec<f64> = out.iter().filter(|i| outline(&node(&s, **i)).0.is_closed()).map(|i| area(&s, *i)).collect();
+    assert_eq!(
+        node(&s, merged).geometric_bounds().unwrap(),
+        Rect::new(0.0, 0.0, 50.0, 100.0)
+    );
+    assert_eq!(
+        node(&s, merged).appearance.fill_paint(),
+        Paint::solid(Color::rgb(1.0, 0.0, 0.0))
+    );
+    let closed: Vec<f64> = out
+        .iter()
+        .filter(|i| outline(&node(&s, **i)).0.is_closed())
+        .map(|i| area(&s, *i))
+        .collect();
     assert_eq!(closed.len(), 2, "both halves");
-    assert!(closed.iter().all(|a| (a - 5000.0).abs() < 1.0), "{closed:?}");
+    assert!(
+        closed.iter().all(|a| (a - 5000.0).abs() < 1.0),
+        "{closed:?}"
+    );
     // The line only bounds the region: it stays whole.
-    assert_eq!(open_paths(&s, &out), vec![(2, Rect::new(50.0, -20.0, 50.0, 120.0))]);
+    assert_eq!(
+        open_paths(&s, &out),
+        vec![(2, Rect::new(50.0, -20.0, 50.0, 120.0))]
+    );
 }
 
 #[test]
 fn shape_builder_merge_across_a_line_removes_the_piece_between() {
     let mut s = session();
     square_and_line(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[25, 50], [75, 50]]})).unwrap();
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[25, 50], [75, 50]]}),
+        )
+        .unwrap();
     assert_eq!(r["regions"], 2);
     let out = ids(&r);
     let merged = NodeId(r["merged"].as_u64().unwrap());
@@ -277,7 +421,13 @@ fn shape_builder_merge_across_a_line_removes_the_piece_between() {
     assert_eq!(out.len(), 3, "merged square + the line's two loose ends");
     let mut ends = open_paths(&s, &out);
     ends.sort_by(|a, b| a.1.y0.total_cmp(&b.1.y0));
-    assert_eq!(ends, vec![(2, Rect::new(50.0, -20.0, 50.0, 0.0)), (2, Rect::new(50.0, 100.0, 50.0, 120.0))]);
+    assert_eq!(
+        ends,
+        vec![
+            (2, Rect::new(50.0, -20.0, 50.0, 0.0)),
+            (2, Rect::new(50.0, 100.0, 50.0, 120.0))
+        ]
+    );
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(layer_children(&s), 2);
 }
@@ -286,24 +436,51 @@ fn shape_builder_merge_across_a_line_removes_the_piece_between() {
 fn shape_builder_alt_deletes_a_region_or_a_line_piece() {
     let mut s = session();
     square_and_line(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[75, 50]], "erase": true})).unwrap();
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[75, 50]], "erase": true}),
+        )
+        .unwrap();
     assert!(r["merged"].is_null());
     let out = ids(&r);
-    let left: Vec<NodeId> = out.iter().copied().filter(|i| outline(&node(&s, *i)).0.is_closed()).collect();
+    let left: Vec<NodeId> = out
+        .iter()
+        .copied()
+        .filter(|i| outline(&node(&s, *i)).0.is_closed())
+        .collect();
     assert_eq!(left.len(), 1);
-    assert_eq!(node(&s, left[0]).geometric_bounds().unwrap(), Rect::new(0.0, 0.0, 50.0, 100.0));
+    assert_eq!(
+        node(&s, left[0]).geometric_bounds().unwrap(),
+        Rect::new(0.0, 0.0, 50.0, 100.0)
+    );
     assert_eq!(open_paths(&s, &out).len(), 1, "the line stays whole");
 
     // Alt on the line inside the square deletes that piece only.
     let mut s = session();
     square_and_line(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[51, 50]], "erase": true, "tolerance": 2})).unwrap();
-    assert_eq!((r["regions"].as_u64(), r["lines"].as_u64()), (Some(0), Some(1)));
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[51, 50]], "erase": true, "tolerance": 2}),
+        )
+        .unwrap();
+    assert_eq!(
+        (r["regions"].as_u64(), r["lines"].as_u64()),
+        (Some(0), Some(1))
+    );
     let out = ids(&r);
     assert_eq!(out.len(), 3);
-    let sq: Vec<NodeId> = out.iter().copied().filter(|i| outline(&node(&s, *i)).0.is_closed()).collect();
+    let sq: Vec<NodeId> = out
+        .iter()
+        .copied()
+        .filter(|i| outline(&node(&s, *i)).0.is_closed())
+        .collect();
     assert_eq!(sq.len(), 1);
-    assert!((area(&s, sq[0]) - 10000.0).abs() < 1.0, "the square is untouched");
+    assert!(
+        (area(&s, sq[0]) - 10000.0).abs() < 1.0,
+        "the square is untouched"
+    );
     assert_eq!(open_paths(&s, &out).len(), 2);
 }
 
@@ -313,27 +490,54 @@ fn shape_builder_fills_an_area_lines_enclose() {
     let l1 = line(&mut s, (0.0, 0.0), (100.0, 100.0));
     let l2 = line(&mut s, (100.0, 0.0), (0.0, 100.0));
     let l3 = line(&mut s, (-10.0, 80.0), (110.0, 80.0));
-    s.execute("select.set", &json!({"ids": [l1.0, l2.0, l3.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [l1.0, l2.0, l3.0]}))
+        .unwrap();
     let r = s.execute("shapeBuilder.regions", &json!({})).unwrap();
     assert_eq!(r["regions"].as_array().unwrap().len(), 1);
     assert_eq!(r["regions"][0]["sources"], json!([]));
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[50, 70]]})).unwrap();
+    let r = s
+        .execute("shapeBuilder.merge", &json!({"points": [[50, 70]]}))
+        .unwrap();
     let merged = NodeId(r["merged"].as_u64().unwrap());
-    assert!((area(&s, merged) - 900.0).abs() < 1e-6, "{}", area(&s, merged));
-    assert_eq!(node(&s, merged).appearance.fill_paint(), s.paint.fill, "the current fill");
-    assert!(!node(&s, merged).appearance.stroke_paint().is_none(), "the lines' stroke");
-    assert_eq!(ids(&r).len(), 4, "the triangle + the three lines, which only bound it");
+    assert!(
+        (area(&s, merged) - 900.0).abs() < 1e-6,
+        "{}",
+        area(&s, merged)
+    );
+    assert_eq!(
+        node(&s, merged).appearance.fill_paint(),
+        s.paint.fill,
+        "the current fill"
+    );
+    assert!(
+        !node(&s, merged).appearance.stroke_paint().is_none(),
+        "the lines' stroke"
+    );
+    assert_eq!(
+        ids(&r).len(),
+        4,
+        "the triangle + the three lines, which only bound it"
+    );
 }
 
 #[test]
 fn shape_builder_closes_filled_open_paths() {
     let mut s = session();
-    let r = s.execute("path.create", &json!({"anchors": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 100}]})).unwrap();
+    let r = s
+        .execute(
+            "path.create",
+            &json!({"anchors": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 100}]}),
+        )
+        .unwrap();
     let p = NodeId(r["id"].as_u64().unwrap());
     set_fill(&mut s, p, Color::rgb(0.0, 1.0, 0.0));
     s.execute("select.set", &json!({"ids": [p.0]})).unwrap();
     let r = s.execute("shapeBuilder.regions", &json!({})).unwrap();
-    assert_eq!(r["regions"].as_array().unwrap().len(), 1, "the fill's area, closed by an invisible edge");
+    assert_eq!(
+        r["regions"].as_array().unwrap().len(),
+        1,
+        "the fill's area, closed by an invisible edge"
+    );
     assert!((r["regions"][0]["area"].as_f64().unwrap() - 5000.0).abs() < 1e-6);
     assert_eq!(r["lines"], json!([]));
     // Unfilled, it is only an edge.
@@ -353,11 +557,26 @@ fn shape_builder_tool_alt_deletes_line_pieces() {
     square_and_line(&mut s);
     let v = ViewInfo::default();
     s.select_tool("shapeBuilder", v).unwrap();
-    let alt = Mods { alt: true, ..Default::default() };
-    s.pointer(&PointerEvent::new(PointerKind::Move, 51.0, 50.0).with_mods(alt), v).unwrap();
+    let alt = Mods {
+        alt: true,
+        ..Default::default()
+    };
+    s.pointer(
+        &PointerEvent::new(PointerKind::Move, 51.0, 50.0).with_mods(alt),
+        v,
+    )
+    .unwrap();
     assert_eq!(s.overlays(v).len(), 1, "the line piece is highlighted");
-    s.pointer(&PointerEvent::new(PointerKind::Down, 51.0, 50.0).with_mods(alt), v).unwrap();
-    s.pointer(&PointerEvent::new(PointerKind::Up, 51.0, 50.0).with_mods(alt), v).unwrap();
+    s.pointer(
+        &PointerEvent::new(PointerKind::Down, 51.0, 50.0).with_mods(alt),
+        v,
+    )
+    .unwrap();
+    s.pointer(
+        &PointerEvent::new(PointerKind::Up, 51.0, 50.0).with_mods(alt),
+        v,
+    )
+    .unwrap();
     assert_eq!(s.journal.last().unwrap().0, "shapeBuilder.merge");
     assert_eq!(layer_children(&s), 3, "square + the line's two loose ends");
 }
@@ -368,7 +587,8 @@ fn corner(s: &mut Session) -> (NodeId, NodeId) {
     let b = rect(s, 50.0, 50.0, 100.0, 100.0);
     set_fill(s, a, Color::rgb(1.0, 0.0, 0.0));
     set_fill(s, b, Color::rgb(0.0, 0.0, 1.0));
-    s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [a.0, b.0]}))
+        .unwrap();
     (a, b)
 }
 
@@ -377,7 +597,11 @@ fn shapes_of(s: &Session, ids: &[NodeId]) -> Vec<(bool, usize, f64)> {
     ids.iter()
         .map(|i| {
             let (p, _) = outline(&node(s, *i));
-            (p.is_closed(), p.anchor_count(), (p.length() * 1e6).round() / 1e6)
+            (
+                p.is_closed(),
+                p.anchor_count(),
+                (p.length() * 1e6).round() / 1e6,
+            )
         })
         .collect()
 }
@@ -387,18 +611,52 @@ fn shape_builder_erase_click_on_an_edge_opens_its_path() {
     let mut s = session();
     corner(&mut s);
     let r = s.execute("shapeBuilder.regions", &json!({})).unwrap();
-    assert_eq!(r["edges"].as_array().unwrap().len(), 4, "each outline cut in two where the other crosses it: {r}");
+    assert_eq!(
+        r["edges"].as_array().unwrap().len(),
+        4,
+        "each outline cut in two where the other crosses it: {r}"
+    );
     // A's side inside B (1 pt off it).
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[101, 75]], "erase": true})).unwrap();
-    assert_eq!((r["regions"].as_u64(), r["lines"].as_u64(), r["edges"].as_u64()), (Some(0), Some(0), Some(1)));
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[101, 75]], "erase": true}),
+        )
+        .unwrap();
+    assert_eq!(
+        (
+            r["regions"].as_u64(),
+            r["lines"].as_u64(),
+            r["edges"].as_u64()
+        ),
+        (Some(0), Some(0), Some(1))
+    );
     let out = ids(&r);
     // A opens where B's outline crosses it and keeps its look; B is untouched.
-    assert_eq!(shapes_of(&s, &out), vec![(false, 5, 300.0), (true, 4, 400.0)]);
-    assert_eq!(node(&s, out[0]).appearance.fill_paint(), Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+    assert_eq!(
+        shapes_of(&s, &out),
+        vec![(false, 5, 300.0), (true, 4, 400.0)]
+    );
+    assert_eq!(
+        node(&s, out[0]).appearance.fill_paint(),
+        Paint::solid(Color::rgb(1.0, 0.0, 0.0))
+    );
     assert_eq!(s.journal.last().unwrap().0, "shapeBuilder.merge");
     s.execute("edit.undo", &json!({})).unwrap();
-    let back: Vec<NodeId> = s.doc().unwrap().doc.children(s.doc().unwrap().doc.default_layer()).unwrap().iter().map(|n| n.id).collect();
-    assert_eq!(shapes_of(&s, &back), vec![(true, 4, 400.0); 2], "one undo step");
+    let back: Vec<NodeId> = s
+        .doc()
+        .unwrap()
+        .doc
+        .children(s.doc().unwrap().doc.default_layer())
+        .unwrap()
+        .iter()
+        .map(|n| n.id)
+        .collect();
+    assert_eq!(
+        shapes_of(&s, &back),
+        vec![(true, 4, 400.0); 2],
+        "one undo step"
+    );
 }
 
 #[test]
@@ -406,8 +664,16 @@ fn shape_builder_erase_drag_along_edges_deletes_each() {
     let mut s = session();
     corner(&mut s);
     // Down A's side inside B, round the corner and along B's side inside A.
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[100, 75], [100, 50], [75, 50]], "erase": true})).unwrap();
-    assert_eq!((r["regions"].as_u64(), r["edges"].as_u64()), (Some(0), Some(2)));
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[100, 75], [100, 50], [75, 50]], "erase": true}),
+        )
+        .unwrap();
+    assert_eq!(
+        (r["regions"].as_u64(), r["edges"].as_u64()),
+        (Some(0), Some(2))
+    );
     assert_eq!(shapes_of(&s, &ids(&r)), vec![(false, 5, 300.0); 2]);
 }
 
@@ -415,14 +681,25 @@ fn shape_builder_erase_drag_along_edges_deletes_each() {
 fn shape_builder_erase_drag_into_regions_deletes_them_not_the_edges_it_crosses() {
     let mut s = session();
     corner(&mut s);
-    let r = s.execute("shapeBuilder.merge", &json!({"points": [[25, 25], [75, 75]], "erase": true})).unwrap();
-    assert_eq!((r["regions"].as_u64(), r["edges"].as_u64()), (Some(2), Some(0)));
+    let r = s
+        .execute(
+            "shapeBuilder.merge",
+            &json!({"points": [[25, 25], [75, 75]], "erase": true}),
+        )
+        .unwrap();
+    assert_eq!(
+        (r["regions"].as_u64(), r["edges"].as_u64()),
+        (Some(2), Some(0))
+    );
     // A is gone; what is left of B stays closed and blue.
     let out = ids(&r);
     assert_eq!(out.len(), 1);
     assert!((area(&s, out[0]) - 7500.0).abs() < 1e-6);
     assert!(outline(&node(&s, out[0])).0.is_closed());
-    assert_eq!(node(&s, out[0]).appearance.fill_paint(), Paint::solid(Color::rgb(0.0, 0.0, 1.0)));
+    assert_eq!(
+        node(&s, out[0]).appearance.fill_paint(),
+        Paint::solid(Color::rgb(0.0, 0.0, 1.0))
+    );
 }
 
 // ---------- Live Paint ----------
@@ -456,27 +733,59 @@ fn live_paint_make_builds_group_with_hidden_sources() {
 fn live_paint_fill_assigns_the_face_under_the_point() {
     let mut s = session();
     let g = live(&mut s);
-    let r = s.execute("livePaint.fill", &json!({"group": g.0, "point": [75, 50], "color": "#00ff00"})).unwrap();
+    let r = s
+        .execute(
+            "livePaint.fill",
+            &json!({"group": g.0, "point": [75, 50], "color": "#00ff00"}),
+        )
+        .unwrap();
     let face = node(&s, NodeId(r["face"].as_u64().unwrap()));
     let bb = face.geometric_bounds().unwrap();
-    assert!((bb.x0 - 50.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6, "{bb:?}");
-    assert_eq!(face.appearance.fill_paint(), Paint::solid(Color::from_hex("#00ff00").unwrap()));
+    assert!(
+        (bb.x0 - 50.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6,
+        "{bb:?}"
+    );
+    assert_eq!(
+        face.appearance.fill_paint(),
+        Paint::solid(Color::from_hex("#00ff00").unwrap())
+    );
     // The other faces are untouched.
     let gn = node(&s, g);
-    let green = vectorcraft_tools::builder::faces(&gn).iter().filter(|f| f.appearance.fill_paint() == face.appearance.fill_paint()).count();
+    let green = vectorcraft_tools::builder::faces(&gn)
+        .iter()
+        .filter(|f| f.appearance.fill_paint() == face.appearance.fill_paint())
+        .count();
     assert_eq!(green, 1);
     // Default paint = current fill; a miss is an error.
     s.paint.fill = Paint::solid(Color::rgb(1.0, 1.0, 0.0));
-    let r = s.execute("livePaint.fill", &json!({"group": g.0, "point": [10, 10]})).unwrap();
-    assert_eq!(node(&s, NodeId(r["face"].as_u64().unwrap())).appearance.fill_paint(), s.paint.fill);
-    assert!(s.execute("livePaint.fill", &json!({"group": g.0, "point": [400, 400]})).is_err());
+    let r = s
+        .execute("livePaint.fill", &json!({"group": g.0, "point": [10, 10]}))
+        .unwrap();
+    assert_eq!(
+        node(&s, NodeId(r["face"].as_u64().unwrap()))
+            .appearance
+            .fill_paint(),
+        s.paint.fill
+    );
+    assert!(
+        s.execute(
+            "livePaint.fill",
+            &json!({"group": g.0, "point": [400, 400]})
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn live_paint_fill_on_plain_paths_makes_the_group() {
     let mut s = session();
     let (a, b) = two(&mut s);
-    let r = s.execute("livePaint.fill", &json!({"ids": [a.0, b.0], "point": [125, 50], "color": "#123456"})).unwrap();
+    let r = s
+        .execute(
+            "livePaint.fill",
+            &json!({"ids": [a.0, b.0], "point": [125, 50], "color": "#123456"}),
+        )
+        .unwrap();
     let g = NodeId(r["group"].as_u64().unwrap());
     assert!(vectorcraft_tools::builder::is_live_paint(&node(&s, g)));
     assert_eq!(layer_children(&s), 1);
@@ -489,20 +798,38 @@ fn live_paint_fill_on_plain_paths_makes_the_group() {
 fn live_paint_stroke_edge() {
     let mut s = session();
     let g = live(&mut s);
-    let r = s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [100, 50], "color": "#ff0000", "width": 3})).unwrap();
+    let r = s
+        .execute(
+            "livePaint.strokeEdge",
+            &json!({"group": g.0, "point": [100, 50], "color": "#ff0000", "width": 3}),
+        )
+        .unwrap();
     let e = node(&s, NodeId(r["edge"].as_u64().unwrap()));
     assert_eq!(e.appearance.stroke_width(), 3.0);
     assert!(e.appearance.fill_paint().is_none());
     let bb = e.geometric_bounds().unwrap();
-    assert!((bb.x0 - 100.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6, "the vertical edge at x=100: {bb:?}");
-    assert!(s.execute("livePaint.strokeEdge", &json!({"group": g.0, "point": [300, 300]})).is_err());
+    assert!(
+        (bb.x0 - 100.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6,
+        "the vertical edge at x=100: {bb:?}"
+    );
+    assert!(
+        s.execute(
+            "livePaint.strokeEdge",
+            &json!({"group": g.0, "point": [300, 300]})
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn live_paint_release_and_expand() {
     let mut s = session();
     let g = live(&mut s);
-    s.execute("livePaint.fill", &json!({"group": g.0, "point": [75, 50], "none": true})).unwrap();
+    s.execute(
+        "livePaint.fill",
+        &json!({"group": g.0, "point": [75, 50], "none": true}),
+    )
+    .unwrap();
     let r = s.execute("livePaint.expand", &json!({})).unwrap();
     assert_eq!(ids(&r), vec![g]);
     let n = node(&s, g);
@@ -510,7 +837,12 @@ fn live_paint_release_and_expand() {
     // Unpainted face and the hidden sources are gone: 2 faces + stroked edges.
     let ch = n.children().unwrap();
     assert!(ch.iter().all(|c| c.visible));
-    assert_eq!(ch.iter().filter(|c| c.name.as_deref() == Some("Face")).count(), 2);
+    assert_eq!(
+        ch.iter()
+            .filter(|c| c.name.as_deref() == Some("Face"))
+            .count(),
+        2
+    );
 
     let mut s = session();
     let (a, b) = two(&mut s);
@@ -529,17 +861,30 @@ fn live_group_only(s: &mut Session) -> NodeId {
 fn live_paint_merge_keeps_paint_and_adds_faces() {
     let mut s = session();
     let g = live(&mut s);
-    s.execute("livePaint.fill", &json!({"group": g.0, "point": [25, 50], "color": "#00ff00"})).unwrap();
+    s.execute(
+        "livePaint.fill",
+        &json!({"group": g.0, "point": [25, 50], "color": "#00ff00"}),
+    )
+    .unwrap();
     let c = rect(&mut s, 120.0, 20.0, 100.0, 20.0);
-    s.execute("select.set", &json!({"ids": [g.0, c.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [g.0, c.0]}))
+        .unwrap();
     let r = s.execute("livePaint.merge", &json!({})).unwrap();
     assert_eq!(NodeId(r["id"].as_u64().unwrap()), g);
     assert!(r["faces"].as_u64().unwrap() > 3);
     let gn = node(&s, g);
-    let f = vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(25.0, 50.0)).unwrap();
-    assert_eq!(f.appearance.fill_paint(), Paint::solid(Color::from_hex("#00ff00").unwrap()));
+    let f =
+        vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(25.0, 50.0)).unwrap();
+    assert_eq!(
+        f.appearance.fill_paint(),
+        Paint::solid(Color::from_hex("#00ff00").unwrap())
+    );
     let src = vectorcraft_tools::builder::sources(&gn).unwrap();
-    assert_eq!(src.children().unwrap().len(), 3, "the rectangle joined the sources");
+    assert_eq!(
+        src.children().unwrap().len(),
+        3,
+        "the rectangle joined the sources"
+    );
     assert_eq!(s.doc().unwrap().doc.parent_of(c), Some(src.id));
     assert_eq!(layer_children(&s), 1);
 }
@@ -551,20 +896,29 @@ fn live_paint_bucket_tool_fills_face() {
     let v = ViewInfo::default();
     s.select_tool("livePaintBucket", v).unwrap();
     s.paint.fill = Paint::solid(Color::rgb(0.0, 1.0, 1.0));
-    s.pointer(&PointerEvent::new(PointerKind::Move, 125.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Move, 125.0, 50.0), v)
+        .unwrap();
     assert!(!s.overlays(v).is_empty(), "red face highlight");
-    s.pointer(&PointerEvent::new(PointerKind::Down, 125.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 125.0, 50.0), v)
+        .unwrap();
     let gn = node(&s, g);
-    let f = vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(125.0, 50.0)).unwrap();
+    let f = vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(125.0, 50.0))
+        .unwrap();
     assert_eq!(f.appearance.fill_paint(), s.paint.fill);
     // Live Paint Selection selects the face.
     s.select_tool("livePaintSelection", v).unwrap();
-    s.pointer(&PointerEvent::new(PointerKind::Down, 125.0, 50.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 125.0, 50.0), v)
+        .unwrap();
     assert_eq!(s.doc().unwrap().selection.objects, vec![f.id]);
 }
 
 fn line(s: &mut Session, a: (f64, f64), b: (f64, f64)) -> NodeId {
-    let r = s.execute("shape.line", &json!({"x1": a.0, "y1": a.1, "x2": b.0, "y2": b.1})).unwrap();
+    let r = s
+        .execute(
+            "shape.line",
+            &json!({"x1": a.0, "y1": a.1, "x2": b.0, "y2": b.1}),
+        )
+        .unwrap();
     NodeId(r["id"].as_u64().unwrap())
 }
 
@@ -572,28 +926,42 @@ fn line(s: &mut Session, a: (f64, f64), b: (f64, f64)) -> NodeId {
 #[test]
 fn live_paint_bucket_fills_an_area_enclosed_by_lines() {
     let mut s = session();
-    let ids = [line(&mut s, (0.0, 0.0), (100.0, 100.0)), line(&mut s, (100.0, 0.0), (0.0, 100.0)), line(&mut s, (-10.0, 80.0), (110.0, 80.0))];
-    s.execute("select.set", &json!({"ids": ids.map(|i| i.0)})).unwrap();
+    let ids = [
+        line(&mut s, (0.0, 0.0), (100.0, 100.0)),
+        line(&mut s, (100.0, 0.0), (0.0, 100.0)),
+        line(&mut s, (-10.0, 80.0), (110.0, 80.0)),
+    ];
+    s.execute("select.set", &json!({"ids": ids.map(|i| i.0)}))
+        .unwrap();
     let v = ViewInfo::default();
     s.select_tool("livePaintBucket", v).unwrap();
     s.paint.fill = Paint::solid(Color::rgb(1.0, 0.0, 1.0));
     // Inside the triangle (20,80) (50,50) (80,80): highlighted, then filled.
-    s.pointer(&PointerEvent::new(PointerKind::Move, 50.0, 70.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Move, 50.0, 70.0), v)
+        .unwrap();
     assert!(!s.overlays(v).is_empty(), "red face highlight");
-    s.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 70.0), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, 50.0, 70.0), v)
+        .unwrap();
     let g = s.doc().unwrap().selection.objects[0];
     let gn = node(&s, g);
     assert!(vectorcraft_tools::builder::is_live_paint(&gn));
     assert_eq!(vectorcraft_tools::builder::faces(&gn).len(), 1);
-    let f = vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(50.0, 70.0)).unwrap();
+    let f =
+        vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(50.0, 70.0)).unwrap();
     assert_eq!(f.appearance.fill_paint(), s.paint.fill);
-    assert!((vectorcraft_pathops::area(f.path_data().unwrap(), FillRule::NonZero).abs() - 900.0).abs() < 1e-6);
+    assert!(
+        (vectorcraft_pathops::area(f.path_data().unwrap(), FillRule::NonZero).abs() - 900.0).abs()
+            < 1e-6
+    );
     // The lines are edges, cut where they cross, and keep their stroke.
     let edges = vectorcraft_tools::builder::edges(&gn);
     assert_eq!(edges.len(), 9);
     assert!(edges.iter().all(|e| !e.appearance.stroke_paint().is_none()));
     // Outside the triangle there's nothing to fill.
-    assert!(s.execute("livePaint.fill", &json!({"group": g.0, "point": [50, 20]})).is_err());
+    assert!(
+        s.execute("livePaint.fill", &json!({"group": g.0, "point": [50, 20]}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -602,15 +970,32 @@ fn a_line_across_a_live_paint_shape_splits_its_face() {
     let r = rect(&mut s, 0.0, 0.0, 100.0, 50.0);
     set_fill(&mut s, r, Color::rgb(1.0, 0.0, 0.0));
     let l = line(&mut s, (40.0, -20.0), (60.0, 70.0));
-    s.execute("select.set", &json!({"ids": [r.0, l.0]})).unwrap();
+    s.execute("select.set", &json!({"ids": [r.0, l.0]}))
+        .unwrap();
     let made = s.execute("livePaint.make", &json!({})).unwrap();
     assert_eq!(made["faces"], 2, "{made}");
     let g = NodeId(made["id"].as_u64().unwrap());
-    s.execute("livePaint.fill", &json!({"group": g.0, "point": [80, 25], "color": "#0000ff"})).unwrap();
+    s.execute(
+        "livePaint.fill",
+        &json!({"group": g.0, "point": [80, 25], "color": "#0000ff"}),
+    )
+    .unwrap();
     let gn = node(&s, g);
-    let face = |x: f64| vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(x, 25.0)).unwrap().appearance.fill_paint();
-    assert_eq!(face(10.0), Paint::solid(Color::rgb(1.0, 0.0, 0.0)), "the left half keeps the rectangle's fill");
-    assert_eq!(face(80.0), Paint::solid(Color::from_hex("#0000ff").unwrap()));
+    let face = |x: f64| {
+        vectorcraft_tools::builder::face_at(&gn, vectorcraft_geom::Point::new(x, 25.0))
+            .unwrap()
+            .appearance
+            .fill_paint()
+    };
+    assert_eq!(
+        face(10.0),
+        Paint::solid(Color::rgb(1.0, 0.0, 0.0)),
+        "the left half keeps the rectangle's fill"
+    );
+    assert_eq!(
+        face(80.0),
+        Paint::solid(Color::from_hex("#0000ff").unwrap())
+    );
 }
 
 // ---------- Image Trace ----------
@@ -619,7 +1004,11 @@ fn a_line_across_a_live_paint_shape_splits_its_face() {
 fn image_doc(s: &mut Session) -> NodeId {
     let r = vectorcraft_trace::Raster::from_fn(100, 100, |x, y| {
         let (dx, dy) = (x as f64 + 0.5 - 50.0, y as f64 + 0.5 - 50.0);
-        if dx * dx + dy * dy <= 900.0 { [0, 0, 0, 255] } else { [255, 255, 255, 255] }
+        if dx * dx + dy * dy <= 900.0 {
+            [0, 0, 0, 255]
+        } else {
+            [255, 255, 255, 255]
+        }
     });
     add_image(s, &r, Affine::translate((50.0, 50.0)) * Affine::scale(2.0))
 }
@@ -628,7 +1017,8 @@ fn add_image(s: &mut Session, r: &vectorcraft_trace::Raster, xf: Affine) -> Node
     let png = r.encode_png();
     let (w, h) = (r.width, r.height);
     s.edit("img", |d, sel| {
-        d.images.insert("img1".into(), ImageBlob::new("image/png", png));
+        d.images
+            .insert("img1".into(), ImageBlob::new("image/png", png));
         let id = d.alloc_id();
         let l = d.default_layer();
         d.insert(
@@ -636,7 +1026,14 @@ fn add_image(s: &mut Session, r: &vectorcraft_trace::Raster, xf: Affine) -> Node
             0,
             Node::new(
                 id,
-                NodeKind::Image(Box::new(ImageObject { key: "img1".into(), width: w, height: h, xf, link: None, placement: Default::default() })),
+                NodeKind::Image(Box::new(ImageObject {
+                    key: "img1".into(),
+                    width: w,
+                    height: h,
+                    xf,
+                    link: None,
+                    placement: Default::default(),
+                })),
             ),
         )?;
         sel.set([id]);
@@ -646,14 +1043,21 @@ fn add_image(s: &mut Session, r: &vectorcraft_trace::Raster, xf: Affine) -> Node
 }
 
 fn traced_paths(n: &Node) -> Vec<Arc<Node>> {
-    n.children().unwrap().iter().filter(|c| !matches!(c.kind, NodeKind::Image(_))).cloned().collect()
+    n.children()
+        .unwrap()
+        .iter()
+        .filter(|c| !matches!(c.kind, NodeKind::Image(_)))
+        .cloned()
+        .collect()
 }
 
 #[test]
 fn image_trace_make_places_paths_over_the_image() {
     let mut s = session();
     let img = image_doc(&mut s);
-    let r = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}})).unwrap();
+    let r = s
+        .execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}}))
+        .unwrap();
     assert_eq!(r["paths"], 1);
     let g = NodeId(r["id"].as_u64().unwrap());
     let n = node(&s, g);
@@ -667,8 +1071,14 @@ fn image_trace_make_places_paths_over_the_image() {
     let got = vectorcraft_pathops::area(&p, rule);
     assert!((got - want).abs() / want < 0.03, "{got} vs {want}");
     let bb = p.bounds().unwrap();
-    assert!((bb.center().x - 150.0).abs() < 1.5 && (bb.center().y - 150.0).abs() < 1.5, "{bb:?}");
-    assert_eq!(paths[0].appearance.fill_paint(), Paint::solid(Color::rgb8(0, 0, 0)));
+    assert!(
+        (bb.center().x - 150.0).abs() < 1.5 && (bb.center().y - 150.0).abs() < 1.5,
+        "{bb:?}"
+    );
+    assert_eq!(
+        paths[0].appearance.fill_paint(),
+        Paint::solid(Color::rgb8(0, 0, 0))
+    );
 }
 
 /// Shapes: the disc of the test image comes out as a live ellipse where the image lies, the same
@@ -677,24 +1087,51 @@ fn image_trace_make_places_paths_over_the_image() {
 fn image_trace_shapes_makes_live_shapes() {
     let mut s = session();
     image_doc(&mut s);
-    let r = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true, "shapes": true}})).unwrap();
+    let r = s
+        .execute(
+            "imageTrace.make",
+            &json!({"params": {"ignoreWhite": true, "shapes": true}}),
+        )
+        .unwrap();
     let n = node(&s, NodeId(r["id"].as_u64().unwrap()));
     let paths = traced_paths(&n);
     assert_eq!(paths.len(), 1);
-    let NodeKind::Path { path, live: Some(live), .. } = &paths[0].kind else { panic!("not a live shape: {:?}", paths[0].kind) };
-    let vectorcraft_doc::LiveShape::Ellipse { w, h, .. } = **live else { panic!("{live:?}") };
+    let NodeKind::Path {
+        path,
+        live: Some(live),
+        ..
+    } = &paths[0].kind
+    else {
+        panic!("not a live shape: {:?}", paths[0].kind)
+    };
+    let vectorcraft_doc::LiveShape::Ellipse { w, h, .. } = **live else {
+        panic!("{live:?}")
+    };
     // A circle of r = 30 px, drawn twice the size.
     assert!(w == h && (w - 60.0).abs() < 0.75, "{w} × {h}");
     let bb = path.bounds().unwrap();
-    assert!((bb.center().x - 150.0).abs() < 1.5 && (bb.center().y - 150.0).abs() < 1.5 && (bb.width() - 120.0).abs() < 1.5, "{bb:?}");
+    assert!(
+        (bb.center().x - 150.0).abs() < 1.5
+            && (bb.center().y - 150.0).abs() < 1.5
+            && (bb.width() - 120.0).abs() < 1.5,
+        "{bb:?}"
+    );
     assert_eq!(*path, live.to_path());
-    assert_eq!(paths[0].appearance.fill_paint(), Paint::solid(Color::rgb8(0, 0, 0)));
+    assert_eq!(
+        paths[0].appearance.fill_paint(),
+        Paint::solid(Color::rgb8(0, 0, 0))
+    );
     // Off, as documents saved before have it: a path.
     let mut s = session();
     image_doc(&mut s);
-    let r = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}})).unwrap();
+    let r = s
+        .execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}}))
+        .unwrap();
     let n = node(&s, NodeId(r["id"].as_u64().unwrap()));
-    assert!(matches!(traced_paths(&n)[0].kind, NodeKind::Path { live: None, .. }));
+    assert!(matches!(
+        traced_paths(&n)[0].kind,
+        NodeKind::Path { live: None, .. }
+    ));
 }
 
 /// Auto Grouping: a ring and the dot in its hole are a group (the ring first), the square beside
@@ -723,24 +1160,51 @@ fn image_trace_auto_grouping_groups_what_is_inside() {
     let (mut s, g) = make(true);
     let items = traced_paths(&node(&s, g));
     assert_eq!(items.len(), 2);
-    let group = items.iter().find(|n| matches!(n.kind, NodeKind::Group { .. })).expect("a group");
+    let group = items
+        .iter()
+        .find(|n| matches!(n.kind, NodeKind::Group { .. }))
+        .expect("a group");
     let inside = group.children().unwrap();
     assert_eq!(inside.len(), 2);
-    assert_eq!(inside[0].appearance.fill_paint(), Paint::solid(Color::rgb8(0, 0, 160)));
-    assert_eq!(inside[1].appearance.fill_paint(), Paint::solid(Color::rgb8(200, 0, 0)));
-    assert!(matches!(items.iter().find(|n| n.id != group.id).unwrap().kind, NodeKind::Path { .. }));
+    assert_eq!(
+        inside[0].appearance.fill_paint(),
+        Paint::solid(Color::rgb8(0, 0, 160))
+    );
+    assert_eq!(
+        inside[1].appearance.fill_paint(),
+        Paint::solid(Color::rgb8(200, 0, 0))
+    );
+    assert!(matches!(
+        items.iter().find(|n| n.id != group.id).unwrap().kind,
+        NodeKind::Path { .. }
+    ));
     // The same picture as without.
     let (flat, fg) = make(false);
     assert_eq!(traced_paths(&node(&flat, fg)).len(), 3);
     let shot = |s: &Session| {
         let img = render_doc(s, true);
-        (0..120).flat_map(|x| (0..80).map(move |y| (x, y))).map(|(x, y)| img.pixel(x, y)).collect::<Vec<_>>()
+        (0..120)
+            .flat_map(|x| (0..80).map(move |y| (x, y)))
+            .map(|(x, y)| img.pixel(x, y))
+            .collect::<Vec<_>>()
     };
     assert_eq!(shot(&s), shot(&flat));
     // Traced again without the option, it is flat again; expanded, the groups stay.
-    let r = s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": {"ignoreWhite": true}})).unwrap();
-    assert_eq!(traced_paths(&node(&s, NodeId(r["id"].as_u64().unwrap()))).len(), 3);
-    s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": {"ignoreWhite": true, "autoGrouping": true}})).unwrap();
+    let r = s
+        .execute(
+            "imageTrace.make",
+            &json!({"preset": "6 Colors", "params": {"ignoreWhite": true}}),
+        )
+        .unwrap();
+    assert_eq!(
+        traced_paths(&node(&s, NodeId(r["id"].as_u64().unwrap()))).len(),
+        3
+    );
+    s.execute(
+        "imageTrace.make",
+        &json!({"preset": "6 Colors", "params": {"ignoreWhite": true, "autoGrouping": true}}),
+    )
+    .unwrap();
     let r = s.execute("imageTrace.expand", &json!({})).unwrap();
     let expanded = node(&s, NodeId(r["ids"][0].as_u64().unwrap()));
     assert_eq!(expanded.children().unwrap().len(), 2);
@@ -756,28 +1220,55 @@ fn image_trace_gradients_fills_with_a_gradient() {
     });
     let make = |gradients: bool| {
         let mut s = session();
-        add_image(&mut s, &art, Affine::translate((50.0, 50.0)) * Affine::scale(2.0));
-        let r = s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": {"gradients": gradients}})).unwrap();
+        add_image(
+            &mut s,
+            &art,
+            Affine::translate((50.0, 50.0)) * Affine::scale(2.0),
+        );
+        let r = s
+            .execute(
+                "imageTrace.make",
+                &json!({"preset": "6 Colors", "params": {"gradients": gradients}}),
+            )
+            .unwrap();
         traced_paths(&node(&s, NodeId(r["id"].as_u64().unwrap())))
     };
     let paths = make(true);
     assert_eq!(paths.len(), 1);
-    let Paint::Gradient(g) = paths[0].appearance.fill_paint() else { panic!("{:?}", paths[0].appearance.fill_paint()) };
+    let Paint::Gradient(g) = paths[0].appearance.fill_paint() else {
+        panic!("{:?}", paths[0].appearance.fill_paint())
+    };
     assert_eq!(g.gradient.kind, vectorcraft_color::GradientKind::Linear);
     assert_eq!(g.gradient.stops.len(), 2);
     // Level, from the image's left edge (x = 50) to its right one (x = 250), at any height.
     let geom = g.geom.as_ref().unwrap();
-    let (a, b) = if geom.start.x < geom.end.x { (geom.start, geom.end) } else { (geom.end, geom.start) };
-    assert!((a.x - 50.0).abs() < 3.0 && (b.x - 250.0).abs() < 3.0 && (a.y - b.y).abs() < 2.0, "{geom:?}");
+    let (a, b) = if geom.start.x < geom.end.x {
+        (geom.start, geom.end)
+    } else {
+        (geom.end, geom.start)
+    };
+    assert!(
+        (a.x - 50.0).abs() < 3.0 && (b.x - 250.0).abs() < 3.0 && (a.y - b.y).abs() < 2.0,
+        "{geom:?}"
+    );
     let flat = make(false);
-    assert!(flat.len() > 1 && flat.iter().all(|n| matches!(n.appearance.fill_paint(), Paint::Solid { .. })));
+    assert!(
+        flat.len() > 1
+            && flat
+                .iter()
+                .all(|n| matches!(n.appearance.fill_paint(), Paint::Solid { .. }))
+    );
 }
 
 #[test]
 fn image_trace_release_and_expand() {
     let mut s = session();
     let img = image_doc(&mut s);
-    s.execute("imageTrace.make", &json!({"preset": "Black and White Logo"})).unwrap();
+    s.execute(
+        "imageTrace.make",
+        &json!({"preset": "Black and White Logo"}),
+    )
+    .unwrap();
     let r = s.execute("imageTrace.release", &json!({})).unwrap();
     assert_eq!(ids(&r), vec![img]);
     assert!(node(&s, img).visible);
@@ -786,13 +1277,23 @@ fn image_trace_release_and_expand() {
     let r = s.execute("imageTrace.make", &json!({"id": img.0})).unwrap();
     let g = NodeId(r["id"].as_u64().unwrap());
     // Re-trace an existing Image Trace group with other parameters.
-    let r2 = s.execute("imageTrace.make", &json!({"id": g.0, "params": {"ignoreWhite": true}})).unwrap();
+    let r2 = s
+        .execute(
+            "imageTrace.make",
+            &json!({"id": g.0, "params": {"ignoreWhite": true}}),
+        )
+        .unwrap();
     assert_eq!(r2["paths"], 1);
     let g = NodeId(r2["id"].as_u64().unwrap());
     s.execute("imageTrace.expand", &json!({})).unwrap();
     let n = node(&s, g);
     assert!(n.name.is_none());
-    assert!(n.children().unwrap().iter().all(|c| !matches!(c.kind, NodeKind::Image(_))));
+    assert!(
+        n.children()
+            .unwrap()
+            .iter()
+            .all(|c| !matches!(c.kind, NodeKind::Image(_)))
+    );
     assert!(s.execute("imageTrace.release", &json!({})).is_err());
 }
 
@@ -806,14 +1307,25 @@ fn image_trace_make_and_expand_and_color_presets() {
         (false, false) => [250, 230, 10, 255],
     });
     add_image(&mut s, &r, Affine::IDENTITY);
-    let res = s.execute("imageTrace.makeAndExpand", &json!({"preset": "16 Colors", "params": {"colors": 4}})).unwrap();
+    let res = s
+        .execute(
+            "imageTrace.makeAndExpand",
+            &json!({"preset": "16 Colors", "params": {"colors": 4}}),
+        )
+        .unwrap();
     assert_eq!(res["colors"], 4);
     assert_eq!(res["paths"], 4);
     let g = node(&s, NodeId(res["id"].as_u64().unwrap()));
     assert!(g.name.is_none());
     assert_eq!(g.children().unwrap().len(), 4);
-    assert!(s.execute("imageTrace.make", &json!({"preset": "No Such Preset"})).is_err());
-    assert!(s.execute("imageTrace.make", &json!({"params": {"mode": "rainbow"}})).is_err());
+    assert!(
+        s.execute("imageTrace.make", &json!({"preset": "No Such Preset"}))
+            .is_err()
+    );
+    assert!(
+        s.execute("imageTrace.make", &json!({"params": {"mode": "rainbow"}}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -827,16 +1339,40 @@ fn image_trace_palettes_and_swatch_libraries() {
     });
     add_image(&mut s, &quads, Affine::IDENTITY);
     let fills = |s: &Session, id: &Value| -> Vec<Color> {
-        traced_paths(&node(s, NodeId(id.as_u64().unwrap()))).iter().filter_map(|n| n.appearance.fill_paint().color()).collect()
+        traced_paths(&node(s, NodeId(id.as_u64().unwrap())))
+            .iter()
+            .filter_map(|n| n.appearance.fill_paint().color())
+            .collect()
     };
     // Document Library: every fill is one of the document's swatch colours, as it is.
-    let r = s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": {"palette": "documentLibrary"}})).unwrap();
+    let r = s
+        .execute(
+            "imageTrace.make",
+            &json!({"preset": "6 Colors", "params": {"palette": "documentLibrary"}}),
+        )
+        .unwrap();
     let doc = crate::cmd::swatchlib::library_colors(&s, "document").unwrap();
     let got = fills(&s, &r["id"]);
-    assert!(!got.is_empty() && got.iter().all(|c| doc.contains(c)), "{got:?}");
-    let t = node(&s, NodeId(r["id"].as_u64().unwrap())).extras().trace.clone().unwrap();
-    assert_eq!((t["params"]["palette"].as_str(), t["params"]["library"].as_str()), (Some("documentLibrary"), Some("document")));
-    assert!(t["params"].get("swatches").is_none(), "looked up again at every trace");
+    assert!(
+        !got.is_empty() && got.iter().all(|c| doc.contains(c)),
+        "{got:?}"
+    );
+    let t = node(&s, NodeId(r["id"].as_u64().unwrap()))
+        .extras()
+        .trace
+        .clone()
+        .unwrap();
+    assert_eq!(
+        (
+            t["params"]["palette"].as_str(),
+            t["params"]["library"].as_str()
+        ),
+        (Some("documentLibrary"), Some("document"))
+    );
+    assert!(
+        t["params"].get("swatches").is_none(),
+        "looked up again at every trace"
+    );
     // A swatch library by id: the web-safe colours.
     let r = s
         .execute(
@@ -846,7 +1382,11 @@ fn image_trace_palettes_and_swatch_libraries() {
         .unwrap();
     let got = fills(&s, &r["id"]);
     assert!((1..=3).contains(&got.len()), "{got:?}");
-    assert!(got.iter().all(|c| c.to_rgba8(1.0)[..3].iter().all(|v| v % 51 == 0)), "{got:?}");
+    assert!(
+        got.iter()
+            .all(|c| c.to_rgba8(1.0)[..3].iter().all(|v| v % 51 == 0)),
+        "{got:?}"
+    );
     // Full Tone and Automatic keep the four flat colours.
     let mut id = r["id"].clone();
     for palette in ["fullTone", "automatic"] {
@@ -854,8 +1394,16 @@ fn image_trace_palettes_and_swatch_libraries() {
         assert_eq!(r["colors"], 4, "{palette}");
         id = r["id"].clone();
     }
-    let mut bad = |p: Value| s.execute("imageTrace.make", &json!({"preset": "6 Colors", "params": p})).is_err();
-    assert!(bad(json!({"palette": "documentLibrary", "library": "No Such Library"})));
+    let mut bad = |p: Value| {
+        s.execute(
+            "imageTrace.make",
+            &json!({"preset": "6 Colors", "params": p}),
+        )
+        .is_err()
+    };
+    assert!(bad(
+        json!({"palette": "documentLibrary", "library": "No Such Library"})
+    ));
     assert!(bad(json!({"palette": "rainbow"})));
 }
 
@@ -863,32 +1411,84 @@ fn image_trace_palettes_and_swatch_libraries() {
 fn image_trace_create_strokes_makes_stroked_centre_lines() {
     let mut s = session();
     // A 3 px wide horizontal line from x = 10 to 90 at y = 50, placed at 2× from (100, 100).
-    let r =
-        vectorcraft_trace::Raster::from_fn(100, 100, |x, y| if (10..90).contains(&x) && (49..52).contains(&y) { [0, 0, 0, 255] } else { [255; 4] });
-    add_image(&mut s, &r, Affine::translate((100.0, 100.0)) * Affine::scale(2.0));
-    let res = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true, "strokes": true, "strokeWidth": 5}})).unwrap();
+    let r = vectorcraft_trace::Raster::from_fn(100, 100, |x, y| {
+        if (10..90).contains(&x) && (49..52).contains(&y) {
+            [0, 0, 0, 255]
+        } else {
+            [255; 4]
+        }
+    });
+    add_image(
+        &mut s,
+        &r,
+        Affine::translate((100.0, 100.0)) * Affine::scale(2.0),
+    );
+    let res = s
+        .execute(
+            "imageTrace.make",
+            &json!({"params": {"ignoreWhite": true, "strokes": true, "strokeWidth": 5}}),
+        )
+        .unwrap();
     assert_eq!(res["paths"], 1);
     let g = NodeId(res["id"].as_u64().unwrap());
     let paths = traced_paths(&node(&s, g));
     let line = &paths[0];
     assert!(line.appearance.fill_paint().color().is_none(), "not filled");
-    let st = line.appearance.items.iter().find_map(|i| if let AppearanceItem::Stroke(st) = i { Some(st) } else { None }).expect("stroked");
-    assert!((st.width - 6.0).abs() < 1.0, "3 px at 2× is about 6 pt: {}", st.width);
+    let st = line
+        .appearance
+        .items
+        .iter()
+        .find_map(|i| {
+            if let AppearanceItem::Stroke(st) = i {
+                Some(st)
+            } else {
+                None
+            }
+        })
+        .expect("stroked");
+    assert!(
+        (st.width - 6.0).abs() < 1.0,
+        "3 px at 2× is about 6 pt: {}",
+        st.width
+    );
     assert_eq!((st.cap, st.join), (LineCap::Round, LineJoin::Round));
     assert_eq!(st.paint, Paint::solid(Color::rgb8(0, 0, 0)));
     let sp = &line.path_data().unwrap().subpaths[0];
     assert!(!sp.closed);
     let (a, b) = (sp.anchors[0].p, sp.anchors[sp.anchors.len() - 1].p);
-    assert!((a.y - 201.0).abs() < 1.5 && (b.y - 201.0).abs() < 1.5 && (a.x - b.x).abs() > 140.0, "{a:?} … {b:?}");
+    assert!(
+        (a.y - 201.0).abs() < 1.5 && (b.y - 201.0).abs() < 1.5 && (a.x - b.x).abs() > 140.0,
+        "{a:?} … {b:?}"
+    );
     let t = node(&s, g).extras().trace.clone().unwrap();
-    assert_eq!((t["params"]["strokes"].as_bool(), t["params"]["strokeWidth"].as_f64()), (Some(true), Some(5.0)));
+    assert_eq!(
+        (
+            t["params"]["strokes"].as_bool(),
+            t["params"]["strokeWidth"].as_f64()
+        ),
+        (Some(true), Some(5.0))
+    );
     // Expand keeps the stroked line.
     s.execute("imageTrace.expand", &json!({})).unwrap();
-    assert!(node(&s, g).children().unwrap()[0].appearance.items.iter().any(|i| matches!(i, AppearanceItem::Stroke(_))));
+    assert!(
+        node(&s, g).children().unwrap()[0]
+            .appearance
+            .items
+            .iter()
+            .any(|i| matches!(i, AppearanceItem::Stroke(_)))
+    );
     // Create needs Fills or Strokes, and a stroke width.
     s.execute("edit.undo", &json!({})).unwrap();
-    for p in [json!({"fills": false, "strokes": false}), json!({"strokes": true, "strokeWidth": 0}), json!({"strokeWidth": -3})] {
-        assert!(s.execute("imageTrace.make", &json!({"id": g.0, "params": p})).is_err(), "{p}");
+    for p in [
+        json!({"fills": false, "strokes": false}),
+        json!({"strokes": true, "strokeWidth": 0}),
+        json!({"strokeWidth": -3}),
+    ] {
+        assert!(
+            s.execute("imageTrace.make", &json!({"id": g.0, "params": p}))
+                .is_err(),
+            "{p}"
+        );
     }
 }
 
@@ -896,12 +1496,24 @@ fn image_trace_create_strokes_makes_stroked_centre_lines() {
 fn image_trace_presets_query_and_errors() {
     let mut s = session();
     let r = s.execute("imageTrace.presets", &json!({})).unwrap();
-    let names: Vec<&str> = r["presets"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap()).collect();
+    let names: Vec<&str> = r["presets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["name"].as_str().unwrap())
+        .collect();
     assert_eq!(names.len(), 15);
     assert!(names.contains(&"Auto Color") && names.contains(&"Outline"));
-    assert!(names.contains(&"Technical Drawing") && names.contains(&"Shades of Gray") && names.contains(&"Flat Logo"));
+    assert!(
+        names.contains(&"Technical Drawing")
+            && names.contains(&"Shades of Gray")
+            && names.contains(&"Flat Logo")
+    );
     let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
-    assert!(s.execute("imageTrace.make", &json!({"id": a.0})).is_err(), "not an image");
+    assert!(
+        s.execute("imageTrace.make", &json!({"id": a.0})).is_err(),
+        "not an image"
+    );
     assert!(find_command("imageTrace.make").unwrap().menu == ["Object", "Image Trace"]);
     assert!(find_command("livePaint.make").unwrap().menu == ["Object", "Live Paint"]);
 }
@@ -920,13 +1532,24 @@ fn soft_logo_doc(s: &mut Session) -> NodeId {
 fn image_trace_flat_logo_preset_makes_a_true_circle() {
     let mut s = session();
     soft_logo_doc(&mut s);
-    let r = s.execute("imageTrace.make", &json!({"preset": "Flat Logo"})).unwrap();
-    assert_eq!((r["paths"].as_u64(), r["colors"].as_u64()), (Some(1), Some(1)));
-    assert!(r["anchors"].as_u64().unwrap() <= 6, "a circle is four anchors: {r}");
+    let r = s
+        .execute("imageTrace.make", &json!({"preset": "Flat Logo"}))
+        .unwrap();
+    assert_eq!(
+        (r["paths"].as_u64(), r["colors"].as_u64()),
+        (Some(1), Some(1))
+    );
+    assert!(
+        r["anchors"].as_u64().unwrap() <= 6,
+        "a circle is four anchors: {r}"
+    );
     let g = NodeId(r["id"].as_u64().unwrap());
     let n = node(&s, g);
     let t = n.extras().trace.clone().expect("settings stored");
-    assert_eq!((t["preset"].as_str(), t["params"]["mode"].as_str()), (Some("Flat Logo"), Some("logo")));
+    assert_eq!(
+        (t["preset"].as_str(), t["params"]["mode"].as_str()),
+        (Some("Flat Logo"), Some("logo"))
+    );
     let paths = traced_paths(&n);
     let (p, rule) = outline(&paths[0]);
     let want = std::f64::consts::PI * 60.0 * 60.0;
@@ -934,22 +1557,41 @@ fn image_trace_flat_logo_preset_makes_a_true_circle() {
     assert!((got - want).abs() / want < 0.01, "area {got} vs {want}");
     let bb = p.bounds().unwrap();
     // The disc is at (50.3, 49.6) in a x2 image placed at (50, 50): centre (150.6, 149.2).
-    assert!((bb.center().x - 150.6).abs() < 0.3 && (bb.center().y - 149.2).abs() < 0.3, "{bb:?}");
+    assert!(
+        (bb.center().x - 150.6).abs() < 0.3 && (bb.center().y - 149.2).abs() < 0.3,
+        "{bb:?}"
+    );
 }
 
 #[test]
 fn image_trace_flat_logo_refuses_a_gradient_and_a_bad_palette() {
     let mut s = session();
-    let grad = vectorcraft_trace::Raster::from_fn(64, 32, |x, y| [(x * 4) as u8, 255 - (x * 4) as u8, (y * 6) as u8, 255]);
+    let grad = vectorcraft_trace::Raster::from_fn(64, 32, |x, y| {
+        [(x * 4) as u8, 255 - (x * 4) as u8, (y * 6) as u8, 255]
+    });
     add_image(&mut s, &grad, Affine::IDENTITY);
-    let e = s.execute("imageTrace.make", &json!({"preset": "Flat Logo"})).unwrap_err().to_string();
+    let e = s
+        .execute("imageTrace.make", &json!({"preset": "Flat Logo"}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("flat-colour") && e.contains("Color mode"), "{e}");
     let mut s = session();
     soft_logo_doc(&mut s);
-    let e = s.execute("imageTrace.make", &json!({"preset": "Flat Logo", "params": {"logoColors": ["crimson"]}})).unwrap_err().to_string();
+    let e = s
+        .execute(
+            "imageTrace.make",
+            &json!({"preset": "Flat Logo", "params": {"logoColors": ["crimson"]}}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("#rrggbb"), "{e}");
     // The named colours are used as given.
-    let r = s.execute("imageTrace.makeAndExpand", &json!({"preset": "Flat Logo", "params": {"logoColors": ["#c8283c"]}})).unwrap();
+    let r = s
+        .execute(
+            "imageTrace.makeAndExpand",
+            &json!({"preset": "Flat Logo", "params": {"logoColors": ["#c8283c"]}}),
+        )
+        .unwrap();
     assert_eq!(r["colors"], 1);
 }
 
@@ -957,18 +1599,28 @@ fn image_trace_flat_logo_refuses_a_gradient_and_a_bad_palette() {
 fn image_trace_object_remembers_its_settings() {
     let mut s = session();
     image_doc(&mut s);
-    let r = s.execute("imageTrace.make", &json!({"preset": "6 Colors"})).unwrap();
+    let r = s
+        .execute("imageTrace.make", &json!({"preset": "6 Colors"}))
+        .unwrap();
     let g = NodeId(r["id"].as_u64().unwrap());
     let t = node(&s, g).extras().trace.clone().expect("settings stored");
     assert_eq!(t["preset"], "6 Colors");
     assert_eq!(t["params"]["colors"], 6);
     // Changing a parameter makes it Custom; the settings survive save/open.
-    let r = s.execute("imageTrace.make", &json!({"id": g.0, "preset": "6 Colors", "params": {"colors": 9}})).unwrap();
+    let r = s
+        .execute(
+            "imageTrace.make",
+            &json!({"id": g.0, "preset": "6 Colors", "params": {"colors": 9}}),
+        )
+        .unwrap();
     let g = NodeId(r["id"].as_u64().unwrap());
     let d = s.doc().unwrap().doc.clone();
     let back = vectorcraft_format::load(&vectorcraft_format::save(&d, false)).unwrap();
     let t = back.node(g).unwrap().extras().trace.clone().unwrap();
-    assert_eq!((t["preset"].as_str(), t["params"]["colors"].as_u64()), (Some("Custom"), Some(9)));
+    assert_eq!(
+        (t["preset"].as_str(), t["params"]["colors"].as_u64()),
+        (Some("Custom"), Some(9))
+    );
     // Expanded traces are plain groups.
     s.execute("imageTrace.expand", &json!({})).unwrap();
     let st = s.doc().unwrap();
@@ -982,44 +1634,110 @@ fn image_trace_object_remembers_its_settings() {
 fn disc_on_blue(s: &mut Session) -> NodeId {
     let r = vectorcraft_trace::Raster::from_fn(100, 100, |x, y| {
         let (dx, dy) = (x as f64 + 0.5 - 50.0, y as f64 + 0.5 - 50.0);
-        if dx * dx + dy * dy <= 900.0 { [0, 0, 0, 255] } else { [170, 210, 255, 255] }
+        if dx * dx + dy * dy <= 900.0 {
+            [0, 0, 0, 255]
+        } else {
+            [170, 210, 255, 255]
+        }
     });
     add_image(s, &r, Affine::translate((50.0, 50.0)) * Affine::scale(2.0));
-    let r = s.execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}})).unwrap();
+    let r = s
+        .execute("imageTrace.make", &json!({"params": {"ignoreWhite": true}}))
+        .unwrap();
     assert_eq!(r["paths"], 1);
     NodeId(r["id"].as_u64().unwrap())
 }
 
 /// The document rendered as the canvas draws it (`trace_views`) or as exports do.
 fn render_doc(s: &Session, trace_views: bool) -> vectorcraft_render::Rendered {
-    let opts = vectorcraft_render::RenderOptions { background: Some([255, 255, 255, 255]), trace_views, ..Default::default() };
-    vectorcraft_render::Renderer::new().render(&s.doc().unwrap().doc, 300, 300, Affine::IDENTITY, &opts)
+    let opts = vectorcraft_render::RenderOptions {
+        background: Some([255, 255, 255, 255]),
+        trace_views,
+        ..Default::default()
+    };
+    vectorcraft_render::Renderer::new().render(
+        &s.doc().unwrap().doc,
+        300,
+        300,
+        Affine::IDENTITY,
+        &opts,
+    )
 }
 
 #[test]
 fn image_trace_view_is_stored_kept_and_validated() {
     let mut s = session();
     let g = disc_on_blue(&mut s);
-    assert_eq!(node(&s, g).extras().trace.clone().unwrap()["view"], "tracingResult");
-    let r = s.execute("imageTrace.setView", &json!({"view": "outlinesWithSourceImage"})).unwrap();
-    assert_eq!((ids(&r), r["view"].as_str()), (vec![g], Some("outlinesWithSourceImage")));
-    assert_eq!(node(&s, g).trace_view(), vectorcraft_doc::TraceView::OutlinesWithSource);
+    assert_eq!(
+        node(&s, g).extras().trace.clone().unwrap()["view"],
+        "tracingResult"
+    );
+    let r = s
+        .execute(
+            "imageTrace.setView",
+            &json!({"view": "outlinesWithSourceImage"}),
+        )
+        .unwrap();
+    assert_eq!(
+        (ids(&r), r["view"].as_str()),
+        (vec![g], Some("outlinesWithSourceImage"))
+    );
+    assert_eq!(
+        node(&s, g).trace_view(),
+        vectorcraft_doc::TraceView::OutlinesWithSource
+    );
     // Setting the view it has already adds no undo step.
     let steps = s.doc().unwrap().history.undo.len();
-    s.execute("imageTrace.setView", &json!({"id": g.0, "view": "outlinesWithSourceImage"})).unwrap();
+    s.execute(
+        "imageTrace.setView",
+        &json!({"id": g.0, "view": "outlinesWithSourceImage"}),
+    )
+    .unwrap();
     assert_eq!(s.doc().unwrap().history.undo.len(), steps);
     // Tracing again keeps it, unless another one is asked for; it survives save and open.
-    let g = NodeId(s.execute("imageTrace.make", &json!({"id": g.0, "params": {"ignoreWhite": true, "noise": 30}})).unwrap()["id"].as_u64().unwrap());
-    assert_eq!(node(&s, g).trace_view(), vectorcraft_doc::TraceView::OutlinesWithSource);
-    let g = NodeId(s.execute("imageTrace.make", &json!({"id": g.0, "view": "SourceImage"})).unwrap()["id"].as_u64().unwrap());
-    let back = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
-    assert_eq!(back.node(g).unwrap().trace_view(), vectorcraft_doc::TraceView::Source);
+    let g = NodeId(
+        s.execute(
+            "imageTrace.make",
+            &json!({"id": g.0, "params": {"ignoreWhite": true, "noise": 30}}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
+    assert_eq!(
+        node(&s, g).trace_view(),
+        vectorcraft_doc::TraceView::OutlinesWithSource
+    );
+    let g = NodeId(
+        s.execute(
+            "imageTrace.make",
+            &json!({"id": g.0, "view": "SourceImage"}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
+    let back =
+        vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
+    assert_eq!(
+        back.node(g).unwrap().trace_view(),
+        vectorcraft_doc::TraceView::Source
+    );
     // Bad views and other objects are refused.
-    assert!(s.execute("imageTrace.setView", &json!({"view": "sepia"})).is_err());
+    assert!(
+        s.execute("imageTrace.setView", &json!({"view": "sepia"}))
+            .is_err()
+    );
     assert!(s.execute("imageTrace.setView", &json!({})).is_err());
     assert!(s.execute("imageTrace.make", &json!({"view": 3})).is_err());
     let a = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
-    assert!(s.execute("imageTrace.setView", &json!({"id": a.0, "view": "outlines"})).is_err());
+    assert!(
+        s.execute(
+            "imageTrace.setView",
+            &json!({"id": a.0, "view": "outlines"})
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -1032,25 +1750,50 @@ fn image_trace_views_draw_on_screen_only_and_expand_to_the_result() {
     let (centre, beside) = ((150, 150), (70, 70));
     let at = |img: &vectorcraft_render::Rendered, (x, y): (u32, u32)| img.pixel(x, y);
     // The outline is a 1 px line where the disc's right side is (x = 210, anti-aliased).
-    let outlined = |img: &vectorcraft_render::Rendered| (205..=215).any(|x| img.pixel(x, 150)[0] < 128);
+    let outlined =
+        |img: &vectorcraft_render::Rendered| (205..=215).any(|x| img.pixel(x, 150)[0] < 128);
     let mut expanded = None;
     for view in vectorcraft_doc::TraceView::ALL {
-        s.execute("imageTrace.setView", &json!({"id": g.0, "view": view.id()})).unwrap();
+        s.execute("imageTrace.setView", &json!({"id": g.0, "view": view.id()}))
+            .unwrap();
         let screen = render_doc(&s, true);
         let (c, b) = (at(&screen, centre), at(&screen, beside));
-        assert_eq!(dark(c), view.shows_result() || view.shows_source(), "{view:?}: the disc's middle {c:?}");
-        assert_eq!(blue(b), view.shows_source(), "{view:?}: the image's background {b:?}");
-        assert!(view.shows_source() || white(b), "{view:?}: nothing beside the disc {b:?}");
+        assert_eq!(
+            dark(c),
+            view.shows_result() || view.shows_source(),
+            "{view:?}: the disc's middle {c:?}"
+        );
+        assert_eq!(
+            blue(b),
+            view.shows_source(),
+            "{view:?}: the image's background {b:?}"
+        );
+        assert!(
+            view.shows_source() || white(b),
+            "{view:?}: nothing beside the disc {b:?}"
+        );
         if view == vectorcraft_doc::TraceView::Outlines {
             assert!(outlined(&screen), "{view:?}: the disc's outline");
         }
         // Exports draw the tracing result whatever the view.
         let export = render_doc(&s, false);
-        assert!(dark(at(&export, centre)) && white(at(&export, beside)), "{view:?}: export");
+        assert!(
+            dark(at(&export, centre)) && white(at(&export, beside)),
+            "{view:?}: export"
+        );
         // Expand keeps the traced shapes, as traced, whatever the view.
         s.execute("imageTrace.expand", &json!({"id": g.0})).unwrap();
-        let shapes: Vec<_> = node(&s, g).children().unwrap().iter().map(|c| (c.path_data().cloned(), c.appearance.clone())).collect();
-        assert_eq!(*expanded.get_or_insert_with(|| shapes.clone()), shapes, "{view:?}: expanded");
+        let shapes: Vec<_> = node(&s, g)
+            .children()
+            .unwrap()
+            .iter()
+            .map(|c| (c.path_data().cloned(), c.appearance.clone()))
+            .collect();
+        assert_eq!(
+            *expanded.get_or_insert_with(|| shapes.clone()),
+            shapes,
+            "{view:?}: expanded"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
     }
 }
@@ -1065,10 +1808,20 @@ fn shape_builder_merges_rosette_rings_cleanly() {
     let c = [400.0, 320.0];
     let mut petals = vec![];
     for k in 0..8 {
-        let id =
-            s.execute("shape.ellipse", &json!({"x": c[0] - 60.0, "y": c[1] - 172.0, "width": 120, "height": 324})).unwrap()["id"].as_u64().unwrap();
+        let id = s
+            .execute(
+                "shape.ellipse",
+                &json!({"x": c[0] - 60.0, "y": c[1] - 172.0, "width": 120, "height": 324}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [id]})).unwrap();
-        s.execute("object.rotate", &json!({"angle": 45.0 * f64::from(k), "origin": c})).unwrap();
+        s.execute(
+            "object.rotate",
+            &json!({"angle": 45.0 * f64::from(k), "origin": c}),
+        )
+        .unwrap();
         petals.push(id);
     }
     s.execute("select.set", &json!({"ids": petals})).unwrap();
@@ -1090,14 +1843,31 @@ fn shape_builder_merges_rosette_rings_cleanly() {
     for k in 0..8 {
         let a = std::f64::consts::FRAC_PI_4 * f64::from(k) - std::f64::consts::FRAC_PI_2;
         let tip = kurbo::Point::new(c[0] + 165.0 * a.cos(), c[1] + 165.0 * a.sin());
-        assert!(inside(tip), "petal {k}'s tip at {tip:?} is in the merged shape");
+        assert!(
+            inside(tip),
+            "petal {k}'s tip at {tip:?} is in the merged shape"
+        );
     }
     // What is left of the petals stays out of the merged area (a piece left over it is a stray
     // outline inside it).
     let merged = merged.unwrap();
-    for id in s.doc().unwrap().selection.objects.clone().into_iter().filter(|id| *id != merged) {
+    for id in s
+        .doc()
+        .unwrap()
+        .selection
+        .objects
+        .clone()
+        .into_iter()
+        .filter(|id| *id != merged)
+    {
         let (p, r) = outline(&node(&s, id));
-        let over = vectorcraft_pathops::boolean(&p, r, &ring, rule, vectorcraft_pathops::BoolOp::Intersect);
+        let over = vectorcraft_pathops::boolean(
+            &p,
+            r,
+            &ring,
+            rule,
+            vectorcraft_pathops::BoolOp::Intersect,
+        );
         let a = vectorcraft_pathops::area(&over, FillRule::NonZero);
         assert!(a < 1.0, "{id:?} overlaps the merged shape by {a} pt²");
     }
@@ -1107,14 +1877,35 @@ fn shape_builder_merges_rosette_rings_cleanly() {
         for sp in &p.subpaths {
             let one = PathData::new(vec![sp.clone()]);
             let width = 2.0 * vectorcraft_pathops::area(&one, r) / one.length();
-            assert!(width > 1.0, "{id:?} has an outline {width:.3} pt wide on average, {:.1} pt long", one.length());
+            assert!(
+                width > 1.0,
+                "{id:?} has an outline {width:.3} pt wide on average, {:.1} pt long",
+                one.length()
+            );
         }
     }
     // The ring is one outline around the centre (the regions the drags missed aside): the
     // petals' tips are no outlines of their own beside it, apart by a hairline.
-    let big = ring.subpaths.iter().filter(|sp| vectorcraft_pathops::area(&PathData::new(vec![(*sp).clone()]), rule) > 100.0).count();
-    assert_eq!(big, 2, "{:?}", ring.subpaths.iter().map(|sp| vectorcraft_pathops::area(&PathData::new(vec![sp.clone()]), rule)).collect::<Vec<_>>());
+    let big = ring
+        .subpaths
+        .iter()
+        .filter(|sp| vectorcraft_pathops::area(&PathData::new(vec![(*sp).clone()]), rule) > 100.0)
+        .count();
+    assert_eq!(
+        big,
+        2,
+        "{:?}",
+        ring.subpaths
+            .iter()
+            .map(|sp| vectorcraft_pathops::area(&PathData::new(vec![sp.clone()]), rule))
+            .collect::<Vec<_>>()
+    );
     // An inner edge would be a second outline over the merged area: normalising would drop it.
     let clean = vectorcraft_pathops::normalize(&ring, rule);
-    assert!((ring.length() - clean.length()).abs() < 1.0, "{} pt of outline, {} without inner edges", ring.length(), clean.length());
+    assert!(
+        (ring.length() - clean.length()).abs() < 1.0,
+        "{} pt of outline, {} without inner edges",
+        ring.length(),
+        clean.length()
+    );
 }

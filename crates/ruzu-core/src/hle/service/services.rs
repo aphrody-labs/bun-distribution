@@ -61,7 +61,9 @@ impl crate::hle::service::hle_ipc::SessionRequestHandler for GenericStubService 
                 | crate::hle::ipc::CommandType::Close
                 | crate::hle::ipc::CommandType::TipcClose
         ) {
-            return crate::hle::service::service::ServiceFramework::handle_sync_request_impl(self, ctx);
+            return crate::hle::service::service::ServiceFramework::handle_sync_request_impl(
+                self, ctx,
+            );
         }
         let is_domain = ctx
             .get_manager()
@@ -696,7 +698,9 @@ pub fn register_stub_services(server_manager: &mut ServerManager, names: &[&str]
 mod tests {
     #[test]
     fn stub_open_registers_and_serializes_returned_domain_object() {
-        use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler, SessionRequestManager};
+        use crate::hle::service::hle_ipc::{
+            HLERequestContext, SessionRequestHandler, SessionRequestManager,
+        };
         let service = std::sync::Arc::new(super::GenericStubService::new("synthetic:stub"));
         let manager = std::sync::Arc::new(std::sync::Mutex::new(SessionRequestManager::new()));
         manager.lock().unwrap().set_session_handler(service.clone());
@@ -719,10 +723,24 @@ mod tests {
                 crate::hle::service::sm::sm::ServiceManager::new(),
             )));
             ctx.populate_from_incoming_command_buffer(&[
-                command_type as u32, 8, 0, 0, 0x49434653, 0, 3, 0, 0, 0, 0, 0,
+                command_type as u32,
+                8,
+                0,
+                0,
+                0x49434653,
+                0,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
             ]);
             let service = super::GenericStubService::new("synthetic:stub");
-            assert_eq!(service.handle_sync_request(&mut ctx), crate::hle::result::RESULT_SUCCESS);
+            assert_eq!(
+                service.handle_sync_request(&mut ctx),
+                crate::hle::result::RESULT_SUCCESS
+            );
             let start = ctx.data_payload_offset as usize;
             assert_eq!(ctx.write_size - ctx.data_payload_offset, 3);
             assert_eq!(&ctx.cmd_buf[start..start + 3], &[0, 0, 0x8000]);
@@ -737,7 +755,10 @@ mod tests {
         let mut ctx = HLERequestContext::new();
         ctx.populate_from_incoming_command_buffer(&[crate::hle::ipc::CommandType::Close as u32, 0]);
         let service = super::GenericStubService::new("synthetic:stub");
-        assert_eq!(service.handle_sync_request(&mut ctx), crate::hle::service::ipc_helpers::RESULT_SESSION_CLOSED);
+        assert_eq!(
+            service.handle_sync_request(&mut ctx),
+            crate::hle::service::ipc_helpers::RESULT_SESSION_CLOSED
+        );
         assert!(ctx.outgoing_move_objects.is_empty());
     }
 

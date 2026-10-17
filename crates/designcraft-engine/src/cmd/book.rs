@@ -18,7 +18,11 @@ pub struct Book {
 }
 
 fn has_book(s: &Session) -> std::result::Result<(), String> {
-    if s.book.is_some() { Ok(()) } else { Err("no book open".into()) }
+    if s.book.is_some() {
+        Ok(())
+    } else {
+        Err("no book open".into())
+    }
 }
 
 fn no_book() -> EngineError {
@@ -45,7 +49,8 @@ fn load(path: &str) -> Result<designcraft_doc::Document> {
         vec![]
     };
     if path.to_lowercase().ends_with(".idml") {
-        return designcraft_idml::import_idml(&bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")));
+        return designcraft_idml::import_idml(&bytes)
+            .map_err(|e| EngineError::Other(format!("{path}: {e}")));
     }
     super::file::from_bytes(&bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
@@ -66,26 +71,38 @@ struct ChapterBatch {
 impl ChapterBatch {
     fn new(chapters: usize, command: &'static str) -> Result<Self> {
         if chapters > MAX_BATCH_CHAPTERS {
-            return Err(bad(command, format!("a book update supports at most {MAX_BATCH_CHAPTERS} chapters")));
+            return Err(bad(
+                command,
+                format!("a book update supports at most {MAX_BATCH_CHAPTERS} chapters"),
+            ));
         }
         let directory = tempfile::Builder::new()
             .prefix(".designcraft-book-")
             .tempdir()
-            .map_err(|e| EngineError::Other(format!("{command}: cannot stage chapter changes: {e}")))?;
-        Ok(Self { directory, chapters: Vec::with_capacity(chapters), command })
+            .map_err(|e| {
+                EngineError::Other(format!("{command}: cannot stage chapter changes: {e}"))
+            })?;
+        Ok(Self {
+            directory,
+            chapters: Vec::with_capacity(chapters),
+            command,
+        })
     }
 
     fn stage(&mut self, path: &str, doc: &designcraft_doc::Document) -> Result<()> {
         use std::io::Write;
 
         // Propagate serialization errors; an empty fallback must never replace a chapter.
-        let bytes = designcraft_format::save(doc).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+        let bytes = designcraft_format::save(doc)
+            .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
         let mut file = tempfile::Builder::new()
             .prefix("chapter-")
             .tempfile_in(self.directory.path())
             .map_err(|e| EngineError::Other(format!("{path}: cannot stage changes: {e}")))?;
-        file.write_all(&bytes).map_err(|e| EngineError::Other(format!("{path}: cannot stage changes: {e}")))?;
-        self.chapters.push((path.to_string(), file.into_temp_path()));
+        file.write_all(&bytes)
+            .map_err(|e| EngineError::Other(format!("{path}: cannot stage changes: {e}")))?;
+        self.chapters
+            .push((path.to_string(), file.into_temp_path()));
         Ok(())
     }
 
@@ -93,7 +110,10 @@ impl ChapterBatch {
         self.commit_with(write_staged_chapter)
     }
 
-    fn commit_with(self, mut write: impl FnMut(&std::path::Path, &std::path::Path) -> std::io::Result<()>) -> Result<()> {
+    fn commit_with(
+        self,
+        mut write: impl FnMut(&std::path::Path, &std::path::Path) -> std::io::Result<()>,
+    ) -> Result<()> {
         let mut completed = Vec::with_capacity(self.chapters.len());
         for (path, staged) in self.chapters {
             if let Err(e) = write(std::path::Path::new(&path), &staged) {
@@ -122,21 +142,49 @@ fn write_staged_chapter(path: &std::path::Path, staged: &std::path::Path) -> std
 fn writable_chapter(s: &Session, path: &str, command: &'static str) -> Result<()> {
     use std::path::Path;
 
-    if Path::new(path).extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext.eq_ignore_ascii_case("idml")) {
-        return Err(bad(command, format!("cannot change imported IDML chapter {path}; convert it to a native DesignCraft document first")));
+    if Path::new(path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("idml"))
+    {
+        return Err(bad(
+            command,
+            format!(
+                "cannot change imported IDML chapter {path}; convert it to a native DesignCraft document first"
+            ),
+        ));
     }
-    let target = std::fs::canonicalize(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
-    if s.docs.iter().any(|doc| doc.path.as_ref().is_some_and(|open| std::fs::canonicalize(open).is_ok_and(|open| open == target))) {
-        return Err(bad(command, format!("chapter {path} is open; close it before updating the book")));
+    let target =
+        std::fs::canonicalize(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    if s.docs.iter().any(|doc| {
+        doc.path
+            .as_ref()
+            .is_some_and(|open| std::fs::canonicalize(open).is_ok_and(|open| open == target))
+    }) {
+        return Err(bad(
+            command,
+            format!("chapter {path} is open; close it before updating the book"),
+        ));
     }
     if !std::fs::metadata(&target).is_ok_and(|metadata| metadata.is_file()) {
-        return Err(bad(command, format!("chapter {path} is not a regular file")));
+        return Err(bad(
+            command,
+            format!("chapter {path} is not a regular file"),
+        ));
     }
     // Check both the file and its resolved parent without truncating it. Replacement needs a
     // writable directory even when an in-place write would be permitted.
-    std::fs::OpenOptions::new().write(true).open(&target).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
-    let parent = target.parent().ok_or_else(|| bad(command, format!("chapter {path} has no parent folder")))?;
-    tempfile::Builder::new().prefix(".designcraft-book-check-").tempfile_in(parent).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(&target)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let parent = target
+        .parent()
+        .ok_or_else(|| bad(command, format!("chapter {path} has no parent folder")))?;
+    tempfile::Builder::new()
+        .prefix(".designcraft-book-check-")
+        .tempfile_in(parent)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(())
 }
 
@@ -152,8 +200,11 @@ fn paginate(s: &Session) -> Result<Value> {
         writable_chapter(s, path, "book.paginate")?;
         let mut d = load(path)?;
         start_at(&mut d, next);
-        let pages = u32::try_from(d.page_count()).map_err(|_| bad("book.paginate", "too many pages for continuous numbering"))?;
-        next = next.checked_add(pages).ok_or_else(|| bad("book.paginate", "too many pages for continuous numbering"))?;
+        let pages = u32::try_from(d.page_count())
+            .map_err(|_| bad("book.paginate", "too many pages for continuous numbering"))?;
+        next = next
+            .checked_add(pages)
+            .ok_or_else(|| bad("book.paginate", "too many pages for continuous numbering"))?;
         batch.stage(path, &d)?;
     }
     batch.commit()?;
@@ -164,7 +215,10 @@ fn paginate(s: &Session) -> Result<Value> {
 fn sync_styles(s: &Session) -> Result<Value> {
     let b = s.book.as_ref().ok_or_else(no_book)?;
     let mut batch = ChapterBatch::new(b.documents.len(), "book.syncStyles")?;
-    let src_path = b.documents.get(b.style_source).ok_or_else(|| bad("book.syncStyles", "the book is empty"))?;
+    let src_path = b
+        .documents
+        .get(b.style_source)
+        .ok_or_else(|| bad("book.syncStyles", "the book is empty"))?;
     let src = load(src_path)?;
     let styles = src.styles.clone();
     let swatches = src.swatches.clone();
@@ -352,29 +406,52 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let p = |n: &str| dir.join(n).to_string_lossy().to_string();
         let mut s = Session::new();
-        for (name, pages, style) in [("a.designcraft", 3, "Chapter Head"), ("b.designcraft", 2, "Other")] {
+        for (name, pages, style) in [
+            ("a.designcraft", 3, "Chapter Head"),
+            ("b.designcraft", 2, "Other"),
+        ] {
             s.execute("file.new", &json!({"pages": pages})).unwrap();
-            s.execute("style.paragraph.create", &json!({"name": style, "chars": {"size": 20}})).unwrap();
+            s.execute(
+                "style.paragraph.create",
+                &json!({"name": style, "chars": {"size": 20}}),
+            )
+            .unwrap();
             s.execute("file.saveAs", &json!({"path": p(name)})).unwrap();
             s.execute("file.close", &json!({})).unwrap();
         }
-        s.execute("book.new", &json!({"path": p("book.dcbook")})).unwrap();
-        s.execute("book.add", &json!({"path": p("a.designcraft")})).unwrap();
-        s.execute("book.add", &json!({"path": p("b.designcraft")})).unwrap();
+        s.execute("book.new", &json!({"path": p("book.dcbook")}))
+            .unwrap();
+        s.execute("book.add", &json!({"path": p("a.designcraft")}))
+            .unwrap();
+        s.execute("book.add", &json!({"path": p("b.designcraft")}))
+            .unwrap();
         let l = s.execute("book.list", &json!({})).unwrap();
         assert_eq!(l["documents"][1]["firstPage"], 4);
         assert_eq!(s.execute("book.paginate", &json!({})).unwrap()["pages"], 5);
         let b = super::load(&p("b.designcraft")).unwrap();
         assert_eq!(b.page_name(0), "4", "continues after the first document");
-        assert_eq!(s.execute("book.syncStyles", &json!({})).unwrap()["synced"], 1);
-        assert!(super::load(&p("b.designcraft")).unwrap().styles.para("Chapter Head").is_some());
+        assert_eq!(
+            s.execute("book.syncStyles", &json!({})).unwrap()["synced"],
+            1
+        );
+        assert!(
+            super::load(&p("b.designcraft"))
+                .unwrap()
+                .styles
+                .para("Chapter Head")
+                .is_some()
+        );
         let r = s.execute("book.exportPdf", &json!({})).unwrap();
         assert_eq!(r["pages"], 5);
         let bytes = super::super::file::base64_decode(r["base64"].as_str().unwrap());
         assert_eq!(designcraft_render::pdf_page_count(&bytes), Some(5));
         // A fresh session reopens the book.
         let mut t = Session::new();
-        assert_eq!(t.execute("book.open", &json!({"path": p("book.dcbook")})).unwrap()["documents"], 2);
+        assert_eq!(
+            t.execute("book.open", &json!({"path": p("book.dcbook")}))
+                .unwrap()["documents"],
+            2
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 }

@@ -36,13 +36,21 @@ pub fn size(v: u64) -> u32 {
 
 /// [`size`] of a measured length (rounded; 1 for NaN).
 pub fn size_f64(v: f64) -> u32 {
-    if v.is_finite() { v.round().clamp(1.0, f64::from(MAX_SIZE)) as u32 } else { 1 }
+    if v.is_finite() {
+        v.round().clamp(1.0, f64::from(MAX_SIZE)) as u32
+    } else {
+        1
+    }
 }
 
 /// A pixel aspect ratio from [`MIN_PIXEL_ASPECT`] to [`MAX_PIXEL_ASPECT`] (square for a value
 /// that isn't a positive number).
 pub fn pixel_aspect(v: f64) -> f64 {
-    if v.is_finite() && v > 0.0 { v.clamp(MIN_PIXEL_ASPECT, MAX_PIXEL_ASPECT) } else { 1.0 }
+    if v.is_finite() && v > 0.0 {
+        v.clamp(MIN_PIXEL_ASPECT, MAX_PIXEL_ASPECT)
+    } else {
+        1.0
+    }
 }
 
 /// A frame rate from [`MIN_FPS`] to [`MAX_FPS`]; `fallback` for a zero or negative rate.
@@ -51,7 +59,11 @@ pub fn frame_rate(r: FrameRate, fallback: FrameRate) -> FrameRate {
         return fallback;
     }
     let fps = r.as_f64();
-    if (MIN_FPS..=MAX_FPS).contains(&fps) { r } else { FrameRate::from_f64(fps.clamp(MIN_FPS, MAX_FPS)) }
+    if (MIN_FPS..=MAX_FPS).contains(&fps) {
+        r
+    } else {
+        FrameRate::from_f64(fps.clamp(MIN_FPS, MAX_FPS))
+    }
 }
 
 /// Records one corrected value.
@@ -95,17 +107,34 @@ fn repair_comp(name: &str, c: &Comp, notes: &mut Vec<String>) -> Option<Comp> {
     let rate = frame_rate(c.frame_rate, FrameRate::FPS_29_97);
     // At least one frame long.
     let duration = c.duration.max(rate.frame_duration());
-    let samples = c.motion_blur_samples.clamp(MOTION_BLUR_SAMPLES.0, MOTION_BLUR_SAMPLES.1);
-    let adaptive = c.motion_blur_adaptive_limit.clamp(ADAPTIVE_SAMPLE_LIMIT.0, ADAPTIVE_SAMPLE_LIMIT.1);
+    let samples = c
+        .motion_blur_samples
+        .clamp(MOTION_BLUR_SAMPLES.0, MOTION_BLUR_SAMPLES.1);
+    let adaptive = c
+        .motion_blur_adaptive_limit
+        .clamp(ADAPTIVE_SAMPLE_LIMIT.0, ADAPTIVE_SAMPLE_LIMIT.1);
     let unchanged = (width, height, rate, duration, samples, adaptive)
-        == (c.width, c.height, c.frame_rate, c.duration, c.motion_blur_samples, c.motion_blur_adaptive_limit)
+        == (
+            c.width,
+            c.height,
+            c.frame_rate,
+            c.duration,
+            c.motion_blur_samples,
+            c.motion_blur_adaptive_limit,
+        )
         && pa.to_bits() == c.pixel_aspect.to_bits();
     if unchanged {
         return None;
     }
     let mut n = c.clone();
     if (width, height) != (c.width, c.height) {
-        note(notes, name, "size", format_args!("{} × {} px", c.width, c.height), format_args!("{width} × {height} px"));
+        note(
+            notes,
+            name,
+            "size",
+            format_args!("{} × {} px", c.width, c.height),
+            format_args!("{width} × {height} px"),
+        );
     }
     if pa.to_bits() != c.pixel_aspect.to_bits() {
         note(notes, name, "pixel aspect ratio", c.pixel_aspect, pa);
@@ -114,16 +143,35 @@ fn repair_comp(name: &str, c: &Comp, notes: &mut Vec<String>) -> Option<Comp> {
         note(notes, name, "frame rate", fps(c.frame_rate), fps(rate));
     }
     if duration != c.duration {
-        note(notes, name, "duration", format_args!("{:.3} s", c.duration.seconds()), format_args!("{:.3} s", duration.seconds()));
+        note(
+            notes,
+            name,
+            "duration",
+            format_args!("{:.3} s", c.duration.seconds()),
+            format_args!("{:.3} s", duration.seconds()),
+        );
         n.work_area = (effectcraft_time::Tick::ZERO, duration);
     }
     if samples != c.motion_blur_samples {
-        note(notes, name, "motion blur samples per frame", c.motion_blur_samples, samples);
+        note(
+            notes,
+            name,
+            "motion blur samples per frame",
+            c.motion_blur_samples,
+            samples,
+        );
     }
     if adaptive != c.motion_blur_adaptive_limit {
-        note(notes, name, "adaptive sample limit", c.motion_blur_adaptive_limit, adaptive);
+        note(
+            notes,
+            name,
+            "adaptive sample limit",
+            c.motion_blur_adaptive_limit,
+            adaptive,
+        );
     }
-    (n.width, n.height, n.pixel_aspect, n.frame_rate, n.duration) = (width, height, pa, rate, duration);
+    (n.width, n.height, n.pixel_aspect, n.frame_rate, n.duration) =
+        (width, height, pa, rate, duration);
     (n.motion_blur_samples, n.motion_blur_adaptive_limit) = (samples, adaptive);
     Some(n)
 }
@@ -131,7 +179,13 @@ fn repair_comp(name: &str, c: &Comp, notes: &mut Vec<String>) -> Option<Comp> {
 fn repair_solid(name: &str, s: &mut Solid, notes: &mut Vec<String>) {
     let (w, h) = (s.width.clamp(1, MAX_SIZE), s.height.clamp(1, MAX_SIZE));
     if (w, h) != (s.width, s.height) {
-        note(notes, name, "size", format_args!("{} × {} px", s.width, s.height), format_args!("{w} × {h} px"));
+        note(
+            notes,
+            name,
+            "size",
+            format_args!("{} × {} px", s.width, s.height),
+            format_args!("{w} × {h} px"),
+        );
         (s.width, s.height) = (w, h);
     }
     let pa = pixel_aspect(s.pixel_aspect);
@@ -145,7 +199,13 @@ fn repair_footage(name: &str, f: &mut Footage, notes: &mut Vec<String>) {
     // Audio-only footage has no frame (0 × 0).
     let (w, h) = (f.width.min(MAX_SIZE), f.height.min(MAX_SIZE));
     if (w, h) != (f.width, f.height) {
-        note(notes, name, "size", format_args!("{} × {} px", f.width, f.height), format_args!("{w} × {h} px"));
+        note(
+            notes,
+            name,
+            "size",
+            format_args!("{} × {} px", f.width, f.height),
+            format_args!("{w} × {h} px"),
+        );
         (f.width, f.height) = (w, h);
     }
     let pa = pixel_aspect(f.pixel_aspect);
@@ -181,19 +241,51 @@ mod tests {
         assert_eq!(pixel_aspect(0.0), 1.0);
         assert_eq!(pixel_aspect(-2.0), 1.0);
         assert_eq!(pixel_aspect(1e9), MAX_PIXEL_ASPECT);
-        assert_eq!(frame_rate(FrameRate { num: 0, den: 1 }, FrameRate::FPS_25), FrameRate::FPS_25);
-        assert_eq!(frame_rate(FrameRate { num: 24, den: -1 }, FrameRate::FPS_25), FrameRate::FPS_25);
-        assert_eq!(frame_rate(FrameRate::new(1_000_000_000_000_000_000, 1), FrameRate::FPS_25).as_f64(), MAX_FPS);
-        assert_eq!(frame_rate(FrameRate::FPS_29_97, FrameRate::FPS_25), FrameRate::FPS_29_97);
+        assert_eq!(
+            frame_rate(FrameRate { num: 0, den: 1 }, FrameRate::FPS_25),
+            FrameRate::FPS_25
+        );
+        assert_eq!(
+            frame_rate(FrameRate { num: 24, den: -1 }, FrameRate::FPS_25),
+            FrameRate::FPS_25
+        );
+        assert_eq!(
+            frame_rate(
+                FrameRate::new(1_000_000_000_000_000_000, 1),
+                FrameRate::FPS_25
+            )
+            .as_f64(),
+            MAX_FPS
+        );
+        assert_eq!(
+            frame_rate(FrameRate::FPS_29_97, FrameRate::FPS_25),
+            FrameRate::FPS_29_97
+        );
     }
 
     #[test]
     fn add_item_and_reading_a_file_hold_footage_to_the_limits() {
         let mut p = crate::Project::default();
-        let wild = Footage { width: u32::MAX, height: 0, pixel_aspect: 0.0, frame_rate: FrameRate { num: 1, den: 0 }, ..Default::default() };
-        let id = p.add_item("Clip", effectcraft_color::Label::None, None, ItemKind::Footage(wild));
-        let ItemKind::Footage(f) = &p.items[&id].kind else { panic!("footage") };
-        assert_eq!((f.width, f.height, f.pixel_aspect, f.frame_rate), (MAX_SIZE, 0, 1.0, FrameRate::FPS_30));
+        let wild = Footage {
+            width: u32::MAX,
+            height: 0,
+            pixel_aspect: 0.0,
+            frame_rate: FrameRate { num: 1, den: 0 },
+            ..Default::default()
+        };
+        let id = p.add_item(
+            "Clip",
+            effectcraft_color::Label::None,
+            None,
+            ItemKind::Footage(wild),
+        );
+        let ItemKind::Footage(f) = &p.items[&id].kind else {
+            panic!("footage")
+        };
+        assert_eq!(
+            (f.width, f.height, f.pixel_aspect, f.frame_rate),
+            (MAX_SIZE, 0, 1.0, FrameRate::FPS_30)
+        );
         // The same values in a file are corrected, and each correction is reported.
         let mut v: serde_json::Value = serde_json::from_str(&p.to_json()).unwrap();
         let kind = &mut v["items"][id.0.to_string()]["kind"];
@@ -203,8 +295,13 @@ mod tests {
         proxy["frame_rate"] = serde_json::json!({"num": 0, "den": 0});
         v["items"][id.0.to_string()]["proxy"] = serde_json::json!({"footage": proxy});
         let (back, notes) = crate::Project::from_json_repaired(&v.to_string()).unwrap();
-        let ItemKind::Footage(b) = &back.items[&id].kind else { panic!("footage") };
-        assert_eq!((b.width, b.native_rate), (MAX_SIZE, Some(FrameRate::FPS_30)));
+        let ItemKind::Footage(b) = &back.items[&id].kind else {
+            panic!("footage")
+        };
+        assert_eq!(
+            (b.width, b.native_rate),
+            (MAX_SIZE, Some(FrameRate::FPS_30))
+        );
         assert_eq!(
             notes,
             [

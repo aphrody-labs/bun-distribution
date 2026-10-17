@@ -54,10 +54,16 @@ fn pieces(seg: &[Point; 4], tol: f64) -> usize {
     let d2 = ((c1.x - 2.0 * c2.x + p1.x).powi(2) + (c1.y - 2.0 * c2.y + p1.y).powi(2)).sqrt();
     let m = d1.max(d2);
     // Small curves get a proportionally finer tolerance so their area stays accurate.
-    let size = (c1.x - p0.x).hypot(c1.y - p0.y) + (c2.x - c1.x).hypot(c2.y - c1.y) + (p1.x - c2.x).hypot(p1.y - c2.y);
+    let size = (c1.x - p0.x).hypot(c1.y - p0.y)
+        + (c2.x - c1.x).hypot(c2.y - c1.y)
+        + (p1.x - c2.x).hypot(p1.y - c2.y);
     let tol = tol.min(size * 1e-3).max(1e-4);
     let n = (0.75 * m / tol).sqrt().ceil();
-    if n.is_finite() { (n as usize).clamp(1, 1 << 16) } else { 1 }
+    if n.is_finite() {
+        (n as usize).clamp(1, 1 << 16)
+    } else {
+        1
+    }
 }
 
 fn eval(seg: &[Point; 4], t: f64) -> (f64, f64) {
@@ -67,13 +73,23 @@ fn eval(seg: &[Point; 4], t: f64) -> (f64, f64) {
     let b = 3.0 * mt * mt * t;
     let c = 3.0 * mt * t * t;
     let d = t * t * t;
-    (a * p0.x + b * c1.x + c * c2.x + d * p1.x, a * p0.y + b * c1.y + c * c2.y + d * p1.y)
+    (
+        a * p0.x + b * c1.x + c * c2.x + d * p1.x,
+        a * p0.y + b * c1.y + c * c2.y + d * p1.y,
+    )
 }
 
 /// Validate before interactive rendering: finite coordinates and a bounded tessellation and
 /// dash workload. Arc length is bounded by the cubic control polygon, without allocating pixels.
-pub fn validate_shape(path: &Path, stroke: Option<&photocraft_doc::ShapeStroke>) -> Result<(), &'static str> {
-    let knots = path.subpaths.iter().try_fold(0usize, |n, s| n.checked_add(s.knots.len())).ok_or("too many path knots")?;
+pub fn validate_shape(
+    path: &Path,
+    stroke: Option<&photocraft_doc::ShapeStroke>,
+) -> Result<(), &'static str> {
+    let knots = path
+        .subpaths
+        .iter()
+        .try_fold(0usize, |n, s| n.checked_add(s.knots.len()))
+        .ok_or("too many path knots")?;
     if knots > 4096 || path.subpaths.len() > 4096 {
         return Err("shape path exceeds 4096 knots/subpaths");
     }
@@ -82,15 +98,26 @@ pub fn validate_shape(path: &Path, stroke: Option<&photocraft_doc::ShapeStroke>)
     for sub in &path.subpaths {
         for k in &sub.knots {
             for p in [k.anchor, k.in_ctrl, k.out_ctrl] {
-                if !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1_000_000.0 || p.y.abs() > 1_000_000.0 {
+                if !p.x.is_finite()
+                    || !p.y.is_finite()
+                    || p.x.abs() > 1_000_000.0
+                    || p.y.abs() > 1_000_000.0
+                {
                     return Err("shape coordinates must be finite and within ±1000000 px");
                 }
             }
         }
         points = points.saturating_add(1);
         for seg in sub.segments() {
-            points = points.saturating_add(if is_line(&seg) { 1 } else { pieces(&seg, crate::DEFAULT_TOLERANCE) });
-            length += seg.windows(2).map(|w| (w[1].x - w[0].x).hypot(w[1].y - w[0].y)).sum::<f64>();
+            points = points.saturating_add(if is_line(&seg) {
+                1
+            } else {
+                pieces(&seg, crate::DEFAULT_TOLERANCE)
+            });
+            length += seg
+                .windows(2)
+                .map(|w| (w[1].x - w[0].x).hypot(w[1].y - w[0].y))
+                .sum::<f64>();
         }
     }
     if points > 100_000 {
@@ -111,7 +138,10 @@ pub fn validate_shape(path: &Path, stroke: Option<&photocraft_doc::ShapeStroke>)
 
 /// Flattens one subpath. Closed subpaths do not repeat the first point at the end.
 pub fn flatten_subpath(s: &Subpath, tol: f64) -> Polyline {
-    let mut out = Polyline { closed: s.closed, ..Default::default() };
+    let mut out = Polyline {
+        closed: s.closed,
+        ..Default::default()
+    };
     if let Some(k) = s.knots.first() {
         out.push((k.anchor.x, k.anchor.y), true);
     }
@@ -161,7 +191,10 @@ mod tests {
             let p = flatten_subpath(&path.subpaths[0], tol);
             // Kappa circles deviate from the true circle by ~0.027% of r; chords add ≤ tol.
             for w in p.pts.windows(2) {
-                let m = ((w[0].0 + w[1].0) / 2.0 - 100.0, (w[0].1 + w[1].1) / 2.0 - 100.0);
+                let m = (
+                    (w[0].0 + w[1].0) / 2.0 - 100.0,
+                    (w[0].1 + w[1].1) / 2.0 - 100.0,
+                );
                 let r = (m.0 * m.0 + m.1 * m.1).sqrt();
                 assert!(100.0 - r <= tol + 0.03, "tol {tol}: chord mid at r={r}");
             }

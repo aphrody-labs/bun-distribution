@@ -109,13 +109,17 @@ pub struct WorldInstanceSpawner {
 #[derive(Error, Debug)]
 pub enum WorldInstanceSpawnError {
     /// `WorldAsset` contains an unregistered component type.
-    #[error("world contains the unregistered component `{type_path}`. consider adding `#[reflect(Component)]` to your type")]
+    #[error(
+        "world contains the unregistered component `{type_path}`. consider adding `#[reflect(Component)]` to your type"
+    )]
     UnregisteredComponent {
         /// Type of the unregistered component.
         type_path: String,
     },
     /// `WorldAsset` contains an unregistered resource type.
-    #[error("world contains the unregistered resource `{type_path}`. consider adding `#[reflect(Resource)]` to your type")]
+    #[error(
+        "world contains the unregistered resource `{type_path}`. consider adding `#[reflect(Resource)]` to your type"
+    )]
     UnregisteredResource {
         /// Type of the unregistered resource.
         type_path: String,
@@ -140,7 +144,9 @@ pub enum WorldInstanceSpawnError {
         type_path: String,
     },
     /// `WorldAsset` contains a proxy without a represented type.
-    #[error("world contains dynamic type `{type_path}` without a represented type. consider changing this using `set_represented_type`.")]
+    #[error(
+        "world contains dynamic type `{type_path}` without a represented type. consider changing this using `set_represented_type`."
+    )]
     NoRepresentedType {
         /// The dynamic instance type.
         type_path: String,

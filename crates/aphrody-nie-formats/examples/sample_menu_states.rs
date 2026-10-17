@@ -18,7 +18,9 @@ const STATE_NAMES: &[&str] = &[
 ];
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let path = std::env::args().nth(1).ok_or("usage: sample_menu_states <file.g4pkm>")?;
+    let path = std::env::args()
+        .nth(1)
+        .ok_or("usage: sample_menu_states <file.g4pkm>")?;
     let bytes = std::fs::read(path)?;
     let layout = g4pkm::parse(&bytes)?;
     let names: Vec<&str> = layout.bones.iter().map(|b| b.name.as_str()).collect();
@@ -35,16 +37,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let data = sub(".g4mt").ok_or("no .g4mt in the package")?;
     let motion = g4mt::Motion::parse(data).ok_or("unreadable motion")?;
     let targets = g4mt::resolve_targets(&motion.target_hashes, &names);
-    println!("targets\t{}\tresolved to bones\t{}", targets.len(), targets.iter().flatten().count());
+    println!(
+        "targets\t{}\tresolved to bones\t{}",
+        targets.len(),
+        targets.iter().flatten().count()
+    );
 
     let name_of = |hash: u32| -> String {
         STATE_NAMES
             .iter()
             .find(|n| crc32(n.as_bytes()) == hash)
             .map(|n| (*n).to_owned())
-            .or_else(|| motion.clips.iter().find(|c| c.crc32 == hash).map(|c| c.name.clone()))
             .or_else(|| {
-                names.iter().find(|n| crc32(n.as_bytes()) == hash).map(|n| format!("bone:{n}"))
+                motion
+                    .clips
+                    .iter()
+                    .find(|c| c.crc32 == hash)
+                    .map(|c| c.name.clone())
+            })
+            .or_else(|| {
+                names
+                    .iter()
+                    .find(|n| crc32(n.as_bytes()) == hash)
+                    .map(|n| format!("bone:{n}"))
             })
             .unwrap_or_else(|| format!("{hash:08x}"))
     };
@@ -64,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         name_of(binding.clip_hash),
                     );
                 }
-            },
+            }
             Err(error) => println!("g4ra\tunreadable: {error}"),
         }
     }
@@ -91,7 +106,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let sample =
                 |frame: u16| motion.sample_local_trs(data, clip, target, f32::from(frame), rest);
-            let hash = motion.target_hashes.get(usize::from(target)).copied().unwrap_or(0);
+            let hash = motion
+                .target_hashes
+                .get(usize::from(target))
+                .copied()
+                .unwrap_or(0);
             match (sample(clip.start_frame), sample(clip.end_frame)) {
                 (Some(first), Some(last)) => println!(
                     "  target {target} ({}) | first t {:?} s {:?} | last t {:?} s {:?}",

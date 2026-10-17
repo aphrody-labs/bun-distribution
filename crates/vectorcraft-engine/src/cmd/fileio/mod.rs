@@ -45,7 +45,9 @@ mod zip;
 use serde_json::{Value, json};
 
 pub use dxf::{UNSUPPORTED, Unsupported, unsupported};
-pub use encode::{ARTBOARD_PARAMS, ArtboardPick, Encoded, encode, encode_all, encode_with_warnings};
+pub use encode::{
+    ARTBOARD_PARAMS, ArtboardPick, Encoded, encode, encode_all, encode_with_warnings,
+};
 pub(crate) use encode::{anti_alias, background, with_single_artboard};
 pub use export::export_source;
 pub(crate) use export::isolated;
@@ -55,8 +57,8 @@ pub(crate) use load::import_svg;
 pub(crate) use load::native_file;
 pub(crate) use load::source;
 pub use load::{
-    Loaded, RasterImage, ReadFile, detect, file_name, load, load_with, open_bytes, open_bytes_with, open_read, open_template, raster_image,
-    read_for_open,
+    Loaded, RasterImage, ReadFile, detect, file_name, load, load_with, open_bytes, open_bytes_with,
+    open_read, open_template, raster_image, read_for_open,
 };
 pub use load::{losses_summary, overwrite_losses};
 pub(crate) use native::preview_png;
@@ -64,12 +66,14 @@ pub use native::with_compression_pref;
 pub use pdfimport::{LoadOptions, page_document};
 pub(crate) use save::job_for;
 pub use save::{
-    SAVE_FORMATS, SaveJob, SaveMode, SavePlan, StreamWrite, export_folder, save_filters, save_format, save_job, save_plan, save_with,
-    stamp_save_dates, templates_dialog_folder, templates_folder,
+    SAVE_FORMATS, SaveJob, SaveMode, SavePlan, StreamWrite, export_folder, save_filters,
+    save_format, save_job, save_plan, save_with, stamp_save_dates, templates_dialog_folder,
+    templates_folder,
 };
 pub use screens::{PRESETS as SCREEN_PRESETS, ScreenSize, preset_rows as screen_preset_rows};
 pub(crate) use screens::{
-    SHARED_KEYS as SCREEN_SETTINGS_KEYS, check_settings as check_screen_settings, export as export_screens, store_settings as store_screen_settings,
+    SHARED_KEYS as SCREEN_SETTINGS_KEYS, check_settings as check_screen_settings,
+    export as export_screens, store_settings as store_screen_settings,
 };
 pub use svg::options_map as svg_options;
 /// Atomic file writes (a temporary file renamed over the target: a failed write never damages the
@@ -223,7 +227,10 @@ impl Format {
             .iter()
             .map(|o| {
                 let default: Value = serde_json::from_str(o.default).unwrap_or(Value::Null);
-                (o.name.to_string(), json!({"type": o.ty, "default": default, "description": o.description}))
+                (
+                    o.name.to_string(),
+                    json!({"type": o.ty, "default": default, "description": o.description}),
+                )
             })
             .collect();
         json!({
@@ -257,9 +264,18 @@ const RANGE: FormatOption = FormatOption {
     default: "null",
     description: "1-based artboards such as \"1-3, 5\", or \"all\" (wins over artboards and artboard)",
 };
-const SCALE: FormatOption = FormatOption { name: "scale", ty: "number", default: "1", description: "pixels per point (0.01–64)" };
-const QUALITY: FormatOption =
-    FormatOption { name: "quality", ty: "integer", default: "90", description: "JPEG quality 0–100 (the JPEG Options dialog shows 0–10)" };
+const SCALE: FormatOption = FormatOption {
+    name: "scale",
+    ty: "number",
+    default: "1",
+    description: "pixels per point (0.01–64)",
+};
+const QUALITY: FormatOption = FormatOption {
+    name: "quality",
+    ty: "integer",
+    default: "90",
+    description: "JPEG quality 0–100 (the JPEG Options dialog shows 0–10)",
+};
 const USE_ARTBOARDS: FormatOption = FormatOption {
     name: "useArtboards",
     ty: "boolean",
@@ -284,8 +300,12 @@ const ANTI_ALIAS: FormatOption = FormatOption {
     default: "\"art\"",
     description: "none (hard pixel edges), art (smooth edges) or type (smooth, text snapped to whole pixels)",
 };
-const INTERLACED: FormatOption =
-    FormatOption { name: "interlaced", ty: "boolean", default: "false", description: "Adam7 interlacing (the image builds up while it loads)" };
+const INTERLACED: FormatOption = FormatOption {
+    name: "interlaced",
+    ty: "boolean",
+    default: "false",
+    description: "Adam7 interlacing (the image builds up while it loads)",
+};
 const COLOR_MODEL: FormatOption = FormatOption {
     name: "colorModel",
     ty: "string",
@@ -298,7 +318,12 @@ const METHOD: FormatOption = FormatOption {
     default: "\"baseline\"",
     description: "baseline (standard), optimized (smaller Huffman tables) or progressive (builds up in scans)",
 };
-const SCANS: FormatOption = FormatOption { name: "scans", ty: "integer", default: "3", description: "progressive scans, 3–5" };
+const SCANS: FormatOption = FormatOption {
+    name: "scans",
+    ty: "integer",
+    default: "3",
+    description: "progressive scans, 3–5",
+};
 const EMBED_ICC: FormatOption = FormatOption {
     name: "embedIcc",
     ty: "boolean",
@@ -312,8 +337,12 @@ const IMAGE_MAP: FormatOption = FormatOption {
     description: "none, client (an HTML page with <map>, <stem>.html) or server (an NCSA <stem>.map): the areas of objects with a URL and an Image Map shape (attributes.set)",
 };
 
-const COLORS: FormatOption =
-    FormatOption { name: "colors", ty: "integer", default: "256", description: "most palette entries, 2–256 (the transparent one included)" };
+const COLORS: FormatOption = FormatOption {
+    name: "colors",
+    ty: "integer",
+    default: "256",
+    description: "most palette entries, 2–256 (the transparent one included)",
+};
 const REDUCTION: FormatOption = FormatOption {
     name: "reduction",
     ty: "string",
@@ -326,7 +355,12 @@ const DITHER: FormatOption = FormatOption {
     default: "\"diffusion\"",
     description: "none, diffusion (Floyd–Steinberg), pattern (8×8 ordered) or noise",
 };
-const DITHER_AMOUNT: FormatOption = FormatOption { name: "ditherAmount", ty: "integer", default: "100", description: "dither strength 0–100" };
+const DITHER_AMOUNT: FormatOption = FormatOption {
+    name: "ditherAmount",
+    ty: "integer",
+    default: "100",
+    description: "dither strength 0–100",
+};
 const TRANSPARENCY: FormatOption = FormatOption {
     name: "transparency",
     ty: "boolean",
@@ -345,8 +379,12 @@ const LOSSLESS: FormatOption = FormatOption {
     default: "true",
     description: "lossless WebP; false asks for lossy, which isn't available yet (written lossless, with a warning)",
 };
-const WEBP_QUALITY: FormatOption =
-    FormatOption { name: "quality", ty: "integer", default: "90", description: "lossy quality 0–100 (for when lossy WebP is available)" };
+const WEBP_QUALITY: FormatOption = FormatOption {
+    name: "quality",
+    ty: "integer",
+    default: "90",
+    description: "lossy quality 0–100 (for when lossy WebP is available)",
+};
 /// The options of the palette formats (PNG-8, GIF).
 const PALETTE_OPTIONS: &[FormatOption] = &[
     ARTBOARD,
@@ -366,17 +404,38 @@ const PALETTE_OPTIONS: &[FormatOption] = &[
     MATTE,
 ];
 
-const LZW: FormatOption = FormatOption { name: "lzw", ty: "boolean", default: "true", description: "LZW compression (lossless, smaller files)" };
+const LZW: FormatOption = FormatOption {
+    name: "lzw",
+    ty: "boolean",
+    default: "true",
+    description: "LZW compression (lossless, smaller files)",
+};
 const BYTE_ORDER: FormatOption = FormatOption {
     name: "byteOrder",
     ty: "string",
     default: "\"little\"",
     description: "the order of the bytes in the file's numbers: little (II, as on PCs) or big (MM)",
 };
-const TIFF_OPTIONS: &[FormatOption] =
-    &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, COLOR_MODEL, LZW, BYTE_ORDER, EMBED_ICC];
-const BMP_COLOR_MODEL: FormatOption =
-    FormatOption { name: "colorModel", ty: "string", default: "\"rgb\"", description: "rgb or gray (greys at every depth)" };
+const TIFF_OPTIONS: &[FormatOption] = &[
+    ARTBOARD,
+    ARTBOARDS,
+    RANGE,
+    USE_ARTBOARDS,
+    PPI,
+    SCALE,
+    BACKGROUND,
+    ANTI_ALIAS,
+    COLOR_MODEL,
+    LZW,
+    BYTE_ORDER,
+    EMBED_ICC,
+];
+const BMP_COLOR_MODEL: FormatOption = FormatOption {
+    name: "colorModel",
+    ty: "string",
+    default: "\"rgb\"",
+    description: "rgb or gray (greys at every depth)",
+};
 const BMP_DEPTH: FormatOption = FormatOption {
     name: "depth",
     ty: "integer",
@@ -389,8 +448,12 @@ const FILE_FORMAT: FormatOption = FormatOption {
     default: "\"windows\"",
     description: "windows, or os2 (1, 4, 8 or 24 bits, uncompressed, rows bottom-up)",
 };
-const RLE: FormatOption =
-    FormatOption { name: "rle", ty: "boolean", default: "false", description: "run-length encode a 4- or 8-bit windows bitmap (RLE4, RLE8)" };
+const RLE: FormatOption = FormatOption {
+    name: "rle",
+    ty: "boolean",
+    default: "false",
+    description: "run-length encode a 4- or 8-bit windows bitmap (RLE4, RLE8)",
+};
 const FLIP_ROWS: FormatOption = FormatOption {
     name: "flipRows",
     ty: "boolean",
@@ -421,7 +484,17 @@ const TGA_DEPTH: FormatOption = FormatOption {
     default: "24",
     description: "bits per pixel: 16 (one-bit alpha), 24 (flattened on white) or 32 (keeps transparency)",
 };
-const TGA_OPTIONS: &[FormatOption] = &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, TGA_DEPTH];
+const TGA_OPTIONS: &[FormatOption] = &[
+    ARTBOARD,
+    ARTBOARDS,
+    RANGE,
+    USE_ARTBOARDS,
+    PPI,
+    SCALE,
+    BACKGROUND,
+    ANTI_ALIAS,
+    TGA_DEPTH,
+];
 const PSD_LAYERS: FormatOption = FormatOption {
     name: "layers",
     ty: "boolean",
@@ -457,8 +530,23 @@ const PSD_OPTIONS: &[FormatOption] = &[
 ];
 
 /// A format `document.open` reads but nothing writes yet.
-const fn reader(id: &'static str, label: &'static str, extensions: &'static [&'static str], mime: &'static str, raster: bool) -> Format {
-    Format { id, label, extensions, mime, read: true, write: false, raster, options: &[] }
+const fn reader(
+    id: &'static str,
+    label: &'static str,
+    extensions: &'static [&'static str],
+    mime: &'static str,
+    raster: bool,
+) -> Format {
+    Format {
+        id,
+        label,
+        extensions,
+        mime,
+        read: true,
+        write: false,
+        raster,
+        options: &[],
+    }
 }
 
 /// Every format VectorCraft reads or writes. Append-only: new formats go at the end.
@@ -466,14 +554,26 @@ pub const FORMATS: &[Format] = &[
     Format {
         id: "vectorcraft",
         label: "VectorCraft",
-        extensions: &[vectorcraft_format::EXTENSION, vectorcraft_format::LEGACY_EXTENSION],
+        extensions: &[
+            vectorcraft_format::EXTENSION,
+            vectorcraft_format::LEGACY_EXTENSION,
+        ],
         mime: "application/json",
         read: true,
         write: true,
         raster: false,
         options: native::OPTIONS,
     },
-    Format { id: "svg", label: "SVG", extensions: &["svg"], mime: "image/svg+xml", read: true, write: true, raster: false, options: svg::OPTIONS },
+    Format {
+        id: "svg",
+        label: "SVG",
+        extensions: &["svg"],
+        mime: "image/svg+xml",
+        read: true,
+        write: true,
+        raster: false,
+        options: svg::OPTIONS,
+    },
     Format {
         id: "svgz",
         label: "SVG Compressed",
@@ -484,7 +584,16 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: svg::OPTIONS,
     },
-    Format { id: "pdf", label: "PDF", extensions: &["pdf"], mime: "application/pdf", read: true, write: true, raster: false, options: pdf::OPTIONS },
+    Format {
+        id: "pdf",
+        label: "PDF",
+        extensions: &["pdf"],
+        mime: "application/pdf",
+        read: true,
+        write: true,
+        raster: false,
+        options: pdf::OPTIONS,
+    },
     Format {
         id: "ai",
         label: "PDF-compatible .ai",
@@ -496,7 +605,13 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: native::AI_OPTIONS,
     },
-    reader("ait", "PDF-compatible .ait template", &["ait"], "application/pdf", false),
+    reader(
+        "ait",
+        "PDF-compatible .ait template",
+        &["ait"],
+        "application/pdf",
+        false,
+    ),
     Format {
         id: "png",
         label: "PNG",
@@ -505,7 +620,17 @@ pub const FORMATS: &[Format] = &[
         read: true,
         write: true,
         raster: true,
-        options: &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, INTERLACED],
+        options: &[
+            ARTBOARD,
+            ARTBOARDS,
+            RANGE,
+            USE_ARTBOARDS,
+            PPI,
+            SCALE,
+            BACKGROUND,
+            ANTI_ALIAS,
+            INTERLACED,
+        ],
     },
     Format {
         id: "jpg",
@@ -532,7 +657,16 @@ pub const FORMATS: &[Format] = &[
             IMAGE_MAP,
         ],
     },
-    Format { id: "gif", label: "GIF", extensions: &["gif"], mime: "image/gif", read: true, write: true, raster: true, options: PALETTE_OPTIONS },
+    Format {
+        id: "gif",
+        label: "GIF",
+        extensions: &["gif"],
+        mime: "image/gif",
+        read: true,
+        write: true,
+        raster: true,
+        options: PALETTE_OPTIONS,
+    },
     Format {
         id: "webp",
         label: "WebP",
@@ -541,7 +675,18 @@ pub const FORMATS: &[Format] = &[
         read: true,
         write: true,
         raster: true,
-        options: &[ARTBOARD, ARTBOARDS, RANGE, USE_ARTBOARDS, PPI, SCALE, BACKGROUND, ANTI_ALIAS, LOSSLESS, WEBP_QUALITY],
+        options: &[
+            ARTBOARD,
+            ARTBOARDS,
+            RANGE,
+            USE_ARTBOARDS,
+            PPI,
+            SCALE,
+            BACKGROUND,
+            ANTI_ALIAS,
+            LOSSLESS,
+            WEBP_QUALITY,
+        ],
     },
     Format {
         id: "tiff",
@@ -553,7 +698,16 @@ pub const FORMATS: &[Format] = &[
         raster: true,
         options: TIFF_OPTIONS,
     },
-    Format { id: "bmp", label: "BMP", extensions: &["bmp"], mime: "image/bmp", read: true, write: true, raster: true, options: BMP_OPTIONS },
+    Format {
+        id: "bmp",
+        label: "BMP",
+        extensions: &["bmp"],
+        mime: "image/bmp",
+        read: true,
+        write: true,
+        raster: true,
+        options: BMP_OPTIONS,
+    },
     Format {
         id: "template",
         label: "VectorCraft Template",
@@ -564,9 +718,36 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: native::OPTIONS,
     },
-    Format { id: "png8", label: "PNG-8", extensions: &["png"], mime: "image/png", read: false, write: true, raster: true, options: PALETTE_OPTIONS },
-    Format { id: "txt", label: "Text", extensions: TEXT_EXTS, mime: "text/plain", read: false, write: true, raster: false, options: text::OPTIONS },
-    Format { id: "dxf", label: "DXF", extensions: &["dxf"], mime: "image/vnd.dxf", read: true, write: true, raster: false, options: dxf::OPTIONS },
+    Format {
+        id: "png8",
+        label: "PNG-8",
+        extensions: &["png"],
+        mime: "image/png",
+        read: false,
+        write: true,
+        raster: true,
+        options: PALETTE_OPTIONS,
+    },
+    Format {
+        id: "txt",
+        label: "Text",
+        extensions: TEXT_EXTS,
+        mime: "text/plain",
+        read: false,
+        write: true,
+        raster: false,
+        options: text::OPTIONS,
+    },
+    Format {
+        id: "dxf",
+        label: "DXF",
+        extensions: &["dxf"],
+        mime: "image/vnd.dxf",
+        read: true,
+        write: true,
+        raster: false,
+        options: dxf::OPTIONS,
+    },
     Format {
         id: "eps",
         label: "EPS",
@@ -577,13 +758,55 @@ pub const FORMATS: &[Format] = &[
         raster: false,
         options: eps::OPTIONS,
     },
-    Format { id: "emf", label: "EMF", extensions: &["emf"], mime: "image/emf", read: true, write: true, raster: false, options: metafile::OPTIONS },
-    Format { id: "wmf", label: "WMF", extensions: &["wmf"], mime: "image/wmf", read: true, write: true, raster: false, options: metafile::OPTIONS },
-    Format { id: "tga", label: "Targa", extensions: &["tga"], mime: "image/x-tga", read: false, write: true, raster: true, options: TGA_OPTIONS },
-    Format { id: "psd", label: "PSD", extensions: &["psd"], mime: "image/x-psd", read: true, write: true, raster: true, options: PSD_OPTIONS },
+    Format {
+        id: "emf",
+        label: "EMF",
+        extensions: &["emf"],
+        mime: "image/emf",
+        read: true,
+        write: true,
+        raster: false,
+        options: metafile::OPTIONS,
+    },
+    Format {
+        id: "wmf",
+        label: "WMF",
+        extensions: &["wmf"],
+        mime: "image/wmf",
+        read: true,
+        write: true,
+        raster: false,
+        options: metafile::OPTIONS,
+    },
+    Format {
+        id: "tga",
+        label: "Targa",
+        extensions: &["tga"],
+        mime: "image/x-tga",
+        read: false,
+        write: true,
+        raster: true,
+        options: TGA_OPTIONS,
+    },
+    Format {
+        id: "psd",
+        label: "PSD",
+        extensions: &["psd"],
+        mime: "image/x-psd",
+        read: true,
+        write: true,
+        raster: true,
+        options: PSD_OPTIONS,
+    },
     // Affinity Photo's `.afphoto` opens by its content but isn't listed: Finder shouldn't offer a
     // vector app for a raster editor's documents.
-    reader("affinity", "Affinity", &["af", "afdesign", "afpub"], "application/vnd.affinity", false),
+    reader(
+        "affinity",
+        "Affinity",
+        &["af", "afdesign", "afpub"],
+        "application/vnd.affinity",
+        false,
+    ),
     // Photoshop's large document format: read like a PSD (its merged image), never written.
     reader("psb", "PSB", &["psb"], "image/x-psb", true),
 ];
@@ -626,7 +849,11 @@ pub const UNASSOCIATED_EXTS: &[&str] = &["psd", "psb"];
 /// `.png` with PNG, so `.png` comes once), in [`FORMATS`] order.
 pub fn export_extensions() -> Vec<&'static str> {
     let mut v: Vec<&'static str> = Vec::new();
-    for e in FORMATS.iter().filter(|f| f.write).filter_map(|f| f.extensions.first()) {
+    for e in FORMATS
+        .iter()
+        .filter(|f| f.write)
+        .filter_map(|f| f.extensions.first())
+    {
         if !v.contains(e) {
             v.push(e);
         }
@@ -669,7 +896,10 @@ pub const PLACE_EXTS: &[&str] = &[
 
 /// One dialog filter per readable format.
 fn format_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
-    FORMATS.iter().filter(|f| f.read).map(|f| (f.label, f.extensions))
+    FORMATS
+        .iter()
+        .filter(|f| f.read)
+        .map(|f| (f.label, f.extensions))
 }
 
 /// Open-dialog filters: "All readable files" first, then one per readable format, then swatch
@@ -678,11 +908,23 @@ fn format_filters() -> impl Iterator<Item = (&'static str, &'static [&'static st
 pub fn open_filters() -> impl Iterator<Item = (&'static str, &'static [&'static str])> {
     std::iter::once(("All readable files", OPEN_EXTS))
         .chain(format_filters())
-        .chain(std::iter::once(("Swatch libraries", super::swatchlib::LIBRARY_EXTS)))
+        .chain(std::iter::once((
+            "Swatch libraries",
+            super::swatchlib::LIBRARY_EXTS,
+        )))
         .chain(std::iter::once(("Libraries", super::library::LIBRARY_EXTS)))
-        .chain(std::iter::once(("Flattener presets", super::flatten::PRESET_EXTS)))
-        .chain(std::iter::once(("PDF presets", super::pdfcmds::PRESET_EXTS)))
-        .chain(std::iter::once(("Print presets", super::printpresets::PRESET_EXTS)))
+        .chain(std::iter::once((
+            "Flattener presets",
+            super::flatten::PRESET_EXTS,
+        )))
+        .chain(std::iter::once((
+            "PDF presets",
+            super::pdfcmds::PRESET_EXTS,
+        )))
+        .chain(std::iter::once((
+            "Print presets",
+            super::printpresets::PRESET_EXTS,
+        )))
         .chain(std::iter::once(("Scripts", super::scripts::EXTS)))
         .chain(std::iter::once(("Plug-ins", super::plugin::EXTS)))
 }
@@ -697,34 +939,61 @@ pub fn place_filters() -> impl Iterator<Item = (&'static str, &'static [&'static
 /// A format by id or extension (any case, leading dot allowed; `jpeg` finds `jpg`).
 pub fn format(id_or_ext: &str) -> Option<&'static Format> {
     let k = id_or_ext.trim_start_matches('.').to_ascii_lowercase();
-    FORMATS.iter().find(|f| f.id == k).or_else(|| FORMATS.iter().find(|f| f.extensions.contains(&k.as_str())))
+    FORMATS
+        .iter()
+        .find(|f| f.id == k)
+        .or_else(|| FORMATS.iter().find(|f| f.extensions.contains(&k.as_str())))
 }
 
 /// The lower-case extension of a file name or path (empty when it has none).
 pub fn extension(name: &str) -> String {
-    std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
+    std::path::Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default()
 }
 
 /// A file name or path without its folder and extension (`/a/Poster.svg` → `Poster`).
 pub fn file_stem(name: &str) -> String {
-    std::path::Path::new(name).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| name.to_string())
+    std::path::Path::new(name)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| name.to_string())
 }
 
 /// The format a file name's extension names.
 pub fn format_for_name(name: &str) -> Option<&'static Format> {
-    Some(extension(name)).filter(|e| !e.is_empty()).and_then(|e| format(&e))
+    Some(extension(name))
+        .filter(|e| !e.is_empty())
+        .and_then(|e| format(&e))
 }
 
 /// The format to write: `format` (an id or extension), else the path's extension, else PNG.
-pub fn writable_format(format_param: Option<&str>, path: Option<&str>) -> std::result::Result<&'static Format, String> {
+pub fn writable_format(
+    format_param: Option<&str>,
+    path: Option<&str>,
+) -> std::result::Result<&'static Format, String> {
     // Formats that can't be written say what to use instead.
     let unknown = |what: String, key: &str| unsupported(key).map_or(what, |u| u.hint.to_string());
     let f = match (format_param, path.map(extension).filter(|e| !e.is_empty())) {
-        (Some(f), _) => format(f).ok_or_else(|| unknown(format!("unknown format `{f}` (see document.formats)"), f))?,
-        (None, Some(e)) => format(&e).ok_or_else(|| unknown(format!("unknown extension `.{e}`: pass `format` (see document.formats)"), &e))?,
+        (Some(f), _) => format(f)
+            .ok_or_else(|| unknown(format!("unknown format `{f}` (see document.formats)"), f))?,
+        (None, Some(e)) => format(&e).ok_or_else(|| {
+            unknown(
+                format!("unknown extension `.{e}`: pass `format` (see document.formats)"),
+                &e,
+            )
+        })?,
         (None, None) => format("png").ok_or("no PNG encoder")?,
     };
-    if f.write { Ok(f) } else { Err(format!("{} files can be opened but not written (see document.formats)", f.label)) }
+    if f.write {
+        Ok(f)
+    } else {
+        Err(format!(
+            "{} files can be opened but not written (see document.formats)",
+            f.label
+        ))
+    }
 }
 
 /// [`writable_format`] for command `cmd`.
@@ -733,7 +1002,13 @@ fn writable(cmd: &str, format_param: Option<&str>, path: Option<&str>) -> Result
 }
 
 fn formats(_: &mut Session, _: &Value) -> Result<Value> {
-    let ids = |pick: fn(&Format) -> bool| FORMATS.iter().filter(|f| pick(f)).map(|f| f.id).collect::<Vec<_>>();
+    let ids = |pick: fn(&Format) -> bool| {
+        FORMATS
+            .iter()
+            .filter(|f| pick(f))
+            .map(|f| f.id)
+            .collect::<Vec<_>>()
+    };
     Ok(json!({
         "formats": FORMATS.iter().map(Format::to_json).collect::<Vec<_>>(),
         "readable": ids(|f| f.read),
@@ -773,11 +1048,16 @@ pub(crate) fn read_file(path: &str) -> Result<Vec<u8>> {
 pub(crate) fn read_file_head(path: &str, max: usize) -> Result<Vec<u8>> {
     use std::io::Read;
     may_read(path)?;
-    if !std::fs::metadata(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?.is_file() {
+    if !std::fs::metadata(path)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?
+        .is_file()
+    {
         return Err(EngineError::Other(format!("{path}: not a file")));
     }
     let mut out = vec![];
-    std::fs::File::open(path).and_then(|f| f.take(max as u64).read_to_end(&mut out)).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    std::fs::File::open(path)
+        .and_then(|f| f.take(max as u64).read_to_end(&mut out))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(out)
 }
 
@@ -785,14 +1065,19 @@ pub(crate) fn read_file_head(path: &str, max: usize) -> Result<Vec<u8>> {
 pub(crate) fn write_file(path: &str, bytes: &[u8]) -> Result<()> {
     may_write(path)?;
     // Never a half-written file: see [`write_atomic`].
-    write_atomic(std::path::Path::new(path), bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))
+    write_atomic(std::path::Path::new(path), bytes)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
 
 /// [`write_file`] with what `fill` writes into the file (a save streamed into it).
 #[cfg(not(target_arch = "wasm32"))]
-pub fn write_file_with(path: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<()> {
+pub fn write_file_with(
+    path: &str,
+    fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>,
+) -> Result<()> {
     may_write(path)?;
-    vectorcraft_format::write_atomic_with(std::path::Path::new(path), |f| fill(f)).map_err(|e| EngineError::Other(format!("{path}: {e}")))
+    vectorcraft_format::write_atomic_with(std::path::Path::new(path), |f| fill(f))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -808,8 +1093,14 @@ pub(crate) fn write_new_file(path: &str, bytes: &[u8]) -> Result<()> {
     use std::io::Write as _;
     may_write(path)?;
     let err = |e: std::io::Error| EngineError::Other(format!("{path}: {e}"));
-    let mut f = std::fs::OpenOptions::new().write(true).create_new(true).open(path).map_err(err)?;
-    let written = f.write_all(bytes).and_then(|()| vectorcraft_format::sync_file(&f));
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(err)?;
+    let written = f
+        .write_all(bytes)
+        .and_then(|()| vectorcraft_format::sync_file(&f));
     drop(f);
     written.map_err(|e| {
         // Best effort: the partly written file is all there is to clean up.
@@ -845,10 +1136,19 @@ pub(crate) fn copy_new(
     same: impl Fn(&std::path::Path, &std::fs::Metadata) -> bool,
 ) -> std::io::Result<Option<Placed>> {
     use std::io::ErrorKind;
-    let (Some(name), Some(stem)) = (from.file_name(), from.file_stem()) else { return Err(ErrorKind::InvalidInput.into()) };
-    let ext = from.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+    let (Some(name), Some(stem)) = (from.file_name(), from.file_stem()) else {
+        return Err(ErrorKind::InvalidInput.into());
+    };
+    let ext = from
+        .extension()
+        .map(|e| format!(".{}", e.to_string_lossy()))
+        .unwrap_or_default();
     for n in 1..=MAX_COPY_NUMBER {
-        let to = if n == 1 { dir.join(name) } else { dir.join(format!("{} {n}{ext}", stem.to_string_lossy())) };
+        let to = if n == 1 {
+            dir.join(name)
+        } else {
+            dir.join(format!("{} {n}{ext}", stem.to_string_lossy()))
+        };
         match std::fs::symlink_metadata(&to) {
             Err(e) if e.kind() == ErrorKind::NotFound => match create(&to) {
                 Ok(()) => return Ok(Some(Placed::Copied(to))),
@@ -867,7 +1167,11 @@ pub(crate) fn copy_new(
 const LIST_MAX: usize = 5000;
 
 fn file_list(_: &mut Session, p: &Value) -> Result<Value> {
-    let path = p.get("path").and_then(Value::as_str).filter(|s| !s.is_empty()).ok_or_else(|| bad("file.list", "missing `path`"))?;
+    let path = p
+        .get("path")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("file.list", "missing `path`"))?;
     let (entries, truncated) = list_dir(path, LIST_MAX)?;
     Ok(json!({ "path": absolute_path(path), "entries": entries, "truncated": truncated }))
 }
@@ -910,8 +1214,14 @@ fn list_dir(_: &str, _: usize) -> Result<(Vec<Value>, bool)> {
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn file_stamp(path: &str) -> Option<(u64, Option<u64>)> {
     may_read(path).ok()?;
-    let m = std::fs::metadata(path).ok().filter(std::fs::Metadata::is_file)?;
-    let modified = m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_millis() as u64);
+    let m = std::fs::metadata(path)
+        .ok()
+        .filter(std::fs::Metadata::is_file)?;
+    let modified = m
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64);
     Some((m.len(), modified))
 }
 
@@ -921,7 +1231,9 @@ pub(crate) fn file_stamp(path: &str) -> Option<(u64, Option<u64>)> {
 pub(crate) fn file_created(path: &str) -> Option<u64> {
     may_read(path).ok()?;
     let t = std::fs::metadata(path).ok()?.created().ok()?;
-    t.duration_since(std::time::UNIX_EPOCH).ok().map(|d| d.as_millis() as u64)
+    t.duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_millis() as u64)
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -936,7 +1248,8 @@ pub(crate) fn absolute_path(path: &str) -> String {
     if std::path::Path::new(path).is_absolute() {
         return path.to_string();
     }
-    std::path::absolute(path).map_or_else(|_| path.to_string(), |p| p.to_string_lossy().into_owned())
+    std::path::absolute(path)
+        .map_or_else(|_| path.to_string(), |p| p.to_string_lossy().into_owned())
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -951,7 +1264,9 @@ pub(crate) fn absolute_path(path: &str) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn no_fs(path: &str) -> EngineError {
-    EngineError::Other(format!("{path}: no file system here (pass dataBase64 to open; omit the path to get dataBase64)"))
+    EngineError::Other(format!(
+        "{path}: no file system here (pass dataBase64 to open; omit the path to get dataBase64)"
+    ))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -970,7 +1285,10 @@ pub(crate) fn write_file(path: &str, _: &[u8]) -> Result<()> {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn write_file_with(path: &str, _: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<()> {
+pub fn write_file_with(
+    path: &str,
+    _: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>,
+) -> Result<()> {
     Err(no_fs(path))
 }
 
@@ -988,18 +1306,34 @@ pub(crate) fn write_new_file(path: &str, _: &[u8]) -> Result<()> {
 /// `-`, `Artboard-N` when unnamed, and `-2`, `-3`… after a name already used (compared without
 /// case: `Icon` and `icon` are one file on most desktop file systems).
 pub fn artboard_file_names(doc: &vectorcraft_doc::Document, boards: &[usize]) -> Vec<String> {
-    unique_file_names(boards.iter().map(|&b| (doc.artboards.get(b).map_or("", |a| a.name.as_str()), format!("Artboard-{}", b + 1))))
+    unique_file_names(boards.iter().map(|&b| {
+        (
+            doc.artboards.get(b).map_or("", |a| a.name.as_str()),
+            format!("Artboard-{}", b + 1),
+        )
+    }))
 }
 
 /// File-name parts for `(name, fallback)` pairs (artboards, assets): the name with unsafe
 /// characters as `-`, the fallback when it is empty, and `-2`, `-3`… after a name already used
 /// (compared without case).
-pub(crate) fn unique_file_names<'a>(names: impl IntoIterator<Item = (&'a str, String)>) -> Vec<String> {
+pub(crate) fn unique_file_names<'a>(
+    names: impl IntoIterator<Item = (&'a str, String)>,
+) -> Vec<String> {
     let mut taken = std::collections::HashSet::new();
     names
         .into_iter()
         .map(|(name, fallback)| {
-            let mut base: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect();
+            let mut base: String = name
+                .chars()
+                .map(|c| {
+                    if c.is_alphanumeric() || c == '-' || c == '_' {
+                        c
+                    } else {
+                        '-'
+                    }
+                })
+                .collect();
             if base.is_empty() {
                 base = fallback;
             }
@@ -1018,7 +1352,13 @@ pub(crate) fn unique_file_names<'a>(names: impl IntoIterator<Item = (&'a str, St
 /// Write an export's files for the destination `path` → `{path, bytes, files?, linked?, …extra}`
 /// (`files`: every file when there are several; `linked`: the images it links to); with no path
 /// → the same with `dataBase64` and `{name, dataBase64}` rows, named after `name`.
-fn write_encoded(path: Option<&str>, name: &str, doc: &vectorcraft_doc::Document, enc: &Encoded, extra: Value) -> Result<Value> {
+fn write_encoded(
+    path: Option<&str>,
+    name: &str,
+    doc: &vectorcraft_doc::Document,
+    enc: &Encoded,
+    extra: Value,
+) -> Result<Value> {
     let files = enc.named(doc, path.unwrap_or(name));
     let (main, linked) = files.split_at(enc.files.len());
     let row = |(name, bytes): &(String, std::borrow::Cow<[u8]>)| match path {
@@ -1030,10 +1370,14 @@ fn write_encoded(path: Option<&str>, name: &str, doc: &vectorcraft_doc::Document
             write_file(p, bytes)?;
         }
     }
-    let Some((first, bytes)) = main.first() else { return Err(EngineError::Other("the export wrote no file".into())) };
+    let Some((first, bytes)) = main.first() else {
+        return Err(EngineError::Other("the export wrote no file".into()));
+    };
     let mut out = match path {
         Some(_) => json!({ "path": first, "bytes": bytes.len() }),
-        None => json!({ "dataBase64": vectorcraft_format::base64_encode(bytes), "bytes": bytes.len() }),
+        None => {
+            json!({ "dataBase64": vectorcraft_format::base64_encode(bytes), "bytes": bytes.len() })
+        }
     };
     if main.len() > 1 {
         out["files"] = main.iter().map(row).collect();
@@ -1054,7 +1398,10 @@ pub(crate) fn merge(mut a: Value, b: Value) -> Value {
 
 /// A file name for bytes handed back without a path: the document's title with `ext`.
 pub(crate) fn default_name(doc: &vectorcraft_doc::Document, ext: &str) -> String {
-    let stem = std::path::Path::new(&doc.title).file_stem().map(|s| s.to_string_lossy().into_owned()).filter(|s| !s.is_empty());
+    let stem = std::path::Path::new(&doc.title)
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .filter(|s| !s.is_empty());
     format!("{}.{ext}", stem.as_deref().unwrap_or("Untitled"))
 }
 
@@ -1065,7 +1412,9 @@ pub(crate) fn write_or_return(path: Option<&str>, bytes: &[u8], extra: Value) ->
             write_file(path, bytes)?;
             json!({ "path": path, "bytes": bytes.len() })
         }
-        None => json!({ "dataBase64": vectorcraft_format::base64_encode(bytes), "bytes": bytes.len() }),
+        None => {
+            json!({ "dataBase64": vectorcraft_format::base64_encode(bytes), "bytes": bytes.len() })
+        }
     };
     Ok(merge(out, extra))
 }

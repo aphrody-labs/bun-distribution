@@ -205,7 +205,11 @@ impl ISslConnection {
                     "SetVerifyOption",
                 ),
                 (3, Some(ISslConnection::set_io_mode_handler), "SetIoMode"),
-                (4, Some(Self::get_socket_descriptor_handler), "GetSocketDescriptor"),
+                (
+                    4,
+                    Some(Self::get_socket_descriptor_handler),
+                    "GetSocketDescriptor",
+                ),
                 (5, None, "GetHostName"),
                 (6, None, "GetVerifyOption"),
                 (7, Some(Self::get_io_mode_handler), "GetIoMode"),
@@ -220,23 +224,47 @@ impl ISslConnection {
                 (12, Some(ISslConnection::pending_handler), "Pending"),
                 (13, None, "Peek"),
                 (14, Some(Self::poll_handler), "Poll"),
-                (15, Some(Self::get_verify_cert_error_handler), "GetVerifyCertError"),
-                (16, Some(Self::get_needed_server_cert_buffer_size_handler), "GetNeededServerCertBufferSize"),
+                (
+                    15,
+                    Some(Self::get_verify_cert_error_handler),
+                    "GetVerifyCertError",
+                ),
+                (
+                    16,
+                    Some(Self::get_needed_server_cert_buffer_size_handler),
+                    "GetNeededServerCertBufferSize",
+                ),
                 (
                     17,
                     Some(ISslConnection::set_session_cache_mode_handler),
                     "SetSessionCacheMode",
                 ),
-                (18, Some(Self::get_session_cache_mode_handler), "GetSessionCacheMode"),
-                (19, Some(Self::flush_session_cache_handler), "FlushSessionCache"),
+                (
+                    18,
+                    Some(Self::get_session_cache_mode_handler),
+                    "GetSessionCacheMode",
+                ),
+                (
+                    19,
+                    Some(Self::flush_session_cache_handler),
+                    "FlushSessionCache",
+                ),
                 (20, None, "SetRenegotiationMode"),
                 (21, None, "GetRenegotiationMode"),
                 (22, Some(ISslConnection::set_option_handler), "SetOption"),
                 (23, Some(Self::get_option_handler), "GetOption"),
                 (24, None, "GetVerifyCertErrors"),
                 (25, None, "GetCipherInfo"),
-                (26, Some(Self::set_next_alpn_proto_handler), "SetNextAlpnProto"),
-                (27, Some(Self::get_next_alpn_proto_handler), "GetNextAlpnProto"),
+                (
+                    26,
+                    Some(Self::set_next_alpn_proto_handler),
+                    "SetNextAlpnProto",
+                ),
+                (
+                    27,
+                    Some(Self::get_next_alpn_proto_handler),
+                    "GetNextAlpnProto",
+                ),
                 (28, None, "SetDtlsSocketDescriptor"),
                 (29, None, "GetDtlsHandshakeTimeout"),
                 (30, None, "SetPrivateOption"),
@@ -338,7 +366,13 @@ impl ISslConnection {
     }
 
     fn get_socket_descriptor_impl(&self) -> Result<u32, ResultCode> {
-        let socket = self.state.lock().unwrap().socket.clone().ok_or(RESULT_NO_SOCKET)?;
+        let socket = self
+            .state
+            .lock()
+            .unwrap()
+            .socket
+            .clone()
+            .ok_or(RESULT_NO_SOCKET)?;
         // Eden forwards the native handle, explicitly truncated to the guest
         // u32 output (including INVALID_SOCKET), not the BSD descriptor index.
         let fd = socket.lock().unwrap().get_fd();
@@ -463,7 +497,10 @@ impl ISslConnection {
         rb.push_result(RESULT_SUCCESS);
     }
 
-    fn get_needed_server_cert_buffer_size_handler(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_needed_server_cert_buffer_size_handler(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         log::warn!("ISslConnection::GetNeededServerCertBufferSize (STUBBED)");
         let mut rb = ResponseBuilder::new(ctx, 3, 0, 0);
         rb.push_result(RESULT_SUCCESS);
@@ -647,7 +684,10 @@ impl ISslConnection {
     fn get_next_alpn_proto_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let state = service.state.lock().unwrap();
-        let size = state.next_alpn_proto.len().min(ctx.get_write_buffer_size(0));
+        let size = state
+            .next_alpn_proto
+            .len()
+            .min(ctx.get_write_buffer_size(0));
         if size != 0 {
             ctx.write_buffer(&state.next_alpn_proto[..size], 0);
         }
@@ -746,7 +786,11 @@ impl ISslContext {
                 ),
                 (6, None, "RemoveServerPki"),
                 (7, None, "RemoveClientPki"),
-                (8, Some(Self::register_internal_pki_handler), "RegisterInternalPki"),
+                (
+                    8,
+                    Some(Self::register_internal_pki_handler),
+                    "RegisterInternalPki",
+                ),
                 (9, None, "AddPolicyOid"),
                 (10, None, "ImportCrl"),
                 (11, None, "RemoveCrl"),
@@ -1035,14 +1079,26 @@ impl ISslServiceForSystem {
                 (0, Some(Self::create_context), "CreateContext"),
                 (1, Some(Self::get_context_count), "GetContextCount"),
                 (2, Some(Self::get_certificates), "GetCertificates"),
-                (3, Some(Self::get_certificate_buf_size), "GetCertificateBufSize"),
+                (
+                    3,
+                    Some(Self::get_certificate_buf_size),
+                    "GetCertificateBufSize",
+                ),
                 (4, Some(Self::debug_ioctl), "DebugIoctl"),
                 (5, Some(Self::set_interface_version), "SetInterfaceVersion"),
                 (6, Some(Self::flush_session_cache), "FlushSessionCache"),
                 (7, Some(Self::set_debug_option), "SetDebugOption"),
                 (8, Some(Self::get_debug_option), "GetDebugOption"),
-                (9, Some(Self::clear_tls12_fallback_flag), "ClearTls12FallbackFlag"),
-                (100, Some(Self::create_context_for_system), "CreateContextForSystem"),
+                (
+                    9,
+                    Some(Self::clear_tls12_fallback_flag),
+                    "ClearTls12FallbackFlag",
+                ),
+                (
+                    100,
+                    Some(Self::create_context_for_system),
+                    "CreateContextForSystem",
+                ),
                 (101, Some(Self::set_thread_core_mask), "SetThreadCoreMask"),
                 (102, Some(Self::get_thread_core_mask), "GetThreadCoreMask"),
                 (103, Some(Self::verify_signature), "VerifySignature"),
@@ -1229,8 +1285,12 @@ mod tests {
 
     #[test]
     fn connection_options_round_trip_and_unknown_option_returns_zero() {
-        let service = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
+        let service = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
         for option in 0..4 {
             for value in [0i32, 1, -1, 0] {
                 let mut ctx = HLERequestContext::new();
@@ -1253,8 +1313,12 @@ mod tests {
 
     #[test]
     fn alpn_empty_buffers_and_context_option_match_upstream_replies() {
-        let service = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
+        let service = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
         service.state.lock().unwrap().next_alpn_proto = vec![2, b'h', b'2'];
         let mut ctx = HLERequestContext::new();
         service.handlers()[&27].handler_callback.unwrap()(&service, &mut ctx);
@@ -1273,20 +1337,31 @@ mod tests {
     #[test]
     fn alpn_round_trip_truncates_to_output_buffer() {
         use crate::device_memory::DeviceMemory;
-        use crate::memory::memory::Memory;
         use crate::hle::ipc;
+        use crate::memory::memory::Memory;
         use common::page_table::{PageTable, PageType};
         let backing = Box::new(DeviceMemory::new());
         let mut table = Box::new(PageTable::new());
         table.resize(32, 12);
-        table.entries.get_and_fault(3).store(false, PageType::Memory, 1,
-            backing.buffer.backing_base_pointer() as usize);
+        table.entries.get_and_fault(3).store(
+            false,
+            PageType::Memory,
+            1,
+            backing.buffer.backing_base_pointer() as usize,
+        );
         let memory = Arc::new(Mutex::new(unsafe {
             Memory::new(SystemRef::null(), backing.as_ref(), &backing.buffer)
         }));
-        memory.lock().unwrap().set_current_page_table(table.as_mut(), true);
-        let service = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
+        memory
+            .lock()
+            .unwrap()
+            .set_current_page_table(table.as_mut(), true);
+        let service = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
         for size in [0, 1, 3, 5] {
             memory.lock().unwrap().write_block(0x3010, &[2, b'h', b'2']);
             memory.lock().unwrap().write_block(0x3040, &[0xCC; 8]);
@@ -1319,7 +1394,11 @@ mod tests {
             123
         }
 
-        fn set_socket(&mut self, _socket: Arc<Mutex<Box<dyn crate::internal_network::sockets::SocketBase>>>) {}
+        fn set_socket(
+            &mut self,
+            _socket: Arc<Mutex<Box<dyn crate::internal_network::sockets::SocketBase>>>,
+        ) {
+        }
 
         fn set_host_name(&mut self, _hostname: &str) -> ResultCode {
             RESULT_SUCCESS
@@ -1345,8 +1424,10 @@ mod tests {
     #[test]
     fn pending_forwards_backend_count_without_a_handshake_gate() {
         let connection = ISslConnection::new(
-            SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend),
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
         );
         assert_eq!(connection.pending_impl(), (RESULT_SUCCESS, 123));
         let mut ctx = HLERequestContext::new();
@@ -1436,8 +1517,12 @@ mod tests {
 
     #[test]
     fn newly_registered_ssl_stubs_match_edens_response_shapes() {
-        let connection = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
+        let connection = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
         for completed in [false, true] {
             connection.state.lock().unwrap().did_handshake = completed;
             for command in [7, 14, 15, 16] {
@@ -1445,7 +1530,9 @@ mod tests {
                 connection.handlers()[&command].handler_callback.unwrap()(&connection, &mut ctx);
                 assert_eq!(ctx.command_buffer()[6], 0, "command {command}");
                 assert_eq!(ctx.command_buffer()[7], 0);
-                if command != 15 { assert_eq!(ctx.command_buffer()[8], 0); }
+                if command != 15 {
+                    assert_eq!(ctx.command_buffer()[8], 0);
+                }
                 assert_eq!(ctx.command_buffer()[1] >> 31, 0);
             }
         }
@@ -1461,19 +1548,38 @@ mod tests {
     fn descriptor_and_io_mode_use_the_retained_native_socket() {
         use crate::internal_network::{network, sockets::Socket};
         let _network = network::NetworkInstance::new();
-        let connection = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
-        assert_eq!(connection.get_socket_descriptor_impl(), Err(RESULT_NO_SOCKET));
-        assert_eq!(connection.set_io_mode_impl(IoMode::NonBlocking as u32), RESULT_NO_SOCKET);
+        let connection = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
+        assert_eq!(
+            connection.get_socket_descriptor_impl(),
+            Err(RESULT_NO_SOCKET)
+        );
+        assert_eq!(
+            connection.set_io_mode_impl(IoMode::NonBlocking as u32),
+            RESULT_NO_SOCKET
+        );
         let mut socket = Socket::new();
-        assert_eq!(socket.initialize(network::Domain::INET, network::Type::DGRAM,
-            network::Protocol::UDP), NetworkErrno::Success);
+        assert_eq!(
+            socket.initialize(
+                network::Domain::INET,
+                network::Type::DGRAM,
+                network::Protocol::UDP
+            ),
+            NetworkErrno::Success
+        );
         let fd = socket.get_fd();
         let shared: Arc<Mutex<Box<dyn SocketBase>>> = Arc::new(Mutex::new(Box::new(socket)));
         connection.state.lock().unwrap().socket = Some(Arc::clone(&shared));
         // There is deliberately no BSD service to look up. The retained
         // socket is authoritative even if its old guest descriptor is gone.
-        assert_eq!(connection.set_io_mode_impl(IoMode::NonBlocking as u32), RESULT_SUCCESS);
+        assert_eq!(
+            connection.set_io_mode_impl(IoMode::NonBlocking as u32),
+            RESULT_SUCCESS
+        );
         assert_eq!(connection.get_socket_descriptor_impl(), Ok(fd as u32));
         let mut ctx = HLERequestContext::new();
         connection.handlers()[&4].handler_callback.unwrap()(&connection, &mut ctx);
@@ -1482,28 +1588,47 @@ mod tests {
         assert_eq!(shared.lock().unwrap().close(), NetworkErrno::Success);
         assert_eq!(connection.get_socket_descriptor_impl(), Ok(u32::MAX));
         // Upstream logs a SetNonBlock error, but still returns success.
-        assert_eq!(connection.set_io_mode_impl(IoMode::Blocking as u32), RESULT_SUCCESS);
+        assert_eq!(
+            connection.set_io_mode_impl(IoMode::Blocking as u32),
+            RESULT_SUCCESS
+        );
     }
 
     #[test]
     fn session_cache_commands_reject_completed_handshake_without_panicking() {
-        let connection = ISslConnection::new(SystemRef::null(), SslVersion::default(),
-            Arc::new(Mutex::new(SslContextSharedData::default())), Box::new(TestSslBackend));
+        let connection = ISslConnection::new(
+            SystemRef::null(),
+            SslVersion::default(),
+            Arc::new(Mutex::new(SslContextSharedData::default())),
+            Box::new(TestSslBackend),
+        );
         for complete in [false, true] {
             connection.state.lock().unwrap().did_handshake = complete;
-            let expected = if complete { RESULT_INTERNAL_ERROR } else { RESULT_SUCCESS };
+            let expected = if complete {
+                RESULT_INTERNAL_ERROR
+            } else {
+                RESULT_SUCCESS
+            };
             for mode in [0, 1, u32::MAX] {
                 assert_eq!(connection.set_session_cache_mode_impl(mode), expected);
             }
-            assert_eq!(connection.get_session_cache_mode_impl(),
-                if complete { Err(RESULT_INTERNAL_ERROR) } else { Ok(0) });
+            assert_eq!(
+                connection.get_session_cache_mode_impl(),
+                if complete {
+                    Err(RESULT_INTERNAL_ERROR)
+                } else {
+                    Ok(0)
+                }
+            );
             assert_eq!(connection.flush_session_cache_impl(), expected);
             for command in [18, 19] {
                 let mut ctx = HLERequestContext::new();
                 connection.handlers()[&command].handler_callback.unwrap()(&connection, &mut ctx);
                 assert_eq!(ctx.command_buffer()[6], expected.get_inner_value());
                 assert_eq!(ctx.command_buffer()[7], 0);
-                if command == 18 { assert_eq!(ctx.command_buffer()[8], 0); }
+                if command == 18 {
+                    assert_eq!(ctx.command_buffer()[8], 0);
+                }
             }
         }
     }

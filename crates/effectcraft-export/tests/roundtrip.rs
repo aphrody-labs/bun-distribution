@@ -10,7 +10,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use effectcraft_color::Label;
-use effectcraft_export::render_queue::{AudioOutput, Channels, OutputFormat, OutputModule, ProResProfile, RenderSettings, TimeSpan, sequence_path};
+use effectcraft_export::render_queue::{
+    AudioOutput, Channels, OutputFormat, OutputModule, ProResProfile, RenderSettings, TimeSpan,
+    sequence_path,
+};
 use effectcraft_export::{Job, Progress, export};
 use effectcraft_media::MediaPool;
 use effectcraft_project::{Comp, ItemId, ItemKind, LayerSource, Project, Solid, build};
@@ -24,7 +27,9 @@ const BG: [f32; 3] = [0.1, 0.1, 0.4];
 const FRAMES: u64 = 12;
 
 fn out_dir(name: &str) -> PathBuf {
-    let d = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/test-out/export").join(name);
+    let d = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target/test-out/export")
+        .join(name);
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).expect("mkdir");
     d
@@ -34,30 +39,75 @@ fn project(audio: Option<&Path>) -> (Project, ItemId) {
     let mut p = Project::default();
     let mut comp = Comp::new(W, H, FrameRate::new(10, 1), Tick::from_seconds_f64(1.2));
     comp.background = BG;
-    let sid = p.add_item("Red", Label::Red, None, ItemKind::Solid(Solid { color: [1.0, 0.0, 0.0], width: 32, height: H, pixel_aspect: 1.0 }));
-    let mut l = build::layer(&mut p, &comp, "Red", LayerSource::Solid { item: sid }, (32, H), None);
+    let sid = p.add_item(
+        "Red",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [1.0, 0.0, 0.0],
+            width: 32,
+            height: H,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut l = build::layer(
+        &mut p,
+        &comp,
+        "Red",
+        LayerSource::Solid { item: sid },
+        (32, H),
+        None,
+    );
     l.in_point = comp.frame_rate.tick_of(5);
     comp.layers.push(l);
     if let Some(path) = audio {
         let f = effectcraft_media::probe(path).expect("probe wav");
         let fid = p.add_item("tone.wav", Label::SeaFoam, None, ItemKind::Footage(f));
-        let l = build::layer(&mut p, &comp, "tone", LayerSource::Footage { item: fid }, (0, 0), None);
+        let l = build::layer(
+            &mut p,
+            &comp,
+            "tone",
+            LayerSource::Footage { item: fid },
+            (0, 0),
+            None,
+        );
         comp.layers.push(l);
     }
-    let cid = p.add_item("Comp 1", Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "Comp 1",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     (p, cid)
 }
 
 fn settings() -> RenderSettings {
-    RenderSettings { time_span: TimeSpan::LengthOfComp, ..Default::default() }
+    RenderSettings {
+        time_span: TimeSpan::LengthOfComp,
+        ..Default::default()
+    }
 }
 
-fn run(p: &Project, cid: ItemId, footage: &dyn FootageSource, om: &OutputModule, path: &Path) -> effectcraft_export::Report {
+fn run(
+    p: &Project,
+    cid: ItemId,
+    footage: &dyn FootageSource,
+    om: &OutputModule,
+    path: &Path,
+) -> effectcraft_export::Report {
     run_frames(p, cid, footage, om, path, FRAMES)
 }
 
 /// [`run`] for a comp of `frames` frames.
-fn run_frames(p: &Project, cid: ItemId, footage: &dyn FootageSource, om: &OutputModule, path: &Path, frames: u64) -> effectcraft_export::Report {
+fn run_frames(
+    p: &Project,
+    cid: ItemId,
+    footage: &dyn FootageSource,
+    om: &OutputModule,
+    path: &Path,
+    frames: u64,
+) -> effectcraft_export::Report {
     let s = settings();
     let path = path.to_string_lossy().to_string();
     let job = Job {
@@ -100,10 +150,16 @@ fn near(a: [f32; 3], b: [f32; 3], tol: f32) -> bool {
 /// Check a decoded (premultiplied, opaque) frame `k`.
 fn check_frame(img: &Image, k: u64, tol: f32) {
     let corner = px(img, 2, 2);
-    assert!(near([corner[0], corner[1], corner[2]], BG, tol), "frame {k} corner {corner:?}");
+    assert!(
+        near([corner[0], corner[1], corner[2]], BG, tol),
+        "frame {k} corner {corner:?}"
+    );
     let c = px(img, img.width / 2, img.height / 2);
     let want = if k >= 5 { [1.0, 0.0, 0.0] } else { BG };
-    assert!(near([c[0], c[1], c[2]], want, tol), "frame {k} centre {c:?} want {want:?}");
+    assert!(
+        near([c[0], c[1], c[2]], want, tol),
+        "frame {k} centre {c:?} want {want:?}"
+    );
 }
 
 fn decode_movie(path: &Path, frames: u64, tol: f32) -> effectcraft_project::Footage {
@@ -111,10 +167,16 @@ fn decode_movie(path: &Path, frames: u64, tol: f32) -> effectcraft_project::Foot
     assert_eq!((f.width, f.height), (W, H));
     assert!(f.has_video);
     let n = f.frame_rate.frame_at(f.duration - Tick(1)) + 1;
-    assert_eq!(n as u64, frames, "frame count from duration {:?} @ {:?}", f.duration, f.frame_rate);
+    assert_eq!(
+        n as u64, frames,
+        "frame count from duration {:?} @ {:?}",
+        f.duration, f.frame_rate
+    );
     let pool = MediaPool::new();
     for k in 0..frames {
-        let img = pool.frame_at(&f, f.frame_rate.tick_of(k as i64)).expect("decode");
+        let img = pool
+            .frame_at(&f, f.frame_rate.tick_of(k as i64))
+            .expect("decode");
         check_frame(&img, k, tol);
     }
     f
@@ -122,12 +184,24 @@ fn decode_movie(path: &Path, frames: u64, tol: f32) -> effectcraft_project::Foot
 
 fn ffprobe(path: &Path) -> Option<String> {
     let out = Command::new("ffprobe")
-        .args(["-v", "error", "-count_frames", "-show_entries", "stream=codec_name,width,height,nb_read_frames,pix_fmt", "-of", "compact=p=0:nk=1"])
+        .args([
+            "-v",
+            "error",
+            "-count_frames",
+            "-show_entries",
+            "stream=codec_name,width,height,nb_read_frames,pix_fmt",
+            "-of",
+            "compact=p=0:nk=1",
+        ])
         .arg(path)
         .output()
         .ok()?;
     if !out.status.success() {
-        panic!("ffprobe rejected {}: {}", path.display(), String::from_utf8_lossy(&out.stderr));
+        panic!(
+            "ffprobe rejected {}: {}",
+            path.display(),
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
     Some(String::from_utf8_lossy(&out.stdout).to_string())
 }
@@ -138,7 +212,14 @@ fn ffmpeg_frame(path: &Path, k: u64) -> Option<Image> {
     let st = Command::new("ffmpeg")
         .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
         .arg(path)
-        .args(["-vf", &format!("select=eq(n\\,{k})"), "-frames:v", "1", "-pix_fmt", "rgba"])
+        .args([
+            "-vf",
+            &format!("select=eq(n\\,{k})"),
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "rgba",
+        ])
         .arg(&png)
         .status()
         .ok()?;
@@ -163,7 +244,10 @@ fn ffmpeg_check(path: &Path, tol: f32) {
 fn h264_mp4_roundtrip() {
     let d = out_dir("h264");
     let (p, cid) = project(None);
-    let om = OutputModule { bitrate_kbps: 4000, ..OutputModule::for_format(OutputFormat::H264) };
+    let om = OutputModule {
+        bitrate_kbps: 4000,
+        ..OutputModule::for_format(OutputFormat::H264)
+    };
     let path = d.join("comp.mp4");
     let r = run(&p, cid, &NoFootage, &om, &path);
     assert!(r.bytes > 100 && !r.audio);
@@ -180,7 +264,10 @@ fn h264_odd_size_is_cropped_even() {
     let d = out_dir("h264-odd");
     let (p, cid) = project(None);
     let om = OutputModule::for_format(OutputFormat::H264);
-    let s = RenderSettings { resolution: 31.0 / 64.0, ..settings() };
+    let s = RenderSettings {
+        resolution: 31.0 / 64.0,
+        ..settings()
+    };
     let comp = p.comp(cid).expect("comp");
     assert_eq!(s.output_size(comp).0 % 2, 1);
     let path = d.join("odd.mp4").to_string_lossy().to_string();
@@ -220,14 +307,27 @@ fn prores_mov_roundtrip() {
 fn prores_4444_with_alpha() {
     let d = out_dir("prores4444");
     let (p, cid) = project(None);
-    let om = OutputModule { channels: Channels::Rgba, prores_profile: ProResProfile::Hq, ..OutputModule::for_format(OutputFormat::ProRes) };
+    let om = OutputModule {
+        channels: Channels::Rgba,
+        prores_profile: ProResProfile::Hq,
+        ..OutputModule::for_format(OutputFormat::ProRes)
+    };
     let path = d.join("alpha.mov");
     run(&p, cid, &NoFootage, &om, &path);
     let f = effectcraft_media::probe(&path).expect("probe");
-    let img = MediaPool::new().frame_at(&f, f.frame_rate.tick_of(7)).expect("decode");
-    assert!(px(&img, 2, 2)[3] < 0.02, "corner transparent: {:?}", px(&img, 2, 2));
+    let img = MediaPool::new()
+        .frame_at(&f, f.frame_rate.tick_of(7))
+        .expect("decode");
+    assert!(
+        px(&img, 2, 2)[3] < 0.02,
+        "corner transparent: {:?}",
+        px(&img, 2, 2)
+    );
     let c = px(&img, W / 2, H / 2);
-    assert!(c[3] > 0.98 && c[0] > 0.95 && c[1] < 0.05, "centre opaque red: {c:?}");
+    assert!(
+        c[3] > 0.98 && c[0] > 0.95 && c[1] < 0.05,
+        "centre opaque red: {c:?}"
+    );
     if let Some(s) = ffprobe(&path) {
         assert!(s.starts_with("prores|64|48|yuva444"), "{s}");
     }
@@ -235,8 +335,13 @@ fn prores_4444_with_alpha() {
 
 fn check_still_dir(dir: &Path, ext: &str, tol: f32, alpha: bool) {
     for k in 0..FRAMES {
-        let path = sequence_path(&dir.join(format!("f_[#####].{ext}")).to_string_lossy(), k as i64);
-        let img = image::open(&path).unwrap_or_else(|e| panic!("{path}: {e}")).to_rgba8();
+        let path = sequence_path(
+            &dir.join(format!("f_[#####].{ext}")).to_string_lossy(),
+            k as i64,
+        );
+        let img = image::open(&path)
+            .unwrap_or_else(|e| panic!("{path}: {e}"))
+            .to_rgba8();
         assert_eq!(img.dimensions(), (W, H));
         let img = Image::from_rgba8(W, H, img.as_raw());
         if alpha {
@@ -262,8 +367,17 @@ fn image_sequences_roundtrip() {
         (OutputFormat::TiffSequence, "tif", 0.01, Channels::Rgba),
     ] {
         let d = out_dir(&format!("seq-{ext}-{ch:?}"));
-        let om = OutputModule { channels: ch, ..OutputModule::for_format(fmt) };
-        let r = run(&p, cid, &NoFootage, &om, &d.join(format!("f_[#####].{ext}")));
+        let om = OutputModule {
+            channels: ch,
+            ..OutputModule::for_format(fmt)
+        };
+        let r = run(
+            &p,
+            cid,
+            &NoFootage,
+            &om,
+            &d.join(format!("f_[#####].{ext}")),
+        );
         assert!(r.path.ends_with(&format!("f_00000.{ext}")), "{}", r.path);
         check_still_dir(&d, ext, tol, ch == Channels::Rgba);
     }
@@ -275,11 +389,16 @@ fn exr_sequence_is_linear() {
     let d = out_dir("seq-exr");
     let om = OutputModule::for_format(OutputFormat::ExrSequence);
     run(&p, cid, &NoFootage, &om, &d.join("f_[#####].exr"));
-    let img = image::open(d.join("f_00000.exr")).expect("exr").to_rgba32f();
+    let img = image::open(d.join("f_00000.exr"))
+        .expect("exr")
+        .to_rgba32f();
     assert_eq!(img.dimensions(), (W, H));
     let c = img.get_pixel(2, 2).0;
     // sRGB 0.4 → linear ≈ 0.133
-    assert!((c[2] - 0.1329).abs() < 0.01 && (c[3] - 1.0).abs() < 1e-6, "{c:?}");
+    assert!(
+        (c[2] - 0.1329).abs() < 0.01 && (c[3] - 1.0).abs() < 1e-6,
+        "{c:?}"
+    );
 }
 
 /// A 32 bpc project whose only layer is a full-frame opaque solid of the given colour.
@@ -287,11 +406,33 @@ fn bright_project(color: [f32; 3]) -> (Project, ItemId) {
     let mut p = Project::default();
     p.settings.bit_depth = effectcraft_project::BitDepth::Bpc32;
     let comp = Comp::new(W, H, FrameRate::new(10, 1), Tick::from_seconds_f64(0.1));
-    let sid = p.add_item("Bright", Label::Red, None, ItemKind::Solid(Solid { color, width: W, height: H, pixel_aspect: 1.0 }));
+    let sid = p.add_item(
+        "Bright",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color,
+            width: W,
+            height: H,
+            pixel_aspect: 1.0,
+        }),
+    );
     let mut comp = comp;
-    let l = build::layer(&mut p, &comp, "Bright", LayerSource::Solid { item: sid }, (W, H), None);
+    let l = build::layer(
+        &mut p,
+        &comp,
+        "Bright",
+        LayerSource::Solid { item: sid },
+        (W, H),
+        None,
+    );
     comp.layers.push(l);
-    let cid = p.add_item("Comp 1", Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "Comp 1",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     (p, cid)
 }
 
@@ -301,7 +442,10 @@ fn exr_centre(color: [f32; 3], channels: Channels, name: &str) -> [f32; 4] {
     let d = out_dir(name);
     let mut om = OutputModule::for_format(OutputFormat::ExrSequence);
     om.channels = channels;
-    let s = RenderSettings { time_span: TimeSpan::LengthOfComp, ..Default::default() };
+    let s = RenderSettings {
+        time_span: TimeSpan::LengthOfComp,
+        ..Default::default()
+    };
     let path = d.join("f_[#####].exr").to_string_lossy().to_string();
     let job = Job {
         project: &p,
@@ -317,7 +461,9 @@ fn exr_centre(color: [f32; 3], channels: Channels, name: &str) -> [f32; 4] {
         nested_switches: true,
     };
     export(&job, &mut |_| true).expect("export");
-    let img = image::open(d.join("f_00000.exr")).expect("exr").to_rgba32f();
+    let img = image::open(d.join("f_00000.exr"))
+        .expect("exr")
+        .to_rgba32f();
     img.get_pixel(W / 2, H / 2).0
 }
 
@@ -333,7 +479,10 @@ fn exr_sequence_keeps_values_above_one() {
     for channels in [Channels::Rgba, Channels::Rgb] {
         let c = exr_centre(src, channels, "seq-exr-over");
         for i in 0..3 {
-            assert!((c[i] - lin(src[i])).abs() < 1e-3 * lin(src[i]).max(1.0), "{channels:?} channel {i}: {c:?}");
+            assert!(
+                (c[i] - lin(src[i])).abs() < 1e-3 * lin(src[i]).max(1.0),
+                "{channels:?} channel {i}: {c:?}"
+            );
         }
         assert!(c[0] > 1.5 && c[1] > 1.25, "{channels:?} not clamped: {c:?}");
         assert!((c[3] - 1.0).abs() < 1e-6, "{c:?}");
@@ -344,7 +493,10 @@ fn exr_sequence_keeps_values_above_one() {
 fn exr_sequence_values_at_or_below_one_are_unchanged() {
     for channels in [Channels::Rgba, Channels::Rgb] {
         let c = exr_centre([1.0, 0.4, 0.0], channels, "seq-exr-in-range");
-        assert!((c[0] - 1.0).abs() < 1e-4 && (c[1] - lin(0.4)).abs() < 1e-4 && c[2].abs() < 1e-6, "{channels:?}: {c:?}");
+        assert!(
+            (c[0] - 1.0).abs() < 1e-4 && (c[1] - lin(0.4)).abs() < 1e-4 && c[2].abs() < 1e-6,
+            "{channels:?}: {c:?}"
+        );
     }
 }
 #[test]
@@ -356,7 +508,9 @@ fn gif_roundtrip() {
     run(&p, cid, &NoFootage, &om, &path);
     let mut opts = gif::DecodeOptions::new();
     opts.set_color_output(gif::ColorOutput::RGBA);
-    let mut dec = opts.read_info(std::fs::File::open(&path).expect("open")).expect("gif header");
+    let mut dec = opts
+        .read_info(std::fs::File::open(&path).expect("open"))
+        .expect("gif header");
     assert_eq!((dec.width() as u32, dec.height() as u32), (W, H));
     let mut k = 0;
     let mut total_delay = 0u32;
@@ -406,7 +560,8 @@ fn write_tone(path: &Path, secs: f64) {
     let n = (secs * sr as f64) as usize;
     let mut data = Vec::with_capacity(n * 4);
     for i in 0..n {
-        let s = (0.5 * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sr as f64).sin() * 32767.0).round() as i16;
+        let s = (0.5 * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sr as f64).sin() * 32767.0)
+            .round() as i16;
         data.extend_from_slice(&s.to_le_bytes());
         data.extend_from_slice(&0i16.to_le_bytes());
     }
@@ -428,7 +583,9 @@ fn write_tone(path: &Path, secs: f64) {
 }
 
 fn rms(v: impl Iterator<Item = f32>) -> f32 {
-    let (s, n) = v.fold((0.0f64, 0usize), |(s, n), x| (s + (x as f64) * (x as f64), n + 1));
+    let (s, n) = v.fold((0.0f64, 0usize), |(s, n), x| {
+        (s + (x as f64) * (x as f64), n + 1)
+    });
     (s / n.max(1) as f64).sqrt() as f32
 }
 
@@ -439,31 +596,59 @@ fn movies_carry_audio() {
     write_tone(&wav, 2.0);
     let (p, cid) = project(Some(&wav));
     let pool = MediaPool::new();
-    for (fmt, name) in [(OutputFormat::H264, "a.mp4"), (OutputFormat::ProRes, "a.mov")] {
-        let om = OutputModule { audio: AudioOutput::Auto, ..OutputModule::for_format(fmt) };
+    for (fmt, name) in [
+        (OutputFormat::H264, "a.mp4"),
+        (OutputFormat::ProRes, "a.mov"),
+    ] {
+        let om = OutputModule {
+            audio: AudioOutput::Auto,
+            ..OutputModule::for_format(fmt)
+        };
         let path = d.join(name);
         let r = run(&p, cid, &pool, &om, &path);
-        assert!(r.audio, "{name}: auto audio is on for a comp with a sound layer");
+        assert!(
+            r.audio,
+            "{name}: auto audio is on for a comp with a sound layer"
+        );
         let f = effectcraft_media::probe(&path).expect("probe");
         assert!(f.has_audio, "{name}");
         let dec = MediaPool::new();
         let s = dec.audio_samples(&f, Tick::from_seconds_f64(0.3), 24_000, 48_000);
-        let (l, r) = (rms(s.iter().step_by(2).copied()), rms(s.iter().skip(1).step_by(2).copied()));
+        let (l, r) = (
+            rms(s.iter().step_by(2).copied()),
+            rms(s.iter().skip(1).step_by(2).copied()),
+        );
         // sine of amplitude 0.5 → RMS ≈ 0.354
         assert!((l - 0.3536).abs() < 0.03, "{name}: left RMS {l}");
         assert!(r < 0.01, "{name}: right RMS {r}");
         if Command::new("ffprobe").arg("-version").output().is_ok() {
             let out = Command::new("ffprobe")
-                .args(["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=codec_name,channels,sample_rate", "-of", "compact=p=0:nk=1"])
+                .args([
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "a:0",
+                    "-show_entries",
+                    "stream=codec_name,channels,sample_rate",
+                    "-of",
+                    "compact=p=0:nk=1",
+                ])
                 .arg(&path)
                 .output()
                 .expect("ffprobe");
             let s = String::from_utf8_lossy(&out.stdout);
-            let want = if fmt == OutputFormat::H264 { "aac|48000|2" } else { "pcm_s16le|48000|2" };
+            let want = if fmt == OutputFormat::H264 {
+                "aac|48000|2"
+            } else {
+                "pcm_s16le|48000|2"
+            };
             assert!(s.trim() == want, "{name}: {s}");
         }
         // Audio off.
-        let om = OutputModule { audio: AudioOutput::Off, ..om };
+        let om = OutputModule {
+            audio: AudioOutput::Off,
+            ..om
+        };
         let path = d.join(format!("silent-{name}"));
         assert!(!run(&p, cid, &pool, &om, &path).audio);
         assert!(!effectcraft_media::probe(&path).expect("probe").has_audio);
@@ -478,8 +663,17 @@ fn ffmpeg_audio(src: &Path) -> Vec<f32> {
         .args(["-f", "f32le", "-ac", "2", "-ar", "48000", "-"])
         .output()
         .expect("ffmpeg");
-    assert!(out.status.success(), "ffmpeg failed to decode {}", src.display());
-    out.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+    assert!(
+        out.status.success(),
+        "ffmpeg failed to decode {}",
+        src.display()
+    );
+    out.stdout
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect()
 }
 
 /// Movies of a 29.97 fps comp whose footage has AAC audio at 44.1 kHz sound like the footage
@@ -490,8 +684,29 @@ fn movies_carry_resampled_footage_audio() {
     let d = out_dir("audio-44k");
     let clip = d.join("clip.mp4");
     let made = Command::new("ffmpeg")
-        .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=64x48:rate=30000/1001:duration=3", "-f", "lavfi", "-i"])
-        .args(["aevalsrc=0.5*sin(2*PI*440*t)|0.5*sin(2*PI*(200+400*t/3)*t):s=44100:d=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"])
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=64x48:rate=30000/1001:duration=3",
+            "-f",
+            "lavfi",
+            "-i",
+        ])
+        .args([
+            "aevalsrc=0.5*sin(2*PI*440*t)|0.5*sin(2*PI*(200+400*t/3)*t):s=44100:d=3",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+        ])
         .arg(&clip)
         .status()
         .is_ok_and(|s| s.success());
@@ -502,21 +717,50 @@ fn movies_carry_resampled_footage_audio() {
     let fps = FrameRate::new(30000, 1001);
     let mut p = Project::default();
     let mut comp = Comp::new(W, H, fps, fps.tick_of(60));
-    let fid = p.add_item("clip.mp4", Label::SeaFoam, None, ItemKind::Footage(effectcraft_media::probe(&clip).expect("probe clip")));
-    let l = build::layer(&mut p, &comp, "clip", LayerSource::Footage { item: fid }, (64, 48), None);
+    let fid = p.add_item(
+        "clip.mp4",
+        Label::SeaFoam,
+        None,
+        ItemKind::Footage(effectcraft_media::probe(&clip).expect("probe clip")),
+    );
+    let l = build::layer(
+        &mut p,
+        &comp,
+        "clip",
+        LayerSource::Footage { item: fid },
+        (64, 48),
+        None,
+    );
     comp.layers.push(l);
-    let cid = p.add_item("Comp 1", Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "Comp 1",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     let want = ffmpeg_audio(&clip);
     let pool = MediaPool::new();
     // AAC is lossy; PCM differs from ffmpeg's resampler by little more than 16-bit rounding.
-    for (fmt, name, tol) in [(OutputFormat::H264, "a.mp4", 0.06), (OutputFormat::ProRes, "a.mov", 0.01)] {
+    for (fmt, name, tol) in [
+        (OutputFormat::H264, "a.mp4", 0.06),
+        (OutputFormat::ProRes, "a.mov", 0.01),
+    ] {
         let path = d.join(name);
         assert!(run_frames(&p, cid, &pool, &OutputModule::for_format(fmt), &path, 60).audio);
         let got = ffmpeg_audio(&path);
         // 60 frames at 29.97 fps: 96 096 samples at 48 kHz.
-        assert!((got.len() as i64 / 2 - 96_096).abs() < 1024, "{name}: {} samples", got.len() / 2);
+        assert!(
+            (got.len() as i64 / 2 - 96_096).abs() < 1024,
+            "{name}: {} samples",
+            got.len() / 2
+        );
         // (Up to the last AAC frames, where the cut to silence smears back into the sound.)
-        let worst = got.iter().zip(&want).take(94_000 * 2).map(|(g, w)| (g - w).abs()).fold(0.0f32, f32::max);
+        let worst = got
+            .iter()
+            .zip(&want)
+            .take(94_000 * 2)
+            .map(|(g, w)| (g - w).abs())
+            .fold(0.0f32, f32::max);
         eprintln!("{name}: max error {worst:.4}");
         assert!(worst < tol, "{name}: max error {worst} against the footage");
     }
@@ -529,7 +773,11 @@ fn webm_vp9_opus_roundtrip() {
     write_tone(&wav, 2.0);
     let (p, cid) = project(Some(&wav));
     let pool = MediaPool::new();
-    let om = OutputModule { quality: 90, audio: AudioOutput::Auto, ..OutputModule::for_format(OutputFormat::WebM) };
+    let om = OutputModule {
+        quality: 90,
+        audio: AudioOutput::Auto,
+        ..OutputModule::for_format(OutputFormat::WebM)
+    };
     let path = d.join("comp.webm");
     let r = run(&p, cid, &pool, &om, &path);
     assert!(r.audio && r.bytes > 200, "{r:?}");
@@ -551,21 +799,45 @@ fn webm_with_alpha() {
     let d = out_dir("webm-alpha");
     let (p, cid) = project(None);
     // Transparent outside the red solid.
-    let om = OutputModule { channels: Channels::Rgba, ..OutputModule::for_format(OutputFormat::WebM) };
+    let om = OutputModule {
+        channels: Channels::Rgba,
+        ..OutputModule::for_format(OutputFormat::WebM)
+    };
     let path = d.join("alpha.webm");
     run(&p, cid, &NoFootage, &om, &path);
     let f = effectcraft_media::probe(&path).expect("probe our output");
     assert_eq!((f.width, f.height), (W, H));
     let bytes = std::fs::read(&path).unwrap();
     // AlphaMode element (0x53C0) and BlockAdditions (0x75A1).
-    assert!(bytes.windows(3).any(|w| w == [0x53, 0xC0, 0x81]), "AlphaMode 1");
-    assert!(bytes.windows(2).any(|w| w == [0x75, 0xA1]), "BlockAdditions");
+    assert!(
+        bytes.windows(3).any(|w| w == [0x53, 0xC0, 0x81]),
+        "AlphaMode 1"
+    );
+    assert!(
+        bytes.windows(2).any(|w| w == [0x75, 0xA1]),
+        "BlockAdditions"
+    );
     // ffmpeg's libvpx decoder reads the alpha channel.
     let png = path.with_extension("alpha.png");
     let ok = Command::new("ffmpeg")
-        .args(["-hide_banner", "-loglevel", "error", "-y", "-c:v", "libvpx-vp9", "-i"])
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-c:v",
+            "libvpx-vp9",
+            "-i",
+        ])
         .arg(&path)
-        .args(["-vf", "select=eq(n\\,8)", "-frames:v", "1", "-pix_fmt", "rgba"])
+        .args([
+            "-vf",
+            "select=eq(n\\,8)",
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "rgba",
+        ])
         .arg(&png)
         .status()
         .map(|s| s.success())
@@ -586,7 +858,10 @@ fn wav_and_aiff_audio_only() {
     write_tone(&wav, 2.0);
     let (p, cid) = project(Some(&wav));
     let pool = MediaPool::new();
-    for (fmt, name, magic) in [(OutputFormat::Wav, "out.wav", &b"RIFF"[..]), (OutputFormat::Aiff, "out.aif", &b"FORM"[..])] {
+    for (fmt, name, magic) in [
+        (OutputFormat::Wav, "out.wav", &b"RIFF"[..]),
+        (OutputFormat::Aiff, "out.aif", &b"FORM"[..]),
+    ] {
         let om = OutputModule::for_format(fmt);
         let path = d.join(name);
         let r = run(&p, cid, &pool, &om, &path);
@@ -594,7 +869,11 @@ fn wav_and_aiff_audio_only() {
         let bytes = std::fs::read(&path).unwrap();
         assert_eq!(&bytes[..4], magic);
         // 1.2 s of 48 kHz 16-bit stereo.
-        assert!((bytes.len() as i64 - 57_600 * 4).abs() < 200, "{name}: {}", bytes.len());
+        assert!(
+            (bytes.len() as i64 - 57_600 * 4).abs() < 200,
+            "{name}: {}",
+            bytes.len()
+        );
         let l = if fmt == OutputFormat::Wav {
             // Decoded by FilmCraft.
             let f = effectcraft_media::probe(&path).expect("probe audio");
@@ -604,7 +883,13 @@ fn wav_and_aiff_audio_only() {
         } else {
             // AIFF: big-endian samples after the SSND chunk's offset/block size.
             let at = bytes.windows(4).position(|w| w == b"SSND").expect("SSND") + 16;
-            let left = bytes[at..].as_chunks::<4>().0.iter().skip(14_400).take(24_000).map(|c| i16::from_be_bytes([c[0], c[1]]) as f32 / 32767.0);
+            let left = bytes[at..]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .skip(14_400)
+                .take(24_000)
+                .map(|c| i16::from_be_bytes([c[0], c[1]]) as f32 / 32767.0);
             rms(left)
         };
         assert!((l - 0.3536).abs() < 0.01, "{name}: left RMS {l}");

@@ -19,9 +19,17 @@ fn hide_when_publishing(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let mut ids: Vec<NodeId> = Vec::new();
     for i in req_targets(cmd, s, p)? {
-        let root = asset_root(doc, i).ok_or_else(|| bad(cmd, format!("{i} isn't a component, a component set or a layer in one")))?;
+        let root = asset_root(doc, i).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("{i} isn't a component, a component set or a layer in one"),
+            )
+        })?;
         if doc.is_remote(root) {
-            return Err(EngineError::Disabled(cmd.into(), crate::library::READ_ONLY.into()));
+            return Err(EngineError::Disabled(
+                cmd.into(),
+                crate::library::READ_ONLY.into(),
+            ));
         }
         if !ids.contains(&root) {
             ids.push(root);
@@ -46,17 +54,29 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             create
         ),
-        spec!("component.createMultiple", "Create multiple components", "{ids?}", true, |s, p| {
-            let ids = req_targets("component.createMultiple", s, p)?;
-            let mut out = Vec::new();
-            for i in ids {
-                let r = create(s, &json!({"ids": [i]}))?;
-                out.push(r["id"].clone());
+        spec!(
+            "component.createMultiple",
+            "Create multiple components",
+            "{ids?}",
+            true,
+            |s, p| {
+                let ids = req_targets("component.createMultiple", s, p)?;
+                let mut out = Vec::new();
+                for i in ids {
+                    let r = create(s, &json!({"ids": [i]}))?;
+                    out.push(r["id"].clone());
+                }
+                s.set_selection(out.iter().filter_map(id_of).collect());
+                Ok(json!({"ids": out}))
             }
-            s.set_selection(out.iter().filter_map(id_of).collect());
-            Ok(json!({"ids": out}))
-        }),
-        spec!("component.combineVariants", "Combine as variants", "{ids? (components)}", true, combine),
+        ),
+        spec!(
+            "component.combineVariants",
+            "Combine as variants",
+            "{ids? (components)}",
+            true,
+            combine
+        ),
         spec!(
             "component.addVariant",
             "Add variant",
@@ -64,21 +84,31 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             add_variant
         ),
-        spec!("instance.create", "Create instance", "{component (component or set: its default variant), x?, y?, parent?}", true, |s, p| {
-            let cmd = "instance.create";
-            let c = req_id(cmd, p, "component")?;
-            let page = s.page()?;
-            let parent = id(p, "parent").unwrap_or(page);
-            let doc = s.doc_mut()?;
-            let c = main_of(doc, c).ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
-            let (x, y) = match (num(p, "x"), num(p, "y")) {
-                (Some(x), Some(y)) if x.is_finite() && y.is_finite() => (x, y),
-                _ => doc.world_bounds(c).map(|b| (b.x1 + 40.0, b.y0)).unwrap_or((0.0, 0.0)),
-            };
-            let i = create_instance(doc, c, parent, x, y)?;
-            s.set_selection(vec![i]);
-            Ok(json!({"id": i}))
-        }),
+        spec!(
+            "instance.create",
+            "Create instance",
+            "{component (component or set: its default variant), x?, y?, parent?}",
+            true,
+            |s, p| {
+                let cmd = "instance.create";
+                let c = req_id(cmd, p, "component")?;
+                let page = s.page()?;
+                let parent = id(p, "parent").unwrap_or(page);
+                let doc = s.doc_mut()?;
+                let c = main_of(doc, c)
+                    .ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
+                let (x, y) = match (num(p, "x"), num(p, "y")) {
+                    (Some(x), Some(y)) if x.is_finite() && y.is_finite() => (x, y),
+                    _ => doc
+                        .world_bounds(c)
+                        .map(|b| (b.x1 + 40.0, b.y0))
+                        .unwrap_or((0.0, 0.0)),
+                };
+                let i = create_instance(doc, c, parent, x, y)?;
+                s.set_selection(vec![i]);
+                Ok(json!({"id": i}))
+            }
+        ),
         spec!(
             "instance.place",
             "Place instance",
@@ -93,14 +123,22 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             |s, p| {
                 let cmd = "component.exposeInstance";
-                let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a nested instance"))?;
+                let id = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad(cmd, "select a nested instance"))?;
                 let exposed = boolean(p, "exposed").unwrap_or(true);
                 let doc = s.doc_mut()?;
-                let ok_target = doc.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Instance { .. }))
+                let ok_target = doc
+                    .node(id)
+                    .is_some_and(|n| matches!(n.kind, NodeKind::Instance { .. }))
                     && owning_component(doc, id).is_some_and(|c| c != id)
                     && !inside_instance(doc, id);
                 if !ok_target {
-                    return Err(bad(cmd, "only instances nested inside a main component can be exposed"));
+                    return Err(bad(
+                        cmd,
+                        "only instances nested inside a main component can be exposed",
+                    ));
                 }
                 doc.get_mut(id)?.exposed = exposed;
                 Ok(json!({"id": id, "exposed": exposed}))
@@ -112,10 +150,15 @@ pub fn specs() -> Vec<CommandSpec> {
             "{id? (instance)} → the nested instance copies whose properties it exposes",
             false,
             |s, p| {
-                let id = targets(s, p).first().copied().ok_or_else(|| bad("instance.exposed", "select an instance"))?;
+                let id = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad("instance.exposed", "select an instance"))?;
                 let doc = s.doc()?;
-                let out: Vec<serde_json::Value> =
-                    exposed_copies(doc, id).into_iter().filter_map(|c| doc.node(c).map(|n| json!({"id": c, "name": n.name}))).collect();
+                let out: Vec<serde_json::Value> = exposed_copies(doc, id)
+                    .into_iter()
+                    .filter_map(|c| doc.node(c).map(|n| json!({"id": c, "name": n.name})))
+                    .collect();
                 Ok(json!({"instances": out}))
             }
         ),
@@ -154,8 +197,20 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             hide_when_publishing
         ),
-        spec!("component.detach", "Detach instance", "{ids?}", true, detach),
-        spec!("component.resetInstance", "Reset all changes", "{ids?}", true, reset_instance),
+        spec!(
+            "component.detach",
+            "Detach instance",
+            "{ids?}",
+            true,
+            detach
+        ),
+        spec!(
+            "component.resetInstance",
+            "Reset all changes",
+            "{ids?}",
+            true,
+            reset_instance
+        ),
         spec!(
             "component.resetOverride",
             "Reset override",
@@ -163,29 +218,54 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             reset_override
         ),
-        spec!("component.goToMain", "Go to main component", "{id?}", false, |s, p| {
-            let cmd = "component.goToMain";
-            let i = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select an instance"))?;
-            let doc = s.doc()?;
-            let inst = owning_instance(doc, i).ok_or_else(|| bad(cmd, "not an instance"))?;
-            let Some(NodeKind::Instance { component, .. }) = doc.node(inst).map(|n| n.kind.clone()) else {
-                return Err(bad(cmd, "not an instance"));
-            };
-            if !doc.contains(component) {
-                return Err(EngineError::Disabled(cmd.into(), "the main component was deleted (use component.restoreMain)".into()));
+        spec!(
+            "component.goToMain",
+            "Go to main component",
+            "{id?}",
+            false,
+            |s, p| {
+                let cmd = "component.goToMain";
+                let i = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad(cmd, "select an instance"))?;
+                let doc = s.doc()?;
+                let inst = owning_instance(doc, i).ok_or_else(|| bad(cmd, "not an instance"))?;
+                let Some(NodeKind::Instance { component, .. }) =
+                    doc.node(inst).map(|n| n.kind.clone())
+                else {
+                    return Err(bad(cmd, "not an instance"));
+                };
+                if !doc.contains(component) {
+                    return Err(EngineError::Disabled(
+                        cmd.into(),
+                        "the main component was deleted (use component.restoreMain)".into(),
+                    ));
+                }
+                if let Some(lib) = crate::library::library_of(doc, component) {
+                    let name = crate::library::library_name(doc, lib);
+                    return Err(EngineError::Disabled(
+                        cmd.into(),
+                        format!(
+                            "the main component is in the library \"{name}\": open that file to edit it"
+                        ),
+                    ));
+                }
+                super::edit::select_and_page(s, vec![component])?;
+                let ds = s.ds_mut()?;
+                if let Some(b) = ds.doc.world_bounds(component) {
+                    ds.view.fit(b, 2.0);
+                }
+                Ok(json!({"id": component}))
             }
-            if let Some(lib) = crate::library::library_of(doc, component) {
-                let name = crate::library::library_name(doc, lib);
-                return Err(EngineError::Disabled(cmd.into(), format!("the main component is in the library \"{name}\": open that file to edit it")));
-            }
-            super::edit::select_and_page(s, vec![component])?;
-            let ds = s.ds_mut()?;
-            if let Some(b) = ds.doc.world_bounds(component) {
-                ds.view.fit(b, 2.0);
-            }
-            Ok(json!({"id": component}))
-        }),
-        spec!("component.pushChanges", "Push changes to main component", "{id?}", true, push_changes),
+        ),
+        spec!(
+            "component.pushChanges",
+            "Push changes to main component",
+            "{id?}",
+            true,
+            push_changes
+        ),
         spec!(
             "component.restoreMain",
             "Restore main component",
@@ -193,7 +273,13 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             restore_main
         ),
-        spec!("instance.swap", "Swap instance", "{ids?, component}", true, swap),
+        spec!(
+            "instance.swap",
+            "Swap instance",
+            "{ids?, component}",
+            true,
+            swap
+        ),
         spec!(
             "instance.swapAt",
             "Swap instance at point",
@@ -222,7 +308,13 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             edit_prop
         ),
-        spec!("component.deleteProperty", "Delete component property", "{id? (component or set), name}", true, delete_prop),
+        spec!(
+            "component.deleteProperty",
+            "Delete component property",
+            "{id? (component or set), name}",
+            true,
+            delete_prop
+        ),
         spec!(
             "component.bindProperty",
             "Bind layer to property",
@@ -230,10 +322,19 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             bind_prop
         ),
-        spec!("component.properties", "Component properties", "{id? (component, set or instance)}", false, |s, p| {
-            let i = targets(s, p).first().copied().ok_or_else(|| bad("component.properties", "select a component or instance"))?;
-            Ok(describe_props(s.doc()?, i))
-        }),
+        spec!(
+            "component.properties",
+            "Component properties",
+            "{id? (component, set or instance)}",
+            false,
+            |s, p| {
+                let i = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad("component.properties", "select a component or instance"))?;
+                Ok(describe_props(s.doc()?, i))
+            }
+        ),
         spec!(
             "component.list",
             "List components",
@@ -268,15 +369,25 @@ pub(crate) fn place(s: &mut Session, p: &Value) -> Result<Value> {
     let pt = figcraft_geom::Point::new(req_num(cmd, p, "x")?, req_num(cmd, p, "y")?);
     let page = s.page()?;
     let doc = s.doc_mut()?;
-    let c = main_of(doc, c).ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
+    let c = main_of(doc, c)
+        .ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
     let mut slot = crate::drop::slot(doc, page, pt);
     // Never inside its own main component (or a copy of it).
     if doc.is_ancestor(c, slot.parent) || slot.parent == c {
-        slot = crate::drop::DropSlot { parent: page, index: None, line: None };
+        slot = crate::drop::DropSlot {
+            parent: page,
+            index: None,
+            line: None,
+        };
     }
-    let (w, h) = doc.node(c).map(|n| (n.width, n.height)).unwrap_or((0.0, 0.0));
-    let local = doc.world_transform(slot.parent).inverse() * figcraft_geom::Point::new(pt.x - w / 2.0, pt.y - h / 2.0);
-    let i = crate::components::create_instance_at(doc, c, slot.parent, local.x, local.y, slot.index)?;
+    let (w, h) = doc
+        .node(c)
+        .map(|n| (n.width, n.height))
+        .unwrap_or((0.0, 0.0));
+    let local = doc.world_transform(slot.parent).inverse()
+        * figcraft_geom::Point::new(pt.x - w / 2.0, pt.y - h / 2.0);
+    let i =
+        crate::components::create_instance_at(doc, c, slot.parent, local.x, local.y, slot.index)?;
     s.set_selection(vec![i]);
     Ok(json!({"id": i, "parent": slot.parent}))
 }
@@ -295,14 +406,30 @@ fn create(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = req_targets(cmd, s, p)?;
     let doc = s.doc_mut()?;
     if ids.iter().any(|i| inside_instance(doc, *i)) {
-        return Err(EngineError::Disabled(cmd.into(), "layers inside an instance can't become components".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "layers inside an instance can't become components".into(),
+        ));
     }
     let ids = z_sorted(doc, &roots(doc, &ids));
-    let target = if ids.len() == 1 && ids.first().and_then(|i| doc.node(*i)).is_some_and(|n| matches!(n.kind, NodeKind::Frame | NodeKind::Group)) {
-        ids.first().copied().ok_or_else(|| bad(cmd, "nothing selected"))?
+    let target = if ids.len() == 1
+        && ids
+            .first()
+            .and_then(|i| doc.node(*i))
+            .is_some_and(|n| matches!(n.kind, NodeKind::Frame | NodeKind::Group))
+    {
+        ids.first()
+            .copied()
+            .ok_or_else(|| bad(cmd, "nothing selected"))?
     } else {
         // Wrap the layers in a frame first (like Figma); a single layer lends it its name.
-        let single_name = if let [only] = ids.as_slice() { doc.node(*only).map(|n| n.name.clone()).filter(|n| !n.is_empty()) } else { None };
+        let single_name = if let [only] = ids.as_slice() {
+            doc.node(*only)
+                .map(|n| n.name.clone())
+                .filter(|n| !n.is_empty())
+        } else {
+            None
+        };
         let r = super::structure::specs()
             .into_iter()
             .find(|x| x.id == "object.frameSelection")
@@ -320,7 +447,10 @@ fn create(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc_mut()?;
     let n = doc.get_mut(target)?;
     let was_group = matches!(n.kind, NodeKind::Group);
-    n.kind = NodeKind::Component { description: String::new(), props: Default::default() };
+    n.kind = NodeKind::Component {
+        description: String::new(),
+        props: Default::default(),
+    };
     if was_group {
         n.fills.clear();
         n.clip = false;
@@ -336,7 +466,10 @@ fn wrap_in_set(doc: &mut Document, ids: &[NodeId]) -> Result<NodeId> {
     let top = *ids.last().ok_or_else(|| bad(cmd, "nothing selected"))?;
     let parent = doc.get(top)?.parent.ok_or_else(|| bad(cmd, "page"))?;
     if inside_instance(doc, top) || owning_instance(doc, parent).is_some() {
-        return Err(EngineError::Disabled(cmd.into(), "components inside an instance can't be combined".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "components inside an instance can't be combined".into(),
+        ));
     }
     let bounds = doc.bounds_of(ids).unwrap_or_default();
     let pw = doc.world_transform(parent);
@@ -344,11 +477,26 @@ fn wrap_in_set(doc: &mut Document, ids: &[NodeId]) -> Result<NodeId> {
     let base = ids
         .first()
         .and_then(|i| doc.node(*i))
-        .map(|n| n.name.split(['/', '=']).next().unwrap_or("Component").trim().to_string())
+        .map(|n| {
+            n.name
+                .split(['/', '='])
+                .next()
+                .unwrap_or("Component")
+                .trim()
+                .to_string()
+        })
         .filter(|n| !n.is_empty() && !n.contains(','))
         .unwrap_or_else(|| "Component".into());
     let set = doc.alloc_id();
-    let mut n = Node::new(set, NodeKind::ComponentSet { description: String::new() }, base, local.width(), local.height());
+    let mut n = Node::new(
+        set,
+        NodeKind::ComponentSet {
+            description: String::new(),
+        },
+        base,
+        local.width(),
+        local.height(),
+    );
     n.transform = figcraft_geom::Affine::translate((local.x0, local.y0));
     n.fills.clear();
     doc.insert(n, parent, doc.index_in_parent(top).map(|i| i + 1))?;
@@ -362,7 +510,10 @@ fn combine(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.combineVariants";
     let ids = req_targets(cmd, s, p)?;
     let doc = s.doc_mut()?;
-    if !ids.iter().all(|i| doc.node(*i).is_some_and(|n| matches!(n.kind, NodeKind::Component { .. }))) {
+    if !ids.iter().all(|i| {
+        doc.node(*i)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Component { .. }))
+    }) {
         return Err(bad(cmd, "select components only"));
     }
     let ids = z_sorted(doc, &ids);
@@ -371,7 +522,14 @@ fn combine(s: &mut Session, p: &Value) -> Result<Value> {
         // Name variants "Property 1=Variant N" unless already in prop=value form.
         let node = doc.get_mut(*i)?;
         if !node.name.contains('=') {
-            node.name = format!("Property 1={}", if k == 0 { "Default".to_string() } else { format!("Variant{}", k + 1) });
+            node.name = format!(
+                "Property 1={}",
+                if k == 0 {
+                    "Default".to_string()
+                } else {
+                    format!("Variant{}", k + 1)
+                }
+            );
         }
     }
     s.set_selection(vec![set]);
@@ -380,7 +538,9 @@ fn combine(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Grow a component set so it wraps its variants with 20 px of padding (right and bottom).
 fn fit_set(doc: &mut Document, set: NodeId) {
-    let Some(kids) = doc.node(set).map(|n| n.children.clone()) else { return };
+    let Some(kids) = doc.node(set).map(|n| n.children.clone()) else {
+        return;
+    };
     let (mut w, mut h) = (0.0f64, 0.0f64);
     for c in kids {
         if let Some(n) = doc.node(c) {
@@ -397,21 +557,42 @@ fn fit_set(doc: &mut Document, set: NodeId) {
 
 fn add_variant(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.addVariant";
-    let t = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a component set or variant"))?;
+    let t = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a component set or variant"))?;
     let doc = s.doc_mut()?;
     let (set, base) = match doc.get(t)?.kind {
         NodeKind::ComponentSet { .. } => {
-            let last = doc.get(t)?.children.last().copied().ok_or_else(|| bad(cmd, "the component set is empty"))?;
+            let last = doc
+                .get(t)?
+                .children
+                .last()
+                .copied()
+                .ok_or_else(|| bad(cmd, "the component set is empty"))?;
             (t, last)
         }
-        NodeKind::Component { .. } => (variant_set(doc, t).ok_or_else(|| bad(cmd, "the component isn't a variant (combine as variants first)"))?, t),
+        NodeKind::Component { .. } => (
+            variant_set(doc, t).ok_or_else(|| {
+                bad(
+                    cmd,
+                    "the component isn't a variant (combine as variants first)",
+                )
+            })?,
+            t,
+        ),
         _ => return Err(bad(cmd, "select a component set or variant")),
     };
     let options = variant_options(doc, set);
     let mut pairs = variant_props(&doc.get(base)?.name);
     let order: Vec<String> = options.iter().map(|(k, _)| k.clone()).collect();
-    let existing: BTreeSet<BTreeMap<String, String>> =
-        doc.get(set)?.children.iter().filter_map(|c| doc.node(*c)).map(|n| variant_props(&n.name)).collect();
+    let existing: BTreeSet<BTreeMap<String, String>> = doc
+        .get(set)?
+        .children
+        .iter()
+        .filter_map(|c| doc.node(*c))
+        .map(|n| variant_props(&n.name))
+        .collect();
     match (string(p, "property"), string(p, "value")) {
         (Some(prop), Some(value)) => {
             let (prop, value) = (prop.trim().to_string(), value.trim().to_string());
@@ -428,7 +609,10 @@ fn add_variant(s: &mut Session, p: &Value) -> Result<Value> {
         }
         (Some(_), None) => return Err(bad(cmd, "`value` is required with `property`")),
         _ => {
-            let prop = order.first().cloned().unwrap_or_else(|| "Property 1".into());
+            let prop = order
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "Property 1".into());
             let mut k = existing.len() + 1;
             loop {
                 pairs.insert(prop.clone(), format!("Variant{k}"));
@@ -467,7 +651,11 @@ fn detach(s: &mut Session, p: &Value) -> Result<Value> {
             continue;
         }
         if inside_instance(doc, i) {
-            return Err(EngineError::Disabled(cmd.into(), "a nested instance can't be detached on its own: detach the outer instance first".into()));
+            return Err(EngineError::Disabled(
+                cmd.into(),
+                "a nested instance can't be detached on its own: detach the outer instance first"
+                    .into(),
+            ));
         }
         // Own layers lose their link (slot content stays as it is); nested instances stay
         // instances of their own mains.
@@ -485,7 +673,10 @@ fn detach(s: &mut Session, p: &Value) -> Result<Value> {
         out.push(i);
     }
     if out.is_empty() {
-        return Err(EngineError::Disabled(cmd.into(), "select an instance".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "select an instance".into(),
+        ));
     }
     s.set_selection(out.clone());
     Ok(json!({"ids": out}))
@@ -497,10 +688,16 @@ fn reset_instance(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc_mut()?;
     let mut done = Vec::new();
     for i in ids {
-        let Some(inst) = owning_instance(doc, i) else { continue };
+        let Some(inst) = owning_instance(doc, i) else {
+            continue;
+        };
         let top = !inside_instance(doc, inst);
         for d in doc.subtree(inst) {
-            let keep: Vec<&str> = if d == inst && top { vec!["size"] } else { vec![] };
+            let keep: Vec<&str> = if d == inst && top {
+                vec!["size"]
+            } else {
+                vec![]
+            };
             if let Some(n) = doc.node(d)
                 && n.overrides.iter().any(|g| !keep.contains(&g.as_str()))
                 && let Some(n) = doc.node_mut(d)
@@ -510,7 +707,8 @@ fn reset_instance(s: &mut Session, p: &Value) -> Result<Value> {
         }
         // Property values go back to the defaults.
         if top
-            && let Some(NodeKind::Instance { component, props }) = doc.node(inst).map(|n| n.kind.clone())
+            && let Some(NodeKind::Instance { component, props }) =
+                doc.node(inst).map(|n| n.kind.clone())
             && let Some(defaults) = doc.node(component).map(default_props)
             && props != defaults
             && let NodeKind::Instance { props, .. } = &mut doc.get_mut(inst)?.kind
@@ -518,31 +716,50 @@ fn reset_instance(s: &mut Session, p: &Value) -> Result<Value> {
             *props = defaults;
         }
         // ...and stop following variables.
-        if top && doc.node(inst).is_some_and(|n| n.bound.keys().any(|k| k.starts_with(PROP_BINDING))) {
-            doc.get_mut(inst)?.bound.retain(|k, _| !k.starts_with(PROP_BINDING));
+        if top
+            && doc
+                .node(inst)
+                .is_some_and(|n| n.bound.keys().any(|k| k.starts_with(PROP_BINDING)))
+        {
+            doc.get_mut(inst)?
+                .bound
+                .retain(|k, _| !k.starts_with(PROP_BINDING));
         }
         done.push(inst);
     }
     if done.is_empty() {
-        return Err(EngineError::Disabled(cmd.into(), "select an instance".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "select an instance".into(),
+        ));
     }
     Ok(json!({"ids": done}))
 }
 
 fn reset_override(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.resetOverride";
-    let i = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a layer inside an instance"))?;
+    let i = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a layer inside an instance"))?;
     let group = string(p, "group");
     if let Some(g) = &group
         && !OVERRIDE_GROUPS.contains(&g.as_str())
     {
-        return Err(bad(cmd, format!("unknown group `{g}` (known: {})", OVERRIDE_GROUPS.join(", "))));
+        return Err(bad(
+            cmd,
+            format!(
+                "unknown group `{g}` (known: {})",
+                OVERRIDE_GROUPS.join(", ")
+            ),
+        ));
     }
     let doc = s.doc_mut()?;
     if owning_instance(doc, i).is_none() || doc.get(i)?.source.is_none() {
         return Err(bad(cmd, "not a layer of an instance"));
     }
-    let top_root = matches!(doc.get(i)?.kind, NodeKind::Instance { .. }) && !inside_instance(doc, i);
+    let top_root =
+        matches!(doc.get(i)?.kind, NodeKind::Instance { .. }) && !inside_instance(doc, i);
     let had = doc.get(i)?.overrides.clone();
     let n = doc.get_mut(i)?;
     match &group {
@@ -568,24 +785,62 @@ fn reset_override(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A property name for `owner` based on `base` (a layer name): valid and not taken yet.
 fn fresh_prop_name(doc: &Document, owner: &Owner, base: &str) -> String {
-    let base: String = base.chars().filter(|c| !matches!(c, ',' | '=')).take(100).collect::<String>().trim().to_string();
-    let base = if base.is_empty() { "Slot".to_string() } else { base };
+    let base: String = base
+        .chars()
+        .filter(|c| !matches!(c, ',' | '='))
+        .take(100)
+        .collect::<String>()
+        .trim()
+        .to_string();
+    let base = if base.is_empty() {
+        "Slot".to_string()
+    } else {
+        base
+    };
     let taken = |n: &str| {
-        owner.components(doc).iter().any(|c| prop_defs(doc, *c).contains_key(n))
+        owner
+            .components(doc)
+            .iter()
+            .any(|c| prop_defs(doc, *c).contains_key(n))
             || matches!(owner, Owner::Set(s) if variant_options(doc, *s).iter().any(|(k, _)| k == n))
     };
-    (1..10_000).map(|k| if k == 1 { base.clone() } else { format!("{base} {k}") }).find(|n| !taken(n)).unwrap_or(base)
+    (1..10_000)
+        .map(|k| {
+            if k == 1 {
+                base.clone()
+            } else {
+                format!("{base} {k}")
+            }
+        })
+        .find(|n| !taken(n))
+        .unwrap_or(base)
 }
 
 /// The `preferred` components of a slot property: component or component set ids.
 fn preferred_arg(cmd: &str, doc: &Document, p: &Value) -> Result<Vec<NodeId>> {
-    let Some(v) = get(p, "preferred").filter(|v| !v.is_null()) else { return Ok(Vec::new()) };
-    let list = v.as_array().ok_or_else(|| bad(cmd, "`preferred`: an array of component ids"))?;
+    let Some(v) = get(p, "preferred").filter(|v| !v.is_null()) else {
+        return Ok(Vec::new());
+    };
+    let list = v
+        .as_array()
+        .ok_or_else(|| bad(cmd, "`preferred`: an array of component ids"))?;
     let mut out = Vec::new();
     for x in list.iter().take(500) {
         let c = id_of(x)
-            .filter(|c| doc.node(*c).is_some_and(|n| matches!(n.kind, NodeKind::Component { .. } | NodeKind::ComponentSet { .. })))
-            .ok_or_else(|| bad(cmd, format!("`preferred`: {x} is not a component or component set")))?;
+            .filter(|c| {
+                doc.node(*c).is_some_and(|n| {
+                    matches!(
+                        n.kind,
+                        NodeKind::Component { .. } | NodeKind::ComponentSet { .. }
+                    )
+                })
+            })
+            .ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("`preferred`: {x} is not a component or component set"),
+                )
+            })?;
         if !out.contains(&c) {
             out.push(c);
         }
@@ -595,30 +850,51 @@ fn preferred_arg(cmd: &str, doc: &Document, p: &Value) -> Result<Vec<NodeId>> {
 
 fn make_slot(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.makeSlot";
-    let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a frame inside a main component"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a frame inside a main component"))?;
     let doc = s.doc()?;
     let n = doc.get(id)?;
-    let inside_main = owning_component(doc, id).is_some_and(|c| c != id) && owning_instance(doc, id).is_none();
+    let inside_main =
+        owning_component(doc, id).is_some_and(|c| c != id) && owning_instance(doc, id).is_none();
     if !matches!(n.kind, NodeKind::Frame) || !inside_main {
-        return Err(bad(cmd, "only a frame inside a main component (not inside an instance) can become a slot"));
+        return Err(bad(
+            cmd,
+            "only a frame inside a main component (not inside an instance) can become a slot",
+        ));
     }
     if is_slot(doc, id) {
-        return Err(EngineError::Disabled(cmd.into(), format!("\"{}\" is already a slot", n.name)));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            format!("\"{}\" is already a slot", n.name),
+        ));
     }
-    let owner = Owner::resolve(doc, id).ok_or_else(|| bad(cmd, "the frame isn't inside a component"))?;
+    let owner =
+        Owner::resolve(doc, id).ok_or_else(|| bad(cmd, "the frame isn't inside a component"))?;
     let name = string(p, "name").unwrap_or_else(|| fresh_prop_name(doc, &owner, &n.name));
     let preferred = get(p, "preferred").cloned().unwrap_or(Value::Null);
-    add_prop(s, &json!({"id": id, "layer": id, "name": name, "type": "slot", "preferred": preferred}))
+    add_prop(
+        s,
+        &json!({"id": id, "layer": id, "name": name, "type": "slot", "preferred": preferred}),
+    )
 }
 
 fn remove_slot(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.removeSlot";
-    let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a slot frame of a main component"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a slot frame of a main component"))?;
     let doc = s.doc()?;
     if owning_instance(doc, id).is_some() {
-        return Err(EngineError::Disabled(cmd.into(), "slots are removed on the main component".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "slots are removed on the main component".into(),
+        ));
     }
-    let name = slot_name(doc, id).ok_or_else(|| bad(cmd, "not a slot frame of a main component"))?;
+    let name =
+        slot_name(doc, id).ok_or_else(|| bad(cmd, "not a slot frame of a main component"))?;
     delete_prop(s, &json!({"id": id, "name": name}))?;
     Ok(json!({"id": id, "name": name}))
 }
@@ -626,11 +902,18 @@ fn remove_slot(s: &mut Session, p: &Value) -> Result<Value> {
 /// The slot inside an instance a command acts on: `id` itself, or instance `id`'s slot `name`.
 fn instance_slot(cmd: &str, doc: &Document, id: NodeId, name: Option<&str>) -> Result<NodeId> {
     let slot = match name {
-        Some(nm) => slots_of(doc, id).into_iter().find(|(_, n)| n == nm).map(|(l, _)| l).ok_or_else(|| bad(cmd, format!("no slot named `{nm}`")))?,
+        Some(nm) => slots_of(doc, id)
+            .into_iter()
+            .find(|(_, n)| n == nm)
+            .map(|(l, _)| l)
+            .ok_or_else(|| bad(cmd, format!("no slot named `{nm}`")))?,
         None => id,
     };
     if !is_slot(doc, slot) || owning_instance(doc, slot).is_none() {
-        return Err(bad(cmd, "not a slot of an instance (a main component's slot takes layers like any frame)"));
+        return Err(bad(
+            cmd,
+            "not a slot of an instance (a main component's slot takes layers like any frame)",
+        ));
     }
     Ok(slot)
 }
@@ -638,14 +921,22 @@ fn instance_slot(cmd: &str, doc: &Document, id: NodeId, name: Option<&str>) -> R
 fn slot_insert(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "instance.slotInsert";
     let c = req_id(cmd, p, "component")?;
-    let target = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a slot inside an instance"))?;
+    let target = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a slot inside an instance"))?;
     let index = match get(p, "index").filter(|v| !v.is_null()) {
         None => None,
-        Some(v) => Some(v.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(cmd, "`index`: a child index (0 = bottom)"))?),
+        Some(v) => Some(
+            v.as_u64()
+                .and_then(|i| usize::try_from(i).ok())
+                .ok_or_else(|| bad(cmd, "`index`: a child index (0 = bottom)"))?,
+        ),
     };
     let doc = s.doc_mut()?;
     let slot = instance_slot(cmd, doc, target, string(p, "slot").as_deref())?;
-    let c = main_of(doc, c).ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
+    let c = main_of(doc, c)
+        .ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
     if boolean(p, "replace").unwrap_or(false) {
         for k in doc.get(slot)?.children.clone() {
             doc.remove(k)?;
@@ -658,7 +949,10 @@ fn slot_insert(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn reset_slot(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "instance.resetSlot";
-    let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a slot inside an instance"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a slot inside an instance"))?;
     let doc = s.doc_mut()?;
     let slot = instance_slot(cmd, doc, id, string(p, "slot").as_deref())?;
     let changed = slot_edited(doc, slot);
@@ -670,28 +964,47 @@ fn reset_slot(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn push_changes(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.pushChanges";
-    let i = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select an instance"))?;
+    let i = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select an instance"))?;
     let doc = s.doc_mut()?;
     // Changes go to the outer instance's main (never into a nested instance's own main).
     let inst = root_instance(doc, i).ok_or_else(|| bad(cmd, "not an instance"))?;
-    let Some(NodeKind::Instance { component, .. }) = doc.node(inst).map(|n| n.kind.clone()) else { return ok() };
+    let Some(NodeKind::Instance { component, .. }) = doc.node(inst).map(|n| n.kind.clone()) else {
+        return ok();
+    };
     if !doc.contains(component) {
-        return Err(EngineError::Disabled(cmd.into(), "the main component was deleted (use component.restoreMain)".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "the main component was deleted (use component.restoreMain)".into(),
+        ));
     }
     // Copy every overridden layer's values to its source in the main (geometry, swaps, property
     // values and slot content stay with the instance).
     let mut pushed = 0;
     for d in doc.subtree(inst) {
-        let Some(n) = doc.node(d).cloned() else { continue };
-        let Some(src) = (if d == inst { Some(component) } else { n.source }) else { continue };
+        let Some(n) = doc.node(d).cloned() else {
+            continue;
+        };
+        let Some(src) = (if d == inst { Some(component) } else { n.source }) else {
+            continue;
+        };
         if n.overrides.is_empty() || !doc.contains(src) || !doc.is_ancestor(component, src) {
             continue;
         }
-        let Some(mut target) = doc.node(src).cloned() else { continue };
+        let Some(mut target) = doc.node(src).cloned() else {
+            continue;
+        };
         let groups: BTreeSet<String> = n
             .overrides
             .iter()
-            .filter(|g| !matches!(g.as_str(), "size" | "position" | "component" | "props" | SLOT) && !(d == inst && g.as_str() == "name"))
+            .filter(|g| {
+                !matches!(
+                    g.as_str(),
+                    "size" | "position" | "component" | "props" | SLOT
+                ) && !(d == inst && g.as_str() == "name")
+            })
             .cloned()
             .collect();
         for g in &groups {
@@ -713,16 +1026,25 @@ fn push_changes(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn restore_main(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.restoreMain";
-    let i = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select an instance"))?;
+    let i = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select an instance"))?;
     let doc = s.doc_mut()?;
     let Some(NodeKind::Instance { component, props }) = doc.node(i).map(|n| n.kind.clone()) else {
         return Err(bad(cmd, "select an instance"));
     };
     if doc.contains(component) {
-        return Err(EngineError::Disabled(cmd.into(), "the main component still exists".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "the main component still exists".into(),
+        ));
     }
     if inside_instance(doc, i) {
-        return Err(EngineError::Disabled(cmd.into(), "select the outer instance".into()));
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            "select the outer instance".into(),
+        ));
     }
     let parent = doc.get(i)?.parent.ok_or_else(|| bad(cmd, "no parent"))?;
     let index = doc.index_in_parent(i);
@@ -744,7 +1066,9 @@ fn restore_main(s: &mut Session, p: &Value) -> Result<Value> {
     let mut nodes = Vec::new();
     let mut nested = Vec::new();
     for d in &sub {
-        let Some(mut n) = doc.node(*d).cloned() else { continue };
+        let Some(mut n) = doc.node(*d).cloned() else {
+            continue;
+        };
         if *d == i {
             let mut defs = BTreeMap::new();
             for (k, v) in &props {
@@ -752,13 +1076,19 @@ fn restore_main(s: &mut Session, p: &Value) -> Result<Value> {
                     Value::Bool(b) => PropDef::Boolean { default: *b },
                     Value::String(t) => PropDef::Text { default: t.clone() },
                     other => match id_of(other) {
-                        Some(c) if doc.contains(c) => PropDef::InstanceSwap { default: c, preferred: Vec::new() },
+                        Some(c) if doc.contains(c) => PropDef::InstanceSwap {
+                            default: c,
+                            preferred: Vec::new(),
+                        },
                         _ => continue,
                     },
                 };
                 defs.insert(k.clone(), def);
             }
-            n.kind = NodeKind::Component { description: String::new(), props: defs };
+            n.kind = NodeKind::Component {
+                description: String::new(),
+                props: defs,
+            };
             n.source = None;
             n.overrides.clear();
             n.prop_refs.clear();
@@ -793,7 +1123,8 @@ fn swap(s: &mut Session, p: &Value) -> Result<Value> {
     let c = req_id(cmd, p, "component")?;
     let ids = req_targets(cmd, s, p)?;
     let doc = s.doc_mut()?;
-    let c = main_of(doc, c).ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
+    let c = main_of(doc, c)
+        .ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
     for i in ids {
         swap_instance(doc, i, c).map_err(|m| bad(cmd, m))?;
     }
@@ -802,7 +1133,11 @@ fn swap(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Make instance `i` show main component `c`, keeping the values of properties with the same names
 /// (the layers' overrides follow by name when the instance is rebuilt).
-pub(crate) fn swap_instance(doc: &mut Document, i: NodeId, c: NodeId) -> std::result::Result<(), String> {
+pub(crate) fn swap_instance(
+    doc: &mut Document,
+    i: NodeId,
+    c: NodeId,
+) -> std::result::Result<(), String> {
     if doc.is_ancestor(c, i) {
         return Err("an instance can't show the component it is inside".into());
     }
@@ -811,7 +1146,10 @@ pub(crate) fn swap_instance(doc: &mut Document, i: NodeId, c: NodeId) -> std::re
         Ok(NodeKind::Instance { component, props }) => {
             *component = c;
             let old = std::mem::take(props);
-            *props = defaults.iter().map(|(k, d)| (k.clone(), old.get(k).cloned().unwrap_or_else(|| d.clone()))).collect();
+            *props = defaults
+                .iter()
+                .map(|(k, d)| (k.clone(), old.get(k).cloned().unwrap_or_else(|| d.clone())))
+                .collect();
             Ok(())
         }
         _ => Err(format!("{i} is not an instance")),
@@ -825,10 +1163,16 @@ pub(crate) fn swap_at(s: &mut Session, p: &Value) -> Result<Value> {
     let pt = figcraft_geom::Point::new(req_num(cmd, p, "x")?, req_num(cmd, p, "y")?);
     let page = s.page()?;
     let doc = s.doc()?;
-    let c = main_of(doc, c).ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
+    let c = main_of(doc, c)
+        .ok_or_else(|| bad(cmd, "`component` must be a component or component set"))?;
     let family = crate::drop::swap_family(doc, c);
-    let target = crate::drop::swap_target(doc, page, pt, family.as_deref(), Some(c))
-        .ok_or_else(|| EngineError::Disabled(cmd.into(), "there is no instance at that point to swap".into()))?;
+    let target =
+        crate::drop::swap_target(doc, page, pt, family.as_deref(), Some(c)).ok_or_else(|| {
+            EngineError::Disabled(
+                cmd.into(),
+                "there is no instance at that point to swap".into(),
+            )
+        })?;
     keep_text_overrides(s.doc_mut()?, target);
     swap(s, &json!({"ids": [target], "component": c}))?;
     s.set_selection(vec![target]);
@@ -837,18 +1181,40 @@ pub(crate) fn swap_at(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Whether instance `id` has a component property `name` that a `kind` variable can drive (a
 /// boolean property takes a boolean variable, a text or variant property a string one).
-pub(crate) fn check_prop_binding(doc: &Document, id: NodeId, name: &str, kind: VariableType) -> std::result::Result<(), String> {
+pub(crate) fn check_prop_binding(
+    doc: &Document,
+    id: NodeId,
+    name: &str,
+    kind: VariableType,
+) -> std::result::Result<(), String> {
     let Some(NodeKind::Instance { component, .. }) = doc.node(id).map(|n| &n.kind) else {
-        return Err(format!("{id} is not an instance (component properties are bound on instances)"));
+        return Err(format!(
+            "{id} is not an instance (component properties are bound on instances)"
+        ));
     };
-    if variant_set(doc, *component).is_some_and(|set| variant_options(doc, set).iter().any(|(o, _)| o == name)) {
-        return if kind == VariableType::String { Ok(()) } else { Err(format!("`{name}` is a variant property: bind a string variable")) };
+    if variant_set(doc, *component)
+        .is_some_and(|set| variant_options(doc, set).iter().any(|(o, _)| o == name))
+    {
+        return if kind == VariableType::String {
+            Ok(())
+        } else {
+            Err(format!(
+                "`{name}` is a variant property: bind a string variable"
+            ))
+        };
     }
     match (prop_defs(doc, *component).get(name), kind) {
-        (Some(PropDef::Boolean { .. }), VariableType::Boolean) | (Some(PropDef::Text { .. }), VariableType::String) => Ok(()),
-        (Some(PropDef::Boolean { .. }), _) => Err(format!("`{name}` is a boolean property: bind a boolean variable")),
-        (Some(PropDef::Text { .. }), _) => Err(format!("`{name}` is a text property: bind a string variable")),
-        (Some(_), _) => Err(format!("`{name}`: only boolean and text properties can be bound to variables")),
+        (Some(PropDef::Boolean { .. }), VariableType::Boolean)
+        | (Some(PropDef::Text { .. }), VariableType::String) => Ok(()),
+        (Some(PropDef::Boolean { .. }), _) => Err(format!(
+            "`{name}` is a boolean property: bind a boolean variable"
+        )),
+        (Some(PropDef::Text { .. }), _) => Err(format!(
+            "`{name}` is a text property: bind a string variable"
+        )),
+        (Some(_), _) => Err(format!(
+            "`{name}`: only boolean and text properties can be bound to variables"
+        )),
         (None, _) => Err(format!("the instance has no property named `{name}`")),
     }
 }
@@ -856,16 +1222,27 @@ pub(crate) fn check_prop_binding(doc: &Document, id: NodeId, name: &str, kind: V
 /// Write bound variable values into instance `id`'s boolean and text property values, and switch
 /// it to the variant its bound variant properties name (only what changed; the instance then
 /// follows like after `instance.setProperties`). A value that names no variant changes nothing.
-pub(crate) fn apply_prop_bindings(doc: &mut Document, id: NodeId, sets: &[(String, VariableValue)]) {
-    let Some(NodeKind::Instance { component, .. }) = doc.node(id).map(|n| &n.kind) else { return };
+pub(crate) fn apply_prop_bindings(
+    doc: &mut Document,
+    id: NodeId,
+    sets: &[(String, VariableValue)],
+) {
+    let Some(NodeKind::Instance { component, .. }) = doc.node(id).map(|n| &n.kind) else {
+        return;
+    };
     let component = *component;
     if let Some(set) = variant_set(doc, component) {
         let options = variant_options(doc, set);
-        let current = doc.node(component).map(|c| variant_props(&c.name)).unwrap_or_default();
+        let current = doc
+            .node(component)
+            .map(|c| variant_props(&c.name))
+            .unwrap_or_default();
         let mut wanted = current.clone();
         for (name, val) in sets {
             if let VariableValue::String(t) = val
-                && options.iter().any(|(o, vals)| o == name && vals.contains(t))
+                && options
+                    .iter()
+                    .any(|(o, vals)| o == name && vals.contains(t))
             {
                 wanted.insert(name.clone(), t.clone());
             }
@@ -878,8 +1255,13 @@ pub(crate) fn apply_prop_bindings(doc: &mut Document, id: NodeId, sets: &[(Strin
             *c = target;
         }
     }
-    let Some(NodeKind::Instance { component, props }) = doc.node(id).map(|n| &n.kind) else { return };
-    let Some(NodeKind::Component { props: defs, .. }) = doc.node(*component).map(|c| &c.kind) else { return };
+    let Some(NodeKind::Instance { component, props }) = doc.node(id).map(|n| &n.kind) else {
+        return;
+    };
+    let Some(NodeKind::Component { props: defs, .. }) = doc.node(*component).map(|c| &c.kind)
+    else {
+        return;
+    };
     let mut next = props.clone();
     for (name, val) in sets {
         let v = match (defs.get(name), val) {
@@ -915,17 +1297,32 @@ fn coerce(cmd: &str, doc: &Document, name: &str, def: &PropDef, v: &Value) -> Re
             None => Err(bad(cmd, format!("`{name}` takes a component id"))),
         },
         PropDef::Variant { options, .. } => {
-            let t = v.as_str().map(str::to_string).unwrap_or_else(|| v.to_string());
-            if options.is_empty() || options.contains(&t) { Ok(json!(t)) } else { Err(bad(cmd, format!("`{name}` must be one of {options:?}"))) }
+            let t = v
+                .as_str()
+                .map(str::to_string)
+                .unwrap_or_else(|| v.to_string());
+            if options.is_empty() || options.contains(&t) {
+                Ok(json!(t))
+            } else {
+                Err(bad(cmd, format!("`{name}` must be one of {options:?}")))
+            }
         }
-        PropDef::Slot { .. } => Err(bad(cmd, format!("`{name}` is a slot: fill it with instance.slotInsert or by adding layers to it"))),
+        PropDef::Slot { .. } => Err(bad(
+            cmd,
+            format!(
+                "`{name}` is a slot: fill it with instance.slotInsert or by adding layers to it"
+            ),
+        )),
     }
 }
 
 fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "instance.setProperties";
     let ids = req_targets(cmd, s, p)?;
-    let props = get(p, "properties").and_then(Value::as_object).cloned().ok_or_else(|| bad(cmd, "`properties` object required"))?;
+    let props = get(p, "properties")
+        .and_then(Value::as_object)
+        .cloned()
+        .ok_or_else(|| bad(cmd, "`properties` object required"))?;
     let doc = s.doc_mut()?;
     for i in ids {
         let Some(NodeKind::Instance { component, .. }) = doc.node(i).map(|n| n.kind.clone()) else {
@@ -934,12 +1331,18 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
         // Variant properties: switch to the matching sibling variant.
         let set = variant_set(doc, component);
         let options = set.map(|s| variant_options(doc, s)).unwrap_or_default();
-        let mut wanted = doc.node(component).map(|c| variant_props(&c.name)).unwrap_or_default();
+        let mut wanted = doc
+            .node(component)
+            .map(|c| variant_props(&c.name))
+            .unwrap_or_default();
         let mut target = component;
         let mut rest = Vec::new();
         for (k, v) in &props {
             if let Some((_, vals)) = options.iter().find(|(o, _)| o == k) {
-                let val = v.as_str().map(str::to_string).unwrap_or_else(|| v.to_string());
+                let val = v
+                    .as_str()
+                    .map(str::to_string)
+                    .unwrap_or_else(|| v.to_string());
                 if !vals.contains(&val) {
                     return Err(bad(cmd, format!("`{k}` must be one of {vals:?}")));
                 }
@@ -949,7 +1352,11 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         if let Some(set) = set
-            && wanted != doc.node(component).map(|c| variant_props(&c.name)).unwrap_or_default()
+            && wanted
+                != doc
+                    .node(component)
+                    .map(|c| variant_props(&c.name))
+                    .unwrap_or_default()
         {
             target = find_variant(doc, set, &wanted).unwrap_or(component);
         }
@@ -960,12 +1367,23 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
         let mut values = Vec::new();
         for (k, v) in rest {
             let def = defs.get(&k).ok_or_else(|| {
-                let known: Vec<&str> = defs.keys().map(String::as_str).chain(options.iter().map(|(o, _)| o.as_str())).collect();
-                bad(cmd, format!("unknown property `{k}` (known: {})", known.join(", ")))
+                let known: Vec<&str> = defs
+                    .keys()
+                    .map(String::as_str)
+                    .chain(options.iter().map(|(o, _)| o.as_str()))
+                    .collect();
+                bad(
+                    cmd,
+                    format!("unknown property `{k}` (known: {})", known.join(", ")),
+                )
             })?;
             values.push((k.clone(), coerce(cmd, doc, &k, def, &v)?));
         }
-        if let NodeKind::Instance { component: c, props: ip } = &mut doc.get_mut(i)?.kind {
+        if let NodeKind::Instance {
+            component: c,
+            props: ip,
+        } = &mut doc.get_mut(i)?.kind
+        {
             *c = target;
             for (k, v) in values {
                 ip.insert(k, v);
@@ -1004,7 +1422,16 @@ impl Owner {
             Owner::Comp(c) => vec![*c],
             Owner::Set(s) => doc
                 .node(*s)
-                .map(|n| n.children.iter().copied().filter(|c| doc.node(*c).is_some_and(|x| matches!(x.kind, NodeKind::Component { .. }))).collect())
+                .map(|n| {
+                    n.children
+                        .iter()
+                        .copied()
+                        .filter(|c| {
+                            doc.node(*c)
+                                .is_some_and(|x| matches!(x.kind, NodeKind::Component { .. }))
+                        })
+                        .collect()
+                })
                 .unwrap_or_default(),
         }
     }
@@ -1023,7 +1450,11 @@ fn prop_defs(doc: &Document, c: NodeId) -> BTreeMap<String, PropDef> {
     }
 }
 
-fn set_prop_defs(doc: &mut Document, c: NodeId, f: impl FnOnce(&mut BTreeMap<String, PropDef>)) -> Result<()> {
+fn set_prop_defs(
+    doc: &mut Document,
+    c: NodeId,
+    f: impl FnOnce(&mut BTreeMap<String, PropDef>),
+) -> Result<()> {
     if let NodeKind::Component { props, .. } = &mut doc.get_mut(c)?.kind {
         f(props);
     }
@@ -1033,38 +1464,67 @@ fn set_prop_defs(doc: &mut Document, c: NodeId, f: impl FnOnce(&mut BTreeMap<Str
 fn valid_prop_name(cmd: &str, name: &str) -> Result<String> {
     let name = name.trim();
     if name.is_empty() || name.contains([',', '=']) || name.chars().count() > 200 {
-        return Err(bad(cmd, "property names must be non-empty, without ',' or '='"));
+        return Err(bad(
+            cmd,
+            "property names must be non-empty, without ',' or '='",
+        ));
     }
     Ok(name.to_string())
 }
 
 fn add_prop(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.addProperty";
-    let target = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a component"))?;
+    let target = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a component"))?;
     let name = valid_prop_name(cmd, &req_string(cmd, p, "name")?)?;
     let t = req_string(cmd, p, "type")?;
     let doc = s.doc_mut()?;
     if inside_instance(doc, target) {
         return Err(bad(cmd, "select a component, not a layer of an instance"));
     }
-    let owner = Owner::resolve(doc, target).ok_or_else(|| bad(cmd, "select a component, a component set or a layer inside a component"))?;
+    let owner = Owner::resolve(doc, target).ok_or_else(|| {
+        bad(
+            cmd,
+            "select a component, a component set or a layer inside a component",
+        )
+    })?;
     // A layer selected inside the component gets bound to the new property.
-    let layer = id(p, "layer")
-        .or_else(|| (target != owner.id() && !matches!(doc.node(target).map(|n| &n.kind), Some(NodeKind::Component { .. }))).then_some(target));
+    let layer = id(p, "layer").or_else(|| {
+        (target != owner.id()
+            && !matches!(
+                doc.node(target).map(|n| &n.kind),
+                Some(NodeKind::Component { .. })
+            ))
+        .then_some(target)
+    });
     let comps = owner.components(doc);
     let variants = match &owner {
         Owner::Set(s) => variant_options(doc, *s),
         Owner::Comp(_) => Vec::new(),
     };
-    if variants.iter().any(|(k, _)| *k == name) || comps.iter().any(|c| prop_defs(doc, *c).contains_key(&name)) {
-        return Err(bad(cmd, format!("a property named `{name}` already exists")));
+    if variants.iter().any(|(k, _)| *k == name)
+        || comps.iter().any(|c| prop_defs(doc, *c).contains_key(&name))
+    {
+        return Err(bad(
+            cmd,
+            format!("a property named `{name}` already exists"),
+        ));
     }
     let layer_node = layer.and_then(|l| doc.node(l)).cloned();
     let def = match t.to_ascii_lowercase().as_str() {
-        "boolean" | "bool" => PropDef::Boolean { default: boolean(p, "default").unwrap_or(true) },
+        "boolean" | "bool" => PropDef::Boolean {
+            default: boolean(p, "default").unwrap_or(true),
+        },
         "text" => PropDef::Text {
             default: string(p, "default")
-                .or_else(|| layer_node.as_ref().and_then(|n| n.kind.text()).map(|t| t.characters.clone()))
+                .or_else(|| {
+                    layer_node
+                        .as_ref()
+                        .and_then(|n| n.kind.text())
+                        .map(|t| t.characters.clone())
+                })
                 .unwrap_or_else(|| name.clone()),
         },
         "instanceswap" | "instance_swap" | "instance" => {
@@ -1075,7 +1535,10 @@ fn add_prop(s: &mut Session, p: &Value) -> Result<Value> {
                 })
                 .and_then(|c| main_of(doc, c))
                 .ok_or_else(|| bad(cmd, "default: a component id"))?;
-            PropDef::InstanceSwap { default: d, preferred: preferred_arg(cmd, doc, p)? }
+            PropDef::InstanceSwap {
+                default: d,
+                preferred: preferred_arg(cmd, doc, p)?,
+            }
         }
         "variant" => {
             let dv = string(p, "default")
@@ -1088,16 +1551,28 @@ fn add_prop(s: &mut Session, p: &Value) -> Result<Value> {
             };
             for c in Owner::Set(set).components(doc) {
                 let cn = doc.get_mut(c)?;
-                cn.name = if cn.name.contains('=') { format!("{}, {name}={dv}", cn.name) } else { format!("{name}={dv}") };
+                cn.name = if cn.name.contains('=') {
+                    format!("{}, {name}={dv}", cn.name)
+                } else {
+                    format!("{name}={dv}")
+                };
             }
             s.set_selection(vec![set]);
             return Ok(json!({"id": set}));
         }
         "slot" => {
-            if !layer_node.as_ref().is_some_and(|n| matches!(n.kind, NodeKind::Frame)) {
-                return Err(bad(cmd, "a slot is a frame inside the component: select one (or pass `layer`)"));
+            if !layer_node
+                .as_ref()
+                .is_some_and(|n| matches!(n.kind, NodeKind::Frame))
+            {
+                return Err(bad(
+                    cmd,
+                    "a slot is a frame inside the component: select one (or pass `layer`)",
+                ));
             }
-            PropDef::Slot { preferred: preferred_arg(cmd, doc, p)? }
+            PropDef::Slot {
+                preferred: preferred_arg(cmd, doc, p)?,
+            }
         }
         _ => return Err(bad(cmd, "type: boolean|text|instanceSwap|variant|slot")),
     };
@@ -1111,7 +1586,9 @@ fn add_prop(s: &mut Session, p: &Value) -> Result<Value> {
         }
         for inst in instances_of(doc, *c) {
             if let NodeKind::Instance { props, .. } = &mut doc.get_mut(inst)?.kind {
-                props.entry(name.clone()).or_insert_with(|| prop_default_value(&def));
+                props
+                    .entry(name.clone())
+                    .or_insert_with(|| prop_default_value(&def));
             }
         }
     }
@@ -1122,12 +1599,22 @@ fn add_prop(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Bind (or with `property: None` unbind) a layer's field to a property of its component.
-fn bind(cmd: &str, doc: &mut Document, layer: NodeId, property: Option<&str>, field: Option<&str>) -> Result<()> {
+fn bind(
+    cmd: &str,
+    doc: &mut Document,
+    layer: NodeId,
+    property: Option<&str>,
+    field: Option<&str>,
+) -> Result<()> {
     let n = doc.get(layer)?.clone();
     if inside_instance(doc, layer) {
-        return Err(bad(cmd, "layers inside an instance can't be bound (bind the nested instance itself, or edit its main)"));
+        return Err(bad(
+            cmd,
+            "layers inside an instance can't be bound (bind the nested instance itself, or edit its main)",
+        ));
     }
-    let comp = owning_component(doc, layer).ok_or_else(|| bad(cmd, "the layer isn't inside a component"))?;
+    let comp = owning_component(doc, layer)
+        .ok_or_else(|| bad(cmd, "the layer isn't inside a component"))?;
     let Some(property) = property.filter(|p| !p.is_empty()) else {
         let n = doc.get_mut(layer)?;
         match field {
@@ -1139,43 +1626,79 @@ fn bind(cmd: &str, doc: &mut Document, layer: NodeId, property: Option<&str>, fi
         return Ok(());
     };
     let defs = prop_defs(doc, comp);
-    let def = defs.get(property).ok_or_else(|| bad(cmd, format!("the component has no property `{property}`")))?;
+    let def = defs
+        .get(property)
+        .ok_or_else(|| bad(cmd, format!("the component has no property `{property}`")))?;
     let expected = match def {
         PropDef::Boolean { .. } => "visible",
         PropDef::Text { .. } => "characters",
         PropDef::InstanceSwap { .. } => "mainComponent",
-        PropDef::Variant { .. } => return Err(bad(cmd, "variant properties pick a variant; they can't be bound to a layer")),
+        PropDef::Variant { .. } => {
+            return Err(bad(
+                cmd,
+                "variant properties pick a variant; they can't be bound to a layer",
+            ));
+        }
         PropDef::Slot { .. } => SLOT,
     };
     let field = field.unwrap_or(expected);
     if field != expected {
-        return Err(bad(cmd, format!("`{property}` can only control `{expected}`")));
+        return Err(bad(
+            cmd,
+            format!("`{property}` can only control `{expected}`"),
+        ));
     }
     match field {
-        "characters" if n.kind.text().is_none() => return Err(bad(cmd, "text properties bind to text layers")),
-        "mainComponent" if !matches!(n.kind, NodeKind::Instance { .. }) => return Err(bad(cmd, "instance swap properties bind to instances")),
-        "visible" if layer == comp => return Err(bad(cmd, "the component itself can't be hidden by its own property")),
-        SLOT if !matches!(n.kind, NodeKind::Frame) => return Err(bad(cmd, "slot properties bind to frames inside the component")),
-        SLOT if doc
-            .subtree(comp)
-            .into_iter()
-            .any(|d| d != layer && doc.node(d).is_some_and(|x| x.prop_refs.get(SLOT).map(String::as_str) == Some(property))) =>
+        "characters" if n.kind.text().is_none() => {
+            return Err(bad(cmd, "text properties bind to text layers"));
+        }
+        "mainComponent" if !matches!(n.kind, NodeKind::Instance { .. }) => {
+            return Err(bad(cmd, "instance swap properties bind to instances"));
+        }
+        "visible" if layer == comp => {
+            return Err(bad(
+                cmd,
+                "the component itself can't be hidden by its own property",
+            ));
+        }
+        SLOT if !matches!(n.kind, NodeKind::Frame) => {
+            return Err(bad(
+                cmd,
+                "slot properties bind to frames inside the component",
+            ));
+        }
+        SLOT if doc.subtree(comp).into_iter().any(|d| {
+            d != layer
+                && doc
+                    .node(d)
+                    .is_some_and(|x| x.prop_refs.get(SLOT).map(String::as_str) == Some(property))
+        }) =>
         {
-            return Err(bad(cmd, format!("another frame of the component is already the slot `{property}`")));
+            return Err(bad(
+                cmd,
+                format!("another frame of the component is already the slot `{property}`"),
+            ));
         }
         _ => {}
     }
-    doc.get_mut(layer)?.prop_refs.insert(field.to_string(), property.to_string());
+    doc.get_mut(layer)?
+        .prop_refs
+        .insert(field.to_string(), property.to_string());
     Ok(())
 }
 
 fn bind_prop(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.bindProperty";
-    let layer = id(p, "layer").or_else(|| targets(s, p).first().copied()).ok_or_else(|| bad(cmd, "`layer` required"))?;
+    let layer = id(p, "layer")
+        .or_else(|| targets(s, p).first().copied())
+        .ok_or_else(|| bad(cmd, "`layer` required"))?;
     let property = string(p, "property");
     let field = string(p, "field");
     if let Some(f) = &field
-        && !matches!(f.as_str(), "visible" | "characters" | "mainComponent" | SLOT)
+        && !matches!(
+            f.as_str(),
+            "visible" | "characters" | "mainComponent" | SLOT
+        )
     {
         return Err(bad(cmd, "field: visible|characters|mainComponent|slot"));
     }
@@ -1192,7 +1715,11 @@ fn rename_prop_refs(doc: &mut Document, comp: NodeId, old: &str, new: Option<&st
             && let Some(n) = doc.node_mut(d)
         {
             match new {
-                Some(nw) => n.prop_refs.values_mut().filter(|v| *v == old).for_each(|v| *v = nw.to_string()),
+                Some(nw) => n
+                    .prop_refs
+                    .values_mut()
+                    .filter(|v| *v == old)
+                    .for_each(|v| *v = nw.to_string()),
                 None => n.prop_refs.retain(|_, v| v != old),
             }
         }
@@ -1218,11 +1745,18 @@ fn rename_prop_refs(doc: &mut Document, comp: NodeId, old: &str, new: Option<&st
 
 fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.editProperty";
-    let target = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a component"))?;
+    let target = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a component"))?;
     let name = req_string(cmd, p, "name")?;
-    let new_name = string(p, "newName").map(|n| valid_prop_name(cmd, &n)).transpose()?.filter(|n| *n != name);
+    let new_name = string(p, "newName")
+        .map(|n| valid_prop_name(cmd, &n))
+        .transpose()?
+        .filter(|n| *n != name);
     let doc = s.doc_mut()?;
-    let owner = Owner::resolve(doc, target).ok_or_else(|| bad(cmd, "select a component or component set"))?;
+    let owner = Owner::resolve(doc, target)
+        .ok_or_else(|| bad(cmd, "select a component or component set"))?;
     let comps = owner.components(doc);
     if let Some(nn) = &new_name {
         let taken = comps.iter().any(|c| prop_defs(doc, *c).contains_key(nn))
@@ -1233,9 +1767,14 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // Variant property of a set.
     if let Owner::Set(set) = owner
-        && let Some((_, values)) = variant_options(doc, set).into_iter().find(|(k, _)| *k == name)
+        && let Some((_, values)) = variant_options(doc, set)
+            .into_iter()
+            .find(|(k, _)| *k == name)
     {
-        let order: Vec<String> = variant_options(doc, set).into_iter().map(|(k, _)| k).collect();
+        let order: Vec<String> = variant_options(doc, set)
+            .into_iter()
+            .map(|(k, _)| k)
+            .collect();
         let rename_value = match (string(p, "value"), string(p, "newValue")) {
             (Some(v), Some(nv)) => {
                 let nv = nv.trim().to_string();
@@ -1249,10 +1788,22 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
             }
             _ => None,
         };
-        let mut order: Vec<String> = order.into_iter().map(|k| if k == name { new_name.clone().unwrap_or(k) } else { k }).collect();
+        let mut order: Vec<String> = order
+            .into_iter()
+            .map(|k| {
+                if k == name {
+                    new_name.clone().unwrap_or(k)
+                } else {
+                    k
+                }
+            })
+            .collect();
         // Reordered: every variant's name lists the properties in the new order.
         if let Some(to) = get(p, "index").filter(|v| !v.is_null()) {
-            let to = to.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(cmd, "`index`: a property place (0 = first)"))?;
+            let to = to
+                .as_u64()
+                .and_then(|i| usize::try_from(i).ok())
+                .ok_or_else(|| bad(cmd, "`index`: a property place (0 = first)"))?;
             let key = new_name.clone().unwrap_or(name.clone());
             order.retain(|k| *k != key);
             order.insert(to.min(order.len()), key);
@@ -1276,14 +1827,36 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(dv) = string(p, "default") {
             let key = new_name.clone().unwrap_or(name.clone());
             let current = default_variant(doc, set);
-            let mut wanted = current.and_then(|d| doc.node(d)).map(|n| variant_props(&n.name)).unwrap_or_default();
+            let mut wanted = current
+                .and_then(|d| doc.node(d))
+                .map(|n| variant_props(&n.name))
+                .unwrap_or_default();
             wanted.insert(key.clone(), dv.clone());
-            let props_of = |c: &NodeId| doc.node(*c).map(|n| variant_props(&n.name)).unwrap_or_default();
-            let pick =
-                comps.iter().copied().find(|c| props_of(c) == wanted).or_else(|| comps.iter().copied().find(|c| props_of(c).get(&key) == Some(&dv)));
-            let (Some(f), Some(d)) = (pick, current) else { return Err(bad(cmd, format!("no variant has {key}={dv}"))) };
+            let props_of = |c: &NodeId| {
+                doc.node(*c)
+                    .map(|n| variant_props(&n.name))
+                    .unwrap_or_default()
+            };
+            let pick = comps
+                .iter()
+                .copied()
+                .find(|c| props_of(c) == wanted)
+                .or_else(|| {
+                    comps
+                        .iter()
+                        .copied()
+                        .find(|c| props_of(c).get(&key) == Some(&dv))
+                });
+            let (Some(f), Some(d)) = (pick, current) else {
+                return Err(bad(cmd, format!("no variant has {key}={dv}")));
+            };
             if f != d {
-                let place = |doc: &Document, c: NodeId| doc.node(c).map(|n| n.transform.as_coeffs()).map(|[.., x, y]| (x, y)).unwrap_or_default();
+                let place = |doc: &Document, c: NodeId| {
+                    doc.node(c)
+                        .map(|n| n.transform.as_coeffs())
+                        .map(|[.., x, y]| (x, y))
+                        .unwrap_or_default()
+                };
                 let (fp, dp) = (place(doc, f), place(doc, d));
                 for (c, (x, y)) in [(f, dp), (d, fp)] {
                     let n = doc.get_mut(c)?;
@@ -1295,10 +1868,16 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
         }
         return ok();
     }
-    let def = comps.iter().find_map(|c| prop_defs(doc, *c).get(&name).cloned()).ok_or_else(|| bad(cmd, format!("no property named `{name}`")))?;
+    let def = comps
+        .iter()
+        .find_map(|c| prop_defs(doc, *c).get(&name).cloned())
+        .ok_or_else(|| bad(cmd, format!("no property named `{name}`")))?;
     let preferred = if get(p, "preferred").is_some() {
         if !matches!(def, PropDef::Slot { .. } | PropDef::InstanceSwap { .. }) {
-            return Err(bad(cmd, "`preferred` is for instance swap and slot properties"));
+            return Err(bad(
+                cmd,
+                "`preferred` is for instance swap and slot properties",
+            ));
         }
         Some(preferred_arg(cmd, doc, p)?)
     } else {
@@ -1309,13 +1888,18 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
             Value::Bool(b) => PropDef::Boolean { default: b },
             Value::String(t) if matches!(def, PropDef::Text { .. }) => PropDef::Text { default: t },
             other => match (&def, id_of(&other)) {
-                (PropDef::InstanceSwap { preferred, .. }, Some(c)) => PropDef::InstanceSwap { default: c, preferred: preferred.clone() },
+                (PropDef::InstanceSwap { preferred, .. }, Some(c)) => PropDef::InstanceSwap {
+                    default: c,
+                    preferred: preferred.clone(),
+                },
                 _ => def.clone(),
             },
         },
         None => def.clone(),
     };
-    if let (Some(list), PropDef::Slot { preferred } | PropDef::InstanceSwap { preferred, .. }) = (preferred, &mut new_def) {
+    if let (Some(list), PropDef::Slot { preferred } | PropDef::InstanceSwap { preferred, .. }) =
+        (preferred, &mut new_def)
+    {
         *preferred = list;
     }
     for c in &comps {
@@ -1339,20 +1923,31 @@ fn edit_prop(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn delete_prop(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "component.deleteProperty";
-    let target = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a component"))?;
+    let target = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a component"))?;
     let name = req_string(cmd, p, "name")?;
     let doc = s.doc_mut()?;
-    let owner = Owner::resolve(doc, target).ok_or_else(|| bad(cmd, "select a component or component set"))?;
+    let owner = Owner::resolve(doc, target)
+        .ok_or_else(|| bad(cmd, "select a component or component set"))?;
     let comps = owner.components(doc);
     if let Owner::Set(set) = owner
         && variant_options(doc, set).iter().any(|(k, _)| *k == name)
     {
-        let order: Vec<String> = variant_options(doc, set).into_iter().map(|(k, _)| k).collect();
+        let order: Vec<String> = variant_options(doc, set)
+            .into_iter()
+            .map(|(k, _)| k)
+            .collect();
         for c in &comps {
             let mut pairs = variant_props(&doc.get(*c)?.name);
             pairs.remove(&name);
             let n = doc.get_mut(*c)?;
-            n.name = if pairs.is_empty() { "Default".into() } else { variant_name(&pairs, &order) };
+            n.name = if pairs.is_empty() {
+                "Default".into()
+            } else {
+                variant_name(&pairs, &order)
+            };
         }
         return ok();
     }
@@ -1374,26 +1969,44 @@ fn delete_prop(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn def_json(name: &str, d: &PropDef) -> Value {
     match d {
-        PropDef::Boolean { default } => json!({"name": name, "type": "boolean", "default": default}),
+        PropDef::Boolean { default } => {
+            json!({"name": name, "type": "boolean", "default": default})
+        }
         PropDef::Text { default } => json!({"name": name, "type": "text", "default": default}),
-        PropDef::InstanceSwap { default, preferred } => json!({"name": name, "type": "instanceSwap", "default": default, "preferred": preferred}),
-        PropDef::Variant { options, default } => json!({"name": name, "type": "variant", "default": default, "options": options}),
-        PropDef::Slot { preferred } => json!({"name": name, "type": "slot", "preferred": preferred}),
+        PropDef::InstanceSwap { default, preferred } => {
+            json!({"name": name, "type": "instanceSwap", "default": default, "preferred": preferred})
+        }
+        PropDef::Variant { options, default } => {
+            json!({"name": name, "type": "variant", "default": default, "options": options})
+        }
+        PropDef::Slot { preferred } => {
+            json!({"name": name, "type": "slot", "preferred": preferred})
+        }
     }
 }
 
 /// Properties of a component, set or instance as JSON (`component.properties`).
 pub(crate) fn describe_props(doc: &Document, id: NodeId) -> Value {
-    let Some(n) = doc.node(id) else { return Value::Null };
+    let Some(n) = doc.node(id) else {
+        return Value::Null;
+    };
     let (owner_comp, values) = match &n.kind {
         NodeKind::Instance { component, props } => (Some(*component), Some(props.clone())),
         _ => (main_of(doc, id).or_else(|| owning_component(doc, id)), None),
     };
-    let Some(comp) = owner_comp else { return json!({"properties": []}) };
+    let Some(comp) = owner_comp else {
+        return json!({"properties": []});
+    };
     let mut list: Vec<Value> = Vec::new();
     if let Some(set) = variant_set(doc, comp) {
-        let current = doc.node(comp).map(|c| variant_props(&c.name)).unwrap_or_default();
-        let defaults = default_variant(doc, set).and_then(|d| doc.node(d)).map(|n| variant_props(&n.name)).unwrap_or_default();
+        let current = doc
+            .node(comp)
+            .map(|c| variant_props(&c.name))
+            .unwrap_or_default();
+        let defaults = default_variant(doc, set)
+            .and_then(|d| doc.node(d))
+            .map(|n| variant_props(&n.name))
+            .unwrap_or_default();
         for (k, vals) in variant_options(doc, set) {
             let mut v = json!({"name": k, "type": "variant", "options": vals, "default": defaults.get(&k).or(vals.first())});
             if values.is_some() {
@@ -1403,11 +2016,22 @@ pub(crate) fn describe_props(doc: &Document, id: NodeId) -> Value {
         }
     }
     // Slots: the frames (on a main) or this instance's copy, with whether it holds its own content.
-    let slots = slots_of(doc, if values.is_some() { id } else { variant_set(doc, comp).unwrap_or(comp) });
+    let slots = slots_of(
+        doc,
+        if values.is_some() {
+            id
+        } else {
+            variant_set(doc, comp).unwrap_or(comp)
+        },
+    );
     for (k, d) in prop_defs(doc, comp) {
         let mut v = def_json(&k, &d);
         if !takes_value(&d) {
-            let layers: Vec<NodeId> = slots.iter().filter(|(_, n)| *n == k).map(|(l, _)| *l).collect();
+            let layers: Vec<NodeId> = slots
+                .iter()
+                .filter(|(_, n)| *n == k)
+                .map(|(l, _)| *l)
+                .collect();
             if values.is_some() {
                 v["value"] = layers.first().map_or(Value::Null, |l| {
                     let count = doc.node(*l).map_or(0, |n| n.children.len());
@@ -1417,7 +2041,10 @@ pub(crate) fn describe_props(doc: &Document, id: NodeId) -> Value {
                 v["layers"] = json!(layers);
             }
         } else if let Some(vals) = &values {
-            v["value"] = vals.get(&k).cloned().unwrap_or_else(|| prop_default_value(&d));
+            v["value"] = vals
+                .get(&k)
+                .cloned()
+                .unwrap_or_else(|| prop_default_value(&d));
         }
         list.push(v);
     }

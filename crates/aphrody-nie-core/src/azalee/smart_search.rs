@@ -140,9 +140,17 @@ impl SearchNames {
     }
 
     fn has_value(&self) -> bool {
-        self.french.as_deref().is_some_and(|value| !value.is_empty())
-            || self.english.as_deref().is_some_and(|value| !value.is_empty())
-            || self.japanese.as_deref().is_some_and(|value| !value.is_empty())
+        self.french
+            .as_deref()
+            .is_some_and(|value| !value.is_empty())
+            || self
+                .english
+                .as_deref()
+                .is_some_and(|value| !value.is_empty())
+            || self
+                .japanese
+                .as_deref()
+                .is_some_and(|value| !value.is_empty())
     }
 
     fn borrowed(&self) -> MultilingualNames<'_> {
@@ -237,7 +245,12 @@ pub struct SmartSearchConfig {
 
 impl Default for SmartSearchConfig {
     fn default() -> Self {
-        Self { context: SearchContext::Global, limit: 20, enable_suggestions: true, min_score: 0.0 }
+        Self {
+            context: SearchContext::Global,
+            limit: 20,
+            enable_suggestions: true,
+            min_score: 0.0,
+        }
     }
 }
 
@@ -249,7 +262,10 @@ pub fn smart_search(
     raw_results: &[GlobalSearchResult],
     config: SmartSearchConfig,
 ) -> Vec<SmartSearchResult> {
-    let mut results: Vec<_> = raw_results.iter().map(|result| enhance(result, query)).collect();
+    let mut results: Vec<_> = raw_results
+        .iter()
+        .map(|result| enhance(result, query))
+        .collect();
 
     if config.min_score > 0.0 {
         results.retain(|result| result.score >= config.min_score);
@@ -259,7 +275,12 @@ pub fn smart_search(
     results.sort_by(|left, right| {
         type_priority(left.result_type, priorities)
             .cmp(&type_priority(right.result_type, priorities))
-            .then_with(|| right.score.partial_cmp(&left.score).unwrap_or(Ordering::Equal))
+            .then_with(|| {
+                right
+                    .score
+                    .partial_cmp(&left.score)
+                    .unwrap_or(Ordering::Equal)
+            })
     });
     results.truncate(config.limit);
 
@@ -381,14 +402,19 @@ fn priorities(context: SearchContext) -> &'static [SearchableType] {
         ],
         SearchContext::Skill => &[SearchableType::Skill],
         SearchContext::Tactic => &[SearchableType::Tactic, SearchableType::Item],
-        SearchContext::Team => {
-            &[SearchableType::Team, SearchableType::Character, SearchableType::Basara]
-        },
+        SearchContext::Team => &[
+            SearchableType::Team,
+            SearchableType::Character,
+            SearchableType::Basara,
+        ],
     }
 }
 
 fn type_priority(result_type: SearchableType, priorities: &[SearchableType]) -> usize {
-    priorities.iter().position(|candidate| *candidate == result_type).unwrap_or(usize::MAX)
+    priorities
+        .iter()
+        .position(|candidate| *candidate == result_type)
+        .unwrap_or(usize::MAX)
 }
 
 #[cfg(test)]
@@ -413,7 +439,11 @@ mod tests {
 
     fn character_data() -> SearchData {
         SearchData {
-            names: Some(SearchNames::new(Some("Mark Evans"), Some("Mark Evans"), Some("円堂 守"))),
+            names: Some(SearchNames::new(
+                Some("Mark Evans"),
+                Some("Mark Evans"),
+                Some("円堂 守"),
+            )),
             ..Default::default()
         }
     }
@@ -421,14 +451,36 @@ mod tests {
     #[test]
     fn prioritizes_context_then_score_and_respects_limit() {
         let raw = vec![
-            result("team", "Mark's team", SearchableType::Team, 1.0, character_data()),
-            result("skill", "Mark skill", SearchableType::Skill, 0.1, character_data()),
-            result("chara", "Mark", SearchableType::Character, 0.8, character_data()),
+            result(
+                "team",
+                "Mark's team",
+                SearchableType::Team,
+                1.0,
+                character_data(),
+            ),
+            result(
+                "skill",
+                "Mark skill",
+                SearchableType::Skill,
+                0.1,
+                character_data(),
+            ),
+            result(
+                "chara",
+                "Mark",
+                SearchableType::Character,
+                0.8,
+                character_data(),
+            ),
         ];
         let results = smart_search(
             "Mark",
             &raw,
-            SmartSearchConfig { context: SearchContext::Skill, limit: 2, ..Default::default() },
+            SmartSearchConfig {
+                context: SearchContext::Skill,
+                limit: 2,
+                ..Default::default()
+            },
         );
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].result_type, SearchableType::Skill);
@@ -453,7 +505,10 @@ mod tests {
         )];
         let results = smart_search("ファイア", &raw, SmartSearchConfig::default());
         assert_eq!(results[0].matched_language, Some(MatchedLanguage::Japanese));
-        assert_eq!(results[0].matched_name.as_deref(), Some("ファイアトルネード"));
+        assert_eq!(
+            results[0].matched_name.as_deref(),
+            Some("ファイアトルネード")
+        );
 
         let localized = vec![result(
             "item",
@@ -466,7 +521,10 @@ mod tests {
             },
         )];
         let localized_results = smart_search("Item", &localized, SmartSearchConfig::default());
-        assert_eq!(localized_results[0].matched_language, Some(MatchedLanguage::English));
+        assert_eq!(
+            localized_results[0].matched_language,
+            Some(MatchedLanguage::English)
+        );
         assert_eq!(localized_results[0].matched_name.as_deref(), Some("Item"));
     }
 
@@ -489,7 +547,10 @@ mod tests {
         let results = smart_search(
             "L'Étoffe des Hero",
             &raw,
-            SmartSearchConfig { min_score: 2.0, ..Default::default() },
+            SmartSearchConfig {
+                min_score: 2.0,
+                ..Default::default()
+            },
         );
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].suggestion, Some("L'Étoffe des Héros".to_owned()));
@@ -510,7 +571,10 @@ mod tests {
         let results = smart_search(
             "Objet reel",
             &raw,
-            SmartSearchConfig { min_score: 2.0, ..Default::default() },
+            SmartSearchConfig {
+                min_score: 2.0,
+                ..Default::default()
+            },
         );
         assert!(results.is_empty());
     }

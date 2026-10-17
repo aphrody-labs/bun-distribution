@@ -8,7 +8,7 @@ use crate::{
     prelude::World,
     query::FilteredAccess,
     schedule::InternedSystemSet,
-    system::{input::SystemInput, SystemAccess, SystemIn},
+    system::{SystemAccess, SystemIn, input::SystemInput},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 
@@ -577,7 +577,7 @@ mod tests {
 
     use crate::{
         schedule::OrElseMarker,
-        system::{assert_system_does_not_conflict, CombinatorSystem},
+        system::{CombinatorSystem, assert_system_does_not_conflict},
     };
 
     #[test]

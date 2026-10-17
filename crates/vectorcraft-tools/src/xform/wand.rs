@@ -28,7 +28,11 @@ impl Tool for MagicWandTool {
             return vec![];
         }
         let Some(h) = hit_test(cx.doc, ev.pos, cx.hit_options()) else {
-            return if ev.mods.shift || ev.mods.alt { vec![] } else { vec![Action::Exec("select.none".into(), json!({}))] };
+            return if ev.mods.shift || ev.mods.alt {
+                vec![]
+            } else {
+                vec![Action::Exec("select.none".into(), json!({}))]
+            };
         };
         let mode = if ev.mods.alt {
             "subtract"
@@ -37,7 +41,10 @@ impl Tool for MagicWandTool {
         } else {
             "set"
         };
-        vec![Action::Exec("select.magicWand".into(), json!({ "id": paint_owner(cx.doc, h.leaf).0, "mode": mode }))]
+        vec![Action::Exec(
+            "select.magicWand".into(),
+            json!({ "id": paint_owner(cx.doc, h.leaf).0, "mode": mode }),
+        )]
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
@@ -91,7 +98,11 @@ impl Tool for LassoTool {
                 vec![]
             }
             PointerKind::Drag if self.active => {
-                if self.points.last().is_none_or(|q| q.distance(p) >= cx.tol(1.0)) {
+                if self
+                    .points
+                    .last()
+                    .is_none_or(|q| q.distance(p) >= cx.tol(1.0))
+                {
                     self.points.push(p);
                 }
                 vec![]
@@ -101,21 +112,31 @@ impl Tool for LassoTool {
                 let poly = std::mem::take(&mut self.points);
                 let (add, sub) = (ev.mods.shift, ev.mods.alt);
                 if poly.len() < 3 {
-                    return if add || sub { vec![] } else { vec![Action::Exec("select.none".into(), json!({}))] };
+                    return if add || sub {
+                        vec![]
+                    } else {
+                        vec![Action::Exec("select.none".into(), json!({}))]
+                    };
                 }
                 // Anchors inside the loop for every editable path.
                 let mut hits: Vec<(NodeId, BTreeSet<AnchorRef>)> = vec![];
                 cx.doc.walk(|n| {
                     if let NodeKind::Path { path, .. } = &n.kind {
-                        let v: BTreeSet<AnchorRef> =
-                            path.anchors().filter(|(_, _, a)| point_in_polygon(&poly, a.p)).map(|(s, i, _)| (s, i)).collect();
+                        let v: BTreeSet<AnchorRef> = path
+                            .anchors()
+                            .filter(|(_, _, a)| point_in_polygon(&poly, a.p))
+                            .map(|(s, i, _)| (s, i))
+                            .collect();
                         if !v.is_empty() {
                             hits.push((n.id, v));
                         }
                     }
                 });
                 hits.retain(|(id, _)| cx.doc.is_editable(*id) && cx.doc.is_visible(*id));
-                let items: Vec<Value> = hits.iter().map(|(id, v)| json!({ "id": id.0, "anchors": anchors_json(v) })).collect();
+                let items: Vec<Value> = hits
+                    .iter()
+                    .map(|(id, v)| json!({ "id": id.0, "anchors": anchors_json(v) }))
+                    .collect();
                 let mode = if sub {
                     "subtract"
                 } else if add {
@@ -123,7 +144,10 @@ impl Tool for LassoTool {
                 } else {
                     "set"
                 };
-                vec![Action::Exec("select.anchorsMany".into(), json!({ "items": items, "mode": mode }))]
+                vec![Action::Exec(
+                    "select.anchorsMany".into(),
+                    json!({ "items": items, "mode": mode }),
+                )]
             }
             _ => vec![],
         }
@@ -141,7 +165,12 @@ impl Tool for LassoTool {
         if !self.active || self.points.len() < 2 {
             return vec![];
         }
-        vec![Overlay::Path { path: super::polygon(&self.points, false), color: [0x40, 0x40, 0x40], width: 1.0, dashed: true }]
+        vec![Overlay::Path {
+            path: super::polygon(&self.points, false),
+            color: [0x40, 0x40, 0x40],
+            width: 1.0,
+            dashed: true,
+        }]
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
@@ -163,10 +192,28 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = MagicWandTool;
         let r = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 150.0));
-        assert_eq!(r, vec![Action::Exec("select.magicWand".into(), json!({"id": a.0, "mode": "set"}))]);
-        let shift = Mods { shift: true, ..Default::default() };
-        let r = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 150.0).with_mods(shift));
-        assert_eq!(r, vec![Action::Exec("select.magicWand".into(), json!({"id": a.0, "mode": "add"}))]);
+        assert_eq!(
+            r,
+            vec![Action::Exec(
+                "select.magicWand".into(),
+                json!({"id": a.0, "mode": "set"})
+            )]
+        );
+        let shift = Mods {
+            shift: true,
+            ..Default::default()
+        };
+        let r = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Down, 150.0, 150.0).with_mods(shift),
+        );
+        assert_eq!(
+            r,
+            vec![Action::Exec(
+                "select.magicWand".into(),
+                json!({"id": a.0, "mode": "add"})
+            )]
+        );
         let miss = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 900.0, 900.0));
         assert_eq!(miss, vec![Action::Exec("select.none".into(), json!({}))]);
     }
@@ -189,6 +236,13 @@ mod tests {
         assert_eq!(v["items"][0]["id"], id.0);
         assert_eq!(v["items"][0]["anchors"].as_array().unwrap().len(), 1);
         assert_eq!(v["mode"], "set");
-        assert!(point_in_polygon(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(0.0, 10.0)], Point::new(2.0, 2.0)));
+        assert!(point_in_polygon(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(10.0, 0.0),
+                Point::new(0.0, 10.0)
+            ],
+            Point::new(2.0, 2.0)
+        ));
     }
 }

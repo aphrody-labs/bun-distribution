@@ -59,8 +59,12 @@ pub fn unsupported(doc: &Document, target: LayerId) -> Option<&'static str> {
     if !matches!(doc.mode, ColorMode::Rgb | ColorMode::Grayscale) {
         return Some("colour mode composites through display RGB");
     }
-    let Some(l) = doc.layer(target) else { return Some("no target layer") };
-    let LayerContent::Raster(s) = &l.content else { return Some("not a pixel layer") };
+    let Some(l) = doc.layer(target) else {
+        return Some("no target layer");
+    };
+    let LayerContent::Raster(s) = &l.content else {
+        return Some("not a pixel layer");
+    };
     if l.clipped {
         return Some("the target is clipped");
     }
@@ -97,11 +101,20 @@ pub fn base_document(doc: &Document, target: LayerId) -> Result<Document, String
     if let Some(why) = unsupported(doc, target) {
         return Err(why.into());
     }
-    let mut l = Layer::new(tl!("Adjustment Preview"), LayerContent::Adjustment(Adjustment::Invert));
+    let mut l = Layer::new(
+        tl!("Adjustment Preview"),
+        LayerContent::Adjustment(Adjustment::Invert),
+    );
     l.id = PREVIEW_LAYER;
     l.clipped = true;
     if let Some(sel) = &doc.selection {
-        l.mask = Some(LayerMask { surface: sel.clone(), enabled: true, linked: false, density: 1.0, feather: 0.0 });
+        l.mask = Some(LayerMask {
+            surface: sel.clone(),
+            enabled: true,
+            linked: false,
+            density: 1.0,
+            feather: 0.0,
+        });
     }
     let mut out = doc.clone();
     out.insert_above(Some(target), l);
@@ -114,8 +127,14 @@ pub fn with_settings(base: &Document, kind: &str, params: &Value) -> Result<Docu
     set_adjustment(base, PREVIEW_LAYER, kind, params)
 }
 
-fn set_adjustment(base: &Document, layer: LayerId, kind: &str, params: &Value) -> Result<Document, String> {
-    let adj = photocraft_engine::adjust_params::from_params(kind, params, None, base.mode).map_err(|e| e.to_string())?;
+fn set_adjustment(
+    base: &Document,
+    layer: LayerId,
+    kind: &str,
+    params: &Value,
+) -> Result<Document, String> {
+    let adj = photocraft_engine::adjust_params::from_params(kind, params, None, base.mode)
+        .map_err(|e| e.to_string())?;
     if base.mode == ColorMode::Grayscale && !keeps_gray(&adj) {
         return Err("colour result in a grayscale document".into());
     }
@@ -127,14 +146,21 @@ fn set_adjustment(base: &Document, layer: LayerId, kind: &str, params: &Value) -
 
 /// `doc` with the dialog's adjustment as a temporary layer clipped to `target` (the selection as
 /// its mask): [`base_document`] then [`with_settings`].
-pub fn preview_document(doc: &Document, target: LayerId, kind: &str, params: &Value) -> Result<Document, String> {
+pub fn preview_document(
+    doc: &Document,
+    target: LayerId,
+    kind: &str,
+    params: &Value,
+) -> Result<Document, String> {
     with_settings(&base_document(doc, target)?, kind, params)
 }
 
 /// The canvas area the preview can change: the target's content within the selection, grown by
 /// the reach of layer effects (the target's and its groups').
 pub fn region(doc: &Document, target: LayerId) -> Rect {
-    let Some(s) = doc.layer(target).and_then(Layer::surface) else { return Rect::EMPTY };
+    let Some(s) = doc.layer(target).and_then(Layer::surface) else {
+        return Rect::EMPTY;
+    };
     let mut r = s.content_bounds().intersect(&doc.bounds());
     if let Some(sel) = &doc.selection {
         r = r.intersect(&sel.content_bounds());
@@ -142,7 +168,8 @@ pub fn region(doc: &Document, target: LayerId) -> Rect {
     if r.is_empty() {
         return r;
     }
-    r.inflate(crate::canvas::effect_reach(&doc.layers)).intersect(&doc.bounds())
+    r.inflate(crate::canvas::effect_reach(&doc.layers))
+        .intersect(&doc.bounds())
 }
 
 /// Per-dialog preview state on the app.
@@ -185,15 +212,29 @@ struct GpuProxy {
 
 /// The open adjustment dialog: (kind, params, Preview on).
 fn dialog(app: &PhotocraftApp) -> Option<(String, Value, bool)> {
-    let d = app.ui.dialogs.iter().find(|d| crate::adjust_dialog::owns(&d.fields))?;
+    let d = app
+        .ui
+        .dialogs
+        .iter()
+        .find(|d| crate::adjust_dialog::owns(&d.fields))?;
     let kind = d.fields.get("__adjust")?.as_str()?.to_string();
-    let preview = d.fields.get("__preview").and_then(Value::as_bool).unwrap_or(true);
+    let preview = d
+        .fields
+        .get("__preview")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     Some((kind, crate::filter_dialog::params_of(&d.fields), preview))
 }
 
 /// FNV-1a over `parts`, never 0.
 fn hash(parts: &[&[u8]]) -> u64 {
-    parts.iter().flat_map(|p| p.iter()).fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3)) | 1
+    parts
+        .iter()
+        .flat_map(|p| p.iter())
+        .fold(0xcbf2_9ce4_8422_2325u64, |h, b| {
+            (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3)
+        })
+        | 1
 }
 
 /// Whether the layer path can draw `doc` cheaply on this app's canvas.
@@ -221,20 +262,47 @@ fn update(app: &mut PhotocraftApp, idx: usize) -> Option<&AdjustPreview> {
     let (doc_id, revision, target) = (st.doc.id, st.revision, st.active_layer?);
     // Commands that target a channel (Channels panel / Quick Mask) or a layer mask keep the proxy
     // preview.
-    let channel_target = st.channel_view.target != photocraft_engine::channel_cmds::ChannelTarget::Composite
+    let channel_target = st.channel_view.target
+        != photocraft_engine::channel_cmds::ChannelTarget::Composite
         || st.doc.quick_mask.is_some()
-        || !app.with_mask_target(&format!("image.adjustments.{kind}"), Value::Null).is_null();
-    let session = hash(&[&doc_id.0.to_le_bytes(), &revision.to_le_bytes(), &target.0.to_le_bytes(), &[u8::from(channel_target)]]);
-    let h = hash(&[kind.as_bytes(), params.to_string().as_bytes(), &[u8::from(preview)]]);
+        || !app
+            .with_mask_target(&format!("image.adjustments.{kind}"), Value::Null)
+            .is_null();
+    let session = hash(&[
+        &doc_id.0.to_le_bytes(),
+        &revision.to_le_bytes(),
+        &target.0.to_le_bytes(),
+        &[u8::from(channel_target)],
+    ]);
+    let h = hash(&[
+        kind.as_bytes(),
+        params.to_string().as_bytes(),
+        &[u8::from(preview)],
+    ]);
     if let Some(p) = &app.adjust_preview
         && (p.doc, p.session, p.hash) == (doc_id, session, h)
     {
         return app.adjust_preview.as_ref();
     }
-    if app.adjust_preview.as_ref().is_none_or(|p| (p.doc, p.session) != (doc_id, session)) {
+    if app
+        .adjust_preview
+        .as_ref()
+        .is_none_or(|p| (p.doc, p.session) != (doc_id, session))
+    {
         let doc = st.doc.clone();
-        let base = if channel_target { None } else { base_document(&doc, target).ok().filter(|b| cheap(app, b)).map(Arc::new) };
-        let region = if base.is_some() { region(&doc, target) } else { Rect::EMPTY };
+        let base = if channel_target {
+            None
+        } else {
+            base_document(&doc, target)
+                .ok()
+                .filter(|b| cheap(app, b))
+                .map(Arc::new)
+        };
+        let region = if base.is_some() {
+            region(&doc, target)
+        } else {
+            Rect::EMPTY
+        };
         app.adjust_preview = Some(AdjustPreview {
             doc: doc_id,
             revision,
@@ -251,7 +319,10 @@ fn update(app: &mut PhotocraftApp, idx: usize) -> Option<&AdjustPreview> {
         });
     }
     let p = app.adjust_preview.as_mut()?;
-    let built = p.base.as_ref().and_then(|b| with_settings(b, &kind, &params).ok());
+    let built = p
+        .base
+        .as_ref()
+        .and_then(|b| with_settings(b, &kind, &params).ok());
     let key = TAG | ((session & 0x7_ffff) << SESSION_SHIFT) | (h & ((1 << SESSION_SHIFT) - 1));
     p.layer_path = built.is_some();
     p.shown = built.filter(|_| preview).map(|d| (Arc::new(d), key));
@@ -276,7 +347,13 @@ pub fn on_layer(app: &mut PhotocraftApp, idx: usize) -> bool {
 /// The canvas area to recomposite when document `idx` (at `revision`) switches from the preview
 /// key `from` to `to` (raw keys, display transform removed): both must be this dialog's previews
 /// or the committed document (0). None means "everything".
-pub fn switch_region(app: &PhotocraftApp, doc: DocId, revision: u64, from: u64, to: u64) -> Option<Rect> {
+pub fn switch_region(
+    app: &PhotocraftApp,
+    doc: DocId,
+    revision: u64,
+    from: u64,
+    to: u64,
+) -> Option<Rect> {
     let p = app.adjust_preview.as_ref()?;
     if p.doc != doc || p.revision != revision {
         return None;
@@ -295,7 +372,9 @@ pub fn shown_key(app: &PhotocraftApp) -> Option<u64> {
 /// what the view shows (`visible`, document pixels), remembering it so [`uncovered`] catches up
 /// as the view moves; back to the committed document (key 0), the whole region.
 pub fn switch_damage(app: &mut PhotocraftApp, to: u64, region: Rect, visible: Rect) -> Rect {
-    let Some(p) = app.adjust_preview.as_mut() else { return region };
+    let Some(p) = app.adjust_preview.as_mut() else {
+        return region;
+    };
     if to == 0 {
         p.covered = None;
         return region;
@@ -324,7 +403,9 @@ pub fn uncovered(app: &mut PhotocraftApp, doc: DocId, key: u64, visible: Rect) -
 /// True while the preview's settings changed within the last `ms` milliseconds (secondary views
 /// such as the Navigator wait for the settings to settle instead of recompositing every change).
 pub fn settling(app: &PhotocraftApp, ms: f64) -> bool {
-    app.adjust_preview.as_ref().is_some_and(|p| p.shown.is_some() && crate::gpu_canvas::now_ms() - p.changed_ms < ms)
+    app.adjust_preview
+        .as_ref()
+        .is_some_and(|p| p.shown.is_some() && crate::gpu_canvas::now_ms() - p.changed_ms < ms)
 }
 
 /// Documents above this size preview zoomed-out views on a reduced copy ([`gpu_proxy`]).
@@ -368,8 +449,17 @@ pub fn proxy_base(base: &Document, k: u32) -> Document {
 }
 
 /// [`with_settings`] for a [`proxy_base`].
-pub fn proxy_with_settings(proxy: &Document, kind: &str, params: &Value) -> Result<Document, String> {
-    set_adjustment(proxy, LayerId(PREVIEW_LAYER.0 ^ PROXY_LAYER_BIT), kind, params)
+pub fn proxy_with_settings(
+    proxy: &Document,
+    kind: &str,
+    params: &Value,
+) -> Result<Document, String> {
+    set_adjustment(
+        proxy,
+        LayerId(PREVIEW_LAYER.0 ^ PROXY_LAYER_BIT),
+        kind,
+        params,
+    )
 }
 
 /// A frame of the zoomed-out preview: composite `doc` (the proxy preview, its own document id)
@@ -396,7 +486,10 @@ pub fn gpu_proxy(app: &mut PhotocraftApp, idx: usize, zoom: f32) -> Option<Proxy
     p.shown.as_ref()?;
     let base = p.base.clone()?;
     let k = proxy_factor(zoom);
-    if k < 2 || base.size.area() <= PROXY_MIN_PIXELS || !photocraft_compose::proxy::proxy_faithful(&base) {
+    if k < 2
+        || base.size.area() <= PROXY_MIN_PIXELS
+        || !photocraft_compose::proxy::proxy_faithful(&base)
+    {
         return None;
     }
     if p.proxy.as_ref().is_none_or(|g| g.k != k) {
@@ -404,7 +497,12 @@ pub fn gpu_proxy(app: &mut PhotocraftApp, idx: usize, zoom: f32) -> Option<Proxy
         if !gpu.supports(&d) {
             return None;
         }
-        p.proxy = Some(GpuProxy { k, base: Arc::new(d), shown: None, drawn: None });
+        p.proxy = Some(GpuProxy {
+            k,
+            base: Arc::new(d),
+            shown: None,
+            drawn: None,
+        });
     }
     let (kind, params) = &p.settings;
     let h = p.hash;
@@ -416,9 +514,21 @@ pub fn gpu_proxy(app: &mut PhotocraftApp, idx: usize, zoom: f32) -> Option<Proxy
     let doc = g.shown.as_ref()?.1.clone();
     let r = p.region;
     let kk = k as i32;
-    let scaled = Rect::new(r.x0.div_euclid(kk), r.y0.div_euclid(kk), r.x1.div_euclid(kk) + 1, r.y1.div_euclid(kk) + 1).intersect(&doc.bounds());
+    let scaled = Rect::new(
+        r.x0.div_euclid(kk),
+        r.y0.div_euclid(kk),
+        r.x1.div_euclid(kk) + 1,
+        r.y1.div_euclid(kk) + 1,
+    )
+    .intersect(&doc.bounds());
     let damage = g.drawn.map(|_| scaled);
-    Some(ProxyFrame { k, doc, damage, stale: g.drawn != Some(h), hash: h })
+    Some(ProxyFrame {
+        k,
+        doc,
+        damage,
+        stale: g.drawn != Some(h),
+        hash: h,
+    })
 }
 
 /// Record that `frame` was composited into the proxy's texture.
@@ -433,7 +543,11 @@ pub fn proxy_drawn(app: &mut PhotocraftApp, frame: &ProxyFrame) {
 pub(crate) fn retain_documents(app: &mut PhotocraftApp) {
     // Native reopen can reuse the ID and revision; neither the old base document nor its
     // coverage and upload markers may survive after that document leaves the session.
-    if app.adjust_preview.as_ref().is_some_and(|p| !app.session.documents().iter().any(|st| st.doc.id == p.doc)) {
+    if app
+        .adjust_preview
+        .as_ref()
+        .is_some_and(|p| !app.session.documents().iter().any(|st| st.doc.id == p.doc))
+    {
         app.adjust_preview = None;
     }
 }

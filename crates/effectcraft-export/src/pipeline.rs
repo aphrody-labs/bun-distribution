@@ -5,7 +5,8 @@
 use std::sync::Mutex;
 
 use effectcraft_project::render_queue::{
-    AlphaMode, Channels, ColorDepth, CurrentOrOff, EffectsMode, FrameSample, RenderLog, ResizeQuality, SwitchOverride, log_path,
+    AlphaMode, Channels, ColorDepth, CurrentOrOff, EffectsMode, FrameSample, RenderLog,
+    ResizeQuality, SwitchOverride, log_path,
 };
 use effectcraft_project::{Comp, Project};
 use effectcraft_raster::Image;
@@ -72,11 +73,19 @@ impl<'a> Cx<'a> {
     pub fn new(job: &'a Job<'a>) -> Cx<'a> {
         let mut project = job.project.clone();
         apply_overrides(&mut project, job);
-        let frame_times = (job.options.log == RenderLog::PlusPerFrameInfo).then(|| Mutex::new(Vec::new()));
+        let frame_times =
+            (job.options.log == RenderLog::PlusPerFrameInfo).then(|| Mutex::new(Vec::new()));
         let cache = LayerCache::default();
         // With deferred readbacks, buffers computed from a missed pass's placeholders are not kept.
         cache.set_gate(job.accel.and_then(|a| a.miss_gate()));
-        Cx { job, project, cache, frame_times, overflowed: Mutex::new(vec![]), written: Mutex::new(vec![]) }
+        Cx {
+            job,
+            project,
+            cache,
+            frame_times,
+            overflowed: Mutex::new(vec![]),
+            written: Mutex::new(vec![]),
+        }
     }
 
     pub fn comp(&self) -> Option<&Comp> {
@@ -90,7 +99,11 @@ impl<'a> Cx<'a> {
         // The whole job renders on the project's renderer (Mercury GPU Acceleration or Software
         // Only), not on whichever compositor Auto timed faster for each frame: the CPU and GPU
         // compositors differ slightly, so a per-frame choice made renders differ run to run.
-        let backend = if self.project.settings.gpu_acceleration { Backend::Gpu } else { Backend::Cpu };
+        let backend = if self.project.settings.gpu_acceleration {
+            Backend::Gpu
+        } else {
+            Backend::Cpu
+        };
         let opts = RenderOpts {
             scale: s.resolution.clamp(0.01, 4.0),
             motion_blur: s.motion_blur_override() != SwitchOverride::OffForAll,
@@ -123,7 +136,12 @@ impl<'a> Cx<'a> {
 
     /// Output frames `ks`, each mapped by `f` (encoding): rendered in parallel batches, or one
     /// by one in passes when readbacks are deferred ([`Cx::deferred`]).
-    pub async fn frames<T: Send>(&self, comp: &Comp, ks: Vec<u64>, f: impl Fn(u64, Image) -> T + Sync + Send) -> Vec<T> {
+    pub async fn frames<T: Send>(
+        &self,
+        comp: &Comp,
+        ks: Vec<u64>,
+        f: impl Fn(u64, Image) -> T + Sync + Send,
+    ) -> Vec<T> {
         if self.deferred() {
             let mut out = Vec::with_capacity(ks.len());
             for k in ks {
@@ -133,7 +151,9 @@ impl<'a> Cx<'a> {
             return out;
         }
         use rayon::prelude::*;
-        ks.into_par_iter().map(|k| f(k, self.frame(comp, k))).collect()
+        ks.into_par_iter()
+            .map(|k| f(k, self.frame(comp, k)))
+            .collect()
     }
 
     /// Output frame `i`: sampled (fields, pulldown), at the colour depth, cropped and resized.
@@ -146,9 +166,17 @@ impl<'a> Cx<'a> {
         let t0 = Instant::now();
         let img = match self.job.settings.sample(comp, i) {
             FrameSample::Progressive(t) => self.render_at(t).await,
-            FrameSample::Fields { first, second, upper_first } => {
+            FrameSample::Fields {
+                first,
+                second,
+                upper_first,
+            } => {
                 let a = self.render_at(first).await;
-                if second == first { a } else { interleave(&a, &self.render_at(second).await, upper_first) }
+                if second == first {
+                    a
+                } else {
+                    interleave(&a, &self.render_at(second).await, upper_first)
+                }
             }
         };
         let mut img = img;
@@ -161,7 +189,9 @@ impl<'a> Cx<'a> {
         }
         let img = self.crop_resize(img);
         if let Some(ft) = &self.frame_times {
-            ft.lock().unwrap_or_else(|e| e.into_inner()).push((i, t0.elapsed().as_secs_f64()));
+            ft.lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .push((i, t0.elapsed().as_secs_f64()));
         }
         img
     }
@@ -171,7 +201,11 @@ impl<'a> Cx<'a> {
         let om = self.job.output;
         let scale = self.job.settings.resolution.clamp(0.01, 4.0);
         let (t, l, b, r) = om.crop.edges(img.width, img.height, scale);
-        let img = if (t, l, b, r) == (0, 0, 0, 0) { img } else { crop(&img, t, l, b, r) };
+        let img = if (t, l, b, r) == (0, 0, 0, 0) {
+            img
+        } else {
+            crop(&img, t, l, b, r)
+        };
         if !om.resize.enabled {
             return img;
         }
@@ -210,18 +244,28 @@ impl<'a> Cx<'a> {
     pub fn create(&self, path: &str) -> crate::Result<out::Out<'_>> {
         let file = out::create(self.sink, path)?;
         if self.sink.is_none() {
-            self.written.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(path.to_owned());
+            self.written
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(path.to_owned());
         }
         Ok(file)
     }
 
     pub fn remove_cancelled_outputs(&self) -> crate::Result<()> {
         let mut failure = None;
-        for path in self.written.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter() {
+        for path in self
+            .written
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+        {
             if let Err(e) = std::fs::remove_file(path)
                 && e.kind() != std::io::ErrorKind::NotFound
             {
-                failure.get_or_insert_with(|| crate::ExportError::Io(format!("cannot remove cancelled output {path}: {e}")));
+                failure.get_or_insert_with(|| {
+                    crate::ExportError::Io(format!("cannot remove cancelled output {path}: {e}"))
+                });
             }
         }
         match failure {
@@ -233,15 +277,26 @@ impl<'a> Cx<'a> {
     /// Where a file goes: `path`, or (Use Storage Overflow) the first overflow folder with room
     /// for `bytes` when the quota hook says the output volume is full.
     pub fn place(&self, path: &str, bytes: u64) -> String {
-        let Some(q) = self.job.options.storage else { return path.to_string() };
+        let Some(q) = self.job.options.storage else {
+            return path.to_string();
+        };
         if !self.job.settings.storage_overflow || q.has_room(path, bytes) {
             return path.to_string();
         }
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.to_string());
         for dir in &self.job.options.overflow {
-            let p = std::path::Path::new(dir).join(&name).to_string_lossy().to_string();
+            let p = std::path::Path::new(dir)
+                .join(&name)
+                .to_string_lossy()
+                .to_string();
             if q.has_room(&p, bytes) {
-                self.overflowed.lock().unwrap_or_else(|e| e.into_inner()).push(p.clone());
+                self.overflowed
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(p.clone());
                 return p;
             }
         }
@@ -249,25 +304,45 @@ impl<'a> Cx<'a> {
     }
 
     /// Write the render log next to the output, as the Log setting asks. Returns its path.
-    pub fn write_log(&self, result: &Result<crate::Report, crate::ExportError>, seconds: f64) -> Option<String> {
+    pub fn write_log(
+        &self,
+        result: &Result<crate::Report, crate::ExportError>,
+        seconds: f64,
+    ) -> Option<String> {
         let level = self.job.options.log;
         // Errors Only: a log for failures (a user stop is not an error).
-        if level == RenderLog::ErrorsOnly && matches!(result, Ok(_) | Err(crate::ExportError::Cancelled)) {
+        if level == RenderLog::ErrorsOnly
+            && matches!(result, Ok(_) | Err(crate::ExportError::Cancelled))
+        {
             return None;
         }
         let comp = self.comp();
         let path = log_path(self.job.path);
         let mut s = String::new();
         s.push_str("EffectCraft Render Log\n");
-        s.push_str(&format!("Item: {}\n", if self.job.options.label.is_empty() { "(render)" } else { &self.job.options.label }));
+        s.push_str(&format!(
+            "Item: {}\n",
+            if self.job.options.label.is_empty() {
+                "(render)"
+            } else {
+                &self.job.options.label
+            }
+        ));
         s.push_str(&format!("Output: {}\n", self.job.path));
         match result {
-            Ok(r) => s.push_str(&format!("Result: Done ({} frames, {}×{}, {} bytes) in {seconds:.2} s\n", r.frames, r.width, r.height, r.bytes)),
+            Ok(r) => s.push_str(&format!(
+                "Result: Done ({} frames, {}×{}, {} bytes) in {seconds:.2} s\n",
+                r.frames, r.width, r.height, r.bytes
+            )),
             Err(e) => s.push_str(&format!("Result: Failed\nError: {e}\n")),
         }
         let over = self.overflowed.lock().unwrap_or_else(|e| e.into_inner());
         if !over.is_empty() {
-            s.push_str(&format!("Storage overflow: {} file(s) written to overflow folders (first: {})\n", over.len(), over[0]));
+            s.push_str(&format!(
+                "Storage overflow: {} file(s) written to overflow folders (first: {})\n",
+                over.len(),
+                over[0]
+            ));
         }
         if level != RenderLog::ErrorsOnly {
             s.push_str("\nRender Settings:\n");
@@ -286,7 +361,12 @@ impl<'a> Cx<'a> {
             let f0 = self.job.settings.first_frame(c);
             for (i, secs) in v {
                 let t = self.job.settings.frame_time(c, i);
-                s.push_str(&format!("  Frame {} ({:.3} s): rendered in {:.1} ms\n", f0 + i as i64, t.seconds(), secs * 1000.0));
+                s.push_str(&format!(
+                    "  Frame {} ({:.3} s): rendered in {:.1} ms\n",
+                    f0 + i as i64,
+                    t.seconds(),
+                    secs * 1000.0
+                ));
             }
         }
         let mut f = self.create(&path).ok()?;
@@ -359,7 +439,10 @@ fn premultiplied8(img: &Image) -> Vec<u8> {
         .iter()
         .flat_map(|p| {
             let a = p[3].clamp(0.0, 1.0);
-            [0, 1, 2].map(|c| (p[c].clamp(0.0, a) * 255.0 + 0.5) as u8).into_iter().chain([(a * 255.0 + 0.5) as u8])
+            [0, 1, 2]
+                .map(|c| (p[c].clamp(0.0, a) * 255.0 + 0.5) as u8)
+                .into_iter()
+                .chain([(a * 255.0 + 0.5) as u8])
         })
         .collect()
 }
@@ -380,13 +463,35 @@ mod tests {
         // A solid animated only in Transform: its pixels render once, then move.
         let mut p = Project::default();
         let mut comp = Comp::new(64, 48, FrameRate::FPS_25, Tick::from_seconds_f64(1.0));
-        let sid = p.add_item("Solid", Label::Red, None, ItemKind::Solid(Solid { color: [1.0, 0.0, 0.0], width: 16, height: 16, pixel_aspect: 1.0 }));
-        let mut l = build::layer(&mut p, &comp, "Solid", LayerSource::Solid { item: sid }, (16, 16), None);
-        l.props.prop_mut("transform/position").unwrap().keys =
-            vec![Keyframe::new(Tick::ZERO, Value::Vec3([8.0, 24.0, 0.0])), Keyframe::new(Tick::from_seconds_f64(1.0), Value::Vec3([56.0, 24.0, 0.0]))];
+        let sid = p.add_item(
+            "Solid",
+            Label::Red,
+            None,
+            ItemKind::Solid(Solid {
+                color: [1.0, 0.0, 0.0],
+                width: 16,
+                height: 16,
+                pixel_aspect: 1.0,
+            }),
+        );
+        let mut l = build::layer(
+            &mut p,
+            &comp,
+            "Solid",
+            LayerSource::Solid { item: sid },
+            (16, 16),
+            None,
+        );
+        l.props.prop_mut("transform/position").unwrap().keys = vec![
+            Keyframe::new(Tick::ZERO, Value::Vec3([8.0, 24.0, 0.0])),
+            Keyframe::new(Tick::from_seconds_f64(1.0), Value::Vec3([56.0, 24.0, 0.0])),
+        ];
         comp.layers.push(l);
         let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.into()));
-        let (settings, output) = (RenderSettings::default(), OutputModule::for_format(OutputFormat::PngSequence));
+        let (settings, output) = (
+            RenderSettings::default(),
+            OutputModule::for_format(OutputFormat::PngSequence),
+        );
         let job = Job {
             project: &p,
             footage: &NoFootage,
@@ -414,7 +519,10 @@ mod tests {
             assert_eq!(img.data, uncached.comp_frame(cid, t).data, "frame {i}");
         }
         let stats = cx.cache.stats();
-        assert_eq!(stats.misses, renders, "the solid rendered on the first frame only");
+        assert_eq!(
+            stats.misses, renders,
+            "the solid rendered on the first frame only"
+        );
         assert!(stats.hits >= 9, "{stats:?}");
     }
 
@@ -425,8 +533,16 @@ mod tests {
         let up = interleave(&a, &b, true);
         let lo = interleave(&a, &b, false);
         for y in 0..4u32 {
-            assert_eq!(up.data[up.idx(1, y)][0], if y % 2 == 0 { 1.0 } else { 0.0 }, "upper first: line {y}");
-            assert_eq!(lo.data[lo.idx(1, y)][0], if y % 2 == 1 { 1.0 } else { 0.0 }, "lower first: line {y}");
+            assert_eq!(
+                up.data[up.idx(1, y)][0],
+                if y % 2 == 0 { 1.0 } else { 0.0 },
+                "upper first: line {y}"
+            );
+            assert_eq!(
+                lo.data[lo.idx(1, y)][0],
+                if y % 2 == 1 { 1.0 } else { 0.0 },
+                "lower first: line {y}"
+            );
         }
     }
 

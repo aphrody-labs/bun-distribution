@@ -49,7 +49,9 @@ fn resident_file_at(path: &std::path::Path) -> Result<File, String> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    options.open(path).map_err(|e| format!("resident model lease unavailable: {e}"))
+    options
+        .open(path)
+        .map_err(|e| format!("resident model lease unavailable: {e}"))
 }
 
 #[cfg(test)]
@@ -62,8 +64,9 @@ fn resident_lease_at(path: &std::path::Path) -> Result<File, String> {
 async fn resident_lease(id: u64) -> Result<File, String> {
     // Use the host owner's common state root, not a domain APHRODY_HOME override: profiles
     // keep their data isolated while every bot process shares the same hardware budget.
-    let root =
-        aphrody_agent_home::paths::home_dir().map_err(|e| e.to_string())?.join(".aphrody/locks");
+    let root = aphrody_agent_home::paths::home_dir()
+        .map_err(|e| e.to_string())?
+        .join(".aphrody/locks");
     let mut directory = std::fs::DirBuilder::new();
     directory.recursive(true);
     #[cfg(unix)]
@@ -88,13 +91,13 @@ async fn wait_resident_lease(file: File, id: u64) -> Result<File, String> {
             Ok(()) => return Ok(file),
             Err(TryLockError::Error(error)) => {
                 return Err(format!("resident model lease unavailable: {error}"));
-            },
+            }
             Err(TryLockError::WouldBlock) if tokio::time::Instant::now() >= deadline => {
                 return Err("another native inference process owns the resident model lease; observation deadline exceeded".into());
-            },
+            }
             Err(TryLockError::WouldBlock) => {
                 tokio::time::sleep(std::time::Duration::from_millis(250)).await
-            },
+            }
         }
     }
 }
@@ -154,17 +157,24 @@ enum Request {
 fn named_home(profile: &str) -> Result<PathBuf, String> {
     if profile.is_empty()
         || profile.len() > 64
-        || !profile.bytes().all(|c| c.is_ascii_alphanumeric() || matches!(c, b'_' | b'-'))
+        || !profile
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'_' | b'-'))
     {
         return Err("an explicit named Agent Home profile is required".into());
     }
     let state = aphrody_agent_home::paths::state_dir().map_err(|e| e.to_string())?;
-    Ok(aphrody_agent_home::paths::named_profile_workspace(&state, profile))
+    Ok(aphrody_agent_home::paths::named_profile_workspace(
+        &state, profile,
+    ))
 }
 
 fn home_prompt(path: PathBuf) -> Result<String, String> {
-    let home = AgentHome::open(HomeOptions { workspace: Some(path), ..HomeOptions::default() })
-        .map_err(|e| e.to_string())?;
+    let home = AgentHome::open(HomeOptions {
+        workspace: Some(path),
+        ..HomeOptions::default()
+    })
+    .map_err(|e| e.to_string())?;
     if home.soul().is_none() {
         return Err("the selected Agent Home has no SOUL.md; refusing a synthetic persona".into());
     }
@@ -176,11 +186,14 @@ fn home_prompt(path: PathBuf) -> Result<String, String> {
         ..BootstrapBudget::default()
     });
     view.sections.retain(|section| {
-        matches!(section.file, BootstrapFile::Soul | BootstrapFile::Identity | BootstrapFile::User)
+        matches!(
+            section.file,
+            BootstrapFile::Soul | BootstrapFile::Identity | BootstrapFile::User
+        )
     });
     if view.sections.iter().any(|section| section.truncated) {
         return Err(
-            "the protected inference identity was truncated; refusing a partial persona".into()
+            "the protected inference identity was truncated; refusing a partial persona".into(),
         );
     }
     view.truncation = None;
@@ -190,7 +203,11 @@ fn home_prompt(path: PathBuf) -> Result<String, String> {
 fn model_path(model: &str) -> Result<PathBuf, String> {
     use aphrody_models::{Catalog, ModelRef, ModelStore};
     let reference = match Catalog::builtin().get(model) {
-        Ok(entry) => entry.primary().ok_or("model has no weights")?.reference.clone(),
+        Ok(entry) => entry
+            .primary()
+            .ok_or("model has no weights")?
+            .reference
+            .clone(),
         Err(_) => model.parse::<ModelRef>().map_err(|e| e.to_string())?,
     };
     let store = ModelStore::open().map_err(|e| e.to_string())?;
@@ -204,7 +221,13 @@ fn model_path(model: &str) -> Result<PathBuf, String> {
 
 async fn execute(request: Request, id: u64) -> Result<Value, String> {
     match request {
-        Request::Open { model, profile, context, gpu_layers, lora } => {
+        Request::Open {
+            model,
+            profile,
+            context,
+            gpu_layers,
+            lora,
+        } => {
             if context.is_some_and(|n| !(512..=32768).contains(&n)) {
                 return Err("context must be between 512 and 32768 tokens".into());
             }
@@ -225,7 +248,10 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
             let options = LoadOptions {
                 ctx: context,
                 gpu_layers: gpu_layers.unwrap_or(u32::MAX),
-                lora: lora.into_iter().map(|path| LoraSpec { path, scale: 1.0 }).collect(),
+                lora: lora
+                    .into_iter()
+                    .map(|path| LoraSpec { path, scale: 1.0 })
+                    .collect(),
                 ..LoadOptions::default()
             };
             let engine = InProcessLlama::load_with_residency_guard(
@@ -242,15 +268,26 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
                 if !state.jobs.contains_key(&id) {
                     return Err("model load was cancelled".into());
                 }
-                state
-                    .models
-                    .insert(id, Arc::new(Session { engine, profile: profile.clone(), home }));
+                state.models.insert(
+                    id,
+                    Arc::new(Session {
+                        engine,
+                        profile: profile.clone(),
+                        home,
+                    }),
+                );
             }
             Ok(
                 json!({ "session": id, "model": model, "profile": profile, "context": context, "backend": "in-process" }),
             )
-        },
-        Request::Chat { session, messages, system, max_tokens, temperature } => {
+        }
+        Request::Chat {
+            session,
+            messages,
+            system,
+            max_tokens,
+            temperature,
+        } => {
             if messages.is_empty() || messages.len() > 64 {
                 return Err("chat requires 1 to 64 messages".into());
             }
@@ -260,7 +297,11 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
             if temperature.is_some_and(|n| !n.is_finite() || !(0.0..=2.0).contains(&n)) {
                 return Err("temperature must be between 0 and 2".into());
             }
-            let session = state()?.models.get(&session).cloned().ok_or("unknown model session")?;
+            let session = state()?
+                .models
+                .get(&session)
+                .cloned()
+                .ok_or("unknown model session")?;
             let home = session.home.clone();
             // Re-open through the canonical owner each turn: SOUL edits take effect without
             // restarting the bot, and the selected profile never depends on process-global env.
@@ -281,7 +322,11 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
                 },
                 ..ChatTurn::default()
             };
-            let mut stream = session.engine.stream(turn).await.map_err(|e| e.to_string())?;
+            let mut stream = session
+                .engine
+                .stream(turn)
+                .await
+                .map_err(|e| e.to_string())?;
             let mut text = String::new();
             let mut usage = Value::Null;
             let mut finish = None;
@@ -305,17 +350,20 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
             Ok(
                 json!({ "text": text, "model": session.engine.model_id(), "profile": session.profile, "usage": usage, "finish_reason": finish }),
             )
-        },
+        }
         Request::Close { session } => {
             let removed = {
                 let mut state = state()?;
                 // Active streams retain their own Arc until cooperative cancellation completes.
                 // Removing the handle prevents new work without invalidating a decoder's memory.
-                state.models.remove(&session).ok_or("unknown model session")?
+                state
+                    .models
+                    .remove(&session)
+                    .ok_or("unknown model session")?
             };
             drop(removed);
             Ok(json!({ "closed": true }))
-        },
+        }
     }
 }
 
@@ -328,7 +376,13 @@ fn submit(input: &[u8]) -> Result<Value, String> {
     }
     let id = NEXT.fetch_add(1, Ordering::Relaxed);
     let opening = matches!(request, Request::Open { .. });
-    state.jobs.insert(id, Job { task: runtime.spawn(execute(request, id)), opening });
+    state.jobs.insert(
+        id,
+        Job {
+            task: runtime.spawn(execute(request, id)),
+            opening,
+        },
+    );
     Ok(json!({ "job": id }))
 }
 
@@ -373,7 +427,9 @@ pub extern "C" fn aphrody_inference_poll(id: u64) -> *mut c_char {
             }
             state.jobs.remove(&id).ok_or("unknown inference job")?.task
         };
-        runtime()?.block_on(task).map_err(|_| "inference task failed".to_owned())?
+        runtime()?
+            .block_on(task)
+            .map_err(|_| "inference task failed".to_owned())?
     })
 }
 
@@ -434,7 +490,11 @@ mod tests {
         drop(lease);
         assert!(resident_lease_at(&path).is_err());
         let child = std::process::Command::new(std::env::current_exe().expect("test executable"))
-            .args(["--exact", "inference::tests::resident_lease_probe_child", "--nocapture"])
+            .args([
+                "--exact",
+                "inference::tests::resident_lease_probe_child",
+                "--nocapture",
+            ])
             .env("APHRODY_INFERENCE_LEASE_TEST", &path)
             .output()
             .expect("separate process");
@@ -452,10 +512,13 @@ mod tests {
         let waiter = resident_file_at(&path).expect("waiting process file");
         let runtime = runtime().expect("runtime");
         let id = NEXT.fetch_add(1, Ordering::Relaxed);
-        state()
-            .expect("state")
-            .jobs
-            .insert(id, Job { task: runtime.spawn(std::future::pending()), opening: false });
+        state().expect("state").jobs.insert(
+            id,
+            Job {
+                task: runtime.spawn(std::future::pending()),
+                opening: false,
+            },
+        );
         runtime.spawn(async move {
             tokio::time::sleep(std::time::Duration::from_millis(20)).await;
             aphrody_inference_cancel(id);
@@ -489,20 +552,46 @@ mod tests {
     fn explicit_home_refuses_missing_soul_and_path_traversal() {
         assert!(named_home("../aphrody").is_err());
         let directory = tempfile::tempdir().unwrap();
-        assert!(home_prompt(directory.path().to_owned()).unwrap_err().contains("SOUL.md"));
-        std::fs::write(directory.path().join("SOUL.md"), "# Fixture\nA test persona.").unwrap();
-        assert!(home_prompt(directory.path().to_owned()).unwrap().contains("A test persona."));
+        assert!(
+            home_prompt(directory.path().to_owned())
+                .unwrap_err()
+                .contains("SOUL.md")
+        );
+        std::fs::write(
+            directory.path().join("SOUL.md"),
+            "# Fixture\nA test persona.",
+        )
+        .unwrap();
+        assert!(
+            home_prompt(directory.path().to_owned())
+                .unwrap()
+                .contains("A test persona.")
+        );
     }
 
     #[test]
     fn inference_identity_is_complete_without_execution_bootstrap() {
         let directory = tempfile::tempdir().unwrap();
-        let soul = format!("# Fixture\n{}\nActual soul tail.", "Persona detail. ".repeat(1000));
+        let soul = format!(
+            "# Fixture\n{}\nActual soul tail.",
+            "Persona detail. ".repeat(1000)
+        );
         std::fs::write(directory.path().join("SOUL.md"), &soul).unwrap();
-        std::fs::write(directory.path().join("IDENTITY.md"), "# Identity\nActual identity.")
-            .unwrap();
-        std::fs::write(directory.path().join("AGENTS.md"), "EXECUTION_ONLY ".repeat(5000)).unwrap();
-        std::fs::write(directory.path().join("TOOLS.md"), "UNAVAILABLE_EXECUTION_TOOLS").unwrap();
+        std::fs::write(
+            directory.path().join("IDENTITY.md"),
+            "# Identity\nActual identity.",
+        )
+        .unwrap();
+        std::fs::write(
+            directory.path().join("AGENTS.md"),
+            "EXECUTION_ONLY ".repeat(5000),
+        )
+        .unwrap();
+        std::fs::write(
+            directory.path().join("TOOLS.md"),
+            "UNAVAILABLE_EXECUTION_TOOLS",
+        )
+        .unwrap();
         let prompt = home_prompt(directory.path().to_owned()).unwrap();
         assert!(prompt.contains(&soul));
         assert!(prompt.contains("Actual identity."));

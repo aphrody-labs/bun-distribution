@@ -21,14 +21,21 @@ use crate::{EngineError, Result, Session};
 pub use photocraft_cms::lutfile::BUILTIN as LOOKS;
 
 /// Selective Color range keys in storage order.
-pub const RANGES: [&str; 9] = ["reds", "yellows", "greens", "cyans", "blues", "magentas", "whites", "neutrals", "blacks"];
+pub const RANGES: [&str; 9] = [
+    "reds", "yellows", "greens", "cyans", "blues", "magentas", "whites", "neutrals", "blacks",
+];
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn num(p: &Value, key: &str, default: f32) -> f32 {
-    p.get(key).and_then(Value::as_f64).map_or(default, |v| v as f32)
+    p.get(key)
+        .and_then(Value::as_f64)
+        .map_or(default, |v| v as f32)
 }
 
 /// `key`'s value; a null counts as missing (as in `adjust_params`).
@@ -54,7 +61,10 @@ fn opt_bool(cmd: &str, p: &Value, key: &str) -> Result<Option<bool>> {
 
 /// A percentage in -100..100 (clamped); anything but a finite number is an error.
 fn percent(cmd: &str, key: &str, v: &Value) -> Result<f32> {
-    let x = v.as_f64().filter(|x| x.is_finite()).ok_or_else(|| bad(cmd, format!("`{key}` must be a number")))?;
+    let x = v
+        .as_f64()
+        .filter(|x| x.is_finite())
+        .ok_or_else(|| bad(cmd, format!("`{key}` must be a number")))?;
     Ok((x as f32).clamp(-100.0, 100.0))
 }
 
@@ -65,28 +75,44 @@ fn percent(cmd: &str, key: &str, v: &Value) -> Result<f32> {
 pub fn selective_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjustment> {
     const CMD: &str = "selectiveColor";
     let (mut relative, mut adj) = match base {
-        Some(Adjustment::SelectiveColor { relative, adjustments }) => (*relative, *adjustments),
+        Some(Adjustment::SelectiveColor {
+            relative,
+            adjustments,
+        }) => (*relative, *adjustments),
         _ => (true, [[0.0; 4]; 9]),
     };
     match opt_str(CMD, p, "method")? {
         None => {}
         Some("relative") => relative = true,
         Some("absolute") => relative = false,
-        Some(m) => return Err(bad(CMD, format!("`method` must be \"relative\" or \"absolute\", not `{m}`"))),
+        Some(m) => {
+            return Err(bad(
+                CMD,
+                format!("`method` must be \"relative\" or \"absolute\", not `{m}`"),
+            ));
+        }
     }
     if let Some(b) = opt_bool(CMD, p, "relative")? {
         relative = b;
     }
     for (row, key) in adj.iter_mut().zip(RANGES) {
         let Some(v) = given(p, key) else { continue };
-        let a = v.as_array().filter(|a| a.len() == 4).ok_or_else(|| bad(CMD, format!("`{key}` must be an array of 4 numbers [c, m, y, k]")))?;
+        let a = v.as_array().filter(|a| a.len() == 4).ok_or_else(|| {
+            bad(
+                CMD,
+                format!("`{key}` must be an array of 4 numbers [c, m, y, k]"),
+            )
+        })?;
         for (slot, x) in row.iter_mut().zip(a) {
             *slot = percent(CMD, key, x)?;
         }
     }
     if let Some(c) = opt_str(CMD, p, "colors")? {
         let Some((row, _)) = adj.iter_mut().zip(RANGES).find(|(_, r)| *r == c) else {
-            return Err(bad(CMD, format!("unknown range `{c}` (ranges: {})", RANGES.join(", "))));
+            return Err(bad(
+                CMD,
+                format!("unknown range `{c}` (ranges: {})", RANGES.join(", ")),
+            ));
         };
         for (slot, key) in row.iter_mut().zip(["cyan", "magenta", "yellow", "black"]) {
             if let Some(v) = given(p, key) {
@@ -94,7 +120,10 @@ pub fn selective_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adj
             }
         }
     }
-    Ok(Adjustment::SelectiveColor { relative, adjustments: adj })
+    Ok(Adjustment::SelectiveColor {
+        relative,
+        adjustments: adj,
+    })
 }
 
 /// Color Lookup from params: `"lut"` (a built-in look id or `"none"`), `"file"` (a .cube / .3dl /
@@ -105,7 +134,13 @@ pub fn selective_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adj
 pub fn lookup_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjustment> {
     const CMD: &str = "colorLookup";
     let (mut name, mut lut, mut size, mut tetrahedral, mut dither) = match base {
-        Some(Adjustment::ColorLookup { name, lut, size, tetrahedral, dither }) => (name.clone(), lut.clone(), *size, *tetrahedral, *dither),
+        Some(Adjustment::ColorLookup {
+            name,
+            lut,
+            size,
+            tetrahedral,
+            dither,
+        }) => (name.clone(), lut.clone(), *size, *tetrahedral, *dither),
         _ => (String::new(), None, 0, false, false),
     };
     let mut loaded: Option<(photocraft_cms::lutfile::LutFile, String)> = None;
@@ -115,7 +150,12 @@ pub fn lookup_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjust
             lut = None;
             size = 0;
         } else {
-            let f = photocraft_cms::lutfile::builtin(id).ok_or_else(|| bad(CMD, format!("unknown look `{id}` (built-ins: {})", builtin_ids())))?;
+            let f = photocraft_cms::lutfile::builtin(id).ok_or_else(|| {
+                bad(
+                    CMD,
+                    format!("unknown look `{id}` (built-ins: {})", builtin_ids()),
+                )
+            })?;
             let label = f.title.clone();
             loaded = Some((f, label));
         }
@@ -123,12 +163,14 @@ pub fn lookup_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjust
     let file_name = opt_str(CMD, p, "fileName")?;
     if let Some(text) = opt_str(CMD, p, "data")? {
         let file_name = file_name.unwrap_or("lut.cube");
-        let f = photocraft_cms::lutfile::parse(file_name, text.as_bytes()).map_err(|e| bad(CMD, e.0))?;
+        let f = photocraft_cms::lutfile::parse(file_name, text.as_bytes())
+            .map_err(|e| bad(CMD, e.0))?;
         loaded = Some((f, base_name(file_name)));
     }
     if let Some(path) = opt_str(CMD, p, "file")?.filter(|s| !s.is_empty()) {
         let bytes = read_file(path).ok_or_else(|| bad(CMD, format!("can't read {path}")))?;
-        let f = photocraft_cms::lutfile::parse(path, &bytes).map_err(|e| bad(CMD, format!("{path}: {}", e.0)))?;
+        let f = photocraft_cms::lutfile::parse(path, &bytes)
+            .map_err(|e| bad(CMD, format!("{path}: {}", e.0)))?;
         loaded = Some((f, base_name(path)));
     }
     if let Some((f, label)) = loaded {
@@ -149,7 +191,12 @@ pub fn lookup_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjust
         None => {}
         Some("trilinear") => tetrahedral = false,
         Some("tetrahedral") => tetrahedral = true,
-        Some(i) => return Err(bad(CMD, format!("`interpolation` must be \"trilinear\" or \"tetrahedral\", not `{i}`"))),
+        Some(i) => {
+            return Err(bad(
+                CMD,
+                format!("`interpolation` must be \"trilinear\" or \"tetrahedral\", not `{i}`"),
+            ));
+        }
     }
     if let Some(b) = opt_bool(CMD, p, "tetrahedral")? {
         tetrahedral = b;
@@ -157,11 +204,21 @@ pub fn lookup_from_params(p: &Value, base: Option<&Adjustment>) -> Result<Adjust
     if let Some(b) = opt_bool(CMD, p, "dither")? {
         dither = b;
     }
-    Ok(Adjustment::ColorLookup { name, lut, size, tetrahedral, dither })
+    Ok(Adjustment::ColorLookup {
+        name,
+        lut,
+        size,
+        tetrahedral,
+        dither,
+    })
 }
 
 fn builtin_ids() -> String {
-    photocraft_cms::lutfile::BUILTIN.iter().map(|b| b.0).collect::<Vec<_>>().join(", ")
+    photocraft_cms::lutfile::BUILTIN
+        .iter()
+        .map(|b| b.0)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn base_name(path: &str) -> String {
@@ -180,9 +237,14 @@ fn read_file(_: &str) -> Option<Vec<u8>> {
 /// `layer.setAdjustment` for the kinds edited one range / option at a time: params merge into the
 /// current values; a call with no parameters resets to defaults.
 pub fn update_adjustment(existing: &Adjustment, p: &Value) -> Option<Result<Adjustment>> {
-    let empty = p.as_object().is_none_or(|o| o.keys().all(|k| matches!(k.as_str(), "layer" | "coalesce" | "__kind")));
+    let empty = p.as_object().is_none_or(|o| {
+        o.keys()
+            .all(|k| matches!(k.as_str(), "layer" | "coalesce" | "__kind"))
+    });
     match existing {
-        Adjustment::SelectiveColor { .. } => Some(selective_from_params(p, (!empty).then_some(existing))),
+        Adjustment::SelectiveColor { .. } => {
+            Some(selective_from_params(p, (!empty).then_some(existing)))
+        }
         Adjustment::ColorLookup { .. } => Some(lookup_from_params(p, (!empty).then_some(existing))),
         _ => None,
     }
@@ -192,7 +254,11 @@ pub fn update_adjustment(existing: &Adjustment, p: &Value) -> Option<Result<Adju
 
 /// Runs `f` on the target surface's content as straight RGBA (`w × h` = content bounds), blending
 /// the result through the selection.
-fn process_surface(surf: &mut Surface, selection: Option<&Surface>, f: &mut dyn FnMut(&mut Vec<[f32; 4]>, Rect)) {
+fn process_surface(
+    surf: &mut Surface,
+    selection: Option<&Surface>,
+    f: &mut dyn FnMut(&mut Vec<[f32; 4]>, Rect),
+) {
     let r = surf.content_bounds();
     if r.is_empty() {
         return;
@@ -203,11 +269,19 @@ fn process_surface(surf: &mut Surface, selection: Option<&Surface>, f: &mut dyn 
     let mut px: Vec<[f32; 4]> = raw.chunks_exact(n).map(|q| to_rgba(&fmt, q)).collect();
     let orig = px.clone();
     f(&mut px, r);
-    surf.write_region(r, &crate::pixels::mix_through_selection(&fmt, r, &orig, &px, selection));
+    surf.write_region(
+        r,
+        &crate::pixels::mix_through_selection(&fmt, r, &orig, &px, selection),
+    );
 }
 
 /// One history step running `f` on the active pixel layer (or targeted channel or layer mask).
-fn rgba_edit(s: &mut Session, label: &str, p: &Value, mut f: impl FnMut(&mut Vec<[f32; 4]>, Rect)) -> Result<Value> {
+fn rgba_edit(
+    s: &mut Session,
+    label: &str,
+    p: &Value,
+    mut f: impl FnMut(&mut Vec<[f32; 4]>, Rect),
+) -> Result<Value> {
     let id = crate::commands::layer_param(s, &Value::Null).ok();
     if crate::channel_cmds::target_of(p) != crate::channel_cmds::Target::Pixels {
         return s.edit(label, |doc, _| {
@@ -233,11 +307,18 @@ fn has_pixels(s: &Session) -> std::result::Result<(), String> {
         return Ok(());
     }
     let d = s.active().ok_or("no document open")?;
-    let l = d.active_layer.and_then(|id| d.doc.layer(id)).ok_or("no active layer")?;
+    let l = d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or("no active layer")?;
     if matches!(l.content, LayerContent::Raster(_)) {
         Ok(())
     } else {
-        Err(format!("active layer is {} {} layer, not a pixel layer", l.content.article(), l.content.kind_name()))
+        Err(format!(
+            "active layer is {} {} layer, not a pixel layer",
+            l.content.article(),
+            l.content.kind_name()
+        ))
     }
 }
 
@@ -248,11 +329,18 @@ pub(crate) fn has_adjustable(s: &Session) -> std::result::Result<(), String> {
         return Ok(());
     }
     let d = s.active().ok_or("no document open")?;
-    let l = d.active_layer.and_then(|id| d.doc.layer(id)).ok_or("no active layer")?;
+    let l = d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or("no active layer")?;
     match &l.content {
         LayerContent::Raster(_) => Ok(()),
         LayerContent::Smart(sm) if sm.cache.is_some() => Ok(()),
-        other => Err(format!("active layer is {} {} layer, not a pixel layer", other.article(), other.kind_name())),
+        other => Err(format!(
+            "active layer is {} {} layer, not a pixel layer",
+            other.article(),
+            other.kind_name()
+        )),
     }
 }
 
@@ -261,12 +349,24 @@ pub(crate) fn has_adjustable(s: &Session) -> std::result::Result<(), String> {
 /// [`adjust_as_filter`]. `Ok(true)` when it was recorded (one history step, the selection becomes
 /// the filter mask); `Ok(false)` when the command should edit pixels instead (a mask or channel
 /// target, or the active layer is not a smart object).
-pub(crate) fn adjust_as_smart_filter(s: &mut Session, kind: &str, label: &str, p: &Value) -> Result<bool> {
+pub(crate) fn adjust_as_smart_filter(
+    s: &mut Session,
+    kind: &str,
+    label: &str,
+    p: &Value,
+) -> Result<bool> {
     if crate::commands::is_mask_target(p) || crate::channel_cmds::is_channel_target(p) {
         return Ok(false);
     }
-    let Some(id) = s.active().and_then(|d| d.active_layer) else { return Ok(false) };
-    let smart = s.active().is_some_and(|d| matches!(d.doc.layer(id).map(|l| &l.content), Some(LayerContent::Smart(_))));
+    let Some(id) = s.active().and_then(|d| d.active_layer) else {
+        return Ok(false);
+    };
+    let smart = s.active().is_some_and(|d| {
+        matches!(
+            d.doc.layer(id).map(|l| &l.content),
+            Some(LayerContent::Smart(_))
+        )
+    });
     if !smart {
         return Ok(false);
     }
@@ -283,12 +383,16 @@ pub(crate) fn adjust_as_smart_filter(s: &mut Session, kind: &str, label: &str, p
         visible: true,
     };
     let sel = s.active().and_then(|d| d.doc.selection.clone());
-    s.edit(label, |doc, _| crate::smart_cmds::add_smart_filter(doc, id, sf, sel.as_ref()))?;
+    s.edit(label, |doc, _| {
+        crate::smart_cmds::add_smart_filter(doc, id, sf, sel.as_ref())
+    })?;
     Ok(true)
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 // ---------- commands ----------
@@ -299,7 +403,9 @@ pub(crate) fn adjust_as_filter(kind: &str, p: &Value, surf: &Surface) -> Option<
     let mut out = surf.clone();
     if kind == "shadowsHighlights" {
         let sh = shadows_highlights_params(p);
-        process_surface(&mut out, None, &mut |px, r| tone::shadows_highlights(px, r.width() as usize, r.height() as usize, &sh));
+        process_surface(&mut out, None, &mut |px, r| {
+            tone::shadows_highlights(px, r.width() as usize, r.height() as usize, &sh)
+        });
     } else {
         let mode = surf.format().mode;
         let adj = crate::adjust_params::from_params(kind, p, None, mode).ok()?;
@@ -314,7 +420,9 @@ fn shadows_highlights(s: &mut Session, p: &Value) -> Result<Value> {
         return Ok(Value::Null);
     }
     let sh = shadows_highlights_params(p);
-    rgba_edit(s, "Shadows/Highlights", p, |px, r| tone::shadows_highlights(px, r.width() as usize, r.height() as usize, &sh))
+    rgba_edit(s, "Shadows/Highlights", p, |px, r| {
+        tone::shadows_highlights(px, r.width() as usize, r.height() as usize, &sh)
+    })
 }
 
 fn shadows_highlights_params(p: &Value) -> ShadowsHighlights {
@@ -336,7 +444,11 @@ fn shadows_highlights_params(p: &Value) -> ShadowsHighlights {
 fn replace_color(s: &mut Session, p: &Value) -> Result<Value> {
     let c = crate::commands::color_param(p, "color", s.tools.foreground);
     let fuzz = num(p, "fuzziness", 40.0).clamp(0.0, 200.0);
-    let (h, sat, l) = (num(p, "hue", 0.0).clamp(-180.0, 180.0), num(p, "saturation", 0.0).clamp(-100.0, 100.0), num(p, "lightness", 0.0).clamp(-100.0, 100.0));
+    let (h, sat, l) = (
+        num(p, "hue", 0.0).clamp(-180.0, 180.0),
+        num(p, "saturation", 0.0).clamp(-100.0, 100.0),
+        num(p, "lightness", 0.0).clamp(-100.0, 100.0),
+    );
     rgba_edit(s, "Replace Color", p, |px, _| {
         tone::replace_color(px, [c[0], c[1], c[2]], fuzz, h, sat, l);
     })
@@ -350,12 +462,18 @@ fn stats_pixels(doc: &Document, layer: Option<u64>, use_selection: bool) -> Resu
     let area = doc.bounds();
     let px: Vec<[f32; 4]> = match layer {
         Some(id) => {
-            let l = doc.layer(photocraft_doc::LayerId(id)).ok_or(EngineError::NoLayer(photocraft_doc::LayerId(id)))?;
+            let l = doc
+                .layer(photocraft_doc::LayerId(id))
+                .ok_or(EngineError::NoLayer(photocraft_doc::LayerId(id)))?;
             photocraft_compose::render_layer(l, area).px
         }
         None => photocraft_compose::flatten(doc).px,
     };
-    let mask = doc.selection.as_ref().filter(|_| use_selection).map(|sel| photocraft_algo::selection::mask_from_surface(Some(sel), area));
+    let mask = doc
+        .selection
+        .as_ref()
+        .filter(|_| use_selection)
+        .map(|sel| photocraft_algo::selection::mask_from_surface(Some(sel), area));
     Ok((px, mask))
 }
 
@@ -365,24 +483,45 @@ fn match_color(s: &mut Session, p: &Value) -> Result<Value> {
         luminance: num(p, "luminance", 100.0).clamp(1.0, 200.0),
         intensity: num(p, "intensity", 100.0).clamp(1.0, 200.0),
         fade: num(p, "fade", 0.0).clamp(0.0, 100.0),
-        neutralize: p.get("neutralize").and_then(Value::as_bool).unwrap_or(false),
+        neutralize: p
+            .get("neutralize")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
     };
     let source = match p.get("source").and_then(Value::as_i64) {
         Some(i) if i >= 0 => {
-            let d = s.documents().get(i as usize).ok_or_else(|| bad(CMD, format!("no document {i}")))?;
+            let d = s
+                .documents()
+                .get(i as usize)
+                .ok_or_else(|| bad(CMD, format!("no document {i}")))?;
             let layer = p.get("sourceLayer").and_then(Value::as_u64);
-            let (px, mask) = stats_pixels(&d.doc, layer, p.get("useSelectionInSource").and_then(Value::as_bool).unwrap_or(false))?;
-            Some(tone::lab_stats(&px, mask.as_deref()).ok_or_else(|| bad(CMD, "the source has no opaque pixels"))?)
+            let (px, mask) = stats_pixels(
+                &d.doc,
+                layer,
+                p.get("useSelectionInSource")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            )?;
+            Some(
+                tone::lab_stats(&px, mask.as_deref())
+                    .ok_or_else(|| bad(CMD, "the source has no opaque pixels"))?,
+            )
         }
         _ => None,
     };
     // Source "None" with default options matches the image to its own statistics: a no-op, as in
     // Photoshop (Neutralize / Luminance / Color Intensity still act).
     // Target statistics: the layer itself, restricted to the selection when asked.
-    let target_sel = p.get("useSelectionInTarget").and_then(Value::as_bool).unwrap_or(false);
+    let target_sel = p
+        .get("useSelectionInTarget")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let sel = s.active().and_then(|d| d.doc.selection.clone());
     rgba_edit(s, "Match Color", p, |px, r| {
-        let mask: Option<Vec<f32>> = sel.as_ref().filter(|_| target_sel).map(|sel| photocraft_algo::selection::mask_from_surface(Some(sel), r));
+        let mask: Option<Vec<f32>> = sel
+            .as_ref()
+            .filter(|_| target_sel)
+            .map(|sel| photocraft_algo::selection::mask_from_surface(Some(sel), r));
         let Some(target) = tone::lab_stats(px, mask.as_deref()) else {
             return;
         };
@@ -395,7 +534,16 @@ fn hdr_toning(s: &mut Session, p: &Value) -> Result<Value> {
     let curve: Vec<(f32, f32)> = p
         .get("curve")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(|v| Some((v.get(0)?.as_f64()? as f32 / 255.0, v.get(1)?.as_f64()? as f32 / 255.0))).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| {
+                    Some((
+                        v.get(0)?.as_f64()? as f32 / 255.0,
+                        v.get(1)?.as_f64()? as f32 / 255.0,
+                    ))
+                })
+                .collect()
+        })
         .unwrap_or_default();
     let h = HdrToning {
         radius: num(p, "radius", d.radius).clamp(1.0, 500.0),
@@ -416,7 +564,10 @@ fn hdr_toning(s: &mut Session, p: &Value) -> Result<Value> {
         let mut px = buf.px;
         tone::hdr_toning(&mut px, w, hgt, &h);
         let fmt = doc.pixel_format();
-        let data: Vec<f32> = px.iter().flat_map(|q| photocraft_raster::from_rgba(&fmt, *q)).collect();
+        let data: Vec<f32> = px
+            .iter()
+            .flat_map(|q| photocraft_raster::from_rgba(&fmt, *q))
+            .collect();
         let mut bg = Layer::raster("Background", fmt);
         bg.locks.transparency = true;
         bg.locks.position = true;
@@ -431,7 +582,12 @@ fn hdr_toning(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The Color Lookup built-ins (id, label) for UIs and agents.
 fn list_looks(_: &mut Session, _: &Value) -> Result<Value> {
-    Ok(json!(photocraft_cms::lutfile::BUILTIN.iter().map(|(id, label)| json!({"id": id, "label": label})).collect::<Vec<_>>()))
+    Ok(json!(
+        photocraft_cms::lutfile::BUILTIN
+            .iter()
+            .map(|(id, label)| json!({"id": id, "label": label}))
+            .collect::<Vec<_>>()
+    ))
 }
 
 macro_rules! spec {

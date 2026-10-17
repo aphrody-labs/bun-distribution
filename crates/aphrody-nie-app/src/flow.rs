@@ -34,7 +34,11 @@ pub enum Screen {
     /// Empty `repliques` means that no sourced dialogue was injected and renders an explicit
     /// unavailable state. Otherwise the front end supplied the lines (`titre` is the event ID).
     /// As with [`Screen::Liste`], loading the source data requires access outside this FSM.
-    Story { idx: usize, titre: String, repliques: Vec<String> },
+    Story {
+        idx: usize,
+        titre: String,
+        repliques: Vec<String>,
+    },
     /// Onglet/mode pas encore jouable (titre = libellé réel) — données réelles à venir.
     Info { title: String },
     /// Liste de données réelles du jeu (effectif…) : `titre` + lignes déjà résolues.
@@ -42,7 +46,11 @@ pub enum Screen {
     /// Les lignes arrivent **du front**, pas de la FSM : les charger demande le VFS, que le web
     /// n'a pas (il reçoit ses octets autrement). La FSM reste ainsi portable, et un front qui ne
     /// sait pas charger l'effectif garde simplement l'écran d'information.
-    Liste { titre: String, lignes: Vec<String>, sel: usize },
+    Liste {
+        titre: String,
+        lignes: Vec<String>,
+        sel: usize,
+    },
 }
 
 impl Screen {
@@ -71,7 +79,7 @@ impl Screen {
                 if enter {
                     *self = Screen::Menu { sel: 0 };
                 }
-            },
+            }
             Screen::Menu { sel } => {
                 if nav != 0 {
                     *sel = wrap(*sel, MENU.len());
@@ -81,32 +89,39 @@ impl Screen {
                     if cur == 5 {
                         *self = Screen::ModeSelect { sel: 0 };
                     } else {
-                        *self = Screen::Info { title: MENU[cur].into() };
+                        *self = Screen::Info {
+                            title: MENU[cur].into(),
+                        };
                     }
                 } else if back {
                     *self = Screen::Title;
                 }
-            },
+            }
             Screen::ModeSelect { sel } => {
                 if nav != 0 {
                     *sel = wrap(*sel, MODES.len());
                 } else if enter {
                     // Mode 0 waits for sourced story data; modes 1-4 start the local simulation.
                     if *sel == 0 {
-                        *self =
-                            Screen::Story { idx: 0, titre: String::new(), repliques: Vec::new() };
+                        *self = Screen::Story {
+                            idx: 0,
+                            titre: String::new(),
+                            repliques: Vec::new(),
+                        };
                     } else {
-                        *self = Screen::Match { world: aphrody_nie_runtime::World::kickoff() };
+                        *self = Screen::Match {
+                            world: aphrody_nie_runtime::World::kickoff(),
+                        };
                     }
                 } else if back {
                     *self = Screen::Menu { sel: 5 };
                 }
-            },
+            }
             Screen::Match { .. } => {
                 if back {
                     *self = Screen::ModeSelect { sel: 0 };
                 }
-            },
+            }
             Screen::Story { idx, repliques, .. } => {
                 // An unavailable scene is a single status page, not synthetic dialogue.
                 let total = repliques.len().max(1);
@@ -118,19 +133,19 @@ impl Screen {
                 } else if back {
                     *self = Screen::ModeSelect { sel: 0 };
                 }
-            },
+            }
             Screen::Info { .. } => {
                 if enter || back {
                     *self = Screen::Menu { sel: 0 };
                 }
-            },
+            }
             Screen::Liste { lignes, sel, .. } => {
                 if nav != 0 && !lignes.is_empty() {
                     *sel = wrap(*sel, lignes.len());
                 } else if back || enter {
                     *self = Screen::Menu { sel: 0 };
                 }
-            },
+            }
         }
     }
 
@@ -148,8 +163,10 @@ impl Screen {
     /// effet, ce qui évite au front de savoir sur quel écran il se trouve.
     pub fn set_game_input(&mut self, dx: f32, dy: f32, shoot: bool) {
         if let Screen::Match { world } = self {
-            world.input =
-                aphrody_nie_runtime::Input { dir: aphrody_nie_geom::Vec2::new(dx, dy), shoot };
+            world.input = aphrody_nie_runtime::Input {
+                dir: aphrody_nie_geom::Vec2::new(dx, dy),
+                shoot,
+            };
         }
     }
 
@@ -163,7 +180,11 @@ impl Screen {
         if let Screen::Info { title } = self
             && !lignes.is_empty()
         {
-            *self = Screen::Liste { titre: title.clone(), lignes, sel: 0 };
+            *self = Screen::Liste {
+                titre: title.clone(),
+                lignes,
+                sel: 0,
+            };
         }
     }
 
@@ -172,7 +193,11 @@ impl Screen {
     /// The front end loads the source data and the FSM advances through it. An empty injection is
     /// ignored, leaving the explicit unavailable state visible.
     pub fn fournir_dialogue(&mut self, id: String, lignes: Vec<String>) {
-        if let Screen::Story { idx, titre, repliques } = self
+        if let Screen::Story {
+            idx,
+            titre,
+            repliques,
+        } = self
             && !lignes.is_empty()
         {
             *idx = 0;
@@ -248,36 +273,44 @@ impl Screen {
             Screen::Title => render_state(&GameState::Title, font, None).buf,
             Screen::Menu { sel } => crate::render::render_main_menu(*sel, font).buf,
             Screen::ModeSelect { sel } => render_list("MODE DE JEU", &MODES, *sel, font).buf,
-            Screen::Story { idx, titre, repliques } => {
-                render_state(&story_render_state(*idx, titre, repliques), font, None).buf
-            },
+            Screen::Story {
+                idx,
+                titre,
+                repliques,
+            } => render_state(&story_render_state(*idx, titre, repliques), font, None).buf,
             Screen::Match { world } => {
                 let terrain = aphrody_nie_runtime::render::render(world, W as u32, H as u32).px;
                 // The local rasterizer has no font, so this layer adds its score and clock.
                 crate::render::hud_match(&terrain, font, world.score, world.time)
-            },
+            }
             Screen::Liste { titre, lignes, sel } => {
                 let vues: Vec<&str> = lignes.iter().map(String::as_str).collect();
                 // Fenêtre glissante autour de la sélection : un effectif compte des milliers de
                 // joueurs, l'écran une dizaine de lignes.
                 const VISIBLES: usize = 9;
-                let debut =
-                    sel.saturating_sub(VISIBLES / 2).min(vues.len().saturating_sub(VISIBLES));
+                let debut = sel
+                    .saturating_sub(VISIBLES / 2)
+                    .min(vues.len().saturating_sub(VISIBLES));
                 let fin = (debut + VISIBLES).min(vues.len());
                 render_list(titre, &vues[debut..fin], sel - debut, font).buf
-            },
+            }
             Screen::Info { title } => {
-                let st =
-                    GameState::Story { speaker: title.clone(), line: CONTENT_UNAVAILABLE.into() };
+                let st = GameState::Story {
+                    speaker: title.clone(),
+                    line: CONTENT_UNAVAILABLE.into(),
+                };
                 render_state(&st, font, None).buf
-            },
+            }
         }
     }
 }
 
 fn story_render_state(idx: usize, title: &str, lines: &[String]) -> GameState {
     if lines.is_empty() {
-        return GameState::Story { speaker: MODES[0].into(), line: STORY_UNAVAILABLE.into() };
+        return GameState::Story {
+            speaker: MODES[0].into(),
+            line: STORY_UNAVAILABLE.into(),
+        };
     }
 
     // Text resources contain lines but not speaker attribution; the event script owns that
@@ -307,7 +340,11 @@ mod tests {
 
     #[test]
     fn unavailable_story_is_one_status_page() {
-        let mut screen = Screen::Story { idx: 0, titre: String::new(), repliques: Vec::new() };
+        let mut screen = Screen::Story {
+            idx: 0,
+            titre: String::new(),
+            repliques: Vec::new(),
+        };
 
         screen.input("CMD_ENTER");
 

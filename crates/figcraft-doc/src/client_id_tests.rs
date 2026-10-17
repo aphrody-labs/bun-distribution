@@ -4,7 +4,8 @@ use crate::{DocError, Document, Node, NodeId, NodeKind};
 use figcraft_geom::Affine;
 
 fn rect(doc: &mut Document, parent: NodeId) -> NodeId {
-    doc.create(parent, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0).unwrap()
+    doc.create(parent, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0)
+        .unwrap()
 }
 
 const C3: u64 = 3 << 32;
@@ -19,7 +20,12 @@ fn single_user_allocation_is_unchanged() {
     assert_eq!(rect(&mut d, page), NodeId(2));
     assert_eq!(d.next_id(), NodeId(3));
     // Inserting any id above the counter moves it, as before.
-    d.insert(Node::new(NodeId(C5 | 9), NodeKind::Rectangle, "x", 1.0, 1.0), page, None).unwrap();
+    d.insert(
+        Node::new(NodeId(C5 | 9), NodeKind::Rectangle, "x", 1.0, 1.0),
+        page,
+        None,
+    )
+    .unwrap();
     assert_eq!(d.next_id(), NodeId((C5 | 9) + 1));
 }
 
@@ -36,9 +42,19 @@ fn clients_allocate_in_their_own_space_and_never_collide() {
     assert_eq!(ia, vec![NodeId(C3 | 1), NodeId(C3 | 2), NodeId(C3 | 3)]);
     assert_eq!(ib, vec![NodeId(C5 | 1), NodeId(C5 | 2), NodeId(C5 | 3)]);
     // Someone else's ids arriving don't move this client's counter; its own higher ids do.
-    a.insert(Node::new(NodeId(C5 | 77), NodeKind::Rectangle, "theirs", 1.0, 1.0), page, None).unwrap();
+    a.insert(
+        Node::new(NodeId(C5 | 77), NodeKind::Rectangle, "theirs", 1.0, 1.0),
+        page,
+        None,
+    )
+    .unwrap();
     assert_eq!(a.next_id(), NodeId(C3 | 4));
-    a.insert(Node::new(NodeId(C3 | 40), NodeKind::Rectangle, "mine", 1.0, 1.0), page, None).unwrap();
+    a.insert(
+        Node::new(NodeId(C3 | 40), NodeKind::Rectangle, "mine", 1.0, 1.0),
+        page,
+        None,
+    )
+    .unwrap();
     assert_eq!(a.alloc_id(), NodeId(C3 | 41));
     // Old ids (client 0) don't count either.
     a.reserve_ids(NodeId(1_000));
@@ -49,7 +65,18 @@ fn clients_allocate_in_their_own_space_and_never_collide() {
 fn setting_a_client_continues_after_its_existing_ids() {
     let mut d = Document::new("a");
     let page = d.first_page().unwrap();
-    d.insert(Node::new(NodeId(C3 | 7), NodeKind::Rectangle, "earlier session", 1.0, 1.0), page, None).unwrap();
+    d.insert(
+        Node::new(
+            NodeId(C3 | 7),
+            NodeKind::Rectangle,
+            "earlier session",
+            1.0,
+            1.0,
+        ),
+        page,
+        None,
+    )
+    .unwrap();
     d.set_client_id(3);
     assert_eq!(d.client_id(), 3);
     assert_eq!(d.alloc_id(), NodeId(C3 | 8));
@@ -86,8 +113,12 @@ fn the_counter_is_saved_but_never_compared_and_the_client_never_saved() {
 fn place_keeps_the_local_transform_and_refuses_bad_moves() {
     let mut d = Document::new("a");
     let page = d.first_page().unwrap();
-    let f = d.create(page, NodeKind::Frame, "F", 100.0, 100.0, 50.0, 50.0).unwrap();
-    let g = d.create(f, NodeKind::Frame, "G", 10.0, 10.0, 20.0, 20.0).unwrap();
+    let f = d
+        .create(page, NodeKind::Frame, "F", 100.0, 100.0, 50.0, 50.0)
+        .unwrap();
+    let g = d
+        .create(f, NodeKind::Frame, "G", 10.0, 10.0, 20.0, 20.0)
+        .unwrap();
     let r = rect(&mut d, page);
     d.get_mut(r).unwrap().transform = Affine::translate((5.0, 6.0));
     d.place(r, f, 0).unwrap();
@@ -95,7 +126,11 @@ fn place_keeps_the_local_transform_and_refuses_bad_moves() {
     assert_eq!(d.node(r).unwrap().parent, Some(f));
     assert_eq!(d.node(f).unwrap().children, vec![r, g]);
     d.place(r, f, 99).unwrap();
-    assert_eq!(d.node(f).unwrap().children, vec![g, r], "same parent, index clamped");
+    assert_eq!(
+        d.node(f).unwrap().children,
+        vec![g, r],
+        "same parent, index clamped"
+    );
     assert_eq!(d.place(f, g, 0), Err(DocError::Cycle(f, g)));
     assert_eq!(d.place(f, f, 0), Err(DocError::Cycle(f, f)));
     assert_eq!(d.place(g, r, 0), Err(DocError::NotContainer(r)));
@@ -110,7 +145,12 @@ fn pages_can_be_inserted_onto_a_page_less_base() {
     assert!(d.pages.is_empty() && d.node_count() == 0);
     let p = Node::new(
         NodeId(C3 | 1),
-        NodeKind::Page { background: figcraft_color::Color::DEFAULT_PAGE, flows: vec![], prototype: Default::default(), guides: vec![] },
+        NodeKind::Page {
+            background: figcraft_color::Color::DEFAULT_PAGE,
+            flows: vec![],
+            prototype: Default::default(),
+            guides: vec![],
+        },
         "P",
         0.0,
         0.0,
@@ -118,7 +158,11 @@ fn pages_can_be_inserted_onto_a_page_less_base() {
     d.insert_page(p.clone()).unwrap();
     assert_eq!(d.pages, vec![NodeId(C3 | 1)]);
     assert!(d.insert_page(p).is_err(), "duplicate");
-    assert!(d.insert_page(Node::new(NodeId(4), NodeKind::Frame, "F", 1.0, 1.0)).is_err(), "not a page");
+    assert!(
+        d.insert_page(Node::new(NodeId(4), NodeKind::Frame, "F", 1.0, 1.0))
+            .is_err(),
+        "not a page"
+    );
     assert!(d.validate().is_empty());
     // The page-less base repairs into a file with a page.
     let mut e = Document::without_pages("x");

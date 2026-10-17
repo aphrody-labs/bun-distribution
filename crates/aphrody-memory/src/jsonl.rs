@@ -131,7 +131,11 @@ impl JsonlBackend {
         let content = lines.join("\n");
         // Write a trailing newline only when there is content, matching the
         // convention used by the .coord JSONL mailboxes.
-        let content = if content.is_empty() { String::new() } else { format!("{content}\n") };
+        let content = if content.is_empty() {
+            String::new()
+        } else {
+            format!("{content}\n")
+        };
 
         fs::write(&tmp_path, content.as_bytes()).await?;
         fs::rename(&tmp_path, &path).await?;
@@ -232,12 +236,16 @@ mod tests {
         let (mut b, _dir) = make_backend().await;
         let mut rec = MemoryRecord::new("test", "hello world");
         let key = format!("{}/{}", rec.ns, rec.id);
-        rec.metadata.insert("subject".into(), serde_json::Value::String("hi".into()));
+        rec.metadata
+            .insert("subject".into(), serde_json::Value::String("hi".into()));
         b.put(&key, rec.clone()).await.expect("put");
         let fetched = b.get(&key).await.expect("get").expect("record present");
         assert_eq!(fetched.id, rec.id);
         assert_eq!(fetched.content, "hello world");
-        assert_eq!(fetched.metadata.get("subject").and_then(|v| v.as_str()), Some("hi"));
+        assert_eq!(
+            fetched.metadata.get("subject").and_then(|v| v.as_str()),
+            Some("hi")
+        );
     }
 
     #[tokio::test]
@@ -303,7 +311,12 @@ mod tests {
         assert_eq!(results.len(), 3);
         // Scores must be non-increasing.
         for w in results.windows(2) {
-            assert!(w[0].1 >= w[1].1, "results not sorted: {} < {}", w[0].1, w[1].1);
+            assert!(
+                w[0].1 >= w[1].1,
+                "results not sorted: {} < {}",
+                w[0].1,
+                w[1].1
+            );
         }
         // Top result should be the "near" record.
         assert_eq!(results[0].0.content, "near");
@@ -315,7 +328,9 @@ mod tests {
         let no_emb = MemoryRecord::new("vec", "no embedding");
         let with_emb = MemoryRecord::new("vec", "has embedding").with_embedding(vec![1.0, 0.0]);
         b.put(&format!("vec/{}", no_emb.id), no_emb).await.unwrap();
-        b.put(&format!("vec/{}", with_emb.id), with_emb).await.unwrap();
+        b.put(&format!("vec/{}", with_emb.id), with_emb)
+            .await
+            .unwrap();
 
         let results = b.search(&[1.0_f32, 0.0].to_vec(), 5).await.unwrap();
         assert_eq!(results.len(), 1, "only embedded records should appear");
@@ -333,7 +348,11 @@ mod tests {
         };
         // Re-open — data must survive.
         let b2 = JsonlBackend::open(dir.path()).await.unwrap();
-        let fetched = b2.get(&key).await.unwrap().expect("record must survive reopen");
+        let fetched = b2
+            .get(&key)
+            .await
+            .unwrap()
+            .expect("record must survive reopen");
         assert_eq!(fetched.content, "durable content");
     }
 }

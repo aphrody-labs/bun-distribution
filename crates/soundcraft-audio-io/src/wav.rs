@@ -1,14 +1,20 @@
 //! Native WAV / BWF / RF64 reader and writer (RIFF chunk layout per the Microsoft multimedia
 //! specification, `bext` per EBU Tech 3285, `ds64` per EBU Tech 3306).
 
-use crate::pcm::{PcmKind, Quantizer, clamp_float, deinterleave, le_u16, le_u32, le_u64, tag, validate_buffer};
-use crate::{AudioBuffer, AudioError, AudioInfo, BitDepth, BwfInfo, FileFormat, Result, SampleFormat};
+use crate::pcm::{
+    PcmKind, Quantizer, clamp_float, deinterleave, le_u16, le_u32, le_u64, tag, validate_buffer,
+};
+use crate::{
+    AudioBuffer, AudioError, AudioInfo, BitDepth, BwfInfo, FileFormat, Result, SampleFormat,
+};
 
 const WAVE_FORMAT_PCM: u16 = 1;
 const WAVE_FORMAT_IEEE_FLOAT: u16 = 3;
 const WAVE_FORMAT_EXTENSIBLE: u16 = 0xFFFE;
 /// Tail of the KSDATAFORMAT_SUBTYPE_* GUIDs (bytes 2..16); bytes 0..2 hold the format tag.
-const GUID_TAIL: [u8; 14] = [0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71];
+const GUID_TAIL: [u8; 14] = [
+    0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71,
+];
 const BEXT_MIN_LEN: usize = 602;
 
 /// Parsed WAV layout (no sample data decoded yet).
@@ -55,7 +61,9 @@ fn parse_fmt(c: &[u8]) -> Result<Fmt> {
             }
             fmt.tag = sub;
         } else {
-            return Err(AudioError::Malformed("WAVE_FORMAT_EXTENSIBLE fmt chunk too short".into()));
+            return Err(AudioError::Malformed(
+                "WAVE_FORMAT_EXTENSIBLE fmt chunk too short".into(),
+            ));
         }
     }
     Ok(fmt)
@@ -64,7 +72,9 @@ fn parse_fmt(c: &[u8]) -> Result<Fmt> {
 /// Read a NUL-padded ASCII field.
 fn fixed_str(b: &[u8]) -> String {
     let end = b.iter().position(|&c| c == 0).unwrap_or(b.len());
-    String::from_utf8_lossy(b.get(..end).unwrap_or_default()).trim_end().to_string()
+    String::from_utf8_lossy(b.get(..end).unwrap_or_default())
+        .trim_end()
+        .to_string()
 }
 
 fn parse_bext(c: &[u8]) -> Option<BwfInfo> {
@@ -85,7 +95,8 @@ fn parse_bext(c: &[u8]) -> Option<BwfInfo> {
 
 /// True when the bytes start like a RIFF/RF64/BW64 WAVE file.
 pub(crate) fn is_wav(b: &[u8]) -> bool {
-    matches!(tag(b, 0), Some(t) if &t == b"RIFF" || &t == b"RF64" || &t == b"BW64") && tag(b, 8).is_some_and(|t| &t == b"WAVE")
+    matches!(tag(b, 0), Some(t) if &t == b"RIFF" || &t == b"RF64" || &t == b"BW64")
+        && tag(b, 8).is_some_and(|t| &t == b"WAVE")
 }
 
 pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
@@ -106,7 +117,9 @@ pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
         if chunks > 100_000 {
             break;
         }
-        let body = pos.checked_add(8).ok_or_else(|| AudioError::Malformed("chunk offset overflow".into()))?;
+        let body = pos
+            .checked_add(8)
+            .ok_or_else(|| AudioError::Malformed("chunk offset overflow".into()))?;
         let remaining = b.len().saturating_sub(body);
         let mut size = u64::from(size32);
         if &id == b"data" && is_rf64 && size32 == u32::MAX {
@@ -116,7 +129,11 @@ pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
         if &id == b"data" {
             // Lenient: a truncated recording (or a streaming writer's 0 / 0xFFFFFFFF size) still
             // yields whatever audio is actually present.
-            let len = if size32 == 0 && !is_rf64 { remaining } else { declared.min(remaining) };
+            let len = if size32 == 0 && !is_rf64 {
+                remaining
+            } else {
+                declared.min(remaining)
+            };
             if data.is_none() {
                 data = Some((body, len));
             }
@@ -148,7 +165,9 @@ pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
         return Err(AudioError::Malformed("WAV declares zero channels".into()));
     }
     if fmt.sample_rate == 0 {
-        return Err(AudioError::Malformed("WAV declares a zero sample rate".into()));
+        return Err(AudioError::Malformed(
+            "WAV declares a zero sample rate".into(),
+        ));
     }
     let channels = usize::from(fmt.channels);
     let (kind, sample_format) = match (fmt.tag, fmt.bits) {
@@ -160,23 +179,59 @@ pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
                 17..=24 => SampleFormat::Int24,
                 _ => SampleFormat::Int32,
             };
-            (PcmKind::Int { bytes, big_endian: false, unsigned: bytes == 1 }, sf)
+            (
+                PcmKind::Int {
+                    bytes,
+                    big_endian: false,
+                    unsigned: bytes == 1,
+                },
+                sf,
+            )
         }
-        (WAVE_FORMAT_IEEE_FLOAT, 32) => (PcmKind::Float { bytes: 4, big_endian: false }, SampleFormat::Float32),
-        (WAVE_FORMAT_IEEE_FLOAT, 64) => (PcmKind::Float { bytes: 8, big_endian: false }, SampleFormat::Float64),
+        (WAVE_FORMAT_IEEE_FLOAT, 32) => (
+            PcmKind::Float {
+                bytes: 4,
+                big_endian: false,
+            },
+            SampleFormat::Float32,
+        ),
+        (WAVE_FORMAT_IEEE_FLOAT, 64) => (
+            PcmKind::Float {
+                bytes: 8,
+                big_endian: false,
+            },
+            SampleFormat::Float64,
+        ),
         (WAVE_FORMAT_PCM | WAVE_FORMAT_IEEE_FLOAT, bits) => {
-            return Err(AudioError::Unsupported(format!("WAV format {} with {bits} bits per sample", fmt.tag)));
+            return Err(AudioError::Unsupported(format!(
+                "WAV format {} with {bits} bits per sample",
+                fmt.tag
+            )));
         }
         _ => return Ok(WavParse::Foreign { bwf }),
     };
-    let block = kind.bytes().checked_mul(channels).ok_or_else(|| AudioError::Malformed("block size overflow".into()))?;
+    let block = kind
+        .bytes()
+        .checked_mul(channels)
+        .ok_or_else(|| AudioError::Malformed("block size overflow".into()))?;
     if usize::from(fmt.block_align) != block {
-        log::debug!("WAV block_align {} disagrees with computed {block}; using computed", fmt.block_align);
+        log::debug!(
+            "WAV block_align {} disagrees with computed {block}; using computed",
+            fmt.block_align
+        );
     }
-    let (data_start, data_len) = data.ok_or_else(|| AudioError::Malformed("WAV has no data chunk".into()))?;
+    let (data_start, data_len) =
+        data.ok_or_else(|| AudioError::Malformed("WAV has no data chunk".into()))?;
     let frames = (data_len / block) as u64;
     Ok(WavParse::Native(WavLayout {
-        info: AudioInfo { format: FileFormat::Wav, sample_format, sample_rate: fmt.sample_rate, channels: fmt.channels, frames, bwf },
+        info: AudioInfo {
+            format: FileFormat::Wav,
+            sample_format,
+            sample_rate: fmt.sample_rate,
+            channels: fmt.channels,
+            frames,
+            bwf,
+        },
         kind,
         data_start,
         data_len,
@@ -184,10 +239,21 @@ pub(crate) fn parse(b: &[u8]) -> Result<WavParse> {
 }
 
 pub(crate) fn decode(b: &[u8], layout: &WavLayout) -> Result<AudioBuffer> {
-    let end = layout.data_start.saturating_add(layout.data_len).min(b.len());
+    let end = layout
+        .data_start
+        .saturating_add(layout.data_len)
+        .min(b.len());
     let data = b.get(layout.data_start..end).unwrap_or_default();
-    let channels = deinterleave(data, layout.kind, usize::from(layout.info.channels), layout.info.frames)?;
-    Ok(AudioBuffer { sample_rate: layout.info.sample_rate, channels })
+    let channels = deinterleave(
+        data,
+        layout.kind,
+        usize::from(layout.info.channels),
+        layout.info.frames,
+    )?;
+    Ok(AudioBuffer {
+        sample_rate: layout.info.sample_rate,
+        channels,
+    })
 }
 
 /// Default speaker mask for a channel count (callers that know the layout pass their own):
@@ -218,9 +284,14 @@ pub(crate) fn read_channel_mask(b: &[u8]) -> Option<u32> {
     for _ in 0..10_000 {
         let (id, size) = (tag(b, pos)?, usize::try_from(le_u32(b, pos + 4)?).ok()?);
         if &id == b"fmt " {
-            return (le_u16(b, pos + 8)? == WAVE_FORMAT_EXTENSIBLE).then(|| le_u32(b, pos + 8 + 20)).flatten();
+            return (le_u16(b, pos + 8)? == WAVE_FORMAT_EXTENSIBLE)
+                .then(|| le_u32(b, pos + 8 + 20))
+                .flatten();
         }
-        pos = pos.checked_add(8)?.checked_add(size)?.checked_add(size & 1)?;
+        pos = pos
+            .checked_add(8)?
+            .checked_add(size)?
+            .checked_add(size & 1)?;
     }
     None
 }
@@ -276,12 +347,24 @@ pub(crate) fn encode(
         BitDepth::Float32 => (32, true),
     };
     let bytes = usize::from(bits / 8);
-    let head = header(channels, buf.sample_rate, (bits, is_float), bwf, mask, frames as u64, force_rf64)?;
-    let data_len = (bytes * channels).checked_mul(frames).ok_or_else(|| AudioError::TooLarge("data size overflow".into()))?;
+    let head = header(
+        channels,
+        buf.sample_rate,
+        (bits, is_float),
+        bwf,
+        mask,
+        frames as u64,
+        force_rf64,
+    )?;
+    let data_len = (bytes * channels)
+        .checked_mul(frames)
+        .ok_or_else(|| AudioError::TooLarge("data size overflow".into()))?;
 
     let mut out = Vec::new();
     out.try_reserve_exact(head.len().saturating_add(data_len).saturating_add(1))
-        .map_err(|_| AudioError::TooLarge(format!("cannot allocate {data_len} bytes for WAV output")))?;
+        .map_err(|_| {
+            AudioError::TooLarge(format!("cannot allocate {data_len} bytes for WAV output"))
+        })?;
     out.extend_from_slice(&head);
     let mut qs = Quantizer::per_channel(u32::from(bits), dither, channels);
     for f in 0..frames {
@@ -311,17 +394,37 @@ pub(crate) fn header(
     frames: u64,
     force_rf64: bool,
 ) -> Result<Vec<u8>> {
-    let block = usize::from(bits / 8).checked_mul(channels).ok_or_else(|| AudioError::TooLarge("block size overflow".into()))?;
-    let block_align = u16::try_from(block).map_err(|_| AudioError::Encode("too many channels for WAV".into()))?;
-    let data_len = u64::from(block_align).checked_mul(frames).ok_or_else(|| AudioError::TooLarge("data size overflow".into()))?;
+    let block = usize::from(bits / 8)
+        .checked_mul(channels)
+        .ok_or_else(|| AudioError::TooLarge("block size overflow".into()))?;
+    let block_align =
+        u16::try_from(block).map_err(|_| AudioError::Encode("too many channels for WAV".into()))?;
+    let data_len = u64::from(block_align)
+        .checked_mul(frames)
+        .ok_or_else(|| AudioError::TooLarge("data size overflow".into()))?;
     let extensible = channels > 2 || bits > 16 || mask.is_some_and(|m| m != channel_mask(channels));
-    let fmt_tag = if is_float { WAVE_FORMAT_IEEE_FLOAT } else { WAVE_FORMAT_PCM };
+    let fmt_tag = if is_float {
+        WAVE_FORMAT_IEEE_FLOAT
+    } else {
+        WAVE_FORMAT_PCM
+    };
 
     let mut fmt = Vec::with_capacity(40);
-    fmt.extend_from_slice(&(if extensible { WAVE_FORMAT_EXTENSIBLE } else { fmt_tag }).to_le_bytes());
+    fmt.extend_from_slice(
+        &(if extensible {
+            WAVE_FORMAT_EXTENSIBLE
+        } else {
+            fmt_tag
+        })
+        .to_le_bytes(),
+    );
     fmt.extend_from_slice(&(channels as u16).to_le_bytes());
     fmt.extend_from_slice(&sample_rate.to_le_bytes());
-    fmt.extend_from_slice(&sample_rate.saturating_mul(u32::from(block_align)).to_le_bytes());
+    fmt.extend_from_slice(
+        &sample_rate
+            .saturating_mul(u32::from(block_align))
+            .to_le_bytes(),
+    );
     fmt.extend_from_slice(&block_align.to_le_bytes());
     fmt.extend_from_slice(&bits.to_le_bytes());
     if extensible {
@@ -341,7 +444,11 @@ pub(crate) fn header(
     }
     push_chunk(&mut meta, b"fmt ", &fmt);
     if is_float {
-        push_chunk(&mut meta, b"fact", &u32::try_from(frames).unwrap_or(u32::MAX).to_le_bytes());
+        push_chunk(
+            &mut meta,
+            b"fact",
+            &u32::try_from(frames).unwrap_or(u32::MAX).to_le_bytes(),
+        );
     }
     let total = (4 + (8 + rf64_body_len) + meta.len() + 8) as u64 + data_len + (data_len & 1);
     let rf64 = force_rf64 || u32::try_from(total).is_err();

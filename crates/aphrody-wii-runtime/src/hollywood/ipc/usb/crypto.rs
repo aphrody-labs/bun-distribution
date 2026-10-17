@@ -199,7 +199,10 @@ pub(super) struct Cipher {
 impl Cipher {
     /// Identity cipher: what the SDK uses before any encryption key is set.
     /// Basically a nop.
-    pub(super) const IDENTITY: Self = Self { ft: [0; 8], sb: [0; 8] };
+    pub(super) const IDENTITY: Self = Self {
+        ft: [0; 8],
+        sb: [0; 8],
+    };
 
     /// Reconstruct the cipher the SDK is about to use from the 16-byte
     /// extension key the guest just wrote to nunchuk register 0x40.
@@ -241,12 +244,30 @@ fn generate_key_data(rand: &[u8; 10], idx: usize) -> [u8; 6] {
     let t0: [u8; 10] = std::array::from_fn(|i| KEYGEN_SBOX_1ST_PARTY[rand[i] as usize]);
 
     [
-        ((ans[0] ^ t0[5]).rotate_right(t0[2] as u32).wrapping_sub(t0[9])) ^ t0[4],
-        ((ans[1] ^ t0[1]).rotate_right(t0[0] as u32).wrapping_sub(t0[5])) ^ t0[7],
-        ((ans[2] ^ t0[6]).rotate_right(t0[8] as u32).wrapping_sub(t0[2])) ^ t0[0],
-        ((ans[3] ^ t0[4]).rotate_right(t0[7] as u32).wrapping_sub(t0[3])) ^ t0[2],
-        ((ans[4] ^ t0[1]).rotate_right(t0[6] as u32).wrapping_sub(t0[3])) ^ t0[4],
-        ((ans[5] ^ t0[7]).rotate_right(t0[8] as u32).wrapping_sub(t0[5])) ^ t0[9],
+        ((ans[0] ^ t0[5])
+            .rotate_right(t0[2] as u32)
+            .wrapping_sub(t0[9]))
+            ^ t0[4],
+        ((ans[1] ^ t0[1])
+            .rotate_right(t0[0] as u32)
+            .wrapping_sub(t0[5]))
+            ^ t0[7],
+        ((ans[2] ^ t0[6])
+            .rotate_right(t0[8] as u32)
+            .wrapping_sub(t0[2]))
+            ^ t0[0],
+        ((ans[3] ^ t0[4])
+            .rotate_right(t0[7] as u32)
+            .wrapping_sub(t0[3]))
+            ^ t0[2],
+        ((ans[4] ^ t0[1])
+            .rotate_right(t0[6] as u32)
+            .wrapping_sub(t0[3]))
+            ^ t0[4],
+        ((ans[5] ^ t0[7])
+            .rotate_right(t0[8] as u32)
+            .wrapping_sub(t0[5]))
+            ^ t0[9],
     ]
 }
 

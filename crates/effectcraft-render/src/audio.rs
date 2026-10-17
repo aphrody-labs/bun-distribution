@@ -23,9 +23,19 @@ const MAX_DEPTH: usize = 16;
 
 /// `frames` stereo sample frames of `comp`'s mix from comp time `start` at `rate` Hz,
 /// interleaved (L R L R …).
-pub fn mix_comp(project: &Project, footage: &dyn FootageSource, expr: Option<&dyn ExprHost>, comp: ItemId, start: Tick, frames: usize, rate: u32) -> Vec<f32> {
+pub fn mix_comp(
+    project: &Project,
+    footage: &dyn FootageSource,
+    expr: Option<&dyn ExprHost>,
+    comp: ItemId,
+    start: Tick,
+    frames: usize,
+    rate: u32,
+) -> Vec<f32> {
     let mut out = vec![0.0f32; frames * 2];
-    mix_into(project, footage, expr, comp, start, rate, &mut out, 1.0, 1.0, 0);
+    mix_into(
+        project, footage, expr, comp, start, rate, &mut out, 1.0, 1.0, 0,
+    );
     out
 }
 
@@ -33,7 +43,9 @@ pub fn mix_comp(project: &Project, footage: &dyn FootageSource, expr: Option<&dy
 /// that has).
 pub fn comp_has_audio(project: &Project, comp: ItemId) -> bool {
     fn walk(project: &Project, comp: ItemId, depth: usize) -> bool {
-        let Some(c) = project.comp(comp) else { return false };
+        let Some(c) = project.comp(comp) else {
+            return false;
+        };
         depth < MAX_DEPTH
             && c.layers.iter().any(|l| {
                 l.switches.audio
@@ -52,10 +64,17 @@ pub fn comp_has_audio(project: &Project, comp: ItemId) -> bool {
 
 /// Enabled audio effects of a layer (in stack order) with their effect ids.
 fn audio_effect_groups(l: &Layer) -> impl Iterator<Item = (&str, &effectcraft_project::PropGroup)> {
-    l.effects().filter(|_| l.switches.effects).into_iter().flat_map(|fx| fx.groups()).filter(|g| g.enabled).filter_map(|g| match &g.kind {
-        GroupKind::Effect { effect } if audio_fx::is_audio_effect(effect) => Some((effect.as_str(), g)),
-        _ => None,
-    })
+    l.effects()
+        .filter(|_| l.switches.effects)
+        .into_iter()
+        .flat_map(|fx| fx.groups())
+        .filter(|g| g.enabled)
+        .filter_map(|g| match &g.kind {
+            GroupKind::Effect { effect } if audio_fx::is_audio_effect(effect) => {
+                Some((effect.as_str(), g))
+            }
+            _ => None,
+        })
 }
 
 /// The layer makes sound on its own (Tone).
@@ -68,7 +87,9 @@ pub fn audible(project: &Project, l: &Layer) -> bool {
     l.switches.audio
         && (generates(l)
             || match &l.source {
-                LayerSource::Footage { item } => matches!(project.item(*item).map(|i| &i.kind), Some(ItemKind::Footage(f)) if f.has_audio),
+                LayerSource::Footage { item } => {
+                    matches!(project.item(*item).map(|i| &i.kind), Some(ItemKind::Footage(f)) if f.has_audio)
+                }
                 LayerSource::Comp { .. } => true,
                 _ => false,
             })
@@ -76,7 +97,11 @@ pub fn audible(project: &Project, l: &Layer) -> bool {
 
 /// Linear gain of an Audio Levels value in dB; -96 dB and below is silence.
 pub fn db_to_gain(db: f64) -> f32 {
-    if db <= -96.0 { 0.0 } else { 10f64.powf(db / 20.0) as f32 }
+    if db <= -96.0 {
+        0.0
+    } else {
+        10f64.powf(db / 20.0) as f32
+    }
 }
 
 fn units_ceil(t: Tick, rate: u32) -> i64 {
@@ -88,7 +113,11 @@ fn units_ceil(t: Tick, rate: u32) -> i64 {
 fn sample_tick(i: i64, rate: u32) -> Tick {
     // Keep the requested sample when the rate does not divide the tick clock.
     let t = Tick::from_units(i, i64::from(rate));
-    if t.to_units_floor(i64::from(rate)) < i { Tick(t.0.saturating_add(1)) } else { t }
+    if t.to_units_floor(i64::from(rate)) < i {
+        Tick(t.0.saturating_add(1))
+    } else {
+        t
+    }
 }
 
 struct MixEnv<'a> {
@@ -143,7 +172,10 @@ impl MixEnv<'_> {
         let lt = l.layer_time(sample_tick(i0 + a as i64, rate));
         let buf = match &l.source {
             LayerSource::Footage { item } => match self.project.item(*item).map(|i| &i.kind) {
-                Some(ItemKind::Footage(f)) if f.has_audio => self.footage.audio(*item, f, lt, src_n, rate).unwrap_or_else(|| vec![0.0; src_n * 2]),
+                Some(ItemKind::Footage(f)) if f.has_audio => self
+                    .footage
+                    .audio(*item, f, lt, src_n, rate)
+                    .unwrap_or_else(|| vec![0.0; src_n * 2]),
                 _ => return out,
             },
             LayerSource::Comp { item } => {
@@ -151,14 +183,29 @@ impl MixEnv<'_> {
                     return out;
                 }
                 let mut sub = vec![0.0f32; src_n * 2];
-                mix_into(self.project, self.footage, self.expr, *item, lt, rate, &mut sub, 1.0, 1.0, self.depth + 1);
+                mix_into(
+                    self.project,
+                    self.footage,
+                    self.expr,
+                    *item,
+                    lt,
+                    rate,
+                    &mut sub,
+                    1.0,
+                    1.0,
+                    self.depth + 1,
+                );
                 sub
             }
             _ => return out,
         };
         let same = (speed - 1.0).abs() < 1e-9;
         for i in 0..m {
-            let j = if same { i } else { ((i as f64 * speed) as usize).min(src_n - 1) };
+            let j = if same {
+                i
+            } else {
+                ((i as f64 * speed) as usize).min(src_n - 1)
+            };
             if j * 2 + 1 >= buf.len() {
                 break;
             }
@@ -184,7 +231,9 @@ impl MixEnv<'_> {
     /// `i0 .. i0 + n`.
     fn layer_audio(&self, l: &Layer, i0: i64, n: usize) -> Vec<f32> {
         let t = sample_tick(i0, self.rate);
-        let fx: Vec<(&str, Params)> = audio_effect_groups(l).map(|(id, g)| (id, self.params(l, g, t))).collect();
+        let fx: Vec<(&str, Params)> = audio_effect_groups(l)
+            .map(|(id, g)| (id, self.params(l, g, t)))
+            .collect();
         if fx.is_empty() {
             return self.layer_raw(l, i0, n, false);
         }
@@ -192,7 +241,9 @@ impl MixEnv<'_> {
         let pre_s: f64 = fx.iter().map(|(id, p)| audio_fx::preroll(id, p)).sum();
         let pre = (pre_s * self.rate as f64).ceil() as usize;
         let mut buf = self.layer_raw(l, i0 - pre as i64, n + pre, reversed);
-        let start = l.layer_time(sample_tick(i0 - pre as i64, self.rate)).seconds();
+        let start = l
+            .layer_time(sample_tick(i0 - pre as i64, self.rate))
+            .seconds();
         for (id, p) in &fx {
             audio_fx::process(id, p, &mut buf, self.rate, start);
         }
@@ -214,13 +265,26 @@ fn mix_into(
     gr: f32,
     depth: usize,
 ) {
-    let Some(comp) = project.comp(comp_id) else { return };
+    let Some(comp) = project.comp(comp_id) else {
+        return;
+    };
     if depth >= MAX_DEPTH || rate == 0 {
         return;
     }
-    let env = MixEnv { project, footage, expr, comp_id, comp, rate, depth };
+    let env = MixEnv {
+        project,
+        footage,
+        expr,
+        comp_id,
+        comp,
+        rate,
+        depth,
+    };
     let frames = out.len() / 2;
-    let any_solo = comp.layers.iter().any(|l| l.switches.solo && audible(project, l));
+    let any_solo = comp
+        .layers
+        .iter()
+        .any(|l| l.switches.solo && audible(project, l));
     let s0 = start.to_units_floor(rate as i64);
     for l in &comp.layers {
         if !audible(project, l) || (any_solo && !l.switches.solo) || l.stretch <= 0.0 {
@@ -247,7 +311,9 @@ fn mix_into(
 }
 
 fn levels(env: &MixEnv, l: &Layer, t: Tick) -> (f32, f32) {
-    let Some(g) = l.props.sub("audio") else { return (1.0, 1.0) };
+    let Some(g) = l.props.sub("audio") else {
+        return (1.0, 1.0);
+    };
     let [a, b] = env.ctx(t).v2(l, g, "levels", [0.0, 0.0]);
     (db_to_gain(a), db_to_gain(b))
 }
@@ -273,7 +339,13 @@ pub fn peak_summary(samples: &[f32], bin: usize) -> Vec<[f32; 4]> {
 
 /// Peak summary of a footage item's audio from source time 0 over `duration`, `bins_per_sec`
 /// entries per second (rendered at a low internal rate, fetched in one-second chunks).
-pub fn footage_peaks(footage: &dyn FootageSource, item: ItemId, f: &effectcraft_project::Footage, duration: Tick, bins_per_sec: u32) -> Vec<[f32; 4]> {
+pub fn footage_peaks(
+    footage: &dyn FootageSource,
+    item: ItemId,
+    f: &effectcraft_project::Footage,
+    duration: Tick,
+    bins_per_sec: u32,
+) -> Vec<[f32; 4]> {
     let bins_per_sec = bins_per_sec.max(1);
     // Enough samples per bin to catch peaks of audible content, without decoding at full rate.
     let bin = (64usize).max(4000 / bins_per_sec as usize);
@@ -284,7 +356,9 @@ pub fn footage_peaks(footage: &dyn FootageSource, item: ItemId, f: &effectcraft_
     let mut i = 0usize;
     while i < total {
         let n = chunk.min(total - i);
-        let buf = footage.audio(item, f, sample_tick(i as i64, rate), n, rate).unwrap_or_else(|| vec![0.0; n * 2]);
+        let buf = footage
+            .audio(item, f, sample_tick(i as i64, rate), n, rate)
+            .unwrap_or_else(|| vec![0.0; n * 2]);
         out.extend(peak_summary(&buf, bin));
         i += n;
     }
@@ -307,8 +381,25 @@ mod tests {
         fn frame(&self, _: ItemId, _: &Footage, _: Tick) -> Option<Arc<Image>> {
             None
         }
-        fn audio(&self, _: ItemId, _: &Footage, start: Tick, frames: usize, _: u32) -> Option<Vec<f32>> {
-            Some((0..frames).flat_map(|_| if start >= Tick::ZERO { [0.25, -0.25] } else { [0.0, 0.0] }).collect())
+        fn audio(
+            &self,
+            _: ItemId,
+            _: &Footage,
+            start: Tick,
+            frames: usize,
+            _: u32,
+        ) -> Option<Vec<f32>> {
+            Some(
+                (0..frames)
+                    .flat_map(|_| {
+                        if start >= Tick::ZERO {
+                            [0.25, -0.25]
+                        } else {
+                            [0.0, 0.0]
+                        }
+                    })
+                    .collect(),
+            )
         }
     }
 
@@ -335,11 +426,30 @@ mod tests {
             color_profile: None,
             ..Default::default()
         };
-        let fid = p.add_item("x.wav", effectcraft_color::Label::SeaFoam, None, ItemKind::Footage(f));
+        let fid = p.add_item(
+            "x.wav",
+            effectcraft_color::Label::SeaFoam,
+            None,
+            ItemKind::Footage(f),
+        );
         let comp = Comp::new(64, 64, FrameRate::new(25, 1), Tick::from_seconds_f64(2.0));
-        let mut l1 = build::layer(&mut p, &comp, "a", LayerSource::Footage { item: fid }, (0, 0), None);
+        let mut l1 = build::layer(
+            &mut p,
+            &comp,
+            "a",
+            LayerSource::Footage { item: fid },
+            (0, 0),
+            None,
+        );
         l1.in_point = Tick::from_seconds_f64(1.0);
-        let mut l2 = build::layer(&mut p, &comp, "b", LayerSource::Footage { item: fid }, (0, 0), None);
+        let mut l2 = build::layer(
+            &mut p,
+            &comp,
+            "b",
+            LayerSource::Footage { item: fid },
+            (0, 0),
+            None,
+        );
         if let Some(g) = l2.props.sub_mut("audio")
             && let Some(pr) = g.get_mut("levels")
         {
@@ -347,14 +457,29 @@ mod tests {
         }
         let mut comp = comp;
         comp.layers = vec![l1, l2];
-        let cid = p.add_item("C", effectcraft_color::Label::Sandstone, None, ItemKind::Comp(comp.into()));
+        let cid = p.add_item(
+            "C",
+            effectcraft_color::Label::Sandstone,
+            None,
+            ItemKind::Comp(comp.into()),
+        );
         assert!(comp_has_audio(&p, cid));
         let rate = 1000;
         let m = mix_comp(&p, &Dc, None, cid, Tick::from_seconds_f64(0.5), 1000, rate);
         // first half: only layer b (half gain left, muted right)
-        assert!((m[0] - 0.125).abs() < 1e-3 && m[1].abs() < 1e-6, "{} {}", m[0], m[1]);
+        assert!(
+            (m[0] - 0.125).abs() < 1e-3 && m[1].abs() < 1e-6,
+            "{} {}",
+            m[0],
+            m[1]
+        );
         // second half (≥ 1 s): a + b
         let i = 700 * 2;
-        assert!((m[i] - 0.375).abs() < 1e-3 && (m[i + 1] + 0.25).abs() < 1e-3, "{} {}", m[i], m[i + 1]);
+        assert!(
+            (m[i] - 0.375).abs() < 1e-3 && (m[i + 1] + 0.25).abs() < 1e-3,
+            "{} {}",
+            m[i],
+            m[i + 1]
+        );
     }
 }

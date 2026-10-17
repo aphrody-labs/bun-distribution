@@ -29,7 +29,11 @@ impl CameraQuad {
     /// The page `page` (view size `w` × `h` points) inset by [`INSET`] on every side.
     pub fn inset(page: usize, w: f32, h: f32) -> Self {
         let (dx, dy) = (w * INSET, h * INSET);
-        Self { page, corners: [[dx, dy], [w - dx, dy], [w - dx, h - dy], [dx, h - dy]], grab: None }
+        Self {
+            page,
+            corners: [[dx, dy], [w - dx, dy], [w - dx, h - dy], [dx, h - dy]],
+            grab: None,
+        }
     }
 }
 
@@ -58,7 +62,14 @@ fn screen(xf: &PageXform, c: [f32; 2]) -> Pos2 {
 }
 
 /// Corner dragging on one page. A press on a page without the quadrilateral moves it there.
-pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, page: usize, view: &mut DocView, allowed: bool) {
+pub(crate) fn page_input(
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    xf: &PageXform,
+    page: usize,
+    view: &mut DocView,
+    allowed: bool,
+) {
     let pointer = ui.input(|i| i.pointer.hover_pos());
     let origin = ui.input(|i| i.pointer.press_origin());
     if !allowed {
@@ -90,8 +101,11 @@ pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, p
                 .map(|(i, _)| i);
         }
     }
-    let Some(q) = view.camera.as_mut().filter(|q| q.page == page) else { return };
-    let near = pointer.is_some_and(|p| q.corners.iter().any(|&c| screen(xf, c).distance(p) <= GRAB));
+    let Some(q) = view.camera.as_mut().filter(|q| q.page == page) else {
+        return;
+    };
+    let near =
+        pointer.is_some_and(|p| q.corners.iter().any(|&c| screen(xf, c).distance(p) <= GRAB));
     if let Some(i) = q.grab {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
         if let Some(p) = pointer {
@@ -110,15 +124,28 @@ pub(crate) fn page_input(ui: &egui::Ui, resp: &egui::Response, xf: &PageXform, p
 
 /// The quadrilateral and its handles, with what will be cut away dimmed.
 pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, view: &DocView) {
-    let Some(q) = view.camera.filter(|q| q.page == page) else { return };
+    let Some(q) = view.camera.filter(|q| q.page == page) else {
+        return;
+    };
     let pts: Vec<Pos2> = q.corners.iter().map(|&c| screen(xf, c)).collect();
     // Dim the page outside the quadrilateral: a band from each edge out to the page's border.
     let r = xf.rect;
     let mut mesh = egui::Mesh::default();
     let dim = Color32::from_black_alpha(70);
-    let outer = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom()];
+    let outer = [
+        r.left_top(),
+        r.right_top(),
+        r.right_bottom(),
+        r.left_bottom(),
+    ];
     // Pair each quad corner with the page corner nearest to it, in order around the page.
-    let start = (0..4).min_by(|&a, &b| pts[0].distance_sq(outer[a]).total_cmp(&pts[0].distance_sq(outer[b]))).unwrap_or(0);
+    let start = (0..4)
+        .min_by(|&a, &b| {
+            pts[0]
+                .distance_sq(outer[a])
+                .total_cmp(&pts[0].distance_sq(outer[b]))
+        })
+        .unwrap_or(0);
     for i in 0..4 {
         let (a, b) = (pts[i], pts[(i + 1) % 4]);
         let (oa, ob) = (outer[(start + i) % 4], outer[(start + i + 1) % 4]);
@@ -150,7 +177,12 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
                 .fill(t.card)
                 .stroke(Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(10))
-                .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }) })
+                .shadow(egui::Shadow {
+                    offset: [0, 4],
+                    blur: 16,
+                    spread: 0,
+                    color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }),
+                })
                 .inner_margin(egui::Margin::symmetric(12, 8))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
@@ -163,7 +195,14 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
                                 (Look::Greyscale, tl!("Greyscale")),
                                 (Look::BlackWhite, tl!("Black and white")),
                             ] {
-                                if ui.add_enabled(allowed, egui::Button::selectable(done.look == look, label)).clicked() && done.look != look {
+                                if ui
+                                    .add_enabled(
+                                        allowed,
+                                        egui::Button::selectable(done.look == look, label),
+                                    )
+                                    .clicked()
+                                    && done.look != look
+                                {
                                     done.look = look;
                                     again = true;
                                 }
@@ -172,30 +211,46 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
                             ui.label(tl!("Clean-up"));
                             let slider = ui.add_enabled(
                                 allowed && done.look != Look::Original,
-                                egui::Slider::new(&mut done.level, 0..=crate::camera_ui::MAX_LEVEL).show_value(false),
+                                egui::Slider::new(&mut done.level, 0..=crate::camera_ui::MAX_LEVEL)
+                                    .show_value(false),
                             );
                             // Enhance again once the slider is let go (or moved with the keys).
-                            again |= slider.drag_stopped() || (slider.changed() && !slider.dragged());
+                            again |=
+                                slider.drag_stopped() || (slider.changed() && !slider.dragged());
                             if again && (done.look, done.level) != done.applied {
                                 view.pending_action = Some(ViewAction::CameraLevel);
                             }
                             ui.separator();
                             let icon = |ui: &mut egui::Ui, name: &str, tip: &str| {
-                                let r = ui.add_enabled(allowed, egui::Button::image(crate::icons::image(name, 18.0, t.text)).frame(false));
+                                let r = ui.add_enabled(
+                                    allowed,
+                                    egui::Button::image(crate::icons::image(name, 18.0, t.text))
+                                        .frame(false),
+                                );
                                 // Named for screen readers (and tests), not only on hover.
-                                r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, allowed, tip));
+                                r.widget_info(|| {
+                                    egui::WidgetInfo::labeled(
+                                        egui::WidgetType::Button,
+                                        allowed,
+                                        tip,
+                                    )
+                                });
                                 r.on_hover_text(tip).clicked()
                             };
                             if icon(ui, "rotate-ccw", tl!("Rotate counterclockwise")) {
-                                view.pending_action = Some(ViewAction::CameraRotate { clockwise: false });
+                                view.pending_action =
+                                    Some(ViewAction::CameraRotate { clockwise: false });
                             }
                             if icon(ui, "rotate-cw", tl!("Rotate clockwise")) {
-                                view.pending_action = Some(ViewAction::CameraRotate { clockwise: true });
+                                view.pending_action =
+                                    Some(ViewAction::CameraRotate { clockwise: true });
                             }
                             if crate::widgets::pill_button(ui, tl!("Crop pages"), false).clicked() {
                                 view.pending_action = Some(ViewAction::CameraNext("page.crop"));
                             }
-                            if crate::widgets::pill_button(ui, tl!("Organize pages"), false).clicked() {
+                            if crate::widgets::pill_button(ui, tl!("Organize pages"), false)
+                                .clicked()
+                            {
                                 view.pending_action = Some(ViewAction::CameraNext("page.organize"));
                             }
                             if crate::widgets::pill_button(ui, tl!("Done"), true).clicked() {
@@ -204,7 +259,13 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
                             return;
                         }
                         let ready = allowed && view.camera.is_some();
-                        if ui.add_enabled_ui(ready, |ui| crate::widgets::pill_button(ui, tl!("Enhance page"), true)).inner.clicked() {
+                        if ui
+                            .add_enabled_ui(ready, |ui| {
+                                crate::widgets::pill_button(ui, tl!("Enhance page"), true)
+                            })
+                            .inner
+                            .clicked()
+                        {
                             view.pending_action = Some(ViewAction::EnhanceCamera);
                         }
                         if crate::widgets::pill_button(ui, tl!("Cancel"), false).clicked() {

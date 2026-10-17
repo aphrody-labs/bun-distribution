@@ -54,6 +54,9 @@ mod tests {
         assert_eq!(count(&s), 2);
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(count(&s), 0, "one undo removes the whole script's work");
-        assert!(s.execute("script.run", &json!({"text": "nope.command"})).is_err());
+        assert!(
+            s.execute("script.run", &json!({"text": "nope.command"}))
+                .is_err()
+        );
     }
 }

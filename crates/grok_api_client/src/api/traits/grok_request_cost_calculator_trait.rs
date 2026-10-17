@@ -24,13 +24,13 @@ pub type UsdMills = u64;
 /// `video_extension`) depend on the source video's duration, which is NOT
 /// part of the request. Those impls document their limitations.
 pub trait GrokRequestCostCalculator {
-  /// Estimated cost rounded up to the nearest whole cent.
-  fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Default impl: derive from mills via ceiling division.
-    self.calculate_cost_in_mills().div_ceil(10)
-  }
+    /// Estimated cost rounded up to the nearest whole cent.
+    fn calculate_cost_in_cents(&self) -> UsdCents {
+        // Default impl: derive from mills via ceiling division.
+        self.calculate_cost_in_mills().div_ceil(10)
+    }
 
-  /// Estimated cost in mills (tenths of a cent). This is the canonical
-  /// method — implementations should override this one.
-  fn calculate_cost_in_mills(&self) -> UsdMills;
+    /// Estimated cost in mills (tenths of a cent). This is the canonical
+    /// method — implementations should override this one.
+    fn calculate_cost_in_mills(&self) -> UsdMills;
 }

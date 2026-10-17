@@ -57,7 +57,9 @@ impl Trigger {
     /// exactly the modifiers `mods`: its key is a combination such as `Shift+K`. A controller
     /// button is a key named from [`GAMEPAD_BUTTONS`], pressed without modifiers.
     pub fn fires_on_key(&self, key: &str, mods: KeyMods) -> bool {
-        let Trigger::KeyPress { key: want } = self else { return false };
+        let Trigger::KeyPress { key: want } = self else {
+            return false;
+        };
         let (m, k) = KeyMods::split(want);
         m == mods && (k.eq_ignore_ascii_case(key) || key_alias(k) == Some(key))
     }
@@ -77,7 +79,12 @@ impl KeyMods {
     /// `key` with these modifiers, as a key trigger stores it: `Ctrl+Alt+Shift+Cmd+K`.
     pub fn combo(self, key: &str) -> String {
         let mut s = String::new();
-        for (on, name) in [(self.ctrl, "Ctrl"), (self.alt, "Alt"), (self.shift, "Shift"), (self.cmd, "Cmd")] {
+        for (on, name) in [
+            (self.ctrl, "Ctrl"),
+            (self.alt, "Alt"),
+            (self.shift, "Shift"),
+            (self.cmd, "Cmd"),
+        ] {
             if on {
                 s.push_str(name);
                 s.push('+');
@@ -136,13 +143,19 @@ pub fn gamepad_button(index: usize) -> Option<&'static str> {
 
 /// Whether a key trigger's key is a controller button.
 pub fn is_gamepad_button(key: &str) -> bool {
-    GAMEPAD_BUTTONS.iter().any(|b| b.eq_ignore_ascii_case(key.trim()))
+    GAMEPAD_BUTTONS
+        .iter()
+        .any(|b| b.eq_ignore_ascii_case(key.trim()))
 }
 
 /// Whether any layer of `doc` has a key/gamepad trigger on a controller button (the player then
 /// polls controllers).
 pub fn uses_gamepad(doc: &crate::Document) -> bool {
-    doc.nodes().any(|n| n.interactions.iter().any(|it| matches!(&it.trigger, Trigger::KeyPress { key } if is_gamepad_button(key))))
+    doc.nodes().any(|n| {
+        n.interactions
+            .iter()
+            .any(|it| matches!(&it.trigger, Trigger::KeyPress { key } if is_gamepad_button(key)))
+    })
 }
 
 /// Alternative spellings people type for keys, as the keys' names.
@@ -206,8 +219,17 @@ pub enum Easing {
 
 impl Easing {
     /// The starting point when switching to a custom curve.
-    pub const CUSTOM_BEZIER: Easing = Easing::CustomBezier { x1: 0.42, y1: 0.0, x2: 0.58, y2: 1.0 };
-    pub const CUSTOM_SPRING: Easing = Easing::CustomSpring { mass: 1.0, stiffness: 100.0, damping: 15.0 };
+    pub const CUSTOM_BEZIER: Easing = Easing::CustomBezier {
+        x1: 0.42,
+        y1: 0.0,
+        x2: 0.58,
+        y2: 1.0,
+    };
+    pub const CUSTOM_SPRING: Easing = Easing::CustomSpring {
+        mass: 1.0,
+        stiffness: 100.0,
+        damping: 15.0,
+    };
 
     pub const ALL: [Easing; 11] = [
         Easing::Linear,
@@ -249,7 +271,11 @@ impl Easing {
             Easing::Quick => Some((1.0, 300.0, 20.0)),
             Easing::Bouncy => Some((1.0, 600.0, 15.0)),
             Easing::Slow => Some((1.0, 80.0, 20.0)),
-            Easing::CustomSpring { mass, stiffness, damping } => Some((mass, stiffness, damping)),
+            Easing::CustomSpring {
+                mass,
+                stiffness,
+                damping,
+            } => Some((mass, stiffness, damping)),
             _ => None,
         }
     }
@@ -269,7 +295,11 @@ impl Easing {
 
     /// Evaluate the curve at `t` (0..1).
     pub fn eval(self, t: f64) -> f64 {
-        let t = if t.is_finite() { t.clamp(0.0, 1.0) } else { 1.0 };
+        let t = if t.is_finite() {
+            t.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
         let back = 1.70158;
         match self {
             Easing::Linear => t,
@@ -283,7 +313,9 @@ impl Easing {
                 }
             }
             Easing::EaseInBack => (back + 1.0) * t * t * t - back * t * t,
-            Easing::EaseOutBack => 1.0 + (back + 1.0) * (t - 1.0).powi(3) + back * (t - 1.0).powi(2),
+            Easing::EaseOutBack => {
+                1.0 + (back + 1.0) * (t - 1.0).powi(3) + back * (t - 1.0).powi(2)
+            }
             Easing::EaseInOutBack => {
                 let c2 = back * 1.525;
                 if t < 0.5 {
@@ -292,7 +324,11 @@ impl Easing {
                     ((2.0 * t - 2.0).powi(2) * ((c2 + 1.0) * (t * 2.0 - 2.0) + c2) + 2.0) / 2.0
                 }
             }
-            Easing::Gentle | Easing::Quick | Easing::Bouncy | Easing::Slow | Easing::CustomSpring { .. } => {
+            Easing::Gentle
+            | Easing::Quick
+            | Easing::Bouncy
+            | Easing::Slow
+            | Easing::CustomSpring { .. } => {
                 let (m, k, c) = self.spring().unwrap_or((1.0, 100.0, 15.0));
                 Spring::new(m, k, c).at(t)
             }
@@ -305,7 +341,10 @@ impl Easing {
 fn cubic_bezier(t: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     let fin = |v: f64, d: f64| if v.is_finite() { v } else { d };
     let (x1, x2) = (fin(x1, 0.42).clamp(0.0, 1.0), fin(x2, 0.58).clamp(0.0, 1.0));
-    let (y1, y2) = (fin(y1, 0.0).clamp(-10.0, 10.0), fin(y2, 1.0).clamp(-10.0, 10.0));
+    let (y1, y2) = (
+        fin(y1, 0.0).clamp(-10.0, 10.0),
+        fin(y2, 1.0).clamp(-10.0, 10.0),
+    );
     let b = |p1: f64, p2: f64, s: f64| {
         let u = 1.0 - s;
         3.0 * u * u * s * p1 + 3.0 * u * s * s * p2 + s * s * s
@@ -341,9 +380,21 @@ impl Spring {
         let zeta = c / (2.0 * (k * m).sqrt());
         // The slowest mode's decay rate (overdamped: w0 (zeta - sqrt(zeta² - 1)), written stably);
         // e^-6.9 is 0.1%, and a critically or over-damped spring's larger lead factor needs ~9.2.
-        let (rate, k_settle) = if zeta < 1.0 { (zeta * w0, 6.9) } else { (w0 / (zeta + (zeta * zeta - 1.0).sqrt()), 9.2) };
-        let settle = if rate > 1e-6 { (k_settle / rate).clamp(0.05, 10.0) } else { 10.0 };
-        Spring { w0, zeta, settle: if settle.is_finite() { settle } else { 10.0 } }
+        let (rate, k_settle) = if zeta < 1.0 {
+            (zeta * w0, 6.9)
+        } else {
+            (w0 / (zeta + (zeta * zeta - 1.0).sqrt()), 9.2)
+        };
+        let settle = if rate > 1e-6 {
+            (k_settle / rate).clamp(0.05, 10.0)
+        } else {
+            10.0
+        };
+        Spring {
+            w0,
+            zeta,
+            settle: if settle.is_finite() { settle } else { 10.0 },
+        }
     }
 
     /// Its position at `t` (0..1) of its settling time.
@@ -444,11 +495,21 @@ impl Transition {
             Direction::Bottom => Direction::Top,
         };
         match self {
-            Transition::MoveIn { direction } => Transition::MoveOut { direction: opp(direction) },
-            Transition::MoveOut { direction } => Transition::MoveIn { direction: opp(direction) },
-            Transition::Push { direction } => Transition::Push { direction: opp(direction) },
-            Transition::SlideIn { direction } => Transition::SlideOut { direction: opp(direction) },
-            Transition::SlideOut { direction } => Transition::SlideIn { direction: opp(direction) },
+            Transition::MoveIn { direction } => Transition::MoveOut {
+                direction: opp(direction),
+            },
+            Transition::MoveOut { direction } => Transition::MoveIn {
+                direction: opp(direction),
+            },
+            Transition::Push { direction } => Transition::Push {
+                direction: opp(direction),
+            },
+            Transition::SlideIn { direction } => Transition::SlideOut {
+                direction: opp(direction),
+            },
+            Transition::SlideOut { direction } => Transition::SlideIn {
+                direction: opp(direction),
+            },
             other => other,
         }
     }
@@ -581,14 +642,23 @@ pub struct ConditionalBlock {
 
 impl ConditionalBlock {
     /// The actions of the first block that applies, with variables resolved in `modes`.
-    pub fn choose<'a>(blocks: &'a [ConditionalBlock], vars: &Variables, modes: &BTreeMap<CollectionId, ModeId>) -> Option<&'a [Action]> {
-        blocks.iter().find(|b| b.condition.as_ref().is_none_or(|c| c.holds(vars, modes))).map(|b| b.actions.as_slice())
+    pub fn choose<'a>(
+        blocks: &'a [ConditionalBlock],
+        vars: &Variables,
+        modes: &BTreeMap<CollectionId, ModeId>,
+    ) -> Option<&'a [Action]> {
+        blocks
+            .iter()
+            .find(|b| b.condition.as_ref().is_none_or(|c| c.holds(vars, modes)))
+            .map(|b| b.actions.as_slice())
     }
 }
 
 /// Every action in `actions` and in their conditional blocks (depth-first, in order).
 pub fn walk(actions: &[Action]) -> Walk<'_> {
-    Walk { stack: vec![(actions.iter(), 0)] }
+    Walk {
+        stack: vec![(actions.iter(), 0)],
+    }
 }
 
 /// Iterator of [`walk`].
@@ -609,7 +679,8 @@ impl<'a> Iterator for Walk<'a> {
             if let Action::Conditional { blocks } = a
                 && depth < MAX_ACTION_DEPTH
             {
-                self.stack.extend(blocks.iter().rev().map(|b| (b.actions.iter(), depth + 1)));
+                self.stack
+                    .extend(blocks.iter().rev().map(|b| (b.actions.iter(), depth + 1)));
             }
             return Some(a);
         }
@@ -684,7 +755,12 @@ impl Action {
                     out.push(variable.as_str());
                     out.extend(expr.iter().flat_map(Expr::variables));
                 }
-                Action::Conditional { blocks } => out.extend(blocks.iter().filter_map(|b| b.condition.as_ref()).flat_map(Expr::variables)),
+                Action::Conditional { blocks } => out.extend(
+                    blocks
+                        .iter()
+                        .filter_map(|b| b.condition.as_ref())
+                        .flat_map(Expr::variables),
+                ),
                 _ => {}
             }
         }
@@ -723,7 +799,9 @@ impl Interaction {
     /// trigger (other triggers have none; "after delay" times itself).
     pub fn delay_secs(&self) -> f64 {
         match self.trigger {
-            Trigger::MouseEnter | Trigger::MouseLeave | Trigger::MouseDown | Trigger::MouseUp => f64::from(self.delay_ms.min(MAX_DELAY_MS)) / 1000.0,
+            Trigger::MouseEnter | Trigger::MouseLeave | Trigger::MouseDown | Trigger::MouseUp => {
+                f64::from(self.delay_ms.min(MAX_DELAY_MS)) / 1000.0
+            }
             _ => 0.0,
         }
     }
@@ -843,7 +921,10 @@ pub struct DeviceColor {
 }
 
 const fn c(name: &'static str, r: u8, g: u8, b: u8) -> DeviceColor {
-    DeviceColor { name, rgb: [r, g, b] }
+    DeviceColor {
+        name,
+        rgb: [r, g, b],
+    }
 }
 
 /// A device prototypes are presented on: its name and screen size in points (held upright).
@@ -879,28 +960,47 @@ impl PrototypeSettings {
             width: 440.0,
             height: 956.0,
             rotates: true,
-            colors: &[c("Black", 0x3B, 0x3A, 0x38), c("White", 0xEC, 0xEB, 0xE6), c("Natural", 0xBF, 0xB9, 0xAF), c("Sand", 0xC6, 0xAC, 0x8F)],
+            colors: &[
+                c("Black", 0x3B, 0x3A, 0x38),
+                c("White", 0xEC, 0xEB, 0xE6),
+                c("Natural", 0xBF, 0xB9, 0xAF),
+                c("Sand", 0xC6, 0xAC, 0x8F),
+            ],
         },
         Device {
             name: "Android Compact",
             width: 412.0,
             height: 917.0,
             rotates: true,
-            colors: &[c("Black", 0x2E, 0x2F, 0x33), c("Silver", 0xD6, 0xD8, 0xDB), c("Green", 0xA6, 0xC0, 0xA3)],
+            colors: &[
+                c("Black", 0x2E, 0x2F, 0x33),
+                c("Silver", 0xD6, 0xD8, 0xDB),
+                c("Green", 0xA6, 0xC0, 0xA3),
+            ],
         },
         Device {
             name: "iPad mini",
             width: 744.0,
             height: 1133.0,
             rotates: true,
-            colors: &[c("Grey", 0x6A, 0x6B, 0x6F), c("Silver", 0xE0, 0xE1, 0xE3), c("Blue", 0x9C, 0xB1, 0xC9), c("Purple", 0xC6, 0xBC, 0xD7)],
+            colors: &[
+                c("Grey", 0x6A, 0x6B, 0x6F),
+                c("Silver", 0xE0, 0xE1, 0xE3),
+                c("Blue", 0x9C, 0xB1, 0xC9),
+                c("Purple", 0xC6, 0xBC, 0xD7),
+            ],
         },
         Device {
             name: "MacBook Air",
             width: 1280.0,
             height: 832.0,
             rotates: false,
-            colors: &[c("Silver", 0xC9, 0xCA, 0xCE), c("Grey", 0x7B, 0x7C, 0x80), c("Dark blue", 0x2E, 0x33, 0x3D), c("Cream", 0xE0, 0xD9, 0xCB)],
+            colors: &[
+                c("Silver", 0xC9, 0xCA, 0xCE),
+                c("Grey", 0x7B, 0x7C, 0x80),
+                c("Dark blue", 0x2E, 0x33, 0x3D),
+                c("Cream", 0xE0, 0xD9, 0xCB),
+            ],
         },
         Device {
             name: "Desktop",
@@ -928,17 +1028,33 @@ impl PrototypeSettings {
     pub fn model(&self) -> Option<Device> {
         if self.device == Self::CUSTOM_DEVICE {
             let ([w, h], [dw, dh]) = (self.custom_size, Self::CUSTOM_DEFAULT);
-            let (width, height) = (Self::custom_side(w).unwrap_or(dw), Self::custom_side(h).unwrap_or(dh));
-            return Some(Device { name: Self::CUSTOM_DEVICE, width, height, rotates: false, colors: &[] });
+            let (width, height) = (
+                Self::custom_side(w).unwrap_or(dw),
+                Self::custom_side(h).unwrap_or(dh),
+            );
+            return Some(Device {
+                name: Self::CUSTOM_DEVICE,
+                width,
+                height,
+                rotates: false,
+                colors: &[],
+            });
         }
-        Self::DEVICES.iter().find(|d| d.name == self.device).copied()
+        Self::DEVICES
+            .iter()
+            .find(|d| d.name == self.device)
+            .copied()
     }
 
     /// The chosen device's colour (its model's first unless another is picked; None without a
     /// body).
     pub fn device_color(&self) -> Option<DeviceColor> {
         let colors = self.model()?.colors;
-        colors.iter().find(|c| c.name == self.color).or(colors.first()).copied()
+        colors
+            .iter()
+            .find(|c| c.name == self.color)
+            .or(colors.first())
+            .copied()
     }
 
     /// The device turned to landscape (only devices that turn do).
@@ -949,6 +1065,14 @@ impl PrototypeSettings {
     /// The chosen device as presented: its screen is wider than tall when turned to landscape.
     pub fn device(&self) -> Option<Device> {
         let d = self.model()?;
-        Some(if self.landscape() { Device { width: d.height, height: d.width, ..d } } else { d })
+        Some(if self.landscape() {
+            Device {
+                width: d.height,
+                height: d.width,
+                ..d
+            }
+        } else {
+            d
+        })
     }
 }

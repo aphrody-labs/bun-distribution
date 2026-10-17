@@ -36,7 +36,9 @@ pub trait StorageHost: Send + Sync {
 }
 
 fn host(s: &Session, cmd: &str) -> Result<std::sync::Arc<dyn StorageHost>> {
-    s.storage.clone().ok_or_else(|| crate::commands::bad(cmd, "browser storage is only managed in the web app"))
+    s.storage
+        .clone()
+        .ok_or_else(|| crate::commands::bad(cmd, "browser storage is only managed in the web app"))
 }
 
 fn info(s: &mut Session, _: &Value) -> Result<Value> {
@@ -59,16 +61,25 @@ fn persist(s: &mut Session, _: &Value) -> Result<Value> {
 fn clear(s: &mut Session, p: &Value) -> Result<Value> {
     let what = str_p(p, "what").unwrap_or("diskCache");
     if !CLEARABLE.contains(&what) {
-        return Err(crate::commands::bad("storage.clear", format!("what: one of {}", CLEARABLE.join(", "))));
+        return Err(crate::commands::bad(
+            "storage.clear",
+            format!("what: one of {}", CLEARABLE.join(", ")),
+        ));
     }
     let h = host(s, "storage.clear")?;
-    let r = h.clear(what).map_err(|e| crate::commands::bad("storage.clear", e))?;
+    let r = h
+        .clear(what)
+        .map_err(|e| crate::commands::bad("storage.clear", e))?;
     s.toast(format!("Cleared browser storage: {what}"));
     Ok(r)
 }
 
 fn has_host(s: &Session) -> std::result::Result<(), String> {
-    if s.storage.is_some() { Ok(()) } else { Err("browser storage is only managed in the web app".into()) }
+    if s.storage.is_some() {
+        Ok(())
+    } else {
+        Err("browser storage is only managed in the web app".into())
+    }
 }
 
 pub(crate) fn specs() -> Vec<CommandSpec> {
@@ -79,8 +90,24 @@ pub(crate) fn specs() -> Vec<CommandSpec> {
             "{} → {available, backend, usage, quota, persisted, files: {count, bytes, media, projects, autoSaves}, diskCache: {enabled, entries, bytes, maxBytes, hits, misses, writes, evictions}}",
             info
         ),
-        cmd!("storage.persist", "Request Persistent Storage", [], None, "{} → {requested, persisted}", has_host, persist),
-        cmd!("storage.clear", "Clear Browser Storage", [], None, "{what: diskCache|media|projects|autoSaves|all} → {cleared, entries, bytes}", has_host, clear),
+        cmd!(
+            "storage.persist",
+            "Request Persistent Storage",
+            [],
+            None,
+            "{} → {requested, persisted}",
+            has_host,
+            persist
+        ),
+        cmd!(
+            "storage.clear",
+            "Clear Browser Storage",
+            [],
+            None,
+            "{what: diskCache|media|projects|autoSaves|all} → {cleared, entries, bytes}",
+            has_host,
+            clear
+        ),
     ]
 }
 
@@ -114,20 +141,56 @@ mod tests {
     #[test]
     fn storage_commands_go_to_the_host() {
         let mut s = Session::default();
-        assert_eq!(s.execute_checked("storage.info", json!({})).unwrap(), json!({"available": false}));
-        assert!(s.execute_checked("storage.clear", json!({"what": "diskCache"})).is_err());
+        assert_eq!(
+            s.execute_checked("storage.info", json!({})).unwrap(),
+            json!({"available": false})
+        );
+        assert!(
+            s.execute_checked("storage.clear", json!({"what": "diskCache"}))
+                .is_err()
+        );
         let m = Arc::new(Mock::default());
         s.storage = Some(m.clone());
         let i = s.execute_checked("storage.info", json!({})).unwrap();
-        assert_eq!((i["available"].clone(), i["backend"].clone(), i["persisted"].clone()), (json!(true), json!("opfs"), json!(false)));
-        assert_eq!(s.execute_checked("storage.persist", json!({})).unwrap()["requested"], json!(true));
-        assert_eq!(s.execute_checked("storage.info", json!({})).unwrap()["persisted"], json!(true));
-        assert!(s.execute_checked("storage.clear", json!({"what": "everything"})).is_err());
-        assert_eq!(s.execute_checked("storage.clear", json!({"what": "media"})).unwrap()["cleared"], json!("media"));
+        assert_eq!(
+            (
+                i["available"].clone(),
+                i["backend"].clone(),
+                i["persisted"].clone()
+            ),
+            (json!(true), json!("opfs"), json!(false))
+        );
+        assert_eq!(
+            s.execute_checked("storage.persist", json!({})).unwrap()["requested"],
+            json!(true)
+        );
+        assert_eq!(
+            s.execute_checked("storage.info", json!({})).unwrap()["persisted"],
+            json!(true)
+        );
+        assert!(
+            s.execute_checked("storage.clear", json!({"what": "everything"}))
+                .is_err()
+        );
+        assert_eq!(
+            s.execute_checked("storage.clear", json!({"what": "media"}))
+                .unwrap()["cleared"],
+            json!("media")
+        );
         // The disk cache's own commands use the browser's disk cache when there is no folder.
         let st = s.execute_checked("cache.diskStats", json!({})).unwrap();
-        assert_eq!((st["enabled"].clone(), st["entries"].clone()), (json!(true), json!(3)));
-        assert_eq!(s.execute_checked("edit.purge", json!({"what": "disk"})).unwrap()["diskEntries"], json!(3));
-        assert_eq!(*m.cleared.lock().unwrap(), vec!["media".to_string(), "diskCache".to_string()]);
+        assert_eq!(
+            (st["enabled"].clone(), st["entries"].clone()),
+            (json!(true), json!(3))
+        );
+        assert_eq!(
+            s.execute_checked("edit.purge", json!({"what": "disk"}))
+                .unwrap()["diskEntries"],
+            json!(3)
+        );
+        assert_eq!(
+            *m.cleared.lock().unwrap(),
+            vec!["media".to_string(), "diskCache".to_string()]
+        );
     }
 }

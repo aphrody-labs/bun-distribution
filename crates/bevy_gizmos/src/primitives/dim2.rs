@@ -386,7 +386,14 @@ where
         }
 
         // transform points from the reference unit square to capsule "rectangle"
-        let [top_left, top_right, bottom_left, bottom_right, top_center, bottom_center] = [
+        let [
+            top_left,
+            top_right,
+            bottom_left,
+            bottom_right,
+            top_center,
+            bottom_center,
+        ] = [
             [-1.0, 1.0],
             [1.0, 1.0],
             [-1.0, -1.0],

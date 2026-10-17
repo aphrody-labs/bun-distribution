@@ -154,5 +154,9 @@ fn patch_generated_protojson_serde(out_dir: &Path) -> Result<(), Box<dyn std::er
 }
 
 fn replace_if_present(source: String, from: &str, to: &str) -> String {
-    if source.contains(from) { source.replace(from, to) } else { source }
+    if source.contains(from) {
+        source.replace(from, to)
+    } else {
+        source
+    }
 }

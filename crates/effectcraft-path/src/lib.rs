@@ -5,7 +5,14 @@
 //! pucker & bloat, zig zag, twist, wiggle, offset, merge) live in [`ops`]; curve-preserving booleans
 //! (for Merge Paths) in [`boolean`] and curve offsetting in [`offset`].
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod boolean;
 pub mod feather;
@@ -38,7 +45,11 @@ pub fn to_kurbo(p: &ShapePath) -> BezPath {
         if o == [0.0; 2] && i == [0.0; 2] {
             out.line_to(v(b));
         } else {
-            out.curve_to(v(a) + KVec2::new(o[0], o[1]), v(b) + KVec2::new(i[0], i[1]), v(b));
+            out.curve_to(
+                v(a) + KVec2::new(o[0], o[1]),
+                v(b) + KVec2::new(i[0], i[1]),
+                v(b),
+            );
         }
     };
     for i in 0..n - 1 {
@@ -132,9 +143,14 @@ pub fn from_kurbo(path: &BezPath) -> Vec<ShapePath> {
 
 /// Rectangle path centred at `pos` with corner `roundness` (AE draws clockwise from the top-right).
 pub fn rect(size: [f64; 2], pos: [f64; 2], roundness: f64) -> BezPath {
-    let r = kurbo::Rect::from_center_size(Point::new(pos[0], pos[1]), (size[0].abs(), size[1].abs()));
+    let r =
+        kurbo::Rect::from_center_size(Point::new(pos[0], pos[1]), (size[0].abs(), size[1].abs()));
     let rad = roundness.clamp(0.0, size[0].abs().min(size[1].abs()) / 2.0);
-    if rad > 0.0 { r.to_rounded_rect(rad).to_path(0.1) } else { r.to_path(0.1) }
+    if rad > 0.0 {
+        r.to_rounded_rect(rad).to_path(0.1)
+    } else {
+        r.to_path(0.1)
+    }
 }
 
 pub fn ellipse(size: [f64; 2], pos: [f64; 2]) -> BezPath {
@@ -142,7 +158,16 @@ pub fn ellipse(size: [f64; 2], pos: [f64; 2]) -> BezPath {
 }
 
 /// Polystar: a star (`inner` radius used) or polygon, rotation in degrees, roundness in percent.
-pub fn polystar(star: bool, points: f64, pos: [f64; 2], rotation: f64, inner: f64, outer: f64, inner_round: f64, outer_round: f64) -> BezPath {
+pub fn polystar(
+    star: bool,
+    points: f64,
+    pos: [f64; 2],
+    rotation: f64,
+    inner: f64,
+    outer: f64,
+    inner_round: f64,
+    outer_round: f64,
+) -> BezPath {
     let n = points.max(3.0).round() as usize;
     let verts = if star { n * 2 } else { n };
     let mut path = BezPath::new();
@@ -152,7 +177,16 @@ pub fn polystar(star: bool, points: f64, pos: [f64; 2], rotation: f64, inner: f6
     for i in 0..verts {
         let r = if star && i % 2 == 1 { inner } else { outer };
         let a = start + step * i as f64;
-        pts.push((Point::new(pos[0] + r * a.cos(), pos[1] + r * a.sin()), a, r, if star && i % 2 == 1 { inner_round } else { outer_round }));
+        pts.push((
+            Point::new(pos[0] + r * a.cos(), pos[1] + r * a.sin()),
+            a,
+            r,
+            if star && i % 2 == 1 {
+                inner_round
+            } else {
+                outer_round
+            },
+        ));
     }
     let tangent = |(p, a, r, round): (Point, f64, f64, f64), sign: f64| -> Point {
         if round == 0.0 {
@@ -184,7 +218,9 @@ fn to_skia(path: &BezPath) -> Option<tiny_skia::Path> {
             PathEl::MoveTo(p) => pb.move_to(p.x as f32, p.y as f32),
             PathEl::LineTo(p) => pb.line_to(p.x as f32, p.y as f32),
             PathEl::QuadTo(a, p) => pb.quad_to(a.x as f32, a.y as f32, p.x as f32, p.y as f32),
-            PathEl::CurveTo(a, b, p) => pb.cubic_to(a.x as f32, a.y as f32, b.x as f32, b.y as f32, p.x as f32, p.y as f32),
+            PathEl::CurveTo(a, b, p) => pb.cubic_to(
+                a.x as f32, a.y as f32, b.x as f32, b.y as f32, p.x as f32, p.y as f32,
+            ),
             PathEl::ClosePath => pb.close(),
         }
     }
@@ -208,7 +244,14 @@ fn from_skia(p: &tiny_skia::Path) -> BezPath {
 
 fn skia_transform(m: &Mat3) -> tiny_skia::Transform {
     let a = &m.0;
-    tiny_skia::Transform::from_row(a[0][0] as f32, a[1][0] as f32, a[0][1] as f32, a[1][1] as f32, a[0][2] as f32, a[1][2] as f32)
+    tiny_skia::Transform::from_row(
+        a[0][0] as f32,
+        a[1][0] as f32,
+        a[0][1] as f32,
+        a[1][1] as f32,
+        a[0][2] as f32,
+        a[1][2] as f32,
+    )
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -221,7 +264,9 @@ pub enum FillRule {
 /// Anti-aliased coverage of `paths` (in local space) transformed by `m` into a `w × h` mask.
 pub fn fill_coverage(paths: &[BezPath], m: &Mat3, w: u32, h: u32, rule: FillRule) -> Mask {
     let mut out = Mask::new(w, h, 0.0);
-    let Some(mut mask) = tiny_skia::Mask::new(w.max(1), h.max(1)) else { return out };
+    let Some(mut mask) = tiny_skia::Mask::new(w.max(1), h.max(1)) else {
+        return out;
+    };
     let mut all = BezPath::new();
     for p in paths {
         all.extend(p.elements().iter().copied());
@@ -271,13 +316,22 @@ pub struct StrokeStyle {
 impl StrokeStyle {
     /// Whether the width varies along the path (Taper or Wave active).
     pub fn is_variable(&self) -> bool {
-        self.taper.as_ref().is_some_and(|t| t.is_active()) || self.wave.as_ref().is_some_and(|w| w.is_active())
+        self.taper.as_ref().is_some_and(|t| t.is_active())
+            || self.wave.as_ref().is_some_and(|w| w.is_active())
     }
 }
 
 impl Default for StrokeStyle {
     fn default() -> Self {
-        StrokeStyle { width: 1.0, cap: Cap::Butt, join: Join::Miter, miter: 4.0, dash: None, taper: None, wave: None }
+        StrokeStyle {
+            width: 1.0,
+            cap: Cap::Butt,
+            join: Join::Miter,
+            miter: 4.0,
+            dash: None,
+            taper: None,
+            wave: None,
+        }
     }
 }
 
@@ -297,7 +351,11 @@ pub fn stroke_outline(paths: &[BezPath], style: &StrokeStyle, res_scale: f64) ->
     if let Some((d, off)) = &style.dash {
         let arr: Vec<f32> = d.iter().map(|v| v.max(0.0) as f32).collect();
         if arr.len() >= 2 && arr.iter().any(|v| *v > 0.0) {
-            let arr = if arr.len() % 2 == 1 { [arr.clone(), arr].concat() } else { arr };
+            let arr = if arr.len() % 2 == 1 {
+                [arr.clone(), arr].concat()
+            } else {
+                arr
+            };
             if let Some(dash) = tiny_skia::StrokeDash::new(arr, *off as f32) {
                 sp = sp.dash(&dash, res_scale as f32)?;
             }
@@ -366,7 +424,10 @@ mod tests {
         for i in 0..4 {
             for c in 0..2 {
                 assert!((b.vertices[i][c] - sp.vertices[i][c]).abs() < 1e-9);
-                assert!((b.in_tangents[i][c] - sp.in_tangents[i][c]).abs() < 1e-9, "{i} {b:?}");
+                assert!(
+                    (b.in_tangents[i][c] - sp.in_tangents[i][c]).abs() < 1e-9,
+                    "{i} {b:?}"
+                );
                 assert!((b.out_tangents[i][c] - sp.out_tangents[i][c]).abs() < 1e-9);
             }
         }
@@ -383,7 +444,10 @@ mod tests {
     #[test]
     fn stroke_has_area() {
         let r = rect([40.0, 40.0], [50.0, 50.0], 0.0);
-        let st = StrokeStyle { width: 4.0, ..Default::default() };
+        let st = StrokeStyle {
+            width: 4.0,
+            ..Default::default()
+        };
         let m = stroke_coverage(&[r], &st, &Mat3::IDENTITY, 100, 100);
         let area: f32 = m.data.iter().sum();
         assert!((area - 4.0 * 160.0).abs() < 40.0, "{area}");

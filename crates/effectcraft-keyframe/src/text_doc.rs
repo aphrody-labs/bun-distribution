@@ -29,8 +29,15 @@ pub enum Justify {
 }
 
 impl Justify {
-    pub const ALL: [Justify; 7] =
-        [Justify::Left, Justify::Center, Justify::Right, Justify::JustifyLastLeft, Justify::JustifyLastCenter, Justify::JustifyLastRight, Justify::JustifyAll];
+    pub const ALL: [Justify; 7] = [
+        Justify::Left,
+        Justify::Center,
+        Justify::Right,
+        Justify::JustifyLastLeft,
+        Justify::JustifyLastCenter,
+        Justify::JustifyLastRight,
+        Justify::JustifyAll,
+    ];
     /// The `layer.setText` / expression name.
     pub fn key(self) -> &'static str {
         match self {
@@ -44,16 +51,24 @@ impl Justify {
         }
     }
     pub fn parse(s: &str) -> Option<Justify> {
-        Some(match s.to_ascii_lowercase().replace(['_', ' ', '-'], "").as_str() {
-            "left" | "leftjustify" => Justify::Left,
-            "center" | "centre" | "centerjustify" => Justify::Center,
-            "right" | "rightjustify" => Justify::Right,
-            "justify" | "justifyleft" | "justifylastleft" | "fulljustifylastlineleft" => Justify::JustifyLastLeft,
-            "justifycenter" | "justifylastcenter" | "fulljustifylastlinecenter" => Justify::JustifyLastCenter,
-            "justifyright" | "justifylastright" | "fulljustifylastlineright" => Justify::JustifyLastRight,
-            "justifyall" | "fulljustifylastlinefull" | "fulljustify" => Justify::JustifyAll,
-            _ => return None,
-        })
+        Some(
+            match s.to_ascii_lowercase().replace(['_', ' ', '-'], "").as_str() {
+                "left" | "leftjustify" => Justify::Left,
+                "center" | "centre" | "centerjustify" => Justify::Center,
+                "right" | "rightjustify" => Justify::Right,
+                "justify" | "justifyleft" | "justifylastleft" | "fulljustifylastlineleft" => {
+                    Justify::JustifyLastLeft
+                }
+                "justifycenter" | "justifylastcenter" | "fulljustifylastlinecenter" => {
+                    Justify::JustifyLastCenter
+                }
+                "justifyright" | "justifylastright" | "fulljustifylastlineright" => {
+                    Justify::JustifyLastRight
+                }
+                "justifyall" | "fulljustifylastlinefull" | "fulljustify" => Justify::JustifyAll,
+                _ => return None,
+            },
+        )
     }
 }
 
@@ -481,7 +496,10 @@ fn split_at(runs: &mut Vec<StyleRun>, at: usize) -> usize {
 impl TextDoc {
     /// A document with `text` in the default style.
     pub fn plain(text: &str) -> TextDoc {
-        TextDoc { text: text.into(), ..Default::default() }
+        TextDoc {
+            text: text.into(),
+            ..Default::default()
+        }
     }
 
     pub fn char_len(&self) -> usize {
@@ -490,7 +508,10 @@ impl TextDoc {
 
     /// Byte offset of character `ci` (clamped to the end).
     pub fn byte_of(&self, ci: usize) -> usize {
-        self.text.char_indices().nth(ci).map_or(self.text.len(), |(b, _)| b)
+        self.text
+            .char_indices()
+            .nth(ci)
+            .map_or(self.text.len(), |(b, _)| b)
     }
 
     /// Character index of byte offset `b`.
@@ -500,7 +521,11 @@ impl TextDoc {
 
     /// The text of characters `r`.
     pub fn substring(&self, r: Range<usize>) -> String {
-        self.text.chars().skip(r.start).take(r.end.saturating_sub(r.start)).collect()
+        self.text
+            .chars()
+            .skip(r.start)
+            .take(r.end.saturating_sub(r.start))
+            .collect()
     }
 
     /// The base (first character's) style.
@@ -598,7 +623,10 @@ impl TextDoc {
     pub fn runs(&self) -> Vec<StyleRun> {
         let n = self.char_len();
         if self.runs.is_empty() {
-            return vec![StyleRun { len: n, style: self.base_style() }];
+            return vec![StyleRun {
+                len: n,
+                style: self.base_style(),
+            }];
         }
         let mut out = Vec::with_capacity(self.runs.len());
         let mut pos = 0;
@@ -608,13 +636,19 @@ impl TextDoc {
             }
             let len = r.len.min(n - pos);
             if len > 0 {
-                out.push(StyleRun { len, style: r.style.clone() });
+                out.push(StyleRun {
+                    len,
+                    style: r.style.clone(),
+                });
             }
             pos += len;
         }
         match out.last_mut() {
             Some(last) if pos < n => last.len += n - pos,
-            None => out.push(StyleRun { len: n, style: self.runs[0].style.clone() }),
+            None => out.push(StyleRun {
+                len: n,
+                style: self.runs[0].style.clone(),
+            }),
             _ => {}
         }
         out
@@ -653,7 +687,9 @@ impl TextDoc {
             }
             pos += r.len;
         }
-        runs.last().map(|r| r.style.clone()).unwrap_or_else(|| self.base_style())
+        runs.last()
+            .map(|r| r.style.clone())
+            .unwrap_or_else(|| self.base_style())
     }
 
     /// The style text typed at caret `at` takes: the character before it, or the first one.
@@ -752,7 +788,11 @@ impl TextDoc {
     /// Change the paragraphs touched by characters `r` (an empty range: the caret's paragraph).
     pub fn apply_para(&mut self, r: Range<usize>, mut f: impl FnMut(&mut ParaStyle)) {
         let pa = self.para_of(r.start);
-        let pb = if r.end > r.start { self.para_of(r.end - 1) } else { pa };
+        let pb = if r.end > r.start {
+            self.para_of(r.end - 1)
+        } else {
+            pa
+        };
         let mut v = self.paras();
         for p in v.iter_mut().take(pb + 1).skip(pa) {
             f(p);
@@ -774,14 +814,23 @@ impl TextDoc {
         let i = split_at(&mut runs, a);
         let j = split_at(&mut runs, b);
         let ins = s.chars().count();
-        runs.splice(i..j, std::iter::once(StyleRun { len: ins, style: st }));
+        runs.splice(
+            i..j,
+            std::iter::once(StyleRun {
+                len: ins,
+                style: st,
+            }),
+        );
         // Paragraphs: the joined paragraph keeps the first one's settings; new paragraphs copy it.
         let mut paras = self.paras();
         let pa = self.para_of(a);
         let pb = self.para_of(b);
         let added = s.matches('\n').count();
         let keep = paras[pa].clone();
-        paras.splice(pa..=pb.min(paras.len() - 1), std::iter::repeat_n(keep, added + 1));
+        paras.splice(
+            pa..=pb.min(paras.len() - 1),
+            std::iter::repeat_n(keep, added + 1),
+        );
         let (ba, bb) = (self.byte_of(a), self.byte_of(b));
         self.text.replace_range(ba..bb, s);
         self.set_runs(runs);
@@ -901,7 +950,11 @@ fn color_json(v: &J) -> Option<[f32; 4]> {
     match v {
         J::String(s) => {
             let s = s.trim_start_matches('#');
-            let h = |i: usize| u8::from_str_radix(s.get(i..i + 2)?, 16).ok().map(|x| x as f32 / 255.0);
+            let h = |i: usize| {
+                u8::from_str_radix(s.get(i..i + 2)?, 16)
+                    .ok()
+                    .map(|x| x as f32 / 255.0)
+            };
             Some([h(0)?, h(2)?, h(4)?, if s.len() >= 8 { h(6)? } else { 1.0 }])
         }
         J::Array(a) if a.len() >= 3 => {
@@ -913,13 +966,18 @@ fn color_json(v: &J) -> Option<[f32; 4]> {
 }
 
 fn num(key: &str, v: &J) -> Result<f64, String> {
-    v.as_f64().filter(|x| x.is_finite()).ok_or_else(|| format!("{key}: expected a number"))
+    v.as_f64()
+        .filter(|x| x.is_finite())
+        .ok_or_else(|| format!("{key}: expected a number"))
 }
 fn norm(v: &J) -> Option<String> {
-    v.as_str().map(|s| s.to_ascii_lowercase().replace(['-', ' ', '_'], ""))
+    v.as_str()
+        .map(|s| s.to_ascii_lowercase().replace(['-', ' ', '_'], ""))
 }
 fn flag(key: &str, v: &J) -> Result<bool, String> {
-    v.as_bool().or_else(|| v.as_f64().map(|x| x != 0.0)).ok_or_else(|| format!("{key}: expected a boolean"))
+    v.as_bool()
+        .or_else(|| v.as_f64().map(|x| x != 0.0))
+        .ok_or_else(|| format!("{key}: expected a boolean"))
 }
 
 /// Character attribute keys of `layer.setText` (also used by the expression style API).
@@ -965,8 +1023,17 @@ pub const CHAR_ATTRS: &[&str] = &[
 ];
 
 /// Paragraph attribute keys of `layer.setText`.
-pub const PARA_ATTRS: &[&str] =
-    &["justify", "indentLeft", "indentRight", "indentFirst", "spaceBefore", "spaceAfter", "direction", "composer", "hangingPunctuation"];
+pub const PARA_ATTRS: &[&str] = &[
+    "justify",
+    "indentLeft",
+    "indentRight",
+    "indentFirst",
+    "spaceBefore",
+    "spaceAfter",
+    "direction",
+    "composer",
+    "hangingPunctuation",
+];
 
 /// Set one character attribute; Ok(false) for keys that aren't character attributes.
 pub fn apply_char_attr(s: &mut CharStyle, key: &str, v: &J) -> Result<bool, String> {
@@ -1013,14 +1080,29 @@ pub fn apply_char_attr(s: &mut CharStyle, key: &str, v: &J) -> Result<bool, Stri
                 s.all_caps = false;
             }
         }
-        "baseline" => s.baseline = v.as_str().and_then(BaselineOption::parse).ok_or("baseline: expected normal|superscript|subscript")?,
+        "baseline" => {
+            s.baseline = v
+                .as_str()
+                .and_then(BaselineOption::parse)
+                .ok_or("baseline: expected normal|superscript|subscript")?
+        }
         "superscript" => {
-            s.baseline = if flag(key, v)? { BaselineOption::Superscript } else { BaselineOption::Normal };
+            s.baseline = if flag(key, v)? {
+                BaselineOption::Superscript
+            } else {
+                BaselineOption::Normal
+            };
         }
         "subscript" => {
-            s.baseline = if flag(key, v)? { BaselineOption::Subscript } else { BaselineOption::Normal };
+            s.baseline = if flag(key, v)? {
+                BaselineOption::Subscript
+            } else {
+                BaselineOption::Normal
+            };
         }
-        "kerning" => s.kerning = Kerning::parse(v).ok_or("kerning: expected metrics|optical|number")?,
+        "kerning" => {
+            s.kerning = Kerning::parse(v).ok_or("kerning: expected metrics|optical|number")?
+        }
         "ligatures" => s.ligatures = flag(key, v)?,
         "tateChuYoko" => s.tate_chu_yoko = flag(key, v)?,
         "verticalRomanUpright" => s.vertical_roman_upright = flag(key, v)?,
@@ -1042,7 +1124,10 @@ pub fn apply_char_attr(s: &mut CharStyle, key: &str, v: &J) -> Result<bool, Stri
                 J::Array(a) => {
                     let mut m = 0u32;
                     for n in a {
-                        let n = n.as_u64().filter(|n| (1..=20).contains(n)).ok_or("stylisticSets: expected set numbers 1–20")?;
+                        let n = n
+                            .as_u64()
+                            .filter(|n| (1..=20).contains(n))
+                            .ok_or("stylisticSets: expected set numbers 1–20")?;
                         m |= 1 << (n - 1);
                     }
                     m
@@ -1094,14 +1179,20 @@ pub fn apply_char_attr(s: &mut CharStyle, key: &str, v: &J) -> Result<bool, Stri
                     s.variations.retain(|(t, _)| t != tag);
                     match val {
                         J::Null => {}
-                        _ => s.variations.push((tag.clone(), val.as_f64().ok_or("variations: expected {tag: number}")? as f32)),
+                        _ => s.variations.push((
+                            tag.clone(),
+                            val.as_f64().ok_or("variations: expected {tag: number}")? as f32,
+                        )),
                     }
                 }
                 s.variations.sort_by(|a, b| a.0.cmp(&b.0));
             }
             _ => return Err("variations: expected {tag: number, …}".into()),
         },
-        k if k.len() == 4 && k.starts_with("ss") && k[2..].parse::<u32>().is_ok_and(|n| (1..=20).contains(&n)) => {
+        k if k.len() == 4
+            && k.starts_with("ss")
+            && k[2..].parse::<u32>().is_ok_and(|n| (1..=20).contains(&n)) =>
+        {
             let n = k[2..].parse::<u32>().unwrap_or(0);
             s.opentype.set_stylistic_set(n, flag(key, v)?);
         }
@@ -1113,9 +1204,9 @@ pub fn apply_char_attr(s: &mut CharStyle, key: &str, v: &J) -> Result<bool, Stri
 /// Set one paragraph attribute; Ok(false) for keys that aren't paragraph attributes.
 pub fn apply_para_attr(p: &mut ParaStyle, key: &str, v: &J) -> Result<bool, String> {
     match key {
-        "justify" => {
-            p.justify = v.as_str().and_then(Justify::parse).ok_or("justify: expected left|center|right|justifyLeft|justifyCenter|justifyRight|justifyAll")?
-        }
+        "justify" => p.justify = v.as_str().and_then(Justify::parse).ok_or(
+            "justify: expected left|center|right|justifyLeft|justifyCenter|justifyRight|justifyAll",
+        )?,
         "indentLeft" => p.indent_left = num(key, v)?,
         "indentRight" => p.indent_right = num(key, v)?,
         "indentFirst" => p.indent_first = num(key, v)?,
@@ -1129,7 +1220,11 @@ pub fn apply_para_attr(p: &mut ParaStyle, key: &str, v: &J) -> Result<bool, Stri
             }
         }
         "composer" => {
-            p.composer = match v.as_str().map(|s| s.to_ascii_lowercase().replace(['-', ' ', '_'], "")).as_deref() {
+            p.composer = match v
+                .as_str()
+                .map(|s| s.to_ascii_lowercase().replace(['-', ' ', '_'], ""))
+                .as_deref()
+            {
                 Some("everyline" | "every") => Composer::EveryLine,
                 Some("singleline" | "single") => Composer::SingleLine,
                 _ => return Err("composer: expected everyLine|singleLine".into()),
@@ -1286,14 +1381,23 @@ mod tests {
         let mut d = TextDoc::plain("one\ntwo\nthree");
         assert_eq!(d.para_count(), 3);
         d.apply_para(4..5, |p| p.indent_left = 30.0);
-        assert_eq!(d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(), vec![0.0, 30.0, 0.0]);
+        assert_eq!(
+            d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(),
+            vec![0.0, 30.0, 0.0]
+        );
         // Enter inside "two" splits it: both halves keep the indent.
         d.replace_range(5..5, "\n", None);
         assert_eq!(d.text, "one\nt\nwo\nthree");
-        assert_eq!(d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(), vec![0.0, 30.0, 30.0, 0.0]);
+        assert_eq!(
+            d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(),
+            vec![0.0, 30.0, 30.0, 0.0]
+        );
         // Joining the first two paragraphs keeps the first's settings.
         d.replace_range(3..4, "", None);
-        assert_eq!(d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(), vec![0.0, 30.0, 0.0]);
+        assert_eq!(
+            d.paras().iter().map(|p| p.indent_left).collect::<Vec<_>>(),
+            vec![0.0, 30.0, 0.0]
+        );
         assert_eq!(d.para_ranges(), vec![0..4, 5..7, 8..13]);
         // Space before only on paragraph 3 via a range ending in it.
         d.apply_para(9..10, |p| p.space_before = 12.0);
@@ -1314,7 +1418,11 @@ mod tests {
         let d: TextDoc = serde_json::from_str(old).unwrap();
         assert!(d.is_uniform());
         assert_eq!(d.style_at(2).size, 50.0);
-        assert_eq!(d.composer, Composer::SingleLine, "old box text keeps greedy breaking");
+        assert_eq!(
+            d.composer,
+            Composer::SingleLine,
+            "old box text keeps greedy breaking"
+        );
         assert!(d.ligatures);
         assert_eq!(d.kerning, Kerning::Metrics);
         // Round trip with runs.
@@ -1344,8 +1452,14 @@ mod tests {
         let mut d = TextDoc::plain("abc\ndef");
         assert!(d.set_attr("size", &J::from(20), Some(0..2)).unwrap());
         assert!(d.set_attr("kerning", &J::from("optical"), None).unwrap());
-        assert!(d.set_attr("justify", &J::from("justifyAll"), Some(5..5)).unwrap());
-        assert!(d.set_attr("superscript", &J::from(true), Some(2..3)).unwrap());
+        assert!(
+            d.set_attr("justify", &J::from("justifyAll"), Some(5..5))
+                .unwrap()
+        );
+        assert!(
+            d.set_attr("superscript", &J::from(true), Some(2..3))
+                .unwrap()
+        );
         assert!(!d.set_attr("nope", &J::from(1), None).unwrap());
         assert!(d.set_attr("size", &J::from("big"), None).is_err());
         assert_eq!(d.style_at(1).size, 20.0);
@@ -1378,17 +1492,27 @@ mod tests {
         // Untouched documents serialize without an OpenType block.
         assert!(!serde_json::to_string(&d).unwrap().contains("opentype"));
         d.set_attr("ss02", &J::Bool(true), Some(0..6)).unwrap();
-        d.set_attr("fractions", &J::Bool(true), Some(7..10)).unwrap();
-        d.set_attr("figures", &J::from("tabularOldstyle"), None).unwrap();
+        d.set_attr("fractions", &J::Bool(true), Some(7..10))
+            .unwrap();
+        d.set_attr("figures", &J::from("tabularOldstyle"), None)
+            .unwrap();
         assert!(d.style_at(0).opentype.stylistic_set(2));
         assert!(!d.style_at(8).opentype.stylistic_set(2));
         assert!(d.style_at(8).opentype.fractions);
         assert_eq!(d.style_at(12).opentype.figure_width, FigureWidth::Tabular);
-        assert!(d.set_attr("stylisticSets", &serde_json::json!([1, 20]), Some(0..1)).unwrap());
+        assert!(
+            d.set_attr("stylisticSets", &serde_json::json!([1, 20]), Some(0..1))
+                .unwrap()
+        );
         assert_eq!(d.style_at(0).opentype.stylistic_sets, 1 | (1 << 19));
-        assert!(d.set_attr("stylisticSets", &serde_json::json!([21]), None).is_err());
+        assert!(
+            d.set_attr("stylisticSets", &serde_json::json!([21]), None)
+                .is_err()
+        );
         let f = d.style_at(8).opentype.feature_settings();
-        assert!(f.contains(&(*b"frac", 1)) && f.contains(&(*b"onum", 1)) && f.contains(&(*b"tnum", 1)));
+        assert!(
+            f.contains(&(*b"frac", 1)) && f.contains(&(*b"onum", 1)) && f.contains(&(*b"tnum", 1))
+        );
         let mut s = d.style_at(0);
         s.opentype.contextual_alternates = false;
         assert!(s.opentype.feature_settings().contains(&(*b"calt", 0)));

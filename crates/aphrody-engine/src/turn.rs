@@ -33,7 +33,10 @@ struct HistoryCursor {
 
 impl HistoryCursor {
     fn new(session: &Session) -> Self {
-        Self { len: session.len(), revision: session.history_revision() }
+        Self {
+            len: session.len(),
+            revision: session.history_revision(),
+        }
     }
 }
 
@@ -165,7 +168,8 @@ pub(crate) async fn emit(
     );
     let event = Event::new(msg);
     if let Some(rec) = rollout {
-        rec.record_async(serde_json::to_value(&event).map_err(RolloutError::from)?).await?;
+        rec.record_async(serde_json::to_value(&event).map_err(RolloutError::from)?)
+            .await?;
         if complete {
             // Completion is a persistence barrier, not merely a UI notification.
             rec.flush().await?;
@@ -239,17 +243,21 @@ pub fn restore_history(lines: &[RolloutLine]) -> RestoredHistory {
         let message = line.item.get("message").cloned().unwrap_or(Value::Null);
         match serde_json::from_value::<ChatMessage>(message) {
             Ok(message) => {
-                if line.item.get("compaction_checkpoint").and_then(Value::as_bool).unwrap_or(false)
+                if line
+                    .item
+                    .get("compaction_checkpoint")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false)
                     && is_compaction_checkpoint(&message)
                 {
                     restored.messages.clear();
                 }
                 restored.messages.push(message);
-            },
+            }
             Err(err) => {
                 tracing::warn!("undecodable history line at {}: {err}", line.ts);
                 restored.undecodable += 1;
-            },
+            }
         }
     }
     restored
@@ -260,7 +268,9 @@ pub(crate) async fn record_compaction_checkpoint(
     session: &Session,
     rollout: Option<&RolloutRecorder>,
 ) -> Result<(), EngineError> {
-    let Some(recorder) = rollout else { return Ok(()) };
+    let Some(recorder) = rollout else {
+        return Ok(());
+    };
     for message in session.history() {
         let checkpoint = is_compaction_checkpoint(message);
         let message = serde_json::to_value(message).map_err(RolloutError::from)?;
@@ -324,7 +334,10 @@ fn load_image(path: &std::path::Path) -> Result<ImageSource, String> {
         image_mime(path).ok_or_else(|| format!("unsupported image type: {}", path.display()))?;
     let bytes =
         std::fs::read(path).map_err(|err| format!("cannot read {}: {err}", path.display()))?;
-    Ok(ImageSource::base64(mime, base64::engine::general_purpose::STANDARD.encode(bytes)))
+    Ok(ImageSource::base64(
+        mime,
+        base64::engine::general_purpose::STANDARD.encode(bytes),
+    ))
 }
 
 /// Convert user [`InputItem`]s into the [`Part`]s of a single user message.
@@ -339,7 +352,9 @@ fn input_to_parts(input: Vec<InputItem>, vision: bool) -> Vec<Part> {
     for item in input {
         match item {
             InputItem::Text { text } => parts.push(Part::Text(text)),
-            InputItem::Image { path: Some(path), .. } => {
+            InputItem::Image {
+                path: Some(path), ..
+            } => {
                 if vision {
                     match load_image(&path) {
                         Ok(image) => parts.push(Part::Image(image)),
@@ -348,15 +363,21 @@ fn input_to_parts(input: Vec<InputItem>, vision: bool) -> Vec<Part> {
                 } else {
                     parts.push(Part::Text(format!("[image: {}]", path.display())));
                 }
-            },
-            InputItem::Image { path: None, url: Some(url) } => {
+            }
+            InputItem::Image {
+                path: None,
+                url: Some(url),
+            } => {
                 if vision {
                     parts.push(Part::Image(ImageSource::Url(url)));
                 } else {
                     parts.push(Part::Text(format!("[image: {url}]")));
                 }
-            },
-            InputItem::Image { path: None, url: None } => {},
+            }
+            InputItem::Image {
+                path: None,
+                url: None,
+            } => {}
         }
     }
     parts
@@ -372,7 +393,10 @@ fn tool_decls(tools: &ToolRegistry) -> Vec<ToolDecl> {
             ToolDecl {
                 name: definition.name.clone(),
                 description: definition.description.clone(),
-                parameters: decl.get("parameters").cloned().unwrap_or(serde_json::Value::Null),
+                parameters: decl
+                    .get("parameters")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null),
             }
         })
         .collect()
@@ -499,8 +523,14 @@ pub async fn run_turn_with_controls(
 
     // 1. Append the user input.
     let mut recorded = HistoryCursor::new(session);
-    record_turn_context(session, rollout, client.model_id(), system.as_deref(), &declared_tools)
-        .await?;
+    record_turn_context(
+        session,
+        rollout,
+        client.model_id(),
+        system.as_deref(),
+        &declared_tools,
+    )
+    .await?;
     let parts = input_to_parts(input, vision);
     session.push_user(parts);
     record_history(session, rollout, &mut recorded).await?;
@@ -516,7 +546,9 @@ pub async fn run_turn_with_controls(
             emit(
                 events,
                 rollout,
-                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+                EventMsg::TurnComplete {
+                    last_agent_message: outcome.last_agent_message.clone(),
+                },
             )
             .await?;
             return Ok(outcome);
@@ -535,7 +567,9 @@ pub async fn run_turn_with_controls(
             emit(
                 events,
                 rollout,
-                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+                EventMsg::TurnComplete {
+                    last_agent_message: outcome.last_agent_message.clone(),
+                },
             )
             .await?;
             return Ok(outcome);
@@ -622,28 +656,39 @@ pub async fn run_turn_with_controls(
                 break;
             };
             match event {
-                Ok(ModelStreamEvent::Created) => {},
+                Ok(ModelStreamEvent::Created) => {}
                 Ok(ModelStreamEvent::TextDelta(delta)) => {
                     text_buf.push_str(&delta);
                     segment.push_str(&delta);
                     emit(events, rollout, EventMsg::AgentMessageDelta { delta }).await?;
-                },
+                }
                 Ok(ModelStreamEvent::ReasoningDelta(delta)) => {
                     emit(events, rollout, EventMsg::AgentReasoningDelta { delta }).await?;
-                },
+                }
                 Ok(ModelStreamEvent::ReasoningItem { text, opaque }) => {
                     close_text_segment(&mut model_parts, &mut segment);
                     model_parts.push(Part::Reasoning { text, opaque });
-                },
+                }
                 // Live fragments of a call still being generated; the assembled
                 // call follows as `ToolCall`, which is what the loop acts on.
-                Ok(ModelStreamEvent::ToolCallDelta { .. }) => {},
-                Ok(ModelStreamEvent::ToolCall { id, name, arguments }) => {
+                Ok(ModelStreamEvent::ToolCallDelta { .. }) => {}
+                Ok(ModelStreamEvent::ToolCall {
+                    id,
+                    name,
+                    arguments,
+                }) => {
                     close_text_segment(&mut model_parts, &mut segment);
                     model_parts.push(Part::function_call(&id, &name, arguments.clone()));
-                    pending_calls.push(PendingCall { id, name, arguments });
-                },
-                Ok(ModelStreamEvent::Completed { usage, finish_reason: _ }) => {
+                    pending_calls.push(PendingCall {
+                        id,
+                        name,
+                        arguments,
+                    });
+                }
+                Ok(ModelStreamEvent::Completed {
+                    usage,
+                    finish_reason: _,
+                }) => {
                     if let Some(usage) = usage {
                         emit(
                             events,
@@ -657,11 +702,18 @@ pub async fn run_turn_with_controls(
                         .await?;
                     }
                     break;
-                },
+                }
                 Err(err) => {
-                    emit(events, rollout, EventMsg::Error { message: err.to_string() }).await?;
+                    emit(
+                        events,
+                        rollout,
+                        EventMsg::Error {
+                            message: err.to_string(),
+                        },
+                    )
+                    .await?;
                     return Err(EngineError::Model(err));
-                },
+                }
             }
         }
 
@@ -671,7 +723,14 @@ pub async fn run_turn_with_controls(
         session.push_model_parts(model_parts);
         record_history(session, rollout, &mut recorded).await?;
         if !text_buf.is_empty() {
-            emit(events, rollout, EventMsg::AgentMessage { text: text_buf.clone() }).await?;
+            emit(
+                events,
+                rollout,
+                EventMsg::AgentMessage {
+                    text: text_buf.clone(),
+                },
+            )
+            .await?;
             outcome.last_agent_message = Some(text_buf);
         }
 
@@ -680,7 +739,9 @@ pub async fn run_turn_with_controls(
             emit(
                 events,
                 rollout,
-                EventMsg::TurnComplete { last_agent_message: outcome.last_agent_message.clone() },
+                EventMsg::TurnComplete {
+                    last_agent_message: outcome.last_agent_message.clone(),
+                },
             )
             .await?;
             return Ok(outcome);
@@ -693,7 +754,12 @@ pub async fn run_turn_with_controls(
         while let Some(call) = calls.next() {
             if interrupt.is_tripped() {
                 outcome.interrupted = true;
-                abandon_calls(&mut responses, call, calls, "turn interrupted before this call ran");
+                abandon_calls(
+                    &mut responses,
+                    call,
+                    calls,
+                    "turn interrupted before this call ran",
+                );
                 session.push_tool_responses(responses);
                 record_history(session, rollout, &mut recorded).await?;
                 emit(
@@ -710,7 +776,10 @@ pub async fn run_turn_with_controls(
             emit(
                 events,
                 rollout,
-                EventMsg::ToolCallBegin { call_id: call.id.clone(), name: call.name.clone() },
+                EventMsg::ToolCallBegin {
+                    call_id: call.id.clone(),
+                    name: call.name.clone(),
+                },
             )
             .await?;
 
@@ -735,7 +804,7 @@ pub async fn run_turn_with_controls(
             // Gated approval, if configured.
             if autonomy == AutonomyMode::Gated {
                 match approve(&call, events, rollout, approvals.as_deref_mut()).await? {
-                    Gate::Approved => {},
+                    Gate::Approved => {}
                     Gate::Denied => {
                         let output = ToolOutput::error(format!(
                             "tool call `{}` denied by approval policy",
@@ -743,7 +812,7 @@ pub async fn run_turn_with_controls(
                         ));
                         responses.push(finish_tool(events, rollout, &call, output, vision).await?);
                         continue;
-                    },
+                    }
                     Gate::Abort => {
                         outcome.interrupted = true;
                         abandon_calls(&mut responses, call, calls, "turn aborted by approval");
@@ -758,7 +827,7 @@ pub async fn run_turn_with_controls(
                         )
                         .await?;
                         return Ok(outcome);
-                    },
+                    }
                 }
             }
 
@@ -860,8 +929,15 @@ async fn finish_tool(
     output: ToolOutput,
     vision: bool,
 ) -> Result<Part, EngineError> {
-    emit(events, rollout, EventMsg::ToolCallEnd { call_id: call.id.clone(), ok: !output.is_error })
-        .await?;
+    emit(
+        events,
+        rollout,
+        EventMsg::ToolCallEnd {
+            call_id: call.id.clone(),
+            ok: !output.is_error,
+        },
+    )
+    .await?;
 
     let mut response = json!({ "output": output.content, "is_error": output.is_error });
     let images = if vision {
@@ -877,5 +953,10 @@ async fn finish_tool(
         Vec::new()
     };
 
-    Ok(Part::FunctionResponse { id: call.id.clone(), name: call.name.clone(), response, images })
+    Ok(Part::FunctionResponse {
+        id: call.id.clone(),
+        name: call.name.clone(),
+        response,
+        images,
+    })
 }

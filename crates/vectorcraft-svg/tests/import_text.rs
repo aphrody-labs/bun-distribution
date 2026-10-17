@@ -10,7 +10,9 @@ use vectorcraft_svg::{import, import_with_report};
 use vectorcraft_text::{FontDb, layout};
 
 fn svg(body: &str) -> String {
-    format!(r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400" height="300">{body}</svg>"#)
+    format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400" height="300">{body}</svg>"#
+    )
 }
 
 fn open(body: &str) -> Document {
@@ -40,13 +42,22 @@ fn texts(d: &Document) -> Vec<&TextObject> {
 
 fn only_text(d: &Document) -> &TextObject {
     let t = texts(d);
-    assert_eq!(t.len(), 1, "{:?}", art(d).iter().map(|n| &n.kind).collect::<Vec<_>>());
+    assert_eq!(
+        t.len(),
+        1,
+        "{:?}",
+        art(d).iter().map(|n| &n.kind).collect::<Vec<_>>()
+    );
     t[0]
 }
 
 /// Document-space pen position of each glyph.
 fn glyph_origins(t: &TextObject) -> Vec<Point> {
-    layout(FontDb::global(), t).glyphs.iter().map(|g| t.xf * g.origin).collect()
+    layout(FontDb::global(), t)
+        .glyphs
+        .iter()
+        .map(|g| t.xf * g.origin)
+        .collect()
 }
 
 fn close(a: f64, b: f64, tol: f64) -> bool {
@@ -55,7 +66,9 @@ fn close(a: f64, b: f64, tol: f64) -> bool {
 
 #[test]
 fn text_keeps_its_z_order_between_shapes() {
-    let d = open(r#"<rect width="10" height="10"/><text x="5" y="20">Hi</text><rect y="30" width="10" height="10"/>"#);
+    let d = open(
+        r#"<rect width="10" height="10"/><text x="5" y="20">Hi</text><rect y="30" width="10" height="10"/>"#,
+    );
     let kinds: Vec<&str> = art(&d)
         .iter()
         .map(|n| match n.kind {
@@ -67,7 +80,12 @@ fn text_keeps_its_z_order_between_shapes() {
     assert_eq!(kinds, ["path", "text", "path"]);
     let t = only_text(&d);
     assert_eq!(t.plain_text(), "Hi");
-    assert!(t.xf.translation().to_point().distance(Point::new(5.0, 20.0)) < 1e-9);
+    assert!(
+        t.xf.translation()
+            .to_point()
+            .distance(Point::new(5.0, 20.0))
+            < 1e-9
+    );
 }
 
 #[test]
@@ -89,15 +107,41 @@ fn text_keeps_its_parent_group_clip_and_mask() {
     let inner = top[0].children().unwrap();
     assert_eq!(inner.len(), 4, "rect, clip group, clip group, masked text");
     // `<g clip-path>` around the text → a clip group holding the clip path and the text.
-    let NodeKind::Group { children, clip: true } = &inner[1].kind else { panic!("{:?}", inner[1].kind) };
-    assert!(matches!(children[0].kind, NodeKind::Path { clipping: true, .. }));
-    let NodeKind::Text(t) = &children[1].kind else { panic!() };
+    let NodeKind::Group {
+        children,
+        clip: true,
+    } = &inner[1].kind
+    else {
+        panic!("{:?}", inner[1].kind)
+    };
+    assert!(matches!(
+        children[0].kind,
+        NodeKind::Path { clipping: true, .. }
+    ));
+    let NodeKind::Text(t) = &children[1].kind else {
+        panic!()
+    };
     assert_eq!(children[1].name.as_deref(), Some("clipped"));
-    assert!(t.xf.translation().to_point().distance(Point::new(10.0, 50.0)) < 1e-9, "{:?}", t.xf);
+    assert!(
+        t.xf.translation()
+            .to_point()
+            .distance(Point::new(10.0, 50.0))
+            < 1e-9,
+        "{:?}",
+        t.xf
+    );
     // The text's own clip-path and opacity.
-    let NodeKind::Group { children, clip: true } = &inner[2].kind else { panic!("{:?}", inner[2].kind) };
+    let NodeKind::Group {
+        children,
+        clip: true,
+    } = &inner[2].kind
+    else {
+        panic!("{:?}", inner[2].kind)
+    };
     assert!((inner[2].opacity - 0.5).abs() < 1e-6);
-    assert!(matches!(children[1].kind, NodeKind::Text(_)) && children[1].name.as_deref() == Some("own"));
+    assert!(
+        matches!(children[1].kind, NodeKind::Text(_)) && children[1].name.as_deref() == Some("own")
+    );
     // The text's own mask.
     assert!(matches!(inner[3].kind, NodeKind::Text(_)));
     assert!(inner[3].extras().mask.is_some());
@@ -106,15 +150,25 @@ fn text_keeps_its_parent_group_clip_and_mask() {
 
 #[test]
 fn top_level_text_joins_the_layer_below_it() {
-    let d = open(r#"<g id="Back"><rect width="5" height="5"/></g><text y="20">Note</text><g id="Front"><rect width="5" height="5"/></g>"#);
-    assert_eq!(d.layers.iter().map(|l| l.name.as_deref().unwrap()).collect::<Vec<_>>(), ["Back", "Front"]);
+    let d = open(
+        r#"<g id="Back"><rect width="5" height="5"/></g><text y="20">Note</text><g id="Front"><rect width="5" height="5"/></g>"#,
+    );
+    assert_eq!(
+        d.layers
+            .iter()
+            .map(|l| l.name.as_deref().unwrap())
+            .collect::<Vec<_>>(),
+        ["Back", "Front"]
+    );
     let back = d.layers[0].children().unwrap();
     assert_eq!(back.len(), 2);
     assert!(matches!(back[1].kind, NodeKind::Text(_)));
     // Text before the first layer goes to its bottom.
     let d = open(r#"<text y="20">First</text><g id="Only"><rect width="5" height="5"/></g>"#);
     let only = d.layers[0].children().unwrap();
-    assert!(matches!(only[0].kind, NodeKind::Text(_)) && matches!(only[1].kind, NodeKind::Path { .. }));
+    assert!(
+        matches!(only[0].kind, NodeKind::Text(_)) && matches!(only[1].kind, NodeKind::Path { .. })
+    );
 }
 
 #[test]
@@ -125,7 +179,10 @@ fn hidden_text_is_skipped_and_use_instances_are_kept() {
     );
     // An undisplayed text comes back as a hidden object (since SVG import keeps hidden objects).
     let hidden: Vec<&Node> = art(&d).into_iter().filter(|n| !n.visible).collect();
-    assert!(matches!(hidden.as_slice(), [n] if matches!(&n.kind, NodeKind::Text(t) if t.plain_text() == "gone")), "{hidden:?}");
+    assert!(
+        matches!(hidden.as_slice(), [n] if matches!(&n.kind, NodeKind::Text(t) if t.plain_text() == "gone")),
+        "{hidden:?}"
+    );
     let t: Vec<&TextObject> = art(&d)
         .into_iter()
         .filter(|n| n.visible)
@@ -136,8 +193,20 @@ fn hidden_text_is_skipped_and_use_instances_are_kept() {
         .collect();
     assert_eq!(t.len(), 2);
     assert!(t.iter().all(|t| t.plain_text() == "Used"));
-    assert!(t[0].xf.translation().to_point().distance(Point::new(10.0, 30.0)) < 1e-9);
-    assert!(t[1].xf.translation().to_point().distance(Point::new(50.0, 30.0)) < 1e-9);
+    assert!(
+        t[0].xf
+            .translation()
+            .to_point()
+            .distance(Point::new(10.0, 30.0))
+            < 1e-9
+    );
+    assert!(
+        t[1].xf
+            .translation()
+            .to_point()
+            .distance(Point::new(50.0, 30.0))
+            < 1e-9
+    );
 }
 
 #[test]
@@ -150,35 +219,67 @@ fn text_path_becomes_type_on_a_path() {
     );
     let t = texts(&d);
     assert_eq!(t.len(), 3);
-    let TextKind::OnPath { path, start, .. } = &t[0].kind else { panic!("{:?}", t[0].kind) };
+    let TextKind::OnPath { path, start, .. } = &t[0].kind else {
+        panic!("{:?}", t[0].kind)
+    };
     assert!(close(*start, 0.25, 1e-9));
     let b = t[0].xf.transform_rect_bbox(path.bounds().unwrap());
-    assert!(close(b.x0, 10.0, 1e-6) && close(b.x1, 210.0, 1e-6) && close(b.y0, 100.0, 1e-6), "{b:?}");
+    assert!(
+        close(b.x0, 10.0, 1e-6) && close(b.x1, 210.0, 1e-6) && close(b.y0, 100.0, 1e-6),
+        "{b:?}"
+    );
     assert_eq!(t[0].plain_text(), "Curve");
-    let TextKind::OnPath { start, .. } = &t[1].kind else { panic!() };
+    let TextKind::OnPath { start, .. } = &t[1].kind else {
+        panic!()
+    };
     assert!(close(*start, 0.1, 1e-6), "{start}");
     // Anchored in the middle: the text starts half its width before the offset.
-    let TextKind::OnPath { start, .. } = &t[2].kind else { panic!() };
+    let TextKind::OnPath { start, .. } = &t[2].kind else {
+        panic!()
+    };
     let first = glyph_origins(t[2])[0];
-    let width: f64 = layout(FontDb::global(), t[2]).glyphs.iter().map(|g| g.advance).sum();
-    assert!(*start < 0.5 && close(first.x + width / 2.0, 110.0, 0.5), "{start} {first:?} {width}");
+    let width: f64 = layout(FontDb::global(), t[2])
+        .glyphs
+        .iter()
+        .map(|g| g.advance)
+        .sum();
+    assert!(
+        *start < 0.5 && close(first.x + width / 2.0, 110.0, 0.5),
+        "{start} {first:?} {width}"
+    );
     assert_eq!(t[2].para.justify, Justify::Left);
 }
 
 #[test]
 fn per_character_positions_rotation_and_shifts() {
-    let d = open(r#"<text x="10 30 60" y="50" rotate="15 -30" dy="0 -4" font-size="12">abcd</text>"#);
+    let d =
+        open(r#"<text x="10 30 60" y="50" rotate="15 -30" dy="0 -4" font-size="12">abcd</text>"#);
     let t = only_text(&d);
     assert_eq!(t.plain_text(), "abcd");
     let o = glyph_origins(t);
-    assert!(close(o[0].x, 10.0, 0.02) && close(o[1].x, 30.0, 0.02) && close(o[2].x, 60.0, 0.02), "{o:?}");
+    assert!(
+        close(o[0].x, 10.0, 0.02) && close(o[1].x, 30.0, 0.02) && close(o[2].x, 60.0, 0.02),
+        "{o:?}"
+    );
     // `d` follows `c` at its natural advance.
     assert!(o[3].x > 60.0 && o[3].x < 70.0, "{o:?}");
-    let chars: Vec<CharStyle> = t.runs.iter().flat_map(|r| r.text.chars().map(|_| r.style.clone())).collect();
+    let chars: Vec<CharStyle> = t
+        .runs
+        .iter()
+        .flat_map(|r| r.text.chars().map(|_| r.style.clone()))
+        .collect();
     let rot: Vec<f64> = chars.iter().map(|s| s.rotation).collect();
-    assert_eq!(rot, [-15.0, 30.0, 30.0, 30.0], "the last rotate value repeats");
+    assert_eq!(
+        rot,
+        [-15.0, 30.0, 30.0, 30.0],
+        "the last rotate value repeats"
+    );
     let shift: Vec<f64> = chars.iter().map(|s| s.baseline_shift).collect();
-    assert_eq!(shift, [0.0, 4.0, 4.0, 4.0], "dy accumulates as baseline shift");
+    assert_eq!(
+        shift,
+        [0.0, 4.0, 4.0, 4.0],
+        "dy accumulates as baseline shift"
+    );
 }
 
 #[test]
@@ -188,10 +289,18 @@ fn per_character_positions_with_middle_anchor() {
     let t = only_text(&d);
     let lay = layout(FontDb::global(), t);
     // Natural advance: the kerning that moves `b` onto its x is added after `a`.
-    let natural = |i: usize| lay.glyphs[i].advance - t.runs[i].style.kerning.unwrap_or(0.0) / 1000.0 * t.runs[i].style.size;
+    let natural = |i: usize| {
+        lay.glyphs[i].advance
+            - t.runs[i].style.kerning.unwrap_or(0.0) / 1000.0 * t.runs[i].style.size
+    };
     let mid = |i: usize| (t.xf * lay.glyphs[i].origin).x + natural(i) / 2.0;
     assert_eq!(t.runs.len(), 2);
-    assert!(close(mid(0), 50.0, 0.05) && close(mid(1), 100.0, 0.05), "{} {}", mid(0), mid(1));
+    assert!(
+        close(mid(0), 50.0, 0.05) && close(mid(1), 100.0, 0.05),
+        "{} {}",
+        mid(0),
+        mid(1)
+    );
 }
 
 #[test]
@@ -203,15 +312,39 @@ fn tspan_lines_dx_and_baseline_shift() {
     let t = only_text(&d);
     assert_eq!(t.plain_text(), "One\nTwo\nThree four2x");
     let lay = layout(FontDb::global(), t);
-    let base: Vec<f64> = lay.lines.iter().map(|l| (t.xf * Point::new(0.0, l.baseline)).y).collect();
-    assert!(close(base[0], 20.0, 1e-6) && close(base[1], 40.0, 1e-6) && close(base[2], 52.0, 1e-6), "{base:?}");
-    let run = |s: &str| t.runs.iter().find(|r| r.text.contains(s)).unwrap().style.clone();
+    let base: Vec<f64> = lay
+        .lines
+        .iter()
+        .map(|l| (t.xf * Point::new(0.0, l.baseline)).y)
+        .collect();
+    assert!(
+        close(base[0], 20.0, 1e-6) && close(base[1], 40.0, 1e-6) && close(base[2], 52.0, 1e-6),
+        "{base:?}"
+    );
+    let run = |s: &str| {
+        t.runs
+            .iter()
+            .find(|r| r.text.contains(s))
+            .unwrap()
+            .style
+            .clone()
+    };
     assert_eq!(run("Two").leading, Some(20.0));
-    assert_eq!(run("Three").leading, None, "12 pt is the auto leading of 10 pt type");
-    assert!(close(run("2").baseline_shift, 4.0, 1e-9) && close(run("x").baseline_shift, -3.0, 1e-9));
+    assert_eq!(
+        run("Three").leading,
+        None,
+        "12 pt is the auto leading of 10 pt type"
+    );
+    assert!(
+        close(run("2").baseline_shift, 4.0, 1e-9) && close(run("x").baseline_shift, -3.0, 1e-9)
+    );
     // dx on "four": the space before it gets 5 pt of kerning.
     let sp = t.runs.iter().find(|r| r.text.ends_with(' ')).unwrap();
-    assert!(close(sp.style.kerning.unwrap(), 500.0, 1e-6), "{:?}", t.runs);
+    assert!(
+        close(sp.style.kerning.unwrap(), 500.0, 1e-6),
+        "{:?}",
+        t.runs
+    );
 }
 
 #[test]
@@ -220,7 +353,14 @@ fn weights_spacing_and_decoration() {
         r#"<text y="20" font-size="10" font-weight="300" letter-spacing="1" word-spacing="2">a b<tspan font-weight="600">c</tspan><tspan font-weight="bolder">d</tspan><tspan font-weight="900" font-style="italic">e</tspan><tspan font-style="italic">f</tspan><tspan text-decoration="underline" font-weight="normal">g</tspan></text>"#,
     );
     let t = only_text(&d);
-    let style = |c: char| t.runs.iter().find(|r| r.text.contains(c)).unwrap().style.clone();
+    let style = |c: char| {
+        t.runs
+            .iter()
+            .find(|r| r.text.contains(c))
+            .unwrap()
+            .style
+            .clone()
+    };
     assert_eq!(style('a').font_style, "Light");
     assert_eq!(style('c').font_style, "SemiBold");
     assert_eq!(style('d').font_style, "Regular", "bolder than 300 is 400");
@@ -228,7 +368,10 @@ fn weights_spacing_and_decoration() {
     assert_eq!(style('f').font_style, "Light Italic");
     assert!(style('g').underline && style('g').font_style == "Regular");
     assert!(close(style('a').tracking, 100.0, 1e-9));
-    assert!(close(style(' ').kerning.unwrap(), 200.0, 1e-9), "word spacing kerns spaces");
+    assert!(
+        close(style(' ').kerning.unwrap(), 200.0, 1e-9),
+        "word spacing kerns spaces"
+    );
     assert_eq!(style('a').kerning, None);
 }
 
@@ -252,7 +395,11 @@ fn css_selectors_reach_text() {
     assert_eq!(fill(1).as_deref(), Some("#ff0000"), "descendant selector");
     assert!(close(t[1].first_style().size, 30.0, 1e-9), "#id selector");
     assert_eq!(fill(2).as_deref(), Some("#00ff00"), "multiple classes");
-    assert_eq!(fill(3).as_deref(), Some("#ff0000"), "one of two classes doesn't match .a.b");
+    assert_eq!(
+        fill(3).as_deref(),
+        Some("#ff0000"),
+        "one of two classes doesn't match .a.b"
+    );
     assert_eq!(fill(4).as_deref(), Some("#0000ff"), "child combinator");
 }
 
@@ -267,19 +414,32 @@ fn gradient_fill_resolves_in_text_space() {
         <text x="20" y="50" font-size="20" fill="url(#user)" stroke="url(#r)">Gradient<tspan fill="url(#box)">Box</tspan></text>"##,
     );
     let t = only_text(&d);
-    let Paint::Gradient(g) = &t.runs[0].style.fill else { panic!("{:?}", t.runs[0].style.fill) };
+    let Paint::Gradient(g) = &t.runs[0].style.fill else {
+        panic!("{:?}", t.runs[0].style.fill)
+    };
     assert_eq!(g.gradient.kind, GradientKind::Linear);
     assert_eq!(g.gradient.stops[0].color.to_hex(), "#ff0000");
     // Text space has its origin at the text's x/y.
     let geom = g.geom.unwrap();
-    assert!(geom.start.distance(Point::new(0.0, -50.0)) < 1e-6 && geom.end.distance(Point::new(100.0, -50.0)) < 1e-6, "{geom:?}");
-    let Paint::Gradient(s) = &t.runs[0].style.stroke else { panic!("{:?}", t.runs[0].style.stroke) };
+    assert!(
+        geom.start.distance(Point::new(0.0, -50.0)) < 1e-6
+            && geom.end.distance(Point::new(100.0, -50.0)) < 1e-6,
+        "{geom:?}"
+    );
+    let Paint::Gradient(s) = &t.runs[0].style.stroke else {
+        panic!("{:?}", t.runs[0].style.stroke)
+    };
     assert_eq!(s.gradient.kind, GradientKind::Radial);
     // objectBoundingBox: the gradient spans the laid-out text.
-    let Paint::Gradient(b) = &t.runs[1].style.fill else { panic!("{:?}", t.runs[1].style.fill) };
+    let Paint::Gradient(b) = &t.runs[1].style.fill else {
+        panic!("{:?}", t.runs[1].style.fill)
+    };
     let bounds = layout(FontDb::global(), t).bounds;
     let geom = b.geom.unwrap();
-    assert!(close(geom.start.x, bounds.x0, 1e-3) && close(geom.end.x, bounds.x1, 1e-3), "{geom:?} {bounds:?}");
+    assert!(
+        close(geom.start.x, bounds.x0, 1e-3) && close(geom.end.x, bounds.x1, 1e-3),
+        "{geom:?} {bounds:?}"
+    );
     assert_eq!(t.runs[1].text, "Box");
 }
 
@@ -293,37 +453,68 @@ fn pattern_fill_on_text_and_shapes() {
     let p = &d.patterns[0];
     assert_eq!(p.name, "dots");
     assert_eq!(p.tile, Rect::new(0.0, 0.0, 10.0, 10.0));
-    let NodeKind::Group { clip: true, children } = &p.art[0].kind else { panic!("content is clipped to the tile") };
+    let NodeKind::Group {
+        clip: true,
+        children,
+    } = &p.art[0].kind
+    else {
+        panic!("content is clipped to the tile")
+    };
     assert_eq!(children.len(), 2);
     let a = art(&d);
-    let Paint::Pattern { pattern, xf } = a[0].appearance.fill_paint() else { panic!() };
+    let Paint::Pattern { pattern, xf } = a[0].appearance.fill_paint() else {
+        panic!()
+    };
     assert_eq!(pattern, "dots");
     assert!(xf.translation().to_point().distance(Point::new(2.0, 0.0)) < 1e-9);
     let t = only_text(&d);
-    let Paint::Pattern { pattern, xf } = &t.runs[0].style.fill else { panic!("{:?}", t.runs[0].style.fill) };
+    let Paint::Pattern { pattern, xf } = &t.runs[0].style.fill else {
+        panic!("{:?}", t.runs[0].style.fill)
+    };
     assert_eq!(pattern, "dots");
     // In text space (origin at 10, 50) the tiles stay where they are in the document.
-    assert!(xf.translation().to_point().distance(Point::new(-8.0, -50.0)) < 1e-9, "{xf:?}");
+    assert!(
+        xf.translation()
+            .to_point()
+            .distance(Point::new(-8.0, -50.0))
+            < 1e-9,
+        "{xf:?}"
+    );
 }
 
 #[test]
 fn vertical_writing_mode_runs_down_a_path() {
     let d = open(r#"<text x="100" y="20" writing-mode="tb" font-size="10">Down</text>"#);
     let t = only_text(&d);
-    let TextKind::OnPath { path, start, .. } = &t.kind else { panic!("{:?}", t.kind) };
+    let TextKind::OnPath { path, start, .. } = &t.kind else {
+        panic!("{:?}", t.kind)
+    };
     assert_eq!(*start, 0.0);
     let b = path.bounds().unwrap();
-    assert!(close(b.x0, b.x1, 1e-9) && close(b.y0, 20.0, 1e-9) && b.height() > 20.0, "{b:?}");
+    assert!(
+        close(b.x0, b.x1, 1e-9) && close(b.y0, 20.0, 1e-9) && b.height() > 20.0,
+        "{b:?}"
+    );
     let o = glyph_origins(t);
-    assert!(o.windows(2).all(|w| w[1].y > w[0].y), "glyphs step down: {o:?}");
+    assert!(
+        o.windows(2).all(|w| w[1].y > w[0].y),
+        "glyphs step down: {o:?}"
+    );
     // The em box is centred on the column.
     let lay = layout(FontDb::global(), t);
-    assert!(lay.bounds.x0 < 100.0 && lay.bounds.x1 > 100.0, "{:?}", lay.bounds);
+    assert!(
+        lay.bounds.x0 < 100.0 && lay.bounds.x1 > 100.0,
+        "{:?}",
+        lay.bounds
+    );
 }
 
 #[test]
 fn unusable_text_path_falls_back_to_point_type_with_a_warning() {
-    let (d, w) = import_with_report(&svg(r##"<text x="5" y="10"><textPath href="#missing">Lost</textPath></text>"##)).unwrap();
+    let (d, w) = import_with_report(&svg(
+        r##"<text x="5" y="10"><textPath href="#missing">Lost</textPath></text>"##,
+    ))
+    .unwrap();
     let t = only_text(&d);
     assert!(matches!(t.kind, TextKind::Point));
     assert_eq!(t.plain_text(), "Lost");
@@ -332,7 +523,9 @@ fn unusable_text_path_falls_back_to_point_type_with_a_warning() {
 
 #[test]
 fn white_space_handling() {
-    let d = open("<text y=\"10\">  Hello\n   big\tworld  </text><text y=\"30\" xml:space=\"preserve\"> a  b </text>");
+    let d = open(
+        "<text y=\"10\">  Hello\n   big\tworld  </text><text y=\"30\" xml:space=\"preserve\"> a  b </text>",
+    );
     let t = texts(&d);
     assert_eq!(t[0].plain_text(), "Hello big world");
     assert_eq!(t[1].plain_text(), " a  b ");
@@ -350,12 +543,18 @@ fn linked_text_keeps_its_url_and_stroke_style() {
     let d = open(
         r#"<rect width="5" height="5"/><a href="https://example.com/t"><text y="20" stroke="red" stroke-width="0.1em" stroke-linejoin="round" stroke-dasharray="2 1">Go</text></a>"#,
     );
-    let n = art(&d).into_iter().find(|n| matches!(n.kind, NodeKind::Text(_))).unwrap();
+    let n = art(&d)
+        .into_iter()
+        .find(|n| matches!(n.kind, NodeKind::Text(_)))
+        .unwrap();
     assert_eq!(n.url(), Some("https://example.com/t"));
     let st = only_text(&d).first_style();
     assert!(close(st.stroke_width, 1.2, 1e-9), "{}", st.stroke_width);
     assert_eq!(st.stroke_join, vectorcraft_doc::LineJoin::Round);
-    assert_eq!(st.stroke_dash.as_ref().map(|d| d.pattern.clone()), Some(vec![2.0, 1.0]));
+    assert_eq!(
+        st.stroke_dash.as_ref().map(|d| d.pattern.clone()),
+        Some(vec![2.0, 1.0])
+    );
 }
 
 #[test]
@@ -372,17 +571,32 @@ fn plain_texts_among_siblings_stay_texts() {
             _ => "other",
         })
         .collect();
-    assert_eq!(texts(&d).iter().map(|t| t.plain_text()).collect::<Vec<_>>(), ["A", "B", "C"], "{kinds:?}");
-    assert_eq!(kinds.iter().filter(|k| **k == "path").count(), 2, "{kinds:?}");
+    assert_eq!(
+        texts(&d).iter().map(|t| t.plain_text()).collect::<Vec<_>>(),
+        ["A", "B", "C"],
+        "{kinds:?}"
+    );
+    assert_eq!(
+        kinds.iter().filter(|k| **k == "path").count(),
+        2,
+        "{kinds:?}"
+    );
 }
 
 #[test]
 fn far_off_positions_stay_finite() {
-    let d = open(r#"<text x="1e308 -1e308 1e308" y="1e308" dx="1e308 1e308" dy="1e308 1e308" rotate="inf 5" text-anchor="middle">abc</text>"#);
+    let d = open(
+        r#"<text x="1e308 -1e308 1e308" y="1e308" dx="1e308 1e308" dy="1e308 1e308" rotate="inf 5" text-anchor="middle">abc</text>"#,
+    );
     let t = only_text(&d);
     assert!(t.xf.as_coeffs().iter().all(|v| v.is_finite()), "{:?}", t.xf);
     for r in &t.runs {
-        assert!(r.style.baseline_shift.is_finite() && r.style.kerning.is_none_or(f64::is_finite) && r.style.rotation.is_finite(), "{r:?}");
+        assert!(
+            r.style.baseline_shift.is_finite()
+                && r.style.kerning.is_none_or(f64::is_finite)
+                && r.style.rotation.is_finite(),
+            "{r:?}"
+        );
     }
 }
 
@@ -412,14 +626,36 @@ fn a_scale_above_text_becomes_its_size() {
     );
     let t = texts(&d);
     let sizes: Vec<f64> = t.iter().map(|t| t.first_style().size).collect();
-    assert!(close(sizes[0], 7.0, 1e-9) && close(sizes[1], 21.0, 1e-9) && close(sizes[2], 14.0, 1e-9), "{sizes:?}");
+    assert!(
+        close(sizes[0], 7.0, 1e-9) && close(sizes[1], 21.0, 1e-9) && close(sizes[2], 14.0, 1e-9),
+        "{sizes:?}"
+    );
     for t in &t {
         assert!(close4(linear(t), [1.0, 0.0, 0.0, 1.0]), "{:?}", t.xf);
     }
-    assert!(t[1].xf.translation().to_point().distance(Point::new(48.0, 180.0)) < 1e-9, "{:?}", t[1].xf);
-    assert!(t[2].xf.translation().to_point().distance(Point::new(100.0, 800.0)) < 1e-9, "{:?}", t[2].xf);
+    assert!(
+        t[1].xf
+            .translation()
+            .to_point()
+            .distance(Point::new(48.0, 180.0))
+            < 1e-9,
+        "{:?}",
+        t[1].xf
+    );
+    assert!(
+        t[2].xf
+            .translation()
+            .to_point()
+            .distance(Point::new(100.0, 800.0))
+            < 1e-9,
+        "{:?}",
+        t[2].xf
+    );
     // Drawn as large as their sizes say.
-    let h: Vec<f64> = t.iter().map(|t| drawn(t).height() / t.first_style().size).collect();
+    let h: Vec<f64> = t
+        .iter()
+        .map(|t| drawn(t).height() / t.first_style().size)
+        .collect();
     assert!(close(h[1], h[0], 1e-6) && close(h[2], h[0], 1e-6), "{h:?}");
 }
 
@@ -430,9 +666,20 @@ fn a_viewbox_scale_becomes_the_size() {
     )
     .unwrap();
     let t = only_text(&d);
-    assert!(close(t.first_style().size, 3.5, 1e-9), "{}", t.first_style().size);
+    assert!(
+        close(t.first_style().size, 3.5, 1e-9),
+        "{}",
+        t.first_style().size
+    );
     assert!(close4(linear(t), [1.0, 0.0, 0.0, 1.0]), "{:?}", t.xf);
-    assert!(t.xf.translation().to_point().distance(Point::new(25.0, 50.0)) < 1e-9, "{:?}", t.xf);
+    assert!(
+        t.xf.translation()
+            .to_point()
+            .distance(Point::new(25.0, 50.0))
+            < 1e-9,
+        "{:?}",
+        t.xf
+    );
 }
 
 #[test]
@@ -447,10 +694,20 @@ fn a_rotated_scale_scales_every_length_and_keeps_the_rotation() {
     );
     let (s, w) = (only_text(&scaled), only_text(&written));
     assert_eq!(s.runs, w.runs);
-    assert!(s.runs.iter().any(|r| r.style.leading == Some(24.0) && r.text.contains("Two")), "{:?}", s.runs);
+    assert!(
+        s.runs
+            .iter()
+            .any(|r| r.style.leading == Some(24.0) && r.text.contains("Two")),
+        "{:?}",
+        s.runs
+    );
     assert!(close(s.xf.determinant(), 1.0, 1e-6), "{:?}", s.xf);
     let r = 30f64.to_radians();
-    assert!(close4(linear(s), [r.cos(), r.sin(), -r.sin(), r.cos()]), "{:?}", s.xf);
+    assert!(
+        close4(linear(s), [r.cos(), r.sin(), -r.sin(), r.cos()]),
+        "{:?}",
+        s.xf
+    );
     for (a, b) in glyph_origins(s).iter().zip(glyph_origins(w)) {
         assert!(a.distance(b) < 1e-6, "{a:?} {b:?}");
     }
@@ -466,14 +723,37 @@ fn a_stretch_or_skew_stays_the_transform() {
     );
     let t = texts(&d);
     let sizes: Vec<f64> = t.iter().map(|t| t.first_style().size).collect();
-    assert!(close(sizes[0], 7.0, 1e-9) && close(sizes[1], 21.0, 1e-9) && close(sizes[2], 7.0, 1e-9), "{sizes:?}");
+    assert!(
+        close(sizes[0], 7.0, 1e-9) && close(sizes[1], 21.0, 1e-9) && close(sizes[2], 7.0, 1e-9),
+        "{sizes:?}"
+    );
     assert!(close4(linear(t[0]), [3.0, 0.0, 0.0, 1.0]), "{:?}", t[0].xf);
-    assert!(close4(linear(t[1]), [1.0 / 3.0, 0.0, 0.0, 1.0]), "{:?}", t[1].xf);
-    assert!(close4(linear(t[2]), [1.0, 0.0, 20f64.to_radians().tan(), 1.0]), "{:?}", t[2].xf);
+    assert!(
+        close4(linear(t[1]), [1.0 / 3.0, 0.0, 0.0, 1.0]),
+        "{:?}",
+        t[1].xf
+    );
+    assert!(
+        close4(linear(t[2]), [1.0, 0.0, 20f64.to_radians().tan(), 1.0]),
+        "{:?}",
+        t[2].xf
+    );
     // `scale(1 3)` draws three times as tall as `scale(3 1)`, a third as wide.
     let (wide, tall) = (drawn(t[0]), drawn(t[1]));
-    assert!(close(tall.height(), 3.0 * wide.height(), 1e-6) && close(3.0 * tall.width(), wide.width(), 1e-6), "{wide:?} {tall:?}");
-    assert!(t[1].xf.translation().to_point().distance(Point::new(10.0, 60.0)) < 1e-9, "{:?}", t[1].xf);
+    assert!(
+        close(tall.height(), 3.0 * wide.height(), 1e-6)
+            && close(3.0 * tall.width(), wide.width(), 1e-6),
+        "{wide:?} {tall:?}"
+    );
+    assert!(
+        t[1].xf
+            .translation()
+            .to_point()
+            .distance(Point::new(10.0, 60.0))
+            < 1e-9,
+        "{:?}",
+        t[1].xf
+    );
 }
 
 #[test]
@@ -483,11 +763,20 @@ fn type_on_a_scaled_path_takes_the_scale() {
         <text font-size="10"><textPath href="#p">Curve</textPath></text></g>"##,
     );
     let t = only_text(&d);
-    assert!(close(t.first_style().size, 20.0, 1e-9), "{}", t.first_style().size);
+    assert!(
+        close(t.first_style().size, 20.0, 1e-9),
+        "{}",
+        t.first_style().size
+    );
     assert!(close(t.xf.determinant(), 1.0, 1e-6), "{:?}", t.xf);
-    let TextKind::OnPath { path, .. } = &t.kind else { panic!("{:?}", t.kind) };
+    let TextKind::OnPath { path, .. } = &t.kind else {
+        panic!("{:?}", t.kind)
+    };
     let b = t.xf.transform_rect_bbox(path.bounds().unwrap());
-    assert!(close(b.x0, 20.0, 1e-9) && close(b.x1, 220.0, 1e-9) && close(b.y0, 200.0, 1e-9), "{b:?}");
+    assert!(
+        close(b.x0, 20.0, 1e-9) && close(b.x1, 220.0, 1e-9) && close(b.y0, 200.0, 1e-9),
+        "{b:?}"
+    );
 }
 
 #[test]
@@ -500,9 +789,20 @@ fn folded_sizes_stay_in_the_character_panels_range() {
     );
     let t = texts(&d);
     let size = |i: usize| t[i].first_style().size;
-    assert!(close(size(0), 1296.0, 1e-9) && close(size(0) * linear(t[0])[0], 2000.0, 1e-9), "{:?}", t[0].xf);
-    assert!(close(size(1), 0.1, 1e-9) && close(size(1) * linear(t[1])[0], 0.007, 1e-9), "{:?}", t[1].xf);
-    assert!(close(size(2), 2000.0, 1e-9) && close4(linear(t[2]), [1.0, 0.0, 0.0, 1.0]), "unscaled type keeps its size");
+    assert!(
+        close(size(0), 1296.0, 1e-9) && close(size(0) * linear(t[0])[0], 2000.0, 1e-9),
+        "{:?}",
+        t[0].xf
+    );
+    assert!(
+        close(size(1), 0.1, 1e-9) && close(size(1) * linear(t[1])[0], 0.007, 1e-9),
+        "{:?}",
+        t[1].xf
+    );
+    assert!(
+        close(size(2), 2000.0, 1e-9) && close4(linear(t[2]), [1.0, 0.0, 0.0, 1.0]),
+        "unscaled type keeps its size"
+    );
 }
 
 #[test]
@@ -513,20 +813,29 @@ fn gradients_on_scaled_text_stay_in_place() {
     );
     let t = only_text(&d);
     assert!(close(t.first_style().size, 40.0, 1e-9));
-    let Paint::Gradient(g) = &t.runs[0].style.fill else { panic!("{:?}", t.runs[0].style.fill) };
+    let Paint::Gradient(g) = &t.runs[0].style.fill else {
+        panic!("{:?}", t.runs[0].style.fill)
+    };
     let geom = g.geom.unwrap();
     let (start, end) = (t.xf * geom.start, t.xf * geom.end);
-    assert!(start.distance(Point::new(40.0, 0.0)) < 1e-6 && end.distance(Point::new(240.0, 0.0)) < 1e-6, "{start:?} {end:?}");
+    assert!(
+        start.distance(Point::new(40.0, 0.0)) < 1e-6 && end.distance(Point::new(240.0, 0.0)) < 1e-6,
+        "{start:?} {end:?}"
+    );
 }
 
 /// The start of a type-on-a-path object's path and a point a little way along it, in document
 /// space.
 fn path_start(t: &TextObject) -> (Point, Point) {
     use vectorcraft_geom::kurbo::{ParamCurve, PathEl};
-    let TextKind::OnPath { path, .. } = &t.kind else { panic!("{:?}", t.kind) };
+    let TextKind::OnPath { path, .. } = &t.kind else {
+        panic!("{:?}", t.kind)
+    };
     let mut bp = path.to_bezpath();
     bp.apply_affine(t.xf);
-    let PathEl::MoveTo(p0) = bp.elements()[0] else { panic!("{bp:?}") };
+    let PathEl::MoveTo(p0) = bp.elements()[0] else {
+        panic!("{bp:?}")
+    };
     let next = bp.segments().next().unwrap().eval(0.05);
     (p0, next)
 }
@@ -551,27 +860,53 @@ fn text_path_follows_basic_shapes_as_their_equivalent_paths() {
     assert!(!w.iter().any(|w| w.contains("textPath")), "{w:?}");
     let t = texts(&d);
     assert_eq!(t.len(), 7);
-    assert!(t.iter().all(|t| matches!(t.kind, TextKind::OnPath { .. })), "{:?}", t.iter().map(|t| &t.kind).collect::<Vec<_>>());
+    assert!(
+        t.iter().all(|t| matches!(t.kind, TextKind::OnPath { .. })),
+        "{:?}",
+        t.iter().map(|t| &t.kind).collect::<Vec<_>>()
+    );
     let near = |a: Point, b: Point| (a - b).hypot() < 1e-6;
     // Circle: starts at 3 o'clock and runs clockwise (down first, y pointing down), around the circle.
     let (p0, next) = path_start(t[0]);
-    assert!(near(p0, Point::new(250.0, 150.0)) && next.y > p0.y && next.x < p0.x, "{p0:?} {next:?}");
-    let TextKind::OnPath { path, .. } = &t[0].kind else { panic!("not on a path") };
+    assert!(
+        near(p0, Point::new(250.0, 150.0)) && next.y > p0.y && next.x < p0.x,
+        "{p0:?} {next:?}"
+    );
+    let TextKind::OnPath { path, .. } = &t[0].kind else {
+        panic!("not on a path")
+    };
     let b = t[0].xf.transform_rect_bbox(path.bounds().unwrap());
-    assert!(close(b.x0, 50.0, 1e-6) && close(b.y0, 50.0, 1e-6) && close(b.x1, 250.0, 1e-6) && close(b.y1, 250.0, 1e-6), "{b:?}");
+    assert!(
+        close(b.x0, 50.0, 1e-6)
+            && close(b.y0, 50.0, 1e-6)
+            && close(b.x1, 250.0, 1e-6)
+            && close(b.y1, 250.0, 1e-6),
+        "{b:?}"
+    );
     assert!(path.is_closed());
     // Ellipse, with the shape's own transform.
     let (p0, next) = path_start(t[1]);
-    assert!(near(p0, Point::new(240.0, 150.0)) && next.y > p0.y, "{p0:?} {next:?}");
+    assert!(
+        near(p0, Point::new(240.0, 150.0)) && next.y > p0.y,
+        "{p0:?} {next:?}"
+    );
     // Rounded rect: after the top-left corner, along the top edge to the right.
     let (p0, next) = path_start(t[2]);
-    assert!(near(p0, Point::new(30.0, 30.0)) && next.x > p0.x && close(next.y, 30.0, 1e-9), "{p0:?} {next:?}");
+    assert!(
+        near(p0, Point::new(30.0, 30.0)) && next.x > p0.x && close(next.y, 30.0, 1e-9),
+        "{p0:?} {next:?}"
+    );
     let (p0, next) = path_start(t[3]);
-    assert!(near(p0, Point::new(20.0, 30.0)) && next.x > p0.x, "{p0:?} {next:?}");
+    assert!(
+        near(p0, Point::new(20.0, 30.0)) && next.x > p0.x,
+        "{p0:?} {next:?}"
+    );
     // Line, polyline and polygon follow their points.
     assert!(near(path_start(t[4]).0, Point::new(10.0, 200.0)));
     assert!(near(path_start(t[5]).0, Point::new(10.0, 10.0)));
-    let TextKind::OnPath { path, .. } = &t[6].kind else { panic!("not on a path") };
+    let TextKind::OnPath { path, .. } = &t[6].kind else {
+        panic!("not on a path")
+    };
     assert!(path.is_closed() && near(path_start(t[6]).0, Point::new(10.0, 10.0)));
     assert_eq!(t[0].plain_text(), "TEXT ON A CIRCLE");
 }
@@ -590,9 +925,16 @@ fn the_font_shorthand_styles_type() {
     let d = open(r#"<text x="10" y="40" style="font: italic bold 30px sans-serif">Deco</text>"#);
     let t = only_text(&d);
     let st = &t.runs[0].style;
-    assert!(close(st.size * t.xf.determinant().abs().sqrt(), 30.0, 1e-6), "{}", st.size);
+    assert!(
+        close(st.size * t.xf.determinant().abs().sqrt(), 30.0, 1e-6),
+        "{}",
+        st.size
+    );
     let style = st.font_style.to_ascii_lowercase();
-    assert!(style.contains("bold") && style.contains("italic"), "{style}");
+    assert!(
+        style.contains("bold") && style.contains("italic"),
+        "{style}"
+    );
 }
 
 /// Inkscape's flowed text (`<flowRoot>`) becomes area type in its region's rectangle, a paragraph
@@ -606,10 +948,22 @@ fn flowed_text_becomes_area_type() {
     .unwrap();
     let t = only_text(&d);
     assert_eq!(t.plain_text(), "This is flowed text\nSecond one");
-    let TextKind::Area { frame } = &t.kind else { panic!("{:?}", t.kind) };
+    let TextKind::Area { frame } = &t.kind else {
+        panic!("{:?}", t.kind)
+    };
     let b = t.xf.transform_rect_bbox(frame.bounds().unwrap());
-    assert!(close(b.x0, 20.0, 1e-6) && close(b.y0, 30.0, 1e-6) && close(b.x1, 120.0, 1e-6) && close(b.y1, 190.0, 1e-6), "{b:?}");
-    assert!(close(t.runs[0].style.size * t.xf.determinant().abs().sqrt(), 16.0, 1e-6));
+    assert!(
+        close(b.x0, 20.0, 1e-6)
+            && close(b.y0, 30.0, 1e-6)
+            && close(b.x1, 120.0, 1e-6)
+            && close(b.y1, 190.0, 1e-6),
+        "{b:?}"
+    );
+    assert!(close(
+        t.runs[0].style.size * t.xf.determinant().abs().sqrt(),
+        16.0,
+        1e-6
+    ));
     assert!(w.iter().any(|w| w.contains("flowRoot")), "{w:?}");
 }
 
@@ -626,6 +980,9 @@ fn flowed_text_that_cannot_be_read_is_reported() {
     .unwrap();
     assert_eq!(only_text(&d).plain_text(), "Outer\ninner");
     for id in ["none", "huge", "far"] {
-        assert!(w.iter().any(|w| w.contains(id) && w.contains("flowRoot")), "{id}: {w:?}");
+        assert!(
+            w.iter().any(|w| w.contains(id) && w.contains("flowRoot")),
+            "{id}: {w:?}"
+        );
     }
 }

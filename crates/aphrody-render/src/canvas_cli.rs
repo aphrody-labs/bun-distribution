@@ -18,7 +18,9 @@ use crate::canvas::{MAX_REQUEST_BYTES, render_untrusted};
 #[must_use]
 pub fn cli_main(_args: Vec<OsString>) -> i32 {
     let mut body = Vec::new();
-    let limit = u64::try_from(MAX_REQUEST_BYTES).unwrap_or(u64::MAX).saturating_add(1);
+    let limit = u64::try_from(MAX_REQUEST_BYTES)
+        .unwrap_or(u64::MAX)
+        .saturating_add(1);
     if let Err(error) = std::io::stdin().take(limit).read_to_end(&mut body) {
         eprintln!("aphrody-canvas: read stdin: {error}");
         return 5;
@@ -31,10 +33,10 @@ pub fn cli_main(_args: Vec<OsString>) -> i32 {
                 return 5;
             }
             0
-        },
+        }
         Err(error) => {
             eprintln!("{error}");
             error.exit_code()
-        },
+        }
     }
 }

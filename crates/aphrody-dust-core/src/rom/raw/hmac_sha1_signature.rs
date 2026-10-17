@@ -51,7 +51,11 @@ impl HmacSha1Signature {
 
     fn check_size(data: &[u8]) -> Result<(), HmacSha1SignatureError> {
         let size = size_of::<Self>();
-        if data.len().is_multiple_of(size) { Ok(()) } else { InvalidSizeSnafu {}.fail() }
+        if data.len().is_multiple_of(size) {
+            Ok(())
+        } else {
+            InvalidSizeSnafu {}.fail()
+        }
     }
 
     fn handle_pod_cast<T>(
@@ -60,9 +64,11 @@ impl HmacSha1Signature {
     ) -> Result<T, HmacSha1SignatureError> {
         match result {
             Ok(signatures) => Ok(signatures),
-            Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned) => {
-                MisalignedSnafu { expected: size_of::<Self>(), actual: addr }.fail()
-            },
+            Err(PodCastError::TargetAlignmentGreaterAndInputNotAligned) => MisalignedSnafu {
+                expected: size_of::<Self>(),
+                actual: addr,
+            }
+            .fail(),
             Err(PodCastError::AlignmentMismatch) => panic!(),
             Err(PodCastError::OutputSliceWouldHaveSlop) => panic!(),
             Err(PodCastError::SizeMismatch) => unreachable!(),
@@ -137,8 +143,13 @@ impl FromStr for HmacSha1Signature {
         let mut hash = [0u8; 20];
         for i in 0..20 {
             let byte_str = &s[i * 2..i * 2 + 2];
-            hash[i] = u8::from_str_radix(byte_str, 16)
-                .map_err(|error| ParseIntSnafu { error, string: byte_str.to_string() }.build())?;
+            hash[i] = u8::from_str_radix(byte_str, 16).map_err(|error| {
+                ParseIntSnafu {
+                    error,
+                    string: byte_str.to_string(),
+                }
+                .build()
+            })?;
         }
 
         Ok(Self { hash })

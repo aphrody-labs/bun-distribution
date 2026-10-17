@@ -50,8 +50,14 @@ fn sharpen_shows_at_half_and_quarter_playback_resolution() {
     for px_scale in [0.5, 0.25] {
         let img = sharpened(px_scale);
         let (dark, light) = (img.get(7, 4)[0], img.get(8, 4)[0]);
-        assert!(dark < plain.get(7, 4)[0] - 0.01, "px_scale {px_scale}: the dark side of the edge should darken (got {dark})");
-        assert!(light > plain.get(8, 4)[0] + 0.01, "px_scale {px_scale}: the light side of the edge should brighten (got {light})");
+        assert!(
+            dark < plain.get(7, 4)[0] - 0.01,
+            "px_scale {px_scale}: the dark side of the edge should darken (got {dark})"
+        );
+        assert!(
+            light > plain.get(8, 4)[0] + 0.01,
+            "px_scale {px_scale}: the light side of the edge should brighten (got {light})"
+        );
     }
 }
 
@@ -59,7 +65,12 @@ fn sharpen_shows_at_half_and_quarter_playback_resolution() {
 fn sharpen_at_full_resolution_is_unchanged() {
     // values rendered before the fix: the Full (paused) frame must not change
     let img = sharpened(1.0);
-    for (x, want) in [(6, 0.25), (7, 0.25 - 1.0 / 6.0), (8, 0.75 + 1.0 / 6.0), (9, 0.75)] {
+    for (x, want) in [
+        (6, 0.25),
+        (7, 0.25 - 1.0 / 6.0),
+        (8, 0.75 + 1.0 / 6.0),
+        (9, 0.75),
+    ] {
         let got = img.get(x, 4)[0];
         assert!((got - want).abs() < 1e-5, "x {x}: got {got}, want {want}");
     }

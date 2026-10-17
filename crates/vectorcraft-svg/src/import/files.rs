@@ -49,10 +49,15 @@ fn marker() -> Option<Vec<u8>> {
     let img = image::RgbaImage::from_fn(MARKER, MARKER, |x, y| {
         let edge = x == 0 || y == 0 || x == last || y == last;
         let cross = x.abs_diff(y) <= 1 || (x + y).abs_diff(last) <= 1;
-        image::Rgba(if edge || cross { [200, 60, 60, 255] } else { [236, 236, 236, 255] })
+        image::Rgba(if edge || cross {
+            [200, 60, 60, 255]
+        } else {
+            [236, 236, 236, 255]
+        })
     });
     let mut png = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .ok()?;
     Some(png)
 }
 
@@ -64,7 +69,10 @@ fn percent_decoded(s: &str) -> String {
     let mut out = Vec::with_capacity(s.len());
     let mut rest = s.as_bytes();
     while let Some((&b, tail)) = rest.split_first() {
-        let hex = tail.get(..2).and_then(|h| std::str::from_utf8(h).ok()).and_then(|h| u8::from_str_radix(h, 16).ok());
+        let hex = tail
+            .get(..2)
+            .and_then(|h| std::str::from_utf8(h).ok())
+            .and_then(|h| u8::from_str_radix(h, 16).ok());
         match hex {
             Some(v) if b == b'%' => {
                 out.push(v);
@@ -81,7 +89,9 @@ fn percent_decoded(s: &str) -> String {
 
 /// Is `p` an absolute path here or on another system (`/…`, `C:/…`, `C:\…`)?
 fn is_absolute(p: &str) -> bool {
-    Path::new(p).is_absolute() || p.starts_with('/') || matches!(p.as_bytes(), [d, b':', b'/' | b'\\', ..] if d.is_ascii_alphabetic())
+    Path::new(p).is_absolute()
+        || p.starts_with('/')
+        || matches!(p.as_bytes(), [d, b':', b'/' | b'\\', ..] if d.is_ascii_alphabetic())
 }
 
 /// Where href `h` points (a path, made absolute from `folder`, or a URL) and whether it is a
@@ -93,7 +103,9 @@ fn target(h: &str, folder: Option<&str>) -> (String, bool) {
             let rest = rest.strip_prefix("localhost").unwrap_or(rest);
             // `file:///C:/art.png` → `C:/art.png`.
             match rest.as_bytes() {
-                [b'/', d, b':', ..] if d.is_ascii_alphabetic() => rest.get(1..).unwrap_or(rest).to_string(),
+                [b'/', d, b':', ..] if d.is_ascii_alphabetic() => {
+                    rest.get(1..).unwrap_or(rest).to_string()
+                }
                 _ => rest.to_string(),
             }
         }
@@ -104,7 +116,10 @@ fn target(h: &str, folder: Option<&str>) -> (String, bool) {
         return (path, true);
     }
     match folder {
-        Some(f) => (Path::new(f).join(&path).to_string_lossy().into_owned(), true),
+        Some(f) => (
+            Path::new(f).join(&path).to_string_lossy().into_owned(),
+            true,
+        ),
         None => (path, false),
     }
 }
@@ -118,16 +133,33 @@ impl Files {
     /// Read the files the `<image>` elements of `xml` (the text `svg`) link to. Placeholders
     /// stretch to the image's box (`preserveAspectRatio="none"`), which the file fills once
     /// relinked.
-    pub(in crate::import) fn read(svg: &str, xml: &roxmltree::Document, opts: &ImportOptions, edits: &mut Edits, warnings: &mut Vec<String>) -> Self {
+    pub(in crate::import) fn read(
+        svg: &str,
+        xml: &roxmltree::Document,
+        opts: &ImportOptions,
+        edits: &mut Edits,
+        warnings: &mut Vec<String>,
+    ) -> Self {
         let mut files = Files::default();
         let mut placeholder = None;
-        for n in xml.descendants().filter(|n| n.is_element() && n.tag_name().name() == "image") {
-            let Some(h) = href(n).filter(|h| !h.trim_start().starts_with("data:")) else { continue };
+        for n in xml
+            .descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "image")
+        {
+            let Some(h) = href(n).filter(|h| !h.trim_start().starts_with("data:")) else {
+                continue;
+            };
             if !files.sources.contains_key(h) {
                 let (path, local) = target(h, opts.folder);
-                let read = if local { opts.read.and_then(|read| read(&path)) } else { None };
+                let read = if local {
+                    opts.read.and_then(|read| read(&path))
+                } else {
+                    None
+                };
                 let source = match read {
-                    Some((bytes, link)) => files.source(bytes, link).ok_or("is not an image VectorCraft reads"),
+                    Some((bytes, link)) => files
+                        .source(bytes, link)
+                        .ok_or("is not an image VectorCraft reads"),
                     None => Err("not found"),
                 };
                 let source = source.or_else(|why| {
@@ -162,14 +194,27 @@ impl Files {
             _ => {
                 let img = image::load_from_memory_with_format(&bytes, format).ok()?;
                 let mut png = Vec::new();
-                img.write_to(&mut std::io::Cursor::new(&mut png), F::Png).ok()?;
+                img.write_to(&mut std::io::Cursor::new(&mut png), F::Png)
+                    .ok()?;
                 let png = Arc::new(png);
-                self.links.insert(key(&png), Linked { link, missing: false });
+                self.links.insert(
+                    key(&png),
+                    Linked {
+                        link,
+                        missing: false,
+                    },
+                );
                 return Some(Source::Raster(ImageKind::PNG, png));
             }
         };
         let bytes = Arc::new(bytes);
-        self.links.insert(key(&bytes), Linked { link, missing: false });
+        self.links.insert(
+            key(&bytes),
+            Linked {
+                link,
+                missing: false,
+            },
+        );
         Some(Source::Raster(kind, bytes))
     }
 
@@ -181,7 +226,9 @@ impl Files {
     /// The link of the image whose data usvg got as `kind`.
     pub(in crate::import) fn linked(&self, kind: &ImageKind) -> Option<&Linked> {
         match kind {
-            ImageKind::PNG(b) | ImageKind::JPEG(b) | ImageKind::GIF(b) | ImageKind::WEBP(b) => self.links.get(&key(b)),
+            ImageKind::PNG(b) | ImageKind::JPEG(b) | ImageKind::GIF(b) | ImageKind::WEBP(b) => {
+                self.links.get(&key(b))
+            }
             ImageKind::SVG(_) => None,
         }
     }
@@ -207,11 +254,15 @@ impl Files {
                 }
                 data(mime, bytes, opts)
             }),
-            resolve_string: Box::new(move |h, opts| match self.sources.get(h).or_else(|| self.sources.get(h.trim()))? {
-                Source::Raster(kind, bytes) => Some(kind(bytes.clone())),
-                Source::Svg(bytes) => {
-                    self.note_text(bytes);
-                    usvg::Tree::from_data_nested(bytes, opts).ok().map(ImageKind::SVG)
+            resolve_string: Box::new(move |h, opts| {
+                match self.sources.get(h).or_else(|| self.sources.get(h.trim()))? {
+                    Source::Raster(kind, bytes) => Some(kind(bytes.clone())),
+                    Source::Svg(bytes) => {
+                        self.note_text(bytes);
+                        usvg::Tree::from_data_nested(bytes, opts)
+                            .ok()
+                            .map(ImageKind::SVG)
+                    }
                 }
             }),
         }
@@ -225,12 +276,27 @@ mod tests {
     #[test]
     fn hrefs_resolve_against_the_folder() {
         let sep = std::path::MAIN_SEPARATOR;
-        assert_eq!(target("photo%20one.png", Some("/art")), (format!("/art{sep}photo one.png"), true));
+        assert_eq!(
+            target("photo%20one.png", Some("/art")),
+            (format!("/art{sep}photo one.png"), true)
+        );
         assert_eq!(target("photo.png", None), ("photo.png".into(), false));
-        assert_eq!(target("/abs/photo.png", Some("/art")), ("/abs/photo.png".into(), true));
-        assert_eq!(target("file:///C:/art/a.png", None), ("C:/art/a.png".into(), true));
-        assert_eq!(target("file:///home/a.png", None), ("/home/a.png".into(), true));
-        assert_eq!(target("https://example.com/a.png", Some("/art")), ("https://example.com/a.png".into(), false));
+        assert_eq!(
+            target("/abs/photo.png", Some("/art")),
+            ("/abs/photo.png".into(), true)
+        );
+        assert_eq!(
+            target("file:///C:/art/a.png", None),
+            ("C:/art/a.png".into(), true)
+        );
+        assert_eq!(
+            target("file:///home/a.png", None),
+            ("/home/a.png".into(), true)
+        );
+        assert_eq!(
+            target("https://example.com/a.png", Some("/art")),
+            ("https://example.com/a.png".into(), false)
+        );
     }
 
     #[test]

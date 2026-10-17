@@ -43,7 +43,11 @@ fn warp_path(path: &BezPath, tol: f64, seg: f64, f: &dyn Fn(Point) -> Point) -> 
     let mut budget = MAX_POINTS;
     let segment = |out: &mut BezPath, a: Point, b: Point, budget: &mut usize| {
         let n = ((b - a).hypot() / seg).ceil();
-        let n = if n.is_finite() { (n as usize).clamp(1, 512) } else { 1 };
+        let n = if n.is_finite() {
+            (n as usize).clamp(1, 512)
+        } else {
+            1
+        };
         for i in 1..=n {
             if *budget == 0 {
                 return;
@@ -89,8 +93,21 @@ struct Item<'a> {
 }
 
 /// Draw `l` (laid out in text rect `tr`, shape transform `m`) through `warp`.
-pub(crate) fn draw(ctx: &mut RenderContext, l: &TextLayout, tr: Rect, m: Affine, paras: &[(usize, ParaState)], warp: &Warp) {
-    let para = |i: usize| paras.iter().find(|(p, _)| *p == i).map(|(_, s)| *s).unwrap_or_default();
+pub(crate) fn draw(
+    ctx: &mut RenderContext,
+    l: &TextLayout,
+    tr: Rect,
+    m: Affine,
+    paras: &[(usize, ParaState)],
+    warp: &Warp,
+) {
+    let para = |i: usize| {
+        paras
+            .iter()
+            .find(|(p, _)| *p == i)
+            .map(|(_, s)| *s)
+            .unwrap_or_default()
+    };
     let m = text_transform(m, tr, l.rotation);
     let n = l.lines.len();
     let mut ink: Vec<Option<Rect>> = vec![None; n];
@@ -98,9 +115,15 @@ pub(crate) fn draw(ctx: &mut RenderContext, l: &TextLayout, tr: Rect, m: Affine,
     let mut items: Vec<Item> = Vec::new();
     for run in &l.runs {
         let k = run.size / run.face.upem.max(1.0);
-        let skew = if run.fake_italic { Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
+        let skew = if run.fake_italic {
+            Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0])
+        } else {
+            Affine::IDENTITY
+        };
         for (gid, x, y) in &run.glyphs {
-            let Some(li) = line_of(l, run.para, *y) else { continue };
+            let Some(li) = line_of(l, run.para, *y) else {
+                continue;
+            };
             if let Some(o) = off.get_mut(li) {
                 *o = Some(o.map_or(ref_offset(run), |v| v.max(ref_offset(run))));
             }
@@ -117,7 +140,12 @@ pub(crate) fn draw(ctx: &mut RenderContext, l: &TextLayout, tr: Rect, m: Affine,
             if let Some(slot) = ink.get_mut(li) {
                 *slot = Some(slot.map_or(b, |r| r.union(b)));
             }
-            items.push(Item { run, path, line: li, state: para(run.para) });
+            items.push(Item {
+                run,
+                path,
+                line: li,
+                state: para(run.para),
+            });
         }
     }
     let lines: Vec<WarpLine> = l
@@ -125,8 +153,16 @@ pub(crate) fn draw(ctx: &mut RenderContext, l: &TextLayout, tr: Rect, m: Affine,
         .iter()
         .enumerate()
         .map(|(i, li)| {
-            let o = off.get(i).copied().flatten().unwrap_or(0.18 * (li.bottom - li.top));
-            WarpLine { ink: ink.get(i).copied().flatten(), extent: li.extent, ref_y: li.baseline - o }
+            let o = off
+                .get(i)
+                .copied()
+                .flatten()
+                .unwrap_or(0.18 * (li.bottom - li.top));
+            WarpLine {
+                ink: ink.get(i).copied().flatten(),
+                extent: li.extent,
+                ref_y: li.baseline - o,
+            }
         })
         .collect();
     let mapper = warp.mapper(&lines, l.inner);
@@ -139,7 +175,9 @@ pub(crate) fn draw(ctx: &mut RenderContext, l: &TextLayout, tr: Rect, m: Affine,
             return;
         }
         let y = (d.rect.y0 + d.rect.y1) / 2.0;
-        let Some(li) = line_of(l, d.para, y) else { return };
+        let Some(li) = line_of(l, d.para, y) else {
+            return;
+        };
         let path = warp_path(&d.rect.to_path(0.1), tol, seg, &|p| mapper.map(li, p));
         ctx.set_transform(m * Affine::translate(ps.offset));
         ctx.set_paint(color(d.color, ps.opacity));
@@ -195,7 +233,13 @@ mod tests {
         let n = out.elements().len();
         assert!(n > 30, "{n}");
         // The first edge is bent onto the parabola.
-        let mid = out.elements().iter().find_map(|e| if let PathEl::LineTo(q) = e { (q.x == 5.0).then_some(*q) } else { None });
+        let mid = out.elements().iter().find_map(|e| {
+            if let PathEl::LineTo(q) = e {
+                (q.x == 5.0).then_some(*q)
+            } else {
+                None
+            }
+        });
         assert_eq!(mid, Some(Point::new(5.0, 0.25)));
         // A huge path with a tiny segment length stays bounded.
         let mut big = BezPath::new();

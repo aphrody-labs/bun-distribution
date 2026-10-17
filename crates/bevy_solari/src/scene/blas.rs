@@ -9,8 +9,8 @@ use bevy_platform::collections::HashMap;
 use bevy_render::{
     diagnostic::{DiagnosticsRecorder, RecordDiagnostics},
     mesh::{
-        allocator::{MeshAllocator, MeshBufferSlice},
         RenderMesh,
+        allocator::{MeshAllocator, MeshBufferSlice},
     },
     render_asset::ExtractedAssets,
     render_resource::*,

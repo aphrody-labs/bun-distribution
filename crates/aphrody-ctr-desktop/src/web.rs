@@ -35,7 +35,9 @@ impl Ctr3ds {
         image: Vec<u8>,
     ) -> Result<Ctr3ds, JsValue> {
         console_error_panic_hook::set_once();
-        let emu = Emu::builder().boot_bytes(&name, &image).map_err(|e| JsValue::from_str(&e.0))?;
+        let emu = Emu::builder()
+            .boot_bytes(&name, &image)
+            .map_err(|e| JsValue::from_str(&e.0))?;
         let (width, height) = (canvas.width().max(1), canvas.height().max(1));
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::BROWSER_WEBGPU,
@@ -47,7 +49,14 @@ impl Ctr3ds {
         let renderer = Renderer::new(&instance, surface, (width, height))
             .await
             .map_err(|e| JsValue::from_str(&e))?;
-        Ok(Ctr3ds { emu, renderer, input: Input::default(), width, height, stopped: None })
+        Ok(Ctr3ds {
+            emu,
+            renderer,
+            input: Input::default(),
+            width,
+            height,
+            stopped: None,
+        })
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
@@ -75,7 +84,8 @@ impl Ctr3ds {
     }
 
     pub fn set_anaglyph(&mut self, on: bool) {
-        self.renderer.set_stereo(if on { Stereo::Anaglyph } else { Stereo::Off });
+        self.renderer
+            .set_stereo(if on { Stereo::Anaglyph } else { Stereo::Off });
         self.emu.set_slider_3d(if on { 1.0 } else { 0.0 });
     }
 
@@ -107,7 +117,12 @@ impl Ctr3ds {
 
     /// DSP output since the last call: interleaved stereo f32 at 32728 Hz.
     pub fn take_audio(&mut self) -> Vec<f32> {
-        self.emu.take_audio().into_iter().flatten().map(|s| f32::from(s) / 32768.0).collect()
+        self.emu
+            .take_audio()
+            .into_iter()
+            .flatten()
+            .map(|s| f32::from(s) / 32768.0)
+            .collect()
     }
 
     pub fn save_state(&mut self) -> Result<Vec<u8>, JsValue> {
@@ -115,6 +130,8 @@ impl Ctr3ds {
     }
 
     pub fn load_state(&mut self, state: Vec<u8>) -> Result<(), JsValue> {
-        self.emu.load_state(&state).map_err(|e| JsValue::from_str(&e.0))
+        self.emu
+            .load_state(&state)
+            .map_err(|e| JsValue::from_str(&e.0))
     }
 }

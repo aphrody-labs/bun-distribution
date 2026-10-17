@@ -10,7 +10,11 @@ use vectorcraft_text::{FALLBACK_FAMILY, FontDb};
 use crate::*;
 
 fn style(size: f64) -> CharStyle {
-    CharStyle { size, fill: Paint::solid(Color::BLACK), ..Default::default() }
+    CharStyle {
+        size,
+        fill: Paint::solid(Color::BLACK),
+        ..Default::default()
+    }
 }
 
 /// A document holding `texts`.
@@ -26,13 +30,30 @@ fn doc(texts: Vec<TextObject>) -> Document {
 
 /// The export of `d` with real text (or outlines), content streams left readable.
 fn pdf(d: &Document, outline_text: bool) -> ExportReport {
-    let settings: PdfSettings =
-        serde_json::from_value(json!({"compression": {"compressText": false}, "advanced": {"outlineText": outline_text}})).unwrap();
-    export_with_report(d, &PdfOptions { settings, ..Default::default() }).unwrap()
+    let settings: PdfSettings = serde_json::from_value(
+        json!({"compression": {"compressText": false}, "advanced": {"outlineText": outline_text}}),
+    )
+    .unwrap();
+    export_with_report(
+        d,
+        &PdfOptions {
+            settings,
+            ..Default::default()
+        },
+    )
+    .unwrap()
 }
 
 fn import_as(bytes: &[u8], text_as: TextAs) -> Document {
-    import_with_report(bytes, &ImportOptions { text_as, ..Default::default() }).unwrap().document
+    import_with_report(
+        bytes,
+        &ImportOptions {
+            text_as,
+            ..Default::default()
+        },
+    )
+    .unwrap()
+    .document
 }
 
 /// The text of the type objects of `d`.
@@ -61,14 +82,24 @@ fn ink(d: &Document) -> Rect {
 
 #[test]
 fn type_is_written_as_text_in_embedded_subset_fonts() {
-    let d = doc(vec![TextObject::point(Point::new(20.0, 60.0), "Hello World", style(24.0))]);
+    let d = doc(vec![TextObject::point(
+        Point::new(20.0, 60.0),
+        "Hello World",
+        style(24.0),
+    )]);
     let r = pdf(&d, false);
     assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     let text = String::from_utf8_lossy(&r.bytes);
-    assert!(text.contains("/FontFile2") || text.contains("/FontFile3"), "an embedded font program");
+    assert!(
+        text.contains("/FontFile2") || text.contains("/FontFile3"),
+        "an embedded font program"
+    );
     assert!(text.contains("/ToUnicode") && text.contains("/Type0"));
     // A subset: the font's name carries the subset tag.
-    assert!(text.contains(&format!("+{}", FALLBACK_FAMILY.replace(' ', ""))), "a subset");
+    assert!(
+        text.contains(&format!("+{}", FALLBACK_FAMILY.replace(' ', ""))),
+        "a subset"
+    );
     assert!(text.contains(" Tf") && text.contains("TJ"));
     // Selectable and searchable: reopened, it is type again, spaces included.
     assert_eq!(texts(&import_as(&r.bytes, TextAs::Text)), ["Hello World"]);
@@ -87,16 +118,47 @@ fn arc() -> PathData {
 #[test]
 fn real_text_lands_within_half_a_point_of_the_outlines() {
     let plain = TextObject::point(Point::new(20.0, 60.0), "Hg fly", style(36.0));
-    let mut turned = TextObject::point(Point::new(60.0, 160.0), "Wave AV", CharStyle { h_scale: 80.0, tracking: 120.0, ..style(30.0) });
+    let mut turned = TextObject::point(
+        Point::new(60.0, 160.0),
+        "Wave AV",
+        CharStyle {
+            h_scale: 80.0,
+            tracking: 120.0,
+            ..style(30.0)
+        },
+    );
     turned.xf *= Affine::rotate(-0.5) * Affine::skew(0.2, 0.0);
     let mut mixed = TextObject::point(Point::new(200.0, 60.0), "", style(20.0));
     mixed.runs = vec![
-        TextRun { text: "x".into(), style: style(20.0), inline: None },
-        TextRun { text: "2".into(), style: CharStyle { baseline_shift: 8.0, v_scale: 140.0, ..style(12.0) }, inline: None },
-        TextRun { text: " ok".into(), style: CharStyle { rotation: 20.0, ..style(20.0) }, inline: None },
+        TextRun {
+            text: "x".into(),
+            style: style(20.0),
+            inline: None,
+        },
+        TextRun {
+            text: "2".into(),
+            style: CharStyle {
+                baseline_shift: 8.0,
+                v_scale: 140.0,
+                ..style(12.0)
+            },
+            inline: None,
+        },
+        TextRun {
+            text: " ok".into(),
+            style: CharStyle {
+                rotation: 20.0,
+                ..style(20.0)
+            },
+            inline: None,
+        },
     ];
     let mut on_path = TextObject::point(Point::ZERO, "along the arc", style(18.0));
-    on_path.kind = TextKind::OnPath { path: arc(), start: 0.0, end: None };
+    on_path.kind = TextKind::OnPath {
+        path: arc(),
+        start: 0.0,
+        end: None,
+    };
     on_path.xf = Affine::IDENTITY;
     for t in [plain, turned, mixed, on_path] {
         let what = t.plain_text();
@@ -104,9 +166,17 @@ fn real_text_lands_within_half_a_point_of_the_outlines() {
         let real = import_as(&pdf(&d, false).bytes, TextAs::Outlines);
         let outlined = import_as(&pdf(&d, true).bytes, TextAs::Outlines);
         let (a, b) = (ink(&real), ink(&outlined));
-        let off = [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1].iter().fold(0.0f64, |m, v| m.max(v.abs()));
+        let off = [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1]
+            .iter()
+            .fold(0.0f64, |m, v| m.max(v.abs()));
         assert!(off < 0.5, "{what}: {a:?} vs {b:?}");
-        assert_eq!(texts(&import_as(&pdf(&d, false).bytes, TextAs::Text)).concat().replace(' ', ""), what.replace(' ', ""), "{what}");
+        assert_eq!(
+            texts(&import_as(&pdf(&d, false).bytes, TextAs::Text))
+                .concat()
+                .replace(' ', ""),
+            what.replace(' ', ""),
+            "{what}"
+        );
     }
 }
 
@@ -117,12 +187,26 @@ fn real_text_lands_within_half_a_point_of_the_outlines() {
 fn a_run_shifted_two_billion_points_is_left_out() {
     let mut t = TextObject::point(Point::new(5.0, 40.0), "", style(12.0));
     t.runs = vec![
-        TextRun { text: "in".into(), style: style(12.0), inline: None },
-        TextRun { text: "out".into(), style: CharStyle { baseline_shift: -2_147_483_649.0, ..style(12.0) }, inline: None },
+        TextRun {
+            text: "in".into(),
+            style: style(12.0),
+            inline: None,
+        },
+        TextRun {
+            text: "out".into(),
+            style: CharStyle {
+                baseline_shift: -2_147_483_649.0,
+                ..style(12.0)
+            },
+            inline: None,
+        },
     ];
     let mut d = doc(vec![t]);
     d.artboards[0].rect = Rect::new(0.0, 0.0, 50.0, 50.0);
-    assert_eq!(texts(&import_as(&pdf(&d, false).bytes, TextAs::Text)), ["in"]);
+    assert_eq!(
+        texts(&import_as(&pdf(&d, false).bytes, TextAs::Text)),
+        ["in"]
+    );
     let b = ink(&import_as(&pdf(&d, true).bytes, TextAs::Outlines));
     assert!(b.y0 > 0.0 && b.y1 < 50.0, "{b:?}");
 }
@@ -136,14 +220,33 @@ fn a_run_shifted_two_billion_points_is_left_out() {
 #[test]
 fn overprinting_runs_are_written_or_left_out_as_other_runs_are() {
     let moved = |overprint_fill| {
-        let back = CharStyle { baseline_shift: 2_147_483_649.0, overprint_fill, ..style(12.0) };
+        let back = CharStyle {
+            baseline_shift: 2_147_483_649.0,
+            overprint_fill,
+            ..style(12.0)
+        };
         TextObject::point(Point::new(5.0, 2_147_483_689.0), "moved", back)
     };
     let scaled = |overprint_fill| {
         let mut t = TextObject::point(Point::new(5.0, 40.0), "", style(12.0));
         t.xf *= Affine::scale(3.0);
-        let up = CharStyle { baseline_shift: 500_000_000.0, overprint_fill, ..style(12.0) };
-        t.runs = vec![TextRun { text: "in".into(), style: style(12.0), inline: None }, TextRun { text: "out".into(), style: up, inline: None }];
+        let up = CharStyle {
+            baseline_shift: 500_000_000.0,
+            overprint_fill,
+            ..style(12.0)
+        };
+        t.runs = vec![
+            TextRun {
+                text: "in".into(),
+                style: style(12.0),
+                inline: None,
+            },
+            TextRun {
+                text: "out".into(),
+                style: up,
+                inline: None,
+            },
+        ];
         t
     };
     let written = |mut t: TextObject| {
@@ -155,7 +258,10 @@ fn overprinting_runs_are_written_or_left_out_as_other_runs_are() {
     };
     let text_of = |bytes: &[u8]| texts(&import_as(bytes, TextAs::Text));
     let (on, off) = (written(moved(true)), written(moved(false)));
-    assert!(String::from_utf8_lossy(&on).contains("/VCop gs"), "an overprinting form");
+    assert!(
+        String::from_utf8_lossy(&on).contains("/VCop gs"),
+        "an overprinting form"
+    );
     assert_eq!(text_of(&on), ["moved"]);
     assert_eq!(text_of(&off), ["moved"]);
     assert_eq!(text_of(&written(scaled(true))), ["in"]);
@@ -170,14 +276,35 @@ fn variable_font_instances_are_real_text_in_their_own_glyphs() {
     FontDb::global().add_font(variable_font().unwrap());
     let mut widths = vec![];
     for s in ["Regular", "Bold"] {
-        let st = CharStyle { font_family: VARIABLE_FAMILY.into(), font_style: s.into(), ..style(48.0) };
-        let d = doc(vec![TextObject::point(Point::new(20.0, 80.0), VARIABLE_CHARS, st)]);
+        let st = CharStyle {
+            font_family: VARIABLE_FAMILY.into(),
+            font_style: s.into(),
+            ..style(48.0)
+        };
+        let d = doc(vec![TextObject::point(
+            Point::new(20.0, 80.0),
+            VARIABLE_CHARS,
+            st,
+        )]);
         let r = pdf(&d, false);
         assert!(r.warnings.is_empty(), "{s}: {:?}", r.warnings);
-        assert_eq!(texts(&import_as(&r.bytes, TextAs::Text)), [VARIABLE_CHARS], "{s}: real text");
-        let (real, outlined) = (ink(&import_as(&r.bytes, TextAs::Outlines)), ink(&import_as(&pdf(&d, true).bytes, TextAs::Outlines)));
-        let off =
-            [real.x0 - outlined.x0, real.y0 - outlined.y0, real.x1 - outlined.x1, real.y1 - outlined.y1].iter().fold(0.0f64, |m, v| m.max(v.abs()));
+        assert_eq!(
+            texts(&import_as(&r.bytes, TextAs::Text)),
+            [VARIABLE_CHARS],
+            "{s}: real text"
+        );
+        let (real, outlined) = (
+            ink(&import_as(&r.bytes, TextAs::Outlines)),
+            ink(&import_as(&pdf(&d, true).bytes, TextAs::Outlines)),
+        );
+        let off = [
+            real.x0 - outlined.x0,
+            real.y0 - outlined.y0,
+            real.x1 - outlined.x1,
+            real.y1 - outlined.y1,
+        ]
+        .iter()
+        .fold(0.0f64, |m, v| m.max(v.abs()));
         assert!(off < 0.5, "{s}: {real:?} vs {outlined:?}");
         widths.push(real.width());
     }
@@ -187,7 +314,14 @@ fn variable_font_instances_are_real_text_in_their_own_glyphs() {
 #[test]
 fn gradients_on_real_text_stay_where_they_were() {
     let fill = Paint::Gradient(Box::new(GradientPaint::new(Gradient::default())));
-    let mut t = TextObject::point(Point::new(30.0, 80.0), "Gradient", CharStyle { fill, ..style(40.0) });
+    let mut t = TextObject::point(
+        Point::new(30.0, 80.0),
+        "Gradient",
+        CharStyle {
+            fill,
+            ..style(40.0)
+        },
+    );
     t.xf *= Affine::rotate(0.3);
     let d = doc(vec![t]);
     let geom = |outline: bool| {
@@ -201,7 +335,10 @@ fn gradients_on_real_text_stay_where_they_were() {
         g.unwrap()
     };
     let (real, outlined) = (geom(false), geom(true));
-    assert!((real.start - outlined.start).hypot() < 0.1 && (real.end - outlined.end).hypot() < 0.1, "{real:?} vs {outlined:?}");
+    assert!(
+        (real.start - outlined.start).hypot() < 0.1 && (real.end - outlined.end).hypot() < 0.1,
+        "{real:?} vs {outlined:?}"
+    );
 }
 
 /// The bundled fallback face as another family `family` (13 characters, like the bundled name),
@@ -209,8 +346,18 @@ fn gradients_on_real_text_stay_where_they_were() {
 fn licensed(family: &str, fs: u16) -> String {
     let face = FontDb::global().face(FALLBACK_FAMILY, "Regular").unwrap();
     let mut bytes = face.file_data().to_vec();
-    let utf16 = |s: &str| s.encode_utf16().flat_map(u16::to_be_bytes).collect::<Vec<u8>>();
-    for (from, to) in [(utf16(FALLBACK_FAMILY), utf16(family)), (FALLBACK_FAMILY.as_bytes().to_vec(), family.as_bytes().to_vec())] {
+    let utf16 = |s: &str| {
+        s.encode_utf16()
+            .flat_map(u16::to_be_bytes)
+            .collect::<Vec<u8>>()
+    };
+    for (from, to) in [
+        (utf16(FALLBACK_FAMILY), utf16(family)),
+        (
+            FALLBACK_FAMILY.as_bytes().to_vec(),
+            family.as_bytes().to_vec(),
+        ),
+    ] {
         assert_eq!(from.len(), to.len());
         let mut at = 0;
         while let Some(i) = bytes[at..].windows(from.len()).position(|w| w == from) {
@@ -219,7 +366,10 @@ fn licensed(family: &str, fs: u16) -> String {
         }
     }
     let tables = u16::from_be_bytes([bytes[4], bytes[5]]) as usize;
-    let os2 = (0..tables).map(|i| 12 + 16 * i).find(|r| &bytes[*r..*r + 4] == b"OS/2").unwrap();
+    let os2 = (0..tables)
+        .map(|i| 12 + 16 * i)
+        .find(|r| &bytes[*r..*r + 4] == b"OS/2")
+        .unwrap();
     let off = u32::from_be_bytes(bytes[os2 + 8..os2 + 12].try_into().unwrap()) as usize;
     bytes[off + 8..off + 10].copy_from_slice(&fs.to_be_bytes());
     FontDb::global().add_font(bytes);
@@ -233,34 +383,97 @@ fn fonts_whose_licence_forbids_embedding_fall_back_to_outlines() {
     let whole = licensed("Entire Sans 3", 0x0100);
     let d = doc(vec![
         TextObject::point(Point::new(20.0, 40.0), "Open", style(24.0)),
-        TextObject::point(Point::new(20.0, 100.0), "Shut", CharStyle { font_family: locked.clone(), ..style(24.0) }),
-        TextObject::point(Point::new(20.0, 160.0), "Full", CharStyle { font_family: whole.clone(), ..style(24.0) }),
+        TextObject::point(
+            Point::new(20.0, 100.0),
+            "Shut",
+            CharStyle {
+                font_family: locked.clone(),
+                ..style(24.0)
+            },
+        ),
+        TextObject::point(
+            Point::new(20.0, 160.0),
+            "Full",
+            CharStyle {
+                font_family: whole.clone(),
+                ..style(24.0)
+            },
+        ),
     ]);
     let r = pdf(&d, false);
-    assert!(r.warnings.iter().any(|w| w.contains(&locked) && w.contains("doesn't allow embedding")), "{:?}", r.warnings);
-    assert!(r.warnings.iter().any(|w| w.contains(&whole) && w.contains("whole")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains(&locked) && w.contains("doesn't allow embedding")),
+        "{:?}",
+        r.warnings
+    );
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains(&whole) && w.contains("whole")),
+        "{:?}",
+        r.warnings
+    );
     // Only the open font is text; the others are drawn as their outlines.
     let back = import_as(&r.bytes, TextAs::Text);
     assert_eq!(texts(&back), ["Open"]);
     let mut paths = 0;
-    back.walk(|n| paths += usize::from(matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })));
+    back.walk(|n| {
+        paths += usize::from(matches!(
+            n.kind,
+            NodeKind::Path { .. } | NodeKind::Compound { .. }
+        ))
+    });
     assert!(paths >= 2, "{paths} outlined words");
 }
 
 #[test]
 fn subset_thresholds_below_100_percent_are_accepted_with_a_warning() {
-    let d = doc(vec![TextObject::point(Point::new(20.0, 60.0), "Subset", style(24.0))]);
-    let settings: PdfSettings = serde_json::from_value(json!({"advanced": {"outlineText": false, "fontSubsetPercent": 40}})).unwrap();
-    let r = export_with_report(&d, &PdfOptions { settings, ..Default::default() }).unwrap();
-    assert!(r.warnings.iter().any(|w| w.contains("subset")), "{:?}", r.warnings);
+    let d = doc(vec![TextObject::point(
+        Point::new(20.0, 60.0),
+        "Subset",
+        style(24.0),
+    )]);
+    let settings: PdfSettings = serde_json::from_value(
+        json!({"advanced": {"outlineText": false, "fontSubsetPercent": 40}}),
+    )
+    .unwrap();
+    let r = export_with_report(
+        &d,
+        &PdfOptions {
+            settings,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert!(
+        r.warnings.iter().any(|w| w.contains("subset")),
+        "{:?}",
+        r.warnings
+    );
     assert_eq!(texts(&import_as(&r.bytes, TextAs::Text)), ["Subset"]);
 }
 
 #[test]
 fn pdf_a_takes_real_text() {
-    let d = doc(vec![TextObject::point(Point::new(20.0, 60.0), "Archive", style(24.0))]);
-    let settings: PdfSettings = serde_json::from_value(json!({"standard": "pdfA2b", "advanced": {"outlineText": false}})).unwrap();
-    let bytes = export(&d, &PdfOptions { settings, created: Some(0), ..Default::default() }).unwrap();
+    let d = doc(vec![TextObject::point(
+        Point::new(20.0, 60.0),
+        "Archive",
+        style(24.0),
+    )]);
+    let settings: PdfSettings =
+        serde_json::from_value(json!({"standard": "pdfA2b", "advanced": {"outlineText": false}}))
+            .unwrap();
+    let bytes = export(
+        &d,
+        &PdfOptions {
+            settings,
+            created: Some(0),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_eq!(texts(&import_as(&bytes, TextAs::Text)), ["Archive"]);
 }
 
@@ -269,9 +482,25 @@ fn pdf_a_takes_real_text() {
 fn a_variable_font_instance_comes_back_in_its_own_style() {
     use vectorcraft_text::test_fonts::{VARIABLE_CHARS, VARIABLE_FAMILY, variable_font};
     FontDb::global().add_font(variable_font().unwrap());
-    let st = CharStyle { font_family: VARIABLE_FAMILY.into(), font_style: "Bold".into(), ..style(48.0) };
-    let d = doc(vec![TextObject::point(Point::new(20.0, 80.0), VARIABLE_CHARS, st)]);
-    let back = crate::import_with_report(&pdf(&d, false).bytes, &ImportOptions { text_as: TextAs::Text, ..Default::default() }).unwrap().document;
+    let st = CharStyle {
+        font_family: VARIABLE_FAMILY.into(),
+        font_style: "Bold".into(),
+        ..style(48.0)
+    };
+    let d = doc(vec![TextObject::point(
+        Point::new(20.0, 80.0),
+        VARIABLE_CHARS,
+        st,
+    )]);
+    let back = crate::import_with_report(
+        &pdf(&d, false).bytes,
+        &ImportOptions {
+            text_as: TextAs::Text,
+            ..Default::default()
+        },
+    )
+    .unwrap()
+    .document;
     let mut styles = vec![];
     back.walk(|n| {
         if let NodeKind::Text(t) = &n.kind {
@@ -285,14 +514,29 @@ fn a_variable_font_instance_comes_back_in_its_own_style() {
 /// digits map to U+FFFD, as some files have it (#708). Each `<003D>` of a digit becomes `<FFFD>`, so
 /// the file's offsets still hold.
 fn digits_unnamed(text: &str) -> Vec<u8> {
-    let d = doc(vec![TextObject::point(Point::new(20.0, 50.0), text, style(24.0))]);
+    let d = doc(vec![TextObject::point(
+        Point::new(20.0, 50.0),
+        text,
+        style(24.0),
+    )]);
     let bytes = pdf(&d, false).bytes;
-    let at = bytes.windows(11).position(|w| w == b"beginbfchar").expect("a readable ToUnicode map");
-    let end = at + bytes[at..].windows(9).position(|w| w == b"endbfchar").unwrap();
+    let at = bytes
+        .windows(11)
+        .position(|w| w == b"beginbfchar")
+        .expect("a readable ToUnicode map");
+    let end = at
+        + bytes[at..]
+            .windows(9)
+            .position(|w| w == b"endbfchar")
+            .unwrap();
     let mut out = bytes.clone();
     for i in at..end.saturating_sub(5) {
         // `<0030>` … `<0039>` after a space: a digit's character (each line's code comes first).
-        if &bytes[i..i + 4] == b"<003" && bytes[i + 4].is_ascii_digit() && bytes[i + 5] == b'>' && bytes[i - 1] == b' ' {
+        if &bytes[i..i + 4] == b"<003"
+            && bytes[i + 4].is_ascii_digit()
+            && bytes[i + 5] == b'>'
+            && bytes[i - 1] == b' '
+        {
             out[i + 1..i + 5].copy_from_slice(b"FFFD");
         }
     }
@@ -306,12 +550,28 @@ fn digits_unnamed(text: &str) -> Vec<u8> {
 #[test]
 fn unnamed_glyphs_of_an_installed_font_are_found_by_their_outline() {
     let bytes = digits_unnamed("Tel 02-12345");
-    let report = import_with_report(&bytes, &ImportOptions { text_as: TextAs::Text, ..Default::default() }).unwrap();
+    let report = import_with_report(
+        &bytes,
+        &ImportOptions {
+            text_as: TextAs::Text,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert_eq!(texts(&report.document), ["Tel 02-12345"]);
     let mut paths = 0;
-    report.document.walk(|n| paths += usize::from(matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })));
+    report.document.walk(|n| {
+        paths += usize::from(matches!(
+            n.kind,
+            NodeKind::Path { .. } | NodeKind::Compound { .. }
+        ))
+    });
     assert_eq!(paths, 0, "no outlines left: {:?}", report.warnings);
-    assert!(!report.warnings.iter().any(|w| w.contains("U+FFFD")), "{:?}", report.warnings);
+    assert!(
+        !report.warnings.iter().any(|w| w.contains("U+FFFD")),
+        "{:?}",
+        report.warnings
+    );
 }
 
 /// #811: an outline is named only by a glyph that draws it exactly; one moved off its place, or an
@@ -321,18 +581,28 @@ fn glyphs_are_named_only_by_an_exact_outline() {
     let db = FontDb::global();
     let face = db.face("Source Sans 3", "Regular").unwrap();
     let k = 1000.0 / face.units_per_em();
-    let pdf_space = |c: char| Affine::new([k, 0.0, 0.0, -k, 0.0, 0.0]) * db.outline(&face, face.glyph_for(c)).as_ref().clone();
+    let pdf_space = |c: char| {
+        Affine::new([k, 0.0, 0.0, -k, 0.0, 0.0])
+            * db.outline(&face, face.glyph_for(c)).as_ref().clone()
+    };
     for c in ['R', 'a', '7', '&', 'é'] {
         assert_eq!(crate::import::identify_glyph(&face, &pdf_space(c)), Some(c));
     }
-    assert_eq!(crate::import::identify_glyph(&face, &(Affine::translate((100.0, 0.0)) * pdf_space('R'))), None);
+    assert_eq!(
+        crate::import::identify_glyph(&face, &(Affine::translate((100.0, 0.0)) * pdf_space('R'))),
+        None
+    );
     assert_eq!(crate::import::identify_glyph(&face, &BezPath::new()), None);
 }
 
 /// #708: where the embedded font program has a character map, a glyph's character comes from it.
 #[test]
 fn an_embedded_fonts_own_cmap_names_its_glyphs() {
-    let data = std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf")).unwrap();
+    let data = std::fs::read(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf"),
+    )
+    .unwrap();
     let chars = crate::import::font_chars(&data).unwrap();
     use skrifa::MetadataProvider;
     let font = skrifa::FontRef::new(&data).unwrap();
@@ -352,9 +622,18 @@ fn slanted_type_reopens_as_type_that_still_leans() {
         t.xf *= Affine::rotate(turn) * Affine::skew(lean, 0.0);
         let d = doc(vec![t]);
         let reopened = import_as(&pdf(&d, false).bytes, TextAs::Text);
-        assert_eq!(texts(&reopened), ["LEAN"], "{turn} {lean}: reopened as type");
-        let (a, b) = (ink(&import_as(&pdf(&reopened, true).bytes, TextAs::Outlines)), ink(&import_as(&pdf(&d, true).bytes, TextAs::Outlines)));
-        let off = [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1].iter().fold(0.0f64, |m, v| m.max(v.abs()));
+        assert_eq!(
+            texts(&reopened),
+            ["LEAN"],
+            "{turn} {lean}: reopened as type"
+        );
+        let (a, b) = (
+            ink(&import_as(&pdf(&reopened, true).bytes, TextAs::Outlines)),
+            ink(&import_as(&pdf(&d, true).bytes, TextAs::Outlines)),
+        );
+        let off = [a.x0 - b.x0, a.y0 - b.y0, a.x1 - b.x1, a.y1 - b.y1]
+            .iter()
+            .fold(0.0f64, |m, v| m.max(v.abs()));
         assert!(off < 0.5, "{turn} {lean}: {a:?} vs {b:?}");
     }
 }
@@ -369,8 +648,16 @@ fn type_in_another_installed_version_reopens_in_that_version() {
     FontDb::global().add_font(twin_font(true).unwrap());
     FontDb::global().add_font(twin_font(false).unwrap());
     for version in [None, Some(TWIN_VERSIONS[0])] {
-        let st = CharStyle { font_family: TWIN_FAMILY.into(), font_version: version.map(Into::into), ..style(40.0) };
-        let d = doc(vec![TextObject::point(Point::new(20.0, 80.0), "Hamburgefonstiv", st)]);
+        let st = CharStyle {
+            font_family: TWIN_FAMILY.into(),
+            font_version: version.map(Into::into),
+            ..style(40.0)
+        };
+        let d = doc(vec![TextObject::point(
+            Point::new(20.0, 80.0),
+            "Hamburgefonstiv",
+            st,
+        )]);
         let back = import_as(&pdf(&d, false).bytes, TextAs::Text);
         let mut found = vec![];
         back.walk(|n| {
@@ -378,7 +665,11 @@ fn type_in_another_installed_version_reopens_in_that_version() {
                 found.push((t.plain_text(), t.first_style().font_version.clone()));
             }
         });
-        assert_eq!(found, [("Hamburgefonstiv".to_string(), version.map(String::from))], "{version:?}");
+        assert_eq!(
+            found,
+            [("Hamburgefonstiv".to_string(), version.map(String::from))],
+            "{version:?}"
+        );
     }
 }
 
@@ -387,7 +678,12 @@ fn origins(d: &Document) -> Vec<Point> {
     let mut out = vec![];
     d.walk(|n| {
         if let NodeKind::Text(t) = &n.kind {
-            out.extend(vectorcraft_text::layout(FontDb::global(), t).glyphs.iter().map(|g| t.xf * g.origin));
+            out.extend(
+                vectorcraft_text::layout(FontDb::global(), t)
+                    .glyphs
+                    .iter()
+                    .map(|g| t.xf * g.origin),
+            );
         }
     });
     out
@@ -397,16 +693,36 @@ fn origins(d: &Document) -> Vec<Point> {
 /// in its place, not evened out by one tracking value; evenly spaced type keeps one run.
 #[test]
 fn glyphs_spaced_each_their_own_way_keep_their_place() {
-    let runs = [("T", 0.0), ("i", -120.0), ("g", 160.0), ("h", -60.0), ("tl", 0.0), ("y", 0.0)];
+    let runs = [
+        ("T", 0.0),
+        ("i", -120.0),
+        ("g", 160.0),
+        ("h", -60.0),
+        ("tl", 0.0),
+        ("y", 0.0),
+    ];
     let mut t = TextObject::point(Point::new(20.0, 100.0), "", style(40.0));
-    t.runs = runs.iter().map(|(s, tr)| TextRun { text: s.to_string(), style: CharStyle { tracking: *tr, ..style(40.0) }, inline: None }).collect();
+    t.runs = runs
+        .iter()
+        .map(|(s, tr)| TextRun {
+            text: s.to_string(),
+            style: CharStyle {
+                tracking: *tr,
+                ..style(40.0)
+            },
+            inline: None,
+        })
+        .collect();
     let d = doc(vec![t]);
     let want = origins(&d);
     let back = import_as(&pdf(&d, false).bytes, TextAs::default());
     let got = origins(&back);
     assert_eq!(got.len(), want.len(), "{:?}", texts(&back));
     for (g, w) in got.iter().zip(&want) {
-        assert!((g.x - w.x).abs() < 0.1 && (g.y - w.y).abs() < 0.1, "{got:?}\nvs {want:?}");
+        assert!(
+            (g.x - w.x).abs() < 0.1 && (g.y - w.y).abs() < 0.1,
+            "{got:?}\nvs {want:?}"
+        );
     }
     let mut runs_back = 0;
     back.walk(|n| {
@@ -416,11 +732,23 @@ fn glyphs_spaced_each_their_own_way_keep_their_place() {
     });
     assert!(runs_back > 1, "one tracking can't place them");
     // Evenly tracked: one run.
-    let even = doc(vec![TextObject::point(Point::new(20.0, 100.0), "Tightly", CharStyle { tracking: -50.0, ..style(40.0) })]);
+    let even = doc(vec![TextObject::point(
+        Point::new(20.0, 100.0),
+        "Tightly",
+        CharStyle {
+            tracking: -50.0,
+            ..style(40.0)
+        },
+    )]);
     let back = import_as(&pdf(&even, false).bytes, TextAs::default());
     back.walk(|n| {
         if let NodeKind::Text(t) = &n.kind {
-            assert_eq!(t.runs.len(), 1, "{:?}", t.runs.iter().map(|r| r.style.tracking).collect::<Vec<_>>());
+            assert_eq!(
+                t.runs.len(),
+                1,
+                "{:?}",
+                t.runs.iter().map(|r| r.style.tracking).collect::<Vec<_>>()
+            );
         }
     });
 }
@@ -432,8 +760,19 @@ fn evenly_tracked_type_on_a_path_keeps_its_length() {
     let mut arc = BezPath::new();
     arc.move_to((40.0, 200.0));
     arc.curve_to((100.0, 80.0), (260.0, 80.0), (320.0, 200.0));
-    let mut t = TextObject::point(Point::ORIGIN, "ARCHING TYPE", CharStyle { tracking: 80.0, ..style(24.0) });
-    t.kind = TextKind::OnPath { path: PathData::from_bezpath(&arc), start: 0.0, end: None };
+    let mut t = TextObject::point(
+        Point::ORIGIN,
+        "ARCHING TYPE",
+        CharStyle {
+            tracking: 80.0,
+            ..style(24.0)
+        },
+    );
+    t.kind = TextKind::OnPath {
+        path: PathData::from_bezpath(&arc),
+        start: 0.0,
+        end: None,
+    };
     let d = doc(vec![t]);
     let want = origins(&d);
     let back = import_as(&pdf(&d, false).bytes, TextAs::default());

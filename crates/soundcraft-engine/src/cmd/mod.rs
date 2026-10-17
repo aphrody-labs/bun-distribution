@@ -143,17 +143,27 @@ pub fn always(_: &Engine) -> std::result::Result<(), String> {
 }
 
 pub fn has_tracks(e: &Engine) -> std::result::Result<(), String> {
-    if e.session().tracks.is_empty() { Err("the session has no tracks".into()) } else { Ok(()) }
+    if e.session().tracks.is_empty() {
+        Err("the session has no tracks".into())
+    } else {
+        Ok(())
+    }
 }
 
 pub fn has_selection(e: &Engine) -> std::result::Result<(), String> {
     let s = e.session();
-    if s.edit.selected_tracks.is_empty() && s.edit.selected_clips.is_empty() { Err("nothing is selected".into()) } else { Ok(()) }
+    if s.edit.selected_tracks.is_empty() && s.edit.selected_clips.is_empty() {
+        Err("nothing is selected".into())
+    } else {
+        Ok(())
+    }
 }
 
 pub fn has_range(e: &Engine) -> std::result::Result<(), String> {
     let s = e.session();
-    if (s.edit.selected_tracks.is_empty() || s.edit.selection.is_empty()) && s.edit.selected_clips.is_empty() {
+    if (s.edit.selected_tracks.is_empty() || s.edit.selection.is_empty())
+        && s.edit.selected_clips.is_empty()
+    {
         Err("make an edit selection first".into())
     } else {
         Ok(())
@@ -161,15 +171,27 @@ pub fn has_range(e: &Engine) -> std::result::Result<(), String> {
 }
 
 pub fn can_undo(e: &Engine) -> std::result::Result<(), String> {
-    if e.can_undo() { Ok(()) } else { Err("nothing to undo".into()) }
+    if e.can_undo() {
+        Ok(())
+    } else {
+        Err("nothing to undo".into())
+    }
 }
 
 pub fn can_redo(e: &Engine) -> std::result::Result<(), String> {
-    if e.can_redo() { Ok(()) } else { Err("nothing to redo".into()) }
+    if e.can_redo() {
+        Ok(())
+    } else {
+        Err("nothing to redo".into())
+    }
 }
 
 pub fn has_clipboard(e: &Engine) -> std::result::Result<(), String> {
-    if e.clipboard.tracks.is_empty() { Err("the clipboard is empty".into()) } else { Ok(()) }
+    if e.clipboard.tracks.is_empty() {
+        Err("the clipboard is empty".into())
+    } else {
+        Ok(())
+    }
 }
 
 // ---- params ------------------------------------------------------------------------------
@@ -179,7 +201,10 @@ pub fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
 }
 
 pub fn f64_or(p: &Value, key: &str, d: f64) -> f64 {
-    p.get(key).and_then(Value::as_f64).filter(|v| v.is_finite()).unwrap_or(d)
+    p.get(key)
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .unwrap_or(d)
 }
 
 pub fn f32_or(p: &Value, key: &str, d: f32) -> f32 {
@@ -187,7 +212,15 @@ pub fn f32_or(p: &Value, key: &str, d: f32) -> f32 {
 }
 
 pub fn i64_or(p: &Value, key: &str, d: i64) -> i64 {
-    p.get(key).and_then(|v| v.as_i64().or_else(|| v.as_f64().filter(|f| f.is_finite()).map(|f| f.round() as i64))).unwrap_or(d)
+    p.get(key)
+        .and_then(|v| {
+            v.as_i64().or_else(|| {
+                v.as_f64()
+                    .filter(|f| f.is_finite())
+                    .map(|f| f.round() as i64)
+            })
+        })
+        .unwrap_or(d)
 }
 
 pub fn bool_or(p: &Value, key: &str, d: bool) -> bool {
@@ -203,10 +236,16 @@ pub fn track_param(e: &Engine, cmd: &str, p: &Value, key: &str) -> Result<Option
     let Some(v) = p.get(key) else { return Ok(None) };
     let s = e.session();
     if let Some(n) = v.as_u64() {
-        return s.track(TrackId(n)).map(|t| Some(t.id)).ok_or_else(|| bad(cmd, format!("no track with id {n}")));
+        return s
+            .track(TrackId(n))
+            .map(|t| Some(t.id))
+            .ok_or_else(|| bad(cmd, format!("no track with id {n}")));
     }
     if let Some(name) = v.as_str() {
-        return s.track_by_name(name).map(|t| Some(t.id)).ok_or_else(|| bad(cmd, format!("no track named `{name}`")));
+        return s
+            .track_by_name(name)
+            .map(|t| Some(t.id))
+            .ok_or_else(|| bad(cmd, format!("no track named `{name}`")));
     }
     Err(bad(cmd, format!("`{key}` must be a track id or name")))
 }
@@ -235,7 +274,14 @@ pub fn tracks_param(e: &Engine, cmd: &str, p: &Value) -> Result<Vec<TrackId>> {
 /// Like `tracks_param` but errors when empty.
 pub fn tracks_required(e: &Engine, cmd: &str, p: &Value) -> Result<Vec<TrackId>> {
     let t = tracks_param(e, cmd, p)?;
-    if t.is_empty() { Err(bad(cmd, "no tracks: pass `track`/`tracks` or select tracks")) } else { Ok(t) }
+    if t.is_empty() {
+        Err(bad(
+            cmd,
+            "no tracks: pass `track`/`tracks` or select tracks",
+        ))
+    } else {
+        Ok(t)
+    }
 }
 
 /// Largest position accepted from parameters: 2^40 samples (about 265 days at 48 kHz). Clamping
@@ -263,7 +309,9 @@ fn position_param_raw(e: &Engine, cmd: &str, p: &Value, key: &str) -> Result<Opt
     if let Some(text) = v.as_str() {
         // Try each format, starting with an explicit prefix like "bars:5|1|000".
         let (fmt, body) = match text.split_once(':') {
-            Some((f, b)) if soundcraft_time::TimeFormat::from_id(f).is_some() => (soundcraft_time::TimeFormat::from_id(f), b),
+            Some((f, b)) if soundcraft_time::TimeFormat::from_id(f).is_some() => {
+                (soundcraft_time::TimeFormat::from_id(f), b)
+            }
             _ => (None, text),
         };
         let fmts: Vec<soundcraft_time::TimeFormat> = match fmt {
@@ -275,13 +323,23 @@ fn position_param_raw(e: &Engine, cmd: &str, p: &Value, key: &str) -> Result<Opt
             }
         };
         for f in fmts {
-            if let Ok(x) = soundcraft_time::parse_position(body, f, s.sample_rate, &s.tempo, s.frame_rate, s.timecode_start) {
+            if let Ok(x) = soundcraft_time::parse_position(
+                body,
+                f,
+                s.sample_rate,
+                &s.tempo,
+                s.frame_rate,
+                s.timecode_start,
+            ) {
                 return Ok(Some(x));
             }
         }
         return Err(bad(cmd, format!("cannot parse position `{text}`")));
     }
-    Err(bad(cmd, format!("`{key}` must be samples, {{seconds}}, or a time string")))
+    Err(bad(
+        cmd,
+        format!("`{key}` must be samples, {{seconds}}, or a time string"),
+    ))
 }
 
 /// Range from `start`/`end` params, else the edit selection.
@@ -313,7 +371,18 @@ pub fn clip_ids_param(e: &Engine, p: &Value) -> Vec<ClipId> {
     s.tracks
         .iter()
         .filter(|t| s.edit.selected_tracks.contains(&t.id))
-        .flat_map(|t| t.clips().iter().filter(move |c| if r.is_empty() { c.range().contains(r.start) } else { c.range().overlaps(&r) }).map(|c| c.id))
+        .flat_map(|t| {
+            t.clips()
+                .iter()
+                .filter(move |c| {
+                    if r.is_empty() {
+                        c.range().contains(r.start)
+                    } else {
+                        c.range().overlaps(&r)
+                    }
+                })
+                .map(|c| c.id)
+        })
         .collect()
 }
 
@@ -329,7 +398,11 @@ mod tests {
             assert!(!c.label.is_empty());
             assert!(c.id.contains('.'), "ids are namespaced: {}", c.id);
         }
-        assert!(command_specs().len() > 150, "only {} commands", command_specs().len());
+        assert!(
+            command_specs().len() > 150,
+            "only {} commands",
+            command_specs().len()
+        );
     }
 
     #[test]
@@ -340,7 +413,11 @@ mod tests {
                 if matches!(c.id, "app.quit") {
                     continue;
                 }
-                let mut e = if demo { crate::demo::demo_engine() } else { Engine::default() };
+                let mut e = if demo {
+                    crate::demo::demo_engine()
+                } else {
+                    Engine::default()
+                };
                 let r = e.execute(c.id, &serde_json::json!({}));
                 if let Err(EngineError::Internal(id, msg)) = r {
                     panic!("{id} panicked: {msg}");

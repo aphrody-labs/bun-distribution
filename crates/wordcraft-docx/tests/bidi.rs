@@ -10,7 +10,8 @@ use wordcraft_doc::{Document, Paragraph, para_block};
 fn zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, bytes) in entries {
-        zw.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        zw.start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         zw.write_all(bytes).unwrap();
     }
     zw.finish().unwrap().into_inner()
@@ -22,7 +23,10 @@ fn docx(body: &str) -> Vec<u8> {
     let doc = format!(
         r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>{body}</w:body></w:document>"#
     );
-    zip(&[("_rels/.rels", root.as_bytes()), ("word/document.xml", doc.as_bytes())])
+    zip(&[
+        ("_rels/.rels", root.as_bytes()),
+        ("word/document.xml", doc.as_bytes()),
+    ])
 }
 
 fn paras(d: &Document) -> Vec<&Paragraph> {
@@ -33,7 +37,10 @@ fn paras(d: &Document) -> Vec<&Paragraph> {
 fn document_xml(bytes: &[u8]) -> String {
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
     let mut s = String::new();
-    z.by_name("word/document.xml").unwrap().read_to_string(&mut s).unwrap();
+    z.by_name("word/document.xml")
+        .unwrap()
+        .read_to_string(&mut s)
+        .unwrap();
     s
 }
 
@@ -55,14 +62,27 @@ fn persian_run() -> CharProps {
 #[test]
 fn persian_paragraph_round_trips() {
     let mut rtl = Paragraph::with_text(FA, persian_run());
-    rtl.props = ParaProps { bidi: Some(true), align: Some(Align::Justify), ..Default::default() };
-    let ltr = Paragraph::with_text("English with فارسی inside", CharProps { cs: Some(true), ..Default::default() });
+    rtl.props = ParaProps {
+        bidi: Some(true),
+        align: Some(Align::Justify),
+        ..Default::default()
+    };
+    let ltr = Paragraph::with_text(
+        "English with فارسی inside",
+        CharProps {
+            cs: Some(true),
+            ..Default::default()
+        },
+    );
     let mut d = Document::new();
     d.body = vec![para_block(rtl.clone()), para_block(ltr.clone())];
     let bytes = wordcraft_docx::write(&d).unwrap();
     let r = wordcraft_docx::read(&bytes).unwrap();
     let ps = paras(&r);
-    assert_eq!(ps[0].text, FA, "Persian text, ZWNJ and digits survive byte for byte");
+    assert_eq!(
+        ps[0].text, FA,
+        "Persian text, ZWNJ and digits survive byte for byte"
+    );
     assert_eq!(ps[0].props.bidi, Some(true));
     assert_eq!(ps[0].props.align, Some(Align::Justify));
     assert_eq!(ps[0].runs[0].props, persian_run());
@@ -73,15 +93,26 @@ fn persian_paragraph_round_trips() {
 
 #[test]
 fn bidi_markup_is_written_in_schema_order() {
-    let mut p =
-        Paragraph::with_text(FA, CharProps { bold: Some(true), italic: Some(true), size: Some(12.0), font: Some("Arial".into()), ..persian_run() });
+    let mut p = Paragraph::with_text(
+        FA,
+        CharProps {
+            bold: Some(true),
+            italic: Some(true),
+            size: Some(12.0),
+            font: Some("Arial".into()),
+            ..persian_run()
+        },
+    );
     p.props.bidi = Some(true);
     let mut d = Document::new();
     d.body = vec![para_block(p)];
     let xml = document_xml(&wordcraft_docx::write(&d).unwrap());
     assert!(xml.contains("<w:bidi/>"), "paragraph direction: {xml}");
     assert!(xml.contains(r#"w:cs="B Nazanin""#), "complex-script font");
-    assert!(xml.contains(r#"<w:szCs w:val="28"/>"#), "complex-script size in half points");
+    assert!(
+        xml.contains(r#"<w:szCs w:val="28"/>"#),
+        "complex-script size in half points"
+    );
     assert!(xml.contains(r#"w:bidi="fa-IR""#), "bidi language");
     // CT_RPr is a sequence: b, bCs, i, iCs … sz, szCs … rtl, cs, lang.
     let pos = |t: &str| xml.find(t).unwrap_or_else(|| panic!("{t} missing: {xml}"));
@@ -108,23 +139,46 @@ fn reads_word_style_bidi_markup() {
     let ps = paras(&d);
     assert_eq!(ps[0].text, "سلام دنیا Word 2025");
     assert_eq!(ps[0].props.bidi, Some(true));
-    assert_eq!(ps[0].props.indent_left, Some(36.0), "w:left is the start indent");
-    assert_eq!(ps[0].props.align, Some(Align::Left), "jc=left is the start edge");
+    assert_eq!(
+        ps[0].props.indent_left,
+        Some(36.0),
+        "w:left is the start indent"
+    );
+    assert_eq!(
+        ps[0].props.align,
+        Some(Align::Left),
+        "jc=left is the start edge"
+    );
     let fa = &ps[0].runs[0].props;
     assert_eq!(fa.font.as_deref(), Some("Times New Roman"));
     assert_eq!(fa.font_cs.as_deref(), Some("B Lotus"));
     assert_eq!((fa.size, fa.size_cs), (Some(12.0), Some(16.0)));
     // Both explicit values survive, even when they happen to be equal.
-    assert_eq!((fa.bold, fa.bold_cs, fa.rtl), (Some(true), Some(true), Some(true)));
-    assert_eq!((fa.lang.as_deref(), fa.lang_bidi.as_deref()), (Some("en-US"), Some("fa-IR")));
+    assert_eq!(
+        (fa.bold, fa.bold_cs, fa.rtl),
+        (Some(true), Some(true), Some(true))
+    );
+    assert_eq!(
+        (fa.lang.as_deref(), fa.lang_bidi.as_deref()),
+        (Some("en-US"), Some("fa-IR"))
+    );
     assert_eq!(ps[1].props.bidi, Some(false));
     let x = &ps[1].runs[0].props;
-    assert_eq!((x.cs, x.italic_cs, x.italic), (Some(true), Some(true), None));
+    assert_eq!(
+        (x.cs, x.italic_cs, x.italic),
+        (Some(true), Some(true), None)
+    );
     // The resolved complex-script formatting is what Persian characters are drawn with.
     let rc = d.styles.resolve_char(None, fa);
     let cs = rc.complex();
-    assert_eq!((cs.font.as_str(), cs.size, cs.bold), ("B Lotus", 16.0, true));
-    assert!(rc.uses_complex('س') && rc.uses_complex('W'), "every character of an rtl run is complex script");
+    assert_eq!(
+        (cs.font.as_str(), cs.size, cs.bold),
+        ("B Lotus", 16.0, true)
+    );
+    assert!(
+        rc.uses_complex('س') && rc.uses_complex('W'),
+        "every character of an rtl run is complex script"
+    );
 }
 
 #[test]
@@ -160,10 +214,20 @@ fn rtl_tables_and_sections_round_trip() {
     let d = wordcraft_docx::read(&docx(body)).unwrap();
     let tables: Vec<&wordcraft_doc::Table> = d.body.iter().filter_map(|b| b.as_table()).collect();
     assert_eq!(tables.len(), 2);
-    assert!(tables[0].props.bidi_visual, "w:bidiVisual reads as a right-to-left table");
-    assert_eq!(tables[0].props.indent, Some(18.0), "the indent is kept (measured from the right)");
+    assert!(
+        tables[0].props.bidi_visual,
+        "w:bidiVisual reads as a right-to-left table"
+    );
+    assert_eq!(
+        tables[0].props.indent,
+        Some(18.0),
+        "the indent is kept (measured from the right)"
+    );
     assert!(!tables[1].props.bidi_visual, "w:val=0 turns it off");
-    assert!(d.last_section.rtl, "w:bidi in sectPr is a right-to-left section");
+    assert!(
+        d.last_section.rtl,
+        "w:bidi in sectPr is a right-to-left section"
+    );
     let bytes = wordcraft_docx::write(&d).unwrap();
     let xml = document_xml(&bytes);
     assert_eq!(xml.matches("<w:bidiVisual/>").count(), 1, "{xml}");
@@ -171,7 +235,12 @@ fn rtl_tables_and_sections_round_trip() {
     let pos = |t: &str| xml.find(t).unwrap_or_else(|| panic!("{t} missing: {xml}"));
     assert!(pos("<w:bidiVisual/>") < pos("<w:tblW"));
     let r = wordcraft_docx::read(&bytes).unwrap();
-    let again: Vec<bool> = r.body.iter().filter_map(|b| b.as_table()).map(|t| t.props.bidi_visual).collect();
+    let again: Vec<bool> = r
+        .body
+        .iter()
+        .filter_map(|b| b.as_table())
+        .map(|t| t.props.bidi_visual)
+        .collect();
     assert_eq!(again, vec![true, false]);
     assert!(r.last_section.rtl && r.last_section.columns.count == 2);
 }

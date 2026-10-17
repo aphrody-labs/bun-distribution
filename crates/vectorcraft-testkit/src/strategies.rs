@@ -15,17 +15,21 @@ pub fn arb_point(lo: f64, hi: f64) -> impl Strategy<Value = Point> {
 
 /// A non-degenerate rectangle inside `[0, 200]²`.
 pub fn arb_rect() -> impl Strategy<Value = Rect> {
-    (0.0..150.0f64, 0.0..150.0f64, 2.0..80.0f64, 2.0..80.0f64).prop_map(|(x, y, w, h)| Rect::new(x, y, x + w, y + h))
+    (0.0..150.0f64, 0.0..150.0f64, 2.0..80.0f64, 2.0..80.0f64)
+        .prop_map(|(x, y, w, h)| Rect::new(x, y, x + w, y + h))
 }
 
 /// A simple (non self-intersecting) star-shaped polygon: points at increasing angles around a
 /// centre with random radii. Every angular step stays below half a turn: a wider one puts the
 /// centre outside and can make the polygon cross itself.
 pub fn arb_star_polygon() -> impl Strategy<Value = Vec<Point>> {
-    let steps = prop::collection::vec((0.2f64..1.0, 5.0f64..40.0), 3..12).prop_filter("an angular step of half a turn or more", |v| {
-        let total: f64 = v.iter().map(|(a, _)| a).sum();
-        v.iter().all(|(a, _)| 2.0 * a < total)
-    });
+    let steps = prop::collection::vec((0.2f64..1.0, 5.0f64..40.0), 3..12).prop_filter(
+        "an angular step of half a turn or more",
+        |v| {
+            let total: f64 = v.iter().map(|(a, _)| a).sum();
+            v.iter().all(|(a, _)| 2.0 * a < total)
+        },
+    );
     (arb_point(40.0, 160.0), steps).prop_map(|(c, v)| {
         let total: f64 = v.iter().map(|(a, _)| a).sum();
         let mut ang = 0.0;
@@ -41,16 +45,21 @@ pub fn arb_star_polygon() -> impl Strategy<Value = Vec<Point>> {
 /// A convex polygon (regular polygon with jittered radius kept convex by using a single radius per
 /// polygon and jittered angles only).
 pub fn arb_convex_polygon() -> impl Strategy<Value = Vec<Point>> {
-    (arb_point(40.0, 160.0), 5.0f64..40.0, prop::collection::vec(0.3f64..1.0, 3..10)).prop_map(|(c, r, v)| {
-        let total: f64 = v.iter().sum();
-        let mut ang = 0.0;
-        v.iter()
-            .map(|a| {
-                ang += a / total * std::f64::consts::TAU;
-                Point::new(c.x + r * ang.cos(), c.y + r * ang.sin())
-            })
-            .collect()
-    })
+    (
+        arb_point(40.0, 160.0),
+        5.0f64..40.0,
+        prop::collection::vec(0.3f64..1.0, 3..10),
+    )
+        .prop_map(|(c, r, v)| {
+            let total: f64 = v.iter().sum();
+            let mut ang = 0.0;
+            v.iter()
+                .map(|a| {
+                    ang += a / total * std::f64::consts::TAU;
+                    Point::new(c.x + r * ang.cos(), c.y + r * ang.sin())
+                })
+                .collect()
+        })
 }
 
 pub fn polygon_path(pts: &[Point]) -> PathData {
@@ -64,14 +73,30 @@ pub fn arb_ellipse() -> impl Strategy<Value = PathData> {
 
 /// Rectangles, ellipses and star-shaped polygons.
 pub fn arb_closed_shape() -> impl Strategy<Value = PathData> {
-    prop_oneof![arb_rect().prop_map(vectorcraft_geom::shapes::rectangle), arb_ellipse(), arb_star_polygon().prop_map(|p| polygon_path(&p)),]
+    prop_oneof![
+        arb_rect().prop_map(vectorcraft_geom::shapes::rectangle),
+        arb_ellipse(),
+        arb_star_polygon().prop_map(|p| polygon_path(&p)),
+    ]
 }
 
 /// A random cubic Bézier path (open or closed, possibly several subpaths, arbitrary handles).
 pub fn arb_path_data() -> impl Strategy<Value = PathData> {
-    let anchor = (arb_point(0.0, 200.0), arb_point(-30.0, 30.0), arb_point(-30.0, 30.0), any::<bool>())
-        .prop_map(|(p, i, o, corner)| if corner { Anchor::corner(p) } else { Anchor::with_handles(p, p + i.to_vec2(), p + o.to_vec2()) });
-    let sub = (prop::collection::vec(anchor, 2..8), any::<bool>()).prop_map(|(a, closed)| SubPath::new(a, closed));
+    let anchor = (
+        arb_point(0.0, 200.0),
+        arb_point(-30.0, 30.0),
+        arb_point(-30.0, 30.0),
+        any::<bool>(),
+    )
+        .prop_map(|(p, i, o, corner)| {
+            if corner {
+                Anchor::corner(p)
+            } else {
+                Anchor::with_handles(p, p + i.to_vec2(), p + o.to_vec2())
+            }
+        });
+    let sub = (prop::collection::vec(anchor, 2..8), any::<bool>())
+        .prop_map(|(a, closed)| SubPath::new(a, closed));
     prop::collection::vec(sub, 1..3).prop_map(PathData::new)
 }
 
@@ -80,14 +105,20 @@ pub fn arb_path_data() -> impl Strategy<Value = PathData> {
 pub fn arb_smooth_curve() -> impl Strategy<Value = PathData> {
     (prop::collection::vec(-20.0f64..20.0, 4..9), 10.0f64..30.0).prop_map(|(ys, step)| {
         // Catmull-Rom through (i*step, y_i), converted to cubic handles.
-        let pts: Vec<Point> = ys.iter().enumerate().map(|(i, y)| Point::new(i as f64 * step, 100.0 + y)).collect();
+        let pts: Vec<Point> = ys
+            .iter()
+            .enumerate()
+            .map(|(i, y)| Point::new(i as f64 * step, 100.0 + y))
+            .collect();
         let n = pts.len();
         let tangent = |i: usize| {
             let a = pts[i.saturating_sub(1)];
             let b = pts[(i + 1).min(n - 1)];
             (b - a) / 6.0
         };
-        let anchors = (0..n).map(|i| Anchor::with_handles(pts[i], pts[i] - tangent(i), pts[i] + tangent(i))).collect();
+        let anchors = (0..n)
+            .map(|i| Anchor::with_handles(pts[i], pts[i] - tangent(i), pts[i] + tangent(i)))
+            .collect();
         PathData::single(SubPath::new(anchors, false))
     })
 }
@@ -173,9 +204,16 @@ const ARRANGE: [&str; 5] = [
     "object.arrange.sendToBack",
     "object.arrange.sendToCurrentLayer",
 ];
-const COLORS: [&str; 6] = ["#ff0000", "#00ff00", "#0000ff", "#222222", "#ffffff", "#ffcc00"];
+const COLORS: [&str; 6] = [
+    "#ff0000", "#00ff00", "#0000ff", "#222222", "#ffffff", "#ffcc00",
+];
 const BLENDS: [&str; 4] = ["Normal", "Multiply", "Screen", "Difference"];
-const PASTE: [&str; 4] = ["edit.paste", "edit.pasteInFront", "edit.pasteInBack", "edit.pasteInPlace"];
+const PASTE: [&str; 4] = [
+    "edit.paste",
+    "edit.pasteInFront",
+    "edit.pasteInBack",
+    "edit.pasteInPlace",
+];
 
 fn coord() -> impl Strategy<Value = f64> {
     -20.0..380.0f64
@@ -265,7 +303,11 @@ pub fn arb_ops(len: std::ops::Range<usize>) -> impl Strategy<Value = Vec<Op>> {
 }
 
 fn pick(ids: &[vectorcraft_doc::NodeId], i: usize) -> Option<u64> {
-    if ids.is_empty() { None } else { Some(ids[i % ids.len()].0) }
+    if ids.is_empty() {
+        None
+    } else {
+        Some(ids[i % ids.len()].0)
+    }
 }
 
 impl Op {
@@ -280,32 +322,59 @@ impl Op {
                 art_nodes(d)
                     .iter()
                     .filter(|n| {
-                        !d.parent_of(n.id).and_then(|p| d.node(p)).is_some_and(|p| matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. }))
+                        !d.parent_of(n.id).and_then(|p| d.node(p)).is_some_and(|p| {
+                            matches!(p.kind, vectorcraft_doc::NodeKind::Compound { .. })
+                        })
                     })
                     .map(|n| n.id)
                     .collect()
             })
             .unwrap_or_default();
-        let layers: Vec<_> = doc.as_ref().map(|d| d.layers.iter().map(|l| l.id.0).collect()).unwrap_or_default();
+        let layers: Vec<_> = doc
+            .as_ref()
+            .map(|d| d.layers.iter().map(|l| l.id.0).collect())
+            .unwrap_or_default();
         let c = |id: &str, p: Value| (id.to_string(), p);
         match self {
-            Op::Rect(x, y, w, h) => c("shape.rectangle", json!({"x": x, "y": y, "width": w, "height": h})),
-            Op::Ellipse(x, y, w, h) => c("shape.ellipse", json!({"x": x, "y": y, "width": w, "height": h})),
-            Op::Polygon(x, y, r, n) => c("shape.polygon", json!({"cx": x, "cy": y, "radius": r, "sides": n})),
-            Op::Star(x, y, r1, r2) => c("shape.star", json!({"cx": x, "cy": y, "radius1": r1, "radius2": r2})),
+            Op::Rect(x, y, w, h) => c(
+                "shape.rectangle",
+                json!({"x": x, "y": y, "width": w, "height": h}),
+            ),
+            Op::Ellipse(x, y, w, h) => c(
+                "shape.ellipse",
+                json!({"x": x, "y": y, "width": w, "height": h}),
+            ),
+            Op::Polygon(x, y, r, n) => c(
+                "shape.polygon",
+                json!({"cx": x, "cy": y, "radius": r, "sides": n}),
+            ),
+            Op::Star(x, y, r1, r2) => c(
+                "shape.star",
+                json!({"cx": x, "cy": y, "radius1": r1, "radius2": r2}),
+            ),
             Op::Line(a, b, cc, d) => c("shape.line", json!({"x1": a, "y1": b, "x2": cc, "y2": d})),
-            Op::Path(pts, closed) => {
-                c("path.create", json!({"anchors": pts.iter().map(|(x, y)| json!({"x": x, "y": y})).collect::<Vec<_>>(), "closed": closed}))
-            }
-            Op::Text(x, y) => c("text.create", json!({"x": x, "y": y, "text": "Ab", "size": 18})),
-            Op::SelectSet(ix) => c("select.set", json!({"ids": ix.iter().filter_map(|i| pick(&art, *i)).collect::<Vec<_>>()})),
+            Op::Path(pts, closed) => c(
+                "path.create",
+                json!({"anchors": pts.iter().map(|(x, y)| json!({"x": x, "y": y})).collect::<Vec<_>>(), "closed": closed}),
+            ),
+            Op::Text(x, y) => c(
+                "text.create",
+                json!({"x": x, "y": y, "text": "Ab", "size": 18}),
+            ),
+            Op::SelectSet(ix) => c(
+                "select.set",
+                json!({"ids": ix.iter().filter_map(|i| pick(&art, *i)).collect::<Vec<_>>()}),
+            ),
             Op::SelectAll => c("select.all", json!({})),
             Op::SelectNone => c("select.none", json!({})),
             Op::SelectInverse => c("select.inverse", json!({})),
             Op::Move(dx, dy, copy) => c("object.move", json!({"dx": dx, "dy": dy, "copy": copy})),
             Op::Rotate(a, copy) => c("object.rotate", json!({"angle": a, "copy": copy})),
             Op::Scale(sx, sy) => c("object.scale", json!({"sx": sx, "sy": sy})),
-            Op::Reflect(v) => c("object.reflect", json!({"axis": if *v { "vertical" } else { "horizontal" }})),
+            Op::Reflect(v) => c(
+                "object.reflect",
+                json!({"axis": if *v { "vertical" } else { "horizontal" }}),
+            ),
             Op::Shear(a) => c("object.shear", json!({"angle": a})),
             Op::TransformAgain => c("object.transformAgain", json!({})),
             Op::Nudge(x, y) => c("object.nudge", json!({"dx": x, "dy": y})),
@@ -316,14 +385,26 @@ impl Op {
                 // Known bug (crates/engine/tests/known_bugs.rs): Bring to Front/Forward panics when
                 // the selection spans several parents. Avoid generating that case.
                 let multi_parent = doc.as_ref().zip(s.active()).is_some_and(|(d, st)| {
-                    let mut parents: Vec<_> = st.selection.objects.iter().map(|id| d.parent_of(*id)).collect();
+                    let mut parents: Vec<_> = st
+                        .selection
+                        .objects
+                        .iter()
+                        .map(|id| d.parent_of(*id))
+                        .collect();
                     parents.dedup();
                     parents.len() > 1
                 });
-                if i < 2 && multi_parent { c("document.inspect", json!({})) } else { c(ARRANGE[i], json!({})) }
+                if i < 2 && multi_parent {
+                    c("document.inspect", json!({}))
+                } else {
+                    c(ARRANGE[i], json!({}))
+                }
             }
             Op::Pathfinder(i) => c(PATHFINDER[*i as usize % PATHFINDER.len()], json!({})),
-            Op::Fill(i) => c("paint.setFill", json!({"color": COLORS[*i as usize % COLORS.len()]})),
+            Op::Fill(i) => c(
+                "paint.setFill",
+                json!({"color": COLORS[*i as usize % COLORS.len()]}),
+            ),
             Op::Gradient(a) => c(
                 "paint.setFill",
                 json!({"gradient": {"kind": if *a > 180.0 { "radial" } else { "linear" }, "angle": a, "stops": [{"offset": 0, "color": "#ff0000"}, {"offset": 1, "color": "#0000ff"}]}}),
@@ -341,7 +422,10 @@ impl Op {
                 }
                 c("stroke.set", p)
             }
-            Op::Transparency(o, b) => c("transparency.set", json!({"opacity": o, "blend": BLENDS[*b as usize % BLENDS.len()]})),
+            Op::Transparency(o, b) => c(
+                "transparency.set",
+                json!({"opacity": o, "blend": BLENDS[*b as usize % BLENDS.len()]}),
+            ),
             Op::Align(i) => {
                 let p = match i % 6 {
                     0 => json!({"horizontal": "left"}),
@@ -356,7 +440,10 @@ impl Op {
             Op::Distribute => c("object.distribute", json!({"horizontal": "center"})),
             Op::LayerNew => c("layer.new", json!({})),
             Op::LayerDelete => c("layer.delete", json!({})),
-            Op::LayerCurrent(i) => c("layer.setCurrent", json!({"id": if layers.is_empty() { 0 } else { layers[i % layers.len()] }})),
+            Op::LayerCurrent(i) => c(
+                "layer.setCurrent",
+                json!({"id": if layers.is_empty() { 0 } else { layers[i % layers.len()] }}),
+            ),
             Op::Collect => c("layer.collectInNew", json!({})),
             Op::Copy => c("edit.copy", json!({})),
             Op::Cut => c("edit.cut", json!({})),
@@ -379,7 +466,10 @@ impl Op {
             Op::ExpandShape => c("object.expandShape", json!({})),
             Op::Effect(i) => {
                 let (id, p) = match i % 4 {
-                    0 => ("distort.roughen", json!({"size": 3, "detail": 4, "seed": 1})),
+                    0 => (
+                        "distort.roughen",
+                        json!({"size": 3, "detail": 4, "seed": 1}),
+                    ),
                     1 => ("stylize.dropShadow", json!({})),
                     2 => ("distort.zigZag", json!({"size": 3, "ridges": 2})),
                     _ => ("stylize.roundCorners", json!({"radius": 5})),
@@ -394,13 +484,22 @@ impl Op {
                 let cmds: Vec<Value> = ops
                     .iter()
                     // See the Arrange note above: selection inside a batch isn't known up front.
-                    .map(|o| if let Op::Arrange(i) = o { Op::Arrange(2 + i % 3) } else { o.clone() })
+                    .map(|o| {
+                        if let Op::Arrange(i) = o {
+                            Op::Arrange(2 + i % 3)
+                        } else {
+                            o.clone()
+                        }
+                    })
                     .map(|o| {
                         let (id, p) = o.command(s);
                         json!({"command": id, "params": p})
                     })
                     .collect();
-                c("command.batch", json!({"label": "Gen batch", "commands": cmds}))
+                c(
+                    "command.batch",
+                    json!({"label": "Gen batch", "commands": cmds}),
+                )
             }
         }
     }
@@ -415,7 +514,9 @@ impl Op {
 /// Keep the unused-import lint quiet when only some helpers are used.
 #[doc(hidden)]
 pub fn _top_level(s: &Session) -> Vec<vectorcraft_doc::NodeId> {
-    s.active().map(|d| top_level_ids(&d.doc)).unwrap_or_default()
+    s.active()
+        .map(|d| top_level_ids(&d.doc))
+        .unwrap_or_default()
 }
 
 // ---------------------------------------------------------------- junk params
@@ -450,11 +551,13 @@ pub fn junk_values() -> Vec<Value> {
 
 /// Every parameter key mentioned in any command's params doc (plus a few common ones).
 pub fn all_param_keys() -> Vec<String> {
-    let mut keys: std::collections::BTreeSet<String> =
-        ["ids", "id", "index", "x", "y", "width", "height", "points", "anchors", "params", "effect", "commands"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
+    let mut keys: std::collections::BTreeSet<String> = [
+        "ids", "id", "index", "x", "y", "width", "height", "points", "anchors", "params", "effect",
+        "commands",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
     for spec in command_specs() {
         keys.extend(param_keys(spec.params));
     }
@@ -477,7 +580,10 @@ pub fn param_keys(doc: &str) -> Vec<String> {
             let before = chars[..start].iter().rev().find(|c| **c != ' ').copied();
             let after = chars.get(i).copied();
             if matches!(before, Some('{') | Some(',') | Some('|'))
-                && matches!(after, Some('?') | Some(':') | Some(',') | Some('}') | Some('=') | Some('|'))
+                && matches!(
+                    after,
+                    Some('?') | Some(':') | Some(',') | Some('}') | Some('=') | Some('|')
+                )
             {
                 out.push(chars[start..i].iter().collect());
             }
@@ -501,10 +607,20 @@ pub fn is_path_key(k: &str) -> bool {
 pub fn junk_params(doc: &str, safe_path: &str) -> Vec<Value> {
     let keys = param_keys(doc);
     let junk = junk_values();
-    let mut out = vec![Value::Null, json!([]), json!("str"), json!(42), json!({"unknownKey": 1})];
+    let mut out = vec![
+        Value::Null,
+        json!([]),
+        json!("str"),
+        json!(42),
+        json!({"unknownKey": 1}),
+    ];
     for k in &keys {
         for (i, v) in junk.iter().enumerate() {
-            let v = if is_path_key(k) && v.is_string() { json!(safe_path) } else { v.clone() };
+            let v = if is_path_key(k) && v.is_string() {
+                json!(safe_path)
+            } else {
+                v.clone()
+            };
             // Sparse: one key at a time with every junk value, plus a few combos.
             let mut o = serde_json::Map::new();
             o.insert(k.clone(), v.clone());
@@ -512,7 +628,11 @@ pub fn junk_params(doc: &str, safe_path: &str) -> Vec<Value> {
             if i % 5 == 0 {
                 let mut all = serde_json::Map::new();
                 for k2 in &keys {
-                    let v2 = if is_path_key(k2) { json!(safe_path) } else { v.clone() };
+                    let v2 = if is_path_key(k2) {
+                        json!(safe_path)
+                    } else {
+                        v.clone()
+                    };
                     all.insert(k2.clone(), v2);
                 }
                 out.push(Value::Object(all));

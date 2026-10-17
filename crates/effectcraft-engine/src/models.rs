@@ -53,7 +53,10 @@ impl Models {
     }
 
     pub fn status(&self, task: Task) -> Status {
-        self.lane(task).lock().map(|s| s.clone()).unwrap_or_default()
+        self.lane(task)
+            .lock()
+            .map(|s| s.clone())
+            .unwrap_or_default()
     }
 
     /// The face model face tracking uses (`None`: the classic tracker).
@@ -129,13 +132,18 @@ fn kind(task: Task) -> &'static Kind {
 impl Session {
     /// The folder installed models live in: the host's, else `models` next to the settings.
     pub fn models_dir(&self) -> Option<PathBuf> {
-        self.models_dir.clone().or_else(|| Some(self.config.as_ref()?.dir()?.join("models")))
+        self.models_dir
+            .clone()
+            .or_else(|| Some(self.config.as_ref()?.dir()?.join("models")))
     }
 
     /// Where `m` is installed, if it is (a file of the published size).
     pub fn model_path(&self, m: &ModelInfo) -> Option<PathBuf> {
         let p = self.models_dir()?.join(m.file_name);
-        std::fs::metadata(&p).ok().filter(|md| md.len() == m.size).map(|_| p)
+        std::fs::metadata(&p)
+            .ok()
+            .filter(|md| md.len() == m.size)
+            .map(|_| p)
     }
 
     /// The model chosen for `task` (Settings).
@@ -181,17 +189,28 @@ impl Session {
             return;
         };
         let (face_slot, label) = (self.models.face_model.clone(), kind(task).label);
-        spawn(&lane, label, format!("Loading {}…", info.name), wait, move |status| {
-            let m = load_file(&path, info.id)?;
-            activate(status, &face_slot, task, Some(m));
-            Ok(format!("{label}: {} loaded", info.name))
-        });
+        spawn(
+            &lane,
+            label,
+            format!("Loading {}…", info.name),
+            wait,
+            move |status| {
+                let m = load_file(&path, info.id)?;
+                activate(status, &face_slot, task, Some(m));
+                Ok(format!("{label}: {} loaded", info.name))
+            },
+        );
     }
 
     /// Finish what the model workers did: a toast, and loading a model that just arrived.
     pub fn poll_models(&mut self) {
         for task in [Task::Mask, Task::Face] {
-            let done = self.models.lane(task).lock().ok().and_then(|mut s| s.done.take());
+            let done = self
+                .models
+                .lane(task)
+                .lock()
+                .ok()
+                .and_then(|mut s| s.done.take());
             if let Some((message, error)) = done {
                 self.events.push(crate::Event::Toast { message, error });
                 self.apply_model(task, false);
@@ -215,7 +234,9 @@ fn spawn(
     job: impl FnOnce(&Arc<Mutex<Status>>) -> std::result::Result<String, String> + Send + 'static,
 ) {
     if cfg!(target_arch = "wasm32") {
-        set(status, |s| s.error = Some("trained models are available in the desktop app".into()));
+        set(status, |s| {
+            s.error = Some("trained models are available in the desktop app".into())
+        });
         return;
     }
     set(status, |s| {
@@ -238,7 +259,10 @@ fn spawn(
     };
     if wait {
         run();
-    } else if let Err(e) = std::thread::Builder::new().name("ec-model".into()).spawn(run) {
+    } else if let Err(e) = std::thread::Builder::new()
+        .name("ec-model".into())
+        .spawn(run)
+    {
         set(status, |s| {
             s.busy = None;
             s.error = Some(format!("cannot start: {e}"));
@@ -254,19 +278,31 @@ fn notice_path(dir: &Path, m: &ModelInfo) -> PathBuf {
 /// Copy verified weights into the models folder (atomically), with their notice.
 fn install_bytes(dir: &Path, m: &ModelInfo, bytes: &[u8]) -> std::result::Result<PathBuf, String> {
     if bytes.len() as u64 != m.size || seg::sha256::hex(bytes) != m.sha256 {
-        return Err(format!("this is not the published {} file (size or SHA-256 differs)", m.name));
+        return Err(format!(
+            "this is not the published {} file (size or SHA-256 differs)",
+            m.name
+        ));
     }
     use crate::config::FileOps;
     let path = dir.join(m.file_name);
     let files = crate::config::StdFiles;
-    files.write(&path, bytes).map_err(|e| format!("cannot write {}: {e}", path.display()))?;
-    files.write(&notice_path(dir, m), seg::notice(m).as_bytes()).map_err(|e| format!("cannot write the notice: {e}"))?;
+    files
+        .write(&path, bytes)
+        .map_err(|e| format!("cannot write {}: {e}", path.display()))?;
+    files
+        .write(&notice_path(dir, m), seg::notice(m).as_bytes())
+        .map_err(|e| format!("cannot write the notice: {e}"))?;
     Ok(path)
 }
 
 fn model_p(p: &Value, cmd: &str, task: Task) -> Result<&'static ModelInfo> {
     let id = str_p(p, "id").ok_or_else(|| bad(cmd, "missing `id`"))?;
-    seg::info(id).filter(|m| m.task == task).ok_or_else(|| bad(cmd, format!("unknown model `{id}` (see {}.models)", kind(task).prefix)))
+    seg::info(id).filter(|m| m.task == task).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("unknown model `{id}` (see {}.models)", kind(task).prefix),
+        )
+    })
 }
 
 fn list(s: &mut Session, task: Task) -> Result<Value> {
@@ -299,7 +335,9 @@ fn list(s: &mut Session, task: Task) -> Result<Value> {
             "active": st.active.as_deref() == Some(m.id),
         }));
     }
-    Ok(json!({"models": v, "busy": st.busy, "error": st.error, "folder": s.models_dir().map(|d| d.display().to_string())}))
+    Ok(
+        json!({"models": v, "busy": st.busy, "error": st.error, "folder": s.models_dir().map(|d| d.display().to_string())}),
+    )
 }
 
 /// After a `wait`: the job's failure, as the command's.
@@ -329,15 +367,24 @@ fn select(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
 
 fn install(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
     let cmd = format!("{}.model.install", kind(task).prefix);
-    let path = str_p(p, "path").ok_or_else(|| bad(&cmd, "missing `path` (the downloaded weights file)"))?;
-    let dir = s.models_dir().ok_or_else(|| bad(&cmd, "no settings folder to install into"))?;
-    let bytes = std::fs::read(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad(&cmd, "missing `path` (the downloaded weights file)"))?;
+    let dir = s
+        .models_dir()
+        .ok_or_else(|| bad(&cmd, "no settings folder to install into"))?;
+    let bytes =
+        std::fs::read(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
     // Which model it is: the one asked for, or the one whose checksum it has.
     let m = match str_p(p, "id") {
         Some(_) => model_p(p, &cmd, task)?,
         None => {
             let h = seg::sha256::hex(&bytes);
-            seg::models(task).find(|m| m.sha256 == h).ok_or_else(|| bad(&cmd, "this file is not a published model in the registry (SHA-256 differs)"))?
+            seg::models(task).find(|m| m.sha256 == h).ok_or_else(|| {
+                bad(
+                    &cmd,
+                    "this file is not a published model in the registry (SHA-256 differs)",
+                )
+            })?
         }
     };
     let dest = install_bytes(&dir, m, &bytes).map_err(|e| bad(&cmd, e))?;
@@ -353,30 +400,47 @@ fn download(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
     let k = kind(task);
     let cmd = format!("{}.model.download", k.prefix);
     let m = model_p(p, &cmd, task)?;
-    let dir = s.models_dir().ok_or_else(|| bad(&cmd, "no settings folder to install into"))?;
+    let dir = s
+        .models_dir()
+        .ok_or_else(|| bad(&cmd, "no settings folder to install into"))?;
     if s.models.status(task).busy.is_some() {
         return Err(bad(&cmd, "a model is already downloading or loading"));
     }
-    let size = if m.size >= 10_000_000 { format!("{} MB", m.size / 1_000_000) } else { format!("{:.1} MB", m.size as f64 / 1e6) };
+    let size = if m.size >= 10_000_000 {
+        format!("{} MB", m.size / 1_000_000)
+    } else {
+        format!("{:.1} MB", m.size as f64 / 1e6)
+    };
     let wait = b_p(p, "wait").unwrap_or(false);
-    spawn(s.models.lane(task), k.label, format!("Downloading {} ({size})…", m.name), wait, move |_| {
-        std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
-        let tmp = dir.join(format!("{}.part", m.file_name));
-        let out = std::process::Command::new("curl")
+    spawn(
+        s.models.lane(task),
+        k.label,
+        format!("Downloading {} ({size})…", m.name),
+        wait,
+        move |_| {
+            std::fs::create_dir_all(&dir)
+                .map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+            let tmp = dir.join(format!("{}.part", m.file_name));
+            let out = std::process::Command::new("curl")
             .args(["-fsSL", "--retry", "2", "--connect-timeout", "20", "-o"])
             .arg(&tmp)
             .arg(m.url)
             .output()
             .map_err(|e| format!("downloading needs curl ({e}); or download {} in a browser and use Install from File", m.url))?;
-        if !out.status.success() {
+            if !out.status.success() {
+                let _ = std::fs::remove_file(&tmp);
+                return Err(format!(
+                    "download failed: {}",
+                    String::from_utf8_lossy(&out.stderr).trim()
+                ));
+            }
+            let bytes =
+                std::fs::read(&tmp).map_err(|e| format!("cannot read the download: {e}"))?;
             let _ = std::fs::remove_file(&tmp);
-            return Err(format!("download failed: {}", String::from_utf8_lossy(&out.stderr).trim()));
-        }
-        let bytes = std::fs::read(&tmp).map_err(|e| format!("cannot read the download: {e}"))?;
-        let _ = std::fs::remove_file(&tmp);
-        install_bytes(&dir, m, &bytes)?;
-        Ok(format!("{}: {} downloaded and verified", k.label, m.name))
-    });
+            install_bytes(&dir, m, &bytes)?;
+            Ok(format!("{}: {} downloaded and verified", k.label, m.name))
+        },
+    );
     if wait {
         waited(s, task, &cmd)?;
         s.apply_model(task, true);
@@ -388,11 +452,14 @@ fn download(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
 
 fn remove(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
     let m = model_p(p, &format!("{}.model.remove", kind(task).prefix), task)?;
-    let Some(path) = s.model_path(m) else { return Ok(json!({"removed": false})) };
+    let Some(path) = s.model_path(m) else {
+        return Ok(json!({"removed": false}));
+    };
     if s.models.status(task).active.as_deref() == Some(m.id) {
         s.models.set_active(task, None);
     }
-    std::fs::remove_file(&path).map_err(|e| EngineError::Other(format!("cannot remove {}: {e}", path.display())))?;
+    std::fs::remove_file(&path)
+        .map_err(|e| EngineError::Other(format!("cannot remove {}: {e}", path.display())))?;
     if let Some(dir) = path.parent() {
         let _ = std::fs::remove_file(notice_path(dir, m));
     }
@@ -401,7 +468,10 @@ fn remove(s: &mut Session, p: &Value, task: Task) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        query!("roto.models", "Roto Brush Models", "{}", |s, _| list(s, Task::Mask)),
+        query!("roto.models", "Roto Brush Models", "{}", |s, _| list(
+            s,
+            Task::Mask
+        )),
         cmd!(
             "roto.model.select",
             "Use Roto Brush Model",
@@ -429,8 +499,19 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             |s, p| download(s, p, Task::Mask)
         ),
-        cmd!("roto.model.remove", "Remove Roto Brush Model", [], None, "{id}", always, |s, p| remove(s, p, Task::Mask)),
-        query!("face.models", "Face Tracking Models", "{}", |s, _| list(s, Task::Face)),
+        cmd!(
+            "roto.model.remove",
+            "Remove Roto Brush Model",
+            [],
+            None,
+            "{id}",
+            always,
+            |s, p| remove(s, p, Task::Mask)
+        ),
+        query!("face.models", "Face Tracking Models", "{}", |s, _| list(
+            s,
+            Task::Face
+        )),
         cmd!(
             "face.model.select",
             "Use Face Tracking Model",
@@ -458,6 +539,14 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             |s, p| download(s, p, Task::Face)
         ),
-        cmd!("face.model.remove", "Remove Face Tracking Model", [], None, "{id}", always, |s, p| remove(s, p, Task::Face)),
+        cmd!(
+            "face.model.remove",
+            "Remove Face Tracking Model",
+            [],
+            None,
+            "{id}",
+            always,
+            |s, p| remove(s, p, Task::Face)
+        ),
     ]
 }

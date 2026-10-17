@@ -19,7 +19,11 @@ use crate::system::{System, SystemId};
 
 impl<const SYSTEM: SystemId> System<SYSTEM> {
     pub fn cause_external_interrupt(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         // Table 4-7. System Reset Exception—Register Settings
         self.gekko.spr.srr0 = Srr0::from(self.gekko.pc);
@@ -48,7 +52,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
     }
 
     pub fn cause_decrementer_interrupt(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         self.gekko.dec.clear_interrupt();
         self.gekko.spr.srr0 = Srr0::from(self.gekko.pc);
@@ -72,11 +80,18 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         self.gekko.pc = base | IRQ_DECREMENTER;
 
-        tracing::debug!(addr = format!("{:08X}", self.gekko.pc), "decrementer IRQ triggered");
+        tracing::debug!(
+            addr = format!("{:08X}", self.gekko.pc),
+            "decrementer IRQ triggered"
+        );
     }
 
     pub fn cause_trap_exception(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         self.gekko.spr.srr0 = Srr0::from(self.gekko.cia);
         // SRR1: MSR bits 0, 5-9, 16-31 preserved; bit 14 (TRAP) set
@@ -102,7 +117,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         self.gekko.nia = base | IRQ_PROGRAM;
 
-        tracing::debug!(addr = format!("{:08X}", self.gekko.nia), "trap exception triggered");
+        tracing::debug!(
+            addr = format!("{:08X}", self.gekko.nia),
+            "trap exception triggered"
+        );
     }
 
     /// Raise a Floating-Point Unavailable exception (0x00800).
@@ -112,7 +130,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
     /// instruction; SRR1 is a clean copy of MSR (no status bits set).
     #[inline(always)]
     pub fn cause_fp_unavailable(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         self.gekko.spr.srr0 = Srr0::from(self.gekko.cia);
         self.gekko.spr.srr1 = chapa::extract_bits!(self.gekko.msr; 0, 5..=9, 16..=31).raw();
@@ -148,7 +170,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
     /// an instruction that updates FPSCR.
     #[inline(always)]
     pub fn cause_fp_program_exception(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         self.gekko.spr.srr0 = Srr0::from(self.gekko.cia);
         // SRR1[11] = floating-point enabled exception indicator
@@ -174,7 +200,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         self.gekko.nia = base | IRQ_PROGRAM;
 
-        tracing::debug!(addr = format!("{:08X}", self.gekko.nia), "FP program exception triggered");
+        tracing::debug!(
+            addr = format!("{:08X}", self.gekko.nia),
+            "FP program exception triggered"
+        );
     }
 
     /// Guard for FP instruction dispatch. Returns true if the instruction may
@@ -201,7 +230,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
     }
 
     pub fn cause_syscall_interrupt(&mut self) {
-        let base: u32 = if self.gekko.msr.exception_prefix() { 0xFFF0_0000 } else { 0 };
+        let base: u32 = if self.gekko.msr.exception_prefix() {
+            0xFFF0_0000
+        } else {
+            0
+        };
 
         self.gekko.spr.srr0 = Srr0::from(self.gekko.cia.wrapping_add(4));
         self.gekko.spr.srr1 = chapa::extract_bits!(self.gekko.msr; 0, 5..=9, 16..=31).raw();
@@ -225,6 +258,9 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
         self.gekko.nia = base | IRQ_SYSTEM_CALL;
 
-        tracing::debug!(addr = format!("{:08X}", self.gekko.nia), "system call IRQ triggered");
+        tracing::debug!(
+            addr = format!("{:08X}", self.gekko.nia),
+            "system call IRQ triggered"
+        );
     }
 }

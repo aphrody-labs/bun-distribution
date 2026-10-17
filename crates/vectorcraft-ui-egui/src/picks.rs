@@ -141,7 +141,11 @@ pub(crate) fn dialog_gone() -> &'static str {
 
 /// Run `f` as `entry`: a dialog it asks for off the UI thread runs `entry` again when it
 /// answers. Inside another entry, that one runs again instead.
-pub(crate) fn as_entry<R>(app: &mut VectorcraftApp, entry: impl FnOnce() -> Entry, f: impl FnOnce(&mut VectorcraftApp) -> R) -> R {
+pub(crate) fn as_entry<R>(
+    app: &mut VectorcraftApp,
+    entry: impl FnOnce() -> Entry,
+    f: impl FnOnce(&mut VectorcraftApp) -> R,
+) -> R {
     if app.picks.entry.is_some() {
         return f(app);
     }
@@ -197,12 +201,16 @@ pub(crate) fn folder_field(app: &mut VectorcraftApp, d: &mut Dialog, key: &'stat
 
 /// A path from an open dialog for `pick` (none: cancelled, or shown off the UI thread for now).
 pub(crate) fn open(app: &mut VectorcraftApp, pick: &FilePick) -> Option<String> {
-    ask(app, PickRequest::Open(pick.clone()))?.into_iter().next()
+    ask(app, PickRequest::Open(pick.clone()))?
+        .into_iter()
+        .next()
 }
 
 /// A path from a save dialog for `pick`.
 pub(crate) fn save(app: &mut VectorcraftApp, pick: &FilePick) -> Option<String> {
-    ask(app, PickRequest::Save(pick.clone()))?.into_iter().next()
+    ask(app, PickRequest::Save(pick.clone()))?
+        .into_iter()
+        .next()
 }
 
 /// A folder from the folder picker.
@@ -247,13 +255,20 @@ fn ask(app: &mut VectorcraftApp, request: PickRequest) -> Option<PickAnswer> {
         (Some(entry), Some(start)) => {
             if let Some(answer) = start(request.clone()) {
                 let doc = entry.document(app);
-                app.picks.waiting = Some(Waiting { request, answer, entry, doc });
+                app.picks.waiting = Some(Waiting {
+                    request,
+                    answer,
+                    entry,
+                    doc,
+                });
                 return None;
             }
         }
         // Shown in line it holds the window (Linux) or is refused (macOS): what asks must run as
         // an entry.
-        (None, Some(_)) => log::warn!("a file dialog asked for outside a command, a dialog's OK or a button: {request:?}"),
+        (None, Some(_)) => log::warn!(
+            "a file dialog asked for outside a command, a dialog's OK or a button: {request:?}"
+        ),
         _ => {}
     }
     let s = &mut app.services;
@@ -280,7 +295,11 @@ pub(crate) fn poll(app: &mut VectorcraftApp, ctx: &egui::Context) {
             // What asked gave up for now: no "cancelled" while the dialog is open, unless it was
             // another dialog, refused.
             if app.ui.status == "cancelled" {
-                app.ui.status = if std::mem::take(&mut app.picks.refused) { busy().into() } else { String::new() };
+                app.ui.status = if std::mem::take(&mut app.picks.refused) {
+                    busy().into()
+                } else {
+                    String::new()
+                };
             }
             // The host wakes the window when the dialog answers; this is in case it can't.
             ctx.request_repaint_after(std::time::Duration::from_secs(1));
@@ -289,7 +308,15 @@ pub(crate) fn poll(app: &mut VectorcraftApp, ctx: &egui::Context) {
         // The dialog's thread is gone: as cancelled.
         Err(TryRecvError::Disconnected) => vec![],
     };
-    let Some(Waiting { request, entry, doc, .. }) = app.picks.waiting.take() else { return };
+    let Some(Waiting {
+        request,
+        entry,
+        doc,
+        ..
+    }) = app.picks.waiting.take()
+    else {
+        return;
+    };
     app.picks.refused = false;
     // Once more: what waited for the dialog (files from the Finder, the menu bar) goes on.
     ctx.request_repaint();
@@ -300,7 +327,9 @@ pub(crate) fn poll(app: &mut VectorcraftApp, ctx: &egui::Context) {
     // an agent), or it may be gone.
     if let Some(uid) = doc {
         let Some(i) = app.session.documents().iter().position(|d| d.uid == uid) else {
-            app.status(tl!("The document was closed while its file dialog was open"));
+            app.status(tl!(
+                "The document was closed while its file dialog was open"
+            ));
             return;
         };
         if app.session.active_index() != Some(i)

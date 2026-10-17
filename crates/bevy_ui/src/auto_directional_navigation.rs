@@ -20,17 +20,17 @@
 use crate::{ComputedNode, ComputedUiTargetCamera, UiGlobalTransform};
 use bevy_camera::visibility::InheritedVisibility;
 use bevy_ecs::{prelude::*, system::SystemParam};
-use bevy_math::{ops, CompassOctant, Vec2};
+use bevy_math::{CompassOctant, Vec2, ops};
 
 use bevy_input_focus::{
+    FocusCause,
     directional_navigation::{
         AutoNavigationConfig, DirectionalNavigation, DirectionalNavigationError, FocusableArea,
     },
     navigator::find_best_candidate,
-    FocusCause,
 };
 
-use bevy_reflect::{prelude::*, Reflect};
+use bevy_reflect::{Reflect, prelude::*};
 
 /// Marker component to enable automatic directional navigation to and from the entity.
 ///

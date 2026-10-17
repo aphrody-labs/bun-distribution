@@ -13,7 +13,12 @@ use filmcraft_time::FrameRate;
 
 const V25: &[&str] = &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25"];
 const TONE: &[&str] = &["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000"];
-const NOISE: &[&str] = &["-f", "lavfi", "-i", "anoisesrc=color=pink:sample_rate=48000:amplitude=0.5:seed=7"];
+const NOISE: &[&str] = &[
+    "-f",
+    "lavfi",
+    "-i",
+    "anoisesrc=color=pink:sample_rate=48000:amplitude=0.5:seed=7",
+];
 
 fn spec(name: &str) -> Vec<String> {
     let cat = |p: &[&[&str]]| p.concat().into_iter().map(String::from).collect::<Vec<_>>();
@@ -22,21 +27,103 @@ fn spec(name: &str) -> Vec<String> {
         "mxf_h264_bf2.mxf" => cat(&[
             V25,
             NOISE,
-            &["-t", "2", "-c:v", "libx264", "-bf", "2", "-g", "12", "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le", "-ac", "2", "-timecode", "01:00:00:00"],
+            &[
+                "-t",
+                "2",
+                "-c:v",
+                "libx264",
+                "-bf",
+                "2",
+                "-g",
+                "12",
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "pcm_s16le",
+                "-ac",
+                "2",
+                "-timecode",
+                "01:00:00:00",
+            ],
         ]),
         "mxf_h264_2997df.mxf" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30000/1001"],
             NOISE,
-            &["-t", "1", "-c:v", "libx264", "-bf", "0", "-g", "10", "-pix_fmt", "yuv420p", "-c:a", "pcm_s24le", "-ac", "2", "-timecode", "01:00:00;00"],
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "libx264",
+                "-bf",
+                "0",
+                "-g",
+                "10",
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "pcm_s24le",
+                "-ac",
+                "2",
+                "-timecode",
+                "01:00:00;00",
+            ],
         ]),
-        "mxf_dnxhr_lb.mxf" => {
-            cat(&[V25, TONE, &["-t", "1", "-c:v", "dnxhd", "-profile:v", "dnxhr_lb", "-pix_fmt", "yuv422p", "-c:a", "pcm_s24le", "-ac", "2"]])
-        }
-        "mxf_prores.mxf" => cat(&[V25, TONE, &["-t", "1", "-c:v", "prores_ks", "-profile:v", "3", "-pix_fmt", "yuv422p10le", "-c:a", "pcm_s16le"]]),
-        "mxf_mpeg2.mxf" => cat(&[V25, NOISE, &["-t", "1", "-c:v", "mpeg2video", "-bf", "2", "-c:a", "pcm_s16le"]]),
+        "mxf_dnxhr_lb.mxf" => cat(&[
+            V25,
+            TONE,
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "dnxhd",
+                "-profile:v",
+                "dnxhr_lb",
+                "-pix_fmt",
+                "yuv422p",
+                "-c:a",
+                "pcm_s24le",
+                "-ac",
+                "2",
+            ],
+        ]),
+        "mxf_prores.mxf" => cat(&[
+            V25,
+            TONE,
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "prores_ks",
+                "-profile:v",
+                "3",
+                "-pix_fmt",
+                "yuv422p10le",
+                "-c:a",
+                "pcm_s16le",
+            ],
+        ]),
+        "mxf_mpeg2.mxf" => cat(&[
+            V25,
+            NOISE,
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "mpeg2video",
+                "-bf",
+                "2",
+                "-c:a",
+                "pcm_s16le",
+            ],
+        ]),
         // XDCAM HD422 style: 1080i 4:2:2 long GOP
         "mxf_xdcam_hd422.mxf" => cat(&[
-            &["-f", "lavfi", "-i", "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff"],
+            &[
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff",
+            ],
             NOISE,
             &[
                 "-t",
@@ -59,8 +146,34 @@ fn spec(name: &str) -> Vec<String> {
                 "2",
             ],
         ]),
-        "mxf_atom_dnxhr.mxf" => cat(&[V25, &["-t", "1", "-c:v", "dnxhd", "-profile:v", "dnxhr_lb", "-pix_fmt", "yuv422p", "-f", "mxf_opatom"]]),
-        "mxf_atom_pcm.mxf" => cat(&[NOISE, &["-t", "1", "-c:a", "pcm_s24le", "-ac", "1", "-f", "mxf_opatom"]]),
+        "mxf_atom_dnxhr.mxf" => cat(&[
+            V25,
+            &[
+                "-t",
+                "1",
+                "-c:v",
+                "dnxhd",
+                "-profile:v",
+                "dnxhr_lb",
+                "-pix_fmt",
+                "yuv422p",
+                "-f",
+                "mxf_opatom",
+            ],
+        ]),
+        "mxf_atom_pcm.mxf" => cat(&[
+            NOISE,
+            &[
+                "-t",
+                "1",
+                "-c:a",
+                "pcm_s24le",
+                "-ac",
+                "1",
+                "-f",
+                "mxf_opatom",
+            ],
+        ]),
         "mxf_d10.mxf" => cat(&[
             &["-f", "lavfi", "-i", "testsrc2=size=720x608:rate=25"],
             NOISE,
@@ -135,7 +248,17 @@ fn open(p: &Path) -> MxfSource {
 fn ffprobe_video_packets(file: &Path) -> Option<usize> {
     let fp = filmcraft_testkit::ffprobe()?;
     let o = std::process::Command::new(fp)
-        .args(["-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries", "stream=nb_read_packets", "-of", "csv=p=0"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-count_packets",
+            "-show_entries",
+            "stream=nb_read_packets",
+            "-of",
+            "csv=p=0",
+        ])
         .arg(file)
         .output()
         .ok()?;
@@ -143,7 +266,15 @@ fn ffprobe_video_packets(file: &Path) -> Option<usize> {
 }
 
 /// Every frame in order, then `seeks` random frames, against ffmpeg's decode (within `tol`).
-fn check_video(ff: &Path, file: &Path, pix_fmt: &str, chroma: (usize, usize), bps: usize, tol: u16, seeks: usize) {
+fn check_video(
+    ff: &Path,
+    file: &Path,
+    pix_fmt: &str,
+    chroma: (usize, usize),
+    bps: usize,
+    tol: u16,
+    seeks: usize,
+) {
     let src = open(file);
     let v = src.info().video.clone().unwrap();
     let (w, h) = (v.width as usize, v.height as usize);
@@ -152,14 +283,21 @@ fn check_video(ff: &Path, file: &Path, pix_fmt: &str, chroma: (usize, usize), bp
     let fsize = (w * h + 2 * cw * ch) * bps;
     let n = raw.len() / fsize;
     let rate = v.frame_rate;
-    assert_eq!(src.info().duration, rate.tick_of(n as i64), "{}: duration = ffmpeg's frame count {n}", file.display());
+    assert_eq!(
+        src.info().duration,
+        rate.tick_of(n as i64),
+        "{}: duration = ffmpeg's frame count {n}",
+        file.display()
+    );
     if let Some(p) = ffprobe_video_packets(file) {
         assert_eq!(p, n, "packets = frames");
     }
     let frame = |i: usize| raw_planes(&raw[i * fsize..(i + 1) * fsize], w, h, cw, ch, bps);
     let mut worst = 0;
     for i in 0..n {
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).unwrap();
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .unwrap();
         let d = max_diff(&planes(&f), &frame(i));
         worst = worst.max(d);
         assert!(d <= tol, "{}: frame {i} differs by {d}", file.display());
@@ -169,9 +307,15 @@ fn check_video(ff: &Path, file: &Path, pix_fmt: &str, chroma: (usize, usize), bp
     let mut rng = Rng(0x9E37_79B9_7F4A_7C15);
     for _ in 0..seeks {
         let i = rng.below(n as u64) as usize;
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).unwrap();
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .unwrap();
         let d = max_diff(&planes(&f), &frame(i));
-        assert!(d <= tol, "{}: seek to frame {i} differs by {d}", file.display());
+        assert!(
+            d <= tol,
+            "{}: seek to frame {i} differs by {d}",
+            file.display()
+        );
     }
     eprintln!("{}: {n} frames, max diff {worst}", file.display());
 }
@@ -187,7 +331,12 @@ fn check_audio_exact(ff: &Path, file: &Path, extra: &[&str]) {
     let got = src.audio(0, n, a.sample_rate).unwrap();
     for i in 0..n {
         for c in 0..ch {
-            assert_eq!(got.channels[c][i], want[i * ch + c], "{}: sample {i} channel {c}", file.display());
+            assert_eq!(
+                got.channels[c][i],
+                want[i * ch + c],
+                "{}: sample {i} channel {c}",
+                file.display()
+            );
         }
     }
     // random windows (sample-exact seeking)
@@ -198,11 +347,18 @@ fn check_audio_exact(ff: &Path, file: &Path, extra: &[&str]) {
         let got = src.audio(s as i64, len, a.sample_rate).unwrap();
         for k in 0..len.min(n - s) {
             for c in 0..ch {
-                assert_eq!(got.channels[c][k], want[(s + k) * ch + c], "window at {s}+{k}");
+                assert_eq!(
+                    got.channels[c][k],
+                    want[(s + k) * ch + c],
+                    "window at {s}+{k}"
+                );
             }
         }
     }
-    eprintln!("{}: {n} sample frames × {ch} channels exact", file.display());
+    eprintln!(
+        "{}: {n} sample frames × {ch} channels exact",
+        file.display()
+    );
 }
 
 #[test]
@@ -214,13 +370,26 @@ fn h264_long_gop_with_b_frames_bit_exact() {
     assert_eq!(info.container, "MXF OP1a");
     assert_eq!(info.kind, MediaKind::Movie);
     let v = info.video.as_ref().unwrap();
-    assert_eq!((v.width, v.height, v.frame_rate), (320, 240, FrameRate::FPS_25));
+    assert_eq!(
+        (v.width, v.height, v.frame_rate),
+        (320, 240, FrameRate::FPS_25)
+    );
     assert_eq!(v.codec, "H.264");
     assert_eq!(info.start_timecode, Some(90_000), "01:00:00:00 at 25 fps");
     assert_eq!(src.file().timecode.unwrap().format(), "01:00:00:00");
-    let t = &src.file().tracks[src.file().track_of_kind(filmcraft_mxf::TrackKind::Picture).unwrap()];
-    assert!(t.needs_reorder && !t.temporal_offsets, "ffmpeg marks B pictures without temporal offsets");
-    assert_eq!(t.samples.iter().filter(|s| s.key).count(), 5, "an IDR every 12 frames over 50");
+    let t = &src.file().tracks[src
+        .file()
+        .track_of_kind(filmcraft_mxf::TrackKind::Picture)
+        .unwrap()];
+    assert!(
+        t.needs_reorder && !t.temporal_offsets,
+        "ffmpeg marks B pictures without temporal offsets"
+    );
+    assert_eq!(
+        t.samples.iter().filter(|s| s.key).count(),
+        5,
+        "an IDR every 12 frames over 50"
+    );
     check_video(&ff, &f, "yuv420p", (2, 2), 1, 0, 25);
     check_audio_exact(&ff, &f, &[]);
 }
@@ -231,7 +400,10 @@ fn h264_2997_drop_frame_timecode_and_24_bit_audio() {
     let f = make(&ff, "mxf_h264_2997df.mxf");
     let src = open(&f);
     let info = src.info();
-    assert_eq!(info.video.as_ref().unwrap().frame_rate, FrameRate::FPS_29_97);
+    assert_eq!(
+        info.video.as_ref().unwrap().frame_rate,
+        FrameRate::FPS_29_97
+    );
     let tc = src.file().timecode.unwrap();
     assert!(tc.drop_frame);
     assert_eq!(tc.format(), "01:00:00;00");
@@ -256,7 +428,16 @@ fn prores_op1a_within_one_lsb() {
     let ff = filmcraft_testkit::require_ffmpeg!();
     let f = make(&ff, "mxf_prores.mxf");
     let src = open(&f);
-    assert!(src.info().video.as_ref().unwrap().codec.starts_with("Apple ProRes 422"), "{}", src.info().video.as_ref().unwrap().codec);
+    assert!(
+        src.info()
+            .video
+            .as_ref()
+            .unwrap()
+            .codec
+            .starts_with("Apple ProRes 422"),
+        "{}",
+        src.info().video.as_ref().unwrap().codec
+    );
     check_video(&ff, &f, "yuv422p10le", (2, 1), 2, 1, 10);
     check_audio_exact(&ff, &f, &[]);
 }
@@ -274,7 +455,10 @@ fn mpeg2_long_gop_decodes() {
     assert!(v.codec.starts_with("MPEG-2 Video (Main@"), "{}", v.codec);
     assert_eq!(v.pixel_format, "YUV 4:2:0 8-bit, progressive");
     // temporal offsets: ffmpeg's MPEG-2 index carries them
-    let t = &src.file().tracks[src.file().track_of_kind(filmcraft_mxf::TrackKind::Picture).unwrap()];
+    let t = &src.file().tracks[src
+        .file()
+        .track_of_kind(filmcraft_mxf::TrackKind::Picture)
+        .unwrap()];
     assert!(t.temporal_offsets);
     check_video(&ff, &f, "yuv420p", (2, 2), 1, MPEG2_TOL, 12);
     check_audio_exact(&ff, &f, &[]);
@@ -287,7 +471,10 @@ fn xdcam_hd422_decodes() {
     let src = open(&f);
     let v = src.info().video.as_ref().unwrap();
     assert_eq!(v.codec, "MPEG-2 Video (4:2:2@High)");
-    assert_eq!(v.pixel_format, "YUV 4:2:2 8-bit, interlaced (upper field first)");
+    assert_eq!(
+        v.pixel_format,
+        "YUV 4:2:2 8-bit, interlaced (upper field first)"
+    );
     assert_eq!((v.width, v.height), (1920, 1080));
     check_video(&ff, &f, "yuv422p", (2, 1), 1, MPEG2_TOL, 6);
     check_audio_exact(&ff, &f, &[]);
@@ -307,8 +494,14 @@ fn op_atom_video_and_audio_files() {
     assert_eq!(src.info().kind, MediaKind::AudioOnly);
     assert_eq!(src.info().container, "MXF OP-Atom");
     let ai = src.info().audio().cloned().unwrap();
-    assert_eq!((ai.sample_rate, ai.channels, ai.bits_per_sample), (48_000, 1, Some(24)));
-    assert_eq!(src.info().duration, filmcraft_time::Tick::from_units(48_000, 48_000));
+    assert_eq!(
+        (ai.sample_rate, ai.channels, ai.bits_per_sample),
+        (48_000, 1, Some(24))
+    );
+    assert_eq!(
+        src.info().duration,
+        filmcraft_time::Tick::from_units(48_000, 48_000)
+    );
     check_audio_exact(&ff, &a, &[]);
 }
 

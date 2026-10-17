@@ -386,7 +386,8 @@ impl KMemoryManager {
             let mut combined: Option<(u64, usize, Pool)> = None;
             for region in layout.get_physical_memory_region_tree().iter() {
                 if !region.is_derived_from(K_MEMORY_REGION_TYPE_DRAM_USER_POOL)
-                    || region.get_attributes() as usize != self.m_num_managers {
+                    || region.get_attributes() as usize != self.m_num_managers
+                {
                     continue;
                 }
                 assert_ne!(region.get_address(), 0);
@@ -412,7 +413,9 @@ impl KMemoryManager {
                     None => combined = Some((region.get_address(), region.get_size(), pool)),
                 }
             }
-            let Some((address, size, pool)) = combined else { break; };
+            let Some((address, size, pool)) = combined else {
+                break;
+            };
             self.initialize_pool(pool, address, size);
         }
     }
@@ -881,9 +884,24 @@ mod tests {
         use crate::hle::kernel::{k_memory_layout::KMemoryLayout, k_memory_region_type::*};
         let mut layout = KMemoryLayout::new();
         let tree = layout.get_physical_memory_region_tree_mut();
-        tree.insert_directly(0x10000, 0x11fff, 1, K_MEMORY_REGION_TYPE_DRAM_APPLET_POOL.get_value());
-        tree.insert_directly(0x20000, 0x21fff, 0, K_MEMORY_REGION_TYPE_DRAM_APPLICATION_POOL.get_value());
-        tree.insert_directly(0x22000, 0x23fff, 0, K_MEMORY_REGION_TYPE_DRAM_APPLICATION_POOL.get_value());
+        tree.insert_directly(
+            0x10000,
+            0x11fff,
+            1,
+            K_MEMORY_REGION_TYPE_DRAM_APPLET_POOL.get_value(),
+        );
+        tree.insert_directly(
+            0x20000,
+            0x21fff,
+            0,
+            K_MEMORY_REGION_TYPE_DRAM_APPLICATION_POOL.get_value(),
+        );
+        tree.insert_directly(
+            0x22000,
+            0x23fff,
+            0,
+            K_MEMORY_REGION_TYPE_DRAM_APPLICATION_POOL.get_value(),
+        );
         let mut manager = KMemoryManager::new();
         manager.initialize_from_layout(&layout);
         assert_eq!(manager.m_num_managers, 2);

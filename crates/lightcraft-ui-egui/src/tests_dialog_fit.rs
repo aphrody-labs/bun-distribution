@@ -11,7 +11,11 @@ use crate::{LightcraftApp, Services};
 const T: Duration = Duration::from_secs(20);
 
 fn demo(size: [f32; 2]) -> Headless {
-    let services = Services { png: None, write_shared: Some(std::sync::Arc::new(|_: &str, _: &[u8]| Ok(()))), ..Default::default() };
+    let services = Services {
+        png: None,
+        write_shared: Some(std::sync::Arc::new(|_: &str, _: &[u8]| Ok(()))),
+        ..Default::default()
+    };
     let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
     let mut h = Headless::new(app, size, 1.0);
     // let the first renders finish (a render still running at exit can crash in GPU teardown)
@@ -20,11 +24,20 @@ fn demo(size: [f32; 2]) -> Headless {
 }
 
 fn rect(h: &Headless, id: &str) -> egui::Rect {
-    h.app.widgets.iter().find(|(w, _)| w == id).map(|(_, r)| *r).unwrap_or_else(|| panic!("no widget {id}"))
+    h.app
+        .widgets
+        .iter()
+        .find(|(w, _)| w == id)
+        .map(|(_, r)| *r)
+        .unwrap_or_else(|| panic!("no widget {id}"))
 }
 
 fn open(h: &mut Headless, command: &str) {
-    let r = h.request("engine.execute", json!({"command": command, "params": {}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": command, "params": {}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{command}: {r}");
     assert!(h.app.ui.dialog.is_some(), "{command} opens a dialog");
     h.settle(T);
@@ -34,14 +47,24 @@ fn open(h: &mut Headless, command: &str) {
 fn assert_fits(h: &Headless, what: &str) {
     let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, h.size);
     let dialog = rect(h, "dialog:window");
-    assert!(screen.contains_rect(dialog), "{what}: dialog {dialog:?} runs off the {screen:?} window");
+    assert!(
+        screen.contains_rect(dialog),
+        "{what}: dialog {dialog:?} runs off the {screen:?} window"
+    );
     let mut buttons = vec!["button:dialogOk"];
-    if h.app.widgets.iter().any(|(w, _)| w == "button:dialogCancel") {
+    if h.app
+        .widgets
+        .iter()
+        .any(|(w, _)| w == "button:dialogCancel")
+    {
         buttons.push("button:dialogCancel");
     }
     for b in buttons {
         let r = rect(h, b);
-        assert!(dialog.contains_rect(r), "{what}: {b} {r:?} is outside the dialog {dialog:?}");
+        assert!(
+            dialog.contains_rect(r),
+            "{what}: {b} {r:?} is outside the dialog {dialog:?}"
+        );
     }
 }
 
@@ -49,7 +72,13 @@ fn assert_fits(h: &Headless, what: &str) {
 fn export_dialog(size: [f32; 2]) -> Headless {
     let mut h = demo(size);
     open(&mut h, "dialog.export");
-    if let Some(crate::state::Dialog::Export { full_size, resize, dir, .. }) = &mut h.app.ui.dialog {
+    if let Some(crate::state::Dialog::Export {
+        full_size,
+        resize,
+        dir,
+        ..
+    }) = &mut h.app.ui.dialog
+    {
         *full_size = false;
         *resize = lightcraft_engine::export::Resize::long_edge(64);
         *dir = "/lc-test-out".into();
@@ -68,8 +97,14 @@ fn export_dialog_fits_a_short_window_and_its_button_exports() {
         assert_eq!(r["ok"], true, "{r}");
         h.step();
         h.step();
-        assert!(h.app.ui.dialog.is_none(), "Export closed the dialog at {size:?}");
-        assert!(h.app.export.is_some() || h.app.last_export_result.is_some(), "Export started at {size:?}");
+        assert!(
+            h.app.ui.dialog.is_none(),
+            "Export closed the dialog at {size:?}"
+        );
+        assert!(
+            h.app.export.is_some() || h.app.last_export_result.is_some(),
+            "Export started at {size:?}"
+        );
         assert!(h.step_until(Duration::from_secs(60), |h| h.app.export.is_none()));
     }
 }
@@ -84,7 +119,10 @@ fn export_dialog_cancel_is_on_screen_in_a_short_window() {
     h.step();
     h.step();
     assert!(h.app.ui.dialog.is_none());
-    assert!(h.app.export.is_none() && h.app.last_export_result.is_none(), "nothing exported");
+    assert!(
+        h.app.export.is_none() && h.app.last_export_result.is_none(),
+        "nothing exported"
+    );
 }
 
 // Scenario: a window with room for it shows the Export dialog as before (no scrolling, same size)
@@ -96,7 +134,11 @@ fn export_dialog_is_unchanged_in_a_tall_window() {
     // (846 tall as before #781: the whole dialog, nothing scrolled away; 615 wide since the
     // format row gained JPEG XL, #780. On macOS the dialog has one more row, "Add to Apple Photos"
     // (#236), so it is 876 tall there)
-    let height = if cfg!(target_os = "macos") { 876.0 } else { 846.0 };
+    let height = if cfg!(target_os = "macos") {
+        876.0
+    } else {
+        846.0
+    };
     assert!((dialog.height() - height).abs() <= 1.0, "{dialog:?}");
     assert!((dialog.width() - 615.2).abs() <= 1.0, "{dialog:?}");
 }
@@ -129,7 +171,11 @@ fn long_dialogs_fit_a_short_window() {
 fn a_dialog_list_shrinks_to_fit_a_short_window() {
     let mut h = demo([1000.0, 320.0]);
     open(&mut h, "app.shortcuts");
-    let shrink = h.view.ctx.data(|d| d.get_temp::<f32>(egui::Id::new("dialog-list-shrink"))).unwrap_or(0.0);
+    let shrink = h
+        .view
+        .ctx
+        .data(|d| d.get_temp::<f32>(egui::Id::new("dialog-list-shrink")))
+        .unwrap_or(0.0);
     assert!(shrink > 0.0, "the list gave up room");
     let dialog = rect(&h, "dialog:window");
     assert!(dialog.height() <= 320.0, "{dialog:?}");

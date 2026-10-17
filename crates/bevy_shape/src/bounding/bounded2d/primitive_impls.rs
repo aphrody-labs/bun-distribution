@@ -4,7 +4,7 @@ use crate::{
     Annulus, Arc2d, BoundingVolume, Capsule2d, Circle, CircularSector, CircularSegment, Ellipse,
     Line2d, Plane2d, Primitive2d, Rectangle, RegularPolygon, Rhombus, Ring, Segment2d, Triangle2d,
 };
-use bevy_math::{ops, Dir2, Isometry2d, Mat2, Rot2, Vec2};
+use bevy_math::{Dir2, Isometry2d, Mat2, Rot2, Vec2, ops};
 use core::f32::consts::{FRAC_PI_2, PI, TAU};
 
 #[cfg(feature = "alloc")]
@@ -442,8 +442,8 @@ mod tests {
 
     use approx::assert_abs_diff_eq;
     use bevy_math::{
-        ops::{self, FloatPow},
         Dir2, Isometry2d, Rot2, Vec2,
+        ops::{self, FloatPow},
     };
 
     use crate::{

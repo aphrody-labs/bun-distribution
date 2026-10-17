@@ -2,14 +2,18 @@
 //! options other commands read (typographer's quotes, superscript/subscript, SVG text export).
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{CharPosition, DocSetup, ExportText, GridSize, NodeId, NodeKind, ScriptMetrics, TextObject, TextStyleDef, Unit};
+use vectorcraft_doc::{
+    CharPosition, DocSetup, ExportText, GridSize, NodeId, NodeKind, ScriptMetrics, TextObject,
+    TextStyleDef, Unit,
+};
 use vectorcraft_tools::{PointerEvent, PointerKind, ToolKey};
 
 use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 300})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 300}))
+        .unwrap();
     s
 }
 
@@ -25,7 +29,15 @@ fn text(s: &Session, id: NodeId) -> TextObject {
 }
 
 fn create_text(s: &mut Session, t: &str) -> NodeId {
-    NodeId(s.execute("text.create", &json!({"x": 10, "y": 50, "text": t, "size": 20})).unwrap()["id"].as_u64().unwrap())
+    NodeId(
+        s.execute(
+            "text.create",
+            &json!({"x": 10, "y": 50, "text": t, "size": 20}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    )
 }
 
 /// Click with the Type tool at (x, y) and type `keys` one at a time; returns the new text object.
@@ -82,11 +94,41 @@ fn many_settings_are_one_undo_step() {
     assert_eq!(d.units, Unit::Millimeters);
     let st = &d.setup;
     assert_eq!(st.bleed, [9.0, 0.0, 0.0, 4.5]);
-    assert_eq!((st.grid_size, st.simulate_paper, st.outline_images, st.highlight_substituted_glyphs), (GridSize::Large, true, true, true));
-    assert_eq!((st.flattener(), st.discard_white_overprint, st.export_text), ("High Resolution", false, ExportText::Appearance));
-    assert_eq!((st.superscript, st.subscript), (ScriptMetrics { size: 60.0, position: 33.3 }, ScriptMetrics { size: 58.3, position: 20.0 }));
+    assert_eq!(
+        (
+            st.grid_size,
+            st.simulate_paper,
+            st.outline_images,
+            st.highlight_substituted_glyphs
+        ),
+        (GridSize::Large, true, true, true)
+    );
+    assert_eq!(
+        (st.flattener(), st.discard_white_overprint, st.export_text),
+        ("High Resolution", false, ExportText::Appearance)
+    );
+    assert_eq!(
+        (st.superscript, st.subscript),
+        (
+            ScriptMetrics {
+                size: 60.0,
+                position: 33.3
+            },
+            ScriptMetrics {
+                size: 58.3,
+                position: 20.0
+            }
+        )
+    );
     assert_eq!(st.small_caps_size, 75.0);
-    let undo: Vec<&str> = s.doc().unwrap().history.undo.iter().map(|e| e.label.as_str()).collect();
+    let undo: Vec<&str> = s
+        .doc()
+        .unwrap()
+        .history
+        .undo
+        .iter()
+        .map(|e| e.label.as_str())
+        .collect();
     assert_eq!(undo, ["Document Setup"]);
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(*s.doc().unwrap().doc, *before);
@@ -124,33 +166,55 @@ fn bad_values_are_rejected_and_change_nothing() {
 #[test]
 fn set_units_is_an_alias() {
     let mut s = session();
-    s.execute("document.setUnits", &json!({"units": "inches"})).unwrap();
+    s.execute("document.setUnits", &json!({"units": "inches"}))
+        .unwrap();
     assert_eq!(s.doc().unwrap().doc.units, Unit::Inches);
-    assert_eq!(s.execute("document.setup", &json!({})).unwrap()["units"], "Inches");
-    assert!(s.execute("document.setUnits", &json!({"units": "parsecs"})).is_err());
+    assert_eq!(
+        s.execute("document.setup", &json!({})).unwrap()["units"],
+        "Inches"
+    );
+    assert!(
+        s.execute("document.setUnits", &json!({"units": "parsecs"}))
+            .is_err()
+    );
 }
 
 #[test]
 fn language_picks_its_quotes_unless_quotes_are_given() {
     let mut s = session();
-    s.execute("document.setup", &json!({"language": "german"})).unwrap();
+    s.execute("document.setup", &json!({"language": "german"}))
+        .unwrap();
     assert_eq!(setup(&s).language, "German");
     assert_eq!(setup(&s).quotes.double, ['„', '“']);
-    s.execute("document.setup", &json!({"language": "French", "quotes": {"double": ["“", "”"]}})).unwrap();
-    assert_eq!((setup(&s).quotes.double, setup(&s).quotes.single), (['“', '”'], ['‹', '›']));
+    s.execute(
+        "document.setup",
+        &json!({"language": "French", "quotes": {"double": ["“", "”"]}}),
+    )
+    .unwrap();
+    assert_eq!(
+        (setup(&s).quotes.double, setup(&s).quotes.single),
+        (['“', '”'], ['‹', '›'])
+    );
 }
 
 #[test]
 fn typographers_quotes_setting_changes_typed_quotes() {
     let mut s = session();
-    let id = type_at(&mut s, 50.0, 50.0, &["\"", "H", "i", "\"", " ", "i", "t", "'", "s"]);
+    let id = type_at(
+        &mut s,
+        50.0,
+        50.0,
+        &["\"", "H", "i", "\"", " ", "i", "t", "'", "s"],
+    );
     assert_eq!(text(&s, id).plain_text(), "“Hi” it’s");
     // The document's quote style.
-    s.execute("document.setup", &json!({"language": "German"})).unwrap();
+    s.execute("document.setup", &json!({"language": "German"}))
+        .unwrap();
     let id = type_at(&mut s, 50.0, 150.0, &["\"", "a", "\""]);
     assert_eq!(text(&s, id).plain_text(), "„a“");
     // Straight quotes with the option off.
-    s.execute("document.setup", &json!({"typographersQuotes": false})).unwrap();
+    s.execute("document.setup", &json!({"typographersQuotes": false}))
+        .unwrap();
     let id = type_at(&mut s, 50.0, 250.0, &["\"", "b", "'"]);
     assert_eq!(text(&s, id).plain_text(), "\"b'");
 }
@@ -158,9 +222,11 @@ fn typographers_quotes_setting_changes_typed_quotes() {
 #[test]
 fn smart_punctuation_uses_the_document_quotes() {
     let mut s = session();
-    s.execute("document.setup", &json!({"language": "French"})).unwrap();
+    s.execute("document.setup", &json!({"language": "French"}))
+        .unwrap();
     let id = create_text(&mut s, "\"oui\" 'non'");
-    s.execute("type.smartPunctuation", &json!({"scope": "document"})).unwrap();
+    s.execute("type.smartPunctuation", &json!({"scope": "document"}))
+        .unwrap();
     assert_eq!(text(&s, id).plain_text(), "«oui» ‹non›");
 }
 
@@ -168,34 +234,89 @@ fn smart_punctuation_uses_the_document_quotes() {
 fn superscript_and_small_caps_use_and_follow_the_setup_sizes() {
     let mut s = session();
     let id = create_text(&mut s, "E=mc2");
-    s.execute("document.setup", &json!({"superscript": {"size": 50, "position": 40}})).unwrap();
-    s.execute("text.setRangeStyle", &json!({"id": id.0, "start": 4, "end": 5, "position": "superscript"})).unwrap();
-    s.execute("text.setFormat", &json!({"ids": [id.0], "smallCaps": true})).unwrap();
+    s.execute(
+        "document.setup",
+        &json!({"superscript": {"size": 50, "position": 40}}),
+    )
+    .unwrap();
+    s.execute(
+        "text.setRangeStyle",
+        &json!({"id": id.0, "start": 4, "end": 5, "position": "superscript"}),
+    )
+    .unwrap();
+    s.execute("text.setFormat", &json!({"ids": [id.0], "smallCaps": true}))
+        .unwrap();
     let t = text(&s, id);
-    assert_eq!(t.runs.last().unwrap().style.position, CharPosition::Superscript(ScriptMetrics { size: 50.0, position: 40.0 }));
+    assert_eq!(
+        t.runs.last().unwrap().style.position,
+        CharPosition::Superscript(ScriptMetrics {
+            size: 50.0,
+            position: 40.0
+        })
+    );
     assert!(t.runs.iter().all(|r| r.style.small_caps == Some(70.0)));
     let narrow = t.cached_bounds.unwrap();
     // A Document Setup change restyles the text in the same undo step.
     let undo = s.doc().unwrap().history.undo.len();
-    s.execute("document.setup", &json!({"superscript": {"size": 100}, "smallCapsSize": 100})).unwrap();
+    s.execute(
+        "document.setup",
+        &json!({"superscript": {"size": 100}, "smallCapsSize": 100}),
+    )
+    .unwrap();
     assert_eq!(s.doc().unwrap().history.undo.len(), undo + 1);
     let t = text(&s, id);
-    assert_eq!(t.runs.last().unwrap().style.position, CharPosition::Superscript(ScriptMetrics { size: 100.0, position: 40.0 }));
+    assert_eq!(
+        t.runs.last().unwrap().style.position,
+        CharPosition::Superscript(ScriptMetrics {
+            size: 100.0,
+            position: 40.0
+        })
+    );
     assert!(t.runs.iter().all(|r| r.style.small_caps == Some(100.0)));
-    assert!(t.cached_bounds.unwrap().width() > narrow.width(), "bounds follow the bigger glyphs");
-    s.execute("text.setFormat", &json!({"ids": [id.0], "position": "normal", "smallCaps": false})).unwrap();
-    assert!(text(&s, id).runs.iter().all(|r| r.style.position == CharPosition::Normal && r.style.small_caps.is_none()));
-    assert!(s.execute("text.setFormat", &json!({"ids": [id.0], "position": "sideways"})).is_err());
+    assert!(
+        t.cached_bounds.unwrap().width() > narrow.width(),
+        "bounds follow the bigger glyphs"
+    );
+    s.execute(
+        "text.setFormat",
+        &json!({"ids": [id.0], "position": "normal", "smallCaps": false}),
+    )
+    .unwrap();
+    assert!(
+        text(&s, id)
+            .runs
+            .iter()
+            .all(|r| r.style.position == CharPosition::Normal && r.style.small_caps.is_none())
+    );
+    assert!(
+        s.execute(
+            "text.setFormat",
+            &json!({"ids": [id.0], "position": "sideways"})
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn character_styles_follow_the_setup_sizes() {
     let mut s = session();
     let attrs = json!({"position": {"kind": "subscript", "size": 58.3, "position": 33.3}, "small_caps": 70.0});
-    Arc::make_mut(&mut s.doc_mut().unwrap().doc).char_styles.push(TextStyleDef { name: "Note".into(), attrs: attrs.as_object().unwrap().clone() });
-    s.execute("document.setup", &json!({"subscript": {"size": 40}, "smallCapsSize": 80})).unwrap();
+    Arc::make_mut(&mut s.doc_mut().unwrap().doc)
+        .char_styles
+        .push(TextStyleDef {
+            name: "Note".into(),
+            attrs: attrs.as_object().unwrap().clone(),
+        });
+    s.execute(
+        "document.setup",
+        &json!({"subscript": {"size": 40}, "smallCapsSize": 80}),
+    )
+    .unwrap();
     let def = &s.doc().unwrap().doc.char_styles[0];
-    assert_eq!(def.attrs["position"], json!({"kind": "subscript", "size": 40.0, "position": 33.3}));
+    assert_eq!(
+        def.attrs["position"],
+        json!({"kind": "subscript", "size": 40.0, "position": 33.3})
+    );
     assert_eq!(def.attrs["small_caps"], json!(80.0));
 }
 
@@ -221,10 +342,14 @@ fn svg_text_export_follows_the_export_text_setting() {
         let mut p = p;
         p["format"] = json!("svg");
         let r = s.execute("document.export", &p).unwrap();
-        String::from_utf8(vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap()).unwrap()
+        String::from_utf8(
+            vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap(),
+        )
+        .unwrap()
     };
     assert!(svg(&mut s, json!({})).contains("<text"));
-    s.execute("document.setup", &json!({"exportText": "appearance"})).unwrap();
+    s.execute("document.setup", &json!({"exportText": "appearance"}))
+        .unwrap();
     assert!(!svg(&mut s, json!({})).contains("<text"));
     // An explicit option still wins.
     assert!(svg(&mut s, json!({"outlineText": false})).contains("<text"));
@@ -234,33 +359,84 @@ fn svg_text_export_follows_the_export_text_setting() {
 fn discard_white_overprint_keeps_white_overprints_in_overprint_preview() {
     let mut s = session();
     let rect = |s: &mut Session, color: &str| {
-        let id = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 40, "height": 40})).unwrap()["id"].as_u64().unwrap();
-        s.execute("paint.setFill", &json!({"ids": [id], "color": color})).unwrap();
-        s.execute("paint.setStroke", &json!({"ids": [id], "none": true})).unwrap();
+        let id = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 40, "height": 40}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("paint.setFill", &json!({"ids": [id], "color": color}))
+            .unwrap();
+        s.execute("paint.setStroke", &json!({"ids": [id], "none": true}))
+            .unwrap();
         id
     };
     rect(&mut s, "#ff0000");
     let white = rect(&mut s, "#ffffff");
-    s.execute("object.setOverprint", &json!({"fill": true, "ids": [white]})).unwrap();
+    s.execute(
+        "object.setOverprint",
+        &json!({"fill": true, "ids": [white]}),
+    )
+    .unwrap();
     let centre = |s: &Session| {
-        let opts = vectorcraft_render::RenderOptions { background: Some([255; 4]), overprint_preview: true, ..Default::default() };
-        vectorcraft_render::Renderer::new().render(&s.doc().unwrap().doc, 40, 40, vectorcraft_geom::Affine::IDENTITY, &opts).pixel(20, 20)
+        let opts = vectorcraft_render::RenderOptions {
+            background: Some([255; 4]),
+            overprint_preview: true,
+            ..Default::default()
+        };
+        vectorcraft_render::Renderer::new()
+            .render(
+                &s.doc().unwrap().doc,
+                40,
+                40,
+                vectorcraft_geom::Affine::IDENTITY,
+                &opts,
+            )
+            .pixel(20, 20)
     };
     // On by default: the white knocks out as it will print.
     assert_eq!(centre(&s), [255, 255, 255, 255]);
-    s.execute("document.setup", &json!({"discardWhiteOverprint": false})).unwrap();
+    s.execute("document.setup", &json!({"discardWhiteOverprint": false}))
+        .unwrap();
     let [r, g, b, _] = centre(&s);
-    assert!(r > 200 && g < 60 && b < 60, "a white overprint vanishes: {:?}", [r, g, b]);
+    assert!(
+        r > 200 && g < 60 && b < 60,
+        "a white overprint vanishes: {:?}",
+        [r, g, b]
+    );
 }
 
 #[test]
 fn saved_flattener_presets_and_background_contents() {
     let mut s = session();
-    s.execute("flattener.presets.save", &json!({"name": "Proofs", "preset": "high"})).unwrap();
-    assert_eq!(s.execute("document.setup", &json!({"flattenerPreset": "proofs"})).unwrap()["flattenerPreset"], "Proofs");
-    assert_eq!(s.execute("document.setup", &json!({"flattenerPreset": "Medium Resolution"})).unwrap()["flattenerPreset"], "Medium Resolution");
-    assert_eq!(setup(&s).flattener_preset, None, "the default is not stored");
-    let r = s.execute("document.setup", &json!({"backgroundContents": "white"})).unwrap();
+    s.execute(
+        "flattener.presets.save",
+        &json!({"name": "Proofs", "preset": "high"}),
+    )
+    .unwrap();
+    assert_eq!(
+        s.execute("document.setup", &json!({"flattenerPreset": "proofs"}))
+            .unwrap()["flattenerPreset"],
+        "Proofs"
+    );
+    assert_eq!(
+        s.execute(
+            "document.setup",
+            &json!({"flattenerPreset": "Medium Resolution"})
+        )
+        .unwrap()["flattenerPreset"],
+        "Medium Resolution"
+    );
+    assert_eq!(
+        setup(&s).flattener_preset,
+        None,
+        "the default is not stored"
+    );
+    let r = s
+        .execute("document.setup", &json!({"backgroundContents": "white"}))
+        .unwrap();
     assert_eq!(r["backgroundContents"], "white");
     assert_eq!(setup(&s).background, vectorcraft_doc::Background::White);
 }

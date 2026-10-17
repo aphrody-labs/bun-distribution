@@ -37,10 +37,14 @@ pub fn emit_vertex(ctx: &mut AttrCtx) {
     let nrm_xyz = decode_normal(ctx, vcd_lo.normal(), vat_a);
 
     let color0 = decode_color(ctx, vcd_lo.color0(), vat_a.clr0_fmt(), vat_a.clr0_cnt(), 2);
-    ctx.bd.ins().store(MEMFLAGS, color0, ctx.out_ptr, offset::COLOR0);
+    ctx.bd
+        .ins()
+        .store(MEMFLAGS, color0, ctx.out_ptr, offset::COLOR0);
 
     let color1 = decode_color(ctx, vcd_lo.color1(), vat_a.clr1_fmt(), vat_a.clr1_cnt(), 3);
-    ctx.bd.ins().store(MEMFLAGS, color1, ctx.out_ptr, offset::COLOR1);
+    ctx.bd
+        .ins()
+        .store(MEMFLAGS, color1, ctx.out_ptr, offset::COLOR1);
 
     let tex_attrs = [
         vcd_hi.tex0(),
@@ -111,7 +115,10 @@ pub fn emit_vertex(ctx: &mut AttrCtx) {
 
 fn read_pos_mtx_idx(ctx: &mut AttrCtx, vcd_lo: crate::flipper::gx::regs::VcdLo) -> ir::Value {
     if vcd_lo.pos_nrm_mtx_idx() {
-        let raw = ctx.bd.ins().load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
+        let raw = ctx
+            .bd
+            .ins()
+            .load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
         let masked = ctx.bd.ins().band_imm(raw, 0x3F);
         let v = ctx.bd.ins().uextend(ir::types::I32, masked);
         ctx.data_ptr = ctx.bd.ins().iadd_imm(ctx.data_ptr, 1);
@@ -159,17 +166,27 @@ fn read_tex_mtx_indices(
 
     std::array::from_fn(|i| {
         if flags[i] {
-            let raw = ctx.bd.ins().load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
+            let raw = ctx
+                .bd
+                .ins()
+                .load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
             let v = ctx.bd.ins().uextend(ir::types::I32, raw);
             ctx.data_ptr = ctx.bd.ins().iadd_imm(ctx.data_ptr, 1);
             v
         } else {
             // MATRIX_INDEX_A: tex0 at bit 6, +6 per channel (tex0..tex3).
             // MATRIX_INDEX_B: tex4 at bit 0, +6 per channel (tex4..tex7).
-            let (cell, shift) =
-                if i < 4 { (cell_a, 6 + (i as i64) * 6) } else { (cell_b, ((i - 4) as i64) * 6) };
+            let (cell, shift) = if i < 4 {
+                (cell_a, 6 + (i as i64) * 6)
+            } else {
+                (cell_b, ((i - 4) as i64) * 6)
+            };
 
-            let shifted = if shift > 0 { ctx.bd.ins().ushr_imm(cell, shift) } else { cell };
+            let shifted = if shift > 0 {
+                ctx.bd.ins().ushr_imm(cell, shift)
+            } else {
+                cell
+            };
 
             ctx.bd.ins().band_imm(shifted, 0x3F)
         }
@@ -188,20 +205,29 @@ fn attr_ptr_and_advance(
             let p = ctx.data_ptr;
             ctx.data_ptr = ctx.bd.ins().iadd_imm(ctx.data_ptr, direct_size as i64);
             p
-        },
+        }
         AttributeType::Index8 => {
-            let raw = ctx.bd.ins().load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
+            let raw = ctx
+                .bd
+                .ins()
+                .load(ir::types::I8, MEMFLAGS_RO, ctx.data_ptr, 0);
             let idx = ctx.bd.ins().uextend(ir::types::I32, raw);
             ctx.data_ptr = ctx.bd.ins().iadd_imm(ctx.data_ptr, 1 + extra_index_slots);
             indexed_addr(ctx, array_idx, idx)
-        },
+        }
         AttributeType::Index16 => {
-            let raw = ctx.bd.ins().load(ir::types::I16, MEMFLAGS_RO, ctx.data_ptr, 0);
+            let raw = ctx
+                .bd
+                .ins()
+                .load(ir::types::I16, MEMFLAGS_RO, ctx.data_ptr, 0);
             let raw = ctx.bd.ins().bswap(raw);
             let idx = ctx.bd.ins().uextend(ir::types::I32, raw);
-            ctx.data_ptr = ctx.bd.ins().iadd_imm(ctx.data_ptr, 2 * (1 + extra_index_slots));
+            ctx.data_ptr = ctx
+                .bd
+                .ins()
+                .iadd_imm(ctx.data_ptr, 2 * (1 + extra_index_slots));
             indexed_addr(ctx, array_idx, idx)
-        },
+        }
         AttributeType::None => ctx.data_ptr,
     }
 }
@@ -236,12 +262,20 @@ fn decode_component_at(
 ) -> ir::Value {
     match fmt {
         ComponentFormat::F32 => {
-            let raw = ctx.bd.ins().load(ir::types::I32, MEMFLAGS_RO, ptr, byte_off);
+            let raw = ctx
+                .bd
+                .ins()
+                .load(ir::types::I32, MEMFLAGS_RO, ptr, byte_off);
             let raw = ctx.bd.ins().bswap(raw);
-            ctx.bd.ins().bitcast(ir::types::F32, ir::MemFlagsData::new(), raw)
-        },
+            ctx.bd
+                .ins()
+                .bitcast(ir::types::F32, ir::MemFlagsData::new(), raw)
+        }
         ComponentFormat::U16 | ComponentFormat::S16 => {
-            let raw = ctx.bd.ins().load(ir::types::I16, MEMFLAGS_RO, ptr, byte_off);
+            let raw = ctx
+                .bd
+                .ins()
+                .load(ir::types::I16, MEMFLAGS_RO, ptr, byte_off);
             let raw = ctx.bd.ins().bswap(raw);
             let signed = matches!(fmt, ComponentFormat::S16);
             let ext = if signed {
@@ -256,7 +290,7 @@ fn decode_component_at(
             };
             let s = ctx.bd.ins().f32const(recip);
             ctx.bd.ins().fmul(f, s)
-        },
+        }
         ComponentFormat::U8 | ComponentFormat::S8 => {
             let raw = ctx.bd.ins().load(ir::types::I8, MEMFLAGS_RO, ptr, byte_off);
             let signed = matches!(fmt, ComponentFormat::S8);
@@ -272,7 +306,7 @@ fn decode_component_at(
             };
             let s = ctx.bd.ins().f32const(recip);
             ctx.bd.ins().fmul(f, s)
-        },
+        }
     }
 }
 
@@ -316,11 +350,17 @@ const SWZ_F32_VEC2: [u8; 16] = [
     3, 2, 1, 0, 7, 6, 5, 4, ZERO_LANE, ZERO_LANE, ZERO_LANE, ZERO_LANE, ZERO_LANE, ZERO_LANE,
     ZERO_LANE, ZERO_LANE,
 ];
-const SWZ_F32_VEC3: [u8; 16] =
-    [3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, ZERO_LANE, ZERO_LANE, ZERO_LANE, ZERO_LANE];
+const SWZ_F32_VEC3: [u8; 16] = [
+    3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, ZERO_LANE, ZERO_LANE, ZERO_LANE, ZERO_LANE,
+];
 
 fn swizzle_const(ctx: &mut AttrCtx, mask: &[u8; 16]) -> ir::Value {
-    let handle = ctx.bd.func.dfg.constants.insert(ir::ConstantData::from(&mask[..]));
+    let handle = ctx
+        .bd
+        .func
+        .dfg
+        .constants
+        .insert(ir::ConstantData::from(&mask[..]));
     ctx.bd.ins().vconst(ir::types::I8X16, handle)
 }
 
@@ -341,7 +381,11 @@ fn decode_vec_simd(
 ) -> ir::Value {
     if matches!(fmt, ComponentFormat::F32) {
         // swappedy swap swap swap
-        let mask = if triplet { &SWZ_F32_VEC3 } else { &SWZ_F32_VEC2 };
+        let mask = if triplet {
+            &SWZ_F32_VEC3
+        } else {
+            &SWZ_F32_VEC2
+        };
         let lanes = self::shuffle_to_i32x4(ctx, ptr, mask);
 
         return ctx.bd.ins().bitcast(ir::types::F32X4, LITTLE, lanes);
@@ -416,8 +460,11 @@ fn decode_normal(
         ComponentFormat::F32 => 1.0f32,
     };
 
-    let extra_index_slots =
-        if vat_a.nrm_index3() && matches!(vat_a.nrm_cnt(), NrmCount::Nbt) { 2 } else { 0 };
+    let extra_index_slots = if vat_a.nrm_index3() && matches!(vat_a.nrm_cnt(), NrmCount::Nbt) {
+        2
+    } else {
+        0
+    };
     let ptr = attr_ptr_and_advance(ctx, attr, ARRAY_NRM, direct, extra_index_slots);
 
     let vector = self::decode_vec_simd(ctx, ptr, fmt, true, recip);
@@ -433,15 +480,21 @@ const SWZ_COLOR_U16: [u8; 16] = [
     1, 0, ZERO_LANE, ZERO_LANE, 1, 0, ZERO_LANE, ZERO_LANE, 1, 0, ZERO_LANE, ZERO_LANE, 1, 0,
     ZERO_LANE, ZERO_LANE,
 ];
-const SWZ_COLOR_U24: [u8; 16] =
-    [2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE];
+const SWZ_COLOR_U24: [u8; 16] = [
+    2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE, 2, 1, 0, ZERO_LANE,
+];
 
 fn vconst_i32x4(ctx: &mut AttrCtx, lanes: [u32; 4]) -> ir::Value {
     let mut bytes = [0u8; 16];
     for (i, v) in lanes.iter().enumerate() {
         bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
     }
-    let handle = ctx.bd.func.dfg.constants.insert(ir::ConstantData::from(&bytes[..]));
+    let handle = ctx
+        .bd
+        .func
+        .dfg
+        .constants
+        .insert(ir::ConstantData::from(&bytes[..]));
     ctx.bd.ins().vconst(ir::types::I32X4, handle)
 }
 
@@ -450,7 +503,12 @@ fn vconst_f32x4(ctx: &mut AttrCtx, lanes: [f32; 4]) -> ir::Value {
     for (i, v) in lanes.iter().enumerate() {
         bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_bits().to_le_bytes());
     }
-    let handle = ctx.bd.func.dfg.constants.insert(ir::ConstantData::from(&bytes[..]));
+    let handle = ctx
+        .bd
+        .func
+        .dfg
+        .constants
+        .insert(ir::ConstantData::from(&bytes[..]));
     ctx.bd.ins().vconst(ir::types::F32X4, handle)
 }
 
@@ -511,26 +569,26 @@ fn decode_color_bytes(
             let l = self::unpack_fields(ctx, l, [1, 64, 2048, 0], 11, [0x1F, 0x3F, 0x1F, 0]);
             let d = self::vconst_f32x4(ctx, [31.0, 63.0, 31.0, 1.0]);
             (l, d, true)
-        },
+        }
         ColorFormat::Rgba4 => {
             let l = self::shuffle_to_i32x4(ctx, ptr, &SWZ_COLOR_U16);
             let l = self::unpack_fields(ctx, l, [1, 16, 256, 4096], 12, [0xF, 0xF, 0xF, 0xF]);
             (l, self::splat_f32x4(ctx, 15.0), !has_alpha)
-        },
+        }
         ColorFormat::Rgba6 => {
             let l = self::shuffle_to_i32x4(ctx, ptr, &SWZ_COLOR_U24);
             let l =
                 self::unpack_fields(ctx, l, [1, 64, 4096, 262144], 18, [0x3F, 0x3F, 0x3F, 0x3F]);
             (l, self::splat_f32x4(ctx, 63.0), !has_alpha)
-        },
+        }
         ColorFormat::Rgb8 | ColorFormat::Rgbx8 => {
             let l = self::shuffle_to_i32x4(ctx, ptr, &SWZ_COLOR_BYTES);
             (l, self::splat_f32x4(ctx, 255.0), true)
-        },
+        }
         ColorFormat::Rgba8 => {
             let l = self::shuffle_to_i32x4(ctx, ptr, &SWZ_COLOR_BYTES);
             (l, self::splat_f32x4(ctx, 255.0), !has_alpha)
-        },
+        }
     };
 
     let f = ctx.bd.ins().fcvt_from_uint(ir::types::F32X4, lanes);
@@ -638,7 +696,10 @@ fn transform_and_normalize_normal(
 
     let zero = ctx.bd.ins().f32const(0.0);
     let eps = ctx.bd.ins().f32const(1e-10);
-    let small = ctx.bd.ins().fcmp(ir::condcodes::FloatCC::LessThan, len, eps);
+    let small = ctx
+        .bd
+        .ins()
+        .fcmp(ir::condcodes::FloatCC::LessThan, len, eps);
 
     let nx_n = ctx.bd.ins().fdiv(nx, len);
     let ny_n = ctx.bd.ins().fdiv(ny, len);
@@ -670,7 +731,10 @@ fn emit_texgens(
         ctx.xf_mem_ptr,
         xf_byte_off(XF_DUAL_TEX_ENABLE),
     );
-    let dual_en = ctx.bd.ins().icmp_imm(ir::condcodes::IntCC::NotEqual, dual_cell, 0);
+    let dual_en = ctx
+        .bd
+        .ins()
+        .icmp_imm(ir::condcodes::IntCC::NotEqual, dual_cell, 0);
 
     for tg in 0..8 {
         let active = ctx.bd.create_block();
@@ -682,7 +746,11 @@ fn emit_texgens(
 
         // active when tg < num_texgens; the 8-slot unroll enforces .min(8)
         let tg_const = ctx.bd.ins().iconst(ir::types::I32, tg as i64);
-        let cond = ctx.bd.ins().icmp(ir::condcodes::IntCC::UnsignedLessThan, tg_const, num_texgens);
+        let cond = ctx.bd.ins().icmp(
+            ir::condcodes::IntCC::UnsignedLessThan,
+            tg_const,
+            num_texgens,
+        );
         ctx.bd.ins().brif(cond, active, &[], passthru, &[]);
 
         ctx.bd.switch_to_block(active);
@@ -690,7 +758,11 @@ fn emit_texgens(
         let a = self::emit_texgen_active(ctx, tg, pos, nrm, tex_mtx_idx, raw_st, dual_en);
         ctx.bd.ins().jump(
             done,
-            &[ir::BlockArg::Value(a[0]), ir::BlockArg::Value(a[1]), ir::BlockArg::Value(a[2])],
+            &[
+                ir::BlockArg::Value(a[0]),
+                ir::BlockArg::Value(a[1]),
+                ir::BlockArg::Value(a[2]),
+            ],
         );
 
         // passthrough: present ? [s, t, 1] : [0, 0, 1]
@@ -702,18 +774,27 @@ fn emit_texgens(
             None => {
                 let z = ctx.bd.ins().f32const(0.0);
                 (z, z)
-            },
+            }
         };
         ctx.bd.ins().jump(
             done,
-            &[ir::BlockArg::Value(ps), ir::BlockArg::Value(pt), ir::BlockArg::Value(one)],
+            &[
+                ir::BlockArg::Value(ps),
+                ir::BlockArg::Value(pt),
+                ir::BlockArg::Value(one),
+            ],
         );
 
         ctx.bd.switch_to_block(done);
         ctx.bd.seal_block(done);
         let d = ctx.bd.block_params(done);
         let out = [d[0], d[1], d[2]];
-        store_vec3(ctx.bd, ctx.out_ptr, offset::TEXCOORDS + (tg as i32) * 12, &out);
+        store_vec3(
+            ctx.bd,
+            ctx.out_ptr,
+            offset::TEXCOORDS + (tg as i32) * 12,
+            &out,
+        );
     }
 }
 
@@ -782,8 +863,13 @@ fn texgen_source(
     let pos_blk = ctx.bd.create_block();
     let nrm_blk = ctx.bd.create_block();
     let dead_blk = ctx.bd.create_block();
-    let tex_blk: [ir::Block; 8] =
-        std::array::from_fn(|k| if raw_st[k].is_some() { ctx.bd.create_block() } else { dead_blk });
+    let tex_blk: [ir::Block; 8] = std::array::from_fn(|k| {
+        if raw_st[k].is_some() {
+            ctx.bd.create_block()
+        } else {
+            dead_blk
+        }
+    });
 
     let mut switch = Switch::new();
     switch.set_entry(0, pos_blk);
@@ -800,7 +886,11 @@ fn texgen_source(
     let jump3 = |ctx: &mut AttrCtx, blk: ir::Block, v: [ir::Value; 3]| {
         ctx.bd.ins().jump(
             blk,
-            &[ir::BlockArg::Value(v[0]), ir::BlockArg::Value(v[1]), ir::BlockArg::Value(v[2])],
+            &[
+                ir::BlockArg::Value(v[0]),
+                ir::BlockArg::Value(v[1]),
+                ir::BlockArg::Value(v[2]),
+            ],
         );
     };
 
@@ -834,7 +924,9 @@ fn texgen_source(
 fn flag(ctx: &mut AttrCtx, word: ir::Value, shift: i64) -> ir::Value {
     let shifted = ctx.bd.ins().ushr_imm(word, shift);
     let bit = ctx.bd.ins().band_imm(shifted, 1);
-    ctx.bd.ins().icmp_imm(ir::condcodes::IntCC::NotEqual, bit, 0)
+    ctx.bd
+        .ins()
+        .icmp_imm(ir::condcodes::IntCC::NotEqual, bit, 0)
 }
 
 // Base address of a 3x4 matrix in xf_mem, indexed by a matrix index (cells of
@@ -851,7 +943,11 @@ fn load_matrix12(
     base_addr: ir::Value,
     flags: ir::MemFlagsData,
 ) -> [ir::Value; 12] {
-    std::array::from_fn(|i| ctx.bd.ins().load(ir::types::F32, flags, base_addr, (i * 4) as i32))
+    std::array::from_fn(|i| {
+        ctx.bd
+            .ins()
+            .load(ir::types::F32, flags, base_addr, (i * 4) as i32)
+    })
 }
 
 // (m0*v0 + m1*v1) + m2*v2 + m3*v3, no fma.
@@ -934,7 +1030,11 @@ fn emit_dual(
         dual_on,
         &[],
         dual_done,
-        &[ir::BlockArg::Value(s), ir::BlockArg::Value(t), ir::BlockArg::Value(q)],
+        &[
+            ir::BlockArg::Value(s),
+            ir::BlockArg::Value(t),
+            ir::BlockArg::Value(q),
+        ],
     );
 
     ctx.bd.switch_to_block(dual_on);
@@ -954,7 +1054,10 @@ fn emit_dual(
 
     // inv_q = q.abs() > EPSILON ? 1/q : 1.0 (1/q always computed; fdiv cannot trap)
     let absq = ctx.bd.ins().fabs(q);
-    let big = ctx.bd.ins().fcmp(ir::condcodes::FloatCC::GreaterThan, absq, eps);
+    let big = ctx
+        .bd
+        .ins()
+        .fcmp(ir::condcodes::FloatCC::GreaterThan, absq, eps);
     let recip = ctx.bd.ins().fdiv(one, q);
     let inv_q = ctx.bd.ins().select(big, recip, one);
 
@@ -966,7 +1069,10 @@ fn emit_dual(
 
     // post matrix at base = (XF_POST_MTX_BASE + post_idx * 4) cells, in bytes
     let post_bytes = ctx.bd.ins().imul_imm(post_idx, 16);
-    let post_bytes = ctx.bd.ins().iadd_imm(post_bytes, (XF_POST_MTX_BASE * 4) as i64);
+    let post_bytes = ctx
+        .bd
+        .ins()
+        .iadd_imm(post_bytes, (XF_POST_MTX_BASE * 4) as i64);
     let post_bytes = ctx.bd.ins().uextend(ctx.pointer_ty, post_bytes);
     let post_addr = ctx.bd.ins().iadd(ctx.xf_mem_ptr, post_bytes);
     let pm = self::load_matrix12(ctx, post_addr, MEMFLAGS_RO);
@@ -978,7 +1084,11 @@ fn emit_dual(
 
     ctx.bd.ins().jump(
         dual_done,
-        &[ir::BlockArg::Value(ps), ir::BlockArg::Value(pt), ir::BlockArg::Value(pq)],
+        &[
+            ir::BlockArg::Value(ps),
+            ir::BlockArg::Value(pt),
+            ir::BlockArg::Value(pq),
+        ],
     );
 
     ctx.bd.switch_to_block(dual_done);

@@ -3,7 +3,9 @@
 fn main() {
     let a: Vec<String> = std::env::args().skip(1).collect();
     let r = lightcraft_raw::decode(&std::fs::read(&a[0]).expect("read")).expect("decode");
-    let lightcraft_raw::RawData::U16(d) = &r.data else { panic!("float data") };
+    let lightcraft_raw::RawData::U16(d) = &r.data else {
+        panic!("float data")
+    };
     let mut out = Vec::with_capacity(8 + d.len() * 2);
     out.extend_from_slice(&(r.width as u32).to_le_bytes());
     out.extend_from_slice(&(r.height as u32).to_le_bytes());

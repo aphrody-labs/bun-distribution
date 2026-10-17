@@ -30,7 +30,15 @@ pub(crate) struct PreparedPatterns<'a> {
 
 impl<'a> PreparedPatterns<'a> {
     pub(crate) fn new(patterns: &'a [Pattern], budget: usize) -> Self {
-        Self { patterns, budget, mode: ColorMode::Rgb, state: Mutex::new(PreparedState { slots: HashMap::new(), reserved_bytes: 0 }) }
+        Self {
+            patterns,
+            budget,
+            mode: ColorMode::Rgb,
+            state: Mutex::new(PreparedState {
+                slots: HashMap::new(),
+                reserved_bytes: 0,
+            }),
+        }
     }
 
     /// Patterns painted into a document of colour mode `mode`.
@@ -50,7 +58,11 @@ impl<'a> PreparedPatterns<'a> {
         }
         let bytes = usize::try_from(p.width)
             .ok()
-            .and_then(|w| usize::try_from(p.height).ok().and_then(|h| w.checked_mul(h)))
+            .and_then(|w| {
+                usize::try_from(p.height)
+                    .ok()
+                    .and_then(|h| w.checked_mul(h))
+            })
             .and_then(|pixels| pixels.checked_mul(std::mem::size_of::<[f32; 4]>()));
         // The borrowed immutable slice pins these addresses for the complete call.
         let key = std::ptr::from_ref(p) as usize;
@@ -76,7 +88,8 @@ impl<'a> PreparedPatterns<'a> {
                 // Conversion must stay serial: Rayon work stealing can re-enter this slot
                 // while its initializer is running inside an effect-map OnceLock.
                 // Run on the requesting worker to preserve its active CMYK profile.
-                slot.get_or_init(|| Tile::new_in(p, self.mode).map(Arc::new)).clone()
+                slot.get_or_init(|| Tile::new_in(p, self.mode).map(Arc::new))
+                    .clone()
             }
             None => Tile::new_in(p, self.mode).map(Arc::new),
         }
@@ -90,12 +103,19 @@ impl<'a> PreparedPatterns<'a> {
 /// pattern in colour in its picker, filled in grey). Empty for a pattern that isn't
 /// [paintable](Pattern::is_paintable).
 pub fn pattern_rgba(p: &Pattern, mode: ColorMode) -> Vec<[f32; 4]> {
-    let Some(n) = p.is_paintable().then(|| usize::try_from(p.pixel_count()).ok()).flatten() else {
+    let Some(n) = p
+        .is_paintable()
+        .then(|| usize::try_from(p.pixel_count()).ok())
+        .flatten()
+    else {
         return Vec::new();
     };
     let mut px = vec![[0.0f32; 4]; n];
     p.surface.read_rgba_into(p.rect(), &mut px);
-    let paints_in = matches!(mode, ColorMode::Grayscale | ColorMode::Bitmap | ColorMode::Duotone | ColorMode::Cmyk);
+    let paints_in = matches!(
+        mode,
+        ColorMode::Grayscale | ColorMode::Bitmap | ColorMode::Duotone | ColorMode::Cmyk
+    );
     if paints_in && p.surface.format().mode != mode {
         let fmt = PixelFormat::new(mode, SampleType::F32, true);
         let mut v = [0.0f32; 5];
@@ -169,7 +189,12 @@ impl Tile {
         if acc[3] <= 0.0 {
             return [0.0; 4];
         }
-        [acc[0] / acc[3], acc[1] / acc[3], acc[2] / acc[3], acc[3].min(1.0)]
+        [
+            acc[0] / acc[3],
+            acc[1] / acc[3],
+            acc[2] / acc[3],
+            acc[3].min(1.0),
+        ]
     }
 }
 
@@ -186,20 +211,38 @@ impl Placement {
     /// `frame`: the layer's frame (used when `link`); `phase` in pixels; `scale` as a fraction;
     /// `angle` in degrees counter-clockwise.
     pub fn new(frame: Rect, link: bool, phase: (f32, f32), scale: f32, angle: f32) -> Placement {
-        let anchor = if frame.is_empty() { (0.0, 0.0) } else { (f64::from(frame.x0), f64::from(frame.y0)) };
+        let anchor = if frame.is_empty() {
+            (0.0, 0.0)
+        } else {
+            (f64::from(frame.x0), f64::from(frame.y0))
+        };
         Self::anchored(anchor, link, phase, scale, angle)
     }
 
     /// Like [`Placement::new`], with the linked origin given as a point. Layer effects anchor
     /// linked patterns at the layer's effects reference point (PSD `fxrp`): Photoshop's
     /// pattern overlays and pattern strokes match pixel-for-pixel tiled from there.
-    pub fn anchored(anchor: (f64, f64), link: bool, phase: (f32, f32), scale: f32, angle: f32) -> Placement {
+    pub fn anchored(
+        anchor: (f64, f64),
+        link: bool,
+        phase: (f32, f32),
+        scale: f32,
+        angle: f32,
+    ) -> Placement {
         let base = if link { anchor } else { (0.0, 0.0) };
         let origin = (base.0 + f64::from(phase.0), base.1 + f64::from(phase.1));
         let s = f64::from(scale);
-        let inv_scale = if s.is_finite() && s > 1e-3 { 1.0 / s } else { 1.0 };
+        let inv_scale = if s.is_finite() && s > 1e-3 {
+            1.0 / s
+        } else {
+            1.0
+        };
         let a = f64::from(angle).to_radians();
-        Placement { origin, cs: (a.cos(), a.sin()), inv_scale }
+        Placement {
+            origin,
+            cs: (a.cos(), a.sin()),
+            inv_scale,
+        }
     }
 
     /// (origin, inverse rotation (cos, sin), inverse scale), for GPU shaders.
@@ -263,7 +306,13 @@ mod tests {
     #[test]
     fn patterns_too_large_to_paint_are_skipped_without_allocating() {
         // Only the size is declared (no tiles): a hostile file can claim any size.
-        let p = Pattern { id: "big".into(), name: "Big".into(), width: 9000, height: 8000, surface: Surface::new(PixelFormat::RGBA8) };
+        let p = Pattern {
+            id: "big".into(),
+            name: "Big".into(),
+            width: 9000,
+            height: 8000,
+            surface: Surface::new(PixelFormat::RGBA8),
+        };
         assert!(!p.is_paintable());
         assert!(Tile::new(&p).is_none());
         assert!(pattern_rgba(&p, ColorMode::Rgb).is_empty());
@@ -275,9 +324,15 @@ mod tests {
     fn link_phase_scale_and_angle_move_the_origin() {
         let t = Tile::new(&checker()).unwrap();
         let linked = Placement::new(Rect::new(2, 0, 10, 10), true, (0.0, 0.0), 1.0, 0.0);
-        assert_eq!(render(&t, &linked, Rect::new(2, 0, 3, 1))[0], [0.0, 0.0, 1.0, 1.0]);
+        assert_eq!(
+            render(&t, &linked, Rect::new(2, 0, 3, 1))[0],
+            [0.0, 0.0, 1.0, 1.0]
+        );
         let phased = Placement::new(Rect::EMPTY, false, (2.0, 0.0), 1.0, 0.0);
-        assert_eq!(render(&t, &phased, Rect::new(2, 0, 3, 1))[0], [0.0, 0.0, 1.0, 1.0]);
+        assert_eq!(
+            render(&t, &phased, Rect::new(2, 0, 3, 1))[0],
+            [0.0, 0.0, 1.0, 1.0]
+        );
         let scaled = Placement::new(Rect::EMPTY, false, (0.0, 0.0), 2.0, 0.0);
         let row = render(&t, &scaled, Rect::new(0, 1, 8, 2));
         assert_eq!(row[2], [0.0, 0.0, 1.0, 1.0]);

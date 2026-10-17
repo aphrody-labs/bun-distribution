@@ -7,15 +7,21 @@ use gridcraft_core::CellRef;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-pub fn serialize<S: Serializer, V: Serialize>(map: &BTreeMap<CellRef, V>, s: S) -> Result<S::Ok, S::Error> {
+pub fn serialize<S: Serializer, V: Serialize>(
+    map: &BTreeMap<CellRef, V>,
+    s: S,
+) -> Result<S::Ok, S::Error> {
     s.collect_map(map.iter().map(|(k, v)| (k.a1(), v)))
 }
 
-pub fn deserialize<'de, D: Deserializer<'de>, V: Deserialize<'de>>(d: D) -> Result<BTreeMap<CellRef, V>, D::Error> {
+pub fn deserialize<'de, D: Deserializer<'de>, V: Deserialize<'de>>(
+    d: D,
+) -> Result<BTreeMap<CellRef, V>, D::Error> {
     let raw = BTreeMap::<String, V>::deserialize(d)?;
     let mut out = BTreeMap::new();
     for (k, v) in raw {
-        let cell = CellRef::parse(&k).ok_or_else(|| D::Error::custom(format!("invalid cell reference `{k}`")))?;
+        let cell = CellRef::parse(&k)
+            .ok_or_else(|| D::Error::custom(format!("invalid cell reference `{k}`")))?;
         out.insert(cell, v);
     }
     Ok(out)
@@ -43,7 +49,14 @@ mod tests {
                 dates: vec![],
             },
         );
-        s.hyperlinks.insert(c3, Hyperlink { target: "Sheet1!A1".into(), tooltip: Some("jump".into()), external: false });
+        s.hyperlinks.insert(
+            c3,
+            Hyperlink {
+                target: "Sheet1!A1".into(),
+                tooltip: Some("jump".into()),
+                external: false,
+            },
+        );
         let json = serde_json::to_string(&s).expect("serialize");
         let back: Sheet = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back.comments, s.comments);

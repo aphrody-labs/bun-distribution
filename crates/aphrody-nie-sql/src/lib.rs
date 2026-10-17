@@ -54,16 +54,27 @@ impl DatabaseUrl {
             if path.is_empty() || path == ":memory:" || path.contains('\0') {
                 return Err(SqlError::InvalidUrl("SQLite URL must name a database file"));
             }
-            return Ok(Self::Sqlite { path: PathBuf::from(path) });
+            return Ok(Self::Sqlite {
+                path: PathBuf::from(path),
+            });
         }
         if value.starts_with("postgres://") || value.starts_with("postgresql://") {
-            let authority = value.split_once("://").map(|(_, rest)| rest).unwrap_or_default();
+            let authority = value
+                .split_once("://")
+                .map(|(_, rest)| rest)
+                .unwrap_or_default();
             if authority.is_empty() || !authority.contains('/') {
-                return Err(SqlError::InvalidUrl("PostgreSQL URL must include host and database"));
+                return Err(SqlError::InvalidUrl(
+                    "PostgreSQL URL must include host and database",
+                ));
             }
-            return Ok(Self::PostgreSql { url: value.to_owned() });
+            return Ok(Self::PostgreSql {
+                url: value.to_owned(),
+            });
         }
-        Err(SqlError::InvalidUrl("expected sqlite:, postgres://, or postgresql:// URL"))
+        Err(SqlError::InvalidUrl(
+            "expected sqlite:, postgres://, or postgresql:// URL",
+        ))
     }
 
     pub fn backend(&self) -> Backend {
@@ -153,7 +164,9 @@ impl PostgresReadOnly {
         tokio::spawn(async move {
             let _ = connection.await;
         });
-        client.batch_execute("SET default_transaction_read_only = on").await?;
+        client
+            .batch_execute("SET default_transaction_read_only = on")
+            .await?;
         Ok(Self { client })
     }
 
@@ -164,7 +177,9 @@ impl PostgresReadOnly {
         tokio::spawn(async move {
             let _ = connection.await;
         });
-        client.batch_execute("SET default_transaction_read_only = on").await?;
+        client
+            .batch_execute("SET default_transaction_read_only = on")
+            .await?;
         Ok(Self { client })
     }
 
@@ -178,9 +193,14 @@ impl PostgresReadOnly {
         query: &ReadQuery,
         parameters: &[Value],
     ) -> Result<QueryResult, SqlError> {
-        let bindings = parameters.iter().map(postgres_parameter).collect::<Vec<_>>();
-        let parameters =
-            bindings.iter().map(|value| value.as_ref() as &(dyn ToSql + Sync)).collect::<Vec<_>>();
+        let bindings = parameters
+            .iter()
+            .map(postgres_parameter)
+            .collect::<Vec<_>>();
+        let parameters = bindings
+            .iter()
+            .map(|value| value.as_ref() as &(dyn ToSql + Sync))
+            .collect::<Vec<_>>();
         let rows = self.client.query(query.as_str(), &parameters).await?;
         rows.iter()
             .map(postgres_row)
@@ -234,16 +254,26 @@ impl ReadOnlyDatabase for SqliteReadOnly {
     }
 
     fn query(&self, query: &ReadQuery, parameters: &[Value]) -> Result<QueryResult, SqlError> {
-        let values = parameters.iter().map(sqlite_parameter).collect::<Result<Vec<_>, _>>()?;
+        let values = parameters
+            .iter()
+            .map(sqlite_parameter)
+            .collect::<Result<Vec<_>, _>>()?;
         let mut statement = self.connection.prepare(query.as_str())?;
-        let columns = statement.column_names().iter().map(ToString::to_string).collect::<Vec<_>>();
+        let columns = statement
+            .column_names()
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
         let mut rows = statement.query(params_from_iter(values.iter()))?;
         let mut output = Vec::new();
         while let Some(row) = rows.next()? {
             let values = (0..columns.len())
                 .map(|index| sqlite_value(row.get_ref(index)?))
                 .collect::<Result<Vec<_>, SqlError>>()?;
-            output.push(Row { columns: columns.clone(), values });
+            output.push(Row {
+                columns: columns.clone(),
+                values,
+            });
         }
         Ok(QueryResult { rows: output })
     }
@@ -255,9 +285,9 @@ impl ReadOnlyDatabase for SqliteReadOnly {
 pub fn open_read_only(url: &DatabaseUrl) -> Result<Box<dyn ReadOnlyDatabase>, SqlError> {
     match url {
         DatabaseUrl::Sqlite { path } => Ok(Box::new(SqliteReadOnly::open(path)?)),
-        DatabaseUrl::PostgreSql { .. } => {
-            Err(SqlError::AsyncBackendRequired { backend: Backend::PostgreSql })
-        },
+        DatabaseUrl::PostgreSql { .. } => Err(SqlError::AsyncBackendRequired {
+            backend: Backend::PostgreSql,
+        }),
     }
 }
 
@@ -268,10 +298,10 @@ pub async fn open_read_only_async(url: &DatabaseUrl) -> Result<AsyncReadOnlyData
     match url {
         DatabaseUrl::Sqlite { path } => {
             Ok(AsyncReadOnlyDatabase::Sqlite(SqliteReadOnly::open(path)?))
-        },
-        DatabaseUrl::PostgreSql { url } => {
-            Ok(AsyncReadOnlyDatabase::PostgreSql(PostgresReadOnly::connect(url).await?))
-        },
+        }
+        DatabaseUrl::PostgreSql { url } => Ok(AsyncReadOnlyDatabase::PostgreSql(
+            PostgresReadOnly::connect(url).await?,
+        )),
     }
 }
 
@@ -348,7 +378,11 @@ fn sqlite_value(value: ValueRef<'_>) -> Result<Value, SqlError> {
 }
 
 fn postgres_row(row: &tokio_postgres::Row) -> Result<Row, SqlError> {
-    let columns = row.columns().iter().map(|column| column.name().to_owned()).collect::<Vec<_>>();
+    let columns = row
+        .columns()
+        .iter()
+        .map(|column| column.name().to_owned())
+        .collect::<Vec<_>>();
     let values = row
         .columns()
         .iter()
@@ -371,13 +405,21 @@ fn postgres_value(row: &tokio_postgres::Row, index: usize, ty: &Type) -> Result<
     if *ty == Type::BOOL {
         nullable!(row.try_get::<_, Option<bool>>(index), Value::Boolean)
     } else if *ty == Type::INT2 {
-        nullable!(row.try_get::<_, Option<i16>>(index), |value| Value::Integer(i64::from(value)))
+        nullable!(
+            row.try_get::<_, Option<i16>>(index),
+            |value| Value::Integer(i64::from(value))
+        )
     } else if *ty == Type::INT4 {
-        nullable!(row.try_get::<_, Option<i32>>(index), |value| Value::Integer(i64::from(value)))
+        nullable!(
+            row.try_get::<_, Option<i32>>(index),
+            |value| Value::Integer(i64::from(value))
+        )
     } else if *ty == Type::INT8 {
         nullable!(row.try_get::<_, Option<i64>>(index), Value::Integer)
     } else if *ty == Type::FLOAT4 {
-        nullable!(row.try_get::<_, Option<f32>>(index), |value| Value::Real(f64::from(value)))
+        nullable!(row.try_get::<_, Option<f32>>(index), |value| Value::Real(
+            f64::from(value)
+        ))
     } else if *ty == Type::FLOAT8 {
         nullable!(row.try_get::<_, Option<f64>>(index), Value::Real)
     } else if matches!(*ty, Type::TEXT | Type::VARCHAR | Type::BPCHAR | Type::NAME) {
@@ -385,9 +427,10 @@ fn postgres_value(row: &tokio_postgres::Row, index: usize, ty: &Type) -> Result<
     } else if *ty == Type::BYTEA {
         nullable!(row.try_get::<_, Option<Vec<u8>>>(index), Value::Blob)
     } else if matches!(*ty, Type::JSON | Type::JSONB) {
-        nullable!(row.try_get::<_, Option<serde_json::Value>>(index), |value: serde_json::Value| {
-            Value::Text(value.to_string())
-        })
+        nullable!(
+            row.try_get::<_, Option<serde_json::Value>>(index),
+            |value: serde_json::Value| { Value::Text(value.to_string()) }
+        )
     } else {
         Err(SqlError::UnsupportedPostgreSqlType)
     }
@@ -420,11 +463,15 @@ mod tests {
     #[test]
     fn parses_backend_urls_without_accepting_memory_sqlite() {
         assert_eq!(
-            DatabaseUrl::parse("sqlite:var/inagle.sqlite").unwrap().backend(),
+            DatabaseUrl::parse("sqlite:var/inagle.sqlite")
+                .unwrap()
+                .backend(),
             Backend::Sqlite
         );
         assert_eq!(
-            DatabaseUrl::parse("postgresql://host/game").unwrap().backend(),
+            DatabaseUrl::parse("postgresql://host/game")
+                .unwrap()
+                .backend(),
             Backend::PostgreSql
         );
         assert!(DatabaseUrl::parse("sqlite::memory:").is_err());
@@ -440,7 +487,10 @@ mod tests {
             "SELECT 1; SELECT 2",
             "WITH c AS (DELETE FROM c) SELECT * FROM c",
         ] {
-            assert!(matches!(ReadQuery::parse(sql), Err(SqlError::NotReadOnly)), "{sql}");
+            assert!(
+                matches!(ReadQuery::parse(sql), Err(SqlError::NotReadOnly)),
+                "{sql}"
+            );
         }
     }
 
@@ -460,9 +510,15 @@ mod tests {
             .unwrap();
         assert_eq!(result.rows.len(), 1);
         assert_eq!(result.rows[0].columns, ["id", "name"]);
-        assert_eq!(result.rows[0].values, [Value::Integer(7), Value::Text("Endou".into())]);
+        assert_eq!(
+            result.rows[0].values,
+            [Value::Integer(7), Value::Text("Endou".into())]
+        );
         assert!(
-            database.connection.execute("INSERT INTO character VALUES (8, 'Gouenji')", []).is_err()
+            database
+                .connection
+                .execute("INSERT INTO character VALUES (8, 'Gouenji')", [])
+                .is_err()
         );
     }
 
@@ -471,7 +527,9 @@ mod tests {
         let url = DatabaseUrl::parse("postgres://localhost/inagle").unwrap();
         assert!(matches!(
             open_read_only(&url),
-            Err(SqlError::AsyncBackendRequired { backend: Backend::PostgreSql })
+            Err(SqlError::AsyncBackendRequired {
+                backend: Backend::PostgreSql
+            })
         ));
     }
 

@@ -93,7 +93,9 @@ fn cores() -> usize {
 }
 
 fn cap_from_env() -> Option<usize> {
-    std::env::var("LIGHTCRAFT_FACE_THREADS").ok().and_then(|v| v.trim().parse::<usize>().ok())
+    std::env::var("LIGHTCRAFT_FACE_THREADS")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
 }
 
 /// The most photos the memory budget can hold in progress at once: half of it (the rest is the window's, the caches',
@@ -105,7 +107,11 @@ fn memory_workers() -> usize {
 /// Photos to work on at once at `pace` on this machine: by the processor's threads and the pace, and never more than
 /// the memory allows. A limit the user sets (`LIGHTCRAFT_FACE_THREADS`) replaces the memory one.
 pub(crate) fn target_workers(pace: Pace) -> usize {
-    workers_for(cores(), pace, Some(cap_from_env().unwrap_or_else(memory_workers)))
+    workers_for(
+        cores(),
+        pace,
+        Some(cap_from_env().unwrap_or_else(memory_workers)),
+    )
 }
 
 /// Threads the worker pool starts with: enough for the fullest pace (the idle ones cost nothing).
@@ -159,10 +165,17 @@ pub(crate) struct Done {
 }
 
 fn overlap(a: &Rect, f: &Face) -> f32 {
-    let (w, h) = ((a.x1.min(f64::from(f.x1)) - a.x0.max(f64::from(f.x0))).max(0.0), (a.y1.min(f64::from(f.y1)) - a.y0.max(f64::from(f.y0))).max(0.0));
+    let (w, h) = (
+        (a.x1.min(f64::from(f.x1)) - a.x0.max(f64::from(f.x0))).max(0.0),
+        (a.y1.min(f64::from(f.y1)) - a.y0.max(f64::from(f.y0))).max(0.0),
+    );
     let inter = w * h;
     let union = (a.x1 - a.x0) * (a.y1 - a.y0) + f64::from((f.x1 - f.x0) * (f.y1 - f.y0)) - inter;
-    if union > 0.0 { (inter / union) as f32 } else { 0.0 }
+    if union > 0.0 {
+        (inter / union) as f32
+    } else {
+        0.0
+    }
 }
 
 /// A detection as a region box: inside the photo and not a sliver; `None` for anything else (it is only ever data).
@@ -171,17 +184,33 @@ fn face_rect(f: &Face) -> Option<Rect> {
         return None;
     }
     let c = |v: f32| f64::from(v.clamp(0.0, 1.0));
-    let r = Rect { x0: c(f.x0), y0: c(f.y0), x1: c(f.x1), y1: c(f.y1) };
+    let r = Rect {
+        x0: c(f.x0),
+        y0: c(f.y0),
+        x1: c(f.x1),
+        y1: c(f.y1),
+    };
     (r.x1 - r.x0 > 0.005 && r.y1 - r.y0 > 0.005).then_some(r)
 }
 
 /// Do the work for one photo. Never panics: whatever goes wrong, its faces come back as `None`.
 pub(crate) fn process(p: Prepared, embedder: &Embedder) -> Done {
-    let Prepared { tag, epoch, id, job, preview, todo, detect, detector } = p;
+    let Prepared {
+        tag,
+        epoch,
+        id,
+        job,
+        preview,
+        todo,
+        detect,
+        detector,
+    } = p;
     let fallback = |todo: Vec<Rect>| todo.into_iter().map(|r| (r, None, r)).collect::<Vec<_>>();
     let rects = todo.clone();
     let run = catch_unwind(AssertUnwindSafe(|| {
-        let from_preview = preview.and_then(|(path, load)| load(&path, EDGE)).filter(|img| img.width.max(img.height) >= MIN_PREVIEW_EDGE);
+        let from_preview = preview
+            .and_then(|(path, load)| load(&path, EDGE))
+            .filter(|img| img.width.max(img.height) >= MIN_PREVIEW_EDGE);
         let image = match from_preview {
             Some(img) => img,
             None => match job.run().rendered {
@@ -190,17 +219,40 @@ pub(crate) fn process(p: Prepared, embedder: &Embedder) -> Done {
             },
         };
         let (w, h) = (image.width, image.height);
-        let rgb: Vec<u8> = image.data.iter().flat_map(|px| [px[0], px[1], px[2]]).collect();
+        let rgb: Vec<u8> = image
+            .data
+            .iter()
+            .flat_map(|px| [px[0], px[1], px[2]])
+            .collect();
         // the detector's landmarks, where it finds the same face: faces are aligned by them, not cut by a box
-        let detected = detector.as_deref().and_then(|d| d.detect(&rgb, w, h, &Options { score: 0.5, ..Options::default() }).ok());
+        let detected = detector.as_deref().and_then(|d| {
+            d.detect(
+                &rgb,
+                w,
+                h,
+                &Options {
+                    score: 0.5,
+                    ..Options::default()
+                },
+            )
+            .ok()
+        });
         let found = detected.clone().unwrap_or_default();
-        let img = Rgb { data: &rgb, width: w, height: h };
+        let img = Rgb {
+            data: &rgb,
+            width: w,
+            height: h,
+        };
         let (iw, ih) = embedder.input_size();
         let scaled = |f: &Face| f.landmarks.map(|(x, y)| (x * w as f32, y * h as f32));
         let mut results: Vec<(Rect, Option<Vec<f32>>, Rect)> = todo
             .into_iter()
             .map(|rect| {
-                let best = found.iter().map(|f| (overlap(&rect, f), f)).filter(|(o, _)| *o >= MATCH_IOU).max_by(|a, b| a.0.total_cmp(&b.0));
+                let best = found
+                    .iter()
+                    .map(|f| (overlap(&rect, f), f))
+                    .filter(|(o, _)| *o >= MATCH_IOU)
+                    .max_by(|a, b| a.0.total_cmp(&b.0));
                 let crop = match best {
                     Some((_, f)) => align_to_template(&img, &scaled(f), iw, ih),
                     None => crop_box(
@@ -226,7 +278,8 @@ pub(crate) fn process(p: Prepared, embedder: &Embedder) -> Done {
                 let mut rects = Vec::new();
                 for f in faces.iter().filter(|f| f.score >= REGION_SCORE) {
                     let Some(rect) = face_rect(f) else { continue };
-                    let v = align_to_template(&img, &scaled(f), iw, ih).and_then(|c| embedder.embed(&c).ok());
+                    let v = align_to_template(&img, &scaled(f), iw, ih)
+                        .and_then(|c| embedder.embed(&c).ok());
                     results.push((rect, v, rect));
                     rects.push(rect);
                 }
@@ -238,7 +291,14 @@ pub(crate) fn process(p: Prepared, embedder: &Embedder) -> Done {
         (results, new_faces)
     }));
     let (results, found) = run.unwrap_or_else(|_| (fallback(rects), None));
-    Done { tag, epoch, id, results, detect_wanted: detect, found }
+    Done {
+        tag,
+        epoch,
+        id,
+        results,
+        detect_wanted: detect,
+        found,
+    }
 }
 
 type Job = (Arc<Embedder>, Prepared);
@@ -255,7 +315,12 @@ struct Limit {
 
 impl Limit {
     fn new() -> Limit {
-        Limit { allowed: AtomicUsize::new(0), pace: AtomicU8::new(Pace::Normal as u8), running: Mutex::new(0), wake: Condvar::new() }
+        Limit {
+            allowed: AtomicUsize::new(0),
+            pace: AtomicU8::new(Pace::Normal as u8),
+            running: Mutex::new(0),
+            wake: Condvar::new(),
+        }
     }
 
     fn set(&self, n: usize, pace: Pace) {
@@ -272,7 +337,11 @@ impl Limit {
     fn enter(&self) {
         let mut running = self.running.lock().unwrap_or_else(PoisonError::into_inner);
         while *running >= self.allowed.load(Ordering::Relaxed) {
-            running = self.wake.wait_timeout(running, Duration::from_millis(100)).unwrap_or_else(PoisonError::into_inner).0;
+            running = self
+                .wake
+                .wait_timeout(running, Duration::from_millis(100))
+                .unwrap_or_else(PoisonError::into_inner)
+                .0;
         }
         *running += 1;
     }
@@ -339,20 +408,24 @@ impl Worker {
         let mut started = 0;
         for i in 0..threads.clamp(1, MAX_WORKERS) {
             let (rx, tx, limit) = (job_rx.clone(), done_tx.clone(), limit.clone());
-            let spawned = std::thread::Builder::new().name(format!("lightcraft-faces-{i}")).spawn(move || {
-                loop {
-                    // the lock is held only while waiting for a job, never while working on one; the threads end when
-                    // the session (the only sender) is dropped
-                    let next = rx.lock().unwrap_or_else(PoisonError::into_inner).recv();
-                    let Ok((embedder, prepared)) = next else { break };
-                    limit.enter();
-                    let done = process_in_background(prepared, &embedder, limit.pace());
-                    limit.leave();
-                    if tx.send(done).is_err() {
-                        break;
+            let spawned = std::thread::Builder::new()
+                .name(format!("lightcraft-faces-{i}"))
+                .spawn(move || {
+                    loop {
+                        // the lock is held only while waiting for a job, never while working on one; the threads end when
+                        // the session (the only sender) is dropped
+                        let next = rx.lock().unwrap_or_else(PoisonError::into_inner).recv();
+                        let Ok((embedder, prepared)) = next else {
+                            break;
+                        };
+                        limit.enter();
+                        let done = process_in_background(prepared, &embedder, limit.pace());
+                        limit.leave();
+                        if tx.send(done).is_err() {
+                            break;
+                        }
                     }
-                }
-            });
+                });
             if spawned.is_ok() {
                 started += 1;
             }
@@ -383,16 +456,37 @@ mod tests {
     fn the_pace_sets_how_much_of_the_machine_the_scan_may_use() {
         use Pace::*;
         // a 32-thread desktop: nothing while the user works, one photo around them, half when idle, most when watched
-        assert_eq!([Pause, Light, Normal, Full].map(|p| workers_for(32, p, None)), [0, 1, 16, 24]);
-        assert_eq!([Pause, Light, Normal, Full].map(|p| workers_for(8, p, None)), [0, 1, 4, 6]);
-        assert_eq!([Pause, Light, Normal, Full].map(|p| workers_for(4, p, None)), [0, 1, 2, 3]);
+        assert_eq!(
+            [Pause, Light, Normal, Full].map(|p| workers_for(32, p, None)),
+            [0, 1, 16, 24]
+        );
+        assert_eq!(
+            [Pause, Light, Normal, Full].map(|p| workers_for(8, p, None)),
+            [0, 1, 4, 6]
+        );
+        assert_eq!(
+            [Pause, Light, Normal, Full].map(|p| workers_for(4, p, None)),
+            [0, 1, 2, 3]
+        );
         // small machines still get one worker (except while paused)
-        assert_eq!([Pause, Light, Normal, Full].map(|p| workers_for(1, p, None)), [0, 1, 1, 1]);
+        assert_eq!(
+            [Pause, Light, Normal, Full].map(|p| workers_for(1, p, None)),
+            [0, 1, 1, 1]
+        );
         assert_eq!(workers_for(0, Full, None), 1);
         assert_eq!(workers_for(10_000, Full, None), MAX_WORKERS);
         // a limit set by the user caps every pace, and is itself kept sane
-        assert_eq!([Light, Normal, Full].map(|p| workers_for(32, p, Some(3))), [1, 3, 3]);
-        assert_eq!((workers_for(32, Full, Some(0)), workers_for(32, Pause, Some(5))), (1, 0));
+        assert_eq!(
+            [Light, Normal, Full].map(|p| workers_for(32, p, Some(3))),
+            [1, 3, 3]
+        );
+        assert_eq!(
+            (
+                workers_for(32, Full, Some(0)),
+                workers_for(32, Pause, Some(5))
+            ),
+            (1, 0)
+        );
         assert_eq!(workers_for(32, Full, Some(usize::MAX)), 24);
     }
 
@@ -403,7 +497,8 @@ mod tests {
         let started = Arc::new(AtomicUsize::new(0));
         let threads: Vec<_> = (0..6)
             .map(|_| {
-                let (limit, now, peak, started) = (limit.clone(), now.clone(), peak.clone(), started.clone());
+                let (limit, now, peak, started) =
+                    (limit.clone(), now.clone(), peak.clone(), started.clone());
                 std::thread::spawn(move || {
                     limit.enter();
                     started.fetch_add(1, Ordering::SeqCst);
@@ -429,7 +524,11 @@ mod tests {
         }
         assert_eq!(started.load(Ordering::SeqCst), 6);
         assert!(peak.load(Ordering::SeqCst) >= 2, "it did run in parallel");
-        assert_eq!(*limit.running.lock().unwrap(), 0, "every place was given back");
+        assert_eq!(
+            *limit.running.lock().unwrap(),
+            0,
+            "every place was given back"
+        );
     }
 
     #[test]
@@ -442,9 +541,17 @@ mod tests {
 
     #[test]
     fn pace_names_are_forgiving() {
-        assert_eq!(["pause", "light", "normal", "full"].map(|n| Pace::parse(Some(n))), [Pace::Pause, Pace::Light, Pace::Normal, Pace::Full]);
         assert_eq!(
-            (Pace::parse(None), Pace::parse(Some("")), Pace::parse(Some("FULL")), Pace::parse(Some("turbo"))),
+            ["pause", "light", "normal", "full"].map(|n| Pace::parse(Some(n))),
+            [Pace::Pause, Pace::Light, Pace::Normal, Pace::Full]
+        );
+        assert_eq!(
+            (
+                Pace::parse(None),
+                Pace::parse(Some("")),
+                Pace::parse(Some("FULL")),
+                Pace::parse(Some("turbo"))
+            ),
             (Pace::Normal, Pace::Normal, Pace::Normal, Pace::Normal)
         );
     }
@@ -452,31 +559,64 @@ mod tests {
     #[test]
     fn the_scans_parallel_work_gets_a_pool_the_size_of_the_pace() {
         use Pace::*;
-        assert_eq!([Pause, Light, Normal, Full].map(|p| pool_threads_for(32, p, None)), [2, 2, 16, 25]);
-        assert_eq!([Light, Normal, Full].map(|p| pool_threads_for(8, p, None)), [2, 4, 6]);
-        assert_eq!([Light, Normal, Full].map(|p| pool_threads_for(2, p, None)), [2, 2, 2]);
+        assert_eq!(
+            [Pause, Light, Normal, Full].map(|p| pool_threads_for(32, p, None)),
+            [2, 2, 16, 25]
+        );
+        assert_eq!(
+            [Light, Normal, Full].map(|p| pool_threads_for(8, p, None)),
+            [2, 4, 6]
+        );
+        assert_eq!(
+            [Light, Normal, Full].map(|p| pool_threads_for(2, p, None)),
+            [2, 2, 2]
+        );
         assert_eq!(pool_threads_for(10_000, Full, None), 32);
-        assert_eq!([Light, Normal, Full].map(|p| pool_threads_for(32, p, Some(3))), [2, 3, 3]);
+        assert_eq!(
+            [Light, Normal, Full].map(|p| pool_threads_for(32, p, Some(3))),
+            [2, 3, 3]
+        );
         // the pools exist and are the sizes asked for
         for pace in [Light, Normal, Full] {
             let pool = scan_pool(pace).expect("a pool can be built");
-            assert_eq!(pool.install(rayon::current_num_threads), pool_threads_for(cores(), pace, cap_from_env()));
+            assert_eq!(
+                pool.install(rayon::current_num_threads),
+                pool_threads_for(cores(), pace, cap_from_env())
+            );
         }
         // a paused scan has the light pool; the pace is remembered as a number and read back
-        assert_eq!(scan_pool(Pause).map(|p| p as *const _), scan_pool(Light).map(|p| p as *const _));
-        assert_eq!([0, 1, 2, 3, 9].map(Pace::from_u8), [Pause, Light, Normal, Full, Normal]);
+        assert_eq!(
+            scan_pool(Pause).map(|p| p as *const _),
+            scan_pool(Light).map(|p| p as *const _)
+        );
+        assert_eq!(
+            [0, 1, 2, 3, 9].map(Pace::from_u8),
+            [Pause, Light, Normal, Full, Normal]
+        );
     }
 
     #[test]
     fn detections_become_boxes_only_when_they_make_sense() {
-        let f = |x0, y0, x1, y1| Face { x0, y0, x1, y1, score: 0.9, landmarks: [(0.0, 0.0); 5] };
+        let f = |x0, y0, x1, y1| Face {
+            x0,
+            y0,
+            x1,
+            y1,
+            score: 0.9,
+            landmarks: [(0.0, 0.0); 5],
+        };
         assert!(face_rect(&f(0.2, 0.2, 0.4, 0.5)).is_some());
         // a box that spills over the edge is brought back inside
         let r = face_rect(&f(-0.1, 0.1, 0.3, 1.2)).unwrap();
         assert_eq!((r.x0, r.y1), (0.0, 1.0));
         // slivers, inverted boxes and non-numbers are dropped, never turned into regions
-        for bad in [f(0.2, 0.2, 0.2, 0.5), f(0.4, 0.2, 0.2, 0.5), f(f32::NAN, 0.2, 0.4, 0.5), f(0.2, 0.2, f32::INFINITY, 0.5), f(1.5, 0.2, 2.0, 0.5)]
-        {
+        for bad in [
+            f(0.2, 0.2, 0.2, 0.5),
+            f(0.4, 0.2, 0.2, 0.5),
+            f(f32::NAN, 0.2, 0.4, 0.5),
+            f(0.2, 0.2, f32::INFINITY, 0.5),
+            f(1.5, 0.2, 2.0, 0.5),
+        ] {
             assert!(face_rect(&bad).is_none(), "{bad:?}");
         }
     }

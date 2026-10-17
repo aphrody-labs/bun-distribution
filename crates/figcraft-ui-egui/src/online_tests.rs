@@ -12,8 +12,8 @@ use egui::{Event, Key, Shape, pos2};
 use figcraft_engine::Prefs;
 use figcraft_engine::figcraft_collab::message::{Admin, AdminReply, ClientMsg, OwnedFile};
 use figcraft_engine::live::{
-    Access, Event as LiveEvent, HostInfo, HostOptions, LiveLink, NetReply, NetRequest, Peer, Presence, PublishOptions, Role, SessionInfo,
-    Shared as SharedLinks, SharedLink,
+    Access, Event as LiveEvent, HostInfo, HostOptions, LiveLink, NetReply, NetRequest, Peer,
+    Presence, PublishOptions, Role, SessionInfo, Shared as SharedLinks, SharedLink,
 };
 use serde_json::{Value, json};
 
@@ -66,10 +66,15 @@ fn info(role: Role, name: &str) -> SessionInfo {
 fn links(file: &str, n: usize) -> SharedLinks {
     let link = |what: &str, code: String| SharedLink {
         id: format!("{what}{n}"),
-        link: format!("figcraft://join?server={SERVER}&file={file}&token=Shared{what}Shared{what}0{n}"),
+        link: format!(
+            "figcraft://join?server={SERVER}&file={file}&token=Shared{what}Shared{what}0{n}"
+        ),
         code: Some(code),
     };
-    SharedLinks { edit: link("edit", format!("NEWED1T0{n}")), view: Some(link("view", format!("NEWV1EW0{n}"))) }
+    SharedLinks {
+        edit: link("edit", format!("NEWED1T0{n}")),
+        view: Some(link("view", format!("NEWV1EW0{n}"))),
+    }
 }
 
 impl LiveLink for Link {
@@ -88,7 +93,13 @@ impl LiveLink for Link {
     fn publish(&mut self, _: u64, _: PublishOptions) -> Result<(), String> {
         Err("not in this test".into())
     }
-    fn hosting(&mut self, server: &str, _: &str, _: &str, req: Option<Admin>) -> Result<(HostInfo, Option<AdminReply>), String> {
+    fn hosting(
+        &mut self,
+        server: &str,
+        _: &str,
+        _: &str,
+        req: Option<Admin>,
+    ) -> Result<(HostInfo, Option<AdminReply>), String> {
         let mut s = self.0.lock().unwrap();
         s.asked.push((server.to_string(), req.clone()));
         if s.offline {
@@ -113,16 +124,27 @@ impl LiveLink for Link {
         };
         Ok((HostInfo::default(), Some(reply)))
     }
-    fn share(&mut self, _: &str, file: &str, owner: &str, revoke: &[String], create: bool) -> Result<Option<SharedLinks>, String> {
+    fn share(
+        &mut self,
+        _: &str,
+        file: &str,
+        owner: &str,
+        revoke: &[String],
+        create: bool,
+    ) -> Result<Option<SharedLinks>, String> {
         let mut s = self.0.lock().unwrap();
-        s.shares.push((file.into(), owner.into(), revoke.to_vec(), create));
+        s.shares
+            .push((file.into(), owner.into(), revoke.to_vec(), create));
         let n = s.shares.iter().filter(|a| a.3).count();
         Ok(create.then(|| links(file, n)))
     }
     fn background(&mut self, job: u64, req: NetRequest) -> bool {
         // Answered at the next poll, as the network would.
         let reply: NetReply = self.request(req);
-        self.0.lock().unwrap().answers.push(LiveEvent::Net { job, reply: Box::new(reply) });
+        self.0.lock().unwrap().answers.push(LiveEvent::Net {
+            job,
+            reply: Box::new(reply),
+        });
         true
     }
     fn leave(&mut self, _: u64) {}
@@ -131,8 +153,18 @@ impl LiveLink for Link {
     fn poll(&mut self) -> Vec<(u64, LiveEvent)> {
         let mut s = self.0.lock().unwrap();
         let session = s.session;
-        let answers: Vec<(u64, LiveEvent)> = std::mem::take(&mut s.answers).into_iter().map(|e| (0, e)).collect();
-        answers.into_iter().chain(std::mem::take(&mut s.events).into_iter().map(|e| (session, e))).collect()
+        let answers: Vec<(u64, LiveEvent)> = std::mem::take(&mut s.answers)
+            .into_iter()
+            .map(|e| (0, e))
+            .collect();
+        answers
+            .into_iter()
+            .chain(
+                std::mem::take(&mut s.events)
+                    .into_iter()
+                    .map(|e| (session, e)),
+            )
+            .collect()
     }
 }
 
@@ -163,10 +195,14 @@ fn record(server: &str, file: &str, shared: bool) -> Value {
 fn harness(records: Vec<Value>) -> (Harness, Shared) {
     let (mut h, _) = Harness::new();
     let script = Shared::default();
-    script.lock().unwrap().files = records.iter().filter_map(|r| r["file"].as_str().map(str::to_string)).collect();
+    script.lock().unwrap().files = records
+        .iter()
+        .filter_map(|r| r["file"].as_str().map(str::to_string))
+        .collect();
     h.app.session.live.install(Box::new(Link(script.clone())));
     h.app.services = Box::new(Clipboard(script.clone()));
-    h.app.session.prefs = serde_json::from_value::<Prefs>(json!({"online_files": records})).unwrap();
+    h.app.session.prefs =
+        serde_json::from_value::<Prefs>(json!({"online_files": records})).unwrap();
     h.app.ui.home = true;
     h.frames(3);
     (h, script)
@@ -193,36 +229,81 @@ fn menu(h: &mut Harness, name: &str) -> Vec<Shape> {
 }
 
 fn toast(h: &Harness) -> String {
-    h.app.ui.toast.as_ref().map(|t| t.0.clone()).unwrap_or_default()
+    h.app
+        .ui
+        .toast
+        .as_ref()
+        .map(|t| t.0.clone())
+        .unwrap_or_default()
 }
 
 fn owned_requests(script: &Shared) -> Vec<(String, usize)> {
     let s = script.lock().unwrap();
     s.asked
         .iter()
-        .filter_map(|(server, req)| if let Some(Admin::Owned { files }) = req { Some((server.clone(), files.len())) } else { None })
+        .filter_map(|(server, req)| {
+            if let Some(Admin::Owned { files }) = req {
+                Some((server.clone(), files.len()))
+            } else {
+                None
+            }
+        })
         .collect()
 }
 
 #[test]
 fn nothing_is_asked_until_the_section_opens_then_each_server_once() {
-    let (mut h, script) = harness(vec![record(SERVER, "a", true), record(OTHER, "b", false), record(SERVER, "c", false)]);
+    let (mut h, script) = harness(vec![
+        record(SERVER, "a", true),
+        record(OTHER, "b", false),
+        record(SERVER, "c", false),
+    ]);
     let shapes = h.frames(2);
-    assert!(has_text(&shapes, "Recents") && has_text(&shapes, "Online") && !has_text(&shapes, "Online files"));
-    assert!(script.lock().unwrap().asked.is_empty(), "the home screen alone asks nothing");
+    assert!(
+        has_text(&shapes, "Recents")
+            && has_text(&shapes, "Online")
+            && !has_text(&shapes, "Online files")
+    );
+    assert!(
+        script.lock().unwrap().asked.is_empty(),
+        "the home screen alone asks nothing"
+    );
     let shapes = open(&mut h);
     assert!(has_text(&shapes, "Online files") && !has_text(&shapes, "Open files"));
-    assert_eq!(owned_requests(&script), [(SERVER.to_string(), 2), (OTHER.to_string(), 1)]);
-    for t in ["File a", "File b", "File c", "share.example · Shared · Opened 2026-10-12", "127.0.0.1:47900 · Not shared · Opened 2026-10-12"] {
-        assert!(has_text(&shapes, t), "the list shows {t:?}: {:?}", texts(&shapes).iter().map(|t| t.0.clone()).collect::<Vec<_>>());
+    assert_eq!(
+        owned_requests(&script),
+        [(SERVER.to_string(), 2), (OTHER.to_string(), 1)]
+    );
+    for t in [
+        "File a",
+        "File b",
+        "File c",
+        "share.example · Shared · Opened 2026-10-12",
+        "127.0.0.1:47900 · Not shared · Opened 2026-10-12",
+    ] {
+        assert!(
+            has_text(&shapes, t),
+            "the list shows {t:?}: {:?}",
+            texts(&shapes)
+                .iter()
+                .map(|t| t.0.clone())
+                .collect::<Vec<_>>()
+        );
     }
     let inspect = h.app.inspect();
     assert_eq!(
-        (&inspect["online"]["open"], &inspect["online"]["files"][0]["state"], &inspect["online"]["files"][0]["hasOwnerToken"]),
+        (
+            &inspect["online"]["open"],
+            &inspect["online"]["files"][0]["state"],
+            &inspect["online"]["files"][0]["hasOwnerToken"]
+        ),
         (&json!(true), &json!("online"), &json!(true))
     );
     for secret in [OWNER, EDIT_TOKEN] {
-        assert!(!inspect.to_string().contains(secret), "ui.inspect carries a secret");
+        assert!(
+            !inspect.to_string().contains(secret),
+            "ui.inspect carries a secret"
+        );
     }
     // Staying there asks nothing more, and an idle section asks for no frames.
     assert!(h.goes_quiet());
@@ -241,7 +322,10 @@ fn nothing_is_asked_until_the_section_opens_then_each_server_once() {
 fn an_empty_list_says_how_files_get_there_and_asks_no_server() {
     let (mut h, script) = harness(vec![]);
     let shapes = open(&mut h);
-    assert!(has_text(&shapes, "Nothing online yet. Use Share on a file to put it online and it is listed here."));
+    assert!(has_text(
+        &shapes,
+        "Nothing online yet. Use Share on a file to put it online and it is listed here."
+    ));
     assert!(script.lock().unwrap().asked.is_empty());
 }
 
@@ -250,7 +334,10 @@ fn a_server_that_cant_be_reached_says_so_and_the_list_still_shows() {
     let (mut h, script) = harness(vec![record(SERVER, "a", true)]);
     script.lock().unwrap().offline = true;
     let shapes = open(&mut h);
-    assert!(has_text(&shapes, "Couldn't reach share.example: showing what this computer remembers."));
+    assert!(has_text(
+        &shapes,
+        "Couldn't reach share.example: showing what this computer remembers."
+    ));
     assert!(has_text(&shapes, "File a") && has_text(&shapes, "Try again"));
     assert_eq!(h.app.inspect()["online"]["files"][0]["state"], "unknown");
     // Back: Try again asks once more and the note goes.
@@ -266,18 +353,44 @@ fn a_row_opens_its_file_as_owner_and_its_tab_shows_when_it_arrives() {
     let shapes = open(&mut h);
     let shapes = click(&mut h, &shapes, "File a");
     assert_eq!(script.lock().unwrap().joined, [edit_link(SERVER, "a")]);
-    assert!(has_text(&shapes, "Joining…") && h.app.ui.home, "still on the home screen while it joins");
+    assert!(
+        has_text(&shapes, "Joining…") && h.app.ui.home,
+        "still on the home screen while it joins"
+    );
     // The owner's welcome and the document.
     use figcraft_engine::figcraft_collab::message::ServerMsg;
     use figcraft_engine::figcraft_collab::{Client, Limits, Outgoing, Server};
     let mut server = Server::new(h.app.session.doc().unwrap().clone(), "", Limits::default());
-    let ClientMsg::Hello(me) = Client::hello("f", "", "Ada", "") else { panic!("no hello") };
+    let ClientMsg::Hello(me) = Client::hello("f", "", "Ada", "") else {
+        panic!("no hello")
+    };
     let (_, outs) = server.join(me).unwrap();
-    let w = outs.into_iter().find_map(|o| if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o { Some(w) } else { None }).unwrap();
-    script.lock().unwrap().events.extend([LiveEvent::Welcome { info: info(Role::Guest, "File a"), peers: vec![] }, LiveEvent::Sync(w)]);
+    let w = outs
+        .into_iter()
+        .find_map(|o| {
+            if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o {
+                Some(w)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    script.lock().unwrap().events.extend([
+        LiveEvent::Welcome {
+            info: info(Role::Guest, "File a"),
+            peers: vec![],
+        },
+        LiveEvent::Sync(w),
+    ]);
     h.frames(3);
-    assert!(!h.app.ui.home && h.app.session.active == 1, "its tab is in front");
-    assert_eq!(h.app.inspect()["tabs"], json!([{"name": "Untitled", "live": null}, {"name": "Untitled", "live": "shared"}]));
+    assert!(
+        !h.app.ui.home && h.app.session.active == 1,
+        "its tab is in front"
+    );
+    assert_eq!(
+        h.app.inspect()["tabs"],
+        json!([{"name": "Untitled", "live": null}, {"name": "Untitled", "live": "shared"}])
+    );
     // Clicking the row again brings that tab back instead of joining twice.
     h.app.ui.home = true;
     let shapes = h.frames(2);
@@ -290,7 +403,15 @@ fn the_row_menu_stops_and_starts_sharing_and_copies_the_code_and_link() {
     let (mut h, script) = harness(vec![record(SERVER, "a", true)]);
     open(&mut h);
     let shapes = menu(&mut h, "File a");
-    for t in ["Open", "Stop sharing", "Copy code", "Copy link", "Rename on the server…", "Remove from server…", "Forget on this computer"] {
+    for t in [
+        "Open",
+        "Stop sharing",
+        "Copy code",
+        "Copy link",
+        "Rename on the server…",
+        "Remove from server…",
+        "Forget on this computer",
+    ] {
         assert!(has_text(&shapes, t), "the menu has {t:?}");
     }
     click(&mut h, &shapes, "Copy code");
@@ -298,21 +419,48 @@ fn the_row_menu_stops_and_starts_sharing_and_copies_the_code_and_link() {
     assert_eq!(toast(&h), "Join code copied");
     let shapes = menu(&mut h, "File a");
     click(&mut h, &shapes, "Copy link");
-    assert_eq!(script.lock().unwrap().copied.last(), Some(&links("a", 0).edit.link));
+    assert_eq!(
+        script.lock().unwrap().copied.last(),
+        Some(&links("a", 0).edit.link)
+    );
     // Stop: the others' links are revoked with the recorded token; the row says so.
     let shapes = menu(&mut h, "File a");
     let shapes = click(&mut h, &shapes, "Stop sharing");
-    assert_eq!(script.lock().unwrap().shares, [("a".to_string(), OWNER.to_string(), vec!["edit0".to_string(), "view0".to_string()], false)]);
-    assert!(has_text(&shapes, "share.example · Not shared · Opened 2026-10-12"));
-    assert_eq!(toast(&h), "Sharing stopped: the file stays on the server, open only to you");
+    assert_eq!(
+        script.lock().unwrap().shares,
+        [(
+            "a".to_string(),
+            OWNER.to_string(),
+            vec!["edit0".to_string(), "view0".to_string()],
+            false
+        )]
+    );
+    assert!(has_text(
+        &shapes,
+        "share.example · Not shared · Opened 2026-10-12"
+    ));
+    assert_eq!(
+        toast(&h),
+        "Sharing stopped: the file stays on the server, open only to you"
+    );
     // Not shared: nothing to copy; Start sharing makes a new code.
     let shapes = menu(&mut h, "File a");
-    assert!(has_text(&shapes, "Start sharing") && !has_text(&shapes, "Copy code") && !has_text(&shapes, "Copy link"));
+    assert!(
+        has_text(&shapes, "Start sharing")
+            && !has_text(&shapes, "Copy code")
+            && !has_text(&shapes, "Copy link")
+    );
     let shapes = click(&mut h, &shapes, "Start sharing");
-    assert!(has_text(&shapes, "share.example · Shared · Opened 2026-10-12"));
+    assert!(has_text(
+        &shapes,
+        "share.example · Shared · Opened 2026-10-12"
+    ));
     let shapes = menu(&mut h, "File a");
     click(&mut h, &shapes, "Copy code");
-    assert_eq!(script.lock().unwrap().copied.last().map(String::as_str), Some("NEW-ED1-T01"));
+    assert_eq!(
+        script.lock().unwrap().copied.last().map(String::as_str),
+        Some("NEW-ED1-T01")
+    );
 }
 
 #[test]
@@ -329,12 +477,21 @@ fn remove_from_server_asks_first_and_forget_only_drops_the_row() {
     assert_eq!(h.app.inspect()["online"]["confirmRemove"], "File a");
     // Cancel: nothing happened.
     let shapes = click(&mut h, &shapes, "Cancel");
-    assert!(!has_text(&shapes, "Remove File a from share.example?") && script.lock().unwrap().files.len() == 2);
+    assert!(
+        !has_text(&shapes, "Remove File a from share.example?")
+            && script.lock().unwrap().files.len() == 2
+    );
     // Escape closes it too.
     let shapes = menu(&mut h, "File a");
     click(&mut h, &shapes, "Remove from server…");
     for pressed in [true, false] {
-        h.frame(vec![Event::Key { key: Key::Escape, physical_key: None, pressed, repeat: false, modifiers: Default::default() }]);
+        h.frame(vec![Event::Key {
+            key: Key::Escape,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        }]);
     }
     assert!(h.app.inspect()["online"]["confirmRemove"].is_null());
     // Remove: off the server and out of the list.
@@ -350,8 +507,15 @@ fn remove_from_server_asks_first_and_forget_only_drops_the_row() {
     let shapes = click(&mut h, &shapes, "Forget on this computer");
     assert!(!has_text(&shapes, "File b") && h.app.session.prefs.online_files.is_empty());
     assert_eq!(script.lock().unwrap().asked.len(), before);
-    assert_eq!(script.lock().unwrap().files, ["b"], "the file stays on the server");
-    assert_eq!(toast(&h), "File b is forgotten on this computer; the file stays on share.example");
+    assert_eq!(
+        script.lock().unwrap().files,
+        ["b"],
+        "the file stays on the server"
+    );
+    assert_eq!(
+        toast(&h),
+        "File b is forgotten on this computer; the file stays on share.example"
+    );
 }
 
 #[test]
@@ -363,12 +527,20 @@ fn rename_on_the_server_takes_a_name() {
     assert!(has_text(&shapes, "Rename on the server") && has_text(&shapes, "Rename"));
     // The field has the keyboard: select everything in it and type over it.
     for pressed in [true, false] {
-        h.frame(vec![Event::Key { key: Key::A, physical_key: None, pressed, repeat: false, modifiers: egui::Modifiers::COMMAND }]);
+        h.frame(vec![Event::Key {
+            key: Key::A,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        }]);
     }
     h.frame(vec![Event::Text("Landing".into())]);
     let shapes = h.frames(2);
     let shapes = click(&mut h, &shapes, "Rename");
-    assert!(script.lock().unwrap().asked.iter().any(|(_, r)| matches!(r, Some(Admin::Rename { file, name }) if file == "a" && name == "Landing")));
+    assert!(script.lock().unwrap().asked.iter().any(
+        |(_, r)| matches!(r, Some(Admin::Rename { file, name }) if file == "a" && name == "Landing")
+    ));
     assert!(has_text(&shapes, "Landing") && h.app.inspect()["online"]["rename"].is_null());
 }
 
@@ -382,7 +554,11 @@ fn a_file_that_is_gone_says_so_and_can_only_be_cleared() {
     click(&mut h, &shapes, "File a");
     assert!(script.lock().unwrap().joined.is_empty());
     let shapes = menu(&mut h, "File a");
-    assert!(has_text(&shapes, "Clear from this list") && !has_text(&shapes, "Open") && !has_text(&shapes, "Remove from server…"));
+    assert!(
+        has_text(&shapes, "Clear from this list")
+            && !has_text(&shapes, "Open")
+            && !has_text(&shapes, "Remove from server…")
+    );
     let shapes = click(&mut h, &shapes, "Clear from this list");
     assert!(!has_text(&shapes, "File a") && has_text(&shapes, "File b"));
     assert_eq!(toast(&h), "File a cleared from the list");
@@ -392,31 +568,64 @@ fn a_file_that_is_gone_says_so_and_can_only_be_cleared() {
 fn tabs_mark_files_in_a_live_session_and_toasts_name_a_file_that_isnt_in_front() {
     let (mut h, script) = harness(vec![]);
     h.app.ui.home = false;
-    h.app.session.execute("file.rename", &json!({"name": "Homepage"})).unwrap();
-    assert_eq!(h.app.inspect()["tabs"], json!([{"name": "Homepage", "live": null}]));
+    h.app
+        .session
+        .execute("file.rename", &json!({"name": "Homepage"}))
+        .unwrap();
+    assert_eq!(
+        h.app.inspect()["tabs"],
+        json!([{"name": "Homepage", "live": null}])
+    );
     // Hosting on the local network: others get in.
-    h.app.session.execute("collab.share", &json!({"via": "local"})).unwrap();
+    h.app
+        .session
+        .execute("collab.share", &json!({"via": "local"}))
+        .unwrap();
     h.frames(2);
     assert_eq!(script.lock().unwrap().hosted, 1);
-    assert_eq!(crate::tabs::live_mark(&h.app, h.app.session.docs[0].uid), Some(true));
+    assert_eq!(
+        crate::tabs::live_mark(&h.app, h.app.session.docs[0].uid),
+        Some(true)
+    );
     // A file of yours on a server that nobody else gets into now: marked apart.
     if let Some(sh) = h.app.session.live_mut().and_then(|l| l.share.as_mut()) {
         sh.links = None;
     }
     h.frames(1);
-    assert_eq!(h.app.inspect()["tabs"], json!([{"name": "Homepage", "live": "private"}]));
+    assert_eq!(
+        h.app.inspect()["tabs"],
+        json!([{"name": "Homepage", "live": "private"}])
+    );
     h.app.session.execute("collab.leave", &json!({})).unwrap();
-    h.app.session.execute("collab.share", &json!({"via": "local"})).unwrap();
+    h.app
+        .session
+        .execute("collab.share", &json!({"via": "local"}))
+        .unwrap();
     // Someone joins while the file is in front, then while another is.
-    let peer = |id, name: &str| Peer { client_id: id, name: name.into(), color: "#9747FF".into() };
-    script.lock().unwrap().events.push(LiveEvent::PeerJoined(peer(2, "Hana")));
+    let peer = |id, name: &str| Peer {
+        client_id: id,
+        name: name.into(),
+        color: "#9747FF".into(),
+    };
+    script
+        .lock()
+        .unwrap()
+        .events
+        .push(LiveEvent::PeerJoined(peer(2, "Hana")));
     h.frames(2);
     assert_eq!(toast(&h), "Hana joined");
     h.app.session.execute("file.new", &json!({})).unwrap();
-    script.lock().unwrap().events.push(LiveEvent::PeerJoined(peer(3, "Ada")));
+    script
+        .lock()
+        .unwrap()
+        .events
+        .push(LiveEvent::PeerJoined(peer(3, "Ada")));
     h.frames(2);
     assert_eq!(toast(&h), "Ada joined Homepage");
-    assert_eq!(h.app.inspect()["tabs"], json!([{"name": "Homepage", "live": "shared"}, {"name": "Untitled", "live": null}]));
+    assert_eq!(
+        h.app.inspect()["tabs"],
+        json!([{"name": "Homepage", "live": "shared"}, {"name": "Untitled", "live": null}])
+    );
     script.lock().unwrap().events.push(LiveEvent::PeerLeft(2));
     h.frames(2);
     assert_eq!(toast(&h), "Hana left Homepage");

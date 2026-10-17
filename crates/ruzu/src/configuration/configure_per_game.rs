@@ -67,7 +67,7 @@ impl GameProperties {
     pub fn load_from_file(title_id: u64, path: &Path) -> Option<Self> {
         use ruzu_core::file_sys::{control_metadata::NACP, patch_manager::PatchManager};
         use ruzu_core::hle::service::filesystem::filesystem::FileSystemController;
-        use ruzu_core::loader::loader::{get_loader, get_file_type_string, System as LoaderSystem};
+        use ruzu_core::loader::loader::{get_file_type_string, get_loader, System as LoaderSystem};
 
         // GTK shares the frontend provider, not the worker-owned Core::System.
         let vfs = crate::game_list::frontend_vfs();
@@ -85,7 +85,11 @@ impl GameProperties {
             PatchManager::new(title_id, &controller, &*provider).get_control_metadata()
         };
         let (name, developer, version) = if let Some(control) = control {
-            (control.get_application_name(), control.get_developer_name(), control.get_version_string())
+            (
+                control.get_application_name(),
+                control.get_developer_name(),
+                control.get_version_string(),
+            )
         } else {
             let mut name = String::new();
             loader.read_title(&mut name);
@@ -101,7 +105,10 @@ impl GameProperties {
             bytes
         };
         Some(Self {
-            name, developer, version, title_id,
+            name,
+            developer,
+            version,
+            title_id,
             format: get_file_type_string(loader.get_file_type()).to_owned(),
             size: crate::game_list::human_size(file.get_size() as u64),
             filename: file.get_name(),
@@ -189,7 +196,8 @@ impl ConfigurePerGame {
         status.set_hexpand(true);
         let cancel = dialog_button("window-close-symbolic", "Cancel", "ruzu-properties-cancel");
         let ok = dialog_button("emblem-ok-symbolic", "OK", "ruzu-properties-ok");
-        let apply = (!runtime_lock).then(|| dialog_button("emblem-ok-symbolic", "Apply", "ruzu-properties-ok"));
+        let apply = (!runtime_lock)
+            .then(|| dialog_button("emblem-ok-symbolic", "Apply", "ruzu-properties-ok"));
 
         let footer = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         footer.set_margin_top(8);
@@ -236,7 +244,9 @@ impl ConfigurePerGame {
             apply.connect_clicked(glib::clone!(
                 #[weak(rename_to = dialog)]
                 this,
-                move |_| { dialog.apply_configuration(); }
+                move |_| {
+                    dialog.apply_configuration();
+                }
             ));
         }
         this.window.connect_close_request(glib::clone!(
@@ -532,12 +542,17 @@ mod tests {
     fn running_properties_apply_twice_then_cancel_keeps_last_applied_values() {
         use common::fs::path_util::{get_ruzu_path, set_ruzu_path, RuzuPath};
         fn label(widget: &gtk::Widget, text: &str) -> Option<gtk::Widget> {
-            if widget.downcast_ref::<gtk::Label>().is_some_and(|label| label.text() == text) {
+            if widget
+                .downcast_ref::<gtk::Label>()
+                .is_some_and(|label| label.text() == text)
+            {
                 return Some(widget.clone());
             }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(found) = label(&widget, text) { return Some(found); }
+                if let Some(found) = label(&widget, text) {
+                    return Some(found);
+                }
                 child = widget.next_sibling();
             }
             None
@@ -545,7 +560,9 @@ mod tests {
         fn button(window: &gtk::Window, text: &str) -> gtk::Button {
             let mut widget = label(window.upcast_ref(), text).unwrap();
             loop {
-                if let Ok(button) = widget.clone().downcast::<gtk::Button>() { return button; }
+                if let Ok(button) = widget.clone().downcast::<gtk::Button>() {
+                    return button;
+                }
                 widget = widget.parent().unwrap();
             }
         }
@@ -553,13 +570,27 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let original = get_ruzu_path(RuzuPath::ConfigDir);
         set_ruzu_path(RuzuPath::ConfigDir, directory.path());
-        let dialog = ConfigurePerGame::new(None, GameProperties {
-            name: "Synthetic app".into(), developer: String::new(), version: "1.0".into(),
-            title_id: 0, format: "NRO".into(), size: "0 B".into(), filename: "sample.nro".into(),
-            path: directory.path().join("sample.nro"), icon: None,
-        }, Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new())), false);
+        let dialog = ConfigurePerGame::new(
+            None,
+            GameProperties {
+                name: "Synthetic app".into(),
+                developer: String::new(),
+                version: "1.0".into(),
+                title_id: 0,
+                format: "NRO".into(),
+                size: "0 B".into(),
+                filename: "sample.nro".into(),
+                path: directory.path().join("sample.nro"),
+                icon: None,
+            },
+            Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new())),
+            false,
+        );
         let calls = Rc::new(Cell::new(0));
-        dialog.connect_applied({ let calls = Rc::clone(&calls); move || calls.set(calls.get() + 1) });
+        dialog.connect_applied({
+            let calls = Rc::clone(&calls);
+            move || calls.set(calls.get() + 1)
+        });
         dialog.window.present();
         let apply = button(&dialog.window, "Apply");
         apply.emit_clicked();

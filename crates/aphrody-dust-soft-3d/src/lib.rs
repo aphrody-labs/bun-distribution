@@ -7,18 +7,18 @@ mod utils;
 
 use aphrody_dust_core::{
     gpu::{
-        Scanline,
         engine_3d::{
             Color, InterpColor, PolyAddr, PolyVertIndex, RenderingPolygonAttrs, TexCoords,
             TextureParams,
         },
+        Scanline,
     },
     utils::mem_prelude::*,
 };
 use core::simd::{cmp::SimdOrd, num::SimdUint};
 use utils::{
-    DummyEdge, Edge, Edges, InterpLineData, clip_x_range, dec_poly_vert_index, decode_rgb5,
-    expand_depth, inc_poly_vert_index, rgb5_to_rgb6, rgb5_to_rgb6_shift,
+    clip_x_range, dec_poly_vert_index, decode_rgb5, expand_depth, inc_poly_vert_index,
+    rgb5_to_rgb6, rgb5_to_rgb6_shift, DummyEdge, Edge, Edges, InterpLineData,
 };
 
 type DepthTestFn = fn(u32, u32, PixelAttrs) -> bool;
@@ -100,7 +100,11 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
         3 => InterpColor::splat(vert_color[0]),
         _ => vert_color,
     };
-    vert_blend_color[3] = if poly.alpha == 0 { 0x1F } else { poly.alpha as u16 };
+    vert_blend_color[3] = if poly.alpha == 0 {
+        0x1F
+    } else {
+        poly.alpha as u16
+    };
 
     let blended_color = if FORMAT == 0 {
         vert_blend_color
@@ -149,21 +153,23 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                         .read_le::<u16>((pal_base + (color_index << 1)) & 0x1_FFFF),
                     (raw_alpha << 2 | raw_alpha >> 1) as u16,
                 ))
-            },
+            }
 
             2 => {
                 let color_index = rendering_data.texture[(tex_base + (i >> 2)) & 0x7_FFFF]
                     .wrapping_shr((i << 1) as u32) as usize
                     & 3;
                 rgb5_to_rgb6(decode_rgb5(
-                    rendering_data.tex_pal.read_le::<u16>(pal_base | color_index << 1),
+                    rendering_data
+                        .tex_pal
+                        .read_le::<u16>(pal_base | color_index << 1),
                     if tex_params.use_color_0_as_transparent() && color_index == 0 {
                         0
                     } else {
                         0x1F
                     },
                 ))
-            },
+            }
 
             3 => {
                 let color_index = rendering_data.texture[(tex_base + (i >> 1)) & 0x7_FFFF]
@@ -179,7 +185,7 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                         0x1F
                     },
                 ))
-            },
+            }
 
             4 => {
                 let color_index = rendering_data.texture[(tex_base + i) & 0x7_FFFF] as usize;
@@ -193,7 +199,7 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                         0x1F
                     },
                 ))
-            },
+            }
 
             5 => {
                 let texel_block_addr = (tex_base & 0x4_0000)
@@ -232,13 +238,13 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                             let color_0 = color!(0);
                             let color_1 = color!(1);
                             (color_0 + color_1) >> 1
-                        },
+                        }
 
                         _ => {
                             let color_0 = color!(0);
                             let color_1 = color!(1);
                             (color_0 * InterpColor::splat(5) + color_1 * InterpColor::splat(3)) >> 3
-                        },
+                        }
                     },
 
                     _ => match mode {
@@ -250,27 +256,38 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                             let color_0 = color!(0);
                             let color_1 = color!(1);
                             (color_0 * InterpColor::splat(3) + color_1 * InterpColor::splat(5)) >> 3
-                        },
+                        }
                     },
                 };
 
-                if mode & 1 != 0 { rgb5_to_rgb6_shift(color) } else { rgb5_to_rgb6(color) }
-            },
+                if mode & 1 != 0 {
+                    rgb5_to_rgb6_shift(color)
+                } else {
+                    rgb5_to_rgb6(color)
+                }
+            }
 
             6 => {
                 let pixel = rendering_data.texture[(tex_base + i) & 0x7_FFFF];
                 let color_index = pixel as usize & 7;
                 let alpha = pixel >> 3;
                 rgb5_to_rgb6(decode_rgb5(
-                    rendering_data.tex_pal.read_le::<u16>((pal_base | color_index << 1) & 0x1_FFFF),
+                    rendering_data
+                        .tex_pal
+                        .read_le::<u16>((pal_base | color_index << 1) & 0x1_FFFF),
                     alpha as u16,
                 ))
-            },
+            }
 
             _ => {
-                let color = rendering_data.texture.read_le::<u16>((tex_base + (i << 1)) & 0x7_FFFE);
-                rgb5_to_rgb6(decode_rgb5(color, if color & 1 << 15 != 0 { 0x1F } else { 0 }))
-            },
+                let color = rendering_data
+                    .texture
+                    .read_le::<u16>((tex_base + (i << 1)) & 0x7_FFFE);
+                rgb5_to_rgb6(decode_rgb5(
+                    color,
+                    if color & 1 << 15 != 0 { 0x1F } else { 0 },
+                ))
+            }
         };
 
         match MODE {
@@ -280,21 +297,21 @@ fn process_pixel<const FORMAT: u8, const MODE: u8>(
                     let mut color = tex_color;
                     color[3] = vert_blend_color[3];
                     color
-                },
+                }
                 _ => {
                     let mut color = (tex_color * InterpColor::splat(tex_color[3])
                         + vert_blend_color * InterpColor::splat(31 - tex_color[3]))
                         >> 5;
                     color[3] = vert_blend_color[3];
                     color
-                },
+                }
             },
 
             _ => {
                 ((tex_color + InterpColor::splat(1)) * (vert_blend_color + InterpColor::splat(1))
                     - InterpColor::splat(1))
                     >> InterpColor::from_array([6, 6, 6, 5])
-            },
+            }
         }
     };
 
@@ -342,8 +359,12 @@ static PROCESS_PIXEL_TEXTURES_ENABLED: [ProcessPixelFn; 32] = [
     process_pixel::<7, 3>,
 ];
 
-static PROCESS_PIXEL_TEXTURES_DISABLED: [ProcessPixelFn; 4] =
-    [process_pixel::<0, 0>, process_pixel::<0, 1>, process_pixel::<0, 2>, process_pixel::<0, 3>];
+static PROCESS_PIXEL_TEXTURES_DISABLED: [ProcessPixelFn; 4] = [
+    process_pixel::<0, 0>,
+    process_pixel::<0, 1>,
+    process_pixel::<0, 2>,
+    process_pixel::<0, 3>,
+];
 
 pub struct Renderer {
     color_buffer: Box<[Scanline<Color>; 192]>,
@@ -361,9 +382,19 @@ fn depth_test_equal_z(a: u32, b: u32, _: PixelAttrs) -> bool {
 }
 
 fn depth_test_less_front_facing(a: u32, b: u32, b_attrs: PixelAttrs) -> bool {
-    let mask = PixelAttrs(0).with_translucent(true).with_front_facing(true).0;
-    let value = PixelAttrs(0).with_translucent(false).with_front_facing(false).0;
-    if b_attrs.0 & mask == value { a <= b } else { a < b }
+    let mask = PixelAttrs(0)
+        .with_translucent(true)
+        .with_front_facing(true)
+        .0;
+    let value = PixelAttrs(0)
+        .with_translucent(false)
+        .with_front_facing(false)
+        .0;
+    if b_attrs.0 & mask == value {
+        a <= b
+    } else {
+        a < b
+    }
 }
 
 fn depth_test_less_back_facing(a: u32, b: u32, _: PixelAttrs) -> bool {
@@ -393,7 +424,11 @@ impl Renderer {
             }
 
             let depth_test: fn(u32, u32, PixelAttrs) -> bool = if poly.attrs.depth_test_equal() {
-                if rendering_data.w_buffering { depth_test_equal_w } else { depth_test_equal_z }
+                if rendering_data.w_buffering {
+                    depth_test_equal_w
+                } else {
+                    depth_test_equal_z
+                }
             } else if poly.attrs.is_front_facing() {
                 depth_test_less_front_facing
             } else {
@@ -573,21 +608,26 @@ impl Renderer {
 
             let color_line_base = 0x4_0000 | line_base;
             for dst in &mut *color_line {
-                let raw_color =
-                    rendering_data.texture.read_le(color_line_base | (x_in_image as usize) << 1);
-                *dst =
-                    rgb5_to_rgb6(decode_rgb5(raw_color, if raw_color >> 15 != 0 { 31 } else { 0 }))
-                        .cast();
+                let raw_color = rendering_data
+                    .texture
+                    .read_le(color_line_base | (x_in_image as usize) << 1);
+                *dst = rgb5_to_rgb6(decode_rgb5(
+                    raw_color,
+                    if raw_color >> 15 != 0 { 31 } else { 0 },
+                ))
+                .cast();
                 x_in_image = x_in_image.wrapping_add(1);
             }
 
             let depth_line_base = 0x4_0000 | line_base;
             let pixel_attrs = PixelAttrs(0).with_opaque_poly_id(rendering_data.clear_poly_id);
-            for (dst_depth, dst_attrs) in
-                depth_full_line[1..257].iter_mut().zip(&mut attr_full_line[1..257])
+            for (dst_depth, dst_attrs) in depth_full_line[1..257]
+                .iter_mut()
+                .zip(&mut attr_full_line[1..257])
             {
-                let raw_depth =
-                    rendering_data.texture.read_le(depth_line_base | (x_in_image as usize) << 1);
+                let raw_depth = rendering_data
+                    .texture
+                    .read_le(depth_line_base | (x_in_image as usize) << 1);
                 *dst_depth = expand_depth(raw_depth);
                 *dst_attrs = pixel_attrs.with_fog_enabled(raw_depth >> 15 != 0);
                 x_in_image = x_in_image.wrapping_add(1);
@@ -708,7 +748,7 @@ impl Renderer {
                         ],
                         [interp_edge!(0, ranges[0].0), interp_edge!(1, ranges[1].1)],
                     )
-                },
+                }
                 Edges::Dummy(edges) => {
                     let l_v = rendering_data.vert_ram[edges[0].addr().get() as usize];
                     let r_v = rendering_data.vert_ram[edges[1].addr().get() as usize];
@@ -720,7 +760,7 @@ impl Renderer {
                             (r_v.color, r_v.uv, edges[1].z(), edges[1].w()),
                         ],
                     )
-                },
+                }
             };
 
             let x_span_start = ranges[0].0;
@@ -731,7 +771,11 @@ impl Renderer {
                 || rendering_data.control.edge_marking_enabled()
                 || is_wireframe
                 || (poly.attrs.is_translucent() && rendering_data.control.alpha_blending_enabled());
-            let fill_edges = if fill_all_edges { [true; 2] } else { fill_edges };
+            let fill_edges = if fill_all_edges {
+                [true; 2]
+            } else {
+                fill_edges
+            };
 
             let is_at_y_boundary = y == poly.top_y || y + 1 == poly.bot_y;
 

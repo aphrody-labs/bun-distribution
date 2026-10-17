@@ -69,7 +69,11 @@ impl CellError {
     }
     pub fn parse(s: &str) -> Option<CellError> {
         let u = s.to_ascii_uppercase();
-        CellError::ALL.iter().chain([CellError::Circ].iter()).find(|e| e.as_str() == u).copied()
+        CellError::ALL
+            .iter()
+            .chain([CellError::Circ].iter())
+            .find(|e| e.as_str() == u)
+            .copied()
     }
 }
 
@@ -96,22 +100,38 @@ impl Array {
     }
     pub fn filled(rows: usize, cols: usize, v: Value) -> Array {
         let (rows, cols) = (rows.max(1), cols.max(1));
-        Array { rows, cols, data: vec![v; rows.saturating_mul(cols)] }
+        Array {
+            rows,
+            cols,
+            data: vec![v; rows.saturating_mul(cols)],
+        }
     }
     pub fn scalar(v: Value) -> Array {
-        Array { rows: 1, cols: 1, data: vec![v] }
+        Array {
+            rows: 1,
+            cols: 1,
+            data: vec![v],
+        }
     }
     pub fn column(v: Vec<Value>) -> Array {
         if v.is_empty() {
             return Array::scalar(Value::Error(CellError::Calc));
         }
-        Array { rows: v.len(), cols: 1, data: v }
+        Array {
+            rows: v.len(),
+            cols: 1,
+            data: v,
+        }
     }
     pub fn row(v: Vec<Value>) -> Array {
         if v.is_empty() {
             return Array::scalar(Value::Error(CellError::Calc));
         }
-        Array { rows: 1, cols: v.len(), data: v }
+        Array {
+            rows: 1,
+            cols: v.len(),
+            data: v,
+        }
     }
     pub fn get(&self, r: usize, c: usize) -> Option<&Value> {
         if r >= self.rows || c >= self.cols {
@@ -124,7 +144,9 @@ impl Array {
     pub fn get_broadcast(&self, r: usize, c: usize) -> Value {
         let rr = if self.rows == 1 { 0 } else { r };
         let cc = if self.cols == 1 { 0 } else { c };
-        self.get(rr, cc).cloned().unwrap_or(Value::Error(CellError::NA))
+        self.get(rr, cc)
+            .cloned()
+            .unwrap_or(Value::Error(CellError::NA))
     }
     pub fn transpose(&self) -> Array {
         let mut data = Vec::with_capacity(self.data.len());
@@ -133,7 +155,11 @@ impl Array {
                 data.push(self.get(r, c).cloned().unwrap_or(Value::Empty));
             }
         }
-        Array { rows: self.cols, cols: self.rows, data }
+        Array {
+            rows: self.cols,
+            cols: self.rows,
+            data,
+        }
     }
     pub fn iter(&self) -> impl Iterator<Item = &Value> {
         self.data.iter()
@@ -187,7 +213,11 @@ impl From<Array> for Value {
 impl Value {
     /// A number, or `#NUM!` when it is NaN or infinite (Excel never stores those).
     pub fn number(v: f64) -> Value {
-        if v.is_finite() { Value::Number(if v == 0.0 { 0.0 } else { v }) } else { Value::Error(CellError::Num) }
+        if v.is_finite() {
+            Value::Number(if v == 0.0 { 0.0 } else { v })
+        } else {
+            Value::Error(CellError::Num)
+        }
     }
     pub fn text(s: impl Into<Arc<str>>) -> Value {
         Value::Text(s.into())
@@ -205,13 +235,25 @@ impl Value {
         matches!(self, Value::Text(_))
     }
     pub fn as_error(&self) -> Option<CellError> {
-        if let Value::Error(e) = self { Some(*e) } else { None }
+        if let Value::Error(e) = self {
+            Some(*e)
+        } else {
+            None
+        }
     }
     pub fn as_f64(&self) -> Option<f64> {
-        if let Value::Number(n) = self { Some(*n) } else { None }
+        if let Value::Number(n) = self {
+            Some(*n)
+        } else {
+            None
+        }
     }
     pub fn as_text(&self) -> Option<&str> {
-        if let Value::Text(t) = self { Some(t) } else { None }
+        if let Value::Text(t) = self {
+            Some(t)
+        } else {
+            None
+        }
     }
     /// Top-left element of an array, the value itself otherwise.
     pub fn scalar(&self) -> Value {
@@ -234,7 +276,11 @@ impl Value {
             Value::Bool(b) => Ok(if *b { 1.0 } else { 0.0 }),
             Value::Text(t) => crate::parse::parse_number_text_in(t, sys).ok_or(CellError::Value),
             Value::Error(e) => Err(*e),
-            Value::Array(a) => a.data.first().map(|v| v.to_number_in(sys)).unwrap_or(Ok(0.0)),
+            Value::Array(a) => a
+                .data
+                .first()
+                .map(|v| v.to_number_in(sys))
+                .unwrap_or(Ok(0.0)),
         }
     }
     /// Coercion to text as `&` does it.
@@ -245,7 +291,11 @@ impl Value {
             Value::Bool(b) => Ok(if *b { "TRUE".into() } else { "FALSE".into() }),
             Value::Text(t) => Ok(t.to_string()),
             Value::Error(e) => Err(*e),
-            Value::Array(a) => a.data.first().map(|v| v.to_text()).unwrap_or(Ok(String::new())),
+            Value::Array(a) => a
+                .data
+                .first()
+                .map(|v| v.to_text())
+                .unwrap_or(Ok(String::new())),
         }
     }
     /// Coercion to a boolean as `IF` does it.
@@ -310,7 +360,11 @@ pub fn compare(a: &Value, b: &Value) -> Ordering {
 /// noise such as `0.1+0.2` versus `0.3` counts as equal.
 pub fn compare_numbers(a: f64, b: f64) -> Ordering {
     fn round15(x: f64) -> f64 {
-        if !x.is_finite() || x == 0.0 { x } else { format!("{x:.14e}").parse().unwrap_or(x) }
+        if !x.is_finite() || x == 0.0 {
+            x
+        } else {
+            format!("{x:.14e}").parse().unwrap_or(x)
+        }
     }
     if a == b {
         return Ordering::Equal;
@@ -320,7 +374,9 @@ pub fn compare_numbers(a: f64, b: f64) -> Ordering {
     if (a - b).abs() > a.abs().max(b.abs()) * 1e-13 {
         return a.partial_cmp(&b).unwrap_or(Ordering::Equal);
     }
-    round15(a).partial_cmp(&round15(b)).unwrap_or(Ordering::Equal)
+    round15(a)
+        .partial_cmp(&round15(b))
+        .unwrap_or(Ordering::Equal)
 }
 
 /// Case-insensitive text order (Unicode lowercase).
@@ -379,7 +435,9 @@ pub fn trim_decimal(s: &str) -> String {
 /// Scientific text like `1.23456789012346E+15` with up to `sig` significant digits.
 pub fn sci_text(n: f64, sig: usize) -> String {
     let s = format!("{:.*e}", sig.saturating_sub(1), n);
-    let Some((mant, exp)) = s.split_once('e') else { return s };
+    let Some((mant, exp)) = s.split_once('e') else {
+        return s;
+    };
     let mant = trim_decimal(mant);
     let e: i32 = exp.parse().unwrap_or(0);
     format!("{}E{}{:02}", mant, if e < 0 { '-' } else { '+' }, e.abs())
@@ -416,11 +474,23 @@ mod tests {
 
     #[test]
     fn comparisons() {
-        assert_eq!(compare(&Value::from("abc"), &Value::from("ABC")), Ordering::Equal);
-        assert_eq!(compare(&Value::Number(5.0), &Value::from("1")), Ordering::Less);
-        assert_eq!(compare(&Value::from("z"), &Value::Bool(false)), Ordering::Less);
+        assert_eq!(
+            compare(&Value::from("abc"), &Value::from("ABC")),
+            Ordering::Equal
+        );
+        assert_eq!(
+            compare(&Value::Number(5.0), &Value::from("1")),
+            Ordering::Less
+        );
+        assert_eq!(
+            compare(&Value::from("z"), &Value::Bool(false)),
+            Ordering::Less
+        );
         assert_eq!(compare(&Value::Empty, &Value::Number(0.0)), Ordering::Equal);
-        assert_eq!(sort_compare(&Value::Empty, &Value::Number(1.0)), Ordering::Greater);
+        assert_eq!(
+            sort_compare(&Value::Empty, &Value::Number(1.0)),
+            Ordering::Greater
+        );
     }
 
     #[test]

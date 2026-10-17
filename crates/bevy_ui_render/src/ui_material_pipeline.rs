@@ -15,6 +15,7 @@ use bevy_mesh::VertexBufferLayout;
 use bevy_render::material_bind_groups::FallbackBuffer;
 use bevy_render::storage::GpuShaderBuffer;
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderSystems,
     globals::{GlobalsBuffer, GlobalsUniform},
     render_asset::{PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssets},
     render_phase::*,
@@ -22,10 +23,9 @@ use bevy_render::{
     renderer::{RenderDevice, RenderQueue},
     sync_world::MainEntity,
     view::*,
-    Extract, ExtractSchedule, Render, RenderSystems,
 };
 use bevy_render::{GpuResourceAppExt, RenderApp, RenderStartup};
-use bevy_shader::{load_shader_library, Shader, ShaderRef};
+use bevy_shader::{Shader, ShaderRef, load_shader_library};
 use bevy_sprite::BorderRect;
 use bevy_ui::ComputedStackIndex;
 use bevy_utils::default;

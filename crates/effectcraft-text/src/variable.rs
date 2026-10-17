@@ -30,7 +30,12 @@ pub fn coords(id: u32) -> Arc<Vec<(String, f32)>> {
     if id == 0 {
         return Arc::new(Vec::new());
     }
-    table().lock().unwrap_or_else(|e| e.into_inner()).get(id as usize - 1).cloned().unwrap_or_default()
+    table()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(id as usize - 1)
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn table() -> &'static Mutex<Vec<Arc<Vec<(String, f32)>>>> {
@@ -52,13 +57,25 @@ pub struct FontAxis {
 /// The variation axes of a face (empty for static fonts).
 pub fn font_axes(face: FaceId) -> Vec<FontAxis> {
     let f = fonts::face(face);
-    let Some(font) = f.font() else { return Vec::new() };
+    let Some(font) = f.font() else {
+        return Vec::new();
+    };
     font.axes()
         .iter()
         .map(|a| {
             let tag = String::from_utf8_lossy(&a.tag().to_be_bytes()).to_string();
-            let name = font.localized_strings(a.name_id()).english_or_first().map(|s| s.to_string()).unwrap_or_else(|| tag.clone());
-            FontAxis { tag, name, min: a.min_value(), default: a.default_value(), max: a.max_value() }
+            let name = font
+                .localized_strings(a.name_id())
+                .english_or_first()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| tag.clone());
+            FontAxis {
+                tag,
+                name,
+                min: a.min_value(),
+                default: a.default_value(),
+                max: a.max_value(),
+            }
         })
         .collect()
 }
@@ -83,16 +100,29 @@ pub fn outline_units_at(face: FaceId, gid: u32, coords: &[(String, f32)]) -> Opt
     static C: OnceLock<Mutex<HashMap<Key, Option<Arc<BezPath>>>>> = OnceLock::new();
     let c = C.get_or_init(Default::default);
     // Quantise to 1/100 of a unit so animation frames reuse outlines.
-    let key: Key = (face, gid, coords.iter().map(|(t, v)| (t.clone(), (v * 100.0).round() as i32)).collect());
+    let key: Key = (
+        face,
+        gid,
+        coords
+            .iter()
+            .map(|(t, v)| (t.clone(), (v * 100.0).round() as i32))
+            .collect(),
+    );
     if let Some(v) = c.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
         return v.clone();
     }
     let f = fonts::face(face);
     let v = f.font().and_then(|font| {
-        let loc = font.axes().location(coords.iter().map(|(t, v)| (tag_of(t), *v)));
+        let loc = font
+            .axes()
+            .location(coords.iter().map(|(t, v)| (tag_of(t), *v)));
         let g = font.outline_glyphs().get(GlyphId::new(gid))?;
         let mut pen = Pen(BezPath::new());
-        g.draw(DrawSettings::unhinted(Size::unscaled(), LocationRef::from(&loc)), &mut pen).ok()?;
+        g.draw(
+            DrawSettings::unhinted(Size::unscaled(), LocationRef::from(&loc)),
+            &mut pen,
+        )
+        .ok()?;
         Some(Arc::new(pen.0))
     });
     let mut m = c.lock().unwrap_or_else(|e| e.into_inner());
@@ -108,9 +138,21 @@ pub fn outline_units_at(face: FaceId, gid: u32, coords: &[(String, f32)]) -> Opt
 /// Variable Font Axes setting, else the axis default).
 pub fn char_outline_varied(g: &CharGlyph, deltas: &[(String, f32)]) -> Option<BezPath> {
     let axes = font_axes(g.face);
-    let base = |t: &str, d: f32| g.variations.iter().find(|(x, _)| x.trim_end() == t.trim_end()).map(|(_, v)| *v).unwrap_or(d);
-    let mut coords: Vec<(String, f32)> =
-        deltas.iter().filter_map(|(t, d)| axes.iter().find(|a| a.tag == *t).map(|a| (t.clone(), (base(&a.tag, a.default) + d).clamp(a.min, a.max)))).collect();
+    let base = |t: &str, d: f32| {
+        g.variations
+            .iter()
+            .find(|(x, _)| x.trim_end() == t.trim_end())
+            .map(|(_, v)| *v)
+            .unwrap_or(d)
+    };
+    let mut coords: Vec<(String, f32)> = deltas
+        .iter()
+        .filter_map(|(t, d)| {
+            axes.iter()
+                .find(|a| a.tag == *t)
+                .map(|a| (t.clone(), (base(&a.tag, a.default) + d).clamp(a.min, a.max)))
+        })
+        .collect();
     if coords.is_empty() {
         return None;
     }
@@ -128,17 +170,32 @@ pub fn char_outline_varied(g: &CharGlyph, deltas: &[(String, f32)]) -> Option<Be
 pub fn advance_units_at(face: FaceId, gid: u32, coords: &[(String, f32)]) -> Option<f32> {
     let f = fonts::face(face);
     let font = f.font()?;
-    let loc = font.axes().location(coords.iter().map(|(t, v)| (tag_of(t), *v)));
-    font.glyph_metrics(Size::unscaled(), LocationRef::from(&loc)).advance_width(GlyphId::new(gid))
+    let loc = font
+        .axes()
+        .location(coords.iter().map(|(t, v)| (tag_of(t), *v)));
+    font.glyph_metrics(Size::unscaled(), LocationRef::from(&loc))
+        .advance_width(GlyphId::new(gid))
 }
 
 /// The change of a laid-out character's advance (layout units) when its face's axes move by
 /// `deltas` (as [`char_outline_varied`]): Variable Font Axes animators re-space the text.
 pub fn char_advance_delta(g: &CharGlyph, deltas: &[(String, f32)]) -> Option<f64> {
     let axes = font_axes(g.face);
-    let base = |t: &str, d: f32| g.variations.iter().find(|(x, _)| x.trim_end() == t.trim_end()).map(|(_, v)| *v).unwrap_or(d);
-    let mut coords: Vec<(String, f32)> =
-        deltas.iter().filter_map(|(t, d)| axes.iter().find(|a| a.tag == *t).map(|a| (t.clone(), (base(&a.tag, a.default) + d).clamp(a.min, a.max)))).collect();
+    let base = |t: &str, d: f32| {
+        g.variations
+            .iter()
+            .find(|(x, _)| x.trim_end() == t.trim_end())
+            .map(|(_, v)| *v)
+            .unwrap_or(d)
+    };
+    let mut coords: Vec<(String, f32)> = deltas
+        .iter()
+        .filter_map(|(t, d)| {
+            axes.iter()
+                .find(|a| a.tag == *t)
+                .map(|a| (t.clone(), (base(&a.tag, a.default) + d).clamp(a.min, a.max)))
+        })
+        .collect();
     if coords.is_empty() {
         return None;
     }
@@ -158,7 +215,9 @@ pub fn char_advance_delta(g: &CharGlyph, deltas: &[(String, f32)]) -> Option<f64
 /// demos: (face, its axes).
 pub fn find_variable_face() -> Option<(FaceId, Vec<FontAxis>)> {
     fonts::scan_system();
-    (0..fonts::all_faces().len()).map(|f| (f, font_axes(f))).find(|(_, a)| a.iter().any(|x| x.max > x.min))
+    (0..fonts::all_faces().len())
+        .map(|f| (f, font_axes(f)))
+        .find(|(_, a)| a.iter().any(|x| x.max > x.min))
 }
 
 #[cfg(test)]
@@ -177,7 +236,10 @@ mod tests {
             return;
         };
         let a = axes.iter().find(|x| x.max > x.min).unwrap();
-        let gid = fonts::face(face).glyph('H').or_else(|| fonts::face(face).glyph('A')).unwrap_or(1);
+        let gid = fonts::face(face)
+            .glyph('H')
+            .or_else(|| fonts::face(face).glyph('A'))
+            .unwrap_or(1);
         let lo = outline_units_at(face, gid, &[(a.tag.clone(), a.min)]).unwrap();
         let hi = outline_units_at(face, gid, &[(a.tag.clone(), a.max)]).unwrap();
         assert_ne!(lo.area(), hi.area(), "{} {}..{}", a.tag, a.min, a.max);
@@ -217,7 +279,10 @@ mod tests {
         }
         let mut moving = None;
         for a in &ranged {
-            let (lo, hi) = (crate::layout::measure("Hamburgefonts", &st(a, a.min)), crate::layout::measure("Hamburgefonts", &st(a, a.max)));
+            let (lo, hi) = (
+                crate::layout::measure("Hamburgefonts", &st(a, a.min)),
+                crate::layout::measure("Hamburgefonts", &st(a, a.max)),
+            );
             if (lo - hi).abs() > 1.0 {
                 moving = Some(((*a).clone(), lo, hi));
                 break;
@@ -229,21 +294,45 @@ mod tests {
         }
         let ink = |a: &FontAxis, v: f32| {
             let l = crate::layout::layout("H", &st(a, v), &crate::ParagraphStyle::default());
-            l.glyphs.iter().map(|g| crate::glyph_outline(g).area().abs()).sum::<f64>()
+            l.glyphs
+                .iter()
+                .map(|g| crate::glyph_outline(g).area().abs())
+                .sum::<f64>()
         };
         if let Some((a, lo, hi)) = moving {
             // The axis was picked because it moves the advance; the outline has to follow it too.
-            assert!((lo - hi).abs() > 1.0, "{} {}..{}: advances {lo} vs {hi}", a.tag, a.min, a.max);
+            assert!(
+                (lo - hi).abs() > 1.0,
+                "{} {}..{}: advances {lo} vs {hi}",
+                a.tag,
+                a.min,
+                a.max
+            );
             let (i_lo, i_hi) = (ink(&a, a.min), ink(&a, a.max));
-            assert!((i_lo - i_hi).abs() > 1.0, "{} {}..{}: outlines do not move", a.tag, a.min, a.max);
+            assert!(
+                (i_lo - i_hi).abs() > 1.0,
+                "{} {}..{}: outlines do not move",
+                a.tag,
+                a.min,
+                a.max
+            );
         } else {
             // Nothing here moves an advance. Holding the advances is what a monospaced family does
             // on purpose, but it is also what a broken variation path does, so this case still has
             // to fail rather than skip: the outline must move along `wght`, or, on a face without
             // one, along the first axis that carries a range.
-            let a = axes.iter().find(|a| a.tag == "wght" && a.max > a.min).unwrap_or(ranged[0]);
+            let a = axes
+                .iter()
+                .find(|a| a.tag == "wght" && a.max > a.min)
+                .unwrap_or(ranged[0]);
             let (i_lo, i_hi) = (ink(a, a.min), ink(a, a.max));
-            assert!((i_lo - i_hi).abs() > 1.0, "{} {}..{}: neither the advances nor the outlines move, so variation support looks broken", a.tag, a.min, a.max);
+            assert!(
+                (i_lo - i_hi).abs() > 1.0,
+                "{} {}..{}: neither the advances nor the outlines move, so variation support looks broken",
+                a.tag,
+                a.min,
+                a.max
+            );
         }
     }
 }

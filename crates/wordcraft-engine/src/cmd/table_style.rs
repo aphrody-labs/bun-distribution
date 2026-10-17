@@ -12,7 +12,15 @@ use wordcraft_doc::{Block, Table};
 use crate::{CmdError, CmdResult, CommandSpec, Session, p};
 
 /// The regions a table style formats, by param name: the table style options they follow.
-pub const REGIONS: [&str; 7] = ["wholeTable", "headerRow", "lastRow", "firstColumn", "lastColumn", "bandedRows", "bandedColumns"];
+pub const REGIONS: [&str; 7] = [
+    "wholeTable",
+    "headerRow",
+    "lastRow",
+    "firstColumn",
+    "lastColumn",
+    "bandedRows",
+    "bandedColumns",
+];
 
 /// The formatting params both commands share; each region (`wholeTable`, `headerRow`, `lastRow`
 /// (the total row), `firstColumn`, `lastColumn`, `bandedRows`, `bandedColumns`) takes the same
@@ -30,11 +38,29 @@ macro_rules! style_params {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        CommandSpec::new("table.newStyle", "New Table Style", "Table Design › Table Styles", new_style).params(style_params!(r#""name": string"#)),
-        CommandSpec::new("table.modifyStyle", "Modify Table Style", "Table Design › Table Styles", modify_style)
-            .params(style_params!(r#""style"?: string (default: the current table's), "name"?: string"#)),
-        CommandSpec::new("table.deleteStyle", "Delete Table Style", "Table Design › Table Styles", delete_style)
-            .params(r#"{"style"?: string (default: the current table's)}"#),
+        CommandSpec::new(
+            "table.newStyle",
+            "New Table Style",
+            "Table Design › Table Styles",
+            new_style,
+        )
+        .params(style_params!(r#""name": string"#)),
+        CommandSpec::new(
+            "table.modifyStyle",
+            "Modify Table Style",
+            "Table Design › Table Styles",
+            modify_style,
+        )
+        .params(style_params!(
+            r#""style"?: string (default: the current table's), "name"?: string"#
+        )),
+        CommandSpec::new(
+            "table.deleteStyle",
+            "Delete Table Style",
+            "Table Design › Table Styles",
+            delete_style,
+        )
+        .params(r#"{"style"?: string (default: the current table's)}"#),
     ]
 }
 
@@ -43,7 +69,10 @@ pub fn table_style_id(s: &Session, name: &str) -> Option<String> {
     let st = &s.doc.styles.styles;
     st.iter()
         .find(|x| x.kind == StyleKind::Table && x.id == name)
-        .or_else(|| st.iter().find(|x| x.kind == StyleKind::Table && x.name.eq_ignore_ascii_case(name)))
+        .or_else(|| {
+            st.iter()
+                .find(|x| x.kind == StyleKind::Table && x.name.eq_ignore_ascii_case(name))
+        })
         .map(|x| x.id.clone())
 }
 
@@ -60,14 +89,26 @@ fn build_new(s: &Session, v: &Value) -> Result<Style, CmdError> {
         return Err(CmdError::Params("name is empty".into()));
     }
     if s.doc.styles.find(&name).is_some() {
-        return Err(CmdError::Failed(format!("a style named `{name}` already exists")));
+        return Err(CmdError::Failed(format!(
+            "a style named `{name}` already exists"
+        )));
     }
     let based_on = match p::str(v, "basedOn") {
-        Some(b) => Some(table_style_id(s, b).ok_or_else(|| CmdError::Params(format!("no table style `{b}`")))?),
+        Some(b) => Some(
+            table_style_id(s, b)
+                .ok_or_else(|| CmdError::Params(format!("no table style `{b}`")))?,
+        ),
         None => table_style_id(s, "TableGrid").or_else(|| table_style_id(s, "TableNormal")),
     };
     let id = s.doc.styles.new_id(&name);
-    let mut st = Style { id, name, kind: StyleKind::Table, based_on, priority: Some(99), ..Default::default() };
+    let mut st = Style {
+        id,
+        name,
+        kind: StyleKind::Table,
+        based_on,
+        priority: Some(99),
+        ..Default::default()
+    };
     edit(&mut st, v)?;
     Ok(st)
 }
@@ -86,8 +127,11 @@ fn new_style(s: &mut Session, v: &Value) -> CmdResult {
 /// The table style `v` names (`style`), else the current table's.
 fn target(s: &Session, v: &Value) -> Result<String, CmdError> {
     match p::str(v, "style") {
-        Some(n) => table_style_id(s, n).ok_or_else(|| CmdError::Params(format!("no table style `{n}`"))),
-        None => current_table_style(s).ok_or_else(|| CmdError::Disabled("the cursor isn't in a table with a style".into())),
+        Some(n) => {
+            table_style_id(s, n).ok_or_else(|| CmdError::Params(format!("no table style `{n}`")))
+        }
+        None => current_table_style(s)
+            .ok_or_else(|| CmdError::Disabled("the cursor isn't in a table with a style".into())),
     }
 }
 
@@ -105,15 +149,21 @@ fn modify_style(s: &mut Session, v: &Value) -> CmdResult {
 /// The style `table.modifyStyle` would store for `v`, validated.
 fn build_modified(s: &Session, v: &Value) -> Result<Style, CmdError> {
     let id = target(s, v)?;
-    let rename = p::str(v, "name").map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
+    let rename = p::str(v, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     if let Some(n) = &rename
         && s.doc.styles.find(n).is_some_and(|x| x.id != id)
     {
-        return Err(CmdError::Failed(format!("a style named `{n}` already exists")));
+        return Err(CmdError::Failed(format!(
+            "a style named `{n}` already exists"
+        )));
     }
     let based_on = match p::str(v, "basedOn") {
         Some(b) => {
-            let b = table_style_id(s, b).ok_or_else(|| CmdError::Params(format!("no table style `{b}`")))?;
+            let b = table_style_id(s, b)
+                .ok_or_else(|| CmdError::Params(format!("no table style `{b}`")))?;
             // A style can't be based on itself or on a style based on it.
             if s.doc.styles.chain(&b).iter().any(|x| x.id == id) {
                 return Err(CmdError::Params("a style can't be based on itself".into()));
@@ -122,7 +172,12 @@ fn build_modified(s: &Session, v: &Value) -> Result<Style, CmdError> {
         }
         None => None,
     };
-    let mut st = s.doc.styles.get(&id).cloned().ok_or_else(|| CmdError::Params("no such style".into()))?;
+    let mut st = s
+        .doc
+        .styles
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| CmdError::Params("no such style".into()))?;
     if let Some(n) = rename {
         st.name = n;
     }
@@ -169,15 +224,32 @@ fn delete_style(s: &mut Session, v: &Value) -> CmdResult {
 /// [`delete_style`].
 pub fn delete(s: &mut Session, id: &str) -> CmdResult {
     let id = id.to_string();
-    let st = s.doc.styles.get(&id).cloned().ok_or_else(|| CmdError::Params("no such style".into()))?;
+    let st = s
+        .doc
+        .styles
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| CmdError::Params("no such style".into()))?;
     if st.kind != StyleKind::Table {
-        return Err(CmdError::Params(format!("`{}` isn't a table style", st.name)));
+        return Err(CmdError::Params(format!(
+            "`{}` isn't a table style",
+            st.name
+        )));
     }
     if is_builtin_table_style(&st) {
-        return Err(CmdError::Failed(format!("`{}` is a built-in table style and can't be deleted", st.name)));
+        return Err(CmdError::Failed(format!(
+            "`{}` is a built-in table style and can't be deleted",
+            st.name
+        )));
     }
     let mut rebased = Vec::new();
-    for child in s.doc.styles.styles.iter_mut().filter(|c| c.based_on.as_deref() == Some(id.as_str())) {
+    for child in s
+        .doc
+        .styles
+        .styles
+        .iter_mut()
+        .filter(|c| c.based_on.as_deref() == Some(id.as_str()))
+    {
         let mut para = st.para.clone();
         para.overlay(&child.para);
         child.para = para;
@@ -210,7 +282,9 @@ pub fn delete(s: &mut Session, id: &str) -> CmdResult {
 pub fn is_builtin_table_style(st: &Style) -> bool {
     const IDS: [&str; 2] = ["TableGrid", "TableNormal"];
     const NAMES: [&str; 3] = ["Table Grid", "Normal Table", "Table Normal"];
-    st.builtin || IDS.iter().any(|x| st.id.eq_ignore_ascii_case(x)) || NAMES.iter().any(|x| st.name.eq_ignore_ascii_case(x))
+    st.builtin
+        || IDS.iter().any(|x| st.id.eq_ignore_ascii_case(x))
+        || NAMES.iter().any(|x| st.name.eq_ignore_ascii_case(x))
 }
 
 /// Tables nest at most this deep for restyling.
@@ -220,7 +294,11 @@ const MAX_DEPTH: usize = 32;
 fn uses_style(t: &Table, id: &str, depth: usize) -> bool {
     t.props.style.as_deref() == Some(id)
         || (depth < MAX_DEPTH
-            && t.rows.iter().flat_map(|r| &r.cells).flat_map(|c| &c.blocks).any(|b| b.as_table().is_some_and(|t| uses_style(t, id, depth + 1))))
+            && t.rows
+                .iter()
+                .flat_map(|r| &r.cells)
+                .flat_map(|c| &c.blocks)
+                .any(|b| b.as_table().is_some_and(|t| uses_style(t, id, depth + 1))))
 }
 
 /// Give every table in `blocks` that uses style `from` style `to`; the number restyled.
@@ -247,7 +325,9 @@ fn restyle(blocks: &mut [Arc<Block>], from: &str, to: Option<&str>, depth: usize
 
 /// Apply style `id` to the table at the caret, if any.
 fn apply(s: &mut Session, id: &str) -> Result<(), CmdError> {
-    let Some((tp, _, _)) = s.sel.focus.path.cell() else { return Ok(()) };
+    let Some((tp, _, _)) = s.sel.focus.path.cell() else {
+        return Ok(());
+    };
     s.doc.table_mut(s.sel.focus.story, &tp)?.props.style = Some(id.to_string());
     super::table::touch_cells(s, &tp)
 }
@@ -259,28 +339,59 @@ fn edit(st: &mut Style, v: &Value) -> Result<(), CmdError> {
         region(r, &mut parts.fill, &mut st.chr, &mut parts.borders)?;
     }
     if let Some(r) = v.get("headerRow") {
-        region(r, &mut parts.header_fill, &mut parts.header_chr, &mut parts.header_borders)?;
+        region(
+            r,
+            &mut parts.header_fill,
+            &mut parts.header_chr,
+            &mut parts.header_borders,
+        )?;
     }
     if let Some(r) = v.get("bandedRows") {
-        region(r, &mut parts.band_fill, &mut parts.band_chr, &mut parts.band_borders)?;
+        region(
+            r,
+            &mut parts.band_fill,
+            &mut parts.band_chr,
+            &mut parts.band_borders,
+        )?;
     }
     if let Some(r) = v.get("lastRow") {
-        region(r, &mut parts.total_fill, &mut parts.total_chr, &mut parts.total_borders)?;
+        region(
+            r,
+            &mut parts.total_fill,
+            &mut parts.total_chr,
+            &mut parts.total_borders,
+        )?;
     }
     if let Some(r) = v.get("firstColumn") {
-        region(r, &mut parts.first_col_fill, &mut parts.first_col_chr, &mut parts.first_col_borders)?;
+        region(
+            r,
+            &mut parts.first_col_fill,
+            &mut parts.first_col_chr,
+            &mut parts.first_col_borders,
+        )?;
     }
     if let Some(r) = v.get("lastColumn") {
-        region(r, &mut parts.last_col_fill, &mut parts.last_col_chr, &mut parts.last_col_borders)?;
+        region(
+            r,
+            &mut parts.last_col_fill,
+            &mut parts.last_col_chr,
+            &mut parts.last_col_borders,
+        )?;
     }
     if let Some(r) = v.get("bandedColumns") {
-        region(r, &mut parts.col_band_fill, &mut parts.col_band_chr, &mut parts.col_band_borders)?;
+        region(
+            r,
+            &mut parts.col_band_fill,
+            &mut parts.col_band_chr,
+            &mut parts.col_band_borders,
+        )?;
     }
     if let Some(n) = v.get("bandSize") {
         parts.band_size = n.as_u64().map(|n| n.clamp(1, 1000) as u32);
     }
     if let Some(pp) = v.get("para") {
-        let pp: ParaProps = serde_json::from_value(pp.clone()).map_err(|e| CmdError::Params(format!("para: {e}")))?;
+        let pp: ParaProps = serde_json::from_value(pp.clone())
+            .map_err(|e| CmdError::Params(format!("para: {e}")))?;
         st.para.overlay(&pp);
         st.para.style = None;
         st.para.numbering = None;
@@ -290,14 +401,21 @@ fn edit(st: &mut Style, v: &Value) -> Result<(), CmdError> {
 }
 
 /// One region's shortcuts: borders, fill and character formatting.
-fn region(r: &Value, fill: &mut Option<Rgb>, chr: &mut CharProps, borders: &mut Option<Borders>) -> Result<(), CmdError> {
+fn region(
+    r: &Value,
+    fill: &mut Option<Rgb>,
+    chr: &mut CharProps,
+    borders: &mut Option<Borders>,
+) -> Result<(), CmdError> {
     if !r.is_object() {
         return Err(CmdError::Params("a region is an object".into()));
     }
     let color = |k: &str| -> Result<Option<Rgb>, CmdError> {
         match r.get(k) {
             None | Some(Value::Null) => Ok(None),
-            Some(Value::String(h)) => Rgb::parse(h).map(Some).ok_or_else(|| CmdError::Params(format!("`{k}`: bad colour `{h}`"))),
+            Some(Value::String(h)) => Rgb::parse(h)
+                .map(Some)
+                .ok_or_else(|| CmdError::Params(format!("`{k}`: bad colour `{h}`"))),
             Some(_) => Err(CmdError::Params(format!("`{k}` is \"RRGGBB\" or null"))),
         }
     };
@@ -325,9 +443,21 @@ fn region(r: &Value, fill: &mut Option<Rgb>, chr: &mut CharProps, borders: &mut 
     match r.get("borders") {
         Some(Value::Bool(true)) => {
             let width = p::f32(r, "borderWidth").unwrap_or(0.5).clamp(0.25, 6.0);
-            *borders = Some(Borders::all(Border { style: BorderStyle::Single, width, color: color("borderColor")?, space: 0.0 }));
+            *borders = Some(Borders::all(Border {
+                style: BorderStyle::Single,
+                width,
+                color: color("borderColor")?,
+                space: 0.0,
+            }));
         }
-        Some(Value::Bool(false)) => *borders = Some(Borders::all(Border { style: BorderStyle::None, width: 0.0, color: None, space: 0.0 })),
+        Some(Value::Bool(false)) => {
+            *borders = Some(Borders::all(Border {
+                style: BorderStyle::None,
+                width: 0.0,
+                color: None,
+                space: 0.0,
+            }))
+        }
         Some(Value::Null) => *borders = None,
         Some(_) => return Err(CmdError::Params("`borders` is true, false or null".into())),
         None => {}

@@ -173,7 +173,11 @@ mod tests {
         let id = unsafe { aphrody_web_media_resolve_submit(url.as_ptr(), std::ptr::null(), 1000) };
         assert_eq!(jobs::web_internal_job_status(id), 1);
         let result = jobs::web_internal_job_take(id);
-        assert!(unsafe { CStr::from_ptr(result) }.to_string_lossy().contains("only http"));
+        assert!(
+            unsafe { CStr::from_ptr(result) }
+                .to_string_lossy()
+                .contains("only http")
+        );
         unsafe { crate::aphrody_string_free(result) };
     }
 }

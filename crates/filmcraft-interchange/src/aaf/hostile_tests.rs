@@ -63,7 +63,13 @@ fn weak_collection_count_beyond_the_index_is_an_error() {
 #[test]
 fn weak_collections_within_the_index_are_read() {
     for sf in [SF_WEAK_VECTOR, SF_WEAK_SET] {
-        assert_eq!(read_keys(sf, index(0, 0, &[])).unwrap(), Vec::<Vec<u8>>::new());
-        assert_eq!(read_keys(sf, index(2, 4, &[1, 2, 3, 4, 5, 6, 7, 8])).unwrap(), [vec![1, 2, 3, 4], vec![5, 6, 7, 8]]);
+        assert_eq!(
+            read_keys(sf, index(0, 0, &[])).unwrap(),
+            Vec::<Vec<u8>>::new()
+        );
+        assert_eq!(
+            read_keys(sf, index(2, 4, &[1, 2, 3, 4, 5, 6, 7, 8])).unwrap(),
+            [vec![1, 2, 3, 4], vec![5, 6, 7, 8]]
+        );
     }
 }

@@ -6,15 +6,25 @@ use serde_json::{Value, json};
 use crate::Session;
 
 fn rect(s: &mut Session, x: f64) {
-    s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 10, "height": 10})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": x, "y": 0, "width": 10, "height": 10}),
+    )
+    .unwrap();
 }
 
 fn autosave(s: &mut Session) -> bool {
-    s.execute("version.autosave", &json!({})).unwrap()["saved"].as_bool().unwrap()
+    s.execute("version.autosave", &json!({})).unwrap()["saved"]
+        .as_bool()
+        .unwrap()
 }
 
 fn list(s: &mut Session) -> Vec<Value> {
-    s.execute("version.list", &json!({})).unwrap().as_array().unwrap().clone()
+    s.execute("version.list", &json!({}))
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .clone()
 }
 
 #[test]
@@ -24,11 +34,15 @@ fn autosaves_follow_unsaved_changes_only() {
     rect(&mut s, 0.0);
     assert!(autosave(&mut s));
     let l = list(&mut s);
-    assert_eq!((l[0]["name"].as_str(), l[0]["auto"].as_bool()), (Some("Autosave"), Some(true)));
+    assert_eq!(
+        (l[0]["name"].as_str(), l[0]["auto"].as_bool()),
+        (Some("Autosave"), Some(true))
+    );
     assert!(!autosave(&mut s), "no change since the checkpoint");
     // A version the user saves is a checkpoint too.
     rect(&mut s, 20.0);
-    s.execute("file.saveVersion", &json!({"name": "Mine"})).unwrap();
+    s.execute("file.saveVersion", &json!({"name": "Mine"}))
+        .unwrap();
     assert!(!autosave(&mut s));
     assert!(list(&mut s)[1].get("auto").is_none());
     // Not while a version is shown.
@@ -43,13 +57,17 @@ fn autosaves_follow_unsaved_changes_only() {
 fn oldest_autosaves_make_room_and_user_versions_stay() {
     let mut s = Session::new();
     rect(&mut s, 0.0);
-    s.execute("file.saveVersion", &json!({"name": "Keep me"})).unwrap();
+    s.execute("file.saveVersion", &json!({"name": "Keep me"}))
+        .unwrap();
     for i in 0..(crate::cmd::file::MAX_AUTOSAVES + 5) {
         rect(&mut s, i as f64 * 20.0);
         assert!(autosave(&mut s));
     }
     let l = list(&mut s);
-    assert_eq!(l.iter().filter(|v| v["auto"] == true).count(), crate::cmd::file::MAX_AUTOSAVES);
+    assert_eq!(
+        l.iter().filter(|v| v["auto"] == true).count(),
+        crate::cmd::file::MAX_AUTOSAVES
+    );
     assert_eq!(l[0]["name"], "Keep me");
 }
 
@@ -61,7 +79,8 @@ fn autosaves_keep_their_flag_in_the_file() {
     let mut s = Session::new();
     rect(&mut s, 0.0);
     assert!(autosave(&mut s));
-    s.execute("file.saveVersion", &json!({"name": "Named"})).unwrap();
+    s.execute("file.saveVersion", &json!({"name": "Named"}))
+        .unwrap();
     s.execute("file.save", &json!({"path": path})).unwrap();
     let mut t = Session::empty();
     t.execute("file.open", &json!({"path": path})).unwrap();

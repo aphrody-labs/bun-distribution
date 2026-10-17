@@ -36,8 +36,16 @@ struct Mods {
     cmd: bool,
 }
 
-const NONE: Mods = Mods { shift: false, alt: false, cmd: false };
-const SHIFT: Mods = Mods { shift: true, alt: false, cmd: false };
+const NONE: Mods = Mods {
+    shift: false,
+    alt: false,
+    cmd: false,
+};
+const SHIFT: Mods = Mods {
+    shift: true,
+    alt: false,
+    cmd: false,
+};
 
 fn ev(kind: PointerKind, p: (f64, f64), m: Mods) -> PointerEvent {
     let mut e = PointerEvent::at(kind, p.0, p.1, 1.0);
@@ -52,7 +60,12 @@ fn click(s: &mut Session, p: (f64, f64), m: Mods) {
 
 fn drag(s: &mut Session, a: (f64, f64), b: (f64, f64), m: Mods) {
     s.pointer(&ev(PointerKind::Down, a, m)).unwrap();
-    s.pointer(&ev(PointerKind::Move, ((a.0 + b.0) / 2.0, (a.1 + b.1) / 2.0), m)).unwrap();
+    s.pointer(&ev(
+        PointerKind::Move,
+        ((a.0 + b.0) / 2.0, (a.1 + b.1) / 2.0),
+        m,
+    ))
+    .unwrap();
     s.pointer(&ev(PointerKind::Move, b, m)).unwrap();
     s.pointer(&ev(PointerKind::Up, b, m)).unwrap();
 }
@@ -63,7 +76,14 @@ fn key(s: &mut Session, name: &str, shift: bool) -> bool {
 
 /// A 100 × 100 rectangle at the origin, selected (and in edit mode when `edit`).
 fn square(s: &mut Session, edit: bool) -> NodeId {
-    let id = id_of(&ex(s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 100, "height": 100}))["id"]).unwrap();
+    let id = id_of(
+        &ex(
+            s,
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 100, "height": 100}),
+        )["id"],
+    )
+    .unwrap();
     if edit {
         ex(s, "vector.edit.begin", json!({"id": id}));
     }
@@ -73,7 +93,11 @@ fn square(s: &mut Session, edit: bool) -> NodeId {
 /// The point at page position `p` of vector `id`.
 fn point_at(s: &Session, id: NodeId, p: (f64, f64)) -> usize {
     let w = s.doc().unwrap().world_transform(id);
-    net(s, id).vertices.iter().position(|v| (w * v.point() - Point::new(p.0, p.1)).hypot() < 1e-6).unwrap()
+    net(s, id)
+        .vertices
+        .iter()
+        .position(|v| (w * v.point() - Point::new(p.0, p.1)).hypot() < 1e-6)
+        .unwrap()
 }
 
 /// A point's page position.
@@ -90,11 +114,23 @@ fn filled(s: &Session, id: NodeId, p: (f64, f64)) -> bool {
 fn entering_and_leaving_vector_edit_mode() {
     // (how, in edit mode after, derivation)
     let rows: Vec<(&str, bool, &str)> = vec![
-        ("double-click", true, "double-clicking a selected shape edits it as a vector"),
+        (
+            "double-click",
+            true,
+            "double-clicking a selected shape edits it as a vector",
+        ),
         ("Enter", false, "Enter leaves edit mode"),
         ("Escape", false, "Escape leaves edit mode"),
-        ("Escape with an open pen path", true, "Escape first ends the pen's path and stays in edit mode"),
-        ("click outside", false, "silent: a click away from the shape leaves edit mode (pinned)"),
+        (
+            "Escape with an open pen path",
+            true,
+            "Escape first ends the pen's path and stays in edit mode",
+        ),
+        (
+            "click outside",
+            false,
+            "silent: a click away from the shape leaves edit mode (pinned)",
+        ),
     ];
     for (how, after, why) in rows {
         let mut s = Session::new();
@@ -102,7 +138,8 @@ fn entering_and_leaving_vector_edit_mode() {
         match how {
             "double-click" => {
                 s.set_selection(vec![id]);
-                s.pointer(&ev(PointerKind::DoubleClick, (50.0, 50.0), NONE)).unwrap();
+                s.pointer(&ev(PointerKind::DoubleClick, (50.0, 50.0), NONE))
+                    .unwrap();
             }
             "Enter" | "Escape" => {
                 key(&mut s, how, false);
@@ -111,7 +148,10 @@ fn entering_and_leaving_vector_edit_mode() {
                 ex(&mut s, "vector.edit.tool", json!({"tool": "pen"}));
                 click(&mut s, (300.0, 300.0), NONE);
                 key(&mut s, "Escape", false);
-                assert!(editing(&s).is_some_and(|e| e.anchor.is_none()), "{why}: the path ended");
+                assert!(
+                    editing(&s).is_some_and(|e| e.anchor.is_none()),
+                    "{why}: the path ended"
+                );
             }
             _ => click(&mut s, (600.0, 600.0), NONE),
         }
@@ -120,46 +160,90 @@ fn entering_and_leaving_vector_edit_mode() {
     // Entering converts the shape to a vector that looks the same.
     let mut s = Session::new();
     let id = square(&mut s, false);
-    ex(&mut s, "node.set", json!({"ids": [id], "props": {"cornerRadius": 20, "fill": "#336699", "stroke": "#000000"}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"ids": [id], "props": {"cornerRadius": 20, "fill": "#336699", "stroke": "#000000"}}),
+    );
     let before = s.doc().unwrap().node(id).unwrap().clone();
     let outline = figcraft_doc::geometry::shape_path(&before).unwrap();
     ex(&mut s, "vector.edit.begin", json!({"id": id}));
     let after = s.doc().unwrap().node(id).unwrap().clone();
-    assert!(matches!(after.kind, NodeKind::Vector { .. }), "the shape is a vector now");
-    assert_eq!((after.fills.clone(), after.strokes.clone()), (before.fills, before.strokes), "fills and strokes are kept");
+    assert!(
+        matches!(after.kind, NodeKind::Vector { .. }),
+        "the shape is a vector now"
+    );
+    assert_eq!(
+        (after.fills.clone(), after.strokes.clone()),
+        (before.fills, before.strokes),
+        "fills and strokes are kept"
+    );
     let (path, _) = figcraft_render::node_outline(s.doc().unwrap(), &after).unwrap();
-    assert!((path.area().abs() - outline.area().abs()).abs() < 0.5, "the outline is kept, rounded corners included");
+    assert!(
+        (path.area().abs() - outline.area().abs()).abs() < 0.5,
+        "the outline is kept, rounded corners included"
+    );
     s.undo().unwrap();
-    assert!(matches!(s.doc().unwrap().node(id).unwrap().kind, NodeKind::Rectangle), "converting is one undo step");
+    assert!(
+        matches!(s.doc().unwrap().node(id).unwrap().kind, NodeKind::Rectangle),
+        "converting is one undo step"
+    );
 }
 
 #[test]
 fn the_pen_follows_the_documented_rules() {
     let mut s = Session::new();
-    let id = id_of(&ex(&mut s, "vector.create", json!({"points": [[0, 0], [100, 0]], "closed": false}))["id"]).unwrap();
+    let id = id_of(
+        &ex(
+            &mut s,
+            "vector.create",
+            json!({"points": [[0, 0], [100, 0]], "closed": false}),
+        )["id"],
+    )
+    .unwrap();
     ex(&mut s, "vector.edit.begin", json!({"id": id}));
     ex(&mut s, "vector.edit.tool", json!({"tool": "pen"}));
     // Clicking an end point continues the path from it.
     click(&mut s, (100.0, 0.0), NONE);
-    assert!(editing(&s).unwrap().anchor.is_some(), "clicking an end point continues from it");
+    assert!(
+        editing(&s).unwrap().anchor.is_some(),
+        "clicking an end point continues from it"
+    );
     click(&mut s, (100.0, 100.0), NONE);
     let n = net(&s, id);
-    assert!(n.segments.iter().all(|sg| sg.is_straight()), "a click adds a corner point and a straight segment");
+    assert!(
+        n.segments.iter().all(|sg| sg.is_straight()),
+        "a click adds a corner point and a straight segment"
+    );
     // Dragging adds a smooth point: its handles mirror angle and length.
     drag(&mut s, (0.0, 100.0), (0.0, 140.0), NONE);
     let v = point_at(&s, id, (0.0, 100.0));
-    assert_eq!(net(&s, id).mirroring(v), HandleMirroring::AngleAndLength, "dragging sets the curve's length and slope with mirrored handles");
-    assert!(net(&s, id).segments.iter().any(|sg| !sg.is_straight()), "the segment into it curves");
+    assert_eq!(
+        net(&s, id).mirroring(v),
+        HandleMirroring::AngleAndLength,
+        "dragging sets the curve's length and slope with mirrored handles"
+    );
+    assert!(
+        net(&s, id).segments.iter().any(|sg| !sg.is_straight()),
+        "the segment into it curves"
+    );
     // Clicking another point of the network closes the path there, and the loop fills.
     click(&mut s, (0.0, 0.0), NONE);
     let n = net(&s, id);
     assert_eq!(n.regions.len(), 1, "closing a path makes a filled area");
-    assert!(editing(&s).unwrap().anchor.is_none(), "closing ends the path");
+    assert!(
+        editing(&s).unwrap().anchor.is_none(),
+        "closing ends the path"
+    );
     // A click on a middle point branches from it (a vector network, not a single path).
     click(&mut s, (100.0, 100.0), NONE);
     click(&mut s, (200.0, 200.0), NONE);
     let corner = point_at(&s, id, (100.0, 100.0));
-    assert_eq!(net(&s, id).incident(corner).len(), 3, "silent: branching from a middle point (pinned)");
+    assert_eq!(
+        net(&s, id).incident(corner).len(),
+        3,
+        "silent: branching from a middle point (pinned)"
+    );
     // Shift keeps the new segment to 45° steps.
     let mut sh = ev(PointerKind::Down, (300.0, 210.0), SHIFT);
     s.pointer(&sh).unwrap();
@@ -167,10 +251,17 @@ fn the_pen_follows_the_documented_rules() {
     s.pointer(&sh).unwrap();
     let last = net(&s, id).vertices.len() - 1;
     let p = page_pos(&s, id, last);
-    assert!((p.y - 200.0).abs() < 1e-6, "silent: Shift snaps to 45° from the last point (pinned): {p:?}");
+    assert!(
+        (p.y - 200.0).abs() < 1e-6,
+        "silent: Shift snaps to 45° from the last point (pinned): {p:?}"
+    );
     // Escape leaves the path open: no new fill.
     key(&mut s, "Escape", false);
-    assert_eq!(net(&s, id).regions.len(), 1, "an open path gets no fill region");
+    assert_eq!(
+        net(&s, id).regions.len(),
+        1,
+        "an open path gets no fill region"
+    );
 }
 
 #[test]
@@ -182,11 +273,41 @@ fn selecting_points_and_segments() {
     // (gesture, modifiers, points selected after, segments selected after, derivation)
     let steps: Vec<(&str, Mods, Vec<usize>, usize, &str)> = vec![
         ("click tl", NONE, vec![tl], 0, "a click selects the point"),
-        ("click tr", SHIFT, vec![tl, tr], 0, "Shift-click adds a point"),
-        ("click tl", SHIFT, vec![tr], 0, "Shift-click on a selected point removes it"),
-        ("click top", NONE, vec![], 1, "a click on a segment selects the segment"),
-        ("marquee top", NONE, vec![tl, tr], 0, "a marquee selects the points inside it"),
-        ("lasso left", SHIFT, vec![tl, tr, 99], 0, "Shift with the lasso adds the points it circles"),
+        (
+            "click tr",
+            SHIFT,
+            vec![tl, tr],
+            0,
+            "Shift-click adds a point",
+        ),
+        (
+            "click tl",
+            SHIFT,
+            vec![tr],
+            0,
+            "Shift-click on a selected point removes it",
+        ),
+        (
+            "click top",
+            NONE,
+            vec![],
+            1,
+            "a click on a segment selects the segment",
+        ),
+        (
+            "marquee top",
+            NONE,
+            vec![tl, tr],
+            0,
+            "a marquee selects the points inside it",
+        ),
+        (
+            "lasso left",
+            SHIFT,
+            vec![tl, tr, 99],
+            0,
+            "Shift with the lasso adds the points it circles",
+        ),
     ];
     for (what, m, mut want, segs, why) in steps {
         match what {
@@ -214,25 +335,59 @@ fn selecting_points_and_segments() {
     ex(&mut s, "vector.edit.tool", json!({"tool": "move"}));
     ex(&mut s, "vector.edit.select", json!({"vertices": [tl]}));
     key(&mut s, "Right", false);
-    assert_eq!(page_pos(&s, id, tl), Point::new(1.0, 0.0), "an arrow nudges by 1");
+    assert_eq!(
+        page_pos(&s, id, tl),
+        Point::new(1.0, 0.0),
+        "an arrow nudges by 1"
+    );
     key(&mut s, "Down", true);
-    assert_eq!(page_pos(&s, id, tl), Point::new(1.0, 10.0), "Shift nudges by 10");
+    assert_eq!(
+        page_pos(&s, id, tl),
+        Point::new(1.0, 10.0),
+        "Shift nudges by 10"
+    );
     s.undo().unwrap();
-    assert_eq!(page_pos(&s, id, tl), Point::new(1.0, 0.0), "each nudge is one undo step");
+    assert_eq!(
+        page_pos(&s, id, tl),
+        Point::new(1.0, 0.0),
+        "each nudge is one undo step"
+    );
     // Dragging a point is one undo step.
     drag(&mut s, (1.0, 0.0), (-30.0, -20.0), NONE);
-    assert_eq!(page_pos(&s, id, tl), Point::new(-30.0, -20.0), "a dragged point follows the pointer");
+    assert_eq!(
+        page_pos(&s, id, tl),
+        Point::new(-30.0, -20.0),
+        "a dragged point follows the pointer"
+    );
     s.undo().unwrap();
-    assert_eq!(page_pos(&s, id, tl), Point::new(1.0, 0.0), "the drag is one undo step");
+    assert_eq!(
+        page_pos(&s, id, tl),
+        Point::new(1.0, 0.0),
+        "the drag is one undo step"
+    );
 }
 
 #[test]
 fn deleting_points_vs_delete_and_heal() {
     // (key, Shift, points, segments, closed afterwards, derivation)
     let rows: Vec<(&str, bool, usize, usize, bool, &str)> = vec![
-        ("Delete", false, 3, 2, false, "Delete removes the point and the segments it joined: the path opens"),
+        (
+            "Delete",
+            false,
+            3,
+            2,
+            false,
+            "Delete removes the point and the segments it joined: the path opens",
+        ),
         ("Backspace", false, 3, 2, false, "Backspace deletes too"),
-        ("Delete", true, 3, 3, true, "Shift+Delete removes the point and heals the path between its neighbours"),
+        (
+            "Delete",
+            true,
+            3,
+            3,
+            true,
+            "Shift+Delete removes the point and heals the path between its neighbours",
+        ),
     ];
     for (k, shift, points, segments, closed, why) in rows {
         let mut s = Session::new();
@@ -241,8 +396,14 @@ fn deleting_points_vs_delete_and_heal() {
         ex(&mut s, "vector.edit.select", json!({"vertices": [tr]}));
         key(&mut s, k, shift);
         let n = net(&s, id);
-        let ends = (0..n.vertices.len()).filter(|v| n.incident(*v).len() == 1).count();
-        assert_eq!((n.vertices.len(), n.segments.len(), ends == 0), (points, segments, closed), "{why}");
+        let ends = (0..n.vertices.len())
+            .filter(|v| n.incident(*v).len() == 1)
+            .count();
+        assert_eq!(
+            (n.vertices.len(), n.segments.len(), ends == 0),
+            (points, segments, closed),
+            "{why}"
+        );
         s.undo().unwrap();
         assert_eq!(net(&s, id).vertices.len(), 4, "{why}: one undo step");
     }
@@ -258,18 +419,30 @@ fn deleting_points_vs_delete_and_heal() {
     let w = s.doc().unwrap().world_transform(id);
     let healed = n.segments.len() - 1;
     let c = n.cubic(healed).unwrap();
-    let nearest = (0..=100).map(|i| (w * c.eval(f64::from(i) / 100.0) - Point::new(50.0, 0.0)).hypot()).fold(f64::MAX, f64::min);
-    assert!(nearest < 0.5, "the healed curve passes where the deleted point was: {nearest}");
+    let nearest = (0..=100)
+        .map(|i| (w * c.eval(f64::from(i) / 100.0) - Point::new(50.0, 0.0)).hypot())
+        .fold(f64::MAX, f64::min);
+    assert!(
+        nearest < 0.5,
+        "the healed curve passes where the deleted point was: {nearest}"
+    );
     // The side points keep their tangents (straight up), so the curve stays smooth there.
     let (h0, h1) = (c.p1 - c.p0, c.p2 - c.p3);
-    assert!(h0.x.abs() < 1e-6 && h0.y < 0.0 && h1.x.abs() < 1e-6 && h1.y < 0.0, "the ends keep their tangents: {h0:?} {h1:?}");
+    assert!(
+        h0.x.abs() < 1e-6 && h0.y < 0.0 && h1.x.abs() < 1e-6 && h1.y < 0.0,
+        "the ends keep their tangents: {h0:?} {h1:?}"
+    );
     // Deleting a selected segment keeps its points when others use them.
     let mut s = Session::new();
     let id = square(&mut s, true);
     click(&mut s, (50.0, 0.0), NONE);
     key(&mut s, "Delete", false);
     let n = net(&s, id);
-    assert_eq!((n.vertices.len(), n.segments.len()), (4, 3), "deleting a segment leaves its points");
+    assert_eq!(
+        (n.vertices.len(), n.segments.len()),
+        (4, 3),
+        "deleting a segment leaves its points"
+    );
 }
 
 #[test]
@@ -280,26 +453,69 @@ fn handles_follow_their_mirroring() {
         ("none", (-20.0, 0.0), "no mirroring: the other handle stays"),
         (
             "angle",
-            (-20.0 * 30.0 / 10f64.hypot(30.0), -20.0 * 10.0 / 10f64.hypot(30.0)),
+            (
+                -20.0 * 30.0 / 10f64.hypot(30.0),
+                -20.0 * 10.0 / 10f64.hypot(30.0),
+            ),
             "mirror angle: the other turns opposite and keeps its length",
         ),
-        ("angleAndLength", (-30.0, -10.0), "mirror angle and length: the other is the dragged one's mirror image"),
+        (
+            "angleAndLength",
+            (-30.0, -10.0),
+            "mirror angle and length: the other is the dragged one's mirror image",
+        ),
     ];
     for (mode, want, why) in rows {
         let mut s = Session::new();
-        let id = id_of(&ex(&mut s, "vector.create", json!({"points": [[0, 0], [100, 0], [200, 0]], "closed": false}))["id"]).unwrap();
+        let id = id_of(
+            &ex(
+                &mut s,
+                "vector.create",
+                json!({"points": [[0, 0], [100, 0], [200, 0]], "closed": false}),
+            )["id"],
+        )
+        .unwrap();
         ex(&mut s, "vector.edit.begin", json!({"id": id}));
         let mid = point_at(&s, id, (100.0, 0.0));
         let n = net(&s, id);
-        let into = n.incident(mid).iter().find(|(_, at_a)| !at_a).map(|x| x.0).unwrap();
-        let out = n.incident(mid).iter().find(|(_, at_a)| *at_a).map(|x| x.0).unwrap();
-        ex(&mut s, "vector.edit.setHandle", json!({"segment": into, "start": false, "x": 80, "y": 0, "independent": true}));
-        ex(&mut s, "vector.edit.setHandle", json!({"segment": out, "start": true, "x": 120, "y": 0, "independent": true}));
-        ex(&mut s, "vector.edit.mirroring", json!({"mode": mode, "vertices": [mid]}));
+        let into = n
+            .incident(mid)
+            .iter()
+            .find(|(_, at_a)| !at_a)
+            .map(|x| x.0)
+            .unwrap();
+        let out = n
+            .incident(mid)
+            .iter()
+            .find(|(_, at_a)| *at_a)
+            .map(|x| x.0)
+            .unwrap();
+        ex(
+            &mut s,
+            "vector.edit.setHandle",
+            json!({"segment": into, "start": false, "x": 80, "y": 0, "independent": true}),
+        );
+        ex(
+            &mut s,
+            "vector.edit.setHandle",
+            json!({"segment": out, "start": true, "x": 120, "y": 0, "independent": true}),
+        );
+        ex(
+            &mut s,
+            "vector.edit.mirroring",
+            json!({"mode": mode, "vertices": [mid]}),
+        );
         let lp = net(&s, id).vertices[mid].point();
-        ex(&mut s, "vector.edit.setHandle", json!({"segment": out, "start": true, "x": lp.x + 30.0, "y": lp.y + 10.0}));
+        ex(
+            &mut s,
+            "vector.edit.setHandle",
+            json!({"segment": out, "start": true, "x": lp.x + 30.0, "y": lp.y + 10.0}),
+        );
         let got = net(&s, id).segments[into].tb;
-        assert!((got.0 - want.0).abs() < 1e-6 && (got.1 - want.1).abs() < 1e-6, "{why}: {got:?}");
+        assert!(
+            (got.0 - want.0).abs() < 1e-6 && (got.1 - want.1).abs() < 1e-6,
+            "{why}: {got:?}"
+        );
     }
 }
 
@@ -323,19 +539,57 @@ fn bend_paint_bucket_cut_join_and_eraser_tools() {
     let id = square(&mut s, true);
     let n = net(&s, id);
     let (topseg, botseg) = (
-        n.segments.iter().position(|sg| n.vertices[sg.a].y == 0.0 && n.vertices[sg.b].y == 0.0).unwrap(),
-        n.segments.iter().position(|sg| n.vertices[sg.a].y == 100.0 && n.vertices[sg.b].y == 100.0).unwrap(),
+        n.segments
+            .iter()
+            .position(|sg| n.vertices[sg.a].y == 0.0 && n.vertices[sg.b].y == 0.0)
+            .unwrap(),
+        n.segments
+            .iter()
+            .position(|sg| n.vertices[sg.a].y == 100.0 && n.vertices[sg.b].y == 100.0)
+            .unwrap(),
     );
-    let a = ex(&mut s, "vector.edit.addVertex", json!({"segment": topseg, "t": 0.5}))["vertex"].as_u64().unwrap();
-    let b = ex(&mut s, "vector.edit.addVertex", json!({"segment": botseg, "t": 0.5}))["vertex"].as_u64().unwrap();
+    let a = ex(
+        &mut s,
+        "vector.edit.addVertex",
+        json!({"segment": topseg, "t": 0.5}),
+    )["vertex"]
+        .as_u64()
+        .unwrap();
+    let b = ex(
+        &mut s,
+        "vector.edit.addVertex",
+        json!({"segment": botseg, "t": 0.5}),
+    )["vertex"]
+        .as_u64()
+        .unwrap();
     ex(&mut s, "vector.edit.connect", json!({"a": a, "b": b}));
     ex(&mut s, "vector.edit.tool", json!({"tool": "paint"}));
     // (gesture, left filled, right filled, derivation)
     let steps: Vec<(&str, bool, bool, &str)> = vec![
-        ("click left", false, true, "a click on a filled area removes its fill"),
-        ("click left", true, true, "a click on an empty area fills it"),
-        ("drag left to right", false, false, "a drag changes every area it crosses the way it changed the first"),
-        ("drag right to left", true, true, "starting on an empty area, a drag fills them all"),
+        (
+            "click left",
+            false,
+            true,
+            "a click on a filled area removes its fill",
+        ),
+        (
+            "click left",
+            true,
+            true,
+            "a click on an empty area fills it",
+        ),
+        (
+            "drag left to right",
+            false,
+            false,
+            "a drag changes every area it crosses the way it changed the first",
+        ),
+        (
+            "drag right to left",
+            true,
+            true,
+            "starting on an empty area, a drag fills them all",
+        ),
     ];
     for (what, left, right, why) in steps {
         match what {
@@ -343,12 +597,28 @@ fn bend_paint_bucket_cut_join_and_eraser_tools() {
             "drag left to right" => drag(&mut s, (25.0, 50.0), (75.0, 50.0), NONE),
             _ => drag(&mut s, (75.0, 50.0), (25.0, 50.0), NONE),
         }
-        assert_eq!((filled(&s, id, (25.0, 50.0)), filled(&s, id, (75.0, 50.0))), (left, right), "{why}");
+        assert_eq!(
+            (filled(&s, id, (25.0, 50.0)), filled(&s, id, (75.0, 50.0))),
+            (left, right),
+            "{why}"
+        );
     }
     s.undo().unwrap();
-    assert_eq!((filled(&s, id, (25.0, 50.0)), filled(&s, id, (75.0, 50.0))), (false, false), "a paint drag is one undo step");
-    let r = ex(&mut s, "vector.edit.paint", json!({"points": [[25, 50], [75, 50]]}));
-    assert_eq!(r["filled"], json!(true), "the command paints a drag's points the same way");
+    assert_eq!(
+        (filled(&s, id, (25.0, 50.0)), filled(&s, id, (75.0, 50.0))),
+        (false, false),
+        "a paint drag is one undo step"
+    );
+    let r = ex(
+        &mut s,
+        "vector.edit.paint",
+        json!({"points": [[25, 50], [75, 50]]}),
+    );
+    assert_eq!(
+        r["filled"],
+        json!(true),
+        "the command paints a drag's points the same way"
+    );
 
     // Cut: a click on a segment splits it into two ends at the same spot, keeping the fill.
     let mut s = Session::new();
@@ -357,8 +627,15 @@ fn bend_paint_bucket_cut_join_and_eraser_tools() {
     click(&mut s, (50.0, 0.0), NONE);
     let e = editing(&s).unwrap();
     assert_eq!(e.vertices.len(), 2, "a click splits the path into two ends");
-    assert_eq!(page_pos(&s, id, e.vertices[0]), page_pos(&s, id, e.vertices[1]), "the ends sit where the click was");
-    assert!(filled(&s, id, (50.0, 50.0)), "silent: the fill stays (pinned)");
+    assert_eq!(
+        page_pos(&s, id, e.vertices[0]),
+        page_pos(&s, id, e.vertices[1]),
+        "the ends sit where the click was"
+    );
+    assert!(
+        filled(&s, id, (50.0, 50.0)),
+        "silent: the fill stays (pinned)"
+    );
     // A drag across divides the shape; the part that comes apart moves to its own layer.
     let mut s = Session::new();
     let id = square(&mut s, true);
@@ -366,32 +643,85 @@ fn bend_paint_bucket_cut_join_and_eraser_tools() {
     ex(&mut s, "vector.edit.tool", json!({"tool": "cut"}));
     drag(&mut s, (-20.0, 40.0), (120.0, 40.0), NONE);
     let layers = s.doc().unwrap().node(page).unwrap().children.clone();
-    assert_eq!(layers.len(), 2, "dragging across divides the shape into two layers");
+    assert_eq!(
+        layers.len(),
+        2,
+        "dragging across divides the shape into two layers"
+    );
     let other = *layers.iter().find(|l| **l != id).unwrap();
-    let parts: Vec<(bool, bool)> = [id, other].iter().map(|l| (filled(&s, *l, (50.0, 20.0)), filled(&s, *l, (50.0, 70.0)))).collect();
-    assert!(parts.contains(&(true, false)) && parts.contains(&(false, true)), "each part keeps its piece of the fill: {parts:?}");
+    let parts: Vec<(bool, bool)> = [id, other]
+        .iter()
+        .map(|l| (filled(&s, *l, (50.0, 20.0)), filled(&s, *l, (50.0, 70.0))))
+        .collect();
+    assert!(
+        parts.contains(&(true, false)) && parts.contains(&(false, true)),
+        "each part keeps its piece of the fill: {parts:?}"
+    );
     assert!(editing(&s).is_some(), "still editing");
     s.undo().unwrap();
-    assert_eq!(s.doc().unwrap().node(page).unwrap().children, vec![id], "the cut is one undo step");
-    assert!(s.execute("vector.edit.cut", &json!({"from": [300, 300], "to": [400, 300]})).is_err(), "a line crossing nothing cuts nothing");
+    assert_eq!(
+        s.doc().unwrap().node(page).unwrap().children,
+        vec![id],
+        "the cut is one undo step"
+    );
+    assert!(
+        s.execute(
+            "vector.edit.cut",
+            &json!({"from": [300, 300], "to": [400, 300]})
+        )
+        .is_err(),
+        "a line crossing nothing cuts nothing"
+    );
 
     // Join: two points on top of each other merge into one.
     let mut s = Session::new();
-    let id = id_of(&ex(&mut s, "vector.create", json!({"path": "M0 0 L50 0 M50 0 L100 0"}))["id"]).unwrap();
+    let id = id_of(
+        &ex(
+            &mut s,
+            "vector.create",
+            json!({"path": "M0 0 L50 0 M50 0 L100 0"}),
+        )["id"],
+    )
+    .unwrap();
     ex(&mut s, "vector.edit.begin", json!({"id": id}));
     let before = net(&s, id).vertices.len();
     ex(&mut s, "vector.edit.selectAll", json!({}));
-    let mids: Vec<usize> = (0..before).filter(|v| (page_pos(&s, id, *v) - Point::new(50.0, 0.0)).hypot() < 1e-6).collect();
+    let mids: Vec<usize> = (0..before)
+        .filter(|v| (page_pos(&s, id, *v) - Point::new(50.0, 0.0)).hypot() < 1e-6)
+        .collect();
     ex(&mut s, "vector.edit.select", json!({"vertices": mids}));
     assert!(s.tool_key("J", false, false, true).unwrap());
-    assert_eq!(net(&s, id).vertices.len(), before - 1, "silent: Cmd/Ctrl+J merges overlapping points (pinned)");
+    assert_eq!(
+        net(&s, id).vertices.len(),
+        before - 1,
+        "silent: Cmd/Ctrl+J merges overlapping points (pinned)"
+    );
 
     // Eraser: erasing through a path keeps one layer.
     let mut s = Session::new();
-    let id = id_of(&ex(&mut s, "vector.create", json!({"points": [[0, 0], [100, 0]], "closed": false}))["id"]).unwrap();
+    let id = id_of(
+        &ex(
+            &mut s,
+            "vector.create",
+            json!({"points": [[0, 0], [100, 0]], "closed": false}),
+        )["id"],
+    )
+    .unwrap();
     let page = s.page().unwrap();
     ex(&mut s, "vector.edit.begin", json!({"id": id}));
-    ex(&mut s, "vector.edit.erase", json!({"points": [[50, 0]], "radius": 10}));
-    assert_eq!(net(&s, id).segments.len(), 2, "the eraser removes what it passes over");
-    assert_eq!(s.doc().unwrap().node(page).unwrap().children, vec![id], "and the pieces stay one layer");
+    ex(
+        &mut s,
+        "vector.edit.erase",
+        json!({"points": [[50, 0]], "radius": 10}),
+    );
+    assert_eq!(
+        net(&s, id).segments.len(),
+        2,
+        "the eraser removes what it passes over"
+    );
+    assert_eq!(
+        s.doc().unwrap().node(page).unwrap().children,
+        vec![id],
+        "and the pieces stay one layer"
+    );
 }

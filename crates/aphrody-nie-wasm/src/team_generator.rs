@@ -16,8 +16,12 @@ pub fn team_generator_filter(
 ) -> Result<String, String> {
     let roster: Vec<owner::Candidate> = parse(roster_json)?;
     let filters: owner::Filters = parse(filters_json)?;
-    serde_json::to_string(&owner::filter_candidates(&roster, &filters, minimum as usize))
-        .map_err(|error| error.to_string())
+    serde_json::to_string(&owner::filter_candidates(
+        &roster,
+        &filters,
+        minimum as usize,
+    ))
+    .map_err(|error| error.to_string())
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
@@ -63,8 +67,11 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
-            let ids =
-                actual.indices.iter().map(|&index| roster[index]["id"].clone()).collect::<Vec<_>>();
+            let ids = actual
+                .indices
+                .iter()
+                .map(|&index| roster[index]["id"].clone())
+                .collect::<Vec<_>>();
             let ignored = actual
                 .ignored
                 .iter()
@@ -93,8 +100,14 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let positions = vec![
-            owner::FieldSlot { index: 0, role: "FW".into() },
-            owner::FieldSlot { index: 1, role: "FW".into() },
+            owner::FieldSlot {
+                index: 0,
+                role: "FW".into(),
+            },
+            owner::FieldSlot {
+                index: 1,
+                role: "FW".into(),
+            },
         ];
         let expected =
             owner::generate(&roster, &positions, &owner::Filters::default(), &[], 5489).unwrap();
@@ -106,7 +119,10 @@ mod tests {
             5489,
         )
         .unwrap();
-        assert_eq!(serde_json::from_str::<Vec<owner::Assignment>>(&actual).unwrap(), expected);
+        assert_eq!(
+            serde_json::from_str::<Vec<owner::Assignment>>(&actual).unwrap(),
+            expected
+        );
         assert_eq!(expected[0].roster_index, Some(3));
         assert_eq!(expected[1].roster_index, Some(0));
         assert!(team_generator_filter("{}", "{}", 1).is_err());

@@ -82,7 +82,10 @@ pub(crate) fn run_on_target(
             .map(|a| format!("'{}'", a.replace('\'', r"'\''")))
             .collect::<Vec<_>>()
             .join(" ");
-        Command::new("ssh").no_window().args(["-o", "BatchMode=yes", target_id, &remote]).output()
+        Command::new("ssh")
+            .no_window()
+            .args(["-o", "BatchMode=yes", target_id, &remote])
+            .output()
     }
 }
 
@@ -103,17 +106,24 @@ pub fn execute_lifecycle(
         .services
         .iter()
         .filter(|s| {
-            id.map_or(s.is_supervised() && !s.is_retired() && s.runs_on(target_id), |wanted| {
-                s.id == wanted
-            })
+            id.map_or(
+                s.is_supervised() && !s.is_retired() && s.runs_on(target_id),
+                |wanted| s.id == wanted,
+            )
         })
         .collect();
 
     if selected.is_empty() {
-        bail!("aucun service correspondant à l'identifiant: {}", id.unwrap_or("<tous>"));
+        bail!(
+            "aucun service correspondant à l'identifiant: {}",
+            id.unwrap_or("<tous>")
+        );
     }
     if let Some(service) = selected.iter().find(|s| !s.is_supervised()) {
-        bail!("le service {} n'a pas d'unité systemd (servi par nginx)", service.id);
+        bail!(
+            "le service {} n'a pas d'unité systemd (servi par nginx)",
+            service.id
+        );
     }
 
     let is_local = is_local_target(target_id);
@@ -128,7 +138,7 @@ pub fn execute_lifecycle(
         ServiceAction::Journal => "journal",
         ServiceAction::Health | ServiceAction::Prewarm => {
             bail!("action traitée par le contrôleur Infra")
-        },
+        }
     };
 
     let mut results = Vec::new();
@@ -160,7 +170,9 @@ pub fn execute_lifecycle(
             });
             continue;
         }
-        let Some(unit) = service.systemd_unit_name() else { continue };
+        let Some(unit) = service.systemd_unit_name() else {
+            continue;
+        };
 
         if action == ServiceAction::Journal {
             let out = if is_local {
@@ -224,7 +236,11 @@ pub fn execute_lifecycle(
             action: cmd_str.to_string(),
             success,
             message: if output.is_empty() {
-                if success { Some("ok".to_string()) } else { Some("failed".to_string()) }
+                if success {
+                    Some("ok".to_string())
+                } else {
+                    Some("failed".to_string())
+                }
             } else {
                 Some(output)
             },
@@ -246,9 +262,10 @@ pub fn get_service_statuses(
         .services
         .iter()
         .filter(|s| {
-            id.map_or(s.is_supervised() && !s.is_retired() && s.runs_on(target_id), |wanted| {
-                s.id == wanted
-            })
+            id.map_or(
+                s.is_supervised() && !s.is_retired() && s.runs_on(target_id),
+                |wanted| s.id == wanted,
+            )
         })
         .collect();
 
@@ -263,7 +280,7 @@ pub fn get_service_statuses(
                 Ok(o) if o.status.success() => {
                     let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
                     (container_state_is_up(&s), s)
-                },
+                }
                 Ok(_) => (false, "absent".to_string()),
                 Err(_) => (false, "unknown".to_string()),
             };
@@ -290,26 +307,48 @@ pub fn get_service_statuses(
             continue;
         };
         let (active, state) = if is_local {
-            let out =
-                Command::new("systemctl").no_window().args(["is-active", &unit]).output().ok();
-            match out {
-                Some(o) => {
-                    let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                    (o.status.success(), if s.is_empty() { "inactive".to_string() } else { s })
-                },
-                None => (false, "unknown".to_string()),
-            }
-        } else {
-            let out = Command::new("ssh")
+            let out = Command::new("systemctl")
                 .no_window()
-                .args(["-o", "BatchMode=yes", target_id, &format!("systemctl is-active {}", unit)])
+                .args(["is-active", &unit])
                 .output()
                 .ok();
             match out {
                 Some(o) => {
                     let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                    (o.status.success(), if s.is_empty() { "inactive".to_string() } else { s })
-                },
+                    (
+                        o.status.success(),
+                        if s.is_empty() {
+                            "inactive".to_string()
+                        } else {
+                            s
+                        },
+                    )
+                }
+                None => (false, "unknown".to_string()),
+            }
+        } else {
+            let out = Command::new("ssh")
+                .no_window()
+                .args([
+                    "-o",
+                    "BatchMode=yes",
+                    target_id,
+                    &format!("systemctl is-active {}", unit),
+                ])
+                .output()
+                .ok();
+            match out {
+                Some(o) => {
+                    let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                    (
+                        o.status.success(),
+                        if s.is_empty() {
+                            "inactive".to_string()
+                        } else {
+                            s
+                        },
+                    )
+                }
                 None => (false, "unknown".to_string()),
             }
         };
@@ -352,8 +391,15 @@ mod tests {
         let root = unit_less_root();
         let statuses = get_service_statuses(root.path(), "vps", Some("creator")).expect("status");
         assert_eq!(statuses.len(), 1);
-        assert_eq!((statuses[0].state.as_str(), statuses[0].active), ("no-unit", false));
-        assert!(get_service_statuses(root.path(), "vps", None).expect("listing").is_empty());
+        assert_eq!(
+            (statuses[0].state.as_str(), statuses[0].active),
+            ("no-unit", false)
+        );
+        assert!(
+            get_service_statuses(root.path(), "vps", None)
+                .expect("listing")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -378,7 +424,11 @@ mod tests {
                    { "id": "vps-only", "kind": "x", "runtime": "bun", "unit": "v.service", "host": "vps" } ] }"#,
         )
         .expect("fixture catalog");
-        assert!(get_service_statuses(root.path(), "dbfr", None).expect("listing").is_empty());
+        assert!(
+            get_service_statuses(root.path(), "dbfr", None)
+                .expect("listing")
+                .is_empty()
+        );
         assert!(execute_lifecycle(root.path(), ServiceAction::Restart, None, "dbfr").is_err());
     }
 

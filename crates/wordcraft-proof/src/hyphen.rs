@@ -81,7 +81,12 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { min_word: 5, after_first: 2, before_last: 2, capitalized: true }
+        Limits {
+            min_word: 5,
+            after_first: 2,
+            before_last: 2,
+            capitalized: true,
+        }
     }
 }
 
@@ -123,7 +128,11 @@ fn core_breaks(core: &[char], lang: ProofLang) -> (Vec<usize>, Source) {
     }
     let dict = Dictionary::en_us();
     let s: String = core.iter().collect();
-    let from_mask = |m: u64, len: usize| (1..len.min(64)).filter(|&i| m & (1 << i) != 0).collect::<Vec<_>>();
+    let from_mask = |m: u64, len: usize| {
+        (1..len.min(64))
+            .filter(|&i| m & (1 << i) != 0)
+            .collect::<Vec<_>>()
+    };
     if let Some(m) = dict.get(&s) {
         return (from_mask(m, n), Source::Dictionary);
     }
@@ -204,12 +213,25 @@ pub fn word_breaks_in(word: &str, lang: ProofLang) -> (Vec<usize>, Source) {
         while b > a && is_apostrophe(chars[b - 1]) {
             b -= 1;
         }
-        let core: Vec<char> = chars[a..b].iter().map(|&c| if is_apostrophe(c) { '\'' } else { c.to_lowercase().next().unwrap_or(c) }).collect();
+        let core: Vec<char> = chars[a..b]
+            .iter()
+            .map(|&c| {
+                if is_apostrophe(c) {
+                    '\''
+                } else {
+                    c.to_lowercase().next().unwrap_or(c)
+                }
+            })
+            .collect();
         let (pts, s) = core_breaks(&core, lang);
         if src == Source::None {
             src = s;
         }
-        out.extend(pts.into_iter().filter(|&p| p > 0 && p < core.len() && core[p - 1] != '\'' && core[p] != '\'').map(|p| a + p));
+        out.extend(
+            pts.into_iter()
+                .filter(|&p| p > 0 && p < core.len() && core[p - 1] != '\'' && core[p] != '\'')
+                .map(|p| a + p),
+        );
         i = j;
     }
     (out, src)
@@ -232,7 +254,10 @@ pub fn hyphen_points_in(word: &str, lim: &Limits, lang: ProofLang) -> Vec<usize>
     let min_after = lim.before_last.max(1);
     // Counted once, so each point's checks take constant time however long the word: letters and
     // uppercase letters before each char, and the letter run (trimmed of apostrophes) of each char.
-    let (mut letters, mut upper) = (Vec::with_capacity(chars.len() + 1), Vec::with_capacity(chars.len() + 1));
+    let (mut letters, mut upper) = (
+        Vec::with_capacity(chars.len() + 1),
+        Vec::with_capacity(chars.len() + 1),
+    );
     let (mut l, mut u) = (0usize, 0usize);
     for c in &chars {
         letters.push(l);
@@ -263,11 +288,17 @@ pub fn hyphen_points_in(word: &str, lim: &Limits, lang: ProofLang) -> Vec<usize>
         }
         i = j.max(i + 1);
     }
-    let count = |v: &[usize], a: usize, b: usize| v.get(b).zip(v.get(a)).map_or(0, |(y, x)| y.saturating_sub(*x));
+    let count = |v: &[usize], a: usize, b: usize| {
+        v.get(b)
+            .zip(v.get(a))
+            .map_or(0, |(y, x)| y.saturating_sub(*x))
+    };
     pts.into_iter()
         .filter(|&p| {
             // A point lies between two letters of one run; the char after it gives the run.
-            let Some(&(a, b)) = run_of.get(p) else { return false };
+            let Some(&(a, b)) = run_of.get(p) else {
+                return false;
+            };
             let n = count(&letters, a, b);
             if n < lim.min_word.max(2) {
                 return false;
@@ -310,7 +341,11 @@ const NON_ASCII_CONSONANTS: &str = "łńśćźżçčďđğģķļľĺňñņřŕš
 
 fn is_vowel(c: char) -> bool {
     let l = c.to_lowercase().next().unwrap_or(c);
-    if l.is_ascii() { matches!(l, 'a' | 'e' | 'i' | 'o' | 'u' | 'y') } else { l.is_alphabetic() && !NON_ASCII_CONSONANTS.contains(l) }
+    if l.is_ascii() {
+        matches!(l, 'a' | 'e' | 'i' | 'o' | 'u' | 'y')
+    } else {
+        l.is_alphabetic() && !NON_ASCII_CONSONANTS.contains(l)
+    }
 }
 
 fn onset_pair(a: char, b: char) -> bool {
@@ -362,7 +397,13 @@ fn heuristic_points(c: &[char]) -> Vec<usize> {
         let ok = if v[i - 1] && !v[i] {
             (i + 1 < n && v[i + 1]) || (i + 2 < n && onset_pair(c[i], c[i + 1]) && v[i + 2])
         } else if !v[i - 1] && !v[i] {
-            i >= 2 && v[i - 2] && i + 1 < n && v[i + 1] && !onset_pair(c[i - 1], c[i]) && c[i - 1] != c[i] || (c[i - 1] == c[i] && i >= 2 && v[i - 2])
+            i >= 2
+                && v[i - 2]
+                && i + 1 < n
+                && v[i + 1]
+                && !onset_pair(c[i - 1], c[i])
+                && c[i - 1] != c[i]
+                || (c[i - 1] == c[i] && i >= 2 && v[i - 2])
         } else {
             false
         };
@@ -376,7 +417,10 @@ fn heuristic_points(c: &[char]) -> Vec<usize> {
 
 /// Polish digraphs, one sound each: never split.
 fn is_digraph_pl(a: char, b: char) -> bool {
-    matches!((a, b), ('c', 'h' | 'z') | ('d', 'z' | 'ź' | 'ż') | ('r' | 's', 'z'))
+    matches!(
+        (a, b),
+        ('c', 'h' | 'z') | ('d', 'z' | 'ź' | 'ż') | ('r' | 's', 'z')
+    )
 }
 
 /// Polish syllable heuristic, for words with letters outside the Polish pattern alphabet (`é`,
@@ -392,8 +436,12 @@ fn heuristic_points_pl(c: &[char]) -> Vec<usize> {
     let v: Vec<bool> = c.iter().map(|&x| is_vowel(x)).collect();
     let at = |i: usize| v.get(i).copied().unwrap_or(false);
     // A syllable nucleus: a vowel, except a softening `i` (after a consonant, before a vowel).
-    let nucleus: Vec<bool> = (0..n).map(|i| at(i) && !(c.get(i) == Some(&'i') && i > 0 && !at(i - 1) && at(i + 1))).collect();
-    let nuclei: Vec<usize> = (0..n).filter(|&i| nucleus.get(i).copied().unwrap_or(false)).collect();
+    let nucleus: Vec<bool> = (0..n)
+        .map(|i| at(i) && !(c.get(i) == Some(&'i') && i > 0 && !at(i - 1) && at(i + 1)))
+        .collect();
+    let nuclei: Vec<usize> = (0..n)
+        .filter(|&i| nucleus.get(i).copied().unwrap_or(false))
+        .collect();
     let mut out = vec![];
     for pair in nuclei.windows(2) {
         let [a, b] = pair else { continue };
@@ -406,7 +454,15 @@ fn heuristic_points_pl(c: &[char]) -> Vec<usize> {
         let mut i = start;
         while i < end {
             units.push(i);
-            i += if i + 1 < end && c.get(i).zip(c.get(i + 1)).is_some_and(|(x, y)| is_digraph_pl(*x, *y)) { 2 } else { 1 };
+            i += if i + 1 < end
+                && c.get(i)
+                    .zip(c.get(i + 1))
+                    .is_some_and(|(x, y)| is_digraph_pl(*x, *y))
+            {
+                2
+            } else {
+                1
+            };
             if i < end && c.get(i) == Some(&'i') {
                 i += 1;
             }
@@ -415,7 +471,13 @@ fn heuristic_points_pl(c: &[char]) -> Vec<usize> {
         let first_is_single = units.get(1).is_some_and(|&second| second == start + 1);
         // A doubled consonant splits (`lek-ki`, `Pöp-pel`), as does a cluster after a sonorant.
         let doubled = c.get(start).is_some_and(|x| c.get(start + 1) == Some(x));
-        out.push(if units.len() >= 2 && first_is_single && (sonorant(start) || doubled) { start + 1 } else { start });
+        out.push(
+            if units.len() >= 2 && first_is_single && (sonorant(start) || doubled) {
+                start + 1
+            } else {
+                start
+            },
+        );
     }
     out
 }
@@ -430,8 +492,16 @@ mod tests {
 
     #[test]
     fn bundled_data_loads() {
-        assert!(Dictionary::en_us().len() > 150_000, "{}", Dictionary::en_us().len());
-        assert!(Patterns::en_us().len() > 1000, "{}", Patterns::en_us().len());
+        assert!(
+            Dictionary::en_us().len() > 150_000,
+            "{}",
+            Dictionary::en_us().len()
+        );
+        assert!(
+            Patterns::en_us().len() > 1000,
+            "{}",
+            Patterns::en_us().len()
+        );
     }
 
     #[test]
@@ -479,14 +549,28 @@ mod tests {
 
     #[test]
     fn limits_are_respected() {
-        let lim = Limits { min_word: 5, after_first: 3, before_last: 3, capitalized: false };
-        for w in ["typography", "hyphenation", "justification", "Paragraph", "beautiful"] {
+        let lim = Limits {
+            min_word: 5,
+            after_first: 3,
+            before_last: 3,
+            capitalized: false,
+        };
+        for w in [
+            "typography",
+            "hyphenation",
+            "justification",
+            "Paragraph",
+            "beautiful",
+        ] {
             for p in hyphen_points(w, &lim) {
                 assert!(p >= 3 && p <= w.chars().count() - 3, "{w} {p}");
             }
         }
         assert!(hyphen_points("Paragraph", &lim).is_empty());
-        let lim = Limits { min_word: 12, ..Limits::default() };
+        let lim = Limits {
+            min_word: 12,
+            ..Limits::default()
+        };
         assert!(hyphen_points("typography", &lim).is_empty());
     }
 
@@ -555,7 +639,12 @@ mod tests {
                 if letters < lim.min_word.max(2) {
                     return false;
                 }
-                if letters > 1 && run.iter().filter(|c| c.is_alphabetic()).all(|c| c.is_uppercase()) {
+                if letters > 1
+                    && run
+                        .iter()
+                        .filter(|c| c.is_alphabetic())
+                        .all(|c| c.is_uppercase())
+                {
                     return false;
                 }
                 if !lim.capitalized && run[0].is_uppercase() {
@@ -580,13 +669,22 @@ mod tests {
             let ok = if v[i - 1] && !v[i] {
                 (i + 1 < n && v[i + 1]) || (i + 2 < n && onset_pair(c[i], c[i + 1]) && v[i + 2])
             } else if !v[i - 1] && !v[i] {
-                i >= 2 && v[i - 2] && i + 1 < n && v[i + 1] && !onset_pair(c[i - 1], c[i]) && c[i - 1] != c[i]
+                i >= 2
+                    && v[i - 2]
+                    && i + 1 < n
+                    && v[i + 1]
+                    && !onset_pair(c[i - 1], c[i])
+                    && c[i - 1] != c[i]
                     || (c[i - 1] == c[i] && i >= 2 && v[i - 2])
             } else {
                 false
             };
             let right: String = c[i..].iter().collect();
-            let core = right.strip_suffix("ed").or_else(|| right.strip_suffix("es")).or_else(|| right.strip_suffix('e')).unwrap_or(&right);
+            let core = right
+                .strip_suffix("ed")
+                .or_else(|| right.strip_suffix("es"))
+                .or_else(|| right.strip_suffix('e'))
+                .unwrap_or(&right);
             if ok && core.chars().any(is_vowel) && core.len() > 1 && v[..i].iter().any(|x| *x) {
                 out.push(i);
             }
@@ -642,8 +740,17 @@ mod tests {
             for min_word in [2, 5, 7] {
                 for (after_first, before_last) in [(1, 1), (2, 2), (3, 2), (2, 4)] {
                     for capitalized in [true, false] {
-                        let lim = Limits { min_word, after_first, before_last, capitalized };
-                        assert_eq!(hyphen_points(w, &lim), hyphen_points_ref(w, &lim), "{w:?} {lim:?}");
+                        let lim = Limits {
+                            min_word,
+                            after_first,
+                            before_last,
+                            capitalized,
+                        };
+                        assert_eq!(
+                            hyphen_points(w, &lim),
+                            hyphen_points_ref(w, &lim),
+                            "{w:?} {lim:?}"
+                        );
                     }
                 }
             }
@@ -664,9 +771,13 @@ mod tests {
             .into_iter()
             .map(|(word, repeat)| {
                 let (small, big) = (word(400), word(8 * 400));
-                let time = |w: &str| (0..repeat).for_each(|_| drop(hyphen_points(w, &Limits::default())));
+                let time =
+                    |w: &str| (0..repeat).for_each(|_| drop(hyphen_points(w, &Limits::default())));
                 let (t1, t8, ratio) = cost_ratio(8, || time(&small), || time(&big));
-                let what = format!("{}…: t(n) {t1:.4} s, t(8n) {t8:.4} s, ratio {ratio:.1}", word(1).chars().take(10).collect::<String>());
+                let what = format!(
+                    "{}…: t(n) {t1:.4} s, t(8n) {t8:.4} s, ratio {ratio:.1}",
+                    word(1).chars().take(10).collect::<String>()
+                );
                 eprintln!("{what}");
                 (what, ratio)
             })
@@ -685,7 +796,14 @@ mod tests {
     #[test]
     fn heuristic_knows_consonants_with_diacritics() {
         // `ł`, `ż`, `ç` are consonants (every non-ASCII letter used to count as a vowel).
-        assert!(!is_vowel('ł') && !is_vowel('Ż') && !is_vowel('ç') && is_vowel('é') && is_vowel('ą') && is_vowel('ø'));
+        assert!(
+            !is_vowel('ł')
+                && !is_vowel('Ż')
+                && !is_vowel('ç')
+                && is_vowel('é')
+                && is_vowel('ą')
+                && is_vowel('ø')
+        );
         let c: Vec<char> = "façade".chars().collect();
         assert_eq!(heuristic_points(&c), vec![2]);
     }
@@ -766,25 +884,43 @@ mod tests {
             assert_eq!(pl(w), want, "{w}");
         }
         assert_eq!(word_breaks_in("nigdy", ProofLang::Pl).1, Source::Dictionary);
-        assert_eq!(word_breaks_in("konstytucja", ProofLang::Pl).1, Source::Patterns);
+        assert_eq!(
+            word_breaks_in("konstytucja", ProofLang::Pl).1,
+            Source::Patterns
+        );
     }
 
     #[test]
     fn polish_heuristic_for_foreign_letters() {
         // Letters outside the Polish alphabet: the Polish syllable heuristic, digraphs kept whole.
-        assert_eq!(word_breaks_in("Pöppelmann", ProofLang::Pl).1, Source::Heuristic);
+        assert_eq!(
+            word_breaks_in("Pöppelmann", ProofLang::Pl).1,
+            Source::Heuristic
+        );
         assert_eq!(pl("Pöppelmann"), "Pöp-pel-mann");
         assert_eq!(pl("Müllerowi"), "Mül-le-ro-wi");
         let c: Vec<char> = "kawiarnié".chars().collect();
-        assert_eq!(heuristic_points_pl(&c), vec![2, 6], "ka-wiar-nié: `wi` and `ni` soften, `rn` splits after the sonorant");
+        assert_eq!(
+            heuristic_points_pl(&c),
+            vec![2, 6],
+            "ka-wiar-nié: `wi` and `ni` soften, `rn` splits after the sonorant"
+        );
         let c: Vec<char> = "szczérze".chars().collect();
-        assert_eq!(heuristic_points_pl(&c), vec![5], "szczé-rze: `rz` stays whole");
+        assert_eq!(
+            heuristic_points_pl(&c),
+            vec![5],
+            "szczé-rze: `rz` stays whole"
+        );
     }
 
     #[test]
     fn languages_without_patterns_keep_the_english_ones() {
         for w in ["hyphenation", "typography", "internationalization"] {
-            assert_eq!(hyphen_points_in(w, &Limits::default(), ProofLang::Other), hyphen_points(w, &Limits::default()), "{w}");
+            assert_eq!(
+                hyphen_points_in(w, &Limits::default(), ProofLang::Other),
+                hyphen_points(w, &Limits::default()),
+                "{w}"
+            );
         }
     }
 
@@ -799,7 +935,11 @@ mod tests {
         assert_eq!(word_breaks_in("таблица", ProofLang::Bg).1, Source::Rules);
         // Latin words in a Bulgarian run are hyphenated as English.
         for w in ["publication", "WordCraft"] {
-            assert_eq!(hyphen_points_in(w, &Limits::default(), ProofLang::Bg), hyphen_points(w, &Limits::default()), "{w}");
+            assert_eq!(
+                hyphen_points_in(w, &Limits::default(), ProofLang::Bg),
+                hyphen_points(w, &Limits::default()),
+                "{w}"
+            );
         }
     }
 }

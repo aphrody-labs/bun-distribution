@@ -19,7 +19,9 @@ pub mod snap;
 
 pub use arc::ArcPath;
 pub use kurbo;
-pub use kurbo::{Affine, BezPath, CubicBez, Line, ParamCurve, PathEl, PathSeg, Point, Rect, Shape, Size, Vec2};
+pub use kurbo::{
+    Affine, BezPath, CubicBez, Line, ParamCurve, PathEl, PathSeg, Point, Rect, Shape, Size, Vec2,
+};
 pub use path::{Anchor, AnchorKind, FillRule, PathData, SubPath};
 pub use projective::Homography;
 
@@ -116,7 +118,10 @@ mod tests {
     fn union_options() {
         let a = Rect::new(0.0, 0.0, 1.0, 1.0);
         let b = Rect::new(2.0, 2.0, 3.0, 3.0);
-        assert_eq!(union_opt(Some(a), Some(b)), Some(Rect::new(0.0, 0.0, 3.0, 3.0)));
+        assert_eq!(
+            union_opt(Some(a), Some(b)),
+            Some(Rect::new(0.0, 0.0, 3.0, 3.0))
+        );
         assert_eq!(union_opt(None, Some(b)), Some(b));
         assert_eq!(union_opt(None, None), None);
     }

@@ -100,7 +100,14 @@ fn step(code: u32, i1: [u32; 4], p: &[f32]) -> Step {
     for (d, s) in q.iter_mut().zip(p) {
         *d = *s;
     }
-    Step { run: false, code, i1, p: q, combine: false, unsharp_blur: false }
+    Step {
+        run: false,
+        code,
+        i1,
+        p: q,
+        combine: false,
+        unsharp_blur: false,
+    }
 }
 
 /// Box passes along x (vertical = false) or y for the radii (radius 0 is a no-op on the CPU).
@@ -116,23 +123,81 @@ fn boxes(radii: &[u32], vertical: bool, repeat: bool, out: &mut Vec<Step>) {
 fn steps(op: &FxOp) -> Vec<Step> {
     let mut out = Vec::new();
     match op {
-        FxOp::BrightnessContrast { br, co } => out.push(step(OP_BRIGHTNESS_CONTRAST, [0; 4], &[*br, *co])),
-        FxOp::ProcAmp { br, co, hue, sat } => out.push(step(OP_PROC_AMP, [0; 4], &[*br, *co, *hue, *sat])),
-        FxOp::Tint { black, white, amount } => {
-            out.push(step(OP_TINT, [0; 4], &[black[0], black[1], black[2], *amount, white[0], white[1], white[2]]));
+        FxOp::BrightnessContrast { br, co } => {
+            out.push(step(OP_BRIGHTNESS_CONTRAST, [0; 4], &[*br, *co]))
+        }
+        FxOp::ProcAmp { br, co, hue, sat } => {
+            out.push(step(OP_PROC_AMP, [0; 4], &[*br, *co, *hue, *sat]))
+        }
+        FxOp::Tint {
+            black,
+            white,
+            amount,
+        } => {
+            out.push(step(
+                OP_TINT,
+                [0; 4],
+                &[
+                    black[0], black[1], black[2], *amount, white[0], white[1], white[2],
+                ],
+            ));
         }
         FxOp::BlackWhite => out.push(step(OP_BLACK_WHITE, [0; 4], &[])),
-        FxOp::ColorBalance { sh, md, hi, preserve } => {
-            out.push(step(OP_COLOR_BALANCE, [*preserve as u32, 0, 0, 0], &[sh[0], sh[1], sh[2], 0.0, md[0], md[1], md[2], 0.0, hi[0], hi[1], hi[2]]))
-        }
-        FxOp::LeaveColor { amount, key_hue, tol, soft } => out.push(step(OP_LEAVE_COLOR, [0; 4], &[*amount, *key_hue, *tol, *soft])),
-        FxOp::ChangeToColor { from_hue, to_hue, tol, soft } => out.push(step(OP_CHANGE_TO_COLOR, [0; 4], &[*from_hue, *to_hue, *tol, *soft])),
-        FxOp::ColorPass { key, sim, reverse } => out.push(step(OP_COLOR_PASS, [*reverse as u32, 0, 0, 0], &[key[0], key[1], key[2], *sim])),
+        FxOp::ColorBalance {
+            sh,
+            md,
+            hi,
+            preserve,
+        } => out.push(step(
+            OP_COLOR_BALANCE,
+            [*preserve as u32, 0, 0, 0],
+            &[
+                sh[0], sh[1], sh[2], 0.0, md[0], md[1], md[2], 0.0, hi[0], hi[1], hi[2],
+            ],
+        )),
+        FxOp::LeaveColor {
+            amount,
+            key_hue,
+            tol,
+            soft,
+        } => out.push(step(
+            OP_LEAVE_COLOR,
+            [0; 4],
+            &[*amount, *key_hue, *tol, *soft],
+        )),
+        FxOp::ChangeToColor {
+            from_hue,
+            to_hue,
+            tol,
+            soft,
+        } => out.push(step(
+            OP_CHANGE_TO_COLOR,
+            [0; 4],
+            &[*from_hue, *to_hue, *tol, *soft],
+        )),
+        FxOp::ColorPass { key, sim, reverse } => out.push(step(
+            OP_COLOR_PASS,
+            [*reverse as u32, 0, 0, 0],
+            &[key[0], key[1], key[2], *sim],
+        )),
         FxOp::Gamma { g } => out.push(step(OP_GAMMA, [0; 4], &[*g])),
-        FxOp::Levels { ib, iw, ob, ow, g } => out.push(step(OP_LEVELS, [0; 4], &[*ib, *iw, *ob, *ow, *g])),
-        FxOp::Extract { lo, hi, soft, invert } => out.push(step(OP_EXTRACT, [*invert as u32, 0, 0, 0], &[*lo, *hi, *soft])),
+        FxOp::Levels { ib, iw, ob, ow, g } => {
+            out.push(step(OP_LEVELS, [0; 4], &[*ib, *iw, *ob, *ow, *g]))
+        }
+        FxOp::Extract {
+            lo,
+            hi,
+            soft,
+            invert,
+        } => out.push(step(
+            OP_EXTRACT,
+            [*invert as u32, 0, 0, 0],
+            &[*lo, *hi, *soft],
+        )),
         FxOp::Invert { channel: 4, blend } => out.push(step(OP_INVERT_ALPHA, [0; 4], &[*blend])),
-        FxOp::Invert { channel, blend } => out.push(step(OP_INVERT, [*channel, 0, 0, 0], &[*blend])),
+        FxOp::Invert { channel, blend } => {
+            out.push(step(OP_INVERT, [*channel, 0, 0, 0], &[*blend]))
+        }
         FxOp::Posterize { n } => out.push(step(OP_POSTERIZE, [0; 4], &[*n])),
         FxOp::Gaussian { rx, ry, repeat } => {
             boxes(rx, false, *repeat, &mut out);
@@ -143,7 +208,12 @@ fn steps(op: &FxOp) -> Vec<Step> {
                 out.push(step(OP_DIRECTIONAL, [*steps, 0, 0, 0], &[*dx, *dy]));
             }
         }
-        FxOp::Unsharp { rx, ry, amount, threshold } => {
+        FxOp::Unsharp {
+            rx,
+            ry,
+            amount,
+            threshold,
+        } => {
             boxes(rx, false, true, &mut out);
             boxes(ry, true, true, &mut out);
             for s in &mut out {
@@ -153,11 +223,28 @@ fn steps(op: &FxOp) -> Vec<Step> {
             s.combine = true;
             out.push(s);
         }
-        FxOp::Crop { x0, x1, y0, y1, feather } => out.push(step(OP_CROP, [0; 4], &[*x0, *x1, *y0, *y1, *feather])),
+        FxOp::Crop {
+            x0,
+            x1,
+            y0,
+            y1,
+            feather,
+        } => out.push(step(OP_CROP, [0; 4], &[*x0, *x1, *y0, *y1, *feather])),
         FxOp::Resample(r) => {
-            let op = if (r.opacity - 1.0).abs() < 1e-6 { 1.0 } else { r.opacity };
+            let op = if (r.opacity - 1.0).abs() < 1e-6 {
+                1.0
+            } else {
+                r.opacity
+            };
             match &r.inv {
-                Some(m) => out.push(step(OP_RESAMPLE, r.rect, &[m.a as f32, m.b as f32, m.c as f32, m.d as f32, m.e as f32, m.f as f32, op, 1.0])),
+                Some(m) => out.push(step(
+                    OP_RESAMPLE,
+                    r.rect,
+                    &[
+                        m.a as f32, m.b as f32, m.c as f32, m.d as f32, m.e as f32, m.f as f32, op,
+                        1.0,
+                    ],
+                )),
                 None => out.push(step(OP_RESAMPLE, [0; 4], &[0.0; 8])),
             }
         }
@@ -165,26 +252,84 @@ fn steps(op: &FxOp) -> Vec<Step> {
         FxOp::VFlip => out.push(step(OP_VFLIP, [0; 4], &[])),
         FxOp::Mirror { cx, cy, nx, ny } => out.push(step(OP_MIRROR, [0; 4], &[*cx, *cy, *nx, *ny])),
         FxOp::Offset { dx, dy, blend } => out.push(step(OP_OFFSET, [0; 4], &[*dx, *dy, *blend])),
-        FxOp::AscCdl { slope: s, offset: o, power: p, sat } => {
-            out.push(step(OP_ASC_CDL, [0; 4], &[s[0], s[1], s[2], *sat, o[0], o[1], o[2], 0.0, p[0], p[1], p[2]]));
+        FxOp::AscCdl {
+            slope: s,
+            offset: o,
+            power: p,
+            sat,
+        } => {
+            out.push(step(
+                OP_ASC_CDL,
+                [0; 4],
+                &[
+                    s[0], s[1], s[2], *sat, o[0], o[1], o[2], 0.0, p[0], p[1], p[2],
+                ],
+            ));
         }
         FxOp::ChannelMix { m } => {
             let p: Vec<f32> = m.iter().flatten().copied().collect();
             out.push(step(OP_CHANNEL_MIX, [0; 4], &p));
         }
-        FxOp::ColorReplace { sim, solid, target: t, replace: r, replace_hsl: h } => {
-            out.push(step(OP_COLOR_REPLACE, [*solid as u32, 0, 0, 0], &[t[0], t[1], t[2], *sim, r[0], r[1], r[2], 0.0, h[0], h[1], h[2]]))
+        FxOp::ColorReplace {
+            sim,
+            solid,
+            target: t,
+            replace: r,
+            replace_hsl: h,
+        } => out.push(step(
+            OP_COLOR_REPLACE,
+            [*solid as u32, 0, 0, 0],
+            &[
+                t[0], t[1], t[2], *sim, r[0], r[1], r[2], 0.0, h[0], h[1], h[2],
+            ],
+        )),
+        FxOp::AlphaAdjust {
+            opacity,
+            ignore,
+            invert,
+            mask_only,
+        } => {
+            out.push(step(
+                OP_ALPHA_ADJUST,
+                [*ignore as u32, *invert as u32, *mask_only as u32, 0],
+                &[*opacity],
+            ));
         }
-        FxOp::AlphaAdjust { opacity, ignore, invert, mask_only } => {
-            out.push(step(OP_ALPHA_ADJUST, [*ignore as u32, *invert as u32, *mask_only as u32, 0], &[*opacity]));
-        }
-        FxOp::Vignette { amount, midpoint, roundness, feather, target } => {
+        FxOp::Vignette {
+            amount,
+            midpoint,
+            roundness,
+            feather,
+            target,
+        } => {
             if amount.abs() >= 1e-5 {
-                out.push(step(OP_VIGNETTE, [0; 4], &[*amount, *midpoint, *roundness, *feather, target[0], target[1], target[2]]));
+                out.push(step(
+                    OP_VIGNETTE,
+                    [0; 4],
+                    &[
+                        *amount, *midpoint, *roundness, *feather, target[0], target[1], target[2],
+                    ],
+                ));
             }
         }
-        FxOp::VideoLimiter { max, comp, axis, warn, warning_color } => {
-            out.push(step(OP_VIDEO_LIMITER, [*axis, *warn as u32, 0, 0], &[*max, *comp, warning_color[0], warning_color[1], warning_color[2]]));
+        FxOp::VideoLimiter {
+            max,
+            comp,
+            axis,
+            warn,
+            warning_color,
+        } => {
+            out.push(step(
+                OP_VIDEO_LIMITER,
+                [*axis, *warn as u32, 0, 0],
+                &[
+                    *max,
+                    *comp,
+                    warning_color[0],
+                    warning_color[1],
+                    warning_color[2],
+                ],
+            ));
         }
         FxOp::Lumetri {
             gains,
@@ -208,14 +353,26 @@ fn steps(op: &FxOp) -> Vec<Step> {
             aspect,
             ..
         } => {
-            let ge = [gains[0] * exposure, gains[1] * exposure, gains[2] * exposure];
+            let ge = [
+                gains[0] * exposure,
+                gains[1] * exposure,
+                gains[2] * exposure,
+            ];
             let b0 = -bl * 0.15;
             let w0 = 1.0 - wh * 0.15;
             let sh_k = sh * 0.35;
             let hl_k = hl * 0.35;
             let vround_aspect = filmcraft_render::gpufx::lumetri_vignette_aspect(*aspect, *vround);
-            let st_k = [(st[0] - 0.5) * 0.3, (st[1] - 0.5) * 0.3, (st[2] - 0.5) * 0.3];
-            let ht_k = [(ht[0] - 0.5) * 0.3, (ht[1] - 0.5) * 0.3, (ht[2] - 0.5) * 0.3];
+            let st_k = [
+                (st[0] - 0.5) * 0.3,
+                (st[1] - 0.5) * 0.3,
+                (st[2] - 0.5) * 0.3,
+            ];
+            let ht_k = [
+                (ht[0] - 0.5) * 0.3,
+                (ht[1] - 0.5) * 0.3,
+                (ht[2] - 0.5) * 0.3,
+            ];
 
             let p = [
                 ge[0],
@@ -243,7 +400,11 @@ fn steps(op: &FxOp) -> Vec<Step> {
                 ht_k[2],
                 0.0,
             ];
-            out.push(step(OP_LUMETRI, [*creative_on as u32, *vignette_on as u32, 0, 0], &p));
+            out.push(step(
+                OP_LUMETRI,
+                [*creative_on as u32, *vignette_on as u32, 0, 0],
+                &p,
+            ));
         }
     }
     out
@@ -261,7 +422,11 @@ impl FxStage {
             && l.max_compute_workgroups_per_dimension >= 1
     }
 
-    pub(crate) fn new(device: &wgpu::Device, composite: &wgpu::ShaderModule, layer_bgl: &wgpu::BindGroupLayout) -> Self {
+    pub(crate) fn new(
+        device: &wgpu::Device,
+        composite: &wgpu::ShaderModule,
+        layer_bgl: &wgpu::BindGroupLayout,
+    ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("filmcraft-fx"),
             source: wgpu::ShaderSource::Wgsl(include_str!("fx.wgsl").into()),
@@ -282,7 +447,11 @@ impl FxStage {
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
                     count: None,
                 },
                 tex(1),
@@ -299,7 +468,11 @@ impl FxStage {
                 tex(3),
             ],
         });
-        let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("fx"), bind_group_layouts: &[Some(&bgl)], immediate_size: 0 });
+        let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("fx"),
+            bind_group_layouts: &[Some(&bgl)],
+            immediate_size: 0,
+        });
         let compute = |entry: &str| {
             device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
                 label: Some("fx"),
@@ -318,7 +491,12 @@ impl FxStage {
         let source = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("fx-source"),
             layout: Some(&spl),
-            vertex: wgpu::VertexState { module: composite, entry_point: Some("vs"), compilation_options: Default::default(), buffers: &[] },
+            vertex: wgpu::VertexState {
+                module: composite,
+                entry_point: Some("vs"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
@@ -326,12 +504,23 @@ impl FxStage {
                 module: composite,
                 entry_point: Some("fs_fx_source"),
                 compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState { format: FX_FORMAT, blend: None, write_mask: wgpu::ColorWrites::ALL })],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: FX_FORMAT,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
             }),
             multiview_mask: None,
             cache: None,
         });
-        Self { px: compute("fx_px"), run: compute("fx_run"), bgl, source, pool: HashMap::new(), used: HashSet::new() }
+        Self {
+            px: compute("fx_px"),
+            run: compute("fx_run"),
+            bgl,
+            source,
+            pool: HashMap::new(),
+            used: HashSet::new(),
+        }
     }
 
     /// Start a frame: pooled textures of sizes no layer uses by [`end_frame`](Self::end_frame)
@@ -357,7 +546,11 @@ impl FxStage {
         while v.len() < n {
             let t = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("filmcraft-fx"),
-                size: wgpu::Extent3d { width: size.0, height: size.1, depth_or_array_layers: 1 },
+                size: wgpu::Extent3d {
+                    width: size.0,
+                    height: size.1,
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -404,7 +597,11 @@ impl FxStage {
             if (s.unsharp_blur || s.combine) && orig.is_none() {
                 orig = Some(cur);
             }
-            let keep = if s.unsharp_blur || s.combine { orig } else { None };
+            let keep = if s.unsharp_blur || s.combine {
+                orig
+            } else {
+                None
+            };
             let dst = (0..n).find(|k| *k != cur && Some(*k) != keep)?;
             let aux = match (s.combine, orig) {
                 (true, Some(o)) => views.get(o)?,
@@ -428,10 +625,22 @@ impl FxStage {
                 label: Some("fx"),
                 layout: &self.bgl,
                 entries: &[
-                    wgpu::BindGroupEntry { binding: 0, resource: buf.as_entire_binding() },
-                    wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(views.get(cur)?) },
-                    wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::TextureView(views.get(dst)?) },
-                    wgpu::BindGroupEntry { binding: 3, resource: wgpu::BindingResource::TextureView(aux) },
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buf.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(views.get(cur)?),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(views.get(dst)?),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: wgpu::BindingResource::TextureView(aux),
+                    },
                 ],
             });
             let groups = if s.run {
@@ -440,7 +649,11 @@ impl FxStage {
             } else {
                 (w.div_ceil(16), h.div_ceil(16))
             };
-            dispatches.push(Dispatch { run: s.run, bg, groups });
+            dispatches.push(Dispatch {
+                run: s.run,
+                bg,
+                groups,
+            });
             cur = dst;
             if s.combine {
                 orig = None;
@@ -464,7 +677,10 @@ impl FxStage {
                     view: &job.source_target,
                     depth_slice: None,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT), store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                        store: wgpu::StoreOp::Store,
+                    },
                 })],
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
@@ -478,7 +694,10 @@ impl FxStage {
         if job.dispatches.is_empty() {
             return;
         }
-        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some("fx"), timestamp_writes: None });
+        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: Some("fx"),
+            timestamp_writes: None,
+        });
         for d in &job.dispatches {
             pass.set_pipeline(if d.run { &self.run } else { &self.px });
             pass.set_bind_group(0, &d.bg, &[]);

@@ -62,7 +62,10 @@ impl<'a> Banner<'a> {
         let size = version.banner_size();
         let mut data = vec![0u8; size];
         data[0..2].copy_from_slice(&(version as u16).to_le_bytes());
-        Self { version, data: data.into() }
+        Self {
+            version,
+            data: data.into(),
+        }
     }
 
     fn handle_pod_cast<T>(result: Result<T, PodCastError>) -> T {
@@ -93,12 +96,19 @@ impl<'a> Banner<'a> {
 
         let version_value = u16::from_le_bytes([data[0], data[1]]);
         let Some(version) = BannerVersion::from_u16(version_value) else {
-            return UnknownVersionSnafu { version: version_value }.fail();
+            return UnknownVersionSnafu {
+                version: version_value,
+            }
+            .fail();
         };
         let size = version.banner_size();
         if data.len() < size {
-            return InvalidSizeSnafu { version: version_value, expected: size, actual: data.len() }
-                .fail();
+            return InvalidSizeSnafu {
+                version: version_value,
+                expected: size,
+                actual: data.len(),
+            }
+            .fail();
         }
         let data = &data[..size];
 
@@ -110,7 +120,10 @@ impl<'a> Banner<'a> {
             palette[i] = u16::from_le_bytes([data[0x220 + i * 2], data[0x221 + i * 2]]);
         }
 
-        Ok(Self { version, data: Cow::Borrowed(data) })
+        Ok(Self {
+            version,
+            data: Cow::Borrowed(data),
+        })
     }
 
     /// Returns the version of this [`Banner`].
@@ -206,7 +219,10 @@ impl<'a> Banner<'a> {
 
     /// Creates a [`DisplayBanner`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayBanner<'_> {
-        DisplayBanner { banner: self, indent }
+        DisplayBanner {
+            banner: self,
+            indent,
+        }
     }
 }
 
@@ -236,19 +252,44 @@ impl Display for DisplayBanner<'_> {
             "{i}Original CRC .... : {:#x}",
             banner.crc(BannerVersion::Original.crc_index())
         )?;
-        write_title!(f, "{i}Japanese Title .. : {}{}{}", banner, Language::Japanese)?;
-        write_title!(f, "{i}English Title ... : {}{}{}", banner, Language::English)?;
+        write_title!(
+            f,
+            "{i}Japanese Title .. : {}{}{}",
+            banner,
+            Language::Japanese
+        )?;
+        write_title!(
+            f,
+            "{i}English Title ... : {}{}{}",
+            banner,
+            Language::English
+        )?;
         write_title!(f, "{i}French Title .... : {}{}{}", banner, Language::French)?;
         write_title!(f, "{i}German Title .... : {}{}{}", banner, Language::German)?;
-        write_title!(f, "{i}Italian Title ... : {}{}{}", banner, Language::Italian)?;
-        write_title!(f, "{i}Spanish Title ... : {}{}{}", banner, Language::Spanish)?;
+        write_title!(
+            f,
+            "{i}Italian Title ... : {}{}{}",
+            banner,
+            Language::Italian
+        )?;
+        write_title!(
+            f,
+            "{i}Spanish Title ... : {}{}{}",
+            banner,
+            Language::Spanish
+        )?;
         if banner.version >= BannerVersion::China {
             writeln!(
                 f,
                 "{i}China CRC ....... : {:#x}",
                 banner.crc(BannerVersion::China.crc_index())
             )?;
-            write_title!(f, "{i}Chinese Title ... : {}{}{}", banner, Language::Chinese)?;
+            write_title!(
+                f,
+                "{i}Chinese Title ... : {}{}{}",
+                banner,
+                Language::Chinese
+            )?;
         }
         if banner.version >= BannerVersion::Korea {
             writeln!(
@@ -266,7 +307,11 @@ impl Display for DisplayBanner<'_> {
             )?;
         }
         writeln!(f, "{i}Palette ......... :\n{}", banner.palette())?;
-        writeln!(f, "{i}Bitmap .......... :\n{}", banner.bitmap().display(banner.palette()))?;
+        writeln!(
+            f,
+            "{i}Bitmap .......... :\n{}",
+            banner.bitmap().display(banner.palette())
+        )?;
         Ok(())
     }
 }
@@ -455,7 +500,10 @@ pub struct BannerBitmap(pub [u8; 0x200]);
 impl BannerBitmap {
     /// Creates a [`DisplayBannerBitmap`] which implements [`Display`].
     pub fn display<'a>(&'a self, palette: &'a BannerPalette) -> DisplayBannerBitmap<'a> {
-        DisplayBannerBitmap { bitmap: self, palette }
+        DisplayBannerBitmap {
+            bitmap: self,
+            palette,
+        }
     }
 
     fn get_index(x: usize, y: usize) -> (usize, usize) {
@@ -469,7 +517,11 @@ impl BannerBitmap {
     /// Gets a palette index at the given coordinates.
     pub fn get_pixel(&self, x: usize, y: usize) -> usize {
         let (index, offset) = Self::get_index(x, y);
-        if index < self.0.len() { (self.0[index] as usize >> offset) & 0xf } else { 0 }
+        if index < self.0.len() {
+            (self.0[index] as usize >> offset) & 0xf
+        } else {
+            0
+        }
     }
 
     /// Sets a palette index at the given coordinates.

@@ -37,7 +37,9 @@ impl FileBackend {
         let _ = fs::remove_file(&old_filename);
         let _ = fs::rename(filename, &old_filename);
 
-        let file = fs::File::create(filename).ok().map(|file| BufWriter::with_capacity(4096, file));
+        let file = fs::File::create(filename)
+            .ok()
+            .map(|file| BufWriter::with_capacity(4096, file));
 
         Self {
             file,
@@ -50,7 +52,13 @@ impl FileBackend {
 impl FileBackend {
     // Mechanical split of FileBackend::Write to snapshot settings outside I/O
     // and exercise limits without writing hundreds of MiB in regression tests.
-    fn write_with_options(&mut self, entry: &Entry, flush_line: bool, censor: bool, extended: bool) {
+    fn write_with_options(
+        &mut self,
+        entry: &Entry,
+        flush_line: bool,
+        censor: bool,
+        extended: bool,
+    ) {
         if !self.enabled {
             return;
         }
@@ -61,11 +69,15 @@ impl FileBackend {
             if censor {
                 static USERNAME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
                 let username = USERNAME.get_or_init(|| {
-                    ["LOGNAME", "USERNAME", "USER"].into_iter()
+                    ["LOGNAME", "USERNAME", "USER"]
+                        .into_iter()
                         .find_map(|key| std::env::var_os(key))
-                        .map(|name| name.to_string_lossy().into_owned()).unwrap_or_default()
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_default()
                 });
-                if !username.is_empty() { msg = msg.replace(username.as_str(), "user"); }
+                if !username.is_empty() {
+                    msg = msg.replace(username.as_str(), "user");
+                }
             }
             let bytes = msg.as_bytes();
             if file.write_all(bytes).is_ok() {
@@ -73,10 +85,16 @@ impl FileBackend {
             }
 
             // Eden raises the 100 MiB cap to 1 GiB for extended logging.
-            let write_limit = if extended { 1024 * 1024 * 1024 } else { 100 * 1024 * 1024 };
+            let write_limit = if extended {
+                1024 * 1024 * 1024
+            } else {
+                100 * 1024 * 1024
+            };
             let write_limit_exceeded = self.bytes_written > write_limit;
 
-            if flush_line { let _ = file.flush(); }
+            if flush_line {
+                let _ = file.flush();
+            }
 
             if entry.log_level >= Level::Error || write_limit_exceeded {
                 if write_limit_exceeded {
@@ -90,11 +108,16 @@ impl FileBackend {
 
 impl Backend for FileBackend {
     fn write(&mut self, entry: &Entry) {
-        if !self.enabled { return; }
+        if !self.enabled {
+            return;
+        }
         let (flush_line, censor, extended) = {
             let settings = crate::settings::values();
-            (*settings.log_flush_line.get_value(), *settings.censor_username.get_value(),
-                *settings.extended_logging.get_value())
+            (
+                *settings.log_flush_line.get_value(),
+                *settings.censor_username.get_value(),
+                *settings.extended_logging.get_value(),
+            )
         };
         self.write_with_options(entry, flush_line, censor, extended);
     }
@@ -230,7 +253,9 @@ impl log::Log for FacadeLogger {
             return false;
         }
         if ENV_FILTER_ACTIVE.load(Ordering::Acquire) {
-            return ENV_FILTER.get().is_some_and(|filter| filter.enabled(metadata));
+            return ENV_FILTER
+                .get()
+                .is_some_and(|filter| filter.enabled(metadata));
         }
 
         // Lock-free fast path: reject on the global minimum level before the
@@ -248,7 +273,9 @@ impl log::Log for FacadeLogger {
             return;
         }
         if ENV_FILTER_ACTIVE.load(Ordering::Acquire)
-            && ENV_FILTER.get().is_some_and(|filter| !filter.matches(record))
+            && ENV_FILTER
+                .get()
+                .is_some_and(|filter| !filter.matches(record))
         {
             return;
         }
@@ -278,9 +305,16 @@ pub fn initialize_from_env(log_dir: Option<PathBuf>) {
 /// precedence on startup. The GUI can subsequently replace the active filter.
 pub fn initialize_with_config(log_dir: Option<PathBuf>, configured_filter: &str, console: bool) {
     let native_override = std::env::var("RUZU_LOG_FILTER").ok();
-    let rust_override = native_override.is_none().then(|| std::env::var("RUST_LOG").ok()).flatten();
+    let rust_override = native_override
+        .is_none()
+        .then(|| std::env::var("RUST_LOG").ok())
+        .flatten();
     let filter = native_override.as_deref().unwrap_or_else(|| {
-        if rust_override.is_some() { "*:Trace" } else { configured_filter }
+        if rust_override.is_some() {
+            "*:Trace"
+        } else {
+            configured_filter
+        }
     });
     if let Some(directives) = rust_override {
         let _ = ENV_FILTER.set(env_filter::Builder::new().parse(&directives).build());
@@ -326,8 +360,9 @@ fn class_from_target(target: &str) -> Class {
     // for example, deliberately use multiple classes in the same file.
     match target {
         // core/arm/dynarmic/arm_dynarmic_{32,64}.cpp: Core_ARM
-        "core::arm::dynarmic::arm_dynarmic_32"
-        | "core::arm::dynarmic::arm_dynarmic_64" => return Class::Core_ARM,
+        "core::arm::dynarmic::arm_dynarmic_32" | "core::arm::dynarmic::arm_dynarmic_64" => {
+            return Class::Core_ARM
+        }
         // core/loader/{nro,nso}.cpp: Loader
         "core::loader::nro" | "core::loader::nso" => return Class::Loader,
         // video_core/renderer_vulkan/vk_rasterizer.cpp: Render_Vulkan
@@ -514,23 +549,39 @@ mod tests {
                     .env(CHILD, case).env("LOGNAME", "synthetic_account")
                     .env("USERNAME", "other_account").env("USER", "third_account");
                 match case {
-                    "username" => { command.env_remove("LOGNAME").env("USERNAME", "synthetic_account"); }
-                    "user" => { command.env_remove("LOGNAME").env_remove("USERNAME").env("USER", "synthetic_account"); }
-                    "empty" => { command.env("LOGNAME", ""); }
+                    "username" => {
+                        command
+                            .env_remove("LOGNAME")
+                            .env("USERNAME", "synthetic_account");
+                    }
+                    "user" => {
+                        command
+                            .env_remove("LOGNAME")
+                            .env_remove("USERNAME")
+                            .env("USER", "synthetic_account");
+                    }
+                    "empty" => {
+                        command.env("LOGNAME", "");
+                    }
                     _ => {}
                 }
                 assert!(command.status().unwrap().success(), "{case}");
             }
             return;
         }
-        let directory = std::env::temp_dir().join(format!("ruzu-file-log-options-{}", std::process::id()));
+        let directory =
+            std::env::temp_dir().join(format!("ruzu-file-log-options-{}", std::process::id()));
         std::fs::create_dir(&directory).unwrap();
         let path = directory.join("test.log");
         let mut backend = FileBackend::new(&path);
         let entry = Entry {
-            timestamp: std::time::Duration::ZERO, log_class: Class::Log,
-            log_level: Level::Info, filename: "test.rs".into(), line_num: 1,
-            function: "test".into(), message: "synthetic_account/other_account/synthetic_account".into(),
+            timestamp: std::time::Duration::ZERO,
+            log_class: Class::Log,
+            log_level: Level::Info,
+            filename: "test.rs".into(),
+            line_num: 1,
+            function: "test".into(),
+            message: "synthetic_account/other_account/synthetic_account".into(),
         };
         backend.write_with_options(&entry, false, true, false);
         assert!(std::fs::read_to_string(&path).unwrap().is_empty());
@@ -546,7 +597,9 @@ mod tests {
             }
         }
         backend.write_with_options(&entry, true, false, false);
-        assert!(std::fs::read_to_string(&path).unwrap().contains("synthetic_account/other_account/synthetic_account"));
+        assert!(std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("synthetic_account/other_account/synthetic_account"));
         backend.bytes_written = 100 * 1024 * 1024;
         backend.write_with_options(&entry, false, false, true);
         assert!(backend.enabled);
@@ -562,20 +615,42 @@ mod tests {
         drop(replacement);
         initialize(Some(directory.clone()), Some("*:Info"));
         let settings = crate::settings::values_mut();
-        push_entry(Class::Log, Level::Info, "test.rs", 1, "test", "queued_before_stop".into());
+        push_entry(
+            Class::Log,
+            Level::Info,
+            "test.rs",
+            1,
+            "test",
+            "queued_before_stop".into(),
+        );
         let (done_tx, done_rx) = mpsc::channel();
-        let stopper = std::thread::spawn(move || { stop(); done_tx.send(()).unwrap(); });
+        let stopper = std::thread::spawn(move || {
+            stop();
+            done_tx.send(()).unwrap();
+        });
         let deadline = Instant::now() + std::time::Duration::from_secs(5);
         loop {
-            if LOGGER.try_lock().is_ok_and(|state| state.is_none()) { break; }
-            assert!(Instant::now() < deadline, "Stop retained LOGGER while waiting for settings");
+            if LOGGER.try_lock().is_ok_and(|state| state.is_none()) {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "Stop retained LOGGER while waiting for settings"
+            );
             std::thread::yield_now();
         }
-        assert!(done_rx.try_recv().is_err(), "writer should be waiting for the settings guard");
+        assert!(
+            done_rx.try_recv().is_err(),
+            "writer should be waiting for the settings guard"
+        );
         drop(settings);
-        done_rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
+        done_rx
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap();
         stopper.join().unwrap();
-        assert!(std::fs::read_to_string(directory.join("ruzu_log.txt")).unwrap().contains("queued_before_stop"));
+        assert!(std::fs::read_to_string(directory.join("ruzu_log.txt"))
+            .unwrap()
+            .contains("queued_before_stop"));
         std::fs::remove_dir_all(directory).unwrap();
     }
 
@@ -589,16 +664,25 @@ mod tests {
                     .env(CHILD, case).env_remove("RUZU_LOG_FILTER").env_remove("RUST_LOG")
                     .env("RUZU_LOG_COLOR", "0");
                 match case {
-                    "rust" => { command.env("RUST_LOG", "off,alpha=debug,beta=trace/keep"); }
-                    "native" => { command.env("RUST_LOG", "trace").env("RUZU_LOG_FILTER", "*:Error"); }
-                    "off" => { command.env("RUST_LOG", "off"); }
+                    "rust" => {
+                        command.env("RUST_LOG", "off,alpha=debug,beta=trace/keep");
+                    }
+                    "native" => {
+                        command
+                            .env("RUST_LOG", "trace")
+                            .env("RUZU_LOG_FILTER", "*:Error");
+                    }
+                    "off" => {
+                        command.env("RUST_LOG", "off");
+                    }
                     _ => {}
                 }
                 assert!(command.status().unwrap().success(), "{case}");
             }
             return;
         };
-        let directory = std::env::temp_dir().join(format!("ruzu-logger-test-{}", std::process::id()));
+        let directory =
+            std::env::temp_dir().join(format!("ruzu-logger-test-{}", std::process::id()));
         std::fs::create_dir(&directory).unwrap();
         initialize_with_config(Some(directory.clone()), "*:Warning", false);
         log::debug!(target: "alpha", "keep_alpha_debug");
@@ -617,7 +701,10 @@ mod tests {
         assert_eq!(contents.contains("keep_beta_trace"), case == "rust");
         assert!(!contents.contains("discard_regex"));
         assert_eq!(contents.contains("keep_other_warning"), case == "config");
-        assert_eq!(contents.contains("keep_other_error"), case == "config" || case == "native");
+        assert_eq!(
+            contents.contains("keep_other_error"),
+            case == "config" || case == "native"
+        );
         assert!(contents.contains("live_info"));
         assert!(!contents.contains("live_debug"));
         std::fs::remove_dir_all(directory).unwrap();
@@ -641,7 +728,10 @@ mod tests {
             ("core::arm::dynarmic::arm_dynarmic_64", Class::Core_ARM),
             ("core::loader::nro", Class::Loader),
             ("core::loader::nso", Class::Loader),
-            ("video_core::renderer_vulkan::vk_rasterizer", Class::Render_Vulkan),
+            (
+                "video_core::renderer_vulkan::vk_rasterizer",
+                Class::Render_Vulkan,
+            ),
         ];
         for (target, class) in cases {
             assert_eq!(class_from_target(target), class);
@@ -653,7 +743,10 @@ mod tests {
             assert_eq!(class_from_target(&format!("{target}_other")), Class::Log);
         }
         assert_eq!(class_from_target("core::crypto::key_manager"), Class::Log);
-        assert_eq!(class_from_target("audio_core::sink::cubeb_sink"), Class::Log);
+        assert_eq!(
+            class_from_target("audio_core::sink::cubeb_sink"),
+            Class::Log
+        );
     }
 
     #[test]
@@ -662,10 +755,16 @@ mod tests {
         assert_eq!(class_from_target("Renderer"), Class::Log);
         assert_eq!(class_from_target("Service.FSExtra"), Class::Service);
         assert_eq!(class_from_target("Service.FS.operation"), Class::Service_FS);
-        assert_eq!(class_from_target("Service_FS::operation"), Class::Service_FS);
+        assert_eq!(
+            class_from_target("Service_FS::operation"),
+            Class::Service_FS
+        );
         for class in Class::all() {
             assert_eq!(class_from_target(class.name()), class);
-            assert_eq!(class_from_target(&format!("{}.message", class.name())), class);
+            assert_eq!(
+                class_from_target(&format!("{}.message", class.name())),
+                class
+            );
         }
     }
 
@@ -684,13 +783,18 @@ mod tests {
         // Isolate global logger state without starting file/console backends.
         let (sender, _receiver) = mpsc::channel();
         *LOGGER.lock().unwrap() = Some(LoggerState {
-            filter: Filter::default(), sender, time_origin: Instant::now(), thread_handle: None,
+            filter: Filter::default(),
+            sender,
+            time_origin: Instant::now(),
+            thread_handle: None,
         });
         for _ in 0..50 {
             std::thread::scope(|scope| {
                 for level in [Level::Debug, Level::Critical] {
                     scope.spawn(move || {
-                        for _ in 0..100 { set_global_filter(&Filter::new(level)); }
+                        for _ in 0..100 {
+                            set_global_filter(&Filter::new(level));
+                        }
                     });
                 }
             });
@@ -699,8 +803,10 @@ mod tests {
             for (slot, level) in FILTER_LEVELS.iter().zip(filter.class_levels()) {
                 assert_eq!(slot.load(Ordering::Relaxed), *level as u8);
             }
-            assert_eq!(FILTER_GLOBAL_MIN.load(Ordering::Acquire),
-                *filter.class_levels().iter().min().unwrap() as u8);
+            assert_eq!(
+                FILTER_GLOBAL_MIN.load(Ordering::Acquire),
+                *filter.class_levels().iter().min().unwrap() as u8
+            );
         }
     }
 

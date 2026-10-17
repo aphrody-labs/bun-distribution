@@ -181,10 +181,17 @@ fn real_file_info0() {
     let Some(cfg) = load_real() else { return };
     let i = &cfg.infos[0];
     assert_eq!(i.update_id, HashId(0x647E_0ABB), "updateId[0]");
-    assert_eq!(i.global_bit_flag_id, HashId(0x00C0_E385), "globalBitFlagId[0]");
+    assert_eq!(
+        i.global_bit_flag_id,
+        HashId(0x00C0_E385),
+        "globalBitFlagId[0]"
+    );
     assert_eq!(i.data_start, 0, "data_start[0]");
     assert_eq!(i.data_count, 8, "data_count[0]");
-    assert_eq!(i.enable_cond, "AAAAABgFNSo9RUMACgEoAAYCNADA44UyAAAAAXk=", "enableCond[0]");
+    assert_eq!(
+        i.enable_cond, "AAAAABgFNSo9RUMACgEoAAYCNADA44UyAAAAAXk=",
+        "enableCond[0]"
+    );
 }
 
 #[test]
@@ -214,7 +221,11 @@ fn real_file_tranches_partitionnent() {
         assert_eq!(info.data_start, attendu_start, "tranches contiguës");
         attendu_start += info.data_count;
     }
-    assert_eq!(attendu_start as usize, cfg.data.len(), "couvre toutes les pages");
+    assert_eq!(
+        attendu_start as usize,
+        cfg.data.len(),
+        "couvre toutes les pages"
+    );
 }
 
 #[test]

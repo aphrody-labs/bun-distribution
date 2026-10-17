@@ -81,7 +81,10 @@ fn fixture_config_entree0() {
     assert_eq!(e.tex_file_path, SENTINEL_CONFIG);
     assert_eq!(e.tex_name, HashId::ZERO);
     assert_eq!(e.text_id, HashId(0x55FB_BA47));
-    assert!(!e.has_real_texture(), "entrée 0 : pas de texture (sentinel)");
+    assert!(
+        !e.has_real_texture(),
+        "entrée 0 : pas de texture (sentinel)"
+    );
     assert!(!e.motion_loop);
 }
 
@@ -92,7 +95,10 @@ fn fixture_config_entree_avec_texture() {
     assert_eq!(e.id, HashId(0x0738_FF66));
     assert_eq!(e.flag_idx, 100);
     assert_eq!(e.type_, 1);
-    assert_eq!(e.tex_file_path, "#/menu/220_img/stamp_img/<LG>/emote_img01_01.g4tx");
+    assert_eq!(
+        e.tex_file_path,
+        "#/menu/220_img/stamp_img/<LG>/emote_img01_01.g4tx"
+    );
     assert_eq!(e.tex_name, HashId(0x2EF8_6069));
     assert_eq!(e.motion_id, HashId(0x4A66_73E1));
     assert!(e.has_real_texture());
@@ -113,7 +119,10 @@ fn fixture_def_set_parse() {
     assert_eq!(cfg.entries[0].set_type, 0);
     assert_eq!(cfg.entries[0].page_idx, 0);
     assert_eq!(cfg.entries[0].chat_id_array, HashId(0x6AE2_3243));
-    assert_eq!(cfg.find_by_chat_id(HashId(0x0738_FF66)).unwrap().set_type, 1);
+    assert_eq!(
+        cfg.find_by_chat_id(HashId(0x0738_FF66)).unwrap().set_type,
+        1
+    );
 }
 
 #[test]
@@ -188,7 +197,10 @@ fn real_1_03_17_entree27_texture() {
     assert_eq!(e.flag_idx, 100);
     assert_eq!(e.sort_id, 100);
     assert_eq!(e.type_, 1);
-    assert_eq!(e.tex_file_path, "#/menu/220_img/stamp_img/<LG>/emote_img01_01.g4tx");
+    assert_eq!(
+        e.tex_file_path,
+        "#/menu/220_img/stamp_img/<LG>/emote_img01_01.g4tx"
+    );
     assert_eq!(e.tex_name, HashId(0x2EF8_6069));
     assert_eq!(e.text_id, HashId(0x88B0_89E4));
     assert_eq!(e.motion_id, HashId(0x4A66_73E1));
@@ -218,7 +230,10 @@ fn real_1_03_17_derniere() {
     assert_eq!(e.flag_idx, 313);
     assert_eq!(e.sort_id, 313);
     assert_eq!(e.type_, 2);
-    assert_eq!(e.tex_file_path, "#/menu/220_img/stamp_img/<LG>/stamp_img02_14.g4tx");
+    assert_eq!(
+        e.tex_file_path,
+        "#/menu/220_img/stamp_img/<LG>/stamp_img02_14.g4tx"
+    );
     assert_eq!(e.tex_name, HashId(0x05D3_B25D));
 }
 

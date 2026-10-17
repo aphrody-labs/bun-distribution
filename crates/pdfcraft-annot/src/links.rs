@@ -38,7 +38,12 @@ pub enum Highlight {
 }
 
 impl Highlight {
-    pub const ALL: [Highlight; 4] = [Highlight::None, Highlight::Invert, Highlight::Outline, Highlight::Inset];
+    pub const ALL: [Highlight; 4] = [
+        Highlight::None,
+        Highlight::Invert,
+        Highlight::Outline,
+        Highlight::Inset,
+    ];
 
     fn code(self) -> &'static str {
         match self {
@@ -62,7 +67,14 @@ impl Highlight {
 impl Default for LinkStyle {
     fn default() -> Self {
         // Acrobat's defaults for a new link: invisible rectangle, invert highlight.
-        LinkStyle { visible: false, color: [0.0, 0.0, 1.0], width: 1.0, dashed: false, underline: false, highlight: Highlight::Invert }
+        LinkStyle {
+            visible: false,
+            color: [0.0, 0.0, 1.0],
+            width: 1.0,
+            dashed: false,
+            underline: false,
+            highlight: Highlight::Invert,
+        }
     }
 }
 
@@ -79,7 +91,12 @@ pub struct LinkItem {
 }
 
 fn nums(doc: &Document, o: Option<&Object>) -> Vec<f64> {
-    o.map(|o| doc.resolve(o)).and_then(|a| a.as_array().map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())).unwrap_or_default()
+    o.map(|o| doc.resolve(o))
+        .and_then(|a| {
+            a.as_array()
+                .map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())
+        })
+        .unwrap_or_default()
 }
 
 fn action_of(doc: &Document, d: &Dict, pages: &[ObjRef]) -> LinkAction {
@@ -93,14 +110,32 @@ fn action_of(doc: &Document, d: &Dict, pages: &[ObjRef]) -> LinkAction {
         }
     };
     if let Some(dest) = d.get(b"Dest") {
-        return dest_page(dest).map_or_else(|| LinkAction::Other("named destination".into()), LinkAction::Page);
+        return dest_page(dest).map_or_else(
+            || LinkAction::Other("named destination".into()),
+            LinkAction::Page,
+        );
     }
-    let Some(a) = d.get(b"A").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()) else { return LinkAction::Other("no action".into()) };
+    let Some(a) = d
+        .get(b"A")
+        .map(|a| doc.resolve(a))
+        .and_then(|a| a.as_dict().cloned())
+    else {
+        return LinkAction::Other("no action".into());
+    };
     match a.name(b"S") {
         Some(b"URI") => LinkAction::Uri(
-            a.get(b"URI").and_then(|u| doc.resolve(u).as_string().map(|s| String::from_utf8_lossy(&s.bytes).into_owned())).unwrap_or_default(),
+            a.get(b"URI")
+                .and_then(|u| {
+                    doc.resolve(u)
+                        .as_string()
+                        .map(|s| String::from_utf8_lossy(&s.bytes).into_owned())
+                })
+                .unwrap_or_default(),
         ),
-        Some(b"GoTo") => a.get(b"D").and_then(dest_page).map_or_else(|| LinkAction::Other("named destination".into()), LinkAction::Page),
+        Some(b"GoTo") => a.get(b"D").and_then(dest_page).map_or_else(
+            || LinkAction::Other("named destination".into()),
+            LinkAction::Page,
+        ),
         Some(s) => LinkAction::Other(String::from_utf8_lossy(s).into_owned()),
         None => LinkAction::Other("no action".into()),
     }
@@ -112,11 +147,18 @@ fn style_of(doc: &Document, d: &Dict) -> LinkStyle {
         Some(b) => b.get(b"W").and_then(Object::as_f64).unwrap_or(1.0),
         None => nums(doc, d.get(b"Border")).get(2).copied().unwrap_or(1.0),
     };
-    let s = bs.as_ref().and_then(|b| b.name(b"S").map(<[u8]>::to_vec)).unwrap_or_default();
+    let s = bs
+        .as_ref()
+        .and_then(|b| b.name(b"S").map(<[u8]>::to_vec))
+        .unwrap_or_default();
     let c = nums(doc, d.get(b"C"));
     LinkStyle {
         visible: width > 0.0,
-        color: if c.len() == 3 { [c[0], c[1], c[2]] } else { [0.0, 0.0, 1.0] },
+        color: if c.len() == 3 {
+            [c[0], c[1], c[2]]
+        } else {
+            [0.0, 0.0, 1.0]
+        },
         width: if width > 0.0 { width } else { 1.0 },
         dashed: s == b"D",
         underline: s == b"U",
@@ -131,11 +173,15 @@ fn style_of(doc: &Document, d: &Dict) -> LinkStyle {
 
 /// Every link in the document.
 pub fn list(doc: &Document) -> Vec<LinkItem> {
-    let Ok(pages) = page_refs(doc) else { return Vec::new() };
+    let Ok(pages) = page_refs(doc) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for (pi, p) in pages.iter().enumerate() {
         for (k, a) in annots(doc, *p).iter().enumerate() {
-            let Some(d) = doc.resolve(a).as_dict().cloned() else { continue };
+            let Some(d) = doc.resolve(a).as_dict().cloned() else {
+                continue;
+            };
             if d.name(b"Subtype") != Some(b"Link") {
                 continue;
             }
@@ -147,7 +193,12 @@ pub fn list(doc: &Document) -> Vec<LinkItem> {
                 page: pi,
                 index: k,
                 obj: a.as_ref(),
-                rect: [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])],
+                rect: [
+                    r[0].min(r[2]),
+                    r[1].min(r[3]),
+                    r[0].max(r[2]),
+                    r[1].max(r[3]),
+                ],
                 action: action_of(doc, &d, &pages),
                 style: style_of(doc, &d),
             });
@@ -158,7 +209,14 @@ pub fn list(doc: &Document) -> Vec<LinkItem> {
 
 fn write_style(d: &mut Dict, s: &LinkStyle) {
     let mut bs = Dict::new();
-    bs.set(b"W".to_vec(), Object::Real(if s.visible { s.width.clamp(0.5, 12.0) } else { 0.0 }));
+    bs.set(
+        b"W".to_vec(),
+        Object::Real(if s.visible {
+            s.width.clamp(0.5, 12.0)
+        } else {
+            0.0
+        }),
+    );
     bs.set(
         b"S".to_vec(),
         Object::name(if s.dashed {
@@ -174,7 +232,15 @@ fn write_style(d: &mut Dict, s: &LinkStyle) {
     }
     d.set(b"BS".to_vec(), Object::Dict(bs));
     d.remove(b"Border");
-    d.set(b"C".to_vec(), Object::Array(s.color.iter().map(|v| Object::Real(v.clamp(0.0, 1.0))).collect()));
+    d.set(
+        b"C".to_vec(),
+        Object::Array(
+            s.color
+                .iter()
+                .map(|v| Object::Real(v.clamp(0.0, 1.0)))
+                .collect(),
+        ),
+    );
     d.set(b"H".to_vec(), Object::name(s.highlight.code()));
 }
 
@@ -183,7 +249,10 @@ fn write_action(doc: &Document, d: &mut Dict, a: &LinkAction) -> Result<(), Anno
         LinkAction::Page(p) => {
             let target = page_ref(doc, *p)?;
             d.remove(b"A");
-            d.set(b"Dest".to_vec(), Object::Array(vec![Object::Ref(target), Object::name("Fit")]));
+            d.set(
+                b"Dest".to_vec(),
+                Object::Array(vec![Object::Ref(target), Object::name("Fit")]),
+            );
         }
         LinkAction::Uri(u) => {
             let u = u.trim();
@@ -206,18 +275,33 @@ fn write_action(doc: &Document, d: &mut Dict, a: &LinkAction) -> Result<(), Anno
 /// non-finite coordinates or a finite pair whose difference overflows to infinity.
 fn checked_rect(rect: [f64; 4]) -> Result<[f64; 4], AnnotError> {
     if !rect.iter().all(|v| v.is_finite()) {
-        return Err(AnnotError::Invalid("the link area must have finite coordinates".into()));
+        return Err(AnnotError::Invalid(
+            "the link area must have finite coordinates".into(),
+        ));
     }
-    let r = [rect[0].min(rect[2]), rect[1].min(rect[3]), rect[0].max(rect[2]), rect[1].max(rect[3])];
+    let r = [
+        rect[0].min(rect[2]),
+        rect[1].min(rect[3]),
+        rect[0].max(rect[2]),
+        rect[1].max(rect[3]),
+    ];
     let (width, height) = (r[2] - r[0], r[3] - r[1]);
     if !width.is_finite() || !height.is_finite() || width < 2.0 || height < 2.0 {
-        return Err(AnnotError::Invalid("the link area is too small or too large".into()));
+        return Err(AnnotError::Invalid(
+            "the link area is too small or too large".into(),
+        ));
     }
     Ok(r)
 }
 
 /// Add a link over `rect` (user space). Returns its index in the page's `/Annots`.
-pub fn add(doc: &mut Document, page: usize, rect: [f64; 4], action: &LinkAction, style: &LinkStyle) -> Result<usize, AnnotError> {
+pub fn add(
+    doc: &mut Document,
+    page: usize,
+    rect: [f64; 4],
+    action: &LinkAction,
+    style: &LinkStyle,
+) -> Result<usize, AnnotError> {
     let p = page_ref(doc, page)?;
     let r = checked_rect(rect)?;
     if matches!(action, LinkAction::Other(_)) {
@@ -226,7 +310,10 @@ pub fn add(doc: &mut Document, page: usize, rect: [f64; 4], action: &LinkAction,
     let mut d = Dict::new();
     d.set(b"Type".to_vec(), Object::name("Annot"));
     d.set(b"Subtype".to_vec(), Object::name("Link"));
-    d.set(b"Rect".to_vec(), Object::Array(r.iter().map(|v| Object::Real(*v)).collect()));
+    d.set(
+        b"Rect".to_vec(),
+        Object::Array(r.iter().map(|v| Object::Real(*v)).collect()),
+    );
     d.set(b"P".to_vec(), Object::Ref(p));
     d.set(b"F".to_vec(), Object::Int(4));
     write_style(&mut d, style);
@@ -241,9 +328,20 @@ pub fn add(doc: &mut Document, page: usize, rect: [f64; 4], action: &LinkAction,
 
 fn link_at(doc: &Document, page: usize, index: usize) -> Result<(ObjRef, ObjRef), AnnotError> {
     let p = page_ref(doc, page)?;
-    let a = annots(doc, p).get(index).cloned().ok_or(AnnotError::NoSuchAnnotation { page, index })?;
-    let r = a.as_ref().ok_or_else(|| AnnotError::Invalid("an inline link can't be edited".into()))?;
-    if doc.get(r).as_dict().and_then(|d| d.name(b"Subtype").map(<[u8]>::to_vec)).as_deref() != Some(b"Link") {
+    let a = annots(doc, p)
+        .get(index)
+        .cloned()
+        .ok_or(AnnotError::NoSuchAnnotation { page, index })?;
+    let r = a
+        .as_ref()
+        .ok_or_else(|| AnnotError::Invalid("an inline link can't be edited".into()))?;
+    if doc
+        .get(r)
+        .as_dict()
+        .and_then(|d| d.name(b"Subtype").map(<[u8]>::to_vec))
+        .as_deref()
+        != Some(b"Link")
+    {
         return Err(AnnotError::Invalid("that annotation isn't a link".into()));
     }
     Ok((p, r))
@@ -262,7 +360,10 @@ pub fn set(
     let mut d = doc.get(r).as_dict().cloned().unwrap_or_default();
     if let Some(rect) = rect {
         let rr = checked_rect(rect)?;
-        d.set(b"Rect".to_vec(), Object::Array(rr.iter().map(|v| Object::Real(*v)).collect()));
+        d.set(
+            b"Rect".to_vec(),
+            Object::Array(rr.iter().map(|v| Object::Real(*v)).collect()),
+        );
     }
     if let Some(s) = style {
         write_style(&mut d, s);
@@ -293,7 +394,13 @@ pub fn remove_all(doc: &mut Document, pages: Option<&[usize]>) -> Result<usize, 
         let list = annots(doc, *p);
         let kept: Vec<Object> = list
             .iter()
-            .filter(|a| doc.resolve(a).as_dict().and_then(|d| d.name(b"Subtype").map(<[u8]>::to_vec)).as_deref() != Some(b"Link"))
+            .filter(|a| {
+                doc.resolve(a)
+                    .as_dict()
+                    .and_then(|d| d.name(b"Subtype").map(<[u8]>::to_vec))
+                    .as_deref()
+                    != Some(b"Link")
+            })
             .cloned()
             .collect();
         if kept.len() != list.len() {
@@ -310,7 +417,11 @@ fn email_at(chars: &[char], start: usize) -> Option<(usize, String)> {
     let local_char = |c: char| c.is_ascii_alphanumeric() || "._+%-".contains(c);
     let domain_char = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '.';
     // Don't create a link starting in the middle of an address.
-    if start > 0 && chars.get(start - 1).is_some_and(|c| local_char(*c) || *c == '@') {
+    if start > 0
+        && chars
+            .get(start - 1)
+            .is_some_and(|c| local_char(*c) || *c == '@')
+    {
         return None;
     }
     let mut at = start;
@@ -321,7 +432,11 @@ fn email_at(chars: &[char], start: usize) -> Option<(usize, String)> {
         }
     }
     let local = chars.get(start..at)?;
-    if local.is_empty() || local.first() == Some(&'.') || local.last() == Some(&'.') || local.windows(2).any(|w| w == ['.', '.']) {
+    if local.is_empty()
+        || local.first() == Some(&'.')
+        || local.last() == Some(&'.')
+        || local.windows(2).any(|w| w == ['.', '.'])
+    {
         return None;
     }
     if chars.get(at) != Some(&'@') {
@@ -337,14 +452,21 @@ fn email_at(chars: &[char], start: usize) -> Option<(usize, String)> {
     while end > at + 1 && chars.get(end - 1) == Some(&'.') {
         end -= 1;
     }
-    if chars.get(end).is_some_and(|c| c.is_ascii_alphanumeric() || *c == '@' || *c == '_') {
+    if chars
+        .get(end)
+        .is_some_and(|c| c.is_ascii_alphanumeric() || *c == '@' || *c == '_')
+    {
         return None;
     }
     let domain = chars.get(at + 1..end)?;
     let mut labels = 0;
     let mut tld_length = 0;
     for label in domain.split(|c| *c == '.') {
-        if label.is_empty() || label.len() > 63 || !label.first()?.is_ascii_alphanumeric() || !label.last()?.is_ascii_alphanumeric() {
+        if label.is_empty()
+            || label.len() > 63
+            || !label.first()?.is_ascii_alphanumeric()
+            || !label.last()?.is_ascii_alphanumeric()
+        {
             return None;
         }
         labels += 1;
@@ -365,13 +487,20 @@ pub fn find_urls(chars: &[char]) -> Vec<(std::ops::Range<usize>, String)> {
     // characters keeps every offset in `chars`'s own index space: case-folding a copy can change
     // its length (U+0130 becomes "i" plus a combining dot), so a folded copy must never supply
     // offsets into the source (that mismatch panicked; #816).
-    let starts_with =
-        |start: usize, pat: &str| pat.chars().enumerate().all(|(k, p)| chars.get(start + k).is_some_and(|c| c.eq_ignore_ascii_case(&p)));
+    let starts_with = |start: usize, pat: &str| {
+        pat.chars().enumerate().all(|(k, p)| {
+            chars
+                .get(start + k)
+                .is_some_and(|c| c.eq_ignore_ascii_case(&p))
+        })
+    };
     let mut out = Vec::new();
     let mut i = 0;
     while i < chars.len() {
         let boundary = i == 0 || chars.get(i - 1).is_some_and(|c| !c.is_alphanumeric());
-        if boundary && (starts_with(i, "http://") || starts_with(i, "https://") || starts_with(i, "www.")) {
+        if boundary
+            && (starts_with(i, "http://") || starts_with(i, "https://") || starts_with(i, "www."))
+        {
             let mut j = i;
             while chars.get(j).is_some_and(|c| url_char(*c)) {
                 j += 1;
@@ -380,9 +509,16 @@ pub fn find_urls(chars: &[char]) -> Vec<(std::ops::Range<usize>, String)> {
             while j > i && chars.get(j - 1).is_some_and(|c| ".,;:!?".contains(*c)) {
                 j -= 1;
             }
-            let s: String = chars.get(i..j).map(|c| c.iter().collect()).unwrap_or_default();
+            let s: String = chars
+                .get(i..j)
+                .map(|c| c.iter().collect())
+                .unwrap_or_default();
             if s.len() > 6 && s.contains('.') {
-                let uri = if s.get(..4).is_some_and(|p| p.eq_ignore_ascii_case("www.")) { format!("http://{s}") } else { s };
+                let uri = if s.get(..4).is_some_and(|p| p.eq_ignore_ascii_case("www.")) {
+                    format!("http://{s}")
+                } else {
+                    s
+                };
                 out.push((i..j, uri));
                 i = j;
                 continue;
@@ -400,7 +536,11 @@ pub fn find_urls(chars: &[char]) -> Vec<(std::ops::Range<usize>, String)> {
 
 /// Create links for found URLs: `(page, quads, uri)` with quads in user space (one link per
 /// line rectangle). Returns how many links were added.
-pub fn add_many(doc: &mut Document, links: &[(usize, Vec<[f64; 4]>, String)], style: &LinkStyle) -> Result<usize, AnnotError> {
+pub fn add_many(
+    doc: &mut Document,
+    links: &[(usize, Vec<[f64; 4]>, String)],
+    style: &LinkStyle,
+) -> Result<usize, AnnotError> {
     let mut n = 0;
     for (page, rects, uri) in links {
         for r in rects {

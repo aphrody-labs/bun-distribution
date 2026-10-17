@@ -37,7 +37,10 @@ impl JevDecideTool {
     /// Wrap a configured router.
     #[must_use]
     pub fn new(router: Arc<JevRouter>) -> Self {
-        Self { router, definition: definition() }
+        Self {
+            router,
+            definition: definition(),
+        }
     }
 
     /// Build from the environment; `None` when no Jev backend is configured.
@@ -69,9 +72,11 @@ impl ToolExecutor for JevDecideTool {
     }
 
     async fn handle(&self, arguments: serde_json::Value) -> Result<ToolOutput, ToolError> {
-        let args: DecideArgs = serde_json::from_value(arguments).map_err(|error| {
-            ToolError::InvalidArguments { tool: JEV_TOOL.into(), message: error.to_string() }
-        })?;
+        let args: DecideArgs =
+            serde_json::from_value(arguments).map_err(|error| ToolError::InvalidArguments {
+                tool: JEV_TOOL.into(),
+                message: error.to_string(),
+            })?;
         let request = Request {
             state: args.state,
             model: args.model.unwrap_or_else(|| DEFAULT_MODEL.to_owned()),
@@ -79,7 +84,10 @@ impl ToolExecutor for JevDecideTool {
         };
         if let Some(threshold) = args.minimum_confidence {
             aphrody_jev::validate_confidence_threshold(threshold).map_err(|error| {
-                ToolError::InvalidArguments { tool: JEV_TOOL.into(), message: error.to_string() }
+                ToolError::InvalidArguments {
+                    tool: JEV_TOOL.into(),
+                    message: error.to_string(),
+                }
             })?;
         }
         match self.router.decide(&request).await {
@@ -91,7 +99,7 @@ impl ToolExecutor for JevDecideTool {
                             message: error.to_string(),
                         })?;
                 Ok(ToolOutput::ok(body.to_string()))
-            },
+            }
             Err(error @ JevError::InvalidRequest(_)) => Err(ToolError::InvalidArguments {
                 tool: JEV_TOOL.into(),
                 message: error.to_string(),
@@ -112,7 +120,11 @@ fn definition() -> ToolDefinition {
     );
     properties.insert(
         "questions".into(),
-        JsonSchema::object(BTreeMap::new(), None, Some(AdditionalProperties::Boolean(true))),
+        JsonSchema::object(
+            BTreeMap::new(),
+            None,
+            Some(AdditionalProperties::Boolean(true)),
+        ),
     );
     properties.insert(
         "model".into(),
@@ -180,7 +192,10 @@ mod tests {
             }))
             .await
             .unwrap_err();
-        assert!(matches!(error, ToolError::InvalidArguments { .. }), "{error}");
+        assert!(
+            matches!(error, ToolError::InvalidArguments { .. }),
+            "{error}"
+        );
     }
 
     #[tokio::test]

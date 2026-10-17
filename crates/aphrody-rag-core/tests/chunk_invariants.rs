@@ -20,14 +20,21 @@ fn assert_covers_every_non_blank_line(path: &str, source: &str, chunks: &[Chunk]
     let normalized = source.replace("\r\n", "\n");
     let mut covered: HashSet<u32> = HashSet::new();
     for c in chunks {
-        assert!(c.start_line <= c.end_line, "{path}: chunk {:?} has start>end", c.symbol);
+        assert!(
+            c.start_line <= c.end_line,
+            "{path}: chunk {:?} has start>end",
+            c.symbol
+        );
         for l in c.start_line..=c.end_line {
             covered.insert(l);
         }
     }
     let required = non_blank_lines(&normalized);
     let missing: Vec<u32> = required.difference(&covered).copied().collect();
-    assert!(missing.is_empty(), "{path}: lines not covered by any chunk: {missing:?}");
+    assert!(
+        missing.is_empty(),
+        "{path}: lines not covered by any chunk: {missing:?}"
+    );
 }
 
 fn assert_max_chars_respected(path: &str, chunks: &[Chunk], max_chars: usize) {
@@ -108,7 +115,9 @@ fn rust_chunker_covers_every_line_and_names_symbols() {
     assert!(symbols.contains(&"Point::magnitude"), "{symbols:?}");
     assert!(symbols.contains(&"inner::helper"), "{symbols:?}");
     assert!(
-        symbols.iter().any(|s| s.starts_with("Point::fmt") || *s == "Point::fmt"),
+        symbols
+            .iter()
+            .any(|s| s.starts_with("Point::fmt") || *s == "Point::fmt"),
         "{symbols:?}"
     );
 }
@@ -134,7 +143,10 @@ fn rust_chunker_crlf_matches_lf() {
 fn rust_chunker_falls_back_on_parse_error() {
     let broken = "fn broken( {{{ not valid rust at all !!!";
     let chunks = chunker_for_path("broken.rs").chunk("broken.rs", broken, &ChunkOptions::default());
-    assert!(!chunks.is_empty(), "a broken file must still produce chunks, never be dropped");
+    assert!(
+        !chunks.is_empty(),
+        "a broken file must still produce chunks, never be dropped"
+    );
     assert_covers_every_non_blank_line("broken.rs", broken, &chunks);
 }
 
@@ -152,7 +164,10 @@ fn rust_chunker_splits_oversized_item_with_overlap() {
         ..ChunkOptions::default()
     };
     let chunks = chunker_for_path("h.rs").chunk("h.rs", &body, &opts);
-    assert!(chunks.len() > 1, "an oversized function must be split into more than one chunk");
+    assert!(
+        chunks.len() > 1,
+        "an oversized function must be split into more than one chunk"
+    );
     assert_covers_every_non_blank_line("h.rs", &body, &chunks);
     assert_max_chars_respected("h.rs", &chunks, opts.max_chars);
 }
@@ -194,8 +209,10 @@ fn markdown_chunker_covers_lines_and_carries_heading_trail() {
 fn markdown_chunker_never_splits_a_fence() {
     let chunks =
         chunker_for_path("README.md").chunk("README.md", MARKDOWN_SRC, &ChunkOptions::default());
-    let fence_chunk =
-        chunks.iter().find(|c| c.text.contains("curl -sSL")).expect("fence content present");
+    let fence_chunk = chunks
+        .iter()
+        .find(|c| c.text.contains("curl -sSL"))
+        .expect("fence content present");
     assert!(fence_chunk.text.contains("```bash"));
     assert!(fence_chunk.text.trim_end().ends_with("```"));
 }
@@ -233,8 +250,12 @@ const PROSE_SRC: &str = "This is the first sentence. This is the second sentence
 
 #[test]
 fn prose_chunker_covers_lines_and_respects_overlap() {
-    let opts =
-        ChunkOptions { max_chars: 40, overlap_pct: 0.15, min_chars: 8, ..ChunkOptions::default() };
+    let opts = ChunkOptions {
+        max_chars: 40,
+        overlap_pct: 0.15,
+        min_chars: 8,
+        ..ChunkOptions::default()
+    };
     let chunks = chunker_for_path("notes.txt").chunk("notes.txt", PROSE_SRC, &opts);
     assert!(chunks.len() > 1);
     assert_covers_every_non_blank_line("notes.txt", PROSE_SRC, &chunks);
@@ -247,7 +268,11 @@ fn prose_chunker_covers_lines_and_respects_overlap() {
             .rev()
             .take(4)
             .any(|w2| b_first_words.iter().take(6).any(|w3| w2 == w3));
-        assert!(shares, "expected overlap between {:?} and {:?}", w[0].text, w[1].text);
+        assert!(
+            shares,
+            "expected overlap between {:?} and {:?}",
+            w[0].text, w[1].text
+        );
     }
 }
 

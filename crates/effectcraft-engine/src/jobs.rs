@@ -98,7 +98,15 @@ pub struct JobInfo {
     pub cancellable: bool,
 }
 
-fn info(id: &str, kind: &str, label: String, done: u64, total: u64, running: bool, message: String) -> JobInfo {
+fn info(
+    id: &str,
+    kind: &str,
+    label: String,
+    done: u64,
+    total: u64,
+    running: bool,
+    message: String,
+) -> JobInfo {
     JobInfo {
         id: id.into(),
         kind: kind.into(),
@@ -141,14 +149,31 @@ impl Session {
             run();
             None
         } else {
-            Some(std::thread::Builder::new().name(format!("task-{kind}")).spawn(run).map_err(|e| crate::EngineError::Other(e.to_string()))?)
+            Some(
+                std::thread::Builder::new()
+                    .name(format!("task-{kind}"))
+                    .spawn(run)
+                    .map_err(|e| crate::EngineError::Other(e.to_string()))?,
+            )
         };
-        self.tasks.push(Task { id, kind, label, ctl, started: web_time::Instant::now(), result, thread });
+        self.tasks.push(Task {
+            id,
+            kind,
+            label,
+            ctl,
+            started: web_time::Instant::now(),
+            result,
+            thread,
+        });
         if wait {
             let rec = self.finish_task(self.tasks.len() - 1);
             return match rec.status.as_str() {
                 "done" => Ok(rec.result),
-                _ => Err(crate::EngineError::Other(if rec.message.is_empty() { rec.status } else { rec.message })),
+                _ => Err(crate::EngineError::Other(if rec.message.is_empty() {
+                    rec.status
+                } else {
+                    rec.message
+                })),
             };
         }
         Ok(json!({"job": format!("task:{id}"), "started": true}))
@@ -164,11 +189,20 @@ impl Session {
         let (status, message, result) = match r {
             Some(Ok(apply)) if !cancelled => match apply(self) {
                 // A task may say how it went (`toast`: "Imported 3 items").
-                Ok(v) => ("done", v.get("toast").and_then(Value::as_str).unwrap_or_default().to_string(), v),
+                Ok(v) => (
+                    "done",
+                    v.get("toast")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string(),
+                    v,
+                ),
                 Err(e) => ("failed", e.to_string(), Value::Null),
             },
             Some(Ok(_)) => ("cancelled", String::new(), Value::Null),
-            Some(Err(e)) if cancelled || e == crate::render_queue::CANCELLED => ("cancelled", String::new(), Value::Null),
+            Some(Err(e)) if cancelled || e == crate::render_queue::CANCELLED => {
+                ("cancelled", String::new(), Value::Null)
+            }
             Some(Err(e)) => ("failed", e, Value::Null),
             None => ("failed", "the task stopped".into(), Value::Null),
         };
@@ -187,7 +221,10 @@ impl Session {
             "cancelled" => format!("{} cancelled", t.label),
             _ => format!("{} failed: {message}", t.label),
         };
-        self.events.push(crate::Event::Toast { message: toast, error: status == "failed" });
+        self.events.push(crate::Event::Toast {
+            message: toast,
+            error: status == "failed",
+        });
         self.job_log.push(rec.clone());
         if self.job_log.len() > 50 {
             self.job_log.remove(0);
@@ -212,7 +249,11 @@ impl Session {
                 let _ = th.join();
             }
             self.poll_jobs();
-            if self.tasks.iter().all(|t| t.thread.is_none() && !lock(&t.ctl.state).finished) {
+            if self
+                .tasks
+                .iter()
+                .all(|t| t.thread.is_none() && !lock(&t.ctl.state).finished)
+            {
                 break;
             }
         }
@@ -233,47 +274,118 @@ impl Session {
             out.push(info(
                 "render",
                 "render",
-                format!("Render Queue{}", name.map(|n| format!(": {n}")).unwrap_or_default()),
+                format!(
+                    "Render Queue{}",
+                    name.map(|n| format!(": {n}")).unwrap_or_default()
+                ),
                 st.done,
                 st.total,
                 true,
-                format!("item {} of {}", (st.items_done + 1).min(st.items_total.max(1)), st.items_total),
+                format!(
+                    "item {} of {}",
+                    (st.items_done + 1).min(st.items_total.max(1)),
+                    st.items_total
+                ),
             ));
         }
         if let Some(p) = self.track_progress()
             && !p.finished
         {
-            out.push(info("track", "track", "Track Motion".into(), p.done, p.total, true, String::new()));
+            out.push(info(
+                "track",
+                "track",
+                "Track Motion".into(),
+                p.done,
+                p.total,
+                true,
+                String::new(),
+            ));
         }
         if let Some(p) = self.mask_track_progress()
             && !p.finished
         {
-            out.push(info("maskTrack", "maskTrack", "Track Mask".into(), p.done, p.total, true, String::new()));
+            out.push(info(
+                "maskTrack",
+                "maskTrack",
+                "Track Mask".into(),
+                p.done,
+                p.total,
+                true,
+                String::new(),
+            ));
         }
         if let Some(p) = self.warp_progress()
             && !p.finished
         {
-            out.push(info("warp", "warp", "Warp Stabilizer analysis".into(), p.done, p.total, true, format!("step {}", p.step)));
+            out.push(info(
+                "warp",
+                "warp",
+                "Warp Stabilizer analysis".into(),
+                p.done,
+                p.total,
+                true,
+                format!("step {}", p.step),
+            ));
         }
         if let Some(p) = self.camera_progress()
             && !p.finished
         {
-            out.push(info("camera", "camera", "3D Camera Tracker analysis".into(), p.done, p.total, true, format!("step {}", p.step)));
+            out.push(info(
+                "camera",
+                "camera",
+                "3D Camera Tracker analysis".into(),
+                p.done,
+                p.total,
+                true,
+                format!("step {}", p.step),
+            ));
         }
         if let Some(p) = self.roto_progress()
             && !p.finished
         {
-            out.push(info("roto", "roto", "Roto Brush propagation".into(), p.done, p.total, true, String::new()));
+            out.push(info(
+                "roto",
+                "roto",
+                "Roto Brush propagation".into(),
+                p.done,
+                p.total,
+                true,
+                String::new(),
+            ));
         }
         if let Some(j) = self.offloaded(crate::offload::JobKind::WarpPlan) {
-            out.push(info("warpPlan", "warp", "Warp Stabilizer: Stabilizing".into(), j.progress.done, j.progress.total, true, String::new()));
+            out.push(info(
+                "warpPlan",
+                "warp",
+                "Warp Stabilizer: Stabilizing".into(),
+                j.progress.done,
+                j.progress.total,
+                true,
+                String::new(),
+            ));
         }
         if let Some(j) = self.offloaded(crate::offload::JobKind::ContentFill) {
-            out.push(info("contentFill", "contentFill", "Content-Aware Fill".into(), j.progress.done, j.progress.total, true, String::new()));
+            out.push(info(
+                "contentFill",
+                "contentFill",
+                "Content-Aware Fill".into(),
+                j.progress.done,
+                j.progress.total,
+                true,
+                String::new(),
+            ));
         }
         for t in &self.tasks {
             let s = lock(&t.ctl.state).clone();
-            out.push(info(&format!("task:{}", t.id), t.kind, t.label.clone(), s.done, s.total, !s.finished, s.message));
+            out.push(info(
+                &format!("task:{}", t.id),
+                t.kind,
+                t.label.clone(),
+                s.done,
+                s.total,
+                !s.finished,
+                s.message,
+            ));
         }
         out
     }
@@ -294,7 +406,9 @@ impl Session {
                 ids.iter().fold(false, |a, j| self.cancel_job(j) | a)
             }
             _ => {
-                let Some(n) = id.strip_prefix("task:").and_then(|n| n.parse::<u64>().ok()) else { return false };
+                let Some(n) = id.strip_prefix("task:").and_then(|n| n.parse::<u64>().ok()) else {
+                    return false;
+                };
                 match self.tasks.iter().find(|t| t.id == n) {
                     Some(t) => {
                         t.ctl.cancel.store(true, Ordering::Relaxed);
@@ -310,7 +424,9 @@ impl Session {
     /// (commands built from several commands).
     pub fn collapse_undo(&mut self, name: &str, snap: &Arc<effectcraft_project::Project>) {
         let h = &mut self.history;
-        let Some(start) = h.undo.iter().rposition(|(_, p)| Arc::ptr_eq(p, snap)) else { return };
+        let Some(start) = h.undo.iter().rposition(|(_, p)| Arc::ptr_eq(p, snap)) else {
+            return;
+        };
         let first = h.undo[start].1.clone();
         h.undo.truncate(start);
         h.undo.push((name.to_string(), first));

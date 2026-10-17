@@ -11,13 +11,19 @@ use crate::{Result, Session};
 impl Session {
     /// Built-in presets followed by the user's.
     pub fn all_export_presets(&self) -> Vec<(ExportPreset, bool)> {
-        builtin_presets().into_iter().map(|p| (p, true)).chain(self.export_presets.iter().cloned().map(|p| (p, false))).collect()
+        builtin_presets()
+            .into_iter()
+            .map(|p| (p, true))
+            .chain(self.export_presets.iter().cloned().map(|p| (p, false)))
+            .collect()
     }
 
     /// `app.export` params with a named `preset` expanded: the preset's params, overridden by the
     /// call's own (`preset` itself removed). Unknown preset names are an error.
     pub fn export_params(&self, p: &Value) -> std::result::Result<Value, String> {
-        let Some(name) = p.get("preset").and_then(Value::as_str) else { return Ok(p.clone()) };
+        let Some(name) = p.get("preset").and_then(Value::as_str) else {
+            return Ok(p.clone());
+        };
         let (preset, _) = self
             .all_export_presets()
             .into_iter()
@@ -35,7 +41,12 @@ impl Session {
 }
 
 fn list(s: &Session) -> Value {
-    Value::Array(s.all_export_presets().into_iter().map(|(p, builtin)| json!({"name": p.name, "builtin": builtin, "params": p.params})).collect())
+    Value::Array(
+        s.all_export_presets()
+            .into_iter()
+            .map(|(p, builtin)| json!({"name": p.name, "builtin": builtin, "params": p.params}))
+            .collect(),
+    )
 }
 
 /// Params that describe a destination or a selection, not the export settings.
@@ -43,22 +54,43 @@ const NOT_SETTINGS: &[&str] = &["ids", "path", "dir", "preset"];
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "export.savePreset";
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(ID, "missing `name`"))?;
-    if builtin_presets().iter().any(|b| b.name.eq_ignore_ascii_case(name)) {
-        return Err(bad(ID, format!("`{name}` is a built-in preset; choose another name")));
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(ID, "missing `name`"))?;
+    if builtin_presets()
+        .iter()
+        .any(|b| b.name.eq_ignore_ascii_case(name))
+    {
+        return Err(bad(
+            ID,
+            format!("`{name}` is a built-in preset; choose another name"),
+        ));
     }
     let mut params = match p.get("params") {
         Some(v @ Value::Object(_)) => v.clone(),
         Some(_) => return Err(bad(ID, "`params` must be an object of app.export params")),
-        None => s.last_export.clone().ok_or_else(|| bad(ID, "no `params` and no previous export to save"))?,
+        None => s
+            .last_export
+            .clone()
+            .ok_or_else(|| bad(ID, "no `params` and no previous export to save"))?,
     };
     if let Some(o) = params.as_object_mut() {
         o.retain(|k, _| !NOT_SETTINGS.contains(&k.as_str()));
     }
     // a preset that app.export would refuse is refused here, where the typo is on screen
     crate::export::ExportOptions::validate(ID, &params)?;
-    let preset = ExportPreset { name: name.to_string(), params };
-    match s.export_presets.iter_mut().find(|x| x.name.eq_ignore_ascii_case(name)) {
+    let preset = ExportPreset {
+        name: name.to_string(),
+        params,
+    };
+    match s
+        .export_presets
+        .iter_mut()
+        .find(|x| x.name.eq_ignore_ascii_case(name))
+    {
         Some(x) => *x = preset,
         None => s.export_presets.push(preset),
     }
@@ -68,9 +100,13 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "export.deletePreset";
-    let name = p.get("name").and_then(Value::as_str).ok_or_else(|| bad(ID, "missing `name`"))?;
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(ID, "missing `name`"))?;
     let before = s.export_presets.len();
-    s.export_presets.retain(|x| !x.name.eq_ignore_ascii_case(name.trim()));
+    s.export_presets
+        .retain(|x| !x.name.eq_ignore_ascii_case(name.trim()));
     if s.export_presets.len() == before {
         return Err(bad(ID, format!("no user export preset `{name}`")));
     }
@@ -94,9 +130,18 @@ fn photos_enabled(s: &Session) -> std::result::Result<(), String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn add_to_photos(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "export.addToPhotos";
-    let runner = s.apple_photos.clone().ok_or_else(|| bad(ID, crate::apple_photos::unavailable()))?;
-    if let Some(k) = p.as_object().and_then(|o| o.keys().find(|k| !matches!(k.as_str(), "paths" | "album" | "wait"))) {
-        return Err(bad(ID, format!("unknown parameter `{k}` (one of paths, album, wait)")));
+    let runner = s
+        .apple_photos
+        .clone()
+        .ok_or_else(|| bad(ID, crate::apple_photos::unavailable()))?;
+    if let Some(k) = p.as_object().and_then(|o| {
+        o.keys()
+            .find(|k| !matches!(k.as_str(), "paths" | "album" | "wait"))
+    }) {
+        return Err(bad(
+            ID,
+            format!("unknown parameter `{k}` (one of paths, album, wait)"),
+        ));
     }
     let paths: Vec<String> = match p.get("paths") {
         Some(Value::Array(a)) => a
@@ -125,7 +170,15 @@ fn add_to_photos(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::Bool(b)) => *b,
         Some(_) => return Err(bad(ID, "`wait` must be true or false")),
     };
-    let job = crate::apple_photos::import_job(&runner, &s.apple_photos_imports, paths, album, !wait, Some(&s.activity)).map_err(|e| bad(ID, e))?;
+    let job = crate::apple_photos::import_job(
+        &runner,
+        &s.apple_photos_imports,
+        paths,
+        album,
+        !wait,
+        Some(&s.activity),
+    )
+    .map_err(|e| bad(ID, e))?;
     match job.outcome() {
         Some(crate::apple_photos::Outcome::Failed(e)) => Err(bad(ID, e)),
         _ => Ok(job.json()),
@@ -137,10 +190,17 @@ fn add_to_photos(s: &mut Session, p: &Value) -> Result<Value> {
 fn photos_imports(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "export.photosImports";
     match p.get("job") {
-        None | Some(Value::Null) => Ok(json!({"imports": s.apple_photos_imports.all().iter().map(|j| j.json()).collect::<Vec<_>>()})),
+        None | Some(Value::Null) => Ok(
+            json!({"imports": s.apple_photos_imports.all().iter().map(|j| j.json()).collect::<Vec<_>>()}),
+        ),
         Some(v) => {
-            let id = v.as_u64().ok_or_else(|| bad(ID, "`job` must be an import number"))?;
-            s.apple_photos_imports.get(id).map(|j| j.json()).ok_or_else(|| bad(ID, format!("no import {id} (see export.photosImports)")))
+            let id = v
+                .as_u64()
+                .ok_or_else(|| bad(ID, "`job` must be an import number"))?;
+            s.apple_photos_imports
+                .get(id)
+                .map(|j| j.json())
+                .ok_or_else(|| bad(ID, format!("no import {id} (see export.photosImports)")))
         }
     }
 }
@@ -177,7 +237,15 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             save
         ),
-        cmd!("export.deletePreset", "Delete Export Preset", [], None, "{name} — removes a user preset → presets", always, delete),
+        cmd!(
+            "export.deletePreset",
+            "Delete Export Preset",
+            [],
+            None,
+            "{name} — removes a user preset → presets",
+            always,
+            delete
+        ),
         cmd!(
             query "export.checkTarget",
             "Check Output Path",

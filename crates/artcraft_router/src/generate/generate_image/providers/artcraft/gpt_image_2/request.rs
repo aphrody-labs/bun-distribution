@@ -7,11 +7,14 @@ use crate::generate::generate_image::providers::artcraft::request_common::send_a
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftGptImage2RequestState {
-  pub request: OmniGenImageCostAndGenerateRequest,
+    pub request: OmniGenImageCostAndGenerateRequest,
 }
 
 impl ArtcraftGptImage2RequestState {
-  pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-    send_artcraft_omni_image_request(&self.request, client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterArtcraftClient,
+    ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+        send_artcraft_omni_image_request(&self.request, client).await
+    }
 }

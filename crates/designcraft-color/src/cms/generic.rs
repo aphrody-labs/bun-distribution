@@ -67,7 +67,11 @@ pub fn swop_like() -> GenericCmykParams {
         black: Lab::new(19.0, 0.5, 0.5),
         dot_gain: [0.20, 0.20, 0.20, 0.22],
         tac: 3.0,
-        bg: BlackGeneration { start: 0.1, max_k: 0.95, gamma: 1.25 },
+        bg: BlackGeneration {
+            start: 0.1,
+            max_k: 0.95,
+            gamma: 1.25,
+        },
     }
 }
 
@@ -114,7 +118,14 @@ impl GenericCmyk {
                 prim_k[i][ch] = paper_xyz[ch] * 10f32.powf(-d.max(di));
             }
         }
-        let mut g = Self { params, prim, prim_k, paper_xyz, black_rel: [0.0; 3], gbd: OnceLock::new() };
+        let mut g = Self {
+            params,
+            prim,
+            prim_k,
+            paper_xyz,
+            black_rel: [0.0; 3],
+            gbd: OnceLock::new(),
+        };
         // Darkest black within TAC: search a few rich blacks.
         let mut best = [1.0f32; 3];
         for k in [0.8f32, 0.9, 1.0] {
@@ -147,7 +158,9 @@ impl GenericCmyk {
         let k = Self::gain(cmyk[3], dg[3]);
         let mut out = [0.0f32; 3];
         for i in 0..8 {
-            let w = (if i & 1 != 0 { c } else { 1.0 - c }) * (if i & 2 != 0 { m } else { 1.0 - m }) * (if i & 4 != 0 { y } else { 1.0 - y });
+            let w = (if i & 1 != 0 { c } else { 1.0 - c })
+                * (if i & 2 != 0 { m } else { 1.0 - m })
+                * (if i & 4 != 0 { y } else { 1.0 - y });
             if w == 0.0 {
                 continue;
             }
@@ -161,7 +174,11 @@ impl GenericCmyk {
     /// Media-relative XYZ (paper = D50 white).
     pub fn to_xyz_rel(&self, cmyk: [f32; 4]) -> [f32; 3] {
         let x = self.to_xyz(cmyk);
-        [x[0] * D50[0] / self.paper_xyz[0], x[1] * D50[1] / self.paper_xyz[1], x[2] * D50[2] / self.paper_xyz[2]]
+        [
+            x[0] * D50[0] / self.paper_xyz[0],
+            x[1] * D50[1] / self.paper_xyz[1],
+            x[2] * D50[2] / self.paper_xyz[2],
+        ]
     }
 
     pub fn to_lab_rel(&self, cmyk: [f32; 4]) -> Lab {
@@ -173,7 +190,11 @@ impl GenericCmyk {
 
     /// Display sRGB: media-relative (paper shows as white) or absolute (simulate paper colour).
     pub fn to_srgb(&self, cmyk: [f32; 4], absolute: bool) -> [f32; 3] {
-        xyz_to_srgb(if absolute { self.to_xyz(cmyk) } else { self.to_xyz_rel(cmyk) })
+        xyz_to_srgb(if absolute {
+            self.to_xyz(cmyk)
+        } else {
+            self.to_xyz_rel(cmyk)
+        })
     }
 
     /// Lab of the darkest printable black (media-relative).
@@ -225,7 +246,11 @@ impl GenericCmyk {
                     lambda *= 10.0;
                     continue;
                 };
-                let xn = [(x[0] + d[0]).clamp(0.0, 1.0), (x[1] + d[1]).clamp(0.0, 1.0), (x[2] + d[2]).clamp(0.0, 1.0)];
+                let xn = [
+                    (x[0] + d[0]).clamp(0.0, 1.0),
+                    (x[1] + d[1]).clamp(0.0, 1.0),
+                    (x[2] + d[2]).clamp(0.0, 1.0),
+                ];
                 let rn = f(xn);
                 let en = rn.iter().map(|v| v * v).sum::<f32>();
                 if en < err {
@@ -257,7 +282,11 @@ impl GenericCmyk {
         if grey <= bg.start {
             return 0.0;
         }
-        (((grey - bg.start) / (1.0 - bg.start)).clamp(0.0, 1.0).powf(bg.gamma) * bg.max_k).clamp(0.0, 1.0)
+        (((grey - bg.start) / (1.0 - bg.start))
+            .clamp(0.0, 1.0)
+            .powf(bg.gamma)
+            * bg.max_k)
+            .clamp(0.0, 1.0)
     }
 
     /// Separate a media-relative Lab (already gamut-mapped) into CMYK with GCR/UCR and the TAC limit.
@@ -273,7 +302,11 @@ impl GenericCmyk {
         if l0 > target.l + 1.0 {
             k = k.max(((l0 - target.l) / l0.max(1.0)).clamp(0.0, 1.0));
         }
-        let mut cmy = if k > 0.0 { self.solve_cmy(target, k, Self::initial_cmy(target, k)) } else { cmy0 };
+        let mut cmy = if k > 0.0 {
+            self.solve_cmy(target, k, Self::initial_cmy(target, k))
+        } else {
+            cmy0
+        };
         // UCR: trade CMY for K until within the TAC limit.
         for _ in 0..6 {
             let sum = cmy.iter().sum::<f32>() + k;
@@ -301,7 +334,11 @@ impl GenericCmyk {
                 for ci in 0..=n {
                     for mi in 0..=n {
                         for yi in 0..=n {
-                            let (c, m, y) = (ci as f32 / n as f32, mi as f32 / n as f32, yi as f32 / n as f32);
+                            let (c, m, y) = (
+                                ci as f32 / n as f32,
+                                mi as f32 / n as f32,
+                                yi as f32 / n as f32,
+                            );
                             if c + m + y + k > self.params.tac + 1e-3 {
                                 continue;
                             }
@@ -336,12 +373,17 @@ impl GenericCmyk {
                     let below = known.iter().rev().find(|&&k| k < li);
                     let above = known.iter().find(|&&k| k > li);
                     smooth[li * GBD_H + hi] = match (below, above) {
-                        (Some(&b), Some(&a)) => col[b] + (col[a] - col[b]) * (li - b) as f32 / (a - b) as f32,
+                        (Some(&b), Some(&a)) => {
+                            col[b] + (col[a] - col[b]) * (li - b) as f32 / (a - b) as f32
+                        }
                         _ => 0.0,
                     };
                 }
             }
-            Gbd { cmax: smooth, cusp_l: cusp.into_iter().map(|c| c.1).collect() }
+            Gbd {
+                cmax: smooth,
+                cusp_l: cusp.into_iter().map(|c| c.1).collect(),
+            }
         })
     }
 
@@ -368,7 +410,11 @@ impl GenericCmyk {
         if intent == Intent::AbsoluteColorimetric {
             // Keep absolute colorimetry: express in media-relative terms without white mapping.
             let x = lab_to_xyz(src);
-            return xyz_to_lab([x[0] * D50[0] / self.paper_xyz[0], x[1] * D50[1] / self.paper_xyz[1], x[2] * D50[2] / self.paper_xyz[2]]);
+            return xyz_to_lab([
+                x[0] * D50[0] / self.paper_xyz[0],
+                x[1] * D50[1] / self.paper_xyz[1],
+                x[2] * D50[2] / self.paper_xyz[2],
+            ]);
         }
         let mut lab = src;
         if bpc || matches!(intent, Intent::Perceptual | Intent::Saturation) {
@@ -393,7 +439,11 @@ impl GenericCmyk {
                     let cmax = self.max_chroma(lab.l, h).max(1.0);
                     let r = c / cmax;
                     const KNEE: f32 = 0.75;
-                    let r2 = if r > KNEE { KNEE + (1.0 - KNEE) * (1.0 - (-(r - KNEE) / (1.0 - KNEE)).exp()) } else { r };
+                    let r2 = if r > KNEE {
+                        KNEE + (1.0 - KNEE) * (1.0 - (-(r - KNEE) / (1.0 - KNEE)).exp())
+                    } else {
+                        r
+                    };
                     lab = Lab::from_lch(lab.l, r2 * cmax * 0.995, lab.hue());
                 }
                 lab
@@ -434,7 +484,8 @@ impl GenericCmyk {
 }
 
 fn solve3(a: [[f32; 3]; 3], b: [f32; 3]) -> Option<[f32; 3]> {
-    let det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+    let det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+        - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
         + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
     if det.abs() < 1e-12 {
         return None;
@@ -445,7 +496,8 @@ fn solve3(a: [[f32; 3]; 3], b: [f32; 3]) -> Option<[f32; 3]> {
         for r in 0..3 {
             m[r][i] = b[r];
         }
-        *o = (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        *o = (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]))
             / det;
     }

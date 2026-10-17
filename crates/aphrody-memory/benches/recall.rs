@@ -128,7 +128,10 @@ async fn build_corpus() -> (tempfile::TempDir, HnswBackend, Embedding) {
             (key, rec)
         })
         .collect();
-    backend.put_many(batch).await.expect("bulk insert must succeed (no I/O failure on tempdir)");
+    backend
+        .put_many(batch)
+        .await
+        .expect("bulk insert must succeed (no I/O failure on tempdir)");
 
     // Query seed deliberately outside the corpus range so the query is not a
     // trivial nearest-neighbour of itself.

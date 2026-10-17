@@ -27,7 +27,10 @@ pub fn set(on: bool) {
 
 pub fn mark(s: &str) -> &'static str {
     LOOKED_UP.with_borrow_mut(|l| l.insert(s.to_string()));
-    CACHE.with_borrow_mut(|c| *c.entry(s.to_string()).or_insert_with(|| Box::leak(format!("⟦{}⟧", s.replace('\n', "⟧\n⟦")).into_boxed_str())))
+    CACHE.with_borrow_mut(|c| {
+        *c.entry(s.to_string())
+            .or_insert_with(|| Box::leak(format!("⟦{}⟧", s.replace('\n', "⟧\n⟦")).into_boxed_str()))
+    })
 }
 
 /// `text` without its marked segments. Lines are marked one by one, since multi-line labels are

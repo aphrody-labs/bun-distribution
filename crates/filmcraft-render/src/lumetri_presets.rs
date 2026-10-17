@@ -70,46 +70,89 @@ fn curve(points: &[[f32; 2]]) -> ParamValue {
 
 /// Every built-in preset, by folder.
 pub fn presets() -> Vec<LumetriPreset> {
-    let p = |folder, name, description, params| LumetriPreset { folder, name, description, params };
+    let p = |folder, name, description, params| LumetriPreset {
+        folder,
+        name,
+        description,
+        params,
+    };
     vec![
         // ---- Cinematic
         p(
             "Cinematic",
             "Teal Shadows, Warm Skin",
             "Cyan-teal shadows and warm highlights with a little more contrast",
-            vec![("shadow_tint", rgb(0.36, 0.52, 0.6)), ("highlight_tint", rgb(0.64, 0.53, 0.42)), ("contrast", fl(20.0)), ("creative_sat", fl(110.0))],
+            vec![
+                ("shadow_tint", rgb(0.36, 0.52, 0.6)),
+                ("highlight_tint", rgb(0.64, 0.53, 0.42)),
+                ("contrast", fl(20.0)),
+                ("creative_sat", fl(110.0)),
+            ],
         ),
         p(
             "Cinematic",
             "Night Exterior",
             "Day for night: darker, cooler and less saturated",
-            vec![("temperature", fl(-45.0)), ("exposure", fl(-0.9)), ("contrast", fl(15.0)), ("creative_sat", fl(70.0)), ("shadow_tint", rgb(0.4, 0.45, 0.62))],
+            vec![
+                ("temperature", fl(-45.0)),
+                ("exposure", fl(-0.9)),
+                ("contrast", fl(15.0)),
+                ("creative_sat", fl(70.0)),
+                ("shadow_tint", rgb(0.4, 0.45, 0.62)),
+            ],
         ),
         p(
             "Cinematic",
             "Golden Dusk",
             "Warm, soft late-afternoon light",
-            vec![("temperature", fl(35.0)), ("tint", fl(8.0)), ("highlights", fl(-15.0)), ("vibrance", fl(20.0)), ("highlight_tint", rgb(0.66, 0.55, 0.4))],
+            vec![
+                ("temperature", fl(35.0)),
+                ("tint", fl(8.0)),
+                ("highlights", fl(-15.0)),
+                ("vibrance", fl(20.0)),
+                ("highlight_tint", rgb(0.66, 0.55, 0.4)),
+            ],
         ),
-        p("Cinematic", "Steel Blue", "Cool, desaturated and punchy", vec![("temperature", fl(-25.0)), ("saturation", fl(80.0)), ("contrast", fl(25.0))]),
+        p(
+            "Cinematic",
+            "Steel Blue",
+            "Cool, desaturated and punchy",
+            vec![
+                ("temperature", fl(-25.0)),
+                ("saturation", fl(80.0)),
+                ("contrast", fl(25.0)),
+            ],
+        ),
         p(
             "Cinematic",
             "Hard Sun",
             "High contrast with held highlights and deep shadows",
-            vec![("contrast", fl(45.0)), ("shadows", fl(-20.0)), ("highlights", fl(-25.0)), ("vibrance", fl(15.0))],
+            vec![
+                ("contrast", fl(45.0)),
+                ("shadows", fl(-20.0)),
+                ("highlights", fl(-25.0)),
+                ("vibrance", fl(15.0)),
+            ],
         ),
         // ---- Film Emulation
         p(
             "Film Emulation",
             "Faded Print",
             "Lifted blacks, softer contrast, muted colour",
-            vec![("faded_film", fl(45.0)), ("contrast", fl(-10.0)), ("creative_sat", fl(85.0))],
+            vec![
+                ("faded_film", fl(45.0)),
+                ("contrast", fl(-10.0)),
+                ("creative_sat", fl(85.0)),
+            ],
         ),
         p(
             "Film Emulation",
             "Silver Retention",
             "Bleach-bypass style: desaturated with hard contrast",
-            vec![("look", ParamValue::Choice(4)), ("look_intensity", fl(80.0))],
+            vec![
+                ("look", ParamValue::Choice(4)),
+                ("look_intensity", fl(80.0)),
+            ],
         ),
         p(
             "Film Emulation",
@@ -117,43 +160,97 @@ pub fn presets() -> Vec<LumetriPreset> {
             "Yellow-green highlights and blue-lifted shadows from crossed channel curves",
             vec![
                 ("curve_red", curve(&[[0.0, 0.0], [0.5, 0.56], [1.0, 1.0]])),
-                ("curve_green", curve(&[[0.0, 0.02], [0.5, 0.54], [1.0, 0.98]])),
+                (
+                    "curve_green",
+                    curve(&[[0.0, 0.02], [0.5, 0.54], [1.0, 0.98]]),
+                ),
                 ("curve_blue", curve(&[[0.0, 0.12], [1.0, 0.82]])),
             ],
         ),
-        p("Film Emulation", "Warm Negative", "Warm print stock with gentle roll-off", vec![("look", ParamValue::Choice(2)), ("temperature", fl(10.0))]),
+        p(
+            "Film Emulation",
+            "Warm Negative",
+            "Warm print stock with gentle roll-off",
+            vec![("look", ParamValue::Choice(2)), ("temperature", fl(10.0))],
+        ),
         // ---- Monochrome
-        p("Monochrome", "Neutral Mono", "Black and white", vec![("saturation", fl(0.0))]),
+        p(
+            "Monochrome",
+            "Neutral Mono",
+            "Black and white",
+            vec![("saturation", fl(0.0))],
+        ),
         p(
             "Monochrome",
             "Hard Mono",
             "Black and white with crushed blacks and strong contrast",
-            vec![("saturation", fl(0.0)), ("contrast", fl(60.0)), ("blacks", fl(-25.0))],
+            vec![
+                ("saturation", fl(0.0)),
+                ("contrast", fl(60.0)),
+                ("blacks", fl(-25.0)),
+            ],
         ),
         p(
             "Monochrome",
             "Sepia Tone",
             "Monochrome toned warm brown",
-            vec![("look", ParamValue::Choice(6)), ("wheel_midtones", wheel(30.0, 0.35)), ("wheel_highlights", wheel(45.0, 0.2))],
+            vec![
+                ("look", ParamValue::Choice(6)),
+                ("wheel_midtones", wheel(30.0, 0.35)),
+                ("wheel_highlights", wheel(45.0, 0.2)),
+            ],
         ),
-        p("Monochrome", "Cold Mono", "Monochrome toned cyan-blue", vec![("look", ParamValue::Choice(6)), ("wheel_midtones", wheel(210.0, 0.3))]),
+        p(
+            "Monochrome",
+            "Cold Mono",
+            "Monochrome toned cyan-blue",
+            vec![
+                ("look", ParamValue::Choice(6)),
+                ("wheel_midtones", wheel(210.0, 0.3)),
+            ],
+        ),
         // ---- Technical
-        p("Technical", "Lift Shadows", "Opens up the shadows", vec![("shadows", fl(40.0)), ("blacks", fl(10.0))]),
-        p("Technical", "Protect Highlights", "Pulls highlights and whites down", vec![("highlights", fl(-40.0)), ("whites", fl(-15.0))]),
-        p("Technical", "Half Saturation", "Saturation at 50 %", vec![("saturation", fl(50.0))]),
-        p("Technical", "Boost Vibrance", "More colour in the less saturated areas", vec![("vibrance", fl(40.0))]),
+        p(
+            "Technical",
+            "Lift Shadows",
+            "Opens up the shadows",
+            vec![("shadows", fl(40.0)), ("blacks", fl(10.0))],
+        ),
+        p(
+            "Technical",
+            "Protect Highlights",
+            "Pulls highlights and whites down",
+            vec![("highlights", fl(-40.0)), ("whites", fl(-15.0))],
+        ),
+        p(
+            "Technical",
+            "Half Saturation",
+            "Saturation at 50 %",
+            vec![("saturation", fl(50.0))],
+        ),
+        p(
+            "Technical",
+            "Boost Vibrance",
+            "More colour in the less saturated areas",
+            vec![("vibrance", fl(40.0))],
+        ),
         p(
             "Technical",
             "Legal Range Squeeze",
             "Maps full-range levels into 16–235 (video range) with a luma curve",
-            vec![("curve_luma", curve(&[[0.0, 16.0 / 255.0], [1.0, 235.0 / 255.0]]))],
+            vec![(
+                "curve_luma",
+                curve(&[[0.0, 16.0 / 255.0], [1.0, 235.0 / 255.0]]),
+            )],
         ),
     ]
 }
 
 /// The preset called `name` (case-insensitive).
 pub fn find(name: &str) -> Option<LumetriPreset> {
-    presets().into_iter().find(|p| p.name.eq_ignore_ascii_case(name))
+    presets()
+        .into_iter()
+        .find(|p| p.name.eq_ignore_ascii_case(name))
 }
 
 /// The procedural preview picture (`w`×`h`, opaque, linear premultiplied like every [`Image`]).
@@ -162,12 +259,37 @@ pub fn preview_image(w: usize, h: usize) -> Image {
     let (wf, hf) = (w as f32, h as f32);
     let horizon = 0.56;
     let ramp_w = (wf * 0.05).max(2.0);
-    let chips: [[f32; 3]; 6] = [[0.85, 0.12, 0.1], [0.95, 0.8, 0.1], [0.15, 0.7, 0.2], [0.1, 0.75, 0.8], [0.15, 0.25, 0.85], [0.8, 0.2, 0.75]];
+    let chips: [[f32; 3]; 6] = [
+        [0.85, 0.12, 0.1],
+        [0.95, 0.8, 0.1],
+        [0.15, 0.7, 0.2],
+        [0.1, 0.75, 0.8],
+        [0.15, 0.25, 0.85],
+        [0.8, 0.2, 0.75],
+    ];
     let chip_h = (hf * 0.12).max(2.0);
-    let mix = |a: [f32; 3], b: [f32; 3], t: f32| [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    let mix = |a: [f32; 3], b: [f32; 3], t: f32| {
+        [
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+        ]
+    };
     // mountain ridge heights (fraction of the height above the horizon), two layers
-    let ridge = |u: f32, k: f32| 0.12 * k * (0.55 + 0.25 * (u * 7.3 + k).sin() + 0.15 * (u * 17.1 + 2.0 * k).sin() + 0.05 * (u * 41.0).sin());
-    let sky = |v: f32| mix([0.98, 0.62, 0.32], [0.16, 0.3, 0.62], (1.0 - v / horizon).clamp(0.0, 1.0).powf(0.8));
+    let ridge = |u: f32, k: f32| {
+        0.12 * k
+            * (0.55
+                + 0.25 * (u * 7.3 + k).sin()
+                + 0.15 * (u * 17.1 + 2.0 * k).sin()
+                + 0.05 * (u * 41.0).sin())
+    };
+    let sky = |v: f32| {
+        mix(
+            [0.98, 0.62, 0.32],
+            [0.16, 0.3, 0.62],
+            (1.0 - v / horizon).clamp(0.0, 1.0).powf(0.8),
+        )
+    };
     let (sun_x, sun_y, sun_r) = (0.68f32, 0.33f32, 0.07f32);
     for y in 0..h {
         for x in 0..w {
@@ -187,7 +309,11 @@ pub fn preview_image(w: usize, h: usize) -> Image {
                     c = mix([0.36, 0.4, 0.52], c, 0.2);
                 }
                 if horizon - v < ridge(u, 0.9) {
-                    c = mix([0.16, 0.2, 0.12], [0.3, 0.28, 0.2], ((horizon - v) / 0.12).clamp(0.0, 1.0));
+                    c = mix(
+                        [0.16, 0.2, 0.12],
+                        [0.3, 0.28, 0.2],
+                        ((horizon - v) / 0.12).clamp(0.0, 1.0),
+                    );
                 }
                 c
             } else {
@@ -195,7 +321,11 @@ pub fn preview_image(w: usize, h: usize) -> Image {
                 let mirror = horizon - (v - horizon);
                 let ripple = 0.04 * ((v * 140.0).sin() * (u * 9.0 + v * 30.0).cos());
                 let r = sky(mirror.max(0.0));
-                mix(mix(r, [0.05, 0.12, 0.22], 0.45 + (v - horizon) * 0.8), [0.0; 3], 0.1 + ripple)
+                mix(
+                    mix(r, [0.05, 0.12, 0.22], 0.45 + (v - horizon) * 0.8),
+                    [0.0; 3],
+                    0.1 + ripple,
+                )
             };
             // grey ramp down the left edge
             if (x as f32) < ramp_w {
@@ -204,7 +334,9 @@ pub fn preview_image(w: usize, h: usize) -> Image {
             }
             // colour chips along the bottom
             if (y as f32) >= hf - chip_h && (x as f32) >= ramp_w {
-                let k = (((x as f32 - ramp_w) / (wf - ramp_w)) * 6.0).floor().clamp(0.0, 5.0) as usize;
+                let k = (((x as f32 - ramp_w) / (wf - ramp_w)) * 6.0)
+                    .floor()
+                    .clamp(0.0, 5.0) as usize;
                 c = chips[k];
             }
             let i = (y * w + x) * 4;
@@ -276,13 +408,25 @@ mod tests {
                 assert!(def.param(k).is_some(), "{}: unknown param {k}", p.name);
             }
             let t = thumbnail(p, 64, 36);
-            let diff: f32 = t.px.iter().zip(&base.px).map(|(a, b)| (a - b).abs()).sum::<f32>() / base.px.len() as f32;
-            assert!(diff > 0.004, "{} barely changes the picture ({diff})", p.name);
+            let diff: f32 =
+                t.px.iter()
+                    .zip(&base.px)
+                    .map(|(a, b)| (a - b).abs())
+                    .sum::<f32>()
+                    / base.px.len() as f32;
+            assert!(
+                diff > 0.004,
+                "{} barely changes the picture ({diff})",
+                p.name
+            );
             assert!(t.px.iter().all(|v| v.is_finite()));
         }
         // Monochrome presets are monochrome (Sepia / Cold are toned: low but not zero chroma)
         let t = thumbnail(&find("Neutral Mono").unwrap(), 64, 36);
-        assert!(t.px.chunks(4).all(|p| (p[0] - p[1]).abs() < 1e-3 && (p[1] - p[2]).abs() < 1e-3));
+        assert!(
+            t.px.chunks(4)
+                .all(|p| (p[0] - p[1]).abs() < 1e-3 && (p[1] - p[2]).abs() < 1e-3)
+        );
         assert!(find("neutral mono").is_some() && find("nope").is_none());
     }
 
@@ -290,7 +434,10 @@ mod tests {
     fn preview_picture_has_ramp_chips_and_sky() {
         let img = preview_image(320, 180);
         let px = |x: usize, y: usize| img.get(x, y);
-        assert!(px(4, 2)[0] > 0.9 && px(4, 177)[0] < 0.05, "grey ramp: white at the top, black at the bottom");
+        assert!(
+            px(4, 2)[0] > 0.9 && px(4, 177)[0] < 0.05,
+            "grey ramp: white at the top, black at the bottom"
+        );
         let red = px(60, 176);
         assert!(red[0] > 0.5 && red[1] < 0.1, "a red chip: {red:?}");
         let sky = px(160, 10);

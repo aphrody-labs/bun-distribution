@@ -9,7 +9,7 @@ use crate::{
     world::{EntityWorldMut, World},
 };
 use alloc::vec::Vec;
-use bevy_ptr::{move_as_ptr, MovingPtr};
+use bevy_ptr::{MovingPtr, move_as_ptr};
 use core::{
     marker::PhantomData,
     mem::{self, MaybeUninit},

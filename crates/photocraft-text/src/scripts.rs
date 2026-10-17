@@ -84,10 +84,43 @@ impl Script {
                 "kinnari",
                 "norasi",
             ],
-            Lao => &["notosanslao", "notosanslaoui", "notoseriflao", "leelawui", "laosangammn", "laomn", "phetsarathot", "saysetthaot"],
-            Khmer => &["notosanskhmer", "notosanskhmerui", "notoserifkhmer", "leelawui", "daunpenh", "khmersangammn", "khmermn", "khmeros", "khmerossys"],
-            Myanmar => &["notosansmyanmar", "notosansmyanmarui", "notoserifmyanmar", "mmrtext", "myanmarsangammn", "myanmarmn", "padauk"],
-            Tibetan => &["notoseriftibetan", "himalaya", "kailasa", "jomolhari", "tibetanmachineuni"],
+            Lao => &[
+                "notosanslao",
+                "notosanslaoui",
+                "notoseriflao",
+                "leelawui",
+                "laosangammn",
+                "laomn",
+                "phetsarathot",
+                "saysetthaot",
+            ],
+            Khmer => &[
+                "notosanskhmer",
+                "notosanskhmerui",
+                "notoserifkhmer",
+                "leelawui",
+                "daunpenh",
+                "khmersangammn",
+                "khmermn",
+                "khmeros",
+                "khmerossys",
+            ],
+            Myanmar => &[
+                "notosansmyanmar",
+                "notosansmyanmarui",
+                "notoserifmyanmar",
+                "mmrtext",
+                "myanmarsangammn",
+                "myanmarmn",
+                "padauk",
+            ],
+            Tibetan => &[
+                "notoseriftibetan",
+                "himalaya",
+                "kailasa",
+                "jomolhari",
+                "tibetanmachineuni",
+            ],
             Arabic => &[
                 "notosansarabic",
                 "notosansarabicui",
@@ -104,10 +137,41 @@ impl Script {
                 "amiri",
                 "arial",
             ],
-            Hebrew => &["notosanshebrew", "notoserifhebrew", "segoeui", "arialhb", "sfhebrew", "dejavusans", "arial", "freesans", "culmus"],
-            Armenian => &["notosansarmenian", "notoserifarmenian", "segoeui", "sylfaen", "mshtakan", "dejavusans", "freesans"],
-            Georgian => &["notosansgeorgian", "notoserifgeorgian", "segoeui", "sylfaen", "dejavusans", "freesans"],
-            Ethiopic => &["notosansethiopic", "notoserifethiopic", "ebrima", "kefa", "abyssinicasil"],
+            Hebrew => &[
+                "notosanshebrew",
+                "notoserifhebrew",
+                "segoeui",
+                "arialhb",
+                "sfhebrew",
+                "dejavusans",
+                "arial",
+                "freesans",
+                "culmus",
+            ],
+            Armenian => &[
+                "notosansarmenian",
+                "notoserifarmenian",
+                "segoeui",
+                "sylfaen",
+                "mshtakan",
+                "dejavusans",
+                "freesans",
+            ],
+            Georgian => &[
+                "notosansgeorgian",
+                "notoserifgeorgian",
+                "segoeui",
+                "sylfaen",
+                "dejavusans",
+                "freesans",
+            ],
+            Ethiopic => &[
+                "notosansethiopic",
+                "notoserifethiopic",
+                "ebrima",
+                "kefa",
+                "abyssinicasil",
+            ],
             Devanagari => &[
                 "notosansdevanagari",
                 "notosansdevanagariui",
@@ -159,16 +223,68 @@ impl Script {
                 "gujaratimt",
                 "lohit-gujarati",
             ],
-            Oriya => &["notosansoriya", "notosansoriyaui", "notoseriforiya", "nirmala", "kalinga", "oriyasangammn", "oriyamn", "lohit-odia", "lohit-oriya"],
-            Tamil => &["notosanstamil", "notosanstamilui", "notoseriftamil", "nirmala", "latha", "tamilsangammn", "tamilmn", "lohit-tamil"],
-            Telugu => {
-                &["notosanstelugu", "notosansteluguui", "notoseriftelugu", "nirmala", "gautami", "kohinoortelugu", "telugusangammn", "telugumn", "lohit-telugu"]
-            }
-            Kannada => &["notosanskannada", "notosanskannadaui", "notoserifkannada", "nirmala", "tunga", "kannadasangammn", "kannadamn", "lohit-kannada"],
-            Malayalam => {
-                &["notosansmalayalam", "notosansmalayalamui", "notoserifmalayalam", "nirmala", "kartika", "malayalamsangammn", "malayalammn", "lohit-malayalam"]
-            }
-            Sinhala => &["notosanssinhala", "notosanssinhalaui", "notoserifsinhala", "nirmala", "iskpota", "sinhalasangammn", "sinhalamn", "lklug"],
+            Oriya => &[
+                "notosansoriya",
+                "notosansoriyaui",
+                "notoseriforiya",
+                "nirmala",
+                "kalinga",
+                "oriyasangammn",
+                "oriyamn",
+                "lohit-odia",
+                "lohit-oriya",
+            ],
+            Tamil => &[
+                "notosanstamil",
+                "notosanstamilui",
+                "notoseriftamil",
+                "nirmala",
+                "latha",
+                "tamilsangammn",
+                "tamilmn",
+                "lohit-tamil",
+            ],
+            Telugu => &[
+                "notosanstelugu",
+                "notosansteluguui",
+                "notoseriftelugu",
+                "nirmala",
+                "gautami",
+                "kohinoortelugu",
+                "telugusangammn",
+                "telugumn",
+                "lohit-telugu",
+            ],
+            Kannada => &[
+                "notosanskannada",
+                "notosanskannadaui",
+                "notoserifkannada",
+                "nirmala",
+                "tunga",
+                "kannadasangammn",
+                "kannadamn",
+                "lohit-kannada",
+            ],
+            Malayalam => &[
+                "notosansmalayalam",
+                "notosansmalayalamui",
+                "notoserifmalayalam",
+                "nirmala",
+                "kartika",
+                "malayalamsangammn",
+                "malayalammn",
+                "lohit-malayalam",
+            ],
+            Sinhala => &[
+                "notosanssinhala",
+                "notosanssinhalaui",
+                "notoserifsinhala",
+                "nirmala",
+                "iskpota",
+                "sinhalasangammn",
+                "sinhalamn",
+                "lklug",
+            ],
         }
     }
 }
@@ -182,7 +298,9 @@ pub fn classify(c: char) -> Option<Script> {
         0x1780..=0x17FF | 0x19E0..=0x19FF => Khmer,
         0x1000..=0x109F | 0xA9E0..=0xA9FF | 0xAA60..=0xAA7F => Myanmar,
         0x0F00..=0x0FFF => Tibetan,
-        0x0600..=0x06FF | 0x0750..=0x077F | 0x0870..=0x08FF | 0xFB50..=0xFDFF | 0xFE70..=0xFEFF => Arabic,
+        0x0600..=0x06FF | 0x0750..=0x077F | 0x0870..=0x08FF | 0xFB50..=0xFDFF | 0xFE70..=0xFEFF => {
+            Arabic
+        }
         0x0590..=0x05FF | 0xFB1D..=0xFB4F => Hebrew,
         0x0530..=0x058F | 0xFB13..=0xFB17 => Armenian,
         0x10A0..=0x10FF | 0x1C90..=0x1CBF | 0x2D00..=0x2D2F => Georgian,
@@ -210,14 +328,32 @@ fn file_key(path: &std::path::Path) -> Option<(String, &str, u8)> {
         return None;
     }
     let stem = path.file_stem()?.to_str()?;
-    let squash = |s: &str| s.chars().filter(|c| !matches!(c, ' ' | '_')).collect::<String>().to_lowercase();
+    let squash = |s: &str| {
+        s.chars()
+            .filter(|c| !matches!(c, ' ' | '_'))
+            .collect::<String>()
+            .to_lowercase()
+    };
     let style = |s: &str| {
         let s = s.to_ascii_lowercase();
         if s.is_empty() || s == "-regular" {
             0
         } else if s.starts_with('[') {
             1
-        } else if ["bold", "italic", "oblique", "condensed", "narrow", "black", "heavy", "thin", "light"].iter().any(|w| s.contains(w)) {
+        } else if [
+            "bold",
+            "italic",
+            "oblique",
+            "condensed",
+            "narrow",
+            "black",
+            "heavy",
+            "thin",
+            "light",
+        ]
+        .iter()
+        .any(|w| s.contains(w))
+        {
             3
         } else {
             2
@@ -244,7 +380,11 @@ pub fn candidates(script: Script, files: &[std::path::PathBuf]) -> Vec<std::path
         })
         .collect();
     ranked.sort_by(|a, b| (a.0, a.1, a.2).cmp(&(b.0, b.1, b.2)));
-    ranked.into_iter().take(MAX_CANDIDATES).map(|(_, _, p)| p.clone()).collect()
+    ranked
+        .into_iter()
+        .take(MAX_CANDIDATES)
+        .map(|(_, _, p)| p.clone())
+        .collect()
 }
 
 /// Every font file in the platform font directories, listed on first use and cached for the
@@ -276,7 +416,10 @@ pub fn covering_face(bytes: &[u8], c: char) -> Option<u32> {
     use skrifa::raw::FileRef;
     match FileRef::new(bytes).ok()? {
         FileRef::Font(f) => f.charmap().map(c).map(|_| 0),
-        FileRef::Collection(col) => col.iter().position(|f| f.is_ok_and(|f| f.charmap().map(c).is_some())).and_then(|i| u32::try_from(i).ok()),
+        FileRef::Collection(col) => col
+            .iter()
+            .position(|f| f.is_ok_and(|f| f.charmap().map(c).is_some()))
+            .and_then(|i| u32::try_from(i).ok()),
     }
 }
 
@@ -330,13 +473,31 @@ mod tests {
         .into_iter()
         .map(PathBuf::from)
         .collect();
-        let names = |s| candidates(s, &files).into_iter().map(|p| p.file_name().unwrap().to_string_lossy().into_owned()).collect::<Vec<_>>();
+        let names = |s| {
+            candidates(s, &files)
+                .into_iter()
+                .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+                .collect::<Vec<_>>()
+        };
         assert_eq!(
             names(Script::Thai),
-            ["NotoSansThai-Regular.ttf", "NotoSansThai[wght].ttf", "NotoSansThai-Bold.ttf", "NotoSansThaiLooped-Regular.ttf", "LeelawUI.ttf", "Thonburi.ttc"]
+            [
+                "NotoSansThai-Regular.ttf",
+                "NotoSansThai[wght].ttf",
+                "NotoSansThai-Bold.ttf",
+                "NotoSansThaiLooped-Regular.ttf",
+                "LeelawUI.ttf",
+                "Thonburi.ttc"
+            ]
         );
-        assert_eq!(names(Script::Arabic), ["DejaVuSans.ttf", "DejaVuSans-Bold.ttf"]);
-        assert_eq!(names(Script::Devanagari), ["Nirmala.ttc", "Kohinoor.ttc", "Lohit-Devanagari.ttf"]);
+        assert_eq!(
+            names(Script::Arabic),
+            ["DejaVuSans.ttf", "DejaVuSans-Bold.ttf"]
+        );
+        assert_eq!(
+            names(Script::Devanagari),
+            ["Nirmala.ttc", "Kohinoor.ttc", "Lohit-Devanagari.ttf"]
+        );
         assert_eq!(names(Script::Tamil), ["Nirmala.ttc", "Lohit-Tamil.ttf"]);
         assert!(names(Script::Ethiopic).is_empty());
         assert!(candidates(Script::Thai, &[]).is_empty());
@@ -348,7 +509,12 @@ mod tests {
         assert_eq!(covering_face(inter, 'A'), Some(0));
         assert_eq!(covering_face(inter, 'ส'), None);
         assert_eq!(covering_face(inter, 'ر'), None);
-        for bad in [&b""[..], b"ttcf", b"ttcf\0\x01\0\0\0\0\0\x02\xff\xff\xff\xff\0\0\0\x10", b"\0\x01\0\0\0\xff"] {
+        for bad in [
+            &b""[..],
+            b"ttcf",
+            b"ttcf\0\x01\0\0\0\0\0\x02\xff\xff\xff\xff\0\0\0\x10",
+            b"\0\x01\0\0\0\xff",
+        ] {
             assert_eq!(covering_face(bad, 'A'), None);
         }
     }
@@ -358,9 +524,26 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn system_candidates_cover_their_script() {
-        for (s, c) in [(Script::Thai, 'ส'), (Script::Arabic, 'ر'), (Script::Hebrew, 'ש'), (Script::Devanagari, 'न')] {
-            let found = system_candidates(s).iter().take(4).any(|p| std::fs::read(p).ok().and_then(|b| covering_face(&b, c)).is_some());
-            eprintln!("{s:?}: {}", if found { "covered" } else { "no installed font" });
+        for (s, c) in [
+            (Script::Thai, 'ส'),
+            (Script::Arabic, 'ر'),
+            (Script::Hebrew, 'ש'),
+            (Script::Devanagari, 'न'),
+        ] {
+            let found = system_candidates(s).iter().take(4).any(|p| {
+                std::fs::read(p)
+                    .ok()
+                    .and_then(|b| covering_face(&b, c))
+                    .is_some()
+            });
+            eprintln!(
+                "{s:?}: {}",
+                if found {
+                    "covered"
+                } else {
+                    "no installed font"
+                }
+            );
         }
     }
 }

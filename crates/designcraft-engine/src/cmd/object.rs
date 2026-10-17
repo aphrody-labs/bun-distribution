@@ -6,12 +6,16 @@ use std::sync::Arc;
 
 use designcraft_color::BlendMode;
 use designcraft_doc::{
-    Content, Document, Fill, Item, ItemId, ParaFormat, Selection, Shape, SpreadRef, Story, StoryId, Stroke, TextFrame, TextFrameOptions, TextSel,
+    Content, Document, Fill, Item, ItemId, ParaFormat, Selection, Shape, SpreadRef, Story, StoryId,
+    Stroke, TextFrame, TextFrameOptions, TextSel,
 };
 use designcraft_geom::{Affine, Point, Rect, Vec2, shapes};
 use serde_json::{Value, json};
 
-use super::{CommandSpec, bad, bool_or, cmd, f64_or, has_doc, has_selection, ok, point_param, rect_param, spread_param, str_param, targets};
+use super::{
+    CommandSpec, bad, bool_or, cmd, f64_or, has_doc, has_selection, ok, point_param, rect_param,
+    spread_param, str_param, targets,
+};
 use crate::{Result, Session};
 
 /// `name` must be a swatch of the document: an unknown name would paint nothing. The error names
@@ -20,9 +24,24 @@ fn known_swatch(doc: &designcraft_doc::Document, name: &str, cmd: &str, key: &st
     if doc.swatch(name).is_some() {
         return Ok(());
     }
-    let bare = |n: &str| n.trim().trim_start_matches('[').trim_end_matches(']').to_lowercase();
-    let hint = doc.swatches.iter().find(|s| bare(&s.name) == bare(name)).map(|s| format!(" (did you mean `{}`?)", s.name)).unwrap_or_default();
-    Err(bad(cmd, format!("{key}: no swatch named `{name}`{hint}; create one with `swatch.create` and use its returned name")))
+    let bare = |n: &str| {
+        n.trim()
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .to_lowercase()
+    };
+    let hint = doc
+        .swatches
+        .iter()
+        .find(|s| bare(&s.name) == bare(name))
+        .map(|s| format!(" (did you mean `{}`?)", s.name))
+        .unwrap_or_default();
+    Err(bad(
+        cmd,
+        format!(
+            "{key}: no swatch named `{name}`{hint}; create one with `swatch.create` and use its returned name"
+        ),
+    ))
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -36,7 +55,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             frame_create
         ),
-        cmd!("line.create", "Create Line", [], None, "{spread?, a: [x,y], b: [x,y]}", has_doc, line_create),
+        cmd!(
+            "line.create",
+            "Create Line",
+            [],
+            None,
+            "{spread?, a: [x,y], b: [x,y]}",
+            has_doc,
+            line_create
+        ),
         cmd!(
             "transform.move",
             "Move",
@@ -55,26 +82,44 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             transform_resize
         ),
-        cmd!("transform.rotate", "Rotate", ["Object", "Transform"], None, "{angle (degrees, CCW), ids?}", has_selection, transform_rotate),
-        cmd!("transform.scale", "Scale", ["Object", "Transform"], None, "{sx, sy, ids?} (about the selection centre)", has_selection, |s, p| {
-            let sx = f64_or(p, "sx", 1.0);
-            let sy = f64_or(p, "sy", sx);
-            if sx.abs() < 1e-4 || sy.abs() < 1e-4 {
-                return Err(bad("transform.scale", "scale too small"));
-            }
-            let strokes = s.prefs.scale_strokes;
-            let ids = targets(s, p)?;
-            s.edit(|d, _| {
-                let c = union_bounds(d, &ids).center();
-                let m = Affine::translate(c.to_vec2()) * Affine::scale_non_uniform(sx, sy) * Affine::translate(-c.to_vec2());
-                for id in &ids {
-                    if let Some(it) = d.item_mut(*id) {
-                        scale_item(it, m, (sx * sy).abs().sqrt(), strokes);
-                    }
+        cmd!(
+            "transform.rotate",
+            "Rotate",
+            ["Object", "Transform"],
+            None,
+            "{angle (degrees, CCW), ids?}",
+            has_selection,
+            transform_rotate
+        ),
+        cmd!(
+            "transform.scale",
+            "Scale",
+            ["Object", "Transform"],
+            None,
+            "{sx, sy, ids?} (about the selection centre)",
+            has_selection,
+            |s, p| {
+                let sx = f64_or(p, "sx", 1.0);
+                let sy = f64_or(p, "sy", sx);
+                if sx.abs() < 1e-4 || sy.abs() < 1e-4 {
+                    return Err(bad("transform.scale", "scale too small"));
                 }
-                ok()
-            })
-        }),
+                let strokes = s.prefs.scale_strokes;
+                let ids = targets(s, p)?;
+                s.edit(|d, _| {
+                    let c = union_bounds(d, &ids).center();
+                    let m = Affine::translate(c.to_vec2())
+                        * Affine::scale_non_uniform(sx, sy)
+                        * Affine::translate(-c.to_vec2());
+                    for id in &ids {
+                        if let Some(it) = d.item_mut(*id) {
+                            scale_item(it, m, (sx * sy).abs().sqrt(), strokes);
+                        }
+                    }
+                    ok()
+                })
+            }
+        ),
         cmd!(
             "transform.again",
             "Transform Again",
@@ -93,10 +138,21 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             clear_transformations
         ),
-        cmd!("transform.shear", "Shear", ["Object", "Transform"], None, "{angle (degrees), ids?}", has_selection, |s, p| {
-            let a = f64_or(p, "angle", 0.0).clamp(-85.0, 85.0).to_radians().tan();
-            apply_about_center(s, p, Affine::new([1.0, 0.0, a, 1.0, 0.0, 0.0]))
-        }),
+        cmd!(
+            "transform.shear",
+            "Shear",
+            ["Object", "Transform"],
+            None,
+            "{angle (degrees), ids?}",
+            has_selection,
+            |s, p| {
+                let a = f64_or(p, "angle", 0.0)
+                    .clamp(-85.0, 85.0)
+                    .to_radians()
+                    .tan();
+                apply_about_center(s, p, Affine::new([1.0, 0.0, a, 1.0, 0.0, 0.0]))
+            }
+        ),
         cmd!(
             "object.matchAttributes",
             "Apply Attributes (Eyedropper)",
@@ -105,8 +161,14 @@ pub fn specs() -> Vec<CommandSpec> {
             "{from: id, ids?} — copy fill, stroke, corners, opacity, effects, wrap",
             has_selection,
             |s, p| {
-                let from = super::id_param(p, "from").ok_or_else(|| bad("object.matchAttributes", "missing from"))?;
-                let src = s.doc()?.doc.item(from).cloned().ok_or(designcraft_doc::DocError::NoItem(from))?;
+                let from = super::id_param(p, "from")
+                    .ok_or_else(|| bad("object.matchAttributes", "missing from"))?;
+                let src = s
+                    .doc()?
+                    .doc
+                    .item(from)
+                    .cloned()
+                    .ok_or(designcraft_doc::DocError::NoItem(from))?;
                 set_flag(
                     s,
                     p,
@@ -125,10 +187,26 @@ pub fn specs() -> Vec<CommandSpec> {
                 )
             }
         ),
-        cmd!("transform.flip", "Flip", ["Object", "Transform"], None, "{axis: horizontal|vertical, ids?}", has_selection, |s, p| {
-            let h = str_param(p, "axis") != Some("vertical");
-            apply_about_center(s, p, if h { Affine::scale_non_uniform(-1.0, 1.0) } else { Affine::scale_non_uniform(1.0, -1.0) })
-        }),
+        cmd!(
+            "transform.flip",
+            "Flip",
+            ["Object", "Transform"],
+            None,
+            "{axis: horizontal|vertical, ids?}",
+            has_selection,
+            |s, p| {
+                let h = str_param(p, "axis") != Some("vertical");
+                apply_about_center(
+                    s,
+                    p,
+                    if h {
+                        Affine::scale_non_uniform(-1.0, 1.0)
+                    } else {
+                        Affine::scale_non_uniform(1.0, -1.0)
+                    },
+                )
+            }
+        ),
         cmd!(
             "transform.set",
             "Transform Panel",
@@ -139,21 +217,105 @@ pub fn specs() -> Vec<CommandSpec> {
             transform_set
         ),
         cmd!(query "transform.info", "Transform Values", [], None, "{ids?} → {scaleX, scaleY (%), rotation, shear (°), content?: the same for a placed graphic} of the first target", has_selection, transform_info),
-        cmd!("object.arrange", "Arrange", ["Object", "Arrange"], None, "{to: front|forward|backward|back, ids?}", has_selection, arrange),
-        cmd!("object.bringToFront", "Bring to Front", ["Object", "Arrange"], Some("Cmd+Shift+]"), "{}", has_selection, |s, _| s
-            .execute("object.arrange", &json!({"to": "front"}))),
-        cmd!("object.bringForward", "Bring Forward", ["Object", "Arrange"], Some("Cmd+]"), "{}", has_selection, |s, _| s
-            .execute("object.arrange", &json!({"to": "forward"}))),
-        cmd!("object.sendBackward", "Send Backward", ["Object", "Arrange"], Some("Cmd+["), "{}", has_selection, |s, _| s
-            .execute("object.arrange", &json!({"to": "backward"}))),
-        cmd!("object.sendToBack", "Send to Back", ["Object", "Arrange"], Some("Cmd+Shift+["), "{}", has_selection, |s, _| s
-            .execute("object.arrange", &json!({"to": "back"}))),
-        cmd!("object.group", "Group", ["Object"], Some("Cmd+G"), "{ids?}", has_selection, group),
-        cmd!("object.ungroup", "Ungroup", ["Object"], Some("Cmd+Shift+G"), "{ids?}", has_selection, ungroup),
-        cmd!("object.lock", "Lock", ["Object"], Some("Cmd+L"), "{ids?}", has_selection, |s, p| set_flag(s, p, |i| i.locked = true, true)),
-        cmd!("object.unlockAll", "Unlock All on Spread", ["Object"], Some("Cmd+Alt+L"), "{}", has_doc, |s, _| all_flag(s, |i| i.locked = false)),
-        cmd!("object.hide", "Hide", ["Object"], Some("Cmd+3"), "{ids?}", has_selection, |s, p| set_flag(s, p, |i| i.hidden = true, true)),
-        cmd!("object.showAll", "Show All on Spread", ["Object"], Some("Cmd+Alt+3"), "{}", has_doc, |s, _| all_flag(s, |i| i.hidden = false)),
+        cmd!(
+            "object.arrange",
+            "Arrange",
+            ["Object", "Arrange"],
+            None,
+            "{to: front|forward|backward|back, ids?}",
+            has_selection,
+            arrange
+        ),
+        cmd!(
+            "object.bringToFront",
+            "Bring to Front",
+            ["Object", "Arrange"],
+            Some("Cmd+Shift+]"),
+            "{}",
+            has_selection,
+            |s, _| s.execute("object.arrange", &json!({"to": "front"}))
+        ),
+        cmd!(
+            "object.bringForward",
+            "Bring Forward",
+            ["Object", "Arrange"],
+            Some("Cmd+]"),
+            "{}",
+            has_selection,
+            |s, _| s.execute("object.arrange", &json!({"to": "forward"}))
+        ),
+        cmd!(
+            "object.sendBackward",
+            "Send Backward",
+            ["Object", "Arrange"],
+            Some("Cmd+["),
+            "{}",
+            has_selection,
+            |s, _| s.execute("object.arrange", &json!({"to": "backward"}))
+        ),
+        cmd!(
+            "object.sendToBack",
+            "Send to Back",
+            ["Object", "Arrange"],
+            Some("Cmd+Shift+["),
+            "{}",
+            has_selection,
+            |s, _| s.execute("object.arrange", &json!({"to": "back"}))
+        ),
+        cmd!(
+            "object.group",
+            "Group",
+            ["Object"],
+            Some("Cmd+G"),
+            "{ids?}",
+            has_selection,
+            group
+        ),
+        cmd!(
+            "object.ungroup",
+            "Ungroup",
+            ["Object"],
+            Some("Cmd+Shift+G"),
+            "{ids?}",
+            has_selection,
+            ungroup
+        ),
+        cmd!(
+            "object.lock",
+            "Lock",
+            ["Object"],
+            Some("Cmd+L"),
+            "{ids?}",
+            has_selection,
+            |s, p| set_flag(s, p, |i| i.locked = true, true)
+        ),
+        cmd!(
+            "object.unlockAll",
+            "Unlock All on Spread",
+            ["Object"],
+            Some("Cmd+Alt+L"),
+            "{}",
+            has_doc,
+            |s, _| all_flag(s, |i| i.locked = false)
+        ),
+        cmd!(
+            "object.hide",
+            "Hide",
+            ["Object"],
+            Some("Cmd+3"),
+            "{ids?}",
+            has_selection,
+            |s, p| set_flag(s, p, |i| i.hidden = true, true)
+        ),
+        cmd!(
+            "object.showAll",
+            "Show All on Spread",
+            ["Object"],
+            Some("Cmd+Alt+3"),
+            "{}",
+            has_doc,
+            |s, _| all_flag(s, |i| i.hidden = false)
+        ),
         cmd!(
             "object.setFlags",
             "Set Visibility / Lock",
@@ -179,12 +341,33 @@ pub fn specs() -> Vec<CommandSpec> {
                 )
             }
         ),
-        cmd!("object.fill", "Fill", [], None, "{swatch (a swatch's name, e.g. [Paper]), tint?: 0..1, ids?}", has_selection, |s, p| {
-            let sw = str_param(p, "swatch").ok_or_else(|| bad("object.fill", "missing swatch"))?.to_string();
-            known_swatch(&s.doc()?.doc, &sw, "object.fill", "swatch")?;
-            let tint = f64_or(p, "tint", 1.0) as f32;
-            set_flag(s, p, move |i| i.fill = Fill { swatch: sw.clone(), tint, ..i.fill.clone() }, false)
-        }),
+        cmd!(
+            "object.fill",
+            "Fill",
+            [],
+            None,
+            "{swatch (a swatch's name, e.g. [Paper]), tint?: 0..1, ids?}",
+            has_selection,
+            |s, p| {
+                let sw = str_param(p, "swatch")
+                    .ok_or_else(|| bad("object.fill", "missing swatch"))?
+                    .to_string();
+                known_swatch(&s.doc()?.doc, &sw, "object.fill", "swatch")?;
+                let tint = f64_or(p, "tint", 1.0) as f32;
+                set_flag(
+                    s,
+                    p,
+                    move |i| {
+                        i.fill = Fill {
+                            swatch: sw.clone(),
+                            tint,
+                            ..i.fill.clone()
+                        }
+                    },
+                    false,
+                )
+            }
+        ),
         cmd!(
             "object.swapFillStroke",
             "Swap Fill and Stroke",
@@ -221,7 +404,11 @@ pub fn specs() -> Vec<CommandSpec> {
                     s,
                     p,
                     move |i| {
-                        let mut st = if i.stroke.is_none() && p2.get("swatch").is_none() { Stroke::default() } else { i.stroke.clone() };
+                        let mut st = if i.stroke.is_none() && p2.get("swatch").is_none() {
+                            Stroke::default()
+                        } else {
+                            i.stroke.clone()
+                        };
                         if let Some(v) = p2.get("swatch").and_then(Value::as_str) {
                             st.swatch = v.into();
                         }
@@ -243,7 +430,14 @@ pub fn specs() -> Vec<CommandSpec> {
                         if let Some(v) = p2.get("gapOverprint").and_then(Value::as_bool) {
                             st.gap_overprint = v;
                         }
-                        for (k, apply) in [("align", 0), ("type", 1), ("cap", 2), ("join", 3), ("start", 4), ("end", 5)] {
+                        for (k, apply) in [
+                            ("align", 0),
+                            ("type", 1),
+                            ("cap", 2),
+                            ("join", 3),
+                            ("start", 4),
+                            ("end", 5),
+                        ] {
                             if let Some(v) = p2.get(k).cloned() {
                                 let _ = match apply {
                                     0 => serde_json::from_value(v).map(|x| st.align = x),
@@ -261,30 +455,42 @@ pub fn specs() -> Vec<CommandSpec> {
                 )
             }
         ),
-        cmd!("object.opacity", "Opacity", [], None, "{opacity: 0..1, blend?: normal|multiply|…, ids?}", has_selection, |s, p| {
-            let o = f64_or(p, "opacity", 1.0).clamp(0.0, 1.0) as f32;
-            // `BlendMode::parse` takes the documented lowercase forms (`multiply`), the panel
-            // labels (`Color Burn`) and the serialized names (`Multiply`). An unknown value is
-            // an error rather than a silent no-op that still reports `changed` (#260).
-            let blend = match p.get("blend") {
-                None | Some(Value::Null) => None,
-                Some(v) => {
-                    let raw = v.as_str().ok_or_else(|| bad("object.opacity", "blend must be a string"))?;
-                    Some(BlendMode::parse(raw).ok_or_else(|| bad("object.opacity", format!("unknown blend mode `{raw}`")))?)
-                }
-            };
-            set_flag(
-                s,
-                p,
-                move |i| {
-                    i.opacity = o;
-                    if let Some(b) = blend {
-                        i.blend = b;
+        cmd!(
+            "object.opacity",
+            "Opacity",
+            [],
+            None,
+            "{opacity: 0..1, blend?: normal|multiply|…, ids?}",
+            has_selection,
+            |s, p| {
+                let o = f64_or(p, "opacity", 1.0).clamp(0.0, 1.0) as f32;
+                // `BlendMode::parse` takes the documented lowercase forms (`multiply`), the panel
+                // labels (`Color Burn`) and the serialized names (`Multiply`). An unknown value is
+                // an error rather than a silent no-op that still reports `changed` (#260).
+                let blend = match p.get("blend") {
+                    None | Some(Value::Null) => None,
+                    Some(v) => {
+                        let raw = v
+                            .as_str()
+                            .ok_or_else(|| bad("object.opacity", "blend must be a string"))?;
+                        Some(BlendMode::parse(raw).ok_or_else(|| {
+                            bad("object.opacity", format!("unknown blend mode `{raw}`"))
+                        })?)
                     }
-                },
-                false,
-            )
-        }),
+                };
+                set_flag(
+                    s,
+                    p,
+                    move |i| {
+                        i.opacity = o;
+                        if let Some(b) = blend {
+                            i.blend = b;
+                        }
+                    },
+                    false,
+                )
+            }
+        ),
         cmd!(
             "object.dropShadow",
             "Drop Shadow",
@@ -302,7 +508,10 @@ pub fn specs() -> Vec<CommandSpec> {
                         ds.on = p2.get("on").and_then(Value::as_bool).unwrap_or(!ds.on);
                         ds.distance = f64_or(&p2, "distance", ds.distance);
                         ds.angle = f64_or(&p2, "angle", ds.angle);
-                        ds.global_light = p2.get("globalLight").and_then(Value::as_bool).unwrap_or(ds.global_light);
+                        ds.global_light = p2
+                            .get("globalLight")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(ds.global_light);
                         ds.opacity = f64_or(&p2, "opacity", ds.opacity as f64) as f32;
                         ds.size = f64_or(&p2, "size", ds.size);
                         ds.spread = f64_or(&p2, "spread", ds.spread);
@@ -331,7 +540,10 @@ pub fn specs() -> Vec<CommandSpec> {
                         e.on = p2.get("on").and_then(Value::as_bool).unwrap_or(!e.on);
                         e.distance = f64_or(&p2, "distance", e.distance);
                         e.angle = f64_or(&p2, "angle", e.angle);
-                        e.global_light = p2.get("globalLight").and_then(Value::as_bool).unwrap_or(e.global_light);
+                        e.global_light = p2
+                            .get("globalLight")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(e.global_light);
                         e.opacity = f64_or(&p2, "opacity", e.opacity as f64) as f32;
                         e.size = f64_or(&p2, "size", e.size);
                         e.choke = f64_or(&p2, "choke", e.choke);
@@ -421,7 +633,10 @@ pub fn specs() -> Vec<CommandSpec> {
                         e.opacity = f64_or(&p2, "opacity", e.opacity as f64) as f32;
                         e.size = f64_or(&p2, "size", e.size);
                         e.choke = f64_or(&p2, "choke", e.choke);
-                        e.center = p2.get("center").and_then(Value::as_bool).unwrap_or(e.center);
+                        e.center = p2
+                            .get("center")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(e.center);
                         if let Some(c) = str_param(&p2, "color") {
                             e.color = c.into();
                         }
@@ -448,9 +663,14 @@ pub fn specs() -> Vec<CommandSpec> {
                         e.size = f64_or(&p2, "size", e.size);
                         e.depth = f64_or(&p2, "depth", e.depth);
                         e.angle = f64_or(&p2, "angle", e.angle);
-                        e.global_light = p2.get("globalLight").and_then(Value::as_bool).unwrap_or(e.global_light);
-                        e.highlight_opacity = f64_or(&p2, "highlightOpacity", e.highlight_opacity as f64) as f32;
-                        e.shadow_opacity = f64_or(&p2, "shadowOpacity", e.shadow_opacity as f64) as f32;
+                        e.global_light = p2
+                            .get("globalLight")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(e.global_light);
+                        e.highlight_opacity =
+                            f64_or(&p2, "highlightOpacity", e.highlight_opacity as f64) as f32;
+                        e.shadow_opacity =
+                            f64_or(&p2, "shadowOpacity", e.shadow_opacity as f64) as f32;
                         if let Some(c) = str_param(&p2, "highlight") {
                             e.highlight = c.into();
                         }
@@ -481,7 +701,10 @@ pub fn specs() -> Vec<CommandSpec> {
                         e.angle = f64_or(&p2, "angle", e.angle);
                         e.distance = f64_or(&p2, "distance", e.distance);
                         e.size = f64_or(&p2, "size", e.size);
-                        e.invert = p2.get("invert").and_then(Value::as_bool).unwrap_or(e.invert);
+                        e.invert = p2
+                            .get("invert")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(e.invert);
                         if let Some(c) = str_param(&p2, "color") {
                             e.color = c.into();
                         }
@@ -506,7 +729,9 @@ pub fn specs() -> Vec<CommandSpec> {
                         let e = &mut i.effects.directional_feather;
                         e.on = p2.get("on").and_then(Value::as_bool).unwrap_or(!e.on);
                         match p2.get("widths") {
-                            Some(Value::Number(n)) => e.widths = [n.as_f64().unwrap_or(0.0).max(0.0); 4],
+                            Some(Value::Number(n)) => {
+                                e.widths = [n.as_f64().unwrap_or(0.0).max(0.0); 4]
+                            }
                             Some(v @ Value::Array(_)) => {
                                 if let Ok(w) = serde_json::from_value::<[f64; 4]>(v.clone()) {
                                     e.widths = w.map(|x| x.max(0.0));
@@ -522,11 +747,27 @@ pub fn specs() -> Vec<CommandSpec> {
                 )
             }
         ),
-        cmd!("object.feather", "Basic Feather", ["Object", "Effects"], None, "{width (0 = off), ids?}", has_selection, |s, p| {
-            let w = f64_or(p, "width", 9.0).max(0.0);
-            set_flag(s, p, move |i| i.effects.feather = w, false)
-        }),
-        cmd!("object.content", "Content", ["Object", "Content"], None, "{type: graphic|text|unassigned, ids?}", has_selection, content_type),
+        cmd!(
+            "object.feather",
+            "Basic Feather",
+            ["Object", "Effects"],
+            None,
+            "{width (0 = off), ids?}",
+            has_selection,
+            |s, p| {
+                let w = f64_or(p, "width", 9.0).max(0.0);
+                set_flag(s, p, move |i| i.effects.feather = w, false)
+            }
+        ),
+        cmd!(
+            "object.content",
+            "Content",
+            ["Object", "Content"],
+            None,
+            "{type: graphic|text|unassigned, ids?}",
+            has_selection,
+            content_type
+        ),
         cmd!(
             "object.textFrameOptions",
             "Text Frame Options…",
@@ -544,10 +785,19 @@ pub fn specs() -> Vec<CommandSpec> {
             "{shape: none|rounded|inverseRounded|inset|bevel|fancy, size, ids?}",
             has_selection,
             |s, p| {
-                let shape =
-                    p.get("shape").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or(designcraft_geom::corners::CornerShape::Rounded);
+                let shape = p
+                    .get("shape")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok())
+                    .unwrap_or(designcraft_geom::corners::CornerShape::Rounded);
                 let size = f64_or(p, "size", 12.0);
-                set_flag(s, p, move |i| i.corners = designcraft_geom::corners::CornerOptions::uniform(shape, size), false)
+                set_flag(
+                    s,
+                    p,
+                    move |i| {
+                        i.corners = designcraft_geom::corners::CornerOptions::uniform(shape, size)
+                    },
+                    false,
+                )
             }
         ),
         cmd!(
@@ -558,7 +808,10 @@ pub fn specs() -> Vec<CommandSpec> {
             "{mode: none|boundingBox|contour|jumpObject|jumpToNextColumn, offset?: number|[t,l,b,r], invert?: bool, ids?}",
             has_selection,
             |s, p| {
-                let mode = p.get("mode").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or(designcraft_doc::WrapMode::BoundingBox);
+                let mode = p
+                    .get("mode")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok())
+                    .unwrap_or(designcraft_doc::WrapMode::BoundingBox);
                 let off = match p.get("offset") {
                     Some(Value::Number(n)) => Some([n.as_f64().unwrap_or(0.0); 4]),
                     Some(v) => serde_json::from_value(v.clone()).ok(),
@@ -599,10 +852,18 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             fitting_options
         ),
-        cmd!("object.rename", "Rename", [], None, "{id, name}", has_doc, |s, p| {
-            let name = str_param(p, "name").unwrap_or("").to_string();
-            set_flag(s, p, move |i| i.name = name.clone(), false)
-        }),
+        cmd!(
+            "object.rename",
+            "Rename",
+            [],
+            None,
+            "{id, name}",
+            has_doc,
+            |s, p| {
+                let name = str_param(p, "name").unwrap_or("").to_string();
+                set_flag(s, p, move |i| i.name = name.clone(), false)
+            }
+        ),
         cmd!(
             "edit.stepAndRepeat",
             "Step and Repeat…",
@@ -612,7 +873,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             step_and_repeat
         ),
-        cmd!("path.create", "Create Path", [], None, "{spread?, anchors: [{p:[x,y], in?:[x,y], out?:[x,y]}], closed?: bool}", has_doc, path_create),
+        cmd!(
+            "path.create",
+            "Create Path",
+            [],
+            None,
+            "{spread?, anchors: [{p:[x,y], in?:[x,y], out?:[x,y]}], closed?: bool}",
+            has_doc,
+            path_create
+        ),
         cmd!(
             "path.appendAnchor",
             "Add Anchor",
@@ -640,8 +909,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             path_reverse
         ),
-        cmd!("path.close", "Close Path", ["Object", "Paths"], None, "{id, subpath?: index (default every subpath)}", has_doc, path_close),
-        cmd!("path.moveAnchors", "Move Anchors", [], None, "{id, anchors: [[subpath, index]], dx, dy, handle?: in|out}", has_doc, path_move_anchors),
+        cmd!(
+            "path.close",
+            "Close Path",
+            ["Object", "Paths"],
+            None,
+            "{id, subpath?: index (default every subpath)}",
+            has_doc,
+            path_close
+        ),
+        cmd!(
+            "path.moveAnchors",
+            "Move Anchors",
+            [],
+            None,
+            "{id, anchors: [[subpath, index]], dx, dy, handle?: in|out}",
+            has_doc,
+            path_move_anchors
+        ),
         cmd!(
             "object.align",
             "Align",
@@ -694,10 +979,23 @@ pub fn specs() -> Vec<CommandSpec> {
             "{rect, cols, rows, gutter? (pt, 12), shape?, content?, spread?} — a grid of frames filling `rect` (frame tools: arrow keys while dragging)",
             has_doc,
             |s, p| {
-                let rect = rect_param(p, "rect").ok_or_else(|| bad("frame.grid", "missing rect"))?;
-                let cols = p.get("cols").and_then(Value::as_u64).unwrap_or(1).clamp(1, 100) as usize;
-                let rows = p.get("rows").and_then(Value::as_u64).unwrap_or(1).clamp(1, 100) as usize;
-                let gutter = p.get("gutter").and_then(Value::as_f64).unwrap_or(12.0).max(0.0);
+                let rect =
+                    rect_param(p, "rect").ok_or_else(|| bad("frame.grid", "missing rect"))?;
+                let cols = p
+                    .get("cols")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1)
+                    .clamp(1, 100) as usize;
+                let rows = p
+                    .get("rows")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(1)
+                    .clamp(1, 100) as usize;
+                let gutter = p
+                    .get("gutter")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(12.0)
+                    .max(0.0);
                 let cw = ((rect.width() - gutter * (cols - 1) as f64) / cols as f64).max(0.5);
                 let ch = ((rect.height() - gutter * (rows - 1) as f64) / rows as f64).max(0.5);
                 let mut ids = Vec::new();
@@ -705,7 +1003,11 @@ pub fn specs() -> Vec<CommandSpec> {
                     for c in 0..cols {
                         let x0 = rect.x0 + c as f64 * (cw + gutter);
                         let y0 = rect.y0 + r as f64 * (ch + gutter);
-                        let q = super::with_param(&super::with_param(p, "rect", json!([x0, y0, x0 + cw, y0 + ch])), "caret", json!(false));
+                        let q = super::with_param(
+                            &super::with_param(p, "rect", json!([x0, y0, x0 + cw, y0 + ch])),
+                            "caret",
+                            json!(false),
+                        );
                         ids.push(frame_create(s, &q)?["id"].clone());
                     }
                 }
@@ -737,7 +1039,10 @@ pub fn specs() -> Vec<CommandSpec> {
                     .find_map(|id| s.doc().ok()?.doc.item(*id)?.text_frame().map(|t| t.story))
                     .ok_or_else(|| bad("object.primaryTextFrame", "select a text frame"))?;
                 let cur = s.doc()?.doc.settings.primary_story;
-                let on = p.get("on").and_then(Value::as_bool).unwrap_or(cur != Some(sid));
+                let on = p
+                    .get("on")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(cur != Some(sid));
                 s.edit(|d, _| {
                     d.settings.primary_story = if on {
                         Some(sid)
@@ -759,7 +1064,12 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             |s, p| {
                 let b = |k: &str| p.get(k).and_then(Value::as_bool);
-                let (of, os, og, np) = (b("overprintFill"), b("overprintStroke"), b("overprintGap"), b("nonprinting"));
+                let (of, os, og, np) = (
+                    b("overprintFill"),
+                    b("overprintStroke"),
+                    b("overprintGap"),
+                    b("nonprinting"),
+                );
                 set_flag(
                     s,
                     p,
@@ -789,7 +1099,10 @@ pub fn specs() -> Vec<CommandSpec> {
             "{angle} — the light angle shared by shadows that use Global Light",
             has_doc,
             |s, p| {
-                let a = p.get("angle").and_then(Value::as_f64).ok_or_else(|| bad("object.globalLight", "angle required"))?;
+                let a = p
+                    .get("angle")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| bad("object.globalLight", "angle required"))?;
                 let a = (a + 180.0).rem_euclid(360.0) - 180.0;
                 s.edit(|d, _| {
                     d.settings.global_light = a;
@@ -861,10 +1174,19 @@ pub fn specs() -> Vec<CommandSpec> {
             }
             Ok(json!({"ids": ids}))
         }),
-        cmd!("object.setLayer", "Move to Layer", [], None, "{layer, ids?}", has_selection, |s, p| {
-            let l = designcraft_doc::LayerId(p.get("layer").and_then(Value::as_u64).unwrap_or(0));
-            set_flag(s, p, move |i| i.layer = l, false)
-        }),
+        cmd!(
+            "object.setLayer",
+            "Move to Layer",
+            [],
+            None,
+            "{layer, ids?}",
+            has_selection,
+            |s, p| {
+                let l =
+                    designcraft_doc::LayerId(p.get("layer").and_then(Value::as_u64).unwrap_or(0));
+                set_flag(s, p, move |i| i.layer = l, false)
+            }
+        ),
     ]
 }
 
@@ -877,9 +1199,22 @@ fn frame_create(s: &mut Session, p: &Value) -> Result<Value> {
     let text = super::text_param(p, "text");
     let caret = bool_or(p, "caret", content == "text");
     let vertical = bool_or(p, "vertical", false);
-    let sides = p.get("sides").and_then(Value::as_u64).map_or(s.prefs.polygon_sides, |v| v as u32).clamp(3, 100);
-    let inset = p.get("starInset").and_then(Value::as_f64).map_or(s.prefs.star_inset, |v| v / 100.0).clamp(0.0, 1.0);
-    let rect = Rect::new(rect.x0, rect.y0, rect.x1.max(rect.x0 + 0.5), rect.y1.max(rect.y0 + 0.5));
+    let sides = p
+        .get("sides")
+        .and_then(Value::as_u64)
+        .map_or(s.prefs.polygon_sides, |v| v as u32)
+        .clamp(3, 100);
+    let inset = p
+        .get("starInset")
+        .and_then(Value::as_f64)
+        .map_or(s.prefs.star_inset, |v| v / 100.0)
+        .clamp(0.0, 1.0);
+    let rect = Rect::new(
+        rect.x0,
+        rect.y0,
+        rect.x1.max(rect.x0 + 0.5),
+        rect.y1.max(rect.y0 + 0.5),
+    );
     s.edit(|d, sel| {
         if d.spread(sr).is_none() {
             return Err(bad("frame.create", "no such spread"));
@@ -890,14 +1225,29 @@ fn frame_create(s: &mut Session, p: &Value) -> Result<Value> {
             _ => (shapes::rectangle(rect), Shape::Rectangle),
         };
         if content == "text" {
-            let (id, sid) = d.add_text_frame(sr, rect, lid, &text, ParaFormat { style: d.styles.default_paragraph.clone(), ..Default::default() })?;
+            let (id, sid) = d.add_text_frame(
+                sr,
+                rect,
+                lid,
+                &text,
+                ParaFormat {
+                    style: d.styles.default_paragraph.clone(),
+                    ..Default::default()
+                },
+            )?;
             if let Some(it) = d.item_mut(id) {
                 it.path = path;
                 it.shape = sh;
             }
             super::text::set_story_direction(d, &[sid], vertical);
             *sel = if caret {
-                Selection::text(TextSel { story: sid, anchor: text.len(), focus: text.len(), frame: Some(id), cell: None })
+                Selection::text(TextSel {
+                    story: sid,
+                    anchor: text.len(),
+                    focus: text.len(),
+                    frame: Some(id),
+                    cell: None,
+                })
             } else {
                 Selection::items(vec![id])
             };
@@ -920,12 +1270,18 @@ fn frame_create(s: &mut Session, p: &Value) -> Result<Value> {
 /// A polygon (or, with a star inset, a star with `sides` points) fitted to `r`.
 pub(crate) fn polygon_in(r: Rect, sides: u32, inset: f64) -> designcraft_geom::PathData {
     let c = r.center();
-    let mut p =
-        if inset > 0.0 { shapes::star(Point::ZERO, 1.0, (1.0 - inset).max(0.0), sides, 0.0) } else { shapes::polygon(Point::ZERO, 1.0, sides, 0.0) };
+    let mut p = if inset > 0.0 {
+        shapes::star(Point::ZERO, 1.0, (1.0 - inset).max(0.0), sides, 0.0)
+    } else {
+        shapes::polygon(Point::ZERO, 1.0, sides, 0.0)
+    };
     // Fit the unit polygon's bounds to the rect.
     if let Some(b) = p.bounds() {
         let a = Affine::translate(c.to_vec2())
-            * Affine::scale_non_uniform(r.width() / b.width().max(1e-9), r.height() / b.height().max(1e-9))
+            * Affine::scale_non_uniform(
+                r.width() / b.width().max(1e-9),
+                r.height() / b.height().max(1e-9),
+            )
             * Affine::translate(-b.center().to_vec2());
         p.transform(a);
     }
@@ -948,7 +1304,13 @@ fn line_create(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Deep-copy items `ids` from `src` into `dst` spread `to` (fresh ids; text frames get story copies).
-pub fn duplicate_from(dst: &mut Document, src: &Document, ids: &[ItemId], to: SpreadRef, off: Vec2) -> Result<Vec<ItemId>> {
+pub fn duplicate_from(
+    dst: &mut Document,
+    src: &Document,
+    ids: &[ItemId],
+    to: SpreadRef,
+    off: Vec2,
+) -> Result<Vec<ItemId>> {
     let mut out = Vec::new();
     let mut story_map: HashMap<StoryId, StoryId> = HashMap::new();
     for id in ids {
@@ -966,7 +1328,12 @@ pub fn duplicate_from(dst: &mut Document, src: &Document, ids: &[ItemId], to: Sp
     Ok(out)
 }
 
-fn renumber(dst: &mut Document, src: &Document, it: &mut Item, stories: &mut HashMap<StoryId, StoryId>) {
+fn renumber(
+    dst: &mut Document,
+    src: &Document,
+    it: &mut Item,
+    stories: &mut HashMap<StoryId, StoryId>,
+) {
     it.id = ItemId(dst.alloc());
     let my_id = it.id;
     if let Some(m) = it.media.as_mut()
@@ -980,7 +1347,10 @@ fn renumber(dst: &mut Document, src: &Document, it: &mut Item, stories: &mut Has
                 Some(n) => *n,
                 None => {
                     let n = StoryId(dst.alloc());
-                    let mut st = src.story(tf.story).cloned().unwrap_or_else(|| Story::new(n));
+                    let mut st = src
+                        .story(tf.story)
+                        .cloned()
+                        .unwrap_or_else(|| Story::new(n));
                     st.id = n;
                     let mut assets = HashMap::new();
                     for a in designcraft_doc::story_asset_refs(&st) {
@@ -1020,14 +1390,22 @@ fn transform_move(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let (dx, dy) = (f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0));
     let copy = bool_or(p, "copy", false);
-    let to: Option<SpreadRef> = p.get("toSpread").and_then(|v| serde_json::from_value(v.clone()).ok());
+    let to: Option<SpreadRef> = p
+        .get("toSpread")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
     s.edit(|d, sel| {
         let ids = if copy {
             let src = d.clone();
             let mut new = Vec::new();
             for id in &ids {
                 let sr = d.find(*id).map(|l| l.spread).unwrap_or(SpreadRef::Doc(0));
-                new.extend(duplicate_from(d, &src, &[*id], to.unwrap_or(sr), Vec2::ZERO)?);
+                new.extend(duplicate_from(
+                    d,
+                    &src,
+                    &[*id],
+                    to.unwrap_or(sr),
+                    Vec2::ZERO,
+                )?);
             }
             *sel = Selection::items(new.clone());
             new
@@ -1044,7 +1422,9 @@ fn transform_move(s: &mut Session, p: &Value) -> Result<Value> {
                 let it = d.remove_item_keep_story(*id)?;
                 d.insert_item(target, it, None)?;
             }
-            let it = d.item_mut(*id).ok_or(designcraft_doc::DocError::NoItem(*id))?;
+            let it = d
+                .item_mut(*id)
+                .ok_or(designcraft_doc::DocError::NoItem(*id))?;
             if it.locked {
                 continue;
             }
@@ -1065,13 +1445,25 @@ fn transform_resize(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let sx = to.width() / from.width();
     let sy = to.height() / from.height();
-    let sx = if sx.abs() < 1e-3 { 1e-3f64.copysign(sx) } else { sx };
-    let sy = if sy.abs() < 1e-3 { 1e-3f64.copysign(sy) } else { sy };
-    let m = Affine::translate((to.x0, to.y0)) * Affine::scale_non_uniform(sx, sy) * Affine::translate((-from.x0, -from.y0));
+    let sx = if sx.abs() < 1e-3 {
+        1e-3f64.copysign(sx)
+    } else {
+        sx
+    };
+    let sy = if sy.abs() < 1e-3 {
+        1e-3f64.copysign(sy)
+    } else {
+        sy
+    };
+    let m = Affine::translate((to.x0, to.y0))
+        * Affine::scale_non_uniform(sx, sy)
+        * Affine::translate((-from.x0, -from.y0));
     let strokes = s.prefs.scale_strokes;
     s.edit(|d, _| {
         for id in &ids {
-            let it = d.item_mut(*id).ok_or(designcraft_doc::DocError::NoItem(*id))?;
+            let it = d
+                .item_mut(*id)
+                .ok_or(designcraft_doc::DocError::NoItem(*id))?;
             if it.locked {
                 continue;
             }
@@ -1100,7 +1492,11 @@ fn transform_resize(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn union_bounds(d: &Document, ids: &[ItemId]) -> Rect {
-    ids.iter().filter_map(|i| d.item(*i)).map(Item::bounds).reduce(|a, b| a.union(b)).unwrap_or(Rect::ZERO)
+    ids.iter()
+        .filter_map(|i| d.item(*i))
+        .map(Item::bounds)
+        .reduce(|a, b| a.union(b))
+        .unwrap_or(Rect::ZERO)
 }
 
 /// Transform an item's geometry in its own space: the path and the gradient vector with it.
@@ -1158,14 +1554,27 @@ fn transform_again(s: &mut Session, p: &Value) -> Result<Value> {
     if list.is_empty() {
         return Err(bad("transform.again", "no transform to repeat"));
     }
-    let steps: Vec<(String, Value)> = if bool_or(p, "sequence", false) { list.clone() } else { list.last().cloned().into_iter().collect() };
-    let mut groups: Vec<Vec<ItemId>> = if bool_or(p, "individually", false) { ids.iter().map(|i| vec![*i]).collect() } else { vec![ids.clone()] };
+    let steps: Vec<(String, Value)> = if bool_or(p, "sequence", false) {
+        list.clone()
+    } else {
+        list.last().cloned().into_iter().collect()
+    };
+    let mut groups: Vec<Vec<ItemId>> = if bool_or(p, "individually", false) {
+        ids.iter().map(|i| vec![*i]).collect()
+    } else {
+        vec![ids.clone()]
+    };
     // Run the steps directly (no recording, one undo step for the whole repeat).
     let saved = s.transforms.clone();
     for (cmd, params) in &steps {
-        let spec = super::find_command(cmd).ok_or_else(|| bad("transform.again", "unknown transform"))?;
+        let spec =
+            super::find_command(cmd).ok_or_else(|| bad("transform.again", "unknown transform"))?;
         for g in &groups {
-            let q = super::with_param(params, "ids", json!(g.iter().map(|i| i.0).collect::<Vec<_>>()));
+            let q = super::with_param(
+                params,
+                "ids",
+                json!(g.iter().map(|i| i.0).collect::<Vec<_>>()),
+            );
             (spec.run)(s, &q)?;
         }
         // Moving a copy selects the copies: later steps (and the next repeat) act on them.
@@ -1220,10 +1629,18 @@ fn transform_rotate(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The transform an item's panel values are measured from: its own (relative to its container)
 /// or, with Transformations are Totals, the whole chain to the pasteboard.
-fn measured_xf(d: &designcraft_doc::Document, id: ItemId, totals: bool) -> Option<(Affine, Affine)> {
+fn measured_xf(
+    d: &designcraft_doc::Document,
+    id: ItemId,
+    totals: bool,
+) -> Option<(Affine, Affine)> {
     let loc = d.find(id)?;
     let it = d.item_at(&loc)?;
-    let parent = if totals { d.parent_xf(&loc) } else { Affine::IDENTITY };
+    let parent = if totals {
+        d.parent_xf(&loc)
+    } else {
+        Affine::IDENTITY
+    };
     Some((parent, parent * it.xf))
 }
 
@@ -1237,8 +1654,11 @@ fn transform_info(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let totals = s.prefs.transformations_are_totals;
     let d = &s.doc()?.doc;
-    let id = *ids.first().ok_or_else(|| bad("transform.info", "nothing selected"))?;
-    let (_, m) = measured_xf(d, id, totals).ok_or_else(|| bad("transform.info", "no such object"))?;
+    let id = *ids
+        .first()
+        .ok_or_else(|| bad("transform.info", "nothing selected"))?;
+    let (_, m) =
+        measured_xf(d, id, totals).ok_or_else(|| bad("transform.info", "no such object"))?;
     let mut out = values_json(m);
     if let Some(g) = d.item(id).and_then(Item::graphic) {
         out["content"] = values_json(if totals { m * g.xf } else { g.xf });
@@ -1251,18 +1671,32 @@ fn transform_values(s: &mut Session, p: &Value, ids: &[ItemId], rf: usize) -> Re
     let totals = s.prefs.transformations_are_totals;
     let strokes = s.prefs.scale_strokes;
     let get = |k: &str| p.get(k).and_then(Value::as_f64);
-    let (rot, shear, sx, sy) = (get("rotation"), get("shear").map(|v| v.clamp(-85.0, 85.0)), get("scaleX"), get("scaleY"));
+    let (rot, shear, sx, sy) = (
+        get("rotation"),
+        get("shear").map(|v| v.clamp(-85.0, 85.0)),
+        get("scaleX"),
+        get("scaleY"),
+    );
     if [sx, sy].iter().flatten().any(|v| v.abs() < 0.01) {
         return Err(bad("transform.set", "scale too small"));
     }
     s.edit(|d, _| {
         for id in ids {
-            let Some((parent, cur)) = measured_xf(d, *id, totals) else { continue };
+            let Some((parent, cur)) = measured_xf(d, *id, totals) else {
+                continue;
+            };
             let Some(it) = d.item(*id) else { continue };
             // The reference point, on the pasteboard, then in the measuring space.
             let full = d.find(*id).map_or(Affine::IDENTITY, |l| d.parent_xf(&l));
-            let spread_a = designcraft_geom::reference_point((full * it.xf).transform_rect_bbox(it.inner_bounds()), rf);
-            let a = if totals { spread_a } else { full.inverse() * spread_a };
+            let spread_a = designcraft_geom::reference_point(
+                (full * it.xf).transform_rect_bbox(it.inner_bounds()),
+                rf,
+            );
+            let a = if totals {
+                spread_a
+            } else {
+                full.inverse() * spread_a
+            };
             let v = designcraft_geom::decompose::decompose(cur);
             let mut t = v;
             if let Some(r) = rot {
@@ -1277,13 +1711,24 @@ fn transform_values(s: &mut Session, p: &Value, ids: &[ItemId], rf: usize) -> Re
             };
             let delta = designcraft_geom::decompose::compose(&t) * lin(cur).inverse();
             // Δ in measuring space about `a`, brought into the item's container space.
-            let m = parent.inverse() * Affine::translate(a.to_vec2()) * delta * Affine::translate(-a.to_vec2()) * parent;
-            let it = d.item_mut(*id).ok_or(designcraft_doc::DocError::NoItem(*id))?;
+            let m = parent.inverse()
+                * Affine::translate(a.to_vec2())
+                * delta
+                * Affine::translate(-a.to_vec2())
+                * parent;
+            let it = d
+                .item_mut(*id)
+                .ok_or(designcraft_doc::DocError::NoItem(*id))?;
             it.xf = m * it.xf;
             // Scale: relative to what is shown (frames show 100% — their scale lives in the geometry).
             if sx.is_some() || sy.is_some() {
-                let (fx, fy) = (sx.map_or(1.0, |x| x / 100.0 / v.scale_x), sy.map_or(1.0, |y| y / 100.0 / v.scale_y));
-                let m = Affine::translate(a.to_vec2()) * Affine::scale_non_uniform(fx, fy) * Affine::translate(-a.to_vec2());
+                let (fx, fy) = (
+                    sx.map_or(1.0, |x| x / 100.0 / v.scale_x),
+                    sy.map_or(1.0, |y| y / 100.0 / v.scale_y),
+                );
+                let m = Affine::translate(a.to_vec2())
+                    * Affine::scale_non_uniform(fx, fy)
+                    * Affine::translate(-a.to_vec2());
                 let m = parent.inverse() * m * parent;
                 scale_item(it, m, (fx * fy).abs().sqrt(), strokes);
             }
@@ -1294,9 +1739,15 @@ fn transform_values(s: &mut Session, p: &Value, ids: &[ItemId], rf: usize) -> Re
 
 fn transform_set(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
-    if ["rotation", "shear", "scaleX", "scaleY"].iter().any(|k| p.get(*k).is_some()) {
+    if ["rotation", "shear", "scaleX", "scaleY"]
+        .iter()
+        .any(|k| p.get(*k).is_some())
+    {
         let rf = p.get("ref").and_then(Value::as_u64).unwrap_or(4) as usize;
-        if !["x", "y", "width", "height"].iter().any(|k| p.get(*k).is_some()) {
+        if !["x", "y", "width", "height"]
+            .iter()
+            .any(|k| p.get(*k).is_some())
+        {
             return transform_values(s, p, &ids, rf);
         }
         transform_values(s, p, &ids, rf)?;
@@ -1311,18 +1762,32 @@ fn transform_set(s: &mut Session, p: &Value) -> Result<Value> {
         // the geometry it pads.
         let geom = union_bounds(d, &ids);
         let from = if with_stroke {
-            ids.iter().filter_map(|i| d.item(*i)).map(Item::visible_bounds).reduce(|a, b| a.union(b)).unwrap_or(geom)
+            ids.iter()
+                .filter_map(|i| d.item(*i))
+                .map(Item::visible_bounds)
+                .reduce(|a, b| a.union(b))
+                .unwrap_or(geom)
         } else {
             geom
         };
-        let pad = (geom.x0 - from.x0, geom.y0 - from.y0, from.x1 - geom.x1, from.y1 - geom.y1);
+        let pad = (
+            geom.x0 - from.x0,
+            geom.y0 - from.y0,
+            from.x1 - geom.x1,
+            from.y1 - geom.y1,
+        );
         let w = f64_or(p, "width", from.width()).max(0.01);
         let h = f64_or(p, "height", from.height()).max(0.01);
         let anchor = designcraft_geom::reference_point(from, rf);
         // New rect keeping the reference point fixed, then moved so the ref point lands on x/y.
         let fx = [0.0, 0.5, 1.0][rf % 3];
         let fy = [0.0, 0.5, 1.0][(rf / 3).min(2)];
-        let mut to = Rect::new(anchor.x - fx * w, anchor.y - fy * h, anchor.x - fx * w + w, anchor.y - fy * h + h);
+        let mut to = Rect::new(
+            anchor.x - fx * w,
+            anchor.y - fy * h,
+            anchor.x - fx * w + w,
+            anchor.y - fy * h + h,
+        );
         // x/y are the reference point position relative to the page origin of the first page in the spread.
         let page_x = ids
             .first()
@@ -1340,9 +1805,17 @@ fn transform_set(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(y) = p.get("y").and_then(Value::as_f64) {
             to = to + Vec2::new(0.0, y - anchor.y);
         }
-        let to = Rect::new(to.x0 + pad.0, to.y0 + pad.1, (to.x1 - pad.2).max(to.x0 + pad.0 + 0.01), (to.y1 - pad.3).max(to.y0 + pad.1 + 0.01));
+        let to = Rect::new(
+            to.x0 + pad.0,
+            to.y0 + pad.1,
+            (to.x1 - pad.2).max(to.x0 + pad.0 + 0.01),
+            (to.y1 - pad.3).max(to.y0 + pad.1 + 0.01),
+        );
         let m = Affine::translate((to.x0, to.y0))
-            * Affine::scale_non_uniform(to.width() / geom.width().max(1e-9), to.height() / geom.height().max(1e-9))
+            * Affine::scale_non_uniform(
+                to.width() / geom.width().max(1e-9),
+                to.height() / geom.height().max(1e-9),
+            )
             * Affine::translate((-geom.x0, -geom.y0));
         for id in &ids {
             if let Some(it) = d.item_mut(*id) {
@@ -1382,13 +1855,24 @@ fn arrange(s: &mut Session, p: &Value) -> Result<Value> {
                 positions.reverse();
             }
             for (spread, i) in positions {
-                let Some(sp) = d.spread_mut(spread) else { continue };
+                let Some(sp) = d.spread_mut(spread) else {
+                    continue;
+                };
                 let Some(it) = sp.items.get(i) else { continue };
                 let layer = it.layer;
                 let sibling = if forward {
-                    sp.items.iter().enumerate().skip(i.saturating_add(1)).find(|(_, it)| it.layer == layer)
+                    sp.items
+                        .iter()
+                        .enumerate()
+                        .skip(i.saturating_add(1))
+                        .find(|(_, it)| it.layer == layer)
                 } else {
-                    sp.items.iter().enumerate().take(i).rev().find(|(_, it)| it.layer == layer)
+                    sp.items
+                        .iter()
+                        .enumerate()
+                        .take(i)
+                        .rev()
+                        .find(|(_, it)| it.layer == layer)
                 };
                 if let Some((j, it)) = sibling
                     && !selected.contains(&it.id)
@@ -1404,7 +1888,9 @@ fn arrange(s: &mut Session, p: &Value) -> Result<Value> {
             if loc.path.len() != 1 {
                 continue;
             }
-            let Some(sp) = d.spread_mut(loc.spread) else { continue };
+            let Some(sp) = d.spread_mut(loc.spread) else {
+                continue;
+            };
             let i = loc.path[0];
             let n = sp.items.len();
             let it = sp.items.remove(i);
@@ -1425,18 +1911,40 @@ fn group(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("object.group", "select at least two objects"));
     }
     s.edit(|d, sel| {
-        let sr = d.find(ids[0]).map(|l| l.spread).ok_or(designcraft_doc::DocError::NoItem(ids[0]))?;
+        let sr = d
+            .find(ids[0])
+            .map(|l| l.spread)
+            .ok_or(designcraft_doc::DocError::NoItem(ids[0]))?;
         // Keep stacking order: collect in z-order.
-        let order: Vec<ItemId> = d.spread(sr).map(|sp| sp.items.iter().map(|i| i.id).filter(|i| ids.contains(i)).collect()).unwrap_or_default();
-        let front = d.spread(sr).and_then(|sp| sp.items.iter().position(|i| Some(&i.id) == order.last())).unwrap_or(0);
+        let order: Vec<ItemId> = d
+            .spread(sr)
+            .map(|sp| {
+                sp.items
+                    .iter()
+                    .map(|i| i.id)
+                    .filter(|i| ids.contains(i))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let front = d
+            .spread(sr)
+            .and_then(|sp| sp.items.iter().position(|i| Some(&i.id) == order.last()))
+            .unwrap_or(0);
         let layer = d.item(order[0]).map(|i| i.layer).unwrap_or_default();
         let mut kids = Vec::new();
         for id in &order {
             kids.push(d.remove_item_keep_story(*id)?);
         }
         let gid = ItemId(d.alloc());
-        let mut g = Item::new(gid, layer, Shape::Group, designcraft_geom::PathData::default());
-        g.content = Content::Group { items: kids.into_iter().map(Arc::new).collect() };
+        let mut g = Item::new(
+            gid,
+            layer,
+            Shape::Group,
+            designcraft_geom::PathData::default(),
+        );
+        g.content = Content::Group {
+            items: kids.into_iter().map(Arc::new).collect(),
+        };
         let at = front + 1 - order.len();
         d.insert_item(sr, g, Some(at))?;
         *sel = Selection::items(vec![gid]);
@@ -1450,12 +1958,18 @@ fn ungroup(s: &mut Session, p: &Value) -> Result<Value> {
         let mut out = Vec::new();
         for id in &ids {
             let Some(loc) = d.find(*id) else { continue };
-            let Some(g) = d.item(*id).cloned() else { continue };
-            let Content::Group { items } = &g.content else { continue };
+            let Some(g) = d.item(*id).cloned() else {
+                continue;
+            };
+            let Content::Group { items } = &g.content else {
+                continue;
+            };
             if loc.path.len() != 1 {
                 continue;
             }
-            let Some(sp) = d.spread_mut(loc.spread) else { continue };
+            let Some(sp) = d.spread_mut(loc.spread) else {
+                continue;
+            };
             sp.items.remove(loc.path[0]);
             for (k, c) in items.iter().enumerate() {
                 let mut c = (**c).clone();
@@ -1491,8 +2005,15 @@ fn unlocked(d: &Document, it: &Item) -> bool {
 
 fn has_editable_selection(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    let st = s.active().ok_or_else(|| super::NOTHING_SELECTED.to_string())?;
-    if st.selection.items.iter().any(|id| st.doc.item(*id).is_some_and(|it| unlocked(&st.doc, it))) {
+    let st = s
+        .active()
+        .ok_or_else(|| super::NOTHING_SELECTED.to_string())?;
+    if st
+        .selection
+        .items
+        .iter()
+        .any(|id| st.doc.item(*id).is_some_and(|it| unlocked(&st.doc, it)))
+    {
         Ok(())
     } else {
         Err("the selected objects are locked".into())
@@ -1525,14 +2046,22 @@ fn visible_weight(st: &mut Stroke) {
 
 fn swap_fill_stroke(it: &mut Item) {
     let fill = std::mem::take(&mut it.fill);
-    it.fill = Fill { swatch: std::mem::take(&mut it.stroke.swatch), tint: it.stroke.tint, ..fill.clone() };
+    it.fill = Fill {
+        swatch: std::mem::take(&mut it.stroke.swatch),
+        tint: it.stroke.tint,
+        ..fill.clone()
+    };
     it.stroke.swatch = fill.swatch;
     it.stroke.tint = fill.tint;
     visible_weight(&mut it.stroke);
 }
 
 fn default_fill_stroke(it: &mut Item) {
-    it.fill = Fill { swatch: designcraft_color::swatch::NONE.into(), tint: 1.0, ..it.fill.clone() };
+    it.fill = Fill {
+        swatch: designcraft_color::swatch::NONE.into(),
+        tint: 1.0,
+        ..it.fill.clone()
+    };
     it.stroke.swatch = designcraft_color::swatch::BLACK.into();
     it.stroke.tint = 1.0;
     visible_weight(&mut it.stroke);
@@ -1564,11 +2093,17 @@ fn content_type(s: &mut Session, p: &Value) -> Result<Value> {
                     st.frames.push(*id);
                     d.stories.insert(sid, Arc::new(st));
                     if let Some(it) = d.item_mut(*id) {
-                        it.content = Content::Text(TextFrame { story: sid, options: TextFrameOptions::default() });
+                        it.content = Content::Text(TextFrame {
+                            story: sid,
+                            options: TextFrameOptions::default(),
+                        });
                     }
                 }
                 ("graphic" | "unassigned", Some(Content::Text(tf))) => {
-                    let empty = d.story(tf.story).map(|s| s.frames.len() == 1).unwrap_or(true);
+                    let empty = d
+                        .story(tf.story)
+                        .map(|s| s.frames.len() == 1)
+                        .unwrap_or(true);
                     if let Some(st) = d.story_mut(tf.story) {
                         st.frames.retain(|f| f != id);
                     }
@@ -1598,20 +2133,32 @@ fn text_frame_options(s: &mut Session, p: &Value) -> Result<Value> {
     if ids.is_empty()
         && let Some(t) = st.selection.text
     {
-        ids = st.doc.story(t.story).map(|s| s.frames.clone()).unwrap_or_default();
+        ids = st
+            .doc
+            .story(t.story)
+            .map(|s| s.frames.clone())
+            .unwrap_or_default();
     }
     let ranged = |key: &str, lo: f64, hi: f64, what: &str| match p.get(key) {
         None | Some(Value::Null) => Ok(None),
         Some(v) => match v.as_f64() {
             Some(x) if x.is_finite() && (lo..=hi).contains(&x) => Ok(Some(x)),
-            _ => Err(bad(ID, format!("{key} must be {what} from {lo} to {hi}, not {v}"))),
+            _ => Err(bad(
+                ID,
+                format!("{key} must be {what} from {lo} to {hi}, not {v}"),
+            )),
         },
     };
     let rule_weight = ranged("columnRuleWeight", 0.0, 1000.0, "a number of points")?;
     let rule_tint = ranged("columnRuleTint", 0.0, 1.0, "a tint")?;
     let rule_offset = ranged("columnRuleOffset", -1440.0, 1440.0, "a number of points")?;
     let rule_top = ranged("columnRuleTopInset", -1440.0, 1440.0, "a number of points")?;
-    let rule_bottom = ranged("columnRuleBottomInset", -1440.0, 1440.0, "a number of points")?;
+    let rule_bottom = ranged(
+        "columnRuleBottomInset",
+        -1440.0,
+        1440.0,
+        "a number of points",
+    )?;
     let rule_color = match p.get("columnRuleColor") {
         None | Some(Value::Null) => None,
         Some(Value::String(c)) if st.doc.swatch(c).is_some() => Some(c.clone()),
@@ -1620,7 +2167,9 @@ fn text_frame_options(s: &mut Session, p: &Value) -> Result<Value> {
     let p = p.clone();
     s.edit(|d, _| {
         for id in &ids {
-            let Some(tf) = d.item_mut(*id).and_then(Item::text_frame_mut) else { continue };
+            let Some(tf) = d.item_mut(*id).and_then(Item::text_frame_mut) else {
+                continue;
+            };
             let o = &mut tf.options;
             if let Some(v) = p.get("columns").and_then(Value::as_u64) {
                 o.columns = (v as u32).clamp(1, 40);
@@ -1641,7 +2190,12 @@ fn text_frame_options(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 _ => {}
             }
-            for (k, which) in [("verticalJustification", 0), ("firstBaseline", 1), ("autoSize", 2), ("columnsKind", 3)] {
+            for (k, which) in [
+                ("verticalJustification", 0),
+                ("firstBaseline", 1),
+                ("autoSize", 2),
+                ("columnsKind", 3),
+            ] {
                 if let Some(v) = p.get(k).cloned() {
                     let _ = match which {
                         0 => serde_json::from_value(v).map(|x| o.vertical_justification = x),
@@ -1681,7 +2235,10 @@ fn text_frame_options(s: &mut Session, p: &Value) -> Result<Value> {
         }
         // Story direction belongs to the story: every frame of the thread turns.
         if let Some(v) = p.get("vertical").and_then(Value::as_bool) {
-            let stories: Vec<StoryId> = ids.iter().filter_map(|id| d.item(*id).and_then(Item::text_frame).map(|t| t.story)).collect();
+            let stories: Vec<StoryId> = ids
+                .iter()
+                .filter_map(|id| d.item(*id).and_then(Item::text_frame).map(|t| t.story))
+                .collect();
             super::text::set_story_direction(d, &stories, v);
         }
         Ok(json!({"changed": ids.len()}))
@@ -1689,13 +2246,22 @@ fn text_frame_options(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The gap at `p` on spread `sr`: (vertical gap?, edge a, edge b, ids ending at a, ids starting at b).
-pub(crate) fn find_gap(d: &Document, sr: designcraft_doc::SpreadRef, p: Point) -> Option<(bool, f64, f64, Vec<ItemId>, Vec<ItemId>)> {
+pub(crate) fn find_gap(
+    d: &Document,
+    sr: designcraft_doc::SpreadRef,
+    p: Point,
+) -> Option<(bool, f64, f64, Vec<ItemId>, Vec<ItemId>)> {
     let sp = d.spread(sr)?;
-    let page = sp.page_at_x(p.x).and_then(|i| sp.pages.get(i)).map(|pg| pg.bounds())?;
+    let page = sp
+        .page_at_x(p.x)
+        .and_then(|i| sp.pages.get(i))
+        .map(|pg| pg.bounds())?;
     let items: Vec<(ItemId, Rect)> = sp
         .items
         .iter()
-        .filter(|it| !it.hidden && !it.locked && d.layer(it.layer).is_none_or(|l| !l.locked && l.visible))
+        .filter(|it| {
+            !it.hidden && !it.locked && d.layer(it.layer).is_none_or(|l| !l.locked && l.visible)
+        })
         .map(|it| (it.id, it.bounds()))
         .collect();
     if items.iter().any(|(_, b)| b.contains(p)) {
@@ -1703,14 +2269,40 @@ pub(crate) fn find_gap(d: &Document, sr: designcraft_doc::SpreadRef, p: Point) -
     }
     // Between left and right neighbours (a vertical gap), or above and below (horizontal).
     let side = |vertical: bool| {
-        let (pos, lo, hi) = if vertical { (p.x, page.x0, page.x1) } else { (p.y, page.y0, page.y1) };
-        let across = |b: &Rect| if vertical { b.y0 <= p.y && p.y <= b.y1 } else { b.x0 <= p.x && p.x <= b.x1 };
+        let (pos, lo, hi) = if vertical {
+            (p.x, page.x0, page.x1)
+        } else {
+            (p.y, page.y0, page.y1)
+        };
+        let across = |b: &Rect| {
+            if vertical {
+                b.y0 <= p.y && p.y <= b.y1
+            } else {
+                b.x0 <= p.x && p.x <= b.x1
+            }
+        };
         let end = |b: &Rect| if vertical { b.x1 } else { b.y1 };
         let start = |b: &Rect| if vertical { b.x0 } else { b.y0 };
-        let a = items.iter().filter(|(_, b)| across(b) && end(b) <= pos).map(|(_, b)| end(b)).fold(lo, f64::max);
-        let z = items.iter().filter(|(_, b)| across(b) && start(b) >= pos).map(|(_, b)| start(b)).fold(hi, f64::min);
-        let before: Vec<ItemId> = items.iter().filter(|(_, b)| across(b) && (end(b) - a).abs() < 0.5).map(|(i, _)| *i).collect();
-        let after: Vec<ItemId> = items.iter().filter(|(_, b)| across(b) && (start(b) - z).abs() < 0.5).map(|(i, _)| *i).collect();
+        let a = items
+            .iter()
+            .filter(|(_, b)| across(b) && end(b) <= pos)
+            .map(|(_, b)| end(b))
+            .fold(lo, f64::max);
+        let z = items
+            .iter()
+            .filter(|(_, b)| across(b) && start(b) >= pos)
+            .map(|(_, b)| start(b))
+            .fold(hi, f64::min);
+        let before: Vec<ItemId> = items
+            .iter()
+            .filter(|(_, b)| across(b) && (end(b) - a).abs() < 0.5)
+            .map(|(i, _)| *i)
+            .collect();
+        let after: Vec<ItemId> = items
+            .iter()
+            .filter(|(_, b)| across(b) && (start(b) - z).abs() < 0.5)
+            .map(|(i, _)| *i)
+            .collect();
         (!before.is_empty() || !after.is_empty()).then_some((vertical, a, z, before, after))
     };
     match (side(true), side(false)) {
@@ -1727,10 +2319,14 @@ fn gap_move(s: &mut Session, p: &Value) -> Result<Value> {
         .and_then(|a| Some(Point::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?)))
         .ok_or_else(|| bad(ID, "missing at"))?;
     let sr = spread_param(p, ID)?;
-    let (vertical, a, z, before, after) = find_gap(&s.doc()?.doc, sr, at).ok_or_else(|| bad(ID, "no gap there"))?;
+    let (vertical, a, z, before, after) =
+        find_gap(&s.doc()?.doc, sr, at).ok_or_else(|| bad(ID, "no gap there"))?;
     // `delta` along the gap's axis, or a drag (dx, dy) of which the axis part counts.
-    let delta =
-        p.get("delta").and_then(Value::as_f64).unwrap_or_else(|| p.get(if vertical { "dx" } else { "dy" }).and_then(Value::as_f64).unwrap_or(0.0));
+    let delta = p.get("delta").and_then(Value::as_f64).unwrap_or_else(|| {
+        p.get(if vertical { "dx" } else { "dy" })
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0)
+    });
     let _ = (a, z);
     s.edit(|d, _| {
         let mut n = 0;
@@ -1746,7 +2342,10 @@ fn gap_move(s: &mut Session, p: &Value) -> Result<Value> {
                     (false, false) => to.y0 = (b.y0 + delta).min(b.y1 - 1.0),
                 }
                 let m = Affine::translate((to.x0, to.y0))
-                    * Affine::scale_non_uniform(to.width() / b.width().max(1e-9), to.height() / b.height().max(1e-9))
+                    * Affine::scale_non_uniform(
+                        to.width() / b.width().max(1e-9),
+                        to.height() / b.height().max(1e-9),
+                    )
                     * Affine::translate((-b.x0, -b.y0));
                 if matches!(it.content, Content::Group { .. }) {
                     it.xf = m * it.xf;
@@ -1771,8 +2370,16 @@ fn clipping_path(s: &mut Session, p: &Value) -> Result<Value> {
         "edges" => true,
         t => return Err(bad(ID, format!("unknown type `{t}` (alpha, edges)"))),
     };
-    let threshold = p.get("threshold").and_then(Value::as_f64).unwrap_or(25.0).clamp(0.0, 255.0);
-    let tol = p.get("tolerance").and_then(Value::as_f64).unwrap_or(2.0).max(0.1);
+    let threshold = p
+        .get("threshold")
+        .and_then(Value::as_f64)
+        .unwrap_or(25.0)
+        .clamp(0.0, 255.0);
+    let tol = p
+        .get("tolerance")
+        .and_then(Value::as_f64)
+        .unwrap_or(2.0)
+        .max(0.1);
     // Trace each graphic (outside the edit: decoding is the slow part).
     let mut paths: Vec<(ItemId, designcraft_geom::PathData)> = Vec::new();
     {
@@ -1780,20 +2387,31 @@ fn clipping_path(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &ids {
             let Some(it) = d.item(*id) else { continue };
             let Some(g) = it.graphic() else { continue };
-            let Some(asset) = d.assets.get(&g.asset) else { continue };
-            let Some(px) = designcraft_render::decode_pixmap_page(&asset.data, asset.page) else { continue };
+            let Some(asset) = d.assets.get(&g.asset) else {
+                continue;
+            };
+            let Some(px) = designcraft_render::decode_pixmap_page(&asset.data, asset.page) else {
+                continue;
+            };
             let (pw, ph) = (px.width() as usize, px.height() as usize);
             // A grid of at most 400 cells on the long side.
             let step = (pw.max(ph) as f64 / 400.0).max(1.0);
-            let (w, h) = (((pw as f64) / step).ceil() as usize, ((ph as f64) / step).ceil() as usize);
+            let (w, h) = (
+                ((pw as f64) / step).ceil() as usize,
+                ((ph as f64) / step).ceil() as usize,
+            );
             let mask: Vec<bool> = (0..w * h)
                 .map(|i| {
-                    let (x, y) = (((i % w) as f64 * step) as u16, ((i / w) as f64 * step) as u16);
+                    let (x, y) = (
+                        ((i % w) as f64 * step) as u16,
+                        ((i / w) as f64 * step) as u16,
+                    );
                     let c = px.sample(x.min(pw as u16 - 1), y.min(ph as u16 - 1));
                     if edges {
                         // Un-premultiply over white: anything darker than the threshold is inside.
                         let a = c.a as f64 / 255.0;
-                        let lum = (0.299 * c.r as f64 + 0.587 * c.g as f64 + 0.114 * c.b as f64) + 255.0 * (1.0 - a);
+                        let lum = (0.299 * c.r as f64 + 0.587 * c.g as f64 + 0.114 * c.b as f64)
+                            + 255.0 * (1.0 - a);
                         lum < 255.0 - threshold
                     } else {
                         c.a as f64 > threshold
@@ -1803,13 +2421,19 @@ fn clipping_path(s: &mut Session, p: &Value) -> Result<Value> {
             // The tolerance is in image pixels; the grid cells are `step` pixels.
             let rings = designcraft_geom::trace::trace(&mask, w, h, tol / step, 4.0);
             if rings.is_empty() {
-                return Err(bad(ID, "nothing to trace (the image is empty at this threshold)"));
+                return Err(bad(
+                    ID,
+                    "nothing to trace (the image is empty at this threshold)",
+                ));
             }
             let (sx, sy) = (g.size.0 / w as f64, g.size.1 / h as f64);
             let subpaths = rings
                 .into_iter()
                 .map(|r| {
-                    let pts: Vec<Point> = r.into_iter().map(|q| g.xf * Point::new(q.x * sx, q.y * sy)).collect();
+                    let pts: Vec<Point> = r
+                        .into_iter()
+                        .map(|q| g.xf * Point::new(q.x * sx, q.y * sy))
+                        .collect();
                     designcraft_geom::path::SubPath::polyline(&pts, true)
                 })
                 .collect();
@@ -1856,9 +2480,14 @@ fn fitting_options(s: &mut Session, p: &Value) -> Result<Value> {
         None => None,
     };
     let auto = p.get("autoFit").and_then(Value::as_bool);
-    let align = p.get("align").and_then(Value::as_u64).map(|v| v.min(8) as u8);
+    let align = p
+        .get("align")
+        .and_then(Value::as_u64)
+        .map(|v| v.min(8) as u8);
     let crop = match p.get("crop") {
-        Some(Value::Array(a)) if a.len() == 4 => Some([0, 1, 2, 3].map(|i| a[i].as_f64().unwrap_or(0.0))),
+        Some(Value::Array(a)) if a.len() == 4 => {
+            Some([0, 1, 2, 3].map(|i| a[i].as_f64().unwrap_or(0.0)))
+        }
         Some(Value::Number(n)) => Some([n.as_f64().unwrap_or(0.0); 4]),
         Some(v) => return Err(bad(ID, format!("bad `crop`: {v} (n or [t, l, b, r])"))),
         None => None,
@@ -1868,7 +2497,9 @@ fn fitting_options(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &ids {
             let Some(it) = d.item_mut(*id) else { continue };
             let r = it.inner_bounds();
-            let Content::Graphic(g) = &mut it.content else { continue };
+            let Content::Graphic(g) = &mut it.content else {
+                continue;
+            };
             if let Some(a) = align {
                 g.fit_align = a;
             }
@@ -1878,7 +2509,11 @@ fn fitting_options(s: &mut Session, p: &Value) -> Result<Value> {
             let mode = fitting.unwrap_or(g.auto_fit);
             if let Some(a) = auto {
                 g.auto_fit = if a {
-                    if mode == designcraft_doc::Fitting::None { designcraft_doc::Fitting::FillProportionally } else { mode }
+                    if mode == designcraft_doc::Fitting::None {
+                        designcraft_doc::Fitting::FillProportionally
+                    } else {
+                        mode
+                    }
                 } else {
                     designcraft_doc::Fitting::None
                 };
@@ -1896,12 +2531,16 @@ fn fitting_options(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn fit(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
-    let mode = str_param(p, "mode").unwrap_or("fitProportionally").to_string();
+    let mode = str_param(p, "mode")
+        .unwrap_or("fitProportionally")
+        .to_string();
     s.edit(|d, _| {
         for id in &ids {
             let Some(it) = d.item_mut(*id) else { continue };
             let r = it.inner_bounds();
-            let Content::Graphic(g) = &mut it.content else { continue };
+            let Content::Graphic(g) = &mut it.content else {
+                continue;
+            };
             let (nw, nh) = g.size;
             let cur = g.xf.transform_rect_bbox(Rect::new(0.0, 0.0, nw, nh));
             if mode == "fitFrameToContent" {
@@ -1930,20 +2569,30 @@ impl RemoveKeep for Document {
         if loc.path.len() != 1 {
             return Err(bad("object", "nested items can't be detached"));
         }
-        let sp = self.spread_mut(loc.spread).ok_or(designcraft_doc::DocError::NoItem(id))?;
+        let sp = self
+            .spread_mut(loc.spread)
+            .ok_or(designcraft_doc::DocError::NoItem(id))?;
         Ok(Arc::unwrap_or_clone(sp.items.remove(loc.path[0])))
     }
 }
 
 /// Bounds of each target item (spread space) and the alignment reference rect.
 fn align_reference(d: &Document, ids: &[ItemId], to: &str, key: Option<ItemId>) -> Option<Rect> {
-    let bounds: Vec<Rect> = ids.iter().filter_map(|i| d.item(*i).map(Item::bounds)).collect();
+    let bounds: Vec<Rect> = ids
+        .iter()
+        .filter_map(|i| d.item(*i).map(Item::bounds))
+        .collect();
     let union = bounds.iter().copied().reduce(|a, b| a.union(b))?;
     let first = ids.first().and_then(|i| d.find(*i))?;
     let sp = d.spread(first.spread)?;
-    let page = sp.page_at_x(union.center().x).and_then(|pi| sp.pages.get(pi));
+    let page = sp
+        .page_at_x(union.center().x)
+        .and_then(|pi| sp.pages.get(pi));
     Some(match to {
-        "keyObject" => key.and_then(|k| d.item(k)).map(Item::bounds).unwrap_or(union),
+        "keyObject" => key
+            .and_then(|k| d.item(k))
+            .map(Item::bounds)
+            .unwrap_or(union),
         "margins" => page.map(|p| p.margin_rect()).unwrap_or(union),
         "page" => page.map(|p| p.bounds()).unwrap_or(union),
         "spread" => sp.bounds(),
@@ -1954,10 +2603,17 @@ fn align_reference(d: &Document, ids: &[ItemId], to: &str, key: Option<ItemId>) 
 fn align(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let edge = str_param(p, "edge").unwrap_or("left").to_string();
-    let to = str_param(p, "to").map(str::to_string).unwrap_or_else(|| if ids.len() > 1 { "selection".into() } else { "page".into() });
+    let to = str_param(p, "to").map(str::to_string).unwrap_or_else(|| {
+        if ids.len() > 1 {
+            "selection".into()
+        } else {
+            "page".into()
+        }
+    });
     let key = s.doc()?.selection.key;
     s.edit(|d, _| {
-        let r = align_reference(d, &ids, &to, key).ok_or_else(|| bad("object.align", "nothing to align"))?;
+        let r = align_reference(d, &ids, &to, key)
+            .ok_or_else(|| bad("object.align", "nothing to align"))?;
         for id in &ids {
             if Some(*id) == key && to == "keyObject" {
                 continue;
@@ -1991,7 +2647,10 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
     let by_spacing = str_param(p, "by") == Some("spacing") || p.get("spacing").is_some();
     let fixed = p.get("spacing").and_then(Value::as_f64);
     s.edit(|d, _| {
-        let mut items: Vec<(ItemId, Rect)> = ids.iter().filter_map(|i| d.item(*i).map(|it| (*i, it.bounds()))).collect();
+        let mut items: Vec<(ItemId, Rect)> = ids
+            .iter()
+            .filter_map(|i| d.item(*i).map(|it| (*i, it.bounds())))
+            .collect();
         let key = |r: &Rect| if horizontal { r.x0 } else { r.y0 };
         items.sort_by(|a, b| key(&a.1).total_cmp(&key(&b.1)));
         let n = items.len();
@@ -2025,7 +2684,11 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
                 if it.locked {
                     continue;
                 }
-                let v = if horizontal { Vec2::new(delta, 0.0) } else { Vec2::new(0.0, delta) };
+                let v = if horizontal {
+                    Vec2::new(delta, 0.0)
+                } else {
+                    Vec2::new(0.0, delta)
+                };
                 it.xf = Affine::translate(v) * it.xf;
             }
         }
@@ -2046,13 +2709,20 @@ fn anchor_from(v: &Value) -> Option<designcraft_geom::Anchor> {
         p,
         h_in,
         h_out,
-        kind: if smooth { designcraft_geom::AnchorKind::Smooth } else { designcraft_geom::AnchorKind::Corner },
+        kind: if smooth {
+            designcraft_geom::AnchorKind::Smooth
+        } else {
+            designcraft_geom::AnchorKind::Corner
+        },
     })
 }
 
 fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
-    let anchors: Vec<designcraft_geom::Anchor> =
-        p.get("anchors").and_then(Value::as_array).map(|a| a.iter().filter_map(anchor_from).collect()).unwrap_or_default();
+    let anchors: Vec<designcraft_geom::Anchor> = p
+        .get("anchors")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(anchor_from).collect())
+        .unwrap_or_default();
     if anchors.len() < 2 {
         return Err(bad("path.create", "a path needs at least two anchors"));
     }
@@ -2061,8 +2731,17 @@ fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
     let lid = s.doc()?.active_layer;
     s.edit(|d, sel| {
         let id = ItemId(d.alloc());
-        let shape = if anchors.len() == 2 && !closed { Shape::GraphicLine } else { Shape::Path };
-        let mut it = Item::new(id, lid, shape, designcraft_geom::PathData::single(designcraft_geom::SubPath::new(anchors, closed)));
+        let shape = if anchors.len() == 2 && !closed {
+            Shape::GraphicLine
+        } else {
+            Shape::Path
+        };
+        let mut it = Item::new(
+            id,
+            lid,
+            shape,
+            designcraft_geom::PathData::single(designcraft_geom::SubPath::new(anchors, closed)),
+        );
         it.stroke = Stroke::default();
         d.insert_item(sr, it, None)?;
         *sel = Selection::items(vec![id]);
@@ -2072,17 +2751,27 @@ fn path_create(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn path_append(s: &mut Session, p: &Value) -> Result<Value> {
     let id = super::id_param(p, "id").ok_or_else(|| bad("path.appendAnchor", "missing id"))?;
-    let a = p.get("anchor").and_then(anchor_from).ok_or_else(|| bad("path.appendAnchor", "missing anchor"))?;
+    let a = p
+        .get("anchor")
+        .and_then(anchor_from)
+        .ok_or_else(|| bad("path.appendAnchor", "missing anchor"))?;
     let subpath = p.get("subpath").and_then(Value::as_u64);
     s.edit(|d, _| {
         let loc = d.find(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
         let inv = (d.parent_xf(&loc) * d.item_at(&loc).map(|i| i.xf).unwrap_or_default()).inverse();
-        let it = d.item_mut(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
+        let it = d
+            .item_mut(id)
+            .ok_or(designcraft_doc::DocError::NoItem(id))?;
         let sp = match subpath {
-            Some(i) => {
-                usize::try_from(i).ok().and_then(|i| it.path.subpaths.get_mut(i)).ok_or_else(|| bad("path.appendAnchor", "no such subpath"))?
-            }
-            None => it.path.subpaths.last_mut().ok_or_else(|| bad("path.appendAnchor", "empty path"))?,
+            Some(i) => usize::try_from(i)
+                .ok()
+                .and_then(|i| it.path.subpaths.get_mut(i))
+                .ok_or_else(|| bad("path.appendAnchor", "no such subpath"))?,
+            None => it
+                .path
+                .subpaths
+                .last_mut()
+                .ok_or_else(|| bad("path.appendAnchor", "empty path"))?,
         };
         if sp.closed {
             return Err(bad("path.appendAnchor", "the subpath is closed"));
@@ -2112,12 +2801,16 @@ fn path_set_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit(|d, _| {
         let loc = d.find(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
         let inv = (d.parent_xf(&loc) * d.item_at(&loc).map(|i| i.xf).unwrap_or_default()).inverse();
-        let it = d.item_mut(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
+        let it = d
+            .item_mut(id)
+            .ok_or(designcraft_doc::DocError::NoItem(id))?;
         if it.locked {
             return Err(bad(ID, "the path is locked"));
         }
         let sp = match subpath {
-            Some(i) => usize::try_from(i).ok().and_then(|i| it.path.subpaths.get_mut(i)),
+            Some(i) => usize::try_from(i)
+                .ok()
+                .and_then(|i| it.path.subpaths.get_mut(i)),
             None => it.path.subpaths.last_mut(),
         }
         .ok_or_else(|| bad(ID, "no such subpath"))?;
@@ -2125,9 +2818,15 @@ fn path_set_anchor(s: &mut Session, p: &Value) -> Result<Value> {
         let ai = match &which {
             Value::String(w) if w == "first" => 0,
             Value::String(w) if w == "last" => n.saturating_sub(1),
-            v => v.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(ID, "anchor: an index, \"first\" or \"last\""))?,
+            v => v
+                .as_u64()
+                .and_then(|i| usize::try_from(i).ok())
+                .ok_or_else(|| bad(ID, "anchor: an index, \"first\" or \"last\""))?,
         };
-        let a = sp.anchors.get_mut(ai).ok_or_else(|| bad(ID, "no such anchor"))?;
+        let a = sp
+            .anchors
+            .get_mut(ai)
+            .ok_or_else(|| bad(ID, "no such anchor"))?;
         if let Some(q) = new_p {
             let v = inv * q - a.p;
             a.p += v;
@@ -2142,8 +2841,14 @@ fn path_set_anchor(s: &mut Session, p: &Value) -> Result<Value> {
         }
         if new_in.is_some() && new_out.is_some() {
             let (i, o) = (a.h_in - a.p, a.h_out - a.p);
-            let collinear = (i.x * o.y - i.y * o.x).abs() <= 1e-6 * i.hypot().max(1.0) * o.hypot().max(1.0) && i.dot(o) <= 0.0;
-            a.kind = if collinear { designcraft_geom::AnchorKind::Smooth } else { designcraft_geom::AnchorKind::Corner };
+            let collinear = (i.x * o.y - i.y * o.x).abs()
+                <= 1e-6 * i.hypot().max(1.0) * o.hypot().max(1.0)
+                && i.dot(o) <= 0.0;
+            a.kind = if collinear {
+                designcraft_geom::AnchorKind::Smooth
+            } else {
+                designcraft_geom::AnchorKind::Corner
+            };
         }
         ok()
     })
@@ -2151,13 +2856,23 @@ fn path_set_anchor(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn path_reverse(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
-    let only = p.get("subpath").and_then(Value::as_u64).map(|i| usize::try_from(i).unwrap_or(usize::MAX));
+    let only = p
+        .get("subpath")
+        .and_then(Value::as_u64)
+        .map(|i| usize::try_from(i).unwrap_or(usize::MAX));
     if let (Some(i), Some(id)) = (only, ids.first())
-        && s.doc()?.doc.item(*id).is_none_or(|it| it.path.subpaths.get(i).is_none())
+        && s.doc()?
+            .doc
+            .item(*id)
+            .is_none_or(|it| it.path.subpaths.get(i).is_none())
     {
         return Err(bad("path.reverse", "no such subpath"));
     }
-    let ids = if only.is_some() { ids.into_iter().take(1).collect() } else { ids };
+    let ids = if only.is_some() {
+        ids.into_iter().take(1).collect()
+    } else {
+        ids
+    };
     s.edit(|d, _| {
         let mut reversed = 0;
         for id in &ids {
@@ -2182,9 +2897,14 @@ fn path_reverse(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn path_close(s: &mut Session, p: &Value) -> Result<Value> {
     let id = super::id_param(p, "id").ok_or_else(|| bad("path.close", "missing id"))?;
-    let only = p.get("subpath").and_then(Value::as_u64).map(|i| usize::try_from(i).unwrap_or(usize::MAX));
+    let only = p
+        .get("subpath")
+        .and_then(Value::as_u64)
+        .map(|i| usize::try_from(i).unwrap_or(usize::MAX));
     s.edit(|d, _| {
-        let it = d.item_mut(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
+        let it = d
+            .item_mut(id)
+            .ok_or(designcraft_doc::DocError::NoItem(id))?;
         if only.is_some_and(|i| i >= it.path.subpaths.len()) {
             return Err(bad("path.close", "no such subpath"));
         }
@@ -2202,7 +2922,10 @@ fn path_close(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn path_move_anchors(s: &mut Session, p: &Value) -> Result<Value> {
     let id = super::id_param(p, "id").ok_or_else(|| bad("path.moveAnchors", "missing id"))?;
-    let which: Vec<(usize, usize)> = p.get("anchors").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default();
+    let which: Vec<(usize, usize)> = p
+        .get("anchors")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
     let d0 = Vec2::new(f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0));
     let handle = str_param(p, "handle").map(str::to_string);
     s.edit(|d, _| {
@@ -2211,9 +2934,13 @@ fn path_move_anchors(s: &mut Session, p: &Value) -> Result<Value> {
         // Spread-space delta → inner-space delta (linear part only).
         let inv = m.inverse();
         let dv = (inv * Point::new(d0.x, d0.y)) - (inv * Point::ZERO);
-        let it = d.item_mut(id).ok_or(designcraft_doc::DocError::NoItem(id))?;
+        let it = d
+            .item_mut(id)
+            .ok_or(designcraft_doc::DocError::NoItem(id))?;
         for (si, ai) in &which {
-            let Some(a) = it.path.anchor_mut(*si, *ai) else { continue };
+            let Some(a) = it.path.anchor_mut(*si, *ai) else {
+                continue;
+            };
             match handle.as_deref() {
                 Some("in") => {
                     a.h_in += dv;
@@ -2242,37 +2969,68 @@ const MAX_STEP_REPEAT_WORK: usize = 1000;
 const MAX_STEP_REPEAT_OFFSET: f64 = 1_000_000_000.0;
 
 fn step_repeat_count(p: &Value, key: &str, default: u64) -> Result<u64> {
-    let Some(value) = p.get(key) else { return Ok(default) };
-    let count = value.as_u64().ok_or_else(|| bad("edit.stepAndRepeat", format!("`{key}` must be an integer")))?;
+    let Some(value) = p.get(key) else {
+        return Ok(default);
+    };
+    let count = value
+        .as_u64()
+        .ok_or_else(|| bad("edit.stepAndRepeat", format!("`{key}` must be an integer")))?;
     if !(1..=MAX_STEP_REPEAT_COPIES).contains(&count) {
-        return Err(bad("edit.stepAndRepeat", format!("`{key}` must be between 1 and {MAX_STEP_REPEAT_COPIES}")));
+        return Err(bad(
+            "edit.stepAndRepeat",
+            format!("`{key}` must be between 1 and {MAX_STEP_REPEAT_COPIES}"),
+        ));
     }
     Ok(count)
 }
 
 fn step_repeat_delta(p: &Value, key: &str, default: f64) -> Result<f64> {
-    let Some(value) = p.get(key) else { return Ok(default) };
-    let delta = value.as_f64().ok_or_else(|| bad("edit.stepAndRepeat", format!("`{key}` must be a finite number")))?;
+    let Some(value) = p.get(key) else {
+        return Ok(default);
+    };
+    let delta = value.as_f64().ok_or_else(|| {
+        bad(
+            "edit.stepAndRepeat",
+            format!("`{key}` must be a finite number"),
+        )
+    })?;
     if !delta.is_finite() {
-        return Err(bad("edit.stepAndRepeat", format!("`{key}` must be a finite number")));
+        return Err(bad(
+            "edit.stepAndRepeat",
+            format!("`{key}` must be a finite number"),
+        ));
     }
     Ok(delta)
 }
 
 fn checked_step_offset(dx: f64, dy: f64, x: u64, y: u64) -> Result<Vec2> {
     let (x, y) = (x as f64 * dx, y as f64 * dy);
-    if !x.is_finite() || !y.is_finite() || x.abs() > MAX_STEP_REPEAT_OFFSET || y.abs() > MAX_STEP_REPEAT_OFFSET {
-        return Err(bad("edit.stepAndRepeat", format!("generated offsets must stay between -{MAX_STEP_REPEAT_OFFSET} and {MAX_STEP_REPEAT_OFFSET}")));
+    if !x.is_finite()
+        || !y.is_finite()
+        || x.abs() > MAX_STEP_REPEAT_OFFSET
+        || y.abs() > MAX_STEP_REPEAT_OFFSET
+    {
+        return Err(bad(
+            "edit.stepAndRepeat",
+            format!(
+                "generated offsets must stay between -{MAX_STEP_REPEAT_OFFSET} and {MAX_STEP_REPEAT_OFFSET}"
+            ),
+        ));
     }
     Ok(Vec2::new(x, y))
 }
 
 fn step_repeat_offsets(p: &Value) -> Result<Vec<Vec2>> {
-    let (dx, dy) = (step_repeat_delta(p, "dx", 12.0)?, step_repeat_delta(p, "dy", 12.0)?);
+    let (dx, dy) = (
+        step_repeat_delta(p, "dx", 12.0)?,
+        step_repeat_delta(p, "dy", 12.0)?,
+    );
     match (p.get("rows"), p.get("columns")) {
         (None, None) => {
             let count = step_repeat_count(p, "count", 1)?;
-            (1..=count).map(|k| checked_step_offset(dx, dy, k, k)).collect()
+            (1..=count)
+                .map(|k| checked_step_offset(dx, dy, k, k))
+                .collect()
         }
         (Some(_), Some(_)) => {
             let rows = step_repeat_count(p, "rows", 1)?;
@@ -2280,9 +3038,18 @@ fn step_repeat_offsets(p: &Value) -> Result<Vec<Vec2>> {
             let cells = rows
                 .checked_mul(columns)
                 .filter(|count| *count <= MAX_STEP_REPEAT_COPIES)
-                .ok_or_else(|| bad("edit.stepAndRepeat", format!("`rows` × `columns` must not exceed {MAX_STEP_REPEAT_COPIES}")))?;
-            let capacity = usize::try_from(cells.saturating_sub(1))
-                .map_err(|_| bad("edit.stepAndRepeat", "the requested grid is too large for this platform"))?;
+                .ok_or_else(|| {
+                    bad(
+                        "edit.stepAndRepeat",
+                        format!("`rows` × `columns` must not exceed {MAX_STEP_REPEAT_COPIES}"),
+                    )
+                })?;
+            let capacity = usize::try_from(cells.saturating_sub(1)).map_err(|_| {
+                bad(
+                    "edit.stepAndRepeat",
+                    "the requested grid is too large for this platform",
+                )
+            })?;
             let mut offsets = Vec::with_capacity(capacity);
             for row in 0..rows {
                 for column in 0..columns {
@@ -2293,14 +3060,22 @@ fn step_repeat_offsets(p: &Value) -> Result<Vec<Vec2>> {
             }
             Ok(offsets)
         }
-        _ => Err(bad("edit.stepAndRepeat", "`rows` and `columns` must be provided together")),
+        _ => Err(bad(
+            "edit.stepAndRepeat",
+            "`rows` and `columns` must be provided together",
+        )),
     }
 }
 
 /// Existing roots to duplicate, with repeated/ancestor-overlapping targets collapsed. Returns an
 /// error before cloning the document when the copies (including group descendants) exceed the
 /// command's work budget.
-fn checked_step_repeat_targets(d: &Document, ids: &[ItemId], copies: usize, max_work: usize) -> Result<Vec<ItemId>> {
+fn checked_step_repeat_targets(
+    d: &Document,
+    ids: &[ItemId],
+    copies: usize,
+    max_work: usize,
+) -> Result<Vec<ItemId>> {
     let mut seen = HashSet::new();
     let mut located = Vec::new();
     for id in ids {
@@ -2319,7 +3094,11 @@ fn checked_step_repeat_targets(d: &Document, ids: &[ItemId], copies: usize, max_
     let roots: Vec<ItemId> = located
         .iter()
         .filter(|(_, loc)| {
-            !located.iter().any(|(_, parent)| parent.spread == loc.spread && parent.path.len() < loc.path.len() && loc.path.starts_with(&parent.path))
+            !located.iter().any(|(_, parent)| {
+                parent.spread == loc.spread
+                    && parent.path.len() < loc.path.len()
+                    && loc.path.starts_with(&parent.path)
+            })
         })
         .map(|(id, _)| *id)
         .collect();
@@ -2336,14 +3115,22 @@ fn checked_step_repeat_targets(d: &Document, ids: &[ItemId], copies: usize, max_
         .len()
         .checked_mul(copies)
         .filter(|work| *work <= max_work)
-        .ok_or_else(|| bad("edit.stepAndRepeat", format!("a single command may create at most {max_work} items, including group contents")))?;
+        .ok_or_else(|| {
+            bad(
+                "edit.stepAndRepeat",
+                format!(
+                    "a single command may create at most {max_work} items, including group contents"
+                ),
+            )
+        })?;
     Ok(roots)
 }
 
 fn step_and_repeat(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let offsets = step_repeat_offsets(p)?;
-    let ids = checked_step_repeat_targets(&s.doc()?.doc, &ids, offsets.len(), MAX_STEP_REPEAT_WORK)?;
+    let ids =
+        checked_step_repeat_targets(&s.doc()?.doc, &ids, offsets.len(), MAX_STEP_REPEAT_WORK)?;
     s.edit(|d, sel| {
         let src = d.clone();
         let mut all = ids.clone();
@@ -2365,22 +3152,40 @@ mod arrange_tests {
 
     fn fixture<const N: usize>(layers: [usize; N]) -> (Session, [ItemId; N]) {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 1, "facingPages": false})).unwrap();
+        s.execute("file.new", &json!({"pages": 1, "facingPages": false}))
+            .unwrap();
         let first = s.doc().unwrap().doc.default_layer().0;
-        let second = s.execute("layer.new", &json!({"name": "Other layer"})).unwrap()["id"].as_u64().unwrap();
+        let second = s
+            .execute("layer.new", &json!({"name": "Other layer"}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let layer_ids = [first, second];
         let mut ids = [ItemId(0); N];
         for (id, layer) in ids.iter_mut().zip(layers) {
             // Overlap objects within each layer; separate layers spatially for hit testing.
             let x = if layer == 0 { 0 } else { 200 };
-            *id = ItemId(s.execute("frame.create", &json!({"rect": [x, 0, x + 100, 100]})).unwrap()["id"].as_u64().unwrap());
-            s.execute("object.setLayer", &json!({"ids": [id.0], "layer": layer_ids[layer]})).unwrap();
+            *id = ItemId(
+                s.execute("frame.create", &json!({"rect": [x, 0, x + 100, 100]}))
+                    .unwrap()["id"]
+                    .as_u64()
+                    .unwrap(),
+            );
+            s.execute(
+                "object.setLayer",
+                &json!({"ids": [id.0], "layer": layer_ids[layer]}),
+            )
+            .unwrap();
         }
         (s, ids)
     }
 
     fn stack(s: &Session) -> Vec<ItemId> {
-        s.doc().unwrap().doc.spreads[0].items.iter().map(|it| it.id).collect()
+        s.doc().unwrap().doc.spreads[0]
+            .items
+            .iter()
+            .map(|it| it.id)
+            .collect()
     }
 
     fn snapshot(s: &Session) -> Value {
@@ -2389,9 +3194,15 @@ mod arrange_tests {
     }
 
     fn assert_items_unchanged(before: &Document, after: &Document) {
-        assert_eq!(serde_json::to_value(&before.layers).unwrap(), serde_json::to_value(&after.layers).unwrap());
+        assert_eq!(
+            serde_json::to_value(&before.layers).unwrap(),
+            serde_json::to_value(&after.layers).unwrap()
+        );
         for it in &before.spreads[0].items {
-            assert_eq!(serde_json::to_value(it).unwrap(), serde_json::to_value(after.item(it.id).unwrap()).unwrap());
+            assert_eq!(
+                serde_json::to_value(it).unwrap(),
+                serde_json::to_value(after.item(it.id).unwrap()).unwrap()
+            );
         }
     }
 
@@ -2400,14 +3211,21 @@ mod arrange_tests {
         for direction in ["forward", "backward"] {
             let (mut s, [a, x, y, b]) = fixture([0, 1, 1, 0]);
             let selected = if direction == "forward" { a } else { b };
-            s.execute("selection.set", &json!({"ids": [selected.0]})).unwrap();
+            s.execute("selection.set", &json!({"ids": [selected.0]}))
+                .unwrap();
             let before = snapshot(&s);
             let doc = s.doc().unwrap().doc.clone();
             let undo_len = s.doc().unwrap().history.undo.len();
-            let hit = |s: &Session| s.doc().unwrap().doc.hit_item(0, Point::new(50.0, 50.0), 0.0);
+            let hit = |s: &Session| {
+                s.doc()
+                    .unwrap()
+                    .doc
+                    .hit_item(0, Point::new(50.0, 50.0), 0.0)
+            };
             assert_eq!(hit(&s), Some(b));
 
-            s.execute("object.arrange", &json!({"to": direction})).unwrap();
+            s.execute("object.arrange", &json!({"to": direction}))
+                .unwrap();
             assert_eq!(stack(&s), [b, x, y, a], "{direction}");
             assert_eq!(hit(&s), Some(a), "the visible topmost object must change");
             assert_items_unchanged(&doc, &s.doc().unwrap().doc);
@@ -2428,11 +3246,11 @@ mod arrange_tests {
     fn arrange_multiple_selection_preserves_order_independent_of_input_order() {
         // Layer 0: a, b, c, d. Layer 1: x, y. Arrays name the original stack indices.
         let cases = [
-            ("forward", [0, 2], [4, 1, 0, 3, 2, 5]),  // a,b cross c as a block
+            ("forward", [0, 2], [4, 1, 0, 3, 2, 5]), // a,b cross c as a block
             ("backward", [2, 4], [2, 1, 4, 3, 0, 5]), // b,c cross a as a block
-            ("forward", [0, 4], [2, 1, 0, 3, 5, 4]),  // separate selected blocks
+            ("forward", [0, 4], [2, 1, 0, 3, 5, 4]), // separate selected blocks
             ("backward", [2, 5], [2, 1, 0, 3, 5, 4]),
-            ("forward", [4, 5], [0, 1, 2, 3, 4, 5]),  // front block is already at its endpoint
+            ("forward", [4, 5], [0, 1, 2, 3, 4, 5]), // front block is already at its endpoint
             ("backward", [0, 2], [0, 1, 2, 3, 4, 5]), // back block is already at its endpoint
         ];
         for (direction, selected, expected) in cases {
@@ -2445,8 +3263,13 @@ mod arrange_tests {
                 }
                 // Explicit command targets may contain duplicates: an item still moves once.
                 selected.push(selected[0]);
-                s.execute("object.arrange", &json!({"to": direction, "ids": selected})).unwrap();
-                assert_eq!(stack(&s), expected.map(|i| ids[i]), "{direction}, reverse={reverse}");
+                s.execute("object.arrange", &json!({"to": direction, "ids": selected}))
+                    .unwrap();
+                assert_eq!(
+                    stack(&s),
+                    expected.map(|i| ids[i]),
+                    "{direction}, reverse={reverse}"
+                );
                 assert_items_unchanged(&doc, &s.doc().unwrap().doc);
             }
         }
@@ -2465,12 +3288,14 @@ mod arrange_tests {
         for (direction, selected, expected) in cases {
             let (mut s, ids) = fixture([1, 0, 0, 0, 1]);
             let selected: Vec<_> = selected.into_iter().map(|i| ids[i].0).collect();
-            s.execute("object.arrange", &json!({"to": direction, "ids": selected})).unwrap();
+            s.execute("object.arrange", &json!({"to": direction, "ids": selected}))
+                .unwrap();
             assert_eq!(stack(&s), expected.map(|i| ids[i]));
         }
         for direction in ["forward", "backward"] {
             let (mut s, [x, a, y]) = fixture([1, 0, 1]);
-            s.execute("object.arrange", &json!({"to": direction, "ids": [a.0]})).unwrap();
+            s.execute("object.arrange", &json!({"to": direction, "ids": [a.0]}))
+                .unwrap();
             assert_eq!(stack(&s), [x, a, y], "only object on its layer");
         }
     }
@@ -2479,8 +3304,13 @@ mod arrange_tests {
     fn arrange_selection_on_two_layers_moves_each_layer_independently() {
         for direction in ["forward", "backward"] {
             let (mut s, [a, x, b, y]) = fixture([0, 1, 0, 1]);
-            let selected = if direction == "forward" { [x.0, a.0] } else { [b.0, y.0] };
-            s.execute("object.arrange", &json!({"to": direction, "ids": selected})).unwrap();
+            let selected = if direction == "forward" {
+                [x.0, a.0]
+            } else {
+                [b.0, y.0]
+            };
+            s.execute("object.arrange", &json!({"to": direction, "ids": selected}))
+                .unwrap();
             assert_eq!(stack(&s), [b, y, a, x]);
             let doc = &s.doc().unwrap().doc;
             assert_eq!(doc.hit_item(0, Point::new(50.0, 50.0), 0.0), Some(a));
@@ -2492,11 +3322,22 @@ mod arrange_tests {
     fn arrange_menu_steps_use_same_layer_order() {
         for command in ["object.bringForward", "object.sendBackward"] {
             let (mut s, [a, x, b]) = fixture([0, 1, 0]);
-            let selected = if command == "object.bringForward" { a } else { b };
-            s.execute("selection.set", &json!({"ids": [selected.0]})).unwrap();
+            let selected = if command == "object.bringForward" {
+                a
+            } else {
+                b
+            };
+            s.execute("selection.set", &json!({"ids": [selected.0]}))
+                .unwrap();
             s.execute(command, &json!({})).unwrap();
             assert_eq!(stack(&s), [b, x, a]);
-            assert_eq!(s.doc().unwrap().doc.hit_item(0, Point::new(50.0, 50.0), 0.0), Some(a));
+            assert_eq!(
+                s.doc()
+                    .unwrap()
+                    .doc
+                    .hit_item(0, Point::new(50.0, 50.0), 0.0),
+                Some(a)
+            );
         }
     }
 }
@@ -2510,27 +3351,70 @@ mod step_repeat_tests {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         let id = |v: Value| ItemId(v["id"].as_u64().unwrap());
-        let a = id(s.execute("frame.create", &json!({"rect": [0, 0, 10, 10]})).unwrap());
-        let b = id(s.execute("frame.create", &json!({"rect": [20, 0, 30, 10]})).unwrap());
-        let locked = id(s.execute("frame.create", &json!({"rect": [40, 0, 50, 10]})).unwrap());
-        s.execute("object.fill", &json!({"ids": [a.0], "swatch": "[Paper]", "tint": 0.5})).unwrap();
-        s.execute("object.stroke", &json!({"ids": [a.0], "swatch": "[Black]", "weight": 2})).unwrap();
-        s.execute("object.fill", &json!({"ids": [b.0, locked.0], "swatch": "[Black]"})).unwrap();
-        s.execute("object.stroke", &json!({"ids": [b.0, locked.0], "swatch": "[None]"})).unwrap();
-        s.execute("object.lock", &json!({"ids": [locked.0]})).unwrap();
-        s.execute("selection.set", &json!({"ids": [a.0, b.0, locked.0]})).unwrap();
+        let a = id(s
+            .execute("frame.create", &json!({"rect": [0, 0, 10, 10]}))
+            .unwrap());
+        let b = id(s
+            .execute("frame.create", &json!({"rect": [20, 0, 30, 10]}))
+            .unwrap());
+        let locked = id(s
+            .execute("frame.create", &json!({"rect": [40, 0, 50, 10]}))
+            .unwrap());
+        s.execute(
+            "object.fill",
+            &json!({"ids": [a.0], "swatch": "[Paper]", "tint": 0.5}),
+        )
+        .unwrap();
+        s.execute(
+            "object.stroke",
+            &json!({"ids": [a.0], "swatch": "[Black]", "weight": 2}),
+        )
+        .unwrap();
+        s.execute(
+            "object.fill",
+            &json!({"ids": [b.0, locked.0], "swatch": "[Black]"}),
+        )
+        .unwrap();
+        s.execute(
+            "object.stroke",
+            &json!({"ids": [b.0, locked.0], "swatch": "[None]"}),
+        )
+        .unwrap();
+        s.execute("object.lock", &json!({"ids": [locked.0]}))
+            .unwrap();
+        s.execute("selection.set", &json!({"ids": [a.0, b.0, locked.0]}))
+            .unwrap();
         let colors = |s: &Session, i: ItemId| {
             let it = s.doc().unwrap().doc.item(i).unwrap().clone();
-            (it.fill.swatch, it.fill.tint, it.stroke.swatch, it.stroke.tint)
+            (
+                it.fill.swatch,
+                it.fill.tint,
+                it.stroke.swatch,
+                it.stroke.tint,
+            )
         };
         let before = [colors(&s, a), colors(&s, b), colors(&s, locked)];
 
-        assert_eq!(s.execute("object.swapFillStroke", &json!({})).unwrap()["changed"], 2);
-        assert_eq!(colors(&s, a), ("[Black]".into(), 1.0, "[Paper]".into(), 0.5));
+        assert_eq!(
+            s.execute("object.swapFillStroke", &json!({})).unwrap()["changed"],
+            2
+        );
+        assert_eq!(
+            colors(&s, a),
+            ("[Black]".into(), 1.0, "[Paper]".into(), 0.5)
+        );
         assert_eq!(colors(&s, b), ("[None]".into(), 1.0, "[Black]".into(), 1.0));
-        assert_eq!(colors(&s, locked), before[2], "a locked object keeps its colours");
+        assert_eq!(
+            colors(&s, locked),
+            before[2],
+            "a locked object keeps its colours"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
-        assert_eq!([colors(&s, a), colors(&s, b), colors(&s, locked)], before, "one undo restores both");
+        assert_eq!(
+            [colors(&s, a), colors(&s, b), colors(&s, locked)],
+            before,
+            "one undo restores both"
+        );
 
         s.execute("object.defaultFillStroke", &json!({})).unwrap();
         for i in [a, b] {
@@ -2539,14 +3423,28 @@ mod step_repeat_tests {
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!([colors(&s, a), colors(&s, b), colors(&s, locked)], before);
 
-        s.execute("selection.set", &json!({"ids": [locked.0]})).unwrap();
-        assert!(s.execute("object.swapFillStroke", &json!({})).is_err(), "nothing unlocked to change");
+        s.execute("selection.set", &json!({"ids": [locked.0]}))
+            .unwrap();
+        assert!(
+            s.execute("object.swapFillStroke", &json!({})).is_err(),
+            "nothing unlocked to change"
+        );
     }
 
     #[test]
     fn step_repeat_validates_counts_and_offsets() {
-        assert_eq!(step_repeat_offsets(&json!({"count": MAX_STEP_REPEAT_COPIES})).unwrap().len(), MAX_STEP_REPEAT_COPIES as usize);
-        assert_eq!(step_repeat_offsets(&json!({"rows": 25, "columns": 40})).unwrap().len(), 999);
+        assert_eq!(
+            step_repeat_offsets(&json!({"count": MAX_STEP_REPEAT_COPIES}))
+                .unwrap()
+                .len(),
+            MAX_STEP_REPEAT_COPIES as usize
+        );
+        assert_eq!(
+            step_repeat_offsets(&json!({"rows": 25, "columns": 40}))
+                .unwrap()
+                .len(),
+            999
+        );
         assert!(step_repeat_offsets(&json!({"count": MAX_STEP_REPEAT_COPIES + 1})).is_err());
         assert!(step_repeat_offsets(&json!({"rows": 500, "columns": 3})).is_err());
         assert!(step_repeat_offsets(&json!({"rows": 3})).is_err());
@@ -2557,19 +3455,59 @@ mod step_repeat_tests {
     fn step_repeat_counts_unique_items_and_group_contents() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = ItemId(s.execute("frame.create", &json!({"rect": [0, 0, 10, 10]})).unwrap()["id"].as_u64().unwrap());
-        let b = ItemId(s.execute("frame.create", &json!({"rect": [20, 0, 30, 10]})).unwrap()["id"].as_u64().unwrap());
-        let c = ItemId(s.execute("frame.create", &json!({"rect": [40, 0, 50, 10]})).unwrap()["id"].as_u64().unwrap());
+        let a = ItemId(
+            s.execute("frame.create", &json!({"rect": [0, 0, 10, 10]}))
+                .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
+        let b = ItemId(
+            s.execute("frame.create", &json!({"rect": [20, 0, 30, 10]}))
+                .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
+        let c = ItemId(
+            s.execute("frame.create", &json!({"rect": [40, 0, 50, 10]}))
+                .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
         let d = &s.doc().unwrap().doc;
-        assert_eq!(checked_step_repeat_targets(d, &[a, a], 2, 2).unwrap(), vec![a]);
+        assert_eq!(
+            checked_step_repeat_targets(d, &[a, a], 2, 2).unwrap(),
+            vec![a]
+        );
         assert!(checked_step_repeat_targets(d, &[a, b, c], 1, 2).is_err());
-        assert_eq!(s.execute("edit.stepAndRepeat", &json!({"ids": [a.0, a.0], "count": 1})).unwrap()["created"], 1);
+        assert_eq!(
+            s.execute(
+                "edit.stepAndRepeat",
+                &json!({"ids": [a.0, a.0], "count": 1})
+            )
+            .unwrap()["created"],
+            1
+        );
 
-        let group = ItemId(s.execute("object.group", &json!({"ids": [a.0, b.0]})).unwrap()["id"].as_u64().unwrap());
+        let group = ItemId(
+            s.execute("object.group", &json!({"ids": [a.0, b.0]}))
+                .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
         let d = &s.doc().unwrap().doc;
-        assert_eq!(checked_step_repeat_targets(d, &[group, group, a], 1, 3).unwrap(), vec![group]);
+        assert_eq!(
+            checked_step_repeat_targets(d, &[group, group, a], 1, 3).unwrap(),
+            vec![group]
+        );
         assert!(checked_step_repeat_targets(d, &[group, a], 1, 2).is_err());
-        assert_eq!(s.execute("edit.stepAndRepeat", &json!({"ids": [group.0, a.0], "count": 1})).unwrap()["created"], 1);
+        assert_eq!(
+            s.execute(
+                "edit.stepAndRepeat",
+                &json!({"ids": [group.0, a.0], "count": 1})
+            )
+            .unwrap()["created"],
+            1
+        );
     }
 }
 
@@ -2581,19 +3519,43 @@ mod polygon_tests {
     fn polygon_settings_make_stars() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("tool.polygonSettings", &json!({"sides": 5, "starInset": 50})).unwrap();
-        let id = s.execute("frame.create", &json!({"rect": [100, 100, 200, 200], "shape": "polygon"})).unwrap()["id"].as_u64().unwrap();
+        s.execute(
+            "tool.polygonSettings",
+            &json!({"sides": 5, "starInset": 50}),
+        )
+        .unwrap();
+        let id = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [100, 100, 200, 200], "shape": "polygon"}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let d = &s.doc().unwrap().doc;
         let it = d.item(ItemId(id)).unwrap();
         // A 5-point star has 10 vertices, fitted to the rect.
         assert_eq!(it.path.subpaths[0].anchors.len(), 10);
         let b = it.bounds();
-        assert!((b.x0 - 100.0).abs() < 1e-6 && (b.y1 - 200.0).abs() < 1e-6, "{b:?}");
+        assert!(
+            (b.x0 - 100.0).abs() < 1e-6 && (b.y1 - 200.0).abs() < 1e-6,
+            "{b:?}"
+        );
         // Explicit parameters win over the settings.
-        let id = s.execute("frame.create", &json!({"rect": [0, 0, 50, 50], "shape": "polygon", "sides": 3, "starInset": 0})).unwrap()["id"]
+        let id = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [0, 0, 50, 50], "shape": "polygon", "sides": 3, "starInset": 0}),
+            )
+            .unwrap()["id"]
             .as_u64()
             .unwrap();
-        assert_eq!(s.doc().unwrap().doc.item(ItemId(id)).unwrap().path.subpaths[0].anchors.len(), 3);
+        assert_eq!(
+            s.doc().unwrap().doc.item(ItemId(id)).unwrap().path.subpaths[0]
+                .anchors
+                .len(),
+            3
+        );
     }
 }
 
@@ -2605,22 +3567,31 @@ mod scale_tests {
     fn scale_strokes_and_dimensions_with_stroke() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [100, 100, 200, 150]})).unwrap();
+        let r = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 150]}))
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        s.execute("object.stroke", &json!({"weight": 4, "swatch": "[Black]"})).unwrap();
+        s.execute("object.stroke", &json!({"weight": 4, "swatch": "[Black]"}))
+            .unwrap();
         let weight = |s: &Session| s.doc().unwrap().doc.item(id).unwrap().stroke.weight;
         let bounds = |s: &Session| s.doc().unwrap().doc.item(id).unwrap().bounds();
         s.execute("transform.scale", &json!({"sx": 2.0})).unwrap();
         assert_eq!(weight(&s), 8.0);
         assert_eq!(bounds(&s), Rect::new(50.0, 75.0, 250.0, 175.0));
-        s.execute("prefs.set", &json!({"scaleStrokes": false})).unwrap();
+        s.execute("prefs.set", &json!({"scaleStrokes": false}))
+            .unwrap();
         s.execute("transform.scale", &json!({"sx": 0.5})).unwrap();
         assert_eq!(weight(&s), 8.0);
         assert!(s.execute("prefs.set", &json!({"nope": 1})).is_err());
         // Width 108 with an 8 pt centred stroke: the path is 100 wide.
         s.execute("transform.set", &json!({"width": 108})).unwrap();
-        assert!((bounds(&s).width() - 100.0).abs() < 1e-9, "{:?}", bounds(&s));
-        s.execute("prefs.set", &json!({"dimensionsIncludeStroke": false})).unwrap();
+        assert!(
+            (bounds(&s).width() - 100.0).abs() < 1e-9,
+            "{:?}",
+            bounds(&s)
+        );
+        s.execute("prefs.set", &json!({"dimensionsIncludeStroke": false}))
+            .unwrap();
         s.execute("transform.set", &json!({"width": 120})).unwrap();
         assert!((bounds(&s).width() - 120.0).abs() < 1e-9);
     }
@@ -2634,12 +3605,19 @@ mod gradient_tests {
     fn gradient_tool_vector_and_unnamed_gradients() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [100, 100, 300, 200]})).unwrap();
+        let r = s
+            .execute("frame.create", &json!({"rect": [100, 100, 300, 200]}))
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
         let swatches = |s: &Session| s.doc().unwrap().doc.swatches.len();
         let n = swatches(&s);
         // The default White→Black gradient, dragged from the left edge to the middle.
-        let r = s.execute("object.gradient", &json!({"from": [100, 150], "to": [200, 150]})).unwrap();
+        let r = s
+            .execute(
+                "object.gradient",
+                &json!({"from": [100, 150], "to": [200, 150]}),
+            )
+            .unwrap();
         assert_eq!(r["kind"], "linear");
         assert_eq!(r["stops"][1]["color"], "#000000");
         assert_eq!(swatches(&s), n + 1, "an unnamed gradient");
@@ -2648,7 +3626,12 @@ mod gradient_tests {
         // Same gradient again: no new swatch. Reverse / radial: a new unnamed gradient.
         s.execute("object.gradient", &json!({})).unwrap();
         assert_eq!(swatches(&s), n + 1);
-        let r = s.execute("object.gradient", &json!({"kind": "radial", "reverse": true})).unwrap();
+        let r = s
+            .execute(
+                "object.gradient",
+                &json!({"kind": "radial", "reverse": true}),
+            )
+            .unwrap();
         assert_eq!(r["kind"], "radial");
         assert_eq!(r["stops"][0]["color"], "#000000");
         let r = s
@@ -2659,7 +3642,13 @@ mod gradient_tests {
             .unwrap();
         assert_eq!(r["stops"][1]["location"], 60.0);
         assert_eq!(r["stops"][1]["midpoint"], 30.0);
-        assert!(s.execute("object.gradient", &json!({"stops": [{"location": 0, "color": "#ff0000"}]})).is_err());
+        assert!(
+            s.execute(
+                "object.gradient",
+                &json!({"stops": [{"location": 0, "color": "#ff0000"}]})
+            )
+            .is_err()
+        );
         // Scaling moves the vector with the shape.
         s.execute("transform.scale", &json!({"sx": 2.0})).unwrap();
         assert_eq!(fill(&s).gradient_vector, Some([0.0, 150.0, 200.0, 150.0]));
@@ -2678,15 +3667,23 @@ mod again_tests {
     fn transform_again_sequence_and_clear() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let id = ItemId(s.execute("frame.create", &json!({"rect": [100, 100, 200, 150]})).unwrap()["id"].as_u64().unwrap());
+        let id = ItemId(
+            s.execute("frame.create", &json!({"rect": [100, 100, 200, 150]}))
+                .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
         let b = |s: &Session| s.doc().unwrap().doc.item(id).unwrap().bounds();
         assert!(s.execute("transform.again", &json!({})).is_err());
-        s.execute("transform.move", &json!({"dx": 10, "dy": 0})).unwrap();
+        s.execute("transform.move", &json!({"dx": 10, "dy": 0}))
+            .unwrap();
         s.execute("transform.again", &json!({})).unwrap();
         assert_eq!(b(&s).x0, 120.0);
-        s.execute("transform.rotate", &json!({"angle": 90})).unwrap();
+        s.execute("transform.rotate", &json!({"angle": 90}))
+            .unwrap();
         // Sequence: move 10 then rotate 90 again.
-        s.execute("transform.again", &json!({"sequence": true})).unwrap();
+        s.execute("transform.again", &json!({"sequence": true}))
+            .unwrap();
         // The 100×50 frame is now 180° round from where it started: still 100 wide.
         assert!((b(&s).width() - 100.0).abs() < 1e-6, "{:?}", b(&s));
         // Clear Transformations: 180° in total → upright again, same centre.
@@ -2698,11 +3695,15 @@ mod again_tests {
         assert!((it.bounds().width() - 100.0).abs() < 1e-6);
         // Step and repeat via Transform Again on a moved copy.
         let n = s.doc().unwrap().doc.spreads[0].items.len();
-        s.execute("transform.move", &json!({"dx": 0, "dy": 60, "copy": true})).unwrap();
+        s.execute("transform.move", &json!({"dx": 0, "dy": 60, "copy": true}))
+            .unwrap();
         s.execute("transform.again", &json!({})).unwrap();
         let d = &s.doc().unwrap().doc;
         assert_eq!(d.spreads[0].items.len(), n + 2);
-        let ys: Vec<f64> = d.spreads[0].items[n..].iter().map(|i| i.bounds().y0.round()).collect();
+        let ys: Vec<f64> = d.spreads[0].items[n..]
+            .iter()
+            .map(|i| i.bounds().y0.round())
+            .collect();
         assert_eq!(ys[1] - ys[0], 60.0, "{ys:?}");
     }
 }
@@ -2715,14 +3716,42 @@ mod label_tests {
     fn script_label_alt_text_and_group_transparency() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [10, 10, 50, 50]})).unwrap()["id"].as_u64().unwrap();
-        let b = s.execute("frame.create", &json!({"rect": [60, 10, 90, 50]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("object.label", &json!({"label": "price", "ids": [a, b]})).unwrap();
-        s.execute("object.altText", &json!({"text": "A red square", "ids": [a]})).unwrap();
-        assert_eq!(s.execute("object.findByLabel", &json!({"label": "price"})).unwrap()["ids"], json!([a, b]));
-        assert_eq!(s.execute("object.findByLabel", &json!({"label": "nope"})).unwrap()["ids"], json!([]));
-        assert_eq!(s.doc().unwrap().doc.item(ItemId(a)).unwrap().alt_text, "A red square");
-        s.execute("object.transparencyGroup", &json!({"knockout": true, "ids": [b]})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [10, 10, 50, 50]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let b = s
+            .execute("frame.create", &json!({"rect": [60, 10, 90, 50]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("object.label", &json!({"label": "price", "ids": [a, b]}))
+            .unwrap();
+        s.execute(
+            "object.altText",
+            &json!({"text": "A red square", "ids": [a]}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.execute("object.findByLabel", &json!({"label": "price"}))
+                .unwrap()["ids"],
+            json!([a, b])
+        );
+        assert_eq!(
+            s.execute("object.findByLabel", &json!({"label": "nope"}))
+                .unwrap()["ids"],
+            json!([])
+        );
+        assert_eq!(
+            s.doc().unwrap().doc.item(ItemId(a)).unwrap().alt_text,
+            "A red square"
+        );
+        s.execute(
+            "object.transparencyGroup",
+            &json!({"knockout": true, "ids": [b]}),
+        )
+        .unwrap();
         let it = s.doc().unwrap().doc.item(ItemId(b)).unwrap().clone();
         assert!(it.knockout && !it.isolate);
         s.execute("edit.undo", &json!({})).unwrap();
@@ -2738,16 +3767,29 @@ mod light_tests {
     fn global_light_moves_shadows_that_use_it() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [10, 10, 50, 50]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("object.dropShadow", &json!({"on": true, "angle": 45, "ids": [a]})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [10, 10, 50, 50]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "object.dropShadow",
+            &json!({"on": true, "angle": 45, "ids": [a]}),
+        )
+        .unwrap();
         let angle = |s: &Session| {
             let d = &s.doc().unwrap().doc;
             let ds = &d.item(ItemId(a)).unwrap().effects.drop_shadow;
             d.light_angle(ds.angle, ds.global_light)
         };
-        s.execute("object.globalLight", &json!({"angle": 200})).unwrap();
+        s.execute("object.globalLight", &json!({"angle": 200}))
+            .unwrap();
         assert_eq!(angle(&s), 45.0, "own angle");
-        s.execute("object.dropShadow", &json!({"globalLight": true, "on": true, "ids": [a]})).unwrap();
+        s.execute(
+            "object.dropShadow",
+            &json!({"globalLight": true, "on": true, "ids": [a]}),
+        )
+        .unwrap();
         assert_eq!(angle(&s), -160.0, "normalised to -180..180");
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(angle(&s), 45.0);
@@ -2762,30 +3804,70 @@ mod transform_values_tests {
     fn absolute_rotation_shear_and_totals() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [100, 100, 200, 150]})).unwrap()["id"].as_u64().unwrap();
-        let info = |s: &mut Session, id: u64| s.execute("transform.info", &json!({"ids": [id]})).unwrap();
-        let centre = |s: &Session| s.doc().unwrap().doc.item(ItemId(a)).unwrap().bounds().center();
+        let a = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 150]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let info =
+            |s: &mut Session, id: u64| s.execute("transform.info", &json!({"ids": [id]})).unwrap();
+        let centre = |s: &Session| {
+            s.doc()
+                .unwrap()
+                .doc
+                .item(ItemId(a))
+                .unwrap()
+                .bounds()
+                .center()
+        };
         let c0 = centre(&s);
-        s.execute("transform.set", &json!({"rotation": 30, "ids": [a]})).unwrap();
-        s.execute("transform.set", &json!({"rotation": 30, "ids": [a]})).unwrap();
-        assert_eq!(info(&mut s, a)["rotation"], 30.0, "absolute, not cumulative");
-        assert!((centre(&s) - c0).hypot() < 1e-9, "about the centre reference point");
-        s.execute("transform.set", &json!({"shear": 20, "ids": [a]})).unwrap();
+        s.execute("transform.set", &json!({"rotation": 30, "ids": [a]}))
+            .unwrap();
+        s.execute("transform.set", &json!({"rotation": 30, "ids": [a]}))
+            .unwrap();
+        assert_eq!(
+            info(&mut s, a)["rotation"],
+            30.0,
+            "absolute, not cumulative"
+        );
+        assert!(
+            (centre(&s) - c0).hypot() < 1e-9,
+            "about the centre reference point"
+        );
+        s.execute("transform.set", &json!({"shear": 20, "ids": [a]}))
+            .unwrap();
         let i = info(&mut s, a);
-        assert_eq!((i["rotation"].as_f64(), i["shear"].as_f64()), (Some(30.0), Some(20.0)));
+        assert_eq!(
+            (i["rotation"].as_f64(), i["shear"].as_f64()),
+            (Some(30.0), Some(20.0))
+        );
         assert_eq!(i["scaleX"], 100.0);
         // Nested: a group rotated 10° around the rotated frame.
-        let b = s.execute("frame.create", &json!({"rect": [300, 100, 350, 150]})).unwrap()["id"].as_u64().unwrap();
-        let g = s.execute("object.group", &json!({"ids": [a, b]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("transform.rotate", &json!({"angle": 10, "ids": [g]})).unwrap();
+        let b = s
+            .execute("frame.create", &json!({"rect": [300, 100, 350, 150]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let g = s.execute("object.group", &json!({"ids": [a, b]})).unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("transform.rotate", &json!({"angle": 10, "ids": [g]}))
+            .unwrap();
         assert_eq!(info(&mut s, a)["rotation"], 40.0, "totals");
-        s.execute("prefs.set", &json!({"transformationsAreTotals": false})).unwrap();
+        s.execute("prefs.set", &json!({"transformationsAreTotals": false}))
+            .unwrap();
         assert_eq!(info(&mut s, a)["rotation"], 30.0, "relative to the group");
-        s.execute("transform.set", &json!({"rotation": 0, "shear": 0, "ids": [a]})).unwrap();
-        s.execute("prefs.set", &json!({"transformationsAreTotals": true})).unwrap();
+        s.execute(
+            "transform.set",
+            &json!({"rotation": 0, "shear": 0, "ids": [a]}),
+        )
+        .unwrap();
+        s.execute("prefs.set", &json!({"transformationsAreTotals": true}))
+            .unwrap();
         assert_eq!(info(&mut s, a)["rotation"], 10.0);
         // Scale is relative to what's shown: a frame always shows 100%.
-        s.execute("transform.set", &json!({"scaleX": 200, "ids": [b]})).unwrap();
+        s.execute("transform.set", &json!({"scaleX": 200, "ids": [b]}))
+            .unwrap();
         assert_eq!(info(&mut s, b)["scaleX"], 100.0);
     }
 }
@@ -2798,14 +3880,29 @@ mod attributes_tests {
     fn attributes_panel_flags() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [10, 10, 50, 50]})).unwrap()["id"].as_u64().unwrap();
-        s.execute("object.attributes", &json!({"overprintFill": true, "overprintGap": true, "nonprinting": true})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [10, 10, 50, 50]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "object.attributes",
+            &json!({"overprintFill": true, "overprintGap": true, "nonprinting": true}),
+        )
+        .unwrap();
         let it = s.doc().unwrap().doc.item(ItemId(a)).unwrap().clone();
-        assert!(it.fill.overprint && it.stroke.gap_overprint && it.nonprinting && !it.stroke.overprint);
+        assert!(
+            it.fill.overprint && it.stroke.gap_overprint && it.nonprinting && !it.stroke.overprint
+        );
         // IDML keeps them.
         let bytes = designcraft_idml::export_idml(&s.doc().unwrap().doc);
         let back = designcraft_idml::import_idml(&bytes).unwrap();
-        let it = back.spreads.iter().flat_map(|sp| sp.items.iter()).find(|i| i.fill.overprint).expect("overprint fill survives");
+        let it = back
+            .spreads
+            .iter()
+            .flat_map(|sp| sp.items.iter())
+            .find(|i| i.fill.overprint)
+            .expect("overprint fill survives");
         assert!(it.stroke.gap_overprint);
     }
 }
@@ -2818,19 +3915,46 @@ mod fitting_tests {
     fn separations_come_from_source_colours() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let c = s.execute("frame.create", &json!({"rect": [100, 100, 200, 200]})).unwrap()["id"].clone();
-        s.execute("object.fill", &json!({"swatch": "C=100 M=0 Y=0 K=0", "ids": [c]})).unwrap();
-        let k = s.execute("frame.create", &json!({"rect": [300, 100, 400, 200]})).unwrap()["id"].clone();
-        s.execute("object.fill", &json!({"swatch": "[Black]", "ids": [k]})).unwrap();
+        let c = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 200]}))
+            .unwrap()["id"]
+            .clone();
+        s.execute(
+            "object.fill",
+            &json!({"swatch": "C=100 M=0 Y=0 K=0", "ids": [c]}),
+        )
+        .unwrap();
+        let k = s
+            .execute("frame.create", &json!({"rect": [300, 100, 400, 200]}))
+            .unwrap()["id"]
+            .clone();
+        s.execute("object.fill", &json!({"swatch": "[Black]", "ids": [k]}))
+            .unwrap();
         let d = s.doc().unwrap().doc.clone();
         let plate = |p: u8| {
             let mut rr = designcraft_render::Renderer::new();
             rr.threads = 0;
-            rr.render_page(&d, &s.cache, 0, 1.0, false, &designcraft_render::RenderOptions { plate: Some(p), ..Default::default() }).unwrap()
+            rr.render_page(
+                &d,
+                &s.cache,
+                0,
+                1.0,
+                false,
+                &designcraft_render::RenderOptions {
+                    plate: Some(p),
+                    ..Default::default()
+                },
+            )
+            .unwrap()
         };
         let (cyan, black) = (plate(0), plate(3));
         // Cyan ink only on the cyan frame; black ink only on the black one (no rich-black guess).
-        assert!(cyan.pixel(150, 150)[0] < 10 && cyan.pixel(350, 150)[0] > 245, "{:?} {:?}", cyan.pixel(150, 150), cyan.pixel(350, 150));
+        assert!(
+            cyan.pixel(150, 150)[0] < 10 && cyan.pixel(350, 150)[0] > 245,
+            "{:?} {:?}",
+            cyan.pixel(150, 150),
+            cyan.pixel(350, 150)
+        );
         assert!(black.pixel(350, 150)[0] < 10 && black.pixel(150, 150)[0] > 245);
         assert!(cyan.pixel(20, 20)[0] > 245, "paper has no ink");
     }
@@ -2839,51 +3963,119 @@ mod fitting_tests {
     fn inner_glow_bevel_and_satin_change_the_inside() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let id = s.execute("frame.create", &json!({"rect": [100, 100, 300, 300]})).unwrap()["id"].clone();
-        s.execute("object.fill", &json!({"swatch": "C=100 M=0 Y=0 K=0", "ids": [id]})).unwrap();
+        let id = s
+            .execute("frame.create", &json!({"rect": [100, 100, 300, 300]}))
+            .unwrap()["id"]
+            .clone();
+        s.execute(
+            "object.fill",
+            &json!({"swatch": "C=100 M=0 Y=0 K=0", "ids": [id]}),
+        )
+        .unwrap();
         let shot = |s: &Session| {
             let d = s.doc().unwrap().doc.clone();
             let mut rr = designcraft_render::Renderer::new();
             rr.threads = 0;
-            rr.render_page(&d, &s.cache, 0, 1.0, false, &Default::default()).unwrap()
+            rr.render_page(&d, &s.cache, 0, 1.0, false, &Default::default())
+                .unwrap()
         };
         let plain = shot(&s);
         // Inner glow (paper colour, screened): the edge lightens, the centre doesn't.
-        s.execute("object.innerGlow", &json!({"ids": [id], "on": true, "size": 20})).unwrap();
+        s.execute(
+            "object.innerGlow",
+            &json!({"ids": [id], "on": true, "size": 20}),
+        )
+        .unwrap();
         let g = shot(&s);
-        assert!(g.pixel(103, 200)[0] > plain.pixel(103, 200)[0] + 30, "edge lighter");
+        assert!(
+            g.pixel(103, 200)[0] > plain.pixel(103, 200)[0] + 30,
+            "edge lighter"
+        );
         assert_eq!(g.pixel(200, 200), plain.pixel(200, 200));
-        s.execute("object.innerGlow", &json!({"ids": [id], "on": false})).unwrap();
+        s.execute("object.innerGlow", &json!({"ids": [id], "on": false}))
+            .unwrap();
         // Bevel: lit and shaded sides differ.
-        s.execute("object.bevel", &json!({"ids": [id], "on": true, "size": 20, "angle": 120, "globalLight": false})).unwrap();
+        s.execute(
+            "object.bevel",
+            &json!({"ids": [id], "on": true, "size": 20, "angle": 120, "globalLight": false}),
+        )
+        .unwrap();
         let b = shot(&s);
         let (top_left, bottom_right) = (b.pixel(104, 104), b.pixel(296, 296));
-        assert!(top_left[1] as i32 > bottom_right[1] as i32 + 30, "{top_left:?} {bottom_right:?}");
-        s.execute("object.bevel", &json!({"ids": [id], "on": false})).unwrap();
+        assert!(
+            top_left[1] as i32 > bottom_right[1] as i32 + 30,
+            "{top_left:?} {bottom_right:?}"
+        );
+        s.execute("object.bevel", &json!({"ids": [id], "on": false}))
+            .unwrap();
         // Satin darkens somewhere inside.
-        s.execute("object.satin", &json!({"ids": [id], "on": true, "distance": 40, "size": 10})).unwrap();
+        s.execute(
+            "object.satin",
+            &json!({"ids": [id], "on": true, "distance": 40, "size": 10}),
+        )
+        .unwrap();
         let st = shot(&s);
         let darker = (110..290)
             .step_by(10)
             .flat_map(|x| (110..290).step_by(10).map(move |y| (x, y)))
             .any(|(x, y)| (st.pixel(x, y)[1] as i32) < plain.pixel(x, y)[1] as i32 - 30);
         assert!(darker);
-        s.execute("object.satin", &json!({"ids": [id], "on": false})).unwrap();
+        s.execute("object.satin", &json!({"ids": [id], "on": false}))
+            .unwrap();
         // Directional feather: only the left edge fades.
-        s.execute("object.directionalFeather", &json!({"ids": [id], "on": true, "widths": [0, 40, 0, 0]})).unwrap();
+        s.execute(
+            "object.directionalFeather",
+            &json!({"ids": [id], "on": true, "widths": [0, 40, 0, 0]}),
+        )
+        .unwrap();
         let df = shot(&s);
-        assert!(df.pixel(102, 200)[0] > 200, "left edge faded to paper: {:?}", df.pixel(102, 200));
-        assert_eq!(df.pixel(298, 200), plain.pixel(298, 200), "right edge untouched");
+        assert!(
+            df.pixel(102, 200)[0] > 200,
+            "left edge faded to paper: {:?}",
+            df.pixel(102, 200)
+        );
+        assert_eq!(
+            df.pixel(298, 200),
+            plain.pixel(298, 200),
+            "right edge untouched"
+        );
         // A knockout group exports as an image too.
-        let other = s.execute("frame.create", &json!({"rect": [400, 100, 450, 150]})).unwrap()["id"].clone();
-        let other2 = s.execute("frame.create", &json!({"rect": [420, 120, 470, 170]})).unwrap()["id"].clone();
-        let g = s.execute("object.group", &json!({"ids": [other, other2]})).unwrap()["id"].clone();
-        s.execute("object.transparencyGroup", &json!({"ids": [g], "knockout": true})).unwrap();
+        let other = s
+            .execute("frame.create", &json!({"rect": [400, 100, 450, 150]}))
+            .unwrap()["id"]
+            .clone();
+        let other2 = s
+            .execute("frame.create", &json!({"rect": [420, 120, 470, 170]}))
+            .unwrap()["id"]
+            .clone();
+        let g = s
+            .execute("object.group", &json!({"ids": [other, other2]}))
+            .unwrap()["id"]
+            .clone();
+        s.execute(
+            "object.transparencyGroup",
+            &json!({"ids": [g], "knockout": true}),
+        )
+        .unwrap();
         let r = s.execute("file.exportPdf", &json!({})).unwrap();
-        assert!(r["warnings"].as_array().unwrap().iter().any(|w| w.as_str().unwrap().contains("2 object(s)")), "{r}");
+        assert!(
+            r["warnings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|w| w.as_str().unwrap().contains("2 object(s)")),
+            "{r}"
+        );
         // PDF export carries effects (as an image of the object).
         let r = s.execute("file.exportPdf", &json!({})).unwrap();
-        assert!(r["warnings"].as_array().unwrap().iter().any(|w| w.as_str().unwrap().contains("soft effects")), "{r}");
+        assert!(
+            r["warnings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|w| w.as_str().unwrap().contains("soft effects")),
+            "{r}"
+        );
         let bytes = super::super::file::base64_decode(r["base64"].as_str().unwrap());
         assert!(String::from_utf8_lossy(&bytes).contains("/Subtype/Image"));
     }
@@ -2892,12 +4084,26 @@ mod fitting_tests {
     fn live_distribute_spreads_objects_without_resizing() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [100, 100, 120, 120]})).unwrap()["id"].as_u64().unwrap();
-        let b = s.execute("frame.create", &json!({"rect": [180, 100, 200, 120]})).unwrap()["id"].as_u64().unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [100, 100, 120, 120]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let b = s
+            .execute("frame.create", &json!({"rect": [180, 100, 200, 120]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("transform.resize", &json!({"ids": [a, b], "from": [100, 100, 200, 120], "to": [100, 100, 300, 120], "distribute": true})).unwrap();
         let d = &s.doc().unwrap().doc;
-        let (ra, rb) = (d.item(ItemId(a)).unwrap().bounds(), d.item(ItemId(b)).unwrap().bounds());
-        assert!((ra.width() - 20.0).abs() < 1e-9 && (rb.width() - 20.0).abs() < 1e-9, "sizes kept");
+        let (ra, rb) = (
+            d.item(ItemId(a)).unwrap().bounds(),
+            d.item(ItemId(b)).unwrap().bounds(),
+        );
+        assert!(
+            (ra.width() - 20.0).abs() < 1e-9 && (rb.width() - 20.0).abs() < 1e-9,
+            "sizes kept"
+        );
         assert!((ra.center().x - 120.0).abs() < 1e-9, "{ra:?}");
         assert!((rb.center().x - 280.0).abs() < 1e-9, "{rb:?}");
     }
@@ -2907,30 +4113,74 @@ mod fitting_tests {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         // A 40×20 pt image placed into a 200×200 frame.
-        let png = designcraft_render::Rendered { width: 40, height: 20, pixels: vec![200; 40 * 20 * 4] }.to_png();
-        let f = s.execute("frame.create", &json!({"rect": [100, 100, 300, 300]})).unwrap()["id"].as_u64().unwrap();
+        let png = designcraft_render::Rendered {
+            width: 40,
+            height: 20,
+            pixels: vec![200; 40 * 20 * 4],
+        }
+        .to_png();
+        let f = s
+            .execute("frame.create", &json!({"rect": [100, 100, 300, 300]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("file.place", &json!({"base64": super::super::file::base64_encode(&png), "name": "a.png", "frame": f})).unwrap();
         let content = |s: &Session| {
             let it = s.doc().unwrap().doc.item(ItemId(f)).unwrap().clone();
-            let Content::Graphic(g) = &it.content else { panic!("graphic") };
-            it.xf.transform_rect_bbox(g.xf.transform_rect_bbox(Rect::new(0.0, 0.0, g.size.0, g.size.1)))
+            let Content::Graphic(g) = &it.content else {
+                panic!("graphic")
+            };
+            it.xf.transform_rect_bbox(
+                g.xf.transform_rect_bbox(Rect::new(0.0, 0.0, g.size.0, g.size.1)),
+            )
         };
         // Fit proportionally from the top-left: 200 wide, 100 high, against the top.
-        s.execute("object.fittingOptions", &json!({"ids": [f], "fitting": "fitProportionally", "align": 0})).unwrap();
+        s.execute(
+            "object.fittingOptions",
+            &json!({"ids": [f], "fitting": "fitProportionally", "align": 0}),
+        )
+        .unwrap();
         let c = content(&s);
-        assert!((c.x0 - 100.0).abs() < 1e-6 && (c.y0 - 100.0).abs() < 1e-6 && (c.width() - 200.0).abs() < 1e-6, "{c:?}");
+        assert!(
+            (c.x0 - 100.0).abs() < 1e-6
+                && (c.y0 - 100.0).abs() < 1e-6
+                && (c.width() - 200.0).abs() < 1e-6,
+            "{c:?}"
+        );
         // Crop 10 pt on every side and fit again: the content spreads past the frame.
-        s.execute("object.fittingOptions", &json!({"ids": [f], "fitting": "fitProportionally", "crop": 10, "align": 4})).unwrap();
+        s.execute(
+            "object.fittingOptions",
+            &json!({"ids": [f], "fitting": "fitProportionally", "crop": 10, "align": 4}),
+        )
+        .unwrap();
         let c = content(&s);
         assert!((c.width() - 220.0).abs() < 1e-6, "{c:?}");
         // Auto-fit: resizing the frame refits the content.
-        s.execute("object.fittingOptions", &json!({"ids": [f], "autoFit": true, "fitting": "fillProportionally", "crop": 0})).unwrap();
-        s.execute("transform.resize", &json!({"from": [100, 100, 300, 300], "to": [100, 100, 500, 300], "ids": [f]})).unwrap();
+        s.execute(
+            "object.fittingOptions",
+            &json!({"ids": [f], "autoFit": true, "fitting": "fillProportionally", "crop": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "transform.resize",
+            &json!({"from": [100, 100, 300, 300], "to": [100, 100, 500, 300], "ids": [f]}),
+        )
+        .unwrap();
         let c = content(&s);
-        assert!((c.width() - 400.0).abs() < 1e-6, "fills the wider frame: {c:?}");
+        assert!(
+            (c.width() - 400.0).abs() < 1e-6,
+            "fills the wider frame: {c:?}"
+        );
         // IDML keeps the options.
-        let back = designcraft_idml::import_idml(&designcraft_idml::export_idml(&s.doc().unwrap().doc)).unwrap();
-        let g = back.spreads.iter().flat_map(|sp| sp.items.iter()).find_map(|i| i.graphic().cloned()).unwrap();
+        let back =
+            designcraft_idml::import_idml(&designcraft_idml::export_idml(&s.doc().unwrap().doc))
+                .unwrap();
+        let g = back
+            .spreads
+            .iter()
+            .flat_map(|sp| sp.items.iter())
+            .find_map(|i| i.graphic().cloned())
+            .unwrap();
         assert_eq!(g.auto_fit, designcraft_doc::Fitting::FillProportionally);
     }
 }
@@ -2946,11 +4196,24 @@ mod primary_frame_tests {
         let r = s.execute("frame.create", &json!({"rect": [72, 72, 300, 300], "content": "text", "text": "x", "caret": false})).unwrap();
         let sid = r["story"].as_u64().unwrap();
         s.execute("object.primaryTextFrame", &json!({})).unwrap();
-        assert_eq!(s.doc().unwrap().doc.settings.primary_story.map(|x| x.0), Some(sid));
+        assert_eq!(
+            s.doc().unwrap().doc.settings.primary_story.map(|x| x.0),
+            Some(sid)
+        );
         s.execute("object.primaryTextFrame", &json!({})).unwrap();
-        assert_eq!(s.doc().unwrap().doc.settings.primary_story, None, "toggles off");
-        let g = s.execute("frame.create", &json!({"rect": [0, 0, 10, 10]})).unwrap()["id"].clone();
-        assert!(s.execute("object.primaryTextFrame", &json!({"ids": [g]})).is_err());
+        assert_eq!(
+            s.doc().unwrap().doc.settings.primary_story,
+            None,
+            "toggles off"
+        );
+        let g = s
+            .execute("frame.create", &json!({"rect": [0, 0, 10, 10]}))
+            .unwrap()["id"]
+            .clone();
+        assert!(
+            s.execute("object.primaryTextFrame", &json!({"ids": [g]}))
+                .is_err()
+        );
     }
 }
 
@@ -2972,16 +4235,38 @@ mod clipping_tests {
                 }
             }
         }
-        let png = designcraft_render::Rendered { width: 40, height: 40, pixels: px }.to_png();
-        let f = s.execute("frame.create", &json!({"rect": [100, 100, 140, 140]})).unwrap()["id"].as_u64().unwrap();
+        let png = designcraft_render::Rendered {
+            width: 40,
+            height: 40,
+            pixels: px,
+        }
+        .to_png();
+        let f = s
+            .execute("frame.create", &json!({"rect": [100, 100, 140, 140]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("file.place", &json!({"base64": super::super::file::base64_encode(&png), "name": "disc.png", "frame": f})).unwrap();
-        s.execute("object.clippingPath", &json!({"ids": [f], "tolerance": 0.5})).unwrap();
+        s.execute(
+            "object.clippingPath",
+            &json!({"ids": [f], "tolerance": 0.5}),
+        )
+        .unwrap();
         let it = s.doc().unwrap().doc.item(ItemId(f)).unwrap().clone();
         let b = it.bounds();
         // The disc spans 5..35 of the 40 px image placed at 100..140.
-        assert!((b.x0 - 105.0).abs() < 1.5 && (b.x1 - 135.0).abs() < 1.5, "{b:?}");
+        assert!(
+            (b.x0 - 105.0).abs() < 1.5 && (b.x1 - 135.0).abs() < 1.5,
+            "{b:?}"
+        );
         assert_eq!(it.shape, Shape::Path);
-        assert!(s.execute("object.clippingPath", &json!({"ids": [f], "threshold": 255})).is_err());
+        assert!(
+            s.execute(
+                "object.clippingPath",
+                &json!({"ids": [f], "threshold": 255})
+            )
+            .is_err()
+        );
     }
 }
 
@@ -2993,14 +4278,35 @@ mod gap_tests {
     fn moving_a_gap_resizes_both_sides() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [100, 100, 200, 300]})).unwrap()["id"].as_u64().unwrap();
-        let b = s.execute("frame.create", &json!({"rect": [220, 100, 320, 300]})).unwrap()["id"].as_u64().unwrap();
-        let r = s.execute("gap.move", &json!({"at": [210, 200], "delta": 30})).unwrap();
-        assert_eq!((r["axis"].as_str(), r["changed"].as_u64()), (Some("x"), Some(2)));
+        let a = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 300]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let b = s
+            .execute("frame.create", &json!({"rect": [220, 100, 320, 300]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let r = s
+            .execute("gap.move", &json!({"at": [210, 200], "delta": 30}))
+            .unwrap();
+        assert_eq!(
+            (r["axis"].as_str(), r["changed"].as_u64()),
+            (Some("x"), Some(2))
+        );
         let bb = |s: &Session, id: u64| s.doc().unwrap().doc.item(ItemId(id)).unwrap().bounds();
-        assert_eq!((bb(&s, a).x1, bb(&s, b).x0), (230.0, 250.0), "the gap moved, its width kept");
+        assert_eq!(
+            (bb(&s, a).x1, bb(&s, b).x0),
+            (230.0, 250.0),
+            "the gap moved, its width kept"
+        );
         assert_eq!(bb(&s, b).x1, 320.0);
-        assert!(s.execute("gap.move", &json!({"at": [150, 200], "delta": 5})).is_err(), "inside an object");
+        assert!(
+            s.execute("gap.move", &json!({"at": [150, 200], "delta": 5}))
+                .is_err(),
+            "inside an object"
+        );
     }
 }
 
@@ -3019,20 +4325,40 @@ mod line_end_tests {
         assert_eq!(story(&s).text, "One\nTwo\nThree");
         assert_eq!(story(&s).paras.len(), 3);
         // The caret is at the end: typed text gets the same treatment.
-        s.execute("text.insert", &json!({"text": "\rFour", "raw": true})).unwrap();
+        s.execute("text.insert", &json!({"text": "\rFour", "raw": true}))
+            .unwrap();
         assert_eq!(story(&s).text, "One\nTwo\nThree\nFour");
         assert_eq!(story(&s).paras.len(), 4);
         // Editing a range or the whole story (scripts written for InDesign end paragraphs with \r).
-        s.execute("story.replaceRange", &json!({"story": sid.0, "start": 0, "end": 3, "text": "Zero\rOne"})).unwrap();
-        assert_eq!((story(&s).text.as_str(), story(&s).paras.len()), ("Zero\nOne\nTwo\nThree\nFour", 5));
-        s.execute("story.setText", &json!({"story": sid.0, "text": "A\r\nB\rC"})).unwrap();
-        assert_eq!((story(&s).text.as_str(), story(&s).paras.len()), ("A\nB\nC", 3));
+        s.execute(
+            "story.replaceRange",
+            &json!({"story": sid.0, "start": 0, "end": 3, "text": "Zero\rOne"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (story(&s).text.as_str(), story(&s).paras.len()),
+            ("Zero\nOne\nTwo\nThree\nFour", 5)
+        );
+        s.execute(
+            "story.setText",
+            &json!({"story": sid.0, "text": "A\r\nB\rC"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (story(&s).text.as_str(), story(&s).paras.len()),
+            ("A\nB\nC", 3)
+        );
         // Notes, made and edited.
-        s.execute("text.select", &json!({"story": sid.0, "anchor": 1})).unwrap();
+        s.execute("text.select", &json!({"story": sid.0, "anchor": 1}))
+            .unwrap();
         let n = s.execute("note.new", &json!({"text": "One\rTwo"})).unwrap();
         let note = |s: &mut Session| s.execute("note.list", &json!({})).unwrap()[0]["text"].clone();
         assert_eq!(note(&mut s), "One\nTwo");
-        s.execute("note.edit", &json!({"story": n["story"], "id": n["id"], "text": "Three\r\nFour"})).unwrap();
+        s.execute(
+            "note.edit",
+            &json!({"story": n["story"], "id": n["id"], "text": "Three\r\nFour"}),
+        )
+        .unwrap();
         assert_eq!(note(&mut s), "Three\nFour");
     }
 }
@@ -3047,24 +4373,62 @@ mod named_target_tests {
     fn ids_act_without_a_selection() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [36, 36, 300, 300], "content": "text", "text": "Hello"})).unwrap();
-        assert!(s.doc().unwrap().selection.items.is_empty(), "frame.create leaves a text caret");
-        let e = s.execute("object.textFrameOptions", &json!({"columns": 2})).unwrap_err().to_string();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [36, 36, 300, 300], "content": "text", "text": "Hello"}),
+            )
+            .unwrap();
+        assert!(
+            s.doc().unwrap().selection.items.is_empty(),
+            "frame.create leaves a text caret"
+        );
+        let e = s
+            .execute("object.textFrameOptions", &json!({"columns": 2}))
+            .unwrap_err()
+            .to_string();
         assert!(e.contains("nothing selected"), "{e}");
-        s.execute("object.textFrameOptions", &json!({"ids": [r["id"]], "columns": 2})).unwrap();
+        s.execute(
+            "object.textFrameOptions",
+            &json!({"ids": [r["id"]], "columns": 2}),
+        )
+        .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        let columns = |s: &Session| s.doc().unwrap().doc.item(id).and_then(|i| i.text_frame().map(|t| t.options.columns));
+        let columns = |s: &Session| {
+            s.doc()
+                .unwrap()
+                .doc
+                .item(id)
+                .and_then(|i| i.text_frame().map(|t| t.options.columns))
+        };
         assert_eq!(columns(&s), Some(2));
-        s.execute("transform.set", &json!({"id": r["id"], "x": 100, "ref": 0})).unwrap();
-        let e = s.execute("object.textFrameOptions", &json!({"ids": [99999], "columns": 1})).unwrap_err().to_string();
+        s.execute("transform.set", &json!({"id": r["id"], "x": 100, "ref": 0}))
+            .unwrap();
+        let e = s
+            .execute(
+                "object.textFrameOptions",
+                &json!({"ids": [99999], "columns": 1}),
+            )
+            .unwrap_err()
+            .to_string();
         assert!(e.contains("no object with id 99999"), "{e}");
         assert_eq!(columns(&s), Some(2));
         // An empty `ids` names nothing (as `targets` reads it), even beside an `id`.
-        let e = s.execute("object.textFrameOptions", &json!({"ids": [], "id": r["id"], "columns": 3})).unwrap_err().to_string();
+        let e = s
+            .execute(
+                "object.textFrameOptions",
+                &json!({"ids": [], "id": r["id"], "columns": 3}),
+            )
+            .unwrap_err()
+            .to_string();
         assert!(e.contains("nothing selected"), "{e}");
         assert_eq!(columns(&s), Some(2));
         // Commands documented with `ids` honour `id` too.
-        assert_eq!(s.execute("conveyor.collect", &json!({"id": r["id"]})).unwrap()["count"], 1);
+        assert_eq!(
+            s.execute("conveyor.collect", &json!({"id": r["id"]}))
+                .unwrap()["count"],
+            1
+        );
     }
 }
 
@@ -3076,17 +4440,59 @@ mod column_rule_tests {
     fn column_rules_set_validate_undo_and_inspect() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [36, 36, 300, 300], "content": "text", "text": "Hello"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [36, 36, 300, 300], "content": "text", "text": "Hello"}),
+            )
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        let opts = |s: &Session| s.doc().unwrap().doc.item(id).unwrap().text_frame().unwrap().options.clone();
-        s.execute("object.textFrameOptions", &json!({"ids": [id.0], "columns": 3, "inset": [1, 2, 3, 4]})).unwrap();
+        let opts = |s: &Session| {
+            s.doc()
+                .unwrap()
+                .doc
+                .item(id)
+                .unwrap()
+                .text_frame()
+                .unwrap()
+                .options
+                .clone()
+        };
+        s.execute(
+            "object.textFrameOptions",
+            &json!({"ids": [id.0], "columns": 3, "inset": [1, 2, 3, 4]}),
+        )
+        .unwrap();
         let before = opts(&s);
         // An unknown swatch or a bad weight is an error and changes nothing.
-        let e = s.execute("object.textFrameOptions", &json!({"ids": [id.0], "columnRule": true, "columnRuleColor": "Mauve"})).unwrap_err();
+        let e = s
+            .execute(
+                "object.textFrameOptions",
+                &json!({"ids": [id.0], "columnRule": true, "columnRuleColor": "Mauve"}),
+            )
+            .unwrap_err();
         assert!(e.to_string().contains("Mauve"), "{e}");
-        assert!(s.execute("object.textFrameOptions", &json!({"ids": [id.0], "columnRuleWeight": -1})).is_err());
-        assert!(s.execute("object.textFrameOptions", &json!({"ids": [id.0], "columnRuleTint": 2})).is_err());
-        assert!(s.execute("object.textFrameOptions", &json!({"ids": [id.0], "columnRuleTopInset": "x"})).is_err());
+        assert!(
+            s.execute(
+                "object.textFrameOptions",
+                &json!({"ids": [id.0], "columnRuleWeight": -1})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "object.textFrameOptions",
+                &json!({"ids": [id.0], "columnRuleTint": 2})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "object.textFrameOptions",
+                &json!({"ids": [id.0], "columnRuleTopInset": "x"})
+            )
+            .is_err()
+        );
         assert_eq!(opts(&s), before);
         s.execute(
             "object.textFrameOptions",
@@ -3095,9 +4501,21 @@ mod column_rule_tests {
         )
         .unwrap();
         let o = opts(&s);
-        assert!(o.column_rule && o.column_rule_weight == 0.5 && o.column_rule_color == "C=100 M=0 Y=0 K=0");
+        assert!(
+            o.column_rule
+                && o.column_rule_weight == 0.5
+                && o.column_rule_color == "C=100 M=0 Y=0 K=0"
+        );
         assert_eq!(o.inset, [1.0, 2.0, 3.0, 4.0], "untouched options stay");
-        assert_eq!((o.column_rule_tint, o.column_rule_offset, o.column_rule_top_inset, o.column_rule_bottom_inset), (0.5, -2.0, 4.0, 6.0));
+        assert_eq!(
+            (
+                o.column_rule_tint,
+                o.column_rule_offset,
+                o.column_rule_top_inset,
+                o.column_rule_bottom_inset
+            ),
+            (0.5, -2.0, 4.0, 6.0)
+        );
         let item = s.execute("document.inspect", &json!({})).unwrap()["spreads"][0]["items"]
             .as_array()
             .unwrap()
@@ -3106,11 +4524,20 @@ mod column_rule_tests {
             .cloned()
             .unwrap();
         assert_eq!(
-            (&item["columnRule"], &item["columnRuleWeight"], &item["columnRuleColor"]),
+            (
+                &item["columnRule"],
+                &item["columnRuleWeight"],
+                &item["columnRuleColor"]
+            ),
             (&json!(true), &json!(0.5), &json!("C=100 M=0 Y=0 K=0"))
         );
         assert_eq!(
-            (&item["columnRuleTint"], &item["columnRuleOffset"], &item["columnRuleTopInset"], &item["columnRuleBottomInset"]),
+            (
+                &item["columnRuleTint"],
+                &item["columnRuleOffset"],
+                &item["columnRuleTopInset"],
+                &item["columnRuleBottomInset"]
+            ),
             (&json!(0.5), &json!(-2.0), &json!(4.0), &json!(6.0))
         );
         // One undo step.
@@ -3133,7 +4560,12 @@ mod blend_mode_tests {
     fn lowercase_documented_blend_modes_apply() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [36, 36, 300, 300], "content": "unassigned"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [36, 36, 300, 300], "content": "unassigned"}),
+            )
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
         let blend = |s: &Session| s.doc().unwrap().doc.item(id).map(|i| i.blend);
 
@@ -3146,9 +4578,15 @@ mod blend_mode_tests {
             ("soft_light", BlendMode::SoftLight),
             ("normal", BlendMode::Normal),
         ] {
-            let out = s.execute("object.opacity", &json!({"opacity": 1, "blend": given})).unwrap();
+            let out = s
+                .execute("object.opacity", &json!({"opacity": 1, "blend": given}))
+                .unwrap();
             assert_eq!(out["changed"], 1, "{given}");
-            assert_eq!(blend(&s), Some(want), "blend mode {given:?} must be applied");
+            assert_eq!(
+                blend(&s),
+                Some(want),
+                "blend mode {given:?} must be applied"
+            );
         }
     }
 
@@ -3158,9 +4596,18 @@ mod blend_mode_tests {
     fn pascal_case_blend_modes_still_apply() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [36, 36, 300, 300], "content": "unassigned"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [36, 36, 300, 300], "content": "unassigned"}),
+            )
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        s.execute("object.opacity", &json!({"opacity": 0.5, "blend": "Multiply"})).unwrap();
+        s.execute(
+            "object.opacity",
+            &json!({"opacity": 0.5, "blend": "Multiply"}),
+        )
+        .unwrap();
         let it = s.doc().unwrap().doc.item(id).cloned().unwrap();
         assert_eq!(it.blend, BlendMode::Multiply);
         assert!((it.opacity - 0.5).abs() < 1e-6, "opacity must still be set");
@@ -3172,13 +4619,29 @@ mod blend_mode_tests {
     fn an_unknown_blend_mode_is_an_error() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [36, 36, 300, 300], "content": "unassigned"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [36, 36, 300, 300], "content": "unassigned"}),
+            )
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        s.execute("object.opacity", &json!({"opacity": 1, "blend": "Multiply"})).unwrap();
-        let e = s.execute("object.opacity", &json!({"opacity": 1, "blend": "sparkle"})).unwrap_err().to_string();
+        s.execute(
+            "object.opacity",
+            &json!({"opacity": 1, "blend": "Multiply"}),
+        )
+        .unwrap();
+        let e = s
+            .execute("object.opacity", &json!({"opacity": 1, "blend": "sparkle"}))
+            .unwrap_err()
+            .to_string();
         assert!(e.contains("sparkle") && e.contains("blend"), "{e}");
         let it = s.doc().unwrap().doc.item(id).cloned().unwrap();
-        assert_eq!(it.blend, BlendMode::Multiply, "a rejected value changes nothing");
+        assert_eq!(
+            it.blend,
+            BlendMode::Multiply,
+            "a rejected value changes nothing"
+        );
         assert_eq!(it.opacity, 1.0);
     }
 }
@@ -3191,14 +4654,52 @@ mod copy_ids_tests {
     fn copies_report_their_ids() {
         let mut s = crate::Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [0, 0, 50, 50]})).unwrap()["id"].as_u64().unwrap();
-        let ids = |r: &serde_json::Value| r["ids"].as_array().unwrap().iter().map(|v| v.as_u64().unwrap()).collect::<Vec<_>>();
-        let selected = |s: &crate::Session| s.doc().unwrap().selection.items.iter().map(|i| i.0).collect::<Vec<_>>();
+        let a = s
+            .execute("frame.create", &json!({"rect": [0, 0, 50, 50]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let ids = |r: &serde_json::Value| {
+            r["ids"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap())
+                .collect::<Vec<_>>()
+        };
+        let selected = |s: &crate::Session| {
+            s.doc()
+                .unwrap()
+                .selection
+                .items
+                .iter()
+                .map(|i| i.0)
+                .collect::<Vec<_>>()
+        };
         // Moving reports what moved; copying reports the copies, which are selected.
-        assert_eq!(ids(&s.execute("transform.move", &json!({"dx": 5, "dy": 0, "ids": [a]})).unwrap()), [a]);
-        let r = s.execute("transform.move", &json!({"dx": 100, "dy": 0, "copy": true, "ids": [a]})).unwrap();
+        assert_eq!(
+            ids(&s
+                .execute("transform.move", &json!({"dx": 5, "dy": 0, "ids": [a]}))
+                .unwrap()),
+            [a]
+        );
+        let r = s
+            .execute(
+                "transform.move",
+                &json!({"dx": 100, "dy": 0, "copy": true, "ids": [a]}),
+            )
+            .unwrap();
         let copy = ids(&r);
-        assert!(copy.len() == 1 && copy[0] != a && s.doc().unwrap().doc.item(designcraft_doc::ItemId(copy[0])).is_some(), "{r}");
+        assert!(
+            copy.len() == 1
+                && copy[0] != a
+                && s.doc()
+                    .unwrap()
+                    .doc
+                    .item(designcraft_doc::ItemId(copy[0]))
+                    .is_some(),
+            "{r}"
+        );
         assert_eq!(selected(&s), copy);
         // Edit › Duplicate.
         let r = s.execute("edit.duplicate", &json!({})).unwrap();
@@ -3206,9 +4707,20 @@ mod copy_ids_tests {
         assert!(dup.len() == 1 && dup[0] != copy[0], "{r}");
         assert_eq!(selected(&s), dup);
         // Step and Repeat: every copy.
-        let r = s.execute("edit.stepAndRepeat", &json!({"count": 3, "dx": 0, "dy": 60, "ids": [a]})).unwrap();
+        let r = s
+            .execute(
+                "edit.stepAndRepeat",
+                &json!({"count": 3, "dx": 0, "dy": 60, "ids": [a]}),
+            )
+            .unwrap();
         assert_eq!((r["created"].as_u64(), ids(&r).len()), (Some(3), 3), "{r}");
-        assert!(ids(&r).iter().all(|i| s.doc().unwrap().doc.item(designcraft_doc::ItemId(*i)).is_some()));
+        assert!(ids(&r).iter().all(|i| {
+            s.doc()
+                .unwrap()
+                .doc
+                .item(designcraft_doc::ItemId(*i))
+                .is_some()
+        }));
     }
 }
 
@@ -3220,26 +4732,57 @@ mod swatch_name_tests {
     fn fills_and_strokes_must_name_a_swatch_and_change_nothing_otherwise() {
         let mut s = crate::Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let id = s.execute("frame.create", &json!({"rect": [0, 0, 100, 100]})).unwrap()["id"].clone();
+        let id = s
+            .execute("frame.create", &json!({"rect": [0, 0, 100, 100]}))
+            .unwrap()["id"]
+            .clone();
         for (cmd, params, hint) in [
-            ("object.fill", json!({"swatch": "Paper", "ids": [id]}), Some("[Paper]")),
-            ("object.fill", json!({"swatch": "[black]", "ids": [id]}), Some("[Black]")),
-            ("object.fill", json!({"swatch": "Missing Ink", "ids": [id]}), None),
-            ("object.stroke", json!({"swatch": "#ff0000", "weight": 4, "ids": [id]}), None),
-            ("object.stroke", json!({"gapSwatch": "paper", "ids": [id]}), Some("[Paper]")),
+            (
+                "object.fill",
+                json!({"swatch": "Paper", "ids": [id]}),
+                Some("[Paper]"),
+            ),
+            (
+                "object.fill",
+                json!({"swatch": "[black]", "ids": [id]}),
+                Some("[Black]"),
+            ),
+            (
+                "object.fill",
+                json!({"swatch": "Missing Ink", "ids": [id]}),
+                None,
+            ),
+            (
+                "object.stroke",
+                json!({"swatch": "#ff0000", "weight": 4, "ids": [id]}),
+                None,
+            ),
+            (
+                "object.stroke",
+                json!({"gapSwatch": "paper", "ids": [id]}),
+                Some("[Paper]"),
+            ),
         ] {
             let before = s.doc().unwrap().doc.clone();
             let e = s.execute(cmd, &params).unwrap_err().to_string();
-            assert!(e.contains("no swatch named") && e.contains("swatch.create"), "{cmd}: {e}");
+            assert!(
+                e.contains("no swatch named") && e.contains("swatch.create"),
+                "{cmd}: {e}"
+            );
             if let Some(h) = hint {
                 assert!(e.contains(&format!("did you mean `{h}`")), "{cmd}: {e}");
             }
-            assert!(std::sync::Arc::ptr_eq(&before, &s.doc().unwrap().doc), "{cmd}: nothing changed");
+            assert!(
+                std::sync::Arc::ptr_eq(&before, &s.doc().unwrap().doc),
+                "{cmd}: nothing changed"
+            );
         }
         // Real names, [None] included, still work.
         for sw in ["[Paper]", "[None]", "C=100 M=0 Y=0 K=0"] {
-            s.execute("object.fill", &json!({"swatch": sw, "ids": [id]})).unwrap();
-            s.execute("object.stroke", &json!({"swatch": sw, "ids": [id]})).unwrap();
+            s.execute("object.fill", &json!({"swatch": sw, "ids": [id]}))
+                .unwrap();
+            s.execute("object.stroke", &json!({"swatch": sw, "ids": [id]}))
+                .unwrap();
         }
     }
 }
@@ -3268,7 +4811,11 @@ mod path_edit_tests {
         let d = &s.doc().unwrap().doc;
         let it = d.item(ItemId(id)).unwrap();
         let xf = d.parent_xf(&d.find(ItemId(id)).unwrap()) * it.xf;
-        it.path.subpaths[0].anchors.iter().map(|a| a.transform(xf)).collect()
+        it.path.subpaths[0]
+            .anchors
+            .iter()
+            .map(|a| a.transform(xf))
+            .collect()
     }
 
     #[test]
@@ -3276,29 +4823,87 @@ mod path_edit_tests {
         let (mut s, id) = session_with_path();
         s.execute("path.reverse", &json!({"ids": [id]})).unwrap();
         let a = anchors(&s, id);
-        assert_eq!(a.iter().map(|a| a.p).collect::<Vec<_>>(), [Point::new(300.0, 200.0), Point::new(200.0, 100.0), Point::new(100.0, 100.0)]);
-        assert_eq!((a[1].h_in, a[1].h_out), (Point::new(230.0, 120.0), Point::new(170.0, 80.0)));
-        assert!(s.execute("path.reverse", &json!({"ids": [id], "subpath": 3})).is_err());
+        assert_eq!(
+            a.iter().map(|a| a.p).collect::<Vec<_>>(),
+            [
+                Point::new(300.0, 200.0),
+                Point::new(200.0, 100.0),
+                Point::new(100.0, 100.0)
+            ]
+        );
+        assert_eq!(
+            (a[1].h_in, a[1].h_out),
+            (Point::new(230.0, 120.0), Point::new(170.0, 80.0))
+        );
+        assert!(
+            s.execute("path.reverse", &json!({"ids": [id], "subpath": 3}))
+                .is_err()
+        );
     }
 
     #[test]
     fn anchors_go_on_the_named_open_subpath_and_set_anchor_reshapes_one() {
         let (mut s, id) = session_with_path();
-        s.execute("path.appendAnchor", &json!({"id": id, "subpath": 0, "anchor": {"p": [400, 250]}})).unwrap();
+        s.execute(
+            "path.appendAnchor",
+            &json!({"id": id, "subpath": 0, "anchor": {"p": [400, 250]}}),
+        )
+        .unwrap();
         assert_eq!(anchors(&s, id).last().unwrap().p, Point::new(400.0, 250.0));
-        assert!(s.execute("path.appendAnchor", &json!({"id": id, "subpath": 1, "anchor": {"p": [0, 0]}})).is_err());
+        assert!(
+            s.execute(
+                "path.appendAnchor",
+                &json!({"id": id, "subpath": 1, "anchor": {"p": [0, 0]}})
+            )
+            .is_err()
+        );
         // Direction lines on the last anchor: collinear and opposite make it smooth.
-        s.execute("path.setAnchor", &json!({"id": id, "anchor": "last", "in": [380, 230], "out": [420, 270]})).unwrap();
+        s.execute(
+            "path.setAnchor",
+            &json!({"id": id, "anchor": "last", "in": [380, 230], "out": [420, 270]}),
+        )
+        .unwrap();
         let last = *anchors(&s, id).last().unwrap();
-        assert_eq!((last.h_in, last.h_out, last.kind), (Point::new(380.0, 230.0), Point::new(420.0, 270.0), designcraft_geom::AnchorKind::Smooth));
-        s.execute("path.setAnchor", &json!({"id": id, "anchor": 0, "p": [90, 110]})).unwrap();
+        assert_eq!(
+            (last.h_in, last.h_out, last.kind),
+            (
+                Point::new(380.0, 230.0),
+                Point::new(420.0, 270.0),
+                designcraft_geom::AnchorKind::Smooth
+            )
+        );
+        s.execute(
+            "path.setAnchor",
+            &json!({"id": id, "anchor": 0, "p": [90, 110]}),
+        )
+        .unwrap();
         assert_eq!(anchors(&s, id)[0].p, Point::new(90.0, 110.0));
-        assert!(s.execute("path.setAnchor", &json!({"id": id, "anchor": 9, "p": [0, 0]})).is_err());
-        assert!(s.execute("path.setAnchor", &json!({"id": id, "anchor": "last"})).is_err(), "nothing to set");
+        assert!(
+            s.execute(
+                "path.setAnchor",
+                &json!({"id": id, "anchor": 9, "p": [0, 0]})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute("path.setAnchor", &json!({"id": id, "anchor": "last"}))
+                .is_err(),
+            "nothing to set"
+        );
         // Closing one subpath; then it takes no more anchors.
-        s.execute("path.close", &json!({"id": id, "subpath": 0})).unwrap();
-        assert!(s.execute("path.appendAnchor", &json!({"id": id, "anchor": {"p": [0, 0]}})).is_err());
-        assert!(s.execute("path.close", &json!({"id": id, "subpath": 4})).is_err());
+        s.execute("path.close", &json!({"id": id, "subpath": 0}))
+            .unwrap();
+        assert!(
+            s.execute(
+                "path.appendAnchor",
+                &json!({"id": id, "anchor": {"p": [0, 0]}})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute("path.close", &json!({"id": id, "subpath": 4}))
+                .is_err()
+        );
     }
 }
 
@@ -3309,20 +4914,53 @@ mod spread_target_tests {
     #[test]
     fn creating_on_a_parent_spread_and_rejecting_unknown_spreads() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 1, "facingPages": false})).unwrap();
+        s.execute("file.new", &json!({"pages": 1, "facingPages": false}))
+            .unwrap();
         let parent = json!({"kind": "parent", "index": 0});
-        let r = s.execute("frame.create", &json!({"spread": parent, "rect": [0, 0, 100, 100]})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"spread": parent, "rect": [0, 0, 100, 100]}),
+            )
+            .unwrap();
         let id = ItemId(r["id"].as_u64().unwrap());
-        assert_eq!(s.doc().unwrap().doc.find(id).unwrap().spread, SpreadRef::Parent(0));
-        s.execute("line.create", &json!({"spread": parent, "a": [0, 0], "b": [50, 50]})).unwrap();
+        assert_eq!(
+            s.doc().unwrap().doc.find(id).unwrap().spread,
+            SpreadRef::Parent(0)
+        );
+        s.execute(
+            "line.create",
+            &json!({"spread": parent, "a": [0, 0], "b": [50, 50]}),
+        )
+        .unwrap();
         assert_eq!(s.doc().unwrap().doc.parents[0].items.len(), 2);
 
         // Each of these used to land on the first body page.
-        for bad in
-            [json!("A-Parent"), json!("0"), json!(-1), json!(1.5), json!({"kind": "master", "index": 0}), json!({"kind": "parent"}), json!([0])]
-        {
-            assert!(s.execute("frame.create", &json!({"spread": bad, "rect": [0, 0, 100, 100]})).is_err(), "frame.create spread {bad}");
-            assert!(s.execute("line.create", &json!({"spread": bad, "a": [0, 0], "b": [50, 50]})).is_err(), "line.create spread {bad}");
+        for bad in [
+            json!("A-Parent"),
+            json!("0"),
+            json!(-1),
+            json!(1.5),
+            json!({"kind": "master", "index": 0}),
+            json!({"kind": "parent"}),
+            json!([0]),
+        ] {
+            assert!(
+                s.execute(
+                    "frame.create",
+                    &json!({"spread": bad, "rect": [0, 0, 100, 100]})
+                )
+                .is_err(),
+                "frame.create spread {bad}"
+            );
+            assert!(
+                s.execute(
+                    "line.create",
+                    &json!({"spread": bad, "a": [0, 0], "b": [50, 50]})
+                )
+                .is_err(),
+                "line.create spread {bad}"
+            );
         }
         assert!(s.doc().unwrap().doc.spreads[0].items.is_empty());
     }

@@ -21,7 +21,9 @@ fn memory() -> String {
     #[cfg(windows)]
     {
         let pid = std::process::id();
-        let cmd = format!("$p = Get-Process -Id {pid}; '{{0:N0}} MB working set, {{1:N0}} MB private' -f ($p.WorkingSet64/1MB), ($p.PrivateMemorySize64/1MB)");
+        let cmd = format!(
+            "$p = Get-Process -Id {pid}; '{{0:N0}} MB working set, {{1:N0}} MB private' -f ($p.WorkingSet64/1MB), ($p.PrivateMemorySize64/1MB)"
+        );
         std::process::Command::new("powershell")
             .args(["-NoProfile", "-Command", &cmd])
             .output()
@@ -43,7 +45,8 @@ fn memory() -> String {
 /// the previews of stored tips that aren't loaded.
 fn library_tip_bytes(s: &Session) -> (usize, u64, u64) {
     let (mut n, mut bytes, mut previews) = (0, 0u64, 0u64);
-    let mut add = |full: Option<&photocraft_engine::paint::GrayTile>, preview: Option<&photocraft_engine::paint::GrayTile>| {
+    let mut add = |full: Option<&photocraft_engine::paint::GrayTile>,
+                   preview: Option<&photocraft_engine::paint::GrayTile>| {
         if let Some(g) = full {
             n += 1;
             bytes += g.data.len() as u64 * 2;
@@ -72,7 +75,11 @@ fn library_tip_bytes(s: &Session) -> (usize, u64, u64) {
 
 fn report(s: &Session, step: &str) {
     let (n, b, p) = library_tip_bytes(s);
-    let cache = s.preset_store.as_ref().map(|st| st.tip_cache()).unwrap_or_default();
+    let cache = s
+        .preset_store
+        .as_ref()
+        .map(|st| st.tip_cache())
+        .unwrap_or_default();
     println!(
         "{step}: {} | {} presets, {n} full tips in the library ({:.0} MB), previews {:.1} MB, tip cache {} tips {:.0} MB ({} decodes)",
         memory(),
@@ -86,15 +93,31 @@ fn report(s: &Session, step: &str) {
 }
 
 fn use_brushes(s: &mut Session, count: usize) {
-    let names: Vec<String> = s.tools.presets.iter().filter(|p| !p.builtin).map(|p| p.name.clone()).take(count).collect();
-    s.execute("file.new", json!({"width": 800, "height": 600})).unwrap();
+    let names: Vec<String> = s
+        .tools
+        .presets
+        .iter()
+        .filter(|p| !p.builtin)
+        .map(|p| p.name.clone())
+        .take(count)
+        .collect();
+    s.execute("file.new", json!({"width": 800, "height": 600}))
+        .unwrap();
     let t = Instant::now();
     for (i, n) in names.iter().enumerate() {
         s.execute("tools.setBrush", json!({"preset": n})).unwrap();
         let y = 50.0 + i as f64 * 40.0;
-        s.execute("paint.stroke", json!({"points": [[50.0, y], [400.0, y], [700.0, y + 20.0]], "brush": {"size": 60.0}})).unwrap();
+        s.execute(
+            "paint.stroke",
+            json!({"points": [[50.0, y], [400.0, y], [700.0, y + 20.0]], "brush": {"size": 60.0}}),
+        )
+        .unwrap();
     }
-    println!("used {} brushes in {:.2} s", names.len(), t.elapsed().as_secs_f64());
+    println!(
+        "used {} brushes in {:.2} s",
+        names.len(),
+        t.elapsed().as_secs_f64()
+    );
     report(s, &format!("after using {} brushes", names.len()));
 }
 
@@ -103,19 +126,37 @@ fn main() {
     println!("start: {}", memory());
     match args.get(1).map(String::as_str) {
         Some("import") => {
-            let (abr, store) = (args.get(2).expect("abr dir"), args.get(3).expect("store dir"));
+            let (abr, store) = (
+                args.get(2).expect("abr dir"),
+                args.get(3).expect("store dir"),
+            );
             let _ = std::fs::remove_dir_all(store);
             let mut s = Session::new();
             s.attach_preset_store(photocraft_engine::preset_store::open_dir(store));
-            let mut files: Vec<_> = std::fs::read_dir(abr).unwrap().flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "abr")).collect();
+            let mut files: Vec<_> = std::fs::read_dir(abr)
+                .unwrap()
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|x| x == "abr"))
+                .collect();
             files.sort();
             let t = Instant::now();
             for f in &files {
-                let r = s.execute("brush.presets.importAbr", json!({"path": f.to_string_lossy()})).unwrap();
+                let r = s
+                    .execute(
+                        "brush.presets.importAbr",
+                        json!({"path": f.to_string_lossy()}),
+                    )
+                    .unwrap();
                 println!("imported {} ({} presets)", f.display(), r["count"]);
             }
             println!("import + store sync: {:.2} s", t.elapsed().as_secs_f64());
-            for w in s.preset_store.as_mut().map(|st| st.take_warnings()).unwrap_or_default() {
+            for w in s
+                .preset_store
+                .as_mut()
+                .map(|st| st.take_warnings())
+                .unwrap_or_default()
+            {
                 println!("warning: {w}");
             }
             report(&s, "after import");
@@ -128,7 +169,11 @@ fn main() {
             let open_s = t.elapsed().as_secs_f64();
             let mut s = Session::new();
             let w = s.attach_preset_store(opened);
-            println!("store open {open_s:.2} s, attach {:.2} s, {} warnings", t.elapsed().as_secs_f64() - open_s, w.len());
+            println!(
+                "store open {open_s:.2} s, attach {:.2} s, {} warnings",
+                t.elapsed().as_secs_f64() - open_s,
+                w.len()
+            );
             for w in w.iter().take(5) {
                 println!("warning: {w}");
             }

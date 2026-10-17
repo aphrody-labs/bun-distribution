@@ -18,7 +18,8 @@ use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, Tool
 
 /// Create a cutting tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
-    matches!(id, "mirrorCut" | "lineCut" | "rectCut").then(|| Box::new(CutTool::new(id)) as Box<dyn Tool>)
+    matches!(id, "mirrorCut" | "lineCut" | "rectCut")
+        .then(|| Box::new(CutTool::new(id)) as Box<dyn Tool>)
 }
 
 pub struct CutTool {
@@ -44,7 +45,15 @@ impl CutTool {
             "lineCut" => "lineCut",
             _ => "rectCut",
         };
-        Self { id, start: None, end: Point::ZERO, mods: Mods::default(), began: false, axis: "free", keep: "left" }
+        Self {
+            id,
+            start: None,
+            end: Point::ZERO,
+            mods: Mods::default(),
+            began: false,
+            axis: "free",
+            keep: "left",
+        }
     }
 
     fn label(&self) -> &'static str {
@@ -62,7 +71,11 @@ impl CutTool {
 
     /// The drag's end point: Shift snaps lines to 45° steps.
     fn end_point(&self, cx: &ToolContext, start: Point, p: Point, m: Mods) -> Point {
-        if m.shift && self.id != "rectCut" { start + constrain_angle_from(p - start, 45.0, cx.constrain_angle) } else { p }
+        if m.shift && self.id != "rectCut" {
+            start + constrain_angle_from(p - start, 45.0, cx.constrain_angle)
+        } else {
+            p
+        }
     }
 
     /// The side Mirror & Cut keeps for an axis running along `d`: the `keep` option named for the
@@ -88,17 +101,27 @@ impl CutTool {
         let (a, b) = (start, self.end);
         let short = a.distance(b) < cx.tol(MIN_DRAG_PX);
         match self.id {
-            "mirrorCut" if self.constrained() => {
-                Some(("path.mirrorCut", json!({"axis": self.axis, "from": [b.x, b.y], "keep": self.keep_side(Vec2::ZERO, self.mods.alt)})))
-            }
+            "mirrorCut" if self.constrained() => Some((
+                "path.mirrorCut",
+                json!({"axis": self.axis, "from": [b.x, b.y], "keep": self.keep_side(Vec2::ZERO, self.mods.alt)}),
+            )),
             _ if short => None,
-            "mirrorCut" => {
-                Some(("path.mirrorCut", json!({"axis": "free", "from": [a.x, a.y], "to": [b.x, b.y], "keep": self.keep_side(b - a, self.mods.alt)})))
-            }
-            "lineCut" => Some(("path.lineCut", json!({"from": [a.x, a.y], "to": [b.x, b.y]}))),
+            "mirrorCut" => Some((
+                "path.mirrorCut",
+                json!({"axis": "free", "from": [a.x, a.y], "to": [b.x, b.y], "keep": self.keep_side(b - a, self.mods.alt)}),
+            )),
+            "lineCut" => Some((
+                "path.lineCut",
+                json!({"from": [a.x, a.y], "to": [b.x, b.y]}),
+            )),
             _ => {
                 let r = drag_rect(a, b, self.mods);
-                (r.width() > 0.0 && r.height() > 0.0).then(|| ("path.rectCut", json!({"rect": [r.x0, r.y0, r.width(), r.height()]})))
+                (r.width() > 0.0 && r.height() > 0.0).then(|| {
+                    (
+                        "path.rectCut",
+                        json!({"rect": [r.x0, r.y0, r.width(), r.height()]}),
+                    )
+                })
             }
         }
     }
@@ -130,7 +153,9 @@ impl Tool for CutTool {
                 vec![]
             }
             PointerKind::Drag | PointerKind::Up => {
-                let Some(start) = self.start else { return vec![] };
+                let Some(start) = self.start else {
+                    return vec![];
+                };
                 self.end = self.end_point(cx, start, ev.pos, ev.mods);
                 self.mods = ev.mods;
                 let mut out = vec![];
@@ -181,7 +206,12 @@ impl Tool for CutTool {
         };
         let far = d * cx.tol(10_000.0);
         let mid = if self.constrained() { b } else { a };
-        vec![Overlay::Line { a: mid - far, b: mid + far, color: FEEDBACK, dashed: true }]
+        vec![Overlay::Line {
+            a: mid - far,
+            b: mid + far,
+            color: FEEDBACK,
+            dashed: true,
+        }]
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
         Cursor::Crosshair
@@ -222,10 +252,29 @@ mod tests {
     use crate::testutil::*;
     use vectorcraft_doc::Selection;
 
-    fn drag(t: &mut CutTool, cx: &ToolContext, from: (f64, f64), to: (f64, f64), m: Mods) -> Vec<Action> {
+    fn drag(
+        t: &mut CutTool,
+        cx: &ToolContext,
+        from: (f64, f64),
+        to: (f64, f64),
+        m: Mods,
+    ) -> Vec<Action> {
         let mut out = t.pointer(cx, &PointerEvent::new(PointerKind::Down, from.0, from.1));
-        out.extend(t.pointer(cx, &PointerEvent::new(PointerKind::Drag, (from.0 + to.0) / 2.0, (from.1 + to.1) / 2.0).with_mods(m)));
-        out.extend(t.pointer(cx, &PointerEvent::new(PointerKind::Up, to.0, to.1).with_mods(m)));
+        out.extend(
+            t.pointer(
+                cx,
+                &PointerEvent::new(
+                    PointerKind::Drag,
+                    (from.0 + to.0) / 2.0,
+                    (from.1 + to.1) / 2.0,
+                )
+                .with_mods(m),
+            ),
+        );
+        out.extend(t.pointer(
+            cx,
+            &PointerEvent::new(PointerKind::Up, to.0, to.1).with_mods(m),
+        ));
         out
     }
 
@@ -239,8 +288,13 @@ mod tests {
         let mut t = CutTool::new("lineCut");
         let a = drag(&mut t, &cx, (150.0, 50.0), (150.0, 250.0), Mods::default());
         assert_eq!(a[0], Action::Begin("Line Cut".into()));
-        assert_eq!(a.iter().filter(|x| matches!(x, Action::Begin(_))).count(), 1);
-        assert!(matches!(&a[a.len() - 2], Action::Preview(c, v) if c == "path.lineCut" && v["to"] == json!([150.0, 250.0])));
+        assert_eq!(
+            a.iter().filter(|x| matches!(x, Action::Begin(_))).count(),
+            1
+        );
+        assert!(
+            matches!(&a[a.len() - 2], Action::Preview(c, v) if c == "path.lineCut" && v["to"] == json!([150.0, 250.0]))
+        );
         assert_eq!(a.last(), Some(&Action::Commit));
         assert!(!t.busy());
     }
@@ -251,13 +305,36 @@ mod tests {
         let s = Selection::default();
         let p = paint();
         let mut t = CutTool::new("rectCut");
-        assert!(drag(&mut t, &cx(&d, &s, &p), (0.0, 0.0), (300.0, 300.0), Mods::default()).is_empty());
+        assert!(
+            drag(
+                &mut t,
+                &cx(&d, &s, &p),
+                (0.0, 0.0),
+                (300.0, 300.0),
+                Mods::default()
+            )
+            .is_empty()
+        );
         let mut s = Selection::default();
         s.set([id]);
         let cx = cx(&d, &s, &p);
-        assert!(drag(&mut t, &cx, (10.0, 10.0), (11.0, 11.0), Mods::default()).is_empty(), "a click doesn't cut");
-        let a = drag(&mut t, &cx, (120.0, 120.0), (160.0, 140.0), Mods { shift: true, ..Default::default() });
-        assert!(matches!(&a[a.len() - 2], Action::Preview(c, v) if c == "path.rectCut" && v["rect"] == json!([120.0, 120.0, 40.0, 40.0])));
+        assert!(
+            drag(&mut t, &cx, (10.0, 10.0), (11.0, 11.0), Mods::default()).is_empty(),
+            "a click doesn't cut"
+        );
+        let a = drag(
+            &mut t,
+            &cx,
+            (120.0, 120.0),
+            (160.0, 140.0),
+            Mods {
+                shift: true,
+                ..Default::default()
+            },
+        );
+        assert!(
+            matches!(&a[a.len() - 2], Action::Preview(c, v) if c == "path.rectCut" && v["rect"] == json!([120.0, 120.0, 40.0, 40.0]))
+        );
     }
 
     #[test]
@@ -270,8 +347,19 @@ mod tests {
         let mut t = CutTool::new("mirrorCut");
         // A free, mostly horizontal axis keeps the top; Alt the bottom.
         let a = drag(&mut t, &cx, (50.0, 150.0), (250.0, 160.0), Mods::default());
-        assert!(matches!(&a[a.len() - 2], Action::Preview(_, v) if v["axis"] == "free" && v["keep"] == "top"));
-        let a = drag(&mut t, &cx, (50.0, 150.0), (250.0, 160.0), Mods { alt: true, ..Default::default() });
+        assert!(
+            matches!(&a[a.len() - 2], Action::Preview(_, v) if v["axis"] == "free" && v["keep"] == "top")
+        );
+        let a = drag(
+            &mut t,
+            &cx,
+            (50.0, 150.0),
+            (250.0, 160.0),
+            Mods {
+                alt: true,
+                ..Default::default()
+            },
+        );
         assert!(matches!(&a[a.len() - 2], Action::Preview(_, v) if v["keep"] == "bottom"));
         // A vertical axis follows the pointer, and a click places it.
         t.set_option("axis", &json!("vertical"));
@@ -280,7 +368,9 @@ mod tests {
         let mut a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 140.0, 150.0));
         a.extend(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 140.0, 150.0)));
         assert_eq!(a.len(), 3);
-        assert!(matches!(&a[1], Action::Preview(_, v) if v["axis"] == "vertical" && v["from"] == json!([140.0, 150.0]) && v["keep"] == "right"));
+        assert!(
+            matches!(&a[1], Action::Preview(_, v) if v["axis"] == "vertical" && v["from"] == json!([140.0, 150.0]) && v["keep"] == "right")
+        );
         t.set_option("axis", &json!("diagonal"));
         assert_eq!(t.axis, "vertical");
     }
@@ -297,7 +387,10 @@ mod tests {
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 250.0));
         assert_eq!(a.len(), 2);
         assert_eq!(t.overlays(&cx).len(), 1);
-        assert_eq!(t.key(&cx, ToolKey::Escape, Mods::default()), vec![Action::Cancel]);
+        assert_eq!(
+            t.key(&cx, ToolKey::Escape, Mods::default()),
+            vec![Action::Cancel]
+        );
         assert!(!t.busy() && t.overlays(&cx).is_empty());
     }
 }

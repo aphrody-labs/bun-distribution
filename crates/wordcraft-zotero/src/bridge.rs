@@ -83,7 +83,9 @@ pub struct Bridge {
 type R = Result<Value, String>;
 
 fn arg(c: &Call, i: usize) -> Result<&Value, String> {
-    c.args.get(i).ok_or_else(|| format!("{}: missing argument {}", c.method, i + 1))
+    c.args
+        .get(i)
+        .ok_or_else(|| format!("{}: missing argument {}", c.method, i + 1))
 }
 fn arg_str(c: &Call, i: usize) -> Result<String, String> {
     match arg(c, i)? {
@@ -94,8 +96,14 @@ fn arg_str(c: &Call, i: usize) -> Result<String, String> {
 }
 fn arg_i64(c: &Call, i: usize) -> Result<i64, String> {
     match arg(c, i)? {
-        Value::Number(n) => n.as_i64().or_else(|| n.as_f64().map(|f| f.clamp(-1e12, 1e12) as i64)).ok_or_else(|| format!("{}: bad number", c.method)),
-        Value::String(s) => s.trim().parse().map_err(|_| format!("{}: argument {} is not a number", c.method, i + 1)),
+        Value::Number(n) => n
+            .as_i64()
+            .or_else(|| n.as_f64().map(|f| f.clamp(-1e12, 1e12) as i64))
+            .ok_or_else(|| format!("{}: bad number", c.method)),
+        Value::String(s) => s
+            .trim()
+            .parse()
+            .map_err(|_| format!("{}: argument {} is not a number", c.method, i + 1)),
         Value::Bool(b) => Ok(i64::from(*b)),
         _ => Err(format!("{}: argument {} is not a number", c.method, i + 1)),
     }
@@ -140,14 +148,24 @@ impl Bridge {
 
     fn field(&mut self, s: &Session, id: u64) -> Result<(usize, ZField), String> {
         let list = self.fields(s);
-        let k = self.ids.iter().position(|x| *x == id).ok_or_else(|| format!("no field with id {id}"))?;
-        list.into_iter().nth(k).map(|f| (k, f)).ok_or_else(|| format!("no field with id {id}"))
+        let k = self
+            .ids
+            .iter()
+            .position(|x| *x == id)
+            .ok_or_else(|| format!("no field with id {id}"))?;
+        list.into_iter()
+            .nth(k)
+            .map(|f| (k, f))
+            .ok_or_else(|| format!("no field with id {id}"))
     }
 
     /// Register a field just inserted with its start marker at `start`; returns its id.
     fn adopt(&mut self, s: &Session, start: &Pos) -> Result<(u64, ZField), String> {
         let list = fields::list(&s.doc);
-        let k = list.iter().position(|f| f.start == *start).ok_or("the new field was not found")?;
+        let k = list
+            .iter()
+            .position(|f| f.start == *start)
+            .ok_or("the new field was not found")?;
         let id = self.fresh_id();
         if self.ids.len() + 1 == list.len() {
             self.ids.insert(k.min(self.ids.len()), id);
@@ -157,7 +175,10 @@ impl Bridge {
                 *slot = id;
             }
         }
-        let f = list.into_iter().nth(k).ok_or("the new field was not found")?;
+        let f = list
+            .into_iter()
+            .nth(k)
+            .ok_or("the new field was not found")?;
         Ok((id, f))
     }
 
@@ -182,7 +203,8 @@ impl Bridge {
 
     /// Answer one call. Errors become `ERR:` replies; Zotero shows them and cancels.
     pub fn handle(&mut self, s: &mut Session, host: &mut dyn Host, c: &Call) -> R {
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.dispatch(s, host, c)));
+        let r =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.dispatch(s, host, c)));
         match r {
             Ok(r) => r,
             Err(_) => {
@@ -370,30 +392,68 @@ impl Bridge {
 
     /// Insert an empty Zotero field at the selection (in a new footnote or endnote for note
     /// styles), holding `content` if given. Returns its id and the field.
-    fn insert_field(&mut self, s: &mut Session, note: i64, content: Option<Fragment>) -> Result<(u64, ZField), String> {
+    fn insert_field(
+        &mut self,
+        s: &mut Session,
+        note: i64,
+        content: Option<Fragment>,
+    ) -> Result<(u64, ZField), String> {
         if !fields::can_insert_at(&s.doc, &s.sel.ordered().0) {
-            return Err("a citation can't go here (only in the text, a footnote or an endnote)".into());
+            return Err(
+                "a citation can't go here (only in the text, a footnote or an endnote)".into(),
+            );
         }
         self.fields(s);
         self.begin_edit(s);
         if (note == 1 || note == 2) && s.sel.focus.story == StoryRef::Body {
-            let id = if note == 1 { "references.footnote" } else { "references.endnote" };
+            let id = if note == 1 {
+                "references.footnote"
+            } else {
+                "references.endnote"
+            };
             s.join_next_undo();
             s.run(id, &json!({})).map_err(|e| e.to_string())?;
         }
         let at = delete_selection(s)?;
-        let base = s.doc.para_at(&at).map(|p| p.props_at(at.off).clone()).unwrap_or_default();
-        let base = CharProps { style: base.style.filter(|st| !st.ends_with("Reference")), ..base };
+        let base = s
+            .doc
+            .para_at(&at)
+            .map(|p| p.props_at(at.off).clone())
+            .unwrap_or_default();
+        let base = CharProps {
+            style: base.style.filter(|st| !st.ends_with("Reference")),
+            ..base
+        };
         let start = at.clone();
         let mut cur = s
             .doc
-            .insert_object(&start, InlineObject::FieldStart { instr: fields::PREFIX.to_string(), locked: false }, &base)
+            .insert_object(
+                &start,
+                InlineObject::FieldStart {
+                    instr: fields::PREFIX.to_string(),
+                    locked: false,
+                },
+                &base,
+            )
             .map_err(|e| e.to_string())?;
         match content {
-            Some(frag) => cur = s.doc.insert_fragment(&cur, &frag).map_err(|e| e.to_string())?,
-            None => cur = s.doc.insert_text(&cur, PLACEHOLDER, &base).map_err(|e| e.to_string())?,
+            Some(frag) => {
+                cur = s
+                    .doc
+                    .insert_fragment(&cur, &frag)
+                    .map_err(|e| e.to_string())?
+            }
+            None => {
+                cur = s
+                    .doc
+                    .insert_text(&cur, PLACEHOLDER, &base)
+                    .map_err(|e| e.to_string())?
+            }
         }
-        let after = s.doc.insert_object(&cur, InlineObject::FieldEnd, &base).map_err(|e| e.to_string())?;
+        let after = s
+            .doc
+            .insert_object(&cur, InlineObject::FieldEnd, &base)
+            .map_err(|e| e.to_string())?;
         s.sel = Selection::caret(after);
         Self::end_edit(s);
         self.adopt(s, &start)
@@ -402,17 +462,33 @@ impl Bridge {
     fn set_text(&mut self, s: &mut Session, id: u64, text: &str, rich: bool) -> Result<(), String> {
         let (_, f) = self.field(s, id)?;
         self.begin_edit(s);
-        let base = s.doc.para(f.start.story, &f.start.path).map(|p| p.props_of_char(f.start.off).clone()).unwrap_or_default();
+        let base = s
+            .doc
+            .para(f.start.story, &f.start.path)
+            .map(|p| p.props_of_char(f.start.off).clone())
+            .unwrap_or_default();
         let frag = rich::fragment(text, rich, &base);
         let multi = frag.blocks.len() > 1;
-        let at = s.doc.delete_range(&f.content_start(), &f.end).map_err(|e| e.to_string())?;
-        let end = s.doc.insert_fragment(&at, &frag).map_err(|e| e.to_string())?;
-        if f.code.get(..4).is_some_and(|k| k.eq_ignore_ascii_case("BIBL")) {
+        let at = s
+            .doc
+            .delete_range(&f.content_start(), &f.end)
+            .map_err(|e| e.to_string())?;
+        let end = s
+            .doc
+            .insert_fragment(&at, &frag)
+            .map_err(|e| e.to_string())?;
+        if f.code
+            .get(..4)
+            .is_some_and(|k| k.eq_ignore_ascii_case("BIBL"))
+        {
             ensure_bib_style(s);
             let paths = s.doc.paths_between(&f.start, &end);
             for path in paths {
                 if let Ok(p) = s.doc.para_mut(f.start.story, &path) {
-                    p.props = ParaProps { style: Some(BIB_STYLE.into()), ..Default::default() };
+                    p.props = ParaProps {
+                        style: Some(BIB_STYLE.into()),
+                        ..Default::default()
+                    };
                     p.touch();
                 }
             }
@@ -445,26 +521,38 @@ impl Bridge {
         self.begin_edit(s);
         let saved = s.sel.clone();
         let frag = s.doc.copy_range(&f.start, &f.after());
-        s.doc.delete_range(&f.start, &f.after()).map_err(|e| e.to_string())?;
+        s.doc
+            .delete_range(&f.start, &f.after())
+            .map_err(|e| e.to_string())?;
         // Where the citation goes in the text: where it was, or where its note's mark was.
         let at = match f.start.story {
             StoryRef::Body => f.start.clone(),
             StoryRef::Part(pid) => match remove_empty_note(s, &f) {
                 Some(p) => p,
                 None => {
-                    let r = note_ref_pos(s, pid).ok_or("the note's reference mark was not found")?;
-                    Pos { off: r.off + OBJ.len_utf8(), ..r }
+                    let r =
+                        note_ref_pos(s, pid).ok_or("the note's reference mark was not found")?;
+                    Pos {
+                        off: r.off + OBJ.len_utf8(),
+                        ..r
+                    }
                 }
             },
         };
         match target {
             None => {
-                s.doc.insert_fragment(&at, &frag).map_err(|e| e.to_string())?;
+                s.doc
+                    .insert_fragment(&at, &frag)
+                    .map_err(|e| e.to_string())?;
             }
             Some(kind) => {
                 s.sel = Selection::caret(at.clone());
                 s.join_next_undo();
-                let cmd = if kind == PartKind::Footnote { "references.footnote" } else { "references.endnote" };
+                let cmd = if kind == PartKind::Footnote {
+                    "references.footnote"
+                } else {
+                    "references.endnote"
+                };
                 if let Err(e) = s.run(cmd, &json!({})) {
                     // Put the citation back where it was taken from.
                     let _ = s.doc.insert_fragment(&at, &frag);
@@ -473,7 +561,9 @@ impl Bridge {
                     return Err(e.to_string());
                 }
                 let c = s.sel.focus.clone();
-                s.doc.insert_fragment(&c, &frag).map_err(|e| e.to_string())?;
+                s.doc
+                    .insert_fragment(&c, &frag)
+                    .map_err(|e| e.to_string())?;
             }
         }
         s.sel = saved;
@@ -489,7 +579,9 @@ impl Bridge {
                 other => other.to_string(),
             };
             let url = format!("{PLACEHOLDER_URL}{key}");
-            let Some((a, b)) = find_link(s, &url) else { return Err(format!("placeholder {key} was not found")) };
+            let Some((a, b)) = find_link(s, &url) else {
+                return Err(format!("placeholder {key} was not found"));
+            };
             self.begin_edit(s);
             let text = s.doc.copy_range(&a, &b);
             let mut text = text;
@@ -508,7 +600,11 @@ impl Bridge {
         let mut codes = Vec::new();
         let mut notes = Vec::new();
         for id in &ids {
-            let f = self.ids.iter().position(|x| x == id).and_then(|k| list.get(k));
+            let f = self
+                .ids
+                .iter()
+                .position(|x| x == id)
+                .and_then(|k| list.get(k));
             codes.push(f.map(|f| f.code.clone()).unwrap_or_default());
             notes.push(f.map(|f| f.note_index).unwrap_or(0));
         }
@@ -519,19 +615,31 @@ impl Bridge {
 /// Delete the selection; returns where it collapsed.
 fn delete_selection(s: &mut Session) -> Result<Pos, String> {
     let (a, b) = s.sel.ordered();
-    let at = if a == b { a } else { s.doc.delete_range(&a, &b).map_err(|e| e.to_string())? };
+    let at = if a == b {
+        a
+    } else {
+        s.doc.delete_range(&a, &b).map_err(|e| e.to_string())?
+    };
     s.sel = Selection::caret(at.clone());
     Ok(at)
 }
 
 /// The first run of text linked to `url`, as a range in one paragraph.
 fn find_link(s: &Session, url: &str) -> Option<(Pos, Pos)> {
-    for story in std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k))) {
+    for story in
+        std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k)))
+    {
         for path in s.doc.para_paths(story) {
-            let Some(p) = s.doc.para(story, &path) else { continue };
+            let Some(p) = s.doc.para(story, &path) else {
+                continue;
+            };
             let mut found: Option<(usize, usize)> = None;
             for (range, props) in p.run_ranges() {
-                let hit = props.link.as_deref().is_some_and(|l| l == url || l.strip_prefix(url).is_some_and(|rest| rest.starts_with('&')));
+                let hit = props.link.as_deref().is_some_and(|l| {
+                    l == url
+                        || l.strip_prefix(url)
+                            .is_some_and(|rest| rest.starts_with('&'))
+                });
                 match (hit, found) {
                     (true, None) => found = Some((range.start, range.end)),
                     (true, Some((a, _))) => found = Some((a, range.end)),
@@ -550,8 +658,12 @@ fn find_link(s: &Session, url: &str) -> Option<(Pos, Pos)> {
 /// Where the body references note `id`.
 fn note_ref_pos(s: &Session, id: u32) -> Option<Pos> {
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
-        let hit = p.object_offsets().into_iter().find(|o| matches!(p.object_at(*o), Some(InlineObject::NoteRef { id: n, .. }) if *n == id));
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
+        let hit = p.object_offsets().into_iter().find(
+            |o| matches!(p.object_at(*o), Some(InlineObject::NoteRef { id: n, .. }) if *n == id),
+        );
         if let Some(off) = hit {
             return Some(Pos::new(StoryRef::Body, path, off));
         }
@@ -562,14 +674,20 @@ fn note_ref_pos(s: &Session, id: u32) -> Option<Pos> {
 /// After deleting a citation that was alone in a note, remove the note too (as Word's plugin
 /// does for note styles). Returns where its reference mark was.
 fn remove_empty_note(s: &mut Session, f: &ZField) -> Option<Pos> {
-    let StoryRef::Part(id) = f.start.story else { return None };
+    let StoryRef::Part(id) = f.start.story else {
+        return None;
+    };
     let blocks = s.doc.story(StoryRef::Part(id))?;
     let mut rest = String::new();
     for b in blocks {
         if let Some(p) = b.as_para() {
             rest.push_str(&p.text);
             // A picture, shape, equation... is content too, even though it has no text.
-            if !p.objects.iter().all(|o| o.is_marker() || matches!(o, InlineObject::NoteRef { .. })) {
+            if !p
+                .objects
+                .iter()
+                .all(|o| o.is_marker() || matches!(o, InlineObject::NoteRef { .. }))
+            {
                 return None;
             }
         }
@@ -578,7 +696,10 @@ fn remove_empty_note(s: &mut Session, f: &ZField) -> Option<Pos> {
         return None;
     }
     let at = note_ref_pos(s, id)?;
-    let after = Pos { off: at.off + OBJ.len_utf8(), ..at.clone() };
+    let after = Pos {
+        off: at.off + OBJ.len_utf8(),
+        ..at.clone()
+    };
     s.doc.delete_range(&at, &after).ok()?;
     s.doc.parts.remove(&id);
     s.sel = Selection::caret(at.clone());
@@ -610,15 +731,27 @@ fn set_bibliography_style(s: &mut Session, c: &Call) -> Result<(), String> {
             .iter()
             .take(64)
             .filter_map(Value::as_i64)
-            .map(|v| TabStop { pos: twips(v).max(0.0), align: TabAlign::default(), leader: TabLeader::default() })
+            .map(|v| TabStop {
+                pos: twips(v).max(0.0),
+                align: TabAlign::default(),
+                leader: TabLeader::default(),
+            })
             .collect(),
         _ => Vec::new(),
     };
     ensure_bib_style(s);
-    let st = s.doc.styles.get_mut(BIB_STYLE).ok_or("the bibliography style is missing")?;
+    let st = s
+        .doc
+        .styles
+        .get_mut(BIB_STYLE)
+        .ok_or("the bibliography style is missing")?;
     st.para.indent_left = Some(twips(body));
     st.para.indent_first = Some(twips(first));
-    st.para.line_spacing = Some(if line > 0 { LineSpacing::Multiple((line as f32 / 240.0).clamp(0.5, 5.0)) } else { LineSpacing::Multiple(1.0) });
+    st.para.line_spacing = Some(if line > 0 {
+        LineSpacing::Multiple((line as f32 / 240.0).clamp(0.5, 5.0))
+    } else {
+        LineSpacing::Multiple(1.0)
+    });
     st.para.space_before = Some(0.0);
     st.para.space_after = Some(twips(entry).max(0.0));
     st.para.tabs = if tabs.is_empty() { None } else { Some(tabs) };

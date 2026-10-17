@@ -54,7 +54,10 @@ impl DiscordVoiceShim {
     /// Trailing slashes are stripped so that path concatenation is consistent.
     pub fn new(gateway_url: impl Into<String>) -> Self {
         let raw = gateway_url.into();
-        Self { gateway_url: raw.trim_end_matches('/').to_owned(), client: reqwest::Client::new() }
+        Self {
+            gateway_url: raw.trim_end_matches('/').to_owned(),
+            client: reqwest::Client::new(),
+        }
     }
 
     /// Construct by reading `OPENCLAW_GATEWAY_URL` from the environment.
@@ -64,8 +67,10 @@ impl DiscordVoiceShim {
     /// Returns [`VoiceError::MissingEnv`] when the variable is absent or not
     /// valid Unicode.
     pub fn from_env() -> Result<Self, VoiceError> {
-        let url = env::var(GATEWAY_URL_ENV)
-            .map_err(|source| VoiceError::MissingEnv { var: GATEWAY_URL_ENV, source })?;
+        let url = env::var(GATEWAY_URL_ENV).map_err(|source| VoiceError::MissingEnv {
+            var: GATEWAY_URL_ENV,
+            source,
+        })?;
         Ok(Self::new(url))
     }
 
@@ -87,8 +92,11 @@ impl DiscordVoiceShim {
     ) -> Result<(), VoiceError> {
         let url = format!("{}/tts", self.gateway_url);
 
-        let mut req =
-            self.client.post(&url).header(reqwest::header::CONTENT_TYPE, "audio/mpeg").body(audio);
+        let mut req = self
+            .client
+            .post(&url)
+            .header(reqwest::header::CONTENT_TYPE, "audio/mpeg")
+            .body(audio);
 
         if let Some(vid) = voice_id {
             req = req.header("X-Voice-Id", vid);
@@ -105,7 +113,10 @@ impl DiscordVoiceShim {
         }
 
         let code = status.as_u16();
-        let body = resp.text().await.unwrap_or_else(|_| String::from("<unreadable body>"));
+        let body = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| String::from("<unreadable body>"));
 
         Err(VoiceError::Api { status: code, body })
     }

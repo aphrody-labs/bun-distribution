@@ -56,7 +56,18 @@ pub fn run(root: &Path) -> Result<(), String> {
         println!("brands: no vendor names in user-visible text");
         return Ok(());
     }
-    let list: Vec<String> = hits.iter().map(|h| format!("{}:{}: \"{}\" in {}", h.path, h.line, h.term, short(&h.context))).collect();
+    let list: Vec<String> = hits
+        .iter()
+        .map(|h| {
+            format!(
+                "{}:{}: \"{}\" in {}",
+                h.path,
+                h.line,
+                h.term,
+                short(&h.context)
+            )
+        })
+        .collect();
     Err(format!(
         "{} vendor name(s) in user-visible text (say \"the reference app\" or name the feature; mark a required legacy alias `{ALLOW}`):\n  {}",
         hits.len(),
@@ -70,13 +81,20 @@ pub fn scan(root: &Path, files: &[String]) -> Vec<Hit> {
     for path in files {
         let Some(kind) = kind_of(path) else { continue };
         // Binary files (images under docs/) are not text and have nothing to read.
-        let Ok(text) = std::fs::read_to_string(root.join(path)) else { continue };
+        let Ok(text) = std::fs::read_to_string(root.join(path)) else {
+            continue;
+        };
         let found = match kind {
             Kind::Rust => scan_rust(&text),
             Kind::Manifest => scan_lines(&text, |l| l.trim_start().starts_with("description")),
             Kind::Text => scan_lines(&text, |_| true),
         };
-        hits.extend(found.into_iter().map(|(line, term, context)| Hit { path: path.clone(), line, term, context }));
+        hits.extend(found.into_iter().map(|(line, term, context)| Hit {
+            path: path.clone(),
+            line,
+            term,
+            context,
+        }));
     }
     hits
 }
@@ -93,7 +111,13 @@ fn kind_of(path: &str) -> Option<Kind> {
         Some(Kind::Text)
     } else if path == "Cargo.toml" || path.ends_with("/Cargo.toml") {
         Some(Kind::Manifest)
-    } else if path.ends_with(".rs") && ["crates/", "apps/", "xtask/"].iter().any(|d| path.starts_with(d)) && path != SELF && !is_test_path(path) {
+    } else if path.ends_with(".rs")
+        && ["crates/", "apps/", "xtask/"]
+            .iter()
+            .any(|d| path.starts_with(d))
+        && path != SELF
+        && !is_test_path(path)
+    {
         Some(Kind::Rust)
     } else {
         None
@@ -103,7 +127,10 @@ fn kind_of(path: &str) -> Option<Kind> {
 fn is_test_path(path: &str) -> bool {
     let mut parts = path.split('/').rev();
     let file = parts.next().unwrap_or_default();
-    file == "tests.rs" || file.starts_with("tests_") || file.ends_with("_tests.rs") || parts.any(|d| d == "tests" || d == "benches")
+    file == "tests.rs"
+        || file.starts_with("tests_")
+        || file.ends_with("_tests.rs")
+        || parts.any(|d| d == "tests" || d == "benches")
 }
 
 /// (line, term, line text) for each denied name on the lines `keep` selects.
@@ -111,7 +138,11 @@ fn scan_lines(text: &str, keep: impl Fn(&str) -> bool) -> Vec<(usize, &'static s
     text.lines()
         .enumerate()
         .filter(|(_, l)| keep(l) && !l.contains(ALLOW))
-        .flat_map(|(i, l)| terms_in(l, DENY).into_iter().map(move |t| (i + 1, t, l.trim().to_string())))
+        .flat_map(|(i, l)| {
+            terms_in(l, DENY)
+                .into_iter()
+                .map(move |t| (i + 1, t, l.trim().to_string()))
+        })
         .collect()
 }
 
@@ -121,7 +152,10 @@ fn scan_rust(src: &str) -> Vec<(usize, &'static str, String)> {
     let lines: Vec<&str> = src.lines().collect();
     let mut out = vec![];
     for lit in rust_literals(src) {
-        if lines.get(lit.first - 1..lit.last.min(lines.len())).is_some_and(|ls| ls.iter().any(|l| l.contains(ALLOW))) {
+        if lines
+            .get(lit.first - 1..lit.last.min(lines.len()))
+            .is_some_and(|ls| ls.iter().any(|l| l.contains(ALLOW)))
+        {
             continue;
         }
         for t in terms_in(&lit.text, DENY) {
@@ -139,7 +173,11 @@ fn terms_in(text: &str, terms: &[&'static str]) -> Vec<&'static str> {
     terms
         .iter()
         .copied()
-        .filter(|t| lower.match_indices(t).any(|(i, _)| !word(i.checked_sub(1).and_then(|j| b.get(j))) && !word(b.get(i + t.len()))))
+        .filter(|t| {
+            lower.match_indices(t).any(|(i, _)| {
+                !word(i.checked_sub(1).and_then(|j| b.get(j))) && !word(b.get(i + t.len()))
+            })
+        })
         .collect()
 }
 
@@ -201,7 +239,11 @@ fn rust_literals(src: &str) -> Vec<Lit> {
                 let (text, end) = quoted(b, i + 1, &mut line);
                 i = end;
                 if test_depth.is_none() {
-                    out.push(Lit { first, last: line, text });
+                    out.push(Lit {
+                        first,
+                        last: line,
+                        text,
+                    });
                 }
             }
             b'\'' => i = after_char_or_lifetime(src, i),
@@ -238,13 +280,21 @@ fn rust_literals(src: &str) -> Vec<Lit> {
                 if matches!(&src[start..i], "r" | "br" | "cr") && b.get(i + hashes) == Some(&b'"') {
                     let first = line;
                     let body = i + hashes + 1;
-                    let close: Vec<u8> = std::iter::once(b'"').chain(std::iter::repeat_n(b'#', hashes)).collect();
-                    let end = (body..b.len()).find(|&j| b[j..].starts_with(&close)).unwrap_or(b.len());
+                    let close: Vec<u8> = std::iter::once(b'"')
+                        .chain(std::iter::repeat_n(b'#', hashes))
+                        .collect();
+                    let end = (body..b.len())
+                        .find(|&j| b[j..].starts_with(&close))
+                        .unwrap_or(b.len());
                     let text = String::from_utf8_lossy(&b[body..end]).into_owned();
                     line += text.matches('\n').count();
                     i = (end + close.len()).min(b.len());
                     if test_depth.is_none() {
-                        out.push(Lit { first, last: line, text });
+                        out.push(Lit {
+                            first,
+                            last: line,
+                            text,
+                        });
                     }
                 }
             }
@@ -275,7 +325,10 @@ fn quoted(b: &[u8], mut i: usize, line: &mut usize) -> (String, usize) {
             i += 1;
         }
     }
-    (String::from_utf8_lossy(&text).into_owned(), (i + 1).min(b.len()))
+    (
+        String::from_utf8_lossy(&text).into_owned(),
+        (i + 1).min(b.len()),
+    )
 }
 
 /// Skip a char literal (`'x'`, `'\n'`, `'\u{…}'`) at `i`, or just the quote of a lifetime/label.
@@ -316,7 +369,16 @@ mod other;
 fn h() { let s = b"InDesign"; let m = "multi
 line Pantone"; }
 "##;
-        assert_eq!(rust_hits(src), [(4, "illustrator"), (4, "acrobat"), (6, "aicb"), (13, "indesign"), (13, "pantone")]);
+        assert_eq!(
+            rust_hits(src),
+            [
+                (4, "illustrator"),
+                (4, "acrobat"),
+                (6, "aicb"),
+                (13, "indesign"),
+                (13, "pantone")
+            ]
+        );
         let lits = rust_literals(src);
         let multi = lits.iter().find(|l| l.text.contains("Pantone")).unwrap();
         assert_eq!((multi.first, multi.last), (13, 14));
@@ -332,12 +394,24 @@ line Pantone"; }
     #[test]
     fn docs_packaging_and_manifests() {
         let lines = |text: &str, keep: fn(&str) -> bool| -> Vec<(usize, &'static str)> {
-            scan_lines(text, keep).into_iter().map(|(l, t, _)| (l, t)).collect()
+            scan_lines(text, keep)
+                .into_iter()
+                .map(|(l, t, _)| (l, t))
+                .collect()
         };
-        assert_eq!(lines("Keywords=vector;illustrator;\n", |_| true), [(1, "illustrator")]);
-        assert_eq!(lines("Like Adobe apps\nnot here: Adobe # brand-ok\n", |_| true), [(1, "adobe")]);
+        assert_eq!(
+            lines("Keywords=vector;illustrator;\n", |_| true),
+            [(1, "illustrator")]
+        );
+        assert_eq!(
+            lines("Like Adobe apps\nnot here: Adobe # brand-ok\n", |_| true),
+            [(1, "adobe")]
+        );
         let manifest = "name = \"adobe-thing\"\ndescription = \"Illustrator-style UI\"\n";
-        assert_eq!(lines(manifest, |l| l.trim_start().starts_with("description")), [(2, "illustrator")]);
+        assert_eq!(
+            lines(manifest, |l| l.trim_start().starts_with("description")),
+            [(2, "illustrator")]
+        );
     }
 
     #[test]
@@ -351,7 +425,15 @@ line Pantone"; }
         assert_eq!(kind_of("crates/ui-egui/Cargo.toml"), Some(Kind::Manifest));
         assert_eq!(kind_of("docs/brand/LICENSE-brand.txt"), Some(Kind::Text));
         assert_eq!(kind_of("packaging/linux/nfpm.yaml"), Some(Kind::Text));
-        for skipped in ["README.md", "ROADMAP.md", "CLAUDE.md", "AGENTS.md", ".github/workflows/release.yml", "ASSETS.md", "docs/mcp.md"] {
+        for skipped in [
+            "README.md",
+            "ROADMAP.md",
+            "CLAUDE.md",
+            "AGENTS.md",
+            ".github/workflows/release.yml",
+            "ASSETS.md",
+            "docs/mcp.md",
+        ] {
             assert_eq!(kind_of(skipped), None, "{skipped}");
         }
     }
@@ -364,23 +446,46 @@ line Pantone"; }
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
             std::fs::write(path, text).unwrap();
         };
-        file("crates/x/src/lib.rs", "pub const LABEL: &str = \"Export for Illustrator\"; // a comment: Adobe\n");
+        file(
+            "crates/x/src/lib.rs",
+            "pub const LABEL: &str = \"Export for Illustrator\"; // a comment: Adobe\n",
+        );
         file("docs/x.md", "Works like Photoshop.\n");
         file("docs/x.txt", "Works like Photoshop.\n");
         file("packaging/x.desktop", "Keywords=vector;illustrator;\n");
         file("README.md", "Adobe trademark notice\n");
-        let files: Vec<String> = ["crates/x/src/lib.rs", "docs/x.md", "docs/x.txt", "packaging/x.desktop", "README.md"].map(String::from).to_vec();
+        let files: Vec<String> = [
+            "crates/x/src/lib.rs",
+            "docs/x.md",
+            "docs/x.txt",
+            "packaging/x.desktop",
+            "README.md",
+        ]
+        .map(String::from)
+        .to_vec();
         let hits = scan(&dir, &files);
         let _ = std::fs::remove_dir_all(&dir);
-        let found: Vec<(&str, usize, &str)> = hits.iter().map(|h| (h.path.as_str(), h.line, h.term)).collect();
-        assert_eq!(found, [("crates/x/src/lib.rs", 1, "illustrator"), ("docs/x.txt", 1, "photoshop"), ("packaging/x.desktop", 1, "illustrator")]);
+        let found: Vec<(&str, usize, &str)> = hits
+            .iter()
+            .map(|h| (h.path.as_str(), h.line, h.term))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                ("crates/x/src/lib.rs", 1, "illustrator"),
+                ("docs/x.txt", 1, "photoshop"),
+                ("packaging/x.desktop", 1, "illustrator")
+            ]
+        );
     }
 
     #[test]
     fn the_tree_is_clean() {
         let root = crate::root();
         // Outside a git checkout there is no file list to check.
-        let Ok(files) = crate::repo_files(&root) else { return };
+        let Ok(files) = crate::repo_files(&root) else {
+            return;
+        };
         let hits = scan(&root, &files);
         assert!(hits.is_empty(), "{hits:#?}");
     }

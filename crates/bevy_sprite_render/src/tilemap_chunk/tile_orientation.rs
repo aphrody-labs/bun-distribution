@@ -1,7 +1,7 @@
 use core::fmt::Display;
 
 use bevy_math::IVec2;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 
 /// The set of possible tile orientations.
 /// These represent all possible results of mirroring the tile horizontally
@@ -278,8 +278,8 @@ mod tests {
     }
 
     #[test]
-    fn applying_any_transform_pair_individually_to_a_pos_should_give_same_result_as_applying_combined_single_transform(
-    ) {
+    fn applying_any_transform_pair_individually_to_a_pos_should_give_same_result_as_applying_combined_single_transform()
+     {
         for (first, ..) in CASES.iter() {
             for (second, ..) in CASES.iter() {
                 let combined = first.and_then(*second);

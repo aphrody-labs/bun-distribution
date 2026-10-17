@@ -24,7 +24,9 @@
 use crate::widgets::CenteredDialog as _;
 use egui::{Align2, Color32, Pos2, Rect, Sense, Stroke, StrokeKind, pos2, vec2};
 use filmcraft_geom::{Affine, Vec2};
-use filmcraft_project::graphic::{self, LayerContent, LayerSpec, eval_layer, layer_display_name, layer_indices};
+use filmcraft_project::graphic::{
+    self, LayerContent, LayerSpec, eval_layer, layer_display_name, layer_indices,
+};
 use filmcraft_project::{ClipId, EffectInstance, ItemKind, ParamValue, TrackItem};
 use filmcraft_render::graphic_clip::{layer_local_bounds, layer_matrix, text_layout};
 use filmcraft_time::Tick;
@@ -49,15 +51,24 @@ pub struct LayerView {
 impl LayerView {
     pub fn quad(&self) -> [Pos2; 4] {
         let b = self.local;
-        [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])].map(|(x, y)| sp(&self.to_screen, x, y))
+        [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]
+            .map(|(x, y)| sp(&self.to_screen, x, y))
     }
     fn to_local(&self, p: Pos2) -> Option<(f32, f32)> {
-        let v = self.to_screen.inverse()?.apply(Vec2::new(p.x as f64, p.y as f64));
+        let v = self
+            .to_screen
+            .inverse()?
+            .apply(Vec2::new(p.x as f64, p.y as f64));
         Some((v.x as f32, v.y as f32))
     }
     pub(crate) fn hit(&self, p: Pos2) -> bool {
         let pad = 4.0 / screen_scale(&self.to_screen).max(1e-6);
-        self.to_local(p).is_some_and(|(x, y)| x >= self.local[0] - pad && x <= self.local[2] + pad && y >= self.local[1] - pad && y <= self.local[3] + pad)
+        self.to_local(p).is_some_and(|(x, y)| {
+            x >= self.local[0] - pad
+                && x <= self.local[2] + pad
+                && y >= self.local[1] - pad
+                && y <= self.local[3] + pad
+        })
     }
     pub(crate) fn is_text(&self) -> bool {
         matches!(self.spec.content, LayerContent::Text(_))
@@ -85,7 +96,13 @@ pub fn is_graphic_clip(app: &FilmcraftApp, c: ClipId) -> bool {
 /// The selected graphic clip, if any.
 pub fn selected_graphic(app: &FilmcraftApp) -> Option<(ClipId, TrackItem)> {
     let q = app.session.active_sequence()?;
-    app.session.state.selection.iter().copied().find(|c| is_graphic_clip(app, *c)).and_then(|c| q.find_item(c).map(|(_, it)| (c, it.clone())))
+    app.session
+        .state
+        .selection
+        .iter()
+        .copied()
+        .find(|c| is_graphic_clip(app, *c))
+        .and_then(|c| q.find_item(c).map(|(_, it)| (c, it.clone())))
 }
 
 /// Layers of the graphic clips visible at the playhead, front-most first. A layer whose
@@ -93,12 +110,17 @@ pub fn selected_graphic(app: &FilmcraftApp) -> Option<(ClipId, TrackItem)> {
 /// Sequence pixels → screen points on the monitor picture `pic`. The picture shows the frame at its
 /// display aspect, so with non-square sequence pixels the two axes scale differently.
 pub(crate) fn frame_to_screen(pic: Rect, frame: (u32, u32)) -> Affine {
-    let (kx, ky) = (pic.width() as f64 / frame.0.max(1) as f64, pic.height() as f64 / frame.1.max(1) as f64);
+    let (kx, ky) = (
+        pic.width() as f64 / frame.0.max(1) as f64,
+        pic.height() as f64 / frame.1.max(1) as f64,
+    );
     Affine::translate(pic.min.x as f64, pic.min.y as f64).then_apply(&Affine::scale(kx, ky))
 }
 
 pub fn visible_layers(app: &FilmcraftApp, pic: Rect, frame: (u32, u32)) -> Vec<LayerView> {
-    let Some(seq) = app.session.active_sequence() else { return Vec::new() };
+    let Some(seq) = app.session.active_sequence() else {
+        return Vec::new();
+    };
     let t = app.session.playhead();
     let screen = frame_to_screen(pic, frame);
     let mut out = Vec::new();
@@ -110,7 +132,11 @@ pub fn visible_layers(app: &FilmcraftApp, pic: Rect, frame: (u32, u32)) -> Vec<L
         if !it.enabled {
             continue;
         }
-        let Some(ItemKind::Graphic { width, height, .. }) = app.session.project.item(it.item).map(|p| &p.kind) else { continue };
+        let Some(ItemKind::Graphic { width, height, .. }) =
+            app.session.project.item(it.item).map(|p| &p.kind)
+        else {
+            continue;
+        };
         let size = (*width, *height);
         let mt = it.source_time_at(t);
         let base = screen.then_apply(&filmcraft_render::motion_matrix(seq, it, size, None, mt));
@@ -118,7 +144,14 @@ pub fn visible_layers(app: &FilmcraftApp, pic: Rect, frame: (u32, u32)) -> Vec<L
         for (li, &ei) in idx.iter().enumerate().rev() {
             if let Some(spec) = eval_layer(&it.effects[ei], mt, size).filter(|s| s.enabled) {
                 let local = layer_local_bounds(&spec);
-                out.push(LayerView { clip: it.id, layer: li, to_screen: base.then_apply(&layer_matrix(&spec)), canvas_to_screen: base, spec, local });
+                out.push(LayerView {
+                    clip: it.id,
+                    layer: li,
+                    to_screen: base.then_apply(&layer_matrix(&spec)),
+                    canvas_to_screen: base,
+                    spec,
+                    local,
+                });
             }
         }
     }
@@ -133,16 +166,25 @@ fn canvas_target(app: &FilmcraftApp, pic: Rect, frame: (u32, u32)) -> (Option<Cl
     if let Some((c, it)) = selected_graphic(app)
         && it.range().contains(t)
         && let Some(seq) = app.session.active_sequence()
-        && let Some(ItemKind::Graphic { width, height, .. }) = app.session.project.item(it.item).map(|p| &p.kind)
+        && let Some(ItemKind::Graphic { width, height, .. }) =
+            app.session.project.item(it.item).map(|p| &p.kind)
     {
-        let m = screen.then_apply(&filmcraft_render::motion_matrix(seq, &it, (*width, *height), None, it.source_time_at(t)));
+        let m = screen.then_apply(&filmcraft_render::motion_matrix(
+            seq,
+            &it,
+            (*width, *height),
+            None,
+            it.source_time_at(t),
+        ));
         return (Some(c), m);
     }
     (None, screen)
 }
 
 fn to_canvas(m: &Affine, p: Pos2) -> Vec2 {
-    m.inverse().map(|i| i.apply(Vec2::new(p.x as f64, p.y as f64))).unwrap_or_default()
+    m.inverse()
+        .map(|i| i.apply(Vec2::new(p.x as f64, p.y as f64)))
+        .unwrap_or_default()
 }
 
 fn text_of(spec: &LayerSpec) -> Option<&filmcraft_project::graphic::TextProps> {
@@ -153,7 +195,10 @@ fn text_of(spec: &LayerSpec) -> Option<&filmcraft_project::graphic::TextProps> {
 }
 
 fn prev_boundary(s: &str, i: usize) -> usize {
-    s[..i.min(s.len())].char_indices().next_back().map_or(0, |(b, _)| b)
+    s[..i.min(s.len())]
+        .char_indices()
+        .next_back()
+        .map_or(0, |(b, _)| b)
 }
 fn next_boundary(s: &str, i: usize) -> usize {
     let i = i.min(s.len());
@@ -187,7 +232,16 @@ struct DragState {
 /// of the top, right, bottom and left edges (4–7).
 pub(crate) fn handle_points(quad: &[Pos2; 4]) -> [Pos2; 8] {
     let mid = |i: usize| quad[i] + (quad[(i + 1) % 4] - quad[i]) * 0.5;
-    [quad[0], quad[1], quad[2], quad[3], mid(0), mid(1), mid(2), mid(3)]
+    [
+        quad[0],
+        quad[1],
+        quad[2],
+        quad[3],
+        mid(0),
+        mid(1),
+        mid(2),
+        mid(3),
+    ]
 }
 
 /// Dragging handle `n` of `quad` from `start` to `cur`: the box grows towards the pointer while
@@ -209,12 +263,23 @@ impl HandleScale {
     fn new(quad: &[Pos2; 4], n: usize, start: Pos2, cur: Pos2, keep_ratio: bool) -> Self {
         let pts = handle_points(quad);
         let n = n.min(7);
-        let pin = if n < 4 { pts[(n + 2) % 4] } else { pts[4 + (n - 4 + 2) % 4] };
-        let (ux, uy) = ((quad[1] - quad[0]).normalized(), (quad[3] - quad[0]).normalized());
+        let pin = if n < 4 {
+            pts[(n + 2) % 4]
+        } else {
+            pts[4 + (n - 4 + 2) % 4]
+        };
+        let (ux, uy) = (
+            (quad[1] - quad[0]).normalized(),
+            (quad[3] - quad[0]).normalized(),
+        );
         // the factor along `dir`: how far the pointer is from the pinned side, relative to the start
         let along = |dir: egui::Vec2| {
             let from = (start - pin).dot(dir);
-            if from.abs() < 1.0 { 1.0 } else { ((cur - pin).dot(dir) / from).max(0.01) }
+            if from.abs() < 1.0 {
+                1.0
+            } else {
+                ((cur - pin).dot(dir) / from).max(0.01)
+            }
         };
         let (fx, fy) = match n {
             0..=3 if keep_ratio => {
@@ -225,7 +290,14 @@ impl HandleScale {
             4 | 6 => (1.0, along(uy)),
             _ => (along(ux), 1.0),
         };
-        Self { pin, ux, uy, fx, fy, apart: n >= 4 || !keep_ratio }
+        Self {
+            pin,
+            ux,
+            uy,
+            fx,
+            fy,
+            apart: n >= 4 || !keep_ratio,
+        }
     }
 
     /// Where a screen point of the layer ends up.
@@ -294,7 +366,9 @@ impl HandleDrag {
             _ => (0.0, 0.0),
         };
         let Some(t) = text_of(&v.spec) else {
-            let LayerContent::Shape(s) = &v.spec.content else { return Self::Stretch(HandleScale::new(&quad, n, start, cur, keep_ratio)) };
+            let LayerContent::Shape(s) = &v.spec.content else {
+                return Self::Stretch(HandleScale::new(&quad, n, start, cur, keep_ratio));
+            };
             // a path is its points, so it stretches; the other shapes are drawn from their Size
             if s.shape == 3 {
                 return Self::Stretch(HandleScale::new(&quad, n, start, cur, keep_ratio));
@@ -305,7 +379,11 @@ impl HandleDrag {
             if keep_ratio && n < 4 && w > 0.0 && h > 0.0 {
                 // Shift: the side that moved further sets the scale of both; the opposite corner stays
                 let (fw, fh) = ((rect[2] - rect[0]) / w, (rect[3] - rect[1]) / h);
-                let f = if (fw - 1.0).abs() >= (fh - 1.0).abs() { fw } else { fh };
+                let f = if (fw - 1.0).abs() >= (fh - 1.0).abs() {
+                    fw
+                } else {
+                    fh
+                };
                 let f = f.max(1.0 / w).max(1.0 / h);
                 if matches!(n, 0 | 3) {
                     rect[0] = rect[2] - w * f;
@@ -318,18 +396,34 @@ impl HandleDrag {
                     rect[3] = rect[1] + h * f;
                 }
             }
-            return Self::Size { rect, from, size: s.size };
+            return Self::Size {
+                rect,
+                from,
+                size: s.size,
+            };
         };
         if is_paragraph(t) {
             // a box without a height is as tall as its text
-            let from = if t.box_height > 0.0 { [0.0, 0.0, t.box_width, t.box_height] } else { [0.0, v.local[1], t.box_width, v.local[3]] };
+            let from = if t.box_height > 0.0 {
+                [0.0, 0.0, t.box_width, t.box_height]
+            } else {
+                [0.0, v.local[1], t.box_width, v.local[3]]
+            };
             let rect = drag_sides(from, n, dx, dy, (t.size * 0.5).max(1.0));
-            return Self::Resize { rect, from, tall: t.box_height > 0.0 || !matches!(n, 5 | 7) };
+            return Self::Resize {
+                rect,
+                from,
+                tall: t.box_height > 0.0 || !matches!(n, 5 | 7),
+            };
         }
         // Every handle scales both axes alike. Only the pointer's travel along one side of the box
         // counts: along its width for the two side handles, along its height for all the others.
         let anchor = anchor_screen(v);
-        let axis = if matches!(n, 5 | 7) { (quad[1] - quad[0]).normalized() } else { (quad[3] - quad[0]).normalized() };
+        let axis = if matches!(n, 5 | 7) {
+            (quad[1] - quad[0]).normalized()
+        } else {
+            (quad[3] - quad[0]).normalized()
+        };
         let handle = handle_points(&quad)[n];
         let from = (handle - anchor).dot(axis);
         // Away from the anchor grows. A handle sitting on the anchor counts as just inside the box
@@ -342,9 +436,17 @@ impl HandleDrag {
         } else {
             1.0
         };
-        let reach = from.abs() + if from.abs() < NEAR_ANCHOR { NEAR_ANCHOR } else { 0.0 };
+        let reach = from.abs()
+            + if from.abs() < NEAR_ANCHOR {
+                NEAR_ANCHOR
+            } else {
+                0.0
+            };
         let f = 1.0 + (cur - start).dot(axis) * away / reach;
-        Self::Scale { anchor, f: if f.is_finite() { f.max(0.01) } else { 1.0 } }
+        Self::Scale {
+            anchor,
+            f: if f.is_finite() { f.max(0.01) } else { 1.0 },
+        }
     }
 
     /// The layer's box on screen as the drag leaves it.
@@ -353,7 +455,8 @@ impl HandleDrag {
             Self::Stretch(h) => v.quad().map(|q| h.apply(q)),
             Self::Scale { anchor, f } => v.quad().map(|q| *anchor + (q - *anchor) * *f),
             Self::Resize { rect: b, .. } | Self::Size { rect: b, .. } => {
-                [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])].map(|(x, y)| sp(&v.to_screen, x, y))
+                [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]
+                    .map(|(x, y)| sp(&v.to_screen, x, y))
             }
         }
     }
@@ -376,7 +479,9 @@ impl HandleDrag {
                 }
                 props
             }
-            Self::Scale { f, .. } => json!({"scale": tr.scale.y * 100.0 * *f as f64, "scale_width": tr.scale.x * 100.0 * *f as f64}),
+            Self::Scale { f, .. } => {
+                json!({"scale": tr.scale.y * 100.0 * *f as f64, "scale_width": tr.scale.x * 100.0 * *f as f64})
+            }
             Self::Resize { rect, from, tall } => {
                 // the box's top-left corner is the layer's origin: when it moves, the anchor point
                 // is renumbered so that it (and the position) stay on the same spot
@@ -394,7 +499,10 @@ impl HandleDrag {
                 // the old layer pixels) to put the box at `rect`. The anchor point is renumbered so
                 // that it, the Position and the side that was not dragged stay where they are.
                 let f = |a: f32, b: f32| if b > 0.0 { a / b } else { 1.0 };
-                let (fx, fy) = (f(rect[2] - rect[0], from[2] - from[0]), f(rect[3] - rect[1], from[3] - from[1]));
+                let (fx, fy) = (
+                    f(rect[2] - rect[0], from[2] - from[0]),
+                    f(rect[3] - rect[1], from[3] - from[1]),
+                );
                 let o = (rect[0] - from[0] * fx, rect[1] - from[1] * fy);
                 json!({
                     "size": [size.0 * fx, size.1 * fy],
@@ -418,12 +526,21 @@ const CORNER_INSET: f32 = 12.0;
 /// corner-radius handles on screen (TL, TR, BR, BL); `None` for other layers and for a rectangle
 /// too small on screen to hold them.
 fn corner_handles(v: &LayerView) -> Option<(f32, [Pos2; 4])> {
-    let LayerContent::Shape(s) = &v.spec.content else { return None };
+    let LayerContent::Shape(s) = &v.spec.content else {
+        return None;
+    };
     let q = v.quad();
-    if s.shape != 0 || (q[1] - q[0]).length() < 4.0 * CORNER_INSET || (q[3] - q[0]).length() < 4.0 * CORNER_INSET {
+    if s.shape != 0
+        || (q[1] - q[0]).length() < 4.0 * CORNER_INSET
+        || (q[3] - q[0]).length() < 4.0 * CORNER_INSET
+    {
         return None;
     }
-    let r = s.corner_radius.min(s.size.0 / 2.0).min(s.size.1 / 2.0).max(0.0);
+    let r = s
+        .corner_radius
+        .min(s.size.0 / 2.0)
+        .min(s.size.1 / 2.0)
+        .max(0.0);
     Some((r, corner_points(v, r)))
 }
 
@@ -431,15 +548,26 @@ fn corner_handles(v: &LayerView) -> Option<(f32, [Pos2; 4])> {
 /// where the rounded corner's arc is centred, but at least [`CORNER_INSET`] points in.
 fn corner_points(v: &LayerView, r: f32) -> [Pos2; 4] {
     let b = v.local;
-    let d = r.max(CORNER_INSET / screen_scale(&v.to_screen).max(1e-6)).min((b[2] - b[0]) / 2.0).min((b[3] - b[1]) / 2.0);
-    [(b[0] + d, b[1] + d), (b[2] - d, b[1] + d), (b[2] - d, b[3] - d), (b[0] + d, b[3] - d)].map(|(x, y)| sp(&v.to_screen, x, y))
+    let d = r
+        .max(CORNER_INSET / screen_scale(&v.to_screen).max(1e-6))
+        .min((b[2] - b[0]) / 2.0)
+        .min((b[3] - b[1]) / 2.0);
+    [
+        (b[0] + d, b[1] + d),
+        (b[2] - d, b[1] + d),
+        (b[2] - d, b[3] - d),
+        (b[0] + d, b[3] - d),
+    ]
+    .map(|(x, y)| sp(&v.to_screen, x, y))
 }
 
 /// The corner radius after dragging handle `n` of rectangle `v` (radius `r0`) from `start` to
 /// `cur`: the pointer's travel into the shape along the corner's diagonal, up to half the shorter
 /// side.
 fn corner_drag(v: &LayerView, r0: f32, n: usize, start: Pos2, cur: Pos2) -> f32 {
-    let (Some(a), Some(b)) = (v.to_local(start), v.to_local(cur)) else { return r0 };
+    let (Some(a), Some(b)) = (v.to_local(start), v.to_local(cur)) else {
+        return r0;
+    };
     let (sx, sy) = match n {
         0 => (1.0, 1.0),
         1 => (-1.0, 1.0),
@@ -456,7 +584,12 @@ fn round_rect_outline(v: &LayerView, r: f32) -> Vec<Pos2> {
     let b = v.local;
     let mut pts = Vec::new();
     // each corner's arc, clockwise from the top-right
-    for (cx, cy, from) in [(b[2] - r, b[1] + r, -90.0_f32), (b[2] - r, b[3] - r, 0.0), (b[0] + r, b[3] - r, 90.0), (b[0] + r, b[1] + r, 180.0)] {
+    for (cx, cy, from) in [
+        (b[2] - r, b[1] + r, -90.0_f32),
+        (b[2] - r, b[3] - r, 0.0),
+        (b[0] + r, b[3] - r, 90.0),
+        (b[0] + r, b[1] + r, 180.0),
+    ] {
         for i in 0..=8 {
             let a = (from + 90.0 * i as f32 / 8.0).to_radians();
             pts.push(sp(&v.to_screen, cx + r * a.cos(), cy + r * a.sin()));
@@ -467,17 +600,34 @@ fn round_rect_outline(v: &LayerView, r: f32) -> Vec<Pos2> {
 
 /// The layer's anchor point on screen.
 fn anchor_screen(v: &LayerView) -> Pos2 {
-    sp(&v.to_screen, v.spec.transform.anchor.x as f32, v.spec.transform.anchor.y as f32)
+    sp(
+        &v.to_screen,
+        v.spec.transform.anchor.x as f32,
+        v.spec.transform.anchor.y as f32,
+    )
 }
 
 /// A screen offset in the units `m` maps to the screen (its translation left out).
 pub(crate) fn unscale(m: &Affine, off: egui::Vec2) -> Vec2 {
-    Affine { e: 0.0, f: 0.0, ..*m }.inverse().map(|i| i.apply(Vec2::new(off.x as f64, off.y as f64))).unwrap_or_default()
+    Affine {
+        e: 0.0,
+        f: 0.0,
+        ..*m
+    }
+    .inverse()
+    .map(|i| i.apply(Vec2::new(off.x as f64, off.y as f64)))
+    .unwrap_or_default()
 }
 
 /// `graphics.newText` for the Type tool: point text at `at`, or paragraph text in the box from
 /// `at` to `corner`.
-fn new_text_action(app: &FilmcraftApp, pic: Rect, frame: (u32, u32), at: Pos2, corner: Option<Pos2>) -> (String, Value) {
+fn new_text_action(
+    app: &FilmcraftApp,
+    pic: Rect,
+    frame: (u32, u32),
+    at: Pos2,
+    corner: Option<Pos2>,
+) -> (String, Value) {
     let (into, m) = canvas_target(app, pic, frame);
     let a = to_canvas(&m, at);
     let size = 100.0 * frame.1 as f64 / 1080.0;
@@ -527,62 +677,121 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
         let q = v.quad();
         let r = Rect::from_points(&q);
         let name = layer_display_name_view(app, v);
-        app.auto.add(&format!("program.layer.{}.{}", v.clip.0, v.layer), r, &name);
+        app.auto
+            .add(&format!("program.layer.{}.{}", v.clip.0, v.layer), r, &name);
     }
     let sel_clip = selected_graphic(app).map(|(c, _)| c);
     let sel_layers = app.session.state.graphic_layers.clone();
     let editing = app.ui.gfx_edit.clone();
     // ---- boxes and handles
-    let graphics_tool = matches!(tool, Tool::Selection | Tool::Type | Tool::VerticalType | Tool::Rectangle | Tool::Ellipse | Tool::Pen);
+    let graphics_tool = matches!(
+        tool,
+        Tool::Selection
+            | Tool::Type
+            | Tool::VerticalType
+            | Tool::Rectangle
+            | Tool::Ellipse
+            | Tool::Pen
+    );
     if graphics_tool {
         for v in views.iter().filter(|v| Some(v.clip) == sel_clip) {
             let q = v.quad();
             let selected = sel_layers.contains(&v.layer);
-            let is_edit = editing.as_ref().is_some_and(|e| e.clip == v.clip.0 && e.layer == v.layer);
+            let is_edit = editing
+                .as_ref()
+                .is_some_and(|e| e.clip == v.clip.0 && e.layer == v.layer);
             // only the selected layers have a box; that of the text being typed into is red, as in Premiere
             if !(selected || is_edit) {
                 continue;
             }
-            painter.add(egui::Shape::closed_line(q.to_vec(), Stroke::new(1.0, if is_edit { t.danger } else { accent })));
+            painter.add(egui::Shape::closed_line(
+                q.to_vec(),
+                Stroke::new(1.0, if is_edit { t.danger } else { accent }),
+            ));
             if selected && !is_edit {
                 let paragraph = text_of(&v.spec).filter(|tp| is_paragraph(tp));
-                let label = if paragraph.is_some() { "resize handle" } else { "scale handle" };
+                let label = if paragraph.is_some() {
+                    "resize handle"
+                } else {
+                    "scale handle"
+                };
                 // text the box hides: its bottom-right handle turns into a red plus
                 let overflow = paragraph.is_some_and(|tp| text_layout(tp).overflow);
                 for (n, c) in q.iter().enumerate() {
                     let hr = Rect::from_center_size(*c, vec2(7.0, 7.0));
                     if overflow && n == 2 {
                         painter.rect_filled(hr.expand(1.0), 0.0, t.danger);
-                        painter.line_segment([*c - vec2(3.0, 0.0), *c + vec2(3.0, 0.0)], Stroke::new(1.0, Color32::WHITE));
-                        painter.line_segment([*c - vec2(0.0, 3.0), *c + vec2(0.0, 3.0)], Stroke::new(1.0, Color32::WHITE));
+                        painter.line_segment(
+                            [*c - vec2(3.0, 0.0), *c + vec2(3.0, 0.0)],
+                            Stroke::new(1.0, Color32::WHITE),
+                        );
+                        painter.line_segment(
+                            [*c - vec2(0.0, 3.0), *c + vec2(0.0, 3.0)],
+                            Stroke::new(1.0, Color32::WHITE),
+                        );
                     } else {
                         painter.rect_filled(hr, 0.0, Color32::WHITE);
                         painter.rect_stroke(hr, 0.0, Stroke::new(1.0, accent), StrokeKind::Middle);
                     }
-                    app.auto.add(&format!("program.layer.{}.{}.handle.{n}", v.clip.0, v.layer), hr.expand(3.0), label);
+                    app.auto.add(
+                        &format!("program.layer.{}.{}.handle.{n}", v.clip.0, v.layer),
+                        hr.expand(3.0),
+                        label,
+                    );
                 }
                 for (n, m) in handle_points(&q).iter().enumerate().skip(4) {
                     let hr = Rect::from_center_size(*m, vec2(5.0, 5.0));
                     painter.rect_filled(hr, 0.0, Color32::WHITE);
-                    app.auto.add(&format!("program.layer.{}.{}.handle.{n}", v.clip.0, v.layer), hr.expand(4.0), label);
+                    app.auto.add(
+                        &format!("program.layer.{}.{}.handle.{n}", v.clip.0, v.layer),
+                        hr.expand(4.0),
+                        label,
+                    );
                 }
                 // a rectangle's corner-radius handles, just inside its corners
-                for (n, c) in corner_handles(v).map(|(_, pts)| pts).iter().flatten().enumerate() {
+                for (n, c) in corner_handles(v)
+                    .map(|(_, pts)| pts)
+                    .iter()
+                    .flatten()
+                    .enumerate()
+                {
                     painter.circle_filled(*c, 3.0, Color32::WHITE);
                     painter.circle_stroke(*c, 3.0, Stroke::new(1.0, accent));
-                    app.auto.add(&format!("program.layer.{}.{}.corner.{n}", v.clip.0, v.layer), Rect::from_center_size(*c, vec2(12.0, 12.0)), "corner radius");
+                    app.auto.add(
+                        &format!("program.layer.{}.{}.corner.{n}", v.clip.0, v.layer),
+                        Rect::from_center_size(*c, vec2(12.0, 12.0)),
+                        "corner radius",
+                    );
                 }
                 // anchor point
                 let a = anchor_screen(v);
                 painter.circle_stroke(a, 4.0, Stroke::new(1.0, accent));
-                painter.line_segment([a - vec2(6.0, 0.0), a + vec2(6.0, 0.0)], Stroke::new(1.0, accent));
-                painter.line_segment([a - vec2(0.0, 6.0), a + vec2(0.0, 6.0)], Stroke::new(1.0, accent));
-                app.auto.add(&format!("program.layer.{}.{}.anchor", v.clip.0, v.layer), Rect::from_center_size(a, vec2(12.0, 12.0)), "anchor point");
+                painter.line_segment(
+                    [a - vec2(6.0, 0.0), a + vec2(6.0, 0.0)],
+                    Stroke::new(1.0, accent),
+                );
+                painter.line_segment(
+                    [a - vec2(0.0, 6.0), a + vec2(0.0, 6.0)],
+                    Stroke::new(1.0, accent),
+                );
+                app.auto.add(
+                    &format!("program.layer.{}.{}.anchor", v.clip.0, v.layer),
+                    Rect::from_center_size(a, vec2(12.0, 12.0)),
+                    "anchor point",
+                );
             }
         }
     }
     let id = egui::Id::new("gfx-overlay");
-    let resp = ui.interact(pic, id, if graphics_tool { Sense::click_and_drag() } else { Sense::hover() });
+    let resp = ui.interact(
+        pic,
+        id,
+        if graphics_tool {
+            Sense::click_and_drag()
+        } else {
+            Sense::hover()
+        },
+    );
     let hover = resp.hover_pos();
     let mut actions: Vec<(String, Value)> = Vec::new();
     let drag_id = id.with("drag");
@@ -592,17 +801,30 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
     if let Some(p) = hover {
         match tool {
             Tool::Type | Tool::VerticalType => ui.ctx().set_cursor_icon(egui::CursorIcon::Text),
-            Tool::Rectangle | Tool::Ellipse | Tool::Pen => ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair),
+            Tool::Rectangle | Tool::Ellipse | Tool::Pen => {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair)
+            }
             Tool::Selection => {
                 let corner = views
                     .iter()
                     .filter(|v| Some(v.clip) == sel_clip && sel_layers.contains(&v.layer))
-                    .find_map(|v| corner_handles(v).and_then(|(_, pts)| pts.iter().position(|c| (*c - p).length() <= 6.0)));
-                if editing.as_ref().is_some_and(|e| views.iter().any(|v| v.clip.0 == e.clip && v.layer == e.layer && v.hit(p))) {
+                    .find_map(|v| {
+                        corner_handles(v)
+                            .and_then(|(_, pts)| pts.iter().position(|c| (*c - p).length() <= 6.0))
+                    });
+                if editing.as_ref().is_some_and(|e| {
+                    views
+                        .iter()
+                        .any(|v| v.clip.0 == e.clip && v.layer == e.layer && v.hit(p))
+                }) {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::Text);
                 } else if let Some(n) = corner {
                     // along the corner's diagonal, the way the drag works
-                    ui.ctx().set_cursor_icon(if n % 2 == 0 { egui::CursorIcon::ResizeNwSe } else { egui::CursorIcon::ResizeNeSw });
+                    ui.ctx().set_cursor_icon(if n % 2 == 0 {
+                        egui::CursorIcon::ResizeNwSe
+                    } else {
+                        egui::CursorIcon::ResizeNeSw
+                    });
                 } else if views.iter().any(|v| v.hit(p)) {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::Move);
                 }
@@ -613,18 +835,28 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
 
     // ---- text editing
     if let Some(ed) = editing.clone() {
-        match views.iter().find(|v| v.clip.0 == ed.clip && v.layer == ed.layer && v.is_text()) {
+        match views
+            .iter()
+            .find(|v| v.clip.0 == ed.clip && v.layer == ed.layer && v.is_text())
+        {
             Some(v) => text_edit(app, ui, v, ed, &resp, &mut actions),
             None => end_edit(app, ui),
         }
     }
     let editing = app.ui.gfx_edit.clone();
-    let edit_view = editing.as_ref().and_then(|e| views.iter().find(|v| v.clip.0 == e.clip && v.layer == e.layer));
+    let edit_view = editing.as_ref().and_then(|e| {
+        views
+            .iter()
+            .find(|v| v.clip.0 == e.clip && v.layer == e.layer)
+    });
 
     // ---- presses (the left button only: a middle or right drag leaves the layers alone)
     if graphics_tool && resp.drag_started_by(egui::PointerButton::Primary) {
         // where the button went down (a drag starts only after the pointer has moved a little)
-        let p = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos()).unwrap_or(pic.center());
+        let p = ui
+            .input(|i| i.pointer.press_origin())
+            .or(resp.interact_pointer_pos())
+            .unwrap_or(pic.center());
         let shift = ui.input(|i| i.modifiers.shift);
         let in_edit = edit_view.is_some_and(|v| v.hit(p));
         drag = None;
@@ -640,25 +872,64 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                     }
                     app.ui.gfx_edit = Some(ed);
                 }
-                drag = Some(DragState { kind: DragKind::TextSelect, clip: v.clip, layer: v.layer, start: p });
+                drag = Some(DragState {
+                    kind: DragKind::TextSelect,
+                    clip: v.clip,
+                    layer: v.layer,
+                    start: p,
+                });
             }
         } else {
             match tool {
                 Tool::Selection | Tool::Type | Tool::VerticalType => {
                     // of the selected layers: the anchor point first (it can sit on a handle), then the handles
-                    let selected = || views.iter().filter(|v| Some(v.clip) == sel_clip && sel_layers.contains(&v.layer));
-                    let anchor = selected().find(|v| tool == Tool::Selection && (anchor_screen(v) - p).length() <= 7.0);
-                    let handle = selected().find_map(|v| handle_points(&v.quad()).iter().position(|c| (*c - p).length() <= 7.0).map(|n| (v.clip, v.layer, n)));
-                    let corner = selected()
-                        .find_map(|v| corner_handles(v).and_then(|(_, pts)| pts.iter().position(|c| (*c - p).length() <= 6.0)).map(|n| (v.clip, v.layer, n)));
+                    let selected = || {
+                        views
+                            .iter()
+                            .filter(|v| Some(v.clip) == sel_clip && sel_layers.contains(&v.layer))
+                    };
+                    let anchor = selected().find(|v| {
+                        tool == Tool::Selection && (anchor_screen(v) - p).length() <= 7.0
+                    });
+                    let handle = selected().find_map(|v| {
+                        handle_points(&v.quad())
+                            .iter()
+                            .position(|c| (*c - p).length() <= 7.0)
+                            .map(|n| (v.clip, v.layer, n))
+                    });
+                    let corner = selected().find_map(|v| {
+                        corner_handles(v)
+                            .and_then(|(_, pts)| pts.iter().position(|c| (*c - p).length() <= 6.0))
+                            .map(|n| (v.clip, v.layer, n))
+                    });
                     if let Some(v) = anchor {
-                        drag = Some(DragState { kind: DragKind::Anchor, clip: v.clip, layer: v.layer, start: p });
+                        drag = Some(DragState {
+                            kind: DragKind::Anchor,
+                            clip: v.clip,
+                            layer: v.layer,
+                            start: p,
+                        });
                     } else if let Some((c, l, n)) = handle {
-                        drag = Some(DragState { kind: DragKind::Handle(n), clip: c, layer: l, start: p });
+                        drag = Some(DragState {
+                            kind: DragKind::Handle(n),
+                            clip: c,
+                            layer: l,
+                            start: p,
+                        });
                     } else if let Some((c, l, n)) = corner {
-                        drag = Some(DragState { kind: DragKind::Corner(n), clip: c, layer: l, start: p });
+                        drag = Some(DragState {
+                            kind: DragKind::Corner(n),
+                            clip: c,
+                            layer: l,
+                            start: p,
+                        });
                     } else if tool == Tool::Type && !views.iter().any(|v| v.is_text() && v.hit(p)) {
-                        drag = Some(DragState { kind: DragKind::NewTextBox, clip: ClipId(0), layer: 0, start: p });
+                        drag = Some(DragState {
+                            kind: DragKind::NewTextBox,
+                            clip: ClipId(0),
+                            layer: 0,
+                            start: p,
+                        });
                     } else if tool == Tool::Selection
                         && let Some(v) = views.iter().find(|v| v.hit(p))
                     {
@@ -666,13 +937,26 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                             end_edit(app, ui);
                         }
                         if !(Some(v.clip) == sel_clip && sel_layers.contains(&v.layer)) {
-                            actions.push(("graphics.selectLayer".into(), json!({"clip": v.clip.0, "layers": [v.layer]})));
+                            actions.push((
+                                "graphics.selectLayer".into(),
+                                json!({"clip": v.clip.0, "layers": [v.layer]}),
+                            ));
                         }
-                        drag = Some(DragState { kind: DragKind::Move, clip: v.clip, layer: v.layer, start: p });
+                        drag = Some(DragState {
+                            kind: DragKind::Move,
+                            clip: v.clip,
+                            layer: v.layer,
+                            start: p,
+                        });
                     }
                 }
                 Tool::Rectangle | Tool::Ellipse => {
-                    drag = Some(DragState { kind: DragKind::NewShape, clip: ClipId(0), layer: 0, start: p });
+                    drag = Some(DragState {
+                        kind: DragKind::NewShape,
+                        clip: ClipId(0),
+                        layer: 0,
+                        start: p,
+                    });
                 }
                 _ => {}
             }
@@ -688,11 +972,19 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
     // ---- drag feedback / commit
     if let Some(d) = drag {
         let cur = resp.interact_pointer_pos().or(hover).unwrap_or(d.start);
-        let v = views.iter().find(|v| v.clip == d.clip && v.layer == d.layer);
+        let v = views
+            .iter()
+            .find(|v| v.clip == d.clip && v.layer == d.layer);
         // Snap in Program Monitor (hold ⌘/Ctrl to move freely)
         let snap_off = match (d.kind, v) {
             (DragKind::Move, Some(v)) if !ui.input(|i| i.modifiers.command) => {
-                crate::panels::monitor_view::snap_move(app, pic, frame, Rect::from_points(&v.quad()), cur - d.start)
+                crate::panels::monitor_view::snap_move(
+                    app,
+                    pic,
+                    frame,
+                    Rect::from_points(&v.quad()),
+                    cur - d.start,
+                )
             }
             _ => (cur - d.start, Vec::new()),
         };
@@ -700,22 +992,34 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
             DragKind::Move => {
                 if let Some(v) = v {
                     let off = snap_off.0;
-                    painter.add(egui::Shape::closed_line(v.quad().iter().map(|q| *q + off).collect(), Stroke::new(1.0, Color32::WHITE)));
+                    painter.add(egui::Shape::closed_line(
+                        v.quad().iter().map(|q| *q + off).collect(),
+                        Stroke::new(1.0, Color32::WHITE),
+                    ));
                     crate::panels::monitor_view::draw_snap_lines(&painter, pic, &snap_off.1);
                 }
             }
             DragKind::Handle(n) => {
                 if let Some(v) = v {
                     let h = HandleDrag::new(v, n, d.start, cur, ui.input(|i| i.modifiers.shift));
-                    painter.add(egui::Shape::closed_line(h.quad(v).to_vec(), Stroke::new(1.0, Color32::WHITE)));
+                    painter.add(egui::Shape::closed_line(
+                        h.quad(v).to_vec(),
+                        Stroke::new(1.0, Color32::WHITE),
+                    ));
                 }
             }
             DragKind::Anchor => {
                 if let Some(v) = v {
                     let a = anchor_screen(v) + (cur - d.start);
                     painter.circle_stroke(a, 4.0, Stroke::new(1.0, Color32::WHITE));
-                    painter.line_segment([a - vec2(6.0, 0.0), a + vec2(6.0, 0.0)], Stroke::new(1.0, Color32::WHITE));
-                    painter.line_segment([a - vec2(0.0, 6.0), a + vec2(0.0, 6.0)], Stroke::new(1.0, Color32::WHITE));
+                    painter.line_segment(
+                        [a - vec2(6.0, 0.0), a + vec2(6.0, 0.0)],
+                        Stroke::new(1.0, Color32::WHITE),
+                    );
+                    painter.line_segment(
+                        [a - vec2(0.0, 6.0), a + vec2(0.0, 6.0)],
+                        Stroke::new(1.0, Color32::WHITE),
+                    );
                 }
             }
             DragKind::Corner(n) => {
@@ -723,21 +1027,38 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                     && let Some((r0, _)) = corner_handles(v)
                 {
                     let r = corner_drag(v, r0, n, d.start, cur);
-                    painter.add(egui::Shape::closed_line(round_rect_outline(v, r), Stroke::new(1.0, Color32::WHITE)));
+                    painter.add(egui::Shape::closed_line(
+                        round_rect_outline(v, r),
+                        Stroke::new(1.0, Color32::WHITE),
+                    ));
                     for c in corner_points(v, r) {
                         painter.circle_stroke(c, 3.0, Stroke::new(1.0, Color32::WHITE));
                     }
                 }
             }
             DragKind::NewTextBox => {
-                painter.rect_stroke(Rect::from_two_pos(d.start, cur), 0.0, Stroke::new(1.0, t.danger), StrokeKind::Middle);
+                painter.rect_stroke(
+                    Rect::from_two_pos(d.start, cur),
+                    0.0,
+                    Stroke::new(1.0, t.danger),
+                    StrokeKind::Middle,
+                );
             }
             DragKind::NewShape => {
                 let r = Rect::from_two_pos(d.start, cur);
                 if tool == Tool::Ellipse {
-                    painter.add(egui::Shape::ellipse_stroke(r.center(), r.size() / 2.0, Stroke::new(1.0, Color32::WHITE)));
+                    painter.add(egui::Shape::ellipse_stroke(
+                        r.center(),
+                        r.size() / 2.0,
+                        Stroke::new(1.0, Color32::WHITE),
+                    ));
                 } else {
-                    painter.rect_stroke(r, 0.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Middle);
+                    painter.rect_stroke(
+                        r,
+                        0.0,
+                        Stroke::new(1.0, Color32::WHITE),
+                        StrokeKind::Middle,
+                    );
                 }
             }
             DragKind::TextSelect => {
@@ -755,13 +1076,21 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
         if resp.drag_stopped() {
             ui.data_mut(|dd| dd.remove::<DragState>(drag_id));
             // egui ends a drag on Escape: that stop abandons it (#580)
-            let moved = (cur - d.start).length() > 2.0 && !ui.input(|i| i.key_pressed(egui::Key::Escape));
+            let moved =
+                (cur - d.start).length() > 2.0 && !ui.input(|i| i.key_pressed(egui::Key::Escape));
             match d.kind {
                 DragKind::Move if moved => {
                     if let Some(v) = v {
-                        let lin = Affine { e: 0.0, f: 0.0, ..v.canvas_to_screen };
+                        let lin = Affine {
+                            e: 0.0,
+                            f: 0.0,
+                            ..v.canvas_to_screen
+                        };
                         let off = snap_off.0;
-                        let delta = lin.inverse().map(|i| i.apply(Vec2::new(off.x as f64, off.y as f64))).unwrap_or_default();
+                        let delta = lin
+                            .inverse()
+                            .map(|i| i.apply(Vec2::new(off.x as f64, off.y as f64)))
+                            .unwrap_or_default();
                         let p0 = v.spec.transform.position;
                         actions.push((
                             "graphics.set".into(),
@@ -771,14 +1100,22 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                 }
                 DragKind::Handle(n) if moved => {
                     if let Some(v) = v {
-                        let props = HandleDrag::new(v, n, d.start, cur, ui.input(|i| i.modifiers.shift)).props(v);
-                        actions.push(("graphics.set".into(), json!({"clip": v.clip.0, "layer": v.layer, "props": props})));
+                        let props =
+                            HandleDrag::new(v, n, d.start, cur, ui.input(|i| i.modifiers.shift))
+                                .props(v);
+                        actions.push((
+                            "graphics.set".into(),
+                            json!({"clip": v.clip.0, "layer": v.layer, "props": props}),
+                        ));
                     }
                 }
                 DragKind::Anchor if moved => {
                     if let Some(v) = v {
                         // the anchor moves over the layer; the position follows it, so the layer stays
-                        let (canvas, local) = (unscale(&v.canvas_to_screen, cur - d.start), unscale(&v.to_screen, cur - d.start));
+                        let (canvas, local) = (
+                            unscale(&v.canvas_to_screen, cur - d.start),
+                            unscale(&v.to_screen, cur - d.start),
+                        );
                         let (p0, a0) = (v.spec.transform.position, v.spec.transform.anchor);
                         actions.push((
                             "graphics.set".into(),
@@ -817,7 +1154,10 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
         }
     }
     // ---- clicks
-    if graphics_tool && resp.clicked() && drag.is_none_or(|d| !matches!(d.kind, DragKind::TextSelect)) {
+    if graphics_tool
+        && resp.clicked()
+        && drag.is_none_or(|d| !matches!(d.kind, DragKind::TextSelect))
+    {
         let p = resp.interact_pointer_pos().unwrap_or(pic.center());
         let in_edit = edit_view.is_some_and(|v| v.hit(p));
         match tool {
@@ -829,7 +1169,11 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                     end_edit(app, ui);
                     let (command, prm) = new_text_action(app, pic, frame, p, None);
                     // vertical text is always point text: a click, never a drawn box
-                    let command = if tool == Tool::VerticalType { "graphics.newVerticalText#edit".into() } else { command };
+                    let command = if tool == Tool::VerticalType {
+                        "graphics.newVerticalText#edit".into()
+                    } else {
+                        command
+                    };
                     actions.push((command, prm));
                 }
             }
@@ -846,7 +1190,10 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
                     if app.ui.gfx_edit.is_some() {
                         end_edit(app, ui);
                     }
-                    actions.push(("graphics.selectLayer".into(), json!({"clip": v.clip.0, "layers": [v.layer]})));
+                    actions.push((
+                        "graphics.selectLayer".into(),
+                        json!({"clip": v.clip.0, "layers": [v.layer]}),
+                    ));
                 } else {
                     deselect_on_monitor(app, ui);
                 }
@@ -871,15 +1218,30 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
     // ---- pen path in progress
     if tool == Tool::Pen && !app.ui.pen_points.is_empty() {
         let (_, m) = canvas_target(app, pic, frame);
-        let pts: Vec<Pos2> = app.ui.pen_points.iter().map(|q| m.apply(Vec2::new(q[0], q[1]))).map(|v| pos2(v.x as f32, v.y as f32)).collect();
+        let pts: Vec<Pos2> = app
+            .ui
+            .pen_points
+            .iter()
+            .map(|q| m.apply(Vec2::new(q[0], q[1])))
+            .map(|v| pos2(v.x as f32, v.y as f32))
+            .collect();
         painter.add(egui::Shape::line(pts.clone(), Stroke::new(1.0, accent)));
         if let (Some(last), Some(h)) = (pts.last(), hover) {
             painter.line_segment([*last, h], Stroke::new(1.0, accent.gamma_multiply(0.5)));
         }
         for (i, q) in pts.iter().enumerate() {
-            painter.rect_filled(Rect::from_center_size(*q, vec2(6.0, 6.0)), 0.0, if i == 0 { accent } else { Color32::WHITE });
+            painter.rect_filled(
+                Rect::from_center_size(*q, vec2(6.0, 6.0)),
+                0.0,
+                if i == 0 { accent } else { Color32::WHITE },
+            );
         }
-        let (enter, esc) = ui.input(|i| (i.key_pressed(egui::Key::Enter), i.key_pressed(egui::Key::Escape)));
+        let (enter, esc) = ui.input(|i| {
+            (
+                i.key_pressed(egui::Key::Enter),
+                i.key_pressed(egui::Key::Escape),
+            )
+        });
         if enter && app.ui.pen_points.len() >= 3 {
             finish_pen(app, pic, frame, &mut actions);
         } else if esc {
@@ -890,20 +1252,33 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
     }
     // ---- caret / selection drawing
     if let Some(ed) = app.ui.gfx_edit.clone()
-        && let Some(v) = views.iter().find(|v| v.clip.0 == ed.clip && v.layer == ed.layer)
+        && let Some(v) = views
+            .iter()
+            .find(|v| v.clip.0 == ed.clip && v.layer == ed.layer)
         && let Some(tp) = text_of(&v.spec)
     {
         let l = text_layout(tp);
         let caret = ed.caret.min(tp.text.len());
         for r in l.selection_rects(ed.anchor.min(tp.text.len()), caret) {
-            let q = [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])].map(|(x, y)| sp(&v.to_screen, x, y));
-            painter.add(egui::Shape::convex_polygon(q.to_vec(), Color32::from_rgba_unmultiplied(80, 140, 255, 90), Stroke::NONE));
+            let q = [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])]
+                .map(|(x, y)| sp(&v.to_screen, x, y));
+            painter.add(egui::Shape::convex_polygon(
+                q.to_vec(),
+                Color32::from_rgba_unmultiplied(80, 140, 255, 90),
+                Stroke::NONE,
+            ));
         }
         let (x, base, li) = l.caret(caret);
         let line = &l.lines[li.min(l.lines.len() - 1)];
-        let (a, b) = (sp(&v.to_screen, x, base - line.ascent), sp(&v.to_screen, x, base + line.descent));
+        let (a, b) = (
+            sp(&v.to_screen, x, base - line.ascent),
+            sp(&v.to_screen, x, base + line.descent),
+        );
         painter.line_segment([a, b], Stroke::new(1.5, Color32::WHITE));
-        painter.line_segment([a + vec2(1.0, 0.0), b + vec2(1.0, 0.0)], Stroke::new(0.5, Color32::BLACK));
+        painter.line_segment(
+            [a + vec2(1.0, 0.0), b + vec2(1.0, 0.0)],
+            Stroke::new(0.5, Color32::BLACK),
+        );
         let er = Rect::from_points(&v.quad()).union(Rect::from_two_pos(a, b));
         app.auto.add("program.textEdit", er, &tp.text);
         ui.ctx().output_mut(|o| {
@@ -924,7 +1299,12 @@ pub fn monitor_overlay(app: &mut FilmcraftApp, ui: &mut egui::Ui, pic: Rect, fra
         match app.session.execute(&cmd, p) {
             Ok(r) => {
                 if then_edit && let (Some(c), Some(l)) = (r["clip"].as_u64(), r["layer"].as_u64()) {
-                    app.ui.gfx_edit = Some(GfxEdit { clip: c, layer: l as usize, caret: 0, anchor: 0 });
+                    app.ui.gfx_edit = Some(GfxEdit {
+                        clip: c,
+                        layer: l as usize,
+                        caret: 0,
+                        anchor: 0,
+                    });
                     app.ui.focused = crate::dock::PanelKind::Program;
                 }
             }
@@ -937,17 +1317,29 @@ fn layer_display_name_view(app: &FilmcraftApp, v: &LayerView) -> String {
     app.session
         .active_sequence()
         .and_then(|q| q.find_item(v.clip))
-        .and_then(|(_, it)| layer_indices(&it.effects).get(v.layer).map(|&e| layer_display_name(&it.effects[e], v.layer)))
+        .and_then(|(_, it)| {
+            layer_indices(&it.effects)
+                .get(v.layer)
+                .map(|&e| layer_display_name(&it.effects[e], v.layer))
+        })
         .unwrap_or_default()
 }
 
-fn finish_pen(app: &mut FilmcraftApp, pic: Rect, frame: (u32, u32), actions: &mut Vec<(String, Value)>) {
+fn finish_pen(
+    app: &mut FilmcraftApp,
+    pic: Rect,
+    frame: (u32, u32),
+    actions: &mut Vec<(String, Value)>,
+) {
     let pts = std::mem::take(&mut app.ui.pen_points);
     if pts.len() < 3 {
         return;
     }
     let n = pts.len() as f64;
-    let (cx, cy) = (pts.iter().map(|p| p[0]).sum::<f64>() / n, pts.iter().map(|p| p[1]).sum::<f64>() / n);
+    let (cx, cy) = (
+        pts.iter().map(|p| p[0]).sum::<f64>() / n,
+        pts.iter().map(|p| p[1]).sum::<f64>() / n,
+    );
     let (into, _) = canvas_target(app, pic, frame);
     let mut p = json!({
         "shape": "path",
@@ -960,33 +1352,79 @@ fn finish_pen(app: &mut FilmcraftApp, pic: Rect, frame: (u32, u32), actions: &mu
     actions.push(("graphics.newShape".into(), p));
 }
 
-fn start_edit_at(app: &mut FilmcraftApp, ui: &egui::Ui, v: &LayerView, p: Pos2, actions: &mut Vec<(String, Value)>) {
+fn start_edit_at(
+    app: &mut FilmcraftApp,
+    ui: &egui::Ui,
+    v: &LayerView,
+    p: Pos2,
+    actions: &mut Vec<(String, Value)>,
+) {
     let Some(tp) = text_of(&v.spec) else { return };
     let l = text_layout(tp);
     let caret = v.to_local(p).map_or(tp.text.len(), |(x, y)| l.hit(x, y));
-    app.ui.gfx_edit = Some(GfxEdit { clip: v.clip.0, layer: v.layer, caret, anchor: caret });
+    app.ui.gfx_edit = Some(GfxEdit {
+        clip: v.clip.0,
+        layer: v.layer,
+        caret,
+        anchor: caret,
+    });
     app.ui.focused = crate::dock::PanelKind::Program;
     let _ = ui;
-    actions.push(("graphics.selectLayer".into(), json!({"clip": v.clip.0, "layers": [v.layer]})));
+    actions.push((
+        "graphics.selectLayer".into(),
+        json!({"clip": v.clip.0, "layers": [v.layer]}),
+    ));
 }
 
 /// Edit ▸ Select All while text is edited on the monitor selects all of that text, not the
 /// timeline clips: on macOS the native menu takes Cmd+A before the text sees the key (#1102).
 /// False when no text is being edited.
 pub(crate) fn select_all_edited_text(app: &mut FilmcraftApp) -> bool {
-    let Some((clip, layer)) = app.ui.gfx_edit.as_ref().map(|e| (e.clip, e.layer)) else { return false };
+    let Some((clip, layer)) = app.ui.gfx_edit.as_ref().map(|e| (e.clip, e.layer)) else {
+        return false;
+    };
     let t = app.session.playhead();
-    let Some((_, it)) = app.session.active_sequence().and_then(|q| q.find_item(ClipId(clip))) else { return false };
-    let Some(ItemKind::Graphic { width, height, .. }) = app.session.project.item(it.item).map(|p| &p.kind) else { return false };
-    let Some(effect) = layer_indices(&it.effects).get(layer).and_then(|&i| it.effects.get(i)) else { return false };
-    let Some(len) = eval_layer(effect, it.source_time_at(t), (*width, *height)).as_ref().and_then(text_of).map(|tp| tp.text.len()) else { return false };
-    let Some(ed) = app.ui.gfx_edit.as_mut() else { return false };
+    let Some((_, it)) = app
+        .session
+        .active_sequence()
+        .and_then(|q| q.find_item(ClipId(clip)))
+    else {
+        return false;
+    };
+    let Some(ItemKind::Graphic { width, height, .. }) =
+        app.session.project.item(it.item).map(|p| &p.kind)
+    else {
+        return false;
+    };
+    let Some(effect) = layer_indices(&it.effects)
+        .get(layer)
+        .and_then(|&i| it.effects.get(i))
+    else {
+        return false;
+    };
+    let Some(len) = eval_layer(effect, it.source_time_at(t), (*width, *height))
+        .as_ref()
+        .and_then(text_of)
+        .map(|tp| tp.text.len())
+    else {
+        return false;
+    };
+    let Some(ed) = app.ui.gfx_edit.as_mut() else {
+        return false;
+    };
     (ed.anchor, ed.caret) = (0, len);
     true
 }
 
 /// Keyboard handling while a text layer is being edited.
-fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: GfxEdit, resp: &egui::Response, actions: &mut Vec<(String, Value)>) {
+fn text_edit(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    v: &LayerView,
+    mut ed: GfxEdit,
+    resp: &egui::Response,
+    actions: &mut Vec<(String, Value)>,
+) {
     let _ = resp;
     // moving to another panel ends the edit; Properties and Essential Graphics style the text
     // being edited, so working there keeps it (#683). Only a move counts: an edit started with
@@ -995,13 +1433,22 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
     let panel_id = egui::Id::new(TEXT_EDIT_ID).with("panel");
     let before = ui.data(|d| d.get_temp::<PanelKind>(panel_id));
     ui.data_mut(|d| d.insert_temp(panel_id, app.ui.focused));
-    if before.is_some_and(|b| b != app.ui.focused) && !matches!(app.ui.focused, PanelKind::Program | PanelKind::Properties | PanelKind::EssentialGraphics) {
+    if before.is_some_and(|b| b != app.ui.focused)
+        && !matches!(
+            app.ui.focused,
+            PanelKind::Program | PanelKind::Properties | PanelKind::EssentialGraphics
+        )
+    {
         end_edit(app, ui);
         return;
     }
     let eid = egui::Id::new(TEXT_EDIT_ID);
     // a real (non-clickable) widget holds keyboard focus so shortcuts pause while typing
-    let fr = ui.interact(Rect::from_points(&v.quad()), eid, Sense::focusable_noninteractive());
+    let fr = ui.interact(
+        Rect::from_points(&v.quad()),
+        eid,
+        Sense::focusable_noninteractive(),
+    );
     fr.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::TextEdit, true, "Text layer"));
     // while another field has the keyboard (a value typed in Properties) the keys are its own;
     // the text takes the keyboard back once nothing has it (#683)
@@ -1010,7 +1457,15 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
     }
     ui.memory_mut(|m| {
         m.request_focus(eid);
-        m.set_focus_lock_filter(eid, egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: true });
+        m.set_focus_lock_filter(
+            eid,
+            egui::EventFilter {
+                tab: true,
+                horizontal_arrows: true,
+                vertical_arrows: true,
+                escape: true,
+            },
+        );
     });
     let Some(tp) = text_of(&v.spec) else { return };
     let mut text = tp.text.clone();
@@ -1034,8 +1489,13 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
     for ev in events {
         match ev {
             // an input method (Chinese, Japanese, Korean) hands over its finished text as a commit (#1083)
-            egui::Event::Text(s) | egui::Event::Paste(s) | egui::Event::Ime(egui::ImeEvent::Commit(s)) => {
-                let s: String = s.chars().filter(|c| !c.is_control() || *c == '\n').collect();
+            egui::Event::Text(s)
+            | egui::Event::Paste(s)
+            | egui::Event::Ime(egui::ImeEvent::Commit(s)) => {
+                let s: String = s
+                    .chars()
+                    .filter(|c| !c.is_control() || *c == '\n')
+                    .collect();
                 if s.is_empty() {
                     continue;
                 }
@@ -1054,7 +1514,12 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
                     }
                 }
             }
-            egui::Event::Key { key, pressed: true, modifiers, .. } => {
+            egui::Event::Key {
+                key,
+                pressed: true,
+                modifiers,
+                ..
+            } => {
                 let shift = modifiers.shift;
                 let mut moved = None;
                 match key {
@@ -1068,7 +1533,11 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
                     }
                     egui::Key::Backspace => {
                         if !delete_sel(&mut text, &mut ed) && ed.caret > 0 {
-                            let p = if modifiers.alt || modifiers.command { word_left(&text, ed.caret) } else { prev_boundary(&text, ed.caret) };
+                            let p = if modifiers.alt || modifiers.command {
+                                word_left(&text, ed.caret)
+                            } else {
+                                prev_boundary(&text, ed.caret)
+                            };
                             text.replace_range(p..ed.caret, "");
                             ed.caret = p;
                             ed.anchor = p;
@@ -1112,7 +1581,11 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
                     }
                     egui::Key::ArrowUp | egui::Key::ArrowDown => {
                         let (x, _, li) = l.caret(ed.caret);
-                        let target = if key == egui::Key::ArrowUp { li.checked_sub(1) } else { Some(li + 1).filter(|n| *n < l.lines.len()) };
+                        let target = if key == egui::Key::ArrowUp {
+                            li.checked_sub(1)
+                        } else {
+                            Some(li + 1).filter(|n| *n < l.lines.len())
+                        };
                         moved = Some(match target {
                             Some(n) => l.hit(x, l.lines[n].baseline),
                             None if key == egui::Key::ArrowUp => 0,
@@ -1134,7 +1607,10 @@ fn text_edit(app: &mut FilmcraftApp, ui: &mut egui::Ui, v: &LayerView, mut ed: G
         }
     }
     if changed && text != tp.text {
-        actions.push(("graphics.setText".into(), json!({"clip": ed.clip, "layer": ed.layer, "text": text, "merge": true})));
+        actions.push((
+            "graphics.setText".into(),
+            json!({"clip": ed.clip, "layer": ed.layer, "text": text, "merge": true}),
+        ));
     }
     if stop {
         end_edit(app, ui);
@@ -1177,7 +1653,11 @@ fn word_right(s: &str, i: usize) -> usize {
 const ROW: f32 = 28.0;
 
 fn pv(e: &EffectInstance, id: &str, mt: Tick) -> ParamValue {
-    e.params.get(id).map(|p| p.value_at(mt)).or_else(|| e.def().and_then(|d| d.param(id)).map(|d| d.default.clone())).unwrap_or(ParamValue::Float(0.0))
+    e.params
+        .get(id)
+        .map(|p| p.value_at(mt))
+        .or_else(|| e.def().and_then(|d| d.param(id)).map(|d| d.default.clone()))
+        .unwrap_or(ParamValue::Float(0.0))
 }
 
 fn color32(c: [f32; 4]) -> Color32 {
@@ -1220,34 +1700,82 @@ impl Ctx<'_> {
             self.actions.push(("graphics.setCharStyle".into(), json!({"clip": self.clip.0, "layer": self.layer, "start": a, "end": b, "style": {k: v}})));
             return;
         }
-        self.actions.push(("graphics.set".into(), json!({"clip": self.clip.0, "layer": self.layer, "props": {id: v}})));
+        self.actions.push((
+            "graphics.set".into(),
+            json!({"clip": self.clip.0, "layer": self.layer, "props": {id: v}}),
+        ));
     }
     fn auto(&mut self, id: &str, r: Rect, label: &str) {
-        self.autos.push((format!("graphics.prop.{id}"), r, label.to_string()));
+        self.autos
+            .push((format!("graphics.prop.{id}"), r, label.to_string()));
     }
     fn row(&self, ui: &mut egui::Ui, label: &str) -> (Rect, egui::Ui) {
         let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), ROW), Sense::hover());
-        ui.painter().text(pos2(r.min.x + 18.0, r.center().y), Align2::LEFT_CENTER, label, Tokens::ui(12.0), self.t.text_dim);
+        ui.painter().text(
+            pos2(r.min.x + 18.0, r.center().y),
+            Align2::LEFT_CENTER,
+            label,
+            Tokens::ui(12.0),
+            self.t.text_dim,
+        );
         let v = ui.new_child(
             egui::UiBuilder::new()
-                .max_rect(Rect::from_min_max(pos2(r.min.x + 130.0, r.min.y + 3.0), pos2(r.max.x - 6.0, r.max.y - 3.0)))
+                .max_rect(Rect::from_min_max(
+                    pos2(r.min.x + 130.0, r.min.y + 3.0),
+                    pos2(r.max.x - 6.0, r.max.y - 3.0),
+                ))
                 .layout(egui::Layout::left_to_right(egui::Align::Center)),
         );
         (r, v)
     }
-    fn number(&mut self, ui: &mut egui::Ui, label: &str, id: &str, speed: f64, range: (f64, f64), dec: usize, unit: &str) {
+    fn number(
+        &mut self,
+        ui: &mut egui::Ui,
+        label: &str,
+        id: &str,
+        speed: f64,
+        range: (f64, f64),
+        dec: usize,
+        unit: &str,
+    ) {
         let v = pv(self.e, id, self.mt).as_f64().unwrap_or(0.0);
         let (r, mut vui) = self.row(ui, label);
-        let (resp, nv) = crate::widgets::hot_number(&mut vui, egui::Id::new(("gfxp", self.clip.0, self.layer, id)), v, speed, range, dec, unit, &self.t);
+        let (resp, nv) = crate::widgets::hot_number(
+            &mut vui,
+            egui::Id::new(("gfxp", self.clip.0, self.layer, id)),
+            v,
+            speed,
+            range,
+            dec,
+            unit,
+            &self.t,
+        );
         self.auto(id, resp.rect, label);
         let _ = r;
         if let Some(nv) = nv {
             self.set(id, json!(nv));
         }
     }
-    fn number_in(&mut self, vui: &mut egui::Ui, id: &str, speed: f64, range: (f64, f64), dec: usize, unit: &str) {
+    fn number_in(
+        &mut self,
+        vui: &mut egui::Ui,
+        id: &str,
+        speed: f64,
+        range: (f64, f64),
+        dec: usize,
+        unit: &str,
+    ) {
         let v = pv(self.e, id, self.mt).as_f64().unwrap_or(0.0);
-        let (resp, nv) = crate::widgets::hot_number(vui, egui::Id::new(("gfxp", self.clip.0, self.layer, id)), v, speed, range, dec, unit, &self.t);
+        let (resp, nv) = crate::widgets::hot_number(
+            vui,
+            egui::Id::new(("gfxp", self.clip.0, self.layer, id)),
+            v,
+            speed,
+            range,
+            dec,
+            unit,
+            &self.t,
+        );
         self.auto(id, resp.rect, id);
         if let Some(nv) = nv {
             self.set(id, json!(nv));
@@ -1295,7 +1823,11 @@ impl Ctx<'_> {
     fn color(&mut self, vui: &mut egui::Ui, id: &str) {
         let c = pv(self.e, id, self.mt).as_color().unwrap_or([1.0; 4]);
         let mut c32 = color32(c);
-        let r = egui::color_picker::color_edit_button_srgba(vui, &mut c32, egui::color_picker::Alpha::Opaque);
+        let r = egui::color_picker::color_edit_button_srgba(
+            vui,
+            &mut c32,
+            egui::color_picker::Alpha::Opaque,
+        );
         self.auto(id, r.rect, id);
         if r.changed() {
             let [r8, g8, b8, _] = c32.to_srgba_unmultiplied();
@@ -1328,20 +1860,40 @@ fn section(ui: &mut egui::Ui, app: &mut FilmcraftApp, name: &str, t: &Tokens) ->
 }
 
 /// A collapsible section's header row: whether the section is open, and the row.
-fn section_header(ui: &mut egui::Ui, app: &mut FilmcraftApp, name: &str, t: &Tokens) -> (bool, Rect) {
+fn section_header(
+    ui: &mut egui::Ui,
+    app: &mut FilmcraftApp,
+    name: &str,
+    t: &Tokens,
+) -> (bool, Rect) {
     ui.add_space(4.0);
     let key = format!("gfx:{name}");
     let open = !app.ui.collapsed_fx.contains(&key);
     let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 30.0), Sense::click());
-    ui.painter().line_segment([r.left_top(), r.right_top()], Stroke::new(1.0, t.separator));
+    ui.painter()
+        .line_segment([r.left_top(), r.right_top()], Stroke::new(1.0, t.separator));
     icons::paint(
         ui.painter(),
         Rect::from_center_size(pos2(r.min.x + 6.0, r.center().y), vec2(10.0, 10.0)),
-        if open { Icon::ChevronDown } else { Icon::ChevronRight },
+        if open {
+            Icon::ChevronDown
+        } else {
+            Icon::ChevronRight
+        },
         t.text_dim,
     );
-    ui.painter().text(pos2(r.min.x + 18.0, r.center().y), Align2::LEFT_CENTER, crate::i18n::t(name), Tokens::semibold(13.0), t.text);
-    app.auto.add(&format!("graphics.section.{}", name.replace(' ', "")), r, name);
+    ui.painter().text(
+        pos2(r.min.x + 18.0, r.center().y),
+        Align2::LEFT_CENTER,
+        crate::i18n::t(name),
+        Tokens::semibold(13.0),
+        t.text,
+    );
+    app.auto.add(
+        &format!("graphics.section.{}", name.replace(' ', "")),
+        r,
+        name,
+    );
     if resp.clicked() {
         if open {
             app.ui.collapsed_fx.push(key);
@@ -1419,22 +1971,50 @@ fn align_glyph(p: &egui::Painter, r: Rect, how: &str, c: Color32) {
 fn glyph_button(ui: &mut egui::Ui, how: &str, tip: &str, on: bool, t: &Tokens) -> egui::Response {
     let (r, resp) = ui.allocate_exact_size(vec2(24.0, 22.0), Sense::click());
     if on {
-        ui.painter().rect_filled(r, 3.0, Color32::from_rgb(0x4b, 0x4b, 0x4b));
+        ui.painter()
+            .rect_filled(r, 3.0, Color32::from_rgb(0x4b, 0x4b, 0x4b));
     } else if resp.hovered() {
         ui.painter().rect_filled(r, 3.0, t.hover);
     }
-    align_glyph(ui.painter(), Rect::from_center_size(r.center(), vec2(16.0, 14.0)), how, if resp.hovered() || on { t.text } else { t.text_dim });
+    align_glyph(
+        ui.painter(),
+        Rect::from_center_size(r.center(), vec2(16.0, 14.0)),
+        how,
+        if resp.hovered() || on {
+            t.text
+        } else {
+            t.text_dim
+        },
+    );
     resp.on_hover_text(tip)
 }
 
-fn letter_button(ui: &mut egui::Ui, text: &str, tip: &str, on: bool, t: &Tokens, font: egui::FontId) -> egui::Response {
+fn letter_button(
+    ui: &mut egui::Ui,
+    text: &str,
+    tip: &str,
+    on: bool,
+    t: &Tokens,
+    font: egui::FontId,
+) -> egui::Response {
     let (r, resp) = ui.allocate_exact_size(vec2(26.0, 22.0), Sense::click());
     if on {
-        ui.painter().rect_filled(r, 3.0, Color32::from_rgb(0x4b, 0x4b, 0x4b));
+        ui.painter()
+            .rect_filled(r, 3.0, Color32::from_rgb(0x4b, 0x4b, 0x4b));
     } else if resp.hovered() {
         ui.painter().rect_filled(r, 3.0, t.hover);
     }
-    ui.painter().text(r.center(), Align2::CENTER_CENTER, text, font, if on || resp.hovered() { t.text } else { t.text_dim });
+    ui.painter().text(
+        r.center(),
+        Align2::CENTER_CENTER,
+        text,
+        font,
+        if on || resp.hovered() {
+            t.text
+        } else {
+            t.text_dim
+        },
+    );
     resp.on_hover_text(tip)
 }
 
@@ -1447,12 +2027,19 @@ pub fn graphic_selected(app: &FilmcraftApp) -> bool {
 pub fn properties(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let t = app.tokens;
     let Some((clip, it)) = selected_graphic(app) else {
-        crate::dock::placeholder(ui, rect, &t, tl!("Select a graphic clip, or use the Type tool (T) on the Program monitor"));
+        crate::dock::placeholder(
+            ui,
+            rect,
+            &t,
+            tl!("Select a graphic clip, or use the Type tool (T) on the Program monitor"),
+        );
         let br = Rect::from_center_size(rect.center() + vec2(0.0, 30.0), vec2(150.0, 26.0));
         let resp = ui.put(br, egui::Button::new(tl!("Create new graphic")));
         app.auto.add("graphics.createNew", br, "Create new graphic");
         if resp.clicked()
-            && let Err(e) = app.session.execute("graphics.newText", json!({"text": "New Text"}))
+            && let Err(e) = app
+                .session
+                .execute("graphics.newText", json!({"text": "New Text"}))
         {
             app.ui.status = e.to_string();
         }
@@ -1461,10 +2048,20 @@ pub fn properties(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let ph = app.session.playhead();
     let mt = it.source_time_at(ph.clamp(it.start, it.end() - Tick(1)));
     let idx = layer_indices(&it.effects);
-    let sel = app.session.state.graphic_layers.first().copied().filter(|l| *l < idx.len());
+    let sel = app
+        .session
+        .state
+        .graphic_layers
+        .first()
+        .copied()
+        .filter(|l| *l < idx.len());
     let mut actions: Vec<(String, Value)> = Vec::new();
     let mut autos: Vec<(String, Rect, String)> = Vec::new();
-    let mut bui = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink2(vec2(12.0, 6.0))).id_salt("gfx-props"));
+    let mut bui = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect.shrink2(vec2(12.0, 6.0)))
+            .id_salt("gfx-props"),
+    );
     bui.set_clip_rect(rect);
     egui::ScrollArea::vertical().id_salt("gfx-props-scroll").auto_shrink([false, false]).show(&mut bui, |ui| {
         // header
@@ -1793,7 +2390,9 @@ pub fn properties(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     for (id, r, label) in autos {
         app.auto.add(&id, r, &label);
     }
-    let (down, press) = ui.ctx().input(|i| (i.pointer.any_down(), i.pointer.press_start_time()));
+    let (down, press) = ui
+        .ctx()
+        .input(|i| (i.pointer.any_down(), i.pointer.press_start_time()));
     let key = egui::Id::new("gfx-props-drag-step");
     let begun = ui.ctx().data(|d| d.get_temp::<Option<f64>>(key)).flatten();
     let mut wrote = false;
@@ -1818,39 +2417,74 @@ pub fn properties(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
 
 /// Text Properties (the wrench in the Text section): Text Layer Type and Text Styling.
 pub fn dialogs(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.text_props_dialog.clone() else { return };
+    let Some(mut d) = app.ui.text_props_dialog.clone() else {
+        return;
+    };
     let mut elems: Vec<(String, Rect, &str)> = Vec::new();
     let mut close = crate::widgets::escape_closes(ctx);
     let mut ok = false;
-    let name = |paragraph: bool| if paragraph { tl!("Paragraph Text") } else { tl!("Point Text") };
+    let name = |paragraph: bool| {
+        if paragraph {
+            tl!("Paragraph Text")
+        } else {
+            tl!("Point Text")
+        }
+    };
     let id = egui::Id::new("gfx-text-properties");
-    egui::Window::new(tl!("Text Properties")).id(id).collapsible(false).resizable(false).centered(ctx).show(ctx, |ui| {
-        ui.label(tl!("Text Layer Type"));
-        let r = egui::ComboBox::from_id_salt("gfx-text-type").selected_text(name(d.paragraph)).width(190.0).show_ui(ui, |ui| {
-            for paragraph in [false, true] {
-                // vertical text has no box to wrap in
-                let r = ui.add_enabled_ui(!(paragraph && d.vertical), |ui| ui.selectable_label(d.paragraph == paragraph, name(paragraph))).inner;
-                elems.push((format!("graphics.textProperties.type.{}", if paragraph { "paragraph" } else { "point" }), r.rect, name(paragraph)));
-                if r.clicked() {
-                    d.paragraph = paragraph;
-                }
-            }
+    egui::Window::new(tl!("Text Properties"))
+        .id(id)
+        .collapsible(false)
+        .resizable(false)
+        .centered(ctx)
+        .show(ctx, |ui| {
+            ui.label(tl!("Text Layer Type"));
+            let r = egui::ComboBox::from_id_salt("gfx-text-type")
+                .selected_text(name(d.paragraph))
+                .width(190.0)
+                .show_ui(ui, |ui| {
+                    for paragraph in [false, true] {
+                        // vertical text has no box to wrap in
+                        let r = ui
+                            .add_enabled_ui(!(paragraph && d.vertical), |ui| {
+                                ui.selectable_label(d.paragraph == paragraph, name(paragraph))
+                            })
+                            .inner;
+                        elems.push((
+                            format!(
+                                "graphics.textProperties.type.{}",
+                                if paragraph { "paragraph" } else { "point" }
+                            ),
+                            r.rect,
+                            name(paragraph),
+                        ));
+                        if r.clicked() {
+                            d.paragraph = paragraph;
+                        }
+                    }
+                });
+            elems.push((
+                "graphics.textProperties.type".into(),
+                r.response.rect,
+                "Text Layer Type",
+            ));
+            ui.add_space(6.0);
+            ui.label(tl!("Text Styling"));
+            let r = ui.checkbox(&mut d.ligatures, tl!("Ligatures"));
+            elems.push((
+                "graphics.textProperties.ligatures".into(),
+                r.rect,
+                "Ligatures",
+            ));
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                let r = ui.button(tl!("Cancel"));
+                elems.push(("graphics.textProperties.cancel".into(), r.rect, "Cancel"));
+                close |= r.clicked();
+                let r = ui.button(tl!("OK"));
+                elems.push(("graphics.textProperties.ok".into(), r.rect, "OK"));
+                ok |= r.clicked();
+            });
         });
-        elems.push(("graphics.textProperties.type".into(), r.response.rect, "Text Layer Type"));
-        ui.add_space(6.0);
-        ui.label(tl!("Text Styling"));
-        let r = ui.checkbox(&mut d.ligatures, tl!("Ligatures"));
-        elems.push(("graphics.textProperties.ligatures".into(), r.rect, "Ligatures"));
-        ui.add_space(6.0);
-        ui.horizontal(|ui| {
-            let r = ui.button(tl!("Cancel"));
-            elems.push(("graphics.textProperties.cancel".into(), r.rect, "Cancel"));
-            close |= r.clicked();
-            let r = ui.button(tl!("OK"));
-            elems.push(("graphics.textProperties.ok".into(), r.rect, "OK"));
-            ok |= r.clicked();
-        });
-    });
     for (id, r, l) in elems {
         app.auto.add(&id, r, l);
     }
@@ -1866,7 +2500,10 @@ pub fn dialogs(app: &mut FilmcraftApp, ctx: &egui::Context) {
             }
         };
         // a layer already of that type is left alone (no undo step)
-        run("graphics.setTextType", json!({"type": if d.paragraph { "paragraph" } else { "point" }}));
+        run(
+            "graphics.setTextType",
+            json!({"type": if d.paragraph { "paragraph" } else { "point" }}),
+        );
         if d.ligatures != d.ligatures_was {
             run("graphics.set", json!({"props": {"ligatures": d.ligatures}}));
         }

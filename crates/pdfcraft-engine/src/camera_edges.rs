@@ -74,7 +74,11 @@ fn shrink(rgba: &[u8], w: usize, h: usize) -> Grey {
                 for x in sx * step..((sx + 1) * step).min(w) {
                     if let Some(p) = rgba.get((y * w + x) * 4..(y * w + x) * 4 + 4) {
                         let white = 255.0 - p[3] as f32;
-                        let (r, g, b) = (p[0] as f32 + white, p[1] as f32 + white, p[2] as f32 + white);
+                        let (r, g, b) = (
+                            p[0] as f32 + white,
+                            p[1] as f32 + white,
+                            p[2] as f32 + white,
+                        );
                         sum += 0.299 * r + 0.587 * g + 0.114 * b;
                         n += 1.0;
                     }
@@ -112,11 +116,18 @@ fn edges(g: &Grey) -> Vec<Option<Edge>> {
             let p = |dx, dy| g.at(x + dx, y + dy);
             let gx = (p(1, -1) + 2.0 * p(1, 0) + p(1, 1)) - (p(-1, -1) + 2.0 * p(-1, 0) + p(-1, 1));
             let gy = (p(-1, 1) + 2.0 * p(0, 1) + p(1, 1)) - (p(-1, -1) + 2.0 * p(0, -1) + p(1, -1));
-            grad.push(Edge { mag: gx.hypot(gy), dir: gy.atan2(gx) });
+            grad.push(Edge {
+                mag: gx.hypot(gy),
+                dir: gy.atan2(gx),
+            });
         }
     }
     // The threshold: a share of the 98th percentile, never below a faint-edge floor.
-    let mut mags: Vec<f32> = grad.iter().map(|e| e.mag).filter(|m| m.is_finite()).collect();
+    let mut mags: Vec<f32> = grad
+        .iter()
+        .map(|e| e.mag)
+        .filter(|m| m.is_finite())
+        .collect();
     mags.sort_by(f32::total_cmp);
     let p98 = mags.get(mags.len() * 98 / 100).copied().unwrap_or(0.0);
     let threshold = (0.25 * p98).max(24.0);
@@ -124,7 +135,8 @@ fn edges(g: &Grey) -> Vec<Option<Edge>> {
         if x < 0 || y < 0 || x >= g.w as isize || y >= g.h as isize {
             return 0.0;
         }
-        grad.get(y as usize * g.w + x as usize).map_or(0.0, |e| e.mag)
+        grad.get(y as usize * g.w + x as usize)
+            .map_or(0.0, |e| e.mag)
     };
     let mut out = Vec::with_capacity(grad.len());
     for (i, e) in grad.iter().enumerate() {
@@ -155,7 +167,10 @@ fn hough(edges: &[Option<Edge>], w: usize, h: usize) -> Vec<Line> {
     let diag = ((w * w + h * h) as f64).sqrt().ceil() as usize;
     let rows = 2 * diag + 1;
     let mut acc = vec![0.0f32; STEPS * rows];
-    let trig: Vec<(f64, f64)> = (0..STEPS).map(|t| (t as f64).to_radians()).map(|a| (a.cos(), a.sin())).collect();
+    let trig: Vec<(f64, f64)> = (0..STEPS)
+        .map(|t| (t as f64).to_radians())
+        .map(|a| (a.cos(), a.sin()))
+        .collect();
     for (i, e) in edges.iter().enumerate() {
         let Some(e) = e else { continue };
         let (x, y) = ((i % w) as f64, (i / w) as f64);
@@ -165,7 +180,10 @@ fn hough(edges: &[Option<Edge>], w: usize, h: usize) -> Vec<Line> {
             let t = t.rem_euclid(STEPS as isize) as usize;
             let Some(&(c, s)) = trig.get(t) else { continue };
             let r = (x * c + y * s).round() as isize + diag as isize;
-            if let Some(cell) = usize::try_from(r).ok().and_then(|r| acc.get_mut(t * rows + r)) {
+            if let Some(cell) = usize::try_from(r)
+                .ok()
+                .and_then(|r| acc.get_mut(t * rows + r))
+            {
                 *cell += e.mag;
             }
         }
@@ -173,12 +191,17 @@ fn hough(edges: &[Option<Edge>], w: usize, h: usize) -> Vec<Line> {
     let mut lines = Vec::new();
     let first = acc.iter().copied().fold(0.0f32, f32::max);
     while lines.len() < MAX_LINES {
-        let Some((best, &v)) = acc.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)) else { break };
+        let Some((best, &v)) = acc.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)) else {
+            break;
+        };
         if v <= 0.0 || v < 0.08 * first {
             break;
         }
         let (t, r) = (best / rows, best % rows);
-        lines.push(Line { theta: (t as f64).to_radians(), rho: r as f64 - diag as f64 });
+        lines.push(Line {
+            theta: (t as f64).to_radians(),
+            rho: r as f64 - diag as f64,
+        });
         // Clear ±6° and ±6 px around the peak (θ wraps, flipping ρ's sign).
         for dt in -6isize..=6 {
             let tt = t as isize + dt;
@@ -189,9 +212,17 @@ fn hough(edges: &[Option<Edge>], w: usize, h: usize) -> Vec<Line> {
             } else {
                 (tt, false)
             };
-            let rr = if flip { 2 * diag as isize - r as isize } else { r as isize };
+            let rr = if flip {
+                2 * diag as isize - r as isize
+            } else {
+                r as isize
+            };
             for dr in -6isize..=6 {
-                if let Some(cell) = usize::try_from(rr + dr).ok().filter(|&q| q < rows).and_then(|q| acc.get_mut(tt as usize * rows + q)) {
+                if let Some(cell) = usize::try_from(rr + dr)
+                    .ok()
+                    .filter(|&q| q < rows)
+                    .and_then(|q| acc.get_mut(tt as usize * rows + q))
+                {
                     *cell = 0.0;
                 }
             }
@@ -206,7 +237,10 @@ fn intersect(a: Line, b: Line) -> Option<Point> {
     if det.abs() < 1e-6 {
         return None;
     }
-    let p = [(a.rho * s2 - b.rho * s1) / det, (c1 * b.rho - c2 * a.rho) / det];
+    let p = [
+        (a.rho * s2 - b.rho * s1) / det,
+        (c1 * b.rho - c2 * a.rho) / det,
+    ];
     p.iter().all(|v| v.is_finite()).then_some(p)
 }
 
@@ -229,12 +263,16 @@ fn support(a: Point, b: Point, edges: &[Option<Edge>], w: usize, h: usize) -> f6
             if x < 0.0 || y < 0.0 || x >= w as f64 || y >= h as f64 {
                 return false;
             }
-            edges.get(y as usize * w + x as usize).copied().flatten().is_some_and(|e| {
-                // Either way across: dark-to-light or light-to-dark.
-                let d = (e.dir - normal).rem_euclid(std::f32::consts::PI);
-                // A NaN direction is no hit, as the two comparisons it replaces said.
-                !d.is_nan() && !(0.35..=std::f32::consts::PI - 0.35).contains(&d)
-            })
+            edges
+                .get(y as usize * w + x as usize)
+                .copied()
+                .flatten()
+                .is_some_and(|e| {
+                    // Either way across: dark-to-light or light-to-dark.
+                    let d = (e.dir - normal).rem_euclid(std::f32::consts::PI);
+                    // A NaN direction is no hit, as the two comparisons it replaces said.
+                    !d.is_nan() && !(0.35..=std::f32::consts::PI - 0.35).contains(&d)
+                })
         });
         hits += hit as usize;
     }
@@ -257,11 +295,19 @@ fn refine(q: [Point; 4], edges: &[Option<Edge>], w: usize, h: usize) -> Option<[
         let normal = ux.atan2(-uy) as f32;
         let mut pts = Vec::new();
         // Pixels near the side, between 5% and 95% of its length (away from the corners).
-        let (x0, x1) = (a[0].min(b[0]).floor() as isize - 3, a[0].max(b[0]).ceil() as isize + 3);
-        let (y0, y1) = (a[1].min(b[1]).floor() as isize - 3, a[1].max(b[1]).ceil() as isize + 3);
+        let (x0, x1) = (
+            a[0].min(b[0]).floor() as isize - 3,
+            a[0].max(b[0]).ceil() as isize + 3,
+        );
+        let (y0, y1) = (
+            a[1].min(b[1]).floor() as isize - 3,
+            a[1].max(b[1]).ceil() as isize + 3,
+        );
         for y in y0.max(0)..=y1.min(h as isize - 1) {
             for x in x0.max(0)..=x1.min(w as isize - 1) {
-                let Some(e) = edges.get(y as usize * w + x as usize).copied().flatten() else { continue };
+                let Some(e) = edges.get(y as usize * w + x as usize).copied().flatten() else {
+                    continue;
+                };
                 let d = (e.dir - normal).rem_euclid(std::f32::consts::PI);
                 if d > 0.35 && d < std::f32::consts::PI - 0.35 {
                     continue;
@@ -278,7 +324,10 @@ fn refine(q: [Point; 4], edges: &[Option<Edge>], w: usize, h: usize) -> Option<[
             return None;
         }
         let n = pts.len() as f64;
-        let (cx, cy) = (pts.iter().map(|p| p[0]).sum::<f64>() / n, pts.iter().map(|p| p[1]).sum::<f64>() / n);
+        let (cx, cy) = (
+            pts.iter().map(|p| p[0]).sum::<f64>() / n,
+            pts.iter().map(|p| p[1]).sum::<f64>() / n,
+        );
         let (mut sxx, mut sxy, mut syy) = (0.0, 0.0, 0.0);
         for p in &pts {
             let (dx, dy) = (p[0] - cx, p[1] - cy);
@@ -304,7 +353,10 @@ fn refine(q: [Point; 4], edges: &[Option<Edge>], w: usize, h: usize) -> Option<[
     let corner = |k: usize| meet(side((k + 3) % 4)?, side(k)?);
     let refined = [corner(0)?, corner(1)?, corner(2)?, corner(3)?];
     // A fit that moved a corner far is not a refinement.
-    let moved = refined.iter().zip(q.iter()).any(|(r, o)| (r[0] - o[0]).hypot(r[1] - o[1]) > 6.0);
+    let moved = refined
+        .iter()
+        .zip(q.iter())
+        .any(|(r, o)| (r[0] - o[0]).hypot(r[1] - o[1]) > 6.0);
     if moved {
         return None;
     }
@@ -325,10 +377,21 @@ fn best_quad(lines: &[Line], edges: &[Option<Edge>], w: usize, h: usize) -> Opti
         for &h2 in horizontal.iter().skip(i + 1) {
             for (j, &v1) in vertical.iter().enumerate() {
                 for &v2 in vertical.iter().skip(j + 1) {
-                    let corners = [intersect(*h1, *v1), intersect(*h1, *v2), intersect(*h2, *v2), intersect(*h2, *v1)];
-                    let [Some(a), Some(b), Some(c), Some(d)] = corners else { continue };
-                    let Some(q) = order_quad([a, b, c, d]) else { continue };
-                    if q.iter().any(|p| p[0] < -mx || p[1] < -my || p[0] > fw + mx || p[1] > fh + my) {
+                    let corners = [
+                        intersect(*h1, *v1),
+                        intersect(*h1, *v2),
+                        intersect(*h2, *v2),
+                        intersect(*h2, *v1),
+                    ];
+                    let [Some(a), Some(b), Some(c), Some(d)] = corners else {
+                        continue;
+                    };
+                    let Some(q) = order_quad([a, b, c, d]) else {
+                        continue;
+                    };
+                    if q.iter()
+                        .any(|p| p[0] < -mx || p[1] < -my || p[0] > fw + mx || p[1] > fh + my)
+                    {
                         continue;
                     }
                     let area = (0..4)
@@ -342,7 +405,9 @@ fn best_quad(lines: &[Line], edges: &[Option<Edge>], w: usize, h: usize) -> Opti
                     if area < MIN_AREA * fw * fh {
                         continue;
                     }
-                    let sides: Vec<f64> = (0..4).map(|k| support(q[k], q[(k + 1) % 4], edges, w, h)).collect();
+                    let sides: Vec<f64> = (0..4)
+                        .map(|k| support(q[k], q[(k + 1) % 4], edges, w, h))
+                        .collect();
                     if sides.iter().any(|&s| s < MIN_SUPPORT) {
                         continue;
                     }
@@ -368,7 +433,10 @@ mod tests {
     struct Lcg(u64);
     impl Lcg {
         fn next(&mut self) -> f32 {
-            self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            self.0 = self
+                .0
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             ((self.0 >> 33) as f32) / (u32::MAX >> 1) as f32
         }
     }
@@ -382,12 +450,29 @@ mod tests {
 
     /// A synthetic photo: `sheet` (corners in reading order) in `paper` over `table(x, y)`, with
     /// 2×2 supersampled edges, optional text lines on the sheet, and noise of ±`noise`.
-    fn photo(w: u32, h: u32, sheet: [Point; 4], paper: f32, table: impl Fn(f64, f64) -> f32, text: bool, noise: f32) -> Vec<u8> {
+    fn photo(
+        w: u32,
+        h: u32,
+        sheet: [Point; 4],
+        paper: f32,
+        table: impl Fn(f64, f64) -> f32,
+        text: bool,
+        noise: f32,
+    ) -> Vec<u8> {
         let mut rng = Lcg(7);
         let at = |u: f64, v: f64| -> Point {
-            let top = [sheet[0][0] + (sheet[1][0] - sheet[0][0]) * u, sheet[0][1] + (sheet[1][1] - sheet[0][1]) * u];
-            let bot = [sheet[3][0] + (sheet[2][0] - sheet[3][0]) * u, sheet[3][1] + (sheet[2][1] - sheet[3][1]) * u];
-            [top[0] + (bot[0] - top[0]) * v, top[1] + (bot[1] - top[1]) * v]
+            let top = [
+                sheet[0][0] + (sheet[1][0] - sheet[0][0]) * u,
+                sheet[0][1] + (sheet[1][1] - sheet[0][1]) * u,
+            ];
+            let bot = [
+                sheet[3][0] + (sheet[2][0] - sheet[3][0]) * u,
+                sheet[3][1] + (sheet[2][1] - sheet[3][1]) * u,
+            ];
+            [
+                top[0] + (bot[0] - top[0]) * v,
+                top[1] + (bot[1] - top[1]) * v,
+            ]
         };
         let bars: Vec<[Point; 4]> = if text {
             (0..12)
@@ -424,11 +509,19 @@ mod tests {
     fn assert_near(found: Option<[Point; 4]>, want: [Point; 4], tol: f64) {
         let found = found.expect("the sheet should be found");
         for (f, w) in found.iter().zip(want.iter()) {
-            assert!((f[0] - w[0]).hypot(f[1] - w[1]) <= tol, "found {found:?}, want {want:?}");
+            assert!(
+                (f[0] - w[0]).hypot(f[1] - w[1]) <= tol,
+                "found {found:?}, want {want:?}"
+            );
         }
     }
 
-    const SHEET: [Point; 4] = [[150.0, 170.0], [760.0, 110.0], [820.0, 1050.0], [100.0, 1090.0]];
+    const SHEET: [Point; 4] = [
+        [150.0, 170.0],
+        [760.0, 110.0],
+        [820.0, 1050.0],
+        [100.0, 1090.0],
+    ];
 
     #[test]
     fn finds_a_tilted_sheet_on_a_plain_table() {
@@ -445,7 +538,8 @@ mod tests {
     #[test]
     fn wood_grain_and_a_shadow_do_not_fool_it() {
         // Horizontal grain stripes, darker towards the bottom right.
-        let table = |x: f64, y: f64| 110.0 + 18.0 * ((y / 23.0).sin() as f32) - (0.03 * (x + y)) as f32;
+        let table =
+            |x: f64, y: f64| 110.0 + 18.0 * ((y / 23.0).sin() as f32) - (0.03 * (x + y)) as f32;
         let img = photo(900, 1200, SHEET, 235.0, table, true, 8.0);
         assert_near(detect_document(&img, 900, 1200), SHEET, 6.0);
     }
@@ -453,7 +547,12 @@ mod tests {
     #[test]
     fn a_card_photographed_from_an_angle() {
         // Strong perspective: the far edge much shorter than the near one.
-        let card = [[260.0, 300.0], [660.0, 290.0], [800.0, 700.0], [120.0, 720.0]];
+        let card = [
+            [260.0, 300.0],
+            [660.0, 290.0],
+            [800.0, 700.0],
+            [120.0, 720.0],
+        ];
         let img = photo(900, 1000, card, 225.0, |_, _| 60.0, false, 5.0);
         assert_near(detect_document(&img, 900, 1000), card, 6.0);
     }
@@ -463,7 +562,12 @@ mod tests {
         // A 500 × 650 sheet turned 30° about (450, 500), corners in reading order.
         let (c, s) = (30f64.to_radians().cos(), 30f64.to_radians().sin());
         let turn = |x: f64, y: f64| [450.0 + x * c - y * s, 500.0 + x * s + y * c];
-        let sheet = [turn(-250.0, -325.0), turn(250.0, -325.0), turn(250.0, 325.0), turn(-250.0, 325.0)];
+        let sheet = [
+            turn(-250.0, -325.0),
+            turn(250.0, -325.0),
+            turn(250.0, 325.0),
+            turn(-250.0, 325.0),
+        ];
         let img = photo(900, 1000, sheet, 240.0, |_, _| 80.0, true, 5.0);
         // Turned 30° clockwise on screen, the top-left corner is the one turned from (-250, -325).
         assert_near(detect_document(&img, 900, 1000), sheet, 6.0);
@@ -473,7 +577,12 @@ mod tests {
     fn a_sheet_running_off_the_picture_is_not_invented() {
         // The bottom edge is outside the picture: either nothing, or corners on the visible
         // edges — never a quadrilateral that cuts the sheet in half.
-        let sheet = [[150.0, 170.0], [760.0, 110.0], [830.0, 1400.0], [90.0, 1450.0]];
+        let sheet = [
+            [150.0, 170.0],
+            [760.0, 110.0],
+            [830.0, 1400.0],
+            [90.0, 1450.0],
+        ];
         let img = photo(900, 1200, sheet, 245.0, |_, _| 95.0, true, 4.0);
         if let Some(q) = detect_document(&img, 900, 1200) {
             let top = (q[0][1] + q[1][1]) / 2.0;
@@ -484,7 +593,8 @@ mod tests {
 
     #[test]
     fn gives_up_without_a_document() {
-        let table = |x: f64, y: f64| 110.0 + 18.0 * ((y / 23.0).sin() as f32) - (0.03 * (x + y)) as f32;
+        let table =
+            |x: f64, y: f64| 110.0 + 18.0 * ((y / 23.0).sin() as f32) - (0.03 * (x + y)) as f32;
         let img = photo(900, 1200, [[0.0; 2]; 4], 0.0, table, false, 8.0);
         assert_eq!(detect_document(&img, 900, 1200), None);
         // White paper on a white desk: no edge to find.

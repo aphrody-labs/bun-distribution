@@ -15,7 +15,14 @@
 //!
 //! No decoder panics on malformed input (property-tested).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod convert;
 pub mod display;
@@ -39,8 +46,10 @@ mod tiff_codec;
 mod webp;
 
 pub use encode::{
-    ChromaSubsampling, EncodeImage, EncodeMeta, HDR_REFERENCE_WHITE_NITS, HLG_REFERENCE_PEAK_NITS, HdrTransfer, Samples, TiffCompression,
-    encode_avif, encode_avif_hdr, encode_avif_pq, encode_jpeg, encode_png, encode_png_pq, encode_psd, encode_tiff, encode_webp_lossless, hlg_signal,
+    ChromaSubsampling, EncodeImage, EncodeMeta, HDR_REFERENCE_WHITE_NITS, HLG_REFERENCE_PEAK_NITS,
+    HdrTransfer, Samples, TiffCompression, encode_avif, encode_avif_hdr, encode_avif_pq,
+    encode_jpeg, encode_png, encode_png_pq, encode_psd, encode_tiff, encode_webp_lossless,
+    hlg_signal,
 };
 pub use jxl_encode::{JxlColour, JxlEffort, JxlOptions, encode_jxl};
 pub use sniff::{Format, sniff};
@@ -78,13 +87,19 @@ pub struct DecodeOptions {
 
 impl Default for DecodeOptions {
     fn default() -> Self {
-        DecodeOptions { max_size: None, max_pixels: 1 << 30 }
+        DecodeOptions {
+            max_size: None,
+            max_pixels: 1 << 30,
+        }
     }
 }
 
 impl DecodeOptions {
     pub fn fit(w: u32, h: u32) -> Self {
-        DecodeOptions { max_size: Some((w, h)), ..Default::default() }
+        DecodeOptions {
+            max_size: Some((w, h)),
+            ..Default::default()
+        }
     }
 }
 
@@ -140,7 +155,9 @@ impl Decoded {
             let a = alpha.map(|a| a.row(y));
             for (x, (o, p)) in row.iter_mut().zip(src).enumerate() {
                 let q = if ident { *p } else { mat_apply(&m, *p) };
-                let al = a.map(|a| (a[x].clamp(0.0, 1.0) * 255.0 + 0.5) as u8).unwrap_or(255);
+                let al = a
+                    .map(|a| (a[x].clamp(0.0, 1.0) * 255.0 + 0.5) as u8)
+                    .unwrap_or(255);
                 *o = [enc(q[0]), enc(q[1]), enc(q[2]), al];
             }
         });
@@ -163,7 +180,8 @@ pub(crate) fn mat_apply(m: &[[f32; 3]; 3], p: [f32; 3]) -> [f32; 3] {
 /// decoder is caught and reported as [`Error::Malformed`].
 pub fn decode(bytes: &[u8], opts: DecodeOptions) -> Result<Decoded> {
     let format = sniff(bytes).ok_or(Error::UnknownFormat)?;
-    std::panic::catch_unwind(|| decode_unguarded(bytes, format, &opts)).unwrap_or_else(|_| Err(Error::Malformed(format, "decoder panicked".into())))
+    std::panic::catch_unwind(|| decode_unguarded(bytes, format, &opts))
+        .unwrap_or_else(|_| Err(Error::Malformed(format, "decoder panicked".into())))
 }
 
 /// What a file's headers say about its image: enough to catalogue it without decoding pixels.
@@ -210,13 +228,22 @@ pub fn read_header_unguarded(bytes: &[u8], format: Format) -> Result<Header> {
             (d.source_width, d.source_height, d.orientation)
         }
     };
-    Ok(Header { format, width, height, orientation })
+    Ok(Header {
+        format,
+        width,
+        height,
+        orientation,
+    })
 }
 
 /// Decode a JPEG preview with its enclosing container's colour space as a fallback.
 /// A JPEG carrying ICC or EXIF metadata keeps its own interpretation. The fallback is applied
 /// before transfer decoding and linear-light resizing, never to already-resampled pixels.
-pub fn decode_jpeg_with_fallback(bytes: &[u8], opts: DecodeOptions, fallback: NamedSpace) -> Result<Decoded> {
+pub fn decode_jpeg_with_fallback(
+    bytes: &[u8],
+    opts: DecodeOptions,
+    fallback: NamedSpace,
+) -> Result<Decoded> {
     std::panic::catch_unwind(|| jpeg::decode_with_fallback(bytes, &opts, Some(fallback)))
         .unwrap_or_else(|_| Err(Error::Malformed(Format::Jpeg, "decoder panicked".into())))
 }
@@ -226,7 +253,14 @@ pub fn decode_jpeg_with_fallback(bytes: &[u8], opts: DecodeOptions, fallback: Na
 pub fn decode_unguarded(bytes: &[u8], format: Format, opts: &DecodeOptions) -> Result<Decoded> {
     let opts = *opts;
     // The reason a format can't be decoded lives in one place, `Format::not_decodable`.
-    let unsupported = || Err(Error::Unsupported(format, format.not_decodable().unwrap_or("not decodable in this build")));
+    let unsupported = || {
+        Err(Error::Unsupported(
+            format,
+            format
+                .not_decodable()
+                .unwrap_or("not decodable in this build"),
+        ))
+    };
     match format {
         Format::Jpeg => jpeg::decode(bytes, &opts),
         Format::Png => png_codec::decode(bytes, &opts),
@@ -255,7 +289,11 @@ pub fn to_working(d: &Decoded) -> Rgb32f {
         d.image.map(|p| mat_apply(&m, p))
     };
     // white is (1, 1, 1) in the working space too: the conversion is white-preserving
-    if let Some(a) = d.alpha.as_ref().filter(|a| a.width == img.width && a.height == img.height) {
+    if let Some(a) = d
+        .alpha
+        .as_ref()
+        .filter(|a| a.width == img.width && a.height == img.height)
+    {
         for (p, &av) in img.data.iter_mut().zip(&a.data) {
             let av = av.clamp(0.0, 1.0);
             *p = p.map(|c| c * av + (1.0 - av));
@@ -307,7 +345,11 @@ fn thumbnail_max_pixels() -> u64 {
 
 impl ThumbnailOptions {
     pub fn new(max_edge: u32) -> Self {
-        ThumbnailOptions { max_edge, min_embedded_edge: max_edge, max_pixels: thumbnail_max_pixels() }
+        ThumbnailOptions {
+            max_edge,
+            min_embedded_edge: max_edge,
+            max_pixels: thumbnail_max_pixels(),
+        }
     }
 }
 
@@ -322,11 +364,18 @@ pub fn decode_thumbnail_with(bytes: &[u8], opts: &ThumbnailOptions) -> Result<Th
     let max_edge = opts.max_edge.max(1);
     let min_edge = opts.min_embedded_edge.clamp(1, max_edge);
     if sniff(bytes) == Some(Format::Jpeg)
-        && let Ok(Some(t)) = std::panic::catch_unwind(|| jpeg::embedded_thumbnail(bytes, max_edge, min_edge))
+        && let Ok(Some(t)) =
+            std::panic::catch_unwind(|| jpeg::embedded_thumbnail(bytes, max_edge, min_edge))
     {
         return Ok(t);
     }
-    let d = decode(bytes, DecodeOptions { max_size: Some((max_edge, max_edge)), max_pixels: opts.max_pixels })?;
+    let d = decode(
+        bytes,
+        DecodeOptions {
+            max_size: Some((max_edge, max_edge)),
+            max_pixels: opts.max_pixels,
+        },
+    )?;
     Ok(Thumbnail {
         image: d.to_srgb8(),
         orientation: d.orientation,

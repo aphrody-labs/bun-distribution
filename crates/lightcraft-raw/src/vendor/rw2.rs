@@ -100,7 +100,10 @@
 
 use super::pef::{Bits, Huffman, diff};
 use super::{active_rows, white_from_data};
-use crate::{BlackLevel, Cfa, ColorData, MAX_SAMPLES, Mode, Opcode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result};
+use crate::{
+    BlackLevel, Cfa, ColorData, MAX_SAMPLES, Mode, Opcode, OpcodeLists, RawData, RawError,
+    RawFormat, RawImage, Rect, Result,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::{ByteOrder, Ifd, Tiff, Value, tags as t};
 use rayon::prelude::*;
@@ -138,7 +141,10 @@ const FORMAT8_FIXED: [(u16, &[u16]); 9] = [
     (0x003d, &[0]),
     (0x003e, &[0]),
     (0x003f, &[0]),
-    (0x0041, &[17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    (
+        0x0041,
+        &[17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ),
     (0x0043, &[1]),
 ];
 /// The camera's lens distortion correction (ExifTool name: DistortionInfo); see the module docs.
@@ -207,12 +213,18 @@ fn encoding(ifd: &Ifd, bits: u32) -> Result<Encoding> {
         (Some(2), _) if bits == 12 => blocks(Block::Packed { bits }, false),
         (Some(4), _) if bits == 12 => blocks(Block::Format4, true),
         (Some(5), _) if bits == 12 || bits == 14 => blocks(Block::Packed { bits }, true),
-        (Some(6), _) if bits == 12 || bits == 14 => blocks(Block::Format6 { bits14: bits == 14 }, false),
+        (Some(6), _) if bits == 12 || bits == 14 => {
+            blocks(Block::Format6 { bits14: bits == 14 }, false)
+        }
         (Some(7), _) if bits == 14 => blocks(Block::Packed { bits }, false),
         (Some(8), _) if (12..=16).contains(&bits) => Ok(Encoding::Strips),
         (None, Some(34828 | 34830)) if (12..=16).contains(&bits) => Ok(Encoding::Words),
-        (Some(f), _) => Err(RawError::Unsupported(format!("Panasonic raw format {f} with {bits}-bit samples"))),
-        (None, c) => Err(RawError::Unsupported(format!("Panasonic raw without a raw format (compression {c:?})"))),
+        (Some(f), _) => Err(RawError::Unsupported(format!(
+            "Panasonic raw format {f} with {bits}-bit samples"
+        ))),
+        (None, c) => Err(RawError::Unsupported(format!(
+            "Panasonic raw without a raw format (compression {c:?})"
+        ))),
     }
 }
 
@@ -224,7 +236,10 @@ struct Fields {
 
 impl Fields {
     fn new(b: &[u8; 16]) -> Fields {
-        Fields { word: u128::from_le_bytes(*b), left: 128 }
+        Fields {
+            word: u128::from_le_bytes(*b),
+            left: 128,
+        }
     }
 
     /// The next `n` (1..=16) bits.
@@ -260,7 +275,11 @@ fn put(out: &mut [u16], i: usize, v: i32) {
 fn packed(b: &[u8; 16], bits: u32, out: &mut [u16]) {
     let word = u128::from_le_bytes(*b);
     let mask = (1u128 << bits.min(16)) - 1;
-    for (i, o) in out.iter_mut().enumerate().take((128 / bits.max(1)) as usize) {
+    for (i, o) in out
+        .iter_mut()
+        .enumerate()
+        .take((128 / bits.max(1)) as usize)
+    {
         *o = ((word >> (i as u32 * bits)) & mask) as u16;
     }
 }
@@ -291,7 +310,11 @@ fn format4(b: &[u8; 16], out: &mut [u16]) {
 }
 
 fn format6(b: &[u8; 16], bits14: bool, out: &mut [u16]) {
-    let (seed, code, groups, bias) = if bits14 { (14, 10, 3, 512) } else { (12, 8, 4, 128) };
+    let (seed, code, groups, bias) = if bits14 {
+        (14, 10, 3, 512)
+    } else {
+        (12, 8, 4, 128)
+    };
     let mut f = Fields::new(b);
     let mut prev = [f.take(seed), f.take(seed)];
     put(out, 0, prev[0]);
@@ -310,31 +333,39 @@ fn format6(b: &[u8; 16], bits14: bool, out: &mut [u16]) {
 /// rotated when `rotated`). Blocks missing from `src` give zeros.
 fn decode_blocks(src: &[u8], kind: Block, rotated: bool, out: &mut [u16]) {
     let per = kind.per();
-    out.par_chunks_mut(CHUNK / 16 * per).enumerate().for_each(|(c, o)| {
-        let raw = src.get(c * CHUNK..).unwrap_or_default();
-        let raw = raw.get(..CHUNK).unwrap_or(raw);
-        let mut logical = Vec::new();
-        let chunk = if rotated && raw.len() == CHUNK {
-            logical.extend_from_slice(raw.get(ROTATE..).unwrap_or_default());
-            logical.extend_from_slice(raw.get(..ROTATE).unwrap_or_default());
-            &logical
-        } else {
-            raw
-        };
-        for (i, px) in o.chunks_mut(per).enumerate() {
-            match chunk.get(i * 16..i * 16 + 16).and_then(|s| <&[u8; 16]>::try_from(s).ok()) {
-                Some(b) => kind.decode(b, px),
-                None => px.fill(0),
+    out.par_chunks_mut(CHUNK / 16 * per)
+        .enumerate()
+        .for_each(|(c, o)| {
+            let raw = src.get(c * CHUNK..).unwrap_or_default();
+            let raw = raw.get(..CHUNK).unwrap_or(raw);
+            let mut logical = Vec::new();
+            let chunk = if rotated && raw.len() == CHUNK {
+                logical.extend_from_slice(raw.get(ROTATE..).unwrap_or_default());
+                logical.extend_from_slice(raw.get(..ROTATE).unwrap_or_default());
+                &logical
+            } else {
+                raw
+            };
+            for (i, px) in o.chunks_mut(per).enumerate() {
+                match chunk
+                    .get(i * 16..i * 16 + 16)
+                    .and_then(|s| <&[u8; 16]>::try_from(s).ok())
+                {
+                    Some(b) => kind.decode(b, px),
+                    None => px.fill(0),
+                }
             }
-        }
-    });
+        });
 }
 
 fn decode_words(src: &[u8], shift: u32, out: &mut [u16]) {
     out.par_chunks_mut(1 << 16).enumerate().for_each(|(k, o)| {
         for (i, v) in o.iter_mut().enumerate() {
             let at = ((k << 16) + i) * 2;
-            *v = src.get(at..at + 2).and_then(|b| <[u8; 2]>::try_from(b).ok()).map_or(0, |b| u16::from_le_bytes(b) >> shift);
+            *v = src
+                .get(at..at + 2)
+                .and_then(|b| <[u8; 2]>::try_from(b).ok())
+                .map_or(0, |b| u16::from_le_bytes(b) >> shift);
         }
     });
 }
@@ -342,19 +373,38 @@ fn decode_words(src: &[u8], shift: u32, out: &mut [u16]) {
 /// A tag as a `u16` array: SHORT values, or the little-endian contents of an UNDEFINED / BYTE value.
 fn u16_array(ifd: &Ifd, tag: u16, order: ByteOrder) -> Option<Vec<u16>> {
     match ifd.value(tag)? {
-        Value::Undefined(b) | Value::Byte(b) => Some(b.as_chunks::<2>().0.iter().map(|c| order.u16(*c)).collect()),
+        Value::Undefined(b) | Value::Byte(b) => {
+            Some(b.as_chunks::<2>().0.iter().map(|c| order.u16(*c)).collect())
+        }
         Value::Short(v) => Some(v.clone()),
-        other => Some(other.to_u64_vec().into_iter().map(|v| v.min(u16::MAX as u64) as u16).collect()),
+        other => Some(
+            other
+                .to_u64_vec()
+                .into_iter()
+                .map(|v| v.min(u16::MAX as u64) as u16)
+                .collect(),
+        ),
     }
 }
 
 /// A format-8 `u16` list (count, then the values; `wide`: 32-bit values as low/high pairs).
 fn list(ifd: &Ifd, tag: u16, order: ByteOrder, wide: bool) -> Result<Vec<u64>> {
-    let a = u16_array(ifd, tag, order).ok_or_else(|| RawError::Corrupt(format!("RW2 format 8 without tag {tag:#06x}")))?;
+    let a = u16_array(ifd, tag, order)
+        .ok_or_else(|| RawError::Corrupt(format!("RW2 format 8 without tag {tag:#06x}")))?;
     let n = a.first().map_or(0, |&n| n as usize);
     let at = |i: usize| a.get(i).map(|&v| v as u64);
-    let values: Option<Vec<u64>> = (0..n).map(|i| if wide { Some(at(1 + 2 * i)? | at(2 + 2 * i)? << 16) } else { at(1 + i) }).collect();
-    values.filter(|v| !v.is_empty() && v.len() <= MAX_STRIPS).ok_or_else(|| RawError::Corrupt(format!("RW2 format 8: bad list in tag {tag:#06x}")))
+    let values: Option<Vec<u64>> = (0..n)
+        .map(|i| {
+            if wide {
+                Some(at(1 + 2 * i)? | at(2 + 2 * i)? << 16)
+            } else {
+                at(1 + i)
+            }
+        })
+        .collect();
+    values
+        .filter(|v| !v.is_empty() && v.len() <= MAX_STRIPS)
+        .ok_or_else(|| RawError::Corrupt(format!("RW2 format 8: bad list in tag {tag:#06x}")))
 }
 
 /// One format-8 strip: its bit stream and placement.
@@ -366,38 +416,74 @@ struct Strip<'a> {
 }
 
 /// The format-8 strips (tiling the full width, top to bottom) and code table.
-fn format8<'a>(ifd: &Ifd, order: ByteOrder, bytes: &'a [u8], w: usize, h: usize) -> Result<(Vec<Strip<'a>>, Huffman)> {
+fn format8<'a>(
+    ifd: &Ifd,
+    order: ByteOrder,
+    bytes: &'a [u8],
+    w: usize,
+    h: usize,
+) -> Result<(Vec<Strip<'a>>, Huffman)> {
     for (tag, want) in FORMAT8_FIXED {
         if let Some(v) = u16_array(ifd, tag, order)
             && v != want
         {
-            return Err(RawError::Unsupported(format!("Panasonic raw format 8 with tag {tag:#06x} = {v:?}")));
+            return Err(RawError::Unsupported(format!(
+                "Panasonic raw format 8 with tag {tag:#06x} = {v:?}"
+            )));
         }
     }
-    let (offsets, lefts, bits) = (list(ifd, STRIP_OFFSETS, order, true)?, list(ifd, STRIP_LEFT, order, true)?, list(ifd, STRIP_BITS, order, true)?);
-    let (widths, heights) = (list(ifd, STRIP_WIDTHS, order, false)?, list(ifd, STRIP_HEIGHTS, order, false)?);
+    let (offsets, lefts, bits) = (
+        list(ifd, STRIP_OFFSETS, order, true)?,
+        list(ifd, STRIP_LEFT, order, true)?,
+        list(ifd, STRIP_BITS, order, true)?,
+    );
+    let (widths, heights) = (
+        list(ifd, STRIP_WIDTHS, order, false)?,
+        list(ifd, STRIP_HEIGHTS, order, false)?,
+    );
     let n = offsets.len();
-    if [lefts.len(), bits.len(), widths.len(), heights.len()].iter().any(|&l| l != n) {
-        return Err(RawError::Corrupt("RW2 format 8: strip lists of different lengths".into()));
+    if [lefts.len(), bits.len(), widths.len(), heights.len()]
+        .iter()
+        .any(|&l| l != n)
+    {
+        return Err(RawError::Corrupt(
+            "RW2 format 8: strip lists of different lengths".into(),
+        ));
     }
     let mut strips = Vec::with_capacity(n);
     let mut x = 0usize;
     for i in 0..n {
         let (left, width, height) = (lefts[i] as usize, widths[i] as usize, heights[i] as usize);
         let len = usize::try_from(bits[i].div_ceil(8)).unwrap_or(usize::MAX);
-        let data = usize::try_from(offsets[i]).ok().and_then(|o| bytes.get(o..o.checked_add(len)?));
+        let data = usize::try_from(offsets[i])
+            .ok()
+            .and_then(|o| bytes.get(o..o.checked_add(len)?));
         let Some(data) = data.filter(|_| left == x && width > 0 && height == h) else {
-            return Err(RawError::Corrupt(format!("RW2 format 8: strip {i} outside the image or file")));
+            return Err(RawError::Corrupt(format!(
+                "RW2 format 8: strip {i} outside the image or file"
+            )));
         };
         x += width;
-        strips.push(Strip { data, width, height, bits: bits[i] });
+        strips.push(Strip {
+            data,
+            width,
+            height,
+            bits: bits[i],
+        });
     }
     if x != w {
-        return Err(RawError::Corrupt(format!("RW2 format 8: strips cover {x} of {w} columns")));
+        return Err(RawError::Corrupt(format!(
+            "RW2 format 8: strips cover {x} of {w} columns"
+        )));
     }
     let codes = u16_array(ifd, HUFFMAN_CODES, order).unwrap_or_default();
     let pairs: Vec<(u32, u32)> = match (codes.first(), codes.get(1..35)) {
-        (Some(17), Some(c)) => c.as_chunks::<2>().0.iter().map(|&[l, c]| (l as u32, c as u32)).collect(),
+        (Some(17), Some(c)) => c
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[l, c]| (l as u32, c as u32))
+            .collect(),
         _ => return Err(RawError::Corrupt("RW2 format 8: bad code table".into())),
     };
     Ok((strips, code_table(&pairs)?))
@@ -410,17 +496,32 @@ fn code_table(pairs: &[(u32, u32)]) -> Result<Huffman> {
     let mut table = Vec::with_capacity(pairs.len());
     for (i, &(la, ca)) in pairs.iter().enumerate() {
         if la > 12 {
-            return Err(RawError::Unsupported(format!("RW2 format 8: {la}-bit code")));
+            return Err(RawError::Unsupported(format!(
+                "RW2 format 8: {la}-bit code"
+            )));
         }
         if la > 0 && ca >> la != 0 {
-            return Err(RawError::Corrupt("RW2 format 8: code longer than its length".into()));
+            return Err(RawError::Corrupt(
+                "RW2 format 8: code longer than its length".into(),
+            ));
         }
-        let shadowed = pairs.iter().any(|&(lb, cb)| lb > 0 && lb < la && ca >> (la - lb) == cb);
-        let duplicate = pairs.iter().enumerate().any(|(j, &(lb, cb))| j != i && la > 0 && (lb, cb) == (la, ca));
+        let shadowed = pairs
+            .iter()
+            .any(|&(lb, cb)| lb > 0 && lb < la && ca >> (la - lb) == cb);
+        let duplicate = pairs
+            .iter()
+            .enumerate()
+            .any(|(j, &(lb, cb))| j != i && la > 0 && (lb, cb) == (la, ca));
         if duplicate {
-            return Err(RawError::Corrupt("RW2 format 8: two categories with the same code".into()));
+            return Err(RawError::Corrupt(
+                "RW2 format 8: two categories with the same code".into(),
+            ));
         }
-        table.push(if la == 0 || shadowed { (0, 0) } else { ((ca << (12 - la)) as u16, la as u8) });
+        table.push(if la == 0 || shadowed {
+            (0, 0)
+        } else {
+            ((ca << (12 - la)) as u16, la as u8)
+        });
     }
     Huffman::new(&table)
 }
@@ -435,9 +536,14 @@ fn decode_strip(s: &Strip, codes: &Huffman, mut rows: Vec<&mut [u16]>) -> Result
         let mut cell = first;
         for cx in 0..s.width.div_ceil(2) {
             for (k, v) in cell.iter_mut().enumerate() {
-                let d = diff(&mut bits, codes).ok_or_else(|| RawError::Corrupt(format!("RW2 format 8: invalid code in row {}", 2 * pair)))?;
+                let d = diff(&mut bits, codes).ok_or_else(|| {
+                    RawError::Corrupt(format!("RW2 format 8: invalid code in row {}", 2 * pair))
+                })?;
                 *v = v.saturating_add(d);
-                if let Some(px) = rows.get_mut(2 * pair + k % 2).and_then(|r| r.get_mut(2 * cx + k / 2)) {
+                if let Some(px) = rows
+                    .get_mut(2 * pair + k % 2)
+                    .and_then(|r| r.get_mut(2 * cx + k / 2))
+                {
                     *px = (*v).clamp(0, u16::MAX as i32) as u16;
                 }
             }
@@ -446,14 +552,21 @@ fn decode_strip(s: &Strip, codes: &Huffman, mut rows: Vec<&mut [u16]>) -> Result
             }
         }
         if bits.consumed_bits() as u64 > s.bits {
-            return Err(RawError::Corrupt(format!("RW2 format 8: strip data ends at row {} of {}", 2 * pair, s.height)));
+            return Err(RawError::Corrupt(format!(
+                "RW2 format 8: strip data ends at row {} of {}",
+                2 * pair,
+                s.height
+            )));
         }
     }
     Ok(())
 }
 
 fn decode_strips(strips: &[Strip], codes: &Huffman, w: usize, out: &mut [u16]) -> Result<()> {
-    let mut parts: Vec<Vec<&mut [u16]>> = strips.iter().map(|s| Vec::with_capacity(s.height)).collect();
+    let mut parts: Vec<Vec<&mut [u16]>> = strips
+        .iter()
+        .map(|s| Vec::with_capacity(s.height))
+        .collect();
     for row in out.chunks_mut(w) {
         let mut rest = row;
         for (s, rows) in strips.iter().zip(parts.iter_mut()) {
@@ -462,14 +575,19 @@ fn decode_strips(strips: &[Strip], codes: &Huffman, w: usize, out: &mut [u16]) -
             rest = tail;
         }
     }
-    strips.par_iter().zip(parts).try_for_each(|(s, rows)| decode_strip(s, codes, rows))
+    strips
+        .par_iter()
+        .zip(parts)
+        .try_for_each(|(s, rows)| decode_strip(s, codes, rows))
 }
 
 /// Replace samples of 0 inside `area` (mapped-out defects) by the mean of the non-zero samples of the same colour two
 /// pixels away.
 fn fill_defects(data: &mut [u16], w: usize, area: Rect) {
     for y in area.y..area.y + area.height {
-        let Some(row) = data.get(y * w + area.x..y * w + area.x + area.width) else { break };
+        let Some(row) = data.get(y * w + area.x..y * w + area.x + area.width) else {
+            break;
+        };
         if !row.contains(&0) {
             continue;
         }
@@ -478,7 +596,12 @@ fn fill_defects(data: &mut [u16], w: usize, area: Rect) {
             if data.get(i) != Some(&0) {
                 continue;
             }
-            let near = [(x.checked_sub(2), Some(y)), (Some(x + 2).filter(|&x| x < w), Some(y)), (Some(x), y.checked_sub(2)), (Some(x), Some(y + 2))];
+            let near = [
+                (x.checked_sub(2), Some(y)),
+                (Some(x + 2).filter(|&x| x < w), Some(y)),
+                (Some(x), y.checked_sub(2)),
+                (Some(x), Some(y + 2)),
+            ];
             let (mut sum, mut n) = (0u32, 0u32);
             for (nx, ny) in near {
                 if let (Some(nx), Some(ny)) = (nx, ny)
@@ -508,20 +631,35 @@ fn cfa(code: u16) -> Cfa {
 
 pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let tiff = Tiff::parse(bytes)?;
-    let ifd0 = tiff.ifds.first().ok_or_else(|| RawError::Corrupt("RW2 without IFD0".into()))?;
+    let ifd0 = tiff
+        .ifds
+        .first()
+        .ok_or_else(|| RawError::Corrupt("RW2 without IFD0".into()))?;
     let get = |tag: u16| ifd0.u64(tag).and_then(|v| usize::try_from(v).ok());
-    let (w, h) = (get(SENSOR_WIDTH).unwrap_or(0), get(SENSOR_HEIGHT).unwrap_or(0));
+    let (w, h) = (
+        get(SENSOR_WIDTH).unwrap_or(0),
+        get(SENSOR_HEIGHT).unwrap_or(0),
+    );
     if w == 0 || h == 0 {
         return Err(RawError::Corrupt("RW2 without sensor size".into()));
     }
-    let n = w.checked_mul(h).filter(|n| *n <= MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
+    let n = w
+        .checked_mul(h)
+        .filter(|n| *n <= MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
     let bits = ifd0.u32(BITS).unwrap_or(12);
     let encoding = encoding(ifd0, bits)?;
     let src = || {
-        let off = get(RAW_OFFSET).or_else(|| get(t::STRIP_OFFSETS)).ok_or_else(|| RawError::Corrupt("RW2 without raw data offset".into()))?;
-        bytes.get(off..).ok_or_else(|| RawError::Corrupt("RW2 raw data outside file".into()))
+        let off = get(RAW_OFFSET)
+            .or_else(|| get(t::STRIP_OFFSETS))
+            .ok_or_else(|| RawError::Corrupt("RW2 without raw data offset".into()))?;
+        bytes
+            .get(off..)
+            .ok_or_else(|| RawError::Corrupt("RW2 raw data outside file".into()))
     };
-    let truncated = |have: usize, need: usize| RawError::Corrupt(format!("RW2 raw data truncated ({have} of {need} bytes)"));
+    let truncated = |have: usize, need: usize| {
+        RawError::Corrupt(format!("RW2 raw data truncated ({have} of {need} bytes)"))
+    };
     let mut data = Vec::new();
     match encoding {
         Encoding::Words => {
@@ -555,14 +693,30 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         }
     }
 
-    let active = match (get(BORDER_TOP), get(BORDER_LEFT), get(BORDER_BOTTOM), get(BORDER_RIGHT)) {
-        (Some(tp), Some(l), Some(b), Some(r)) if b > tp && r > l => Rect::new(l, tp, r - l, b - tp).clipped(w, h),
+    let active = match (
+        get(BORDER_TOP),
+        get(BORDER_LEFT),
+        get(BORDER_BOTTOM),
+        get(BORDER_RIGHT),
+    ) {
+        (Some(tp), Some(l), Some(b), Some(r)) if b > tp && r > l => {
+            Rect::new(l, tp, r - l, b - tp).clipped(w, h)
+        }
         _ => Rect::new(0, 0, w, h),
     };
-    let active = if active.width == 0 || active.height == 0 { Rect::new(0, 0, w, h) } else { active };
+    let active = if active.width == 0 || active.height == 0 {
+        Rect::new(0, 0, w, h)
+    } else {
+        active
+    };
     let crop = match CROP.map(get) {
         [Some(tp), Some(l), Some(b), Some(r)]
-            if b > tp && r > l && l >= active.x && tp >= active.y && r <= active.x + active.width && b <= active.y + active.height =>
+            if b > tp
+                && r > l
+                && l >= active.x
+                && tp >= active.y
+                && r <= active.x + active.width
+                && b <= active.y + active.height =>
         {
             Rect::new(l - active.x, tp - active.y, r - l, b - tp)
         }
@@ -573,32 +727,63 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     }
 
     let cfa = cfa(ifd0.u16(CFA_PATTERN).unwrap_or(1));
-    let tags = BLACK_RGB.map(|tag| ifd0.f64(tag).filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0) as f32);
+    let tags = BLACK_RGB.map(|tag| {
+        ifd0.f64(tag)
+            .filter(|v| v.is_finite() && *v >= 0.0)
+            .unwrap_or(0.0) as f32
+    });
     let offset = match encoding {
-        Encoding::Blocks { kind: Block::Format4 | Block::Format6 { .. }, .. } => CODEC_BLACK_OFFSET,
+        Encoding::Blocks {
+            kind: Block::Format4 | Block::Format6 { .. },
+            ..
+        } => CODEC_BLACK_OFFSET,
         _ => 0.0,
     };
-    let rgb = if tags.iter().all(|&v| v == 0.0) { [DEFAULT_BLACK; 3] } else { tags.map(|v| v + offset) };
+    let rgb = if tags.iter().all(|&v| v == 0.0) {
+        [DEFAULT_BLACK; 3]
+    } else {
+        tags.map(|v| v + offset)
+    };
     // per CFA position, anchored at the active area
-    let values = cfa.shifted(active.x, active.y).pattern.iter().map(|&c| rgb[c as usize]).collect();
-    let black = BlackLevel { repeat_rows: 2, repeat_cols: 2, values, ..Default::default() };
+    let values = cfa
+        .shifted(active.x, active.y)
+        .pattern
+        .iter()
+        .map(|&c| rgb[c as usize])
+        .collect();
+    let black = BlackLevel {
+        repeat_rows: 2,
+        repeat_cols: 2,
+        values,
+        ..Default::default()
+    };
     let full = ((1u32 << bits.clamp(1, 16)) - 1) as f32;
     let white = if data.is_empty() {
         // headers only (white isn't part of `RawInfo`): the recorded limit as a placeholder
-        LINEARITY_LIMIT.iter().filter_map(|&tag| ifd0.f64(tag)).map(|v| v as f32).filter(|v| *v > 0.0 && *v <= full).fold(full, f32::min)
+        LINEARITY_LIMIT
+            .iter()
+            .filter_map(|&tag| ifd0.f64(tag))
+            .map(|v| v as f32)
+            .filter(|v| *v > 0.0 && *v <= full)
+            .fold(full, f32::min)
     } else {
         white_from_data(&active_rows(&data, w, active), bits)
     };
     let white = if white > black.mean() { white } else { full };
     let wb = match WB_RGB.map(|tag| ifd0.f64(tag)) {
-        [Some(r), Some(g), Some(b)] if r > 0.0 && g > 0.0 && b > 0.0 => Some([(r / g) as f32, 1.0, (b / g) as f32]),
+        [Some(r), Some(g), Some(b)] if r > 0.0 && g > 0.0 && b > 0.0 => {
+            Some([(r / g) as f32, 1.0, (b / g) as f32])
+        }
         _ => None,
     };
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
     metadata.width = Some(crop.width as u32);
     metadata.height = Some(crop.height as u32);
     if metadata.iso.is_none() {
-        metadata.iso = ifd0.u32(ISO).or_else(|| ifd0.u32(ISO_32)).filter(|v| *v > 0);
+        metadata.iso = ifd0
+            .u32(ISO)
+            .or_else(|| ifd0.u32(ISO_32))
+            .filter(|v| *v > 0);
     }
     let img = RawImage {
         format: RawFormat::Rw2,
@@ -616,7 +801,10 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         color: ColorData::default(),
         wb_multipliers: wb,
         linearized: false,
-        opcodes: OpcodeLists { list3: distortion(ifd0, active).into_iter().collect(), ..Default::default() },
+        opcodes: OpcodeLists {
+            list3: distortion(ifd0, active).into_iter().collect(),
+            ..Default::default()
+        },
         metadata,
     };
     img.validate_for(mode)?;
@@ -634,7 +822,11 @@ fn distortion(ifd: &Ifd, active: Rect) -> Option<Opcode> {
     if u16::from_le_bytes(word(7)?) & 0x000f != 1 {
         return None;
     }
-    let (k2, k4, k6) = (signed(8)? / DISTORTION_ONE, signed(4)? / DISTORTION_ONE, signed(11)? / DISTORTION_ONE);
+    let (k2, k4, k6) = (
+        signed(8)? / DISTORTION_ONE,
+        signed(4)? / DISTORTION_ONE,
+        signed(11)? / DISTORTION_ONE,
+    );
     let zoom = 1.0 + signed(5)? / DISTORTION_ONE;
     let radius = u16::from_le_bytes(word(12)?) as f64;
     if k2 == 0.0 && k4 == 0.0 && k6 == 0.0 && zoom == 1.0 {
@@ -642,7 +834,10 @@ fn distortion(ifd: &Ifd, active: Rect) -> Option<Opcode> {
     }
     // DNG's normalisation: the distance from the centre to the farthest corner, in pixel-index units
     let half_diag = (active.width as f64 - 1.0).hypot(active.height as f64 - 1.0) / 2.0;
-    if !(half_diag >= 1.0 && (0.5 * half_diag..=2.0 * half_diag).contains(&radius) && (0.75..=1.25).contains(&zoom)) {
+    if !(half_diag >= 1.0
+        && (0.5 * half_diag..=2.0 * half_diag).contains(&radius)
+        && (0.75..=1.25).contains(&zoom))
+    {
         return None;
     }
     // the camera's correction: a source point at radius ρ (in units of `radius`) moves to ρ·g(ρ)
@@ -699,11 +894,17 @@ fn distortion(ifd: &Ifd, active: Rect) -> Option<Opcode> {
     }
     let k = solve4(a, rhs)?;
     let fit = |u: f64| basis(u).iter().zip(&k).map(|(f, c)| f * c).sum::<f64>();
-    let worst = samples.iter().map(|&(u, v)| (fit(u) - v).abs()).fold(0.0, f64::max);
+    let worst = samples
+        .iter()
+        .map(|&(u, v)| (fit(u) - v).abs())
+        .fold(0.0, f64::max);
     if worst.is_nan() || worst > DISTORTION_MAX_FIT_ERROR {
         return None;
     }
-    Some(Opcode::WarpRectilinear { planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]], center: [0.5, 0.5] })
+    Some(Opcode::WarpRectilinear {
+        planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]],
+        center: [0.5, 0.5],
+    })
 }
 
 /// Solve the 4 × 4 system `a·x = b` (Gaussian elimination with partial pivoting); `None` when singular or not finite.
@@ -779,7 +980,12 @@ mod tests {
         f.put(2, 2).put(8, 200).put(8, 64).put(8, 131); // 1234, 1738, 1246
         f.put(2, 3).put(8, 50).put(8, 255).put(8, 0); // 50·16 + 1738 % 16 = 810, 4080 + 14 = 4094, 810 (kept)
         assert_eq!(f.left, 0);
-        assert_eq!(decode4(f.block()), [1000, 2000, 1002, 1992, 1002, 1994, 946, 1994, 1234, 1738, 1246, 810, 4094, 810]);
+        assert_eq!(
+            decode4(f.block()),
+            [
+                1000, 2000, 1002, 1992, 1002, 1994, 946, 1994, 1234, 1738, 1246, 810, 4094, 810
+            ]
+        );
 
         // a deferred seed (defect marker, 8 bits only) and absolute codes because the previous value is too small
         let mut f = FieldWriter::new();
@@ -792,7 +998,12 @@ mod tests {
         f.put(2, 0).put(8, 127).put(8, 0).put(8, 255); // 516, 517 (kept), 643
         f.put(2, 0).put(8, 1).put(8, 128).put(8, 128); // 390, 643, 390
         assert_eq!(f.left, 0);
-        assert_eq!(decode4(f.block()), [0, 325, 481, 349, 245, 401, 517, 517, 516, 517, 643, 390, 643, 390]);
+        assert_eq!(
+            decode4(f.block()),
+            [
+                0, 325, 481, 349, 245, 401, 517, 517, 516, 517, 643, 390, 643, 390
+            ]
+        );
 
         // a colour without a seed until pixel 12, which then always reads its 4 low bits
         let mut f = FieldWriter::new();
@@ -812,7 +1023,12 @@ mod tests {
             }
         }
         assert_eq!(f.left, 0);
-        assert_eq!(decode4(f.block()), [0, 1600, 0, 1600, 0, 1600, 0, 1600, 0, 1600, 0, 1600, 7, 1600]);
+        assert_eq!(
+            decode4(f.block()),
+            [
+                0, 1600, 0, 1600, 0, 1600, 0, 1600, 0, 1600, 0, 1600, 7, 1600
+            ]
+        );
     }
 
     #[test]
@@ -824,7 +1040,12 @@ mod tests {
         f.put(2, 1).put(10, 600).put(10, 400).put(10, 10); // 4976, 16148, 3972
         let mut out = [0u16; 11];
         format6(&f.block(), true, &mut out);
-        assert_eq!(out, [5000, 6000, 5008, 5988, 5008, 16372, 4800, 16372, 4976, 16148, 3972]);
+        assert_eq!(
+            out,
+            [
+                5000, 6000, 5008, 5988, 5008, 16372, 4800, 16372, 4976, 16148, 3972
+            ]
+        );
 
         let mut f = FieldWriter::new();
         f.put(12, 300).put(12, 4000);
@@ -835,7 +1056,12 @@ mod tests {
         assert_eq!(f.left, 0);
         let mut out = [0u16; 14];
         format6(&f.block(), false, &mut out);
-        assert_eq!(out, [300, 4000, 560, 3888, 568, 3889, 567, 3889, 167, 4081, 327, 4081, 331, 4081]);
+        assert_eq!(
+            out,
+            [
+                300, 4000, 560, 3888, 568, 3889, 567, 3889, 167, 4081, 327, 4081, 331, 4081
+            ]
+        );
     }
 
     /// A camera-like format 4/6 encoder: per group the smallest scale that codes the targets exactly, else scale 3.
@@ -871,7 +1097,8 @@ mod tests {
                     } else {
                         // nearest step, as a camera would
                         let j = (v - (p[c] & (m - 1)) + m / 2) / m;
-                        (absolute || (v - (p[c] & (m - 1))) % m == 0).then_some(j.clamp(1, (1 << code_bits) - 1))?
+                        (absolute || (v - (p[c] & (m - 1))) % m == 0)
+                            .then_some(j.clamp(1, (1 << code_bits) - 1))?
                     };
                     p[c] = next(p[c], j, (m, absolute), bias);
                     codes.push(j);
@@ -896,7 +1123,11 @@ mod tests {
             .map(|i| {
                 let (x, y) = (i % w, i / w);
                 let smooth = lo + (hi - lo) * ((x * 7 + y * 3) % 997) as u32 / 997 / 2;
-                let edge = if (x / 37 + y / 23) % 3 == 0 { (hi - lo) / 3 } else { 0 };
+                let edge = if (x / 37 + y / 23) % 3 == 0 {
+                    (hi - lo) / 3
+                } else {
+                    0
+                };
                 (smooth + edge + (x % 2 * 40) as u32).min(hi) as u16
             })
             .collect()
@@ -905,28 +1136,59 @@ mod tests {
     /// Rotate every whole 0x4000-byte chunk the way formats 4 and 5 store them.
     fn rotate(mut stream: Vec<u8>) -> Vec<u8> {
         stream.resize(stream.len().div_ceil(CHUNK) * CHUNK, 0);
-        stream.chunks(CHUNK).flat_map(|c| c[CHUNK - ROTATE..].iter().chain(&c[..CHUNK - ROTATE]).copied().collect::<Vec<_>>()).collect()
+        stream
+            .chunks(CHUNK)
+            .flat_map(|c| {
+                c[CHUNK - ROTATE..]
+                    .iter()
+                    .chain(&c[..CHUNK - ROTATE])
+                    .copied()
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     }
 
     /// Pack samples LSB-first into 16-byte blocks (formats 2, 5 and 7).
     fn pack(px: &[u16], bits: u32) -> Vec<u8> {
         let per = (128 / bits) as usize;
-        px.chunks(per).flat_map(|blk| blk.iter().enumerate().fold(0u128, |w, (i, &v)| w | (v as u128) << (i as u32 * bits)).to_le_bytes()).collect()
+        px.chunks(per)
+            .flat_map(|blk| {
+                blk.iter()
+                    .enumerate()
+                    .fold(0u128, |w, (i, &v)| w | (v as u128) << (i as u32 * bits))
+                    .to_le_bytes()
+            })
+            .collect()
     }
 
     /// A minimal RW2: IFD0 with `tags` plus sensor size, borders (2 rows, 4 columns at the top/left) and Make, the
     /// payload at the end. `at_payload` adds tags that hold the payload's offset.
-    fn file(w: u16, h: u16, tags: &[(u16, Value)], payload: &[u8], at_payload: &dyn Fn(u32) -> Vec<(u16, Value)>) -> Vec<u8> {
+    fn file(
+        w: u16,
+        h: u16,
+        tags: &[(u16, Value)],
+        payload: &[u8],
+        at_payload: &dyn Fn(u32) -> Vec<(u16, Value)>,
+    ) -> Vec<u8> {
         let build = |off: u32| {
             let mut ifd = IfdBuilder::new();
-            for (tag, v) in [(SENSOR_WIDTH, w), (SENSOR_HEIGHT, h), (BORDER_TOP, 2), (BORDER_LEFT, 4), (BORDER_BOTTOM, h), (BORDER_RIGHT, w)] {
+            for (tag, v) in [
+                (SENSOR_WIDTH, w),
+                (SENSOR_HEIGHT, h),
+                (BORDER_TOP, 2),
+                (BORDER_LEFT, 4),
+                (BORDER_BOTTOM, h),
+                (BORDER_RIGHT, w),
+            ] {
                 ifd.set(tag, Value::Short(vec![v]));
             }
             ifd.set(t::MAKE, Value::Ascii("Panasonic".into()));
             for (tag, v) in tags.iter().cloned().chain(at_payload(off)) {
                 ifd.set(tag, v);
             }
-            let mut b = TiffWriter::new(ByteOrder::Little, false).write(&[ifd]).unwrap();
+            let mut b = TiffWriter::new(ByteOrder::Little, false)
+                .write(&[ifd])
+                .unwrap();
             b[2] = 0x55;
             b
         };
@@ -943,10 +1205,26 @@ mod tests {
 
     /// Tags of a format-`format`, `bits`-bit file with black levels `black` and the payload at `RawDataOffset`.
     fn rw2(w: u16, h: u16, bits: u16, format: u16, black: u16, payload: &[u8]) -> Vec<u8> {
-        let mut tags = vec![short(CFA_PATTERN, 1), short(BITS, bits), short(RAW_FORMAT, format)];
-        tags.extend(BLACK_RGB.iter().enumerate().map(|(i, &tag)| short(tag, black + i as u16)));
-        tags.extend(WB_RGB.iter().zip([512, 256, 384]).map(|(&tag, v)| short(tag, v)));
-        file(w, h, &tags, payload, &|off| vec![(RAW_OFFSET, Value::Long(vec![off]))])
+        let mut tags = vec![
+            short(CFA_PATTERN, 1),
+            short(BITS, bits),
+            short(RAW_FORMAT, format),
+        ];
+        tags.extend(
+            BLACK_RGB
+                .iter()
+                .enumerate()
+                .map(|(i, &tag)| short(tag, black + i as u16)),
+        );
+        tags.extend(
+            WB_RGB
+                .iter()
+                .zip([512, 256, 384])
+                .map(|(&tag, v)| short(tag, v)),
+        );
+        file(w, h, &tags, payload, &|off| {
+            vec![(RAW_OFFSET, Value::Long(vec![off]))]
+        })
     }
 
     fn samples(r: &RawImage) -> &[u16] {
@@ -967,12 +1245,22 @@ mod tests {
             stream.extend_from_slice(&b);
             want.extend(out);
         }
-        assert!(want.iter().zip(&target).all(|(a, b)| a.abs_diff(*b) <= 8), "the encoder is too lossy for the test image");
+        assert!(
+            want.iter().zip(&target).all(|(a, b)| a.abs_diff(*b) <= 8),
+            "the encoder is too lossy for the test image"
+        );
         let bytes = rw2(w as u16, h as u16, 12, 4, 128, &rotate(stream));
         let r = crate::decode(&bytes).unwrap();
         assert_eq!(samples(&r), want);
         assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
-        assert_eq!(r.black.values, vec![143.0; 4].into_iter().zip([0., 1., 1., 2.]).map(|(b, o)| b + o).collect::<Vec<f32>>());
+        assert_eq!(
+            r.black.values,
+            vec![143.0; 4]
+                .into_iter()
+                .zip([0., 1., 1., 2.])
+                .map(|(b, o)| b + o)
+                .collect::<Vec<f32>>()
+        );
 
         // format 6: not rotated; 11 (14-bit) or 14 (12-bit) pixels per block
         for (bits, per, top) in [(14u16, 11usize, 16000u32), (12, 14, 4000)] {
@@ -987,7 +1275,11 @@ mod tests {
             let bytes = rw2(w as u16, 40, bits, 6, 512, &stream);
             let r = crate::decode(&bytes).unwrap_or_else(|e| panic!("{bits}: {e}"));
             assert_eq!(samples(&r), want, "{bits}-bit");
-            assert_eq!(r.black.at(0, 0, 0, 1), 527.0, "format 6 stores samples 15 above the black level");
+            assert_eq!(
+                r.black.at(0, 0, 0, 1),
+                527.0,
+                "format 6 stores samples 15 above the black level"
+            );
         }
     }
 
@@ -1005,9 +1297,15 @@ mod tests {
         let px: Vec<u16> = (0..w * h).map(|i| (i % 4000) as u16 + 1).collect();
         let mut tags = vec![short(CFA_PATTERN, 1), short(BITS, 12), short(RAW_FORMAT, 5)];
         tags.extend(info.map(|v| (DISTORTION_INFO, v)));
-        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| vec![(RAW_OFFSET, Value::Long(vec![off]))]);
+        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| {
+            vec![(RAW_OFFSET, Value::Long(vec![off]))]
+        });
         let r = crate::decode(&bytes).unwrap();
-        assert_eq!(crate::probe_info(&bytes).unwrap().opcodes, r.opcodes, "headers-only probe reads the same correction");
+        assert_eq!(
+            crate::probe_info(&bytes).unwrap().opcodes,
+            r.opcodes,
+            "headers-only probe reads the same correction"
+        );
         r.opcodes.list3
     }
 
@@ -1022,7 +1320,9 @@ mod tests {
             distortion_block(&w)
         };
         let ops = distorted(Some(on(&[])));
-        let [Opcode::WarpRectilinear { planes, center }] = ops.as_slice() else { panic!("{ops:?}") };
+        let [Opcode::WarpRectilinear { planes, center }] = ops.as_slice() else {
+            panic!("{ops:?}")
+        };
         assert_eq!((planes.len(), *center), (1, [0.5, 0.5]));
         let k = planes[0];
         assert_eq!((k[4], k[5]), (0.0, 0.0), "radial only");
@@ -1035,14 +1335,31 @@ mod tests {
             let want = rho * 51.0 / half_diag;
             let got = u * (k[0] + k[1] * u * u + k[2] * u.powi(4) + k[3] * u.powi(6));
             // the 4-term odd polynomial approximates the exact inverse (5e-5 of the half diagonal ≈ 0.2 px at 20 MP)
-            assert!((got - want).abs() < 5e-5, "u {u}: source radius {got}, want {want}");
+            assert!(
+                (got - want).abs() < 5e-5,
+                "u {u}: source radius {got}, want {want}"
+            );
         }
 
         // no correction: no block, recorded as off, or the identity
         assert!(distorted(None).is_empty());
-        assert!(distorted(Some(distortion_block(&[(7, 0x0000), (8, 4096), (12, 51)]))).is_empty(), "off");
-        assert!(distorted(Some(distortion_block(&[(7, 0x7f00u16 as i16), (8, 4096), (12, 51)]))).is_empty(), "off, other bits set");
-        assert!(distorted(Some(distortion_block(&[(7, 0x0001), (12, 51)]))).is_empty(), "identity");
+        assert!(
+            distorted(Some(distortion_block(&[(7, 0x0000), (8, 4096), (12, 51)]))).is_empty(),
+            "off"
+        );
+        assert!(
+            distorted(Some(distortion_block(&[
+                (7, 0x7f00u16 as i16),
+                (8, 4096),
+                (12, 51)
+            ])))
+            .is_empty(),
+            "off, other bits set"
+        );
+        assert!(
+            distorted(Some(distortion_block(&[(7, 0x0001), (12, 51)]))).is_empty(),
+            "identity"
+        );
         // hostile values are ignored, never a panic or a wild warp
         for (what, block) in [
             ("truncated", Value::Undefined(vec![1, 0, 2, 0, 3])),
@@ -1054,7 +1371,12 @@ mod tests {
             ("runs away", on(&[(8, 32767), (4, 32767), (11, 32767)])),
         ] {
             let ops = distorted(Some(block));
-            assert!(ops.iter().all(|op| !matches!(op, Opcode::WarpRectilinear { .. })) || what == "runs away", "{what}: {ops:?}");
+            assert!(
+                ops.iter()
+                    .all(|op| !matches!(op, Opcode::WarpRectilinear { .. }))
+                    || what == "runs away",
+                "{what}: {ops:?}"
+            );
             if let [Opcode::WarpRectilinear { planes, .. }] = ops.as_slice() {
                 assert!(planes[0].iter().all(|c| c.is_finite()), "{what}");
             }
@@ -1064,30 +1386,65 @@ mod tests {
     #[test]
     fn packed_and_word_formats() {
         let (w, h) = (90usize, 200usize); // > one chunk of data
-        for (format, bits, rotated) in [(5u16, 12u32, true), (5, 14, true), (7, 14, false), (2, 12, false)] {
-            let px: Vec<u16> = (0..w * h).map(|i| (((i * 2654435761usize) >> 7) as u16 & ((1 << bits) - 1)).max(1)).collect();
+        for (format, bits, rotated) in [
+            (5u16, 12u32, true),
+            (5, 14, true),
+            (7, 14, false),
+            (2, 12, false),
+        ] {
+            let px: Vec<u16> = (0..w * h)
+                .map(|i| (((i * 2654435761usize) >> 7) as u16 & ((1 << bits) - 1)).max(1))
+                .collect();
             let stream = pack(&px, bits);
-            let bytes = rw2(w as u16, h as u16, bits as u16, format, 100, &if rotated { rotate(stream) } else { stream });
+            let bytes = rw2(
+                w as u16,
+                h as u16,
+                bits as u16,
+                format,
+                100,
+                &if rotated { rotate(stream) } else { stream },
+            );
             assert_eq!(crate::probe(&bytes), Some(RawFormat::Rw2));
-            let r = crate::decode(&bytes).unwrap_or_else(|e| panic!("format {format}, {bits}-bit: {e}"));
+            let r = crate::decode(&bytes)
+                .unwrap_or_else(|e| panic!("format {format}, {bits}-bit: {e}"));
             assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
             assert_eq!(samples(&r), px, "format {format}, {bits}-bit");
             assert_eq!(r.active_area, Rect::new(4, 2, w - 4, h - 2));
             assert_eq!(r.cfa.as_ref().unwrap().name(), "RGGB");
             // packed formats store samples at the recorded black level, per colour, anchored at the active area
-            assert_eq!([r.black.at(0, 0, 0, 1), r.black.at(1, 0, 0, 1), r.black.at(1, 1, 0, 1)], [100.0, 101.0, 102.0]);
+            assert_eq!(
+                [
+                    r.black.at(0, 0, 0, 1),
+                    r.black.at(1, 0, 0, 1),
+                    r.black.at(1, 1, 0, 1)
+                ],
+                [100.0, 101.0, 102.0]
+            );
             assert_eq!(r.wb_multipliers, Some([2.0, 1.0, 1.5]));
         }
         // the oldest files: 16-bit words with the sample left-justified, no black level recorded
         for (compression, bits) in [(34828u16, 12u32), (34830, 14)] {
             let px: Vec<u16> = (0..w * h).map(|i| 100 + (i * 7 % 3000) as u16).collect();
-            let payload: Vec<u8> = px.iter().flat_map(|&v| (v << (16 - bits)).to_le_bytes()).collect();
-            let tags = [short(BITS, bits as u16), short(COMPRESSION, compression), short(CFA_PATTERN, 4)];
-            let bytes = file(w as u16, h as u16, &tags, &payload, &|off| vec![(t::STRIP_OFFSETS, Value::Long(vec![off]))]);
+            let payload: Vec<u8> = px
+                .iter()
+                .flat_map(|&v| (v << (16 - bits)).to_le_bytes())
+                .collect();
+            let tags = [
+                short(BITS, bits as u16),
+                short(COMPRESSION, compression),
+                short(CFA_PATTERN, 4),
+            ];
+            let bytes = file(w as u16, h as u16, &tags, &payload, &|off| {
+                vec![(t::STRIP_OFFSETS, Value::Long(vec![off]))]
+            });
             let r = crate::decode(&bytes).unwrap_or_else(|e| panic!("{compression}: {e}"));
             assert_eq!(samples(&r), px);
             assert_eq!(r.black.mean(), DEFAULT_BLACK);
-            assert_eq!(r.white_at(0), ((1 << bits) - 1) as f32, "no saturation plateau: the full range");
+            assert_eq!(
+                r.white_at(0),
+                ((1 << bits) - 1) as f32,
+                "no saturation plateau: the full range"
+            );
         }
     }
 
@@ -1100,23 +1457,50 @@ mod tests {
         px[30 * w + 40] = 0;
         px[1] = 0; // in the border: left alone
         let mut tags = vec![short(CFA_PATTERN, 2), short(BITS, 12), short(RAW_FORMAT, 5)];
-        tags.extend([0x002f, 0x0030, 0x0031, 0x0032].iter().zip([12u16, 10, 52, 80]).map(|(&tag, v)| short(tag, v)));
+        tags.extend(
+            [0x002f, 0x0030, 0x0031, 0x0032]
+                .iter()
+                .zip([12u16, 10, 52, 80])
+                .map(|(&tag, v)| short(tag, v)),
+        );
         tags.extend(LINEARITY_LIMIT.map(|tag| short(tag, 2000))); // recorded limits are not used
-        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| vec![(RAW_OFFSET, Value::Long(vec![off]))]);
+        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| {
+            vec![(RAW_OFFSET, Value::Long(vec![off]))]
+        });
         let r = crate::decode(&bytes).unwrap();
         let d = samples(&r);
-        assert_eq!(d[30 * w + 40], ((px[30 * w + 38] as u32 + px[30 * w + 42] as u32 + px[28 * w + 40] as u32 + px[32 * w + 40] as u32) / 4) as u16);
+        assert_eq!(
+            d[30 * w + 40],
+            ((px[30 * w + 38] as u32
+                + px[30 * w + 42] as u32
+                + px[28 * w + 40] as u32
+                + px[32 * w + 40] as u32)
+                / 4) as u16
+        );
         assert_eq!(d[1], 0);
-        assert!((3800.0..=3900.0).contains(&r.white_at(0)), "{}", r.white_at(0));
+        assert!(
+            (3800.0..=3900.0).contains(&r.white_at(0)),
+            "{}",
+            r.white_at(0)
+        );
         assert_eq!(r.black.mean(), DEFAULT_BLACK, "no black recorded");
-        assert_eq!(r.crop, Rect::new(6, 10, 70, 40), "crop tags are sensor coordinates; the crop is relative to the active area");
+        assert_eq!(
+            r.crop,
+            Rect::new(6, 10, 70, 40),
+            "crop tags are sensor coordinates; the crop is relative to the active area"
+        );
         assert_eq!((r.metadata.width, r.metadata.height), (Some(70), Some(40)));
         // the CFA tag describes sample (0, 0) of the data, not the active area's origin
         assert_eq!(r.cfa.as_ref().unwrap().name(), "GRBG");
         let mut tags = vec![short(CFA_PATTERN, 2), short(BITS, 12), short(RAW_FORMAT, 5)];
         tags.extend([0x002f, 0x0030, 0x0031, 0x0032].map(|tag| short(tag, 0))); // some bodies write zeros
-        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| vec![(RAW_OFFSET, Value::Long(vec![off]))]);
-        assert_eq!(crate::decode(&bytes).unwrap().crop, Rect::new(0, 0, w - 4, h - 2));
+        let bytes = file(w as u16, h as u16, &tags, &rotate(pack(&px, 12)), &|off| {
+            vec![(RAW_OFFSET, Value::Long(vec![off]))]
+        });
+        assert_eq!(
+            crate::decode(&bytes).unwrap().crop,
+            Rect::new(0, 0, w - 4, h - 2)
+        );
     }
 
     /// Format 8 code tables as two cameras write them (16-bit DC-GH6; 14-bit DC-S5M2, whose codes for categories 15
@@ -1161,7 +1545,13 @@ mod tests {
     ];
 
     /// Encode a strip (the inverse of [`decode_strip`]): returns the stored bytes and the number of bits.
-    fn encode_strip(px: &[u16], w: usize, h: usize, table: &[(u32, u32); 17], padding_rows: usize) -> (Vec<u8>, u64) {
+    fn encode_strip(
+        px: &[u16],
+        w: usize,
+        h: usize,
+        table: &[(u32, u32); 17],
+        padding_rows: usize,
+    ) -> (Vec<u8>, u64) {
         let mut bits: Vec<bool> = vec![];
         let mut put = |n: u32, v: u32| bits.extend((0..n).rev().map(|i| v >> i & 1 == 1));
         let mut first = [0i32; 4];
@@ -1175,7 +1565,14 @@ mod tests {
                     let c = 32 - d.unsigned_abs().leading_zeros();
                     let (len, code) = table[c as usize];
                     put(len, code);
-                    put(c, if d >= 0 { d as u32 } else { (d + (1 << c) - 1) as u32 });
+                    put(
+                        c,
+                        if d >= 0 {
+                            d as u32
+                        } else {
+                            (d + (1 << c) - 1) as u32
+                        },
+                    );
                     *p = v;
                 }
                 if cx == 0 {
@@ -1185,16 +1582,34 @@ mod tests {
         }
         let n = bits.len() as u64;
         // stored with each byte's bits taken from bit 0 up
-        (bits.chunks(8).map(|b| b.iter().enumerate().fold(0u8, |a, (i, &x)| a | (x as u8) << i)).collect(), n)
+        (
+            bits.chunks(8)
+                .map(|b| {
+                    b.iter()
+                        .enumerate()
+                        .fold(0u8, |a, (i, &x)| a | (x as u8) << i)
+                })
+                .collect(),
+            n,
+        )
     }
 
     /// A format-8 file with the given strip widths; `tweak` edits the tags before writing.
-    fn format8_file(w: usize, h: usize, px: &[u16], widths: &[usize], table: &[(u32, u32); 17], tweak: &dyn Fn(&mut Vec<(u16, Value)>)) -> Vec<u8> {
+    fn format8_file(
+        w: usize,
+        h: usize,
+        px: &[u16],
+        widths: &[usize],
+        table: &[(u32, u32); 17],
+        tweak: &dyn Fn(&mut Vec<(u16, Value)>),
+    ) -> Vec<u8> {
         let mut payload = vec![];
         let mut strips = vec![]; // (offset in payload, bits, left, width)
         let mut left = 0;
         for &sw in widths {
-            let sub: Vec<u16> = (0..h).flat_map(|y| px[y * w + left..y * w + left + sw].to_vec()).collect();
+            let sub: Vec<u16> = (0..h)
+                .flat_map(|y| px[y * w + left..y * w + left + sw].to_vec())
+                .collect();
             let (data, bits) = encode_strip(&sub, sw, h, table, 2);
             strips.push((payload.len(), bits, left, sw));
             payload.extend(data);
@@ -1202,22 +1617,57 @@ mod tests {
             left += sw;
         }
         let u16s = |v: Vec<u16>| undefined(&v);
-        let wide = |v: Vec<u64>| u16s(std::iter::once(v.len() as u16).chain(v.iter().flat_map(|&x| [x as u16, (x >> 16) as u16])).collect());
-        let narrow = |v: Vec<u64>| u16s(std::iter::once(v.len() as u16).chain(v.iter().map(|&x| x as u16)).collect());
+        let wide = |v: Vec<u64>| {
+            u16s(
+                std::iter::once(v.len() as u16)
+                    .chain(v.iter().flat_map(|&x| [x as u16, (x >> 16) as u16]))
+                    .collect(),
+            )
+        };
+        let narrow = |v: Vec<u64>| {
+            u16s(
+                std::iter::once(v.len() as u16)
+                    .chain(v.iter().map(|&x| x as u16))
+                    .collect(),
+            )
+        };
         let mut tags = vec![short(CFA_PATTERN, 1), short(BITS, 14), short(RAW_FORMAT, 8)];
         tags.extend(BLACK_RGB.map(|tag| short(tag, 512)));
-        tags.push((HUFFMAN_CODES, u16s(std::iter::once(17).chain(table.iter().flat_map(|&(l, c)| [l as u16, c as u16])).collect())));
+        tags.push((
+            HUFFMAN_CODES,
+            u16s(
+                std::iter::once(17)
+                    .chain(table.iter().flat_map(|&(l, c)| [l as u16, c as u16]))
+                    .collect(),
+            ),
+        ));
         for (tag, v) in FORMAT8_FIXED {
-            tags.push(if v.len() == 1 { short(tag, v[0]) } else { (tag, u16s(v.to_vec())) });
+            tags.push(if v.len() == 1 {
+                short(tag, v[0])
+            } else {
+                (tag, u16s(v.to_vec()))
+            });
         }
-        tags.push((STRIP_LEFT, wide(strips.iter().map(|s| s.2 as u64).collect())));
+        tags.push((
+            STRIP_LEFT,
+            wide(strips.iter().map(|s| s.2 as u64).collect()),
+        ));
         tags.push((STRIP_BITS, wide(strips.iter().map(|s| s.1).collect())));
-        tags.push((STRIP_WIDTHS, narrow(strips.iter().map(|s| s.3 as u64).collect())));
+        tags.push((
+            STRIP_WIDTHS,
+            narrow(strips.iter().map(|s| s.3 as u64).collect()),
+        ));
         tags.push((STRIP_HEIGHTS, narrow(vec![h as u64; strips.len()])));
         tweak(&mut tags);
         let offsets: Vec<usize> = strips.iter().map(|s| s.0).collect();
         file(w as u16, h as u16, &tags, &payload, &|off| {
-            vec![(RAW_OFFSET, Value::Long(vec![off])), (STRIP_OFFSETS, wide(offsets.iter().map(|&o| off as u64 + o as u64).collect()))]
+            vec![
+                (RAW_OFFSET, Value::Long(vec![off])),
+                (
+                    STRIP_OFFSETS,
+                    wide(offsets.iter().map(|&o| off as u64 + o as u64).collect()),
+                ),
+            ]
         })
     }
 
@@ -1225,12 +1675,20 @@ mod tests {
     fn format8_strips_round_trip() {
         let (w, h) = (64usize, 30usize);
         let px = image(w, h, 520, 16000);
-        for (table, widths) in [(&TABLE14, vec![64]), (&TABLE14, vec![30, 34]), (&TABLE16, vec![20, 22, 22])] {
+        for (table, widths) in [
+            (&TABLE14, vec![64]),
+            (&TABLE14, vec![30, 34]),
+            (&TABLE16, vec![20, 22, 22]),
+        ] {
             let bytes = format8_file(w, h, &px, &widths, table, &|_| {});
             let r = crate::decode(&bytes).unwrap_or_else(|e| panic!("{widths:?}: {e}"));
             assert_eq!(samples(&r), px, "{widths:?}");
             assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
-            assert_eq!(r.black.mean(), 512.0, "format 8 stores samples at the recorded black level");
+            assert_eq!(
+                r.black.mean(),
+                512.0,
+                "format 8 stores samples at the recorded black level"
+            );
         }
     }
 
@@ -1247,11 +1705,32 @@ mod tests {
             put(c, v);
         }
         let n = bits.len() as u64;
-        let mut data: Vec<u8> = bits.chunks(8).map(|b| b.iter().enumerate().fold(0u8, |a, (i, &x)| a | (x as u8) << i)).collect();
+        let mut data: Vec<u8> = bits
+            .chunks(8)
+            .map(|b| {
+                b.iter()
+                    .enumerate()
+                    .fold(0u8, |a, (i, &x)| a | (x as u8) << i)
+            })
+            .collect();
         data.extend([0; 8]);
         let (mut top, mut bottom) = ([0u16; 2], [0u16; 2]);
-        decode_strip(&Strip { data: &data, width: 2, height: 2, bits: n }, &code_table(&TABLE14).unwrap(), vec![&mut top, &mut bottom]).unwrap();
-        assert_eq!((top, bottom), ([1, 3], [2, 4]), "top-left, bottom-left, top-right, bottom-right");
+        decode_strip(
+            &Strip {
+                data: &data,
+                width: 2,
+                height: 2,
+                bits: n,
+            },
+            &code_table(&TABLE14).unwrap(),
+            vec![&mut top, &mut bottom],
+        )
+        .unwrap();
+        assert_eq!(
+            (top, bottom),
+            ([1, 3], [2, 4]),
+            "top-left, bottom-left, top-right, bottom-right"
+        );
     }
 
     fn replace(tags: &mut Vec<(u16, Value)>, tag: u16, v: Value) {
@@ -1267,23 +1746,50 @@ mod tests {
     fn format8_rejects_what_it_cannot_decode() {
         let (w, h) = (64usize, 30usize);
         let px = image(w, h, 520, 16000);
-        let case = |tag: u16, v: Value| crate::decode(&format8_file(w, h, &px, &[32, 32], &TABLE14, &|t| replace(t, tag, v.clone())));
+        let case = |tag: u16, v: Value| {
+            crate::decode(&format8_file(w, h, &px, &[32, 32], &TABLE14, &|t| {
+                replace(t, tag, v.clone())
+            }))
+        };
         // an auxiliary tag with a value no sample has
-        assert!(matches!(case(0x003b, Value::Short(vec![4095])), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            case(0x003b, Value::Short(vec![4095])),
+            Err(RawError::Unsupported(_))
+        ));
         // strips that don't tile the width, or extend past the file
-        assert!(matches!(case(STRIP_WIDTHS, undefined(&[2, 32, 30])), Err(RawError::Corrupt(_))));
-        assert!(matches!(case(STRIP_BITS, undefined(&[2, 0, 256, 0, 256])), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            case(STRIP_WIDTHS, undefined(&[2, 32, 30])),
+            Err(RawError::Corrupt(_))
+        ));
+        assert!(matches!(
+            case(STRIP_BITS, undefined(&[2, 0, 256, 0, 256])),
+            Err(RawError::Corrupt(_))
+        ));
         // a strip whose stated length ends before its data does
-        assert!(matches!(case(STRIP_BITS, undefined(&[2, 64, 0, 64, 0])), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            case(STRIP_BITS, undefined(&[2, 64, 0, 64, 0])),
+            Err(RawError::Corrupt(_))
+        ));
         // code tables: two categories with the same code, a code longer than its length, missing entries
-        let table: Vec<u16> = std::iter::once(17).chain(TABLE14.iter().flat_map(|&(l, c)| [l as u16, c as u16])).collect();
+        let table: Vec<u16> = std::iter::once(17)
+            .chain(TABLE14.iter().flat_map(|&(l, c)| [l as u16, c as u16]))
+            .collect();
         let mut dup = table.clone();
         dup[1..3].copy_from_slice(&[2, 0]);
-        assert!(matches!(case(HUFFMAN_CODES, undefined(&dup)), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            case(HUFFMAN_CODES, undefined(&dup)),
+            Err(RawError::Corrupt(_))
+        ));
         let mut long = table.clone();
         long[1..3].copy_from_slice(&[3, 9]);
-        assert!(matches!(case(HUFFMAN_CODES, undefined(&long)), Err(RawError::Corrupt(_))));
-        assert!(matches!(case(HUFFMAN_CODES, undefined(&table[..20])), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            case(HUFFMAN_CODES, undefined(&long)),
+            Err(RawError::Corrupt(_))
+        ));
+        assert!(matches!(
+            case(HUFFMAN_CODES, undefined(&table[..20])),
+            Err(RawError::Corrupt(_))
+        ));
         // the shadowed 12-bit codes of the 14-bit table are fine
         assert!(case(HUFFMAN_CODES, undefined(&table)).is_ok());
     }
@@ -1292,15 +1798,32 @@ mod tests {
     fn unsupported_and_truncated_files() {
         let payload = [0u8; 64];
         for (format, bits) in [(1u16, 12u16), (3, 12), (4, 14), (7, 12), (9, 12)] {
-            assert!(matches!(crate::decode(&rw2(28, 4, bits, format, 128, &payload)), Err(RawError::Unsupported(_))), "{format}/{bits}");
+            assert!(
+                matches!(
+                    crate::decode(&rw2(28, 4, bits, format, 128, &payload)),
+                    Err(RawError::Unsupported(_))
+                ),
+                "{format}/{bits}"
+            );
         }
         let tags = [short(BITS, 12), short(COMPRESSION, 34826)];
-        let bytes = file(28, 4, &tags, &payload, &|off| vec![(t::STRIP_OFFSETS, Value::Long(vec![off]))]);
-        assert!(matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))));
+        let bytes = file(28, 4, &tags, &payload, &|off| {
+            vec![(t::STRIP_OFFSETS, Value::Long(vec![off]))]
+        });
+        assert!(matches!(
+            crate::decode(&bytes),
+            Err(RawError::Unsupported(_))
+        ));
         for format in [4u16, 5, 6] {
             let bytes = rw2(280, 20, 12, format, 128, &payload);
-            assert!(matches!(crate::decode(&bytes), Err(RawError::Corrupt(_))), "{format}");
-            assert!(matches!(crate::probe_info(&bytes), Err(RawError::Corrupt(_))), "{format}");
+            assert!(
+                matches!(crate::decode(&bytes), Err(RawError::Corrupt(_))),
+                "{format}"
+            );
+            assert!(
+                matches!(crate::probe_info(&bytes), Err(RawError::Corrupt(_))),
+                "{format}"
+            );
         }
     }
 }

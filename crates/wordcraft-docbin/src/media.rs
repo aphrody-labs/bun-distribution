@@ -77,11 +77,23 @@ impl Pictures {
             Found::Range(pic) => {
                 let bytes = data.get(pic.range.clone())?.to_vec();
                 let key = self.insert(bytes, pic.ext, false)?;
-                Inline { key, w: pic.w, h: pic.h, crop: [0.0; 4], alt: String::new() }
+                Inline {
+                    key,
+                    w: pic.w,
+                    h: pic.h,
+                    crop: [0.0; 4],
+                    alt: String::new(),
+                }
             }
             Found::Shape { w, h, blip, props } => {
                 let key = self.insert(blip.bytes, blip.ext, blip.placeholder)?;
-                Inline { key, w, h, crop: props.crop, alt: props.alt }
+                Inline {
+                    key,
+                    w,
+                    h,
+                    crop: props.crop,
+                    alt: props.alt,
+                }
             }
         };
         self.by_fc.insert(fc_pic, pic.clone());
@@ -99,18 +111,24 @@ impl Pictures {
         }
         let fbse = bstore.get((pib as usize).checked_sub(1)?)?;
         let room = self.limit.saturating_sub(self.total);
-        let key = officeart::fbse_blip(fbse, delay, room).and_then(|b| self.insert(b.bytes, b.ext, b.placeholder));
+        let key = officeart::fbse_blip(fbse, delay, room)
+            .and_then(|b| self.insert(b.bytes, b.ext, b.placeholder));
         self.by_bse.insert(pib, key.clone());
         key
     }
 
     /// Add picture bytes as a new media entry, within the byte cap.
     fn insert(&mut self, bytes: Vec<u8>, ext: &str, placeholder: bool) -> Option<String> {
-        let total = self.total.checked_add(bytes.len()).filter(|&t| t <= self.limit)?;
+        let total = self
+            .total
+            .checked_add(bytes.len())
+            .filter(|&t| t <= self.limit)?;
         let key = format!("image{}.{ext}", self.media.len() + 1);
         if placeholder {
             if self.placeholders < 10 {
-                log::warn!("docbin: picture `{key}` is in a format WordCraft can't draw ({ext}); it shows as a placeholder");
+                log::warn!(
+                    "docbin: picture `{key}` is in a format WordCraft can't draw ({ext}); it shows as a placeholder"
+                );
             }
             self.placeholders = self.placeholders.saturating_add(1);
         }
@@ -122,7 +140,9 @@ impl Pictures {
     /// Note a picture anchor that could not be materialised.
     pub(crate) fn dropped(&mut self, cp: u32) {
         if self.dropped < 10 {
-            log::warn!("docbin: picture at CP {cp} could not be read (or a picture cap was reached) and was dropped");
+            log::warn!(
+                "docbin: picture at CP {cp} could not be read (or a picture cap was reached) and was dropped"
+            );
         }
         self.dropped = self.dropped.saturating_add(1);
     }
@@ -140,7 +160,12 @@ struct Located {
 /// `OfficeArtInlineSpContainer` (Word 97 and later) whose BLIP is decoded.
 enum Found {
     Range(Located),
-    Shape { w: f32, h: f32, blip: officeart::Blip, props: officeart::Props },
+    Shape {
+        w: f32,
+        h: f32,
+        blip: officeart::Blip,
+        props: officeart::Props,
+    },
 }
 
 /// `PICF.mfpf.mm` values of pictures stored as a shape (`MM_SHAPE`) or a shape with a file
@@ -154,14 +179,24 @@ fn locate(data: &[u8], fc_pic: u32) -> Option<Found> {
     let pic = data.get(base..)?;
     let lcb = u32::from_le_bytes(pic.get(0..4)?.try_into().ok()?) as usize;
     let cb_header = u16::from_le_bytes(pic.get(4..6)?.try_into().ok()?) as usize;
-    let cb_header = if (0x20..=0x100).contains(&cb_header) { cb_header } else { CB_HEADER };
+    let cb_header = if (0x20..=0x100).contains(&cb_header) {
+        cb_header
+    } else {
+        CB_HEADER
+    };
     let mm = u16::from_le_bytes(pic.get(6..8)?.try_into().ok()?);
     let m = pic.get(OFF_PICMID..OFF_PICMID + 8)?;
     let dxa_goal = i16::from_le_bytes([m[0], m[1]]) as f32;
     let dya_goal = i16::from_le_bytes([m[2], m[3]]) as f32;
     let mx = u16::from_le_bytes([m[4], m[5]]) as f32;
     let my = u16::from_le_bytes([m[6], m[7]]) as f32;
-    let scale = |r: f32| if r > 0.0 { (r / 1000.0).clamp(0.01, 100.0) } else { 1.0 };
+    let scale = |r: f32| {
+        if r > 0.0 {
+            (r / 1000.0).clamp(0.01, 100.0)
+        } else {
+            1.0
+        }
+    };
     let end = lcb.min(pic.len());
     if mm == MM_SHAPE || mm == MM_SHAPEFILE {
         let mut at = cb_header;
@@ -181,7 +216,12 @@ fn locate(data: &[u8], fc_pic: u32) -> Option<Found> {
     let at = sniff(body)?;
     let image = body.get(at..)?;
     let start = base.checked_add(cb_header)?.checked_add(at)?;
-    Some(Found::Range(Located { w, h, range: start..start.checked_add(image.len())?, ext: ext_of(image) }))
+    Some(Found::Range(Located {
+        w,
+        h,
+        range: start..start.checked_add(image.len())?,
+        ext: ext_of(image),
+    }))
 }
 
 /// An `OfficeArtInlineSpContainer`: the picture shape, then the `OfficeArtFBSE` records its
@@ -189,9 +229,20 @@ fn locate(data: &[u8], fc_pic: u32) -> Option<Found> {
 fn inline_shape(buf: &[u8], data: &[u8]) -> Option<(officeart::Blip, officeart::Props)> {
     let mut budget = 10_000usize;
     let recs = officeart::children(buf, &mut budget);
-    let sp = recs.iter().find(|r| r.typ == officeart::rt::SP_CONTAINER).map(|r| officeart::shape(r.body, &mut budget))?;
-    let fbses: Vec<&[u8]> = recs.iter().filter(|r| r.typ == officeart::rt::FBSE).map(|r| r.body).collect();
-    let fbse = sp.props.pib.and_then(|p| fbses.get((p as usize).checked_sub(1)?)).or(fbses.first())?;
+    let sp = recs
+        .iter()
+        .find(|r| r.typ == officeart::rt::SP_CONTAINER)
+        .map(|r| officeart::shape(r.body, &mut budget))?;
+    let fbses: Vec<&[u8]> = recs
+        .iter()
+        .filter(|r| r.typ == officeart::rt::FBSE)
+        .map(|r| r.body)
+        .collect();
+    let fbse = sp
+        .props
+        .pib
+        .and_then(|p| fbses.get((p as usize).checked_sub(1)?))
+        .or(fbses.first())?;
     let blip = officeart::fbse_blip(fbse, data, MAX_MEDIA_BYTES)?;
     Some((blip, sp.props))
 }
@@ -201,7 +252,10 @@ fn inline_shape(buf: &[u8], data: &[u8]) -> Option<(officeart::Blip, officeart::
 fn sniff(body: &[u8]) -> Option<usize> {
     for at in [0usize, 8, 12, 16, 20, 22, 24, 32] {
         if let Some(b) = body.get(at..)
-            && (b.starts_with(b"\x89PNG") || b.starts_with(b"\xFF\xD8\xFF") || b.starts_with(b"GIF8") || b.starts_with(b"BM"))
+            && (b.starts_with(b"\x89PNG")
+                || b.starts_with(b"\xFF\xD8\xFF")
+                || b.starts_with(b"GIF8")
+                || b.starts_with(b"BM"))
         {
             return Some(at);
         }

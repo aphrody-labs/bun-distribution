@@ -23,7 +23,10 @@
 //!   `0x84a`, `0x84c`, `0x84d`). Against the thumbnail's neutral pixels (370 pixels with R, G and B within 6 of
 //!   each other) the raw G/R is 0.94 and G/B 1.96; `0x848` (1913, 1834, 921) gives 0.96 and 1.99, the others
 //!   0.77..1.25 and 2.08..2.96, so its green over red and over blue are the gains.
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result, ljpeg};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result, ljpeg,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::chunk_bytes;
 use lightcraft_tiff::{Ifd, Tiff, tags as t};
@@ -61,32 +64,62 @@ pub(crate) fn raw_ifd<'a>(tiff: &'a Tiff, bytes: &[u8]) -> Option<&'a Ifd> {
 
 pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let tiff = Tiff::parse(bytes)?;
-    let ifd0 = tiff.ifds.first().ok_or_else(|| RawError::Corrupt("Kodak TIFF without IFDs".into()))?;
-    let raw = raw_ifd(&tiff, bytes).ok_or_else(|| RawError::Unsupported("Kodak raw image not found".into()))?;
+    let ifd0 = tiff
+        .ifds
+        .first()
+        .ok_or_else(|| RawError::Corrupt("Kodak TIFF without IFDs".into()))?;
+    let raw = raw_ifd(&tiff, bytes)
+        .ok_or_else(|| RawError::Unsupported("Kodak raw image not found".into()))?;
     let info = raw.image()?;
     let (w, h) = (info.width as usize, info.height as usize);
-    let n = w.checked_mul(h).filter(|n| *n > 0 && *n <= crate::MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
-    let cfa = match (raw.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(), raw.bytes(t::CFA_PATTERN_EP)) {
-        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa { width: 2, height: 2, pattern: p.to_vec() },
-        _ => return Err(RawError::Unsupported("Kodak raw without a 2x2 CFAPattern".into())),
+    let n = w
+        .checked_mul(h)
+        .filter(|n| *n > 0 && *n <= crate::MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
+    let cfa = match (
+        raw.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(),
+        raw.bytes(t::CFA_PATTERN_EP),
+    ) {
+        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa {
+            width: 2,
+            height: 2,
+            pattern: p.to_vec(),
+        },
+        _ => {
+            return Err(RawError::Unsupported(
+                "Kodak raw without a 2x2 CFAPattern".into(),
+            ));
+        }
     };
     let curve: Vec<u16> = raw
         .u64s(RESPONSE_CURVE)
-        .filter(|c| c.len() == CURVE_LEN && c.windows(2).all(|p| p[0] <= p[1]) && c.iter().all(|&v| v < CURVE_LEN as u64))
+        .filter(|c| {
+            c.len() == CURVE_LEN
+                && c.windows(2).all(|p| p[0] <= p[1])
+                && c.iter().all(|&v| v < CURVE_LEN as u64)
+        })
         .ok_or_else(|| RawError::Unsupported("Kodak raw without a usable response curve".into()))?
         .into_iter()
         .map(|v| v as u16)
         .collect();
     let (black, data) = if mode == Mode::Full {
         let chunks = info.chunks(bytes.len() as u64);
-        let src = chunks.first().and_then(|c| chunk_bytes(bytes, c)).ok_or_else(|| RawError::Corrupt("Kodak strip outside file".into()))?;
+        let src = chunks
+            .first()
+            .and_then(|c| chunk_bytes(bytes, c))
+            .ok_or_else(|| RawError::Corrupt("Kodak strip outside file".into()))?;
         let f = ljpeg::decode(src, n)?;
         if f.components != 2 || f.width * 2 != w || f.height != h || f.data.len() != n {
-            return Err(RawError::Corrupt("Kodak lossless JPEG does not match the image size".into()));
+            return Err(RawError::Corrupt(
+                "Kodak lossless JPEG does not match the image size".into(),
+            ));
         }
         let mut d = f.data;
         for v in &mut d {
-            *v = curve.get(usize::from(*v)).copied().unwrap_or(CURVE_LEN as u16 - 1);
+            *v = curve
+                .get(usize::from(*v))
+                .copied()
+                .unwrap_or(CURVE_LEN as u16 - 1);
         }
         (measured_black(&d, w), RawData::U16(d))
     } else {
@@ -125,8 +158,15 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
 /// The vendor IFD (`KodakIFD`): a plain IFD with absolute value offsets.
 fn kodak_ifd(bytes: &[u8], tiff: &Tiff, ifd0: &Ifd) -> Option<Ifd> {
     let off = u64::from(ifd0.u32(KODAK_IFD)?);
-    let opts = lightcraft_tiff::ParseOptions { max_ifds: 4, max_depth: 1, follow_children: false, ..Default::default() };
-    lightcraft_tiff::parse_ifd_at(bytes, off, tiff.order, 0, false, &opts).ok().map(|(i, _)| i)
+    let opts = lightcraft_tiff::ParseOptions {
+        max_ifds: 4,
+        max_depth: 1,
+        follow_children: false,
+        ..Default::default()
+    };
+    lightcraft_tiff::parse_ifd_at(bytes, off, tiff.order, 0, false, &opts)
+        .ok()
+        .map(|(i, _)| i)
 }
 
 /// Black level per CFA position (the mosaic's first sample is position 0): the value below which only 0.01% of that
@@ -158,7 +198,12 @@ fn measured_black(d: &[u16], w: usize) -> BlackLevel {
             level as f32
         })
         .collect();
-    BlackLevel { repeat_rows: 2, repeat_cols: 2, values, ..Default::default() }
+    BlackLevel {
+        repeat_rows: 2,
+        repeat_cols: 2,
+        values,
+        ..Default::default()
+    }
 }
 
 #[cfg(test)]
@@ -172,7 +217,15 @@ mod tests {
 
     /// A response curve: the identity below 100, then steeper, saturating at 4095.
     fn curve() -> Vec<u16> {
-        (0..CURVE_LEN as u32).map(|i| if i < 100 { i as u16 } else { (100 + (i - 100) * 7).min(4095) as u16 }).collect()
+        (0..CURVE_LEN as u32)
+            .map(|i| {
+                if i < 100 {
+                    i as u16
+                } else {
+                    (100 + (i - 100) * 7).min(4095) as u16
+                }
+            })
+            .collect()
     }
 
     /// Stored mosaic: values 60..=300, in the range the curve expands.
@@ -195,7 +248,13 @@ mod tests {
         b
     }
 
-    fn file(make: &str, stream: Vec<u8>, width: u32, with_curve: bool, wb: Option<[i32; 3]>) -> Vec<u8> {
+    fn file(
+        make: &str,
+        stream: Vec<u8>,
+        width: u32,
+        with_curve: bool,
+        wb: Option<[i32; 3]>,
+    ) -> Vec<u8> {
         let mut raw = IfdBuilder::new();
         raw.set(t::NEW_SUBFILE_TYPE, Value::Long(vec![0]));
         raw.set(t::IMAGE_WIDTH, Value::Short(vec![width as u16]));
@@ -209,7 +268,10 @@ mod tests {
         }
         raw.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![2, 2]));
         raw.set(t::CFA_PATTERN_EP, Value::Byte(vec![1, 0, 2, 1]));
-        raw.set_image(ImageData::Strips { rows_per_strip: H as u32, strips: vec![stream] });
+        raw.set_image(ImageData::Strips {
+            rows_per_strip: H as u32,
+            strips: vec![stream],
+        });
         let build = |ptr: u32| {
             let mut ifd0 = IfdBuilder::new();
             ifd0.set(t::MAKE, Value::Ascii(make.into()));
@@ -218,7 +280,9 @@ mod tests {
                 ifd0.set(KODAK_IFD, Value::Long(vec![ptr]));
             }
             ifd0.add_sub_ifd(raw.clone());
-            TiffWriter::new(ByteOrder::Big, false).write(&[ifd0]).unwrap()
+            TiffWriter::new(ByteOrder::Big, false)
+                .write(&[ifd0])
+                .unwrap()
         };
         let mut bytes = build(0);
         if let Some(v) = wb {
@@ -241,7 +305,10 @@ mod tests {
         let bytes = file("Kodak", stream(), W as u32, true, Some([1900, 1800, 900]));
         assert_eq!(probe(&bytes), Some(RawFormat::KodakDcs));
         let r = decode(&bytes).unwrap();
-        assert_eq!((r.format, r.width, r.height, r.bits), (RawFormat::KodakDcs, W, H, 12));
+        assert_eq!(
+            (r.format, r.width, r.height, r.bits),
+            (RawFormat::KodakDcs, W, H, 12)
+        );
         let want: Vec<u16> = stored().iter().map(|&v| curve()[usize::from(v)]).collect();
         assert_eq!(r.data, RawData::U16(want.clone()));
         assert_eq!(r.cfa.as_ref().unwrap().name(), "GRBG");
@@ -249,22 +316,51 @@ mod tests {
         assert_eq!(r.wb_multipliers, Some([1800.0 / 1900.0, 1.0, 2.0]));
         // 0.01% of 32 samples is the smallest one of each position
         let w = &want;
-        let min = |y0: usize, x0: usize| (y0..H).step_by(2).flat_map(|y| (x0..W).step_by(2).map(move |x| w[y * W + x])).min().unwrap() as f32;
-        assert_eq!(r.black.values, vec![min(0, 0), min(0, 1), min(1, 0), min(1, 1)]);
+        let min = |y0: usize, x0: usize| {
+            (y0..H)
+                .step_by(2)
+                .flat_map(|y| (x0..W).step_by(2).map(move |x| w[y * W + x]))
+                .min()
+                .unwrap() as f32
+        };
+        assert_eq!(
+            r.black.values,
+            vec![min(0, 0), min(0, 1), min(1, 0), min(1, 1)]
+        );
         let i = probe_info(&bytes).unwrap();
-        assert_eq!((i.format, i.width, i.height, i.wb_multipliers), (RawFormat::KodakDcs, W, H, r.wb_multipliers));
+        assert_eq!(
+            (i.format, i.width, i.height, i.wb_multipliers),
+            (RawFormat::KodakDcs, W, H, r.wb_multipliers)
+        );
     }
 
     /// Without the vendor IFD there is no white balance; the layout is recognised from the structure alone, so
     /// another make, one component, a stream of another width or a missing curve change nothing for other files.
     #[test]
     fn only_this_layout_is_claimed() {
-        assert_eq!(decode(&file("Kodak", stream(), W as u32, true, None)).unwrap().wb_multipliers, None);
-        assert_ne!(probe(&file("Canon", stream(), W as u32, true, None)), Some(RawFormat::KodakDcs));
-        assert_ne!(probe(&file("Kodak", stream(), W as u32 + 2, true, None)), Some(RawFormat::KodakDcs));
-        assert_ne!(probe(&file("Kodak", stream(), W as u32, false, None)), Some(RawFormat::KodakDcs));
+        assert_eq!(
+            decode(&file("Kodak", stream(), W as u32, true, None))
+                .unwrap()
+                .wb_multipliers,
+            None
+        );
+        assert_ne!(
+            probe(&file("Canon", stream(), W as u32, true, None)),
+            Some(RawFormat::KodakDcs)
+        );
+        assert_ne!(
+            probe(&file("Kodak", stream(), W as u32 + 2, true, None)),
+            Some(RawFormat::KodakDcs)
+        );
+        assert_ne!(
+            probe(&file("Kodak", stream(), W as u32, false, None)),
+            Some(RawFormat::KodakDcs)
+        );
         let one = ljpeg::encode(&stored()[..W * H / 2], W, H / 2, 1, 12, 1, 0);
-        assert_ne!(probe(&file("Kodak", one, W as u32, true, None)), Some(RawFormat::KodakDcs));
+        assert_ne!(
+            probe(&file("Kodak", one, W as u32, true, None)),
+            Some(RawFormat::KodakDcs)
+        );
     }
 
     /// Hostile input: truncated streams and tables report errors instead of panicking.

@@ -82,7 +82,16 @@ fn pack(sizes: &[(u32, u32)], max: u32) -> Option<(u32, u32, Vec<(u32, u32)>)> {
 /// Upper bound of the planes drawn on any one pixel: a pixel covered by a set of planes lies in
 /// each one's box, so every plane of the set overlaps the box of any member.
 fn max_overlap(boxes: &[[i64; 4]]) -> usize {
-    boxes.iter().map(|a| boxes.iter().filter(|b| a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]).count()).max().unwrap_or(0)
+    boxes
+        .iter()
+        .map(|a| {
+            boxes
+                .iter()
+                .filter(|b| a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3])
+                .count()
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 fn light_kind(k: LightKind) -> u32 {
@@ -97,15 +106,30 @@ fn light_kind(k: LightKind) -> u32 {
 fn write_geo(w: &mut Words, g: &PlaneGeo) {
     // The homography is defined up to scale: normalise it (by a positive factor, keeping the
     // sign tests) into f32's comfortable range.
-    let m = g.hinv.0.iter().flatten().fold(0.0f64, |a, v| a.max(v.abs()));
+    let m = g
+        .hinv
+        .0
+        .iter()
+        .flatten()
+        .fold(0.0f64, |a, v| a.max(v.abs()));
     let k = if m > 0.0 { 1.0 / m } else { 1.0 };
     for r in 0..3 {
-        w.d([g.hinv.0[r][0] * k, g.hinv.0[r][1] * k, g.hinv.0[r][2] * k, 0.0]);
+        w.d([
+            g.hinv.0[r][0] * k,
+            g.hinv.0[r][1] * k,
+            g.hinv.0[r][2] * k,
+            0.0,
+        ]);
     }
     w.d([g.depth[0], g.depth[1], g.depth[2], 0.0]);
     affine_rows(w, &g.world);
     w.d([g.normal.x, g.normal.y, g.normal.z, 0.0]);
-    w.d([g.cam.eye.x, g.cam.eye.y, g.cam.eye.z, if g.cam.ortho { 1.0 } else { 0.0 }]);
+    w.d([
+        g.cam.eye.x,
+        g.cam.eye.y,
+        g.cam.eye.z,
+        if g.cam.ortho { 1.0 } else { 0.0 },
+    ]);
     let f = g.cam.forward();
     w.d([f.x, f.y, f.z, 0.0]);
 }
@@ -127,12 +151,20 @@ const LIGHT_BYTES: usize = 6 * 16;
 /// caller draws it on the CPU).
 pub(crate) fn draw_run(e: &mut Enc, run: &Run3d, canvas: &GpuImage) -> Option<GpuImage> {
     let (w, h) = (canvas.width, canvas.height);
-    let boxes: Vec<[i64; 4]> = run.planes.iter().filter(|p| p.draw).map(|p| p.bbox).collect();
+    let boxes: Vec<[i64; 4]> = run
+        .planes
+        .iter()
+        .filter(|p| p.draw)
+        .map(|p| p.bbox)
+        .collect();
     if boxes.is_empty() {
         return Some(canvas.clone());
     }
     if max_overlap(&boxes) > MAX_FRAGS
-        || run.planes.iter().any(|p| p.winv.0[3] != [0.0, 0.0, 0.0, 1.0] || p.geos.iter().any(|g| g.world.0[3] != [0.0, 0.0, 0.0, 1.0]))
+        || run.planes.iter().any(|p| {
+            p.winv.0[3] != [0.0, 0.0, 0.0, 1.0]
+                || p.geos.iter().any(|g| g.world.0[3] != [0.0, 0.0, 0.0, 1.0])
+        })
     {
         return None;
     }
@@ -144,7 +176,10 @@ pub(crate) fn draw_run(e: &mut Enc, run: &Run3d, canvas: &GpuImage) -> Option<Gp
         match &p.dof {
             Some(d) => {
                 let pad = d.pad as f64;
-                texs.push((crate::bokeh::apply(e, &up, d)?, [p.buf.offset[0] + pad, p.buf.offset[1] + pad]));
+                texs.push((
+                    crate::bokeh::apply(e, &up, d)?,
+                    [p.buf.offset[0] + pad, p.buf.offset[1] + pad],
+                ));
             }
             None => texs.push((up, p.buf.offset)),
         }
@@ -180,15 +215,30 @@ pub(crate) fn draw_run(e: &mut Enc, run: &Run3d, canvas: &GpuImage) -> Option<Gp
             None => 0,
         };
         planes.f([ax as f32, ay as f32, t.width as f32, t.height as f32]);
-        planes.d([off[0], off[1], p.buf.scale, if p.bicubic { 1.0 } else { 0.0 }]);
+        planes.d([
+            off[0],
+            off[1],
+            p.buf.scale,
+            if p.bicubic { 1.0 } else { 0.0 },
+        ]);
         planes.d(p.bbox.map(|v| v as f64));
         planes.d(p.bounds);
         affine_rows(&mut planes, &p.winv);
-        planes.f([p.mat.ambient, p.mat.diffuse, p.mat.specular, p.mat.exponent() as f32]);
+        planes.f([
+            p.mat.ambient,
+            p.mat.diffuse,
+            p.mat.specular,
+            p.mat.exponent() as f32,
+        ]);
         planes.f([p.mat.metal, p.mat.light_transmission, p.opacity, 0.0]);
         let flags = p.draw as u32 | (p.preserve as u32) << 1 | (p.mat.accepts_lights as u32) << 2;
         planes.u([n_geos, p.geos.len() as u32, flags, mode_id(p.mode)]);
-        planes.u([p.mat.casts_shadows, p.mat.accepts_shadows, p.layer_id, p.order as u32]);
+        planes.u([
+            p.mat.casts_shadows,
+            p.mat.accepts_shadows,
+            p.layer_id,
+            p.order as u32,
+        ]);
         planes.u([matte, run.seed ^ p.layer_id, 0, 0]);
         for g in &p.geos {
             write_geo(&mut geos, g);
@@ -212,9 +262,23 @@ pub(crate) fn draw_run(e: &mut Enc, run: &Run3d, canvas: &GpuImage) -> Option<Gp
     let cb = e.bytes(casters.at_least(16));
     let mb = e.data(&mattes);
     let mut p = Params::default();
-    p.u[0] = [run.planes.len() as u32, run.lights.len() as u32, run.casters.len() as u32, 0];
+    p.u[0] = [
+        run.planes.len() as u32,
+        run.lights.len() as u32,
+        run.casters.len() as u32,
+        0,
+    ];
     let out = e.scratch(w, h);
-    e.dispatch_ext("classic3d", &p, &atlas, Some(canvas), &out, Some(&mb), (w.div_ceil(16), h.div_ceil(16)), Some([&pb, &gb, &lb, &cb]));
+    e.dispatch_ext(
+        "classic3d",
+        &p,
+        &atlas,
+        Some(canvas),
+        &out,
+        Some(&mb),
+        (w.div_ceil(16), h.div_ceil(16)),
+        Some([&pb, &gb, &lb, &cb]),
+    );
     Some(out)
 }
 
@@ -230,11 +294,17 @@ mod tests {
             assert!(x + sw <= w && y + sh <= h);
             for (j, (&(x2, y2), &(sw2, sh2))) in pos.iter().zip(&sizes).enumerate() {
                 if i != j {
-                    assert!(x + sw <= x2 || x2 + sw2 <= x || y + sh <= y2 || y2 + sh2 <= y, "{i} and {j} overlap");
+                    assert!(
+                        x + sw <= x2 || x2 + sw2 <= x || y + sh <= y2 || y2 + sh2 <= y,
+                        "{i} and {j} overlap"
+                    );
                 }
             }
         }
         assert!(pack(&[(300, 10)], 256).is_none());
-        assert_eq!(max_overlap(&[[0, 0, 10, 10], [5, 5, 15, 15], [20, 20, 30, 30]]), 2);
+        assert_eq!(
+            max_overlap(&[[0, 0, 10, 10], [5, 5, 15, 15], [20, 20, 30, 30]]),
+            2
+        );
     }
 }

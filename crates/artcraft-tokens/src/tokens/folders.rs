@@ -7,7 +7,9 @@ use utoipa::ToSchema;
 use crate::prefixes::TokenPrefix;
 
 /// The primary key for folders.
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize, Default, ToSchema)]
+#[derive(
+    Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize, Default, ToSchema,
+)]
 #[cfg_attr(feature = "database", derive(sqlx::Type))]
 #[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct FolderToken(pub String);

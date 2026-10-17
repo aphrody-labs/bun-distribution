@@ -81,7 +81,11 @@ pub struct TacticsPriorityLevel {
 
 impl Default for TacticsPriorityLevel {
     fn default() -> Self {
-        Self { count: 1, max_priority: TACTICS_MAX_PRIORITY, flag: 0 }
+        Self {
+            count: 1,
+            max_priority: TACTICS_MAX_PRIORITY,
+            flag: 0,
+        }
     }
 }
 

@@ -61,8 +61,13 @@ impl ProfileServiceContext {
     /// independent of process-wide environment variables.
     #[must_use]
     pub fn new(root: impl Into<PathBuf>, profile: Option<&str>) -> Self {
-        let profile = profile.map(str::trim).filter(|value| !value.is_empty()).map(str::to_owned);
-        let namespace = profile.as_deref().map_or_else(|| "aphrody".to_owned(), profile_namespace);
+        let profile = profile
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned);
+        let namespace = profile
+            .as_deref()
+            .map_or_else(|| "aphrody".to_owned(), profile_namespace);
         let root = root.into();
         Self {
             profile,
@@ -116,11 +121,13 @@ impl ProfileServiceContext {
         context.database_type = database.db_type;
         context.database_cache = database.cache;
         context.database_url = match database.url_env.as_deref() {
-            Some(name) => {
-                Some(environment(name).filter(|value| !value.is_empty()).ok_or_else(|| {
-                    ServiceConfigError::MissingEnvironment { name: name.to_owned() }
-                })?)
-            },
+            Some(name) => Some(
+                environment(name)
+                    .filter(|value| !value.is_empty())
+                    .ok_or_else(|| ServiceConfigError::MissingEnvironment {
+                        name: name.to_owned(),
+                    })?,
+            ),
             None => database.url.clone(),
         };
         if database.db_type == Some(DatabaseType::Sqlite)
@@ -131,7 +138,12 @@ impl ProfileServiceContext {
         if let Some(raw) = database.cache_path.as_deref() {
             context.sqlite_cache_path = resolve_profile_path(&context.root, raw)?;
         }
-        if let Some(schema) = database.schema.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        if let Some(schema) = database
+            .schema
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             schema.clone_into(&mut context.postgres_schema);
         }
 
@@ -277,7 +289,10 @@ impl ProfileServiceContext {
 }
 
 fn resolve_sqlite_path(root: &Path, raw: &str) -> Result<PathBuf, ServiceConfigError> {
-    let path = raw.strip_prefix("sqlite://").or_else(|| raw.strip_prefix("sqlite:")).unwrap_or(raw);
+    let path = raw
+        .strip_prefix("sqlite://")
+        .or_else(|| raw.strip_prefix("sqlite:"))
+        .unwrap_or(raw);
     resolve_profile_path(root, path)
 }
 
@@ -286,8 +301,13 @@ fn resolve_profile_path(root: &Path, raw: &str) -> Result<PathBuf, ServiceConfig
     if path.is_absolute() {
         return Ok(path.to_path_buf());
     }
-    if path.components().any(|part| matches!(part, std::path::Component::ParentDir)) {
-        return Err(ServiceConfigError::EscapingPath { path: raw.to_owned() });
+    if path
+        .components()
+        .any(|part| matches!(part, std::path::Component::ParentDir))
+    {
+        return Err(ServiceConfigError::EscapingPath {
+            path: raw.to_owned(),
+        });
     }
     Ok(root.join(path))
 }
@@ -301,7 +321,11 @@ fn profile_namespace(profile: &str) -> String {
         return sanitized;
     }
 
-    let stem = if sanitized.is_empty() { "profile" } else { sanitized.as_str() };
+    let stem = if sanitized.is_empty() {
+        "profile"
+    } else {
+        sanitized.as_str()
+    };
     let digest = blake3::hash(trimmed.as_bytes()).to_hex();
     format!("{stem}-{}", &digest[..12])
 }
@@ -335,8 +359,16 @@ mod tests {
             niers.ocr_cache_dir(),
         ];
 
-        assert!(shenron_paths.iter().all(|path| path.starts_with(shenron.root())));
-        assert!(niers_paths.iter().all(|path| path.starts_with(niers.root())));
+        assert!(
+            shenron_paths
+                .iter()
+                .all(|path| path.starts_with(shenron.root()))
+        );
+        assert!(
+            niers_paths
+                .iter()
+                .all(|path| path.starts_with(niers.root()))
+        );
         for left in &shenron_paths {
             for right in &niers_paths {
                 assert_ne!(left, right);
@@ -402,10 +434,19 @@ mod tests {
         .unwrap();
 
         assert_eq!(context.database_url(), Some("postgres://db/shenron"));
-        assert_eq!(context.local_memory_path(), Some(root.join("cache/memory.db").as_path()));
+        assert_eq!(
+            context.local_memory_path(),
+            Some(root.join("cache/memory.db").as_path())
+        );
         assert_eq!(context.postgres_schema(), "shenron_canon");
-        assert_eq!(context.ocr_database_path(), root.join("ocr-state/corpus.db"));
-        assert_eq!(context.ocr_engines(), &[OcrEngine::PpOcrV5, OcrEngine::DotsOcr3b]);
+        assert_eq!(
+            context.ocr_database_path(),
+            root.join("ocr-state/corpus.db")
+        );
+        assert_eq!(
+            context.ocr_engines(),
+            &[OcrEngine::PpOcrV5, OcrEngine::DotsOcr3b]
+        );
         assert_eq!(context.redis_url(), Some("redis://127.0.0.1:6379/1"));
         assert_eq!(context.redis_key("rag:answer"), "shenron:rag:answer");
     }

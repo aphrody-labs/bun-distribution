@@ -130,7 +130,10 @@ fn effective_mode(argument: Option<RagModeArg>, configured: Option<RagMode>) -> 
 }
 
 fn postgres_url(explicit_local_db: bool, configured: Option<String>) -> Option<String> {
-    (!explicit_local_db).then_some(configured).flatten().filter(|url| !url.trim().is_empty())
+    (!explicit_local_db)
+        .then_some(configured)
+        .flatten()
+        .filter(|url| !url.trim().is_empty())
 }
 
 fn search_mode(mode: RagModeArg) -> SearchMode {
@@ -169,7 +172,7 @@ async fn build_embedder(config: &RagConfig) -> miette::Result<Option<Arc<dyn Emb
                     "native embedding backend selected but aphrody-rag was built without the `native` feature"
                 ));
             }
-        },
+        }
         EmbedBackend::Ort => {
             let model = resolved.model.clone();
             let loaded = tokio::task::spawn_blocking(move || OrtEmbedder::load(&model))
@@ -185,7 +188,7 @@ async fn build_embedder(config: &RagConfig) -> miette::Result<Option<Arc<dyn Emb
                 ));
             }
             Arc::new(loaded)
-        },
+        }
         EmbedBackend::LlamaServer => {
             // The resolver guarantees `endpoint` for HTTP backends.
             let raw = resolved.endpoint.as_deref().unwrap_or_default();
@@ -194,7 +197,7 @@ async fn build_embedder(config: &RagConfig) -> miette::Result<Option<Arc<dyn Emb
                 resolved.model,
                 resolved.dimension,
             ))
-        },
+        }
         EmbedBackend::OpenaiCompat => {
             let raw = resolved.endpoint.as_deref().unwrap_or_default();
             Arc::new(OpenAiCompatEmbedder::new(
@@ -203,7 +206,7 @@ async fn build_embedder(config: &RagConfig) -> miette::Result<Option<Arc<dyn Emb
                 resolved.dimension,
                 resolved.api_key,
             ))
-        },
+        }
     };
     Ok(Some(embedder))
 }
@@ -224,7 +227,11 @@ fn build_reranker(config: &RagConfig, enabled: bool) -> miette::Result<Option<Ar
 
 async fn build_pipeline(config: &RagConfig, mode: RagModeArg) -> miette::Result<Pipeline> {
     let needs_vectors = !matches!(mode, RagModeArg::Lexical);
-    let embedder = if needs_vectors { build_embedder(config).await? } else { None };
+    let embedder = if needs_vectors {
+        build_embedder(config).await?
+    } else {
+        None
+    };
     let rerank = matches!(mode, RagModeArg::HybridRerank);
     Ok(Pipeline {
         embedder,
@@ -244,9 +251,10 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
         (None, Some(path)) => expand_path(path, &state_root)?,
         (None, None) => state_root.join("rag/index.db"),
     };
-    if let Some(database_url) =
-        postgres_url(explicit_local_db, std::env::var("APHRODY_MCP_DATABASE_URL").ok())
-    {
+    if let Some(database_url) = postgres_url(
+        explicit_local_db,
+        std::env::var("APHRODY_MCP_DATABASE_URL").ok(),
+    ) {
         match &args.action {
             RagAction::WebIngest { url, force } => {
                 let markdown = aphrody_rag::scrape_web_markdown(
@@ -262,8 +270,15 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                         .map_err(|message| miette::miette!("web-ingest: {message}"))?;
                 println!("{}", serde_json::to_string(&result).into_diagnostic()?);
                 return Ok(());
-            },
-            RagAction::Search { query, limit, mode, lang, entity, kind } => {
+            }
+            RagAction::Search {
+                query,
+                limit,
+                mode,
+                lang,
+                entity,
+                kind,
+            } => {
                 if effective_mode(*mode, config.rag.mode) != RagModeArg::Lexical {
                     return Err(miette::miette!(
                         "PostgreSQL RAG supports lexical search only; use --mode lexical"
@@ -288,27 +303,32 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                 };
                 println!("{}", serde_json::to_string(&result).into_diagnostic()?);
                 return Ok(());
-            },
+            }
             RagAction::Stats => {
                 let result = aphrody_rag::pg_stats(&database_url)
                     .await
                     .map_err(|message| miette::miette!("rag stats: {message}"))?;
                 println!("{}", serde_json::to_string(&result).into_diagnostic()?);
                 return Ok(());
-            },
+            }
             RagAction::Index { .. } | RagAction::Context { .. } => {
                 return Err(miette::miette!(
                     "this RAG command uses the local SQLite index; pass --db explicitly"
                 ));
-            },
+            }
         }
     }
-    if matches!(&args.action, RagAction::Index { .. } | RagAction::WebIngest { .. }) {
+    if matches!(
+        &args.action,
+        RagAction::Index { .. } | RagAction::WebIngest { .. }
+    ) {
         if let Some(parent) = db.parent().filter(|parent| !parent.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent).into_diagnostic()?;
         }
     } else if !db.is_file() {
-        return Err(miette::miette!("RAG index does not exist; run `aphrody rag index` first"));
+        return Err(miette::miette!(
+            "RAG index does not exist; run `aphrody rag index` first"
+        ));
     }
     let store = Arc::new(RagStore::open(&db).into_diagnostic()?);
     match args.action {
@@ -321,8 +341,10 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
             if let Some(embedder) = embedder {
                 indexer = indexer.with_embedder(embedder);
             }
-            let stats =
-                indexer.index_directory(path, &IndexOptions::default()).await.into_diagnostic()?;
+            let stats = indexer
+                .index_directory(path, &IndexOptions::default())
+                .await
+                .into_diagnostic()?;
             println!("{}", serde_json::to_string(&stats).into_diagnostic()?);
             if !stats.errors.is_empty() {
                 return Err(miette::miette!(
@@ -330,11 +352,14 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                     stats.errors.len()
                 ));
             }
-        },
+        }
         RagAction::WebIngest { url, force } => {
             let embedder = build_embedder(&config.rag).await?;
             if let Some(embedder) = &embedder {
-                store.ensure_embedding_model(embedder.model_id()).await.into_diagnostic()?;
+                store
+                    .ensure_embedding_model(embedder.model_id())
+                    .await
+                    .into_diagnostic()?;
             }
             let mut indexer = RagIndexer::new(store);
             if let Some(embedder) = embedder {
@@ -348,8 +373,10 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                 return Err(miette::miette!("{}", output.content));
             }
             println!("{}", output.content);
-        },
-        RagAction::Search { query, limit, mode, .. } => {
+        }
+        RagAction::Search {
+            query, limit, mode, ..
+        } => {
             if !(1..=100).contains(&limit) {
                 return Err(miette::miette!("RAG limit must be between 1 and 100"));
             }
@@ -383,12 +410,20 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                 .await
                 .into_diagnostic()?;
             let json_str = serde_json::to_string(&result).into_diagnostic()?;
-            redis_cache.cache_rag_result(&query, &mode_str, &json_str).await;
+            redis_cache
+                .cache_rag_result(&query, &mode_str, &json_str)
+                .await;
             println!("{json_str}");
-        },
-        RagAction::Context { query, token_budget, mode } => {
+        }
+        RagAction::Context {
+            query,
+            token_budget,
+            mode,
+        } => {
             if token_budget == 0 {
-                return Err(miette::miette!("RAG token budget must be greater than zero"));
+                return Err(miette::miette!(
+                    "RAG token budget must be greater than zero"
+                ));
             }
             let requested = effective_mode(mode, config.rag.mode);
             let pipeline = build_pipeline(&config.rag, requested).await?;
@@ -408,7 +443,7 @@ pub(crate) async fn run(args: RagArgs, overrides: CliOverrides) -> miette::Resul
                 .await
                 .into_diagnostic()?;
             println!("{}", result.content);
-        },
+        }
         RagAction::Stats => println!(
             "{}",
             serde_json::to_string(&store.stats().await.into_diagnostic()?).into_diagnostic()?
@@ -443,14 +478,20 @@ mod tests {
             effective_mode(Some(RagModeArg::Vector), Some(RagMode::Lexical)),
             RagModeArg::Vector
         );
-        assert_eq!(effective_mode(None, Some(RagMode::HybridRerank)), RagModeArg::HybridRerank);
+        assert_eq!(
+            effective_mode(None, Some(RagMode::HybridRerank)),
+            RagModeArg::HybridRerank
+        );
         assert_eq!(effective_mode(None, None), RagModeArg::Lexical);
     }
 
     #[test]
     fn relative_database_path_is_profile_scoped() {
         let root = Path::new("profile-root");
-        assert_eq!(expand_path("rag/custom.db", root).unwrap(), root.join("rag/custom.db"));
+        assert_eq!(
+            expand_path("rag/custom.db", root).unwrap(),
+            root.join("rag/custom.db")
+        );
     }
 
     #[test]
@@ -459,7 +500,10 @@ mod tests {
             postgres_url(false, Some("postgres://private".to_owned())),
             Some("postgres://private".to_owned())
         );
-        assert_eq!(postgres_url(true, Some("postgres://private".to_owned())), None);
+        assert_eq!(
+            postgres_url(true, Some("postgres://private".to_owned())),
+            None
+        );
         assert_eq!(postgres_url(false, Some("  ".to_owned())), None);
     }
 }

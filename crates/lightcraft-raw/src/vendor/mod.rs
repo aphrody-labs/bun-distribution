@@ -32,7 +32,9 @@ pub(crate) const EXIF_CFA_PATTERN: u16 = 0xa302;
 /// The colour-filter layout from the Exif `CFAPattern` tag (`0xa302`: two 16-bit repeat counts, found in either
 /// byte order, then one byte per site: 0 = red, 1 = green, 2 = blue), when it describes a 2×2 Bayer cell.
 pub(crate) fn cfa_from_exif(tiff: &Tiff) -> Option<Cfa> {
-    let &[c0, c1, r0, r1, s0, s1, s2, s3] = tiff.exif()?.bytes(EXIF_CFA_PATTERN)? else { return None };
+    let &[c0, c1, r0, r1, s0, s1, s2, s3] = tiff.exif()?.bytes(EXIF_CFA_PATTERN)? else {
+        return None;
+    };
     let two = |a: u8, b: u8| matches!((a, b), (2, 0) | (0, 2));
     let name = match [s0, s1, s2, s3] {
         [0, 1, 1, 2] => "RGGB",
@@ -46,7 +48,13 @@ pub(crate) fn cfa_from_exif(tiff: &Tiff) -> Option<Cfa> {
 
 /// Black level per 2×2 CFA position (anchored at the active area origin) from masked sensor columns `cols` over
 /// rows `rows`. Falls back to 0 when the region is empty.
-pub(crate) fn black_from_columns(data: &[u16], width: usize, cols: Range<usize>, rows: Range<usize>, active: Rect) -> BlackLevel {
+pub(crate) fn black_from_columns(
+    data: &[u16],
+    width: usize,
+    cols: Range<usize>,
+    rows: Range<usize>,
+    active: Rect,
+) -> BlackLevel {
     let height = data.len() / width.max(1);
     let (mut sum, mut n) = ([0f64; 4], [0u64; 4]);
     for y in rows.start..rows.end.min(height) {
@@ -60,7 +68,13 @@ pub(crate) fn black_from_columns(data: &[u16], width: usize, cols: Range<usize>,
     if n.contains(&0) {
         return BlackLevel::uniform(0.0);
     }
-    BlackLevel { repeat_rows: 2, repeat_cols: 2, values: (0..4).map(|i| (sum[i] / n[i] as f64) as f32).collect(), delta_h: vec![], delta_v: vec![] }
+    BlackLevel {
+        repeat_rows: 2,
+        repeat_cols: 2,
+        values: (0..4).map(|i| (sum[i] / n[i] as f64) as f32).collect(),
+        delta_h: vec![],
+        delta_v: vec![],
+    }
 }
 
 /// Samples of up to 512 evenly spaced rows of the active area, for [`white_from_data`]: the borders can hold
@@ -68,7 +82,12 @@ pub(crate) fn black_from_columns(data: &[u16], width: usize, cols: Range<usize>,
 /// row parities, and with them every CFA site, are read.
 pub(crate) fn active_rows(data: &[u16], w: usize, a: Rect) -> Vec<u16> {
     let step = (a.height / 512).max(1) | 1;
-    (a.y..a.y + a.height).step_by(step).filter_map(|y| data.get(y * w + a.x..y * w + a.x + a.width)).flatten().copied().collect()
+    (a.y..a.y + a.height)
+        .step_by(step)
+        .filter_map(|y| data.get(y * w + a.x..y * w + a.x + a.width))
+        .flatten()
+        .copied()
+        .collect()
 }
 
 /// White level estimate: the saturation plateau if a noticeable number of samples sit at the maximum value,
@@ -98,7 +117,10 @@ pub(crate) fn white_from_data(data: &[u16], bits: u32) -> f32 {
     let band = (mx / 256).max(1);
     let near = mx.saturating_sub(band);
     let below = near.saturating_sub(band);
-    let count = |from: u32, to: u32| hist.get(from as usize..to as usize).map_or(0, |h| h.iter().sum::<usize>());
+    let count = |from: u32, to: u32| {
+        hist.get(from as usize..to as usize)
+            .map_or(0, |h| h.iter().sum::<usize>())
+    };
     // the strays count as saturated too
     let top = count(near, full_level + 1);
     let under = count(below, near);
@@ -121,14 +143,21 @@ mod tests {
         let data: Vec<u16> = (0..8 * 6)
             .map(|i| {
                 let (x, y) = (i % 8, i / 8);
-                if x < 4 { [100, 101, 102, 103][(y % 2) * 2 + x % 2] } else { 5000 }
+                if x < 4 {
+                    [100, 101, 102, 103][(y % 2) * 2 + x % 2]
+                } else {
+                    5000
+                }
             })
             .collect();
         let b = black_from_columns(&data, 8, 0..4, 0..6, Rect::new(4, 0, 4, 6));
         assert_eq!(b.values, vec![100.0, 101.0, 102.0, 103.0]);
         let b = black_from_columns(&data, 8, 0..4, 0..6, Rect::new(3, 1, 4, 5));
         assert_eq!(b.at(0, 0, 0, 1), 103.0);
-        assert_eq!(black_from_columns(&data, 8, 0..0, 0..6, Rect::new(0, 0, 8, 6)), BlackLevel::uniform(0.0));
+        assert_eq!(
+            black_from_columns(&data, 8, 0..0, 0..6, Rect::new(0, 0, 8, 6)),
+            BlackLevel::uniform(0.0)
+        );
     }
 
     #[test]
@@ -147,7 +176,15 @@ mod tests {
     #[test]
     fn active_rows_reads_both_row_parities() {
         let n = 2048;
-        let d: Vec<u16> = (0..n * n).map(|i| if (i / n) % 2 == 1 && i % 2 == 1 { 15000 } else { (i % 10000) as u16 }).collect();
+        let d: Vec<u16> = (0..n * n)
+            .map(|i| {
+                if (i / n) % 2 == 1 && i % 2 == 1 {
+                    15000
+                } else {
+                    (i % 10000) as u16
+                }
+            })
+            .collect();
         let w = white_from_data(&active_rows(&d, n, Rect::new(0, 0, n, n)), 14);
         assert!((14900.0..=15000.0).contains(&w), "{w}");
     }

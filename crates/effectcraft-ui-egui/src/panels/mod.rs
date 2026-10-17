@@ -97,11 +97,14 @@ pub(crate) fn project_drop_items(app: &EffectcraftApp, dragged: u64) -> Vec<u64>
     candidates
         .into_iter()
         .filter(|id| {
-            app.session.project.item(ItemId(*id)).is_some_and(|item| match &item.kind {
-                ItemKind::Comp(_) | ItemKind::Solid(_) => true,
-                ItemKind::Footage(f) => f.kind != FootageKind::Data,
-                ItemKind::Folder => false,
-            })
+            app.session
+                .project
+                .item(ItemId(*id))
+                .is_some_and(|item| match &item.kind {
+                    ItemKind::Comp(_) | ItemKind::Solid(_) => true,
+                    ItemKind::Footage(f) => f.kind != FootageKind::Data,
+                    ItemKind::Folder => false,
+                })
         })
         .collect()
 }
@@ -118,8 +121,12 @@ pub(crate) fn toggle_time_display(app: &mut EffectcraftApp, resp: &egui::Respons
     if !(resp.clicked() && resp.ctx.input(|i| i.modifiers.command)) {
         return;
     }
-    let timecode = app.session.project.settings.time_display == effectcraft_engine::project::TimeDisplayStyle::Timecode;
-    if let Err(e) = app.session.execute("file.projectSettings", serde_json::json!({"timeDisplay": if timecode { "frames" } else { "timecode" }})) {
+    let timecode = app.session.project.settings.time_display
+        == effectcraft_engine::project::TimeDisplayStyle::Timecode;
+    if let Err(e) = app.session.execute(
+        "file.projectSettings",
+        serde_json::json!({"timeDisplay": if timecode { "frames" } else { "timecode" }}),
+    ) {
         app.ui.status = e.to_string();
     }
 }
@@ -174,77 +181,113 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: PanelKind, rect: Rec
 /// The ≡ panel menu (opened from a tab).
 pub fn panel_menu_popup(app: &mut EffectcraftApp, ui: &mut egui::Ui) {
     let id = egui::Id::new("panel-menu");
-    let Some((panel, pos)) = ui.ctx().data(|d| d.get_temp::<(PanelKind, egui::Pos2)>(id)) else { return };
+    let Some((panel, pos)) = ui.ctx().data(|d| d.get_temp::<(PanelKind, egui::Pos2)>(id)) else {
+        return;
+    };
     // The menu opens in the window that shows the panel (a panel can have its own window).
     if app.panel_viewport(ui.ctx(), panel) != ui.ctx().viewport_id() {
         return;
     }
     let mut close = false;
-    let area = egui::Area::new(id.with("area")).order(egui::Order::Foreground).fixed_pos(pos).show(ui.ctx(), |ui| {
-        egui::Frame::popup(ui.style()).show(ui, |ui| {
-            ui.set_min_width(200.0);
-            if ui.button(tr("Close Panel")).clicked() {
-                let _ = app.dock_command(ui.ctx(), craft_ui::docking::Action::Close { panel });
-                close = true;
-            }
-            let floating = app.ui.floating.iter().any(|f| f.panels.contains(&panel));
-            if !floating && ui.button(tr("Undock Panel")).clicked() {
-                let r = crate::dock_ui::default_float_rect(ui.ctx().content_rect());
-                let _ = app.dock_command(ui.ctx(), craft_ui::docking::Action::Float { panel, rect: r });
-                close = true;
-            }
-            // Multiple monitors: a native window of its own, which can go on another screen.
-            if !ui.ctx().embed_viewports() {
-                let windowed = app.in_panel_window(panel);
-                if ui.button(if windowed { tr("Move Panel to Main Window") } else { tr("Move Panel to New Window") }).clicked() {
-                    let _ = crate::menus::invoke(app, &ui.ctx().clone(), "window.panelWindow", serde_json::json!({"panel": panel, "window": !windowed}));
+    let area = egui::Area::new(id.with("area"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos)
+        .show(ui.ctx(), |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                ui.set_min_width(200.0);
+                if ui.button(tr("Close Panel")).clicked() {
+                    let _ = app.dock_command(ui.ctx(), craft_ui::docking::Action::Close { panel });
                     close = true;
                 }
-            }
-            if !floating && ui.button(if app.ui.maximized == Some(panel) { tr("Restore Panel Size") } else { tr("Maximize Panel") }).clicked() {
-                app.toggle_maximize(panel);
-                close = true;
-            }
-            ui.separator();
-            match panel {
-                PanelKind::Timeline => {
-                    for (label, id) in [
-                        ("Hide Shy Layers", "hideShy"),
-                        ("Enable Frame Blending", "frameBlending"),
-                        ("Enable Motion Blur", "motionBlur"),
-                        ("Draft 3D", "draft3d"),
-                    ] {
-                        if ui.button(label).clicked() {
-                            let _ = app.session.execute("comp.setSwitch", serde_json::json!({"switch": id}));
-                            close = true;
-                        }
-                    }
-                    if ui.button(tr("Composition Settings…")).clicked() {
-                        let _ = dialogs::open_comp_settings(app);
+                let floating = app.ui.floating.iter().any(|f| f.panels.contains(&panel));
+                if !floating && ui.button(tr("Undock Panel")).clicked() {
+                    let r = crate::dock_ui::default_float_rect(ui.ctx().content_rect());
+                    let _ = app.dock_command(
+                        ui.ctx(),
+                        craft_ui::docking::Action::Float { panel, rect: r },
+                    );
+                    close = true;
+                }
+                // Multiple monitors: a native window of its own, which can go on another screen.
+                if !ui.ctx().embed_viewports() {
+                    let windowed = app.in_panel_window(panel);
+                    if ui
+                        .button(if windowed {
+                            tr("Move Panel to Main Window")
+                        } else {
+                            tr("Move Panel to New Window")
+                        })
+                        .clicked()
+                    {
+                        let _ = crate::menus::invoke(
+                            app,
+                            &ui.ctx().clone(),
+                            "window.panelWindow",
+                            serde_json::json!({"panel": panel, "window": !windowed}),
+                        );
                         close = true;
                     }
                 }
-                PanelKind::Composition | PanelKind::Viewer(_) => {
-                    for (label, cmd) in [
-                        ("New Viewer", "view.newViewer"),
-                        ("Composition Settings…", "app.compSettings"),
-                        ("View Options…", "view.layerControls"),
-                        ("Show Grid", "view.grid"),
-                        ("Title/Action Safe", "view.safeMargins"),
-                    ] {
-                        if ui.button(label).clicked() {
-                            let _ = crate::menus::invoke(app, &ui.ctx().clone(), cmd, serde_json::json!({}));
+                if !floating
+                    && ui
+                        .button(if app.ui.maximized == Some(panel) {
+                            tr("Restore Panel Size")
+                        } else {
+                            tr("Maximize Panel")
+                        })
+                        .clicked()
+                {
+                    app.toggle_maximize(panel);
+                    close = true;
+                }
+                ui.separator();
+                match panel {
+                    PanelKind::Timeline => {
+                        for (label, id) in [
+                            ("Hide Shy Layers", "hideShy"),
+                            ("Enable Frame Blending", "frameBlending"),
+                            ("Enable Motion Blur", "motionBlur"),
+                            ("Draft 3D", "draft3d"),
+                        ] {
+                            if ui.button(label).clicked() {
+                                let _ = app
+                                    .session
+                                    .execute("comp.setSwitch", serde_json::json!({"switch": id}));
+                                close = true;
+                            }
+                        }
+                        if ui.button(tr("Composition Settings…")).clicked() {
+                            let _ = dialogs::open_comp_settings(app);
                             close = true;
                         }
                     }
+                    PanelKind::Composition | PanelKind::Viewer(_) => {
+                        for (label, cmd) in [
+                            ("New Viewer", "view.newViewer"),
+                            ("Composition Settings…", "app.compSettings"),
+                            ("View Options…", "view.layerControls"),
+                            ("Show Grid", "view.grid"),
+                            ("Title/Action Safe", "view.safeMargins"),
+                        ] {
+                            if ui.button(label).clicked() {
+                                let _ = crate::menus::invoke(
+                                    app,
+                                    &ui.ctx().clone(),
+                                    cmd,
+                                    serde_json::json!({}),
+                                );
+                                close = true;
+                            }
+                        }
+                    }
+                    _ => {
+                        ui.label(egui::RichText::new(panel.title()).weak());
+                    }
                 }
-                _ => {
-                    ui.label(egui::RichText::new(panel.title()).weak());
-                }
-            }
+            });
         });
-    });
     if close || crate::widgets::pressed_outside(ui.ctx(), &area.response) {
-        ui.ctx().data_mut(|d| d.remove::<(PanelKind, egui::Pos2)>(id));
+        ui.ctx()
+            .data_mut(|d| d.remove::<(PanelKind, egui::Pos2)>(id));
     }
 }

@@ -53,7 +53,11 @@ pub struct PisteWeb {
 impl From<&Piste> for PisteWeb {
     fn from(p: &Piste) -> Self {
         Self {
-            frames: p.frames.iter().map(|f| [f.sprite_index as u64, f.duree_ms]).collect(),
+            frames: p
+                .frames
+                .iter()
+                .map(|f| [f.sprite_index as u64, f.duree_ms])
+                .collect(),
             loop_start: p.loop_start,
             fallback: p.repli.clone(),
         }
@@ -107,10 +111,15 @@ pub fn feuille(m: &AnimationsManifest) -> SpriteSheet {
     let cellules = (a.columns * a.rows) as usize;
     let sprites = (0..cellules)
         .map(|i| {
-            let (x, y) =
-                (i as u32 % a.columns * a.cell_width, i as u32 / a.columns * a.cell_height);
+            let (x, y) = (
+                i as u32 % a.columns * a.cell_width,
+                i as u32 / a.columns * a.cell_height,
+            );
             let nom = format!("c{i}");
-            #[expect(clippy::cast_possible_wrap, reason = "atlas de quelques milliers de pixels")]
+            #[expect(
+                clippy::cast_possible_wrap,
+                reason = "atlas de quelques milliers de pixels"
+            )]
             Sprite {
                 classe: assainir_nom(&nom),
                 nom,
@@ -121,7 +130,10 @@ pub fn feuille(m: &AnimationsManifest) -> SpriteSheet {
             }
         })
         .collect();
-    #[expect(clippy::cast_possible_wrap, reason = "atlas de quelques milliers de pixels")]
+    #[expect(
+        clippy::cast_possible_wrap,
+        reason = "atlas de quelques milliers de pixels"
+    )]
     SpriteSheet {
         nom: m.pet.id.clone(),
         largeur: a.width as i32,
@@ -160,7 +172,15 @@ pub fn donnees_web(pet: &PetManifest, m: &AnimationsManifest) -> Result<DonneesW
         neutral,
         states: Etat::TOUS
             .iter()
-            .map(|e| (e.animation(), EtatWeb { lifetime_ms: e.duree_vie_ms(), label: e.libelle() }))
+            .map(|e| {
+                (
+                    e.animation(),
+                    EtatWeb {
+                        lifetime_ms: e.duree_vie_ms(),
+                        label: e.libelle(),
+                    },
+                )
+            })
             .collect(),
         gaze_deadzone: ZONE_MORTE,
         css: feuille(m).vers_css("spritesheet.webp"),
@@ -193,7 +213,7 @@ fn ecrire_json(v: &serde_json::Value, niveau: usize, s: &mut String) {
     match v {
         Value::Array(a) if a.is_empty() || a.iter().all(|x| !x.is_array() && !x.is_object()) => {
             s.push_str(&v.to_string());
-        },
+        }
         Value::Array(a) => {
             s.push_str("[\n");
             for (i, x) in a.iter().enumerate() {
@@ -203,7 +223,7 @@ fn ecrire_json(v: &serde_json::Value, niveau: usize, s: &mut String) {
             }
             s.push_str(&marge(niveau));
             s.push(']');
-        },
+        }
         Value::Object(o) if o.is_empty() => s.push_str("{}"),
         Value::Object(o) => {
             s.push_str("{\n");
@@ -216,7 +236,7 @@ fn ecrire_json(v: &serde_json::Value, niveau: usize, s: &mut String) {
             }
             s.push_str(&marge(niveau));
             s.push('}');
-        },
+        }
         _ => s.push_str(&v.to_string()),
     }
 }
@@ -231,15 +251,19 @@ fn ecrire_json(v: &serde_json::Value, niveau: usize, s: &mut String) {
 fn temps_de_test(piste: &Piste, graine: &mut u64) -> Vec<u64> {
     let mut temps = vec![0, 1];
     let mut t = 0u64;
-    let boucle = piste.loop_start.and_then(|i| piste.frames.get(i..)).unwrap_or_default();
+    let boucle = piste
+        .loop_start
+        .and_then(|i| piste.frames.get(i..))
+        .unwrap_or_default();
     for f in piste.frames.iter().chain(boucle) {
         t += f.duree_ms.max(1);
         temps.extend([t - 1, t, t + 1]);
     }
     for _ in 0..16 {
         // LCG de Knuth : déterministe, identique d'une machine à l'autre.
-        *graine =
-            graine.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+        *graine = graine
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
         temps.push((*graine >> 33) % 10_000_000);
     }
     temps.sort_unstable();
@@ -256,7 +280,11 @@ fn tick_json(nom: &str, ecoule: u64, t: Option<(&str, Tick)>) -> serde_json::Val
 
 fn sequences(pet: &PetCodex, noms: &[&str], graine: &mut u64) -> Vec<serde_json::Value> {
     let mut lignes = Vec::new();
-    for (nom, piste) in pet.pistes.iter().filter(|(n, _)| noms.contains(&n.as_str())) {
+    for (nom, piste) in pet
+        .pistes
+        .iter()
+        .filter(|(n, _)| noms.contains(&n.as_str()))
+    {
         for t in temps_de_test(piste, graine) {
             lignes.push(tick_json(nom, t, pet.resoudre(nom, t)));
         }
@@ -302,9 +330,15 @@ pub fn fixture_parite() -> Result<serde_json::Value, Error> {
         .filter(|n| !pets::ALIAS.iter().any(|(a, _)| a == n))
         .collect();
     let declares = ["wave", "blink", "still", "spin", "idle"];
-    for (p, noms) in [(&aphrody, propres.as_slice()), (&synthetique, declares.as_slice())] {
-        let pistes: BTreeMap<&str, PisteWeb> =
-            p.pistes.iter().map(|(n, piste)| (n.as_str(), piste.into())).collect();
+    for (p, noms) in [
+        (&aphrody, propres.as_slice()),
+        (&synthetique, declares.as_slice()),
+    ] {
+        let pistes: BTreeMap<&str, PisteWeb> = p
+            .pistes
+            .iter()
+            .map(|(n, piste)| (n.as_str(), piste.into()))
+            .collect();
         cas.push(serde_json::json!({
             "id": p.id,
             "tracks": pistes,
@@ -330,7 +364,7 @@ pub fn fixture_parite() -> Result<serde_json::Value, Error> {
         match (op, etat) {
             ("poser", Some(e)) => a.poser(e, t),
             ("effacer", _) => a.effacer(),
-            _ => {},
+            _ => {}
         }
         let (nom, ecoule) = a.animation(t);
         let tick = aphrody.resoudre(nom, ecoule);
@@ -350,8 +384,15 @@ pub fn fixture_parite() -> Result<serde_json::Value, Error> {
     for i in 0..48 {
         let angle = f64::from(i) * 7.5 + 1.25;
         for rayon in [10.0, 23.9, 24.0, 160.0] {
-            let (dx, dy) = (rayon * angle.to_radians().sin(), -rayon * angle.to_radians().cos());
-            regard.push(serde_json::json!([dx, dy, pets::regard(dx, dy, ZONE_MORTE, n)]));
+            let (dx, dy) = (
+                rayon * angle.to_radians().sin(),
+                -rayon * angle.to_radians().cos(),
+            );
+            regard.push(serde_json::json!([
+                dx,
+                dy,
+                pets::regard(dx, dy, ZONE_MORTE, n)
+            ]));
         }
     }
 

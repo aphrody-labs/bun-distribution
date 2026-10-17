@@ -74,24 +74,43 @@ impl GainTableMap {
     /// Parse the tag's bytes from a file in byte order `order` (`version2`: `ProfileGainTableMap2`):
     /// in that order, else big-endian (see the module docs). `None` when malformed.
     pub fn parse(b: &[u8], order: ByteOrder, version2: bool) -> Option<GainTableMap> {
-        Self::parse_in(b, order, version2).or_else(|| if order == ByteOrder::Big { None } else { Self::parse_in(b, ByteOrder::Big, version2) })
+        Self::parse_in(b, order, version2).or_else(|| {
+            if order == ByteOrder::Big {
+                None
+            } else {
+                Self::parse_in(b, ByteOrder::Big, version2)
+            }
+        })
     }
 
     /// Parse the tag's bytes with every multi-byte field in `order`.
     fn parse_in(b: &[u8], order: ByteOrder, version2: bool) -> Option<GainTableMap> {
         let take = |o: usize, n: usize| b.get(o..o.checked_add(n)?);
-        let u32_at = |o: usize| take(o, 4).and_then(|s| s.try_into().ok()).map(|a: [u8; 4]| order.u32(a));
+        let u32_at = |o: usize| {
+            take(o, 4)
+                .and_then(|s| s.try_into().ok())
+                .map(|a: [u8; 4]| order.u32(a))
+        };
         let f32_at = |o: usize| u32_at(o).map(f32::from_bits);
-        let f64_at = |o: usize| take(o, 8).and_then(|s| s.try_into().ok()).map(|a: [u8; 8]| f64::from_bits(order.u64(a)));
+        let f64_at = |o: usize| {
+            take(o, 8)
+                .and_then(|s| s.try_into().ok())
+                .map(|a: [u8; 8]| f64::from_bits(order.u64(a)))
+        };
         let (points_v, points_h) = (u32_at(0)? as usize, u32_at(4)? as usize);
-        let (spacing_v, spacing_h, origin_v, origin_h) = (f64_at(8)?, f64_at(16)?, f64_at(24)?, f64_at(32)?);
+        let (spacing_v, spacing_h, origin_v, origin_h) =
+            (f64_at(8)?, f64_at(16)?, f64_at(24)?, f64_at(32)?);
         let points_n = u32_at(40)? as usize;
         let mut weights = [0f32; 5];
         for (i, w) in weights.iter_mut().enumerate() {
             *w = f32_at(44 + 4 * i)?;
         }
-        let tables = points_v.checked_mul(points_h).filter(|&t| t > 0 && t <= MAX_TABLES)?;
-        let count = tables.checked_mul(points_n).filter(|&c| c > 0 && c <= MAX_GAINS)?;
+        let tables = points_v
+            .checked_mul(points_h)
+            .filter(|&t| t > 0 && t <= MAX_TABLES)?;
+        let count = tables
+            .checked_mul(points_n)
+            .filter(|&c| c > 0 && c <= MAX_GAINS)?;
         let spacing_ok = |s: f64, points: usize| s.is_finite() && (s > 0.0 || points == 1);
         if !spacing_ok(spacing_v, points_v)
             || !spacing_ok(spacing_h, points_h)
@@ -101,8 +120,11 @@ impl GainTableMap {
         {
             return None;
         }
-        let (header, data_type, gamma, gain_min, gain_max) =
-            if version2 { (80, u32_at(64)?, f32_at(68)?, f32_at(72)?, f32_at(76)?) } else { (64, 3, 1.0, 0.0, 1.0) };
+        let (header, data_type, gamma, gain_min, gain_max) = if version2 {
+            (80, u32_at(64)?, f32_at(68)?, f32_at(72)?, f32_at(76)?)
+        } else {
+            (64, 3, 1.0, 0.0, 1.0)
+        };
         if !(0.25..=4.0).contains(&gamma) {
             return None;
         }
@@ -119,14 +141,40 @@ impl GainTableMap {
         let scaled = |q: f32, max: f32| gain_min + q / max * (gain_max - gain_min);
         let gains: Vec<f32> = match data_type {
             0 => data.iter().map(|&q| scaled(q as f32, 255.0)).collect(),
-            1 => data.as_chunks::<2>().0.iter().map(|c| scaled(order.u16(*c) as f32, 65535.0)).collect(),
-            2 => data.as_chunks::<2>().0.iter().map(|c| crate::unpack::f16_to_f32(order.u16(*c))).collect(),
-            _ => data.as_chunks::<4>().0.iter().map(|c| f32::from_bits(order.u32(*c))).collect(),
+            1 => data
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| scaled(order.u16(*c) as f32, 65535.0))
+                .collect(),
+            2 => data
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| crate::unpack::f16_to_f32(order.u16(*c)))
+                .collect(),
+            _ => data
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_bits(order.u32(*c)))
+                .collect(),
         };
         if gains.len() != count || !gains.iter().all(|g| g.is_finite() && *g >= 0.0) {
             return None;
         }
-        Some(GainTableMap { points_v, points_h, points_n, spacing_v, spacing_h, origin_v, origin_h, weights, gamma, gains })
+        Some(GainTableMap {
+            points_v,
+            points_h,
+            points_n,
+            spacing_v,
+            spacing_h,
+            origin_v,
+            origin_h,
+            weights,
+            gamma,
+            gains,
+        })
     }
 
     /// The tag's bytes in `order`: version 1 (DNG 1.6, f32 gains) when the gamma is 1, else
@@ -187,9 +235,17 @@ impl GainTableMap {
             last: points.saturating_sub(1),
             origin,
             // (a degenerate axis replicates its first table)
-            inv: if points > 1 && spacing.is_finite() && spacing > 0.0 { 1.0 / spacing } else { 0.0 },
+            inv: if points > 1 && spacing.is_finite() && spacing > 0.0 {
+                1.0 / spacing
+            } else {
+                0.0
+            },
         };
-        Some(GainEval { map: self, v: axis(self.points_v, self.origin_v, self.spacing_v), h: axis(self.points_h, self.origin_h, self.spacing_h) })
+        Some(GainEval {
+            map: self,
+            v: axis(self.points_v, self.origin_v, self.spacing_v),
+            h: axis(self.points_h, self.origin_h, self.spacing_h),
+        })
     }
 }
 
@@ -210,7 +266,11 @@ impl Axis {
             return (0, 0, 0.0);
         }
         let f = (pos - self.origin) * self.inv;
-        let f = if f.is_nan() { 0.0 } else { f.clamp(0.0, self.last as f64) };
+        let f = if f.is_nan() {
+            0.0
+        } else {
+            f.clamp(0.0, self.last as f64)
+        };
         // (≥ 0: `as` truncates like `floor`, which isn't inlined on baseline x86-64)
         let i0 = (f as usize).min(self.last);
         let i1 = i0.saturating_add(1).min(self.last);
@@ -221,8 +281,17 @@ impl Axis {
 /// Grid cell along one axis (see [`Axis::cell`]).
 #[cfg(test)]
 fn cell(pos: f64, origin: f64, spacing: f64, points: usize) -> (usize, usize, f32) {
-    let inv = if points > 1 && spacing.is_finite() && spacing > 0.0 { 1.0 / spacing } else { 0.0 };
-    Axis { last: points.saturating_sub(1), origin, inv }.cell(pos)
+    let inv = if points > 1 && spacing.is_finite() && spacing > 0.0 {
+        1.0 / spacing
+    } else {
+        0.0
+    };
+    Axis {
+        last: points.saturating_sub(1),
+        origin,
+        inv,
+    }
+    .cell(pos)
 }
 
 /// A [`GainTableMap`] prepared for evaluating many pixels.
@@ -331,26 +400,52 @@ mod tests {
     }
 
     fn floats(order: ByteOrder, g: &[f32]) -> Vec<u8> {
-        g.iter().flat_map(|v| if order == ByteOrder::Big { v.to_be_bytes() } else { v.to_le_bytes() }).collect()
+        g.iter()
+            .flat_map(|v| {
+                if order == ByteOrder::Big {
+                    v.to_be_bytes()
+                } else {
+                    v.to_le_bytes()
+                }
+            })
+            .collect()
     }
 
     const GREEN: [f32; 5] = [0.0, 1.0, 0.0, 0.0, 0.0];
 
     /// 2 × 2 tables of N = 4 points: table (r, c) = base · [1, 2, 3, 4] with base 1, 2, 3, 4.
     fn grid() -> Vec<f32> {
-        (0..4).flat_map(|t| (1..=4).map(move |i| (t + 1) as f32 * i as f32)).collect()
+        (0..4)
+            .flat_map(|t| (1..=4).map(move |i| (t + 1) as f32 * i as f32))
+            .collect()
     }
 
     #[test]
     fn version_2_storage_types_and_gamma() {
         let order = ByteOrder::Little;
         let v2 = |dt: u32, gamma: f32, data: &[u8]| {
-            GainTableMap::parse(&tag(order, [1, 1, 4], [1.0, 1.0], [0.0, 0.0], GREEN, Some((dt, gamma, 0.5, 2.5)), data), order, true)
+            GainTableMap::parse(
+                &tag(
+                    order,
+                    [1, 1, 4],
+                    [1.0, 1.0],
+                    [0.0, 0.0],
+                    GREEN,
+                    Some((dt, gamma, 0.5, 2.5)),
+                    data,
+                ),
+                order,
+                true,
+            )
         };
         // u8: 0 → GainMin, 255 → GainMax
         let m = v2(0, 1.0, &[0, 51, 255, 255]).unwrap();
         let want = [0.5, 0.9, 2.5, 2.5];
-        assert!(m.gains.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-6), "{:?}", m.gains);
+        assert!(
+            m.gains.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-6),
+            "{:?}",
+            m.gains
+        );
         // u16
         let m = v2(1, 1.0, &[0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff]).unwrap();
         assert_eq!(m.gains, vec![0.5, 2.5, 0.5, 2.5]);
@@ -366,18 +461,37 @@ mod tests {
         assert!(v2(0, 5.0, &[0; 4]).is_none());
         assert!(v2(1, 1.0, &[0; 4]).is_none());
         // negative integer range
-        let neg = tag(order, [1, 1, 4], [1.0, 1.0], [0.0, 0.0], GREEN, Some((0, 1.0, -1.0, 1.0)), &[0; 4]);
+        let neg = tag(
+            order,
+            [1, 1, 4],
+            [1.0, 1.0],
+            [0.0, 0.0],
+            GREEN,
+            Some((0, 1.0, -1.0, 1.0)),
+            &[0; 4],
+        );
         assert!(GainTableMap::parse(&neg, order, true).is_none());
     }
 
     #[test]
     fn malformed_tags_are_rejected() {
         let order = ByteOrder::Big;
-        let good = tag(order, [2, 2, 4], [0.5, 0.5], [0.25, 0.25], GREEN, None, &floats(order, &grid()));
+        let good = tag(
+            order,
+            [2, 2, 4],
+            [0.5, 0.5],
+            [0.25, 0.25],
+            GREEN,
+            None,
+            &floats(order, &grid()),
+        );
         assert!(GainTableMap::parse(&good, order, false).is_some());
         // every truncation (and an extra byte)
         for n in 0..good.len() {
-            assert!(GainTableMap::parse(&good[..n], order, false).is_none(), "{n} bytes");
+            assert!(
+                GainTableMap::parse(&good[..n], order, false).is_none(),
+                "{n} bytes"
+            );
         }
         let mut long = good.clone();
         long.push(0);
@@ -387,29 +501,88 @@ mod tests {
         // read as version 2 the header is too short for the data
         assert!(GainTableMap::parse(&good, order, true).is_none());
         let bad = |dims: [u32; 3], spacing: [f64; 2], origin: [f64; 2], gains: &[f32]| {
-            GainTableMap::parse(&tag(order, dims, spacing, origin, GREEN, None, &floats(order, gains)), order, false)
+            GainTableMap::parse(
+                &tag(
+                    order,
+                    dims,
+                    spacing,
+                    origin,
+                    GREEN,
+                    None,
+                    &floats(order, gains),
+                ),
+                order,
+                false,
+            )
         };
         let mut g = grid();
         g[5] = f32::NAN;
-        assert!(bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(), "NaN gain");
+        assert!(
+            bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(),
+            "NaN gain"
+        );
         g[5] = -1.0;
-        assert!(bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(), "negative gain");
+        assert!(
+            bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(),
+            "negative gain"
+        );
         g[5] = f32::INFINITY;
-        assert!(bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(), "infinite gain");
-        assert!(bad([2, 2, 4], [0.0, 0.5], [0.0, 0.0], &grid()).is_none(), "zero spacing");
-        assert!(bad([2, 2, 4], [0.5, f64::NAN], [0.0, 0.0], &grid()).is_none(), "NaN spacing");
-        assert!(bad([2, 2, 4], [0.5, 0.5], [f64::INFINITY, 0.0], &grid()).is_none(), "infinite origin");
-        assert!(bad([0, 2, 4], [0.5, 0.5], [0.0, 0.0], &[]).is_none(), "no rows");
-        assert!(bad([1, 1, 0], [0.5, 0.5], [0.0, 0.0], &[]).is_none(), "no points");
+        assert!(
+            bad([2, 2, 4], [0.5, 0.5], [0.0, 0.0], &g).is_none(),
+            "infinite gain"
+        );
+        assert!(
+            bad([2, 2, 4], [0.0, 0.5], [0.0, 0.0], &grid()).is_none(),
+            "zero spacing"
+        );
+        assert!(
+            bad([2, 2, 4], [0.5, f64::NAN], [0.0, 0.0], &grid()).is_none(),
+            "NaN spacing"
+        );
+        assert!(
+            bad([2, 2, 4], [0.5, 0.5], [f64::INFINITY, 0.0], &grid()).is_none(),
+            "infinite origin"
+        );
+        assert!(
+            bad([0, 2, 4], [0.5, 0.5], [0.0, 0.0], &[]).is_none(),
+            "no rows"
+        );
+        assert!(
+            bad([1, 1, 0], [0.5, 0.5], [0.0, 0.0], &[]).is_none(),
+            "no points"
+        );
         // huge dimensions (whose product overflows or exceeds the cap) are rejected before allocating
-        assert!(bad([u32::MAX, u32::MAX, u32::MAX], [0.5, 0.5], [0.0, 0.0], &grid()).is_none());
+        assert!(
+            bad(
+                [u32::MAX, u32::MAX, u32::MAX],
+                [0.5, 0.5],
+                [0.0, 0.0],
+                &grid()
+            )
+            .is_none()
+        );
         assert!(bad([4096, 4096, 1], [0.5, 0.5], [0.0, 0.0], &grid()).is_none());
         assert!(bad([1, 1, u32::MAX], [0.5, 0.5], [0.0, 0.0], &grid()).is_none());
         // a single table needs no spacing
         assert!(bad([1, 1, 2], [0.0, 0.0], [0.0, 0.0], &[1.0, 2.0]).is_some());
         let mut w = GREEN;
         w[3] = f32::NAN;
-        assert!(GainTableMap::parse(&tag(order, [1, 1, 1], [1.0, 1.0], [0.0, 0.0], w, None, &floats(order, &[1.0])), order, false).is_none());
+        assert!(
+            GainTableMap::parse(
+                &tag(
+                    order,
+                    [1, 1, 1],
+                    [1.0, 1.0],
+                    [0.0, 0.0],
+                    w,
+                    None,
+                    &floats(order, &[1.0])
+                ),
+                order,
+                false
+            )
+            .is_none()
+        );
     }
 
     /// The payload is read in the file's byte order, else big-endian; a little-endian payload in
@@ -417,34 +590,87 @@ mod tests {
     #[test]
     fn byte_order_is_the_files_with_a_big_endian_fallback() {
         use ByteOrder::{Big, Little};
-        let v1 = |o: ByteOrder| tag(o, [2, 2, 4], [0.5, 0.5], [0.25, 0.25], GREEN, None, &floats(o, &grid()));
+        let v1 = |o: ByteOrder| {
+            tag(
+                o,
+                [2, 2, 4],
+                [0.5, 0.5],
+                [0.25, 0.25],
+                GREEN,
+                None,
+                &floats(o, &grid()),
+            )
+        };
         let v2 = |o: ByteOrder| {
             let mut gains = Vec::new();
             for q in [0u16, 0x1234, 0xffff, 0x8000] {
-                gains.extend_from_slice(&if o == Big { q.to_be_bytes() } else { q.to_le_bytes() });
+                gains.extend_from_slice(&if o == Big {
+                    q.to_be_bytes()
+                } else {
+                    q.to_le_bytes()
+                });
             }
-            tag(o, [1, 1, 4], [1.0, 1.0], [0.0, 0.0], GREEN, Some((1, 2.0, 0.5, 2.5)), &gains)
+            tag(
+                o,
+                [1, 1, 4],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                GREEN,
+                Some((1, 2.0, 0.5, 2.5)),
+                &gains,
+            )
         };
-        let (want1, want2) = (GainTableMap::parse_in(&v1(Big), Big, false).unwrap(), GainTableMap::parse_in(&v2(Big), Big, true).unwrap());
+        let (want1, want2) = (
+            GainTableMap::parse_in(&v1(Big), Big, false).unwrap(),
+            GainTableMap::parse_in(&v2(Big), Big, true).unwrap(),
+        );
         assert_eq!(want1.gains, grid());
-        assert_eq!((want2.gains[0], want2.gains[2], want2.gamma), (0.5, 2.5, 2.0));
+        assert_eq!(
+            (want2.gains[0], want2.gains[2], want2.gamma),
+            (0.5, 2.5, 2.0)
+        );
         // in the file's order
-        assert_eq!(GainTableMap::parse(&v1(Little), Little, false).as_ref(), Some(&want1));
-        assert_eq!(GainTableMap::parse(&v2(Little), Little, true).as_ref(), Some(&want2));
-        assert_eq!(GainTableMap::parse(&v1(Big), Big, false).as_ref(), Some(&want1));
+        assert_eq!(
+            GainTableMap::parse(&v1(Little), Little, false).as_ref(),
+            Some(&want1)
+        );
+        assert_eq!(
+            GainTableMap::parse(&v2(Little), Little, true).as_ref(),
+            Some(&want2)
+        );
+        assert_eq!(
+            GainTableMap::parse(&v1(Big), Big, false).as_ref(),
+            Some(&want1)
+        );
         // a big-endian payload in a little-endian file: the fallback
-        assert_eq!(GainTableMap::parse(&v1(Big), Little, false).as_ref(), Some(&want1));
-        assert_eq!(GainTableMap::parse(&v2(Big), Little, true).as_ref(), Some(&want2));
+        assert_eq!(
+            GainTableMap::parse(&v1(Big), Little, false).as_ref(),
+            Some(&want1)
+        );
+        assert_eq!(
+            GainTableMap::parse(&v2(Big), Little, true).as_ref(),
+            Some(&want2)
+        );
         // no little-endian fallback in a big-endian file
         assert!(GainTableMap::parse(&v1(Little), Big, false).is_none());
         assert!(GainTableMap::parse(&v2(Little), Big, true).is_none());
         // whatever the grid, a read in the wrong order fails the size checks
-        for dims in [[1, 1, 1], [6, 8, 257], [48, 64, 2], [255, 16, 1], [256, 16, 1], [1, 4096, 1]] {
+        for dims in [
+            [1, 1, 1],
+            [6, 8, 257],
+            [48, 64, 2],
+            [255, 16, 1],
+            [256, 16, 1],
+            [1, 4096, 1],
+        ] {
             for (o, wrong) in [(Big, Little), (Little, Big)] {
                 let g = vec![1.0; dims.iter().product::<u32>() as usize];
                 let b = tag(o, dims, [0.5, 0.5], [0.0, 0.0], GREEN, None, &floats(o, &g));
                 assert!(GainTableMap::parse_in(&b, o, false).is_some(), "{dims:?}");
-                assert!(GainTableMap::parse_in(&b, wrong, false).is_none(), "{dims:?} read {wrong:?}");
+                assert!(
+                    GainTableMap::parse_in(&b, wrong, false).is_none(),
+                    "{dims:?} read {wrong:?}"
+                );
             }
         }
     }
@@ -452,8 +678,20 @@ mod tests {
     #[test]
     fn writes_what_it_reads() {
         for order in [ByteOrder::Big, ByteOrder::Little] {
-            let m =
-                GainTableMap::parse(&tag(order, [2, 2, 4], [0.5, 0.5], [0.25, 0.25], GREEN, None, &floats(order, &grid())), order, false).unwrap();
+            let m = GainTableMap::parse(
+                &tag(
+                    order,
+                    [2, 2, 4],
+                    [0.5, 0.5],
+                    [0.25, 0.25],
+                    GREEN,
+                    None,
+                    &floats(order, &grid()),
+                ),
+                order,
+                false,
+            )
+            .unwrap();
             let (v2, b) = m.to_bytes(order);
             assert!(!v2);
             assert_eq!(GainTableMap::parse(&b, order, false).unwrap(), m);
@@ -464,11 +702,28 @@ mod tests {
         }
     }
 
-    fn map(dims: [usize; 3], spacing: [f64; 2], origin: [f64; 2], weights: [f32; 5], gains: Vec<f32>) -> GainTableMap {
+    fn map(
+        dims: [usize; 3],
+        spacing: [f64; 2],
+        origin: [f64; 2],
+        weights: [f32; 5],
+        gains: Vec<f32>,
+    ) -> GainTableMap {
         let [points_v, points_h, points_n] = dims;
         let [spacing_v, spacing_h] = spacing;
         let [origin_v, origin_h] = origin;
-        GainTableMap { points_v, points_h, points_n, spacing_v, spacing_h, origin_v, origin_h, weights, gamma: 1.0, gains }
+        GainTableMap {
+            points_v,
+            points_h,
+            points_n,
+            spacing_v,
+            spacing_h,
+            origin_v,
+            origin_h,
+            weights,
+            gamma: 1.0,
+            gains,
+        }
     }
 
     const LUMA: [f32; 5] = [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 0.0, 0.0];
@@ -478,11 +733,26 @@ mod tests {
         // one table of 3 points: index = input × 3 (DNG 1.7.1), clamped to the last point
         let m = map([1, 1, 3], [1.0, 1.0], [0.0, 0.0], LUMA, vec![1.0, 2.0, 3.0]);
         assert_eq!(m.gain([0.0; 3], 0.5, 0.5), 1.0);
-        assert!((m.gain([1.0 / 3.0; 3], 0.5, 0.5) - 2.0).abs() < 1e-5, "index 1");
-        assert!((m.gain([1.0 / 6.0; 3], 0.5, 0.5) - 1.5).abs() < 1e-5, "index 0.5: linear in the table");
-        assert!((m.gain([0.9; 3], 0.5, 0.5) - 3.0).abs() < 1e-5, "index 2.7 clamps to the last point");
+        assert!(
+            (m.gain([1.0 / 3.0; 3], 0.5, 0.5) - 2.0).abs() < 1e-5,
+            "index 1"
+        );
+        assert!(
+            (m.gain([1.0 / 6.0; 3], 0.5, 0.5) - 1.5).abs() < 1e-5,
+            "index 0.5: linear in the table"
+        );
+        assert!(
+            (m.gain([0.9; 3], 0.5, 0.5) - 3.0).abs() < 1e-5,
+            "index 2.7 clamps to the last point"
+        );
         // min/max weights and gamma: input = max(R, G, B)², two points
-        let mut m = map([1, 1, 2], [1.0, 1.0], [0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 1.0], vec![1.0, 3.0]);
+        let mut m = map(
+            [1, 1, 2],
+            [1.0, 1.0],
+            [0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0],
+            vec![1.0, 3.0],
+        );
         m.gamma = 2.0;
         // max 0.5 → 0.25 → index 0.5 → ×2
         assert!((m.gain([0.1, 0.5, 0.2], 0.0, 0.0) - 2.0).abs() < 1e-5);
@@ -493,7 +763,11 @@ mod tests {
         // 1 × 2 constant tables at x = 0.25 (×1) and x = 0.75 (×3)
         let m = map([1, 2, 1], [1.0, 0.5], [0.0, 0.25], LUMA, vec![1.0, 3.0]);
         let g = |x: f64| m.gain([0.2; 3], x, 0.5);
-        assert!((g(0.25) - 1.0).abs() < 1e-5 && (g(0.5) - 2.0).abs() < 1e-5 && (g(0.75) - 3.0).abs() < 1e-5);
+        assert!(
+            (g(0.25) - 1.0).abs() < 1e-5
+                && (g(0.5) - 2.0).abs() < 1e-5
+                && (g(0.75) - 3.0).abs() < 1e-5
+        );
         assert!((g(0.0) - 1.0).abs() < 1e-5 && (g(1.0) - 3.0).abs() < 1e-5);
         assert!((g(-10.0) - 1.0).abs() < 1e-5 && (g(10.0) - 3.0).abs() < 1e-5);
         // vertically too: 2 × 1 at y = 0 (×1) and y = 1 (×2)
@@ -505,8 +779,18 @@ mod tests {
     fn hand_built_maps_never_panic() {
         // review on #273: `(i0 + 1).min(points - 1)` overflowed for points_v = usize::MAX at +inf
         let mut m = map([usize::MAX, 1, 1], [1.0, 1.0], [0.0, 0.0], LUMA, vec![2.0]);
-        assert_eq!(m.gain([0.5; 3], 0.5, f64::INFINITY), 1.0, "inconsistent sizes: no gain");
-        for (v, h, n, len) in [(usize::MAX, 1, 1, 1), (1, usize::MAX, usize::MAX, 3), (0, 0, 0, 0), (2, 2, 0, 0), (1, 1, 2, 1)] {
+        assert_eq!(
+            m.gain([0.5; 3], 0.5, f64::INFINITY),
+            1.0,
+            "inconsistent sizes: no gain"
+        );
+        for (v, h, n, len) in [
+            (usize::MAX, 1, 1, 1),
+            (1, usize::MAX, usize::MAX, 3),
+            (0, 0, 0, 0),
+            (2, 2, 0, 0),
+            (1, 1, 2, 1),
+        ] {
             m.points_v = v;
             m.points_h = h;
             m.points_n = n;
@@ -514,32 +798,59 @@ mod tests {
             for spacing in [0.0, -1.0, f64::NAN, f64::INFINITY, 1e-300] {
                 m.spacing_v = spacing;
                 m.spacing_h = spacing;
-                for p in [[0.5; 3], [f32::NAN; 3], [f32::INFINITY, 0.0, -1.0], [1e30; 3]] {
-                    for (x, y) in [(0.5, 0.5), (f64::INFINITY, f64::NEG_INFINITY), (f64::NAN, f64::NAN)] {
+                for p in [
+                    [0.5; 3],
+                    [f32::NAN; 3],
+                    [f32::INFINITY, 0.0, -1.0],
+                    [1e30; 3],
+                ] {
+                    for (x, y) in [
+                        (0.5, 0.5),
+                        (f64::INFINITY, f64::NEG_INFINITY),
+                        (f64::NAN, f64::NAN),
+                    ] {
                         assert!(m.gain(p, x, y).is_finite());
                     }
                 }
             }
         }
         // the grid cell itself saturates (the reviewer's case, reached directly)
-        assert_eq!(cell(f64::INFINITY, 0.0, 1.0, usize::MAX), (usize::MAX - 1, usize::MAX - 1, 0.0));
+        assert_eq!(
+            cell(f64::INFINITY, 0.0, 1.0, usize::MAX),
+            (usize::MAX - 1, usize::MAX - 1, 0.0)
+        );
         assert_eq!(cell(f64::NEG_INFINITY, 0.0, 1.0, usize::MAX).0, 0);
         // a consistent map with a huge grid and positions far outside it
-        let m = map([1, 1, 2], [1e-300, 1e-300], [0.0, 0.0], [f32::MAX; 5], vec![1.0, 4.0]);
+        let m = map(
+            [1, 1, 2],
+            [1e-300, 1e-300],
+            [0.0, 0.0],
+            [f32::MAX; 5],
+            vec![1.0, 4.0],
+        );
         assert!(m.gain([1e30; 3], f64::INFINITY, -f64::INFINITY).is_finite());
     }
 
     #[test]
     fn placement_undoes_crop_and_orientation() {
         // the source is the right half of the active area, rotated 90° clockwise
-        let p = SourcePlacement { rect: [0.5, 0.0, 0.5, 1.0], orientation: lightcraft_geom::Orientation::Rotate90 };
+        let p = SourcePlacement {
+            rect: [0.5, 0.0, 0.5, 1.0],
+            orientation: lightcraft_geom::Orientation::Rotate90,
+        };
         // the oriented source's top-left came from the crop's bottom-left
         let (x, y) = p.active(0.0, 0.0);
-        assert!((x - 0.5).abs() < 1e-12 && (y - 1.0).abs() < 1e-12, "{x} {y}");
+        assert!(
+            (x - 0.5).abs() < 1e-12 && (y - 1.0).abs() < 1e-12,
+            "{x} {y}"
+        );
         // its top-right came from the crop's top-left
         let (x, y) = p.active(1.0, 0.0);
         assert!((x - 0.5).abs() < 1e-12 && y.abs() < 1e-12, "{x} {y}");
-        let plain = SourcePlacement { rect: [0.0, 0.0, 1.0, 1.0], orientation: lightcraft_geom::Orientation::Normal };
+        let plain = SourcePlacement {
+            rect: [0.0, 0.0, 1.0, 1.0],
+            orientation: lightcraft_geom::Orientation::Normal,
+        };
         assert_eq!(plain.active(0.25, 0.75), (0.25, 0.75));
     }
 }
@@ -551,9 +862,15 @@ mod bench {
     #[test]
     #[ignore]
     fn gain_throughput() {
-        let Some(path) = std::env::var_os("GTM_FILE") else { return };
+        let Some(path) = std::env::var_os("GTM_FILE") else {
+            return;
+        };
         let raw = crate::decode(&std::fs::read(path).unwrap()).unwrap();
-        let m = raw.color.profile.gain_table_map.expect("the file has no gain table map");
+        let m = raw
+            .color
+            .profile
+            .gain_table_map
+            .expect("the file has no gain table map");
         let e = m.evaluator().unwrap();
         let n = 3_000_000usize;
         let t = std::time::Instant::now();
@@ -563,6 +880,12 @@ mod bench {
             let v = ((i * 7919) % 1000) as f32 / 1000.0 * 0.5;
             acc += e.gain([v, v * 0.9, v * 0.8], x, y);
         }
-        println!("{}×{}×{} map: {:.1} ns/px ({acc})", m.points_v, m.points_h, m.points_n, t.elapsed().as_secs_f64() * 1e9 / n as f64);
+        println!(
+            "{}×{}×{} map: {:.1} ns/px ({acc})",
+            m.points_v,
+            m.points_h,
+            m.points_n,
+            t.elapsed().as_secs_f64() * 1e9 / n as f64
+        );
     }
 }

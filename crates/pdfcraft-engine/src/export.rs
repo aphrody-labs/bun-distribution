@@ -33,21 +33,42 @@ impl Document {
             bytes: self.display.clone(),
             config: self.config.clone(),
             pages: self.info.pages.len(),
-            sizes: self.info.pages.iter().map(|p| (p.width, p.height)).collect(),
+            sizes: self
+                .info
+                .pages
+                .iter()
+                .map(|p| (p.width, p.height))
+                .collect(),
         }
     }
 }
 
 /// Export all images: the images `pages` (0-based) use, each once, skipping those under
 /// `min_side` pixels on their shorter side. JPEGs come out unchanged, other images as PNG.
-pub fn extract_images(src: &ExportSource, pages: &[usize], min_side: u32) -> Result<pdfcraft_create::ImageExport, String> {
-    let doc = pdfcraft_cos::Document::open_with_password(src.bytes.clone(), src.config.password.as_deref()).map_err(|e| e.to_string())?;
+pub fn extract_images(
+    src: &ExportSource,
+    pages: &[usize],
+    min_side: u32,
+) -> Result<pdfcraft_create::ImageExport, String> {
+    let doc = pdfcraft_cos::Document::open_with_password(
+        src.bytes.clone(),
+        src.config.password.as_deref(),
+    )
+    .map_err(|e| e.to_string())?;
     Ok(pdfcraft_create::extract_images(&doc, pages, min_side))
 }
 
 /// The file name for the `index`-th (1-based) exported image: `<stem>_Page_<n>_Image_<index>.<ext>`.
-pub fn image_file_name(stem: &str, image: &pdfcraft_create::ExtractedImage, index: usize) -> String {
-    format!("{stem}_Page_{}_Image_{index:04}.{}", image.page + 1, image.extension)
+pub fn image_file_name(
+    stem: &str,
+    image: &pdfcraft_create::ExtractedImage,
+    index: usize,
+) -> String {
+    format!(
+        "{stem}_Page_{}_Image_{index:04}.{}",
+        image.page + 1,
+        image.extension
+    )
 }
 
 impl Exporter {
@@ -59,7 +80,11 @@ impl Exporter {
     /// resolution they allow, as the interactive Export does; [`Exporter::dpi_used`] says at what.
     /// A source whose `config.reject_oversize` is set refuses such pages instead.
     pub fn from_source(src: ExportSource) -> Self {
-        Self { renderer: PageRenderer::new(src.bytes, src.config), pages: src.pages, sizes: src.sizes }
+        Self {
+            renderer: PageRenderer::new(src.bytes, src.config),
+            pages: src.pages,
+            sizes: src.sizes,
+        }
     }
 
     /// The resolution page `page` is actually exported at when asked for `dpi`: lower than asked
@@ -67,20 +92,30 @@ impl Exporter {
     pub fn dpi_used(&self, page: usize, dpi: f64) -> f64 {
         let dpi = dpi.clamp(18.0, 1200.0);
         match self.sizes.get(page) {
-            Some(&(w, h)) => f64::from(pdfcraft_render::effective_scale(w, h, (dpi / 72.0) as f32)) * 72.0,
+            Some(&(w, h)) => {
+                f64::from(pdfcraft_render::effective_scale(w, h, (dpi / 72.0) as f32)) * 72.0
+            }
             None => dpi,
         }
     }
 
     fn check(&self, page: usize) -> Result<(), String> {
-        if page < self.pages { Ok(()) } else { Err(format!("page {} does not exist", page + 1)) }
+        if page < self.pages {
+            Ok(())
+        } else {
+            Err(format!("page {} does not exist", page + 1))
+        }
     }
 
     /// Page `page` (0-based) as a PNG at `dpi`, at most the renderer's size limits allow (see
     /// [`Exporter::dpi_used`]); refused instead when the source asked for `reject_oversize`.
     pub fn png(&mut self, page: usize, dpi: f64) -> Result<Vec<u8>, String> {
         self.check(page)?;
-        let r = self.renderer.render(RenderRequest { page, scale: (dpi.clamp(18.0, 1200.0) / 72.0) as f32, ..Default::default() });
+        let r = self.renderer.render(RenderRequest {
+            page,
+            scale: (dpi.clamp(18.0, 1200.0) / 72.0) as f32,
+            ..Default::default()
+        });
         if let Some(e) = r.error {
             return Err(format!("page {}: {e}", page + 1));
         }
@@ -90,7 +125,11 @@ impl Exporter {
     /// Page `page` as an image file of `format`.
     pub fn image(&mut self, page: usize, dpi: f64, format: ImageFormat) -> Result<Vec<u8>, String> {
         self.check(page)?;
-        let r = self.renderer.render(RenderRequest { page, scale: (dpi.clamp(18.0, 1200.0) / 72.0) as f32, ..Default::default() });
+        let r = self.renderer.render(RenderRequest {
+            page,
+            scale: (dpi.clamp(18.0, 1200.0) / 72.0) as f32,
+            ..Default::default()
+        });
         if let Some(e) = r.error {
             return Err(format!("page {}: {e}", page + 1));
         }
@@ -100,10 +139,19 @@ impl Exporter {
     /// The reading-order text of a page.
     pub fn text(&mut self, page: usize) -> Result<String, String> {
         self.check(page)?;
-        let r = self.renderer.render(RenderRequest { page, kind: RequestKind::Text, scale: 1.0, ..Default::default() });
+        let r = self.renderer.render(RenderRequest {
+            page,
+            kind: RequestKind::Text,
+            scale: 1.0,
+            ..Default::default()
+        });
         match r.text {
             Some(t) => Ok(t.plain_text()),
-            None => Err(format!("page {}: {}", page + 1, r.error.unwrap_or_else(|| "no text layer".into()))),
+            None => Err(format!(
+                "page {}: {}",
+                page + 1,
+                r.error.unwrap_or_else(|| "no text layer".into())
+            )),
         }
     }
 
@@ -122,7 +170,12 @@ impl Exporter {
 }
 
 /// Premultiplied RGBA → an image file of `format`.
-pub fn encode_image(width: u32, height: u32, premultiplied: &[u8], format: ImageFormat) -> Result<Vec<u8>, String> {
+pub fn encode_image(
+    width: u32,
+    height: u32,
+    premultiplied: &[u8],
+    format: ImageFormat,
+) -> Result<Vec<u8>, String> {
     match format {
         ImageFormat::Png => encode_png(width, height, premultiplied),
         ImageFormat::Jpeg { quality } => encode_jpeg(width, height, premultiplied, quality),
@@ -188,13 +241,22 @@ fn over_white(premultiplied: &[u8]) -> Vec<u8> {
         .iter()
         .flat_map(|p| {
             let k = 255 - p[3];
-            [p[0].saturating_add(k), p[1].saturating_add(k), p[2].saturating_add(k)]
+            [
+                p[0].saturating_add(k),
+                p[1].saturating_add(k),
+                p[2].saturating_add(k),
+            ]
         })
         .collect()
 }
 
 /// Premultiplied RGBA → baseline JPEG (pages are opaque: transparency becomes white paper).
-pub fn encode_jpeg(width: u32, height: u32, premultiplied: &[u8], quality: u8) -> Result<Vec<u8>, String> {
+pub fn encode_jpeg(
+    width: u32,
+    height: u32,
+    premultiplied: &[u8],
+    quality: u8,
+) -> Result<Vec<u8>, String> {
     use image::ImageEncoder;
     let rgb = over_white(premultiplied);
     let mut out = Vec::new();
@@ -209,6 +271,8 @@ pub fn encode_tiff(width: u32, height: u32, premultiplied: &[u8]) -> Result<Vec<
     use image::ImageEncoder;
     let rgb = over_white(premultiplied);
     let mut out = std::io::Cursor::new(Vec::new());
-    image::codecs::tiff::TiffEncoder::new(&mut out).write_image(&rgb, width, height, image::ExtendedColorType::Rgb8).map_err(|e| e.to_string())?;
+    image::codecs::tiff::TiffEncoder::new(&mut out)
+        .write_image(&rgb, width, height, image::ExtendedColorType::Rgb8)
+        .map_err(|e| e.to_string())?;
     Ok(out.into_inner())
 }

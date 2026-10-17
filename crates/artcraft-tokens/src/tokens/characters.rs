@@ -14,4 +14,9 @@ pub struct CharacterToken(pub String);
 
 impl_string_token!(CharacterToken);
 impl_mysql_token_from_row!(CharacterToken);
-impl_crockford_generator!(CharacterToken, 32usize, TokenPrefix::Character, CrockfordLower);
+impl_crockford_generator!(
+    CharacterToken,
+    32usize,
+    TokenPrefix::Character,
+    CrockfordLower
+);

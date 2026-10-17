@@ -6,14 +6,18 @@ use lightcraft_codecs::*;
 use std::path::{Path, PathBuf};
 
 fn corpus_root() -> PathBuf {
-    std::env::var_os("LIGHTCRAFT_CORPUS").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
+    std::env::var_os("LIGHTCRAFT_CORPUS")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus"))
 }
 
 fn files(dir: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
-        let Ok(rd) = std::fs::read_dir(&d) else { continue };
+        let Ok(rd) = std::fs::read_dir(&d) else {
+            continue;
+        };
         for e in rd.flatten() {
             let p = e.path();
             if p.is_dir() {
@@ -36,17 +40,28 @@ fn corpus_images_decode() {
     }
     let (mut ok, mut unsupported) = (0, 0);
     for p in files(&dir) {
-        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let Ok(bytes) = std::fs::read(&p) else {
+            continue;
+        };
         let Some(f) = sniff(&bytes) else { continue };
         if !f.can_decode() {
             unsupported += 1;
             assert!(decode(&bytes, DecodeOptions::default()).is_err());
             continue;
         }
-        let d = decode(&bytes, DecodeOptions::default()).unwrap_or_else(|e| panic!("{}: {e}", p.display()));
+        let d = decode(&bytes, DecodeOptions::default())
+            .unwrap_or_else(|e| panic!("{}: {e}", p.display()));
         assert!(d.width > 0 && d.height > 0);
-        assert!(d.image.data.iter().all(|px| px.iter().all(|v| v.is_finite())), "{}: non-finite", p.display());
-        let t = decode_thumbnail(&bytes, 256).unwrap_or_else(|e| panic!("{} thumb: {e}", p.display()));
+        assert!(
+            d.image
+                .data
+                .iter()
+                .all(|px| px.iter().all(|v| v.is_finite())),
+            "{}: non-finite",
+            p.display()
+        );
+        let t =
+            decode_thumbnail(&bytes, 256).unwrap_or_else(|e| panic!("{} thumb: {e}", p.display()));
         assert!(t.image.width <= 256 && t.image.height <= 256);
         ok += 1;
     }
@@ -87,13 +102,23 @@ fn corpus_raw_is_routed() {
         return;
     }
     for p in files(&dir) {
-        let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+        let ext = p
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
         if matches!(ext.as_str(), "txt" | "md" | "xmp" | "json") {
             continue;
         }
-        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let Ok(bytes) = std::fs::read(&p) else {
+            continue;
+        };
         let f = sniff(&bytes);
-        assert!(f.is_some_and(|f| f.is_raw()), "{}: sniffed {f:?}", p.display());
+        assert!(
+            f.is_some_and(|f| f.is_raw()),
+            "{}: sniffed {f:?}",
+            p.display()
+        );
     }
 }
 
@@ -114,7 +139,9 @@ fn system_icc_profiles() {
         ("ITU-2020.icc", Some(NamedSpace::Rec2020)),
     ];
     for (name, named) in expect {
-        let Ok(b) = std::fs::read(dir.join(name)) else { continue };
+        let Ok(b) = std::fs::read(dir.join(name)) else {
+            continue;
+        };
         let info = parse(&b).unwrap_or_else(|| panic!("{name}"));
         assert_eq!(info.named, named, "{name}");
         assert!(matches!(info.kind, IccKind::MatrixTrc { .. }), "{name}");
@@ -129,7 +156,9 @@ fn system_icc_profiles() {
         {
             let mut enc = TiffEncoder::new(&mut cur).unwrap();
             let mut im = enc.new_image::<colortype::CMYK8>(2, 1).unwrap();
-            im.encoder().write_tag(tiff::tags::Tag::IccProfile, &b[..]).unwrap();
+            im.encoder()
+                .write_tag(tiff::tags::Tag::IccProfile, &b[..])
+                .unwrap();
             im.write_data(&[0u8, 0, 0, 0, 0, 0, 0, 255]).unwrap();
         }
         let d = decode(&cur.into_inner(), DecodeOptions::default()).unwrap();

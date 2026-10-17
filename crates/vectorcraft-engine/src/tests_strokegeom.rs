@@ -8,25 +8,56 @@ use super::*;
 
 fn session_with_line() -> (Session, NodeId) {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
-    let r = s.execute("shape.line", &json!({"x1": 10, "y1": 100, "x2": 150, "y2": 100})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 200}))
+        .unwrap();
+    let r = s
+        .execute(
+            "shape.line",
+            &json!({"x1": 10, "y1": 100, "x2": 150, "y2": 100}),
+        )
+        .unwrap();
     (s, NodeId(r["id"].as_u64().unwrap()))
 }
 
 fn stroke(s: &Session, id: NodeId) -> StrokeLayer {
-    s.doc().unwrap().doc.node(id).unwrap().appearance.stroke().unwrap().clone()
+    s.doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .appearance
+        .stroke()
+        .unwrap()
+        .clone()
 }
 
 #[test]
 fn arrow_align_is_set_per_stroke_and_validated() {
     let (mut s, id) = session_with_line();
     assert_eq!(stroke(&s, id).arrow_align, ArrowAlign::Extend);
-    s.execute("stroke.set", &json!({"endArrow": "TriangleOpen", "arrowAlign": "tip"})).unwrap();
+    s.execute(
+        "stroke.set",
+        &json!({"endArrow": "TriangleOpen", "arrowAlign": "tip"}),
+    )
+    .unwrap();
     let st = stroke(&s, id);
-    assert_eq!((st.end_arrow, st.arrow_align), (Some(vectorcraft_doc::Arrowhead::TriangleOpen), ArrowAlign::Tip));
-    s.execute("stroke.set", &json!({"arrowAlign": "extend", "ids": [id.0]})).unwrap();
+    assert_eq!(
+        (st.end_arrow, st.arrow_align),
+        (
+            Some(vectorcraft_doc::Arrowhead::TriangleOpen),
+            ArrowAlign::Tip
+        )
+    );
+    s.execute(
+        "stroke.set",
+        &json!({"arrowAlign": "extend", "ids": [id.0]}),
+    )
+    .unwrap();
     assert_eq!(stroke(&s, id).arrow_align, ArrowAlign::Extend);
-    assert!(s.execute("stroke.set", &json!({"arrowAlign": "middle"})).is_err());
+    assert!(
+        s.execute("stroke.set", &json!({"arrowAlign": "middle"}))
+            .is_err()
+    );
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(stroke(&s, id).arrow_align, ArrowAlign::Tip);
 }
@@ -40,11 +71,21 @@ fn profiles_come_from_the_preset_catalogue() {
         assert_eq!(WidthProfile::id_of(st.profile.as_ref()), p.id);
     }
     assert!(stroke(&s, id).profile.is_some());
-    s.execute("stroke.set", &json!({"profile": "uniform"})).unwrap();
-    assert!(stroke(&s, id).profile.is_none(), "uniform is the plain stroke");
-    assert!(s.execute("stroke.set", &json!({"profile": "zigzag"})).is_err());
+    s.execute("stroke.set", &json!({"profile": "uniform"}))
+        .unwrap();
+    assert!(
+        stroke(&s, id).profile.is_none(),
+        "uniform is the plain stroke"
+    );
+    assert!(
+        s.execute("stroke.set", &json!({"profile": "zigzag"}))
+            .is_err()
+    );
     // The params doc (what agents read) lists every preset and the arrow alignment.
-    let spec = command_specs().iter().find(|c| c.id == "stroke.set").unwrap();
+    let spec = command_specs()
+        .iter()
+        .find(|c| c.id == "stroke.set")
+        .unwrap();
     for p in WidthProfile::PRESETS {
         assert!(spec.params.contains(&format!("\"{}\"", p.id)), "{}", p.id);
     }
@@ -68,9 +109,13 @@ fn arrow_align_and_profiles_survive_the_native_format() {
     .unwrap();
     let doc = &s.doc().unwrap().doc;
     let back = vectorcraft_format::load(&vectorcraft_format::save(doc, false)).unwrap();
-    assert_eq!(back.node(id).unwrap().appearance.stroke().unwrap(), &stroke(&s, id));
+    assert_eq!(
+        back.node(id).unwrap().appearance.stroke().unwrap(),
+        &stroke(&s, id)
+    );
     // A stroke with the default alignment writes nothing new, so older builds read it unchanged.
-    s.execute("stroke.set", &json!({"arrowAlign": "extend"})).unwrap();
+    s.execute("stroke.set", &json!({"arrowAlign": "extend"}))
+        .unwrap();
     let text = String::from_utf8(vectorcraft_format::save(&s.doc().unwrap().doc, true)).unwrap();
     assert!(!text.contains("arrow_align"));
 }

@@ -29,7 +29,15 @@ pub const CONTENTS: [(&str, &str); 9] = [
 ];
 
 /// Params the dialog edits and remembers.
-const KEYS: [&str; 7] = ["contents", "color", "pattern", "colorAdaptation", "mode", "opacity", "preserveTransparency"];
+const KEYS: [&str; 7] = [
+    "contents",
+    "color",
+    "pattern",
+    "colorAdaptation",
+    "mode",
+    "opacity",
+    "preserveTransparency",
+];
 
 /// Is this dialog the Fill dialog?
 pub fn owns(fields: &Map<String, Value>) -> bool {
@@ -44,10 +52,19 @@ fn hex(c: [f32; 4]) -> String {
 /// A remembered value, if it is one the dialog can show (a corrupt preference is ignored).
 fn valid(app: &PhotocraftApp, key: &str, v: &Value) -> bool {
     match key {
-        "contents" => v.as_str().is_some_and(|c| CONTENTS.iter().any(|(k, _)| *k == c)),
+        "contents" => v
+            .as_str()
+            .is_some_and(|c| CONTENTS.iter().any(|(k, _)| *k == c)),
         "mode" | "opacity" | "preserveTransparency" => crate::dialog_blend_ui::valid(key, v),
-        "color" => v.as_str().is_some_and(|h| h.len() == 7 && h.starts_with('#') && h.get(1..).is_some_and(|d| d.chars().all(|c| c.is_ascii_hexdigit()))),
-        "pattern" => v.as_str().is_some_and(|p| app.session.patterns.items.iter().any(|q| q.id == p)),
+        "color" => v.as_str().is_some_and(|h| {
+            h.len() == 7
+                && h.starts_with('#')
+                && h.get(1..)
+                    .is_some_and(|d| d.chars().all(|c| c.is_ascii_hexdigit()))
+        }),
+        "pattern" => v
+            .as_str()
+            .is_some_and(|p| app.session.patterns.items.iter().any(|q| q.id == p)),
         "colorAdaptation" => v.is_boolean(),
         _ => false,
     }
@@ -105,7 +122,10 @@ pub fn open(app: &mut PhotocraftApp) -> u64 {
 
 /// The `edit.fill` params of the dialog's fields: only the options of the chosen contents.
 pub fn params(f: &Map<String, Value>) -> Value {
-    let contents = f.get("contents").and_then(Value::as_str).unwrap_or("foreground");
+    let contents = f
+        .get("contents")
+        .and_then(Value::as_str)
+        .unwrap_or("foreground");
     let mut p = json!({ "contents": contents });
     for k in ["mode", "opacity", "preserveTransparency"] {
         if let Some(v) = f.get(k) {
@@ -128,15 +148,26 @@ pub fn params(f: &Map<String, Value>) -> Value {
 
 /// OK: remember the choices, then fill.
 pub fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value, String> {
-    let remembered: Map<String, Value> = KEYS.iter().filter_map(|k| f.get(*k).map(|v| (k.to_string(), v.clone()))).collect();
-    app.session.prefs.edit(|p| p.dialogs.insert(COMMAND.into(), Value::Object(remembered)));
+    let remembered: Map<String, Value> = KEYS
+        .iter()
+        .filter_map(|k| f.get(*k).map(|v| (k.to_string(), v.clone())))
+        .collect();
+    app.session
+        .prefs
+        .edit(|p| p.dialogs.insert(COMMAND.into(), Value::Object(remembered)));
     app.run(COMMAND, params(f))
 }
 
 fn label(ui: &mut egui::Ui, text: &str) {
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(vec2(112.0, 22.0), Sense::hover());
-    ui.painter().text(pos2(r.right() - 6.0, r.center().y), Align2::RIGHT_CENTER, text, egui::FontId::proportional(12.0), t.text_dim);
+    ui.painter().text(
+        pos2(r.right() - 6.0, r.center().y),
+        Align2::RIGHT_CENTER,
+        text,
+        egui::FontId::proportional(12.0),
+        t.text_dim,
+    );
 }
 
 fn get_str(f: &Map<String, Value>, k: &str, d: &str) -> String {
@@ -144,7 +175,11 @@ fn get_str(f: &Map<String, Value>, k: &str, d: &str) -> String {
 }
 
 fn parse_hex(h: &str) -> [u8; 3] {
-    let d = |i: usize| h.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).unwrap_or(0);
+    let d = |i: usize| {
+        h.get(i..i + 2)
+            .and_then(|x| u8::from_str_radix(x, 16).ok())
+            .unwrap_or(0)
+    };
     [d(1), d(3), d(5)]
 }
 
@@ -169,7 +204,13 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) 
                 label(ui, tl!("Color:"));
                 // Photoshop shows no swatch; this one reopens the Color Picker on the colour.
                 let rgb = parse_hex(&get_str(f, "color", "#000000"));
-                if crate::widgets::color_swatch_button(ui, egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]), tl!("Fill color")).clicked() {
+                if crate::widgets::color_swatch_button(
+                    ui,
+                    egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]),
+                    tl!("Fill color"),
+                )
+                .clicked()
+                {
                     crate::color_picker_ui::request(f, tl!("Color Picker (Fill Color)"));
                 }
             });
@@ -179,21 +220,36 @@ pub fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) 
                 label(ui, tl!("Custom Pattern:"));
                 let pat = get_str(f, "pattern", "");
                 if app.session.patterns.items.is_empty() {
-                    ui.label(egui::RichText::new(tl!("No patterns")).color(Tokens::get(ui.ctx()).text_faint));
+                    ui.label(
+                        egui::RichText::new(tl!("No patterns"))
+                            .color(Tokens::get(ui.ctx()).text_faint),
+                    );
                 } else {
                     // Photoshop shows the pattern itself and opens a grid of swatches.
                     if let Some(id) = crate::preset_panels::pattern_picker(app, ui, &pat) {
                         f.insert("pattern".into(), json!(id));
                     }
-                    let name = app.session.patterns.items.iter().find(|p| p.id == get_str(f, "pattern", "")).map(|p| p.display_name().to_string());
-                    ui.label(egui::RichText::new(name.unwrap_or_default()).color(Tokens::get(ui.ctx()).text_dim));
+                    let name = app
+                        .session
+                        .patterns
+                        .items
+                        .iter()
+                        .find(|p| p.id == get_str(f, "pattern", ""))
+                        .map(|p| p.display_name().to_string());
+                    ui.label(
+                        egui::RichText::new(name.unwrap_or_default())
+                            .color(Tokens::get(ui.ctx()).text_dim),
+                    );
                 }
             });
         }
         "contentAware" => {
             ui.horizontal(|ui| {
                 label(ui, "");
-                let mut on = f.get("colorAdaptation").and_then(Value::as_bool).unwrap_or(true);
+                let mut on = f
+                    .get("colorAdaptation")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(true);
                 if crate::widgets::checkbox(ui, &mut on, "Color Adaptation").changed() {
                     f.insert("colorAdaptation".into(), json!(on));
                 }

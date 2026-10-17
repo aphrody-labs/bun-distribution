@@ -35,10 +35,19 @@ fn native_libctru_command_parity() {
         std::env::temp_dir().join(format!("aphrody-ctr-c-parity-{}", std::process::id()));
     fs::create_dir_all(&temporary).unwrap();
     let c_file = temporary.join("reference.c");
-    let executable = temporary.join(if cfg!(windows) { "reference.exe" } else { "reference" });
+    let executable = temporary.join(if cfg!(windows) {
+        "reference.exe"
+    } else {
+        "reference"
+    });
     fs::write(&c_file, harness).unwrap();
-    let compiler = std::env::var_os("CC")
-        .unwrap_or_else(|| if cfg!(windows) { "clang".into() } else { "cc".into() });
+    let compiler = std::env::var_os("CC").unwrap_or_else(|| {
+        if cfg!(windows) {
+            "clang".into()
+        } else {
+            "cc".into()
+        }
+    });
     let compile = Command::new(compiler)
         .args(["-std=c11", "-Wall", "-Wextra", "-Werror"])
         .arg(&c_file)
@@ -46,7 +55,11 @@ fn native_libctru_command_parity() {
         .arg(&executable)
         .output()
         .unwrap();
-    assert!(compile.status.success(), "{}", String::from_utf8_lossy(&compile.stderr));
+    assert!(
+        compile.status.success(),
+        "{}",
+        String::from_utf8_lossy(&compile.stderr)
+    );
     let reference = Command::new(&executable).output().unwrap();
     assert!(reference.status.success());
     let params: [u32; 1025] = core::array::from_fn(|i| 0xabcdef00 ^ i as u32);

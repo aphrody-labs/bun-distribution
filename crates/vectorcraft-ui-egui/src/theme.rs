@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle,
+    Visuals,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,7 +18,12 @@ pub enum Brightness {
 }
 
 impl Brightness {
-    pub const ALL: [Brightness; 4] = [Brightness::Dark, Brightness::MediumDark, Brightness::MediumLight, Brightness::Light];
+    pub const ALL: [Brightness; 4] = [
+        Brightness::Dark,
+        Brightness::MediumDark,
+        Brightness::MediumLight,
+        Brightness::Light,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Brightness::Dark => "Dark",
@@ -33,7 +41,9 @@ impl Brightness {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|b| b.id().eq_ignore_ascii_case(s) || b.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|b| b.id().eq_ignore_ascii_case(s) || b.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -222,7 +232,8 @@ impl Tokens {
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL)).unwrap_or_else(|| Tokens::for_brightness(Brightness::MediumDark))
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL))
+            .unwrap_or_else(|| Tokens::for_brightness(Brightness::MediumDark))
     }
     pub fn cr(&self) -> CornerRadius {
         CornerRadius::same(self.radius)
@@ -251,24 +262,45 @@ pub fn mono(size: f32) -> FontId {
 pub fn install_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
     let add = |f: &mut FontDefinitions, name: &str, bytes: &'static [u8]| {
-        f.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(bytes)));
+        f.font_data
+            .insert(name.to_owned(), Arc::new(FontData::from_static(bytes)));
     };
-    add(&mut fonts, "SourceSans3", include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf"));
-    add(&mut fonts, "SourceSans3-Semibold", include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Semibold.ttf"));
-    add(&mut fonts, "JetBrainsMono", include_bytes!("../../../assets/vectorcraft/fonts/JetBrainsMono-Regular.ttf"));
-    let fallback: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
+    add(
+        &mut fonts,
+        "SourceSans3",
+        include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf"),
+    );
+    add(
+        &mut fonts,
+        "SourceSans3-Semibold",
+        include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Semibold.ttf"),
+    );
+    add(
+        &mut fonts,
+        "JetBrainsMono",
+        include_bytes!("../../../assets/vectorcraft/fonts/JetBrainsMono-Regular.ttf"),
+    );
+    let fallback: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
     let mut prop = vec!["SourceSans3".to_string()];
     prop.extend(fallback.clone());
     fonts.families.insert(FontFamily::Proportional, prop);
     let mut semi = vec!["SourceSans3-Semibold".to_string()];
     semi.extend(fallback.clone());
-    fonts.families.insert(FontFamily::Name(FONT_UI_SEMIBOLD.into()), semi);
+    fonts
+        .families
+        .insert(FontFamily::Name(FONT_UI_SEMIBOLD.into()), semi);
     let mut ui = vec!["SourceSans3".to_string()];
     ui.extend(fallback.clone());
     fonts.families.insert(FontFamily::Name(FONT_UI.into()), ui);
     let mut mono = vec!["JetBrainsMono".to_string()];
     mono.extend(fallback);
-    fonts.families.insert(FontFamily::Name(FONT_MONO.into()), mono);
+    fonts
+        .families
+        .insert(FontFamily::Name(FONT_MONO.into()), mono);
     add_craft_fonts(&mut fonts);
     ctx.set_fonts(fonts);
 }
@@ -282,12 +314,21 @@ pub(crate) fn craft_font_name(f: &vectorcraft_text::CraftFont) -> String {
 /// every family, after the app's own fonts and before the installed fonts `ui_fonts` adds: BIZ
 /// UDPGothic first (bold first in the semibold family), then the Mincho faces.
 fn add_craft_fonts(fonts: &mut FontDefinitions) {
-    for f in vectorcraft_text::CRAFT_FONTS.iter().filter(|f| f.is_japanese()) {
-        fonts.font_data.insert(craft_font_name(f), Arc::new(FontData::from_static(f.bytes)));
+    for f in vectorcraft_text::CRAFT_FONTS
+        .iter()
+        .filter(|f| f.is_japanese())
+    {
+        fonts
+            .font_data
+            .insert(craft_font_name(f), Arc::new(FontData::from_static(f.bytes)));
     }
     for (family, stack) in fonts.families.iter_mut() {
         let bold = *family == FontFamily::Name(FONT_UI_SEMIBOLD.into());
-        stack.extend(vectorcraft_text::craft_fonts::japanese_ui_fonts(bold).into_iter().map(craft_font_name));
+        stack.extend(
+            vectorcraft_text::craft_fonts::japanese_ui_fonts(bold)
+                .into_iter()
+                .map(craft_font_name),
+        );
     }
 }
 
@@ -295,7 +336,11 @@ fn add_craft_fonts(fonts: &mut FontDefinitions) {
 pub fn apply(ctx: &egui::Context, b: Brightness) {
     let t = Tokens::for_brightness(b);
     ctx.data_mut(|d| d.insert_temp(egui::Id::NULL, t));
-    let mut v = if t.dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
     v.extreme_bg_color = t.input;
@@ -307,14 +352,27 @@ pub fn apply(ctx: &egui::Context, b: Brightness) {
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.hyperlink_color = t.accent;
     v.override_text_color = Some(t.text);
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 14, spread: 0, color: Color32::from_black_alpha(if t.dark { 120 } else { 60 }) };
-    v.window_shadow = egui::epaint::Shadow { offset: [0, 8], blur: 28, spread: 0, color: Color32::from_black_alpha(if t.dark { 140 } else { 70 }) };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 14,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark { 120 } else { 60 }),
+    };
+    v.window_shadow = egui::epaint::Shadow {
+        offset: [0, 8],
+        blur: 28,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark { 140 } else { 70 }),
+    };
     let w = &mut v.widgets;
-    craft_ui::theme::WidgetPalette { noninteractive: t.panel, inactive: t.button, hovered: t.hover, active: t.tool_active, open: t.hover }.apply_to(
-        w,
-        t.cr(),
-        Stroke::new(1.0, t.text),
-    );
+    craft_ui::theme::WidgetPalette {
+        noninteractive: t.panel,
+        inactive: t.button,
+        hovered: t.hover,
+        active: t.tool_active,
+        open: t.hover,
+    }
+    .apply_to(w, t.cr(), Stroke::new(1.0, t.text));
     w.noninteractive.bg_stroke = Stroke::new(1.0, t.divider);
     w.inactive.bg_stroke = Stroke::NONE;
     w.hovered.bg_stroke = Stroke::new(1.0, t.input_border);
@@ -330,8 +388,14 @@ pub fn apply(ctx: &egui::Context, b: Brightness) {
             (TextStyle::Small, FontId::proportional(11.0)),
             (TextStyle::Body, FontId::proportional(13.0)),
             (TextStyle::Button, FontId::proportional(13.0)),
-            (TextStyle::Heading, FontId::new(15.0, FontFamily::Name(FONT_UI_SEMIBOLD.into()))),
-            (TextStyle::Monospace, FontId::new(11.5, FontFamily::Name(FONT_MONO.into()))),
+            (
+                TextStyle::Heading,
+                FontId::new(15.0, FontFamily::Name(FONT_UI_SEMIBOLD.into())),
+            ),
+            (
+                TextStyle::Monospace,
+                FontId::new(11.5, FontFamily::Name(FONT_MONO.into())),
+            ),
         ]
         .into();
         s.animation_time = 0.08;

@@ -47,7 +47,7 @@ fn last_error_hint(code: u32) -> &'static str {
     match code {
         5 => {
             " (ERROR_ACCESS_DENIED — EAC actif ? lance nie.exe directement sans EACLauncher, ou en admin)"
-        },
+        }
         87 => " (ERROR_INVALID_PARAMETER — plage partiellement non mappée)",
         299 => " (ERROR_PARTIAL_COPY — la plage chevauche un trou non mappé)",
         _ => "",
@@ -333,7 +333,13 @@ pub fn enumerate_regions(pid: i32) -> Vec<MapEntry> {
                 .find(|(mb, me, _)| base >= *mb && base < *me)
                 .map(|(_, _, name)| name.clone())
                 .unwrap_or_default();
-            out.push(MapEntry { start: base, end: next, perms, offset: 0, path });
+            out.push(MapEntry {
+                start: base,
+                end: next,
+                perms,
+                offset: 0,
+                path,
+            });
         }
         addr = next;
     }

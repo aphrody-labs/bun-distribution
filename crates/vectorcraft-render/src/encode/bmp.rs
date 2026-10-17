@@ -29,7 +29,13 @@ pub struct BmpOptions {
 
 impl Default for BmpOptions {
     fn default() -> Self {
-        Self { os2: false, depth: 24, rle: false, top_down: false, gray: false }
+        Self {
+            os2: false,
+            depth: 24,
+            rle: false,
+            top_down: false,
+            gray: false,
+        }
     }
 }
 
@@ -38,7 +44,10 @@ impl BmpOptions {
     pub fn check(&self) -> Result<(), String> {
         let err = |s: &str| Err(s.to_string());
         if !DEPTHS.contains(&self.depth) {
-            return Err(format!("BMP depth {}: 1, 4, 8, 16, 24 or 32 bits per pixel", self.depth));
+            return Err(format!(
+                "BMP depth {}: 1, 4, 8, 16, 24 or 32 bits per pixel",
+                self.depth
+            ));
         }
         if self.os2 && !OS2_DEPTHS.contains(&self.depth) {
             return err("OS/2 bitmaps have 1, 4, 8 or 24 bits per pixel");
@@ -47,7 +56,9 @@ impl BmpOptions {
             return err("RLE compression is for 4- and 8-bit Windows bitmaps");
         }
         if self.top_down && (self.rle || self.os2) {
-            return err("compressed and OS/2 bitmaps store their rows bottom-up: turn off flipped rows");
+            return err(
+                "compressed and OS/2 bitmaps store their rows bottom-up: turn off flipped rows",
+            );
         }
         Ok(())
     }
@@ -59,18 +70,42 @@ impl BmpOptions {
             _ if self.gray => Reduction::Gray,
             _ => palette.reduction,
         };
-        PaletteOptions { colors: 1 << self.depth, reduction, transparency: false, matte: Some([255; 3]), ..palette.clone() }
+        PaletteOptions {
+            colors: 1 << self.depth,
+            reduction,
+            transparency: false,
+            matte: Some([255; 3]),
+            ..palette.clone()
+        }
     }
 }
 
 /// Straight-alpha RGBA pixels as a BMP. At 1, 4 and 8 bits `palette` picks the colours (its
 /// reduction and dither); every depth but 32 bits blends partly transparent pixels over white.
-pub fn encode(rgba: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, palette: &PaletteOptions) -> Result<Vec<u8>, String> {
+pub fn encode(
+    rgba: &[u8],
+    width: u32,
+    height: u32,
+    ppi: f64,
+    o: &BmpOptions,
+    palette: &PaletteOptions,
+) -> Result<Vec<u8>, String> {
     o.check()?;
     let (w, h) = (width as usize, height as usize);
-    let side = if o.os2 { u32::from(u16::MAX) } else { i32::MAX as u32 };
-    if w == 0 || h == 0 || width > side || height > side || w.checked_mul(h).and_then(|n| n.checked_mul(4)) != Some(rgba.len()) {
-        return Err(format!("BMP encoding failed: {width} × {height} pixels doesn't fit the format or the pixel buffer"));
+    let side = if o.os2 {
+        u32::from(u16::MAX)
+    } else {
+        i32::MAX as u32
+    };
+    if w == 0
+        || h == 0
+        || width > side
+        || height > side
+        || w.checked_mul(h).and_then(|n| n.checked_mul(4)) != Some(rgba.len())
+    {
+        return Err(format!(
+            "BMP encoding failed: {width} × {height} pixels doesn't fit the format or the pixel buffer"
+        ));
     }
     let px = rgba.as_chunks::<4>().0;
     let gray = |c: [u8; 3]| if o.gray { [quantize::luma(c); 3] } else { c };
@@ -82,7 +117,11 @@ pub fn encode(rgba: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, pa
     if o.depth <= 8 {
         let ix = quantize::quantize(rgba, width, height, &o.palette(palette));
         for y in 0..h {
-            let row = ix.indices.get(row_at(y) * w..).and_then(|r| r.get(..w)).unwrap_or_default();
+            let row = ix
+                .indices
+                .get(row_at(y) * w..)
+                .and_then(|r| r.get(..w))
+                .unwrap_or_default();
             if o.rle {
                 rle_row(row, o.depth, &mut data);
                 // End of line, or of the bitmap after the last.
@@ -95,7 +134,11 @@ pub fn encode(rgba: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, pa
         colors = ix.palette;
     } else {
         for y in 0..h {
-            for p in px.get(row_at(y) * w..).and_then(|r| r.get(..w)).unwrap_or_default() {
+            for p in px
+                .get(row_at(y) * w..)
+                .and_then(|r| r.get(..w))
+                .unwrap_or_default()
+            {
                 match o.depth {
                     16 => {
                         let [r, g, b] = gray(on_white(p)).map(|v| u16::from(v >> 3));
@@ -118,7 +161,14 @@ pub fn encode(rgba: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, pa
 }
 
 /// The file: file header, info header, palette, then the pixel data.
-fn header(data: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, colors: &[[u8; 3]]) -> Result<Vec<u8>, String> {
+fn header(
+    data: &[u8],
+    width: u32,
+    height: u32,
+    ppi: f64,
+    o: &BmpOptions,
+    colors: &[[u8; 3]],
+) -> Result<Vec<u8>, String> {
     let too_large = || "the image is too large for BMP: lower the resolution".to_string();
     let indexed = o.depth <= 8;
     let (info_len, entry) = match (o.os2, o.depth) {
@@ -155,7 +205,11 @@ fn header(data: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, colors
             (false, _) => 0,
         };
         let ppm = pixels_per_metre(ppi).min(i32::MAX as u32);
-        let h = if o.top_down { -(height as i32) } else { height as i32 };
+        let h = if o.top_down {
+            -(height as i32)
+        } else {
+            height as i32
+        };
         out.extend((info_len as u32).to_le_bytes());
         out.extend(width.to_le_bytes());
         out.extend(h.to_le_bytes());
@@ -169,7 +223,13 @@ fn header(data: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, colors
         out.extend(0u32.to_le_bytes());
         if info_len == 108 {
             // Red, green, blue and alpha masks, sRGB, then unused end points and gammas.
-            for mask in [0x00FF_0000u32, 0x0000_FF00, 0x0000_00FF, 0xFF00_0000, u32::from_be_bytes(*b"sRGB")] {
+            for mask in [
+                0x00FF_0000u32,
+                0x0000_FF00,
+                0x0000_00FF,
+                0xFF00_0000,
+                u32::from_be_bytes(*b"sRGB"),
+            ] {
                 out.extend(mask.to_le_bytes());
             }
             out.extend([0; 48]);
@@ -187,10 +247,18 @@ fn header(data: &[u8], width: u32, height: u32, ppi: f64, o: &BmpOptions, colors
 /// as (count, index), other stretches of three pixels or more in absolute mode (0, count, the
 /// pixels packed, padded to a word).
 fn rle_row(row: &[u8], bits: u8, out: &mut Vec<u8>) {
-    let run_byte = |v: u8| if bits == 4 { (v & 15) << 4 | (v & 15) } else { v };
+    let run_byte = |v: u8| {
+        if bits == 4 {
+            (v & 15) << 4 | (v & 15)
+        } else {
+            v
+        }
+    };
     let mut i = 0;
     while let Some(&v) = row.get(i) {
-        let run = row.get(i..).map_or(1, |r| r.iter().take(255).take_while(|x| **x == v).count());
+        let run = row
+            .get(i..)
+            .map_or(1, |r| r.iter().take(255).take_while(|x| **x == v).count());
         if run >= 2 {
             out.extend([run as u8, run_byte(v)]);
             i += run;
@@ -209,7 +277,10 @@ fn rle_row(row: &[u8], bits: u8, out: &mut Vec<u8>) {
             out.extend([0, lit.len() as u8]);
             let start = out.len();
             match bits {
-                4 => out.extend(lit.chunks(2).map(|p| (p[0] & 15) << 4 | p.get(1).map_or(0, |x| x & 15))),
+                4 => out.extend(
+                    lit.chunks(2)
+                        .map(|p| (p[0] & 15) << 4 | p.get(1).map_or(0, |x| x & 15)),
+                ),
                 _ => out.extend_from_slice(lit),
             }
             if (out.len() - start) % 2 == 1 {

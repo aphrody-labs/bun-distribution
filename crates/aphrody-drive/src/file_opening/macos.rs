@@ -47,7 +47,11 @@ impl FileOpener for MacFileOpener {
         app_id: &str,
     ) -> Result<Vec<OpenResult>, String> {
         // The Swift side splits NUL-delimited paths.
-        let joined = paths.iter().map(|path| path.to_string_lossy()).collect::<Vec<_>>().join("\0");
+        let joined = paths
+            .iter()
+            .map(|path| path.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("\0");
         let paths = SRString::from(joined.as_str());
         let app_id = SRString::from(app_id);
         // SAFETY: as above.

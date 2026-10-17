@@ -37,14 +37,35 @@ pub fn database() -> Option<&'static LensDb> {
 
 /// The database profile for a photo with metadata `m`, for its `w × h` (unoriented, default-cropped) image,
 /// re-expressed after `orientation`. `None` without a database, lens name, focal length or matching profile.
-pub fn lookup(db: &LensDb, m: &lightcraft_meta::Metadata, w: f64, h: f64, orientation: lightcraft_geom::Orientation) -> Option<EmbeddedLens> {
+pub fn lookup(
+    db: &LensDb,
+    m: &lightcraft_meta::Metadata,
+    w: f64,
+    h: f64,
+    orientation: lightcraft_geom::Orientation,
+) -> Option<EmbeddedLens> {
     let focal = m.focal_length.filter(|f| f.is_finite() && *f > 0.0)?;
-    let camera = db.find_camera(m.make.as_deref().unwrap_or_default(), m.model.as_deref().unwrap_or_default());
+    let camera = db.find_camera(
+        m.make.as_deref().unwrap_or_default(),
+        m.model.as_deref().unwrap_or_default(),
+    );
     let lens = db.find_lens(m.lens_make.as_deref(), m.lens_model.as_deref()?, camera)?;
     let crop = frame_crop_factor(camera.map(|c| c.crop_factor), focal, m.focal_length_35mm);
-    let shot = Shot { focal, aperture: m.f_number, distance: None, crop_factor: crop, width: w, height: h };
+    let shot = Shot {
+        focal,
+        aperture: m.f_number,
+        distance: None,
+        crop_factor: crop,
+        width: w,
+        height: h,
+    };
     let corr = lens.correction(&shot)?;
-    Some(lightcraft_pipeline::optics::reorient_lens(&corr, orientation, w, h))
+    Some(lightcraft_pipeline::optics::reorient_lens(
+        &corr,
+        orientation,
+        w,
+        h,
+    ))
 }
 
 /// The crop factor of the recorded frame, which scales the profile's radii: the body's (`camera`), else what the
@@ -53,7 +74,9 @@ pub fn lookup(db: &LensDb, m: &lightcraft_meta::Metadata, w: f64, h: f64, orient
 /// gives; the frame's corners are then nearer the optical axis, so that crop wins. Within 10 % of the body's, the
 /// difference is the tag's whole-millimetre rounding and the body's value stands.
 fn frame_crop_factor(camera: Option<f64>, focal: f64, focal_35mm: Option<f64>) -> Option<f64> {
-    let frame = focal_35mm.map(|f35| f35 / focal).filter(|c| c.is_finite() && (0.1..=20.0).contains(c));
+    let frame = focal_35mm
+        .map(|f35| f35 / focal)
+        .filter(|c| c.is_finite() && (0.1..=20.0).contains(c));
     match (camera, frame) {
         (Some(body), Some(frame)) if frame > body * 1.1 => Some(frame),
         (body, frame) => body.or(frame),
@@ -61,11 +84,20 @@ fn frame_crop_factor(camera: Option<f64>, focal: f64, focal_35mm: Option<f64>) -
 }
 
 /// [`crate::files::embedded_lens`], else the database profile ([`lookup`]) for a raw with metadata `meta`.
-pub fn for_raw(raw: &lightcraft_raw::RawInfo, meta: impl FnOnce() -> lightcraft_meta::Metadata) -> Option<EmbeddedLens> {
+pub fn for_raw(
+    raw: &lightcraft_raw::RawInfo,
+    meta: impl FnOnce() -> lightcraft_meta::Metadata,
+) -> Option<EmbeddedLens> {
     crate::files::embedded_lens(raw).or_else(|| {
         let db = database()?;
-        let c = raw.crop.clipped(raw.active_area.width, raw.active_area.height);
-        let (w, h) = if c.width == 0 || c.height == 0 { (raw.active_area.width, raw.active_area.height) } else { (c.width, c.height) };
+        let c = raw
+            .crop
+            .clipped(raw.active_area.width, raw.active_area.height);
+        let (w, h) = if c.width == 0 || c.height == 0 {
+            (raw.active_area.width, raw.active_area.height)
+        } else {
+            (c.width, c.height)
+        };
         lookup(db, &meta(), w as f64, h as f64, raw.orientation)
     })
 }
@@ -101,11 +133,41 @@ mod tests {
         let lens = lookup(&db, &meta(), 6000.0, 4000.0, Orientation::Normal).unwrap();
         assert!(lens.warp.is_some() && lens.vignette.is_some());
         let rotated = lookup(&db, &meta(), 6000.0, 4000.0, Orientation::Rotate90).unwrap();
-        assert_eq!(rotated.warp.unwrap().center, lightcraft_geom::Point::new(0.5, 0.5));
+        assert_eq!(
+            rotated.warp.unwrap().center,
+            lightcraft_geom::Point::new(0.5, 0.5)
+        );
         // no lens name, no focal length, an unknown lens: nothing
-        assert!(lookup(&db, &lightcraft_meta::Metadata { lens_model: None, ..meta() }, 6000.0, 4000.0, Orientation::Normal).is_none());
-        assert!(lookup(&db, &lightcraft_meta::Metadata { focal_length: None, ..meta() }, 6000.0, 4000.0, Orientation::Normal).is_none());
-        let other = lightcraft_meta::Metadata { lens_model: Some("70-200mm F4".into()), ..meta() };
+        assert!(
+            lookup(
+                &db,
+                &lightcraft_meta::Metadata {
+                    lens_model: None,
+                    ..meta()
+                },
+                6000.0,
+                4000.0,
+                Orientation::Normal
+            )
+            .is_none()
+        );
+        assert!(
+            lookup(
+                &db,
+                &lightcraft_meta::Metadata {
+                    focal_length: None,
+                    ..meta()
+                },
+                6000.0,
+                4000.0,
+                Orientation::Normal
+            )
+            .is_none()
+        );
+        let other = lightcraft_meta::Metadata {
+            lens_model: Some("70-200mm F4".into()),
+            ..meta()
+        };
         assert!(lookup(&db, &other, 6000.0, 4000.0, Orientation::Normal).is_none());
     }
 
@@ -135,18 +197,41 @@ mod tests {
             ..Default::default()
         };
         let at = |crop: f64, w: f64, h: f64| {
-            let shot = Shot { focal: 70.0, aperture: Some(2.8), distance: None, crop_factor: Some(crop), width: w, height: h };
+            let shot = Shot {
+                focal: 70.0,
+                aperture: Some(2.8),
+                distance: None,
+                crop_factor: Some(crop),
+                width: w,
+                height: h,
+            };
             db.lenses[0].correction(&shot).unwrap()
         };
         let aps_c = lookup(&db, &m(Some(105.0)), 5616.0, 3744.0, Orientation::Normal).unwrap();
         assert_eq!(aps_c, at(1.5, 5616.0, 3744.0));
-        assert_ne!(aps_c, at(1.0, 5616.0, 3744.0), "the crop is not corrected as a full frame");
+        assert_ne!(
+            aps_c,
+            at(1.0, 5616.0, 3744.0),
+            "the crop is not corrected as a full frame"
+        );
         // full frame, a 35 mm equivalent rounded off by a millimetre, or none at all: the body's crop factor
         for f35 in [Some(70.0), Some(71.0), None] {
-            assert_eq!(lookup(&db, &m(f35), 8640.0, 5760.0, Orientation::Normal).unwrap(), at(1.0, 8640.0, 5760.0), "{f35:?}");
+            assert_eq!(
+                lookup(&db, &m(f35), 8640.0, 5760.0, Orientation::Normal).unwrap(),
+                at(1.0, 8640.0, 5760.0),
+                "{f35:?}"
+            );
         }
-        assert_eq!(frame_crop_factor(None, 70.0, Some(105.0)), Some(1.5), "no body in the database: the 35 mm equivalent's");
-        assert_eq!(frame_crop_factor(Some(1.0), 0.0, Some(105.0)), Some(1.0), "a hostile focal length is ignored");
+        assert_eq!(
+            frame_crop_factor(None, 70.0, Some(105.0)),
+            Some(1.5),
+            "no body in the database: the 35 mm equivalent's"
+        );
+        assert_eq!(
+            frame_crop_factor(Some(1.0), 0.0, Some(105.0)),
+            Some(1.0),
+            "a hostile focal length is ignored"
+        );
     }
 
     /// A synthetic grid recorded through the profile's barrel distortion comes out of the pipeline's geometry
@@ -175,7 +260,13 @@ mod tests {
             (w as f64 / 2.0 + dx * s * n, h as f64 / 2.0 + dy * s * n)
         };
         // horizontal scene lines every 50 px (2 px wide, dark on light)
-        let line = |v: f64| if v.rem_euclid(50.0) < 2.0 { 0.02f32 } else { 0.8 };
+        let line = |v: f64| {
+            if v.rem_euclid(50.0) < 2.0 {
+                0.02f32
+            } else {
+                0.8
+            }
+        };
         let src = lightcraft_raster::Rgb32f::from_fn(w, h, |x, y| {
             let (_, sy) = undistort(x as f64 + 0.5, y as f64 + 0.5);
             [line(sy); 3]
@@ -197,15 +288,28 @@ mod tests {
                 })
                 .collect()
         };
-        let spread = |rows: &[f64]| rows.iter().cloned().fold(f64::MIN, f64::max) - rows.iter().cloned().fold(f64::MAX, f64::min);
+        let spread = |rows: &[f64]| {
+            rows.iter().cloned().fold(f64::MIN, f64::max)
+                - rows.iter().cloned().fold(f64::MAX, f64::min)
+        };
         let req = lightcraft_pipeline::RenderRequest::fit(w, h);
         let mut s = lightcraft_develop::DevelopSettings::default();
-        let info = lightcraft_pipeline::SourceInfo { lens: Some(lens), ..Default::default() };
-        let before = spread(&line_rows(&lightcraft_pipeline::render(&src, &info, &s, &req).image));
+        let info = lightcraft_pipeline::SourceInfo {
+            lens: Some(lens),
+            ..Default::default()
+        };
+        let before = spread(&line_rows(
+            &lightcraft_pipeline::render(&src, &info, &s, &req).image,
+        ));
         s.optics.lens_profile = true;
-        let after = spread(&line_rows(&lightcraft_pipeline::render(&src, &info, &s, &req).image));
+        let after = spread(&line_rows(
+            &lightcraft_pipeline::render(&src, &info, &s, &req).image,
+        ));
         assert!(before > 2.0, "the recorded line is curved: {before} px");
         // 8-bit output and a 2 px line: the centroid measurement itself is good to about a pixel
-        assert!(after < 1.0 && after < before / 8.0, "corrected line bent by {after} px (uncorrected {before})");
+        assert!(
+            after < 1.0 && after < before / 8.0,
+            "corrected line bent by {after} px (uncorrected {before})"
+        );
     }
 }

@@ -14,7 +14,9 @@ use std::collections::HashMap;
 use egui::{Rect, Sense, Stroke, StrokeKind, Ui, vec2};
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
-use vectorcraft_engine::cmd::library::{ItemKind, LIBRARY_EXT, LIBRARY_EXTS, Library, LibraryGraphic};
+use vectorcraft_engine::cmd::library::{
+    ItemKind, LIBRARY_EXT, LIBRARY_EXTS, Library, LibraryGraphic,
+};
 
 use crate::theme::Tokens;
 use crate::widgets::{self, PanelDrag, menu_item, menu_item_name};
@@ -51,17 +53,34 @@ fn run(app: &mut VectorcraftApp, cmd: &str, p: Value) {
 fn ask_name(app: &mut VectorcraftApp, rename: Option<&str>) {
     let (cmd, label, name) = match rename {
         Some(n) => ("library.rename", "Rename Library", n.to_string()),
-        None => ("library.create", "Create New Library", "My Library".to_string()),
+        None => (
+            "library.create",
+            "Create New Library",
+            "My Library".to_string(),
+        ),
     };
-    app.ui.dialog = Some(crate::state::Dialog::new("command", json!({ "__command": cmd, "__label": label, "name": name })));
+    app.ui.dialog = Some(crate::state::Dialog::new(
+        "command",
+        json!({ "__command": cmd, "__label": label, "name": name }),
+    ));
 }
 
 /// The name dialog for a new group of `library` (`items`: `[{kind, item}]` moved into it), or for
 /// renaming group `rename`.
 fn ask_group_name(app: &mut VectorcraftApp, library: &str, rename: Option<&str>, items: Value) {
     let (cmd, label, name, fixed) = match rename {
-        Some(g) => ("library.renameGroup", "Rename Library Group", g, json!({ "library": library, "group": g })),
-        None => ("library.createGroup", "New Library Group", "Group", json!({ "library": library, "items": items })),
+        Some(g) => (
+            "library.renameGroup",
+            "Rename Library Group",
+            g,
+            json!({ "library": library, "group": g }),
+        ),
+        None => (
+            "library.createGroup",
+            "New Library Group",
+            "Group",
+            json!({ "library": library, "items": items }),
+        ),
     };
     let d = json!({ "__command": cmd, "__label": label, "name": name, "__params": fixed });
     app.ui.dialog = Some(crate::state::Dialog::new("command", d));
@@ -95,7 +114,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let fill_active = app.session.fill_active;
     let has_doc = app.session.active().is_some();
     let libs = &app.session.libraries;
-    let Some((lib_id, lib)) = libs.current().and_then(|id| Some((id.to_string(), libs.get(id)?))) else {
+    let Some((lib_id, lib)) = libs
+        .current()
+        .and_then(|id| Some((id.to_string(), libs.get(id)?)))
+    else {
         ui.add_space(16.0);
         ui.vertical_centered(|ui| {
             icons::icon(ui, "library", 40.0, t.text_dim);
@@ -112,16 +134,28 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let mut act: Option<Act> = None;
     // The library picker.
     let names: Vec<&str> = libs.all().iter().map(|(_, l)| l.name.as_str()).collect();
-    if let Some((id, _)) = widgets::dropdown_names(ui, "lib-picker", &lib.name, &names, ui.available_width()).and_then(|i| libs.all().get(i)) {
+    if let Some((id, _)) =
+        widgets::dropdown_names(ui, "lib-picker", &lib.name, &names, ui.available_width())
+            .and_then(|i| libs.all().get(i))
+    {
         act = Some(Act::Run("library.setCurrent", json!({ "library": id })));
     }
     ui.add_space(4.0);
     let empty = lib.items().next().is_none() && lib.groups.is_empty();
-    let query = if empty { String::new() } else { widgets::search_field(ui, egui::Id::new("library-search"), tl!("Search")) };
+    let query = if empty {
+        String::new()
+    } else {
+        widgets::search_field(ui, egui::Id::new("library-search"), tl!("Search"))
+    };
     let query = query.trim().to_lowercase();
     let searching = !query.is_empty();
     let shown = |name: &str| !searching || name.to_lowercase().contains(&query);
-    let items = Items { library: &lib_id, lib, groups: lib.group_index(), fill_active };
+    let items = Items {
+        library: &lib_id,
+        lib,
+        groups: lib.group_index(),
+        fill_active,
+    };
     // The items shown in each section: the ungrouped ones first, then each group's.
     let mut counts = vec![0usize; lib.groups.len() + 1];
     for (kind, key, _) in lib.items().filter(|(_, _, name)| shown(name)) {
@@ -138,80 +172,112 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 ui,
                 "library",
                 tl!("This library is empty"),
-                tl!("Drag art or swatches here, or use + to add the selection's colors and text styles."),
+                tl!(
+                    "Drag art or swatches here, or use + to add the selection's colors and text styles."
+                ),
             );
             return ui.min_rect();
         }
         if searching && counts.iter().all(|n| *n == 0) {
-            let body = crate::i18n::fmt(tl!("No items in this library match “{query}”."), &[("query", &query)]);
+            let body = crate::i18n::fmt(
+                tl!("No items in this library match “{query}”."),
+                &[("query", &query)],
+            );
             super::empty_state(ui, "search", tl!("No results"), &body);
             return ui.min_rect();
         }
-        egui::Frame::NONE.inner_margin(egui::Margin::same(6)).show(ui, |ui| {
-            items.show(ui, &mut act, |kind, key, name| items.group_of(kind, key).is_none() && shown(name));
-            for (i, g) in lib.groups.iter().enumerate() {
-                let n = counts.get(i + 1).copied().unwrap_or_default();
-                if searching && n == 0 {
-                    continue;
-                }
-                // Open unless closed; open while searching, to show what matched.
-                let key = format!("library-group-closed:{lib_id}:{}", g.name);
-                let closed: bool = super::pstate(ui.ctx(), &key);
-                let open = searching || !closed;
-                let header = widgets::section_toggle_name(ui, &g.name, open);
-                ui.painter().text(
-                    header.rect.right_center() - vec2(6.0, 0.0),
-                    egui::Align2::RIGHT_CENTER,
-                    n.to_string(),
-                    egui::FontId::proportional(11.5),
-                    t.text_dim,
-                );
-                if header.clicked() && !searching {
-                    super::set_pstate(ui.ctx(), &key, !closed);
-                }
-                header.context_menu(|ui| {
-                    if menu_item(ui, "Rename Group…", true, false) {
-                        act = Some(Act::RenameGroup(g.name.clone()));
-                        ui.close();
-                    }
-                    if menu_item(ui, "Delete Group", true, false) {
-                        act = Some(Act::Run("library.deleteGroup", json!({ "group": g.name })));
-                        ui.close();
-                    }
+        egui::Frame::NONE
+            .inner_margin(egui::Margin::same(6))
+            .show(ui, |ui| {
+                items.show(ui, &mut act, |kind, key, name| {
+                    items.group_of(kind, key).is_none() && shown(name)
                 });
-                if !open {
-                    continue;
+                for (i, g) in lib.groups.iter().enumerate() {
+                    let n = counts.get(i + 1).copied().unwrap_or_default();
+                    if searching && n == 0 {
+                        continue;
+                    }
+                    // Open unless closed; open while searching, to show what matched.
+                    let key = format!("library-group-closed:{lib_id}:{}", g.name);
+                    let closed: bool = super::pstate(ui.ctx(), &key);
+                    let open = searching || !closed;
+                    let header = widgets::section_toggle_name(ui, &g.name, open);
+                    ui.painter().text(
+                        header.rect.right_center() - vec2(6.0, 0.0),
+                        egui::Align2::RIGHT_CENTER,
+                        n.to_string(),
+                        egui::FontId::proportional(11.5),
+                        t.text_dim,
+                    );
+                    if header.clicked() && !searching {
+                        super::set_pstate(ui.ctx(), &key, !closed);
+                    }
+                    header.context_menu(|ui| {
+                        if menu_item(ui, "Rename Group…", true, false) {
+                            act = Some(Act::RenameGroup(g.name.clone()));
+                            ui.close();
+                        }
+                        if menu_item(ui, "Delete Group", true, false) {
+                            act = Some(Act::Run("library.deleteGroup", json!({ "group": g.name })));
+                            ui.close();
+                        }
+                    });
+                    if !open {
+                        continue;
+                    }
+                    ui.add_space(2.0);
+                    if n == 0 {
+                        ui.label(
+                            egui::RichText::new(tl!(
+                                "Right-click an item to move it into this group."
+                            ))
+                            .size(11.5)
+                            .color(t.text_dim),
+                        );
+                        ui.add_space(6.0);
+                    } else {
+                        items.show(ui, &mut act, |kind, key, name| {
+                            items.group_of(kind, key) == Some(i) && shown(name)
+                        });
+                    }
                 }
-                ui.add_space(2.0);
-                if n == 0 {
-                    ui.label(egui::RichText::new(tl!("Right-click an item to move it into this group.")).size(11.5).color(t.text_dim));
-                    ui.add_space(6.0);
-                } else {
-                    items.show(ui, &mut act, |kind, key, name| items.group_of(kind, key) == Some(i) && shown(name));
-                }
-            }
-        });
+            });
         ui.min_rect()
     });
     // Art dragged off the canvas, or a swatch, dropped on the list is added to the library.
     let zone = ui.interact(list_rect, ui.id().with("libraries-drop"), Sense::hover());
     if let Some(ids) = widgets::art_drop(ui, &zone) {
-        act = Some(Act::Run("library.add", json!({ "kind": "graphic", "ids": ids })));
+        act = Some(Act::Run(
+            "library.add",
+            json!({ "kind": "graphic", "ids": ids }),
+        ));
     }
     if let Some(drag) = zone.dnd_hover_payload::<PanelDrag>()
-        && let PanelDrag::Paint { paint: Paint::Solid { color, .. }, .. } = &*drag
+        && let PanelDrag::Paint {
+            paint: Paint::Solid { color, .. },
+            ..
+        } = &*drag
     {
-        ui.painter().rect_stroke(zone.rect, 0.0, Stroke::new(1.5, t.accent), StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            zone.rect,
+            0.0,
+            Stroke::new(1.5, t.accent),
+            StrokeKind::Inside,
+        );
         let color = *color;
         if zone.dnd_release_payload::<PanelDrag>().is_some() {
-            act = Some(Act::Run("library.add", json!({ "kind": "fillColor", "color": color })));
+            act = Some(Act::Run(
+                "library.add",
+                json!({ "kind": "fillColor", "color": color }),
+            ));
         }
     }
     widgets::bottom_bar(ui, |ui| {
         if widgets::icon_button(ui, "group", tl!("New Group"), false, 24.0).clicked() {
             act = Some(Act::NewGroup(json!([])));
         }
-        let add = widgets::icon_button_enabled(ui, "plus", tl!("Add Content"), false, has_doc, 24.0);
+        let add =
+            widgets::icon_button_enabled(ui, "plus", tl!("Add Content"), false, has_doc, 24.0);
         egui::Popup::menu(&add).show(|ui| {
             for (label, kind) in [
                 ("Graphic", "graphic"),
@@ -249,67 +315,134 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 impl Items<'_> {
     /// The colours, character and paragraph styles and graphics `keep` keeps (given the kind, key
     /// and name of each), each kind under its heading.
-    fn show(&self, ui: &mut Ui, act: &mut Option<Act>, keep: impl Fn(ItemKind, &str, &str) -> bool) {
+    fn show(
+        &self,
+        ui: &mut Ui,
+        act: &mut Option<Act>,
+        keep: impl Fn(ItemKind, &str, &str) -> bool,
+    ) {
         let t = Tokens::get(ui.ctx());
         let lib = self.lib;
-        let colors: Vec<_> = lib.colors.iter().filter(|c| keep(ItemKind::Color, &c.name, &c.name)).collect();
+        let colors: Vec<_> = lib
+            .colors
+            .iter()
+            .filter(|c| keep(ItemKind::Color, &c.name, &c.name))
+            .collect();
         if !colors.is_empty() {
             heading(ui, tl!("Colors"));
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
                 for c in colors {
-                    let (r, resp) = ui.allocate_exact_size(vec2(CHIP, CHIP), Sense::click_and_drag());
+                    let (r, resp) =
+                        ui.allocate_exact_size(vec2(CHIP, CHIP), Sense::click_and_drag());
                     let paint = Paint::solid(c.color);
                     widgets::swatch_tile(ui, r, &paint, false, false);
-                    ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, t.border), StrokeKind::Inside);
-                    widgets::drag_source(ui, &resp, || PanelDrag::Paint { paint: paint.clone(), params: json!({ "color": c.color }), rows: None });
+                    ui.painter().rect_stroke(
+                        r,
+                        0.0,
+                        Stroke::new(1.0, t.border),
+                        StrokeKind::Inside,
+                    );
+                    widgets::drag_source(ui, &resp, || PanelDrag::Paint {
+                        paint: paint.clone(),
+                        params: json!({ "color": c.color }),
+                        rows: None,
+                    });
                     let resp = resp.on_hover_text(&c.name);
                     if resp.clicked() {
                         let to = if self.fill_active { "fill" } else { "stroke" };
-                        *act = Some(Act::Run("library.use", json!({ "kind": "fillColor", "item": c.name, "to": to })));
+                        *act = Some(Act::Run(
+                            "library.use",
+                            json!({ "kind": "fillColor", "item": c.name, "to": to }),
+                        ));
                     }
                     resp.context_menu(|ui| self.item_menu(ui, act, ItemKind::Color, &c.name));
                 }
             });
             ui.add_space(6.0);
         }
-        for (kind, list, title) in
-            [(ItemKind::CharStyle, &lib.char_styles, tl!("Character Styles")), (ItemKind::ParaStyle, &lib.para_styles, tl!("Paragraph Styles"))]
-        {
-            let list: Vec<_> = list.iter().filter(|s| keep(kind, &s.name, &s.name)).collect();
+        for (kind, list, title) in [
+            (
+                ItemKind::CharStyle,
+                &lib.char_styles,
+                tl!("Character Styles"),
+            ),
+            (
+                ItemKind::ParaStyle,
+                &lib.para_styles,
+                tl!("Paragraph Styles"),
+            ),
+        ] {
+            let list: Vec<_> = list
+                .iter()
+                .filter(|s| keep(kind, &s.name, &s.name))
+                .collect();
             if list.is_empty() {
                 continue;
             }
             heading(ui, title);
             for st in list {
-                let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::click());
+                let (r, resp) =
+                    ui.allocate_exact_size(vec2(ui.available_width(), 22.0), Sense::click());
                 if resp.hovered() {
                     ui.painter().rect_filled(r, 0.0, t.hover);
                 }
-                let icon = if kind == ItemKind::ParaStyle { "pilcrow" } else { "type" };
-                icons::paint(ui, icon, Rect::from_center_size(r.left_center() + vec2(10.0, 0.0), vec2(14.0, 14.0)), t.icon);
-                ui.painter().text(r.left_center() + vec2(24.0, 0.0), egui::Align2::LEFT_CENTER, &st.name, egui::FontId::proportional(12.5), t.text);
+                let icon = if kind == ItemKind::ParaStyle {
+                    "pilcrow"
+                } else {
+                    "type"
+                };
+                icons::paint(
+                    ui,
+                    icon,
+                    Rect::from_center_size(r.left_center() + vec2(10.0, 0.0), vec2(14.0, 14.0)),
+                    t.icon,
+                );
+                ui.painter().text(
+                    r.left_center() + vec2(24.0, 0.0),
+                    egui::Align2::LEFT_CENTER,
+                    &st.name,
+                    egui::FontId::proportional(12.5),
+                    t.text,
+                );
                 let resp = resp.on_hover_text(tl!("Click to apply to the selected type"));
                 if resp.clicked() {
-                    *act = Some(Act::Run("library.use", json!({ "kind": kind_param(kind), "item": st.name })));
+                    *act = Some(Act::Run(
+                        "library.use",
+                        json!({ "kind": kind_param(kind), "item": st.name }),
+                    ));
                 }
                 resp.context_menu(|ui| self.item_menu(ui, act, kind, &st.name));
             }
             ui.add_space(6.0);
         }
-        let graphics: Vec<_> = lib.graphics.iter().filter(|g| keep(ItemKind::Graphic, &g.id, &g.name)).collect();
+        let graphics: Vec<_> = lib
+            .graphics
+            .iter()
+            .filter(|g| keep(ItemKind::Graphic, &g.id, &g.name))
+            .collect();
         if !graphics.is_empty() {
             heading(ui, tl!("Graphics"));
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
                 for g in graphics {
-                    let (r, resp) = ui.allocate_exact_size(vec2(TILE, TILE), Sense::click_and_drag());
+                    let (r, resp) =
+                        ui.allocate_exact_size(vec2(TILE, TILE), Sense::click_and_drag());
                     tile(ui, r, self.library, g);
-                    ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, if resp.hovered() { t.accent } else { t.border }), StrokeKind::Inside);
+                    ui.painter().rect_stroke(
+                        r,
+                        0.0,
+                        Stroke::new(1.0, if resp.hovered() { t.accent } else { t.border }),
+                        StrokeKind::Inside,
+                    );
                     // Dragged onto the canvas, a copy is placed where it is dropped.
-                    widgets::drag_source(ui, &resp, || PanelDrag::LibraryGraphic { library: self.library.to_string(), item: g.id.clone() });
+                    widgets::drag_source(ui, &resp, || PanelDrag::LibraryGraphic {
+                        library: self.library.to_string(),
+                        item: g.id.clone(),
+                    });
                     let resp = resp.on_hover_text(&g.name);
-                    let place = || Act::Run("library.use", json!({ "kind": "graphic", "item": g.id }));
+                    let place =
+                        || Act::Run("library.use", json!({ "kind": "graphic", "item": g.id }));
                     if resp.double_clicked() {
                         *act = Some(place());
                     }
@@ -383,14 +516,25 @@ fn tile(ui: &Ui, r: Rect, library: &str, g: &LibraryGraphic) {
     ui.painter().rect_filled(r, 0.0, egui::Color32::WHITE);
     if let Some(tex) = thumbnail(ui.ctx(), library, g) {
         let size = tex.size_vec2();
-        let k = ((r.width() - 6.0) / size.x).min((r.height() - 6.0) / size.y).min(1.0);
+        let k = ((r.width() - 6.0) / size.x)
+            .min((r.height() - 6.0) / size.y)
+            .min(1.0);
         let fit = Rect::from_center_size(r.center(), size * k);
-        ui.painter().image(tex.id(), fit, Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter().image(
+            tex.id(),
+            fit,
+            Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
     }
 }
 
 /// The texture of graphic `g`'s PNG thumbnail, decoded once.
-fn thumbnail(ctx: &egui::Context, library: &str, g: &LibraryGraphic) -> Option<egui::TextureHandle> {
+fn thumbnail(
+    ctx: &egui::Context,
+    library: &str,
+    g: &LibraryGraphic,
+) -> Option<egui::TextureHandle> {
     thread_local! {
         static CACHE: crate::graphics::TexCache<HashMap<(String, String, usize), Option<egui::TextureHandle>>> = crate::graphics::TexCache::default();
     }
@@ -402,8 +546,15 @@ fn thumbnail(ctx: &egui::Context, library: &str, g: &LibraryGraphic) -> Option<e
         .and_then(|png| image::load_from_memory_with_format(&png, image::ImageFormat::Png).ok())
         .map(|img| {
             let rgba = img.to_rgba8();
-            let image = egui::ColorImage::from_rgba_unmultiplied([rgba.width() as usize, rgba.height() as usize], rgba.as_raw());
-            ctx.load_texture(format!("library-{library}-{}", g.id), image, egui::TextureOptions::LINEAR)
+            let image = egui::ColorImage::from_rgba_unmultiplied(
+                [rgba.width() as usize, rgba.height() as usize],
+                rgba.as_raw(),
+            );
+            ctx.load_texture(
+                format!("library-{library}-{}", g.id),
+                image,
+                egui::TextureOptions::LINEAR,
+            )
         });
     CACHE.with(|c| {
         let mut c = c.borrow_mut();
@@ -417,7 +568,12 @@ fn thumbnail(ctx: &egui::Context, library: &str, g: &LibraryGraphic) -> Option<e
 
 /// Graphic `item` of `library`'s thumbnail in `r` (the chip a dragged graphic shows at the pointer).
 pub(crate) fn chip(app: &VectorcraftApp, ui: &Ui, r: Rect, library: &str, item: &str) {
-    if let Some(g) = app.session.libraries.get(library).and_then(|l| l.graphics.iter().find(|g| g.id == item)) {
+    if let Some(g) = app
+        .session
+        .libraries
+        .get(library)
+        .and_then(|l| l.graphics.iter().find(|g| g.id == item))
+    {
         tile(ui, r, library, g);
     }
 }
@@ -437,7 +593,10 @@ fn import_picked(app: &mut VectorcraftApp) {
         f();
         return;
     }
-    let pick = crate::FilePick { filters: vec![("Libraries", LIBRARY_EXTS)], ..Default::default() };
+    let pick = crate::FilePick {
+        filters: vec![("Libraries", LIBRARY_EXTS)],
+        ..Default::default()
+    };
     if let Some(path) = crate::picks::open(app, &pick) {
         let r = import(app, json!({ "path": path }));
         report(app, r);
@@ -446,8 +605,16 @@ fn import_picked(app: &mut VectorcraftApp) {
 
 /// Export Library…: library `id` written to a picked file named after it (the web downloads it).
 fn export_picked(app: &mut VectorcraftApp, id: &str, name: &str) {
-    let file = format!("{}.{LIBRARY_EXT}", vectorcraft_engine::cmd::library::file_stem_for(name));
-    let r = crate::io::save_command_output_named(app, "library.export", &file, json!({ "library": id }));
+    let file = format!(
+        "{}.{LIBRARY_EXT}",
+        vectorcraft_engine::cmd::library::file_stem_for(name)
+    );
+    let r = crate::io::save_command_output_named(
+        app,
+        "library.export",
+        &file,
+        json!({ "library": id }),
+    );
     report(app, r);
 }
 
@@ -519,21 +686,42 @@ mod tests {
     #[test]
     fn the_panel_draws_its_libraries() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         frame(&mut app);
         app.run("library.create", json!({"name": "Brand"})).unwrap();
         frame(&mut app);
-        let id = app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap()["id"].clone();
+        let id = app
+            .run(
+                "shape.rectangle",
+                json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+            )
+            .unwrap()["id"]
+            .clone();
         app.run("select.set", json!({"ids": [id]})).unwrap();
         app.run("library.add", json!({"kind": "graphic"})).unwrap();
-        app.run("library.add", json!({"kind": "fillColor"})).unwrap();
-        let t = app.run("text.create", json!({"x": 10, "y": 80, "text": "Type"})).unwrap()["id"].clone();
+        app.run("library.add", json!({"kind": "fillColor"}))
+            .unwrap();
+        let t = app
+            .run("text.create", json!({"x": 10, "y": 80, "text": "Type"}))
+            .unwrap()["id"]
+            .clone();
         app.run("select.set", json!({"ids": [t]})).unwrap();
-        app.run("library.add", json!({"kind": "charStyle"})).unwrap();
-        app.run("library.add", json!({"kind": "paraStyle"})).unwrap();
+        app.run("library.add", json!({"kind": "charStyle"}))
+            .unwrap();
+        app.run("library.add", json!({"kind": "paraStyle"}))
+            .unwrap();
         frame(&mut app);
         let lib = app.session.libraries.get("Brand").unwrap();
-        assert_eq!((lib.graphics.len(), lib.colors.len(), lib.char_styles.len(), lib.para_styles.len()), (1, 1, 1, 1));
+        assert_eq!(
+            (
+                lib.graphics.len(),
+                lib.colors.len(),
+                lib.char_styles.len(),
+                lib.para_styles.len()
+            ),
+            (1, 1, 1, 1)
+        );
         // The thumbnail decodes.
         let ctx = egui::Context::default();
         assert!(thumbnail(&ctx, "Brand", &lib.graphics[0]).is_some());
@@ -562,24 +750,49 @@ mod tests {
     #[test]
     fn the_panel_searches_and_shows_groups() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         app.run("library.create", json!({"name": "Brand"})).unwrap();
         for (name, color) in [("Ocean Blue", "#0044aa"), ("Sun Yellow", "#ffcc00")] {
-            app.run("library.add", json!({"kind": "fillColor", "color": color, "name": name})).unwrap();
+            app.run(
+                "library.add",
+                json!({"kind": "fillColor", "color": color, "name": name}),
+            )
+            .unwrap();
         }
-        let t = app.run("text.create", json!({"x": 10, "y": 80, "text": "Type"})).unwrap()["id"].clone();
+        let t = app
+            .run("text.create", json!({"x": 10, "y": 80, "text": "Type"}))
+            .unwrap()["id"]
+            .clone();
         app.run("select.set", json!({"ids": [t]})).unwrap();
-        app.run("library.add", json!({"kind": "charStyle", "name": "Headline"})).unwrap();
-        app.run("library.createGroup", json!({"name": "Warm", "items": [{"kind": "fillColor", "item": "Sun Yellow"}]})).unwrap();
+        app.run(
+            "library.add",
+            json!({"kind": "charStyle", "name": "Headline"}),
+        )
+        .unwrap();
+        app.run(
+            "library.createGroup",
+            json!({"name": "Warm", "items": [{"kind": "fillColor", "item": "Sun Yellow"}]}),
+        )
+        .unwrap();
         let all = texts(&mut app, "");
         let at = |s: &str| all.iter().position(|t| t == s);
         assert!(at("Headline").is_some() && at("Warm").is_some(), "{all:?}");
-        assert!(at("Headline") < at("Warm"), "groups come after the ungrouped items: {all:?}");
+        assert!(
+            at("Headline") < at("Warm"),
+            "groups come after the ungrouped items: {all:?}"
+        );
         // "BLUE" finds the blue swatch only: the style and the group without a match are hidden.
         let found = texts(&mut app, "BLUE");
-        assert!(!found.iter().any(|t| t == "Headline" || t == "Warm"), "{found:?}");
+        assert!(
+            !found.iter().any(|t| t == "Headline" || t == "Warm"),
+            "{found:?}"
+        );
         let found = texts(&mut app, "yellow");
-        assert!(found.iter().any(|t| t == "Warm") && !found.iter().any(|t| t == "Headline"), "{found:?}");
+        assert!(
+            found.iter().any(|t| t == "Warm") && !found.iter().any(|t| t == "Headline"),
+            "{found:?}"
+        );
         let none = texts(&mut app, "zzz");
         assert!(none.iter().any(|t| t == "No results"), "{none:?}");
     }
@@ -589,17 +802,43 @@ mod tests {
     #[test]
     fn group_dialogs_run_with_their_library_and_group() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
-        let lib = app.run("library.create", json!({"name": "Brand"})).unwrap()["id"].as_str().unwrap().to_string();
-        app.run("library.add", json!({"kind": "fillColor", "color": "#0044aa", "name": "Blue"})).unwrap();
-        ask_group_name(&mut app, &lib, None, json!([{"kind": "fillColor", "item": "Blue"}]));
-        app.ui.dialog.as_mut().unwrap().fields.insert("name".into(), json!("Cool"));
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
+        let lib = app.run("library.create", json!({"name": "Brand"})).unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        app.run(
+            "library.add",
+            json!({"kind": "fillColor", "color": "#0044aa", "name": "Blue"}),
+        )
+        .unwrap();
+        ask_group_name(
+            &mut app,
+            &lib,
+            None,
+            json!([{"kind": "fillColor", "item": "Blue"}]),
+        );
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("name".into(), json!("Cool"));
         crate::dialogs::confirm(&mut app).unwrap();
         ask_group_name(&mut app, &lib, Some("Cool"), Value::Null);
-        app.ui.dialog.as_mut().unwrap().fields.insert("name".into(), json!("Cold"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("name".into(), json!("Cold"));
         crate::dialogs::confirm(&mut app).unwrap();
         let got = app.run("library.get", json!({})).unwrap();
-        assert_eq!(got["groups"], json!([{"name": "Cold", "items": [{"kind": "color", "item": "Blue"}]}]));
+        assert_eq!(
+            got["groups"],
+            json!([{"name": "Cold", "items": [{"kind": "color", "item": "Blue"}]}])
+        );
     }
 
     /// Export Library… writes the library's file and Import Library… adds it back as a new library.
@@ -609,22 +848,34 @@ mod tests {
         let dir = vectorcraft_testkit::temp_dir("libraries-panel");
         let path = dir.join("Brand.vclibrary").to_string_lossy().to_string();
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         app.run("library.create", json!({"name": "Brand"})).unwrap();
-        app.run("library.add", json!({"kind": "fillColor", "color": "#0044aa", "name": "Blue"})).unwrap();
+        app.run(
+            "library.add",
+            json!({"kind": "fillColor", "color": "#0044aa", "name": "Blue"}),
+        )
+        .unwrap();
         let picked = path.clone();
         app.services.pick_save = Some(Box::new(move |pick: &crate::FilePick| {
             assert_eq!(pick.name, "Brand.vclibrary", "the library's name suggested");
             Some(picked.clone())
         }));
-        app.services.write = Some(Box::new(|p: &str, bytes: &[u8]| std::fs::write(p, bytes).map_err(|e| e.to_string())));
+        app.services.write = Some(Box::new(|p: &str, bytes: &[u8]| {
+            std::fs::write(p, bytes).map_err(|e| e.to_string())
+        }));
         export_picked(&mut app, "Brand", "Brand");
         assert!(std::path::Path::new(&path).exists());
         let picked = path.clone();
         app.services.pick_open = Some(Box::new(move |_: &crate::FilePick| Some(picked.clone())));
         import_picked(&mut app);
         let list = app.run("library.list", json!({})).unwrap();
-        let names: Vec<&str> = list["libraries"].as_array().unwrap().iter().map(|l| l["name"].as_str().unwrap()).collect();
+        let names: Vec<&str> = list["libraries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| l["name"].as_str().unwrap())
+            .collect();
         assert_eq!(names, ["Brand", "Brand (2)"]);
         assert_eq!(app.ui.status, "Imported library Brand (2)");
     }

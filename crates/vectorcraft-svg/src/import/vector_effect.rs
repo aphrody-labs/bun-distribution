@@ -17,24 +17,50 @@ use super::{Edits, href};
 pub(super) const NON_SCALING: &str = "non-scaling-stroke";
 
 /// The shapes the property applies to (`<text>` is read by the text import).
-const SHAPES: &[&str] = &["path", "rect", "circle", "ellipse", "line", "polyline", "polygon"];
+const SHAPES: &[&str] = &[
+    "path", "rect", "circle", "ellipse", "line", "polyline", "polygon",
+];
 
 /// Does element `n` ask for a non-scaling stroke?
 pub(super) fn is_non_scaling(css: &Styles, n: XNode) -> bool {
-    css.own(n, "vector-effect").is_some_and(|v| v.trim() == NON_SCALING)
+    css.own(n, "vector-effect")
+        .is_some_and(|v| v.trim() == NON_SCALING)
 }
 
 /// Record the ids of the shapes with a non-scaling stroke (made up for those without one) in
 /// `ids`, and warn about those shown where usvg drops ids: their strokes scale like others.
-pub(super) fn find(svg: &str, xml: &roxmltree::Document, css: &Styles, edits: &mut Edits, ids: &mut HashSet<String>, warnings: &mut Vec<String>) {
-    let reused: HashSet<&str> =
-        xml.descendants().filter(|n| n.tag_name().name() == "use").filter_map(href).filter_map(|h| h.trim().strip_prefix('#')).collect();
-    for n in xml.descendants().filter(|n| n.is_element() && SHAPES.contains(&n.tag_name().name()) && is_non_scaling(css, *n)) {
+pub(super) fn find(
+    svg: &str,
+    xml: &roxmltree::Document,
+    css: &Styles,
+    edits: &mut Edits,
+    ids: &mut HashSet<String>,
+    warnings: &mut Vec<String>,
+) {
+    let reused: HashSet<&str> = xml
+        .descendants()
+        .filter(|n| n.tag_name().name() == "use")
+        .filter_map(href)
+        .filter_map(|h| h.trim().strip_prefix('#'))
+        .collect();
+    for n in xml.descendants().filter(|n| {
+        n.is_element() && SHAPES.contains(&n.tag_name().name()) && is_non_scaling(css, *n)
+    }) {
         // usvg drops the ids of marker and `<use>` copies; a pattern's paint scales its art.
-        let placed = n.ancestors().any(|a| matches!(a.tag_name().name(), "pattern" | "marker" | "symbol"));
-        if placed || n.ancestors().any(|a| a.attribute("id").is_some_and(|id| reused.contains(id))) {
-            let label = n.attribute("id").map_or_else(|| format!("a {}", n.tag_name().name()), |id| format!("'{id}'"));
-            let w = format!("non-scaling stroke on {label} in a pattern, marker or reused element: it scales with the transform there");
+        let placed = n
+            .ancestors()
+            .any(|a| matches!(a.tag_name().name(), "pattern" | "marker" | "symbol"));
+        if placed
+            || n.ancestors()
+                .any(|a| a.attribute("id").is_some_and(|id| reused.contains(id)))
+        {
+            let label = n.attribute("id").map_or_else(
+                || format!("a {}", n.tag_name().name()),
+                |id| format!("'{id}'"),
+            );
+            let w = format!(
+                "non-scaling stroke on {label} in a pattern, marker or reused element: it scales with the transform there"
+            );
             if !warnings.contains(&w) {
                 warnings.push(w);
             }

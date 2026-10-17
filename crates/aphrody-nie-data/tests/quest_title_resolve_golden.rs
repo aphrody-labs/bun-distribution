@@ -22,8 +22,14 @@ fn quest(id: u32, title: u32) -> ParsedQuest {
 
 fn titles() -> Vec<(HashId, String)> {
     vec![
-        (HashId(0x0B0F_1787), String::from("Tu n'as pas perdu le foot")),
-        (HashId(0xA04C_7405), String::from("Interrogez les élèves des alentours.")),
+        (
+            HashId(0x0B0F_1787),
+            String::from("Tu n'as pas perdu le foot"),
+        ),
+        (
+            HashId(0xA04C_7405),
+            String::from("Interrogez les élèves des alentours."),
+        ),
         // hash dupliqué : la DERNIÈRE valeur l'emporte (last-wins de buildNameMap).
         (HashId(0x0000_00AA), String::from("ancien")),
         (HashId(0x0000_00AA), String::from("récent")),

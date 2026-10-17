@@ -52,7 +52,12 @@ async fn post(
     bearer: &str,
     req: &ChatRequest,
 ) -> Result<reqwest::Response, GatewayError> {
-    let resp = client.post(url).bearer_auth(bearer).json(&build_openai_body(req)).send().await?;
+    let resp = client
+        .post(url)
+        .bearer_auth(bearer)
+        .json(&build_openai_body(req))
+        .send()
+        .await?;
     if resp.status().is_success() {
         return Ok(resp);
     }
@@ -85,16 +90,16 @@ fn sse_bytes_to_chunks(
                             if done {
                                 break;
                             }
-                        },
-                        Ok(None) => {},
+                        }
+                        Ok(None) => {}
                         Err(e) => {
                             chunks.push(Err(e));
                             break;
-                        },
+                        }
                     }
                 }
                 chunks
-            },
+            }
         };
         futures::stream::iter(items)
     })
@@ -109,8 +114,10 @@ mod tests {
     fn frames(
         parts: &[&str],
     ) -> impl Stream<Item = Result<Bytes, reqwest::Error>> + Send + 'static {
-        let owned: Vec<Result<Bytes, reqwest::Error>> =
-            parts.iter().map(|p| Ok(Bytes::from((*p).to_owned()))).collect();
+        let owned: Vec<Result<Bytes, reqwest::Error>> = parts
+            .iter()
+            .map(|p| Ok(Bytes::from((*p).to_owned())))
+            .collect();
         futures::stream::iter(owned)
     }
 

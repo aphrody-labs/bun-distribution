@@ -42,7 +42,11 @@ fn a_non_scaling_stroke_keeps_its_width_under_a_scale() {
     </svg>"##;
     let (d, warnings) = import_with_report(svg).unwrap();
     assert!(close(stroke(&d, "red").0, 12.0));
-    assert!(close(stroke(&d, "green").0, 4.0), "{:?}", stroke(&d, "green"));
+    assert!(
+        close(stroke(&d, "green").0, 4.0),
+        "{:?}",
+        stroke(&d, "green")
+    );
     assert!(warnings.is_empty(), "{warnings:?}");
 }
 
@@ -56,13 +60,23 @@ fn widths_and_dashes_are_in_screen_pixels_past_the_view_box() {
     </svg>"##;
     let (d, _) = import_with_report(svg).unwrap();
     let (w, dash) = stroke(&d, "box");
-    assert!(close(w, 2.0) && dash == Some(vec![6.0, 3.0]), "{w} {dash:?}");
+    assert!(
+        close(w, 2.0) && dash == Some(vec![6.0, 3.0]),
+        "{w} {dash:?}"
+    );
     assert!(close(stroke(&d, "ring").0, 4.0));
 
     // In a root sized in millimetres a CSS pixel is 0.75 pt.
-    let mm = svg.replace(r#"width="200" height="100""#, r#"width="200mm" height="100mm""#);
+    let mm = svg.replace(
+        r#"width="200" height="100""#,
+        r#"width="200mm" height="100mm""#,
+    );
     let (d, _) = import_with_report(&mm).unwrap();
-    assert!(close(stroke(&d, "box").0, 1.5), "a 2 px stroke is 1.5 pt: {:?}", stroke(&d, "box"));
+    assert!(
+        close(stroke(&d, "box").0, 1.5),
+        "a 2 px stroke is 1.5 pt: {:?}",
+        stroke(&d, "box")
+    );
 }
 
 #[test]
@@ -72,7 +86,12 @@ fn a_reused_non_scaling_stroke_warns() {
       <use xlink:href="#tick" transform="scale(4)"/>
     </svg>"##;
     let (_, warnings) = import_with_report(svg).unwrap();
-    assert!(warnings.iter().any(|w| w.contains("non-scaling stroke on 'tick'")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("non-scaling stroke on 'tick'")),
+        "{warnings:?}"
+    );
 }
 
 #[test]
@@ -85,11 +104,29 @@ fn type_keeps_its_non_scaling_stroke_width() {
     let t = text(&d);
     let st = &t.runs[0].style;
     // The scale became the type's size: the stroke and its dashes keep their width on screen.
-    assert!(close(st.size, 40.0) && close(t.xf.determinant(), 1.0), "{} {:?}", st.size, t.xf);
-    assert!(close(st.stroke_width * t.xf.determinant().sqrt(), 3.0), "{} {:?}", st.stroke_width, t.xf);
-    assert_eq!(st.stroke_dash.as_ref().map(|d| d.pattern.clone()), Some(vec![4.0, 2.0]));
+    assert!(
+        close(st.size, 40.0) && close(t.xf.determinant(), 1.0),
+        "{} {:?}",
+        st.size,
+        t.xf
+    );
+    assert!(
+        close(st.stroke_width * t.xf.determinant().sqrt(), 3.0),
+        "{} {:?}",
+        st.stroke_width,
+        t.xf
+    );
+    assert_eq!(
+        st.stroke_dash.as_ref().map(|d| d.pattern.clone()),
+        Some(vec![4.0, 2.0])
+    );
     assert!(warnings.is_empty(), "{warnings:?}");
 
     let (_, warnings) = import_with_report(&svg.replace("scale(2)", "scale(2 1)")).unwrap();
-    assert!(warnings.iter().any(|w| w.contains("non-scaling stroke on a text approximated")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("non-scaling stroke on a text approximated")),
+        "{warnings:?}"
+    );
 }

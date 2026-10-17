@@ -27,7 +27,15 @@ use effectcraft_project::ParamUi;
 use crate::{Buf, EffectCtx, EffectSpec, Params, num, p, popup, slider};
 
 fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>) -> EffectSpec {
-    EffectSpec { id, name, category: "Audio", params, render: passthrough, gpu: false, float: true }
+    EffectSpec {
+        id,
+        name,
+        category: "Audio",
+        params,
+        render: passthrough,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn passthrough(_: &EffectCtx, b: Buf) -> Buf {
@@ -43,50 +51,156 @@ fn pp(id: &'static str, name: &'static str, v: (Value, ParamUi)) -> crate::Param
 }
 
 /// Distortion's Type options.
-pub const DISTORTION_TYPES: [&str; 6] = ["Soft Clip", "Hard Clip", "Saturation 1", "Saturation 2", "Tube", "Fuzz"];
+pub const DISTORTION_TYPES: [&str; 6] = [
+    "Soft Clip",
+    "Hard Clip",
+    "Saturation 1",
+    "Saturation 2",
+    "Tube",
+    "Fuzz",
+];
 
 pub fn specs() -> Vec<EffectSpec> {
     const BANDS: [[&str; 8]; 3] = [
-        ["band1Enable", "Band 1 Enabled", "band1Frequency", "Band 1 Frequency", "band1Bandwidth", "Band 1 Bandwidth", "band1BoostCut", "Band 1 Boost/Cut"],
-        ["band2Enable", "Band 2 Enabled", "band2Frequency", "Band 2 Frequency", "band2Bandwidth", "Band 2 Bandwidth", "band2BoostCut", "Band 2 Boost/Cut"],
-        ["band3Enable", "Band 3 Enabled", "band3Frequency", "Band 3 Frequency", "band3Bandwidth", "Band 3 Bandwidth", "band3BoostCut", "Band 3 Boost/Cut"],
+        [
+            "band1Enable",
+            "Band 1 Enabled",
+            "band1Frequency",
+            "Band 1 Frequency",
+            "band1Bandwidth",
+            "Band 1 Bandwidth",
+            "band1BoostCut",
+            "Band 1 Boost/Cut",
+        ],
+        [
+            "band2Enable",
+            "Band 2 Enabled",
+            "band2Frequency",
+            "Band 2 Frequency",
+            "band2Bandwidth",
+            "Band 2 Bandwidth",
+            "band2BoostCut",
+            "Band 2 Boost/Cut",
+        ],
+        [
+            "band3Enable",
+            "Band 3 Enabled",
+            "band3Frequency",
+            "Band 3 Frequency",
+            "band3Bandwidth",
+            "Band 3 Bandwidth",
+            "band3BoostCut",
+            "Band 3 Boost/Cut",
+        ],
     ];
     let mut eq = vec![];
-    for (b, (f, on)) in BANDS.iter().zip([(200.0, true), (1000.0, false), (5000.0, false)]) {
+    for (b, (f, on)) in BANDS
+        .iter()
+        .zip([(200.0, true), (1000.0, false), (5000.0, false)])
+    {
         eq.push(p(b[0], b[1], Value::Bool(on), ParamUi::Checkbox));
-        eq.push(p(b[2], b[3], num(f), slider(20.0, 20000.0, 20.0, 20000.0, 1)));
+        eq.push(p(
+            b[2],
+            b[3],
+            num(f),
+            slider(20.0, 20000.0, 20.0, 20000.0, 1),
+        ));
         eq.push(p(b[4], b[5], num(30.0), slider(1.0, 100.0, 1.0, 100.0, 1)));
         eq.push(p(b[6], b[7], num(0.0), slider(-24.0, 24.0, -24.0, 24.0, 2)));
     }
     vec![
-        spec("ec.audio.backwards", "Backwards", vec![p("swapChannels", "Swap Channels", Value::Bool(false), ParamUi::Checkbox)]),
+        spec(
+            "ec.audio.backwards",
+            "Backwards",
+            vec![p(
+                "swapChannels",
+                "Swap Channels",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            )],
+        ),
         spec(
             "ec.audio.basstreble",
             "Bass & Treble",
             vec![
-                p("bass", "Bass", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 2)),
-                p("treble", "Treble", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 2)),
+                p(
+                    "bass",
+                    "Bass",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 2),
+                ),
+                p(
+                    "treble",
+                    "Treble",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 2),
+                ),
             ],
         ),
         spec(
             "ec.audio.compressor",
             "Compressor",
             vec![
-                p("threshold", "Threshold (dB)", num(-16.0), slider(-60.0, 0.0, -60.0, 0.0, 2)),
-                p("ratio", "Ratio (x:1)", num(3.0), slider(0.4, 30.0, 0.4, 30.0, 2)),
-                p("knee", "Knee (dB)", num(15.0), slider(0.0, 30.0, 0.0, 30.0, 2)),
-                p("attack", "Attack (ms)", num(6.0), slider(0.0, 400.0, 0.0, 400.0, 2)),
-                p("release", "Release (ms)", num(440.0), slider(1.0, 4000.0, 1.0, 4000.0, 2)),
-                p("autoRelease", "Auto Release", Value::Bool(true), ParamUi::Checkbox),
-                p("makeupGain", "Makeup Gain (dB)", num(0.0), slider(-30.0, 30.0, -30.0, 30.0, 2)),
-                p("outputLimit", "Output Limit (dB)", num(0.0), slider(-30.0, 0.0, -30.0, 0.0, 2)),
+                p(
+                    "threshold",
+                    "Threshold (dB)",
+                    num(-16.0),
+                    slider(-60.0, 0.0, -60.0, 0.0, 2),
+                ),
+                p(
+                    "ratio",
+                    "Ratio (x:1)",
+                    num(3.0),
+                    slider(0.4, 30.0, 0.4, 30.0, 2),
+                ),
+                p(
+                    "knee",
+                    "Knee (dB)",
+                    num(15.0),
+                    slider(0.0, 30.0, 0.0, 30.0, 2),
+                ),
+                p(
+                    "attack",
+                    "Attack (ms)",
+                    num(6.0),
+                    slider(0.0, 400.0, 0.0, 400.0, 2),
+                ),
+                p(
+                    "release",
+                    "Release (ms)",
+                    num(440.0),
+                    slider(1.0, 4000.0, 1.0, 4000.0, 2),
+                ),
+                p(
+                    "autoRelease",
+                    "Auto Release",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "makeupGain",
+                    "Makeup Gain (dB)",
+                    num(0.0),
+                    slider(-30.0, 30.0, -30.0, 30.0, 2),
+                ),
+                p(
+                    "outputLimit",
+                    "Output Limit (dB)",
+                    num(0.0),
+                    slider(-30.0, 0.0, -30.0, 0.0, 2),
+                ),
             ],
         ),
         spec(
             "ec.audio.delay",
             "Delay",
             vec![
-                p("delayTime", "Delay Time (milliseconds)", num(500.0), slider(1.0, 10000.0, 1.0, 2000.0, 2)),
+                p(
+                    "delayTime",
+                    "Delay Time (milliseconds)",
+                    num(500.0),
+                    slider(1.0, 10000.0, 1.0, 2000.0, 2),
+                ),
                 pp("delayAmount", "Delay Amount", pct(50.0)),
                 pp("feedback", "Feedback", pct(50.0)),
                 pp("dryOut", "Dry Out", pct(75.0)),
@@ -97,26 +211,71 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.audio.distortion",
             "Distortion",
             vec![
-                p("distortionType", "Type", Value::Enum(0), popup(&DISTORTION_TYPES)),
+                p(
+                    "distortionType",
+                    "Type",
+                    Value::Enum(0),
+                    popup(&DISTORTION_TYPES),
+                ),
                 pp("drive", "Drive", pct(25.0)),
                 p("gain", "Gain", num(25.0), slider(0.0, 300.0, 0.0, 300.0, 2)),
                 pp("mix", "Mix", pct(100.0)),
-                p("volume", "Volume", num(11.0), slider(0.0, 100.0, 0.0, 100.0, 2)),
-                p("bitDepth", "Resolution (bit)", num(24.0), slider(1.0, 24.0, 1.0, 24.0, 0)),
-                p("downsample", "Downsample (x)", num(1.0), slider(1.0, 64.0, 1.0, 32.0, 0)),
+                p(
+                    "volume",
+                    "Volume",
+                    num(11.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 2),
+                ),
+                p(
+                    "bitDepth",
+                    "Resolution (bit)",
+                    num(24.0),
+                    slider(1.0, 24.0, 1.0, 24.0, 0),
+                ),
+                p(
+                    "downsample",
+                    "Downsample (x)",
+                    num(1.0),
+                    slider(1.0, 64.0, 1.0, 32.0, 0),
+                ),
             ],
         ),
         spec(
             "ec.audio.flangechorus",
             "Flange & Chorus",
             vec![
-                p("voiceSeparationTime", "Voice Separation Time (ms)", num(3.0), slider(0.0, 100.0, 0.0, 50.0, 2)),
+                p(
+                    "voiceSeparationTime",
+                    "Voice Separation Time (ms)",
+                    num(3.0),
+                    slider(0.0, 100.0, 0.0, 50.0, 2),
+                ),
                 p("voices", "Voices", num(1.0), slider(1.0, 8.0, 1.0, 8.0, 0)),
-                p("modulationRate", "Modulation Rate", num(0.4), slider(0.0, 10.0, 0.0, 5.0, 2)),
+                p(
+                    "modulationRate",
+                    "Modulation Rate",
+                    num(0.4),
+                    slider(0.0, 10.0, 0.0, 5.0, 2),
+                ),
                 pp("modulationDepth", "Modulation Depth", pct(50.0)),
-                p("voicePhaseChange", "Voice Phase Change", num(0.0), ParamUi::Angle),
-                p("invertPhase", "Invert Phase", Value::Bool(false), ParamUi::Checkbox),
-                p("stereoVoices", "Stereo Voices", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "voicePhaseChange",
+                    "Voice Phase Change",
+                    num(0.0),
+                    ParamUi::Angle,
+                ),
+                p(
+                    "invertPhase",
+                    "Invert Phase",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "stereoVoices",
+                    "Stereo Voices",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 pp("dryOut", "Dry Out", pct(50.0)),
                 pp("wetOut", "Wet Out", pct(50.0)),
             ],
@@ -125,18 +284,48 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.audio.gate",
             "Gate",
             vec![
-                p("threshold", "Threshold (dB)", num(-60.0), slider(-60.0, 0.0, -60.0, 0.0, 2)),
-                p("attack", "Attack (ms)", num(10.0), slider(0.0, 1000.0, 0.0, 1000.0, 2)),
-                p("hold", "Hold (ms)", num(40.0), slider(0.0, 2500.0, 0.0, 2500.0, 2)),
-                p("release", "Release (ms)", num(220.0), slider(5.0, 4000.0, 5.0, 4000.0, 2)),
+                p(
+                    "threshold",
+                    "Threshold (dB)",
+                    num(-60.0),
+                    slider(-60.0, 0.0, -60.0, 0.0, 2),
+                ),
+                p(
+                    "attack",
+                    "Attack (ms)",
+                    num(10.0),
+                    slider(0.0, 1000.0, 0.0, 1000.0, 2),
+                ),
+                p(
+                    "hold",
+                    "Hold (ms)",
+                    num(40.0),
+                    slider(0.0, 2500.0, 0.0, 2500.0, 2),
+                ),
+                p(
+                    "release",
+                    "Release (ms)",
+                    num(220.0),
+                    slider(5.0, 4000.0, 5.0, 4000.0, 2),
+                ),
             ],
         ),
         spec(
             "ec.audio.highlowpass",
             "High-Low Pass",
             vec![
-                p("filterOptions", "Filter Options", Value::Enum(0), popup(&["High Pass", "Low Pass"])),
-                p("cutoffFrequency", "Cutoff Frequency", num(2000.0), slider(20.0, 20000.0, 20.0, 20000.0, 1)),
+                p(
+                    "filterOptions",
+                    "Filter Options",
+                    Value::Enum(0),
+                    popup(&["High Pass", "Low Pass"]),
+                ),
+                p(
+                    "cutoffFrequency",
+                    "Cutoff Frequency",
+                    num(2000.0),
+                    slider(20.0, 20000.0, 20.0, 20000.0, 1),
+                ),
                 pp("dryOut", "Dry Out", pct(0.0)),
                 pp("wetOut", "Wet Out", pct(100.0)),
             ],
@@ -145,8 +334,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.audio.modulator",
             "Modulator",
             vec![
-                p("modulationType", "Modulation Type", Value::Enum(0), popup(&["Sine", "Triangle"])),
-                p("modulationRate", "Modulation Rate", num(10.0), slider(0.0, 100.0, 0.0, 20.0, 2)),
+                p(
+                    "modulationType",
+                    "Modulation Type",
+                    Value::Enum(0),
+                    popup(&["Sine", "Triangle"]),
+                ),
+                p(
+                    "modulationRate",
+                    "Modulation Rate",
+                    num(10.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 2),
+                ),
                 pp("modulationDepth", "Modulation Depth", pct(5.0)),
                 pp("amplitudeModulation", "Amplitude Modulation", pct(0.0)),
             ],
@@ -156,7 +355,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.audio.reverb",
             "Reverb",
             vec![
-                p("reverbTime", "Reverb Time (milliseconds)", num(100.0), slider(1.0, 5000.0, 1.0, 1000.0, 2)),
+                p(
+                    "reverbTime",
+                    "Reverb Time (milliseconds)",
+                    num(100.0),
+                    slider(1.0, 5000.0, 1.0, 1000.0, 2),
+                ),
                 pp("diffusion", "Diffusion", pct(75.0)),
                 pp("decay", "Decay", pct(25.0)),
                 pp("brightness", "Brightness", pct(10.0)),
@@ -168,23 +372,78 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.audio.stereomixer",
             "Stereo Mixer",
             vec![
-                p("leftLevel", "Left Level", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 2)),
-                p("rightLevel", "Right Level", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 2)),
-                p("leftPan", "Left Pan", num(-100.0), slider(-100.0, 100.0, -100.0, 100.0, 2)),
-                p("rightPan", "Right Pan", num(100.0), slider(-100.0, 100.0, -100.0, 100.0, 2)),
-                p("invertPhase", "Invert Phase", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "leftLevel",
+                    "Left Level",
+                    num(100.0),
+                    slider(0.0, 400.0, 0.0, 200.0, 2),
+                ),
+                p(
+                    "rightLevel",
+                    "Right Level",
+                    num(100.0),
+                    slider(0.0, 400.0, 0.0, 200.0, 2),
+                ),
+                p(
+                    "leftPan",
+                    "Left Pan",
+                    num(-100.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 2),
+                ),
+                p(
+                    "rightPan",
+                    "Right Pan",
+                    num(100.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 2),
+                ),
+                p(
+                    "invertPhase",
+                    "Invert Phase",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
         ),
         spec(
             "ec.audio.tone",
             "Tone",
             vec![
-                p("waveformOptions", "Waveform Options", Value::Enum(0), popup(&["Sine", "Triangle", "Saw", "Square", "White Noise"])),
-                p("frequency1", "Frequency 1", num(440.0), slider(0.0, 22000.0, 0.0, 2000.0, 2)),
-                p("frequency2", "Frequency 2", num(493.88), slider(0.0, 22000.0, 0.0, 2000.0, 2)),
-                p("frequency3", "Frequency 3", num(587.33), slider(0.0, 22000.0, 0.0, 2000.0, 2)),
-                p("frequency4", "Frequency 4", num(659.26), slider(0.0, 22000.0, 0.0, 2000.0, 2)),
-                p("frequency5", "Frequency 5", num(783.99), slider(0.0, 22000.0, 0.0, 2000.0, 2)),
+                p(
+                    "waveformOptions",
+                    "Waveform Options",
+                    Value::Enum(0),
+                    popup(&["Sine", "Triangle", "Saw", "Square", "White Noise"]),
+                ),
+                p(
+                    "frequency1",
+                    "Frequency 1",
+                    num(440.0),
+                    slider(0.0, 22000.0, 0.0, 2000.0, 2),
+                ),
+                p(
+                    "frequency2",
+                    "Frequency 2",
+                    num(493.88),
+                    slider(0.0, 22000.0, 0.0, 2000.0, 2),
+                ),
+                p(
+                    "frequency3",
+                    "Frequency 3",
+                    num(587.33),
+                    slider(0.0, 22000.0, 0.0, 2000.0, 2),
+                ),
+                p(
+                    "frequency4",
+                    "Frequency 4",
+                    num(659.26),
+                    slider(0.0, 22000.0, 0.0, 2000.0, 2),
+                ),
+                p(
+                    "frequency5",
+                    "Frequency 5",
+                    num(783.99),
+                    slider(0.0, 22000.0, 0.0, 2000.0, 2),
+                ),
                 pp("level", "Level", pct(20.0)),
             ],
         ),
@@ -216,21 +475,37 @@ pub fn preroll(id: &str, params: &Params) -> f64 {
         // The envelope settles within a few attack/release time constants.
         "ec.audio.compressor" | "ec.audio.gate" => {
             let auto = id == "ec.audio.compressor" && params.b("autoRelease");
-            let rel = if auto { AUTO_RELEASE_SLOW_MS } else { params.f("release").max(1.0) } / 1000.0;
+            let rel = if auto {
+                AUTO_RELEASE_SLOW_MS
+            } else {
+                params.f("release").max(1.0)
+            } / 1000.0;
             let att = params.f("attack").max(0.0) / 1000.0;
-            let hold = if id == "ec.audio.gate" { params.f("hold").max(0.0) / 1000.0 } else { 0.0 };
+            let hold = if id == "ec.audio.gate" {
+                params.f("hold").max(0.0) / 1000.0
+            } else {
+                0.0
+            };
             (9.0 * rel + 9.0 * att + hold + 0.01).min(10.0)
         }
         "ec.audio.delay" => {
             let d = params.f("delayTime").max(1.0) / 1000.0;
             let fb = (params.f("feedback") / 100.0).clamp(0.0, 0.99);
-            let taps = if fb > 1e-3 { (1e-3f64.ln() / fb.ln()).ceil() + 1.0 } else { 1.0 };
+            let taps = if fb > 1e-3 {
+                (1e-3f64.ln() / fb.ln()).ceil() + 1.0
+            } else {
+                1.0
+            };
             (d * taps).min(10.0)
         }
         "ec.audio.reverb" => {
             let (fb, _, _, pre) = reverb_params(params);
             // T60 of the longest comb (~37 ms) with loop gain fb, plus the pre-delay.
-            let t60 = if fb > 1e-3 { -3.0 * 0.0367 / fb.log10() } else { 0.05 };
+            let t60 = if fb > 1e-3 {
+                -3.0 * 0.0367 / fb.log10()
+            } else {
+                0.05
+            };
             (t60 + pre).min(4.0)
         }
         _ => 0.0,
@@ -246,7 +521,10 @@ pub fn process(id: &str, params: &Params, buf: &mut [f32], rate: u32, start: f64
     let sr = rate as f64;
     match id {
         "ec.audio.backwards" if params.b("swapChannels") => {
-            buf.as_chunks_mut::<2>().0.iter_mut().for_each(|f| f.swap(0, 1));
+            buf.as_chunks_mut::<2>()
+                .0
+                .iter_mut()
+                .for_each(|f| f.swap(0, 1));
         }
         "ec.audio.basstreble" => {
             let bass = params.f("bass") / 100.0 * 12.0;
@@ -261,7 +539,11 @@ pub fn process(id: &str, params: &Params, buf: &mut [f32], rate: u32, start: f64
         "ec.audio.highlowpass" => {
             let fc = params.f("cutoffFrequency").clamp(1.0, sr * 0.49);
             let q = std::f64::consts::FRAC_1_SQRT_2;
-            let bq = if params.e("filterOptions") == 1 { Biquad::low_pass(sr, fc, q) } else { Biquad::high_pass(sr, fc, q) };
+            let bq = if params.e("filterOptions") == 1 {
+                Biquad::low_pass(sr, fc, q)
+            } else {
+                Biquad::high_pass(sr, fc, q)
+            };
             let dry = (params.f("dryOut") / 100.0) as f32;
             let wet = (params.f("wetOut") / 100.0) as f32;
             let orig = buf.to_vec();
@@ -312,19 +594,36 @@ pub struct Biquad {
 
 impl Biquad {
     fn norm(b0: f64, b1: f64, b2: f64, a0: f64, a1: f64, a2: f64) -> Biquad {
-        Biquad { b: [b0 / a0, b1 / a0, b2 / a0], a: [a1 / a0, a2 / a0] }
+        Biquad {
+            b: [b0 / a0, b1 / a0, b2 / a0],
+            a: [a1 / a0, a2 / a0],
+        }
     }
     pub fn low_pass(sr: f64, f0: f64, q: f64) -> Biquad {
         let w = 2.0 * PI * f0 / sr;
         let (s, c) = w.sin_cos();
         let al = s / (2.0 * q);
-        Self::norm((1.0 - c) / 2.0, 1.0 - c, (1.0 - c) / 2.0, 1.0 + al, -2.0 * c, 1.0 - al)
+        Self::norm(
+            (1.0 - c) / 2.0,
+            1.0 - c,
+            (1.0 - c) / 2.0,
+            1.0 + al,
+            -2.0 * c,
+            1.0 - al,
+        )
     }
     pub fn high_pass(sr: f64, f0: f64, q: f64) -> Biquad {
         let w = 2.0 * PI * f0 / sr;
         let (s, c) = w.sin_cos();
         let al = s / (2.0 * q);
-        Self::norm((1.0 + c) / 2.0, -(1.0 + c), (1.0 + c) / 2.0, 1.0 + al, -2.0 * c, 1.0 - al)
+        Self::norm(
+            (1.0 + c) / 2.0,
+            -(1.0 + c),
+            (1.0 + c) / 2.0,
+            1.0 + al,
+            -2.0 * c,
+            1.0 - al,
+        )
     }
     /// Peaking EQ with bandwidth `bw` in octaves and gain in dB.
     pub fn peaking(sr: f64, f0: f64, bw: f64, db: f64) -> Biquad {
@@ -332,7 +631,14 @@ impl Biquad {
         let w = 2.0 * PI * f0 / sr;
         let (s, c) = w.sin_cos();
         let al = s * (2f64.ln() / 2.0 * bw * w / s).sinh();
-        Self::norm(1.0 + al * a, -2.0 * c, 1.0 - al * a, 1.0 + al / a, -2.0 * c, 1.0 - al / a)
+        Self::norm(
+            1.0 + al * a,
+            -2.0 * c,
+            1.0 - al * a,
+            1.0 + al / a,
+            -2.0 * c,
+            1.0 - al / a,
+        )
     }
     /// Shelf with slope S = 1.
     pub fn low_shelf(sr: f64, f0: f64, db: f64) -> Biquad {
@@ -429,7 +735,11 @@ fn lin_to_db(v: f64) -> f64 {
 
 /// One-pole smoothing coefficient for a time constant of `ms` milliseconds.
 fn smoothing(ms: f64, sr: f64) -> f64 {
-    if ms <= 0.0 { 0.0 } else { (-1.0 / (ms / 1000.0 * sr)).exp() }
+    if ms <= 0.0 {
+        0.0
+    } else {
+        (-1.0 / (ms / 1000.0 * sr)).exp()
+    }
 }
 
 /// Static compressor curve: gain change (dB, ≤ 0) for an input level `x` dB (quadratic soft
@@ -462,8 +772,18 @@ fn compressor(params: &Params, buf: &mut [f32], sr: f64) {
     let knee = params.f("knee").max(0.0);
     let att = smoothing(params.f("attack"), sr);
     let auto = params.b("autoRelease");
-    let rel = smoothing(if auto { AUTO_RELEASE_FAST_MS } else { params.f("release").max(0.001) }, sr);
-    let (att_s, rel_s) = (smoothing(AUTO_RELEASE_SLOW_ATTACK_MS, sr), smoothing(AUTO_RELEASE_SLOW_MS, sr));
+    let rel = smoothing(
+        if auto {
+            AUTO_RELEASE_FAST_MS
+        } else {
+            params.f("release").max(0.001)
+        },
+        sr,
+    );
+    let (att_s, rel_s) = (
+        smoothing(AUTO_RELEASE_SLOW_ATTACK_MS, sr),
+        smoothing(AUTO_RELEASE_SLOW_MS, sr),
+    );
     let makeup = params.f("makeupGain");
     // Output Limit: a final ceiling (brick-wall clip) so the result never exceeds it.
     let limit = db_to_lin(params.f("outputLimit").min(0.0)) as f32;
@@ -610,7 +930,11 @@ fn flange_chorus(params: &Params, buf: &mut [f32], sr: f64, start: f64) {
             }
         }
         for ch in 0..2 {
-            let w = if cnt[ch] > 0 { acc[ch] / cnt[ch] as f32 } else { 0.0 };
+            let w = if cnt[ch] > 0 {
+                acc[ch] / cnt[ch] as f32
+            } else {
+                0.0
+            };
             buf[i * 2 + ch] = src[i * 2 + ch] * dry + inv * w * wet;
         }
     }
@@ -630,7 +954,11 @@ fn modulator(params: &Params, buf: &mut [f32], sr: f64, start: f64) {
         let d = depth * (1.0 + l) * 0.5;
         let g = (1.0 - am * (1.0 - l) * 0.5) as f32;
         for ch in 0..2 {
-            let x = if depth > 0.0 { read_frac(&src, i, ch, d) } else { src[i * 2 + ch] };
+            let x = if depth > 0.0 {
+                read_frac(&src, i, ch, d)
+            } else {
+                src[i * 2 + ch]
+            };
             buf[i * 2 + ch] = x * g;
         }
     }
@@ -659,10 +987,26 @@ fn reverb(params: &Params, buf: &mut [f32], sr: f64) {
     let src = buf.to_vec();
     for ch in 0..2 {
         let spread = if ch == 1 { SPREAD } else { 0 };
-        let mut combs: Vec<(Vec<f64>, usize, f64)> = COMBS.iter().map(|&l| (vec![0.0; (((l + spread) as f64 * k) as usize).max(1)], 0, 0.0)).collect();
-        let mut aps: Vec<(Vec<f64>, usize)> = ALLPASS.iter().map(|&l| (vec![0.0; (((l + spread) as f64 * k) as usize).max(1)], 0)).collect();
+        let mut combs: Vec<(Vec<f64>, usize, f64)> = COMBS
+            .iter()
+            .map(|&l| {
+                (
+                    vec![0.0; (((l + spread) as f64 * k) as usize).max(1)],
+                    0,
+                    0.0,
+                )
+            })
+            .collect();
+        let mut aps: Vec<(Vec<f64>, usize)> = ALLPASS
+            .iter()
+            .map(|&l| (vec![0.0; (((l + spread) as f64 * k) as usize).max(1)], 0))
+            .collect();
         for i in 0..n {
-            let x = if i >= pre_n { (src[(i - pre_n) * 2] as f64 + src[(i - pre_n) * 2 + 1] as f64) * 0.5 * 0.03 } else { 0.0 };
+            let x = if i >= pre_n {
+                (src[(i - pre_n) * 2] as f64 + src[(i - pre_n) * 2 + 1] as f64) * 0.5 * 0.03
+            } else {
+                0.0
+            };
             let mut out = 0.0;
             for (line, pos, filt) in combs.iter_mut() {
                 let y = line[*pos];
@@ -704,7 +1048,10 @@ fn stereo_mixer(params: &Params, buf: &mut [f32]) {
 fn tone(params: &Params, buf: &mut [f32], sr: f64, start: f64) {
     let kind = params.e("waveformOptions");
     let level = (params.f("level") / 100.0) as f32;
-    let freqs: Vec<f64> = (1..=5).map(|i| params.f(&format!("frequency{i}"))).filter(|f| *f > 0.0).collect();
+    let freqs: Vec<f64> = (1..=5)
+        .map(|i| params.f(&format!("frequency{i}")))
+        .filter(|f| *f > 0.0)
+        .collect();
     let n = buf.len() / 2;
     for i in 0..n {
         let t = start + i as f64 / sr;
@@ -723,7 +1070,8 @@ fn tone(params: &Params, buf: &mut [f32], sr: f64, start: f64) {
                 }
                 // White noise: a hash of the absolute sample position (every frequency alike).
                 4 => {
-                    let h = ((t * sr).round() as i64 as u64 ^ f.to_bits()).wrapping_mul(0x9e37_79b9_7f4a_7c15);
+                    let h = ((t * sr).round() as i64 as u64 ^ f.to_bits())
+                        .wrapping_mul(0x9e37_79b9_7f4a_7c15);
                     let h = (h ^ (h >> 29)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
                     ((h ^ (h >> 32)) >> 11) as f64 / (1u64 << 53) as f64 * 2.0 - 1.0
                 }
@@ -742,7 +1090,13 @@ mod tests {
 
     fn defaults(id: &str) -> Params {
         let s = crate::find(id).unwrap();
-        Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() }
+        Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        }
     }
 
     fn sine(freq: f64, sr: f64, n: usize) -> Vec<f32> {
@@ -845,7 +1199,10 @@ mod tests {
         let mut b = vec![0.0f32; 48000 * 2];
         process("ec.audio.tone", &p, &mut b, sr, 0.0);
         let left: Vec<f32> = b.iter().step_by(2).copied().collect();
-        let crossings = left.windows(2).filter(|w| w[0] <= 0.0 && w[1] > 0.0).count();
+        let crossings = left
+            .windows(2)
+            .filter(|w| w[0] <= 0.0 && w[1] > 0.0)
+            .count();
         assert!((crossings as i64 - 1000).abs() <= 1, "{crossings}");
         let peak = left.iter().fold(0.0f32, |m, v| m.max(v.abs()));
         assert!((peak - 0.2).abs() < 1e-3, "{peak}");
@@ -870,7 +1227,11 @@ mod tests {
         p.values.insert("band1Frequency".into(), num(1000.0));
         let mut s = sine(1000.0, sr, 9600);
         process("ec.audio.parametriceq", &p, &mut s, 48000, 0.0);
-        assert!((rms(&s, 4000) * std::f32::consts::SQRT_2 - 3.98).abs() < 0.2, "{}", rms(&s, 4000) * std::f32::consts::SQRT_2);
+        assert!(
+            (rms(&s, 4000) * std::f32::consts::SQRT_2 - 3.98).abs() < 0.2,
+            "{}",
+            rms(&s, 4000) * std::f32::consts::SQRT_2
+        );
         // Reverb leaves a tail after an impulse.
         let p = defaults("ec.audio.reverb");
         let mut b = vec![0.0f32; 48000];
@@ -909,10 +1270,20 @@ mod tests {
         // The soft knee meets the hard curve at its edges.
         let k = 6.0;
         assert!(compressor_gain_db(-23.0, -20.0, 4.0, k).abs() < 1e-9);
-        assert!((compressor_gain_db(-17.0, -20.0, 4.0, k) - compressor_gain_db(-17.0, -20.0, 4.0, 0.0)).abs() < 1e-9);
+        assert!(
+            (compressor_gain_db(-17.0, -20.0, 4.0, k) - compressor_gain_db(-17.0, -20.0, 4.0, 0.0))
+                .abs()
+                < 1e-9
+        );
         let sr = 48000.0;
         let mut p = defaults("ec.audio.compressor");
-        for (k, v) in [("attack", 1.0), ("threshold", -20.0), ("ratio", 4.0), ("knee", 0.0), ("release", 100.0)] {
+        for (k, v) in [
+            ("attack", 1.0),
+            ("threshold", -20.0),
+            ("ratio", 4.0),
+            ("knee", 0.0),
+            ("release", 100.0),
+        ] {
             p.values.insert(k.into(), num(v));
         }
         p.values.insert("autoRelease".into(), Value::Bool(false));
@@ -958,7 +1329,10 @@ mod tests {
         for k in 0..DISTORTION_TYPES.len() as u32 {
             for x in [-2.0f32, -0.3, 0.0, 0.2, 1.7] {
                 let y = distort_sample(k, x, 0.5);
-                assert!(y.abs() <= 1.0 && y.signum() * x.signum() >= 0.0, "{k} {x} {y}");
+                assert!(
+                    y.abs() <= 1.0 && y.signum() * x.signum() >= 0.0,
+                    "{k} {x} {y}"
+                );
             }
         }
         // Tube is asymmetric.
@@ -1014,10 +1388,19 @@ mod tests {
             let mut p = defaults("ec.audio.compressor");
             p.values.insert("autoRelease".into(), Value::Bool(auto));
             p.values.insert("release".into(), num(4000.0));
-            let mut b: Vec<f32> = sine(1000.0, sr, 9600).iter().enumerate().map(|(i, v)| if i < 960 { *v } else { v * 0.2 }).collect();
+            let mut b: Vec<f32> = sine(1000.0, sr, 9600)
+                .iter()
+                .enumerate()
+                .map(|(i, v)| if i < 960 { *v } else { v * 0.2 })
+                .collect();
             process("ec.audio.compressor", &p, &mut b, 48000, 0.0);
             rms(&b, 4800)
         };
-        assert!(burst(true) > burst(false) * 1.2, "{} {}", burst(true), burst(false));
+        assert!(
+            burst(true) > burst(false) * 1.2,
+            "{} {}",
+            burst(true),
+            burst(false)
+        );
     }
 }

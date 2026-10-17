@@ -34,7 +34,11 @@ fn lo_ext_dirs(name: &str) -> Vec<String> {
     let dashed = name.replace('_', "-");
     let first = format!("dict-{primary}");
     let full = format!("dict-{dashed}");
-    if full == first { vec![first] } else { vec![first, full] }
+    if full == first {
+        vec![first]
+    } else {
+        vec![first, full]
+    }
 }
 
 /// Directories that may hold Hunspell dictionaries, most specific first. `lo_exts`, when a
@@ -51,19 +55,36 @@ pub fn search_dirs(lo_exts: Option<&[String]>) -> Vec<PathBuf> {
         dirs.push(PathBuf::from(d));
     }
     // LibreOffice keeps each language under `…/share/extensions/<dict-xx>`.
-    let lo_dirs =
-        |prefix: &str| -> Vec<PathBuf> { lo_exts.map_or_else(Vec::new, |exts| exts.iter().map(|e| PathBuf::from(prefix).join(e)).collect()) };
-    let home = std::env::var_os("HOME").filter(|v| !v.is_empty()).map(PathBuf::from);
+    let lo_dirs = |prefix: &str| -> Vec<PathBuf> {
+        lo_exts.map_or_else(Vec::new, |exts| {
+            exts.iter().map(|e| PathBuf::from(prefix).join(e)).collect()
+        })
+    };
+    let home = std::env::var_os("HOME")
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from);
     if cfg!(windows) {
         for var in ["LOCALAPPDATA", "APPDATA"] {
-            if let Some(base) = std::env::var_os(var).filter(|v| !v.is_empty()).map(PathBuf::from) {
+            if let Some(base) = std::env::var_os(var)
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from)
+            {
                 dirs.push(base.join("WordCraft").join("dictionaries"));
                 dirs.push(base.join("hunspell"));
             }
         }
         for var in ["ProgramFiles", "ProgramFiles(x86)"] {
-            if let Some(base) = std::env::var_os(var).filter(|v| !v.is_empty()).map(PathBuf::from) {
-                dirs.extend(lo_dirs(&base.join("LibreOffice").join("share").join("extensions").to_string_lossy()));
+            if let Some(base) = std::env::var_os(var)
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from)
+            {
+                dirs.extend(lo_dirs(
+                    &base
+                        .join("LibreOffice")
+                        .join("share")
+                        .join("extensions")
+                        .to_string_lossy(),
+                ));
             }
         }
     } else if cfg!(target_os = "macos") {
@@ -73,15 +94,26 @@ pub fn search_dirs(lo_exts: Option<&[String]>) -> Vec<PathBuf> {
         dirs.push(PathBuf::from("/Library/Spelling"));
         dirs.push(PathBuf::from("/opt/homebrew/share/hunspell"));
         dirs.push(PathBuf::from("/usr/local/share/hunspell"));
-        dirs.extend(lo_dirs("/Applications/LibreOffice.app/Contents/Resources/extensions"));
+        dirs.extend(lo_dirs(
+            "/Applications/LibreOffice.app/Contents/Resources/extensions",
+        ));
     } else {
         if let Some(h) = &home {
             dirs.push(h.join(".local/share/hunspell"));
         }
-        for d in ["/usr/share/hunspell", "/usr/share/myspell", "/usr/share/myspell/dicts", "/usr/local/share/hunspell", "/usr/local/share/myspell"] {
+        for d in [
+            "/usr/share/hunspell",
+            "/usr/share/myspell",
+            "/usr/share/myspell/dicts",
+            "/usr/local/share/hunspell",
+            "/usr/local/share/myspell",
+        ] {
             dirs.push(PathBuf::from(d));
         }
-        for d in ["/usr/lib/libreoffice/share/extensions", "/opt/libreoffice/share/extensions"] {
+        for d in [
+            "/usr/lib/libreoffice/share/extensions",
+            "/opt/libreoffice/share/extensions",
+        ] {
             dirs.extend(lo_dirs(d));
         }
     }
@@ -92,7 +124,9 @@ pub fn search_dirs(lo_exts: Option<&[String]>) -> Vec<PathBuf> {
 /// [`search_dirs`] (including LibreOffice's extension folder for the first name).
 pub fn find(names: &[&str]) -> Option<(PathBuf, PathBuf)> {
     let lo = names.first().copied().map(lo_ext_dirs);
-    search_dirs(lo.as_deref()).into_iter().find_map(|dir| find_in(&dir, names))
+    search_dirs(lo.as_deref())
+        .into_iter()
+        .find_map(|dir| find_in(&dir, names))
 }
 
 /// The first `<name>.aff`/`<name>.dic` pair for any of `names` in `dir`.
@@ -107,7 +141,9 @@ pub fn find_in(dir: &Path, names: &[&str]) -> Option<(PathBuf, PathBuf)> {
 /// Read a Hunspell pair from disk (size-capped), decoded per the `.aff`'s `SET` line.
 pub fn load(aff: &Path, dic: &Path) -> Result<AffixDict, String> {
     let read = |p: &Path| -> Result<Vec<u8>, String> {
-        let len = std::fs::metadata(p).map_err(|e| format!("{}: {e}", p.display()))?.len();
+        let len = std::fs::metadata(p)
+            .map_err(|e| format!("{}: {e}", p.display()))?
+            .len();
         if len > MAX_FILE {
             return Err(format!("{}: too large ({len} bytes)", p.display()));
         }
@@ -123,17 +159,36 @@ const ISO_8859_2_HIGH: &str = "\u{a0}Ą˘Ł¤ĽŚ§¨ŠŞŤŹ\u{ad}ŽŻ°ą˛ł�
 
 fn decode_latin2(bytes: &[u8]) -> String {
     let high: Vec<char> = ISO_8859_2_HIGH.chars().collect();
-    bytes.iter().map(|&b| if b < 0xa0 { char::from(b) } else { high.get(usize::from(b - 0xa0)).copied().unwrap_or('\u{fffd}') }).collect()
+    bytes
+        .iter()
+        .map(|&b| {
+            if b < 0xa0 {
+                char::from(b)
+            } else {
+                high.get(usize::from(b - 0xa0))
+                    .copied()
+                    .unwrap_or('\u{fffd}')
+            }
+        })
+        .collect()
 }
 
 /// Decode an `.aff`/`.dic` pair to UTF-8 from the encoding the `.aff`'s `SET` line names
 /// (UTF-8 when there is none; ISO 8859-2 is the other one Polish dictionaries use).
 pub fn decode(aff: &[u8], dic: &[u8]) -> Result<(String, String), String> {
-    let head = String::from_utf8_lossy(aff.get(..aff.len().min(8192)).unwrap_or_default()).to_string();
-    let set = head.lines().find_map(|l| l.trim_start_matches('\u{feff}').strip_prefix("SET ")).map(str::trim).unwrap_or("UTF-8").to_ascii_uppercase();
+    let head =
+        String::from_utf8_lossy(aff.get(..aff.len().min(8192)).unwrap_or_default()).to_string();
+    let set = head
+        .lines()
+        .find_map(|l| l.trim_start_matches('\u{feff}').strip_prefix("SET "))
+        .map(str::trim)
+        .unwrap_or("UTF-8")
+        .to_ascii_uppercase();
     match set.as_str() {
         "UTF-8" | "UTF8" => {
-            let text = |b: &[u8], what: &str| String::from_utf8(b.to_vec()).map_err(|e| format!("{what}: not UTF-8: {e}"));
+            let text = |b: &[u8], what: &str| {
+                String::from_utf8(b.to_vec()).map_err(|e| format!("{what}: not UTF-8: {e}"))
+            };
             Ok((text(aff, ".aff")?, text(dic, ".dic")?))
         }
         "ISO8859-2" | "ISO-8859-2" => Ok((decode_latin2(aff), decode_latin2(dic))),
@@ -166,16 +221,27 @@ mod tests {
         assert_eq!(super::lo_ext_dirs("de-DE"), ["dict-de", "dict-de-DE"]);
         let dirs = search_dirs(Some(&super::lo_ext_dirs("pt_BR")));
         assert!(dirs.iter().any(|d| d.ends_with("dict-pt-BR")), "{dirs:?}");
-        assert!(search_dirs(None).iter().all(|d| !d.to_string_lossy().contains("dict-")), "no language: no LibreOffice guess");
+        assert!(
+            search_dirs(None)
+                .iter()
+                .all(|d| !d.to_string_lossy().contains("dict-")),
+            "no language: no LibreOffice guess"
+        );
     }
 
     #[test]
     fn finds_and_loads_a_pair_in_a_directory() {
         let dir = std::env::temp_dir().join(format!("wordcraft-hunspell-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        assert!(find_in(&dir, &["xx_XX"]).is_none(), "no files: nothing found");
+        assert!(
+            find_in(&dir, &["xx_XX"]).is_none(),
+            "no files: nothing found"
+        );
         std::fs::write(dir.join("xx_XX.aff"), "SET UTF-8\nSFX A Y 1\nSFX A 0 y .\n").unwrap();
-        assert!(find_in(&dir, &["xx_XX"]).is_none(), "an .aff alone isn't a dictionary");
+        assert!(
+            find_in(&dir, &["xx_XX"]).is_none(),
+            "an .aff alone isn't a dictionary"
+        );
         std::fs::write(dir.join("xx_XX.dic"), "1\nkot/A\n").unwrap();
         let (aff, dic) = find_in(&dir, &["yy", "xx_XX"]).unwrap();
         let d = load(&aff, &dic).unwrap();

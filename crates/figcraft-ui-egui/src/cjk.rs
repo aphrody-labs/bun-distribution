@@ -30,8 +30,16 @@ const JAPANESE: &[&str] = &[
     "IPAPGothic",
     "TakaoPGothic",
 ];
-const KOREAN: &[&str] =
-    &["Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Noto Sans KR", "Source Han Sans KR", "NanumGothic", "NanumBarunGothic", "UnDotum"];
+const KOREAN: &[&str] = &[
+    "Malgun Gothic",
+    "Apple SD Gothic Neo",
+    "Noto Sans CJK KR",
+    "Noto Sans KR",
+    "Source Han Sans KR",
+    "NanumGothic",
+    "NanumBarunGothic",
+    "UnDotum",
+];
 const CHINESE: &[&str] = &[
     "Noto Sans CJK SC",
     "Microsoft YaHei UI",
@@ -49,8 +57,17 @@ pub fn scripts(s: &str) -> u8 {
     s.chars().fold(0, |m, c| {
         m | match u32::from(c) {
             0x3040..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F => KANA,
-            0x1100..=0x11FF | 0x3130..=0x318F | 0xA960..=0xA97F | 0xAC00..=0xD7FF | 0xFFA0..=0xFFDC => HANGUL,
-            0x3000..=0x303F | 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF | 0xFF01..=0xFF65 | 0x20000..=0x3FFFF => HAN,
+            0x1100..=0x11FF
+            | 0x3130..=0x318F
+            | 0xA960..=0xA97F
+            | 0xAC00..=0xD7FF
+            | 0xFFA0..=0xFFDC => HANGUL,
+            0x3000..=0x303F
+            | 0x3400..=0x4DBF
+            | 0x4E00..=0x9FFF
+            | 0xF900..=0xFAFF
+            | 0xFF01..=0xFF65
+            | 0x20000..=0x3FFFF => HAN,
             _ => 0,
         }
     })
@@ -73,7 +90,9 @@ pub fn can_show(code: &str) -> bool {
     let need = language(code);
     need == 0
         || !cfg!(target_arch = "wasm32")
-        || samples(need, 0).iter().all(|(c, _)| figcraft_text::face_with_char(*c, &["BIZ UDPGothic", "Noto Sans CJK SC"]).is_some())
+        || samples(need, 0).iter().all(|(c, _)| {
+            figcraft_text::face_with_char(*c, &["BIZ UDPGothic", "Noto Sans CJK SC"]).is_some()
+        })
 }
 
 /// A character standing for each script in `need`, with the families to look for it in, the UI
@@ -87,13 +106,20 @@ fn samples(need: u8, ui: u8) -> Vec<(char, Vec<&'static str>)> {
         (false, HANGUL) => ('漢', [KOREAN, JAPANESE, CHINESE].concat()),
         (false, _) => ('漢', [JAPANESE, KOREAN, CHINESE].concat()),
     };
-    let mut v = vec![(KANA, ('あ', JAPANESE.to_vec())), (HAN, han), (HANGUL, ('한', KOREAN.to_vec()))];
+    let mut v = vec![
+        (KANA, ('あ', JAPANESE.to_vec())),
+        (HAN, han),
+        (HANGUL, ('한', KOREAN.to_vec())),
+    ];
     match ui {
         HANGUL => v.reverse(),
         HAN => v.swap(0, 1),
         _ => {}
     }
-    v.into_iter().filter(|(bit, _)| need & bit != 0).map(|(_, s)| s).collect()
+    v.into_iter()
+        .filter(|(bit, _)| need & bit != 0)
+        .map(|(_, s)| s)
+        .collect()
 }
 
 /// Faces (built-in or installed) drawing the scripts in `need` that `have` (the UI's other fonts)
@@ -128,13 +154,27 @@ mod tests {
         assert_eq!(language("zh-Hant"), HAN);
         assert_eq!(language("zh-Hans"), HAN);
         assert_eq!(language("fr"), 0);
-        assert!(["en", "es", "es-419", "fr", "de", "pt-BR"].iter().all(|c| can_show(c)));
+        assert!(
+            ["en", "es", "es-419", "fr", "de", "pt-BR"]
+                .iter()
+                .all(|c| can_show(c))
+        );
     }
 
     #[test]
     fn the_ui_language_script_comes_first() {
-        let order = |need, ui| samples(need, ui).into_iter().map(|(c, _)| c).collect::<String>();
-        let first_face = |need, ui| samples(need, ui).first().and_then(|(_, f)| f.first()).copied();
+        let order = |need, ui| {
+            samples(need, ui)
+                .into_iter()
+                .map(|(c, _)| c)
+                .collect::<String>()
+        };
+        let first_face = |need, ui| {
+            samples(need, ui)
+                .first()
+                .and_then(|(_, f)| f.first())
+                .copied()
+        };
         assert_eq!(order(KANA | HAN | HANGUL, 0), "あ漢한");
         assert_eq!(order(KANA | HAN | HANGUL, KANA | HAN), "あ漢한");
         assert_eq!(order(KANA | HAN | HANGUL, HANGUL), "한漢あ");
@@ -146,8 +186,15 @@ mod tests {
         // A Chinese UI draws Han in a Chinese face first, Japanese names in it too.
         assert_eq!(order(KANA | HAN | HANGUL, HAN), "们あ한");
         assert_eq!(order(KANA | HAN, language("zh-Hans")), "们あ");
-        assert!(["Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC"].iter().all(|f| samples(HAN, HAN)[0].1[..4].contains(f)));
+        assert!(
+            ["Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC"]
+                .iter()
+                .all(|f| samples(HAN, HAN)[0].1[..4].contains(f))
+        );
         assert!(faces(0, "en", &|_| false).is_empty());
-        assert!(faces(KANA | HANGUL | HAN, "ja", &|_| true).is_empty(), "nothing is looked up for scripts the UI draws");
+        assert!(
+            faces(KANA | HANGUL | HAN, "ja", &|_| true).is_empty(),
+            "nothing is looked up for scripts the UI draws"
+        );
     }
 }

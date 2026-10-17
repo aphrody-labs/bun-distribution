@@ -58,7 +58,12 @@ async fn ping_agent_card_and_msg_roundtrip() {
 
     let ping = app
         .clone()
-        .oneshot(axum::http::Request::builder().uri("/ping").body(Body::empty()).unwrap())
+        .oneshot(
+            axum::http::Request::builder()
+                .uri("/ping")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(ping.status(), 200);
@@ -168,7 +173,14 @@ async fn coord_route_serves_mailbox_as_ndjson_and_sse() {
     let resp = app.clone().oneshot(get_coord(None)).await.unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(resp.headers()["content-type"], "application/x-ndjson");
-    assert!(resp.into_body().collect().await.unwrap().to_bytes().is_empty());
+    assert!(
+        resp.into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .is_empty()
+    );
 
     // `/msg` from the aphrody peer lands in `.coord/inbox-from-aphrody.jsonl`,
     // the mailbox `/coord` proxies.
@@ -194,7 +206,11 @@ async fn coord_route_serves_mailbox_as_ndjson_and_sse() {
     assert_eq!(msg.status(), 200);
     assert!(coord.join("inbox-from-aphrody.jsonl").is_file());
 
-    let resp = app.clone().oneshot(get_coord(Some("application/json"))).await.unwrap();
+    let resp = app
+        .clone()
+        .oneshot(get_coord(Some("application/json")))
+        .await
+        .unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(resp.headers()["content-type"], "application/x-ndjson");
     let bytes = resp.into_body().collect().await.unwrap().to_bytes();
@@ -205,7 +221,10 @@ async fn coord_route_serves_mailbox_as_ndjson_and_sse() {
     assert_eq!(stored.id, env.id);
     assert_eq!(stored.topic, "coord-route");
 
-    let resp = app.oneshot(get_coord(Some("text/event-stream"))).await.unwrap();
+    let resp = app
+        .oneshot(get_coord(Some("text/event-stream")))
+        .await
+        .unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(resp.headers()["content-type"], "text/event-stream");
     let bytes = resp.into_body().collect().await.unwrap().to_bytes();

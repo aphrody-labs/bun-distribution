@@ -132,8 +132,13 @@ impl LlamaServerSpec {
         if matches!(self.placement, Placement::Auto { .. }) && !caps.fit {
             return Err("automatic placement requires --fit");
         }
-        if matches!(self.placement, Placement::Planned { n_cpu_moe: Some(_), .. })
-            && !caps.n_cpu_moe
+        if matches!(
+            self.placement,
+            Placement::Planned {
+                n_cpu_moe: Some(_),
+                ..
+            }
+        ) && !caps.n_cpu_moe
         {
             return Err("CPU expert placement requires --n-cpu-moe");
         }
@@ -185,8 +190,11 @@ impl LlamaServerSpec {
         match self.placement {
             Placement::Auto { margin_mib } => {
                 push(&["--fit", "on", "--fit-target", &margin_mib.to_string()]);
-            },
-            Placement::Planned { n_gpu_layers, n_cpu_moe } => {
+            }
+            Placement::Planned {
+                n_gpu_layers,
+                n_cpu_moe,
+            } => {
                 if caps.fit {
                     // An explicit split must not be second-guessed.
                     push(&["--fit", "off"]);
@@ -195,13 +203,13 @@ impl LlamaServerSpec {
                 if let (true, Some(layers)) = (caps.n_cpu_moe, n_cpu_moe) {
                     push(&["--n-cpu-moe", &layers.to_string()]);
                 }
-            },
+            }
             Placement::Cpu => {
                 if caps.fit {
                     push(&["--fit", "off"]);
                 }
                 push(&["--n-gpu-layers", "0"]);
-            },
+            }
         }
 
         if self.kv != KvQuant::F16 && caps.kv_cache_types {
@@ -210,7 +218,12 @@ impl LlamaServerSpec {
             if caps.flash_attn == FlashAttnSyntax::Switch {
                 push(&["--flash-attn"]);
             }
-            push(&["--cache-type-k", self.kv.as_arg(), "--cache-type-v", self.kv.as_arg()]);
+            push(&[
+                "--cache-type-k",
+                self.kv.as_arg(),
+                "--cache-type-v",
+                self.kv.as_arg(),
+            ]);
         }
 
         match self.role {
@@ -221,7 +234,7 @@ impl LlamaServerSpec {
                 if let Some(template) = &self.chat_template_file {
                     push(&["--chat-template-file", &template.display().to_string()]);
                 }
-            },
+            }
             Role::Embed => {
                 if let Some(flag) = &caps.embedding_flag {
                     push(&[flag]);
@@ -229,12 +242,12 @@ impl LlamaServerSpec {
                 if let Some(pooling) = &self.pooling {
                     push(&["--pooling", pooling]);
                 }
-            },
+            }
             Role::Rerank => {
                 if let Some(flag) = &caps.rerank_flag {
                     push(&[flag]);
                 }
-            },
+            }
         }
 
         if !self.lora.is_empty() {
@@ -304,7 +317,10 @@ mod tests {
         spec.mmproj = Some(PathBuf::from("fixture-mmproj.gguf"));
         absent = caps.clone();
         absent.mmproj = false;
-        assert_eq!(spec.validate_capabilities(&absent), Err("vision projector requires --mmproj"));
+        assert_eq!(
+            spec.validate_capabilities(&absent),
+            Err("vision projector requires --mmproj")
+        );
         spec.mmproj = None;
         spec.role = Role::Embed;
         absent = caps.clone();
@@ -354,7 +370,10 @@ mod tests {
             jinja: true,
             chat_template_file: None,
             pooling: None,
-            lora: vec![LoraAdapter { path: PathBuf::from("a.gguf"), scale: 1.0 }],
+            lora: vec![LoraAdapter {
+                path: PathBuf::from("a.gguf"),
+                scale: 1.0,
+            }],
             extra_args: vec!["--threads".into(), "8".into()],
         }
     }
@@ -400,7 +419,10 @@ mod tests {
     #[test]
     fn legacy_command_line_degrades_to_what_the_build_knows() {
         let mut spec = chat_spec();
-        spec.placement = Placement::Planned { n_gpu_layers: 20, n_cpu_moe: Some(4) };
+        spec.placement = Placement::Planned {
+            n_gpu_layers: 20,
+            n_cpu_moe: Some(4),
+        };
         let args = spec.to_args(&legacy(), "127.0.0.1", 9001);
         assert_eq!(
             args,
@@ -440,12 +462,23 @@ mod tests {
         spec.pooling = Some("mean".into());
         spec.placement = Placement::Cpu;
         let embed = spec.to_args(&modern(), "127.0.0.1", 1);
-        assert!(embed.windows(3).any(|w| w == ["--embeddings", "--pooling", "mean"]));
-        assert!(embed.windows(4).any(|w| w == ["--fit", "off", "--n-gpu-layers", "0"]));
+        assert!(
+            embed
+                .windows(3)
+                .any(|w| w == ["--embeddings", "--pooling", "mean"])
+        );
+        assert!(
+            embed
+                .windows(4)
+                .any(|w| w == ["--fit", "off", "--n-gpu-layers", "0"])
+        );
         assert!(!embed.contains(&"--jinja".to_string()));
 
         spec.role = Role::Rerank;
-        assert!(spec.to_args(&legacy(), "127.0.0.1", 1).contains(&"--reranking".to_string()));
+        assert!(
+            spec.to_args(&legacy(), "127.0.0.1", 1)
+                .contains(&"--reranking".to_string())
+        );
     }
 
     #[test]
@@ -463,7 +496,11 @@ mod tests {
         let mut spec = chat_spec();
         spec.draft_model = Some(PathBuf::from("draft.gguf"));
         let modern_args = spec.to_args(&modern(), "127.0.0.1", 9001);
-        assert!(modern_args.windows(2).any(|w| w == ["--model-draft", "draft.gguf"]));
+        assert!(
+            modern_args
+                .windows(2)
+                .any(|w| w == ["--model-draft", "draft.gguf"])
+        );
 
         // Legacy build does not know --model-draft, so it must not be passed.
         let legacy_args = spec.to_args(&legacy(), "127.0.0.1", 9001);

@@ -49,9 +49,12 @@ fn load(vfs: &Vfs, prefix: &str, must_contain: &str) -> Option<serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg_root =
         load(&vfs, "mission_config", "/gamedata/mission/").expect("mission_config introuvable");
@@ -80,13 +83,23 @@ fn main() {
             n
         );
     }
-    eprintln!("noms de mission résolus = {resolved}/{} (stub : msa999999)", missions.len());
+    eprintln!(
+        "noms de mission résolus = {resolved}/{} (stub : msa999999)",
+        missions.len()
+    );
 
     // Mécanisme : chaque entrée réelle de `mission_text` est résoluble par son propre hash.
     assert!(!mission_text.is_empty(), "mission_text fr non vide");
     for (h, txt) in &mission_text {
-        assert_eq!(aphrody_nie_data::text::find_text(&mission_text, *h), Some(txt.as_str()));
-        eprintln!("  mission_text {} = {:?}", h.to_hex(), txt.chars().take(40).collect::<String>());
+        assert_eq!(
+            aphrody_nie_data::text::find_text(&mission_text, *h),
+            Some(txt.as_str())
+        );
+        eprintln!(
+            "  mission_text {} = {:?}",
+            h.to_hex(),
+            txt.chars().take(40).collect::<String>()
+        );
     }
     eprintln!("✓ END-TO-END OK : jointure mission::resolve_name vérifiée sur le vrai mission_text");
 }

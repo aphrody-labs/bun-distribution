@@ -31,7 +31,10 @@ pub struct Distort {
 
 impl Distort {
     pub fn active(&self) -> bool {
-        self.liquify.is_some() || self.puppet.is_some() || self.perspective.is_some() || self.vanishing.is_some()
+        self.liquify.is_some()
+            || self.puppet.is_some()
+            || self.perspective.is_some()
+            || self.vanishing.is_some()
     }
 
     /// Short description for `ui.inspect`.
@@ -53,8 +56,16 @@ pub(crate) fn active_pixels(app: &PhotocraftApp) -> Result<(LayerId, Surface, bo
     let l = st.doc.layer(id).ok_or("no layer")?;
     match &l.content {
         LayerContent::Raster(s) => Ok((id, s.clone(), false)),
-        LayerContent::Smart(sm) => sm.cache.clone().map(|c| (id, c, true)).ok_or_else(|| "the smart object has no pixels".to_string()),
-        other => Err(format!("needs a pixel layer or smart object (active layer is {} {} layer)", other.article(), other.kind_name())),
+        LayerContent::Smart(sm) => sm
+            .cache
+            .clone()
+            .map(|c| (id, c, true))
+            .ok_or_else(|| "the smart object has no pixels".to_string()),
+        other => Err(format!(
+            "needs a pixel layer or smart object (active layer is {} {} layer)",
+            other.article(),
+            other.kind_name()
+        )),
     }
 }
 
@@ -101,28 +112,57 @@ pub fn display_doc(app: &PhotocraftApp, idx: usize) -> Option<(Arc<Document>, u6
 }
 
 /// Menu / control routing. `Some` when this module handles the invocation.
-pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn menu(
+    app: &mut PhotocraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     let empty = params.as_object().is_none_or(|o| o.is_empty());
     let ui = params.get("ui");
     match id {
-        "filter.filterGallery" if empty => Some(crate::gallery_ui::open(app).map(|_| json!({"gallery": app.distort.describe()["gallery"]}))),
-        "filter.filterGallery" if ui.is_some() && app.distort.gallery.is_some() => Some(crate::gallery_ui::control(app, ui.unwrap_or(&Value::Null))),
-        "filter.liquify" if empty => Some(crate::liquify_ui::open(app, ctx).map(|_| json!({"liquify": app.distort.describe()["liquify"]}))),
-        "filter.liquify" if ui.is_some() && app.distort.liquify.is_some() => Some(crate::liquify_ui::control(app, ui.unwrap_or(&Value::Null))),
-        "edit.puppetWarp" | "layer.smartObjects.puppetWarp" if empty => {
-            Some(crate::puppet_ui::begin(app, ctx, id).map(|_| json!({"puppet": app.distort.describe()["puppet"]})))
+        "filter.filterGallery" if empty => Some(
+            crate::gallery_ui::open(app)
+                .map(|_| json!({"gallery": app.distort.describe()["gallery"]})),
+        ),
+        "filter.filterGallery" if ui.is_some() && app.distort.gallery.is_some() => {
+            Some(crate::gallery_ui::control(app, ui.unwrap_or(&Value::Null)))
         }
-        "edit.puppetWarp" | "layer.smartObjects.puppetWarp" if ui.is_some() && app.distort.puppet.is_some() => {
+        "filter.liquify" if empty => Some(
+            crate::liquify_ui::open(app, ctx)
+                .map(|_| json!({"liquify": app.distort.describe()["liquify"]})),
+        ),
+        "filter.liquify" if ui.is_some() && app.distort.liquify.is_some() => {
+            Some(crate::liquify_ui::control(app, ui.unwrap_or(&Value::Null)))
+        }
+        "edit.puppetWarp" | "layer.smartObjects.puppetWarp" if empty => Some(
+            crate::puppet_ui::begin(app, ctx, id)
+                .map(|_| json!({"puppet": app.distort.describe()["puppet"]})),
+        ),
+        "edit.puppetWarp" | "layer.smartObjects.puppetWarp"
+            if ui.is_some() && app.distort.puppet.is_some() =>
+        {
             Some(crate::puppet_ui::control(app, ui.unwrap_or(&Value::Null)))
         }
-        "edit.perspectiveWarp" | "layer.smartObjects.perspectiveWarp" if empty => {
-            Some(crate::perspective_ui::begin(app, ctx, id).map(|_| json!({"perspective": app.distort.describe()["perspective"]})))
+        "edit.perspectiveWarp" | "layer.smartObjects.perspectiveWarp" if empty => Some(
+            crate::perspective_ui::begin(app, ctx, id)
+                .map(|_| json!({"perspective": app.distort.describe()["perspective"]})),
+        ),
+        "edit.perspectiveWarp" | "layer.smartObjects.perspectiveWarp"
+            if ui.is_some() && app.distort.perspective.is_some() =>
+        {
+            Some(crate::perspective_ui::control(
+                app,
+                ui.unwrap_or(&Value::Null),
+            ))
         }
-        "edit.perspectiveWarp" | "layer.smartObjects.perspectiveWarp" if ui.is_some() && app.distort.perspective.is_some() => {
-            Some(crate::perspective_ui::control(app, ui.unwrap_or(&Value::Null)))
+        "filter.vanishingPoint" if empty => Some(
+            crate::vp_ui::begin(app, ctx)
+                .map(|_| json!({"vanishingPoint": app.distort.describe()["vanishingPoint"]})),
+        ),
+        "filter.vanishingPoint" if ui.is_some() && app.distort.vanishing.is_some() => {
+            Some(crate::vp_ui::control(app, ui.unwrap_or(&Value::Null)))
         }
-        "filter.vanishingPoint" if empty => Some(crate::vp_ui::begin(app, ctx).map(|_| json!({"vanishingPoint": app.distort.describe()["vanishingPoint"]}))),
-        "filter.vanishingPoint" if ui.is_some() && app.distort.vanishing.is_some() => Some(crate::vp_ui::control(app, ui.unwrap_or(&Value::Null))),
         _ => None,
     }
 }

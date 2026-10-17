@@ -7,12 +7,18 @@ use crate::{DeepSamples, OutputDepth, RenderRequest, SourceInfo, render};
 
 fn sunset() -> Rgb32f {
     let lib = lightcraft_scenes::demo_library();
-    let s = lib.iter().find(|s| s.kind == lightcraft_scenes::Kind::OceanSunset).map(|s| s.render(240, 160));
+    let s = lib
+        .iter()
+        .find(|s| s.kind == lightcraft_scenes::Kind::OceanSunset)
+        .map(|s| s.render(240, 160));
     s.unwrap_or_else(|| lib[0].render(240, 160))
 }
 
 fn raw() -> SourceInfo {
-    SourceInfo { raw: true, ..Default::default() }
+    SourceInfo {
+        raw: true,
+        ..Default::default()
+    }
 }
 
 fn hdr_on(max_ev: f64) -> DevelopSettings {
@@ -23,7 +29,10 @@ fn hdr_on(max_ev: f64) -> DevelopSettings {
 }
 
 fn deep(src: &Rgb32f, s: &DevelopSettings, depth: OutputDepth) -> Vec<f32> {
-    let req = RenderRequest { depth, ..RenderRequest::fit(240, 240) };
+    let req = RenderRequest {
+        depth,
+        ..RenderRequest::fit(240, 240)
+    };
     match render(src, &raw(), s, &req).deep.map(|d| d.samples) {
         Some(DeepSamples::F32(v)) => v,
         other => panic!("expected float samples, got {other:?}"),
@@ -34,7 +43,10 @@ fn deep(src: &Rgb32f, s: &DevelopSettings, depth: OutputDepth) -> Vec<f32> {
 fn hdr_render_keeps_highlights_up_to_the_peak() {
     let src = sunset();
     let v = deep(&src, &hdr_on(3.0), OutputDepth::F32Hdr);
-    assert!(v.iter().all(|x| x.is_finite() && (0.0..=8.0 + 1e-4).contains(x)));
+    assert!(
+        v.iter()
+            .all(|x| x.is_finite() && (0.0..=8.0 + 1e-4).contains(x))
+    );
     let max = v.iter().copied().fold(0.0f32, f32::max);
     assert!(max > 1.5, "the sun should rise above SDR white, max {max}");
     // a smaller headroom limit caps lower
@@ -69,10 +81,16 @@ fn hdr_keeps_the_camera_tone_curve_in_the_midtones() {
         let x = 0.004 * 1.18f32.powi(i as i32);
         [x, 1.0 - (-2.0 * x).exp()]
     });
-    let info = SourceInfo { camera_tone: crate::tone::CameraTone::new(knots), ..raw() };
+    let info = SourceInfo {
+        camera_tone: crate::tone::CameraTone::new(knots),
+        ..raw()
+    };
     let src = sunset();
     let render_at = |s: &DevelopSettings, depth| {
-        let req = RenderRequest { depth, ..RenderRequest::fit(240, 240) };
+        let req = RenderRequest {
+            depth,
+            ..RenderRequest::fit(240, 240)
+        };
         match render(&src, &info, s, &req).deep.map(|d| d.samples) {
             Some(DeepSamples::F32(v)) => v,
             other => panic!("expected float samples, got {other:?}"),
@@ -97,7 +115,10 @@ fn hdr_keeps_the_camera_tone_curve_in_the_midtones() {
 fn f32hdr_without_hdr_is_the_sdr_float_render() {
     let src = sunset();
     let s = DevelopSettings::default();
-    assert_eq!(deep(&src, &s, OutputDepth::F32Hdr), deep(&src, &s, OutputDepth::F32Linear));
+    assert_eq!(
+        deep(&src, &s, OutputDepth::F32Hdr),
+        deep(&src, &s, OutputDepth::F32Linear)
+    );
 }
 
 #[test]
@@ -125,16 +146,34 @@ fn visualize_hdr_paints_only_what_rises_above_white() {
     use crate::Overlay;
     use crate::visualize::HDR_BANDS;
     let src = sunset();
-    let req = RenderRequest { overlay: Overlay::HdrRange, ..RenderRequest::fit(240, 240) };
-    let banded = |p: &[u8; 4]| HDR_BANDS.iter().any(|b| (0..3).all(|k| (p[k] as i32 - b[k] as i32).abs() < 70) && p[0] > p[2] + 40);
+    let req = RenderRequest {
+        overlay: Overlay::HdrRange,
+        ..RenderRequest::fit(240, 240)
+    };
+    let banded = |p: &[u8; 4]| {
+        HDR_BANDS
+            .iter()
+            .any(|b| (0..3).all(|k| (p[k] as i32 - b[k] as i32).abs() < 70) && p[0] > p[2] + 40)
+    };
     let on = render(&src, &raw(), &hdr_on(3.0), &req);
     let n = on.image.data.iter().filter(|p| banded(p)).count();
     assert!(n > 0 && n < on.image.data.len() / 3, "{n} banded pixels");
     // the rest is grey
-    assert!(on.image.data.iter().filter(|p| !banded(p)).all(|p| p[0] == p[1] && p[1] == p[2]));
+    assert!(
+        on.image
+            .data
+            .iter()
+            .filter(|p| !banded(p))
+            .all(|p| p[0] == p[1] && p[1] == p[2])
+    );
     // HDR off: the overlay draws nothing
     let off = render(&src, &raw(), &DevelopSettings::default(), &req);
-    let plain = render(&src, &raw(), &DevelopSettings::default(), &RenderRequest::fit(240, 240));
+    let plain = render(
+        &src,
+        &raw(),
+        &DevelopSettings::default(),
+        &RenderRequest::fit(240, 240),
+    );
     assert_eq!(off.image.data, plain.image.data);
 }
 
@@ -147,26 +186,65 @@ fn hdr_histogram_shows_the_range_above_sdr_white_on_a_fixed_scale() {
     let mut s = hdr_on(3.0);
     s.light.exposure = 1.0;
     for other in [
-        RenderRequest { depth: OutputDepth::U16, ..req },
-        RenderRequest { window: Some(crate::PixelWindow { x: 0, y: 0, w: 8, h: 8 }), ..req },
-        RenderRequest { proof: Some(crate::Proof::default()), ..req },
+        RenderRequest {
+            depth: OutputDepth::U16,
+            ..req
+        },
+        RenderRequest {
+            window: Some(crate::PixelWindow {
+                x: 0,
+                y: 0,
+                w: 8,
+                h: 8,
+            }),
+            ..req
+        },
+        RenderRequest {
+            proof: Some(crate::Proof::default()),
+            ..req
+        },
     ] {
         assert!(crate::hdr_histogram(&src, &raw(), &s, &other).is_none());
     }
     let h = crate::hdr_histogram(&src, &raw(), &s, &req).expect("an HDR edit's histogram");
     let bins = h.hdr.expect("HDR bins");
-    assert_eq!(bins.stops, lightcraft_develop::Hdr::MAX_EV_LIMIT as f32, "the whole HDR range");
-    assert!(h.above_sdr() > 0.0, "highlights above SDR white: {}", h.above_sdr());
+    assert_eq!(
+        bins.stops,
+        lightcraft_develop::Hdr::MAX_EV_LIMIT as f32,
+        "the whole HDR range"
+    );
+    assert!(
+        h.above_sdr() > 0.0,
+        "highlights above SDR white: {}",
+        h.above_sdr()
+    );
     assert!(h.total > 0);
     // the scale doesn't follow the headroom limit (a damaged one included); the content does
-    let highest = |h: &lightcraft_raster::Histogram| h.luma.iter().rposition(|&n| n > 0).unwrap_or(0);
+    let highest =
+        |h: &lightcraft_raster::Histogram| h.luma.iter().rposition(|&n| n > 0).unwrap_or(0);
     let top3 = highest(&h);
     s.hdr.max_ev = 1.5;
     let h15 = crate::hdr_histogram(&src, &raw(), &s, &req).unwrap();
     assert_eq!(h15.hdr.unwrap().stops, bins.stops);
-    assert!(highest(&h15) < top3, "a lower limit pulls the highlights down: {} vs {top3}", highest(&h15));
+    assert!(
+        highest(&h15) < top3,
+        "a lower limit pulls the highlights down: {} vs {top3}",
+        highest(&h15)
+    );
     s.hdr.max_ev = f64::NAN;
-    assert_eq!(crate::hdr_histogram(&src, &raw(), &s, &req).unwrap().hdr.unwrap().stops, bins.stops);
+    assert_eq!(
+        crate::hdr_histogram(&src, &raw(), &s, &req)
+            .unwrap()
+            .hdr
+            .unwrap()
+            .stops,
+        bins.stops
+    );
     // the SDR rendition's own histogram has nothing above white
-    assert!(render(&src, &raw(), &hdr_on(3.0), &req).histogram.hdr.is_none());
+    assert!(
+        render(&src, &raw(), &hdr_on(3.0), &req)
+            .histogram
+            .hdr
+            .is_none()
+    );
 }

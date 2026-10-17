@@ -4,7 +4,14 @@
 //! `layout.pages.insert`…) and JSON parameters. The egui UI, the CLI, the control channel and MCP
 //! all go through [`Session::execute`]. Tools (pointer gestures) are hosted here and reduce to
 //! commands, so every gesture is journaled and replayable.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -126,7 +133,10 @@ impl DocState {
             saved_doc: doc.clone(),
             doc,
             selection: Selection::default(),
-            history: History { limit: 1000, ..Default::default() },
+            history: History {
+                limit: 1000,
+                ..Default::default()
+            },
             path,
             revision: 1,
             saved_revision: 1,
@@ -334,7 +344,12 @@ impl Session {
         let d = self.active()?;
         let n = d.doc.page_count();
         let s = s.trim();
-        let pos = |t: &str| t.parse::<usize>().ok().filter(|k| (1..=n).contains(k)).map(|k| k - 1);
+        let pos = |t: &str| {
+            t.parse::<usize>()
+                .ok()
+                .filter(|k| (1..=n).contains(k))
+                .map(|k| k - 1)
+        };
         if let Some(t) = s.strip_prefix('+') {
             return pos(t);
         }
@@ -374,7 +389,9 @@ impl Session {
     pub fn stop_data_preview(&mut self) {
         let Some(st) = self.active_mut() else { return };
         st.preview_record = None;
-        let Some(stash) = st.preview_stash.take() else { return };
+        let Some(stash) = st.preview_stash.take() else {
+            return;
+        };
         st.doc = stash;
         st.revision = st.revision.saturating_add(1);
     }
@@ -389,7 +406,11 @@ impl Session {
         }
         if i < self.docs.len() {
             self.docs.remove(i);
-            self.active = if self.docs.is_empty() { None } else { Some(i.min(self.docs.len() - 1)) };
+            self.active = if self.docs.is_empty() {
+                None
+            } else {
+                Some(i.min(self.docs.len() - 1))
+            };
         }
     }
 
@@ -405,11 +426,20 @@ impl Session {
         if let Err(e) = (spec.enabled)(self) {
             // A command that takes `ids` acts on the objects the call names, so it needs no
             // selection: with a text caret or nothing selected, `{"ids": [5]}` still runs.
-            let named = if e == cmd::NOTHING_SELECTED { cmd::named_targets(spec, params) } else { None };
-            let Some(ids) = named else { return Err(EngineError::Disabled(id.into(), e)) };
+            let named = if e == cmd::NOTHING_SELECTED {
+                cmd::named_targets(spec, params)
+            } else {
+                None
+            };
+            let Some(ids) = named else {
+                return Err(EngineError::Disabled(id.into(), e));
+            };
             let st = self.doc()?;
             if let Some(gone) = ids.iter().find(|i| st.doc.item(**i).is_none()) {
-                return Err(EngineError::Disabled(id.into(), format!("no object with id {}", gone.0)));
+                return Err(EngineError::Disabled(
+                    id.into(),
+                    format!("no object with id {}", gone.0),
+                ));
             }
         }
         // Preview is temporary. Save, merge, and every other edit restore the template first.
@@ -435,7 +465,11 @@ impl Session {
         if spec.undoable
             && let Some(st) = self.active_mut()
             && st.interaction.is_none()
-            && st.doc.spreads.iter().any(|sp| sp.items.iter().any(|i| i.live_caption.is_some()))
+            && st
+                .doc
+                .spreads
+                .iter()
+                .any(|sp| sp.items.iter().any(|i| i.live_caption.is_some()))
         {
             let mut d = (*st.doc).clone();
             if cmd::captions::refresh_live(&mut d) {
@@ -449,7 +483,11 @@ impl Session {
             && st.interaction.is_none()
             && spec.undoable
         {
-            let entry = HistoryEntry { label: spec.label.to_string(), doc: old, selection: st.selection.clone() };
+            let entry = HistoryEntry {
+                label: spec.label.to_string(),
+                doc: old,
+                selection: st.selection.clone(),
+            };
             push_undo(st, entry);
         }
         if spec.journal {
@@ -465,11 +503,19 @@ impl Session {
         if st.interaction.is_some() {
             return;
         }
-        let Some(sid) = st.doc.settings.primary_story else { return };
-        let Some(story) = st.doc.story(sid) else { return };
+        let Some(sid) = st.doc.settings.primary_story else {
+            return;
+        };
+        let Some(story) = st.doc.story(sid) else {
+            return;
+        };
         let cs = self.cache.get(&st.doc, sid, None);
         let overset = cs.overset_at.is_some();
-        let empty_tail = story.frames.len() > 1 && story.frames.last().is_some_and(|f| cs.frame(*f).is_none_or(|ft| ft.range.is_empty()));
+        let empty_tail = story.frames.len() > 1
+            && story
+                .frames
+                .last()
+                .is_some_and(|f| cs.frame(*f).is_none_or(|ft| ft.range.is_empty()));
         if !overset && !empty_tail {
             return;
         }
@@ -482,13 +528,23 @@ impl Session {
                 if story.frames.len() < 2 {
                     break;
                 }
-                let Some(&last) = story.frames.last() else { break };
+                let Some(&last) = story.frames.last() else {
+                    break;
+                };
                 let cs = designcraft_compose::compose_story(&d, sid, &Default::default());
                 if cs.frame(last).is_some_and(|ft| !ft.range.is_empty()) {
                     break;
                 }
-                let Some(page) = d.page_of_item(last) else { break };
-                let alone = d.spreads.iter().flat_map(|sp| sp.items.iter()).filter(|i| d.page_of_item(i.id) == Some(page)).count() == 1;
+                let Some(page) = d.page_of_item(last) else {
+                    break;
+                };
+                let alone = d
+                    .spreads
+                    .iter()
+                    .flat_map(|sp| sp.items.iter())
+                    .filter(|i| d.page_of_item(i.id) == Some(page))
+                    .count()
+                    == 1;
                 if page + 1 != d.page_count() || !alone || d.page_count() < 2 {
                     break;
                 }
@@ -505,7 +561,14 @@ impl Session {
 
     /// Remember a move/rotate/scale/shear/flip for Transform Again.
     fn record_transform(&mut self, id: &str, params: &Value) {
-        if !matches!(id, "transform.move" | "transform.rotate" | "transform.scale" | "transform.shear" | "transform.flip") {
+        if !matches!(
+            id,
+            "transform.move"
+                | "transform.rotate"
+                | "transform.scale"
+                | "transform.shear"
+                | "transform.flip"
+        ) {
             return;
         }
         let Some(st) = self.active() else { return };
@@ -532,7 +595,10 @@ impl Session {
     }
 
     /// Mutate the active document (copy-on-write) and bump the revision.
-    pub fn edit<T>(&mut self, f: impl FnOnce(&mut Document, &mut Selection) -> Result<T>) -> Result<T> {
+    pub fn edit<T>(
+        &mut self,
+        f: impl FnOnce(&mut Document, &mut Selection) -> Result<T>,
+    ) -> Result<T> {
         let st = self.doc_mut()?;
         let mut doc = (*st.doc).clone();
         let mut sel = st.selection.clone();

@@ -22,7 +22,11 @@ impl Kind {
     }
 
     fn command(self) -> &'static str {
-        if self.paragraph() { "type.paragraphStyle.set" } else { "type.characterStyle.set" }
+        if self.paragraph() {
+            "type.paragraphStyle.set"
+        } else {
+            "type.characterStyle.set"
+        }
     }
 }
 
@@ -45,16 +49,34 @@ pub(crate) fn owns(fields: &Map<String, Value>) -> bool {
 }
 
 fn target(fields: &Map<String, Value>) -> Result<Target, String> {
-    serde_json::from_value(fields.get(TARGET).cloned().ok_or("picker has no text style target")?).map_err(|_| "invalid text style color target".into())
+    serde_json::from_value(
+        fields
+            .get(TARGET)
+            .cloned()
+            .ok_or("picker has no text style target")?,
+    )
+    .map_err(|_| "invalid text style color target".into())
 }
 
 fn color(doc: &Document, kind: Kind, id: u32) -> Result<Color, String> {
     let attrs = if kind.paragraph() {
-        &doc.text_styles.para_style(id).ok_or("no such paragraph style")?.char_attrs
+        &doc.text_styles
+            .para_style(id)
+            .ok_or("no such paragraph style")?
+            .char_attrs
     } else {
-        &doc.text_styles.char_style(id).ok_or("no such character style")?.attrs
+        &doc.text_styles
+            .char_style(id)
+            .ok_or("no such character style")?
+            .attrs
     };
-    serde_json::from_value(attrs.get("color").cloned().ok_or("enable the style's Color attribute first")?).map_err(|_| "invalid text style color".into())
+    serde_json::from_value(
+        attrs
+            .get("color")
+            .cloned()
+            .ok_or("enable the style's Color attribute first")?,
+    )
+    .map_err(|_| "invalid text style color".into())
 }
 
 fn validate(app: &PhotocraftApp, t: &Target) -> Result<(), String> {
@@ -63,7 +85,10 @@ fn validate(app: &PhotocraftApp, t: &Target) -> Result<(), String> {
         return Err("text style color document changed while the picker was open".into());
     }
     let panels = &app.ui.type_panels;
-    if !panels.styles || panels.styles_tab != usize::from(t.kind.paragraph()) || panels.options != Some((t.kind.paragraph(), t.id)) {
+    if !panels.styles
+        || panels.styles_tab != usize::from(t.kind.paragraph())
+        || panels.options != Some((t.kind.paragraph(), t.id))
+    {
         return Err("text Style Options closed or changed".into());
     }
     color(&st.doc, t.kind, t.id)?;
@@ -81,9 +106,18 @@ pub(crate) fn open(app: &mut PhotocraftApp, kind: Kind, id: u32) -> Result<u64, 
         return Err("invalid text style color".into());
     }
     // Style colors use encoded RGB, just like the existing compact style picker.
-    let t = Target { document: st.doc.id, revision: st.revision, kind, id, color: color_picker_ui::hex(rgb) };
+    let t = Target {
+        document: st.doc.id,
+        revision: st.revision,
+        kind,
+        id,
+        color: color_picker_ui::hex(rgb),
+    };
     let mut fields = color_picker_ui::initial_fields("dialog", "Color Picker (Text Color)", rgb);
-    fields.insert(TARGET.into(), serde_json::to_value(t).map_err(|e| e.to_string())?);
+    fields.insert(
+        TARGET.into(),
+        serde_json::to_value(t).map_err(|e| e.to_string())?,
+    );
     let panels = &mut app.ui.type_panels;
     panels.styles = true;
     panels.styles_tab = usize::from(kind.paragraph());
@@ -92,10 +126,18 @@ pub(crate) fn open(app: &mut PhotocraftApp, kind: Kind, id: u32) -> Result<u64, 
 }
 
 fn chosen(fields: &Map<String, Value>) -> Result<String, String> {
-    fields.get("color").and_then(Value::as_str).and_then(color_picker_ui::parse_hex).map(color_picker_ui::hex).ok_or("invalid picker color".into())
+    fields
+        .get("color")
+        .and_then(Value::as_str)
+        .and_then(color_picker_ui::parse_hex)
+        .map(color_picker_ui::hex)
+        .ok_or("invalid picker color".into())
 }
 
-pub(crate) fn confirm(app: &mut PhotocraftApp, fields: &Map<String, Value>) -> Result<Value, String> {
+pub(crate) fn confirm(
+    app: &mut PhotocraftApp,
+    fields: &Map<String, Value>,
+) -> Result<Value, String> {
     let t = target(fields)?;
     validate(app, &t)?;
     let color = chosen(fields)?;
@@ -103,12 +145,20 @@ pub(crate) fn confirm(app: &mut PhotocraftApp, fields: &Map<String, Value>) -> R
     if color == t.color {
         return Ok(Value::Null);
     }
-    app.run(t.kind.command(), json!({"id": t.id, "attrs": {"color": color}}))
+    app.run(
+        t.kind.command(),
+        json!({"id": t.id, "attrs": {"color": color}}),
+    )
 }
 
 pub(crate) fn prune(app: &mut PhotocraftApp) {
-    let invalid: Vec<_> =
-        app.ui.dialogs.iter().filter(|d| owns(&d.fields) && target(&d.fields).and_then(|t| validate(app, &t)).is_err()).map(|d| d.id).collect();
+    let invalid: Vec<_> = app
+        .ui
+        .dialogs
+        .iter()
+        .filter(|d| owns(&d.fields) && target(&d.fields).and_then(|t| validate(app, &t)).is_err())
+        .map(|d| d.id)
+        .collect();
     app.ui.dialogs.retain(|d| !invalid.contains(&d.id));
     if !app.ui.dialogs.iter().any(|d| owns(&d.fields)) {
         app.text_style_preview = None;
@@ -137,18 +187,37 @@ pub(crate) fn display_doc(app: &mut PhotocraftApp, idx: usize) -> Option<(Arc<Do
         app.text_style_preview = None;
         return None;
     }
-    let key = (egui::Id::new((t.document.0, t.revision, d.id, t.kind.paragraph(), t.id, &color)).value() & ((1 << 60) - 1)) | (1 << 60);
+    let key = (egui::Id::new((
+        t.document.0,
+        t.revision,
+        d.id,
+        t.kind.paragraph(),
+        t.id,
+        &color,
+    ))
+    .value()
+        & ((1 << 60) - 1))
+        | (1 << 60);
     if app.text_style_preview.as_ref().map(|p| p.key) != Some(key) {
-        let shown = photocraft_engine::type_styles_cmds::preview_options(&st.doc, &json!({"id": t.id, "attrs": {"color": color}}), t.kind.paragraph())
-            .map(Arc::new)
-            .map_err(|e| e.to_string());
+        let shown = photocraft_engine::type_styles_cmds::preview_options(
+            &st.doc,
+            &json!({"id": t.id, "attrs": {"color": color}}),
+            t.kind.paragraph(),
+        )
+        .map(Arc::new)
+        .map_err(|e| e.to_string());
         if let Err(error) = &shown {
             app.ui.status = error.clone();
             app.ui.status_error = true;
         }
         app.text_style_preview = Some(Preview { key, shown });
     }
-    app.text_style_preview.as_ref()?.shown.as_ref().ok().map(|doc| (doc.clone(), key))
+    app.text_style_preview
+        .as_ref()?
+        .shown
+        .as_ref()
+        .ok()
+        .map(|doc| (doc.clone(), key))
 }
 
 #[cfg(test)]

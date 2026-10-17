@@ -73,8 +73,13 @@ impl PathExt for Path {
     }
 
     fn absolute(&self) -> Result<PathBuf, AbsoluteError> {
-        std::path::absolute(self)
-            .map_err(|error| AbsoluteSnafu { path: self.to_string_lossy(), error }.build())
+        std::path::absolute(self).map_err(|error| {
+            AbsoluteSnafu {
+                path: self.to_string_lossy(),
+                error,
+            }
+            .build()
+        })
     }
 
     fn diff_paths<P>(&self, base: P) -> Result<PathBuf, DiffPathsError>
@@ -84,9 +89,11 @@ impl PathExt for Path {
         let base = base.as_ref();
         match diff_paths(self, base) {
             Some(diff) => Ok(diff),
-            None => {
-                DiffPathsSnafu { path: self.to_string_lossy(), base: base.to_string_lossy() }.fail()
-            },
+            None => DiffPathsSnafu {
+                path: self.to_string_lossy(),
+                base: base.to_string_lossy(),
+            }
+            .fail(),
         }
     }
 
@@ -114,7 +121,12 @@ impl PathExt for Path {
 
 impl Display for StripPrefixErrorExt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "prefix '{}' not found for '{}'", self.prefix.display(), self.path.display())
+        write!(
+            f,
+            "prefix '{}' not found for '{}'",
+            self.prefix.display(),
+            self.path.display()
+        )
     }
 }
 

@@ -39,7 +39,12 @@ pub fn compact_timestamp(unix_ms: i64) -> String {
     let secs = unix_ms.div_euclid(1000);
     let (y, m, d) = civil_date(secs);
     let rem = secs.rem_euclid(86_400);
-    format!("{y:04}{m:02}{d:02}T{:02}{:02}{:02}Z", rem / 3600, rem % 3600 / 60, rem % 60)
+    format!(
+        "{y:04}{m:02}{d:02}T{:02}{:02}{:02}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
 }
 
 #[cfg(test)]

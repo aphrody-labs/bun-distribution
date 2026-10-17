@@ -28,7 +28,10 @@ fn is_space(b: u8) -> bool {
 }
 
 fn is_delim(b: u8) -> bool {
-    matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        b,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 fn syntax<T>(what: &str) -> Res<T> {
@@ -37,7 +40,12 @@ fn syntax<T>(what: &str) -> Res<T> {
 
 impl<'a> Lexer<'a> {
     pub fn new(src: &'a [u8]) -> Self {
-        Self { src, pos: 0, fresh: false, immediate: false }
+        Self {
+            src,
+            pos: 0,
+            fresh: false,
+            immediate: false,
+        }
     }
 
     /// What is left to read.
@@ -100,7 +108,9 @@ impl<'a> Lexer<'a> {
 
     fn token(&mut self, depth: usize) -> Res<Option<Obj>> {
         self.skip_space();
-        let Some(b) = self.peek() else { return Ok(None) };
+        let Some(b) = self.peek() else {
+            return Ok(None);
+        };
         self.pos += 1;
         Ok(Some(match b {
             b'(' => Obj::string(self.string()?),
@@ -154,7 +164,11 @@ impl<'a> Lexer<'a> {
                     self.immediate = true;
                 }
                 let name = self.word();
-                if immediate { Obj::Exec(Rc::from(format!("{IMMEDIATE}{name}").as_str())) } else { Obj::Name(Rc::from(name.as_str())) }
+                if immediate {
+                    Obj::Exec(Rc::from(format!("{IMMEDIATE}{name}").as_str()))
+                } else {
+                    Obj::Name(Rc::from(name.as_str()))
+                }
             }
             _ => {
                 self.pos -= 1;
@@ -181,7 +195,9 @@ impl<'a> Lexer<'a> {
         let mut out = vec![];
         let mut depth = 0usize;
         loop {
-            let Some(b) = self.peek() else { return syntax("(") };
+            let Some(b) = self.peek() else {
+                return syntax("(");
+            };
             self.pos += 1;
             match b {
                 b'(' => {
@@ -194,7 +210,9 @@ impl<'a> Lexer<'a> {
                     out.push(b);
                 }
                 b'\\' => {
-                    let Some(e) = self.peek() else { return syntax("(") };
+                    let Some(e) = self.peek() else {
+                        return syntax("(");
+                    };
                     self.pos += 1;
                     match e {
                         b'n' => out.push(b'\n'),
@@ -231,7 +249,11 @@ impl<'a> Lexer<'a> {
 
     /// A hexadecimal string after its `<`.
     fn hex(&mut self) -> Res<Vec<u8>> {
-        let end = self.rest().iter().position(|b| *b == b'>').ok_or(PsError::Ps("syntaxerror", "<".into()))?;
+        let end = self
+            .rest()
+            .iter()
+            .position(|b| *b == b'>')
+            .ok_or(PsError::Ps("syntaxerror", "<".into()))?;
         let body = self.rest().get(..end).unwrap_or_default();
         let out = hex_decode(body).ok_or(PsError::Ps("syntaxerror", "<".into()))?;
         self.advance(end + 1);
@@ -241,7 +263,8 @@ impl<'a> Lexer<'a> {
     /// An ASCII85 string after its `<~`.
     fn ascii85(&mut self) -> Res<Vec<u8>> {
         let end = find(self.rest(), b"~>").ok_or(PsError::Ps("syntaxerror", "<~".into()))?;
-        let text = String::from_utf8_lossy(self.rest().get(..end + 2).unwrap_or_default()).into_owned();
+        let text =
+            String::from_utf8_lossy(self.rest().get(..end + 2).unwrap_or_default()).into_owned();
         self.advance(end + 2);
         ps::ascii85_decode(&text).ok_or(PsError::Ps("syntaxerror", "<~".into()))
     }
@@ -289,7 +312,9 @@ fn number(w: &str) -> Option<Obj> {
         return i64::from_str_radix(digits, base).ok().map(Obj::Int);
     }
     // Rust reads `inf` and `nan`; PostScript doesn't.
-    if w.bytes().any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E')) {
+    if w.bytes()
+        .any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E'))
+    {
         return None;
     }
     let v: f64 = w.parse().ok()?;

@@ -41,9 +41,14 @@ pub fn story_paras(frames: &[&TextObject], later_wins: &[bool]) -> Vec<ParaStyle
 
 /// Paragraph styles of the slice `runs` of a story starting at story paragraph `first`.
 fn slice_paras(paras: &[ParaStyle], first: usize, runs: &[TextRun]) -> Vec<ParaStyle> {
-    let n = 1 + runs.iter().map(|r| r.text.bytes().filter(|&b| b == b'\n').count()).sum::<usize>();
+    let n = 1 + runs
+        .iter()
+        .map(|r| r.text.bytes().filter(|&b| b == b'\n').count())
+        .sum::<usize>();
     let fallback = paras.last().cloned().unwrap_or_default();
-    (first..first + n).map(|i| paras.get(i).cloned().unwrap_or_else(|| fallback.clone())).collect()
+    (first..first + n)
+        .map(|i| paras.get(i).cloned().unwrap_or_else(|| fallback.clone()))
+        .collect()
 }
 
 /// How many bytes of `runs` fit in `frame` (whole lines; a following break space or paragraph
@@ -78,7 +83,12 @@ pub struct Slice {
 /// frame's own) split across `frames` in order (the last frame takes any overflow). Empty slices
 /// keep one empty run carrying the style at the split, so typing there has a style. A paragraph
 /// split between frames has its style in both.
-pub fn distribute(db: &FontDb, frames: &[&TextObject], runs: &[TextRun], paras: &[ParaStyle]) -> Vec<Slice> {
+pub fn distribute(
+    db: &FontDb,
+    frames: &[&TextObject],
+    runs: &[TextRun],
+    paras: &[ParaStyle],
+) -> Vec<Slice> {
     let mut rest = runs.to_vec();
     let mut out = Vec::with_capacity(frames.len());
     let mut next_para = 0;
@@ -86,7 +96,11 @@ pub fn distribute(db: &FontDb, frames: &[&TextObject], runs: &[TextRun], paras: 
         let first_para = next_para;
         let len = runs_len(&rest);
         let own = [f.para.clone()];
-        let (paras, first_para) = if paras.is_empty() { (&own[..], 0) } else { (paras, first_para) };
+        let (paras, first_para) = if paras.is_empty() {
+            (&own[..], 0)
+        } else {
+            (paras, first_para)
+        };
         let n = if i + 1 == frames.len() {
             len
         } else {
@@ -97,13 +111,28 @@ pub fn distribute(db: &FontDb, frames: &[&TextObject], runs: &[TextRun], paras: 
         };
         let mut head = slice_runs(&rest, 0, n);
         if head.is_empty() {
-            head.push(TextRun { text: String::new(), style: style_at(&rest, n), inline: None });
+            head.push(TextRun {
+                text: String::new(),
+                style: style_at(&rest, n),
+                inline: None,
+            });
         }
         let tail = slice_runs(&rest, n, len);
-        rest = if tail.is_empty() { vec![TextRun { text: String::new(), style: style_at(&rest, len), inline: None }] } else { tail };
+        rest = if tail.is_empty() {
+            vec![TextRun {
+                text: String::new(),
+                style: style_at(&rest, len),
+                inline: None,
+            }]
+        } else {
+            tail
+        };
         let head_paras = slice_paras(paras, first_para, &head);
         next_para += head_paras.len().saturating_sub(1);
-        out.push(Slice { runs: head, paras: head_paras });
+        out.push(Slice {
+            runs: head,
+            paras: head_paras,
+        });
     }
     out
 }
@@ -116,7 +145,9 @@ mod tests {
 
     fn frame(x: f64) -> TextObject {
         let mut t = TextObject::point(vectorcraft_geom::Point::ZERO, "", CharStyle::default());
-        t.kind = TextKind::Area { frame: shapes::rectangle(Rect::new(x, 0.0, x + 120.0, 60.0)) };
+        t.kind = TextKind::Area {
+            frame: shapes::rectangle(Rect::new(x, 0.0, x + 120.0, 60.0)),
+        };
         t.xf = Affine::IDENTITY;
         t
     }
@@ -125,9 +156,17 @@ mod tests {
     fn story_flows_across_frames_and_rejoins() {
         let db = FontDb::global();
         let (a, b, c) = (frame(0.0), frame(200.0), frame(400.0));
-        let text = "The quick brown fox jumps over the lazy dog. ".repeat(6) + "\nSecond paragraph here.";
-        let story = vec![TextRun { text: text.clone(), style: CharStyle::default(), inline: None }];
-        let parts: Vec<Vec<TextRun>> = distribute(db, &[&a, &b, &c], &story, &[]).into_iter().map(|s| s.runs).collect();
+        let text =
+            "The quick brown fox jumps over the lazy dog. ".repeat(6) + "\nSecond paragraph here.";
+        let story = vec![TextRun {
+            text: text.clone(),
+            style: CharStyle::default(),
+            inline: None,
+        }];
+        let parts: Vec<Vec<TextRun>> = distribute(db, &[&a, &b, &c], &story, &[])
+            .into_iter()
+            .map(|s| s.runs)
+            .collect();
         let lens: Vec<usize> = parts.iter().map(|p| runs_len(p)).collect();
         assert!(lens[0] > 0 && lens[1] > 0, "{lens:?}");
         let joined: String = parts.iter().flatten().map(|r| r.text.as_str()).collect();
@@ -146,9 +185,17 @@ mod tests {
     fn paragraph_styles_flow_with_their_paragraphs() {
         let db = FontDb::global();
         let (a, b) = (frame(0.0), frame(200.0));
-        let text = "The quick brown fox jumps over the lazy dog. ".repeat(4) + "\nSecond paragraph.\nThird.";
-        let story = vec![TextRun { text, style: CharStyle::default(), inline: None }];
-        let style = |j| ParaStyle { justify: j, ..Default::default() };
+        let text = "The quick brown fox jumps over the lazy dog. ".repeat(4)
+            + "\nSecond paragraph.\nThird.";
+        let story = vec![TextRun {
+            text,
+            style: CharStyle::default(),
+            inline: None,
+        }];
+        let style = |j| ParaStyle {
+            justify: j,
+            ..Default::default()
+        };
         use vectorcraft_doc::Justify::*;
         let paras = vec![style(Left), style(Center), style(Right)];
         let parts = distribute(db, &[&a, &b], &story, &paras);
@@ -168,7 +215,10 @@ mod tests {
         assert_eq!(story_paras(&[&fa, &fb], &[]), paras);
         // A frame whose shared first paragraph was restyled wins.
         fb.edit_paras(Some(0..1), |p| p.justify = JustifyAll);
-        assert_eq!(story_paras(&[&fa, &fb], &[false, true])[0].justify, JustifyAll);
+        assert_eq!(
+            story_paras(&[&fa, &fb], &[false, true])[0].justify,
+            JustifyAll
+        );
         assert_eq!(story_paras(&[&fa, &fb], &[false, false])[0].justify, Left);
     }
 
@@ -176,10 +226,27 @@ mod tests {
     fn short_story_leaves_later_frames_empty_with_a_style() {
         let db = FontDb::global();
         let (a, b) = (frame(0.0), frame(200.0));
-        let st = CharStyle { size: 20.0, ..Default::default() };
-        let parts: Vec<Vec<TextRun>> =
-            distribute(db, &[&a, &b], &[TextRun { text: "Hi".into(), style: st, inline: None }], &[]).into_iter().map(|s| s.runs).collect();
+        let st = CharStyle {
+            size: 20.0,
+            ..Default::default()
+        };
+        let parts: Vec<Vec<TextRun>> = distribute(
+            db,
+            &[&a, &b],
+            &[TextRun {
+                text: "Hi".into(),
+                style: st,
+                inline: None,
+            }],
+            &[],
+        )
+        .into_iter()
+        .map(|s| s.runs)
+        .collect();
         assert_eq!(parts[0][0].text, "Hi");
-        assert_eq!((parts[1][0].text.as_str(), parts[1][0].style.size), ("", 20.0));
+        assert_eq!(
+            (parts[1][0].text.as_str(), parts[1][0].style.size),
+            ("", 20.0)
+        );
     }
 }

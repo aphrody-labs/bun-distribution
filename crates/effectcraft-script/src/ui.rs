@@ -21,7 +21,10 @@ use effectcraft_engine::scriptui::{ScriptUiEvent, ScriptWindow, layout};
 use serde_json::{Value as J, json};
 use web_time::Instant;
 
-use crate::runtime::{ACTIVE, Active, CONSOLE, Restore, ScriptError, arg_string, js_str, outcome, script_error, settle, throw, with_active};
+use crate::runtime::{
+    ACTIVE, Active, CONSOLE, Restore, ScriptError, arg_string, js_str, outcome, script_error,
+    settle, throw, with_active,
+};
 
 pub(crate) const SCRIPTUI: &str = include_str!("scriptui.js");
 
@@ -54,20 +57,32 @@ fn drop_inline(host: u32) {
 
 fn call_global(ctx: &mut Context, name: &str, args: &[JsValue]) -> JsResult<JsValue> {
     let f = ctx.global_object().get(js_string!(name), ctx)?;
-    let f = f.as_object().ok_or_else(|| throw(format!("{name} is not defined")))?;
+    let f = f
+        .as_object()
+        .ok_or_else(|| throw(format!("{name} is not defined")))?;
     f.call(&JsValue::undefined(), args, ctx)
 }
 
 /// The open windows of a context (closed ones are reported once, invisible, then forgotten).
 pub(crate) fn snapshot(ctx: &mut Context) -> Vec<ScriptWindow> {
-    let Ok(v) = call_global(ctx, "__uiSnapshot", &[]) else { return vec![] };
-    let s = v.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_default();
+    let Ok(v) = call_global(ctx, "__uiSnapshot", &[]) else {
+        return vec![];
+    };
+    let s = v
+        .to_string(ctx)
+        .map(|s| s.to_std_string_escaped())
+        .unwrap_or_default();
     serde_json::from_str(&s).unwrap_or_default()
 }
 
 /// Run a window event's handlers in `ctx`.
 fn dispatch_js(ctx: &mut Context, ev: &ScriptUiEvent) -> Result<J, ScriptError> {
-    let args = [JsValue::from(ev.window), JsValue::from(ev.widget), js_str(&ev.kind), js_str(&ev.value.to_string())];
+    let args = [
+        JsValue::from(ev.window),
+        JsValue::from(ev.widget),
+        js_str(&ev.kind),
+        js_str(&ev.value.to_string()),
+    ];
     match call_global(ctx, "__uiDispatch", &args) {
         Ok(_) => Ok(J::Null),
         Err(e) => {
@@ -87,11 +102,15 @@ pub(crate) fn native_new_id(_: &JsValue, _: &[JsValue], _: &mut Context) -> JsRe
 /// layout ([`effectcraft_engine::scriptui::layout`]) for `layout.layout()`.
 pub(crate) fn native_layout(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let s = arg_string(args, 0, ctx)?;
-    let mut w: ScriptWindow = serde_json::from_str(&s).map_err(|e| throw(format!("layout: {e}")))?;
+    let mut w: ScriptWindow =
+        serde_json::from_str(&s).map_err(|e| throw(format!("layout: {e}")))?;
     layout(&mut w);
     let mut all = vec![];
     w.root.walk(&mut all);
-    let map: serde_json::Map<String, J> = all.iter().map(|c| (c.id.to_string(), json!(c.bounds))).collect();
+    let map: serde_json::Map<String, J> = all
+        .iter()
+        .map(|c| (c.id.to_string(), json!(c.bounds)))
+        .collect();
     Ok(js_str(&J::Object(map).to_string()))
 }
 
@@ -110,7 +129,11 @@ pub(crate) fn native_modal(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> 
             return Ok(r);
         }
         let windows = snapshot(ctx);
-        let out = crate::Outcome { output: settle(), waiting: true, ..Default::default() };
+        let out = crate::Outcome {
+            output: settle(),
+            waiting: true,
+            ..Default::default()
+        };
         let Some(ev) = yield_wait(out, windows, false) else {
             // The caller went away: cancel the dialog.
             return Ok(JsValue::from(2));
@@ -180,7 +203,8 @@ struct HostEnd {
 }
 
 fn hosts() -> &'static std::sync::Mutex<BTreeMap<u32, HostEnd>> {
-    static H: std::sync::OnceLock<std::sync::Mutex<BTreeMap<u32, HostEnd>>> = std::sync::OnceLock::new();
+    static H: std::sync::OnceLock<std::sync::Mutex<BTreeMap<u32, HostEnd>>> =
+        std::sync::OnceLock::new();
     H.get_or_init(Default::default)
 }
 
@@ -200,24 +224,53 @@ enum Wake {
 /// On the host thread: hand the session (with the windows' state and what the script printed)
 /// back to the caller, and wait for the next event. `None` when the caller has gone. Scheduled
 /// tasks wait while a modal dialog does.
-fn yield_wait(outcome: crate::Outcome, windows: Vec<ScriptWindow>, done: bool) -> Option<ScriptUiEvent> {
+fn yield_wait(
+    outcome: crate::Outcome,
+    windows: Vec<ScriptWindow>,
+    done: bool,
+) -> Option<ScriptUiEvent> {
     let mut out = outcome;
     loop {
         match yield_wake(out, windows.clone(), done, None)? {
             Wake::Event(ev) => return Some(ev),
-            Wake::Tick(_) => out = crate::Outcome { waiting: true, ..Default::default() },
+            Wake::Tick(_) => {
+                out = crate::Outcome {
+                    waiting: true,
+                    ..Default::default()
+                }
+            }
         }
     }
 }
 
 /// [`yield_wait`] that also wakes for the scheduled tasks due at `next_due`.
-fn yield_wake(outcome: crate::Outcome, windows: Vec<ScriptWindow>, done: bool, next_due: Option<Instant>) -> Option<Wake> {
+fn yield_wake(
+    outcome: crate::Outcome,
+    windows: Vec<ScriptWindow>,
+    done: bool,
+    next_due: Option<Instant>,
+) -> Option<Wake> {
     let (session, link, name) = ACTIVE.with(|a| {
         let mut a = a.borrow_mut();
         let a = a.as_mut()?;
-        Some((std::mem::take(&mut a.session), a.link.take()?, a.name.clone()))
+        Some((
+            std::mem::take(&mut a.session),
+            a.link.take()?,
+            a.name.clone(),
+        ))
     })?;
-    if link.tx.send(FromHost { session, outcome, windows, name, done, next_due }).is_err() {
+    if link
+        .tx
+        .send(FromHost {
+            session,
+            outcome,
+            windows,
+            name,
+            done,
+            next_due,
+        })
+        .is_err()
+    {
         return None;
     }
     if done {
@@ -239,16 +292,33 @@ fn yield_wake(outcome: crate::Outcome, windows: Vec<ScriptWindow>, done: bool, n
 
 #[cfg(not(target_arch = "wasm32"))]
 fn host_main(host: u32, name: String, code: String, link: Link) {
-    let Ok(ToHost::Start(session)) = link.rx.recv() else { return };
+    let Ok(ToHost::Start(session)) = link.rx.recv() else {
+        return;
+    };
     let mut a = Active::new(session, &name, host);
     a.link = Some(link);
     ACTIVE.with(|c| *c.borrow_mut() = Some(a));
-    let file = if name.is_empty() { "script".to_string() } else { name.clone() };
+    let file = if name.is_empty() {
+        "script".to_string()
+    } else {
+        name.clone()
+    };
     let body = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut ctx = match crate::runtime::new_context() {
             Ok(c) => c,
             Err(e) => {
-                yield_wait(outcome(settle(), Err(ScriptError { message: e, file: file.clone(), ..Default::default() })), vec![], true);
+                yield_wait(
+                    outcome(
+                        settle(),
+                        Err(ScriptError {
+                            message: e,
+                            file: file.clone(),
+                            ..Default::default()
+                        }),
+                    ),
+                    vec![],
+                    true,
+                );
                 return;
             }
         };
@@ -269,7 +339,12 @@ fn host_main(host: u32, name: String, code: String, link: Link) {
                 }
                 Some(Wake::Tick(now)) => {
                     let (ran, error) = crate::tasks::run_due(&mut ctx, host, now);
-                    out = crate::Outcome { result: json!(ran), output: settle(), error, waiting: false };
+                    out = crate::Outcome {
+                        result: json!(ran),
+                        output: settle(),
+                        error,
+                        waiting: false,
+                    };
                 }
                 None => break,
             }
@@ -281,34 +356,75 @@ fn host_main(host: u32, name: String, code: String, link: Link) {
     if let Some(mut a) = left
         && let Some(link) = a.link.take()
     {
-        let message = if body.is_err() { "the script engine stopped unexpectedly" } else { "the script ended" };
-        let out = crate::Outcome { error: Some(ScriptError { message: message.into(), file, ..Default::default() }), ..Default::default() };
-        let _ = link.tx.send(FromHost { session: std::mem::take(&mut a.session), outcome: out, windows: vec![], name, done: true, next_due: None });
+        let message = if body.is_err() {
+            "the script engine stopped unexpectedly"
+        } else {
+            "the script ended"
+        };
+        let out = crate::Outcome {
+            error: Some(ScriptError {
+                message: message.into(),
+                file,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let _ = link.tx.send(FromHost {
+            session: std::mem::take(&mut a.session),
+            outcome: out,
+            windows: vec![],
+            name,
+            done: true,
+            next_due: None,
+        });
     }
 }
 
 /// Wait for the host to hand the session back; keep its link while it has windows open.
 fn receive(session: &mut Session, host: u32, end: HostEnd) -> crate::Outcome {
     match end.rx.recv() {
-        Ok(FromHost { session: s, outcome, windows, name, done, next_due }) => {
+        Ok(FromHost {
+            session: s,
+            outcome,
+            windows,
+            name,
+            done,
+            next_due,
+        }) => {
             *session = s;
             publish(session, host, &name, windows);
             if done {
                 session.script_ui.windows.retain(|w| w.host != host);
                 session.script_ui.revision += 1;
             } else if let Ok(mut h) = hosts().lock() {
-                h.insert(host, HostEnd { next_due, epoch: session.script_ui.project_epoch, ..end });
+                h.insert(
+                    host,
+                    HostEnd {
+                        next_due,
+                        epoch: session.script_ui.project_epoch,
+                        ..end
+                    },
+                );
             }
             outcome
         }
-        Err(_) => crate::Outcome { error: Some(ScriptError { message: "the script host stopped".into(), ..Default::default() }), ..Default::default() },
+        Err(_) => crate::Outcome {
+            error: Some(ScriptError {
+                message: "the script host stopped".into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
     }
 }
 
 /// Run a script file on a new script-host thread (see the module docs). Not on the web, where
 /// scripts run inline.
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn run_threaded(session: &mut Session, req: &effectcraft_engine::ScriptRequest) -> crate::Outcome {
+pub(crate) fn run_threaded(
+    session: &mut Session,
+    req: &effectcraft_engine::ScriptRequest,
+) -> crate::Outcome {
     let host = new_host_id();
     let (to_tx, to_rx) = std::sync::mpsc::channel();
     let (from_tx, from_rx) = std::sync::mpsc::channel();
@@ -316,19 +432,50 @@ pub(crate) fn run_threaded(session: &mut Session, req: &effectcraft_engine::Scri
     let spawned = std::thread::Builder::new()
         .name(format!("script-{host}"))
         .stack_size(64 << 20)
-        .spawn(move || host_main(host, name, code, Link { rx: to_rx, tx: from_tx }));
+        .spawn(move || {
+            host_main(
+                host,
+                name,
+                code,
+                Link {
+                    rx: to_rx,
+                    tx: from_tx,
+                },
+            )
+        });
     if spawned.is_err() {
         return crate::runtime::run_inline(session, req);
     }
-    if let Err(std::sync::mpsc::SendError(msg)) = to_tx.send(ToHost::Start(std::mem::take(session))) {
+    if let Err(std::sync::mpsc::SendError(msg)) = to_tx.send(ToHost::Start(std::mem::take(session)))
+    {
         *session = msg.into_session();
-        return crate::Outcome { error: Some(ScriptError { message: "the script host did not start".into(), ..Default::default() }), ..Default::default() };
+        return crate::Outcome {
+            error: Some(ScriptError {
+                message: "the script host did not start".into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
     }
-    receive(session, host, HostEnd { tx: to_tx, rx: from_rx, next_due: None, epoch: 0 })
+    receive(
+        session,
+        host,
+        HostEnd {
+            tx: to_tx,
+            rx: from_rx,
+            next_due: None,
+            epoch: 0,
+        },
+    )
 }
 
 /// Record the windows a host published (named after the script that made them).
-pub(crate) fn publish(session: &mut Session, host: u32, name: &str, mut windows: Vec<ScriptWindow>) {
+pub(crate) fn publish(
+    session: &mut Session,
+    host: u32,
+    name: &str,
+    mut windows: Vec<ScriptWindow>,
+) {
     for w in &mut windows {
         if w.script.is_empty() {
             w.script = name.to_string();
@@ -341,7 +488,10 @@ pub(crate) fn publish(session: &mut Session, host: u32, name: &str, mut windows:
     session.script_ui.publish(host, windows);
     // Its last window closed: the context and its scheduled tasks go (a script that never showed
     // a window keeps them, see [`crate::tasks`]).
-    if host != CONSOLE_HOST && !session.script_ui.windows.iter().any(|w| w.host == host) && (had || !crate::tasks::has(host)) {
+    if host != CONSOLE_HOST
+        && !session.script_ui.windows.iter().any(|w| w.host == host)
+        && (had || !crate::tasks::has(host))
+    {
         drop_inline(host);
         crate::tasks::drop_host(host);
     }
@@ -354,7 +504,10 @@ pub fn dispatch_ui(session: &mut Session, ev: &ScriptUiEvent) -> Result<J, Strin
     if ACTIVE.with(|a| a.try_borrow().map(|g| g.is_some()).unwrap_or(true)) {
         return Err("scripts can't drive script windows".into());
     }
-    let w = session.script_ui.window(ev.window).ok_or_else(|| format!("no script window {}", ev.window))?;
+    let w = session
+        .script_ui
+        .window(ev.window)
+        .ok_or_else(|| format!("no script window {}", ev.window))?;
     let (host, name) = (w.host, w.script.clone());
     let inline = host == CONSOLE_HOST || INLINE.with(|m| m.borrow().contains_key(&host));
     if inline {
@@ -366,7 +519,10 @@ pub fn dispatch_ui(session: &mut Session, ev: &ScriptUiEvent) -> Result<J, Strin
         session.script_ui.revision += 1;
         return Err("the script that made this window has ended".into());
     };
-    if let Err(std::sync::mpsc::SendError(msg)) = end.tx.send(ToHost::Event(std::mem::take(session), ev.clone())) {
+    if let Err(std::sync::mpsc::SendError(msg)) = end
+        .tx
+        .send(ToHost::Event(std::mem::take(session), ev.clone()))
+    {
         *session = msg.into_session();
         session.script_ui.windows.retain(|w| w.host != host);
         session.script_ui.revision += 1;
@@ -375,7 +531,12 @@ pub fn dispatch_ui(session: &mut Session, ev: &ScriptUiEvent) -> Result<J, Strin
     Ok(receive(session, host, end).to_json())
 }
 
-fn dispatch_inline(session: &mut Session, host: u32, name: &str, ev: &ScriptUiEvent) -> crate::Outcome {
+fn dispatch_inline(
+    session: &mut Session,
+    host: u32,
+    name: &str,
+    ev: &ScriptUiEvent,
+) -> crate::Outcome {
     let s = std::mem::take(session);
     ACTIVE.with(|a| *a.borrow_mut() = Some(Active::new(s, name, host)));
     let guard = Restore { target: session };
@@ -407,7 +568,11 @@ fn dispatch_inline(session: &mut Session, host: u32, name: &str, ev: &ScriptUiEv
 /// Run the due tasks of the script-host threads; hosts without windows whose project was closed
 /// end.
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn tick_threaded(session: &mut Session, now: Instant, report: &mut crate::tasks::Report) {
+pub(crate) fn tick_threaded(
+    session: &mut Session,
+    now: Instant,
+    report: &mut crate::tasks::Report,
+) {
     let epoch = session.script_ui.project_epoch;
     let (mut due, mut stale) = (vec![], vec![]);
     if let Ok(mut h) = hosts().lock() {
@@ -424,8 +589,12 @@ pub(crate) fn tick_threaded(session: &mut Session, now: Instant, report: &mut cr
     }
     drop(stale);
     for host in due {
-        let Some(end) = hosts().lock().ok().and_then(|mut h| h.remove(&host)) else { continue };
-        if let Err(std::sync::mpsc::SendError(msg)) = end.tx.send(ToHost::Tick(std::mem::take(session), now)) {
+        let Some(end) = hosts().lock().ok().and_then(|mut h| h.remove(&host)) else {
+            continue;
+        };
+        if let Err(std::sync::mpsc::SendError(msg)) =
+            end.tx.send(ToHost::Tick(std::mem::take(session), now))
+        {
             *session = msg.into_session();
             session.script_ui.windows.retain(|w| w.host != host);
             session.script_ui.revision += 1;
@@ -459,7 +628,10 @@ pub(crate) fn tick_inline(session: &mut Session, now: Instant, report: &mut crat
         if crate::tasks::next_due(host).is_some_and(|d| d <= now) {
             report.add(tick_inline_host(session, host, &name, now));
         }
-        if host != CONSOLE_HOST && !crate::tasks::has(host) && !session.script_ui.windows.iter().any(|w| w.host == host) {
+        if host != CONSOLE_HOST
+            && !crate::tasks::has(host)
+            && !session.script_ui.windows.iter().any(|w| w.host == host)
+        {
             // A script without windows whose tasks have all run.
             drop_inline(host);
         }
@@ -485,11 +657,19 @@ fn tick_inline_host(session: &mut Session, host: u32, name: &str, now: Instant) 
     drop(guard);
     crate::tasks::set_epoch(host, session.script_ui.project_epoch);
     publish(session, host, name, windows);
-    crate::Outcome { result: json!(ran), output, error, waiting: false }
+    crate::Outcome {
+        result: json!(ran),
+        output,
+        error,
+        waiting: false,
+    }
 }
 
 /// Forget the session's task hosts that have ended (inline ones: that have no tasks left).
 pub(crate) fn prune_task_hosts(session: &mut Session) {
     let threaded = |host: &u32| hosts().lock().ok().is_some_and(|h| h.contains_key(host));
-    session.script_ui.task_hosts.retain(|host| crate::tasks::has(*host) || threaded(host));
+    session
+        .script_ui
+        .task_hosts
+        .retain(|host| crate::tasks::has(*host) || threaded(host));
 }

@@ -15,7 +15,10 @@ impl Default for Irq {
 
 impl Irq {
     pub fn new() -> Self {
-        Irq { cause: Cause::from_raw(0), mask: Mask::from_raw(0) }
+        Irq {
+            cause: Cause::from_raw(0),
+            mask: Mask::from_raw(0),
+        }
     }
 }
 
@@ -23,9 +26,11 @@ impl Irq {
 pub fn route_to_pi<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     let firing = (sys.hollywood.irq.cause.raw() & sys.hollywood.irq.mask.raw()) != 0;
     if firing {
-        sys.pi.assert_interrupt(crate::flipper::pi::InterruptFlag::Hw);
+        sys.pi
+            .assert_interrupt(crate::flipper::pi::InterruptFlag::Hw);
     } else {
-        sys.pi.clear_interrupt(crate::flipper::pi::InterruptFlag::Hw);
+        sys.pi
+            .clear_interrupt(crate::flipper::pi::InterruptFlag::Hw);
     }
 }
 

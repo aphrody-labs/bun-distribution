@@ -14,28 +14,54 @@ pub fn import(doc: &mut Document) -> Vec<String> {
     let mut warnings = Vec::new();
     let dpi = doc.resolution_dpi;
     let mut styles = std::mem::take(&mut doc.text_styles);
-    let mut char_ids: HashMap<String, u32> = styles.character.iter().map(|d| (d.name.clone(), d.id)).collect();
-    let mut para_ids: HashMap<String, u32> = styles.paragraph.iter().map(|d| (d.name.clone(), d.id)).collect();
-    let ids: Vec<LayerId> = doc.walk().into_iter().filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_))).map(|(_, _, l)| l.id).collect();
+    let mut char_ids: HashMap<String, u32> = styles
+        .character
+        .iter()
+        .map(|d| (d.name.clone(), d.id))
+        .collect();
+    let mut para_ids: HashMap<String, u32> = styles
+        .paragraph
+        .iter()
+        .map(|d| (d.name.clone(), d.id))
+        .collect();
+    let ids: Vec<LayerId> = doc
+        .walk()
+        .into_iter()
+        .filter(|(_, _, l)| matches!(l.content, LayerContent::Text(_)))
+        .map(|(_, _, l)| l.id)
+        .collect();
     for id in ids {
-        let Some(LayerContent::Text(t)) = doc.layer_mut(id).map(|l| &mut l.content) else { continue };
-        let Some(raw) = t.psd_raw.clone() else { continue };
+        let Some(LayerContent::Text(t)) = doc.layer_mut(id).map(|l| &mut l.content) else {
+            continue;
+        };
+        let Some(raw) = t.psd_raw.clone() else {
+            continue;
+        };
         if !photocraft_text::psd_styles::has_named_sheets(&raw) {
             continue;
         }
-        let Some(sh) = photocraft_text::psd_styles::read_style_sheets(&raw, dpi) else { continue };
+        let Some(sh) = photocraft_text::psd_styles::read_style_sheets(&raw, dpi) else {
+            continue;
+        };
         let mut cmap: HashMap<usize, u32> = HashMap::new();
         for (ix, name, st) in &sh.char_sheets {
             let id = if let Some(id) = char_ids.get(name).copied() {
                 id
             } else {
                 let Some(id) = styles.next_char_id() else {
-                    warnings.push(format!("character style {:?} was not imported: style id space exhausted", name));
+                    warnings.push(format!(
+                        "character style {:?} was not imported: style id space exhausted",
+                        name
+                    ));
                     continue;
                 };
                 let mut attrs = diff_attrs(st, &sh.normal_char);
                 attrs.remove("postscript_name");
-                styles.character.push(CharacterStyleDef { id, name: name.clone(), attrs });
+                styles.character.push(CharacterStyleDef {
+                    id,
+                    name: name.clone(),
+                    attrs,
+                });
                 char_ids.insert(name.clone(), id);
                 id
             };
@@ -47,18 +73,36 @@ pub fn import(doc: &mut Document) -> Vec<String> {
                 id
             } else {
                 let Some(id) = styles.next_para_id() else {
-                    warnings.push(format!("paragraph style {:?} was not imported: style id space exhausted", name));
+                    warnings.push(format!(
+                        "paragraph style {:?} was not imported: style id space exhausted",
+                        name
+                    ));
                     continue;
                 };
-                let mut char_attrs = cs.as_ref().map(|c| diff_attrs(c, &sh.normal_char)).unwrap_or_default();
+                let mut char_attrs = cs
+                    .as_ref()
+                    .map(|c| diff_attrs(c, &sh.normal_char))
+                    .unwrap_or_default();
                 char_attrs.remove("postscript_name");
-                styles.paragraph.push(ParagraphStyleDef { id, name: name.clone(), para_attrs: diff_attrs(p, &sh.normal_para), char_attrs });
+                styles.paragraph.push(ParagraphStyleDef {
+                    id,
+                    name: name.clone(),
+                    para_attrs: diff_attrs(p, &sh.normal_para),
+                    char_attrs,
+                });
                 para_ids.insert(name.clone(), id);
                 id
             };
             pmap.insert(*ix, id);
         }
-        link(t, &sh.run_char, &sh.run_char_lens, &cmap, &sh.run_para, &pmap);
+        link(
+            t,
+            &sh.run_char,
+            &sh.run_char_lens,
+            &cmap,
+            &sh.run_para,
+            &pmap,
+        );
     }
     doc.text_styles = styles;
     warnings
@@ -74,13 +118,18 @@ fn link(
 ) {
     if run_char_lens.len() == run_char.len() && !run_char.is_empty() {
         // Each model run takes the sheet of the `StyleRun` entry its first character is in.
-        let (mut off, mut i, mut end) = (0usize, 0usize, run_char_lens.first().copied().unwrap_or(0));
+        let (mut off, mut i, mut end) =
+            (0usize, 0usize, run_char_lens.first().copied().unwrap_or(0));
         for r in t.runs.iter_mut() {
             while off >= end && i + 1 < run_char_lens.len() {
                 i += 1;
                 end = end.saturating_add(run_char_lens.get(i).copied().unwrap_or(0));
             }
-            r.style.style_sheet = run_char.get(i).copied().flatten().and_then(|i| cmap.get(&i).copied());
+            r.style.style_sheet = run_char
+                .get(i)
+                .copied()
+                .flatten()
+                .and_then(|i| cmap.get(&i).copied());
             off = off.saturating_add(r.len);
         }
     } else if t.runs.len() == run_char.len() {

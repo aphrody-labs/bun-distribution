@@ -21,11 +21,11 @@ use wgpu::{BufferSlice, CommandEncoder};
 use bevy_app::{App, Plugin, PreUpdate};
 
 use crate::{
-    renderer::{PendingCommandBuffers, RenderGraph, RenderGraphSystems},
     GpuResourceAppExt, Render, RenderApp, RenderSystems,
+    renderer::{PendingCommandBuffers, RenderGraph, RenderGraphSystems},
 };
 
-use self::internal::{sync_diagnostics, Pass, RenderDiagnosticsMutex, WriteTimestamp};
+use self::internal::{Pass, RenderDiagnosticsMutex, WriteTimestamp, sync_diagnostics};
 pub use self::{
     erased_render_asset_diagnostic_plugin::ErasedRenderAssetDiagnosticPlugin,
     internal::DiagnosticsRecorder, mesh_allocator_diagnostic_plugin::MeshAllocatorDiagnosticPlugin,

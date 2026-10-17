@@ -93,7 +93,11 @@ fn parsed() -> RealSkillConfig {
 fn comptes_listes() {
     let cfg = parsed();
     assert_eq!(cfg.courses.len(), 6, "6 courbes de tir dans le dump");
-    assert_eq!(cfg.skills.len(), 6, "sous-ensemble de 6 tirs dans la fixture");
+    assert_eq!(
+        cfg.skills.len(),
+        6,
+        "sous-ensemble de 6 tirs dans la fixture"
+    );
 }
 
 #[test]
@@ -210,5 +214,10 @@ fn vrai_fichier_vfs_si_present() {
     // Le 1er tir et la 1re courbe doivent matcher la fixture.
     assert_eq!(cfg.skills[0].id, HashId(0xA212_3954));
     assert_eq!(cfg.courses[0].curve_angle, 65.0);
-    assert_eq!(cfg.find_skill(HashId(0x636E_86D3)).unwrap().shoot_course_info_ref, [5, 1]);
+    assert_eq!(
+        cfg.find_skill(HashId(0x636E_86D3))
+            .unwrap()
+            .shoot_course_info_ref,
+        [5, 1]
+    );
 }

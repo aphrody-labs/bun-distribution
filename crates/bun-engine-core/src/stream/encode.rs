@@ -7,15 +7,16 @@ use windows::{
     Win32::{
         Foundation::VARIANT_TRUE,
         Media::MediaFoundation::{
-            CLSID_MSH264EncoderMFT, CODECAPI_AVEncCommonMeanBitRate, CODECAPI_AVEncCommonRateControlMode,
-            CODECAPI_AVEncMPVGOPSize, CODECAPI_AVEncVideoForceKeyFrame, CODECAPI_AVLowLatencyMode,
-            ICodecAPI, IMFTransform, MF_E_TRANSFORM_NEED_MORE_INPUT, MF_E_TRANSFORM_STREAM_CHANGE,
-            MF_MT_AVG_BITRATE, MF_MT_FRAME_RATE, MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE,
-            MF_MT_MPEG2_PROFILE, MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video,
-            MFSampleExtension_CleanPoint, MFT_MESSAGE_NOTIFY_BEGIN_STREAMING,
-            MFT_MESSAGE_NOTIFY_START_OF_STREAM, MFT_OUTPUT_DATA_BUFFER,
-            MFT_OUTPUT_STREAM_PROVIDES_SAMPLES, MFVideoFormat_H264, MFVideoFormat_NV12,
-            MFVideoInterlace_Progressive, eAVEncCommonRateControlMode_CBR, eAVEncH264VProfile_Base,
+            CLSID_MSH264EncoderMFT, CODECAPI_AVEncCommonMeanBitRate,
+            CODECAPI_AVEncCommonRateControlMode, CODECAPI_AVEncMPVGOPSize,
+            CODECAPI_AVEncVideoForceKeyFrame, CODECAPI_AVLowLatencyMode, ICodecAPI, IMFTransform,
+            MF_E_TRANSFORM_NEED_MORE_INPUT, MF_E_TRANSFORM_STREAM_CHANGE, MF_MT_AVG_BITRATE,
+            MF_MT_FRAME_RATE, MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MPEG2_PROFILE,
+            MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video, MFSampleExtension_CleanPoint,
+            MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, MFT_MESSAGE_NOTIFY_START_OF_STREAM,
+            MFT_OUTPUT_DATA_BUFFER, MFT_OUTPUT_STREAM_PROVIDES_SAMPLES, MFVideoFormat_H264,
+            MFVideoFormat_NV12, MFVideoInterlace_Progressive, eAVEncCommonRateControlMode_CBR,
+            eAVEncH264VProfile_Base,
         },
         System::{
             Com::{CLSCTX_INPROC_SERVER, CoCreateInstance},
@@ -71,29 +72,62 @@ impl Encoder {
         // SAFETY: COM object creation and media-type configuration of the H.264 encoder MFT.
         unsafe {
             let transform: IMFTransform =
-                CoCreateInstance(&CLSID_MSH264EncoderMFT, None, CLSCTX_INPROC_SERVER).map_err(hr("H.264 encoder MFT"))?;
+                CoCreateInstance(&CLSID_MSH264EncoderMFT, None, CLSCTX_INPROC_SERVER)
+                    .map_err(hr("H.264 encoder MFT"))?;
             let codec = transform.cast::<ICodecAPI>().ok();
             if let Some(api) = codec.as_ref() {
                 let _ = api.SetValue(&CODECAPI_AVLowLatencyMode, &variant_true());
-                let _ = api.SetValue(&CODECAPI_AVEncCommonRateControlMode, &variant_u32(eAVEncCommonRateControlMode_CBR.0 as u32));
-                let _ = api.SetValue(&CODECAPI_AVEncCommonMeanBitRate, &variant_u32(bitrate_kbps * 1000));
+                let _ = api.SetValue(
+                    &CODECAPI_AVEncCommonRateControlMode,
+                    &variant_u32(eAVEncCommonRateControlMode_CBR.0 as u32),
+                );
+                let _ = api.SetValue(
+                    &CODECAPI_AVEncCommonMeanBitRate,
+                    &variant_u32(bitrate_kbps * 1000),
+                );
                 let _ = api.SetValue(&CODECAPI_AVEncMPVGOPSize, &variant_u32(fps * 4));
             }
             let output = super::decode::media_type(MFMediaType_Video, MFVideoFormat_H264)?;
-            output.SetUINT32(&MF_MT_AVG_BITRATE, bitrate_kbps * 1000).map_err(hr("bitrate"))?;
-            output.SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height)).map_err(hr("frame size"))?;
-            output.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1)).map_err(hr("frame rate"))?;
-            output.SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32).map_err(hr("interlace"))?;
-            output.SetUINT32(&MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_Base.0 as u32).map_err(hr("profile"))?;
-            transform.SetOutputType(0, &output, 0).map_err(hr("SetOutputType(H.264)"))?;
+            output
+                .SetUINT32(&MF_MT_AVG_BITRATE, bitrate_kbps * 1000)
+                .map_err(hr("bitrate"))?;
+            output
+                .SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height))
+                .map_err(hr("frame size"))?;
+            output
+                .SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1))
+                .map_err(hr("frame rate"))?;
+            output
+                .SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32)
+                .map_err(hr("interlace"))?;
+            output
+                .SetUINT32(&MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_Base.0 as u32)
+                .map_err(hr("profile"))?;
+            transform
+                .SetOutputType(0, &output, 0)
+                .map_err(hr("SetOutputType(H.264)"))?;
             let input = super::decode::media_type(MFMediaType_Video, MFVideoFormat_NV12)?;
-            input.SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height)).map_err(hr("frame size"))?;
-            input.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1)).map_err(hr("frame rate"))?;
-            input.SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32).map_err(hr("interlace"))?;
-            transform.SetInputType(0, &input, 0).map_err(hr("SetInputType(NV12)"))?;
-            let info = transform.GetOutputStreamInfo(0).map_err(hr("GetOutputStreamInfo"))?;
-            transform.ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0).map_err(hr("BEGIN_STREAMING"))?;
-            transform.ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, 0).map_err(hr("START_OF_STREAM"))?;
+            input
+                .SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height))
+                .map_err(hr("frame size"))?;
+            input
+                .SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1))
+                .map_err(hr("frame rate"))?;
+            input
+                .SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32)
+                .map_err(hr("interlace"))?;
+            transform
+                .SetInputType(0, &input, 0)
+                .map_err(hr("SetInputType(NV12)"))?;
+            let info = transform
+                .GetOutputStreamInfo(0)
+                .map_err(hr("GetOutputStreamInfo"))?;
+            transform
+                .ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0)
+                .map_err(hr("BEGIN_STREAMING"))?;
+            transform
+                .ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, 0)
+                .map_err(hr("START_OF_STREAM"))?;
             Ok(Self {
                 transform,
                 codec,
@@ -120,24 +154,34 @@ impl Encoder {
                 let _ = api.SetValue(&CODECAPI_AVEncVideoForceKeyFrame, &variant_u32(1));
             }
             let sample = MFCreateSample().map_err(hr("MFCreateSample"))?;
-            let buffer = MFCreateMemoryBuffer(expected as u32).map_err(hr("MFCreateMemoryBuffer"))?;
+            let buffer =
+                MFCreateMemoryBuffer(expected as u32).map_err(hr("MFCreateMemoryBuffer"))?;
             let mut ptr = null_mut();
             buffer.Lock(&mut ptr, None, None).map_err(hr("Lock"))?;
             std::ptr::copy_nonoverlapping(nv12.as_ptr(), ptr, expected);
             buffer.Unlock().map_err(hr("Unlock"))?;
-            buffer.SetCurrentLength(expected as u32).map_err(hr("SetCurrentLength"))?;
+            buffer
+                .SetCurrentLength(expected as u32)
+                .map_err(hr("SetCurrentLength"))?;
             sample.AddBuffer(&buffer).map_err(hr("AddBuffer"))?;
-            sample.SetSampleTime(self.frame * duration).map_err(hr("SetSampleTime"))?;
-            sample.SetSampleDuration(duration).map_err(hr("SetSampleDuration"))?;
+            sample
+                .SetSampleTime(self.frame * duration)
+                .map_err(hr("SetSampleTime"))?;
+            sample
+                .SetSampleDuration(duration)
+                .map_err(hr("SetSampleDuration"))?;
             self.frame += 1;
-            self.transform.ProcessInput(0, &sample, 0).map_err(hr("ProcessInput"))?;
+            self.transform
+                .ProcessInput(0, &sample, 0)
+                .map_err(hr("ProcessInput"))?;
             let mut units = Vec::new();
             loop {
                 let provided = if self.provides_samples {
                     None
                 } else {
                     let s = MFCreateSample().map_err(hr("MFCreateSample"))?;
-                    let b = MFCreateMemoryBuffer(self.output_bytes).map_err(hr("MFCreateMemoryBuffer"))?;
+                    let b = MFCreateMemoryBuffer(self.output_bytes)
+                        .map_err(hr("MFCreateMemoryBuffer"))?;
                     s.AddBuffer(&b).map_err(hr("AddBuffer"))?;
                     Some(s)
                 };
@@ -155,17 +199,26 @@ impl Encoder {
                     Ok(()) => {
                         let Some(out) = out else { continue };
                         let key = out.GetUINT32(&MFSampleExtension_CleanPoint).unwrap_or(0) != 0;
-                        let contiguous = out.ConvertToContiguousBuffer().map_err(hr("ConvertToContiguousBuffer"))?;
+                        let contiguous = out
+                            .ConvertToContiguousBuffer()
+                            .map_err(hr("ConvertToContiguousBuffer"))?;
                         let mut data = null_mut();
                         let mut len = 0u32;
-                        contiguous.Lock(&mut data, None, Some(&mut len)).map_err(hr("Lock"))?;
+                        contiguous
+                            .Lock(&mut data, None, Some(&mut len))
+                            .map_err(hr("Lock"))?;
                         units.push((std::slice::from_raw_parts(data, len as usize).to_vec(), key));
                         let _ = contiguous.Unlock();
                     }
                     Err(e) if e.code() == MF_E_TRANSFORM_NEED_MORE_INPUT => return Ok(units),
                     Err(e) if e.code() == MF_E_TRANSFORM_STREAM_CHANGE => {
-                        let t = self.transform.GetOutputAvailableType(0, 0).map_err(hr("GetOutputAvailableType"))?;
-                        self.transform.SetOutputType(0, &t, 0).map_err(hr("SetOutputType"))?;
+                        let t = self
+                            .transform
+                            .GetOutputAvailableType(0, 0)
+                            .map_err(hr("GetOutputAvailableType"))?;
+                        self.transform
+                            .SetOutputType(0, &t, 0)
+                            .map_err(hr("SetOutputType"))?;
                     }
                     Err(e) => return Err(format!("ProcessOutput: {e}")),
                 }

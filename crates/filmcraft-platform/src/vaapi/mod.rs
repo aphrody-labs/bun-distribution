@@ -72,7 +72,11 @@ mod linux {
     /// High decoder also decodes what the smaller profiles allow).
     pub(crate) fn h264_profiles(profile_idc: u8) -> Option<&'static [ffi::VAProfile]> {
         Some(match profile_idc {
-            66 => &[ffi::VAProfileH264ConstrainedBaseline, ffi::VAProfileH264Main, ffi::VAProfileH264High],
+            66 => &[
+                ffi::VAProfileH264ConstrainedBaseline,
+                ffi::VAProfileH264Main,
+                ffi::VAProfileH264High,
+            ],
             77 => &[ffi::VAProfileH264Main, ffi::VAProfileH264High],
             100 => &[ffi::VAProfileH264High],
             _ => return None,
@@ -107,7 +111,9 @@ mod linux {
     /// The first parameter set of NAL unit type `ty` among `sets`, without its header (`header`
     /// bytes) and emulation prevention.
     fn parameter_set(sets: &[Vec<u8>], header: usize, ty: impl Fn(u8) -> bool) -> Option<Vec<u8>> {
-        sets.iter().find(|n| n.first().is_some_and(|&h| ty(h))).and_then(|n| Some(unescape_rbsp(n.get(header..)?)))
+        sets.iter()
+            .find(|n| n.first().is_some_and(|&h| ty(h)))
+            .and_then(|n| Some(unescape_rbsp(n.get(header..)?)))
     }
 
     impl VaDecoder {
@@ -117,50 +123,94 @@ mod linux {
             if info.chroma_format_idc != 1 || info.bit_depth_chroma != bits || info.interlaced {
                 return Err(format!(
                     "{} chroma format {} at {bits}/{}-bit is not taken",
-                    if info.interlaced { "interlaced" } else { "progressive" },
+                    if info.interlaced {
+                        "interlaced"
+                    } else {
+                        "progressive"
+                    },
                     info.chroma_format_idc,
                     info.bit_depth_chroma
                 ));
             }
-            let geometry = Geometry { crop: info.crop, bits, color: info.color, par: info.par };
+            let geometry = Geometry {
+                crop: info.crop,
+                bits,
+                color: info.color,
+                par: info.par,
+            };
             let (front, codec, vendor) = match info.codec {
                 NalCodec::H264 => {
                     if bits != 8 {
                         return Err(format!("{bits}-bit H.264 is not taken"));
                     }
-                    let profiles = h264_profiles(info.profile_idc).ok_or_else(|| format!("H.264 profile_idc {} is not taken", info.profile_idc))?;
-                    let rbsp = parameter_set(&info.parameter_sets, 1, |h| h & 0x1f == 7).ok_or("no SPS")?;
-                    let sps = filmcraft_h264::params::Sps::parse(&rbsp).map_err(|e| e.to_string())?;
+                    let profiles = h264_profiles(info.profile_idc).ok_or_else(|| {
+                        format!("H.264 profile_idc {} is not taken", info.profile_idc)
+                    })?;
+                    let rbsp = parameter_set(&info.parameter_sets, 1, |h| h & 0x1f == 7)
+                        .ok_or("no SPS")?;
+                    let sps =
+                        filmcraft_h264::params::Sps::parse(&rbsp).map_err(|e| e.to_string())?;
                     sps.check_supported().map_err(|e| e.to_string())?;
                     let mbs = (sps.pic_width_in_mbs, sps.frame_height_in_mbs());
                     // the DPB, the picture being decoded, and one spare
                     let count = sps.max_dpb_frames().saturating_add(2).min(18);
-                    let session = Session::new(profiles, (sps.width(), sps.height()), count, geometry)?;
+                    let session =
+                        Session::new(profiles, (sps.width(), sps.height()), count, geometry)?;
                     let vendor = session.vendor().to_string();
-                    (Front::H264(Box::new(h264::Front::new(session, info.length_size, mbs, &info.parameter_sets).map_err(|e| e.to_string())?)), "H.264", vendor)
+                    (
+                        Front::H264(Box::new(
+                            h264::Front::new(session, info.length_size, mbs, &info.parameter_sets)
+                                .map_err(|e| e.to_string())?,
+                        )),
+                        "H.264",
+                        vendor,
+                    )
                 }
                 NalCodec::Hevc => {
-                    let profiles =
-                        hevc_profiles(info.profile_idc, bits).ok_or_else(|| format!("HEVC profile {} at {bits}-bit is not taken", info.profile_idc))?;
-                    let rbsp = parameter_set(&info.parameter_sets, 2, |h| (h >> 1) & 0x3f == 33).ok_or("no SPS")?;
-                    let sps = filmcraft_hevc::params::Sps::parse(&rbsp).map_err(|e| e.to_string())?;
+                    let profiles = hevc_profiles(info.profile_idc, bits).ok_or_else(|| {
+                        format!(
+                            "HEVC profile {} at {bits}-bit is not taken",
+                            info.profile_idc
+                        )
+                    })?;
+                    let rbsp = parameter_set(&info.parameter_sets, 2, |h| (h >> 1) & 0x3f == 33)
+                        .ok_or("no SPS")?;
+                    let sps =
+                        filmcraft_hevc::params::Sps::parse(&rbsp).map_err(|e| e.to_string())?;
                     sps.check_supported().map_err(|e| e.to_string())?;
                     if sps.range_extension {
                         return Err("HEVC range extensions are not taken".into());
                     }
-                    let count = (sps.max_dec_pic_buffering as usize).saturating_add(2).min(18);
+                    let count = (sps.max_dec_pic_buffering as usize)
+                        .saturating_add(2)
+                        .min(18);
                     let size = (sps.width, sps.height);
                     let session = Session::new(profiles, size, count, geometry)?;
                     let vendor = session.vendor().to_string();
                     (
-                        Front::Hevc(Box::new(hevc::Front::new(session, info.length_size, size, bits, &info.parameter_sets).map_err(|e| e.to_string())?)),
+                        Front::Hevc(Box::new(
+                            hevc::Front::new(
+                                session,
+                                info.length_size,
+                                size,
+                                bits,
+                                &info.parameter_sets,
+                            )
+                            .map_err(|e| e.to_string())?,
+                        )),
                         "HEVC",
                         vendor,
                     )
                 }
             };
             let name = format!("VA-API {codec} ({vendor})");
-            Ok(Self { front, info, name, fed: 0, fail_after: None })
+            Ok(Self {
+                front,
+                info,
+                name,
+                fed: 0,
+                fail_after: None,
+            })
         }
 
         /// Test hook: fail every decode call after the first `n` (a GPU lost mid-stream).
@@ -173,7 +223,9 @@ mod linux {
         fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
             self.fed += 1;
             if self.fail_after.is_some_and(|n| self.fed > n) {
-                return Err(CodecError::Decode("VA-API decoder failed (test hook)".into()));
+                return Err(CodecError::Decode(
+                    "VA-API decoder failed (test hook)".into(),
+                ));
             }
             match &mut self.front {
                 Front::H264(f) => f.decode(sample, pts),

@@ -47,8 +47,10 @@ pub fn inject_dll(pid: u32, dll_path: &str) -> Result<()> {
         }
 
         let load_lib_name = CString::new("LoadLibraryA")?;
-        let load_lib_addr =
-            GetProcAddress(h_kernel32, windows::core::PCSTR(load_lib_name.as_ptr().cast()));
+        let load_lib_addr = GetProcAddress(
+            h_kernel32,
+            windows::core::PCSTR(load_lib_name.as_ptr().cast()),
+        );
         if load_lib_addr.is_none() {
             let _ = CloseHandle(h_process);
             return Err(anyhow!("Impossible de trouver l'adresse de LoadLibraryA"));
@@ -59,8 +61,13 @@ pub fn inject_dll(pid: u32, dll_path: &str) -> Result<()> {
         let dll_path_bytes = dll_path_c.as_bytes_with_nul();
         let alloc_size = dll_path_bytes.len();
 
-        let alloc_mem =
-            VirtualAllocEx(h_process, None, alloc_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+        let alloc_mem = VirtualAllocEx(
+            h_process,
+            None,
+            alloc_size,
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE,
+        );
 
         if alloc_mem.is_null() {
             let _ = CloseHandle(h_process);

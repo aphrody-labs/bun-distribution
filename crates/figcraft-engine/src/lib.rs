@@ -5,7 +5,14 @@
 //! and the MCP server all go through [`Session::execute`], so everything is scriptable and every
 //! change is one undo step. Pointer tools ([`tools`]) and text editing reduce to the same document
 //! edits and are journaled the same way.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod al_keys;
 pub mod annotations;
@@ -88,7 +95,9 @@ pub enum EngineError {
     #[error("waiting for the server")]
     Waiting,
     /// A bug: the command panicked. The document was rolled back.
-    #[error("internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)")]
+    #[error(
+        "internal error in `{cmd}`: {msg} (the document was left as it was before; please report this bug)"
+    )]
     Internal { cmd: String, msg: String },
 }
 
@@ -104,7 +113,10 @@ impl From<figcraft_doc::DocError> for EngineError {
 pub type Result<T> = std::result::Result<T, EngineError>;
 
 pub fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.to_string(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.to_string(),
+        msg: msg.into(),
+    }
 }
 
 /// One undo step.
@@ -203,7 +215,11 @@ impl ViewState {
         (self.cx - self.vw / 2.0 / z, self.cy - self.vh / 2.0 / z)
     }
     pub fn set_zoom_at(&mut self, zoom: f64, anchor: (f64, f64)) {
-        let z = if zoom.is_finite() { zoom.clamp(Self::MIN_ZOOM, Self::MAX_ZOOM) } else { self.zoom };
+        let z = if zoom.is_finite() {
+            zoom.clamp(Self::MIN_ZOOM, Self::MAX_ZOOM)
+        } else {
+            self.zoom
+        };
         let old = self.zoom.max(1e-9);
         // Keep the page point under `anchor` fixed.
         self.cx = anchor.0 + (self.cx - anchor.0) * old / z;
@@ -239,7 +255,11 @@ impl ViewState {
     /// A wheel or trackpad scroll of (`dx`, `dy`) screen points: the canvas pans with it (content
     /// follows the fingers); with Shift a plain vertical wheel pans sideways.
     pub fn scroll(&mut self, dx: f64, dy: f64, shift: bool) {
-        let (dx, dy) = if shift && dx == 0.0 { (dy, 0.0) } else { (dx, dy) };
+        let (dx, dy) = if shift && dx == 0.0 {
+            (dy, 0.0)
+        } else {
+            (dx, dy)
+        };
         if !(dx.is_finite() && dy.is_finite()) {
             return;
         }
@@ -344,10 +364,19 @@ pub struct VersionPreview {
 }
 
 /// Why edits are refused while a version is shown.
-pub const PREVIEW_READ_ONLY: &str = "you're viewing an earlier version: restore it or go back to the current version to edit";
+pub const PREVIEW_READ_ONLY: &str =
+    "you're viewing an earlier version: restore it or go back to the current version to edit";
 
 /// Commands that first end a version preview: they act on the document itself.
-const ENDS_PREVIEW: &[&str] = &["file.save", "file.saveAs", "file.close", "file.revert", "file.saveVersion", "file.duplicate", "version.restore"];
+const ENDS_PREVIEW: &[&str] = &[
+    "file.save",
+    "file.saveAs",
+    "file.close",
+    "file.revert",
+    "file.saveVersion",
+    "file.duplicate",
+    "version.restore",
+];
 
 static NEXT_UID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
@@ -357,7 +386,11 @@ impl DocState {
             doc.repair();
         }
         doc.link_layer_text_styles();
-        let page = doc.current_page.filter(|p| doc.pages.contains(p)).or_else(|| doc.first_page()).unwrap_or(NodeId(0));
+        let page = doc
+            .current_page
+            .filter(|p| doc.pages.contains(p))
+            .or_else(|| doc.first_page())
+            .unwrap_or(NodeId(0));
         let doc = Arc::new(doc);
         let mut st = Self {
             checkpoint: None,
@@ -365,7 +398,10 @@ impl DocState {
             doc,
             selection: Vec::new(),
             page,
-            history: History { limit: 1000, ..Default::default() },
+            history: History {
+                limit: 1000,
+                ..Default::default()
+            },
             path,
             revision: 1,
             view: ViewState::default(),
@@ -392,8 +428,15 @@ impl DocState {
     /// is still there on this page.
     pub fn selected_guide(&self) -> Option<(NodeId, usize)> {
         let (owner, i) = self.guide.filter(|_| self.selection.is_empty())?;
-        let on_page = owner == self.page || self.doc.top_level_frame(owner).is_some_and(|f| self.doc.ancestors(f).contains(&self.page));
-        (on_page && guides::keeps_guides(&self.doc, owner) && self.doc.node(owner).is_some_and(|n| i < n.guides().len())).then_some((owner, i))
+        let on_page = owner == self.page
+            || self
+                .doc
+                .top_level_frame(owner)
+                .is_some_and(|f| self.doc.ancestors(f).contains(&self.page));
+        (on_page
+            && guides::keeps_guides(&self.doc, owner)
+            && self.doc.node(owner).is_some_and(|n| i < n.guides().len()))
+        .then_some((owner, i))
     }
 
     /// With the version history read from its file.
@@ -416,7 +459,11 @@ impl DocState {
 
     /// The document itself, not a version or live text preview shown in its place.
     pub fn document_itself(&self) -> &Arc<Document> {
-        self.preview.as_ref().map(|p| &p.doc).or(self.text_preview.as_ref()).unwrap_or(&self.doc)
+        self.preview
+            .as_ref()
+            .map(|p| &p.doc)
+            .or(self.text_preview.as_ref())
+            .unwrap_or(&self.doc)
     }
 
     /// The version history, for editing (the file then has unsaved changes).
@@ -429,7 +476,9 @@ impl DocState {
     pub fn changed_since_checkpoint(&self) -> bool {
         let doc = self.preview.as_ref().map_or(&self.doc, |p| &p.doc);
         // Normalising after a command can copy a document without changing it: compare contents then.
-        self.checkpoint.as_ref().is_none_or(|c| !Arc::ptr_eq(doc, c) && **doc != **c)
+        self.checkpoint
+            .as_ref()
+            .is_none_or(|c| !Arc::ptr_eq(doc, c) && **doc != **c)
     }
 
     /// Note that a version of the current document was just saved (or restored).
@@ -438,8 +487,19 @@ impl DocState {
     }
 
     /// Push a snapshot undo step: the document was `before` (shown with `selection` on `page`).
-    pub(crate) fn push_undo(&mut self, label: &str, before: Arc<Document>, selection: Vec<NodeId>, page: NodeId) {
-        self.history.undo.push(HistoryEntry { label: label.to_string(), doc: before, selection, page });
+    pub(crate) fn push_undo(
+        &mut self,
+        label: &str,
+        before: Arc<Document>,
+        selection: Vec<NodeId>,
+        page: NodeId,
+    ) {
+        self.history.undo.push(HistoryEntry {
+            label: label.to_string(),
+            doc: before,
+            selection,
+            page,
+        });
         if self.history.undo.len() > self.history.limit.max(1) {
             self.history.undo.remove(0);
         }
@@ -463,7 +523,11 @@ impl DocState {
         });
         self.page = Some(self.page)
             .filter(|pg| self.doc.pages.contains(pg))
-            .or_else(|| self.doc.current_page.filter(|pg| self.doc.pages.contains(pg)))
+            .or_else(|| {
+                self.doc
+                    .current_page
+                    .filter(|pg| self.doc.pages.contains(pg))
+            })
             .or_else(|| self.doc.first_page())
             .unwrap_or(self.page);
         self.text_edit = None;
@@ -474,7 +538,9 @@ impl DocState {
 
     /// End a version preview, putting the document, selection and page back. False when none.
     pub fn end_preview(&mut self) -> bool {
-        let Some(p) = self.preview.take() else { return false };
+        let Some(p) = self.preview.take() else {
+            return false;
+        };
         self.doc = p.doc;
         self.selection = p.selection;
         self.page = p.page;
@@ -515,14 +581,16 @@ impl DocState {
 
     /// The layer the focus view shows, while it exists on the current page.
     pub fn focused(&self) -> Option<NodeId> {
-        self.focus.filter(|f| self.doc.page_of(*f) == Some(self.page))
+        self.focus
+            .filter(|f| self.doc.page_of(*f) == Some(self.page))
     }
 
     /// Drop selected ids that no longer exist or aren't on the current page.
     pub fn clean_selection(&mut self) {
         let doc = self.doc.clone();
         let page = self.page;
-        self.selection.retain(|id| doc.contains(*id) && doc.page_of(*id) == Some(page) && *id != page);
+        self.selection
+            .retain(|id| doc.contains(*id) && doc.page_of(*id) == Some(page) && *id != page);
         let mut seen = BTreeSet::new();
         self.selection.retain(|id| seen.insert(*id));
         if let Some(te) = &self.text_edit
@@ -531,11 +599,19 @@ impl DocState {
             self.text_edit = None;
         }
         // Vector edit mode ends when its layer is gone (or no longer a vector, e.g. undone).
-        if self.vector_edit.as_mut().is_some_and(|ve| doc.page_of(ve.id) != Some(page) || !ve.clamp_doc(&doc)) {
+        if self
+            .vector_edit
+            .as_mut()
+            .is_some_and(|ve| doc.page_of(ve.id) != Some(page) || !ve.clamp_doc(&doc))
+        {
             self.vector_edit = None;
         }
         // A moved rotation origin lasts as long as its selection.
-        if self.rotation_origin.as_ref().is_some_and(|o| o.ids != self.selection) {
+        if self
+            .rotation_origin
+            .as_ref()
+            .is_some_and(|o| o.ids != self.selection)
+        {
             self.rotation_origin = None;
         }
     }
@@ -586,7 +662,10 @@ pub struct Prefs {
     pub recent_files: Vec<String>,
     /// The files you put on a server without its key, with their owner tokens (passwords: see
     /// [`online`]), most recently opened first, at most [`online::MAX_ONLINE_FILES`].
-    #[serde(skip_serializing_if = "Vec::is_empty", deserialize_with = "online::read")]
+    #[serde(
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "online::read"
+    )]
     pub online_files: Vec<online::OnlineFile>,
     /// The Getting started tips on the home screen were closed (Help ▸ Getting started shows them
     /// again).
@@ -712,7 +791,11 @@ impl Session {
 
     /// The background new pages get: the dark page colour while the interface is dark.
     pub fn new_page_background(&self) -> figcraft_color::Color {
-        if self.ui_dark == Some(true) { figcraft_color::Color::DARK_PAGE } else { figcraft_color::Color::DEFAULT_PAGE }
+        if self.ui_dark == Some(true) {
+            figcraft_color::Color::DARK_PAGE
+        } else {
+            figcraft_color::Color::DEFAULT_PAGE
+        }
     }
 
     /// Tell the engine the interface's theme (the UI does, every frame). The first time, a new
@@ -723,7 +806,11 @@ impl Session {
             return;
         }
         for ds in &mut self.docs {
-            let untouched = ds.path.is_none() && ds.history.undo.is_empty() && ds.history.redo.is_empty() && !ds.is_dirty() && ds.versions.is_empty();
+            let untouched = ds.path.is_none()
+                && ds.history.undo.is_empty()
+                && ds.history.redo.is_empty()
+                && !ds.is_dirty()
+                && ds.versions.is_empty();
             let pages = ds.doc.pages.clone();
             let blank = pages.iter().all(|p| {
                 ds.doc.node(*p).is_some_and(|n| {
@@ -736,7 +823,9 @@ impl Session {
             }
             let mut doc = (*ds.doc).clone();
             for p in pages {
-                if let Some(figcraft_doc::NodeKind::Page { background, .. }) = doc.node_mut(p).map(|n| &mut n.kind) {
+                if let Some(figcraft_doc::NodeKind::Page { background, .. }) =
+                    doc.node_mut(p).map(|n| &mut n.kind)
+                {
                     *background = figcraft_color::Color::DARK_PAGE;
                 }
             }
@@ -758,7 +847,9 @@ impl Session {
     }
 
     pub fn ds_mut(&mut self) -> Result<&mut DocState> {
-        self.docs.get_mut(self.active).ok_or(EngineError::NoDocument)
+        self.docs
+            .get_mut(self.active)
+            .ok_or(EngineError::NoDocument)
     }
 
     pub fn doc(&self) -> Result<&Document> {
@@ -805,7 +896,10 @@ impl Session {
         {
             ds.end_preview();
         }
-        let before = self.ds().ok().map(|d| (d.doc.clone(), d.selection.clone(), d.page, d.uid));
+        let before = self
+            .ds()
+            .ok()
+            .map(|d| (d.doc.clone(), d.selection.clone(), d.page, d.uid));
         let result = guard::run(id, || (spec.run)(self, params))
             .and_then(|v| self.check_instance_structure(id, &before).map(|()| v))
             .and_then(|v| self.check_preview(id, &before).map(|()| v))
@@ -837,31 +931,60 @@ impl Session {
     }
 
     /// A version shown in place of the document is read-only: refuse an edit (it is rolled back).
-    fn check_preview(&self, id: &str, before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>) -> Result<()> {
-        let Some((bdoc, _, _, uid)) = before else { return Ok(()) };
-        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else { return Ok(()) };
+    fn check_preview(
+        &self,
+        id: &str,
+        before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>,
+    ) -> Result<()> {
+        let Some((bdoc, _, _, uid)) = before else {
+            return Ok(());
+        };
+        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else {
+            return Ok(());
+        };
         if ds.preview.is_none() || Arc::ptr_eq(&ds.doc, bdoc) || id == "version.preview" {
             return Ok(());
         }
-        Err(EngineError::Disabled(id.to_string(), PREVIEW_READ_ONLY.into()))
+        Err(EngineError::Disabled(
+            id.to_string(),
+            PREVIEW_READ_ONLY.into(),
+        ))
     }
 
     /// A live session's document you may only view (or that is on its way to a server) is
     /// read-only: refuse an edit (it is rolled back).
-    fn check_live_access(&self, id: &str, before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>) -> Result<()> {
-        let Some((bdoc, _, _, uid)) = before else { return Ok(()) };
-        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else { return Ok(()) };
+    fn check_live_access(
+        &self,
+        id: &str,
+        before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>,
+    ) -> Result<()> {
+        let Some((bdoc, _, _, uid)) = before else {
+            return Ok(());
+        };
+        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else {
+            return Ok(());
+        };
         match self.live_read_only(*uid) {
-            Some(why) if !Arc::ptr_eq(&ds.doc, bdoc) => Err(EngineError::Disabled(id.to_string(), why.into())),
+            Some(why) if !Arc::ptr_eq(&ds.doc, bdoc) => {
+                Err(EngineError::Disabled(id.to_string(), why.into()))
+            }
             _ => Ok(()),
         }
     }
 
     /// Instances can't gain, lose or reorder layers, nor move, resize or re-constrain the layers in
     /// them, and library copies are read-only: refuse such an edit (it is rolled back).
-    fn check_instance_structure(&self, id: &str, before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>) -> Result<()> {
-        let Some((bdoc, _, _, uid)) = before else { return Ok(()) };
-        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else { return Ok(()) };
+    fn check_instance_structure(
+        &self,
+        id: &str,
+        before: &Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>,
+    ) -> Result<()> {
+        let Some((bdoc, _, _, uid)) = before else {
+            return Ok(());
+        };
+        let Some(ds) = self.docs.iter().find(|d| d.uid == *uid) else {
+            return Ok(());
+        };
         if Arc::ptr_eq(&ds.doc, bdoc) {
             return Ok(());
         }
@@ -877,14 +1000,20 @@ impl Session {
     }
 
     /// Bookkeeping after a successful command: normalise what changed, push undo, bump revision.
-    fn after_command(&mut self, spec: &CommandSpec, before: Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>) {
+    fn after_command(
+        &mut self,
+        spec: &CommandSpec,
+        before: Option<(Arc<Document>, Vec<NodeId>, NodeId, u64)>,
+    ) {
         let Some((bdoc, bsel, bpage, uid)) = before else {
             if let Ok(ds) = self.ds_mut() {
                 ds.revision += 1;
             }
             return;
         };
-        let Some(ds) = self.docs.iter_mut().find(|d| d.uid == uid) else { return };
+        let Some(ds) = self.docs.iter_mut().find(|d| d.uid == uid) else {
+            return;
+        };
         let changed = !Arc::ptr_eq(&ds.doc, &bdoc);
         if changed {
             normalize(ds.doc_mut(), &bdoc);
@@ -900,7 +1029,14 @@ impl Session {
     /// Record an edit of document `uid` (it was `before`, shown with `selection` on `page`) as one
     /// undo step called `label` (`None`: not undoable). On a live session's document the edit is
     /// synced and the step is the user's own ([`live`]); otherwise it is a snapshot of `before`.
-    pub(crate) fn record(&mut self, uid: u64, label: Option<&str>, before: Arc<Document>, selection: Vec<NodeId>, page: NodeId) {
+    pub(crate) fn record(
+        &mut self,
+        uid: u64,
+        label: Option<&str>,
+        before: Arc<Document>,
+        selection: Vec<NodeId>,
+        page: NodeId,
+    ) {
         if self.live_doc(uid) {
             return self.live_edit(uid, label);
         }
@@ -912,7 +1048,10 @@ impl Session {
     /// How many undo and redo steps the active document has (the user's own in a live session).
     pub fn undo_depth(&self) -> (usize, usize) {
         match self.ds() {
-            Ok(ds) if self.live_doc(ds.uid) => self.live().client().map_or((0, 0), figcraft_collab::Client::history_len),
+            Ok(ds) if self.live_doc(ds.uid) => self
+                .live()
+                .client()
+                .map_or((0, 0), figcraft_collab::Client::history_len),
             Ok(ds) => (ds.history.undo.len(), ds.history.redo.len()),
             Err(_) => (0, 0),
         }
@@ -921,10 +1060,19 @@ impl Session {
     /// The labels of the active document's last `n` undo steps, the next one first.
     pub fn undo_labels(&self, n: usize) -> Vec<String> {
         match self.ds() {
-            Ok(ds) if self.live_doc(ds.uid) => {
-                self.live().client().map(|c| c.undo_labels().rev().take(n).map(str::to_string).collect()).unwrap_or_default()
-            }
-            Ok(ds) => ds.history.undo.iter().rev().take(n).map(|h| h.label.clone()).collect(),
+            Ok(ds) if self.live_doc(ds.uid) => self
+                .live()
+                .client()
+                .map(|c| c.undo_labels().rev().take(n).map(str::to_string).collect())
+                .unwrap_or_default(),
+            Ok(ds) => ds
+                .history
+                .undo
+                .iter()
+                .rev()
+                .take(n)
+                .map(|h| h.label.clone())
+                .collect(),
             Err(_) => Vec::new(),
         }
     }
@@ -937,18 +1085,30 @@ impl Session {
         }
         let ds = self.ds_mut()?;
         if ds.preview.is_some() {
-            return Err(EngineError::Disabled(label.to_string(), PREVIEW_READ_ONLY.into()));
+            return Err(EngineError::Disabled(
+                label.to_string(),
+                PREVIEW_READ_ONLY.into(),
+            ));
         }
         if ds.interaction.is_none() {
-            ds.interaction = Some(Interaction { label: label.to_string(), doc: ds.doc.clone(), selection: ds.selection.clone() });
+            ds.interaction = Some(Interaction {
+                label: label.to_string(),
+                doc: ds.doc.clone(),
+                selection: ds.selection.clone(),
+            });
         }
         Ok(())
     }
 
     /// Replace the document with `f(snapshot)` for a live preview during a gesture.
-    pub fn preview(&mut self, f: impl FnOnce(&mut Document, &mut Vec<NodeId>) -> Result<()>) -> Result<()> {
+    pub fn preview(
+        &mut self,
+        f: impl FnOnce(&mut Document, &mut Vec<NodeId>) -> Result<()>,
+    ) -> Result<()> {
         let ds = self.ds_mut()?;
-        let Some(it) = ds.interaction.clone() else { return Err(EngineError::Other("no gesture in progress".into())) };
+        let Some(it) = ds.interaction.clone() else {
+            return Err(EngineError::Other("no gesture in progress".into()));
+        };
         let mut doc = (*it.doc).clone();
         let mut sel = it.selection.clone();
         let res = f(&mut doc, &mut sel);
@@ -970,7 +1130,9 @@ impl Session {
     /// Finish a gesture as one undo step (no step if nothing changed).
     pub fn commit_interaction(&mut self) -> Result<()> {
         let ds = self.ds_mut()?;
-        let Some(it) = ds.interaction.take() else { return Ok(()) };
+        let Some(it) = ds.interaction.take() else {
+            return Ok(());
+        };
         let (uid, page) = (ds.uid, ds.page);
         ds.revision += 1;
         if !Arc::ptr_eq(&it.doc, &ds.doc) && *it.doc != *ds.doc {
@@ -997,7 +1159,10 @@ impl Session {
         let live = self.ds().is_ok_and(|d| self.live_doc(d.uid));
         let ds = self.ds_mut()?;
         if ds.preview.is_some() {
-            return Err(EngineError::Disabled("edit.undo".into(), PREVIEW_READ_ONLY.into()));
+            return Err(EngineError::Disabled(
+                "edit.undo".into(),
+                PREVIEW_READ_ONLY.into(),
+            ));
         }
         if let Some(it) = ds.interaction.take()
             && live
@@ -1009,8 +1174,15 @@ impl Session {
         if live {
             return Ok(self.live_travel(true));
         }
-        let Some(e) = ds.history.undo.pop() else { return Ok(false) };
-        let redo = HistoryEntry { label: e.label.clone(), doc: ds.doc.clone(), selection: ds.selection.clone(), page: ds.page };
+        let Some(e) = ds.history.undo.pop() else {
+            return Ok(false);
+        };
+        let redo = HistoryEntry {
+            label: e.label.clone(),
+            doc: ds.doc.clone(),
+            selection: ds.selection.clone(),
+            page: ds.page,
+        };
         ds.history.redo.push(redo);
         ds.doc = e.doc;
         ds.selection = e.selection;
@@ -1027,7 +1199,10 @@ impl Session {
         let live = self.ds().is_ok_and(|d| self.live_doc(d.uid));
         let ds = self.ds_mut()?;
         if ds.preview.is_some() {
-            return Err(EngineError::Disabled("edit.redo".into(), PREVIEW_READ_ONLY.into()));
+            return Err(EngineError::Disabled(
+                "edit.redo".into(),
+                PREVIEW_READ_ONLY.into(),
+            ));
         }
         if let Some(it) = ds.interaction.take()
             && live
@@ -1038,8 +1213,15 @@ impl Session {
         if live {
             return Ok(self.live_travel(false));
         }
-        let Some(e) = ds.history.redo.pop() else { return Ok(false) };
-        let undo = HistoryEntry { label: e.label.clone(), doc: ds.doc.clone(), selection: ds.selection.clone(), page: ds.page };
+        let Some(e) = ds.history.redo.pop() else {
+            return Ok(false);
+        };
+        let undo = HistoryEntry {
+            label: e.label.clone(),
+            doc: ds.doc.clone(),
+            selection: ds.selection.clone(),
+            page: ds.page,
+        };
         ds.history.undo.push(undo);
         ds.doc = e.doc;
         ds.selection = e.selection;
@@ -1053,25 +1235,38 @@ impl Session {
 
     /// Queue a UI request (dialogs etc.).
     pub fn request_ui(&mut self, kind: &str, data: Value) {
-        self.ui_requests.push(UiRequest { kind: kind.to_string(), data });
+        self.ui_requests.push(UiRequest {
+            kind: kind.to_string(),
+            data,
+        });
     }
 
     /// Run several commands as one undo step.
     pub fn batch(&mut self, label: &str, cmds: &[(String, Value)]) -> Result<Vec<Value>> {
-        self.grouped(label, |s| cmds.iter().map(|(id, p)| s.execute(id, p)).collect())
+        self.grouped(label, |s| {
+            cmds.iter().map(|(id, p)| s.execute(id, p)).collect()
+        })
     }
 
     /// Run `f` as one undo step called `label`: the commands it executes push no steps of their
     /// own, and when it fails the document, selection, page and history are put back.
     pub fn grouped<T>(&mut self, label: &str, f: impl FnOnce(&mut Self) -> Result<T>) -> Result<T> {
         let ds = self.ds_mut()?;
-        let (before, sel, page, saved_len, uid) = (ds.doc.clone(), ds.selection.clone(), ds.page, ds.history.undo.len(), ds.uid);
+        let (before, sel, page, saved_len, uid) = (
+            ds.doc.clone(),
+            ds.selection.clone(),
+            ds.page,
+            ds.history.undo.len(),
+            ds.uid,
+        );
         // The steps inside are dropped again below, so they mustn't push the oldest ones out.
         let limit = std::mem::replace(&mut ds.history.limit, usize::MAX);
         self.live_hold(uid, true);
         let result = f(self);
         self.live_hold(uid, false);
-        let Some(ds) = self.docs.iter_mut().find(|d| d.uid == uid) else { return result };
+        let Some(ds) = self.docs.iter_mut().find(|d| d.uid == uid) else {
+            return result;
+        };
         ds.history.limit = limit;
         ds.history.undo.truncate(saved_len);
         if result.is_err() {
@@ -1132,18 +1327,29 @@ pub fn normalize(doc: &mut Document, before: &Document) {
     cmd::styles::apply_bindings_to(doc, scope.as_ref());
     style_vars::refresh(doc, Some(before), scope.as_ref());
     if doc.styles != before.styles {
-        let changed_styles: Vec<String> = doc.styles.iter().filter(|s| !before.styles.contains(s)).map(|s| s.id.clone()).collect();
+        let changed_styles: Vec<String> = doc
+            .styles
+            .iter()
+            .filter(|s| !before.styles.contains(s))
+            .map(|s| s.id.clone())
+            .collect();
         for sid in changed_styles {
             cmd::styles::propagate_style(doc, &sid);
         }
     }
     touched.extend(doc.take_dirty());
     // Lists and text chars edited away from their style unlink from it.
-    let live_now: Vec<NodeId> = touched.iter().copied().filter(|i| doc.contains(*i)).collect();
+    let live_now: Vec<NodeId> = touched
+        .iter()
+        .copied()
+        .filter(|i| doc.contains(*i))
+        .collect();
     cmd::styles::sync_list_styles(doc, before, &live_now);
     cmd::styles::sync_text_styles(doc, &live_now);
     touched.extend(doc.take_dirty());
-    let live = |doc: &Document, t: &BTreeSet<NodeId>| -> Vec<NodeId> { t.iter().copied().filter(|i| doc.contains(*i)).collect() };
+    let live = |doc: &Document, t: &BTreeSet<NodeId>| -> Vec<NodeId> {
+        t.iter().copied().filter(|i| doc.contains(*i)).collect()
+    };
     // 0b. Fill and hug only where they can apply (a layer moved out of auto layout, a parent that
     // started to hug or lost auto layout): the rest becomes fixed at its current size.
     for id in live(doc, &touched) {
@@ -1172,12 +1378,22 @@ pub fn normalize(doc: &mut Document, before: &Document) {
     }
     touched.extend(doc.take_dirty());
     // Parents of removed nodes (as they were before) count as touched.
-    let removed_parents: Vec<NodeId> =
-        touched.iter().filter(|i| !doc.contains(**i)).filter_map(|i| before.node(*i).and_then(|n| n.parent)).filter(|p| doc.contains(*p)).collect();
+    let removed_parents: Vec<NodeId> = touched
+        .iter()
+        .filter(|i| !doc.contains(**i))
+        .filter_map(|i| before.node(*i).and_then(|n| n.parent))
+        .filter(|p| doc.contains(*p))
+        .collect();
     // 3. Groups / booleans wrap their children.
     let mut fit: BTreeSet<NodeId> = BTreeSet::new();
-    for id in live(doc, &touched).into_iter().chain(removed_parents.iter().copied()) {
-        if doc.node(id).is_some_and(|n| n.kind.bounds_follow_children()) {
+    for id in live(doc, &touched)
+        .into_iter()
+        .chain(removed_parents.iter().copied())
+    {
+        if doc
+            .node(id)
+            .is_some_and(|n| n.kind.bounds_follow_children())
+        {
             fit.insert(id);
         }
         for a in doc.ancestors(id) {
@@ -1201,7 +1417,9 @@ pub fn normalize(doc: &mut Document, before: &Document) {
     touched.extend(doc.take_dirty());
     // 4. Auto layout for frames where something that sizes or places layers changed.
     let mut frames: BTreeSet<NodeId> = BTreeSet::new();
-    let moved = live(doc, &touched).into_iter().filter(|id| affects_layout(before, doc, *id));
+    let moved = live(doc, &touched)
+        .into_iter()
+        .filter(|id| affects_layout(before, doc, *id));
     for id in moved.chain(removed_parents) {
         if !doc.contains(id) {
             continue;
@@ -1220,10 +1438,17 @@ pub fn normalize(doc: &mut Document, before: &Document) {
         // Layers the layout leaves where they were stay untouched.
         let kept: Vec<(Arc<Node>, bool)> = doc
             .node(f)
-            .map(|n| std::iter::once(f).chain(n.children.iter().copied()).collect::<Vec<_>>())
+            .map(|n| {
+                std::iter::once(f)
+                    .chain(n.children.iter().copied())
+                    .collect::<Vec<_>>()
+            })
             .unwrap_or_default()
             .into_iter()
-            .filter_map(|i| doc.node_arc(i).map(|a| (a.clone(), doc.dirty().contains(&i))))
+            .filter_map(|i| {
+                doc.node_arc(i)
+                    .map(|a| (a.clone(), doc.dirty().contains(&i)))
+            })
             .collect();
         figcraft_layout::layout_frame(doc, f, &m);
         for (a, was_dirty) in kept {
@@ -1242,7 +1467,9 @@ pub fn normalize(doc: &mut Document, before: &Document) {
 /// layout frame around it: new, resized, moved, shown or hidden, restructured, other text or
 /// layout settings.
 fn affects_layout(before: &Document, doc: &Document, id: NodeId) -> bool {
-    let (Some(a), Some(b)) = (before.node(id), doc.node(id)) else { return true };
+    let (Some(a), Some(b)) = (before.node(id), doc.node(id)) else {
+        return true;
+    };
     a.width != b.width
         || a.height != b.height
         || a.transform != b.transform
@@ -1259,14 +1486,20 @@ fn affects_layout(before: &Document, doc: &Document, id: NodeId) -> bool {
 /// The layers whose variable bindings an edit may have changed: every bound layer when a variable
 /// changed, else the touched layers and everything below those that moved, are new or chose
 /// another variable mode (modes are inherited).
-fn binding_scope(doc: &Document, before: &Document, touched: &BTreeSet<NodeId>) -> Option<BTreeSet<NodeId>> {
+fn binding_scope(
+    doc: &Document,
+    before: &Document,
+    touched: &BTreeSet<NodeId>,
+) -> Option<BTreeSet<NodeId>> {
     if doc.variables != before.variables {
         return None;
     }
     let mut out = BTreeSet::new();
     for &id in touched {
         let Some(n) = doc.node(id) else { continue };
-        let inherited = before.node(id).is_none_or(|b| b.var_modes != n.var_modes || b.parent != n.parent);
+        let inherited = before
+            .node(id)
+            .is_none_or(|b| b.var_modes != n.var_modes || b.parent != n.parent);
         if inherited {
             out.extend(doc.subtree(id));
         } else {
@@ -1280,12 +1513,19 @@ fn binding_scope(doc: &Document, before: &Document, touched: &BTreeSet<NodeId>) 
 /// design `touched` changed (added, removed or edited; the handoff status itself and hiding a
 /// section's contents don't count).
 fn mark_dev_changes(doc: &mut Document, before: &Document, touched: &BTreeSet<NodeId>) {
-    let ready = |d: &Document, id: NodeId| d.node(id).is_some_and(|n| n.dev_status == figcraft_doc::DevStatus::ReadyForDev);
+    let ready = |d: &Document, id: NodeId| {
+        d.node(id)
+            .is_some_and(|n| n.dev_status == figcraft_doc::DevStatus::ReadyForDev)
+    };
     let mut changed: BTreeSet<NodeId> = BTreeSet::new();
     for &id in touched {
         // Ready-for-dev frames around it first (the cheap test).
         let mut chain = vec![id];
-        chain.extend(if doc.contains(id) { doc.ancestors(id) } else { before.ancestors(id) });
+        chain.extend(if doc.contains(id) {
+            doc.ancestors(id)
+        } else {
+            before.ancestors(id)
+        });
         chain.retain(|m| ready(before, *m) && ready(doc, *m));
         if chain.is_empty() {
             continue;
@@ -1312,8 +1552,17 @@ fn mark_dev_changes(doc: &mut Document, before: &Document, touched: &BTreeSet<No
     }
     // Snapshots last until the change is resolved, the layer is marked again or it's deleted.
     if !doc.dev_snapshots.is_empty() {
-        let keep = |d: &Document, id: NodeId| d.node(id).is_some_and(|n| n.dev_status == figcraft_doc::DevStatus::ReadyForDev && n.dev_changed);
-        let stale: Vec<NodeId> = doc.dev_snapshots.keys().copied().filter(|id| !keep(doc, *id)).collect();
+        let keep = |d: &Document, id: NodeId| {
+            d.node(id).is_some_and(|n| {
+                n.dev_status == figcraft_doc::DevStatus::ReadyForDev && n.dev_changed
+            })
+        };
+        let stale: Vec<NodeId> = doc
+            .dev_snapshots
+            .keys()
+            .copied()
+            .filter(|id| !keep(doc, *id))
+            .collect();
         for id in stale {
             doc.dev_snapshots.remove(&id);
         }

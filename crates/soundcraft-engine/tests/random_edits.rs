@@ -71,22 +71,34 @@ fn params(i: usize, a: i64, b: i64, track: &str) -> Value {
         "mix.volume" => json!({"track": track, "db": (a % 20) as f64 - 10.0}),
         "mix.pan" => json!({"track": track, "pan": ((a % 200) as f64) / 100.0}),
         "mix.insert" => json!({"track": track, "plugin": "eq_7band"}),
-        "automation.set_point" => json!({"track": track, "param": "volume", "at": s, "value": -6.0}),
-        "automation.write_range" => json!({"track": track, "param": "pan", "start": s, "end": e, "value": 0.5}),
+        "automation.set_point" => {
+            json!({"track": track, "param": "volume", "at": s, "value": -6.0})
+        }
+        "automation.write_range" => {
+            json!({"track": track, "param": "pan", "start": s, "end": e, "value": 0.5})
+        }
         "event.tempo" => json!({"bpm": 60.0 + (a.unsigned_abs() % 100) as f64, "at": s}),
         "markers.add" => json!({"at": s}),
         "track.new" => json!({"format": "Stereo"}),
         "track.duplicate" | "track.delete" => json!({"tracks": [track]}),
-        "edit.space_clips" => json!({"tracks": [track], "start": s, "end": e, "gap": {"seconds": 0.25}}),
+        "edit.space_clips" => {
+            json!({"tracks": [track], "start": s, "end": e, "gap": {"seconds": 0.25}})
+        }
         "event.tempo_linear" => json!({"start": s, "end": e, "start_bpm": 90.0, "end_bpm": 130.0}),
         "event.insert_time" => json!({"start": s, "length": {"seconds": 1.0}}),
-        "track.change_width" => json!({"tracks": [track], "format": if a % 2 == 0 { "Stereo" } else { "Mono" }}),
-        "clip.elastic_properties" => json!({"ratio": 0.5 + (a.unsigned_abs() % 150) as f64 / 100.0}),
+        "track.change_width" => {
+            json!({"tracks": [track], "format": if a % 2 == 0 { "Stereo" } else { "Mono" }})
+        }
+        "clip.elastic_properties" => {
+            json!({"ratio": 0.5 + (a.unsigned_abs() % 150) as f64 / 100.0})
+        }
         "audiosuite.process" => {
             let p = ["normalize", "reverse", "invert", "gain"][(b.unsigned_abs() % 4) as usize];
             json!({ "process": p })
         }
-        "event.beat_detective" => json!({"tracks": [track], "start": s, "end": e, "separate": true}),
+        "event.beat_detective" => {
+            json!({"tracks": [track], "start": s, "end": e, "separate": true})
+        }
         _ => json!({"tracks": [track], "start": s, "end": e}),
     }
 }
@@ -113,7 +125,9 @@ fn check_invariants(e: &Engine) -> Result<(), String> {
             return Err("non-finite volume".into());
         }
     }
-    serde_json::to_string(s).map(|_| ()).map_err(|err| err.to_string())
+    serde_json::to_string(s)
+        .map(|_| ())
+        .map_err(|err| err.to_string())
 }
 
 proptest! {

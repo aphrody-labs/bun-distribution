@@ -19,7 +19,9 @@ const INKS: usize = 4;
 /// A layer the native path can composite: a visible raster layer the compositor would only blend
 /// Normally at its opacity.
 fn plain(layer: &Layer) -> Option<&Surface> {
-    let LayerContent::Raster(s) = &layer.content else { return None };
+    let LayerContent::Raster(s) = &layer.content else {
+        return None;
+    };
     let simple = layer.blend == BlendMode::Normal
         && !layer.clipped
         && layer.mask.as_ref().is_none_or(|m| !m.enabled)
@@ -37,7 +39,10 @@ fn plain(layer: &Layer) -> Option<&Surface> {
 /// document isn't CMYK or a visible layer needs the full compositor (see the module docs).
 /// `paper` flattens onto white paper (no ink) and makes the result opaque.
 pub fn flatten_cmyk(doc: &Document, rect: Rect, fmt: PixelFormat, paper: bool) -> Option<Surface> {
-    if doc.mode != ColorMode::Cmyk || fmt.mode != ColorMode::Cmyk || doc.layers.iter().any(|l| l.clipped) {
+    if doc.mode != ColorMode::Cmyk
+        || fmt.mode != ColorMode::Cmyk
+        || doc.layers.iter().any(|l| l.clipped)
+    {
         return None;
     }
     let mut stack = Vec::new();
@@ -60,7 +65,10 @@ pub fn flatten_cmyk(doc: &Document, rect: Rect, fmt: PixelFormat, paper: bool) -
         acc.clear();
         acc.resize(w * band.height() as usize, [0.0f32; INKS + 1]);
         for &(surf, opacity) in &stack {
-            if opacity <= 0.0 || (surf.content_bounds().intersect(&band).is_empty() && surf.default_pixel().iter().all(|v| *v == 0.0)) {
+            if opacity <= 0.0
+                || (surf.content_bounds().intersect(&band).is_empty()
+                    && surf.default_pixel().iter().all(|v| *v == 0.0))
+            {
                 continue;
             }
             let sf = surf.format();
@@ -75,7 +83,11 @@ pub fn flatten_cmyk(doc: &Document, rect: Rect, fmt: PixelFormat, paper: bool) -
                 let keep = d[INKS] * (1.0 - sa);
                 for c in 0..INKS {
                     // An opaque pixel replaces what is below exactly (no rounding through the mix).
-                    d[c] = if sa >= 1.0 { s[c] } else { (s[c] * sa + d[c] * keep) / oa };
+                    d[c] = if sa >= 1.0 {
+                        s[c]
+                    } else {
+                        (s[c] * sa + d[c] * keep) / oa
+                    };
                 }
                 d[INKS] = oa;
             }

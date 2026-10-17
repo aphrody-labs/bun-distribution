@@ -445,7 +445,11 @@ impl GxRenderer {
         let requested_scale = efb_scale;
         let efb_scale = efb_scale.clamp(1, MAX_EFB_SCALE).min(max_scale);
         if efb_scale != requested_scale {
-            tracing::warn!(requested = requested_scale, effective = efb_scale, "EFB scale clamped");
+            tracing::warn!(
+                requested = requested_scale,
+                effective = efb_scale,
+                "EFB scale clamped"
+            );
         }
 
         let efb_w = EFB_WIDTH * efb_scale;
@@ -453,8 +457,10 @@ impl GxRenderer {
 
         let frame_uniform_size = FRAME_UNIFORMS_SIZE.get();
         let draw_uniform_size = DRAW_UNIFORMS_SIZE.get();
-        let draw_uniform_stride =
-            align_up(draw_uniform_size, device.limits().min_uniform_buffer_offset_alignment as u64);
+        let draw_uniform_stride = align_up(
+            draw_uniform_size,
+            device.limits().min_uniform_buffer_offset_alignment as u64,
+        );
 
         let xfb_copy_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("xfb_copy_shader"),
@@ -464,13 +470,23 @@ impl GxRenderer {
         let efb_depth_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("efb_depth_shader"),
             source: wgpu::ShaderSource::Wgsl(
-                format!("{}\n{}", include_str!("shaders/efb_depth.wgsl"), pack_formats_wgsl).into(),
+                format!(
+                    "{}\n{}",
+                    include_str!("shaders/efb_depth.wgsl"),
+                    pack_formats_wgsl
+                )
+                .into(),
             ),
         });
         let efb_pack_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("efb_pack_shader"),
             source: wgpu::ShaderSource::Wgsl(
-                format!("{}\n{}", include_str!("shaders/efb_pack.wgsl"), pack_formats_wgsl).into(),
+                format!(
+                    "{}\n{}",
+                    include_str!("shaders/efb_pack.wgsl"),
+                    pack_formats_wgsl
+                )
+                .into(),
             ),
         });
 
@@ -541,7 +557,11 @@ impl GxRenderer {
 
         let fallback_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("gx_fallback_tex"),
-            size: wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -552,8 +572,16 @@ impl GxRenderer {
         queue.write_texture(
             fallback_texture.as_image_copy(),
             &[255u8, 255, 255, 255],
-            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(4), rows_per_image: None },
-            wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4),
+                rows_per_image: None,
+            },
+            wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
         );
         let fallback_view = fallback_texture.create_view(&Default::default());
 
@@ -590,7 +618,11 @@ impl GxRenderer {
         // Resolved (1x) color: CopyXfb reads from here.
         let efb_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("efb_color_resolved"),
-            size: wgpu::Extent3d { width: efb_w, height: efb_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: efb_w,
+                height: efb_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -605,7 +637,11 @@ impl GxRenderer {
         // Multisampled (4x) color: actual render target for draws.
         let efb_msaa_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("efb_color_msaa"),
-            size: wgpu::Extent3d { width: efb_w, height: efb_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: efb_w,
+                height: efb_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: EFB_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
@@ -618,7 +654,11 @@ impl GxRenderer {
         // Multisampled (4x) depth.
         let efb_depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("efb_depth"),
-            size: wgpu::Extent3d { width: efb_w, height: efb_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: efb_w,
+                height: efb_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: EFB_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
@@ -631,7 +671,11 @@ impl GxRenderer {
         // XFB accumulation texture. Holds the composited output of all
         let xfb_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("xfb_accum"),
-            size: wgpu::Extent3d { width: efb_w, height: efb_h, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: efb_w,
+                height: efb_h,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -744,7 +788,10 @@ impl GxRenderer {
                 label: Some(label),
                 layout: &xfb_copy_bind_group_layout,
                 entries: &[
-                    wgpu::BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    },
                     wgpu::BindGroupEntry {
                         binding: 1,
                         resource: wgpu::BindingResource::TextureView(&efb_view),
@@ -801,7 +848,10 @@ impl GxRenderer {
                 label: Some(label),
                 layout: &efb_depth_resolve_bg_layout,
                 entries: &[
-                    wgpu::BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    },
                     wgpu::BindGroupEntry {
                         binding: 1,
                         resource: wgpu::BindingResource::TextureView(&efb_depth_view),
@@ -870,7 +920,12 @@ impl GxRenderer {
             rg8: color_pack("efb_pack_rg8", "fs_rg8"),
         };
         let depth_pack = |label: &str, entry: &str| {
-            make_pack_pipeline(label, entry, &efb_depth_resolve_pipeline_layout, &efb_depth_shader)
+            make_pack_pipeline(
+                label,
+                entry,
+                &efb_depth_resolve_pipeline_layout,
+                &efb_depth_shader,
+            )
         };
         let efb_depth_pack_pipelines = render::EfbDepthPackPipelines {
             z24x8: depth_pack("efb_depth_pack_z24x8", "fs_rgba8"),
@@ -943,7 +998,12 @@ impl GxRenderer {
             sampler_cache: {
                 let mut m = FxHashMap::default();
                 m.insert(
-                    (WrapMode::Clamp, WrapMode::Clamp, MagFilter::Linear, MinFilter::Linear),
+                    (
+                        WrapMode::Clamp,
+                        WrapMode::Clamp,
+                        MagFilter::Linear,
+                        MinFilter::Linear,
+                    ),
                     sampler,
                 );
                 m
@@ -1076,7 +1136,12 @@ impl GxRenderer {
     }
 
     pub(crate) fn scaled_src_rect(&self, x: u32, y: u32, w: u32, h: u32) -> [f32; 4] {
-        [self.scaled(x) as f32, self.scaled(y) as f32, self.scaled(w) as f32, self.scaled(h) as f32]
+        [
+            self.scaled(x) as f32,
+            self.scaled(y) as f32,
+            self.scaled(w) as f32,
+            self.scaled(h) as f32,
+        ]
     }
 
     pub(crate) fn submit_pending(&mut self, queue: &wgpu::Queue) -> Option<wgpu::SubmissionIndex> {
@@ -1113,10 +1178,13 @@ impl GxRenderer {
         #[cfg(feature = "gx-stats")]
         {
             self.stats.queue_submits.fetch_add(1, Ordering::Relaxed);
-            self.stats.command_buffers_submitted.fetch_add(command_buffer_count, Ordering::Relaxed);
             self.stats
-                .queue_submit_cpu_ns
-                .fetch_add(submit_started.elapsed().as_nanos() as u64, Ordering::Relaxed);
+                .command_buffers_submitted
+                .fetch_add(command_buffer_count, Ordering::Relaxed);
+            self.stats.queue_submit_cpu_ns.fetch_add(
+                submit_started.elapsed().as_nanos() as u64,
+                Ordering::Relaxed,
+            );
         }
 
         self.draw_bufs_write_pending = false;
@@ -1150,7 +1218,10 @@ impl GxRenderer {
         let row_bytes = (width as u64) * 4;
         let padded_row_bytes = align_up(row_bytes, ROW_ALIGNMENT);
         let upload_size = padded_row_bytes * height as u64;
-        let offset = align_up(self.texture_staging_scratch.len() as u64, COPY_BUFFER_ALIGNMENT);
+        let offset = align_up(
+            self.texture_staging_scratch.len() as u64,
+            COPY_BUFFER_ALIGNMENT,
+        );
         let end = offset + upload_size;
         self.texture_staging_peak = self.texture_staging_peak.max(end);
         if end > self.texture_staging_capacity {
@@ -1163,7 +1234,8 @@ impl GxRenderer {
         for row in 0..height as usize {
             let src_start = row * row_bytes as usize;
             let src_end = src_start + row_bytes as usize;
-            self.texture_staging_scratch.extend_from_slice(&rgba[src_start..src_end]);
+            self.texture_staging_scratch
+                .extend_from_slice(&rgba[src_start..src_end]);
             if pad > 0 {
                 let new_len = self.texture_staging_scratch.len() + pad;
                 self.texture_staging_scratch.resize(new_len, 0);
@@ -1181,7 +1253,11 @@ impl GxRenderer {
                 },
             },
             dest.as_image_copy(),
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
         self.current_encoder = Some(encoder);
         true
@@ -1194,7 +1270,10 @@ impl GxRenderer {
         if self.texture_staging_peak <= self.texture_staging_capacity {
             return;
         }
-        let new_cap = self.texture_staging_peak.next_power_of_two().max(self.texture_staging_peak);
+        let new_cap = self
+            .texture_staging_peak
+            .next_power_of_two()
+            .max(self.texture_staging_peak);
         self.texture_staging_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("gx_texture_staging"),
             size: new_cap,
@@ -1282,7 +1361,10 @@ impl GxRenderer {
             return;
         }
         let shader = self.shader_cache[&key.shader].clone();
-        if self.pipeline_compiler.request(self.pipeline_generation, key, shader) {
+        if self
+            .pipeline_compiler
+            .request(self.pipeline_generation, key, shader)
+        {
             self.pending_pipeline_keys.insert(key);
         }
     }
@@ -1320,8 +1402,10 @@ impl GxRenderer {
         // type-check on wasm32. Fall back to a sequential pass there.
         #[cfg(not(target_arch = "wasm32"))]
         let compiled: Vec<(pipeline::FullPipelineKey, wgpu::RenderPipeline)> = {
-            let num_threads =
-                std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(keys.len());
+            let num_threads = std::thread::available_parallelism()
+                .map(|n| n.get())
+                .unwrap_or(4)
+                .min(keys.len());
             let chunk_size = keys.len().div_ceil(num_threads);
 
             let self_ref = &*self;
@@ -1349,7 +1433,10 @@ impl GxRenderer {
                         })
                     })
                     .collect();
-                handles.into_iter().flat_map(|h| h.join().unwrap()).collect()
+                handles
+                    .into_iter()
+                    .flat_map(|h| h.join().unwrap())
+                    .collect()
             })
         };
 
@@ -1392,8 +1479,10 @@ fn prewarm_shader_variants(
     }
 
     let t0 = std::time::Instant::now();
-    let num_threads =
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(keys.len());
+    let num_threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .min(keys.len());
 
     let chunk_size = keys.len().div_ceil(num_threads);
     let compiled: Vec<(ShaderKey, String)> = std::thread::scope(|s| {
@@ -1408,7 +1497,10 @@ fn prewarm_shader_variants(
                 })
             })
             .collect();
-        handles.into_iter().flat_map(|h| h.join().unwrap()).collect()
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().unwrap())
+            .collect()
     });
 
     let modules: Vec<(ShaderKey, wgpu::ShaderModule)> = compiled

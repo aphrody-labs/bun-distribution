@@ -109,9 +109,18 @@ impl AnchoredObject {
 impl Default for AnchoredObject {
     /// An empty placeholder (an object mark typed or pasted without its object).
     fn default() -> Self {
-        let path = designcraft_geom::shapes::rectangle(designcraft_geom::Rect::new(0.0, 0.0, 0.0, 0.0));
-        let item = Item::new(crate::ids::ItemId(0), crate::ids::LayerId(0), crate::item::Shape::Rectangle, path);
-        AnchoredObject { item, position: AnchorPosition::default() }
+        let path =
+            designcraft_geom::shapes::rectangle(designcraft_geom::Rect::new(0.0, 0.0, 0.0, 0.0));
+        let item = Item::new(
+            crate::ids::ItemId(0),
+            crate::ids::LayerId(0),
+            crate::item::Shape::Rectangle,
+            path,
+        );
+        AnchoredObject {
+            item,
+            position: AnchorPosition::default(),
+        }
     }
 }
 
@@ -129,6 +138,8 @@ impl Story {
         if !self.text[pos.min(self.text.len())..].starts_with(OBJECT_MARK) {
             return None;
         }
-        self.objects.get(self.text[..pos].matches(OBJECT_MARK).count()).map(|o| &**o)
+        self.objects
+            .get(self.text[..pos].matches(OBJECT_MARK).count())
+            .map(|o| &**o)
     }
 }

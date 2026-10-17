@@ -32,7 +32,10 @@ impl XmlWriter {
         if let Some(d) = doctype {
             let _ = writeln!(out, "<!DOCTYPE {d}>");
         }
-        Self { out, stack: Vec::new() }
+        Self {
+            out,
+            stack: Vec::new(),
+        }
     }
 
     fn indent(&mut self) {
@@ -86,11 +89,16 @@ impl XmlWriter {
 }
 
 pub(crate) fn child<'a, 'i>(n: Node<'a, 'i>, name: &str) -> Option<Node<'a, 'i>> {
-    n.children().find(|c| c.is_element() && c.tag_name().name() == name)
+    n.children()
+        .find(|c| c.is_element() && c.tag_name().name() == name)
 }
 
-pub(crate) fn children<'a, 'i>(n: Node<'a, 'i>, name: &'static str) -> impl Iterator<Item = Node<'a, 'i>> {
-    n.children().filter(move |c| c.is_element() && c.tag_name().name() == name)
+pub(crate) fn children<'a, 'i>(
+    n: Node<'a, 'i>,
+    name: &'static str,
+) -> impl Iterator<Item = Node<'a, 'i>> {
+    n.children()
+        .filter(move |c| c.is_element() && c.tag_name().name() == name)
 }
 
 pub(crate) fn elements<'a, 'i>(n: Node<'a, 'i>) -> impl Iterator<Item = Node<'a, 'i>> {
@@ -116,7 +124,11 @@ pub(crate) fn child_text<'a>(n: Node<'a, '_>, name: &str) -> Option<&'a str> {
 }
 
 pub(crate) fn child_i64(n: Node<'_, '_>, name: &str) -> Option<i64> {
-    child_text(n, name).and_then(|t| t.parse::<i64>().ok().or_else(|| t.parse::<f64>().ok().map(|f| f.round() as i64)))
+    child_text(n, name).and_then(|t| {
+        t.parse::<i64>()
+            .ok()
+            .or_else(|| t.parse::<f64>().ok().map(|f| f.round() as i64))
+    })
 }
 
 pub(crate) fn child_f64(n: Node<'_, '_>, name: &str) -> Option<f64> {
@@ -144,7 +156,10 @@ pub(crate) fn num(v: f64) -> String {
 }
 
 pub(crate) fn parse(text: &str) -> Result<roxmltree::Document<'_>, String> {
-    let opts = roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() };
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: true,
+        ..Default::default()
+    };
     roxmltree::Document::parse_with_options(text, opts).map_err(|e| e.to_string())
 }
 

@@ -40,7 +40,10 @@ impl Vfs {
         mounts.insert("/etc/google".to_string(), ".config".to_string());
         mounts.insert("/bin".to_string(), "bin".to_string());
         mounts.insert("/tmp".to_string(), "target/tmp".to_string());
-        Ok(Self { root_path: current_dir, mounts })
+        Ok(Self {
+            root_path: current_dir,
+            mounts,
+        })
     }
 
     pub fn resolve(&self, unix_path: &str) -> Result<PathBuf> {
@@ -81,7 +84,9 @@ impl Default for ProcessManager {
 
 impl ProcessManager {
     pub fn new() -> Self {
-        Self { processes: HashMap::new() }
+        Self {
+            processes: HashMap::new(),
+        }
     }
 
     pub fn spawn(&mut self, name: &str, command: &str, args: &[&str]) -> Result<()> {
@@ -95,9 +100,12 @@ impl ProcessManager {
         if let Some(child) = self.processes.get_mut(name) {
             match child.try_wait() {
                 Ok(Some(status)) => {
-                    warn!("Processus {} terminé avec le statut : {}. Relance...", name, status);
+                    warn!(
+                        "Processus {} terminé avec le statut : {}. Relance...",
+                        name, status
+                    );
                     self.spawn(name, command, args)?;
-                },
+                }
                 Ok(None) => (), // Toujours en cours
                 Err(e) => warn!("Erreur lors de l'attente du processus {} : {}", name, e),
             }
@@ -123,8 +131,10 @@ impl Crypto {
         // On copie le contenu dans un Vec<u8> avant de le libérer avec LocalFree,
         // garantissant qu'aucun pointeur vers la région libérée ne subsiste.
         unsafe {
-            let input =
-                CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 };
+            let input = CRYPT_INTEGER_BLOB {
+                cbData: data.len() as u32,
+                pbData: data.as_ptr() as *mut u8,
+            };
             let mut output = CRYPT_INTEGER_BLOB::default();
 
             if CryptUnprotectData(&input, None, None, None, None, 0, &mut output).is_ok() {

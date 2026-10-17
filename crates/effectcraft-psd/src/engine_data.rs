@@ -57,7 +57,8 @@ struct P<'a> {
 
 impl P<'_> {
     fn ws(&mut self) {
-        while self.i < self.b.len() && (self.b[self.i].is_ascii_whitespace() || self.b[self.i] == 0) {
+        while self.i < self.b.len() && (self.b[self.i].is_ascii_whitespace() || self.b[self.i] == 0)
+        {
             self.i += 1;
         }
     }
@@ -121,7 +122,10 @@ impl P<'_> {
             b'(' => Some(EValue::Str(self.string())),
             _ => {
                 let start = self.i;
-                while self.i < self.b.len() && !self.b[self.i].is_ascii_whitespace() && !b"[]<>/(".contains(&self.b[self.i]) {
+                while self.i < self.b.len()
+                    && !self.b[self.i].is_ascii_whitespace()
+                    && !b"[]<>/(".contains(&self.b[self.i])
+                {
                     self.i += 1;
                 }
                 let tok = std::str::from_utf8(&self.b[start..self.i]).unwrap_or("");
@@ -132,7 +136,10 @@ impl P<'_> {
                 Some(match tok {
                     "true" => EValue::Bool(true),
                     "false" => EValue::Bool(false),
-                    t => t.parse::<f64>().map(EValue::Num).unwrap_or_else(|_| EValue::Name(t.to_string())),
+                    t => t
+                        .parse::<f64>()
+                        .map(EValue::Num)
+                        .unwrap_or_else(|_| EValue::Name(t.to_string())),
                 })
             }
         }
@@ -140,7 +147,10 @@ impl P<'_> {
     fn name(&mut self) -> String {
         self.i += 1; // '/'
         let start = self.i;
-        while self.i < self.b.len() && !self.b[self.i].is_ascii_whitespace() && !b"[]<>/(".contains(&self.b[self.i]) {
+        while self.i < self.b.len()
+            && !self.b[self.i].is_ascii_whitespace()
+            && !b"[]<>/(".contains(&self.b[self.i])
+        {
             self.i += 1;
         }
         String::from_utf8_lossy(&self.b[start..self.i]).into_owned()
@@ -167,8 +177,15 @@ impl P<'_> {
             }
         }
         if raw.starts_with(&[0xFE, 0xFF]) {
-            let u: Vec<u16> = raw[2..].as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
-            String::from_utf16_lossy(&u).trim_end_matches('\0').to_string()
+            let u: Vec<u16> = raw[2..]
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                .collect();
+            String::from_utf16_lossy(&u)
+                .trim_end_matches('\0')
+                .to_string()
         } else {
             String::from_utf8_lossy(&raw).into_owned()
         }
@@ -215,29 +232,49 @@ pub struct TextStyle {
 
 pub fn text_style(ed: &EValue) -> TextStyle {
     let engine = ed.get("EngineDict").unwrap_or(ed);
-    let resources = ed.get("ResourceDict").or_else(|| ed.get("DocumentResources"));
+    let resources = ed
+        .get("ResourceDict")
+        .or_else(|| ed.get("DocumentResources"));
     let run = engine.path("StyleRun/RunArray/0/StyleSheet/StyleSheetData");
     let normal = resources.and_then(|r| r.path("StyleSheetSet/0/StyleSheetData"));
-    let attr = |k: &str| run.and_then(|r| r.get(k)).or_else(|| normal.and_then(|n| n.get(k)));
-    let font =
-        attr("Font").and_then(EValue::num).and_then(|i| resources?.path(&format!("FontSet/{}/Name", i as usize))).and_then(EValue::str).map(str::to_string);
-    let color = attr("FillColor").and_then(|c| c.get("Values")).and_then(|v| match v {
-        EValue::Array(a) if a.len() >= 4 => Some([a[1].num()?, a[2].num()?, a[3].num()?]),
-        _ => None,
-    });
+    let attr = |k: &str| {
+        run.and_then(|r| r.get(k))
+            .or_else(|| normal.and_then(|n| n.get(k)))
+    };
+    let font = attr("Font")
+        .and_then(EValue::num)
+        .and_then(|i| resources?.path(&format!("FontSet/{}/Name", i as usize)))
+        .and_then(EValue::str)
+        .map(str::to_string);
+    let color = attr("FillColor")
+        .and_then(|c| c.get("Values"))
+        .and_then(|v| match v {
+            EValue::Array(a) if a.len() >= 4 => Some([a[1].num()?, a[2].num()?, a[3].num()?]),
+            _ => None,
+        });
     let para = engine.path("ParagraphRun/RunArray/0/ParagraphSheet/Properties");
     let para_normal = resources.and_then(|r| r.path("ParagraphSheetSet/0/Properties"));
-    let justification =
-        para.and_then(|p| p.get("Justification")).or_else(|| para_normal.and_then(|p| p.get("Justification"))).and_then(EValue::num).map(|n| n as u8);
+    let justification = para
+        .and_then(|p| p.get("Justification"))
+        .or_else(|| para_normal.and_then(|p| p.get("Justification")))
+        .and_then(EValue::num)
+        .map(|n| n as u8);
     let auto_leading = attr("AutoLeading").is_none_or(|v| *v != EValue::Bool(false));
-    let box_text = engine.path("Rendered/Shapes/Children/0/ShapeType").and_then(EValue::num) == Some(1.0);
+    let box_text = engine
+        .path("Rendered/Shapes/Children/0/ShapeType")
+        .and_then(EValue::num)
+        == Some(1.0);
     TextStyle {
         font,
         size: attr("FontSize").and_then(EValue::num),
         color,
         justification,
         tracking: attr("Tracking").and_then(EValue::num),
-        leading: if auto_leading { None } else { attr("Leading").and_then(EValue::num) },
+        leading: if auto_leading {
+            None
+        } else {
+            attr("Leading").and_then(EValue::num)
+        },
         faux_bold: attr("FauxBold") == Some(&EValue::Bool(true)),
         faux_italic: attr("FauxItalic") == Some(&EValue::Bool(true)),
         box_text,
@@ -270,7 +307,10 @@ mod tests {
     fn parses_minimal() {
         let b = minimal("Hi (there)", "Arial-BoldMT", 36.0, [1.0, 0.5, 0.0], 2);
         let v = parse(&b);
-        assert_eq!(v.path("EngineDict/Editor/Text").and_then(EValue::str), Some("Hi (there)\r"));
+        assert_eq!(
+            v.path("EngineDict/Editor/Text").and_then(EValue::str),
+            Some("Hi (there)\r")
+        );
         let st = text_style(&v);
         assert_eq!(st.font.as_deref(), Some("Arial-BoldMT"));
         assert_eq!(st.size, Some(36.0));

@@ -15,7 +15,10 @@ use vectorcraft_geom::Rect;
 use super::super::*;
 use super::encode::single_artboard;
 use super::export::{isolated, without_artboards};
-use super::{ARTBOARD_PARAMS, ArtboardPick, Format, artboard_file_names, create_dir, encode, unique_file_names, writable, write_file};
+use super::{
+    ARTBOARD_PARAMS, ArtboardPick, Format, artboard_file_names, create_dir, encode,
+    unique_file_names, writable, write_file,
+};
 
 const C: &str = "document.exportForScreens";
 
@@ -36,7 +39,12 @@ impl ScreenSize {
     /// `2x` (or `2`), `100w`, `100h` or `72ppi`, in any case; positive numbers only.
     pub fn parse(s: &str) -> Option<Self> {
         let s = s.trim().to_ascii_lowercase();
-        let num = |t: &str| t.trim().parse::<f64>().ok().filter(|v| v.is_finite() && *v > 0.0);
+        let num = |t: &str| {
+            t.trim()
+                .parse::<f64>()
+                .ok()
+                .filter(|v| v.is_finite() && *v > 0.0)
+        };
         if let Some(n) = s.strip_suffix("ppi") {
             return num(n).map(Self::Ppi);
         }
@@ -55,10 +63,16 @@ impl ScreenSize {
         let positive = |key: &str, make: fn(f64) -> Self| -> Option<Result<Self>> {
             let v = row.get(key).filter(|v| !v.is_null())?;
             Some(
-                v.as_f64().filter(|n| n.is_finite() && *n > 0.0).map(make).ok_or_else(|| bad(C, format!("{key} must be a positive number, not {v}"))),
+                v.as_f64()
+                    .filter(|n| n.is_finite() && *n > 0.0)
+                    .map(make)
+                    .ok_or_else(|| bad(C, format!("{key} must be a positive number, not {v}"))),
             )
         };
-        if let Some(r) = positive("width", Self::Width).or_else(|| positive("height", Self::Height)).or_else(|| positive("ppi", Self::Ppi)) {
+        if let Some(r) = positive("width", Self::Width)
+            .or_else(|| positive("height", Self::Height))
+            .or_else(|| positive("ppi", Self::Ppi))
+        {
             return r;
         }
         match row.get("scale") {
@@ -80,7 +94,11 @@ impl ScreenSize {
 
     /// Pixels per point for `region`.
     fn scale_for(self, region: Rect) -> Result<f64> {
-        let per = |px: f64, pt: f64| (pt > 0.0).then(|| px / pt).ok_or_else(|| bad(C, "an empty artboard has no width or height to scale to"));
+        let per = |px: f64, pt: f64| {
+            (pt > 0.0)
+                .then(|| px / pt)
+                .ok_or_else(|| bad(C, "an empty artboard has no width or height to scale to"))
+        };
         match self {
             Self::Width(w) => per(w, region.width()),
             Self::Height(h) => per(h, region.height()),
@@ -112,14 +130,26 @@ impl ScreenSize {
 /// A file-name suffix that names a pixel size (`@2x`, `@0.5x`, `@100w`, `@100h`): vector rows
 /// leave it out.
 fn is_size_suffix(s: &str) -> bool {
-    s.strip_prefix('@').is_some_and(|t| t.ends_with(|c: char| c.is_ascii_alphabetic()) && ScreenSize::parse(t).is_some())
+    s.strip_prefix('@').is_some_and(|t| {
+        t.ends_with(|c: char| c.is_ascii_alphabetic()) && ScreenSize::parse(t).is_some()
+    })
 }
 
 /// The presets of the dialog's format rows: (id, label).
-pub const PRESETS: [(&str, &str); 2] = [("mobile", "Mobile 1x/2x/3x"), ("density", "Density buckets (0.75x–4x)")];
+pub const PRESETS: [(&str, &str); 2] = [
+    ("mobile", "Mobile 1x/2x/3x"),
+    ("density", "Density buckets (0.75x–4x)"),
+];
 
 /// Screen density buckets: (sub-folder, scale).
-const DENSITY: [(&str, f64); 6] = [("ldpi", 0.75), ("mdpi", 1.0), ("hdpi", 1.5), ("xhdpi", 2.0), ("xxhdpi", 3.0), ("xxxhdpi", 4.0)];
+const DENSITY: [(&str, f64); 6] = [
+    ("ldpi", 0.75),
+    ("mdpi", 1.0),
+    ("hdpi", 1.5),
+    ("xhdpi", 2.0),
+    ("xxhdpi", 3.0),
+    ("xxxhdpi", 4.0),
+];
 
 /// The format rows of preset `id` (see [`PRESETS`]): PNG at 1x, 2x and 3x (`@2x`, `@3x`), or PNG
 /// at every density bucket, each in its bucket's sub-folder under the same name.
@@ -137,12 +167,24 @@ pub fn preset_rows(id: &str) -> Option<Vec<Value>> {
 /// A name safe as one file or folder name: letters, digits, `-`, `_` and `.` kept, anything else
 /// `-` (`None` when nothing but dots is left: `.` and `..` name other folders).
 fn safe_name(s: &str) -> Option<String> {
-    let n: String = s.trim().chars().map(|c| if c.is_alphanumeric() || "-_.".contains(c) { c } else { '-' }).collect();
+    let n: String = s
+        .trim()
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || "-_.".contains(c) {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
     (!n.trim_matches('.').is_empty()).then_some(n)
 }
 
 /// Keys of a format row that aren't encoder options.
-const ROW_KEYS: [&str; 7] = ["format", "scale", "ppi", "width", "height", "suffix", "folder"];
+const ROW_KEYS: [&str; 7] = [
+    "format", "scale", "ppi", "width", "height", "suffix", "folder",
+];
 
 /// One format row: what to write, at which size, with which suffix, into which sub-folder.
 struct Row {
@@ -161,12 +203,22 @@ impl Row {
             return Err(bad(C, "each format is an object {format, scale?, suffix?}"));
         }
         let format = writable(C, Some(str_param(row, "format").unwrap_or("png")), None)?;
-        if matches!(format.id, "vectorcraft" | "template" | "ai" | "txt" | "dxf" | "eps" | "emf" | "wmf") {
-            return Err(bad(C, "Export for Screens writes png, png8, jpg, webp, gif, svg, svgz or pdf"));
+        if matches!(
+            format.id,
+            "vectorcraft" | "template" | "ai" | "txt" | "dxf" | "eps" | "emf" | "wmf"
+        ) {
+            return Err(bad(
+                C,
+                "Export for Screens writes png, png8, jpg, webp, gif, svg, svgz or pdf",
+            ));
         }
         // Vector formats have no pixel size: it doesn't apply and adds no @2x suffix (not even one
         // left over from a raster row switched to SVG or PDF).
-        let size = if format.raster { ScreenSize::of_row(row)? } else { ScreenSize::Scale(1.0) };
+        let size = if format.raster {
+            ScreenSize::of_row(row)?
+        } else {
+            ScreenSize::Scale(1.0)
+        };
         let suffix = match str_param(row, "suffix") {
             Some(s) if !format.raster && is_size_suffix(s) => String::new(),
             Some(s) => s.to_string(),
@@ -181,11 +233,19 @@ impl Row {
         let mut options = Map::new();
         if let Some(o) = settings.get(format.id).and_then(Value::as_object) {
             options.extend(
-                o.iter().filter(|(k, _)| !ROW_KEYS.contains(&k.as_str()) && k.as_str() != "useArtboards").map(|(k, v)| (k.clone(), v.clone())),
+                o.iter()
+                    .filter(|(k, _)| {
+                        !ROW_KEYS.contains(&k.as_str()) && k.as_str() != "useArtboards"
+                    })
+                    .map(|(k, v)| (k.clone(), v.clone())),
             );
         }
         if let Some(o) = without_artboards(row).as_object() {
-            options.extend(o.iter().filter(|(k, _)| !ROW_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())));
+            options.extend(
+                o.iter()
+                    .filter(|(k, _)| !ROW_KEYS.contains(&k.as_str()))
+                    .map(|(k, v)| (k.clone(), v.clone())),
+            );
         }
         for k in ARTBOARD_PARAMS {
             options.remove(k);
@@ -194,8 +254,18 @@ impl Row {
         options.entry("preserveEditing").or_insert(json!(false));
         let options = Value::Object(options);
         // A PDF preset (built-in or saved) becomes its settings.
-        let options = if format.id == "pdf" { super::pdf::expand_preset(s, C, &options)?.into_owned() } else { options };
-        Ok(Self { format, size, suffix, folder, options })
+        let options = if format.id == "pdf" {
+            super::pdf::expand_preset(s, C, &options)?.into_owned()
+        } else {
+            options
+        };
+        Ok(Self {
+            format,
+            size,
+            suffix,
+            folder,
+            options,
+        })
     }
 
     /// The encoder options for `region`, `artboard` of the document written.
@@ -222,7 +292,14 @@ impl Row {
 
 /// The settings the Asset Export panel shares with the dialog: what is exported, not which art
 /// or where to.
-pub(crate) const SHARED_KEYS: [&str; 6] = ["formats", "preset", "settings", "prefix", "subfolders", "antiAlias"];
+pub(crate) const SHARED_KEYS: [&str; 6] = [
+    "formats",
+    "preset",
+    "settings",
+    "prefix",
+    "subfolders",
+    "antiAlias",
+];
 
 /// What `document.exportForScreens` reads besides the formats.
 #[derive(Default, Deserialize)]
@@ -243,7 +320,11 @@ struct ScreenParams {
 
 impl ScreenParams {
     fn of(p: &Value) -> Result<Self> {
-        if p.is_object() { Self::deserialize(p).map_err(|e| bad(C, e.to_string())) } else { Ok(Self::default()) }
+        if p.is_object() {
+            Self::deserialize(p).map_err(|e| bad(C, e.to_string()))
+        } else {
+            Ok(Self::default())
+        }
     }
 }
 
@@ -252,13 +333,22 @@ impl ScreenParams {
 fn rows_of(s: &Session, p: &Value, preset: Option<&str>) -> Result<Vec<Row>> {
     let settings = p.get("settings").cloned().unwrap_or(Value::Null);
     let rows: Vec<Value> = match (preset, p.get("formats")) {
-        (Some(_), Some(f)) if !f.is_null() => return Err(bad(C, "give formats or a preset, not both")),
-        (Some(id), _) => preset_rows(id).ok_or_else(|| bad(C, format!("preset `{id}`: mobile or density")))?,
+        (Some(_), Some(f)) if !f.is_null() => {
+            return Err(bad(C, "give formats or a preset, not both"));
+        }
+        (Some(id), _) => {
+            preset_rows(id).ok_or_else(|| bad(C, format!("preset `{id}`: mobile or density")))?
+        }
         (None, Some(Value::Array(rows))) => rows.clone(),
         (None, None | Some(Value::Null)) => vec![json!({})],
-        (None, Some(v)) => return Err(bad(C, format!("formats must be an array of rows, not {v}"))),
+        (None, Some(v)) => {
+            return Err(bad(C, format!("formats must be an array of rows, not {v}")));
+        }
     };
-    let mut rows: Vec<Row> = rows.iter().map(|r| Row::parse(s, r, &settings)).collect::<Result<_>>()?;
+    let mut rows: Vec<Row> = rows
+        .iter()
+        .map(|r| Row::parse(s, r, &settings))
+        .collect::<Result<_>>()?;
     if rows.is_empty() {
         return Err(bad(C, "no formats to export"));
     }
@@ -298,7 +388,13 @@ impl Output {
     }
 
     /// Write `bytes` as `name` (relative) under `folder`, or keep them.
-    fn put(&mut self, folder: Option<&str>, keep: bool, name: String, bytes: Vec<u8>) -> Result<()> {
+    fn put(
+        &mut self,
+        folder: Option<&str>,
+        keep: bool,
+        name: String,
+        bytes: Vec<u8>,
+    ) -> Result<()> {
         match folder {
             Some(dir) if !keep => {
                 if let Some((sub, _)) = name.rsplit_once('/')
@@ -336,7 +432,19 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let subfolders = o.subfolders || o.preset.is_some();
     // A prefix names files, not folders.
-    let prefix: String = o.prefix.as_deref().unwrap_or("").chars().map(|c| if matches!(c, '/' | '\\' | ':') { '-' } else { c }).collect();
+    let prefix: String = o
+        .prefix
+        .as_deref()
+        .unwrap_or("")
+        .chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':') {
+                '-'
+            } else {
+                c
+            }
+        })
+        .collect();
     let folder = o.folder.as_deref().filter(|f| !f.is_empty());
     if let Some(dir) = folder {
         create_dir(dir)?;
@@ -354,7 +462,11 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let name_of = |r: &Row, stem: &str| {
         let file = format!("{prefix}{stem}{}.{}", r.suffix, r.format.extensions[0]);
-        if subfolders { format!("{}/{file}", r.folder) } else { file }
+        if subfolders {
+            format!("{}/{file}", r.folder)
+        } else {
+            file
+        }
     };
     let mut out = Output::default();
     if o.full_document {
@@ -373,8 +485,9 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
                 encode(&doc, "pdf", &options)?
             } else {
                 if whole.is_none() {
-                    let bounds =
-                        vectorcraft_render::encode::art_bounds(&doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
+                    let bounds = vectorcraft_render::encode::art_bounds(&doc).ok_or_else(|| {
+                        bad(C, "nothing to export: the document has no visible art")
+                    })?;
                     whole = Some(single_artboard(&doc, bounds, "Document"));
                 }
                 let Some(d) = whole.as_ref() else { continue };
@@ -384,12 +497,21 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
             out.put(folder, o.zip, name, bytes)?;
         }
     } else if let Some(ids) = &o.assets {
-        let assets =
-            ids.iter().map(|id| doc.asset(*id).ok_or_else(|| bad(C, format!("no asset {id} (see assets.list)")))).collect::<Result<Vec<_>>>()?;
+        let assets = ids
+            .iter()
+            .map(|id| {
+                doc.asset(*id)
+                    .ok_or_else(|| bad(C, format!("no asset {id} (see assets.list)")))
+            })
+            .collect::<Result<Vec<_>>>()?;
         if assets.is_empty() {
             return Err(bad(C, "no assets to export"));
         }
-        for (a, stem) in assets.iter().zip(unique_file_names(assets.iter().map(|a| (a.name.as_str(), "Asset".to_string())))) {
+        for (a, stem) in assets.iter().zip(unique_file_names(
+            assets
+                .iter()
+                .map(|a| (a.name.as_str(), "Asset".to_string())),
+        )) {
             let (d, bounds) = isolated(&doc, &doc.paint_order(a.nodes.iter().copied()), &a.name)
                 .ok_or_else(|| bad(C, format!("asset `{}` has no art to export", a.name)))?;
             for r in &rows {
@@ -403,11 +525,19 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
         }
     } else {
         let n = doc.artboards.len();
-        let boards = o.boards.resolve(n).map_err(|e| bad(C, e))?.unwrap_or_else(|| (0..n).collect());
+        let boards = o
+            .boards
+            .resolve(n)
+            .map_err(|e| bad(C, e))?
+            .unwrap_or_else(|| (0..n).collect());
         if boards.is_empty() {
             return Err(bad(C, "the document has no artboard"));
         }
-        for (b, stem) in boards.iter().copied().zip(artboard_file_names(&doc, &boards)) {
+        for (b, stem) in boards
+            .iter()
+            .copied()
+            .zip(artboard_file_names(&doc, &boards))
+        {
             let region = doc.artboards.get(b).map_or(Rect::ZERO, |a| a.rect);
             for r in &rows {
                 let name = name_of(r, &stem);
@@ -422,14 +552,19 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let names: Vec<&str> = out.kept.iter().map(|(n, _)| n.as_str()).collect();
     if o.zip {
         let zip = super::zip::store(&out.kept).map_err(|e| bad(C, e))?;
-        let zip_name = format!("{prefix}{}.zip", safe_name(&super::file_stem(&doc.title)).unwrap_or_else(|| "Untitled".into()));
+        let zip_name = format!(
+            "{prefix}{}.zip",
+            safe_name(&super::file_stem(&doc.title)).unwrap_or_else(|| "Untitled".into())
+        );
         return match folder {
             Some(dir) => {
                 let path = format!("{dir}/{zip_name}");
                 write_file(&path, &zip)?;
                 Ok(json!({ "path": path, "bytes": zip.len(), "files": names }))
             }
-            None => Ok(json!({ "name": zip_name, "dataBase64": vectorcraft_format::base64_encode(&zip), "bytes": zip.len(), "files": names })),
+            None => Ok(
+                json!({ "name": zip_name, "dataBase64": vectorcraft_format::base64_encode(&zip), "bytes": zip.len(), "files": names }),
+            ),
         };
     }
     Ok(match folder {

@@ -18,7 +18,19 @@ fn cell_set_offset_extreme_arguments_return_ref() {
         "=OFFSET(B2,1E300,0,-1E300,1)",
         "=OFFSET(B2,0,1E300,1,-1E300)",
     ] {
-        session.execute("cell.set", json!({"cell": "D1", "input": formula})).unwrap();
-        assert_eq!(session.doc().unwrap().wb.sheet(0).unwrap().value(CellRef::new(0, 3)), Value::Error(CellError::Ref), "{formula}");
+        session
+            .execute("cell.set", json!({"cell": "D1", "input": formula}))
+            .unwrap();
+        assert_eq!(
+            session
+                .doc()
+                .unwrap()
+                .wb
+                .sheet(0)
+                .unwrap()
+                .value(CellRef::new(0, 3)),
+            Value::Error(CellError::Ref),
+            "{formula}"
+        );
     }
 }

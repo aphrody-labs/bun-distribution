@@ -29,7 +29,11 @@ pub struct BandMatrix {
 
 impl BandMatrix {
     pub fn new(n: usize, bw: usize) -> Self {
-        Self { n, bw, a: vec![0.0; n * (bw + 1)] }
+        Self {
+            n,
+            bw,
+            a: vec![0.0; n * (bw + 1)],
+        }
     }
     pub fn len(&self) -> usize {
         self.n
@@ -50,7 +54,11 @@ impl BandMatrix {
     }
     pub fn get(&self, i: usize, j: usize) -> f64 {
         let (i, j) = if i >= j { (i, j) } else { (j, i) };
-        if i - j > self.bw { 0.0 } else { self.a[self.idx(i, j)] }
+        if i - j > self.bw {
+            0.0
+        } else {
+            self.a[self.idx(i, j)]
+        }
     }
     /// In-place Cholesky factorisation (L·Lᵀ). Returns false if the matrix isn't positive definite.
     pub fn factor(&mut self) -> bool {
@@ -124,7 +132,10 @@ pub struct MeshOptions {
 
 impl Default for MeshOptions {
     fn default() -> Self {
-        Self { resolution: 20, expand: 3.0 }
+        Self {
+            resolution: 20,
+            expand: 3.0,
+        }
     }
 }
 
@@ -146,8 +157,14 @@ impl Mesh {
             if outlines.is_empty() {
                 return 2;
             }
-            let near = |o: &BezPath, r: f64| o.segments().any(|s| s.nearest(c, 1e-3).distance_sq <= r * r);
-            if outlines.iter().any(|o| closed_winding(o, c) != 0 || near(o, cell * 0.25)) {
+            let near = |o: &BezPath, r: f64| {
+                o.segments()
+                    .any(|s| s.nearest(c, 1e-3).distance_sq <= r * r)
+            };
+            if outlines
+                .iter()
+                .any(|o| closed_winding(o, c) != 0 || near(o, cell * 0.25))
+            {
                 return 2;
             }
             u8::from(outlines.iter().any(|o| {
@@ -167,7 +184,10 @@ impl Mesh {
         let mut core = vec![false; nx * ny];
         for j in 0..ny {
             for i in 0..nx {
-                let c = Point::new(origin.x + (i as f64 + 0.5) * cell, origin.y + (j as f64 + 0.5) * cell);
+                let c = Point::new(
+                    origin.x + (i as f64 + 0.5) * cell,
+                    origin.y + (j as f64 + 0.5) * cell,
+                );
                 let k = keep(c);
                 kept[j * nx + i] = k > 0;
                 core[j * nx + i] = k == 2;
@@ -176,12 +196,20 @@ impl Mesh {
         // Number vertices row by row (keeps the systems banded).
         for j in 0..=ny {
             for i in 0..=nx {
-                let used = [(i.wrapping_sub(1), j.wrapping_sub(1)), (i, j.wrapping_sub(1)), (i.wrapping_sub(1), j), (i, j)]
-                    .iter()
-                    .any(|&(ci, cj)| ci < nx && cj < ny && kept[cj * nx + ci]);
+                let used = [
+                    (i.wrapping_sub(1), j.wrapping_sub(1)),
+                    (i, j.wrapping_sub(1)),
+                    (i.wrapping_sub(1), j),
+                    (i, j),
+                ]
+                .iter()
+                .any(|&(ci, cj)| ci < nx && cj < ny && kept[cj * nx + ci]);
                 if used {
                     vid[j * (nx + 1) + i] = verts.len();
-                    verts.push(Point::new(origin.x + i as f64 * cell, origin.y + j as f64 * cell));
+                    verts.push(Point::new(
+                        origin.x + i as f64 * cell,
+                        origin.y + j as f64 * cell,
+                    ));
                 }
             }
         }
@@ -200,12 +228,25 @@ impl Mesh {
                 cells[j * nx + i] = Some([t0, t0 + 1]);
             }
         }
-        Mesh { verts, tris, origin, cell, nx, ny, cells, core }
+        Mesh {
+            verts,
+            tris,
+            origin,
+            cell,
+            nx,
+            ny,
+            cells,
+            core,
+        }
     }
 
     /// Band width (in vertices) of the vertex adjacency.
     fn vertex_band(&self) -> usize {
-        self.tris.iter().filter_map(|t| Some(t.iter().max()? - t.iter().min()?)).max().unwrap_or(0)
+        self.tris
+            .iter()
+            .filter_map(|t| Some(t.iter().max()? - t.iter().min()?))
+            .max()
+            .unwrap_or(0)
     }
 
     /// The triangle and barycentric coordinates of `p` (extrapolated from the nearest mesh cell
@@ -223,8 +264,10 @@ impl Mesh {
                 if c.is_none() {
                     continue;
                 }
-                let cc =
-                    Point::new(self.origin.x + ((k % self.nx) as f64 + 0.5) * self.cell, self.origin.y + ((k / self.nx) as f64 + 0.5) * self.cell);
+                let cc = Point::new(
+                    self.origin.x + ((k % self.nx) as f64 + 0.5) * self.cell,
+                    self.origin.y + ((k / self.nx) as f64 + 0.5) * self.cell,
+                );
                 let d = cc.distance_squared(p);
                 if best.is_none_or(|(bd, _)| d < bd) {
                     best = Some((d, k));
@@ -271,14 +314,16 @@ impl Mesh {
 
     /// Is `p` (rest space) on the mesh?
     pub fn contains(&self, p: Point) -> bool {
-        self.cell_at(p).is_some_and(|k| self.cells.get(k).is_some_and(Option::is_some))
+        self.cell_at(p)
+            .is_some_and(|k| self.cells.get(k).is_some_and(Option::is_some))
     }
 
     /// The grid cell under `p`, if inside the grid.
     fn cell_at(&self, p: Point) -> Option<usize> {
         let fi = ((p.x - self.origin.x) / self.cell).floor();
         let fj = ((p.y - self.origin.y) / self.cell).floor();
-        (fi >= 0.0 && fj >= 0.0 && fi < self.nx as f64 && fj < self.ny as f64).then(|| fj as usize * self.nx + fi as usize)
+        (fi >= 0.0 && fj >= 0.0 && fi < self.nx as f64 && fj < self.ny as f64)
+            .then(|| fj as usize * self.nx + fi as usize)
     }
 
     /// The rest-space point that the `deformed` mesh shows at `q` (None: `q` is off the mesh).
@@ -307,30 +352,48 @@ impl Mesh {
     pub fn turn_at(&self, deformed: &[Point], p: Point) -> Option<f64> {
         let (t, _) = self.locate(p)?;
         let tri = self.tris.get(t)?;
-        let cur = [*deformed.get(tri[0])?, *deformed.get(tri[1])?, *deformed.get(tri[2])?];
+        let cur = [
+            *deformed.get(tri[0])?,
+            *deformed.get(tri[1])?,
+            *deformed.get(tri[2])?,
+        ];
         Some(fit_angle(&tri.map(|i| self.verts[i]), &cur))
     }
 
     /// Centre of grid cell `k`.
     fn cell_centre(&self, k: usize) -> Point {
-        Point::new(self.origin.x + ((k % self.nx) as f64 + 0.5) * self.cell, self.origin.y + ((k / self.nx) as f64 + 0.5) * self.cell)
+        Point::new(
+            self.origin.x + ((k % self.nx) as f64 + 0.5) * self.cell,
+            self.origin.y + ((k / self.nx) as f64 + 0.5) * self.cell,
+        )
     }
 
     /// The cells pins go in: those inside the art (or every kept cell when none is).
     fn pin_cells(&self) -> Vec<bool> {
         let any_core = self.core.iter().any(|c| *c);
-        self.cells.iter().zip(&self.core).map(|(c, core)| c.is_some() && (*core || !any_core)).collect()
+        self.cells
+            .iter()
+            .zip(&self.core)
+            .map(|(c, core)| c.is_some() && (*core || !any_core))
+            .collect()
     }
 
     /// The 8 neighbours of cell `k` inside the grid, with the step length (in cells).
     fn neighbours(&self, k: usize) -> impl Iterator<Item = (usize, f64)> + use<> {
         let (nx, ny) = (self.nx as i64, self.ny as i64);
         let (i, j) = ((k % self.nx) as i64, (k / self.nx) as i64);
-        (-1i64..=1).flat_map(move |dj| (-1i64..=1).map(move |di| (di, dj))).filter_map(move |(di, dj)| {
-            let (a, b) = (i + di, j + dj);
-            let step = if di != 0 && dj != 0 { std::f64::consts::SQRT_2 } else { 1.0 };
-            ((di, dj) != (0, 0) && a >= 0 && b >= 0 && a < nx && b < ny).then_some(((b * nx + a) as usize, step))
-        })
+        (-1i64..=1)
+            .flat_map(move |dj| (-1i64..=1).map(move |di| (di, dj)))
+            .filter_map(move |(di, dj)| {
+                let (a, b) = (i + di, j + dj);
+                let step = if di != 0 && dj != 0 {
+                    std::f64::consts::SQRT_2
+                } else {
+                    1.0
+                };
+                ((di, dj) != (0, 0) && a >= 0 && b >= 0 && a < nx && b < ny)
+                    .then_some(((b * nx + a) as usize, step))
+            })
     }
 
     /// Distances (in cells, through the cells where `inside`) from `sources` (cells with their
@@ -410,7 +473,11 @@ pub struct Pin {
 impl Pin {
     /// A pin free to turn.
     pub fn new(rest: Point, target: Point) -> Self {
-        Self { rest, target, angle: None }
+        Self {
+            rest,
+            target,
+            angle: None,
+        }
     }
 
     /// The soft constraints this pin puts on the mesh: the pin itself and, when its rotation is
@@ -418,7 +485,12 @@ impl Pin {
     fn constraints(&self, reach: f64) -> impl Iterator<Item = (Point, Point)> + use<> {
         let frame = self.angle.map(|a| {
             let (s, c) = a.sin_cos();
-            [Vec2::new(reach, 0.0), Vec2::new(0.0, reach)].map(|d| (self.rest + d, self.target + Vec2::new(d.x * c - d.y * s, d.x * s + d.y * c)))
+            [Vec2::new(reach, 0.0), Vec2::new(0.0, reach)].map(|d| {
+                (
+                    self.rest + d,
+                    self.target + Vec2::new(d.x * c - d.y * s, d.x * s + d.y * c),
+                )
+            })
         });
         std::iter::once((self.rest, self.target)).chain(frame.into_iter().flatten())
     }
@@ -431,8 +503,11 @@ pub fn deform(mesh: &Mesh, pins: &[Pin]) -> Vec<Point> {
     if n == 0 || pins.is_empty() {
         return mesh.verts.clone();
     }
-    let located: Vec<(usize, [f64; 3], Point)> =
-        pins.iter().flat_map(|p| p.constraints(mesh.cell)).filter_map(|(rest, target)| mesh.locate(rest).map(|(t, w)| (t, w, target))).collect();
+    let located: Vec<(usize, [f64; 3], Point)> = pins
+        .iter()
+        .flat_map(|p| p.constraints(mesh.cell))
+        .filter_map(|(rest, target)| mesh.locate(rest).map(|(t, w)| (t, w, target)))
+        .collect();
     let vb = mesh.vertex_band();
     // ---- step 1: similarity-invariant error, 2n unknowns interleaved (x0, y0, x1, y1, ...).
     let mut g = BandMatrix::new(2 * n, 2 * vb + 1);
@@ -470,9 +545,14 @@ pub fn deform(mesh: &Mesh, pins: &[Pin]) -> Vec<Point> {
         for comp in 0..2 {
             for i in 0..3 {
                 for j in 0..=i {
-                    g.add(2 * tri[i] + comp, 2 * tri[j] + comp, PIN_WEIGHT * w[i] * w[j]);
+                    g.add(
+                        2 * tri[i] + comp,
+                        2 * tri[j] + comp,
+                        PIN_WEIGHT * w[i] * w[j],
+                    );
                 }
-                rhs[2 * tri[i] + comp] += PIN_WEIGHT * w[i] * if comp == 0 { target.x } else { target.y };
+                rhs[2 * tri[i] + comp] +=
+                    PIN_WEIGHT * w[i] * if comp == 0 { target.x } else { target.y };
             }
         }
     }
@@ -486,7 +566,9 @@ pub fn deform(mesh: &Mesh, pins: &[Pin]) -> Vec<Point> {
         return mesh.verts.clone();
     }
     g.solve(&mut rhs);
-    let step1: Vec<Point> = (0..n).map(|i| Point::new(rhs[2 * i], rhs[2 * i + 1])).collect();
+    let step1: Vec<Point> = (0..n)
+        .map(|i| Point::new(rhs[2 * i], rhs[2 * i + 1]))
+        .collect();
 
     // ---- step 2: fit rigid triangles, then match edge vectors (x and y separable).
     let mut l = BandMatrix::new(n, vb);
@@ -538,7 +620,10 @@ pub fn deform(mesh: &Mesh, pins: &[Pin]) -> Vec<Point> {
 }
 
 fn centroid(p: &[Point; 3]) -> Point {
-    Point::new((p[0].x + p[1].x + p[2].x) / 3.0, (p[0].y + p[1].y + p[2].y) / 3.0)
+    Point::new(
+        (p[0].x + p[1].x + p[2].x) / 3.0,
+        (p[0].y + p[1].y + p[2].y) / 3.0,
+    )
 }
 
 /// The rotation (radians) that best fits triangle `rest` onto `cur` (least squares, about their
@@ -565,10 +650,31 @@ pub fn auto_pins(mesh: &Mesh, count: usize) -> Vec<Point> {
 /// The centre of the cells pins go in: the cell nearest their centroid, and the centroid itself
 /// (that cell's centre when the centroid falls off the art, as in a ring).
 fn centre_of(mesh: &Mesh) -> Option<(usize, Point)> {
-    let cells: Vec<usize> = mesh.pin_cells().iter().enumerate().filter(|(_, c)| **c).map(|(k, _)| k).collect();
-    let c = (cells.iter().fold(Vec2::ZERO, |a, k| a + mesh.cell_centre(*k).to_vec2()) / cells.len().max(1) as f64).to_point();
-    let k = cells.into_iter().min_by(|a, b| mesh.cell_centre(*a).distance_squared(c).total_cmp(&mesh.cell_centre(*b).distance_squared(c)))?;
-    Some((k, if mesh.contains(c) { c } else { mesh.cell_centre(k) }))
+    let cells: Vec<usize> = mesh
+        .pin_cells()
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| **c)
+        .map(|(k, _)| k)
+        .collect();
+    let c = (cells
+        .iter()
+        .fold(Vec2::ZERO, |a, k| a + mesh.cell_centre(*k).to_vec2())
+        / cells.len().max(1) as f64)
+        .to_point();
+    let k = cells.into_iter().min_by(|a, b| {
+        mesh.cell_centre(*a)
+            .distance_squared(c)
+            .total_cmp(&mesh.cell_centre(*b).distance_squared(c))
+    })?;
+    Some((
+        k,
+        if mesh.contains(c) {
+            c
+        } else {
+            mesh.cell_centre(k)
+        },
+    ))
 }
 
 /// The most pins placed automatically.
@@ -578,20 +684,34 @@ const MAX_AUTO_PINS: usize = 12;
 /// end of each limb (a part reaching well beyond the art's thickness, like the arms of a star or
 /// the ends of a long bar); at least three in all where the art has room.
 pub fn default_pins(mesh: &Mesh) -> Vec<Point> {
-    let Some((centre, middle)) = centre_of(mesh) else { return vec![] };
+    let Some((centre, middle)) = centre_of(mesh) else {
+        return vec![];
+    };
     let inside = mesh.pin_cells();
     // Thickness: the largest distance from inside the art to its edge.
     let edge: Vec<(usize, f64)> = (0..inside.len())
-        .filter(|k| inside[*k] && (mesh.neighbours(*k).count() < 8 || mesh.neighbours(*k).any(|(m, _)| !inside[m])))
+        .filter(|k| {
+            inside[*k]
+                && (mesh.neighbours(*k).count() < 8 || mesh.neighbours(*k).any(|(m, _)| !inside[m]))
+        })
         .map(|k| (k, 0.5))
         .collect();
-    let radius = mesh.geodesic(&inside, &edge).into_iter().filter(|d| d.is_finite()).fold(0.0, f64::max);
+    let radius = mesh
+        .geodesic(&inside, &edge)
+        .into_iter()
+        .filter(|d| d.is_finite())
+        .fold(0.0, f64::max);
     // Limb ends: the cells farthest from the centre (through the art), well beyond the thickness.
     let from_centre = mesh.geodesic(&inside, &[(centre, 0.0)]);
     let mut ends: Vec<usize> = (0..inside.len())
         .filter(|k| {
             let d = from_centre[*k];
-            inside[*k] && d.is_finite() && d >= 1.5 * radius && mesh.neighbours(*k).all(|(m, _)| !inside[m] || from_centre[m] <= d)
+            inside[*k]
+                && d.is_finite()
+                && d >= 1.5 * radius
+                && mesh
+                    .neighbours(*k)
+                    .all(|(m, _)| !inside[m] || from_centre[m] <= d)
         })
         .collect();
     ends.sort_by(|a, b| from_centre[*b].total_cmp(&from_centre[*a]));
@@ -612,7 +732,8 @@ pub fn default_pins(mesh: &Mesh) -> Vec<Point> {
             .map(|m| mesh.cell_centre(m))
             .filter(|q| q.distance(p) < apart)
             .collect();
-        let mid = (cap.iter().fold(Vec2::ZERO, |a, q| a + q.to_vec2()) / cap.len().max(1) as f64).to_point();
+        let mid = (cap.iter().fold(Vec2::ZERO, |a, q| a + q.to_vec2()) / cap.len().max(1) as f64)
+            .to_point();
         out.push(if mesh.contains(mid) { mid } else { p });
     }
     spread_pins(mesh, &mut out, 3);
@@ -622,11 +743,23 @@ pub fn default_pins(mesh: &Mesh) -> Vec<Point> {
 /// Add pins to `out` until there are `count`, each as far as possible from the others
 /// (farthest-point sampling over the cells pins go in).
 fn spread_pins(mesh: &Mesh, out: &mut Vec<Point>, count: usize) {
-    let centres: Vec<Point> = mesh.pin_cells().iter().enumerate().filter(|(_, c)| **c).map(|(k, _)| mesh.cell_centre(k)).collect();
+    let centres: Vec<Point> = mesh
+        .pin_cells()
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| **c)
+        .map(|(k, _)| mesh.cell_centre(k))
+        .collect();
     while out.len() < count.min(centres.len()) {
         let Some(&next) = centres.iter().max_by(|a, b| {
-            let da = out.iter().map(|o| o.distance_squared(**a)).fold(f64::MAX, f64::min);
-            let db = out.iter().map(|o| o.distance_squared(**b)).fold(f64::MAX, f64::min);
+            let da = out
+                .iter()
+                .map(|o| o.distance_squared(**a))
+                .fold(f64::MAX, f64::min);
+            let db = out
+                .iter()
+                .map(|o| o.distance_squared(**b))
+                .fold(f64::MAX, f64::min);
             da.total_cmp(&db)
         }) else {
             break;
@@ -652,7 +785,9 @@ mod tests {
             }
         }
         let x: Vec<f64> = (0..n).map(|i| i as f64 * 0.5 - 2.0).collect();
-        let mut b: Vec<f64> = (0..n).map(|i| (0..n).map(|j| m.get(i, j) * x[j]).sum()).collect();
+        let mut b: Vec<f64> = (0..n)
+            .map(|i| (0..n).map(|j| m.get(i, j) * x[j]).sum())
+            .collect();
         assert!(m.factor());
         m.solve(&mut b);
         for i in 0..n {
@@ -667,14 +802,25 @@ mod tests {
 
     fn rect_mesh() -> Mesh {
         let r = Rect::new(0.0, 0.0, 200.0, 100.0);
-        Mesh::build(&[shapes::rectangle(r).to_bezpath()], r, MeshOptions { resolution: 16, expand: 0.0 })
+        Mesh::build(
+            &[shapes::rectangle(r).to_bezpath()],
+            r,
+            MeshOptions {
+                resolution: 16,
+                expand: 0.0,
+            },
+        )
     }
 
     #[test]
     fn mesh_covers_shape_and_locates_points() {
         let m = rect_mesh();
         assert!(!m.tris.is_empty());
-        for p in [Point::new(10.0, 10.0), Point::new(150.0, 70.0), Point::new(199.0, 99.0)] {
+        for p in [
+            Point::new(10.0, 10.0),
+            Point::new(150.0, 70.0),
+            Point::new(199.0, 99.0),
+        ] {
             let (t, w) = m.locate(p).unwrap();
             assert!(w.iter().all(|v| *v >= -1e-9), "{w:?}");
             assert!((m.map(&m.verts, p) - p).hypot() < 1e-9);
@@ -689,7 +835,14 @@ mod tests {
         l.line_to((20.0, 100.0));
         l.line_to((0.0, 100.0));
         l.close_path();
-        let lm = Mesh::build(&[l], Rect::new(0.0, 0.0, 100.0, 100.0), MeshOptions { resolution: 10, expand: 0.0 });
+        let lm = Mesh::build(
+            &[l],
+            Rect::new(0.0, 0.0, 100.0, 100.0),
+            MeshOptions {
+                resolution: 10,
+                expand: 0.0,
+            },
+        );
         assert!(lm.tris.len() < m.tris.len() / 2, "{} tris", lm.tris.len());
         assert!(lm.cells.iter().filter(|c| c.is_some()).count() < 60);
     }
@@ -697,10 +850,17 @@ mod tests {
     #[test]
     fn pins_at_rest_leave_the_mesh_unchanged() {
         let m = rect_mesh();
-        let pins: Vec<Pin> =
-            [(20.0, 50.0), (180.0, 50.0), (100.0, 20.0)].iter().map(|&(x, y)| Pin::new(Point::new(x, y), Point::new(x, y))).collect();
+        let pins: Vec<Pin> = [(20.0, 50.0), (180.0, 50.0), (100.0, 20.0)]
+            .iter()
+            .map(|&(x, y)| Pin::new(Point::new(x, y), Point::new(x, y)))
+            .collect();
         let d = deform(&m, &pins);
-        let err = m.verts.iter().zip(&d).map(|(a, b)| a.distance(*b)).fold(0.0, f64::max);
+        let err = m
+            .verts
+            .iter()
+            .zip(&d)
+            .map(|(a, b)| a.distance(*b))
+            .fold(0.0, f64::max);
         assert!(err < 1e-4, "{err}");
     }
 
@@ -711,10 +871,17 @@ mod tests {
             let (s, c) = 0.5f64.sin_cos();
             Point::new(p.x * c - p.y * s + 30.0, p.x * s + p.y * c - 10.0)
         };
-        let pins: Vec<Pin> =
-            [(20.0, 50.0), (180.0, 50.0), (100.0, 90.0)].iter().map(|&(x, y)| Pin::new(Point::new(x, y), rot(Point::new(x, y)))).collect();
+        let pins: Vec<Pin> = [(20.0, 50.0), (180.0, 50.0), (100.0, 90.0)]
+            .iter()
+            .map(|&(x, y)| Pin::new(Point::new(x, y), rot(Point::new(x, y))))
+            .collect();
         let d = deform(&m, &pins);
-        let err = m.verts.iter().zip(&d).map(|(a, b)| rot(*a).distance(*b)).fold(0.0, f64::max);
+        let err = m
+            .verts
+            .iter()
+            .zip(&d)
+            .map(|(a, b)| rot(*a).distance(*b))
+            .fold(0.0, f64::max);
         assert!(err < 1e-2, "{err}");
     }
 
@@ -730,11 +897,16 @@ mod tests {
         let d = deform(&m, &pins);
         for p in &pins {
             let got = m.map(&d, p.rest);
-            assert!(got.distance(p.target) < 0.05, "pin {:?} → {got:?}", p.target);
+            assert!(
+                got.distance(p.target) < 0.05,
+                "pin {:?} → {got:?}",
+                p.target
+            );
         }
         // Area is preserved (as-rigid-as-possible): total within a few percent, no flipped triangles.
-        let (a0, a1): (f64, f64) =
-            (0..m.tris.len()).map(|t| (m.tri_area(&m.verts, t), m.tri_area(&d, t))).fold((0.0, 0.0), |s, v| (s.0 + v.0, s.1 + v.1));
+        let (a0, a1): (f64, f64) = (0..m.tris.len())
+            .map(|t| (m.tri_area(&m.verts, t), m.tri_area(&d, t)))
+            .fold((0.0, 0.0), |s, v| (s.0 + v.0, s.1 + v.1));
         assert!((a1 / a0 - 1.0).abs() < 0.05, "area ratio {}", a1 / a0);
         assert!((0..m.tris.len()).all(|t| m.tri_area(&d, t) * m.tri_area(&m.verts, t) > 0.0));
         // Each triangle stays nearly congruent: edge lengths change by < 25%.
@@ -757,19 +929,43 @@ mod tests {
             c + Vec2::new(d.x * co - d.y * s, d.x * s + d.y * co)
         };
         // One pin, held at 0.4 rad: the whole shape turns rigidly around it.
-        let d = deform(&m, &[Pin { angle: Some(0.4), ..Pin::new(c, c) }]);
-        let err = m.verts.iter().zip(&d).map(|(a, b)| rot(*a).distance(*b)).fold(0.0, f64::max);
+        let d = deform(
+            &m,
+            &[Pin {
+                angle: Some(0.4),
+                ..Pin::new(c, c)
+            }],
+        );
+        let err = m
+            .verts
+            .iter()
+            .zip(&d)
+            .map(|(a, b)| rot(*a).distance(*b))
+            .fold(0.0, f64::max);
         assert!(err < 0.05, "{err}");
         // A free pin alone leaves the shape where it is.
         let d = deform(&m, &[Pin::new(c, c)]);
         assert!(m.verts.iter().zip(&d).all(|(a, b)| a.distance(*b) < 1e-3));
         // Held ends: the turned end turns, the other end stays.
         let left = Point::new(10.0, 50.0);
-        let pins = [Pin { angle: Some(0.5), ..Pin::new(left, left) }, Pin::new(Point::new(190.0, 50.0), Point::new(190.0, 50.0))];
+        let pins = [
+            Pin {
+                angle: Some(0.5),
+                ..Pin::new(left, left)
+            },
+            Pin::new(Point::new(190.0, 50.0), Point::new(190.0, 50.0)),
+        ];
         let d = deform(&m, &pins);
         let near = m.map(&d, Point::new(10.0, 62.0)) - left;
-        assert!((near.atan2() - (Vec2::new(0.0, 12.0).atan2() + 0.5)).abs() < 0.1, "the left end turned: {near:?}");
-        assert!(m.map(&d, Point::new(190.0, 80.0)).distance(Point::new(190.0, 80.0)) < 5.0);
+        assert!(
+            (near.atan2() - (Vec2::new(0.0, 12.0).atan2() + 0.5)).abs() < 0.1,
+            "the left end turned: {near:?}"
+        );
+        assert!(
+            m.map(&d, Point::new(190.0, 80.0))
+                .distance(Point::new(190.0, 80.0))
+                < 5.0
+        );
     }
 
     #[test]
@@ -783,18 +979,46 @@ mod tests {
         xs.sort_by(f64::total_cmp);
         assert!(xs[0] < 25.0 && xs[1] > 175.0, "{p:?}");
         // A five-pointed star: the centre and its five tips.
-        let star = vectorcraft_geom::shapes::star(Point::new(100.0, 100.0), 100.0, 35.0, 5, 0.0).to_bezpath();
-        let sm = Mesh::build(std::slice::from_ref(&star), star.bounding_box(), MeshOptions { resolution: 30, expand: 0.0 });
+        let star = vectorcraft_geom::shapes::star(Point::new(100.0, 100.0), 100.0, 35.0, 5, 0.0)
+            .to_bezpath();
+        let sm = Mesh::build(
+            std::slice::from_ref(&star),
+            star.bounding_box(),
+            MeshOptions {
+                resolution: 30,
+                expand: 0.0,
+            },
+        );
         let p = default_pins(&sm);
         assert_eq!(p.len(), 6, "{p:?}");
-        assert!(p[1..].iter().all(|q| q.distance(Point::new(100.0, 100.0)) > 55.0), "{p:?}");
+        assert!(
+            p[1..]
+                .iter()
+                .all(|q| q.distance(Point::new(100.0, 100.0)) > 55.0),
+            "{p:?}"
+        );
         // A disc has no limbs: the centre, topped up to three.
         let disc = vectorcraft_geom::kurbo::Circle::new((50.0, 50.0), 50.0).to_path(0.1);
-        let dm = Mesh::build(std::slice::from_ref(&disc), disc.bounding_box(), MeshOptions::default());
+        let dm = Mesh::build(
+            std::slice::from_ref(&disc),
+            disc.bounding_box(),
+            MeshOptions::default(),
+        );
         assert_eq!(default_pins(&dm).len(), 3);
         // A point with a wide Expand stays a small grid.
-        let dot = Mesh::build(&[], Rect::new(5.0, 5.0, 5.0, 5.0), MeshOptions { expand: 1000.0, ..Default::default() });
-        assert!(dot.verts.len() < 30 * 30 && default_pins(&dot).len() == 3, "{}", dot.verts.len());
+        let dot = Mesh::build(
+            &[],
+            Rect::new(5.0, 5.0, 5.0, 5.0),
+            MeshOptions {
+                expand: 1000.0,
+                ..Default::default()
+            },
+        );
+        assert!(
+            dot.verts.len() < 30 * 30 && default_pins(&dot).len() == 3,
+            "{}",
+            dot.verts.len()
+        );
     }
 
     #[test]
@@ -807,7 +1031,10 @@ mod tests {
         let d: Vec<Point> = m.verts.iter().map(|v| rot(*v)).collect();
         let p = Point::new(60.0, 40.0);
         assert!(m.unmap(&d, rot(p)).unwrap().distance(p) < 1e-6);
-        assert!(m.unmap(&d, Point::new(-500.0, 0.0)).is_none(), "off the mesh");
+        assert!(
+            m.unmap(&d, Point::new(-500.0, 0.0)).is_none(),
+            "off the mesh"
+        );
         assert!((m.turn_at(&d, p).unwrap() - 0.3).abs() < 1e-9);
         assert!(m.contains(p) && !m.contains(Point::new(300.0, 50.0)));
     }
@@ -817,7 +1044,10 @@ mod tests {
         let m = rect_mesh();
         let p = auto_pins(&m, 3);
         assert_eq!(p.len(), 3);
-        assert!(p.iter().all(|q| Rect::new(0.0, 0.0, 200.0, 100.0).contains(*q)));
+        assert!(
+            p.iter()
+                .all(|q| Rect::new(0.0, 0.0, 200.0, 100.0).contains(*q))
+        );
         assert!(p[1].distance(p[2]) > 100.0);
     }
 }

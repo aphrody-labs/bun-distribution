@@ -37,7 +37,10 @@ pub struct InstalledPlugin {
 }
 
 /// Saves only the plugins imported from a manifest file (the others can't be loaded again).
-pub(crate) fn persisted<S: Serializer>(list: &[InstalledPlugin], s: S) -> std::result::Result<S::Ok, S::Error> {
+pub(crate) fn persisted<S: Serializer>(
+    list: &[InstalledPlugin],
+    s: S,
+) -> std::result::Result<S::Ok, S::Error> {
     s.collect_seq(list.iter().filter(|p| p.path.is_some()))
 }
 
@@ -84,7 +87,11 @@ pub struct OpenPanel {
 impl OpenPanel {
     /// The panel's title: its own, else the plugin's name.
     pub fn title(&self) -> &str {
-        if self.panel.title.is_empty() { &self.manifest.name } else { &self.panel.title }
+        if self.panel.title.is_empty() {
+            &self.manifest.name
+        } else {
+            &self.panel.title
+        }
     }
 
     fn describe(&self) -> Value {
@@ -123,26 +130,40 @@ fn refusal(m: &Manifest, command: &str, params: &Value) -> Option<String> {
     }
     // A widget's own data is FigCraft's to write, so no plugin can forge or retarget a widget.
     if writes_widget_data(params, 0) {
-        return Some(format!("plugins can't write `{}…` layer data", crate::widgets::DATA_PREFIX));
+        return Some(format!(
+            "plugins can't write `{}…` layer data",
+            crate::widgets::DATA_PREFIX
+        ));
     }
     if command == "image.place" && get(params, "path").is_some() {
         return Some("plugins can't read files: pass the image as `data`".into());
     }
     if !m.permissions.allows(command) {
-        return Some(format!("`{command}` isn't in the commands {} asked permission for", m.name));
+        return Some(format!(
+            "`{command}` isn't in the commands {} asked permission for",
+            m.name
+        ));
     }
     if m.permissions.access == Access::Read && find_command(command).is_some_and(|c| c.history) {
-        return Some(format!("`{command}` edits the document, and {} may only read it", m.name));
+        return Some(format!(
+            "`{command}` edits the document, and {} may only read it",
+            m.name
+        ));
     }
     None
 }
 
 /// Whether `params` set layer data (`pluginData`, anywhere in them) under a widget's own keys.
 fn writes_widget_data(params: &Value, depth: usize) -> bool {
-    let own = |data: &Value| data.as_object().is_some_and(|m| m.keys().any(|k| k.starts_with(crate::widgets::DATA_PREFIX)));
+    let own = |data: &Value| {
+        data.as_object()
+            .is_some_and(|m| m.keys().any(|k| k.starts_with(crate::widgets::DATA_PREFIX)))
+    };
     depth < 64
         && match params {
-            Value::Object(m) => m.iter().any(|(k, v)| (k == "pluginData" && own(v)) || writes_widget_data(v, depth + 1)),
+            Value::Object(m) => m
+                .iter()
+                .any(|(k, v)| (k == "pluginData" && own(v)) || writes_widget_data(v, depth + 1)),
             Value::Array(a) => a.iter().any(|v| writes_widget_data(v, depth + 1)),
             _ => false,
         }
@@ -157,7 +178,8 @@ struct EngineHost<'s> {
 
 impl figcraft_plugin::Host for EngineHost<'_> {
     fn call(&mut self, command: &str, params: &str) -> std::result::Result<String, String> {
-        let params: Value = serde_json::from_str(params).map_err(|e| format!("params for `{command}` aren't JSON: {e}"))?;
+        let params: Value = serde_json::from_str(params)
+            .map_err(|e| format!("params for `{command}` aren't JSON: {e}"))?;
         if let Some(why) = refusal(self.manifest, command, &params) {
             return Err(why);
         }
@@ -169,10 +191,16 @@ impl figcraft_plugin::Host for EngineHost<'_> {
             let opened_ui = s.ui_requests.len() > ui_before;
             s.ui_requests.truncate(ui_before);
             if opened_ui {
-                return Err(EngineError::Disabled(command.into(), "it opens a dialog or panel, which plugins can't".into()));
+                return Err(EngineError::Disabled(
+                    command.into(),
+                    "it opens a dialog or panel, which plugins can't".into(),
+                ));
             }
             if read_only && !Arc::ptr_eq(&doc, &s.ds()?.doc) {
-                return Err(EngineError::Disabled(command.into(), "it changed the document, and this plugin may only read it".into()));
+                return Err(EngineError::Disabled(
+                    command.into(),
+                    "it changed the document, and this plugin may only read it".into(),
+                ));
             }
             Ok(v)
         });
@@ -192,7 +220,14 @@ impl figcraft_plugin::Host for EngineHost<'_> {
     }
 
     fn setting(&mut self, key: &str) -> Option<String> {
-        Some(self.s.prefs.plugin_settings.get(&self.manifest.id)?.get(key)?.to_string())
+        Some(
+            self.s
+                .prefs
+                .plugin_settings
+                .get(&self.manifest.id)?
+                .get(key)?
+                .to_string(),
+        )
     }
 
     fn set_setting(&mut self, key: &str, value: Option<&str>) -> std::result::Result<(), String> {
@@ -208,20 +243,41 @@ impl figcraft_plugin::Host for EngineHost<'_> {
             }
             return Ok(());
         };
-        if key.is_empty() || key.chars().count() > MAX_SETTING_KEY || key.chars().any(char::is_control) {
-            return Err(format!("a setting's key must be 1–{MAX_SETTING_KEY} characters without control characters"));
+        if key.is_empty()
+            || key.chars().count() > MAX_SETTING_KEY
+            || key.chars().any(char::is_control)
+        {
+            return Err(format!(
+                "a setting's key must be 1–{MAX_SETTING_KEY} characters without control characters"
+            ));
         }
-        let too_big = || format!("a plugin's settings are limited to {} KB", MAX_SETTINGS_BYTES / 1024);
+        let too_big = || {
+            format!(
+                "a plugin's settings are limited to {} KB",
+                MAX_SETTINGS_BYTES / 1024
+            )
+        };
         if key.len() + text.len() > MAX_SETTINGS_BYTES {
             return Err(too_big());
         }
-        let v: Value = serde_json::from_str(text).map_err(|e| format!("a setting must be JSON: {e}"))?;
-        let others: usize =
-            all.get(id).map_or(0, |mine| mine.iter().filter(|(k, _)| k.as_str() != key).map(|(k, v)| k.len() + v.to_string().len()).sum());
+        let v: Value =
+            serde_json::from_str(text).map_err(|e| format!("a setting must be JSON: {e}"))?;
+        let others: usize = all.get(id).map_or(0, |mine| {
+            mine.iter()
+                .filter(|(k, _)| k.as_str() != key)
+                .map(|(k, v)| k.len() + v.to_string().len())
+                .sum()
+        });
         if others + key.len() + v.to_string().len() > MAX_SETTINGS_BYTES {
             return Err(too_big());
         }
-        if all.entry(id.clone()).or_default().insert(key.to_string(), v.clone()).as_ref() != Some(&v) {
+        if all
+            .entry(id.clone())
+            .or_default()
+            .insert(key.to_string(), v.clone())
+            .as_ref()
+            != Some(&v)
+        {
             self.s.plugins.unsaved = true;
         }
         Ok(())
@@ -230,7 +286,11 @@ impl figcraft_plugin::Host for EngineHost<'_> {
 
 /// The installed plugin `id`.
 pub(crate) fn installed<'a>(s: &'a Session, cmd: &str, id: &str) -> Result<&'a InstalledPlugin> {
-    s.prefs.plugins.iter().find(|p| p.manifest.id == id).ok_or_else(|| bad(cmd, format!("no plugin `{id}` is installed")))
+    s.prefs
+        .plugins
+        .iter()
+        .find(|p| p.manifest.id == id)
+        .ok_or_else(|| bad(cmd, format!("no plugin `{id}` is installed")))
 }
 
 /// Read a file of at most `max` bytes.
@@ -239,7 +299,10 @@ pub(crate) fn read_file(path: &std::path::Path, max: usize) -> Result<Vec<u8>> {
     let shown = path.display();
     let meta = std::fs::metadata(path).map_err(|e| EngineError::Other(format!("{shown}: {e}")))?;
     if !meta.is_file() || meta.len() > max as u64 {
-        return Err(EngineError::Other(format!("{shown}: not a file of at most {} KB", max / 1024)));
+        return Err(EngineError::Other(format!(
+            "{shown}: not a file of at most {} KB",
+            max / 1024
+        )));
     }
     std::fs::read(path).map_err(|e| EngineError::Other(format!("{shown}: {e}")))
 }
@@ -261,7 +324,10 @@ fn load_from_disk(cmd: &str, path: &str) -> Result<(Manifest, String, Vec<u8>)> 
 
 #[cfg(target_arch = "wasm32")]
 fn load_from_disk(cmd: &str, _path: &str) -> Result<(Manifest, String, Vec<u8>)> {
-    Err(bad(cmd, "there are no files in the browser: pass `manifest` and `wasm` (base64)"))
+    Err(bad(
+        cmd,
+        "there are no files in the browser: pass `manifest` and `wasm` (base64)",
+    ))
 }
 
 /// The module a manifest at `manifest_file` names.
@@ -278,12 +344,17 @@ pub(crate) fn module_of(s: &Session, p: &InstalledPlugin) -> Result<Arc<Vec<u8>>
         return Ok(m.clone());
     }
     let Some(path) = &p.path else {
-        return Err(EngineError::Other(format!("{} was imported without a manifest file: import it again", p.manifest.name)));
+        return Err(EngineError::Other(format!(
+            "{} was imported without a manifest file: import it again",
+            p.manifest.name
+        )));
     };
     #[cfg(not(target_arch = "wasm32"))]
     return module_file(std::path::Path::new(path), &p.manifest).map(Arc::new);
     #[cfg(target_arch = "wasm32")]
-    return Err(EngineError::Other(format!("{path}: there are no files in the browser")));
+    return Err(EngineError::Other(format!(
+        "{path}: there are no files in the browser"
+    )));
 }
 
 /// The sandbox limits for a run, with `fuel` lowering the instruction budget.
@@ -310,7 +381,11 @@ fn describe(s: &Session, p: &InstalledPlugin) -> Value {
 
 fn list(s: &mut Session, _p: &Value) -> Result<Value> {
     let plugins: Vec<Value> = s.prefs.plugins.iter().map(|p| describe(s, p)).collect();
-    let last = s.plugins.last.as_ref().map(|(id, command, _)| json!({"id": id, "command": command}));
+    let last = s
+        .plugins
+        .last
+        .as_ref()
+        .map(|(id, command, _)| json!({"id": id, "command": command}));
     Ok(json!({"plugins": plugins, "last": last}))
 }
 
@@ -328,18 +403,42 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
             }
             .map_err(|e| bad(cmd, e))?;
             use base64::Engine as _;
-            let b64 = string(p, "wasm").ok_or_else(|| bad(cmd, "pass the module as `wasm` (base64) with `manifest`"))?;
+            let b64 = string(p, "wasm")
+                .ok_or_else(|| bad(cmd, "pass the module as `wasm` (base64) with `manifest`"))?;
             if b64.len() > Limits::default().module_bytes / 3 * 4 + 4 {
                 return Err(bad(cmd, "the module is too large"));
             }
-            let wasm = base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|e| bad(cmd, format!("`wasm`: {e}")))?;
+            let wasm = base64::engine::general_purpose::STANDARD
+                .decode(b64.trim())
+                .map_err(|e| bad(cmd, format!("`wasm`: {e}")))?;
             (m, None, wasm)
         }
-        (None, None) => return Err(bad(cmd, "pass `path` (a figcraft-plugin.json or its folder), or `manifest` and `wasm`")),
+        (None, None) => {
+            return Err(bad(
+                cmd,
+                "pass `path` (a figcraft-plugin.json or its folder), or `manifest` and `wasm`",
+            ));
+        }
     };
-    figcraft_plugin::check_module(&wasm, &Limits::default()).map_err(|e| plugin_error(&manifest.name, e))?;
-    let mut out = describe(s, &InstalledPlugin { manifest: manifest.clone(), path: path.clone(), source: None });
-    out["replaced"] = json!(register(s, InstalledPlugin { manifest, path, source: None }, wasm));
+    figcraft_plugin::check_module(&wasm, &Limits::default())
+        .map_err(|e| plugin_error(&manifest.name, e))?;
+    let mut out = describe(
+        s,
+        &InstalledPlugin {
+            manifest: manifest.clone(),
+            path: path.clone(),
+            source: None,
+        },
+    );
+    out["replaced"] = json!(register(
+        s,
+        InstalledPlugin {
+            manifest,
+            path,
+            source: None
+        },
+        wasm
+    ));
     out["loaded"] = json!(true);
     Ok(out)
 }
@@ -378,34 +477,67 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     s.plugins.unsaved = true;
     s.plugins.modules.remove(&id);
     close_panel(s, &id);
-    if s.plugins.last.as_ref().is_some_and(|(last, ..)| *last == id) {
+    if s.plugins
+        .last
+        .as_ref()
+        .is_some_and(|(last, ..)| *last == id)
+    {
         s.plugins.last = None;
     }
     Ok(json!({"removed": id}))
 }
 
 /// Run plugin `id`'s `command` with `params` as one undo step.
-pub fn run(s: &mut Session, id: &str, command: Option<&str>, params: &Value, fuel: Option<f64>) -> Result<Value> {
+pub fn run(
+    s: &mut Session,
+    id: &str,
+    command: Option<&str>,
+    params: &Value,
+    fuel: Option<f64>,
+) -> Result<Value> {
     let cmd = "plugin.run";
     let mut p = installed(s, cmd, id)?.clone();
     // Checked again: the preferences file may have been edited by hand.
     p.manifest = Manifest::from_value(&json!(p.manifest)).map_err(|e| bad(cmd, e))?;
     let m = &p.manifest;
-    let c = m.command(command).ok_or_else(|| bad(cmd, format!("{} has no command `{}`", m.name, command.unwrap_or_default())))?;
+    let c = m.command(command).ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "{} has no command `{}`",
+                m.name,
+                command.unwrap_or_default()
+            ),
+        )
+    })?;
     let params = c.resolve_params(params).map_err(|e| bad(cmd, e))?;
     let wasm = module_of(s, &p)?;
     let limits = limits(fuel);
     // The API the plugin was written for: a v1 plugin gets the input it always got.
-    let input = json!({"api": m.api, "command": c.id, "params": params, "selection": s.selection()}).to_string();
+    let input =
+        json!({"api": m.api, "command": c.id, "params": params, "selection": s.selection()})
+            .to_string();
     s.plugins.last = Some((m.id.clone(), c.id.clone(), params.clone()));
-    let label = if m.commands.len() > 1 { format!("{}: {}", m.name, c.label.trim_end_matches(['…', '.'])) } else { m.name.clone() };
+    let label = if m.commands.len() > 1 {
+        format!("{}: {}", m.name, c.label.trim_end_matches(['…', '.']))
+    } else {
+        m.name.clone()
+    };
     let mut instance = Instance::new(&wasm, &limits).map_err(|e| plugin_error(&m.name, e))?;
     let mut out = call_plugin(s, m, &label, &mut instance, &input).map_err(|(e, _)| e)?;
     match out.ui.take() {
         Some(UiChange::Show(panel)) => {
             let values = panel.values(&Map::new());
             close_panel(s, &m.id);
-            s.plugins.panels.push(OpenPanel { manifest: m.clone(), command: c.id.clone(), params, label, panel, values, instance });
+            s.plugins.panels.push(OpenPanel {
+                manifest: m.clone(),
+                command: c.id.clone(),
+                params,
+                label,
+                panel,
+                values,
+                instance,
+            });
         }
         Some(UiChange::Close) => close_panel(s, &m.id),
         None => {}
@@ -458,17 +590,33 @@ fn ui(s: &mut Session, p: &Value) -> Result<Value> {
 /// event and every value, as one undo step.
 fn event(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "plugin.event";
-    let id = string(p, "id").ok_or_else(|| bad(cmd, "`id` required (the plugin whose panel is open)"))?;
-    let control = string(p, "control").ok_or_else(|| bad(cmd, "`control` required (a control's name)"))?;
-    let at = s.plugins.panels.iter().position(|o| o.manifest.id == id).ok_or_else(|| bad(cmd, format!("`{id}` has no panel open")))?;
-    let open = s.plugins.panels.get(at).ok_or_else(|| bad(cmd, "no panel is open"))?;
+    let id = string(p, "id")
+        .ok_or_else(|| bad(cmd, "`id` required (the plugin whose panel is open)"))?;
+    let control =
+        string(p, "control").ok_or_else(|| bad(cmd, "`control` required (a control's name)"))?;
+    let at = s
+        .plugins
+        .panels
+        .iter()
+        .position(|o| o.manifest.id == id)
+        .ok_or_else(|| bad(cmd, format!("`{id}` has no panel open")))?;
+    let open = s
+        .plugins
+        .panels
+        .get(at)
+        .ok_or_else(|| bad(cmd, "no panel is open"))?;
     let c = open
         .panel
         .control(&control)
         .filter(|c| c.kind != ParamKind::Note)
         .ok_or_else(|| bad(cmd, format!("the panel has no control `{control}`")))?;
     let field = c.is_field();
-    let value = if field { c.coerce(get(p, "value").unwrap_or(&Value::Null)).map_err(|e| bad(cmd, e))? } else { Value::Null };
+    let value = if field {
+        c.coerce(get(p, "value").unwrap_or(&Value::Null))
+            .map_err(|e| bad(cmd, e))?
+    } else {
+        Value::Null
+    };
     let mut open = s.plugins.panels.remove(at);
     if field {
         open.values.insert(control.clone(), value.clone());
@@ -476,7 +624,13 @@ fn event(s: &mut Session, p: &Value) -> Result<Value> {
     let command = open.command.clone();
     let event = json!({"control": control, "value": value});
     let input = json!({"api": open.manifest.api, "command": open.command, "params": open.params, "selection": s.selection(), "event": event, "values": open.values});
-    let mut out = match call_plugin(s, &open.manifest, &open.label, &mut open.instance, &input.to_string()) {
+    let mut out = match call_plugin(
+        s,
+        &open.manifest,
+        &open.label,
+        &mut open.instance,
+        &input.to_string(),
+    ) {
         Ok(out) => out,
         Err((e, usable)) => {
             // A plugin that returned an error keeps its panel; one that crashed loses it.
@@ -514,12 +668,21 @@ fn close(s: &mut Session, p: &Value) -> Result<Value> {
 fn run_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let id = string(p, "id").ok_or_else(|| bad("plugin.run", "`id` required (see plugin.list)"))?;
     let command = string(p, "command");
-    run(s, &id, command.as_deref(), get(p, "params").unwrap_or(&Value::Null), num(p, "fuel"))
+    run(
+        s,
+        &id,
+        command.as_deref(),
+        get(p, "params").unwrap_or(&Value::Null),
+        num(p, "fuel"),
+    )
 }
 
 fn run_last(s: &mut Session, _p: &Value) -> Result<Value> {
     let Some((id, command, params)) = s.plugins.last.clone() else {
-        return Err(EngineError::Disabled("plugins.runLast".into(), "no plugin has run yet".into()));
+        return Err(EngineError::Disabled(
+            "plugins.runLast".into(),
+            "no plugin has run yet".into(),
+        ));
     };
     run(s, &id, Some(&command), &params, None)
 }
@@ -531,7 +694,13 @@ fn manage(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("plugin.list", "List plugins", "{} → {plugins: [{id, name, version, main, permissions, commands, path, loaded}], last}", false, list),
+        spec!(
+            "plugin.list",
+            "List plugins",
+            "{} → {plugins: [{id, name, version, main, permissions, commands, path, loaded}], last}",
+            false,
+            list
+        ),
         spec!(
             "plugin.import",
             "Import plugin from manifest…",
@@ -561,8 +730,20 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             event
         ),
-        spec!("plugin.close", "Close plugin panel", "{id} → {closed}", false, close),
+        spec!(
+            "plugin.close",
+            "Close plugin panel",
+            "{id} → {closed}",
+            false,
+            close
+        ),
         spec!("plugins.runLast", "Run last plugin", "{}", false, run_last),
-        spec!("plugins.manage", "Manage plugins…", "{}  opens the plugins window; returns the list like `plugin.list`", false, manage),
+        spec!(
+            "plugins.manage",
+            "Manage plugins…",
+            "{}  opens the plugins window; returns the list like `plugin.list`",
+            false,
+            manage
+        ),
     ]
 }

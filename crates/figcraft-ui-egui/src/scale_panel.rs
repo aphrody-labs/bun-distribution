@@ -24,37 +24,64 @@ pub fn section(app: &mut FigApp, ui: &mut Ui, doc: &Document, sel: &[NodeId]) {
     let round = |v: f64| (v * 100.0).round() / 100.0;
     widgets::sublabels(ui, tr("Dimensions"), None);
     row(ui, 32.0, |ui| {
-        if let Some(FieldEdit::Set(w)) = widgets::number_field(ui, Id::new("scale_w"), Lead::Text("W"), Some(round(b.width())), "", col, 1.0)
-            && b.width() > 1e-9
+        if let Some(FieldEdit::Set(w)) = widgets::number_field(
+            ui,
+            Id::new("scale_w"),
+            Lead::Text("W"),
+            Some(round(b.width())),
+            "",
+            col,
+            1.0,
+        ) && b.width() > 1e-9
         {
             factor = Some(w / b.width());
         }
-        if let Some(FieldEdit::Set(h)) = widgets::number_field(ui, Id::new("scale_h"), Lead::Text("H"), Some(round(b.height())), "", col, 1.0)
-            && b.height() > 1e-9
+        if let Some(FieldEdit::Set(h)) = widgets::number_field(
+            ui,
+            Id::new("scale_h"),
+            Lead::Text("H"),
+            Some(round(b.height())),
+            "",
+            col,
+            1.0,
+        ) && b.height() > 1e-9
         {
             factor = Some(h / b.height());
         }
     });
     widgets::sublabels(ui, tr("Scale"), Some(tr("Anchor")));
     crate::right::block(ui, 52.0, 2.0, |ui| {
-        if let Some(FieldEdit::Set(k)) = widgets::number_field(ui, Id::new("scale_k"), Lead::None, Some(1.0), "x", col, 0.1) {
+        if let Some(FieldEdit::Set(k)) =
+            widgets::number_field(ui, Id::new("scale_k"), Lead::None, Some(1.0), "x", col, 0.1)
+        {
             factor = Some(k);
         }
         ui.add_space(8.0);
         if let Some(a) = anchor_picker(ui, anchor) {
-            app.run("tool.scaleAnchor", json!({"anchor": figcraft_engine::tools::anchor_name(a)}));
+            app.run(
+                "tool.scaleAnchor",
+                json!({"anchor": figcraft_engine::tools::anchor_name(a)}),
+            );
         }
     });
     if let Some((k, cx, cy)) = factor.and_then(|k| scale_about(b, anchor, k)) {
-        app.run("transform.scale", json!({"ids": sel, "factor": k, "cx": cx, "cy": cy}));
+        app.run(
+            "transform.scale",
+            json!({"ids": sel, "factor": k, "cx": cx, "cy": cy}),
+        );
     }
 }
 
 /// The factor (clamped to 0.01–100) and pivot for scaling `b` by `k` around `anchor`; None when
 /// nothing would change or `k` isn't a usable number.
 fn scale_about(b: figcraft_geom::Rect, anchor: (u8, u8), k: f64) -> Option<(f64, f64, f64)> {
-    let k = Some(k).filter(|k| k.is_finite() && *k > 0.0 && (*k - 1.0).abs() > 1e-9)?.clamp(0.01, 100.0);
-    let (ax, ay) = (f64::from(anchor.0.min(2)) / 2.0, f64::from(anchor.1.min(2)) / 2.0);
+    let k = Some(k)
+        .filter(|k| k.is_finite() && *k > 0.0 && (*k - 1.0).abs() > 1e-9)?
+        .clamp(0.01, 100.0);
+    let (ax, ay) = (
+        f64::from(anchor.0.min(2)) / 2.0,
+        f64::from(anchor.1.min(2)) / 2.0,
+    );
     Some((k, b.x0 + b.width() * ax, b.y0 + b.height() * ay))
 }
 
@@ -66,22 +93,48 @@ fn anchor_picker(ui: &mut Ui, cur: (u8, u8)) -> Option<(u8, u8)> {
     let mut out = None;
     for row in 0..3u8 {
         for col in 0..3u8 {
-            let c = pos2(r.min.x + 8.0 + f32::from(col) * 16.0, r.min.y + 8.0 + f32::from(row) * 16.0);
+            let c = pos2(
+                r.min.x + 8.0 + f32::from(col) * 16.0,
+                r.min.y + 8.0 + f32::from(row) * 16.0,
+            );
             let hit = Rect::from_center_size(c, vec2(16.0, 16.0));
             let resp = ui.interact(hit, Id::new(("scale_anchor_dot", col, row)), Sense::click());
             let on = (col, row) == cur;
             if on {
-                ui.painter().rect_filled(Rect::from_center_size(c, vec2(7.0, 7.0)), CornerRadius::same(2), t.accent);
+                ui.painter().rect_filled(
+                    Rect::from_center_size(c, vec2(7.0, 7.0)),
+                    CornerRadius::same(2),
+                    t.accent,
+                );
             } else {
-                let dot = Rect::from_center_size(c, vec2(if resp.hovered() { 6.0 } else { 4.0 }, if resp.hovered() { 6.0 } else { 4.0 }));
-                ui.painter().rect_filled(dot, CornerRadius::same(1), if resp.hovered() { t.icon } else { t.icon_secondary });
+                let dot = Rect::from_center_size(
+                    c,
+                    vec2(
+                        if resp.hovered() { 6.0 } else { 4.0 },
+                        if resp.hovered() { 6.0 } else { 4.0 },
+                    ),
+                );
+                ui.painter().rect_filled(
+                    dot,
+                    CornerRadius::same(1),
+                    if resp.hovered() {
+                        t.icon
+                    } else {
+                        t.icon_secondary
+                    },
+                );
             }
             if resp.clicked() {
                 out = Some((col, row));
             }
         }
     }
-    ui.painter().rect_stroke(r, CornerRadius::same(5), Stroke::new(1.0, t.border), StrokeKind::Inside);
+    ui.painter().rect_stroke(
+        r,
+        CornerRadius::same(5),
+        Stroke::new(1.0, t.border),
+        StrokeKind::Inside,
+    );
     out
 }
 

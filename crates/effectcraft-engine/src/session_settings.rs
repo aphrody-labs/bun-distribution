@@ -29,10 +29,15 @@ impl Session {
         self.prefs.normalize();
         self.apply_cache_budgets();
         self.configure_disk_cache();
-        self.footage.set_conform_folder(self.conformed_audio_folder());
+        self.footage
+            .set_conform_folder(self.conformed_audio_folder());
         // Switches Affect Nested Comps changes what precomp layers render: drop cached pixels.
         let nested = self.prefs.general.switches_affect_nested_comps;
-        if self.applied_nested_switches.replace(nested).is_some_and(|was| was != nested) {
+        if self
+            .applied_nested_switches
+            .replace(nested)
+            .is_some_and(|was| was != nested)
+        {
             self.layer_cache.clear();
             self.events.push(crate::Event::PurgeCaches);
         }
@@ -57,7 +62,11 @@ impl Session {
             return None;
         }
         let base = effectcraft_render::disk_cache::default_folder();
-        Some(base.parent().map(|p| p.join(name)).unwrap_or_else(|| base.join(name)))
+        Some(
+            base.parent()
+                .map(|p| p.join(name))
+                .unwrap_or_else(|| base.join(name)),
+        )
     }
 
     /// Settings ▸ Disk ▸ Database and Cache Folder (media cache: audio waveform summaries).
@@ -111,7 +120,8 @@ impl Session {
         };
         let max = d.disk_cache_max_gb.max(1) as u64 * (1 << 30);
         // (no file system in the browser: the disk cache stays off there)
-        let Some(folder) = folder.filter(|_| d.disk_cache_enabled && !cfg!(target_arch = "wasm32")) else {
+        let Some(folder) = folder.filter(|_| d.disk_cache_enabled && !cfg!(target_arch = "wasm32"))
+        else {
             self.disk_cache = None;
             self.layer_cache.set_disk(None);
             return;
@@ -131,7 +141,8 @@ impl Session {
                 }
             },
         };
-        self.layer_cache.set_disk(Some((dc.clone(), footage_salt(&self.project))));
+        self.layer_cache
+            .set_disk(Some((dc.clone(), footage_salt(&self.project))));
         self.disk_cache = Some(dc);
     }
 
@@ -162,7 +173,8 @@ impl Session {
 
     /// The active shortcut preset resolved against every bindable command.
     pub fn shortcuts(&self) -> &ShortcutTable {
-        self.shortcut_table.get_or_init(|| ShortcutTable::build(&self.keymaps, &self.ui_commands))
+        self.shortcut_table
+            .get_or_init(|| ShortcutTable::build(&self.keymaps, &self.ui_commands))
     }
 
     /// Remember a project in File ▸ Open Recent and in the crash-recovery sentinel.
@@ -170,8 +182,12 @@ impl Session {
         self.prefs.push_recent(path);
         self.save_prefs();
         let _ = self.autosave_wait();
-        self.autosave =
-            autosave::AutoSaveState { last: self.autosave.last, sentinel: self.autosave.sentinel, background: self.autosave.background, ..Default::default() };
+        self.autosave = autosave::AutoSaveState {
+            last: self.autosave.last,
+            sentinel: self.autosave.sentinel,
+            background: self.autosave.background,
+            ..Default::default()
+        };
         self.update_sentinel();
     }
 
@@ -180,7 +196,12 @@ impl Session {
         if let Some(c) = &self.config
             && self.autosave.sentinel
         {
-            let s = Sentinel { pid: autosave::pid(), project: self.path.clone(), autosave: self.autosave.last_path.clone(), dirty: self.is_dirty() };
+            let s = Sentinel {
+                pid: autosave::pid(),
+                project: self.path.clone(),
+                autosave: self.autosave.last_path.clone(),
+                dirty: self.is_dirty(),
+            };
             autosave::update(c.as_ref(), &s);
         }
     }
@@ -220,7 +241,14 @@ impl Session {
         let root = self.default_autosave_root();
         let prefs = self.autosave_prefs();
         let fail = |e: std::io::Error| EngineError::Other(format!("auto-save failed: {e}"));
-        let plan = autosave::plan_in(self.file_ops(), &prefs, self.path.as_deref(), root.as_deref(), self.autosave.last_slot).map_err(fail)?;
+        let plan = autosave::plan_in(
+            self.file_ops(),
+            &prefs,
+            self.path.as_deref(),
+            root.as_deref(),
+            self.autosave.last_slot,
+        )
+        .map_err(fail)?;
         if self.autosave.background && !cfg!(target_arch = "wasm32") {
             let project = self.project.clone();
             let config = self.config.clone();
@@ -250,7 +278,9 @@ impl Session {
     /// Wait for a background auto-save ([`autosave::AutoSaveState::background`]) to land.
     pub fn autosave_wait(&mut self) -> Result<()> {
         match self.autosave.pending.take() {
-            Some(w) => w.join().map_err(|e| EngineError::Other(format!("auto-save failed: {e}"))),
+            Some(w) => w
+                .join()
+                .map_err(|e| EngineError::Other(format!("auto-save failed: {e}"))),
             None => Ok(()),
         }
     }
@@ -258,7 +288,11 @@ impl Session {
     /// Call periodically with wall-clock seconds: auto-saves a dirty project once the interval
     /// has passed since the last auto-save (or since the first call). Returns the written path.
     pub fn autosave_tick(&mut self, now: f64) -> Option<Result<String>> {
-        if self.autosave.pending.as_ref().is_some_and(autosave::PendingWrite::is_finished)
+        if self
+            .autosave
+            .pending
+            .as_ref()
+            .is_some_and(autosave::PendingWrite::is_finished)
             && let Err(e) = self.autosave_wait()
         {
             return Some(Err(e));
@@ -274,16 +308,28 @@ impl Session {
             return None;
         }
         self.autosave.last = Some(now);
-        if !self.is_dirty() || self.autosave.saved_revision == Some(self.revision) || self.render_job.is_some() {
+        if !self.is_dirty()
+            || self.autosave.saved_revision == Some(self.revision)
+            || self.render_job.is_some()
+        {
             return None;
         }
-        if self.path.is_none() && self.prefs.auto_save.location != "custom" && self.default_autosave_root().is_none() && self.autosave_folder_override.is_none()
+        if self.path.is_none()
+            && self.prefs.auto_save.location != "custom"
+            && self.default_autosave_root().is_none()
+            && self.autosave_folder_override.is_none()
         {
             return None;
         }
         let r = self.autosave_now();
         if let Ok(p) = &r {
-            self.toast(format!("Auto-saved {}", Path::new(p).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()));
+            self.toast(format!(
+                "Auto-saved {}",
+                Path::new(p)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            ));
         }
         Some(r)
     }

@@ -36,7 +36,13 @@ pub enum TrackKind {
 }
 
 impl TrackKind {
-    pub const ALL: [TrackKind; 5] = [TrackKind::Stabilize, TrackKind::Transform, TrackKind::Affine, TrackKind::Perspective, TrackKind::Raw];
+    pub const ALL: [TrackKind; 5] = [
+        TrackKind::Stabilize,
+        TrackKind::Transform,
+        TrackKind::Affine,
+        TrackKind::Perspective,
+        TrackKind::Raw,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             TrackKind::Stabilize => "Stabilize",
@@ -62,7 +68,9 @@ impl TrackKind {
             "perspectivecornerpin" => return Some(TrackKind::Perspective),
             _ => {}
         }
-        TrackKind::ALL.into_iter().find(|k| k.id() == n || k.label().to_ascii_lowercase().replace(' ', "") == n)
+        TrackKind::ALL
+            .into_iter()
+            .find(|k| k.id() == n || k.label().to_ascii_lowercase().replace(' ', "") == n)
     }
     pub fn is_corner_pin(self) -> bool {
         matches!(self, TrackKind::Affine | TrackKind::Perspective)
@@ -148,7 +156,11 @@ pub struct TrackerSettings {
 
 impl TrackerSettings {
     pub fn new(kind: TrackKind) -> TrackerSettings {
-        TrackerSettings { kind, position: true, ..Default::default() }
+        TrackerSettings {
+            kind,
+            position: true,
+            ..Default::default()
+        }
     }
     pub fn point_count(&self) -> usize {
         self.kind.point_count(self.rotation || self.scale)
@@ -175,25 +187,56 @@ pub fn motion_trackers(ids: &mut Ids) -> PropGroup {
 
 /// One Track Point group.
 pub fn track_point(ids: &mut Ids, name: &str, p: &PointInit) -> PropGroup {
-    let pt = |ids: &mut Ids, m: &str, n: &str, v: [f64; 2]| ids.prop(m, n, Value::Vec2(v)).with_ui(ParamUi::Point).spatial();
-    let vec = |ids: &mut Ids, m: &str, n: &str, v: [f64; 2]| ids.prop(m, n, Value::Vec2(v)).with_ui(ParamUi::Point);
-    let attach = [p.center[0] + p.attach_offset[0], p.center[1] + p.attach_offset[1]];
+    let pt = |ids: &mut Ids, m: &str, n: &str, v: [f64; 2]| {
+        ids.prop(m, n, Value::Vec2(v))
+            .with_ui(ParamUi::Point)
+            .spatial()
+    };
+    let vec = |ids: &mut Ids, m: &str, n: &str, v: [f64; 2]| {
+        ids.prop(m, n, Value::Vec2(v)).with_ui(ParamUi::Point)
+    };
+    let attach = [
+        p.center[0] + p.attach_offset[0],
+        p.center[1] + p.attach_offset[1],
+    ];
     let fc = pt(ids, "featureCenter", "Feature Center", p.center);
     let fs = vec(ids, "featureSize", "Feature Size", p.feature_size);
     let so = vec(ids, "searchOffset", "Search Offset", p.search_offset);
     let ss = vec(ids, "searchSize", "Search Size", p.search_size);
-    let cf = ids.prop("confidence", "Confidence", Value::Scalar(0.0)).with_ui(ParamUi::Percent);
+    let cf = ids
+        .prop("confidence", "Confidence", Value::Scalar(0.0))
+        .with_ui(ParamUi::Percent);
     let ap = pt(ids, "attachPoint", "Attach Point", attach);
-    let ao = vec(ids, "attachPointOffset", "Attach Point Offset", p.attach_offset);
-    let mut g = ids.group(TRACK_POINT, name).with(fc).with(fs).with(so).with(ss).with(cf).with(ap).with(ao);
+    let ao = vec(
+        ids,
+        "attachPointOffset",
+        "Attach Point Offset",
+        p.attach_offset,
+    );
+    let mut g = ids
+        .group(TRACK_POINT, name)
+        .with(fc)
+        .with(fs)
+        .with(so)
+        .with(ss)
+        .with(cf)
+        .with(ap)
+        .with(ao);
     g.kind = GroupKind::Indexed;
     g
 }
 
 /// A Tracker group with its points.
-pub fn tracker(ids: &mut Ids, name: &str, settings: TrackerSettings, points: &[PointInit]) -> PropGroup {
+pub fn tracker(
+    ids: &mut Ids,
+    name: &str,
+    settings: TrackerSettings,
+    points: &[PointInit],
+) -> PropGroup {
     let mut g = ids.group("tracker", name);
-    g.kind = GroupKind::Tracker { settings: Box::new(settings) };
+    g.kind = GroupKind::Tracker {
+        settings: Box::new(settings),
+    };
     for (i, p) in points.iter().enumerate() {
         let tp = track_point(ids, &format!("Track Point {}", i + 1), p);
         g.children.push(tp.into());
@@ -207,13 +250,28 @@ pub fn default_points(kind: TrackKind, n: usize, size: [f64; 2]) -> Vec<PointIni
     let f = (m * 0.04).clamp(16.0, 80.0).round();
     let s = (f * 2.0).round();
     let c = [size[0] / 2.0, size[1] / 2.0];
-    let mk = |p: [f64; 2]| PointInit { center: p, feature_size: [f, f], search_offset: [0.0; 2], search_size: [s, s], attach_offset: [0.0; 2] };
+    let mk = |p: [f64; 2]| PointInit {
+        center: p,
+        feature_size: [f, f],
+        search_offset: [0.0; 2],
+        search_size: [s, s],
+        attach_offset: [0.0; 2],
+    };
     let (dx, dy) = ((size[0] * 0.18).max(2.0 * s), (size[1] * 0.18).max(2.0 * s));
     match (kind, n) {
         (TrackKind::Perspective, _) | (_, 4) => {
-            vec![mk([c[0] - dx, c[1] - dy]), mk([c[0] + dx, c[1] - dy]), mk([c[0] - dx, c[1] + dy]), mk([c[0] + dx, c[1] + dy])]
+            vec![
+                mk([c[0] - dx, c[1] - dy]),
+                mk([c[0] + dx, c[1] - dy]),
+                mk([c[0] - dx, c[1] + dy]),
+                mk([c[0] + dx, c[1] + dy]),
+            ]
         }
-        (TrackKind::Affine, _) | (_, 3) => vec![mk([c[0] - dx, c[1] - dy]), mk([c[0] + dx, c[1] - dy]), mk([c[0] - dx, c[1] + dy])],
+        (TrackKind::Affine, _) | (_, 3) => vec![
+            mk([c[0] - dx, c[1] - dy]),
+            mk([c[0] + dx, c[1] - dy]),
+            mk([c[0] - dx, c[1] + dy]),
+        ],
         (_, 2) => vec![mk([c[0] - dx, c[1]]), mk([c[0] + dx, c[1]])],
         _ => vec![mk(c)],
     }
@@ -226,10 +284,13 @@ impl Layer {
     }
     /// Trackers of the layer (groups with [`GroupKind::Tracker`]).
     pub fn trackers(&self) -> impl Iterator<Item = (&PropGroup, &TrackerSettings)> {
-        self.motion_trackers().into_iter().flat_map(|g| g.groups()).filter_map(|g| match &g.kind {
-            GroupKind::Tracker { settings } => Some((g, settings.as_ref())),
-            _ => None,
-        })
+        self.motion_trackers()
+            .into_iter()
+            .flat_map(|g| g.groups())
+            .filter_map(|g| match &g.kind {
+                GroupKind::Tracker { settings } => Some((g, settings.as_ref())),
+                _ => None,
+            })
     }
     pub fn tracker(&self, uid: Uid) -> Option<(&PropGroup, &TrackerSettings)> {
         self.trackers().find(|(g, _)| g.uid == uid)
@@ -272,17 +333,49 @@ mod tests {
         let mut n = 1;
         let mut ids = Ids(&mut n);
         let pts = default_points(TrackKind::Perspective, 4, [1920.0, 1080.0]);
-        let g = tracker(&mut ids, "Tracker 1", TrackerSettings::new(TrackKind::Perspective), &pts);
+        let g = tracker(
+            &mut ids,
+            "Tracker 1",
+            TrackerSettings::new(TrackKind::Perspective),
+            &pts,
+        );
         assert_eq!(g.track_points().count(), 4);
         let tp = g.track_points().next().unwrap();
         let names: Vec<&str> = tp.props().map(|p| p.name.as_str()).collect();
-        assert_eq!(names, ["Feature Center", "Feature Size", "Search Offset", "Search Size", "Confidence", "Attach Point", "Attach Point Offset"]);
+        assert_eq!(
+            names,
+            [
+                "Feature Center",
+                "Feature Size",
+                "Search Offset",
+                "Search Size",
+                "Confidence",
+                "Attach Point",
+                "Attach Point Offset"
+            ]
+        );
         let json = serde_json::to_string(&g).unwrap();
         let back: PropGroup = serde_json::from_str(&json).unwrap();
         assert_eq!(back, g);
-        assert_eq!(back.tracker_settings().unwrap().kind, TrackKind::Perspective);
-        assert_eq!(TrackKind::from_name("Parallel Corner Pin"), Some(TrackKind::Affine));
-        assert_eq!(TrackKind::from_name("perspective"), Some(TrackKind::Perspective));
-        assert_eq!(TrackerSettings { rotation: true, ..TrackerSettings::new(TrackKind::Transform) }.point_count(), 2);
+        assert_eq!(
+            back.tracker_settings().unwrap().kind,
+            TrackKind::Perspective
+        );
+        assert_eq!(
+            TrackKind::from_name("Parallel Corner Pin"),
+            Some(TrackKind::Affine)
+        );
+        assert_eq!(
+            TrackKind::from_name("perspective"),
+            Some(TrackKind::Perspective)
+        );
+        assert_eq!(
+            TrackerSettings {
+                rotation: true,
+                ..TrackerSettings::new(TrackKind::Transform)
+            }
+            .point_count(),
+            2
+        );
     }
 }

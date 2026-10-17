@@ -17,7 +17,10 @@ pub(crate) fn finite(p: Point) -> bool {
 pub(crate) fn bez(c: &Cubic, t: f64) -> Point {
     let u = 1.0 - t;
     let (a, b, cc, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-    Point::new(a * c[0].x + b * c[1].x + cc * c[2].x + d * c[3].x, a * c[0].y + b * c[1].y + cc * c[2].y + d * c[3].y)
+    Point::new(
+        a * c[0].x + b * c[1].x + cc * c[2].x + d * c[3].x,
+        a * c[0].y + b * c[1].y + cc * c[2].y + d * c[3].y,
+    )
 }
 
 /// A closed polyline resampled at (about) `step` spacing; also returns the exact spacing used.
@@ -90,7 +93,9 @@ pub(crate) fn resample_open(p: &[Point], step: f64) -> Option<(Vec<Point>, f64)>
 fn kernel(sigma: f64) -> Vec<f64> {
     let s = sigma.max(0.3);
     let r = ((3.0 * s).ceil() as i64).max(1);
-    let k: Vec<f64> = (-r..=r).map(|i| (-0.5 * (i as f64 / s).powi(2)).exp()).collect();
+    let k: Vec<f64> = (-r..=r)
+        .map(|i| (-0.5 * (i as f64 / s).powi(2)).exp())
+        .collect();
     let sum: f64 = k.iter().sum();
     k.iter().map(|v| v / sum).collect()
 }
@@ -140,7 +145,11 @@ pub(crate) fn smooth_open(p: &[Point], sigma: f64) -> Vec<Point> {
     for i in 1..=r_ext {
         ext.push(last + (last - p.get(n - 1 - i).copied().unwrap_or(last)));
     }
-    let kk = if r_ext == r { k } else { kernel_of_radius(s, r_ext) };
+    let kk = if r_ext == r {
+        k
+    } else {
+        kernel_of_radius(s, r_ext)
+    };
     let rr = (kk.len() - 1) / 2;
     let mut out: Vec<Point> = (0..n)
         .map(|i| {
@@ -164,7 +173,9 @@ pub(crate) fn smooth_open(p: &[Point], sigma: f64) -> Vec<Point> {
 }
 
 fn kernel_of_radius(sigma: f64, r: usize) -> Vec<f64> {
-    let k: Vec<f64> = (-(r as i64)..=r as i64).map(|i| (-0.5 * (i as f64 / sigma).powi(2)).exp()).collect();
+    let k: Vec<f64> = (-(r as i64)..=r as i64)
+        .map(|i| (-0.5 * (i as f64 / sigma).powi(2)).exp())
+        .collect();
     let sum: f64 = k.iter().sum();
     k.iter().map(|v| v / sum).collect()
 }
@@ -174,7 +185,11 @@ pub(crate) fn turning(p: &[Point], w: usize) -> Vec<f64> {
     let n = p.len();
     (0..n)
         .map(|i| {
-            let (Some(&c), Some(&a), Some(&b)) = (p.get(i), p.get((i + n - w % n) % n), p.get((i + w) % n)) else { return 0.0 };
+            let (Some(&c), Some(&a), Some(&b)) =
+                (p.get(i), p.get((i + n - w % n) % n), p.get((i + w) % n))
+            else {
+                return 0.0;
+            };
             let (v1, v2) = (c - a, b - c);
             (v1.cross(v2)).atan2(v1.dot(v2)).abs().to_degrees()
         })
@@ -192,7 +207,8 @@ pub(crate) fn find_corners(p: &[Point], w: usize, thr: f64) -> Vec<usize> {
     let mut idx: Vec<usize> = Vec::new();
     for i in 0..n {
         let a = at(i);
-        if a >= thr && a >= at(i + n - 1) && a > at(i + 1) && idx.last().is_none_or(|&l| i - l > w) {
+        if a >= thr && a >= at(i + n - 1) && a > at(i + 1) && idx.last().is_none_or(|&l| i - l > w)
+        {
             idx.push(i);
         }
     }
@@ -232,12 +248,16 @@ pub(crate) fn line_fit(pts: &[Point]) -> Option<Line> {
         d = -d;
     }
     let nrm = Vec2::new(-d.y, d.x);
-    let resid = pts.iter().map(|p| (*p - c).dot(nrm).abs()).fold(0.0, f64::max);
+    let resid = pts
+        .iter()
+        .map(|p| (*p - c).dot(nrm).abs())
+        .fold(0.0, f64::max);
     (resid.is_finite()).then_some(Line { c, d, resid })
 }
 
 fn solve3(m: [f64; 9], b: [f64; 3]) -> Option<[f64; 3]> {
-    let det = m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]);
+    let det = m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6])
+        + m[2] * (m[3] * m[7] - m[4] * m[6]);
     if det.abs() < 1e-12 {
         return None;
     }
@@ -246,7 +266,8 @@ fn solve3(m: [f64; 9], b: [f64; 3]) -> Option<[f64; 3]> {
         for r in 0..3 {
             t[r * 3 + col] = b[r];
         }
-        t[0] * (t[4] * t[8] - t[5] * t[7]) - t[1] * (t[3] * t[8] - t[5] * t[6]) + t[2] * (t[3] * t[7] - t[4] * t[6])
+        t[0] * (t[4] * t[8] - t[5] * t[7]) - t[1] * (t[3] * t[8] - t[5] * t[6])
+            + t[2] * (t[3] * t[7] - t[4] * t[6])
     };
     Some([rep(0) / det, rep(1) / det, rep(2) / det])
 }
@@ -282,13 +303,18 @@ pub(crate) fn circle_fit(pts: &[Point]) -> Option<Circle> {
         return None;
     }
     let (c, r) = (Point::new(s[0] + m.x, s[1] + m.y), r2.sqrt());
-    let resid = pts.iter().map(|p| (p.distance(c) - r).abs()).fold(0.0, f64::max);
+    let resid = pts
+        .iter()
+        .map(|p| (p.distance(c) - r).abs())
+        .fold(0.0, f64::max);
     (resid.is_finite() && r.is_finite()).then_some(Circle { c, r, resid })
 }
 
 /// Cubic Béziers approximating the arc of radius `r` about `c` from angle `a0` to `a1`.
 pub(crate) fn arc_cubics(c: Point, r: f64, a0: f64, a1: f64) -> Vec<Cubic> {
-    let n = ((a1 - a0).abs() / std::f64::consts::FRAC_PI_2).ceil().clamp(1.0, 64.0) as usize;
+    let n = ((a1 - a0).abs() / std::f64::consts::FRAC_PI_2)
+        .ceil()
+        .clamp(1.0, 64.0) as usize;
     let da = (a1 - a0) / n as f64;
     let k = 4.0 / 3.0 * (da / 4.0).tan();
     (0..n)
@@ -296,7 +322,12 @@ pub(crate) fn arc_cubics(c: Point, r: f64, a0: f64, a1: f64) -> Vec<Cubic> {
             let (s, e) = (a0 + j as f64 * da, a0 + (j + 1) as f64 * da);
             let p0 = Point::new(c.x + r * s.cos(), c.y + r * s.sin());
             let p3 = Point::new(c.x + r * e.cos(), c.y + r * e.sin());
-            [p0, p0 + Vec2::new(-s.sin(), s.cos()) * (k * r), p3 - Vec2::new(-e.sin(), e.cos()) * (k * r), p3]
+            [
+                p0,
+                p0 + Vec2::new(-s.sin(), s.cos()) * (k * r),
+                p3 - Vec2::new(-e.sin(), e.cos()) * (k * r),
+                p3,
+            ]
         })
         .collect()
 }
@@ -327,7 +358,12 @@ pub(crate) fn all_within(a: &[Point], b: &[Point], lim: f64) -> bool {
     }
     a.iter().all(|&p| {
         let (kx, ky) = key(p);
-        (-1..=1).any(|dx| (-1..=1).any(|dy| grid.get(&(kx + dx, ky + dy)).is_some_and(|v| v.iter().any(|q| q.distance(p) <= lim))))
+        (-1..=1).any(|dx| {
+            (-1..=1).any(|dy| {
+                grid.get(&(kx + dx, ky + dy))
+                    .is_some_and(|v| v.iter().any(|q| q.distance(p) <= lim))
+            })
+        })
     })
 }
 
@@ -350,7 +386,9 @@ mod tests {
     fn resampling_makes_even_spacing() {
         let (r, step) = resample_closed(&circle_pts(37, 20.0), 0.5).expect("resample");
         assert!((step - 0.5).abs() < 0.01);
-        let gaps: Vec<f64> = (0..r.len()).map(|i| r[i].distance(r[(i + 1) % r.len()])).collect();
+        let gaps: Vec<f64> = (0..r.len())
+            .map(|i| r[i].distance(r[(i + 1) % r.len()]))
+            .collect();
         assert!(gaps.iter().all(|g| (g - step).abs() < 0.02), "{gaps:?}");
     }
 
@@ -359,7 +397,17 @@ mod tests {
         assert!(resample_closed(&[], 1.0).is_none());
         assert!(resample_closed(&[Point::new(0.0, 0.0); 5], 1.0).is_none());
         assert!(resample_closed(&circle_pts(10, 5.0), 0.0).is_none());
-        assert!(resample_closed(&[Point::new(f64::NAN, 0.0), Point::new(1.0, 0.0), Point::new(0.0, 1.0)], 0.1).is_none());
+        assert!(
+            resample_closed(
+                &[
+                    Point::new(f64::NAN, 0.0),
+                    Point::new(1.0, 0.0),
+                    Point::new(0.0, 1.0)
+                ],
+                0.1
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -372,7 +420,9 @@ mod tests {
 
     #[test]
     fn open_smoothing_pins_the_ends() {
-        let run: Vec<Point> = (0..60).map(|i| Point::new(i as f64 * 0.2, (i as f64 * 0.7).sin() * 0.05)).collect();
+        let run: Vec<Point> = (0..60)
+            .map(|i| Point::new(i as f64 * 0.2, (i as f64 * 0.7).sin() * 0.05))
+            .collect();
         let s = smooth_open(&run, 3.0);
         assert_eq!((s[0], s[59]), (run[0], run[59]));
         assert_eq!(s.len(), run.len());
@@ -401,12 +451,21 @@ mod tests {
 
     #[test]
     fn line_and_circle_fits_recover_their_shapes() {
-        let line: Vec<Point> = (0..50).map(|i| Point::new(i as f64, 2.0 * i as f64 + 1.0)).collect();
+        let line: Vec<Point> = (0..50)
+            .map(|i| Point::new(i as f64, 2.0 * i as f64 + 1.0))
+            .collect();
         let l = line_fit(&line).expect("line");
         assert!(l.resid < 1e-9 && l.d.x > 0.0);
         let c = circle_fit(&circle_pts(100, 12.5)).expect("circle");
-        assert!((c.r - 12.5).abs() < 1e-6 && c.c.distance(Point::new(50.0, 50.0)) < 1e-6 && c.resid < 1e-6);
-        assert!(circle_fit(&line).is_none() || circle_fit(&line).is_some_and(|c| c.r > 1e3 || c.resid > 1.0));
+        assert!(
+            (c.r - 12.5).abs() < 1e-6
+                && c.c.distance(Point::new(50.0, 50.0)) < 1e-6
+                && c.resid < 1e-6
+        );
+        assert!(
+            circle_fit(&line).is_none()
+                || circle_fit(&line).is_some_and(|c| c.r > 1e3 || c.resid > 1.0)
+        );
         assert!(line_fit(&[Point::new(0.0, 0.0)]).is_none());
     }
 

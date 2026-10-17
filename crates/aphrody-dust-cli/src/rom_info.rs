@@ -45,7 +45,11 @@ impl RomInfo {
             title: inspection.title.clone(),
             game_code: inspection.game_code.clone(),
             maker_code: inspection.maker_code.clone(),
-            platform: if inspection.is_dsi { "DSi enhanced" } else { "Nintendo DS" },
+            platform: if inspection.is_dsi {
+                "DSi enhanced"
+            } else {
+                "Nintendo DS"
+            },
             unit_code: inspection.unit_code,
             file_size: inspection.file_size,
             ds_region_size: inspection.ds_region_size,
@@ -70,17 +74,38 @@ impl RomInfo {
         } else {
             println!("Title: {}", report.title);
             println!("Game code: {} ({})", report.game_code, report.maker_code);
-            println!("Platform: {} (unit code {})", report.platform, report.unit_code);
+            println!(
+                "Platform: {} (unit code {})",
+                report.platform, report.unit_code
+            );
             println!("File size: {} bytes", report.file_size);
             println!("DS region: {} bytes", report.ds_region_size);
             println!("DSi region: {} bytes", report.dsi_region_size);
             println!("ARM9i: {}; ARM7i: {}", report.has_arm9i, report.has_arm7i);
             println!(
                 "Header CRC: {}",
-                if inspection.header_crc_valid { "valid" } else { "invalid" }
+                if inspection.header_crc_valid {
+                    "valid"
+                } else {
+                    "invalid"
+                }
             );
-            println!("Logo CRC: {}", if inspection.logo_crc_valid { "valid" } else { "invalid" });
-            println!("ROM validation: {}", if report.valid { "passed" } else { "issues found" });
+            println!(
+                "Logo CRC: {}",
+                if inspection.logo_crc_valid {
+                    "valid"
+                } else {
+                    "invalid"
+                }
+            );
+            println!(
+                "ROM validation: {}",
+                if report.valid {
+                    "passed"
+                } else {
+                    "issues found"
+                }
+            );
             if invalid_regions.is_empty() {
                 println!("Declared regions: valid");
             } else {

@@ -18,8 +18,17 @@ fn dng_opens_as_16_bit_prophoto() {
     assert_eq!(d.depth, SampleType::U16);
     assert_eq!(d.layers.len(), 1);
     let icc = d.icc_profile.as_ref().expect("profile");
-    assert_eq!(icc.as_slice(), &photocraft_cms::Builtin::ProPhotoCompat.profile().to_bytes()[..]);
-    assert!(r.warnings.iter().any(|w| w.contains("DNG") && w.contains("ProPhoto")), "{:?}", r.warnings);
+    assert_eq!(
+        icc.as_slice(),
+        &photocraft_cms::Builtin::ProPhotoCompat.profile().to_bytes()[..]
+    );
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("DNG") && w.contains("ProPhoto")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 /// #3497: a monochrome (one-sample LinearRaw) DNG, as VueScan writes film scans, opens as a
@@ -28,18 +37,41 @@ fn dng_opens_as_16_bit_prophoto() {
 fn monochrome_dng_opens() {
     let (w, h) = (40, 24);
     let data: Vec<u16> = (0..w * h).map(|i| (i % w * 1600) as u16).collect();
-    let r = import("S261009_90_67.dng", &DngSpec::monochrome(w, h, data).build()).unwrap();
+    let r = import(
+        "S261009_90_67.dng",
+        &DngSpec::monochrome(w, h, data).build(),
+    )
+    .unwrap();
     let d = &r.document;
-    assert_eq!((d.size.width, d.size.height, d.mode, d.depth), (40, 24, ColorMode::Rgb, SampleType::U16));
-    assert!(r.warnings.iter().all(|w| !w.contains("colour matrix") && !w.contains("preview")), "{:?}", r.warnings);
+    assert_eq!(
+        (d.size.width, d.size.height, d.mode, d.depth),
+        (40, 24, ColorMode::Rgb, SampleType::U16)
+    );
+    assert!(
+        r.warnings
+            .iter()
+            .all(|w| !w.contains("colour matrix") && !w.contains("preview")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 #[test]
 fn cr2_opens() {
     let (w, h) = (48, 16);
     let data = mosaic(&scene(w, h), w, [0, 1, 1, 2], 256, 12000);
-    let spec =
-        Cr2Spec { width: w, height: h, data, precision: 14, components: 2, slices: vec![24, 24], borders: None, wb_rggb: None, orientation: 6, model_id: None };
+    let spec = Cr2Spec {
+        width: w,
+        height: h,
+        data,
+        precision: 14,
+        components: 2,
+        slices: vec![24, 24],
+        borders: None,
+        wb_rggb: None,
+        orientation: 6,
+        model_id: None,
+    };
     let r = import("IMG_0001.CR2", &spec.build()).unwrap();
     // Orientation 6 rotates the 48×16 sensor image to 16×48.
     assert_eq!((r.document.size.width, r.document.size.height), (16, 48));
@@ -79,7 +111,13 @@ fn nef_with_preview() -> Vec<u8> {
 fn unsupported_raw_falls_back_to_the_embedded_preview() {
     let r = import("DSC_0001.NEF", &nef_with_preview()).unwrap();
     assert_eq!((r.document.size.width, r.document.size.height), (32, 20));
-    assert!(r.warnings.first().is_some_and(|w| w.contains("Nikon compressed NEF") && w.contains("embedded")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .first()
+            .is_some_and(|w| w.contains("Nikon compressed NEF") && w.contains("embedded")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 #[test]
@@ -121,7 +159,9 @@ fn patches(w: usize, h: usize) -> Vec<[f32; 3]> {
         seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
         (seed >> 8) as f32 / (1u32 << 24) as f32
     };
-    let colours: Vec<[f32; 3]> = (0..96).map(|_| [0.12 + 0.5 * rnd(), 0.12 + 0.5 * rnd(), 0.12 + 0.5 * rnd()]).collect();
+    let colours: Vec<[f32; 3]> = (0..96)
+        .map(|_| [0.12 + 0.5 * rnd(), 0.12 + 0.5 * rnd(), 0.12 + 0.5 * rnd()])
+        .collect();
     (0..w * h)
         .map(|i| {
             let (x, y) = (i % w, i / w);
@@ -133,14 +173,22 @@ fn patches(w: usize, h: usize) -> Vec<[f32; 3]> {
 
 /// A "camera JPEG" of `cam`: more saturated than sRGB primaries, with a brightening curve.
 fn camera_rendering(cam: &[[f32; 3]], w: usize, h: usize) -> Vec<u8> {
-    let k = [[1.3f32, -0.2, -0.1], [-0.15, 1.25, -0.1], [0.0, -0.25, 1.25]];
+    let k = [
+        [1.3f32, -0.2, -0.1],
+        [-0.15, 1.25, -0.1],
+        [0.0, -0.25, 1.25],
+    ];
     let px: Vec<u8> = cam
         .iter()
         .flat_map(|c| {
             (0..3).map(move |i| {
                 let v = (k[i][0] * c[0] + k[i][1] * c[1] + k[i][2] * c[2]).clamp(0.0, 1.0);
                 let v = 1.6 * v / (1.0 + 0.6 * v);
-                let e = if v <= 0.0031308 { 12.92 * v } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 };
+                let e = if v <= 0.0031308 {
+                    12.92 * v
+                } else {
+                    1.055 * v.powf(1.0 / 2.4) - 0.055
+                };
                 (e * 255.0).round() as u8
             })
         })
@@ -149,7 +197,15 @@ fn camera_rendering(cam: &[[f32; 3]], w: usize, h: usize) -> Vec<u8> {
 }
 
 fn jpeg(img: Image) -> Vec<u8> {
-    photocraft_codecs::encode(&img, Format::Jpeg, &EncodeOptions { jpeg_quality: 95, ..Default::default() }).unwrap()
+    photocraft_codecs::encode(
+        &img,
+        Format::Jpeg,
+        &EncodeOptions {
+            jpeg_quality: 95,
+            ..Default::default()
+        },
+    )
+    .unwrap()
 }
 
 /// An uncompressed NEF-like raw of `cam` with an optional JPEG preview in IFD0.
@@ -157,7 +213,13 @@ fn nef_uncompressed(cam: &[[f32; 3]], w: usize, h: usize, preview: Option<Vec<u8
     nef_uncompressed_with_wb(cam, w, h, preview, None)
 }
 
-fn nef_uncompressed_with_wb(cam: &[[f32; 3]], w: usize, h: usize, preview: Option<Vec<u8>>, wb: Option<[u32; 2]>) -> Vec<u8> {
+fn nef_uncompressed_with_wb(
+    cam: &[[f32; 3]],
+    w: usize,
+    h: usize,
+    preview: Option<Vec<u8>>,
+    wb: Option<[u32; 2]>,
+) -> Vec<u8> {
     let data = mosaic(cam, w, [0, 1, 1, 2], 0, 4095);
     let mut t = TiffBuilder::default();
     let strip = t.blob(data.iter().flat_map(|v| v.to_le_bytes()).collect());
@@ -175,10 +237,16 @@ fn nef_uncompressed_with_wb(cam: &[[f32; 3]], w: usize, h: usize, preview: Optio
         (33421, Val::Short(vec![2, 2])),
         (33422, Val::Byte(vec![0, 1, 1, 2])),
     ]);
-    let mut ifd0 = vec![(271, Val::Ascii("NIKON CORPORATION".into())), (330, Val::Ifds(vec![raw]))];
+    let mut ifd0 = vec![
+        (271, Val::Ascii("NIKON CORPORATION".into())),
+        (330, Val::Ifds(vec![raw])),
+    ];
     if let Some([r, b]) = wb {
         let mut note = TiffBuilder::default();
-        let note_ifd = note.ifd(vec![(0x000C, Val::Rational(vec![(r, 1024), (b, 1024), (1, 1), (1, 1)]))]);
+        let note_ifd = note.ifd(vec![(
+            0x000C,
+            Val::Rational(vec![(r, 1024), (b, 1024), (1, 1), (1, 1)]),
+        )]);
         note.chain = vec![note_ifd];
         let mut maker = b"Nikon\0\x02\x10\0\0".to_vec();
         maker.extend(note.build());
@@ -196,7 +264,9 @@ fn nef_uncompressed_with_wb(cam: &[[f32; 3]], w: usize, h: usize, preview: Optio
 }
 
 fn fitted(warnings: &[String]) -> bool {
-    warnings.iter().any(|w| w.contains("fitted to the camera's embedded JPEG"))
+    warnings
+        .iter()
+        .any(|w| w.contains("fitted to the camera's embedded JPEG"))
 }
 
 fn fallback(warnings: &[String]) -> bool {
@@ -207,8 +277,16 @@ fn fallback(warnings: &[String]) -> bool {
 fn uncalibrated_raw_takes_its_colour_from_the_camera_jpeg() {
     let (w, h) = (480, 320);
     let cam = patches(w, h);
-    let r = import("DSC_0002.NEF", &nef_uncompressed(&cam, w, h, Some(camera_rendering(&cam, w, h)))).unwrap();
-    assert!(fitted(&r.warnings) && !fallback(&r.warnings), "{:?}", r.warnings);
+    let r = import(
+        "DSC_0002.NEF",
+        &nef_uncompressed(&cam, w, h, Some(camera_rendering(&cam, w, h))),
+    )
+    .unwrap();
+    assert!(
+        fitted(&r.warnings) && !fallback(&r.warnings),
+        "{:?}",
+        r.warnings
+    );
     assert_eq!((r.document.size.width, r.document.size.height), (480, 320));
     assert_eq!(r.document.depth, SampleType::U16);
 }
@@ -219,28 +297,58 @@ fn camera_raw_tuning_keeps_the_default_look_and_applies_user_gains_after_fitting
     use photocraft_raw::{DevelopOptions, WhiteBalance, decode, develop_sensor};
 
     let (w, h) = (480, 320);
-    let cam: Vec<_> = patches(w, h).into_iter().map(|c| c.map(|v| v * 0.6)).collect();
+    let cam: Vec<_> = patches(w, h)
+        .into_iter()
+        .map(|c| c.map(|v| v * 0.6))
+        .collect();
     let balanced: Vec<_> = cam.iter().map(|c| [c[0] * 2.0, c[1], c[2] * 1.5]).collect();
-    let bytes = nef_uncompressed_with_wb(&cam, w, h, Some(camera_rendering(&balanced, w, h)), Some([2048, 1536]));
+    let bytes = nef_uncompressed_with_wb(
+        &cam,
+        w,
+        h,
+        Some(camera_rendering(&balanced, w, h)),
+        Some([2048, 1536]),
+    );
     let normal = import("camera.nef", &bytes).unwrap();
     assert!(fitted(&normal.warnings));
     let sensor = decode(&bytes, &Default::default()).unwrap();
     let look = fit_preview_look(&bytes, &sensor, &DevelopOptions::default()).unwrap();
     for tuning in [
         RawTuning::default(),
-        RawTuning { exposure: 0.5, ..Default::default() },
-        RawTuning { exposure: -0.5, temperature: 20.0, tint: -15.0, ..Default::default() },
+        RawTuning {
+            exposure: 0.5,
+            ..Default::default()
+        },
+        RawTuning {
+            exposure: -0.5,
+            temperature: 20.0,
+            tint: -15.0,
+            ..Default::default()
+        },
     ] {
         let (got, applied) = import_raw_tuned("camera.nef", &bytes, &tuning).unwrap();
-        assert!(applied && fitted(&got.warnings) && !fallback(&got.warnings), "{:?}", got.warnings);
+        assert!(
+            applied && fitted(&got.warnings) && !fallback(&got.warnings),
+            "{:?}",
+            got.warnings
+        );
         assert_eq!(got.document.depth, SampleType::U16);
-        assert_eq!((got.document.size.width, got.document.size.height), (w as u32, h as u32));
-        let gains = photocraft_algo::camera_raw::white_balance_gains(tuning.temperature, tuning.tint).map(f64::from);
+        assert_eq!(
+            (got.document.size.width, got.document.size.height),
+            (w as u32, h as u32)
+        );
+        let gains =
+            photocraft_algo::camera_raw::white_balance_gains(tuning.temperature, tuning.tint)
+                .map(f64::from);
         let expected = develop_sensor(
             &sensor,
             &DevelopOptions {
                 exposure: f64::from(tuning.exposure),
-                white_balance: WhiteBalance::Multipliers([2.0 * gains[0], gains[1], 1.5 * gains[2]]),
+                white_balance: WhiteBalance::Multipliers([
+                    2.0 * gains[0],
+                    gains[1],
+                    1.5 * gains[2],
+                ]),
                 camera_look: Some(look.clone()),
                 ..Default::default()
             },
@@ -248,9 +356,14 @@ fn camera_raw_tuning_keeps_the_default_look_and_applies_user_gains_after_fitting
         .unwrap();
         let expected_bytes: Vec<_> = expected.rgb.iter().flat_map(|v| v.to_ne_bytes()).collect();
         let actual = photocraft_io::document_to_image(&got.document, &mut Vec::new()).unwrap();
-        assert_eq!(actual.data(), expected_bytes, "tuning {tuning:?} must not refit away the user controls");
+        assert_eq!(
+            actual.data(),
+            expected_bytes,
+            "tuning {tuning:?} must not refit away the user controls"
+        );
         if tuning == RawTuning::default() {
-            let original = photocraft_io::document_to_image(&normal.document, &mut Vec::new()).unwrap();
+            let original =
+                photocraft_io::document_to_image(&normal.document, &mut Vec::new()).unwrap();
             assert_eq!(actual.data(), original.data());
         }
     }
@@ -267,24 +380,46 @@ fn unusable_previews_keep_the_neutral_fallback() {
             (seed >> 16) as u8
         })
         .collect();
-    let mut garbage = jpeg(Image::from_u8(64, 48, ChannelLayout::Rgb, vec![90; 64 * 48 * 3]).unwrap());
+    let mut garbage =
+        jpeg(Image::from_u8(64, 48, ChannelLayout::Rgb, vec![90; 64 * 48 * 3]).unwrap());
     let sos = garbage.windows(2).rposition(|p| p == [0xFF, 0xDA]).unwrap();
     garbage.truncate(sos + 8);
     garbage.extend(std::iter::repeat_n(0xAB, 200));
     let previews = [
         None,
-        Some(jpeg(Image::from_u8(w as u32, h as u32, ChannelLayout::Rgb, noise).unwrap())),
-        Some(jpeg(Image::from_u8(240, 240, ChannelLayout::Rgb, vec![128; 240 * 240 * 3]).unwrap())),
-        Some(jpeg(Image::from_u8(w as u32, h as u32, ChannelLayout::Gray, vec![128; w * h]).unwrap())),
+        Some(jpeg(
+            Image::from_u8(w as u32, h as u32, ChannelLayout::Rgb, noise).unwrap(),
+        )),
+        Some(jpeg(
+            Image::from_u8(240, 240, ChannelLayout::Rgb, vec![128; 240 * 240 * 3]).unwrap(),
+        )),
+        Some(jpeg(
+            Image::from_u8(w as u32, h as u32, ChannelLayout::Gray, vec![128; w * h]).unwrap(),
+        )),
         Some(garbage),
     ];
     for (i, p) in previews.into_iter().enumerate() {
         let bytes = nef_uncompressed(&cam, w, h, p);
         let r = import("DSC_0003.NEF", &bytes).unwrap();
-        assert!(fallback(&r.warnings) && !fitted(&r.warnings), "preview {i}: {:?}", r.warnings);
-        let (tuned, wb) =
-            photocraft_io::raw::import_raw_tuned("DSC_0003.NEF", &bytes, &photocraft_io::raw::RawTuning { exposure: 0.5, ..Default::default() }).unwrap();
-        assert!(!wb && fallback(&tuned.warnings) && !fitted(&tuned.warnings), "preview {i}: {:?}", tuned.warnings);
+        assert!(
+            fallback(&r.warnings) && !fitted(&r.warnings),
+            "preview {i}: {:?}",
+            r.warnings
+        );
+        let (tuned, wb) = photocraft_io::raw::import_raw_tuned(
+            "DSC_0003.NEF",
+            &bytes,
+            &photocraft_io::raw::RawTuning {
+                exposure: 0.5,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            !wb && fallback(&tuned.warnings) && !fitted(&tuned.warnings),
+            "preview {i}: {:?}",
+            tuned.warnings
+        );
         assert_eq!(tuned.document.depth, SampleType::U16);
     }
 }
@@ -309,17 +444,27 @@ fn a_re_develop_keeps_the_fitted_look() {
     let cam = patches(w, h);
     let nef = nef_uncompressed(&cam, w, h, Some(camera_rendering(&cam, w, h)));
     let opened = import("DSC_0003.NEF", &nef).unwrap();
-    let (again, _) = photocraft_io::raw::import_raw_tuned("DSC_0003.NEF", &nef, &Default::default()).unwrap();
+    let (again, _) =
+        photocraft_io::raw::import_raw_tuned("DSC_0003.NEF", &nef, &Default::default()).unwrap();
     assert!(fitted(&again.warnings), "{:?}", again.warnings);
     let pixels = |d: &photocraft_doc::Document| {
         let s = d.layers[0].surface().unwrap();
         let mut px = vec![[0.0f32; 4]; w * h];
-        s.read_rgba_into(photocraft_geom::Rect::new(0, 0, w as i32, h as i32), &mut px);
+        s.read_rgba_into(
+            photocraft_geom::Rect::new(0, 0, w as i32, h as i32),
+            &mut px,
+        );
         px
     };
     assert_eq!(pixels(&opened.document), pixels(&again.document));
     let curve = photocraft_io::raw::tone_curve(&nef);
-    assert!(curve.len() > 2 && curve.windows(2).all(|k| k[1][0] > k[0][0] && k[1][1] >= k[0][1]), "{curve:?}");
+    assert!(
+        curve.len() > 2
+            && curve
+                .windows(2)
+                .all(|k| k[1][0] > k[0][0] && k[1][1] >= k[0][1]),
+        "{curve:?}"
+    );
     // The camera's brightening curve: mid-grey comes out lighter.
     let mid = curve.iter().find(|k| k[0] >= 0.18).unwrap();
     assert!(mid[1] > mid[0], "{mid:?}");

@@ -10,14 +10,22 @@ pub fn pdf(objects: &[(u32, String, Option<Vec<u8>>)], root: u32) -> Vec<u8> {
         offsets.push((*n, out.len()));
         match stream {
             Some(data) if dict.contains("/Filter") => {
-                let d = format!("{} /Length {} >>", dict.trim_end().trim_end_matches(">>"), data.len());
+                let d = format!(
+                    "{} /Length {} >>",
+                    dict.trim_end().trim_end_matches(">>"),
+                    data.len()
+                );
                 out.extend_from_slice(format!("{n} 0 obj\n{d}\nstream\n").as_bytes());
                 out.extend_from_slice(data);
                 out.extend_from_slice(b"\nendstream\nendobj\n");
             }
             Some(data) => {
                 let z = miniz_oxide::deflate::compress_to_vec_zlib(data, 6);
-                let d = format!("{} /Filter /FlateDecode /Length {} >>", dict.trim_end().trim_end_matches(">>"), z.len());
+                let d = format!(
+                    "{} /Filter /FlateDecode /Length {} >>",
+                    dict.trim_end().trim_end_matches(">>"),
+                    z.len()
+                );
                 out.extend_from_slice(format!("{n} 0 obj\n{d}\nstream\n").as_bytes());
                 out.extend_from_slice(&z);
                 out.extend_from_slice(b"\nendstream\nendobj\n");
@@ -34,6 +42,12 @@ pub fn pdf(objects: &[(u32, String, Option<Vec<u8>>)], root: u32) -> Vec<u8> {
             None => out.extend_from_slice(b"0000000000 65535 f \n"),
         }
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root {root} 0 R >>\nstartxref\n{xref}\n%%EOF\n", max + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root {root} 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            max + 1
+        )
+        .as_bytes(),
+    );
     out
 }

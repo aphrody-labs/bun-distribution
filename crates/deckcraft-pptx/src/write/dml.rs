@@ -1,9 +1,13 @@
 //! DrawingML writing: colours, fills, lines, effects, transforms and text.
 
 use deckcraft_geom::{Xfrm, pt_to_emu};
-use deckcraft_model::style::{ColorBase, ColorRef, Compound, Dash, Effects, Fill, GradientShape, Line, LineCap, LineJoin, PictureFill, PictureMode};
+use deckcraft_model::style::{
+    ColorBase, ColorRef, Compound, Dash, Effects, Fill, GradientShape, Line, LineCap, LineJoin,
+    PictureFill, PictureMode,
+};
 use deckcraft_model::text::{
-    Action, AutoFit, BodyProps, Bullet, Caps, Hyperlink, ListStyle, ParaProps, Paragraph, RunKind, RunProps, Spacing, Strike, TextBody,
+    Action, AutoFit, BodyProps, Bullet, Caps, Hyperlink, ListStyle, ParaProps, Paragraph, RunKind,
+    RunProps, Spacing, Strike, TextBody,
 };
 
 use super::{Exp, Out};
@@ -20,7 +24,11 @@ pub fn emu_pos(pt: f64) -> i64 {
 
 /// Fraction → 1/100 000.
 pub fn pct(v: f64) -> i64 {
-    if v.is_finite() { (v * 100_000.0).round().clamp(-2.0e9, 2.0e9) as i64 } else { 0 }
+    if v.is_finite() {
+        (v * 100_000.0).round().clamp(-2.0e9, 2.0e9) as i64
+    } else {
+        0
+    }
 }
 
 /// Degrees → 1/60 000 degree, normalised to 0..360.
@@ -36,13 +44,25 @@ pub fn color(w: &mut W, c: &ColorRef) {
     let (tag, a) = match &c.base {
         ColorBase::Rgb { rgb } => ("a:srgbClr", A::new().a("val", rgb.hex())),
         ColorBase::Scheme { slot } => ("a:schemeClr", A::new().a("val", slot.xml_name())),
-        ColorBase::Preset { name } => ("a:prstClr", A::new().a("val", if name.is_empty() { "black" } else { name })),
-        ColorBase::System { name, last } => {
-            ("a:sysClr", A::new().a("val", if name.is_empty() { "windowText" } else { name }).a("lastClr", last.hex()))
-        }
+        ColorBase::Preset { name } => (
+            "a:prstClr",
+            A::new().a("val", if name.is_empty() { "black" } else { name }),
+        ),
+        ColorBase::System { name, last } => (
+            "a:sysClr",
+            A::new()
+                .a("val", if name.is_empty() { "windowText" } else { name })
+                .a("lastClr", last.hex()),
+        ),
     };
     let rgb_alpha = match &c.base {
-        ColorBase::Rgb { rgb } if rgb.a < 255 && !c.mods.iter().any(|m| matches!(m, deckcraft_color::ColorTransform::Alpha(_))) => {
+        ColorBase::Rgb { rgb }
+            if rgb.a < 255
+                && !c
+                    .mods
+                    .iter()
+                    .any(|m| matches!(m, deckcraft_color::ColorTransform::Alpha(_))) =>
+        {
             Some((rgb.a as i64 * 100_000 / 255) as i32)
         }
         _ => None,
@@ -79,7 +99,17 @@ pub fn fill(w: &mut W, x: &mut Exp, o: &mut Out, f: &Fill) {
         Fill::Gradient(g) => gradient(w, g),
         Fill::Picture(pf) => blip_fill(w, x, o, "a:blipFill", pf),
         Fill::Pattern(p) => {
-            w.open("a:pattFill", A::new().a("prst", if p.preset.is_empty() { "pct5" } else { &p.preset }));
+            w.open(
+                "a:pattFill",
+                A::new().a(
+                    "prst",
+                    if p.preset.is_empty() {
+                        "pct5"
+                    } else {
+                        &p.preset
+                    },
+                ),
+            );
             w.open0("a:fgClr");
             color(w, &p.fg);
             w.close("a:fgClr");
@@ -95,11 +125,17 @@ pub fn fill(w: &mut W, x: &mut Exp, o: &mut Out, f: &Fill) {
 
 /// `a:blipFill` / `p:blipFill`.
 pub fn blip_fill(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, pf: &PictureFill) {
-    let rid = x.media_rel(o, pf.media, "image").unwrap_or_else(|| x.placeholder_rel(o));
+    let rid = x
+        .media_rel(o, pf.media, "image")
+        .unwrap_or_else(|| x.placeholder_rel(o));
     w.open(tag, A::new().a("rotWithShape", "1"));
     let adj = &pf.adjust;
-    let has_kids =
-        pf.alpha.is_some() || adj.brightness != 0.0 || adj.contrast != 0.0 || adj.grayscale || adj.duotone.is_some() || adj.clear_color.is_some();
+    let has_kids = pf.alpha.is_some()
+        || adj.brightness != 0.0
+        || adj.contrast != 0.0
+        || adj.grayscale
+        || adj.duotone.is_some()
+        || adj.clear_color.is_some();
     let a = A::new().a("r:embed", &rid);
     if has_kids {
         w.open("a:blip", a);
@@ -109,7 +145,10 @@ pub fn blip_fill(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, pf: &PictureFil
             color(w, &ColorRef::rgb(c));
             w.close("a:clrFrom");
             w.open0("a:clrTo");
-            color(w, &ColorRef::rgb(c).with(deckcraft_color::ColorTransform::Alpha(0)));
+            color(
+                w,
+                &ColorRef::rgb(c).with(deckcraft_color::ColorTransform::Alpha(0)),
+            );
             w.close("a:clrTo");
             w.close("a:clrChange");
         }
@@ -126,7 +165,12 @@ pub fn blip_fill(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, pf: &PictureFil
             w.empty0("a:grayscl");
         }
         if adj.brightness != 0.0 || adj.contrast != 0.0 {
-            w.empty("a:lum", A::new().a("bright", pct(adj.brightness.clamp(-1.0, 1.0))).a("contrast", pct(adj.contrast.clamp(-1.0, 1.0))));
+            w.empty(
+                "a:lum",
+                A::new()
+                    .a("bright", pct(adj.brightness.clamp(-1.0, 1.0)))
+                    .a("contrast", pct(adj.contrast.clamp(-1.0, 1.0))),
+            );
         }
         w.close("a:blip");
     } else {
@@ -134,19 +178,40 @@ pub fn blip_fill(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, pf: &PictureFil
     }
     let c = pf.crop;
     if c.iter().any(|v| *v != 0.0) {
-        w.empty("a:srcRect", A::new().a("l", pct(c[0])).a("t", pct(c[1])).a("r", pct(c[2])).a("b", pct(c[3])));
+        w.empty(
+            "a:srcRect",
+            A::new()
+                .a("l", pct(c[0]))
+                .a("t", pct(c[1]))
+                .a("r", pct(c[2]))
+                .a("b", pct(c[3])),
+        );
     }
     match &pf.mode {
         PictureMode::Stretch { fill_rect: r } => {
             w.open0("a:stretch");
             if r.iter().any(|v| *v != 0.0) {
-                w.empty("a:fillRect", A::new().a("l", pct(r[0])).a("t", pct(r[1])).a("r", pct(r[2])).a("b", pct(r[3])));
+                w.empty(
+                    "a:fillRect",
+                    A::new()
+                        .a("l", pct(r[0]))
+                        .a("t", pct(r[1]))
+                        .a("r", pct(r[2]))
+                        .a("b", pct(r[3])),
+                );
             } else {
                 w.empty0("a:fillRect");
             }
             w.close("a:stretch");
         }
-        PictureMode::Tile { tx, ty, sx, sy, flip, align } => {
+        PictureMode::Tile {
+            tx,
+            ty,
+            sx,
+            sy,
+            flip,
+            align,
+        } => {
             let flip = match flip.as_str() {
                 "x" | "y" | "xy" => flip.as_str(),
                 _ => "none",
@@ -155,7 +220,16 @@ pub fn blip_fill(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, pf: &PictureFil
                 "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br" => align.as_str(),
                 _ => "tl",
             };
-            w.empty("a:tile", A::new().a("tx", emu(*tx)).a("ty", emu(*ty)).a("sx", pct(*sx)).a("sy", pct(*sy)).a("flip", flip).a("algn", algn));
+            w.empty(
+                "a:tile",
+                A::new()
+                    .a("tx", emu(*tx))
+                    .a("ty", emu(*ty))
+                    .a("sx", pct(*sx))
+                    .a("sy", pct(*sy))
+                    .a("flip", flip)
+                    .a("algn", algn),
+            );
         }
     }
     w.close(tag);
@@ -176,19 +250,28 @@ pub fn line(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, l: &Line) {
     w.open(tag, a);
     if let Some(f) = &l.fill {
         match f {
-            Fill::None | Fill::Solid { .. } | Fill::Gradient(_) | Fill::Pattern(_) => fill(w, x, o, f),
+            Fill::None | Fill::Solid { .. } | Fill::Gradient(_) | Fill::Pattern(_) => {
+                fill(w, x, o, f)
+            }
             _ => {}
         }
     }
     match &l.dash {
         Some(Dash::Preset { name }) => {
-            let n = if Dash::PRESETS.contains(&name.as_str()) { name.as_str() } else { "solid" };
+            let n = if Dash::PRESETS.contains(&name.as_str()) {
+                name.as_str()
+            } else {
+                "solid"
+            };
             w.val("a:prstDash", n);
         }
         Some(Dash::Custom { pattern }) if !pattern.is_empty() => {
             w.open0("a:custDash");
             for (d, s) in pattern.iter().take(64) {
-                w.empty("a:ds", A::new().a("d", pct(*d).max(0)).a("sp", pct(*s).max(0)));
+                w.empty(
+                    "a:ds",
+                    A::new().a("d", pct(*d).max(0)).a("sp", pct(*s).max(0)),
+                );
             }
             w.close("a:custDash");
         }
@@ -210,14 +293,23 @@ pub fn line(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, l: &Line) {
                 "sm" | "lg" => s.to_string(),
                 _ => "med".to_string(),
             };
-            w.empty(t, A::new().a("type", kind).a("w", sz(&e.w)).a("len", sz(&e.len)));
+            w.empty(
+                t,
+                A::new()
+                    .a("type", kind)
+                    .a("w", sz(&e.w))
+                    .a("len", sz(&e.len)),
+            );
         }
     }
     w.close(tag);
 }
 
 fn shadow(w: &mut W, tag: &str, s: &deckcraft_model::style::Shadow) {
-    let mut a = A::new().a("blurRad", emu(s.blur).max(0)).a("dist", emu(s.dist).max(0)).a("dir", ang(s.dir));
+    let mut a = A::new()
+        .a("blurRad", emu(s.blur).max(0))
+        .a("dist", emu(s.dist).max(0))
+        .a("dir", ang(s.dir));
     if tag == "a:outerShdw" {
         if s.sx != 1.0 {
             a = a.a("sx", pct(s.sx));
@@ -235,7 +327,9 @@ fn shadow(w: &mut W, tag: &str, s: &deckcraft_model::style::Shadow) {
             "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br" => s.align.as_str(),
             _ => "b",
         };
-        a = a.a("algn", algn).a("rotWithShape", if s.rotate_with_shape { "1" } else { "0" });
+        a = a
+            .a("algn", algn)
+            .a("rotWithShape", if s.rotate_with_shape { "1" } else { "0" });
     }
     w.open(tag, a);
     color(w, &s.color);
@@ -243,7 +337,10 @@ fn shadow(w: &mut W, tag: &str, s: &deckcraft_model::style::Shadow) {
 }
 
 fn gradient(w: &mut W, g: &deckcraft_model::style::Gradient) {
-    w.open("a:gradFill", A::new().a("rotWithShape", if g.rotate_with_shape { "1" } else { "0" }));
+    w.open(
+        "a:gradFill",
+        A::new().a("rotWithShape", if g.rotate_with_shape { "1" } else { "0" }),
+    );
     // No stops: no `a:gsLst`, so the gradient keeps taking them from its style's fill.
     let mut stops = g.stops.clone();
     if stops.len() == 1 {
@@ -261,14 +358,26 @@ fn gradient(w: &mut W, g: &deckcraft_model::style::Gradient) {
         w.close("a:gsLst");
     }
     match &g.shape {
-        GradientShape::Linear { angle, scaled } => w.empty("a:lin", A::new().a("ang", ang(*angle)).a("scaled", if *scaled { "1" } else { "0" })),
+        GradientShape::Linear { angle, scaled } => w.empty(
+            "a:lin",
+            A::new()
+                .a("ang", ang(*angle))
+                .a("scaled", if *scaled { "1" } else { "0" }),
+        ),
         GradientShape::Path { path, focus } => {
             let p = match path.as_str() {
                 "rect" | "shape" | "circle" => path.as_str(),
                 _ => "circle",
             };
             w.open("a:path", A::new().a("path", p));
-            w.empty("a:fillToRect", A::new().a("l", pct(focus[0])).a("t", pct(focus[1])).a("r", pct(focus[2])).a("b", pct(focus[3])));
+            w.empty(
+                "a:fillToRect",
+                A::new()
+                    .a("l", pct(focus[0]))
+                    .a("t", pct(focus[1]))
+                    .a("r", pct(focus[2]))
+                    .a("b", pct(focus[3])),
+            );
             w.close("a:path");
         }
     }
@@ -326,13 +435,25 @@ pub fn effects(w: &mut W, fx: &Effects) {
 pub fn xfrm(w: &mut W, tag: &str, x: &Xfrm, child: Option<&Xfrm>) {
     let x = if x.is_finite() { *x } else { Xfrm::default() };
     let rot = ang(x.rot);
-    w.open(tag, A::new().o("rot", (rot != 0).then_some(rot)).t("flipH", x.flip_h).t("flipV", x.flip_v));
+    w.open(
+        tag,
+        A::new()
+            .o("rot", (rot != 0).then_some(rot))
+            .t("flipH", x.flip_h)
+            .t("flipV", x.flip_v),
+    );
     w.empty("a:off", A::new().a("x", emu(x.x)).a("y", emu(x.y)));
-    w.empty("a:ext", A::new().a("cx", emu_pos(x.w)).a("cy", emu_pos(x.h)));
+    w.empty(
+        "a:ext",
+        A::new().a("cx", emu_pos(x.w)).a("cy", emu_pos(x.h)),
+    );
     if let Some(c) = child {
         let c = if c.is_finite() { *c } else { Xfrm::default() };
         w.empty("a:chOff", A::new().a("x", emu(c.x)).a("y", emu(c.y)));
-        w.empty("a:chExt", A::new().a("cx", emu_pos(c.w)).a("cy", emu_pos(c.h)));
+        w.empty(
+            "a:chExt",
+            A::new().a("cx", emu_pos(c.w)).a("cy", emu_pos(c.h)),
+        );
     }
     w.close(tag);
 }
@@ -351,25 +472,56 @@ pub fn hyperlink(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, h: &Hyperlink) 
         Action::Slide { slide } => match x.slide_parts.get(slide) {
             Some(target) => {
                 let rel = crate::opc::relative(&o.name, target);
-                (o.rels.add("slide", &rel, false), Some("ppaction://hlinksldjump".to_string()))
+                (
+                    o.rels.add("slide", &rel, false),
+                    Some("ppaction://hlinksldjump".to_string()),
+                )
             }
             None => return,
         },
-        Action::NextSlide => (String::new(), Some("ppaction://hlinkshowjump?jump=nextslide".into())),
-        Action::PreviousSlide => (String::new(), Some("ppaction://hlinkshowjump?jump=previousslide".into())),
-        Action::FirstSlide => (String::new(), Some("ppaction://hlinkshowjump?jump=firstslide".into())),
-        Action::LastSlide => (String::new(), Some("ppaction://hlinkshowjump?jump=lastslide".into())),
-        Action::EndShow => (String::new(), Some("ppaction://hlinkshowjump?jump=endshow".into())),
-        Action::LastViewed => (String::new(), Some("ppaction://hlinkshowjump?jump=lastslideviewed".into())),
+        Action::NextSlide => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=nextslide".into()),
+        ),
+        Action::PreviousSlide => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=previousslide".into()),
+        ),
+        Action::FirstSlide => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=firstslide".into()),
+        ),
+        Action::LastSlide => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=lastslide".into()),
+        ),
+        Action::EndShow => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=endshow".into()),
+        ),
+        Action::LastViewed => (
+            String::new(),
+            Some("ppaction://hlinkshowjump?jump=lastslideviewed".into()),
+        ),
         Action::CustomShow { name } => {
-            let id = x.p.custom_shows.iter().position(|c| c.name == *name).unwrap_or(0);
-            (String::new(), Some(format!("ppaction://customshow?id={id}&return=true")))
+            let id =
+                x.p.custom_shows
+                    .iter()
+                    .position(|c| c.name == *name)
+                    .unwrap_or(0);
+            (
+                String::new(),
+                Some(format!("ppaction://customshow?id={id}&return=true")),
+            )
         }
         Action::Program { path } => {
             if path.is_empty() {
                 return;
             }
-            (o.rels.add("hyperlink", path, true), Some("ppaction://program".into()))
+            (
+                o.rels.add("hyperlink", path, true),
+                Some("ppaction://program".into()),
+            )
         }
         Action::PlayMedia => (String::new(), Some("ppaction://media".into())),
     };
@@ -378,14 +530,21 @@ pub fn hyperlink(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, h: &Hyperlink) 
         A::new()
             .a("r:id", rid)
             .o("action", action)
-            .o("tooltip", (!h.tooltip.is_empty()).then_some(h.tooltip.as_str()))
+            .o(
+                "tooltip",
+                (!h.tooltip.is_empty()).then_some(h.tooltip.as_str()),
+            )
             .t("highlightClick", h.highlight_click),
     );
 }
 
 pub fn body_pr(w: &mut W, b: &BodyProps) {
     let a = A::new()
-        .o("rot", b.rot.map(|r| (r * 60_000.0).round().clamp(-21_600_000.0, 21_600_000.0) as i64))
+        .o(
+            "rot",
+            b.rot
+                .map(|r| (r * 60_000.0).round().clamp(-21_600_000.0, 21_600_000.0) as i64),
+        )
         .o("vert", b.vert.map(|v| v.xml()))
         .o("wrap", b.wrap.map(|v| if v { "square" } else { "none" }))
         .o("lIns", b.inset_l.map(emu))
@@ -398,7 +557,10 @@ pub fn body_pr(w: &mut W, b: &BodyProps) {
         .o("anchor", b.anchor.map(|a| a.xml()))
         .b("anchorCtr", b.anchor_ctr)
         .b("upright", b.upright);
-    let warp = b.warp.as_deref().filter(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric()));
+    let warp = b
+        .warp
+        .as_deref()
+        .filter(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric()));
     if warp.is_none() && b.autofit.is_none() {
         w.empty("a:bodyPr", a);
         return;
@@ -406,15 +568,25 @@ pub fn body_pr(w: &mut W, b: &BodyProps) {
     w.open("a:bodyPr", a);
     if let Some(p) = warp {
         w.open("a:prstTxWarp", A::new().a("prst", p));
-        let adj: Vec<(usize, i64)> =
-            b.warp_adj.iter().take(8).enumerate().filter(|(_, v)| v.is_finite()).map(|(i, v)| (i, v.round().clamp(-2.0e9, 2.0e9) as i64)).collect();
+        let adj: Vec<(usize, i64)> = b
+            .warp_adj
+            .iter()
+            .take(8)
+            .enumerate()
+            .filter(|(_, v)| v.is_finite())
+            .map(|(i, v)| (i, v.round().clamp(-2.0e9, 2.0e9) as i64))
+            .collect();
         if adj.is_empty() {
             w.empty0("a:avLst");
         } else {
             let single = deckcraft_geom::warp::adjust_count(p) <= 1 && b.warp_adj.len() == 1;
             w.open0("a:avLst");
             for (i, v) in adj {
-                let n = if single { "adj".to_string() } else { format!("adj{}", i + 1) };
+                let n = if single {
+                    "adj".to_string()
+                } else {
+                    format!("adj{}", i + 1)
+                };
                 w.empty("a:gd", A::new().a("name", n).a("fmla", format!("val {v}")));
             }
             w.close("a:avLst");
@@ -424,10 +596,18 @@ pub fn body_pr(w: &mut W, b: &BodyProps) {
     match b.autofit {
         Some(AutoFit::None) => w.empty0("a:noAutofit"),
         Some(AutoFit::Shape) => w.empty0("a:spAutoFit"),
-        Some(AutoFit::Shrink { font_scale, line_reduction }) => {
+        Some(AutoFit::Shrink {
+            font_scale,
+            line_reduction,
+        }) => {
             let fs = pct(font_scale.clamp(0.01, 1.0));
             let lr = pct(line_reduction.clamp(0.0, 1.0));
-            w.empty("a:normAutofit", A::new().o("fontScale", (fs != 100_000).then_some(fs)).o("lnSpcReduction", (lr != 0).then_some(lr)));
+            w.empty(
+                "a:normAutofit",
+                A::new()
+                    .o("fontScale", (fs != 100_000).then_some(fs))
+                    .o("lnSpcReduction", (lr != 0).then_some(lr)),
+            );
         }
         None => {}
     }
@@ -448,7 +628,15 @@ pub fn is_default_ppr(p: &ParaProps) -> bool {
 }
 
 /// `a:pPr` / `a:lvlNpPr`.
-pub fn ppr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, level: Option<u8>, p: &ParaProps, def: Option<&RunProps>) {
+pub fn ppr(
+    w: &mut W,
+    x: &mut Exp,
+    o: &mut Out,
+    tag: &str,
+    level: Option<u8>,
+    p: &ParaProps,
+    def: Option<&RunProps>,
+) {
     let a = A::new()
         .o("marL", p.margin_left.map(|v| emu(v.clamp(0.0, 4032.0))))
         .o("marR", p.margin_right.map(|v| emu(v.clamp(0.0, 4032.0))))
@@ -460,7 +648,12 @@ pub fn ppr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, level: Option<u8>, p:
         .b("eaLnBrk", p.east_asian_line_break)
         .b("latinLnBrk", p.latin_line_break)
         .b("hangingPunct", p.hanging_punct)
-        .o("fontAlgn", p.font_align.as_deref().filter(|f| matches!(*f, "auto" | "t" | "ctr" | "base" | "b")));
+        .o(
+            "fontAlgn",
+            p.font_align
+                .as_deref()
+                .filter(|f| matches!(*f, "auto" | "t" | "ctr" | "base" | "b")),
+        );
     let has_kids = p.line_spacing.is_some()
         || p.space_before.is_some()
         || p.space_after.is_some()
@@ -497,10 +690,23 @@ pub fn ppr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, level: Option<u8>, p:
     }
     match &p.bullet {
         Some(Bullet::None) => w.empty0("a:buNone"),
-        Some(Bullet::Char { char }) => w.empty("a:buChar", A::new().a("char", if char.is_empty() { "•" } else { char })),
+        Some(Bullet::Char { char }) => w.empty(
+            "a:buChar",
+            A::new().a("char", if char.is_empty() { "•" } else { char }),
+        ),
         Some(Bullet::AutoNum { scheme, start_at }) => {
-            let s = if scheme.is_empty() || !scheme.chars().all(|c| c.is_ascii_alphanumeric()) { "arabicPeriod" } else { scheme };
-            w.empty("a:buAutoNum", A::new().a("type", s).o("startAt", (*start_at != 1).then_some((*start_at).clamp(1, 32767))));
+            let s = if scheme.is_empty() || !scheme.chars().all(|c| c.is_ascii_alphanumeric()) {
+                "arabicPeriod"
+            } else {
+                scheme
+            };
+            w.empty(
+                "a:buAutoNum",
+                A::new().a("type", s).o(
+                    "startAt",
+                    (*start_at != 1).then_some((*start_at).clamp(1, 32767)),
+                ),
+            );
         }
         Some(Bullet::Picture { media }) => match x.media_rel(o, *media, "image") {
             Some(rid) => {
@@ -539,10 +745,19 @@ fn typeface(w: &mut W, tag: &str, f: &Option<String>) {
 pub fn rpr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, r: &RunProps) {
     let a = A::new()
         .o("lang", r.lang.as_deref().filter(|l| !l.is_empty()))
-        .o("sz", r.size.map(|s| (s.clamp(1.0, 4000.0) * 100.0).round() as i64))
+        .o(
+            "sz",
+            r.size
+                .map(|s| (s.clamp(1.0, 4000.0) * 100.0).round() as i64),
+        )
         .b("b", r.bold)
         .b("i", r.italic)
-        .o("u", r.underline.as_deref().filter(|u| !u.is_empty() && u.chars().all(|c| c.is_ascii_alphanumeric())))
+        .o(
+            "u",
+            r.underline
+                .as_deref()
+                .filter(|u| !u.is_empty() && u.chars().all(|c| c.is_ascii_alphanumeric())),
+        )
         .o(
             "strike",
             r.strike.map(|s| match s {
@@ -551,7 +766,11 @@ pub fn rpr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, r: &RunProps) {
                 Strike::Double => "dblStrike",
             }),
         )
-        .o("kern", r.kern.map(|k| (k.clamp(0.0, 4000.0) * 100.0).round() as i64))
+        .o(
+            "kern",
+            r.kern
+                .map(|k| (k.clamp(0.0, 4000.0) * 100.0).round() as i64),
+        )
         .o(
             "cap",
             r.caps.map(|c| match c {
@@ -560,7 +779,11 @@ pub fn rpr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, r: &RunProps) {
                 Caps::All => "all",
             }),
         )
-        .o("spc", r.spacing.map(|s| (s.clamp(-4000.0, 4000.0) * 100.0).round() as i64))
+        .o(
+            "spc",
+            r.spacing
+                .map(|s| (s.clamp(-4000.0, 4000.0) * 100.0).round() as i64),
+        )
         .o("baseline", r.baseline.map(|b| pct(b.clamp(-10.0, 10.0))))
         .b("noProof", r.no_proof);
     let has_kids = r.outline.is_some()
@@ -589,7 +812,14 @@ pub fn rpr(w: &mut W, x: &mut Exp, o: &mut Out, tag: &str, r: &RunProps) {
         }
     }
     if r.shadow.is_some() || r.glow.is_some() {
-        effects(w, &Effects { outer_shadow: r.shadow.clone(), glow: r.glow.clone(), ..Default::default() });
+        effects(
+            w,
+            &Effects {
+                outer_shadow: r.shadow.clone(),
+                glow: r.glow.clone(),
+                ..Default::default()
+            },
+        );
     }
     if let Some(h) = &r.highlight {
         w.open0("a:highlight");
@@ -674,7 +904,9 @@ pub fn paragraph(w: &mut W, x: &mut Exp, o: &mut Out, p: &Paragraph, math: bool,
             }
             RunKind::Field { field } => {
                 let id = crate::tables::guid(&format!("{}:{index}:{ri}:{field}", o.name));
-                let ty = (!field.is_empty() && field.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')).then_some(field.as_str());
+                let ty = (!field.is_empty()
+                    && field.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'))
+                .then_some(field.as_str());
                 w.open("a:fld", A::new().a("id", id).o("type", ty));
                 rpr(w, x, o, "a:rPr", &r.props);
                 w.elt("a:t", &r.text);
@@ -698,5 +930,8 @@ pub fn paragraph(w: &mut W, x: &mut Exp, o: &mut Out, p: &Paragraph, math: bool,
 }
 
 pub fn has_math(tb: &TextBody) -> bool {
-    tb.paragraphs.iter().flat_map(|p| &p.runs).any(|r| matches!(&r.kind, RunKind::Math { omml } if !omml.is_empty()))
+    tb.paragraphs
+        .iter()
+        .flat_map(|p| &p.runs)
+        .any(|r| matches!(&r.kind, RunKind::Math { omml } if !omml.is_empty()))
 }

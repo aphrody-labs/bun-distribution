@@ -31,8 +31,10 @@ pub unsafe extern "C" fn web_internal_extract_title(html_ptr: *const c_char) -> 
         let start_tag = "<title>";
         let end_tag = "</title>";
 
-        if let Some(start_idx) =
-            html.find(start_tag).or_else(|| html.find("<TITLE>")).or_else(|| html.find("<title "))
+        if let Some(start_idx) = html
+            .find(start_tag)
+            .or_else(|| html.find("<TITLE>"))
+            .or_else(|| html.find("<title "))
         {
             let after_start = &html[start_idx..];
             let content_start = after_start.find('>').map(|i| i + 1).unwrap_or(0);
@@ -197,7 +199,7 @@ pub unsafe extern "C" fn web_internal_extract_links(
                                 Ok(mut u) => {
                                     u.set_fragment(None);
                                     u.to_string()
-                                },
+                                }
                                 Err(_) => href.split('#').next().unwrap_or(href).to_string(),
                             }
                         } else {

@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct UserSessionToken(pub String);
 
 impl_string_token!(UserSessionToken);
-impl_crockford_generator!(UserSessionToken, 32usize, TokenPrefix::UserSession, CrockfordLower);
+impl_crockford_generator!(
+    UserSessionToken,
+    32usize,
+    TokenPrefix::UserSession,
+    CrockfordLower
+);

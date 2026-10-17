@@ -24,7 +24,13 @@ pub enum TraceView {
 
 impl TraceView {
     /// Panel order.
-    pub const ALL: [Self; 5] = [Self::Result, Self::ResultWithOutlines, Self::Outlines, Self::OutlinesWithSource, Self::Source];
+    pub const ALL: [Self; 5] = [
+        Self::Result,
+        Self::ResultWithOutlines,
+        Self::Outlines,
+        Self::OutlinesWithSource,
+        Self::Source,
+    ];
 
     /// The id used in command params and in the saved `trace` object.
     pub fn id(self) -> &'static str {
@@ -39,13 +45,19 @@ impl TraceView {
 
     /// The view an id names (any case).
     pub fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|v| v.id().eq_ignore_ascii_case(id))
+        Self::ALL
+            .into_iter()
+            .find(|v| v.id().eq_ignore_ascii_case(id))
     }
 
     /// The view an Image Trace object's `trace` settings ask for (the tracing result when they
     /// name none, or an unknown one).
     pub fn of(trace: &serde_json::Value) -> Self {
-        trace.get("view").and_then(serde_json::Value::as_str).and_then(Self::from_id).unwrap_or_default()
+        trace
+            .get("view")
+            .and_then(serde_json::Value::as_str)
+            .and_then(Self::from_id)
+            .unwrap_or_default()
     }
 
     /// Whether the source image shows.
@@ -60,14 +72,21 @@ impl TraceView {
 
     /// Whether the traced shapes' outlines show.
     pub fn shows_outlines(self) -> bool {
-        matches!(self, Self::ResultWithOutlines | Self::Outlines | Self::OutlinesWithSource)
+        matches!(
+            self,
+            Self::ResultWithOutlines | Self::Outlines | Self::OutlinesWithSource
+        )
     }
 }
 
 impl Node {
     /// The View of an Image Trace object (the tracing result for anything else, or an unknown id).
     pub fn trace_view(&self) -> TraceView {
-        self.extras().trace.as_deref().map(TraceView::of).unwrap_or_default()
+        self.extras()
+            .trace
+            .as_deref()
+            .map(TraceView::of)
+            .unwrap_or_default()
     }
 }
 
@@ -80,7 +99,10 @@ mod tests {
         for v in TraceView::ALL {
             assert_eq!(TraceView::from_id(v.id()), Some(v));
             assert_eq!(TraceView::from_id(&v.id().to_ascii_uppercase()), Some(v));
-            assert!(v.shows_result() || v.shows_outlines() || v.shows_source(), "{v:?} shows something");
+            assert!(
+                v.shows_result() || v.shows_outlines() || v.shows_source(),
+                "{v:?} shows something"
+            );
         }
         let mut g = Node::group(crate::NodeId(1), vec![]);
         assert_eq!(g.trace_view(), TraceView::Result);

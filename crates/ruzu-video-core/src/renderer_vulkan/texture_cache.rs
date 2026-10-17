@@ -2025,8 +2025,8 @@ impl CachedSampler {
                 a: key.swizzle[3],
             })
             .srgb(false);
-        let mut reduction_ci = vk::SamplerReductionModeCreateInfo::default()
-            .reduction_mode(self.reduction_mode);
+        let mut reduction_ci =
+            vk::SamplerReductionModeCreateInfo::default().reduction_mode(self.reduction_mode);
 
         let base = &self.base;
         let mut create_info = vk::SamplerCreateInfo::default()
@@ -3026,8 +3026,7 @@ impl TextureCacheRuntime {
                 .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .image(src_image)
-                .subresource_range(src_range.subresource_range(src_aspect))
-                ];
+                .subresource_range(src_range.subresource_range(src_aspect))];
             let middle_in_barriers = [vk::ImageMemoryBarrier::default()
                 .src_access_mask(vk::AccessFlags::empty())
                 .dst_access_mask(vk::AccessFlags::empty())
@@ -3036,8 +3035,7 @@ impl TextureCacheRuntime {
                 .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .image(src_image)
-                .subresource_range(src_range.subresource_range(src_aspect))
-                ];
+                .subresource_range(src_range.subresource_range(src_aspect))];
             let middle_out_barriers = [vk::ImageMemoryBarrier::default()
                 .src_access_mask(
                     vk::AccessFlags::SHADER_WRITE
@@ -3051,8 +3049,7 @@ impl TextureCacheRuntime {
                 .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .image(dst_image)
-                .subresource_range(dst_range.subresource_range(dst_aspect))
-                ];
+                .subresource_range(dst_range.subresource_range(dst_aspect))];
             let post_barriers = [vk::ImageMemoryBarrier::default()
                 .src_access_mask(vk::AccessFlags::TRANSFER_WRITE)
                 .dst_access_mask(
@@ -3070,8 +3067,7 @@ impl TextureCacheRuntime {
                 .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
                 .image(dst_image)
-                .subresource_range(dst_range.subresource_range(dst_aspect))
-                ];
+                .subresource_range(dst_range.subresource_range(dst_aspect))];
 
             device.cmd_pipeline_barrier(
                 cmd,
@@ -3643,8 +3639,8 @@ impl TextureCacheRuntime {
             return Ok(image.storage_image_views[index]);
         }
 
-        let mut usage_info = vk::ImageViewUsageCreateInfo::default()
-            .usage(vk::ImageUsageFlags::STORAGE);
+        let mut usage_info =
+            vk::ImageViewUsageCreateInfo::default().usage(vk::ImageUsageFlags::STORAGE);
         let view_info = vk::ImageViewCreateInfo::default()
             .push_next(&mut usage_info)
             .image(image.handle())
@@ -4061,8 +4057,7 @@ impl TextureCacheRuntime {
                 .is_storage_image_multisample_supported(),
         );
         let view_formats = self.view_formats[info.format as usize].clone();
-        let mut format_list = vk::ImageFormatListCreateInfo::default()
-            .view_formats(&view_formats);
+        let mut format_list = vk::ImageFormatListCreateInfo::default().view_formats(&view_formats);
         let has_storage_compatible_view = view_formats.iter().any(|&view_format| {
             self.vulkan_device().is_format_supported(
                 view_format,
@@ -4228,8 +4223,8 @@ impl TextureCacheRuntime {
                 range.layer_count = layer_count;
             }
             let mut usage_info = vk::ImageViewUsageCreateInfo::default().usage(usage);
-            let mut astc_decode_mode = vk::ImageViewASTCDecodeModeEXT::default()
-                .decode_mode(vk::Format::R8G8B8A8_UNORM);
+            let mut astc_decode_mode =
+                vk::ImageViewASTCDecodeModeEXT::default().decode_mode(vk::Format::R8G8B8A8_UNORM);
             let mut view_info_builder = vk::ImageViewCreateInfo::default()
                 .push_next(&mut usage_info)
                 .image(image.handle())
@@ -4370,8 +4365,7 @@ impl TextureCacheRuntime {
             return true;
         }
         let mut properties3 = vk::FormatProperties3::default();
-        let mut properties2 = vk::FormatProperties2::default()
-            .push_next(&mut properties3);
+        let mut properties2 = vk::FormatProperties2::default().push_next(&mut properties3);
         unsafe {
             self.instance.get_physical_device_format_properties2(
                 self.physical_device,
@@ -7007,8 +7001,7 @@ mod tests {
             let info = unsafe { &*info };
             unsafe {
                 *output = vk::Sampler::from_raw(
-                    1 + u64::from(info.compare_enable)
-                        + ((info.compare_op.as_raw() as u64) << 8),
+                    1 + u64::from(info.compare_enable) + ((info.compare_op.as_raw() as u64) << 8),
                 );
             }
             vk::Result::SUCCESS
@@ -7029,9 +7022,8 @@ mod tests {
                 vk::Device::null(),
             )
         };
-        let mut view_base = ImageViewBase::null(
-            crate::texture_cache::image_view_base::NullImageViewParams,
-        );
+        let mut view_base =
+            ImageViewBase::null(crate::texture_cache::image_view_base::NullImageViewParams);
         view_base.format = PixelFormat::S8UintD24Unorm;
         // MakeKey never dereferences the device owner. No real image handles
         // are created, so dropping this fixture performs no Vulkan operation.
@@ -7040,14 +7032,17 @@ mod tests {
             device: device.clone(),
             base: NonNull::from(&mut view_base),
             image_handle: vk::Image::null(),
-            image_views: [vk::ImageView::null(); shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
+            image_views: [vk::ImageView::null();
+                shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
             render_target: vk::ImageView::null(),
             typeless_storage_view: vk::ImageView::null(),
             depth_view: vk::ImageView::null(),
             stencil_view: vk::ImageView::null(),
             color_view: vk::ImageView::null(),
-            storage_signeds: [vk::ImageView::null(); shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
-            storage_unsigneds: [vk::ImageView::null(); shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
+            storage_signeds: [vk::ImageView::null();
+                shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
+            storage_unsigneds: [vk::ImageView::null();
+                shader_recompiler::shader_info::NUM_TEXTURE_TYPES as usize],
             null_image: None,
             samples: vk::SampleCountFlags::TYPE_1,
             buffer_size: 0,
@@ -7094,9 +7089,18 @@ mod tests {
             for key in [
                 sampler.make_key(&view, true),
                 SamplerVariantKey::default(),
-                SamplerVariantKey { force_nearest: true, ..Default::default() },
-                SamplerVariantKey { reduce_anisotropy: true, ..Default::default() },
-                SamplerVariantKey { drop_reduction: true, ..Default::default() },
+                SamplerVariantKey {
+                    force_nearest: true,
+                    ..Default::default()
+                },
+                SamplerVariantKey {
+                    reduce_anisotropy: true,
+                    ..Default::default()
+                },
+                SamplerVariantKey {
+                    drop_reduction: true,
+                    ..Default::default()
+                },
             ] {
                 assert_eq!(
                     sampler.emplace(key).unwrap().as_raw(),
@@ -7119,8 +7123,7 @@ mod tests {
             vk::Format::A2B10G10R10_UNORM_PACK32,
             vk::Format::A8B8G8R8_UNORM_PACK32,
         ];
-        let mut format_list = vk::ImageFormatListCreateInfo::default()
-            .view_formats(&formats);
+        let mut format_list = vk::ImageFormatListCreateInfo::default().view_formats(&formats);
         let mut image_info = vk::ImageCreateInfo::default();
         apply_image_format_list(&mut image_info, &mut format_list, &formats, true, false);
 
@@ -7140,8 +7143,7 @@ mod tests {
             vk::Format::A8B8G8R8_SRGB_PACK32,
             vk::Format::A8B8G8R8_UNORM_PACK32,
         ];
-        let mut format_list = vk::ImageFormatListCreateInfo::default()
-            .view_formats(&formats);
+        let mut format_list = vk::ImageFormatListCreateInfo::default().view_formats(&formats);
         let mut image_info = vk::ImageCreateInfo::default();
         apply_image_format_list(&mut image_info, &mut format_list, &formats, false, true);
 
@@ -7153,8 +7155,7 @@ mod tests {
 
         // A single view format keeps the create info untouched.
         let single = [vk::Format::A8B8G8R8_SRGB_PACK32];
-        let mut single_list = vk::ImageFormatListCreateInfo::default()
-            .view_formats(&single);
+        let mut single_list = vk::ImageFormatListCreateInfo::default().view_formats(&single);
         let mut single_info = vk::ImageCreateInfo::default();
         apply_image_format_list(&mut single_info, &mut single_list, &single, true, true);
         assert!(single_info.flags.is_empty());
@@ -7854,7 +7855,6 @@ fn transform_buffer_image_copies(
                 height: copy.image_extent.height,
                 depth: copy.image_extent.depth,
             })
-            
     };
     if aspect == (vk::ImageAspectFlags::DEPTH | vk::ImageAspectFlags::STENCIL) {
         let mut result = Vec::with_capacity(copies.len() * 2);
@@ -8163,7 +8163,6 @@ fn make_image_create_info(
         .usage(image_usage_flags(format_info, info.format, allow_storage))
         .sharing_mode(vk::SharingMode::EXCLUSIVE)
         .initial_layout(vk::ImageLayout::UNDEFINED)
-        
 }
 
 /// Port of `MakeMsaaScratchImageCreateInfo`: single-sample image sharing the

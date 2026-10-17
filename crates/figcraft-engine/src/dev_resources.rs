@@ -32,7 +32,10 @@ pub fn check_url(url: &str) -> std::result::Result<String, String> {
         return Err("a link has no spaces".into());
     }
     let lower = url.to_ascii_lowercase();
-    let rest = ["https://", "http://"].iter().find_map(|p| lower.strip_prefix(p)).ok_or("a link starts with https:// or http://")?;
+    let rest = ["https://", "http://"]
+        .iter()
+        .find_map(|p| lower.strip_prefix(p))
+        .ok_or("a link starts with https:// or http://")?;
     let host = rest.split(['/', '?', '#']).next().unwrap_or_default();
     let host = host.rsplit('@').next().unwrap_or_default();
     if host.is_empty() || host.starts_with(':') {
@@ -62,17 +65,44 @@ pub struct Listed {
 /// Layer `id`'s dev resources: its own first (none for a layer inside an instance, whose links come
 /// from the main's layer), then those of its main component and that component's set.
 pub fn list(doc: &Document, id: NodeId) -> Vec<Listed> {
-    let Some(n) = doc.node(id) else { return Vec::new() };
-    let inherited = |from: NodeId| doc.node(from).into_iter().flat_map(move |m| m.dev_resources.iter().map(move |r| (r, from)));
+    let Some(n) = doc.node(id) else {
+        return Vec::new();
+    };
+    let inherited = |from: NodeId| {
+        doc.node(from)
+            .into_iter()
+            .flat_map(move |m| m.dev_resources.iter().map(move |r| (r, from)))
+    };
     if inside_instance(doc, id) {
         let from = n.source.unwrap_or(id);
-        return n.dev_resources.iter().map(|r| Listed { resource: r.clone(), index: None, from: Some(from) }).collect();
+        return n
+            .dev_resources
+            .iter()
+            .map(|r| Listed {
+                resource: r.clone(),
+                index: None,
+                from: Some(from),
+            })
+            .collect();
     }
-    let mut out: Vec<Listed> = n.dev_resources.iter().enumerate().map(|(i, r)| Listed { resource: r.clone(), index: Some(i), from: None }).collect();
+    let mut out: Vec<Listed> = n
+        .dev_resources
+        .iter()
+        .enumerate()
+        .map(|(i, r)| Listed {
+            resource: r.clone(),
+            index: Some(i),
+            from: None,
+        })
+        .collect();
     if let NodeKind::Instance { component, .. } = n.kind {
         let set = variant_set(doc, component);
         for (r, from) in inherited(component).chain(set.into_iter().flat_map(inherited)) {
-            out.push(Listed { resource: r.clone(), index: None, from: Some(from) });
+            out.push(Listed {
+                resource: r.clone(),
+                index: None,
+                from: Some(from),
+            });
         }
     }
     out
@@ -99,14 +129,20 @@ pub fn list_json(doc: &Document, id: NodeId) -> Value {
 
 /// The layer a command acts on: not a page, not a layer inside an instance.
 fn layer(cmd: &str, s: &Session, p: &Value) -> Result<NodeId> {
-    let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a layer or pass `id`"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a layer or pass `id`"))?;
     let doc = s.doc()?;
     let n = doc.node(id).ok_or_else(|| bad(cmd, "no such layer"))?;
     if n.is_page() {
         return Err(bad(cmd, "pages can't have dev resources"));
     }
     if inside_instance(doc, id) {
-        return Err(bad(cmd, "this layer is inside an instance: add the link to the main component's layer"));
+        return Err(bad(
+            cmd,
+            "this layer is inside an instance: add the link to the main component's layer",
+        ));
     }
     Ok(id)
 }
@@ -124,7 +160,9 @@ fn url_param(cmd: &str, p: &Value) -> Result<Option<String>> {
 fn name_param(cmd: &str, p: &Value) -> Result<Option<String>> {
     match get(p, "name") {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::String(n)) => Ok(Some(n.trim().chars().take(MAX_NAME).collect::<String>()).filter(|n| !n.is_empty())),
+        Some(Value::String(n)) => {
+            Ok(Some(n.trim().chars().take(MAX_NAME).collect::<String>()).filter(|n| !n.is_empty()))
+        }
         Some(_) => Err(bad(cmd, "name: a string")),
     }
 }
@@ -134,7 +172,10 @@ fn existing(cmd: &str, s: &Session, id: NodeId, p: &Value) -> Result<usize> {
     let index = req_index(cmd, p, "index")?;
     let count = s.doc()?.node(id).map_or(0, |n| n.dev_resources.len());
     if index >= count {
-        return Err(bad(cmd, format!("no dev resource {index} (the layer has {count} of its own)")));
+        return Err(bad(
+            cmd,
+            format!("no dev resource {index} (the layer has {count} of its own)"),
+        ));
     }
     Ok(index)
 }
@@ -153,30 +194,42 @@ pub fn specs() -> Vec<CommandSpec> {
                 let name = name_param(cmd, p)?.unwrap_or_else(|| default_name(&url));
                 let n = s.doc_mut()?.get_mut(id)?;
                 if n.dev_resources.len() >= MAX_PER_LAYER {
-                    return Err(bad(cmd, format!("a layer has at most {MAX_PER_LAYER} dev resources")));
+                    return Err(bad(
+                        cmd,
+                        format!("a layer has at most {MAX_PER_LAYER} dev resources"),
+                    ));
                 }
                 n.dev_resources.push(DevResource { url, name });
                 Ok(json!({"id": id, "index": n.dev_resources.len() - 1}))
             }
         ),
-        spec!("devResource.edit", "Edit dev resource", "{id?, index (of the layer's own), url?, name?}  → {id, index}", true, |s, p| {
-            let cmd = "devResource.edit";
-            let id = layer(cmd, s, p)?;
-            let index = existing(cmd, s, id, p)?;
-            let (url, name) = (url_param(cmd, p)?, name_param(cmd, p)?);
-            if url.is_none() && name.is_none() {
-                return Err(bad(cmd, "pass `url` and/or `name`"));
+        spec!(
+            "devResource.edit",
+            "Edit dev resource",
+            "{id?, index (of the layer's own), url?, name?}  → {id, index}",
+            true,
+            |s, p| {
+                let cmd = "devResource.edit";
+                let id = layer(cmd, s, p)?;
+                let index = existing(cmd, s, id, p)?;
+                let (url, name) = (url_param(cmd, p)?, name_param(cmd, p)?);
+                if url.is_none() && name.is_none() {
+                    return Err(bad(cmd, "pass `url` and/or `name`"));
+                }
+                let n = s.doc_mut()?.get_mut(id)?;
+                let r = n
+                    .dev_resources
+                    .get_mut(index)
+                    .ok_or_else(|| bad(cmd, "no such dev resource"))?;
+                if let Some(u) = url {
+                    r.url = u;
+                }
+                if let Some(nm) = name {
+                    r.name = nm;
+                }
+                Ok(json!({"id": id, "index": index}))
             }
-            let n = s.doc_mut()?.get_mut(id)?;
-            let r = n.dev_resources.get_mut(index).ok_or_else(|| bad(cmd, "no such dev resource"))?;
-            if let Some(u) = url {
-                r.url = u;
-            }
-            if let Some(nm) = name {
-                r.name = nm;
-            }
-            Ok(json!({"id": id, "index": index}))
-        }),
+        ),
         spec!(
             "devResource.remove",
             "Remove dev resource",
@@ -210,9 +263,13 @@ pub fn specs() -> Vec<CommandSpec> {
             "{id? (default the first selected layer)}  the layer's links, its own first, then inherited from its main component and that component's set → [{name, url, index? (own), from? (the layer it comes from)}]",
             false,
             |s, p| {
-                let id = targets(s, p).first().copied().ok_or_else(|| bad("devResource.list", "select a layer or pass `id`"))?;
+                let id = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad("devResource.list", "select a layer or pass `id`"))?;
                 let doc = s.doc()?;
-                doc.node(id).ok_or_else(|| bad("devResource.list", "no such layer"))?;
+                doc.node(id)
+                    .ok_or_else(|| bad("devResource.list", "no such layer"))?;
                 Ok(list_json(doc, id))
             }
         ),

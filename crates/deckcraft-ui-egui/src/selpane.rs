@@ -46,7 +46,14 @@ pub struct Row {
 
 /// The rows as listed: front-most first, children under their group unless it's folded.
 pub fn rows(shapes: &[Shape], collapsed: &HashSet<u32>) -> Vec<Row> {
-    fn rec(v: &[Shape], depth: usize, parent: Option<u32>, dim: bool, collapsed: &HashSet<u32>, out: &mut Vec<Row>) {
+    fn rec(
+        v: &[Shape],
+        depth: usize,
+        parent: Option<u32>,
+        dim: bool,
+        collapsed: &HashSet<u32>,
+        out: &mut Vec<Row>,
+    ) {
         if depth > 64 {
             return;
         }
@@ -62,7 +69,14 @@ pub fn rows(shapes: &[Shape], collapsed: &HashSet<u32>) -> Vec<Row> {
                 parent,
             });
             if sh.is_group() && !collapsed.contains(&sh.id.0) {
-                rec(sh.children(), depth + 1, Some(sh.id.0), dim || sh.hidden, collapsed, out);
+                rec(
+                    sh.children(),
+                    depth + 1,
+                    Some(sh.id.0),
+                    dim || sh.hidden,
+                    collapsed,
+                    out,
+                );
             }
         }
     }
@@ -79,7 +93,10 @@ pub fn drop_target(dragged: u32, siblings: &[(u32, Rect)], y: f32) -> Option<(us
     let first = others.first()?;
     let mut gaps: Vec<f32> = vec![first.1.top()];
     gaps.extend(others.iter().map(|(_, r)| r.bottom()));
-    let (g, gy) = gaps.iter().enumerate().min_by(|a, b| (a.1 - y).abs().total_cmp(&(b.1 - y).abs()))?;
+    let (g, gy) = gaps
+        .iter()
+        .enumerate()
+        .min_by(|a, b| (a.1 - y).abs().total_cmp(&(b.1 - y).abs()))?;
     // `g` siblings sit above the line; the dragged object goes behind them.
     Some((others.len() - g, *gy))
 }
@@ -95,28 +112,49 @@ fn row_id(id: u32) -> Id {
 
 fn small_icon_button(ui: &mut Ui, icon: Icon, label: &str, enabled: bool) -> egui::Response {
     let t = Tokens::get(ui.ctx());
-    let (rect, resp) = ui.allocate_exact_size(vec2(24.0, 22.0), if enabled { Sense::click() } else { Sense::hover() });
+    let (rect, resp) = ui.allocate_exact_size(
+        vec2(24.0, 22.0),
+        if enabled {
+            Sense::click()
+        } else {
+            Sense::hover()
+        },
+    );
     resp.widget_info(|| WidgetInfo::labeled(WidgetType::Button, enabled, label));
     if enabled && resp.hovered() {
-        ui.painter().rect_filled(rect, CornerRadius::same(4), t.hover);
+        ui.painter()
+            .rect_filled(rect, CornerRadius::same(4), t.hover);
     }
-    ui.painter().rect_stroke(rect, CornerRadius::same(4), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+    ui.painter().rect_stroke(
+        rect,
+        CornerRadius::same(4),
+        Stroke::new(1.0, t.border),
+        egui::StrokeKind::Inside,
+    );
     icons::paint(ui.painter(), rect.shrink(4.0), icon, t.text, !enabled);
     resp.on_hover_text(label)
 }
 
 pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let rows = rows(st.shapes(), &app.selpane.collapsed);
     let selected: Vec<u32> = st.selection.shapes.iter().map(|i| i.0).collect();
     let has_sel = !selected.is_empty();
 
     ui.horizontal(|ui| {
-        if ui.add(egui::Button::new("Show All").stroke(Stroke::new(1.0, t.border))).clicked() {
+        if ui
+            .add(egui::Button::new("Show All").stroke(Stroke::new(1.0, t.border)))
+            .clicked()
+        {
             run(app, "selection.showAll", json!({}));
         }
-        if ui.add(egui::Button::new("Hide All").stroke(Stroke::new(1.0, t.border))).clicked() {
+        if ui
+            .add(egui::Button::new("Hide All").stroke(Stroke::new(1.0, t.border)))
+            .clicked()
+        {
             run(app, "selection.hideAll", json!({}));
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -131,10 +169,20 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     ui.add_space(6.0);
 
     // The list has the keyboard while one of its rows has focus.
-    let focused_row = ui.memory(|m| m.focused()).and_then(|f| rows.iter().find(|r| row_id(r.id) == f).map(|r| r.id));
+    let focused_row = ui
+        .memory(|m| m.focused())
+        .and_then(|f| rows.iter().find(|r| row_id(r.id) == f).map(|r| r.id));
     if let Some(f) = focused_row {
         ui.memory_mut(|m| {
-            m.set_focus_lock_filter(row_id(f), egui::EventFilter { tab: false, horizontal_arrows: true, vertical_arrows: true, escape: true })
+            m.set_focus_lock_filter(
+                row_id(f),
+                egui::EventFilter {
+                    tab: false,
+                    horizontal_arrows: true,
+                    vertical_arrows: true,
+                    escape: true,
+                },
+            )
         });
     }
     let mut rects: Vec<Rect> = Vec::with_capacity(rows.len());
@@ -144,11 +192,18 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
         let resp = ui.interact(r, row_id(row.id), Sense::click_and_drag());
         rects.push(r);
         let sel = selected.contains(&row.id);
-        resp.widget_info(|| WidgetInfo::selected(WidgetType::SelectableLabel, true, sel, &row.name));
+        resp.widget_info(|| {
+            WidgetInfo::selected(WidgetType::SelectableLabel, true, sel, &row.name)
+        });
         let painter = ui.painter_at(r);
         if sel {
             painter.rect_filled(r, CornerRadius::same(3), t.selected);
-            painter.rect_stroke(r.shrink(0.5), CornerRadius::same(3), Stroke::new(1.0, t.text_faint), egui::StrokeKind::Inside);
+            painter.rect_stroke(
+                r.shrink(0.5),
+                CornerRadius::same(3),
+                Stroke::new(1.0, t.text_faint),
+                egui::StrokeKind::Inside,
+            );
         } else if resp.hovered() {
             painter.rect_filled(r, CornerRadius::same(3), t.hover);
         }
@@ -160,7 +215,17 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
             let cresp = ui.interact(cr, ui.id().with(("fold", row.id)), Sense::click());
             let label = format!("{} {}", if open { "Collapse" } else { "Expand" }, row.name);
             cresp.widget_info(|| WidgetInfo::labeled(WidgetType::Button, true, &label));
-            icons::paint(&painter, cr, if open { Icon::ChevronDown } else { Icon::ChevronRight }, t.text_dim, false);
+            icons::paint(
+                &painter,
+                cr,
+                if open {
+                    Icon::ChevronDown
+                } else {
+                    Icon::ChevronRight
+                },
+                t.text_dim,
+                false,
+            );
             if cresp.clicked() {
                 if open {
                     app.selpane.collapsed.insert(row.id);
@@ -172,26 +237,52 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
         let name_x = x0 + 16.0;
         let eye = Rect::from_center_size(pos2(r.max.x - 34.0, r.center().y), vec2(16.0, 16.0));
         let lock = Rect::from_center_size(pos2(r.max.x - 12.0, r.center().y), vec2(16.0, 16.0));
-        let name_rect = Rect::from_min_max(pos2(name_x, r.min.y + 2.0), pos2(eye.min.x - 6.0, r.max.y - 2.0));
-        let renaming = app.selpane.renaming.as_ref().filter(|(id, _)| *id == row.id).map(|(_, s)| s.clone());
+        let name_rect = Rect::from_min_max(
+            pos2(name_x, r.min.y + 2.0),
+            pos2(eye.min.x - 6.0, r.max.y - 2.0),
+        );
+        let renaming = app
+            .selpane
+            .renaming
+            .as_ref()
+            .filter(|(id, _)| *id == row.id)
+            .map(|(_, s)| s.clone());
         if let Some(mut buf) = renaming {
             let edit_id = ui.id().with(("rename", row.id));
-            let out = ui.put(name_rect, egui::TextEdit::singleline(&mut buf).id(edit_id).font(theme::font(12.5)).margin(vec2(2.0, 1.0)));
+            let out = ui.put(
+                name_rect,
+                egui::TextEdit::singleline(&mut buf)
+                    .id(edit_id)
+                    .font(theme::font(12.5))
+                    .margin(vec2(2.0, 1.0)),
+            );
             if !app.selpane.rename_started {
                 out.request_focus();
                 if let Some(mut s) = egui::TextEdit::load_state(ui.ctx(), edit_id) {
-                    let all = egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(buf.chars().count()));
+                    let all = egui::text::CCursorRange::two(
+                        egui::text::CCursor::new(0),
+                        egui::text::CCursor::new(buf.chars().count()),
+                    );
                     s.cursor.set_char_range(Some(all));
                     s.store(ui.ctx(), edit_id);
                 }
                 app.selpane.rename_started = true;
             }
-            let (enter, esc) = ui.input(|i| (i.key_pressed(egui::Key::Enter), i.key_pressed(egui::Key::Escape)));
+            let (enter, esc) = ui.input(|i| {
+                (
+                    i.key_pressed(egui::Key::Enter),
+                    i.key_pressed(egui::Key::Escape),
+                )
+            });
             if out.lost_focus() || enter || esc {
                 app.selpane.renaming = None;
                 app.selpane.rename_started = false;
                 if !esc && buf.trim() != row.name && !buf.trim().is_empty() {
-                    run(app, "shape.rename", json!({"id": row.id, "name": buf.trim()}));
+                    run(
+                        app,
+                        "shape.rename",
+                        json!({"id": row.id, "name": buf.trim()}),
+                    );
                 }
                 ui.memory_mut(|m| m.request_focus(row_id(row.id)));
             } else if let Some((_, s)) = app.selpane.renaming.as_mut() {
@@ -199,20 +290,54 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
             }
         } else {
             let color = if row.dimmed { t.text_faint } else { t.text };
-            painter.text(pos2(name_x, r.center().y), Align2::LEFT_CENTER, &row.name, theme::font(12.5), color);
+            painter.text(
+                pos2(name_x, r.center().y),
+                Align2::LEFT_CENTER,
+                &row.name,
+                theme::font(12.5),
+                color,
+            );
         }
         // Eye and padlock.
         let ink = if row.dimmed { t.text_faint } else { t.text_dim };
-        icons::paint(&painter, eye, if row.hidden { Icon::EyeOff } else { Icon::Eye }, ink, false);
-        icons::paint(&painter, lock, if row.locked { Icon::Lock } else { Icon::Unlock }, ink, false);
-        let eye_resp = ui.interact(eye.expand(3.0), ui.id().with(("eye", row.id)), Sense::click());
+        icons::paint(
+            &painter,
+            eye,
+            if row.hidden { Icon::EyeOff } else { Icon::Eye },
+            ink,
+            false,
+        );
+        icons::paint(
+            &painter,
+            lock,
+            if row.locked { Icon::Lock } else { Icon::Unlock },
+            ink,
+            false,
+        );
+        let eye_resp = ui.interact(
+            eye.expand(3.0),
+            ui.id().with(("eye", row.id)),
+            Sense::click(),
+        );
         let eye_label = format!("{} {}", if row.hidden { "Show" } else { "Hide" }, row.name);
         eye_resp.widget_info(|| WidgetInfo::labeled(WidgetType::Button, true, &eye_label));
-        let lock_resp = ui.interact(lock.expand(3.0), ui.id().with(("lock", row.id)), Sense::click());
-        let lock_label = format!("{} {}", if row.locked { "Unlock" } else { "Lock" }, row.name);
+        let lock_resp = ui.interact(
+            lock.expand(3.0),
+            ui.id().with(("lock", row.id)),
+            Sense::click(),
+        );
+        let lock_label = format!(
+            "{} {}",
+            if row.locked { "Unlock" } else { "Lock" },
+            row.name
+        );
         lock_resp.widget_info(|| WidgetInfo::labeled(WidgetType::Button, true, &lock_label));
         if eye_resp.clicked() {
-            run(app, "shape.visible", json!({"id": row.id, "visible": row.hidden}));
+            run(
+                app,
+                "shape.visible",
+                json!({"id": row.id, "visible": row.hidden}),
+            );
         } else if lock_resp.clicked() {
             run(app, "shape.lock", json!({"id": row.id}));
         } else if resp.double_clicked() {
@@ -253,7 +378,11 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
         if released {
             app.selpane.drag = None;
             if let Some((index, _)) = target {
-                run(app, "arrange.reorder", json!({"id": dragged, "index": index}));
+                run(
+                    app,
+                    "arrange.reorder",
+                    json!({"id": dragged, "index": index}),
+                );
             }
         }
     }
@@ -274,7 +403,11 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
 /// Each sibling of `parent`'s block (its row plus its shown children), top to bottom.
 fn sibling_blocks(rows: &[Row], rects: &[Rect], parent: Option<u32>) -> Vec<(u32, Rect)> {
     let mut out: Vec<(u32, Rect)> = vec![];
-    let depth_of = |id: Option<u32>| id.and_then(|p| rows.iter().find(|r| r.id == p)).map(|r| r.depth + 1).unwrap_or(0);
+    let depth_of = |id: Option<u32>| {
+        id.and_then(|p| rows.iter().find(|r| r.id == p))
+            .map(|r| r.depth + 1)
+            .unwrap_or(0)
+    };
     let depth = depth_of(parent);
     let mut current: Option<(u32, Rect)> = None;
     for (row, rect) in rows.iter().zip(rects) {
@@ -299,15 +432,30 @@ fn sibling_blocks(rows: &[Row], rects: &[Rect], parent: Option<u32>) -> Vec<(u32
 
 fn click(app: &mut SlideApp, rows: &[Row], k: usize, ctrl: bool, shift: bool) {
     let Some(row) = rows.get(k) else { return };
-    if shift && let Some(a) = app.selpane.anchor.and_then(|a| rows.iter().position(|r| r.id == a)) {
+    if shift
+        && let Some(a) = app
+            .selpane
+            .anchor
+            .and_then(|a| rows.iter().position(|r| r.id == a))
+    {
         // A run of rows of the same kind (top level, or inside groups) between the anchor and here.
         let (lo, hi) = if a <= k { (a, k) } else { (k, a) };
         let top = row.parent.is_none();
-        let ids: Vec<u32> = rows.get(lo..=hi).unwrap_or(&[]).iter().filter(|r| r.parent.is_none() == top).map(|r| r.id).collect();
+        let ids: Vec<u32> = rows
+            .get(lo..=hi)
+            .unwrap_or(&[])
+            .iter()
+            .filter(|r| r.parent.is_none() == top)
+            .map(|r| r.id)
+            .collect();
         run(app, "selection.select", json!({"ids": ids, "add": ctrl}));
         return;
     }
-    run(app, "selection.select", json!({"id": row.id, "toggle": ctrl}));
+    run(
+        app,
+        "selection.select",
+        json!({"id": row.id, "toggle": ctrl}),
+    );
     app.selpane.anchor = Some(row.id);
 }
 
@@ -322,11 +470,16 @@ fn keys(app: &mut SlideApp, ui: &Ui, rows: &[Row], selected: &[u32], focused: u3
             i.key_pressed(egui::Key::Escape),
         )
     });
-    let cur = selected.last().and_then(|id| rows.iter().position(|r| r.id == *id));
+    let cur = selected
+        .last()
+        .and_then(|id| rows.iter().position(|r| r.id == *id));
     let to = if up {
         Some(cur.map(|c| c.saturating_sub(1)).unwrap_or(0))
     } else if down {
-        Some(cur.map(|c| (c + 1).min(rows.len().saturating_sub(1))).unwrap_or(0))
+        Some(
+            cur.map(|c| (c + 1).min(rows.len().saturating_sub(1)))
+                .unwrap_or(0),
+        )
     } else if home {
         Some(0)
     } else if end {
@@ -373,11 +526,21 @@ fn context_menu(app: &mut SlideApp, resp: &egui::Response, row: &Row) {
             app.selpane.rename_started = false;
             ui.close();
         }
-        if ui.button(if row.hidden { "Show" } else { "Hide" }).clicked() {
-            run(app, "shape.visible", json!({"id": row.id, "visible": row.hidden}));
+        if ui
+            .button(if row.hidden { "Show" } else { "Hide" })
+            .clicked()
+        {
+            run(
+                app,
+                "shape.visible",
+                json!({"id": row.id, "visible": row.hidden}),
+            );
             ui.close();
         }
-        if ui.button(if row.locked { "Unlock" } else { "Lock" }).clicked() {
+        if ui
+            .button(if row.locked { "Unlock" } else { "Lock" })
+            .clicked()
+        {
             run(app, "shape.lock", json!({"id": row.id}));
             ui.close();
         }

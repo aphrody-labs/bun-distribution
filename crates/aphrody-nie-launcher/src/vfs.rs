@@ -18,7 +18,10 @@ pub struct VfsServer {
 
 impl VfsServer {
     pub fn new(pipe_name: String) -> Self {
-        Self { pipe_name, files: HashMap::new() }
+        Self {
+            pipe_name,
+            files: HashMap::new(),
+        }
     }
 
     pub fn insert_file(&mut self, entry: PackageEntry) {
@@ -30,7 +33,10 @@ impl VfsServer {
     }
 
     pub fn start_listener(&self) -> Result<()> {
-        info!("VFS streaming listener initialized for pipe: {}", self.pipe_name);
+        info!(
+            "VFS streaming listener initialized for pipe: {}",
+            self.pipe_name
+        );
         Ok(())
     }
 }

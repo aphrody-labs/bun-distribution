@@ -114,7 +114,9 @@ struct Placed {
 fn mount_name(n: &str) -> String {
     let field = |key: &str| {
         let rest = n.strip_prefix("smb-share:")?;
-        rest.split(',').find_map(|kv| kv.strip_prefix(key)?.strip_prefix('=')).filter(|v| !v.is_empty())
+        rest.split(',')
+            .find_map(|kv| kv.strip_prefix(key)?.strip_prefix('='))
+            .filter(|v| !v.is_empty())
     };
     match (field("share"), field("server")) {
         (Some(share), Some(server)) => format!("{share} on {server}"),
@@ -144,7 +146,9 @@ fn place(dir: &str) -> Option<Placed> {
             ["media", u, n, ..] => named(format!("/media/{u}/{n}"), n, 3),
             ["mnt", n, ..] => named(format!("/mnt/{n}"), n, 2),
             // Linux desktops mount network places per user, naming server and share
-            ["run", "user", uid, "gvfs", n, ..] => named(format!("/run/user/{uid}/gvfs/{n}"), &mount_name(n), 5),
+            ["run", "user", uid, "gvfs", n, ..] => {
+                named(format!("/run/user/{uid}/gvfs/{n}"), &mount_name(n), 5)
+            }
             // NFS automounts: Linux `/net/<host>`, macOS `/Network/Servers/<host>`
             ["net", host, ..] => named(format!("/net/{host}"), host, 2),
             ["Network", "Servers", host, ..] => named(format!("/Network/Servers/{host}"), host, 3),
@@ -153,13 +157,24 @@ fn place(dir: &str) -> Option<Placed> {
     } else {
         return None;
     };
-    Some(Placed { mount, volume, names: names.iter().skip(used).take(MAX_DEPTH).map(|n| n.to_string()).collect() })
+    Some(Placed {
+        mount,
+        volume,
+        names: names
+            .iter()
+            .skip(used)
+            .take(MAX_DEPTH)
+            .map(|n| n.to_string())
+            .collect(),
+    })
 }
 
 /// The disk or share (`/Volumes/nas`, `D:`, `/` for the startup disk) a file-backed photo is on,
 /// from its stored path alone.
 pub fn volume_of(p: &crate::Photo) -> Option<String> {
-    let Source::File { path } = &p.source else { return None };
+    let Source::File { path } = &p.source else {
+        return None;
+    };
     let dir = path.rfind(['/', '\\']).and_then(|i| path.get(..i.max(1)))?;
     place(dir).map(|pl| folder_key(&pl.mount))
 }
@@ -179,7 +194,16 @@ pub fn is_startup_disk(path: &str) -> bool {
 /// told apart; the path itself when it has no names (`/`).
 pub fn folder_label(path: &str) -> String {
     let names: Vec<&str> = path.split(['/', '\\']).filter(|n| !n.is_empty()).collect();
-    if names.is_empty() { path.to_string() } else { names.iter().skip(names.len().saturating_sub(2)).copied().collect::<Vec<_>>().join("/") }
+    if names.is_empty() {
+        path.to_string()
+    } else {
+        names
+            .iter()
+            .skip(names.len().saturating_sub(2))
+            .copied()
+            .collect::<Vec<_>>()
+            .join("/")
+    }
 }
 
 impl Catalog {
@@ -198,7 +222,10 @@ impl Catalog {
     pub fn folder_label_op(&self, path: &str, label: Option<ColorLabel>) -> Op {
         let mut record = self.folder_record(path).cloned().unwrap_or_default();
         record.label = label;
-        Op::SetFolderRecord { folder: path.to_string(), record: Some(record) }
+        Op::SetFolderRecord {
+            folder: path.to_string(),
+            record: Some(record),
+        }
     }
 
     /// The ops that carry the records of folder `from` and the folders inside it over to `to`
@@ -207,7 +234,9 @@ impl Catalog {
     /// folder that is no longer there and are dropped (undo restores them). Empty when there is
     /// nothing to carry or drop.
     pub fn folder_records_follow(&self, from: &str, to: &str) -> Vec<Op> {
-        let (Some(root), Some(dest)) = (record_key(from), record_key(to)) else { return Vec::new() };
+        let (Some(root), Some(dest)) = (record_key(from), record_key(to)) else {
+            return Vec::new();
+        };
         if root == dest {
             return Vec::new();
         }
@@ -218,15 +247,30 @@ impl Catalog {
             .filter_map(|(k, r)| {
                 let rest = folder_rest(k, &root)?;
                 let base = dest.trim_end_matches('/');
-                let path = if rest.is_empty() { dest.clone() } else { format!("{base}/{}", rest.join("/")) };
+                let path = if rest.is_empty() {
+                    dest.clone()
+                } else {
+                    format!("{base}/{}", rest.join("/"))
+                };
                 Some((folder_key(&path), r.clone()))
             })
             .collect();
         // what was known at the old place goes, and so does what is left at the new one (also
         // when the moved folder carries nothing: the folder now there is not the one it was about)
-        let stale = self.folder_records.keys().filter(|k| key_within(k, &root) || key_within(k, &dest));
-        let mut ops: Vec<Op> = stale.map(|k| Op::SetFolderRecord { folder: k.clone(), record: None }).collect();
-        ops.extend(moved.into_iter().map(|(k, r)| Op::SetFolderRecord { folder: k, record: Some(r) }));
+        let stale = self
+            .folder_records
+            .keys()
+            .filter(|k| key_within(k, &root) || key_within(k, &dest));
+        let mut ops: Vec<Op> = stale
+            .map(|k| Op::SetFolderRecord {
+                folder: k.clone(),
+                record: None,
+            })
+            .collect();
+        ops.extend(moved.into_iter().map(|(k, r)| Op::SetFolderRecord {
+            folder: k,
+            record: Some(r),
+        }));
         ops
     }
 
@@ -253,18 +297,37 @@ impl Catalog {
             if !levels.contains_key(&vkey) {
                 levels.insert(
                     vkey.clone(),
-                    Level { name: placed.volume.clone(), path: placed.mount.clone(), own: 0, volume: true, children: Vec::new() },
+                    Level {
+                        name: placed.volume.clone(),
+                        path: placed.mount.clone(),
+                        own: 0,
+                        volume: true,
+                        children: Vec::new(),
+                    },
                 );
                 roots.push(vkey.clone());
             }
-            let mut prefix = if placed.mount == "/" { String::new() } else { placed.mount.clone() };
+            let mut prefix = if placed.mount == "/" {
+                String::new()
+            } else {
+                placed.mount.clone()
+            };
             let mut parent = vkey;
             for name in &placed.names {
                 prefix.push('/');
                 prefix.push_str(name);
                 let key = folder_key(&prefix);
                 if !levels.contains_key(&key) {
-                    levels.insert(key.clone(), Level { name: name.clone(), path: prefix.clone(), own: 0, volume: false, children: Vec::new() });
+                    levels.insert(
+                        key.clone(),
+                        Level {
+                            name: name.clone(),
+                            path: prefix.clone(),
+                            own: 0,
+                            volume: false,
+                            children: Vec::new(),
+                        },
+                    );
                     if let Some(l) = levels.get_mut(&parent) {
                         l.children.push(key.clone());
                     }
@@ -275,19 +338,34 @@ impl Catalog {
                 l.own += n;
             }
         }
-        let mut tree: Vec<FolderNode> = roots.iter().filter_map(|k| build(k, &levels, &self.folder_records)).collect();
+        let mut tree: Vec<FolderNode> = roots
+            .iter()
+            .filter_map(|k| build(k, &levels, &self.folder_records))
+            .collect();
         sort(&mut tree);
         // a folder that holds another disk's mount covers that disk's photos too
-        let mounts: Vec<String> = tree.iter().filter(|v| v.path != "/").map(|v| v.path.clone()).collect();
+        let mounts: Vec<String> = tree
+            .iter()
+            .filter(|v| v.path != "/")
+            .map(|v| v.path.clone())
+            .collect();
         mark_selectable(&mut tree, &mounts);
         tree
     }
 }
 
 /// The node for `key` with everything below it (at most [`MAX_DEPTH`] deep).
-fn build(key: &str, levels: &HashMap<String, Level>, records: &BTreeMap<String, FolderRecord>) -> Option<FolderNode> {
+fn build(
+    key: &str,
+    levels: &HashMap<String, Level>,
+    records: &BTreeMap<String, FolderRecord>,
+) -> Option<FolderNode> {
     let l = levels.get(key)?;
-    let mut children: Vec<FolderNode> = l.children.iter().filter_map(|k| build(k, levels, records)).collect();
+    let mut children: Vec<FolderNode> = l
+        .children
+        .iter()
+        .filter_map(|k| build(k, levels, records))
+        .collect();
     sort(&mut children);
     let count = l.own + children.iter().map(|c| c.count).sum::<usize>();
     Some(FolderNode {
@@ -304,11 +382,17 @@ fn build(key: &str, levels: &HashMap<String, Level>, records: &BTreeMap<String, 
 
 fn mark_selectable(nodes: &mut [FolderNode], mounts: &[String]) {
     for n in nodes {
-        n.selectable = !(n.volume && n.path == "/") && (n.volume || !mounts.iter().any(|m| folder_within(m, &n.path)));
+        n.selectable = !(n.volume && n.path == "/")
+            && (n.volume || !mounts.iter().any(|m| folder_within(m, &n.path)));
         mark_selectable(&mut n.children, mounts);
     }
 }
 
 fn sort(v: &mut [FolderNode]) {
-    v.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()).then_with(|| a.name.cmp(&b.name)));
+    v.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then_with(|| a.name.cmp(&b.name))
+    });
 }

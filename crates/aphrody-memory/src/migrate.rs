@@ -97,7 +97,9 @@ pub async fn migrate(
     dry_run: bool,
 ) -> Result<MigrationDiff, MemoryError> {
     if agent_id.is_empty() {
-        return Err(MemoryError::InvalidArgument("migrate requires a non-empty agent_id".into()));
+        return Err(MemoryError::InvalidArgument(
+            "migrate requires a non-empty agent_id".into(),
+        ));
     }
 
     // 1. Read source: every record for this agent. We omit `limit` so the provider returns its
@@ -136,11 +138,11 @@ pub async fn migrate(
                 if migrated_ids.len() < MAX_ID_PREVIEW {
                     migrated_ids.push(id_for_preview);
                 }
-            },
+            }
             Err(e) => {
                 skipped += 1;
                 skipped_ids.push((id_for_preview, e.to_string()));
-            },
+            }
         }
     }
 
@@ -186,10 +188,14 @@ mod tests {
         // Seed source with 3 records under the same agent.
         for i in 0..3 {
             let id = format!("rec-{i}");
-            src.add(rec(&id, "agent-A", &format!("body-{i}"))).await.unwrap();
+            src.add(rec(&id, "agent-A", &format!("body-{i}")))
+                .await
+                .unwrap();
         }
         // Plus one record under a different agent — must NOT migrate.
-        src.add(rec("decoy", "agent-OTHER", "ignored")).await.unwrap();
+        src.add(rec("decoy", "agent-OTHER", "ignored"))
+            .await
+            .unwrap();
 
         let diff = migrate(&src, &dst, "agent-A", false).await.unwrap();
 
@@ -227,7 +233,10 @@ mod tests {
         assert_eq!(diff.source_count, 1);
         assert_eq!(diff.migrated, 1, "dry-run still reports intent");
         assert_eq!(diff.skipped, 0);
-        assert!(dst.get("only").await.unwrap().is_none(), "dry-run must not write");
+        assert!(
+            dst.get("only").await.unwrap().is_none(),
+            "dry-run must not write"
+        );
     }
 
     #[tokio::test]
@@ -235,7 +244,9 @@ mod tests {
         let src = SqliteLocalProvider::open_in_memory().unwrap();
         let dst = SqliteLocalProvider::open_in_memory().unwrap();
         for i in 0..2 {
-            src.add(rec(&format!("r-{i}"), "agent-A", "x")).await.unwrap();
+            src.add(rec(&format!("r-{i}"), "agent-A", "x"))
+                .await
+                .unwrap();
         }
 
         let first = migrate(&src, &dst, "agent-A", false).await.unwrap();
@@ -262,7 +273,10 @@ mod tests {
         let json = serde_json::to_string(&diff).unwrap();
         let back: MigrationDiff = serde_json::from_str(&json).unwrap();
         assert_eq!(back, diff);
-        assert!(json.contains("\"from\":\"sqlite_local\""), "snake_case ProviderKind: {json}");
+        assert!(
+            json.contains("\"from\":\"sqlite_local\""),
+            "snake_case ProviderKind: {json}"
+        );
         assert!(json.contains("\"dry_run\":true"));
     }
 
@@ -272,11 +286,17 @@ mod tests {
         let dst = SqliteLocalProvider::open_in_memory().unwrap();
         // Seed MAX_ID_PREVIEW + 5 records so the preview is forced to truncate.
         for i in 0..(MAX_ID_PREVIEW + 5) {
-            src.add(rec(&format!("id-{i:04}"), "agent-A", "x")).await.unwrap();
+            src.add(rec(&format!("id-{i:04}"), "agent-A", "x"))
+                .await
+                .unwrap();
         }
         let diff = migrate(&src, &dst, "agent-A", true).await.unwrap();
         assert_eq!(diff.source_count, MAX_ID_PREVIEW + 5);
         assert_eq!(diff.migrated, MAX_ID_PREVIEW + 5, "count is accurate");
-        assert_eq!(diff.migrated_ids.len(), MAX_ID_PREVIEW, "preview is capped, not the count");
+        assert_eq!(
+            diff.migrated_ids.len(),
+            MAX_ID_PREVIEW,
+            "preview is capped, not the count"
+        );
     }
 }

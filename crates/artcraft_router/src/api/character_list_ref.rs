@@ -5,7 +5,6 @@ use tokens::tokens::characters::CharacterToken;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CharacterListRef {
-  CharacterTokens(Vec<CharacterToken>),
-
-  // In the future, we may have other identifiers for characters.
+    CharacterTokens(Vec<CharacterToken>),
+    // In the future, we may have other identifiers for characters.
 }

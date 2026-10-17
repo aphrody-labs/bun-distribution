@@ -44,11 +44,26 @@ impl CjkChar {
 pub fn classify(c: char) -> Option<CjkChar> {
     let u = c as u32;
     Some(match u {
-        0x1100..=0x11FF | 0x3130..=0x318F | 0xA960..=0xA97F | 0xAC00..=0xD7AF | 0xD7B0..=0xD7FF | 0xFFA0..=0xFFDC => CjkChar::Hangul,
+        0x1100..=0x11FF
+        | 0x3130..=0x318F
+        | 0xA960..=0xA97F
+        | 0xAC00..=0xD7AF
+        | 0xD7B0..=0xD7FF
+        | 0xFFA0..=0xFFDC => CjkChar::Hangul,
         0x3040..=0x30FF | 0x31F0..=0x31FF | 0xFF65..=0xFF9F | 0x1B000..=0x1B16F => CjkChar::Kana,
         0x3100..=0x312F | 0x31A0..=0x31BF => CjkChar::Bopomofo,
-        0x2E80..=0x2FDF | 0x3000..=0x303F | 0x3190..=0x319F | 0x31C0..=0x31EF | 0x3200..=0x33FF | 0x3400..=0x4DBF | 0x4E00..=0x9FFF => CjkChar::Han,
-        0xF900..=0xFAFF | 0xFE30..=0xFE4F | 0xFF00..=0xFF64 | 0xFFE0..=0xFFEF | 0x20000..=0x3FFFF => CjkChar::Han,
+        0x2E80..=0x2FDF
+        | 0x3000..=0x303F
+        | 0x3190..=0x319F
+        | 0x31C0..=0x31EF
+        | 0x3200..=0x33FF
+        | 0x3400..=0x4DBF
+        | 0x4E00..=0x9FFF => CjkChar::Han,
+        0xF900..=0xFAFF
+        | 0xFE30..=0xFE4F
+        | 0xFF00..=0xFF64
+        | 0xFFE0..=0xFFEF
+        | 0x20000..=0x3FFFF => CjkChar::Han,
         _ => return None,
     })
 }
@@ -58,7 +73,13 @@ pub fn classify(c: char) -> Option<CjkChar> {
 /// for shared Han when the locale is Japanese.
 pub fn script_order(locale: Option<&str>) -> [CjkScript; 4] {
     use CjkScript::*;
-    let tag = locale.unwrap_or("").split(['.', '@']).next().unwrap_or("").to_ascii_lowercase().replace('_', "-");
+    let tag = locale
+        .unwrap_or("")
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .replace('_', "-");
     let mut parts = tag.split('-');
     let lang = parts.next().unwrap_or("");
     let rest: Vec<&str> = parts.collect();
@@ -66,7 +87,9 @@ pub fn script_order(locale: Option<&str>) -> [CjkScript; 4] {
         "ja" => [Japanese, SimplifiedChinese, TraditionalChinese, Korean],
         "ko" => [Korean, TraditionalChinese, SimplifiedChinese, Japanese],
         "zh" | "yue" => {
-            let hant = rest.iter().any(|p| matches!(*p, "hant" | "tw" | "hk" | "mo"));
+            let hant = rest
+                .iter()
+                .any(|p| matches!(*p, "hant" | "tw" | "hk" | "mo"));
             let hans = rest.iter().any(|p| matches!(*p, "hans" | "cn" | "sg"));
             if (hant || lang == "yue") && !hans {
                 [TraditionalChinese, SimplifiedChinese, Japanese, Korean]
@@ -92,14 +115,22 @@ pub fn ui_script_order() -> [CjkScript; 4] {
 }
 
 fn detect_locale() -> Option<String> {
-    let env = |k: &str| std::env::var(k).ok().map(|v| v.trim().to_string()).filter(|v| !v.is_empty() && v != "C" && v != "POSIX" && !v.starts_with("C."));
+    let env = |k: &str| {
+        std::env::var(k)
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty() && v != "C" && v != "POSIX" && !v.starts_with("C."))
+    };
     if let Some(v) = env("PHOTOCRAFT_LOCALE") {
         return Some(v);
     }
     if let Some(v) = os_locale() {
         return Some(v);
     }
-    ["LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"].iter().find_map(|k| env(k)).map(|v| v.split(':').next().unwrap_or("").to_string())
+    ["LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"]
+        .iter()
+        .find_map(|k| env(k))
+        .map(|v| v.split(':').next().unwrap_or("").to_string())
 }
 
 #[cfg(target_os = "macos")]
@@ -119,13 +150,21 @@ fn os_locale() -> Option<String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     let out = std::process::Command::new("reg")
-        .args(["query", "HKCU\\Control Panel\\International", "/v", "LocaleName"])
+        .args([
+            "query",
+            "HKCU\\Control Panel\\International",
+            "/v",
+            "LocaleName",
+        ])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
     let text = String::from_utf8_lossy(&out.stdout);
     // "    LocaleName    REG_SZ    ja-JP"
-    text.lines().find(|l| l.contains("LocaleName")).and_then(|l| l.split_whitespace().last()).map(str::to_string)
+    text.lines()
+        .find(|l| l.contains("LocaleName"))
+        .and_then(|l| l.split_whitespace().last())
+        .map(str::to_string)
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
@@ -175,15 +214,25 @@ pub fn bplist_first_language(b: &[u8]) -> Option<String> {
     let string = |obj: usize| -> Option<String> {
         let (kind, n, start) = header(obj)?;
         match kind {
-            0x5 => b.get(start..start.checked_add(n)?).map(|s| String::from_utf8_lossy(s).into_owned()),
+            0x5 => b
+                .get(start..start.checked_add(n)?)
+                .map(|s| String::from_utf8_lossy(s).into_owned()),
             0x6 => {
                 let s = b.get(start..start.checked_add(n.checked_mul(2)?)?)?;
-                Some(String::from_utf16_lossy(&s.as_chunks::<2>().0.iter().map(|p| u16::from_be_bytes(*p)).collect::<Vec<_>>()))
+                Some(String::from_utf16_lossy(
+                    &s.as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|p| u16::from_be_bytes(*p))
+                        .collect::<Vec<_>>(),
+                ))
             }
             _ => None,
         }
     };
-    let obj_ref = |at: usize| -> Option<usize> { usize::try_from(be(b.get(at..at.checked_add(ref_size)?)?)).ok() };
+    let obj_ref = |at: usize| -> Option<usize> {
+        usize::try_from(be(b.get(at..at.checked_add(ref_size)?)?)).ok()
+    };
     let (kind, n, start) = header(top)?;
     if kind != 0xD {
         return None;
@@ -206,12 +255,41 @@ pub fn bplist_first_language(b: &[u8]) -> Option<String> {
 /// Family names (as the Type tool's font database knows them) per script, most preferred first.
 pub fn families(script: CjkScript) -> &'static [&'static str] {
     match script {
-        CjkScript::Japanese => &["Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "IPAexGothic"],
-        CjkScript::SimplifiedChinese => {
-            &["PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", "WenQuanYi Micro Hei", "WenQuanYi Zen Hei", "Heiti SC"]
-        }
-        CjkScript::TraditionalChinese => &["PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", "Hiragino Sans CNS", "Heiti TC"],
-        CjkScript::Korean => &["Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "NanumGothic", "UnDotum"],
+        CjkScript::Japanese => &[
+            "Hiragino Sans",
+            "Hiragino Kaku Gothic ProN",
+            "Yu Gothic",
+            "Meiryo",
+            "Noto Sans CJK JP",
+            "Noto Sans JP",
+            "IPAexGothic",
+        ],
+        CjkScript::SimplifiedChinese => &[
+            "PingFang SC",
+            "Hiragino Sans GB",
+            "Microsoft YaHei",
+            "Noto Sans CJK SC",
+            "Noto Sans SC",
+            "WenQuanYi Micro Hei",
+            "WenQuanYi Zen Hei",
+            "Heiti SC",
+        ],
+        CjkScript::TraditionalChinese => &[
+            "PingFang TC",
+            "Microsoft JhengHei",
+            "Noto Sans CJK TC",
+            "Noto Sans TC",
+            "Hiragino Sans CNS",
+            "Heiti TC",
+        ],
+        CjkScript::Korean => &[
+            "Apple SD Gothic Neo",
+            "Malgun Gothic",
+            "Noto Sans CJK KR",
+            "Noto Sans KR",
+            "NanumGothic",
+            "UnDotum",
+        ],
     }
 }
 
@@ -232,7 +310,10 @@ struct FontconfigCjkScan {
 #[cfg(target_os = "linux")]
 fn fontconfig_cjk_scan() -> &'static FontconfigCjkScan {
     static SCAN: std::sync::OnceLock<FontconfigCjkScan> = std::sync::OnceLock::new();
-    SCAN.get_or_init(|| FontconfigCjkScan { started: std::sync::atomic::AtomicBool::new(false), result: std::sync::Mutex::new(None) })
+    SCAN.get_or_init(|| FontconfigCjkScan {
+        started: std::sync::atomic::AtomicBool::new(false),
+        result: std::sync::Mutex::new(None),
+    })
 }
 
 #[cfg(target_os = "linux")]
@@ -251,12 +332,25 @@ pub fn start_fontconfig_cjk_scan() {
     if std::thread::Builder::new()
         .name("photocraft-fontconfig-cjk".into())
         .spawn(move || {
-            let result = [CjkScript::Japanese, CjkScript::SimplifiedChinese, CjkScript::TraditionalChinese, CjkScript::Korean].map(fontconfig_match);
-            *scan.result.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(result);
+            let result = [
+                CjkScript::Japanese,
+                CjkScript::SimplifiedChinese,
+                CjkScript::TraditionalChinese,
+                CjkScript::Korean,
+            ]
+            .map(fontconfig_match);
+            *scan
+                .result
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(result);
         })
         .is_err()
     {
-        *fontconfig_cjk_scan().result.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(std::array::from_fn(|_| None));
+        *fontconfig_cjk_scan()
+            .result
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(std::array::from_fn(|_| None));
     }
 }
 
@@ -268,7 +362,12 @@ pub fn start_fontconfig_cjk_scan() {}
 /// Whether the optional background Fontconfig CJK lookup is still running.
 pub fn fontconfig_cjk_scan_pending() -> bool {
     let scan = fontconfig_cjk_scan();
-    scan.started.load(std::sync::atomic::Ordering::Relaxed) && scan.result.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none()
+    scan.started.load(std::sync::atomic::Ordering::Relaxed)
+        && scan
+            .result
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_none()
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -291,17 +390,34 @@ fn fontconfig_match(script: CjkScript) -> Option<FontFile> {
         CjkScript::TraditionalChinese => "zh-tw",
         CjkScript::Korean => "ko",
     };
-    let output = std::process::Command::new("fc-match").args(["--format=%{file}\\t%{family[0]}\\n", &format!(":lang={language}")]).output().ok()?;
+    let output = std::process::Command::new("fc-match")
+        .args([
+            "--format=%{file}\\t%{family[0]}\\n",
+            &format!(":lang={language}"),
+        ])
+        .output()
+        .ok()?;
     if !output.status.success() {
         return None;
     }
-    let line = output.stdout.split(|byte| *byte == b'\n').find(|line| !line.is_empty())?;
+    let line = output
+        .stdout
+        .split(|byte| *byte == b'\n')
+        .find(|line| !line.is_empty())?;
     let separator = line.iter().position(|byte| *byte == b'\t')?;
     let path = line.get(..separator)?;
     let family = line.get(separator.checked_add(1)?..)?;
     let path = std::path::PathBuf::from(OsString::from_vec(path.to_vec()));
     if !path.is_absolute()
-        || !path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| matches!(ext.to_ascii_lowercase().as_str(), "ttf" | "otf" | "ttc" | "otc"))
+        || !path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| {
+                matches!(
+                    ext.to_ascii_lowercase().as_str(),
+                    "ttf" | "otf" | "ttc" | "otc"
+                )
+            })
         || !path.is_file()
     {
         return None;
@@ -317,13 +433,20 @@ fn fontconfig_match(script: CjkScript) -> Option<FontFile> {
         return None;
     }
     let mut bytes = Vec::new();
-    bytes.try_reserve_exact(usize::try_from(length).ok()?).ok()?;
+    bytes
+        .try_reserve_exact(usize::try_from(length).ok()?)
+        .ok()?;
     file.take(MAX_FONT_BYTES + 1).read_to_end(&mut bytes).ok()?;
-    if u64::try_from(bytes.len()).ok()? > MAX_FONT_BYTES || !fontconfig_font_covers_sample(&bytes, &family, script) {
+    if u64::try_from(bytes.len()).ok()? > MAX_FONT_BYTES
+        || !fontconfig_font_covers_sample(&bytes, &family, script)
+    {
         return None;
     }
 
-    Some(FontFile { path: path.canonicalize().unwrap_or(path), family })
+    Some(FontFile {
+        path: path.canonicalize().unwrap_or(path),
+        family,
+    })
 }
 
 #[cfg(target_os = "linux")]
@@ -331,14 +454,18 @@ fn fontconfig_font_covers_sample(bytes: &[u8], family: &str, script: CjkScript) 
     use skrifa::MetadataProvider;
 
     let index = face_index_for_family(bytes, family);
-    let Ok(font) = skrifa::FontRef::from_index(bytes, index) else { return false };
+    let Ok(font) = skrifa::FontRef::from_index(bytes, index) else {
+        return false;
+    };
     let sample = match script {
         CjkScript::Japanese => "レイヤー図",
         CjkScript::SimplifiedChinese => "图层",
         CjkScript::TraditionalChinese => "圖層",
         CjkScript::Korean => "카드 배경",
     };
-    sample.chars().all(|character| font.charmap().map(character).is_some())
+    sample
+        .chars()
+        .all(|character| font.charmap().map(character).is_some())
 }
 
 #[cfg(target_os = "linux")]
@@ -355,7 +482,12 @@ fn fontconfig_cjk_font(script: CjkScript) -> Option<FontFile> {
         CjkScript::TraditionalChinese => 2,
         CjkScript::Korean => 3,
     };
-    scan.result.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref()?.get(index)?.clone()
+    scan.result
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .as_ref()?
+        .get(index)?
+        .clone()
 }
 
 #[cfg(all(not(target_os = "linux"), not(target_arch = "wasm32")))]
@@ -368,25 +500,56 @@ fn fontconfig_cjk_font(_: CjkScript) -> Option<FontFile> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn font_files(script: CjkScript) -> Vec<FontFile> {
     use CjkScript::*;
-    let f = |p: &str, family: &'static str| FontFile { path: p.into(), family: family.to_string() };
+    let f = |p: &str, family: &'static str| FontFile {
+        path: p.into(),
+        family: family.to_string(),
+    };
     if cfg!(target_os = "macos") {
         let pingfang = |family| mac_pingfang().map(|path| FontFile { path, family });
         match script {
-            Japanese => vec![f("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc", ""), f("/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc", "")],
+            Japanese => vec![
+                f("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc", ""),
+                f("/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc", ""),
+            ],
             SimplifiedChinese => pingfang("PingFang SC".to_string())
                 .into_iter()
-                .chain([f("/System/Library/Fonts/Hiragino Sans GB.ttc", ""), f("/System/Library/Fonts/STHeiti Light.ttc", "Heiti SC")])
+                .chain([
+                    f("/System/Library/Fonts/Hiragino Sans GB.ttc", ""),
+                    f("/System/Library/Fonts/STHeiti Light.ttc", "Heiti SC"),
+                ])
                 .collect(),
-            TraditionalChinese => pingfang("PingFang TC".to_string()).into_iter().chain([f("/System/Library/Fonts/STHeiti Light.ttc", "Heiti TC")]).collect(),
-            Korean => vec![f("/System/Library/Fonts/AppleSDGothicNeo.ttc", "Apple SD Gothic Neo")],
+            TraditionalChinese => pingfang("PingFang TC".to_string())
+                .into_iter()
+                .chain([f("/System/Library/Fonts/STHeiti Light.ttc", "Heiti TC")])
+                .collect(),
+            Korean => vec![f(
+                "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+                "Apple SD Gothic Neo",
+            )],
         }
     } else if cfg!(target_os = "windows") {
         let dir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
-        let w = |file: &str, family: &'static str| FontFile { path: std::path::Path::new(&dir).join("Fonts").join(file), family: family.to_string() };
+        let w = |file: &str, family: &'static str| FontFile {
+            path: std::path::Path::new(&dir).join("Fonts").join(file),
+            family: family.to_string(),
+        };
         match script {
-            Japanese => vec![w("YuGothR.ttc", "Yu Gothic"), w("YuGothM.ttc", "Yu Gothic"), w("meiryo.ttc", "Meiryo"), w("msgothic.ttc", "")],
-            SimplifiedChinese => vec![w("msyh.ttc", "Microsoft YaHei"), w("msyh.ttf", ""), w("simsun.ttc", "")],
-            TraditionalChinese => vec![w("msjh.ttc", "Microsoft JhengHei"), w("msjh.ttf", ""), w("mingliu.ttc", "")],
+            Japanese => vec![
+                w("YuGothR.ttc", "Yu Gothic"),
+                w("YuGothM.ttc", "Yu Gothic"),
+                w("meiryo.ttc", "Meiryo"),
+                w("msgothic.ttc", ""),
+            ],
+            SimplifiedChinese => vec![
+                w("msyh.ttc", "Microsoft YaHei"),
+                w("msyh.ttf", ""),
+                w("simsun.ttc", ""),
+            ],
+            TraditionalChinese => vec![
+                w("msjh.ttc", "Microsoft JhengHei"),
+                w("msjh.ttf", ""),
+                w("mingliu.ttc", ""),
+            ],
             Korean => vec![w("malgun.ttf", ""), w("gulim.ttc", "")],
         }
     } else {
@@ -417,11 +580,17 @@ pub fn font_files(script: CjkScript) -> Vec<FontFile> {
             Japanese => vec![
                 f("/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf", ""),
                 f("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", ""),
-                f("/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf", ""),
+                f(
+                    "/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf",
+                    "",
+                ),
             ],
             SimplifiedChinese | TraditionalChinese => vec![
                 f("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", ""),
-                f("/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc", ""),
+                f(
+                    "/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",
+                    "",
+                ),
                 f("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", ""),
                 f("/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc", ""),
             ],
@@ -452,7 +621,10 @@ fn with_flatpak_host_fonts(files: Vec<FontFile>) -> Vec<FontFile> {
             file.path
                 .strip_prefix("/usr/share/fonts")
                 .ok()
-                .map(|relative| FontFile { path: std::path::Path::new("/run/host/fonts").join(relative), family: file.family.clone() })
+                .map(|relative| FontFile {
+                    path: std::path::Path::new("/run/host/fonts").join(relative),
+                    family: file.family.clone(),
+                })
         } else {
             None
         };
@@ -466,12 +638,23 @@ fn with_flatpak_host_fonts(files: Vec<FontFile>) -> Vec<FontFile> {
 /// but look worse than the script fonts).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn last_resort_files() -> Vec<FontFile> {
-    let f = |p: &str| FontFile { path: p.into(), family: String::new() };
+    let f = |p: &str| FontFile {
+        path: p.into(),
+        family: String::new(),
+    };
     if cfg!(target_os = "macos") {
-        vec![f("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"), f("/Library/Fonts/Arial Unicode.ttf")]
+        vec![
+            f("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
+            f("/Library/Fonts/Arial Unicode.ttf"),
+        ]
     } else if cfg!(target_os = "windows") {
         let dir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
-        vec![FontFile { path: std::path::Path::new(&dir).join("Fonts").join("ARIALUNI.TTF"), family: String::new() }]
+        vec![FontFile {
+            path: std::path::Path::new(&dir)
+                .join("Fonts")
+                .join("ARIALUNI.TTF"),
+            family: String::new(),
+        }]
     } else {
         with_flatpak_host_fonts(vec![
             f("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"),
@@ -490,14 +673,25 @@ pub fn mac_pingfang() -> Option<std::path::PathBuf> {
     if old.is_file() {
         return Some(old);
     }
-    let roots = [Path::new("/System/Library/AssetsV2"), Path::new("/System/Library/AssetsV2/PreinstalledAssetsV2/InstallWithOs")];
+    let roots = [
+        Path::new("/System/Library/AssetsV2"),
+        Path::new("/System/Library/AssetsV2/PreinstalledAssetsV2/InstallWithOs"),
+    ];
     for root in roots {
-        let Ok(rd) = std::fs::read_dir(root) else { continue };
+        let Ok(rd) = std::fs::read_dir(root) else {
+            continue;
+        };
         for e in rd.flatten().take(512) {
-            if !e.file_name().to_string_lossy().starts_with("com_apple_MobileAsset_Font") {
+            if !e
+                .file_name()
+                .to_string_lossy()
+                .starts_with("com_apple_MobileAsset_Font")
+            {
                 continue;
             }
-            let Ok(assets) = std::fs::read_dir(e.path()) else { continue };
+            let Ok(assets) = std::fs::read_dir(e.path()) else {
+                continue;
+            };
             for a in assets.flatten().take(4096) {
                 let p = a.path().join("AssetData/PingFang.ttc");
                 if p.is_file() {
@@ -516,10 +710,17 @@ pub fn face_index_for_family(bytes: &[u8], family: &str) -> u32 {
     if family.is_empty() {
         return 0;
     }
-    let Ok(FileRef::Collection(c)) = FileRef::new(bytes) else { return 0 };
+    let Ok(FileRef::Collection(c)) = FileRef::new(bytes) else {
+        return 0;
+    };
     for (i, f) in c.iter().enumerate() {
         let Ok(f) = f else { continue };
-        let named = [StringId::TYPOGRAPHIC_FAMILY_NAME, StringId::FAMILY_NAME].iter().any(|id| f.localized_strings(*id).any(|s| s.chars().eq(family.chars())));
+        let named = [StringId::TYPOGRAPHIC_FAMILY_NAME, StringId::FAMILY_NAME]
+            .iter()
+            .any(|id| {
+                f.localized_strings(*id)
+                    .any(|s| s.chars().eq(family.chars()))
+            });
         if named {
             return i as u32;
         }
@@ -544,7 +745,14 @@ mod tests {
         assert_eq!(script_order(Some("zh-Hans-HK"))[0], SimplifiedChinese);
         assert_eq!(script_order(Some("ko-KR"))[0], Korean);
         // Non-CJK and unknown: Japanese forms are never first.
-        for l in [None, Some(""), Some("en_US.UTF-8"), Some("C"), Some("de"), Some("!!@@")] {
+        for l in [
+            None,
+            Some(""),
+            Some("en_US.UTF-8"),
+            Some("C"),
+            Some("de"),
+            Some("!!@@"),
+        ] {
             let o = script_order(l);
             assert_eq!(o[0], SimplifiedChinese);
             assert_ne!(o[0], Japanese);
@@ -599,18 +807,24 @@ mod tests {
     /// `plutil -convert binary1` of a dict with AKLastLocale, AppleLanguages
     /// [zh-Hant-TW, en-US] and AppleLocale.
     const SAMPLE: &[u8] = &[
-        0x62, 0x70, 0x6c, 0x69, 0x73, 0x74, 0x30, 0x30, 0xd3, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x5b, 0x41, 0x70, 0x70, 0x6c, 0x65, 0x4c, 0x6f, 0x63, 0x61,
-        0x6c, 0x65, 0x5c, 0x41, 0x4b, 0x4c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x65, 0x5e, 0x41, 0x70, 0x70, 0x6c, 0x65, 0x4c, 0x61, 0x6e, 0x67,
-        0x75, 0x61, 0x67, 0x65, 0x73, 0x55, 0x7a, 0x68, 0x5f, 0x54, 0x57, 0x55, 0x65, 0x6e, 0x5f, 0x55, 0x53, 0xa2, 0x07, 0x08, 0x5a, 0x7a, 0x68, 0x2d, 0x48,
-        0x61, 0x6e, 0x74, 0x2d, 0x54, 0x57, 0x55, 0x65, 0x6e, 0x2d, 0x55, 0x53, 0x08, 0x0f, 0x1b, 0x28, 0x37, 0x3d, 0x43, 0x46, 0x51, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x57,
+        0x62, 0x70, 0x6c, 0x69, 0x73, 0x74, 0x30, 0x30, 0xd3, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+        0x5b, 0x41, 0x70, 0x70, 0x6c, 0x65, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x65, 0x5c, 0x41, 0x4b,
+        0x4c, 0x61, 0x73, 0x74, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x65, 0x5e, 0x41, 0x70, 0x70, 0x6c,
+        0x65, 0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x73, 0x55, 0x7a, 0x68, 0x5f, 0x54,
+        0x57, 0x55, 0x65, 0x6e, 0x5f, 0x55, 0x53, 0xa2, 0x07, 0x08, 0x5a, 0x7a, 0x68, 0x2d, 0x48,
+        0x61, 0x6e, 0x74, 0x2d, 0x54, 0x57, 0x55, 0x65, 0x6e, 0x2d, 0x55, 0x53, 0x08, 0x0f, 0x1b,
+        0x28, 0x37, 0x3d, 0x43, 0x46, 0x51, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x57,
     ];
 
     #[test]
     fn reads_apple_languages_and_rejects_garbage() {
         assert_eq!(bplist_first_language(SAMPLE).as_deref(), Some("zh-Hant-TW"));
-        assert_eq!(script_order(bplist_first_language(SAMPLE).as_deref())[0], TraditionalChinese);
+        assert_eq!(
+            script_order(bplist_first_language(SAMPLE).as_deref())[0],
+            TraditionalChinese
+        );
         assert_eq!(bplist_first_language(b""), None);
         assert_eq!(bplist_first_language(b"bplist00"), None);
         assert_eq!(bplist_first_language(&[0xFF; 64]), None);
@@ -630,7 +844,10 @@ mod tests {
     #[test]
     fn face_index_handles_bad_data() {
         assert_eq!(face_index_for_family(b"", "PingFang SC"), 0);
-        assert_eq!(face_index_for_family(b"ttcf\0\0\0\0garbage", "PingFang SC"), 0);
+        assert_eq!(
+            face_index_for_family(b"ttcf\0\0\0\0garbage", "PingFang SC"),
+            0
+        );
         let inter = include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf");
         assert_eq!(face_index_for_family(inter, "Inter"), 0);
         assert_eq!(face_index_for_family(inter, ""), 0);
@@ -641,7 +858,10 @@ mod tests {
     fn fontconfig_candidates_must_cover_the_requested_script() {
         let inter = include_bytes!("../../../assets/photocraft/fonts/Inter-Regular.ttf");
         for script in [Japanese, SimplifiedChinese, TraditionalChinese, Korean] {
-            assert!(!fontconfig_font_covers_sample(inter, "Inter", script), "{script:?}");
+            assert!(
+                !fontconfig_font_covers_sample(inter, "Inter", script),
+                "{script:?}"
+            );
         }
     }
 
@@ -649,9 +869,15 @@ mod tests {
     #[test]
     fn fontconfig_matches_cover_the_requested_script() {
         for script in [Japanese, SimplifiedChinese, TraditionalChinese, Korean] {
-            let Some(file) = fontconfig_match(script) else { continue };
+            let Some(file) = fontconfig_match(script) else {
+                continue;
+            };
             let bytes = std::fs::read(&file.path).expect("Fontconfig match remains readable");
-            assert!(fontconfig_font_covers_sample(&bytes, &file.family, script), "{script:?}: {}", file.path.display());
+            assert!(
+                fontconfig_font_covers_sample(&bytes, &file.family, script),
+                "{script:?}: {}",
+                file.path.display()
+            );
         }
     }
 
@@ -673,16 +899,37 @@ mod flatpak_tests {
 
     #[test]
     fn cjk_discovery_includes_host_fonts_with_the_matching_collection_face() {
-        for script in [CjkScript::Japanese, CjkScript::SimplifiedChinese, CjkScript::TraditionalChinese, CjkScript::Korean] {
+        for script in [
+            CjkScript::Japanese,
+            CjkScript::SimplifiedChinese,
+            CjkScript::TraditionalChinese,
+            CjkScript::Korean,
+        ] {
             let files = font_files(script);
             let native = &files[0];
             let host = &files[1];
-            assert_eq!(native.path, std::path::Path::new("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"));
-            assert_eq!(host.path, std::path::Path::new("/run/host/fonts/opentype/noto/NotoSansCJK-Regular.ttc"));
-            assert_eq!(host.family, families(script).iter().find(|family| family.starts_with("Noto Sans CJK")).copied().unwrap());
+            assert_eq!(
+                native.path,
+                std::path::Path::new("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+            );
+            assert_eq!(
+                host.path,
+                std::path::Path::new("/run/host/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+            );
+            assert_eq!(
+                host.family,
+                families(script)
+                    .iter()
+                    .find(|family| family.starts_with("Noto Sans CJK"))
+                    .copied()
+                    .unwrap()
+            );
             for pair in files.windows(2) {
                 if let Ok(relative) = pair[0].path.strip_prefix("/usr/share/fonts") {
-                    assert_eq!(pair[1].path, std::path::Path::new("/run/host/fonts").join(relative));
+                    assert_eq!(
+                        pair[1].path,
+                        std::path::Path::new("/run/host/fonts").join(relative)
+                    );
                     assert_eq!(pair[1].family, pair[0].family);
                 }
             }
@@ -692,8 +939,8 @@ mod flatpak_tests {
     #[test]
     fn last_resort_discovery_includes_the_host_droid_font() {
         let files = last_resort_files();
-        assert!(
-            files.iter().any(|file| file.path == std::path::Path::new("/run/host/fonts/truetype/droid/DroidSansFallbackFull.ttf") && file.family.is_empty())
-        );
+        assert!(files.iter().any(|file| file.path
+            == std::path::Path::new("/run/host/fonts/truetype/droid/DroidSansFallbackFull.ttf")
+            && file.family.is_empty()));
     }
 }

@@ -77,28 +77,36 @@ pub(crate) struct DescribeImageRequest {
     pub image_path: Option<String>,
 
     /// Inline image bytes, base64-encoded.
-    #[schemars(description = "Base64-encoded image bytes. Mutually exclusive with image_path. \
-                              Max 16 MiB decoded.")]
+    #[schemars(
+        description = "Base64-encoded image bytes. Mutually exclusive with image_path. \
+                              Max 16 MiB decoded."
+    )]
     #[serde(default)]
     pub image_base64: Option<String>,
 
     /// What to ask of the image.
-    #[schemars(description = "caption (one short description), dense_region (per-region \
+    #[schemars(
+        description = "caption (one short description), dense_region (per-region \
                               descriptions with boxes), full_page_ocr (text only, never a \
-                              description), or vqa (needs `question`). Default caption.")]
+                              description), or vqa (needs `question`). Default caption."
+    )]
     #[serde(default)]
     pub mode: Option<String>,
 
     /// The question, required in `vqa` mode.
-    #[schemars(description = "The question to ask about the image. Required when mode is vqa, \
-                              rejected otherwise.")]
+    #[schemars(
+        description = "The question to ask about the image. Required when mode is vqa, \
+                              rejected otherwise."
+    )]
     #[serde(default)]
     pub question: Option<String>,
 
     /// Catalog id of the vision model.
-    #[schemars(description = "Catalog id of the vision model. Default smolvlm-500m-q8. A \
+    #[schemars(
+        description = "Catalog id of the vision model. Default smolvlm-500m-q8. A \
                               document model such as granite-docling-258m is refused for \
-                              caption/vqa: it answers, but not with what you asked for.")]
+                              caption/vqa: it answers, but not with what you asked for."
+    )]
     #[serde(default)]
     pub model: Option<String>,
 
@@ -137,10 +145,16 @@ fn resolve_source(req: &DescribeImageRequest) -> Result<Source, String> {
         (Some(path), None) => {
             let path = std::path::PathBuf::from(path);
             if !path.is_file() {
-                return Err(format!("image_path {} is not a readable file", path.display()));
+                return Err(format!(
+                    "image_path {} is not a readable file",
+                    path.display()
+                ));
             }
-            Ok(Source { path, _scratch: None })
-        },
+            Ok(Source {
+                path,
+                _scratch: None,
+            })
+        }
         (None, Some(encoded)) => {
             let bytes = base64::engine::general_purpose::STANDARD
                 .decode(encoded.as_bytes())
@@ -149,15 +163,21 @@ fn resolve_source(req: &DescribeImageRequest) -> Result<Source, String> {
                 return Err("image payload is empty after base64 decode".to_owned());
             }
             if bytes.len() > MAX_IMAGE_BYTES {
-                return Err(format!("image is {}B (> max {MAX_IMAGE_BYTES}B)", bytes.len()));
+                return Err(format!(
+                    "image is {}B (> max {MAX_IMAGE_BYTES}B)",
+                    bytes.len()
+                ));
             }
             let dir =
                 tempfile::tempdir().map_err(|e| format!("cannot create a work directory: {e}"))?;
             let path = dir.path().join("image.png");
             std::fs::write(&path, &bytes)
                 .map_err(|e| format!("cannot stage the inline image: {e}"))?;
-            Ok(Source { path, _scratch: Some(dir) })
-        },
+            Ok(Source {
+                path,
+                _scratch: Some(dir),
+            })
+        }
         (Some(_), Some(_)) => Err("image_path and image_base64 are mutually exclusive".to_owned()),
         (None, None) => Err("one of image_path or image_base64 is required".to_owned()),
     }
@@ -169,8 +189,17 @@ fn resolve_source(req: &DescribeImageRequest) -> Result<Source, String> {
 /// dropping it would answer a different question than the caller asked, and
 /// they would have no way to tell from the response.
 fn resolve_mode(req: &DescribeImageRequest) -> Result<aphrody_vision::VisionMode, String> {
-    let raw = req.mode.as_deref().unwrap_or("caption").trim().to_ascii_lowercase();
-    let question = req.question.as_deref().map(str::trim).filter(|q| !q.is_empty());
+    let raw = req
+        .mode
+        .as_deref()
+        .unwrap_or("caption")
+        .trim()
+        .to_ascii_lowercase();
+    let question = req
+        .question
+        .as_deref()
+        .map(str::trim)
+        .filter(|q| !q.is_empty());
 
     match raw.as_str() {
         "vqa" => {
@@ -181,11 +210,15 @@ fn resolve_mode(req: &DescribeImageRequest) -> Result<aphrody_vision::VisionMode
                     question.len()
                 ));
             }
-            Ok(aphrody_vision::VisionMode::Vqa { question: question.to_owned() })
-        },
+            Ok(aphrody_vision::VisionMode::Vqa {
+                question: question.to_owned(),
+            })
+        }
         other => {
             if question.is_some() {
-                return Err(format!("`question` is only meaningful in mode vqa, not `{other}`"));
+                return Err(format!(
+                    "`question` is only meaningful in mode vqa, not `{other}`"
+                ));
             }
             match other {
                 "caption" => Ok(aphrody_vision::VisionMode::Caption),
@@ -195,7 +228,7 @@ fn resolve_mode(req: &DescribeImageRequest) -> Result<aphrody_vision::VisionMode
                     "unknown mode `{unknown}` (expected caption, dense_region, full_page_ocr, vqa)"
                 )),
             }
-        },
+        }
     }
 }
 
@@ -210,9 +243,15 @@ pub(crate) async fn describe(req: DescribeImageRequest) -> String {
         Err(reason) => return error_envelope("VISION_BAD_REQUEST", reason),
     };
 
-    let model = req.model.clone().unwrap_or_else(|| DEFAULT_MODEL.to_owned());
+    let model = req
+        .model
+        .clone()
+        .unwrap_or_else(|| DEFAULT_MODEL.to_owned());
     if model.trim().is_empty() {
-        return error_envelope("VISION_BAD_REQUEST", "model must be non-empty when provided");
+        return error_envelope(
+            "VISION_BAD_REQUEST",
+            "model must be non-empty when provided",
+        );
     }
 
     let mut options = aphrody_vision::VisionOptions::new(&model, mode);
@@ -244,14 +283,14 @@ pub(crate) async fn describe(req: DescribeImageRequest) -> String {
         // under their own codes rather than as a generic backend failure.
         Ok(Err(err @ aphrody_vision::VisionError::ModeUnsupported { .. })) => {
             return error_envelope("VISION_MODE_UNSUPPORTED", err.to_string());
-        },
+        }
         Ok(Err(err @ aphrody_vision::VisionError::ModelNotInstalled { .. })) => {
             return error_envelope("VISION_MODEL_NOT_INSTALLED", err.to_string());
-        },
+        }
         Ok(Err(err)) => return error_envelope("VISION_BACKEND_ERROR", err.to_string()),
         Err(err) => {
             return error_envelope("VISION_INTERNAL", format!("vision task panicked: {err}"));
-        },
+        }
     };
 
     // Both shapes are returned on purpose: `text` for a caller that wants one
@@ -288,16 +327,28 @@ mod tests {
     fn schema_exposes_the_documented_fields() {
         let schema = rmcp::schemars::schema_for!(DescribeImageRequest);
         let json = serde_json::to_string(&schema).expect("schema serialise");
-        for field in
-            ["image_path", "image_base64", "mode", "question", "model", "max_tokens", "keep_raw"]
-        {
-            assert!(json.contains(&format!("\"{field}\"")), "schema missing {field}: {json}");
+        for field in [
+            "image_path",
+            "image_base64",
+            "mode",
+            "question",
+            "model",
+            "max_tokens",
+            "keep_raw",
+        ] {
+            assert!(
+                json.contains(&format!("\"{field}\"")),
+                "schema missing {field}: {json}"
+            );
         }
     }
 
     #[test]
     fn the_default_mode_is_caption() {
-        assert!(matches!(resolve_mode(&blank()), Ok(aphrody_vision::VisionMode::Caption)));
+        assert!(matches!(
+            resolve_mode(&blank()),
+            Ok(aphrody_vision::VisionMode::Caption)
+        ));
     }
 
     #[test]
@@ -309,7 +360,10 @@ mod tests {
             ("full_page_ocr", aphrody_vision::ModeKind::FullPageOcr),
             ("full-page-ocr", aphrody_vision::ModeKind::FullPageOcr),
         ] {
-            let req = DescribeImageRequest { mode: Some(raw.to_owned()), ..blank() };
+            let req = DescribeImageRequest {
+                mode: Some(raw.to_owned()),
+                ..blank()
+            };
             let mode = resolve_mode(&req).unwrap_or_else(|e| panic!("mode `{raw}` rejected: {e}"));
             assert_eq!(mode.kind(), expected, "for `{raw}`");
         }
@@ -317,13 +371,22 @@ mod tests {
 
     #[test]
     fn mode_parsing_is_case_and_whitespace_insensitive() {
-        let req = DescribeImageRequest { mode: Some("  CAPTION ".to_owned()), ..blank() };
-        assert!(matches!(resolve_mode(&req), Ok(aphrody_vision::VisionMode::Caption)));
+        let req = DescribeImageRequest {
+            mode: Some("  CAPTION ".to_owned()),
+            ..blank()
+        };
+        assert!(matches!(
+            resolve_mode(&req),
+            Ok(aphrody_vision::VisionMode::Caption)
+        ));
     }
 
     #[test]
     fn vqa_without_a_question_is_refused_rather_than_silently_captioned() {
-        let req = DescribeImageRequest { mode: Some("vqa".to_owned()), ..blank() };
+        let req = DescribeImageRequest {
+            mode: Some("vqa".to_owned()),
+            ..blank()
+        };
         let err = resolve_mode(&req).unwrap_err();
         assert!(err.contains("question"), "{err}");
     }
@@ -353,7 +416,10 @@ mod tests {
 
     #[test]
     fn an_unknown_mode_lists_the_valid_ones() {
-        let req = DescribeImageRequest { mode: Some("describe-please".to_owned()), ..blank() };
+        let req = DescribeImageRequest {
+            mode: Some("describe-please".to_owned()),
+            ..blank()
+        };
         let err = resolve_mode(&req).unwrap_err();
         for expected in ["caption", "dense_region", "full_page_ocr", "vqa"] {
             assert!(err.contains(expected), "`{expected}` missing from: {err}");
@@ -378,29 +444,44 @@ mod tests {
             image_base64: Some("Zm9v".to_owned()),
             ..blank()
         };
-        assert!(resolve_source(&both).unwrap_err().contains("mutually exclusive"));
+        assert!(
+            resolve_source(&both)
+                .unwrap_err()
+                .contains("mutually exclusive")
+        );
     }
 
     #[test]
     fn a_missing_file_is_named_in_the_error() {
-        let req =
-            DescribeImageRequest { image_path: Some("Z:/nope/absent.png".to_owned()), ..blank() };
+        let req = DescribeImageRequest {
+            image_path: Some("Z:/nope/absent.png".to_owned()),
+            ..blank()
+        };
         assert!(resolve_source(&req).unwrap_err().contains("absent.png"));
     }
 
     #[test]
     fn undecodable_base64_is_rejected_before_any_model_load() {
-        let req = DescribeImageRequest { image_base64: Some("not base64!!".to_owned()), ..blank() };
+        let req = DescribeImageRequest {
+            image_base64: Some("not base64!!".to_owned()),
+            ..blank()
+        };
         assert!(resolve_source(&req).unwrap_err().contains("decode"));
     }
 
     #[test]
     fn an_inline_image_is_staged_as_a_real_file_for_the_child_process() {
         let png = base64::engine::general_purpose::STANDARD.encode(b"\x89PNG\r\n\x1a\nstub");
-        let req = DescribeImageRequest { image_base64: Some(png), ..blank() };
+        let req = DescribeImageRequest {
+            image_base64: Some(png),
+            ..blank()
+        };
         let source = resolve_source(&req).expect("inline image must stage");
         assert!(source.path.is_file(), "{}", source.path.display());
-        assert!(source._scratch.is_some(), "the scratch dir must outlive the call");
+        assert!(
+            source._scratch.is_some(),
+            "the scratch dir must outlive the call"
+        );
     }
 
     #[tokio::test]

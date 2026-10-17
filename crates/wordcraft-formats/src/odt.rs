@@ -18,7 +18,9 @@ use quick_xml::XmlVersion;
 use quick_xml::events::{BytesStart, Event};
 use wordcraft_doc::{Align, Document, Rgb};
 
-use crate::model::{self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, make_img, mime_of};
+use crate::model::{
+    self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, make_img, mime_of,
+};
 
 /// Largest zip entry we inflate.
 const MAX_ENTRY: u64 = 256 << 20;
@@ -101,7 +103,10 @@ fn text_props(f: &Fmt) -> String {
         p.push_str(&format!(" fo:color=\"#{}\"", c.hex().to_ascii_lowercase()));
     }
     if let Some(c) = f.background {
-        p.push_str(&format!(" fo:background-color=\"#{}\"", c.hex().to_ascii_lowercase()));
+        p.push_str(&format!(
+            " fo:background-color=\"#{}\"",
+            c.hex().to_ascii_lowercase()
+        ));
     }
     if let Some(s) = f.size {
         p.push_str(&format!(" fo:font-size=\"{}\"", pt(s)));
@@ -109,7 +114,10 @@ fn text_props(f: &Fmt) -> String {
     if f.code {
         p.push_str(&format!(" fo:font-family=\"'{}'\" style:font-family-generic=\"modern\" style:font-pitch=\"fixed\"", model::MONO_FONT));
     } else if let Some(fam) = &f.font {
-        p.push_str(&format!(" fo:font-family=\"'{}'\"", x(&fam.replace('\'', ""))));
+        p.push_str(&format!(
+            " fo:font-family=\"'{}'\"",
+            x(&fam.replace('\'', ""))
+        ));
     }
     p
 }
@@ -149,7 +157,9 @@ impl Writer {
         match p.align {
             Some(Align::Center) => props.push_str(" fo:text-align=\"center\""),
             Some(Align::Right) => props.push_str(" fo:text-align=\"end\""),
-            Some(Align::Justify) | Some(Align::Distribute) => props.push_str(" fo:text-align=\"justify\""),
+            Some(Align::Justify) | Some(Align::Distribute) => {
+                props.push_str(" fo:text-align=\"justify\"")
+            }
             Some(Align::Left) => props.push_str(" fo:text-align=\"start\""),
             None => {}
         }
@@ -172,9 +182,17 @@ impl Writer {
     }
 
     fn picture(&mut self, img: &model::Img) -> String {
-        let ext = if img.ext == "jpeg" { "jpg".to_string() } else { img.ext.clone() };
+        let ext = if img.ext == "jpeg" {
+            "jpg".to_string()
+        } else {
+            img.ext.clone()
+        };
         let name = format!("Pictures/image{}.{}", self.pictures.len() + 1, ext);
-        self.pictures.push((name.clone(), img.data.clone(), mime_of(&img.ext).to_string()));
+        self.pictures.push((
+            name.clone(),
+            img.data.clone(),
+            mime_of(&img.ext).to_string(),
+        ));
         name
     }
 
@@ -190,7 +208,11 @@ impl Writer {
                         if *spaces == 0 {
                             return;
                         }
-                        let (lit, extra) = if prev_space { (0, *spaces) } else { (1, *spaces - 1) };
+                        let (lit, extra) = if prev_space {
+                            (0, *spaces)
+                        } else {
+                            (1, *spaces - 1)
+                        };
                         if lit == 1 {
                             body.push(' ');
                         }
@@ -222,11 +244,19 @@ impl Writer {
                     }
                     let link = f.link.as_ref();
                     if let Some(l) = link {
-                        out.push_str(&format!("<text:a xlink:type=\"simple\" xlink:href=\"{}\">", x(l)));
+                        out.push_str(&format!(
+                            "<text:a xlink:type=\"simple\" xlink:href=\"{}\">",
+                            x(l)
+                        ));
                     }
-                    let fs = Fmt { link: None, ..f.clone() };
+                    let fs = Fmt {
+                        link: None,
+                        ..f.clone()
+                    };
                     match self.text_style(&fs) {
-                        Some(n) => out.push_str(&format!("<text:span text:style-name=\"{n}\">{body}</text:span>")),
+                        Some(n) => out.push_str(&format!(
+                            "<text:span text:style-name=\"{n}\">{body}</text:span>"
+                        )),
                         None => out.push_str(&body),
                     }
                     if link.is_some() {
@@ -247,7 +277,9 @@ impl Writer {
                     out.push_str("</draw:frame>");
                     prev_space = false;
                 }
-                Inline::Anchor(a) => out.push_str(&format!("<text:bookmark text:name=\"{}\"/>", x(a))),
+                Inline::Anchor(a) => {
+                    out.push_str(&format!("<text:bookmark text:name=\"{}\"/>", x(a)))
+                }
                 Inline::Figure(_) | Inline::Equation { .. } => {}
             }
         }
@@ -257,7 +289,10 @@ impl Writer {
         let style = self.para_style(p);
         match p.kind {
             Kind::Heading(n) => {
-                out.push_str(&format!("<text:h text:style-name=\"{style}\" text:outline-level=\"{}\">", n.clamp(1, 6)));
+                out.push_str(&format!(
+                    "<text:h text:style-name=\"{style}\" text:outline-level=\"{}\">",
+                    n.clamp(1, 6)
+                ));
                 self.inlines(&p.inlines, out);
                 out.push_str("</text:h>");
             }
@@ -364,18 +399,28 @@ impl Writer {
 
     fn table(&mut self, t: &FTable, out: &mut String, depth: usize) {
         let cols = t.cols().max(1);
-        let widths: Vec<f32> = if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 0.0) {
-            t.widths.clone()
-        } else {
-            vec![468.0 / cols as f32; cols]
-        };
+        let widths: Vec<f32> =
+            if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 0.0) {
+                t.widths.clone()
+            } else {
+                vec![468.0 / cols as f32; cols]
+            };
         self.tables.push(widths);
         let tn = self.tables.len();
-        out.push_str(&format!("<table:table table:name=\"Table{tn}\" table:style-name=\"Table{tn}\">"));
+        out.push_str(&format!(
+            "<table:table table:name=\"Table{tn}\" table:style-name=\"Table{tn}\">"
+        ));
         for c in 0..cols {
-            out.push_str(&format!("<table:table-column table:style-name=\"Table{tn}.C{}\"/>", c + 1));
+            out.push_str(&format!(
+                "<table:table-column table:style-name=\"Table{tn}.C{}\"/>",
+                c + 1
+            ));
         }
-        let header_rows = t.rows.iter().take_while(|r| !r.is_empty() && r.iter().all(|c| c.header)).count();
+        let header_rows = t
+            .rows
+            .iter()
+            .take_while(|r| !r.is_empty() && r.iter().all(|c| c.header))
+            .count();
         for (ri, row) in t.rows.iter().enumerate() {
             if ri == 0 && header_rows > 0 {
                 out.push_str("<table:table-header-rows>");
@@ -410,7 +455,9 @@ impl Writer {
                 }
             }
             for _ in g..cols {
-                out.push_str("<table:table-cell office:value-type=\"string\"><text:p/></table:table-cell>");
+                out.push_str(
+                    "<table:table-cell office:value-type=\"string\"><text:p/></table:table-cell>",
+                );
             }
             out.push_str("</table:table-row>");
             if ri + 1 == header_rows {
@@ -467,7 +514,9 @@ impl Writer {
             }
         }
         for (i, sh) in self.cell_styles.iter().enumerate() {
-            let bg = sh.map(|c| format!(" fo:background-color=\"#{}\"", c.hex().to_ascii_lowercase())).unwrap_or_default();
+            let bg = sh
+                .map(|c| format!(" fo:background-color=\"#{}\"", c.hex().to_ascii_lowercase()))
+                .unwrap_or_default();
             s.push_str(&format!(
                 "<style:style style:name=\"Cell{}\" style:family=\"table-cell\"><style:table-cell-properties fo:padding=\"4pt\" fo:border=\"0.5pt solid #000000\"{bg}/></style:style>",
                 i + 1
@@ -479,12 +528,16 @@ impl Writer {
 }
 
 fn styles_xml(sec: &wordcraft_doc::SectionProps, body_font: &str) -> String {
-    let mut s = format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<office:document-styles {NS}><office:styles>");
+    let mut s = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<office:document-styles {NS}><office:styles>"
+    );
     s.push_str(&format!(
         "<style:default-style style:family=\"paragraph\"><style:paragraph-properties fo:margin-bottom=\"8pt\"/><style:text-properties fo:font-family=\"'{}'\" fo:font-size=\"12pt\"/></style:default-style>",
         x(body_font)
     ));
-    s.push_str("<style:style style:name=\"Standard\" style:family=\"paragraph\" style:class=\"text\"/>");
+    s.push_str(
+        "<style:style style:name=\"Standard\" style:family=\"paragraph\" style:class=\"text\"/>",
+    );
     s.push_str("<style:style style:name=\"Heading\" style:family=\"paragraph\" style:parent-style-name=\"Standard\" style:class=\"text\"><style:paragraph-properties fo:margin-top=\"12pt\" fo:margin-bottom=\"4pt\" fo:keep-with-next=\"always\"/><style:text-properties fo:color=\"#0f4761\"/></style:style>");
     let sizes = [20.0, 16.0, 14.0, 12.0, 12.0, 11.0];
     for (i, sz) in sizes.iter().enumerate() {
@@ -513,8 +566,9 @@ fn styles_xml(sec: &wordcraft_doc::SectionProps, body_font: &str) -> String {
 }
 
 fn meta_xml(m: &Meta) -> String {
-    let mut s =
-        format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<office:document-meta {NS}><office:meta><meta:generator>WordCraft</meta:generator>");
+    let mut s = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<office:document-meta {NS}><office:meta><meta:generator>WordCraft</meta:generator>"
+    );
     if !m.title.is_empty() {
         s.push_str(&format!("<dc:title>{}</dc:title>", x(&m.title)));
     }
@@ -522,16 +576,31 @@ fn meta_xml(m: &Meta) -> String {
         s.push_str(&format!("<dc:subject>{}</dc:subject>", x(&m.subject)));
     }
     if !m.description.is_empty() {
-        s.push_str(&format!("<dc:description>{}</dc:description>", x(&m.description)));
+        s.push_str(&format!(
+            "<dc:description>{}</dc:description>",
+            x(&m.description)
+        ));
     }
     if !m.author.is_empty() {
-        s.push_str(&format!("<meta:initial-creator>{}</meta:initial-creator><dc:creator>{}</dc:creator>", x(&m.author), x(&m.author)));
+        s.push_str(&format!(
+            "<meta:initial-creator>{}</meta:initial-creator><dc:creator>{}</dc:creator>",
+            x(&m.author),
+            x(&m.author)
+        ));
     }
-    for k in m.keywords.split([',', ';']).map(str::trim).filter(|k| !k.is_empty()) {
+    for k in m
+        .keywords
+        .split([',', ';'])
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
+    {
         s.push_str(&format!("<meta:keyword>{}</meta:keyword>", x(k)));
     }
     if !m.created.is_empty() {
-        s.push_str(&format!("<meta:creation-date>{}</meta:creation-date>", x(m.created.trim_end_matches('Z'))));
+        s.push_str(&format!(
+            "<meta:creation-date>{}</meta:creation-date>",
+            x(m.created.trim_end_matches('Z'))
+        ));
     }
     s.push_str("</office:meta></office:document-meta>\n");
     s
@@ -547,24 +616,35 @@ pub fn export(doc: &Document) -> Result<Vec<u8>, String> {
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<office:document-content {NS}>{}<office:body><office:text>\n{body}</office:text></office:body></office:document-content>\n",
         w.automatic_styles()
     );
-    let body_font = doc.styles.default_chr.font.clone().unwrap_or_else(|| wordcraft_doc::styles::BODY_FONT.to_string());
+    let body_font = doc
+        .styles
+        .default_chr
+        .font
+        .clone()
+        .unwrap_or_else(|| wordcraft_doc::styles::BODY_FONT.to_string());
     let styles = styles_xml(&doc.last_section, &body_font);
     let meta = meta_xml(&flow.meta);
     let mut manifest = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.3\">\n<manifest:file-entry manifest:full-path=\"/\" manifest:version=\"1.3\" manifest:media-type=\"application/vnd.oasis.opendocument.text\"/>\n<manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>\n<manifest:file-entry manifest:full-path=\"styles.xml\" manifest:media-type=\"text/xml\"/>\n<manifest:file-entry manifest:full-path=\"meta.xml\" manifest:media-type=\"text/xml\"/>\n",
     );
     for (name, _, mime) in &w.pictures {
-        manifest.push_str(&format!("<manifest:file-entry manifest:full-path=\"{}\" manifest:media-type=\"{mime}\"/>\n", x(name)));
+        manifest.push_str(&format!(
+            "<manifest:file-entry manifest:full-path=\"{}\" manifest:media-type=\"{mime}\"/>\n",
+            x(name)
+        ));
     }
     manifest.push_str("</manifest:manifest>\n");
 
     let err = |e: zip::result::ZipError| format!("ODT: {e}");
     let ioerr = |e: std::io::Error| format!("ODT: {e}");
     let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
-    let stored = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-    let deflated = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let stored =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let deflated = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     z.start_file("mimetype", stored).map_err(err)?;
-    z.write_all(b"application/vnd.oasis.opendocument.text").map_err(ioerr)?;
+    z.write_all(b"application/vnd.oasis.opendocument.text")
+        .map_err(ioerr)?;
     for (name, data) in [
         ("META-INF/manifest.xml", manifest.as_bytes()),
         ("content.xml", content.as_bytes()),
@@ -662,8 +742,10 @@ fn attrs_of(e: &BytesStart<'_>) -> Attrs {
     let mut v = Vec::new();
     for a in e.attributes().with_checks(false).flatten().take(128) {
         let k = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-        let val =
-            a.normalized_value(XmlVersion::Explicit1_0).map(|c| c.into_owned()).unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned());
+        let val = a
+            .normalized_value(XmlVersion::Explicit1_0)
+            .map(|c| c.into_owned())
+            .unwrap_or_else(|_| String::from_utf8_lossy(&a.value).into_owned());
         v.push((k, val));
     }
     v
@@ -694,14 +776,21 @@ fn events(xml: &[u8], mut f: impl FnMut(Ev)) {
     loop {
         buf.clear();
         match r.read_event_into(&mut buf) {
-            Ok(Event::Start(e)) => f(Ev::Start(String::from_utf8_lossy(e.name().as_ref()).into_owned(), attrs_of(&e))),
+            Ok(Event::Start(e)) => f(Ev::Start(
+                String::from_utf8_lossy(e.name().as_ref()).into_owned(),
+                attrs_of(&e),
+            )),
             Ok(Event::Empty(e)) => {
                 let n = String::from_utf8_lossy(e.name().as_ref()).into_owned();
                 f(Ev::Start(n.clone(), attrs_of(&e)));
                 f(Ev::End(n));
             }
-            Ok(Event::End(e)) => f(Ev::End(String::from_utf8_lossy(e.name().as_ref()).into_owned())),
-            Ok(Event::Text(t)) => f(Ev::Text(t.decode().map(|c| c.into_owned()).unwrap_or_default())),
+            Ok(Event::End(e)) => f(Ev::End(
+                String::from_utf8_lossy(e.name().as_ref()).into_owned(),
+            )),
+            Ok(Event::Text(t)) => f(Ev::Text(
+                t.decode().map(|c| c.into_owned()).unwrap_or_default(),
+            )),
             Ok(Event::CData(t)) => f(Ev::Text(String::from_utf8_lossy(&t).into_owned())),
             Ok(Event::GeneralRef(r)) => {
                 let name = String::from_utf8_lossy(&r).into_owned();
@@ -711,7 +800,12 @@ fn events(xml: &[u8], mut f: impl FnMut(Ev)) {
                     "gt" => ">".to_string(),
                     "quot" => "\"".to_string(),
                     "apos" => "'".to_string(),
-                    _ => r.resolve_char_ref().ok().flatten().map(|c| c.to_string()).unwrap_or_default(),
+                    _ => r
+                        .resolve_char_ref()
+                        .ok()
+                        .flatten()
+                        .map(|c| c.to_string())
+                        .unwrap_or_default(),
                 };
                 f(Ev::Text(s));
             }
@@ -741,7 +835,8 @@ impl Styles {
                             parent: get(&a, "style:parent-style-name").map(String::from),
                             display: get(&a, "style:display-name").map(String::from),
                             auto: in_auto && auto_section_is_auto,
-                            outline: get(&a, "style:default-outline-level").and_then(|v| v.parse::<u8>().ok()),
+                            outline: get(&a, "style:default-outline-level")
+                                .and_then(|v| v.parse::<u8>().ok()),
                             ..Default::default()
                         };
                         cur = Some((name.to_string(), info));
@@ -772,15 +867,28 @@ impl Styles {
                         if let Some(c) = get(&a, "fo:color").and_then(model::parse_color) {
                             d.color = Some(c);
                         }
-                        if let Some(c) = get(&a, "fo:background-color").and_then(model::parse_color) {
+                        if let Some(c) = get(&a, "fo:background-color").and_then(model::parse_color)
+                        {
                             d.background = Some(c);
                         }
-                        if let Some(sz) = get(&a, "fo:font-size").and_then(length).filter(|v| *v >= 1.0 && *v <= 1638.0) {
+                        if let Some(sz) = get(&a, "fo:font-size")
+                            .and_then(length)
+                            .filter(|v| *v >= 1.0 && *v <= 1638.0)
+                        {
                             d.size = Some(sz);
                         }
-                        if let Some(fam) = get(&a, "fo:font-family").or_else(|| get(&a, "style:font-name")) {
-                            let fam = fam.split(',').next().unwrap_or("").trim().trim_matches(['\'', '"']).to_string();
-                            if model::is_mono(&fam) || get(&a, "style:font-pitch") == Some("fixed") {
+                        if let Some(fam) =
+                            get(&a, "fo:font-family").or_else(|| get(&a, "style:font-name"))
+                        {
+                            let fam = fam
+                                .split(',')
+                                .next()
+                                .unwrap_or("")
+                                .trim()
+                                .trim_matches(['\'', '"'])
+                                .to_string();
+                            if model::is_mono(&fam) || get(&a, "style:font-pitch") == Some("fixed")
+                            {
                                 d.code = Some(true);
                             } else if !fam.is_empty() {
                                 d.font = Some(fam);
@@ -812,11 +920,19 @@ impl Styles {
                         }
                     }
                 }
-                "list-style" => list = get(&a, "style:name").map(|n| (n.to_string(), vec![false; 10])),
-                "list-level-style-number" | "list-level-style-bullet" | "list-level-style-image" => {
+                "list-style" => {
+                    list = get(&a, "style:name").map(|n| (n.to_string(), vec![false; 10]))
+                }
+                "list-level-style-number"
+                | "list-level-style-bullet"
+                | "list-level-style-image" => {
                     if let Some((_, v)) = &mut list {
-                        let lv = get(&a, "text:level").and_then(|l| l.parse::<usize>().ok()).unwrap_or(1).clamp(1, 10);
-                        let ordered = local(&q) == "list-level-style-number" && get(&a, "style:num-format").is_some_and(|f| !f.is_empty());
+                        let lv = get(&a, "text:level")
+                            .and_then(|l| l.parse::<usize>().ok())
+                            .unwrap_or(1)
+                            .clamp(1, 10);
+                        let ordered = local(&q) == "list-level-style-number"
+                            && get(&a, "style:num-format").is_some_and(|f| !f.is_empty());
                         if let Some(slot) = v.get_mut(lv - 1) {
                             *slot = ordered;
                         }
@@ -886,10 +1002,18 @@ impl Styles {
         let mut kind_at = chain.len();
         for (i, (n, s)) in chain.iter().enumerate() {
             kind_at = i;
-            let dn = s.display.as_deref().unwrap_or(n).to_ascii_lowercase().replace("_20_", " ");
+            let dn = s
+                .display
+                .as_deref()
+                .unwrap_or(n)
+                .to_ascii_lowercase()
+                .replace("_20_", " ");
             let nn = n.to_ascii_lowercase().replace("_20_", " ");
             for cand in [dn.as_str(), nn.as_str()] {
-                if let Some(d) = cand.strip_prefix("heading ").and_then(|r| r.trim().parse::<u8>().ok()) {
+                if let Some(d) = cand
+                    .strip_prefix("heading ")
+                    .and_then(|r| r.trim().parse::<u8>().ok())
+                {
                     kind = Kind::Heading(d.clamp(1, 6));
                 } else if cand == "title" {
                     kind = Kind::Title;
@@ -909,10 +1033,18 @@ impl Styles {
             kind_at = chain.len();
         }
         let align = chain.iter().find_map(|(_, s)| s.align);
-        let pb = chain.iter().take_while(|(_, s)| s.auto).any(|(_, s)| s.page_break);
+        let pb = chain
+            .iter()
+            .take_while(|(_, s)| s.auto)
+            .any(|(_, s)| s.page_break);
         let rule = chain.iter().any(|(_, s)| s.border_bottom);
         let mut f = Fmt::default();
-        for (_, s) in chain.iter().take(kind_at).rev().filter(|(n, s)| s.auto || *n != "Standard") {
+        for (_, s) in chain
+            .iter()
+            .take(kind_at)
+            .rev()
+            .filter(|(n, s)| s.auto || *n != "Standard")
+        {
             s.fmt.apply(&mut f);
         }
         (kind, align, pb, rule, f)
@@ -962,11 +1094,22 @@ impl Body<'_> {
 
     fn start_para(&mut self, style: Option<&str>, heading: Option<u8>) {
         self.end_para();
-        let (mut kind, align, pb, rule, base) = style.map(|s| self.styles.para(s)).unwrap_or((Kind::Normal, None, false, false, Fmt::default()));
+        let (mut kind, align, pb, rule, base) = style.map(|s| self.styles.para(s)).unwrap_or((
+            Kind::Normal,
+            None,
+            false,
+            false,
+            Fmt::default(),
+        ));
         if let Some(h) = heading {
             kind = Kind::Heading(h.clamp(1, 6));
         }
-        let mut p = Para { kind, align, page_break: pb, ..Default::default() };
+        let mut p = Para {
+            kind,
+            align,
+            page_break: pb,
+            ..Default::default()
+        };
         if rule && kind == Kind::Normal {
             p.kind = Kind::Rule;
         }
@@ -974,8 +1117,14 @@ impl Body<'_> {
             && self.lists.last().is_some_and(|l| l.1)
         {
             let style = self.lists.iter().rev().find_map(|l| l.0.clone());
-            let ordered = style.and_then(|s| self.styles.lists.get(&s)).and_then(|v| v.get(lv.min(9)).copied()).unwrap_or(false);
-            p.list = Some(ListInfo { ordered, level: lv.min(8) as u8 });
+            let ordered = style
+                .and_then(|s| self.styles.lists.get(&s))
+                .and_then(|v| v.get(lv.min(9)).copied())
+                .unwrap_or(false);
+            p.list = Some(ListInfo {
+                ordered,
+                level: lv.min(8) as u8,
+            });
             self.para_cont = self.item_used.last().copied().unwrap_or(false);
             if let Some(u) = self.item_used.last_mut() {
                 *u = true;
@@ -988,7 +1137,9 @@ impl Body<'_> {
     }
 
     fn end_para(&mut self) {
-        let Some(mut p) = self.para.take() else { return };
+        let Some(mut p) = self.para.take() else {
+            return;
+        };
         self.fmt.pop();
         if p.kind != Kind::Code {
             p.trim();
@@ -1098,7 +1249,15 @@ impl Body<'_> {
                 self.skip = 1;
             }
             "p" | "h" if !self.in_desc => {
-                let h = if local(q) == "h" { Some(get(a, "text:outline-level").and_then(|v| v.parse::<u8>().ok()).unwrap_or(1)) } else { None };
+                let h = if local(q) == "h" {
+                    Some(
+                        get(a, "text:outline-level")
+                            .and_then(|v| v.parse::<u8>().ok())
+                            .unwrap_or(1),
+                    )
+                } else {
+                    None
+                };
                 self.start_para(get(a, "text:style-name"), h);
             }
             "span" => {
@@ -1120,7 +1279,10 @@ impl Body<'_> {
                 self.fmt.push(f);
             }
             "s" => {
-                let n = get(a, "text:c").and_then(|v| v.parse::<usize>().ok()).unwrap_or(1).clamp(1, 1000);
+                let n = get(a, "text:c")
+                    .and_then(|v| v.parse::<usize>().ok())
+                    .unwrap_or(1)
+                    .clamp(1, 1000);
                 self.push_text(&" ".repeat(n));
             }
             "tab" => self.push_text("\t"),
@@ -1138,7 +1300,8 @@ impl Body<'_> {
             "list" => {
                 self.end_para();
                 if self.lists.len() < 64 {
-                    self.lists.push((get(a, "text:style-name").map(String::from), false));
+                    self.lists
+                        .push((get(a, "text:style-name").map(String::from), false));
                     self.item_used.push(false);
                 } else {
                     self.skip = 1;
@@ -1158,7 +1321,11 @@ impl Body<'_> {
                     self.skip = 1;
                     return;
                 }
-                self.tables.push(TableB { rows: Vec::new(), row: Vec::new(), hcover: 0 });
+                self.tables.push(TableB {
+                    rows: Vec::new(),
+                    row: Vec::new(),
+                    hcover: 0,
+                });
             }
             "table-row" => {
                 if let Some(t) = self.tables.last_mut() {
@@ -1168,22 +1335,40 @@ impl Body<'_> {
             }
             "table-cell" => {
                 self.end_para();
-                let span = get(a, "table:number-columns-spanned").and_then(|v| v.parse::<u32>().ok()).unwrap_or(1).clamp(1, 63);
-                let rows = get(a, "table:number-rows-spanned").and_then(|v| v.parse::<u32>().ok()).unwrap_or(1).clamp(1, 1000);
-                let shading = get(a, "table:style-name").and_then(|s| self.styles.cell_background(s));
+                let span = get(a, "table:number-columns-spanned")
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .unwrap_or(1)
+                    .clamp(1, 63);
+                let rows = get(a, "table:number-rows-spanned")
+                    .and_then(|v| v.parse::<u32>().ok())
+                    .unwrap_or(1)
+                    .clamp(1, 1000);
+                let shading =
+                    get(a, "table:style-name").and_then(|s| self.styles.cell_background(s));
                 if let Some(t) = self.tables.last_mut() {
                     t.hcover = span as usize - 1;
                 }
-                self.cells.push(Cell { colspan: span, rowspan: rows, shading, ..Default::default() });
+                self.cells.push(Cell {
+                    colspan: span,
+                    rowspan: rows,
+                    shading,
+                    ..Default::default()
+                });
                 self.containers.push(Vec::new());
-                self.lists_saved.push((std::mem::take(&mut self.lists), std::mem::take(&mut self.item_used)));
+                self.lists_saved.push((
+                    std::mem::take(&mut self.lists),
+                    std::mem::take(&mut self.item_used),
+                ));
             }
             "covered-table-cell" => {
                 if let Some(t) = self.tables.last_mut() {
                     if t.hcover > 0 {
                         t.hcover -= 1;
                     } else if t.row.len() < 63 {
-                        t.row.push(Cell { covered: true, ..Default::default() });
+                        t.row.push(Cell {
+                            covered: true,
+                            ..Default::default()
+                        });
                     }
                 }
             }
@@ -1238,7 +1423,11 @@ impl Body<'_> {
             }
             "table-cell" => {
                 self.end_para();
-                let blocks = if self.containers.len() > 1 { self.containers.pop().unwrap_or_default() } else { Vec::new() };
+                let blocks = if self.containers.len() > 1 {
+                    self.containers.pop().unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
                 (self.lists, self.item_used) = self.lists_saved.pop().unwrap_or_default();
                 let mut cell = self.cells.pop().unwrap_or_default();
                 cell.blocks = blocks;
@@ -1270,7 +1459,11 @@ impl Body<'_> {
                 if let Some(t) = self.tables.pop()
                     && !t.rows.is_empty()
                 {
-                    self.container().push(FBlock::Table(FTable { rows: t.rows, widths: Vec::new(), borderless: false }));
+                    self.container().push(FBlock::Table(FTable {
+                        rows: t.rows,
+                        widths: Vec::new(),
+                        borderless: false,
+                    }));
                 }
             }
             "desc" | "title" => self.in_desc = false,
@@ -1330,10 +1523,14 @@ fn read_meta(xml: &[u8]) -> Meta {
 
 /// Parse an `.odt` package into the flow model.
 pub fn parse(bytes: &[u8]) -> Result<Flow, String> {
-    let mut z = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| format!("ODT: not a valid package ({e})"))?;
+    let mut z = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|e| format!("ODT: not a valid package ({e})"))?;
     if let Some(mt) = read_entry(&mut z, "mimetype") {
         let mt = String::from_utf8_lossy(&mt);
-        if !mt.trim().starts_with("application/vnd.oasis.opendocument.text") {
+        if !mt
+            .trim()
+            .starts_with("application/vnd.oasis.opendocument.text")
+        {
             return Err(format!("ODT: not a text document ({})", mt.trim()));
         }
     }
@@ -1343,7 +1540,9 @@ pub fn parse(bytes: &[u8]) -> Result<Flow, String> {
         styles.read(&s, false);
     }
     styles.read(&content, true);
-    let meta = read_entry(&mut z, "meta.xml").map(|m| read_meta(&m)).unwrap_or_default();
+    let meta = read_entry(&mut z, "meta.xml")
+        .map(|m| read_meta(&m))
+        .unwrap_or_default();
     let mut total = 0u64;
     let mut fetch = |path: &str| -> Option<Vec<u8>> {
         let d = read_entry(&mut z, path)?;
@@ -1393,7 +1592,11 @@ pub fn parse(bytes: &[u8]) -> Result<Flow, String> {
     let mut blocks = body.containers.pop().unwrap_or_default();
     for t in body.tables.drain(..) {
         if !t.rows.is_empty() {
-            blocks.push(FBlock::Table(FTable { rows: t.rows, widths: Vec::new(), borderless: false }));
+            blocks.push(FBlock::Table(FTable {
+                rows: t.rows,
+                widths: Vec::new(),
+                borderless: false,
+            }));
         }
     }
     if blocks.is_empty() {
@@ -1420,13 +1623,17 @@ fn apply_page_layout(xml: &[u8], sec: &mut wordcraft_doc::SectionProps) {
     let mut master: Option<String> = None;
     events(xml, |ev| match ev {
         Ev::Start(q, a) => match local(&q) {
-            "page-layout" if q.starts_with("style:") => cur = get(&a, "style:name").map(String::from),
+            "page-layout" if q.starts_with("style:") => {
+                cur = get(&a, "style:name").map(String::from)
+            }
             "page-layout-properties" => {
                 if let Some(n) = &cur {
                     layouts.insert(n.clone(), a);
                 }
             }
-            "master-page" if master.is_none() => master = get(&a, "style:page-layout-name").map(String::from),
+            "master-page" if master.is_none() => {
+                master = get(&a, "style:page-layout-name").map(String::from)
+            }
             _ => {}
         },
         Ev::End(q) => {
@@ -1436,7 +1643,9 @@ fn apply_page_layout(xml: &[u8], sec: &mut wordcraft_doc::SectionProps) {
         }
         Ev::Text(_) => {}
     });
-    let Some(a) = master.and_then(|m| layouts.remove(&m)) else { return };
+    let Some(a) = master.and_then(|m| layouts.remove(&m)) else {
+        return;
+    };
     let len = |k: &str| get(&a, k).and_then(length).filter(|v| *v >= 0.0);
     // Like the DOCX reader: a page is at least half an inch; at most 22 inches (Word's limit), so a hostile
     // `1e30pt` can't reach layout.
@@ -1485,9 +1694,14 @@ mod tests {
     /// A package with `content.xml` and, when given, `styles.xml`.
     fn package(content: &str, styles: Option<&str>) -> Vec<u8> {
         let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
-        let o = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-        for (name, data) in
-            [("mimetype", "application/vnd.oasis.opendocument.text"), ("content.xml", content)].into_iter().chain(styles.map(|s| ("styles.xml", s)))
+        let o = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for (name, data) in [
+            ("mimetype", "application/vnd.oasis.opendocument.text"),
+            ("content.xml", content),
+        ]
+        .into_iter()
+        .chain(styles.map(|s| ("styles.xml", s)))
         {
             z.start_file(name, o).unwrap();
             z.write_all(data.as_bytes()).unwrap();
@@ -1496,7 +1710,16 @@ mod tests {
     }
 
     fn paras(f: &Flow) -> Vec<&Para> {
-        f.blocks.iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p) } else { None }).collect()
+        f.blocks
+            .iter()
+            .filter_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     #[test]
@@ -1513,11 +1736,26 @@ mod tests {
         let f = parse(&package(&content, Some(&styles))).unwrap();
         let ps = paras(&f);
         assert_eq!(ps.len(), 4);
-        let fmt = |p: &Para| p.inlines.iter().find_map(|i| if let Inline::Text(_, f) = i { Some(f.clone()) } else { None }).unwrap();
+        let fmt = |p: &Para| {
+            p.inlines
+                .iter()
+                .find_map(|i| {
+                    if let Inline::Text(_, f) = i {
+                        Some(f.clone())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap()
+        };
         assert_eq!(fmt(ps[0]), Fmt::default());
         for p in &ps[1..] {
             let f = fmt(p);
-            assert!(f.bold && f.color == Some(Rgb(255, 0, 0)) && f.size == Some(24.0), "{}: {f:?}", p.text());
+            assert!(
+                f.bold && f.color == Some(Rgb(255, 0, 0)) && f.size == Some(24.0),
+                "{}: {f:?}",
+                p.text()
+            );
         }
     }
 
@@ -1551,7 +1789,10 @@ mod tests {
         let mut sec = wordcraft_doc::SectionProps::default();
         apply_page_layout(xml, &mut sec);
         assert!(sec.landscape);
-        assert_eq!((sec.page_w, sec.page_h, sec.margin_left, sec.margin_top), (720.0, 360.0, 72.0, 72.0));
+        assert_eq!(
+            (sec.page_w, sec.page_h, sec.margin_left, sec.margin_top),
+            (720.0, 360.0, 72.0, 72.0)
+        );
     }
 
     #[test]
@@ -1573,11 +1814,24 @@ mod tests {
         assert_eq!((sec.margin_top, sec.margin_left), (1584.0, 1584.0));
         // Negative, zero, tiny and non-numeric values leave the defaults alone.
         let def = wordcraft_doc::SectionProps::default();
-        for (w, h, m) in [("-10in", "-5in", "-1in"), ("0pt", "0pt", "NaNpt"), ("1pt", "2pt", "infpt"), ("NaN", "inf", "x")] {
+        for (w, h, m) in [
+            ("-10in", "-5in", "-1in"),
+            ("0pt", "0pt", "NaNpt"),
+            ("1pt", "2pt", "infpt"),
+            ("NaN", "inf", "x"),
+        ] {
             let mut sec = wordcraft_doc::SectionProps::default();
             apply_page_layout(styles(w, h, m).as_bytes(), &mut sec);
-            assert_eq!((sec.page_w, sec.page_h), (def.page_w, def.page_h), "{w} {h}");
-            assert_eq!((sec.margin_top, sec.margin_right), (def.margin_top, def.margin_right), "{m}");
+            assert_eq!(
+                (sec.page_w, sec.page_h),
+                (def.page_w, def.page_h),
+                "{w} {h}"
+            );
+            assert_eq!(
+                (sec.margin_top, sec.margin_right),
+                (def.margin_top, def.margin_right),
+                "{m}"
+            );
             assert!(sec.page_w.is_finite() && sec.margin_left.is_finite());
         }
     }
@@ -1589,8 +1843,16 @@ mod tests {
             r##"<office:document-content {NS_T}><office:automatic-styles><style:style style:name="RedCell" style:family="table-cell"><style:table-cell-properties fo:background-color="#ff0000"/></style:style></office:automatic-styles><office:body><office:text><table:table><table:table-column table:number-columns-repeated="2"/><table:table-row><table:table-cell table:style-name="RedCell"><text:p>Red</text:p></table:table-cell><table:table-cell><text:p>Plain</text:p></table:table-cell></table:table-row></table:table></office:text></office:body></office:document-content>"##
         );
         let f = parse(&package(&content, None)).unwrap();
-        let Some(FBlock::Table(t)) = f.blocks.iter().find(|b| matches!(b, FBlock::Table(_))) else { panic!("no table") };
+        let Some(FBlock::Table(t)) = f.blocks.iter().find(|b| matches!(b, FBlock::Table(_))) else {
+            panic!("no table")
+        };
         let row: Vec<_> = t.rows[0].iter().map(|c| (c.text(), c.shading)).collect();
-        assert_eq!(row, vec![("Red".to_string(), Some(Rgb(255, 0, 0))), ("Plain".to_string(), None)]);
+        assert_eq!(
+            row,
+            vec![
+                ("Red".to_string(), Some(Rgb(255, 0, 0))),
+                ("Plain".to_string(), None)
+            ]
+        );
     }
 }

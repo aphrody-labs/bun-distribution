@@ -101,9 +101,12 @@ fn load_t2b(vfs: &Vfs, prefix: &str) -> serde_json::Value {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg = load_rdbn(&vfs, "strategy_ai_config");
     let config = aphrody_nie_data::ai::parse_strategy_ai_config(&cfg);
@@ -114,15 +117,26 @@ fn main() {
     eprintln!("[ai_text fr] entrées = {}", text.len());
 
     use aphrody_nie_data::ai::{resolve_strategy_description, resolve_strategy_name};
-    let named =
-        config.strategy_infos.iter().filter(|s| resolve_strategy_name(s, &text).is_some()).count();
-    eprintln!("noms de stratégie résolus = {named}/{}", config.strategy_infos.len());
+    let named = config
+        .strategy_infos
+        .iter()
+        .filter(|s| resolve_strategy_name(s, &text).is_some())
+        .count();
+    eprintln!(
+        "noms de stratégie résolus = {named}/{}",
+        config.strategy_infos.len()
+    );
 
     for s in config.strategy_infos.iter().take(8) {
         let n = resolve_strategy_name(s, &text);
         let d =
             resolve_strategy_description(s, &text).map(|x| x.chars().take(40).collect::<String>());
-        eprintln!("  strategy {} → {:?}  desc={:?}", s.strategy_id.to_hex(), n, d);
+        eprintln!(
+            "  strategy {} → {:?}  desc={:?}",
+            s.strategy_id.to_hex(),
+            n,
+            d
+        );
     }
     if named == 0 {
         eprintln!("⚠ VERDICT : name_id → ai_text NE résout PAS (modèle à revoir, ou autre table)");

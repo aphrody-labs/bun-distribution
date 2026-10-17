@@ -24,12 +24,22 @@ fn formula(text: &str, value: f64) -> Cell {
 }
 
 fn cell<'a>(sheet: &'a El, address: &str) -> &'a El {
-    sheet.child("sheetData").unwrap().kids("row").flat_map(|r| r.kids("c")).find(|c| c.attr("r") == Some(address)).unwrap()
+    sheet
+        .child("sheetData")
+        .unwrap()
+        .kids("row")
+        .flat_map(|r| r.kids("c"))
+        .find(|c| c.attr("r") == Some(address))
+        .unwrap()
 }
 
 fn assert_scalar(sheet: &El, address: &str) {
     let c = cell(sheet, address);
-    assert_eq!(c.attr("cm"), None, "scalar formula must not have dynamic metadata at {address}");
+    assert_eq!(
+        c.attr("cm"),
+        None,
+        "scalar formula must not have dynamic metadata at {address}"
+    );
     let f = c.child("f").unwrap();
     assert_eq!(f.attr("t"), None);
     assert_eq!(f.attr("ref"), None);
@@ -37,7 +47,11 @@ fn assert_scalar(sheet: &El, address: &str) {
 
 fn assert_dynamic(sheet: &El, address: &str, reference: &str) {
     let c = cell(sheet, address);
-    assert_eq!(c.attr("cm"), Some("1"), "array evaluation metadata at {address}");
+    assert_eq!(
+        c.attr("cm"),
+        Some("1"),
+        "array evaluation metadata at {address}"
+    );
     let f = c.child("f").unwrap();
     assert_eq!(f.attr("t"), Some("array"));
     assert_eq!(f.attr("ref"), Some(reference));
@@ -48,15 +62,29 @@ fn nonspilling_formulas_preserve_array_evaluation_and_metadata() {
     let mut wb = Workbook::new();
     let data = wb.sheet_mut(0).unwrap();
     data.name = "Data".into();
-    for (address, value) in [("A1", 1.0), ("A2", 4.0), ("A3", 9.0), ("B1", 2.0), ("B2", 3.0), ("B3", 4.0)] {
-        data.cells.set(at(address), Cell::value(Value::Number(value)));
+    for (address, value) in [
+        ("A1", 1.0),
+        ("A2", 4.0),
+        ("A3", 9.0),
+        ("B1", 2.0),
+        ("B2", 3.0),
+        ("B3", 4.0),
+    ] {
+        data.cells
+            .set(at(address), Cell::value(Value::Number(value)));
     }
-    let cases = [("B107", "SUM(Data!A1:A3*Data!B1:B3)", 50.0), ("B108", "SUM(SQRT(Data!A1:A3))", 6.0), ("B109", "SUM(ABS(Data!A1:A3))", 14.0)];
+    let cases = [
+        ("B107", "SUM(Data!A1:A3*Data!B1:B3)", 50.0),
+        ("B108", "SUM(SQRT(Data!A1:A3))", 6.0),
+        ("B109", "SUM(ABS(Data!A1:A3))", 14.0),
+    ];
     let mut results = Sheet::new("Results");
     for (address, text, value) in cases {
         results.cells.set(at(address), formula(text, value));
     }
-    results.cells.set(at("C107"), Cell::value(Value::text("neighbor")));
+    results
+        .cells
+        .set(at("C107"), Cell::value(Value::text("neighbor")));
     assert!(results.spill_ranges.is_empty());
     wb.sheets.push(Arc::new(results));
 
@@ -73,7 +101,15 @@ fn nonspilling_formulas_preserve_array_evaluation_and_metadata() {
     let kind = metadata.path(&["metadataTypes", "metadataType"]).unwrap();
     assert_eq!(kind.attr("name"), Some("XLDAPR"));
     assert_eq!(kind.attr("cellMeta"), Some("1"));
-    let dynamic = metadata.path(&["futureMetadata", "bk", "extLst", "ext", "dynamicArrayProperties"]).unwrap();
+    let dynamic = metadata
+        .path(&[
+            "futureMetadata",
+            "bk",
+            "extLst",
+            "ext",
+            "dynamicArrayProperties",
+        ])
+        .unwrap();
     assert_eq!(dynamic.attr("fDynamic"), Some("1"));
     assert_eq!(dynamic.attr("fCollapsed"), Some("0"));
     let record = metadata.path(&["cellMetadata", "bk", "rc"]).unwrap();
@@ -81,7 +117,12 @@ fn nonspilling_formulas_preserve_array_evaluation_and_metadata() {
     let types = pkg.read_xml("[Content_Types].xml").unwrap().unwrap();
     assert!(types.kids("Override").any(|e| e.attr("PartName") == Some("/xl/metadata.xml")
         && e.attr("ContentType") == Some("application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml")));
-    assert!(pkg.rels("xl/workbook.xml").unwrap().iter().any(|r| r.kind == "sheetMetadata" && r.target == "xl/metadata.xml"));
+    assert!(
+        pkg.rels("xl/workbook.xml")
+            .unwrap()
+            .iter()
+            .any(|r| r.kind == "sheetMetadata" && r.target == "xl/metadata.xml")
+    );
 
     let (back, report) = read_xlsx(&bytes).unwrap();
     assert!(report.warnings.is_empty(), "{:?}", report.warnings);
@@ -115,7 +156,10 @@ fn dynamic_spills_and_legacy_cse_keep_distinct_ranges() {
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
     assert_eq!(cell(&sheet, "A1").attr("cm"), None);
     let legacy = cell(&sheet, "A1").child("f").unwrap();
-    assert_eq!((legacy.attr("t"), legacy.attr("ref")), (Some("array"), Some("A1:A2")));
+    assert_eq!(
+        (legacy.attr("t"), legacy.attr("ref")),
+        (Some("array"), Some("A1:A2"))
+    );
     assert_dynamic(&sheet, "B1", "B1:B3");
     assert_scalar(&sheet, "C1");
     assert_eq!(cell(&sheet, "B2").child("v").unwrap().text, "2");
@@ -123,10 +167,16 @@ fn dynamic_spills_and_legacy_cse_keep_distinct_ranges() {
 
     let (back, _) = read_xlsx(&bytes).unwrap();
     let sh = back.sheet(0).unwrap();
-    assert_eq!(sh.cell(at("A1")).unwrap().formula.as_ref().unwrap().array, Some(range("A1:A2")));
+    assert_eq!(
+        sh.cell(at("A1")).unwrap().formula.as_ref().unwrap().array,
+        Some(range("A1:A2"))
+    );
     // A legacy array's cached values are dropped on read: the formula fills its range on recalc (#156).
     assert!(sh.cell(at("A2")).is_none());
-    assert_eq!(sh.cell(at("B1")).unwrap().formula.as_ref().unwrap().array, None);
+    assert_eq!(
+        sh.cell(at("B1")).unwrap().formula.as_ref().unwrap().array,
+        None
+    );
     assert!(sh.cell(at("B2")).is_none());
     assert!(sh.cell(at("B3")).is_none());
     assert_eq!(sh.value(at("C1")), Value::Number(6.0));
@@ -138,21 +188,38 @@ fn scalar_formulas_constants_and_legacy_cse_do_not_require_dynamic_metadata() {
     let sh = wb.sheet_mut(0).unwrap();
     sh.name = "Data".into();
     sh.cells.set(at("A1"), Cell::value(Value::Number(3.0)));
-    for (address, text, value) in [("C1", "1+2", 3.0), ("C2", "Data!A1", 3.0), ("C3", "SUM(A1:A3)", 3.0), ("C4", "A1*2", 6.0)] {
+    for (address, text, value) in [
+        ("C1", "1+2", 3.0),
+        ("C2", "Data!A1", 3.0),
+        ("C3", "SUM(A1:A3)", 3.0),
+        ("C4", "A1*2", 6.0),
+    ] {
         sh.cells.set(at(address), formula(text, value));
     }
     for legacy in [false, true] {
         if legacy {
             let mut f = Formula::new("SUM(A1:A2)");
             f.array = Some(range("B1"));
-            wb.sheet_mut(0).unwrap().cells.set(at("B1"), Cell::formula(f));
+            wb.sheet_mut(0)
+                .unwrap()
+                .cells
+                .set(at("B1"), Cell::formula(f));
         }
         let bytes = write_xlsx(&wb).unwrap();
         let mut pkg = Package::open(&bytes).unwrap();
         assert!(!pkg.has("xl/metadata.xml"));
-        assert!(!pkg.rels("xl/workbook.xml").unwrap().iter().any(|r| r.kind == "sheetMetadata"));
+        assert!(
+            !pkg.rels("xl/workbook.xml")
+                .unwrap()
+                .iter()
+                .any(|r| r.kind == "sheetMetadata")
+        );
         let types = pkg.read_xml("[Content_Types].xml").unwrap().unwrap();
-        assert!(!types.kids("Override").any(|e| e.attr("PartName") == Some("/xl/metadata.xml")));
+        assert!(
+            !types
+                .kids("Override")
+                .any(|e| e.attr("PartName") == Some("/xl/metadata.xml"))
+        );
         let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
         assert_eq!(cell(&sheet, "A1").attr("cm"), None);
         for address in ["C1", "C2", "C3", "C4"] {
@@ -174,7 +241,14 @@ fn calculated_table_column_keeps_formula_and_cell_value() {
         header_row: true,
         totals_row: false,
         columns: vec![
-            TableColumn { name: "Input".into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "Input".into(),
+                totals: TotalsFn::None,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
             TableColumn {
                 name: "Output".into(),
                 totals: TotalsFn::None,
@@ -198,14 +272,29 @@ fn calculated_table_column_keeps_formula_and_cell_value() {
     let mut pkg = Package::open(&bytes).unwrap();
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
     assert_scalar(&sheet, "B2");
-    assert_eq!(cell(&sheet, "B1").attr("cm"), None, "table headers are text");
+    assert_eq!(
+        cell(&sheet, "B1").attr("cm"),
+        None,
+        "table headers are text"
+    );
     let table = pkg.read_xml("xl/tables/table1.xml").unwrap().unwrap();
-    let column = table.child("tableColumns").unwrap().kids("tableColumn").nth(1).unwrap();
-    assert_eq!(column.child("calculatedColumnFormula").unwrap().text, "A2*2");
+    let column = table
+        .child("tableColumns")
+        .unwrap()
+        .kids("tableColumn")
+        .nth(1)
+        .unwrap();
+    assert_eq!(
+        column.child("calculatedColumnFormula").unwrap().text,
+        "A2*2"
+    );
     let (back, _) = read_xlsx(&bytes).unwrap();
     let sh = back.sheet(0).unwrap();
     assert_eq!(sh.tables[0].columns[1].formula.as_deref(), Some("A2*2"));
-    assert_eq!(sh.cell(at("B2")).unwrap().formula.as_ref().unwrap().array, None);
+    assert_eq!(
+        sh.cell(at("B2")).unwrap().formula.as_ref().unwrap().array,
+        None
+    );
     assert_eq!(sh.value(at("B2")), Value::Number(6.0));
 }
 
@@ -222,7 +311,14 @@ fn this_row_references_are_written_in_long_form() {
         header_row: true,
         totals_row: false,
         columns: vec![
-            TableColumn { name: "Input".into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "Input".into(),
+                totals: TotalsFn::None,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
             TableColumn {
                 name: "Output".into(),
                 totals: TotalsFn::None,
@@ -245,14 +341,31 @@ fn this_row_references_are_written_in_long_form() {
     let bytes = write_xlsx(&wb).unwrap();
     let mut pkg = Package::open(&bytes).unwrap();
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
-    assert_eq!(cell(&sheet, "B2").child("f").unwrap().text, "Data[[#This Row],[Input]]*2");
+    assert_eq!(
+        cell(&sheet, "B2").child("f").unwrap().text,
+        "Data[[#This Row],[Input]]*2"
+    );
     let table = pkg.read_xml("xl/tables/table1.xml").unwrap().unwrap();
-    let column = table.child("tableColumns").unwrap().kids("tableColumn").nth(1).unwrap();
-    assert_eq!(column.child("calculatedColumnFormula").unwrap().text, "[[#This Row],[Input]]*2");
+    let column = table
+        .child("tableColumns")
+        .unwrap()
+        .kids("tableColumn")
+        .nth(1)
+        .unwrap();
+    assert_eq!(
+        column.child("calculatedColumnFormula").unwrap().text,
+        "[[#This Row],[Input]]*2"
+    );
     let (back, _) = read_xlsx(&bytes).unwrap();
     let sh = back.sheet(0).unwrap();
-    assert_eq!(sh.tables[0].columns[1].formula.as_deref(), Some("[@Input]*2"));
-    assert_eq!(sh.cell(at("B2")).unwrap().formula.as_ref().unwrap().text, "Data[@Input]*2");
+    assert_eq!(
+        sh.tables[0].columns[1].formula.as_deref(),
+        Some("[@Input]*2")
+    );
+    assert_eq!(
+        sh.cell(at("B2")).unwrap().formula.as_ref().unwrap().text,
+        "Data[@Input]*2"
+    );
 }
 
 /// Compare both cell and formula metadata, collecting all boundaries in the group on failure.
@@ -260,17 +373,27 @@ fn check_formula_metadata(mut wb: Workbook, sheet_index: usize, cases: &[(&str, 
     for (i, (text, _)) in cases.iter().enumerate() {
         let f = Formula::new(text);
         assert!(f.expr().is_some(), "test formula must parse: {text}");
-        wb.sheet_mut(sheet_index).unwrap().cells.set(CellRef::new(i as u32 + 100, 5), Cell::formula(f));
+        wb.sheet_mut(sheet_index)
+            .unwrap()
+            .cells
+            .set(CellRef::new(i as u32 + 100, 5), Cell::formula(f));
     }
     let bytes = write_xlsx(&wb).unwrap();
     let mut pkg = Package::open(&bytes).unwrap();
-    let sheet = pkg.read_xml(&format!("xl/worksheets/sheet{}.xml", sheet_index + 1)).unwrap().unwrap();
+    let sheet = pkg
+        .read_xml(&format!("xl/worksheets/sheet{}.xml", sheet_index + 1))
+        .unwrap()
+        .unwrap();
     let mut mismatches = vec![];
     for (i, (text, dynamic)) in cases.iter().enumerate() {
         let address = CellRef::new(i as u32 + 100, 5).to_string();
         let c = cell(&sheet, &address);
         let f = c.child("f").unwrap();
-        let expected = if *dynamic { (Some("1"), Some("array"), Some(address.as_str())) } else { (None, None, None) };
+        let expected = if *dynamic {
+            (Some("1"), Some("array"), Some(address.as_str()))
+        } else {
+            (None, None, None)
+        };
         let actual = (c.attr("cm"), f.attr("t"), f.attr("ref"));
         if actual != expected {
             mismatches.push(format!("{text}: expected {expected:?}, got {actual:?}"));
@@ -338,7 +461,13 @@ fn implicit_intersection_metadata_resolves_names_in_formula_sheet_scope() {
         ("Scoped", Some(0), "2"),
         ("LocalInputs", Some(1), "Results!$A$1:$A$3"),
     ] {
-        wb.names.push(DefinedName { name: name.into(), scope, formula: text.into(), comment: String::new(), hidden: false });
+        wb.names.push(DefinedName {
+            name: name.into(),
+            scope,
+            formula: text.into(),
+            comment: String::new(),
+            hidden: false,
+        });
     }
     check_formula_metadata(
         wb.clone(),
@@ -354,14 +483,28 @@ fn implicit_intersection_metadata_resolves_names_in_formula_sheet_scope() {
             ("SQRT(Scoped)", false),
         ],
     );
-    check_formula_metadata(wb, 1, &[("SQRT(Scoped)", true), ("SUM(LocalInputs)", false), ("LocalInputs*2", true)]);
+    check_formula_metadata(
+        wb,
+        1,
+        &[
+            ("SQRT(Scoped)", true),
+            ("SUM(LocalInputs)", false),
+            ("LocalInputs*2", true),
+        ],
+    );
 }
 
 #[test]
 fn cyclic_names_preserve_array_evaluation_without_unbounded_export_recursion() {
     let mut wb = Workbook::new();
     for (name, formula) in [("First", "Second"), ("Second", "First")] {
-        wb.names.push(DefinedName { name: name.into(), scope: None, formula: formula.into(), comment: String::new(), hidden: false });
+        wb.names.push(DefinedName {
+            name: name.into(),
+            scope: None,
+            formula: formula.into(),
+            comment: String::new(),
+            hidden: false,
+        });
     }
     check_formula_metadata(wb, 0, &[("First", true), ("SUM(First)", true)]);
 }
@@ -377,7 +520,14 @@ fn implicit_intersection_metadata_distinguishes_table_rows_and_columns() {
         header_row: true,
         totals_row: false,
         columns: vec![
-            TableColumn { name: "Input".into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "Input".into(),
+                totals: TotalsFn::None,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
             TableColumn {
                 name: "Output".into(),
                 totals: TotalsFn::None,
@@ -406,6 +556,11 @@ fn implicit_intersection_metadata_distinguishes_table_rows_and_columns() {
     check_formula_metadata(
         wb,
         0,
-        &[("Data[@Input]*2", false), ("SUM(Data[Input])", false), ("SUM(Data[Input]*2)", true), ("SQRT(Data[Input])", true)],
+        &[
+            ("Data[@Input]*2", false),
+            ("SUM(Data[Input])", false),
+            ("SUM(Data[Input]*2)", true),
+            ("SQRT(Data[Input])", true),
+        ],
     );
 }

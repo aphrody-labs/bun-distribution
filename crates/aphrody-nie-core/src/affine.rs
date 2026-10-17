@@ -55,8 +55,16 @@ mod tests {
     /// Identité affine → `out == a` bit-à-bit.
     #[test]
     fn identity_is_noop() {
-        let ident = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]];
-        let a = [[1.5, -2.0, 3.25, 1.0], [0.5, 4.0, -1.0, 0.0], [7.0, 8.0, 9.0, 1.0]];
+        let ident = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+        ];
+        let a = [
+            [1.5, -2.0, 3.25, 1.0],
+            [0.5, 4.0, -1.0, 0.0],
+            [7.0, 8.0, 9.0, 1.0],
+        ];
         assert_eq!(bits(&compose_affine_3x4(&a, &ident)), bits(&a));
     }
 
@@ -78,8 +86,16 @@ mod tests {
     /// Cas golden capturé du fuzz byte-exact (scale × rotation-ish + translation).
     #[test]
     fn golden_general() {
-        let a = [[2.0, 0.5, -1.0, 0.0], [1.0, 3.0, 0.25, 0.0], [4.0, -2.0, 6.0, 1.0]];
-        let b = [[0.5, 1.0, 0.0, 0.0], [-1.0, 2.0, 1.5, 0.0], [3.0, 0.0, -0.5, 1.0]];
+        let a = [
+            [2.0, 0.5, -1.0, 0.0],
+            [1.0, 3.0, 0.25, 0.0],
+            [4.0, -2.0, 6.0, 1.0],
+        ];
+        let b = [
+            [0.5, 1.0, 0.0, 0.0],
+            [-1.0, 2.0, 1.5, 0.0],
+            [3.0, 0.0, -0.5, 1.0],
+        ];
         let out = compose_affine_3x4(&a, &b);
         // recalcul indépendant avec la même chaîne FMA fusée.
         for r in 0..3 {

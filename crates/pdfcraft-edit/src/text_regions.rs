@@ -13,16 +13,27 @@ fn same_plane(a: &TextLine, b: &TextLine) -> bool {
             let by = bt.0.get(axis + 1).copied().unwrap_or(0.0);
             let al = ax.hypot(ay);
             let bl = bx.hypot(by);
-            al > 0.0 && bl > 0.0 && (ax / al - bx / bl).abs() < 0.001 && (ay / al - by / bl).abs() < 0.001
+            al > 0.0
+                && bl > 0.0
+                && (ax / al - bx / bl).abs() < 0.001
+                && (ay / al - by / bl).abs() < 0.001
         })
 }
 
 fn union(a: [f64; 4], b: [f64; 4]) -> [f64; 4] {
-    [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])]
+    [
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[2].max(b[2]),
+        a[3].max(b[3]),
+    ]
 }
 
 fn row_rect(row: &[usize], lines: &[TextLine]) -> Option<[f64; 4]> {
-    row.iter().filter_map(|i| lines.get(*i)).map(|l| l.rect).reduce(union)
+    row.iter()
+        .filter_map(|i| lines.get(*i))
+        .map(|l| l.rect)
+        .reduce(union)
 }
 
 pub(super) fn group_blocks(lines: &[TextLine]) -> Vec<TextBlock> {
@@ -40,7 +51,11 @@ pub(super) fn group_reading_blocks(lines: &[TextLine]) -> Vec<TextBlock> {
 fn across(line: &TextLine) -> f64 {
     let m = Matrix(line.origin.tm).then(&Matrix(line.origin.ctm)).0;
     let h = m[0].hypot(m[1]);
-    if h.is_finite() && h > 1e-9 { h } else { line.origin.k }
+    if h.is_finite() && h > 1e-9 {
+        h
+    } else {
+        line.origin.k
+    }
 }
 
 /// Invisible text (rendering mode 3), as in an OCR layer over a scanned image.
@@ -89,15 +104,27 @@ fn group_layout(lines: &[TextLine], mixed: bool) -> Vec<TextBlock> {
     }
     let mut blocks: Vec<TextBlock> = Vec::new();
     for row in rows {
-        let Some(first) = row.first().and_then(|i| lines.get(*i)) else { continue };
-        let Some(rect) = row_rect(&row, lines) else { continue };
+        let Some(first) = row.first().and_then(|i| lines.get(*i)) else {
+            continue;
+        };
+        let Some(rect) = row_rect(&row, lines) else {
+            continue;
+        };
         let joins = blocks.last().is_some_and(|block| {
-            let Some(prev_row) = block.rows.last() else { return false };
-            let Some(prev) = prev_row.first().and_then(|i| lines.get(*i)) else { return false };
-            let Some(pr) = row_rect(prev_row, lines) else { return false };
+            let Some(prev_row) = block.rows.last() else {
+                return false;
+            };
+            let Some(prev) = prev_row.first().and_then(|i| lines.get(*i)) else {
+                return false;
+            };
+            let Some(pr) = row_rect(prev_row, lines) else {
+                return false;
+            };
             let gap = prev.origin.baseline - first.origin.baseline;
             let tol = prev.size.max(first.size).max(1.0);
-            let aligned = (pr[0] - rect[0]).abs() < tol || ((pr[0] + pr[2] - rect[0] - rect[2]) / 2.0).abs() < tol || (pr[2] - rect[2]).abs() < tol;
+            let aligned = (pr[0] - rect[0]).abs() < tol
+                || ((pr[0] + pr[2] - rect[0] - rect[2]) / 2.0).abs() < tol
+                || (pr[2] - rect[2]).abs() < tol;
             // OCR lines stay apart: the scan fixes where each one is, so they never rewrap together.
             (!mixed || !(invisible(prev) || invisible(first)))
                 && (mixed || same_style(prev, first))
@@ -124,15 +151,23 @@ fn group_layout(lines: &[TextLine], mixed: bool) -> Vec<TextBlock> {
                 invisible: true,
             });
         }
-        let Some(block) = blocks.last_mut() else { continue };
+        let Some(block) = blocks.last_mut() else {
+            continue;
+        };
         let mut row_text = String::new();
         if !block.rows.is_empty() {
             block.editor_text.push('\n');
         }
         for &index in &row {
-            let Some(line) = lines.get(index) else { continue };
+            let Some(line) = lines.get(index) else {
+                continue;
+            };
             // Some producers position separate words without encoding a space.
-            if let Some(prev) = block.lines.last().filter(|i| row.contains(i)).and_then(|i| lines.get(*i))
+            if let Some(prev) = block
+                .lines
+                .last()
+                .filter(|i| row.contains(i))
+                .and_then(|i| lines.get(*i))
                 && !row_text.ends_with(char::is_whitespace)
                 && !line.text.starts_with(char::is_whitespace)
                 && line.rect[0] - prev.rect[2] > line.size * 0.12
@@ -154,7 +189,9 @@ fn group_layout(lines: &[TextLine], mixed: bool) -> Vec<TextBlock> {
                 block.text.push(' ');
             }
         }
-        block.text.push_str(row_text.trim_matches(paragraph_separator));
+        block
+            .text
+            .push_str(row_text.trim_matches(paragraph_separator));
         block.rect = union(block.rect, rect);
         block.rows.push(row);
     }
@@ -171,16 +208,16 @@ fn shape_source(
     if !pdfcraft_fonts::source_shaping::required(text) {
         return Ok(None);
     }
-    let source =
-        fonts.get(name.as_bytes()).and_then(|f| doc.dict(f)).ok_or_else(|| EditError::Invalid("the shaped text has no font resource".into()))?;
+    let source = fonts
+        .get(name.as_bytes())
+        .and_then(|f| doc.dict(f))
+        .ok_or_else(|| EditError::Invalid("the shaped text has no font resource".into()))?;
     let family = Metrics::from_dict(doc, &source).base_font;
     let mut candidates = vec![source];
-    candidates.extend(
-        fonts
-            .iter()
-            .filter_map(|(_, f)| doc.dict(f))
-            .filter(|f| pdfcraft_fonts::embedding::face_key(&Metrics::from_dict(doc, f).base_font) == pdfcraft_fonts::embedding::face_key(&family)),
-    );
+    candidates.extend(fonts.iter().filter_map(|(_, f)| doc.dict(f)).filter(|f| {
+        pdfcraft_fonts::embedding::face_key(&Metrics::from_dict(doc, f).base_font)
+            == pdfcraft_fonts::embedding::face_key(&family)
+    }));
     for font in candidates {
         if let Some(bytes) = pdfcraft_fonts::pdf::embedded_sfnt(doc, &font)
             && pdfcraft_fonts::embedding::covers(&bytes, text)
@@ -202,13 +239,19 @@ pub(super) fn rewrite_styled_block(
     text: Option<&str>,
     style: &BlockStyle,
 ) -> Result<LineEdit, EditError> {
-    let first = block.lines.first().and_then(|i| lines.get(*i)).ok_or_else(|| EditError::Invalid("the paragraph has no source runs".into()))?;
+    let first = block
+        .lines
+        .first()
+        .and_then(|i| lines.get(*i))
+        .ok_or_else(|| EditError::Invalid("the paragraph has no source runs".into()))?;
     let draft = match text {
         Some(t) if t != block.text => t,
         _ => &block.editor_text,
     };
     if draft.len() > 4_000_000 {
-        return Err(EditError::Invalid("the replacement text is too large".into()));
+        return Err(EditError::Invalid(
+            "the replacement text is too large".into(),
+        ));
     }
     if draft == block.editor_text && *style == BlockStyle::default() {
         return Ok(LineEdit { substituted: None });
@@ -219,9 +262,13 @@ pub(super) fn rewrite_styled_block(
         || ranges.iter().any(|r| {
             r.range.start >= r.range.end
                 || draft.get(r.range.clone()).is_none()
-                || [r.size, r.char_spacing, r.scale].iter().flatten().any(|n| !n.is_finite())
+                || [r.size, r.char_spacing, r.scale]
+                    .iter()
+                    .flatten()
+                    .any(|n| !n.is_finite())
                 || r.size.is_some_and(|n| n <= 0.0 || n > 14400.0)
-                || r.color.is_some_and(|c| c.iter().any(|n| !n.is_finite() || !(0.0..=1.0).contains(n)))
+                || r.color
+                    .is_some_and(|c| c.iter().any(|n| !n.is_finite() || !(0.0..=1.0).contains(n)))
         })
         || ranges.windows(2).any(|r| r[0].range.end > r[1].range.start)
     {
@@ -243,7 +290,9 @@ pub(super) fn rewrite_styled_block(
         edges.sort_unstable();
         edges.dedup();
         for bounds in edges.windows(2) {
-            let (Some(start), Some(end)) = (bounds.first().copied(), bounds.get(1).copied()) else { continue };
+            let (Some(start), Some(end)) = (bounds.first().copied(), bounds.get(1).copied()) else {
+                continue;
+            };
             let mut index = source;
             let selected = ranges.iter().find(|r| r.range.contains(&start)).copied();
             if selected.is_some() || style.family.is_some() || style.bold.is_some() {
@@ -259,9 +308,11 @@ pub(super) fn rewrite_styled_block(
                 };
                 let r = selected.unwrap_or(&default_range);
                 let mut line = lines.get(source).unwrap_or(first).clone();
-                if let Some((family, bold, italic)) =
-                    r.family.or(style.family).or_else(|| style.bold.map(|b| (source_family(&line.base_font), b, line.italic)))
-                {
+                if let Some((family, bold, italic)) = r.family.or(style.family).or_else(|| {
+                    style
+                        .bold
+                        .map(|b| (source_family(&line.base_font), b, line.italic))
+                }) {
                     let base = family.base_font(bold, italic);
                     line.font = format!("PCRange{}", base.replace('-', ""));
                     line.base_font = base.to_owned();
@@ -298,8 +349,15 @@ pub(super) fn rewrite_styled_block(
     }
     let lines = styled_lines.as_slice();
     let p = page_dict(doc, page)?;
-    let mut res = p.dict.get(b"Resources").and_then(|r| doc.resolve(r).as_dict().cloned()).unwrap_or_default();
-    let mut fonts = res.get(b"Font").and_then(|r| doc.resolve(r).as_dict().cloned()).unwrap_or_default();
+    let mut res = p
+        .dict
+        .get(b"Resources")
+        .and_then(|r| doc.resolve(r).as_dict().cloned())
+        .unwrap_or_default();
+    let mut fonts = res
+        .get(b"Font")
+        .and_then(|r| doc.resolve(r).as_dict().cloned())
+        .unwrap_or_default();
     for line in lines.iter().filter(|line| line.font.starts_with("PCRange")) {
         let mut f = Dict::new();
         f.set(b"Type".to_vec(), Object::name("Font"));
@@ -311,25 +369,45 @@ pub(super) fn rewrite_styled_block(
     let mut metrics = std::collections::BTreeMap::new();
     for (name, object) in fonts.iter().take(256) {
         if let Some(font) = doc.resolve(object).as_dict() {
-            metrics.insert(String::from_utf8_lossy(name).into_owned(), Metrics::from_dict(doc, font));
+            metrics.insert(
+                String::from_utf8_lossy(name).into_owned(),
+                Metrics::from_dict(doc, font),
+            );
         }
     }
     for index in &block.lines {
         if let Some(line) = lines.get(*index)
             && !metrics.contains_key(&line.font)
-            && let Some(font) = fonts.get(line.font.as_bytes()).and_then(|f| doc.resolve(f).as_dict().cloned())
+            && let Some(font) = fonts
+                .get(line.font.as_bytes())
+                .and_then(|f| doc.resolve(f).as_dict().cloned())
         {
             metrics.insert(line.font.clone(), Metrics::from_dict(doc, &font));
         }
     }
-    if [style.size, style.line_spacing, style.char_spacing, style.scale, style.width].iter().flatten().any(|v| !v.is_finite())
-        || style.color.is_some_and(|c| c.iter().any(|v| !v.is_finite()))
+    if [
+        style.size,
+        style.line_spacing,
+        style.char_spacing,
+        style.scale,
+        style.width,
+    ]
+    .iter()
+    .flatten()
+    .any(|v| !v.is_finite())
+        || style
+            .color
+            .is_some_and(|c| c.iter().any(|v| !v.is_finite()))
     {
-        return Err(EditError::Invalid("the paragraph's formatting must use finite numbers".into()));
+        return Err(EditError::Invalid(
+            "the paragraph's formatting must use finite numbers".into(),
+        ));
     }
     let [dx, dy] = style.offset.unwrap_or([0.0, 0.0]);
     if !dx.is_finite() || !dy.is_finite() || style.width.is_some_and(|w| !w.is_finite()) {
-        return Err(EditError::Invalid("the paragraph's position and width must be finite".into()));
+        return Err(EditError::Invalid(
+            "the paragraph's position and width must be finite".into(),
+        ));
     }
     // A rewritten OCR line grows to the right rather than wrapping onto the scanned line below.
     let natural = if block.invisible {
@@ -341,7 +419,8 @@ pub(super) fn rewrite_styled_block(
     // Each tuple is a character, its source style and an encodable resource name.
     let mut chars = Vec::new();
     let mut substituted = None;
-    let mut fallback_names: std::collections::BTreeMap<(String, char), String> = std::collections::BTreeMap::new();
+    let mut fallback_names: std::collections::BTreeMap<(String, char), String> =
+        std::collections::BTreeMap::new();
     let mut full_faces: HashMap<String, String> = HashMap::new();
     for (range, index) in styled_spans {
         let source = lines.get(index).unwrap_or(first);
@@ -351,29 +430,46 @@ pub(super) fn rewrite_styled_block(
                 continue;
             }
             let s = ch.to_string();
-            let name = if let Some(resource) = overrides.get(&index).and_then(|r| r.resource.as_ref()).or(style.resource.as_ref()) {
+            let name = if let Some(resource) = overrides
+                .get(&index)
+                .and_then(|r| r.resource.as_ref())
+                .or(style.resource.as_ref())
+            {
                 if !metrics.get(resource).is_some_and(|m| source_encodes(m, &s)) {
-                    return Err(EditError::Invalid(format!("the selected font resource {resource} cannot show U+{:04X}", u32::from(ch))));
+                    return Err(EditError::Invalid(format!(
+                        "the selected font resource {resource} cannot show U+{:04X}",
+                        u32::from(ch)
+                    )));
                 }
                 resource.clone()
-            } else if metrics.get(&source.font).is_some_and(|m| source_encodes(m, &s)) {
+            } else if metrics
+                .get(&source.font)
+                .is_some_and(|m| source_encodes(m, &s))
+            {
                 source.font.clone()
             } else if let Some((name, _)) = metrics.iter().find(|(_, m)| {
-                pdfcraft_fonts::embedding::face_key(&m.base_font) == pdfcraft_fonts::embedding::face_key(&source.base_font) && source_encodes(m, &s)
+                pdfcraft_fonts::embedding::face_key(&m.base_font)
+                    == pdfcraft_fonts::embedding::face_key(&source.base_font)
+                    && source_encodes(m, &s)
             }) {
                 name.clone()
-            } else if let Some(face) =
-                pdfcraft_fonts::embedding::matching_faces(&source.base_font).into_iter().find(|f| pdfcraft_fonts::embedding::covers(f.bytes, &s))
+            } else if let Some(face) = pdfcraft_fonts::embedding::matching_faces(&source.base_font)
+                .into_iter()
+                .find(|f| pdfcraft_fonts::embedding::covers(f.bytes, &s))
             {
                 let key = face.name();
                 if let Some(name) = full_faces.get(&key) {
                     name.clone()
                 } else {
-                    let name = pdfcraft_fonts::embedding::embed(doc, &mut fonts, face.bytes, face.family).map_err(EditError::Invalid)?;
+                    let name =
+                        pdfcraft_fonts::embedding::embed(doc, &mut fonts, face.bytes, face.family)
+                            .map_err(EditError::Invalid)?;
                     let font = fonts
                         .get(name.as_bytes())
                         .and_then(|f| doc.dict(f))
-                        .ok_or_else(|| EditError::Invalid("the full source font could not be loaded".into()))?;
+                        .ok_or_else(|| {
+                            EditError::Invalid("the full source font could not be loaded".into())
+                        })?;
                     metrics.insert(name.clone(), Metrics::from_dict(doc, &font));
                     full_faces.insert(key, name.clone());
                     name
@@ -381,20 +477,37 @@ pub(super) fn rewrite_styled_block(
             } else {
                 let family = source_family(&source.base_font);
                 if needs_type3(&s) {
-                    let key = (source.base_font.rsplit('+').next().unwrap_or(&source.base_font).to_owned(), ch);
+                    let key = (
+                        source
+                            .base_font
+                            .rsplit('+')
+                            .next()
+                            .unwrap_or(&source.base_font)
+                            .to_owned(),
+                        ch,
+                    );
                     if let Some(name) = fallback_names.get(&key) {
                         chars.push((ch, index, name.clone()));
                         continue;
                     }
                     if fallback_names.len() >= MAX_TYPE3_GLYPHS {
-                        return Err(EditError::Invalid("the replacement has too many fallback glyphs".into()));
+                        return Err(EditError::Invalid(
+                            "the replacement has too many fallback glyphs".into(),
+                        ));
                     }
-                    let fallback = type3_font(doc, &mut fonts, &s, family, source.bold, MAX_TYPE3_GLYPHS)?;
-                    let name = fallback.names.first().cloned().ok_or_else(no_japanese_font)?;
+                    let fallback =
+                        type3_font(doc, &mut fonts, &s, family, source.bold, MAX_TYPE3_GLYPHS)?;
+                    let name = fallback
+                        .names
+                        .first()
+                        .cloned()
+                        .ok_or_else(no_japanese_font)?;
                     let dict = fonts
                         .get(name.as_bytes())
                         .and_then(|f| doc.resolve(f).as_dict().cloned())
-                        .ok_or_else(|| EditError::Invalid("the fallback font could not be loaded".into()))?;
+                        .ok_or_else(|| {
+                            EditError::Invalid("the fallback font could not be loaded".into())
+                        })?;
                     metrics.insert(name.clone(), Metrics::from_dict(doc, &dict));
                     substituted = Some(fallback.family.to_string());
                     fallback_names.insert(key, name.clone());
@@ -407,7 +520,9 @@ pub(super) fn rewrite_styled_block(
                     f.set(b"Subtype".to_vec(), Object::name("Type1"));
                     f.set(b"BaseFont".to_vec(), Object::name(base));
                     f.set(b"Encoding".to_vec(), Object::name("WinAnsiEncoding"));
-                    metrics.entry(name.clone()).or_insert_with(|| Metrics::from_dict(doc, &f));
+                    metrics
+                        .entry(name.clone())
+                        .or_insert_with(|| Metrics::from_dict(doc, &f));
                     fonts.set(name.clone().into_bytes(), Object::Dict(f));
                     substituted = Some(base.to_string());
                     name
@@ -417,7 +532,13 @@ pub(super) fn rewrite_styled_block(
         }
     }
     let size_of = |source: &TextLine, index: usize| {
-        overrides.get(&index).and_then(|r| r.size).or(style.size).unwrap_or(source.size).max(0.1) / source.origin.k.max(1e-6)
+        overrides
+            .get(&index)
+            .and_then(|r| r.size)
+            .or(style.size)
+            .unwrap_or(source.size)
+            .max(0.1)
+            / source.origin.k.max(1e-6)
     };
     // A source run may carry TJ kerning/justification that is absent from its text state.
     // Keep its measured advance when rebuilding the run instead of making it wrap on entry.
@@ -433,14 +554,23 @@ pub(super) fn rewrite_styled_block(
                 source.origin.state.word_spacing,
             ) * source.origin.state.scale
                 * across(source);
-            let changed_face = style.resource.is_some() || overrides.get(&index).is_some_and(|r| r.family.is_some() || r.resource.is_some());
-            let factor = if nominal > 0.0 && !changed_face { ((source.rect[2] - source.rect[0]) / nominal).clamp(0.5, 2.0) } else { 1.0 };
+            let changed_face = style.resource.is_some()
+                || overrides
+                    .get(&index)
+                    .is_some_and(|r| r.family.is_some() || r.resource.is_some());
+            let factor = if nominal > 0.0 && !changed_face {
+                ((source.rect[2] - source.rect[0]) / nominal).clamp(0.5, 2.0)
+            } else {
+                1.0
+            };
             calibration.insert(index, factor);
         }
     }
     let advance = |item: &(char, usize, String)| -> f64 {
         let source = lines.get(item.1).unwrap_or(first);
-        let Some(m) = metrics.get(&item.2) else { return 0.0 };
+        let Some(m) = metrics.get(&item.2) else {
+            return 0.0;
+        };
         source_width(
             m,
             &item.0.to_string(),
@@ -450,9 +580,15 @@ pub(super) fn rewrite_styled_block(
                 .get(&item.1)
                 .and_then(|r| r.char_spacing)
                 .or(style.char_spacing)
-                .map_or(source.origin.state.char_spacing, |c| c / source.origin.k.max(1e-6)),
+                .map_or(source.origin.state.char_spacing, |c| {
+                    c / source.origin.k.max(1e-6)
+                }),
             source.origin.state.word_spacing,
-        ) * overrides.get(&item.1).and_then(|r| r.scale).or(style.scale).map_or(source.origin.state.scale, |s| (s / 100.0).clamp(0.1, 10.0))
+        ) * overrides
+            .get(&item.1)
+            .and_then(|r| r.scale)
+            .or(style.scale)
+            .map_or(source.origin.state.scale, |s| (s / 100.0).clamp(0.1, 10.0))
             * across(source)
             * calibration.get(&item.1).copied().unwrap_or(1.0)
     };
@@ -461,20 +597,28 @@ pub(super) fn rewrite_styled_block(
         let mut at = 0;
         while let Some(item) = items.get(at) {
             let mut end = at + 1;
-            while items.get(end).is_some_and(|v| v.1 == item.1 && v.2 == item.2) {
+            while items
+                .get(end)
+                .is_some_and(|v| v.1 == item.1 && v.2 == item.2)
+            {
                 end += 1;
             }
             let segment = items.get(at..end).unwrap_or_default();
             let string: String = segment.iter().map(|v| v.0).collect();
             if let Some((_, shaped, _)) = shape_source(doc, &fonts, &item.2, &string)? {
                 let source = lines.get(item.1).unwrap_or(first);
-                let scale =
-                    overrides.get(&item.1).and_then(|r| r.scale).or(style.scale).map_or(source.origin.state.scale, |s| (s / 100.0).clamp(0.1, 10.0));
+                let scale = overrides
+                    .get(&item.1)
+                    .and_then(|r| r.scale)
+                    .or(style.scale)
+                    .map_or(source.origin.state.scale, |s| (s / 100.0).clamp(0.1, 10.0));
                 let spacing = overrides
                     .get(&item.1)
                     .and_then(|r| r.char_spacing)
                     .or(style.char_spacing)
-                    .map_or(source.origin.state.char_spacing, |s| s / source.origin.k.max(1e-6));
+                    .map_or(source.origin.state.char_spacing, |s| {
+                        s / source.origin.k.max(1e-6)
+                    });
                 width += (shaped.advance * size_of(source, item.1)
                     + spacing * string.chars().count() as f64
                     + source.origin.state.word_spacing * string.matches(' ').count() as f64)
@@ -509,7 +653,10 @@ pub(super) fn rewrite_styled_block(
         let word = chars.get(at..end).unwrap_or_default();
         let w = measure(word)?;
         if !row.is_empty() && !item.0.is_whitespace() && row_width + w > width + 0.5 {
-            while row.last().is_some_and(|c: &(char, usize, String)| c.0.is_whitespace()) {
+            while row
+                .last()
+                .is_some_and(|c: &(char, usize, String)| c.0.is_whitespace())
+            {
                 row.pop();
             }
             rows.push(std::mem::take(&mut row));
@@ -524,7 +671,11 @@ pub(super) fn rewrite_styled_block(
     }
     for row in &rows {
         let text: String = row.iter().map(|v| v.0).collect();
-        if pdfcraft_fonts::source_shaping::required(&text) && row.first().is_some_and(|first| row.iter().any(|v| v.1 != first.1 || v.2 != first.2)) {
+        if pdfcraft_fonts::source_shaping::required(&text)
+            && row
+                .first()
+                .is_some_and(|first| row.iter().any(|v| v.1 != first.1 || v.2 != first.2))
+        {
             return Err(EditError::Invalid(
                 "contextual/bidi text across font or style boundaries needs a uniform full-face row; mixed contextual runs are not yet supported"
                     .into(),
@@ -541,8 +692,20 @@ pub(super) fn rewrite_styled_block(
             while row.get(end).is_some_and(|v| v.1 == item.1 && v.2 == item.2) {
                 end += 1;
             }
-            segment_advances.insert((row_index, at), row.get(at..end).unwrap_or_default().iter().map(&advance).sum::<f64>());
-            let string: String = row.get(at..end).unwrap_or_default().iter().map(|v| v.0).collect();
+            segment_advances.insert(
+                (row_index, at),
+                row.get(at..end)
+                    .unwrap_or_default()
+                    .iter()
+                    .map(&advance)
+                    .sum::<f64>(),
+            );
+            let string: String = row
+                .get(at..end)
+                .unwrap_or_default()
+                .iter()
+                .map(|v| v.0)
+                .collect();
             if let Some((bytes, shaped, family)) = shape_source(doc, &fonts, &item.2, &string)? {
                 shaped_runs.insert((row_index, at), (bytes, shaped, family));
             }
@@ -551,24 +714,49 @@ pub(super) fn rewrite_styled_block(
     }
     let mut glyph_resources = HashMap::new();
     for (key, (bytes, shaped, family)) in &shaped_runs {
-        let mappings: Vec<_> = shaped.glyphs.iter().map(|g| (g.text.clone(), g.id)).collect();
-        let resource = pdfcraft_fonts::embedding::embed_mapping(doc, &mut fonts, bytes, family, &mappings).map_err(EditError::Invalid)?;
+        let mappings: Vec<_> = shaped
+            .glyphs
+            .iter()
+            .map(|g| (g.text.clone(), g.id))
+            .collect();
+        let resource =
+            pdfcraft_fonts::embedding::embed_mapping(doc, &mut fonts, bytes, family, &mappings)
+                .map_err(EditError::Invalid)?;
         glyph_resources.insert(*key, resource);
     }
     let n = pdfcraft_content::num;
     let mut block_ops = vec![Op::new("q", vec![])];
     block_ops.extend(reveal_ops(block, lines, style, first.origin.ctm)?);
-    let back = Matrix([first.origin.ctm[0], first.origin.ctm[1], first.origin.ctm[2], first.origin.ctm[3], 0.0, 0.0])
-        .invert()
-        .ok_or_else(|| EditError::Invalid("the paragraph is drawn in a space it cannot be edited in".into()))?;
+    let back = Matrix([
+        first.origin.ctm[0],
+        first.origin.ctm[1],
+        first.origin.ctm[2],
+        first.origin.ctm[3],
+        0.0,
+        0.0,
+    ])
+    .invert()
+    .ok_or_else(|| {
+        EditError::Invalid("the paragraph is drawn in a space it cannot be edited in".into())
+    })?;
     let (tx, ty) = back.apply(dx, dy);
-    block_ops.push(Op::new("cm", vec![n(1.0), n(0.0), n(0.0), n(1.0), n(tx), n(ty)]));
+    block_ops.push(Op::new(
+        "cm",
+        vec![n(1.0), n(0.0), n(0.0), n(1.0), n(tx), n(ty)],
+    ));
     let centre = (block.rect[0] + block.rect[2]) / 2.0;
-    let lefts: Vec<_> = block.rows.iter().filter_map(|r| row_rect(r, lines).map(|r| r[0])).collect();
-    let left_span = lefts.iter().copied().fold(f64::NEG_INFINITY, f64::max) - lefts.iter().copied().fold(f64::INFINITY, f64::min);
+    let lefts: Vec<_> = block
+        .rows
+        .iter()
+        .filter_map(|r| row_rect(r, lines).map(|r| r[0]))
+        .collect();
+    let left_span = lefts.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+        - lefts.iter().copied().fold(f64::INFINITY, f64::min);
     let centered = block.rows.len() > 1
         && left_span > first.size * 0.5
-        && block.rows.iter().all(|row| row_rect(row, lines).is_some_and(|r| ((r[0] + r[2]) / 2.0 - centre).abs() < first.size));
+        && block.rows.iter().all(|row| {
+            row_rect(row, lines).is_some_and(|r| ((r[0] + r[2]) / 2.0 - centre).abs() < first.size)
+        });
     let source_leading = block
         .rows
         .windows(2)
@@ -581,7 +769,11 @@ pub(super) fn rewrite_styled_block(
         .unwrap_or(first.size * 1.5);
     let mut baseline = first.origin.baseline;
     for (row_index, row) in rows.iter().enumerate() {
-        let anchor = block.rows.get(row_index).and_then(|r| r.first()).and_then(|i| lines.get(*i));
+        let anchor = block
+            .rows
+            .get(row_index)
+            .and_then(|r| r.first())
+            .and_then(|i| lines.get(*i));
         if style.line_spacing.is_none()
             && style.size.is_none()
             && let Some(anchor) = anchor
@@ -590,10 +782,26 @@ pub(super) fn rewrite_styled_block(
         }
         let anchor = anchor.unwrap_or(first);
         let w = measured.get(row_index).copied().unwrap_or(0.0);
-        let align = style.align.unwrap_or(if centered { crate::added::Align::Center } else { crate::added::Align::Left });
-        let original_rect = block.rows.get(row_index).and_then(|row| row_rect(row, lines)).unwrap_or(block.rect);
-        let left = if style.width.is_none() && style.align.is_none() { original_rect[0] } else { block.rect[0] };
-        let available = if style.width.is_none() && style.align.is_none() { original_rect[2] - original_rect[0] } else { width };
+        let align = style.align.unwrap_or(if centered {
+            crate::added::Align::Center
+        } else {
+            crate::added::Align::Left
+        });
+        let original_rect = block
+            .rows
+            .get(row_index)
+            .and_then(|row| row_rect(row, lines))
+            .unwrap_or(block.rect);
+        let left = if style.width.is_none() && style.align.is_none() {
+            original_rect[0]
+        } else {
+            block.rect[0]
+        };
+        let available = if style.width.is_none() && style.align.is_none() {
+            original_rect[2] - original_rect[0]
+        } else {
+            width
+        };
         let mut x = left
             + match align {
                 crate::added::Align::Center => (available - w) / 2.0,
@@ -605,15 +813,24 @@ pub(super) fn rewrite_styled_block(
             let Some(item) = row.get(pos) else { break };
             let source = lines.get(item.1).unwrap_or(first);
             let mut end = pos + 1;
-            while row.get(end).is_some_and(|other| other.1 == item.1 && other.2 == item.2) {
+            while row
+                .get(end)
+                .is_some_and(|other| other.1 == item.1 && other.2 == item.2)
+            {
                 end += 1;
             }
             let segment = row.get(pos..end).unwrap_or_default();
             let string: String = segment.iter().map(|c| c.0).collect();
-            let m = metrics.get(&item.2).ok_or_else(|| EditError::Invalid("the paragraph font is missing".into()))?;
+            let m = metrics
+                .get(&item.2)
+                .ok_or_else(|| EditError::Invalid("the paragraph font is missing".into()))?;
             let mut state = source.origin.state.clone();
             state.font = Some((item.2.clone(), size_of(source, item.1)));
-            if let Some(c) = overrides.get(&item.1).and_then(|r| r.char_spacing).or(style.char_spacing) {
+            if let Some(c) = overrides
+                .get(&item.1)
+                .and_then(|r| r.char_spacing)
+                .or(style.char_spacing)
+            {
                 state.char_spacing = c / source.origin.k.max(1e-6);
             }
             if let Some(s) = overrides.get(&item.1).and_then(|r| r.scale).or(style.scale) {
@@ -625,17 +842,33 @@ pub(super) fn rewrite_styled_block(
             if let Some([r, g, b]) = overrides.get(&item.1).and_then(|r| r.color).or(style.color) {
                 state.fill = vec![Op::new("rg", vec![n(r), n(g), n(b)])];
             }
-            let inverse = Matrix(first.origin.ctm).invert().ok_or_else(|| EditError::Invalid("the paragraph has a singular transform".into()))?;
-            let mut tm = Matrix(source.origin.tm).then(&Matrix(source.origin.ctm)).then(&inverse).0;
+            let inverse = Matrix(first.origin.ctm).invert().ok_or_else(|| {
+                EditError::Invalid("the paragraph has a singular transform".into())
+            })?;
+            let mut tm = Matrix(source.origin.tm)
+                .then(&Matrix(source.origin.ctm))
+                .then(&inverse)
+                .0;
             let (ax, ay) = back.apply(x - source.origin.x, baseline - source.origin.baseline);
             tm[4] += ax;
             tm[5] += ay;
-            let mut segment_width = segment_advances.get(&(row_index, pos)).copied().unwrap_or(0.0);
+            let mut segment_width = segment_advances
+                .get(&(row_index, pos))
+                .copied()
+                .unwrap_or(0.0);
             if let Some((_, shaped, _)) = shaped_runs.get(&(row_index, pos)) {
-                let resource = glyph_resources.get(&(row_index, pos)).ok_or_else(|| EditError::Invalid("shaped font is missing".into()))?;
+                let resource = glyph_resources
+                    .get(&(row_index, pos))
+                    .ok_or_else(|| EditError::Invalid("shaped font is missing".into()))?;
                 let mut properties = Dict::new();
-                properties.set(b"ActualText".to_vec(), Object::String(PdfString::text(&string)));
-                block_ops.push(Op::new("BDC", vec![Object::name("Span"), Object::Dict(properties)]));
+                properties.set(
+                    b"ActualText".to_vec(),
+                    Object::String(PdfString::text(&string)),
+                );
+                block_ops.push(Op::new(
+                    "BDC",
+                    vec![Object::name("Span"), Object::Dict(properties)],
+                ));
                 state.font = Some((resource.clone(), size_of(source, item.1)));
                 // Absolute glyph matrices preserve marks and contextual positions; font-program
                 // codes are separate from Unicode and ToUnicode/ActualText keep logical text.
@@ -647,13 +880,20 @@ pub(super) fn rewrite_styled_block(
                     let y = glyph.position[1] * size;
                     matrix[4] += matrix[0] * x + matrix[2] * y;
                     matrix[5] += matrix[1] * x + matrix[3] * y;
-                    let code = u16::try_from(i + 1).map_err(|_| EditError::Invalid("shaped glyph limit".into()))?;
+                    let code = u16::try_from(i + 1)
+                        .map_err(|_| EditError::Invalid("shaped glyph limit".into()))?;
                     block_ops.push(Op::new("BT", vec![]));
                     block_ops.extend(state.ops());
                     block_ops.push(Op::new("Tm", matrix.map(n).to_vec()));
-                    block_ops.push(Op::new("Tj", vec![Object::String(PdfString::literal(code.to_be_bytes().to_vec()))]));
+                    block_ops.push(Op::new(
+                        "Tj",
+                        vec![Object::String(PdfString::literal(
+                            code.to_be_bytes().to_vec(),
+                        ))],
+                    ));
                     block_ops.push(Op::new("ET", vec![]));
-                    extra += state.char_spacing * glyph.text.chars().count() as f64 + state.word_spacing * glyph.text.matches(' ').count() as f64;
+                    extra += state.char_spacing * glyph.text.chars().count() as f64
+                        + state.word_spacing * glyph.text.matches(' ').count() as f64;
                 }
                 block_ops.push(Op::new("EMC", vec![]));
                 segment_width = (shaped.advance * size + extra) * state.scale * source.origin.k;
@@ -672,12 +912,26 @@ pub(super) fn rewrite_styled_block(
                 block_ops.push(Op::new("ET", vec![]));
             }
             if underlines.get(&item.1).copied().or(style.underline) == Some(true) {
-                let [r, g, b] = overrides.get(&item.1).and_then(|r| r.color).or(style.color).unwrap_or(source.color);
+                let [r, g, b] = overrides
+                    .get(&item.1)
+                    .and_then(|r| r.color)
+                    .or(style.color)
+                    .unwrap_or(source.color);
                 let underline_size = size_of(source, item.1) * source.origin.k;
-                let (x0, y0) = back.apply(x - first.origin.ctm[4], baseline - first.origin.ctm[5] - underline_size * 0.12);
-                let (x1, y1) = back.apply(x + segment_width - first.origin.ctm[4], baseline - first.origin.ctm[5] - underline_size * 0.12);
+                let (x0, y0) = back.apply(
+                    x - first.origin.ctm[4],
+                    baseline - first.origin.ctm[5] - underline_size * 0.12,
+                );
+                let (x1, y1) = back.apply(
+                    x + segment_width - first.origin.ctm[4],
+                    baseline - first.origin.ctm[5] - underline_size * 0.12,
+                );
                 block_ops.push(Op::new("RG", vec![n(r), n(g), n(b)]));
-                block_ops.push(Op::new("w", vec![n(underline_size * 0.06 / first.origin.ctm[2].hypot(first.origin.ctm[3]).max(1e-6))]));
+                block_ops.push(Op::new(
+                    "w",
+                    vec![n(underline_size * 0.06
+                        / first.origin.ctm[2].hypot(first.origin.ctm[3]).max(1e-6))],
+                ));
                 block_ops.push(Op::new("m", vec![n(x0), n(y0)]));
                 block_ops.push(Op::new("l", vec![n(x1), n(y1)]));
                 block_ops.push(Op::new("S", vec![]));
@@ -693,7 +947,12 @@ pub(super) fn rewrite_styled_block(
     }
     block_ops.push(Op::new("Q", vec![]));
     let streams = content_streams(doc, &p.dict);
-    let pieces = Pieces::join(&streams.iter().map(|(_, d)| d.as_slice()).collect::<Vec<_>>());
+    let pieces = Pieces::join(
+        &streams
+            .iter()
+            .map(|(_, d)| d.as_slice())
+            .collect::<Vec<_>>(),
+    );
     let ops = pieces.parse().ops;
     let members: Vec<_> = block.lines.iter().filter_map(|i| lines.get(*i)).collect();
     let mut drop = coincident_ops(lines, &members);
@@ -705,7 +964,10 @@ pub(super) fn rewrite_styled_block(
         .unwrap_or_default()
         .iter()
         .enumerate()
-        .any(|(i, op)| matches!(op.op.as_slice(), b"Tj" | b"TJ" | b"'" | b"\"") && !drop.contains(&(o.bt_op + i)));
+        .any(|(i, op)| {
+            matches!(op.op.as_slice(), b"Tj" | b"TJ" | b"'" | b"\"")
+                && !drop.contains(&(o.bt_op + i))
+        });
     let after = if split { &o.state } else { &o.bt_state };
     block_ops.extend(after.ops());
     if split {
@@ -714,7 +976,16 @@ pub(super) fn rewrite_styled_block(
         block_ops.push(Op::new("Tm", o.tlm.iter().map(|v| n(*v)).collect()));
     }
     let at = if split { start } else { o.bt_op };
-    let data = splice(&pieces, &ops, |i| (if i == at { std::mem::take(&mut block_ops) } else { Vec::new() }, !drop.contains(&i)));
+    let data = splice(&pieces, &ops, |i| {
+        (
+            if i == at {
+                std::mem::take(&mut block_ops)
+            } else {
+                Vec::new()
+            },
+            !drop.contains(&i),
+        )
+    });
     let contents = rewritten_contents(doc, &streams, data);
     res.set(b"Font".to_vec(), Object::Dict(fonts));
     doc.update_dict(p.obj, |d| {

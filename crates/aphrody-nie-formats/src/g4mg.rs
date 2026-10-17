@@ -162,8 +162,11 @@ pub fn extract_geometry(g4mg: &[u8], g4md: &G4md) -> Vec<SubmeshGeometry> {
 
     // Stride dérivé : région vertex [0, face_data_base) / nombre total de vertices.
     let total_verts: usize = g4md.submeshes.iter().map(|s| s.vertex_count as usize).sum();
-    let derived_stride =
-        if face_data_base > 0 && total_verts > 0 { face_data_base / total_verts } else { 0 };
+    let derived_stride = if face_data_base > 0 && total_verts > 0 {
+        face_data_base / total_verts
+    } else {
+        0
+    };
 
     // `total_verts` n'est fiable que si les vertex_offsets sont DISTINCTS. Sur les meshes de menu,
     // des submeshes PARTAGENT leurs vertices (offsets répétés) → `total_verts` double-compte →
@@ -183,8 +186,9 @@ pub fn extract_geometry(g4mg: &[u8], g4md: &G4md) -> Vec<SubmeshGeometry> {
         if cnt == 0 {
             continue;
         }
-        let next =
-            order.get(k + 1).map_or(face_data_base, |&j| g4md.submeshes[j].vertex_offset as usize);
+        let next = order.get(k + 1).map_or(face_data_base, |&j| {
+            g4md.submeshes[j].vertex_offset as usize
+        });
         gap_stride[i] = next.saturating_sub(g4md.submeshes[i].vertex_offset as usize) / cnt;
     }
 
@@ -270,10 +274,17 @@ pub fn extract_geometry(g4mg: &[u8], g4md: &G4md) -> Vec<SubmeshGeometry> {
         });
 
         let mut positions = Vec::with_capacity(vertex_count);
-        let mut normals =
-            Vec::with_capacity(if decode_normal.is_some() { vertex_count } else { 0 });
+        let mut normals = Vec::with_capacity(if decode_normal.is_some() {
+            vertex_count
+        } else {
+            0
+        });
         let mut uv0 = Vec::with_capacity(if decode_uv.is_some() { vertex_count } else { 0 });
-        let mut colors = Vec::with_capacity(if decode_color.is_some() { vertex_count } else { 0 });
+        let mut colors = Vec::with_capacity(if decode_color.is_some() {
+            vertex_count
+        } else {
+            0
+        });
 
         for i in 0..vertex_count {
             let p = v_offset + i * stride;
@@ -304,7 +315,11 @@ pub fn extract_geometry(g4mg: &[u8], g4md: &G4md) -> Vec<SubmeshGeometry> {
         if index_count > 0 && i_end <= g4mg.len() {
             for i in 0..index_count {
                 let p = i_offset + i * idx_size;
-                let v = if index32 { read_u32(g4mg, p) } else { u32::from(read_u16(g4mg, p)) };
+                let v = if index32 {
+                    read_u32(g4mg, p)
+                } else {
+                    u32::from(read_u16(g4mg, p))
+                };
                 indices.push(v);
             }
         }
@@ -399,13 +414,13 @@ fn compact_global_indices(geometries: &mut [SubmeshGeometry], global_bases: &[Op
                     let local_index = positions.len() as u32;
                     positions.push(source.positions[source_local_index]);
                     if has_normals {
-                        normals.push(
-                            source.normals.get(source_local_index).copied().unwrap_or(Vec3 {
+                        normals.push(source.normals.get(source_local_index).copied().unwrap_or(
+                            Vec3 {
                                 x: 0.0,
                                 y: 0.0,
                                 z: 1.0,
-                            }),
-                        );
+                            },
+                        ));
                     }
                     if has_uv0 {
                         uv0.push(
@@ -417,14 +432,14 @@ fn compact_global_indices(geometries: &mut [SubmeshGeometry], global_bases: &[Op
                         );
                     }
                     if has_colors {
-                        colors.push(
-                            source.colors.get(source_local_index).copied().unwrap_or(Vec4 {
+                        colors.push(source.colors.get(source_local_index).copied().unwrap_or(
+                            Vec4 {
                                 x: 1.0,
                                 y: 1.0,
                                 z: 1.0,
                                 w: 1.0,
-                            }),
-                        );
+                            },
+                        ));
                     }
                     remap.insert(vertex_key, local_index);
                     local_index
@@ -504,9 +519,14 @@ fn decode_color_at(data: &[u8], off: usize, datatype: u32) -> Vec4 {
                     w: data[off + 3] as f32 / 255.0,
                 }
             } else {
-                Vec4 { x: 1.0, y: 1.0, z: 1.0, w: 1.0 }
+                Vec4 {
+                    x: 1.0,
+                    y: 1.0,
+                    z: 1.0,
+                    w: 1.0,
+                }
             }
-        },
+        }
         14 => Vec4 {
             x: f32::from(read_u16(data, off)) / 65535.0,
             y: f32::from(read_u16(data, off + 2)) / 65535.0,
@@ -531,7 +551,11 @@ pub fn snorm16(s: i16) -> f32 {
 /// Décode une normale à `off` et la renormalise (port de `DecodeNormal`).
 fn decode_normal_at(data: &[u8], off: usize, datatype: u32) -> Vec3 {
     let (mut x, mut y, mut z) = match datatype {
-        2 | 3 => (read_f32(data, off), read_f32(data, off + 4), read_f32(data, off + 8)),
+        2 | 3 => (
+            read_f32(data, off),
+            read_f32(data, off + 4),
+            read_f32(data, off + 8),
+        ),
         _ => (
             snorm16(read_i16(data, off)),
             snorm16(read_i16(data, off + 2)),
@@ -543,9 +567,17 @@ fn decode_normal_at(data: &[u8], off: usize, datatype: u32) -> Vec3 {
     z = sanitize(z);
     let len = (x * x + y * y + z * z).sqrt();
     if len > 1e-6 {
-        Vec3 { x: x / len, y: y / len, z: z / len }
+        Vec3 {
+            x: x / len,
+            y: y / len,
+            z: z / len,
+        }
     } else {
-        Vec3 { x: 0.0, y: 0.0, z: 1.0 } // normale dégénérée : repli sûr
+        Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        } // normale dégénérée : repli sûr
     }
 }
 
@@ -558,9 +590,15 @@ fn decode_uv_at(data: &[u8], off: usize, datatype: u32) -> Vec2 {
             f32::from(read_u16(data, off)) / 65535.0,
             f32::from(read_u16(data, off + 2)) / 65535.0,
         ),
-        _ => (snorm16(read_i16(data, off)), snorm16(read_i16(data, off + 2))),
+        _ => (
+            snorm16(read_i16(data, off)),
+            snorm16(read_i16(data, off + 2)),
+        ),
     };
-    Vec2 { u: sanitize(u), v: sanitize(v) }
+    Vec2 {
+        u: sanitize(u),
+        v: sanitize(v),
+    }
 }
 
 fn sanitize(f: f32) -> f32 {
@@ -568,11 +606,15 @@ fn sanitize(f: f32) -> f32 {
 }
 
 fn read_f32(data: &[u8], off: usize) -> f32 {
-    data.get(off..off + 4).and_then(|s| <[u8; 4]>::try_from(s).ok()).map_or(0.0, f32::from_le_bytes)
+    data.get(off..off + 4)
+        .and_then(|s| <[u8; 4]>::try_from(s).ok())
+        .map_or(0.0, f32::from_le_bytes)
 }
 
 fn read_u16(data: &[u8], off: usize) -> u16 {
-    data.get(off..off + 2).and_then(|s| <[u8; 2]>::try_from(s).ok()).map_or(0, u16::from_le_bytes)
+    data.get(off..off + 2)
+        .and_then(|s| <[u8; 2]>::try_from(s).ok())
+        .map_or(0, u16::from_le_bytes)
 }
 
 fn read_i16(data: &[u8], off: usize) -> i16 {
@@ -580,7 +622,9 @@ fn read_i16(data: &[u8], off: usize) -> i16 {
 }
 
 fn read_u32(data: &[u8], off: usize) -> u32 {
-    data.get(off..off + 4).and_then(|s| <[u8; 4]>::try_from(s).ok()).map_or(0, u32::from_le_bytes)
+    data.get(off..off + 4)
+        .and_then(|s| <[u8; 4]>::try_from(s).ok())
+        .map_or(0, u32::from_le_bytes)
 }
 
 /// Expose la table d'attributs résolue (pour les writers GLB).
@@ -671,7 +715,14 @@ mod tests {
         assert_eq!(g.stride, 72);
 
         // Positions = (0,0,0),(1,0,0),(2,0,0).
-        assert_eq!(g.positions[0], Vec3 { x: 0.0, y: 0.0, z: 0.0 });
+        assert_eq!(
+            g.positions[0],
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0
+            }
+        );
         assert_eq!(g.positions[1].x, 1.0);
         assert_eq!(g.positions[2].x, 2.0);
 
@@ -771,14 +822,23 @@ mod tests {
             stride: 68,
             material_index: 0,
             index32: false,
-            positions: alloc::vec![Vec3 { x, y: 0.0, z: 0.0 }, Vec3 { x: x + 1.0, y: 0.0, z: 0.0 }],
+            positions: alloc::vec![
+                Vec3 { x, y: 0.0, z: 0.0 },
+                Vec3 {
+                    x: x + 1.0,
+                    y: 0.0,
+                    z: 0.0
+                }
+            ],
             normals: Vec::new(),
             uv0: Vec::new(),
             colors: Vec::new(),
             indices,
         };
-        let mut geometries =
-            alloc::vec![geometry(0, 10.0, alloc::vec![]), geometry(1, 20.0, alloc::vec![2, 3, 2]),];
+        let mut geometries = alloc::vec![
+            geometry(0, 10.0, alloc::vec![]),
+            geometry(1, 20.0, alloc::vec![2, 3, 2]),
+        ];
         compact_global_indices(&mut geometries, &[Some(2), Some(4)]);
         assert_eq!(geometries[1].positions[0].x, 10.0);
         assert_eq!(geometries[1].positions[1].x, 11.0);
@@ -863,7 +923,11 @@ mod tests {
         let g = &geo[0];
         assert_eq!(g.vertex_count, 4);
         assert_eq!(g.stride, 32);
-        assert_eq!(g.indices, alloc::vec![0u32, 1, 2, 0, 2, 3], "quad = deux triangles");
+        assert_eq!(
+            g.indices,
+            alloc::vec![0u32, 1, 2, 0, 2, 3],
+            "quad = deux triangles"
+        );
         assert!(!g.index32, "indices sur 16 bits");
         assert_eq!(g.positions.len(), 4);
         assert_eq!(g.positions[0].x, 1.0, "premier sommet en x = 1.0");
@@ -878,7 +942,11 @@ mod tests {
             return;
         };
         assert!(data.len() >= 192, "{chemin} : moins de 192 octets");
-        assert_eq!(&data[..192], &MENU_G4MG[..], "{chemin} : les 192 premiers octets");
+        assert_eq!(
+            &data[..192],
+            &MENU_G4MG[..],
+            "{chemin} : les 192 premiers octets"
+        );
 
         // Et la géométrie extraite du fichier réel est celle du quad.
         let md = build_menu_g4md();

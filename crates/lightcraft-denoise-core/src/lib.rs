@@ -1,7 +1,14 @@
 //! Model metadata, bounded archive/cache formats and Bayer tiling, independent of inference.
 //! Used by featureless engine and web builds; no neural-network or matrix backend is linked.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 pub mod archive;
 pub mod bayer;
 pub mod hash;

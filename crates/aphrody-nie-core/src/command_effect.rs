@@ -72,7 +72,11 @@ pub struct SpecialTacticsSlot {
 
 impl Default for SpecialTacticsSlot {
     fn default() -> Self {
-        Self { id: ID_INVALID_U8, data: 0, flags: SPECIAL_TACTICS_FLAGS }
+        Self {
+            id: ID_INVALID_U8,
+            data: 0,
+            flags: SPECIAL_TACTICS_FLAGS,
+        }
     }
 }
 
@@ -88,7 +92,10 @@ pub struct SuperTacticsSlot {
 
 impl Default for SuperTacticsSlot {
     fn default() -> Self {
-        Self { id: ID_INVALID_U8, effect_type: SUPER_TACTICS_TYPE }
+        Self {
+            id: ID_INVALID_U8,
+            effect_type: SUPER_TACTICS_TYPE,
+        }
     }
 }
 
@@ -104,7 +111,10 @@ pub struct PassiveSkillSlot {
 
 impl Default for PassiveSkillSlot {
     fn default() -> Self {
-        Self { id: ID_INVALID_U32, flags: PASSIVE_SKILL_FLAGS }
+        Self {
+            id: ID_INVALID_U32,
+            flags: PASSIVE_SKILL_FLAGS,
+        }
     }
 }
 
@@ -120,7 +130,10 @@ pub struct StadiumGimmickSlot {
 
 impl Default for StadiumGimmickSlot {
     fn default() -> Self {
-        Self { id: ID_INVALID_U8, effect_type: 3 }
+        Self {
+            id: ID_INVALID_U8,
+            effect_type: 3,
+        }
     }
 }
 
@@ -136,7 +149,10 @@ pub struct TeamBuildSlot {
 
 impl Default for TeamBuildSlot {
     fn default() -> Self {
-        Self { id: ID_INVALID_U32, marker: ID_INVALID_U8 }
+        Self {
+            id: ID_INVALID_U32,
+            marker: ID_INVALID_U8,
+        }
     }
 }
 
@@ -326,7 +342,11 @@ mod golden_tests {
     fn embedded_passive_counts() {
         let db = PassiveSkillEffectDb::load_embedded();
         assert_eq!(db.effects.len(), 8, "m_soccerPassiveSkillEffectList = 8");
-        assert_eq!(db.ranges.len(), 1, "m_soccerPassiveSkillEffectRangeList = 1");
+        assert_eq!(
+            db.ranges.len(),
+            1,
+            "m_soccerPassiveSkillEffectRangeList = 1"
+        );
     }
 
     /// Golden : premier effet réel (0x20DFBB4B, param1 = 1.5).

@@ -19,7 +19,9 @@
 
 use serde_json::{Value, json};
 use vectorcraft_color::{BlendMode, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, CharStyle, FillLayer, Node, NodeKind, ParaStyle, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, CharStyle, FillLayer, Node, NodeKind, ParaStyle, StrokeLayer,
+};
 use vectorcraft_geom::Rect;
 
 use super::edit::selected_roots;
@@ -216,11 +218,26 @@ pub(crate) fn item_target_at(s: &Session, p: &Value, key: &str, cmd: &str) -> Re
         Some(Value::Null) => Ok(ItemTarget::Top),
         Some(v) => v
             .as_u64()
-            .map(|i| ItemTarget::Item { index: i as usize, explicit: true })
-            .ok_or_else(|| bad(cmd, format!("`{key}` must be an appearance item index (paint order) or null"))),
+            .map(|i| ItemTarget::Item {
+                index: i as usize,
+                explicit: true,
+            })
+            .ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("`{key}` must be an appearance item index (paint order) or null"),
+                )
+            }),
         // The active item is a row of the first selected object's own stack.
-        None if p.get("ids").is_some() || p.get("id").is_some() || targets_contents(p)? => Ok(ItemTarget::Top),
-        None => Ok(s.appearance_item().map_or(ItemTarget::Top, |index| ItemTarget::Item { index, explicit: false })),
+        None if p.get("ids").is_some() || p.get("id").is_some() || targets_contents(p)? => {
+            Ok(ItemTarget::Top)
+        }
+        None => Ok(s
+            .appearance_item()
+            .map_or(ItemTarget::Top, |index| ItemTarget::Item {
+                index,
+                explicit: false,
+            })),
     }
 }
 
@@ -238,10 +255,26 @@ impl ItemTarget {
     /// of its own kind, so a fill row leaves stroke edits on the topmost stroke of the painted
     /// leaves (as without an active item) and vice versa. Explicit items are kept (and checked).
     pub(crate) fn of_kind(self, s: &Session, fill: bool) -> Self {
-        let ItemTarget::Item { index, explicit: false } = self else { return self };
-        let fits =
-            s.active().and_then(|st| st.doc.node(*st.selection.subjects().first()?)?.appearance.items.get(index).map(|it| it.is_fill() == fill));
-        if fits == Some(true) { self } else { ItemTarget::Top }
+        let ItemTarget::Item {
+            index,
+            explicit: false,
+        } = self
+        else {
+            return self;
+        };
+        let fits = s.active().and_then(|st| {
+            st.doc
+                .node(*st.selection.subjects().first()?)?
+                .appearance
+                .items
+                .get(index)
+                .map(|it| it.is_fill() == fill)
+        });
+        if fits == Some(true) {
+            self
+        } else {
+            ItemTarget::Top
+        }
     }
 
     /// The item of `ap` a fill (`fill`) or stroke edit changes; `None` = the topmost one.
@@ -253,7 +286,10 @@ impl ItemTarget {
                     cmd,
                     match ap.items.get(index) {
                         None => format!("no appearance item {index}"),
-                        Some(_) => format!("appearance item {index} is not a {}", if fill { "fill" } else { "stroke" }),
+                        Some(_) => format!(
+                            "appearance item {index} is not a {}",
+                            if fill { "fill" } else { "stroke" }
+                        ),
                     },
                 )),
                 found => Ok(found),
@@ -266,8 +302,13 @@ impl ItemTarget {
         match self {
             ItemTarget::Top => Ok(None),
             ItemTarget::Item { index, .. } if index < ap.items.len() => Ok(Some(index)),
-            ItemTarget::Item { index, explicit: true } => Err(bad(cmd, format!("no appearance item {index}"))),
-            ItemTarget::Item { explicit: false, .. } => Ok(None),
+            ItemTarget::Item {
+                index,
+                explicit: true,
+            } => Err(bad(cmd, format!("no appearance item {index}"))),
+            ItemTarget::Item {
+                explicit: false, ..
+            } => Ok(None),
         }
     }
 }
@@ -279,7 +320,10 @@ fn targets_contents(p: &Value) -> Result<bool> {
         Some(v) => match v.as_str() {
             Some("object") => Ok(false),
             Some("contents") => Ok(true),
-            _ => Err(bad("appearance", format!("`target` must be \"object\" or \"contents\", not {v}"))),
+            _ => Err(bad(
+                "appearance",
+                format!("`target` must be \"object\" or \"contents\", not {v}"),
+            )),
         },
     }
 }
@@ -302,9 +346,16 @@ pub(crate) fn appearance_targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> 
         subject_roots(s)?
     } else {
         let d = &s.doc()?.doc;
-        targets(s, p)?.into_iter().filter(|id| d.node(*id).is_some()).collect()
+        targets(s, p)?
+            .into_iter()
+            .filter(|id| d.node(*id).is_some())
+            .collect()
     };
-    if targets_contents(p)? { leaf_targets(s, &roots) } else { Ok(roots) }
+    if targets_contents(p)? {
+        leaf_targets(s, &roots)
+    } else {
+        Ok(roots)
+    }
 }
 
 /// [`appearance_targets`] of `cmd`, which needs at least one.
@@ -365,24 +416,43 @@ pub(crate) fn edit_items_then(
 }
 
 /// How many of `ids` differ in `d` from `before`.
-pub(crate) fn count_changed(d: &vectorcraft_doc::Document, before: &vectorcraft_doc::Document, ids: &[NodeId]) -> usize {
-    ids.iter().filter(|id| d.node(**id) != before.node(**id)).count()
+pub(crate) fn count_changed(
+    d: &vectorcraft_doc::Document,
+    before: &vectorcraft_doc::Document,
+    ids: &[NodeId],
+) -> usize {
+    ids.iter()
+        .filter(|id| d.node(**id) != before.node(**id))
+        .count()
 }
 
 /// Whether an edit aimed at `item` changes a stroke: the `stroke` param, else the kind of the
 /// targeted item (on the first target object), else `default`.
-pub(crate) fn edits_stroke(s: &Session, p: &Value, item: ItemTarget, default: bool) -> Result<bool> {
+pub(crate) fn edits_stroke(
+    s: &Session,
+    p: &Value,
+    item: ItemTarget,
+    default: bool,
+) -> Result<bool> {
     if let Some(b) = p.get("stroke").and_then(Value::as_bool) {
         return Ok(b);
     }
-    let ItemTarget::Item { index, .. } = item else { return Ok(default) };
+    let ItemTarget::Item { index, .. } = item else {
+        return Ok(default);
+    };
     let ids = appearance_targets(s, p)?;
     let d = &s.doc()?.doc;
-    Ok(ids.first().and_then(|id| d.node(*id)?.appearance.items.get(index)).map_or(default, |it| !it.is_fill()))
+    Ok(ids
+        .first()
+        .and_then(|id| d.node(*id)?.appearance.items.get(index))
+        .map_or(default, |it| !it.is_fill()))
 }
 
 pub(crate) fn index_param(p: &Value, key: &str, cmd: &str) -> Result<usize> {
-    p.get(key).and_then(Value::as_u64).map(|i| i as usize).ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
+    p.get(key)
+        .and_then(Value::as_u64)
+        .map(|i| i as usize)
+        .ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
 }
 
 fn set_active_item(s: &mut Session, p: &Value) -> Result<Value> {
@@ -397,43 +467,73 @@ fn set_active_item(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let st = s.doc()?;
     let objects = st.selection.subjects().to_vec();
-    let first = objects.first().and_then(|id| st.doc.node(*id)).ok_or_else(|| EngineError::Other("nothing selected".into()))?;
-    let fill = first.appearance.items.get(index).ok_or_else(|| bad(C, format!("no appearance item {index}")))?.is_fill();
+    let first = objects
+        .first()
+        .and_then(|id| st.doc.node(*id))
+        .ok_or_else(|| EngineError::Other("nothing selected".into()))?;
+    let fill = first
+        .appearance
+        .items
+        .get(index)
+        .ok_or_else(|| bad(C, format!("no appearance item {index}")))?
+        .is_fill();
     let doc = st.uid;
     s.fill_active = fill;
-    s.active_appearance_item = Some(ActiveItem { doc, objects, index });
+    s.active_appearance_item = Some(ActiveItem {
+        doc,
+        objects,
+        index,
+    });
     Ok(json!({ "index": index }))
 }
 
 fn add_item(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
-    let ids = require_targets(s, p, if fill { "appearance.addFill" } else { "appearance.addStroke" })?;
+    let ids = require_targets(
+        s,
+        p,
+        if fill {
+            "appearance.addFill"
+        } else {
+            "appearance.addStroke"
+        },
+    )?;
     let defaults = s.paint.clone();
-    s.edit(if fill { "Add New Fill" } else { "Add New Stroke" }, |d, _| {
-        for id in &ids {
-            if let Some(n) = d.node_mut(*id) {
-                // A copy of the top fill (stroke); without one, type's characters' and otherwise the
-                // default paint, so a new fill on a group or type shows.
-                let paint = match (n.appearance.paint_at(None, fill), &n.kind) {
-                    (Some(p), _) => p.clone(),
-                    (None, NodeKind::Text(_)) => super::paint::proxy_paint(n, !fill, None),
-                    (None, _) => {
-                        if fill {
-                            defaults.fill.clone()
-                        } else {
-                            defaults.stroke.clone()
+    s.edit(
+        if fill {
+            "Add New Fill"
+        } else {
+            "Add New Stroke"
+        },
+        |d, _| {
+            for id in &ids {
+                if let Some(n) = d.node_mut(*id) {
+                    // A copy of the top fill (stroke); without one, type's characters' and otherwise the
+                    // default paint, so a new fill on a group or type shows.
+                    let paint = match (n.appearance.paint_at(None, fill), &n.kind) {
+                        (Some(p), _) => p.clone(),
+                        (None, NodeKind::Text(_)) => super::paint::proxy_paint(n, !fill, None),
+                        (None, _) => {
+                            if fill {
+                                defaults.fill.clone()
+                            } else {
+                                defaults.stroke.clone()
+                            }
                         }
-                    }
-                };
-                let item = if fill {
-                    AppearanceItem::Fill(FillLayer::new(paint))
-                } else {
-                    AppearanceItem::Stroke(StrokeLayer::new(paint, n.appearance.stroke_width().max(1.0)))
-                };
-                n.appearance.items.push(item);
+                    };
+                    let item = if fill {
+                        AppearanceItem::Fill(FillLayer::new(paint))
+                    } else {
+                        AppearanceItem::Stroke(StrokeLayer::new(
+                            paint,
+                            n.appearance.stroke_width().max(1.0),
+                        ))
+                    };
+                    n.appearance.items.push(item);
+                }
             }
-        }
-        Ok(())
-    })?;
+            Ok(())
+        },
+    )?;
     ok()
 }
 
@@ -456,7 +556,11 @@ fn clear_appearance(s: &mut Session, p: &Value) -> Result<Value> {
 /// Clear Appearance on `n`: no fill, no stroke, and the object's Opacity row back to Default. A
 /// group keeps no fill or stroke rows of its own.
 fn clear(n: &mut Node) {
-    n.appearance = if is_group(n) { Appearance::default().into() } else { Appearance::basic(Paint::None, Paint::None, 1.0).into() };
+    n.appearance = if is_group(n) {
+        Appearance::default().into()
+    } else {
+        Appearance::basic(Paint::None, Paint::None, 1.0).into()
+    };
     n.opacity = 1.0;
     n.blend = BlendMode::Normal;
 }
@@ -471,25 +575,45 @@ fn transfer(s: &mut Session, p: &Value) -> Result<Value> {
     let copy = bool_or(p, "copy", false);
     // When both objects come out as they were, the document and its undo history stay as they are.
     let before = s.doc()?.doc.clone();
-    super::overprint::edit_counted(s, if copy { "Copy Appearance" } else { "Move Appearance" }, |d| {
-        let src = d.node(source).cloned().ok_or(EngineError::NoNode(source))?;
-        let to = d.node_mut(target).ok_or(EngineError::NoNode(target))?;
-        let mut ap = src.appearance.clone();
-        if let (Some(f), Some(t)) = (src.geometric_bounds(), to.geometric_bounds()) {
-            ap.rebase_gradients(f, t);
-        }
-        // Only groups, layers and type have a Contents (Characters) row to keep a slot for.
-        if to.contents_label().is_none() {
-            ap.contents_index = None;
-        }
-        to.appearance = ap;
-        (to.opacity, to.blend, to.isolate, to.knockout, to.knockout_shape) = (src.opacity, src.blend, src.isolate, src.knockout, src.knockout_shape);
-        if !copy && let Some(n) = d.node_mut(source) {
-            clear(n);
-            (n.isolate, n.knockout, n.knockout_shape) = (false, Default::default(), false);
-        }
-        Ok(count_changed(d, &before, &[source, target]))
-    })?;
+    super::overprint::edit_counted(
+        s,
+        if copy {
+            "Copy Appearance"
+        } else {
+            "Move Appearance"
+        },
+        |d| {
+            let src = d.node(source).cloned().ok_or(EngineError::NoNode(source))?;
+            let to = d.node_mut(target).ok_or(EngineError::NoNode(target))?;
+            let mut ap = src.appearance.clone();
+            if let (Some(f), Some(t)) = (src.geometric_bounds(), to.geometric_bounds()) {
+                ap.rebase_gradients(f, t);
+            }
+            // Only groups, layers and type have a Contents (Characters) row to keep a slot for.
+            if to.contents_label().is_none() {
+                ap.contents_index = None;
+            }
+            to.appearance = ap;
+            (
+                to.opacity,
+                to.blend,
+                to.isolate,
+                to.knockout,
+                to.knockout_shape,
+            ) = (
+                src.opacity,
+                src.blend,
+                src.isolate,
+                src.knockout,
+                src.knockout_shape,
+            );
+            if !copy && let Some(n) = d.node_mut(source) {
+                clear(n);
+                (n.isolate, n.knockout, n.knockout_shape) = (false, Default::default(), false);
+            }
+            Ok(count_changed(d, &before, &[source, target]))
+        },
+    )?;
     s.active_appearance_item = None;
     Ok(json!({ "source": source.0, "target": target.0 }))
 }
@@ -507,13 +631,27 @@ fn reduce_basic(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &ids {
             if let Some(n) = d.node_mut(*id) {
                 // The topmost visible fill and stroke stay, without their own transparency or effects.
-                let top = |fill: bool| n.appearance.items.iter().rev().find(|i| i.visible() && i.is_fill() == fill).cloned();
+                let top = |fill: bool| {
+                    n.appearance
+                        .items
+                        .iter()
+                        .rev()
+                        .find(|i| i.visible() && i.is_fill() == fill)
+                        .cloned()
+                };
                 let (fill, stroke) = (top(true), top(false));
                 // Other objects always keep a fill row (None when there was none); a group only
                 // keeps the rows it had.
-                let fill =
-                    (fill.is_some() || !is_group(n)).then(|| AppearanceItem::Fill(FillLayer::new(fill.map_or(Paint::None, |f| f.paint().clone()))));
-                n.appearance = Appearance { items: fill.into_iter().collect(), ..Default::default() }.into();
+                let fill = (fill.is_some() || !is_group(n)).then(|| {
+                    AppearanceItem::Fill(FillLayer::new(
+                        fill.map_or(Paint::None, |f| f.paint().clone()),
+                    ))
+                });
+                n.appearance = Appearance {
+                    items: fill.into_iter().collect(),
+                    ..Default::default()
+                }
+                .into();
                 if let Some(AppearanceItem::Stroke(mut st)) = stroke {
                     st.effects.clear();
                     st.opacity = 1.0;
@@ -548,15 +686,29 @@ fn set_item(s: &mut Session, p: &Value) -> Result<Value> {
                 super::paint::restore_unpainted_stroke(&mut n.appearance, Some(idx), pa);
             }
             let bounds = n.geometric_bounds();
-            let Some(item) = n.appearance.items.get_mut(idx) else { continue };
+            let Some(item) = n.appearance.items.get_mut(idx) else {
+                continue;
+            };
             let (pp, op, bl, vis, bounds) = match item {
-                AppearanceItem::Fill(f) => (&mut f.paint, &mut f.opacity, &mut f.blend, &mut f.visible, bounds),
+                AppearanceItem::Fill(f) => (
+                    &mut f.paint,
+                    &mut f.opacity,
+                    &mut f.blend,
+                    &mut f.visible,
+                    bounds,
+                ),
                 AppearanceItem::Stroke(st) => {
                     if let Some(w) = p.get("weight").and_then(Value::as_f64) {
                         st.width = w.max(0.0);
                     }
                     let bounds = bounds.map(|b| st.paint_bounds(b));
-                    (&mut st.paint, &mut st.opacity, &mut st.blend, &mut st.visible, bounds)
+                    (
+                        &mut st.paint,
+                        &mut st.opacity,
+                        &mut st.blend,
+                        &mut st.visible,
+                        bounds,
+                    )
                 }
             };
             if let Some(pa) = &paint {
@@ -586,7 +738,11 @@ fn item_indices(p: &Value, cmd: &str) -> Result<Vec<usize>> {
     let mut v = match p.get("indices") {
         Some(a) => a
             .as_array()
-            .and_then(|a| a.iter().map(|x| x.as_u64().map(|i| i as usize)).collect::<Option<Vec<_>>>())
+            .and_then(|a| {
+                a.iter()
+                    .map(|x| x.as_u64().map(|i| i as usize))
+                    .collect::<Option<Vec<_>>>()
+            })
             .filter(|v| !v.is_empty())
             .ok_or_else(|| bad(cmd, "`indices` must be a non-empty array of item indices"))?,
         None => vec![index_param(p, "index", cmd)?],
@@ -613,7 +769,9 @@ fn remove_item(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(count_changed(d, &before, &ids))
     })?;
-    s.remap_appearance_item(&ids, |a| (!idx.contains(&a)).then(|| a - idx.iter().filter(|i| **i < a).count()));
+    s.remap_appearance_item(&ids, |a| {
+        (!idx.contains(&a)).then(|| a - idx.iter().filter(|i| **i < a).count())
+    });
     ok()
 }
 
@@ -642,7 +800,11 @@ fn duplicate_item(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
         }
-        if any { Ok(()) } else { Err(bad(C, format!("no item at index {}", idx[0]))) }
+        if any {
+            Ok(())
+        } else {
+            Err(bad(C, format!("no item at index {}", idx[0])))
+        }
     })?;
     // Rows at or above each copy move up by one.
     s.remap_appearance_item(&ids, |a| {
@@ -657,9 +819,15 @@ fn duplicate_item(s: &mut Session, p: &Value) -> Result<Value> {
 fn show_all_hidden(s: &mut Session, p: &Value) -> Result<Value> {
     let roots = require_targets(s, p, "appearance.showAllHidden")?;
     let ids = s.edit("Show All Hidden Attributes", |d, _| {
-        let shown: Vec<NodeId> = roots.iter().copied().filter(|id| d.node_mut(*id).is_some_and(|n| n.appearance.show_all())).collect();
+        let shown: Vec<NodeId> = roots
+            .iter()
+            .copied()
+            .filter(|id| d.node_mut(*id).is_some_and(|n| n.appearance.show_all()))
+            .collect();
         if shown.is_empty() {
-            return Err(EngineError::Other("Show All Hidden Attributes: nothing is hidden".into()));
+            return Err(EngineError::Other(
+                "Show All Hidden Attributes: nothing is hidden".into(),
+            ));
         }
         Ok(shown)
     })?;
@@ -674,7 +842,10 @@ fn move_item(s: &mut Session, p: &Value) -> Result<Value> {
         return move_contents(s, &ids, to);
     }
     let from = index_param(p, "from", C)?;
-    let contents = p.get("contents").map(|_| index_param(p, "contents", C)).transpose()?;
+    let contents = p
+        .get("contents")
+        .map(|_| index_param(p, "contents", C))
+        .transpose()?;
     let mut landed = to;
     // When every object's stack comes out as it was, the document and its undo history stay as they
     // are.
@@ -682,7 +853,10 @@ fn move_item(s: &mut Session, p: &Value) -> Result<Value> {
     super::overprint::edit_counted(s, "Reorder Appearance", |d| {
         for id in &ids {
             let Some(n) = d.node_mut(*id) else { continue };
-            landed = n.appearance.move_item(from, to).ok_or_else(|| bad(C, format!("no item at index {from}")))?;
+            landed = n
+                .appearance
+                .move_item(from, to)
+                .ok_or_else(|| bad(C, format!("no item at index {from}")))?;
             if let Some(k) = contents.filter(|_| n.contents_label().is_some()) {
                 n.appearance.set_contents_at(k);
             }
@@ -713,11 +887,18 @@ fn move_contents(s: &mut Session, ids: &[NodeId], to: usize) -> Result<Value> {
     let mut slot = None;
     super::overprint::edit_counted(s, "Reorder Appearance", |d| {
         for id in ids {
-            let Some(n) = d.node_mut(*id).filter(|n| n.contents_label().is_some()) else { continue };
+            let Some(n) = d.node_mut(*id).filter(|n| n.contents_label().is_some()) else {
+                continue;
+            };
             n.appearance.set_contents_at(to);
             slot.get_or_insert(n.appearance.contents_at());
         }
-        slot.ok_or_else(|| bad("appearance.moveItem", "only groups, layers and type have a Contents (Characters) row"))?;
+        slot.ok_or_else(|| {
+            bad(
+                "appearance.moveItem",
+                "only groups, layers and type have a Contents (Characters) row",
+            )
+        })?;
         Ok(count_changed(d, &before, ids))
     })?;
     Ok(json!({ "contents": slot }))
@@ -730,10 +911,19 @@ fn target_contents(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .filter_map(|id| d.node(*id))
         .filter(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
-        .flat_map(|n| n.children().into_iter().flatten().filter(|c| c.visible && !c.locked).map(|c| c.id))
+        .flat_map(|n| {
+            n.children()
+                .into_iter()
+                .flatten()
+                .filter(|c| c.visible && !c.locked)
+                .map(|c| c.id)
+        })
         .collect();
     if ids.is_empty() {
-        return Err(bad("appearance.targetContents", "select a group or layer with visible, unlocked members"));
+        return Err(bad(
+            "appearance.targetContents",
+            "select a group or layer with visible, unlocked members",
+        ));
     }
     s.select(|_, sel| sel.set(ids.iter().copied()))?;
     Ok(json!({ "ids": ids.iter().map(|i| i.0).collect::<Vec<_>>() }))
@@ -750,13 +940,21 @@ fn copy_from(s: &mut Session, p: &Value) -> Result<Value> {
     };
     // Reversed, the first selected object's attributes go onto the clicked object.
     let (src_id, mut targets) = if reverse {
-        let first = leaf_targets(s, &selected)?.into_iter().next().ok_or_else(|| bad(C, "select the object to copy from"))?;
+        let first = leaf_targets(s, &selected)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| bad(C, "select the object to copy from"))?;
         (first, leaf_targets(s, &[clicked])?)
     } else {
         (clicked, leaf_targets(s, &selected)?)
     };
     targets.retain(|id| *id != src_id);
-    let picked = Picked::of(s.doc()?.doc.node(src_id).ok_or(EngineError::NoNode(src_id))?);
+    let picked = Picked::of(
+        s.doc()?
+            .doc
+            .node(src_id)
+            .ok_or(EngineError::NoNode(src_id))?,
+    );
     if !reverse {
         picked.to_defaults(s, &attrs.appearance);
     }
@@ -793,11 +991,21 @@ impl Picked {
         let (appearance, bounds, text) = match &n.kind {
             NodeKind::Text(t) if !t.runs.is_empty() => {
                 let st = &t.runs[0].style;
-                (st.basic_appearance(), Some(t.local_bounds()), Some((st.clone(), t.para.clone())))
+                (
+                    st.basic_appearance(),
+                    Some(t.local_bounds()),
+                    Some((st.clone(), t.para.clone())),
+                )
             }
             _ => ((*n.appearance).clone(), n.geometric_bounds(), None),
         };
-        Self { appearance, bounds, opacity: n.opacity, blend: n.blend, text }
+        Self {
+            appearance,
+            bounds,
+            opacity: n.opacity,
+            blend: n.blend,
+            text,
+        }
     }
 
     /// The appearance placed on an object whose box (in its paint space) is `to`: placed gradients
@@ -835,7 +1043,15 @@ impl Picked {
         }
         if append {
             let placed = self.placed(n.geometric_bounds());
-            n.appearance.items.extend(placed.items.into_iter().filter(|it| if it.is_fill() { ap.fill.color } else { ap.stroke.color }));
+            n.appearance
+                .items
+                .extend(placed.items.into_iter().filter(|it| {
+                    if it.is_fill() {
+                        ap.fill.color
+                    } else {
+                        ap.stroke.color
+                    }
+                }));
             n.appearance.effects.extend(placed.effects);
             return;
         }
@@ -924,9 +1140,15 @@ fn focal_attrs(to: &mut Appearance, from: &Appearance, a: &AppearanceAttrs) {
 fn run_attrs(st: &mut CharStyle, from: &Appearance, a: &AppearanceAttrs) {
     let mut ap = st.basic_appearance();
     focal_attrs(&mut ap, from, a);
-    let (Some(f), Some(k)) = (ap.fill(), ap.stroke()) else { return };
+    let (Some(f), Some(k)) = (ap.fill(), ap.stroke()) else {
+        return;
+    };
     (st.fill, st.overprint_fill, st.overprint_stroke) = (f.paint.clone(), f.overprint, k.overprint);
-    let width = if a.stroke.color { ap.stroke_width() } else { k.width };
+    let width = if a.stroke.color {
+        ap.stroke_width()
+    } else {
+        k.width
+    };
     st.set_stroke_layer(&StrokeLayer { width, ..k.clone() });
     if !st.stroke.is_none() {
         super::gradient::run_stroke_weight(st);

@@ -56,20 +56,31 @@ pub fn build_parser(
     let out_ptr = h[1];
     let iter = h[2];
 
-    let cond = bd.ins().icmp(ir::condcodes::IntCC::UnsignedLessThan, iter, count);
+    let cond = bd
+        .ins()
+        .icmp(ir::condcodes::IntCC::UnsignedLessThan, iter, count);
     bd.ins().brif(cond, body, &[], exit, &[]);
 
     bd.switch_to_block(body);
     bd.seal_block(body);
 
-    let mut actx =
-        AttrCtx { bd: &mut bd, xf_mem_ptr, arrays_ptr, data_ptr, out_ptr, pointer_ty, key };
+    let mut actx = AttrCtx {
+        bd: &mut bd,
+        xf_mem_ptr,
+        arrays_ptr,
+        data_ptr,
+        out_ptr,
+        pointer_ty,
+        key,
+    };
 
     attr::emit_vertex(&mut actx);
 
     let new_data_ptr = actx.data_ptr;
-    let new_out_ptr =
-        actx.bd.ins().iadd_imm(actx.out_ptr, std::mem::size_of::<DrawVertex>() as i64);
+    let new_out_ptr = actx
+        .bd
+        .ins()
+        .iadd_imm(actx.out_ptr, std::mem::size_of::<DrawVertex>() as i64);
     let new_iter = actx.bd.ins().iadd_imm(iter, 1);
 
     actx.bd.ins().jump(

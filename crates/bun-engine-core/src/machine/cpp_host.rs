@@ -22,8 +22,15 @@ impl CppHost {
     ///
     /// # Errors
     /// Returns the plugin, firmware or content error.
-    pub fn open(core: &str, content: &std::path::Path, firmware: Option<&std::path::Path>) -> Result<Self, String> {
-        let name = CORES.into_iter().find(|c| *c == core).ok_or_else(|| format!("unknown C++ core `{core}`"))?;
+    pub fn open(
+        core: &str,
+        content: &std::path::Path,
+        firmware: Option<&std::path::Path>,
+    ) -> Result<Self, String> {
+        let name = CORES
+            .into_iter()
+            .find(|c| *c == core)
+            .ok_or_else(|| format!("unknown C++ core `{core}`"))?;
         let plugin = Core::open_named(name).map_err(|e| e.to_string())?;
         let mut emu = plugin.create().map_err(|e| e.to_string())?;
         if std::env::var_os("BUN_EMU_VERBOSE").is_some() {
@@ -32,15 +39,23 @@ impl CppHost {
         if let Ok(config) = std::env::var("BUN_EMU_CONFIG") {
             for pair in config.split(';').filter(|p| !p.is_empty()) {
                 let (k, v) = pair.split_once('=').unwrap_or((pair, "1"));
-                emu.set_config(k.trim(), v.trim()).map_err(|e| e.to_string())?;
+                emu.set_config(k.trim(), v.trim())
+                    .map_err(|e| e.to_string())?;
             }
         }
         if let Some(fw) = firmware {
             let spec = fw.to_string_lossy();
             let (kind, path) = match spec.split_once('=') {
-                Some((kind, path)) if plugin.info().firmware_kinds.iter().any(|k| k == kind) => (kind.to_owned(), path.to_owned()),
+                Some((kind, path)) if plugin.info().firmware_kinds.iter().any(|k| k == kind) => {
+                    (kind.to_owned(), path.to_owned())
+                }
                 _ => (
-                    plugin.info().firmware_kinds.first().cloned().ok_or("this core takes no firmware")?,
+                    plugin
+                        .info()
+                        .firmware_kinds
+                        .first()
+                        .cloned()
+                        .ok_or("this core takes no firmware")?,
                     spec.into_owned(),
                 ),
             };
@@ -48,7 +63,11 @@ impl CppHost {
             emu.load_firmware(&kind, &data).map_err(|e| e.to_string())?;
         }
         emu.load_content_path(content).map_err(|e| e.to_string())?;
-        Ok(Self { name, emu, stopped: None })
+        Ok(Self {
+            name,
+            emu,
+            stopped: None,
+        })
     }
 
     pub fn emulator(&mut self) -> &mut Emulator {
@@ -82,7 +101,11 @@ impl Machine for CppHost {
         self.emu
             .frames()
             .into_iter()
-            .map(|f| Screen { width: f.width as usize, height: f.height as usize, rgb: f.to_rgb() })
+            .map(|f| Screen {
+                width: f.width as usize,
+                height: f.height as usize,
+                rgb: f.to_rgb(),
+            })
             .collect()
     }
 

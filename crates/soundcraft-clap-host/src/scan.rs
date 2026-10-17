@@ -25,7 +25,11 @@ pub fn default_search_paths() -> Vec<PathBuf> {
 }
 
 /// The OS-specific standard locations, given the relevant environment values.
-pub fn os_search_paths(home: Option<PathBuf>, common_program_files: Option<PathBuf>, local_app_data: Option<PathBuf>) -> Vec<PathBuf> {
+pub fn os_search_paths(
+    home: Option<PathBuf>,
+    common_program_files: Option<PathBuf>,
+    local_app_data: Option<PathBuf>,
+) -> Vec<PathBuf> {
     let mut v = Vec::new();
     if cfg!(target_os = "macos") {
         if let Some(h) = home {
@@ -51,7 +55,9 @@ pub fn os_search_paths(home: Option<PathBuf>, common_program_files: Option<PathB
 
 /// True when the path names a CLAP plugin (`*.clap`, case-insensitive).
 pub fn is_clap_path(p: &Path) -> bool {
-    p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("clap"))
+    p.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("clap"))
 }
 
 /// Recursively collects `.clap` files and bundles under `dirs` (missing directories are skipped).
@@ -76,7 +82,9 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>, budget: &mut usize) {
     if depth > MAX_DEPTH || out.len() >= MAX_BUNDLES {
         return;
     }
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in rd.flatten() {
         if *budget == 0 || out.len() >= MAX_BUNDLES {
             return;
@@ -84,7 +92,9 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<PathBuf>, budget: &mut usize) {
         *budget -= 1;
         let p = entry.path();
         // `metadata` follows symlinks (plugins are often symlinked in); errors are skipped.
-        let Ok(md) = std::fs::metadata(&p) else { continue };
+        let Ok(md) = std::fs::metadata(&p) else {
+            continue;
+        };
         if is_clap_path(&p) {
             out.push(p);
         } else if md.is_dir() {
@@ -109,19 +119,42 @@ pub fn bundle_executable(path: &Path) -> Option<PathBuf> {
             return Some(p);
         }
     }
-    let mut files: Vec<PathBuf> = std::fs::read_dir(&macos).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_file()).take(64).collect();
+    let mut files: Vec<PathBuf> = std::fs::read_dir(&macos)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file())
+        .take(64)
+        .collect();
     files.sort();
     files.into_iter().next()
 }
 
 /// Maps CLAP feature strings to a SoundCraft insert-menu category.
 pub fn category_from_features<S: AsRef<str>>(features: &[S]) -> Category {
-    let has = |names: &[&str]| features.iter().any(|f| names.iter().any(|n| f.as_ref().eq_ignore_ascii_case(n)));
-    if has(&["instrument", "synthesizer", "sampler", "drum", "drum-machine"]) {
+    let has = |names: &[&str]| {
+        features
+            .iter()
+            .any(|f| names.iter().any(|n| f.as_ref().eq_ignore_ascii_case(n)))
+    };
+    if has(&[
+        "instrument",
+        "synthesizer",
+        "sampler",
+        "drum",
+        "drum-machine",
+    ]) {
         Category::Instrument
     } else if has(&["equalizer", "filter"]) {
         Category::Eq
-    } else if has(&["compressor", "limiter", "expander", "gate", "de-esser", "transient-shaper"]) {
+    } else if has(&[
+        "compressor",
+        "limiter",
+        "expander",
+        "gate",
+        "de-esser",
+        "transient-shaper",
+    ]) {
         Category::Dynamics
     } else if has(&["reverb"]) {
         Category::Reverb
@@ -140,7 +173,9 @@ pub fn category_from_features<S: AsRef<str>>(features: &[S]) -> Category {
 
 /// True when the features mark an instrument (CLAP `instrument`).
 pub fn is_instrument<S: AsRef<str>>(features: &[S]) -> bool {
-    features.iter().any(|f| f.as_ref().eq_ignore_ascii_case("instrument"))
+    features
+        .iter()
+        .any(|f| f.as_ref().eq_ignore_ascii_case("instrument"))
 }
 
 #[cfg(test)]
@@ -148,7 +183,10 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("soundcraft-clap-scan-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "soundcraft-clap-scan-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -165,9 +203,20 @@ mod tests {
         std::fs::write(d.join("c.clap/Contents/MacOS/c"), b"x").unwrap();
         std::fs::write(d.join("c.clap/Contents/inner.clap"), b"x").unwrap();
         let found = find_bundles(&[d.clone(), d.join("missing")]);
-        let names: Vec<String> = found.iter().map(|p| p.strip_prefix(&d).unwrap().to_string_lossy().replace('\\', "/")).collect();
+        let names: Vec<String> = found
+            .iter()
+            .map(|p| {
+                p.strip_prefix(&d)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/")
+            })
+            .collect();
         assert_eq!(names, vec!["a.clap", "c.clap", "vendor/sub/B.CLAP"]);
-        assert_eq!(bundle_executable(&d.join("c.clap")), Some(d.join("c.clap/Contents/MacOS/c")));
+        assert_eq!(
+            bundle_executable(&d.join("c.clap")),
+            Some(d.join("c.clap/Contents/MacOS/c"))
+        );
         assert_eq!(bundle_executable(&d.join("a.clap")), Some(d.join("a.clap")));
         assert_eq!(bundle_executable(&d.join("nope.clap")), None);
         let _ = std::fs::remove_dir_all(&d);
@@ -178,7 +227,10 @@ mod tests {
         let d = tmp("exe");
         std::fs::create_dir_all(d.join("X.clap/Contents/MacOS")).unwrap();
         std::fs::write(d.join("X.clap/Contents/MacOS/other"), b"x").unwrap();
-        assert_eq!(bundle_executable(&d.join("X.clap")), Some(d.join("X.clap/Contents/MacOS/other")));
+        assert_eq!(
+            bundle_executable(&d.join("X.clap")),
+            Some(d.join("X.clap/Contents/MacOS/other"))
+        );
         std::fs::create_dir_all(d.join("Empty.clap")).unwrap();
         assert_eq!(bundle_executable(&d.join("Empty.clap")), None);
         let _ = std::fs::remove_dir_all(&d);
@@ -186,27 +238,59 @@ mod tests {
 
     #[test]
     fn os_paths_cover_the_standard_locations() {
-        let v = os_search_paths(Some("/home/u".into()), Some("C:/CPF".into()), Some("C:/LAD".into()));
+        let v = os_search_paths(
+            Some("/home/u".into()),
+            Some("C:/CPF".into()),
+            Some("C:/LAD".into()),
+        );
         if cfg!(target_os = "macos") {
-            assert_eq!(v, vec![PathBuf::from("/home/u/Library/Audio/Plug-Ins/CLAP"), PathBuf::from("/Library/Audio/Plug-Ins/CLAP")]);
+            assert_eq!(
+                v,
+                vec![
+                    PathBuf::from("/home/u/Library/Audio/Plug-Ins/CLAP"),
+                    PathBuf::from("/Library/Audio/Plug-Ins/CLAP")
+                ]
+            );
         } else if cfg!(windows) {
             assert_eq!(v.len(), 2);
             assert!(v[0].ends_with("CLAP") && v[1].ends_with("CLAP"));
         } else {
-            assert_eq!(v, vec![PathBuf::from("/home/u/.clap"), PathBuf::from("/usr/lib/clap"), PathBuf::from("/usr/local/lib/clap")]);
+            assert_eq!(
+                v,
+                vec![
+                    PathBuf::from("/home/u/.clap"),
+                    PathBuf::from("/usr/lib/clap"),
+                    PathBuf::from("/usr/local/lib/clap")
+                ]
+            );
         }
         assert!(default_search_paths().len() >= v.len().saturating_sub(1));
     }
 
     #[test]
     fn features_map_to_categories() {
-        assert_eq!(category_from_features(&["audio-effect", "reverb", "stereo"]), Category::Reverb);
-        assert_eq!(category_from_features(&["instrument", "synthesizer"]), Category::Instrument);
-        assert_eq!(category_from_features(&["audio-effect", "Compressor"]), Category::Dynamics);
-        assert_eq!(category_from_features(&["audio-effect", "equalizer"]), Category::Eq);
+        assert_eq!(
+            category_from_features(&["audio-effect", "reverb", "stereo"]),
+            Category::Reverb
+        );
+        assert_eq!(
+            category_from_features(&["instrument", "synthesizer"]),
+            Category::Instrument
+        );
+        assert_eq!(
+            category_from_features(&["audio-effect", "Compressor"]),
+            Category::Dynamics
+        );
+        assert_eq!(
+            category_from_features(&["audio-effect", "equalizer"]),
+            Category::Eq
+        );
         assert_eq!(category_from_features(&["chorus"]), Category::Modulation);
         assert_eq!(category_from_features(&["distortion"]), Category::Harmonic);
-        assert_eq!(category_from_features(&["pitch-shifter"]), Category::PitchShift);
+        assert_eq!(
+            category_from_features(&["pitch-shifter"]),
+            Category::PitchShift
+        );
         assert_eq!(category_from_features(&["delay"]), Category::Delay);
         assert_eq!(category_from_features::<&str>(&[]), Category::Other);
         assert!(is_instrument(&["instrument"]));

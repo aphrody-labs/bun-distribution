@@ -15,7 +15,11 @@ pub const SNAP: usize = 256;
 /// tens of codes off the full-frame render from 4:1 up (#1146).
 pub const MAX_MARGIN: usize = 3072;
 /// The most a window may span on either axis: a bound on its texture whatever the window size.
-pub const MAX_SPAN: usize = if cfg!(target_arch = "wasm32") { 3072 } else { 6144 };
+pub const MAX_SPAN: usize = if cfg!(target_arch = "wasm32") {
+    3072
+} else {
+    6144
+};
 
 /// A window render the loupe asked for: which photo, the size of the zoomed frame it is a window
 /// of, and the window. The texture that comes back is drawn at this place of the frame.
@@ -37,7 +41,13 @@ impl RegionView {
     ///
     /// While a slider is dragged (`drafting`) a window made for an earlier value of it still
     /// belongs: drafts follow the drag, and waiting for an exact match would show none.
-    pub fn is_current(&self, photo: lightcraft_catalog::PhotoId, full: (usize, usize), settings: u64, drafting: bool) -> bool {
+    pub fn is_current(
+        &self,
+        photo: lightcraft_catalog::PhotoId,
+        full: (usize, usize),
+        settings: u64,
+        drafting: bool,
+    ) -> bool {
         self.photo == photo && self.full == full && (drafting || self.settings == settings)
     }
 }
@@ -95,28 +105,64 @@ pub struct LoupePlan {
 /// The loupe's render plan. The cost of a render follows the canvas, not the zoom: the whole-frame
 /// render is canvas-sized, and the window holds only the pixels on screen at no more than 100 %.
 pub fn plan(settings: &crate::state::AppSettings, v: ViewSizes) -> LoupePlan {
-    let canvas_long = if v.canvas_long.is_finite() { v.canvas_long.max(8.0) } else { 8.0 };
-    let drawn_long = if v.drawn_long.is_finite() { v.drawn_long.max(8.0) } else { canvas_long };
-    let scale = if v.draft_scale.is_finite() { v.draft_scale.clamp(0.1, 1.0) } else { 1.0 };
+    let canvas_long = if v.canvas_long.is_finite() {
+        v.canvas_long.max(8.0)
+    } else {
+        8.0
+    };
+    let drawn_long = if v.drawn_long.is_finite() {
+        v.drawn_long.max(8.0)
+    } else {
+        canvas_long
+    };
+    let scale = if v.draft_scale.is_finite() {
+        v.draft_scale.clamp(0.1, 1.0)
+    } else {
+        1.0
+    };
     if !v.windows {
         // the whole frame at the size it is drawn (soft proof or a whole-frame diagnostic has no
         // window); while a slider drags, a canvas-sized draft as with windows: a drag at 1:1 must
         // not render the photo's every pixel each frame
-        let long = if scale < 1.0 { drawn_long.min(canvas_long) } else { drawn_long };
+        let long = if scale < 1.0 {
+            drawn_long.min(canvas_long)
+        } else {
+            drawn_long
+        };
         let main_edge = settings.loupe_edge(long * scale, v.native_long, v.texture_side);
-        return LoupePlan { main_edge, window_edge: None };
+        return LoupePlan {
+            main_edge,
+            window_edge: None,
+        };
     }
     // a user who chose a size above the preview source level (3840, 5120) means it; otherwise the
     // original is not decoded for the whole-frame render
-    let source_cap = if settings.preview_limit == 0 { lightcraft_engine::SourceLevel::Preview.max_edge() } else { settings.preview_limit as usize };
-    let edge_at = |scale: f32| settings.loupe_edge(drawn_long.min(canvas_long) * scale, v.native_long, v.texture_side).min(source_cap);
+    let source_cap = if settings.preview_limit == 0 {
+        lightcraft_engine::SourceLevel::Preview.max_edge()
+    } else {
+        settings.preview_limit as usize
+    };
+    let edge_at = |scale: f32| {
+        settings
+            .loupe_edge(
+                drawn_long.min(canvas_long) * scale,
+                v.native_long,
+                v.texture_side,
+            )
+            .min(source_cap)
+    };
     let main_edge = edge_at(scale);
     let frame_edge = settings.window_frame_edge(drawn_long, v.native_long);
     // a user who capped the preview size has chosen speed over sharpness at fit
     let fit = drawn_long <= canvas_long * 1.05;
     // (against the undrafted whole-frame render: a drag must not switch the window off and on)
-    let window_edge = (frame_edge as f32 > edge_at(1.0) as f32 * WINDOW_RATIO && !(fit && settings.preview_limit != 0)).then_some(frame_edge);
-    LoupePlan { main_edge, window_edge }
+    let window_edge = (frame_edge as f32 > edge_at(1.0) as f32 * WINDOW_RATIO
+        && !(fit && settings.preview_limit != 0))
+        .then_some(frame_edge);
+    LoupePlan {
+        main_edge,
+        window_edge,
+    }
 }
 
 /// How long the render sizes stay as they were after a pinch or two-finger scroll stops (s).
@@ -136,9 +182,19 @@ pub struct SizeHold {
 impl SizeHold {
     /// The plan to render this frame: `fresh` normally; the plan from before the gesture while
     /// one is running (`gesturing`) and for [`HOLD_SECS`] after. `now` is in seconds.
-    pub fn apply(&mut self, photo: lightcraft_catalog::PhotoId, now: f64, gesturing: bool, fresh: LoupePlan) -> LoupePlan {
+    pub fn apply(
+        &mut self,
+        photo: lightcraft_catalog::PhotoId,
+        now: f64,
+        gesturing: bool,
+        fresh: LoupePlan,
+    ) -> LoupePlan {
         if self.photo != Some(photo) {
-            *self = SizeHold { photo: Some(photo), plan: Some(fresh), until: f64::NEG_INFINITY };
+            *self = SizeHold {
+                photo: Some(photo),
+                plan: Some(fresh),
+                until: f64::NEG_INFINITY,
+            };
             return fresh;
         }
         if gesturing {
@@ -164,21 +220,35 @@ impl SizeHold {
 /// line there left the whole view to one side (#1351).
 pub fn wipe_line(img: egui::Rect, canvas: egui::Rect) -> egui::Pos2 {
     let shown = img.intersect(canvas);
-    if shown.is_positive() { shown.center() } else { img.center() }
+    if shown.is_positive() {
+        shown.center()
+    } else {
+        img.center()
+    }
 }
 
 /// Where a window of one side of a Before/After view may be drawn: its own pane in side by side
 /// and stacked views (a window carries margin beyond what its pane shows, which would otherwise
 /// spill into the neighbour), its side of the line in a wipe, else the canvas.
-pub fn window_clip(mode: crate::state::BeforeAfter, before_side: bool, pane: egui::Rect, canvas: egui::Rect, img: egui::Rect) -> egui::Rect {
+pub fn window_clip(
+    mode: crate::state::BeforeAfter,
+    before_side: bool,
+    pane: egui::Rect,
+    canvas: egui::Rect,
+    img: egui::Rect,
+) -> egui::Rect {
     use crate::state::BeforeAfter;
     let (min, max) = (canvas.min, canvas.max);
     let line = wipe_line(img, canvas);
     let clip = match (mode, before_side) {
         (BeforeAfter::Split, true) => egui::Rect::from_min_max(min, egui::pos2(line.x, max.y)),
-        (BeforeAfter::SplitTopBottom, true) => egui::Rect::from_min_max(min, egui::pos2(max.x, line.y)),
+        (BeforeAfter::SplitTopBottom, true) => {
+            egui::Rect::from_min_max(min, egui::pos2(max.x, line.y))
+        }
         (BeforeAfter::Split, false) => egui::Rect::from_min_max(egui::pos2(line.x, min.y), max),
-        (BeforeAfter::SplitTopBottom, false) => egui::Rect::from_min_max(egui::pos2(min.x, line.y), max),
+        (BeforeAfter::SplitTopBottom, false) => {
+            egui::Rect::from_min_max(egui::pos2(min.x, line.y), max)
+        }
         (BeforeAfter::SideBySide | BeforeAfter::TopBottom, _) => pane,
         _ => canvas,
     };
@@ -205,8 +275,18 @@ pub fn same_aspect(shown: f32, frame: f32) -> bool {
 /// frame's pixels, as much of the frame as is on screen — is covered: expanded by a margin,
 /// snapped outwards to the [`SNAP`] grid (margin: see [`margin_for`]) and clamped into the frame,
 /// at most `max_span` ([`max_span`]) wide or high. `None`: nothing is visible.
-pub fn window_for(full_w: usize, full_h: usize, visible: (f32, f32, f32, f32), max_span: usize) -> Option<PixelWindow> {
-    if full_w == 0 || full_h == 0 || [visible.0, visible.1, visible.2, visible.3].iter().any(|v| !v.is_finite()) {
+pub fn window_for(
+    full_w: usize,
+    full_h: usize,
+    visible: (f32, f32, f32, f32),
+    max_span: usize,
+) -> Option<PixelWindow> {
+    if full_w == 0
+        || full_h == 0
+        || [visible.0, visible.1, visible.2, visible.3]
+            .iter()
+            .any(|v| !v.is_finite())
+    {
         return None;
     }
     let margin = margin_for(full_w.max(full_h));
@@ -216,7 +296,10 @@ pub fn window_for(full_w: usize, full_h: usize, visible: (f32, f32, f32, f32), m
             return None;
         }
         let a = (lo as usize).saturating_sub(margin) / SNAP * SNAP;
-        let b = ((hi.ceil() as usize).saturating_add(margin)).div_ceil(SNAP).saturating_mul(SNAP).min(full);
+        let b = ((hi.ceil() as usize).saturating_add(margin))
+            .div_ceil(SNAP)
+            .saturating_mul(SNAP)
+            .min(full);
         // a window larger than MAX_SPAN keeps the visible part (centred on it), snapped
         if b - a > max_span {
             let mid = ((lo + hi) / 2.0) as usize;
@@ -227,7 +310,12 @@ pub fn window_for(full_w: usize, full_h: usize, visible: (f32, f32, f32, f32), m
     };
     let (x0, x1) = axis(visible.0, visible.2, full_w)?;
     let (y0, y1) = axis(visible.1, visible.3, full_h)?;
-    Some(PixelWindow { x: x0, y: y0, w: x1 - x0, h: y1 - y0 })
+    Some(PixelWindow {
+        x: x0,
+        y: y0,
+        w: x1 - x0,
+        h: y1 - y0,
+    })
 }
 
 #[cfg(test)]
@@ -238,7 +326,14 @@ mod tests {
     const BIG: usize = 16384;
 
     fn sizes(drawn: f32, canvas: f32, native: usize) -> ViewSizes {
-        ViewSizes { drawn_long: drawn, canvas_long: canvas, native_long: native, texture_side: BIG, draft_scale: 1.0, windows: true }
+        ViewSizes {
+            drawn_long: drawn,
+            canvas_long: canvas,
+            native_long: native,
+            texture_side: BIG,
+            draft_scale: 1.0,
+            windows: true,
+        }
     }
 
     fn auto() -> AppSettings {
@@ -289,7 +384,13 @@ mod tests {
     #[test]
     fn a_drag_shrinks_the_whole_frame_draft_not_the_window() {
         let still = plan(&auto(), sizes(24000.0, 2800.0, 6000));
-        let drag = plan(&auto(), ViewSizes { draft_scale: 0.6, ..sizes(24000.0, 2800.0, 6000) });
+        let drag = plan(
+            &auto(),
+            ViewSizes {
+                draft_scale: 0.6,
+                ..sizes(24000.0, 2800.0, 6000)
+            },
+        );
         assert!(drag.main_edge < still.main_edge, "{drag:?} vs {still:?}");
         assert_eq!(drag.window_edge, still.window_edge);
     }
@@ -299,19 +400,32 @@ mod tests {
     // windowed path
     #[test]
     fn without_a_window_a_drag_drafts_at_the_canvas_size() {
-        let no_window = |draft_scale: f32| ViewSizes { windows: false, draft_scale, ..sizes(24000.0, 2800.0, 6000) };
+        let no_window = |draft_scale: f32| ViewSizes {
+            windows: false,
+            draft_scale,
+            ..sizes(24000.0, 2800.0, 6000)
+        };
         let still = plan(&auto(), no_window(1.0));
         let drag = plan(&auto(), no_window(0.6));
         assert_eq!(still.window_edge, None);
-        assert!(still.main_edge > 2800, "at rest the zoomed frame: {still:?}");
-        assert!(drag.main_edge <= 2800, "a drag drafts at most the canvas: {drag:?}");
+        assert!(
+            still.main_edge > 2800,
+            "at rest the zoomed frame: {still:?}"
+        );
+        assert!(
+            drag.main_edge <= 2800,
+            "a drag drafts at most the canvas: {drag:?}"
+        );
     }
 
     // Given the user capped the preview size, the whole-frame render obeys it, and a fit view
     // stays on it (no original decoded); a zoomed view still gets its sharp window
     #[test]
     fn a_preview_limit_caps_the_whole_frame_render_and_spares_the_fit_view() {
-        let s = AppSettings { preview_limit: 1600, ..Default::default() };
+        let s = AppSettings {
+            preview_limit: 1600,
+            ..Default::default()
+        };
         let fit = plan(&s, sizes(2800.0, 2800.0, 6000));
         assert_eq!((fit.main_edge, fit.window_edge), (1600, None));
         let zoomed = plan(&s, sizes(6000.0, 2800.0, 6000));
@@ -322,7 +436,13 @@ mod tests {
     // (a window is cut to the texture side separately)
     #[test]
     fn the_texture_side_caps_the_whole_frame_render_only() {
-        let p = plan(&auto(), ViewSizes { texture_side: 2048, ..sizes(6000.0, 2800.0, 6000) });
+        let p = plan(
+            &auto(),
+            ViewSizes {
+                texture_side: 2048,
+                ..sizes(6000.0, 2800.0, 6000)
+            },
+        );
         assert_eq!((p.main_edge, p.window_edge), (2048, Some(6000)));
     }
 
@@ -339,7 +459,13 @@ mod tests {
     fn a_drag_at_fit_on_a_large_display_keeps_the_window() {
         for drawn in [3300.0, 3840.0, 4096.0, 5120.0] {
             let still = plan(&auto(), sizes(drawn, drawn, 6000));
-            let drag = plan(&auto(), ViewSizes { draft_scale: 0.6, ..sizes(drawn, drawn, 6000) });
+            let drag = plan(
+                &auto(),
+                ViewSizes {
+                    draft_scale: 0.6,
+                    ..sizes(drawn, drawn, 6000)
+                },
+            );
             assert!(still.window_edge.is_some(), "{drawn}: {still:?}");
             assert_eq!(drag.window_edge, still.window_edge, "{drawn}");
         }
@@ -349,13 +475,38 @@ mod tests {
     // spot read too far for one render), the whole-frame render is as big as the view
     #[test]
     fn without_windows_the_whole_frame_is_rendered_at_the_drawn_size() {
-        let p = plan(&auto(), ViewSizes { windows: false, ..sizes(6000.0, 2800.0, 6000) });
+        let p = plan(
+            &auto(),
+            ViewSizes {
+                windows: false,
+                ..sizes(6000.0, 2800.0, 6000)
+            },
+        );
         assert_eq!((p.main_edge, p.window_edge), (6000, None));
-        let fit = plan(&auto(), ViewSizes { windows: false, ..sizes(2800.0, 2800.0, 6000) });
+        let fit = plan(
+            &auto(),
+            ViewSizes {
+                windows: false,
+                ..sizes(2800.0, 2800.0, 6000)
+            },
+        );
         assert_eq!((fit.main_edge, fit.window_edge), (2816, None));
-        let deep = plan(&auto(), ViewSizes { windows: false, ..sizes(48000.0, 2800.0, 6000) });
+        let deep = plan(
+            &auto(),
+            ViewSizes {
+                windows: false,
+                ..sizes(48000.0, 2800.0, 6000)
+            },
+        );
         assert_eq!(deep.main_edge, 6000, "never above the photo's own pixels");
-        let small = plan(&auto(), ViewSizes { windows: false, texture_side: 2048, ..sizes(6000.0, 2800.0, 6000) });
+        let small = plan(
+            &auto(),
+            ViewSizes {
+                windows: false,
+                texture_side: 2048,
+                ..sizes(6000.0, 2800.0, 6000)
+            },
+        );
         assert_eq!(small.main_edge, 2048);
     }
 
@@ -364,12 +515,21 @@ mod tests {
     #[test]
     fn a_large_preview_limit_is_honoured() {
         for limit in [3840u32, 5120] {
-            let s = AppSettings { preview_limit: limit, ..Default::default() };
+            let s = AppSettings {
+                preview_limit: limit,
+                ..Default::default()
+            };
             let p = plan(&s, sizes(5120.0, 5120.0, 6000));
             assert_eq!(p.main_edge, limit as usize, "{limit}");
-            assert_eq!(p.window_edge, None, "a fit view at the limit needs no window");
+            assert_eq!(
+                p.window_edge, None,
+                "a fit view at the limit needs no window"
+            );
         }
-        let s = AppSettings { preview_limit: 2560, ..Default::default() };
+        let s = AppSettings {
+            preview_limit: 2560,
+            ..Default::default()
+        };
         assert_eq!(plan(&s, sizes(5120.0, 5120.0, 6000)).main_edge, 2560);
     }
 
@@ -383,7 +543,13 @@ mod tests {
     // Given a drag at fit on a Retina Mac, the window does not switch on (it would flicker with the drag)
     #[test]
     fn a_drag_at_fit_does_not_switch_the_window_on() {
-        let p = plan(&auto(), ViewSizes { draft_scale: 0.6, ..sizes(2800.0, 2800.0, 6000) });
+        let p = plan(
+            &auto(),
+            ViewSizes {
+                draft_scale: 0.6,
+                ..sizes(2800.0, 2800.0, 6000)
+            },
+        );
         assert_eq!(p.window_edge, None);
     }
 
@@ -391,14 +557,21 @@ mod tests {
     #[test]
     fn a_pinch_holds_the_render_sizes() {
         use lightcraft_catalog::PhotoId;
-        let (fit, zoomed) = (plan(&auto(), sizes(1400.0, 1400.0, 6000)), plan(&auto(), sizes(24000.0, 1400.0, 6000)));
+        let (fit, zoomed) = (
+            plan(&auto(), sizes(1400.0, 1400.0, 6000)),
+            plan(&auto(), sizes(24000.0, 1400.0, 6000)),
+        );
         assert_ne!(fit, zoomed);
         let mut hold = SizeHold::default();
         let p = PhotoId(1);
         assert_eq!(hold.apply(p, 0.0, false, fit), fit);
         // the pinch runs for a second: every frame would plan something else
         for k in 1..60 {
-            assert_eq!(hold.apply(p, k as f64 / 60.0, true, zoomed), fit, "frame {k}");
+            assert_eq!(
+                hold.apply(p, k as f64 / 60.0, true, zoomed),
+                fit,
+                "frame {k}"
+            );
         }
         // it stopped at t = 59/60: still held for a moment (no flicker between two events)…
         assert!(hold.holding(1.1));
@@ -413,7 +586,10 @@ mod tests {
     #[test]
     fn another_photo_is_planned_afresh() {
         use lightcraft_catalog::PhotoId;
-        let (fit, zoomed) = (plan(&auto(), sizes(1400.0, 1400.0, 6000)), plan(&auto(), sizes(24000.0, 1400.0, 6000)));
+        let (fit, zoomed) = (
+            plan(&auto(), sizes(1400.0, 1400.0, 6000)),
+            plan(&auto(), sizes(24000.0, 1400.0, 6000)),
+        );
         let mut hold = SizeHold::default();
         hold.apply(PhotoId(1), 0.0, false, fit);
         assert_eq!(hold.apply(PhotoId(2), 0.1, true, zoomed), zoomed);
@@ -433,13 +609,34 @@ mod tests {
         let img = egui::Rect::from_min_max(egui::pos2(100.0, 50.0), egui::pos2(900.0, 550.0));
         let before = window_clip(Split, true, canvas, canvas, img);
         let after = window_clip(Split, false, canvas, canvas, img);
-        assert_eq!((before.max.x, after.min.x), (500.0, 500.0), "the line is the image's middle");
-        assert_eq!(window_clip(SplitTopBottom, true, canvas, canvas, img).max.y, 300.0);
-        assert_eq!(window_clip(SplitTopBottom, false, canvas, canvas, img).min.y, 300.0);
+        assert_eq!(
+            (before.max.x, after.min.x),
+            (500.0, 500.0),
+            "the line is the image's middle"
+        );
+        assert_eq!(
+            window_clip(SplitTopBottom, true, canvas, canvas, img).max.y,
+            300.0
+        );
+        assert_eq!(
+            window_clip(SplitTopBottom, false, canvas, canvas, img)
+                .min
+                .y,
+            300.0
+        );
         // zoomed in, the photo's middle (x = 1600) is off screen: the line is the view's middle
-        let zoomed = egui::Rect::from_min_max(egui::pos2(-200.0, -900.0), egui::pos2(3400.0, 1500.0));
-        assert_eq!(window_clip(Split, false, canvas, canvas, zoomed).min.x, 500.0);
-        assert_eq!(window_clip(SplitTopBottom, true, canvas, canvas, zoomed).max.y, 300.0);
+        let zoomed =
+            egui::Rect::from_min_max(egui::pos2(-200.0, -900.0), egui::pos2(3400.0, 1500.0));
+        assert_eq!(
+            window_clip(Split, false, canvas, canvas, zoomed).min.x,
+            500.0
+        );
+        assert_eq!(
+            window_clip(SplitTopBottom, true, canvas, canvas, zoomed)
+                .max
+                .y,
+            300.0
+        );
         assert_eq!(window_clip(Off, false, canvas, canvas, img), canvas);
         assert_eq!(window_clip(Original, true, canvas, canvas, img), canvas);
     }
@@ -457,7 +654,15 @@ mod tests {
     #[test]
     fn hostile_sizes_give_a_usable_plan() {
         for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -3.0, 0.0] {
-            let p = plan(&auto(), ViewSizes { drawn_long: v, canvas_long: v, draft_scale: v, ..sizes(1.0, 1.0, 6000) });
+            let p = plan(
+                &auto(),
+                ViewSizes {
+                    drawn_long: v,
+                    canvas_long: v,
+                    draft_scale: v,
+                    ..sizes(1.0, 1.0, 6000)
+                },
+            );
             assert!((8..=2560).contains(&p.main_edge), "{v}: {p:?}");
         }
         let p = plan(&auto(), sizes(1000.0, 1000.0, 0));
@@ -467,20 +672,47 @@ mod tests {
     // Given a visible area in the middle of a big frame, the window covers it with a margin, on the grid
     #[test]
     fn the_window_covers_the_visible_area_with_a_margin_on_the_grid() {
-        let w = window_for(48_000, 32_000, (20_000.0, 10_000.0, 21_400.0, 10_900.0), MAX_SPAN).unwrap();
+        let w = window_for(
+            48_000,
+            32_000,
+            (20_000.0, 10_000.0, 21_400.0, 10_900.0),
+            MAX_SPAN,
+        )
+        .unwrap();
         let m = margin_for(48_000);
         assert!(w.x + m <= 20_000 && w.x + w.w >= 21_400 + m, "{w:?}");
         assert!(w.y + m <= 10_000 && w.y + w.h >= 10_900 + m, "{w:?}");
-        assert_eq!((w.x % SNAP, w.y % SNAP, w.w % SNAP, w.h % SNAP), (0, 0, 0, 0));
+        assert_eq!(
+            (w.x % SNAP, w.y % SNAP, w.w % SNAP, w.h % SNAP),
+            (0, 0, 0, 0)
+        );
     }
 
     // Given a small pan, the same window is kept (no re-render); a big pan changes it
     #[test]
     fn small_pans_keep_the_window() {
-        let a = window_for(48_000, 32_000, (20_000.0, 10_000.0, 21_400.0, 10_900.0), MAX_SPAN).unwrap();
-        let b = window_for(48_000, 32_000, (20_040.0, 10_030.0, 21_440.0, 10_930.0), MAX_SPAN).unwrap();
+        let a = window_for(
+            48_000,
+            32_000,
+            (20_000.0, 10_000.0, 21_400.0, 10_900.0),
+            MAX_SPAN,
+        )
+        .unwrap();
+        let b = window_for(
+            48_000,
+            32_000,
+            (20_040.0, 10_030.0, 21_440.0, 10_930.0),
+            MAX_SPAN,
+        )
+        .unwrap();
         assert_eq!(a, b);
-        let c = window_for(48_000, 32_000, (26_000.0, 10_000.0, 27_400.0, 10_900.0), MAX_SPAN).unwrap();
+        let c = window_for(
+            48_000,
+            32_000,
+            (26_000.0, 10_000.0, 27_400.0, 10_900.0),
+            MAX_SPAN,
+        )
+        .unwrap();
         assert_ne!(a, c);
     }
 
@@ -500,7 +732,11 @@ mod tests {
     fn the_margin_grows_with_the_zoom_up_to_a_cap() {
         assert_eq!(margin_for(1000), SNAP, "never less than one grid step");
         assert!(margin_for(8000) > margin_for(3000));
-        assert_eq!(margin_for(48_000), 2304, "4.5 % of an 8:1 frame, under the cap");
+        assert_eq!(
+            margin_for(48_000),
+            2304,
+            "4.5 % of an 8:1 frame, under the cap"
+        );
         assert_eq!(margin_for(80_000), MAX_MARGIN);
         assert_eq!(margin_for(0), SNAP);
         assert!(margin_for(usize::MAX) <= MAX_MARGIN);
@@ -518,15 +754,35 @@ mod tests {
             before: false,
             key: 7,
             full: (6000, 4000),
-            window: PixelWindow { x: 0, y: 0, w: 256, h: 256 },
+            window: PixelWindow {
+                x: 0,
+                y: 0,
+                w: 256,
+                h: 256,
+            },
             settings: 11,
         };
         assert!(v.is_current(PhotoId(1), (6000, 4000), 11, false));
-        assert!(!v.is_current(PhotoId(2), (6000, 4000), 11, false), "another photo");
-        assert!(!v.is_current(PhotoId(1), (6000, 4001), 11, false), "another zoom");
-        assert!(!v.is_current(PhotoId(1), (6000, 4000), 12, false), "another look (an edit, an undo)");
-        assert!(v.is_current(PhotoId(1), (6000, 4000), 12, true), "a drag's drafts follow the value");
-        assert!(!v.is_current(PhotoId(2), (6000, 4000), 12, true), "…of this photo only");
+        assert!(
+            !v.is_current(PhotoId(2), (6000, 4000), 11, false),
+            "another photo"
+        );
+        assert!(
+            !v.is_current(PhotoId(1), (6000, 4001), 11, false),
+            "another zoom"
+        );
+        assert!(
+            !v.is_current(PhotoId(1), (6000, 4000), 12, false),
+            "another look (an edit, an undo)"
+        );
+        assert!(
+            v.is_current(PhotoId(1), (6000, 4000), 12, true),
+            "a drag's drafts follow the value"
+        );
+        assert!(
+            !v.is_current(PhotoId(2), (6000, 4000), 12, true),
+            "…of this photo only"
+        );
     }
 
     // Given a GPU that allows 2048 px textures, no window is wider than that
@@ -534,8 +790,17 @@ mod tests {
     fn a_window_fits_the_texture_side() {
         for tex in [512, 2048, 4096] {
             let span = max_span(tex);
-            assert!(span <= tex.max(SNAP) && span.is_multiple_of(SNAP), "{tex}: {span}");
-            let w = window_for(48_000, 32_000, (20_000.0, 10_000.0, 21_400.0, 10_900.0), span).unwrap();
+            assert!(
+                span <= tex.max(SNAP) && span.is_multiple_of(SNAP),
+                "{tex}: {span}"
+            );
+            let w = window_for(
+                48_000,
+                32_000,
+                (20_000.0, 10_000.0, 21_400.0, 10_900.0),
+                span,
+            )
+            .unwrap();
             assert!(w.w <= span && w.h <= span, "{tex}: {w:?}");
         }
         assert_eq!(max_span(100_000), MAX_SPAN);
@@ -545,13 +810,25 @@ mod tests {
     // Given nothing visible, or hostile numbers, there is no window (never a panic)
     #[test]
     fn nothing_visible_or_hostile_input_is_no_window() {
-        assert_eq!(window_for(1000, 1000, (2000.0, 0.0, 3000.0, 100.0), MAX_SPAN), None);
-        assert_eq!(window_for(1000, 1000, (10.0, 10.0, 10.0, 90.0), MAX_SPAN), None);
+        assert_eq!(
+            window_for(1000, 1000, (2000.0, 0.0, 3000.0, 100.0), MAX_SPAN),
+            None
+        );
+        assert_eq!(
+            window_for(1000, 1000, (10.0, 10.0, 10.0, 90.0), MAX_SPAN),
+            None
+        );
         assert_eq!(window_for(0, 1000, (0.0, 0.0, 10.0, 10.0), MAX_SPAN), None);
         for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
             assert_eq!(window_for(1000, 1000, (v, 0.0, 10.0, 10.0), MAX_SPAN), None);
         }
-        let w = window_for(usize::MAX / 2, usize::MAX / 2, (0.0, 0.0, 1e30, 1e30), MAX_SPAN).unwrap();
+        let w = window_for(
+            usize::MAX / 2,
+            usize::MAX / 2,
+            (0.0, 0.0, 1e30, 1e30),
+            MAX_SPAN,
+        )
+        .unwrap();
         assert!(w.w <= MAX_SPAN && w.h <= MAX_SPAN, "{w:?}");
     }
 

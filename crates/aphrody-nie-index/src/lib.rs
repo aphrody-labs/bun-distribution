@@ -92,7 +92,10 @@ mod host {
         /// Ouvre (ou crée) la base au chemin donné et applique le schéma.
         pub fn open(path: impl AsRef<std::path::Path>) -> Result<Self> {
             let conn = Connection::open(path)?;
-            let db = Self { conn, redis_pool: None };
+            let db = Self {
+                conn,
+                redis_pool: None,
+            };
             db.init()?;
             Ok(db)
         }
@@ -105,7 +108,10 @@ mod host {
                 .build(client)
                 .map_err(|e| IndexError::RedisPool(e.to_string()))?;
 
-            let db = Self { conn, redis_pool: Some(redis_pool) };
+            let db = Self {
+                conn,
+                redis_pool: Some(redis_pool),
+            };
             db.init()?;
             Ok(db)
         }
@@ -113,7 +119,10 @@ mod host {
         /// Base en mémoire (tests).
         pub fn open_in_memory() -> Result<Self> {
             let conn = Connection::open_in_memory()?;
-            let db = Self { conn, redis_pool: None };
+            let db = Self {
+                conn,
+                redis_pool: None,
+            };
             db.init()?;
             Ok(db)
         }
@@ -217,7 +226,9 @@ mod host {
             )?;
             let id =
                 self.conn
-                    .query_row("SELECT id FROM binary WHERE sha256 = ?1", [sha256], |r| r.get(0))?;
+                    .query_row("SELECT id FROM binary WHERE sha256 = ?1", [sha256], |r| {
+                        r.get(0)
+                    })?;
             Ok(id)
         }
 
@@ -471,8 +482,17 @@ mod host {
                 [binary_id],
                 |r| r.get(0),
             )?;
-            let pct = if total > 0 { (classified as f64) * 100.0 / (total as f64) } else { 0.0 };
-            Ok(Coverage { total, named, classified, pct })
+            let pct = if total > 0 {
+                (classified as f64) * 100.0 / (total as f64)
+            } else {
+                0.0
+            };
+            Ok(Coverage {
+                total,
+                named,
+                classified,
+                pct,
+            })
         }
 
         /// Nombre de fonctions par sous-système.
@@ -481,7 +501,9 @@ mod host {
             "SELECT COALESCE(subsystem,'?') s, COUNT(*) n FROM function WHERE binary_id=?1 GROUP BY s ORDER BY n DESC",
         )?;
             let rows = stmt
-                .query_map([binary_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?
+                .query_map([binary_id], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+                })?
                 .collect::<std::result::Result<Vec<_>, _>>()?;
             Ok(rows)
         }
@@ -494,7 +516,10 @@ mod host {
         #[test]
         fn re_database_resolution_prefers_the_explicit_binding_override() {
             let override_path = PathBuf::from("custom-re.sqlite");
-            assert_eq!(resolve_re_database_path(Some(override_path.clone())), override_path);
+            assert_eq!(
+                resolve_re_database_path(Some(override_path.clone())),
+                override_path
+            );
             assert!(default_re_database_path().ends_with("var/nie.sqlite"));
         }
 
@@ -528,7 +553,10 @@ mod host {
         #[test]
         fn schema_applies_and_coverage_computes() {
             let mut db = Db::open_in_memory().unwrap();
-            assert_eq!(db.get_meta("schema_version").unwrap().as_deref(), Some(SCHEMA_VERSION));
+            assert_eq!(
+                db.get_meta("schema_version").unwrap().as_deref(),
+                Some(SCHEMA_VERSION)
+            );
             // La migration caméra est appliquée par `init` : ses tables et vues existent.
             let cam_tables: i64 = db
                 .conn()
@@ -567,11 +595,28 @@ mod host {
                 .unwrap();
             let tx = db.conn_mut().transaction().unwrap();
             // une fonction non classifiée (standalone) + une classifiée
-            ingest::function(&tx, bin, 0x1_4000_1000, None, Some("re"), "standalone", "leaf", 0.0)
-                .unwrap();
-            let fid =
-                ingest::function(&tx, bin, 0x1_4002_4b80, None, Some("re"), "game", "hub", 0.5)
-                    .unwrap();
+            ingest::function(
+                &tx,
+                bin,
+                0x1_4000_1000,
+                None,
+                Some("re"),
+                "standalone",
+                "leaf",
+                0.0,
+            )
+            .unwrap();
+            let fid = ingest::function(
+                &tx,
+                bin,
+                0x1_4002_4b80,
+                None,
+                Some("re"),
+                "game",
+                "hub",
+                0.5,
+            )
+            .unwrap();
             ingest::str_ref(&tx, bin, fid, "CHARA_PARAM_INFO").unwrap();
             tx.commit().unwrap();
             let cov = db.snapshot_coverage(bin).unwrap();
@@ -584,7 +629,10 @@ mod host {
         fn redis_meta_fallback_ignored_if_no_redis() {
             let db = Db::open_in_memory().unwrap();
             db.set_meta("test_key", "test_val").unwrap();
-            assert_eq!(db.get_meta("test_key").unwrap().as_deref(), Some("test_val"));
+            assert_eq!(
+                db.get_meta("test_key").unwrap().as_deref(),
+                Some("test_val")
+            );
         }
 
         #[test]
@@ -592,7 +640,10 @@ mod host {
             // Enregistre en base SQLite en mémoire et tente Redis local
             if let Ok(db) = Db::open_with_redis(":memory:", "redis://127.0.0.1/") {
                 db.set_meta("redis_test_key", "redis_val").unwrap();
-                assert_eq!(db.get_meta("redis_test_key").unwrap().as_deref(), Some("redis_val"));
+                assert_eq!(
+                    db.get_meta("redis_test_key").unwrap().as_deref(),
+                    Some("redis_val")
+                );
             }
         }
     }

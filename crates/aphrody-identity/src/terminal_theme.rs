@@ -125,9 +125,19 @@ const fn accent_tones(dark: bool) -> (f64, f64) {
 /// Black, bright black, white, bright white.
 const fn neutral_roles(dark: bool) -> [Role; 4] {
     if dark {
-        [Role::SurfaceContainerHighest, Role::Outline, Role::OnSurfaceVariant, Role::OnSurface]
+        [
+            Role::SurfaceContainerHighest,
+            Role::Outline,
+            Role::OnSurfaceVariant,
+            Role::OnSurface,
+        ]
     } else {
-        [Role::OnSurface, Role::OnSurfaceVariant, Role::SurfaceContainerHighest, Role::SurfaceContainerLowest]
+        [
+            Role::OnSurface,
+            Role::OnSurfaceVariant,
+            Role::SurfaceContainerHighest,
+            Role::SurfaceContainerLowest,
+        ]
     }
 }
 
@@ -219,13 +229,21 @@ impl TerminalScheme {
     /// Windows Terminal scheme name.
     #[must_use]
     pub const fn wt_name(&self) -> &'static str {
-        if self.dark { WT_SCHEME_DARK } else { WT_SCHEME_LIGHT }
+        if self.dark {
+            WT_SCHEME_DARK
+        } else {
+            WT_SCHEME_LIGHT
+        }
     }
 
     /// Rio theme file stem.
     #[must_use]
     pub const fn rio_name(&self) -> &'static str {
-        if self.dark { RIO_THEME_DARK } else { RIO_THEME_LIGHT }
+        if self.dark {
+            RIO_THEME_DARK
+        } else {
+            RIO_THEME_LIGHT
+        }
     }
 
     fn mode(&self) -> &'static str {
@@ -264,21 +282,35 @@ pub struct Paint {
 }
 
 const fn fg(ink: Ink) -> Paint {
-    Paint { fg: Some(ink), bg: None, attr: None }
+    Paint {
+        fg: Some(ink),
+        bg: None,
+        attr: None,
+    }
 }
 const fn bold(ink: Ink) -> Paint {
-    Paint { fg: Some(ink), bg: None, attr: Some("b") }
+    Paint {
+        fg: Some(ink),
+        bg: None,
+        attr: Some("b"),
+    }
 }
 const fn on(fg: Ink, bg: Ink) -> Paint {
-    Paint { fg: Some(fg), bg: Some(bg), attr: None }
+    Paint {
+        fg: Some(fg),
+        bg: Some(bg),
+        attr: None,
+    }
 }
 const fn attr(attr: &'static str) -> Paint {
-    Paint { fg: None, bg: None, attr: Some(attr) }
+    Paint {
+        fg: None,
+        bg: None,
+        attr: Some(attr),
+    }
 }
 
-use Ansi::{
-    Blue, BrightBlack, BrightMagenta, BrightYellow, Cyan, Green, Magenta, Yellow,
-};
+use Ansi::{Blue, BrightBlack, BrightMagenta, BrightYellow, Cyan, Green, Magenta, Yellow};
 const PRIMARY: Ink = Ink::Role(Role::Primary);
 const SECONDARY: Ink = Ink::Role(Role::Secondary);
 const TERTIARY: Ink = Ink::Role(Role::Tertiary);
@@ -317,8 +349,20 @@ pub const NUSHELL: [(&str, Paint); 68] = [
     ("semver", bold(ansi(Cyan))),
     ("semver-range", bold(ansi(Cyan))),
     ("hints", fg(ansi(BrightBlack))),
-    ("search_result", on(Ink::Role(Role::OnTertiaryContainer), Ink::Role(Role::TertiaryContainer))),
-    ("selection", on(Ink::Role(Role::OnPrimaryContainer), Ink::Role(Role::PrimaryContainer))),
+    (
+        "search_result",
+        on(
+            Ink::Role(Role::OnTertiaryContainer),
+            Ink::Role(Role::TertiaryContainer),
+        ),
+    ),
+    (
+        "selection",
+        on(
+            Ink::Role(Role::OnPrimaryContainer),
+            Ink::Role(Role::PrimaryContainer),
+        ),
+    ),
     ("selection_cursor", attr("n")),
     ("binary_null_char", fg(ansi(BrightBlack))),
     ("binary_printable", bold(ansi(Cyan))),
@@ -496,10 +540,19 @@ impl TerminalTheme {
             ("tabs-active", PRIMARY),
             ("split", Ink::Role(Role::OutlineVariant)),
             ("split-active", PRIMARY),
-            ("search-match-background", Ink::Role(Role::SecondaryContainer)),
-            ("search-match-foreground", Ink::Role(Role::OnSecondaryContainer)),
+            (
+                "search-match-background",
+                Ink::Role(Role::SecondaryContainer),
+            ),
+            (
+                "search-match-foreground",
+                Ink::Role(Role::OnSecondaryContainer),
+            ),
             ("search-focused-match-background", TERTIARY),
-            ("search-focused-match-foreground", Ink::Role(Role::OnTertiary)),
+            (
+                "search-focused-match-foreground",
+                Ink::Role(Role::OnTertiary),
+            ),
             ("hint-background", Ink::Role(Role::TertiaryContainer)),
             ("hint-foreground", Ink::Role(Role::OnTertiaryContainer)),
         ];
@@ -588,9 +641,13 @@ impl TerminalTheme {
     /// # Errors
     /// When the file has no top-level `"schemes": [ … ]`.
     pub fn splice_wt_settings(&self, settings: &str) -> Result<String, String> {
-        let key = settings.find("\"schemes\"").ok_or("settings.json: no \"schemes\" key")?;
+        let key = settings
+            .find("\"schemes\"")
+            .ok_or("settings.json: no \"schemes\" key")?;
         let open = key
-            + settings[key..].find('[').ok_or("settings.json: \"schemes\" is not an array")?;
+            + settings[key..]
+                .find('[')
+                .ok_or("settings.json: \"schemes\" is not an array")?;
         let close = matching_bracket(settings, open).ok_or("settings.json: unbalanced schemes")?;
         let line_start = settings[..key].rfind('\n').map_or(0, |i| i + 1);
         let indent = &settings[line_start..key];
@@ -603,7 +660,11 @@ impl TerminalTheme {
             array.push_str(&wt_scheme(m, &inner));
         }
         let _ = write!(array, "\n{indent}]");
-        Ok(format!("{}{array}{}", &settings[..open], &settings[close + 1..]))
+        Ok(format!(
+            "{}{array}{}",
+            &settings[..open],
+            &settings[close + 1..]
+        ))
     }
 
     /// Every pair the generated files draw, measured.
@@ -614,16 +675,35 @@ impl TerminalTheme {
             let mode = m.mode();
             let bg = m.background();
             let mut push = |what: String, fg: u32, bg: u32, minimum: f64| {
-                out.push(ContrastCheck { mode, what, fg, bg, ratio: contrast(fg, bg), minimum });
+                out.push(ContrastCheck {
+                    mode,
+                    what,
+                    fg,
+                    bg,
+                    ratio: contrast(fg, bg),
+                    minimum,
+                });
             };
             push("foreground".into(), m.foreground(), bg, 4.5);
             push("cursor".into(), m.cursor(), bg, 3.0);
-            push("selection".into(), m.foreground(), m.selection_background(), 4.5);
-            push("selection-foreground".into(), m.selection_foreground(), m.selection_background(), 4.5);
+            push(
+                "selection".into(),
+                m.foreground(),
+                m.selection_background(),
+                4.5,
+            );
+            push(
+                "selection-foreground".into(),
+                m.selection_foreground(),
+                m.selection_background(),
+                4.5,
+            );
             // Black is a background slot in dark mode and white one in light mode: drawn as text
             // they are meant to vanish, so they are not text pairs.
             for (i, name) in ANSI_NAMES.iter().enumerate() {
-                let background_slot = if m.dark { i == Ansi::Black as usize } else {
+                let background_slot = if m.dark {
+                    i == Ansi::Black as usize
+                } else {
                     i == Ansi::White as usize || i == Ansi::BrightWhite as usize
                 };
                 if !background_slot {
@@ -641,9 +721,21 @@ impl TerminalTheme {
             }
             let rio = [
                 ("rio.tabs-active", PRIMARY, Role::SurfaceContainerHigh),
-                ("rio.search-match", Ink::Role(Role::OnSecondaryContainer), Role::SecondaryContainer),
-                ("rio.search-focused-match", Ink::Role(Role::OnTertiary), Role::Tertiary),
-                ("rio.hint", Ink::Role(Role::OnTertiaryContainer), Role::TertiaryContainer),
+                (
+                    "rio.search-match",
+                    Ink::Role(Role::OnSecondaryContainer),
+                    Role::SecondaryContainer,
+                ),
+                (
+                    "rio.search-focused-match",
+                    Ink::Role(Role::OnTertiary),
+                    Role::Tertiary,
+                ),
+                (
+                    "rio.hint",
+                    Ink::Role(Role::OnTertiaryContainer),
+                    Role::TertiaryContainer,
+                ),
             ];
             for (what, ink, under) in rio {
                 push(what.into(), m.ink(ink), m.role(under), 4.5);
@@ -677,9 +769,17 @@ fn wt_scheme(m: &TerminalScheme, indent: &str) -> String {
         ("background", hex_from_argb(m.background())),
         ("foreground", hex_from_argb(m.foreground())),
         ("cursorColor", hex_from_argb(m.cursor())),
-        ("selectionBackground", hex_from_argb(m.selection_background())),
+        (
+            "selectionBackground",
+            hex_from_argb(m.selection_background()),
+        ),
     ];
-    fields.extend(WT_KEYS.iter().zip(m.ansi).map(|(k, c)| (*k, hex_from_argb(c))));
+    fields.extend(
+        WT_KEYS
+            .iter()
+            .zip(m.ansi)
+            .map(|(k, c)| (*k, hex_from_argb(c))),
+    );
     let mut s = format!("{indent}{{\n");
     for (i, (k, v)) in fields.iter().enumerate() {
         let comma = if i + 1 < fields.len() { "," } else { "" };
@@ -699,7 +799,7 @@ fn matching_bracket(text: &str, open: usize) -> Option<usize> {
                 (true, _) => escaped = false,
                 (false, '\\') => escaped = true,
                 (false, '"') => in_string = false,
-                _ => {},
+                _ => {}
             }
             continue;
         }
@@ -711,20 +811,28 @@ fn matching_bracket(text: &str, open: usize) -> Option<usize> {
                 if depth == 0 {
                     return Some(open + i);
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     None
 }
 
 fn nu_key(key: &str) -> String {
-    if key.contains('-') { format!("\"{key}\"") } else { key.to_owned() }
+    if key.contains('-') {
+        format!("\"{key}\"")
+    } else {
+        key.to_owned()
+    }
 }
 
 fn nu_paint(m: &TerminalScheme, paint: Paint) -> String {
     match paint {
-        Paint { fg: Some(ink), bg: None, attr: None } => format!("\"{}\"", m.hex(ink)),
+        Paint {
+            fg: Some(ink),
+            bg: None,
+            attr: None,
+        } => format!("\"{}\"", m.hex(ink)),
         Paint { fg, bg, attr } => {
             let mut parts = Vec::new();
             if let Some(ink) = fg {
@@ -737,7 +845,7 @@ fn nu_paint(m: &TerminalScheme, paint: Paint) -> String {
                 parts.push(format!("attr: \"{a}\""));
             }
             format!("{{ {} }}", parts.join(", "))
-        },
+        }
     }
 }
 
@@ -747,7 +855,9 @@ pub fn xterm256(argb: u32) -> u8 {
     const LEVELS: [u32; 6] = [0, 95, 135, 175, 215, 255];
     let [r, g, b] = [(argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF];
     let nearest = |v: u32| {
-        (0..6u8).min_by_key(|&i| LEVELS[usize::from(i)].abs_diff(v)).unwrap_or(0)
+        (0..6u8)
+            .min_by_key(|&i| LEVELS[usize::from(i)].abs_diff(v))
+            .unwrap_or(0)
     };
     let dist = |c: [u32; 3]| {
         let d = |a: u32, b: u32| {
@@ -757,12 +867,20 @@ pub fn xterm256(argb: u32) -> u8 {
         d(c[0], r) + d(c[1], g) + d(c[2], b)
     };
     let (ri, gi, bi) = (nearest(r), nearest(g), nearest(b));
-    let cube = [LEVELS[usize::from(ri)], LEVELS[usize::from(gi)], LEVELS[usize::from(bi)]];
+    let cube = [
+        LEVELS[usize::from(ri)],
+        LEVELS[usize::from(gi)],
+        LEVELS[usize::from(bi)],
+    ];
     let cube_index = 16 + 36 * ri + 6 * gi + bi;
     let grey_step = ((r + g + b) / 3).saturating_sub(3) / 10;
     let grey_step = u8::try_from(grey_step.min(23)).unwrap_or(23);
     let grey = 8 + 10 * u32::from(grey_step);
-    if dist([grey, grey, grey]) < dist(cube) { 232 + grey_step } else { cube_index }
+    if dist([grey, grey, grey]) < dist(cube) {
+        232 + grey_step
+    } else {
+        cube_index
+    }
 }
 
 /// HCT of a colour, for reports.

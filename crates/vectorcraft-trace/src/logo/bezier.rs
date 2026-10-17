@@ -37,7 +37,11 @@ fn fit_one(p: &[Point], u: &[f64], t1: Vec2, t2: Vec2) -> Option<Cubic> {
     }
     let det = c00 * c11 - c01 * c01;
     let seg = p0.distance(p3);
-    let (mut al, mut ar) = if det.abs() > 1e-12 { ((x0 * c11 - x1 * c01) / det, (c00 * x1 - c01 * x0) / det) } else { (0.0, 0.0) };
+    let (mut al, mut ar) = if det.abs() > 1e-12 {
+        ((x0 * c11 - x1 * c01) / det, (c00 * x1 - c01 * x0) / det)
+    } else {
+        (0.0, 0.0)
+    };
     if !al.is_finite() || !ar.is_finite() || al <= 1e-6 * seg || ar <= 1e-6 * seg {
         al = seg / 3.0;
         ar = seg / 3.0;
@@ -55,7 +59,11 @@ fn reparam(c: &Cubic, p: &[Point], u: &[f64]) -> Vec<f64> {
             let d1 = (v0 * (s * s) + v1 * (2.0 * s * t) + v2 * (t * t)) * 3.0;
             let d2 = ((v1 - v0) * s + (v2 - v1) * t) * 6.0;
             let den = d1.dot(d1) + d.dot(d2);
-            if den.abs() > 1e-12 { (t - d.dot(d1) / den).clamp(0.0, 1.0) } else { t }
+            if den.abs() > 1e-12 {
+                (t - d.dot(d1) / den).clamp(0.0, 1.0)
+            } else {
+                t
+            }
         })
         .collect()
 }
@@ -72,14 +80,18 @@ fn max_err(c: &Cubic, p: &[Point], u: &[f64]) -> (f64, usize) {
 }
 
 fn rec(p: &[Point], t1: Vec2, t2: Vec2, tol: f64, depth: usize, out: &mut Vec<Cubic>) {
-    let (Some(&a), Some(&b)) = (p.first(), p.last()) else { return };
+    let (Some(&a), Some(&b)) = (p.first(), p.last()) else {
+        return;
+    };
     if p.len() == 2 {
         let d = a.distance(b) / 3.0;
         out.push([a, a + t1 * d, b + t2 * d, b]);
         return;
     }
     let mut u = chord(p);
-    let Some(mut c) = fit_one(p, &u, t1, t2) else { return };
+    let Some(mut c) = fit_one(p, &u, t1, t2) else {
+        return;
+    };
     for _ in 0..4 {
         let (e, _) = max_err(&c, p, &u);
         if e < tol {
@@ -122,7 +134,11 @@ pub(crate) fn fit_cubics(p: &[Point], t1: Vec2, t2: Vec2, tol: f64) -> Vec<Cubic
 
 /// Unit direction from `p[i]` towards `p[i + k]` (`sign > 0`) or `p[i - k]` (`sign < 0`).
 pub(crate) fn tangent(p: &[Point], i: usize, k: usize, sign: i32) -> Vec2 {
-    let j = if sign > 0 { (i + k).min(p.len().saturating_sub(1)) } else { i.saturating_sub(k) };
+    let j = if sign > 0 {
+        (i + k).min(p.len().saturating_sub(1))
+    } else {
+        i.saturating_sub(k)
+    };
     match (p.get(i), p.get(j)) {
         (Some(&a), Some(&b)) if a.distance(b) > 1e-12 => (b - a) / a.distance(b),
         _ => Vec2::new(1.0, 0.0),
@@ -136,13 +152,27 @@ mod tests {
 
     fn dev(cs: &[Cubic], pts: &[Point]) -> f64 {
         let s = sample_cubics(cs, 0.01);
-        pts.iter().map(|p| s.iter().map(|q| q.distance(*p)).fold(f64::MAX, f64::min)).fold(0.0, f64::max)
+        pts.iter()
+            .map(|p| s.iter().map(|q| q.distance(*p)).fold(f64::MAX, f64::min))
+            .fold(0.0, f64::max)
     }
 
     #[test]
     fn a_circle_arc_is_one_cubic() {
-        let pts: Vec<Point> = (0..200).map(|i| Point::new(20.0 * (i as f64 * 0.006).cos(), 20.0 * (i as f64 * 0.006).sin())).collect();
-        let cs = fit_cubics(&pts, tangent(&pts, 0, 4, 1), tangent(&pts, 199, 4, -1), 0.05);
+        let pts: Vec<Point> = (0..200)
+            .map(|i| {
+                Point::new(
+                    20.0 * (i as f64 * 0.006).cos(),
+                    20.0 * (i as f64 * 0.006).sin(),
+                )
+            })
+            .collect();
+        let cs = fit_cubics(
+            &pts,
+            tangent(&pts, 0, 4, 1),
+            tangent(&pts, 199, 4, -1),
+            0.05,
+        );
         assert_eq!(cs.len(), 1);
         assert!(dev(&cs, &pts) < 0.05);
     }
@@ -167,16 +197,30 @@ mod tests {
 
     #[test]
     fn a_wavy_curve_is_fitted_within_tolerance() {
-        let pts: Vec<Point> = (0..600).map(|i| Point::new(i as f64 * 0.05, 3.0 * (i as f64 * 0.02).sin())).collect();
-        let cs = fit_cubics(&pts, tangent(&pts, 0, 4, 1), tangent(&pts, 599, 4, -1), 0.04);
+        let pts: Vec<Point> = (0..600)
+            .map(|i| Point::new(i as f64 * 0.05, 3.0 * (i as f64 * 0.02).sin()))
+            .collect();
+        let cs = fit_cubics(
+            &pts,
+            tangent(&pts, 0, 4, 1),
+            tangent(&pts, 599, 4, -1),
+            0.04,
+        );
         assert!(dev(&cs, &pts) < 0.05);
         assert!(cs.len() < 20);
     }
 
     #[test]
     fn pieces_join_end_to_end() {
-        let pts: Vec<Point> = (0..400).map(|i| Point::new(i as f64 * 0.1, (i as f64 * 0.05).sin() * 4.0)).collect();
-        let cs = fit_cubics(&pts, tangent(&pts, 0, 4, 1), tangent(&pts, 399, 4, -1), 0.02);
+        let pts: Vec<Point> = (0..400)
+            .map(|i| Point::new(i as f64 * 0.1, (i as f64 * 0.05).sin() * 4.0))
+            .collect();
+        let cs = fit_cubics(
+            &pts,
+            tangent(&pts, 0, 4, 1),
+            tangent(&pts, 399, 4, -1),
+            0.02,
+        );
         for w in cs.windows(2) {
             assert!(w[0][3].distance(w[1][0]) < 1e-9);
         }
@@ -187,9 +231,36 @@ mod tests {
         let t = Vec2::new(1.0, 0.0);
         assert!(fit_cubics(&[], t, t, 0.1).is_empty());
         assert!(fit_cubics(&[Point::new(0.0, 0.0)], t, t, 0.1).is_empty());
-        assert_eq!(fit_cubics(&[Point::new(0.0, 0.0), Point::new(3.0, 0.0)], t, -t, 0.1).len(), 1);
-        assert!(fit_cubics(&[Point::new(f64::NAN, 0.0), Point::new(1.0, 1.0), Point::new(2.0, 0.0)], t, t, 0.1).is_empty());
-        assert!(fit_cubics(&[Point::new(0.0, 0.0), Point::new(1.0, 0.0), Point::new(2.0, 0.0)], t, t, 0.0).is_empty());
+        assert_eq!(
+            fit_cubics(&[Point::new(0.0, 0.0), Point::new(3.0, 0.0)], t, -t, 0.1).len(),
+            1
+        );
+        assert!(
+            fit_cubics(
+                &[
+                    Point::new(f64::NAN, 0.0),
+                    Point::new(1.0, 1.0),
+                    Point::new(2.0, 0.0)
+                ],
+                t,
+                t,
+                0.1
+            )
+            .is_empty()
+        );
+        assert!(
+            fit_cubics(
+                &[
+                    Point::new(0.0, 0.0),
+                    Point::new(1.0, 0.0),
+                    Point::new(2.0, 0.0)
+                ],
+                t,
+                t,
+                0.0
+            )
+            .is_empty()
+        );
         // Duplicate points do not divide by zero.
         let _ = fit_cubics(&[Point::new(1.0, 1.0); 10], t, t, 0.1);
     }

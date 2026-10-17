@@ -242,7 +242,8 @@ fn bind_axis(bindings: &[sdl::SDL_GamepadBinding], axis: sdl::SDL_GamepadAxis) -
 /// This is additional to InputFromStick's SDL-to-Nintendo Y conversion.
 fn binding_reverses_axis(binding: &sdl::SDL_GamepadBinding) -> bool {
     if binding.input_type != sdl::SDL_GAMEPAD_BINDTYPE_AXIS
-        || binding.output_type != sdl::SDL_GAMEPAD_BINDTYPE_AXIS {
+        || binding.output_type != sdl::SDL_GAMEPAD_BINDTYPE_AXIS
+    {
         return false;
     }
     unsafe {
@@ -1009,9 +1010,13 @@ impl SDLDriver {
         let left_identifier = left_source.lock().pad_identifier();
         mapping.insert(
             native_analog::Values::LStick as i32,
-            self.build_analog_param(&left_identifier, left_x, left_y,
+            self.build_analog_param(
+                &left_identifier,
+                left_x,
+                left_y,
                 binding_reverses_axis(&bind_axis_raw(&bindings, Axis::LEFTX)),
-                binding_reverses_axis(&bind_axis_raw(&bindings, Axis::LEFTY))),
+                binding_reverses_axis(&bind_axis_raw(&bindings, Axis::LEFTY)),
+            ),
         );
 
         let right_x = bind_axis(&bindings, Axis::RIGHTX);
@@ -1019,9 +1024,13 @@ impl SDLDriver {
         let right_identifier = joystick.lock().pad_identifier();
         mapping.insert(
             native_analog::Values::RStick as i32,
-            self.build_analog_param(&right_identifier, right_x, right_y,
+            self.build_analog_param(
+                &right_identifier,
+                right_x,
+                right_y,
                 binding_reverses_axis(&bind_axis_raw(&bindings, Axis::RIGHTX)),
-                binding_reverses_axis(&bind_axis_raw(&bindings, Axis::RIGHTY))),
+                binding_reverses_axis(&bind_axis_raw(&bindings, Axis::RIGHTY)),
+            ),
         );
 
         mapping
@@ -1509,32 +1518,52 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_SDL_RAW_INPUT_HINT";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "drivers::sdl_driver::tests::raw_input_setting_reaches_sdl_hint"])
+                .args([
+                    "--exact",
+                    "drivers::sdl_driver::tests::raw_input_setting_reaches_sdl_hint"
+                ])
                 .env(CHILD, "1")
                 .env_remove("SDL_JOYSTICK_RAWINPUT")
                 .env_remove("SDL_APP_NAME")
                 .env_remove("SDL_JOYSTICK_HIDAPI_JOY_CONS")
                 .env_remove("SDL_JOYSTICK_HIDAPI_SWITCH")
-                .status().unwrap().success());
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         for enabled in [false, true, false] {
-            common::settings::values_mut().enable_raw_input.set_value(enabled);
-            common::settings::values_mut().enable_joycon_driver.set_value(enabled);
-            common::settings::values_mut().enable_procon_driver.set_value(!enabled);
+            common::settings::values_mut()
+                .enable_raw_input
+                .set_value(enabled);
+            common::settings::values_mut()
+                .enable_joycon_driver
+                .set_value(enabled);
+            common::settings::values_mut()
+                .enable_procon_driver
+                .set_value(!enabled);
             super::SDLDriver::set_hints();
             for (name, expected) in [
                 ("SDL_JOYSTICK_RAWINPUT", if enabled { "1" } else { "0" }),
                 ("SDL_APP_NAME", "Ruzu"),
                 // Custom drivers disable only their corresponding SDL HIDAPI driver.
-                ("SDL_JOYSTICK_HIDAPI_JOY_CONS", if enabled { "0" } else { "1" }),
-                ("SDL_JOYSTICK_HIDAPI_SWITCH", if enabled { "1" } else { "0" }),
+                (
+                    "SDL_JOYSTICK_HIDAPI_JOY_CONS",
+                    if enabled { "0" } else { "1" },
+                ),
+                (
+                    "SDL_JOYSTICK_HIDAPI_SWITCH",
+                    if enabled { "1" } else { "0" },
+                ),
             ] {
                 let name = std::ffi::CString::new(name).unwrap();
                 // SDL owns the string; no hint mutation occurs during this read.
                 let value = unsafe { super::sdl::SDL_GetHint(name.as_ptr()) };
                 assert!(!value.is_null());
-                assert_eq!(unsafe { std::ffi::CStr::from_ptr(value) }.to_str().unwrap(), expected);
+                assert_eq!(
+                    unsafe { std::ffi::CStr::from_ptr(value) }.to_str().unwrap(),
+                    expected
+                );
             }
         }
     }

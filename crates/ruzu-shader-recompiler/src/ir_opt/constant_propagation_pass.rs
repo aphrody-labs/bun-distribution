@@ -1605,11 +1605,7 @@ fn fold_derivative_y_from_correction(
 }
 
 /// Port of upstream `FoldFPMul32`.
-fn fold_fp_mul32(
-    program: &mut Program,
-    inst_ref: InstRef,
-    preserves_depth_interpolation: bool,
-) {
+fn fold_fp_mul32(program: &mut Program, inst_ref: InstRef, preserves_depth_interpolation: bool) {
     let inst = program.block(inst_ref.block).inst(inst_ref.inst).clone();
     if let (Some(Value::ImmF32(lhs)), Some(Value::ImmF32(rhs))) =
         (inst.args.first().copied(), inst.args.get(1).copied())
@@ -2364,7 +2360,10 @@ mod tests {
         let folded = numerator * (1.0_f32 / (reciprocal_w + attribute));
 
         assert_eq!(folded.to_bits(), prepass.to_bits() + 1);
-        assert_ne!(prepass, folded, "Equal depth testing rejects the folded result");
+        assert_ne!(
+            prepass, folded,
+            "Equal depth testing rejects the folded result"
+        );
     }
 
     #[test]

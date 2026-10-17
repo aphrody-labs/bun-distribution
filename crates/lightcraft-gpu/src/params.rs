@@ -140,7 +140,11 @@ pub struct Present {
 
 /// The `finish` kernel's parameter block and auxiliary table (tone LUT | chroma curve | sRGB LUT | curve LUTs |
 /// mask terms) for `fp` with `masks` (their local adjustments' terms).
-pub fn finish_block(fp: &FinishParams, masks: &[[f32; MASK_TERMS]], present: &Present) -> (Vec<u32>, Vec<f32>) {
+pub fn finish_block(
+    fp: &FinishParams,
+    masks: &[[f32; MASK_TERMS]],
+    present: &Present,
+) -> (Vec<u32>, Vec<f32>) {
     let mut aux: Vec<f32> = fp.tone.lut().to_vec();
     aux.extend_from_slice(fp.tone.chroma_lut());
     let srgb_off = aux.len();
@@ -242,7 +246,17 @@ pub fn finish_block(fp: &FinishParams, masks: &[[f32; MASK_TERMS]], present: &Pr
         let long = fp.ow.max(fp.oh);
         let [a, b, c, d, e, f] = fp.out_to_norm.0;
         let (kx, ky) = (fp.ow / long, fp.oh / long);
-        p.fs("GRAIN_AFF", &[(a * kx) as f32, (b * ky) as f32, (c * kx) as f32, (d * ky) as f32, (e * kx) as f32, (f * ky) as f32]);
+        p.fs(
+            "GRAIN_AFF",
+            &[
+                (a * kx) as f32,
+                (b * ky) as f32,
+                (c * kx) as f32,
+                (d * ky) as f32,
+                (e * kx) as f32,
+                (f * ky) as f32,
+            ],
+        );
     }
     (p.0, aux)
 }

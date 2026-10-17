@@ -1,9 +1,9 @@
 //! Assigning objects to clusters.
 
 use bevy_camera::{
+    Camera,
     primitives::{Aabb, Frustum, Sphere},
     visibility::{RenderLayers, ViewVisibility},
-    Camera,
 };
 use bevy_ecs::{
     entity::Entity,
@@ -11,8 +11,8 @@ use bevy_ecs::{
     system::{Local, Query, Res},
 };
 use bevy_math::{
-    ops::{self, sin_cos},
     Mat4, UVec3, Vec2, Vec3, Vec3A, Vec3Swizzles as _, Vec4, Vec4Swizzles as _,
+    ops::{self, sin_cos},
 };
 use bevy_shape::HalfSpace;
 use bevy_transform::components::GlobalTransform;
@@ -20,8 +20,8 @@ use tracing::{error, warn};
 
 use super::{ClusterConfig, ClusterFarZMode, ClusteredDecal, Clusters, GlobalClusterSettings};
 use crate::{
-    cluster::ClusterableObjects, EnvironmentMapLight, LightProbe, PointLight, RectLight, SpotLight,
-    VolumetricLight,
+    EnvironmentMapLight, LightProbe, PointLight, RectLight, SpotLight, VolumetricLight,
+    cluster::ClusterableObjects,
 };
 
 const NDC_MIN: Vec2 = Vec2::NEG_ONE;

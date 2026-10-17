@@ -69,30 +69,150 @@ pub fn specs() -> Vec<EffectSpec> {
         params: vec![
             p("version", "Version", Value::Enum(2), popup(&VERSIONS)),
             p("quality", "Quality", Value::Enum(0), popup(&QUALITIES)),
-            p("rotoBrushPropagation/searchRadius", "Search Radius", num(15.0), slider(0.0, 100.0, 0.0, 50.0, 1)),
-            p("rotoBrushPropagation/motionThreshold", "Motion Threshold", num(10.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("rotoBrushPropagation/motionDamping", "Motion Damping", num(20.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("rotoBrushPropagation/viewSearchRegion", "View Search Region", Value::Bool(false), ParamUi::Checkbox),
-            p("rotoBrushMatte/feather", "Feather", num(0.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-            p("rotoBrushMatte/contrast", "Contrast", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("rotoBrushMatte/shiftEdge", "Shift Edge", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
-            p("rotoBrushMatte/reduceChatter", "Reduce Chatter", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("refineEdgeMatte/smooth", "Smooth", num(1.0), slider(0.0, 100.0, 0.0, 10.0, 1)),
-            p("refineEdgeMatte/feather", "Feather", num(0.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-            p("refineEdgeMatte/contrast", "Contrast", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("refineEdgeMatte/shiftEdge", "Shift Edge", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
-            p("refineEdgeMatte/reduceChatter", "Reduce Chatter", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("refineEdgeMatte/useMotionBlur", "Use Motion Blur", Value::Bool(false), ParamUi::Checkbox),
-            p("refineEdgeMatte/motionBlur/motionBlurSamples", "Samples", num(11.0), slider(1.0, 64.0, 1.0, 32.0, 0)),
-            p("refineEdgeMatte/motionBlur/shutterAngle", "Shutter Angle", num(180.0), slider(0.0, 720.0, 0.0, 360.0, 0)),
-            p("refineEdgeMatte/motionBlur/higherQuality", "Higher Quality", Value::Bool(true), ParamUi::Checkbox),
-            p("refineEdgeMatte/decontaminateEdgeColors", "Decontaminate Edge Colors", Value::Bool(true), ParamUi::Checkbox),
-            p("refineEdgeMatte/decontamination/decontaminationAmount", "Decontamination Amount", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("refineEdgeMatte/decontamination/extendWhereSmoothed", "Extend Where Smoothed", Value::Bool(true), ParamUi::Checkbox),
-            p("refineEdgeMatte/decontamination/increaseDecontaminationRadius", "Increase Decontamination Radius", num(0.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-            p("refineEdgeMatte/decontamination/viewDecontaminationMap", "View Decontamination Map", Value::Bool(false), ParamUi::Checkbox),
-            p(STROKES, "Strokes", Value::Str(String::new()), ParamUi::Hidden),
-            p(INPUT_KEY, "Input Key", Value::Str(String::new()), ParamUi::Hidden),
+            p(
+                "rotoBrushPropagation/searchRadius",
+                "Search Radius",
+                num(15.0),
+                slider(0.0, 100.0, 0.0, 50.0, 1),
+            ),
+            p(
+                "rotoBrushPropagation/motionThreshold",
+                "Motion Threshold",
+                num(10.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "rotoBrushPropagation/motionDamping",
+                "Motion Damping",
+                num(20.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "rotoBrushPropagation/viewSearchRegion",
+                "View Search Region",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "rotoBrushMatte/feather",
+                "Feather",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 20.0, 1),
+            ),
+            p(
+                "rotoBrushMatte/contrast",
+                "Contrast",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "rotoBrushMatte/shiftEdge",
+                "Shift Edge",
+                num(0.0),
+                slider(-100.0, 100.0, -100.0, 100.0, 0),
+            ),
+            p(
+                "rotoBrushMatte/reduceChatter",
+                "Reduce Chatter",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/smooth",
+                "Smooth",
+                num(1.0),
+                slider(0.0, 100.0, 0.0, 10.0, 1),
+            ),
+            p(
+                "refineEdgeMatte/feather",
+                "Feather",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 20.0, 1),
+            ),
+            p(
+                "refineEdgeMatte/contrast",
+                "Contrast",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/shiftEdge",
+                "Shift Edge",
+                num(0.0),
+                slider(-100.0, 100.0, -100.0, 100.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/reduceChatter",
+                "Reduce Chatter",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/useMotionBlur",
+                "Use Motion Blur",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "refineEdgeMatte/motionBlur/motionBlurSamples",
+                "Samples",
+                num(11.0),
+                slider(1.0, 64.0, 1.0, 32.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/motionBlur/shutterAngle",
+                "Shutter Angle",
+                num(180.0),
+                slider(0.0, 720.0, 0.0, 360.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/motionBlur/higherQuality",
+                "Higher Quality",
+                Value::Bool(true),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "refineEdgeMatte/decontaminateEdgeColors",
+                "Decontaminate Edge Colors",
+                Value::Bool(true),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "refineEdgeMatte/decontamination/decontaminationAmount",
+                "Decontamination Amount",
+                num(100.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "refineEdgeMatte/decontamination/extendWhereSmoothed",
+                "Extend Where Smoothed",
+                Value::Bool(true),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "refineEdgeMatte/decontamination/increaseDecontaminationRadius",
+                "Increase Decontamination Radius",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 20.0, 1),
+            ),
+            p(
+                "refineEdgeMatte/decontamination/viewDecontaminationMap",
+                "View Decontamination Map",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                STROKES,
+                "Strokes",
+                Value::Str(String::new()),
+                ParamUi::Hidden,
+            ),
+            p(
+                INPUT_KEY,
+                "Input Key",
+                Value::Str(String::new()),
+                ParamUi::Hidden,
+            ),
             p(FROZEN, "Frozen", Value::Str(String::new()), ParamUi::Hidden),
         ],
         render,
@@ -167,13 +287,25 @@ pub fn matte_params(params: &Params) -> MatteParams {
         shift: f(params, "refineEdgeMatte/shiftEdge"),
         chatter: f(params, "refineEdgeMatte/reduceChatter"),
         motion_blur: b(params, "refineEdgeMatte/useMotionBlur"),
-        mb_samples: f(params, "refineEdgeMatte/motionBlur/motionBlurSamples").round().clamp(1.0, 64.0) as usize,
+        mb_samples: f(params, "refineEdgeMatte/motionBlur/motionBlurSamples")
+            .round()
+            .clamp(1.0, 64.0) as usize,
         shutter_angle: f(params, "refineEdgeMatte/motionBlur/shutterAngle"),
         higher_quality: b(params, "refineEdgeMatte/motionBlur/higherQuality"),
         decontaminate: b(params, "refineEdgeMatte/decontaminateEdgeColors"),
-        decontamination: f(params, "refineEdgeMatte/decontamination/decontaminationAmount"),
-        extend_where_smoothed: b(params, "refineEdgeMatte/decontamination/extendWhereSmoothed"),
-        increase_radius: f(params, "refineEdgeMatte/decontamination/increaseDecontaminationRadius").max(0.0),
+        decontamination: f(
+            params,
+            "refineEdgeMatte/decontamination/decontaminationAmount",
+        ),
+        extend_where_smoothed: b(
+            params,
+            "refineEdgeMatte/decontamination/extendWhereSmoothed",
+        ),
+        increase_radius: f(
+            params,
+            "refineEdgeMatte/decontamination/increaseDecontaminationRadius",
+        )
+        .max(0.0),
     }
 }
 
@@ -213,8 +345,16 @@ pub fn seed(params: &Params, layer_size: [f64; 2], fps: f64) -> u64 {
     ] {
         fnv(&mut h, &v.to_bits().to_le_bytes());
     }
-    fnv(&mut h, &[e(params, "quality") as u8, e(params, "version") as u8]);
-    fnv(&mut h, model_for(params).map_or(effectcraft_segment::CLASSICAL, |m| m.info().id).as_bytes());
+    fnv(
+        &mut h,
+        &[e(params, "quality") as u8, e(params, "version") as u8],
+    );
+    fnv(
+        &mut h,
+        model_for(params)
+            .map_or(effectcraft_segment::CLASSICAL, |m| m.info().id)
+            .as_bytes(),
+    );
     h
 }
 
@@ -235,12 +375,23 @@ const CACHE_BYTES: usize = 768 << 20;
 
 fn cache() -> &'static Mutex<SegCache> {
     static C: OnceLock<Mutex<SegCache>> = OnceLock::new();
-    C.get_or_init(|| Mutex::new(SegCache { map: HashMap::new(), order: VecDeque::new(), bytes: 0 }))
+    C.get_or_init(|| {
+        Mutex::new(SegCache {
+            map: HashMap::new(),
+            order: VecDeque::new(),
+            bytes: 0,
+        })
+    })
 }
 
 /// A cached segmentation (chain key, scale).
 pub fn cached(key: u64, scale: f64) -> Option<Arc<FrameSeg>> {
-    cache().lock().unwrap_or_else(|e| e.into_inner()).map.get(&(key, scale.to_bits())).cloned()
+    cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .map
+        .get(&(key, scale.to_bits()))
+        .cloned()
 }
 
 pub fn store(key: u64, scale: f64, seg: Arc<FrameSeg>) {
@@ -253,7 +404,9 @@ pub fn store(key: u64, scale: f64, seg: Arc<FrameSeg>) {
     c.map.insert(k, seg);
     c.order.push_back(k);
     while c.bytes > CACHE_BYTES {
-        let Some(old) = c.order.pop_front() else { break };
+        let Some(old) = c.order.pop_front() else {
+            break;
+        };
         if let Some(s) = c.map.remove(&old) {
             c.bytes -= s.matte.len() + s.refine.len();
         }
@@ -264,7 +417,12 @@ pub fn store(key: u64, scale: f64, seg: Arc<FrameSeg>) {
 pub fn forget(keys: impl IntoIterator<Item = u64>) {
     let keys: std::collections::HashSet<u64> = keys.into_iter().collect();
     let mut c = cache().lock().unwrap_or_else(|e| e.into_inner());
-    let gone: Vec<(u64, u64)> = c.map.keys().filter(|k| keys.contains(&k.0)).copied().collect();
+    let gone: Vec<(u64, u64)> = c
+        .map
+        .keys()
+        .filter(|k| keys.contains(&k.0))
+        .copied()
+        .collect();
     for k in gone {
         if let Some(s) = c.map.remove(&k) {
             c.bytes -= s.matte.len() + s.refine.len();
@@ -284,7 +442,10 @@ pub fn purge() {
 /// The layer-space grid (`round(size · scale)` pixels) of a buffer.
 pub fn layer_grid(buf: &Buf, layer_size: [f64; 2]) -> Image {
     let s = if buf.scale > 0.0 { buf.scale } else { 1.0 };
-    let (w, h) = (((layer_size[0] * s).round() as u32).max(1), ((layer_size[1] * s).round() as u32).max(1));
+    let (w, h) = (
+        ((layer_size[0] * s).round() as u32).max(1),
+        ((layer_size[1] * s).round() as u32).max(1),
+    );
     let (ox, oy) = (buf.offset[0].round() as i64, buf.offset[1].round() as i64);
     let mut img = Image::new(w, h);
     img.rows_mut().for_each(|(y, row)| {
@@ -309,13 +470,24 @@ impl Chain {
     pub fn new(params: &Params, layer_size: [f64; 2], fps: f64, scale: f64) -> Chain {
         let data = data(params);
         let keys = data.chain_keys(seed(params, layer_size, fps));
-        Chain { refine_radius: data.refine_radius(), data, keys, opts: seg_opts(params, scale), model: model_for(params) }
+        Chain {
+            refine_radius: data.refine_radius(),
+            data,
+            keys,
+            opts: seg_opts(params, scale),
+            model: model_for(params),
+        }
     }
 
     /// Frame `f`'s segmentation at this chain's scale: cached, or computed from the nearest
     /// cached frame towards the base (full-resolution results serve smaller scales).
     /// `frame(g)`: the effect's input on frame g on the layer grid at this scale.
-    pub fn ensure(&self, f: i64, frame: &mut dyn FnMut(i64) -> Option<Arc<Image>>, cancel: &dyn Fn() -> bool) -> Option<Arc<FrameSeg>> {
+    pub fn ensure(
+        &self,
+        f: i64,
+        frame: &mut dyn FnMut(i64) -> Option<Arc<Image>>,
+        cancel: &dyn Fn() -> bool,
+    ) -> Option<Arc<FrameSeg>> {
         let sc = self.opts.scale;
         let lookup = |g: i64| -> Option<Arc<FrameSeg>> {
             let k = *self.keys.get(&g)?;
@@ -359,7 +531,14 @@ impl Chain {
             let img = frame(g)?;
             let strokes = self.data.strokes_at(g);
             let seg = match (&cur, g == base) {
-                (_, true) | (None, _) => rb::segment_with(&img, &strokes, None, &self.opts, self.refine_radius, self.model.as_deref()),
+                (_, true) | (None, _) => rb::segment_with(
+                    &img,
+                    &strokes,
+                    None,
+                    &self.opts,
+                    self.refine_radius,
+                    self.model.as_deref(),
+                ),
                 (Some(p), false) => {
                     let src = self.data.source_of(g)?;
                     let pimg = match prev_img.take() {
@@ -369,7 +548,15 @@ impl Chain {
                     if pimg.width != img.width || pimg.height != img.height {
                         return None;
                     }
-                    rb::propagate_with(&pimg, p, &img, &strokes, &self.opts, self.refine_radius, self.model.as_deref())
+                    rb::propagate_with(
+                        &pimg,
+                        p,
+                        &img,
+                        &strokes,
+                        &self.opts,
+                        self.refine_radius,
+                        self.model.as_deref(),
+                    )
                 }
             };
             let seg = Arc::new(seg);
@@ -382,13 +569,18 @@ impl Chain {
 
     /// Whether frame `f` is computed (at full resolution or at `scale`).
     pub fn is_cached(&self, f: i64, scale: f64) -> bool {
-        self.keys.get(&f).is_some_and(|k| cached(*k, 1.0).is_some() || cached(*k, scale).is_some())
+        self.keys
+            .get(&f)
+            .is_some_and(|k| cached(*k, 1.0).is_some() || cached(*k, scale).is_some())
     }
 }
 
 /// Nearest-neighbour resampling of a segmentation to another scale.
 pub fn downscale(s: &FrameSeg, scale: f64) -> FrameSeg {
-    let (w, h) = (((s.w as f64) * scale).round().max(1.0) as usize, ((s.h as f64) * scale).round().max(1.0) as usize);
+    let (w, h) = (
+        ((s.w as f64) * scale).round().max(1.0) as usize,
+        ((s.h as f64) * scale).round().max(1.0) as usize,
+    );
     resample(s, w, h)
 }
 
@@ -396,7 +588,14 @@ fn resample(s: &FrameSeg, w: usize, h: usize) -> FrameSeg {
     if s.w == w && s.h == h {
         return s.clone();
     }
-    let mut out = FrameSeg { w, h, matte: vec![0; w * h], refine: vec![0; w * h], fg: s.fg.clone(), bg: s.bg.clone() };
+    let mut out = FrameSeg {
+        w,
+        h,
+        matte: vec![0; w * h],
+        refine: vec![0; w * h],
+        fg: s.fg.clone(),
+        bg: s.bg.clone(),
+    };
     if s.w == 0 || s.h == 0 {
         return out;
     }
@@ -504,14 +703,25 @@ fn frozen(params: &Params) -> Option<Arc<FrozenCache>> {
 
 /// Encode one frame for [`FrozenCache`].
 pub fn freeze_frame(alpha: &[f32], band: &[u8]) -> FrozenFrame {
-    let a: Vec<u8> = alpha.iter().map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8).collect();
-    FrozenFrame { a: rle::encode(&a), b: rle::encode(band) }
+    let a: Vec<u8> = alpha
+        .iter()
+        .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)
+        .collect();
+    FrozenFrame {
+        a: rle::encode(&a),
+        b: rle::encode(band),
+    }
 }
 
 // ------------------------------------------------------------------ render
 
 /// A frame's matte (alpha and band) on the layer grid of `img` at `scale`.
-fn matte_for(ctx: &EffectCtx, f: i64, img: &Arc<Image>, scale: f64) -> Option<(Vec<f32>, Vec<u8>, f64)> {
+fn matte_for(
+    ctx: &EffectCtx,
+    f: i64,
+    img: &Arc<Image>,
+    scale: f64,
+) -> Option<(Vec<f32>, Vec<u8>, f64)> {
     let (w, h) = (img.width as usize, img.height as usize);
     // Frozen mattes.
     if let Some(fc) = frozen(ctx.params)
@@ -530,9 +740,13 @@ fn matte_for(ctx: &EffectCtx, f: i64, img: &Arc<Image>, scale: f64) -> Option<(V
                 let mut bd = vec![0u8; w * h];
                 for y in 0..h {
                     for x in 0..w {
-                        let (sx, sy) = ((x as f64 + 0.5) * fw as f64 / w as f64, (y as f64 + 0.5) * fh as f64 / h as f64);
+                        let (sx, sy) = (
+                            (x as f64 + 0.5) * fw as f64 / w as f64,
+                            (y as f64 + 0.5) * fh as f64 / h as f64,
+                        );
                         al[y * w + x] = rb::matting::sample(&af, fw, fh, sx, sy);
-                        bd[y * w + x] = bnd[(sy as usize).min(fh - 1) * fw + (sx as usize).min(fw - 1)];
+                        bd[y * w + x] =
+                            bnd[(sy as usize).min(fh - 1) * fw + (sx as usize).min(fw - 1)];
                     }
                 }
                 (al, bd)
@@ -556,7 +770,11 @@ fn matte_for(ctx: &EffectCtx, f: i64, img: &Arc<Image>, scale: f64) -> Option<(V
         (im.width as usize == w && im.height as usize == h).then(|| Arc::new(im))
     };
     let seg = chain.ensure(f, &mut frame, &|| false)?;
-    let seg = if seg.w == w && seg.h == h { (*seg).clone() } else { resample(&seg, w, h) };
+    let seg = if seg.w == w && seg.h == h {
+        (*seg).clone()
+    } else {
+        resample(&seg, w, h)
+    };
     let mp = matte_params(ctx.params);
     let (mut prev, mut next) = (None, None);
     if needs_neighbours(&mp) {
@@ -564,11 +782,23 @@ fn matte_for(ctx: &EffectCtx, f: i64, img: &Arc<Image>, scale: f64) -> Option<(V
             if chain.data.in_span(g)
                 && let Some(s) = chain.ensure(g, &mut frame, &|| false)
             {
-                *slot = Some(if s.w == w && s.h == h { (*s).clone() } else { resample(&s, w, h) });
+                *slot = Some(if s.w == w && s.h == h {
+                    (*s).clone()
+                } else {
+                    resample(&s, w, h)
+                });
             }
         }
     }
-    let alpha = final_alpha(img, &seg, prev.as_ref(), next.as_ref(), &mp, chain.refine_radius, scale);
+    let alpha = final_alpha(
+        img,
+        &seg,
+        prev.as_ref(),
+        next.as_ref(),
+        &mp,
+        chain.refine_radius,
+        scale,
+    );
     Some((alpha, seg.refine, chain.refine_radius))
 }
 
@@ -579,17 +809,26 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
     }
     let f = frame_of(ctx.time, ctx.fps());
     let sc = if buf.scale > 0.0 { buf.scale } else { 1.0 };
-    let mut out = Buf { img: Image::new(buf.img.width, buf.img.height), offset: buf.offset, scale: buf.scale };
+    let mut out = Buf {
+        img: Image::new(buf.img.width, buf.img.height),
+        offset: buf.offset,
+        scale: buf.scale,
+    };
     if !d.in_span(f) {
         return out;
     }
     let img = Arc::new(layer_grid(&buf, ctx.layer_size));
-    let Some((alpha, band, rr)) = matte_for(ctx, f, &img, sc) else { return out };
+    let Some((alpha, band, rr)) = matte_for(ctx, f, &img, sc) else {
+        return out;
+    };
     let (w, h) = (img.width as usize, img.height as usize);
     let mp = matte_params(ctx.params);
     let mut rgb = rb::rgb_of(&img);
     let map = refine::decontaminate(&mut rgb, &alpha, &band, w, h, &mp, rr * sc, sc);
-    let view_map = b(ctx.params, "refineEdgeMatte/decontamination/viewDecontaminationMap");
+    let view_map = b(
+        ctx.params,
+        "refineEdgeMatte/decontamination/viewDecontaminationMap",
+    );
     let (ox, oy) = (buf.offset[0].round() as i64, buf.offset[1].round() as i64);
     for y in 0..h {
         for x in 0..w {
@@ -636,7 +875,15 @@ pub fn frame_matte(
             next = chain.ensure(f + 1, frame, cancel);
         }
     }
-    let alpha = final_alpha(&img, &seg, prev.as_deref(), next.as_deref(), &mp, chain.refine_radius, 1.0);
+    let alpha = final_alpha(
+        &img,
+        &seg,
+        prev.as_deref(),
+        next.as_deref(),
+        &mp,
+        chain.refine_radius,
+        1.0,
+    );
     Some((alpha, seg.refine.clone()))
 }
 
@@ -658,7 +905,16 @@ mod tests {
                 let tex = ((x * 7 + y * 13) % 9) as f32 / 60.0;
                 let fg = [0.85 + tex, 0.2, 0.1];
                 let bg = [0.1, 0.4 + tex, 0.7];
-                img.set(x, y, [fg[0] * a + bg[0] * (1.0 - a), fg[1] * a + bg[1] * (1.0 - a), fg[2] * a + bg[2] * (1.0 - a), 1.0]);
+                img.set(
+                    x,
+                    y,
+                    [
+                        fg[0] * a + bg[0] * (1.0 - a),
+                        fg[1] * a + bg[1] * (1.0 - a),
+                        fg[2] * a + bg[2] * (1.0 - a),
+                        1.0,
+                    ],
+                );
             }
         }
         img
@@ -671,22 +927,52 @@ mod tests {
             None
         }
         fn self_at(&self, t: f64, _: usize) -> Option<Buf> {
-            Some(Buf { img: frame(t), offset: [0.0; 2], scale: 1.0 })
+            Some(Buf {
+                img: frame(t),
+                offset: [0.0; 2],
+                scale: 1.0,
+            })
         }
     }
 
     fn params_with(d: &RotoData) -> Params {
         let s = &specs()[0];
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
-        params.values.insert(STROKES.into(), Value::Str(d.to_json()));
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
+        params
+            .values
+            .insert(STROKES.into(), Value::Str(d.to_json()));
         params
     }
 
     #[test]
     fn renders_the_segmented_disk_on_demand() {
         let mut d = RotoData::default();
-        d.add(Stroke { kind: StrokeKind::Fg, frame: 0, radius: 3.0, points: vec![[35.0, 40.0], [45.0, 40.0]] }, 20, [0, 24]);
-        d.add(Stroke { kind: StrokeKind::Bg, frame: 0, radius: 3.0, points: vec![[5.0, 5.0], [95.0, 5.0], [95.0, 75.0]] }, 20, [0, 24]);
+        d.add(
+            Stroke {
+                kind: StrokeKind::Fg,
+                frame: 0,
+                radius: 3.0,
+                points: vec![[35.0, 40.0], [45.0, 40.0]],
+            },
+            20,
+            [0, 24],
+        );
+        d.add(
+            Stroke {
+                kind: StrokeKind::Bg,
+                frame: 0,
+                radius: 3.0,
+                points: vec![[5.0, 5.0], [95.0, 5.0], [95.0, 75.0]],
+            },
+            20,
+            [0, 24],
+        );
         let params = params_with(&d);
         let host = Seq;
         let run = |t: f64| {
@@ -696,9 +982,22 @@ mod tests {
                 layer_size: [100.0, 80.0],
                 seed: 1,
                 adjustment: false,
-                env: EffectEnv { host: Some(&host), frame_rate: 25.0, ..Default::default() },
+                env: EffectEnv {
+                    host: Some(&host),
+                    frame_rate: 25.0,
+                    ..Default::default()
+                },
             };
-            crate::apply(&specs()[0], &ctx, Buf { img: frame(t), offset: [0.0; 2], scale: 1.0 }).img
+            crate::apply(
+                &specs()[0],
+                &ctx,
+                Buf {
+                    img: frame(t),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+            )
+            .img
         };
         // Frame 5 (propagated through frames 1–4).
         let out = run(5.0 / 25.0 + 0.001);
@@ -724,9 +1023,22 @@ mod tests {
             layer_size: [100.0, 80.0],
             seed: 1,
             adjustment: false,
-            env: EffectEnv { host: Some(&host), frame_rate: 25.0, ..Default::default() },
+            env: EffectEnv {
+                host: Some(&host),
+                frame_rate: 25.0,
+                ..Default::default()
+            },
         };
-        let o = crate::apply(&specs()[0], &ctx, Buf { img: frame(0.3), offset: [0.0; 2], scale: 1.0 }).img;
+        let o = crate::apply(
+            &specs()[0],
+            &ctx,
+            Buf {
+                img: frame(0.3),
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+        )
+        .img;
         assert!(o.data.iter().all(|p| p[3] == 0.0));
     }
 
@@ -742,21 +1054,54 @@ mod tests {
         let mut g = ids.group(ID, "Roto Brush & Refine Edge");
         g.kind = effectcraft_project::GroupKind::Effect { effect: ID.into() };
         let mut rb = ids.group("rotoBrushMatte", "Roto Brush Matte");
-        rb.children.push(ids.prop("searchRadius", "Search Radius", Value::Scalar(33.0)).into());
-        rb.children.push(ids.prop("feather", "Feather", Value::Scalar(2.0)).into());
+        rb.children.push(
+            ids.prop("searchRadius", "Search Radius", Value::Scalar(33.0))
+                .into(),
+        );
+        rb.children
+            .push(ids.prop("feather", "Feather", Value::Scalar(2.0)).into());
         let mut re = ids.group("refineEdgeMatte", "Refine Edge Matte");
-        re.children.push(ids.prop("shutterAngle", "Shutter Angle", Value::Scalar(90.0)).into());
-        re.children.push(ids.prop("decontaminationAmount", "Decontamination Amount", Value::Scalar(40.0)).into());
+        re.children.push(
+            ids.prop("shutterAngle", "Shutter Angle", Value::Scalar(90.0))
+                .into(),
+        );
+        re.children.push(
+            ids.prop(
+                "decontaminationAmount",
+                "Decontamination Amount",
+                Value::Scalar(40.0),
+            )
+            .into(),
+        );
         g.children.push(rb.into());
         g.children.push(re.into());
-        assert!(crate::migrate::upgrade_instance(spec, &mut g, &mut ids, [100.0, 80.0]));
+        assert!(crate::migrate::upgrade_instance(
+            spec,
+            &mut g,
+            &mut ids,
+            [100.0, 80.0]
+        ));
         let params = crate::flatten_params(&g, &mut |p| p.value.clone());
         assert_eq!(f(&params, "rotoBrushPropagation/searchRadius"), 33.0);
         assert_eq!(f(&params, "rotoBrushMatte/feather"), 2.0);
         assert_eq!(f(&params, "refineEdgeMatte/motionBlur/shutterAngle"), 90.0);
-        assert_eq!(f(&params, "refineEdgeMatte/decontamination/decontaminationAmount"), 40.0);
-        assert!(g.sub("rotoBrushMatte").unwrap().get("searchRadius").is_none());
-        assert_eq!(g.sub("rotoBrushPropagation").unwrap().name, "Roto Brush Propagation");
+        assert_eq!(
+            f(
+                &params,
+                "refineEdgeMatte/decontamination/decontaminationAmount"
+            ),
+            40.0
+        );
+        assert!(
+            g.sub("rotoBrushMatte")
+                .unwrap()
+                .get("searchRadius")
+                .is_none()
+        );
+        assert_eq!(
+            g.sub("rotoBrushPropagation").unwrap().name,
+            "Roto Brush Propagation"
+        );
         // Parameters the old save lacked get their defaults.
         assert_eq!(f(&params, "rotoBrushPropagation/motionDamping"), 20.0);
     }

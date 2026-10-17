@@ -75,7 +75,6 @@ fn pop_common_arguments(broker: &AppletDataBroker, applet_name: &str) {
         .unwrap_or_else(|| panic!("{applet_name} common arguments are too small"));
 }
 
-
 struct AuthCallbackState {
     complete: AtomicBool,
     successful: AtomicBool,
@@ -252,9 +251,13 @@ impl FrontendApplet for Auth {
     }
 
     fn request_exit(&mut self) {
-        self.callback_state.frontend_executing.store(true, Ordering::Release);
+        self.callback_state
+            .frontend_executing
+            .store(true, Ordering::Release);
         self.frontend.close();
-        self.callback_state.frontend_executing.store(false, Ordering::Release);
+        self.callback_state
+            .frontend_executing
+            .store(false, Ordering::Release);
     }
 
     fn get_library_applet_mode(&self) -> LibraryAppletMode {
@@ -378,9 +381,13 @@ impl FrontendApplet for PhotoViewer {
     }
 
     fn request_exit(&mut self) {
-        self.callback_state.frontend_executing.store(true, Ordering::Release);
+        self.callback_state
+            .frontend_executing
+            .store(true, Ordering::Release);
         self.frontend.close();
-        self.callback_state.frontend_executing.store(false, Ordering::Release);
+        self.callback_state
+            .frontend_executing
+            .store(false, Ordering::Release);
     }
 
     fn get_library_applet_mode(&self) -> LibraryAppletMode {

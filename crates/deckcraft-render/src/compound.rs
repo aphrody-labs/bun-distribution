@@ -41,10 +41,15 @@ pub fn offset(path: &BezPath, d: f64, tolerance: f64) -> BezPath {
     let mut segs: Vec<PathSeg> = Vec::new();
     let mut closed = false;
     let flush = |segs: &mut Vec<PathSeg>, closed: bool, out: &mut BezPath| {
-        let pieces: Vec<(PathSeg, BezPath)> = segs.iter().filter_map(|s| offset_seg(*s, d, tolerance).map(|p| (*s, p))).collect();
+        let pieces: Vec<(PathSeg, BezPath)> = segs
+            .iter()
+            .filter_map(|s| offset_seg(*s, d, tolerance).map(|p| (*s, p)))
+            .collect();
         let begin = out.elements().len();
         for (i, (seg, piece)) in pieces.iter().enumerate() {
-            let Some(PathEl::MoveTo(p)) = piece.elements().first().copied() else { continue };
+            let Some(PathEl::MoveTo(p)) = piece.elements().first().copied() else {
+                continue;
+            };
             match i.checked_sub(1).and_then(|j| pieces.get(j)) {
                 None => out.move_to(p),
                 Some((prev, _)) => join(out, *prev, *seg, p, d),
@@ -143,11 +148,22 @@ fn offset_seg(s: PathSeg, d: f64, tolerance: f64) -> Option<BezPath> {
 
 /// The segment's tangent at its start and at its end (the first non-zero control vector).
 fn tangents(s: PathSeg) -> (Vec2, Vec2) {
-    let first = |v: &[Vec2]| v.iter().copied().find(|v| v.hypot2() > 1e-18).unwrap_or(Vec2::ZERO);
+    let first = |v: &[Vec2]| {
+        v.iter()
+            .copied()
+            .find(|v| v.hypot2() > 1e-18)
+            .unwrap_or(Vec2::ZERO)
+    };
     match s {
         PathSeg::Line(l) => (l.p1 - l.p0, l.p1 - l.p0),
-        PathSeg::Quad(q) => (first(&[q.p1 - q.p0, q.p2 - q.p0]), first(&[q.p2 - q.p1, q.p2 - q.p0])),
-        PathSeg::Cubic(c) => (first(&[c.p1 - c.p0, c.p2 - c.p0, c.p3 - c.p0]), first(&[c.p3 - c.p2, c.p3 - c.p1, c.p3 - c.p0])),
+        PathSeg::Quad(q) => (
+            first(&[q.p1 - q.p0, q.p2 - q.p0]),
+            first(&[q.p2 - q.p1, q.p2 - q.p0]),
+        ),
+        PathSeg::Cubic(c) => (
+            first(&[c.p1 - c.p0, c.p2 - c.p0, c.p3 - c.p0]),
+            first(&[c.p3 - c.p2, c.p3 - c.p1, c.p3 - c.p0]),
+        ),
     }
 }
 
@@ -174,7 +190,9 @@ fn miter(prev: PathSeg, next: PathSeg, d: f64) -> Option<Point> {
     let (t1, _) = tangents(next);
     let (n0, n1) = (right(t0)?, right(t1)?);
     let denom = 1.0 + n0.dot(n1);
-    (denom > 0.02).then(|| prev.end() + (n0 + n1) * (d / denom)).filter(|m| m.is_finite())
+    (denom > 0.02)
+        .then(|| prev.end() + (n0 + n1) * (d / denom))
+        .filter(|m| m.is_finite())
 }
 
 /// Join the offset of `prev` (ending at `out`'s current point) to the offset of `next`, which
@@ -198,11 +216,20 @@ mod tests {
 
     #[test]
     fn bands_split_the_width_like_powerpoint() {
-        for c in [Compound::Single, Compound::Double, Compound::ThinThick, Compound::ThickThin, Compound::Triple] {
+        for c in [
+            Compound::Single,
+            Compound::Double,
+            Compound::ThinThick,
+            Compound::ThickThin,
+            Compound::Triple,
+        ] {
             let b = bands(c);
             assert_eq!(b.first().map(|x| x.0), Some(0.0));
             assert_eq!(b.last().map(|x| x.1), Some(1.0));
-            assert!(b.windows(2).all(|w| w[0].1 < w[1].0), "{c:?}: bands in order with gaps");
+            assert!(
+                b.windows(2).all(|w| w[0].1 < w[1].0),
+                "{c:?}: bands in order with gaps"
+            );
         }
         // Thin-thick: the thin line on the left, thick-thin its mirror.
         let (tt, th) = (bands(Compound::ThinThick), bands(Compound::ThickThin));
@@ -216,11 +243,17 @@ mod tests {
         let r = kurbo::Rect::new(0.0, 0.0, 100.0, 50.0).to_path(0.1);
         let out = offset(&r, -5.0, 0.01).bounding_box();
         assert!(
-            (out.x0 + 5.0).abs() < 1e-6 && (out.y0 + 5.0).abs() < 1e-6 && (out.x1 - 105.0).abs() < 1e-6 && (out.y1 - 55.0).abs() < 1e-6,
+            (out.x0 + 5.0).abs() < 1e-6
+                && (out.y0 + 5.0).abs() < 1e-6
+                && (out.x1 - 105.0).abs() < 1e-6
+                && (out.y1 - 55.0).abs() < 1e-6,
             "{out:?}"
         );
         let inn = offset(&r, 5.0, 0.01).bounding_box();
-        assert!((inn.x0 - 5.0).abs() < 1e-6 && (inn.y1 - 45.0).abs() < 1e-6, "{inn:?}");
+        assert!(
+            (inn.x0 - 5.0).abs() < 1e-6 && (inn.y1 - 45.0).abs() < 1e-6,
+            "{inn:?}"
+        );
         // Corners meet at their miter points: the area is the offset rectangle's.
         assert!((offset(&r, -5.0, 0.01).area().abs() - 110.0 * 60.0).abs() < 1e-6);
     }
@@ -230,7 +263,10 @@ mod tests {
         let c = kurbo::Circle::new((50.0, 50.0), 20.0).to_path(0.01);
         let b = offset(&c, 4.0, 0.01).bounding_box();
         let w = b.width() / 2.0;
-        assert!((w - 16.0).abs() < 0.2 || (w - 24.0).abs() < 0.2, "radius {w}");
+        assert!(
+            (w - 16.0).abs() < 0.2 || (w - 24.0).abs() < 0.2,
+            "radius {w}"
+        );
         // A hostile path never panics and yields finite output.
         let mut p = BezPath::new();
         p.move_to((0.0, 0.0));

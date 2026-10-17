@@ -63,8 +63,9 @@ const EFFECT_DATA: &[[&str; 9]] = &[
 ];
 
 /// `TEAM_BUILD_EFFECT_INFO` — 30 entrées : `count` (en-tête) + paire `[offset, count]`.
-const EFFECT_INFO_COUNT: [i64; 30] =
-    [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
+const EFFECT_INFO_COUNT: [i64; 30] = [
+    1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5,
+];
 const EFFECT_INFO_REF: [[i64; 2]; 30] = [
     [0, 1],
     [1, 1],
@@ -101,22 +102,78 @@ const EFFECT_INFO_REF: [[i64; 2]; 30] = [
 /// `TEAM_BUILD_UP_DATA` — 9 lignes × 7 vars (type, threshold, multiplier, cv1, cv2, refId, count).
 const UP_DATA: [[i64; 7]; 9] = [
     [1, 25, 1, NULL_SENTINEL, NULL_SENTINEL, -936656357, 1],
-    [2, NULL_SENTINEL, 1, NULL_SENTINEL, NULL_SENTINEL, 1361220513, 1],
-    [3, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, 0, 1],
-    [11, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, 0, 1],
+    [
+        2,
+        NULL_SENTINEL,
+        1,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        1361220513,
+        1,
+    ],
+    [
+        3,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        0,
+        1,
+    ],
+    [
+        11,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        0,
+        1,
+    ],
     [4, 15, 1, NULL_SENTINEL, NULL_SENTINEL, 640000823, 1],
     [5, 15, 1, NULL_SENTINEL, NULL_SENTINEL, -1203685740, 1],
     [17, NULL_SENTINEL, 4, 2, NULL_SENTINEL, -817494526, 4],
-    [18, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, NULL_SENTINEL, 0, 2],
+    [
+        18,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        0,
+        2,
+    ],
     [13, 50, 1, NULL_SENTINEL, NULL_SENTINEL, 1448040376, 1],
 ];
 
 /// `TEAM_BUILD_DOWN_DATA` — 6 lignes × 7 vars.
 const DOWN_DATA: [[i64; 7]; 6] = [
-    [6, NULL_SENTINEL, 3, NULL_SENTINEL, NULL_SENTINEL, -1845035560, 3],
-    [6, NULL_SENTINEL, 1, NULL_SENTINEL, NULL_SENTINEL, -1845035560, 1],
+    [
+        6,
+        NULL_SENTINEL,
+        3,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        -1845035560,
+        3,
+    ],
+    [
+        6,
+        NULL_SENTINEL,
+        1,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        -1845035560,
+        1,
+    ],
     [16, 2, 1, NULL_SENTINEL, NULL_SENTINEL, 185576546, 1],
-    [7, NULL_SENTINEL, 4, NULL_SENTINEL, NULL_SENTINEL, 2080939252, 4],
+    [
+        7,
+        NULL_SENTINEL,
+        4,
+        NULL_SENTINEL,
+        NULL_SENTINEL,
+        2080939252,
+        4,
+    ],
     [9, 15, 1, NULL_SENTINEL, NULL_SENTINEL, -496236201, 1],
     [15, 45, 1, NULL_SENTINEL, NULL_SENTINEL, -1788134975, 1],
 ];
@@ -156,15 +213,20 @@ fn fixture() -> Value {
         .iter()
         .enumerate()
         .map(|(i, row)| {
-            child(format!("TEAM_BUILD_EFFECT_DATA_{i}"), row.iter().map(|s| var(s)).collect())
+            child(
+                format!("TEAM_BUILD_EFFECT_DATA_{i}"),
+                row.iter().map(|s| var(s)).collect(),
+            )
         })
         .collect();
 
     // EFFECT_INFO : en-tête + ref alternés.
     let mut effect_info = Vec::new();
     for i in 0..EFFECT_INFO_COUNT.len() {
-        effect_info
-            .push(child(format!("TEAM_BUILD_EFFECT_INFO_{i}"), vec![var_i(EFFECT_INFO_COUNT[i])]));
+        effect_info.push(child(
+            format!("TEAM_BUILD_EFFECT_INFO_{i}"),
+            vec![var_i(EFFECT_INFO_COUNT[i])],
+        ));
         effect_info.push(child(
             format!("TEAM_BUILD_EFFECT_INFO_REF_EFFECT_DATA_{i}"),
             vec![var_i(EFFECT_INFO_REF[i][0]), var_i(EFFECT_INFO_REF[i][1])],
@@ -176,7 +238,10 @@ fn fixture() -> Value {
         .iter()
         .enumerate()
         .map(|(i, row)| {
-            child(format!("TEAM_BUILD_UP_DATA_{i}"), row.iter().map(|&n| var_i(n)).collect())
+            child(
+                format!("TEAM_BUILD_UP_DATA_{i}"),
+                row.iter().map(|&n| var_i(n)).collect(),
+            )
         })
         .collect();
 
@@ -185,7 +250,10 @@ fn fixture() -> Value {
         .iter()
         .enumerate()
         .map(|(i, row)| {
-            child(format!("TEAM_BUILD_DOWN_DATA_{i}"), row.iter().map(|&n| var_i(n)).collect())
+            child(
+                format!("TEAM_BUILD_DOWN_DATA_{i}"),
+                row.iter().map(|&n| var_i(n)).collect(),
+            )
         })
         .collect();
 
@@ -301,7 +369,10 @@ fn effect_info_compte_et_paires() {
     // Info 29 (dernière) : count 5, paire [34, 1].
     let i29 = &db.effect_infos[29];
     assert_eq!(i29.count, 5);
-    assert_eq!(i29.effect_data_ref.map(|r| (r.offset, r.count)), Some((34, 1)));
+    assert_eq!(
+        i29.effect_data_ref.map(|r| (r.offset, r.count)),
+        Some((34, 1))
+    );
 }
 
 #[test]
@@ -352,20 +423,29 @@ fn build_info_groupes_et_refs() {
     assert_eq!(b0.build_level, 1);
     assert_eq!(b0.up_data_ref.map(|r| (r.offset, r.count)), Some((0, 1)));
     assert_eq!(b0.down_data_ref.map(|r| (r.offset, r.count)), Some((0, 1)));
-    assert_eq!(b0.effect_info_ref.map(|r| (r.offset, r.count)), Some((0, 5)));
+    assert_eq!(
+        b0.effect_info_ref.map(|r| (r.offset, r.count)),
+        Some((0, 5))
+    );
 
     // Build 4 : type 1, up[6,2] (2 modifs), down[4,1], effInfo[20,5].
     let b4 = &db.build_infos[4];
     assert_eq!(b4.build_type, 1);
     assert_eq!(b4.up_data_ref.map(|r| (r.offset, r.count)), Some((6, 2)));
-    assert_eq!(b4.effect_info_ref.map(|r| (r.offset, r.count)), Some((20, 5)));
+    assert_eq!(
+        b4.effect_info_ref.map(|r| (r.offset, r.count)),
+        Some((20, 5))
+    );
 
     // Build 5 (dernier) : type 3, up[8,1], down[5,1], effInfo[25,5].
     let b5 = &db.build_infos[5];
     assert_eq!(b5.build_type, 3);
     assert_eq!(b5.up_data_ref.map(|r| (r.offset, r.count)), Some((8, 1)));
     assert_eq!(b5.down_data_ref.map(|r| (r.offset, r.count)), Some((5, 1)));
-    assert_eq!(b5.effect_info_ref.map(|r| (r.offset, r.count)), Some((25, 5)));
+    assert_eq!(
+        b5.effect_info_ref.map(|r| (r.offset, r.count)),
+        Some((25, 5))
+    );
 }
 
 #[test]

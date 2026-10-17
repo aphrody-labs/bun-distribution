@@ -96,13 +96,27 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 // ---------------------------------------------------------------- helpers
 
 /// A same-size per-pixel kernel over `src` (the buffer's size).
-fn kernel(e: &mut Enc, entry: &str, p: &Params, src: &GpuImage, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> GpuImage {
+fn kernel(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    src: &GpuImage,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> GpuImage {
     let out = e.scratch(src.width, src.height);
     e.pixels(entry, p, src, aux, &out, data);
     out
 }
 
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     b.img = kernel(e, entry, p, &b.img, aux, data);
     Some(b)
 }
@@ -117,14 +131,31 @@ fn rgb(c: [f32; 4], w: f32) -> [f32; 4] {
 
 /// The CPU buffer geometry of `b` (no pixels: `fit_layer` reads only size, offset and scale).
 fn shape(b: &GBuf) -> Buf {
-    Buf { img: Image { width: b.img.width, height: b.img.height, data: vec![] }, offset: b.offset, scale: b.scale }
+    Buf {
+        img: Image {
+            width: b.img.width,
+            height: b.img.height,
+            data: vec![],
+        },
+        offset: b.offset,
+        scale: b.scale,
+    }
 }
 
 /// The layer in layer parameter `id` fitted to `b` (`util::fit_layer`) and uploaded; `Some(None)`
 /// when none is chosen.
-fn fitted(e: &mut Enc, ctx: &EffectCtx, b: &GBuf, id: &str, masks_and_effects: bool, stretch: bool) -> Option<Option<GpuImage>> {
+fn fitted(
+    e: &mut Enc,
+    ctx: &EffectCtx,
+    b: &GBuf,
+    id: &str,
+    masks_and_effects: bool,
+    stretch: bool,
+) -> Option<Option<GpuImage>> {
     match ctx.layer_param(id, masks_and_effects) {
-        Some(o) => Some(Some(e.g.upload_image(&effectcraft_effects::util::fit_layer(ctx, &shape(b), &o, stretch))?)),
+        Some(o) => Some(Some(e.g.upload_image(
+            &effectcraft_effects::util::fit_layer(ctx, &shape(b), &o, stretch),
+        )?)),
         None => Some(None),
     }
 }
@@ -173,12 +204,26 @@ fn block_dissolve(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let bw = (pr.f("blockWidth") * b.scale).max(1e-3);
     let bh = (pr.f("blockHeight") * b.scale).max(1e-3);
     let feather = pr.f("feather") * b.scale;
-    let subs: Vec<f64> = if pr.b("softEdges") { (0..4).map(|k| (k as f64 + 0.5) / 4.0).collect() } else { vec![0.5] };
+    let subs: Vec<f64> = if pr.b("softEdges") {
+        (0..4).map(|k| (k as f64 + 0.5) / 4.0).collect()
+    } else {
+        vec![0.5]
+    };
     // Block indices per column / row sub-sample, as the CPU computes them (f64, then u32).
-    let index =
-        |n: u32, o: f64, size: f64| (0..n).flat_map(|i| subs.iter().map(move |s| (((i as f64 + s - o) / size).floor() as i64) as u32)).collect::<Vec<_>>();
+    let index = |n: u32, o: f64, size: f64| {
+        (0..n)
+            .flat_map(|i| {
+                subs.iter()
+                    .map(move |s| (((i as f64 + s - o) / size).floor() as i64) as u32)
+            })
+            .collect::<Vec<_>>()
+    };
     let cols = index(b.img.width, b.offset[0], bw);
-    let table: Vec<u8> = cols.iter().chain(&index(b.img.height, b.offset[1], bh)).flat_map(|v| v.to_le_bytes()).collect();
+    let table: Vec<u8> = cols
+        .iter()
+        .chain(&index(b.img.height, b.offset[1], bh))
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
     let data = e.bytes(table);
     let mut p = Params::default();
     p.u[0] = [subs.len() as u32, ctx.seed ^ 0xb10c, cols.len() as u32, 0];
@@ -195,7 +240,10 @@ fn block_dissolve(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 /// transition::max_corner_dist.
 fn max_corner_dist(b: &GBuf, c: (f64, f64), metric: impl Fn(f64, f64) -> f64) -> f64 {
     let (w, h) = (b.img.width as f64, b.img.height as f64);
-    [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|(x, y)| metric(x - c.0, y - c.1)).fold(1e-6, f64::max)
+    [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+        .iter()
+        .map(|(x, y)| metric(x - c.0, y - c.1))
+        .fold(1e-6, f64::max)
 }
 
 fn grid_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -269,7 +317,12 @@ fn glass_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let mut p = Params::default();
     let data = rev.as_ref().map(|r| rows(e, &mut p, r));
     p.u[0][0] = rev.is_some() as u32;
-    p.f[0] = [c, soft * 0.5 + 0.01, (pr.f("displacementAmount") * b.scale * 4.0) as f32, 0.0];
+    p.f[0] = [
+        c,
+        soft * 0.5 + 0.01,
+        (pr.f("displacementAmount") * b.scale * 4.0) as f32,
+        0.0,
+    ];
     run(e, "ftr_glass", &p, b, Some(&g), data.as_ref())
 }
 
@@ -310,7 +363,14 @@ fn warpomatic(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     m = match pr.e("reactor") {
         1 => {
             let mean = gaussian_blur(e, &m, 8.0 * b.scale, 8.0 * b.scale, true);
-            kernel(e, "ftr_react_contrast", &Params::default(), &m, Some(&mean), None)
+            kernel(
+                e,
+                "ftr_react_contrast",
+                &Params::default(),
+                &m,
+                Some(&mean),
+                None,
+            )
         }
         2 => kernel(e, "ftr_react_local", &Params::default(), &m, Some(&m), None),
         _ => m,
@@ -319,7 +379,12 @@ fn warpomatic(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let mut p = Params::default();
     let data = rev.as_ref().map(|r| rows(e, &mut p, r));
     p.u[0] = [pr.e("warpDirection"), rev.is_some() as u32, 0, 0];
-    p.f[0] = [c, (pr.f("blendSpan") / 100.0) as f32 * 0.5, (pr.f("warpAmount") * b.scale) as f32 * 20.0, 0.0];
+    p.f[0] = [
+        c,
+        (pr.f("blendSpan") / 100.0) as f32 * 0.5,
+        (pr.f("warpAmount") * b.scale) as f32 * 20.0,
+        0.0,
+    ];
     run(e, "ftr_warpo", &p, b, Some(&m), data.as_ref())
 }
 
@@ -336,7 +401,10 @@ fn jaws(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let width = (pr.f("width") * b.scale).max(1.0);
     let amp = pr.f("height") / 100.0 * width * 0.5;
     let (bw, bh) = (b.img.width as f64, b.img.height as f64);
-    let vmax = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)].iter().map(|&(x, y)| (-(x - cx) * sn + (y - cy) * cs).abs()).fold(0.0, f64::max);
+    let vmax = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)]
+        .iter()
+        .map(|&(x, y)| (-(x - cx) * sn + (y - cy) * cs).abs())
+        .fold(0.0, f64::max);
     let d = c * (vmax + 2.0 * amp + 2.0);
     let mut p = Params::default();
     p.u[0][0] = pr.e("shape");
@@ -401,13 +469,21 @@ fn radial_shadow(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     if pr.b("resizeLayer") && !ctx.adjustment {
         let l = b.to_px(lp0);
         let (bw, bh) = (b.img.width as f64, b.img.height as f64);
-        let grow = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)].iter().map(|(cx, cy)| ((cx - l.0).hypot(cy - l.1)) * (k - 1.0)).fold(0.0, f64::max);
+        let grow = [(0.0, 0.0), (bw, 0.0), (0.0, bh), (bw, bh)]
+            .iter()
+            .map(|(cx, cy)| ((cx - l.0).hypot(cy - l.1)) * (k - 1.0))
+            .fold(0.0, f64::max);
         b.pad(e, (grow + soft * 1.5).ceil() as u32 + 1)?;
     }
     let l = b.to_px(lp0);
     let mut p = Params::default();
     p.u[0][0] = (pr.e("render") == 1) as u32;
-    p.f[0] = [l.0 as f32, l.1 as f32, k as f32, pr.f("opacity") as f32 / 100.0 * color[3]];
+    p.f[0] = [
+        l.0 as f32,
+        l.1 as f32,
+        k as f32,
+        pr.f("opacity") as f32 / 100.0 * color[3],
+    ];
     p.f[1] = rgb(color, pr.f("colorInfluence") as f32 / 100.0);
     let mut sh = kernel(e, "ftr_rshadow", &p, &b.img, None, None);
     if soft > 0.0 {
@@ -428,13 +504,31 @@ fn norm3(v: [f64; 3]) -> [f64; 3] {
 /// perspective::Shading into f[3..7]; the layer rectangle into f[1].
 fn shading(ctx: &EffectCtx, b: &GBuf, p: &mut Params) {
     let pr = ctx.params;
-    let (a, el) = (pr.f("lightDirection").to_radians(), pr.f("lightHeight").to_radians());
+    let (a, el) = (
+        pr.f("lightDirection").to_radians(),
+        pr.f("lightHeight").to_radians(),
+    );
     let l = norm3([a.sin() * el.cos(), -a.cos() * el.cos(), el.sin()]);
     let hv = norm3([l[0], l[1], l[2] + 1.0]);
-    p.f[1] = f4([b.offset[0], b.offset[1], ctx.layer_size[0] * b.scale, ctx.layer_size[1] * b.scale]);
-    p.f[3] = [l[0] as f32, l[1] as f32, l[2] as f32, pr.f("lightIntensity") as f32 / 100.0];
+    p.f[1] = f4([
+        b.offset[0],
+        b.offset[1],
+        ctx.layer_size[0] * b.scale,
+        ctx.layer_size[1] * b.scale,
+    ]);
+    p.f[3] = [
+        l[0] as f32,
+        l[1] as f32,
+        l[2] as f32,
+        pr.f("lightIntensity") as f32 / 100.0,
+    ];
     p.f[4] = rgb(pr.color("lightColor"), pr.f("ambient") as f32 / 100.0);
-    p.f[5] = [pr.f("diffuse") as f32 / 100.0, pr.f("specular") as f32 / 100.0, 1.0 / (pr.f("roughness") as f32).max(0.001), 0.0];
+    p.f[5] = [
+        pr.f("diffuse") as f32 / 100.0,
+        pr.f("specular") as f32 / 100.0,
+        1.0 / (pr.f("roughness") as f32).max(0.001),
+        0.0,
+    ];
     p.f[6] = [hv[0] as f32, hv[1] as f32, hv[2] as f32, 0.0];
 }
 
@@ -505,7 +599,12 @@ fn spotlight(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let axis = norm3([to.0 - from.0, to.1 - from.1, -height]);
     let mut p = Params::default();
     p.u[0][0] = (pr.e("render") == 1) as u32;
-    p.f[0] = [from.0 as f32, from.1 as f32, height as f32, pr.f("intensity") as f32 / 100.0];
+    p.f[0] = [
+        from.0 as f32,
+        from.1 as f32,
+        height as f32,
+        pr.f("intensity") as f32 / 100.0,
+    ];
     p.f[1] = f4([axis[0], axis[1], axis[2], cone * (1.0 - soft)]);
     p.f[2] = rgb(pr.color("color"), cone as f32);
     run(e, "ftr_spot", &p, b, None, None)
@@ -516,7 +615,12 @@ fn spotlight(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 fn environment(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let pr = ctx.params;
     let (mut env, es, eo, esz) = match ctx.layer_param("environment", true) {
-        Some(o) => (e.g.upload_image(&o.buf.img)?, o.buf.scale, o.buf.offset, o.size),
+        Some(o) => (
+            e.g.upload_image(&o.buf.img)?,
+            o.buf.scale,
+            o.buf.offset,
+            o.size,
+        ),
         None => (b.img.clone(), b.scale, b.offset, ctx.layer_size),
     };
     if pr.b("filterEnvironment") {
@@ -528,7 +632,12 @@ fn environment(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let mut p = Params::default();
     let data = rows(e, &mut p, &env);
     p.u[0][0] = pr.e("mapping");
-    p.f[0] = f4([1.0 / b.scale.max(1e-6), pr.f("height") / 100.0 * 20.0, es, 0.0]);
+    p.f[0] = f4([
+        1.0 / b.scale.max(1e-6),
+        pr.f("height") / 100.0 * 20.0,
+        es,
+        0.0,
+    ]);
     p.f[1] = f4([eo[0], eo[1], esz[0], esz[1]]);
     run(e, "ftr_env", &p, b, Some(&hmap), Some(&data))
 }
@@ -540,7 +649,11 @@ fn glasses(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     if pr.b("leftRightSwap") {
         std::mem::swap(&mut l, &mut r);
     }
-    let unit = if pr.e("units") == 1 { ctx.layer_size[0] / 100.0 } else { 1.0 } * b.scale;
+    let unit = if pr.e("units") == 1 {
+        ctx.layer_size[0] / 100.0
+    } else {
+        1.0
+    } * b.scale;
     let conv = pr.f("sceneConvergence") * unit;
     let va = pr.f("verticalAlignment") * unit;
     let mut shift = |img: GpuImage, dx: f64, dy: f64| {
@@ -555,7 +668,12 @@ fn glasses(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let r = shift(r, -conv * 0.5, va);
     let mut p = Params::default();
     p.u[0][0] = pr.e("view3d");
-    p.f[0] = [b.img.width as f32, b.img.height as f32, (pr.f("balance") / 20.0).clamp(0.0, 1.0) as f32, 0.0];
+    p.f[0] = [
+        b.img.width as f32,
+        b.img.height as f32,
+        (pr.f("balance") / 20.0).clamp(0.0, 1.0) as f32,
+        0.0,
+    ];
     let out = kernel(e, "ftr_glasses", &p, &l, Some(&r), None);
     Some(GBuf { img: out, ..b })
 }
@@ -573,7 +691,11 @@ fn bender(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (ax, ay) = (top.0 - base.0, top.1 - base.1);
     let len = (ax * ax + ay * ay).sqrt().max(1e-6);
     let (ux, uy) = (ax / len, ay / len);
-    let reference = if pr.b("adjustToDistance") { len } else { ctx.layer_size[1] * b.scale };
+    let reference = if pr.b("adjustToDistance") {
+        len
+    } else {
+        ctx.layer_size[1] * b.scale
+    };
     let mut p = Params::default();
     p.u[0][0] = pr.e("style");
     p.f[0] = f4([base.0, base.1, ux, uy]);
@@ -589,13 +711,31 @@ fn blobbylize(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let h = gaussian_blur(e, &raw, soft, soft, true);
     let lpos = b.to_px(pr.v2("lightPosition"));
     let lheight = pr.f("lightHeight");
-    let (d, el) = (pr.f("lightDirection").to_radians(), (lheight / 100.0).clamp(0.0, 1.0) * std::f64::consts::FRAC_PI_2);
+    let (d, el) = (
+        pr.f("lightDirection").to_radians(),
+        (lheight / 100.0).clamp(0.0, 1.0) * std::f64::consts::FRAC_PI_2,
+    );
     let ldir = [d.sin() * el.cos(), -d.cos() * el.cos(), el.sin()];
     let span = (b.img.width.max(b.img.height) as f64).max(1.0);
     let mut p = Params::default();
-    p.f[0] = f4([(soft * 0.5).max(1.0), (pr.f("cutAway") / 100.0).clamp(0.0, 0.99), pr.f("lightIntensity") / 100.0, pr.f("ambient") / 100.0]);
-    p.f[1] = f4([pr.f("diffuse") / 100.0, pr.f("specular") / 100.0, (1.0 / pr.f("roughness").clamp(0.001, 1.0)).min(500.0), pr.f("metal") / 100.0]);
-    p.f[2] = f4([lpos.0, lpos.1, lheight / 100.0 * span, (pr.e("lightType") == 1) as u32 as f64]);
+    p.f[0] = f4([
+        (soft * 0.5).max(1.0),
+        (pr.f("cutAway") / 100.0).clamp(0.0, 0.99),
+        pr.f("lightIntensity") / 100.0,
+        pr.f("ambient") / 100.0,
+    ]);
+    p.f[1] = f4([
+        pr.f("diffuse") / 100.0,
+        pr.f("specular") / 100.0,
+        (1.0 / pr.f("roughness").clamp(0.001, 1.0)).min(500.0),
+        pr.f("metal") / 100.0,
+    ]);
+    p.f[2] = f4([
+        lpos.0,
+        lpos.1,
+        lheight / 100.0 * span,
+        (pr.e("lightType") == 1) as u32 as f64,
+    ]);
     p.f[3] = f4([ldir[0], ldir[1], ldir[2], 0.0]);
     p.f[4] = rgb(pr.color("lightColor"), 0.0);
     run(e, "ftr_blob", &p, b, Some(&h), None)

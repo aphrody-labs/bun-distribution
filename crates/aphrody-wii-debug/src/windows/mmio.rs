@@ -19,7 +19,10 @@ pub fn show_mmio<const SYSTEM: SystemId>(
             );
             let go = ui.button("Go").clicked();
             if go || (resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
-                let s = addr_input.trim().trim_start_matches("0x").trim_start_matches("0X");
+                let s = addr_input
+                    .trim()
+                    .trim_start_matches("0x")
+                    .trim_start_matches("0X");
                 if let Ok(addr) = u32::from_str_radix(s, 16) {
                     *base = addr & !0xF;
                 }
@@ -36,31 +39,40 @@ pub fn show_mmio<const SYSTEM: SystemId>(
 
         ui.separator();
 
-        ScrollArea::vertical().auto_shrink([false; 2]).show(ui, |ui| {
-            Grid::new("mem_grid").num_columns(3).striped(true).show(ui, |ui| {
-                for row in 0u32..16 {
-                    let addr = base.wrapping_add(row * 16);
+        ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(ui, |ui| {
+                Grid::new("mem_grid")
+                    .num_columns(3)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        for row in 0u32..16 {
+                            let addr = base.wrapping_add(row * 16);
 
-                    ui.monospace(format!("{:08X}", addr));
+                            ui.monospace(format!("{:08X}", addr));
 
-                    let mut hex = String::with_capacity(16 * 3 + 1);
-                    let mut ascii = String::with_capacity(16);
-                    for col in 0u32..16 {
-                        if col == 8 {
-                            hex.push(' ');
+                            let mut hex = String::with_capacity(16 * 3 + 1);
+                            let mut ascii = String::with_capacity(16);
+                            for col in 0u32..16 {
+                                if col == 8 {
+                                    hex.push(' ');
+                                }
+                                let byte = mmio.virt_read_u8(addr.wrapping_add(col));
+                                hex.push_str(&format!("{:02X}", byte));
+                                if col < 15 {
+                                    hex.push(' ');
+                                }
+                                ascii.push(if byte.is_ascii_graphic() {
+                                    byte as char
+                                } else {
+                                    '.'
+                                });
+                            }
+                            ui.monospace(&hex);
+                            ui.monospace(&ascii);
+                            ui.end_row();
                         }
-                        let byte = mmio.virt_read_u8(addr.wrapping_add(col));
-                        hex.push_str(&format!("{:02X}", byte));
-                        if col < 15 {
-                            hex.push(' ');
-                        }
-                        ascii.push(if byte.is_ascii_graphic() { byte as char } else { '.' });
-                    }
-                    ui.monospace(&hex);
-                    ui.monospace(&ascii);
-                    ui.end_row();
-                }
+                    });
             });
-        });
     });
 }

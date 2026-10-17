@@ -34,7 +34,13 @@ pub struct PropChange {
 impl PropChange {
     pub fn new(section: &'static str, property: String, before: String, after: String) -> Self {
         let text = format!("{property} {before} → {after}");
-        Self { section, property, before, after, text }
+        Self {
+            section,
+            property,
+            before,
+            after,
+            text,
+        }
     }
 }
 
@@ -110,9 +116,17 @@ pub fn compare(doc: &Document, id: NodeId) -> Comparison {
     if !out.changed {
         return out;
     }
-    let Some(before) = doc.with_dev_snapshot(id) else { return out };
+    let Some(before) = doc.with_dev_snapshot(id) else {
+        return out;
+    };
     out.snapshot = true;
-    let mut w = Walk { before: &before, now: doc, now_ids: bounded_set(doc, id), before_ids: bounded_set(&before, id), out: &mut out };
+    let mut w = Walk {
+        before: &before,
+        now: doc,
+        now_ids: bounded_set(doc, id),
+        before_ids: bounded_set(&before, id),
+        out: &mut out,
+    };
     w.layer(id, 0);
     out
 }
@@ -120,7 +134,8 @@ pub fn compare(doc: &Document, id: NodeId) -> Comparison {
 /// The before and after documents of layer `id` (the snapshot's copy and the document), for
 /// rendering the two side by side.
 pub fn before_doc(doc: &Document, id: NodeId) -> Option<Document> {
-    doc.node(id).filter(|n| n.dev_status == DevStatus::ReadyForDev && n.dev_changed)?;
+    doc.node(id)
+        .filter(|n| n.dev_status == DevStatus::ReadyForDev && n.dev_changed)?;
     doc.with_dev_snapshot(id)
 }
 
@@ -138,7 +153,13 @@ pub fn compare_docs(before: &Document, now: &Document) -> Comparison {
         modified: 0,
         truncated: false,
     };
-    let mut w = Walk { before, now, now_ids: now.ids().collect(), before_ids: before.ids().collect(), out: &mut out };
+    let mut w = Walk {
+        before,
+        now,
+        now_ids: now.ids().collect(),
+        before_ids: before.ids().collect(),
+        out: &mut out,
+    };
     for p in &now.pages {
         if before.contains(*p) {
             w.layer(*p, 0);
@@ -154,7 +175,10 @@ pub fn compare_docs(before: &Document, now: &Document) -> Comparison {
 }
 
 fn bounded_set(doc: &Document, id: NodeId) -> BTreeSet<NodeId> {
-    doc.subtree(id).into_iter().take(MAX_SNAPSHOT_NODES * 2).collect()
+    doc.subtree(id)
+        .into_iter()
+        .take(MAX_SNAPSHOT_NODES * 2)
+        .collect()
 }
 
 struct Walk<'a> {
@@ -182,7 +206,15 @@ impl Walk<'_> {
     fn whole(&mut self, doc: &Document, id: NodeId, depth: usize, change: ChangeKind) {
         let Some(n) = doc.node(id) else { return };
         let layers = doc.subtree(id).len().min(MAX_SNAPSHOT_NODES * 2);
-        self.push(LayerChange { id, name: n.name.clone(), type_name: n.kind.type_name(), change, depth, layers, properties: Vec::new() });
+        self.push(LayerChange {
+            id,
+            name: n.name.clone(),
+            type_name: n.kind.type_name(),
+            change,
+            depth,
+            layers,
+            properties: Vec::new(),
+        });
     }
 
     /// Layer `id` (in both versions) and what's under it: its own changes, then its children as they
@@ -193,8 +225,17 @@ impl Walk<'_> {
         }
         let Some(now) = self.now.node(id) else { return };
         // A layer shared by both versions under a shared parent didn't change (nor its place).
-        let shared = |n: NodeId| self.before.node_arc(n).zip(self.now.node_arc(n)).is_some_and(|(x, y)| std::sync::Arc::ptr_eq(x, y));
-        let props = if shared(id) && now.parent.is_none_or(shared) { Vec::new() } else { layer_changes(self.before, self.now, id) };
+        let shared = |n: NodeId| {
+            self.before
+                .node_arc(n)
+                .zip(self.now.node_arc(n))
+                .is_some_and(|(x, y)| std::sync::Arc::ptr_eq(x, y))
+        };
+        let props = if shared(id) && now.parent.is_none_or(shared) {
+            Vec::new()
+        } else {
+            layer_changes(self.before, self.now, id)
+        };
         if !props.is_empty() {
             self.push(LayerChange {
                 id,
@@ -213,8 +254,18 @@ impl Walk<'_> {
                 self.whole(self.now, *c, depth + 1, ChangeKind::Added);
             }
         }
-        let lost: Vec<NodeId> =
-            self.before.node(id).map(|b| b.children.iter().rev().copied().filter(|c| !self.now_ids.contains(c)).collect()).unwrap_or_default();
+        let lost: Vec<NodeId> = self
+            .before
+            .node(id)
+            .map(|b| {
+                b.children
+                    .iter()
+                    .rev()
+                    .copied()
+                    .filter(|c| !self.now_ids.contains(c))
+                    .collect()
+            })
+            .unwrap_or_default();
         for c in lost {
             self.whole(self.before, c, depth + 1, ChangeKind::Removed);
         }
@@ -223,21 +274,42 @@ impl Walk<'_> {
 
 /// What changed on layer `id` between `before` and `now` (both must hold it).
 pub fn layer_changes(before: &Document, now: &Document, id: NodeId) -> Vec<PropChange> {
-    let (Some(b), Some(a)) = (before.node(id), now.node(id)) else { return Vec::new() };
+    let (Some(b), Some(a)) = (before.node(id), now.node(id)) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     let mut put = |section: &'static str, property: &str, before: String, after: String| {
         if before != after {
-            out.push(PropChange::new(section, property.to_string(), before, after));
+            out.push(PropChange::new(
+                section,
+                property.to_string(),
+                before,
+                after,
+            ));
         }
     };
-    let parent_name = |d: &Document, n: &Node| n.parent.and_then(|p| d.node(p)).map(|p| p.name.clone()).unwrap_or_default();
+    let parent_name = |d: &Document, n: &Node| {
+        n.parent
+            .and_then(|p| d.node(p))
+            .map(|p| p.name.clone())
+            .unwrap_or_default()
+    };
     if b.parent != a.parent {
-        put("Layer", "parent", parent_name(before, b), parent_name(now, a));
+        put(
+            "Layer",
+            "parent",
+            parent_name(before, b),
+            parent_name(now, a),
+        );
     } else if let Some((ib, ia)) = order(before, now, id) {
         put("Layer", "order", ib.to_string(), ia.to_string());
     }
     // Unchanged layers (shared with the snapshot, or equal) only move with their parent.
-    let same = before.node_arc(id).zip(now.node_arc(id)).is_some_and(|(x, y)| std::sync::Arc::ptr_eq(x, y)) || b.same_design(a);
+    let same = before
+        .node_arc(id)
+        .zip(now.node_arc(id))
+        .is_some_and(|(x, y)| std::sync::Arc::ptr_eq(x, y))
+        || b.same_design(a);
     if same {
         return out;
     }
@@ -245,26 +317,57 @@ pub fn layer_changes(before: &Document, now: &Document, id: NodeId) -> Vec<PropC
     let shown = |n: &Node| if n.visible { "visible" } else { "hidden" }.to_string();
     put("Layer", "visibility", shown(b), shown(a));
     if b.blend != a.blend {
-        put("Layer", "blend", b.blend.label().to_string(), a.blend.label().to_string());
+        put(
+            "Layer",
+            "blend",
+            b.blend.label().to_string(),
+            a.blend.label().to_string(),
+        );
     }
     if a.kind.is_frame_like() && b.kind.is_frame_like() {
         let yes = |v: bool| if v { "on" } else { "off" }.to_string();
         put("Layer", "clip content", yes(b.clip), yes(a.clip));
     }
     if let (NodeKind::Text(tb), NodeKind::Text(ta)) = (&b.kind, &a.kind) {
-        put("Layer", "text", quoted(&tb.characters), quoted(&ta.characters));
+        put(
+            "Layer",
+            "text",
+            quoted(&tb.characters),
+            quoted(&ta.characters),
+        );
     }
-    if let (NodeKind::Instance { component: cb, props: pb }, NodeKind::Instance { component: ca, props: pa }) = (&b.kind, &a.kind) {
-        let main = |d: &Document, c: &NodeId| d.node(*c).map(|n| n.name.clone()).unwrap_or_else(|| c.to_string());
+    if let (
+        NodeKind::Instance {
+            component: cb,
+            props: pb,
+        },
+        NodeKind::Instance {
+            component: ca,
+            props: pa,
+        },
+    ) = (&b.kind, &a.kind)
+    {
+        let main = |d: &Document, c: &NodeId| {
+            d.node(*c)
+                .map(|n| n.name.clone())
+                .unwrap_or_else(|| c.to_string())
+        };
         put("Layer", "component", main(before, cb), main(now, ca));
         let keys: BTreeSet<&String> = pb.keys().chain(pa.keys()).collect();
         for k in keys {
-            let v = |m: &std::collections::BTreeMap<String, serde_json::Value>| m.get(k).map(value_text).unwrap_or_else(|| "default".into());
+            let v = |m: &std::collections::BTreeMap<String, serde_json::Value>| {
+                m.get(k).map(value_text).unwrap_or_else(|| "default".into())
+            };
             put("Layer", k.split('#').next().unwrap_or(k), v(pb), v(pa));
         }
     }
     if b.kind.type_name() != a.kind.type_name() {
-        put("Layer", "type", b.kind.type_name().to_string(), a.kind.type_name().to_string());
+        put(
+            "Layer",
+            "type",
+            b.kind.type_name().to_string(),
+            a.kind.type_name().to_string(),
+        );
     }
     for c in section_changes(&properties(before, id), &properties(now, id)) {
         out.push(c);
@@ -277,9 +380,24 @@ pub fn layer_changes(before: &Document, now: &Document, id: NodeId) -> Vec<PropC
 fn order(before: &Document, now: &Document, id: NodeId) -> Option<(usize, usize)> {
     let parent = now.node(id)?.parent?;
     let (pb, pa) = (before.node(parent)?, now.node(parent)?);
-    let common_b: Vec<NodeId> = pb.children.iter().rev().copied().filter(|c| pa.children.contains(c)).collect();
-    let common_a: Vec<NodeId> = pa.children.iter().rev().copied().filter(|c| pb.children.contains(c)).collect();
-    let (ib, ia) = (common_b.iter().position(|c| *c == id)?, common_a.iter().position(|c| *c == id)?);
+    let common_b: Vec<NodeId> = pb
+        .children
+        .iter()
+        .rev()
+        .copied()
+        .filter(|c| pa.children.contains(c))
+        .collect();
+    let common_a: Vec<NodeId> = pa
+        .children
+        .iter()
+        .rev()
+        .copied()
+        .filter(|c| pb.children.contains(c))
+        .collect();
+    let (ib, ia) = (
+        common_b.iter().position(|c| *c == id)?,
+        common_a.iter().position(|c| *c == id)?,
+    );
     (ib != ia).then_some((ib + 1, ia + 1))
 }
 
@@ -299,7 +417,11 @@ fn value_text(v: &serde_json::Value) -> String {
 }
 
 /// The sections whose rows form a list (one row per paint or effect).
-const LISTS: [(&str, &str); 3] = [("Fills", "fill"), ("Strokes", "stroke"), ("Effects", "effect")];
+const LISTS: [(&str, &str); 3] = [
+    ("Fills", "fill"),
+    ("Strokes", "stroke"),
+    ("Effects", "effect"),
+];
 
 /// The changes between two layers' inspected properties.
 fn section_changes(before: &[Section], after: &[Section]) -> Vec<PropChange> {
@@ -309,15 +431,22 @@ fn section_changes(before: &[Section], after: &[Section]) -> Vec<PropChange> {
             titles.push(s.title);
         }
     }
-    let rows = |list: &[Section], title: &str| -> Vec<Prop> { list.iter().find(|s| s.title == title).map(|s| s.rows.clone()).unwrap_or_default() };
+    let rows = |list: &[Section], title: &str| -> Vec<Prop> {
+        list.iter()
+            .find(|s| s.title == title)
+            .map(|s| s.rows.clone())
+            .unwrap_or_default()
+    };
     let mut out = Vec::new();
     for title in titles {
         let (b, a) = (rows(before, title), rows(after, title));
         match LISTS.iter().find(|(t, _)| *t == title) {
             Some((_, base)) => {
                 // A stroke's weight is a row of its own, not a paint.
-                let (bw, b): (Vec<Prop>, Vec<Prop>) = b.into_iter().partition(|r| r.label == "Weight");
-                let (aw, a): (Vec<Prop>, Vec<Prop>) = a.into_iter().partition(|r| r.label == "Weight");
+                let (bw, b): (Vec<Prop>, Vec<Prop>) =
+                    b.into_iter().partition(|r| r.label == "Weight");
+                let (aw, a): (Vec<Prop>, Vec<Prop>) =
+                    a.into_iter().partition(|r| r.label == "Weight");
                 list_changes(title, base, &b, &a, &mut out);
                 keyed_changes(title, &bw, &aw, &mut out);
             }
@@ -328,7 +457,13 @@ fn section_changes(before: &[Section], after: &[Section]) -> Vec<PropChange> {
 }
 
 /// Rows paired by position: `fill #FF0000 → #E03030`, `fill 2 none → #FFFFFF`.
-fn list_changes(section: &'static str, base: &str, before: &[Prop], after: &[Prop], out: &mut Vec<PropChange>) {
+fn list_changes(
+    section: &'static str,
+    base: &str,
+    before: &[Prop],
+    after: &[Prop],
+    out: &mut Vec<PropChange>,
+) {
     let n = before.len().max(after.len());
     for i in 0..n {
         let (b, a) = (before.get(i), after.get(i));
@@ -338,10 +473,16 @@ fn list_changes(section: &'static str, base: &str, before: &[Prop], after: &[Pro
             (Some(x), None) | (None, Some(x)) if base == "effect" => x.label.to_lowercase(),
             _ => base.to_string(),
         };
-        let property = if n > 1 { format!("{kind} {}", i + 1) } else { kind };
+        let property = if n > 1 {
+            format!("{kind} {}", i + 1)
+        } else {
+            kind
+        };
         let text = |p: Option<&Prop>, other: Option<&Prop>| match p {
             Some(p) => {
-                let v = if p.label == "Solid" || base == "effect" && other.is_some_and(|o| o.label == p.label) {
+                let v = if p.label == "Solid"
+                    || base == "effect" && other.is_some_and(|o| o.label == p.label)
+                {
                     p.value.clone()
                 } else {
                     format!("{} {}", p.label, p.value)
@@ -358,7 +499,12 @@ fn list_changes(section: &'static str, base: &str, before: &[Prop], after: &[Pro
 }
 
 /// Rows paired by label: `width 120 → 136`.
-fn keyed_changes(section: &'static str, before: &[Prop], after: &[Prop], out: &mut Vec<PropChange>) {
+fn keyed_changes(
+    section: &'static str,
+    before: &[Prop],
+    after: &[Prop],
+    out: &mut Vec<PropChange>,
+) {
     let mut labels: Vec<&str> = after.iter().map(|r| r.label.as_str()).collect();
     for r in before {
         if !labels.contains(&r.label.as_str()) {
@@ -370,14 +516,22 @@ fn keyed_changes(section: &'static str, before: &[Prop], after: &[Prop], out: &m
         if label == "Content" {
             continue;
         }
-        let (b, a) = (before.iter().find(|r| r.label == label), after.iter().find(|r| r.label == label));
+        let (b, a) = (
+            before.iter().find(|r| r.label == label),
+            after.iter().find(|r| r.label == label),
+        );
         let text = |p: Option<&Prop>, other: Option<&Prop>| match p {
             Some(p) => with_token(p.value.clone(), p, other),
             None => missing(section, label).to_string(),
         };
         let (tb, ta) = (text(b, a), text(a, b));
         if tb != ta {
-            out.push(PropChange::new(section, property_name(section, label), tb, ta));
+            out.push(PropChange::new(
+                section,
+                property_name(section, label),
+                tb,
+                ta,
+            ));
         }
     }
 }

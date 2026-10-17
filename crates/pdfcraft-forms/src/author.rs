@@ -111,7 +111,10 @@ fn rgb(c: [f64; 3]) -> Object {
 /// The AcroForm dictionary's reference, creating the form (with `/Helv` in `/DR`) if needed.
 pub(crate) fn ensure_form(doc: &mut Document) -> Result<ObjRef, FormError> {
     let root = doc.root().ok_or(FormError::NoForm)?;
-    let existing = doc.get(root).as_dict().and_then(|d| d.get(b"AcroForm").cloned());
+    let existing = doc
+        .get(root)
+        .as_dict()
+        .and_then(|d| d.get(b"AcroForm").cloned());
     let r = match existing {
         Some(Object::Ref(r)) if doc.get(r).as_dict().is_some() => r,
         other => {
@@ -126,13 +129,28 @@ pub(crate) fn ensure_form(doc: &mut Document) -> Result<ObjRef, FormError> {
         af.set(b"Fields".to_vec(), Object::Array(Vec::new()));
     }
     if !af.contains(b"DA") {
-        af.set(b"DA".to_vec(), PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()));
+        af.set(
+            b"DA".to_vec(),
+            PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()),
+        );
     }
-    let mut dr = af.get(b"DR").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
-    let mut fonts = dr.get(b"Font").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
+    let mut dr = af
+        .get(b"DR")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_dict().cloned())
+        .unwrap_or_default();
+    let mut fonts = dr
+        .get(b"Font")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_dict().cloned())
+        .unwrap_or_default();
     // Acrobat's resource names for the standard fonts its Appearance tab offers.
     let mut added = false;
-    for (name, base) in [("Helv", "Helvetica"), ("TiRo", "Times-Roman"), ("Cour", "Courier")] {
+    for (name, base) in [
+        ("Helv", "Helvetica"),
+        ("TiRo", "Times-Roman"),
+        ("Cour", "Courier"),
+    ] {
         if fonts.contains(name.as_bytes()) {
             continue;
         }
@@ -178,12 +196,21 @@ pub struct LookPatch {
 
 impl LookPatch {
     fn validate(&self) -> Result<(), FormError> {
-        for c in self.border.flatten().into_iter().chain(self.fill.flatten()).chain(self.text) {
+        for c in self
+            .border
+            .flatten()
+            .into_iter()
+            .chain(self.fill.flatten())
+            .chain(self.text)
+        {
             if !c.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) {
                 return invalid("appearance colours must be finite RGB values between 0 and 1");
             }
         }
-        if self.width.is_some_and(|v| !v.is_finite() || !(0.0..=12.0).contains(&v)) {
+        if self
+            .width
+            .is_some_and(|v| !v.is_finite() || !(0.0..=12.0).contains(&v))
+        {
             return invalid("border width must be between 0 and 12 points");
         }
         Ok(())
@@ -202,10 +229,17 @@ fn patch_da(da: &str, size: Option<f64>, patch: &LookPatch) -> String {
     let numeric = |s: &str| s.parse::<f64>().is_ok();
     if patch.font.is_some() || size.is_some() {
         let old = appearance::parse_da(da);
-        let font = patch.font.map_or_else(|| old.font.clone(), |f| f.resource().to_string());
+        let font = patch
+            .font
+            .map_or_else(|| old.font.clone(), |f| f.resource().to_string());
         // `parse_da` reads sizes up to 300 points; keep the same bound when writing.
         let size = appearance::fmt(size.unwrap_or(old.size).clamp(0.0, 300.0));
-        let at = toks.iter().enumerate().rev().find(|(i, t)| t.as_str() == "Tf" && *i >= 2).map(|(i, _)| i);
+        let at = toks
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(i, t)| t.as_str() == "Tf" && *i >= 2)
+            .map(|(i, _)| i);
         match at {
             Some(i) => {
                 if let Some(slot) = toks.get_mut(i - 2) {
@@ -219,7 +253,12 @@ fn patch_da(da: &str, size: Option<f64>, patch: &LookPatch) -> String {
         }
     }
     if let Some(c) = patch.text {
-        let rgb = [appearance::fmt(c[0]), appearance::fmt(c[1]), appearance::fmt(c[2]), "rg".into()];
+        let rgb = [
+            appearance::fmt(c[0]),
+            appearance::fmt(c[1]),
+            appearance::fmt(c[2]),
+            "rg".into(),
+        ];
         let at = toks.iter().enumerate().rev().find_map(|(i, t)| {
             let n = match t.as_str() {
                 "g" => 1,
@@ -228,7 +267,9 @@ fn patch_da(da: &str, size: Option<f64>, patch: &LookPatch) -> String {
                 _ => return None,
             };
             let start = i.checked_sub(n)?;
-            toks.get(start..i).is_some_and(|ops| ops.iter().all(|o| numeric(o))).then_some((start, i))
+            toks.get(start..i)
+                .is_some_and(|ops| ops.iter().all(|o| numeric(o)))
+                .then_some((start, i))
         });
         match at {
             Some((start, end)) => {
@@ -247,11 +288,22 @@ fn patch_widget_look(doc: &mut Document, w: &Widget, patch: &LookPatch) -> Resul
     if !touches_mk && !touches_bs {
         return Ok(());
     }
-    let wd = doc.get(w.obj).as_dict().cloned().ok_or_else(|| FormError::Invalid("the widget is not a dictionary".into()))?;
+    let wd = doc
+        .get(w.obj)
+        .as_dict()
+        .cloned()
+        .ok_or_else(|| FormError::Invalid("the widget is not a dictionary".into()))?;
     if touches_mk {
         let indirect = wd.get(b"MK").and_then(Object::as_ref);
-        let mut mk = wd.get(b"MK").map(|m| doc.resolve(m)).and_then(|m| m.as_dict().cloned()).unwrap_or_default();
-        for (key, change) in [(b"BC".as_slice(), patch.border), (b"BG".as_slice(), patch.fill)] {
+        let mut mk = wd
+            .get(b"MK")
+            .map(|m| doc.resolve(m))
+            .and_then(|m| m.as_dict().cloned())
+            .unwrap_or_default();
+        for (key, change) in [
+            (b"BC".as_slice(), patch.border),
+            (b"BG".as_slice(), patch.fill),
+        ] {
             if let Some(change) = change {
                 match change {
                     Some(c) => mk.set(key.to_vec(), rgb(c)),
@@ -269,7 +321,11 @@ fn patch_widget_look(doc: &mut Document, w: &Widget, patch: &LookPatch) -> Resul
     }
     if touches_bs {
         let indirect = wd.get(b"BS").and_then(Object::as_ref);
-        let mut bs = wd.get(b"BS").map(|b| doc.resolve(b)).and_then(|b| b.as_dict().cloned()).unwrap_or_default();
+        let mut bs = wd
+            .get(b"BS")
+            .map(|b| doc.resolve(b))
+            .and_then(|b| b.as_dict().cloned())
+            .unwrap_or_default();
         if let Some(width) = patch.width {
             bs.set(b"W".to_vec(), Object::Real(width));
         }
@@ -297,7 +353,13 @@ pub enum BorderStyle {
 }
 
 impl BorderStyle {
-    pub const ALL: [BorderStyle; 5] = [BorderStyle::Solid, BorderStyle::Dashed, BorderStyle::Beveled, BorderStyle::Inset, BorderStyle::Underline];
+    pub const ALL: [BorderStyle; 5] = [
+        BorderStyle::Solid,
+        BorderStyle::Dashed,
+        BorderStyle::Beveled,
+        BorderStyle::Inset,
+        BorderStyle::Underline,
+    ];
 
     fn code(self) -> &'static str {
         match self {
@@ -361,8 +423,14 @@ pub enum CheckStyle {
 }
 
 impl CheckStyle {
-    pub const ALL: [CheckStyle; 6] =
-        [CheckStyle::Check, CheckStyle::Circle, CheckStyle::Cross, CheckStyle::Diamond, CheckStyle::Square, CheckStyle::Star];
+    pub const ALL: [CheckStyle; 6] = [
+        CheckStyle::Check,
+        CheckStyle::Circle,
+        CheckStyle::Cross,
+        CheckStyle::Diamond,
+        CheckStyle::Square,
+        CheckStyle::Star,
+    ];
 
     fn code(self) -> &'static str {
         match self {
@@ -388,50 +456,95 @@ impl CheckStyle {
 
     /// A widget's style: its `/MK /CA`, else a check for check boxes and a circle for radios.
     pub(crate) fn of_widget(doc: &Document, wd: &Dict, kind: FieldKind) -> Self {
-        let mk = wd.get(b"MK").and_then(|m| doc.resolve(m).as_dict().cloned()).unwrap_or_default();
-        let ca = mk.get(b"CA").and_then(|c| doc.resolve(c).as_string().map(|s| s.to_text()));
-        CheckStyle::ALL.into_iter().find(|s| ca.as_deref() == Some(s.code())).unwrap_or(if kind == FieldKind::Radio {
-            CheckStyle::Circle
-        } else {
-            CheckStyle::Check
-        })
+        let mk = wd
+            .get(b"MK")
+            .and_then(|m| doc.resolve(m).as_dict().cloned())
+            .unwrap_or_default();
+        let ca = mk
+            .get(b"CA")
+            .and_then(|c| doc.resolve(c).as_string().map(|s| s.to_text()));
+        CheckStyle::ALL
+            .into_iter()
+            .find(|s| ca.as_deref() == Some(s.code()))
+            .unwrap_or(if kind == FieldKind::Radio {
+                CheckStyle::Circle
+            } else {
+                CheckStyle::Check
+            })
     }
 }
 
 /// A check box's or radio button's style (from its first widget).
 pub fn check_style(doc: &Document, f: &Field) -> CheckStyle {
-    let wd = f.widgets.first().and_then(|w| doc.get(w.obj).as_dict().cloned()).unwrap_or_default();
+    let wd = f
+        .widgets
+        .first()
+        .and_then(|w| doc.get(w.obj).as_dict().cloned())
+        .unwrap_or_default();
     CheckStyle::of_widget(doc, &wd, f.kind)
 }
 
 fn rgb_of(doc: &Document, o: Option<&Object>) -> Option<[f64; 3]> {
-    let v: Vec<f64> = doc.resolve(o?).as_array()?.iter().filter_map(Object::as_f64).collect();
+    let v: Vec<f64> = doc
+        .resolve(o?)
+        .as_array()?
+        .iter()
+        .filter_map(Object::as_f64)
+        .collect();
     match v.len() {
         1 => Some([v[0]; 3]),
         3 => Some([v[0], v[1], v[2]]),
-        4 => Some([(1.0 - v[0]) * (1.0 - v[3]), (1.0 - v[1]) * (1.0 - v[3]), (1.0 - v[2]) * (1.0 - v[3])]),
+        4 => Some([
+            (1.0 - v[0]) * (1.0 - v[3]),
+            (1.0 - v[1]) * (1.0 - v[3]),
+            (1.0 - v[2]) * (1.0 - v[3]),
+        ]),
         _ => None,
     }
 }
 
 /// A field's current look (from its first widget and its default appearance).
 pub fn look(doc: &Document, f: &Field) -> Look {
-    let wd = f.widgets.first().and_then(|w| doc.get(w.obj).as_dict().cloned()).unwrap_or_default();
-    let mk = wd.get(b"MK").and_then(|m| doc.resolve(m).as_dict().cloned()).unwrap_or_default();
-    let bs = wd.get(b"BS").and_then(|b| doc.resolve(b).as_dict().cloned()).unwrap_or_default();
-    let da = wd.get(b"DA").and_then(|o| doc.resolve(o).as_string().map(|s| s.to_text())).unwrap_or_else(|| f.da.clone());
+    let wd = f
+        .widgets
+        .first()
+        .and_then(|w| doc.get(w.obj).as_dict().cloned())
+        .unwrap_or_default();
+    let mk = wd
+        .get(b"MK")
+        .and_then(|m| doc.resolve(m).as_dict().cloned())
+        .unwrap_or_default();
+    let bs = wd
+        .get(b"BS")
+        .and_then(|b| doc.resolve(b).as_dict().cloned())
+        .unwrap_or_default();
+    let da = wd
+        .get(b"DA")
+        .and_then(|o| doc.resolve(o).as_string().map(|s| s.to_text()))
+        .unwrap_or_else(|| f.da.clone());
     let parsed = appearance::parse_da(&da);
-    let nums: Vec<f64> = parsed.color.split_whitespace().filter_map(|t| t.parse().ok()).collect();
+    let nums: Vec<f64> = parsed
+        .color
+        .split_whitespace()
+        .filter_map(|t| t.parse().ok())
+        .collect();
     let text = match nums.len() {
         1 => [nums[0]; 3],
         3 => [nums[0], nums[1], nums[2]],
-        4 => [(1.0 - nums[0]) * (1.0 - nums[3]), (1.0 - nums[1]) * (1.0 - nums[3]), (1.0 - nums[2]) * (1.0 - nums[3])],
+        4 => [
+            (1.0 - nums[0]) * (1.0 - nums[3]),
+            (1.0 - nums[1]) * (1.0 - nums[3]),
+            (1.0 - nums[2]) * (1.0 - nums[3]),
+        ],
         _ => [0.0; 3],
     };
     Look {
         border: rgb_of(doc, mk.get(b"BC")),
         fill: rgb_of(doc, mk.get(b"BG")),
-        width: bs.get(b"W").and_then(|w| doc.resolve(w).as_f64()).unwrap_or(1.0),
+        width: bs
+            .get(b"W")
+            .and_then(|w| doc.resolve(w).as_f64())
+            .unwrap_or(1.0),
         style: match bs.name(b"S") {
             Some(b"D") => BorderStyle::Dashed,
             Some(b"B") => BorderStyle::Beveled,
@@ -451,19 +564,35 @@ pub fn look(doc: &Document, f: &Field) -> Look {
 /// A `/DA` string with the given font, size and colour.
 fn da_string(font: FieldFont, size: f64, c: [f64; 3]) -> String {
     let f = crate::appearance::fmt;
-    format!("/{} {} Tf {} {} {} rg", font.resource(), f(size.clamp(0.0, 100.0)), f(c[0]), f(c[1]), f(c[2]))
+    format!(
+        "/{} {} Tf {} {} {} rg",
+        font.resource(),
+        f(size.clamp(0.0, 100.0)),
+        f(c[0]),
+        f(c[1]),
+        f(c[2])
+    )
 }
 
 fn add_to_page(doc: &mut Document, page: ObjRef, widget: ObjRef) -> Result<(), FormError> {
-    let existing = doc.get(page).as_dict().and_then(|d| d.get(b"Annots").cloned());
-    match existing.as_ref().and_then(|o| o.as_ref()).filter(|r| doc.get(*r).as_array().is_some()) {
+    let existing = doc
+        .get(page)
+        .as_dict()
+        .and_then(|d| d.get(b"Annots").cloned());
+    match existing
+        .as_ref()
+        .and_then(|o| o.as_ref())
+        .filter(|r| doc.get(*r).as_array().is_some())
+    {
         Some(r) => {
             let mut a = doc.get(r).as_array().cloned().unwrap_or_default();
             a.push(Object::Ref(widget));
             doc.set(r, Object::Array(a));
         }
         None => {
-            let mut a = existing.and_then(|o| o.as_array().cloned()).unwrap_or_default();
+            let mut a = existing
+                .and_then(|o| o.as_array().cloned())
+                .unwrap_or_default();
             a.push(Object::Ref(widget));
             doc.update_dict(page, |d| d.set(b"Annots".to_vec(), Object::Array(a)))?;
         }
@@ -473,7 +602,11 @@ fn add_to_page(doc: &mut Document, page: ObjRef, widget: ObjRef) -> Result<(), F
 
 fn add_to_fields(doc: &mut Document, af: ObjRef, field: ObjRef) -> Result<(), FormError> {
     let mut d = doc.get(af).as_dict().cloned().unwrap_or_default();
-    let mut list = d.get(b"Fields").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
+    let mut list = d
+        .get(b"Fields")
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_array().cloned())
+        .unwrap_or_default();
     list.push(Object::Ref(field));
     d.set(b"Fields".to_vec(), Object::Array(list));
     doc.set(af, Object::Dict(d));
@@ -484,7 +617,11 @@ fn add_to_fields(doc: &mut Document, af: ObjRef, field: ObjRef) -> Result<(), Fo
 fn free_name(existing: &[Field], base: &str) -> String {
     (1..=u64::MAX)
         .map(|n| format!("{base}{n}"))
-        .find(|c| !existing.iter().any(|f| f.name == *c || f.name.starts_with(&format!("{c}."))))
+        .find(|c| {
+            !existing
+                .iter()
+                .any(|f| f.name == *c || f.name.starts_with(&format!("{c}.")))
+        })
         .unwrap_or_else(|| base.to_string())
 }
 
@@ -492,7 +629,10 @@ fn widget_dict(page: ObjRef, rect: [f64; 4]) -> Dict {
     let mut d = Dict::new();
     d.set(b"Type".to_vec(), Object::name("Annot"));
     d.set(b"Subtype".to_vec(), Object::name("Widget"));
-    d.set(b"Rect".to_vec(), Object::Array(rect.iter().map(|v| Object::Real(*v)).collect()));
+    d.set(
+        b"Rect".to_vec(),
+        Object::Array(rect.iter().map(|v| Object::Real(*v)).collect()),
+    );
     d.set(b"P".to_vec(), Object::Ref(page));
     d.set(b"F".to_vec(), Object::Int(4));
     let mut mk = Dict::new();
@@ -507,10 +647,23 @@ fn widget_dict(page: ObjRef, rect: [f64; 4]) -> Dict {
 }
 
 /// Add a field on `page` (0-based) in `rect` (user space). Returns its full name.
-pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewField, name: Option<&str>) -> Result<String, FormError> {
+pub fn add_field(
+    doc: &mut Document,
+    page: usize,
+    rect: [f64; 4],
+    kind: &NewField,
+    name: Option<&str>,
+) -> Result<String, FormError> {
     let pages = page_refs(doc);
-    let page_ref = *pages.get(page).ok_or_else(|| FormError::Invalid(format!("page {} does not exist", page + 1)))?;
-    let rect = [rect[0].min(rect[2]), rect[1].min(rect[3]), rect[0].max(rect[2]), rect[1].max(rect[3])];
+    let page_ref = *pages
+        .get(page)
+        .ok_or_else(|| FormError::Invalid(format!("page {} does not exist", page + 1)))?;
+    let rect = [
+        rect[0].min(rect[2]),
+        rect[1].min(rect[3]),
+        rect[0].max(rect[2]),
+        rect[1].max(rect[3]),
+    ];
     if !rect.iter().all(|v| v.is_finite()) || rect[2] - rect[0] < 4.0 || rect[3] - rect[1] < 4.0 {
         return invalid("the field is too small");
     }
@@ -530,7 +683,10 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
         _ => free_name(&existing, kind.base_name()),
     };
     let radio_group = match kind {
-        NewField::Radio { group, .. } => existing.iter().find(|f| f.kind == FieldKind::Radio && Some(&f.name) == group.as_ref()).cloned(),
+        NewField::Radio { group, .. } => existing
+            .iter()
+            .find(|f| f.kind == FieldKind::Radio && Some(&f.name) == group.as_ref())
+            .cloned(),
         _ => None,
     };
     if radio_group.is_none() && existing.iter().any(|f| f.name == name) {
@@ -545,14 +701,20 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
     match kind {
         NewField::Text { multiline } => {
             w.set(b"FT".to_vec(), Object::name("Tx"));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()));
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()),
+            );
             if *multiline {
                 w.set(b"Ff".to_vec(), Object::Int(flags::MULTILINE as i64));
             }
         }
         NewField::Date => {
             w.set(b"FT".to_vec(), Object::name("Tx"));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()));
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()),
+            );
             // Acrobat's format and keystroke actions for mm/dd/yyyy (run by its JavaScript engine).
             let js = |s: &str| {
                 let mut a = Dict::new();
@@ -569,7 +731,10 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
             w.set(b"FT".to_vec(), Object::name("Btn"));
             w.set(b"V".to_vec(), Object::name("Off"));
             w.set(b"AS".to_vec(), Object::name("Off"));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/ZaDb 0 Tf 0 g".to_vec()));
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/ZaDb 0 Tf 0 g".to_vec()),
+            );
         }
         NewField::Radio { export, .. } => {
             w.set(b"AS".to_vec(), Object::name("Off"));
@@ -577,9 +742,16 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
                 return invalid("a radio button needs an export value other than Off");
             }
         }
-        NewField::Combo { options, editable } | NewField::List { options, multi: editable } => {
+        NewField::Combo { options, editable }
+        | NewField::List {
+            options,
+            multi: editable,
+        } => {
             w.set(b"FT".to_vec(), Object::name("Ch"));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()));
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/Helv 12 Tf 0 g".to_vec()),
+            );
             let combo = matches!(kind, NewField::Combo { .. });
             let mut ff = 0;
             if combo {
@@ -591,13 +763,28 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
                 ff |= flags::MULTI_SELECT;
             }
             w.set(b"Ff".to_vec(), Object::Int(ff as i64));
-            w.set(b"Opt".to_vec(), Object::Array(options.iter().map(|o| Object::String(PdfString::text(o))).collect()));
+            w.set(
+                b"Opt".to_vec(),
+                Object::Array(
+                    options
+                        .iter()
+                        .map(|o| Object::String(PdfString::text(o)))
+                        .collect(),
+                ),
+            );
         }
         NewField::Button { caption } => {
             w.set(b"FT".to_vec(), Object::name("Btn"));
             w.set(b"Ff".to_vec(), Object::Int(flags::PUSH_BUTTON as i64));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()));
-            let mut mk = w.get(b"MK").and_then(|m| m.as_dict()).cloned().unwrap_or_default();
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()),
+            );
+            let mut mk = w
+                .get(b"MK")
+                .and_then(|m| m.as_dict())
+                .cloned()
+                .unwrap_or_default();
             mk.set(b"BG".to_vec(), rgb([0.86, 0.86, 0.86]));
             mk.set(b"CA".to_vec(), PdfString::text(caption));
             w.set(b"MK".to_vec(), Object::Dict(mk));
@@ -605,8 +792,15 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
         NewField::Image => {
             w.set(b"FT".to_vec(), Object::name("Btn"));
             w.set(b"Ff".to_vec(), Object::Int(flags::PUSH_BUTTON as i64));
-            w.set(b"DA".to_vec(), PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()));
-            let mut mk = w.get(b"MK").and_then(|m| m.as_dict()).cloned().unwrap_or_default();
+            w.set(
+                b"DA".to_vec(),
+                PdfString::literal(b"/Helv 0 Tf 0 g".to_vec()),
+            );
+            let mut mk = w
+                .get(b"MK")
+                .and_then(|m| m.as_dict())
+                .cloned()
+                .unwrap_or_default();
             // Icon only, no border or fill: the picture is the field.
             mk.remove(b"BC");
             mk.remove(b"BG");
@@ -614,7 +808,10 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
             w.set(b"MK".to_vec(), Object::Dict(mk));
             let mut a = Dict::new();
             a.set(b"S".to_vec(), Object::name("JavaScript"));
-            a.set(b"JS".to_vec(), PdfString::literal(b"event.target.buttonImportIcon();".to_vec()));
+            a.set(
+                b"JS".to_vec(),
+                PdfString::literal(b"event.target.buttonImportIcon();".to_vec()),
+            );
             w.set(b"A".to_vec(), Object::Dict(a));
         }
         NewField::Signature => {
@@ -629,10 +826,16 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
                 None => {
                     let mut g = Dict::new();
                     g.set(b"FT".to_vec(), Object::name("Btn"));
-                    g.set(b"Ff".to_vec(), Object::Int((flags::RADIO | flags::NO_TOGGLE_TO_OFF) as i64));
+                    g.set(
+                        b"Ff".to_vec(),
+                        Object::Int((flags::RADIO | flags::NO_TOGGLE_TO_OFF) as i64),
+                    );
                     g.set(b"T".to_vec(), PdfString::text(&field_name));
                     g.set(b"V".to_vec(), Object::name("Off"));
-                    g.set(b"DA".to_vec(), PdfString::literal(b"/ZaDb 0 Tf 0 g".to_vec()));
+                    g.set(
+                        b"DA".to_vec(),
+                        PdfString::literal(b"/ZaDb 0 Tf 0 g".to_vec()),
+                    );
                     g.set(b"Kids".to_vec(), Object::Array(Vec::new()));
                     let g = doc.add(Object::Dict(g));
                     add_to_fields(doc, af, g)?;
@@ -641,7 +844,10 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
             };
             doc.update_dict(widget, |d| d.set(b"Parent".to_vec(), Object::Ref(group)))?;
             doc.update_dict(group, |d| {
-                let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+                let mut kids = d
+                    .get(b"Kids")
+                    .and_then(|k| k.as_array().cloned())
+                    .unwrap_or_default();
                 kids.push(Object::Ref(widget));
                 d.set(b"Kids".to_vec(), Object::Array(kids));
             })?;
@@ -674,7 +880,10 @@ pub fn add_field(doc: &mut Document, page: usize, rect: [f64; 4], kind: &NewFiel
 /// (`pdfcraft_fonts::UNDRAWN_MARK`) and other viewers are asked to redraw the form (see
 /// `ask_viewers_to_redraw`), as when a value is set.
 pub fn redraw_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
-    let f = fields(doc).into_iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
+    let f = fields(doc)
+        .into_iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
     let mut undrawn = false;
     for w in &f.widgets {
         let mut missing = None;
@@ -721,22 +930,46 @@ pub fn redraw_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
 }
 
 fn frame_only(doc: &Document, w: &Widget) -> (String, crate::appearance::Placement) {
-    let (page_w, page_h) = ((w.rect[2] - w.rect[0]).max(1.0), (w.rect[3] - w.rect[1]).max(1.0));
+    let (page_w, page_h) = (
+        (w.rect[2] - w.rect[0]).max(1.0),
+        (w.rect[3] - w.rect[1]).max(1.0),
+    );
     let wobj = doc.get(w.obj);
     let wd = wobj.as_dict().cloned().unwrap_or_default();
-    let place = crate::appearance::placement(crate::appearance::mk_rotation(doc, &wd), page_w, page_h);
+    let place =
+        crate::appearance::placement(crate::appearance::mk_rotation(doc, &wd), page_w, page_h);
     let (width, height) = (place.layout_w, place.layout_h);
-    let mk = wd.get(b"MK").and_then(|m| m.as_dict()).cloned().unwrap_or_default();
+    let mk = wd
+        .get(b"MK")
+        .and_then(|m| m.as_dict())
+        .cloned()
+        .unwrap_or_default();
     let col = |k: &[u8]| -> Option<String> {
-        let v: Vec<f64> = mk.get(k)?.as_array()?.iter().filter_map(|x| x.as_f64()).collect();
-        (v.len() == 3).then(|| format!("{} {} {}", crate::appearance::fmt(v[0]), crate::appearance::fmt(v[1]), crate::appearance::fmt(v[2])))
+        let v: Vec<f64> = mk
+            .get(k)?
+            .as_array()?
+            .iter()
+            .filter_map(|x| x.as_f64())
+            .collect();
+        (v.len() == 3).then(|| {
+            format!(
+                "{} {} {}",
+                crate::appearance::fmt(v[0]),
+                crate::appearance::fmt(v[1]),
+                crate::appearance::fmt(v[2])
+            )
+        })
     };
     let mut c = String::new();
     if let Some(bg) = col(b"BG") {
         c.push_str(&format!("{bg} rg 0 0 {width:.3} {height:.3} re f\n"));
     }
     if let Some(bc) = col(b"BC") {
-        c.push_str(&format!("{bc} RG 1 w 0.5 0.5 {:.3} {:.3} re S\n", width - 1.0, height - 1.0));
+        c.push_str(&format!(
+            "{bc} RG 1 w 0.5 0.5 {:.3} {:.3} re S\n",
+            width - 1.0,
+            height - 1.0
+        ));
     }
     (c, place)
 }
@@ -757,22 +990,43 @@ fn button_appearance(doc: &Document, w: &Widget) -> (Stream, Option<char>) {
     let (mut c, place) = frame_only(doc, w);
     let (width, height) = (place.layout_w, place.layout_h);
     let wobj = doc.get(w.obj);
-    let mk = wobj.as_dict().and_then(|d| d.get(b"MK")).map(|m| doc.resolve(m)).and_then(|m| m.as_dict().cloned()).unwrap_or_default();
-    let caption = mk.get(b"CA").map(|c| doc.resolve(c)).and_then(|c| c.as_string().map(|s| s.to_text())).unwrap_or_default();
+    let mk = wobj
+        .as_dict()
+        .and_then(|d| d.get(b"MK"))
+        .map(|m| doc.resolve(m))
+        .and_then(|m| m.as_dict().cloned())
+        .unwrap_or_default();
+    let caption = mk
+        .get(b"CA")
+        .map(|c| doc.resolve(c))
+        .and_then(|c| c.as_string().map(|s| s.to_text()))
+        .unwrap_or_default();
     let icon_only = mk.get(b"TP").and_then(|t| doc.resolve(t).as_int()) == Some(1);
     let mut content = std::mem::take(&mut c).into_bytes();
     let mut xobjects = Dict::new();
     if let Some(icon) = mk.get(b"I").and_then(Object::as_ref)
         && let Object::Stream(s) = &*doc.get(icon)
     {
-        let bb: Vec<f64> = s.dict.get(b"BBox").and_then(|b| b.as_array().map(|a| a.iter().filter_map(Object::as_f64).collect())).unwrap_or_default();
+        let bb: Vec<f64> = s
+            .dict
+            .get(b"BBox")
+            .and_then(|b| {
+                b.as_array()
+                    .map(|a| a.iter().filter_map(Object::as_f64).collect())
+            })
+            .unwrap_or_default();
         if let [x0, y0, x1, y1] = bb[..]
             && x1 > x0
             && y1 > y0
         {
             // Proportional, as large as fits (Acrobat's default icon placement), centred.
-            let k = ((width - 2.0) / (x1 - x0)).min((height - 2.0) / (y1 - y0)).max(0.0);
-            let (dx, dy) = ((width - (x1 - x0) * k) / 2.0 - x0 * k, (height - (y1 - y0) * k) / 2.0 - y0 * k);
+            let k = ((width - 2.0) / (x1 - x0))
+                .min((height - 2.0) / (y1 - y0))
+                .max(0.0);
+            let (dx, dy) = (
+                (width - (x1 - x0) * k) / 2.0 - x0 * k,
+                (height - (y1 - y0) * k) / 2.0 - y0 * k,
+            );
             content.extend(format!("q {k:.6} 0 0 {k:.6} {dx:.3} {dy:.3} cm /Icon Do Q\n").bytes());
             xobjects.set(b"Icon".to_vec(), Object::Ref(icon));
         }
@@ -782,7 +1036,14 @@ fn button_appearance(doc: &Document, w: &Widget) -> (Stream, Option<char>) {
         missing = pdfcraft_fonts::first_undrawable(&caption);
         let size = ((height - 4.0) * 0.6).clamp(4.0, 14.0);
         let tw = helvetica_width(&caption, size);
-        content.extend(format!("BT /Helv {size:.2} Tf 0 g 1 0 0 1 {:.3} {:.3} Tm ", (width - tw) / 2.0, (height - size * 0.7) / 2.0).bytes());
+        content.extend(
+            format!(
+                "BT /Helv {size:.2} Tf 0 g 1 0 0 1 {:.3} {:.3} Tm ",
+                (width - tw) / 2.0,
+                (height - size * 0.7) / 2.0
+            )
+            .bytes(),
+        );
         content.extend(literal(&win_ansi(&caption)));
         content.extend_from_slice(b" Tj ET\n");
     }
@@ -803,8 +1064,16 @@ fn button_appearance(doc: &Document, w: &Widget) -> (Stream, Option<char>) {
 
 /// Give a push button (an image field) the picture `image` (an image XObject of `px` pixels):
 /// it becomes the button's icon (`/MK /I`) and its appearance.
-pub fn set_button_icon(doc: &mut Document, name: &str, image: ObjRef, px: (u32, u32)) -> Result<(), FormError> {
-    let f = fields(doc).into_iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
+pub fn set_button_icon(
+    doc: &mut Document,
+    name: &str,
+    image: ObjRef,
+    px: (u32, u32),
+) -> Result<(), FormError> {
+    let f = fields(doc)
+        .into_iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
     if f.kind != FieldKind::PushButton {
         return invalid(format!("{name} is not a button or image field"));
     }
@@ -814,11 +1083,18 @@ pub fn set_button_icon(doc: &mut Document, name: &str, image: ObjRef, px: (u32, 
     xo.set(b"Im0".to_vec(), Object::Ref(image));
     let mut res = Dict::new();
     res.set(b"XObject".to_vec(), Object::Dict(xo));
-    let icon =
-        doc.add(Object::Stream(form_stream(crate::appearance::placement(0, w, h), format!("q {w} 0 0 {h} 0 0 cm /Im0 Do Q").into_bytes(), res)));
+    let icon = doc.add(Object::Stream(form_stream(
+        crate::appearance::placement(0, w, h),
+        format!("q {w} 0 0 {h} 0 0 cm /Im0 Do Q").into_bytes(),
+        res,
+    )));
     for wd in &f.widgets {
-        let mut mk =
-            doc.get(wd.obj).as_dict().and_then(|d| d.get(b"MK").map(|m| doc.resolve(m))).and_then(|m| m.as_dict().cloned()).unwrap_or_default();
+        let mut mk = doc
+            .get(wd.obj)
+            .as_dict()
+            .and_then(|d| d.get(b"MK").map(|m| doc.resolve(m)))
+            .and_then(|m| m.as_dict().cloned())
+            .unwrap_or_default();
         mk.set(b"I".to_vec(), Object::Ref(icon));
         if !mk.contains(b"TP") {
             mk.set(b"TP".to_vec(), Object::Int(1));
@@ -838,16 +1114,25 @@ fn swapped_around_center(r: [f64; 4]) -> Option<[f64; 4]> {
     if !r.iter().all(|v| v.is_finite()) {
         return None;
     }
-    let (x0, y0, x1, y1) = (r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3]));
+    let (x0, y0, x1, y1) = (
+        r[0].min(r[2]),
+        r[1].min(r[3]),
+        r[0].max(r[2]),
+        r[1].max(r[3]),
+    );
     let (cx, cy) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
     let (nw, nh) = (y1 - y0, x1 - x0);
     let out = [cx - nw / 2.0, cy - nh / 2.0, cx + nw / 2.0, cy + nh / 2.0];
-    (out.iter().all(|v| v.is_finite()) && out[2] - out[0] >= 4.0 && out[3] - out[1] >= 4.0).then_some(out)
+    (out.iter().all(|v| v.is_finite()) && out[2] - out[0] >= 4.0 && out[3] - out[1] >= 4.0)
+        .then_some(out)
 }
 
 /// Change a field's properties (General and Options tabs) and redraw it.
 pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<String, FormError> {
-    if props.font_size.is_some_and(|size| !size.is_finite() || size < 0.0) {
+    if props
+        .font_size
+        .is_some_and(|size| !size.is_finite() || size < 0.0)
+    {
         return invalid("font size must be a finite, non-negative number");
     }
     if let Some(patch) = &props.appearance {
@@ -857,7 +1142,11 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
         patch.validate()?;
     }
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?.clone();
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?
+        .clone();
     // Validated before anything is written, so a refused rotation leaves the document unchanged.
     // `Some(Some(rect))`: the widget's axis changes and it gets the swapped rectangle.
     let mut rotated_rect: Option<Option<[f64; 4]>> = None;
@@ -871,21 +1160,39 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
         let axis_change = (w.rotation % 180 == 0) != (rot % 180 == 0);
         rotated_rect = Some(None);
         if axis_change && props.rect.is_none() {
-            let Some(rect) = swapped_around_center(w.rect) else { return invalid("the field is too small") };
+            let Some(rect) = swapped_around_center(w.rect) else {
+                return invalid("the field is too small");
+            };
             rotated_rect = Some(Some(rect));
         }
     }
     // A locked field only takes unlocking (Acrobat greys its properties out).
-    if f.locked() && props.locked != Some(false) && *props != (FieldProps { locked: props.locked, ..FieldProps::default() }) {
+    if f.locked()
+        && props.locked != Some(false)
+        && *props
+            != (FieldProps {
+                locked: props.locked,
+                ..FieldProps::default()
+            })
+    {
         return invalid(format!("{name} is locked: unlock it first"));
     }
     if let Some(lock) = props.locked {
         for w in &f.widgets {
-            let flags = doc.get(w.obj).as_dict().and_then(|d| d.get(b"F").and_then(|v| doc.resolve(v).as_int())).unwrap_or(0);
+            let flags = doc
+                .get(w.obj)
+                .as_dict()
+                .and_then(|d| d.get(b"F").and_then(|v| doc.resolve(v).as_int()))
+                .unwrap_or(0);
             let v = if lock { flags | 128 } else { flags & !128 };
             doc.update_dict(w.obj, |d| d.set(b"F".to_vec(), Object::Int(v)))?;
         }
-        if *props == (FieldProps { locked: props.locked, ..FieldProps::default() }) {
+        if *props
+            == (FieldProps {
+                locked: props.locked,
+                ..FieldProps::default()
+            })
+        {
             return Ok(name.to_string());
         }
     }
@@ -893,7 +1200,12 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
         crate::set_field_actions(doc, name, acts)?;
     }
     let mut new_name = name.to_string();
-    if let Some(n) = props.name.as_deref().map(str::trim).filter(|n| *n != f.name) {
+    if let Some(n) = props
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| *n != f.name)
+    {
         if n.is_empty() || n.contains('.') {
             return invalid("field names can't be empty or contain a period");
         }
@@ -901,15 +1213,25 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
             return invalid(format!("a field named {n:?} already exists"));
         }
         // Rename the terminal part (the field's own /T).
-        let prefix = f.name.rsplit_once('.').map(|(p, _)| format!("{p}.")).unwrap_or_default();
+        let prefix = f
+            .name
+            .rsplit_once('.')
+            .map(|(p, _)| format!("{p}."))
+            .unwrap_or_default();
         new_name = format!("{prefix}{n}");
         doc.update_dict(f.obj, |d| d.set(b"T".to_vec(), PdfString::text(n)))?;
     }
     // The new default appearance when the size or the look changes.
-    let size = props.font_size.unwrap_or_else(|| crate::appearance::parse_da(&f.da).size);
+    let size = props
+        .font_size
+        .unwrap_or_else(|| crate::appearance::parse_da(&f.da).size);
     let new_da = match &props.look {
         Some(l) => da_string(l.font, size, l.text),
-        None => patch_da(&f.da, props.font_size, &props.appearance.unwrap_or_default()),
+        None => patch_da(
+            &f.da,
+            props.font_size,
+            &props.appearance.unwrap_or_default(),
+        ),
     };
     if props.look.is_some() || props.appearance.is_some_and(|p| p.font.is_some()) {
         ensure_form(doc)?;
@@ -949,7 +1271,9 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
     {
         return invalid("alignment is 0 (left), 1 (centre) or 2 (right)");
     }
-    if props.options.as_ref().is_some_and(|o| o.is_empty()) && matches!(f.kind, FieldKind::Combo | FieldKind::List) {
+    if props.options.as_ref().is_some_and(|o| o.is_empty())
+        && matches!(f.kind, FieldKind::Combo | FieldKind::List)
+    {
         return invalid("a list needs at least one option");
     }
     if props.check_style.is_some() && !matches!(f.kind, FieldKind::CheckBox | FieldKind::Radio) {
@@ -973,7 +1297,14 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
             }
         }
         if let Some(opts) = &props.options {
-            d.set(b"Opt".to_vec(), Object::Array(opts.iter().map(|o| Object::String(PdfString::text(o))).collect()));
+            d.set(
+                b"Opt".to_vec(),
+                Object::Array(
+                    opts.iter()
+                        .map(|o| Object::String(PdfString::text(o)))
+                        .collect(),
+                ),
+            );
         }
         // "Sort items": the list itself is kept in order (export values stay with their items).
         if ff & flags::SORT != 0 && matches!(f.kind, FieldKind::Combo | FieldKind::List) {
@@ -988,7 +1319,10 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
                     if e == disp {
                         Object::String(PdfString::text(disp))
                     } else {
-                        Object::Array(vec![Object::String(PdfString::text(e)), Object::String(PdfString::text(disp))])
+                        Object::Array(vec![
+                            Object::String(PdfString::text(e)),
+                            Object::String(PdfString::text(disp)),
+                        ])
                     }
                 })
                 .collect();
@@ -999,15 +1333,25 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
         }
         match &props.default_value {
             // Buttons name their default state; text and choices hold a string.
-            Some(Some(v)) if matches!(f.kind, FieldKind::CheckBox | FieldKind::Radio) => d.set(b"DV".to_vec(), Object::Name(crate::name_bytes(v))),
+            Some(Some(v)) if matches!(f.kind, FieldKind::CheckBox | FieldKind::Radio) => {
+                d.set(b"DV".to_vec(), Object::Name(crate::name_bytes(v)))
+            }
             Some(Some(v)) => d.set(b"DV".to_vec(), PdfString::text(v)),
             Some(None) => {
                 d.remove(b"DV");
             }
             None => {}
         }
-        if props.font_size.is_some() || props.look.is_some() || props.appearance.is_some_and(|p| p.font.is_some() || p.text.is_some()) {
-            d.set(b"DA".to_vec(), PdfString::literal(new_da.clone().into_bytes()));
+        if props.font_size.is_some()
+            || props.look.is_some()
+            || props
+                .appearance
+                .is_some_and(|p| p.font.is_some() || p.text.is_some())
+        {
+            d.set(
+                b"DA".to_vec(),
+                PdfString::literal(new_da.clone().into_bytes()),
+            );
         }
     })?;
     if props.appearance.is_some() || (props.font_size.is_some() && props.look.is_none()) {
@@ -1016,7 +1360,9 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
             patch_widget_look(doc, w, patch)?;
             // A widget's own /DA overrides its field's /DA. Patch that override separately
             // rather than replacing its font or colour with the first widget's defaults.
-            if w.obj != f.obj && (props.font_size.is_some() || patch.font.is_some() || patch.text.is_some()) {
+            if w.obj != f.obj
+                && (props.font_size.is_some() || patch.font.is_some() || patch.text.is_some())
+            {
                 let da = doc
                     .get(w.obj)
                     .as_dict()
@@ -1025,16 +1371,25 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
                     .and_then(|v| v.as_string().map(|s| s.to_text()));
                 if let Some(da) = da {
                     let da = patch_da(&da, props.font_size, patch);
-                    doc.update_dict(w.obj, |d| d.set(b"DA".to_vec(), PdfString::literal(da.into_bytes())))?;
+                    doc.update_dict(w.obj, |d| {
+                        d.set(b"DA".to_vec(), PdfString::literal(da.into_bytes()))
+                    })?;
                 }
             }
         }
     }
     if let Some(l) = &props.look {
-        let arr = |c: [f64; 3]| Object::Array(c.iter().map(|v| Object::Real(v.clamp(0.0, 1.0))).collect());
+        let arr = |c: [f64; 3]| {
+            Object::Array(c.iter().map(|v| Object::Real(v.clamp(0.0, 1.0))).collect())
+        };
         for w in &f.widgets {
             // Resolved first: an indirect /MK keeps its mark, rotation and other entries.
-            let mut mk = doc.get(w.obj).as_dict().and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned())).flatten().unwrap_or_default();
+            let mut mk = doc
+                .get(w.obj)
+                .as_dict()
+                .and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned()))
+                .flatten()
+                .unwrap_or_default();
             doc.update_dict(w.obj, |d| {
                 match l.border {
                     Some(c) => mk.set(b"BC".to_vec(), arr(c)),
@@ -1062,22 +1417,42 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
     if let Some(style) = props.check_style {
         for w in &f.widgets {
             // Resolved first: an indirect /MK keeps its colours.
-            let mut mk = doc.get(w.obj).as_dict().and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned())).flatten().unwrap_or_default();
+            let mut mk = doc
+                .get(w.obj)
+                .as_dict()
+                .and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned()))
+                .flatten()
+                .unwrap_or_default();
             mk.set(b"CA".to_vec(), PdfString::text(style.code()));
             doc.update_dict(w.obj, |d| d.set(b"MK".to_vec(), Object::Dict(mk)))?;
         }
     }
     if let Some((wi, r)) = props.rect {
-        let w = f.widgets.get(wi).ok_or_else(|| FormError::Invalid(format!("{name} has no widget {}", wi + 1)))?;
-        let r = [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])];
+        let w = f
+            .widgets
+            .get(wi)
+            .ok_or_else(|| FormError::Invalid(format!("{name} has no widget {}", wi + 1)))?;
+        let r = [
+            r[0].min(r[2]),
+            r[1].min(r[3]),
+            r[0].max(r[2]),
+            r[1].max(r[3]),
+        ];
         if !r.iter().all(|v| v.is_finite()) || r[2] - r[0] < 4.0 || r[3] - r[1] < 4.0 {
             return invalid("the field is too small");
         }
-        doc.update_dict(w.obj, |d| d.set(b"Rect".to_vec(), Object::Array(r.iter().map(|v| Object::Real(*v)).collect())))?;
+        doc.update_dict(w.obj, |d| {
+            d.set(
+                b"Rect".to_vec(),
+                Object::Array(r.iter().map(|v| Object::Real(*v)).collect()),
+            )
+        })?;
     }
     if props.format.is_some() || props.validate.is_some() || props.calculate.is_some() {
         if !matches!(f.kind, FieldKind::Text | FieldKind::Combo) {
-            return invalid("only text fields and drop-down lists have format, validate and calculate scripts");
+            return invalid(
+                "only text fields and drop-down lists have format, validate and calculate scripts",
+            );
         }
         let mut aa = doc
             .get(f.obj)
@@ -1149,7 +1524,10 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
             if w.obj != f.obj {
                 doc.update_dict(w.obj, |d| {
                     if d.contains(b"DA") {
-                        d.set(b"DA".to_vec(), PdfString::literal(new_da.clone().into_bytes()));
+                        d.set(
+                            b"DA".to_vec(),
+                            PdfString::literal(new_da.clone().into_bytes()),
+                        );
                     }
                 })?;
             }
@@ -1159,9 +1537,19 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
         && let Some(w) = f.widgets.get(wi)
     {
         if let Some(rect) = swapped {
-            doc.update_dict(w.obj, |d| d.set(b"Rect".to_vec(), Object::Array(rect.iter().map(|v| Object::Real(*v)).collect())))?;
+            doc.update_dict(w.obj, |d| {
+                d.set(
+                    b"Rect".to_vec(),
+                    Object::Array(rect.iter().map(|v| Object::Real(*v)).collect()),
+                )
+            })?;
         }
-        let mut mk = doc.get(w.obj).as_dict().and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned())).flatten().unwrap_or_default();
+        let mut mk = doc
+            .get(w.obj)
+            .as_dict()
+            .and_then(|d| d.get(b"MK").map(|m| doc.resolve(m).as_dict().cloned()))
+            .flatten()
+            .unwrap_or_default();
         if rot == 0 {
             mk.remove(b"R");
         } else {
@@ -1185,12 +1573,22 @@ pub fn set_props(doc: &mut Document, name: &str, props: &FieldProps) -> Result<S
 /// Delete a field: its widgets leave their pages and the field leaves the form.
 pub fn delete_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?.clone();
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?
+        .clone();
     let widgets: std::collections::HashSet<ObjRef> = f.widgets.iter().map(|w| w.obj).collect();
     for p in page_refs(doc) {
-        let Some(a) = doc.get(p).as_dict().and_then(|d| d.get(b"Annots").cloned()) else { continue };
+        let Some(a) = doc.get(p).as_dict().and_then(|d| d.get(b"Annots").cloned()) else {
+            continue;
+        };
         let list = doc.resolve(&a).as_array().cloned().unwrap_or_default();
-        let kept: Vec<Object> = list.iter().filter(|o| !o.as_ref().is_some_and(|r| widgets.contains(&r))).cloned().collect();
+        let kept: Vec<Object> = list
+            .iter()
+            .filter(|o| !o.as_ref().is_some_and(|r| widgets.contains(&r)))
+            .cloned()
+            .collect();
         if kept.len() != list.len() {
             match a.as_ref() {
                 Some(r) if doc.get(r).as_array().is_some() => doc.set(r, Object::Array(kept)),
@@ -1199,11 +1597,21 @@ pub fn delete_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
         }
     }
     // Out of the field tree: from its parent's /Kids, or from /Fields.
-    let parent = doc.get(f.obj).as_dict().and_then(|d| d.reference(b"Parent"));
+    let parent = doc
+        .get(f.obj)
+        .as_dict()
+        .and_then(|d| d.reference(b"Parent"));
     let remove_from = |doc: &mut Document, holder: ObjRef, key: &[u8]| -> Result<(), FormError> {
         let mut d = doc.get(holder).as_dict().cloned().unwrap_or_default();
-        let list = d.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
-        let kept: Vec<Object> = list.into_iter().filter(|o| o.as_ref() != Some(f.obj)).collect();
+        let list = d
+            .get(key)
+            .map(|o| doc.resolve(o))
+            .and_then(|o| o.as_array().cloned())
+            .unwrap_or_default();
+        let kept: Vec<Object> = list
+            .into_iter()
+            .filter(|o| o.as_ref() != Some(f.obj))
+            .collect();
         d.set(key.to_vec(), Object::Array(kept));
         doc.set(holder, Object::Dict(d));
         Ok(())
@@ -1212,12 +1620,23 @@ pub fn delete_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
         Some(p) => remove_from(doc, p, b"Kids")?,
         None => {
             let root = doc.root().ok_or(FormError::NoForm)?;
-            match doc.get(root).as_dict().and_then(|d| d.get(b"AcroForm").cloned()) {
+            match doc
+                .get(root)
+                .as_dict()
+                .and_then(|d| d.get(b"AcroForm").cloned())
+            {
                 Some(Object::Ref(af)) => remove_from(doc, af, b"Fields")?,
                 // A form dictionary held directly in the catalog.
                 Some(Object::Dict(mut af)) => {
-                    let list = af.get(b"Fields").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
-                    let kept: Vec<Object> = list.into_iter().filter(|o| o.as_ref() != Some(f.obj)).collect();
+                    let list = af
+                        .get(b"Fields")
+                        .map(|o| doc.resolve(o))
+                        .and_then(|o| o.as_array().cloned())
+                        .unwrap_or_default();
+                    let kept: Vec<Object> = list
+                        .into_iter()
+                        .filter(|o| o.as_ref() != Some(f.obj))
+                        .collect();
                     af.set(b"Fields".to_vec(), Object::Array(kept));
                     doc.update_dict(root, |d| d.set(b"AcroForm".to_vec(), Object::Dict(af)))?;
                 }
@@ -1229,15 +1648,39 @@ pub fn delete_field(doc: &mut Document, name: &str) -> Result<(), FormError> {
 }
 
 /// Widget-only keys: they stay with each widget when a merged field is split.
-const WIDGET_KEYS: [&[u8]; 12] = [b"Type", b"Subtype", b"Rect", b"P", b"AP", b"AS", b"MK", b"F", b"BS", b"Border", b"H", b"StructParent"];
+const WIDGET_KEYS: [&[u8]; 12] = [
+    b"Type",
+    b"Subtype",
+    b"Rect",
+    b"P",
+    b"AP",
+    b"AS",
+    b"MK",
+    b"F",
+    b"BS",
+    b"Border",
+    b"H",
+    b"StructParent",
+];
 
 /// Duplicate a field onto other pages (Acrobat: right-click a field ▸ Duplicate): each page
 /// gets a widget at the same place, belonging to the same field, so they share one value.
 /// A field that is its own widget is first split into a field and a widget kid. Returns how
 /// many widgets were added (pages that already have one are skipped).
-pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Result<usize, FormError> {
-    let f = fields(doc).into_iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
-    let model = f.widgets.first().cloned().ok_or_else(|| FormError::Invalid(format!("{name} has no widget")))?;
+pub fn duplicate_field(
+    doc: &mut Document,
+    name: &str,
+    pages: &[usize],
+) -> Result<usize, FormError> {
+    let f = fields(doc)
+        .into_iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
+    let model = f
+        .widgets
+        .first()
+        .cloned()
+        .ok_or_else(|| FormError::Invalid(format!("{name} has no widget")))?;
     let refs = page_refs(doc);
     for p in pages {
         if *p >= refs.len() {
@@ -1245,7 +1688,11 @@ pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Resul
         }
     }
     let have: std::collections::HashSet<usize> = f.widgets.iter().filter_map(|w| w.page).collect();
-    let targets: Vec<usize> = pages.iter().copied().filter(|p| !have.contains(p)).collect();
+    let targets: Vec<usize> = pages
+        .iter()
+        .copied()
+        .filter(|p| !have.contains(p))
+        .collect();
     if targets.is_empty() {
         return Ok(0);
     }
@@ -1270,15 +1717,29 @@ pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Resul
         // The page lists the widget now, not the field.
         if let Some(p) = model.page {
             let pr = refs[p];
-            let annots = doc.get(pr).as_dict().and_then(|d| d.get(b"Annots").cloned());
-            let swap =
-                |a: Vec<Object>| -> Vec<Object> { a.into_iter().map(|o| if o.as_ref() == Some(f.obj) { Object::Ref(kr) } else { o }).collect() };
+            let annots = doc
+                .get(pr)
+                .as_dict()
+                .and_then(|d| d.get(b"Annots").cloned());
+            let swap = |a: Vec<Object>| -> Vec<Object> {
+                a.into_iter()
+                    .map(|o| {
+                        if o.as_ref() == Some(f.obj) {
+                            Object::Ref(kr)
+                        } else {
+                            o
+                        }
+                    })
+                    .collect()
+            };
             match annots {
                 Some(Object::Ref(ar)) => {
                     let a = doc.get(ar).as_array().cloned().unwrap_or_default();
                     doc.set(ar, Object::Array(swap(a)));
                 }
-                Some(Object::Array(a)) => doc.update_dict(pr, |d| d.set(b"Annots".to_vec(), Object::Array(swap(a))))?,
+                Some(Object::Array(a)) => {
+                    doc.update_dict(pr, |d| d.set(b"Annots".to_vec(), Object::Array(swap(a))))?
+                }
                 _ => {}
             }
         }
@@ -1293,7 +1754,10 @@ pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Resul
         w.set(b"Parent".to_vec(), Object::Ref(f.obj));
         w.remove(b"StructParent");
         let wr = doc.add(Object::Dict(w));
-        let annots = doc.get(pr).as_dict().and_then(|d| d.get(b"Annots").cloned());
+        let annots = doc
+            .get(pr)
+            .as_dict()
+            .and_then(|d| d.get(b"Annots").cloned());
         match annots {
             Some(Object::Ref(ar)) => {
                 let mut a = doc.get(ar).as_array().cloned().unwrap_or_default();
@@ -1301,7 +1765,9 @@ pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Resul
                 doc.set(ar, Object::Array(a));
             }
             other => {
-                let mut a = other.and_then(|o| o.as_array().cloned()).unwrap_or_default();
+                let mut a = other
+                    .and_then(|o| o.as_array().cloned())
+                    .unwrap_or_default();
                 a.push(Object::Ref(wr));
                 doc.update_dict(pr, |d| d.set(b"Annots".to_vec(), Object::Array(a)))?;
             }
@@ -1309,7 +1775,10 @@ pub fn duplicate_field(doc: &mut Document, name: &str, pages: &[usize]) -> Resul
         added.push(wr);
     }
     doc.update_dict(f.obj, |d| {
-        let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+        let mut kids = d
+            .get(b"Kids")
+            .and_then(|k| k.as_array().cloned())
+            .unwrap_or_default();
         kids.extend(added.iter().map(|r| Object::Ref(*r)));
         d.set(b"Kids".to_vec(), Object::Array(kids));
     })?;

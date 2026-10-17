@@ -30,7 +30,10 @@ use std::str::FromStr;
 
 use usvg::roxmltree;
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{CharStyle, Dash, Justify, LineCap, LineJoin, ParaDirection, ParaStyle, StrokeLayer, TextKind, TextObject, TextRun};
+use vectorcraft_doc::{
+    CharStyle, Dash, Justify, LineCap, LineJoin, ParaDirection, ParaStyle, StrokeLayer, TextKind,
+    TextObject, TextRun,
+};
 use vectorcraft_geom::kurbo::ParamCurveArclen;
 use vectorcraft_geom::{Affine, BezPath, PathData, Point, Rect};
 use vectorcraft_text::{FontDb, TextLayout};
@@ -46,13 +49,27 @@ const MAX_LINE_GAP: f64 = 10_000.0;
 
 /// A whitespace/comma separated list.
 fn list(v: &str) -> impl Iterator<Item = &str> {
-    v.split(|c: char| c.is_whitespace() || c == ',').filter(|t| !t.is_empty())
+    v.split(|c: char| c.is_whitespace() || c == ',')
+        .filter(|t| !t.is_empty())
 }
 
 /// Style name for a CSS weight (rounded to the nearest hundred) and slant.
 fn style_name(weight: u16, italic: bool) -> String {
-    const NAMES: [&str; 9] = ["Thin", "ExtraLight", "Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold", "Black"];
-    let name = NAMES.get((weight.clamp(100, 900) as usize + 50) / 100 - 1).copied().unwrap_or("Regular");
+    const NAMES: [&str; 9] = [
+        "Thin",
+        "ExtraLight",
+        "Light",
+        "Regular",
+        "Medium",
+        "SemiBold",
+        "Bold",
+        "ExtraBold",
+        "Black",
+    ];
+    let name = NAMES
+        .get((weight.clamp(100, 900) as usize + 50) / 100 - 1)
+        .copied()
+        .unwrap_or("Regular");
     match (name, italic) {
         ("Regular", true) => "Italic".into(),
         (n, true) => format!("{n} Italic"),
@@ -65,7 +82,9 @@ fn solid(c: svgtypes::Color) -> Paint {
 }
 
 fn parse_transform(s: Option<&str>) -> Affine {
-    s.and_then(|s| svgtypes::Transform::from_str(s).ok()).map(|t| Affine::new([t.a, t.b, t.c, t.d, t.e, t.f])).unwrap_or(Affine::IDENTITY)
+    s.and_then(|s| svgtypes::Transform::from_str(s).ok())
+        .map(|t| Affine::new([t.a, t.b, t.c, t.d, t.e, t.f]))
+        .unwrap_or(Affine::IDENTITY)
 }
 
 /// Character attributes an element gives its text.
@@ -153,7 +172,9 @@ impl TextSlots {
         if !p.id().is_empty() {
             return p.id().strip_prefix(&self.prefix)?.parse().ok();
         }
-        let Some(usvg::Paint::Color(c)) = p.fill().map(|f| f.paint()) else { return None };
+        let Some(usvg::Paint::Color(c)) = p.fill().map(|f| f.paint()) else {
+            return None;
+        };
         if p.stroke().is_some() || p.data().segments().count() != 5 {
             return None;
         }
@@ -161,24 +182,48 @@ impl TextSlots {
         let m = self.texts.get(i)?.marker;
         let b = p.data().bounds();
         let near = |a: f32, b: f64| (a as f64 - b).abs() <= 1e-3 * b.abs().max(1.0);
-        (near(b.left(), m.x0) && near(b.top(), m.y0) && near(b.right(), m.x1) && near(b.bottom(), m.y1)).then_some(i)
+        (near(b.left(), m.x0)
+            && near(b.top(), m.y0)
+            && near(b.right(), m.x1)
+            && near(b.bottom(), m.y1))
+        .then_some(i)
     }
 }
 
 /// Replace every `<text>` usvg would draw by a placeholder group (see the module docs).
-pub(super) fn prepare<'s>(svg: &'s str, xml: &roxmltree::Document, dpi: f64, warnings: &mut Vec<String>) -> (Cow<'s, str>, TextSlots) {
+pub(super) fn prepare<'s>(
+    svg: &'s str,
+    xml: &roxmltree::Document,
+    dpi: f64,
+    warnings: &mut Vec<String>,
+) -> (Cow<'s, str>, TextSlots) {
     let mut prefix = String::from("vectorcraft-text-");
-    while xml.descendants().any(|n| n.attribute("id").is_some_and(|id| id.starts_with(&prefix))) {
+    while xml
+        .descendants()
+        .any(|n| n.attribute("id").is_some_and(|id| id.starts_with(&prefix)))
+    {
         prefix.insert(0, '_');
     }
-    let mut slots = TextSlots { prefix, texts: vec![] };
+    let mut slots = TextSlots {
+        prefix,
+        texts: vec![],
+    };
     let cx = Ctx::new(xml, dpi);
     let mut out = String::new();
     let mut copied = 0;
-    let is_text = |n: &XNode| n.is_element() && matches!(n.tag_name().name(), "text" | "flowRoot") && n.tag_name().namespace() == Some(SVG_NS);
+    let is_text = |n: &XNode| {
+        n.is_element()
+            && matches!(n.tag_name().name(), "text" | "flowRoot")
+            && n.tag_name().namespace() == Some(SVG_NS)
+    };
     for t in xml.descendants().filter(is_text) {
-        let label = t.attribute("id").map_or_else(|| "a text".to_string(), |id| format!("text '{id}'"));
-        if t.ancestors().skip(1).any(|a| a.is_element() && a.tag_name().name() == "clipPath") {
+        let label = t
+            .attribute("id")
+            .map_or_else(|| "a text".to_string(), |id| format!("text '{id}'"));
+        if t.ancestors()
+            .skip(1)
+            .any(|a| a.is_element() && a.tag_name().name() == "clipPath")
+        {
             warnings.push(format!("{label} in a clip path ignored"));
             continue;
         }
@@ -188,19 +233,43 @@ pub(super) fn prepare<'s>(svg: &'s str, xml: &roxmltree::Document, dpi: f64, war
         let Some(qname) = svg
             .get(r.start..r.end)
             .and_then(|s| s.strip_prefix('<'))
-            .map(|s| s.split(|c: char| c.is_whitespace() || c == '>' || c == '/').next().unwrap_or(""))
+            .map(|s| {
+                s.split(|c: char| c.is_whitespace() || c == '>' || c == '/')
+                    .next()
+                    .unwrap_or("")
+            })
         else {
             continue;
         };
         let flowed = t.tag_name().name() == "flowRoot";
-        let Some(q) = qname.strip_suffix(t.tag_name().name()).filter(|q| q.is_empty() || q.ends_with(':')) else { continue };
+        let Some(q) = qname
+            .strip_suffix(t.tag_name().name())
+            .filter(|q| q.is_empty() || q.ends_with(':'))
+        else {
+            continue;
+        };
         if cx.css.own(t, "display").as_deref() == Some("none") || r.start < copied {
             continue;
         }
-        let built = if flowed { cx.build_flow(t, &label, warnings) } else { cx.build(xml, t, &label, warnings) };
-        let Some((text, paints)) = built else { continue };
+        let built = if flowed {
+            cx.build_flow(t, &label, warnings)
+        } else {
+            cx.build(xml, t, &label, warnings)
+        };
+        let Some((text, paints)) = built else {
+            continue;
+        };
         out.push_str(&svg[copied..r.start]);
-        placeholder(&mut out, q, &cx.css, t, &slots.prefix, slots.texts.len(), text.marker, &paints);
+        placeholder(
+            &mut out,
+            q,
+            &cx.css,
+            t,
+            &slots.prefix,
+            slots.texts.len(),
+            text.marker,
+            &paints,
+        );
         copied = r.end;
         slots.texts.push(text);
     }
@@ -213,29 +282,62 @@ pub(super) fn prepare<'s>(svg: &'s str, xml: &roxmltree::Document, dpi: f64, war
 
 /// Write the placeholder group for text `t` (namespace prefix `q`), slot `index`.
 #[allow(clippy::too_many_arguments)]
-fn placeholder(out: &mut String, q: &str, css: &Styles, t: XNode, prefix: &str, index: usize, b: Rect, paints: &[String]) {
+fn placeholder(
+    out: &mut String,
+    q: &str,
+    css: &Styles,
+    t: XNode,
+    prefix: &str,
+    index: usize,
+    b: Rect,
+    paints: &[String],
+) {
     let _ = write!(out, "<{q}g");
-    for a in ["id", "transform", "systemLanguage", "requiredFeatures", "requiredExtensions"] {
+    for a in [
+        "id",
+        "transform",
+        "systemLanguage",
+        "requiredFeatures",
+        "requiredExtensions",
+    ] {
         if let Some(v) = t.attribute(a) {
             let _ = write!(out, " {a}=\"{}\"", xml_escape(v));
         }
     }
     // The text's own non-inherited properties, overriding any rule that matches the `<g>`.
     let mut style = String::new();
-    for (p, initial) in
-        [("opacity", "1"), ("clip-path", "none"), ("mask", "none"), ("filter", "none"), ("mix-blend-mode", "normal"), ("isolation", "auto")]
-    {
-        let _ = write!(style, "{p}:{};", css.own(t, p).as_deref().unwrap_or(initial));
+    for (p, initial) in [
+        ("opacity", "1"),
+        ("clip-path", "none"),
+        ("mask", "none"),
+        ("filter", "none"),
+        ("mix-blend-mode", "normal"),
+        ("isolation", "auto"),
+    ] {
+        let _ = write!(
+            style,
+            "{p}:{};",
+            css.own(t, p).as_deref().unwrap_or(initial)
+        );
     }
     if let Some(v) = css.own(t, "visibility") {
         let _ = write!(style, "visibility:{v};");
     }
     let _ = write!(out, " style=\"{}display:inline\">", xml_escape(&style));
     let d = format!("M{} {}H{}V{}H{}Z", b.x0, b.y0, b.x1, b.y1, b.x0);
-    const REST: &str = "stroke:none;opacity:1;display:inline;marker:none;clip-path:none;mask:none;filter:none";
-    let _ = write!(out, "<{q}path id=\"{prefix}{index}\" style=\"fill:#{:06x};{REST}\" d=\"{d}\"/>", index & 0xff_ffff);
+    const REST: &str =
+        "stroke:none;opacity:1;display:inline;marker:none;clip-path:none;mask:none;filter:none";
+    let _ = write!(
+        out,
+        "<{q}path id=\"{prefix}{index}\" style=\"fill:#{:06x};{REST}\" d=\"{d}\"/>",
+        index & 0xff_ffff
+    );
     for p in paints {
-        let _ = write!(out, "<{q}path style=\"fill:{};{REST}\" d=\"{d}\"/>", xml_escape(p));
+        let _ = write!(
+            out,
+            "<{q}path style=\"fill:{};{REST}\" d=\"{d}\"/>",
+            xml_escape(p)
+        );
     }
     let _ = write!(out, "</{q}g>");
 }
@@ -263,10 +365,20 @@ impl Ctx {
             elems: RefCell::default(),
         };
         let root = xml.root_element();
-        let dim = |a: &str| root.attribute(a).and_then(|v| cx.length(v, DEFAULT_FONT_SIZE, 0.0)).filter(|v| *v > 0.0);
-        cx.viewport = match root.attribute("viewBox").and_then(|v| svgtypes::ViewBox::from_str(v).ok()) {
+        let dim = |a: &str| {
+            root.attribute(a)
+                .and_then(|v| cx.length(v, DEFAULT_FONT_SIZE, 0.0))
+                .filter(|v| *v > 0.0)
+        };
+        cx.viewport = match root
+            .attribute("viewBox")
+            .and_then(|v| svgtypes::ViewBox::from_str(v).ok())
+        {
             Some(vb) if vb.w > 0.0 && vb.h > 0.0 => (vb.w, vb.h),
-            _ => (dim("width").unwrap_or(100.0), dim("height").unwrap_or(100.0)),
+            _ => (
+                dim("width").unwrap_or(100.0),
+                dim("height").unwrap_or(100.0),
+            ),
         };
         cx
     }
@@ -313,8 +425,14 @@ impl Ctx {
         if let Some(s) = self.sizes.borrow().get(&n.id()) {
             return *s;
         }
-        let parent = n.parent_element().map_or(DEFAULT_FONT_SIZE, |p| self.font_size(p));
-        let s = self.css.own(n, "font-size").and_then(|v| self.parse_font_size(&v, parent)).unwrap_or(parent);
+        let parent = n
+            .parent_element()
+            .map_or(DEFAULT_FONT_SIZE, |p| self.font_size(p));
+        let s = self
+            .css
+            .own(n, "font-size")
+            .and_then(|v| self.parse_font_size(&v, parent))
+            .unwrap_or(parent);
         self.sizes.borrow_mut().insert(n.id(), s);
         s
     }
@@ -338,7 +456,11 @@ impl Ctx {
                 550..=749 => 400,
                 _ => 700,
             },
-            Some(v) => v.parse::<f64>().ok().filter(|w| (1.0..=1000.0).contains(w)).map_or(parent, |w| w.round() as u16),
+            Some(v) => v
+                .parse::<f64>()
+                .ok()
+                .filter(|w| (1.0..=1000.0).contains(w))
+                .map_or(parent, |w| w.round() as u16),
             None => parent,
         };
         self.weights.borrow_mut().insert(n.id(), w);
@@ -347,14 +469,24 @@ impl Ctx {
 
     /// A fill or stroke: a ready paint, or a `url(#…)` paint for usvg to resolve.
     fn paint(&self, n: XNode, prop: &str) -> (Paint, Option<String>) {
-        let initial = if prop == "fill" { Paint::solid(Color::BLACK) } else { Paint::None };
-        let Some(v) = self.css.prop(n, prop) else { return (initial, None) };
+        let initial = if prop == "fill" {
+            Paint::solid(Color::BLACK)
+        } else {
+            Paint::None
+        };
+        let Some(v) = self.css.prop(n, prop) else {
+            return (initial, None);
+        };
         match svgtypes::Paint::from_str(&v) {
             Ok(svgtypes::Paint::None) => (Paint::None, None),
             Ok(svgtypes::Paint::Color(c)) => (solid(c), None),
-            Ok(svgtypes::Paint::CurrentColor) => {
-                (self.css.prop(n, "color").and_then(|c| svgtypes::Color::from_str(&c).ok()).map_or(Paint::solid(Color::BLACK), solid), None)
-            }
+            Ok(svgtypes::Paint::CurrentColor) => (
+                self.css
+                    .prop(n, "color")
+                    .and_then(|c| svgtypes::Color::from_str(&c).ok())
+                    .map_or(Paint::solid(Color::BLACK), solid),
+                None,
+            ),
             Ok(svgtypes::Paint::FuncIRI(..)) => (Paint::None, Some(v)),
             _ => (initial, None),
         }
@@ -368,21 +500,32 @@ impl Ctx {
         let css = &self.css;
         let mut st = CharStyle::default();
         if let Some(f) = css.prop(n, "font-family") {
-            let fam = f.split(',').next().unwrap_or("").trim().trim_matches(|c| c == '\'' || c == '"').to_string();
+            let fam = f
+                .split(',')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .trim_matches(|c| c == '\'' || c == '"')
+                .to_string();
             if !fam.is_empty() {
                 st.font_family = fam;
             }
         }
         let size = self.font_size(n);
         st.size = size;
-        let italic = css.prop(n, "font-style").is_some_and(|s| s == "italic" || s == "oblique");
+        let italic = css
+            .prop(n, "font-style")
+            .is_some_and(|s| s == "italic" || s == "oblique");
         st.font_style = style_name(self.weight(n), italic);
         let (fill, mut fill_url) = self.paint(n, "fill");
         st.fill = fill;
         let (stroke, mut stroke_url) = self.paint(n, "stroke");
         if !stroke.is_none() || stroke_url.is_some() {
             st.stroke = stroke;
-            st.stroke_width = css.prop(n, "stroke-width").and_then(|w| self.length(&w, size, size)).unwrap_or(1.0);
+            st.stroke_width = css
+                .prop(n, "stroke-width")
+                .and_then(|w| self.length(&w, size, size))
+                .unwrap_or(1.0);
             st.stroke_cap = match css.prop(n, "stroke-linecap").as_deref() {
                 Some("round") => LineCap::Round,
                 Some("square") => LineCap::Square,
@@ -393,18 +536,37 @@ impl Ctx {
                 Some("bevel") => LineJoin::Bevel,
                 _ => LineJoin::Miter,
             };
-            st.stroke_miter_limit =
-                css.prop(n, "stroke-miterlimit").and_then(|m| m.trim().parse::<f64>().ok()).filter(|m| m.is_finite()).map_or(4.0, |m| m.max(1.0));
-            let pattern: Vec<f64> = css.prop(n, "stroke-dasharray").map_or(vec![], |d| list(&d).filter_map(|v| self.length(v, size, size)).collect());
-            let offset = css.prop(n, "stroke-dashoffset").and_then(|o| self.length(&o, size, size)).unwrap_or(0.0);
-            st.stroke_dash = Some(Dash { pattern, offset, align_corners: false }).filter(Dash::is_dashed);
+            st.stroke_miter_limit = css
+                .prop(n, "stroke-miterlimit")
+                .and_then(|m| m.trim().parse::<f64>().ok())
+                .filter(|m| m.is_finite())
+                .map_or(4.0, |m| m.max(1.0));
+            let pattern: Vec<f64> = css.prop(n, "stroke-dasharray").map_or(vec![], |d| {
+                list(&d)
+                    .filter_map(|v| self.length(v, size, size))
+                    .collect()
+            });
+            let offset = css
+                .prop(n, "stroke-dashoffset")
+                .and_then(|o| self.length(&o, size, size))
+                .unwrap_or(0.0);
+            st.stroke_dash = Some(Dash {
+                pattern,
+                offset,
+                align_corners: false,
+            })
+            .filter(Dash::is_dashed);
         }
-        if let Some(v) = css.prop(n, "letter-spacing").and_then(|v| self.length(&v, size, size))
+        if let Some(v) = css
+            .prop(n, "letter-spacing")
+            .and_then(|v| self.length(&v, size, size))
             && size > 0.0
         {
             st.tracking = v / size * 1000.0;
         }
-        if let Some(v) = css.prop(n, "kerning").and_then(|v| self.length(&v, size, size))
+        if let Some(v) = css
+            .prop(n, "kerning")
+            .and_then(|v| self.length(&v, size, size))
             && size > 0.0
         {
             st.kerning = Some(v / size * 1000.0);
@@ -420,16 +582,38 @@ impl Ctx {
             Some(v) => self.length(v, size, size).unwrap_or(0.0),
             None => 0.0,
         };
-        let parent = if n.tag_name().name() == "text" { 0.0 } else { n.parent_element().map_or(0.0, |p| self.elem(p).style.baseline_shift) };
+        let parent = if n.tag_name().name() == "text" {
+            0.0
+        } else {
+            n.parent_element()
+                .map_or(0.0, |p| self.elem(p).style.baseline_shift)
+        };
         st.baseline_shift = parent + own;
-        if css.prop(n, "visibility").is_some_and(|v| v == "hidden" || v == "collapse") {
+        if css
+            .prop(n, "visibility")
+            .is_some_and(|v| v == "hidden" || v == "collapse")
+        {
             (st.fill, st.stroke, fill_url, stroke_url) = (Paint::None, Paint::None, None, None);
         }
-        let word_spacing = css.prop(n, "word-spacing").and_then(|v| self.length(&v, size, size)).unwrap_or(0.0);
-        let order = css.prop(n, "paint-order").and_then(|v| svgtypes::PaintOrder::from_str(&v).ok()).unwrap_or_default().order;
+        let word_spacing = css
+            .prop(n, "word-spacing")
+            .and_then(|v| self.length(&v, size, size))
+            .unwrap_or(0.0);
+        let order = css
+            .prop(n, "paint-order")
+            .and_then(|v| svgtypes::PaintOrder::from_str(&v).ok())
+            .unwrap_or_default()
+            .order;
         let at = |k| order.iter().position(|o| *o == k);
-        let stroke_first = at(svgtypes::PaintOrderKind::Stroke) < at(svgtypes::PaintOrderKind::Fill);
-        let e = Rc::new(ElemStyle { style: st, fill: fill_url, stroke: stroke_url, word_spacing, stroke_first });
+        let stroke_first =
+            at(svgtypes::PaintOrderKind::Stroke) < at(svgtypes::PaintOrderKind::Fill);
+        let e = Rc::new(ElemStyle {
+            style: st,
+            fill: fill_url,
+            stroke: stroke_url,
+            word_spacing,
+            stroke_first,
+        });
         self.elems.borrow_mut().insert(n.id(), e.clone());
         e
     }
@@ -444,7 +628,11 @@ impl Ctx {
         for c in el.children() {
             if c.is_text() {
                 for ch in c.text().unwrap_or("").chars() {
-                    let ch = if matches!(ch, '\n' | '\r' | '\t') { ' ' } else { ch };
+                    let ch = if matches!(ch, '\n' | '\r' | '\t') {
+                        ' '
+                    } else {
+                        ch
+                    };
                     if !preserve && ch == ' ' && out.chars.last().is_none_or(|(p, _)| *p == ' ') {
                         continue;
                     }
@@ -470,7 +658,9 @@ impl Ctx {
             Some(d) => BezPath::from_svg(d).ok()?,
             None => {
                 let id = href(tp)?.trim().strip_prefix('#')?;
-                let el = xml.descendants().find(|n| n.is_element() && n.attribute("id") == Some(id))?;
+                let el = xml
+                    .descendants()
+                    .find(|n| n.is_element() && n.attribute("id") == Some(id))?;
                 let d = match el.tag_name().name() {
                     "path" => el.attribute("d")?.to_string(),
                     _ => self.shape_path(el)?,
@@ -493,10 +683,17 @@ impl Ctx {
     /// their points. `None` for other elements and for shapes that render nothing.
     fn shape_path(&self, el: XNode) -> Option<String> {
         let (vw, vh) = self.viewport;
-        let len = |a: &str, pct: f64| el.attribute(a).and_then(|v| self.length(v, DEFAULT_FONT_SIZE, pct));
+        let len = |a: &str, pct: f64| {
+            el.attribute(a)
+                .and_then(|v| self.length(v, DEFAULT_FONT_SIZE, pct))
+        };
         let x = |a: &str| len(a, vw).unwrap_or(0.0);
         let y = |a: &str| len(a, vh).unwrap_or(0.0);
-        let points = || -> Vec<f64> { el.attribute("points").map(|v| list(v).map_while(|t| t.parse().ok()).collect()).unwrap_or_default() };
+        let points = || -> Vec<f64> {
+            el.attribute("points")
+                .map(|v| list(v).map_while(|t| t.parse().ok()).collect())
+                .unwrap_or_default()
+        };
         let ellipse = |cx: f64, cy: f64, rx: f64, ry: f64| {
             (rx > 0.0 && ry > 0.0).then(|| {
                 format!(
@@ -525,8 +722,14 @@ impl Ctx {
                 if w <= 0.0 || h <= 0.0 {
                     return None;
                 }
-                let (rx, ry) = (len("rx", vw).filter(|v| *v > 0.0), len("ry", vh).filter(|v| *v > 0.0));
-                let (rx, ry) = (rx.or(ry).unwrap_or(0.0).min(w / 2.0), ry.or(rx).unwrap_or(0.0).min(h / 2.0));
+                let (rx, ry) = (
+                    len("rx", vw).filter(|v| *v > 0.0),
+                    len("ry", vh).filter(|v| *v > 0.0),
+                );
+                let (rx, ry) = (
+                    rx.or(ry).unwrap_or(0.0).min(w / 2.0),
+                    ry.or(rx).unwrap_or(0.0).min(h / 2.0),
+                );
                 if rx <= 0.0 || ry <= 0.0 {
                     return Some(format!("M{x0} {y0} H{} V{} H{x0}Z", x0 + w, y0 + h));
                 }
@@ -566,48 +769,108 @@ impl Ctx {
     /// Read one Inkscape `<flowRoot>` (SVG 1.2 flowed text, which browsers don't draw but
     /// Inkscape writes) as area type: its frame the first `<rect>` of its `<flowRegion>`, a
     /// paragraph per `<flowPara>`, styled as `<text>` is. Other regions are left out with a warning.
-    fn build_flow(&self, t: XNode, label: &str, warnings: &mut Vec<String>) -> Option<(PendingText, Vec<String>)> {
+    fn build_flow(
+        &self,
+        t: XNode,
+        label: &str,
+        warnings: &mut Vec<String>,
+    ) -> Option<(PendingText, Vec<String>)> {
         let (vw, vh) = self.viewport;
-        let region = t.children().find(|c| c.is_element() && c.tag_name().name() == "flowRegion");
-        let rect = region.and_then(|r| r.children().find(|c| c.is_element() && c.tag_name().name() == "rect"));
-        let size = |n: XNode, a: &str, pct: f64| n.attribute(a).and_then(|v| self.length(v, DEFAULT_FONT_SIZE, pct));
+        let region = t
+            .children()
+            .find(|c| c.is_element() && c.tag_name().name() == "flowRegion");
+        let rect = region.and_then(|r| {
+            r.children()
+                .find(|c| c.is_element() && c.tag_name().name() == "rect")
+        });
+        let size = |n: XNode, a: &str, pct: f64| {
+            n.attribute(a)
+                .and_then(|v| self.length(v, DEFAULT_FONT_SIZE, pct))
+        };
         let frame = rect.and_then(|r| {
             let (w, h) = (size(r, "width", vw)?, size(r, "height", vh)?);
             (w > 0.0 && h > 0.0).then(|| (r, Rect::new(0.0, 0.0, w, h)))
         });
         let Some((r, frame)) = frame else {
-            warnings.push(format!("{label}: flowed text (flowRoot) without a rectangle region was left out"));
+            warnings.push(format!(
+                "{label}: flowed text (flowRoot) without a rectangle region was left out"
+            ));
             return None;
         };
-        let origin = Affine::translate((size(r, "x", vw).unwrap_or(0.0), size(r, "y", vh).unwrap_or(0.0)));
-        let paras: Vec<XNode> = t.descendants().filter(|n| n.is_element() && n.tag_name().name() == "flowPara").collect();
+        let origin = Affine::translate((
+            size(r, "x", vw).unwrap_or(0.0),
+            size(r, "y", vh).unwrap_or(0.0),
+        ));
+        let paras: Vec<XNode> = t
+            .descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "flowPara")
+            .collect();
         let collapse = |n: XNode| {
-            n.descendants().filter(XNode::is_text).filter_map(|c| c.text()).collect::<String>().split_whitespace().collect::<Vec<_>>().join(" ")
+            n.descendants()
+                .filter(XNode::is_text)
+                .filter_map(|c| c.text())
+                .collect::<String>()
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
         };
-        let text = paras.iter().map(|p| collapse(*p)).collect::<Vec<_>>().join("\n");
+        let text = paras
+            .iter()
+            .map(|p| collapse(*p))
+            .collect::<Vec<_>>()
+            .join("\n");
         if text.trim().is_empty() {
             return None;
         }
         let style = self.elem(paras.first().copied().unwrap_or(t)).style.clone();
         let mut obj = TextObject::point(Point::ZERO, &text, style);
-        obj.kind = TextKind::Area { frame: vectorcraft_geom::shapes::rectangle(frame) };
+        obj.kind = TextKind::Area {
+            frame: vectorcraft_geom::shapes::rectangle(frame),
+        };
         obj.xf = parse_transform(r.attribute("transform")) * origin;
         let servers = vec![(None, None); obj.runs.len()];
         let b = obj.xf.transform_rect_bbox(frame);
         // A size, place or transform past what numbers hold (`width="1e999"`) has no frame to set type in.
         if ![b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite()) {
-            warnings.push(format!("{label}: flowed text (flowRoot) with a region too large to place was left out"));
+            warnings.push(format!(
+                "{label}: flowed text (flowRoot) with a region too large to place was left out"
+            ));
             return None;
         }
         let marker = Rect::new(b.x0, b.y0, b.x1.max(b.x0 + 1.0), b.y1.max(b.y0 + 1.0));
         let name = t.attribute("id").unwrap_or("").to_string();
-        Some((PendingText { name, obj, servers, paints: 0, non_scaling: false, under: None, marker }, Vec::new()))
+        Some((
+            PendingText {
+                name,
+                obj,
+                servers,
+                paints: 0,
+                non_scaling: false,
+                under: None,
+                marker,
+            },
+            Vec::new(),
+        ))
     }
 
     /// Read one `<text>`: the pending text and its `url(#…)` paints.
-    fn build(&self, xml: &roxmltree::Document, t: XNode, label: &str, warnings: &mut Vec<String>) -> Option<(PendingText, Vec<String>)> {
-        let preserve = t.ancestors().filter(|a| a.is_element()).find_map(|a| a.attribute((roxmltree::NS_XML_URI, "space"))) == Some("preserve");
-        let mut cs = Chars { chars: vec![], spans: vec![], path: None };
+    fn build(
+        &self,
+        xml: &roxmltree::Document,
+        t: XNode,
+        label: &str,
+        warnings: &mut Vec<String>,
+    ) -> Option<(PendingText, Vec<String>)> {
+        let preserve = t
+            .ancestors()
+            .filter(|a| a.is_element())
+            .find_map(|a| a.attribute((roxmltree::NS_XML_URI, "space")))
+            == Some("preserve");
+        let mut cs = Chars {
+            chars: vec![],
+            spans: vec![],
+            path: None,
+        };
         self.collect(t, preserve, &mut cs);
         if !preserve {
             while cs.chars.last().is_some_and(|c| c.0 == ' ') {
@@ -621,13 +884,22 @@ impl Ctx {
 
         // Positioning lists, applied in tree order so descendants override their ancestors.
         let (vw, vh) = self.viewport;
-        let (mut x, mut y, mut dx, mut dy, mut rot) = (vec![None; n], vec![None; n], vec![0.0; n], vec![0.0; n], vec![None; n]);
+        let (mut x, mut y, mut dx, mut dy, mut rot) = (
+            vec![None; n],
+            vec![None; n],
+            vec![0.0; n],
+            vec![0.0; n],
+            vec![None; n],
+        );
         for (el, r) in &cs.spans {
             let r = r.start.min(n)..r.end.min(n);
             let em = self.font_size(*el);
             let apply = |name: &str, pct: f64, put: &mut dyn FnMut(usize, f64)| {
                 if let Some(v) = el.attribute(name) {
-                    for (i, l) in r.clone().zip(list(v).filter_map(|t| self.length(t, em, pct))) {
+                    for (i, l) in r
+                        .clone()
+                        .zip(list(v).filter_map(|t| self.length(t, em, pct)))
+                    {
                         put(i, l);
                     }
                 }
@@ -637,8 +909,15 @@ impl Ctx {
             apply("dx", vw, &mut |i, v| dx[i] = v);
             apply("dy", vh, &mut |i, v| dy[i] = v);
             // A shorter rotate list repeats its last value.
-            let angles: Vec<f64> =
-                el.attribute("rotate").map(|v| list(v).filter_map(|t| t.parse().ok()).filter(|a: &f64| a.is_finite()).collect()).unwrap_or_default();
+            let angles: Vec<f64> = el
+                .attribute("rotate")
+                .map(|v| {
+                    list(v)
+                        .filter_map(|t| t.parse().ok())
+                        .filter(|a: &f64| a.is_finite())
+                        .collect()
+                })
+                .unwrap_or_default();
             if let Some(&last) = angles.last() {
                 for (k, i) in r.enumerate() {
                     rot[i] = Some(*angles.get(k).unwrap_or(&last));
@@ -677,7 +956,12 @@ impl Ctx {
             .collect();
         let under = stroke_under(&mut cells, label, warnings);
 
-        let anchor_of = |i: usize| match cs.chars.get(i).and_then(|c| self.css.prop(c.1, "text-anchor")).as_deref() {
+        let anchor_of = |i: usize| match cs
+            .chars
+            .get(i)
+            .and_then(|c| self.css.prop(c.1, "text-anchor"))
+            .as_deref()
+        {
             Some("middle") => 0.5,
             Some("end") => 1.0,
             _ => 0.0,
@@ -686,11 +970,16 @@ impl Ctx {
         let path = cs.path.and_then(|tp| match self.text_path(xml, tp) {
             Some(p) => Some((tp, p)),
             None => {
-                warnings.push(format!("{label}: textPath has no usable path; imported as point type"));
+                warnings.push(format!(
+                    "{label}: textPath has no usable path; imported as point type"
+                ));
                 None
             }
         });
-        let vertical = self.css.prop(t, "writing-mode").is_some_and(|m| m.starts_with("tb") || m.starts_with("vertical"));
+        let vertical = self
+            .css
+            .prop(t, "writing-mode")
+            .is_some_and(|m| m.starts_with("tb") || m.starts_with("vertical"));
         let mut obj = TextObject::point(Point::ZERO, "", CharStyle::default());
         let mut breaks: Vec<Break> = vec![];
         let mut para_styles: Vec<ParaStyle> = vec![];
@@ -706,10 +995,24 @@ impl Ctx {
             }
             let len: f64 = bp.segments().map(|s| s.arclen(1e-4)).sum();
             let em = self.font_size(tp);
-            let offset = tp.attribute("startOffset").and_then(|v| self.length(v, em, len)).unwrap_or(0.0) + dx[0];
-            let width = if anchor > 0.0 { advance(&point_text(&cells)) } else { 0.0 };
-            let start = Some((offset - anchor * width) / len).filter(|s| s.is_finite()).map_or(0.0, |s| s.clamp(0.0, 1.0));
-            obj.kind = TextKind::OnPath { path: PathData::from_bezpath(&bp), start, end: None };
+            let offset = tp
+                .attribute("startOffset")
+                .and_then(|v| self.length(v, em, len))
+                .unwrap_or(0.0)
+                + dx[0];
+            let width = if anchor > 0.0 {
+                advance(&point_text(&cells))
+            } else {
+                0.0
+            };
+            let start = Some((offset - anchor * width) / len)
+                .filter(|s| s.is_finite())
+                .map_or(0.0, |s| s.clamp(0.0, 1.0));
+            obj.kind = TextKind::OnPath {
+                path: PathData::from_bezpath(&bp),
+                start,
+                end: None,
+            };
             obj.xf = Affine::IDENTITY;
         } else if vertical {
             // Type on a vertical path: dy is extra advance, dx shifts across the column.
@@ -724,32 +1027,52 @@ impl Ctx {
             let lay = measure(&point_text(&cells));
             let width: f64 = lay.glyphs.iter().map(|g| g.advance).sum();
             // Glyphs turn 90° clockwise; centre the em box on the column (SVG's central baseline).
-            let centre = lay.lines.first().map_or(0.0, |l| (l.ascent - l.descent) / 2.0);
-            let (x0, y0) = (finite(x[0].unwrap_or(0.0) - centre), finite(y[0].unwrap_or(0.0) + dy[0] - anchor * width));
+            let centre = lay
+                .lines
+                .first()
+                .map_or(0.0, |l| (l.ascent - l.descent) / 2.0);
+            let (x0, y0) = (
+                finite(x[0].unwrap_or(0.0) - centre),
+                finite(y[0].unwrap_or(0.0) + dy[0] - anchor * width),
+            );
             let mut bp = BezPath::new();
             bp.move_to((x0, y0));
             bp.line_to((x0, y0 + width + 1.0));
-            obj.kind = TextKind::OnPath { path: PathData::from_bezpath(&bp), start: 0.0, end: None };
+            obj.kind = TextKind::OnPath {
+                path: PathData::from_bezpath(&bp),
+                start: 0.0,
+                end: None,
+            };
             obj.xf = Affine::IDENTITY;
         } else {
             let origin = Point::new(x[0].unwrap_or(0.0) + dx[0], y[0].unwrap_or(0.0) + dy[0]);
-            let (justify, left, starts) = lines(&mut cells, &x, &y, &dx, &dy, anchor, origin.x, &mut breaks);
+            let (justify, left, starts) =
+                lines(&mut cells, &x, &y, &dx, &dy, anchor, origin.x, &mut breaks);
             obj.para.justify = justify;
             obj.xf = Affine::translate((finite(left), finite(origin.y)));
             // Lines anchored differently (paragraphs aligned differently): each line's paragraph
             // takes its alignment, and indents that put it where it was.
-            if let Some(starts) = starts.filter(|st| st.iter().any(|(i, _)| anchor_of(*i) != anchor)) {
+            if let Some(starts) =
+                starts.filter(|st| st.iter().any(|(i, _)| anchor_of(*i) != anchor))
+            {
                 for (k, &(i, ax)) in starts.iter().enumerate() {
                     let a = anchor_of(i);
                     let d = finite(ax - left);
-                    let mut pa = ParaStyle { justify: justify_of(a), ..ParaStyle::default() };
+                    let mut pa = ParaStyle {
+                        justify: justify_of(a),
+                        ..ParaStyle::default()
+                    };
                     match pa.justify {
                         Justify::Center if d >= 0.0 => pa.left_indent = 2.0 * d,
                         Justify::Center => pa.right_indent = -2.0 * d,
                         Justify::Right => pa.right_indent = -d,
                         _ => pa.left_indent = d,
                     }
-                    let count = if k == 0 { 1 } else { breaks.get(k - 1).map_or(1, |b| b.count) };
+                    let count = if k == 0 {
+                        1
+                    } else {
+                        breaks.get(k - 1).map_or(1, |b| b.count)
+                    };
                     para_styles.extend(std::iter::repeat_n(pa, count));
                 }
             }
@@ -761,35 +1084,69 @@ impl Ctx {
         }
         // SVG text runs left to right unless `direction: rtl` says otherwise, whatever its first
         // strong character: pinned (on every paragraph) when that would read as right to left.
-        if self.css.prop(t, "direction").is_some_and(|d| d.trim() == "rtl") {
+        if self
+            .css
+            .prop(t, "direction")
+            .is_some_and(|d| d.trim() == "rtl")
+        {
             obj.edit_paras(None, |pa| pa.direction = Some(ParaDirection::RightToLeft));
-        } else if obj.plain_text().split('\n').any(|p| vectorcraft_text::paragraph_is_rtl(p, None)) {
+        } else if obj
+            .plain_text()
+            .split('\n')
+            .any(|p| vectorcraft_text::paragraph_is_rtl(p, None))
+        {
             obj.edit_paras(None, |pa| pa.direction = Some(ParaDirection::LeftToRight));
         }
         // The placeholder covers the text (laid out when a paint server needs its bounding box).
-        let b = if paints.is_empty() { obj.bounds() } else { Some(obj.xf.transform_rect_bbox(measure(&obj).bounds)) }.unwrap_or_default();
+        let b = if paints.is_empty() {
+            obj.bounds()
+        } else {
+            Some(obj.xf.transform_rect_bbox(measure(&obj).bounds))
+        }
+        .unwrap_or_default();
         let marker = Rect::new(b.x0, b.y0, b.x1.max(b.x0 + 1.0), b.y1.max(b.y0 + 1.0));
         let name = t.attribute("id").unwrap_or("").to_string();
         let non_scaling = vector_effect::is_non_scaling(&self.css, t);
-        Some((PendingText { name, obj, servers, paints: paints.len(), non_scaling, under, marker }, paints))
+        Some((
+            PendingText {
+                name,
+                obj,
+                servers,
+                paints: paints.len(),
+                non_scaling,
+                under,
+                marker,
+            },
+            paints,
+        ))
     }
 }
 
 /// `paint-order` with the stroke first: the characters' stroke moves under all of them, as the
 /// object's own stroke (returned with its `url(#…)` paint index), and their own strokes go. Only
 /// when every character has that same stroke under a fill; otherwise a warning.
-fn stroke_under(cells: &mut [Cell], label: &str, warnings: &mut Vec<String>) -> Option<(StrokeLayer, Option<usize>)> {
-    let stroked = |c: &Cell| (c.stroke.is_some() || !c.style.stroke.is_none()) && c.style.stroke_width > 0.0;
+fn stroke_under(
+    cells: &mut [Cell],
+    label: &str,
+    warnings: &mut Vec<String>,
+) -> Option<(StrokeLayer, Option<usize>)> {
+    let stroked =
+        |c: &Cell| (c.stroke.is_some() || !c.style.stroke.is_none()) && c.style.stroke_width > 0.0;
     let filled = |c: &Cell| c.fill.is_some() || !c.style.fill.is_none();
     // Spaces paint nothing.
     let mut ink = cells.iter().filter(|c| !c.ch.is_whitespace());
-    if !ink.clone().any(|c| c.stroke_first && stroked(c) && filled(c)) {
+    if !ink
+        .clone()
+        .any(|c| c.stroke_first && stroked(c) && filled(c))
+    {
         return None;
     }
     let key = |c: &Cell| (c.stroke_first && stroked(c)).then(|| (c.style.stroke_layer(), c.stroke));
     let first = ink.next().and_then(key);
     if first.is_none() || !ink.all(|c| key(c) == first) {
-        warnings.push(format!("paint-order on {label} ignored: its characters' strokes differ"));
+        warnings.push(format!(
+            "paint-order on {label} ignored: its characters' strokes differ"
+        ));
         return None;
     }
     let none = CharStyle::default().stroke_layer();
@@ -821,9 +1178,19 @@ pub(super) fn size_scale(t: &TextObject, xf: Affine) -> f64 {
     if !(k.is_finite() && k > 0.0) {
         return 1.0;
     }
-    let (lo, hi) = t.runs.iter().map(|r| r.style.size).fold((f64::INFINITY, 0.0f64), |(lo, hi), s| (lo.min(s), hi.max(s)));
+    let (lo, hi) = t
+        .runs
+        .iter()
+        .map(|r| r.style.size)
+        .fold((f64::INFINITY, 0.0f64), |(lo, hi), s| {
+            (lo.min(s), hi.max(s))
+        });
     // Sizes already outside the range don't move further out.
-    if k > 1.0 { k.min((SIZES.end() / hi).max(1.0)) } else { k.max((SIZES.start() / lo).min(1.0)) }
+    if k > 1.0 {
+        k.min((SIZES.end() / hi).max(1.0))
+    } else {
+        k.max((SIZES.start() / lo).min(1.0))
+    }
 }
 
 /// Make text space `k` times larger and the transform `1 / k` times smaller, so the type draws
@@ -888,8 +1255,16 @@ fn lines(
             // Whole multiples of the auto leading add blank lines (not without limit: a far-off y
             // mustn't ask for billions); other spacing is one break.
             let count = (gap / lead).round().clamp(1.0, MAX_LINE_GAP);
-            let count = if (gap / count - lead).abs() <= lead * 0.05 { count } else { 1.0 };
-            breaks.push(Break { at: i, count: count as usize, leading: gap / count });
+            let count = if (gap / count - lead).abs() <= lead * 0.05 {
+                count
+            } else {
+                1.0
+            };
+            breaks.push(Break {
+                at: i,
+                count: count as usize,
+                leading: gap / count,
+            });
             lines.push((i, ax + dx[i]));
             (base, cur) = (ny, ny);
             continue;
@@ -904,7 +1279,10 @@ fn lines(
     // A line's characters take its spacing as leading unless it is their auto leading.
     for (k, b) in breaks.iter().enumerate() {
         let end = breaks.get(k + 1).map_or(n, |nb| nb.at);
-        if cells[b.at..end].iter().any(|c| (c.style.effective_leading() - b.leading).abs() > 0.01) {
+        if cells[b.at..end]
+            .iter()
+            .any(|c| (c.style.effective_leading() - b.leading).abs() > 0.01)
+        {
             for c in &mut cells[b.at..end] {
                 c.style.leading = Some(b.leading);
             }
@@ -924,18 +1302,27 @@ fn lines(
         let lay = measure(&with_runs(runs.0));
         let (pens, ends) = pens(&lay, &bytes);
         // Chunk starts in order: line starts and absolutely placed characters.
-        let mut starts: Vec<usize> = lines.iter().map(|l| l.0).chain(targets.iter().map(|t| t.0)).collect();
+        let mut starts: Vec<usize> = lines
+            .iter()
+            .map(|l| l.0)
+            .chain(targets.iter().map(|t| t.0))
+            .collect();
         starts.sort_unstable();
         let width = |s: usize| {
             let k = starts.partition_point(|&c| c <= s);
             let e = starts.get(k).copied().unwrap_or(n);
-            let end = (s..e).filter_map(|j| ends[j]).fold(f64::NEG_INFINITY, f64::max);
+            let end = (s..e)
+                .filter_map(|j| ends[j])
+                .fold(f64::NEG_INFINITY, f64::max);
             match pens[s] {
                 Some(p) if end.is_finite() => end - p,
                 _ => 0.0,
             }
         };
-        let line_left: Vec<f64> = lines.iter().map(|&(s, lx)| lx - anchor * width(s)).collect();
+        let line_left: Vec<f64> = lines
+            .iter()
+            .map(|&(s, lx)| lx - anchor * width(s))
+            .collect();
         left = line_left[0];
         for w in &mut wants {
             w.1 -= anchor * width(w.0) + line_left[line_of(w.0)];
@@ -957,7 +1344,9 @@ fn lines(
             if l != line {
                 (line, moved) = (l, 0.0);
             }
-            let (Some(p), Some(p0)) = (pens[i], pens[lines[l].0]) else { continue };
+            let (Some(p), Some(p0)) = (pens[i], pens[lines[l].0]) else {
+                continue;
+            };
             let d = want - (p - p0 + moved);
             cells[i - 1].kern += d;
             moved += d;
@@ -994,9 +1383,13 @@ fn advance(t: &TextObject) -> f64 {
 fn pens(lay: &TextLayout, bytes: &[usize]) -> (Vec<Option<f64>>, Vec<Option<f64>>) {
     let mut at: HashMap<usize, (f64, f64)> = HashMap::with_capacity(lay.glyphs.len());
     for g in &lay.glyphs {
-        at.entry(g.byte).or_insert((g.origin.x, g.origin.x + g.advance));
+        at.entry(g.byte)
+            .or_insert((g.origin.x, g.origin.x + g.advance));
     }
-    bytes.iter().map(|b| at.get(b).map_or((None, None), |&(s, e)| (Some(s), Some(e)))).unzip()
+    bytes
+        .iter()
+        .map(|b| at.get(b).map_or((None, None), |&(s, e)| (Some(s), Some(e))))
+        .unzip()
 }
 
 type Key = (Option<usize>, Option<usize>);
@@ -1013,7 +1406,11 @@ fn assemble(cells: &[Cell], breaks: &[Break]) -> (Runs, Vec<usize>) {
             r.text.push(ch);
             return;
         }
-        runs.push(TextRun { text: ch.into(), style, inline: None });
+        runs.push(TextRun {
+            text: ch.into(),
+            style,
+            inline: None,
+        });
         keys.push(key);
     }
     let mut out: Runs = (vec![], vec![]);

@@ -63,13 +63,26 @@ impl std::fmt::Display for UserFontError {
         match self {
             UserFontError::Empty => write!(f, "the font file is empty"),
             UserFontError::TooLarge { bytes } => {
-                write!(f, "the font file is too large ({} MB; at most {} MB)", bytes.div_ceil(1 << 20), MAX_FONT_FILE_BYTES >> 20)
+                write!(
+                    f,
+                    "the font file is too large ({} MB; at most {} MB)",
+                    bytes.div_ceil(1 << 20),
+                    MAX_FONT_FILE_BYTES >> 20
+                )
             }
-            UserFontError::NotAFont => write!(f, "not a font file (TrueType, OpenType, TTC, WOFF or WOFF2)"),
+            UserFontError::NotAFont => write!(
+                f,
+                "not a font file (TrueType, OpenType, TTC, WOFF or WOFF2)"
+            ),
             UserFontError::BadWebFont(e) => write!(f, "the web font couldn't be read: {e}"),
             UserFontError::Unusable(e) => write!(f, "the font couldn't be read: {e}"),
-            UserFontError::AlreadyAvailable(families) => write!(f, "already available: {}", families.join(", ")),
-            UserFontError::TooMany => write!(f, "too many added fonts (at most {MAX_USER_FONTS}); remove some first"),
+            UserFontError::AlreadyAvailable(families) => {
+                write!(f, "already available: {}", families.join(", "))
+            }
+            UserFontError::TooMany => write!(
+                f,
+                "too many added fonts (at most {MAX_USER_FONTS}); remove some first"
+            ),
             UserFontError::NotUserFont(family) => write!(f, "{family:?} isn't a font you added"),
         }
     }
@@ -148,22 +161,30 @@ pub fn decode_font_file(bytes: &[u8]) -> Result<Vec<u8>, UserFontError> {
         return Err(UserFontError::TooLarge { bytes: bytes.len() });
     }
     let decoded = match sniff(bytes).ok_or(UserFontError::NotAFont)? {
-        FontFormat::TrueType | FontFormat::OpenType | FontFormat::Collection => return Ok(bytes.to_vec()),
+        FontFormat::TrueType | FontFormat::OpenType | FontFormat::Collection => {
+            return Ok(bytes.to_vec());
+        }
         FontFormat::Woff => unwrap_web_font(|| wuff::decompress_woff1(bytes))?,
         FontFormat::Woff2 => unwrap_web_font(|| wuff::decompress_woff2(bytes))?,
     };
     if decoded.len() > MAX_DECODED_BYTES {
-        return Err(UserFontError::TooLarge { bytes: decoded.len() });
+        return Err(UserFontError::TooLarge {
+            bytes: decoded.len(),
+        });
     }
     match sniff(&decoded) {
         Some(FontFormat::TrueType | FontFormat::OpenType | FontFormat::Collection) => Ok(decoded),
-        _ => Err(UserFontError::BadWebFont("it doesn't hold a TrueType or OpenType font".into())),
+        _ => Err(UserFontError::BadWebFont(
+            "it doesn't hold a TrueType or OpenType font".into(),
+        )),
     }
 }
 
 /// Run a WOFF/WOFF2 decoder. The decoder checks its input, but it is third-party code reading
 /// hostile bytes: a panic in it is caught (native) and reported as a damaged file.
-fn unwrap_web_font(decode: impl FnOnce() -> Result<Vec<u8>, wuff::WuffErr>) -> Result<Vec<u8>, UserFontError> {
+fn unwrap_web_font(
+    decode: impl FnOnce() -> Result<Vec<u8>, wuff::WuffErr>,
+) -> Result<Vec<u8>, UserFontError> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(decode)) {
         Ok(Ok(v)) => Ok(v),
         Ok(Err(e)) => Err(UserFontError::BadWebFont(format!("{e:?}"))),
@@ -177,7 +198,17 @@ fn stored_name(name: &str, sfnt: &[u8]) -> String {
     // The last component, whichever separator the name came with.
     let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
     let stem = base.rsplit_once('.').map(|(s, _)| s).unwrap_or(base);
-    let mut clean: String = stem.chars().take(64).map(|c| if c.is_alphanumeric() || matches!(c, ' ' | '-' | '_') { c } else { '_' }).collect();
+    let mut clean: String = stem
+        .chars()
+        .take(64)
+        .map(|c| {
+            if c.is_alphanumeric() || matches!(c, ' ' | '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     clean = clean.trim().to_string();
     if clean.is_empty() || clean.starts_with('-') {
         clean = format!("font{clean}");
@@ -225,18 +256,29 @@ impl FontDb {
         let warning = match self.user_font_dir() {
             Some(dir) => match write_unique(&dir, &font.file, &sfnt) {
                 Ok(path) => {
-                    font.file = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or(font.file);
+                    font.file = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or(font.file);
                     font.path = Some(path);
                     None
                 }
                 Err(e) => {
                     log::warn!("couldn't store the font {name} in {}: {e}", dir.display());
-                    Some(format!("added for this session only: couldn't store it in {}: {e}", dir.display()))
+                    Some(format!(
+                        "added for this session only: couldn't store it in {}: {e}",
+                        dir.display()
+                    ))
                 }
             },
             None => None,
         };
-        if let Some(f) = self.write_user().fonts.iter_mut().find(|f| f.face_ids == font.face_ids) {
+        if let Some(f) = self
+            .write_user()
+            .fonts
+            .iter_mut()
+            .find(|f| f.face_ids == font.face_ids)
+        {
             f.file.clone_from(&font.file);
             f.path.clone_from(&font.path);
         }
@@ -244,7 +286,12 @@ impl FontDb {
     }
 
     /// Check the faces in `sfnt` and add the new ones, recording them as a user font.
-    fn add_user_faces(&self, name: &str, sfnt: Vec<u8>, path: Option<PathBuf>) -> Result<UserFont, UserFontError> {
+    fn add_user_faces(
+        &self,
+        name: &str,
+        sfnt: Vec<u8>,
+        path: Option<PathBuf>,
+    ) -> Result<UserFont, UserFontError> {
         if self.read_user().fonts.len() >= MAX_USER_FONTS {
             return Err(UserFontError::TooMany);
         }
@@ -256,17 +303,31 @@ impl FontDb {
             return Err(UserFontError::Unusable("no face with a family name".into()));
         }
         if found.len() > MAX_FACES_PER_FILE {
-            return Err(UserFontError::Unusable(format!("more than {MAX_FACES_PER_FILE} faces")));
+            return Err(UserFontError::Unusable(format!(
+                "more than {MAX_FACES_PER_FILE} faces"
+            )));
         }
         let file = stored_name(name, &sfnt);
         let data = Arc::new(sfnt);
         let mut new = Vec::new();
         for f in found {
             let label = format!("{} {}", f.family, f.style);
-            let face = make_face(FontBytes::Owned(data.clone()), f.index, f.family, f.style, f.legacy, f.coords)
-                .ok_or_else(|| UserFontError::Unusable(format!("{label} doesn't parse")))?;
-            if face.skrifa().is_none_or(|s| s.charmap().mappings().next().is_none()) {
-                return Err(UserFontError::Unusable(format!("{label} maps no characters")));
+            let face = make_face(
+                FontBytes::Owned(data.clone()),
+                f.index,
+                f.family,
+                f.style,
+                f.legacy,
+                f.coords,
+            )
+            .ok_or_else(|| UserFontError::Unusable(format!("{label} doesn't parse")))?;
+            if face
+                .skrifa()
+                .is_none_or(|s| s.charmap().mappings().next().is_none())
+            {
+                return Err(UserFontError::Unusable(format!(
+                    "{label} maps no characters"
+                )));
             }
             new.push(Arc::new(face));
         }
@@ -277,12 +338,19 @@ impl FontDb {
         };
         let mut user = self.write_user();
         // Unique among the user fonts (the folder is checked when writing).
-        let file = unique_name(&file, |n| user.fonts.iter().any(|f| f.file.eq_ignore_ascii_case(n)));
+        let file = unique_name(&file, |n| {
+            user.fonts.iter().any(|f| f.file.eq_ignore_ascii_case(n))
+        });
         let added: Vec<Arc<super::FontFace>> = {
             let mut faces = self.faces.write().unwrap_or_else(|e| e.into_inner());
             let fresh: Vec<_> = new
                 .iter()
-                .filter(|f| !faces.iter().any(|g| g.family.eq_ignore_ascii_case(&f.family) && g.style.eq_ignore_ascii_case(&f.style)))
+                .filter(|f| {
+                    !faces.iter().any(|g| {
+                        g.family.eq_ignore_ascii_case(&f.family)
+                            && g.style.eq_ignore_ascii_case(&f.style)
+                    })
+                })
                 .cloned()
                 .collect();
             faces.extend(fresh.iter().cloned());
@@ -293,7 +361,10 @@ impl FontDb {
         }
         let font = UserFont {
             file,
-            faces: added.iter().map(|f| (f.family.clone(), f.style.clone())).collect(),
+            faces: added
+                .iter()
+                .map(|f| (f.family.clone(), f.style.clone()))
+                .collect(),
             path,
             face_ids: added.iter().map(|f| f.id).collect(),
         };
@@ -305,7 +376,11 @@ impl FontDb {
 
     /// Forget cached fallback choices and tell watchers ([`FontDb::generation`]).
     fn fonts_changed(&self) {
-        self.fallbacks.write().unwrap_or_else(|e| e.into_inner()).map.clear();
+        self.fallbacks
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .map
+            .clear();
         self.generation.fetch_add(1, Ordering::AcqRel);
     }
 
@@ -316,18 +391,30 @@ impl FontDb {
         let mut user = self.write_user();
         let ids: Vec<u32> = {
             let faces = self.read_faces();
-            faces.iter().filter(|f| f.named(family)).map(|f| f.id).collect()
+            faces
+                .iter()
+                .filter(|f| f.named(family))
+                .map(|f| f.id)
+                .collect()
         };
-        let (gone, kept): (Vec<UserFont>, Vec<UserFont>) = std::mem::take(&mut user.fonts)
-            .into_iter()
-            .partition(|u| u.faces.iter().any(|(f, _)| f.eq_ignore_ascii_case(family)) || u.face_ids.iter().any(|i| ids.contains(i)));
+        let (gone, kept): (Vec<UserFont>, Vec<UserFont>) =
+            std::mem::take(&mut user.fonts).into_iter().partition(|u| {
+                u.faces.iter().any(|(f, _)| f.eq_ignore_ascii_case(family))
+                    || u.face_ids.iter().any(|i| ids.contains(i))
+            });
         user.fonts = kept;
         drop(user);
         if gone.is_empty() {
             return Err(UserFontError::NotUserFont(family.to_string()));
         }
-        let drop_ids: Vec<u32> = gone.iter().flat_map(|u| u.face_ids.iter().copied()).collect();
-        self.faces.write().unwrap_or_else(|e| e.into_inner()).retain(|f| !drop_ids.contains(&f.id));
+        let drop_ids: Vec<u32> = gone
+            .iter()
+            .flat_map(|u| u.face_ids.iter().copied())
+            .collect();
+        self.faces
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|f| !drop_ids.contains(&f.id));
         for u in &gone {
             if let Some(p) = &u.path
                 && let Err(e) = std::fs::remove_file(p)
@@ -348,28 +435,44 @@ impl FontDb {
         self.write_user().dir = Some(dir.to_path_buf());
         let mut loaded = Vec::new();
         let mut skipped = Vec::new();
-        let Ok(rd) = std::fs::read_dir(dir) else { return (loaded, skipped) };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return (loaded, skipped);
+        };
         let mut paths: Vec<PathBuf> = rd
             .flatten()
             .map(|e| e.path())
             .filter(|p| p.is_file())
-            .filter(|p| p.extension().and_then(|e| e.to_str()).is_some_and(|e| STORED_EXTS.contains(&e.to_ascii_lowercase().as_str())))
+            .filter(|p| {
+                p.extension()
+                    .and_then(|e| e.to_str())
+                    .is_some_and(|e| STORED_EXTS.contains(&e.to_ascii_lowercase().as_str()))
+            })
             .collect();
         paths.sort();
         for p in paths {
-            let file = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            let file = p
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
             let read = match std::fs::metadata(&p) {
-                Ok(m) if m.len() > MAX_FONT_FILE_BYTES as u64 => {
-                    Err(UserFontError::TooLarge { bytes: usize::try_from(m.len()).unwrap_or(usize::MAX) })
-                }
+                Ok(m) if m.len() > MAX_FONT_FILE_BYTES as u64 => Err(UserFontError::TooLarge {
+                    bytes: usize::try_from(m.len()).unwrap_or(usize::MAX),
+                }),
                 Ok(_) => std::fs::read(&p).map_err(|e| UserFontError::Unusable(e.to_string())),
                 Err(e) => Err(UserFontError::Unusable(e.to_string())),
             };
-            let r = read.and_then(|b| decode_font_file(&b)).and_then(|sfnt| self.add_user_faces(&file, sfnt, Some(p.clone())));
+            let r = read
+                .and_then(|b| decode_font_file(&b))
+                .and_then(|sfnt| self.add_user_faces(&file, sfnt, Some(p.clone())));
             match r {
                 Ok(mut f) => {
                     // Its own file name, so removing it deletes this file.
-                    if let Some(u) = self.write_user().fonts.iter_mut().find(|u| u.face_ids == f.face_ids) {
+                    if let Some(u) = self
+                        .write_user()
+                        .fonts
+                        .iter_mut()
+                        .find(|u| u.face_ids == f.face_ids)
+                    {
                         u.file.clone_from(&file);
                     }
                     f.file = file;
@@ -391,7 +494,10 @@ fn unique_name(name: &str, taken: impl Fn(&str) -> bool) -> String {
         return name.to_string();
     }
     let (stem, ext) = name.rsplit_once('.').unwrap_or((name, ""));
-    (2..10_000).map(|n| format!("{stem}-{n}.{ext}")).find(|n| !taken(n)).unwrap_or_else(|| format!("{stem}-x.{ext}"))
+    (2..10_000)
+        .map(|n| format!("{stem}-{n}.{ext}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| format!("{stem}-x.{ext}"))
 }
 
 /// Write `bytes` to a new file in `dir` named `name` (or a numbered variant when that exists),
@@ -418,9 +524,21 @@ mod tests {
     /// A bundled Source Sans 3 file renamed `family` (as long as the original name).
     pub(crate) fn renamed(file: &str, family: &str) -> Vec<u8> {
         assert_eq!(family.len(), "Source Sans 3".len());
-        let mut data = std::fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/wordcraft/fonts").join(file)).unwrap();
-        let utf16 = |s: &str| s.encode_utf16().flat_map(u16::to_be_bytes).collect::<Vec<u8>>();
-        for (from, to) in [(utf16("Source Sans 3"), utf16(family)), (b"Source Sans 3".to_vec(), family.as_bytes().to_vec())] {
+        let mut data = std::fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../assets/wordcraft/fonts")
+                .join(file),
+        )
+        .unwrap();
+        let utf16 = |s: &str| {
+            s.encode_utf16()
+                .flat_map(u16::to_be_bytes)
+                .collect::<Vec<u8>>()
+        };
+        for (from, to) in [
+            (utf16("Source Sans 3"), utf16(family)),
+            (b"Source Sans 3".to_vec(), family.as_bytes().to_vec()),
+        ] {
             let mut i = 0;
             while let Some(at) = data[i..].windows(from.len()).position(|w| w == from) {
                 data[i + at..i + at + to.len()].copy_from_slice(&to);
@@ -509,7 +627,11 @@ mod tests {
                 }
             }
         }
-        let mut b = Bits { out: Vec::new(), acc: 0, n: 0 };
+        let mut b = Bits {
+            out: Vec::new(),
+            acc: 0,
+            n: 0,
+        };
         b.put(0, 1); // WBITS = 16
         for chunk in data.chunks(1 << 16) {
             b.put(0, 1); // ISLAST = 0
@@ -543,7 +665,11 @@ mod tests {
         let mut dir = Vec::new();
         let mut stream = Vec::new();
         for (tag, data) in &t {
-            let null = if tag == b"glyf" || tag == b"loca" { 3 << 6 } else { 0 };
+            let null = if tag == b"glyf" || tag == b"loca" {
+                3 << 6
+            } else {
+                0
+            };
             dir.push(63 | null);
             dir.extend_from_slice(tag);
             base128(data.len() as u32, &mut dir);
@@ -557,7 +683,11 @@ mod tests {
         out.extend_from_slice(&(total as u32).to_be_bytes());
         out.extend_from_slice(&(t.len() as u16).to_be_bytes());
         out.extend_from_slice(&0u16.to_be_bytes());
-        let sfnt: usize = 12 + 16 * t.len() + t.iter().map(|(_, d)| d.len().next_multiple_of(4)).sum::<usize>();
+        let sfnt: usize = 12
+            + 16 * t.len()
+            + t.iter()
+                .map(|(_, d)| d.len().next_multiple_of(4))
+                .sum::<usize>();
         out.extend_from_slice(&(sfnt as u32).to_be_bytes());
         out.extend_from_slice(&(compressed.len() as u32).to_be_bytes());
         out.extend_from_slice(&[0, 1, 0, 0]);
@@ -573,10 +703,18 @@ mod tests {
         let db = db();
         let gen0 = db.generation();
         assert!(!db.has_family(FAMILY));
-        let r = db.install_font("Userfont-Regular.ttf", &renamed("SourceSans3-Regular.ttf", FAMILY)).unwrap();
+        let r = db
+            .install_font(
+                "Userfont-Regular.ttf",
+                &renamed("SourceSans3-Regular.ttf", FAMILY),
+            )
+            .unwrap();
         assert_eq!(r.font.families(), vec![FAMILY.to_string()]);
         assert_eq!(r.font.file, "Userfont-Regular.ttf");
-        assert!(r.font.path.is_none() && r.warning.is_none(), "no folder: kept for the session only");
+        assert!(
+            r.font.path.is_none() && r.warning.is_none(),
+            "no folder: kept for the session only"
+        );
         assert!(db.generation() > gen0);
         assert!(db.families().iter().any(|f| f == FAMILY));
         let face = db.face(FAMILY, "Regular");
@@ -593,11 +731,21 @@ mod tests {
     fn the_bundled_baseline_is_never_replaced() {
         let db = db();
         let before = db.face("Source Sans 3", "Regular").id();
-        let bytes = std::fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/wordcraft/fonts/SourceSans3-Regular.ttf")).unwrap();
-        assert!(matches!(db.install_font("x.ttf", &bytes), Err(UserFontError::AlreadyAvailable(_))));
+        let bytes = std::fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../assets/wordcraft/fonts/SourceSans3-Regular.ttf"),
+        )
+        .unwrap();
+        assert!(matches!(
+            db.install_font("x.ttf", &bytes),
+            Err(UserFontError::AlreadyAvailable(_))
+        ));
         assert_eq!(db.face("Source Sans 3", "Regular").id(), before);
         assert!(db.user_fonts().is_empty());
-        assert!(matches!(db.remove_user_font("Source Sans 3"), Err(UserFontError::NotUserFont(_))));
+        assert!(matches!(
+            db.remove_user_font("Source Sans 3"),
+            Err(UserFontError::NotUserFont(_))
+        ));
         assert!(db.has_family("Source Sans 3"));
     }
 
@@ -619,7 +767,18 @@ mod tests {
         ];
         // Damaged web fonts: every prefix, and flipped bytes through the headers and directory.
         for packed in [woff1(&regular), woff2(&regular)] {
-            for cut in [8, 20, 44, 47, 48, 60, 100, 300, packed.len() / 2, packed.len() - 1] {
+            for cut in [
+                8,
+                20,
+                44,
+                47,
+                48,
+                60,
+                100,
+                300,
+                packed.len() / 2,
+                packed.len() - 1,
+            ] {
                 cases.push(packed[..cut.min(packed.len())].to_vec());
             }
             for at in 4..200 {
@@ -633,10 +792,20 @@ mod tests {
             // A flipped byte inside a table can leave a usable font; the cut-off files can't.
             assert!(i >= 9 || r.is_err(), "case {i}");
         }
-        assert_eq!(db.families().len(), n + db.user_fonts().iter().map(|u| u.families().len()).sum::<usize>());
+        assert_eq!(
+            db.families().len(),
+            n + db
+                .user_fonts()
+                .iter()
+                .map(|u| u.families().len())
+                .sum::<usize>()
+        );
         let mut big = regular.clone();
         big.resize(MAX_FONT_FILE_BYTES + 1, 0);
-        assert!(matches!(db.install_font("big.ttf", &big), Err(UserFontError::TooLarge { .. })));
+        assert!(matches!(
+            db.install_font("big.ttf", &big),
+            Err(UserFontError::TooLarge { .. })
+        ));
     }
 
     #[test]
@@ -645,7 +814,9 @@ mod tests {
         for (name, packed) in [("a.woff", woff1(&regular)), ("a.woff2", woff2(&regular))] {
             assert!(is_font_file_name(name));
             let db = db();
-            let r = db.install_font(name, &packed).unwrap_or_else(|e| panic!("{name}: {e}"));
+            let r = db
+                .install_font(name, &packed)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
             assert_eq!(r.font.file, "a.ttf", "stored unwrapped");
             let face = db.face(FAMILY, "Regular");
             assert_eq!(face.family, FAMILY);
@@ -658,14 +829,30 @@ mod tests {
         let dir = temp_dir("store");
         let db = db();
         let (loaded, skipped) = db.load_user_fonts(&dir);
-        assert!(loaded.is_empty() && skipped.is_empty(), "a missing folder is empty");
-        let r = db.install_font("../../evil/Userfont Bold?.woff2", &woff2(&renamed("SourceSans3-Bold.ttf", FAMILY))).unwrap();
+        assert!(
+            loaded.is_empty() && skipped.is_empty(),
+            "a missing folder is empty"
+        );
+        let r = db
+            .install_font(
+                "../../evil/Userfont Bold?.woff2",
+                &woff2(&renamed("SourceSans3-Bold.ttf", FAMILY)),
+            )
+            .unwrap();
         assert!(r.warning.is_none());
         let path = r.font.path.clone().unwrap();
-        assert_eq!(path.parent(), Some(dir.as_path()), "a file name can't leave the folder");
+        assert_eq!(
+            path.parent(),
+            Some(dir.as_path()),
+            "a file name can't leave the folder"
+        );
         assert_eq!(r.font.file, "Userfont Bold_.ttf");
         assert!(path.exists());
-        db.install_font("Userfont-Regular.ttf", &renamed("SourceSans3-Regular.ttf", FAMILY)).unwrap();
+        db.install_font(
+            "Userfont-Regular.ttf",
+            &renamed("SourceSans3-Regular.ttf", FAMILY),
+        )
+        .unwrap();
         // A damaged file in the folder is skipped, never fatal.
         std::fs::write(dir.join("damaged.ttf"), b"ttcf\0\x01\0\0\xff\xff\xff\xff").unwrap();
         std::fs::write(dir.join("notes.txt"), b"hello").unwrap();
@@ -675,14 +862,20 @@ mod tests {
         let (loaded, skipped) = next.load_user_fonts(&dir);
         assert_eq!(loaded.len(), 2, "{skipped:?}");
         assert_eq!(skipped.len(), 1);
-        assert_eq!(next.styles(FAMILY), vec!["Regular".to_string(), "Bold".to_string()]);
+        assert_eq!(
+            next.styles(FAMILY),
+            vec!["Regular".to_string(), "Bold".to_string()]
+        );
         assert_eq!(next.face(FAMILY, "Bold").style, "Bold");
 
         // Removing the family deletes both files; text in it falls back.
         let gone = next.remove_user_font(FAMILY).unwrap();
         assert_eq!(gone.len(), 2);
         assert!(!next.has_family(FAMILY));
-        assert_eq!(next.face(FAMILY, "Regular").family, super::super::FALLBACK_FAMILY);
+        assert_eq!(
+            next.face(FAMILY, "Regular").family,
+            super::super::FALLBACK_FAMILY
+        );
         assert!(!path.exists());
         assert!(next.user_fonts().is_empty());
         let _ = std::fs::remove_dir_all(&dir);
@@ -694,6 +887,9 @@ mod tests {
         assert_eq!(stored_name("C:\\x\\..\\a.b.TTF", &ttf), "a_b.ttf");
         assert_eq!(stored_name("", &ttf), "font.ttf");
         assert_eq!(stored_name("-rf.otf", b"OTTO"), "font-rf.otf");
-        assert_eq!(unique_name("a.ttf", |n| n == "a.ttf" || n == "a-2.ttf"), "a-3.ttf");
+        assert_eq!(
+            unique_name("a.ttf", |n| n == "a.ttf" || n == "a-2.ttf"),
+            "a-3.ttf"
+        );
     }
 }

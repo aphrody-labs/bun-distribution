@@ -476,7 +476,9 @@ mod tests {
         // None selects the capped 0.5-second interval, without wall-clock sleeps.
         state.last_update = None;
         for enabled in [false, true, false] {
-            common::settings::values_mut().emulate_analog_keyboard.set_value(enabled);
+            common::settings::values_mut()
+                .emulate_analog_keyboard
+                .set_value(enabled);
             let status = state.get_status();
             let angle = if enabled { 0.1 } else { state.goal_angle };
             assert!((status.x.raw_value - angle.cos() * MAX_RANGE).abs() < 1e-6);

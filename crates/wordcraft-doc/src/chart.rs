@@ -71,7 +71,9 @@ impl ChartType {
 
     /// The type an id names (any ASCII case).
     pub fn from_id(id: &str) -> Option<ChartType> {
-        ChartType::ALL.into_iter().find(|t| t.id().eq_ignore_ascii_case(id.trim()))
+        ChartType::ALL
+            .into_iter()
+            .find(|t| t.id().eq_ignore_ascii_case(id.trim()))
     }
 
     /// The name shown for it.
@@ -107,7 +109,12 @@ pub enum LegendPos {
 }
 
 impl LegendPos {
-    pub const ALL: [LegendPos; 4] = [LegendPos::Right, LegendPos::Top, LegendPos::Left, LegendPos::Bottom];
+    pub const ALL: [LegendPos; 4] = [
+        LegendPos::Right,
+        LegendPos::Top,
+        LegendPos::Left,
+        LegendPos::Bottom,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -119,7 +126,9 @@ impl LegendPos {
     }
 
     pub fn from_id(id: &str) -> Option<LegendPos> {
-        LegendPos::ALL.into_iter().find(|p| p.id().eq_ignore_ascii_case(id.trim()))
+        LegendPos::ALL
+            .into_iter()
+            .find(|p| p.id().eq_ignore_ascii_case(id.trim()))
     }
 }
 
@@ -158,17 +167,36 @@ impl ChartSpec {
     /// (one for pie and doughnut charts, x values for scatter charts), legend at the bottom.
     pub fn sample(kind: ChartType) -> ChartSpec {
         let (categories, series): (Vec<&str>, Vec<(&str, [f64; 4])>) = match kind {
-            ChartType::Pie | ChartType::Doughnut => (vec!["North", "East", "South", "West"], vec![("Share", [38.0, 24.0, 21.0, 17.0])]),
-            ChartType::Scatter => (vec!["1", "2", "3", "4"], vec![("Series 1", [2.1, 3.4, 3.0, 4.6]), ("Series 2", [1.2, 1.9, 2.8, 3.1])]),
+            ChartType::Pie | ChartType::Doughnut => (
+                vec!["North", "East", "South", "West"],
+                vec![("Share", [38.0, 24.0, 21.0, 17.0])],
+            ),
+            ChartType::Scatter => (
+                vec!["1", "2", "3", "4"],
+                vec![
+                    ("Series 1", [2.1, 3.4, 3.0, 4.6]),
+                    ("Series 2", [1.2, 1.9, 2.8, 3.1]),
+                ],
+            ),
             _ => (
                 vec!["Q1", "Q2", "Q3", "Q4"],
-                vec![("Series 1", [3.2, 4.1, 3.6, 5.0]), ("Series 2", [2.0, 2.7, 3.9, 3.3]), ("Series 3", [1.5, 2.2, 2.4, 3.8])],
+                vec![
+                    ("Series 1", [3.2, 4.1, 3.6, 5.0]),
+                    ("Series 2", [2.0, 2.7, 3.9, 3.3]),
+                    ("Series 3", [1.5, 2.2, 2.4, 3.8]),
+                ],
             ),
         };
         ChartSpec {
             kind,
             categories: categories.into_iter().map(str::to_string).collect(),
-            series: series.into_iter().map(|(n, v)| ChartSeries { name: n.to_string(), values: v.into_iter().map(Some).collect() }).collect(),
+            series: series
+                .into_iter()
+                .map(|(n, v)| ChartSeries {
+                    name: n.to_string(),
+                    values: v.into_iter().map(Some).collect(),
+                })
+                .collect(),
             title: None,
             legend: Some(LegendPos::Bottom),
             data_labels: false,
@@ -187,9 +215,17 @@ impl ChartSpec {
     /// categories padded with empty labels to the longest series).
     pub fn sanitize(&mut self) {
         self.series.truncate(MAX_SERIES);
-        let longest = self.series.iter().map(|s| s.values.len()).max().unwrap_or(0);
+        let longest = self
+            .series
+            .iter()
+            .map(|s| s.values.len())
+            .max()
+            .unwrap_or(0);
         let n = self.categories.len().max(longest).min(MAX_POINTS);
-        let keep = MAX_CELLS.checked_div(n).unwrap_or(MAX_SERIES).clamp(1, MAX_SERIES);
+        let keep = MAX_CELLS
+            .checked_div(n)
+            .unwrap_or(MAX_SERIES)
+            .clamp(1, MAX_SERIES);
         self.series.truncate(keep);
         self.categories.truncate(n);
         for c in &mut self.categories {
@@ -204,7 +240,11 @@ impl ChartSpec {
             }
             s.values.resize(n, None);
         }
-        self.title = self.title.as_deref().map(clean_text).filter(|t| !t.is_empty());
+        self.title = self
+            .title
+            .as_deref()
+            .map(clean_text)
+            .filter(|t| !t.is_empty());
     }
 
     /// The chart after `sanitize`.
@@ -216,8 +256,17 @@ impl ChartSpec {
 
 /// `s` as chart text: control characters as spaces, ends trimmed, at most [`MAX_TEXT`] characters.
 pub fn clean_text(s: &str) -> String {
-    let s: String = s.chars().take(MAX_TEXT * 4).map(|c| if c.is_control() { ' ' } else { c }).collect();
-    s.trim().chars().take(MAX_TEXT).collect::<String>().trim_end().to_string()
+    let s: String = s
+        .chars()
+        .take(MAX_TEXT * 4)
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect();
+    s.trim()
+        .chars()
+        .take(MAX_TEXT)
+        .collect::<String>()
+        .trim_end()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -229,7 +278,10 @@ mod tests {
         let mut c = ChartSpec {
             categories: vec!["a".into(); MAX_POINTS + 10],
             series: (0..MAX_SERIES + 5)
-                .map(|i| ChartSeries { name: format!("{}\n{}", "x".repeat(400), i), values: vec![Some(f64::NAN), Some(f64::INFINITY), Some(1.0)] })
+                .map(|i| ChartSeries {
+                    name: format!("{}\n{}", "x".repeat(400), i),
+                    values: vec![Some(f64::NAN), Some(f64::INFINITY), Some(1.0)],
+                })
                 .collect(),
             title: Some("  ".into()),
             ..Default::default()
@@ -250,12 +302,18 @@ mod tests {
     fn short_categories_are_padded_to_the_longest_series() {
         let c = ChartSpec {
             categories: vec!["a".into()],
-            series: vec![ChartSeries { name: "s".into(), values: vec![Some(1.0), Some(2.0)] }],
+            series: vec![ChartSeries {
+                name: "s".into(),
+                values: vec![Some(1.0), Some(2.0)],
+            }],
             ..Default::default()
         }
         .sanitized();
         assert_eq!(c.categories, vec!["a".to_string(), String::new()]);
-        assert_eq!(ChartType::from_id("BARSTACKED"), Some(ChartType::BarStacked));
+        assert_eq!(
+            ChartType::from_id("BARSTACKED"),
+            Some(ChartType::BarStacked)
+        );
         assert_eq!(LegendPos::from_id("top"), Some(LegendPos::Top));
     }
 }

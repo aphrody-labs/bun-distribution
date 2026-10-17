@@ -11,7 +11,10 @@ pub fn quantize_i8(v: &[f32]) -> (Vec<i8>, f32) {
     }
     let scale = max / 127.0;
     let inv = 1.0 / scale;
-    let q = v.iter().map(|x| (x * inv).round().clamp(-127.0, 127.0) as i8).collect();
+    let q = v
+        .iter()
+        .map(|x| (x * inv).round().clamp(-127.0, 127.0) as i8)
+        .collect();
     (q, scale)
 }
 

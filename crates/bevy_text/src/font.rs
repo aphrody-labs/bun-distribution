@@ -10,9 +10,9 @@ use bevy_ecs::system::Query;
 use bevy_ecs::system::ResMut;
 use bevy_platform::collections::HashSet;
 use bevy_reflect::TypePath;
+use parley::FontFamilyName;
 use parley::fontique::Blob;
 use parley::fontique::FontInfoOverride;
-use parley::FontFamilyName;
 
 /// An [`Asset`] that contains the data for a loaded font, if loaded as an asset.
 ///
@@ -173,16 +173,20 @@ mod tests {
             .alias
             .clone();
         assert_eq!(font_alias, format!("asset_id:{:?}", font_handle.id()));
-        assert!(world
-            .resource_mut::<FontCx>()
-            .collection
-            .family_id("Fira Mono")
-            .is_some());
-        assert!(world
-            .resource_mut::<FontCx>()
-            .collection
-            .family_id(&font_alias)
-            .is_some());
+        assert!(
+            world
+                .resource_mut::<FontCx>()
+                .collection
+                .family_id("Fira Mono")
+                .is_some()
+        );
+        assert!(
+            world
+                .resource_mut::<FontCx>()
+                .collection
+                .family_id(&font_alias)
+                .is_some()
+        );
 
         world
             .resource_mut::<Assets<Font>>()
@@ -191,11 +195,13 @@ mod tests {
         app.update();
         let world = app.world_mut();
 
-        assert!(world
-            .resource_mut::<FontCx>()
-            .collection
-            .family_id(&font_alias)
-            .is_none());
+        assert!(
+            world
+                .resource_mut::<FontCx>()
+                .collection
+                .family_id(&font_alias)
+                .is_none()
+        );
     }
 
     #[test]

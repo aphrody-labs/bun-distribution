@@ -46,7 +46,13 @@ pub struct PenSample {
 
 impl Default for PenSample {
     fn default() -> Self {
-        Self { pressure: 1.0, tilt_x: 0.0, tilt_y: 0.0, rotation: 0.0, eraser: false }
+        Self {
+            pressure: 1.0,
+            tilt_x: 0.0,
+            tilt_y: 0.0,
+            rotation: 0.0,
+            eraser: false,
+        }
     }
 }
 
@@ -59,7 +65,11 @@ impl PenSample {
             tilt_x: f(self.tilt_x, -90.0, 90.0, 0.0),
             tilt_y: f(self.tilt_y, -90.0, 90.0, 0.0),
             // `rem_euclid` rounds tiny negative angles up to exactly 360.
-            rotation: if self.rotation.is_finite() { self.rotation.rem_euclid(360.0) % 360.0 } else { 0.0 },
+            rotation: if self.rotation.is_finite() {
+                self.rotation.rem_euclid(360.0) % 360.0
+            } else {
+                0.0
+            },
             eraser: self.eraser,
         }
     }
@@ -102,7 +112,12 @@ impl StylusFeed {
 
     /// The samples set since the last drain, oldest first.
     pub fn drain(&self) -> Vec<PenSample> {
-        self.0.lock().unwrap_or_else(PoisonError::into_inner).queue.drain(..).collect()
+        self.0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .queue
+            .drain(..)
+            .collect()
     }
 }
 
@@ -198,7 +213,10 @@ impl Stylus {
         self.frame = self.feed.drain();
         self.current = None;
         for e in events {
-            if let egui::Event::Touch { id, phase, force, .. } = e {
+            if let egui::Event::Touch {
+                id, phase, force, ..
+            } = e
+            {
                 let force = force.filter(|f| f.is_finite()).map(|f| f.clamp(0.0, 1.0));
                 match phase {
                     egui::TouchPhase::Start | egui::TouchPhase::Move => {
@@ -224,10 +242,15 @@ impl Stylus {
                         // no force at all (winit maps pressure 0 to `None`): a light tap is
                         // pressure 0, never a mouse click's full pressure. A finger on a screen
                         // without force sensing stays at full pressure.
-                        let force = force.or((down && self.touch_pen && (start || self.touch.is_none())).then_some(0.0));
+                        let force = force
+                            .or((down && self.touch_pen && (start || self.touch.is_none()))
+                                .then_some(0.0));
                         if let Some(f) = force {
                             self.touch = Some(f);
-                            self.frame.push(PenSample { pressure: f, ..Default::default() });
+                            self.frame.push(PenSample {
+                                pressure: f,
+                                ..Default::default()
+                            });
                         }
                     }
                     egui::TouchPhase::End | egui::TouchPhase::Cancel => {
@@ -264,10 +287,19 @@ impl Stylus {
         if !self.use_pressure {
             return None;
         }
-        let s = self.current.or_else(|| self.latest()).or(self.touch.map(|pressure| PenSample { pressure, ..Default::default() }))?;
+        let s = self
+            .current
+            .or_else(|| self.latest())
+            .or(self.touch.map(|pressure| PenSample {
+                pressure,
+                ..Default::default()
+            }))?;
         // The pen's pressure through Preferences › Tools › Pressure Curve, before any brush sees it.
         Some(match &self.pressure_curve {
-            Some(c) => PenSample { pressure: c.eval(s.pressure), ..s },
+            Some(c) => PenSample {
+                pressure: c.eval(s.pressure),
+                ..s
+            },
             None => s,
         })
     }
@@ -291,8 +323,17 @@ impl Stylus {
             return;
         }
         let m = self.frame.len();
-        let start = self.prev.or(self.frame.first().copied()).unwrap_or_default();
-        let at = |i: usize| if i == 0 { start } else { self.frame.get(i - 1).copied().unwrap_or(start) };
+        let start = self
+            .prev
+            .or(self.frame.first().copied())
+            .unwrap_or_default();
+        let at = |i: usize| {
+            if i == 0 {
+                start
+            } else {
+                self.frame.get(i - 1).copied().unwrap_or(start)
+            }
+        };
         let pos = (k + 1).min(n) as f32 / n as f32 * m as f32;
         let i = pos.floor() as usize;
         let (a, b, t) = (at(i), at((i + 1).min(m)), pos - pos.floor());
@@ -363,7 +404,11 @@ impl Stylus {
             Some(c) => c.eval(self.peak),
             None => self.peak,
         };
-        if self.peak > 0.0 { peak.max(s.pressure) } else { s.pressure }
+        if self.peak > 0.0 {
+            peak.max(s.pressure)
+        } else {
+            s.pressure
+        }
     }
 
     /// Start recording a drag's tilt/rotation.
@@ -391,7 +436,11 @@ impl Stylus {
 
     /// Time of drag point `i` (the last known time past the end).
     pub(crate) fn point_ms(&self, i: usize) -> f64 {
-        self.times.get(i).or(self.times.last()).copied().unwrap_or(0.0)
+        self.times
+            .get(i)
+            .or(self.times.last())
+            .copied()
+            .unwrap_or(0.0)
     }
 
     /// Stroke points for `paint.stroke`: `[x, y, pressure]`, extended with
@@ -407,7 +456,12 @@ impl Stylus {
             .map(|(i, p)| {
                 let mut v = vec![p[0], p[1], p[2]];
                 if has_pose || has_time {
-                    let t = self.stroke.get(i).or(self.stroke.last()).copied().unwrap_or_default();
+                    let t = self
+                        .stroke
+                        .get(i)
+                        .or(self.stroke.last())
+                        .copied()
+                        .unwrap_or_default();
                     v.extend(t.map(f64::from));
                 }
                 if has_time {
@@ -440,7 +494,12 @@ impl PenContacts {
         let pressed = |f: &Option<f32>| f.is_some_and(|f| f > 0.0);
         let mut pen = self.down.iter().any(|(_, p)| *p);
         for e in events {
-            let egui::Event::Touch { id, phase, force, .. } = e else { continue };
+            let egui::Event::Touch {
+                id, phase, force, ..
+            } = e
+            else {
+                continue;
+            };
             match phase {
                 egui::TouchPhase::Start => {
                     let is_pen = self.hovering.contains(id) || pressed(force);
@@ -465,7 +524,9 @@ impl PenContacts {
                     }
                     None => {}
                 },
-                egui::TouchPhase::End | egui::TouchPhase::Cancel => self.down.retain(|(c, _)| c != id),
+                egui::TouchPhase::End | egui::TouchPhase::Cancel => {
+                    self.down.retain(|(c, _)| c != id)
+                }
             }
         }
         pen
@@ -475,7 +536,11 @@ impl PenContacts {
 /// Turn egui's touch press-and-hold off while a pen contact is down (and through the frame it
 /// lifts in, so the release is the click a quick tap would be), back on otherwise for fingers.
 pub(crate) fn pen_hold_is_no_right_click(ctx: &egui::Context, pen_down: bool) {
-    let want = if pen_down { f64::INFINITY } else { egui::InputOptions::default().max_click_duration };
+    let want = if pen_down {
+        f64::INFINITY
+    } else {
+        egui::InputOptions::default().max_click_duration
+    };
     if ctx.options(|o| o.input_options.max_click_duration) != want {
         ctx.options_mut(|o| o.input_options.max_click_duration = want);
     }
@@ -491,11 +556,23 @@ mod tests {
         let ctx = egui::Context::default();
         let mut contacts = PenContacts::default();
         let mut right_clicked = false;
-        let ev = |phase, force| egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(3), phase, pos: egui::pos2(50.0, 50.0), force };
+        let ev = |phase, force| egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(3),
+            phase,
+            pos: egui::pos2(50.0, 50.0),
+            force,
+        };
         // A first frame lays the area out, so the press hits it.
         let mut frames = vec![(0.0, vec![])];
         if hover_first {
-            frames.push((0.05, vec![ev(egui::TouchPhase::Move, None), egui::Event::PointerMoved(egui::pos2(50.0, 50.0))]));
+            frames.push((
+                0.05,
+                vec![
+                    ev(egui::TouchPhase::Move, None),
+                    egui::Event::PointerMoved(egui::pos2(50.0, 50.0)),
+                ],
+            ));
         }
         frames.push((
             0.1,
@@ -517,14 +594,20 @@ mod tests {
             // egui-winit emits the touch and its emulated pointer events together.
             let mut raw = egui::RawInput {
                 time: Some(time),
-                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(200.0, 200.0))),
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(200.0, 200.0),
+                )),
                 ..Default::default()
             };
             raw.events.append(&mut events);
             let pen = contacts.observe(&raw.events);
             pen_hold_is_no_right_click(&ctx, pen);
             let mut out = ctx.run_ui(raw, |ui| {
-                let r = ui.allocate_rect(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(200.0, 200.0)), egui::Sense::click_and_drag());
+                let r = ui.allocate_rect(
+                    egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(200.0, 200.0)),
+                    egui::Sense::click_and_drag(),
+                );
                 right_clicked |= r.secondary_clicked();
             });
             out.textures_delta.clear();
@@ -534,15 +617,30 @@ mod tests {
 
     #[test]
     fn a_held_pen_is_not_a_right_click_but_a_held_finger_still_is() {
-        assert!(held_contact_right_clicks(false, None), "a finger's press-and-hold is egui's context menu");
-        assert!(!held_contact_right_clicks(true, None), "a pen that hovered first");
-        assert!(!held_contact_right_clicks(false, Some(0.4)), "a contact that reports pressure");
+        assert!(
+            held_contact_right_clicks(false, None),
+            "a finger's press-and-hold is egui's context menu"
+        );
+        assert!(
+            !held_contact_right_clicks(true, None),
+            "a pen that hovered first"
+        );
+        assert!(
+            !held_contact_right_clicks(false, Some(0.4)),
+            "a contact that reports pressure"
+        );
     }
 
     #[test]
     fn pen_contacts_follow_hover_force_and_lift() {
         use egui::TouchPhase::{Cancel, End, Move, Start};
-        let t = |id, phase, force| egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(id), phase, pos: egui::pos2(1.0, 1.0), force };
+        let t = |id, phase, force| egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(id),
+            phase,
+            pos: egui::pos2(1.0, 1.0),
+            force,
+        };
         let mut c = PenContacts::default();
         assert!(!c.observe(&[t(1, Move, None)]), "hovering is no contact");
         assert!(c.observe(&[t(1, Start, None)]));
@@ -557,11 +655,20 @@ mod tests {
     }
 
     fn touch(phase: egui::TouchPhase, force: Option<f32>) -> egui::Event {
-        egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(0), phase, pos: egui::pos2(1.0, 1.0), force }
+        egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(0),
+            phase,
+            pos: egui::pos2(1.0, 1.0),
+            force,
+        }
     }
 
     fn pen(pressure: f32) -> PenSample {
-        PenSample { pressure, ..Default::default() }
+        PenSample {
+            pressure,
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -571,7 +678,10 @@ mod tests {
             feed.set(Some(pen(p)));
         }
         assert_eq!(feed.get().map(|s| s.pressure), Some(0.3));
-        assert_eq!(feed.drain().iter().map(|s| s.pressure).collect::<Vec<_>>(), vec![0.1, 0.2, 0.3]);
+        assert_eq!(
+            feed.drain().iter().map(|s| s.pressure).collect::<Vec<_>>(),
+            vec![0.1, 0.2, 0.3]
+        );
         assert!(feed.drain().is_empty(), "drained once");
         feed.set(None);
         assert_eq!(feed.get(), None, "a lifted pen is not queued");
@@ -601,7 +711,10 @@ mod tests {
             })
             .collect();
         let want = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
-        assert!(got.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-6), "{got:?}");
+        assert!(
+            got.iter().zip(want).all(|(g, w)| (g - w).abs() < 1e-6),
+            "{got:?}"
+        );
         s.clear_selection();
         assert_eq!(s.pressure(), 0.8, "back to the current sample");
     }
@@ -662,13 +775,22 @@ mod tests {
     #[test]
     fn rotation_between_samples_takes_the_short_way_round() {
         let mut s = Stylus::default();
-        s.feed.set(Some(PenSample { rotation: 350.0, ..pen(1.0) }));
+        s.feed.set(Some(PenSample {
+            rotation: 350.0,
+            ..pen(1.0)
+        }));
         s.update(&[]);
-        s.feed.set(Some(PenSample { rotation: 10.0, ..pen(1.0) }));
+        s.feed.set(Some(PenSample {
+            rotation: 10.0,
+            ..pen(1.0)
+        }));
         s.update(&[]);
         s.select(0, 2);
         let r = s.sample().map_or(-1.0, |p| p.rotation);
-        assert!(r.abs() < 1e-3 || (r - 360.0).abs() < 1e-3, "halfway from 350° to 10° is 0°, got {r}");
+        assert!(
+            r.abs() < 1e-3 || (r - 360.0).abs() < 1e-3,
+            "halfway from 350° to 10° is 0°, got {r}"
+        );
     }
 
     #[test]
@@ -684,7 +806,10 @@ mod tests {
         let mut s = Stylus::default();
         s.update(&[touch(egui::TouchPhase::Start, Some(0.25))]);
         assert_eq!(s.pressure(), 0.25);
-        s.update(&[touch(egui::TouchPhase::Move, Some(0.8)), touch(egui::TouchPhase::Move, Some(1.7))]);
+        s.update(&[
+            touch(egui::TouchPhase::Move, Some(0.8)),
+            touch(egui::TouchPhase::Move, Some(1.7)),
+        ]);
         assert_eq!(s.pressure(), 1.0, "clamped");
         s.update(&[touch(egui::TouchPhase::Move, Some(f32::NAN))]);
         assert_eq!(s.pressure(), 1.0);
@@ -698,7 +823,13 @@ mod tests {
     }
 
     fn touch_id(id: u64, phase: egui::TouchPhase, force: Option<f32>) -> egui::Event {
-        egui::Event::Touch { device_id: egui::TouchDeviceId(1), id: egui::TouchId(id), phase, pos: egui::pos2(1.0, 1.0), force }
+        egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(id),
+            phase,
+            pos: egui::pos2(1.0, 1.0),
+            force,
+        }
     }
 
     #[test]
@@ -744,7 +875,11 @@ mod tests {
     fn a_new_tap_in_the_frame_an_old_one_lifted_keeps_its_force() {
         use egui::TouchPhase::{End, Start};
         let mut s = Stylus::default();
-        s.update(&[touch_id(1, Start, Some(0.6)), touch_id(1, End, None), touch_id(2, Start, Some(0.2))]);
+        s.update(&[
+            touch_id(1, Start, Some(0.6)),
+            touch_id(1, End, None),
+            touch_id(2, Start, Some(0.2)),
+        ]);
         assert_eq!(s.pressure(), 0.2);
         s.update(&[]);
         assert_eq!(s.pressure(), 0.2, "the second contact is still down");
@@ -754,8 +889,23 @@ mod tests {
     fn feed_wins_and_is_sanitized() {
         let mut s = Stylus::default();
         s.update(&[touch(egui::TouchPhase::Start, Some(0.3))]);
-        s.feed.set(Some(PenSample { pressure: 0.6, tilt_x: 120.0, tilt_y: -30.0, rotation: -90.0, eraser: false }));
-        assert_eq!(s.sample(), Some(PenSample { pressure: 0.6, tilt_x: 90.0, tilt_y: -30.0, rotation: 270.0, eraser: false }));
+        s.feed.set(Some(PenSample {
+            pressure: 0.6,
+            tilt_x: 120.0,
+            tilt_y: -30.0,
+            rotation: -90.0,
+            eraser: false,
+        }));
+        assert_eq!(
+            s.sample(),
+            Some(PenSample {
+                pressure: 0.6,
+                tilt_x: 90.0,
+                tilt_y: -30.0,
+                rotation: 270.0,
+                eraser: false
+            })
+        );
         s.feed.set(None);
         assert_eq!(s.pressure(), 0.3);
     }
@@ -764,28 +914,87 @@ mod tests {
     fn pen_samples_reach_the_brush_stroke() {
         use crate::canvas::{ToolEvent, tool_event};
         use serde_json::json;
-        let mut app = crate::PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", json!({"width": 120, "height": 80})).unwrap();
+        let mut app =
+            crate::PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        app.session
+            .execute("file.new", json!({"width": 120, "height": 80}))
+            .unwrap();
         app.session.execute("layer.new.layer", json!({})).unwrap();
         app.ui.tool = crate::state::Tool::Brush;
         let m = egui::Modifiers::NONE;
-        app.stylus.feed.set(Some(PenSample { pressure: 0.2, tilt_x: 40.0, tilt_y: 0.0, rotation: 30.0, eraser: false }));
+        app.stylus.feed.set(Some(PenSample {
+            pressure: 0.2,
+            tilt_x: 40.0,
+            tilt_y: 0.0,
+            rotation: 30.0,
+            eraser: false,
+        }));
         let pr = app.stylus.pressure();
-        tool_event(&mut app, ToolEvent::Down { x: 10.0, y: 40.0, pressure: pr }, m);
-        app.stylus.feed.set(Some(PenSample { pressure: 0.9, tilt_x: 10.0, tilt_y: -5.0, rotation: 60.0, eraser: false }));
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 10.0,
+                y: 40.0,
+                pressure: pr,
+            },
+            m,
+        );
+        app.stylus.feed.set(Some(PenSample {
+            pressure: 0.9,
+            tilt_x: 10.0,
+            tilt_y: -5.0,
+            rotation: 60.0,
+            eraser: false,
+        }));
         let pr = app.stylus.pressure();
-        tool_event(&mut app, ToolEvent::Move { x: 100.0, y: 40.0, pressure: pr }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 100.0,
+                y: 40.0,
+                pressure: pr,
+            },
+            m,
+        );
         tool_event(&mut app, ToolEvent::Up { x: 100.0, y: 40.0 }, m);
-        let (id, p) = app.session.journal.iter().rev().find(|(id, _)| id == "paint.stroke").cloned().unwrap();
+        let (id, p) = app
+            .session
+            .journal
+            .iter()
+            .rev()
+            .find(|(id, _)| id == "paint.stroke")
+            .cloned()
+            .unwrap();
         assert_eq!(id, "paint.stroke");
-        assert_eq!(p["points"][0], json!([10.0, 40.0, 0.2f32 as f64, 40.0, 0.0, 30.0]));
-        assert_eq!(p["points"][1], json!([100.0, 40.0, 0.9f32 as f64, 10.0, -5.0, 60.0]));
+        assert_eq!(
+            p["points"][0],
+            json!([10.0, 40.0, 0.2f32 as f64, 40.0, 0.0, 30.0])
+        );
+        assert_eq!(
+            p["points"][1],
+            json!([100.0, 40.0, 0.9f32 as f64, 10.0, -5.0, 60.0])
+        );
         // A mouse stroke stays at full pressure with plain [x, y, p] points.
         app.stylus.feed.set(None);
         let pr = app.stylus.pressure();
-        tool_event(&mut app, ToolEvent::Down { x: 10.0, y: 60.0, pressure: pr }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 10.0,
+                y: 60.0,
+                pressure: pr,
+            },
+            m,
+        );
         tool_event(&mut app, ToolEvent::Up { x: 90.0, y: 60.0 }, m);
-        let (_, p) = app.session.journal.iter().rev().find(|(id, _)| id == "paint.stroke").cloned().unwrap();
+        let (_, p) = app
+            .session
+            .journal
+            .iter()
+            .rev()
+            .find(|(id, _)| id == "paint.stroke")
+            .cloned()
+            .unwrap();
         assert_eq!(p["points"][0], json!([10.0, 60.0, 1.0]));
     }
 
@@ -796,7 +1005,13 @@ mod tests {
         s.begin_stroke();
         s.record_point();
         assert_eq!(s.stroke_points(&pts)[1], vec![10.0, 0.0, 0.7]);
-        s.feed.set(Some(PenSample { pressure: 0.7, tilt_x: 30.0, tilt_y: 10.0, rotation: 45.0, eraser: false }));
+        s.feed.set(Some(PenSample {
+            pressure: 0.7,
+            tilt_x: 30.0,
+            tilt_y: 10.0,
+            rotation: 45.0,
+            eraser: false,
+        }));
         s.record_point();
         let out = s.stroke_points(&pts);
         assert_eq!(out[0], vec![0.0, 0.0, 0.5, 0.0, 0.0, 0.0]);
@@ -805,22 +1020,42 @@ mod tests {
 
     #[test]
     fn use_pressure_off_ignores_pen_and_touch() {
-        let mut s = Stylus { use_pressure: false, ..Default::default() };
+        let mut s = Stylus {
+            use_pressure: false,
+            ..Default::default()
+        };
         s.update(&[touch(egui::TouchPhase::Start, Some(0.3))]);
-        s.feed.set(Some(PenSample { pressure: 0.2, tilt_x: 40.0, ..Default::default() }));
+        s.feed.set(Some(PenSample {
+            pressure: 0.2,
+            tilt_x: 40.0,
+            ..Default::default()
+        }));
         assert_eq!((s.sample(), s.pressure()), (None, 1.0));
         s.begin_stroke();
-        assert_eq!(s.stroke_points(&[[1.0, 2.0, 1.0]]), vec![vec![1.0, 2.0, 1.0]], "no tilt either");
+        assert_eq!(
+            s.stroke_points(&[[1.0, 2.0, 1.0]]),
+            vec![vec![1.0, 2.0, 1.0]],
+            "no tilt either"
+        );
     }
 
     #[test]
     fn eraser_end_switches_tools_once_and_never_mid_drag() {
         use crate::canvas::{ToolEvent, tool_event};
         use crate::state::Tool;
-        let mut app = crate::PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", serde_json::json!({"width": 60, "height": 60})).unwrap();
+        let mut app =
+            crate::PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        app.session
+            .execute("file.new", serde_json::json!({"width": 60, "height": 60}))
+            .unwrap();
         app.ui.tool = Tool::Brush;
-        let pen = |eraser| Some(PenSample { pressure: 0.5, eraser, ..Default::default() });
+        let pen = |eraser| {
+            Some(PenSample {
+                pressure: 0.5,
+                eraser,
+                ..Default::default()
+            })
+        };
         // A mouse never switches.
         assert!(!Stylus::sync_eraser_tool(&mut app));
         app.stylus.feed.set(pen(true));
@@ -828,13 +1063,29 @@ mod tests {
         assert_eq!(app.ui.tool, Tool::Eraser);
         assert!(!Stylus::sync_eraser_tool(&mut app), "reported once");
         // Flipping back during a drag waits for the drag to end.
-        tool_event(&mut app, ToolEvent::Down { x: 10.0, y: 10.0, pressure: 0.5 }, egui::Modifiers::NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 10.0,
+                y: 10.0,
+                pressure: 0.5,
+            },
+            egui::Modifiers::NONE,
+        );
         app.stylus.feed.set(pen(false));
         assert!(!Stylus::sync_eraser_tool(&mut app));
         assert_eq!(app.ui.tool, Tool::Eraser);
-        tool_event(&mut app, ToolEvent::Up { x: 20.0, y: 10.0 }, egui::Modifiers::NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Up { x: 20.0, y: 10.0 },
+            egui::Modifiers::NONE,
+        );
         assert!(Stylus::sync_eraser_tool(&mut app));
-        assert_eq!(app.ui.tool, Tool::Brush, "the tip restores the previous tool");
+        assert_eq!(
+            app.ui.tool,
+            Tool::Brush,
+            "the tip restores the previous tool"
+        );
         // The eraser end while the Eraser is already chosen remembers nothing to restore.
         app.ui.tool = Tool::Eraser;
         app.stylus.feed.set(pen(true));

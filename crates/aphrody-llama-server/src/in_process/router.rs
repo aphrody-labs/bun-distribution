@@ -28,7 +28,12 @@ use aphrody_toolcall_repair::{extract_any, strip_tool_calls};
 const THINK_OPEN: &str = "<think>";
 const THINK_CLOSE: &str = "</think>";
 /// Markers after which the rest of the output is held back as a tool call.
-const TOOL_MARKERS: [&str; 4] = ["<tool_call>", "[TOOL_CALLS]", "<|python_tag|>", "<function="];
+const TOOL_MARKERS: [&str; 4] = [
+    "<tool_call>",
+    "[TOOL_CALLS]",
+    "<|python_tag|>",
+    "<function=",
+];
 
 /// Why generation ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,7 +103,11 @@ impl Router {
     pub(crate) fn new(config: RouterConfig) -> Self {
         Self {
             tools: config.tools,
-            stops: config.stops.into_iter().filter(|stop| !stop.is_empty()).collect(),
+            stops: config
+                .stops
+                .into_iter()
+                .filter(|stop| !stop.is_empty())
+                .collect(),
             pending: String::new(),
             in_think: config.think_open,
             holding_tools: false,
@@ -168,7 +177,11 @@ impl Router {
         }
 
         let total = prompt_tokens.saturating_add(completion_tokens);
-        let reason = if called { "tool_calls" } else { finish.as_reason() };
+        let reason = if called {
+            "tool_calls"
+        } else {
+            finish.as_reason()
+        };
         events.push(ModelStreamEvent::Completed {
             usage: Some(TokenUsage::new(
                 u64::try_from(prompt_tokens).unwrap_or(u64::MAX),
@@ -188,7 +201,11 @@ impl Router {
             events.push(ModelStreamEvent::ReasoningDelta(text.to_owned()));
             return;
         }
-        let text = if self.seen_content { text } else { text.trim_start() };
+        let text = if self.seen_content {
+            text
+        } else {
+            text.trim_start()
+        };
         if text.is_empty() {
             return;
         }
@@ -198,9 +215,15 @@ impl Router {
 
     fn next_marker(&self) -> Option<(usize, Marker)> {
         if self.in_think {
-            return self.pending.find(THINK_CLOSE).map(|at| (at, Marker::ThinkClose));
+            return self
+                .pending
+                .find(THINK_CLOSE)
+                .map(|at| (at, Marker::ThinkClose));
         }
-        let mut best = self.pending.find(THINK_OPEN).map(|at| (at, Marker::ThinkOpen));
+        let mut best = self
+            .pending
+            .find(THINK_OPEN)
+            .map(|at| (at, Marker::ThinkOpen));
         if !self.tools.is_empty() {
             for marker in TOOL_MARKERS {
                 if let Some(at) = self.pending.find(marker)
@@ -245,8 +268,11 @@ impl Router {
                 return;
             }
 
-            let stop_at =
-                self.stops.iter().filter_map(|stop| self.pending.find(stop.as_str())).min();
+            let stop_at = self
+                .stops
+                .iter()
+                .filter_map(|stop| self.pending.find(stop.as_str()))
+                .min();
             let marker = self.next_marker();
 
             // A stop string wins when it comes first.
@@ -267,16 +293,16 @@ impl Router {
                     Marker::ThinkOpen => {
                         self.pending.replace_range(..at + THINK_OPEN.len(), "");
                         self.in_think = true;
-                    },
+                    }
                     Marker::ThinkClose => {
                         self.pending.replace_range(..at + THINK_CLOSE.len(), "");
                         self.in_think = false;
-                    },
+                    }
                     Marker::Tool => {
                         // Keep the marker: the extractor needs it.
                         self.pending.replace_range(..at, "");
                         self.holding_tools = true;
-                    },
+                    }
                 }
                 continue;
             }
@@ -288,10 +314,10 @@ impl Router {
                     Some(true) => {
                         self.holding_tools = true;
                         continue;
-                    },
+                    }
                     // Too short to tell: the next character decides.
                     None if !flush => return,
-                    _ => {},
+                    _ => {}
                 }
             }
 
@@ -318,7 +344,12 @@ fn starts_like_json_call(text: &str) -> Option<bool> {
     let mut chars = text.chars();
     match chars.next() {
         Some('{') => Some(true),
-        Some('[') => chars.as_str().trim_start().chars().next().map(|next| next == '{'),
+        Some('[') => chars
+            .as_str()
+            .trim_start()
+            .chars()
+            .next()
+            .map(|next| next == '{'),
         Some(_) => Some(false),
         None => None,
     }
@@ -375,9 +406,9 @@ mod tests {
         events
             .iter()
             .filter_map(|event| match event {
-                ModelStreamEvent::ToolCall { name, arguments, .. } => {
-                    Some((name.clone(), arguments.clone()))
-                },
+                ModelStreamEvent::ToolCall {
+                    name, arguments, ..
+                } => Some((name.clone(), arguments.clone())),
                 _ => None,
             })
             .collect()
@@ -399,13 +430,23 @@ mod tests {
 
     #[test]
     fn plain_text_streams_through_and_completes_with_usage() {
-        let events = run(RouterConfig::default(), &["Hel", "lo ", "world"], Finish::Stop);
+        let events = run(
+            RouterConfig::default(),
+            &["Hel", "lo ", "world"],
+            Finish::Stop,
+        );
         assert_eq!(text_of(&events), "Hello world");
-        let Some(ModelStreamEvent::Completed { usage: Some(usage), finish_reason }) = events.last()
+        let Some(ModelStreamEvent::Completed {
+            usage: Some(usage),
+            finish_reason,
+        }) = events.last()
         else {
             panic!("no completion: {events:?}");
         };
-        assert_eq!((usage.input_tokens, usage.output_tokens, usage.total_tokens), (10, 5, 15));
+        assert_eq!(
+            (usage.input_tokens, usage.output_tokens, usage.total_tokens),
+            (10, 5, 15)
+        );
         assert_eq!(finish_reason.as_deref(), Some("stop"));
     }
 
@@ -413,16 +454,29 @@ mod tests {
     fn reasoning_is_split_even_when_the_tags_straddle_tokens() {
         let events = run(
             RouterConfig::default(),
-            &["<th", "ink>plan the ", "answer</thi", "nk>\n\nFinal ", "answer"],
+            &[
+                "<th",
+                "ink>plan the ",
+                "answer</thi",
+                "nk>\n\nFinal ",
+                "answer",
+            ],
             Finish::Stop,
         );
         assert_eq!(reasoning_of(&events), "plan the answer");
-        assert_eq!(text_of(&events), "Final answer", "whitespace after </think> is dropped");
+        assert_eq!(
+            text_of(&events),
+            "Final answer",
+            "whitespace after </think> is dropped"
+        );
     }
 
     #[test]
     fn a_prompt_that_already_opened_the_think_block_starts_in_reasoning() {
-        let config = RouterConfig { think_open: true, ..Default::default() };
+        let config = RouterConfig {
+            think_open: true,
+            ..Default::default()
+        };
         let events = run(config, &["thinking...</think>done"], Finish::Stop);
         assert_eq!(reasoning_of(&events), "thinking...");
         assert_eq!(text_of(&events), "done");
@@ -436,7 +490,10 @@ mod tests {
 
     #[test]
     fn stop_strings_cut_the_output_and_hold_back_a_possible_prefix() {
-        let config = RouterConfig { stops: vec!["END".to_owned()], ..Default::default() };
+        let config = RouterConfig {
+            stops: vec!["END".to_owned()],
+            ..Default::default()
+        };
         let mut router = Router::new(config);
         let mut events = router.push("keep E");
         // `E` could start `END`: it must not have been streamed yet.
@@ -449,7 +506,10 @@ mod tests {
 
     #[test]
     fn a_held_prefix_that_is_not_the_stop_string_is_released() {
-        let config = RouterConfig { stops: vec!["END".to_owned()], ..Default::default() };
+        let config = RouterConfig {
+            stops: vec!["END".to_owned()],
+            ..Default::default()
+        };
         let events = run(config, &["a E", "x"], Finish::Stop);
         assert_eq!(text_of(&events), "a Ex");
     }
@@ -465,7 +525,10 @@ mod tests {
             Finish::Stop,
         );
         assert_eq!(text_of(&events).trim_end(), "Let me look.");
-        assert_eq!(calls_of(&events), vec![("read_file".to_owned(), json!({"path": "a.rs"}))]);
+        assert_eq!(
+            calls_of(&events),
+            vec![("read_file".to_owned(), json!({"path": "a.rs"}))]
+        );
         assert_eq!(finish_reason_of(&events).as_deref(), Some("tool_calls"));
     }
 
@@ -481,19 +544,30 @@ mod tests {
     fn bare_json_is_a_call_only_when_it_names_a_declared_tool() {
         let call = r#"{"name":"search","arguments":{"q":"x"}}"#;
         let events = run(tools(&["search"]), &[call], Finish::Stop);
-        assert_eq!(calls_of(&events), vec![("search".to_owned(), json!({"q": "x"}))]);
+        assert_eq!(
+            calls_of(&events),
+            vec![("search".to_owned(), json!({"q": "x"}))]
+        );
 
         let answer = r#"{"name":"Ada","age":36}"#;
         let events = run(tools(&["search"]), &[answer], Finish::Stop);
         assert!(calls_of(&events).is_empty());
-        assert_eq!(text_of(&events), answer, "a JSON answer is still delivered, just not streamed");
+        assert_eq!(
+            text_of(&events),
+            answer,
+            "a JSON answer is still delivered, just not streamed"
+        );
     }
 
     #[test]
     fn a_bracketed_answer_that_is_not_an_array_of_objects_still_streams() {
         let mut router = Router::new(tools(&["search"]));
         let events = router.push("[1] first point");
-        assert_eq!(text_of(&events), "[1] first point", "no JSON-call hold-back for `[1]`");
+        assert_eq!(
+            text_of(&events),
+            "[1] first point",
+            "no JSON-call hold-back for `[1]`"
+        );
     }
 
     #[test]
@@ -520,7 +594,11 @@ mod tests {
     #[test]
     fn partial_suffix_matches_only_proper_prefixes() {
         assert_eq!(partial_suffix("abc<th", THINK_OPEN), 3);
-        assert_eq!(partial_suffix("abc<think>", THINK_OPEN), 0, "a full match is not partial");
+        assert_eq!(
+            partial_suffix("abc<think>", THINK_OPEN),
+            0,
+            "a full match is not partial"
+        );
         assert_eq!(partial_suffix("abc", THINK_OPEN), 0);
         // Multi-byte candidates are only cut on character boundaries.
         assert_eq!(partial_suffix("x終", "終了"), "終".len());

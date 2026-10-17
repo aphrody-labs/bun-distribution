@@ -31,7 +31,8 @@ impl Default for PatternLibrary {
 }
 
 fn hash01(x: u32, y: u32, seed: u32) -> f32 {
-    let mut h = x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841) ^ seed.wrapping_mul(0xcb1a_b31f);
+    let mut h =
+        x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841) ^ seed.wrapping_mul(0xcb1a_b31f);
     h ^= h >> 13;
     h = h.wrapping_mul(0x5bd1_e995);
     h ^= h >> 15;
@@ -56,23 +57,37 @@ fn procedural(name: &str, w: u32, h: u32, f: impl Fn(u32, u32) -> [f32; 3]) -> P
 pub fn builtin() -> Vec<Pattern> {
     let g = |v: f32| [v, v, v];
     vec![
-        procedural("Checkerboard", 16, 16, |x, y| g(if (x / 8 + y / 8) % 2 == 0 { 0.8 } else { 1.0 })),
-        procedural("Diagonal Lines", 8, 8, |x, y| g(if (x + y) % 8 < 2 { 0.2 } else { 1.0 })),
+        procedural("Checkerboard", 16, 16, |x, y| {
+            g(if (x / 8 + y / 8) % 2 == 0 { 0.8 } else { 1.0 })
+        }),
+        procedural("Diagonal Lines", 8, 8, |x, y| {
+            g(if (x + y) % 8 < 2 { 0.2 } else { 1.0 })
+        }),
         procedural("Dots", 12, 12, |x, y| {
             let (dx, dy) = (x as f32 + 0.5 - 6.0, y as f32 + 0.5 - 6.0);
             g(((dx * dx + dy * dy).sqrt() - 3.0).clamp(0.0, 1.0))
         }),
-        procedural("Grid", 16, 16, |x, y| g(if x == 0 || y == 0 { 0.55 } else { 1.0 })),
+        procedural("Grid", 16, 16, |x, y| {
+            g(if x == 0 || y == 0 { 0.55 } else { 1.0 })
+        }),
         procedural("Bricks", 32, 16, |x, y| {
             let row = y / 8;
             let xo = (x + if row % 2 == 1 { 8 } else { 0 }) % 16;
             let mortar = y % 8 == 7 || xo == 15;
             let n = hash01(x, y, 7) * 0.08;
-            if mortar { [0.78 + n, 0.76 + n, 0.72 + n] } else { [0.62 + n, 0.27 + n * 0.5, 0.2] }
+            if mortar {
+                [0.78 + n, 0.76 + n, 0.72 + n]
+            } else {
+                [0.62 + n, 0.27 + n * 0.5, 0.2]
+            }
         }),
         procedural("Weave", 16, 16, |x, y| {
             let over = ((x / 4) + (y / 4)) % 2 == 0;
-            let t = if over { (y % 4) as f32 / 3.0 } else { (x % 4) as f32 / 3.0 };
+            let t = if over {
+                (y % 4) as f32 / 3.0
+            } else {
+                (x % 4) as f32 / 3.0
+            };
             let v = 0.55 + 0.35 * (1.0 - (2.0 * t - 1.0).abs());
             [v, v * 0.92, v * 0.8]
         }),
@@ -80,7 +95,10 @@ pub fn builtin() -> Vec<Pattern> {
             // Two octaves of smoothed value noise (wraps at 64 px).
             let oct = |cell: u32, seed: u32| {
                 let (cx, cy) = (x / cell, y / cell);
-                let (fx, fy) = ((x % cell) as f32 / cell as f32, (y % cell) as f32 / cell as f32);
+                let (fx, fy) = (
+                    (x % cell) as f32 / cell as f32,
+                    (y % cell) as f32 / cell as f32,
+                );
                 let n = 64 / cell;
                 let v = |i: u32, j: u32| hash01(i % n, j % n, seed);
                 let s = |t: f32| t * t * (3.0 - 2.0 * t);
@@ -95,7 +113,10 @@ pub fn builtin() -> Vec<Pattern> {
 }
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn always(_: &Session) -> std::result::Result<(), String> {
@@ -103,11 +124,17 @@ fn always(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn has_pattern(s: &Session) -> std::result::Result<(), String> {
-    if s.patterns.items.is_empty() && s.active().is_none_or(|d| d.doc.patterns.is_empty()) { Err("no patterns".into()) } else { Ok(()) }
+    if s.patterns.items.is_empty() && s.active().is_none_or(|d| d.doc.patterns.is_empty()) {
+        Err("no patterns".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Finds a pattern by id or name: the active document's first, then the library. An empty key
@@ -115,7 +142,9 @@ fn has_pattern(s: &Session) -> std::result::Result<(), String> {
 pub fn resolve(s: &Session, key: &str) -> Option<Pattern> {
     if key.is_empty() {
         // The Patterns panel's selection, else the first library pattern.
-        return crate::presets::patterns::current(s).or(s.patterns.items.first()).cloned();
+        return crate::presets::patterns::current(s)
+            .or(s.patterns.items.first())
+            .cloned();
     }
     if let Some(d) = s.active()
         && let Some(p) = photocraft_doc::pattern::find(&d.doc.patterns, key, key)
@@ -140,13 +169,40 @@ pub fn ensure_in_doc(doc: &mut Document, pat: &Pattern) {
 /// Resolves the pattern of a Pattern Overlay / pattern stroke built from params (its `name`
 /// holds the requested key) into a real pattern: returns the effect with name and id filled in,
 /// plus the pattern to copy into the document.
-pub fn resolve_effect(s: &Session, fx: photocraft_doc::Effect) -> Result<(photocraft_doc::Effect, Option<Pattern>)> {
+pub fn resolve_effect(
+    s: &Session,
+    fx: photocraft_doc::Effect,
+) -> Result<(photocraft_doc::Effect, Option<Pattern>)> {
     use photocraft_doc::Effect;
     match fx {
-        Effect::PatternOverlay { common, name, id, scale, angle, link, phase } => {
+        Effect::PatternOverlay {
+            common,
+            name,
+            id,
+            scale,
+            angle,
+            link,
+            phase,
+        } => {
             let key = if id.is_empty() { name } else { id };
-            let pat = resolve(s, &key).ok_or_else(|| bad("layer.layerStyle.patternOverlay", format!("no pattern \"{key}\" (see pattern.list)")))?;
-            Ok((Effect::PatternOverlay { common, name: pat.name.clone(), id: pat.id.clone(), scale, angle, link, phase }, Some(pat)))
+            let pat = resolve(s, &key).ok_or_else(|| {
+                bad(
+                    "layer.layerStyle.patternOverlay",
+                    format!("no pattern \"{key}\" (see pattern.list)"),
+                )
+            })?;
+            Ok((
+                Effect::PatternOverlay {
+                    common,
+                    name: pat.name.clone(),
+                    id: pat.id.clone(),
+                    scale,
+                    angle,
+                    link,
+                    phase,
+                },
+                Some(pat),
+            ))
         }
         other => Ok((other, None)),
     }
@@ -162,9 +218,22 @@ fn info(p: &Pattern, in_doc: bool, in_library: bool) -> Value {
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
-    let doc_pats: Vec<Pattern> = s.active().map(|d| d.doc.patterns.clone()).unwrap_or_default();
-    let mut out: Vec<Value> = s.patterns.items.iter().map(|p| info(p, doc_pats.iter().any(|d| d.id == p.id), true)).collect();
-    out.extend(doc_pats.iter().filter(|d| !s.patterns.items.iter().any(|p| p.id == d.id)).map(|p| info(p, true, false)));
+    let doc_pats: Vec<Pattern> = s
+        .active()
+        .map(|d| d.doc.patterns.clone())
+        .unwrap_or_default();
+    let mut out: Vec<Value> = s
+        .patterns
+        .items
+        .iter()
+        .map(|p| info(p, doc_pats.iter().any(|d| d.id == p.id), true))
+        .collect();
+    out.extend(
+        doc_pats
+            .iter()
+            .filter(|d| !s.patterns.items.iter().any(|p| p.id == d.id))
+            .map(|p| info(p, true, false)),
+    );
     Ok(Value::Array(out))
 }
 
@@ -188,13 +257,19 @@ fn composite_surface(doc: &Document, r: Rect) -> Surface {
 /// Define Pattern dialog starts from it.
 pub fn default_name(s: &Session) -> String {
     let doc_name = s.active().map(|st| st.doc.name.clone()).unwrap_or_default();
-    let base =
-        std::path::Path::new(&doc_name).file_stem().map(|x| x.to_string_lossy().to_string()).filter(|b| !b.is_empty()).unwrap_or_else(|| "Pattern".into());
+    let base = std::path::Path::new(&doc_name)
+        .file_stem()
+        .map(|x| x.to_string_lossy().to_string())
+        .filter(|b| !b.is_empty())
+        .unwrap_or_else(|| "Pattern".into());
     let taken = |n: &str| s.patterns.items.iter().any(|q| q.name == n);
     if !taken(&base) {
         return base;
     }
-    (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or(base)
+    (2..)
+        .map(|i| format!("{base} {i}"))
+        .find(|n| !taken(n))
+        .unwrap_or(base)
 }
 
 fn define(s: &mut Session, p: &Value) -> Result<Value> {
@@ -203,10 +278,16 @@ fn define(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &st.doc;
     let r = match p.get("rect").and_then(Value::as_array) {
         Some(a) if a.len() == 4 => {
-            let v: Vec<i32> = a.iter().map(|x| x.as_f64().unwrap_or(0.0).round() as i32).collect();
+            let v: Vec<i32> = a
+                .iter()
+                .map(|x| x.as_f64().unwrap_or(0.0).round() as i32)
+                .collect();
             Rect::new(v[0], v[1], v[2], v[3])
         }
-        _ => doc.selection.as_ref().map_or(doc.bounds(), |m| m.content_bounds()),
+        _ => doc
+            .selection
+            .as_ref()
+            .map_or(doc.bounds(), |m| m.content_bounds()),
     }
     .intersect(&doc.bounds());
     if r.is_empty() {
@@ -219,7 +300,10 @@ fn define(s: &mut Session, p: &Value) -> Result<Value> {
     // Opaque patterns drop their alpha channel (as Photoshop does).
     let fmt = surf.format();
     let px = surf.read_region(Rect::new(0, 0, r.width() as i32, r.height() as i32));
-    if px.chunks_exact(fmt.channels()).all(|q| q[fmt.channels() - 1] >= 1.0) {
+    if px
+        .chunks_exact(fmt.channels())
+        .all(|q| q[fmt.channels() - 1] >= 1.0)
+    {
         surf = surf.convert(PixelFormat::new(fmt.mode, fmt.sample, false));
     }
     let name = match p.get("name").and_then(Value::as_str) {
@@ -236,20 +320,35 @@ fn define(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn library_index(s: &Session, cmd: &str, p: &Value) -> Result<usize> {
-    let key = p.get("pattern").and_then(Value::as_str).ok_or_else(|| bad(cmd, "missing `pattern` (id or name)"))?;
-    let found =
-        photocraft_doc::pattern::find(&s.patterns.items, key, key).map(|f| f.id.clone()).ok_or_else(|| bad(cmd, format!("no library pattern \"{key}\"")))?;
-    Ok(s.patterns.items.iter().position(|q| q.id == found).unwrap_or(0))
+    let key = p
+        .get("pattern")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(cmd, "missing `pattern` (id or name)"))?;
+    let found = photocraft_doc::pattern::find(&s.patterns.items, key, key)
+        .map(|f| f.id.clone())
+        .ok_or_else(|| bad(cmd, format!("no library pattern \"{key}\"")))?;
+    Ok(s.patterns
+        .items
+        .iter()
+        .position(|q| q.id == found)
+        .unwrap_or(0))
 }
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "pattern.rename";
-    let name = p.get("name").and_then(Value::as_str).filter(|n| !n.trim().is_empty()).ok_or_else(|| bad(cmd, "missing `name`"))?.to_string();
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .filter(|n| !n.trim().is_empty())
+        .ok_or_else(|| bad(cmd, "missing `name`"))?
+        .to_string();
     let i = library_index(s, cmd, p)?;
     let id = s.patterns.items[i].id.clone();
     s.patterns.items[i].name = name.clone();
     // A copy stored in the document is renamed too (a document edit, so undoable).
-    if s.active().is_some_and(|d| d.doc.patterns.iter().any(|q| q.id == id)) {
+    if s.active()
+        .is_some_and(|d| d.doc.patterns.iter().any(|q| q.id == id))
+    {
         s.edit("Rename Pattern", |doc, _| {
             for q in doc.patterns.iter_mut().filter(|q| q.id == id) {
                 q.name = name.clone();
@@ -269,9 +368,15 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "pattern.import";
     // A file on disk, or its bytes (a dropped file, the web build).
-    let bytes = match (p.get("path").and_then(Value::as_str), p.get("data").and_then(Value::as_str)) {
-        (Some(path), _) => std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?,
-        (None, Some(b64)) => photocraft_paint::tile::b64_decode(b64).ok_or_else(|| bad(cmd, "`data` is not base64"))?,
+    let bytes = match (
+        p.get("path").and_then(Value::as_str),
+        p.get("data").and_then(Value::as_str),
+    ) {
+        (Some(path), _) => {
+            std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?
+        }
+        (None, Some(b64)) => photocraft_paint::tile::b64_decode(b64)
+            .ok_or_else(|| bad(cmd, "`data` is not base64"))?,
         (None, None) => return Err(bad(cmd, "missing `path` (.pat file) or `data`")),
     };
     let pats = photocraft_io::pattern_map::read_pat(&bytes).map_err(EngineError::Other)?;
@@ -288,11 +393,16 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "pattern.export";
-    let path = p.get("path").and_then(Value::as_str).ok_or_else(|| bad(cmd, "missing `path`"))?;
+    let path = p
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(cmd, "missing `path`"))?;
     let pats: Vec<Pattern> = match p.get("patterns").and_then(Value::as_array) {
-        Some(keys) => {
-            keys.iter().filter_map(Value::as_str).map(|k| resolve(s, k).ok_or_else(|| bad(cmd, format!("no pattern \"{k}\"")))).collect::<Result<_>>()?
-        }
+        Some(keys) => keys
+            .iter()
+            .filter_map(Value::as_str)
+            .map(|k| resolve(s, k).ok_or_else(|| bad(cmd, format!("no pattern \"{k}\""))))
+            .collect::<Result<_>>()?,
         None => s.patterns.items.clone(),
     };
     let bytes = photocraft_io::pattern_map::write_pat(&pats).map_err(EngineError::Other)?;
@@ -305,17 +415,42 @@ pub(crate) fn placement(p: &Value) -> (f32, f32, bool, (f32, f32)) {
     let phase = p
         .get("phase")
         .and_then(Value::as_array)
-        .map_or((0.0, 0.0), |a| (a.first().and_then(Value::as_f64).unwrap_or(0.0) as f32, a.get(1).and_then(Value::as_f64).unwrap_or(0.0) as f32));
-    ((num("scale", 100.0) / 100.0).clamp(0.01, 10.0), num("angle", 0.0), p.get("link").and_then(Value::as_bool).unwrap_or(true), phase)
+        .map_or((0.0, 0.0), |a| {
+            (
+                a.first().and_then(Value::as_f64).unwrap_or(0.0) as f32,
+                a.get(1).and_then(Value::as_f64).unwrap_or(0.0) as f32,
+            )
+        });
+    (
+        (num("scale", 100.0) / 100.0).clamp(0.01, 10.0),
+        num("angle", 0.0),
+        p.get("link").and_then(Value::as_bool).unwrap_or(true),
+        phase,
+    )
 }
 
 /// The edit of `layer.newFillLayer.pattern`: a Pattern Fill layer of `pat` placed as `p` asks,
 /// above `active`. The Pattern Fill dialog previews it on a copy of the document.
-pub(crate) fn insert_fill_layer(doc: &mut Document, active: &mut Option<photocraft_doc::LayerId>, pat: &Pattern, p: &Value) -> Result<photocraft_doc::LayerId> {
+pub(crate) fn insert_fill_layer(
+    doc: &mut Document,
+    active: &mut Option<photocraft_doc::LayerId>,
+    pat: &Pattern,
+    p: &Value,
+) -> Result<photocraft_doc::LayerId> {
     let (scale, angle, link, phase) = placement(p);
     ensure_in_doc(doc, pat);
-    let fill = Fill::Pattern { name: pat.name.clone(), scale, id: pat.id.clone(), angle, link, phase };
-    let mut l = Layer::new(doc.next_layer_name("Pattern Fill"), LayerContent::Fill(fill));
+    let fill = Fill::Pattern {
+        name: pat.name.clone(),
+        scale,
+        id: pat.id.clone(),
+        angle,
+        link,
+        phase,
+    };
+    let mut l = Layer::new(
+        doc.next_layer_name("Pattern Fill"),
+        LayerContent::Fill(fill),
+    );
     crate::commands::mask_new_layer(doc, &mut l, p, "layer.newFillLayer.pattern")?;
     let id = doc.insert_above(*active, l);
     *active = Some(id);
@@ -324,15 +459,23 @@ pub(crate) fn insert_fill_layer(doc: &mut Document, active: &mut Option<photocra
 
 fn new_fill_layer(s: &mut Session, p: &Value) -> Result<Value> {
     let pat = resolve_param(s, "layer.newFillLayer.pattern", p)?;
-    let id = s.edit("New Pattern Fill Layer", |doc, active| insert_fill_layer(doc, active, &pat, p))?;
+    let id = s.edit("New Pattern Fill Layer", |doc, active| {
+        insert_fill_layer(doc, active, &pat, p)
+    })?;
     Ok(json!({"layer": id.0, "pattern": pat.id}))
 }
 
 fn brush_texture(s: &mut Session, p: &Value) -> Result<Value> {
     let pat = resolve_param(s, "brush.texturePattern", p)?;
-    let n = pat.is_paintable().then(|| usize::try_from(pat.pixel_count()).ok()).flatten();
+    let n = pat
+        .is_paintable()
+        .then(|| usize::try_from(pat.pixel_count()).ok())
+        .flatten();
     let Some(n) = n else {
-        return Err(bad("brush.texturePattern", "the pattern is empty or too large to paint"));
+        return Err(bad(
+            "brush.texturePattern",
+            "the pattern is empty or too large to paint",
+        ));
     };
     // Brush textures are grey: luminance of the composite over white.
     let mut px = vec![[0.0f32; 4]; n];
@@ -360,9 +503,12 @@ pub fn average_color(p: &Pattern) -> Color {
     let side = photocraft_doc::pattern::MAX_PAINT_PIXELS.isqrt() as u32;
     let (w, h) = (p.width.min(side), p.height.min(side));
     let mut px = vec![[0.0f32; 4]; w as usize * h as usize];
-    p.surface.read_rgba_into(Rect::new(0, 0, w as i32, h as i32), &mut px);
+    p.surface
+        .read_rgba_into(Rect::new(0, 0, w as i32, h as i32), &mut px);
     let n = px.len().max(1) as f32;
-    let s = px.iter().fold([0.0f32; 3], |a, q| [a[0] + q[0], a[1] + q[1], a[2] + q[2]]);
+    let s = px
+        .iter()
+        .fold([0.0f32; 3], |a, q| [a[0] + q[0], a[1] + q[1], a[2] + q[2]]);
     Color::rgb(s[0] / n, s[1] / n, s[2] / n)
 }
 
@@ -458,7 +604,11 @@ mod tests {
 
     fn session(depth: u64) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 40, "height": 30, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 40, "height": 30, "depth": depth}),
+        )
+        .unwrap();
         s
     }
 
@@ -481,38 +631,75 @@ mod tests {
     fn define_rename_delete_and_pat_round_trip() {
         let mut s = session(8);
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        s.execute("select.rect", json!({"x": 2, "y": 3, "width": 5, "height": 4})).unwrap();
-        let r = s.execute("edit.definePattern", json!({"name": "Red"})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 2, "y": 3, "width": 5, "height": 4}),
+        )
+        .unwrap();
+        let r = s
+            .execute("edit.definePattern", json!({"name": "Red"}))
+            .unwrap();
         let id = r["pattern"].as_str().unwrap().to_string();
         let pat = resolve(&s, &id).unwrap();
         assert_eq!((pat.width, pat.height), (5, 4));
         assert!(!pat.surface.format().alpha, "opaque pattern drops alpha");
         // Same content → same id (replayable); not duplicated.
         let n = s.patterns.items.len();
-        s.execute("edit.definePattern", json!({"name": "Red"})).unwrap();
+        s.execute("edit.definePattern", json!({"name": "Red"}))
+            .unwrap();
         assert_eq!(s.patterns.items.len(), n);
-        s.execute("pattern.rename", json!({"pattern": id, "name": "Crimson"})).unwrap();
+        s.execute("pattern.rename", json!({"pattern": id, "name": "Crimson"}))
+            .unwrap();
         assert_eq!(resolve(&s, "Crimson").unwrap().id, id);
         let dir = std::env::temp_dir().join(format!("pc-pat-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("lib.pat");
         let path = path.to_str().unwrap();
         s.execute("pattern.export", json!({"path": path})).unwrap();
-        s.execute("pattern.delete", json!({"pattern": "Crimson"})).unwrap();
+        s.execute("pattern.delete", json!({"pattern": "Crimson"}))
+            .unwrap();
         assert!(resolve(&s, "Crimson").is_none());
-        assert!(s.execute("pattern.delete", json!({"pattern": "Crimson"})).is_err());
+        assert!(
+            s.execute("pattern.delete", json!({"pattern": "Crimson"}))
+                .is_err()
+        );
         let v = s.execute("pattern.import", json!({"path": path})).unwrap();
-        assert!(v["imported"].as_array().unwrap().iter().any(|x| x == id.as_str()));
-        assert_eq!(resolve(&s, &id).unwrap().surface.read_region(Rect::new(0, 0, 5, 4)), pat.surface.read_region(Rect::new(0, 0, 5, 4)));
+        assert!(
+            v["imported"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|x| x == id.as_str())
+        );
+        assert_eq!(
+            resolve(&s, &id)
+                .unwrap()
+                .surface
+                .read_region(Rect::new(0, 0, 5, 4)),
+            pat.surface.read_region(Rect::new(0, 0, 5, 4))
+        );
         // The same file as bytes (a dropped file, the web build).
         let bytes = std::fs::read(path).unwrap();
-        s.execute("pattern.delete", json!({"pattern": "Crimson"})).unwrap();
-        let v = s.execute("pattern.import", json!({"data": photocraft_paint::tile::b64_encode(&bytes)})).unwrap();
+        s.execute("pattern.delete", json!({"pattern": "Crimson"}))
+            .unwrap();
+        let v = s
+            .execute(
+                "pattern.import",
+                json!({"data": photocraft_paint::tile::b64_encode(&bytes)}),
+            )
+            .unwrap();
         assert_eq!(v["count"], v["imported"].as_array().unwrap().len());
         assert_eq!(resolve(&s, "Crimson").unwrap().id, id);
         std::fs::remove_dir_all(dir).ok();
-        assert!(s.execute("pattern.import", json!({"path": "/nonexistent.pat"})).is_err());
-        for bad in [json!({}), json!({"data": "not base64!"}), json!({"data": "aGVsbG8="})] {
+        assert!(
+            s.execute("pattern.import", json!({"path": "/nonexistent.pat"}))
+                .is_err()
+        );
+        for bad in [
+            json!({}),
+            json!({"data": "not base64!"}),
+            json!({"data": "aGVsbG8="}),
+        ] {
             assert!(s.execute("pattern.import", bad.clone()).is_err(), "{bad}");
         }
     }
@@ -521,17 +708,31 @@ mod tests {
     fn pattern_fill_layer_renders_at_every_depth_and_undoes() {
         for depth in [8u64, 16, 32] {
             let mut s = session(depth);
-            let r = s.execute("layer.newFillLayer.pattern", json!({"pattern": "Checkerboard"})).unwrap();
+            let r = s
+                .execute(
+                    "layer.newFillLayer.pattern",
+                    json!({"pattern": "Checkerboard"}),
+                )
+                .unwrap();
             let id = LayerId(r["layer"].as_u64().unwrap());
             let st = s.active().unwrap();
             assert_eq!(st.doc.patterns.len(), 1, "copied into the document");
-            assert!(matches!(&st.doc.layer(id).unwrap().content, LayerContent::Fill(Fill::Pattern { .. })));
+            assert!(matches!(
+                &st.doc.layer(id).unwrap().content,
+                LayerContent::Fill(Fill::Pattern { .. })
+            ));
             // Checkerboard: 8 px squares of 0.8 and 1.0 grey from the canvas origin.
             let (a, b) = (pixel(&s, 1, 1), pixel(&s, 9, 1));
-            assert!((a[0] - 0.8).abs() < 0.01 && (b[0] - 1.0).abs() < 0.01, "{depth}: {a:?} {b:?}");
+            assert!(
+                (a[0] - 0.8).abs() < 0.01 && (b[0] - 1.0).abs() < 0.01,
+                "{depth}: {a:?} {b:?}"
+            );
             s.undo();
             assert!(s.active().unwrap().doc.patterns.is_empty());
-            assert!(s.execute("layer.newFillLayer.pattern", json!({"pattern": "nope"})).is_err());
+            assert!(
+                s.execute("layer.newFillLayer.pattern", json!({"pattern": "nope"}))
+                    .is_err()
+            );
         }
     }
 
@@ -539,13 +740,24 @@ mod tests {
     fn fill_with_pattern_respects_selection() {
         for depth in [8u64, 16, 32] {
             let mut s = session(depth);
-            s.execute("select.rect", json!({"x": 0, "y": 0, "width": 8, "height": 8})).unwrap();
-            s.execute("edit.fill", json!({"contents": "pattern", "pattern": "Diagonal Lines"})).unwrap();
+            s.execute(
+                "select.rect",
+                json!({"x": 0, "y": 0, "width": 8, "height": 8}),
+            )
+            .unwrap();
+            s.execute(
+                "edit.fill",
+                json!({"contents": "pattern", "pattern": "Diagonal Lines"}),
+            )
+            .unwrap();
             let st = s.active().unwrap();
             let surf = st.doc.layers[0].surface().unwrap();
             assert!(surf.pixel(0, 0)[0] < 0.3, "{depth}: line pixel");
             assert!(surf.pixel(4, 0)[0] > 0.9);
-            assert!(surf.pixel(20, 20)[0] > 0.99, "outside the selection untouched");
+            assert!(
+                surf.pixel(20, 20)[0] > 0.99,
+                "outside the selection untouched"
+            );
         }
     }
 
@@ -553,11 +765,23 @@ mod tests {
     fn pattern_overlay_composes_with_an_outside_stroke() {
         let mut s = session(8);
         s.execute("layer.new.layer", json!({})).unwrap();
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 10, "height": 10})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 10, "height": 10}),
+        )
+        .unwrap();
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
         s.execute("select.deselect", json!({})).unwrap();
-        s.execute("layer.layerStyle.patternOverlay", json!({"pattern": "Diagonal Lines"})).unwrap();
-        s.execute("layer.layerStyle.stroke", json!({"size": 3, "color": "#00ff00", "add": true})).unwrap();
+        s.execute(
+            "layer.layerStyle.patternOverlay",
+            json!({"pattern": "Diagonal Lines"}),
+        )
+        .unwrap();
+        s.execute(
+            "layer.layerStyle.stroke",
+            json!({"size": 3, "color": "#00ff00", "add": true}),
+        )
+        .unwrap();
         let out = pixel(&s, 8, 15);
         assert!(out[1] > 0.9 && out[0] < 0.1, "stroke outside: {out:?}");
     }
@@ -567,27 +791,67 @@ mod tests {
         let mut s = session(16);
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
-        s.execute("layer.layerStyle.patternOverlay", json!({"pattern": "Checkerboard", "opacity": 100})).unwrap();
+        s.execute(
+            "layer.layerStyle.patternOverlay",
+            json!({"pattern": "Checkerboard", "opacity": 100}),
+        )
+        .unwrap();
         let st = s.active().unwrap();
         assert_eq!(st.doc.patterns.len(), 1);
         let p = pixel(&s, 1, 1);
-        assert!((p[0] - 0.8).abs() < 0.01 && (p[2] - 0.8).abs() < 0.01, "{p:?}");
-        assert!(s.execute("layer.layerStyle.patternOverlay", json!({"pattern": "missing"})).is_err());
-        s.execute("layer.layerStyle.stroke", json!({"size": 4, "color": "#ffffff", "add": true})).unwrap();
+        assert!(
+            (p[0] - 0.8).abs() < 0.01 && (p[2] - 0.8).abs() < 0.01,
+            "{p:?}"
+        );
+        assert!(
+            s.execute(
+                "layer.layerStyle.patternOverlay",
+                json!({"pattern": "missing"})
+            )
+            .is_err()
+        );
+        s.execute(
+            "layer.layerStyle.stroke",
+            json!({"size": 4, "color": "#ffffff", "add": true}),
+        )
+        .unwrap();
         let st = s.active().unwrap();
-        assert_eq!(st.doc.layer(st.active_layer.unwrap()).unwrap().effects.items.len(), 2);
-        s.execute("brush.texturePattern", json!({"pattern": "Dots", "scale": 50})).unwrap();
+        assert_eq!(
+            st.doc
+                .layer(st.active_layer.unwrap())
+                .unwrap()
+                .effects
+                .items
+                .len(),
+            2
+        );
+        s.execute(
+            "brush.texturePattern",
+            json!({"pattern": "Dots", "scale": 50}),
+        )
+        .unwrap();
         assert!(s.tools.brush.texture.enabled);
-        assert!(matches!(s.tools.brush.texture.pattern, photocraft_paint::Pattern::Tile(_)));
+        assert!(matches!(
+            s.tools.brush.texture.pattern,
+            photocraft_paint::Pattern::Tile(_)
+        ));
     }
 
     #[test]
     fn a_pattern_too_large_to_paint_is_refused_not_allocated() {
         // width × height overflows u32: this panicked (debug) or wrapped (release).
         let mut s = session(8);
-        let huge = Pattern { id: "huge".into(), name: "Huge".into(), width: 65_536, height: 65_536, surface: Surface::new(PixelFormat::RGBA8) };
+        let huge = Pattern {
+            id: "huge".into(),
+            name: "Huge".into(),
+            width: 65_536,
+            height: 65_536,
+            surface: Surface::new(PixelFormat::RGBA8),
+        };
         s.patterns.items.push(huge);
-        let e = s.execute("brush.texturePattern", json!({"pattern": "huge"})).unwrap_err();
+        let e = s
+            .execute("brush.texturePattern", json!({"pattern": "huge"}))
+            .unwrap_err();
         assert!(e.to_string().contains("too large"), "{e}");
     }
 }

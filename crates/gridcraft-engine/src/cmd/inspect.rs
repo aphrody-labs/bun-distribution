@@ -24,8 +24,15 @@ pub fn value_json(v: &Value) -> Json {
         Value::Bool(b) => json!(b),
         Value::Error(e) => json!({"error": e.as_str()}),
         Value::Array(a) => {
-            let rows: Vec<Json> =
-                (0..a.rows).map(|r| Json::Array((0..a.cols).map(|c| value_json(&a.get(r, c).cloned().unwrap_or_default())).collect())).collect();
+            let rows: Vec<Json> = (0..a.rows)
+                .map(|r| {
+                    Json::Array(
+                        (0..a.cols)
+                            .map(|c| value_json(&a.get(r, c).cloned().unwrap_or_default()))
+                            .collect(),
+                    )
+                })
+                .collect();
             Json::Array(rows)
         }
     }
@@ -88,11 +95,16 @@ fn read(s: &mut Session, p: &Json) -> Result<Json> {
         },
     };
     let r = match sh.used_range() {
-        Some(u) if r.is_full_cols() || r.is_full_rows() => r.intersection(&u).unwrap_or(RangeRef::cell(r.start)),
+        Some(u) if r.is_full_cols() || r.is_full_rows() => {
+            r.intersection(&u).unwrap_or(RangeRef::cell(r.start))
+        }
         _ => r,
     };
     if r.count() > 1_000_000 {
-        return Err(bad("sheet.read", "range larger than 1,000,000 cells; read it in parts"));
+        return Err(bad(
+            "sheet.read",
+            "range larger than 1,000,000 cells; read it in parts",
+        ));
     }
     let formulas = bool_param(p, "formulas").unwrap_or(false);
     let formatted = bool_param(p, "formatted").unwrap_or(false);
@@ -158,7 +170,12 @@ fn list_commands(s: &mut Session, p: &Json) -> Result<Json> {
     let v: Vec<Json> = s
         .commands()
         .into_iter()
-        .filter(|c| q.as_ref().is_none_or(|q| c.id.to_ascii_lowercase().contains(q.as_str()) || c.label.to_ascii_lowercase().contains(q.as_str())))
+        .filter(|c| {
+            q.as_ref().is_none_or(|q| {
+                c.id.to_ascii_lowercase().contains(q.as_str())
+                    || c.label.to_ascii_lowercase().contains(q.as_str())
+            })
+        })
         .map(|c| serde_json::to_value(c).unwrap_or_default())
         .collect();
     Ok(Json::Array(v))

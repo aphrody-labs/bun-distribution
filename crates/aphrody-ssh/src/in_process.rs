@@ -110,11 +110,17 @@ impl HostConfig {
         let env_port = std::env::var(format!("APHRODY_{}_PORT", upper_alias))
             .ok()
             .and_then(|p| p.parse::<u16>().ok());
-        let env_key = std::env::var(format!("APHRODY_{}_KEY", upper_alias)).ok().map(PathBuf::from);
+        let env_key = std::env::var(format!("APHRODY_{}_KEY", upper_alias))
+            .ok()
+            .map(PathBuf::from);
 
         // 2. ~/.ssh/config parse
         let ssh_cfg = home.join(".ssh").join("config");
-        let parsed_cfg = if ssh_cfg.exists() { parse_ssh_config(&ssh_cfg, alias) } else { None };
+        let parsed_cfg = if ssh_cfg.exists() {
+            parse_ssh_config(&ssh_cfg, alias)
+        } else {
+            None
+        };
 
         // Unconfigured aliases stay aliases; deployment endpoints belong in SSH config.
         let fallback_host = alias;
@@ -129,13 +135,20 @@ impl HostConfig {
             .or_else(|| parsed_cfg.as_ref().and_then(|c| c.user.clone()))
             .unwrap_or_else(|| fallback_user.to_string());
 
-        let port = env_port.or_else(|| parsed_cfg.as_ref().and_then(|c| c.port)).unwrap_or(22);
+        let port = env_port
+            .or_else(|| parsed_cfg.as_ref().and_then(|c| c.port))
+            .unwrap_or(22);
 
         let identity_path = env_key
             .or_else(|| parsed_cfg.as_ref().and_then(|c| c.identity_path.clone()))
             .unwrap_or(fallback_key);
 
-        Ok(Self { hostname, port, user, identity_path })
+        Ok(Self {
+            hostname,
+            port,
+            user,
+            identity_path,
+        })
     }
 }
 
@@ -196,10 +209,15 @@ impl InProcessSshSession {
         let rsa_hash = session.best_supported_rsa_hash().await?.flatten();
         let key_with_alg = PrivateKeyWithHashAlg::new(Arc::new(key_pair), rsa_hash);
 
-        let auth_res =
-            session.authenticate_publickey(&config.user, key_with_alg).await.with_context(
-                || format!("SSH publickey authentication failed for user {}", config.user),
-            )?;
+        let auth_res = session
+            .authenticate_publickey(&config.user, key_with_alg)
+            .await
+            .with_context(|| {
+                format!(
+                    "SSH publickey authentication failed for user {}",
+                    config.user
+                )
+            })?;
 
         if !auth_res.success() {
             bail!("Authentication rejected for user {} on {addr}", config.user);
@@ -227,14 +245,14 @@ impl InProcessSshSession {
             match msg {
                 ChannelMsg::Data { ref data } => {
                     stdout.extend_from_slice(data);
-                },
+                }
                 ChannelMsg::ExtendedData { ref data, .. } => {
                     stderr.extend_from_slice(data);
-                },
+                }
                 ChannelMsg::ExitStatus { exit_status } => {
                     exit_code = Some(exit_status as i32);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -352,7 +370,10 @@ impl SftpDriver {
         max_depth: usize,
     ) -> Result<SftpTreeNode> {
         let root_meta = Self::stat(sftp, remote_path).await?;
-        let mut root_node = SftpTreeNode { entry: root_meta, children: Vec::new() };
+        let mut root_node = SftpTreeNode {
+            entry: root_meta,
+            children: Vec::new(),
+        };
 
         if root_node.entry.is_dir && max_depth > 0 {
             Self::build_tree_recursive(sftp, &mut root_node, max_depth - 1).await?;
@@ -368,9 +389,17 @@ impl SftpDriver {
         let entries = Self::read_dir(sftp, &parent.entry.path).await?;
         for entry in entries {
             let is_dir = entry.is_dir;
-            let mut child_node = SftpTreeNode { entry, children: Vec::new() };
+            let mut child_node = SftpTreeNode {
+                entry,
+                children: Vec::new(),
+            };
             if is_dir && depth_left > 0 {
-                Box::pin(Self::build_tree_recursive(sftp, &mut child_node, depth_left - 1)).await?;
+                Box::pin(Self::build_tree_recursive(
+                    sftp,
+                    &mut child_node,
+                    depth_left - 1,
+                ))
+                .await?;
             }
             parent.children.push(child_node);
         }
@@ -443,7 +472,10 @@ impl FastRsyncSync {
     pub fn calculate_signature(base_content: &[u8], block_size: u32) -> Vec<u8> {
         rsync::compute_signature(
             base_content,
-            RsyncOptions { block_size, crypto_hash_size: rsync::DEFAULT_CRYPTO_HASH_SIZE },
+            RsyncOptions {
+                block_size,
+                crypto_hash_size: rsync::DEFAULT_CRYPTO_HASH_SIZE,
+            },
         )
     }
 
@@ -465,7 +497,10 @@ mod tests {
         let fixture = std::env::temp_dir().join(format!(
             "aphrody-ssh-config-{}-{}.txt",
             std::process::id(),
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         ));
         std::fs::write(
             &fixture,
@@ -476,7 +511,10 @@ mod tests {
         assert_eq!(configured.hostname.as_deref(), Some("example.invalid"));
         assert_eq!(configured.user.as_deref(), Some("configured-user"));
         assert_eq!(configured.port, Some(2222));
-        assert_eq!(configured.identity_path, Some(dirs_home().unwrap().join(".ssh/example-key")));
+        assert_eq!(
+            configured.identity_path,
+            Some(dirs_home().unwrap().join(".ssh/example-key"))
+        );
     }
     #[test]
     fn fast_rsync_differential_cycle() {

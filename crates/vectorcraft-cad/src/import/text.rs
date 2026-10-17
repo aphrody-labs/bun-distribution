@@ -30,7 +30,12 @@ pub(crate) fn mtext(s: &str) -> (String, Option<String>) {
                 Some(f @ ('f' | 'F')) => {
                     let arg = until_semicolon(&mut chars);
                     if family.is_none() && f == 'f' {
-                        family = arg.split('|').next().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
+                        family = arg
+                            .split('|')
+                            .next()
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(str::to_string);
                     }
                 }
                 // Height, colour, tracking, oblique, width, alignment, paragraph: settings with
@@ -70,7 +75,10 @@ fn escapes(s: &str) -> String {
     while let Some(c) = rest.chars().next() {
         let after = rest.get(c.len_utf8()..).unwrap_or("");
         if c == '\\'
-            && let Some(hex) = after.strip_prefix("U+").or_else(|| after.strip_prefix("u+")).and_then(|h| h.get(..4))
+            && let Some(hex) = after
+                .strip_prefix("U+")
+                .or_else(|| after.strip_prefix("u+"))
+                .and_then(|h| h.get(..4))
             && let Some(ch) = u32::from_str_radix(hex, 16).ok().and_then(char::from_u32)
         {
             out.push(ch);
@@ -116,9 +124,19 @@ fn percent_codes(s: &str) -> String {
             Some('%') => out.push('%'),
             Some('u' | 'o' | 'k') => {}
             Some(c) if c.is_ascii_digit() => {
-                let digits: String = code.chars().take(3).take_while(char::is_ascii_digit).collect();
+                let digits: String = code
+                    .chars()
+                    .take(3)
+                    .take_while(char::is_ascii_digit)
+                    .collect();
                 skip = digits.len();
-                out.extend(digits.parse::<u32>().ok().and_then(char::from_u32).filter(|c| !c.is_control()));
+                out.extend(
+                    digits
+                        .parse::<u32>()
+                        .ok()
+                        .and_then(char::from_u32)
+                        .filter(|c| !c.is_control()),
+                );
             }
             _ => {
                 out.push_str("%%");
@@ -137,8 +155,15 @@ mod tests {
 
     #[test]
     fn control_codes_and_escapes() {
-        assert_eq!(plain("45%%d %%p0.1 %%c20 100%%% %%uunder%%u"), "45° ±0.1 ⌀20 100% under");
-        assert_eq!(plain("caf\\U+00E9 ^ x^I^Jy"), "café ^x\ty", "`^ ` is a caret");
+        assert_eq!(
+            plain("45%%d %%p0.1 %%c20 100%%% %%uunder%%u"),
+            "45° ±0.1 ⌀20 100% under"
+        );
+        assert_eq!(
+            plain("caf\\U+00E9 ^ x^I^Jy"),
+            "café ^x\ty",
+            "`^ ` is a caret"
+        );
         assert_eq!(plain("%%065%%066"), "AB");
         assert_eq!(plain("50%% off"), "50%% off", "an unknown code stays");
         assert_eq!(plain("\\U+"), "\\U+");
@@ -146,7 +171,9 @@ mod tests {
 
     #[test]
     fn mtext_formatting_is_dropped() {
-        let (t, family) = mtext("{\\fArial|b1|i0|c0|p34;Title}\\P\\H2.5x;Line \\C1;two\\~\\S1/2;\\Pa\\\\b {\\Lunder}");
+        let (t, family) = mtext(
+            "{\\fArial|b1|i0|c0|p34;Title}\\P\\H2.5x;Line \\C1;two\\~\\S1/2;\\Pa\\\\b {\\Lunder}",
+        );
         assert_eq!(t, "Title\nLine two\u{A0}1/2\na\\b under");
         assert_eq!(family.as_deref(), Some("Arial"));
         // Carets are written "^ " (a caret before another character is a control character).

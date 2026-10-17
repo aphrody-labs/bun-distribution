@@ -85,17 +85,26 @@ impl HomeLayout {
                     return Err(StoreError::InvalidProfile(name.clone()));
                 }
                 named_profile_workspace(state, name)
-            },
+            }
         };
         let db_path = home.join("db").join(DB_FILE);
-        Ok(Self { scope: scope.clone(), state: state.to_path_buf(), home, db_path })
+        Ok(Self {
+            scope: scope.clone(),
+            state: state.to_path_buf(),
+            home,
+            db_path,
+        })
     }
 
     /// Directory of the consolidated, checksum-verified backups of the given day
     /// (`<state>/private/backups/aphrody-unique/<YYYY-MM-DD>`, ADR D12).
     #[must_use]
     pub fn backup_dir(&self, unix_ms: i64) -> PathBuf {
-        self.state.join("private").join("backups").join("aphrody-unique").join(date_string(unix_ms))
+        self.state
+            .join("private")
+            .join("backups")
+            .join("aphrody-unique")
+            .join(date_string(unix_ms))
     }
 }
 
@@ -120,7 +129,10 @@ mod tests {
         assert_eq!(dbfr.home, legacy);
         std::fs::create_dir_all(state.path().join("workspaces/dbfr")).unwrap();
         let dbfr = HomeLayout::in_state(state.path(), &HomeScope::Profile("dbfr".into())).unwrap();
-        assert_eq!(dbfr.db_path, state.path().join("workspaces/dbfr/db/aphrody.sqlite"));
+        assert_eq!(
+            dbfr.db_path,
+            state.path().join("workspaces/dbfr/db/aphrody.sqlite")
+        );
         let ie = HomeLayout::in_state(state.path(), &HomeScope::Profile("ie".into())).unwrap();
         let global = HomeLayout::in_state(state.path(), &HomeScope::Global).unwrap();
         assert_ne!(dbfr.db_path, ie.db_path);
@@ -145,7 +157,9 @@ mod tests {
         let layout = HomeLayout::in_state(state.path(), &HomeScope::Global).unwrap();
         assert_eq!(
             layout.backup_dir(1_791_290_096_000),
-            state.path().join("private/backups/aphrody-unique/2026-10-06")
+            state
+                .path()
+                .join("private/backups/aphrody-unique/2026-10-06")
         );
     }
 

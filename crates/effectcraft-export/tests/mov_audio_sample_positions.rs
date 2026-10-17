@@ -18,8 +18,20 @@ impl FootageSource for RecordingNative {
     fn frame(&self, _: ItemId, _: &Footage, _: Tick) -> Option<Arc<Image>> {
         None
     }
-    fn audio(&self, _: ItemId, footage: &Footage, start: Tick, frames: usize, rate: u32) -> Option<Vec<f32>> {
-        self.calls.lock().unwrap().push((start, start.to_units_floor(i64::from(rate)), frames, rate));
+    fn audio(
+        &self,
+        _: ItemId,
+        footage: &Footage,
+        start: Tick,
+        frames: usize,
+        rate: u32,
+    ) -> Option<Vec<f32>> {
+        self.calls.lock().unwrap().push((
+            start,
+            start.to_units_floor(i64::from(rate)),
+            frames,
+            rate,
+        ));
         Some(self.pool.audio_samples(footage, start, frames, rate))
     }
 }
@@ -62,13 +74,22 @@ fn boxes(bytes: &[u8]) -> Vec<([u8; 4], &[u8])> {
         let size = u32::from_be_bytes(bytes[offset..offset + 4].try_into().unwrap());
         let name = bytes[offset + 4..offset + 8].try_into().unwrap();
         let (size, header) = if size == 1 {
-            (usize::try_from(u64::from_be_bytes(bytes[offset + 8..offset + 16].try_into().unwrap())).unwrap(), 16)
+            (
+                usize::try_from(u64::from_be_bytes(
+                    bytes[offset + 8..offset + 16].try_into().unwrap(),
+                ))
+                .unwrap(),
+                16,
+            )
         } else if size == 0 {
             (bytes.len() - offset, 8)
         } else {
             (size as usize, 8)
         };
-        assert!(size >= header && offset + size <= bytes.len(), "valid returned MOV boxes");
+        assert!(
+            size >= header && offset + size <= bytes.len(),
+            "valid returned MOV boxes"
+        );
         out.push((name, &bytes[offset + header..offset + size]));
         offset += size;
     }
@@ -76,7 +97,11 @@ fn boxes(bytes: &[u8]) -> Vec<([u8; 4], &[u8])> {
     out
 }
 fn child<'a>(bytes: &'a [u8], name: &[u8; 4]) -> &'a [u8] {
-    boxes(bytes).into_iter().find(|(kind, _)| kind == name).unwrap().1
+    boxes(bytes)
+        .into_iter()
+        .find(|(kind, _)| kind == name)
+        .unwrap()
+        .1
 }
 fn movie_pcm_count(bytes: &[u8], rate: u32, frames: usize) {
     let moov = child(bytes, b"moov");
@@ -88,9 +113,15 @@ fn movie_pcm_count(bytes: &[u8], rate: u32, frames: usize) {
         .expect("the returned MOV has a sound track");
     let header = child(mdia, b"mdhd");
     let (timescale, duration) = if header[0] == 1 {
-        (u32::from_be_bytes(header[20..24].try_into().unwrap()), u64::from_be_bytes(header[24..32].try_into().unwrap()))
+        (
+            u32::from_be_bytes(header[20..24].try_into().unwrap()),
+            u64::from_be_bytes(header[24..32].try_into().unwrap()),
+        )
     } else {
-        (u32::from_be_bytes(header[12..16].try_into().unwrap()), u64::from(u32::from_be_bytes(header[16..20].try_into().unwrap())))
+        (
+            u32::from_be_bytes(header[12..16].try_into().unwrap()),
+            u64::from(u32::from_be_bytes(header[16..20].try_into().unwrap())),
+        )
     };
     assert_eq!(timescale, rate, "PCM MOV audio timescale");
     assert_eq!(duration, frames as u64, "PCM MOV selected sample count");
@@ -102,23 +133,38 @@ fn movie_pcm_count(bytes: &[u8], rate: u32, frames: usize) {
         .0
         .iter()
         .take(count)
-        .map(|entry| u64::from(u32::from_be_bytes(entry[..4].try_into().unwrap())) * u64::from(u32::from_be_bytes(entry[4..].try_into().unwrap())))
+        .map(|entry| {
+            u64::from(u32::from_be_bytes(entry[..4].try_into().unwrap()))
+                * u64::from(u32::from_be_bytes(entry[4..].try_into().unwrap()))
+        })
         .sum();
-    assert_eq!(duration, frames as u64, "all encoded PCM samples are counted");
+    assert_eq!(
+        duration, frames as u64,
+        "all encoded PCM samples are counted"
+    );
     let sizes = child(table, b"stsz");
     let fixed = u32::from_be_bytes(sizes[4..8].try_into().unwrap()) as u64;
     let count = u32::from_be_bytes(sizes[8..12].try_into().unwrap()) as usize;
     let bytes = if fixed != 0 {
         fixed * count as u64
     } else {
-        sizes[12..].as_chunks::<4>().0.iter().take(count).map(|entry| u64::from(u32::from_be_bytes(*entry))).sum()
+        sizes[12..]
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .take(count)
+            .map(|entry| u64::from(u32::from_be_bytes(*entry)))
+            .sum()
     };
     assert_eq!(bytes, (frames * 8) as u64, "native stereo float PCM bytes");
 }
 fn first_sample_tick(index: i64, rate: u32) -> Tick {
     let numerator = i128::from(index) * i128::from(TICKS_PER_SECOND);
     let denominator = i128::from(rate);
-    Tick((numerator.div_euclid(denominator) + i128::from(numerator.rem_euclid(denominator) != 0)) as i64)
+    Tick(
+        (numerator.div_euclid(denominator) + i128::from(numerator.rem_euclid(denominator) != 0))
+            as i64,
+    )
 }
 fn check(native_rate: u32, output_rate: u32) {
     let frame_rate = FrameRate::FPS_24;
@@ -142,19 +188,50 @@ fn check(native_rate: u32, output_rate: u32) {
         assert_eq!(oracle_tick.to_units_floor(i64::from(output_rate)), first);
         let expected = pool.audio_samples(&footage, oracle_tick, frames, output_rate);
         assert_eq!(expected.len(), frames * 2);
-        assert!(expected.iter().any(|sample| *sample != 0.0), "the real native decoding/resampling control must not be silent");
+        assert!(
+            expected.iter().any(|sample| *sample != 0.0),
+            "the real native decoding/resampling control must not be silent"
+        );
         if impulses {
-            assert_eq!(expected[..2], [0.75, -0.75], "the actual native provider decodes the first indexed source impulse");
-            assert_eq!(expected[expected.len() - 2..], [0.25, -0.25], "the actual native provider decodes the last indexed source impulse");
+            assert_eq!(
+                expected[..2],
+                [0.75, -0.75],
+                "the actual native provider decodes the first indexed source impulse"
+            );
+            assert_eq!(
+                expected[expected.len() - 2..],
+                [0.25, -0.25],
+                "the actual native provider decodes the last indexed source impulse"
+            );
         }
-        let provider = RecordingNative { pool, calls: Mutex::default() };
+        let provider = RecordingNative {
+            pool,
+            calls: Mutex::default(),
+        };
         let mut project = Project::default();
         let duration = Tick::from_seconds_f64(1.0);
-        let item = project.add_item("Native WAV", Default::default(), None, ItemKind::Footage(footage));
+        let item = project.add_item(
+            "Native WAV",
+            Default::default(),
+            None,
+            ItemKind::Footage(footage),
+        );
         let mut comp = Comp::new(16, 16, frame_rate, duration);
         comp.work_area = span;
-        comp.layers.push(build::layer(&mut project, &comp, "Native WAV", LayerSource::Footage { item }, (16, 16), None));
-        let comp = project.add_item("Comp", Default::default(), None, ItemKind::Comp(comp.into()));
+        comp.layers.push(build::layer(
+            &mut project,
+            &comp,
+            "Native WAV",
+            LayerSource::Footage { item },
+            (16, 16),
+            None,
+        ));
+        let comp = project.add_item(
+            "Comp",
+            Default::default(),
+            None,
+            ItemKind::Comp(comp.into()),
+        );
         let settings = RenderSettings::default();
         let mut output = OutputModule::for_format(OutputFormat::ProRes);
         output.audio_sample_rate = output_rate;
@@ -162,7 +239,9 @@ fn check(native_rate: u32, output_rate: u32) {
         output.audio_format = AudioFormat::F32;
         let files: Arc<Mutex<Vec<(String, Vec<u8>)>>> = Default::default();
         let received = files.clone();
-        let sink: Box<Sink> = Box::new(move |name: &str, bytes: Vec<u8>| received.lock().unwrap().push((name.into(), bytes)));
+        let sink: Box<Sink> = Box::new(move |name: &str, bytes: Vec<u8>| {
+            received.lock().unwrap().push((name.into(), bytes))
+        });
         let job = Job {
             project: &project,
             footage: &provider,
@@ -179,19 +258,36 @@ fn check(native_rate: u32, output_rate: u32) {
         let report = export(&job, &mut |_| true).unwrap();
         assert!(report.audio);
         let files = files.lock().unwrap();
-        let movie = &files.iter().find(|(name, _)| name.ends_with(".mov")).unwrap().1;
-        assert_eq!(report.frames, 1, "the one-frame ProRes movie was actually encoded");
+        let movie = &files
+            .iter()
+            .find(|(name, _)| name.ends_with(".mov"))
+            .unwrap()
+            .1;
+        assert_eq!(
+            report.frames, 1,
+            "the one-frame ProRes movie was actually encoded"
+        );
         movie_pcm_count(movie, output_rate, frames);
-        let decoded = probe_bytes("returned-native-impulse.mov", Arc::from(movie.as_slice())).unwrap();
-        assert!(decoded.has_audio && decoded.has_video, "the native movie decoder recognized both tracks");
+        let decoded =
+            probe_bytes("returned-native-impulse.mov", Arc::from(movie.as_slice())).unwrap();
+        assert!(
+            decoded.has_audio && decoded.has_video,
+            "the native movie decoder recognized both tracks"
+        );
         let decoder = MediaPool::new();
         decoder.add_bytes(&decoded.path, Arc::from(movie.as_slice()));
         let decoded_pcm = decoder.audio_samples(&decoded, Tick::ZERO, frames + 8, output_rate);
         assert_eq!(decoded_pcm.len(), (frames + 8) * 2);
-        assert!(decoded_pcm[frames * 2..].iter().all(|value| *value == 0.0), "native PCM ends at the selected sample count");
+        assert!(
+            decoded_pcm[frames * 2..].iter().all(|value| *value == 0.0),
+            "native PCM ends at the selected sample count"
+        );
         let actual = decoded_pcm[..frames * 2].to_vec();
         let calls = provider.calls.lock().unwrap();
-        assert!(!calls.is_empty(), "production export actually called the real native provider");
+        assert!(
+            !calls.is_empty(),
+            "production export actually called the real native provider"
+        );
         eprintln!(
             "native_rate={native_rate} output_rate={output_rate} loops={loops} first={first} end={end} count={frames} provider_calls={calls:?} first_actual={:?} first_expected={:?} last_actual={:?} last_expected={:?}",
             &actual[..2],
@@ -201,10 +297,18 @@ fn check(native_rate: u32, output_rate: u32) {
         );
         if actual != expected {
             let first_mismatch = actual.iter().zip(&expected).position(|(a, b)| a != b);
-            mismatches.push((loops, first_mismatch, actual[..2].to_vec(), expected[..2].to_vec()));
+            mismatches.push((
+                loops,
+                first_mismatch,
+                actual[..2].to_vec(),
+                expected[..2].to_vec(),
+            ));
         }
     }
-    assert!(mismatches.is_empty(), "production native MOV PCM export must preserve the native provider's selected sample positions: {mismatches:?}");
+    assert!(
+        mismatches.is_empty(),
+        "production native MOV PCM export must preserve the native provider's selected sample positions: {mismatches:?}"
+    );
 }
 #[test]
 fn native_media_mov_pcm_work_area_preserves_44100_positions() {

@@ -31,7 +31,9 @@ pub struct Opening {
 /// Does opening happen off the UI thread here? Not on wasm (no threads), in unit tests (they look
 /// at the document right after asking for it), or with `VECTORCRAFT_SYNC_OPEN` set.
 pub fn available() -> bool {
-    !(cfg!(target_arch = "wasm32") || cfg!(test) || std::env::var_os("VECTORCRAFT_SYNC_OPEN").is_some())
+    !(cfg!(target_arch = "wasm32")
+        || cfg!(test)
+        || std::env::var_os("VECTORCRAFT_SYNC_OPEN").is_some())
 }
 
 /// Decode `bytes`, the file at `path`, on a thread of its own → `{background: true, status}`, or
@@ -42,20 +44,32 @@ pub fn start(app: &mut VectorcraftApp, path: &str, bytes: Vec<u8>) -> Result<Val
     let (name, file) = (path.to_string(), bytes.clone());
     // The automation roots in force here are in force there.
     let scope = ScopeHandle::capture();
-    let spawned = std::thread::Builder::new().name("vectorcraft-open".into()).spawn(move || {
-        let r = scope
-            .run(|| vectorcraft_engine::guard::catch_panic(|| fileio::read_for_open(&name, &file, &Value::Null).map_err(|e| e.to_string())))
-            .unwrap_or_else(|msg| Err(format!("internal error: {msg} (please report this bug)")));
-        // The file's bytes go before the document is handed over.
-        drop(file);
-        // The app may have quit meanwhile: nothing to hand it to.
-        let _ = tx.send(r);
-    });
+    let spawned = std::thread::Builder::new()
+        .name("vectorcraft-open".into())
+        .spawn(move || {
+            let r = scope
+                .run(|| {
+                    vectorcraft_engine::guard::catch_panic(|| {
+                        fileio::read_for_open(&name, &file, &Value::Null).map_err(|e| e.to_string())
+                    })
+                })
+                .unwrap_or_else(|msg| {
+                    Err(format!("internal error: {msg} (please report this bug)"))
+                });
+            // The file's bytes go before the document is handed over.
+            drop(file);
+            // The app may have quit meanwhile: nothing to hand it to.
+            let _ = tx.send(r);
+        });
     if spawned.is_err() {
         return Err(Arc::try_unwrap(bytes).unwrap_or_else(|b| b.to_vec()));
     }
     let label = format!("Opening {}", fileio::file_name(path));
-    app.opening.pending.push(Pending { path: path.to_string(), label: label.clone(), done });
+    app.opening.pending.push(Pending {
+        path: path.to_string(),
+        label: label.clone(),
+        done,
+    });
     let status = format!("{label}…");
     app.status(status.clone());
     Ok(json!({ "background": true, "status": status }))
@@ -71,7 +85,9 @@ pub fn poll(app: &mut VectorcraftApp) {
                 i += 1;
                 continue;
             }
-            Err(TryRecvError::Disconnected) => Err("the file stopped being read (please report this bug)".to_string()),
+            Err(TryRecvError::Disconnected) => {
+                Err("the file stopped being read (please report this bug)".to_string())
+            }
         };
         let p = app.opening.pending.remove(i);
         // The status bar no longer says it is opening.
@@ -84,7 +100,9 @@ pub fn poll(app: &mut VectorcraftApp) {
 
 /// Open a file read off the UI thread, as [`crate::io::open_reporting`] opens one read at once.
 fn finish(app: &mut VectorcraftApp, path: &str, r: Result<ReadFile, String>) {
-    let opened = r.and_then(|file| fileio::open_read(&mut app.session, file, Some(path.to_string())).map_err(|e| e.to_string()));
+    let opened = r.and_then(|file| {
+        fileio::open_read(&mut app.session, file, Some(path.to_string())).map_err(|e| e.to_string())
+    });
     match opened {
         Ok(r) => {
             crate::io::opened(app, &r);
@@ -119,17 +137,37 @@ mod tests {
         assert_eq!(app.session.documents().len(), before + 1);
         assert!(!app.ui.status.starts_with("Opening"), "{}", app.ui.status);
         let st = app.session.doc().unwrap();
-        assert_eq!((st.path.as_deref(), st.doc.artboards[0].rect.width()), (Some("/art/Poster.vectorcraft"), 120.0));
-        assert_eq!(app.ui.recent_files.first().map(String::as_str), Some("/art/Poster.vectorcraft"));
+        assert_eq!(
+            (st.path.as_deref(), st.doc.artboards[0].rect.width()),
+            (Some("/art/Poster.vectorcraft"), 120.0)
+        );
+        assert_eq!(
+            app.ui.recent_files.first().map(String::as_str),
+            Some("/art/Poster.vectorcraft")
+        );
         // A file that can't be read: reported, nothing opened, not a recent file.
-        start(&mut app, "/art/Broken.vectorcraft", b"{\"format\":\"vectorcraft\"".to_vec()).unwrap();
+        start(
+            &mut app,
+            "/art/Broken.vectorcraft",
+            b"{\"format\":\"vectorcraft\"".to_vec(),
+        )
+        .unwrap();
         let t0 = std::time::Instant::now();
         while !app.opening.pending.is_empty() && t0.elapsed().as_secs() < 30 {
             poll(&mut app);
             std::thread::yield_now();
         }
         assert_eq!(app.session.documents().len(), before + 1);
-        assert!(app.ui.status.starts_with("Couldn't open Broken.vectorcraft"), "{}", app.ui.status);
-        assert_ne!(app.ui.recent_files.first().map(String::as_str), Some("/art/Broken.vectorcraft"));
+        assert!(
+            app.ui
+                .status
+                .starts_with("Couldn't open Broken.vectorcraft"),
+            "{}",
+            app.ui.status
+        );
+        assert_ne!(
+            app.ui.recent_files.first().map(String::as_str),
+            Some("/art/Broken.vectorcraft")
+        );
     }
 }

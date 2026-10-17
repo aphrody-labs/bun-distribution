@@ -31,7 +31,10 @@ pub(crate) fn looks_like_pcx(b: &[u8]) -> bool {
     }
     let width = u32::from(x1 - x0) + 1;
     let min_stride = (width * u32::from(bits)).div_ceil(8);
-    stride >= min_stride && stride > 0 && (bits != 8 || matches!(planes, 1 | 3)) && (bits == 8 || u32::from(bits) * u32::from(planes) <= 4)
+    stride >= min_stride
+        && stride > 0
+        && (bits != 8 || matches!(planes, 1 | 3))
+        && (bits == 8 || u32::from(bits) * u32::from(planes) <= 4)
 }
 
 /// Read one compressed plane's row. RLE packets never cross a scanline.
@@ -61,11 +64,23 @@ pub(crate) fn decode(b: &[u8], limits: &Limits) -> Result<Image, CodecError> {
     if !looks_like_pcx(b) {
         return Err(bad("invalid PCX header or unsupported pixel layout"));
     }
-    let (w, h) = (u32::from(le16(b, 8) - le16(b, 4)) + 1, u32::from(le16(b, 10) - le16(b, 6)) + 1);
+    let (w, h) = (
+        u32::from(le16(b, 8) - le16(b, 4)) + 1,
+        u32::from(le16(b, 10) - le16(b, 6)) + 1,
+    );
     limits.check(w, h, ChannelLayout::Rgb, SampleType::U8)?;
-    let (bits, planes, stride) = (usize::from(b[3]), usize::from(b[65]), usize::from(le16(b, 66)));
-    let row_len = stride.checked_mul(planes).ok_or_else(|| bad("row size overflow"))?;
-    let total = (w as usize).checked_mul(h as usize).and_then(|n| n.checked_mul(3)).ok_or_else(|| bad("pixel size overflow"))?;
+    let (bits, planes, stride) = (
+        usize::from(b[3]),
+        usize::from(b[65]),
+        usize::from(le16(b, 66)),
+    );
+    let row_len = stride
+        .checked_mul(planes)
+        .ok_or_else(|| bad("row size overflow"))?;
+    let total = (w as usize)
+        .checked_mul(h as usize)
+        .and_then(|n| n.checked_mul(3))
+        .ok_or_else(|| bad("pixel size overflow"))?;
     // The last 769 bytes are the optional VGA palette for 8-bit indexed images.
     let vga = bits == 8 && planes == 1 && b.len() >= HEADER + 769 && b[b.len() - 769] == 0x0c;
     if bits == 8 && planes == 1 && !vga && le16(b, 68) != 2 {

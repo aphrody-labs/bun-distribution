@@ -38,7 +38,13 @@ fn is_one(v: &f32) -> bool {
 
 impl Word {
     pub fn new(text: impl Into<String>, start: Tick, end: Tick) -> Self {
-        Self { text: text.into(), start, end, speaker: None, confidence: 1.0 }
+        Self {
+            text: text.into(),
+            start,
+            end,
+            speaker: None,
+            confidence: 1.0,
+        }
     }
     pub fn range(&self) -> TimeRange {
         TimeRange::from_bounds(self.start, self.end.max(self.start))
@@ -53,7 +59,8 @@ impl Word {
 /// Lower-case `s` and trim punctuation and symbols from both ends (apostrophes inside a word stay:
 /// `"Don't!"` → `"don't"`).
 pub fn normalize_word(s: &str) -> String {
-    s.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase()
+    s.trim_matches(|c: char| !c.is_alphanumeric())
+        .to_lowercase()
 }
 
 /// A speaker label.
@@ -80,12 +87,21 @@ impl Transcript {
     /// has no speaker).
     pub fn speaker_name(&self, word: &Word) -> Option<String> {
         let i = word.speaker? as usize;
-        Some(self.speakers.get(i).map(|s| s.name.clone()).unwrap_or_else(|| format!("Speaker {}", i + 1)))
+        Some(
+            self.speakers
+                .get(i)
+                .map(|s| s.name.clone())
+                .unwrap_or_else(|| format!("Speaker {}", i + 1)),
+        )
     }
 
     /// The text of all words joined by spaces.
     pub fn text(&self) -> String {
-        self.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ")
+        self.words
+            .iter()
+            .map(|w| w.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     /// Indices of the words overlapping the media range.
@@ -118,7 +134,9 @@ impl Transcript {
         if let Some(m) = max {
             while self.speakers.len() <= m as usize {
                 let n = self.speakers.len() + 1;
-                self.speakers.push(Speaker { name: format!("Speaker {n}") });
+                self.speakers.push(Speaker {
+                    name: format!("Speaker {n}"),
+                });
             }
         }
     }
@@ -130,12 +148,18 @@ impl Transcript {
                 return Err(format!("word {i} ({:?}) ends before it starts", w.text));
             }
             if i > 0 && self.words[i - 1].end > w.start {
-                return Err(format!("word {i} ({:?}) overlaps the word before it", w.text));
+                return Err(format!(
+                    "word {i} ({:?}) overlaps the word before it",
+                    w.text
+                ));
             }
             if let Some(s) = w.speaker
                 && s as usize >= self.speakers.len()
             {
-                return Err(format!("word {i} has speaker {s}, but there are {} speakers", self.speakers.len()));
+                return Err(format!(
+                    "word {i} has speaker {s}, but there are {} speakers",
+                    self.speakers.len()
+                ));
             }
         }
         Ok(())
@@ -152,10 +176,21 @@ mod tests {
 
     #[test]
     fn normalize_sorts_clamps_and_labels() {
-        let mut t = Transcript { words: vec![w("b", 10, 30), w(" a ", 0, 15), w("", 40, 50), w("c", 35, 20)], ..Default::default() };
+        let mut t = Transcript {
+            words: vec![
+                w("b", 10, 30),
+                w(" a ", 0, 15),
+                w("", 40, 50),
+                w("c", 35, 20),
+            ],
+            ..Default::default()
+        };
         t.words[0].speaker = Some(1);
         t.normalize();
-        assert_eq!(t.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>(), ["a", "b", "c"]);
+        assert_eq!(
+            t.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>(),
+            ["a", "b", "c"]
+        );
         assert_eq!(t.words[0].end, Tick(10));
         assert_eq!(t.words[2].end, Tick(35));
         assert_eq!(t.speakers.len(), 2);
@@ -165,7 +200,10 @@ mod tests {
 
     #[test]
     fn words_in_range_and_normalized() {
-        let t = Transcript { words: vec![w("Um,", 0, 10), w("Don't!", 10, 20), w("go", 25, 30)], ..Default::default() };
+        let t = Transcript {
+            words: vec![w("Um,", 0, 10), w("Don't!", 10, 20), w("go", 25, 30)],
+            ..Default::default()
+        };
         assert_eq!(t.words_in(TimeRange::from_bounds(Tick(5), Tick(24))), 0..2);
         assert_eq!(t.words_in(TimeRange::from_bounds(Tick(20), Tick(25))), 2..2);
         assert_eq!(t.words[0].normalized(), "um");

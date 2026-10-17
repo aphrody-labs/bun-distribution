@@ -22,8 +22,14 @@ pub enum CornerShape {
 }
 
 impl CornerShape {
-    pub const ALL: [CornerShape; 6] =
-        [CornerShape::None, CornerShape::Fancy, CornerShape::Bevel, CornerShape::Inset, CornerShape::InverseRounded, CornerShape::Rounded];
+    pub const ALL: [CornerShape; 6] = [
+        CornerShape::None,
+        CornerShape::Fancy,
+        CornerShape::Bevel,
+        CornerShape::Inset,
+        CornerShape::InverseRounded,
+        CornerShape::Rounded,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             CornerShape::None => "None",
@@ -57,7 +63,9 @@ pub struct CornerOptions {
 
 impl CornerOptions {
     pub fn uniform(shape: CornerShape, size: f64) -> Self {
-        Self { corners: [Corner { shape, size }; 4] }
+        Self {
+            corners: [Corner { shape, size }; 4],
+        }
     }
     pub fn is_none(&self) -> bool {
         self.corners.iter().all(Corner::is_none)
@@ -85,12 +93,20 @@ const SMOOTH: f64 = 0.9998;
 
 /// The unit direction a segment leaves its start in (None for a point).
 fn start_dir(c: &CubicBez) -> Option<Vec2> {
-    [c.p1, c.p2, c.p3].into_iter().map(|q| q - c.p0).find(|d| d.hypot() > 1e-9).map(|d| d / d.hypot())
+    [c.p1, c.p2, c.p3]
+        .into_iter()
+        .map(|q| q - c.p0)
+        .find(|d| d.hypot() > 1e-9)
+        .map(|d| d / d.hypot())
 }
 
 /// The unit direction a segment arrives at its end in (None for a point).
 fn end_dir(c: &CubicBez) -> Option<Vec2> {
-    [c.p2, c.p1, c.p0].into_iter().map(|q| c.p3 - q).find(|d| d.hypot() > 1e-9).map(|d| d / d.hypot())
+    [c.p2, c.p1, c.p0]
+        .into_iter()
+        .map(|q| c.p3 - q)
+        .find(|d| d.hypot() > 1e-9)
+        .map(|d| d / d.hypot())
 }
 
 /// Does the path turn where `prev` ends and `next` starts?
@@ -109,7 +125,17 @@ fn apply_subpath(sp: &SubPath, opts: &CornerOptions, out: &mut BezPath) {
     let segs: Vec<CubicBez> = (0..n).map(|i| sp.segment(i)).collect();
     let lines: Vec<bool> = (0..n).map(|i| sp.segment_is_line(i)).collect();
     // Straight sides are measured (and trimmed below) exactly; curves by arc length.
-    let lens: Vec<f64> = segs.iter().zip(&lines).map(|(c, line)| if *line { (c.p3 - c.p0).hypot() } else { c.arclen(ARC_ACCURACY) }).collect();
+    let lens: Vec<f64> = segs
+        .iter()
+        .zip(&lines)
+        .map(|(c, line)| {
+            if *line {
+                (c.p3 - c.p0).hypot()
+            } else {
+                c.arclen(ARC_ACCURACY)
+            }
+        })
+        .collect();
     let size: Vec<f64> = (0..n)
         .map(|i| {
             let c = opts.corners[i % 4];
@@ -130,12 +156,24 @@ fn apply_subpath(sp: &SubPath, opts: &CornerOptions, out: &mut BezPath) {
             let (s0, s1) = (size[i], size[(i + 1) % n]);
             if lines[i] {
                 let c = &segs[i];
-                let u = if lens[i] > 1e-12 { (c.p3 - c.p0) / lens[i] } else { Vec2::ZERO };
+                let u = if lens[i] > 1e-12 {
+                    (c.p3 - c.p0) / lens[i]
+                } else {
+                    Vec2::ZERO
+                };
                 let (a, b) = (c.p0 + u * s0, c.p3 - u * s1);
                 return CubicBez::new(a, a, b, b);
             }
-            let t0 = if s0 > 0.0 { segs[i].inv_arclen(s0, ARC_ACCURACY) } else { 0.0 };
-            let t1 = if s1 > 0.0 { segs[i].inv_arclen(lens[i] - s1, ARC_ACCURACY) } else { 1.0 };
+            let t0 = if s0 > 0.0 {
+                segs[i].inv_arclen(s0, ARC_ACCURACY)
+            } else {
+                0.0
+            };
+            let t1 = if s1 > 0.0 {
+                segs[i].inv_arclen(lens[i] - s1, ARC_ACCURACY)
+            } else {
+                1.0
+            };
             segs[i].subsegment(t0..t1.max(t0))
         })
         .collect();
@@ -151,8 +189,20 @@ fn apply_subpath(sp: &SubPath, opts: &CornerOptions, out: &mut BezPath) {
         let j = (i + 1) % n;
         let next = &trimmed[j];
         if size[j] > 0.0 {
-            match (end_dir(seg).or_else(|| end_dir(&segs[i])), start_dir(next).or_else(|| start_dir(&segs[j]))) {
-                (Some(ta), Some(tb)) => corner_shape(out, opts.corners[j % 4].shape, sp.anchors[j].p, seg.p3, next.p0, -ta, tb, size[j]),
+            match (
+                end_dir(seg).or_else(|| end_dir(&segs[i])),
+                start_dir(next).or_else(|| start_dir(&segs[j])),
+            ) {
+                (Some(ta), Some(tb)) => corner_shape(
+                    out,
+                    opts.corners[j % 4].shape,
+                    sp.anchors[j].p,
+                    seg.p3,
+                    next.p0,
+                    -ta,
+                    tb,
+                    size[j],
+                ),
                 _ => out.line_to(next.p0),
             }
         }
@@ -161,7 +211,16 @@ fn apply_subpath(sp: &SubPath, opts: &CornerOptions, out: &mut BezPath) {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn corner_shape(out: &mut BezPath, shape: CornerShape, p: Point, a: Point, b: Point, ui: Vec2, uo: Vec2, s: f64) {
+fn corner_shape(
+    out: &mut BezPath,
+    shape: CornerShape,
+    p: Point,
+    a: Point,
+    b: Point,
+    ui: Vec2,
+    uo: Vec2,
+    s: f64,
+) {
     const K: f64 = crate::shapes::KAPPA;
     match shape {
         CornerShape::None => out.line_to(b),
@@ -197,7 +256,10 @@ mod tests {
     #[test]
     fn none_is_identity() {
         let r = rectangle(Rect::new(0.0, 0.0, 100.0, 50.0));
-        assert_eq!(apply(&r, &CornerOptions::default()).bounding_box(), Rect::new(0.0, 0.0, 100.0, 50.0));
+        assert_eq!(
+            apply(&r, &CornerOptions::default()).bounding_box(),
+            Rect::new(0.0, 0.0, 100.0, 50.0)
+        );
     }
 
     #[test]
@@ -207,7 +269,10 @@ mod tests {
         for shape in CornerShape::ALL.into_iter().skip(1) {
             let bp = apply(&r, &CornerOptions::uniform(shape, 12.0));
             let bb = bp.bounding_box();
-            assert!(bb.x0 >= -1e-6 && bb.y0 >= -1e-6 && bb.x1 <= 100.0 + 1e-6 && bb.y1 <= 60.0 + 1e-6, "{shape:?} {bb:?}");
+            assert!(
+                bb.x0 >= -1e-6 && bb.y0 >= -1e-6 && bb.x1 <= 100.0 + 1e-6 && bb.y1 <= 60.0 + 1e-6,
+                "{shape:?} {bb:?}"
+            );
             let area = bp.area().abs();
             assert!(area < 6000.0 && area > 5000.0, "{shape:?} area {area}");
         }
@@ -223,7 +288,9 @@ mod tests {
 
     fn nearest(bp: &BezPath, p: Point) -> f64 {
         use kurbo::ParamCurveNearest;
-        bp.segments().map(|s| s.nearest(p, 1e-6).distance_sq.sqrt()).fold(f64::INFINITY, f64::min)
+        bp.segments()
+            .map(|s| s.nearest(p, 1e-6).distance_sq.sqrt())
+            .fold(f64::INFINITY, f64::min)
     }
 
     /// A quarter disc of radius 100 centred on (0, 100): its arc from (0, 0) to (100, 100).
@@ -234,7 +301,10 @@ mod tests {
         let mut a1 = crate::path::Anchor::corner(Point::new(100.0, 100.0));
         a1.h_in = Point::new(100.0, 100.0 - k);
         let a2 = crate::path::Anchor::corner(Point::new(0.0, 100.0));
-        PathData::new(vec![SubPath { anchors: vec![a0, a1, a2], closed: true }])
+        PathData::new(vec![SubPath {
+            anchors: vec![a0, a1, a2],
+            closed: true,
+        }])
     }
 
     #[test]
@@ -246,10 +316,17 @@ mod tests {
         let area = bp.area().abs();
         assert!(area > 7300.0 && area < 7854.0, "area {area}");
         // The middle of the arc is kept.
-        let mid = Point::new(100.0 * std::f64::consts::FRAC_1_SQRT_2, 100.0 - 100.0 * std::f64::consts::FRAC_1_SQRT_2);
+        let mid = Point::new(
+            100.0 * std::f64::consts::FRAC_1_SQRT_2,
+            100.0 - 100.0 * std::f64::consts::FRAC_1_SQRT_2,
+        );
         assert!(nearest(&bp, mid) < 0.05, "{}", nearest(&bp, mid));
         // All three corners are rounded off: the line-line one and both where the arc meets a line.
-        for corner in [Point::new(0.0, 0.0), Point::new(100.0, 100.0), Point::new(0.0, 100.0)] {
+        for corner in [
+            Point::new(0.0, 0.0),
+            Point::new(100.0, 100.0),
+            Point::new(0.0, 100.0),
+        ] {
             assert!(nearest(&bp, corner) > 3.0, "{corner:?} is still sharp");
         }
     }
@@ -269,7 +346,10 @@ mod tests {
             .collect();
         assert_eq!(pts.len(), 9, "{pts:?}");
         for p in pts {
-            assert!([0.0, 10.0, 90.0, 100.0].contains(&p.x) && [0.0, 10.0, 50.0, 60.0].contains(&p.y), "{p:?}");
+            assert!(
+                [0.0, 10.0, 90.0, 100.0].contains(&p.x) && [0.0, 10.0, 50.0, 60.0].contains(&p.y),
+                "{p:?}"
+            );
         }
     }
 
@@ -278,7 +358,10 @@ mod tests {
         let e = crate::shapes::ellipse(Rect::new(0.0, 0.0, 100.0, 60.0));
         for shape in CornerShape::ALL.into_iter().skip(1) {
             let bp = apply(&e, &CornerOptions::uniform(shape, 20.0));
-            assert!((bp.area().abs() - e.to_bezpath().area().abs()).abs() < 1e-6, "{shape:?}");
+            assert!(
+                (bp.area().abs() - e.to_bezpath().area().abs()).abs() < 1e-6,
+                "{shape:?}"
+            );
         }
     }
 

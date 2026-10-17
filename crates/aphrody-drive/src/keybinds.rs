@@ -28,7 +28,7 @@ impl Modifier {
         match token.to_ascii_lowercase().as_str() {
             "cmdorctrl" | "commandorcontrol" | "cmdorcontrol" | "commandorctrl" => {
                 Some(Self::CommandOrControl)
-            },
+            }
             "cmd" | "command" => Some(Self::Command),
             "ctrl" | "control" => Some(Self::Control),
             "alt" | "option" | "altgr" => Some(Self::Alt),
@@ -88,7 +88,11 @@ impl Accelerator {
             return Err(format!("accelerator `{text}` ends with a modifier"));
         }
         let mut modifiers = Vec::new();
-        for token in head.split('+').map(str::trim).filter(|token| !token.is_empty()) {
+        for token in head
+            .split('+')
+            .map(str::trim)
+            .filter(|token| !token.is_empty())
+        {
             let modifier = Modifier::parse(token)
                 .ok_or_else(|| format!("unknown modifier `{token}` in `{text}`"))?;
             if !modifiers.contains(&modifier) {
@@ -136,7 +140,9 @@ impl KeybindState {
     /// When the accelerator does not parse.
     pub fn register(&self, id: &str, accelerator: &str) -> Result<String, String> {
         let normalized = Accelerator::parse(accelerator)?.to_string();
-        self.registered.lock().insert(id.to_string(), normalized.clone());
+        self.registered
+            .lock()
+            .insert(id.to_string(), normalized.clone());
         Ok(normalized)
     }
 
@@ -217,7 +223,10 @@ mod tests {
     #[test]
     fn modifiers_are_aliased_sorted_and_deduplicated() {
         let accelerator = Accelerator::parse("shift+Cmd+cmd+Option+K").unwrap();
-        assert_eq!(accelerator.modifiers, vec![Modifier::Command, Modifier::Alt, Modifier::Shift]);
+        assert_eq!(
+            accelerator.modifiers,
+            vec![Modifier::Command, Modifier::Alt, Modifier::Shift]
+        );
         assert_eq!(accelerator.key, "K");
         assert_eq!(normalized("CommandOrControl+,"), "CmdOrCtrl+,");
         assert_eq!(normalized("Meta+Win+E"), "Super+E");
@@ -240,9 +249,15 @@ mod tests {
     #[test]
     fn registry_stores_the_normalized_form() {
         let state = KeybindState::new();
-        assert_eq!(state.register("explorer.copy", "cmd+c").unwrap(), "Command+C");
+        assert_eq!(
+            state.register("explorer.copy", "cmd+c").unwrap(),
+            "Command+C"
+        );
         assert!(state.register("bad", "Nope+X").is_err());
-        assert_eq!(state.get_accelerator("explorer.copy").as_deref(), Some("Command+C"));
+        assert_eq!(
+            state.get_accelerator("explorer.copy").as_deref(),
+            Some("Command+C")
+        );
         assert_eq!(state.list_all().len(), 1);
         assert!(state.unregister("explorer.copy"));
         assert!(!state.unregister("explorer.copy"));

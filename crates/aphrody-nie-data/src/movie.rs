@@ -51,7 +51,11 @@ pub const NONE_SENTINEL: &str = "0xFFFFFFFF";
 /// Renvoie `Some(chemin)` si la chaîne est un vrai chemin, `None` si vide ou sentinelle.
 #[must_use]
 fn path_or_none(s: &str) -> Option<&str> {
-    if s.is_empty() || s == NONE_SENTINEL { None } else { Some(s) }
+    if s.is_empty() || s == NONE_SENTINEL {
+        None
+    } else {
+        Some(s)
+    }
 }
 
 /// Lit un champ flottant (`Float` RDBN) d'un objet `values[]` (`0.0` si absent).
@@ -256,7 +260,9 @@ impl MoviePlayingConfig {
         if info.menu_id.is_zero() {
             return None;
         }
-        self.subtitle_menus.iter().find(|s| s.subtitle_id == info.menu_id)
+        self.subtitle_menus
+            .iter()
+            .find(|s| s.subtitle_id == info.menu_id)
     }
 }
 
@@ -267,7 +273,9 @@ fn parse_list<T, F>(root: &Value, list_name: &str, f: F) -> Vec<T>
 where
     F: Fn(&Value) -> T,
 {
-    list_values(root, list_name).map(|vals| vals.iter().map(f).collect()).unwrap_or_default()
+    list_values(root, list_name)
+        .map(|vals| vals.iter().map(f).collect())
+        .unwrap_or_default()
 }
 
 /// Parse un `movie_playing_config_*.cfg.bin` complet (forme iecode `{ "lists": [...] }`).

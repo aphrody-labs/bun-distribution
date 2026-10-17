@@ -43,7 +43,13 @@ fn checked_name(name: &str, cmd: &str) -> Result<String> {
         return Err(bad(cmd, "the preset name is empty"));
     }
     if name.chars().count() > crate::brush_preset_cmds::MAX_NAME {
-        return Err(bad(cmd, format!("preset names are at most {} characters", crate::brush_preset_cmds::MAX_NAME)));
+        return Err(bad(
+            cmd,
+            format!(
+                "preset names are at most {} characters",
+                crate::brush_preset_cmds::MAX_NAME
+            ),
+        ));
     }
     Ok(name.to_string())
 }
@@ -51,14 +57,20 @@ fn checked_name(name: &str, cmd: &str) -> Result<String> {
 /// Read saved tool presets entry by entry, so a damaged entry (wrong type, empty or overlong name,
 /// a duplicate name) is skipped without discarding the others.
 pub(crate) fn load(value: Value) -> Vec<ToolPreset> {
-    let Some(entries) = value.as_array() else { return Vec::new() };
+    let Some(entries) = value.as_array() else {
+        return Vec::new();
+    };
     let mut presets: Vec<ToolPreset> = Vec::new();
     for entry in entries {
         if presets.len() >= MAX_PRESETS {
             break;
         }
-        let Ok(mut preset) = serde_json::from_value::<ToolPreset>(entry.clone()) else { continue };
-        let Ok(name) = checked_name(&preset.name, "") else { continue };
+        let Ok(mut preset) = serde_json::from_value::<ToolPreset>(entry.clone()) else {
+            continue;
+        };
+        let Ok(name) = checked_name(&preset.name, "") else {
+            continue;
+        };
         if preset.tool.trim().is_empty() || presets.iter().any(|p| p.name == name) {
             continue;
         }
@@ -72,18 +84,41 @@ pub(crate) fn load(value: Value) -> Vec<ToolPreset> {
 }
 
 fn norm(t: &str) -> String {
-    t.to_ascii_lowercase().replace([' ', '_', '-'], "").trim_end_matches("tool").to_string()
+    t.to_ascii_lowercase()
+        .replace([' ', '_', '-'], "")
+        .trim_end_matches("tool")
+        .to_string()
 }
 
 /// A few starting presets (our own).
 pub fn builtin() -> Vec<ToolPreset> {
     let brush = |size: f32, hardness: f32| json!({"brush": {"size": size, "hardness": hardness}});
     vec![
-        ToolPreset { name: "Soft Round 100 px".into(), tool: "brush".into(), options: brush(100.0, 0.0) },
-        ToolPreset { name: "Hard Round 12 px".into(), tool: "brush".into(), options: brush(12.0, 1.0) },
-        ToolPreset { name: "Soft Eraser 60 px".into(), tool: "eraser".into(), options: brush(60.0, 0.0) },
-        ToolPreset { name: "Radial Gradient".into(), tool: "gradient".into(), options: json!({"toolOptions": {"gradient_style": "radial"}}) },
-        ToolPreset { name: "Clone Soft 40 px".into(), tool: "cloneStamp".into(), options: brush(40.0, 0.2) },
+        ToolPreset {
+            name: "Soft Round 100 px".into(),
+            tool: "brush".into(),
+            options: brush(100.0, 0.0),
+        },
+        ToolPreset {
+            name: "Hard Round 12 px".into(),
+            tool: "brush".into(),
+            options: brush(12.0, 1.0),
+        },
+        ToolPreset {
+            name: "Soft Eraser 60 px".into(),
+            tool: "eraser".into(),
+            options: brush(60.0, 0.0),
+        },
+        ToolPreset {
+            name: "Radial Gradient".into(),
+            tool: "gradient".into(),
+            options: json!({"toolOptions": {"gradient_style": "radial"}}),
+        },
+        ToolPreset {
+            name: "Clone Soft 40 px".into(),
+            tool: "cloneStamp".into(),
+            options: brush(40.0, 0.2),
+        },
     ]
 }
 
@@ -127,12 +162,18 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     if options.get("brush").is_none() && brushy.contains(&norm(&tool).as_str()) {
         options["brush"] = serde_json::to_value(&s.tools.brush).unwrap_or(Value::Null);
     }
-    if p.get("includeColor").and_then(Value::as_bool).unwrap_or(false) {
+    if p.get("includeColor")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
         let f = s.tools.foreground;
         options["foreground"] = json!(f);
     }
     if s.presets.tool_presets.len() >= MAX_PRESETS {
-        return Err(bad(CMD, format!("at most {MAX_PRESETS} tool presets can be saved; delete some first")));
+        return Err(bad(
+            CMD,
+            format!("at most {MAX_PRESETS} tool presets can be saved; delete some first"),
+        ));
     }
     let base = match p.get("name") {
         None | Some(Value::Null) => tool.clone(),
@@ -142,7 +183,11 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let groups = [Group::new("", s.presets.tool_presets.clone())];
     let name = super::unique_name(&groups, &base);
-    s.presets.tool_presets.push(ToolPreset { name: name.clone(), tool: tool.clone(), options });
+    s.presets.tool_presets.push(ToolPreset {
+        name: name.clone(),
+        tool: tool.clone(),
+        options,
+    });
     s.presets_changed();
     Ok(json!({"name": name, "tool": tool}))
 }
@@ -156,11 +201,21 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .find(|t| t.name == name)
         .cloned()
-        .ok_or_else(|| bad(CMD, format!("no tool preset \"{name}\" (see tool.presets.list)")))?;
+        .ok_or_else(|| {
+            bad(
+                CMD,
+                format!("no tool preset \"{name}\" (see tool.presets.list)"),
+            )
+        })?;
     if let Some(b) = t.options.get("brush").filter(|b| b.is_object()) {
         super::call(s, "tools.setBrush", json!({"brush": b}))?;
     }
-    if let Some(c) = t.options.get("foreground").and_then(Value::as_array).filter(|a| a.len() >= 3) {
+    if let Some(c) = t
+        .options
+        .get("foreground")
+        .and_then(Value::as_array)
+        .filter(|a| a.len() >= 3)
+    {
         let v: Vec<f32> = c.iter().map(|x| x.as_f64().unwrap_or(0.0) as f32).collect();
         s.tools.foreground = [v[0], v[1], v[2], v.get(3).copied().unwrap_or(1.0)];
     }

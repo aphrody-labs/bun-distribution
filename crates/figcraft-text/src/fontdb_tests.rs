@@ -2,13 +2,24 @@ use super::*;
 
 fn pending(styles: &[&str]) -> FontDb {
     let mut db = FontDb::default();
-    let entries = styles.iter().map(|s| Pending { path: format!("no-such-dir/{s}.ttf").into(), index: 0, style: (*s).into() }).collect();
-    db.pending.insert("cjk ui".into(), ("CJK UI".into(), entries));
+    let entries = styles
+        .iter()
+        .map(|s| Pending {
+            path: format!("no-such-dir/{s}.ttf").into(),
+            index: 0,
+            style: (*s).into(),
+        })
+        .collect();
+    db.pending
+        .insert("cjk ui".into(), ("CJK UI".into(), entries));
     db
 }
 
 fn left(db: &FontDb) -> Vec<String> {
-    db.pending.get("cjk ui").map(|(_, v)| v.iter().map(|e| e.style.clone()).collect()).unwrap_or_default()
+    db.pending
+        .get("cjk ui")
+        .map(|(_, v)| v.iter().map(|e| e.style.clone()).collect())
+        .unwrap_or_default()
 }
 
 #[test]
@@ -33,7 +44,9 @@ fn find_one_reads_only_the_nearest_style() {
 #[test]
 fn system_fonts_are_scanned_once() {
     // Racing callers (the desktop's background scan, on-demand lookups, tests) share one walk.
-    let threads: Vec<_> = (0..4).map(|_| std::thread::spawn(scan_system_fonts)).collect();
+    let threads: Vec<_> = (0..4)
+        .map(|_| std::thread::spawn(scan_system_fonts))
+        .collect();
     for t in threads {
         t.join().unwrap();
     }
@@ -56,14 +69,24 @@ fn the_scan_reads_names_like_a_whole_file_read() {
                 let p = e.path();
                 if p.is_dir() {
                     stack.push(p);
-                } else if p.extension().is_some_and(|x| ["ttf", "otf", "ttc", "otc"].contains(&x.to_ascii_lowercase().to_str().unwrap_or(""))) {
+                } else if p.extension().is_some_and(|x| {
+                    ["ttf", "otf", "ttc", "otc"]
+                        .contains(&x.to_ascii_lowercase().to_str().unwrap_or(""))
+                }) {
                     files.push(p);
                 }
             }
         }
     }
     for p in files {
-        let Ok(whole) = std::fs::read(&p) else { continue };
-        assert_eq!(faces_in(&index_bytes(&p, whole.len()).unwrap()), faces_in(&whole), "{}", p.display());
+        let Ok(whole) = std::fs::read(&p) else {
+            continue;
+        };
+        assert_eq!(
+            faces_in(&index_bytes(&p, whole.len()).unwrap()),
+            faces_in(&whole),
+            "{}",
+            p.display()
+        );
     }
 }

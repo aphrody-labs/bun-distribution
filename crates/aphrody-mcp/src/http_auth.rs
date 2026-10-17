@@ -55,12 +55,15 @@ pub(crate) fn resolve_token(
     let dedicated = env(TOKEN_ENV).filter(|value| !value.trim().is_empty());
     let (name, token) = match dedicated {
         Some(token) => (TOKEN_ENV, Some(token)),
-        None => ("APHRODY_AI_HTTP_TOKEN", aphrody_config::ai_env::HTTP_TOKEN.resolve_with(env)),
+        None => (
+            "APHRODY_AI_HTTP_TOKEN",
+            aphrody_config::ai_env::HTTP_TOKEN.resolve_with(env),
+        ),
     };
     match token.map(|value| value.trim().to_owned()) {
         Some(token) if token.len() < MIN_TOKEN_BYTES => {
             Err(format!("{name} must be at least {MIN_TOKEN_BYTES} bytes"))
-        },
+        }
         other => Ok(other),
     }
 }
@@ -83,24 +86,28 @@ impl McpAuth {
     /// Log what an operator must fix when `/mcp` will refuse every request.
     pub(crate) fn warn_if_unusable(&self) {
         match &self.state {
-            AuthState::Configured(_) => {},
+            AuthState::Configured(_) => {}
             AuthState::Missing => tracing::error!(
                 "{TOKEN_ENV} is not set: /mcp answers 503 to every request (REST and /healthz are unaffected)"
             ),
             AuthState::Invalid(reason) => {
                 tracing::error!("{reason}: /mcp answers 503 to every request");
-            },
+            }
         }
     }
 
     #[cfg(test)]
     pub(crate) fn with_token(token: &str) -> Self {
-        Self { state: AuthState::Configured(token.into()) }
+        Self {
+            state: AuthState::Configured(token.into()),
+        }
     }
 
     #[cfg(test)]
     pub(crate) fn unconfigured() -> Self {
-        Self { state: AuthState::Missing }
+        Self {
+            state: AuthState::Missing,
+        }
     }
 }
 
@@ -144,10 +151,11 @@ pub(crate) async fn require_bearer(
             } else {
                 refusal(StatusCode::UNAUTHORIZED, "Unauthorized")
             }
-        },
-        AuthState::Missing => {
-            refusal(StatusCode::SERVICE_UNAVAILABLE, "MCP HTTP token is not configured")
-        },
+        }
+        AuthState::Missing => refusal(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "MCP HTTP token is not configured",
+        ),
         AuthState::Invalid(reason) => refusal(StatusCode::SERVICE_UNAVAILABLE, reason),
     }
 }
@@ -163,8 +171,10 @@ mod tests {
     const TOKEN: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     fn lookup(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
-        let map: HashMap<String, String> =
-            pairs.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
+        let map: HashMap<String, String> = pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect();
         move |name| map.get(name).cloned()
     }
 
@@ -178,7 +188,10 @@ mod tests {
     fn the_dedicated_variable_wins_and_the_ai_http_token_is_the_fallback() {
         let other = "f".repeat(40);
         assert_eq!(
-            resolve_token(&lookup(&[(TOKEN_ENV, TOKEN), ("APHRODY_AI_HTTP_TOKEN", &other)])),
+            resolve_token(&lookup(&[
+                (TOKEN_ENV, TOKEN),
+                ("APHRODY_AI_HTTP_TOKEN", &other)
+            ])),
             Ok(Some(TOKEN.to_owned()))
         );
         assert_eq!(
@@ -195,11 +208,18 @@ mod tests {
     fn a_short_token_is_refused_and_never_falls_back() {
         assert!(resolve_token(&lookup(&[(TOKEN_ENV, "short")])).is_err());
         assert!(
-            resolve_token(&lookup(&[(TOKEN_ENV, "short"), ("APHRODY_AI_HTTP_TOKEN", TOKEN)]))
-                .is_err()
+            resolve_token(&lookup(&[
+                (TOKEN_ENV, "short"),
+                ("APHRODY_AI_HTTP_TOKEN", TOKEN)
+            ]))
+            .is_err()
         );
         assert!(
-            resolve_token(&lookup(&[("APHRODY_AI_HTTP_TOKEN", "x".repeat(31).as_str())])).is_err()
+            resolve_token(&lookup(&[(
+                "APHRODY_AI_HTTP_TOKEN",
+                "x".repeat(31).as_str()
+            )]))
+            .is_err()
         );
         assert!(resolve_token(&lookup(&[(TOKEN_ENV, "x".repeat(32).as_str())])).is_ok());
     }
@@ -207,13 +227,19 @@ mod tests {
     #[test]
     fn the_token_is_trimmed_like_an_environment_file_value() {
         let padded = format!("{TOKEN}\n");
-        assert_eq!(resolve_token(&lookup(&[(TOKEN_ENV, &padded)])), Ok(Some(TOKEN.to_owned())));
+        assert_eq!(
+            resolve_token(&lookup(&[(TOKEN_ENV, &padded)])),
+            Ok(Some(TOKEN.to_owned()))
+        );
     }
 
     #[test]
     fn debug_never_prints_the_token() {
         let text = format!("{:?}", McpAuth::with_token(TOKEN));
-        assert!(!text.contains(TOKEN) && !text.contains(&TOKEN[..8]), "{text}");
+        assert!(
+            !text.contains(TOKEN) && !text.contains(&TOKEN[..8]),
+            "{text}"
+        );
     }
 
     #[test]
@@ -249,12 +275,27 @@ mod tests {
     #[tokio::test]
     async fn the_right_token_passes_and_every_other_request_is_refused() {
         let address = serve(McpAuth::with_token(TOKEN)).await;
-        assert_eq!(call(address, Some(&format!("Bearer {TOKEN}"))).await.status(), 200);
-        assert_eq!(call(address, Some(&format!("bearer {TOKEN}"))).await.status(), 200);
+        assert_eq!(
+            call(address, Some(&format!("Bearer {TOKEN}")))
+                .await
+                .status(),
+            200
+        );
+        assert_eq!(
+            call(address, Some(&format!("bearer {TOKEN}")))
+                .await
+                .status(),
+            200
+        );
 
         let refused = call(address, None).await;
         assert_eq!(refused.status(), 401);
-        assert!(refused.headers()["www-authenticate"].to_str().unwrap().starts_with("Bearer"));
+        assert!(
+            refused.headers()["www-authenticate"]
+                .to_str()
+                .unwrap()
+                .starts_with("Bearer")
+        );
         assert_eq!(refused.headers()["cache-control"], "no-store");
         let body = refused.text().await.unwrap();
         assert!(!body.contains(TOKEN));
@@ -276,7 +317,12 @@ mod tests {
     async fn without_a_usable_token_the_endpoint_is_closed() {
         let missing = serve(McpAuth::unconfigured()).await;
         assert_eq!(call(missing, None).await.status(), 503);
-        assert_eq!(call(missing, Some(&format!("Bearer {TOKEN}"))).await.status(), 503);
+        assert_eq!(
+            call(missing, Some(&format!("Bearer {TOKEN}")))
+                .await
+                .status(),
+            503
+        );
 
         let invalid = serve(McpAuth::from_lookup(&lookup(&[(TOKEN_ENV, "short")]))).await;
         let response = call(invalid, Some("Bearer short")).await;

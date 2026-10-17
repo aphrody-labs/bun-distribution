@@ -83,7 +83,10 @@ impl<'a> RamView<'a> {
 
         let end = addr.checked_add(len - 1)?;
         let (first, last) = if end < self.mem1.len() {
-            (addr >> MEMORY_DIRTY_PAGE_SHIFT, end >> MEMORY_DIRTY_PAGE_SHIFT)
+            (
+                addr >> MEMORY_DIRTY_PAGE_SHIFT,
+                end >> MEMORY_DIRTY_PAGE_SHIFT,
+            )
         } else if addr >= MEM2_BASE as usize
             && end < (MEM2_BASE as usize).checked_add(self.mem2.len())?
         {
@@ -94,7 +97,11 @@ impl<'a> RamView<'a> {
             return None;
         };
 
-        self.memory_page_generations.get(first..=last)?.iter().copied().max()
+        self.memory_page_generations
+            .get(first..=last)?
+            .iter()
+            .copied()
+            .max()
     }
 }
 
@@ -140,7 +147,11 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
     pub fn new() -> Self {
         let ram = vec![0u8; RAM_SIZE];
         let ram_ptr = ram.as_ptr() as usize;
-        let mem2 = if SYSTEM == WII { vec![0; MEM2_SIZE] } else { Vec::new() };
+        let mem2 = if SYSTEM == WII {
+            vec![0; MEM2_SIZE]
+        } else {
+            Vec::new()
+        };
 
         let mut fastmem_lut = vec![0usize; FASTMEM_LUT_PAGES];
 
@@ -177,11 +188,18 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
 
         let fastmem_lut_ptr = fastmem_lut.as_ptr() as usize;
 
-        let refcount_len = if SYSTEM == WII { MEM1_LINES + MEM2_LINES } else { MEM1_LINES };
+        let refcount_len = if SYSTEM == WII {
+            MEM1_LINES + MEM2_LINES
+        } else {
+            MEM1_LINES
+        };
         let code_refcount: Box<[u8]> = vec![0u8; refcount_len].into_boxed_slice();
         let code_refcount_ptr = code_refcount.as_ptr() as usize;
-        let dirty_page_count =
-            if SYSTEM == WII { MEM1_DIRTY_PAGES + MEM2_DIRTY_PAGES } else { MEM1_DIRTY_PAGES };
+        let dirty_page_count = if SYSTEM == WII {
+            MEM1_DIRTY_PAGES + MEM2_DIRTY_PAGES
+        } else {
+            MEM1_DIRTY_PAGES
+        };
 
         Mmio {
             ram,
@@ -229,8 +247,11 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             let phys_base = page << FASTMEM_PAGE_SHIFT;
             let is_fastmem = phys_base <= RAM_END
                 || (SYSTEM == WII && (MEM2_BASE..=MEM2_END).contains(&phys_base));
-            let aliases: &[u32] =
-                if is_fastmem { &[0x0000_0000, 0x8000_0000, 0xC000_0000] } else { &[] };
+            let aliases: &[u32] = if is_fastmem {
+                &[0x0000_0000, 0x8000_0000, 0xC000_0000]
+            } else {
+                &[]
+            };
 
             for &alias in aliases {
                 self.fastmem_lut[((phys_base | alias) >> FASTMEM_PAGE_SHIFT) as usize] = 0;
@@ -262,14 +283,18 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             let phys_base = page << FASTMEM_PAGE_SHIFT;
             let phys_end = phys_base + FASTMEM_PAGE_BYTES as u32 - 1;
 
-            if let (Some(first), Some(last)) =
-                (Self::memory_dirty_page_index(phys_base), Self::memory_dirty_page_index(phys_end))
-            {
+            if let (Some(first), Some(last)) = (
+                Self::memory_dirty_page_index(phys_base),
+                Self::memory_dirty_page_index(phys_end),
+            ) {
                 self.memory_page_generations[first..=last].fill(write_generation);
             }
 
             let (host_addr, aliases): (usize, &[u32]) = if phys_base <= RAM_END {
-                (self.ram_ptr + phys_base as usize, &[0x0000_0000, 0x8000_0000, 0xC000_0000])
+                (
+                    self.ram_ptr + phys_base as usize,
+                    &[0x0000_0000, 0x8000_0000, 0xC000_0000],
+                )
             } else if SYSTEM == WII && (MEM2_BASE..=MEM2_END).contains(&phys_base) {
                 (
                     self.mem2.as_ptr() as usize + (phys_base - MEM2_BASE) as usize,
@@ -297,9 +322,12 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             LCACHE_BASE..=LCACHE_END => (&self.lcache, (phys - LCACHE_BASE) as usize),
             MEM2_BASE..=MEM2_END if SYSTEM == WII => (&self.mem2, (phys - MEM2_BASE) as usize),
             _ => {
-                tracing::error!(phys_addr = format!("{:08X}", phys), "unmapped physical read");
+                tracing::error!(
+                    phys_addr = format!("{:08X}", phys),
+                    "unmapped physical read"
+                );
                 (&self.ram, 0)
-            },
+            }
         }
     }
 
@@ -316,9 +344,12 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             LCACHE_BASE..=LCACHE_END => (&mut self.lcache, (phys - LCACHE_BASE) as usize),
             MEM2_BASE..=MEM2_END if SYSTEM == WII => (&mut self.mem2, (phys - MEM2_BASE) as usize),
             _ => {
-                tracing::error!(phys_addr = format!("{:08X}", phys), "unmapped physical write");
+                tracing::error!(
+                    phys_addr = format!("{:08X}", phys),
+                    "unmapped physical write"
+                );
                 (&mut self.ram, 0)
-            },
+            }
         }
     }
 
@@ -440,7 +471,7 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             RAM_BASE..=RAM_END => Some((phys >> CODE_LINE_SHIFT) as usize),
             MEM2_BASE..=MEM2_END if SYSTEM == WII => {
                 Some(MEM1_LINES + ((phys - MEM2_BASE) >> CODE_LINE_SHIFT) as usize)
-            },
+            }
             _ => None,
         }
     }
@@ -502,7 +533,7 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             RAM_BASE..=RAM_END => Some((phys as usize) >> MEMORY_DIRTY_PAGE_SHIFT),
             MEM2_BASE..=MEM2_END if SYSTEM == WII => {
                 Some(MEM1_DIRTY_PAGES + (((phys - MEM2_BASE) as usize) >> MEMORY_DIRTY_PAGE_SHIFT))
-            },
+            }
             _ => None,
         }
     }
@@ -516,9 +547,10 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             return;
         };
 
-        let (Some(first), Some(last)) =
-            (Self::memory_dirty_page_index(phys), Self::memory_dirty_page_index(last_phys))
-        else {
+        let (Some(first), Some(last)) = (
+            Self::memory_dirty_page_index(phys),
+            Self::memory_dirty_page_index(last_phys),
+        ) else {
             return;
         };
 
@@ -625,7 +657,11 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
             lcache_vaddr = format!("{lcache_vaddr:08X}"),
             lcache_paddr = format!("{lcache_paddr:08X}"),
             length,
-            direction = if dmal.load() { "mem -> lcache" } else { "lcache -> mem" },
+            direction = if dmal.load() {
+                "mem -> lcache"
+            } else {
+                "lcache -> mem"
+            },
             "locked cache DMA"
         );
 
@@ -643,7 +679,11 @@ impl<const SYSTEM: SystemId> Mmio<SYSTEM> {
     #[inline(always)]
     pub fn fetch_instruction(&self, addr: u32) -> u32 {
         let phys = virt_to_phys(addr);
-        if phys <= RAM_END - 3 { self.ram_read_u32(phys) } else { self.phys_read_u32(phys) }
+        if phys <= RAM_END - 3 {
+            self.ram_read_u32(phys)
+        } else {
+            self.phys_read_u32(phys)
+        }
     }
 
     #[inline(always)]

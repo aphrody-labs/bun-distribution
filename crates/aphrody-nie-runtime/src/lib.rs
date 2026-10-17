@@ -93,8 +93,16 @@ impl FixedStep {
     /// [`TICK_DT`] : un pas nul ou négatif ferait boucler l'appelant indéfiniment.
     #[must_use]
     pub fn new(dt: f32, max_catchup: u32) -> Self {
-        let dt = if dt.is_finite() && dt > 0.0 { dt } else { TICK_DT };
-        Self { accumulateur: 0.0, dt, max_catchup: max_catchup.max(1) }
+        let dt = if dt.is_finite() && dt > 0.0 {
+            dt
+        } else {
+            TICK_DT
+        };
+        Self {
+            accumulateur: 0.0,
+            dt,
+            max_catchup: max_catchup.max(1),
+        }
     }
 
     /// Durée d'un pas.
@@ -219,7 +227,11 @@ pub struct Ball {
 
 impl Default for Ball {
     fn default() -> Self {
-        Self { pos: V3::new(0.0, 0.0, 0.11), vel: V3::default(), gravity: BALL_GRAVITY }
+        Self {
+            pos: V3::new(0.0, 0.0, 0.11),
+            vel: V3::default(),
+            gravity: BALL_GRAVITY,
+        }
     }
 }
 
@@ -289,10 +301,22 @@ impl World {
         for &(xf, yf, role) in &FORMATION_442 {
             // Domicile : attaque +x, sa moitié = −x.
             let home0 = V2::new(xf * HALF_LEN, yf * HALF_WID);
-            players.push(Player { pos: home0, vel: V2::default(), team: 0, role, home: home0 });
+            players.push(Player {
+                pos: home0,
+                vel: V2::default(),
+                team: 0,
+                role,
+                home: home0,
+            });
             // Extérieur : miroir (attaque −x).
             let home1 = V2::new(-xf * HALF_LEN, yf * HALF_WID);
-            players.push(Player { pos: home1, vel: V2::default(), team: 1, role, home: home1 });
+            players.push(Player {
+                pos: home1,
+                vel: V2::default(),
+                team: 1,
+                role,
+                home: home1,
+            });
         }
         Self {
             ball: Ball::default(),
@@ -424,10 +448,12 @@ impl World {
         let carrier = self.possessor;
         // Joueurs sous contrôle pour chaque équipe (0 = domicile, 1 = extérieur).
         // Seulement s'il y a une direction demandée. Sans entrée, le joueur reste piloté par l'IA.
-        let pilote_home =
-            (self.input.dir.len() > 0.01).then(|| self.controlled_for_team(0)).flatten();
-        let pilote_away =
-            (self.away_input.dir.len() > 0.01).then(|| self.controlled_for_team(1)).flatten();
+        let pilote_home = (self.input.dir.len() > 0.01)
+            .then(|| self.controlled_for_team(0))
+            .flatten();
+        let pilote_away = (self.away_input.dir.len() > 0.01)
+            .then(|| self.controlled_for_team(1))
+            .flatten();
         // Plus proche par équipe.
         let mut nearest = [usize::MAX, usize::MAX];
         let mut best = [f32::MAX, f32::MAX];
@@ -443,7 +469,10 @@ impl World {
             let target = if carrier == Some(i) {
                 // Porteur : sprinte vers le but adverse en GARDANT sa position latérale
                 // (jeu 2D ; léger recentrage pour finir face au but).
-                V2::new(if p.team == 0 { HALF_LEN } else { -HALF_LEN }, p.pos.y * 0.85)
+                V2::new(
+                    if p.team == 0 { HALF_LEN } else { -HALF_LEN },
+                    p.pos.y * 0.85,
+                )
             } else if nearest[p.team as usize] == i
                 && !(p.role == Role::Goalkeeper && ball2.x.abs() < HALF_LEN * 0.5)
             {
@@ -527,7 +556,7 @@ impl World {
                     && self.players[nearest.0].team != self.players[c].team
                     && nearest.1 < STEAL_RADIUS;
                 if opp_steal { Some(nearest.0) } else { Some(c) }
-            },
+            }
             // Sinon le plus proche prend, s'il est à portée de contrôle.
             None if nearest.1 < CONTROL_RADIUS => Some(nearest.0),
             None => None,
@@ -550,7 +579,11 @@ impl World {
             self.away_input.shoot && Some(i) == self.controlled_for_team(1)
         };
         if cmd_shoot && self.kick_timer <= 0.0 {
-            let user_dir = if team == 0 { self.input.dir } else { self.away_input.dir };
+            let user_dir = if team == 0 {
+                self.input.dir
+            } else {
+                self.away_input.dir
+            };
             let vise = if user_dir.len() > 0.01 {
                 user_dir.norm()
             } else {
@@ -575,7 +608,11 @@ impl World {
                 .iter()
                 .find(|p| p.team != team && p.role == Role::Goalkeeper)
                 .map_or(0.0, |g| g.pos.y);
-            let post = if gk_y >= 0.0 { -GOAL_HALF * 0.82 } else { GOAL_HALF * 0.82 };
+            let post = if gk_y >= 0.0 {
+                -GOAL_HALF * 0.82
+            } else {
+                GOAL_HALF * 0.82
+            };
             let dir = (V2::new(goal_x, post) - ball2).norm();
             self.ball.vel = V3::new(dir.x * KICK_POWER, dir.y * KICK_POWER, KICK_LOFT);
             self.kick_timer = KICK_COOLDOWN;
@@ -599,8 +636,10 @@ impl World {
             if (ball2.x - own_goal_x).abs() > 16.5 {
                 continue; // hors du tiers défensif proche du but.
             }
-            let Some(gk) =
-                self.players.iter().position(|p| p.team == team && p.role == Role::Goalkeeper)
+            let Some(gk) = self
+                .players
+                .iter()
+                .position(|p| p.team == team && p.role == Role::Goalkeeper)
             else {
                 continue;
             };
@@ -662,7 +701,13 @@ mod tests {
         let w = World::kickoff();
         assert_eq!(w.players.len(), 22);
         assert_eq!(w.players.iter().filter(|p| p.team == 0).count(), 11);
-        assert_eq!(w.players.iter().filter(|p| p.role == Role::Goalkeeper).count(), 2);
+        assert_eq!(
+            w.players
+                .iter()
+                .filter(|p| p.role == Role::Goalkeeper)
+                .count(),
+            2
+        );
         assert!(w.ball.pos.ground().len() < 0.01, "ballon au centre");
         assert_eq!(w.ball.gravity, BALL_GRAVITY);
     }
@@ -677,7 +722,11 @@ mod tests {
         for _ in 0..10 {
             w.step(1.0 / 60.0);
         }
-        assert!(w.ball.pos.z < z0, "le ballon descend ({} < {z0})", w.ball.pos.z);
+        assert!(
+            w.ball.pos.z < z0,
+            "le ballon descend ({} < {z0})",
+            w.ball.pos.z
+        );
     }
 
     #[test]
@@ -687,7 +736,11 @@ mod tests {
         w.ball.pos = V3::new(0.0, 0.0, 0.05);
         w.ball.vel = V3::new(0.0, 0.0, -5.0);
         w.step(1.0 / 60.0);
-        assert!(w.ball.vel.z > 0.0, "rebond : vitesse verticale inversée ({})", w.ball.vel.z);
+        assert!(
+            w.ball.vel.z > 0.0,
+            "rebond : vitesse verticale inversée ({})",
+            w.ball.vel.z
+        );
         assert!(w.ball.vel.z < 5.0, "rebond amorti (restitution < 1)");
     }
 
@@ -700,7 +753,10 @@ mod tests {
             .iter()
             .enumerate()
             .min_by(|a, b| {
-                a.1.pos.len().partial_cmp(&b.1.pos.len()).unwrap_or(core::cmp::Ordering::Equal)
+                a.1.pos
+                    .len()
+                    .partial_cmp(&b.1.pos.len())
+                    .unwrap_or(core::cmp::Ordering::Equal)
             })
             .map(|(i, _)| i)
             .unwrap();
@@ -751,7 +807,11 @@ mod tests {
             w1.step(1.0 / 60.0);
             w2.step(1.0 / 60.0);
         }
-        assert_eq!(w1.state_hash(), w2.state_hash(), "hash après 120 ticks identique");
+        assert_eq!(
+            w1.state_hash(),
+            w2.state_hash(),
+            "hash après 120 ticks identique"
+        );
     }
 
     #[test]
@@ -772,8 +832,14 @@ mod tests {
 
         w.step(1.0 / 60.0);
 
-        assert!(w.players[home_ctrl].pos.y > y0_home, "joueur domicile a bougé vers le haut");
-        assert!(w.players[away_ctrl].pos.y < y0_away, "joueur extérieur a bougé vers le bas");
+        assert!(
+            w.players[home_ctrl].pos.y > y0_home,
+            "joueur domicile a bougé vers le haut"
+        );
+        assert!(
+            w.players[away_ctrl].pos.y < y0_away,
+            "joueur extérieur a bougé vers le bas"
+        );
     }
 
     // ─── Détection de désynchronisation ──────────────────────────────────────────────────
@@ -789,7 +855,10 @@ mod tests {
     #[test]
     fn deux_mondes_qui_divergeront_ne_partagent_pas_leur_hachage() {
         for (nom, poser) in [
-            ("kick_timer", (|w: &mut World| w.kick_timer = KICK_COOLDOWN) as fn(&mut World)),
+            (
+                "kick_timer",
+                (|w: &mut World| w.kick_timer = KICK_COOLDOWN) as fn(&mut World),
+            ),
             ("steal_lock", |w: &mut World| w.steal_lock = POSSESSION_LOCK),
             ("tick", |w: &mut World| w.tick = 1),
             ("time", |w: &mut World| w.time = 1.0),
@@ -832,11 +901,18 @@ mod tests {
 
         let mut libre = porteur_pret();
         let mut bloque = porteur_pret();
-        assert_eq!(libre.state_hash(), bloque.state_hash(), "les deux mondes partent identiques");
+        assert_eq!(
+            libre.state_hash(),
+            bloque.state_hash(),
+            "les deux mondes partent identiques"
+        );
         bloque.kick_timer = KICK_COOLDOWN;
 
         for w in [&mut libre, &mut bloque] {
-            w.input = Input { dir: V2::new(1.0, 0.0), shoot: true };
+            w.input = Input {
+                dir: V2::new(1.0, 0.0),
+                shoot: true,
+            };
             w.step(1.0 / 60.0);
         }
 
@@ -876,7 +952,10 @@ mod tests {
             total.abs_diff(attendu) <= 1,
             "{total} pas pour {horloge:.4}s, soit {attendu} attendus"
         );
-        assert!(pas.reste() < TICK_DT, "le reste doit rester une fraction de pas");
+        assert!(
+            pas.reste() < TICK_DT,
+            "le reste doit rester une fraction de pas"
+        );
     }
 
     /// Une frame très longue ne demande PAS des centaines de pas : c'est la spirale de la mort.
@@ -887,7 +966,11 @@ mod tests {
     #[test]
     fn une_frame_tres_longue_est_bornee() {
         let mut pas = FixedStep::default();
-        assert_eq!(pas.advance(10.0), MAX_CATCHUP_STEPS, "10 s = 600 pas sans borne");
+        assert_eq!(
+            pas.advance(10.0),
+            MAX_CATCHUP_STEPS,
+            "10 s = 600 pas sans borne"
+        );
         // Et le retard n'est pas reporté : la frame suivante repart propre.
         assert!(pas.reste() <= TICK_DT);
         assert!(pas.advance(TICK_DT) <= MAX_CATCHUP_STEPS);
@@ -903,7 +986,11 @@ mod tests {
     fn une_horloge_invalide_ne_casse_pas_laccumulateur() {
         let mut pas = FixedStep::default();
         for mauvais in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0] {
-            assert_eq!(pas.advance(mauvais), 0, "{mauvais} ne doit produire aucun pas");
+            assert_eq!(
+                pas.advance(mauvais),
+                0,
+                "{mauvais} ne doit produire aucun pas"
+            );
         }
         assert!(pas.reste().is_finite(), "l'accumulateur doit rester fini");
         assert_eq!(pas.advance(TICK_DT), 1, "la simulation repart normalement");
@@ -918,7 +1005,11 @@ mod tests {
             let pas = FixedStep::new(absurde, 5);
             assert_eq!(pas.dt().to_bits(), TICK_DT.to_bits(), "dt = {absurde}");
         }
-        assert_eq!(FixedStep::new(TICK_DT, 0).advance(10.0), 1, "borne plancher à 1");
+        assert_eq!(
+            FixedStep::new(TICK_DT, 0).advance(10.0),
+            1,
+            "borne plancher à 1"
+        );
     }
 
     /// La cadence du moteur et celle du protocole réseau sont le MÊME nombre.
@@ -941,8 +1032,16 @@ mod tests {
         let mut pas = FixedStep::default();
         assert_eq!(pas.overstep_fraction(), 0.0, "rien d'accumulé au départ");
 
-        assert_eq!(pas.advance(TICK_DT * 0.25), 0, "un quart de pas n'en produit aucun");
-        assert!((pas.overstep_fraction() - 0.25).abs() < 1e-5, "{}", pas.overstep_fraction());
+        assert_eq!(
+            pas.advance(TICK_DT * 0.25),
+            0,
+            "un quart de pas n'en produit aucun"
+        );
+        assert!(
+            (pas.overstep_fraction() - 0.25).abs() < 1e-5,
+            "{}",
+            pas.overstep_fraction()
+        );
 
         assert_eq!(pas.advance(TICK_DT * 0.5), 0);
         assert!((pas.overstep_fraction() - 0.75).abs() < 1e-5);
@@ -954,6 +1053,9 @@ mod tests {
             "après un pas, il reste 0,25 : {}",
             pas.overstep_fraction()
         );
-        assert!(pas.overstep_fraction() < 1.0, "toujours une FRACTION de pas");
+        assert!(
+            pas.overstep_fraction() < 1.0,
+            "toujours une FRACTION de pas"
+        );
     }
 }

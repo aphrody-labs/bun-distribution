@@ -145,7 +145,10 @@ fn spawn_server(
     if let Some(parent) = log_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let log = OpenOptions::new().create(true).append(true).open(&log_path)?;
+    let log = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)?;
 
     let mut command = Command::new(&request.binary).no_window();
     command
@@ -155,7 +158,10 @@ fn spawn_server(
         .stderr(Stdio::from(log));
     spawn_group(
         &mut command,
-        SpawnOptions { die_with_parent_thread: true, ..SpawnOptions::default() },
+        SpawnOptions {
+            die_with_parent_thread: true,
+            ..SpawnOptions::default()
+        },
     )
 }
 
@@ -196,7 +202,11 @@ fn unpublish(dirs: &StateDirs, role: Role) {
     if replaced {
         return;
     }
-    for path in [dirs.state_file(role), dirs.stop_file(role), dirs.touch_file(role)] {
+    for path in [
+        dirs.state_file(role),
+        dirs.stop_file(role),
+        dirs.touch_file(role),
+    ] {
         if let Err(error) = remove_if_present(&path) {
             tracing::warn!(path = %path.display(), %error, "failed to remove daemon state file");
         }
@@ -231,8 +241,10 @@ pub async fn run(dirs: &StateDirs, role: Role) -> Result<ExitReason, DaemonError
 
 async fn launch_and_supervise(dirs: &StateDirs, role: Role) -> Result<ExitReason, DaemonError> {
     let spec_path = dirs.spec_file(role);
-    let request_error =
-        |message: String| DaemonError::Request { path: spec_path.display().to_string(), message };
+    let request_error = |message: String| DaemonError::Request {
+        path: spec_path.display().to_string(),
+        message,
+    };
     let bytes = std::fs::read(&spec_path).map_err(|error| request_error(error.to_string()))?;
     let request: DaemonRequest =
         serde_json::from_slice(&bytes).map_err(|error| request_error(error.to_string()))?;
@@ -245,7 +257,10 @@ async fn launch_and_supervise(dirs: &StateDirs, role: Role) -> Result<ExitReason
     }
 
     let caps = ServerCapabilities::probe(&request.binary)?;
-    request.spec.validate_capabilities(&caps).map_err(|message| request_error(message.into()))?;
+    request
+        .spec
+        .validate_capabilities(&caps)
+        .map_err(|message| request_error(message.into()))?;
 
     // A CPU-only instance occupies no VRAM and needs no lease.
     let _lease = if request.spec.placement == Placement::Cpu {
@@ -298,12 +313,16 @@ async fn serve(
             Ok(()) => {
                 state.ready = true;
                 break (child, state, client);
-            },
+            }
             Err(DaemonError::StartupExit { ref log_tail, .. })
                 if attempt < PORT_ATTEMPTS && port_was_taken(log_tail) =>
             {
-                tracing::warn!(port, attempt, "llama-server lost the race for its port, retrying");
-            },
+                tracing::warn!(
+                    port,
+                    attempt,
+                    "llama-server lost the race for its port, retrying"
+                );
+            }
             Err(error) => return Err(error),
         }
     };
@@ -372,7 +391,9 @@ mod tests {
 
     #[test]
     fn port_race_is_recognised_in_the_log() {
-        assert!(port_was_taken("main: couldn't bind HTTP server socket, hostname: 127.0.0.1"));
+        assert!(port_was_taken(
+            "main: couldn't bind HTTP server socket, hostname: 127.0.0.1"
+        ));
         assert!(port_was_taken("bind: Address already in use"));
         assert!(!port_was_taken("error loading model: unknown architecture"));
     }

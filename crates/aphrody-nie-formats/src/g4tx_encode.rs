@@ -83,7 +83,12 @@ pub fn encode_dds_bgra8(w: u32, h: u32, rgba: &[u8]) -> Result<Vec<u8>, alloc::s
     // Pixels : RGBA8 → BGRA8 (octet bas = B, cf. masques ci-dessus — même convention que
     // `dds_format_and_pixel_offset`/`decode_texture_rgba` en lecture).
     let mut pixels = vec![0u8; expected];
-    for (src, dst) in rgba.as_chunks::<4>().0.iter().zip(pixels.as_chunks_mut::<4>().0.iter_mut()) {
+    for (src, dst) in rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(pixels.as_chunks_mut::<4>().0.iter_mut())
+    {
         dst[0] = src[2]; // B
         dst[1] = src[1]; // G
         dst[2] = src[0]; // R
@@ -115,7 +120,10 @@ pub fn encode_dds_bgra8(w: u32, h: u32, rgba: &[u8]) -> Result<Vec<u8>, alloc::s
 pub fn encode_dds_bc7(w: u32, h: u32, rgba: &[u8]) -> Result<Vec<u8>, alloc::string::String> {
     let expected = (w as usize) * (h as usize) * 4;
     if rgba.len() != expected {
-        return Err(format!("encode_dds_bc7 : rgba.len()={} attendu w*h*4={expected}", rgba.len()));
+        return Err(format!(
+            "encode_dds_bc7 : rgba.len()={} attendu w*h*4={expected}",
+            rgba.len()
+        ));
     }
     let surface = image_dds::SurfaceRgba8 {
         width: w,
@@ -192,11 +200,16 @@ pub fn decode_png_to_rgba8(png_bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), allo
     decoder.set_transformations(
         png::Transformations::normalize_to_color8() | png::Transformations::ALPHA,
     );
-    let mut reader = decoder.read_info().map_err(|e| format!("en-tête PNG invalide : {e}"))?;
-    let buf_size =
-        reader.output_buffer_size().ok_or("PNG : taille de tampon de sortie indéterminable")?;
+    let mut reader = decoder
+        .read_info()
+        .map_err(|e| format!("en-tête PNG invalide : {e}"))?;
+    let buf_size = reader
+        .output_buffer_size()
+        .ok_or("PNG : taille de tampon de sortie indéterminable")?;
     let mut buf = vec![0u8; buf_size];
-    let info = reader.next_frame(&mut buf).map_err(|e| format!("décodage PNG : {e}"))?;
+    let info = reader
+        .next_frame(&mut buf)
+        .map_err(|e| format!("décodage PNG : {e}"))?;
     let (w, h) = (info.width, info.height);
 
     let rgba = match info.color_type {
@@ -213,12 +226,12 @@ pub fn decode_png_to_rgba8(png_bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), allo
                 dst[3] = 255;
             }
             out
-        },
+        }
         other => {
             return Err(format!(
                 "PNG : type de couleur {other:?} inattendu après normalisation (bug)"
             ));
-        },
+        }
     };
     Ok((w, h, rgba))
 }
@@ -367,7 +380,7 @@ pub fn encode_g4tx_multi_texture(
 
     if textures.is_empty() {
         return Err(
-            "encode_g4tx_multi_texture : au moins une texture principale est requise".to_string()
+            "encode_g4tx_multi_texture : au moins une texture principale est requise".to_string(),
         );
     }
     if regions.len() > u8::MAX as usize {
@@ -402,7 +415,11 @@ pub fn encode_g4tx_multi_texture(
     let string_offsets_size = total_count * 2;
     let mut noms: Vec<u8> = Vec::new();
     let mut offsets: Vec<i16> = Vec::with_capacity(total_count);
-    for name in textures.iter().map(|t| t.name).chain(regions.iter().map(|r| r.name)) {
+    for name in textures
+        .iter()
+        .map(|t| t.name)
+        .chain(regions.iter().map(|r| r.name))
+    {
         let pos = string_offsets_size + noms.len();
         let pos = i16::try_from(pos).map_err(|_| {
             format!("encode_g4tx_multi_texture : table de chaînes trop grande ({pos} octets)")
@@ -461,7 +478,12 @@ pub fn encode_g4tx_multi_texture(
     // Table de hash (@hash_offset, total_count × u32) : jamais lue par `parse` — zéro.
 
     // Table d'ids (@id_offset, total_count × u8), textures puis régions.
-    for (i, id) in textures.iter().map(|t| t.id).chain(regions.iter().map(|r| r.id)).enumerate() {
+    for (i, id) in textures
+        .iter()
+        .map(|t| t.id)
+        .chain(regions.iter().map(|r| r.id))
+        .enumerate()
+    {
         out[id_offset + i] = id;
     }
 
@@ -537,11 +559,10 @@ mod tests {
         assert_eq!(parsed.header.sub_texture_count, 0);
         assert_eq!(parsed.textures.len(), 2);
 
-        for (tex, (nom, id, attendu)) in parsed
-            .textures
-            .iter()
-            .zip([("c99019010_1_l00", 0u8, &rgba1), ("c99019010_2_l00", 1u8, &rgba2)])
-        {
+        for (tex, (nom, id, attendu)) in parsed.textures.iter().zip([
+            ("c99019010_1_l00", 0u8, &rgba1),
+            ("c99019010_2_l00", 1u8, &rgba2),
+        ]) {
             assert_eq!(tex.name, nom);
             assert_eq!(tex.id, id);
             assert!(tex.is_dds);
@@ -563,8 +584,20 @@ mod tests {
 
         let bytes = encode_g4tx_multi_texture(
             &[
-                TextureAEcrire { name: "atlas_a", id: 10, width: 4, height: 4, dds: &dds_a },
-                TextureAEcrire { name: "atlas_b", id: 11, width: 4, height: 4, dds: &dds_b },
+                TextureAEcrire {
+                    name: "atlas_a",
+                    id: 10,
+                    width: 4,
+                    height: 4,
+                    dds: &dds_a,
+                },
+                TextureAEcrire {
+                    name: "atlas_b",
+                    id: 11,
+                    width: 4,
+                    height: 4,
+                    dds: &dds_b,
+                },
             ],
             &[
                 RegionAEcrire {
@@ -682,7 +715,13 @@ mod tests {
 
         let (_, dds) = damier(2, 2, 1);
         let err = encode_g4tx_multi_texture(
-            &[TextureAEcrire { name: "seule", id: 0, width: 2, height: 2, dds: &dds }],
+            &[TextureAEcrire {
+                name: "seule",
+                id: 0,
+                width: 2,
+                height: 2,
+                dds: &dds,
+            }],
             &[RegionAEcrire {
                 entry_index: 3,
                 name: "orpheline",
@@ -773,7 +812,10 @@ mod tests {
             g4tx_decode::decode_texture_rgba(&g4tx_bytes, &parsed.textures[0])
                 .expect("decode final");
         assert_eq!((fw, fh), (w, h));
-        assert_eq!(final_rgba, rgba, "PNG d'origine == pixels du .g4tx généré, bout en bout");
+        assert_eq!(
+            final_rgba, rgba,
+            "PNG d'origine == pixels du .g4tx généré, bout en bout"
+        );
     }
 
     /// `encode_dds_bgra8` rejette une entrée de taille incohérente plutôt que de tronquer/étendre
@@ -819,7 +861,9 @@ mod real_game_tests {
     /// absent de ce poste, ou si aucun `.g4tx` mono-texture réel n'est trouvé dans l'échantillon.
     #[test]
     fn encode_g4tx_round_trip_sur_un_vrai_fichier() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip encode_g4tx_round_trip_sur_un_vrai_fichier : jeu absent");
@@ -828,8 +872,11 @@ mod real_game_tests {
         let mut vfs = Vfs::new();
         vfs.init(&data_dir).expect("vfs init");
 
-        let candidates: Vec<String> =
-            vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(".g4tx")).collect();
+        let candidates: Vec<String> = vfs
+            .iter()
+            .map(|(p, _)| p.to_string())
+            .filter(|p| p.ends_with(".g4tx"))
+            .collect();
         let step = (candidates.len() / 3000).max(1);
 
         let mut tested = 0usize;
@@ -860,8 +907,15 @@ mod real_game_tests {
             let (rw, rh, rrgba) =
                 crate::g4tx_decode::decode_texture_rgba(&g4tx_bytes, &reparsed.textures[0])
                     .unwrap_or_else(|| panic!("{path} : redécodage échoué"));
-            assert_eq!((rw, rh), (w, h), "{path} : dimensions divergentes après round-trip");
-            assert_eq!(rrgba, rgba, "{path} : pixels divergents après round-trip encode→decode");
+            assert_eq!(
+                (rw, rh),
+                (w, h),
+                "{path} : dimensions divergentes après round-trip"
+            );
+            assert_eq!(
+                rrgba, rgba,
+                "{path} : pixels divergents après round-trip encode→decode"
+            );
             tested += 1;
         }
         eprintln!(

@@ -89,8 +89,16 @@ impl ReplayRequest {
         }
         if self.events.len() > MAX_EVENTS
             || self.item_counts.len() > 256
-            || self.item_counts.values().any(|count| !(0..=256).contains(count))
-            || self.item_counts.values().map(|count| i64::from(*count)).sum::<i64>() > 512
+            || self
+                .item_counts
+                .values()
+                .any(|count| !(0..=256).contains(count))
+            || self
+                .item_counts
+                .values()
+                .map(|count| i64::from(*count))
+                .sum::<i64>()
+                > 512
         {
             return Err("Menu replay exceeds input limits".into());
         }
@@ -110,11 +118,11 @@ impl ReplayRequest {
                     .map(|arg| match arg {
                         EventValue::Number(value) if value.is_finite() => {
                             Ok(CallbackArg::Number(*value))
-                        },
+                        }
                         EventValue::Boolean(value) => Ok(CallbackArg::Boolean(*value)),
                         EventValue::String(value) if value.len() <= 1024 => {
                             Ok(CallbackArg::String(value.clone()))
-                        },
+                        }
                         EventValue::Nil => Ok(CallbackArg::Nil),
                         _ => Err("Invalid callback argument".to_string()),
                     })
@@ -150,15 +158,32 @@ where
         (bytes.len() <= MAX_SCRIPT_BYTES && crate::is_lua52_bytecode(&bytes)).then_some(bytes)
     })
     .map_err(|e| e.to_string())?;
-    session.lua().set_memory_limit(64 * 1024 * 1024).map_err(|e| e.to_string())?;
+    session
+        .lua()
+        .set_memory_limit(64 * 1024 * 1024)
+        .map_err(|e| e.to_string())?;
     // VFS INCLUDE is the only loader. Host execution never exposes filesystem/process primitives.
-    for name in
-        ["io", "os", "debug", "package", "require", "dofile", "loadfile", "load", "loadstring"]
-    {
-        session.lua().globals().set(name, mlua::Value::Nil).map_err(|e| e.to_string())?;
+    for name in [
+        "io",
+        "os",
+        "debug",
+        "package",
+        "require",
+        "dofile",
+        "loadfile",
+        "load",
+        "loadstring",
+    ] {
+        session
+            .lua()
+            .globals()
+            .set(name, mlua::Value::Nil)
+            .map_err(|e| e.to_string())?;
     }
     let state = session.menu_state().ok_or("Menu state unavailable")?;
-    state.borrow_mut().set_observed_native_state(request.observed_native);
+    state
+        .borrow_mut()
+        .set_observed_native_state(request.observed_native);
     state.borrow_mut().text_by_id = localized_text;
     let drive = session
         .drive_menu_vfs_for_frames_with_limit(
@@ -176,7 +201,13 @@ where
         .dispatch_menu_events_with_limit(&events, Some(INSTRUCTION_LIMIT))
         .map_err(|e| e.to_string())?;
     let state = state.borrow();
-    if state.layers.values().map(|layer| layer.objects.len()).sum::<usize>() > 8192 {
+    if state
+        .layers
+        .values()
+        .map(|layer| layer.objects.len())
+        .sum::<usize>()
+        > 8192
+    {
         return Err("Menu scene exceeds object limit".into());
     }
     // Collecté AVANT le calcul de `complete` : les deux consomment les mêmes sources, et
@@ -207,7 +238,10 @@ where
         .into_iter()
         .filter(|callback| {
             matches!(
-                session.lua().globals().raw_get::<mlua::Value>(callback.as_str()),
+                session
+                    .lua()
+                    .globals()
+                    .raw_get::<mlua::Value>(callback.as_str()),
                 Ok(mlua::Value::Function(_))
             )
         })

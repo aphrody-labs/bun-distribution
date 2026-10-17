@@ -325,8 +325,7 @@ impl PresentManager {
         let mut free_queue = VecDeque::with_capacity(effective_count);
 
         let semaphore_ci = vk::SemaphoreCreateInfo::default();
-        let fence_ci = vk::FenceCreateInfo::default()
-            .flags(vk::FenceCreateFlags::SIGNALED);
+        let fence_ci = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
 
         for i in 0..effective_count {
             let render_ready = unsafe {

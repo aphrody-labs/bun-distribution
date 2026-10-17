@@ -1,5 +1,5 @@
 use crate::{
-    io::{processor_gated::ProcessorGatedReader, AssetSourceEvent, AssetWatcher},
+    io::{AssetSourceEvent, AssetWatcher, processor_gated::ProcessorGatedReader},
     processor::ProcessingState,
 };
 use alloc::{
@@ -247,9 +247,9 @@ impl AssetSourceBuilder {
     pub fn with_watcher(
         mut self,
         watcher: impl FnMut(async_channel::Sender<AssetSourceEvent>) -> Option<Box<dyn AssetWatcher>>
-            + Send
-            + Sync
-            + 'static,
+        + Send
+        + Sync
+        + 'static,
     ) -> Self {
         self.watcher = Some(Box::new(watcher));
         self
@@ -277,9 +277,9 @@ impl AssetSourceBuilder {
     pub fn with_processed_watcher(
         mut self,
         watcher: impl FnMut(async_channel::Sender<AssetSourceEvent>) -> Option<Box<dyn AssetWatcher>>
-            + Send
-            + Sync
-            + 'static,
+        + Send
+        + Sync
+        + 'static,
     ) -> Self {
         self.processed_watcher = Some(Box::new(watcher));
         self

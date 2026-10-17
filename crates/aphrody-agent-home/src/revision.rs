@@ -37,8 +37,17 @@ use crate::{HomeError, fsutil::sha256_hex};
 pub const REVISION_ALGORITHM: &str = "sha256-v1";
 
 /// Directory names never part of the home content (matched at any depth).
-pub const EXCLUDED_DIRS: &[&str] =
-    &[".aphrody", ".git", ".coord", "db", "cache", "locks", "logs", "sessions", "node_modules"];
+pub const EXCLUDED_DIRS: &[&str] = &[
+    ".aphrody",
+    ".git",
+    ".coord",
+    "db",
+    "cache",
+    "locks",
+    "logs",
+    "sessions",
+    "node_modules",
+];
 
 /// File-name suffixes never part of the home content.
 pub const EXCLUDED_SUFFIXES: &[&str] = &[
@@ -91,7 +100,9 @@ pub struct HomeRevision {
 /// Whether a file name is excluded from the content set.
 #[must_use]
 pub fn is_excluded_file(name: &str) -> bool {
-    EXCLUDED_SUFFIXES.iter().any(|suffix| name.ends_with(suffix))
+    EXCLUDED_SUFFIXES
+        .iter()
+        .any(|suffix| name.ends_with(suffix))
 }
 
 /// Whether a directory name is excluded from the content set.
@@ -101,7 +112,10 @@ pub fn is_excluded_dir(name: &str) -> bool {
 }
 
 fn invalid(path: &Path, why: &str) -> HomeError {
-    HomeError::io(path, std::io::Error::new(std::io::ErrorKind::InvalidData, why.to_string()))
+    HomeError::io(
+        path,
+        std::io::Error::new(std::io::ErrorKind::InvalidData, why.to_string()),
+    )
 }
 
 /// List the content files of `root` (see the module docs for the rules),
@@ -128,7 +142,11 @@ pub fn content_files(root: &Path) -> Result<Vec<ContentFile>, HomeError> {
             if name.contains(['\n', '\r']) {
                 return Err(invalid(&abs, "home content path contains a line break"));
             }
-            let rel = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+            let rel = if prefix.is_empty() {
+                name.clone()
+            } else {
+                format!("{prefix}/{name}")
+            };
             if file_type.is_dir() {
                 if !is_excluded_dir(&name) {
                     stack.push((abs, rel));
@@ -136,7 +154,12 @@ pub fn content_files(root: &Path) -> Result<Vec<ContentFile>, HomeError> {
             } else if file_type.is_file() && !is_excluded_file(&name) {
                 let meta = entry.metadata().map_err(|e| HomeError::io(&abs, e))?;
                 let modified = meta.modified().map_err(|e| HomeError::io(&abs, e))?;
-                out.push(ContentFile { path: rel, abs, size: meta.len(), modified });
+                out.push(ContentFile {
+                    path: rel,
+                    abs,
+                    size: meta.len(),
+                    modified,
+                });
             }
         }
     }
@@ -165,7 +188,11 @@ pub fn manifest_revision(files: &[FileDigest]) -> String {
 /// [`HomeError::Io`] when the file cannot be read.
 pub fn digest(file: &ContentFile) -> Result<FileDigest, HomeError> {
     let bytes = std::fs::read(&file.abs).map_err(|e| HomeError::io(&file.abs, e))?;
-    Ok(FileDigest { path: file.path.clone(), size: bytes.len() as u64, sha256: sha256_hex(&bytes) })
+    Ok(FileDigest {
+        path: file.path.clone(),
+        size: bytes.len() as u64,
+        sha256: sha256_hex(&bytes),
+    })
 }
 
 /// Compute the `sha256-v1` revision of the home at `root`.
@@ -173,7 +200,10 @@ pub fn digest(file: &ContentFile) -> Result<FileDigest, HomeError> {
 /// # Errors
 /// See [`content_files`] and [`digest`].
 pub fn home_revision(root: &Path) -> Result<HomeRevision, HomeError> {
-    let files = content_files(root)?.iter().map(digest).collect::<Result<Vec<_>, _>>()?;
+    let files = content_files(root)?
+        .iter()
+        .map(digest)
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(HomeRevision {
         algorithm: REVISION_ALGORITHM.to_string(),
         revision: manifest_revision(&files),
@@ -200,7 +230,11 @@ mod tests {
         write(root, "AGENTS.md", b"rules\n");
         write(root, "USER.md", b"---\nname: Sam\n---\n");
         write(root, "memory/2026-10-06.md", b"note\n");
-        write(root, "skills/\u{e9}t\u{e9}.md", "\u{e9}t\u{e9}\n".as_bytes());
+        write(
+            root,
+            "skills/\u{e9}t\u{e9}.md",
+            "\u{e9}t\u{e9}\n".as_bytes(),
+        );
         // Excluded: state, git, databases, temp files.
         write(root, ".aphrody/workspace-state.json", b"{}");
         write(root, ".git/HEAD", b"ref: refs/heads/main\n");
@@ -219,7 +253,12 @@ mod tests {
         let paths: Vec<_> = rev.files.iter().map(|f| f.path.as_str()).collect();
         assert_eq!(
             paths,
-            ["AGENTS.md", "USER.md", "memory/2026-10-06.md", "skills/\u{e9}t\u{e9}.md"]
+            [
+                "AGENTS.md",
+                "USER.md",
+                "memory/2026-10-06.md",
+                "skills/\u{e9}t\u{e9}.md"
+            ]
         );
     }
 

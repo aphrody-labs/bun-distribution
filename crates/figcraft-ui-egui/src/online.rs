@@ -43,15 +43,26 @@ fn detail(f: &OnlineFile) -> String {
     if f.state == FileState::Gone {
         return trf("{server} · No longer on the server", &[("server", &host)]);
     }
-    let shared = if f.shared.is_some() { tr("Shared") } else { tr("Not shared") };
+    let shared = if f.shared.is_some() {
+        tr("Shared")
+    } else {
+        tr("Not shared")
+    };
     let date = utc_date(f.opened);
     let day = date.get(..10).unwrap_or(&date);
-    trf("{server} · {shared} · Opened {date}", &[("server", &host), ("shared", &shared), ("date", &day)])
+    trf(
+        "{server} · {shared} · Opened {date}",
+        &[("server", &host), ("shared", &shared), ("date", &day)],
+    )
 }
 
 /// The mark of a file others get into (`true`), or one that only its owner does.
 pub fn mark(shared: bool) -> Icon {
-    if shared { Icon::LiveShared } else { Icon::LivePrivate }
+    if shared {
+        Icon::LiveShared
+    } else {
+        Icon::LivePrivate
+    }
 }
 
 /// Ask each server once what became of its files (in the background).
@@ -63,7 +74,14 @@ fn refresh(app: &mut FigApp, ctx: &egui::Context) {
 
 /// Run `action` of `collab.manageFile` on recorded file `f` without the window waiting for the
 /// server; `done` gets the result.
-fn manage(app: &mut FigApp, ctx: &egui::Context, f: (&str, &str), action: &str, extra: Value, done: crate::Done) {
+fn manage(
+    app: &mut FigApp,
+    ctx: &egui::Context,
+    f: (&str, &str),
+    action: &str,
+    extra: Value,
+    done: crate::Done,
+) {
     let mut params = json!({"server": f.0, "file": f.1, "action": action});
     if let (Some(p), Some(e)) = (params.as_object_mut(), extra.as_object()) {
         p.extend(e.clone());
@@ -73,7 +91,12 @@ fn manage(app: &mut FigApp, ctx: &egui::Context, f: (&str, &str), action: &str, 
 
 /// Open recorded file `f` as its owner; its tab shows once the file arrives.
 fn open(app: &mut FigApp, f: &OnlineFile) {
-    let Some(r) = app.run("collab.openFile", json!({"server": f.server, "file": f.file})) else { return };
+    let Some(r) = app.run(
+        "collab.openFile",
+        json!({"server": f.server, "file": f.file}),
+    ) else {
+        return;
+    };
     if r["alreadyOpen"] == true && !r["document"].is_null() {
         app.ui.home = false;
     } else {
@@ -86,11 +109,26 @@ pub fn section(app: &mut FigApp, ui: &mut Ui, main: Rect, t: &Tokens) {
     let ctx = ui.ctx().clone();
     // Shown again after something else was: ask the servers.
     let frame = ctx.cumulative_frame_nr();
-    if app.ui.online.drawn.replace(frame).is_none_or(|d| d.saturating_add(1) < frame) {
+    if app
+        .ui
+        .online
+        .drawn
+        .replace(frame)
+        .is_none_or(|d| d.saturating_add(1) < frame)
+    {
         refresh(app, &ctx);
     }
-    ui.painter().text(main.min, Align2::LEFT_TOP, tr("Online files"), semibold(18.0), t.text);
-    let body = Rect::from_min_max(pos2(main.min.x, main.min.y + 40.0), pos2(main.min.x + main.width().min(720.0), main.max.y));
+    ui.painter().text(
+        main.min,
+        Align2::LEFT_TOP,
+        tr("Online files"),
+        semibold(18.0),
+        t.text,
+    );
+    let body = Rect::from_min_max(
+        pos2(main.min.x, main.min.y + 40.0),
+        pos2(main.min.x + main.width().min(720.0), main.max.y),
+    );
     ui.scope_builder(egui::UiBuilder::new().max_rect(body).layout(egui::Layout::top_down(egui::Align::Min)), |ui| {
         ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Wrap);
         ui.spacing_mut().item_spacing.y = 6.0;
@@ -128,19 +166,39 @@ fn status(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     if app.session.waiting_for(MANAGE) {
         return widgets::label(ui, tr("Asking the server…"), t.text_secondary);
     }
-    let problems: Vec<(String, bool)> =
-        app.session.live.servers.iter().map(|(s, p)| (server_host(s).to_string(), matches!(p, ServerProblem::Offline(_)))).collect();
+    let problems: Vec<(String, bool)> = app
+        .session
+        .live
+        .servers
+        .iter()
+        .map(|(s, p)| {
+            (
+                server_host(s).to_string(),
+                matches!(p, ServerProblem::Offline(_)),
+            )
+        })
+        .collect();
     let mut again = false;
     for (host, offline) in &problems {
         if *offline {
             ui.horizontal(|ui| {
-                widgets::label(ui, &trf("Couldn't reach {server}: showing what this computer remembers.", &[("server", host)]), t.danger);
+                widgets::label(
+                    ui,
+                    &trf(
+                        "Couldn't reach {server}: showing what this computer remembers.",
+                        &[("server", host)],
+                    ),
+                    t.danger,
+                );
                 again |= widgets::button(ui, tr("Try again"), false, true).clicked();
             });
         } else {
             widgets::label(
                 ui,
-                &trf("{server} can't say what became of your files (it is older than this app).", &[("server", host)]),
+                &trf(
+                    "{server} can't say what became of your files (it is older than this app).",
+                    &[("server", host)],
+                ),
                 t.text_secondary,
             );
         }
@@ -158,23 +216,49 @@ fn row(app: &mut FigApp, ui: &mut Ui, t: &Tokens, f: &OnlineFile, busy: bool) {
     let details = detail(f);
     a11y::button(&resp, &format!("{}, {details}", f.name));
     let ink = if gone { t.text_tertiary } else { t.text };
-    let glyph = if gone { Icon::Close } else { mark(f.shared.is_some()) };
-    let tint = if f.shared.is_some() && !gone { t.success } else { t.icon_secondary };
-    let shown = FileRow { mark: Some((glyph, tint)), name: &f.name, ink, detail: &details, detail_size: 11.0, detail_ink: t.text_secondary };
+    let glyph = if gone {
+        Icon::Close
+    } else {
+        mark(f.shared.is_some())
+    };
+    let tint = if f.shared.is_some() && !gone {
+        t.success
+    } else {
+        t.icon_secondary
+    };
+    let shown = FileRow {
+        mark: Some((glyph, tint)),
+        name: &f.name,
+        ink,
+        detail: &details,
+        detail_size: 11.0,
+        detail_ink: t.text_secondary,
+    };
     file_row(ui, t, r.with_max_x(more.min.x - 4.0), &resp, &shown);
     // The menu button takes its own clicks.
-    let mresp =
-        ui.interact(more, ui.id().with(("online_more", &f.server, &f.file)), Sense::click()).tip(trf("Actions for {name}", &[("name", &f.name)]));
-    a11y::menu_button(&mresp, &trf("Actions for {name}", &[("name", &f.name)]), a11y::menu_open(&mresp));
+    let mresp = ui
+        .interact(
+            more,
+            ui.id().with(("online_more", &f.server, &f.file)),
+            Sense::click(),
+        )
+        .tip(trf("Actions for {name}", &[("name", &f.name)]));
+    a11y::menu_button(
+        &mresp,
+        &trf("Actions for {name}", &[("name", &f.name)]),
+        a11y::menu_open(&mresp),
+    );
     if mresp.hovered() {
-        ui.painter().rect_filled(more, CornerRadius::same(5), t.pressed);
+        ui.painter()
+            .rect_filled(more, CornerRadius::same(5), t.pressed);
     }
     icons::paint(ui.painter(), more.shrink(5.0), Icon::Dots, t.icon);
     let ctx = ui.ctx().clone();
     let at = (f.server.as_str(), f.file.as_str());
     crate::right::menu_popup(&mresp).width(240.0).show(|ui| {
         // What asks the server waits its turn: one request about a file at a time.
-        let item = |ui: &mut Ui, label: &str, show: bool| show && crate::right::menu_item(ui, label, "");
+        let item =
+            |ui: &mut Ui, label: &str, show: bool| show && crate::right::menu_item(ui, label, "");
         if gone {
             if item(ui, tr("Clear from this list"), true) {
                 forget(app, f);
@@ -187,19 +271,35 @@ fn row(app: &mut FigApp, ui: &mut Ui, t: &Tokens, f: &OnlineFile, busy: bool) {
             ui.close();
         }
         let shared = f.shared.as_ref();
-        if item(ui, if shared.is_some() { tr("Stop sharing") } else { tr("Start sharing") }, !busy) {
+        if item(
+            ui,
+            if shared.is_some() {
+                tr("Stop sharing")
+            } else {
+                tr("Start sharing")
+            },
+            !busy,
+        ) {
             let said = if shared.is_some() {
                 tr("Sharing stopped: the file stays on the server, open only to you")
             } else {
                 tr("Shared: copy its code from the file's menu")
             };
-            manage(app, &ctx, at, if shared.is_some() { "unshare" } else { "share" }, json!({}), Box::new(move |app, _, _| app.toast(said)));
+            manage(
+                app,
+                &ctx,
+                at,
+                if shared.is_some() { "unshare" } else { "share" },
+                json!({}),
+                Box::new(move |app, _, _| app.toast(said)),
+            );
             ui.close();
         }
         if let Some(code) = shared.and_then(|s| s.edit.code.as_deref())
             && item(ui, tr("Copy code"), true)
         {
-            app.services.clipboard_set_text(&figcraft_engine::figcraft_collab::code::grouped(code));
+            app.services
+                .clipboard_set_text(&figcraft_engine::figcraft_collab::code::grouped(code));
             app.toast(tr("Join code copied"));
             ui.close();
         }
@@ -232,20 +332,31 @@ fn row(app: &mut FigApp, ui: &mut Ui, t: &Tokens, f: &OnlineFile, busy: bool) {
 
 /// Drop `f` from the list on this computer, and say that the file itself stays.
 fn forget(app: &mut FigApp, f: &OnlineFile) {
-    if app.run("collab.forgetFile", json!({"server": f.server, "file": f.file})).is_none() {
+    if app
+        .run(
+            "collab.forgetFile",
+            json!({"server": f.server, "file": f.file}),
+        )
+        .is_none()
+    {
         return;
     }
     if f.state == FileState::Gone {
         app.toast(trf("{name} cleared from the list", &[("name", &f.name)]));
     } else {
-        app.toast(trf("{name} is forgotten on this computer; the file stays on {server}", &[("name", &f.name), ("server", &server_host(&f.server))]));
+        app.toast(trf(
+            "{name} is forgotten on this computer; the file stays on {server}",
+            &[("name", &f.name), ("server", &server_host(&f.server))],
+        ));
     }
 }
 
 /// Escape closes the section's dialogs; true when it did.
 pub fn dialog_keys(app: &mut FigApp, ctx: &egui::Context) {
     let o = &mut app.ui.online;
-    if (o.remove.is_some() || o.rename.is_some()) && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+    if (o.remove.is_some() || o.rename.is_some())
+        && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+    {
         o.remove = None;
         o.rename = None;
     }
@@ -274,7 +385,14 @@ pub fn dialogs(app: &mut FigApp, ctx: &egui::Context) {
         });
         if go {
             let said = trf("{name} was removed from the server", &[("name", &name)]);
-            manage(app, ctx, (&server, &file), "remove", json!({}), Box::new(move |app, _, _| app.toast(said)));
+            manage(
+                app,
+                ctx,
+                (&server, &file),
+                "remove",
+                json!({}),
+                Box::new(move |app, _, _| app.toast(said)),
+            );
         } else if open && !cancel {
             app.ui.online.remove = Some((server, file, name));
         }
@@ -299,7 +417,14 @@ pub fn dialogs(app: &mut FigApp, ctx: &egui::Context) {
             });
         });
         if go && !name.trim().is_empty() {
-            manage(app, ctx, (&server, &file), "rename", json!({"name": name.trim()}), Box::new(|_, _, _| {}));
+            manage(
+                app,
+                ctx,
+                (&server, &file),
+                "rename",
+                json!({"name": name.trim()}),
+                Box::new(|_, _, _| {}),
+            );
         } else if open && !cancel {
             app.ui.online.rename = Some((server, file, name));
         }

@@ -69,7 +69,11 @@ pub struct MatchScoring {
 impl Default for MatchScoring {
     /// Reproduit l'init du décompilé : scores=0, multiplicateur=1.0f (bits `0x3F80_0000`), flags=0x100.
     fn default() -> Self {
-        Self { scores: [0; 4], multiplier: f32::from_bits(0x3F80_0000), flags: 0x0100 }
+        Self {
+            scores: [0; 4],
+            multiplier: f32::from_bits(0x3F80_0000),
+            flags: 0x0100,
+        }
     }
 }
 

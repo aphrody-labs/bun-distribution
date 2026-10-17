@@ -22,10 +22,16 @@ const MAX_DESCRIPTION: usize = 2000;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("libraries.publish", "Publish library…", "{}  (opens the publish form in the Assets panel)", false, |s, _| {
-            s.request_ui("panel.libraries", json!({"publish": true}));
-            Ok(json!({"ok": true}))
-        }),
+        spec!(
+            "libraries.publish",
+            "Publish library…",
+            "{}  (opens the publish form in the Assets panel)",
+            false,
+            |s, _| {
+                s.request_ui("panel.libraries", json!({"publish": true}));
+                Ok(json!({"ok": true}))
+            }
+        ),
         spec!(
             "library.publish",
             "Publish library",
@@ -104,7 +110,10 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let (_, lib, key) = component_arg(s, "library.swapAt", p)?;
                 let map = import(s.doc_mut()?, &lib, &[key], false)?;
-                let local = map.get(&key).copied().ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
+                let local = map
+                    .get(&key)
+                    .copied()
+                    .ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
                 super::component::swap_at(s, &with(p, &["x", "y"], json!({"component": local})))
             }
         ),
@@ -116,7 +125,10 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let (_, lib, key) = component_arg(s, "library.import", p)?;
                 let map = import(s.doc_mut()?, &lib, &[key], false)?;
-                let local = map.get(&key).copied().ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
+                let local = map
+                    .get(&key)
+                    .copied()
+                    .ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
                 Ok(json!({"component": local}))
             }
         ),
@@ -145,7 +157,10 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 let (lib, key) = variable_arg(s, "library.bindVariable", p, "variable")?;
                 let local = import_variable(s, &lib, &key)?;
-                super::styles::bind(s, &with(p, &["ids", "id", "field"], json!({"variable": local})))?;
+                super::styles::bind(
+                    s,
+                    &with(p, &["ids", "id", "field"], json!({"variable": local})),
+                )?;
                 Ok(json!({"variable": local}))
             }
         ),
@@ -186,9 +201,14 @@ fn with(p: &Value, keys: &[&str], mut base: Value) -> Value {
 /// An enabled library of the active document (`library` param), read from its file.
 fn library(s: &mut Session, cmd: &str, p: &Value) -> Result<(LibraryLink, Arc<PublishedLibrary>)> {
     let key = req_string(cmd, p, "library")?;
-    let link = find_link(s.doc()?, &key)
-        .cloned()
-        .ok_or_else(|| bad(cmd, format!("no enabled library `{key}` (library.list shows them; library.add enables one)")))?;
+    let link = find_link(s.doc()?, &key).cloned().ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "no enabled library `{key}` (library.list shows them; library.add enables one)"
+            ),
+        )
+    })?;
     let lib = s.load_library(&link.path)?;
     if lib.manifest.id != link.id {
         return Err(EngineError::Other(format!(
@@ -202,44 +222,88 @@ fn library(s: &mut Session, cmd: &str, p: &Value) -> Result<(LibraryLink, Arc<Pu
 }
 
 /// The `library` and published `component` params: (link, library, the component's snapshot id).
-fn component_arg(s: &mut Session, cmd: &str, p: &Value) -> Result<(LibraryLink, Arc<PublishedLibrary>, NodeId)> {
+fn component_arg(
+    s: &mut Session,
+    cmd: &str,
+    p: &Value,
+) -> Result<(LibraryLink, Arc<PublishedLibrary>, NodeId)> {
     let (link, lib) = library(s, cmd, p)?;
     let v = get(p, "component").ok_or_else(|| bad(cmd, "`component` (id or name) required"))?;
     let m = &lib.manifest;
-    let offered = |id: NodeId| asset_root(&lib.doc, id).and_then(|r| m.component(r)).is_some_and(|a| a.published);
-    let by_name = || v.as_str().and_then(|t| m.components.iter().find(|a| a.published && a.name == t)).map(|a| a.id);
-    let key = id_of(v).filter(|i| offered(*i)).or_else(by_name).ok_or_else(|| bad(cmd, format!("\"{}\" publishes no component {v}", link.name)))?;
+    let offered = |id: NodeId| {
+        asset_root(&lib.doc, id)
+            .and_then(|r| m.component(r))
+            .is_some_and(|a| a.published)
+    };
+    let by_name = || {
+        v.as_str()
+            .and_then(|t| m.components.iter().find(|a| a.published && a.name == t))
+            .map(|a| a.id)
+    };
+    let key = id_of(v)
+        .filter(|i| offered(*i))
+        .or_else(by_name)
+        .ok_or_else(|| bad(cmd, format!("\"{}\" publishes no component {v}", link.name)))?;
     Ok((link, lib, key))
 }
 
 /// The `library` and a published variable named by `param` (id, else name): (library, the
 /// variable's id in the library).
-fn variable_arg(s: &mut Session, cmd: &str, p: &Value, param: &str) -> Result<(Arc<PublishedLibrary>, VariableId)> {
+fn variable_arg(
+    s: &mut Session,
+    cmd: &str,
+    p: &Value,
+    param: &str,
+) -> Result<(Arc<PublishedLibrary>, VariableId)> {
     let (link, lib) = library(s, cmd, p)?;
     let key = req_string(cmd, p, param)?;
-    let id = published_variables(&lib).find(|v| v.id == key).or_else(|| published_variables(&lib).find(|v| v.name == key)).map(|v| v.id.clone());
-    let id = id.ok_or_else(|| bad(cmd, format!("\"{}\" publishes no variable `{key}`", link.name)))?;
+    let id = published_variables(&lib)
+        .find(|v| v.id == key)
+        .or_else(|| published_variables(&lib).find(|v| v.name == key))
+        .map(|v| v.id.clone());
+    let id = id.ok_or_else(|| {
+        bad(
+            cmd,
+            format!("\"{}\" publishes no variable `{key}`", link.name),
+        )
+    })?;
     Ok((lib, id))
 }
 
 /// Copy library variable `key` in (with what it aliases); its local id.
 fn import_variable(s: &mut Session, lib: &PublishedLibrary, key: &str) -> Result<VariableId> {
-    let map = import_variables(s.doc_mut()?, lib, &BTreeSet::from([key.to_string()]), &BTreeSet::new(), false);
-    map.variables.get(key).cloned().ok_or_else(|| EngineError::Other("the variable didn't import".into()))
+    let map = import_variables(
+        s.doc_mut()?,
+        lib,
+        &BTreeSet::from([key.to_string()]),
+        &BTreeSet::new(),
+        false,
+    );
+    map.variables
+        .get(key)
+        .cloned()
+        .ok_or_else(|| EngineError::Other("the variable didn't import".into()))
 }
 
 fn alias(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.aliasVariable";
     let own = req_string(cmd, p, "variable")?;
     let doc = s.doc()?;
-    let kind = doc.variables.get(&own).filter(|v| !is_remote_variable(doc, &v.id)).map(|v| v.kind);
+    let kind = doc
+        .variables
+        .get(&own)
+        .filter(|v| !is_remote_variable(doc, &v.id))
+        .map(|v| v.kind);
     let kind = kind.ok_or_else(|| bad(cmd, format!("no local variable `{own}`")))?;
     let (lib, key) = variable_arg(s, cmd, p, "alias")?;
     if lib.doc.variables.get(&key).is_some_and(|v| v.kind != kind) {
         return Err(bad(cmd, "the library variable has another type"));
     }
     let local = import_variable(s, &lib, &key)?;
-    super::styles::var_set(s, &with(p, &["variable", "mode"], json!({"value": {"alias": local}})))?;
+    super::styles::var_set(
+        s,
+        &with(p, &["variable", "mode"], json!({"value": {"alias": local}})),
+    )?;
     Ok(json!({"variable": local}))
 }
 
@@ -250,13 +314,40 @@ fn set_mode(s: &mut Session, p: &Value) -> Result<Value> {
     let coll = published_collections(&lib)
         .find(|c| c.id == key)
         .or_else(|| published_collections(&lib).find(|c| c.name == key))
-        .ok_or_else(|| bad(cmd, format!("\"{}\" publishes no variable collection `{key}`", link.name)))?;
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                format!("\"{}\" publishes no variable collection `{key}`", link.name),
+            )
+        })?;
     let m = req_string(cmd, p, "mode")?;
-    let mode = coll.modes.iter().find(|x| x.id == m || x.name == m).map(|x| x.id.clone()).ok_or_else(|| bad(cmd, "no such mode"))?;
+    let mode = coll
+        .modes
+        .iter()
+        .find(|x| x.id == m || x.name == m)
+        .map(|x| x.id.clone())
+        .ok_or_else(|| bad(cmd, "no such mode"))?;
     let key = coll.id.clone();
-    let map = import_variables(s.doc_mut()?, &lib, &BTreeSet::new(), &BTreeSet::from([key.clone()]), false);
-    let local = map.collections.get(&key).cloned().ok_or_else(|| EngineError::Other("the collection didn't import".into()))?;
-    super::styles::set_mode(s, &with(p, &["ids", "id"], json!({"collection": local, "mode": mode})))?;
+    let map = import_variables(
+        s.doc_mut()?,
+        &lib,
+        &BTreeSet::new(),
+        &BTreeSet::from([key.clone()]),
+        false,
+    );
+    let local = map
+        .collections
+        .get(&key)
+        .cloned()
+        .ok_or_else(|| EngineError::Other("the collection didn't import".into()))?;
+    super::styles::set_mode(
+        s,
+        &with(
+            p,
+            &["ids", "id"],
+            json!({"collection": local, "mode": mode}),
+        ),
+    )?;
     Ok(json!({"collection": local}))
 }
 
@@ -268,31 +359,65 @@ fn extend(s: &mut Session, p: &Value) -> Result<Value> {
         .find(|c| c.id == key)
         .or_else(|| published_collections(&lib).find(|c| c.name == key))
         .cloned()
-        .ok_or_else(|| bad(cmd, format!("\"{}\" publishes no variable collection `{key}`", link.name)))?;
-    let vars: BTreeSet<VariableId> = published_variables(&lib).filter(|v| v.collection == coll.id).map(|v| v.id.clone()).collect();
+        .ok_or_else(|| {
+            bad(
+                cmd,
+                format!("\"{}\" publishes no variable collection `{key}`", link.name),
+            )
+        })?;
+    let vars: BTreeSet<VariableId> = published_variables(&lib)
+        .filter(|v| v.collection == coll.id)
+        .map(|v| v.id.clone())
+        .collect();
     let doc = s.doc_mut()?;
     let map = import_variables(doc, &lib, &vars, &BTreeSet::from([coll.id.clone()]), false);
-    let parent = map.collections.get(&coll.id).cloned().ok_or_else(|| EngineError::Other("the collection didn't import".into()))?;
-    let base = string(p, "name").map(|n| n.trim().chars().take(200).collect::<String>()).filter(|n| !n.is_empty());
+    let parent = map
+        .collections
+        .get(&coll.id)
+        .cloned()
+        .ok_or_else(|| EngineError::Other("the collection didn't import".into()))?;
+    let base = string(p, "name")
+        .map(|n| n.trim().chars().take(200).collect::<String>())
+        .filter(|n| !n.is_empty());
     let base = base.unwrap_or_else(|| format!("{} (extended)", coll.name));
     let name = super::variables::free_collection_name(doc, &base);
     let id = doc.new_collection_id();
-    doc.variables.collections.push(Collection { id: id.clone(), name, modes: Vec::new(), extends: Some(parent) });
+    doc.variables.collections.push(Collection {
+        id: id.clone(),
+        name,
+        modes: Vec::new(),
+        extends: Some(parent),
+    });
     super::variables::sync_extensions(doc);
     Ok(json!({"id": id}))
 }
 
 /// What `p` asks `cmd` to publish of `doc` (`include`, else the default after `prev`; less
 /// `exclude`) and its description.
-fn publish_args(cmd: &str, doc: &Document, p: &Value, prev: Option<&LibraryManifest>) -> Result<(Selection, Option<String>)> {
+fn publish_args(
+    cmd: &str,
+    doc: &Document,
+    p: &Value,
+    prev: Option<&LibraryManifest>,
+) -> Result<(Selection, Option<String>)> {
     let all = publishable(doc);
-    let coll_named = |c: &String, t: &str| doc.variables.collections.iter().any(|x| x.id == *c && x.name == t);
+    let coll_named = |c: &String, t: &str| {
+        doc.variables
+            .collections
+            .iter()
+            .any(|x| x.id == *c && x.name == t)
+    };
     let count = |s: &Selection| s.components.len() + s.styles.len() + s.collections.len();
     let pick = |key: &str| -> Result<Selection> {
         let mut sel = Selection::default();
         let Some(v) = get(p, key) else { return Ok(sel) };
         let Value::Array(items) = v else {
-            return Err(bad(cmd, format!("`{key}` must be an array of component ids and style or variable collection ids or names")));
+            return Err(bad(
+                cmd,
+                format!(
+                    "`{key}` must be an array of component ids and style or variable collection ids or names"
+                ),
+            ));
         };
         for item in items {
             let text = item.as_str().map(str::trim);
@@ -304,22 +429,42 @@ fn publish_args(cmd: &str, doc: &Document, p: &Value, prev: Option<&LibraryManif
             } else if let Some(i) = id_of(item).filter(|i| all.components.contains(i)) {
                 sel.components.push(i);
             } else if let Some(t) = text {
-                sel.components.extend(all.components.iter().filter(|i| doc.node(**i).is_some_and(|n| n.name == t)));
-                sel.styles.extend(all.styles.iter().filter(|x| doc.style(x).is_some_and(|y| y.name == t)).cloned());
-                sel.collections.extend(all.collections.iter().filter(|c| coll_named(c, t)).cloned());
+                sel.components.extend(
+                    all.components
+                        .iter()
+                        .filter(|i| doc.node(**i).is_some_and(|n| n.name == t)),
+                );
+                sel.styles.extend(
+                    all.styles
+                        .iter()
+                        .filter(|x| doc.style(x).is_some_and(|y| y.name == t))
+                        .cloned(),
+                );
+                sel.collections
+                    .extend(all.collections.iter().filter(|c| coll_named(c, t)).cloned());
             }
             if count(&sel) == before {
-                return Err(bad(cmd, format!("{item} is not a local component, component set, style or variable collection of this file")));
+                return Err(bad(
+                    cmd,
+                    format!(
+                        "{item} is not a local component, component set, style or variable collection of this file"
+                    ),
+                ));
             }
         }
         Ok(sel)
     };
-    let mut sel = if get(p, "include").is_some() { pick("include")? } else { default_selection(doc, prev) };
+    let mut sel = if get(p, "include").is_some() {
+        pick("include")?
+    } else {
+        default_selection(doc, prev)
+    };
     let x = pick("exclude")?;
     sel.components.retain(|c| !x.components.contains(c));
     sel.styles.retain(|s| !x.styles.contains(s));
     sel.collections.retain(|c| !x.collections.contains(c));
-    let description = string(p, "description").map(|d| d.trim().chars().take(MAX_DESCRIPTION).collect());
+    let description =
+        string(p, "description").map(|d| d.trim().chars().take(MAX_DESCRIPTION).collect());
     Ok((sel, description))
 }
 
@@ -339,7 +484,12 @@ fn published_json(sel: &Selection, lib: &PublishedLibrary) -> Value {
 fn publish_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let prev = doc.published.clone();
-    let (sel, description) = publish_args("library.publish", doc, p, prev.as_ref().map(|l| &l.manifest))?;
+    let (sel, description) = publish_args(
+        "library.publish",
+        doc,
+        p,
+        prev.as_ref().map(|l| &l.manifest),
+    )?;
     let lib = publish(doc, prev.as_deref(), &sel, description, s.ds()?.uid)?;
     let out = published_json(&sel, &lib);
     s.doc_mut()?.published = Some(Arc::new(lib));
@@ -353,8 +503,12 @@ fn unexpected(r: &LibraryReply) -> EngineError {
 
 fn publish_to_server(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.publishToServer";
-    let key = string(p, "key").map(|k| k.trim().to_string()).filter(|k| !k.is_empty());
-    let server = string(p, "server").map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
+    let key = string(p, "key")
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty());
+    let server = string(p, "server")
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty());
     let (doc, uid) = s.ds().map(|ds| (ds.doc.clone(), ds.uid))?;
     let mut kept = None;
     let link = match server {
@@ -375,8 +529,16 @@ fn publish_to_server(s: &mut Session, p: &Value) -> Result<Value> {
         })?,
     };
     // The server's version is the one to follow (others may have published since).
-    let current = match s.library_request(&link, LibraryReq::Fetch { have: None, usage: None })? {
-        LibraryReply::Library { archive, .. } => Some(read_archive(&archive).map_err(EngineError::Other)?),
+    let current = match s.library_request(
+        &link,
+        LibraryReq::Fetch {
+            have: None,
+            usage: None,
+        },
+    )? {
+        LibraryReply::Library { archive, .. } => {
+            Some(read_archive(&archive).map_err(EngineError::Other)?)
+        }
         LibraryReply::Empty => None,
         other => return Err(unexpected(&other)),
     };
@@ -388,10 +550,17 @@ fn publish_to_server(s: &mut Session, p: &Value) -> Result<Value> {
         (Err(_), Some(own)) if current.is_none() && !sel.is_empty() => (**own).clone(),
         (Err(e), _) => return Err(e),
     };
-    let lib = match s.library_exchange(&link, LibraryReq::Publish { archive: archive(&lib)? })? {
+    let lib = match s.library_exchange(
+        &link,
+        LibraryReq::Publish {
+            archive: archive(&lib)?,
+        },
+    )? {
         // Run again in the background: what the server keeps is what went out then (a new copy
         // differs at least in its time).
-        (LibraryReply::Published { .. }, Some(LibraryReq::Publish { archive })) => read_archive(&archive).map_err(EngineError::Other)?,
+        (LibraryReply::Published { .. }, Some(LibraryReq::Publish { archive })) => {
+            read_archive(&archive).map_err(EngineError::Other)?
+        }
         (LibraryReply::Published { .. }, _) => lib,
         (other, _) => return Err(unexpected(&other)),
     };
@@ -409,13 +578,25 @@ fn usage_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.usage";
     let link = match string(p, "library") {
         Some(key) => {
-            let l = find_link(s.doc()?, &key).ok_or_else(|| bad(cmd, format!("no enabled library `{key}`")))?;
+            let l = find_link(s.doc()?, &key)
+                .ok_or_else(|| bad(cmd, format!("no enabled library `{key}`")))?;
             if !is_server_link(&l.path) {
-                return Err(bad(cmd, format!("\"{}\" is a library file, not a team library: only a server knows which files use it", l.name)));
+                return Err(bad(
+                    cmd,
+                    format!(
+                        "\"{}\" is a library file, not a team library: only a server knows which files use it",
+                        l.name
+                    ),
+                ));
             }
             l.path.clone()
         }
-        None => s.server_link().ok_or_else(|| bad(cmd, "name an enabled team library, or open this file from its server"))?,
+        None => s.server_link().ok_or_else(|| {
+            bad(
+                cmd,
+                "name an enabled team library, or open this file from its server",
+            )
+        })?,
     };
     let lib = s.load_library(&link)?;
     let files = match s.library_request(&link, LibraryReq::Usage)? {
@@ -452,19 +633,30 @@ fn usage_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 fn swap_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.swap";
     let from = req_string(cmd, p, "from")?;
-    let from = find_link(s.doc()?, &from).map(|l| l.id.clone()).ok_or_else(|| bad(cmd, format!("no enabled library `{from}`")))?;
+    let from = find_link(s.doc()?, &from)
+        .map(|l| l.id.clone())
+        .ok_or_else(|| bad(cmd, format!("no enabled library `{from}`")))?;
     let to = req_string(cmd, p, "to")?;
     let (link, lib) = library(s, cmd, &json!({"library": to}))?;
     if link.id == from {
         return Err(bad(cmd, "`from` and `to` are the same library"));
     }
     let r = crate::library_swap::swap_library(s.doc_mut()?, &from, &lib)?;
-    Ok(json!({"components": r.components, "styles": r.styles, "variables": r.variables, "unmatched": r.unmatched, "removed": r.removed}))
+    Ok(
+        json!({"components": r.components, "styles": r.styles, "variables": r.variables, "unmatched": r.unmatched, "removed": r.removed}),
+    )
 }
 
 fn assets_json(lib: &PublishedLibrary) -> Value {
     let m = &lib.manifest;
-    let modes = |c: &str| lib.doc.variables.collection(c).map(|c| c.modes.iter().map(|x| json!({"id": x.id, "name": x.name})).collect::<Vec<_>>());
+    let modes = |c: &str| {
+        lib.doc.variables.collection(c).map(|c| {
+            c.modes
+                .iter()
+                .map(|x| json!({"id": x.id, "name": x.name}))
+                .collect::<Vec<_>>()
+        })
+    };
     json!({
         "components": m.components.iter().filter(|a| a.published).map(|a| json!({"id": a.id, "name": a.name, "set": a.set, "version": a.version})).collect::<Vec<_>>(),
         "styles": m.styles.iter().filter(|x| x.published).map(|x| json!({"id": x.id, "name": x.name, "type": x.kind, "version": x.version})).collect::<Vec<_>>(),
@@ -484,11 +676,18 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
                 e["version"] = json!(lib.manifest.version);
                 e["description"] = json!(lib.manifest.description);
                 e["updates"] = json!(pending(s.doc()?, &lib).count());
-                if with_assets && let (Value::Object(e), Value::Object(a)) = (&mut e, assets_json(&lib)) {
+                if with_assets
+                    && let (Value::Object(e), Value::Object(a)) = (&mut e, assets_json(&lib))
+                {
                     e.extend(a);
                 }
             }
-            Ok(lib) => e["error"] = json!(format!("the file now holds another library (\"{}\")", lib.manifest.name)),
+            Ok(lib) => {
+                e["error"] = json!(format!(
+                    "the file now holds another library (\"{}\")",
+                    lib.manifest.name
+                ))
+            }
             Err(err) => e["error"] = json!(err.to_string()),
         }
         out.push(e);
@@ -506,7 +705,10 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
     });
     let mut res = json!({"libraries": out, "published": published});
     if with_assets {
-        let (def, all) = (default_selection(doc, doc.published.as_ref().map(|l| &l.manifest)), publishable(doc));
+        let (def, all) = (
+            default_selection(doc, doc.published.as_ref().map(|l| &l.manifest)),
+            publishable(doc),
+        );
         res["publishable"] = json!({
             "components": all.components.iter().filter_map(|c| doc.node(*c).map(|n| json!({"id": c, "name": n.name, "selected": def.components.contains(c)}))).collect::<Vec<_>>(),
             "styles": all.styles.iter().filter_map(|x| doc.style(x).map(|st| json!({"id": st.id, "name": st.name, "selected": def.styles.contains(x)}))).collect::<Vec<_>>(),
@@ -519,14 +721,28 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.add";
     let raw = req_string(cmd, p, "path")?;
-    let path = if is_server_link(&raw) { raw.trim().to_string() } else { absolute_path(raw.trim()) };
+    let path = if is_server_link(&raw) {
+        raw.trim().to_string()
+    } else {
+        absolute_path(raw.trim())
+    };
     let lib = s.load_library(&path)?;
     let m = &lib.manifest;
     let doc = s.doc()?;
-    if doc.published.as_ref().is_some_and(|me| me.manifest.id == m.id) {
-        return Err(EngineError::Disabled(cmd.into(), format!("this file is the library \"{}\"", m.name)));
+    if doc
+        .published
+        .as_ref()
+        .is_some_and(|me| me.manifest.id == m.id)
+    {
+        return Err(EngineError::Disabled(
+            cmd.into(),
+            format!("this file is the library \"{}\"", m.name),
+        ));
     }
-    let unchanged = doc.libraries.link(&m.id).is_some_and(|l| l.path == path && l.name == m.name);
+    let unchanged = doc
+        .libraries
+        .link(&m.id)
+        .is_some_and(|l| l.path == path && l.name == m.name);
     if !unchanged {
         let libs = s.doc_mut()?.libraries_mut();
         match libs.enabled.iter_mut().find(|l| l.id == m.id) {
@@ -535,7 +751,12 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
                 l.path = path.clone();
                 l.name = m.name.clone();
             }
-            None => libs.enabled.push(LibraryLink { id: m.id.clone(), name: m.name.clone(), path: path.clone(), version: m.version }),
+            None => libs.enabled.push(LibraryLink {
+                id: m.id.clone(),
+                name: m.name.clone(),
+                path: path.clone(),
+                version: m.version,
+            }),
         }
     }
     let mut out = assets_json(&lib);
@@ -549,7 +770,9 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.remove";
     let key = req_string(cmd, p, "id")?;
-    let id = find_link(s.doc()?, &key).map(|l| l.id.clone()).ok_or_else(|| bad(cmd, format!("no enabled library `{key}`")))?;
+    let id = find_link(s.doc()?, &key)
+        .map(|l| l.id.clone())
+        .ok_or_else(|| bad(cmd, format!("no enabled library `{key}`")))?;
     let doc = s.doc_mut()?;
     doc.libraries_mut().enabled.retain(|l| l.id != id);
     prune(doc, &id)?;
@@ -577,7 +800,11 @@ fn updates(s: &mut Session, _p: &Value) -> Result<Value> {
         }
         count += p.count();
         let m = &lib.manifest;
-        let name = |r: &ImportedComponent| m.component(r.key).map(|a| a.name.clone()).unwrap_or_default();
+        let name = |r: &ImportedComponent| {
+            m.component(r.key)
+                .map(|a| a.name.clone())
+                .unwrap_or_default()
+        };
         let rows = |list: &[ImportedRecord], name: &dyn Fn(&str) -> Option<String>| {
             // A variable new to an extended collection has no copy yet: no `id`.
             list.iter().map(|r| json!({"id": (!r.local.is_empty()).then_some(&r.local), "key": r.key, "name": name(&r.key)})).collect::<Vec<_>>()
@@ -598,7 +825,11 @@ fn updates(s: &mut Session, _p: &Value) -> Result<Value> {
 fn accept(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "library.acceptUpdates";
     let named: Option<Vec<String>> = match get(p, "ids") {
-        Some(Value::Array(a)) => Some(a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect()),
+        Some(Value::Array(a)) => Some(
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect(),
+        ),
         Some(Value::String(one)) => Some(vec![one.clone()]),
         Some(_) => return Err(bad(cmd, "`ids` must be an array of library ids")),
         None => None,
@@ -606,7 +837,11 @@ fn accept(s: &mut Session, p: &Value) -> Result<Value> {
     let links: Vec<LibraryLink> = match &named {
         Some(keys) => keys
             .iter()
-            .map(|k| find_link(s.doc()?, k).cloned().ok_or_else(|| bad(cmd, format!("no enabled library `{k}`"))))
+            .map(|k| {
+                find_link(s.doc()?, k)
+                    .cloned()
+                    .ok_or_else(|| bad(cmd, format!("no enabled library `{k}`")))
+            })
             .collect::<Result<_>>()?,
         None => s.doc()?.libraries.enabled.clone(),
     };
@@ -641,7 +876,10 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
     let (cx, cy) = s.ds().map(|d| (d.view.cx, d.view.cy))?;
     let (x, y) = (num(p, "x").unwrap_or(cx), num(p, "y").unwrap_or(cy));
     let map = import(s.doc_mut()?, &lib, &[key], false)?;
-    let local = map.get(&key).copied().ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
+    let local = map
+        .get(&key)
+        .copied()
+        .ok_or_else(|| EngineError::Other("the component didn't import".into()))?;
     let mut out = super::component::place(s, &json!({"component": local, "x": x, "y": y}))?;
     out["component"] = json!(local);
     Ok(out)
@@ -657,13 +895,21 @@ fn apply_style(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .filter(|x| x.published)
         .find(|x| x.id == key)
-        .or_else(|| m.styles.iter().filter(|x| x.published).find(|x| x.name == key))
+        .or_else(|| {
+            m.styles
+                .iter()
+                .filter(|x| x.published)
+                .find(|x| x.name == key)
+        })
         .map(|x| x.id.clone())
         .ok_or_else(|| bad(cmd, format!("\"{}\" publishes no style `{key}`", link.name)))?;
     let local = import_styles(s.doc_mut()?, &lib, &[style].into_iter().collect(), false)
         .into_values()
         .next()
         .ok_or_else(|| EngineError::Other("the style didn't import".into()))?;
-    super::styles::apply(s, &with(p, &["ids", "id", "target"], json!({"style": local})))?;
+    super::styles::apply(
+        s,
+        &with(p, &["ids", "id", "target"], json!({"style": local})),
+    )?;
     Ok(json!({"style": local}))
 }

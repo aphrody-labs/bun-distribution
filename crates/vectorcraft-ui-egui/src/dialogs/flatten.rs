@@ -30,13 +30,22 @@ const PRESET_NAME: &str = "__presetName";
 /// What the preset dropdown shows once the options differ from the preset's.
 const CUSTOM: &str = "[Custom]";
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Flatten Transparency").into(), body, confirm, preview: true, min_width: 420.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Flatten Transparency").into(),
+    body,
+    confirm,
+    preview: true,
+    min_width: 420.0,
+    ..DialogSpec::FORM
+};
 
 /// Open Flatten Transparency for the selection with the default preset.
 pub fn open(app: &mut VectorcraftApp) {
     let name = FlattenOptions::preset_label(FlattenOptions::PRESETS[1]).unwrap_or_default();
-    let mut d = Dialog::new(KIND, json!({ "preset": name, APPLIED: name, "preview": false }));
+    let mut d = Dialog::new(
+        KIND,
+        json!({ "preset": name, APPLIED: name, "preview": false }),
+    );
     put_options(&mut d.fields, &FlattenOptions::default());
     app.ui.dialog = Some(d);
 }
@@ -87,14 +96,22 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let presets = app.session.flattener_presets();
     ui.horizontal(|ui| {
         widgets::dim_label(ui, tl!("Preset:"));
-        if let Some(p) = preset_dropdown(ui, "flatten-preset", &presets, &d.str("preset"), current.as_ref().ok(), 220.0) {
+        if let Some(p) = preset_dropdown(
+            ui,
+            "flatten-preset",
+            &presets,
+            &d.str("preset"),
+            current.as_ref().ok(),
+            220.0,
+        ) {
             put_options(&mut d.fields, &p.options);
             applied(d, &p.name);
         }
         if widgets::flat_button(ui, tl!("Save Preset…"), 100.0).clicked() {
             let open = !d.bool(SAVING);
             d.fields.insert(SAVING.into(), json!(open));
-            d.fields.insert(PRESET_NAME.into(), json!(app.session.new_preset_name()));
+            d.fields
+                .insert(PRESET_NAME.into(), json!(app.session.new_preset_name()));
         }
     });
     if d.bool(SAVING) {
@@ -106,10 +123,15 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         put_options(&mut d.fields, &o);
     }
     if let Err(e) = &current {
-        ui.label(egui::RichText::new(e).color(Tokens::get(ui.ctx()).text_dim).size(11.5));
+        ui.label(
+            egui::RichText::new(e)
+                .color(Tokens::get(ui.ctx()).text_dim)
+                .size(11.5),
+        );
     }
     // Invalid values keep the last preview.
-    let p = params(d, &app.session.prefs.flattener_presets).unwrap_or_else(|_| d.fields.get(form::PREVIEWED).cloned().unwrap_or_default());
+    let p = params(d, &app.session.prefs.flattener_presets)
+        .unwrap_or_else(|_| d.fields.get(form::PREVIEWED).cloned().unwrap_or_default());
     form::preview(app, ui, d, "Flatten Transparency", CMD, p);
     false
 }
@@ -121,7 +143,8 @@ fn save_row(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
         widgets::dim_label(ui, tl!("Name:"));
         let r = form::text_edit(ui, d, PRESET_NAME, 180.0);
         // Enter saves the preset instead of flattening.
-        let enter = r.lost_focus() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter));
+        let enter = r.lost_focus()
+            && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter));
         if (widgets::flat_button(ui, tl!("Save"), 60.0).clicked() || enter)
             && let Err(e) = save_preset(app, d)
         {
@@ -132,7 +155,13 @@ fn save_row(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
         }
     });
     let name = d.str(PRESET_NAME);
-    if app.session.prefs.flattener_presets.iter().any(|p| p.name.eq_ignore_ascii_case(name.trim())) {
+    if app
+        .session
+        .prefs
+        .flattener_presets
+        .iter()
+        .any(|p| p.name.eq_ignore_ascii_case(name.trim()))
+    {
         widgets::dim_label(ui, tl!("Replaces the saved preset of that name."));
     }
 }
@@ -163,14 +192,22 @@ pub(crate) fn preset_dropdown<'a>(
     options: Option<&FlattenOptions>,
     width: f32,
 ) -> Option<&'a FlattenerPreset> {
-    let shown = presets.iter().find(|p| p.name == name && Some(&p.options) == options).map_or(tl!(CUSTOM), |p| p.name.as_str());
+    let shown = presets
+        .iter()
+        .find(|p| p.name == name && Some(&p.options) == options)
+        .map_or(tl!(CUSTOM), |p| p.name.as_str());
     let names: Vec<&str> = presets.iter().map(|p| p.name.as_str()).collect();
-    super::mixed_dropdown(ui, id, shown, &names, width, |k| names.get(k).is_some_and(|n| is_builtin(n))).and_then(|i| presets.get(i))
+    super::mixed_dropdown(ui, id, shown, &names, width, |k| {
+        names.get(k).is_some_and(|n| is_builtin(n))
+    })
+    .and_then(|i| presets.get(i))
 }
 
 /// Is `name` a built-in flattener preset's?
 fn is_builtin(name: &str) -> bool {
-    FlattenOptions::PRESETS.iter().any(|id| FlattenOptions::preset_label(id) == Some(name))
+    FlattenOptions::PRESETS
+        .iter()
+        .any(|id| FlattenOptions::preset_label(id) == Some(name))
 }
 
 /// The width of the option value fields.
@@ -179,7 +216,12 @@ const FIELD: f32 = 56.0;
 /// The flattener options as Flatten Transparency, the preset manager and the Flattener Preview
 /// panel edit them: the raster/vector balance, both resolutions and the six switches. Returns true
 /// when one changed.
-pub(crate) fn options_editor(ui: &mut egui::Ui, id: &str, o: &mut FlattenOptions, enabled: bool) -> bool {
+pub(crate) fn options_editor(
+    ui: &mut egui::Ui,
+    id: &str,
+    o: &mut FlattenOptions,
+    enabled: bool,
+) -> bool {
     let t = Tokens::get(ui.ctx());
     let before = o.clone();
     let dim = |ui: &mut egui::Ui, s: &str| {
@@ -191,36 +233,60 @@ pub(crate) fn options_editor(ui: &mut egui::Ui, id: &str, o: &mut FlattenOptions
             ui.spacing_mut().item_spacing.x = 6.0;
             dim(ui, tl!("Rasters"));
             let rail = (ui.available_width() - FIELD - 56.0).clamp(80.0, 200.0);
-            if let (Some(x), _) = widgets::color_slider(ui, (id, "balance-slider"), (o.balance / 100.0) as f32, rail, &|_| t.input_border) {
+            if let (Some(x), _) = widgets::color_slider(
+                ui,
+                (id, "balance-slider"),
+                (o.balance / 100.0) as f32,
+                rail,
+                &|_| t.input_border,
+            ) {
                 o.balance = (x as f64 * 100.0).round();
             }
             dim(ui, tl!("Vectors"));
-            if let Some(v) = widgets::plain_field(ui, (id, "balance"), o.balance, "", 0, FIELD - 12.0) {
+            if let Some(v) =
+                widgets::plain_field(ui, (id, "balance"), o.balance, "", 0, FIELD - 12.0)
+            {
                 o.balance = v.round().clamp(0.0, 100.0);
             }
         });
         ui.add_space(4.0);
-        egui::Grid::new((id, "resolutions")).num_columns(2).spacing([8.0, 4.0]).show(ui, |ui| {
-            for (label, key) in [(tl!("Line Art and Text Resolution:"), 0), (tl!("Gradient and Mesh Resolution:"), 1)] {
-                widgets::dim_label(ui, label);
-                ui.horizontal(|ui| {
-                    let v = if key == 0 { &mut o.line_art_ppi } else { &mut o.gradient_ppi };
-                    if let Some(n) = widgets::plain_field(ui, (id, key), *v, "", 0, FIELD) {
-                        *v = n.round().clamp(1.0, 2400.0);
-                    }
-                    dim(ui, "ppi");
-                });
-                ui.end_row();
-            }
-        });
+        egui::Grid::new((id, "resolutions"))
+            .num_columns(2)
+            .spacing([8.0, 4.0])
+            .show(ui, |ui| {
+                for (label, key) in [
+                    (tl!("Line Art and Text Resolution:"), 0),
+                    (tl!("Gradient and Mesh Resolution:"), 1),
+                ] {
+                    widgets::dim_label(ui, label);
+                    ui.horizontal(|ui| {
+                        let v = if key == 0 {
+                            &mut o.line_art_ppi
+                        } else {
+                            &mut o.gradient_ppi
+                        };
+                        if let Some(n) = widgets::plain_field(ui, (id, key), *v, "", 0, FIELD) {
+                            *v = n.round().clamp(1.0, 2400.0);
+                        }
+                        dim(ui, "ppi");
+                    });
+                    ui.end_row();
+                }
+            });
         ui.add_space(4.0);
         let switches: [(&str, &mut bool); 6] = [
             (tl!("Convert All Text to Outlines"), &mut o.text_to_outlines),
-            (tl!("Convert All Strokes to Outlines"), &mut o.strokes_to_outlines),
+            (
+                tl!("Convert All Strokes to Outlines"),
+                &mut o.strokes_to_outlines,
+            ),
             (tl!("Clip Complex Regions"), &mut o.clip_complex_regions),
             (tl!("Anti-alias Rasters"), &mut o.anti_alias),
             (tl!("Preserve Alpha Transparency"), &mut o.preserve_alpha),
-            (tl!("Preserve Overprints and Spot Colors"), &mut o.preserve_overprints),
+            (
+                tl!("Preserve Overprints and Spot Colors"),
+                &mut o.preserve_overprints,
+            ),
         ];
         for (label, v) in switches {
             if widgets::check(ui, label, *v, enabled) {
@@ -239,25 +305,40 @@ mod tests {
     /// The built-in presets are told from saved ones by name (only theirs are translated).
     #[test]
     fn built_in_presets_are_known_by_name() {
-        assert!(FlattenOptions::builtin_presets().iter().all(|p| is_builtin(&p.name)));
+        assert!(
+            FlattenOptions::builtin_presets()
+                .iter()
+                .all(|p| is_builtin(&p.name))
+        );
         assert!(!is_builtin("Regular") && !is_builtin("high"));
     }
 
     fn frame(app: &mut VectorcraftApp) {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| super::super::show(app, ui.ctx()));
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+            super::super::show(app, ui.ctx())
+        });
         out.textures_delta.clear();
     }
 
     /// A document with a half-transparent red square over a blue one, both selected.
     fn scene() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         for (x, color) in [(10, "#0000ff"), (60, "#ff0000")] {
-            let id = app.run("shape.rectangle", json!({"x": x, "y": x, "width": 100, "height": 100})).unwrap()["id"].clone();
-            app.run("paint.setFill", json!({"color": color, "ids": [id]})).unwrap();
-            app.run("paint.setStroke", json!({"none": true, "ids": [id]})).unwrap();
+            let id = app
+                .run(
+                    "shape.rectangle",
+                    json!({"x": x, "y": x, "width": 100, "height": 100}),
+                )
+                .unwrap()["id"]
+                .clone();
+            app.run("paint.setFill", json!({"color": color, "ids": [id]}))
+                .unwrap();
+            app.run("paint.setStroke", json!({"none": true, "ids": [id]}))
+                .unwrap();
         }
         app.run("transparency.set", json!({"opacity": 50})).unwrap();
         app.run("select.all", json!({})).unwrap();
@@ -280,10 +361,21 @@ mod tests {
         app.run("ui.flattenTransparencyDialog", json!({})).unwrap();
         assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(KIND));
         frame(&mut app);
-        assert!(!app.session.in_interaction(), "no preview until it is turned on");
-        app.ui.dialog.as_mut().unwrap().fields.insert("preview".into(), json!(true));
+        assert!(
+            !app.session.in_interaction(),
+            "no preview until it is turned on"
+        );
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("preview".into(), json!(true));
         frame(&mut app);
-        assert!(app.session.in_interaction() && !transparent_left(&app), "previewed on the canvas");
+        assert!(
+            app.session.in_interaction() && !transparent_left(&app),
+            "previewed on the canvas"
+        );
         super::super::cancel(&mut app);
         assert!(app.ui.dialog.is_none() && !app.session.in_interaction());
         assert_eq!(app.session.doc().unwrap().doc, before, "Cancel rolls back");
@@ -292,14 +384,25 @@ mod tests {
         let d = app.ui.dialog.as_mut().unwrap();
         d.fields.insert("preset".into(), json!("High Resolution"));
         frame(&mut app);
-        assert_eq!(app.ui.dialog.as_ref().unwrap().f64("lineArtPpi", 0.0), 1200.0, "a preset set from outside loads");
-        app.ui.dialog.as_mut().unwrap().fields.insert("balance".into(), json!(0));
+        assert_eq!(
+            app.ui.dialog.as_ref().unwrap().f64("lineArtPpi", 0.0),
+            1200.0,
+            "a preset set from outside loads"
+        );
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("balance".into(), json!(0));
         super::super::confirm(&mut app).unwrap();
         assert!(app.ui.dialog.is_none());
         let st = app.session.doc().unwrap();
         assert_eq!(st.history.undo.len(), undo + 1);
         let mut images = 0;
-        st.doc.layers[0].walk(&mut |n| images += matches!(n.kind, vectorcraft_doc::NodeKind::Image(_)) as usize);
+        st.doc.layers[0].walk(&mut |n| {
+            images += matches!(n.kind, vectorcraft_doc::NodeKind::Image(_)) as usize
+        });
         assert_eq!(images, 1, "balance 0 rasterizes");
         assert!(!transparent_left(&app));
     }
@@ -314,18 +417,31 @@ mod tests {
         save_preset(&mut app, &mut d).unwrap();
         assert_eq!(d.str("preset"), "Thirty");
         let saved = &app.session.prefs.flattener_presets;
-        assert_eq!((saved.len(), saved[0].name.as_str(), saved[0].options.balance), (1, "Thirty", 30.0));
+        assert_eq!(
+            (
+                saved.len(),
+                saved[0].name.as_str(),
+                saved[0].options.balance
+            ),
+            (1, "Thirty", 30.0)
+        );
         // A saved preset set from outside loads like a built-in one.
         d.fields.insert("preset".into(), json!("Low Resolution"));
         app.ui.dialog = Some(d);
         frame(&mut app);
         assert_eq!(app.ui.dialog.as_ref().unwrap().f64("balance", 0.0), 75.0);
-        app.ui.dialog.as_mut().unwrap().fields.insert("preset".into(), json!("Thirty"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("preset".into(), json!("Thirty"));
         frame(&mut app);
         assert_eq!(app.ui.dialog.as_ref().unwrap().f64("balance", 0.0), 30.0);
         // Built-in presets can't be replaced.
         let mut d = app.ui.dialog.clone().unwrap();
-        d.fields.insert(PRESET_NAME.into(), json!("High Resolution"));
+        d.fields
+            .insert(PRESET_NAME.into(), json!("High Resolution"));
         assert!(save_preset(&mut app, &mut d).is_err());
     }
 
@@ -333,9 +449,18 @@ mod tests {
     fn bad_values_report_and_keep_the_dialog_open() {
         let mut app = scene();
         app.run("ui.flattenTransparencyDialog", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("gradientPpi".into(), json!(9000));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("gradientPpi".into(), json!(9000));
         frame(&mut app);
-        assert!(super::super::confirm(&mut app).unwrap_err().contains("resolutions"));
+        assert!(
+            super::super::confirm(&mut app)
+                .unwrap_err()
+                .contains("resolutions")
+        );
         assert!(app.ui.dialog.is_some());
     }
 }

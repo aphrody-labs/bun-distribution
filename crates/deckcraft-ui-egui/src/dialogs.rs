@@ -18,13 +18,20 @@ pub struct Dialog {
 
 impl Dialog {
     pub fn new(id: &str) -> Self {
-        Dialog { id: id.into(), params: Value::Null, fields: Default::default() }
+        Dialog {
+            id: id.into(),
+            params: Value::Null,
+            fields: Default::default(),
+        }
     }
     pub fn modal(&self) -> bool {
         true
     }
     fn get(&mut self, k: &str, default: &str) -> String {
-        self.fields.entry(k.into()).or_insert_with(|| default.to_string()).clone()
+        self.fields
+            .entry(k.into())
+            .or_insert_with(|| default.to_string())
+            .clone()
     }
 }
 
@@ -61,7 +68,9 @@ fn title(id: &str) -> &'static str {
 }
 
 pub fn show(app: &mut SlideApp, ctx: &egui::Context) {
-    let Some(mut d) = app.dialog.take() else { return };
+    let Some(mut d) = app.dialog.take() else {
+        return;
+    };
     let mut open = true;
     let mut close = false;
     egui::Window::new(title(&d.id))
@@ -85,12 +94,21 @@ fn buttons(ui: &mut Ui, ok_label: &str) -> (bool, bool) {
     ui.add_space(8.0);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         let t = Tokens::get(ui.ctx());
-        if ui.add(egui::Button::new(egui::RichText::new(ok_label).color(t.accent_text)).fill(t.accent).min_size(vec2(72.0, 24.0))).clicked()
+        if ui
+            .add(
+                egui::Button::new(egui::RichText::new(ok_label).color(t.accent_text))
+                    .fill(t.accent)
+                    .min_size(vec2(72.0, 24.0)),
+            )
+            .clicked()
             || ui.input(|i| i.key_pressed(egui::Key::Enter))
         {
             ok = true;
         }
-        if ui.add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0))).clicked() {
+        if ui
+            .add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0)))
+            .clicked()
+        {
             cancel = true;
         }
     });
@@ -109,12 +127,19 @@ fn field(ui: &mut Ui, d: &mut Dialog, label: &str, key: &str, default: &str) {
 fn check(ui: &mut Ui, d: &mut Dialog, label: &str, key: &str, default: bool) -> bool {
     let mut v = d.get(key, if default { "1" } else { "0" }) == "1";
     ui.checkbox(&mut v, label);
-    d.fields.insert(key.into(), if v { "1".into() } else { "0".into() });
+    d.fields
+        .insert(key.into(), if v { "1".into() } else { "0".into() });
     v
 }
 
 fn num(d: &mut Dialog, key: &str, default: f64) -> f64 {
-    d.get(key, "").trim().trim_end_matches(['"', '%', ' ']).parse::<f64>().ok().filter(|v| v.is_finite()).unwrap_or(default)
+    d.get(key, "")
+        .trim()
+        .trim_end_matches(['"', '%', ' '])
+        .parse::<f64>()
+        .ok()
+        .filter(|v| v.is_finite())
+        .unwrap_or(default)
 }
 
 /// Returns true when the dialog should close.
@@ -134,32 +159,67 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "slideSize" => {
-            let cur = app.session.active().map(|s| s.doc.slide_size).unwrap_or(deckcraft_model::defaults::WIDE);
+            let cur = app
+                .session
+                .active()
+                .map(|s| s.doc.slide_size)
+                .unwrap_or(deckcraft_model::defaults::WIDE);
             ui.label("Slides sized for:");
             let preset = d.get("preset", "");
-            egui::ComboBox::from_id_salt("sizes").selected_text(if preset.is_empty() { "Custom" } else { &preset }).show_ui(ui, |ui| {
-                for (label, w, h) in deckcraft_model::defaults::SLIDE_SIZES {
-                    if ui.selectable_label(preset == *label, *label).clicked() {
-                        d.fields.insert("preset".into(), label.to_string());
-                        d.fields.insert("w".into(), format!("{:.2}", w / 72.0));
-                        d.fields.insert("h".into(), format!("{:.2}", h / 72.0));
+            egui::ComboBox::from_id_salt("sizes")
+                .selected_text(if preset.is_empty() { "Custom" } else { &preset })
+                .show_ui(ui, |ui| {
+                    for (label, w, h) in deckcraft_model::defaults::SLIDE_SIZES {
+                        if ui.selectable_label(preset == *label, *label).clicked() {
+                            d.fields.insert("preset".into(), label.to_string());
+                            d.fields.insert("w".into(), format!("{:.2}", w / 72.0));
+                            d.fields.insert("h".into(), format!("{:.2}", h / 72.0));
+                        }
                     }
-                }
-            });
-            field(ui, d, "Width (in):", "w", &format!("{:.2}", cur.width / 72.0));
-            field(ui, d, "Height (in):", "h", &format!("{:.2}", cur.height / 72.0));
+                });
+            field(
+                ui,
+                d,
+                "Width (in):",
+                "w",
+                &format!("{:.2}", cur.width / 72.0),
+            );
+            field(
+                ui,
+                d,
+                "Height (in):",
+                "h",
+                &format!("{:.2}", cur.height / 72.0),
+            );
             let maximize = check(ui, d, "Maximize content (else ensure fit)", "max", false);
             let (ok, cancel) = buttons(ui, "OK");
             if ok {
-                let (w, h) = (num(d, "w", cur.width / 72.0) * 72.0, num(d, "h", cur.height / 72.0) * 72.0);
-                run(app, "design.slideSize", json!({"w": w, "h": h, "scale": if maximize { "maximize" } else { "ensureFit" }}));
+                let (w, h) = (
+                    num(d, "w", cur.width / 72.0) * 72.0,
+                    num(d, "h", cur.height / 72.0) * 72.0,
+                );
+                run(
+                    app,
+                    "design.slideSize",
+                    json!({"w": w, "h": h, "scale": if maximize { "maximize" } else { "ensureFit" }}),
+                );
             }
             ok || cancel
         }
         "headerFooter" => {
-            let hf = app.session.active().map(|s| s.doc.header_footer.clone()).unwrap_or_default();
+            let hf = app
+                .session
+                .active()
+                .map(|s| s.doc.header_footer.clone())
+                .unwrap_or_default();
             let date = check(ui, d, "Date and time", "date", hf.date);
-            field(ui, d, "  Fixed date (empty = update automatically):", "dateText", &hf.date_text);
+            field(
+                ui,
+                d,
+                "  Fixed date (empty = update automatically):",
+                "dateText",
+                &hf.date_text,
+            );
             let num_on = check(ui, d, "Slide number", "num", hf.slide_number);
             let foot = check(ui, d, "Footer", "footer", hf.footer);
             field(ui, d, "  Footer text:", "footerText", &hf.footer_text);
@@ -188,13 +248,22 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         "hyperlink" => {
             let mode = d.get("mode", "url");
             ui.horizontal(|ui| {
-                if ui.selectable_label(mode == "url", "Web Page or File").clicked() {
+                if ui
+                    .selectable_label(mode == "url", "Web Page or File")
+                    .clicked()
+                {
                     d.fields.insert("mode".into(), "url".into());
                 }
-                if ui.selectable_label(mode == "slide", "This Document").clicked() {
+                if ui
+                    .selectable_label(mode == "slide", "This Document")
+                    .clicked()
+                {
                     d.fields.insert("mode".into(), "slide".into());
                 }
-                if ui.selectable_label(mode == "email", "Email Address").clicked() {
+                if ui
+                    .selectable_label(mode == "email", "Email Address")
+                    .clicked()
+                {
                     d.fields.insert("mode".into(), "email".into());
                 }
             });
@@ -203,16 +272,25 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                     let titles: Vec<String> = app
                         .session
                         .active()
-                        .map(|s| s.doc.slides.iter().enumerate().map(|(i, sl)| format!("{}. {}", i + 1, sl.title())).collect())
+                        .map(|s| {
+                            s.doc
+                                .slides
+                                .iter()
+                                .enumerate()
+                                .map(|(i, sl)| format!("{}. {}", i + 1, sl.title()))
+                                .collect()
+                        })
                         .unwrap_or_default();
                     let sel = d.get("slide", "0").parse::<usize>().unwrap_or(0);
-                    egui::ScrollArea::vertical().max_height(180.0).show(ui, |ui| {
-                        for (i, t) in titles.iter().enumerate() {
-                            if ui.selectable_label(sel == i, t).clicked() {
-                                d.fields.insert("slide".into(), i.to_string());
+                    egui::ScrollArea::vertical()
+                        .max_height(180.0)
+                        .show(ui, |ui| {
+                            for (i, t) in titles.iter().enumerate() {
+                                if ui.selectable_label(sel == i, t).clicked() {
+                                    d.fields.insert("slide".into(), i.to_string());
+                                }
                             }
-                        }
-                    });
+                        });
                 }
                 "email" => field(ui, d, "Email address:", "email", ""),
                 _ => field(ui, d, "Address:", "url", "https://"),
@@ -222,8 +300,12 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             if ok {
                 let tip = d.get("tip", "");
                 let p = match mode.as_str() {
-                    "slide" => json!({"slide": d.get("slide", "0").parse::<usize>().unwrap_or(0), "tooltip": tip}),
-                    "email" => json!({"url": format!("mailto:{}", d.get("email", "")), "tooltip": tip}),
+                    "slide" => {
+                        json!({"slide": d.get("slide", "0").parse::<usize>().unwrap_or(0), "tooltip": tip})
+                    }
+                    "email" => {
+                        json!({"url": format!("mailto:{}", d.get("email", "")), "tooltip": tip})
+                    }
                     _ => json!({"url": d.get("url", ""), "tooltip": tip}),
                 };
                 run(app, "insert.hyperlink", p);
@@ -231,7 +313,11 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "setupShow" => {
-            let sh = app.session.active().map(|s| s.doc.show.clone()).unwrap_or_default();
+            let sh = app
+                .session
+                .active()
+                .map(|s| s.doc.show.clone())
+                .unwrap_or_default();
             let ty = d.get("type", &sh.show_type);
             ui.label("Show type");
             for (l, v) in [
@@ -243,39 +329,71 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                     d.fields.insert("type".into(), v.into());
                 }
             }
-            let lp = check(ui, d, "Loop continuously until 'Esc'", "loop", sh.loop_until_esc);
+            let lp = check(
+                ui,
+                d,
+                "Loop continuously until 'Esc'",
+                "loop",
+                sh.loop_until_esc,
+            );
             let nn = check(ui, d, "Show without narration", "nn", sh.without_narration);
             let na = check(ui, d, "Show without animation", "na", sh.without_animation);
             let ut = check(ui, d, "Use timings, if present", "ut", sh.use_timings);
             let (ok, cancel) = buttons(ui, "OK");
             if ok {
                 let ty = d.get("type", "speaker");
-                run(app, "show.setup", json!({"type": ty, "loop": lp, "noNarration": nn, "noAnimation": na, "useTimings": ut}));
+                run(
+                    app,
+                    "show.setup",
+                    json!({"type": ty, "loop": lp, "noNarration": nn, "noAnimation": na, "useTimings": ut}),
+                );
             }
             ok || cancel
         }
         "quit" => {
-            let names: Vec<String> = app.session.documents().iter().filter(|d| d.is_dirty()).map(|d| d.title()).collect();
+            let names: Vec<String> = app
+                .session
+                .documents()
+                .iter()
+                .filter(|d| d.is_dirty())
+                .map(|d| d.title())
+                .collect();
             if names.is_empty() {
                 app.quit_confirmed = true;
                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                 return true;
             }
-            let what = if names.len() == 1 { format!("“{}”", names[0]) } else { format!("{} presentations", names.len()) };
-            ui.label(egui::RichText::new(format!("Do you want to save the changes you made to {what}?")).strong());
+            let what = if names.len() == 1 {
+                format!("“{}”", names[0])
+            } else {
+                format!("{} presentations", names.len())
+            };
+            ui.label(
+                egui::RichText::new(format!(
+                    "Do you want to save the changes you made to {what}?"
+                ))
+                .strong(),
+            );
             ui.label("Your changes will be lost if you don't save them.");
             ui.add_space(8.0);
             let mut done = false;
             ui.horizontal(|ui| {
                 let t = Tokens::get(ui.ctx());
-                if ui.add(egui::Button::new("Don't Save").min_size(vec2(84.0, 24.0))).clicked() {
+                if ui
+                    .add(egui::Button::new("Don't Save").min_size(vec2(84.0, 24.0)))
+                    .clicked()
+                {
                     let _ = app.session.execute("file.recovery.discard", &json!({}));
                     app.quit_confirmed = true;
                     ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
                     done = true;
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let save = ui.add(egui::Button::new(egui::RichText::new("Save").color(t.accent_text)).fill(t.accent).min_size(vec2(72.0, 24.0)));
+                    let save = ui.add(
+                        egui::Button::new(egui::RichText::new("Save").color(t.accent_text))
+                            .fill(t.accent)
+                            .min_size(vec2(72.0, 24.0)),
+                    );
                     if save.clicked() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                         if app.save_all() {
                             app.quit_confirmed = true;
@@ -283,7 +401,10 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                         }
                         done = true;
                     }
-                    if ui.add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0))).clicked() {
+                    if ui
+                        .add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0)))
+                        .clicked()
+                    {
                         done = true;
                     }
                 });
@@ -292,29 +413,47 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         }
         "close" => {
             // File › Close and Ctrl+W on a presentation with unsaved changes.
-            let Some(name) = app.session.active().map(|d| d.title()) else { return true };
-            ui.label(egui::RichText::new(format!("Do you want to save the changes you made to “{name}”?")).strong());
+            let Some(name) = app.session.active().map(|d| d.title()) else {
+                return true;
+            };
+            ui.label(
+                egui::RichText::new(format!(
+                    "Do you want to save the changes you made to “{name}”?"
+                ))
+                .strong(),
+            );
             ui.label("Your changes will be lost if you don't save them.");
             ui.add_space(8.0);
             let mut done = false;
             ui.horizontal(|ui| {
                 let t = Tokens::get(ui.ctx());
-                if ui.add(egui::Button::new("Don't Save").min_size(vec2(84.0, 24.0))).clicked() {
+                if ui
+                    .add(egui::Button::new("Don't Save").min_size(vec2(84.0, 24.0)))
+                    .clicked()
+                {
                     run(app, "file.close", json!({}));
                     done = true;
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let save = ui.add(egui::Button::new(egui::RichText::new("Save").color(t.accent_text)).fill(t.accent).min_size(vec2(72.0, 24.0)));
+                    let save = ui.add(
+                        egui::Button::new(egui::RichText::new("Save").color(t.accent_text))
+                            .fill(t.accent)
+                            .min_size(vec2(72.0, 24.0)),
+                    );
                     if save.clicked() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                         app.save();
                         // In the browser a save is a download: the presentation stays "unsaved".
-                        let web = app.services.pick_save.is_none() && app.services.download.is_some();
+                        let web =
+                            app.services.pick_save.is_none() && app.services.download.is_some();
                         if web || app.session.active().is_some_and(|d| !d.is_dirty()) {
                             run(app, "file.close", json!({}));
                         }
                         done = true;
                     }
-                    if ui.add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0))).clicked() {
+                    if ui
+                        .add(egui::Button::new("Cancel").min_size(vec2(72.0, 24.0)))
+                        .clicked()
+                    {
                         done = true;
                     }
                 });
@@ -335,7 +474,12 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         }
         "comment" => {
             let mut v = d.get("text", "");
-            ui.add(egui::TextEdit::multiline(&mut v).hint_text("Start a conversation").desired_rows(4).desired_width(320.0));
+            ui.add(
+                egui::TextEdit::multiline(&mut v)
+                    .hint_text("Start a conversation")
+                    .desired_rows(4)
+                    .desired_width(320.0),
+            );
             d.fields.insert("text".into(), v.clone());
             let (ok, cancel) = buttons(ui, "Post");
             if ok && !v.trim().is_empty() {
@@ -345,10 +489,18 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "altText" => {
-            let cur = app.session.active().and_then(|s| s.selected_shapes().first().map(|x| x.descr.clone())).unwrap_or_default();
+            let cur = app
+                .session
+                .active()
+                .and_then(|s| s.selected_shapes().first().map(|x| x.descr.clone()))
+                .unwrap_or_default();
             ui.label("How would you describe this object and its context to someone who is blind or has low vision?");
             let mut v = d.get("text", &cur);
-            ui.add(egui::TextEdit::multiline(&mut v).desired_rows(4).desired_width(340.0));
+            ui.add(
+                egui::TextEdit::multiline(&mut v)
+                    .desired_rows(4)
+                    .desired_width(340.0),
+            );
             d.fields.insert("text".into(), v.clone());
             let deco = check(ui, d, "Mark as decorative", "deco", false);
             let (ok, cancel) = buttons(ui, "OK");
@@ -360,7 +512,12 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         "outline" => {
             ui.label("Paste or type an outline. Unindented lines become slide titles; tab-indented lines become bullets.");
             let mut v = d.get("text", "");
-            ui.add(egui::TextEdit::multiline(&mut v).desired_rows(10).desired_width(380.0).code_editor());
+            ui.add(
+                egui::TextEdit::multiline(&mut v)
+                    .desired_rows(10)
+                    .desired_width(380.0)
+                    .code_editor(),
+            );
             d.fields.insert("text".into(), v.clone());
             let (ok, cancel) = buttons(ui, "Insert");
             if ok {
@@ -369,14 +526,27 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "renameSection" | "renameShape" | "renameLayout" => {
-            let cur = d.params.get("name").and_then(Value::as_str).unwrap_or("").to_string();
+            let cur = d
+                .params
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
             field(ui, d, "Name:", "name", &cur);
             let (ok, cancel) = buttons(ui, "Rename");
             if ok {
                 let name = d.get("name", "");
                 match d.id.as_str() {
-                    "renameSection" => run(app, "section.rename", json!({"index": d.params.get("index").cloned().unwrap_or_default(), "name": name})),
-                    "renameShape" => run(app, "shape.rename", json!({"id": d.params.get("id").cloned().unwrap_or_default(), "name": name})),
+                    "renameSection" => run(
+                        app,
+                        "section.rename",
+                        json!({"index": d.params.get("index").cloned().unwrap_or_default(), "name": name}),
+                    ),
+                    "renameShape" => run(
+                        app,
+                        "shape.rename",
+                        json!({"id": d.params.get("id").cloned().unwrap_or_default(), "name": name}),
+                    ),
                     _ => run(app, "master.renameLayout", json!({"name": name})),
                 }
             }
@@ -480,8 +650,18 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 ui.label(egui::RichText::new(g).font(theme::bold(12.0)));
                 ui.horizontal_wrapped(|ui| {
                     for c in chars.chars() {
-                        if ui.add(egui::Button::new(egui::RichText::new(c.to_string()).size(16.0)).min_size(vec2(26.0, 26.0))).clicked() {
-                            if app.session.active().is_some_and(|s| s.selection.text.is_none()) {
+                        if ui
+                            .add(
+                                egui::Button::new(egui::RichText::new(c.to_string()).size(16.0))
+                                    .min_size(vec2(26.0, 26.0)),
+                            )
+                            .clicked()
+                        {
+                            if app
+                                .session
+                                .active()
+                                .is_some_and(|s| s.selection.text.is_none())
+                            {
                                 let _ = app.run("text.edit", json!({}));
                             }
                             let _ = app.run("insert.symbol", json!({"text": c.to_string()}));
@@ -495,13 +675,25 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         "equation" => {
             ui.label("Type an equation in linear form (e.g. a^2+b^2=c^2, x=(-b±√(b^2-4ac))/2a).");
             let mut v = d.get("eq", "");
-            ui.add(egui::TextEdit::singleline(&mut v).desired_width(340.0).font(theme::font(15.0)));
+            ui.add(
+                egui::TextEdit::singleline(&mut v)
+                    .desired_width(340.0)
+                    .font(theme::font(15.0)),
+            );
             d.fields.insert("eq".into(), v.clone());
             let (ok, cancel) = buttons(ui, "Insert");
             if ok && !v.is_empty() {
                 let pretty = pretty_equation(&v);
-                let size = app.session.active().map(|s| s.doc.slide_size).unwrap_or(deckcraft_model::defaults::WIDE);
-                run(app, "insert.textBox", json!({"rect": [size.width / 2.0 - 150.0, size.height / 2.0 - 25.0, 300, 50], "text": pretty}));
+                let size = app
+                    .session
+                    .active()
+                    .map(|s| s.doc.slide_size)
+                    .unwrap_or(deckcraft_model::defaults::WIDE);
+                run(
+                    app,
+                    "insert.textBox",
+                    json!({"rect": [size.width / 2.0 - 150.0, size.height / 2.0 - 25.0, 300, 50], "text": pretty}),
+                );
                 run(app, "text.exit", json!({}));
                 run(app, "format.font", json!({"family": "Liberation Serif"}));
                 run(app, "format.italic", json!({"on": true}));
@@ -510,7 +702,10 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "spelling" => {
-            let v = app.session.execute("review.spelling", &json!({})).unwrap_or_default();
+            let v = app
+                .session
+                .execute("review.spelling", &json!({}))
+                .unwrap_or_default();
             let list = v.as_array().cloned().unwrap_or_default();
             if list.is_empty() {
                 ui.label("The spelling check is complete. No issues found.");
@@ -518,9 +713,15 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             for item in &list {
                 ui.horizontal(|ui| {
                     let w = item.get("word").and_then(Value::as_str).unwrap_or("");
-                    ui.label(format!("Slide {}: “{w}”", item.get("slide").and_then(Value::as_u64).unwrap_or(0) + 1));
+                    ui.label(format!(
+                        "Slide {}: “{w}”",
+                        item.get("slide").and_then(Value::as_u64).unwrap_or(0) + 1
+                    ));
                     if ui.small_button("Go to").clicked() {
-                        let _ = app.run("slide.go", json!({"index": item.get("slide").cloned().unwrap_or_default()}));
+                        let _ = app.run(
+                            "slide.go",
+                            json!({"index": item.get("slide").cloned().unwrap_or_default()}),
+                        );
                     }
                 });
             }
@@ -528,7 +729,10 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "accessibility" => {
-            let v = app.session.execute("review.accessibility", &json!({})).unwrap_or_default();
+            let v = app
+                .session
+                .execute("review.accessibility", &json!({}))
+                .unwrap_or_default();
             let list = v.as_array().cloned().unwrap_or_default();
             if list.is_empty() {
                 ui.label("No accessibility issues found. People with disabilities should not have difficulty reading this document.");
@@ -574,7 +778,11 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ok || cancel
         }
         "customShow" => {
-            let shows = app.session.active().map(|s| s.doc.custom_shows.clone()).unwrap_or_default();
+            let shows = app
+                .session
+                .active()
+                .map(|s| s.doc.custom_shows.clone())
+                .unwrap_or_default();
             for s in &shows {
                 ui.horizontal(|ui| {
                     ui.label(format!("{} ({} slides)", s.name, s.slides.len()));
@@ -587,17 +795,30 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             field(ui, d, "Slides (e.g. 1,3,5):", "slides", "1");
             let (ok, cancel) = buttons(ui, "Create");
             if ok {
-                let idx: Vec<usize> =
-                    d.get("slides", "").split(',').filter_map(|s| s.trim().parse::<usize>().ok()).filter(|v| *v > 0).map(|v| v - 1).collect();
-                run(app, "show.customShow", json!({"name": d.get("name", "Custom Show"), "slides": idx}));
+                let idx: Vec<usize> = d
+                    .get("slides", "")
+                    .split(',')
+                    .filter_map(|s| s.trim().parse::<usize>().ok())
+                    .filter(|v| *v > 0)
+                    .map(|v| v - 1)
+                    .collect();
+                run(
+                    app,
+                    "show.customShow",
+                    json!({"name": d.get("name", "Custom Show"), "slides": idx}),
+                );
             }
             ok || cancel
         }
         "chartData" => {
             let ch = app.session.active().and_then(|s| {
-                s.selected_shapes()
-                    .into_iter()
-                    .find_map(|x| if let deckcraft_model::ShapeKind::Chart(c) = &x.kind { Some(((**c).clone(), x.id)) } else { None })
+                s.selected_shapes().into_iter().find_map(|x| {
+                    if let deckcraft_model::ShapeKind::Chart(c) = &x.kind {
+                        Some(((**c).clone(), x.id))
+                    } else {
+                        None
+                    }
+                })
             });
             let Some((c, id)) = ch else {
                 ui.label("Select a chart first.");
@@ -605,17 +826,32 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 return ok || cancel;
             };
             ui.label("Edit the data: first row = series names, first column = categories.");
-            let mut grid: Vec<Vec<String>> = d.params.get("grid").and_then(|g| serde_json::from_value(g.clone()).ok()).unwrap_or_else(|| {
-                let mut g = vec![std::iter::once(String::new()).chain(c.series.iter().map(|s| s.name.clone())).collect::<Vec<_>>()];
-                for (i, cat) in c.categories.iter().enumerate() {
-                    let mut row = vec![cat.clone()];
-                    for s in &c.series {
-                        row.push(s.values.get(i).copied().flatten().map(|v| v.to_string()).unwrap_or_default());
+            let mut grid: Vec<Vec<String>> = d
+                .params
+                .get("grid")
+                .and_then(|g| serde_json::from_value(g.clone()).ok())
+                .unwrap_or_else(|| {
+                    let mut g = vec![
+                        std::iter::once(String::new())
+                            .chain(c.series.iter().map(|s| s.name.clone()))
+                            .collect::<Vec<_>>(),
+                    ];
+                    for (i, cat) in c.categories.iter().enumerate() {
+                        let mut row = vec![cat.clone()];
+                        for s in &c.series {
+                            row.push(
+                                s.values
+                                    .get(i)
+                                    .copied()
+                                    .flatten()
+                                    .map(|v| v.to_string())
+                                    .unwrap_or_default(),
+                            );
+                        }
+                        g.push(row);
                     }
-                    g.push(row);
-                }
-                g
-            });
+                    g
+                });
             egui::Grid::new("chartdata").striped(true).show(ui, |ui| {
                 for row in grid.iter_mut() {
                     for cell in row.iter_mut() {
@@ -638,10 +874,21 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             d.params = json!({"grid": grid});
             let (ok, cancel) = buttons(ui, "OK");
             if ok {
-                let names: Vec<String> = grid.first().map(|r| r.iter().skip(1).cloned().collect()).unwrap_or_default();
-                let cats: Vec<String> = grid.iter().skip(1).map(|r| r.first().cloned().unwrap_or_default()).collect();
+                let names: Vec<String> = grid
+                    .first()
+                    .map(|r| r.iter().skip(1).cloned().collect())
+                    .unwrap_or_default();
+                let cats: Vec<String> = grid
+                    .iter()
+                    .skip(1)
+                    .map(|r| r.first().cloned().unwrap_or_default())
+                    .collect();
                 let series: Vec<Value> = names.iter().enumerate().map(|(k, n)| json!({"name": n, "values": grid.iter().skip(1).map(|r| r.get(k + 1).and_then(|v| v.trim().parse::<f64>().ok())).collect::<Vec<_>>()})).collect();
-                run(app, "chart.data", json!({"id": id.0, "categories": cats, "series": series}));
+                run(
+                    app,
+                    "chart.data",
+                    json!({"id": id.0, "categories": cats, "series": series}),
+                );
             }
             ok || cancel
         }
@@ -678,18 +925,30 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 }
             });
             let mut v = d.get("text", "Plan\nBuild\nLaunch");
-            ui.add(egui::TextEdit::multiline(&mut v).desired_rows(5).desired_width(320.0));
+            ui.add(
+                egui::TextEdit::multiline(&mut v)
+                    .desired_rows(5)
+                    .desired_width(320.0),
+            );
             d.fields.insert("text".into(), v.clone());
             let (ok, cancel) = buttons(ui, "Insert");
             if ok {
-                run(app, "insert.smartArt", json!({"kind": kind, "items": v.lines().filter(|l| !l.trim().is_empty()).collect::<Vec<_>>()}));
+                run(
+                    app,
+                    "insert.smartArt",
+                    json!({"kind": kind, "items": v.lines().filter(|l| !l.trim().is_empty()).collect::<Vec<_>>()}),
+                );
             }
             ok || cancel
         }
         "about" => {
             let tab = d.get("tab", "about");
             ui.horizontal(|ui| {
-                for (k, l) in [("about", "About"), ("contributors", "Contributors"), ("models", "Models")] {
+                for (k, l) in [
+                    ("about", "About"),
+                    ("contributors", "Contributors"),
+                    ("models", "Models"),
+                ] {
                     if ui.selectable_label(tab == k, l).clicked() {
                         d.fields.insert("tab".into(), k.into());
                     }
@@ -701,7 +960,11 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                     // The credits need room for the table; the About tab keeps its compact size.
                     ui.set_min_size(vec2(640.0, 380.0));
                     ui.set_max_height(380.0);
-                    if tab == "models" { crate::credits::models_ui(ui) } else { crate::credits::contributors_ui(ui) }
+                    if tab == "models" {
+                        crate::credits::models_ui(ui)
+                    } else {
+                        crate::credits::contributors_ui(ui)
+                    }
                 }
                 _ => about(app, ui),
             }
@@ -715,14 +978,23 @@ fn body(app: &mut SlideApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 let _ = app.run("view.dark", json!({"on": dark}));
             }
             let mut scale = app.ui.ui_scale;
-            if ui.add(egui::Slider::new(&mut scale, 0.75..=1.75).text("Interface size")).changed() {
+            if ui
+                .add(egui::Slider::new(&mut scale, 0.75..=1.75).text("Interface size"))
+                .changed()
+            {
                 app.ui.ui_scale = scale;
             }
             ui.label(egui::RichText::new("Editing").font(theme::bold(13.0)));
             ui.checkbox(&mut app.session.prefs.smart_guides, "Show smart guides");
             ui.checkbox(&mut app.session.prefs.snap_to_grid, "Snap objects to grid");
-            ui.checkbox(&mut app.session.prefs.smart_quotes, "Replace straight quotes with smart quotes");
-            ui.checkbox(&mut app.session.prefs.autocorrect, "AutoCorrect as you type");
+            ui.checkbox(
+                &mut app.session.prefs.smart_quotes,
+                "Replace straight quotes with smart quotes",
+            );
+            ui.checkbox(
+                &mut app.session.prefs.autocorrect,
+                "AutoCorrect as you type",
+            );
             ui.horizontal(|ui| {
                 ui.label("Your name (comments):");
                 ui.text_edit_singleline(&mut app.session.prefs.author);
@@ -777,7 +1049,12 @@ fn pretty_equation(s: &str) -> String {
             _ => out.push(c),
         }
     }
-    out.replace("sqrt", "√").replace("<=", "≤").replace(">=", "≥").replace("!=", "≠").replace("pi", "π").replace("+-", "±")
+    out.replace("sqrt", "√")
+        .replace("<=", "≤")
+        .replace(">=", "≥")
+        .replace("!=", "≠")
+        .replace("pi", "π")
+        .replace("+-", "±")
 }
 
 pub fn about(_app: &mut SlideApp, ui: &mut Ui) {
@@ -791,11 +1068,23 @@ pub fn about(_app: &mut SlideApp, ui: &mut Ui) {
         ui.label("Presentations and slide shows, rebuilt from scratch in pure Rust.");
         ui.label("An open-source, clean-room project. Not affiliated with Microsoft.");
         ui.add_space(6.0);
-        ui.hyperlink_to("Join our community on Discord", deckcraft_engine::links::DISCORD);
-        ui.hyperlink_to("getartcraft.com/apps/deckcraft", deckcraft_engine::links::APP_PAGE);
+        ui.hyperlink_to(
+            "Join our community on Discord",
+            deckcraft_engine::links::DISCORD,
+        );
+        ui.hyperlink_to(
+            "getartcraft.com/apps/deckcraft",
+            deckcraft_engine::links::APP_PAGE,
+        );
         ui.hyperlink_to("Source on GitHub", deckcraft_engine::links::GITHUB);
         ui.add_space(6.0);
-        ui.label(egui::RichText::new("MIT OR Apache-2.0 · © 2026 ArtCraft Team and the DeckCraft contributors").size(11.0).color(t.text_faint));
+        ui.label(
+            egui::RichText::new(
+                "MIT OR Apache-2.0 · © 2026 ArtCraft Team and the DeckCraft contributors",
+            )
+            .size(11.0)
+            .color(t.text_faint),
+        );
     });
 }
 
@@ -804,7 +1093,9 @@ pub fn about(_app: &mut SlideApp, ui: &mut Ui) {
 /// release workflow sets `DECKCRAFT_BUILD_SHA` / `DECKCRAFT_BUILD_DATE` at build time.
 pub fn version_line() -> String {
     let mut s = format!("Version {}", env!("CARGO_PKG_VERSION"));
-    let sha = option_env!("DECKCRAFT_BUILD_SHA").map(|s| s.get(..9).unwrap_or(s)).filter(|s| !s.is_empty());
+    let sha = option_env!("DECKCRAFT_BUILD_SHA")
+        .map(|s| s.get(..9).unwrap_or(s))
+        .filter(|s| !s.is_empty());
     let date = option_env!("DECKCRAFT_BUILD_DATE").filter(|s| !s.is_empty());
     match (sha, date) {
         (Some(sha), Some(date)) => s.push_str(&format!(" ({sha}, {date})")),
@@ -819,12 +1110,20 @@ pub fn paint_logo(p: &egui::Painter, r: Rect) {
     let orange = Color32::from_rgb(0xF2, 0x6B, 0x1D);
     let deep = Color32::from_rgb(0xC2, 0x4E, 0x14);
     let card = r.shrink(r.width() * 0.08);
-    p.rect_filled(card.translate(vec2(r.width() * 0.04, r.width() * 0.05)), CornerRadius::same((r.width() * 0.14) as u8), deep);
+    p.rect_filled(
+        card.translate(vec2(r.width() * 0.04, r.width() * 0.05)),
+        CornerRadius::same((r.width() * 0.14) as u8),
+        deep,
+    );
     p.rect_filled(card, CornerRadius::same((r.width() * 0.14) as u8), orange);
     let c = card.center();
     let s = card.width() * 0.22;
     p.add(egui::Shape::convex_polygon(
-        vec![pos2(c.x - s * 0.7, c.y - s), pos2(c.x + s, c.y), pos2(c.x - s * 0.7, c.y + s)],
+        vec![
+            pos2(c.x - s * 0.7, c.y - s),
+            pos2(c.x + s, c.y),
+            pos2(c.x - s * 0.7, c.y + s),
+        ],
         Color32::WHITE,
         Stroke::NONE,
     ));

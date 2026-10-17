@@ -15,7 +15,11 @@ enum SlideBodyItem<'a> {
 /// Clamps to PowerPoint's allowed slide dimensions: 1 inch (914,400 EMU = 72 pt)
 /// to 56 inches (51,206,400 EMU = 4032 pt).
 fn emu(pt: f64, default_pt: f64) -> i64 {
-    if pt.is_finite() && pt > 0.0 { (pt * 12700.0).round().clamp(914400.0, 51206400.0) as i64 } else { (default_pt * 12700.0).round() as i64 }
+    if pt.is_finite() && pt > 0.0 {
+        (pt * 12700.0).round().clamp(914400.0, 51206400.0) as i64
+    } else {
+        (default_pt * 12700.0).round() as i64
+    }
 }
 
 /// The largest height one item may take on a slide (about 1,100 inches). Text sizes and image
@@ -39,7 +43,11 @@ fn height_emu(pt: f64) -> i64 {
 /// A formatted DrawingML text run (`<a:r>`).
 fn run_drawingml(text: &str, size: f64, bold: bool, italic: bool, color: [f64; 3]) -> String {
     let mut rpr = String::new();
-    let sz = if size.is_finite() { (size * 100.0).round().clamp(100.0, 400000.0) as i64 } else { 1200 };
+    let sz = if size.is_finite() {
+        (size * 100.0).round().clamp(100.0, 400000.0) as i64
+    } else {
+        1200
+    };
     rpr.push_str(&format!(" sz=\"{sz}\""));
     if bold {
         rpr.push_str(" b=\"1\"");
@@ -47,8 +55,15 @@ fn run_drawingml(text: &str, size: f64, bold: bool, italic: bool, color: [f64; 3
     if italic {
         rpr.push_str(" i=\"1\"");
     }
-    let fill = if let Some(h) = hex(color) { format!("<a:solidFill><a:srgbClr val=\"{h}\"/></a:solidFill>") } else { String::new() };
-    format!("<a:r><a:rPr{rpr}>{fill}</a:rPr><a:t>{}</a:t></a:r>", esc(text))
+    let fill = if let Some(h) = hex(color) {
+        format!("<a:solidFill><a:srgbClr val=\"{h}\"/></a:solidFill>")
+    } else {
+        String::new()
+    };
+    format!(
+        "<a:r><a:rPr{rpr}>{fill}</a:rPr><a:t>{}</a:t></a:r>",
+        esc(text)
+    )
 }
 
 /// Generates a DrawingML table inside a `<p:graphicFrame>` with explicit cell borders.
@@ -57,11 +72,21 @@ fn pptx_table(shape_id: usize, t: &Table, x: i64, y: i64, content_w: i64) -> (St
     edges.push(t.rect[2]);
     let widths_pt: Vec<f64> = edges.windows(2).map(|w| (w[1] - w[0]).max(20.0)).collect();
     let total_pt: f64 = widths_pt.iter().sum();
-    let scale = if total_pt > 0.0 { (content_w as f64 / (total_pt * 12700.0)).min(1.0) } else { 1.0 };
-    let widths: Vec<i64> = widths_pt.iter().map(|w| (w * scale * 12700.0).round().max(127000.0) as i64).collect();
+    let scale = if total_pt > 0.0 {
+        (content_w as f64 / (total_pt * 12700.0)).min(1.0)
+    } else {
+        1.0
+    };
+    let widths: Vec<i64> = widths_pt
+        .iter()
+        .map(|w| (w * scale * 12700.0).round().max(127000.0) as i64)
+        .collect();
     let table_w: i64 = widths.iter().fold(0i64, |sum, w| sum.saturating_add(*w));
     let row_h: i64 = height_emu(24.0);
-    let table_h: i64 = i64::try_from(t.rows.len()).unwrap_or(i64::MAX).saturating_mul(row_h).min(MAX_ITEM_EMU);
+    let table_h: i64 = i64::try_from(t.rows.len())
+        .unwrap_or(i64::MAX)
+        .saturating_mul(row_h)
+        .min(MAX_ITEM_EMU);
 
     let mut grid_cols = String::new();
     for w in &widths {
@@ -92,7 +117,9 @@ fn pptx_table(shape_id: usize, t: &Table, x: i64, y: i64, content_w: i64) -> (St
         }
         let used: usize = row.iter().map(|c| c.span).sum();
         for _ in used..t.cols.len() {
-            rows_xml.push_str(&format!("<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody>{TC_PR}</a:tc>"));
+            rows_xml.push_str(&format!(
+                "<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody>{TC_PR}</a:tc>"
+            ));
         }
         rows_xml.push_str("</a:tr>");
     }
@@ -117,7 +144,9 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
     let dummy = [Page::default()];
     let pages = if pages.is_empty() { &dummy[..] } else { pages };
 
-    let (sw, sh) = pages.first().map_or((9144000, 6858000), |p| (emu(p.width, 720.0), emu(p.height, 540.0)));
+    let (sw, sh) = pages.first().map_or((9144000, 6858000), |p| {
+        (emu(p.width, 720.0), emu(p.height, 540.0))
+    });
     let mx = (sw / 16).clamp(360000, 914400);
     let my = (sh / 16).clamp(360000, 914400);
     let content_w = sw - 2 * mx;
@@ -131,7 +160,9 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
             .blocks
             .iter()
             .enumerate()
-            .filter(|(i, b)| !consumed.get(*i).copied().unwrap_or(false) && !b.text.trim().is_empty())
+            .filter(|(i, b)| {
+                !consumed.get(*i).copied().unwrap_or(false) && !b.text.trim().is_empty()
+            })
             .max_by(|(_, a), (_, b)| a.size.total_cmp(&b.size))
             .map(|(i, _)| i);
 
@@ -157,14 +188,22 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
 
         if let Some(title_block) = title_idx.and_then(|ti| p.blocks.get(ti)) {
             let title_h = height_emu((title_block.size * 1.5).max(36.0));
-            let title_run = run_drawingml(&title_block.text, title_block.size, title_block.bold, title_block.italic, title_block.color);
+            let title_run = run_drawingml(
+                &title_block.text,
+                title_block.size,
+                title_block.bold,
+                title_block.italic,
+                title_block.color,
+            );
             shapes.push_str(&format!(
                 "<p:sp><p:nvSpPr><p:cNvPr id=\"{shape_id}\" name=\"Title {shape_id}\"/><p:cNvSpPr txBox=\"1\"/><p:nvPr/></p:nvSpPr>\
 <p:spPr><a:xfrm><a:off x=\"{mx}\" y=\"{current_y}\"/><a:ext cx=\"{content_w}\" cy=\"{title_h}\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>\
 <p:txBody><a:bodyPr wrap=\"square\" rtlCol=\"0\"><a:spAutoFit/></a:bodyPr><a:lstStyle/><a:p>{title_run}</a:p></p:txBody></p:sp>"
             ));
             shape_id += 1;
-            current_y = current_y.saturating_add(title_h).saturating_add(height_emu(18.0));
+            current_y = current_y
+                .saturating_add(title_h)
+                .saturating_add(height_emu(18.0));
         }
 
         let mut i = 0;
@@ -187,7 +226,9 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
 <p:txBody><a:bodyPr wrap=\"square\" rtlCol=\"0\"><a:spAutoFit/></a:bodyPr><a:lstStyle/>{paras_xml}</p:txBody></p:sp>"
                     ));
                     shape_id += 1;
-                    current_y = current_y.saturating_add(box_h).saturating_add(height_emu(12.0));
+                    current_y = current_y
+                        .saturating_add(box_h)
+                        .saturating_add(height_emu(12.0));
                 }
                 SlideBodyItem::Img(im) => {
                     let global_img_idx = global_media.len() + 1;
@@ -196,7 +237,10 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
                     let r_id = format!("rIdImg{}", slide_media_rels.len() + 1);
                     slide_media_rels.push((r_id.clone(), global_img_idx));
 
-                    let (w, h) = ((im.rect[2] - im.rect[0]).max(1.0), (im.rect[3] - im.rect[1]).max(1.0));
+                    let (w, h) = (
+                        (im.rect[2] - im.rect[0]).max(1.0),
+                        (im.rect[3] - im.rect[1]).max(1.0),
+                    );
                     let max_w = content_w as f64 / 12700.0;
                     let k = (max_w / w).min(1.0);
                     let cx = height_emu(w * k).min(content_w);
@@ -210,14 +254,18 @@ pub fn pptx(pages: &[Page], title: &str) -> Vec<u8> {
 <p:spPr><a:xfrm><a:off x=\"{x}\" y=\"{y}\"/><a:ext cx=\"{cx}\" cy=\"{cy}\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></p:spPr></p:pic>"
                     ));
                     shape_id += 1;
-                    current_y = current_y.saturating_add(cy).saturating_add(height_emu(12.0));
+                    current_y = current_y
+                        .saturating_add(cy)
+                        .saturating_add(height_emu(12.0));
                     i += 1;
                 }
                 SlideBodyItem::Table(t) => {
                     let (table_xml, table_h) = pptx_table(shape_id, t, mx, current_y, content_w);
                     shapes.push_str(&table_xml);
                     shape_id += 1;
-                    current_y = current_y.saturating_add(table_h).saturating_add(height_emu(12.0));
+                    current_y = current_y
+                        .saturating_add(table_h)
+                        .saturating_add(height_emu(12.0));
                     i += 1;
                 }
             }
@@ -334,16 +382,44 @@ xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" type=\"blank\"
     z.add("_rels/.rels", rels.as_bytes(), true);
     z.add("docProps/core.xml", core.as_bytes(), true);
     z.add("ppt/presentation.xml", pres.as_bytes(), true);
-    z.add("ppt/_rels/presentation.xml.rels", pres_rels.as_bytes(), true);
-    z.add("ppt/slideMasters/slideMaster1.xml", slide_master.as_bytes(), true);
-    z.add("ppt/slideMasters/_rels/slideMaster1.xml.rels", slide_master_rels.as_bytes(), true);
-    z.add("ppt/slideLayouts/slideLayout1.xml", slide_layout.as_bytes(), true);
-    z.add("ppt/slideLayouts/_rels/slideLayout1.xml.rels", slide_layout_rels.as_bytes(), true);
+    z.add(
+        "ppt/_rels/presentation.xml.rels",
+        pres_rels.as_bytes(),
+        true,
+    );
+    z.add(
+        "ppt/slideMasters/slideMaster1.xml",
+        slide_master.as_bytes(),
+        true,
+    );
+    z.add(
+        "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+        slide_master_rels.as_bytes(),
+        true,
+    );
+    z.add(
+        "ppt/slideLayouts/slideLayout1.xml",
+        slide_layout.as_bytes(),
+        true,
+    );
+    z.add(
+        "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+        slide_layout_rels.as_bytes(),
+        true,
+    );
     z.add("ppt/theme/theme1.xml", theme.as_bytes(), true);
     for (i, (s_xml, s_rels)) in slides.iter().enumerate() {
         let num = i + 1;
-        z.add(&format!("ppt/slides/slide{num}.xml"), s_xml.as_bytes(), true);
-        z.add(&format!("ppt/slides/_rels/slide{num}.xml.rels"), s_rels.as_bytes(), true);
+        z.add(
+            &format!("ppt/slides/slide{num}.xml"),
+            s_xml.as_bytes(),
+            true,
+        );
+        z.add(
+            &format!("ppt/slides/_rels/slide{num}.xml.rels"),
+            s_rels.as_bytes(),
+            true,
+        );
     }
     for (name, im) in &global_media {
         z.add(&format!("ppt/media/{name}"), &im.bytes, false);
@@ -419,7 +495,12 @@ mod tests {
             "ppt/slides/_rels/slide1.xml.rels",
             "ppt/media/image1.png",
         ] {
-            assert!(bytes.windows(part_name.len()).any(|w| w == part_name.as_bytes()), "missing {part_name}");
+            assert!(
+                bytes
+                    .windows(part_name.len())
+                    .any(|w| w == part_name.as_bytes()),
+                "missing {part_name}"
+            );
         }
     }
 
@@ -435,7 +516,10 @@ mod tests {
         assert!(slide_xml.contains("Revenue grew 25%"));
         assert!(slide_xml.contains("<p:pic>"));
         assert!(slide_xml.contains("<a:blip r:embed=\"rIdImg1\"/>"));
-        assert!(!slide_xml.contains("<p:ph"), "pure text boxes avoid placeholder inheritance repair warnings: {slide_xml}");
+        assert!(
+            !slide_xml.contains("<p:ph"),
+            "pure text boxes avoid placeholder inheritance repair warnings: {slide_xml}"
+        );
 
         let rels_xml = part(&bytes, "ppt/slides/_rels/slide1.xml.rels");
         assert!(rels_xml.contains("Target=\"../media/image1.png\""));
@@ -456,19 +540,35 @@ mod tests {
     /// Every entry of the package in order: (name, uncompressed bytes), read from the local
     /// headers the way an unzipper walks them, so a broken structure fails here.
     fn entries(zip: &[u8]) -> Vec<(String, Vec<u8>)> {
-        let at = |i: usize, n: usize| zip[i..i + n].iter().rev().fold(0usize, |v, b| v << 8 | *b as usize);
+        let at = |i: usize, n: usize| {
+            zip[i..i + n]
+                .iter()
+                .rev()
+                .fold(0usize, |v, b| v << 8 | *b as usize)
+        };
         let mut out = Vec::new();
         let mut i = 0;
         while zip[i..].starts_with(b"PK\x03\x04") {
-            let (method, size, raw, name_len, extra) = (at(i + 8, 2), at(i + 18, 4), at(i + 22, 4), at(i + 26, 2), at(i + 28, 2));
+            let (method, size, raw, name_len, extra) = (
+                at(i + 8, 2),
+                at(i + 18, 4),
+                at(i + 22, 4),
+                at(i + 26, 2),
+                at(i + 28, 2),
+            );
             let data = i + 30 + name_len + extra;
-            let name = String::from_utf8(zip[i + 30..i + 30 + name_len].to_vec()).expect("UTF-8 name");
+            let name =
+                String::from_utf8(zip[i + 30..i + 30 + name_len].to_vec()).expect("UTF-8 name");
             let body = &zip[data..data + size];
             let bytes = match method {
                 0 => body.to_vec(),
                 8 => {
                     let mut v = Vec::new();
-                    std::io::Read::read_to_end(&mut flate2::read::DeflateDecoder::new(body), &mut v).expect("inflates");
+                    std::io::Read::read_to_end(
+                        &mut flate2::read::DeflateDecoder::new(body),
+                        &mut v,
+                    )
+                    .expect("inflates");
                     v
                 }
                 m => panic!("{name}: unexpected method {m}"),
@@ -477,7 +577,10 @@ mod tests {
             out.push((name, bytes));
             i = data + size;
         }
-        assert!(zip[i..].starts_with(b"PK\x01\x02"), "the central directory follows the entries");
+        assert!(
+            zip[i..].starts_with(b"PK\x01\x02"),
+            "the central directory follows the entries"
+        );
         out
     }
 
@@ -491,7 +594,11 @@ mod tests {
                 continue;
             }
             if let Some(close) = tag.strip_prefix('/') {
-                assert_eq!(stack.pop(), Some(close.trim()), "{name}: </{close}> closes the wrong element");
+                assert_eq!(
+                    stack.pop(),
+                    Some(close.trim()),
+                    "{name}: </{close}> closes the wrong element"
+                );
             } else if !tag.ends_with('/') {
                 stack.push(tag.split_whitespace().next().unwrap_or_default());
             }
@@ -525,7 +632,11 @@ mod tests {
         };
         let bytes = pptx(&[sample_page(), table_page], "Two");
         let parts = entries(&bytes);
-        assert_eq!(parts.first().map(|p| p.0.as_str()), Some("[Content_Types].xml"), "content types come first");
+        assert_eq!(
+            parts.first().map(|p| p.0.as_str()),
+            Some("[Content_Types].xml"),
+            "content types come first"
+        );
         let names: std::collections::HashSet<&str> = parts.iter().map(|p| p.0.as_str()).collect();
         assert_eq!(names.len(), parts.len(), "no duplicate parts");
         for required in [
@@ -546,17 +657,32 @@ mod tests {
         ] {
             assert!(names.contains(required), "missing {required}");
         }
-        let text = |n: &str| String::from_utf8(parts.iter().find(|p| p.0 == n).map(|p| p.1.clone()).unwrap_or_default()).expect("UTF-8 XML");
+        let text = |n: &str| {
+            String::from_utf8(
+                parts
+                    .iter()
+                    .find(|p| p.0 == n)
+                    .map(|p| p.1.clone())
+                    .unwrap_or_default(),
+            )
+            .expect("UTF-8 XML")
+        };
         for (name, body) in &parts {
             if name.ends_with(".xml") || name.ends_with(".rels") {
                 assert!(body.starts_with(b"<?xml"), "{name} is XML");
                 assert_tags_balance(name, &text(name));
             }
         }
-        assert!(text("ppt/slides/slide2.xml").contains("<a:tbl>"), "the second slide carries the table");
+        assert!(
+            text("ppt/slides/slide2.xml").contains("<a:tbl>"),
+            "the second slide carries the table"
+        );
         // Text boxes, not placeholders: the blank layout defines none to inherit from.
         for slide in ["ppt/slides/slide1.xml", "ppt/slides/slide2.xml"] {
-            assert!(!text(slide).contains("<p:ph"), "{slide} uses no placeholders");
+            assert!(
+                !text(slide).contains("<p:ph"),
+                "{slide} uses no placeholders"
+            );
         }
         // Every override names a part that exists, and every XML part has a content type.
         let types = text("[Content_Types].xml");
@@ -564,8 +690,16 @@ mod tests {
             let part = chunk.split('"').next().unwrap_or_default();
             assert!(names.contains(part), "override for missing part {part}");
         }
-        for slide in ["ppt/slides/slide1.xml", "ppt/slides/slide2.xml", "ppt/presentation.xml", "ppt/theme/theme1.xml"] {
-            assert!(types.contains(&format!("PartName=\"/{slide}\"")), "{slide} has a content type");
+        for slide in [
+            "ppt/slides/slide1.xml",
+            "ppt/slides/slide2.xml",
+            "ppt/presentation.xml",
+            "ppt/theme/theme1.xml",
+        ] {
+            assert!(
+                types.contains(&format!("PartName=\"/{slide}\"")),
+                "{slide} has a content type"
+            );
         }
         // Relationship targets resolve to parts in the package.
         for (rels, base) in [
@@ -573,8 +707,14 @@ mod tests {
             ("ppt/_rels/presentation.xml.rels", "ppt/"),
             ("ppt/slides/_rels/slide1.xml.rels", "ppt/slides/"),
             ("ppt/slides/_rels/slide2.xml.rels", "ppt/slides/"),
-            ("ppt/slideMasters/_rels/slideMaster1.xml.rels", "ppt/slideMasters/"),
-            ("ppt/slideLayouts/_rels/slideLayout1.xml.rels", "ppt/slideLayouts/"),
+            (
+                "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+                "ppt/slideMasters/",
+            ),
+            (
+                "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+                "ppt/slideLayouts/",
+            ),
         ] {
             for chunk in text(rels).split("Target=\"").skip(1) {
                 let target = chunk.split('"').next().unwrap_or_default();
@@ -587,14 +727,24 @@ mod tests {
                     }
                 }
                 let resolved = path.join("/");
-                assert!(names.contains(resolved.as_str()), "{rels}: target {target} is missing");
+                assert!(
+                    names.contains(resolved.as_str()),
+                    "{rels}: target {target} is missing"
+                );
             }
         }
         // The theme's font scheme carries the schema-required latin, ea and cs faces.
         let theme = text("ppt/theme/theme1.xml");
         for font in ["majorFont", "minorFont"] {
-            let inner = theme.split(&format!("<a:{font}>")).nth(1).and_then(|r| r.split(&format!("</a:{font}>")).next()).unwrap_or_default();
-            assert!(inner.contains("<a:latin ") && inner.contains("<a:ea ") && inner.contains("<a:cs "), "{font}: {inner}");
+            let inner = theme
+                .split(&format!("<a:{font}>"))
+                .nth(1)
+                .and_then(|r| r.split(&format!("</a:{font}>")).next())
+                .unwrap_or_default();
+            assert!(
+                inner.contains("<a:latin ") && inner.contains("<a:ea ") && inner.contains("<a:cs "),
+                "{font}: {inner}"
+            );
         }
         assert!(text("ppt/presentation.xml").contains("r:id=\"rIdSld2\""));
     }
@@ -617,12 +767,26 @@ mod tests {
             blocks.push(huge("inf", f64::INFINITY, 200.0 - k as f64));
         }
         let images = (0..40)
-            .map(|k| Image { ext: "png", bytes: vec![0; 4], rect: [0.0, -1e300, 1e-300, 1e300 - k as f64], size: [1.0, 1.0], rotation: 0.0 })
+            .map(|k| Image {
+                ext: "png",
+                bytes: vec![0; 4],
+                rect: [0.0, -1e300, 1e-300, 1e300 - k as f64],
+                size: [1.0, 1.0],
+                rotation: 0.0,
+            })
             .collect();
-        let p = Page { width: f64::MAX, height: f64::NAN, blocks, images };
+        let p = Page {
+            width: f64::MAX,
+            height: f64::NAN,
+            blocks,
+            images,
+        };
         let bytes = pptx(&[p], "Hostile");
         let slide = part(&bytes, "ppt/slides/slide1.xml");
-        assert!(slide.contains("Title") && slide.contains("<p:pic>"), "the slide is still written");
+        assert!(
+            slide.contains("Title") && slide.contains("<p:pic>"),
+            "the slide is still written"
+        );
         assert!(!slide.contains("y=\"-"), "positions never wrap negative");
         assert!(!slide.contains("<p:ph"), "text boxes, not placeholders");
     }
@@ -640,28 +804,56 @@ mod tests {
     #[test]
     fn pptx_slide_dimensions_and_clamping() {
         // Known dimensions: 720x540 pt (10x7.5 in) = 9144000x6858000 EMU
-        let p = Page { width: 720.0, height: 540.0, ..Page::default() };
+        let p = Page {
+            width: 720.0,
+            height: 540.0,
+            ..Page::default()
+        };
         let bytes = pptx(&[p], "Known Dimensions");
         let pres_xml = part(&bytes, "ppt/presentation.xml");
-        assert!(pres_xml.contains("<p:sldSz cx=\"9144000\" cy=\"6858000\"/>"), "{pres_xml}");
+        assert!(
+            pres_xml.contains("<p:sldSz cx=\"9144000\" cy=\"6858000\"/>"),
+            "{pres_xml}"
+        );
 
         // Tiny page (10x10 pt) clamps to PowerPoint minimum of 1 inch (914400 EMU)
-        let tiny = Page { width: 10.0, height: 10.0, ..Page::default() };
+        let tiny = Page {
+            width: 10.0,
+            height: 10.0,
+            ..Page::default()
+        };
         let tiny_bytes = pptx(&[tiny], "Tiny");
         let tiny_pres = part(&tiny_bytes, "ppt/presentation.xml");
-        assert!(tiny_pres.contains("<p:sldSz cx=\"914400\" cy=\"914400\"/>"), "{tiny_pres}");
+        assert!(
+            tiny_pres.contains("<p:sldSz cx=\"914400\" cy=\"914400\"/>"),
+            "{tiny_pres}"
+        );
 
         // Poster page (10000x10000 pt) clamps to PowerPoint maximum of 56 inches (51206400 EMU)
-        let poster = Page { width: 10_000.0, height: 10_000.0, ..Page::default() };
+        let poster = Page {
+            width: 10_000.0,
+            height: 10_000.0,
+            ..Page::default()
+        };
         let poster_bytes = pptx(&[poster], "Poster");
         let poster_pres = part(&poster_bytes, "ppt/presentation.xml");
-        assert!(poster_pres.contains("<p:sldSz cx=\"51206400\" cy=\"51206400\"/>"), "{poster_pres}");
+        assert!(
+            poster_pres.contains("<p:sldSz cx=\"51206400\" cy=\"51206400\"/>"),
+            "{poster_pres}"
+        );
 
         // Non-finite dimensions fall back to default
-        let nan_page = Page { width: f64::NAN, height: -1.0, ..Page::default() };
+        let nan_page = Page {
+            width: f64::NAN,
+            height: -1.0,
+            ..Page::default()
+        };
         let nan_bytes = pptx(&[nan_page], "NaN");
         let nan_pres = part(&nan_bytes, "ppt/presentation.xml");
-        assert!(nan_pres.contains("<p:sldSz cx=\"9144000\" cy=\"6858000\"/>"), "{nan_pres}");
+        assert!(
+            nan_pres.contains("<p:sldSz cx=\"9144000\" cy=\"6858000\"/>"),
+            "{nan_pres}"
+        );
     }
 
     #[test]
@@ -721,9 +913,16 @@ mod tests {
         std::fs::write(&pptx_path, &bytes).unwrap();
 
         for cmd in ["libreoffice", "soffice"] {
-            let status = std::process::Command::new(cmd).args(["--headless", "--convert-to", "pdf", "--outdir"]).arg(&dir).arg(&pptx_path).status();
+            let status = std::process::Command::new(cmd)
+                .args(["--headless", "--convert-to", "pdf", "--outdir"])
+                .arg(&dir)
+                .arg(&pptx_path)
+                .status();
             if status.is_ok_and(|st| st.success()) {
-                assert!(dir.join("test.pdf").is_file(), "LibreOffice produced test.pdf");
+                assert!(
+                    dir.join("test.pdf").is_file(),
+                    "LibreOffice produced test.pdf"
+                );
                 break;
             }
         }

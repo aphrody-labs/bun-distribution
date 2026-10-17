@@ -67,11 +67,12 @@ pub mod thread_worker;
 
 // Compression
 pub mod lz4_compression;
-pub mod zstd_compression;
 pub mod zbic_compression;
+pub mod zstd_compression;
 
 // System utilities
 pub mod announce_multiplayer_room;
+pub mod assert;
 pub mod cityhash;
 pub mod common_funcs;
 pub mod cpu_features;
@@ -82,7 +83,6 @@ pub mod input;
 pub mod lock_order;
 pub mod logging;
 pub mod scm_rev;
-pub mod assert;
 pub mod steady_clock;
 pub mod string_util;
 pub mod telemetry;

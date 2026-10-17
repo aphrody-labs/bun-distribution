@@ -2,7 +2,7 @@ use crate::shader::*;
 use alloc::borrow::Cow;
 use alloc::sync::Arc;
 use bevy_asset::AssetId;
-use bevy_platform::collections::{hash_map::EntryRef, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::EntryRef};
 use core::hash::Hash;
 use thiserror::Error;
 use tracing::debug;

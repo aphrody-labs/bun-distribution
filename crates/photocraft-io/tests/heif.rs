@@ -10,8 +10,11 @@ use photocraft_io::{ExportOptions, export, import};
 
 /// A file of `corpus/heif/`; a missing corpus fails.
 fn corpus(rel: &str) -> Vec<u8> {
-    let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/heif").join(rel);
-    std::fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()))
+    let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../corpus/heif")
+        .join(rel);
+    std::fs::read(&p)
+        .unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()))
 }
 
 fn strips() -> Vec<u8> {
@@ -30,10 +33,15 @@ fn heic_opens_as_an_8_bit_rgb_document() {
 
 #[test]
 fn ten_bit_heic_opens_as_a_16_bit_document_with_transparency() {
-    let d = import("hdr.heic", &corpus("pillow-heif/heif/RGBA_10__29x100.heif")).unwrap().document;
+    let d = import("hdr.heic", &corpus("pillow-heif/heif/RGBA_10__29x100.heif"))
+        .unwrap()
+        .document;
     assert_eq!((d.size.width, d.size.height), (29, 100));
     assert_eq!((d.mode, d.depth), (ColorMode::Rgb, SampleType::U16));
-    assert!(!d.layers[0].locks.transparency, "an image with alpha opens as an unlocked layer");
+    assert!(
+        !d.layers[0].locks.transparency,
+        "an image with alpha opens as an unlocked layer"
+    );
 }
 
 #[test]
@@ -41,7 +49,13 @@ fn heic_metadata_reaches_the_document_and_exports_upright() {
     let r = import("photo.heic", &corpus("heic-rs/with-exif.heic")).unwrap();
     let d = &r.document;
     assert_eq!((d.size.width, d.size.height), (2048, 1536));
-    assert!(d.metadata.exif.is_some() && d.metadata.xmp.as_deref().is_some_and(|x| x.contains("x:xmpmeta")));
+    assert!(
+        d.metadata.exif.is_some()
+            && d.metadata
+                .xmp
+                .as_deref()
+                .is_some_and(|x| x.contains("x:xmpmeta"))
+    );
     // HEIC is read-only: save the photo as a JPEG, which keeps the EXIF with Orientation 1.
     let out = export(d, "photo.jpg", &ExportOptions::default()).unwrap();
     assert_eq!(detect(&out.bytes), Some(Format::Jpeg));

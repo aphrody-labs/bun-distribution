@@ -30,7 +30,9 @@ pub const MAX_USAGE: usize = 10_000;
 /// Whether a library's path is a share link of a file on a server (else it is a library file).
 pub fn is_server_link(path: &str) -> bool {
     let p = path.trim_start().to_ascii_lowercase();
-    ["figcraft://", "ws://", "wss://"].iter().any(|s| p.starts_with(s))
+    ["figcraft://", "ws://", "wss://"]
+        .iter()
+        .any(|s| p.starts_with(s))
 }
 
 /// A library path to show: a server link without its token.
@@ -38,16 +40,26 @@ pub fn shown_path(path: &str) -> String {
     if !is_server_link(path) {
         return path.to_string();
     }
-    let Some(at) = path.find("token=") else { return path.to_string() };
-    let end = path.get(at..).and_then(|rest| rest.find('&')).map_or(path.len(), |e| at + e);
-    format!("{}token=…{}", path.get(..at).unwrap_or_default(), path.get(end..).unwrap_or_default())
+    let Some(at) = path.find("token=") else {
+        return path.to_string();
+    };
+    let end = path
+        .get(at..)
+        .and_then(|rest| rest.find('&'))
+        .map_or(path.len(), |e| at + e);
+    format!(
+        "{}token=…{}",
+        path.get(..at).unwrap_or_default(),
+        path.get(end..).unwrap_or_default()
+    )
 }
 
 /// `lib` as the archive a server keeps: a `.figcraft` file holding only the library.
 pub fn archive(lib: &PublishedLibrary) -> Result<Vec<u8>> {
     let mut holder = Document::new(lib.manifest.name.clone());
     holder.published = Some(Arc::new(lib.clone()));
-    figcraft_format::save_bytes(&holder, None).map_err(|e| EngineError::Other(format!("couldn't pack the library: {e}")))
+    figcraft_format::save_bytes(&holder, None)
+        .map_err(|e| EngineError::Other(format!("couldn't pack the library: {e}")))
 }
 
 /// The library in an archive from a server (untrusted: read with the library file's limits).
@@ -55,7 +67,9 @@ pub fn read_archive(bytes: &[u8]) -> std::result::Result<PublishedLibrary, Strin
     match figcraft_format::read_library(Cursor::new(bytes)) {
         Ok(Some(lib)) => Ok(lib),
         Ok(None) => Err("the server sent a file without a library".into()),
-        Err(e) => Err(format!("the server sent a library that can't be read ({e})")),
+        Err(e) => Err(format!(
+            "the server sent a library that can't be read ({e})"
+        )),
     }
 }
 
@@ -66,20 +80,29 @@ pub fn read_archive(bytes: &[u8]) -> std::result::Result<PublishedLibrary, Strin
 pub fn usage(doc: &Document, library: &str) -> Usage {
     let store = doc.library_store();
     let mut counts = std::collections::BTreeMap::<NodeId, u32>::new();
-    let records: std::collections::BTreeMap<NodeId, NodeId> =
-        doc.libraries.components.iter().filter(|r| r.library == library).map(|r| (r.root, r.key)).collect();
+    let records: std::collections::BTreeMap<NodeId, NodeId> = doc
+        .libraries
+        .components
+        .iter()
+        .filter(|r| r.library == library)
+        .map(|r| (r.root, r.key))
+        .collect();
     if !records.is_empty() {
         for n in doc.nodes() {
             if let NodeKind::Instance { component, .. } = &n.kind
                 && store.is_none_or(|st| doc.page_of(n.id) != Some(st))
-                && let Some(key) = crate::library::asset_root(doc, *component).and_then(|r| records.get(&r))
+                && let Some(key) =
+                    crate::library::asset_root(doc, *component).and_then(|r| records.get(&r))
             {
                 let c = counts.entry(*key).or_default();
                 *c = c.saturating_add(1);
             }
         }
     }
-    Usage { file: doc.name.clone(), components: counts.into_iter().take(MAX_USAGE).collect() }
+    Usage {
+        file: doc.name.clone(),
+        components: counts.into_iter().take(MAX_USAGE).collect(),
+    }
 }
 
 /// A reply that doesn't answer the request.
@@ -93,23 +116,37 @@ impl Session {
     pub fn server_link(&self) -> Option<String> {
         let uid = self.ds().ok()?.uid;
         let live = Some(self.live_of(uid)).filter(|l| l.syncing() && l.doc_uid == Some(uid))?;
-        live.info.as_ref().filter(|i| i.role == crate::live::Role::Guest && i.access == crate::live::Access::Edit).map(|i| i.link.clone())
+        live.info
+            .as_ref()
+            .filter(|i| i.role == crate::live::Role::Guest && i.access == crate::live::Access::Edit)
+            .map(|i| i.link.clone())
     }
 
     /// One request about the team library behind share link `link` (a refusal is an error), with
     /// the request answered when a command running in the background got its answer earlier
     /// ([`crate::background`]). Callers outside the background wait for the server (at most the
     /// connect timeout when it can't be reached).
-    pub(crate) fn library_exchange(&mut self, link: &str, req: LibraryReq) -> Result<(LibraryReply, Option<LibraryReq>)> {
-        let (reply, sent) = self.net(NetRequest::Library { link: link.to_string(), req })?;
+    pub(crate) fn library_exchange(
+        &mut self,
+        link: &str,
+        req: LibraryReq,
+    ) -> Result<(LibraryReply, Option<LibraryReq>)> {
+        let (reply, sent) = self.net(NetRequest::Library {
+            link: link.to_string(),
+            req,
+        })?;
         let sent = match sent {
             Some(NetRequest::Library { req, .. }) => Some(req),
             _ => None,
         };
         match reply {
-            NetReply::Library(Ok(LibraryReply::Failed { reason }) | Err(reason)) => Err(EngineError::Other(reason)),
+            NetReply::Library(Ok(LibraryReply::Failed { reason }) | Err(reason)) => {
+                Err(EngineError::Other(reason))
+            }
             NetReply::Library(Ok(r)) => Ok((r, sent)),
-            _ => Err(EngineError::Other("the server answered something else".into())),
+            _ => Err(EngineError::Other(
+                "the server answered something else".into(),
+            )),
         }
     }
 
@@ -137,10 +174,19 @@ impl Session {
             _ => None,
         };
         let usage = self.doc().ok().map(|d| {
-            let id = d.libraries.enabled.iter().find(|l| l.path == path).map(|l| l.id.clone()).unwrap_or_default();
+            let id = d
+                .libraries
+                .enabled
+                .iter()
+                .find(|l| l.path == path)
+                .map(|l| l.id.clone())
+                .unwrap_or_default();
             usage(d, &id)
         });
-        let reply = match self.net(NetRequest::Library { link: path.to_string(), req: LibraryReq::Fetch { have, usage } }) {
+        let reply = match self.net(NetRequest::Library {
+            link: path.to_string(),
+            req: LibraryReq::Fetch { have, usage },
+        }) {
             Ok((NetReply::Library(r), _)) => r,
             Ok(_) => Err("the server answered something else".into()),
             Err(EngineError::Waiting) => return Err(EngineError::Waiting),
@@ -163,7 +209,13 @@ impl Session {
                     Some(Ok(lib)) => Some(lib.manifest.version),
                     _ => None,
                 };
-                (l.path.clone(), LibraryReq::Fetch { have, usage: Some(usage(doc, &l.id)) })
+                (
+                    l.path.clone(),
+                    LibraryReq::Fetch {
+                        have,
+                        usage: Some(usage(doc, &l.id)),
+                    },
+                )
             })
             .collect();
         if let (false, Some(net)) = (jobs.is_empty(), self.live.link()) {
@@ -173,27 +225,40 @@ impl Session {
 
     /// A background library request was answered: a newer library replaces the one shown ("Library
     /// updates available" follows).
-    pub(crate) fn library_answer(&mut self, link: &str, reply: std::result::Result<LibraryReply, String>) {
+    pub(crate) fn library_answer(
+        &mut self,
+        link: &str,
+        reply: std::result::Result<LibraryReply, String>,
+    ) {
         let _ = self.take_library(link, reply);
     }
 
     /// Take the answer to a fetch of the team library behind `link` into the cache. While the
     /// server can't be reached (or refuses) the last library fetched stays in use.
-    fn take_library(&mut self, link: &str, reply: std::result::Result<LibraryReply, String>) -> std::result::Result<Arc<PublishedLibrary>, String> {
+    fn take_library(
+        &mut self,
+        link: &str,
+        reply: std::result::Result<LibraryReply, String>,
+    ) -> std::result::Result<Arc<PublishedLibrary>, String> {
         let kept = match self.libraries.cached(link) {
             Some(Ok(lib)) => Some(lib.clone()),
             _ => None,
         };
         let result = match reply {
             Ok(LibraryReply::Library { archive, .. }) => read_archive(&archive).map(Arc::new),
-            Ok(LibraryReply::Unchanged { .. }) => kept.clone().ok_or_else(|| NOT_FETCHED.to_string()),
+            Ok(LibraryReply::Unchanged { .. }) => {
+                kept.clone().ok_or_else(|| NOT_FETCHED.to_string())
+            }
             Ok(LibraryReply::Empty) => Err(NO_LIBRARY.into()),
             Ok(LibraryReply::Failed { reason }) | Err(reason) => Err(reason),
             Ok(other) => Err(unexpected(&other).to_string()),
         };
         match (result, kept) {
             (Err(e), Some(lib)) => {
-                log::info!("team library {}: {e}; the last version fetched stays in use", shown_path(link));
+                log::info!(
+                    "team library {}: {e}; the last version fetched stays in use",
+                    shown_path(link)
+                );
                 Ok(lib)
             }
             (result, _) => {

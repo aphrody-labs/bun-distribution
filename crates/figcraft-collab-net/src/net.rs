@@ -22,7 +22,9 @@ use crate::tls::{self, Tls};
 
 /// tungstenite's settings for messages up to `max` bytes.
 pub fn config(max: usize) -> WebSocketConfig {
-    WebSocketConfig::default().max_message_size(Some(max)).max_frame_size(Some(max))
+    WebSocketConfig::default()
+        .max_message_size(Some(max))
+        .max_frame_size(Some(max))
 }
 
 /// One side (read or write) of a connection: reads from its own handle, writes whole buffers
@@ -39,8 +41,18 @@ impl Duplex {
     /// Two handles on `stream` (for the reader and the writer) and one to shut it down with.
     pub fn split(stream: TcpStream, tls: Option<Tls>) -> io::Result<(Duplex, Duplex, TcpStream)> {
         let write = Arc::new(Mutex::new(stream.try_clone()?));
-        let a = Duplex { read: stream.try_clone()?, write: write.clone(), tls: tls.clone(), meter: None };
-        let b = Duplex { read: stream.try_clone()?, write, tls, meter: None };
+        let a = Duplex {
+            read: stream.try_clone()?,
+            write: write.clone(),
+            tls: tls.clone(),
+            meter: None,
+        };
+        let b = Duplex {
+            read: stream.try_clone()?,
+            write,
+            tls,
+            meter: None,
+        };
         Ok((a, b, stream))
     }
 
@@ -78,7 +90,11 @@ impl Readers {
     /// read timeout).
     fn shed_biggest(&self, me: u64, all: &AtomicUsize) -> bool {
         let t = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-        let Some((&id, r)) = t.iter().filter(|(_, r)| !r.shed.load(Ordering::Relaxed)).max_by_key(|(_, r)| r.mine.load(Ordering::Relaxed)) else {
+        let Some((&id, r)) = t
+            .iter()
+            .filter(|(_, r)| !r.shed.load(Ordering::Relaxed))
+            .max_by_key(|(_, r)| r.mine.load(Ordering::Relaxed))
+        else {
             return false;
         };
         if id == me || r.mine.load(Ordering::Relaxed) == 0 {
@@ -134,12 +150,33 @@ impl Meter {
         max_block: usize,
         max_all: usize,
     ) -> Self {
-        let (mine, shed) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicBool::new(false)));
+        let (mine, shed) = (
+            Arc::new(AtomicUsize::new(0)),
+            Arc::new(AtomicBool::new(false)),
+        );
         if let Ok(s) = sock.try_clone() {
-            let r = Reader { mine: mine.clone(), block: block.clone(), shed: shed.clone(), sock: s };
-            readers.0.lock().unwrap_or_else(PoisonError::into_inner).insert(id, r);
+            let r = Reader {
+                mine: mine.clone(),
+                block: block.clone(),
+                shed: shed.clone(),
+                sock: s,
+            };
+            readers
+                .0
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .insert(id, r);
         }
-        Self { id, mine, shed, block, all, max_block, max_all, readers: readers.clone() }
+        Self {
+            id,
+            mine,
+            shed,
+            block,
+            all,
+            max_block,
+            max_all,
+            readers: readers.clone(),
+        }
     }
 
     fn add(&mut self, n: usize) -> io::Result<()> {
@@ -173,7 +210,11 @@ impl Meter {
 impl Drop for Meter {
     fn drop(&mut self) {
         self.release();
-        self.readers.0.lock().unwrap_or_else(PoisonError::into_inner).remove(&self.id);
+        self.readers
+            .0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(&self.id);
     }
 }
 
@@ -203,11 +244,17 @@ impl Write for Duplex {
         if let Some(t) = &self.tls {
             return tls::write(t, &self.write, buf);
         }
-        self.write.lock().unwrap_or_else(PoisonError::into_inner).write_all(buf)?;
+        self.write
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .write_all(buf)?;
         Ok(buf.len())
     }
     fn flush(&mut self) -> io::Result<()> {
-        self.write.lock().unwrap_or_else(PoisonError::into_inner).flush()
+        self.write
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .flush()
     }
 }
 
@@ -218,9 +265,17 @@ pub fn shutdown(s: &TcpStream) {
 
 /// Connect to `server` (through TLS for `wss://`): the reader's and the writer's handles, and the
 /// socket to shut it down with.
-pub fn open(server: &Endpoint, timeout: Duration, limits: &NetLimits) -> Result<(Duplex, Duplex, TcpStream), String> {
+pub fn open(
+    server: &Endpoint,
+    timeout: Duration,
+    limits: &NetLimits,
+) -> Result<(Duplex, Duplex, TcpStream), String> {
     let stream = dial(&server.host, timeout, limits)?;
-    let tls = if server.secure { Some(tls::handshake(&stream, &server.host)?) } else { None };
+    let tls = if server.secure {
+        Some(tls::handshake(&stream, &server.host)?)
+    } else {
+        None
+    };
     Duplex::split(stream, tls).map_err(|e| e.to_string())
 }
 
@@ -228,14 +283,18 @@ pub fn open(server: &Endpoint, timeout: Duration, limits: &NetLimits) -> Result<
 /// and reads and writes bounded by `limits`' hello and write timeouts.
 fn dial(host: &str, timeout: Duration, limits: &NetLimits) -> Result<TcpStream, String> {
     use std::net::ToSocketAddrs;
-    let addrs = host.to_socket_addrs().map_err(|e| format!("can't find {host}: {e}"))?;
+    let addrs = host
+        .to_socket_addrs()
+        .map_err(|e| format!("can't find {host}: {e}"))?;
     let mut last = format!("can't find {host}");
     for a in addrs {
         match TcpStream::connect_timeout(&a, timeout) {
             Ok(s) => {
                 let _ = s.set_nodelay(true);
-                s.set_read_timeout(Some(limits.hello_timeout)).map_err(|e| e.to_string())?;
-                s.set_write_timeout(Some(limits.write_timeout)).map_err(|e| e.to_string())?;
+                s.set_read_timeout(Some(limits.hello_timeout))
+                    .map_err(|e| e.to_string())?;
+                s.set_write_timeout(Some(limits.write_timeout))
+                    .map_err(|e| e.to_string())?;
                 return Ok(s);
             }
             Err(e) => last = format!("no answer from {a}: {e}"),
@@ -255,7 +314,12 @@ pub struct Bucket {
 
 impl Bucket {
     pub fn new(rate: f64, burst: f64) -> Self {
-        Self { rate, burst, tokens: burst, at: Instant::now() }
+        Self {
+            rate,
+            burst,
+            tokens: burst,
+            at: Instant::now(),
+        }
     }
 
     /// Spend one token at `now`; false when there are none left.

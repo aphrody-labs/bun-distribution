@@ -16,10 +16,30 @@ pub const ALIGNMENTS: [(Justify, &str, &str, &str); 7] = [
     (Justify::Left, "dc-para-left", "Align left", "left"),
     (Justify::Center, "dc-para-center", "Align center", "center"),
     (Justify::Right, "dc-para-right", "Align right", "right"),
-    (Justify::JustifyLeft, "dc-para-justify-left", "Justify with last line aligned left", "justifyLeft"),
-    (Justify::JustifyCenter, "dc-para-justify-center", "Justify with last line aligned center", "justifyCenter"),
-    (Justify::JustifyRight, "dc-para-justify-right", "Justify with last line aligned right", "justifyRight"),
-    (Justify::JustifyAll, "dc-para-justify-all", "Justify all lines", "justifyAll"),
+    (
+        Justify::JustifyLeft,
+        "dc-para-justify-left",
+        "Justify with last line aligned left",
+        "justifyLeft",
+    ),
+    (
+        Justify::JustifyCenter,
+        "dc-para-justify-center",
+        "Justify with last line aligned center",
+        "justifyCenter",
+    ),
+    (
+        Justify::JustifyRight,
+        "dc-para-justify-right",
+        "Justify with last line aligned right",
+        "justifyRight",
+    ),
+    (
+        Justify::JustifyAll,
+        "dc-para-justify-all",
+        "Justify all lines",
+        "justifyAll",
+    ),
 ];
 
 /// Paragraph attributes apply to the selected text objects' paragraphs or, while the Type tool
@@ -60,11 +80,20 @@ fn para_cmd(app: &mut VectorcraftApp, cmd: &str, mut p: Value) {
 /// right to left: its Paragraph Direction, else from its first strong character?
 fn resolved_rtl(app: &VectorcraftApp, para: &ParaStyle) -> bool {
     let editing = super::character::text_editing(app);
-    let text = editing.and_then(|(id, _, _)| match app.session.active().and_then(|d| d.doc.node(id)).map(|n| &n.kind) {
-        Some(NodeKind::Text(t)) => Some(t.as_ref()),
-        _ => None,
+    let text = editing.and_then(|(id, _, _)| {
+        match app
+            .session
+            .active()
+            .and_then(|d| d.doc.node(id))
+            .map(|n| &n.kind)
+        {
+            Some(NodeKind::Text(t)) => Some(t.as_ref()),
+            _ => None,
+        }
     });
-    let Some(t) = text.or_else(|| super::character::first_selected_text(app)) else { return para.direction == Some(ParaDirection::RightToLeft) };
+    let Some(t) = text.or_else(|| super::character::first_selected_text(app)) else {
+        return para.direction == Some(ParaDirection::RightToLeft);
+    };
     let plain = t.plain_text();
     let paragraph = vectorcraft_text::edit::paragraph_at(&plain, editing.map_or(0, |(_, a, _)| a));
     vectorcraft_text::paragraph_is_rtl(plain.get(paragraph).unwrap_or_default(), para.direction)
@@ -101,7 +130,12 @@ pub fn hyphenate_check(app: &mut VectorcraftApp, ui: &mut Ui, para: &ParaStyle) 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some((_, para)) = text_style(app) else {
-        super::empty_state(ui, "pilcrow", tl!("No text selected"), tl!("Select a text object to edit its paragraph attributes."));
+        super::empty_state(
+            ui,
+            "pilcrow",
+            tl!("No text selected"),
+            tl!("Select a text object to edit its paragraph attributes."),
+        );
         return;
     };
     let rtl = resolved_rtl(app, &para);
@@ -112,8 +146,18 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         if app.session.prefs.show_indic_options {
             ui.add_space(6.0);
             for (to_rtl, icon, tip, id) in [
-                (false, "dc-para-ltr", tl!("Left-to-Right Paragraph Direction"), "leftToRight"),
-                (true, "dc-para-rtl", tl!("Right-to-Left Paragraph Direction"), "rightToLeft"),
+                (
+                    false,
+                    "dc-para-ltr",
+                    tl!("Left-to-Right Paragraph Direction"),
+                    "leftToRight",
+                ),
+                (
+                    true,
+                    "dc-para-rtl",
+                    tl!("Right-to-Left Paragraph Direction"),
+                    "rightToLeft",
+                ),
             ] {
                 if widgets::icon_button(ui, icon, tip, rtl == to_rtl, 28.0).clicked() {
                     format(app, json!({"direction": id}));
@@ -126,36 +170,82 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     // Indents and paragraph spacing are distances (General); type sizes follow Units ▸ Type.
     let unit = app.session.general_unit();
     let label = |ui: &mut Ui, s: &str, tip: &str| {
-        let l = ui.add_sized(vec2(22.0, 24.0), egui::Label::new(egui::RichText::new(s).size(11.5).strong().color(t.text))).on_hover_text(tip);
+        let l = ui
+            .add_sized(
+                vec2(22.0, 24.0),
+                egui::Label::new(egui::RichText::new(s).size(11.5).strong().color(t.text)),
+            )
+            .on_hover_text(tip);
         crate::scrub::note_label(ui, l.rect);
     };
-    egui::Grid::new("para-grid").num_columns(4).spacing([4.0, 4.0]).show(ui, |ui| {
-        label(ui, "→|", tl!("Left Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-li", Some(para.left_indent), unit, fw, 1.0, -1296.0, &[]) {
-            format(app, json!({"leftIndent": v}));
-        }
-        label(ui, "|←", tl!("Right Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-ri", Some(para.right_indent), unit, fw, 1.0, -1296.0, &[]) {
-            format(app, json!({"rightIndent": v}));
-        }
-        ui.end_row();
-        label(ui, "1→", tl!("First-line Left Indent"));
-        if let Some(v) = widgets::spin_field(ui, "pa-fi", Some(para.first_line_indent), unit, fw, 1.0, -1296.0, &[]) {
-            format(app, json!({"firstLineIndent": v}));
-        }
-        ui.label("");
-        ui.label("");
-        ui.end_row();
-        label(ui, "↑¶", tl!("Space Before Paragraph"));
-        if let Some(v) = widgets::spin_field(ui, "pa-sb", Some(para.space_before), unit, fw, 1.0, 0.0, &[]) {
-            format(app, json!({"spaceBefore": v}));
-        }
-        label(ui, "↓¶", tl!("Space After Paragraph"));
-        if let Some(v) = widgets::spin_field(ui, "pa-sa", Some(para.space_after), unit, fw, 1.0, 0.0, &[]) {
-            format(app, json!({"spaceAfter": v}));
-        }
-        ui.end_row();
-    });
+    egui::Grid::new("para-grid")
+        .num_columns(4)
+        .spacing([4.0, 4.0])
+        .show(ui, |ui| {
+            label(ui, "→|", tl!("Left Indent"));
+            if let Some(v) = widgets::spin_field(
+                ui,
+                "pa-li",
+                Some(para.left_indent),
+                unit,
+                fw,
+                1.0,
+                -1296.0,
+                &[],
+            ) {
+                format(app, json!({"leftIndent": v}));
+            }
+            label(ui, "|←", tl!("Right Indent"));
+            if let Some(v) = widgets::spin_field(
+                ui,
+                "pa-ri",
+                Some(para.right_indent),
+                unit,
+                fw,
+                1.0,
+                -1296.0,
+                &[],
+            ) {
+                format(app, json!({"rightIndent": v}));
+            }
+            ui.end_row();
+            label(ui, "1→", tl!("First-line Left Indent"));
+            if let Some(v) = widgets::spin_field(
+                ui,
+                "pa-fi",
+                Some(para.first_line_indent),
+                unit,
+                fw,
+                1.0,
+                -1296.0,
+                &[],
+            ) {
+                format(app, json!({"firstLineIndent": v}));
+            }
+            ui.label("");
+            ui.label("");
+            ui.end_row();
+            label(ui, "↑¶", tl!("Space Before Paragraph"));
+            if let Some(v) = widgets::spin_field(
+                ui,
+                "pa-sb",
+                Some(para.space_before),
+                unit,
+                fw,
+                1.0,
+                0.0,
+                &[],
+            ) {
+                format(app, json!({"spaceBefore": v}));
+            }
+            label(ui, "↓¶", tl!("Space After Paragraph"));
+            if let Some(v) =
+                widgets::spin_field(ui, "pa-sa", Some(para.space_after), unit, fw, 1.0, 0.0, &[])
+            {
+                format(app, json!({"spaceAfter": v}));
+            }
+            ui.end_row();
+        });
     ui.add_space(4.0);
     if pstate::<bool>(ui.ctx(), "pa-hide-options") {
         return;
@@ -166,22 +256,47 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         ui.horizontal(|ui| {
             widgets::dim_label(ui, tl!("Mojikumi Set"));
             let sets = [tl!("None"), tl!("Line-end Punctuation Half Width")];
-            let current = if para.mojikumi == vectorcraft_doc::Mojikumi::LineEndHalf { sets[1] } else { sets[0] };
+            let current = if para.mojikumi == vectorcraft_doc::Mojikumi::LineEndHalf {
+                sets[1]
+            } else {
+                sets[0]
+            };
             // Already translated: shown as they are.
-            if let Some(i) = widgets::dropdown_names(ui, "pa-mojikumi", current, &sets, ui.available_width() - 4.0) {
-                format(app, json!({"mojikumi": if i == 1 { "lineEndHalf" } else { "none" }}));
+            if let Some(i) = widgets::dropdown_names(
+                ui,
+                "pa-mojikumi",
+                current,
+                &sets,
+                ui.available_width() - 4.0,
+            ) {
+                format(
+                    app,
+                    json!({"mojikumi": if i == 1 { "lineEndHalf" } else { "none" }}),
+                );
             }
         });
         // Which characters may not start or end a line.
         ui.horizontal(|ui| {
             use vectorcraft_doc::Kinsoku;
             widgets::dim_label(ui, tl!("Kinsoku Set"));
-            let sets = [(tl!("None"), Kinsoku::None, "none"), (tl!("Hard"), Kinsoku::Hard, "hard"), (tl!("Soft"), Kinsoku::Soft, "soft")];
+            let sets = [
+                (tl!("None"), Kinsoku::None, "none"),
+                (tl!("Hard"), Kinsoku::Hard, "hard"),
+                (tl!("Soft"), Kinsoku::Soft, "soft"),
+            ];
             let names = sets.map(|s| s.0);
-            let current = sets.iter().find(|s| s.1 == para.kinsoku).map_or(names[1], |s| s.0);
+            let current = sets
+                .iter()
+                .find(|s| s.1 == para.kinsoku)
+                .map_or(names[1], |s| s.0);
             // Already translated: shown as they are.
-            if let Some(i) = widgets::dropdown_names(ui, "pa-kinsoku", current, &names, ui.available_width() - 4.0)
-                && let Some((_, _, key)) = sets.get(i)
+            if let Some(i) = widgets::dropdown_names(
+                ui,
+                "pa-kinsoku",
+                current,
+                &names,
+                ui.available_width() - 4.0,
+            ) && let Some((_, _, key)) = sets.get(i)
             {
                 format(app, json!({"kinsoku": key}));
             }
@@ -193,18 +308,33 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let style = text_style(app);
     let has = style.is_some();
     let hidden: bool = pstate(ui.ctx(), "pa-hide-options");
-    if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
+    if menu_item(
+        ui,
+        if hidden {
+            tl!("Show Options")
+        } else {
+            tl!("Hide Options")
+        },
+        true,
+        false,
+    ) {
         set_pstate(ui.ctx(), "pa-hide-options", !hidden);
     }
     ui.separator();
-    for l in [tl!("Roman Hanging Punctuation"), tl!("Justification…"), tl!("Hyphenation…")] {
+    for l in [
+        tl!("Roman Hanging Punctuation"),
+        tl!("Justification…"),
+        tl!("Hyphenation…"),
+    ] {
         menu_item(ui, l, false, false);
     }
     // How leading is measured (Japanese layout measures it from em box top to em box top), with
     // the East Asian options.
     if app.session.prefs.show_east_asian_options {
         ui.separator();
-        let top_to_top = style.as_ref().is_some_and(|(_, p)| p.leading_model == vectorcraft_doc::LeadingModel::EmBoxTop);
+        let top_to_top = style
+            .as_ref()
+            .is_some_and(|(_, p)| p.leading_model == vectorcraft_doc::LeadingModel::EmBoxTop);
         if menu_item(ui, tl!("Top-to-Top Leading"), has, top_to_top) {
             format(app, json!({"leadingModel": "emBoxTop"}));
         }
@@ -231,9 +361,14 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     ui.separator();
     let composer = style.as_ref().map(|(_, p)| p.composer);
-    for (c, label, id) in
-        [(Composer::SingleLine, tl!("Single-line Composer"), "singleLine"), (Composer::EveryLine, tl!("Every-line Composer"), "everyLine")]
-    {
+    for (c, label, id) in [
+        (
+            Composer::SingleLine,
+            tl!("Single-line Composer"),
+            "singleLine",
+        ),
+        (Composer::EveryLine, tl!("Every-line Composer"), "everyLine"),
+    ] {
         if menu_item(ui, label, has, composer == Some(c)) {
             format(app, json!({ "composer": id }));
         }
@@ -259,19 +394,33 @@ mod tests {
     #[test]
     fn alignment_buttons_show_the_resolved_alignment_and_direction_sets_it() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 400, "height": 200})).unwrap();
-        app.session.execute("text.create", &json!({"x": 200, "y": 50, "text": "שלום"})).unwrap();
+        app.session
+            .execute("file.new", &json!({"width": 400, "height": 200}))
+            .unwrap();
+        app.session
+            .execute("text.create", &json!({"x": 200, "y": 50, "text": "שלום"}))
+            .unwrap();
         let shown = |app: &VectorcraftApp| {
             let para = text_style(app).unwrap().1;
             shown_alignment(para.justify, resolved_rtl(app, &para))
         };
         assert_eq!(shown(&app), Justify::Right);
         app.session.execute("object.group", &json!({})).unwrap();
-        assert_eq!(shown(&app), Justify::Right, "group controls resolve the same text descendant's direction");
-        app.session.execute("text.setStyle", &json!({"justify": "left"})).unwrap();
+        assert_eq!(
+            shown(&app),
+            Justify::Right,
+            "group controls resolve the same text descendant's direction"
+        );
+        app.session
+            .execute("text.setStyle", &json!({"justify": "left"}))
+            .unwrap();
         assert_eq!(shown(&app), Justify::Left);
-        app.session.execute("text.setStyle", &json!({"justify": "auto"})).unwrap();
-        app.session.execute("text.setFormat", &json!({"direction": "leftToRight"})).unwrap();
+        app.session
+            .execute("text.setStyle", &json!({"justify": "auto"}))
+            .unwrap();
+        app.session
+            .execute("text.setFormat", &json!({"direction": "leftToRight"}))
+            .unwrap();
         assert_eq!(shown(&app), Justify::Left);
         // The direction buttons show with the Indic options only.
         crate::i18n::set_current(crate::i18n::Lang::EN);

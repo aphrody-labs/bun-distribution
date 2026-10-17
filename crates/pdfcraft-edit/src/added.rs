@@ -11,7 +11,10 @@
 use std::collections::{HashMap, HashSet};
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
-use pdfcraft_fonts::{GlyphError, GlyphOutline, ShapedCluster, ShapedScript, Std14, literal, shape_arabic, shape_thai, shaped_glyph, win_ansi};
+use pdfcraft_fonts::{
+    GlyphError, GlyphOutline, ShapedCluster, ShapedScript, Std14, literal, shape_arabic,
+    shape_thai, shaped_glyph, win_ansi,
+};
 use unicode_bidi::{Level, ParagraphBidiInfo};
 
 use crate::{EditError, MarkKind, check, contents, n, page_list, place_tagged};
@@ -62,7 +65,11 @@ impl Family {
         } else {
             Family::Helvetica
         };
-        (family, s.contains("Bold"), s.contains("Italic") || s.contains("Oblique"))
+        (
+            family,
+            s.contains("Bold"),
+            s.contains("Italic") || s.contains("Oblique"),
+        )
     }
 
     /// Advance width of `s` at `size` points, from the published standard-14 metrics.
@@ -147,7 +154,14 @@ pub struct AddedImage {
 
 impl AddedImage {
     pub fn new(rect: [f64; 4], image: ObjRef) -> Self {
-        AddedImage { rect, image, rotation: 0, flip_h: false, flip_v: false, crop: [0.0; 4] }
+        AddedImage {
+            rect,
+            image,
+            rotation: 0,
+            flip_h: false,
+            flip_v: false,
+            crop: [0.0; 4],
+        }
     }
 
     /// The matrix from image space (the unit square) to display space: crop, flip, rotate,
@@ -190,8 +204,15 @@ impl Content {
     fn scaled(self, factor: f64) -> Content {
         match self {
             _ if factor == 1.0 => self,
-            Content::Text(t) => Content::Text(AddedText { rect: t.rect.map(|v| v * factor), size: t.size * factor, ..t }),
-            Content::Image(i) => Content::Image(AddedImage { rect: i.rect.map(|v| v * factor), ..i }),
+            Content::Text(t) => Content::Text(AddedText {
+                rect: t.rect.map(|v| v * factor),
+                size: t.size * factor,
+                ..t
+            }),
+            Content::Image(i) => Content::Image(AddedImage {
+                rect: i.rect.map(|v| v * factor),
+                ..i
+            }),
         }
     }
 
@@ -221,11 +242,21 @@ pub struct MarkerScan {
 }
 
 fn nums(doc: &Document, o: Option<&Object>) -> Vec<f64> {
-    o.map(|o| doc.resolve(o)).and_then(|a| a.as_array().map(|a| a.iter().filter_map(Object::as_f64).collect())).unwrap_or_default()
+    o.map(|o| doc.resolve(o))
+        .and_then(|a| {
+            a.as_array()
+                .map(|a| a.iter().filter_map(Object::as_f64).collect())
+        })
+        .unwrap_or_default()
 }
 
 fn norm(r: [f64; 4]) -> [f64; 4] {
-    [r[0].min(r[2]), r[1].min(r[3]), r[0].max(r[2]), r[1].max(r[3])]
+    [
+        r[0].min(r[2]),
+        r[1].min(r[3]),
+        r[0].max(r[2]),
+        r[1].max(r[3]),
+    ]
 }
 
 /// The lines of a text item after wrapping to its box width.
@@ -253,13 +284,30 @@ fn wrapped(t: &AddedText) -> Vec<(String, bool)> {
         // sum of its words' and shaping stays linear in the paragraph's length. The space is the
         // paragraph's; a space between Latin words is drawn in the item's font, a few hundredths
         // of an em apart.
-        let measure = |s: &str| if arabic || thai { shaped_width(t, s, rtl) } else { t.family.width(s, t.size, t.bold, t.italic) };
+        let measure = |s: &str| {
+            if arabic || thai {
+                shaped_width(t, s, rtl)
+            } else {
+                t.family.width(s, t.size, t.bold, t.italic)
+            }
+        };
         let space = measure(" ");
         let (mut line, mut line_w) = (String::new(), 0.0);
         for word in para.split(' ') {
-            let candidate = if line.is_empty() { word.to_string() } else { format!("{line} {word}") };
-            let candidate_w =
-                if arabic || thai { if line.is_empty() { measure(word) } else { line_w + space + measure(word) } } else { measure(&candidate) };
+            let candidate = if line.is_empty() {
+                word.to_string()
+            } else {
+                format!("{line} {word}")
+            };
+            let candidate_w = if arabic || thai {
+                if line.is_empty() {
+                    measure(word)
+                } else {
+                    line_w + space + measure(word)
+                }
+            } else {
+                measure(&candidate)
+            };
             if !line.is_empty() && candidate_w > width {
                 out.push((std::mem::take(&mut line), rtl));
                 line = word.to_string();
@@ -281,7 +329,9 @@ fn thai_lines(t: &AddedText, para: &str, width: f64) -> Result<Vec<String>, Edit
     let mut atoms = Vec::new();
     for piece in pieces {
         match piece {
-            Piece::Shaped(clusters) => atoms.extend(clusters.into_iter().map(|c| (c.text, c.advance * t.size))),
+            Piece::Shaped(clusters) => {
+                atoms.extend(clusters.into_iter().map(|c| (c.text, c.advance * t.size)))
+            }
             Piece::Latin(s) => atoms.extend(s.chars().map(|c| {
                 let text = c.to_string();
                 let w = t.family.width(&text, t.size, t.bold, t.italic);
@@ -318,20 +368,34 @@ fn is_arabic(c: char) -> bool {
 /// face to draw it). Page-content tools refuse such text; the Add-text editor keeps it open.
 pub fn first_undrawable(t: &AddedText) -> Option<char> {
     if t.text.chars().any(is_thai) {
-        if let Some(c) = t.text.chars().find(|c| is_thai(*c) && !pdfcraft_fonts::thai_has(*c)) {
+        if let Some(c) = t
+            .text
+            .chars()
+            .find(|c| is_thai(*c) && !pdfcraft_fonts::thai_has(*c))
+        {
             return Some(c);
         }
-        let rest = AddedText { text: t.text.chars().filter(|c| !is_thai(*c)).collect(), ..t.clone() };
+        let rest = AddedText {
+            text: t.text.chars().filter(|c| !is_thai(*c)).collect(),
+            ..t.clone()
+        };
         return first_undrawable(&rest);
     }
     // Arabic that nothing can draw: there's no face, or the face lacks it.
-    if let Some(c) = t.text.chars().find(|c| shaped_arabic(*c) && !pdfcraft_fonts::arabic_has(*c)) {
+    if let Some(c) = t
+        .text
+        .chars()
+        .find(|c| shaped_arabic(*c) && !pdfcraft_fonts::arabic_has(*c))
+    {
         return Some(c);
     }
     if pdfcraft_fonts::document_arabic_font().is_none() || !t.text.chars().any(is_arabic) {
         // Drawn line by line in the item's standard font (`\n` splits lines). Without the face
         // that is also how `draw` redraws an existing item, so it's checked that way.
-        return t.text.split('\n').find_map(pdfcraft_fonts::first_non_win_ansi);
+        return t
+            .text
+            .split('\n')
+            .find_map(pdfcraft_fonts::first_non_win_ansi);
     }
     // What `shaped_layout` leaves to the standard font, exactly as `draw_shaped` splits it.
     wrapped(t).into_iter().find_map(|(line, rtl)| {
@@ -397,7 +461,9 @@ fn shaped_layout(t: &AddedText, line: &str, rtl: bool) -> Result<(Vec<Piece>, f6
         for c in text.chars().filter(|c| !is_bidi_control(*c)) {
             let script = if is_thai(c) {
                 Some(ShapedScript::Thai)
-            } else if is_arabic(c) || (run_rtl && !c.is_alphanumeric() && pdfcraft_fonts::arabic_has(c)) {
+            } else if is_arabic(c)
+                || (run_rtl && !c.is_alphanumeric() && pdfcraft_fonts::arabic_has(c))
+            {
                 Some(ShapedScript::Arabic)
             } else {
                 None
@@ -413,7 +479,9 @@ fn shaped_layout(t: &AddedText, line: &str, rtl: bool) -> Result<(Vec<Piece>, f6
         for (script, s) in segments {
             pieces.push(if let Some(script) = script {
                 let shaped = match script {
-                    ShapedScript::Arabic => shape_arabic(&s, run_rtl).map_err(|e| arabic_error(e, &s))?,
+                    ShapedScript::Arabic => {
+                        shape_arabic(&s, run_rtl).map_err(|e| arabic_error(e, &s))?
+                    }
                     ShapedScript::Thai => shape_thai(&s).map_err(|e| thai_error(e, &s))?,
                 };
                 Piece::Shaped(shaped)
@@ -437,7 +505,9 @@ fn shaped_layout(t: &AddedText, line: &str, rtl: bool) -> Result<(Vec<Piece>, f6
 /// The width of `s` in a shaped-text item; the item's font's estimate if it can't be shaped (drawing
 /// then reports why).
 fn shaped_width(t: &AddedText, s: &str, rtl: bool) -> f64 {
-    shaped_layout(t, s, rtl).map(|(_, w)| w).unwrap_or_else(|_| t.family.width(s, t.size, t.bold, t.italic))
+    shaped_layout(t, s, rtl)
+        .map(|(_, w)| w)
+        .unwrap_or_else(|_| t.family.width(s, t.size, t.bold, t.italic))
 }
 
 fn arabic_error(e: GlyphError, text: &str) -> EditError {
@@ -482,7 +552,13 @@ type LaidLine = (String, bool, Vec<Piece>, f64);
 /// Draw a text item that has Arabic or Thai in it. Each line is laid out in display order; Arabic glyphs
 /// come from Type 3 fonts drawn from the craft-fonts face's outlines (no font file is embedded),
 /// with a ToUnicode map for copy and search. Other text uses the item's standard font.
-fn draw_shaped(doc: &mut Document, t: &AddedText, taken: &Dict, fonts: &mut Dict, out: &mut Vec<u8>) -> Result<(), EditError> {
+fn draw_shaped(
+    doc: &mut Document,
+    t: &AddedText,
+    taken: &Dict,
+    fonts: &mut Dict,
+    out: &mut Vec<u8>,
+) -> Result<(), EditError> {
     let laid = wrapped(t)
         .into_iter()
         .map(|(line, rtl)| shaped_layout(t, &line, rtl).map(|(pieces, w)| (line, rtl, pieces, w)))
@@ -507,10 +583,14 @@ fn draw_laid_shaped(
     // one of the fonts, so copy and search get each character exactly once.
     let mut keys: Vec<&ShapedCluster> = Vec::new();
     let mut index: HashMap<ClusterKey, usize> = HashMap::new();
-    for c in laid.iter().flat_map(|(_, _, pieces, _)| pieces).flat_map(|p| match p {
-        Piece::Shaped(clusters) => clusters.as_slice(),
-        Piece::Latin(_) => &[],
-    }) {
+    for c in laid
+        .iter()
+        .flat_map(|(_, _, pieces, _)| pieces)
+        .flat_map(|p| match p {
+            Piece::Shaped(clusters) => clusters.as_slice(),
+            Piece::Latin(_) => &[],
+        })
+    {
         index.entry(cluster_key(c)).or_insert_with(|| {
             keys.push(c);
             keys.len() - 1
@@ -521,7 +601,9 @@ fn draw_laid_shaped(
     let mut outlines = HashMap::new();
     for c in &keys {
         for (id, _) in &c.glyphs {
-            if let std::collections::hash_map::Entry::Vacant(entry) = outlines.entry((c.script, *id)) {
+            if let std::collections::hash_map::Entry::Vacant(entry) =
+                outlines.entry((c.script, *id))
+            {
                 entry.insert(outline(c.script, *id).map_err(|e| match c.script {
                     ShapedScript::Arabic => arabic_error(e, &c.text),
                     ShapedScript::Thai => thai_error(e, &c.text),
@@ -530,7 +612,11 @@ fn draw_laid_shaped(
         }
     }
     // The names the page and this item already use: a new font never takes one of them.
-    let mut taken_names: HashSet<Vec<u8>> = taken.iter().chain(fonts.iter()).map(|(name, _)| name.clone()).collect();
+    let mut taken_names: HashSet<Vec<u8>> = taken
+        .iter()
+        .chain(fonts.iter())
+        .map(|(name, _)| name.clone())
+        .collect();
     let mut names = Vec::new();
     for chunk in keys.chunks(GLYPHS_PER_FONT) {
         let font = type3_shaped(doc, chunk, &outlines);
@@ -555,7 +641,11 @@ fn draw_laid_shaped(
         out.extend(format!("/Span <</ActualText <FEFF{logical}>>> BDC\n").bytes());
         let spaces = line.matches(' ').count();
         // Justified: the spaces of every line but the last stretch to fill the box.
-        let tw = if t.align == Align::Justify && i + 1 < laid.len() && spaces > 0 { ((r[2] - r[0]) - w).max(0.0) / spaces as f64 } else { 0.0 };
+        let tw = if t.align == Align::Justify && i + 1 < laid.len() && spaces > 0 {
+            ((r[2] - r[0]) - w).max(0.0) / spaces as f64
+        } else {
+            0.0
+        };
         let x = match t.align {
             // A right-to-left paragraph's unstretched last line ends at the right edge.
             Align::Justify if *rtl => r[2] - w - tw * spaces as f64,
@@ -569,16 +659,30 @@ fn draw_laid_shaped(
         for piece in pieces {
             match piece {
                 Piece::Latin(s) => {
-                    out.extend(format!("/{latin} {} Tf {} Tw 1 0 0 1 {} {} Tm ", n(t.size), n(tw), n(pen), n(y)).bytes());
+                    out.extend(
+                        format!(
+                            "/{latin} {} Tf {} Tw 1 0 0 1 {} {} Tm ",
+                            n(t.size),
+                            n(tw),
+                            n(pen),
+                            n(y)
+                        )
+                        .bytes(),
+                    );
                     out.extend(literal(&win_ansi(s)));
                     out.extend_from_slice(b" Tj\n");
                     current = Some(latin.as_str());
-                    pen += t.family.width(s, t.size, t.bold, t.italic) + tw * s.matches(' ').count() as f64;
+                    pen += t.family.width(s, t.size, t.bold, t.italic)
+                        + tw * s.matches(' ').count() as f64;
                 }
                 Piece::Shaped(clusters) => {
                     for c in clusters {
-                        let Some(&k) = index.get(&cluster_key(c)) else { continue };
-                        let Some(name) = names.get(k / GLYPHS_PER_FONT) else { continue };
+                        let Some(&k) = index.get(&cluster_key(c)) else {
+                            continue;
+                        };
+                        let Some(name) = names.get(k / GLYPHS_PER_FONT) else {
+                            continue;
+                        };
                         // Codes start at 1; k % 240 + 1 is at most 240.
                         let code = u8::try_from(k % GLYPHS_PER_FONT + 1).unwrap_or(1);
                         if current != Some(name.as_str()) {
@@ -604,11 +708,23 @@ fn draw_laid_shaped(
 type ClusterKey<'a> = (ShapedScript, &'a str, Vec<(u32, u64, u64)>, u64);
 
 fn cluster_key(c: &ShapedCluster) -> ClusterKey<'_> {
-    (c.script, c.text.as_str(), c.glyphs.iter().map(|(id, [x, y])| (*id, x.to_bits(), y.to_bits())).collect(), c.advance.to_bits())
+    (
+        c.script,
+        c.text.as_str(),
+        c.glyphs
+            .iter()
+            .map(|(id, [x, y])| (*id, x.to_bits(), y.to_bits()))
+            .collect(),
+        c.advance.to_bits(),
+    )
 }
 
 /// A Type 3 font with `clusters` as codes 1…, each drawn from its script face's glyph `outlines`.
-fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &HashMap<(ShapedScript, u32), GlyphOutline>) -> ObjRef {
+fn type3_shaped(
+    doc: &mut Document,
+    clusters: &[&ShapedCluster],
+    outlines: &HashMap<(ShapedScript, u32), GlyphOutline>,
+) -> ObjRef {
     let mut charprocs = Dict::new();
     let mut differences = vec![Object::Int(1)];
     let mut widths = Vec::with_capacity(clusters.len());
@@ -620,27 +736,71 @@ fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &Hash
         let mut paths = Vec::new();
         let mut ink: Option<[f64; 4]> = None;
         for (id, [dx, dy]) in &c.glyphs {
-            let Some(g) = outlines.get(&(c.script, *id)) else { continue };
+            let Some(g) = outlines.get(&(c.script, *id)) else {
+                continue;
+            };
             for contour in &g.contours {
                 for (j, p) in contour.iter().enumerate() {
-                    paths.extend(format!("{} {} {}\n", n((p[0] + dx) * 1000.0), n((p[1] + dy) * 1000.0), if j == 0 { "m" } else { "l" }).bytes());
+                    paths.extend(
+                        format!(
+                            "{} {} {}\n",
+                            n((p[0] + dx) * 1000.0),
+                            n((p[1] + dy) * 1000.0),
+                            if j == 0 { "m" } else { "l" }
+                        )
+                        .bytes(),
+                    );
                 }
                 paths.extend_from_slice(b"h\n");
-                let b = [g.bbox[0] + dx, g.bbox[1] + dy, g.bbox[2] + dx, g.bbox[3] + dy];
-                ink = Some(ink.map_or(b, |a| [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])]));
+                let b = [
+                    g.bbox[0] + dx,
+                    g.bbox[1] + dy,
+                    g.bbox[2] + dx,
+                    g.bbox[3] + dy,
+                ];
+                ink = Some(ink.map_or(b, |a| {
+                    [
+                        a[0].min(b[0]),
+                        a[1].min(b[1]),
+                        a[2].max(b[2]),
+                        a[3].max(b[3]),
+                    ]
+                }));
             }
         }
         // Rounded outwards so no ink is clipped.
-        let [x0, y0, x1, y1] =
-            ink.map_or([0.0; 4], |b| [(b[0] * 1000.0).floor(), (b[1] * 1000.0).floor(), (b[2] * 1000.0).ceil(), (b[3] * 1000.0).ceil()]);
-        bbox = [bbox[0].min(x0), bbox[1].min(y0), bbox[2].max(x1), bbox[3].max(y1)];
-        let mut proc = format!("{} 0 {} {} {} {} d1\n", n(c.advance * 1000.0), n(x0), n(y0), n(x1), n(y1)).into_bytes();
+        let [x0, y0, x1, y1] = ink.map_or([0.0; 4], |b| {
+            [
+                (b[0] * 1000.0).floor(),
+                (b[1] * 1000.0).floor(),
+                (b[2] * 1000.0).ceil(),
+                (b[3] * 1000.0).ceil(),
+            ]
+        });
+        bbox = [
+            bbox[0].min(x0),
+            bbox[1].min(y0),
+            bbox[2].max(x1),
+            bbox[3].max(y1),
+        ];
+        let mut proc = format!(
+            "{} 0 {} {} {} {} d1\n",
+            n(c.advance * 1000.0),
+            n(x0),
+            n(y0),
+            n(x1),
+            n(y1)
+        )
+        .into_bytes();
         if !paths.is_empty() {
             proc.extend(paths);
             proc.extend_from_slice(b"f\n");
         }
         let glyph = format!("g{code:02X}");
-        charprocs.set(glyph.clone().into_bytes(), Object::Ref(doc.add(Object::Stream(Stream::flate(Dict::new(), &proc)))));
+        charprocs.set(
+            glyph.clone().into_bytes(),
+            Object::Ref(doc.add(Object::Stream(Stream::flate(Dict::new(), &proc)))),
+        );
         differences.push(Object::name(&glyph));
         widths.push(Object::Real((c.advance * 1000.0).round()));
         if !c.text.is_empty() {
@@ -653,13 +813,21 @@ fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &Hash
     );
     // A CMap block holds at most 100 entries.
     for block in to_unicode.chunks(100) {
-        cmap.push_str(&format!("{} beginbfchar\n{}endbfchar\n", block.len(), block.concat()));
+        cmap.push_str(&format!(
+            "{} beginbfchar\n{}endbfchar\n",
+            block.len(),
+            block.concat()
+        ));
     }
     cmap.push_str("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n");
     let cmap = doc.add(Object::Stream(Stream::flate(Dict::new(), cmap.as_bytes())));
     // The face's family when every glyph comes from one script; without the face, the script's
     // name (as Arabic items were always named).
-    let family = match clusters.first().map(|c| c.script).filter(|s| clusters.iter().all(|c| c.script == *s)) {
+    let family = match clusters
+        .first()
+        .map(|c| c.script)
+        .filter(|s| clusters.iter().all(|c| c.script == *s))
+    {
         Some(script) => script.font().map_or(
             match script {
                 ShapedScript::Arabic => "Arabic",
@@ -672,7 +840,10 @@ fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &Hash
     let mut descriptor = Dict::new();
     descriptor.set(b"Type".to_vec(), Object::name("FontDescriptor"));
     descriptor.set(b"FontName".to_vec(), Object::name(&family.replace(' ', "")));
-    descriptor.set(b"FontFamily".to_vec(), Object::String(PdfString::literal(family.as_bytes().to_vec())));
+    descriptor.set(
+        b"FontFamily".to_vec(),
+        Object::String(PdfString::literal(family.as_bytes().to_vec())),
+    );
     descriptor.set(b"Flags".to_vec(), Object::Int(4));
     descriptor.set(b"ItalicAngle".to_vec(), Object::Int(0));
     let mut encoding = Dict::new();
@@ -681,11 +852,24 @@ fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &Hash
     let mut font = Dict::new();
     font.set(b"Type".to_vec(), Object::name("Font"));
     font.set(b"Subtype".to_vec(), Object::name("Type3"));
-    font.set(b"FontDescriptor".to_vec(), Object::Ref(doc.add(Object::Dict(descriptor))));
-    font.set(b"FontBBox".to_vec(), Object::Array(bbox.iter().map(|v| Object::Real(*v)).collect()));
+    font.set(
+        b"FontDescriptor".to_vec(),
+        Object::Ref(doc.add(Object::Dict(descriptor))),
+    );
+    font.set(
+        b"FontBBox".to_vec(),
+        Object::Array(bbox.iter().map(|v| Object::Real(*v)).collect()),
+    );
     font.set(
         b"FontMatrix".to_vec(),
-        Object::Array(vec![Object::Real(0.001), Object::Int(0), Object::Int(0), Object::Real(0.001), Object::Int(0), Object::Int(0)]),
+        Object::Array(vec![
+            Object::Real(0.001),
+            Object::Int(0),
+            Object::Int(0),
+            Object::Real(0.001),
+            Object::Int(0),
+            Object::Int(0),
+        ]),
     );
     font.set(b"FirstChar".to_vec(), Object::Int(1));
     font.set(b"LastChar".to_vec(), Object::Int(clusters.len() as i64));
@@ -699,9 +883,24 @@ fn type3_shaped(doc: &mut Document, clusters: &[&ShapedCluster], outlines: &Hash
 /// Content and resources for an item; `view` maps display space to user space. `taken` holds the
 /// page's font names. `existing`: the item is being replaced, so a build without the Arabic face
 /// keeps drawing its Arabic as `?`, as before Arabic was supported, rather than refusing to move it.
-fn draw(doc: &mut Document, c: &Content, view: [f64; 6], taken: &Dict, existing: bool) -> Result<(Vec<u8>, Dict), EditError> {
+fn draw(
+    doc: &mut Document,
+    c: &Content,
+    view: [f64; 6],
+    taken: &Dict,
+    existing: bool,
+) -> Result<(Vec<u8>, Dict), EditError> {
     let mut res = Dict::new();
-    let mut out = format!("q {} {} {} {} {} {} cm\n", n(view[0]), n(view[1]), n(view[2]), n(view[3]), n(view[4]), n(view[5])).into_bytes();
+    let mut out = format!(
+        "q {} {} {} {} {} {} cm\n",
+        n(view[0]),
+        n(view[1]),
+        n(view[2]),
+        n(view[3]),
+        n(view[4]),
+        n(view[5])
+    )
+    .into_bytes();
     match c {
         Content::Text(t) => {
             let base = t.family.base_font(t.bold, t.italic);
@@ -715,7 +914,10 @@ fn draw(doc: &mut Document, c: &Content, view: [f64; 6], taken: &Dict, existing:
             }
             let mut fonts = Dict::new();
             fonts.set(name.clone().into_bytes(), Object::Dict(font));
-            if t.text.chars().any(is_thai) || (t.text.chars().any(is_arabic) && (pdfcraft_fonts::document_arabic_font().is_some() || !existing)) {
+            if t.text.chars().any(is_thai)
+                || (t.text.chars().any(is_arabic)
+                    && (pdfcraft_fonts::document_arabic_font().is_some() || !existing))
+            {
                 draw_shaped(doc, t, taken, &mut fonts, &mut out)?;
                 res.set(b"Font".to_vec(), Object::Dict(fonts));
                 out.extend_from_slice(b"Q\n");
@@ -724,7 +926,16 @@ fn draw(doc: &mut Document, c: &Content, view: [f64; 6], taken: &Dict, existing:
             res.set(b"Font".to_vec(), Object::Dict(fonts));
             let r = text_rect(t);
             let [cr, cg, cb] = t.color.map(|v| v.clamp(0.0, 1.0));
-            out.extend(format!("BT /{name} {} Tf {} {} {} rg\n", n(t.size), n(cr), n(cg), n(cb)).bytes());
+            out.extend(
+                format!(
+                    "BT /{name} {} Tf {} {} {} rg\n",
+                    n(t.size),
+                    n(cr),
+                    n(cg),
+                    n(cb)
+                )
+                .bytes(),
+            );
             for (i, line) in lines(t).iter().enumerate() {
                 let w = t.family.width(line, t.size, t.bold, t.italic);
                 let x = match t.align {
@@ -737,8 +948,11 @@ fn draw(doc: &mut Document, c: &Content, view: [f64; 6], taken: &Dict, existing:
                 // Justified: word spacing makes every line but the last fill the box.
                 let all = lines(t);
                 let spaces = line.matches(' ').count();
-                let tw =
-                    if t.align == Align::Justify && i + 1 < all.len() && spaces > 0 { ((r[2] - r[0]) - w).max(0.0) / spaces as f64 } else { 0.0 };
+                let tw = if t.align == Align::Justify && i + 1 < all.len() && spaces > 0 {
+                    ((r[2] - r[0]) - w).max(0.0) / spaces as f64
+                } else {
+                    0.0
+                };
                 out.extend(format!("1 0 0 1 {} {} Tm {} Tw ", n(x), n(y), n(tw)).bytes());
                 out.extend(literal(&win_ansi(line)));
                 out.extend_from_slice(b" Tj\n");
@@ -746,7 +960,8 @@ fn draw(doc: &mut Document, c: &Content, view: [f64; 6], taken: &Dict, existing:
             out.extend_from_slice(b"ET\n");
         }
         Content::Image(i) => {
-            if !matches!(&*doc.get(i.image), Object::Stream(s) if s.dict.name(b"Subtype") == Some(b"Image")) {
+            if !matches!(&*doc.get(i.image), Object::Stream(s) if s.dict.name(b"Subtype") == Some(b"Image"))
+            {
                 return Err(EditError::Invalid("not an image".into()));
             }
             let r = norm(i.rect);
@@ -785,7 +1000,10 @@ fn params(c: &Content) -> Dict {
         Content::Text(t) => {
             d.set(b"Kind".to_vec(), Object::name("Text"));
             d.set(b"Text".to_vec(), PdfString::text(&t.text));
-            d.set(b"Font".to_vec(), Object::name(t.family.base_font(t.bold, t.italic)));
+            d.set(
+                b"Font".to_vec(),
+                Object::name(t.family.base_font(t.bold, t.italic)),
+            );
             d.set(b"Size".to_vec(), Object::Real(t.size));
             d.set(b"Color".to_vec(), arr(&t.color));
             d.set(
@@ -804,7 +1022,10 @@ fn params(c: &Content) -> Dict {
             d.set(b"Image".to_vec(), Object::Ref(i.image));
             d.set(b"Rect".to_vec(), arr(&norm(i.rect)));
             if i.rotation % 4 != 0 {
-                d.set(b"Rotate".to_vec(), Object::Int(i64::from(i.rotation % 4) * 90));
+                d.set(
+                    b"Rotate".to_vec(),
+                    Object::Int(i64::from(i.rotation % 4) * 90),
+                );
             }
             if i.flip_h {
                 d.set(b"FlipH".to_vec(), Object::Bool(true));
@@ -829,12 +1050,19 @@ fn parse(doc: &Document, d: &Dict) -> Option<Content> {
             let c = nums(doc, d.get(b"Color"));
             Some(Content::Text(AddedText {
                 rect,
-                text: d.get(b"Text").and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text())).unwrap_or_default(),
+                text: d
+                    .get(b"Text")
+                    .and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text()))
+                    .unwrap_or_default(),
                 family,
                 bold,
                 italic,
                 size: d.get(b"Size").and_then(Object::as_f64).unwrap_or(12.0),
-                color: if c.len() == 3 { [c[0], c[1], c[2]] } else { [0.0; 3] },
+                color: if c.len() == 3 {
+                    [c[0], c[1], c[2]]
+                } else {
+                    [0.0; 3]
+                },
                 align: match d.int(b"Align") {
                     Some(1) => Align::Center,
                     Some(2) => Align::Right,
@@ -868,8 +1096,14 @@ fn with_resolved<T>(doc: &Document, object: &Object, f: impl FnOnce(&Object) -> 
     }
 }
 
-fn for_each_content_entry(doc: &Document, page: &pdfcraft_model::Page, mut visit: impl FnMut(&Object)) {
-    let Some(contents) = page.dict.get(b"Contents") else { return };
+fn for_each_content_entry(
+    doc: &Document,
+    page: &pdfcraft_model::Page,
+    mut visit: impl FnMut(&Object),
+) {
+    let Some(contents) = page.dict.get(b"Contents") else {
+        return;
+    };
     with_resolved(doc, contents, |resolved| match resolved {
         Object::Array(entries) => {
             for entry in entries {
@@ -886,7 +1120,9 @@ pub fn scan_markers(doc: &Document) -> MarkerScan {
     for (pi, page) in page_list(doc).iter().enumerate() {
         for_each_content_entry(doc, page, |entry| {
             with_resolved(doc, entry, |resolved| {
-                let Some(dict) = resolved.as_dict() else { return };
+                let Some(dict) = resolved.as_dict() else {
+                    return;
+                };
                 let tag = dict.name(b"PCMark");
                 let kind = if tag == Some(&b"HeaderFooter"[..]) {
                     Some(MarkKind::HeaderFooter)
@@ -903,13 +1139,19 @@ pub fn scan_markers(doc: &Document) -> MarkerScan {
                     scan.marks.push(kind);
                 }
 
-                let Some(obj) = Object::as_ref(entry) else { return };
+                let Some(obj) = Object::as_ref(entry) else {
+                    return;
+                };
                 if tag != Some(TAG.as_bytes()) {
                     return;
                 }
-                let Some(params_object) = dict.get(b"PCAdded") else { return };
+                let Some(params_object) = dict.get(b"PCAdded") else {
+                    return;
+                };
                 with_resolved(doc, params_object, |resolved_params| {
-                    let Some(params) = resolved_params.as_dict() else { return };
+                    let Some(params) = resolved_params.as_dict() else {
+                        return;
+                    };
                     if let Some(content) = parse(doc, params) {
                         // Display points depend on the page's /UserUnit. An item records the one it was
                         // written for; none means 1, as for items written before display space followed
@@ -919,7 +1161,11 @@ pub fn scan_markers(doc: &Document) -> MarkerScan {
                             .and_then(Object::as_f64)
                             .filter(|u| u.is_finite() && *u >= 1.0)
                             .map_or(1.0, |u| u.min(pdfcraft_model::MAX_USER_UNIT));
-                        scan.added.push(Added { page: pi, obj, content: content.scaled(page.user_unit(doc) / written) });
+                        scan.added.push(Added {
+                            page: pi,
+                            obj,
+                            content: content.scaled(page.user_unit(doc) / written),
+                        });
                     }
                 });
             });
@@ -939,7 +1185,9 @@ fn validate(c: &Content) -> Result<(), EditError> {
                 return Err(EditError::Invalid("type some text first".into()));
             }
             if !(t.size.is_finite() && (1.0..=500.0).contains(&t.size)) {
-                return Err(EditError::Invalid("the font size must be between 1 and 500 points".into()));
+                return Err(EditError::Invalid(
+                    "the font size must be between 1 and 500 points".into(),
+                ));
             }
             if (r[2] - r[0]).abs() < 1.0 {
                 return Err(EditError::Invalid("the text box is too narrow".into()));
@@ -950,10 +1198,15 @@ fn validate(c: &Content) -> Result<(), EditError> {
             // Without the Arabic face, `draw` decides for the Arabic letters themselves (#403): a new
             // item is refused with what's missing, and one that already holds Arabic stays movable.
             // Everything else in it is drawn in the standard font, so it still has to fit.
-            let undrawable = if t.text.chars().any(shaped_arabic) && pdfcraft_fonts::document_arabic_font().is_none() {
+            let undrawable = if t.text.chars().any(shaped_arabic)
+                && pdfcraft_fonts::document_arabic_font().is_none()
+            {
                 t.text.split('\n').find_map(|line| {
-                    line.chars()
-                        .find(|c| !(shaped_arabic(*c) || is_thai(*c) && pdfcraft_fonts::thai_has(*c) || pdfcraft_fonts::win_ansi_encodable(*c)))
+                    line.chars().find(|c| {
+                        !(shaped_arabic(*c)
+                            || is_thai(*c) && pdfcraft_fonts::thai_has(*c)
+                            || pdfcraft_fonts::win_ansi_encodable(*c))
+                    })
                 })
             } else {
                 first_undrawable(t)
@@ -972,7 +1225,12 @@ fn validate(c: &Content) -> Result<(), EditError> {
 }
 
 /// Write an item's stream (new, or replacing `obj`) and make its resources available to the page.
-fn write(doc: &mut Document, page: usize, c: &Content, obj: Option<ObjRef>) -> Result<ObjRef, EditError> {
+fn write(
+    doc: &mut Document,
+    page: usize,
+    c: &Content,
+    obj: Option<ObjRef>,
+) -> Result<ObjRef, EditError> {
     validate(c)?;
     let all = page_list(doc);
     check(&[page], all.len())?;
@@ -981,14 +1239,27 @@ fn write(doc: &mut Document, page: usize, c: &Content, obj: Option<ObjRef>) -> R
     let user_unit = p.user_unit(doc);
     // The page gets its own copy of its resources with the item's fonts and images added, and
     // without the Arabic fonts of the version it replaces.
-    let mut pres = p.dict.get(b"Resources").map(|r| doc.resolve(r)).and_then(|r| r.as_dict().cloned()).unwrap_or_default();
+    let mut pres = p
+        .dict
+        .get(b"Resources")
+        .map(|r| doc.resolve(r))
+        .and_then(|r| r.as_dict().cloned())
+        .unwrap_or_default();
     if let Some(r) = obj {
         drop_fonts(doc, &mut pres, &own_fonts(doc, r));
     }
-    let taken = pres.get(b"Font").map(|f| doc.resolve(f)).and_then(|f| f.as_dict().cloned()).unwrap_or_default();
+    let taken = pres
+        .get(b"Font")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_dict().cloned())
+        .unwrap_or_default();
     let (content, res) = draw(doc, c, view, &taken, obj.is_some())?;
     for (k, v) in res.iter() {
-        let mut sub = pres.get(k).map(|s| doc.resolve(s)).and_then(|s| s.as_dict().cloned()).unwrap_or_default();
+        let mut sub = pres
+            .get(k)
+            .map(|s| doc.resolve(s))
+            .and_then(|s| s.as_dict().cloned())
+            .unwrap_or_default();
         for (n2, o) in v.as_dict().into_iter().flat_map(|d| d.iter()) {
             sub.set(n2.clone(), o.clone());
         }
@@ -1013,7 +1284,10 @@ fn write(doc: &mut Document, page: usize, c: &Content, obj: Option<ObjRef>) -> R
             let p = page_list(doc).swap_remove(page);
             place_tagged(doc, &p, TAG, content.clone(), false)?;
             let p = page_list(doc).swap_remove(page);
-            let r = contents(doc, &p)?.last().and_then(Object::as_ref).ok_or_else(|| EditError::Invalid("could not add the content".into()))?;
+            let r = contents(doc, &p)?
+                .last()
+                .and_then(Object::as_ref)
+                .ok_or_else(|| EditError::Invalid("could not add the content".into()))?;
             doc.set(r, Object::Stream(stream));
             Ok(r)
         }
@@ -1036,14 +1310,23 @@ fn find(doc: &Document, page: usize, index: usize) -> Result<Added, EditError> {
         .into_iter()
         .filter(|a| a.page == page)
         .nth(index)
-        .ok_or_else(|| EditError::Invalid(format!("page {} has no added item {}", page + 1, index + 1)))
+        .ok_or_else(|| {
+            EditError::Invalid(format!("page {} has no added item {}", page + 1, index + 1))
+        })
 }
 
 /// Replace item `index` of `page` (moved, resized, retyped or reformatted).
-pub fn update_content(doc: &mut Document, page: usize, index: usize, c: &Content) -> Result<(), EditError> {
+pub fn update_content(
+    doc: &mut Document,
+    page: usize,
+    index: usize,
+    c: &Content,
+) -> Result<(), EditError> {
     let a = find(doc, page, index)?;
     if std::mem::discriminant(&a.content) != std::mem::discriminant(c) {
-        return Err(EditError::Invalid("an item can't change between text and image".into()));
+        return Err(EditError::Invalid(
+            "an item can't change between text and image".into(),
+        ));
     }
     write(doc, page, c, Some(a.obj))?;
     Ok(())
@@ -1053,7 +1336,10 @@ pub fn update_content(doc: &mut Document, page: usize, index: usize, c: &Content
 pub fn delete_content(doc: &mut Document, page: usize, index: usize) -> Result<(), EditError> {
     let a = find(doc, page, index)?;
     let p = page_list(doc).swap_remove(page);
-    let list: Vec<Object> = contents(doc, &p)?.into_iter().filter(|o| o.as_ref() != Some(a.obj)).collect();
+    let list: Vec<Object> = contents(doc, &p)?
+        .into_iter()
+        .filter(|o| o.as_ref() != Some(a.obj))
+        .collect();
     let fonts = own_fonts(doc, a.obj);
     // Only the page's own resources carry an item's fonts (`write` gives the page a copy).
     let res = match p.dict.get(b"Resources") {
@@ -1076,16 +1362,30 @@ pub fn delete_content(doc: &mut Document, page: usize, index: usize) -> Result<(
 /// The Type 3 fonts an Arabic item's stream shows text with. Each item has its own (`draw_shaped`
 /// names them so), so they go when the item is replaced or deleted.
 fn own_fonts(doc: &Document, obj: ObjRef) -> Vec<Vec<u8>> {
-    let Object::Stream(s) = &*doc.get(obj) else { return Vec::new() };
-    let Ok(data) = s.decoded() else { return Vec::new() };
-    data.split(u8::is_ascii_whitespace).filter_map(|w| w.strip_prefix(b"/")).filter(|w| w.starts_with(b"PCAr")).map(<[u8]>::to_vec).collect()
+    let Object::Stream(s) = &*doc.get(obj) else {
+        return Vec::new();
+    };
+    let Ok(data) = s.decoded() else {
+        return Vec::new();
+    };
+    data.split(u8::is_ascii_whitespace)
+        .filter_map(|w| w.strip_prefix(b"/"))
+        .filter(|w| w.starts_with(b"PCAr"))
+        .map(<[u8]>::to_vec)
+        .collect()
 }
 
 fn drop_fonts(doc: &Document, res: &mut Dict, names: &[Vec<u8>]) {
     if names.is_empty() {
         return;
     }
-    let Some(mut fonts) = res.get(b"Font").map(|f| doc.resolve(f)).and_then(|f| f.as_dict().cloned()) else { return };
+    let Some(mut fonts) = res
+        .get(b"Font")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_dict().cloned())
+    else {
+        return;
+    };
     for name in names {
         fonts.remove(name);
     }

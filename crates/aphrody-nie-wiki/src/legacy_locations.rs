@@ -11,10 +11,15 @@ fn present(value: &Value) -> bool {
     !value.is_null() && value.as_str() != Some("")
 }
 fn first(values: &[&Value]) -> Value {
-    values.iter().find(|value| present(value)).map_or(Value::Null, |value| (*value).clone())
+    values
+        .iter()
+        .find(|value| present(value))
+        .map_or(Value::Null, |value| (*value).clone())
 }
 fn string(value: &Value) -> String {
-    value.as_str().map_or_else(|| value.to_string(), str::to_owned)
+    value
+        .as_str()
+        .map_or_else(|| value.to_string(), str::to_owned)
 }
 fn decimal_prefix(value: &str) -> Option<i64> {
     let value = value.trim_start();
@@ -90,16 +95,23 @@ fn category_values(mut categories: Vec<(String, usize)>) -> Vec<Value> {
 /// Complete list; legacy query parameters were ignored, not pagination controls.
 pub fn shops(connection: &Connection) -> anyhow::Result<Value> {
     let index = item_index(connection);
-    let records = rows(connection, &format!("SELECT {SHOP_COLUMNS} FROM inagle_shops"), &[])
-        .unwrap_or_default();
+    let records = rows(
+        connection,
+        &format!("SELECT {SHOP_COLUMNS} FROM inagle_shops"),
+        &[],
+    )
+    .unwrap_or_default();
     type ShopGroup = (i64, Value, usize, Vec<(String, usize)>);
     let mut groups: Vec<ShopGroup> = Vec::new();
     for row in records {
         let id = integer(&row["shop_id"]).unwrap_or_default();
-        let position = groups.iter().position(|group| group.0 == id).unwrap_or_else(|| {
-            groups.push((id, row.clone(), 0, Vec::new()));
-            groups.len() - 1
-        });
+        let position = groups
+            .iter()
+            .position(|group| group.0 == id)
+            .unwrap_or_else(|| {
+                groups.push((id, row.clone(), 0, Vec::new()));
+                groups.len() - 1
+            });
         let (_, _, count, categories) = &mut groups[position];
         *count += 1;
         if let Some(item) = row["item_db_id"].as_str().and_then(|id| index.get(id)) {
@@ -130,8 +142,11 @@ pub fn shop(connection: &Connection, key: &str) -> anyhow::Result<Option<Value>>
     let mut items = Vec::new();
     let mut categories = Vec::new();
     for row in &records {
-        let slot =
-            if row["slot_index"].is_null() { String::new() } else { string(&row["slot_index"]) };
+        let slot = if row["slot_index"].is_null() {
+            String::new()
+        } else {
+            string(&row["slot_index"])
+        };
         let fallback = json!(format!("{}:{slot}", string(&row["shop_id"])));
         let db_id = first(&[&row["item_db_id"], &row["item_name_fr"], &fallback]);
         if !seen.insert(format!("{}:{slot}", string(&db_id))) {
@@ -162,12 +177,23 @@ pub fn shop(connection: &Connection, key: &str) -> anyhow::Result<Option<Value>>
 }
 
 fn stadium_value(row: &Value) -> Value {
-    let code = row["image_path"].as_str().unwrap_or("").rsplit('/').next().unwrap_or("");
+    let code = row["image_path"]
+        .as_str()
+        .unwrap_or("")
+        .rsplit('/')
+        .next()
+        .unwrap_or("");
     // TEXT indices intentionally retain the frozen JavaScript typeof behavior.
     let title = row["field_index"]
         .as_f64()
         .map(|index| format!("Terrain {}", index + 1.0))
-        .unwrap_or_else(|| if code.is_empty() { "Terrain".into() } else { code.into() });
+        .unwrap_or_else(|| {
+            if code.is_empty() {
+                "Terrain".into()
+            } else {
+                code.into()
+            }
+        });
     let image = format!("https://cdn.rosegriffon.fr/dx11/menu/220_img/stadium/{code}.png");
     json!({"id":row["id"],"code":code,"index":row["field_index"],"title":title,"image":image,"thumb":format!("{image}?w=400&format=webp&crop=bandes"),"full":format!("{image}?w=1600&format=webp&crop=bandes")})
 }
@@ -177,22 +203,36 @@ fn stadium_order(value: &Value) -> f64 {
     } else if value.as_str().is_some_and(|value| value.trim().is_empty()) {
         0.0
     } else {
-        value.as_f64().or_else(|| value.as_str()?.trim().parse().ok()).unwrap_or(f64::NAN)
+        value
+            .as_f64()
+            .or_else(|| value.as_str()?.trim().parse().ok())
+            .unwrap_or(f64::NAN)
     }
 }
 pub fn stadiums(connection: &Connection, query: Option<&str>) -> anyhow::Result<Value> {
     let query = query.unwrap_or("").trim().to_lowercase();
-    let mut records =
-        rows(connection, "SELECT id,field_index,image_path,condition FROM inagle_stadiums", &[])
-            .unwrap_or_default()
-            .iter()
-            .map(stadium_value)
-            .filter(|row| {
-                query.is_empty()
-                    || row["code"].as_str().unwrap_or("").to_lowercase().contains(&query)
-                    || row["title"].as_str().unwrap_or("").to_lowercase().contains(&query)
-            })
-            .collect::<Vec<_>>();
+    let mut records = rows(
+        connection,
+        "SELECT id,field_index,image_path,condition FROM inagle_stadiums",
+        &[],
+    )
+    .unwrap_or_default()
+    .iter()
+    .map(stadium_value)
+    .filter(|row| {
+        query.is_empty()
+            || row["code"]
+                .as_str()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains(&query)
+            || row["title"]
+                .as_str()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains(&query)
+    })
+    .collect::<Vec<_>>();
     records.sort_by(|a, b| {
         if a["index"] == b["index"] {
             a["id"].as_str().cmp(&b["id"].as_str())
@@ -250,7 +290,10 @@ mod tests {
         let connection = Connection::open_in_memory().unwrap();
         assert_eq!(shops(&connection).unwrap(), json!([]));
         assert!(shop(&connection, "1").unwrap().is_none());
-        assert_eq!(stadiums(&connection, None).unwrap(), json!({"data":[],"total":0}));
+        assert_eq!(
+            stadiums(&connection, None).unwrap(),
+            json!({"data":[],"total":0})
+        );
         assert!(stadium(&connection, "missing").unwrap().is_none());
         let raw = stadium_value(
             &json!({"id":"field","field_index":"2","image_path":"stadium/img_native"}),

@@ -15,7 +15,9 @@ struct Truth {
 
 fn noise(rng: &mut Rng) -> f64 {
     // Sum of uniforms ≈ Gaussian, σ ≈ 0.1 px.
-    let u: f64 = (0..4).map(|_| (rng.next_u64() % 10_000) as f64 / 10_000.0 - 0.5).sum();
+    let u: f64 = (0..4)
+        .map(|_| (rng.next_u64() % 10_000) as f64 / 10_000.0 - 0.5)
+        .sum();
     u * 0.17
 }
 
@@ -31,11 +33,21 @@ fn tracks_of(pts: &[V3], t: &Truth, seed: u64, noise_on: bool) -> CameraTracks {
             let uv = (p[2] > 0.1).then(|| [f * p[0] / p[2] + W / 2.0, f * p[1] / p[2] + H / 2.0]);
             match uv.filter(|u| u[0] >= 2.0 && u[1] >= 2.0 && u[0] < W - 2.0 && u[1] < H - 2.0) {
                 Some(u) => {
-                    let (nx, ny) = if noise_on { (noise(&mut rng), noise(&mut rng)) } else { (0.0, 0.0) };
+                    let (nx, ny) = if noise_on {
+                        (noise(&mut rng), noise(&mut rng))
+                    } else {
+                        (0.0, 0.0)
+                    };
                     let q = [(u[0] + nx) as f32, (u[1] + ny) as f32];
                     match &mut cur {
                         Some(tr) => tr.pts.push(q),
-                        None => cur = Some(Track2D { id: 0, start: k as u32, pts: vec![q] }),
+                        None => {
+                            cur = Some(Track2D {
+                                id: 0,
+                                start: k as u32,
+                                pts: vec![q],
+                            })
+                        }
                     }
                 }
                 None => {
@@ -53,7 +65,16 @@ fn tracks_of(pts: &[V3], t: &Truth, seed: u64, noise_on: bool) -> CameraTracks {
     for (i, tr) in tracks.iter_mut().enumerate() {
         tr.id = i as u32;
     }
-    CameraTracks { version: 1, size: [W, H], start: 0.0, frame_duration: 1.0 / 30.0, frames: t.cams.len() as u32, factor: 1.0, detailed: false, tracks }
+    CameraTracks {
+        version: 1,
+        size: [W, H],
+        start: 0.0,
+        frame_duration: 1.0 / 30.0,
+        frames: t.cams.len() as u32,
+        factor: 1.0,
+        detailed: false,
+        tracks,
+    }
 }
 
 fn random_points(n: usize, seed: u64, center: V3, ext: V3) -> Vec<V3> {
@@ -61,7 +82,11 @@ fn random_points(n: usize, seed: u64, center: V3, ext: V3) -> Vec<V3> {
     (0..n)
         .map(|_| {
             let mut u = || (rng.next_u64() % 100_000) as f64 / 100_000.0 - 0.5;
-            [center[0] + u() * ext[0], center[1] + u() * ext[1], center[2] + u() * ext[2]]
+            [
+                center[0] + u() * ext[0],
+                center[1] + u() * ext[1],
+                center[2] + u() * ext[2],
+            ]
         })
         .collect()
 }
@@ -71,7 +96,11 @@ fn moving_camera(frames: usize, f: impl Fn(usize) -> f64) -> Truth {
     let cams = (0..frames)
         .map(|k| {
             let t = k as f64 / (frames - 1) as f64;
-            let c = [-3.0 + 6.0 * t, -0.6 + 0.8 * t + 0.5 * (std::f64::consts::PI * t).sin(), -1.0 + 2.0 * t - 1.5 * (t - 0.5) * (t - 0.5)];
+            let c = [
+                -3.0 + 6.0 * t,
+                -0.6 + 0.8 * t + 0.5 * (std::f64::consts::PI * t).sin(),
+                -1.0 + 2.0 * t - 1.5 * (t - 0.5) * (t - 0.5),
+            ];
             // Look at the scene centre (0, 0, 10).
             let fwd = normalize(sub([0.3 * t, 0.2, 10.0], c));
             let right = normalize(cross([0.0, 1.0, 0.0], fwd));
@@ -88,12 +117,20 @@ fn moving_camera(frames: usize, f: impl Fn(usize) -> f64) -> Truth {
 /// Align the solved centres to the true ones (similarity) and return the RMS path error
 /// relative to the path length, plus the worst rotation error (degrees).
 fn path_error(s: &CameraSolve, t: &Truth) -> (f64, f64) {
-    let solved: Vec<usize> = (0..s.frames.len()).filter(|k| s.frames[*k].solved).collect();
+    let solved: Vec<usize> = (0..s.frames.len())
+        .filter(|k| s.frames[*k].solved)
+        .collect();
     let src: Vec<V3> = solved.iter().map(|k| s.frames[*k].center).collect();
     let dst: Vec<V3> = solved.iter().map(|k| t.cams[*k].1).collect();
     let sim = umeyama(&src, &dst).expect("alignment");
     let len = norm(sub(dst[0], dst[dst.len() - 1])).max(1e-9);
-    let rms = (src.iter().zip(&dst).map(|(a, b)| dot(sub(sim.apply(*a), *b), sub(sim.apply(*a), *b))).sum::<f64>() / src.len() as f64).sqrt();
+    let rms = (src
+        .iter()
+        .zip(&dst)
+        .map(|(a, b)| dot(sub(sim.apply(*a), *b), sub(sim.apply(*a), *b)))
+        .sum::<f64>()
+        / src.len() as f64)
+        .sqrt();
     // Rotation: R_true ≈ R_solved · simᵀ.
     let mut worst: f64 = 0.0;
     for k in &solved {
@@ -105,7 +142,13 @@ fn path_error(s: &CameraSolve, t: &Truth) -> (f64, f64) {
 }
 
 fn settings(shot: ShotType, method: SolveMethod) -> SolveSettings {
-    SolveSettings { shot, hfov: 0.0, method, deleted: vec![], lens_distortion: false }
+    SolveSettings {
+        shot,
+        hfov: 0.0,
+        method,
+        deleted: vec![],
+        lens_distortion: false,
+    }
 }
 
 #[test]
@@ -115,8 +158,19 @@ fn fixed_angle_solve_recovers_path_and_focal() {
     let pts = random_points(400, 1, [0.0, 0.0, 10.0], [14.0, 8.0, 8.0]);
     let tr = tracks_of(&pts, &t, 2, true);
     let t0 = std::time::Instant::now();
-    let s = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Typical), None).expect("solve");
-    eprintln!("fixed: {:?} err {:.3} px focal {:.1} in {:?}", s.method_used, s.average_error, s.focal(), t0.elapsed());
+    let s = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Typical),
+        None,
+    )
+    .expect("solve");
+    eprintln!(
+        "fixed: {:?} err {:.3} px focal {:.1} in {:?}",
+        s.method_used,
+        s.average_error,
+        s.focal(),
+        t0.elapsed()
+    );
     assert!(s.frames.iter().all(|c| c.solved));
     assert!(s.average_error < 0.5, "{}", s.average_error);
     assert!((s.focal() - f).abs() / f < 0.02, "focal {}", s.focal());
@@ -127,7 +181,10 @@ fn fixed_angle_solve_recovers_path_and_focal() {
     assert!(norm(s.frames[0].center) < 1e-9 && norm(s.frames[0].rot) < 1e-9);
     // Serde round trip.
     let j = s.to_json();
-    assert_eq!(CameraSolve::from_json(&j).unwrap().points.len(), s.points.len());
+    assert_eq!(
+        CameraSolve::from_json(&j).unwrap().points.len(),
+        s.points.len()
+    );
 }
 
 #[test]
@@ -136,7 +193,12 @@ fn auto_detect_picks_a_general_model_for_a_translating_camera() {
     let t = moving_camera(30, |_| f);
     let pts = random_points(300, 3, [0.0, 0.0, 10.0], [14.0, 8.0, 8.0]);
     let tr = tracks_of(&pts, &t, 4, true);
-    let s = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Auto), None).expect("solve");
+    let s = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Auto),
+        None,
+    )
+    .expect("solve");
     assert_eq!(s.method_used, SolveMethod::Typical);
     assert!(s.average_error < 0.5);
     assert!((s.focal() - f).abs() / f < 0.02, "focal {}", s.focal());
@@ -149,8 +211,18 @@ fn specified_angle_of_view_is_kept() {
     let pts = random_points(300, 5, [0.0, 0.0, 10.0], [14.0, 8.0, 8.0]);
     let tr = tracks_of(&pts, &t, 6, true);
     let hfov = 2.0 * (W * 0.5 / f).atan().to_degrees();
-    let s =
-        solve(&tr, &SolveSettings { shot: ShotType::SpecifyAngle, hfov, method: SolveMethod::Typical, deleted: vec![], lens_distortion: false }, None).unwrap();
+    let s = solve(
+        &tr,
+        &SolveSettings {
+            shot: ShotType::SpecifyAngle,
+            hfov,
+            method: SolveMethod::Typical,
+            deleted: vec![],
+            lens_distortion: false,
+        },
+        None,
+    )
+    .unwrap();
     assert!((s.focal() - f).abs() < 1e-6);
     assert!(s.average_error < 0.5);
     let (pe, _) = path_error(&s, &t);
@@ -162,12 +234,21 @@ fn variable_zoom_recovers_per_frame_focal() {
     let t = moving_camera(40, |k| 950.0 + 6.0 * k as f64);
     let pts = random_points(450, 7, [0.0, 0.0, 10.0], [16.0, 9.0, 8.0]);
     let tr = tracks_of(&pts, &t, 8, true);
-    let s = solve(&tr, &settings(ShotType::VariableZoom, SolveMethod::Typical), None).expect("solve");
+    let s = solve(
+        &tr,
+        &settings(ShotType::VariableZoom, SolveMethod::Typical),
+        None,
+    )
+    .expect("solve");
     eprintln!("variable: err {:.3}", s.average_error);
     assert!(s.average_error < 0.5);
     for (k, c) in s.frames.iter().enumerate() {
         let f = t.cams[k].2;
-        assert!((c.focal - f).abs() / f < 0.02, "frame {k}: {} vs {f}", c.focal);
+        assert!(
+            (c.focal - f).abs() / f < 0.02,
+            "frame {k}: {} vs {f}",
+            c.focal
+        );
     }
 }
 
@@ -177,15 +258,35 @@ fn tripod_pan_solve() {
     let cams = (0..40)
         .map(|k| {
             let a = -0.4 + 0.8 * k as f64 / 39.0;
-            (mm(&rodrigues([0.0, 0.0, 0.02]), &mm(&rodrigues([0.05 * a, 0.0, 0.0]), &rodrigues([0.0, a, 0.0]))), [0.0; 3], f)
+            (
+                mm(
+                    &rodrigues([0.0, 0.0, 0.02]),
+                    &mm(&rodrigues([0.05 * a, 0.0, 0.0]), &rodrigues([0.0, a, 0.0])),
+                ),
+                [0.0; 3],
+                f,
+            )
         })
         .collect();
     let t = Truth { cams };
     // Points all around at varying distances (rotation only: depth is unobservable).
-    let pts = random_points(600, 9, [0.0, 0.0, 0.0], [60.0, 20.0, 60.0]).into_iter().filter(|p| p[2] > 3.0).collect::<Vec<_>>();
+    let pts = random_points(600, 9, [0.0, 0.0, 0.0], [60.0, 20.0, 60.0])
+        .into_iter()
+        .filter(|p| p[2] > 3.0)
+        .collect::<Vec<_>>();
     let tr = tracks_of(&pts, &t, 10, true);
-    let s = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Auto), None).expect("solve");
-    eprintln!("tripod: {:?} err {:.3} focal {:.1}", s.method_used, s.average_error, s.focal());
+    let s = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Auto),
+        None,
+    )
+    .expect("solve");
+    eprintln!(
+        "tripod: {:?} err {:.3} focal {:.1}",
+        s.method_used,
+        s.average_error,
+        s.focal()
+    );
     assert_eq!(s.method_used, SolveMethod::TripodPan);
     assert!(s.average_error < 0.5);
     assert!((s.focal() - f).abs() / f < 0.02, "{}", s.focal());
@@ -205,7 +306,11 @@ fn mostly_flat_scene_and_ground_plane() {
     let cams = (0..40)
         .map(|k| {
             let t = k as f64 / 39.0;
-            let c = [-2.0 + 4.0 * t, -0.3 * (std::f64::consts::PI * t).sin(), 2.0 * t];
+            let c = [
+                -2.0 + 4.0 * t,
+                -0.3 * (std::f64::consts::PI * t).sin(),
+                2.0 * t,
+            ];
             let fwd = normalize([0.1 - 0.2 * t, 0.45, 1.0]);
             let right = normalize(cross([0.0, 1.0, 0.0], fwd));
             let down = cross(fwd, right);
@@ -214,11 +319,24 @@ fn mostly_flat_scene_and_ground_plane() {
         .collect();
     let t = Truth { cams };
     let mut rng = Rng(11);
-    let pts: Vec<V3> = (0..500).map(|_| [((rng.next_u64() % 2000) as f64 / 100.0) - 10.0, 2.0, 2.0 + (rng.next_u64() % 2000) as f64 / 100.0]).collect();
+    let pts: Vec<V3> = (0..500)
+        .map(|_| {
+            [
+                ((rng.next_u64() % 2000) as f64 / 100.0) - 10.0,
+                2.0,
+                2.0 + (rng.next_u64() % 2000) as f64 / 100.0,
+            ]
+        })
+        .collect();
     let tr = tracks_of(&pts, &t, 12, true);
     for method in [SolveMethod::MostlyFlat, SolveMethod::Auto] {
         let s = solve(&tr, &settings(ShotType::FixedAngle, method), None).expect("solve");
-        eprintln!("flat {method:?}: {:?} err {:.3} focal {:.1}", s.method_used, s.average_error, s.focal());
+        eprintln!(
+            "flat {method:?}: {:?} err {:.3} focal {:.1}",
+            s.method_used,
+            s.average_error,
+            s.focal()
+        );
         assert_eq!(s.method_used, SolveMethod::MostlyFlat);
         assert!(s.average_error < 0.5, "{}", s.average_error);
         assert!((s.focal() - f).abs() / f < 0.02, "{}", s.focal());
@@ -227,12 +345,25 @@ fn mostly_flat_scene_and_ground_plane() {
     }
     // Ground plane from the solved (coplanar) points: every point lies on it.
     let hfov = 2.0 * (W * 0.5 / f).atan().to_degrees();
-    let mut s =
-        solve(&tr, &SolveSettings { shot: ShotType::SpecifyAngle, hfov, method: SolveMethod::MostlyFlat, deleted: vec![], lens_distortion: false }, None)
-            .expect("solve");
+    let mut s = solve(
+        &tr,
+        &SolveSettings {
+            shot: ShotType::SpecifyAngle,
+            hfov,
+            method: SolveMethod::MostlyFlat,
+            deleted: vec![],
+            lens_distortion: false,
+        },
+        None,
+    )
+    .expect("solve");
     let ids: Vec<u32> = s.visible(0).map(|p| p.id).take(12).collect();
     let g = s.ground_from(&ids, 0).expect("ground");
-    let spread = s.points.iter().map(|p| dot(sub(p.pos, g.origin), g.normal).abs()).fold(0.0, f64::max);
+    let spread = s
+        .points
+        .iter()
+        .map(|p| dot(sub(p.pos, g.origin), g.normal).abs())
+        .fold(0.0, f64::max);
     let depth = norm(sub(s.frames[0].center, g.origin));
     assert!(spread < 0.01 * depth, "{spread}");
     // Up points towards the camera.
@@ -241,7 +372,11 @@ fn mostly_flat_scene_and_ground_plane() {
     let w = s.world([W, H], 1000.0);
     // In the world, ground points have y ≈ 0 and the cameras are above (y < 0).
     for p in s.points.iter().take(20) {
-        assert!(w.apply(p.pos)[1].abs() < 0.01 * 1000.0 * depth, "{:?}", w.apply(p.pos));
+        assert!(
+            w.apply(p.pos)[1].abs() < 0.01 * 1000.0 * depth,
+            "{:?}",
+            w.apply(p.pos)
+        );
     }
     assert!(w.apply(s.frames[0].center)[1] < 0.0);
     assert!(norm(w.apply(g.origin)) < 1e-6);
@@ -254,12 +389,25 @@ fn deleted_tracks_are_ignored_and_cancel_stops() {
     let tr = tracks_of(&pts, &t, 14, true);
     let deleted: Vec<u32> = (0..40).collect();
     let hfov = 2.0 * (W * 0.5 / 1000.0f64).atan().to_degrees();
-    let s =
-        solve(&tr, &SolveSettings { shot: ShotType::SpecifyAngle, hfov, method: SolveMethod::Typical, deleted: deleted.clone(), lens_distortion: false }, None)
-            .unwrap();
+    let s = solve(
+        &tr,
+        &SolveSettings {
+            shot: ShotType::SpecifyAngle,
+            hfov,
+            method: SolveMethod::Typical,
+            deleted: deleted.clone(),
+            lens_distortion: false,
+        },
+        None,
+    )
+    .unwrap();
     assert!(s.points.iter().all(|p| !deleted.contains(&p.id)));
     let stop = std::sync::atomic::AtomicBool::new(true);
-    let r = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Typical), Some(&stop));
+    let r = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Typical),
+        Some(&stop),
+    );
     assert!(r.is_err());
 }
 
@@ -303,16 +451,38 @@ fn rendered_scene_end_to_end() {
     };
     // Planes: (point, normal, u axis, v axis).
     let planes: [(V3, V3, V3, V3); 3] = [
-        ([0.0, 1.5, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
-        ([0.0, 0.0, 10.0], [0.0, 0.0, -1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
-        ([-1.0, 0.0, 6.0], [0.3, 0.0, -1.0], [1.0, 0.0, 0.3], [0.0, 1.0, 0.0]),
+        (
+            [0.0, 1.5, 0.0],
+            [0.0, -1.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ),
+        (
+            [0.0, 0.0, 10.0],
+            [0.0, 0.0, -1.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ),
+        (
+            [-1.0, 0.0, 6.0],
+            [0.3, 0.0, -1.0],
+            [1.0, 0.0, 0.3],
+            [0.0, 1.0, 0.0],
+        ),
     ];
     let render = |k: usize| {
         let (r, c, f) = t.cams[k];
         let mut img = Image::new(w, h);
         for y in 0..h {
             for x in 0..w {
-                let d = mtv(&r, [(x as f64 + 0.5 - w as f64 / 2.0) / f, (y as f64 + 0.5 - h as f64 / 2.0) / f, 1.0]);
+                let d = mtv(
+                    &r,
+                    [
+                        (x as f64 + 0.5 - w as f64 / 2.0) / f,
+                        (y as f64 + 0.5 - h as f64 / 2.0) / f,
+                        1.0,
+                    ],
+                );
                 let mut best = (f64::INFINITY, 0.0f32);
                 for (i, (p0, n, ua, va)) in planes.iter().enumerate() {
                     let den = dot(*n, d);
@@ -322,11 +492,20 @@ fn rendered_scene_end_to_end() {
                     let tt = dot(*n, sub(*p0, c)) / den;
                     let hit = add(c, scale(d, tt));
                     // The box face is limited in extent.
-                    if i == 2 && (dot(sub(hit, *p0), *ua).abs() > 1.2 || dot(sub(hit, *p0), *va).abs() > 1.0) {
+                    if i == 2
+                        && (dot(sub(hit, *p0), *ua).abs() > 1.2
+                            || dot(sub(hit, *p0), *va).abs() > 1.0)
+                    {
                         continue;
                     }
                     if tt > 0.1 && tt < best.0 {
-                        best = (tt, tex(dot(sub(hit, *p0), *ua) + 10.0 * i as f64, dot(sub(hit, *p0), *va)));
+                        best = (
+                            tt,
+                            tex(
+                                dot(sub(hit, *p0), *ua) + 10.0 * i as f64,
+                                dot(sub(hit, *p0), *va),
+                            ),
+                        );
                     }
                 }
                 let v = best.1;
@@ -342,8 +521,19 @@ fn rendered_scene_end_to_end() {
     }
     let tr = an.finish(0.0, 1.0 / 24.0);
     assert!(tr.tracks.len() > 100, "{}", tr.tracks.len());
-    let s = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Auto), None).expect("solve");
-    eprintln!("rendered: {:?} err {:.3} focal {:.1} points {}", s.method_used, s.average_error, s.focal(), s.points.len());
+    let s = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Auto),
+        None,
+    )
+    .expect("solve");
+    eprintln!(
+        "rendered: {:?} err {:.3} focal {:.1} points {}",
+        s.method_used,
+        s.average_error,
+        s.focal(),
+        s.points.len()
+    );
     assert!(s.average_error < 0.5, "{}", s.average_error);
     assert!((s.focal() - f).abs() / f < 0.05, "{}", s.focal());
     let (pe, _) = path_error(&s, &t);
@@ -359,8 +549,20 @@ fn perf_long_clip() {
     let pts = random_points(900, 21, [0.0, 0.0, 10.0], [16.0, 9.0, 8.0]);
     let tr = tracks_of(&pts, &t, 22, true);
     let t0 = std::time::Instant::now();
-    let s = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Auto), None).expect("solve");
-    eprintln!("300 frames, {} tracks: {:?} err {:.3} focal {:.1} in {:?}", tr.tracks.len(), s.method_used, s.average_error, s.focal(), t0.elapsed());
+    let s = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Auto),
+        None,
+    )
+    .expect("solve");
+    eprintln!(
+        "300 frames, {} tracks: {:?} err {:.3} focal {:.1} in {:?}",
+        tr.tracks.len(),
+        s.method_used,
+        s.average_error,
+        s.focal(),
+        t0.elapsed()
+    );
     assert!(s.average_error < 0.5);
 }
 
@@ -369,18 +571,34 @@ fn perf_long_clip() {
 #[test]
 #[ignore]
 fn solve_saved_tracks() {
-    let Some(path) = std::env::var_os("EC_CAMTRACK_FILE") else { return };
+    let Some(path) = std::env::var_os("EC_CAMTRACK_FILE") else {
+        return;
+    };
     let mut tr = CameraTracks::from_json(&std::fs::read_to_string(path).unwrap()).unwrap();
-    if let Some(maxy) = std::env::var("EC_CAMTRACK_MAXY").ok().and_then(|v| v.parse::<f32>().ok()) {
+    if let Some(maxy) = std::env::var("EC_CAMTRACK_MAXY")
+        .ok()
+        .and_then(|v| v.parse::<f32>().ok())
+    {
         tr.tracks.retain(|t| t.pts.iter().all(|p| p[1] < maxy));
     }
-    let shot = if std::env::var_os("EC_CAMTRACK_VARIABLE").is_some() { ShotType::VariableZoom } else { ShotType::FixedAngle };
+    let shot = if std::env::var_os("EC_CAMTRACK_VARIABLE").is_some() {
+        ShotType::VariableZoom
+    } else {
+        ShotType::FixedAngle
+    };
     let t0 = std::time::Instant::now();
     // With the true cameras (`[{pos, poi, zoom}]` per frame, two-node), how consistent are the
     // tracks themselves?
     if let Some(tp) = std::env::var_os("EC_CAMTRACK_TRUTH") {
-        let v: Vec<serde_json::Value> = serde_json::from_str(&std::fs::read_to_string(tp).unwrap()).unwrap();
-        let g = |x: &serde_json::Value| -> V3 { [x[0].as_f64().unwrap(), x[1].as_f64().unwrap(), x[2].as_f64().unwrap()] };
+        let v: Vec<serde_json::Value> =
+            serde_json::from_str(&std::fs::read_to_string(tp).unwrap()).unwrap();
+        let g = |x: &serde_json::Value| -> V3 {
+            [
+                x[0].as_f64().unwrap(),
+                x[1].as_f64().unwrap(),
+                x[2].as_f64().unwrap(),
+            ]
+        };
         let cams: Vec<(super::geometry::Pose, f64)> = v
             .iter()
             .map(|c| {
@@ -389,7 +607,13 @@ fn solve_saved_tracks() {
                 let d0 = [0.0, 1.0, 0.0];
                 let down = normalize(sub(d0, scale(fwd, dot(d0, fwd))));
                 let right = cross(down, fwd);
-                (super::geometry::Pose { r: [right, down, fwd], c: pos }, c["zoom"].as_f64().unwrap())
+                (
+                    super::geometry::Pose {
+                        r: [right, down, fwd],
+                        c: pos,
+                    },
+                    c["zoom"].as_f64().unwrap(),
+                )
             })
             .collect();
         let (w, h) = (tr.size[0], tr.size[1]);
@@ -402,13 +626,25 @@ fn solve_saved_tracks() {
                 .enumerate()
                 .map(|(i, p)| {
                     let (pose, z) = cams[t.start as usize + i];
-                    (pose, [(p[0] as f64 - w / 2.0) / z, (p[1] as f64 - h / 2.0) / z])
+                    (
+                        pose,
+                        [(p[0] as f64 - w / 2.0) / z, (p[1] as f64 - h / 2.0) / z],
+                    )
                 })
                 .collect();
-            let Some(x) = super::geometry::triangulate(&views) else { continue };
-            let e: Vec<f64> = views.iter().filter_map(|(p, o)| super::geometry::reproj2(p, x, *o).map(|e| e.sqrt() * cams[0].1)).collect();
+            let Some(x) = super::geometry::triangulate(&views) else {
+                continue;
+            };
+            let e: Vec<f64> = views
+                .iter()
+                .filter_map(|(p, o)| {
+                    super::geometry::reproj2(p, x, *o).map(|e| e.sqrt() * cams[0].1)
+                })
+                .collect();
             means.push((e.iter().sum::<f64>() / e.len().max(1) as f64, t.pts[0]));
-            if std::env::var_os("EC_CAMTRACK_TRUTH_FILTER").is_some() && means.last().unwrap().0 > 1.0 {
+            if std::env::var_os("EC_CAMTRACK_TRUTH_FILTER").is_some()
+                && means.last().unwrap().0 > 1.0
+            {
                 drop_ids.push(t.id);
             }
         }
@@ -424,7 +660,10 @@ fn solve_saved_tracks() {
         }
     }
     let mut st = settings(shot, SolveMethod::Auto);
-    if let Some(a) = std::env::var("EC_CAMTRACK_AOV").ok().and_then(|v| v.parse::<f64>().ok()) {
+    if let Some(a) = std::env::var("EC_CAMTRACK_AOV")
+        .ok()
+        .and_then(|v| v.parse::<f64>().ok())
+    {
         st.shot = ShotType::SpecifyAngle;
         st.hfov = a;
     }
@@ -459,10 +698,27 @@ fn lens_distortion_is_recovered_in_the_bundle_adjustment() {
     let f = 1000.0;
     let t = moving_camera(36, |_| f);
     let pts = random_points(450, 7, [0.0, 0.0, 10.0], [16.0, 9.0, 8.0]);
-    let truth = Distortion { k1: -0.12, k2: 0.03, radius: 0.5 * W.hypot(H) };
+    let truth = Distortion {
+        k1: -0.12,
+        k2: 0.03,
+        radius: 0.5 * W.hypot(H),
+    };
     let tr = distort_tracks(&tracks_of(&pts, &t, 8, true), &truth);
-    let plain = solve(&tr, &settings(ShotType::FixedAngle, SolveMethod::Typical), None).expect("pinhole solve");
-    let lens = solve(&tr, &SolveSettings { lens_distortion: true, ..settings(ShotType::FixedAngle, SolveMethod::Typical) }, None).expect("lens solve");
+    let plain = solve(
+        &tr,
+        &settings(ShotType::FixedAngle, SolveMethod::Typical),
+        None,
+    )
+    .expect("pinhole solve");
+    let lens = solve(
+        &tr,
+        &SolveSettings {
+            lens_distortion: true,
+            ..settings(ShotType::FixedAngle, SolveMethod::Typical)
+        },
+        None,
+    )
+    .expect("lens solve");
     let d = lens.distortion.expect("distortion solved");
     eprintln!(
         "pinhole error {:.3} px (focal {:.1}); with distortion {:.3} px (focal {:.1}), k1 {:.4} k2 {:.4}",
@@ -478,8 +734,17 @@ fn lens_distortion_is_recovered_in_the_bundle_adjustment() {
     assert!((d.k2 - truth.k2).abs() < 0.01, "k2 {}", d.k2);
     // The distortion model explains the tracks: about the noise level, far below the pinhole fit.
     assert!(lens.average_error < 0.3, "{}", lens.average_error);
-    assert!(lens.average_error < 0.5 * plain.average_error, "{} vs {}", lens.average_error, plain.average_error);
-    assert!((lens.focal() - f).abs() < 0.02 * f, "focal {}", lens.focal());
+    assert!(
+        lens.average_error < 0.5 * plain.average_error,
+        "{} vs {}",
+        lens.average_error,
+        plain.average_error
+    );
+    assert!(
+        (lens.focal() - f).abs() < 0.02 * f,
+        "focal {}",
+        lens.focal()
+    );
     let (path, rot) = path_error(&lens, &t);
     assert!(path < 0.01 && rot < 0.3, "path {path} rot {rot}");
     // Projection through the lens lands on the (distorted) tracks; undistorting inverts it.
@@ -489,7 +754,13 @@ fn lens_distortion_is_recovered_in_the_bundle_adjustment() {
     assert!((back[0] - p[0]).abs() < 1e-6 && (back[1] - p[1]).abs() < 1e-6);
     let sp = &lens.points[0];
     let k = sp.first as usize;
-    let obs = tr.track(sp.id).and_then(|t| t.at(k as u32)).expect("observed");
+    let obs = tr
+        .track(sp.id)
+        .and_then(|t| t.at(k as u32))
+        .expect("observed");
     let proj = lens.project(k, sp.pos, false).expect("in front");
-    assert!((proj[0] - obs[0]).hypot(proj[1] - obs[1]) < 2.0, "{proj:?} vs {obs:?}");
+    assert!(
+        (proj[0] - obs[0]).hypot(proj[1] - obs[1]) < 2.0,
+        "{proj:?} vs {obs:?}"
+    );
 }

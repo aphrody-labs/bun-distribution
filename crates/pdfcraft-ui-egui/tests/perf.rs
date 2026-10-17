@@ -11,8 +11,16 @@ fn load_average() -> Option<f64> {
     if let Ok(s) = std::fs::read_to_string("/proc/loadavg") {
         return s.split_whitespace().next()?.parse().ok();
     }
-    let out = std::process::Command::new("sysctl").args(["-n", "vm.loadavg"]).output().ok()?;
-    String::from_utf8_lossy(&out.stdout).trim_matches(|c: char| c == '{' || c == '}' || c.is_whitespace()).split_whitespace().next()?.parse().ok()
+    let out = std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok()?;
+    String::from_utf8_lossy(&out.stdout)
+        .trim_matches(|c: char| c == '{' || c == '}' || c.is_whitespace())
+        .split_whitespace()
+        .next()?
+        .parse()
+        .ok()
 }
 
 /// Frame budgets only mean something on a machine that isn't overcommitted: with the load
@@ -21,7 +29,9 @@ fn overloaded() -> bool {
     let cores = std::thread::available_parallelism().map_or(4, |n| n.get()) as f64;
     match load_average() {
         Some(l) if l > 2.0 * cores => {
-            eprintln!("PERF skipped: load average {l:.0} on {cores} cores; frame budgets need a quiet machine");
+            eprintln!(
+                "PERF skipped: load average {l:.0} on {cores} cores; frame budgets need a quiet machine"
+            );
             true
         }
         _ => false,
@@ -62,7 +72,10 @@ fn best_average(label: &str, frames: usize, mut step: impl FnMut(usize)) -> std:
 fn big(n: usize) -> Vec<u8> {
     let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 3 * i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 612 792] >>", kids.join(" ")));
+    objs.push(format!(
+        "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 612 792] >>",
+        kids.join(" ")
+    ));
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
     for i in 0..n {
         objs.push(format!(
@@ -70,9 +83,19 @@ fn big(n: usize) -> Vec<u8> {
             5 + 3 * i,
             6 + 3 * i
         ));
-        let body: String =
-            (0..40).map(|l| format!("BT /F1 10 Tf 72 {} Td (Page {} line {l} with some words to lay out) Tj ET\n", 720 - l * 15, i + 1)).collect();
-        objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+        let body: String = (0..40)
+            .map(|l| {
+                format!(
+                    "BT /F1 10 Tf 72 {} Td (Page {} line {l} with some words to lay out) Tj ET\n",
+                    720 - l * 15,
+                    i + 1
+                )
+            })
+            .collect();
+        objs.push(format!(
+            "<< /Length {} >>\nstream\n{body}\nendstream",
+            body.len()
+        ));
         objs.push("<< /Type /Annot /Subtype /Square /Rect [72 72 144 144] /C [1 0 0] /T (Ada) /Contents (Check) >>".into());
     }
     let mut out = b"%PDF-1.7\n".to_vec();
@@ -86,7 +109,13 @@ fn big(n: usize) -> Vec<u8> {
     for o in offs {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -95,15 +124,19 @@ fn scrolling_a_500_page_document_stays_within_the_frame_budget() {
     if overloaded() {
         return;
     }
-    let _turn = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let _turn = SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let bytes = big(500);
     let t0 = std::time::Instant::now();
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("big.pdf", None, bytes).expect("opens");
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("big.pdf", None, bytes).expect("opens");
+            app
+        });
     h.run_steps(4);
     eprintln!("PERF open {:?}", t0.elapsed());
     // Scroll through the document: 200 frames, jumping ~2 pages per frame.
@@ -119,17 +152,21 @@ fn panels_with_hundreds_of_items_stay_within_the_frame_budget() {
     if overloaded() {
         return;
     }
-    let _turn = SERIAL.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let _turn = SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let bytes = big(500);
     for panel in ["comments", "pages", "fields"] {
         let b = bytes.clone();
-        let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            app.open_bytes("big.pdf", None, b).expect("opens");
-            app.set_option("panel", panel).unwrap();
-            app
-        });
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1400.0, 900.0))
+            .build_eframe(move |_cc| {
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                app.open_bytes("big.pdf", None, b).expect("opens");
+                app.set_option("panel", panel).unwrap();
+                app
+            });
         h.run_steps(4);
         let avg = best_average(panel, 100, |f| {
             h.state_mut().views[0].goto = Some(((f * 5) % 500, 0.3));

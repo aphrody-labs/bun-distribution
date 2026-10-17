@@ -41,13 +41,12 @@ use bevy_ecs::{
     schedule::{IntoScheduleConfigs, SystemSet},
     system::{Query, Res},
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect, ReflectFromReflect};
+use bevy_reflect::{Reflect, ReflectFromReflect, std_traits::ReflectDefault};
 
 use crate::{
-    color_from_entity,
+    AppGizmoBuilder, color_from_entity,
     config::{GizmoConfigGroup, GizmoConfigStore},
     gizmos::Gizmos,
-    AppGizmoBuilder,
 };
 
 /// A [`Plugin`] that provides visualization of [`Frustum`]s for debugging.

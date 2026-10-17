@@ -119,11 +119,18 @@ impl SqliteBackend {
             Ok(conn)
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite open: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite open: {e}"),
+        })?;
 
         debug!(path = %path.display(), "opened sqlite backend");
-        Ok(Self { path, conn: Arc::new(Mutex::new(conn)) })
+        Ok(Self {
+            path,
+            conn: Arc::new(Mutex::new(conn)),
+        })
     }
 
     /// Filesystem path the backend was opened with (mostly for diagnostics).
@@ -157,7 +164,10 @@ fn encode_embedding(emb: &Embedding) -> Vec<u8> {
 fn decode_embedding(bytes: &[u8]) -> Result<Embedding, MemoryError> {
     if !bytes.len().is_multiple_of(4) {
         return Err(MemoryError::Internal {
-            message: format!("embedding blob length {} is not a multiple of 4", bytes.len()),
+            message: format!(
+                "embedding blob length {} is not a multiple of 4",
+                bytes.len()
+            ),
         });
     }
     let mut out = Vec::with_capacity(bytes.len() / 4);
@@ -229,7 +239,9 @@ fn dt_to_millis(dt: DateTime<Utc>) -> i64 {
 }
 
 fn millis_to_dt(millis: i64) -> DateTime<Utc> {
-    Utc.timestamp_millis_opt(millis).single().unwrap_or_else(Utc::now)
+    Utc.timestamp_millis_opt(millis)
+        .single()
+        .unwrap_or_else(Utc::now)
 }
 
 // ---------------------------------------------------------------------------
@@ -260,13 +272,19 @@ impl MemoryBackend for SqliteBackend {
                     embedding  = excluded.embedding,  \
                     metadata   = excluded.metadata,   \
                     updated_at = excluded.updated_at",
-                params![key, ns, content, embedding, metadata, created_at, updated_at],
+                params![
+                    key, ns, content, embedding, metadata, created_at, updated_at
+                ],
             )?;
             Ok(())
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite put: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite put: {e}"),
+        })?;
         trace!("sqlite put ok");
         Ok(())
     }
@@ -283,8 +301,12 @@ impl MemoryBackend for SqliteBackend {
             stmt.query_row(params![key], row_to_record).optional()
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite get: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite get: {e}"),
+        })?;
         match raw {
             Some(r) => Ok(Some(raw_to_record(r)?)),
             None => Ok(None),
@@ -320,14 +342,20 @@ impl MemoryBackend for SqliteBackend {
             Ok(out)
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite search: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite search: {e}"),
+        })?;
 
         let query_len = query.len();
         let mut scored: Vec<(MemoryRecord, f32)> = Vec::with_capacity(raws.len());
         for raw in raws {
             let record = raw_to_record(raw)?;
-            let Some(ref emb) = record.embedding else { continue };
+            let Some(ref emb) = record.embedding else {
+                continue;
+            };
             if emb.len() != query_len {
                 continue;
             }
@@ -348,8 +376,12 @@ impl MemoryBackend for SqliteBackend {
             Ok(())
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite delete: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite delete: {e}"),
+        })?;
         Ok(())
     }
 
@@ -371,8 +403,12 @@ impl MemoryBackend for SqliteBackend {
             Ok(out)
         })
         .await
-        .map_err(|e| MemoryError::Internal { message: format!("join error: {e}") })?
-        .map_err(|e| MemoryError::Internal { message: format!("sqlite list: {e}") })?;
+        .map_err(|e| MemoryError::Internal {
+            message: format!("join error: {e}"),
+        })?
+        .map_err(|e| MemoryError::Internal {
+            message: format!("sqlite list: {e}"),
+        })?;
 
         let mut records = Vec::with_capacity(raws.len());
         for raw in raws {
@@ -391,7 +427,9 @@ mod tests {
     use super::*;
 
     async fn make_backend() -> SqliteBackend {
-        SqliteBackend::in_memory().await.expect("open in-memory sqlite")
+        SqliteBackend::in_memory()
+            .await
+            .expect("open in-memory sqlite")
     }
 
     #[tokio::test]
@@ -399,14 +437,21 @@ mod tests {
         let mut b = make_backend().await;
         let mut rec =
             MemoryRecord::new("test", "hello sqlite").with_embedding(vec![0.1, 0.2, 0.3, 0.4]);
-        rec.metadata.insert("subject".into(), serde_json::Value::String("hi".into()));
+        rec.metadata
+            .insert("subject".into(), serde_json::Value::String("hi".into()));
         let key = format!("{}/{}", rec.ns, rec.id);
         b.put(&key, rec.clone()).await.expect("put");
         let fetched = b.get(&key).await.expect("get").expect("present");
         assert_eq!(fetched.content, "hello sqlite");
         assert_eq!(fetched.ns, "test");
-        assert_eq!(fetched.embedding.as_deref(), Some([0.1_f32, 0.2, 0.3, 0.4].as_slice()));
-        assert_eq!(fetched.metadata.get("subject").and_then(|v| v.as_str()), Some("hi"));
+        assert_eq!(
+            fetched.embedding.as_deref(),
+            Some([0.1_f32, 0.2, 0.3, 0.4].as_slice())
+        );
+        assert_eq!(
+            fetched.metadata.get("subject").and_then(|v| v.as_str()),
+            Some("hi")
+        );
     }
 
     #[tokio::test]
@@ -440,7 +485,12 @@ mod tests {
         let results = b.search(&q, 3).await.expect("search");
         assert_eq!(results.len(), 3);
         for w in results.windows(2) {
-            assert!(w[0].1 >= w[1].1, "results not sorted: {} < {}", w[0].1, w[1].1);
+            assert!(
+                w[0].1 >= w[1].1,
+                "results not sorted: {} < {}",
+                w[0].1,
+                w[1].1
+            );
         }
         assert_eq!(results[0].0.content, "near");
     }
@@ -453,7 +503,10 @@ mod tests {
                 MemoryRecord::new("k", format!("item-{i}")).with_embedding(vec![f32::from(i), 0.0]);
             b.put(&format!("k/{}", r.id), r).await.unwrap();
         }
-        let r = b.search(&[1.0_f32, 0.0].to_vec(), 99).await.expect("search");
+        let r = b
+            .search(&[1.0_f32, 0.0].to_vec(), 99)
+            .await
+            .expect("search");
         assert_eq!(r.len(), 3, "k>n must return n results, got {}", r.len());
     }
 
@@ -461,7 +514,11 @@ mod tests {
     async fn empty_store_search_returns_empty() {
         let b = make_backend().await;
         let r = b.search(&[0.5_f32, 0.5].to_vec(), 5).await.expect("search");
-        assert!(r.is_empty(), "empty store must return no results, got {}", r.len());
+        assert!(
+            r.is_empty(),
+            "empty store must return no results, got {}",
+            r.len()
+        );
     }
 
     #[tokio::test]
@@ -470,9 +527,16 @@ mod tests {
         let no_emb = MemoryRecord::new("vec", "no embedding");
         let with_emb = MemoryRecord::new("vec", "has embedding").with_embedding(vec![1.0, 0.0]);
         b.put(&format!("vec/{}", no_emb.id), no_emb).await.unwrap();
-        b.put(&format!("vec/{}", with_emb.id), with_emb).await.unwrap();
+        b.put(&format!("vec/{}", with_emb.id), with_emb)
+            .await
+            .unwrap();
         let r = b.search(&[1.0_f32, 0.0].to_vec(), 5).await.expect("search");
-        assert_eq!(r.len(), 1, "only embedded records should appear, got {}", r.len());
+        assert_eq!(
+            r.len(),
+            1,
+            "only embedded records should appear, got {}",
+            r.len()
+        );
         assert_eq!(r[0].0.content, "has embedding");
     }
 

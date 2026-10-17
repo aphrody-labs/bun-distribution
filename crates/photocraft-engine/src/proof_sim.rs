@@ -86,7 +86,11 @@ pub struct HdrPreview {
 
 impl Default for HdrPreview {
     fn default() -> Self {
-        Self { highlight_compression: false, exposure: 0.0, gamma: 1.0 }
+        Self {
+            highlight_compression: false,
+            exposure: 0.0,
+            gamma: 1.0,
+        }
     }
 }
 
@@ -111,25 +115,44 @@ pub fn hdr_active(c: &ColorState, doc: &Document) -> bool {
 /// Changes whenever the display LUT of `doc` changes because of this module (for UI caches).
 pub fn signature(c: &ColorState, doc: &Document) -> String {
     let pv = c.proof(doc.id);
-    let h = if hdr_active(c, doc) { c.hdr.get(&doc.id).copied() } else { None };
+    let h = if hdr_active(c, doc) {
+        c.hdr.get(&doc.id).copied()
+    } else {
+        None
+    };
     format!("{:?} {:?}", pv.setup.kind, h)
 }
 
 fn srgb_decode(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 fn srgb_encode(v: f32) -> f32 {
     let v = v.clamp(0.0, 1.0);
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// Viénot et al. (1999): linear RGB → LMS.
-const RGB_LMS: [[f32; 3]; 3] = [[17.8824, 43.5161, 4.11935], [3.45565, 27.1554, 3.86714], [0.0299566, 0.184309, 1.46709]];
+const RGB_LMS: [[f32; 3]; 3] = [
+    [17.8824, 43.5161, 4.11935],
+    [3.45565, 27.1554, 3.86714],
+    [0.0299566, 0.184309, 1.46709],
+];
 /// LMS → linear RGB (the paper's values, kept verbatim).
 #[allow(clippy::excessive_precision)]
-const LMS_RGB: [[f32; 3]; 3] =
-    [[0.080_944_45, -0.130_504_41, 0.116_721_07], [-0.010_248_533, 0.054_019_327, -0.113_614_71], [-0.000_365_297, -0.004_121_614_7, 0.693_511_4]];
+const LMS_RGB: [[f32; 3]; 3] = [
+    [0.080_944_45, -0.130_504_41, 0.116_721_07],
+    [-0.010_248_533, 0.054_019_327, -0.113_614_71],
+    [-0.000_365_297, -0.004_121_614_7, 0.693_511_4],
+];
 
 fn mul(m: &[[f32; 3]; 3], v: [f32; 3]) -> [f32; 3] {
     [0, 1, 2].map(|i| m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2])
@@ -140,7 +163,11 @@ pub fn dichromat(rgb_lin: [f32; 3], protan: bool) -> [f32; 3] {
     // Gamut reduction so the simulated colours stay displayable.
     let v = rgb_lin.map(|c| 0.992_052 * c + 0.003_974);
     let [l, m, s] = mul(&RGB_LMS, v);
-    let lms = if protan { [2.02344 * m - 2.52581 * s, m, s] } else { [l, 0.494_207 * l + 1.24827 * s, s] };
+    let lms = if protan {
+        [2.02344 * m - 2.52581 * s, m, s]
+    } else {
+        [l, 0.494_207 * l + 1.24827 * s, s]
+    };
     mul(&LMS_RGB, lms).map(|c| c.clamp(0.0, 1.0))
 }
 
@@ -151,10 +178,24 @@ pub fn display_lut(c: &ColorState, doc: &Document, size: usize) -> Result<Option
 
 /// [`display_lut`], leaving the 32-bit preview out when `include_hdr` is false (the GPU canvas
 /// applies it in its shader).
-pub fn display_lut_with(c: &ColorState, doc: &Document, size: usize, include_hdr: bool, display: Option<u32>) -> Result<Option<Lut3d>> {
+pub fn display_lut_with(
+    c: &ColorState,
+    doc: &Document,
+    size: usize,
+    include_hdr: bool,
+    display: Option<u32>,
+) -> Result<Option<Lut3d>> {
     let pv = c.proof(doc.id);
-    let kind = if pv.enabled { pv.setup.kind } else { ProofKind::Profile };
-    let hdr = if include_hdr { c.hdr_preview(doc) } else { None };
+    let kind = if pv.enabled {
+        pv.setup.kind
+    } else {
+        ProofKind::Profile
+    };
+    let hdr = if include_hdr {
+        c.hdr_preview(doc)
+    } else {
+        None
+    };
     if kind == ProofKind::Profile && hdr.is_none() {
         return Ok(None);
     }
@@ -167,19 +208,34 @@ pub fn display_lut_with(c: &ColorState, doc: &Document, size: usize, include_hdr
     let base: Box<dyn Fn([f32; 3]) -> [f32; 3]> = match kind {
         ProofKind::Profile => {
             let t = if pv.enabled {
-                Transform::proof(&src, &setup.profile, &mon, setup.intent, setup.bpc, setup.simulate_paper)
+                Transform::proof(
+                    &src,
+                    &setup.profile,
+                    &mon,
+                    setup.intent,
+                    setup.bpc,
+                    setup.simulate_paper,
+                )
             } else {
-                Transform::new(&src, &mon, crate::display_color::DISPLAY_INTENT, crate::display_color::DISPLAY_BPC)
+                Transform::new(
+                    &src,
+                    &mon,
+                    crate::display_color::DISPLAY_INTENT,
+                    crate::display_color::DISPLAY_BPC,
+                )
             }
             .map_err(err)?;
             Box::new(move |v| eval3(&t, &v))
         }
         ProofKind::Plate(_) | ProofKind::CmyPlate => {
             if setup.profile.channels() != 4 {
-                return Err(EngineError::Other("plate previews need a CMYK proof profile".into()));
+                return Err(EngineError::Other(
+                    "plate previews need a CMYK proof profile".into(),
+                ));
             }
             let sep = Transform::new(&src, &setup.profile, setup.intent, setup.bpc).map_err(err)?;
-            let print = Transform::new(&setup.profile, &mon, Intent::RelativeColorimetric, true).map_err(err)?;
+            let print = Transform::new(&setup.profile, &mon, Intent::RelativeColorimetric, true)
+                .map_err(err)?;
             Box::new(move |v| {
                 let mut ink = [0.0f32; 16];
                 sep.eval(&v, &mut ink);
@@ -196,8 +252,10 @@ pub fn display_lut_with(c: &ColorState, doc: &Document, size: usize, include_hdr
             Box::new(move |v| eval3(&t, &v.map(|x| srgb_encode(x.max(0.0).powf(1.8)))))
         }
         ProofKind::Protanopia | ProofKind::Deuteranopia => {
-            let to_srgb = Transform::new(&src, srgb, Intent::RelativeColorimetric, true).map_err(err)?;
-            let to_mon = Transform::new(srgb, &mon, Intent::RelativeColorimetric, true).map_err(err)?;
+            let to_srgb =
+                Transform::new(&src, srgb, Intent::RelativeColorimetric, true).map_err(err)?;
+            let to_mon =
+                Transform::new(srgb, &mon, Intent::RelativeColorimetric, true).map_err(err)?;
             let protan = kind == ProofKind::Protanopia;
             Box::new(move |v| {
                 let s = eval3(&to_srgb, &v);
@@ -227,18 +285,28 @@ pub fn display_lut_with(c: &ColorState, doc: &Document, size: usize, include_hdr
 fn eval3(t: &Transform, v: &[f32]) -> [f32; 3] {
     let mut out = [0.0f32; 16];
     t.eval(v, &mut out);
-    if t.outputs() == 1 { [out[0]; 3] } else { [out[0], out[1], out[2]] }
+    if t.outputs() == 1 {
+        [out[0]; 3]
+    } else {
+        [out[0], out[1], out[2]]
+    }
 }
 
 // ------------------------------------------------------------------ commands
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn is_32(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    if d.doc.depth == SampleType::F32 { Ok(()) } else { Err("32-bit Preview Options apply to 32-bit documents".into()) }
+    if d.doc.depth == SampleType::F32 {
+        Ok(())
+    } else {
+        Err("32-bit Preview Options apply to 32-bit documents".into())
+    }
 }
 
 /// Select a simulated proof (`kind`) and turn Proof Colors on. Plates use the working CMYK.
@@ -246,7 +314,15 @@ pub fn set_kind(s: &mut Session, kind: ProofKind) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let (id, doc) = (st.doc.id, st.doc.clone());
     let plates = matches!(kind, ProofKind::Plate(_) | ProofKind::CmyPlate);
-    let working = if plates { Some(s.color.resolve("working-cmyk", Some(&doc), Some(photocraft_color::ColorMode::Cmyk))?) } else { None };
+    let working = if plates {
+        Some(s.color.resolve(
+            "working-cmyk",
+            Some(&doc),
+            Some(photocraft_color::ColorMode::Cmyk),
+        )?)
+    } else {
+        None
+    };
     let pv = s.color.proof_mut(id);
     if let Some(w) = working {
         pv.setup.profile = w;
@@ -258,7 +334,10 @@ pub fn set_kind(s: &mut Session, kind: ProofKind) -> Result<Value> {
 }
 
 fn run_kind(s: &mut Session, id: &str) -> Result<Value> {
-    let kind = id.strip_prefix("view.proofSetup.").and_then(ProofKind::from_id).ok_or_else(|| EngineError::UnknownCommand(id.into()))?;
+    let kind = id
+        .strip_prefix("view.proofSetup.")
+        .and_then(ProofKind::from_id)
+        .ok_or_else(|| EngineError::UnknownCommand(id.into()))?;
     set_kind(s, kind)
 }
 
@@ -270,7 +349,12 @@ fn preview_32(s: &mut Session, p: &Value) -> Result<Value> {
         h.highlight_compression = match m {
             "exposureGamma" | "exposureAndGamma" => false,
             "highlightCompression" => true,
-            o => return Err(EngineError::BadParams { cmd: CMD.into(), msg: format!("method `{o}` (exposureGamma|highlightCompression)") }),
+            o => {
+                return Err(EngineError::BadParams {
+                    cmd: CMD.into(),
+                    msg: format!("method `{o}` (exposureGamma|highlightCompression)"),
+                });
+            }
         };
     }
     if let Some(e) = p.get("exposure").and_then(Value::as_f64) {
@@ -280,7 +364,9 @@ fn preview_32(s: &mut Session, p: &Value) -> Result<Value> {
         h.gamma = (g as f32).clamp(0.1, 9.99);
     }
     s.color.hdr.insert(id, h);
-    Ok(json!({"method": if h.highlight_compression { "highlightCompression" } else { "exposureGamma" }, "exposure": h.exposure, "gamma": h.gamma}))
+    Ok(
+        json!({"method": if h.highlight_compression { "highlightCompression" } else { "exposureGamma" }, "exposure": h.exposure, "gamma": h.gamma}),
+    )
 }
 
 macro_rules! kind_spec {
@@ -301,13 +387,22 @@ macro_rules! kind_spec {
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         kind_spec!("view.proofSetup.workingCyanPlate", "Working Cyan Plate"),
-        kind_spec!("view.proofSetup.workingMagentaPlate", "Working Magenta Plate"),
+        kind_spec!(
+            "view.proofSetup.workingMagentaPlate",
+            "Working Magenta Plate"
+        ),
         kind_spec!("view.proofSetup.workingYellowPlate", "Working Yellow Plate"),
         kind_spec!("view.proofSetup.workingBlackPlate", "Working Black Plate"),
         kind_spec!("view.proofSetup.workingCmyPlate", "Working CMY Plate"),
         kind_spec!("view.proofSetup.legacyMacintoshRgb", "Legacy Macintosh RGB"),
-        kind_spec!("view.proofSetup.colorBlindnessProtanopia", "Color Blindness — Protanopia-type"),
-        kind_spec!("view.proofSetup.colorBlindnessDeuteranopia", "Color Blindness — Deuteranopia-type"),
+        kind_spec!(
+            "view.proofSetup.colorBlindnessProtanopia",
+            "Color Blindness — Protanopia-type"
+        ),
+        kind_spec!(
+            "view.proofSetup.colorBlindnessDeuteranopia",
+            "Color Blindness — Deuteranopia-type"
+        ),
         CommandSpec {
             id: "view.thirtyTwoBitPreviewOptions",
             label: "32-bit Preview Options…",
@@ -327,7 +422,11 @@ mod tests {
 
     fn session(mode: &str, depth: u32) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8, "mode": mode, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 8, "height": 8, "mode": mode, "depth": depth}),
+        )
+        .unwrap();
         s
     }
 
@@ -347,7 +446,10 @@ mod tests {
             // Red and green become (nearly) indistinguishable in hue: both yellowish/brown.
             let r = dichromat([1.0, 0.0, 0.0], protan);
             let gr = dichromat([0.0, 1.0, 0.0], protan);
-            assert!((r[0] - r[1]).abs() < 0.15 && (gr[0] - gr[1]).abs() < 0.15, "{r:?} {gr:?}");
+            assert!(
+                (r[0] - r[1]).abs() < 0.15 && (gr[0] - gr[1]).abs() < 0.15,
+                "{r:?} {gr:?}"
+            );
             // Blue stays blue.
             let b = dichromat([0.0, 0.0, 1.0], protan);
             assert!(b[2] > 0.8);
@@ -372,7 +474,10 @@ mod tests {
                 assert_eq!(r["proofColors"], true);
                 let d = s.active().unwrap().doc.clone();
                 let pv = s.color.proof(d.id);
-                assert_eq!(pv.setup.kind.id(), id.trim_start_matches("view.proofSetup."));
+                assert_eq!(
+                    pv.setup.kind.id(),
+                    id.trim_start_matches("view.proofSetup.")
+                );
                 let lut = s.color.display_lut(&d, 5).unwrap();
                 assert_eq!(lut.data.len(), 125);
                 let bytes = s.color.canvas_lut(&d, 5).unwrap().unwrap();
@@ -384,7 +489,8 @@ mod tests {
     #[test]
     fn plate_previews_are_gray_and_track_ink() {
         let mut s = session("rgb", 8);
-        s.execute("view.proofSetup.workingCyanPlate", json!({})).unwrap();
+        s.execute("view.proofSetup.workingCyanPlate", json!({}))
+            .unwrap();
         let d = s.active().unwrap().doc.clone();
         let lut = s.color.display_lut(&d, 5).unwrap();
         // Pure cyan: heavy cyan plate → dark gray; white: no ink → white; red: little cyan.
@@ -392,19 +498,27 @@ mod tests {
         let white = sample(&lut, [4, 4, 4]);
         let red = sample(&lut, [4, 0, 0]);
         for c in [cyan, white, red] {
-            assert!((c[0] - c[1]).abs() < 0.03 && (c[1] - c[2]).abs() < 0.03, "plates are gray: {c:?}");
+            assert!(
+                (c[0] - c[1]).abs() < 0.03 && (c[1] - c[2]).abs() < 0.03,
+                "plates are gray: {c:?}"
+            );
         }
         assert!(white[0] > 0.9, "{white:?}");
-        assert!(cyan[0] < red[0] && cyan[0] < 0.6, "cyan {cyan:?} red {red:?}");
+        assert!(
+            cyan[0] < red[0] && cyan[0] < 0.6,
+            "cyan {cyan:?} red {red:?}"
+        );
         // Back to the plain working CMYK proof via Proof Setup.
-        s.execute("view.proofSetup", json!({"profile": "working-cmyk"})).unwrap();
+        s.execute("view.proofSetup", json!({"profile": "working-cmyk"}))
+            .unwrap();
         assert_eq!(s.color.proof(d.id).setup.kind, ProofKind::Profile);
     }
 
     #[test]
     fn legacy_mac_is_darker_in_midtones() {
         let mut s = session("rgb", 8);
-        s.execute("view.proofSetup.legacyMacintoshRgb", json!({})).unwrap();
+        s.execute("view.proofSetup.legacyMacintoshRgb", json!({}))
+            .unwrap();
         let d = s.active().unwrap().doc.clone();
         let lut = s.color.display_lut(&d, 5).unwrap();
         let mid = sample(&lut, [2, 2, 2]);
@@ -417,11 +531,20 @@ mod tests {
     #[test]
     fn thirty_two_bit_preview_options() {
         let mut s = session("rgb", 8);
-        assert!(s.execute("view.thirtyTwoBitPreviewOptions", json!({"exposure": 1})).is_err(), "8-bit: disabled");
+        assert!(
+            s.execute("view.thirtyTwoBitPreviewOptions", json!({"exposure": 1}))
+                .is_err(),
+            "8-bit: disabled"
+        );
         let mut s = session("rgb", 32);
         let d = s.active().unwrap().doc.clone();
         assert!(s.color.canvas_lut(&d, 5).unwrap().is_none());
-        let r = s.execute("view.thirtyTwoBitPreviewOptions", json!({"exposure": 1.0, "gamma": 1.0})).unwrap();
+        let r = s
+            .execute(
+                "view.thirtyTwoBitPreviewOptions",
+                json!({"exposure": 1.0, "gamma": 1.0}),
+            )
+            .unwrap();
         assert_eq!(r["exposure"], 1.0);
         assert!(hdr_active(&s.color, &d));
         let lut = s.color.display_lut(&d, 5).unwrap();
@@ -430,14 +553,33 @@ mod tests {
         assert!((q[0] - 0.354).abs() < 0.02, "{q:?}");
         assert!(s.color.canvas_lut(&d, 5).unwrap().is_some());
         // The GPU canvas applies it in its shader: its LUT leaves it out (none for sRGB).
-        assert_eq!(s.color.hdr_preview(&d), Some(HdrPreview { highlight_compression: false, exposure: 1.0, gamma: 1.0 }));
+        assert_eq!(
+            s.color.hdr_preview(&d),
+            Some(HdrPreview {
+                highlight_compression: false,
+                exposure: 1.0,
+                gamma: 1.0
+            })
+        );
         assert!(s.color.gpu_canvas_lut(&d, 5).unwrap().is_none());
         // Highlight Compression: identity mapping, so no LUT.
-        s.execute("view.thirtyTwoBitPreviewOptions", json!({"method": "highlightCompression"})).unwrap();
+        s.execute(
+            "view.thirtyTwoBitPreviewOptions",
+            json!({"method": "highlightCompression"}),
+        )
+        .unwrap();
         assert!(!hdr_active(&s.color, &d));
-        assert!(s.execute("view.thirtyTwoBitPreviewOptions", json!({"method": "nope"})).is_err());
+        assert!(
+            s.execute("view.thirtyTwoBitPreviewOptions", json!({"method": "nope"}))
+                .is_err()
+        );
         // Clamped ranges.
-        let r = s.execute("view.thirtyTwoBitPreviewOptions", json!({"method": "exposureGamma", "exposure": 99, "gamma": 0})).unwrap();
+        let r = s
+            .execute(
+                "view.thirtyTwoBitPreviewOptions",
+                json!({"method": "exposureGamma", "exposure": 99, "gamma": 0}),
+            )
+            .unwrap();
         assert_eq!(r["exposure"], 20.0);
         assert!((r["gamma"].as_f64().unwrap() - 0.1).abs() < 1e-6);
     }

@@ -18,7 +18,9 @@ use hayro_interpret::CacheKey;
 use hayro_syntax::Pdf;
 use hayro_syntax::content::TypedIter;
 use hayro_syntax::content::ops::TypedInstruction;
-use hayro_syntax::object::{Array, Dict, FromBytes, MaybeRef, Name, Object, ObjectIdentifier, dict_or_stream};
+use hayro_syntax::object::{
+    Array, Dict, FromBytes, MaybeRef, Name, Object, ObjectIdentifier, dict_or_stream,
+};
 use hayro_syntax::page::{Page, Resources};
 
 /// The interpreter's limit on nested form XObjects.
@@ -67,25 +69,43 @@ impl Ocgs {
     pub fn read(pdf: &Pdf) -> Self {
         let mut o = Self::default();
         let xref = pdf.xref();
-        let Some(props) = xref.get::<Dict<'_>>(xref.root_id()).and_then(|c| c.get::<Dict<'_>>(b"OCProperties")) else {
+        let Some(props) = xref
+            .get::<Dict<'_>>(xref.root_id())
+            .and_then(|c| c.get::<Dict<'_>>(b"OCProperties"))
+        else {
             return o;
         };
         let config = props.get::<Dict<'_>>(b"D").unwrap_or_default();
         let refs = |d: &Dict<'_>, key: &[u8]| -> Vec<ObjectIdentifier> {
             d.get::<Array<'_>>(key)
-                .map(|a| a.raw_iter().filter_map(|i| i.as_obj_ref()).map(ObjectIdentifier::from).take(MAX_GROUPS).collect())
+                .map(|a| {
+                    a.raw_iter()
+                        .filter_map(|i| i.as_obj_ref())
+                        .map(ObjectIdentifier::from)
+                        .take(MAX_GROUPS)
+                        .collect()
+                })
                 .unwrap_or_default()
         };
         let all = refs(&props, b"OCGs");
-        if config.get::<Name<'_>>(b"BaseState").is_some_and(|n| n.as_ref() == b"OFF") {
+        if config
+            .get::<Name<'_>>(b"BaseState")
+            .is_some_and(|n| n.as_ref() == b"OFF")
+        {
             o.off.extend(all.iter().copied());
         }
         for id in refs(&config, b"ON") {
             o.off.remove(&id);
         }
         o.off.extend(refs(&config, b"OFF"));
-        let auto = config.get::<Array<'_>>(b"AS").map(|a| a.iter::<Dict<'_>>().take(MAX_GROUPS).collect::<Vec<_>>()).unwrap_or_default();
-        for d in auto.iter().filter(|d| d.get::<Name<'_>>(b"Event").is_some_and(|e| e.as_ref() == b"View")) {
+        let auto = config
+            .get::<Array<'_>>(b"AS")
+            .map(|a| a.iter::<Dict<'_>>().take(MAX_GROUPS).collect::<Vec<_>>())
+            .unwrap_or_default();
+        for d in auto.iter().filter(|d| {
+            d.get::<Name<'_>>(b"Event")
+                .is_some_and(|e| e.as_ref() == b"View")
+        }) {
             o.view_auto.extend(refs(d, b"OCGs"));
         }
         let locked: HashSet<_> = refs(&config, b"Locked").into_iter().collect();
@@ -104,7 +124,14 @@ impl Ocgs {
     /// lists that array's groups as its sublayers; an array starting with a label lists its
     /// groups under the label, which isn't a group (they go under `parent`). A group listed twice
     /// stays where it is first listed. `seen`: the entries read so far.
-    fn nest(&mut self, order: &Array<'_>, parent: Option<usize>, depth: usize, xref: &hayro_syntax::xref::XRef, seen: &mut usize) {
+    fn nest(
+        &mut self,
+        order: &Array<'_>,
+        parent: Option<usize>,
+        depth: usize,
+        xref: &hayro_syntax::xref::XRef,
+        seen: &mut usize,
+    ) {
         let mut prev = None;
         for item in order.raw_iter() {
             *seen += 1;
@@ -125,7 +152,10 @@ impl Ocgs {
             if let Some(sub) = sub
                 && depth < MAX_NESTING
             {
-                let label = matches!(sub.raw_iter().next(), Some(MaybeRef::NotRef(Object::String(_))));
+                let label = matches!(
+                    sub.raw_iter().next(),
+                    Some(MaybeRef::NotRef(Object::String(_)))
+                );
                 let under = prev.take().filter(|_| !label).or(parent);
                 self.nest(&sub, under, depth + 1, xref, seen);
             }
@@ -147,7 +177,10 @@ impl Ocgs {
         if let Some(i) = self.index.get(&id) {
             return *i;
         }
-        let name = d.get::<hayro_syntax::object::String<'_>>(b"Name").map(|s| text_string(s.as_bytes())).unwrap_or_default();
+        let name = d
+            .get::<hayro_syntax::object::String<'_>>(b"Name")
+            .map(|s| text_string(s.as_bytes()))
+            .unwrap_or_default();
         let print = usage(d, b"Print", b"PrintState") != Some(false);
         // A view state applies when the configuration says so on opening; an off one hides the
         // group all the same (it says how the group is meant to be seen).
@@ -157,8 +190,18 @@ impl Ocgs {
             Some(false) => false,
             _ => !self.off.contains(&id),
         };
-        let name = if name.is_empty() { format!("Layer {}", self.list.len() + 1) } else { name };
-        self.list.push(Ocg { name, on, print, locked, parent: None });
+        let name = if name.is_empty() {
+            format!("Layer {}", self.list.len() + 1)
+        } else {
+            name
+        };
+        self.list.push(Ocg {
+            name,
+            on,
+            print,
+            locked,
+            parent: None,
+        });
         self.index.insert(id, self.list.len() - 1);
         self.list.len() - 1
     }
@@ -170,9 +213,19 @@ impl Ocgs {
 
     /// The group content marked with `/OC` (`d`: the group or membership dictionary, `id` its
     /// object) belongs to: a membership dictionary's first group.
-    fn group_of(&mut self, d: &Dict<'_>, id: ObjectIdentifier, xref: &hayro_syntax::xref::XRef) -> Option<usize> {
-        if d.get::<Name<'_>>(b"Type").is_some_and(|t| t.as_ref() == b"OCMD") {
-            let first = d.get::<Array<'_>>(b"OCGs").and_then(|a| a.raw_iter().find_map(|i| i.as_obj_ref())).or_else(|| d.get_ref(b"OCGs"))?;
+    fn group_of(
+        &mut self,
+        d: &Dict<'_>,
+        id: ObjectIdentifier,
+        xref: &hayro_syntax::xref::XRef,
+    ) -> Option<usize> {
+        if d.get::<Name<'_>>(b"Type")
+            .is_some_and(|t| t.as_ref() == b"OCMD")
+        {
+            let first = d
+                .get::<Array<'_>>(b"OCGs")
+                .and_then(|a| a.raw_iter().find_map(|i| i.as_obj_ref()))
+                .or_else(|| d.get_ref(b"OCGs"))?;
             let id = ObjectIdentifier::from(first);
             return self.note(id, &xref.get::<Dict<'_>>(id)?);
         }
@@ -190,7 +243,10 @@ impl Ocgs {
 
 /// The state (`ON` → true, `OFF` → false) group `d`'s usage `category` gives in `key`.
 fn usage(d: &Dict<'_>, category: &[u8], key: &[u8]) -> Option<bool> {
-    let state = d.get::<Dict<'_>>(b"Usage")?.get::<Dict<'_>>(category)?.get::<Name<'_>>(key)?;
+    let state = d
+        .get::<Dict<'_>>(b"Usage")?
+        .get::<Dict<'_>>(category)?
+        .get::<Name<'_>>(key)?;
     match state.as_ref() {
         b"ON" => Some(true),
         b"OFF" => Some(false),
@@ -202,7 +258,12 @@ fn usage(d: &Dict<'_>, category: &[u8], key: &[u8]) -> Option<bool> {
 /// (read as Latin-1, which it matches for letters).
 pub(crate) fn text_string(b: &[u8]) -> String {
     if let Some(rest) = b.strip_prefix(&[0xFE, 0xFF]) {
-        let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
+        let units: Vec<u16> = rest
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_be_bytes(*c))
+            .collect();
         return String::from_utf16_lossy(&units);
     }
     if let Some(rest) = b.strip_prefix(&[0xEF, 0xBB, 0xBF]) {
@@ -259,7 +320,9 @@ struct Overprint {
 /// A marked-content tag as [`Scan::tags`] keeps it: its FNV-1a hash (the tags are only compared,
 /// and a page can have millions).
 pub(crate) fn tag_key(tag: &[u8]) -> u64 {
-    tag.iter().fold(0xcbf2_9ce4_8422_2325, |h, &b| (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3))
+    tag.iter().fold(0xcbf2_9ce4_8422_2325, |h, &b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+    })
 }
 
 /// [`MAX_OPS`], lowered by tests that need a page past it.
@@ -310,13 +373,23 @@ impl Walker<'_, '_> {
     /// Enter optional content `d` (object `id`): a group, or a membership dictionary whose policy
     /// decides from its groups.
     fn begin_oc(&mut self, d: &Dict<'_>, id: Option<ObjectIdentifier>) {
-        let membership = id.is_none() || d.get::<Name<'_>>(b"Type").is_some_and(|t| t.as_ref() == b"OCMD");
+        let membership = id.is_none()
+            || d.get::<Name<'_>>(b"Type")
+                .is_some_and(|t| t.as_ref() == b"OCMD");
         let on = match id {
             Some(id) if !membership => !self.off.contains(&id),
             _ => {
                 let ids: Vec<ObjectIdentifier> = match d.get::<Array<'_>>(b"OCGs") {
-                    Some(a) => a.raw_iter().filter_map(|i| i.as_obj_ref()).map(ObjectIdentifier::from).collect(),
-                    None => d.get_ref(b"OCGs").map(ObjectIdentifier::from).into_iter().collect(),
+                    Some(a) => a
+                        .raw_iter()
+                        .filter_map(|i| i.as_obj_ref())
+                        .map(ObjectIdentifier::from)
+                        .collect(),
+                    None => d
+                        .get_ref(b"OCGs")
+                        .map(ObjectIdentifier::from)
+                        .into_iter()
+                        .collect(),
                 };
                 let on = |i: &ObjectIdentifier| !self.off.contains(i);
                 ids.is_empty()
@@ -370,8 +443,15 @@ impl Walker<'_, '_> {
         }
         let s = self.state();
         self.overprinting(s.fill || s.stroke);
-        let now = TextOverprint::All { fill: s.fill, stroke: s.stroke };
-        self.text = if self.text == TextOverprint::None || self.text == now { now } else { TextOverprint::Mixed };
+        let now = TextOverprint::All {
+            fill: s.fill,
+            stroke: s.stroke,
+        };
+        self.text = if self.text == TextOverprint::None || self.text == now {
+            now
+        } else {
+            TextOverprint::Mixed
+        };
     }
 
     fn note_fonts(&mut self, res: &Resources<'_>) {
@@ -379,7 +459,12 @@ impl Walker<'_, '_> {
             if let Some(f) = res.fonts.get::<Dict<'_>>(key.as_ref())
                 && let Some(name) = f.get::<Name<'_>>(b"BaseFont")
             {
-                self.fonts.entry(f.cache_key()).or_insert_with(|| (String::from_utf8_lossy(name.as_ref()).into_owned(), embeds_glyphs(&f)));
+                self.fonts.entry(f.cache_key()).or_insert_with(|| {
+                    (
+                        String::from_utf8_lossy(name.as_ref()).into_owned(),
+                        embeds_glyphs(&f),
+                    )
+                });
             }
         }
     }
@@ -404,11 +489,19 @@ impl Walker<'_, '_> {
             match op {
                 TypedInstruction::BeginMarkedContentWithProperties(bdc) => {
                     let oc = match bdc.1 {
-                        Object::Name(n) => {
-                            res.properties.get_ref(n.as_ref()).map(|r| (res.properties.get::<Dict<'_>>(n.as_ref()).unwrap_or_default(), r))
-                        }
-                        o => dict_or_stream(o)
-                            .and_then(|(props, _)| props.get_ref(b"OC").map(|r| (props.get::<Dict<'_>>(b"OC").unwrap_or_default(), r))),
+                        Object::Name(n) => res.properties.get_ref(n.as_ref()).map(|r| {
+                            (
+                                res.properties
+                                    .get::<Dict<'_>>(n.as_ref())
+                                    .unwrap_or_default(),
+                                r,
+                            )
+                        }),
+                        o => dict_or_stream(o).and_then(|(props, _)| {
+                            props
+                                .get_ref(b"OC")
+                                .map(|r| (props.get::<Dict<'_>>(b"OC").unwrap_or_default(), r))
+                        }),
                     };
                     let group = match oc {
                         Some((d, r)) => {
@@ -443,10 +536,14 @@ impl Walker<'_, '_> {
                         s.nonzero = d.get::<u8>(b"OPM").map_or(s.nonzero, |m| m != 0);
                     }
                 }
-                TypedInstruction::FillPathEvenOdd(_) | TypedInstruction::FillPathNonZero(_) | TypedInstruction::FillPathNonZeroCompatibility(_) => {
+                TypedInstruction::FillPathEvenOdd(_)
+                | TypedInstruction::FillPathNonZero(_)
+                | TypedInstruction::FillPathNonZeroCompatibility(_) => {
                     self.painted(false);
                 }
-                TypedInstruction::StrokePath(_) | TypedInstruction::CloseAndStrokePath(_) => self.painted(true),
+                TypedInstruction::StrokePath(_) | TypedInstruction::CloseAndStrokePath(_) => {
+                    self.painted(true)
+                }
                 TypedInstruction::FillAndStrokeEvenOdd(_)
                 | TypedInstruction::FillAndStrokeNonZero(_)
                 | TypedInstruction::CloseFillAndStrokeEvenOdd(_)
@@ -468,9 +565,13 @@ impl Walker<'_, '_> {
                     if !self.is_visible() || depth >= MAX_DEPTH {
                         continue;
                     }
-                    let Some(s) = res.get_x_object(x.0) else { continue };
+                    let Some(s) = res.get_x_object(x.0) else {
+                        continue;
+                    };
                     let d = s.dict();
-                    if d.get::<Name<'_>>(b"Subtype").as_deref() != Some(b"Form") || d.get::<[f32; 4]>(b"BBox").is_none() {
+                    if d.get::<Name<'_>>(b"Subtype").as_deref() != Some(b"Form")
+                        || d.get::<[f32; 4]>(b"BBox").is_none()
+                    {
                         continue;
                     }
                     let Ok(data) = s.decoded() else { continue };
@@ -483,9 +584,15 @@ impl Walker<'_, '_> {
                         if let Some(g) = d.get::<Dict<'_>>(b"Group")
                             && self.out.groups.len() < MAX_GROUPS
                         {
-                            self.out.groups.push((g.get::<bool>(b"I").unwrap_or(false), g.get::<bool>(b"K").unwrap_or(false)));
+                            self.out.groups.push((
+                                g.get::<bool>(b"I").unwrap_or(false),
+                                g.get::<bool>(b"K").unwrap_or(false),
+                            ));
                         }
-                        let inner = Resources::from_parent(d.get::<Dict<'_>>(b"Resources").unwrap_or_default(), res.clone());
+                        let inner = Resources::from_parent(
+                            d.get::<Dict<'_>>(b"Resources").unwrap_or_default(),
+                            res.clone(),
+                        );
                         self.save();
                         self.walk(TypedIter::new(data.as_ref()), &inner, depth + 1);
                         self.restore();
@@ -508,25 +615,48 @@ pub(crate) type FontNames = HashMap<u128, (String, bool)>;
 /// its descendant's), or a Type 3 font's glyph procedures. A font that doesn't is drawn with a
 /// stand-in, whose glyphs say nothing about which installed face the document means.
 fn embeds_glyphs(f: &Dict<'_>) -> bool {
-    if f.get::<Name<'_>>(b"Subtype").is_some_and(|s| s.as_ref() == b"Type3") {
+    if f.get::<Name<'_>>(b"Subtype")
+        .is_some_and(|s| s.as_ref() == b"Type3")
+    {
         return true;
     }
     // A font program is a stream, so always an indirect object.
     let program = |d: &Dict<'_>| {
-        d.get::<Dict<'_>>(b"FontDescriptor").is_some_and(|fd| [&b"FontFile"[..], b"FontFile2", b"FontFile3"].iter().any(|k| fd.get_ref(*k).is_some()))
+        d.get::<Dict<'_>>(b"FontDescriptor").is_some_and(|fd| {
+            [&b"FontFile"[..], b"FontFile2", b"FontFile3"]
+                .iter()
+                .any(|k| fd.get_ref(*k).is_some())
+        })
     };
-    program(f) || f.get::<Array<'_>>(b"DescendantFonts").and_then(|a| a.iter::<Dict<'_>>().next()).is_some_and(|d| program(&d))
+    program(f)
+        || f.get::<Array<'_>>(b"DescendantFonts")
+            .and_then(|a| a.iter::<Dict<'_>>().next())
+            .is_some_and(|d| program(&d))
 }
 
 /// Walk `page` as the interpreter will: `all_on` when [`all_on`] turned every group on. Fonts
 /// found are noted in `fonts` (their cache key → base font name, and whether the file carries its
 /// glyphs).
-pub(crate) fn scan_page(page: &Page<'_>, ocgs: &mut Ocgs, all_on: bool, fonts: &mut FontNames) -> Scan {
+pub(crate) fn scan_page(
+    page: &Page<'_>,
+    ocgs: &mut Ocgs,
+    all_on: bool,
+    fonts: &mut FontNames,
+) -> Scan {
     walk_page(page, ocgs, all_on, fonts).out
 }
 
-fn walk_page<'w, 'p>(page: &Page<'p>, ocgs: &'w mut Ocgs, all_on: bool, fonts: &'w mut FontNames) -> Walker<'w, 'p> {
-    let off = if all_on { HashSet::new() } else { ocgs.off.clone() };
+fn walk_page<'w, 'p>(
+    page: &Page<'p>,
+    ocgs: &'w mut Ocgs,
+    all_on: bool,
+    fonts: &'w mut FontNames,
+) -> Walker<'w, 'p> {
+    let off = if all_on {
+        HashSet::new()
+    } else {
+        ocgs.off.clone()
+    };
     let mut w = Walker {
         ocgs,
         off,
@@ -570,7 +700,13 @@ pub(crate) fn all_on(bytes: &[u8], pdf: &Pdf) -> Option<Vec<u8>> {
     // A later key wins: the groups' configuration is gone, so the interpreter draws them all.
     out.extend_from_slice(b" /OCProperties null >>\nendobj\n");
     let xref = out.len();
-    out.extend(format!("xref\n{} 1\n{at:010} {:05} n \ntrailer\n<<", root.obj_number, root.gen_number).bytes());
+    out.extend(
+        format!(
+            "xref\n{} 1\n{at:010} {:05} n \ntrailer\n<<",
+            root.obj_number, root.gen_number
+        )
+        .bytes(),
+    );
     out.extend_from_slice(inner);
     out.extend(format!(" /Prev {prev} >>\nstartxref\n{xref}\n%%EOF\n").bytes());
     Some(out)
@@ -580,7 +716,12 @@ pub(crate) fn all_on(bytes: &[u8], pdf: &Pdf) -> Option<Vec<u8>> {
 fn last_xref(bytes: &[u8]) -> Option<usize> {
     let at = bytes.windows(9).rposition(|w| w == b"startxref")?;
     let rest = bytes.get(at + 9..)?;
-    let digits: String = rest.iter().skip_while(|c| c.is_ascii_whitespace()).take_while(|c| c.is_ascii_digit()).map(|&c| c as char).collect();
+    let digits: String = rest
+        .iter()
+        .skip_while(|c| c.is_ascii_whitespace())
+        .take_while(|c| c.is_ascii_digit())
+        .map(|&c| c as char)
+        .collect();
     digits.parse().ok().filter(|&p: &usize| p < bytes.len())
 }
 
@@ -588,7 +729,11 @@ fn last_xref(bytes: &[u8]) -> Option<usize> {
 /// cross-reference stream's dictionary), as written.
 fn trailer_at(bytes: &[u8], at: usize) -> Option<&[u8]> {
     let rest = bytes.get(at..)?;
-    let from = if rest.trim_ascii_start().starts_with(b"xref") { rest.windows(7).position(|w| w == b"trailer")? } else { 0 };
+    let from = if rest.trim_ascii_start().starts_with(b"xref") {
+        rest.windows(7).position(|w| w == b"trailer")?
+    } else {
+        0
+    };
     let open = from + rest.get(from..)?.windows(2).position(|w| w == b"<<")?;
     let d = Dict::from_bytes(rest.get(open..)?)?;
     Some(d.data())

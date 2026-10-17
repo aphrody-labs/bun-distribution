@@ -184,7 +184,6 @@ impl Cabinet {
         }
     }
 
-
     fn finish_cancel(
         system: SystemRef,
         input: CabinetInput,

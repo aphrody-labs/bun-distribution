@@ -45,7 +45,7 @@ pub mod prelude {
 }
 
 use alloc::sync::Arc;
-use bevy_app::{prelude::*, OnAppExitSystems};
+use bevy_app::{OnAppExitSystems, prelude::*};
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use bevy_platform::sync::Mutex;
 

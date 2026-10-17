@@ -192,7 +192,9 @@ pub fn thread_cpu_time() -> Option<Duration> {
     }
     #[cfg(windows)]
     {
-        cpu_time::ThreadTime::try_now().ok().map(|t| t.as_duration())
+        cpu_time::ThreadTime::try_now()
+            .ok()
+            .map(|t| t.as_duration())
     }
     #[cfg(not(any(windows, all(unix, not(target_arch = "wasm32")))))]
     {
@@ -209,7 +211,9 @@ pub fn process_cpu_time() -> Option<Duration> {
     }
     #[cfg(windows)]
     {
-        cpu_time::ProcessTime::try_now().ok().map(|t| t.as_duration())
+        cpu_time::ProcessTime::try_now()
+            .ok()
+            .map(|t| t.as_duration())
     }
     #[cfg(not(any(windows, all(unix, not(target_arch = "wasm32")))))]
     {
@@ -226,7 +230,13 @@ thread_local! {
 
 /// Run `f`, adding its wall/CPU time to this thread's source-time accumulator.
 fn timed_source<R>(f: impl FnOnce() -> R) -> R {
-    let cpu = || if PROFILING.with(Cell::get) { thread_cpu_time().unwrap_or_default() } else { Duration::ZERO };
+    let cpu = || {
+        if PROFILING.with(Cell::get) {
+            thread_cpu_time().unwrap_or_default()
+        } else {
+            Duration::ZERO
+        }
+    };
     let (w0, c0) = (Instant::now(), cpu());
     let r = f();
     let (dw, dc) = (w0.elapsed(), cpu().saturating_sub(c0));
@@ -244,13 +254,27 @@ impl filmcraft_media::MediaSource for TimedSource {
     fn info(&self) -> &filmcraft_media::MediaInfo {
         self.0.info()
     }
-    fn video_frame(&self, req: filmcraft_media::FrameRequest) -> filmcraft_media::Result<Arc<filmcraft_frame::VideoFrame>> {
+    fn video_frame(
+        &self,
+        req: filmcraft_media::FrameRequest,
+    ) -> filmcraft_media::Result<Arc<filmcraft_frame::VideoFrame>> {
         timed_source(|| self.0.video_frame(req))
     }
-    fn audio(&self, start: i64, frames: usize, sample_rate: u32) -> filmcraft_media::Result<filmcraft_frame::AudioBuffer> {
+    fn audio(
+        &self,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> filmcraft_media::Result<filmcraft_frame::AudioBuffer> {
         self.0.audio(start, frames, sample_rate)
     }
-    fn audio_stream(&self, stream: usize, start: i64, frames: usize, sample_rate: u32) -> filmcraft_media::Result<filmcraft_frame::AudioBuffer> {
+    fn audio_stream(
+        &self,
+        stream: usize,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> filmcraft_media::Result<filmcraft_frame::AudioBuffer> {
         self.0.audio_stream(stream, start, frames, sample_rate)
     }
 }
@@ -263,7 +287,10 @@ struct JobProvider {
 
 impl filmcraft_render::SourceProvider for JobProvider {
     fn source(&self, item: ItemId) -> Option<filmcraft_media::SharedSource> {
-        let s = self.inner.pool.monitor_source(item, self.inner.source(item)?);
+        let s = self
+            .inner
+            .pool
+            .monitor_source(item, self.inner.source(item)?);
         Some(Arc::new(TimedSource(s)))
     }
 }
@@ -311,7 +338,8 @@ impl PlanCache {
             self.bytes -= old;
         }
         if self.map.len() > Self::MAX || self.bytes > Self::BUDGET {
-            let mut v: Vec<(u64, FrameKey, usize)> = self.map.iter().map(|(k, v)| (v.1, *k, v.2)).collect();
+            let mut v: Vec<(u64, FrameKey, usize)> =
+                self.map.iter().map(|(k, v)| (v.1, *k, v.2)).collect();
             v.sort_unstable_by_key(|x| x.0);
             for (_, k, b) in v {
                 if self.map.len() <= Self::MAX && self.bytes <= Self::BUDGET {
@@ -339,7 +367,11 @@ impl Cache {
             self.bytes -= old.px.len();
         }
         if self.bytes > self.budget {
-            let mut all: Vec<(u64, FrameKey, usize)> = self.map.iter().map(|(k, (v, s))| (*s, *k, v.px.len())).collect();
+            let mut all: Vec<(u64, FrameKey, usize)> = self
+                .map
+                .iter()
+                .map(|(k, (v, s))| (*s, *k, v.px.len()))
+                .collect();
             all.sort_unstable_by_key(|x| x.0);
             for (_, k, b) in all {
                 if self.bytes <= self.budget * 8 / 10 {
@@ -410,11 +442,21 @@ impl FrameServer {
         (c.bytes, c.budget)
     }
 
-    pub fn new(pool: Arc<MediaPool>, services: Arc<dyn Services>, previews: Arc<PreviewStore>, workers: usize) -> Self {
+    pub fn new(
+        pool: Arc<MediaPool>,
+        services: Arc<dyn Services>,
+        previews: Arc<PreviewStore>,
+        workers: usize,
+    ) -> Self {
         let shared = Arc::new(Shared {
             queue: Mutex::new(VecDeque::new()),
             cv: Condvar::new(),
-            done: Mutex::new(Cache { map: HashMap::new(), bytes: 0, budget: 768 << 20, clock: 0 }),
+            done: Mutex::new(Cache {
+                map: HashMap::new(),
+                bytes: 0,
+                budget: 768 << 20,
+                clock: 0,
+            }),
             plans: Mutex::new(PlanCache::default()),
             in_flight: Mutex::new(Vec::new()),
             profiling: AtomicBool::new(false),
@@ -431,16 +473,27 @@ impl FrameServer {
             let services = services.clone();
             let rp = repaint.clone();
             let pv = previews.clone();
-            std::thread::Builder::new().name(format!("filmcraft-frames-{i}")).spawn(move || worker(sh, pool, services, pv, rp)).ok();
+            std::thread::Builder::new()
+                .name(format!("filmcraft-frames-{i}"))
+                .spawn(move || worker(sh, pool, services, pv, rp))
+                .ok();
         }
         #[cfg(target_arch = "wasm32")]
         let _ = workers;
-        Self { shared, pool, services, previews, repaint }
+        Self {
+            shared,
+            pool,
+            services,
+            previews,
+            repaint,
+        }
     }
 
     /// The default number of frame workers for this machine.
     pub fn default_workers() -> usize {
-        std::thread::available_parallelism().map(|n| n.get().clamp(2, 6)).unwrap_or(3)
+        std::thread::available_parallelism()
+            .map(|n| n.get().clamp(2, 6))
+            .unwrap_or(3)
     }
 
     pub fn set_context(&self, ctx: &egui::Context) {
@@ -457,12 +510,22 @@ impl FrameServer {
     }
 
     pub fn take_records(&self) -> Vec<JobRecord> {
-        std::mem::take(&mut *self.shared.records.lock().unwrap_or_else(|e| e.into_inner()))
+        std::mem::take(
+            &mut *self
+                .shared
+                .records
+                .lock()
+                .unwrap_or_else(|e| e.into_inner()),
+        )
     }
 
     /// Cumulative job statistics (`perf.stats`).
     pub fn stats(&self) -> FrameStats {
-        self.shared.stats.lock().unwrap_or_else(|e| e.into_inner()).clone()
+        self.shared
+            .stats
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     /// Worker threads.
@@ -491,14 +554,30 @@ impl FrameServer {
     }
 
     pub fn get_plan(&self, k: &FrameKey) -> Option<Arc<GpuPlan>> {
-        self.shared.plans.lock().unwrap_or_else(|e| e.into_inner()).get(k)
+        self.shared
+            .plans
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(k)
     }
 
     /// Whether the exact frame (image or plan) is ready.
     pub fn is_ready(&self, k: &FrameKey) -> bool {
         match k.target {
-            Target::SequencePlan(_) => self.shared.plans.lock().unwrap_or_else(|e| e.into_inner()).map.contains_key(k),
-            _ => self.shared.done.lock().unwrap_or_else(|e| e.into_inner()).map.contains_key(k),
+            Target::SequencePlan(_) => self
+                .shared
+                .plans
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .map
+                .contains_key(k),
+            _ => self
+                .shared
+                .done
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .map
+                .contains_key(k),
         }
     }
 
@@ -506,7 +585,10 @@ impl FrameServer {
     pub fn nearest_plan(&self, key: FrameKey, max_back: i64) -> Option<(FrameKey, Arc<GpuPlan>)> {
         let mut g = self.shared.plans.lock().unwrap_or_else(|e| e.into_inner());
         (0..=max_back).find_map(|d| {
-            let k = FrameKey { frame: key.frame - d, ..key };
+            let k = FrameKey {
+                frame: key.frame - d,
+                ..key
+            };
             g.get(&k).map(|p| (k, p))
         })
     }
@@ -516,20 +598,61 @@ impl FrameServer {
     /// The frame on screen (`prio` 0: scrubbing, a seek) treats frames more than
     /// [`SCRUB_KEEP_S`] before it as not wanted: a decoder seeking from a keyframe skips their
     /// non-reference pictures, while nearby frames stay decoded (and cached) for scrubbing back.
-    pub fn request(&self, key: FrameKey, time: Tick, scale: f32, project: &Arc<Project>, prio: u32) {
+    pub fn request(
+        &self,
+        key: FrameKey,
+        time: Tick,
+        scale: f32,
+        project: &Arc<Project>,
+        prio: u32,
+    ) {
         let late = (prio == 0).then(|| Tick::from_seconds_f64(SCRUB_KEEP_S));
         self.request_job(key, time, scale, project, prio, false, late);
     }
 
-    fn request_job(&self, key: FrameKey, time: Tick, scale: f32, project: &Arc<Project>, prio: u32, prefetch: bool, catch_up: Option<Tick>) {
-        let hit = || self.shared.stats.lock().unwrap_or_else(|e| e.into_inner()).request_hits += 1;
-        if self.shared.done.lock().unwrap_or_else(|e| e.into_inner()).map.contains_key(&key)
-            || self.shared.plans.lock().unwrap_or_else(|e| e.into_inner()).map.contains_key(&key)
+    fn request_job(
+        &self,
+        key: FrameKey,
+        time: Tick,
+        scale: f32,
+        project: &Arc<Project>,
+        prio: u32,
+        prefetch: bool,
+        catch_up: Option<Tick>,
+    ) {
+        let hit = || {
+            self.shared
+                .stats
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .request_hits += 1
+        };
+        if self
+            .shared
+            .done
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .map
+            .contains_key(&key)
+            || self
+                .shared
+                .plans
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .map
+                .contains_key(&key)
         {
             hit();
             return;
         }
-        if self.shared.in_flight.lock().unwrap_or_else(|e| e.into_inner()).iter().any(|(k, c, _)| *k == key && !c.load(Ordering::Relaxed)) {
+        if self
+            .shared
+            .in_flight
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .any(|(k, c, _)| *k == key && !c.load(Ordering::Relaxed))
+        {
             hit();
             return;
         }
@@ -546,7 +669,11 @@ impl FrameServer {
             hit();
             return;
         }
-        self.shared.stats.lock().unwrap_or_else(|e| e.into_inner()).request_misses += 1;
+        self.shared
+            .stats
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .request_misses += 1;
         if prio == 0 {
             // A new frame on screen for this view replaces the one asked for before: scrubbing
             // asks for one per refresh, and without this the oldest position would decode
@@ -558,13 +685,29 @@ impl FrameServer {
             // refresh, cancelling each one for the next would show nothing until the mouse rests.
             let same_view = |k: &FrameKey| k.target == key.target && k.size == key.size;
             q.retain(|j| !(j.prio == 0 && !j.prefetch && same_view(&j.key)));
-            for (k, c, prefetch) in self.shared.in_flight.lock().unwrap_or_else(|e| e.into_inner()).iter() {
+            for (k, c, prefetch) in self
+                .shared
+                .in_flight
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .iter()
+            {
                 if !prefetch && same_view(k) && k.frame != key.frame {
                     c.store(true, Ordering::Relaxed);
                 }
             }
         }
-        q.push_back(Job { key, queued: Instant::now(), cancel: Default::default(), prefetch, catch_up, time, scale, project: project.clone(), prio });
+        q.push_back(Job {
+            key,
+            queued: Instant::now(),
+            cancel: Default::default(),
+            prefetch,
+            catch_up,
+            time,
+            scale,
+            project: project.clone(),
+            prio,
+        });
         drop(q);
         self.shared.cv.notify_one();
     }
@@ -576,49 +719,101 @@ impl FrameServer {
     /// When frames cost more to render than the frame interval (CPU effects), frames that could
     /// not be ready in time are not started and the workers get evenly spaced frames they can
     /// finish ([`playback_plan`]). While `preroll` (clock not started yet) every frame is wanted.
-    pub fn schedule_playback(&self, key: FrameKey, rate: filmcraft_time::FrameRate, scale: f32, project: &Arc<Project>, speed: f64, preroll: bool) {
+    pub fn schedule_playback(
+        &self,
+        key: FrameKey,
+        rate: filmcraft_time::FrameRate,
+        scale: f32,
+        project: &Arc<Project>,
+        speed: f64,
+        preroll: bool,
+    ) {
         let dir = if speed < 0.0 { -1 } else { 1 };
         let step = speed.abs().max(1.0) as i64;
         let fps = rate.as_f64() * speed.abs().max(1.0) / step as f64;
-        let (lead, stride) = if preroll { (1, 1) } else { playback_plan(self.render_cost(), fps, self.shared.workers) };
+        let (lead, stride) = if preroll {
+            (1, 1)
+        } else {
+            playback_plan(self.render_cost(), fps, self.shared.workers)
+        };
         if lead <= 1 {
             // the frame due now; once the clock runs, the frames before it are late
-            self.request_job(key, rate.tick_of(key.frame), scale, project, 0, false, (!preroll && dir > 0).then_some(Tick::ZERO));
+            self.request_job(
+                key,
+                rate.tick_of(key.frame),
+                scale,
+                project,
+                0,
+                false,
+                (!preroll && dir > 0).then_some(Tick::ZERO),
+            );
         }
         // During preroll the clock has not started: only the frames that gate start, not a
         // prefetch run that walks the rest of a LongGOP and evicts the playhead pictures.
-        let ahead = if preroll { (PREROLL_FRAMES - 1).max(0) } else { prefetch_depth(speed) };
+        let ahead = if preroll {
+            (PREROLL_FRAMES - 1).max(0)
+        } else {
+            prefetch_depth(speed)
+        };
         for i in 0..ahead {
             let f = key.frame + (lead + i * stride) * dir * step;
             if f >= 0 {
                 // forward play: frames before the playhead are late (reverse play skips nothing)
                 let late = (!preroll && dir > 0).then(|| rate.tick_of(f) - rate.tick_of(key.frame));
-                self.request_job(FrameKey { frame: f, ..key }, rate.tick_of(f), scale, project, i as u32 + 1, true, late);
+                self.request_job(
+                    FrameKey { frame: f, ..key },
+                    rate.tick_of(f),
+                    scale,
+                    project,
+                    i as u32 + 1,
+                    true,
+                    late,
+                );
             }
         }
         let (target, rev, cur) = (key.target, key.revision, key.frame);
         let span = (lead + ahead * stride) * step + 26;
-        self.retain_queue(|k| k.target != target || (k.revision == rev && (k.frame - cur) * dir >= 0 && (k.frame - cur).abs() < span));
+        self.retain_queue(|k| {
+            k.target != target
+                || (k.revision == rev && (k.frame - cur) * dir >= 0 && (k.frame - cur).abs() < span)
+        });
     }
 
     /// Whether playback can start at `key`: the next [`PREROLL_FRAMES`] frames (up to `last`)
     /// are ready.
     pub fn preroll_ready(&self, key: FrameKey, speed: f64, last: i64) -> bool {
         let step = (speed.abs().max(1.0) as i64) * if speed < 0.0 { -1 } else { 1 };
-        (0..PREROLL_FRAMES).map(|i| key.frame + i * step).filter(|f| *f >= 0 && *f <= last).all(|f| self.is_ready(&FrameKey { frame: f, ..key }))
+        (0..PREROLL_FRAMES)
+            .map(|i| key.frame + i * step)
+            .filter(|f| *f >= 0 && *f <= last)
+            .all(|f| self.is_ready(&FrameKey { frame: f, ..key }))
     }
 
     /// The current per-frame render cost estimate (s), see [`playback_plan`].
     pub fn render_cost(&self) -> f64 {
-        *self.shared.render_cost.lock().unwrap_or_else(|e| e.into_inner())
+        *self
+            .shared
+            .render_cost
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
     }
 
     /// Drop queued jobs that fail `keep` (e.g. stale revisions or frames far from the playhead).
     /// Jobs already running for such frames are cancelled: a worker blocked behind a decoder
     /// would otherwise go on to decode a frame playback has passed, possibly from its keyframe.
     pub fn retain_queue(&self, keep: impl Fn(&FrameKey) -> bool) {
-        self.shared.queue.lock().unwrap_or_else(|e| e.into_inner()).retain(|j| keep(&j.key));
-        for (k, c, _) in self.shared.in_flight.lock().unwrap_or_else(|e| e.into_inner()).iter() {
+        self.shared
+            .queue
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|j| keep(&j.key));
+        for (k, c, _) in self
+            .shared
+            .in_flight
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+        {
             if !keep(k) {
                 c.store(true, Ordering::Relaxed);
             }
@@ -628,8 +823,18 @@ impl FrameServer {
     /// Playback stopped: drop its queued prefetch jobs and cancel the running ones (left alone,
     /// they would keep the workers busy, e.g. rendering effects for frames nobody will see).
     pub fn stop_prefetch(&self) {
-        self.shared.queue.lock().unwrap_or_else(|e| e.into_inner()).retain(|j| !j.prefetch);
-        for (_, c, prefetch) in self.shared.in_flight.lock().unwrap_or_else(|e| e.into_inner()).iter() {
+        self.shared
+            .queue
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|j| !j.prefetch);
+        for (_, c, prefetch) in self
+            .shared
+            .in_flight
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+        {
             if *prefetch {
                 c.store(true, Ordering::Relaxed);
             }
@@ -637,13 +842,30 @@ impl FrameServer {
     }
 
     pub fn queue_len(&self) -> usize {
-        self.shared.queue.lock().unwrap_or_else(|e| e.into_inner()).len()
+        self.shared
+            .queue
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .len()
     }
 
     /// The most recent cached frame for `target` at or before `frame` within `max_back` frames.
-    pub fn nearest(&self, target: Target, frame: i64, size: u32, revision: u64, max_back: i64) -> Option<Arc<Rgba>> {
+    pub fn nearest(
+        &self,
+        target: Target,
+        frame: i64,
+        size: u32,
+        revision: u64,
+        max_back: i64,
+    ) -> Option<Arc<Rgba>> {
         for d in 0..=max_back {
-            if let Some(v) = self.get(&FrameKey { target, frame: frame - d, size, revision, draft: false }) {
+            if let Some(v) = self.get(&FrameKey {
+                target,
+                frame: frame - d,
+                size,
+                revision,
+                draft: false,
+            }) {
                 return Some(v);
             }
         }
@@ -666,13 +888,24 @@ impl FrameServer {
                 if q.is_empty() {
                     break;
                 }
-                let best = q.iter().enumerate().min_by_key(|(i, j)| (j.prio, *i)).map(|(i, _)| i).unwrap_or(0);
+                let best = q
+                    .iter()
+                    .enumerate()
+                    .min_by_key(|(i, j)| (j.prio, *i))
+                    .map(|(i, _)| i)
+                    .unwrap_or(0);
                 match q.remove(best) {
                     Some(job) => job,
                     None => break,
                 }
             };
-            if run_job(&self.shared, &job, &self.pool, &self.services, &self.previews) {
+            if run_job(
+                &self.shared,
+                &job,
+                &self.pool,
+                &self.services,
+                &self.previews,
+            ) {
                 done += 1;
             } else {
                 retry.push(job);
@@ -711,7 +944,10 @@ pub struct PlaybackMeter {
 
 impl PlaybackMeter {
     pub fn start(&mut self, speed: f64) {
-        *self = Self { step: (speed.abs().max(1.0) as i64) * if speed < 0.0 { -1 } else { 1 }, ..Default::default() };
+        *self = Self {
+            step: (speed.abs().max(1.0) as i64) * if speed < 0.0 { -1 } else { 1 },
+            ..Default::default()
+        };
     }
 
     /// Record one display refresh: `frame` is due now and `exact` says whether it is on screen.
@@ -777,7 +1013,12 @@ fn worker(
             loop {
                 if !q.is_empty() {
                     // highest priority (lowest number) first; FIFO among equals
-                    let best = q.iter().enumerate().min_by_key(|(i, j)| (j.prio, *i)).map(|(i, _)| i).unwrap_or(0);
+                    let best = q
+                        .iter()
+                        .enumerate()
+                        .min_by_key(|(i, j)| (j.prio, *i))
+                        .map(|(i, _)| i)
+                        .unwrap_or(0);
                     if let Some(job) = q.remove(best) {
                         break job;
                     }
@@ -788,9 +1029,14 @@ fn worker(
         // A panic while decoding or rendering one frame (bad media, a decoder bug) must not take
         // the worker down with it: a dead worker leaves its frame "in flight" forever and the
         // monitors blank. Log it, forget the job and keep serving.
-        let ran = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_job(&sh, &job, &pool, &services, &previews)));
+        let ran = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            run_job(&sh, &job, &pool, &services, &previews)
+        }));
         if ran.is_err() {
-            sh.in_flight.lock().unwrap_or_else(|e| e.into_inner()).retain(|(k, c, _)| !(*k == job.key && Arc::ptr_eq(c, &job.cancel)));
+            sh.in_flight
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .retain(|(k, c, _)| !(*k == job.key && Arc::ptr_eq(c, &job.cancel)));
             sh.stats.lock().unwrap_or_else(|e| e.into_inner()).failed += 1;
             log::error!("frame job {:?} panicked; the worker continues", job.key);
         }
@@ -810,13 +1056,31 @@ pub fn inject_job_panics(n: u32) {
 }
 static INJECT_PANICS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
-fn run_job(sh: &Shared, job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Services>, previews: &PreviewStore) -> bool {
-    sh.in_flight.lock().unwrap_or_else(|e| e.into_inner()).push((job.key, job.cancel.clone(), job.prefetch));
-    if INJECT_PANICS.load(Ordering::Relaxed) > 0 && INJECT_PANICS.fetch_sub(1, Ordering::Relaxed) > 0 {
+fn run_job(
+    sh: &Shared,
+    job: &Job,
+    pool: &Arc<MediaPool>,
+    services: &Arc<dyn Services>,
+    previews: &PreviewStore,
+) -> bool {
+    sh.in_flight
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push((job.key, job.cancel.clone(), job.prefetch));
+    if INJECT_PANICS.load(Ordering::Relaxed) > 0
+        && INJECT_PANICS.fetch_sub(1, Ordering::Relaxed) > 0
+    {
         crate::crash::injected_fault("injected frame-job fault");
     }
     let profiling = sh.profiling.load(Ordering::Relaxed);
-    let (started, cpu0) = (Instant::now(), if profiling { thread_cpu_time().unwrap_or_default() } else { Duration::ZERO });
+    let (started, cpu0) = (
+        Instant::now(),
+        if profiling {
+            thread_cpu_time().unwrap_or_default()
+        } else {
+            Duration::ZERO
+        },
+    );
     SOURCE_TIME.with(|s| s.set((Duration::ZERO, Duration::ZERO)));
     PROFILING.with(|p| p.set(profiling));
     // A cancelled job may have missed layers (its source gave up): its result is not cached.
@@ -834,14 +1098,20 @@ fn run_job(sh: &Shared, job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Ser
                         if !job.cancel.load(Ordering::Relaxed) && !loading {
                             // Convert texels for upload here, not on the UI thread when the frame is shown.
                             let prepared = filmcraft_gpu::prepare(&plan);
-                            sh.plans.lock().unwrap_or_else(|e| e.into_inner()).insert(job.key, GpuPlan { plan, prepared });
+                            sh.plans
+                                .lock()
+                                .unwrap_or_else(|e| e.into_inner())
+                                .insert(job.key, GpuPlan { plan, prepared });
                         }
                         pv
                     } else {
                         let (img, pv) = render_job(job, pool, services, previews);
                         loading = filmcraft_media::pending::take();
                         if !job.cancel.load(Ordering::Relaxed) && !loading {
-                            sh.done.lock().unwrap_or_else(|e| e.into_inner()).insert(job.key, Arc::new(img));
+                            sh.done
+                                .lock()
+                                .unwrap_or_else(|e| e.into_inner())
+                                .insert(job.key, Arc::new(img));
                         }
                         pv
                     }
@@ -850,21 +1120,34 @@ fn run_job(sh: &Shared, job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Ser
         })
     });
     let cancelled = job.cancel.load(Ordering::Relaxed);
-    sh.in_flight.lock().unwrap_or_else(|e| e.into_inner()).retain(|(k, c, _)| !(*k == job.key && Arc::ptr_eq(c, &job.cancel)));
+    sh.in_flight
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .retain(|(k, c, _)| !(*k == job.key && Arc::ptr_eq(c, &job.cancel)));
     if job.prefetch {
         // Work beyond fetching source frames (decoding is sequential per source and is
         // not saved by skipping frames, so it is left out of the estimate). A cancelled job
         // only tells that the work takes at least this long.
-        let cost = started.elapsed().saturating_sub(SOURCE_TIME.with(|s| s.get()).0).as_secs_f64();
+        let cost = started
+            .elapsed()
+            .saturating_sub(SOURCE_TIME.with(|s| s.get()).0)
+            .as_secs_f64();
         let mut c = sh.render_cost.lock().unwrap_or_else(|e| e.into_inner());
         if !cancelled || cost > *c {
-            *c = if *c == 0.0 { cost } else { *c * 0.8 + cost * 0.2 };
+            *c = if *c == 0.0 {
+                cost
+            } else {
+                *c * 0.8 + cost * 0.2
+            };
         }
     }
     {
         let job_wall = started.elapsed();
         let source = SOURCE_TIME.with(|s| s.get()).0;
-        let (src_ms, render_ms) = (source.as_secs_f64() * 1e3, job_wall.saturating_sub(source).as_secs_f64() * 1e3);
+        let (src_ms, render_ms) = (
+            source.as_secs_f64() * 1e3,
+            job_wall.saturating_sub(source).as_secs_f64() * 1e3,
+        );
         let mut st = sh.stats.lock().unwrap_or_else(|e| e.into_inner());
         st.jobs += 1;
         st.cancelled += cancelled as u64;
@@ -892,34 +1175,66 @@ fn run_job(sh: &Shared, job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Ser
             preview,
             cancelled,
         };
-        sh.records.lock().unwrap_or_else(|e| e.into_inner()).push(rec);
+        sh.records
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(rec);
     }
     !loading
 }
 
 /// The preview frame for a sequence job, when its segment has been rendered.
-fn preview_frame(job: &Job, seq: ItemId, pool: &MediaPool, previews: &PreviewStore) -> Option<Arc<filmcraft_frame::VideoFrame>> {
+fn preview_frame(
+    job: &Job,
+    seq: ItemId,
+    pool: &MediaPool,
+    previews: &PreviewStore,
+) -> Option<Arc<filmcraft_frame::VideoFrame>> {
     let rate = job.project.sequence(seq)?.settings.frame_rate;
     timed_source(|| previews.frame(pool, &job.project, seq, rate.frame_at(job.time), job.scale))
 }
 
 fn provider(job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Services>) -> JobProvider {
-    JobProvider { inner: pool.provider(job.project.clone(), services.clone()) }
+    JobProvider {
+        inner: pool.provider(job.project.clone(), services.clone()),
+    }
 }
 
-fn plan_job(job: &Job, seq: ItemId, pool: &Arc<MediaPool>, services: &Arc<dyn Services>, previews: &PreviewStore) -> (filmcraft_render::plan::FramePlan, bool) {
-    let opts = filmcraft_render::RenderOptions { scale: job.scale, captions: true, ..Default::default() };
+fn plan_job(
+    job: &Job,
+    seq: ItemId,
+    pool: &Arc<MediaPool>,
+    services: &Arc<dyn Services>,
+    previews: &PreviewStore,
+) -> (filmcraft_render::plan::FramePlan, bool) {
+    let opts = filmcraft_render::RenderOptions {
+        scale: job.scale,
+        captions: true,
+        ..Default::default()
+    };
     if let Some(frame) = preview_frame(job, seq, pool, previews)
         && let Some(q) = job.project.sequence(seq)
     {
         // One full-frame layer: the preview scaled to the output size. Previews never contain
         // captions (they are not part of the preview hash), so captions are layered on live.
         let (w, h) = filmcraft_render::output_size(q, job.scale);
-        let matrix = filmcraft_geom::Affine::scale(w as f64 / frame.width.max(1) as f64, h as f64 / frame.height.max(1) as f64);
-        let mut layers = vec![filmcraft_render::plan::PlanLayer { frame, matrix, opacity: 1.0, blend: filmcraft_render::Blend::Normal, fx: None, input: None }];
+        let matrix = filmcraft_geom::Affine::scale(
+            w as f64 / frame.width.max(1) as f64,
+            h as f64 / frame.height.max(1) as f64,
+        );
+        let mut layers = vec![filmcraft_render::plan::PlanLayer {
+            frame,
+            matrix,
+            opacity: 1.0,
+            blend: filmcraft_render::Blend::Normal,
+            fx: None,
+            input: None,
+        }];
         for o in filmcraft_render::caption_overlays(q, job.time, w, h) {
             layers.push(filmcraft_render::plan::PlanLayer {
-                frame: Arc::new(filmcraft_frame::VideoFrame::rgba_f32(o.w as u32, o.h as u32, o.px)),
+                frame: Arc::new(filmcraft_frame::VideoFrame::rgba_f32(
+                    o.w as u32, o.h as u32, o.px,
+                )),
                 matrix: filmcraft_geom::Affine::translate(o.x as f64, o.y as f64),
                 opacity: 1.0,
                 blend: filmcraft_render::Blend::Normal,
@@ -927,48 +1242,111 @@ fn plan_job(job: &Job, seq: ItemId, pool: &Arc<MediaPool>, services: &Arc<dyn Se
                 input: None,
             });
         }
-        return (filmcraft_render::plan::FramePlan::Layers { width: w, height: h, layers }, true);
+        return (
+            filmcraft_render::plan::FramePlan::Layers {
+                width: w,
+                height: h,
+                layers,
+            },
+            true,
+        );
     }
     let provider = provider(job, pool, services);
-    (filmcraft_render::plan::plan_frame(&job.project, seq, job.time, opts, &provider), false)
+    (
+        filmcraft_render::plan::plan_frame(&job.project, seq, job.time, opts, &provider),
+        false,
+    )
 }
 
 /// Render a job to RGBA8; the flag says whether it came from a render preview.
-fn render_job(job: &Job, pool: &Arc<MediaPool>, services: &Arc<dyn Services>, previews: &PreviewStore) -> (Rgba, bool) {
+fn render_job(
+    job: &Job,
+    pool: &Arc<MediaPool>,
+    services: &Arc<dyn Services>,
+    previews: &PreviewStore,
+) -> (Rgba, bool) {
     if let Target::Sequence(seq) | Target::SequencePlan(seq) = job.key.target
         && let Some(f) = preview_frame(job, seq, pool, previews)
         && let Some(q) = job.project.sequence(seq)
     {
         let (w, h) = filmcraft_render::output_size(q, job.scale);
-        let img = filmcraft_render::Image { w: f.width as usize, h: f.height as usize, px: f.to_linear_f32() };
+        let img = filmcraft_render::Image {
+            w: f.width as usize,
+            h: f.height as usize,
+            px: f.to_linear_f32(),
+        };
         let mut img = if img.w == w && img.h == h {
             img
         } else {
-            img.transformed(w, h, &filmcraft_geom::Affine::scale(w as f64 / img.w.max(1) as f64, h as f64 / img.h.max(1) as f64))
+            img.transformed(
+                w,
+                h,
+                &filmcraft_geom::Affine::scale(
+                    w as f64 / img.w.max(1) as f64,
+                    h as f64 / img.h.max(1) as f64,
+                ),
+            )
         };
         if matches!(job.key.target, Target::Sequence(_)) {
             for o in filmcraft_render::caption_overlays(q, job.time, w, h) {
                 o.composite_onto(&mut img.px, w, h);
             }
         }
-        return (Rgba { w: img.w, h: img.h, px: img.over_black_rgba8() }, true);
+        return (
+            Rgba {
+                w: img.w,
+                h: img.h,
+                px: img.over_black_rgba8(),
+            },
+            true,
+        );
     }
     let provider = provider(job, pool, services);
-    let opts = filmcraft_render::RenderOptions { scale: job.scale, captions: true, ..Default::default() };
+    let opts = filmcraft_render::RenderOptions {
+        scale: job.scale,
+        captions: true,
+        ..Default::default()
+    };
     let img = match job.key.target {
-        Target::Sequence(seq) | Target::SequencePlan(seq) => Some(filmcraft_render::render_sequence(&job.project, seq, job.time, opts, &provider)),
-        Target::Item(item) => filmcraft_render::render_item(&job.project, item, job.time, job.scale, &provider),
+        Target::Sequence(seq) | Target::SequencePlan(seq) => Some(
+            filmcraft_render::render_sequence(&job.project, seq, job.time, opts, &provider),
+        ),
+        Target::Item(item) => {
+            filmcraft_render::render_item(&job.project, item, job.time, job.scale, &provider)
+        }
         Target::MulticamGrid(item, side, page) => {
             let side = (side > 0).then_some(side as usize);
-            filmcraft_render::multicam::render_grid_page(&job.project, item, job.time, job.scale, side, page as usize, &provider).map(|(img, _)| img)
+            filmcraft_render::multicam::render_grid_page(
+                &job.project,
+                item,
+                job.time,
+                job.scale,
+                side,
+                page as usize,
+                &provider,
+            )
+            .map(|(img, _)| img)
         }
-        Target::MulticamAngle(item, angle) => {
-            filmcraft_render::multicam::render_angle_thumbnail(&job.project, item, angle as usize, job.time, job.scale, &provider)
-        }
+        Target::MulticamAngle(item, angle) => filmcraft_render::multicam::render_angle_thumbnail(
+            &job.project,
+            item,
+            angle as usize,
+            job.time,
+            job.scale,
+            &provider,
+        ),
     };
     let rgba = match img {
-        Some(img) => Rgba { w: img.w, h: img.h, px: img.over_black_rgba8() },
-        None => Rgba { w: 1, h: 1, px: vec![0, 0, 0, 255] },
+        Some(img) => Rgba {
+            w: img.w,
+            h: img.h,
+            px: img.over_black_rgba8(),
+        },
+        None => Rgba {
+            w: 1,
+            h: 1,
+            px: vec![0, 0, 0, 255],
+        },
     };
     (rgba, false)
 }
@@ -995,10 +1373,21 @@ mod tests {
     fn draft_decoding_only_for_reduced_resolution_playback() {
         use super::draft_playback;
         assert!(draft_playback(true, 0.5, true) && draft_playback(true, 0.25, true));
-        assert!(!draft_playback(true, 1.0, true), "full resolution is never draft");
-        assert!(!draft_playback(false, 0.5, true), "a paused frame is never draft");
+        assert!(
+            !draft_playback(true, 1.0, true),
+            "full resolution is never draft"
+        );
+        assert!(
+            !draft_playback(false, 0.5, true),
+            "a paused frame is never draft"
+        );
         assert!(!draft_playback(true, 0.5, false), "off unless enabled");
-        assert!(!filmcraft_engine::autosave::Preferences::default().playback.draft_decode, "off by default");
+        assert!(
+            !filmcraft_engine::autosave::Preferences::default()
+                .playback
+                .draft_decode,
+            "off by default"
+        );
     }
 
     #[test]
@@ -1028,7 +1417,16 @@ mod tests {
         // 24 fps on a 60 Hz display: each frame is due for 2–3 refreshes.
         let mut m = PlaybackMeter::default();
         m.start(1.0);
-        for (f, exact) in [(0, true), (0, true), (0, true), (1, false), (1, true), (2, false), (2, false), (3, true)] {
+        for (f, exact) in [
+            (0, true),
+            (0, true),
+            (0, true),
+            (1, false),
+            (1, true),
+            (2, false),
+            (2, false),
+            (3, true),
+        ] {
             m.refresh(f, exact);
         }
         m.finish();

@@ -24,16 +24,30 @@ pub const PATHFINDERS: [(&str, &str, &str); 6] = [
 ];
 
 fn run(app: &mut VectorcraftApp, ui: &Ui, op: &str, label: &str) {
-    if app.run(&format!("object.pathfinder.{op}"), json!({})).is_ok() {
-        set_pstate(ui.ctx(), "pf-last", Some((op.to_string(), label.to_string())));
+    if app
+        .run(&format!("object.pathfinder.{op}"), json!({}))
+        .is_ok()
+    {
+        set_pstate(
+            ui.ctx(),
+            "pf-last",
+            Some((op.to_string(), label.to_string())),
+        );
     }
 }
 
 /// How many objects the selection gives an operation: a group selected alone counts as its
 /// members (#1450).
 fn operands(app: &VectorcraftApp) -> usize {
-    let alone = app.session.active().filter(|d| d.selection.len() == 1).and_then(|d| d.doc.node(*d.selection.objects.first()?));
-    match alone.and_then(|n| n.children().filter(|_| matches!(n.kind, vectorcraft_doc::NodeKind::Group { .. }))) {
+    let alone = app
+        .session
+        .active()
+        .filter(|d| d.selection.len() == 1)
+        .and_then(|d| d.doc.node(*d.selection.objects.first()?));
+    match alone.and_then(|n| {
+        n.children()
+            .filter(|_| matches!(n.kind, vectorcraft_doc::NodeKind::Group { .. }))
+    }) {
         Some(members) => members.len(),
         None => selection_len(app),
     }
@@ -61,18 +75,33 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             }
         }
         ui.add_enabled_ui(false, |ui| {
-            let (r, _) = ui.allocate_exact_size(egui::vec2(ui.available_width().min(90.0), 26.0), egui::Sense::hover());
+            let (r, _) = ui.allocate_exact_size(
+                egui::vec2(ui.available_width().min(90.0), 26.0),
+                egui::Sense::hover(),
+            );
             ui.painter().rect_filled(r, 2, t.hover.gamma_multiply(0.5));
-            ui.painter().text(r.center(), egui::Align2::CENTER_CENTER, tl!("Expand"), egui::FontId::proportional(12.5), t.text_disabled);
+            ui.painter().text(
+                r.center(),
+                egui::Align2::CENTER_CENTER,
+                tl!("Expand"),
+                egui::FontId::proportional(12.5),
+                t.text_disabled,
+            );
         })
         .response
-        .on_disabled_hover_text(tl!("Expand applies to compound shapes (Alt-click a shape mode) — on the roadmap"));
+        .on_disabled_hover_text(tl!(
+            "Expand applies to compound shapes (Alt-click a shape mode) — on the roadmap"
+        ));
     });
     widgets::subheader(ui, tl!("Pathfinders:"));
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 5.0;
         for (icon, tip, op) in PATHFINDERS {
-            let min = if op == "outline" || op == "divide" { 1 } else { 2 };
+            let min = if op == "outline" || op == "divide" {
+                1
+            } else {
+                2
+            };
             if button(ui, icon, tip, n, min) {
                 run(app, ui, op, tip);
             }
@@ -83,8 +112,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     menu_item(ui, tl!("Trap…"), false, false);
     let last: Option<(String, String)> = pstate(ui.ctx(), "pf-last");
-    let label =
-        last.as_ref().map(|(_, l)| crate::i18n::fmt(tl!("Repeat {name}"), &[("name", tl!(l))])).unwrap_or_else(|| tl!("Repeat Pathfinder").into());
+    let label = last
+        .as_ref()
+        .map(|(_, l)| crate::i18n::fmt(tl!("Repeat {name}"), &[("name", tl!(l))]))
+        .unwrap_or_else(|| tl!("Repeat Pathfinder").into());
     if menu_item(ui, &label, last.is_some() && selection_len(app) >= 1, false)
         && let Some((op, l)) = last
     {

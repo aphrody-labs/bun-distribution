@@ -70,9 +70,17 @@ fn mix_name(c: AudioChannels) -> &'static str {
 
 /// Fill the draft from the active sequence and open the dialog on the General tab.
 pub fn open(app: &mut FilmcraftApp) {
-    let Some(q) = app.session.active_sequence() else { return };
+    let Some(q) = app.session.active_sequence() else {
+        return;
+    };
     let st = &q.settings;
-    let name = app.session.state.active_sequence.and_then(|id| app.session.project.item(id)).map(|i| i.name.clone()).unwrap_or_default();
+    let name = app
+        .session
+        .state
+        .active_sequence
+        .and_then(|id| app.session.project.item(id))
+        .map(|i| i.name.clone())
+        .unwrap_or_default();
     app.ui.sequence_settings = SequenceSettingsDraft {
         tab: "general".into(),
         name,
@@ -139,7 +147,13 @@ fn new_sequence_params(d: &SequenceSettingsDraft) -> (Map<String, Value>, Map<St
     p.insert("video".into(), json!(d.video_tracks.min(256)));
     p.insert("audio".into(), json!(d.audio_tracks.min(256)));
     // what's left: only the settings `file.newSequence` has no parameter for
-    let after = SequenceSettings { frame_rate: rate(d), width: d.width, height: d.height, sample_rate: d.sample_rate, ..Default::default() };
+    let after = SequenceSettings {
+        frame_rate: rate(d),
+        width: d.width,
+        height: d.height,
+        sample_rate: d.sample_rate,
+        ..Default::default()
+    };
     let mut rest = changes(d, &after, name);
     rest.retain(|k, _| matches!(k.as_str(), "dropFrame" | "maxRenderQuality"));
     (p, rest)
@@ -147,18 +161,29 @@ fn new_sequence_params(d: &SequenceSettingsDraft) -> (Map<String, Value>, Map<St
 
 /// The Tracks tab of New Sequence: how many video and audio tracks the sequence starts with.
 fn tracks(ui: &mut egui::Ui, d: &mut SequenceSettingsDraft, elems: &mut Elems) {
-    for (id, label, n) in [("video", "Video:", &mut d.video_tracks), ("audio", "Audio:", &mut d.audio_tracks)] {
+    for (id, label, n) in [
+        ("video", "Video:", &mut d.video_tracks),
+        ("audio", "Audio:", &mut d.audio_tracks),
+    ] {
         ui.horizontal(|ui| {
             ui.label(t(label));
             let r = ui.add(crate::widgets::number_drag(n).range(0..=256));
-            elems.push((format!("sequenceSettings.tracks.{id}"), r.rect, n.to_string()));
+            elems.push((
+                format!("sequenceSettings.tracks.{id}"),
+                r.rect,
+                n.to_string(),
+            ));
             ui.label(tl!("tracks"));
         });
     }
 }
 
 fn rate(d: &SequenceSettingsDraft) -> FrameRate {
-    FrameRate { num: d.fps_num, den: d.fps_den }.sane()
+    FrameRate {
+        num: d.fps_num,
+        den: d.fps_den,
+    }
+    .sane()
 }
 
 /// "16:9" for a frame size, or "1.90:1" when the reduced ratio has no small integer form.
@@ -176,8 +201,14 @@ fn aspect(w: u32, h: u32) -> String {
 
 /// The width a `w` x `h` frame with `par` pixels shows at, in square pixels (rounded).
 fn display_width(w: u32, h: u32, par: (u32, u32)) -> u32 {
-    let dw = filmcraft_project::conformed_size((w, h), par, (1, 1)).0.round();
-    if dw >= f64::from(u32::MAX) { u32::MAX } else { dw.max(0.0) as u32 }
+    let dw = filmcraft_project::conformed_size((w, h), par, (1, 1))
+        .0
+        .round();
+    if dw >= f64::from(u32::MAX) {
+        u32::MAX
+    } else {
+        dw.max(0.0) as u32
+    }
 }
 
 fn gcd(mut a: u32, mut b: u32) -> u32 {
@@ -195,7 +226,16 @@ fn timebase_label(r: FrameRate) -> String {
 /// NTSC rates, plain timecode otherwise (`(id, label)`).
 fn timecode_formats(r: FrameRate) -> Vec<(&'static str, String)> {
     if r.supports_drop_frame() {
-        vec![("df", tlf!("{rate} fps Drop-Frame Timecode", rate = r.label())), ("ndf", tlf!("{rate} fps Non Drop-Frame Timecode", rate = r.label()))]
+        vec![
+            (
+                "df",
+                tlf!("{rate} fps Drop-Frame Timecode", rate = r.label()),
+            ),
+            (
+                "ndf",
+                tlf!("{rate} fps Non Drop-Frame Timecode", rate = r.label()),
+            ),
+        ]
     } else {
         vec![("tc", tlf!("{rate} fps Timecode", rate = r.label()))]
     }
@@ -205,7 +245,10 @@ fn par_label(par: (u32, u32)) -> String {
     if par.0 == par.1 {
         tl!("Square Pixels (1.0)").into()
     } else if par.1 > 0 {
-        tlf!("Custom ({ratio})", ratio = format!("{:.4}", f64::from(par.0) / f64::from(par.1)))
+        tlf!(
+            "Custom ({ratio})",
+            ratio = format!("{:.4}", f64::from(par.0) / f64::from(par.1))
+        )
     } else {
         tl!("Custom").into()
     }
@@ -213,7 +256,11 @@ fn par_label(par: (u32, u32)) -> String {
 
 /// The parameters for `sequence.settings` that differ from `cur` (and the sequence's name
 /// `cur_name`); empty when nothing changed. A blank name keeps the current one.
-fn changes(d: &SequenceSettingsDraft, cur: &SequenceSettings, cur_name: &str) -> Map<String, Value> {
+fn changes(
+    d: &SequenceSettingsDraft,
+    cur: &SequenceSettings,
+    cur_name: &str,
+) -> Map<String, Value> {
     let mut p = Map::new();
     let name = d.name.trim();
     if !name.is_empty() && name != cur_name {
@@ -256,21 +303,44 @@ fn changes(d: &SequenceSettingsDraft, cur: &SequenceSettings, cur_name: &str) ->
 type Elems = Vec<(String, egui::Rect, String)>;
 
 /// One labelled row: the label right-aligned in a `label_w` column, then the control.
-fn row<R>(ui: &mut egui::Ui, label_w: f32, label: &str, enabled: bool, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
+fn row<R>(
+    ui: &mut egui::Ui,
+    label_w: f32,
+    label: &str,
+    enabled: bool,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> R {
     ui.horizontal(|ui| {
         let h = ui.spacing().interact_size.y;
-        ui.allocate_ui_with_layout(egui::vec2(label_w, h), egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.add_enabled(enabled, egui::Label::new(t(label)));
-        });
+        ui.allocate_ui_with_layout(
+            egui::vec2(label_w, h),
+            egui::Layout::right_to_left(egui::Align::Center),
+            |ui| {
+                ui.add_enabled(enabled, egui::Label::new(t(label)));
+            },
+        );
         add(ui)
     })
     .inner
 }
 
 /// A greyed-out list showing `value`, with the "not supported yet" hint (or `hint`).
-fn fixed_combo(ui: &mut egui::Ui, elems: &mut Elems, id: &str, value: &str, width: f32, hint: &str) {
+fn fixed_combo(
+    ui: &mut egui::Ui,
+    elems: &mut Elems,
+    id: &str,
+    value: &str,
+    width: f32,
+    hint: &str,
+) {
     let r = ui
-        .add_enabled_ui(false, |ui| egui::ComboBox::from_id_salt(("seq-settings-fixed", id)).selected_text(t(value)).width(width).show_ui(ui, |_| {}).response)
+        .add_enabled_ui(false, |ui| {
+            egui::ComboBox::from_id_salt(("seq-settings-fixed", id))
+                .selected_text(t(value))
+                .width(width)
+                .show_ui(ui, |_| {})
+                .response
+        })
         .inner
         .on_disabled_hover_text(t(hint));
     elems.push((format!("sequenceSettings.{id}"), r.rect, value.to_string()));
@@ -278,7 +348,12 @@ fn fixed_combo(ui: &mut egui::Ui, elems: &mut Elems, id: &str, value: &str, widt
 
 /// A greyed-out read-only value (a number field in Premiere), with the hint.
 fn fixed_value(ui: &mut egui::Ui, elems: &mut Elems, id: &str, value: &str) {
-    let r = ui.add_enabled(false, egui::Button::new(value).min_size(egui::vec2(64.0, 0.0))).on_disabled_hover_text(t(NOT_YET));
+    let r = ui
+        .add_enabled(
+            false,
+            egui::Button::new(value).min_size(egui::vec2(64.0, 0.0)),
+        )
+        .on_disabled_hover_text(t(NOT_YET));
     elems.push((format!("sequenceSettings.{id}"), r.rect, value.to_string()));
 }
 
@@ -291,18 +366,35 @@ fn section(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
     });
 }
 
-fn general(ui: &mut egui::Ui, d: &mut SequenceSettingsDraft, cur: &SequenceSettings, audio_samples: bool, elems: &mut Elems) {
+fn general(
+    ui: &mut egui::Ui,
+    d: &mut SequenceSettingsDraft,
+    cur: &SequenceSettings,
+    audio_samples: bool,
+    elems: &mut Elems,
+) {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let label_w = ["Preview File Format:", "Pixel Aspect Ratio:", "Number of Channels:"]
-        .iter()
-        .map(|l| ui.painter().layout_no_wrap(t(l).to_string(), font.clone(), egui::Color32::WHITE).size().x)
-        .fold(0.0, f32::max);
+    let label_w = [
+        "Preview File Format:",
+        "Pixel Aspect Ratio:",
+        "Number of Channels:",
+    ]
+    .iter()
+    .map(|l| {
+        ui.painter()
+            .layout_no_wrap(t(l).to_string(), font.clone(), egui::Color32::WHITE)
+            .size()
+            .x
+    })
+    .fold(0.0, f32::max);
     let list_w = 260.0;
     row(ui, label_w, "Sequence Name:", true, |ui| {
         let r = ui.add(egui::TextEdit::singleline(&mut d.name).desired_width(list_w));
         elems.push(("sequenceSettings.name".into(), r.rect, d.name.clone()));
     });
-    row(ui, label_w, "Editing Mode:", false, |ui| fixed_combo(ui, elems, "editingMode", "Custom", list_w, NOT_YET));
+    row(ui, label_w, "Editing Mode:", false, |ui| {
+        fixed_combo(ui, elems, "editingMode", "Custom", list_w, NOT_YET)
+    });
     row(ui, label_w, "Timebase:", true, |ui| {
         let r = rate(d);
         let mut choices: Vec<(i64, i64)> = TIMEBASES.to_vec();
@@ -313,69 +405,142 @@ fn general(ui: &mut egui::Ui, d: &mut SequenceSettingsDraft, cur: &SequenceSetti
         // no row limit of our own: the list grows to egui's popup limit (`Spacing::default_area_size`,
         // 400 px), so every rate up to 119.88 shows without scrolling (the default 200 px stopped
         // before 29.97)
-        let resp = egui::ComboBox::from_id_salt("seq-settings-timebase").selected_text(&shown).width(list_w).height(f32::INFINITY).show_ui(ui, |ui| {
-            for (num, den) in choices {
-                let label = timebase_label(FrameRate { num, den });
-                let o = ui.selectable_label((d.fps_num, d.fps_den) == (num, den), &label);
-                // a new timebase starts on its usual timecode (drop-frame for the NTSC rates);
-                // picking the current one again keeps the Display Format chosen for it
-                if o.clicked() && (d.fps_num, d.fps_den) != (num, den) {
-                    d.fps_num = num;
-                    d.fps_den = den;
-                    d.drop_frame = FrameRate { num, den }.supports_drop_frame();
+        let resp = egui::ComboBox::from_id_salt("seq-settings-timebase")
+            .selected_text(&shown)
+            .width(list_w)
+            .height(f32::INFINITY)
+            .show_ui(ui, |ui| {
+                for (num, den) in choices {
+                    let label = timebase_label(FrameRate { num, den });
+                    let o = ui.selectable_label((d.fps_num, d.fps_den) == (num, den), &label);
+                    // a new timebase starts on its usual timecode (drop-frame for the NTSC rates);
+                    // picking the current one again keeps the Display Format chosen for it
+                    if o.clicked() && (d.fps_num, d.fps_den) != (num, den) {
+                        d.fps_num = num;
+                        d.fps_den = den;
+                        d.drop_frame = FrameRate { num, den }.supports_drop_frame();
+                    }
+                    elems.push((
+                        format!("sequenceSettings.timebase.option.{num}/{den}"),
+                        o.rect,
+                        label,
+                    ));
                 }
-                elems.push((format!("sequenceSettings.timebase.option.{num}/{den}"), o.rect, label));
-            }
-        });
-        elems.push(("sequenceSettings.timebase".into(), resp.response.rect, shown));
+            });
+        elems.push((
+            "sequenceSettings.timebase".into(),
+            resp.response.rect,
+            shown,
+        ));
     });
     section(ui, "Video", |ui| {
         row(ui, label_w, "Frame Size:", true, |ui| {
-            let w = ui.add(crate::widgets::number_drag(&mut d.width).range(1..=filmcraft_project::MAX_FRAME_SIDE).speed(1.0));
+            let w = ui.add(
+                crate::widgets::number_drag(&mut d.width)
+                    .range(1..=filmcraft_project::MAX_FRAME_SIDE)
+                    .speed(1.0),
+            );
             elems.push(("sequenceSettings.width".into(), w.rect, d.width.to_string()));
             ui.label(tl!("horizontal"));
-            let h = ui.add(crate::widgets::number_drag(&mut d.height).range(1..=filmcraft_project::MAX_FRAME_SIDE).speed(1.0));
-            elems.push(("sequenceSettings.height".into(), h.rect, d.height.to_string()));
+            let h = ui.add(
+                crate::widgets::number_drag(&mut d.height)
+                    .range(1..=filmcraft_project::MAX_FRAME_SIDE)
+                    .speed(1.0),
+            );
+            elems.push((
+                "sequenceSettings.height".into(),
+                h.rect,
+                d.height.to_string(),
+            ));
             ui.label(tl!("vertical"));
             // the display aspect: 1440 x 1080 with 4:3 pixels is 16:9
             let a = aspect(display_width(d.width, d.height, cur.par), d.height);
             let ar = ui.label(&a);
             elems.push(("sequenceSettings.aspect".into(), ar.rect, a));
         });
-        let r = ui.checkbox(&mut d.scale_motion, tl!("Scale motion effects proportionally when changing frame size"));
-        elems.push(("sequenceSettings.scaleMotion".into(), r.rect, d.scale_motion.to_string()));
-        row(ui, label_w, "Pixel Aspect Ratio:", false, |ui| fixed_combo(ui, elems, "par", &par_label(cur.par), list_w, NOT_YET));
-        row(ui, label_w, "Fields:", false, |ui| fixed_combo(ui, elems, "fields", "No Fields (Progressive Scan)", list_w, NOT_YET));
+        let r = ui.checkbox(
+            &mut d.scale_motion,
+            tl!("Scale motion effects proportionally when changing frame size"),
+        );
+        elems.push((
+            "sequenceSettings.scaleMotion".into(),
+            r.rect,
+            d.scale_motion.to_string(),
+        ));
+        row(ui, label_w, "Pixel Aspect Ratio:", false, |ui| {
+            fixed_combo(ui, elems, "par", &par_label(cur.par), list_w, NOT_YET)
+        });
+        row(ui, label_w, "Fields:", false, |ui| {
+            fixed_combo(
+                ui,
+                elems,
+                "fields",
+                "No Fields (Progressive Scan)",
+                list_w,
+                NOT_YET,
+            )
+        });
         row(ui, label_w, "Display Format:", true, |ui| {
             let r = rate(d);
             let formats = timecode_formats(r);
-            let chosen = if r.supports_drop_frame() { if d.drop_frame { "df" } else { "ndf" } } else { "tc" };
-            let shown = formats.iter().find(|(id, _)| *id == chosen).map(|(_, l)| l.clone()).unwrap_or_default();
-            let resp = egui::ComboBox::from_id_salt("seq-settings-video-display").selected_text(&shown).width(list_w).show_ui(ui, |ui| {
-                for (id, label) in &formats {
-                    let o = ui.selectable_label(*id == chosen, label);
-                    if o.clicked() {
-                        d.drop_frame = *id == "df";
+            let chosen = if r.supports_drop_frame() {
+                if d.drop_frame { "df" } else { "ndf" }
+            } else {
+                "tc"
+            };
+            let shown = formats
+                .iter()
+                .find(|(id, _)| *id == chosen)
+                .map(|(_, l)| l.clone())
+                .unwrap_or_default();
+            let resp = egui::ComboBox::from_id_salt("seq-settings-video-display")
+                .selected_text(&shown)
+                .width(list_w)
+                .show_ui(ui, |ui| {
+                    for (id, label) in &formats {
+                        let o = ui.selectable_label(*id == chosen, label);
+                        if o.clicked() {
+                            d.drop_frame = *id == "df";
+                        }
+                        elems.push((
+                            format!("sequenceSettings.videoDisplay.option.{id}"),
+                            o.rect,
+                            label.clone(),
+                        ));
                     }
-                    elems.push((format!("sequenceSettings.videoDisplay.option.{id}"), o.rect, label.clone()));
-                }
-                for label in ["Feet + Frames 16mm", "Feet + Frames 35mm", "Frames"] {
-                    ui.add_enabled(false, egui::Button::selectable(false, t(label))).on_disabled_hover_text(t(NOT_YET));
-                }
-            });
-            elems.push(("sequenceSettings.videoDisplay".into(), resp.response.rect, shown));
+                    for label in ["Feet + Frames 16mm", "Feet + Frames 35mm", "Frames"] {
+                        ui.add_enabled(false, egui::Button::selectable(false, t(label)))
+                            .on_disabled_hover_text(t(NOT_YET));
+                    }
+                });
+            elems.push((
+                "sequenceSettings.videoDisplay".into(),
+                resp.response.rect,
+                shown,
+            ));
         });
     });
     section(ui, "Audio", |ui| {
         row(ui, label_w, "Channel Format:", true, |ui| {
             let shown = d.mix.clone();
-            let resp = egui::ComboBox::from_id_salt("seq-settings-mix").selected_text(t(&shown)).width(120.0).show_ui(ui, |ui| {
-                for m in MIXES {
-                    let o = ui.selectable_value(&mut d.mix, m.to_string(), t(m));
-                    elems.push((format!("sequenceSettings.channelFormat.option.{m}"), o.rect, m.to_string()));
-                }
-            });
-            elems.push(("sequenceSettings.channelFormat".into(), resp.response.rect, shown));
+            let resp = egui::ComboBox::from_id_salt("seq-settings-mix")
+                .selected_text(t(&shown))
+                .width(120.0)
+                .show_ui(ui, |ui| {
+                    for m in MIXES {
+                        let o = ui.selectable_value(&mut d.mix, m.to_string(), t(m));
+                        elems.push((
+                            format!("sequenceSettings.channelFormat.option.{m}"),
+                            o.rect,
+                            m.to_string(),
+                        ));
+                    }
+                });
+            elems.push((
+                "sequenceSettings.channelFormat".into(),
+                resp.response.rect,
+                shown,
+            ));
             ui.add_enabled(false, egui::Label::new(tl!("Number of Channels:")));
             let n = match d.mix.as_str() {
                 "Mono" => "1",
@@ -391,67 +556,162 @@ fn general(ui: &mut egui::Ui, d: &mut SequenceSettingsDraft, cur: &SequenceSetti
                 rates.insert(0, d.sample_rate);
             }
             let shown = format!("{} Hz", d.sample_rate);
-            let resp = egui::ComboBox::from_id_salt("seq-settings-sample-rate").selected_text(&shown).width(list_w).show_ui(ui, |ui| {
-                for hz in rates {
-                    let label = format!("{hz} Hz");
-                    let o = ui.selectable_value(&mut d.sample_rate, hz, &label);
-                    elems.push((format!("sequenceSettings.sampleRate.option.{hz}"), o.rect, label));
-                }
-            });
-            elems.push(("sequenceSettings.sampleRate".into(), resp.response.rect, shown));
+            let resp = egui::ComboBox::from_id_salt("seq-settings-sample-rate")
+                .selected_text(&shown)
+                .width(list_w)
+                .show_ui(ui, |ui| {
+                    for hz in rates {
+                        let label = format!("{hz} Hz");
+                        let o = ui.selectable_value(&mut d.sample_rate, hz, &label);
+                        elems.push((
+                            format!("sequenceSettings.sampleRate.option.{hz}"),
+                            o.rect,
+                            label,
+                        ));
+                    }
+                });
+            elems.push((
+                "sequenceSettings.sampleRate".into(),
+                resp.response.rect,
+                shown,
+            ));
         });
-        let shown = if audio_samples { "Audio Samples" } else { "Milliseconds" };
-        row(ui, label_w, "Display Format:", false, |ui| fixed_combo(ui, elems, "audioDisplay", shown, list_w, NOT_YET));
+        let shown = if audio_samples {
+            "Audio Samples"
+        } else {
+            "Milliseconds"
+        };
+        row(ui, label_w, "Display Format:", false, |ui| {
+            fixed_combo(ui, elems, "audioDisplay", shown, list_w, NOT_YET)
+        });
     });
     section(ui, "Video Previews", |ui| {
         row(ui, label_w, "Preview File Format:", false, |ui| {
             fixed_combo(ui, elems, "previewFormat", "QuickTime", list_w, NOT_YET);
-            ui.add_enabled(false, egui::Button::new(tl!("Configure…"))).on_disabled_hover_text(t(NOT_YET));
+            ui.add_enabled(false, egui::Button::new(tl!("Configure…")))
+                .on_disabled_hover_text(t(NOT_YET));
         });
-        row(ui, label_w, "Codec:", false, |ui| fixed_combo(ui, elems, "previewCodec", &cur.preview_codec, list_w, NOT_YET));
-        row(ui, label_w, "Width:", false, |ui| fixed_value(ui, elems, "previewWidth", &d.width.to_string()));
+        row(ui, label_w, "Codec:", false, |ui| {
+            fixed_combo(
+                ui,
+                elems,
+                "previewCodec",
+                &cur.preview_codec,
+                list_w,
+                NOT_YET,
+            )
+        });
+        row(ui, label_w, "Width:", false, |ui| {
+            fixed_value(ui, elems, "previewWidth", &d.width.to_string())
+        });
         row(ui, label_w, "Height:", false, |ui| {
             fixed_value(ui, elems, "previewHeight", &d.height.to_string());
-            ui.add_enabled(false, egui::Button::new(tl!("Reset"))).on_disabled_hover_text(t(NOT_YET));
+            ui.add_enabled(false, egui::Button::new(tl!("Reset")))
+                .on_disabled_hover_text(t(NOT_YET));
         });
         ui.horizontal(|ui| {
             let mut bit_depth = cur.max_bit_depth;
-            let r = ui.add_enabled(false, egui::Checkbox::new(&mut bit_depth, tl!("Maximum Bit Depth"))).on_disabled_hover_text(t(NOT_YET));
-            elems.push(("sequenceSettings.maxBitDepth".into(), r.rect, bit_depth.to_string()));
+            let r = ui
+                .add_enabled(
+                    false,
+                    egui::Checkbox::new(&mut bit_depth, tl!("Maximum Bit Depth")),
+                )
+                .on_disabled_hover_text(t(NOT_YET));
+            elems.push((
+                "sequenceSettings.maxBitDepth".into(),
+                r.rect,
+                bit_depth.to_string(),
+            ));
             let r = ui.checkbox(&mut d.max_render_quality, tl!("Maximum Render Quality"));
-            elems.push(("sequenceSettings.maxRenderQuality".into(), r.rect, d.max_render_quality.to_string()));
+            elems.push((
+                "sequenceSettings.maxRenderQuality".into(),
+                r.rect,
+                d.max_render_quality.to_string(),
+            ));
         });
         let mut linear = true;
-        let r = ui.add_enabled(false, egui::Checkbox::new(&mut linear, tl!("Composite in Linear Color"))).on_disabled_hover_text(t(LINEAR));
+        let r = ui
+            .add_enabled(
+                false,
+                egui::Checkbox::new(&mut linear, tl!("Composite in Linear Color")),
+            )
+            .on_disabled_hover_text(t(LINEAR));
         elems.push(("sequenceSettings.linearColor".into(), r.rect, "true".into()));
     });
 }
 
 fn color(ui: &mut egui::Ui, d: &mut SequenceSettingsDraft, elems: &mut Elems) {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let label_w = ui.painter().layout_no_wrap(tl!("Working Color Space:").to_string(), font, egui::Color32::WHITE).size().x;
+    let label_w = ui
+        .painter()
+        .layout_no_wrap(
+            tl!("Working Color Space:").to_string(),
+            font,
+            egui::Color32::WHITE,
+        )
+        .size()
+        .x;
     row(ui, label_w, "Working Color Space:", true, |ui| {
-        let shown = WorkingSpace::parse(&d.working_space).map_or(d.working_space.clone(), |w| t(w.label()).to_string());
-        let resp = egui::ComboBox::from_id_salt("seq-settings-working-space").selected_text(&shown).width(220.0).show_ui(ui, |ui| {
-            for w in WorkingSpace::ALL {
-                let o = ui.selectable_value(&mut d.working_space, w.id().to_string(), t(w.label()));
-                elems.push((format!("sequenceSettings.workingSpace.option.{}", w.id()), o.rect, w.label().to_string()));
-            }
-        });
-        elems.push(("sequenceSettings.workingSpace".into(), resp.response.rect, shown));
+        let shown = WorkingSpace::parse(&d.working_space)
+            .map_or(d.working_space.clone(), |w| t(w.label()).to_string());
+        let resp = egui::ComboBox::from_id_salt("seq-settings-working-space")
+            .selected_text(&shown)
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for w in WorkingSpace::ALL {
+                    let o =
+                        ui.selectable_value(&mut d.working_space, w.id().to_string(), t(w.label()));
+                    elems.push((
+                        format!("sequenceSettings.workingSpace.option.{}", w.id()),
+                        o.rect,
+                        w.label().to_string(),
+                    ));
+                }
+            });
+        elems.push((
+            "sequenceSettings.workingSpace".into(),
+            resp.response.rect,
+            shown,
+        ));
     });
     ui.add_space(4.0);
-    let r = ui.checkbox(&mut d.wide_gamut, tl!("Wide gamut color (composite in BT.2020)"));
-    elems.push(("sequenceSettings.wideGamut".into(), r.rect, d.wide_gamut.to_string()));
-    let r = ui.checkbox(&mut d.auto_tone_map, tl!("Auto Tone Map Media (HDR and log into SDR)"));
-    elems.push(("sequenceSettings.autoToneMap".into(), r.rect, d.auto_tone_map.to_string()));
+    let r = ui.checkbox(
+        &mut d.wide_gamut,
+        tl!("Wide gamut color (composite in BT.2020)"),
+    );
+    elems.push((
+        "sequenceSettings.wideGamut".into(),
+        r.rect,
+        d.wide_gamut.to_string(),
+    ));
+    let r = ui.checkbox(
+        &mut d.auto_tone_map,
+        tl!("Auto Tone Map Media (HDR and log into SDR)"),
+    );
+    elems.push((
+        "sequenceSettings.autoToneMap".into(),
+        r.rect,
+        d.auto_tone_map.to_string(),
+    ));
 }
 
 fn vr(ui: &mut egui::Ui, elems: &mut Elems) {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let label_w = ui.painter().layout_no_wrap(tl!("Captured View:").to_string(), font, egui::Color32::WHITE).size().x;
-    row(ui, label_w, "Projection:", false, |ui| fixed_combo(ui, elems, "vr.projection", "None", 200.0, NOT_YET));
-    row(ui, label_w, "Layout:", false, |ui| fixed_combo(ui, elems, "vr.layout", "Monoscopic", 200.0, NOT_YET));
+    let label_w = ui
+        .painter()
+        .layout_no_wrap(
+            tl!("Captured View:").to_string(),
+            font,
+            egui::Color32::WHITE,
+        )
+        .size()
+        .x;
+    row(ui, label_w, "Projection:", false, |ui| {
+        fixed_combo(ui, elems, "vr.projection", "None", 200.0, NOT_YET)
+    });
+    row(ui, label_w, "Layout:", false, |ui| {
+        fixed_combo(ui, elems, "vr.layout", "Monoscopic", 200.0, NOT_YET)
+    });
     row(ui, label_w, "Captured View:", false, |ui| {
         fixed_value(ui, elems, "vr.horizontal", "0°");
         ui.add_enabled(false, egui::Label::new(tl!("Horizontal")));
@@ -468,23 +728,43 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) -> bool {
     let (cur, cur_name) = if new_sequence {
         (SequenceSettings::default(), String::new())
     } else {
-        let Some(q) = app.session.active_sequence() else { return false };
-        let name = app.session.state.active_sequence.and_then(|id| app.session.project.item(id)).map(|i| i.name.clone()).unwrap_or_default();
+        let Some(q) = app.session.active_sequence() else {
+            return false;
+        };
+        let name = app
+            .session
+            .state
+            .active_sequence
+            .and_then(|id| app.session.project.item(id))
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
         (q.settings.clone(), name)
     };
     let audio_samples = app.session.project.settings.audio_display_samples;
     let accent = app.tokens.accent;
     let mut d = app.ui.sequence_settings.clone();
-    crate::widgets::revert_drag_on_escape(ctx, egui::Id::new("sequence-settings-before-drag"), &mut d);
+    crate::widgets::revert_drag_on_escape(
+        ctx,
+        egui::Id::new("sequence-settings-before-drag"),
+        &mut d,
+    );
     let mut keep = true;
     let mut apply = false;
     let mut elems: Elems = Vec::new();
     let max_h = ctx.content_rect().height() * 0.8;
-    let title = if new_sequence { tl!("New Sequence") } else { tl!("Sequence Settings") };
+    let title = if new_sequence {
+        tl!("New Sequence")
+    } else {
+        tl!("Sequence Settings")
+    };
     let tabs: &[(&str, &str)] = if new_sequence {
         &[("general", "General"), ("tracks", "Tracks")]
     } else {
-        &[("general", "General"), ("color", "Color Management"), ("vr", "VR Properties")]
+        &[
+            ("general", "General"),
+            ("color", "Color Management"),
+            ("vr", "VR Properties"),
+        ]
     };
     egui::Window::new(title)
         .id(egui::Id::new("Sequence Settings"))
@@ -501,19 +781,29 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) -> bool {
                     if r.clicked() {
                         d.tab = id.to_string();
                     }
-                    elems.push((format!("sequenceSettings.tab.{id}"), r.rect, label.to_string()));
+                    elems.push((
+                        format!("sequenceSettings.tab.{id}"),
+                        r.rect,
+                        label.to_string(),
+                    ));
                 }
             });
             ui.separator();
-            egui::ScrollArea::vertical().max_height(max_h).auto_shrink([false, true]).show(ui, |ui| match d.tab.as_str() {
-                "color" if !new_sequence => color(ui, &mut d, &mut elems),
-                "tracks" if new_sequence => tracks(ui, &mut d, &mut elems),
-                "vr" if !new_sequence => vr(ui, &mut elems),
-                _ => general(ui, &mut d, &cur, audio_samples, &mut elems),
-            });
+            egui::ScrollArea::vertical()
+                .max_height(max_h)
+                .auto_shrink([false, true])
+                .show(ui, |ui| match d.tab.as_str() {
+                    "color" if !new_sequence => color(ui, &mut d, &mut elems),
+                    "tracks" if new_sequence => tracks(ui, &mut d, &mut elems),
+                    "vr" if !new_sequence => vr(ui, &mut elems),
+                    _ => general(ui, &mut d, &cur, audio_samples, &mut elems),
+                });
             ui.add_space(10.0);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let o = ui.add(egui::Button::new(egui::RichText::new(tl!("OK")).color(egui::Color32::WHITE)).fill(accent));
+                let o = ui.add(
+                    egui::Button::new(egui::RichText::new(tl!("OK")).color(egui::Color32::WHITE))
+                        .fill(accent),
+                );
                 elems.push(("sequenceSettings.ok".into(), o.rect, "OK".into()));
                 if o.clicked() {
                     apply = true;
@@ -539,7 +829,14 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) -> bool {
         let r = app
             .session
             .execute("file.newSequence", Value::Object(p))
-            .and_then(|_| if rest.is_empty() { Ok(Value::Null) } else { app.session.execute("sequence.settings", Value::Object(rest)) });
+            .and_then(|_| {
+                if rest.is_empty() {
+                    Ok(Value::Null)
+                } else {
+                    app.session
+                        .execute("sequence.settings", Value::Object(rest))
+                }
+            });
         if let Err(e) = r {
             app.ui.status = e.to_string();
             keep = true;
@@ -585,9 +882,15 @@ mod tests {
 
     #[test]
     fn display_formats_follow_the_timebase() {
-        assert_eq!(timecode_formats(FrameRate::FPS_23_976), vec![("tc", "23.976 fps Timecode".to_string())]);
+        assert_eq!(
+            timecode_formats(FrameRate::FPS_23_976),
+            vec![("tc", "23.976 fps Timecode".to_string())]
+        );
         let ntsc = timecode_formats(FrameRate::FPS_29_97);
-        assert_eq!(ntsc.iter().map(|(id, _)| *id).collect::<Vec<_>>(), vec!["df", "ndf"]);
+        assert_eq!(
+            ntsc.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+            vec!["df", "ndf"]
+        );
         assert_eq!(ntsc[0].1, "29.97 fps Drop-Frame Timecode");
     }
 
@@ -621,29 +924,53 @@ mod tests {
         };
         let (p, rest) = new_sequence_params(&d);
         assert!(p.get("name").is_none());
-        assert_eq!(Value::Object(rest), json!({"dropFrame":true,"maxRenderQuality":true}));
+        assert_eq!(
+            Value::Object(rest),
+            json!({"dropFrame":true,"maxRenderQuality":true})
+        );
     }
 
     #[test]
     fn only_changed_settings_are_sent() {
         let cur = SequenceSettings::default();
         let mut d = SequenceSettingsDraft::default();
-        assert!(changes(&d, &cur, "").is_empty(), "the defaults match: nothing to send");
+        assert!(
+            changes(&d, &cur, "").is_empty(),
+            "the defaults match: nothing to send"
+        );
         d.width = 1280;
         d.height = 720;
         d.max_render_quality = true;
         let p = changes(&d, &cur, "");
-        assert_eq!(Value::Object(p), json!({"width":1280,"height":720,"scaleMotion":true,"maxRenderQuality":true}));
+        assert_eq!(
+            Value::Object(p),
+            json!({"width":1280,"height":720,"scaleMotion":true,"maxRenderQuality":true})
+        );
         // drop-frame only travels for a rate that has it
-        let mut d = SequenceSettingsDraft { drop_frame: true, ..Default::default() };
+        let mut d = SequenceSettingsDraft {
+            drop_frame: true,
+            ..Default::default()
+        };
         assert!(changes(&d, &cur, "").is_empty());
         (d.fps_num, d.fps_den) = (30_000, 1001);
-        assert_eq!(Value::Object(changes(&d, &cur, "")), json!({"fps":30_000.0/1001.0,"dropFrame":true}));
+        assert_eq!(
+            Value::Object(changes(&d, &cur, "")),
+            json!({"fps":30_000.0/1001.0,"dropFrame":true})
+        );
         // the name travels when it changed; blank or unchanged it doesn't
-        let d = SequenceSettingsDraft { name: "  Rough Cut  ".into(), ..Default::default() };
-        assert_eq!(Value::Object(changes(&d, &cur, "Sequence 01")), json!({"name":"Rough Cut"}));
+        let d = SequenceSettingsDraft {
+            name: "  Rough Cut  ".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            Value::Object(changes(&d, &cur, "Sequence 01")),
+            json!({"name":"Rough Cut"})
+        );
         assert!(changes(&d, &cur, "Rough Cut").is_empty());
-        let d = SequenceSettingsDraft { name: "   ".into(), ..Default::default() };
+        let d = SequenceSettingsDraft {
+            name: "   ".into(),
+            ..Default::default()
+        };
         assert!(changes(&d, &cur, "Sequence 01").is_empty());
     }
 }

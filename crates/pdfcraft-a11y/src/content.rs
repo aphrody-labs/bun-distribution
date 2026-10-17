@@ -29,9 +29,19 @@ impl Scan {
         let mut s = Scan::default();
         for &p in list {
             let Some(page) = pages.get(p) else { continue };
-            let res = page.dict.get(b"Resources").map(|r| doc.resolve(r)).and_then(|r| r.as_dict().cloned()).unwrap_or_default();
+            let res = page
+                .dict
+                .get(b"Resources")
+                .map(|r| doc.resolve(r))
+                .and_then(|r| r.as_dict().cloned())
+                .unwrap_or_default();
             let data = page_content(doc, &page.dict);
-            let mut w = Walk { doc, scan: &mut s, page: p, forms: HashSet::new() };
+            let mut w = Walk {
+                doc,
+                scan: &mut s,
+                page: p,
+                forms: HashSet::new(),
+            };
             w.content(&data, &res, false, 0);
         }
         s
@@ -39,7 +49,9 @@ impl Scan {
 }
 
 fn page_content(doc: &Document, page: &Dict) -> Vec<u8> {
-    let Some(c) = page.get(b"Contents") else { return Vec::new() };
+    let Some(c) = page.get(b"Contents") else {
+        return Vec::new();
+    };
     match &*doc.resolve(c) {
         Object::Stream(s) => s.decoded().unwrap_or_default(),
         Object::Array(a) => a
@@ -66,12 +78,19 @@ struct Walk<'a> {
 
 impl Walk<'_> {
     fn sub(&self, res: &Dict, key: &[u8]) -> Dict {
-        res.get(key).map(|x| self.doc.resolve(x)).and_then(|x| x.as_dict().cloned()).unwrap_or_default()
+        res.get(key)
+            .map(|x| self.doc.resolve(x))
+            .and_then(|x| x.as_dict().cloned())
+            .unwrap_or_default()
     }
 
     /// Walk a content stream; `covered`: already inside tagged or artifact content.
     fn content(&mut self, data: &[u8], res: &Dict, covered: bool, depth: usize) {
-        let (fonts, xobjects, props) = (self.sub(res, b"Font"), self.sub(res, b"XObject"), self.sub(res, b"Properties"));
+        let (fonts, xobjects, props) = (
+            self.sub(res, b"Font"),
+            self.sub(res, b"XObject"),
+            self.sub(res, b"Properties"),
+        );
         // Marked-content stack: whether each level is tagged or an artifact.
         let mut stack: Vec<bool> = Vec::new();
         let mut untagged = 0;
@@ -83,9 +102,11 @@ impl Walk<'_> {
                     let marks = op.name(0) == Some(b"Artifact")
                         || match op.operands.get(1) {
                             Some(Object::Dict(d)) => d.contains(b"MCID"),
-                            Some(Object::Name(n)) => {
-                                props.get(n).map(|x| self.doc.resolve(x)).and_then(|x| x.as_dict().map(|d| d.contains(b"MCID"))).unwrap_or(false)
-                            }
+                            Some(Object::Name(n)) => props
+                                .get(n)
+                                .map(|x| self.doc.resolve(x))
+                                .and_then(|x| x.as_dict().map(|d| d.contains(b"MCID")))
+                                .unwrap_or(false),
                             _ => false,
                         };
                     stack.push(inside || marks);
@@ -98,17 +119,29 @@ impl Walk<'_> {
                     untagged += usize::from(!inside);
                 }
                 b"Tf" => {
-                    if let Some(r) = op.name(0).and_then(|n| fonts.get(n)).and_then(Object::as_ref) {
+                    if let Some(r) = op
+                        .name(0)
+                        .and_then(|n| fonts.get(n))
+                        .and_then(Object::as_ref)
+                    {
                         self.scan.fonts.entry(self.page).or_default().insert(r);
                     }
                 }
-                b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"S" | b"s" | b"sh" => untagged += usize::from(!inside),
+                b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"S" | b"s" | b"sh" => {
+                    untagged += usize::from(!inside)
+                }
                 b"BI" => {
                     self.scan.has_images = true;
                     untagged += usize::from(!inside);
                 }
                 b"Do" => {
-                    let Some(r) = op.name(0).and_then(|n| xobjects.get(n)).and_then(Object::as_ref) else { continue };
+                    let Some(r) = op
+                        .name(0)
+                        .and_then(|n| xobjects.get(n))
+                        .and_then(Object::as_ref)
+                    else {
+                        continue;
+                    };
                     let obj = self.doc.get(r);
                     let Object::Stream(x) = &*obj else { continue };
                     match x.dict.name(b"Subtype") {
@@ -140,23 +173,36 @@ impl Walk<'_> {
 }
 
 fn catalog(doc: &Document) -> Dict {
-    doc.root().and_then(|r| doc.get(r).as_dict().cloned()).unwrap_or_default()
+    doc.root()
+        .and_then(|r| doc.get(r).as_dict().cloned())
+        .unwrap_or_default()
 }
 
 fn text_of(doc: &Document, d: &Dict, key: &[u8]) -> Option<String> {
-    d.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_string().map(|s| s.to_text())).map(|s| s.trim().to_owned()).filter(|s| !s.is_empty())
+    d.get(key)
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_string().map(|s| s.to_text()))
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
 }
 
 fn doc_finding(sentence: &'static str) -> Vec<Finding> {
     vec![Finding::plain(None, sentence)]
 }
 
-pub(crate) fn document_rule(doc: &Document, rule: Rule, pages: &[Page], scan: &Scan) -> Vec<Finding> {
+pub(crate) fn document_rule(
+    doc: &Document,
+    rule: Rule,
+    pages: &[Page],
+    scan: &Scan,
+) -> Vec<Finding> {
     let cat = catalog(doc);
     match rule {
         Rule::PermissionFlag => match doc.permissions() {
             // The file's own setting, whichever password opened it.
-            Some(p) if (p.bits >> 9) & 1 == 0 => doc_finding("The security settings don't allow screen readers to read the text"),
+            Some(p) if (p.bits >> 9) & 1 == 0 => {
+                doc_finding("The security settings don't allow screen readers to read the text")
+            }
             _ => Vec::new(),
         },
         Rule::ImageOnly => {
@@ -167,13 +213,22 @@ pub(crate) fn document_rule(doc: &Document, rule: Rule, pages: &[Page], scan: &S
             }
         }
         Rule::TaggedPdf => {
-            let marked = cat.get(b"MarkInfo").map(|m| doc.resolve(m)).and_then(|m| m.as_dict().and_then(|d| d.get(b"Marked").cloned()));
+            let marked = cat
+                .get(b"MarkInfo")
+                .map(|m| doc.resolve(m))
+                .and_then(|m| m.as_dict().and_then(|d| d.get(b"Marked").cloned()));
             let mut out = Vec::new();
             if !cat.contains(b"StructTreeRoot") {
-                out.push(Finding::plain(None, "The document has no tags (structure tree)"));
+                out.push(Finding::plain(
+                    None,
+                    "The document has no tags (structure tree)",
+                ));
             }
             if !matches!(marked, Some(Object::Bool(true))) {
-                out.push(Finding::plain(None, "The document isn't marked as tagged (MarkInfo Marked)"));
+                out.push(Finding::plain(
+                    None,
+                    "The document isn't marked as tagged (MarkInfo Marked)",
+                ));
             }
             out
         }
@@ -186,24 +241,45 @@ pub(crate) fn document_rule(doc: &Document, rule: Rule, pages: &[Page], scan: &S
         }
         Rule::Title => {
             let mut out = Vec::new();
-            let info = doc.trailer().get(b"Info").map(|i| doc.resolve(i)).and_then(|i| i.as_dict().cloned()).unwrap_or_default();
+            let info = doc
+                .trailer()
+                .get(b"Info")
+                .map(|i| doc.resolve(i))
+                .and_then(|i| i.as_dict().cloned())
+                .unwrap_or_default();
             if text_of(doc, &info, b"Title").is_none() {
                 out.push(Finding::plain(None, "The document has no title"));
             }
             let shows = cat
                 .get(b"ViewerPreferences")
                 .map(|v| doc.resolve(v))
-                .and_then(|v| v.as_dict().and_then(|d| d.get(b"DisplayDocTitle").map(|x| matches!(&*doc.resolve(x), Object::Bool(true)))))
+                .and_then(|v| {
+                    v.as_dict().and_then(|d| {
+                        d.get(b"DisplayDocTitle")
+                            .map(|x| matches!(&*doc.resolve(x), Object::Bool(true)))
+                    })
+                })
                 .unwrap_or(false);
             if !shows {
-                out.push(Finding::plain(None, "The window shows the file name, not the title (Initial View > Show)"));
+                out.push(Finding::plain(
+                    None,
+                    "The window shows the file name, not the title (Initial View > Show)",
+                ));
             }
             out
         }
         Rule::Bookmarks => {
-            let has = cat.get(b"Outlines").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().map(|d| d.contains(b"First"))).unwrap_or(false);
+            let has = cat
+                .get(b"Outlines")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_dict().map(|d| d.contains(b"First")))
+                .unwrap_or(false);
             if pages.len() > 20 && !has {
-                vec![Finding::worded(None, "{n} pages and no bookmarks", vec![("{n}", pages.len().to_string())])]
+                vec![Finding::worded(
+                    None,
+                    "{n} pages and no bookmarks",
+                    vec![("{n}", pages.len().to_string())],
+                )]
             } else {
                 Vec::new()
             }
@@ -223,7 +299,9 @@ fn subtype_name(d: &Dict) -> String {
 fn annotation_rect(doc: &Document, annot: &Dict) -> Option<[f64; 4]> {
     let rect = annot.get(b"Rect").map(|r| doc.resolve(r))?;
     let values = rect.as_array()?;
-    let [x0, y0, x1, y1] = values.as_slice() else { return None };
+    let [x0, y0, x1, y1] = values.as_slice() else {
+        return None;
+    };
     let [x0, y0, x1, y1] = [x0, y0, x1, y1].map(|v| doc.resolve(v).as_f64());
     let (x0, y0, x1, y1) = (x0?, y0?, x1?, y1?);
     if ![x0, y0, x1, y1].iter().all(|v| v.is_finite()) || x0 == x1 || y0 == y1 {
@@ -232,12 +310,27 @@ fn annotation_rect(doc: &Document, annot: &Dict) -> Option<[f64; 4]> {
     Some([x0.min(x1), y0.min(y1), x0.max(x1), y0.max(y1)])
 }
 
-pub(crate) fn page_rule(doc: &Document, rule: Rule, pages: &[Page], list: &[usize], scan: &Scan, tagged: bool) -> Vec<Finding> {
+pub(crate) fn page_rule(
+    doc: &Document,
+    rule: Rule,
+    pages: &[Page],
+    list: &[usize],
+    scan: &Scan,
+    tagged: bool,
+) -> Vec<Finding> {
     let mut out = Vec::new();
     let annots = |p: &Page| -> Vec<(ObjRef, Dict)> {
-        let a = p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default();
+        let a = p
+            .dict
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default();
         a.iter()
-            .filter_map(|x| x.as_ref().and_then(|r| doc.get(r).as_dict().cloned().map(|d| (r, d))))
+            .filter_map(|x| {
+                x.as_ref()
+                    .and_then(|r| doc.get(r).as_dict().cloned().map(|d| (r, d)))
+            })
             .filter(|(_, d)| d.name(b"Subtype") != Some(b"Popup"))
             .collect()
     };
@@ -249,8 +342,16 @@ pub(crate) fn page_rule(doc: &Document, rule: Rule, pages: &[Page], list: &[usiz
             for (p, n) in &scan.untagged {
                 // One item and several items are separate wordings, so a language can agree the
                 // noun with the number its own way.
-                let pattern = if *n == 1 { "Page {p}: {n} untagged content item" } else { "Page {p}: {n} untagged content items" };
-                out.push(Finding::worded(Some(*p), pattern, vec![("{p}", (p + 1).to_string()), ("{n}", n.to_string())]));
+                let pattern = if *n == 1 {
+                    "Page {p}: {n} untagged content item"
+                } else {
+                    "Page {p}: {n} untagged content items"
+                };
+                out.push(Finding::worded(
+                    Some(*p),
+                    pattern,
+                    vec![("{p}", (p + 1).to_string()), ("{n}", n.to_string())],
+                ));
             }
         }
         Rule::TaggedAnnotations | Rule::TaggedMultimedia | Rule::TaggedFormFields => {
@@ -285,7 +386,11 @@ pub(crate) fn page_rule(doc: &Document, rule: Rule, pages: &[Page], list: &[usiz
             for &p in list {
                 let Some(page) = pages.get(p) else { continue };
                 if !annots(page).is_empty() && page.dict.name(b"Tabs") != Some(b"S") {
-                    out.push(Finding::worded(Some(p), "Page {p} doesn't tab in structure order", vec![("{p}", (p + 1).to_string())]));
+                    out.push(Finding::worded(
+                        Some(p),
+                        "Page {p} doesn't tab in structure order",
+                        vec![("{p}", (p + 1).to_string())],
+                    ));
                 }
             }
         }
@@ -307,7 +412,11 @@ pub(crate) fn page_rule(doc: &Document, rule: Rule, pages: &[Page], list: &[usiz
                                 "Font {} on page {p} doesn't map its characters to Unicode",
                                 vec![("{}", String::from_utf8_lossy(n).into_owned()), page],
                             ),
-                            None => Finding::worded(Some(*p), "Font (unnamed) on page {p} doesn't map its characters to Unicode", vec![page]),
+                            None => Finding::worded(
+                                Some(*p),
+                                "Font (unnamed) on page {p} doesn't map its characters to Unicode",
+                                vec![page],
+                            ),
                         });
                     }
                 }
@@ -322,7 +431,11 @@ pub(crate) fn page_rule(doc: &Document, rule: Rule, pages: &[Page], list: &[usiz
                         continue;
                     }
                     // The field is the widget itself when it has a name, else its parent.
-                    let field = if a.contains(b"T") { Some(r) } else { a.get(b"Parent").and_then(Object::as_ref) };
+                    let field = if a.contains(b"T") {
+                        Some(r)
+                    } else {
+                        a.get(b"Parent").and_then(Object::as_ref)
+                    };
                     let Some(field) = field else { continue };
                     if !seen.insert(field) {
                         continue;
@@ -350,7 +463,9 @@ fn full_name(doc: &Document, field: ObjRef) -> String {
     let mut node = Some(field);
     for _ in 0..64 {
         let Some(r) = node else { break };
-        let Some(d) = doc.get(r).as_dict().cloned() else { break };
+        let Some(d) = doc.get(r).as_dict().cloned() else {
+            break;
+        };
         if let Some(t) = text_of(doc, &d, b"T") {
             parts.push(t);
         }
@@ -369,15 +484,27 @@ fn maps_to_unicode(doc: &Document, f: &Dict) -> bool {
     let enc = f.get(b"Encoding").map(|e| doc.resolve(e));
     match f.name(b"Subtype") {
         Some(b"Type0") => {
-            let identity = matches!(enc.as_deref(), Some(Object::Name(n)) if n.starts_with(b"Identity"));
+            let identity =
+                matches!(enc.as_deref(), Some(Object::Name(n)) if n.starts_with(b"Identity"));
             let ordering = f
                 .get(b"DescendantFonts")
                 .map(|d| doc.resolve(d))
                 .and_then(|d| d.as_array().and_then(|a| a.first().cloned()))
                 .and_then(|d| doc.resolve(&d).as_dict().cloned())
-                .and_then(|d| d.get(b"CIDSystemInfo").map(|c| doc.resolve(c)).and_then(|c| c.as_dict().cloned()))
-                .and_then(|c| c.get(b"Ordering").map(|o| doc.resolve(o)).and_then(|o| o.as_string().map(|s| s.bytes.clone())));
-            let known = matches!(ordering.as_deref(), Some(b"Japan1" | b"GB1" | b"CNS1" | b"Korea1" | b"KR"));
+                .and_then(|d| {
+                    d.get(b"CIDSystemInfo")
+                        .map(|c| doc.resolve(c))
+                        .and_then(|c| c.as_dict().cloned())
+                })
+                .and_then(|c| {
+                    c.get(b"Ordering")
+                        .map(|o| doc.resolve(o))
+                        .and_then(|o| o.as_string().map(|s| s.bytes.clone()))
+                });
+            let known = matches!(
+                ordering.as_deref(),
+                Some(b"Japan1" | b"GB1" | b"CNS1" | b"Korea1" | b"KR")
+            );
             !identity && known
         }
         Some(b"Type3") => enc.is_some(),
@@ -385,7 +512,11 @@ fn maps_to_unicode(doc: &Document, f: &Dict) -> bool {
             Some(Object::Name(_) | Object::Dict(_)) => true,
             _ => {
                 // No encoding: the font's built-in one, which is standard unless it is symbolic.
-                let flags = f.get(b"FontDescriptor").map(|d| doc.resolve(d)).and_then(|d| d.as_dict().and_then(|d| d.int(b"Flags"))).unwrap_or(32);
+                let flags = f
+                    .get(b"FontDescriptor")
+                    .map(|d| doc.resolve(d))
+                    .and_then(|d| d.as_dict().and_then(|d| d.int(b"Flags")))
+                    .unwrap_or(32);
                 let base = f.name(b"BaseFont").unwrap_or(b"");
                 flags & 4 == 0 || matches!(base, b"Symbol" | b"ZapfDingbats")
             }

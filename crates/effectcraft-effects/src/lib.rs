@@ -6,7 +6,14 @@
 //! [`instantiate`]), so parameters animate, take expressions and are addressable like any other
 //! property.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod audio_fx;
 mod blur2;
@@ -71,14 +78,21 @@ use std::sync::OnceLock;
 pub use card3d::{CompLight, CompScene};
 pub use color_fx::{COLORAMA_PRESETS, ColoramaPalette};
 pub use color_fx::{
-    HUESAT_CHANNELS, HUESAT_RANGES, LEVELS_CHANNELS, PHOTO_FILTER_CUSTOM, PHOTO_FILTERS, exposure_settings, fill_uses_masks, huesat_ranges_identity,
-    levels_channel_ids, levels_channel_settings, levels_channels_identity, levels_clip,
+    HUESAT_CHANNELS, HUESAT_RANGES, LEVELS_CHANNELS, PHOTO_FILTER_CUSTOM, PHOTO_FILTERS,
+    exposure_settings, fill_uses_masks, huesat_ranges_identity, levels_channel_ids,
+    levels_channel_settings, levels_channels_identity, levels_clip,
 };
-pub use color2::{Curve, auto_correct_settings, color_link_mode, color_link_sample, equalize_tables, luma_clip_points, shadow_highlight_amounts};
+pub use color2::{
+    Curve, auto_correct_settings, color_link_mode, color_link_sample, equalize_tables,
+    luma_clip_points, shadow_highlight_amounts,
+};
 pub use color3::OffsetCurve;
 pub use distort::transform_shutter;
 pub use distort2::{MAGNIFY_MODES, bezier_grid, parse_mesh};
-pub use distort3::{RESHAPE_POINTS, ReshapeSetup, SmearSetup, cc_smear_pad, reshape_setup, smear_setup, warp_inverse_map};
+pub use distort3::{
+    RESHAPE_POINTS, ReshapeSetup, SmearSetup, cc_smear_pad, reshape_setup, smear_setup,
+    warp_inverse_map,
+};
 pub use distort4::liquify_mesh;
 use effectcraft_keyframe::Value;
 use effectcraft_project::build::Ids;
@@ -92,9 +106,12 @@ pub use stylize2::strobe_on;
 pub use blur2::{camera_lens_plain, camera_lens_spans};
 pub use generate::gen_mode;
 pub use generate2::pattern_kind as cell_pattern_kind;
-pub use generate2::{BoltSeg, Contour, Ghost, RadioPlan, Wave, flare_ghosts, lightning_segments, radio_plan};
+pub use generate2::{
+    BoltSeg, Contour, Ghost, RadioPlan, Wave, flare_ghosts, lightning_segments, radio_plan,
+};
 pub use generate3::{
-    Coverage, MarksPlan, PaintPlan, Seg, eyedropper_color, marks_plan, paint_bucket_region, paint_plan, plan_reads_pixels, poly_segs, scribble_style,
+    Coverage, MarksPlan, PaintPlan, Seg, eyedropper_color, marks_plan, paint_bucket_region,
+    paint_plan, plan_reads_pixels, poly_segs, scribble_style,
 };
 pub use noise::GrainLook;
 pub use textfx::{BoltPlan, TextLook, TextPass, bolt_plan, text_passes};
@@ -105,16 +122,22 @@ pub use noise::remove_grain_level;
 pub use noise3::{FractalGpu, fractal_gpu};
 pub use stylize3::{BumpLight, bump_layer_id};
 pub use textfx::{TextLayer, text_layer};
-pub use time_fx::{PixelMotion, TimewarpPlan, TwStep, pmb_plan, posterized_time, time_frames, timewarp_crop, timewarp_plan};
+pub use time_fx::{
+    PixelMotion, TimewarpPlan, TwStep, pmb_plan, posterized_time, time_frames, timewarp_crop,
+    timewarp_plan,
+};
 // effectcraft-gpu fx_tone.
 pub use ocio::color_stabilizer_maps;
 // GPU effects, part B (3D Channel, Immersive Video, colour management, simulation render passes).
 pub use channel3d::{CRYPTO_LAYERS, id_color, selection_hashes};
 pub use ocio::{ColorOp, Straight, Tf, color_program};
-pub use sim::{Acc, Blob, Bubble, Post, Shape, Sprite, SpritePlan, Tint, bubble_list, drizzle_drops, mercury_blobs, sprite_plan};
+pub use sim::{
+    Acc, Blob, Bubble, Post, Shape, Sprite, SpritePlan, Tint, bubble_list, drizzle_drops,
+    mercury_blobs, sprite_plan,
+};
 pub use sim2::{
-    CausticsSetup, FoamDisc, FoamEnv, FoamPlan, Piece, PiecePlan, PieceTex, PixelPlan, WavePlan, Waves, caustics_setup, foam_full_plan, piece_plan, pixel_plan,
-    wave_world_plan,
+    CausticsSetup, FoamDisc, FoamEnv, FoamPlan, Piece, PiecePlan, PieceTex, PixelPlan, WavePlan,
+    Waves, caustics_setup, foam_full_plan, piece_plan, pixel_plan, wave_world_plan,
 };
 pub use utility::{Lut, load_lut};
 pub use vr::{equi_dir as vr_equi_dir, rotation as vr_rotation};
@@ -199,7 +222,9 @@ impl Params {
     }
     /// The first nested group under `prefix` with match id `m`.
     pub fn group(&self, prefix: &str, m: &str) -> Option<String> {
-        self.groups(prefix).into_iter().find(|g| self.s(&format!("{g}@match")) == m)
+        self.groups(prefix)
+            .into_iter()
+            .find(|g| self.s(&format!("{g}@match")) == m)
     }
 }
 
@@ -211,14 +236,21 @@ impl Params {
 /// are also keyed by their match path (`group/sub/param`, the first group with each match id),
 /// which is how effects with twirl-down groups declare and read them.
 pub fn flatten_params(g: &PropGroup, eval: &mut dyn FnMut(&Property) -> Value) -> Params {
-    fn walk(g: &PropGroup, pre: &str, mpre: &str, eval: &mut dyn FnMut(&Property) -> Value, out: &mut HashMap<String, Value>) {
+    fn walk(
+        g: &PropGroup,
+        pre: &str,
+        mpre: &str,
+        eval: &mut dyn FnMut(&Property) -> Value,
+        out: &mut HashMap<String, Value>,
+    ) {
         let mut gi = 0;
         for c in &g.children {
             match c {
                 effectcraft_project::Node::Prop(p) => {
                     let v = eval(p);
                     if !mpre.is_empty() {
-                        out.entry(format!("{mpre}{}", p.match_id)).or_insert_with(|| v.clone());
+                        out.entry(format!("{mpre}{}", p.match_id))
+                            .or_insert_with(|| v.clone());
                     }
                     out.insert(format!("{pre}{}", p.match_id), v);
                 }
@@ -243,7 +275,9 @@ pub fn flatten_params(g: &PropGroup, eval: &mut dyn FnMut(&Property) -> Value) -
 /// parameters evaluated by `eval`: settings it can't render as asked, such as an OCIO config it
 /// can't read or transforms it passes through. `None` when it renders as asked.
 pub fn warning(g: &PropGroup, eval: &mut dyn FnMut(&Property) -> Value) -> Option<String> {
-    let GroupKind::Effect { effect } = &g.kind else { return None };
+    let GroupKind::Effect { effect } = &g.kind else {
+        return None;
+    };
     // Only the effects that can warn evaluate their parameters.
     if !ocio::CUSTOM_CONFIG_FX.contains(&effect.as_str()) {
         return None;
@@ -262,13 +296,24 @@ pub struct Buf {
 
 impl Buf {
     pub fn to_px(&self, p: [f64; 2]) -> (f64, f64) {
-        (p[0] * self.scale + self.offset[0], p[1] * self.scale + self.offset[1])
+        (
+            p[0] * self.scale + self.offset[0],
+            p[1] * self.scale + self.offset[1],
+        )
     }
     /// Grow the buffer so it covers a `size`-layer-pixel region starting at its offset (see
     /// [`cover_plan`]): the whole layer rectangle a sized source's buffer already is. Content
     /// keeps its place; the new area is transparent. No-op when the buffer already covers it.
     pub fn cover(&mut self, size: [f64; 2]) {
-        let Some((dx, dy, w, h)) = cover_plan(self.offset, self.scale, size, self.img.width, self.img.height) else { return };
+        let Some((dx, dy, w, h)) = cover_plan(
+            self.offset,
+            self.scale,
+            size,
+            self.img.width,
+            self.img.height,
+        ) else {
+            return;
+        };
         let src = std::mem::replace(&mut self.img, Image::new(w, h));
         let (sw, sh) = (src.width as usize, src.height as usize);
         for y in 0..sh {
@@ -300,12 +345,27 @@ impl Buf {
 /// `width` × `height` so it spans the `size`-layer-pixel region that starts at its offset — the
 /// whole layer rectangle, which a sized source's buffer already is. `None` when the buffer
 /// already covers that region unchanged (footage, solids, the comp below an adjustment).
-pub fn cover_plan(offset: [f64; 2], scale: f64, size: [f64; 2], width: u32, height: u32) -> Option<(u32, u32, u32, u32)> {
-    if scale <= 0.0 || !scale.is_finite() || !offset[0].is_finite() || !offset[1].is_finite() || !size[0].is_finite() || !size[1].is_finite() {
+pub fn cover_plan(
+    offset: [f64; 2],
+    scale: f64,
+    size: [f64; 2],
+    width: u32,
+    height: u32,
+) -> Option<(u32, u32, u32, u32)> {
+    if scale <= 0.0
+        || !scale.is_finite()
+        || !offset[0].is_finite()
+        || !offset[1].is_finite()
+        || !size[0].is_finite()
+        || !size[1].is_finite()
+    {
         return None;
     }
     // Region and content, both as pixel ranges in the buffer's own coordinates.
-    let (rw, rh) = (offset[0] + (size[0] * scale).ceil(), offset[1] + (size[1] * scale).ceil());
+    let (rw, rh) = (
+        offset[0] + (size[0] * scale).ceil(),
+        offset[1] + (size[1] * scale).ceil(),
+    );
     let (lo_x, lo_y) = (offset[0].min(0.0).floor(), offset[1].min(0.0).floor());
     let (hi_x, hi_y) = (rw.max(width as f64).ceil(), rh.max(height as f64).ceil());
     let (nw_f, nh_f) = (hi_x - lo_x, hi_y - lo_y);
@@ -442,7 +502,11 @@ impl EffectCtx<'_> {
     }
     /// Frame rate for frame-based maths (comp rate, else 30).
     pub fn fps(&self) -> f64 {
-        if self.env.frame_rate > 0.0 { self.env.frame_rate } else { 30.0 }
+        if self.env.frame_rate > 0.0 {
+            self.env.frame_rate
+        } else {
+            30.0
+        }
     }
 }
 
@@ -461,17 +525,32 @@ pub struct EffectSpec {
 }
 
 pub(crate) fn p(id: &'static str, name: &'static str, default: Value, ui: ParamUi) -> ParamSpec {
-    ParamSpec { id, name, default, ui }
+    ParamSpec {
+        id,
+        name,
+        default,
+        ui,
+    }
 }
 pub(crate) fn slider(min: f64, max: f64, smin: f64, smax: f64, decimals: u8) -> ParamUi {
-    ParamUi::Slider { min, max, slider_min: smin, slider_max: smax, decimals }
+    ParamUi::Slider {
+        min,
+        max,
+        slider_min: smin,
+        slider_max: smax,
+        decimals,
+    }
 }
 /// A file parameter offering files with these extensions (Effect Controls' Choose…).
 pub(crate) fn file_ui(exts: &[&str]) -> ParamUi {
-    ParamUi::File { filters: exts.iter().map(|s| s.to_string()).collect() }
+    ParamUi::File {
+        filters: exts.iter().map(|s| s.to_string()).collect(),
+    }
 }
 pub(crate) fn popup(opts: &[&str]) -> ParamUi {
-    ParamUi::Popup { options: opts.iter().map(|s| s.to_string()).collect() }
+    ParamUi::Popup {
+        options: opts.iter().map(|s| s.to_string()).collect(),
+    }
 }
 pub(crate) fn num(v: f64) -> Value {
     Value::Scalar(v)
@@ -545,7 +624,10 @@ pub fn registry() -> &'static [EffectSpec] {
 
 /// A built-in effect or a registered plug-in by id.
 pub fn find(id: &str) -> Option<&'static EffectSpec> {
-    registry().iter().find(|s| s.id == id).or_else(|| plugin::plugins().into_iter().find(|s| s.id == id))
+    registry()
+        .iter()
+        .find(|s| s.id == id)
+        .or_else(|| plugin::plugins().into_iter().find(|s| s.id == id))
 }
 
 /// Every effect: the built-ins ([`registry`]) and the registered plug-ins
@@ -563,7 +645,11 @@ pub fn all() -> Vec<&'static EffectSpec> {
 /// Effects & Presets categories: [`CATEGORIES`] then the plug-ins' own, alphabetically.
 pub fn categories() -> Vec<&'static str> {
     let mut v: Vec<&'static str> = CATEGORIES.to_vec();
-    let mut extra: Vec<&'static str> = plugin::plugins().iter().map(|s| s.category).filter(|c| !CATEGORIES.contains(c)).collect();
+    let mut extra: Vec<&'static str> = plugin::plugins()
+        .iter()
+        .map(|s| s.category)
+        .filter(|c| !CATEGORIES.contains(c))
+        .collect();
     extra.sort_unstable();
     extra.dedup();
     v.extend(extra);
@@ -575,23 +661,40 @@ const ALIASES: &[(&str, &[&str])] = &[("ec.keying.keylight", keylight::KEYLIGHT_
 
 /// Other names effect `id` answers to (in [`lookup`] and searches).
 pub fn aliases(id: &str) -> &'static [&'static str] {
-    ALIASES.iter().find(|(i, _)| *i == id).map_or(&[], |(_, a)| a)
+    ALIASES
+        .iter()
+        .find(|(i, _)| *i == id)
+        .map_or(&[], |(_, a)| a)
 }
 
 /// Search (Effects & Presets, `effect.list`): the display name or one of its [`aliases`]
 /// contains `query` (lowercase).
 pub fn name_matches(spec: &EffectSpec, query: &str) -> bool {
-    std::iter::once(spec.name).chain(aliases(spec.id).iter().copied()).any(|n| n.to_lowercase().contains(query))
+    std::iter::once(spec.name)
+        .chain(aliases(spec.id).iter().copied())
+        .any(|n| n.to_lowercase().contains(query))
 }
 
 /// Find by id or (case-insensitive) display name.
 pub fn lookup(name_or_id: &str) -> Option<&'static EffectSpec> {
     find(name_or_id)
-        .or_else(|| all().into_iter().find(|s| s.name.eq_ignore_ascii_case(name_or_id)))
-        .or_else(|| ALIASES.iter().find(|(_, names)| names.iter().any(|a| a.eq_ignore_ascii_case(name_or_id))).and_then(|(id, _)| find(id)))
+        .or_else(|| {
+            all()
+                .into_iter()
+                .find(|s| s.name.eq_ignore_ascii_case(name_or_id))
+        })
+        .or_else(|| {
+            ALIASES
+                .iter()
+                .find(|(_, names)| names.iter().any(|a| a.eq_ignore_ascii_case(name_or_id)))
+                .and_then(|(id, _)| find(id))
+        })
         .or_else(|| {
             // Display names of earlier versions.
-            migrate::EFFECT_NAME_ALIASES.iter().find(|(old, _)| old.eq_ignore_ascii_case(name_or_id)).and_then(|(_, id)| find(id))
+            migrate::EFFECT_NAME_ALIASES
+                .iter()
+                .find(|(old, _)| old.eq_ignore_ascii_case(name_or_id))
+                .and_then(|(_, id)| find(id))
         })
 }
 
@@ -599,7 +702,9 @@ pub fn lookup(name_or_id: &str) -> Option<&'static EffectSpec> {
 /// layer size).
 pub fn default_value(ps: &ParamSpec, layer_size: [f64; 2]) -> Value {
     match (&ps.ui, &ps.default) {
-        (ParamUi::Point, Value::Vec2(f)) => Value::Vec2([f[0] * layer_size[0], f[1] * layer_size[1]]),
+        (ParamUi::Point, Value::Vec2(f)) => {
+            Value::Vec2([f[0] * layer_size[0], f[1] * layer_size[1]])
+        }
         _ => ps.default.clone(),
     }
 }
@@ -615,19 +720,33 @@ pub fn layer_source_id(id: &str) -> String {
 }
 
 /// Build the property group for a new instance of an effect.
-pub fn instantiate(spec: &EffectSpec, ids: &mut Ids, instance_name: &str, layer_size: [f64; 2]) -> PropGroup {
+pub fn instantiate(
+    spec: &EffectSpec,
+    ids: &mut Ids,
+    instance_name: &str,
+    layer_size: [f64; 2],
+) -> PropGroup {
     let mut g = ids.group(spec.id, instance_name);
-    g.kind = GroupKind::Effect { effect: spec.id.to_string() };
+    g.kind = GroupKind::Effect {
+        effect: spec.id.to_string(),
+    };
     for ps in &spec.params {
         let default = default_value(ps, layer_size);
         // `group/sub/param` ids nest the parameter in twirl-down groups (Warp Stabilizer's
         // Stabilization / Borders / Advanced).
-        let (path, leaf) = ps.id.rsplit_once('/').map(|(g, l)| (Some(g), l)).unwrap_or((None, ps.id));
+        let (path, leaf) = ps
+            .id
+            .rsplit_once('/')
+            .map(|(g, l)| (Some(g), l))
+            .unwrap_or((None, ps.id));
         let mut pr = Property::new(ids.alloc(), leaf, ps.name, default).with_ui(ps.ui.clone());
         if matches!(ps.ui, ParamUi::Point) {
             pr.spatial = true;
         }
-        if matches!(ps.ui, ParamUi::Checkbox | ParamUi::Popup { .. } | ParamUi::Layer) {
+        if matches!(
+            ps.ui,
+            ParamUi::Checkbox | ParamUi::Popup { .. } | ParamUi::Layer
+        ) {
             pr.hold_only = true;
         }
         match path.and_then(|path| nested_group(&mut g, ids, path)) {
@@ -640,7 +759,13 @@ pub fn instantiate(spec: &EffectSpec, ids: &mut Ids, instance_name: &str, layer_
         // to `group/paramSource` = `layer_source_id("group/param")`.
         let sid = layer_source_id(ps.id);
         if matches!(ps.ui, ParamUi::Layer) && !spec.params.iter().any(|q| q.id == sid) {
-            let mut src = Property::new(ids.alloc(), &layer_source_id(leaf), &format!("{} Source", ps.name), Value::Enum(2)).with_ui(ParamUi::Hidden);
+            let mut src = Property::new(
+                ids.alloc(),
+                &layer_source_id(leaf),
+                &format!("{} Source", ps.name),
+                Value::Enum(2),
+            )
+            .with_ui(ParamUi::Hidden);
             src.hold_only = true;
             match path.and_then(|path| nested_group(&mut g, ids, path)) {
                 Some(sub) => sub.children.push(src.into()),
@@ -841,7 +966,14 @@ pub const PARAM_GROUPS: &[(&str, &str)] = &[
 
 /// Display names of nested parameter groups by match id.
 fn group_name(m: &str) -> &str {
-    warp_stab::GROUPS.iter().chain(roto::GROUPS).chain(keylight::GROUPS).chain(PARAM_GROUPS).find(|(id, _)| *id == m).map(|(_, n)| *n).unwrap_or(m)
+    warp_stab::GROUPS
+        .iter()
+        .chain(roto::GROUPS)
+        .chain(keylight::GROUPS)
+        .chain(PARAM_GROUPS)
+        .find(|(id, _)| *id == m)
+        .map(|(_, n)| *n)
+        .unwrap_or(m)
 }
 
 /// The nested group at `path` (`borders/autoScale`) under `g`, created on first use.
@@ -1159,7 +1291,13 @@ pub const GPU_EFFECTS: &[&str] = &[
 /// Effects that can read [`EffectHost::comp_scene`] (the comp camera or the first comp light):
 /// their output changes when the camera, the lights or the layer's own transform move, so the
 /// renderer's layer cache folds the comp scene into the key for these.
-pub const READS_COMP_SCENE: &[&str] = &["ec.sim.carddance", "ec.sim.shatter", "ec.transition.cardwipe", "ec.sim.caustics", "ec.sim.ccparticleworld"];
+pub const READS_COMP_SCENE: &[&str] = &[
+    "ec.sim.carddance",
+    "ec.sim.shatter",
+    "ec.transition.cardwipe",
+    "ec.sim.caustics",
+    "ec.sim.ccparticleworld",
+];
 
 /// Effects whose output depends on [`EffectCtx::time`] directly (not only through animated
 /// parameters). The renderer's layer cache folds the layer time into the key for these.
@@ -1233,16 +1371,43 @@ pub fn apply(spec: &EffectSpec, ctx: &EffectCtx, buf: Buf) -> Buf {
 /// Test helper: run effect `id` on `img` (scale 1, layer size = image size) with its defaults
 /// overridden by `vals`, at layer time `time`, with an optional environment.
 #[cfg(test)]
-pub(crate) fn run_fx(id: &str, vals: &[(&str, Value)], img: Image, time: f64, env: EffectEnv) -> Buf {
+pub(crate) fn run_fx(
+    id: &str,
+    vals: &[(&str, Value)],
+    img: Image,
+    time: f64,
+    env: EffectEnv,
+) -> Buf {
     let s = find(id).unwrap_or_else(|| panic!("no effect {id}"));
     let size = [img.width as f64, img.height as f64];
-    let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: s
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (k, v) in vals {
         assert!(params.values.contains_key(*k), "{id}: unknown param {k}");
         params.values.insert(k.to_string(), v.clone());
     }
-    let ctx = EffectCtx { params: &params, time, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: false, env };
-    apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 })
+    let ctx = EffectCtx {
+        params: &params,
+        time,
+        layer_size: [img.width as f64, img.height as f64],
+        seed: 1,
+        adjustment: false,
+        env,
+    };
+    apply(
+        s,
+        &ctx,
+        Buf {
+            img,
+            offset: [0.0, 0.0],
+            scale: 1.0,
+        },
+    )
 }
 
 #[cfg(test)]
@@ -1252,7 +1417,13 @@ mod tests {
     #[test]
     fn run_fx_passthrough() {
         let img = Image::filled(4, 3, [0.5, 0.25, 0.125, 1.0]);
-        let out = run_fx("ec.control.slider", &[("slider", num(3.0))], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.control.slider",
+            &[("slider", num(3.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(out.img.data, img.data);
     }
 
@@ -1271,7 +1442,12 @@ mod tests {
         let mut ids = std::collections::HashSet::new();
         for s in r {
             assert!(ids.insert(s.id), "duplicate {}", s.id);
-            assert!(CATEGORIES.contains(&s.category), "{} in unknown category {}", s.id, s.category);
+            assert!(
+                CATEGORIES.contains(&s.category),
+                "{} in unknown category {}",
+                s.id,
+                s.category
+            );
             let mut pids = std::collections::HashSet::new();
             for p in &s.params {
                 assert!(pids.insert(p.id), "{}: duplicate param {}", s.id, p.id);
@@ -1305,7 +1481,16 @@ mod tests {
                     problems.push(format!("{at}: empty display name"));
                 }
                 match (&p.ui, &p.default) {
-                    (ParamUi::Slider { min, max, slider_min, slider_max, .. }, d) => {
+                    (
+                        ParamUi::Slider {
+                            min,
+                            max,
+                            slider_min,
+                            slider_max,
+                            ..
+                        },
+                        d,
+                    ) => {
                         if !(min <= max && slider_min <= slider_max) {
                             problems.push(format!("{at}: inverted range"));
                         }
@@ -1313,9 +1498,13 @@ mod tests {
                             problems.push(format!("{at}: slider range {slider_min}..{slider_max} outside valid range {min}..{max}"));
                         }
                         match d {
-                            Value::Scalar(v) if v < min || v > max => problems.push(format!("{at}: default {v} outside {min}..{max}")),
+                            Value::Scalar(v) if v < min || v > max => {
+                                problems.push(format!("{at}: default {v} outside {min}..{max}"))
+                            }
                             Value::Scalar(_) => {}
-                            d => problems.push(format!("{at}: slider default {d:?} is not a number")),
+                            d => {
+                                problems.push(format!("{at}: slider default {d:?} is not a number"))
+                            }
                         }
                     }
                     (ParamUi::Popup { options }, d) => {
@@ -1328,22 +1517,42 @@ mod tests {
                         }
                         match d {
                             Value::Enum(i) if (*i as usize) < options.len() => {}
-                            d => problems.push(format!("{at}: popup default {d:?} not among {} options", options.len())),
+                            d => problems.push(format!(
+                                "{at}: popup default {d:?} not among {} options",
+                                options.len()
+                            )),
                         }
                     }
-                    (ParamUi::Checkbox, d) if !matches!(d, Value::Bool(_)) => problems.push(format!("{at}: checkbox default {d:?}")),
-                    (ParamUi::Color, d) if !matches!(d, Value::Color(_)) => problems.push(format!("{at}: color default {d:?}")),
-                    (ParamUi::Point, d) if !matches!(d, Value::Vec2(_)) => problems.push(format!("{at}: point default {d:?}")),
-                    (ParamUi::Point3, d) if !matches!(d, Value::Vec3(_)) => problems.push(format!("{at}: 3D point default {d:?}")),
-                    (ParamUi::Layer, d) if !matches!(d, Value::Layer(_)) => problems.push(format!("{at}: layer default {d:?}")),
-                    (ParamUi::Percent | ParamUi::Angle | ParamUi::Pixels | ParamUi::Number, d) if !matches!(d, Value::Scalar(_) | Value::Vec2(_)) => {
+                    (ParamUi::Checkbox, d) if !matches!(d, Value::Bool(_)) => {
+                        problems.push(format!("{at}: checkbox default {d:?}"))
+                    }
+                    (ParamUi::Color, d) if !matches!(d, Value::Color(_)) => {
+                        problems.push(format!("{at}: color default {d:?}"))
+                    }
+                    (ParamUi::Point, d) if !matches!(d, Value::Vec2(_)) => {
+                        problems.push(format!("{at}: point default {d:?}"))
+                    }
+                    (ParamUi::Point3, d) if !matches!(d, Value::Vec3(_)) => {
+                        problems.push(format!("{at}: 3D point default {d:?}"))
+                    }
+                    (ParamUi::Layer, d) if !matches!(d, Value::Layer(_)) => {
+                        problems.push(format!("{at}: layer default {d:?}"))
+                    }
+                    (ParamUi::Percent | ParamUi::Angle | ParamUi::Pixels | ParamUi::Number, d)
+                        if !matches!(d, Value::Scalar(_) | Value::Vec2(_)) =>
+                    {
                         problems.push(format!("{at}: numeric default {d:?}"))
                     }
                     _ => {}
                 }
             }
         }
-        assert!(problems.is_empty(), "{} problems:\n{}", problems.len(), problems.join("\n"));
+        assert!(
+            problems.is_empty(),
+            "{} problems:\n{}",
+            problems.len(),
+            problems.join("\n")
+        );
     }
 
     /// Every effect runs on a small image with its default parameters without panicking and
@@ -1353,16 +1562,48 @@ mod tests {
         let mut img = Image::new(48, 32);
         for y in 0..32 {
             for x in 0..48 {
-                let a = if (8..40).contains(&x) && (6..26).contains(&y) { 1.0 } else { 0.0 };
+                let a = if (8..40).contains(&x) && (6..26).contains(&y) {
+                    1.0
+                } else {
+                    0.0
+                };
                 img.set(x, y, [x as f32 / 48.0 * a, y as f32 / 32.0 * a, 0.5 * a, a]);
             }
         }
         for s in registry() {
-            let params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
-            let ctx = EffectCtx { params: &params, time: 0.5, layer_size: [48.0, 32.0], seed: 1, adjustment: false, env: Default::default() };
-            let out = apply(s, &ctx, Buf { img: img.clone(), offset: [0.0, 0.0], scale: 1.0 });
+            let params = Params {
+                values: s
+                    .params
+                    .iter()
+                    .map(|p| (p.id.to_string(), p.default.clone()))
+                    .collect(),
+            };
+            let ctx = EffectCtx {
+                params: &params,
+                time: 0.5,
+                layer_size: [48.0, 32.0],
+                seed: 1,
+                adjustment: false,
+                env: Default::default(),
+            };
+            let out = apply(
+                s,
+                &ctx,
+                Buf {
+                    img: img.clone(),
+                    offset: [0.0, 0.0],
+                    scale: 1.0,
+                },
+            );
             assert!(!out.img.is_empty(), "{}", s.id);
-            assert!(out.img.data.iter().all(|p| p[3].is_finite() && p[3] >= -1e-4 && p[3] <= 1.0001), "{} alpha out of range", s.id);
+            assert!(
+                out.img
+                    .data
+                    .iter()
+                    .all(|p| p[3].is_finite() && p[3] >= -1e-4 && p[3] <= 1.0001),
+                "{} alpha out of range",
+                s.id
+            );
         }
     }
 
@@ -1374,28 +1615,66 @@ mod tests {
         let mut img = Image::new(40, 30);
         for y in 0..30 {
             for x in 0..40 {
-                let a = if (6..34).contains(&x) && (5..25).contains(&y) { 1.0 } else { 0.3 };
-                img.set(x, y, [((x * 7 + y * 3) % 11) as f32 / 11.0 * a, y as f32 / 30.0 * a, 0.4 * a, a]);
+                let a = if (6..34).contains(&x) && (5..25).contains(&y) {
+                    1.0
+                } else {
+                    0.3
+                };
+                img.set(
+                    x,
+                    y,
+                    [
+                        ((x * 7 + y * 3) % 11) as f32 / 11.0 * a,
+                        y as f32 / 30.0 * a,
+                        0.4 * a,
+                        a,
+                    ],
+                );
             }
         }
         let mut missing = vec![];
         for s in registry() {
-            let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+            let mut params = Params {
+                values: s
+                    .params
+                    .iter()
+                    .map(|p| (p.id.to_string(), p.default.clone()))
+                    .collect(),
+            };
             for (k, v) in params.values.iter_mut() {
                 if k.to_lowercase().contains("random") && matches!(v, Value::Bool(_)) {
                     *v = Value::Bool(true);
                 }
             }
             let run = |t: f64| {
-                let ctx = EffectCtx { params: &params, time: t, layer_size: [40.0, 30.0], seed: 7, adjustment: false, env: Default::default() };
-                apply(s, &ctx, Buf { img: img.clone(), offset: [0.0, 0.0], scale: 1.0 }).img
+                let ctx = EffectCtx {
+                    params: &params,
+                    time: t,
+                    layer_size: [40.0, 30.0],
+                    seed: 7,
+                    adjustment: false,
+                    env: Default::default(),
+                };
+                apply(
+                    s,
+                    &ctx,
+                    Buf {
+                        img: img.clone(),
+                        offset: [0.0, 0.0],
+                        scale: 1.0,
+                    },
+                )
+                .img
             };
             let (a, b) = (run(0.0), run(1.37));
             if a != b && !is_time_dependent(s.id) {
                 missing.push(s.id);
             }
         }
-        assert!(missing.is_empty(), "these depend on time but are not in TIME_DEPENDENT: {missing:?}");
+        assert!(
+            missing.is_empty(),
+            "these depend on time but are not in TIME_DEPENDENT: {missing:?}"
+        );
     }
 
     /// A host that tags the returned pixels with the requested mode (R = 0 source, 0.5 masks,
@@ -1404,10 +1683,24 @@ mod tests {
     impl EffectHost for ModeHost {
         fn layer(&self, _: u64, me: bool) -> Option<LayerPixels> {
             let v = if me { 1.0 } else { 0.0 };
-            Some(LayerPixels { buf: Buf { img: Image::filled(1, 1, [v, 0.0, 0.0, 1.0]), offset: [0.0; 2], scale: 1.0 }, size: [1.0, 1.0] })
+            Some(LayerPixels {
+                buf: Buf {
+                    img: Image::filled(1, 1, [v, 0.0, 0.0, 1.0]),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [1.0, 1.0],
+            })
         }
         fn layer_masks(&self, _: u64) -> Option<LayerPixels> {
-            Some(LayerPixels { buf: Buf { img: Image::filled(1, 1, [0.5, 0.0, 0.0, 1.0]), offset: [0.0; 2], scale: 1.0 }, size: [1.0, 1.0] })
+            Some(LayerPixels {
+                buf: Buf {
+                    img: Image::filled(1, 1, [0.5, 0.0, 0.0, 1.0]),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [1.0, 1.0],
+            })
         }
         fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
             None
@@ -1423,8 +1716,18 @@ mod tests {
             if let Some(c) = companion {
                 params.values.insert(layer_source_id("l"), Value::Enum(c));
             }
-            let env = EffectEnv { host: Some(&host), ..Default::default() };
-            let ctx = EffectCtx { params: &params, time: 0.0, layer_size: [1.0, 1.0], seed: 0, adjustment: false, env };
+            let env = EffectEnv {
+                host: Some(&host),
+                ..Default::default()
+            };
+            let ctx = EffectCtx {
+                params: &params,
+                time: 0.0,
+                layer_size: [1.0, 1.0],
+                seed: 0,
+                adjustment: false,
+                env,
+            };
             ctx.layer_param("l", builtin).unwrap().buf.img.get(0, 0)[0]
         };
         assert_eq!(mode(None, true), 1.0);
@@ -1434,10 +1737,31 @@ mod tests {
         assert_eq!(mode(Some(2), false), 1.0);
         // Instances get a companion (default Effects & Masks) unless the effect declares one.
         let mut next = 0;
-        let g = instantiate(find("ec.channel.blend").unwrap(), &mut Ids(&mut next), "Blend", [10.0, 10.0]);
-        assert_eq!(g.get("blendWithLayerSource").map(|p| p.value.clone()), Some(Value::Enum(2)));
-        let g = instantiate(find("ec.noise.matchgrain").unwrap(), &mut Ids(&mut next), "Match Grain", [10.0, 10.0]);
-        assert_eq!(g.get("noiseSourceLayerSource").map(|p| p.value.clone()), Some(Value::Enum(0)));
-        assert_eq!(g.props().filter(|p| p.match_id == "noiseSourceLayerSource").count(), 1);
+        let g = instantiate(
+            find("ec.channel.blend").unwrap(),
+            &mut Ids(&mut next),
+            "Blend",
+            [10.0, 10.0],
+        );
+        assert_eq!(
+            g.get("blendWithLayerSource").map(|p| p.value.clone()),
+            Some(Value::Enum(2))
+        );
+        let g = instantiate(
+            find("ec.noise.matchgrain").unwrap(),
+            &mut Ids(&mut next),
+            "Match Grain",
+            [10.0, 10.0],
+        );
+        assert_eq!(
+            g.get("noiseSourceLayerSource").map(|p| p.value.clone()),
+            Some(Value::Enum(0))
+        );
+        assert_eq!(
+            g.props()
+                .filter(|p| p.match_id == "noiseSourceLayerSource")
+                .count(),
+            1
+        );
     }
 }

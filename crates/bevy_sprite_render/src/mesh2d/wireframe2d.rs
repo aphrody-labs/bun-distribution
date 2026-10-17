@@ -1,40 +1,42 @@
 use crate::{
-    init_mesh_2d_pipeline, DrawMesh2d, Mesh2dPipeline, Mesh2dPipelineKey, RenderMesh2dInstances,
-    SetMesh2dBindGroup, SetMesh2dViewBindGroup, ViewKeyCache,
+    DrawMesh2d, Mesh2dPipeline, Mesh2dPipelineKey, RenderMesh2dInstances, SetMesh2dBindGroup,
+    SetMesh2dViewBindGroup, ViewKeyCache, init_mesh_2d_pipeline,
 };
 use bevy_app::{App, Plugin, PostUpdate, Startup, Update};
 use bevy_asset::{
-    embedded_asset, load_embedded_asset, prelude::AssetChanged, AsAssetId, Asset, AssetApp,
-    AssetEventSystems, AssetId, AssetServer, Assets, Handle, UntypedAssetId,
+    AsAssetId, Asset, AssetApp, AssetEventSystems, AssetId, AssetServer, Assets, Handle,
+    UntypedAssetId, embedded_asset, load_embedded_asset, prelude::AssetChanged,
 };
-use bevy_camera::{visibility::ViewVisibility, Camera, Camera2d};
+use bevy_camera::{Camera, Camera2d, visibility::ViewVisibility};
 use bevy_color::{Color, ColorToComponents};
 use bevy_core_pipeline::schedule::{Core2d, Core2dSystems};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     change_detection::Tick,
     prelude::*,
-    system::{lifetimeless::SRes, SystemChangeTick, SystemParamItem},
+    system::{SystemChangeTick, SystemParamItem, lifetimeless::SRes},
 };
 use bevy_mesh::{Mesh2d, MeshVertexBufferLayoutRef};
 use bevy_platform::{
     collections::{HashMap, HashSet},
     hash::FixedHasher,
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderDebugFlags,
+    RenderStartup, RenderSystems,
     batching::gpu_preprocessing::GpuPreprocessingMode,
     camera::{
-        extract_cameras, DirtySpecializationSystems, DirtyWireframeSpecializations,
-        ExtractedCamera, PendingQueues,
+        DirtySpecializationSystems, DirtyWireframeSpecializations, ExtractedCamera, PendingQueues,
+        extract_cameras,
     },
     extract_resource::ExtractResource,
     mesh::{
-        allocator::{MeshAllocator, MeshSlabId, MeshSlabs},
         RenderMesh,
+        allocator::{MeshAllocator, MeshSlabId, MeshSlabs},
     },
     render_asset::{
-        prepare_assets, PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssets,
+        PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssets, prepare_assets,
     },
     render_phase::{
         AddRenderCommand, BinnedPhaseItem, BinnedRenderPhasePlugin, BinnedRenderPhaseType,
@@ -49,8 +51,6 @@ use bevy_render::{
         ExtractedView, RenderVisibleEntities, RetainedViewEntity, ViewDepthStencilTexture,
         ViewTarget,
     },
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderDebugFlags,
-    RenderStartup, RenderSystems,
 };
 use bevy_shader::Shader;
 use core::{hash::Hash, ops::Range};

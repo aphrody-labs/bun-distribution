@@ -3,9 +3,9 @@
 //! [array-like]: https://doc.rust-lang.org/book/ch03-02-data-types.html#the-array-type
 use crate::generics::impl_generic_info_methods;
 use crate::{
-    ty::impl_type_methods, utility::reflect_hasher, ApplyError, Generics, MaybeTyped,
-    PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut, ReflectOwned, ReflectRef,
-    Type, TypeInfo, TypePath,
+    ApplyError, Generics, MaybeTyped, PartialReflect, Reflect, ReflectCloneError, ReflectKind,
+    ReflectMut, ReflectOwned, ReflectRef, Type, TypeInfo, TypePath, ty::impl_type_methods,
+    utility::reflect_hasher,
 };
 use alloc::{boxed::Box, vec::Vec};
 use bevy_reflect_derive::impl_type_path;

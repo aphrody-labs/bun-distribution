@@ -71,7 +71,9 @@ fn main() -> ExitCode {
 pub fn root() -> PathBuf {
     // `cargo run` sets it at run time; prefer that over the compile-time value, which goes stale
     // when the checkout moves and the cached xtask binary isn't rebuilt
-    let dir = std::env::var_os("CARGO_MANIFEST_DIR").map(PathBuf::from).filter(|d| d.join("Cargo.toml").is_file());
+    let dir = std::env::var_os("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .filter(|d| d.join("Cargo.toml").is_file());
     let dir = dir.unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")));
     dir.parent().expect("xtask has a parent dir").to_path_buf()
 }
@@ -85,15 +87,21 @@ pub fn cargo() -> Command {
     if std::env::args().nth(1).as_deref() == Some("ci") {
         static JOBS: std::sync::OnceLock<(String, String)> = std::sync::OnceLock::new();
         let (build, threads) = JOBS.get_or_init(|| {
-            let ram_mb = available_ram_mb().or_else(|| total_ram_gb().map(|gb| gb.saturating_mul(1024) / 2));
-            let jobs = ci_jobs(ram_mb, std::thread::available_parallelism().map_or(4, |n| n.get()));
+            let ram_mb =
+                available_ram_mb().or_else(|| total_ram_gb().map(|gb| gb.saturating_mul(1024) / 2));
+            let jobs = ci_jobs(
+                ram_mb,
+                std::thread::available_parallelism().map_or(4, |n| n.get()),
+            );
             // More test threads barely shorten CI (a few heavy tests dominate) but make the
             // wall-clock frame-budget tests flaky on a loaded machine.
             (jobs.to_string(), jobs.min(4).to_string())
         });
-        for (key, value) in
-            [("CARGO_PROFILE_DEV_DEBUG", "line-tables-only"), ("CARGO_BUILD_JOBS", build.as_str()), ("RUST_TEST_THREADS", threads.as_str())]
-        {
+        for (key, value) in [
+            ("CARGO_PROFILE_DEV_DEBUG", "line-tables-only"),
+            ("CARGO_BUILD_JOBS", build.as_str()),
+            ("RUST_TEST_THREADS", threads.as_str()),
+        ] {
             if std::env::var_os(key).is_none() {
                 c.env(key, value);
             }
@@ -108,7 +116,9 @@ pub fn cargo() -> Command {
 /// than installed RAM keeps a busy machine (browsers, VMs, editors) from being overcommitted.
 /// Test threads are this, capped at 4.
 fn ci_jobs(available_mb: Option<u64>, cpus: usize) -> usize {
-    available_mb.map_or(4, |mb| usize::try_from(mb / 1536).unwrap_or(usize::MAX)).clamp(1, cpus.max(1))
+    available_mb
+        .map_or(4, |mb| usize::try_from(mb / 1536).unwrap_or(usize::MAX))
+        .clamp(1, cpus.max(1))
 }
 
 /// RAM the OS could hand out now (free plus reclaimable cache) in MB, if it reports it.
@@ -119,20 +129,41 @@ fn available_ram_mb() -> Option<u64> {
     };
     if cfg!(target_os = "linux") {
         let info = std::fs::read_to_string("/proc/meminfo").ok()?;
-        let kb = info.lines().find_map(|l| l.strip_prefix("MemAvailable:"))?.trim().trim_end_matches("kB").trim();
+        let kb = info
+            .lines()
+            .find_map(|l| l.strip_prefix("MemAvailable:"))?
+            .trim()
+            .trim_end_matches("kB")
+            .trim();
         Some(kb.parse::<u64>().ok()? / 1024)
     } else if cfg!(windows) {
         let cmd = "(Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory).AvailableMBytes";
-        output("powershell", &["-NoProfile", "-Command", cmd])?.trim().parse().ok()
+        output("powershell", &["-NoProfile", "-Command", cmd])?
+            .trim()
+            .parse()
+            .ok()
     } else {
         // macOS: free + inactive + speculative pages
         let stat = output("vm_stat", &[])?;
-        let page: u64 = stat.split("page size of ").nth(1)?.split_whitespace().next()?.parse().ok()?;
+        let page: u64 = stat
+            .split("page size of ")
+            .nth(1)?
+            .split_whitespace()
+            .next()?
+            .parse()
+            .ok()?;
         let pages = |name: &str| -> Option<u64> {
             let line = stat.lines().find(|l| l.starts_with(name))?;
-            line.rsplit(':').next()?.trim().trim_end_matches('.').parse().ok()
+            line.rsplit(':')
+                .next()?
+                .trim()
+                .trim_end_matches('.')
+                .parse()
+                .ok()
         };
-        let free = pages("Pages free")?.saturating_add(pages("Pages inactive")?).saturating_add(pages("Pages speculative").unwrap_or(0));
+        let free = pages("Pages free")?
+            .saturating_add(pages("Pages inactive")?)
+            .saturating_add(pages("Pages speculative").unwrap_or(0));
         Some(free.saturating_mul(page) >> 20)
     }
 }
@@ -142,11 +173,23 @@ fn available_ram_mb() -> Option<u64> {
 fn total_ram_gb() -> Option<u64> {
     let bytes: u64 = if cfg!(target_os = "linux") {
         let info = std::fs::read_to_string("/proc/meminfo").ok()?;
-        let kb = info.lines().find_map(|l| l.strip_prefix("MemTotal:"))?.trim().trim_end_matches("kB").trim();
+        let kb = info
+            .lines()
+            .find_map(|l| l.strip_prefix("MemTotal:"))?
+            .trim()
+            .trim_end_matches("kB")
+            .trim();
         kb.parse::<u64>().ok()?.checked_mul(1024)?
     } else {
         let (program, args): (&str, &[&str]) = if cfg!(windows) {
-            ("powershell", &["-NoProfile", "-Command", "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"])
+            (
+                "powershell",
+                &[
+                    "-NoProfile",
+                    "-Command",
+                    "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory",
+                ],
+            )
         } else {
             ("sysctl", &["-n", "hw.memsize"])
         };
@@ -159,14 +202,26 @@ fn total_ram_gb() -> Option<u64> {
 
 pub fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     eprintln!("$ {what}");
-    let status = cmd.status().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
-    if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
+    let status = cmd
+        .status()
+        .map_err(|e| format!("{what}: failed to spawn: {e}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("{what}: exited with {status}"))
+    }
 }
 
 pub fn metadata() -> Result<serde_json::Value, String> {
-    let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
+    let out = cargo()
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .output()
+        .map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
-        return Err(format!("cargo metadata failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "cargo metadata failed:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
     serde_json::from_slice(&out.stdout).map_err(|e| format!("cargo metadata: bad JSON: {e}"))
 }
@@ -189,7 +244,12 @@ fn cmd_layers() -> Result<(), String> {
                 format!("{}{k}", layers::short_name(&d.name))
             })
             .collect();
-        println!("{:<28} {:<14} {}", c.name, layers::describe(layers::classify(&c.name)), ws.join(", "));
+        println!(
+            "{:<28} {:<14} {}",
+            c.name,
+            layers::describe(layers::classify(&c.name)),
+            ws.join(", ")
+        );
     }
     let violations = layers::check(&crates);
     println!();
@@ -227,7 +287,11 @@ fn cmd_wasm() -> Result<(), String> {
     for pkg in &set {
         let mut c = cargo();
         c.args(["check", "--target", "wasm32-unknown-unknown", "-p", pkg]);
-        let ok = run(c, &format!("cargo check --target wasm32-unknown-unknown -p {pkg}")).is_ok();
+        let ok = run(
+            c,
+            &format!("cargo check --target wasm32-unknown-unknown -p {pkg}"),
+        )
+        .is_ok();
         results.push((pkg.clone(), ok));
     }
     println!("\nwasm32-unknown-unknown check:");
@@ -235,7 +299,11 @@ fn cmd_wasm() -> Result<(), String> {
         println!("  {:<6} {p}", if *ok { "ok" } else { "FAIL" });
     }
     let failed = results.iter().filter(|r| !r.1).count();
-    if failed == 0 { Ok(()) } else { Err(format!("{failed} crate(s) failed the wasm check")) }
+    if failed == 0 {
+        Ok(())
+    } else {
+        Err(format!("{failed} crate(s) failed the wasm check"))
+    }
 }
 
 fn cmd_ci() -> Result<(), String> {
@@ -253,7 +321,14 @@ fn cmd_ci() -> Result<(), String> {
             "clippy",
             Box::new(|| {
                 let mut c = cargo();
-                c.args(["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]);
+                c.args([
+                    "clippy",
+                    "--workspace",
+                    "--all-targets",
+                    "--",
+                    "-D",
+                    "warnings",
+                ]);
                 run(c, "cargo clippy --workspace --all-targets -- -D warnings")
             }),
         ),
@@ -262,15 +337,50 @@ fn cmd_ci() -> Result<(), String> {
             Box::new(|| {
                 // the optional HEIC/HEIF decoder is off in the workspace build above
                 let mut c = cargo();
-                c.args(["clippy", "-p", "lightcraft-codecs", "--features", "heif", "--all-targets", "--", "-D", "warnings"]);
-                run(c, "cargo clippy -p lightcraft-codecs --features heif --all-targets -- -D warnings")?;
+                c.args([
+                    "clippy",
+                    "-p",
+                    "lightcraft-codecs",
+                    "--features",
+                    "heif",
+                    "--all-targets",
+                    "--",
+                    "-D",
+                    "warnings",
+                ]);
+                run(
+                    c,
+                    "cargo clippy -p lightcraft-codecs --features heif --all-targets -- -D warnings",
+                )?;
                 let mut c = cargo();
-                c.args(["test", "-p", "lightcraft-codecs", "-p", "lightcraft-heif", "--features", "lightcraft-codecs/heif"]);
-                run(c, "cargo test -p lightcraft-codecs -p lightcraft-heif --features lightcraft-codecs/heif")?;
+                c.args([
+                    "test",
+                    "-p",
+                    "lightcraft-codecs",
+                    "-p",
+                    "lightcraft-heif",
+                    "--features",
+                    "lightcraft-codecs/heif",
+                ]);
+                run(
+                    c,
+                    "cargo test -p lightcraft-codecs -p lightcraft-heif --features lightcraft-codecs/heif",
+                )?;
                 // the engine's HEIC import test, with the decoder (the workspace run checks the error)
                 let mut c = cargo();
-                c.args(["test", "-p", "lightcraft-engine", "--lib", "--features", "lightcraft-codecs/heif", "heic"]);
-                run(c, "cargo test -p lightcraft-engine --lib --features lightcraft-codecs/heif heic")
+                c.args([
+                    "test",
+                    "-p",
+                    "lightcraft-engine",
+                    "--lib",
+                    "--features",
+                    "lightcraft-codecs/heif",
+                    "heic",
+                ]);
+                run(
+                    c,
+                    "cargo test -p lightcraft-engine --lib --features lightcraft-codecs/heif heic",
+                )
             }),
         ),
         (
@@ -302,7 +412,11 @@ fn cmd_ci() -> Result<(), String> {
         }
         done.push(*name);
     }
-    println!("\nCI summary: all {} steps passed ({})", done.len(), done.join(", "));
+    println!(
+        "\nCI summary: all {} steps passed ({})",
+        done.len(),
+        done.join(", ")
+    );
     Ok(())
 }
 
@@ -417,7 +531,11 @@ const RAW_SAMPLES: &[(&str, &str, &str)] = &[
     ),
     // SR2SubIFD white balance (#535): the A500 and A700 above, a third layout of a body that had none before
     // (SLT-A33, 29000 bytes), and two shots whose maker-note gains differ from the preset applied (5600 K, Shade)
-    ("arw-sony-a33.arw", "https://raw.pixls.us/data/Sony/SLT-A33/DSC01867.ARW", "1a59856394f10d4fadb40f5ab9c6d1c89f473f4dbcdefd216fbbbbf1ad8d21f9"),
+    (
+        "arw-sony-a33.arw",
+        "https://raw.pixls.us/data/Sony/SLT-A33/DSC01867.ARW",
+        "1a59856394f10d4fadb40f5ab9c6d1c89f473f4dbcdefd216fbbbbf1ad8d21f9",
+    ),
     (
         "arw-sony-a3500-5600k.arw",
         "https://raw.pixls.us/data/Sony/ILCE-3500/DSC06923.ARW",
@@ -913,7 +1031,9 @@ Tests that use a corpus skip cleanly when it is absent.
         if actual != *sha256 {
             // delete it, so the next run downloads it again instead of trusting it
             std::fs::remove_file(&out).map_err(|e| format!("remove {}: {e}", out.display()))?;
-            bad.push(format!("{name}: sha256 is {actual}, expected {sha256} (file deleted; source {url})"));
+            bad.push(format!(
+                "{name}: sha256 is {actual}, expected {sha256} (file deleted; source {url})"
+            ));
         }
     }
     if bad.is_empty() {
@@ -932,7 +1052,8 @@ Tests that use a corpus skip cleanly when it is absent.
 
 fn file_sha256(path: &Path) -> Result<String, String> {
     use sha2::{Digest, Sha256};
-    let mut file = std::fs::File::open(path).map_err(|e| format!("open {}: {e}", path.display()))?;
+    let mut file =
+        std::fs::File::open(path).map_err(|e| format!("open {}: {e}", path.display()))?;
     let mut hash = Sha256::new();
     std::io::copy(&mut file, &mut hash).map_err(|e| format!("read {}: {e}", path.display()))?;
     Ok(format!("{:x}", hash.finalize()))
@@ -944,9 +1065,21 @@ mod ci_jobs_tests {
 
     #[test]
     fn jobs_follow_available_ram_and_never_exceed_the_cpus() {
-        assert_eq!(ci_jobs(Some(3 * 1024), 8), 2, "a 4 GB machine with 3 GB free");
-        assert_eq!(ci_jobs(Some(6 * 1024), 8), 4, "an 8 GB machine with 6 GB free");
-        assert_eq!(ci_jobs(Some(7 * 1024), 32), 4, "a busy 32 GB machine: what is free counts");
+        assert_eq!(
+            ci_jobs(Some(3 * 1024), 8),
+            2,
+            "a 4 GB machine with 3 GB free"
+        );
+        assert_eq!(
+            ci_jobs(Some(6 * 1024), 8),
+            4,
+            "an 8 GB machine with 6 GB free"
+        );
+        assert_eq!(
+            ci_jobs(Some(7 * 1024), 32),
+            4,
+            "a busy 32 GB machine: what is free counts"
+        );
         assert_eq!(ci_jobs(Some(24 * 1024), 32), 16);
         assert_eq!(ci_jobs(Some(64 * 1024), 8), 8, "capped at the CPU count");
         assert_eq!(ci_jobs(Some(500), 8), 1, "at least one");
@@ -966,7 +1099,13 @@ mod corpus_tests {
         names.dedup();
         assert_eq!(names.len(), RAW_SAMPLES.len(), "duplicate file name");
         for (name, _, sha256) in RAW_SAMPLES {
-            assert!(sha256.len() == 64 && sha256.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')), "{name}: not a lowercase sha256");
+            assert!(
+                sha256.len() == 64
+                    && sha256
+                        .bytes()
+                        .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')),
+                "{name}: not a lowercase sha256"
+            );
         }
     }
 }

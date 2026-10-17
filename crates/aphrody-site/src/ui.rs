@@ -15,7 +15,9 @@ pub struct AppUi {
 
 impl AppUi {
     pub fn load(root: &Path) -> io::Result<Self> {
-        let ui = Self { root: root.canonicalize()? };
+        let ui = Self {
+            root: root.canonicalize()?,
+        };
         for asset in ["index.html", "app.js", "app.css"] {
             ui.asset_path(asset)?;
         }
@@ -33,13 +35,21 @@ impl AppUi {
     fn asset_path(&self, relative: &str) -> io::Result<PathBuf> {
         if relative.contains(['\\', '%', ':'])
             || relative.chars().any(char::is_control)
-            || Path::new(relative).components().any(|part| !matches!(part, Component::Normal(_)))
+            || Path::new(relative)
+                .components()
+                .any(|part| !matches!(part, Component::Normal(_)))
         {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid UI asset path"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid UI asset path",
+            ));
         }
         let path = self.root.join(relative).canonicalize()?;
         if !path.starts_with(&self.root) || !path.is_file() {
-            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "asset outside app-ui"));
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "asset outside app-ui",
+            ));
         }
         Ok(path)
     }
@@ -51,7 +61,10 @@ impl AppUi {
     pub async fn response(&self, request_path: &str) -> Response {
         let relative = request_path.strip_prefix('/').unwrap_or(request_path);
         if relative.starts_with("api/")
-            || matches!(relative, "api" | "rpc" | "events" | "notifications" | "healthz")
+            || matches!(
+                relative,
+                "api" | "rpc" | "events" | "notifications" | "healthz"
+            )
         {
             return StatusCode::NOT_FOUND.into_response();
         }
@@ -62,7 +75,7 @@ impl AppUi {
                     Ok(path) => path,
                     Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
                 }
-            },
+            }
             Err(_) => return StatusCode::NOT_FOUND.into_response(),
         };
         let content_type = match path.extension().and_then(|extension| extension.to_str()) {

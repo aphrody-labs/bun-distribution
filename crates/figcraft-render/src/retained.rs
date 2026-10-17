@@ -69,7 +69,11 @@ struct Sensitive {
 /// Grain effects (noise, texture) work on their layer's pixels, which end where a render cuts the
 /// layer (texture scatters pixels from across the cut): grainy layers are redrawn whole.
 fn sensitive(doc: &Document) -> Sensitive {
-    let noisy = doc.nodes().filter(|n| n.effects.iter().any(|e| e.visible && matches!(e.kind, EffectKind::Noise(_) | EffectKind::Texture(_))));
+    let noisy = doc.nodes().filter(|n| {
+        n.effects
+            .iter()
+            .any(|e| e.visible && matches!(e.kind, EffectKind::Noise(_) | EffectKind::Texture(_)))
+    });
     let pattern_sources = doc
         .nodes()
         .flat_map(|n| n.fills.iter().chain(&n.strokes))
@@ -78,12 +82,20 @@ fn sensitive(doc: &Document) -> Sensitive {
             _ => None,
         })
         .collect();
-    Sensitive { areas: noisy.filter_map(|n| draw::paint_bounds(doc, n.id)).collect(), backdrop_blur: crate::max_backdrop_blur(doc), pattern_sources }
+    Sensitive {
+        areas: noisy
+            .filter_map(|n| draw::paint_bounds(doc, n.id))
+            .collect(),
+        backdrop_blur: crate::max_backdrop_blur(doc),
+        pattern_sources,
+    }
 }
 
 /// Whether `id` is a pattern source or inside one in `doc`.
 fn in_pattern_source(doc: &Document, s: &Sensitive, id: NodeId) -> bool {
-    s.pattern_sources.iter().any(|src| *src == id || doc.is_ancestor(*src, id))
+    s.pattern_sources
+        .iter()
+        .any(|src| *src == id || doc.is_ancestor(*src, id))
 }
 
 /// A view snapped outwards to whole device pixels: the origin on its zoom's pixel grid and one
@@ -91,7 +103,13 @@ fn in_pattern_source(doc: &Document, s: &Sensitive, id: NodeId) -> bool {
 pub fn snap(view: &View) -> Option<(View, (i64, i64))> {
     let s = view.scale;
     let (fx, fy) = ((view.origin.0 * s).floor(), (view.origin.1 * s).floor());
-    if !(s.is_finite() && s > 0.0 && fx.is_finite() && fy.is_finite() && fx.abs() < 1e15 && fy.abs() < 1e15) {
+    if !(s.is_finite()
+        && s > 0.0
+        && fx.is_finite()
+        && fy.is_finite()
+        && fx.abs() < 1e15
+        && fy.abs() < 1e15)
+    {
         return None;
     }
     let v = View {
@@ -117,10 +135,20 @@ impl Px {
         (self.x1 - self.x0).max(0) as u64 * (self.y1 - self.y0).max(0) as u64
     }
     fn union(&self, o: &Px) -> Px {
-        Px { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+        Px {
+            x0: self.x0.min(o.x0),
+            y0: self.y0.min(o.y0),
+            x1: self.x1.max(o.x1),
+            y1: self.y1.max(o.y1),
+        }
     }
     fn clamp(&self, w: i64, h: i64) -> Option<Px> {
-        let r = Px { x0: self.x0.max(0), y0: self.y0.max(0), x1: self.x1.min(w), y1: self.y1.min(h) };
+        let r = Px {
+            x0: self.x0.max(0),
+            y0: self.y0.max(0),
+            x1: self.x1.min(w),
+            y1: self.y1.min(h),
+        };
         (r.x1 > r.x0 && r.y1 > r.y0).then_some(r)
     }
 }
@@ -139,7 +167,13 @@ impl Retained {
 
     /// Render `view` of `page`, reusing the previous render where nothing changed. Returns the
     /// view actually drawn (snapped to device pixels, see [`snap`]), the image and what it took.
-    pub fn render(&mut self, doc: &Arc<Document>, page: NodeId, view: &View, opts: &Options) -> Option<(View, &Pixmap, Work)> {
+    pub fn render(
+        &mut self,
+        doc: &Arc<Document>,
+        page: NodeId,
+        view: &View,
+        opts: &Options,
+    ) -> Option<(View, &Pixmap, Work)> {
         // A view that can't be put on a pixel grid (non-finite or absurd) draws nothing.
         let Some((snapped, px)) = snap(view) else {
             self.last = None;
@@ -167,9 +201,17 @@ impl Retained {
             && last.doc.color_profile == doc.color_profile
         {
             let same_doc = Arc::ptr_eq(&last.doc, doc);
-            let s = if same_doc { last.sensitive.clone() } else { Arc::new(sensitive(doc)) };
+            let s = if same_doc {
+                last.sensitive.clone()
+            } else {
+                Arc::new(sensitive(doc))
+            };
             if let Some((pix, pixels)) = patch(last, doc, page, &snapped, px, opts, &s) {
-                work = if pixels == 0 { Work::Reused } else { Work::Partial { pixels } };
+                work = if pixels == 0 {
+                    Work::Reused
+                } else {
+                    Work::Partial { pixels }
+                };
                 let frame = self.keep(doc, page, (&snapped, px, fonts), opts, pix, s);
                 return Some((snapped, &frame.pix, work));
             }
@@ -215,7 +257,12 @@ impl Retained {
 /// Page rectangle → device pixels of a frame whose top-left is `px`, rounded outwards plus a pixel
 /// of anti-aliasing.
 fn to_px(r: Rect, scale: f64, px: (i64, i64)) -> Option<Px> {
-    let (x0, y0, x1, y1) = ((r.x0 * scale).floor() - 1.0, (r.y0 * scale).floor() - 1.0, (r.x1 * scale).ceil() + 1.0, (r.y1 * scale).ceil() + 1.0);
+    let (x0, y0, x1, y1) = (
+        (r.x0 * scale).floor() - 1.0,
+        (r.y0 * scale).floor() - 1.0,
+        (r.x1 * scale).ceil() + 1.0,
+        (r.y1 * scale).ceil() + 1.0,
+    );
     if !(x0.is_finite() && y0.is_finite() && x1.is_finite() && y1.is_finite())
         || x0.abs() > 1e15
         || y0.abs() > 1e15
@@ -224,12 +271,19 @@ fn to_px(r: Rect, scale: f64, px: (i64, i64)) -> Option<Px> {
     {
         return None;
     }
-    Some(Px { x0: x0 as i64 - px.0, y0: y0 as i64 - px.1, x1: x1 as i64 - px.0, y1: y1 as i64 - px.1 })
+    Some(Px {
+        x0: x0 as i64 - px.0,
+        y0: y0 as i64 - px.1,
+        x1: x1 as i64 - px.0,
+        y1: y1 as i64 - px.1,
+    })
 }
 
 /// Page areas a change to `id` in `doc` affects on `page`; `None` when only a full render will do.
 fn changed_areas(doc: &Document, page: NodeId, id: NodeId, out: &mut Vec<Rect>) -> Option<()> {
-    let Some(n) = doc.node(id) else { return Some(()) };
+    let Some(n) = doc.node(id) else {
+        return Some(());
+    };
     if n.is_page() {
         // Page background, page order or top-level layers.
         return if id == page { None } else { Some(()) };
@@ -252,7 +306,10 @@ fn changed_areas(doc: &Document, page: NodeId, id: NodeId, out: &mut Vec<Rect>) 
         if an.is_page() {
             break;
         }
-        if matches!(an.kind, NodeKind::BooleanOp { .. }) || an.is_mask || an.effects.iter().any(|e| e.visible) {
+        if matches!(an.kind, NodeKind::BooleanOp { .. })
+            || an.is_mask
+            || an.effects.iter().any(|e| e.visible)
+        {
             out.push(draw::paint_bounds(doc, a)?);
         }
     }
@@ -261,7 +318,15 @@ fn changed_areas(doc: &Document, page: NodeId, id: NodeId, out: &mut Vec<Rect>) 
 
 /// The previous frame brought up to date for `doc` at `px`, rendering only what changed; `None`
 /// when a full render is the better (or only correct) choice. Also returns the pixels rendered.
-fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, i64), opts: &Options, s: &Sensitive) -> Option<(Pixmap, u64)> {
+fn patch(
+    last: Frame,
+    doc: &Arc<Document>,
+    page: NodeId,
+    view: &View,
+    px: (i64, i64),
+    opts: &Options,
+    s: &Sensitive,
+) -> Option<(Pixmap, u64)> {
     let (w, h) = (i64::from(view.width), i64::from(view.height));
     let (dx, dy) = (px.0.checked_sub(last.px.0)?, px.1.checked_sub(last.px.1)?);
     if dx.abs() >= w || dy.abs() >= h {
@@ -269,7 +334,11 @@ fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, 
     }
     // Background blurs read the backdrop around them, so a change shows that far off: under a blur
     // beside a changed layer, and at the old view's edge (where the backdrop used to end).
-    let reach = crate::backdrop_reach(s.backdrop_blur.max(last.sensitive.backdrop_blur), view.scale).ceil();
+    let reach = crate::backdrop_reach(
+        s.backdrop_blur.max(last.sensitive.backdrop_blur),
+        view.scale,
+    )
+    .ceil();
     if !reach.is_finite() || reach > MAX_MARGIN_PX {
         return None;
     }
@@ -277,14 +346,34 @@ fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, 
     let mut damage: Vec<Px> = Vec::new();
     // Strips a pan uncovers.
     if dx > 0 {
-        damage.push(Px { x0: w - dx - reach, y0: 0, x1: w, y1: h });
+        damage.push(Px {
+            x0: w - dx - reach,
+            y0: 0,
+            x1: w,
+            y1: h,
+        });
     } else if dx < 0 {
-        damage.push(Px { x0: 0, y0: 0, x1: reach - dx, y1: h });
+        damage.push(Px {
+            x0: 0,
+            y0: 0,
+            x1: reach - dx,
+            y1: h,
+        });
     }
     if dy > 0 {
-        damage.push(Px { x0: 0, y0: h - dy - reach, x1: w, y1: h });
+        damage.push(Px {
+            x0: 0,
+            y0: h - dy - reach,
+            x1: w,
+            y1: h,
+        });
     } else if dy < 0 {
-        damage.push(Px { x0: 0, y0: 0, x1: w, y1: reach - dy });
+        damage.push(Px {
+            x0: 0,
+            y0: 0,
+            x1: w,
+            y1: reach - dy,
+        });
     }
     // Layers that changed, where they were and where they are now.
     if !Arc::ptr_eq(&last.doc, doc) {
@@ -299,7 +388,12 @@ fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, 
         }
         for r in areas {
             if let Some(p) = to_px(r, view.scale, px) {
-                damage.push(Px { x0: p.x0 - reach, y0: p.y0 - reach, x1: p.x1 + reach, y1: p.y1 + reach });
+                damage.push(Px {
+                    x0: p.x0 - reach,
+                    y0: p.y0 - reach,
+                    x1: p.x1 + reach,
+                    y1: p.y1 + reach,
+                });
             }
         }
     }
@@ -308,7 +402,12 @@ fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, 
         return Some((last.pix, 0));
     }
     // Layers whose look depends on where they are cut are redrawn whole.
-    let sensitive: Vec<Px> = s.areas.iter().chain(last.sensitive.areas.iter()).filter_map(|r| to_px(*r, view.scale, px)).collect();
+    let sensitive: Vec<Px> = s
+        .areas
+        .iter()
+        .chain(last.sensitive.areas.iter())
+        .filter_map(|r| to_px(*r, view.scale, px))
+        .collect();
     for _ in 0..4 {
         let mut grew = false;
         for d in damage.iter_mut() {
@@ -326,7 +425,10 @@ fn patch(last: Frame, doc: &Arc<Document>, page: NodeId, view: &View, px: (i64, 
     }
     let mut damage = merge(damage.iter().filter_map(|d| d.clamp(w, h)).collect());
     if damage.len() > MAX_RECTS {
-        let all = damage.iter().skip(1).fold(*damage.first()?, |a, b| a.union(b));
+        let all = damage
+            .iter()
+            .skip(1)
+            .fold(*damage.first()?, |a, b| a.union(b));
         damage = vec![all];
     }
     let pixels: u64 = damage.iter().map(Px::area).sum();
@@ -353,11 +455,26 @@ fn shift(pix: &mut Pixmap, dx: i64, dy: i64) -> Option<()> {
     let row = usize::try_from(w * 4).ok()?;
     let data = pix.data_mut();
     // Columns that survive the horizontal move, as byte ranges within a row.
-    let (src_x, dst_x, n) = if dx >= 0 { (dx, 0, w - dx) } else { (0, -dx, w + dx) };
-    let (src_x, dst_x, n) = (usize::try_from(src_x * 4).ok()?, usize::try_from(dst_x * 4).ok()?, usize::try_from(n * 4).ok()?);
-    let ys: Box<dyn Iterator<Item = i64>> = if dy >= 0 { Box::new(0..h - dy) } else { Box::new((-dy..h).rev()) };
+    let (src_x, dst_x, n) = if dx >= 0 {
+        (dx, 0, w - dx)
+    } else {
+        (0, -dx, w + dx)
+    };
+    let (src_x, dst_x, n) = (
+        usize::try_from(src_x * 4).ok()?,
+        usize::try_from(dst_x * 4).ok()?,
+        usize::try_from(n * 4).ok()?,
+    );
+    let ys: Box<dyn Iterator<Item = i64>> = if dy >= 0 {
+        Box::new(0..h - dy)
+    } else {
+        Box::new((-dy..h).rev())
+    };
     for y in ys {
-        let (src, dst) = (usize::try_from(y + dy).ok()? * row, usize::try_from(y).ok()? * row);
+        let (src, dst) = (
+            usize::try_from(y + dy).ok()? * row,
+            usize::try_from(y).ok()? * row,
+        );
         if src + src_x + n > data.len() || dst + dst_x + n > data.len() {
             return None;
         }
@@ -374,7 +491,9 @@ fn merge(mut rects: Vec<Px>) -> Vec<Px> {
         let mut j = i + 1;
         let mut merged = false;
         while j < rects.len() {
-            let (Some(a), Some(b)) = (rects.get(i).copied(), rects.get(j).copied()) else { break };
+            let (Some(a), Some(b)) = (rects.get(i).copied(), rects.get(j).copied()) else {
+                break;
+            };
             let u = a.union(&b);
             if u.area() <= a.area() + b.area() {
                 if let Some(slot) = rects.get_mut(i) {
@@ -395,12 +514,29 @@ fn merge(mut rects: Vec<Px>) -> Vec<Px> {
 
 /// Render the frame pixels `d` (with `margin` more around, discarded) into `pix`.
 #[allow(clippy::too_many_arguments)]
-fn render_into(doc: &Document, page: NodeId, view: &View, px: (i64, i64), d: &Px, margin: i64, opts: &Options, pix: &mut Pixmap) -> Option<()> {
+fn render_into(
+    doc: &Document,
+    page: NodeId,
+    view: &View,
+    px: (i64, i64),
+    d: &Px,
+    margin: i64,
+    opts: &Options,
+    pix: &mut Pixmap,
+) -> Option<()> {
     let s = view.scale;
     let (ox, oy) = (d.x0 - margin, d.y0 - margin);
-    let (rw, rh) = (u32::try_from(d.x1 - d.x0 + 2 * margin).ok()?, u32::try_from(d.y1 - d.y0 + 2 * margin).ok()?);
+    let (rw, rh) = (
+        u32::try_from(d.x1 - d.x0 + 2 * margin).ok()?,
+        u32::try_from(d.y1 - d.y0 + 2 * margin).ok()?,
+    );
     // The same pixel grid as the frame: origin (px + offset) / scale.
-    let sub = View { origin: ((px.0 + ox) as f64 / s, (px.1 + oy) as f64 / s), scale: s, width: rw, height: rh };
+    let sub = View {
+        origin: ((px.0 + ox) as f64 / s, (px.1 + oy) as f64 / s),
+        scale: s,
+        width: rw,
+        height: rh,
+    };
     let part = render_view(doc, page, &sub, opts)?;
     let inner = IntRect::from_xywh(
         i32::try_from(margin).ok()?,
@@ -409,7 +545,17 @@ fn render_into(doc: &Document, page: NodeId, view: &View, px: (i64, i64), d: &Px
         u32::try_from(d.y1 - d.y0).ok()?,
     )?;
     let inner = part.clone_rect(inner)?;
-    let copy = PixmapPaint { blend_mode: tiny_skia::BlendMode::Source, ..Default::default() };
-    pix.draw_pixmap(i32::try_from(d.x0).ok()?, i32::try_from(d.y0).ok()?, inner.as_ref(), &copy, Transform::identity(), None);
+    let copy = PixmapPaint {
+        blend_mode: tiny_skia::BlendMode::Source,
+        ..Default::default()
+    };
+    pix.draw_pixmap(
+        i32::try_from(d.x0).ok()?,
+        i32::try_from(d.y0).ok()?,
+        inner.as_ref(),
+        &copy,
+        Transform::identity(),
+        None,
+    );
     Some(())
 }

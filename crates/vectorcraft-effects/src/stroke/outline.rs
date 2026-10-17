@@ -55,19 +55,27 @@ pub fn is_plain(st: &StrokeLayer) -> bool {
 /// Dashes a plain stroke can't draw like the canvas: fitted to corners, or zero-length dashes
 /// (dots) with a cap that paints them.
 fn needs_outline_dashes(st: &StrokeLayer) -> bool {
-    st.dash.as_ref().is_some_and(|d| d.is_dashed() && (d.align_corners || (st.cap != LineCap::Butt && d.pattern.contains(&0.0))))
+    st.dash.as_ref().is_some_and(|d| {
+        d.is_dashed() && (d.align_corners || (st.cap != LineCap::Butt && d.pattern.contains(&0.0)))
+    })
 }
 
 /// Do these pieces of `st` need filled outlines (see [`is_plain`])? Alignment alone doesn't; a
 /// gradient along or across the stroke paints slices clipped to them.
 fn needs_outline(pieces: &StrokePieces, st: &StrokeLayer) -> bool {
-    !pieces.heads.is_empty() || st.profile.is_some() || needs_outline_dashes(st) || st.path_gradient().is_some()
+    !pieces.heads.is_empty()
+        || st.profile.is_some()
+        || needs_outline_dashes(st)
+        || st.path_gradient().is_some()
 }
 
 /// How a writer draws stroke `st` along `bp` (brushes aside) to match the canvas.
 pub fn for_writer(bp: &BezPath, st: &StrokeLayer) -> Written {
     if is_plain(st) {
-        return Written { shape: WrittenShape::Stroke { width: st.width }, side: None };
+        return Written {
+            shape: WrittenShape::Stroke { width: st.width },
+            side: None,
+        };
     }
     let closed = is_closed(bp);
     let side = (st.align != StrokeAlign::Center && closed).then_some(st.align);
@@ -90,12 +98,23 @@ impl Written {
     pub fn reach(&self, st: &StrokeLayer, path_bounds: Rect) -> Rect {
         match &self.shape {
             WrittenShape::Stroke { width } => {
-                let miter = if st.join == LineJoin::Miter { st.miter_limit.max(1.0) } else { 1.0 };
-                let cap = if st.cap == LineCap::Square { std::f64::consts::SQRT_2 } else { 1.0 };
+                let miter = if st.join == LineJoin::Miter {
+                    st.miter_limit.max(1.0)
+                } else {
+                    1.0
+                };
+                let cap = if st.cap == LineCap::Square {
+                    std::f64::consts::SQRT_2
+                } else {
+                    1.0
+                };
                 let r = width / 2.0 * miter.max(cap);
                 path_bounds.inflate(r, r)
             }
-            WrittenShape::Fill(fills) => fills.iter().map(Shape::bounding_box).fold(path_bounds, |a, b| a.union(b)),
+            WrittenShape::Fill(fills) => fills
+                .iter()
+                .map(Shape::bounding_box)
+                .fold(path_bounds, |a, b| a.union(b)),
         }
     }
 }
@@ -110,12 +129,21 @@ pub fn outline_region(path: &PathData, rule: FillRule, st: &StrokeLayer) -> Path
     let bp = path.to_bezpath();
     let closed = is_closed(&bp);
     let pieces = stroke_pieces(&bp, st);
-    let mut parts = vec![line_outline(&pieces.line, st, aligned_width(st, closed), OUTLINE_TOL)];
+    let mut parts = vec![line_outline(
+        &pieces.line,
+        st,
+        aligned_width(st, closed),
+        OUTLINE_TOL,
+    )];
     parts.extend(pieces.heads.into_iter().map(|h| h.outline));
     let region = vectorcraft_pathops::stroke_region(&parts);
     match st.align {
-        StrokeAlign::Inside if closed => vectorcraft_pathops::boolean(&region, FillRule::NonZero, path, rule, BoolOp::Intersect),
-        StrokeAlign::Outside if closed => vectorcraft_pathops::boolean(&region, FillRule::NonZero, path, rule, BoolOp::Difference),
+        StrokeAlign::Inside if closed => {
+            vectorcraft_pathops::boolean(&region, FillRule::NonZero, path, rule, BoolOp::Intersect)
+        }
+        StrokeAlign::Outside if closed => {
+            vectorcraft_pathops::boolean(&region, FillRule::NonZero, path, rule, BoolOp::Difference)
+        }
         _ => region,
     }
 }

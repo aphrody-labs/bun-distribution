@@ -59,7 +59,9 @@ pub struct StaticBearerValidator {
 
 impl StaticBearerValidator {
     pub fn new() -> Self {
-        StaticBearerValidator { tokens: HashMap::new() }
+        StaticBearerValidator {
+            tokens: HashMap::new(),
+        }
     }
 
     pub fn with_token(mut self, token: impl Into<String>, username: impl Into<String>) -> Self {
@@ -77,7 +79,10 @@ impl Default for StaticBearerValidator {
 #[async_trait]
 impl BearerValidator for StaticBearerValidator {
     async fn validate(&self, token: &str) -> Result<Option<User>, A2AError> {
-        Ok(self.tokens.get(token).map(|name| User::authenticated(name.clone())))
+        Ok(self
+            .tokens
+            .get(token)
+            .map(|name| User::authenticated(name.clone())))
     }
 }
 
@@ -88,7 +93,9 @@ pub struct StaticBasicValidator {
 
 impl StaticBasicValidator {
     pub fn new() -> Self {
-        StaticBasicValidator { creds: HashMap::new() }
+        StaticBasicValidator {
+            creds: HashMap::new(),
+        }
     }
 
     pub fn with_credentials(
@@ -129,7 +136,10 @@ pub struct AuthUserBuilder {
 
 impl AuthUserBuilder {
     pub fn new() -> Self {
-        AuthUserBuilder { bearer: None, basic: None }
+        AuthUserBuilder {
+            bearer: None,
+            basic: None,
+        }
     }
 
     pub fn with_bearer(mut self, validator: impl BearerValidator) -> Self {
@@ -152,11 +162,17 @@ impl Default for AuthUserBuilder {
 #[async_trait]
 impl UserBuilder for AuthUserBuilder {
     async fn build(&self, headers: &HeaderMap) -> Result<Option<User>, A2AError> {
-        let Some(auth) = headers.get(header::AUTHORIZATION).and_then(|v| v.to_str().ok()) else {
+        let Some(auth) = headers
+            .get(header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+        else {
             return Ok(None);
         };
 
-        if let Some(rest) = auth.strip_prefix("Bearer ").or_else(|| auth.strip_prefix("bearer ")) {
+        if let Some(rest) = auth
+            .strip_prefix("Bearer ")
+            .or_else(|| auth.strip_prefix("bearer "))
+        {
             if let Some(validator) = self.bearer.as_ref() {
                 let token = rest.trim();
                 return validator.validate(token).await;
@@ -164,7 +180,10 @@ impl UserBuilder for AuthUserBuilder {
             return Ok(None);
         }
 
-        if let Some(rest) = auth.strip_prefix("Basic ").or_else(|| auth.strip_prefix("basic ")) {
+        if let Some(rest) = auth
+            .strip_prefix("Basic ")
+            .or_else(|| auth.strip_prefix("basic "))
+        {
             if let Some(validator) = self.basic.as_ref() {
                 let decoded = base64::engine::general_purpose::STANDARD
                     .decode(rest.trim().as_bytes())
@@ -193,7 +212,10 @@ mod tests {
 
     fn headers_with(auth: &str) -> HeaderMap {
         let mut h = HeaderMap::new();
-        h.insert(HeaderName::from_static("authorization"), HeaderValue::from_str(auth).unwrap());
+        h.insert(
+            HeaderName::from_static("authorization"),
+            HeaderValue::from_str(auth).unwrap(),
+        );
         h
     }
 

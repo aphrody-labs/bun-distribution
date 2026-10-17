@@ -32,10 +32,7 @@ impl WeightsFileType {
     }
 
     pub fn all_variants() -> BTreeSet<Self> {
-        BTreeSet::from([
-            Self::Checkpoint,
-            Self::SafeTensors,
-        ])
+        BTreeSet::from([Self::Checkpoint, Self::SafeTensors])
     }
 }
 
@@ -44,9 +41,9 @@ impl_mysql_enum_coders!(WeightsFileType);
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
+    #[test]
     fn test_to_str() {
         assert_eq!(WeightsFileType::Checkpoint.to_str(), "checkpoint");
         assert_eq!(WeightsFileType::SafeTensors.to_str(), "safetensors");
@@ -54,8 +51,14 @@ mod tests {
 
     #[test]
     fn test_from_str() {
-        assert_eq!(WeightsFileType::from_str("checkpoint").unwrap(), WeightsFileType::Checkpoint);
-        assert_eq!(WeightsFileType::from_str("safetensors").unwrap(), WeightsFileType::SafeTensors);
+        assert_eq!(
+            WeightsFileType::from_str("checkpoint").unwrap(),
+            WeightsFileType::Checkpoint
+        );
+        assert_eq!(
+            WeightsFileType::from_str("safetensors").unwrap(),
+            WeightsFileType::SafeTensors
+        );
         assert!(WeightsFileType::from_str("invalid").is_err());
     }
 

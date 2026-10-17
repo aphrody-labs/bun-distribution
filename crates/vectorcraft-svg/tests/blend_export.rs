@@ -11,7 +11,15 @@ use vectorcraft_svg::{ExportOptions, export};
 use vectorcraft_testkit::raster::{Image, render_artboard};
 
 fn rect(d: &mut Document, r: Rect, rgb: [u8; 3]) -> Node {
-    Node::path(d.alloc_id(), shapes::rectangle(r), Appearance::basic(Paint::solid(Color::rgb8(rgb[0], rgb[1], rgb[2])), Paint::None, 0.0))
+    Node::path(
+        d.alloc_id(),
+        shapes::rectangle(r),
+        Appearance::basic(
+            Paint::solid(Color::rgb8(rgb[0], rgb[1], rgb[2])),
+            Paint::None,
+            0.0,
+        ),
+    )
 }
 
 fn add(d: &mut Document, n: Node) {
@@ -24,12 +32,22 @@ fn resvg_render(svg: &str, w: u32, h: u32) -> Image {
     let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).expect("parse");
     let mut pm = resvg::tiny_skia::Pixmap::new(w, h).unwrap();
     pm.fill(resvg::tiny_skia::Color::WHITE);
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pm.as_mut());
-    Image { width: w, height: h, rgba: pm.data().to_vec() }
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pm.as_mut(),
+    );
+    Image {
+        width: w,
+        height: h,
+        rgba: pm.data().to_vec(),
+    }
 }
 
 fn within(a: [u8; 3], b: [u8; 3], tol: i32) -> bool {
-    a.iter().zip(b).all(|(x, y)| (*x as i32 - y as i32).abs() <= tol)
+    a.iter()
+        .zip(b)
+        .all(|(x, y)| (*x as i32 - y as i32).abs() <= tol)
 }
 
 #[test]
@@ -59,7 +77,10 @@ fn every_blend_mode_follows_the_reference_formulas() {
             let px = resvg_render(&svg, 20, 20).over_white(10, 10);
             let f = |c: [u8; 3]| c.map(|v| v as f32 / 255.0);
             let want = blend_rgb(mode, f(b), f(s)).map(|v| (v * 255.0).round() as u8);
-            assert!(within(px, want, 1), "{mode:?}, {b:?} under {s:?}: {px:?}, want {want:?}");
+            assert!(
+                within(px, want, 1),
+                "{mode:?}, {b:?} under {s:?}: {px:?}, want {want:?}"
+            );
         }
     }
 }
@@ -87,12 +108,19 @@ fn clip_and_invert_masks_match_the_canvas() {
         let written = resvg_render(&svg, 40, 20);
         for x in [10, 30] {
             let (c, w) = (canvas.over_white(x, 10), written.over_white(x, 10));
-            assert!(within(c, w, 2), "clip {clip}, invert {invert}, x {x}: canvas {c:?}, svg {w:?}");
+            assert!(
+                within(c, w, 2),
+                "clip {clip}, invert {invert}, x {x}: canvas {c:?}, svg {w:?}"
+            );
         }
         // Over the green art the red shows at the art's luminance (inverted: its complement).
         let lum: f32 = if invert { 1.0 - 0.7152 } else { 0.7152 };
         let g = (255.0 * (1.0 - lum)).round() as u8;
-        assert!(within(canvas.over_white(10, 10), [255, g, g], 2), "{:?}", canvas.over_white(10, 10));
+        assert!(
+            within(canvas.over_white(10, 10), [255, g, g], 2),
+            "{:?}",
+            canvas.over_white(10, 10)
+        );
     }
 }
 
@@ -113,12 +141,20 @@ fn a_knockout_group_of_opaque_art_needs_no_masks() {
     };
     let opaque = knockout(1.0);
     assert!(!opaque.contains("<mask"), "{opaque}");
-    assert!(within(resvg_render(&opaque, 20, 20).over_white(10, 10), [0, 0, 200], 2));
+    assert!(within(
+        resvg_render(&opaque, 20, 20).over_white(10, 10),
+        [0, 0, 200],
+        2
+    ));
     let translucent = knockout(0.5);
     assert!(translucent.contains("<mask"), "{translucent}");
     // The top half-shows white, not the red it knocks out.
     assert!(
-        within(resvg_render(&translucent, 20, 20).over_white(10, 10), [128, 128, 228], 3),
+        within(
+            resvg_render(&translucent, 20, 20).over_white(10, 10),
+            [128, 128, 228],
+            3
+        ),
         "{:?}",
         resvg_render(&translucent, 20, 20).over_white(10, 10)
     );
@@ -132,8 +168,18 @@ fn a_knockout_group_with_a_brushed_stroke_keeps_its_masks() {
     let below = rect(&mut d, Rect::new(0.0, 0.0, 40.0, 40.0), [200, 0, 0]);
     let mut stroke = vectorcraft_doc::StrokeLayer::new(Paint::solid(Color::rgb8(0, 0, 200)), 8.0);
     stroke.brush = Some("Bristle Round".into());
-    let line = shapes::line(vectorcraft_geom::Point::new(5.0, 20.0), vectorcraft_geom::Point::new(35.0, 20.0));
-    let top = Node::path(d.alloc_id(), line, Appearance { items: vec![vectorcraft_doc::AppearanceItem::Stroke(stroke)], ..Default::default() });
+    let line = shapes::line(
+        vectorcraft_geom::Point::new(5.0, 20.0),
+        vectorcraft_geom::Point::new(35.0, 20.0),
+    );
+    let top = Node::path(
+        d.alloc_id(),
+        line,
+        Appearance {
+            items: vec![vectorcraft_doc::AppearanceItem::Stroke(stroke)],
+            ..Default::default()
+        },
+    );
     let mut group = Node::group(d.alloc_id(), vec![below.into(), top.into()]);
     group.knockout = vectorcraft_doc::Knockout::On;
     add(&mut d, group);

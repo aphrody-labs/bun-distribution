@@ -62,8 +62,10 @@ const RAW: &[i64] = &[
 ];
 
 fn node_fixture() -> serde_json::Value {
-    let variables: Vec<_> =
-        RAW.iter().map(|v| json!({ "type": "Int", "value": v.to_string() })).collect();
+    let variables: Vec<_> = RAW
+        .iter()
+        .map(|v| json!({ "type": "Int", "value": v.to_string() }))
+        .collect();
     json!({
         "entries": [{
             "name": "CHARA_PARAM_INFO_1",
@@ -90,7 +92,10 @@ fn chara_param_info_1_champs_de_base() {
     assert_eq!(p.sub_position, 4);
     assert_eq!(p.growth_pattern, 0); // var8
 
-    assert_eq!(element_id_to_names(p.element), Some(("Montagne", "Mountain", "山")));
+    assert_eq!(
+        element_id_to_names(p.element),
+        Some(("Montagne", "Mountain", "山"))
+    );
     assert_eq!(position_id_to_code(p.main_position), Some("FW"));
 }
 
@@ -127,7 +132,10 @@ fn niveau_first_slot_est_zero_comme_inagle() {
     // le niveau@12 = 1 qu'aurait donné une lecture hash-first @11 décalée). Conforme inagle.
     let parsed = parse_all_chara_params(&node_fixture());
     let p = &parsed[0];
-    assert_eq!(p.skills[0].learn_level, 0, "level-first @10 → niveau du slot 0 = 0");
+    assert_eq!(
+        p.skills[0].learn_level, 0,
+        "level-first @10 → niveau du slot 0 = 0"
+    );
 }
 
 #[test]
@@ -149,8 +157,14 @@ fn chara_param_240bedf2_niveau_zero_vrai_fichier() {
 
     // La techniqueId 0x240BEDF2 (604761586) doit avoir learnLevel = 0 (niveau@10 = 0).
     let skill_target = HashId(0x240B_EDF2);
-    let found = params.iter().flat_map(|p| p.skills.iter()).find(|s| s.skill_id == skill_target);
-    assert!(found.is_some(), "techniqueId 0x240BEDF2 introuvable dans le vrai dump {path}");
+    let found = params
+        .iter()
+        .flat_map(|p| p.skills.iter())
+        .find(|s| s.skill_id == skill_target);
+    assert!(
+        found.is_some(),
+        "techniqueId 0x240BEDF2 introuvable dans le vrai dump {path}"
+    );
     assert_eq!(
         found.unwrap().learn_level,
         0,

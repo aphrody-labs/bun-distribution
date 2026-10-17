@@ -5,14 +5,19 @@
 use egui::{Color32, Context, Id, Rect, TextureHandle, TextureOptions, Ui, pos2};
 
 /// 128 px: sharp at 44 pt on a 2× display, and the mipmaps keep 22 pt clean.
-const ICON_PNG: &[u8] = include_bytes!("../../../assets/vectorcraft/app-icon/hicolor/128x128/apps/ai.storyteller.vectorcraft.png");
+const ICON_PNG: &[u8] = include_bytes!(
+    "../../../assets/vectorcraft/app-icon/hicolor/128x128/apps/ai.storyteller.vectorcraft.png"
+);
 
 /// The icon's pixels (one transparent pixel if it couldn't be decoded, which a test rules out).
 fn decode() -> egui::ColorImage {
     match image::load_from_memory_with_format(ICON_PNG, image::ImageFormat::Png) {
         Ok(img) => {
             let img = img.to_rgba8();
-            egui::ColorImage::from_rgba_unmultiplied([img.width() as usize, img.height() as usize], img.as_raw())
+            egui::ColorImage::from_rgba_unmultiplied(
+                [img.width() as usize, img.height() as usize],
+                img.as_raw(),
+            )
         }
         Err(_) => egui::ColorImage::filled([1, 1], Color32::TRANSPARENT),
     }
@@ -24,7 +29,10 @@ fn texture(ctx: &Context) -> TextureHandle {
     if let Some(tex) = ctx.data(|d| d.get_temp::<TextureHandle>(id)) {
         return tex;
     }
-    let options = TextureOptions { mipmap_mode: Some(egui::TextureFilter::Linear), ..TextureOptions::LINEAR };
+    let options = TextureOptions {
+        mipmap_mode: Some(egui::TextureFilter::Linear),
+        ..TextureOptions::LINEAR
+    };
     let tex = ctx.load_texture("vectorcraft-brand-mark", decode(), options);
     ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
     tex
@@ -33,7 +41,8 @@ fn texture(ctx: &Context) -> TextureHandle {
 /// Paint the mark into `r` (square).
 pub fn paint_mark(ui: &Ui, r: Rect) {
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
-    ui.painter().image(texture(ui.ctx()).id(), r, uv, Color32::WHITE);
+    ui.painter()
+        .image(texture(ui.ctx()).id(), r, uv, Color32::WHITE);
 }
 
 /// The mark's texture id (tests: find the painted marks among the shapes).
@@ -65,14 +74,24 @@ mod tests {
         // app-drawn bar here.
         app.custom_titlebar = true;
         let mut frame = || {
-            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| crate::chrome::app_bar(&mut app, ui));
-            let uploads = out.textures_delta.set.values().flat_map(|d| d.iter()).filter(|d| d.image.size() == [128, 128]).count();
+            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+                crate::chrome::app_bar(&mut app, ui)
+            });
+            let uploads = out
+                .textures_delta
+                .set
+                .values()
+                .flat_map(|d| d.iter())
+                .filter(|d| d.image.size() == [128, 128])
+                .count();
             out.textures_delta.clear();
             let marks: Vec<Rect> = out
                 .shapes
                 .iter()
                 .filter_map(|c| match &c.shape {
-                    egui::Shape::Mesh(m) if m.texture_id == texture(&ctx).id() => Some(m.calc_bounds()),
+                    egui::Shape::Mesh(m) if m.texture_id == texture(&ctx).id() => {
+                        Some(m.calc_bounds())
+                    }
                     _ => None,
                 })
                 .collect();

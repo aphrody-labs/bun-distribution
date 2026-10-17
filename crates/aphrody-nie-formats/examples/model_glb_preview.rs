@@ -15,7 +15,11 @@ fn main() {
     let a: Vec<String> = std::env::args().collect();
     let g4md = std::fs::read(&a[1]).expect("lecture g4md");
     let g4mg = std::fs::read(&a[2]).expect("lecture g4mg");
-    let g4tx = if a[3] == "-" { None } else { Some(std::fs::read(&a[3]).expect("lecture g4tx")) };
+    let g4tx = if a[3] == "-" {
+        None
+    } else {
+        Some(std::fs::read(&a[3]).expect("lecture g4tx"))
+    };
     let out = &a[4];
 
     let stem = std::path::Path::new(&a[1])

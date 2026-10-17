@@ -35,7 +35,10 @@ pub struct Neck {
 impl Neck {
     /// `vb` at `…neck` (detector) or `tracker_neck`.
     pub fn new(vb: VarBuilder) -> Result<Self> {
-        let up = ConvTranspose2dConfig { stride: 2, ..Default::default() };
+        let up = ConvTranspose2dConfig {
+            stride: 2,
+            ..Default::default()
+        };
         let mut levels = Vec::new();
         for (i, factor) in [4.0f32, 2.0, 1.0, 0.5].into_iter().enumerate() {
             let l = vb.pp(format!("fpn_layers.{i}"));
@@ -45,7 +48,16 @@ impl Neck {
                 let b = candle_nn::conv_transpose2d(HIDDEN / 2, HIDDEN / 4, 2, up, s.pp("2"))?;
                 (Scale::Up4(a, b), HIDDEN / 4)
             } else if factor == 2.0 {
-                (Scale::Up2(candle_nn::conv_transpose2d(HIDDEN, HIDDEN / 2, 2, up, s.pp("0"))?), HIDDEN / 2)
+                (
+                    Scale::Up2(candle_nn::conv_transpose2d(
+                        HIDDEN,
+                        HIDDEN / 2,
+                        2,
+                        up,
+                        s.pp("0"),
+                    )?),
+                    HIDDEN / 2,
+                )
             } else if factor == 1.0 {
                 (Scale::Same, HIDDEN)
             } else {
@@ -54,7 +66,16 @@ impl Neck {
             levels.push(Level {
                 scale,
                 proj1: candle_nn::conv2d(inter, FPN, 1, Conv2dConfig::default(), l.pp("proj1"))?,
-                proj2: candle_nn::conv2d(FPN, FPN, 3, Conv2dConfig { padding: 1, ..Default::default() }, l.pp("proj2"))?,
+                proj2: candle_nn::conv2d(
+                    FPN,
+                    FPN,
+                    3,
+                    Conv2dConfig {
+                        padding: 1,
+                        ..Default::default()
+                    },
+                    l.pp("proj2"),
+                )?,
             });
         }
         Ok(Self { levels })

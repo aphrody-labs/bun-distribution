@@ -178,7 +178,15 @@ impl AuraCmd {
             rank: int_opt(16),
         };
 
-        Some(AuraCmd { aura_id, asset_code, name_id, desc_id, element, sub_type, config })
+        Some(AuraCmd {
+            aura_id,
+            asset_code,
+            name_id,
+            desc_id,
+            element,
+            sub_type,
+            config,
+        })
     }
 }
 

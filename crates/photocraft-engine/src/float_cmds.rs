@@ -41,11 +41,23 @@ impl CutParts {
     /// which can't hold transparency, one filled with `background` (Photoshop). Errors without a
     /// selection or pixels. With `mask` the layer's mask is split instead of its pixels; the hole it
     /// leaves takes the background colour (as on the Background layer).
-    pub fn new(doc: &Document, layer: LayerId, copy: bool, background: [f32; 4], mask: bool) -> Result<Self> {
-        let sel = doc.selection.as_ref().ok_or_else(|| EngineError::Other("no selection".into()))?;
+    pub fn new(
+        doc: &Document,
+        layer: LayerId,
+        copy: bool,
+        background: [f32; 4],
+        mask: bool,
+    ) -> Result<Self> {
+        let sel = doc
+            .selection
+            .as_ref()
+            .ok_or_else(|| EngineError::Other("no selection".into()))?;
         let l = doc.layer(layer).ok_or(EngineError::NoLayer(layer))?;
         let surf = if mask {
-            &l.mask.as_ref().ok_or_else(|| EngineError::Other("the layer has no mask".into()))?.surface
+            &l.mask
+                .as_ref()
+                .ok_or_else(|| EngineError::Other("the layer has no mask".into()))?
+                .surface
         } else {
             let LayerContent::Raster(surf) = &l.content else {
                 return Err(EngineError::Other("the layer has no pixels to move".into()));
@@ -54,20 +66,32 @@ impl CutParts {
         };
         let fmt = surf.format();
         let with_alpha = PixelFormat::new(fmt.mode, fmt.sample, true);
-        let full = if fmt == with_alpha { surf.clone() } else { surf.convert(with_alpha) };
+        let full = if fmt == with_alpha {
+            surf.clone()
+        } else {
+            surf.convert(with_alpha)
+        };
         // A mask has no alpha: it keeps its format, and the cut leaves background colour.
         let mut rest = if mask { surf.clone() } else { full.clone() };
         let mut piece = Surface::new(with_alpha);
         let fill = !copy && (mask || doc.is_background(layer));
         // A mask's untouched pixels (its default, e.g. white) move too, so take the whole canvas.
-        let b = sel.content_bounds().intersect(&if mask { doc.bounds() } else { surf.content_bounds() });
+        let b = sel.content_bounds().intersect(&if mask {
+            doc.bounds()
+        } else {
+            surf.content_bounds()
+        });
         if !b.is_empty() {
             let n = with_alpha.channels();
             let a = n - 1;
             let mut rp = full.read_region(b);
             let mut pp = rp.clone();
             let w = b.width() as usize;
-            for (i, (p, r)) in pp.chunks_exact_mut(n).zip(rp.chunks_exact_mut(n)).enumerate() {
+            for (i, (p, r)) in pp
+                .chunks_exact_mut(n)
+                .zip(rp.chunks_exact_mut(n))
+                .enumerate()
+            {
                 let k = sel.sample_channel(b.x0 + (i % w) as i32, b.y0 + (i / w) as i32, 0);
                 if k <= 0.0 {
                     p.fill(0.0);
@@ -88,7 +112,12 @@ impl CutParts {
             piece.write_region(b, &pp);
             piece.prune();
         }
-        Ok(Self { layer, rest, piece, mask })
+        Ok(Self {
+            layer,
+            rest,
+            piece,
+            mask,
+        })
     }
 
     /// `doc` with the piece moved by whole pixels (dx, dy) over the cut-out layer.
@@ -100,11 +129,17 @@ impl CutParts {
 
     /// Put the piece, moved by (dx, dy), over the cut-out layer (or mask) of `doc`.
     fn place(&self, doc: &mut Document, dx: i32, dy: i32) -> Result<()> {
-        let l = doc.layer_mut(self.layer).ok_or(EngineError::NoLayer(self.layer))?;
+        let l = doc
+            .layer_mut(self.layer)
+            .ok_or(EngineError::NoLayer(self.layer))?;
         let surf = if self.mask {
-            l.mask.as_mut().map(|m| &mut m.surface).ok_or_else(|| EngineError::Other("the layer has no mask".into()))?
+            l.mask
+                .as_mut()
+                .map(|m| &mut m.surface)
+                .ok_or_else(|| EngineError::Other("the layer has no mask".into()))?
         } else {
-            l.surface_mut().ok_or_else(|| EngineError::Other("the layer has no pixels to move".into()))?
+            l.surface_mut()
+                .ok_or_else(|| EngineError::Other("the layer has no pixels to move".into()))?
         };
         let mut out = self.rest.clone();
         let piece = photocraft_algo::resample::translate_surface(&self.piece, dx, dy);
@@ -129,18 +164,25 @@ pub struct Floating {
 
 /// The floating piece of `st`, if it is still valid (the document hasn't changed under it).
 pub fn floating(st: &DocState) -> Option<&Floating> {
-    st.floating.as_ref().filter(|f| f.revision == st.revision && st.doc.selection.is_some())
+    st.floating
+        .as_ref()
+        .filter(|f| f.revision == st.revision && st.doc.selection.is_some())
 }
 
 /// The document as shown while a piece floats `extra` further than its offset (a drag of it in
 /// progress); `None` when nothing floats.
 pub fn displayed(st: &DocState, extra: (i32, i32)) -> Option<Document> {
     let f = floating(st)?;
-    f.parts.moved(&st.doc, f.offset.0 + extra.0, f.offset.1 + extra.1).ok()
+    f.parts
+        .moved(&st.doc, f.offset.0 + extra.0, f.offset.1 + extra.1)
+        .ok()
 }
 
 fn int_param(p: &Value, key: &str) -> i32 {
-    p.get(key).and_then(Value::as_f64).filter(|v| v.is_finite()).map_or(0, |v| v.round().clamp(-1e7, 1e7) as i32)
+    p.get(key)
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .map_or(0, |v| v.round().clamp(-1e7, 1e7) as i32)
 }
 
 fn can_float(s: &Session) -> std::result::Result<(), String> {
@@ -151,7 +193,10 @@ fn can_float(s: &Session) -> std::result::Result<(), String> {
     if st.doc.selection.is_none() {
         return Err("there is no selection".into());
     }
-    let l = st.active_layer.and_then(|id| st.doc.layer(id)).ok_or("no active layer")?;
+    let l = st
+        .active_layer
+        .and_then(|id| st.doc.layer(id))
+        .ok_or("no active layer")?;
     if !matches!(l.content, LayerContent::Raster(_)) {
         return Err("the active layer has no pixels to move".into());
     }
@@ -174,9 +219,22 @@ fn float(s: &mut Session, p: &Value) -> Result<Value> {
     let background = s.tools.background;
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
     if floating(st).is_none() {
-        let layer = st.active_layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
-        let parts = CutParts::new(&st.doc, layer, copy, background, crate::commands::is_mask_target(p))?;
-        st.floating = Some(Floating { layer, offset: (0, 0), revision: st.revision, parts: Arc::new(parts) });
+        let layer = st
+            .active_layer
+            .ok_or_else(|| EngineError::Other("no active layer".into()))?;
+        let parts = CutParts::new(
+            &st.doc,
+            layer,
+            copy,
+            background,
+            crate::commands::is_mask_target(p),
+        )?;
+        st.floating = Some(Floating {
+            layer,
+            offset: (0, 0),
+            revision: st.revision,
+            parts: Arc::new(parts),
+        });
     }
     let f = st.floating.as_mut().ok_or(EngineError::NoDocument)?;
     f.offset = (f.offset.0.saturating_add(dx), f.offset.1.saturating_add(dy));
@@ -185,7 +243,9 @@ fn float(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Drop the floating piece into its layer and move the selection with it (one history step).
 pub fn drop_floating(s: &mut Session) -> Result<Value> {
-    let Some(st) = s.active_mut() else { return Ok(json!({"dropped": false})) };
+    let Some(st) = s.active_mut() else {
+        return Ok(json!({"dropped": false}));
+    };
     let Some(f) = floating(st).cloned() else {
         st.floating = None;
         return Ok(json!({"dropped": false}));
@@ -197,7 +257,10 @@ pub fn drop_floating(s: &mut Session) -> Result<Value> {
     }
     s.edit("Move", |doc, _| {
         f.parts.place(doc, dx, dy)?;
-        doc.selection = doc.selection.as_ref().map(|sel| photocraft_algo::resample::translate_surface(sel, dx, dy));
+        doc.selection = doc
+            .selection
+            .as_ref()
+            .map(|sel| photocraft_algo::resample::translate_surface(sel, dx, dy));
         Ok(())
     })?;
     Ok(json!({"dropped": true, "offset": [dx, dy]}))
@@ -205,13 +268,18 @@ pub fn drop_floating(s: &mut Session) -> Result<Value> {
 
 /// Commands that leave a floating piece floating: its own, and ones that don't touch documents.
 fn keeps_floating(id: &str) -> bool {
-    matches!(id, "select.float" | "select.drop") || ["view.", "window.", "help.", "prefs."].iter().any(|p| id.starts_with(p))
+    matches!(id, "select.float" | "select.drop")
+        || ["view.", "window.", "help.", "prefs."]
+            .iter()
+            .any(|p| id.starts_with(p))
 }
 
 /// Before any command (`Session::dispatch`): Undo puts a floating piece back (and is used up:
 /// returns its result); every other command but the floating ones drops it first.
 pub(crate) fn before_command(s: &mut Session, id: &str) -> Result<Option<Value>> {
-    let Some(st) = s.active_mut() else { return Ok(None) };
+    let Some(st) = s.active_mut() else {
+        return Ok(None);
+    };
     if floating(st).is_none() {
         st.floating = None;
         return Ok(None);

@@ -58,7 +58,12 @@ pub struct GDSKizunaLinkConfig {
 
 impl Default for GDSKizunaLinkConfig {
     fn default() -> Self {
-        Self { match_points: 50, combo_points: 25, town_interaction_points: 15, max_link_level: 5 }
+        Self {
+            match_points: 50,
+            combo_points: 25,
+            town_interaction_points: 15,
+            max_link_level: 5,
+        }
     }
 }
 
@@ -80,7 +85,11 @@ impl CGDDKizunalinkStatus {
 
     /// Records an interaction between two characters, upgrading bond points and level.
     pub fn add_bond_points(&mut self, chara_a: u32, chara_b: u32, points: u32, title: &str) {
-        let key = if chara_a < chara_b { (chara_a, chara_b) } else { (chara_b, chara_a) };
+        let key = if chara_a < chara_b {
+            (chara_a, chara_b)
+        } else {
+            (chara_b, chara_a)
+        };
 
         let node = self.links.entry(key).or_insert_with(|| KizunaLinkNode {
             chara_id_a: key.0,
@@ -118,9 +127,16 @@ impl CGDDKizunalinkStatus {
 
         for (old_key, mut node) in keys_to_update {
             self.links.remove(&old_key);
-            let other = if old_key.0 == from_chara_id { old_key.1 } else { old_key.0 };
-            let new_key =
-                if to_chara_id < other { (to_chara_id, other) } else { (other, to_chara_id) };
+            let other = if old_key.0 == from_chara_id {
+                old_key.1
+            } else {
+                old_key.0
+            };
+            let new_key = if to_chara_id < other {
+                (to_chara_id, other)
+            } else {
+                (other, to_chara_id)
+            };
             node.chara_id_a = new_key.0;
             node.chara_id_b = new_key.1;
             self.links.insert(new_key, node);

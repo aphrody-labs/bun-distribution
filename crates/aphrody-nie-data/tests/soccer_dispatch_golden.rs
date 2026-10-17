@@ -25,7 +25,11 @@ fn soccer_parsers_existants_routes() {
             "soccer_focus_battle_effect_config",
             "soccer_focus_battle",
         ),
-        ("soccer_technic_config.cfg.bin.json", "soccer_technic_config", "soccer_technic"),
+        (
+            "soccer_technic_config.cfg.bin.json",
+            "soccer_technic_config",
+            "soccer_technic",
+        ),
         (
             "soccer_game_additional_config_1.04.14.00.cfg.bin.json",
             "soccer_game_additional_config",

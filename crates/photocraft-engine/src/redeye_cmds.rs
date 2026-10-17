@@ -16,13 +16,20 @@ const CMD: &str = "paint.redEye";
 const MISS: &str = "no red-eye pixels near the click";
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: CMD.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: CMD.into(),
+        msg: msg.into(),
+    }
 }
 
 fn num(p: &Value, key: &str, default: f32) -> Result<f32> {
     match p.get(key) {
         None => Ok(default),
-        Some(v) => v.as_f64().filter(|x| x.is_finite()).map(|x| x as f32).ok_or_else(|| bad(format!("`{key}` must be a finite number (got {v})"))),
+        Some(v) => v
+            .as_f64()
+            .filter(|x| x.is_finite())
+            .map(|x| x as f32)
+            .ok_or_else(|| bad(format!("`{key}` must be a finite number (got {v})"))),
     }
 }
 
@@ -60,16 +67,27 @@ fn clicks(p: &Value) -> Result<Vec<(i32, i32)>> {
     }
     match (p.get("x").and_then(coord), p.get("y").and_then(coord)) {
         (Some(x), Some(y)) => Ok(vec![pixel(x, y)?]),
-        (None, None) if p.get("x").is_none() && p.get("y").is_none() => Err(bad("missing `x`,`y` or `points`")),
+        (None, None) if p.get("x").is_none() && p.get("y").is_none() => {
+            Err(bad("missing `x`,`y` or `points`"))
+        }
         _ => Err(bad("`x` and `y` must be finite numbers")),
     }
 }
 
 fn read_rect(cx: i32, cy: i32, radius: f32) -> Result<Rect> {
-    let r = if radius.is_finite() { radius.ceil().clamp(0.0, 256.0) as i32 } else { 64 };
+    let r = if radius.is_finite() {
+        radius.ceil().clamp(0.0, 256.0) as i32
+    } else {
+        64
+    };
     let halo = redeye::halo_radius();
     let ext = r.saturating_add(halo);
-    let area = Rect::new(cx.saturating_sub(ext), cy.saturating_sub(ext), cx.saturating_add(ext).saturating_add(1), cy.saturating_add(ext).saturating_add(1));
+    let area = Rect::new(
+        cx.saturating_sub(ext),
+        cy.saturating_sub(ext),
+        cx.saturating_add(ext).saturating_add(1),
+        cy.saturating_add(ext).saturating_add(1),
+    );
     let w = area.width() as u64;
     let h = area.height() as u64;
     let cap = MAX_WINDOW as u64;
@@ -108,11 +126,16 @@ fn write_rgba(surf: &mut Surface, area: Rect, before: &[[f32; 4]], px: &[[f32; 4
         return;
     }
     for i in 0..need {
-        let (Some(q), Some(o)) = (px.get(i), before.get(i)) else { continue };
+        let (Some(q), Some(o)) = (px.get(i), before.get(i)) else {
+            continue;
+        };
         if !rgb_changed(o, q) {
             continue;
         }
-        let Some(out) = data.get_mut(i.saturating_mul(n)..i.saturating_mul(n).saturating_add(n)) else { continue };
+        let Some(out) = data.get_mut(i.saturating_mul(n)..i.saturating_mul(n).saturating_add(n))
+        else {
+            continue;
+        };
         let alpha = out.last().copied();
         from_rgba_into(&fmt, *q, out);
         if fmt.alpha
@@ -137,7 +160,13 @@ fn mix_selection(orig: &[[f32; 4]], px: &mut [[f32; 4]], area: Rect, sel: &Surfa
     for i in 0..n {
         let y = i / w;
         let x = i % w;
-        let k = sel.sample_channel(area.x0.saturating_add(x as i32), area.y0.saturating_add(y as i32), 0).clamp(0.0, 1.0);
+        let k = sel
+            .sample_channel(
+                area.x0.saturating_add(x as i32),
+                area.y0.saturating_add(y as i32),
+                0,
+            )
+            .clamp(0.0, 1.0);
         if k >= 1.0 {
             continue;
         }
@@ -168,11 +197,23 @@ fn restore_locked(orig: &[[f32; 4]], px: &mut [[f32; 4]]) {
 }
 
 fn count_changed(orig: &[[f32; 4]], px: &[[f32; 4]]) -> u32 {
-    let n = orig.iter().zip(px.iter()).filter(|(a, b)| rgb_changed(a, b)).count();
+    let n = orig
+        .iter()
+        .zip(px.iter())
+        .filter(|(a, b)| rgb_changed(a, b))
+        .count();
     u32::try_from(n).unwrap_or(u32::MAX)
 }
 
-fn apply_click(surf: &mut Surface, sel: Option<&Surface>, lock: bool, click: (i32, i32), pupil: f32, darken: f32, clip: Rect) -> Result<(Rect, u32)> {
+fn apply_click(
+    surf: &mut Surface,
+    sel: Option<&Surface>,
+    lock: bool,
+    click: (i32, i32),
+    pupil: f32,
+    darken: f32,
+    clip: Rect,
+) -> Result<(Rect, u32)> {
     let area = read_rect(click.0, click.1, redeye::search_radius(pupil))?.intersect(&clip);
     if area.is_empty() {
         return Ok((Rect::EMPTY, 0));
@@ -236,7 +277,11 @@ fn red_eye(s: &mut Session, p: &Value) -> Result<Value> {
         for click in &pts {
             let (area, n) = apply_click(surf, sel.as_ref(), lock, *click, pupil, darken, canvas)?;
             total = total.saturating_add(n);
-            damage = if damage.is_empty() { area } else { damage.union(&area) };
+            damage = if damage.is_empty() {
+                area
+            } else {
+                damage.union(&area)
+            };
         }
         if total == 0 {
             return Err(EngineError::Other(MISS.into()));
@@ -246,7 +291,9 @@ fn red_eye(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(st) = s.active_mut() {
         st.last_damage = Some(damage);
     }
-    Ok(json!({ "damage": [damage.x0, damage.y0, damage.width(), damage.height()], "pixels": total }))
+    Ok(
+        json!({ "damage": [damage.x0, damage.y0, damage.width(), damage.height()], "pixels": total }),
+    )
 }
 
 /// Red Eye command specs.
@@ -273,19 +320,32 @@ mod tests {
 
     fn session(w: u32, h: u32, depth: u64, mode: &str) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": w, "height": h, "depth": depth, "mode": mode})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": w, "height": h, "depth": depth, "mode": mode}),
+        )
+        .unwrap();
         s
     }
 
     fn rgba(s: &Session, x: i32, y: i32) -> [f32; 4] {
         let d = s.active().unwrap();
-        d.doc.layer(d.active_layer.unwrap()).unwrap().surface().unwrap().rgba(x, y)
+        d.doc
+            .layer(d.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .rgba(x, y)
     }
 
     fn paint_layer(s: &mut Session, f: impl Fn(i32, i32) -> [f32; 4]) {
         s.edit("setup", |doc, active| {
             let b = doc.bounds();
-            let surf = doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap();
+            let surf = doc
+                .layer_mut(active.unwrap())
+                .unwrap()
+                .surface_mut()
+                .unwrap();
             let fmt = surf.format();
             let mut data = Vec::new();
             for y in b.y0..b.y1 {
@@ -320,10 +380,15 @@ mod tests {
             paint_layer(&mut s, red_disc(32, 32, 8));
             let before = rgba(&s, 32, 26);
             assert!(before[0] > 0.8, "setup {before:?}");
-            let r = s.execute("paint.redEye", json!({"x": 32, "y": 32})).unwrap();
+            let r = s
+                .execute("paint.redEye", json!({"x": 32, "y": 32}))
+                .unwrap();
             assert!(r["pixels"].as_u64().unwrap() > 0, "{r}");
             let after = rgba(&s, 32, 26);
-            assert!(after[0] < before[0] - 0.2, "depth {depth}: {after:?} vs {before:?}");
+            assert!(
+                after[0] < before[0] - 0.2,
+                "depth {depth}: {after:?} vs {before:?}"
+            );
             let catch = rgba(&s, 32, 32);
             assert!(catch[0] >= 0.9 && catch[1] >= 0.9, "catchlight {catch:?}");
             assert!(s.undo());
@@ -343,23 +408,45 @@ mod tests {
     fn miss_and_bad_params_are_errors() {
         let mut s = session(32, 32, 8, "rgb");
         paint_layer(&mut s, |_, _| [0.1, 0.2, 0.8, 1.0]);
-        let err = s.execute("paint.redEye", json!({"x": 16, "y": 16})).unwrap_err().to_string();
+        let err = s
+            .execute("paint.redEye", json!({"x": 16, "y": 16}))
+            .unwrap_err()
+            .to_string();
         assert!(err.contains(MISS), "{err}");
         assert!(s.execute("paint.redEye", json!({})).is_err());
-        assert!(s.execute("paint.redEye", json!({"x": null, "y": 1})).is_err());
+        assert!(
+            s.execute("paint.redEye", json!({"x": null, "y": 1}))
+                .is_err()
+        );
         let pts: Vec<[i32; 2]> = (0..65).map(|i| [i, 0]).collect();
         assert!(s.execute("paint.redEye", json!({"points": pts})).is_err());
-        assert!(s.execute("paint.redEye", json!({"x": "nope", "y": 1})).is_err());
+        assert!(
+            s.execute("paint.redEye", json!({"x": "nope", "y": 1}))
+                .is_err()
+        );
         assert!(s.execute("paint.redEye", json!({"points": []})).is_err());
-        let huge = s.execute("paint.redEye", json!({"x": 8, "y": 8, "pupilSize": 10_000.0}));
+        let huge = s.execute(
+            "paint.redEye",
+            json!({"x": 8, "y": 8, "pupilSize": 10_000.0}),
+        );
         assert!(huge.unwrap_err().to_string().contains("512"), "window cap");
-        s.execute("paint.redEye", json!({"x": 8, "y": 8, "pupilSize": 0})).ok();
-        s.execute("paint.redEye", json!({"x": 8, "y": 8, "pupilSize": 101})).ok();
+        s.execute("paint.redEye", json!({"x": 8, "y": 8, "pupilSize": 0}))
+            .ok();
+        s.execute("paint.redEye", json!({"x": 8, "y": 8, "pupilSize": 101}))
+            .ok();
         let mut s = session(64, 64, 8, "rgb");
         paint_layer(&mut s, red_disc(32, 32, 8));
-        assert!(s.execute("paint.redEye", json!({"x": 32, "y": 32, "pupilSize": 0})).is_ok(), "pupilSize 0 clamps");
+        assert!(
+            s.execute("paint.redEye", json!({"x": 32, "y": 32, "pupilSize": 0}))
+                .is_ok(),
+            "pupilSize 0 clamps"
+        );
         assert!(s.undo());
-        assert!(s.execute("paint.redEye", json!({"x": 32, "y": 32, "pupilSize": 101})).is_ok(), "pupilSize 101 clamps");
+        assert!(
+            s.execute("paint.redEye", json!({"x": 32, "y": 32, "pupilSize": 101}))
+                .is_ok(),
+            "pupilSize 101 clamps"
+        );
     }
 
     #[test]
@@ -368,12 +455,23 @@ mod tests {
         assert!(!s.is_enabled("paint.redEye"));
         let mut s = session(32, 32, 8, "rgb");
         assert!(s.is_enabled("paint.redEye"));
-        s.execute("layer.setProps", json!({"locks": {"pixels": true}})).unwrap();
-        assert!(!s.is_enabled("paint.redEye"), "locked pixels disable the tool");
-        let err = s.execute("paint.redEye", json!({"x": 8, "y": 8})).unwrap_err().to_string();
+        s.execute("layer.setProps", json!({"locks": {"pixels": true}}))
+            .unwrap();
+        assert!(
+            !s.is_enabled("paint.redEye"),
+            "locked pixels disable the tool"
+        );
+        let err = s
+            .execute("paint.redEye", json!({"x": 8, "y": 8}))
+            .unwrap_err()
+            .to_string();
         assert!(err.to_ascii_lowercase().contains("locked"), "{err}");
         let mut s = session(64, 64, 8, "rgb");
-        s.execute("type.create", json!({"x": 8, "y": 24, "text": "Hi", "size": 12})).unwrap();
+        s.execute(
+            "type.create",
+            json!({"x": 8, "y": 24, "text": "Hi", "size": 12}),
+        )
+        .unwrap();
         assert!(!s.is_enabled("paint.redEye"));
         assert!(s.execute("paint.redEye", json!({"x": 8, "y": 8})).is_err());
     }
@@ -382,14 +480,17 @@ mod tests {
     fn several_points_are_one_history_step() {
         let mut s = session(80, 40, 8, "rgb");
         paint_layer(&mut s, |x, y| {
-            if ((x - 20).abs() <= 6 && (y - 20).abs() <= 6) || ((x - 60).abs() <= 6 && (y - 20).abs() <= 6) {
+            if ((x - 20).abs() <= 6 && (y - 20).abs() <= 6)
+                || ((x - 60).abs() <= 6 && (y - 20).abs() <= 6)
+            {
                 [0.95, 0.1, 0.1, 1.0]
             } else {
                 [0.2, 0.2, 0.2, 1.0]
             }
         });
         let past = s.active().unwrap().history.past_len();
-        s.execute("paint.redEye", json!({"points": [[20, 20], [60, 20]]})).unwrap();
+        s.execute("paint.redEye", json!({"points": [[20, 20], [60, 20]]}))
+            .unwrap();
         assert_eq!(s.active().unwrap().history.past_len(), past + 1);
         assert!(rgba(&s, 20, 20)[0] < 0.7);
         assert!(rgba(&s, 60, 20)[0] < 0.7);
@@ -403,7 +504,11 @@ mod tests {
         let disc = red_disc(32, 32, 8);
         s.edit("setup", |doc, active| {
             let b = doc.bounds();
-            let surf = doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap();
+            let surf = doc
+                .layer_mut(active.unwrap())
+                .unwrap()
+                .surface_mut()
+                .unwrap();
             let fmt = surf.format();
             let n = fmt.channels();
             let mut data = Vec::new();
@@ -424,15 +529,26 @@ mod tests {
         .unwrap();
         let raw = |s: &Session, x: i32, y: i32| {
             let d = s.active().unwrap();
-            let surf = d.doc.layer(d.active_layer.unwrap()).unwrap().surface().unwrap();
+            let surf = d
+                .doc
+                .layer(d.active_layer.unwrap())
+                .unwrap()
+                .surface()
+                .unwrap();
             surf.read_region(Rect::new(x, y, x + 1, y + 1))
         };
         let probes = [(32, 18), (2, 2), (50, 40)];
         let before: Vec<Vec<f32>> = probes.iter().map(|&(x, y)| raw(&s, x, y)).collect();
-        let r = s.execute("paint.redEye", json!({"x": 32, "y": 32})).unwrap();
+        let r = s
+            .execute("paint.redEye", json!({"x": 32, "y": 32}))
+            .unwrap();
         assert!(r["pixels"].as_u64().unwrap() > 0, "{r}");
         for (&(x, y), b) in probes.iter().zip(&before) {
-            assert_eq!(&raw(&s, x, y), b, "untouched CMYK pixel ({x},{y}) inside the window changed");
+            assert_eq!(
+                &raw(&s, x, y),
+                b,
+                "untouched CMYK pixel ({x},{y}) inside the window changed"
+            );
         }
         assert!(rgba(&s, 32, 26)[0] < 0.7, "pupil corrected");
     }
@@ -441,7 +557,13 @@ mod tests {
     fn gray_document_misses() {
         let mut s = session(24, 24, 16, "gray");
         paint_layer(&mut s, |_, _| [0.5, 0.5, 0.5, 1.0]);
-        assert_eq!(s.active().unwrap().doc.pixel_format().mode, ColorMode::Grayscale);
-        assert!(s.execute("paint.redEye", json!({"x": 12, "y": 12})).is_err());
+        assert_eq!(
+            s.active().unwrap().doc.pixel_format().mode,
+            ColorMode::Grayscale
+        );
+        assert!(
+            s.execute("paint.redEye", json!({"x": 12, "y": 12}))
+                .is_err()
+        );
     }
 }

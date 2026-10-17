@@ -59,7 +59,9 @@ pub fn vps_proxy_target(
     remote: Option<String>,
 ) -> Result<(String, String), VpnError> {
     let host = host.map(|h| h.trim().to_owned()).filter(|h| !h.is_empty());
-    let remote = remote.map(|r| r.trim().to_owned()).filter(|r| !r.is_empty());
+    let remote = remote
+        .map(|r| r.trim().to_owned())
+        .filter(|r| !r.is_empty());
     let remote = remote.ok_or_else(|| {
         VpnError::Config(format!(
             "{PROXY_REMOTE_ENV} is not set (endpoint published by aphrody-infra)"
@@ -71,7 +73,12 @@ pub fn vps_proxy_target(
 /// Status of the Mullvad VPN tunnel.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TunnelState {
-    Connected { relay: String, location: String, ipv4: Option<String>, ipv6: Option<String> },
+    Connected {
+        relay: String,
+        location: String,
+        ipv4: Option<String>,
+        ipv6: Option<String>,
+    },
     Connecting,
     Disconnected,
     Blocked(String),
@@ -125,11 +132,18 @@ impl MullvadController {
 
     /// Queries the current tunnel status.
     pub async fn status(&self) -> Result<TunnelState, VpnError> {
-        let output = tokio::process::Command::new(&self.bin_path).no_window().arg("status").output().await?;
+        let output = tokio::process::Command::new(&self.bin_path)
+            .no_window()
+            .arg("status")
+            .output()
+            .await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(VpnError::CommandFailed { code: output.status.code(), stderr });
+            return Err(VpnError::CommandFailed {
+                code: output.status.code(),
+                stderr,
+            });
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -165,7 +179,12 @@ impl MullvadController {
                 }
             }
 
-            TunnelState::Connected { relay, location, ipv4, ipv6 }
+            TunnelState::Connected {
+                relay,
+                location,
+                ipv4,
+                ipv6,
+            }
         } else if trimmed.starts_with("Connecting") {
             TunnelState::Connecting
         } else if trimmed.starts_with("Disconnected") {
@@ -185,15 +204,25 @@ impl MullvadController {
             let output = cmd.output().await?;
             if !output.status.success() {
                 let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-                return Err(VpnError::CommandFailed { code: output.status.code(), stderr });
+                return Err(VpnError::CommandFailed {
+                    code: output.status.code(),
+                    stderr,
+                });
             }
         }
 
-        let output = tokio::process::Command::new(&self.bin_path).no_window().arg("connect").output().await?;
+        let output = tokio::process::Command::new(&self.bin_path)
+            .no_window()
+            .arg("connect")
+            .output()
+            .await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(VpnError::CommandFailed { code: output.status.code(), stderr });
+            return Err(VpnError::CommandFailed {
+                code: output.status.code(),
+                stderr,
+            });
         }
 
         Ok(())
@@ -201,12 +230,18 @@ impl MullvadController {
 
     /// Disconnects from Mullvad VPN.
     pub async fn disconnect(&self) -> Result<(), VpnError> {
-        let output =
-            tokio::process::Command::new(&self.bin_path).no_window().arg("disconnect").output().await?;
+        let output = tokio::process::Command::new(&self.bin_path)
+            .no_window()
+            .arg("disconnect")
+            .output()
+            .await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(VpnError::CommandFailed { code: output.status.code(), stderr });
+            return Err(VpnError::CommandFailed {
+                code: output.status.code(),
+                stderr,
+            });
         }
 
         Ok(())
@@ -222,13 +257,13 @@ impl MullvadController {
                     return Ok(());
                 }
                 self.connect(Some("us")).await?;
-            },
+            }
             TunnelState::Disconnected | TunnelState::Unknown(_) | TunnelState::Blocked(_) => {
                 self.connect(Some("us")).await?;
-            },
+            }
             TunnelState::Connecting => {
                 tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-            },
+            }
         }
         Ok(())
     }
@@ -257,10 +292,19 @@ impl VpsProxyManager {
             .timeout(std::time::Duration::from_secs(4))
             .build()
             .ok()?;
-        let response =
-            client.get("https://ipinfo.io/json").send().await.ok()?.error_for_status().ok()?;
+        let response = client
+            .get("https://ipinfo.io/json")
+            .send()
+            .await
+            .ok()?
+            .error_for_status()
+            .ok()?;
         let val: serde_json::Value = response.json().await.ok()?;
-        let exit_country = val.get("country").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let exit_country = val
+            .get("country")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         if exit_country.is_empty() {
             return None;
         }
@@ -268,8 +312,14 @@ impl VpsProxyManager {
         Some(ProxyConfig {
             proxy_url: format!("socks5h://127.0.0.1:{}", port),
             exit_country,
-            exit_ip: val.get("ip").and_then(|v| v.as_str()).map(ToString::to_string),
-            exit_city: val.get("city").and_then(|v| v.as_str()).map(ToString::to_string),
+            exit_ip: val
+                .get("ip")
+                .and_then(|v| v.as_str())
+                .map(ToString::to_string),
+            exit_city: val
+                .get("city")
+                .and_then(|v| v.as_str())
+                .map(ToString::to_string),
         })
     }
 
@@ -278,17 +328,22 @@ impl VpsProxyManager {
         #[cfg(target_os = "windows")]
         {
             let arg_list = format!("'-N', '-L', '{}:{}', '{}'", port, remote, host);
-            let _ = std::process::Command::new("powershell").no_window()
+            let _ = std::process::Command::new("powershell")
+                .no_window()
                 .args([
                     "-NoProfile",
                     "-Command",
-                    &format!("Start-Process ssh -ArgumentList {} -WindowStyle Hidden", arg_list),
+                    &format!(
+                        "Start-Process ssh -ArgumentList {} -WindowStyle Hidden",
+                        arg_list
+                    ),
                 ])
                 .status();
         }
         #[cfg(not(target_os = "windows"))]
         {
-            let _ = std::process::Command::new("ssh").no_window()
+            let _ = std::process::Command::new("ssh")
+                .no_window()
                 .args(["-f", "-N", "-L", &format!("{}:{}", port, remote), host])
                 .status();
         }
@@ -320,7 +375,8 @@ impl VpsProxyManager {
                     return Ok(cfg);
                 }
                 // Switch VPS relay to US if it was pointing elsewhere
-                let _ = tokio::process::Command::new("ssh").no_window()
+                let _ = tokio::process::Command::new("ssh")
+                    .no_window()
                     .args([host.as_str(), "sudo /usr/local/bin/mullvad-switch-relay us"])
                     .output()
                     .await;
@@ -332,7 +388,9 @@ impl VpsProxyManager {
             tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
         }
 
-        Err(VpnError::ParseError("Impossible d'établir le proxy SOCKS5 US via VPS".into()))
+        Err(VpnError::ParseError(
+            "Impossible d'établir le proxy SOCKS5 US via VPS".into(),
+        ))
     }
 }
 
@@ -368,13 +426,13 @@ pub async fn ensure_us_connectivity_for_agy() -> Result<Option<ProxyConfig>, Vpn
                     if controller.connect(Some("us")).await.is_ok() {
                         return Ok(None);
                     }
-                },
+                }
                 _ => {
                     // Try to connect local Mullvad to US
                     if controller.connect(Some("us")).await.is_ok() {
                         return Ok(None);
                     }
-                },
+                }
             }
         }
     }
@@ -396,22 +454,36 @@ mod tests {
              2a0d:5600:6:106::e002";
         let state = MullvadController::parse_status(sample);
         match state {
-            TunnelState::Connected { relay, location, ipv4, ipv6 } => {
+            TunnelState::Connected {
+                relay,
+                location,
+                ipv4,
+                ipv6,
+            } => {
                 assert_eq!(relay, "us-mia-wg-103");
                 assert_eq!(location, "USA, Miami, FL");
                 assert_eq!(ipv4, Some("135.136.36.109".to_string()));
                 assert_eq!(ipv6, Some("2a0d:5600:6:106::e002".to_string()));
-            },
+            }
             _ => panic!("Expected Connected state, got {:?}", state),
         }
     }
 
     #[test]
     fn vps_proxy_target_requires_remote() {
-        assert!(matches!(vps_proxy_target(None, None), Err(VpnError::Config(_))));
-        assert!(matches!(vps_proxy_target(None, Some(" ".into())), Err(VpnError::Config(_))));
+        assert!(matches!(
+            vps_proxy_target(None, None),
+            Err(VpnError::Config(_))
+        ));
+        assert!(matches!(
+            vps_proxy_target(None, Some(" ".into())),
+            Err(VpnError::Config(_))
+        ));
         let (host, remote) = vps_proxy_target(None, Some("socks.internal:1080".into())).unwrap();
-        assert_eq!((host.as_str(), remote.as_str()), ("vps", "socks.internal:1080"));
+        assert_eq!(
+            (host.as_str(), remote.as_str()),
+            ("vps", "socks.internal:1080")
+        );
         let (host, _) = vps_proxy_target(Some("edge".into()), Some("h:1".into())).unwrap();
         assert_eq!(host, "edge");
     }

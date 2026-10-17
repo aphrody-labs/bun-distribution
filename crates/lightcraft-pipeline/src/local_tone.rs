@@ -33,14 +33,26 @@ pub fn enabled(info: &SourceInfo, s: &DevelopSettings) -> bool {
 /// Multiply the resampled, not yet white-balanced source `img` (the output frame of `p`) by the
 /// local tone gain at each pixel. Blank canvas (outside a lens / perspective warp) is left alone.
 pub fn apply(img: &mut Rgb32f, info: &SourceInfo, p: &Plan<'_>) {
-    let Some(lt) = info.local_tone.as_deref().filter(|_| enabled(info, &p.settings)) else { return };
-    let Some(eval) = lt.map.evaluator() else { return };
+    let Some(lt) = info
+        .local_tone
+        .as_deref()
+        .filter(|_| enabled(info, &p.settings))
+    else {
+        return;
+    };
+    let Some(eval) = lt.map.evaluator() else {
+        return;
+    };
     let (w, h) = (img.width, img.height);
     let frame = &p.frame;
     let (ow, oh) = (frame.ow.max(1e-9), frame.oh.max(1e-9));
     let o2t = frame.out_to_oriented(w, h);
     let user = frame.orient.inverse();
-    let to_prophoto = PROPHOTO.from_xyz().mul(&bradford(D65, D50)).mul(&REC2020.to_xyz()).to_f32();
+    let to_prophoto = PROPHOTO
+        .from_xyz()
+        .mul(&bradford(D65, D50))
+        .mul(&REC2020.to_xyz())
+        .to_f32();
     crate::for_rows(&mut img.data, w, |y, row| {
         for (x, px) in row.iter_mut().enumerate() {
             // output pixel → user-oriented source px → EXIF-oriented source (0..1) → active area
@@ -54,7 +66,8 @@ pub fn apply(img: &mut Rgb32f, info: &SourceInfo, p: &Plan<'_>) {
             let (u, v) = user.map(s.x / ow, s.y / oh, 1.0, 1.0);
             let (ax, ay) = lt.placement.active(u, v);
             let m = &to_prophoto;
-            let q: [f32; 3] = std::array::from_fn(|i| m[i][0] * px[0] + m[i][1] * px[1] + m[i][2] * px[2]);
+            let q: [f32; 3] =
+                std::array::from_fn(|i| m[i][0] * px[0] + m[i][1] * px[1] + m[i][2] * px[2]);
             let g = eval.gain(q, ax, ay);
             *px = px.map(|c| c * g);
         }

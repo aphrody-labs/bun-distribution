@@ -143,12 +143,20 @@ impl Parser<'_> {
         if !r.starts_with('<') {
             return self.err("expected a tag");
         }
-        let Some(end) = r.find('>') else { return self.err("unterminated tag") };
+        let Some(end) = r.find('>') else {
+            return self.err("unterminated tag");
+        };
         let inner = &r[1..end];
         self.i += end + 1;
         let closing = inner.starts_with('/');
         let selfc = inner.ends_with('/');
-        let name = inner.trim_start_matches('/').trim_end_matches('/').split_whitespace().next().unwrap_or("").to_string();
+        let name = inner
+            .trim_start_matches('/')
+            .trim_end_matches('/')
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_string();
         Ok((name, closing, selfc))
     }
     fn peek_close(&mut self, name: &str) -> bool {
@@ -165,7 +173,9 @@ impl Parser<'_> {
     fn text(&mut self, name: &str) -> Result<String, String> {
         let r = &self.s[self.i..];
         let t = format!("</{name}>");
-        let Some(end) = r.find(&t) else { return self.err(&format!("missing {t}")) };
+        let Some(end) = r.find(&t) else {
+            return self.err(&format!("missing {t}"));
+        };
         self.i += end + t.len();
         Ok(unescape(&r[..end]))
     }
@@ -183,7 +193,13 @@ impl Parser<'_> {
         if closing {
             return self.err(&format!("unexpected </{name}>"));
         }
-        let leaf = |p: &mut Self, f: &dyn Fn(String) -> Result<Plist, String>| if selfc { f(String::new()) } else { p.text(&name).and_then(f) };
+        let leaf = |p: &mut Self, f: &dyn Fn(String) -> Result<Plist, String>| {
+            if selfc {
+                f(String::new())
+            } else {
+                p.text(&name).and_then(f)
+            }
+        };
         match name.as_str() {
             "plist" => {
                 if selfc {
@@ -217,9 +233,12 @@ impl Parser<'_> {
                 Ok(Plist::Array(a))
             }
             "string" | "date" => leaf(self, &|t| Ok(Plist::Str(t))),
-            "real" | "integer" => {
-                leaf(self, &|t| t.trim().parse::<f64>().map(Plist::Num).map_err(|_| format!("property list: bad number {:?}", t.trim())))
-            }
+            "real" | "integer" => leaf(self, &|t| {
+                t.trim()
+                    .parse::<f64>()
+                    .map(Plist::Num)
+                    .map_err(|_| format!("property list: bad number {:?}", t.trim()))
+            }),
             "data" => leaf(self, &|_| Ok(Plist::Data)),
             "true" | "false" => {
                 if !selfc {
@@ -238,14 +257,20 @@ pub fn parse_plist(bytes: &[u8]) -> Result<Plist, String> {
         return Err("binary property lists are not supported".into());
     }
     let text = String::from_utf8_lossy(bytes);
-    let mut p = Parser { s: text.trim_start_matches('\u{feff}'), i: 0, depth: 0 };
+    let mut p = Parser {
+        s: text.trim_start_matches('\u{feff}'),
+        i: 0,
+        depth: 0,
+    };
     p.value()
 }
 
 // ------------------------------------------------------------------------------------ mapping
 
 /// Luminar's colour bands (`h`/`s`/`l` + band in the HSL tool) — the same eight as `crs:`.
-const BANDS: [&str; 8] = ["Red", "Orange", "Yellow", "Green", "Aqua", "Blue", "Purple", "Magenta"];
+const BANDS: [&str; 8] = [
+    "Red", "Orange", "Yellow", "Green", "Aqua", "Blue", "Purple", "Magenta",
+];
 
 /// Effects whose parameters carry the basic tone / colour sliders under their own names.
 const BASIC: &[&str] = &[
@@ -270,7 +295,14 @@ struct Target {
 }
 
 fn target(effect: &str, param: &str, value: f64) -> Option<Target> {
-    let t = |crs: &str, scale: f64, additive: bool, range: (f64, f64)| Some(Target { crs: crs.to_string(), scale, additive, range });
+    let t = |crs: &str, scale: f64, additive: bool, range: (f64, f64)| {
+        Some(Target {
+            crs: crs.to_string(),
+            scale,
+            additive,
+            range,
+        })
+    };
     let pm = (-100.0, 100.0);
     if BASIC.contains(&effect) {
         return match param {
@@ -281,7 +313,9 @@ fn target(effect: &str, param: &str, value: f64) -> Option<Target> {
             "Whites" => t("Whites2012", 1.0, true, pm),
             "Blacks" => t("Blacks2012", 1.0, true, pm),
             // an absolute colour temperature (raw develop) vs. a relative shift
-            "Temperature" if value.abs() > 1000.0 => t("Temperature", 1.0, false, (2000.0, 50000.0)),
+            "Temperature" if value.abs() > 1000.0 => {
+                t("Temperature", 1.0, false, (2000.0, 50000.0))
+            }
             "Temperature" => t("IncrementalTemperature", 1.0, true, pm),
             "Tint" => t("IncrementalTint", 1.0, true, pm),
             "Saturation" => t("Saturation", 1.0, true, pm),
@@ -292,20 +326,32 @@ fn target(effect: &str, param: &str, value: f64) -> Option<Target> {
         };
     }
     match (effect, param) {
-        ("MIPLAIStructureEffect" | "MIPLStructureEffect", "Amount") => t("Clarity2012", 1.0, true, pm),
+        ("MIPLAIStructureEffect" | "MIPLStructureEffect", "Amount") => {
+            t("Clarity2012", 1.0, true, pm)
+        }
         ("MIPLDehazeEffect", "Amount") => t("Dehaze", 1.0, true, pm),
         ("MIPLVignetteEffect", "Amount") => t("PostCropVignetteAmount", 1.0, true, pm),
-        ("MIPLVignetteEffect", "Vignette Size" | "Size") => t("PostCropVignetteMidpoint", 1.0, false, (0.0, 100.0)),
-        ("MIPLGrainNewEffect" | "MIPLGrainEffect", "Amount") => t("GrainAmount", 1.0, true, (0.0, 100.0)),
+        ("MIPLVignetteEffect", "Vignette Size" | "Size") => {
+            t("PostCropVignetteMidpoint", 1.0, false, (0.0, 100.0))
+        }
+        ("MIPLGrainNewEffect" | "MIPLGrainEffect", "Amount") => {
+            t("GrainAmount", 1.0, true, (0.0, 100.0))
+        }
         ("MIPLChannelsEffect" | "MIPLHSLEffect", _) => {
-            let (kind, band) = param.split_at(param.char_indices().nth(1).map_or(param.len(), |(i, _)| i));
+            let (kind, band) =
+                param.split_at(param.char_indices().nth(1).map_or(param.len(), |(i, _)| i));
             let field = match kind {
                 "h" => "HueAdjustment",
                 "s" => "SaturationAdjustment",
                 "l" => "LuminanceAdjustment",
                 _ => return None,
             };
-            BANDS.contains(&band).then(|| Target { crs: format!("{field}{band}"), scale: 1.0, additive: true, range: pm })
+            BANDS.contains(&band).then(|| Target {
+                crs: format!("{field}{band}"),
+                scale: 1.0,
+                additive: true,
+                range: pm,
+            })
         }
         _ => None,
     }
@@ -314,19 +360,30 @@ fn target(effect: &str, param: &str, value: f64) -> Option<Target> {
 /// A point curve stored as `OptionalData`: a leading value, then x, y pairs in 0..1 with x
 /// increasing. Anything else isn't read.
 fn curve_points(param: &Plist) -> Option<Vec<(f64, f64)>> {
-    let data: Vec<f64> = param.get("OptionalData")?.array().iter().map(Plist::num).collect::<Option<_>>()?;
+    let data: Vec<f64> = param
+        .get("OptionalData")?
+        .array()
+        .iter()
+        .map(Plist::num)
+        .collect::<Option<_>>()?;
     if data.len() < 5 || data.len().is_multiple_of(2) {
         return None;
     }
     let pts: Vec<(f64, f64)> = data[1..].chunks(2).map(|c| (c[0], c[1])).collect();
-    let ok = pts.iter().all(|&(x, y)| (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y)) && pts.windows(2).all(|w| w[1].0 > w[0].0);
+    let ok = pts
+        .iter()
+        .all(|&(x, y)| (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y))
+        && pts.windows(2).all(|w| w[1].0 > w[0].0);
     ok.then_some(pts)
 }
 
 /// `MIPLSmartContrastEffect` → `SmartContrast`.
 fn short(effect: &str) -> &str {
     let e = effect.strip_prefix("MIPL").unwrap_or(effect);
-    ["_v1_Effect", "EffectID", "Effect"].iter().find_map(|s| e.strip_suffix(s)).unwrap_or(e)
+    ["_v1_Effect", "EffectID", "Effect"]
+        .iter()
+        .find_map(|s| e.strip_suffix(s))
+        .unwrap_or(e)
 }
 
 #[derive(Default)]
@@ -348,21 +405,33 @@ impl Acc {
             if matches!(layer.get("Enabled"), Some(Plist::Bool(false))) {
                 continue;
             }
-            let opacity = weight * layer.get("Amount").and_then(Plist::num).unwrap_or(1.0).clamp(0.0, 1.0);
+            let opacity = weight
+                * layer
+                    .get("Amount")
+                    .and_then(Plist::num)
+                    .unwrap_or(1.0)
+                    .clamp(0.0, 1.0);
             if opacity <= 0.0 {
                 continue;
             }
-            let blend = layer.get("BlendModeIdentifier").and_then(Plist::str).unwrap_or("Normal");
+            let blend = layer
+                .get("BlendModeIdentifier")
+                .and_then(Plist::str)
+                .unwrap_or("Normal");
             // a layer with a mask applies locally: not a global look
             let empty = |v: &Plist| {
-                matches!(v, Plist::Bool(false)) || matches!(v, Plist::Dict(d) if d.is_empty()) || matches!(v, Plist::Array(a) if a.is_empty())
+                matches!(v, Plist::Bool(false))
+                    || matches!(v, Plist::Dict(d) if d.is_empty())
+                    || matches!(v, Plist::Array(a) if a.is_empty())
             };
             let masked = matches!(layer, Plist::Dict(m) if m.iter().any(|(k, v)| k.to_ascii_lowercase().contains("mask") && !empty(v)));
             let literal = blend.eq_ignore_ascii_case("normal") && !masked;
             let mut reported = false;
             for effect in layer.get("Effects").map(Plist::array).unwrap_or_default() {
                 let id = effect.get("Identifier").and_then(Plist::str).unwrap_or("?");
-                let Some(Plist::Dict(params)) = effect.get("Parameters") else { continue };
+                let Some(Plist::Dict(params)) = effect.get("Parameters") else {
+                    continue;
+                };
                 for (name, pv) in params {
                     let value = pv.get("Value").and_then(Plist::num).or(pv.num());
                     if literal && id == "MIPLCurveEffect" {
@@ -377,7 +446,12 @@ impl Acc {
                             && !self.curves.contains_key(crs)
                         {
                             // a curve at partial opacity: the points fade toward the identity
-                            self.curves.insert(crs.to_string(), pts.into_iter().map(|(x, y)| (x, x + (y - x) * opacity)).collect());
+                            self.curves.insert(
+                                crs.to_string(),
+                                pts.into_iter()
+                                    .map(|(x, y)| (x, x + (y - x) * opacity))
+                                    .collect(),
+                            );
                             continue;
                         }
                         if pv.get("OptionalData").is_some() {
@@ -385,7 +459,9 @@ impl Acc {
                         }
                         continue;
                     }
-                    let Some(v) = value.filter(|v| *v != 0.0) else { continue };
+                    let Some(v) = value.filter(|v| *v != 0.0) else {
+                        continue;
+                    };
                     match target(id, name, v).filter(|_| literal) {
                         Some(t) => {
                             let x = v * t.scale * if t.additive { opacity } else { 1.0 };
@@ -400,10 +476,20 @@ impl Acc {
                 }
             }
             if !literal && reported {
-                let lid = layer.get("Identifier").and_then(Plist::str).unwrap_or("layer");
-                self.skip(if masked { format!("{lid}: mask") } else { format!("{lid}: blend mode {blend}") });
+                let lid = layer
+                    .get("Identifier")
+                    .and_then(Plist::str)
+                    .unwrap_or("layer");
+                self.skip(if masked {
+                    format!("{lid}: mask")
+                } else {
+                    format!("{lid}: blend mode {blend}")
+                });
             }
-            if let Some(sub) = layer.get("Sublayers").and_then(|s| s.get("AdjustmentLayers")) {
+            if let Some(sub) = layer
+                .get("Sublayers")
+                .and_then(|s| s.get("AdjustmentLayers"))
+            {
                 self.layers(sub.array(), opacity);
             }
         }
@@ -415,7 +501,13 @@ impl Acc {
 fn look_name(path: &str) -> String {
     let p = Path::new(path);
     let stem = |p: &Path| p.file_stem().map(|s| s.to_string_lossy().to_string());
-    let bundle = p.parent().filter(|d| d.file_name().is_some_and(|n| n.eq_ignore_ascii_case("Contents"))).and_then(Path::parent);
+    let bundle = p
+        .parent()
+        .filter(|d| {
+            d.file_name()
+                .is_some_and(|n| n.eq_ignore_ascii_case("Contents"))
+        })
+        .and_then(Path::parent);
     match bundle {
         Some(b) if b.extension().is_some_and(|e| e.eq_ignore_ascii_case("lmp")) => stem(b),
         _ => stem(p),
@@ -426,7 +518,9 @@ fn look_name(path: &str) -> String {
 /// Read one Luminar look (`.lmp`) into a preset in `group` (default "Imported Presets").
 pub fn read_lmp(path: &str, bytes: &[u8], group: Option<String>) -> Result<Imported, String> {
     let root = parse_plist(bytes)?;
-    let layers = root.get("AdjustmentLayers").ok_or("not a Luminar look (no adjustment layers)")?;
+    let layers = root
+        .get("AdjustmentLayers")
+        .ok_or("not a Luminar look (no adjustment layers)")?;
     let mut acc = Acc::default();
     acc.layers(layers.array(), 1.0);
     let mut props = Props::new();
@@ -434,12 +528,27 @@ pub fn read_lmp(path: &str, bytes: &[u8], group: Option<String>) -> Result<Impor
         props.insert(format!("crs:{k}"), vec![format!("{}", v.clamp(*lo, *hi))]);
     }
     for (k, pts) in &acc.curves {
-        props.insert(format!("crs:{k}"), pts.iter().map(|(x, y)| format!("{}, {}", x * 255.0, y * 255.0)).collect());
+        props.insert(
+            format!("crs:{k}"),
+            pts.iter()
+                .map(|(x, y)| format!("{}, {}", x * 255.0, y * 255.0))
+                .collect(),
+        );
     }
-    if let Some(u) = root.get("uuid").and_then(Plist::str).filter(|u| !u.trim().is_empty()) {
+    if let Some(u) = root
+        .get("uuid")
+        .and_then(Plist::str)
+        .filter(|u| !u.trim().is_empty())
+    {
         props.insert("crs:UUID".into(), vec![u.trim().to_string()]);
     }
-    let name = root.get("Name").and_then(Plist::str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string).unwrap_or_else(|| look_name(path));
+    let name = root
+        .get("Name")
+        .and_then(Plist::str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| look_name(path));
     match build(&props, &Default::default(), name, group, false) {
         Some(mut i) => {
             i.preset.id = i.preset.id.replacen("user.xmp.", "user.lmp.", 1);
@@ -447,7 +556,10 @@ pub fn read_lmp(path: &str, bytes: &[u8], group: Option<String>) -> Result<Impor
             Ok(i)
         }
         None if acc.unmapped.is_empty() => Err("this look has no adjustments".into()),
-        None => Err(format!("none of this look's settings have a counterpart here ({})", acc.unmapped.join(", "))),
+        None => Err(format!(
+            "none of this look's settings have a counterpart here ({})",
+            acc.unmapped.join(", ")
+        )),
     }
 }
 
@@ -457,15 +569,32 @@ pub fn read_mplumpack(path: &str, bytes: &[u8]) -> Result<Vec<Imported>, String>
     let entries = read_zip(bytes)?;
     let info = entries
         .iter()
-        .find(|(n, _)| n.rsplit('/').next().is_some_and(|b| b.eq_ignore_ascii_case("PresetsInfo.plist")))
+        .find(|(n, _)| {
+            n.rsplit('/')
+                .next()
+                .is_some_and(|b| b.eq_ignore_ascii_case("PresetsInfo.plist"))
+        })
         .and_then(|(_, b)| parse_plist(b).ok())
-        .and_then(|p| p.get("GroupName").and_then(Plist::str).map(str::trim).filter(|g| !g.is_empty()).map(str::to_string));
-    let stem = Path::new(path).file_stem().map(|s| s.to_string_lossy().to_string());
-    let pack = info.or_else(|| stem.as_deref().and_then(group_from_dir)).unwrap_or_else(|| "Luminar Looks".into());
+        .and_then(|p| {
+            p.get("GroupName")
+                .and_then(Plist::str)
+                .map(str::trim)
+                .filter(|g| !g.is_empty())
+                .map(str::to_string)
+        });
+    let stem = Path::new(path)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string());
+    let pack = info
+        .or_else(|| stem.as_deref().and_then(group_from_dir))
+        .unwrap_or_else(|| "Luminar Looks".into());
     let mut out = Vec::new();
     let mut errors = Vec::new();
     for (inner, data) in &entries {
-        if !Path::new(inner).extension().is_some_and(|e| e.eq_ignore_ascii_case("lmp")) {
+        if !Path::new(inner)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("lmp"))
+        {
             continue;
         }
         match read_lmp(inner, data, Some(pack.clone())) {
@@ -474,7 +603,11 @@ pub fn read_mplumpack(path: &str, bytes: &[u8]) -> Result<Vec<Imported>, String>
         }
     }
     if out.is_empty() {
-        return Err(if errors.is_empty() { "no looks in this collection".into() } else { errors.join("; ") });
+        return Err(if errors.is_empty() {
+            "no looks in this collection".into()
+        } else {
+            errors.join("; ")
+        });
     }
     Ok(out)
 }
@@ -487,7 +620,9 @@ mod tests {
 
     /// One effect's parameter as Luminar writes it.
     fn param(name: &str, v: f64) -> String {
-        format!("<key>{name}</key><dict><key>OptionalDataType</key><integer>0</integer><key>Value</key><real>{v}</real></dict>")
+        format!(
+            "<key>{name}</key><dict><key>OptionalDataType</key><integer>0</integer><key>Value</key><real>{v}</real></dict>"
+        )
     }
 
     fn layer(id: &str, amount: f64, blend: &str, effects: &[(&str, String)], sub: &str) -> String {
@@ -495,8 +630,13 @@ mod tests {
             .iter()
             .map(|(e, p)| format!("<dict><key>Identifier</key><string>{e}</string><key>Parameters</key><dict>{p}</dict></dict>"))
             .collect();
-        let sub =
-            if sub.is_empty() { String::new() } else { format!("<key>Sublayers</key><dict><key>AdjustmentLayers</key><array>{sub}</array></dict>") };
+        let sub = if sub.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "<key>Sublayers</key><dict><key>AdjustmentLayers</key><array>{sub}</array></dict>"
+            )
+        };
         format!(
             "<dict><key>Amount</key><real>{amount}</real><key>BlendModeIdentifier</key><string>{blend}</string><key>Effects</key><array>{fx}</array>\
              <key>Enabled</key><true/><key>Identifier</key><string>{id}</string>{sub}</dict>"
@@ -520,31 +660,98 @@ mod tests {
                 "Normal",
                 &[(
                     "MIPLDevelopCommonEffectID",
-                    param("Exposure", 25.0) + &param("Contrast", 12.0) + &param("Highlights", -30.0) + &param("Temperature", 15.0),
+                    param("Exposure", 25.0)
+                        + &param("Contrast", 12.0)
+                        + &param("Highlights", -30.0)
+                        + &param("Temperature", 15.0),
                 )],
-                &layer("CurveLayer", 1.0, "Normal", &[("MIPLCurveEffect", curve.to_string())], ""),
+                &layer(
+                    "CurveLayer",
+                    1.0,
+                    "Normal",
+                    &[("MIPLCurveEffect", curve.to_string())],
+                    "",
+                ),
             ),
-            layer("Disabled", 1.0, "Normal", &[("MIPLDevelopCommonEffectID", param("Shadows", 50.0))], "").replace("<true/>", "<false/>"),
+            layer(
+                "Disabled",
+                1.0,
+                "Normal",
+                &[("MIPLDevelopCommonEffectID", param("Shadows", 50.0))],
+                "",
+            )
+            .replace("<true/>", "<false/>"),
         ]
         .concat();
         let layers = [
             layer("DevelopAdjustmentLayer", 1.0, "Normal", &[], &sub),
-            layer("AIStructureEffect", 1.0, "Normal", &[("MIPLAIStructureEffect", param("Amount", 20.0) + &param("Boost", 10.0))], ""),
+            layer(
+                "AIStructureEffect",
+                1.0,
+                "Normal",
+                &[(
+                    "MIPLAIStructureEffect",
+                    param("Amount", 20.0) + &param("Boost", 10.0),
+                )],
+                "",
+            ),
             layer(
                 "Half",
                 0.5,
                 "Normal",
-                &[("MIPLVibranceEffect", param("Vibrance", 30.0)), ("MIPLSaturationEffect", param("Saturation", -10.0))],
+                &[
+                    ("MIPLVibranceEffect", param("Vibrance", 30.0)),
+                    ("MIPLSaturationEffect", param("Saturation", -10.0)),
+                ],
                 "",
             ),
-            layer("Hsl", 1.0, "Normal", &[("MIPLChannelsEffect", param("hOrange", -8.0) + &param("sBlue", 12.0) + &param("lGreen", 4.0))], ""),
-            layer("Vignette", 1.0, "Normal", &[("MIPLVignetteEffect", param("Amount", -20.0) + &param("Vignette Size", 40.0))], ""),
-            layer("Orton", 1.0, "Normal", &[("MIPLOrtonFilterEffect", param("Amount", 15.0))], ""),
-            layer("Screened", 1.0, "Screen", &[("MIPLContrastEffect", param("Contrast", 40.0))], ""),
-            layer("Untouched", 1.0, "Normal", &[("MIPLSkyEnhancerEffect", String::new())], ""),
+            layer(
+                "Hsl",
+                1.0,
+                "Normal",
+                &[(
+                    "MIPLChannelsEffect",
+                    param("hOrange", -8.0) + &param("sBlue", 12.0) + &param("lGreen", 4.0),
+                )],
+                "",
+            ),
+            layer(
+                "Vignette",
+                1.0,
+                "Normal",
+                &[(
+                    "MIPLVignetteEffect",
+                    param("Amount", -20.0) + &param("Vignette Size", 40.0),
+                )],
+                "",
+            ),
+            layer(
+                "Orton",
+                1.0,
+                "Normal",
+                &[("MIPLOrtonFilterEffect", param("Amount", 15.0))],
+                "",
+            ),
+            layer(
+                "Screened",
+                1.0,
+                "Screen",
+                &[("MIPLContrastEffect", param("Contrast", 40.0))],
+                "",
+            ),
+            layer(
+                "Untouched",
+                1.0,
+                "Normal",
+                &[("MIPLSkyEnhancerEffect", String::new())],
+                "",
+            ),
         ]
         .concat();
-        look(&layers, "<key>uuid</key><string>AB12-CD34</string><key>kMPPresetIdentifierKey</key><string>x 2.lmp</string>")
+        look(
+            &layers,
+            "<key>uuid</key><string>AB12-CD34</string><key>kMPPresetIdentifierKey</key><string>x 2.lmp</string>",
+        )
     }
 
     #[test]
@@ -562,37 +769,81 @@ mod tests {
 
     #[test]
     fn hostile_nesting_is_an_error_not_a_crash() {
-        let deep = format!("<plist>{}{}</plist>", "<array>".repeat(200_000), "</array>".repeat(200_000));
-        assert!(parse_plist(deep.as_bytes()).unwrap_err().contains("nested too deeply"));
-        let ok = format!("<plist>{}<true/>{}</plist>", "<array>".repeat(20), "</array>".repeat(20));
+        let deep = format!(
+            "<plist>{}{}</plist>",
+            "<array>".repeat(200_000),
+            "</array>".repeat(200_000)
+        );
+        assert!(
+            parse_plist(deep.as_bytes())
+                .unwrap_err()
+                .contains("nested too deeply")
+        );
+        let ok = format!(
+            "<plist>{}<true/>{}</plist>",
+            "<array>".repeat(20),
+            "</array>".repeat(20)
+        );
         assert!(parse_plist(ok.as_bytes()).is_ok());
     }
 
     #[test]
     fn look_sliders_map_and_the_rest_is_reported() {
-        let i = read_presets("/x/Soft Contrast.lmp", modern().as_bytes(), None).unwrap().remove(0);
+        let i = read_presets("/x/Soft Contrast.lmp", modern().as_bytes(), None)
+            .unwrap()
+            .remove(0);
         let p = &i.preset;
-        assert_eq!((p.name.as_str(), p.group.as_str(), p.id.as_str()), ("Soft Contrast", "Imported Presets", "user.lmp.ab12-cd34"));
+        assert_eq!(
+            (p.name.as_str(), p.group.as_str(), p.id.as_str()),
+            ("Soft Contrast", "Imported Presets", "user.lmp.ab12-cd34")
+        );
         let s = &p.settings;
         assert_eq!(s["light"]["exposure"], json!(1.0), "±100 ↔ ±4 EV");
         assert_eq!(s["light"]["contrast"], json!(12.0));
         assert_eq!(s["light"]["highlights"], json!(-30.0));
-        assert!(s["light"].get("shadows").is_none(), "disabled layers are ignored");
+        assert!(
+            s["light"].get("shadows").is_none(),
+            "disabled layers are ignored"
+        );
         assert_eq!(s["effects"]["clarity"], json!(20.0), "Structure → clarity");
-        assert_eq!(s["color"]["vibrance"], json!(15.0), "layer opacity scales the slider");
+        assert_eq!(
+            s["color"]["vibrance"],
+            json!(15.0),
+            "layer opacity scales the slider"
+        );
         assert_eq!(s["color"]["saturation"], json!(-5.0));
         assert_eq!(s["mixer"]["orange"]["hue"], json!(-8.0));
         assert_eq!(s["mixer"]["blue"]["sat"], json!(12.0));
         assert_eq!(s["mixer"]["green"]["lum"], json!(4.0));
         assert_eq!(s["vignette"]["amount"], json!(-20.0));
         assert_eq!(s["vignette"]["midpoint"], json!(40.0));
-        assert!(s["wb"]["temp"].as_f64().unwrap() > 6500.0, "a warm shift: {}", s["wb"]);
+        assert!(
+            s["wb"]["temp"].as_f64().unwrap() > 6500.0,
+            "a warm shift: {}",
+            s["wb"]
+        );
         let c = s["curve"]["master"].as_array().unwrap();
         assert_eq!(c.len(), 3);
-        assert!((c[0]["y"].as_f64().unwrap() - 0.1).abs() < 1e-9 && (c[2]["y"].as_f64().unwrap() - 0.9).abs() < 1e-9);
-        assert_eq!(i.unmapped, ["AIStructure.Boost", "OrtonFilter.Amount", "Contrast.Contrast", "Screened: blend mode Screen"]);
-        assert!(s["light"]["contrast"] == json!(12.0), "the screen-blended layer isn't folded in");
-        lightcraft_develop::DevelopSettings::default().merged(s).expect("valid develop settings");
+        assert!(
+            (c[0]["y"].as_f64().unwrap() - 0.1).abs() < 1e-9
+                && (c[2]["y"].as_f64().unwrap() - 0.9).abs() < 1e-9
+        );
+        assert_eq!(
+            i.unmapped,
+            [
+                "AIStructure.Boost",
+                "OrtonFilter.Amount",
+                "Contrast.Contrast",
+                "Screened: blend mode Screen"
+            ]
+        );
+        assert!(
+            s["light"]["contrast"] == json!(12.0),
+            "the screen-blended layer isn't folded in"
+        );
+        lightcraft_develop::DevelopSettings::default()
+            .merged(s)
+            .expect("valid develop settings");
     }
 
     #[test]
@@ -603,26 +854,63 @@ mod tests {
                 "ToneLayer",
                 1.0,
                 "Normal",
-                &[("MIPLExposureEffect", param("Exposure", 0.0)), ("MIPLHighlightsEffect", param("Shadows", 10.0))],
+                &[
+                    ("MIPLExposureEffect", param("Exposure", 0.0)),
+                    ("MIPLHighlightsEffect", param("Shadows", 10.0)),
+                ],
                 "",
             ),
-            layer("ClarityLayer", 1.0, "Normal", &[("MIPLClarityEffect", param("Clarity", 20.0))], ""),
-            layer("Wb", 1.0, "Normal", &[("MIPLWhiteBalanceEffect", param("Temperature", -15.0) + &param("Tint", 10.0))], ""),
+            layer(
+                "ClarityLayer",
+                1.0,
+                "Normal",
+                &[("MIPLClarityEffect", param("Clarity", 20.0))],
+                "",
+            ),
+            layer(
+                "Wb",
+                1.0,
+                "Normal",
+                &[(
+                    "MIPLWhiteBalanceEffect",
+                    param("Temperature", -15.0) + &param("Tint", 10.0),
+                )],
+                "",
+            ),
         ]
         .concat();
         let lmp = look(&layers, "<key>Name</key><string>Blue Hour</string>");
-        let i = read_presets("whatever.lmp", lmp.as_bytes(), Some("Mine".into())).unwrap().remove(0);
-        assert_eq!((i.preset.name.as_str(), i.preset.group.as_str()), ("Blue Hour", "Mine"));
+        let i = read_presets("whatever.lmp", lmp.as_bytes(), Some("Mine".into()))
+            .unwrap()
+            .remove(0);
+        assert_eq!(
+            (i.preset.name.as_str(), i.preset.group.as_str()),
+            ("Blue Hour", "Mine")
+        );
         assert_eq!(i.preset.settings["light"], json!({"shadows": 10.0}));
         assert_eq!(i.preset.settings["effects"]["clarity"], json!(20.0));
         assert_eq!(i.preset.settings["wb"]["tint"], json!(10.0));
         assert!(i.preset.settings["wb"]["temp"].as_f64().unwrap() < 6500.0);
         assert!(i.unmapped.is_empty(), "{:?}", i.unmapped);
         // a bundle's inner file is named after the bundle
-        let b = read_presets("/p/Vintage.lmp/Contents/preset.lmp", modern().as_bytes(), None).unwrap();
+        let b = read_presets(
+            "/p/Vintage.lmp/Contents/preset.lmp",
+            modern().as_bytes(),
+            None,
+        )
+        .unwrap();
         assert_eq!(b[0].preset.name, "Vintage");
         // nothing we can carry over: an error that says what was there
-        let only = look(&layer("Orton", 1.0, "Normal", &[("MIPLOrtonFilterEffect", param("Amount", 15.0))], ""), "");
+        let only = look(
+            &layer(
+                "Orton",
+                1.0,
+                "Normal",
+                &[("MIPLOrtonFilterEffect", param("Amount", 15.0))],
+                "",
+            ),
+            "",
+        );
         let e = read_presets("Glow.lmp", only.as_bytes(), None).unwrap_err();
         assert!(e.contains("OrtonFilter.Amount"), "{e}");
         assert!(read_presets("x.lmp", b"<plist><dict/></plist>", None).is_err());
@@ -631,8 +919,26 @@ mod tests {
     #[test]
     fn packs_group_by_their_name() {
         use crate::preset_import::tests::zip;
-        let a = look(&layer("C", 1.0, "Normal", &[("MIPLClarityEffect", param("Clarity", 20.0))], ""), "<key>Name</key><string>Pop 1</string>");
-        let b = look(&layer("S", 1.0, "Normal", &[("MIPLSaturationEffect", param("Saturation", 25.0))], ""), "");
+        let a = look(
+            &layer(
+                "C",
+                1.0,
+                "Normal",
+                &[("MIPLClarityEffect", param("Clarity", 20.0))],
+                "",
+            ),
+            "<key>Name</key><string>Pop 1</string>",
+        );
+        let b = look(
+            &layer(
+                "S",
+                1.0,
+                "Normal",
+                &[("MIPLSaturationEffect", param("Saturation", 25.0))],
+                "",
+            ),
+            "",
+        );
         let info = b"<?xml version=\"1.0\"?><plist version=\"1.0\"><dict><key>GroupName</key><string>Magic Light</string></dict></plist>";
         let pack = zip(
             &[
@@ -645,24 +951,47 @@ mod tests {
             true,
         );
         let v = read_presets("/d/Magic Light-2.mplumpack", &pack, None).unwrap();
-        let got: Vec<_> = v.iter().map(|i| (i.preset.name.as_str(), i.preset.group.as_str())).collect();
+        let got: Vec<_> = v
+            .iter()
+            .map(|i| (i.preset.name.as_str(), i.preset.group.as_str()))
+            .collect();
         assert_eq!(got, [("Pop 1", "Magic Light"), ("Pop 2", "Magic Light")]);
         // without PresetsInfo.plist the pack's file name is the group
-        let v = read_presets("Seaside Looks.mplumpack", &zip(&[("Pop 2.lmp", b.as_bytes())], false), None).unwrap();
+        let v = read_presets(
+            "Seaside Looks.mplumpack",
+            &zip(&[("Pop 2.lmp", b.as_bytes())], false),
+            None,
+        )
+        .unwrap();
         assert_eq!(v[0].preset.group, "Seaside Looks");
         // a pack inside a downloaded zip, and bundle-style looks in a zip folder
-        let outer = zip(&[("Archive/Magic Light-2.mplumpack", &pack), ("Archive/Magic Light.plist", b"<plist/>")], false);
+        let outer = zip(
+            &[
+                ("Archive/Magic Light-2.mplumpack", &pack),
+                ("Archive/Magic Light.plist", b"<plist/>"),
+            ],
+            false,
+        );
         assert_eq!(read_presets("download.zip", &outer, None).unwrap().len(), 2);
         let bundles = zip(
             &[
-                ("Wild Pack/Vintage.lmp/Contents/preset.lmp", modern().as_bytes()),
-                ("Wild Pack/Vintage.lmp/Contents/Info.plist", b"<plist><dict/></plist>"),
+                (
+                    "Wild Pack/Vintage.lmp/Contents/preset.lmp",
+                    modern().as_bytes(),
+                ),
+                (
+                    "Wild Pack/Vintage.lmp/Contents/Info.plist",
+                    b"<plist><dict/></plist>",
+                ),
                 ("Wild Pack/Flat.lmp", a.as_bytes()),
             ],
             true,
         );
         let v = read_presets("wild.zip", &bundles, None).unwrap();
-        let got: Vec<_> = v.iter().map(|i| (i.preset.name.as_str(), i.preset.group.as_str())).collect();
+        let got: Vec<_> = v
+            .iter()
+            .map(|i| (i.preset.name.as_str(), i.preset.group.as_str()))
+            .collect();
         assert_eq!(got, [("Vintage", "Wild Pack"), ("Pop 1", "Wild Pack")]);
         assert!(read_presets("empty.mplumpack", &zip(&[("icon.png", b"x")], false), None).is_err());
     }
@@ -673,15 +1002,39 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("Wild/Vintage.lmp/Contents/resources")).unwrap();
         std::fs::write(dir.join("Wild/Vintage.lmp/Contents/preset.lmp"), modern()).unwrap();
-        std::fs::write(dir.join("Wild/Vintage.lmp/Contents/Info.plist"), "<plist><dict/></plist>").unwrap();
+        std::fs::write(
+            dir.join("Wild/Vintage.lmp/Contents/Info.plist"),
+            "<plist><dict/></plist>",
+        )
+        .unwrap();
         std::fs::write(dir.join("Wild/Vintage.lmp/Contents/PkgInfo"), "LMP?????").unwrap();
         let mut s = crate::Session::with_demo();
-        let r = s.execute("preset.import", &json!({"paths": [dir.join("Wild").to_string_lossy()]})).unwrap();
+        let r = s
+            .execute(
+                "preset.import",
+                &json!({"paths": [dir.join("Wild").to_string_lossy()]}),
+            )
+            .unwrap();
         let im = &r["imported"][0];
-        assert_eq!((im["name"].as_str(), im["group"].as_str()), (Some("Vintage"), Some("Wild")), "{r}");
-        assert!(im["unmapped"].as_array().unwrap().iter().any(|u| u == "OrtonFilter.Amount"));
+        assert_eq!(
+            (im["name"].as_str(), im["group"].as_str()),
+            (Some("Vintage"), Some("Wild")),
+            "{r}"
+        );
+        assert!(
+            im["unmapped"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|u| u == "OrtonFilter.Amount")
+        );
         // a dropped bundle folder on its own
-        let r = s.execute("preset.import", &json!({"paths": [dir.join("Wild/Vintage.lmp").to_string_lossy()], "dryRun": true})).unwrap();
+        let r = s
+            .execute(
+                "preset.import",
+                &json!({"paths": [dir.join("Wild/Vintage.lmp").to_string_lossy()], "dryRun": true}),
+            )
+            .unwrap();
         assert_eq!(r["imported"][0]["group"], json!("Imported Presets"), "{r}");
         let _ = std::fs::remove_dir_all(&dir);
     }

@@ -1,7 +1,7 @@
 use crate::{
-    map::{DynamicMap, Map, MapInfo},
-    serde::{de::registration_utils::try_get_registration, TypedReflectDeserializer},
     TypeRegistry,
+    map::{DynamicMap, Map, MapInfo},
+    serde::{TypedReflectDeserializer, de::registration_utils::try_get_registration},
 };
 use core::{fmt, fmt::Formatter};
 use serde::de::{MapAccess, Visitor};

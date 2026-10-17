@@ -15,13 +15,19 @@ pub struct ToolResult {
 
 impl ToolResult {
     pub fn text(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: false }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: false,
+        }
     }
     pub fn json(v: &Value) -> Self {
         Self::text(serde_json::to_string_pretty(v).unwrap_or_default())
     }
     pub fn error(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: true }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: true,
+        }
     }
     pub fn to_value(&self) -> Value {
         json!({"content": self.content, "isError": self.is_error})
@@ -130,7 +136,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "List commands",
             "List GridCraft commands: id, label, ribbon path, shortcut, a parameter description (`params`) and whether it can run \
              right now. Use it to discover what execute_command can do (e.g. search \"sort\", \"border\", \"chart\", \"sheet\").",
-            obj(json!({"search": string("Case-insensitive substring matched against id, label and ribbon path")}), &[]),
+            obj(
+                json!({"search": string("Case-insensitive substring matched against id, label and ribbon path")}),
+                &[],
+            ),
             true,
         ),
         // ----- workbook -----
@@ -189,7 +198,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "get_cell",
             "Get cell",
             "Details of one cell: computed value and type, formula, display text, raw input, spill range, style, merge, comment and hyperlink.",
-            obj(json!({"cell": string("Cell, e.g. \"B7\" or \"Sheet2!C3\"")}), &["cell"]),
+            obj(
+                json!({"cell": string("Cell, e.g. \"B7\" or \"Sheet2!C3\"")}),
+                &["cell"],
+            ),
             true,
         ),
         tool(
@@ -345,7 +357,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "new_workbook",
             "New workbook",
             "Create a new workbook and make it active: blank, or a built-in sample (\"budget\", \"sales\", \"grades\").",
-            obj(json!({"sample": enumeration("Sample workbook", &["budget", "sales", "grades"])}), &[]),
+            obj(
+                json!({"sample": enumeration("Sample workbook", &["budget", "sales", "grades"])}),
+                &[],
+            ),
             false,
         ),
         tool(
@@ -355,7 +370,13 @@ pub fn tool_definitions() -> Vec<Value> {
             obj(json!({"steps": int("Number of steps (default 1)")}), &[]),
             false,
         ),
-        tool("redo", "Redo", "Redo the last undone change(s).", obj(json!({"steps": int("Number of steps (default 1)")}), &[]), false),
+        tool(
+            "redo",
+            "Redo",
+            "Redo the last undone change(s).",
+            obj(json!({"steps": int("Number of steps (default 1)")}), &[]),
+            false,
+        ),
         tool(
             "screenshot",
             "Screenshot",
@@ -414,11 +435,21 @@ fn schema_matches(schema: &Value, v: &Value) -> bool {
         return false;
     }
     if let Some(o) = v.as_object() {
-        if schema["required"].as_array().into_iter().flatten().filter_map(Value::as_str).any(|r| o.get(r).is_none_or(Value::is_null)) {
+        if schema["required"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .any(|r| o.get(r).is_none_or(Value::is_null))
+        {
             return false;
         }
         if let Some(props) = schema["properties"].as_object() {
-            return o.iter().all(|(k, x)| props.get(k).is_some_and(|ps| x.is_null() || schema_matches(ps, x)));
+            return o.iter().all(|(k, x)| {
+                props
+                    .get(k)
+                    .is_some_and(|ps| x.is_null() || schema_matches(ps, x))
+            });
         }
     }
     true
@@ -428,10 +459,20 @@ fn schema_matches(schema: &Value, v: &Value) -> bool {
 /// top-level type mismatches and values matching none of a `oneOf` are JSON-RPC "invalid params" errors.
 pub(crate) fn check_arguments(name: &str, args: &Value) -> Result<(), String> {
     let defs = tool_definitions();
-    let def = defs.iter().find(|d| d["name"] == name).ok_or_else(|| format!("unknown tool `{name}`"))?;
+    let def = defs
+        .iter()
+        .find(|d| d["name"] == name)
+        .ok_or_else(|| format!("unknown tool `{name}`"))?;
     let schema = &def["inputSchema"];
-    let Some(a) = args.as_object() else { return Err("tool arguments must be an object".into()) };
-    for r in schema["required"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+    let Some(a) = args.as_object() else {
+        return Err("tool arguments must be an object".into());
+    };
+    for r in schema["required"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+    {
         if a.get(r).is_none_or(Value::is_null) {
             return Err(format!("{name}: missing required argument `{r}`"));
         }
@@ -443,19 +484,31 @@ pub(crate) fn check_arguments(name: &str, args: &Value) -> Result<(), String> {
         };
         let ok = match &p["type"] {
             Value::String(t) => type_matches(t, v),
-            Value::Array(ts) => ts.iter().filter_map(Value::as_str).any(|t| type_matches(t, v)),
+            Value::Array(ts) => ts
+                .iter()
+                .filter_map(Value::as_str)
+                .any(|t| type_matches(t, v)),
             _ => true,
         };
         if !ok {
-            return Err(format!("{name}: argument `{k}` must be of type {}", p["type"]));
+            return Err(format!(
+                "{name}: argument `{k}` must be of type {}",
+                p["type"]
+            ));
         }
         if let Some(allowed) = p["enum"].as_array()
             && !allowed.contains(v)
         {
-            return Err(format!("{name}: `{k}` must be one of {}", Value::Array(allowed.clone())));
+            return Err(format!(
+                "{name}: `{k}` must be one of {}",
+                Value::Array(allowed.clone())
+            ));
         }
         if (p["oneOf"].is_array() || p["items"]["oneOf"].is_array()) && !schema_matches(p, v) {
-            return Err(format!("{name}: argument `{k}` does not match the schema: {}", p["description"]));
+            return Err(format!(
+                "{name}: argument `{k}` does not match the schema: {}",
+                p["description"]
+            ));
         }
     }
     Ok(())
@@ -466,7 +519,9 @@ pub(crate) fn check_arguments(name: &str, args: &Value) -> Result<(), String> {
 type Args = Map<String, Value>;
 
 fn req_str<'a>(a: &'a Args, k: &str) -> Result<&'a str, String> {
-    a.get(k).and_then(Value::as_str).ok_or_else(|| format!("missing string argument `{k}`"))
+    a.get(k)
+        .and_then(Value::as_str)
+        .ok_or_else(|| format!("missing string argument `{k}`"))
 }
 
 fn exec(b: &mut dyn Backend, cmd: &str, params: Value) -> Result<Value, String> {
@@ -475,7 +530,15 @@ fn exec(b: &mut dyn Backend, cmd: &str, params: Value) -> Result<Value, String> 
 
 /// Copies the listed keys (when present and non-null) into a params object.
 fn pick(a: &Args, keys: &[&str]) -> Value {
-    Value::Object(keys.iter().filter_map(|k| a.get(*k).filter(|v| !v.is_null()).map(|v| (k.to_string(), v.clone()))).collect())
+    Value::Object(
+        keys.iter()
+            .filter_map(|k| {
+                a.get(*k)
+                    .filter(|v| !v.is_null())
+                    .map(|v| (k.to_string(), v.clone()))
+            })
+            .collect(),
+    )
 }
 
 fn format_range(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
@@ -512,7 +575,11 @@ fn format_range(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
             "center" => "home.alignCenter",
             "right" => "home.alignRight",
             "justify" => "home.justify",
-            other => return Err(format!("horizontalAlign `{other}` must be left, center, right or justify")),
+            other => {
+                return Err(format!(
+                    "horizontalAlign `{other}` must be left, center, right or justify"
+                ));
+            }
         };
         steps.push((id, json!({"range": r})));
     }
@@ -521,27 +588,35 @@ fn format_range(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     }
     match a.get("borders") {
         None | Some(Value::Null) => {}
-        Some(Value::String(preset)) => steps.push(("home.borders", json!({"range": r, "preset": preset}))),
+        Some(Value::String(preset)) => {
+            steps.push(("home.borders", json!({"range": r, "preset": preset})))
+        }
         Some(Value::Object(o)) => {
             let mut p = Value::Object(o.clone());
             p["range"] = r.clone();
             steps.push(("home.borders", p));
         }
-        Some(_) => return Err("`borders` must be a preset name or {preset, style?, color?}".into()),
+        Some(_) => {
+            return Err("`borders` must be a preset name or {preset, style?, color?}".into());
+        }
     }
     if steps.is_empty() {
         return Err("nothing to apply: give at least one of bold, italic, underline, fontName, fontSize, fontColor, fillColor, numberFormat, horizontalAlign, wrapText, borders".into());
     }
     let mut applied = Vec::new();
     for (id, p) in steps {
-        exec(b, id, p).map_err(|e| format!("{id}: {e} (applied before the failure: {applied:?})"))?;
+        exec(b, id, p)
+            .map_err(|e| format!("{id}: {e} (applied before the failure: {applied:?})"))?;
         applied.push(id);
     }
     Ok(json!({"range": range, "applied": applied}))
 }
 
 fn sort_range(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
-    let keys = a.get("keys").and_then(Value::as_array).ok_or("`keys` must be an array")?;
+    let keys = a
+        .get("keys")
+        .and_then(Value::as_array)
+        .ok_or("`keys` must be an array")?;
     if keys.is_empty() {
         return Err("`keys` needs at least one sort level".into());
     }
@@ -575,14 +650,20 @@ fn filter(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     if let Some(r) = a.get("range").and_then(Value::as_str) {
         exec(b, "selection.set", json!({"range": r}))?;
     }
-    exec(b, "data.filterBy", pick(a, &["column", "values", "custom", "top", "blanks", "clear"]))
+    exec(
+        b,
+        "data.filterBy",
+        pick(a, &["column", "values", "custom", "top", "blanks", "clear"]),
+    )
 }
 
 fn save_workbook(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     if a.get("path").and_then(Value::as_str).is_none() {
         let info = b.call("document.inspect", json!({}))?;
         if info.get("path").is_none_or(Value::is_null) {
-            return Err("this workbook has never been saved: pass `path` (e.g. \"/tmp/book.xlsx\")".into());
+            return Err(
+                "this workbook has never been saved: pass `path` (e.g. \"/tmp/book.xlsx\")".into(),
+            );
         }
     }
     exec(b, "file.save", pick(a, &["path"]))
@@ -608,13 +689,20 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<Value, String> 
         }
         "list_commands" => b.call("engine.commands", pick(a, &["search"])),
         "inspect_workbook" => b.call("document.inspect", json!({})),
-        "read_range" => b.call("sheet.read", pick(a, &["range", "sheet", "formulas", "formatted"])),
+        "read_range" => b.call(
+            "sheet.read",
+            pick(a, &["range", "sheet", "formulas", "formatted"]),
+        ),
         "write_range" => exec(b, "range.setValues", pick(a, &["range", "values"])),
         "set_cell" => exec(b, "cell.set", pick(a, &["cell", "input"])),
         "get_cell" => exec(b, "cell.get", pick(a, &["cell"])),
         "evaluate_formula" => {
             let f = req_str(a, "formula")?;
-            let formula = if f.starts_with('=') { f.to_string() } else { format!("={f}") };
+            let formula = if f.starts_with('=') {
+                f.to_string()
+            } else {
+                format!("={f}")
+            };
             let mut p = pick(a, &["cell"]);
             p["formula"] = json!(formula);
             let v = exec(b, "formulas.evaluate", p)?;
@@ -622,8 +710,16 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<Value, String> 
         }
         "select" => exec(b, "selection.set", pick(a, &["range", "active"])),
         "format_range" => format_range(b, a),
-        "insert_chart" => exec(b, "insert.chart", pick(a, &["range", "type", "subtype", "title", "at"])),
-        "create_table" => exec(b, "insert.table", pick(a, &["range", "style", "header", "name"])),
+        "insert_chart" => exec(
+            b,
+            "insert.chart",
+            pick(a, &["range", "type", "subtype", "title", "at"]),
+        ),
+        "create_table" => exec(
+            b,
+            "insert.table",
+            pick(a, &["range", "style", "header", "name"]),
+        ),
         "sort_range" => sort_range(b, a),
         "filter" => filter(b, a),
         "open_workbook" => exec(b, "file.open", pick(a, &["path"])),

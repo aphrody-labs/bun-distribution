@@ -358,10 +358,11 @@ use rand::Rng;
 //     "__intercomReloadLocation"
 // ]
 
-
 const CORES: &[usize] = &[8, 16, 24, 32];
 
-const CACHED_SCRIPTS: &[&str] = &["https://cdn.oaistatic.com/_next/static/cXh69klOLzS0Gy2joLDRS/_ssgManifest.js?dpl=453ebaec0d44c2decab71692e1bfe39be35a24b3"];
+const CACHED_SCRIPTS: &[&str] = &[
+    "https://cdn.oaistatic.com/_next/static/cXh69klOLzS0Gy2joLDRS/_ssgManifest.js?dpl=453ebaec0d44c2decab71692e1bfe39be35a24b3",
+];
 
 const CACHED_DPL: &[&str] = &["prod-f501fe933b3edf57aea882da888e1a544df99840"];
 
@@ -394,7 +395,7 @@ const NAVIGATOR_KEY: &[&str] = &[
     "webdriver−false",
     "getInstalledRelatedApps−function getInstalledRelatedApps() { [native code] }",
     "getInstalledRelatedApps−function getInstalledRelatedApps() { [native code] }",
-    "bluetooth−[object Bluetooth]"
+    "bluetooth−[object Bluetooth]",
 ];
 
 const DOCUMENT_KEY: &[&str] = &["_reactListeningo743lnnpvdg", "location"];
@@ -651,21 +652,21 @@ const WINDOW_KEY: &[&str] = &[
     "__BUILD_MANIFEST",
     "__SSG_MANIFEST",
     "__intercomAssignLocation",
-    "__intercomReloadLocation"
+    "__intercomReloadLocation",
 ];
 
 pub fn get_random_core_count() -> usize {
-  CORES[rand::rng().random_range(0..CORES.len())]
+    CORES[rand::rng().random_range(0..CORES.len())]
 }
 
 pub fn get_random_navigator_key() -> String {
-  NAVIGATOR_KEY[rand::rng().random_range(0..NAVIGATOR_KEY.len())].to_string()
+    NAVIGATOR_KEY[rand::rng().random_range(0..NAVIGATOR_KEY.len())].to_string()
 }
 
 pub fn get_random_document_key() -> String {
-  DOCUMENT_KEY[rand::rng().random_range(0..DOCUMENT_KEY.len())].to_string()
+    DOCUMENT_KEY[rand::rng().random_range(0..DOCUMENT_KEY.len())].to_string()
 }
 
 pub fn get_random_window_key() -> String {
-  WINDOW_KEY[rand::rng().random_range(0..WINDOW_KEY.len())].to_string()
+    WINDOW_KEY[rand::rng().random_range(0..WINDOW_KEY.len())].to_string()
 }

@@ -10,11 +10,17 @@ use crate::Session;
 use crate::collab_tests::base;
 
 fn ok(s: &mut Session, cmd: &str, p: Value) -> Value {
-    s.execute(cmd, &p).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
+    s.execute(cmd, &p)
+        .unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
 }
 
 fn names(s: &mut Session) -> Vec<String> {
-    ok(s, "version.list", json!({})).as_array().unwrap().iter().map(|v| v["name"].as_str().unwrap().to_string()).collect()
+    ok(s, "version.list", json!({}))
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v["name"].as_str().unwrap().to_string())
+        .collect()
 }
 
 fn layer_name(s: &Session, id: NodeId) -> String {
@@ -25,9 +31,18 @@ fn layer_name(s: &Session, id: NodeId) -> String {
 /// id, a rectangle).
 fn branched() -> (Session, String, NodeId) {
     let mut s = Session::with_document(base());
-    let r = s.doc().unwrap().nodes().find(|n| matches!(n.kind, NodeKind::Rectangle)).unwrap().id;
+    let r = s
+        .doc()
+        .unwrap()
+        .nodes()
+        .find(|n| matches!(n.kind, NodeKind::Rectangle))
+        .unwrap()
+        .id;
     ok(&mut s, "file.saveVersion", json!({"name": "Main v1"}));
-    let id = ok(&mut s, "branch.create", json!({"name": "Explore"}))["id"].as_str().unwrap().to_string();
+    let id = ok(&mut s, "branch.create", json!({"name": "Explore"}))["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
     (s, id, r)
 }
 
@@ -37,14 +52,25 @@ fn versions_saved_on_a_branch_are_the_branchs_own() {
     let original = layer_name(&s, r);
     // A new branch's history starts empty: the main file's versions stay with it.
     assert!(names(&mut s).is_empty());
-    ok(&mut s, "node.set", json!({"id": r, "props": {"name": "Before"}}));
+    ok(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"name": "Before"}}),
+    );
     let v = ok(&mut s, "file.saveVersion", json!({"name": "Branch v1"}))["id"].clone();
-    ok(&mut s, "node.set", json!({"id": r, "props": {"name": "After"}}));
+    ok(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"name": "After"}}),
+    );
     assert_eq!(names(&mut s), ["Branch v1"]);
     // Viewing a branch version shows it read-only; going back shows the branch as it is.
     ok(&mut s, "version.preview", json!({"id": v}));
     assert_eq!(layer_name(&s, r), "Before");
-    assert!(s.execute("node.set", &json!({"id": r, "props": {"name": "No"}})).is_err());
+    assert!(
+        s.execute("node.set", &json!({"id": r, "props": {"name": "No"}}))
+            .is_err()
+    );
     ok(&mut s, "version.exitPreview", json!({}));
     assert_eq!(layer_name(&s, r), "After");
     // Restoring is one undo step on the branch.
@@ -54,10 +80,18 @@ fn versions_saved_on_a_branch_are_the_branchs_own() {
     assert_eq!(layer_name(&s, r), "After");
     ok(&mut s, "edit.redo", json!({}));
     // Renaming works on the branch's history; main's history is untouched.
-    ok(&mut s, "version.rename", json!({"id": v, "name": "Branch v1 (renamed)"}));
+    ok(
+        &mut s,
+        "version.rename",
+        json!({"id": v, "name": "Branch v1 (renamed)"}),
+    );
     ok(&mut s, "doc.switch", json!({"index": 0}));
     assert_eq!(names(&mut s), ["Main v1"]);
-    assert_eq!(layer_name(&s, r), original, "restoring on the branch leaves main alone");
+    assert_eq!(
+        layer_name(&s, r),
+        original,
+        "restoring on the branch leaves main alone"
+    );
 }
 
 #[test]
@@ -66,10 +100,18 @@ fn branch_versions_save_with_the_file_and_survive_merging() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("file.figcraft").to_string_lossy().to_string();
     let (mut s, id, r) = branched();
-    ok(&mut s, "node.set", json!({"id": r, "props": {"name": "On the branch"}}));
+    ok(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"name": "On the branch"}}),
+    );
     ok(&mut s, "file.saveVersion", json!({"name": "Branch v1"}));
     // An autosave on a branch tab goes into the branch's history too.
-    ok(&mut s, "node.set", json!({"id": r, "props": {"name": "On the branch, later"}}));
+    ok(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"name": "On the branch, later"}}),
+    );
     assert_eq!(ok(&mut s, "version.autosave", json!({}))["saved"], true);
     ok(&mut s, "doc.switch", json!({"index": 0}));
     ok(&mut s, "file.saveAs", json!({"path": path}));
@@ -102,24 +144,67 @@ fn different_fills_of_a_layer_merge_without_a_conflict() {
     // Main gives a rectangle a second fill before branching; the branch recolours the first and
     // main the second: no conflict, both kept. Recolouring the same fill both ways conflicts.
     let mut s = Session::with_document(base());
-    let r = s.doc().unwrap().nodes().find(|n| matches!(n.kind, NodeKind::Rectangle)).unwrap().id;
+    let r = s
+        .doc()
+        .unwrap()
+        .nodes()
+        .find(|n| matches!(n.kind, NodeKind::Rectangle))
+        .unwrap()
+        .id;
     ok(&mut s, "fill.add", json!({"ids": [r]}));
-    let id = ok(&mut s, "branch.create", json!({}))["id"].as_str().unwrap().to_string();
-    ok(&mut s, "fill.set", json!({"ids": [r], "index": 0, "color": "#FF0000"}));
+    let id = ok(&mut s, "branch.create", json!({}))["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    ok(
+        &mut s,
+        "fill.set",
+        json!({"ids": [r], "index": 0, "color": "#FF0000"}),
+    );
     ok(&mut s, "doc.switch", json!({"index": 0}));
-    ok(&mut s, "fill.set", json!({"ids": [r], "index": 1, "color": "#0000FF"}));
-    assert_eq!(ok(&mut s, "branch.review", json!({"id": id}))["conflicts"], json!([]));
+    ok(
+        &mut s,
+        "fill.set",
+        json!({"ids": [r], "index": 1, "color": "#0000FF"}),
+    );
+    assert_eq!(
+        ok(&mut s, "branch.review", json!({"id": id}))["conflicts"],
+        json!([])
+    );
     ok(&mut s, "branch.merge", json!({"id": id}));
     let fills = serde_json::to_string(&s.doc().unwrap().node(r).unwrap().fills).unwrap();
     let mut t = Session::with_document(s.doc().unwrap().clone());
-    ok(&mut t, "fill.set", json!({"ids": [r], "index": 0, "color": "#FF0000"}));
-    ok(&mut t, "fill.set", json!({"ids": [r], "index": 1, "color": "#0000FF"}));
-    assert_eq!(fills, serde_json::to_string(&t.doc().unwrap().node(r).unwrap().fills).unwrap(), "both recolours kept");
+    ok(
+        &mut t,
+        "fill.set",
+        json!({"ids": [r], "index": 0, "color": "#FF0000"}),
+    );
+    ok(
+        &mut t,
+        "fill.set",
+        json!({"ids": [r], "index": 1, "color": "#0000FF"}),
+    );
+    assert_eq!(
+        fills,
+        serde_json::to_string(&t.doc().unwrap().node(r).unwrap().fills).unwrap(),
+        "both recolours kept"
+    );
 
-    let id = ok(&mut s, "branch.create", json!({}))["id"].as_str().unwrap().to_string();
-    ok(&mut s, "fill.set", json!({"ids": [r], "index": 1, "color": "#00FF00"}));
+    let id = ok(&mut s, "branch.create", json!({}))["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    ok(
+        &mut s,
+        "fill.set",
+        json!({"ids": [r], "index": 1, "color": "#00FF00"}),
+    );
     ok(&mut s, "doc.switch", json!({"index": 0}));
-    ok(&mut s, "fill.set", json!({"ids": [r], "index": 1, "color": "#FFFF00"}));
+    ok(
+        &mut s,
+        "fill.set",
+        json!({"ids": [r], "index": 1, "color": "#FFFF00"}),
+    );
     let conflicts = ok(&mut s, "branch.review", json!({"id": id}))["conflicts"].clone();
     assert_eq!(conflicts.as_array().unwrap().len(), 1, "{conflicts}");
     assert_eq!(conflicts[0]["key"], format!("{r}/fills"));

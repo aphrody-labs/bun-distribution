@@ -15,23 +15,88 @@ fn on() -> Value {
 
 #[test]
 fn color_balance_vibrance_tritone_mixer() {
-    effect_case("ec.color.colorbalance", &[("shadowRed", n(40.0)), ("midGreen", n(-30.0)), ("hiBlue", n(60.0))]);
-    effect_case("ec.color.colorbalance", &[("shadowBlue", n(-50.0)), ("midRed", n(70.0)), ("hiGreen", n(25.0)), ("preserveLuminosity", on())]);
-    effect_case("ec.color.vibrance", &[("vibrance", n(60.0)), ("saturation", n(-20.0))]);
-    effect_case("ec.color.vibrance", &[("vibrance", n(-40.0)), ("saturation", n(35.0))]);
-    effect_case("ec.color.tritone", &[("midtones", c(0.6, 0.3, 0.5)), ("shadows", c(0.0, 0.1, 0.3)), ("blend", n(30.0))]);
+    effect_case(
+        "ec.color.colorbalance",
+        &[
+            ("shadowRed", n(40.0)),
+            ("midGreen", n(-30.0)),
+            ("hiBlue", n(60.0)),
+        ],
+    );
+    effect_case(
+        "ec.color.colorbalance",
+        &[
+            ("shadowBlue", n(-50.0)),
+            ("midRed", n(70.0)),
+            ("hiGreen", n(25.0)),
+            ("preserveLuminosity", on()),
+        ],
+    );
+    effect_case(
+        "ec.color.vibrance",
+        &[("vibrance", n(60.0)), ("saturation", n(-20.0))],
+    );
+    effect_case(
+        "ec.color.vibrance",
+        &[("vibrance", n(-40.0)), ("saturation", n(35.0))],
+    );
+    effect_case(
+        "ec.color.tritone",
+        &[
+            ("midtones", c(0.6, 0.3, 0.5)),
+            ("shadows", c(0.0, 0.1, 0.3)),
+            ("blend", n(30.0)),
+        ],
+    );
     effect_case("ec.color.tritone", &[("highlights", c(1.0, 0.9, 0.6))]);
-    effect_case("ec.color.channelmixer", &[("rr", n(80.0)), ("rg", n(30.0)), ("gb", n(-40.0)), ("bc", n(10.0)), ("br", n(50.0))]);
-    effect_case("ec.color.channelmixer", &[("rr", n(40.0)), ("rg", n(40.0)), ("rb", n(20.0)), ("rc", n(-5.0)), ("monochrome", on())]);
+    effect_case(
+        "ec.color.channelmixer",
+        &[
+            ("rr", n(80.0)),
+            ("rg", n(30.0)),
+            ("gb", n(-40.0)),
+            ("bc", n(10.0)),
+            ("br", n(50.0)),
+        ],
+    );
+    effect_case(
+        "ec.color.channelmixer",
+        &[
+            ("rr", n(40.0)),
+            ("rg", n(40.0)),
+            ("rb", n(20.0)),
+            ("rc", n(-5.0)),
+            ("monochrome", on()),
+        ],
+    );
 }
 
 #[test]
 fn black_white_colorama_selective_color() {
     effect_case("ec.color.blackwhite", &[]);
-    effect_case("ec.color.blackwhite", &[("reds", n(120.0)), ("blues", n(-50.0)), ("cyans", n(200.0)), ("tint", on())]);
+    effect_case(
+        "ec.color.blackwhite",
+        &[
+            ("reds", n(120.0)),
+            ("blues", n(-50.0)),
+            ("cyans", n(200.0)),
+            ("tint", on()),
+        ],
+    );
     effect_case("ec.color.colorama", &[]);
-    effect_case("ec.color.colorama", &[("inputPhase/mode", e(4)), ("inputPhase/phaseShift", n(75.0)), ("outputCycle/cycles", n(2.5)), ("blend", n(40.0))]);
-    effect_case("ec.color.colorama", &[("inputPhase/mode", e(8)), ("outputCycle/cycles", n(1.3))]);
+    effect_case(
+        "ec.color.colorama",
+        &[
+            ("inputPhase/mode", e(4)),
+            ("inputPhase/phaseShift", n(75.0)),
+            ("outputCycle/cycles", n(2.5)),
+            ("blend", n(40.0)),
+        ],
+    );
+    effect_case(
+        "ec.color.colorama",
+        &[("inputPhase/mode", e(8)), ("outputCycle/cycles", n(1.3))],
+    );
     effect_case(
         "ec.color.selectivecolor",
         &[
@@ -108,9 +173,32 @@ fn lumetri() {
 
 #[test]
 fn linear_color_key() {
-    effect_case("ec.key.linearcolor", &[("keyColor", c(0.6, 0.5, 0.4)), ("tolerance", n(15.0)), ("softness", n(20.0))]);
-    effect_case("ec.key.linearcolor", &[("keyColor", c(0.2, 0.8, 0.3)), ("matchColors", e(1)), ("keyOperation", e(1)), ("view", e(2))]);
-    effect_case("ec.key.linearcolor", &[("keyColor", c(0.7, 0.3, 0.6)), ("matchColors", e(2)), ("tolerance", n(5.0)), ("softness", n(30.0))]);
+    effect_case(
+        "ec.key.linearcolor",
+        &[
+            ("keyColor", c(0.6, 0.5, 0.4)),
+            ("tolerance", n(15.0)),
+            ("softness", n(20.0)),
+        ],
+    );
+    effect_case(
+        "ec.key.linearcolor",
+        &[
+            ("keyColor", c(0.2, 0.8, 0.3)),
+            ("matchColors", e(1)),
+            ("keyOperation", e(1)),
+            ("view", e(2)),
+        ],
+    );
+    effect_case(
+        "ec.key.linearcolor",
+        &[
+            ("keyColor", c(0.7, 0.3, 0.6)),
+            ("matchColors", e(2)),
+            ("tolerance", n(5.0)),
+            ("softness", n(30.0)),
+        ],
+    );
 }
 
 #[test]
@@ -172,6 +260,14 @@ fn key_light() {
         ],
     );
     for view in [1, 2, 4, 7, 9] {
-        effect_case("ec.keying.keylight", &[screen.clone(), ("view", e(view)), ("screenMatte/screenShrinkGrow", n(1.0)), ("screenMatte/replaceMethod", e(1))]);
+        effect_case(
+            "ec.keying.keylight",
+            &[
+                screen.clone(),
+                ("view", e(view)),
+                ("screenMatte/screenShrinkGrow", n(1.0)),
+                ("screenMatte/replaceMethod", e(1)),
+            ],
+        );
     }
 }

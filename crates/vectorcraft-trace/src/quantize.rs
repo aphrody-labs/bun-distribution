@@ -20,7 +20,12 @@ fn luma(p: [u8; 4]) -> u8 {
 
 /// Reduce `img` to a palette according to `params.mode`.
 pub fn quantize(img: &Raster, params: &TraceParams) -> Quantized {
-    let px = img.rgba.as_chunks::<4>().0.iter().map(|c| [c[0], c[1], c[2], c[3]]);
+    let px = img
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| [c[0], c[1], c[2], c[3]]);
     match params.mode {
         Mode::BlackAndWhite => {
             let t = params.threshold;
@@ -35,7 +40,10 @@ pub fn quantize(img: &Raster, params: &TraceParams) -> Quantized {
                     }
                 })
                 .collect();
-            Quantized { labels, palette: vec![[255, 255, 255], [0, 0, 0]] }
+            Quantized {
+                labels,
+                palette: vec![[255, 255, 255], [0, 0, 0]],
+            }
         }
         Mode::Grayscale => {
             let own = own_colours(img);
@@ -49,18 +57,41 @@ pub fn quantize(img: &Raster, params: &TraceParams) -> Quantized {
                 hist
             };
             let (every, calm) = (histogram(false), histogram(true));
-            let hist = if palette_from_own(calm.iter().sum::<u64>() as f64, every.iter().sum::<u64>() as f64) { calm } else { every };
+            let hist = if palette_from_own(
+                calm.iter().sum::<u64>() as f64,
+                every.iter().sum::<u64>() as f64,
+            ) {
+                calm
+            } else {
+                every
+            };
             let levels = kmeans_1d(&hist, params.colors.clamp(2, 256) as usize);
             let mut lut = [0u16; 256];
             for (v, slot) in lut.iter_mut().enumerate() {
                 *slot = nearest_1d(&levels, v as f64) as u16;
             }
-            let labels = px.map(|p| if p[3] < 128 { TRANSPARENT } else { lut[luma(p) as usize] }).collect();
+            let labels = px
+                .map(|p| {
+                    if p[3] < 128 {
+                        TRANSPARENT
+                    } else {
+                        lut[luma(p) as usize]
+                    }
+                })
+                .collect();
             let palette = levels.iter().map(|&l| {
                 let g = l.round().clamp(0.0, 255.0) as u8;
                 [g, g, g]
             });
-            settled(merge_mixed(compact(labels, palette.collect()), img.width as usize, img.height as usize), img, &own)
+            settled(
+                merge_mixed(
+                    compact(labels, palette.collect()),
+                    img.width as usize,
+                    img.height as usize,
+                ),
+                img,
+                &own,
+            )
         }
         // Logo mode traces without quantising; asked directly, it quantises like Color.
         Mode::Color | Mode::Logo => {
@@ -68,7 +99,8 @@ pub fn quantize(img: &Raster, params: &TraceParams) -> Quantized {
             // range per channel so that close tones (a dark, low-contrast photo) stay apart.
             let hk = HistKey::new(img);
             let own = own_colours(img);
-            let (mut every, mut calm) = (vec![Bin::default(); 1 << 15], vec![Bin::default(); 1 << 15]);
+            let (mut every, mut calm) =
+                (vec![Bin::default(); 1 << 15], vec![Bin::default(); 1 << 15]);
             for (p, &f) in img.rgba.as_chunks::<4>().0.iter().zip(&own) {
                 if p[3] >= 128 {
                     let k = hk.key(p[0], p[1], p[2]);
@@ -78,23 +110,52 @@ pub fn quantize(img: &Raster, params: &TraceParams) -> Quantized {
                     }
                 }
             }
-            let used =
-                |bins: &[Bin]| -> Vec<Used> { bins.iter().enumerate().filter(|(_, b)| b.n > 0).map(|(i, b)| (i, b.mean(), b.n as f64)).collect() };
+            let used = |bins: &[Bin]| -> Vec<Used> {
+                bins.iter()
+                    .enumerate()
+                    .filter(|(_, b)| b.n > 0)
+                    .map(|(i, b)| (i, b.mean(), b.n as f64))
+                    .collect()
+            };
             let (every, calm) = (used(&every), used(&calm));
             let count = |u: &[Used]| u.iter().map(|b| b.2).sum::<f64>();
-            let from = if palette_from_own(count(&calm), count(&every)) { &calm } else { &every };
+            let from = if palette_from_own(count(&calm), count(&every)) {
+                &calm
+            } else {
+                &every
+            };
             // The picture with `colors` colours asked for; fewer come back when it has fewer, or
             // when noise made several of one (see `merge_mixed`).
             let reduce = |colors: u32| {
-                let centers = color_palette(from, &TraceParams { colors, ..params.clone() });
+                let centers = color_palette(
+                    from,
+                    &TraceParams {
+                        colors,
+                        ..params.clone()
+                    },
+                );
                 let mut lut = vec![0u16; 1 << 15];
                 let center_labs = labs(&centers);
                 for (i, c, _) in &every {
                     lut[*i] = nearest_lab(&center_labs, oklab(*c)) as u16;
                 }
-                let labels =
-                    img.rgba.as_chunks::<4>().0.iter().map(|p| if p[3] < 128 { TRANSPARENT } else { lut[hk.key(p[0], p[1], p[2])] }).collect();
-                let palette = centers.iter().map(|c| [c[0].round() as u8, c[1].round() as u8, c[2].round() as u8]).collect();
+                let labels = img
+                    .rgba
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|p| {
+                        if p[3] < 128 {
+                            TRANSPARENT
+                        } else {
+                            lut[hk.key(p[0], p[1], p[2])]
+                        }
+                    })
+                    .collect();
+                let palette = centers
+                    .iter()
+                    .map(|c| [c[0].round() as u8, c[1].round() as u8, c[2].round() as u8])
+                    .collect();
                 let q = compact(labels, palette);
                 // A swatch library's colours are used as they are.
                 if params.palette == Palette::DocumentLibrary && !params.swatches.is_empty() {
@@ -118,7 +179,9 @@ fn own_colours(img: &Raster) -> Vec<bool> {
     let (w, h) = (img.width as isize, img.height as isize);
     let px = img.rgba.as_chunks::<4>().0;
     let at = |x: isize, y: isize| {
-        let p = (x >= 0 && y >= 0 && x < w && y < h).then(|| px.get((y * w + x) as usize)).flatten()?;
+        let p = (x >= 0 && y >= 0 && x < w && y < h)
+            .then(|| px.get((y * w + x) as usize))
+            .flatten()?;
         (p[3] >= 128).then(|| [f64::from(p[0]), f64::from(p[1]), f64::from(p[2])])
     };
     let mut out = Vec::with_capacity(px.len());
@@ -128,17 +191,21 @@ fn own_colours(img: &Raster) -> Vec<bool> {
                 out.push(false);
                 continue;
             };
-            let blend = [(1, 0), (0, 1), (1, 1), (1, -1)].into_iter().any(|(dx, dy)| {
-                let (Some(a), Some(b)) = (at(x - dx, y - dy), at(x + dx, y + dy)) else { return false };
-                let d = [0, 1, 2].map(|k| b[k] - a[k]);
-                let len2: f64 = d.iter().map(|v| v * v).sum();
-                if len2 <= 400.0 {
-                    return false;
-                }
-                let t = (0..3).map(|k| (p[k] - a[k]) * d[k]).sum::<f64>() / len2;
-                let off2: f64 = (0..3).map(|k| (p[k] - a[k] - t * d[k]).powi(2)).sum();
-                t > 0.06 && t < 0.94 && off2 < len2 / 16.0
-            });
+            let blend = [(1, 0), (0, 1), (1, 1), (1, -1)]
+                .into_iter()
+                .any(|(dx, dy)| {
+                    let (Some(a), Some(b)) = (at(x - dx, y - dy), at(x + dx, y + dy)) else {
+                        return false;
+                    };
+                    let d = [0, 1, 2].map(|k| b[k] - a[k]);
+                    let len2: f64 = d.iter().map(|v| v * v).sum();
+                    if len2 <= 400.0 {
+                        return false;
+                    }
+                    let t = (0..3).map(|k| (p[k] - a[k]) * d[k]).sum::<f64>() / len2;
+                    let off2: f64 = (0..3).map(|k| (p[k] - a[k] - t * d[k]).powi(2)).sum();
+                    t > 0.06 && t < 0.94 && off2 < len2 / 16.0
+                });
             out.push(!blend);
         }
     }
@@ -157,7 +224,11 @@ fn palette_from_own(own: f64, all: f64) -> bool {
 fn oklab(c: [f64; 3]) -> [f64; 3] {
     let lin = c.map(|v| {
         let v = (v / 255.0).clamp(0.0, 1.0);
-        if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.04045 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     });
     let l = (0.412_221_470_8 * lin[0] + 0.536_332_536_3 * lin[1] + 0.051_445_992_9 * lin[2]).cbrt();
     let m = (0.211_903_498_2 * lin[0] + 0.680_699_545_1 * lin[1] + 0.107_396_956_6 * lin[2]).cbrt();
@@ -190,7 +261,13 @@ fn merge_mixed(q: Quantized, w: usize, h: usize) -> Quantized {
     for i in 0..w * h {
         let Some(a) = label(i) else { continue };
         count[a] += 1.0;
-        for j in [(i % w + 1 < w).then_some(i + 1), (i + w < w * h).then_some(i + w)].into_iter().flatten() {
+        for j in [
+            (i % w + 1 < w).then_some(i + 1),
+            (i + w < w * h).then_some(i + w),
+        ]
+        .into_iter()
+        .flatten()
+        {
             if let Some(b) = label(j).filter(|&b| b != a) {
                 touch[a * k + b] += 1.0;
                 touch[b * k + a] += 1.0;
@@ -208,14 +285,20 @@ fn merge_mixed(q: Quantized, w: usize, h: usize) -> Quantized {
                     continue;
                 }
                 let mixed = touch[a * k + b] / count[a].min(count[b]);
-                let apart = (0..3).map(|c| (color[a][c] - color[b][c]).powi(2)).sum::<f64>().sqrt();
-                if (mixed > 0.5 && apart < 30.0 || mixed > 0.15 && apart < 12.0) && best.is_none_or(|x| mixed > x.0) {
+                let apart = (0..3)
+                    .map(|c| (color[a][c] - color[b][c]).powi(2))
+                    .sum::<f64>()
+                    .sqrt();
+                if (mixed > 0.5 && apart < 30.0 || mixed > 0.15 && apart < 12.0)
+                    && best.is_none_or(|x| mixed > x.0)
+                {
                     best = Some((mixed, a, b));
                 }
             }
         }
         let Some((_, a, b)) = best else { break };
-        color[a] = [0, 1, 2].map(|c| (color[a][c] * count[a] + color[b][c] * count[b]) / (count[a] + count[b]));
+        color[a] = [0, 1, 2]
+            .map(|c| (color[a][c] * count[a] + color[b][c] * count[b]) / (count[a] + count[b]));
         count[a] += count[b];
         count[b] = 0.0;
         into[b] = a;
@@ -237,8 +320,18 @@ fn merge_mixed(q: Quantized, w: usize, h: usize) -> Quantized {
         }
         into[i] = to;
     }
-    let labels = q.labels.iter().map(|&l| into.get(l as usize).map_or(l, |&t| t as u16)).collect();
-    compact(labels, color.iter().map(|c| [c[0].round() as u8, c[1].round() as u8, c[2].round() as u8]).collect())
+    let labels = q
+        .labels
+        .iter()
+        .map(|&l| into.get(l as usize).map_or(l, |&t| t as u16))
+        .collect();
+    compact(
+        labels,
+        color
+            .iter()
+            .map(|c| [c[0].round() as u8, c[1].round() as u8, c[2].round() as u8])
+            .collect(),
+    )
 }
 
 /// `q` with its blend pixels settled, and the colours that leaves unused dropped.
@@ -275,8 +368,12 @@ fn settled(mut q: Quantized, img: &Raster, own: &[bool]) -> Quantized {
                 }
             }
         }
-        let (Some(p), Some(mine)) = (img.rgba.get(i * 4..i * 4 + 3).map(|p| [f64::from(p[0]), f64::from(p[1]), f64::from(p[2])]), color(mine_l))
-        else {
+        let (Some(p), Some(mine)) = (
+            img.rgba
+                .get(i * 4..i * 4 + 3)
+                .map(|p| [f64::from(p[0]), f64::from(p[1]), f64::from(p[2])]),
+            color(mine_l),
+        ) else {
             continue;
         };
         if near.len() < 2 || near.contains(&mine_l) {
@@ -285,10 +382,16 @@ fn settled(mut q: Quantized, img: &Raster, own: &[bool]) -> Quantized {
         let mut best: Option<(f64, u16)> = None;
         for (n, &a) in near.iter().enumerate() {
             for &b in &near[n + 1..] {
-                let (Some(ca), Some(cb)) = (color(a), color(b)) else { continue };
+                let (Some(ca), Some(cb)) = (color(a), color(b)) else {
+                    continue;
+                };
                 let d = [0, 1, 2].map(|k| cb[k] - ca[k]);
                 let len2: f64 = d.iter().map(|v| v * v).sum();
-                let t = if len2 > 0.0 { ((0..3).map(|k| (p[k] - ca[k]) * d[k]).sum::<f64>() / len2).clamp(0.0, 1.0) } else { 0.0 };
+                let t = if len2 > 0.0 {
+                    ((0..3).map(|k| (p[k] - ca[k]) * d[k]).sum::<f64>() / len2).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 let off = dist(p, [0, 1, 2].map(|k| ca[k] + t * d[k]));
                 if best.is_none_or(|x| off < x.0) {
                     best = Some((off, if t < 0.5 { a } else { b }));
@@ -302,7 +405,11 @@ fn settled(mut q: Quantized, img: &Raster, own: &[bool]) -> Quantized {
             changed = true;
         }
     }
-    if changed { compact(q.labels, q.palette) } else { q }
+    if changed {
+        compact(q.labels, q.palette)
+    } else {
+        q
+    }
 }
 
 /// Whether `img` is continuous tone (a photo, a gradient) rather than flat art, however noisy
@@ -318,13 +425,21 @@ pub(crate) fn continuous_tone(img: &Raster) -> bool {
             bins[hk.key(p[0], p[1], p[2])].add(p);
         }
     }
-    let used: Vec<Used> = bins.iter().enumerate().filter(|(_, b)| b.n > 0).map(|(i, b)| (i, b.mean(), b.n as f64)).collect();
+    let used: Vec<Used> = bins
+        .iter()
+        .enumerate()
+        .filter(|(_, b)| b.n > 0)
+        .map(|(i, b)| (i, b.mean(), b.n as f64))
+        .collect();
     // The root-mean-square distance (levels) from the pixels to the nearest of `k` colours.
     let unsaid = |k: usize| {
         let colors = centers(&median_cut(&used, k, 0.0));
         let (mut sum, mut n) = (0.0, 0.0);
         for (_, c, weight) in &used {
-            let d2 = colors.iter().map(|m| (0..3).map(|ch| (m[ch] - c[ch]).powi(2)).sum::<f64>()).fold(f64::INFINITY, f64::min);
+            let d2 = colors
+                .iter()
+                .map(|m| (0..3).map(|ch| (m[ch] - c[ch]).powi(2)).sum::<f64>())
+                .fold(f64::INFINITY, f64::min);
             sum += d2 * weight;
             n += weight;
         }
@@ -361,7 +476,10 @@ fn compact(mut labels: Vec<u16>, palette: Vec<[u8; 3]>) -> Quantized {
             *l = remap[*l as usize];
         }
     }
-    Quantized { labels, palette: out }
+    Quantized {
+        labels,
+        palette: out,
+    }
 }
 
 #[derive(Clone, Copy, Default)]
@@ -379,7 +497,11 @@ impl Bin {
     }
     fn mean(&self) -> [f64; 3] {
         let n = self.n.max(1) as f64;
-        [self.sum[0] as f64 / n, self.sum[1] as f64 / n, self.sum[2] as f64 / n]
+        [
+            self.sum[0] as f64 / n,
+            self.sum[1] as f64 / n,
+            self.sum[2] as f64 / n,
+        ]
     }
 }
 
@@ -419,7 +541,8 @@ impl HistKey {
     }
 
     fn key(&self, r: u8, g: u8, b: u8) -> usize {
-        let c = |v: u8, ch: usize| (v.saturating_sub(self.lo[ch]) >> self.shift[ch]).min(31) as usize;
+        let c =
+            |v: u8, ch: usize| (v.saturating_sub(self.lo[ch]) >> self.shift[ch]).min(31) as usize;
         (c(r, 0) << 10) | (c(g, 1) << 5) | c(b, 2)
     }
 }
@@ -439,7 +562,15 @@ fn nearest_1d(levels: &[f64], v: f64) -> usize {
 fn kmeans_1d(hist: &[u64; 256], k: usize) -> Vec<f64> {
     let lo = hist.iter().position(|&n| n > 0).unwrap_or(0) as f64;
     let hi = hist.iter().rposition(|&n| n > 0).unwrap_or(255) as f64;
-    let mut levels: Vec<f64> = (0..k).map(|i| if k == 1 { lo } else { lo + (hi - lo) * i as f64 / (k - 1) as f64 }).collect();
+    let mut levels: Vec<f64> = (0..k)
+        .map(|i| {
+            if k == 1 {
+                lo
+            } else {
+                lo + (hi - lo) * i as f64 / (k - 1) as f64
+            }
+        })
+        .collect();
     for _ in 0..20 {
         let mut sum = vec![0.0; k];
         let mut cnt = vec![0.0; k];
@@ -493,7 +624,12 @@ fn color_palette(used: &[Used], params: &TraceParams) -> Vec<[f64; 3]> {
     let detail = (params.color_detail / 100.0).clamp(0.0, 1.0);
     // Full Tone: split until no colour box is wider than 96 (few colours) … 8 (many) levels per
     // channel, which is one histogram bin.
-    let full_tone = || refine(used, centers(&median_cut(used, FULL_TONE_MAX, 96.0 - 88.0 * detail)));
+    let full_tone = || {
+        refine(
+            used,
+            centers(&median_cut(used, FULL_TONE_MAX, 96.0 - 88.0 * detail)),
+        )
+    };
     match params.palette {
         Palette::Limited => kmeans_rgb(used, k),
         Palette::FullTone => full_tone(),
@@ -501,7 +637,9 @@ fn color_palette(used: &[Used], params: &TraceParams) -> Vec<[f64; 3]> {
             Some(n) => kmeans_rgb(used, n),
             None => full_tone(),
         },
-        Palette::DocumentLibrary if !params.swatches.is_empty() => library_colors(used, &params.swatches, k),
+        Palette::DocumentLibrary if !params.swatches.is_empty() => {
+            library_colors(used, &params.swatches, k)
+        }
         // No library colours to use: as Limited.
         Palette::DocumentLibrary => kmeans_rgb(used, k),
     }
@@ -535,7 +673,8 @@ fn flat_colors(used: &[Used], detail: f64) -> Option<usize> {
     let colours: Vec<&ColorBox> = boxes.iter().filter(|b| b.weight >= min_share).collect();
     let weight: f64 = colours.iter().map(|b| b.weight).sum();
     let peaks: f64 = colours.iter().map(|b| b.peak).sum();
-    (weight >= 0.9 * total && peaks >= 0.5 * weight && colours.len() <= 32).then_some(colours.len().max(2))
+    (weight >= 0.9 * total && peaks >= 0.5 * weight && colours.len() <= 32)
+        .then_some(colours.len().max(2))
 }
 
 /// The most histogram bins flat art's main colours spread over (a few bins per colour).
@@ -559,7 +698,11 @@ fn library_colors(used: &[Used], swatches: &[[u8; 3]], k: usize) -> Vec<[f64; 3]
     }
     let mut order: Vec<usize> = (0..all.len()).collect();
     order.sort_by(|a, b| weight[*b].total_cmp(&weight[*a]).then(a.cmp(b)));
-    order.into_iter().take(k.max(1)).filter_map(|i| all.get(i).copied()).collect()
+    order
+        .into_iter()
+        .take(k.max(1))
+        .filter_map(|i| all.get(i).copied())
+        .collect()
 }
 
 /// A median-cut box: its weighted mean colour, pixel count and the pixel count of its heaviest bin.
@@ -586,7 +729,11 @@ fn kmeans_rgb(used: &[Used], k: usize) -> Vec<[f64; 3]> {
 /// some box spans more than `spread` levels of a channel.
 fn median_cut(used: &[Used], k: usize, spread: f64) -> Vec<ColorBox> {
     if used.is_empty() {
-        return vec![ColorBox { mean: [255.0; 3], weight: 0.0, peak: 0.0 }];
+        return vec![ColorBox {
+            mean: [255.0; 3],
+            weight: 0.0,
+            peak: 0.0,
+        }];
     }
     /// A box's bins and its best cut: (gain, bins sorted along the cut's channel, bins on the first side).
     struct Cut {
@@ -605,7 +752,9 @@ fn median_cut(used: &[Used], k: usize, spread: f64) -> Vec<ColorBox> {
             for ch in 0..3 {
                 let mut sorted = bins.clone();
                 sorted.sort_by(|x, y| used[*x].1[ch].total_cmp(&used[*y].1[ch]));
-                let (total, sum): (f64, f64) = sorted.iter().fold((0.0, 0.0), |a, &i| (a.0 + used[i].2, a.1 + used[i].1[ch] * used[i].2));
+                let (total, sum): (f64, f64) = sorted.iter().fold((0.0, 0.0), |a, &i| {
+                    (a.0 + used[i].2, a.1 + used[i].1[ch] * used[i].2)
+                });
                 let (mut w, mut s) = (0.0, 0.0);
                 let mut cut: Option<(f64, usize)> = None;
                 for (j, &i) in sorted.iter().enumerate().take(sorted.len() - 1) {
@@ -631,10 +780,15 @@ fn median_cut(used: &[Used], k: usize, spread: f64) -> Vec<ColorBox> {
     let mut boxes = vec![plan((0..used.len()).collect())];
     while boxes.len() < k {
         let gain = |c: &Cut| c.best.as_ref().map_or(f64::NEG_INFINITY, |b| b.0);
-        let Some(bi) = (0..boxes.len()).filter(|&i| boxes[i].best.is_some()).max_by(|&a, &b| gain(&boxes[a]).total_cmp(&gain(&boxes[b]))) else {
+        let Some(bi) = (0..boxes.len())
+            .filter(|&i| boxes[i].best.is_some())
+            .max_by(|&a, &b| gain(&boxes[a]).total_cmp(&gain(&boxes[b])))
+        else {
             break;
         };
-        let Some((_, mut sorted, at)) = boxes.swap_remove(bi).best else { break };
+        let Some((_, mut sorted, at)) = boxes.swap_remove(bi).best else {
+            break;
+        };
         let tail = sorted.split_off(at);
         boxes.push(plan(sorted));
         boxes.push(plan(tail));
@@ -651,7 +805,11 @@ fn median_cut(used: &[Used], k: usize, spread: f64) -> Vec<ColorBox> {
                 w += used[i].2;
                 peak = peak.max(used[i].2);
             }
-            ColorBox { mean: [s[0] / w, s[1] / w, s[2] / w], weight: w, peak }
+            ColorBox {
+                mean: [s[0] / w, s[1] / w, s[2] / w],
+                weight: w,
+                peak,
+            }
         })
         .collect()
 }

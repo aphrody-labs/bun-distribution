@@ -105,7 +105,12 @@ pub struct LoadOptions {
 
 impl Default for LoadOptions {
     fn default() -> Self {
-        Self { ctx: None, gpu_layers: u32::MAX, mmproj: None, lora: Vec::new() }
+        Self {
+            ctx: None,
+            gpu_layers: u32::MAX,
+            mmproj: None,
+            lora: Vec::new(),
+        }
     }
 }
 
@@ -186,7 +191,13 @@ impl InProcessLlama {
         model_name: impl Into<String>,
         options: LoadOptions,
     ) -> Result<Self, LlamaLoadError> {
-        Self::load_inner(path.as_ref().to_path_buf(), model_name.into(), options, None).await
+        Self::load_inner(
+            path.as_ref().to_path_buf(),
+            model_name.into(),
+            options,
+            None,
+        )
+        .await
     }
 
     /// Load a model while retaining a host resource through loading and every decoder.
@@ -200,7 +211,13 @@ impl InProcessLlama {
         options: LoadOptions,
         guard: Arc<dyn Send + Sync>,
     ) -> Result<Self, LlamaLoadError> {
-        Self::load_inner(path.as_ref().to_path_buf(), model_name.into(), options, Some(guard)).await
+        Self::load_inner(
+            path.as_ref().to_path_buf(),
+            model_name.into(),
+            options,
+            Some(guard),
+        )
+        .await
     }
 
     async fn load_inner(
@@ -237,15 +254,17 @@ impl InProcessLlama {
         let lora = match options.lora.first() {
             Some(spec) => {
                 let adapter =
-                    model.lora_adapter_init(&spec.path).map_err(|error| LlamaLoadError::Lora {
-                        path: spec.path.display().to_string(),
-                        message: error.to_string(),
-                    })?;
+                    model
+                        .lora_adapter_init(&spec.path)
+                        .map_err(|error| LlamaLoadError::Lora {
+                            path: spec.path.display().to_string(),
+                            message: error.to_string(),
+                        })?;
                 Some(LoraHandle {
                     adapter: std::sync::Mutex::new(SendAdapter(adapter)),
                     scale: spec.scale,
                 })
-            },
+            }
             None => None,
         };
         let mtmd = match &options.mmproj {
@@ -261,10 +280,12 @@ impl InProcessLlama {
                             message: error.to_string(),
                         })?;
                 Some(context)
-            },
+            }
             None => None,
         };
-        let n_ctx = ctx.unwrap_or_else(|| model.n_ctx_train().min(DEFAULT_MAX_CTX)).max(512);
+        let n_ctx = ctx
+            .unwrap_or_else(|| model.n_ctx_train().min(DEFAULT_MAX_CTX))
+            .max(512);
         Ok(Self {
             inner: Arc::new(Inner {
                 mtmd,
@@ -289,7 +310,10 @@ impl InProcessLlama {
     /// Whether a projector with vision support is loaded.
     #[must_use]
     pub fn supports_images(&self) -> bool {
-        self.inner.mtmd.as_ref().is_some_and(MtmdContext::support_vision)
+        self.inner
+            .mtmd
+            .as_ref()
+            .is_some_and(MtmdContext::support_vision)
     }
 
     /// The context size every turn runs with.
@@ -392,15 +416,15 @@ fn render_messages(turn: &ChatTurn, marker: Option<&str>) -> Vec<(&'static str, 
                 Part::Text(value) => push(value),
                 Part::Image(_) => {
                     push(marker.unwrap_or("[image omitted: no multimodal projector is loaded]"))
-                },
-                Part::Reasoning { .. } => {},
+                }
+                Part::Reasoning { .. } => {}
                 Part::FunctionCall { name, args, .. } => push(&format!(
                     "<tool_call>\n{}\n</tool_call>",
                     json!({ "name": name, "arguments": args })
                 )),
                 Part::FunctionResponse { response, .. } => {
                     push(&format!("<tool_response>\n{response}\n</tool_response>"));
-                },
+                }
             }
         }
         let role = match role {
@@ -423,11 +447,13 @@ fn image_bytes(source: &ImageSource) -> Result<Vec<u8>, String> {
             .map_err(|error| format!("invalid base64 image: {error}")),
         ImageSource::Url(url) => {
             if url.starts_with("http://") || url.starts_with("https://") {
-                return Err(format!("remote image URLs are not fetched in-process: {url}"));
+                return Err(format!(
+                    "remote image URLs are not fetched in-process: {url}"
+                ));
             }
             let path = url.strip_prefix("file://").unwrap_or(url);
             std::fs::read(path).map_err(|error| format!("cannot read image {path}: {error}"))
-        },
+        }
     }
 }
 
@@ -436,7 +462,13 @@ fn turn_images(turn: &ChatTurn) -> Vec<&ImageSource> {
     turn.messages
         .iter()
         .flat_map(|message| message.parts.iter())
-        .filter_map(|part| if let Part::Image(image) = part { Some(image) } else { None })
+        .filter_map(|part| {
+            if let Part::Image(image) = part {
+                Some(image)
+            } else {
+                None
+            }
+        })
         .collect()
 }
 
@@ -459,7 +491,10 @@ fn render_jinja_prompt(
     environment.add_function(
         "raise_exception",
         |message: String| -> Result<String, minijinja::Error> {
-            Err(minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, message))
+            Err(minijinja::Error::new(
+                minijinja::ErrorKind::InvalidOperation,
+                message,
+            ))
         },
     );
     environment.add_function("strftime_now", |format: String| {
@@ -468,8 +503,10 @@ fn render_jinja_prompt(
     environment
         .add_template("chat", template)
         .map_err(|error| format!("chat template: {error}"))?;
-    let messages: Vec<_> =
-        messages.iter().map(|(role, content)| json!({"role":role,"content":content})).collect();
+    let messages: Vec<_> = messages
+        .iter()
+        .map(|(role, content)| json!({"role":role,"content":content}))
+        .collect();
     environment.get_template("chat").map_err(|error| format!("chat template: {error}"))?
         .render(minijinja::context! { messages, bos_token => bos, eos_token => eos,
             add_generation_prompt => true, enable_thinking => false, tools => Vec::<serde_json::Value>::new() })
@@ -483,7 +520,10 @@ fn generate(
     tx: &mpsc::UnboundedSender<Result<ModelStreamEvent, ModelError>>,
 ) -> Result<(), String> {
     let model = &inner.model;
-    let mtmd = inner.mtmd.as_ref().filter(|context| context.support_vision());
+    let mtmd = inner
+        .mtmd
+        .as_ref()
+        .filter(|context| context.support_vision());
     let images = turn_images(turn);
     let marker = mtmd.map(|_| mtmd_default_marker());
     let messages = render_messages(turn, marker)
@@ -515,9 +555,15 @@ fn generate(
 
     // Most templates write the BOS token themselves; add it only when they did not.
     let mut decoder = encoding_rs::UTF_8.new_decoder();
-    let bos = model.token_to_piece(model.token_bos(), &mut decoder, true, None).unwrap_or_default();
+    let bos = model
+        .token_to_piece(model.token_bos(), &mut decoder, true, None)
+        .unwrap_or_default();
     let templated_bos = !bos.is_empty() && prompt.starts_with(&bos);
-    let add_bos = if templated_bos { AddBos::Never } else { AddBos::Always };
+    let add_bos = if templated_bos {
+        AddBos::Never
+    } else {
+        AddBos::Always
+    };
 
     // Text: one token list. Images: projector chunks (text + encoded image embeddings).
     let mut tokens = Vec::new();
@@ -557,7 +603,9 @@ fn generate(
             chunks = Some((parsed, bitmaps));
             result
         } else {
-            tokens = model.str_to_token(&prompt, add_bos).map_err(|error| error.to_string())?;
+            tokens = model
+                .str_to_token(&prompt, add_bos)
+                .map_err(|error| error.to_string())?;
             (tokens.len(), tokens.len(), 1, false)
         };
 
@@ -568,7 +616,10 @@ fn generate(
         ));
     }
     let room = n_ctx as usize - positions - 1;
-    let budget = turn.options.max_output_tokens.map_or(room, |max| (max as usize).min(room));
+    let budget = turn
+        .options
+        .max_output_tokens
+        .map_or(room, |max| (max as usize).min(room));
 
     let mut params = LlamaContextParams::default().with_n_ctx(NonZeroU32::new(n_ctx));
     if chunks.is_some() {
@@ -576,16 +627,20 @@ fn generate(
         let n_batch = 2048_u32.max(u32::try_from(max_chunk).unwrap_or(u32::MAX));
         params = params.with_n_batch(n_batch);
         if non_causal {
-            params =
-                params.with_n_ubatch(n_batch).with_attention_type(LlamaAttentionType::NonCausal);
+            params = params
+                .with_n_ubatch(n_batch)
+                .with_attention_type(LlamaAttentionType::NonCausal);
         }
     }
-    let mut ctx = model.new_context(inner.backend, params).map_err(|error| error.to_string())?;
+    let mut ctx = model
+        .new_context(inner.backend, params)
+        .map_err(|error| error.to_string())?;
     if let Some(lora) = &inner.lora
         && lora.scale != 0.0
     {
         let mut adapter = lora.adapter.lock().map_err(|error| error.to_string())?;
-        ctx.lora_adapter_set(&mut adapter.0, lora.scale).map_err(|error| error.to_string())?;
+        ctx.lora_adapter_set(&mut adapter.0, lora.scale)
+            .map_err(|error| error.to_string())?;
     }
     let n_batch = (ctx.n_batch() as usize).max(1);
     let mut batch = LlamaBatch::new(n_batch, 1);
@@ -595,7 +650,14 @@ fn generate(
     let mut logits_row;
     if let (Some((parsed, _bitmaps)), Some(context)) = (&chunks, mtmd) {
         position = parsed
-            .eval_chunks(context, &ctx, 0, 0, i32::try_from(n_batch).unwrap_or(i32::MAX), true)
+            .eval_chunks(
+                context,
+                &ctx,
+                0,
+                0,
+                i32::try_from(n_batch).unwrap_or(i32::MAX),
+                true,
+            )
             .map_err(|error| format!("cannot evaluate the multimodal prompt: {error}"))?;
         logits_row = -1;
     } else {
@@ -660,7 +722,9 @@ fn generate(
             break;
         }
         batch.clear();
-        batch.add(token, position, &[0], true).map_err(|error| error.to_string())?;
+        batch
+            .add(token, position, &[0], true)
+            .map_err(|error| error.to_string())?;
         position += 1;
         ctx.decode(&mut batch).map_err(|error| error.to_string())?;
         logits_row = batch.n_tokens() - 1;
@@ -694,7 +758,11 @@ mod tests {
         let engine = InProcessLlama::load_with_residency_guard(
             &path,
             "resident-test",
-            LoadOptions { ctx: Some(1024), gpu_layers: 0, ..LoadOptions::default() },
+            LoadOptions {
+                ctx: Some(1024),
+                gpu_layers: 0,
+                ..LoadOptions::default()
+            },
             Arc::new(Resident(Arc::clone(&resource))),
         )
         .await
@@ -719,7 +787,7 @@ mod tests {
             while let Some(event) = futures::StreamExt::next(&mut stream).await {
                 match event.expect("native decoder with system instructions") {
                     ModelStreamEvent::TextDelta(text) if !text.is_empty() => return true,
-                    _ => {},
+                    _ => {}
                 }
             }
             false
@@ -745,7 +813,10 @@ mod tests {
         let template = "{{ bos_token }}{% for m in messages %}<{{ m.role }}>{{ m.content.strip() }}{% endfor %}{% if add_generation_prompt %}<assistant>{% endif %}";
         let rendered = render_jinja_prompt(
             template,
-            &[("system", " actual soul ".into()), ("user", " hello ".into())],
+            &[
+                ("system", " actual soul ".into()),
+                ("user", " hello ".into()),
+            ],
             "<bos>",
             "<eos>",
         )
@@ -770,7 +841,10 @@ mod tests {
     fn tools_are_declared_in_the_system_message() {
         let turn = ChatTurn {
             system: Some("Be brief.".into()),
-            messages: vec![ChatMessage { role: Role::User, parts: vec![Part::Text("hi".into())] }],
+            messages: vec![ChatMessage {
+                role: Role::User,
+                parts: vec![Part::Text("hi".into())],
+            }],
             tools: vec![tool()],
             ..ChatTurn::default()
         };
@@ -788,11 +862,19 @@ mod tests {
             messages: vec![
                 ChatMessage {
                     role: Role::Model,
-                    parts: vec![Part::function_call("c1", "get_weather", json!({"city": "Paris"}))],
+                    parts: vec![Part::function_call(
+                        "c1",
+                        "get_weather",
+                        json!({"city": "Paris"}),
+                    )],
                 },
                 ChatMessage {
                     role: Role::Tool,
-                    parts: vec![Part::function_response("c1", "get_weather", json!({"t": 21}))],
+                    parts: vec![Part::function_response(
+                        "c1",
+                        "get_weather",
+                        json!({"t": 21}),
+                    )],
                 },
             ],
             ..ChatTurn::default()
@@ -816,20 +898,33 @@ mod tests {
             }],
             ..ChatTurn::default()
         };
-        assert_eq!(render_messages(&turn, Some("<__media__>"))[0].1, "look\n<__media__>");
-        assert!(render_messages(&turn, None)[0].1.contains("no multimodal projector"));
+        assert_eq!(
+            render_messages(&turn, Some("<__media__>"))[0].1,
+            "look\n<__media__>"
+        );
+        assert!(
+            render_messages(&turn, None)[0]
+                .1
+                .contains("no multimodal projector")
+        );
         assert_eq!(turn_images(&turn).len(), 1);
     }
 
     #[test]
     fn image_bytes_reads_base64_and_files_but_never_the_network() {
         let png = base64::engine::general_purpose::STANDARD.encode(b"abc");
-        assert_eq!(image_bytes(&ImageSource::base64("image/png", png)).unwrap(), b"abc");
+        assert_eq!(
+            image_bytes(&ImageSource::base64("image/png", png)).unwrap(),
+            b"abc"
+        );
         assert!(image_bytes(&ImageSource::base64("image/png", "!!!")).is_err());
         assert!(image_bytes(&ImageSource::Url("https://example.test/a.png".into())).is_err());
         let dir = std::env::temp_dir().join(format!("aphrody-img-{}", std::process::id()));
         std::fs::write(&dir, b"xyz").unwrap();
-        assert_eq!(image_bytes(&ImageSource::Url(dir.display().to_string())).unwrap(), b"xyz");
+        assert_eq!(
+            image_bytes(&ImageSource::Url(dir.display().to_string())).unwrap(),
+            b"xyz"
+        );
         assert_eq!(
             image_bytes(&ImageSource::Url(format!("file://{}", dir.display()))).unwrap(),
             b"xyz"
@@ -842,7 +937,10 @@ mod tests {
         let turn = ChatTurn {
             messages: vec![ChatMessage {
                 role: Role::Model,
-                parts: vec![Part::Reasoning { text: "hm".into(), opaque: json!(null) }],
+                parts: vec![Part::Reasoning {
+                    text: "hm".into(),
+                    opaque: json!(null),
+                }],
             }],
             ..ChatTurn::default()
         };

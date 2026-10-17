@@ -8,11 +8,13 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use crate::core::SystemRef;
+use crate::hle::result::{ResultCode, RESULT_SUCCESS, RESULT_UNKNOWN};
 use crate::hle::service::acc::profile_manager::ProfileManager;
 use crate::hle::service::am::am_types::AppletId;
-use crate::hle::service::am::frontend::applet_profile_select::{UiReturnArg, UiSettings, UiSettingsV1};
-use crate::hle::result::{ResultCode, RESULT_SUCCESS, RESULT_UNKNOWN};
 use crate::hle::service::am::applet_data_broker::AppletDataBroker;
+use crate::hle::service::am::frontend::applet_profile_select::{
+    UiReturnArg, UiSettings, UiSettingsV1,
+};
 use crate::hle::service::am::service::storage::IStorage;
 use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
 use crate::hle::service::ipc_helpers::{RequestParser, ResponseBuilder};
@@ -142,7 +144,11 @@ impl ILibraryAppletAccessor {
 
     fn unknown170_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
-        let handle = service.applet.lock().unwrap().ensure_unknown_event_object_id(ctx);
+        let handle = service
+            .applet
+            .lock()
+            .unwrap()
+            .ensure_unknown_event_object_id(ctx);
         let Some(handle) = handle else {
             ResponseBuilder::new(ctx, 2, 0, 0).push_result(crate::hle::result::RESULT_UNKNOWN);
             return;
@@ -335,7 +341,11 @@ impl ILibraryAppletAccessor {
                 // the child before locking its caller to avoid nested locks.
                 let (caller, is_frontend, applet_id) = {
                     let applet = service.applet.lock().unwrap();
-                    (applet.caller_applet.upgrade(), applet.frontend.is_some(), applet.applet_id)
+                    (
+                        applet.caller_applet.upgrade(),
+                        applet.frontend.is_some(),
+                        applet.applet_id,
+                    )
                 };
                 if let Some(caller) = caller {
                     let mut caller = caller.lock().unwrap();
@@ -448,7 +458,10 @@ impl ILibraryAppletAccessor {
         };
         drop(applet);
         if complete {
-            crate::hle::service::am::frontend::applets::exit(self.system, &Arc::downgrade(&self.applet));
+            crate::hle::service::am::frontend::applets::exit(
+                self.system,
+                &Arc::downgrade(&self.applet),
+            );
         }
     }
 
@@ -463,7 +476,10 @@ impl ILibraryAppletAccessor {
         };
         drop(applet);
         if complete {
-            crate::hle::service::am::frontend::applets::exit(self.system, &Arc::downgrade(&self.applet));
+            crate::hle::service::am::frontend::applets::exit(
+                self.system,
+                &Arc::downgrade(&self.applet),
+            );
         }
     }
 
@@ -477,13 +493,18 @@ impl ILibraryAppletAccessor {
         };
         drop(applet);
         if complete {
-            crate::hle::service::am::frontend::applets::exit(self.system, &Arc::downgrade(&self.applet));
+            crate::hle::service::am::frontend::applets::exit(
+                self.system,
+                &Arc::downgrade(&self.applet),
+            );
         }
     }
 }
 
 impl SessionRequestHandler for ILibraryAppletAccessor {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, ctx)
@@ -513,16 +534,35 @@ mod tests {
     #[test]
     fn single_user_play_changes_only_the_two_display_options() {
         use crate::hle::service::am::frontend::applet_profile_select::UiSettingsDisplayOptions;
-        assert_eq!(std::mem::offset_of!(super::UiSettings, display_options), 0x90);
-        assert_eq!(std::mem::offset_of!(super::UiSettingsV1, display_options), 0x90);
-        assert_eq!(std::mem::offset_of!(UiSettingsDisplayOptions, is_skip_enabled), 1);
-        assert_eq!(std::mem::offset_of!(UiSettingsDisplayOptions, show_skip_button), 4);
+        assert_eq!(
+            std::mem::offset_of!(super::UiSettings, display_options),
+            0x90
+        );
+        assert_eq!(
+            std::mem::offset_of!(super::UiSettingsV1, display_options),
+            0x90
+        );
+        assert_eq!(
+            std::mem::offset_of!(UiSettingsDisplayOptions, is_skip_enabled),
+            1
+        );
+        assert_eq!(
+            std::mem::offset_of!(UiSettingsDisplayOptions, show_skip_button),
+            4
+        );
         for size in [0x98, 0xa0] {
             let mut data: Vec<u8> = (0..size).map(|i| i as u8).collect();
             let before = data.clone();
             super::enable_single_user_play(&mut data);
             for index in 0..size {
-                assert_eq!(data[index], if index == 0x91 || index == 0x94 { 1 } else { before[index] });
+                assert_eq!(
+                    data[index],
+                    if index == 0x91 || index == 0x94 {
+                        1
+                    } else {
+                        before[index]
+                    }
+                );
             }
         }
     }
@@ -531,7 +571,9 @@ mod tests {
     fn profile_return_fallback_preserves_uuid_and_uses_current_user() {
         const CHILD: &str = "RUZU_APPLET_PROFILE_RETURN_TEST_ROOT";
         if let Some(root) = std::env::var_os(CHILD) {
-            use crate::hle::service::acc::profile_manager::{ProfileManager, MAX_USERS, PROFILE_USERNAME_SIZE};
+            use crate::hle::service::acc::profile_manager::{
+                ProfileManager, MAX_USERS, PROFILE_USERNAME_SIZE,
+            };
             use common::fs::path_util::{set_ruzu_path, RuzuPath};
             set_ruzu_path(RuzuPath::NANDDir, std::path::Path::new(&root));
             assert_eq!(std::mem::size_of::<super::UiReturnArg>(), 24);
@@ -564,7 +606,8 @@ mod tests {
 
             let mut name = [0; PROFILE_USERNAME_SIZE];
             name[..4].copy_from_slice(b"Test");
-            let selected = u128::from_le_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            let selected =
+                u128::from_le_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
             assert_eq!(manager.create_new_user(selected, &name), RESULT_SUCCESS);
             manager.write_user_save_file();
             common::settings::values_mut().current_user.set_value(1);
@@ -575,14 +618,20 @@ mod tests {
             // Fill every slot so constructor clamping does not repair the
             // setting. GetUser still receives the original invalid index.
             for index in 2..MAX_USERS {
-                assert_eq!(manager.create_new_user(index as u128 + 1, &name), RESULT_SUCCESS);
+                assert_eq!(
+                    manager.create_new_user(index as u128 + 1, &name),
+                    RESULT_SUCCESS
+                );
             }
             manager.write_user_save_file();
             for index in [-1, MAX_USERS as i32] {
                 common::settings::values_mut().current_user.set_value(index);
                 let reopened = ProfileManager::new();
                 let clamped = index.clamp(0, MAX_USERS as i32 - 1) as usize;
-                assert_eq!(reopened.get_last_opened_user(), manager.get_user(clamped).unwrap());
+                assert_eq!(
+                    reopened.get_last_opened_user(),
+                    manager.get_user(clamped).unwrap()
+                );
                 empty.fill(0);
                 empty[..8].fill(0xab);
                 let before = empty;
@@ -591,13 +640,24 @@ mod tests {
             }
             return;
         }
-        let root = std::env::temp_dir().join(format!("ruzu-applet-profile-return-{}-{}",
-            std::process::id(), std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let root = std::env::temp_dir().join(format!(
+            "ruzu-applet-profile-return-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         std::fs::create_dir(&root).unwrap();
         let status = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", std::thread::current().name().unwrap(), "--test-threads=1"])
-            .env(CHILD, &root).status().unwrap();
+            .args([
+                "--exact",
+                std::thread::current().name().unwrap(),
+                "--test-threads=1",
+            ])
+            .env(CHILD, &root)
+            .status()
+            .unwrap();
         std::fs::remove_dir_all(&root).unwrap();
         assert!(status.success());
     }
@@ -605,19 +665,30 @@ mod tests {
     #[test]
     fn pop_out_data_notifies_only_after_success_and_without_spurious_resume() {
         use crate::hle::service::am::am_types::AppletMessage;
-        use crate::hle::service::am::lifecycle_manager::ActivityState;
         use crate::hle::service::am::frontend::applet_general::StubApplet;
+        use crate::hle::service::am::lifecycle_manager::ActivityState;
         for is_frontend in [false, true] {
             for focus_changed in [false, true] {
                 for enabled in [false, true] {
-                    let caller = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), true)));
-                    let applet = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), false)));
+                    let caller = Arc::new(Mutex::new(Applet::new(
+                        SystemRef::null(),
+                        Process::new(),
+                        true,
+                    )));
+                    let applet = Arc::new(Mutex::new(Applet::new(
+                        SystemRef::null(),
+                        Process::new(),
+                        false,
+                    )));
                     let broker = Arc::new(AppletDataBroker::new());
                     applet.lock().unwrap().caller_applet = Arc::downgrade(&caller);
                     if is_frontend {
                         applet.lock().unwrap().frontend = Some(Box::new(StubApplet::new(
-                            SystemRef::null(), Arc::downgrade(&applet), broker.clone(),
-                            Default::default(), Default::default(),
+                            SystemRef::null(),
+                            Arc::downgrade(&applet),
+                            broker.clone(),
+                            Default::default(),
+                            Default::default(),
                         )));
                     }
                     {
@@ -632,11 +703,21 @@ mod tests {
                             lifecycle.set_activity_state(ActivityState::BackgroundObscured);
                         }
                     }
-                    let accessor = ILibraryAppletAccessor::new(SystemRef::null(), broker.clone(), applet);
+                    let accessor =
+                        ILibraryAppletAccessor::new(SystemRef::null(), broker.clone(), applet);
                     let mut ctx = HLERequestContext::new();
                     ILibraryAppletAccessor::pop_out_data_handler(&accessor, &mut ctx);
-                    assert_eq!(ctx.cmd_buf[6], crate::hle::service::am::am_results::RESULT_NO_DATA_IN_CHANNEL.get_inner_value());
-                    assert!(!caller.lock().unwrap().lifecycle_manager.get_system_event().is_signaled());
+                    assert_eq!(
+                        ctx.cmd_buf[6],
+                        crate::hle::service::am::am_results::RESULT_NO_DATA_IN_CHANNEL
+                            .get_inner_value()
+                    );
+                    assert!(!caller
+                        .lock()
+                        .unwrap()
+                        .lifecycle_manager
+                        .get_system_event()
+                        .is_signaled());
                     broker.get_out_data().push(vec![1, 2, 3]);
                     ILibraryAppletAccessor::pop_out_data_handler(&accessor, &mut ctx);
                     assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
@@ -646,7 +727,14 @@ mod tests {
                     assert_eq!(lifecycle.get_system_event().is_signaled(), expected);
                     let mut message = AppletMessage::None;
                     assert_eq!(lifecycle.pop_message(&mut message), expected);
-                    assert_eq!(message, if expected { AppletMessage::FocusStateChanged } else { AppletMessage::None });
+                    assert_eq!(
+                        message,
+                        if expected {
+                            AppletMessage::FocusStateChanged
+                        } else {
+                            AppletMessage::None
+                        }
+                    );
                     assert!(!lifecycle.pop_message(&mut message));
                 }
             }
@@ -655,11 +743,19 @@ mod tests {
 
     #[test]
     fn unknown170_copies_the_same_unsignaled_applet_event() {
-        use crate::hle::service::hle_ipc::KAutoObjectRef;
         use crate::hle::kernel::k_process::{KProcess, ProcessLock};
         use crate::hle::kernel::k_thread::{KThread, KThreadLock};
-        let applet = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), false)));
-        let accessor = ILibraryAppletAccessor::new(SystemRef::null(), Arc::new(AppletDataBroker::new()), Arc::clone(&applet));
+        use crate::hle::service::hle_ipc::KAutoObjectRef;
+        let applet = Arc::new(Mutex::new(Applet::new(
+            SystemRef::null(),
+            Process::new(),
+            false,
+        )));
+        let accessor = ILibraryAppletAccessor::new(
+            SystemRef::null(),
+            Arc::new(AppletDataBroker::new()),
+            Arc::clone(&applet),
+        );
         let process = Arc::new(ProcessLock::from_value(KProcess::new()));
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
@@ -668,8 +764,12 @@ mod tests {
             let mut ctx = HLERequestContext::new_with_thread(Arc::clone(&thread), 0x2000);
             accessor.handlers[&170].handler_callback.unwrap()(&accessor, &mut ctx);
             assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
-            let [KAutoObjectRef::ObjectId(id)] = ctx.outgoing_copy_objects.as_slice() else { panic!("expected copy object"); };
-            if let Some(old) = previous { assert_eq!(*id, old); }
+            let [KAutoObjectRef::ObjectId(id)] = ctx.outgoing_copy_objects.as_slice() else {
+                panic!("expected copy object");
+            };
+            if let Some(old) = previous {
+                assert_eq!(*id, old);
+            }
             previous = Some(*id);
             let applet = applet.lock().unwrap();
             let event = applet.unknown_event.as_ref().unwrap().lock().unwrap();

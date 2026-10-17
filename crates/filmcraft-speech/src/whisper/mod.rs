@@ -61,27 +61,57 @@ impl Whisper {
     /// Load a model directory (`config.json`, `generation_config.json`, `tokenizer.json`,
     /// `model.safetensors`).
     pub fn load(dir: &Path, id: &str) -> Result<Self, SpeechError> {
-        let read = |n: &str| std::fs::read(dir.join(n)).map_err(|e| SpeechError::Model(format!("{}: {e}", dir.join(n).display())));
-        let cfg: Config = serde_json::from_slice(&read("config.json")?).map_err(|e| SpeechError::Model(format!("config.json: {e}")))?;
-        let gen_cfg: serde_json::Value = serde_json::from_slice(&read("generation_config.json")?).unwrap_or_default();
+        let read = |n: &str| {
+            std::fs::read(dir.join(n))
+                .map_err(|e| SpeechError::Model(format!("{}: {e}", dir.join(n).display())))
+        };
+        let cfg: Config = serde_json::from_slice(&read("config.json")?)
+            .map_err(|e| SpeechError::Model(format!("config.json: {e}")))?;
+        let gen_cfg: serde_json::Value =
+            serde_json::from_slice(&read("generation_config.json")?).unwrap_or_default();
         let tok = Tokenizer::from_json(&String::from_utf8_lossy(&read("tokenizer.json")?))?;
         let weights = read("model.safetensors")?;
         let alignment_heads = gen_cfg["alignment_heads"]
             .as_array()
-            .map(|a| a.iter().filter_map(|p| Some((p[0].as_u64()? as usize, p[1].as_u64()? as usize))).collect::<Vec<_>>())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|p| Some((p[0].as_u64()? as usize, p[1].as_u64()? as usize)))
+                    .collect::<Vec<_>>()
+            })
             .filter(|v| !v.is_empty())
-            .unwrap_or_else(|| (cfg.decoder_layers / 2..cfg.decoder_layers).flat_map(|l| (0..cfg.decoder_attention_heads).map(move |h| (l, h))).collect());
-        let mut suppress: Vec<u32> =
-            gen_cfg["suppress_tokens"].as_array().map(|a| a.iter().filter_map(|x| x.as_u64().map(|v| v as u32)).collect()).unwrap_or_default();
+            .unwrap_or_else(|| {
+                (cfg.decoder_layers / 2..cfg.decoder_layers)
+                    .flat_map(|l| (0..cfg.decoder_attention_heads).map(move |h| (l, h)))
+                    .collect()
+            });
+        let mut suppress: Vec<u32> = gen_cfg["suppress_tokens"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_u64().map(|v| v as u32))
+                    .collect()
+            })
+            .unwrap_or_default();
         suppress.extend(tok.non_text_specials());
         suppress.sort_unstable();
         suppress.dedup();
         let begin_suppress = gen_cfg["begin_suppress_tokens"]
             .as_array()
-            .map(|a| a.iter().filter_map(|x| x.as_u64().map(|v| v as u32)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_u64().map(|v| v as u32))
+                    .collect()
+            })
             .unwrap_or_else(|| vec![220, tok.eot]);
         let model = Model::load(cfg, weights).map_err(merr)?;
-        Ok(Self { id: id.to_string(), model: Mutex::new(model), tok, alignment_heads, suppress, begin_suppress })
+        Ok(Self {
+            id: id.to_string(),
+            model: Mutex::new(model),
+            tok,
+            alignment_heads,
+            suppress,
+            begin_suppress,
+        })
     }
 
     pub fn languages(&self) -> Vec<String> {
@@ -93,7 +123,8 @@ impl Whisper {
         for m in 0..n_mels {
             let end = (seek + N_FRAMES).min(frames);
             if seek < end {
-                w[m * N_FRAMES..m * N_FRAMES + end - seek].copy_from_slice(&mel[m * frames + seek..m * frames + end]);
+                w[m * N_FRAMES..m * N_FRAMES + end - seek]
+                    .copy_from_slice(&mel[m * frames + seek..m * frames + end]);
             }
         }
         w
@@ -101,9 +132,17 @@ impl Whisper {
 
     fn detect_language(&self, m: &mut Model, xa: &Tensor) -> Result<String, SpeechError> {
         m.decoder.reset();
-        let (logits, _) = m.decoder.forward(&[self.tok.sot], xa, false, None).map_err(merr)?;
+        let (logits, _) = m
+            .decoder
+            .forward(&[self.tok.sot], xa, false, None)
+            .map_err(merr)?;
         let l = Model::last_logits(&logits).map_err(merr)?;
-        let best = self.tok.languages.iter().max_by(|a, b| l[a.1 as usize].total_cmp(&l[b.1 as usize])).map(|x| x.0.clone());
+        let best = self
+            .tok
+            .languages
+            .iter()
+            .max_by(|a, b| l[a.1 as usize].total_cmp(&l[b.1 as usize]))
+            .map(|x| x.0.clone());
         Ok(best.unwrap_or_else(|| "en".into()))
     }
 
@@ -130,11 +169,18 @@ impl Whisper {
             if penult_ts {
                 logits[tb..].iter_mut().for_each(|v| *v = ninf);
             } else {
-                logits[..self.tok.eot as usize].iter_mut().for_each(|v| *v = ninf);
+                logits[..self.tok.eot as usize]
+                    .iter_mut()
+                    .for_each(|v| *v = ninf);
             }
         }
         if let Some(&last) = seq.iter().rev().find(|&&t| self.tok.is_timestamp(t)) {
-            let lim = (if last_ts && !penult_ts { last } else { last + 1 } as usize).min(logits.len());
+            let lim = (if last_ts && !penult_ts {
+                last
+            } else {
+                last + 1
+            } as usize)
+                .min(logits.len());
             logits[tb..lim].iter_mut().for_each(|v| *v = ninf);
         }
         if seq.is_empty() {
@@ -164,13 +210,26 @@ impl Whisper {
 
     /// Greedy decode of one window. Returns sampled tokens (no prompt, no end-of-text), the mean
     /// log-probability and the no-speech probability.
-    fn decode_window(&self, m: &mut Model, xa: &Tensor, prompt: &[u32]) -> Result<(Vec<u32>, f32, f32), SpeechError> {
+    fn decode_window(
+        &self,
+        m: &mut Model,
+        xa: &Tensor,
+        prompt: &[u32],
+    ) -> Result<(Vec<u32>, f32, f32), SpeechError> {
         m.decoder.reset();
         let mut seq: Vec<u32> = Vec::new();
         let (logits, _) = m.decoder.forward(prompt, xa, true, None).map_err(merr)?;
         // no-speech probability from the start-of-transcript position
-        let first = logits.get(0).and_then(|l| l.get(0)).and_then(|l| l.to_vec1::<f32>()).map_err(merr)?;
-        let no_speech = self.tok.no_speech.map(|ns| softmax_at(&first, ns as usize)).unwrap_or(0.0);
+        let first = logits
+            .get(0)
+            .and_then(|l| l.get(0))
+            .and_then(|l| l.to_vec1::<f32>())
+            .map_err(merr)?;
+        let no_speech = self
+            .tok
+            .no_speech
+            .map(|ns| softmax_at(&first, ns as usize))
+            .unwrap_or(0.0);
         let mut cur = Model::last_logits(&logits).map_err(merr)?;
         let mut sum_lp = 0f32;
         for _ in 0..MAX_TOKENS.min(m.cfg.max_target_positions / 2) {
@@ -236,7 +295,12 @@ impl Transcriber for Whisper {
         self.id.clone()
     }
 
-    fn transcribe(&self, audio: &[f32], opts: &Options, progress: ProgressFn) -> Result<Transcript, SpeechError> {
+    fn transcribe(
+        &self,
+        audio: &[f32],
+        opts: &Options,
+        progress: ProgressFn,
+    ) -> Result<Transcript, SpeechError> {
         let mut m = self.model.lock().unwrap_or_else(|e| e.into_inner());
         let n_mels = m.cfg.num_mel_bins;
         let content_frames = audio.len() / SAMPLES_PER_FRAME;
@@ -251,9 +315,18 @@ impl Transcriber for Whisper {
         if trace {
             eprintln!("mel {:.3}s", clock.elapsed().as_secs_f64());
         }
-        let mut language = opts.language.clone().filter(|l| !l.is_empty() && l != "auto");
-        if language.as_deref().is_some_and(|l| self.tok.multilingual() && self.tok.language_token(l).is_none()) {
-            return Err(SpeechError::Model(format!("the model does not know the language `{}`", language.unwrap_or_default())));
+        let mut language = opts
+            .language
+            .clone()
+            .filter(|l| !l.is_empty() && l != "auto");
+        if language
+            .as_deref()
+            .is_some_and(|l| self.tok.multilingual() && self.tok.language_token(l).is_none())
+        {
+            return Err(SpeechError::Model(format!(
+                "the model does not know the language `{}`",
+                language.unwrap_or_default()
+            )));
         }
         let mut words: Vec<Word> = Vec::new();
         let mut seek = 0usize;
@@ -280,15 +353,22 @@ impl Transcriber for Whisper {
             }
             let (toks, avg_lp, no_speech) = self.decode_window(&mut m, &xa, &prompt)?;
             if trace {
-                eprintln!("decode {} tokens {:.3}s", toks.len(), clock.elapsed().as_secs_f64());
+                eprintln!(
+                    "decode {} tokens {:.3}s",
+                    toks.len(),
+                    clock.elapsed().as_secs_f64()
+                );
             }
             let skip = no_speech > 0.6 && avg_lp < -1.0;
             // where the next window starts
             let is_ts: Vec<bool> = toks.iter().map(|&t| self.tok.is_timestamp(t)).collect();
-            let single_ending = is_ts.len() >= 2 && !is_ts[is_ts.len() - 2] && is_ts[is_ts.len() - 1];
+            let single_ending =
+                is_ts.len() >= 2 && !is_ts[is_ts.len() - 2] && is_ts[is_ts.len() - 1];
             let last_pair = (1..is_ts.len()).rev().find(|&i| is_ts[i] && is_ts[i - 1]);
             let advance = match last_pair {
-                Some(i) if !single_ending => ((toks[i - 1] - self.tok.timestamp_begin) as usize * FRAMES_PER_TS).clamp(1, seg_frames),
+                Some(i) if !single_ending => ((toks[i - 1] - self.tok.timestamp_begin) as usize
+                    * FRAMES_PER_TS)
+                    .clamp(1, seg_frames),
                 _ => seg_frames,
             };
             let text: Vec<u32> = toks.iter().copied().filter(|&t| t < self.tok.eot).collect();
@@ -298,17 +378,34 @@ impl Transcriber for Whisper {
                     Some(i) if !single_ending => i,
                     _ => toks.len(),
                 };
-                let text: Vec<u32> = toks[..upto].iter().copied().filter(|&t| t < self.tok.eot).collect();
+                let text: Vec<u32> = toks[..upto]
+                    .iter()
+                    .copied()
+                    .filter(|&t| t < self.tok.eot)
+                    .collect();
                 let mut aprompt = prompt.clone();
                 aprompt.push(self.tok.no_timestamps);
-                let times = align::align(&mut m, &xa, &aprompt, &text, self.tok.eot, &self.alignment_heads, seg_frames).map_err(merr)?;
+                let times = align::align(
+                    &mut m,
+                    &xa,
+                    &aprompt,
+                    &text,
+                    self.tok.eot,
+                    &self.alignment_heads,
+                    seg_frames,
+                )
+                .map_err(merr)?;
                 let offset = seek * SAMPLES_PER_FRAME;
                 let limit = (seek + advance) * SAMPLES_PER_FRAME;
                 for (wtext, r) in tokenizer::group_words(&self.tok, &text) {
                     let (s, e) = (times[r.start].0, times[r.end - 1].1);
                     let a = (offset + s * SAMPLES_PER_FRAME).min(limit);
                     let b = (offset + e * SAMPLES_PER_FRAME).min(limit).max(a);
-                    words.push(Word::new(wtext, sample_tick(a as i64), sample_tick(b as i64)));
+                    words.push(Word::new(
+                        wtext,
+                        sample_tick(a as i64),
+                        sample_tick(b as i64),
+                    ));
                 }
             }
             if trace {
@@ -316,14 +413,22 @@ impl Transcriber for Whisper {
             }
             seek += advance;
         }
-        let mut t = Transcript { language: language.unwrap_or_else(|| "en".into()), source: self.id.clone(), speakers: Vec::new(), words };
+        let mut t = Transcript {
+            language: language.unwrap_or_else(|| "en".into()),
+            source: self.id.clone(),
+            speakers: Vec::new(),
+            words,
+        };
         t.normalize();
         crate::vad::tighten_words(audio, &mut t.words);
         if opts.diarize && !t.words.is_empty() {
             if !progress(0.96, "Labelling speakers") {
                 return Err(SpeechError::Cancelled);
             }
-            let p = crate::diarize::Params { max_speakers: opts.max_speakers, ..Default::default() };
+            let p = crate::diarize::Params {
+                max_speakers: opts.max_speakers,
+                ..Default::default()
+            };
             crate::diarize::diarize(audio, &mut t, &p);
         }
         progress(1.0, "Done");

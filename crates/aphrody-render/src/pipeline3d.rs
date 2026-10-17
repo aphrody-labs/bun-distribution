@@ -161,12 +161,12 @@ impl Pipeline3d {
                                     api: frame.adapter.backend,
                                 },
                             });
-                        },
+                        }
                         Err(crate::gpu3d::Gpu3dError::Scene(err)) => return Err(err.into()),
                         Err(err) if policy == RenderPolicy::GpuRequired => {
                             return Err(Pipeline3dError::Gpu(err.to_string()));
-                        },
-                        Err(_) => {},
+                        }
+                        Err(_) => {}
                     }
                 } else if policy == RenderPolicy::GpuRequired {
                     let why = match &self.gpu {

@@ -50,7 +50,9 @@ impl ForgeStore {
         let extra_rva: Vec<(u32, u32)> = extra
             .iter()
             .filter_map(|&(va, len)| {
-                u32::try_from(va.checked_sub(base)?).ok().map(|rva| (rva, len))
+                u32::try_from(va.checked_sub(base)?)
+                    .ok()
+                    .map(|rva| (rva, len))
             })
             .collect();
         let cover = Cover::split_with(&img, &extra_rva).context("découpage en unités")?;
@@ -58,7 +60,10 @@ impl ForgeStore {
         let path = Self::cover_path(root);
         std::fs::write(&path, serde_json::to_vec(&cover)?)
             .with_context(|| format!("écriture de {}", path.display()))?;
-        Ok(Self { root: root.to_path_buf(), cover })
+        Ok(Self {
+            root: root.to_path_buf(),
+            cover,
+        })
     }
 
     /// Écrit un recouvrement déjà calculé.
@@ -76,7 +81,10 @@ impl ForgeStore {
         let path = Self::cover_path(root);
         std::fs::write(&path, serde_json::to_vec(&cover)?)
             .with_context(|| format!("écriture de {}", path.display()))?;
-        Ok(Self { root: root.to_path_buf(), cover })
+        Ok(Self {
+            root: root.to_path_buf(),
+            cover,
+        })
     }
 
     /// Charge un recouvrement déjà calculé.
@@ -94,7 +102,10 @@ impl ForgeStore {
         let cover: Cover = serde_json::from_slice(&raw)
             .with_context(|| format!("recouvrement illisible : {}", path.display()))?;
         cover.validate().context("recouvrement incohérent")?;
-        Ok(Self { root: root.to_path_buf(), cover })
+        Ok(Self {
+            root: root.to_path_buf(),
+            cover,
+        })
     }
 }
 
@@ -196,7 +207,10 @@ mod tests {
         assert_eq!(reloaded.cover, store.cover);
 
         let reference = ReferenceBinary::load_checked(&exe, &reloaded.cover).expect("référence");
-        let rebuilt = reloaded.cover.assemble(|u| reference.payload(u)).expect("assemblage");
+        let rebuilt = reloaded
+            .cover
+            .assemble(|u| reference.payload(u))
+            .expect("assemblage");
         assert_eq!(sha256_hex(&rebuilt), reloaded.cover.sha256);
     }
 

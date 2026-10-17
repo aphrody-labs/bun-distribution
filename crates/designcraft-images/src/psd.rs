@@ -10,8 +10,10 @@ use designcraft_color::cms::{Lab, lab::lab_to_srgb};
 const MAX_RGBA_BYTES: usize = 512 << 20;
 
 /// Tagged blocks whose length is 8 bytes in a PSB.
-const LONG_KEYS: [&[u8; 4]; 13] =
-    [b"LMsk", b"Lr16", b"Lr32", b"Layr", b"Mt16", b"Mt32", b"Mtrn", b"Alph", b"FMsk", b"lnk2", b"FEid", b"FXid", b"PxSD"];
+const LONG_KEYS: [&[u8; 4]; 13] = [
+    b"LMsk", b"Lr16", b"Lr32", b"Layr", b"Mt16", b"Mt32", b"Mtrn", b"Alph", b"FMsk", b"lnk2",
+    b"FEid", b"FXid", b"PxSD",
+];
 
 /// Big-endian reads; each one fails at the end of the data.
 struct Reader<'a> {
@@ -32,7 +34,11 @@ impl<'a> Reader<'a> {
     }
     /// A length-prefixed block: 4-byte length, or 8 bytes when `long`.
     fn block(&mut self, long: bool) -> Option<&'a [u8]> {
-        let n = if long { u64::from_be_bytes(self.take(8)?.try_into().ok()?) } else { u64::from(self.u32()?) };
+        let n = if long {
+            u64::from_be_bytes(self.take(8)?.try_into().ok()?)
+        } else {
+            u64::from(self.u32()?)
+        };
         self.take(usize::try_from(n).ok()?)
     }
 }
@@ -101,7 +107,12 @@ pub(crate) fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
         _ => depth == 8 || depth == 16,
     };
     let colours = mode.colour_channels();
-    if !(1..=56).contains(&channels) || channels < colours || !(1..=max_side).contains(&w) || !(1..=max_side).contains(&h) || !depth_ok {
+    if !(1..=56).contains(&channels)
+        || channels < colours
+        || !(1..=max_side).contains(&w)
+        || !(1..=max_side).contains(&h)
+        || !depth_ok
+    {
         return None;
     }
     let (wu, hu) = (usize::try_from(w).ok()?, usize::try_from(h).ok()?);
@@ -117,7 +128,11 @@ pub(crate) fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
     let transparency = channels > colours && layer_count(layers, psb).is_some_and(|n| n < 0);
     let row_bytes = wu.checked_mul(usize::from(depth))?.div_ceil(8);
     let data = ImageData::parse(r, psb, channels, row_bytes, hu)?;
-    let palette = if mode == Mode::Indexed { Some(palette(colour_mode_data)?) } else { None };
+    let palette = if mode == Mode::Indexed {
+        Some(palette(colour_mode_data)?)
+    } else {
+        None
+    };
     // Header sizes are untrusted: allocate only once the data to fill the image is present.
     data.holds(colours + usize::from(transparency))?;
 
@@ -153,14 +168,18 @@ pub(crate) fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
             && a < 255
         {
             for (v, w) in v.iter_mut().zip(white).take(colours) {
-                *v = (w + (*v - w) * 255.0 / f32::from(a)).round().clamp(0.0, 255.0);
+                *v = (w + (*v - w) * 255.0 / f32::from(a))
+                    .round()
+                    .clamp(0.0, 255.0);
             }
         }
         let [v0, v1, v2, v3] = v;
         *px = match mode {
             Mode::Bitmap | Mode::Gray => [byte(v0), byte(v0), byte(v0), a],
             Mode::Indexed => {
-                let Some([pr, pg, pb]) = &palette else { return None };
+                let Some([pr, pg, pb]) = &palette else {
+                    return None;
+                };
                 let i = usize::from(px[0]);
                 [pr[i], pg[i], pb[i], a]
             }
@@ -168,7 +187,8 @@ pub(crate) fn decode(bytes: &[u8]) -> Option<image::RgbaImage> {
             Mode::Cmyk => {
                 // Stored inverted: 255 is no ink.
                 let ink = |v: f32| 1.0 - v / 255.0;
-                let [r, g, b] = Color::cmyk(ink(v0), ink(v1), ink(v2), ink(v3)).to_rgb_uncalibrated();
+                let [r, g, b] =
+                    Color::cmyk(ink(v0), ink(v1), ink(v2), ink(v3)).to_rgb_uncalibrated();
                 [q(r), q(g), q(b), a]
             }
             Mode::Lab => {
@@ -225,7 +245,13 @@ struct ImageData<'a> {
 }
 
 impl<'a> ImageData<'a> {
-    fn parse(mut r: Reader<'a>, psb: bool, channels: usize, row_bytes: usize, height: usize) -> Option<Self> {
+    fn parse(
+        mut r: Reader<'a>,
+        psb: bool,
+        channels: usize,
+        row_bytes: usize,
+        height: usize,
+    ) -> Option<Self> {
         let count_size = if psb { 4 } else { 2 };
         let counts = match r.u16()? {
             0 => &[][..],
@@ -233,7 +259,13 @@ impl<'a> ImageData<'a> {
             // ZIP appears only in layers, never in the composite.
             _ => return None,
         };
-        Some(ImageData { counts, count_size, data: r.b, row_bytes, height })
+        Some(ImageData {
+            counts,
+            count_size,
+            data: r.b,
+            row_bytes,
+            height,
+        })
     }
 
     /// `Some` when the data can hold the first `channels` channels: whole raw planes, or row
@@ -265,12 +297,21 @@ impl<'a> ImageData<'a> {
         if self.counts.is_empty() {
             let plane = self.row_bytes.checked_mul(self.height)?;
             let start = ch.checked_mul(plane)?;
-            self.data.get(start..start.checked_add(plane)?)?.chunks_exact(self.row_bytes).for_each(row);
+            self.data
+                .get(start..start.checked_add(plane)?)?
+                .chunks_exact(self.row_bytes)
+                .for_each(row);
             return Some(());
         }
-        let mut counts = self.counts.chunks_exact(self.count_size).map(|c| c.iter().fold(0usize, |n, &b| n << 8 | usize::from(b)));
+        let mut counts = self
+            .counts
+            .chunks_exact(self.count_size)
+            .map(|c| c.iter().fold(0usize, |n, &b| n << 8 | usize::from(b)));
         // This channel starts after every earlier channel's rows.
-        let mut at = counts.by_ref().take(ch.checked_mul(self.height)?).try_fold(0usize, |at, n| at.checked_add(n))?;
+        let mut at = counts
+            .by_ref()
+            .take(ch.checked_mul(self.height)?)
+            .try_fold(0usize, |at, n| at.checked_add(n))?;
         for _ in 0..self.height {
             let n = counts.next()?;
             let end = at.checked_add(n)?;
@@ -311,9 +352,20 @@ fn unpack_bits(mut src: &[u8], len: usize) -> Option<Vec<u8>> {
 fn fill(dst: &mut [u8], slot: usize, step: usize, src: &[u8], depth: u16) {
     let dst = dst.iter_mut().skip(slot).step_by(step);
     match depth {
-        1 => dst.zip(src.iter().flat_map(|&b| (0..8).rev().map(move |i| if (b >> i) & 1 == 1 { 0 } else { 255 }))).for_each(|(d, s)| *d = s),
+        1 => dst
+            .zip(src.iter().flat_map(|&b| {
+                (0..8)
+                    .rev()
+                    .map(move |i| if (b >> i) & 1 == 1 { 0 } else { 255 })
+            }))
+            .for_each(|(d, s)| *d = s),
         16 => dst
-            .zip(src.as_chunks::<2>().0.iter().map(|c| c.iter().fold(0u32, |n, &b| n << 8 | u32::from(b))))
+            .zip(
+                src.as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| c.iter().fold(0u32, |n, &b| n << 8 | u32::from(b))),
+            )
             .for_each(|(d, s)| *d = ((s * 255 + 32_767) / 65_535) as u8),
         _ => dst.zip(src).for_each(|(d, &s)| *d = s),
     }
@@ -377,7 +429,17 @@ mod tests {
 
     impl Psd {
         fn new(mode: u16, channels: Vec<Vec<u8>>) -> Self {
-            Psd { version: 1, mode, depth: 8, w: W, h: H, channels, palette: Vec::new(), layers: Layers::None, rle: false }
+            Psd {
+                version: 1,
+                mode,
+                depth: 8,
+                w: W,
+                h: H,
+                channels,
+                palette: Vec::new(),
+                layers: Layers::None,
+                rle: false,
+            }
         }
         fn rle(self) -> Self {
             Psd { rle: true, ..self }
@@ -390,7 +452,11 @@ mod tests {
         }
         /// A section length: 4 bytes, 8 in PSB.
         fn len(&self, n: usize) -> Vec<u8> {
-            if self.psb() { (n as u64).to_be_bytes().to_vec() } else { (n as u32).to_be_bytes().to_vec() }
+            if self.psb() {
+                (n as u64).to_be_bytes().to_vec()
+            } else {
+                (n as u32).to_be_bytes().to_vec()
+            }
         }
         fn row_bytes(&self) -> usize {
             (self.w as usize * self.depth as usize).div_ceil(8)
@@ -404,9 +470,16 @@ mod tests {
                 return b;
             }
             b.extend(1u16.to_be_bytes());
-            let rows: Vec<Vec<u8>> = planes.iter().flat_map(|p| p.chunks(self.row_bytes()).map(packbits)).collect();
+            let rows: Vec<Vec<u8>> = planes
+                .iter()
+                .flat_map(|p| p.chunks(self.row_bytes()).map(packbits))
+                .collect();
             for r in &rows {
-                if self.psb() { b.extend((r.len() as u32).to_be_bytes()) } else { b.extend((r.len() as u16).to_be_bytes()) }
+                if self.psb() {
+                    b.extend((r.len() as u32).to_be_bytes())
+                } else {
+                    b.extend((r.len() as u16).to_be_bytes())
+                }
             }
             rows.iter().for_each(|r| b.extend(r));
             b
@@ -504,7 +577,11 @@ mod tests {
         let mut out = Vec::new();
         let mut i = 0;
         while i < row.len() {
-            let run = row[i..].iter().take(128).take_while(|&&v| v == row[i]).count();
+            let run = row[i..]
+                .iter()
+                .take(128)
+                .take_while(|&&v| v == row[i])
+                .count();
             if run >= 2 {
                 out.push((1 - run as i16) as i8 as u8);
                 out.push(row[i]);
@@ -545,7 +622,11 @@ mod tests {
                         psd.layers = Layers::Count(1);
                     }
                     let want: Vec<[u8; 4]> = gray().iter().map(|&g| [g, g, g, 255]).collect();
-                    assert_eq!(pixels(&psd.write()), want, "gray + {n} extra channels, rle {rle}, layered {layered}");
+                    assert_eq!(
+                        pixels(&psd.write()),
+                        want,
+                        "gray + {n} extra channels, rle {rle}, layered {layered}"
+                    );
                 }
             }
         }
@@ -566,7 +647,12 @@ mod tests {
                         assert_eq!(p[3], 0, "pixel {i} is in the hole");
                     } else {
                         let g = gray()[i];
-                        assert_eq!(*p, [g, g, g, 255], "pixel {i}, rle {rle}, {} extras", extras.len());
+                        assert_eq!(
+                            *p,
+                            [g, g, g, 255],
+                            "pixel {i}, rle {rle}, {} extras",
+                            extras.len()
+                        );
                     }
                 }
             }
@@ -575,13 +661,21 @@ mod tests {
 
     #[test]
     fn rgb_with_a_spot_channel_is_opaque_rgb() {
-        let (r, g, b) = (plane(200, None), plane(10, Some((0, 0, 6, 8, 90))), plane(30, None));
+        let (r, g, b) = (
+            plane(200, None),
+            plane(10, Some((0, 0, 6, 8, 90))),
+            plane(30, None),
+        );
         for rle in [false, true] {
             let mut psd = Psd::new(3, vec![r.clone(), g.clone(), b.clone(), spot()]);
             psd.rle = rle;
             let px = pixels(&psd.write());
             assert_eq!(px[at(0, 0)], [200, 90, 30, 255]);
-            assert_eq!(px[at(9, 6)], [200, 10, 30, 255], "the spot square doesn't hide the image");
+            assert_eq!(
+                px[at(9, 6)],
+                [200, 10, 30, 255],
+                "the spot square doesn't hide the image"
+            );
             assert!(px.iter().all(|p| p[3] == 255));
         }
     }
@@ -592,11 +686,17 @@ mod tests {
         let r = plane(255, None);
         let gb = plane(0, Some((0, 0, 1, 1, 127)));
         let a = plane(255, Some((0, 0, 1, 1, 128)));
-        let psd = Psd::new(3, vec![r, gb.clone(), gb, a, sel()]).layers(Layers::Count(-1)).rle();
+        let psd = Psd::new(3, vec![r, gb.clone(), gb, a, sel()])
+            .layers(Layers::Count(-1))
+            .rle();
         let px = pixels(&psd.write());
         assert_eq!(px[at(0, 0)], [255, 0, 0, 128]);
         assert_eq!(px[at(5, 5)], [255, 0, 0, 255]);
-        assert_eq!(px[at(2, 2)][3], 255, "the alpha selection after the transparency is ignored");
+        assert_eq!(
+            px[at(2, 2)][3],
+            255,
+            "the alpha selection after the transparency is ignored"
+        );
     }
 
     #[test]
@@ -625,7 +725,9 @@ mod tests {
 
     /// 8-bit plane → 16-bit big-endian samples (v × 257).
     fn wide(p: &[u8]) -> Vec<u8> {
-        p.iter().flat_map(|&v| (v as u16 * 257).to_be_bytes()).collect()
+        p.iter()
+            .flat_map(|&v| (v as u16 * 257).to_be_bytes())
+            .collect()
     }
 
     #[test]
@@ -642,7 +744,8 @@ mod tests {
     #[test]
     fn sixteen_bit_transparency_from_the_lr16_block() {
         let hole = plane(255, Some((2, 3, 5, 6, 0)));
-        let mut psd = Psd::new(1, vec![wide(&gray()), wide(&hole), wide(&spot())]).layers(Layers::Lr16(-1));
+        let mut psd =
+            Psd::new(1, vec![wide(&gray()), wide(&hole), wide(&spot())]).layers(Layers::Lr16(-1));
         psd.depth = 16;
         let px = pixels(&psd.write());
         assert_eq!(px[at(3, 4)][3], 0);
@@ -652,7 +755,9 @@ mod tests {
     #[test]
     fn psb_with_rle_and_transparency() {
         let hole = plane(255, Some((2, 3, 5, 6, 0)));
-        let mut psd = Psd::new(1, vec![gray(), hole, sel()]).layers(Layers::Count(-1)).rle();
+        let mut psd = Psd::new(1, vec![gray(), hole, sel()])
+            .layers(Layers::Count(-1))
+            .rle();
         psd.version = 2;
         let px = pixels(&psd.write());
         assert_eq!(px[at(3, 4)][3], 0);
@@ -699,14 +804,23 @@ mod tests {
 
     fn valid_files() -> Vec<Vec<u8>> {
         let hole = plane(255, Some((2, 3, 5, 6, 0)));
-        let mut wide16 = Psd::new(1, vec![wide(&gray()), wide(&hole)]).layers(Layers::Lr16(-1)).rle();
+        let mut wide16 = Psd::new(1, vec![wide(&gray()), wide(&hole)])
+            .layers(Layers::Lr16(-1))
+            .rle();
         wide16.depth = 16;
-        let mut psb = Psd::new(3, vec![gray(), gray(), gray(), hole.clone()]).layers(Layers::Count(-1)).rle();
+        let mut psb = Psd::new(3, vec![gray(), gray(), gray(), hole.clone()])
+            .layers(Layers::Count(-1))
+            .rle();
         psb.version = 2;
         vec![
             Psd::new(1, vec![gray(), sel(), spot()]).write(),
-            Psd::new(1, vec![gray(), hole.clone(), spot()]).layers(Layers::Count(-1)).rle().write(),
-            Psd::new(4, vec![gray(), gray(), gray(), gray()]).rle().write(),
+            Psd::new(1, vec![gray(), hole.clone(), spot()])
+                .layers(Layers::Count(-1))
+                .rle()
+                .write(),
+            Psd::new(4, vec![gray(), gray(), gray(), gray()])
+                .rle()
+                .write(),
             wide16.write(),
             psb.write(),
         ]
@@ -718,7 +832,10 @@ mod tests {
             let full = decode_rgba(&file).expect("the full file decodes");
             for n in 0..file.len() {
                 if let Some(img) = decode_rgba(&file[..n]) {
-                    assert_eq!(img, full, "a truncated file decodes only when the composite survived");
+                    assert_eq!(
+                        img, full,
+                        "a truncated file decodes only when the composite survived"
+                    );
                 }
             }
         }
@@ -753,16 +870,46 @@ mod tests {
             b
         };
         assert!(decode_rgba(&ok).is_some());
-        assert!(decode_rgba(&set(4, &3u16.to_be_bytes())).is_none(), "version 3");
-        assert!(decode_rgba(&set(12, &0u16.to_be_bytes())).is_none(), "no channels");
-        assert!(decode_rgba(&set(12, &57u16.to_be_bytes())).is_none(), "57 channels");
-        assert!(decode_rgba(&set(14, &0u32.to_be_bytes())).is_none(), "zero height");
-        assert!(decode_rgba(&set(18, &0u32.to_be_bytes())).is_none(), "zero width");
-        assert!(decode_rgba(&set(18, &30_001u32.to_be_bytes())).is_none(), "wider than a PSD can be");
-        assert!(decode_rgba(&set(14, &u32::MAX.to_be_bytes())).is_none(), "absurd height");
-        assert!(decode_rgba(&set(22, &32u16.to_be_bytes())).is_none(), "32-bit");
-        assert!(decode_rgba(&set(22, &7u16.to_be_bytes())).is_none(), "7-bit");
-        assert!(decode_rgba(&set(24, &7u16.to_be_bytes())).is_none(), "multichannel");
+        assert!(
+            decode_rgba(&set(4, &3u16.to_be_bytes())).is_none(),
+            "version 3"
+        );
+        assert!(
+            decode_rgba(&set(12, &0u16.to_be_bytes())).is_none(),
+            "no channels"
+        );
+        assert!(
+            decode_rgba(&set(12, &57u16.to_be_bytes())).is_none(),
+            "57 channels"
+        );
+        assert!(
+            decode_rgba(&set(14, &0u32.to_be_bytes())).is_none(),
+            "zero height"
+        );
+        assert!(
+            decode_rgba(&set(18, &0u32.to_be_bytes())).is_none(),
+            "zero width"
+        );
+        assert!(
+            decode_rgba(&set(18, &30_001u32.to_be_bytes())).is_none(),
+            "wider than a PSD can be"
+        );
+        assert!(
+            decode_rgba(&set(14, &u32::MAX.to_be_bytes())).is_none(),
+            "absurd height"
+        );
+        assert!(
+            decode_rgba(&set(22, &32u16.to_be_bytes())).is_none(),
+            "32-bit"
+        );
+        assert!(
+            decode_rgba(&set(22, &7u16.to_be_bytes())).is_none(),
+            "7-bit"
+        );
+        assert!(
+            decode_rgba(&set(24, &7u16.to_be_bytes())).is_none(),
+            "multichannel"
+        );
         // Huge but within the side limit: refused before allocating.
         let mut big = set(14, &30_000u32.to_be_bytes());
         big[18..22].copy_from_slice(&30_000u32.to_be_bytes());
@@ -776,7 +923,11 @@ mod tests {
     fn bad_compression_is_rejected() {
         let ok = Psd::new(1, vec![gray()]).rle().write();
         assert!(decode_rgba(&ok).is_some());
-        let comp = ok.len() - Psd::new(1, vec![gray()]).rle().channel_data(&[gray()], true).len();
+        let comp = ok.len()
+            - Psd::new(1, vec![gray()])
+                .rle()
+                .channel_data(&[gray()], true)
+                .len();
         for method in [2u16, 3, 4] {
             let mut b = ok.clone();
             b[comp..comp + 2].copy_from_slice(&method.to_be_bytes());
@@ -793,7 +944,8 @@ mod tests {
         }
         let mut b = ok[..comp].to_vec();
         b.extend(1u16.to_be_bytes());
-        rows.iter().for_each(|r| b.extend((r.len() as u16).to_be_bytes()));
+        rows.iter()
+            .for_each(|r| b.extend((r.len() as u16).to_be_bytes()));
         rows.iter().for_each(|r| b.extend(r));
         assert!(decode_rgba(&b).is_none());
     }
@@ -801,11 +953,22 @@ mod tests {
     #[test]
     fn packbits_round_trips() {
         let row = [1u8, 1, 1, 2, 3, 4, 4, 5, 6, 6, 6, 6, 7];
-        assert_eq!(super::unpack_bits(&packbits(&row), row.len()), Some(row.to_vec()));
+        assert_eq!(
+            super::unpack_bits(&packbits(&row), row.len()),
+            Some(row.to_vec())
+        );
         // -128 is a no-op.
         assert_eq!(super::unpack_bits(&[0x80, 0x01, 9, 8], 2), Some(vec![9, 8]));
-        assert_eq!(super::unpack_bits(&[0x05, 1, 2], 6), None, "literal past the end of the data");
-        assert_eq!(super::unpack_bits(&[0xFE, 7], 2), None, "run longer than the row");
+        assert_eq!(
+            super::unpack_bits(&[0x05, 1, 2], 6),
+            None,
+            "literal past the end of the data"
+        );
+        assert_eq!(
+            super::unpack_bits(&[0xFE, 7], 2),
+            None,
+            "run longer than the row"
+        );
     }
 
     #[test]
@@ -823,8 +986,12 @@ mod tests {
         head.extend(1u16.to_be_bytes()); // grayscale
         head.extend([0u8; 12]); // empty colour mode data, image resources, layers
         let holds = |b: &[u8]| {
-            let r = super::Reader { b: &b[head.len()..] };
-            super::ImageData::parse(r, false, 1, w as usize, h as usize).expect("parses").holds(1)
+            let r = super::Reader {
+                b: &b[head.len()..],
+            };
+            super::ImageData::parse(r, false, 1, w as usize, h as usize)
+                .expect("parses")
+                .holds(1)
         };
         // Raw: a few bytes instead of 11000 × 11000.
         let mut raw = head.clone();

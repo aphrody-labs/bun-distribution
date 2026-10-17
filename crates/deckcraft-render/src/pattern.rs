@@ -46,19 +46,43 @@ const TILES: &[(&str, [u8; 8])] = &[
     ("dkUpDiag", [0x33, 0x66, 0xCC, 0x99, 0x33, 0x66, 0xCC, 0x99]),
     ("wdDnDiag", [0xC1, 0xE0, 0x70, 0x38, 0x1C, 0x0E, 0x07, 0x83]),
     ("wdUpDiag", [0x83, 0x07, 0x0E, 0x1C, 0x38, 0x70, 0xE0, 0xC1]),
-    ("dashDnDiag", [0x00, 0x00, 0x88, 0x44, 0x22, 0x11, 0x00, 0x00]),
-    ("dashUpDiag", [0x00, 0x00, 0x11, 0x22, 0x44, 0x88, 0x00, 0x00]),
-    ("diagCross", [0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81]),
+    (
+        "dashDnDiag",
+        [0x00, 0x00, 0x88, 0x44, 0x22, 0x11, 0x00, 0x00],
+    ),
+    (
+        "dashUpDiag",
+        [0x00, 0x00, 0x11, 0x22, 0x44, 0x88, 0x00, 0x00],
+    ),
+    (
+        "diagCross",
+        [0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81],
+    ),
     ("smCheck", [0x99, 0x66, 0x66, 0x99, 0x99, 0x66, 0x66, 0x99]),
     ("lgCheck", [0xF0, 0xF0, 0xF0, 0xF0, 0x0F, 0x0F, 0x0F, 0x0F]),
     ("smGrid", [0xFF, 0x88, 0x88, 0x88, 0xFF, 0x88, 0x88, 0x88]),
     ("lgGrid", [0xFF, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80]),
     ("dotGrid", [0xAA, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00]),
-    ("smConfetti", [0x80, 0x08, 0x40, 0x02, 0x10, 0x01, 0x20, 0x04]),
-    ("lgConfetti", [0xB1, 0x30, 0x03, 0x1B, 0xD8, 0xC0, 0x0C, 0x8D]),
-    ("horzBrick", [0xFF, 0x80, 0x80, 0x80, 0xFF, 0x08, 0x08, 0x08]),
-    ("diagBrick", [0x01, 0x02, 0x04, 0x08, 0x18, 0x24, 0x42, 0x81]),
-    ("solidDmnd", [0x10, 0x38, 0x7C, 0xFE, 0x7C, 0x38, 0x10, 0x00]),
+    (
+        "smConfetti",
+        [0x80, 0x08, 0x40, 0x02, 0x10, 0x01, 0x20, 0x04],
+    ),
+    (
+        "lgConfetti",
+        [0xB1, 0x30, 0x03, 0x1B, 0xD8, 0xC0, 0x0C, 0x8D],
+    ),
+    (
+        "horzBrick",
+        [0xFF, 0x80, 0x80, 0x80, 0xFF, 0x08, 0x08, 0x08],
+    ),
+    (
+        "diagBrick",
+        [0x01, 0x02, 0x04, 0x08, 0x18, 0x24, 0x42, 0x81],
+    ),
+    (
+        "solidDmnd",
+        [0x10, 0x38, 0x7C, 0xFE, 0x7C, 0x38, 0x10, 0x00],
+    ),
     ("openDmnd", [0x82, 0x44, 0x28, 0x10, 0x28, 0x44, 0x82, 0x01]),
     ("dotDmnd", [0x80, 0x00, 0x22, 0x00, 0x08, 0x00, 0x22, 0x00]),
     ("plaid", [0xAA, 0x55, 0xAA, 0x55, 0xF0, 0xF0, 0xF0, 0xF0]),
@@ -83,25 +107,43 @@ pub fn tile(name: &str) -> [u8; 8] {
 
 /// Is cell (`x`, `y`) of the tile the foreground?
 pub fn is_fg(tile: &[u8; 8], x: usize, y: usize) -> bool {
-    tile.get(y % 8).is_some_and(|row| row & (0x80 >> (x % 8)) != 0)
+    tile.get(y % 8)
+        .is_some_and(|row| row & (0x80 >> (x % 8)) != 0)
 }
 
 fn premul(c: Rgba, alpha: f64) -> vello_cpu::color::PremulRgba8 {
-    let a = (c.a as f64 * alpha.clamp(0.0, 1.0)).round().clamp(0.0, 255.0);
+    let a = (c.a as f64 * alpha.clamp(0.0, 1.0))
+        .round()
+        .clamp(0.0, 255.0);
     let m = |v: u8| (v as f64 * a / 255.0).round().clamp(0.0, 255.0) as u8;
-    vello_cpu::color::PremulRgba8 { r: m(c.r), g: m(c.g), b: m(c.b), a: a as u8 }
+    vello_cpu::color::PremulRgba8 {
+        r: m(c.r),
+        g: m(c.g),
+        b: m(c.b),
+        a: a as u8,
+    }
 }
 
 /// Fill `path` (in the space `m` maps to the output) with preset `name` in `fg` on `bg`, faded by
 /// `alpha`.
-pub fn fill(ctx: &mut RenderContext, name: &str, fg: Rgba, bg: Rgba, alpha: f64, path: &BezPath, m: Affine) {
+pub fn fill(
+    ctx: &mut RenderContext,
+    name: &str,
+    fg: Rgba,
+    bg: Rgba,
+    alpha: f64,
+    path: &BezPath,
+    m: Affine,
+) {
     let det = m.determinant();
     if !det.is_finite() || det.abs() <= 1e-12 {
         return;
     }
     let t = tile(name);
     let (f, b) = (premul(fg, alpha), premul(bg, alpha));
-    let data: Vec<vello_cpu::color::PremulRgba8> = (0..64).map(|i| if is_fg(&t, i % 8, i / 8) { f } else { b }).collect();
+    let data: Vec<vello_cpu::color::PremulRgba8> = (0..64)
+        .map(|i| if is_fg(&t, i % 8, i / 8) { f } else { b })
+        .collect();
     let pm = Arc::new(Pixmap::from_parts(data, 8, 8));
     ctx.set_transform(m);
     ctx.set_paint(vello_cpu::Image {
@@ -200,8 +242,15 @@ mod tests {
             let t = tile(n);
             (0..64).filter(|i| is_fg(&t, i % 8, i / 8)).count()
         };
-        let names = ["pct5", "pct10", "pct20", "pct25", "pct30", "pct40", "pct50", "pct60", "pct70", "pct75", "pct80", "pct90"];
-        assert!(names.windows(2).all(|w| share(w[0]) <= share(w[1])), "{:?}", names.map(share));
+        let names = [
+            "pct5", "pct10", "pct20", "pct25", "pct30", "pct40", "pct50", "pct60", "pct70",
+            "pct75", "pct80", "pct90",
+        ];
+        assert!(
+            names.windows(2).all(|w| share(w[0]) <= share(w[1])),
+            "{:?}",
+            names.map(share)
+        );
         assert_eq!((share("pct5"), share("pct50"), share("pct90")), (2, 32, 62));
         assert_eq!(tile("nonsense"), tile("pct50"));
     }

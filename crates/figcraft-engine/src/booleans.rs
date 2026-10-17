@@ -26,7 +26,8 @@ use crate::{Result, Session};
 
 /// Whether `id` is a boolean group.
 pub fn is_group(doc: &Document, id: NodeId) -> bool {
-    doc.node(id).is_some_and(|n| matches!(n.kind, NodeKind::BooleanOp { .. }))
+    doc.node(id)
+        .is_some_and(|n| matches!(n.kind, NodeKind::BooleanOp { .. }))
 }
 
 /// The boolean group `id` is an operand of.
@@ -39,7 +40,9 @@ pub fn group_of(doc: &Document, id: NodeId) -> Option<NodeId> {
 /// (`None` outside boolean groups).
 pub fn operand_op(doc: &Document, id: NodeId) -> Option<BoolOp> {
     let g = group_of(doc, id)?;
-    let NodeKind::BooleanOp { op } = doc.node(g)?.kind else { return None };
+    let NodeKind::BooleanOp { op } = doc.node(g)?.kind else {
+        return None;
+    };
     Some(doc.node(id)?.bool_op.unwrap_or(op))
 }
 
@@ -47,7 +50,9 @@ pub fn operand_op(doc: &Document, id: NodeId) -> Option<BoolOp> {
 /// panel marks with the operation's icon).
 pub fn distinct_op(doc: &Document, id: NodeId) -> Option<BoolOp> {
     let g = doc.node(group_of(doc, id)?)?;
-    let NodeKind::BooleanOp { op } = g.kind else { return None };
+    let NodeKind::BooleanOp { op } = g.kind else {
+        return None;
+    };
     let own = doc.node(id)?.bool_op.filter(|o| *o != op)?;
     (g.children.first() != Some(&id)).then_some(own)
 }
@@ -67,7 +72,10 @@ pub fn shown_op(doc: &Document, ids: &[NodeId]) -> Option<BoolOp> {
 
 /// Boolean group results for hit testing ([`figcraft_doc::geometry::BoolResult`]): none for a
 /// group that is selected or holds a selected layer, whose operands are hit instead.
-pub fn result_outline<'a>(doc: &'a Document, selection: &'a [NodeId]) -> impl Fn(NodeId, &Node) -> Option<BezPath> + 'a {
+pub fn result_outline<'a>(
+    doc: &'a Document,
+    selection: &'a [NodeId],
+) -> impl Fn(NodeId, &Node) -> Option<BezPath> + 'a {
     move |id, n| {
         if selection.iter().any(|s| doc.is_ancestor(id, *s)) {
             return None;
@@ -79,10 +87,16 @@ pub fn result_outline<'a>(doc: &'a Document, selection: &'a [NodeId]) -> impl Fn
 /// The operands to outline on the canvas while layers inside a boolean group are selected or
 /// edited (`editing`: the layer in vector edit mode): every operand of the nearest boolean group
 /// holding each of them, in layer order, without repeats.
-pub fn outlined_operands(doc: &Document, selection: &[NodeId], editing: Option<NodeId>) -> Vec<NodeId> {
+pub fn outlined_operands(
+    doc: &Document,
+    selection: &[NodeId],
+    editing: Option<NodeId>,
+) -> Vec<NodeId> {
     let mut out = Vec::new();
     for id in selection.iter().copied().chain(editing) {
-        let Some(g) = doc.ancestors(id).into_iter().find(|a| is_group(doc, *a)) else { continue };
+        let Some(g) = doc.ancestors(id).into_iter().find(|a| is_group(doc, *a)) else {
+            continue;
+        };
         for c in doc.node(g).map(|n| n.children.clone()).unwrap_or_default() {
             if doc.node(c).is_some_and(|n| n.visible) && !out.contains(&c) {
                 out.push(c);
@@ -139,6 +153,17 @@ pub(crate) fn apply(s: &mut Session, cmd: &str, p: &Value, op: BoolOp) -> Result
 
 /// A boolean group's default name follows its operation; other names stay.
 fn renamed(name: &str, op: BoolOp) -> String {
-    let default = [BoolOp::Union, BoolOp::Subtract, BoolOp::Intersect, BoolOp::Exclude].iter().any(|o| o.label() == name);
-    if default { op.label().to_string() } else { name.to_string() }
+    let default = [
+        BoolOp::Union,
+        BoolOp::Subtract,
+        BoolOp::Intersect,
+        BoolOp::Exclude,
+    ]
+    .iter()
+    .any(|o| o.label() == name);
+    if default {
+        op.label().to_string()
+    } else {
+        name.to_string()
+    }
 }

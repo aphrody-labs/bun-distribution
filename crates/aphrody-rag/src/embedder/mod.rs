@@ -37,7 +37,11 @@ pub const MATRYOSHKA_512_DIM: usize = 512;
 pub fn format_query_or_passage(model_id: &str, text: &str, is_query: bool) -> String {
     let lower = model_id.to_ascii_lowercase();
     if lower.contains("qwen3") && lower.contains("embed") {
-        if is_query { format!("{QWEN3_QUERY_INSTRUCTION}{text}") } else { text.to_string() }
+        if is_query {
+            format!("{QWEN3_QUERY_INSTRUCTION}{text}")
+        } else {
+            text.to_string()
+        }
     } else if lower.contains("e5") {
         let prefix = if is_query { "query: " } else { "passage: " };
         format!("{prefix}{text}")

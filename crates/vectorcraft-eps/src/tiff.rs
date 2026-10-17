@@ -13,7 +13,12 @@ use crate::Raster;
 /// over white or, with `alpha`, RGBA (unassociated alpha).
 pub(crate) fn encode(img: &Raster, bw: bool, alpha: bool) -> Result<Vec<u8>, String> {
     let w = img.width as usize;
-    if w == 0 || img.height == 0 || w.checked_mul(img.height as usize).and_then(|n| n.checked_mul(4)) != Some(img.rgba.len()) {
+    if w == 0
+        || img.height == 0
+        || w.checked_mul(img.height as usize)
+            .and_then(|n| n.checked_mul(4))
+            != Some(img.rgba.len())
+    {
         return Err("the preview image is empty".into());
     }
     let px = img.rgba.as_chunks::<4>().0;
@@ -37,18 +42,41 @@ pub(crate) fn encode(img: &Raster, bw: bool, alpha: bool) -> Result<Vec<u8>, Str
     } else if alpha {
         (Cow::Borrowed(&img.rgba), Photometric::Rgb, 4, 8)
     } else {
-        (px.iter().flat_map(on_white).collect(), Photometric::Rgb, 3, 8)
+        (
+            px.iter().flat_map(on_white).collect(),
+            Photometric::Rgb,
+            3,
+            8,
+        )
     };
-    let image = Image { width: img.width, height: img.height, data: &data, photometric, samples, bits, alpha: alpha && !bw };
-    tiff::write(&image, &Layout { byte_order: ByteOrder::Little, compression: Compression::PackBits, ppi: 72.0, icc: None })
-        .map_err(|e| format!("the preview: {e}"))
+    let image = Image {
+        width: img.width,
+        height: img.height,
+        data: &data,
+        photometric,
+        samples,
+        bits,
+        alpha: alpha && !bw,
+    };
+    tiff::write(
+        &image,
+        &Layout {
+            byte_order: ByteOrder::Little,
+            compression: Compression::PackBits,
+            ppi: 72.0,
+            icc: None,
+        },
+    )
+    .map_err(|e| format!("the preview: {e}"))
 }
 
 /// `img` as a PNG.
 pub(crate) fn png(img: &Raster) -> Result<Vec<u8>, String> {
-    let rgba = image::RgbaImage::from_raw(img.width, img.height, img.rgba.clone()).ok_or("the thumbnail image is malformed")?;
+    let rgba = image::RgbaImage::from_raw(img.width, img.height, img.rgba.clone())
+        .ok_or("the thumbnail image is malformed")?;
     let mut out = vec![];
-    rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).map_err(|e| e.to_string())?;
+    rgba.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
     Ok(out)
 }
 
@@ -66,18 +94,29 @@ struct Tiff<'a> {
 impl Tiff<'_> {
     fn u16(&self, at: usize) -> Option<u16> {
         let b: [u8; 2] = self.b.get(at..at.checked_add(2)?)?.try_into().ok()?;
-        Some(if self.big { u16::from_be_bytes(b) } else { u16::from_le_bytes(b) })
+        Some(if self.big {
+            u16::from_be_bytes(b)
+        } else {
+            u16::from_le_bytes(b)
+        })
     }
 
     fn u32(&self, at: usize) -> Option<u32> {
         let b: [u8; 4] = self.b.get(at..at.checked_add(4)?)?.try_into().ok()?;
-        Some(if self.big { u32::from_be_bytes(b) } else { u32::from_le_bytes(b) })
+        Some(if self.big {
+            u32::from_be_bytes(b)
+        } else {
+            u32::from_le_bytes(b)
+        })
     }
 
     /// The values of the directory entry at `at` (bytes, shorts or longs; in the entry when they
     /// fit in four bytes).
     fn values(&self, at: usize) -> Option<Vec<u32>> {
-        let (kind, n) = (self.u16(at.checked_add(2)?)?, self.u32(at.checked_add(4)?)? as usize);
+        let (kind, n) = (
+            self.u16(at.checked_add(2)?)?,
+            self.u32(at.checked_add(4)?)? as usize,
+        );
         let size = match kind {
             1 => 1,
             3 => 2,
@@ -88,7 +127,11 @@ impl Tiff<'_> {
             return None;
         }
         let field = at.checked_add(8)?;
-        let start = if n * size <= 4 { field } else { self.u32(field)? as usize };
+        let start = if n * size <= 4 {
+            field
+        } else {
+            self.u32(field)? as usize
+        };
         (0..n)
             .map(|i| {
                 let at = start.checked_add(i * size)?;
@@ -124,7 +167,13 @@ pub(crate) fn palette_rgba(bytes: &[u8]) -> Option<image::RgbaImage> {
     let samples = one(277).unwrap_or(1) as usize;
     let alpha = samples == 2 && matches!(get(338)?.as_slice(), [0..=2]);
     let plain = one(259).unwrap_or(1) == 1 && one(262)? == 3 && one(284).unwrap_or(1) == 1;
-    if !plain || !(samples == 1 || alpha) || get(258)?.iter().any(|b| *b != 8) || w == 0 || h == 0 || w.checked_mul(h)? > MAX_PIXELS {
+    if !plain
+        || !(samples == 1 || alpha)
+        || get(258)?.iter().any(|b| *b != 8)
+        || w == 0
+        || h == 0
+        || w.checked_mul(h)? > MAX_PIXELS
+    {
         return None;
     }
     let map = get(320)?;
@@ -136,11 +185,20 @@ pub(crate) fn palette_rgba(bytes: &[u8]) -> Option<image::RgbaImage> {
     let per = (one(278).unwrap_or(u32::MAX) as usize).min(h);
     let row = w * samples;
     // The strips are in the file: so is all that's allocated.
-    if per == 0 || offsets.len() != counts.len() || offsets.len() < h.div_ceil(per) || row * h > bytes.len() {
+    if per == 0
+        || offsets.len() != counts.len()
+        || offsets.len() < h.div_ceil(per)
+        || row * h > bytes.len()
+    {
         return None;
     }
     let mut data = Vec::with_capacity(row * h);
-    for (k, (at, n)) in offsets.iter().zip(&counts).take(h.div_ceil(per)).enumerate() {
+    for (k, (at, n)) in offsets
+        .iter()
+        .zip(&counts)
+        .take(h.div_ceil(per))
+        .enumerate()
+    {
         let want = per.min(h - k * per) * row;
         if (*n as usize) < want {
             return None;
@@ -149,12 +207,21 @@ pub(crate) fn palette_rgba(bytes: &[u8]) -> Option<image::RgbaImage> {
         data.extend_from_slice(bytes.get(at..at.checked_add(want)?)?);
     }
     // Map entries are 16-bit.
-    let channel = |c: usize, i: usize| map.get(c * 256 + i).map_or(0, |v| ((u64::from(*v).min(65_535) * 255 + 32_767) / 65_535) as u8);
+    let channel = |c: usize, i: usize| {
+        map.get(c * 256 + i).map_or(0, |v| {
+            ((u64::from(*v).min(65_535) * 255 + 32_767) / 65_535) as u8
+        })
+    };
     let rgba = data
         .chunks_exact(samples)
         .flat_map(|px| {
             let i = usize::from(px.first().copied().unwrap_or(0));
-            [channel(0, i), channel(1, i), channel(2, i), px.get(1).copied().unwrap_or(255)]
+            [
+                channel(0, i),
+                channel(1, i),
+                channel(2, i),
+                px.get(1).copied().unwrap_or(255),
+            ]
         })
         .collect();
     image::RgbaImage::from_raw(w as u32, h as u32, rgba)

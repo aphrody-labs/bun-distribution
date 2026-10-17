@@ -6,11 +6,13 @@ use pdfcraft_ui_egui::PdfCraftApp;
 use pdfcraft_ui_egui::theme::{ThemeKind, ThemePreference, Tokens};
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1100.0, 800.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app
+        });
     h.input_mut().system_theme = Some(egui::Theme::Dark);
     h.run_steps(4);
     h
@@ -20,8 +22,14 @@ fn assert_theme(h: &Harness<'static, PdfCraftApp>, preference: ThemePreference, 
     assert_eq!(h.state().theme_preference, preference);
     assert_eq!(h.state().theme, kind);
     assert_eq!(Tokens::get(&h.ctx).kind, kind);
-    assert_eq!(h.ctx.global_style().visuals.dark_mode, kind == ThemeKind::Dark);
-    assert_eq!(h.ctx.options(|o| o.theme_preference), egui::ThemePreference::System);
+    assert_eq!(
+        h.ctx.global_style().visuals.dark_mode,
+        kind == ThemeKind::Dark
+    );
+    assert_eq!(
+        h.ctx.options(|o| o.theme_preference),
+        egui::ThemePreference::System
+    );
     for branch in [egui::Theme::Light, egui::Theme::Dark] {
         let style = h.ctx.style_of(branch);
         assert_eq!(style.visuals.dark_mode, kind == ThemeKind::Dark);
@@ -84,7 +92,11 @@ fn toolbar_and_view_menu_share_three_state_preferences() {
 
 #[test]
 fn saved_preferences_restore_with_legacy_light_dark_settings() {
-    for (value, preference) in [("light", ThemePreference::Light), ("dark", ThemePreference::Dark), ("system", ThemePreference::System)] {
+    for (value, preference) in [
+        ("light", ThemePreference::Light),
+        ("dark", ThemePreference::Dark),
+        ("system", ThemePreference::System),
+    ] {
         let mut app = PdfCraftApp::new();
         app.set_option("language", "en").unwrap();
         app.set_option("theme", value).unwrap();
@@ -123,19 +135,25 @@ fn commands_and_options_apply_before_the_first_frame() {
     assert_eq!(app.theme, ThemeKind::Dark);
     app.run_command("view.theme.light");
     app.set_option("theme", "dark").unwrap();
-    assert!(app.set_option("theme", "purple").unwrap_err().contains("light, dark, or system"));
+    assert!(
+        app.set_option("theme", "purple")
+            .unwrap_err()
+            .contains("light, dark, or system")
+    );
     assert_eq!(app.theme_preference, ThemePreference::Dark);
     assert_eq!(app.theme, ThemeKind::Dark);
 }
 
 #[test]
 fn restored_system_tracks_native_input_without_rewriting_saved_preference() {
-    let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.restore(r#"{"theme":"System"}"#);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1100.0, 800.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.restore(r#"{"theme":"System"}"#);
+            app
+        });
     for (input, expected) in [
         (Some(egui::Theme::Dark), ThemeKind::Dark),
         (Some(egui::Theme::Light), ThemeKind::Light),
@@ -145,9 +163,15 @@ fn restored_system_tracks_native_input_without_rewriting_saved_preference() {
         h.input_mut().system_theme = input;
         h.run_steps(3);
         assert_theme(&h, ThemePreference::System, expected);
-        assert_eq!(serde_json::from_str::<serde_json::Value>(&h.state().persist()).unwrap()["theme"], "System");
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&h.state().persist()).unwrap()["theme"],
+            "System"
+        );
     }
-    for (manual, expected) in [(ThemePreference::Light, ThemeKind::Light), (ThemePreference::Dark, ThemeKind::Dark)] {
+    for (manual, expected) in [
+        (ThemePreference::Light, ThemeKind::Light),
+        (ThemePreference::Dark, ThemeKind::Dark),
+    ] {
         h.state_mut().set_theme_preference(manual);
         for input in [Some(egui::Theme::Dark), Some(egui::Theme::Light), None] {
             h.input_mut().system_theme = input;
@@ -163,7 +187,10 @@ fn unknown_system_uses_light_after_a_manual_dark_choice() {
     app.set_theme_preference(ThemePreference::Dark);
     app.set_theme_preference(ThemePreference::System);
     assert_eq!(app.theme, ThemeKind::Light);
-    assert_eq!(serde_json::from_str::<serde_json::Value>(&app.persist()).unwrap()["theme"], "System");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&app.persist()).unwrap()["theme"],
+        "System"
+    );
 }
 
 #[test]
@@ -182,16 +209,22 @@ fn native_appearance_remains_inherited_for_every_saved_choice() {
             }
         }
     }
-    for preference in [ThemePreference::System, ThemePreference::Light, ThemePreference::Dark] {
+    for preference in [
+        ThemePreference::System,
+        ThemePreference::Light,
+        ThemePreference::Dark,
+    ] {
         let commands = NativeCommands(Default::default());
         let observed = commands.clone();
-        let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(move |cc| {
-            cc.egui_ctx.add_plugin(commands);
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            app.set_theme_preference(preference);
-            app
-        });
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1100.0, 800.0))
+            .build_eframe(move |cc| {
+                cc.egui_ctx.add_plugin(commands);
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                app.set_theme_preference(preference);
+                app
+            });
         h.input_mut().system_theme = Some(egui::Theme::Light);
         h.run_steps(3);
         h.input_mut().system_theme = Some(egui::Theme::Dark);
@@ -200,7 +233,15 @@ fn native_appearance_remains_inherited_for_every_saved_choice() {
         // native window intent, not operating-system ThemeChanged delivery.
         let commands = observed.0.lock().unwrap();
         assert!(!commands.is_empty());
-        assert!(commands.iter().all(|theme| *theme == egui::SystemTheme::SystemDefault), "{commands:?}");
-        assert_eq!(h.ctx.options(|o| o.theme_preference), egui::ThemePreference::System);
+        assert!(
+            commands
+                .iter()
+                .all(|theme| *theme == egui::SystemTheme::SystemDefault),
+            "{commands:?}"
+        );
+        assert_eq!(
+            h.ctx.options(|o| o.theme_preference),
+            egui::ThemePreference::System
+        );
     }
 }

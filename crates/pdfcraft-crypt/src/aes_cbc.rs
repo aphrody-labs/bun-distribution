@@ -81,7 +81,10 @@ pub fn aes_cbc_decrypt(key: &[u8], iv: &[u8; 16], data: &[u8], pad: bool) -> Vec
     }
     if pad && let Some(&n) = out.last() {
         let n = n as usize;
-        if (1..=16).contains(&n) && n <= out.len() && out[out.len() - n..].iter().all(|b| *b as usize == n) {
+        if (1..=16).contains(&n)
+            && n <= out.len()
+            && out[out.len() - n..].iter().all(|b| *b as usize == n)
+        {
             out.truncate(out.len() - n);
         }
     }

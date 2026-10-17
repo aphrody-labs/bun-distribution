@@ -34,7 +34,15 @@ fn folder_mode(f: &Map<String, Value>) -> bool {
 }
 
 fn files(f: &Map<String, Value>) -> Vec<String> {
-    f.get("files").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default()
+    f.get("files")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn folder(f: &Map<String, Value>) -> &str {
@@ -42,7 +50,9 @@ fn folder(f: &Map<String, Value>) -> &str {
 }
 
 fn selected(f: &Map<String, Value>) -> Option<usize> {
-    f.get("selected").and_then(Value::as_u64).map(|i| i as usize)
+    f.get("selected")
+        .and_then(Value::as_u64)
+        .map(|i| i as usize)
 }
 
 /// Add `paths` to the Files list, skipping those already in it, in their order.
@@ -57,17 +67,29 @@ fn add(f: &mut Map<String, Value>, paths: impl IntoIterator<Item = String>) {
 }
 
 fn file_name(p: &str) -> &str {
-    std::path::Path::new(p).file_name().and_then(|n| n.to_str()).unwrap_or(p)
+    std::path::Path::new(p)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(p)
 }
 
 /// The open documents that have a file, in tab order (what Add Open Files adds).
 fn open_files(app: &PhotocraftApp) -> Vec<String> {
-    app.session.documents().iter().filter_map(|d| d.path.clone()).collect()
+    app.session
+        .documents()
+        .iter()
+        .filter_map(|d| d.path.clone())
+        .collect()
 }
 
 /// OK needs files to load: some in the list, or a chosen folder.
 pub fn can_confirm(f: &Map<String, Value>) -> bool {
-    !owns(f) || if folder_mode(f) { !folder(f).is_empty() } else { !files(f).is_empty() }
+    !owns(f)
+        || if folder_mode(f) {
+            !folder(f).is_empty()
+        } else {
+            !files(f).is_empty()
+        }
 }
 
 /// Browse…: files to add (Files) or the folder to load (Folder), into dialog `id` once the file
@@ -81,14 +103,29 @@ fn browse(app: &mut PhotocraftApp, id: u64, folder: bool) {
         })
     } else {
         let initial_dir = crate::file_dialog::last_used_dir(&app.ui.recent_files);
-        app.ask_file(FileDialogRequest::Open { multiple: true, initial_dir, extensions: None }, move |app, answer| {
-            let FileDialogAnswer::Paths(paths) = answer else { return Err("Load Files into Stack reads files from disk".into()) };
-            let d = app.ui.dialog_mut(id).ok_or("the dialog was closed")?;
-            add(&mut d.fields, paths);
-            Ok(Value::Null)
-        })
+        app.ask_file(
+            FileDialogRequest::Open {
+                multiple: true,
+                initial_dir,
+                extensions: None,
+            },
+            move |app, answer| {
+                let FileDialogAnswer::Paths(paths) = answer else {
+                    return Err("Load Files into Stack reads files from disk".into());
+                };
+                let d = app.ui.dialog_mut(id).ok_or("the dialog was closed")?;
+                add(&mut d.fields, paths);
+                Ok(Value::Null)
+            },
+        )
     };
-    if let Err(e) = r.map(|_| ()).or_else(|e| if e == crate::file_dialog::CANCELLED { Ok(()) } else { Err(e) }) {
+    if let Err(e) = r.map(|_| ()).or_else(|e| {
+        if e == crate::file_dialog::CANCELLED {
+            Ok(())
+        } else {
+            Err(e)
+        }
+    }) {
         app.ui.status = e;
     }
 }
@@ -103,7 +140,10 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
         let mut mode = usize::from(folder_mode(f));
         let options = [(0, tl!("Files")), (1, tl!("Folder"))];
         if widgets::dropdown(ui, "load-stack-use", &mut mode, &options, 120.0) {
-            f.insert("use".into(), json!(if mode == 1 { "folder" } else { "files" }));
+            f.insert(
+                "use".into(),
+                json!(if mode == 1 { "folder" } else { "files" }),
+            );
             f.remove("selected");
         }
     });
@@ -113,26 +153,44 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
     ui.horizontal_top(|ui| {
         // The list: the chosen files, or the images in the chosen folder.
         let shown: Vec<String> = if folder_mode {
-            if folder(f).is_empty() { Vec::new() } else { photocraft_engine::file_cmds::list_images(folder(f)).unwrap_or_default() }
+            if folder(f).is_empty() {
+                Vec::new()
+            } else {
+                photocraft_engine::file_cmds::list_images(folder(f)).unwrap_or_default()
+            }
         } else {
             files(f)
         };
         let sel = selected(f);
-        egui::Frame::NONE.fill(t.field).stroke(egui::Stroke::new(1.0, t.field_border)).corner_radius(t.radius_sm).inner_margin(4.0).show(ui, |ui| {
-            ui.set_min_size(vec2(300.0, 160.0));
-            ui.set_max_width(300.0);
-            egui::ScrollArea::vertical().id_salt("load-stack-files").max_height(160.0).auto_shrink([false, false]).show(ui, |ui| {
-                if folder_mode && !folder(f).is_empty() {
-                    ui.label(RichText::new(folder(f)).color(t.text_dim));
-                }
-                for (i, p) in shown.iter().enumerate() {
-                    let row = ui.add(egui::Button::selectable(!folder_mode && sel == Some(i), file_name(p))).on_hover_text(p.as_str());
-                    if row.clicked() && !folder_mode {
-                        f.insert("selected".into(), json!(i));
-                    }
-                }
+        egui::Frame::NONE
+            .fill(t.field)
+            .stroke(egui::Stroke::new(1.0, t.field_border))
+            .corner_radius(t.radius_sm)
+            .inner_margin(4.0)
+            .show(ui, |ui| {
+                ui.set_min_size(vec2(300.0, 160.0));
+                ui.set_max_width(300.0);
+                egui::ScrollArea::vertical()
+                    .id_salt("load-stack-files")
+                    .max_height(160.0)
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        if folder_mode && !folder(f).is_empty() {
+                            ui.label(RichText::new(folder(f)).color(t.text_dim));
+                        }
+                        for (i, p) in shown.iter().enumerate() {
+                            let row = ui
+                                .add(egui::Button::selectable(
+                                    !folder_mode && sel == Some(i),
+                                    file_name(p),
+                                ))
+                                .on_hover_text(p.as_str());
+                            if row.clicked() && !folder_mode {
+                                f.insert("selected".into(), json!(i));
+                            }
+                        }
+                    });
             });
-        });
         ui.add_space(8.0);
         ui.vertical(|ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
@@ -140,7 +198,12 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
                 browse_now = true;
             }
             let can_remove = !folder_mode && sel.is_some_and(|i| i < files(f).len());
-            if ui.add_enabled_ui(can_remove, |ui| widgets::secondary_button(ui, tl!("Remove"), 120.0)).inner.clicked()
+            if ui
+                .add_enabled_ui(can_remove, |ui| {
+                    widgets::secondary_button(ui, tl!("Remove"), 120.0)
+                })
+                .inner
+                .clicked()
                 && let Some(i) = sel
             {
                 let mut list = files(f);
@@ -149,10 +212,22 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
                 f.remove("selected");
             }
             let open = open_files(app);
-            if ui.add_enabled_ui(!folder_mode && !open.is_empty(), |ui| widgets::secondary_button(ui, tl!("Add Open Files"), 120.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(!folder_mode && !open.is_empty(), |ui| {
+                    widgets::secondary_button(ui, tl!("Add Open Files"), 120.0)
+                })
+                .inner
+                .clicked()
+            {
                 add(f, open);
             }
-            if ui.add_enabled_ui(!folder_mode && files(f).len() > 1, |ui| widgets::secondary_button(ui, tl!("Sort By Name"), 120.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(!folder_mode && files(f).len() > 1, |ui| {
+                    widgets::secondary_button(ui, tl!("Sort By Name"), 120.0)
+                })
+                .inner
+                .clicked()
+            {
                 let mut list = files(f);
                 list.sort_by_key(|p| file_name(p).to_lowercase());
                 f.insert("files".into(), json!(list));
@@ -161,7 +236,13 @@ pub fn body(app: &mut PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Valu
         });
     });
     ui.add_space(8.0);
-    for (key, label) in [("align", tl!("Attempt to Automatically Align Source Images")), ("smartObject", tl!("Create Smart Object after Loading Layers"))] {
+    for (key, label) in [
+        ("align", tl!("Attempt to Automatically Align Source Images")),
+        (
+            "smartObject",
+            tl!("Create Smart Object after Loading Layers"),
+        ),
+    ] {
         let mut on = f.get(key).and_then(Value::as_bool).unwrap_or(false);
         if widgets::checkbox(ui, &mut on, label).changed() {
             f.insert(key.into(), json!(on));
@@ -192,8 +273,14 @@ pub fn confirm(app: &mut PhotocraftApp, f: &Map<String, Value>) -> Result<Value,
         json!(list)
     };
     let align = f.get("align").and_then(Value::as_bool).unwrap_or(false);
-    let smart = f.get("smartObject").and_then(Value::as_bool).unwrap_or(false);
-    let r = app.run(COMMAND, json!({"paths": paths, "align": align, "createSmartObject": smart}));
+    let smart = f
+        .get("smartObject")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let r = app.run(
+        COMMAND,
+        json!({"paths": paths, "align": align, "createSmartObject": smart}),
+    );
     if r.is_ok() {
         app.sync_views();
     }

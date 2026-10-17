@@ -58,25 +58,40 @@ impl<'a> Cursor<'a> {
     }
 
     fn u8(&mut self) -> Result<u8, MidiError> {
-        let b = *self.data.get(self.pos).ok_or(MidiError::Truncated(self.at()))?;
+        let b = *self
+            .data
+            .get(self.pos)
+            .ok_or(MidiError::Truncated(self.at()))?;
         self.pos += 1;
         Ok(b)
     }
 
     fn peek(&self) -> Result<u8, MidiError> {
-        self.data.get(self.pos).copied().ok_or(MidiError::Truncated(self.at()))
+        self.data
+            .get(self.pos)
+            .copied()
+            .ok_or(MidiError::Truncated(self.at()))
     }
 
     fn bytes(&mut self, n: usize) -> Result<&'a [u8], MidiError> {
-        let end = self.pos.checked_add(n).ok_or(MidiError::Truncated(self.at()))?;
-        let s = self.data.get(self.pos..end).ok_or(MidiError::Truncated(self.at()))?;
+        let end = self
+            .pos
+            .checked_add(n)
+            .ok_or(MidiError::Truncated(self.at()))?;
+        let s = self
+            .data
+            .get(self.pos..end)
+            .ok_or(MidiError::Truncated(self.at()))?;
         self.pos = end;
         Ok(s)
     }
 
     fn u16(&mut self) -> Result<u16, MidiError> {
         let b = self.bytes(2)?;
-        Ok(u16::from_be_bytes([b.first().copied().unwrap_or(0), b.get(1).copied().unwrap_or(0)]))
+        Ok(u16::from_be_bytes([
+            b.first().copied().unwrap_or(0),
+            b.get(1).copied().unwrap_or(0),
+        ]))
     }
 
     fn u32(&mut self) -> Result<u32, MidiError> {
@@ -112,9 +127,15 @@ impl TickConv {
     fn from_division(division: u16, offset: usize) -> Result<Self, MidiError> {
         if division & 0x8000 == 0 {
             if division == 0 {
-                return Err(MidiError::Invalid { offset, reason: "division of 0 ticks per quarter note" });
+                return Err(MidiError::Invalid {
+                    offset,
+                    reason: "division of 0 ticks per quarter note",
+                });
             }
-            Ok(Self { num: i128::from(PPQ), den: i128::from(division) })
+            Ok(Self {
+                num: i128::from(PPQ),
+                den: i128::from(division),
+            })
         } else {
             // SMPTE: high byte is negative frames/sec (two's complement), low byte ticks/frame.
             // Approximated at 120 bpm: one quarter note = 0.5 s, so
@@ -123,14 +144,23 @@ impl TickConv {
             let fps = -i128::from(hi as i8);
             let tpf = i128::from(lo);
             if fps <= 0 || tpf == 0 {
-                return Err(MidiError::Invalid { offset, reason: "invalid SMPTE division" });
+                return Err(MidiError::Invalid {
+                    offset,
+                    reason: "invalid SMPTE division",
+                });
             }
             let two_ppq = 2 * i128::from(PPQ);
             if fps == 29 {
                 // 29.97 drop-frame: ticks/sec = 30000/1001 * tpf
-                Ok(Self { num: two_ppq * 1001, den: 30000 * tpf })
+                Ok(Self {
+                    num: two_ppq * 1001,
+                    den: 30000 * tpf,
+                })
             } else {
-                Ok(Self { num: two_ppq, den: fps * tpf })
+                Ok(Self {
+                    num: two_ppq,
+                    den: fps * tpf,
+                })
             }
         }
     }
@@ -160,17 +190,36 @@ struct Globals {
 /// - Unknown chunks and meta events are skipped. Any malformed structure (bad header, truncated
 ///   chunk, VLQ longer than 4 bytes, data byte without running status, ...) returns an error.
 pub fn read_smf(bytes: &[u8]) -> Result<Smf, MidiError> {
-    let mut cur = Cursor { data: bytes, pos: 0, base: 0 };
+    let mut cur = Cursor {
+        data: bytes,
+        pos: 0,
+        base: 0,
+    };
     if cur.bytes(4).map_err(|_| MidiError::NotSmf)? != b"MThd" {
         return Err(MidiError::NotSmf);
     }
     let header_len = cur.u32()?;
     if header_len < 6 {
-        return Err(MidiError::Invalid { offset: 4, reason: "header chunk shorter than 6 bytes" });
+        return Err(MidiError::Invalid {
+            offset: 4,
+            reason: "header chunk shorter than 6 bytes",
+        });
     }
-    let header_len = usize::try_from(header_len).map_err(|_| MidiError::BadChunkLength { offset: 4, len: u64::from(header_len) })?;
-    let header = cur.bytes(header_len).map_err(|_| MidiError::BadChunkLength { offset: 4, len: u64::try_from(header_len).unwrap_or(u64::MAX) })?;
-    let mut hc = Cursor { data: header, pos: 0, base: 8 };
+    let header_len = usize::try_from(header_len).map_err(|_| MidiError::BadChunkLength {
+        offset: 4,
+        len: u64::from(header_len),
+    })?;
+    let header = cur
+        .bytes(header_len)
+        .map_err(|_| MidiError::BadChunkLength {
+            offset: 4,
+            len: u64::try_from(header_len).unwrap_or(u64::MAX),
+        })?;
+    let mut hc = Cursor {
+        data: header,
+        pos: 0,
+        base: 8,
+    };
     let format = hc.u16()?;
     let _ntrks = hc.u16()?;
     let division = hc.u16()?;
@@ -179,7 +228,12 @@ pub fn read_smf(bytes: &[u8]) -> Result<Smf, MidiError> {
     }
     let conv = TickConv::from_division(division, 12)?;
 
-    let mut globals = Globals { tempos: Vec::new(), meters: Vec::new(), markers: Vec::new(), key_sigs: Vec::new() };
+    let mut globals = Globals {
+        tempos: Vec::new(),
+        meters: Vec::new(),
+        markers: Vec::new(),
+        key_sigs: Vec::new(),
+    };
     let mut tracks = Vec::new();
     let mut event_budget = MAX_EVENTS;
 
@@ -190,7 +244,10 @@ pub fn read_smf(bytes: &[u8]) -> Result<Smf, MidiError> {
         let remaining = bytes.len().saturating_sub(cur.pos);
         let len_usize = usize::try_from(len).unwrap_or(usize::MAX);
         if len_usize > remaining {
-            return Err(MidiError::BadChunkLength { offset: chunk_at, len: u64::from(len) });
+            return Err(MidiError::BadChunkLength {
+                offset: chunk_at,
+                len: u64::from(len),
+            });
         }
         let body_at = cur.at();
         let body = cur.bytes(len_usize)?;
@@ -204,7 +261,12 @@ pub fn read_smf(bytes: &[u8]) -> Result<Smf, MidiError> {
         tracks.push(track);
     }
 
-    if format == 1 && tracks.len() > 1 && tracks.first().is_some_and(|t| t.sequence.notes.is_empty() && t.sequence.ctrls.is_empty()) {
+    if format == 1
+        && tracks.len() > 1
+        && tracks
+            .first()
+            .is_some_and(|t| t.sequence.notes.is_empty() && t.sequence.ctrls.is_empty())
+    {
         tracks.remove(0);
     }
 
@@ -214,25 +276,60 @@ pub fn read_smf(bytes: &[u8]) -> Result<Smf, MidiError> {
     globals.markers.sort_by_key(|t| t.0);
     globals.key_sigs.sort_by_key(|t| t.0);
 
-    Ok(Smf { format, tracks, tempos: globals.tempos, meters: globals.meters, markers: globals.markers, key_sigs: globals.key_sigs })
+    Ok(Smf {
+        format,
+        tracks,
+        tempos: globals.tempos,
+        meters: globals.meters,
+        markers: globals.markers,
+        key_sigs: globals.key_sigs,
+    })
 }
 
 /// Open note-ons for one (channel, pitch), oldest first: `(model tick, velocity)`.
 type OpenNotes = Vec<VecDeque<(i64, u8)>>;
 
-fn close_note(open: &mut OpenNotes, notes: &mut Vec<Note>, channel: u8, pitch: u8, tick: i64, release: u8) {
+fn close_note(
+    open: &mut OpenNotes,
+    notes: &mut Vec<Note>,
+    channel: u8,
+    pitch: u8,
+    tick: i64,
+    release: u8,
+) {
     let key = usize::from(channel & 0x0F) * 128 + usize::from(pitch & 0x7F);
-    let Some(stack) = open.get_mut(key) else { return };
+    let Some(stack) = open.get_mut(key) else {
+        return;
+    };
     if stack.is_empty() {
         return; // unmatched note-off: ignored
     }
-    let Some((start, velocity)) = stack.pop_front() else { return };
+    let Some((start, velocity)) = stack.pop_front() else {
+        return;
+    };
     let length = tick.saturating_sub(start).max(1);
-    notes.push(Note { pitch, velocity, release_velocity: release, channel, start, length });
+    notes.push(Note {
+        pitch,
+        velocity,
+        release_velocity: release,
+        channel,
+        start,
+        length,
+    });
 }
 
-fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget: &mut usize) -> Result<SmfTrack, MidiError> {
-    let mut cur = Cursor { data: body, pos: 0, base };
+fn read_track(
+    body: &[u8],
+    base: usize,
+    conv: TickConv,
+    g: &mut Globals,
+    budget: &mut usize,
+) -> Result<SmfTrack, MidiError> {
+    let mut cur = Cursor {
+        data: body,
+        pos: 0,
+        base,
+    };
     let mut name: Option<String> = None;
     let mut seq = Sequence::default();
     let mut open: OpenNotes = vec![VecDeque::new(); 16 * 128];
@@ -256,7 +353,10 @@ fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget:
             cur.pos += 1;
             first
         } else {
-            running.ok_or(MidiError::Invalid { offset: event_at, reason: "data byte without running status" })?
+            running.ok_or(MidiError::Invalid {
+                offset: event_at,
+                reason: "data byte without running status",
+            })?
         };
 
         match status {
@@ -270,7 +370,9 @@ fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget:
                     0x03 if name.is_none() => {
                         name = Some(String::from_utf8_lossy(data).into_owned());
                     }
-                    0x06 => g.markers.push((tick, String::from_utf8_lossy(data).into_owned())),
+                    0x06 => g
+                        .markers
+                        .push((tick, String::from_utf8_lossy(data).into_owned())),
                     0x51 => {
                         if let [a, b, c] = data {
                             let us = (u32::from(*a) << 16) | (u32::from(*b) << 8) | u32::from(*c);
@@ -308,13 +410,19 @@ fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget:
                 let channel = status & 0x0F;
                 let d1 = cur.u8()?;
                 if d1 & 0x80 != 0 {
-                    return Err(MidiError::Invalid { offset: event_at, reason: "status byte where a data byte was expected" });
+                    return Err(MidiError::Invalid {
+                        offset: event_at,
+                        reason: "status byte where a data byte was expected",
+                    });
                 }
                 let needs_two = !matches!(status & 0xF0, 0xC0 | 0xD0);
                 let d2 = if needs_two {
                     let d = cur.u8()?;
                     if d & 0x80 != 0 {
-                        return Err(MidiError::Invalid { offset: event_at, reason: "status byte where a data byte was expected" });
+                        return Err(MidiError::Invalid {
+                            offset: event_at,
+                            reason: "status byte where a data byte was expected",
+                        });
                     }
                     d
                 } else {
@@ -322,24 +430,63 @@ fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget:
                 };
                 match status & 0xF0 {
                     0x80 => close_note(&mut open, &mut seq.notes, channel, d1, tick, d2),
-                    0x90 if d2 == 0 => close_note(&mut open, &mut seq.notes, channel, d1, tick, DEFAULT_RELEASE),
+                    0x90 if d2 == 0 => close_note(
+                        &mut open,
+                        &mut seq.notes,
+                        channel,
+                        d1,
+                        tick,
+                        DEFAULT_RELEASE,
+                    ),
                     0x90 => {
-                        if let Some(stack) = open.get_mut(usize::from(channel) * 128 + usize::from(d1)) {
+                        if let Some(stack) =
+                            open.get_mut(usize::from(channel) * 128 + usize::from(d1))
+                        {
                             stack.push_back((tick, d2));
                         }
                     }
-                    0xA0 => seq.ctrls.push(CtrlEvent { tick, channel, kind: CtrlKind::PolyPressure(d1), value: i32::from(d2) }),
-                    0xB0 => seq.ctrls.push(CtrlEvent { tick, channel, kind: CtrlKind::Cc(d1), value: i32::from(d2) }),
-                    0xC0 => seq.ctrls.push(CtrlEvent { tick, channel, kind: CtrlKind::Program, value: i32::from(d1) }),
-                    0xD0 => seq.ctrls.push(CtrlEvent { tick, channel, kind: CtrlKind::ChannelPressure, value: i32::from(d1) }),
+                    0xA0 => seq.ctrls.push(CtrlEvent {
+                        tick,
+                        channel,
+                        kind: CtrlKind::PolyPressure(d1),
+                        value: i32::from(d2),
+                    }),
+                    0xB0 => seq.ctrls.push(CtrlEvent {
+                        tick,
+                        channel,
+                        kind: CtrlKind::Cc(d1),
+                        value: i32::from(d2),
+                    }),
+                    0xC0 => seq.ctrls.push(CtrlEvent {
+                        tick,
+                        channel,
+                        kind: CtrlKind::Program,
+                        value: i32::from(d1),
+                    }),
+                    0xD0 => seq.ctrls.push(CtrlEvent {
+                        tick,
+                        channel,
+                        kind: CtrlKind::ChannelPressure,
+                        value: i32::from(d1),
+                    }),
                     _ => {
                         // 0xE0 pitch bend: LSB then MSB, centred on 8192.
                         let v = (i32::from(d2) << 7 | i32::from(d1)) - 8192;
-                        seq.ctrls.push(CtrlEvent { tick, channel, kind: CtrlKind::PitchBend, value: v });
+                        seq.ctrls.push(CtrlEvent {
+                            tick,
+                            channel,
+                            kind: CtrlKind::PitchBend,
+                            value: v,
+                        });
                     }
                 }
             }
-            _ => return Err(MidiError::Invalid { offset: event_at, reason: "system real-time/common status in a track" }),
+            _ => {
+                return Err(MidiError::Invalid {
+                    offset: event_at,
+                    reason: "system real-time/common status in a track",
+                });
+            }
         }
     }
 
@@ -349,11 +496,21 @@ fn read_track(body: &[u8], base: usize, conv: TickConv, g: &mut Globals, budget:
         let pitch = u8::try_from(key % 128).unwrap_or(0);
         for (start, velocity) in stack.drain(..) {
             let length = tick.saturating_sub(start).max(1);
-            seq.notes.push(Note { pitch, velocity, release_velocity: DEFAULT_RELEASE, channel, start, length });
+            seq.notes.push(Note {
+                pitch,
+                velocity,
+                release_velocity: DEFAULT_RELEASE,
+                channel,
+                start,
+                length,
+            });
         }
     }
     seq.sort();
-    Ok(SmfTrack { name: name.unwrap_or_default(), sequence: seq })
+    Ok(SmfTrack {
+        name: name.unwrap_or_default(),
+        sequence: seq,
+    })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -364,7 +521,9 @@ const MAX_VLQ: u64 = 0x0FFF_FFFF;
 
 fn push_vlq(out: &mut Vec<u8>, v: u64) -> Result<(), MidiError> {
     if v > MAX_VLQ {
-        return Err(MidiError::Write(format!("value {v} does not fit in a MIDI variable-length quantity")));
+        return Err(MidiError::Write(format!(
+            "value {v} does not fit in a MIDI variable-length quantity"
+        )));
     }
     let mut buf = [0u8; 4];
     let mut n = 0;
@@ -427,7 +586,8 @@ fn write_track(out: &mut Vec<u8>, mut events: Vec<WEvent>) -> Result<(), MidiErr
     }
     // End of Track.
     body.extend_from_slice(&[0x00, 0xFF, 0x2F, 0x00]);
-    let len = u32::try_from(body.len()).map_err(|_| MidiError::Write("track larger than 4 GiB".into()))?;
+    let len = u32::try_from(body.len())
+        .map_err(|_| MidiError::Write("track larger than 4 GiB".into()))?;
     out.extend_from_slice(b"MTrk");
     out.extend_from_slice(&len.to_be_bytes());
     out.extend_from_slice(&body);
@@ -444,7 +604,8 @@ fn write_track(out: &mut Vec<u8>, mut events: Vec<WEvent>) -> Result<(), MidiErr
 /// Errors: invalid tempo (non-finite or <= 0 bpm), meter denominator that is not a power of two
 /// (1..=128), more than 65535 tracks, or a gap between events beyond the 28-bit delta limit.
 pub fn write_smf(smf: &Smf) -> Result<Vec<u8>, MidiError> {
-    let ntrks = u16::try_from(smf.tracks.len().saturating_add(1)).map_err(|_| MidiError::Write("more than 65535 tracks".into()))?;
+    let ntrks = u16::try_from(smf.tracks.len().saturating_add(1))
+        .map_err(|_| MidiError::Write("more than 65535 tracks".into()))?;
     let mut out = Vec::new();
     out.extend_from_slice(b"MThd");
     out.extend_from_slice(&6u32.to_be_bytes());
@@ -458,38 +619,70 @@ pub fn write_smf(smf: &Smf) -> Result<Vec<u8>, MidiError> {
         if !bpm.is_finite() || bpm <= 0.0 {
             return Err(MidiError::Write(format!("invalid tempo {bpm} bpm")));
         }
-        let us = (60_000_000.0 / bpm).round().clamp(1.0, f64::from(0x00FF_FFFFu32)) as u32;
+        let us = (60_000_000.0 / bpm)
+            .round()
+            .clamp(1.0, f64::from(0x00FF_FFFFu32)) as u32;
         let [_, a, b, c] = us.to_be_bytes();
-        ev.push(WEvent { tick: clamp_tick(t), order: 0, bytes: meta(0x51, &[a, b, c])? });
+        ev.push(WEvent {
+            tick: clamp_tick(t),
+            order: 0,
+            bytes: meta(0x51, &[a, b, c])?,
+        });
     }
     for &(t, num, den) in &smf.meters {
         if den == 0 || !den.is_power_of_two() {
-            return Err(MidiError::Write(format!("meter denominator {den} is not a power of two")));
+            return Err(MidiError::Write(format!(
+                "meter denominator {den} is not a power of two"
+            )));
         }
         let dd = den.trailing_zeros() as u8;
-        ev.push(WEvent { tick: clamp_tick(t), order: 1, bytes: meta(0x58, &[num, dd, 24, 8])? });
+        ev.push(WEvent {
+            tick: clamp_tick(t),
+            order: 1,
+            bytes: meta(0x58, &[num, dd, 24, 8])?,
+        });
     }
     for &(t, sf, minor) in &smf.key_sigs {
         let sf = sf.clamp(-7, 7);
-        ev.push(WEvent { tick: clamp_tick(t), order: 2, bytes: meta(0x59, &[sf as u8, u8::from(minor)])? });
+        ev.push(WEvent {
+            tick: clamp_tick(t),
+            order: 2,
+            bytes: meta(0x59, &[sf as u8, u8::from(minor)])?,
+        });
     }
     for (t, text) in &smf.markers {
-        ev.push(WEvent { tick: clamp_tick(*t), order: 3, bytes: meta(0x06, text.as_bytes())? });
+        ev.push(WEvent {
+            tick: clamp_tick(*t),
+            order: 3,
+            bytes: meta(0x06, text.as_bytes())?,
+        });
     }
     write_track(&mut out, ev)?;
 
     for track in &smf.tracks {
         let mut ev = Vec::new();
         if !track.name.is_empty() {
-            ev.push(WEvent { tick: 0, order: 0, bytes: meta(0x03, track.name.as_bytes())? });
+            ev.push(WEvent {
+                tick: 0,
+                order: 0,
+                bytes: meta(0x03, track.name.as_bytes())?,
+            });
         }
         for n in &track.sequence.notes {
             let ch = n.channel & 0x0F;
             let pitch = n.pitch & 0x7F;
             let start = clamp_tick(n.start);
             let end = clamp_tick(n.end()).max(start.saturating_add(1));
-            ev.push(WEvent { tick: start, order: 3, bytes: vec![0x90 | ch, pitch, n.velocity.clamp(1, 127)] });
-            ev.push(WEvent { tick: end, order: 1, bytes: vec![0x80 | ch, pitch, n.release_velocity & 0x7F] });
+            ev.push(WEvent {
+                tick: start,
+                order: 3,
+                bytes: vec![0x90 | ch, pitch, n.velocity.clamp(1, 127)],
+            });
+            ev.push(WEvent {
+                tick: end,
+                order: 1,
+                bytes: vec![0x80 | ch, pitch, n.release_velocity & 0x7F],
+            });
         }
         for c in &track.sequence.ctrls {
             let ch = c.channel & 0x0F;
@@ -504,7 +697,11 @@ pub fn write_smf(smf: &Smf) -> Result<Vec<u8>, MidiError> {
                     vec![0xE0 | ch, (v & 0x7F) as u8, ((v >> 7) & 0x7F) as u8]
                 }
             };
-            ev.push(WEvent { tick: clamp_tick(c.tick), order: 2, bytes });
+            ev.push(WEvent {
+                tick: clamp_tick(c.tick),
+                order: 2,
+                bytes,
+            });
         }
         write_track(&mut out, ev)?;
     }
@@ -517,10 +714,16 @@ mod tests {
 
     #[test]
     fn vlq_round_trip() {
-        for v in [0u64, 0x40, 0x7F, 0x80, 0x2000, 0x3FFF, 0x4000, 0x1F_FFFF, 0x20_0000, MAX_VLQ] {
+        for v in [
+            0u64, 0x40, 0x7F, 0x80, 0x2000, 0x3FFF, 0x4000, 0x1F_FFFF, 0x20_0000, MAX_VLQ,
+        ] {
             let mut b = Vec::new();
             push_vlq(&mut b, v).unwrap();
-            let mut c = Cursor { data: &b, pos: 0, base: 0 };
+            let mut c = Cursor {
+                data: &b,
+                pos: 0,
+                base: 0,
+            };
             assert_eq!(u64::from(c.vlq().unwrap()), v);
             assert!(c.is_empty());
         }

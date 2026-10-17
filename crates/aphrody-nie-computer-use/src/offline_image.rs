@@ -105,9 +105,9 @@ impl<'a> OfflineImage<'a> {
     pub fn resolve(&self, space: ImageAddressSpace, address: u64) -> Result<u64> {
         let offset = match space {
             ImageAddressSpace::FileOffset | ImageAddressSpace::Rva => address,
-            ImageAddressSpace::Va => {
-                address.checked_sub(self.image_base).context("VA is below image base")?
-            },
+            ImageAddressSpace::Va => address
+                .checked_sub(self.image_base)
+                .context("VA is below image base")?,
         };
         anyhow::ensure!(
             offset <= self.bytes.len() as u64,
@@ -123,7 +123,9 @@ impl<'a> OfflineImage<'a> {
             "range length {length} exceeds {MAX_INSPECTION_OUTPUT_BYTES}"
         );
         let offset = self.resolve(space, address)?;
-        let end = offset.checked_add(length as u64).context("offline image range overflow")?;
+        let end = offset
+            .checked_add(length as u64)
+            .context("offline image range overflow")?;
         anyhow::ensure!(
             end <= self.bytes.len() as u64,
             "range 0x{offset:x}..0x{end:x} is outside the offline image"
@@ -140,7 +142,9 @@ impl<'a> OfflineImage<'a> {
             MAX_INSPECTION_RANGES
         );
         let total = ranges.iter().try_fold(0usize, |total, range| {
-            total.checked_add(range.length).context("inspection output length overflow")
+            total
+                .checked_add(range.length)
+                .context("inspection output length overflow")
         })?;
         anyhow::ensure!(
             total <= MAX_INSPECTION_OUTPUT_BYTES,
@@ -152,7 +156,10 @@ impl<'a> OfflineImage<'a> {
             let address = parse_address(&range.address)?;
             let offset = self.resolve(range.space, address)?;
             let bytes = self.read(range.space, address, range.length)?;
-            let va = self.image_base.checked_add(offset).context("RVA to VA overflow")?;
+            let va = self
+                .image_base
+                .checked_add(offset)
+                .context("RVA to VA overflow")?;
             results.push(ImageRangeResult {
                 file_offset: hex_address(offset),
                 rva: hex_address(offset),
@@ -183,7 +190,10 @@ pub fn inspect_offline_image(
 
 /// JSON adapter intended for WebAssembly bindings. All addresses remain strings on the wire.
 pub fn inspect_offline_image_json(bytes: &[u8], request_json: &str) -> Result<String> {
-    anyhow::ensure!(request_json.len() <= 64 * 1024, "inspection request JSON exceeds 65536 bytes");
+    anyhow::ensure!(
+        request_json.len() <= 64 * 1024,
+        "inspection request JSON exceeds 65536 bytes"
+    );
     let request: ImageInspectionRequest =
         serde_json::from_str(request_json).context("parse offline image inspection request")?;
     serde_json::to_string(&inspect_offline_image(bytes, &request)?)
@@ -193,7 +203,10 @@ pub fn inspect_offline_image_json(bytes: &[u8], request_json: &str) -> Result<St
 fn parse_address(value: &str) -> Result<u64> {
     let value = value.trim();
     anyhow::ensure!(!value.is_empty(), "address is empty");
-    if let Some(hex) = value.strip_prefix("0x").or_else(|| value.strip_prefix("0X")) {
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
         anyhow::ensure!(!hex.is_empty(), "hex address is empty");
         u64::from_str_radix(hex, 16).context("invalid hexadecimal address")
     } else {
@@ -219,7 +232,10 @@ mod tests {
         let image = OfflineImage::new(&bytes, 0x1_4000_0000).unwrap();
         assert_eq!(image.resolve(ImageAddressSpace::FileOffset, 3).unwrap(), 3);
         assert_eq!(image.resolve(ImageAddressSpace::Rva, 3).unwrap(), 3);
-        assert_eq!(image.resolve(ImageAddressSpace::Va, 0x1_4000_0003).unwrap(), 3);
+        assert_eq!(
+            image.resolve(ImageAddressSpace::Va, 0x1_4000_0003).unwrap(),
+            3
+        );
     }
 
     #[test]
@@ -242,10 +258,20 @@ mod tests {
     fn rejects_ranges_below_base_outside_image_and_over_budget() {
         let bytes = fixture();
         let image = OfflineImage::new(&bytes, 0x140000000).unwrap();
-        assert!(image.read(ImageAddressSpace::Va, 0x0001_3fff_ffff, 1).is_err());
+        assert!(
+            image
+                .read(ImageAddressSpace::Va, 0x0001_3fff_ffff, 1)
+                .is_err()
+        );
         assert!(image.read(ImageAddressSpace::Rva, 31, 2).is_err());
         assert!(
-            image.read(ImageAddressSpace::FileOffset, 0, MAX_INSPECTION_OUTPUT_BYTES + 1).is_err()
+            image
+                .read(
+                    ImageAddressSpace::FileOffset,
+                    0,
+                    MAX_INSPECTION_OUTPUT_BYTES + 1
+                )
+                .is_err()
         );
     }
 
@@ -253,11 +279,14 @@ mod tests {
     fn rejects_oversized_batch_before_reading() {
         let bytes = fixture();
         let image = OfflineImage::new(&bytes, 0).unwrap();
-        let ranges =
-            vec![
-                ImageRangeRequest { space: ImageAddressSpace::Rva, address: "0".into(), length: 0 };
-                MAX_INSPECTION_RANGES + 1
-            ];
+        let ranges = vec![
+            ImageRangeRequest {
+                space: ImageAddressSpace::Rva,
+                address: "0".into(),
+                length: 0
+            };
+            MAX_INSPECTION_RANGES + 1
+        ];
         assert!(image.inspect(&ranges).is_err());
     }
 

@@ -65,8 +65,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             brush_new
         ),
-        cmd!("brush.delete", "Delete Brush", [], None, "{name} delete a brush; strokes using it become plain strokes", has_doc, brush_delete),
-        cmd!("brush.duplicate", "Duplicate Brush", [], None, "{name, newName?} → {name}", has_doc, brush_duplicate),
+        cmd!(
+            "brush.delete",
+            "Delete Brush",
+            [],
+            None,
+            "{name} delete a brush; strokes using it become plain strokes",
+            has_doc,
+            brush_delete
+        ),
+        cmd!(
+            "brush.duplicate",
+            "Duplicate Brush",
+            [],
+            None,
+            "{name, newName?} → {name}",
+            has_doc,
+            brush_duplicate
+        ),
         cmd!(
             "brush.options",
             "Brush Options…",
@@ -150,7 +166,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             symbol_delete
         ),
-        cmd!("symbol.duplicate", "Duplicate Symbol", [], None, "{name, newName?} → {name}", has_doc, symbol_duplicate),
+        cmd!(
+            "symbol.duplicate",
+            "Duplicate Symbol",
+            [],
+            None,
+            "{name, newName?} → {name}",
+            has_doc,
+            symbol_duplicate
+        ),
         cmd!(
             "symbol.replace",
             "Replace Symbol",
@@ -209,7 +233,9 @@ fn roots(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
 }
 
 fn name_param<'a>(p: &'a Value, cmd: &str) -> Result<&'a str> {
-    str_param(p, "name").filter(|n| !n.trim().is_empty()).ok_or_else(|| bad(cmd, "missing `name`"))
+    str_param(p, "name")
+        .filter(|n| !n.trim().is_empty())
+        .ok_or_else(|| bad(cmd, "missing `name`"))
 }
 
 // ---------- brushes ----------
@@ -220,8 +246,18 @@ fn brush_targets(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
     for id in ids {
         let Some(n) = d.node(*id) else { continue };
         n.walk(&mut |c| {
-            let own = matches!(c.kind, NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. });
-            let in_compound = d.parent_of(c.id).and_then(|p| d.node(p)).is_some_and(|p| matches!(p.kind, NodeKind::Compound { .. }));
+            let own = matches!(
+                c.kind,
+                NodeKind::Path {
+                    guide: false,
+                    clipping: false,
+                    ..
+                } | NodeKind::Compound { .. }
+            );
+            let in_compound = d
+                .parent_of(c.id)
+                .and_then(|p| d.node(p))
+                .is_some_and(|p| matches!(p.kind, NodeKind::Compound { .. }));
             if own && !in_compound && !out.contains(&c.id) {
                 out.push(c.id);
             }
@@ -232,13 +268,17 @@ fn brush_targets(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
 
 fn brush_list(s: &mut Session, _: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
-    let list: Vec<Value> = brush::library(d).iter().map(|b| json!({"name": b.name, "type": b.kind.type_id()})).collect();
+    let list: Vec<Value> = brush::library(d)
+        .iter()
+        .map(|b| json!({"name": b.name, "type": b.kind.type_id()}))
+        .collect();
     Ok(json!({ "brushes": list, "current": brush::current(d) }))
 }
 
 fn brush_get(s: &mut Session, p: &Value) -> Result<Value> {
     let name = name_param(p, "brush.get")?;
-    let b = brush::find(&s.doc()?.doc, name).ok_or_else(|| EngineError::Other(format!("no brush named `{name}`")))?;
+    let b = brush::find(&s.doc()?.doc, name)
+        .ok_or_else(|| EngineError::Other(format!("no brush named `{name}`")))?;
     Ok(serde_json::to_value(b).unwrap_or_default())
 }
 
@@ -249,7 +289,11 @@ fn brush_apply(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, format!("no brush named `{name}`")));
     }
     let ids = brush_targets(&s.doc()?.doc, &roots(s, p)?);
-    let stroke = if s.paint.stroke.is_none() { Paint::solid(Color::BLACK) } else { s.paint.stroke.clone() };
+    let stroke = if s.paint.stroke.is_none() {
+        Paint::solid(Color::BLACK)
+    } else {
+        s.paint.stroke.clone()
+    };
     s.edit("Apply Brush", |d, _| {
         d.unknown.insert(brush::CURRENT_KEY.into(), json!(name));
         for id in &ids {
@@ -318,7 +362,10 @@ pub(crate) fn selection_art(s: &Session, p: &Value) -> Result<Option<Node>> {
     Ok(match nodes.len() {
         0 => None,
         1 => nodes.into_iter().next(),
-        _ => Some(Node::group(NodeId(0), nodes.into_iter().map(Arc::new).collect())),
+        _ => Some(Node::group(
+            NodeId(0),
+            nodes.into_iter().map(Arc::new).collect(),
+        )),
     })
 }
 
@@ -330,7 +377,12 @@ fn merge(base: &mut Value, patch: &Value) {
     }
 }
 
-fn save_library(s: &mut Session, label: &str, lib: Vec<Brush>, rename: Option<(String, Option<String>)>) -> Result<()> {
+fn save_library(
+    s: &mut Session,
+    label: &str,
+    lib: Vec<Brush>,
+    rename: Option<(String, Option<String>)>,
+) -> Result<()> {
     s.edit(label, |d, _| {
         brush::store(d, &lib);
         if let Some((from, to)) = rename {
@@ -375,7 +427,9 @@ fn brush_new(s: &mut Session, p: &Value) -> Result<Value> {
         o => return Err(bad(C, format!("unknown brush type `{o}`"))),
     };
     let mut lib = brush::library(&s.doc()?.doc);
-    let base_name = str_param(p, "name").map(str::to_string).unwrap_or_else(|| format!("New {} Brush", ty[..1].to_uppercase() + &ty[1..]));
+    let base_name = str_param(p, "name")
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("New {} Brush", ty[..1].to_uppercase() + &ty[1..]));
     let name = brush::unique_name(&lib, &base_name);
     let mut v = json!({"name": name, "type": ty});
     if let Some(params) = p.get("params") {
@@ -386,7 +440,8 @@ fn brush_new(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(k) = art_key
         && v.get(k).is_none()
     {
-        let art = selection_art(s, p)?.ok_or_else(|| bad(C, format!("{ty} brushes need selected art (or params.{k})")))?;
+        let art = selection_art(s, p)?
+            .ok_or_else(|| bad(C, format!("{ty} brushes need selected art (or params.{k})")))?;
         if art.geometric_bounds().is_none_or(|b| b.width() <= 1e-6) {
             return Err(bad(C, "the selected art has no width"));
         }
@@ -399,7 +454,8 @@ fn brush_new(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A brush definition from command params, its values kept within their ranges.
 fn parse_brush(cmd: &str, v: Value) -> Result<Brush> {
-    let mut b: Brush = serde_json::from_value(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))?;
+    let mut b: Brush =
+        serde_json::from_value(v).map_err(|e| bad(cmd, format!("invalid brush: {e}")))?;
     b.sanitize();
     Ok(b)
 }
@@ -419,8 +475,15 @@ fn brush_delete(s: &mut Session, p: &Value) -> Result<Value> {
 fn brush_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let name = name_param(p, "brush.duplicate")?;
     let mut lib = brush::library(&s.doc()?.doc);
-    let mut b = lib.iter().find(|b| b.name == name).cloned().ok_or_else(|| bad("brush.duplicate", format!("no brush named `{name}`")))?;
-    b.name = brush::unique_name(&lib, str_param(p, "newName").unwrap_or(&format!("{name} copy")));
+    let mut b = lib
+        .iter()
+        .find(|b| b.name == name)
+        .cloned()
+        .ok_or_else(|| bad("brush.duplicate", format!("no brush named `{name}`")))?;
+    b.name = brush::unique_name(
+        &lib,
+        str_param(p, "newName").unwrap_or(&format!("{name} copy")),
+    );
     let out = b.name.clone();
     lib.push(b);
     save_library(s, "Duplicate Brush", lib, None)?;
@@ -431,12 +494,17 @@ fn brush_options(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "brush.options";
     let name = name_param(p, C)?.to_string();
     let mut lib = brush::library(&s.doc()?.doc);
-    let i = lib.iter().position(|b| b.name == name).ok_or_else(|| bad(C, format!("no brush named `{name}`")))?;
+    let i = lib
+        .iter()
+        .position(|b| b.name == name)
+        .ok_or_else(|| bad(C, format!("no brush named `{name}`")))?;
     let mut v = serde_json::to_value(&lib[i]).unwrap_or_default();
     if let Some(params) = p.get("params") {
         merge(&mut v, params);
     }
-    let new_name = str_param(p, "newName").filter(|n| !n.trim().is_empty() && *n != name).map(str::to_string);
+    let new_name = str_param(p, "newName")
+        .filter(|n| !n.trim().is_empty() && *n != name)
+        .map(str::to_string);
     if let Some(nn) = &new_name {
         if lib.iter().any(|b| &b.name == nn) {
             return Err(bad(C, format!("a brush named `{nn}` exists")));
@@ -455,15 +523,29 @@ fn brush_options(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn expand_brush(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = brush_targets(&s.doc()?.doc, &roots(s, p)?);
-    let ids: Vec<NodeId> = ids.into_iter().filter(|id| s.doc().ok().and_then(|st| st.doc.node(*id)).is_some_and(brush::has_brush)).collect();
+    let ids: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| {
+            s.doc()
+                .ok()
+                .and_then(|st| st.doc.node(*id))
+                .is_some_and(brush::has_brush)
+        })
+        .collect();
     if ids.is_empty() {
-        return Err(EngineError::Other("Expand: no brush strokes selected".into()));
+        return Err(EngineError::Other(
+            "Expand: no brush strokes selected".into(),
+        ));
     }
     let out = s.edit("Expand", |d, sel| {
         let mut out = vec![];
         for id in &ids {
-            let Some(n) = d.node(*id).cloned() else { continue };
-            let Some(g) = brush::expand(d, &n) else { continue };
+            let Some(n) = d.node(*id).cloned() else {
+                continue;
+            };
+            let Some(g) = brush::expand(d, &n) else {
+                continue;
+            };
             let g = d.reid(&g);
             let (par, idx, _) = d.position(*id).ok_or(EngineError::NoNode(*id))?;
             let gid = g.id;
@@ -478,10 +560,15 @@ fn expand_brush(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn brush_freehand(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "brush").map(str::to_string).filter(|n| s.doc().is_ok_and(|st| brush::find(&st.doc, n).is_some()));
-    let spec = find_command("path.freehand").ok_or_else(|| EngineError::UnknownCommand("path.freehand".into()))?;
+    let name = str_param(p, "brush")
+        .map(str::to_string)
+        .filter(|n| s.doc().is_ok_and(|st| brush::find(&st.doc, n).is_some()));
+    let spec = find_command("path.freehand")
+        .ok_or_else(|| EngineError::UnknownCommand("path.freehand".into()))?;
     let r = (spec.run)(s, p)?;
-    let (Some(name), Some(id)) = (name, id_param(&r, "id")) else { return Ok(r) };
+    let (Some(name), Some(id)) = (name, id_param(&r, "id")) else {
+        return Ok(r);
+    };
     s.edit("Paintbrush", |d, _| {
         if let Some(st) = d.node_mut(id).and_then(|n| n.appearance.stroke_mut()) {
             st.brush = Some(name.clone());
@@ -502,7 +589,10 @@ fn natural_size(d: &Document, name: &str) -> (f64, f64) {
 }
 
 fn set_natural_size(d: &mut Document, name: &str, size: Option<(f64, f64)>) {
-    let m = d.unknown.entry(SIZES_KEY.to_string()).or_insert_with(|| json!({}));
+    let m = d
+        .unknown
+        .entry(SIZES_KEY.to_string())
+        .or_insert_with(|| json!({}));
     if let Some(o) = m.as_object_mut() {
         match size {
             Some((w, h)) => o.insert(name.into(), json!([w, h])),
@@ -518,10 +608,13 @@ fn place_xf(c: Point, (w, h): (f64, f64)) -> Affine {
 
 /// Normalise art for a symbol definition: returns (art, natural size, centre in the document).
 fn normalize(mut art: Node) -> Result<(Node, (f64, f64), Point)> {
-    let b = art.geometric_bounds().ok_or_else(|| EngineError::Other("the art has no bounds".into()))?;
+    let b = art
+        .geometric_bounds()
+        .ok_or_else(|| EngineError::Other("the art has no bounds".into()))?;
     let (w, h) = (b.width().max(1.0), b.height().max(1.0));
     let c = b.center();
-    let n = Affine::scale_non_uniform(2.0 * HALF / w, 2.0 * HALF / h) * Affine::translate(-c.to_vec2());
+    let n =
+        Affine::scale_non_uniform(2.0 * HALF / w, 2.0 * HALF / h) * Affine::translate(-c.to_vec2());
     art.transform(n, false);
     Ok((art, (w, h), c))
 }
@@ -543,7 +636,11 @@ fn symbol_names(d: &Document) -> Vec<String> {
 }
 
 fn current_symbol(d: &Document) -> Option<String> {
-    d.unknown.get(CURRENT_SYMBOL).and_then(Value::as_str).filter(|n| d.symbols.iter().any(|s| s.name == *n)).map(str::to_string)
+    d.unknown
+        .get(CURRENT_SYMBOL)
+        .and_then(Value::as_str)
+        .filter(|n| d.symbols.iter().any(|s| s.name == *n))
+        .map(str::to_string)
 }
 
 fn symbol_list(s: &mut Session, _: &Value) -> Result<Value> {
@@ -556,19 +653,46 @@ fn symbol_list(s: &mut Session, _: &Value) -> Result<Value> {
             json!({"name": sym.name, "instances": instances_of(d, Some(&sym.name)).len(), "size": [w, h]})
         })
         .collect();
-    Ok(json!({ "symbols": list, "current": current_symbol(d).or_else(|| symbol_names(d).into_iter().next()) }))
+    Ok(
+        json!({ "symbols": list, "current": current_symbol(d).or_else(|| symbol_names(d).into_iter().next()) }),
+    )
 }
 
 /// Replace the root nodes `ids` with one instance of `name` (art already stored). Returns the id.
-fn replace_with_instance(d: &mut Document, ids: &[NodeId], name: &str, xf: Affine) -> Result<NodeId> {
-    let top = *ids.last().ok_or_else(|| EngineError::Other("nothing selected".into()))?;
+fn replace_with_instance(
+    d: &mut Document,
+    ids: &[NodeId],
+    name: &str,
+    xf: Affine,
+) -> Result<NodeId> {
+    let top = *ids
+        .last()
+        .ok_or_else(|| EngineError::Other("nothing selected".into()))?;
     if separate(d, ids) {
         let id = d.alloc_id();
-        return Ok(d.wrap(ids, |_| Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf }))?);
+        return Ok(d.wrap(ids, |_| {
+            Node::new(
+                id,
+                NodeKind::SymbolInstance {
+                    symbol: name.into(),
+                    xf,
+                },
+            )
+        })?);
     }
     let (par, idx, _) = d.position(top).ok_or(EngineError::NoNode(top))?;
     let id = d.alloc_id();
-    d.insert(par, idx + 1, Node::new(id, NodeKind::SymbolInstance { symbol: name.into(), xf }))?;
+    d.insert(
+        par,
+        idx + 1,
+        Node::new(
+            id,
+            NodeKind::SymbolInstance {
+                symbol: name.into(),
+                xf,
+            },
+        ),
+    )?;
     for r in ids {
         d.remove(*r)?;
     }
@@ -579,10 +703,17 @@ fn symbol_new(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = roots(s, p)?;
     let art = selection_art(s, p)?.ok_or_else(|| EngineError::Other("nothing selected".into()))?;
     let (art, size, c) = normalize(art)?;
-    let name = s.doc()?.doc.unique_symbol_name(str_param(p, "name").filter(|n| !n.trim().is_empty()).unwrap_or("New Symbol"));
+    let name = s.doc()?.doc.unique_symbol_name(
+        str_param(p, "name")
+            .filter(|n| !n.trim().is_empty())
+            .unwrap_or("New Symbol"),
+    );
     let id = s.edit("New Symbol", |d, sel| {
         let art = d.reid(&art);
-        d.symbols.push(Symbol { name: name.clone(), art: Arc::new(art) });
+        d.symbols.push(Symbol {
+            name: name.clone(),
+            art: Arc::new(art),
+        });
         set_natural_size(d, &name, Some(size));
         d.unknown.insert(CURRENT_SYMBOL.into(), json!(name));
         let id = replace_with_instance(d, &ids, &name, place_xf(c, size))?;
@@ -596,22 +727,36 @@ fn resolve_symbol(d: &Document, p: &Value, cmd: &str) -> Result<String> {
     match str_param(p, "name") {
         Some(n) if d.symbols.iter().any(|s| s.name == n) => Ok(n.to_string()),
         Some(n) => Err(bad(cmd, format!("no symbol named `{n}`"))),
-        None => {
-            current_symbol(d).or_else(|| symbol_names(d).into_iter().next()).ok_or_else(|| EngineError::Other("the document has no symbols".into()))
-        }
+        None => current_symbol(d)
+            .or_else(|| symbol_names(d).into_iter().next())
+            .ok_or_else(|| EngineError::Other("the document has no symbols".into())),
     }
 }
 
 fn symbol_place(s: &mut Session, p: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
     let name = resolve_symbol(d, p, "symbol.place")?;
-    let centre = d.artboards.first().map(|a| a.rect.center()).unwrap_or(Point::ZERO);
+    let centre = d
+        .artboards
+        .first()
+        .map(|a| a.rect.center())
+        .unwrap_or(Point::ZERO);
     let c = Point::new(f64_or(p, "x", centre.x), f64_or(p, "y", centre.y));
     let size = natural_size(d, &name);
     let parent = s.doc()?.target_parent()?;
     let id = s.edit("Place Symbol Instance", |d, sel| {
         let id = d.alloc_id();
-        d.insert(parent, usize::MAX, Node::new(id, NodeKind::SymbolInstance { symbol: name.clone(), xf: place_xf(c, size) }))?;
+        d.insert(
+            parent,
+            usize::MAX,
+            Node::new(
+                id,
+                NodeKind::SymbolInstance {
+                    symbol: name.clone(),
+                    xf: place_xf(c, size),
+                },
+            ),
+        )?;
         sel.set([id]);
         Ok(id)
     })?;
@@ -620,7 +765,9 @@ fn symbol_place(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The plain art of instance `inst` in document space (fresh ids).
 fn expanded_instance(d: &mut Document, inst: &Node) -> Option<Node> {
-    let NodeKind::SymbolInstance { symbol, xf } = &inst.kind else { return None };
+    let NodeKind::SymbolInstance { symbol, xf } = &inst.kind else {
+        return None;
+    };
     let sym = d.symbols.iter().find(|s| &s.name == symbol)?;
     let mut art = (*sym.art).clone();
     if let Some(f) = inst.appearance.fill()
@@ -644,8 +791,12 @@ fn expanded_instance(d: &mut Document, inst: &Node) -> Option<Node> {
 fn break_links(d: &mut Document, ids: &[NodeId]) -> Result<Vec<NodeId>> {
     let mut out = vec![];
     for id in ids {
-        let Some(inst) = d.node(*id).cloned() else { continue };
-        let Some(art) = expanded_instance(d, &inst) else { continue };
+        let Some(inst) = d.node(*id).cloned() else {
+            continue;
+        };
+        let Some(art) = expanded_instance(d, &inst) else {
+            continue;
+        };
         let (par, idx, _) = d.position(*id).ok_or(EngineError::NoNode(*id))?;
         let aid = art.id;
         d.remove(*id)?;
@@ -685,7 +836,9 @@ fn symbol_break_link(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn symbol_edit(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = selected_instances(s, p)?;
-    let first = *ids.first().ok_or_else(|| EngineError::Other("select a symbol instance".into()))?;
+    let first = *ids
+        .first()
+        .ok_or_else(|| EngineError::Other("select a symbol instance".into()))?;
     let name = match &s.doc()?.doc.node(first).map(|n| n.kind.clone()) {
         Some(NodeKind::SymbolInstance { symbol, .. }) => symbol.clone(),
         _ => return Err(EngineError::Other("select a symbol instance".into())),
@@ -755,12 +908,20 @@ fn symbol_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "symbol.duplicate";
     let name = name_param(p, C)?.to_string();
     let d = &s.doc()?.doc;
-    let sym = d.symbols.iter().find(|x| x.name == name).cloned().ok_or_else(|| bad(C, format!("no symbol named `{name}`")))?;
+    let sym = d
+        .symbols
+        .iter()
+        .find(|x| x.name == name)
+        .cloned()
+        .ok_or_else(|| bad(C, format!("no symbol named `{name}`")))?;
     let new = d.unique_symbol_name(str_param(p, "newName").unwrap_or(&format!("{name} copy")));
     let size = natural_size(d, &name);
     s.edit("Duplicate Symbol", |d, _| {
         let art = d.reid(&sym.art);
-        d.symbols.push(Symbol { name: new.clone(), art: Arc::new(art) });
+        d.symbols.push(Symbol {
+            name: new.clone(),
+            art: Arc::new(art),
+        });
         set_natural_size(d, &new, Some(size));
         Ok(())
     })?;
@@ -784,7 +945,9 @@ fn symbol_replace(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(NodeKind::SymbolInstance { symbol, .. }) => natural_size(d, symbol),
                 _ => continue,
             };
-            if let Some(NodeKind::SymbolInstance { symbol, xf }) = d.node_mut(*id).map(|n| &mut n.kind) {
+            if let Some(NodeKind::SymbolInstance { symbol, xf }) =
+                d.node_mut(*id).map(|n| &mut n.kind)
+            {
                 *symbol = name.clone();
                 *xf *= Affine::scale_non_uniform(new.0 / old.0, new.1 / old.1);
             }
@@ -811,8 +974,14 @@ fn symbol_select_instances(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------- symbolism tools ----------
 
 fn points(p: &Value, cmd: &str) -> Result<Vec<Point>> {
-    let a = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(cmd, "missing points [[x,y]…]"))?;
-    let v: Vec<Point> = a.iter().filter_map(|q| Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?))).collect();
+    let a = p
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, "missing points [[x,y]…]"))?;
+    let v: Vec<Point> = a
+        .iter()
+        .filter_map(|q| Some(Point::new(q.get(0)?.as_f64()?, q.get(1)?.as_f64()?)))
+        .collect();
     if v.is_empty() || v.iter().any(|q| !q.x.is_finite() || !q.y.is_finite()) {
         return Err(bad(cmd, "points must be finite [x,y] pairs"));
     }
@@ -822,7 +991,10 @@ fn points(p: &Value, cmd: &str) -> Result<Vec<Point>> {
 /// Deterministic per-point jitter in [-1, 1]² (so previews re-applied on the snapshot agree).
 fn jitter(i: usize, q: Point) -> (f64, f64, f64) {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325 ^ i as u64;
-    for v in [(q.x * 16.0).round() as i64 as u64, (q.y * 16.0).round() as i64 as u64] {
+    for v in [
+        (q.x * 16.0).round() as i64 as u64,
+        (q.y * 16.0).round() as i64 as u64,
+    ] {
         h ^= v;
         h = h.wrapping_mul(0x0000_0100_0000_01b3);
         h ^= h >> 29;
@@ -845,14 +1017,27 @@ fn symbol_spray(s: &mut Session, p: &Value) -> Result<Value> {
     let scale = f64_or(p, "scale", 1.0).clamp(0.01, 100.0);
     let alt = bool_or(p, "alt", false);
     let size = natural_size(&st.doc, &name);
-    let set = st.selection.objects.first().copied().filter(|id| st.selection.len() == 1 && st.doc.node(*id).is_some_and(is_symbol_set));
+    let set = st
+        .selection
+        .objects
+        .first()
+        .copied()
+        .filter(|id| st.selection.len() == 1 && st.doc.node(*id).is_some_and(is_symbol_set));
     // Only a new Symbol Set needs a layer that takes new art.
-    let parent = if alt || set.is_some() { st.insertion_parent() } else { st.target_parent()? };
+    let parent = if alt || set.is_some() {
+        st.insertion_parent()
+    } else {
+        st.target_parent()?
+    };
     if alt {
         // Remove instances of this symbol under the brush (within the set, or anywhere).
         let d = &st.doc;
         let scope: Vec<NodeId> = match set {
-            Some(g) => d.node(g).and_then(|n| n.children()).map(|c| c.iter().map(|c| c.id).collect()).unwrap_or_default(),
+            Some(g) => d
+                .node(g)
+                .and_then(|n| n.children())
+                .map(|c| c.iter().map(|c| c.id).collect())
+                .unwrap_or_default(),
             None => instances_of(d, Some(&name)),
         };
         let doomed: Vec<NodeId> = scope
@@ -860,7 +1045,8 @@ fn symbol_spray(s: &mut Session, p: &Value) -> Result<Value> {
             .filter(|id| {
                 d.node(*id).is_some_and(|n| {
                     matches!(&n.kind, NodeKind::SymbolInstance { symbol, .. } if *symbol == name)
-                        && n.geometric_bounds().is_some_and(|b| pts.iter().any(|q| q.distance(b.center()) <= radius))
+                        && n.geometric_bounds()
+                            .is_some_and(|b| pts.iter().any(|q| q.distance(b.center()) <= radius))
                 })
             })
             .collect();
@@ -888,7 +1074,13 @@ fn symbol_spray(s: &mut Session, p: &Value) -> Result<Value> {
             let (_, _, js) = jitter(i + 7, *c);
             let k = scale * (1.0 + js * 0.1);
             let id = d.alloc_id();
-            nodes.push(Node::new(id, NodeKind::SymbolInstance { symbol: name.clone(), xf: place_xf(*c, size) * Affine::scale(k) }));
+            nodes.push(Node::new(
+                id,
+                NodeKind::SymbolInstance {
+                    symbol: name.clone(),
+                    xf: place_xf(*c, size) * Affine::scale(k),
+                },
+            ));
         }
         let gid = match set {
             Some(g) => {
@@ -920,8 +1112,14 @@ fn instance_center(n: &Node) -> Option<Point> {
 
 fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "symbol.adjust";
-    let tool = str_param(p, "tool").ok_or_else(|| bad(C, "missing `tool`"))?.to_string();
-    if !["shift", "scrunch", "size", "spin", "stain", "screen", "style"].contains(&tool.as_str()) {
+    let tool = str_param(p, "tool")
+        .ok_or_else(|| bad(C, "missing `tool`"))?
+        .to_string();
+    if ![
+        "shift", "scrunch", "size", "spin", "stain", "screen", "style",
+    ]
+    .contains(&tool.as_str())
+    {
         return Err(bad(C, format!("unknown tool `{tool}`")));
     }
     let pts = points(p, C)?;
@@ -934,8 +1132,18 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.paint.fill.color().unwrap_or(Color::BLACK),
     };
     let style_paint = match str_param(p, "style") {
-        Some(n) => st.doc.graphic_styles.iter().find(|g| g.name == n).map(|g| g.appearance.fill_paint()),
-        None => st.doc.graphic_styles.get(1).or(st.doc.graphic_styles.first()).map(|g| g.appearance.fill_paint()),
+        Some(n) => st
+            .doc
+            .graphic_styles
+            .iter()
+            .find(|g| g.name == n)
+            .map(|g| g.appearance.fill_paint()),
+        None => st
+            .doc
+            .graphic_styles
+            .get(1)
+            .or(st.doc.graphic_styles.first())
+            .map(|g| g.appearance.fill_paint()),
     };
     let candidates: Vec<NodeId> = {
         let d = &st.doc;
@@ -971,7 +1179,9 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
             let delta = if j > 0 { *q - pts[j - 1] } else { Vec2::ZERO };
             for id in &candidates {
                 let Some(n) = d.node_mut(*id) else { continue };
-                let Some(c) = instance_center(n) else { continue };
+                let Some(c) = instance_center(n) else {
+                    continue;
+                };
                 let dist = c.distance(*q);
                 if dist > radius {
                     continue;
@@ -981,7 +1191,9 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
                     continue;
                 }
                 touched.insert(*id);
-                let about = |m: Affine| Affine::translate(c.to_vec2()) * m * Affine::translate(-c.to_vec2());
+                let about = |m: Affine| {
+                    Affine::translate(c.to_vec2()) * m * Affine::translate(-c.to_vec2())
+                };
                 match tool.as_str() {
                     "shift" => n.transform(Affine::translate(delta * w.min(1.0)), false),
                     "scrunch" => {
@@ -994,19 +1206,42 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
                     }
                     "spin" => {
                         // Turn towards the drag direction; a click spins a little.
-                        let a = if delta.hypot() > 1e-9 { (c - *q).cross(delta).signum() * 0.1 * w } else { 0.05 * w };
+                        let a = if delta.hypot() > 1e-9 {
+                            (c - *q).cross(delta).signum() * 0.1 * w
+                        } else {
+                            0.05 * w
+                        };
                         n.transform(about(Affine::rotate(if alt { -a } else { a })), false);
                     }
                     "stain" | "style" => {
-                        let paint = if tool == "style" { style_paint.clone().unwrap_or(Paint::solid(color)) } else { Paint::solid(color) };
+                        let paint = if tool == "style" {
+                            style_paint.clone().unwrap_or(Paint::solid(color))
+                        } else {
+                            Paint::solid(color)
+                        };
                         if tool == "style" && alt {
                             n.appearance.items.clear();
                             continue;
                         }
-                        let cur = n.appearance.fill().filter(|f| f.paint == paint).map(|f| f.opacity).unwrap_or(0.0);
-                        let step = if tool == "style" { 1.0 } else { 0.15 * w as f32 };
-                        let o = if alt { (cur - step).max(0.0) } else { (cur + step).min(1.0) };
-                        n.appearance.items.retain(|i| !matches!(i, AppearanceItem::Fill(_)));
+                        let cur = n
+                            .appearance
+                            .fill()
+                            .filter(|f| f.paint == paint)
+                            .map(|f| f.opacity)
+                            .unwrap_or(0.0);
+                        let step = if tool == "style" {
+                            1.0
+                        } else {
+                            0.15 * w as f32
+                        };
+                        let o = if alt {
+                            (cur - step).max(0.0)
+                        } else {
+                            (cur + step).min(1.0)
+                        };
+                        n.appearance
+                            .items
+                            .retain(|i| !matches!(i, AppearanceItem::Fill(_)));
                         if o > 0.0 {
                             let mut f = FillLayer::new(paint);
                             f.opacity = o;
@@ -1015,7 +1250,11 @@ fn symbol_adjust(s: &mut Session, p: &Value) -> Result<Value> {
                     }
                     _ => {
                         let step = (0.1 * w) as f32;
-                        n.opacity = if alt { (n.opacity + step).min(1.0) } else { (n.opacity - step).max(0.05) };
+                        n.opacity = if alt {
+                            (n.opacity + step).min(1.0)
+                        } else {
+                            (n.opacity - step).max(0.05)
+                        };
                     }
                 }
             }

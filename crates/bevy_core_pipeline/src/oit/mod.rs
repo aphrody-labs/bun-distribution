@@ -6,8 +6,9 @@ use bevy_ecs::{component::*, prelude::*};
 use bevy_log::trace;
 use bevy_math::UVec2;
 use bevy_platform::time::Instant;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     extract_component::{ExtractComponent, ExtractComponentPlugin},
     render_resource::{
@@ -16,14 +17,13 @@ use bevy_render::{
     },
     renderer::{RenderDevice, RenderQueue},
     view::Msaa,
-    Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::load_shader_library;
 use resolve::OitResolvePlugin;
 
 use crate::{
     core_3d::main_transparent_pass_3d,
-    oit::resolve::{node::oit_resolve, OitResolvePipelineId},
+    oit::resolve::{OitResolvePipelineId, node::oit_resolve},
     schedule::{Core3d, Core3dSystems},
 };
 

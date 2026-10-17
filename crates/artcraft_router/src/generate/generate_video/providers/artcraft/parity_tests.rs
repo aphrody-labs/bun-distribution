@@ -11,10 +11,10 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 const RESOLUTIONS: [Option<RouterResolution>; 4] = [
-  None,
-  Some(RouterResolution::FourEightyP),
-  Some(RouterResolution::SevenTwentyP),
-  Some(RouterResolution::TenEightyP),
+    None,
+    Some(RouterResolution::FourEightyP),
+    Some(RouterResolution::SevenTwentyP),
+    Some(RouterResolution::TenEightyP),
 ];
 
 /// Durations spanning the supported window (1..=15 seconds) plus over-the-cap
@@ -24,108 +24,120 @@ const DURATIONS: [u16; 17] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 const BATCHES: [u16; 4] = [1, 2, 3, 4];
 
 mod seedance_2p0_bpu_matches_seedance_2p0_bp {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn cost_parity_across_all_combos() {
-    for &res in &RESOLUTIONS {
-      for &dur in &DURATIONS {
-        for &batch in &BATCHES {
-          let bp = cost_cents(RouterVideoModel::Seedance2p0BytePlus, res, dur, batch);
-          let bpu = cost_cents(RouterVideoModel::Seedance2p0BytePlusUltra, res, dur, batch);
-          assert_eq!(
-            bpu, bp,
-            "cost mismatch at res={:?} dur={} batch={}: bp={} bpu={}",
-            res, dur, batch, bp, bpu,
-          );
+    #[test]
+    fn cost_parity_across_all_combos() {
+        for &res in &RESOLUTIONS {
+            for &dur in &DURATIONS {
+                for &batch in &BATCHES {
+                    let bp = cost_cents(RouterVideoModel::Seedance2p0BytePlus, res, dur, batch);
+                    let bpu =
+                        cost_cents(RouterVideoModel::Seedance2p0BytePlusUltra, res, dur, batch);
+                    assert_eq!(
+                        bpu, bp,
+                        "cost mismatch at res={:?} dur={} batch={}: bp={} bpu={}",
+                        res, dur, batch, bp, bpu,
+                    );
+                }
+            }
         }
-      }
     }
-  }
 
-  #[test]
-  fn credits_parity_across_all_combos() {
-    for &res in &RESOLUTIONS {
-      for &dur in &DURATIONS {
-        for &batch in &BATCHES {
-          let bp = build_cost(RouterVideoModel::Seedance2p0BytePlus, res, dur, batch);
-          let bpu = build_cost(RouterVideoModel::Seedance2p0BytePlusUltra, res, dur, batch);
-          assert_eq!(
-            bpu.cost_in_credits, bp.cost_in_credits,
-            "credit mismatch at res={:?} dur={} batch={}",
-            res, dur, batch,
-          );
+    #[test]
+    fn credits_parity_across_all_combos() {
+        for &res in &RESOLUTIONS {
+            for &dur in &DURATIONS {
+                for &batch in &BATCHES {
+                    let bp = build_cost(RouterVideoModel::Seedance2p0BytePlus, res, dur, batch);
+                    let bpu =
+                        build_cost(RouterVideoModel::Seedance2p0BytePlusUltra, res, dur, batch);
+                    assert_eq!(
+                        bpu.cost_in_credits, bp.cost_in_credits,
+                        "credit mismatch at res={:?} dur={} batch={}",
+                        res, dur, batch,
+                    );
+                }
+            }
         }
-      }
     }
-  }
 }
 
 mod seedance_2p0_bpu_fast_matches_seedance_2p0_bp_fast {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn cost_parity_across_all_combos() {
-    for &res in &RESOLUTIONS {
-      for &dur in &DURATIONS {
-        for &batch in &BATCHES {
-          let bp = cost_cents(RouterVideoModel::Seedance2p0BytePlusFast, res, dur, batch);
-          let bpu = cost_cents(RouterVideoModel::Seedance2p0BytePlusUltraFast, res, dur, batch);
-          assert_eq!(
-            bpu, bp,
-            "cost mismatch at res={:?} dur={} batch={}: bp_fast={} bpu_fast={}",
-            res, dur, batch, bp, bpu,
-          );
+    #[test]
+    fn cost_parity_across_all_combos() {
+        for &res in &RESOLUTIONS {
+            for &dur in &DURATIONS {
+                for &batch in &BATCHES {
+                    let bp = cost_cents(RouterVideoModel::Seedance2p0BytePlusFast, res, dur, batch);
+                    let bpu = cost_cents(
+                        RouterVideoModel::Seedance2p0BytePlusUltraFast,
+                        res,
+                        dur,
+                        batch,
+                    );
+                    assert_eq!(
+                        bpu, bp,
+                        "cost mismatch at res={:?} dur={} batch={}: bp_fast={} bpu_fast={}",
+                        res, dur, batch, bp, bpu,
+                    );
+                }
+            }
         }
-      }
     }
-  }
 
-  #[test]
-  fn credits_parity_across_all_combos() {
-    for &res in &RESOLUTIONS {
-      for &dur in &DURATIONS {
-        for &batch in &BATCHES {
-          let bp = build_cost(RouterVideoModel::Seedance2p0BytePlusFast, res, dur, batch);
-          let bpu = build_cost(RouterVideoModel::Seedance2p0BytePlusUltraFast, res, dur, batch);
-          assert_eq!(
-            bpu.cost_in_credits, bp.cost_in_credits,
-            "credit mismatch at res={:?} dur={} batch={}",
-            res, dur, batch,
-          );
+    #[test]
+    fn credits_parity_across_all_combos() {
+        for &res in &RESOLUTIONS {
+            for &dur in &DURATIONS {
+                for &batch in &BATCHES {
+                    let bp = build_cost(RouterVideoModel::Seedance2p0BytePlusFast, res, dur, batch);
+                    let bpu = build_cost(
+                        RouterVideoModel::Seedance2p0BytePlusUltraFast,
+                        res,
+                        dur,
+                        batch,
+                    );
+                    assert_eq!(
+                        bpu.cost_in_credits, bp.cost_in_credits,
+                        "credit mismatch at res={:?} dur={} batch={}",
+                        res, dur, batch,
+                    );
+                }
+            }
         }
-      }
     }
-  }
 }
 
 fn build_cost(
-  model: RouterVideoModel,
-  resolution: Option<RouterResolution>,
-  duration_seconds: u16,
-  video_batch_count: u16,
+    model: RouterVideoModel,
+    resolution: Option<RouterResolution>,
+    duration_seconds: u16,
+    video_batch_count: u16,
 ) -> VideoGenerationCostEstimate {
-  GenerateVideoRequestBuilder {
-    model,
-    provider: RouterProvider::Artcraft,
-    resolution,
-    duration_seconds: Some(duration_seconds),
-    video_batch_count: Some(video_batch_count),
-    ..Default::default()
-  }
-  .build2()
-  .expect("build2 should succeed")
-  .estimate_cost()
-  .expect("estimate_cost should succeed")
+    GenerateVideoRequestBuilder {
+        model,
+        provider: RouterProvider::Artcraft,
+        resolution,
+        duration_seconds: Some(duration_seconds),
+        video_batch_count: Some(video_batch_count),
+        ..Default::default()
+    }
+    .build2()
+    .expect("build2 should succeed")
+    .estimate_cost()
+    .expect("estimate_cost should succeed")
 }
 
 fn cost_cents(
-  model: RouterVideoModel,
-  resolution: Option<RouterResolution>,
-  duration_seconds: u16,
-  video_batch_count: u16,
+    model: RouterVideoModel,
+    resolution: Option<RouterResolution>,
+    duration_seconds: u16,
+    video_batch_count: u16,
 ) -> u64 {
-  build_cost(model, resolution, duration_seconds, video_batch_count)
-    .cost_in_usd_cents
-    .expect("cost_in_usd_cents should be Some")
+    build_cost(model, resolution, duration_seconds, video_batch_count)
+        .cost_in_usd_cents
+        .expect("cost_in_usd_cents should be Some")
 }

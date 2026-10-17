@@ -22,17 +22,33 @@ pub(crate) fn parse(text: &str) -> Line<'_> {
         Some(rest) => ("//@", rest),
         None => ("#", text.strip_prefix('#').unwrap_or(text)),
     };
-    let end = rest.find(|c: char| !c.is_ascii_alphanumeric() && c != '_').unwrap_or(rest.len());
-    let (name, rest) = (rest.get(..end).unwrap_or(rest), rest.get(end..).unwrap_or_default());
-    let known = catalog::DIRECTIVES.iter().copied().find(|d| d.eq_ignore_ascii_case(name));
-    Line { form, name, known, value: value(rest) }
+    let end = rest
+        .find(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .unwrap_or(rest.len());
+    let (name, rest) = (
+        rest.get(..end).unwrap_or(rest),
+        rest.get(end..).unwrap_or_default(),
+    );
+    let known = catalog::DIRECTIVES
+        .iter()
+        .copied()
+        .find(|d| d.eq_ignore_ascii_case(name));
+    Line {
+        form,
+        name,
+        known,
+        value: value(rest),
+    }
 }
 
 fn value(rest: &str) -> &str {
     let v = rest.trim();
     if let Some(quote) = v.chars().next().filter(|c| matches!(c, '"' | '\'')) {
         let inner = v.get(1..).unwrap_or_default();
-        return inner.find(quote).and_then(|i| inner.get(..i)).unwrap_or(inner);
+        return inner
+            .find(quote)
+            .and_then(|i| inner.get(..i))
+            .unwrap_or(inner);
     }
     let v = v.find("//").and_then(|i| v.get(..i)).unwrap_or(v);
     v.trim_end().trim_end_matches(';').trim_end()
@@ -58,14 +74,20 @@ pub(crate) fn target(value: &str) -> Specifier<'_> {
         Some((app, instance)) => (app, Some(instance)),
         None => (head, None),
     };
-    let (version, locale) = match tail.map(|t| t.split_once('-').map_or((t, None), |(v, l)| (v, Some(l)))) {
-        Some((version, locale)) => (Some(version), locale),
-        None => (None, None),
-    };
+    let (version, locale) =
+        match tail.map(|t| t.split_once('-').map_or((t, None), |(v, l)| (v, Some(l)))) {
+            Some((version, locale)) => (Some(version), locale),
+            None => (None, None),
+        };
     fn part(s: Option<&str>) -> Option<&str> {
         s.filter(|s| !s.is_empty())
     }
-    Specifier { app, instance: part(instance), version: part(version), locale: part(locale) }
+    Specifier {
+        app,
+        instance: part(instance),
+        version: part(version),
+        locale: part(locale),
+    }
 }
 
 /// The most folders an `#includepath` line names that are kept.

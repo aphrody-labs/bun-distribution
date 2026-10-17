@@ -1,4 +1,5 @@
 use crate::{
+    ExtractSchedule, MainWorld, Render, RenderApp, RenderSystems,
     extract_component::ExtractComponentPlugin,
     render_asset::RenderAssets,
     render_resource::{
@@ -9,7 +10,6 @@ use crate::{
     storage::{GpuShaderBuffer, ShaderBuffer},
     sync_world::MainEntity,
     texture::GpuImage,
-    ExtractSchedule, MainWorld, Render, RenderApp, RenderSystems,
 };
 use async_channel::{Receiver, Sender};
 use bevy_app::{App, First, Plugin};
@@ -30,9 +30,9 @@ use bevy_image::{Image, TextureFormatPixelInfo};
 use bevy_log::{debug, warn};
 use bevy_platform::collections::HashMap;
 use bevy_reflect::Reflect;
+use encase::ShaderType;
 use encase::internal::ReadFrom;
 use encase::private::Reader;
-use encase::ShaderType;
 
 /// A plugin that enables reading back gpu buffers and textures to the cpu.
 pub struct GpuReadbackPlugin {

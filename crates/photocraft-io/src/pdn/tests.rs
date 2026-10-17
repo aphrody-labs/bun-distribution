@@ -72,8 +72,20 @@ fn fixture(modes: &[i32], legacy: bool, compressed: bool) -> Vec<u8> {
     w.0.push(12);
     w.int(1);
     w.string("PaintDotNet.Data");
-    w.object(1, "PaintDotNet.Document", &[("width", Int(2)), ("height", Int(2)), ("layers", Ref(2))]);
-    w.object(2, "PaintDotNet.LayerList", &[("parent", Ref(1)), ("ArrayList+_size", Int(modes.len() as i32)), ("ArrayList+_items", Ref(3))]);
+    w.object(
+        1,
+        "PaintDotNet.Document",
+        &[("width", Int(2)), ("height", Int(2)), ("layers", Ref(2))],
+    );
+    w.object(
+        2,
+        "PaintDotNet.LayerList",
+        &[
+            ("parent", Ref(1)),
+            ("ArrayList+_size", Int(modes.len() as i32)),
+            ("ArrayList+_items", Ref(3)),
+        ],
+    );
     w.0.push(16);
     w.int(3);
     w.int(modes.len() as i32 + 2);
@@ -87,31 +99,78 @@ fn fixture(modes: &[i32], legacy: bool, compressed: bool) -> Vec<u8> {
         w.object(
             id,
             "PaintDotNet.BitmapLayer",
-            &[("Layer+width", Int(2)), ("Layer+height", Int(2)), ("surface", Ref(id + 1)), ("Layer+properties", Ref(id + 2)), ("properties", Ref(id + 3))],
+            &[
+                ("Layer+width", Int(2)),
+                ("Layer+height", Int(2)),
+                ("surface", Ref(id + 1)),
+                ("Layer+properties", Ref(id + 2)),
+                ("properties", Ref(id + 3)),
+            ],
         );
-        w.object(id + 1, "PaintDotNet.Surface", &[("width", Int(2)), ("height", Int(2)), ("stride", Int(12)), ("scan0", Ref(id + 7))]);
-        let mut fields =
-            vec![("name", Ref(id + 4)), ("opacity", Byte(if i == 0 { 255 } else { 128 })), ("visible", Bool(i != 1)), ("isBackground", Bool(i == 0))];
+        w.object(
+            id + 1,
+            "PaintDotNet.Surface",
+            &[
+                ("width", Int(2)),
+                ("height", Int(2)),
+                ("stride", Int(12)),
+                ("scan0", Ref(id + 7)),
+            ],
+        );
+        let mut fields = vec![
+            ("name", Ref(id + 4)),
+            ("opacity", Byte(if i == 0 { 255 } else { 128 })),
+            ("visible", Bool(i != 1)),
+            ("isBackground", Bool(i == 0)),
+        ];
         if !legacy {
             fields.push(("blendMode", Ref(id + 5)));
         }
         w.object(id + 2, "PaintDotNet.Layer+LayerProperties", &fields);
-        w.object(id + 3, "PaintDotNet.BitmapLayer+BitmapLayerProperties", &[("blendOp", Ref(id + 6))]);
+        w.object(
+            id + 3,
+            "PaintDotNet.BitmapLayer+BitmapLayerProperties",
+            &[("blendOp", Ref(id + 6))],
+        );
         w.0.push(6);
         w.int(id + 4);
         w.string(&format!("Läyer {i}"));
-        w.object(id + 5, "PaintDotNet.LayerBlendMode", &[("value__", Int(*mode))]);
-        w.object(id + 6, &format!("PaintDotNet.UserBlendOps+{}BlendOp", OLD_MODES.get(*mode as usize).unwrap_or(&"Unknown")), &[]);
-        w.object(id + 7, "PaintDotNet.MemoryBlock", &[("length64", Long(24)), ("hasParent", Bool(false)), ("deferred", Bool(true))]);
+        w.object(
+            id + 5,
+            "PaintDotNet.LayerBlendMode",
+            &[("value__", Int(*mode))],
+        );
+        w.object(
+            id + 6,
+            &format!(
+                "PaintDotNet.UserBlendOps+{}BlendOp",
+                OLD_MODES.get(*mode as usize).unwrap_or(&"Unknown")
+            ),
+            &[],
+        );
+        w.object(
+            id + 7,
+            "PaintDotNet.MemoryBlock",
+            &[
+                ("length64", Long(24)),
+                ("hasParent", Bool(false)),
+                ("deferred", Bool(true)),
+            ],
+        );
     }
     w.0.push(11);
     for _ in modes {
         w.0.push(if compressed { 0 } else { 1 });
         w.0.extend(12u32.to_be_bytes());
         for index in [1u32, 0] {
-            let raw = if index == 0 { vec![30, 20, 10, 255, 60, 50, 40, 128, 99, 99, 99, 99] } else { vec![90, 80, 70, 64, 120, 110, 100, 0, 99, 99, 99, 99] };
+            let raw = if index == 0 {
+                vec![30, 20, 10, 255, 60, 50, 40, 128, 99, 99, 99, 99]
+            } else {
+                vec![90, 80, 70, 64, 120, 110, 100, 0, 99, 99, 99, 99]
+            };
             let data = if compressed {
-                let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+                let mut enc =
+                    flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
                 enc.write_all(&raw).unwrap();
                 enc.finish().unwrap()
             } else {
@@ -145,16 +204,32 @@ fn all_pdn_blend_modes_and_layer_properties_import_and_save_natively() {
                 assert_eq!(layer.opacity, if i == 0 { 1.0 } else { 128.0 / 255.0 });
                 assert!(!layer.locks.all && !layer.locks.pixels && !layer.locks.position);
                 let surface = layer.surface().unwrap();
-                for (x, y, expected) in [(0, 0, [10, 20, 30, 255]), (1, 0, [40, 50, 60, 128]), (0, 1, [70, 80, 90, 64]), (1, 1, [100, 110, 120, 0])] {
+                for (x, y, expected) in [
+                    (0, 0, [10, 20, 30, 255]),
+                    (1, 0, [40, 50, 60, 128]),
+                    (0, 1, [70, 80, 90, 64]),
+                    (1, 1, [100, 110, 120, 0]),
+                ] {
                     let pixel = surface.pixel(x, y);
-                    assert_eq!(pixel.iter().map(|v| (v * 255.0).round() as u8).collect::<Vec<_>>(), expected);
+                    assert_eq!(
+                        pixel
+                            .iter()
+                            .map(|v| (v * 255.0).round() as u8)
+                            .collect::<Vec<_>>(),
+                        expected
+                    );
                 }
             }
             let saved = crate::export(&doc, "sample.pcraft", &Default::default()).unwrap();
             assert!(saved.warnings.is_empty());
-            let back = crate::import("sample.pcraft", &saved.bytes).unwrap().document;
+            let back = crate::import("sample.pcraft", &saved.bytes)
+                .unwrap()
+                .document;
             assert_eq!(doc.layers, back.layers);
-            assert_eq!(photocraft_compose::flatten(&doc).px, photocraft_compose::flatten(&back).px);
+            assert_eq!(
+                photocraft_compose::flatten(&doc).px,
+                photocraft_compose::flatten(&back).px
+            );
         }
     }
 }
@@ -163,7 +238,10 @@ fn all_pdn_blend_modes_and_layer_properties_import_and_save_natively() {
 fn truncation_unknown_modes_and_corrupt_chunks_fail_without_panicking() {
     let raw = fixture(&[0], false, false);
     for len in 0..raw.len() {
-        assert!(crate::import("truncated.pdn", &raw[..len]).is_err(), "length {len}");
+        assert!(
+            crate::import("truncated.pdn", &raw[..len]).is_err(),
+            "length {len}"
+        );
     }
     assert!(crate::import("unknown.pdn", &fixture(&[999], false, false)).is_err());
     let mut corrupt = raw.clone();
@@ -221,22 +299,43 @@ proptest::proptest! {
 
 #[test]
 fn psd_export_reports_paint_net_blend_loss() {
-    let mut doc = crate::import("sample.pdn", &fixture(&[5], false, false)).unwrap().document;
-    doc.layers[0].effects.items.push(photocraft_doc::effects::Effect::ColorOverlay {
-        common: photocraft_doc::effects::FxCommon::new(BlendMode::Glow, 1.0),
-        color: photocraft_color::Color::BLACK,
-    });
+    let mut doc = crate::import("sample.pdn", &fixture(&[5], false, false))
+        .unwrap()
+        .document;
+    doc.layers[0]
+        .effects
+        .items
+        .push(photocraft_doc::effects::Effect::ColorOverlay {
+            common: photocraft_doc::effects::FxCommon::new(BlendMode::Glow, 1.0),
+            color: photocraft_color::Color::BLACK,
+        });
     let result = crate::export(&doc, "sample.psd", &Default::default()).unwrap();
-    assert!(result.warnings.iter().any(|s| s.contains("Reflect") && s.contains("no PSD equivalent")));
-    assert!(result.warnings.iter().any(|s| s.contains("Color Overlay") && s.contains("Glow") && s.contains("no PSD equivalent")));
+    assert!(
+        result
+            .warnings
+            .iter()
+            .any(|s| s.contains("Reflect") && s.contains("no PSD equivalent"))
+    );
+    assert!(result.warnings.iter().any(|s| s.contains("Color Overlay")
+        && s.contains("Glow")
+        && s.contains("no PSD equivalent")));
     let native = crate::export(&doc, "sample.pcraft", &Default::default()).unwrap();
-    assert_eq!(crate::import("sample.pcraft", &native.bytes).unwrap().document.layers, doc.layers);
+    assert_eq!(
+        crate::import("sample.pcraft", &native.bytes)
+            .unwrap()
+            .document
+            .layers,
+        doc.layers
+    );
 }
 
 #[test]
 fn malformed_pdn_reports_a_format_error() {
     for bytes in [b"".as_slice(), b"PDN3", b"PDN3\xff\xff\xff", b"PDN4\0\0\0"] {
-        assert!(matches!(crate::import("bad.pdn", bytes), Err(IoError::Pdn(_))));
+        assert!(matches!(
+            crate::import("bad.pdn", bytes),
+            Err(IoError::Pdn(_))
+        ));
     }
 }
 
@@ -278,8 +377,18 @@ fn serialized_counts_depth_and_references_are_bounded() {
     missing_class.int(999);
     let mut missing_root = header();
     missing_root.0.push(11);
-    for w in [oversized, nested, duplicate, null_run, missing_class, missing_root] {
-        let mut reader = Reader { bytes: &w.0, pos: 0 };
+    for w in [
+        oversized,
+        nested,
+        duplicate,
+        null_run,
+        missing_class,
+        missing_root,
+    ] {
+        let mut reader = Reader {
+            bytes: &w.0,
+            pos: 0,
+        };
         assert!(nrbf::parse(&mut reader, &Interrupt::NONE).is_err());
     }
 }
@@ -287,13 +396,22 @@ fn serialized_counts_depth_and_references_are_bounded() {
 #[test]
 fn pdn_export_is_explicitly_unsupported() {
     let doc = Document::new("x", Size::new(1, 1), ColorMode::Rgb, SampleType::U8);
-    assert!(matches!(crate::export(&doc, "x.pdn", &Default::default()), Err(IoError::Unsupported(_))));
+    assert!(matches!(
+        crate::export(&doc, "x.pdn", &Default::default()),
+        Err(IoError::Unsupported(_))
+    ));
 }
 
 #[test]
 fn truncated_uncompressed_pixels_are_rejected_before_allocating() {
     // A raw (version 1) block of 256 MiB chunks that declares 1 GiB of pixels but holds a few bytes.
-    let mut reader = Reader { bytes: &[1, 0x10, 0, 0, 0, 0, 0, 0, 0], pos: 0 };
-    let e = pixels(&mut reader, 1 << 30, &Interrupt::NONE).err().map(|e| e.to_string()).unwrap_or_default();
+    let mut reader = Reader {
+        bytes: &[1, 0x10, 0, 0, 0, 0, 0, 0, 0],
+        pos: 0,
+    };
+    let e = pixels(&mut reader, 1 << 30, &Interrupt::NONE)
+        .err()
+        .map(|e| e.to_string())
+        .unwrap_or_default();
     assert!(e.contains("uncompressed pixel data is truncated"), "{e}");
 }

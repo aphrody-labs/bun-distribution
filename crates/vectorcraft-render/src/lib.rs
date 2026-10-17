@@ -24,7 +24,10 @@ pub mod proof;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use vectorcraft_doc::{AppearanceItem, Document, Node, NodeId, NodeKind, StrokeAlign, StrokeLayer, TextObject, TraceView};
+use vectorcraft_doc::{
+    AppearanceItem, Document, Node, NodeId, NodeKind, StrokeAlign, StrokeLayer, TextObject,
+    TraceView,
+};
 use vectorcraft_geom::{Affine, BezPath, FillRule, Rect, Shape};
 use vello_cpu::kurbo;
 use vello_cpu::peniko::{self, BlendMode, Compose, Mix};
@@ -62,7 +65,10 @@ pub fn raster_size(region: Rect, scale: f64) -> Result<(u32, u32), String> {
         return Err(format!("invalid scale {scale}"));
     }
     let (w, h) = region_pixels(region, scale);
-    if !(w <= MAX_RASTER_SIDE && h <= MAX_RASTER_SIDE && u64::from(w) * u64::from(h) <= MAX_RASTER_PIXELS) {
+    if !(w <= MAX_RASTER_SIDE
+        && h <= MAX_RASTER_SIDE
+        && u64::from(w) * u64::from(h) <= MAX_RASTER_PIXELS)
+    {
         return Err(format!(
             "the image would be {w} × {h} pixels; raster exports are limited to {MAX_RASTER_SIDE} pixels per side and {} megapixels: lower the scale or resolution",
             MAX_RASTER_PIXELS / 1_000_000
@@ -173,7 +179,9 @@ impl AntiAlias {
 
     /// The mode an id names (any case).
     pub fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|a| a.id().eq_ignore_ascii_case(id))
+        Self::ALL
+            .into_iter()
+            .find(|a| a.id().eq_ignore_ascii_case(id))
     }
 
     /// The name shown in options dialogs.
@@ -245,7 +253,12 @@ fn downsample(src: &[u8], w: usize, h: usize, k: usize) -> Vec<u8> {
         let mut acc = [0u32; 4];
         for y in oy * k..(oy + 1) * k {
             let row = y * w + ox * k;
-            for p in src.get(row * 4..(row + k) * 4).unwrap_or_default().as_chunks::<4>().0 {
+            for p in src
+                .get(row * 4..(row + k) * 4)
+                .unwrap_or_default()
+                .as_chunks::<4>()
+                .0
+            {
                 for (a, v) in acc.iter_mut().zip(p) {
                     *a += u32::from(*v);
                 }
@@ -285,7 +298,8 @@ impl Rendered {
         let mut buf = Vec::new();
         let img = image::RgbaImage::from_raw(self.width, self.height, self.to_straight())
             .ok_or("PNG encoding failed: pixel buffer doesn't match the image size")?;
-        img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png).map_err(|e| format!("PNG encoding failed: {e}"))?;
+        img.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png)
+            .map_err(|e| format!("PNG encoding failed: {e}"))?;
         Ok(buf)
     }
     /// Encode as JPEG (flattened on white) at `quality` 1..=100.
@@ -470,7 +484,8 @@ pub struct Renderer {
 const MAX_INLINE_DEPTH: u32 = 4;
 
 /// Set once a missing inline symbol has been logged (it would log every frame otherwise).
-static MISSING_INLINE_LOGGED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static MISSING_INLINE_LOGGED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FrameStats {
@@ -561,22 +576,60 @@ impl Renderer {
     }
 
     /// Render `doc` into a `width`×`height` image using `view` (document → pixel transform).
-    pub fn render(&mut self, doc: &Document, width: u32, height: u32, view: Affine, opts: &RenderOptions) -> Rendered {
+    pub fn render(
+        &mut self,
+        doc: &Document,
+        width: u32,
+        height: u32,
+        view: Affine,
+        opts: &RenderOptions,
+    ) -> Rendered {
         self.render_as(doc, width, height, view, opts, false)
     }
 
     /// [`Self::render`], or with `inks` the ink amounts in the working CMYK space instead of
     /// screen colours (4 bytes a pixel, see [`Self::render_region_inks`]).
-    fn render_as(&mut self, doc: &Document, width: u32, height: u32, view: Affine, opts: &RenderOptions, inks: bool) -> Rendered {
+    fn render_as(
+        &mut self,
+        doc: &Document,
+        width: u32,
+        height: u32,
+        view: Affine,
+        opts: &RenderOptions,
+        inks: bool,
+    ) -> Rendered {
         let start = now();
         if opts.supersample && opts.anti_alias == AntiAlias::Art && opts.mask_view.is_none() {
-            let (w, h) = (width.clamp(1, u16::MAX as u32), height.clamp(1, u16::MAX as u32));
+            let (w, h) = (
+                width.clamp(1, u16::MAX as u32),
+                height.clamp(1, u16::MAX as u32),
+            );
             if let Some(k) = supersample_factor(w, h) {
-                let hard = RenderOptions { anti_alias: AntiAlias::None, supersample: false, ..opts.clone() };
-                let big = self.render_as(doc, w * k, h * k, Affine::scale(f64::from(k)) * view, &hard, inks);
-                let pixels = downsample(&big.pixels, big.width as usize, big.height as usize, k as usize);
+                let hard = RenderOptions {
+                    anti_alias: AntiAlias::None,
+                    supersample: false,
+                    ..opts.clone()
+                };
+                let big = self.render_as(
+                    doc,
+                    w * k,
+                    h * k,
+                    Affine::scale(f64::from(k)) * view,
+                    &hard,
+                    inks,
+                );
+                let pixels = downsample(
+                    &big.pixels,
+                    big.width as usize,
+                    big.height as usize,
+                    k as usize,
+                );
                 self.stats.micros = now().saturating_sub(start);
-                return Rendered { width: w, height: h, pixels };
+                return Rendered {
+                    width: w,
+                    height: h,
+                    pixels,
+                };
             }
         }
         let prepared = proof::prepare(doc, opts);
@@ -590,23 +643,65 @@ impl Renderer {
         let inv = view.inverse();
         let visible = inv.transform_rect_bbox(Rect::new(0.0, 0.0, w as f64, h as f64));
         let px = 1.0 / view.determinant().abs().sqrt().max(1e-12);
-        let screen = if opts.rich_black { Ink::RichBlack } else { Ink::Display };
-        let frame = Frame { mt: threads > 0, doc, view, visible, px, opts, ink: screen };
+        let screen = if opts.rich_black {
+            Ink::RichBlack
+        } else {
+            Ink::Display
+        };
+        let frame = Frame {
+            mt: threads > 0,
+            doc,
+            view,
+            visible,
+            px,
+            opts,
+            ink: screen,
+        };
         self.begin_frame();
         // View Opacity Mask: the mask's coverage in greyscale instead of the artwork.
-        if let Some(m) = opts.mask_view.and_then(|id| doc.node(id)).and_then(|n| n.extras().mask.as_deref()) {
-            let pixels = self.mask_values(&frame, m, w, h).into_iter().flat_map(|v| [v, v, v, 255]).collect();
+        if let Some(m) = opts
+            .mask_view
+            .and_then(|id| doc.node(id))
+            .and_then(|n| n.extras().mask.as_deref())
+        {
+            let pixels = self
+                .mask_values(&frame, m, w, h)
+                .into_iter()
+                .flat_map(|v| [v, v, v, 255])
+                .collect();
             self.end_frame();
             self.stats.micros = now().saturating_sub(start);
-            return Rendered { width: w as u32, height: h as u32, pixels };
+            return Rendered {
+                width: w as u32,
+                height: h as u32,
+                pixels,
+            };
         }
         let mut pixels = if inks || ink::blends_in_cmyk(doc, opts) {
             // Blending in CMYK: one frame per ink plane, then their inks shown on screen.
-            let cmy = self.draw_frame(&Frame { ink: Ink::Cmy, ..frame }, w, h);
+            let cmy = self.draw_frame(
+                &Frame {
+                    ink: Ink::Cmy,
+                    ..frame
+                },
+                w,
+                h,
+            );
             let stats = self.stats;
-            let k = self.draw_frame(&Frame { ink: Ink::K, ..frame }, w, h);
+            let k = self.draw_frame(
+                &Frame {
+                    ink: Ink::K,
+                    ..frame
+                },
+                w,
+                h,
+            );
             self.stats = stats;
-            if inks { ink::amounts(&cmy, &k) } else { ink::compose(&cmy, &k, opts) }
+            if inks {
+                ink::amounts(&cmy, &k)
+            } else {
+                ink::compose(&cmy, &k, opts)
+            }
         } else {
             self.draw_frame(&frame, w, h)
         };
@@ -615,7 +710,11 @@ impl Renderer {
             proof::post(&mut pixels, opts);
         }
         self.stats.micros = now().saturating_sub(start);
-        Rendered { width: w as u32, height: h as u32, pixels }
+        Rendered {
+            width: w as u32,
+            height: h as u32,
+            pixels,
+        }
     }
 
     /// Start a frame: cache entries used from now on are marked with its stamp.
@@ -656,18 +755,36 @@ impl Renderer {
     /// Draw frame `f` (`w`×`h` pixels): the background, the artboards and the page's art.
     fn draw_frame(&mut self, f: &Frame, w: u16, h: u16) -> Vec<u8> {
         let (threads, opts) = (self.threads, f.opts);
-        let slot = if threads == 0 { self.ctx_st.take() } else { self.ctx.take() };
+        let slot = if threads == 0 {
+            self.ctx_st.take()
+        } else {
+            self.ctx.take()
+        };
         let mut ctx = match slot {
             Some(mut c) if c.width() == w && c.height() == h => {
                 c.reset();
                 c
             }
-            _ => RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: threads, ..Default::default() }),
+            _ => RenderContext::new_with(
+                w,
+                h,
+                vello_cpu::RenderSettings {
+                    num_threads: threads,
+                    ..Default::default()
+                },
+            ),
         };
         // `reset` keeps the threshold of the previous render: set it every time.
         ctx.set_aliasing_threshold(opts.anti_alias.threshold());
-        let render_mode = if opts.precise { vello_cpu::RenderMode::OptimizeQuality } else { vello_cpu::RenderMode::OptimizeSpeed };
-        self.raster = vello_cpu::RasterizerSettings { render_mode, ..Default::default() };
+        let render_mode = if opts.precise {
+            vello_cpu::RenderMode::OptimizeQuality
+        } else {
+            vello_cpu::RenderMode::OptimizeSpeed
+        };
+        self.raster = vello_cpu::RasterizerSettings {
+            render_mode,
+            ..Default::default()
+        };
         if let Some(bg) = opts.background {
             ctx.set_transform(Affine::IDENTITY);
             ctx.set_paint(f.ink.fixed(bg));
@@ -689,7 +806,11 @@ impl Renderer {
                 clip.extend(ab.rect.path_elements(0.1));
             }
             let blends = self.children_blend(&f.doc.layers);
-            let trim = Composite { clip: Some((&clip, FillRule::NonZero)), blends, ..Default::default() };
+            let trim = Composite {
+                clip: Some((&clip, FillRule::NonZero)),
+                blends,
+                ..Default::default()
+            };
             self.group(&mut ctx, f, trim, &mut |r, c, fr| r.draw_page(c, fr));
         } else {
             self.draw_page(&mut ctx, f);
@@ -714,7 +835,12 @@ impl Renderer {
         let doc = f.doc;
         // While editing an opacity mask its art is seen only through the mask.
         let mask_layer = doc.mask_edit.map(|m| m.layer);
-        let layers: Vec<Arc<Node>> = doc.layers.iter().filter(|l| Some(l.id) != mask_layer).cloned().collect();
+        let layers: Vec<Arc<Node>> = doc
+            .layers
+            .iter()
+            .filter(|l| Some(l.id) != mask_layer)
+            .cloned()
+            .collect();
         // Page Isolated Blending / Page Knockout Group: the page is a group of its own.
         let page_group = !f.opts.outline && (doc.page_isolate || doc.page_knockout);
         let knockout = page_group && doc.page_knockout;
@@ -725,7 +851,16 @@ impl Renderer {
         };
         if page_group {
             let blends = self.children_blend(&layers);
-            self.group(ctx, f, Composite { isolated: doc.page_isolate, blends, ..Default::default() }, &mut draw);
+            self.group(
+                ctx,
+                f,
+                Composite {
+                    isolated: doc.page_isolate,
+                    blends,
+                    ..Default::default()
+                },
+                &mut draw,
+            );
         } else {
             draw(self, ctx, f);
         }
@@ -733,13 +868,29 @@ impl Renderer {
 
     /// Render one artboard (or any document rect) at `scale` pixels per point, transparent or on white,
     /// as exported: template layers and guides are left out.
-    pub fn render_region(&mut self, doc: &Document, region: Rect, scale: f64, white: bool) -> Rendered {
-        let opts = RenderOptions { background: white.then_some([255, 255, 255, 255]), skip_templates: true, ..Default::default() };
+    pub fn render_region(
+        &mut self,
+        doc: &Document,
+        region: Rect,
+        scale: f64,
+        white: bool,
+    ) -> Rendered {
+        let opts = RenderOptions {
+            background: white.then_some([255, 255, 255, 255]),
+            skip_templates: true,
+            ..Default::default()
+        };
         self.render_region_with(doc, region, scale, &opts)
     }
 
     /// Render a document rect at `scale` pixels per point with `opts`.
-    pub fn render_region_with(&mut self, doc: &Document, region: Rect, scale: f64, opts: &RenderOptions) -> Rendered {
+    pub fn render_region_with(
+        &mut self,
+        doc: &Document,
+        region: Rect,
+        scale: f64,
+        opts: &RenderOptions,
+    ) -> Rendered {
         let (w, h) = region_pixels(region, scale);
         let view = Affine::scale(scale) * Affine::translate((-region.x0, -region.y0));
         self.render(doc, w, h, view, opts)
@@ -749,7 +900,13 @@ impl Renderer {
     /// drawn as the two ink planes of [`ink`], so CMYK colours keep their own inks (black type
     /// stays black ink alone) and RGB ones are separated with the colour settings. Where nothing
     /// is drawn (no background) there is no ink. CMYK exports draw this.
-    pub fn render_region_inks(&mut self, doc: &Document, region: Rect, scale: f64, opts: &RenderOptions) -> Vec<u8> {
+    pub fn render_region_inks(
+        &mut self,
+        doc: &Document,
+        region: Rect,
+        scale: f64,
+        opts: &RenderOptions,
+    ) -> Vec<u8> {
         let (w, h) = region_pixels(region, scale);
         let view = Affine::scale(scale) * Affine::translate((-region.x0, -region.y0));
         self.render_as(doc, w, h, view, opts, true).pixels
@@ -761,13 +918,28 @@ impl Renderer {
     }
 
     /// Render node `n` of `doc` (its resources) into `w`×`h` transparent pixels through `view`.
-    pub fn render_node(&mut self, doc: &Document, n: &Arc<Node>, w: u16, h: u16, view: Affine) -> Option<Rendered> {
+    pub fn render_node(
+        &mut self,
+        doc: &Document,
+        n: &Arc<Node>,
+        w: u16,
+        h: u16,
+        view: Affine,
+    ) -> Option<Rendered> {
         let inv = view.inverse();
         let visible = inv.transform_rect_bbox(Rect::new(0.0, 0.0, w as f64, h as f64));
         let px = 1.0 / view.determinant().abs().sqrt().max(1e-12);
         let mut ctx = single_threaded_context(w, h);
         let opts = RenderOptions::default();
-        let frame = Frame { mt: false, doc, view, visible, px, opts: &opts, ink: Ink::Display };
+        let frame = Frame {
+            mt: false,
+            doc,
+            view,
+            visible,
+            px,
+            opts: &opts,
+            ink: Ink::Display,
+        };
         self.begin_frame();
         (self.knockout, self.nested, self.backdrop) = (false, 0, None);
         self.clip_paths.clear();
@@ -776,17 +948,33 @@ impl Renderer {
         let mut pm = Pixmap::new(w, h);
         ctx.render(&mut pm, &mut self.resources);
         self.end_frame();
-        Some(Rendered { width: w as u32, height: h as u32, pixels: pm.data_as_u8_slice().to_vec() })
+        Some(Rendered {
+            width: w as u32,
+            height: h as u32,
+            pixels: pm.data_as_u8_slice().to_vec(),
+        })
     }
 
     /// Render any node (also one outside the tree, e.g. opacity-mask art) fitted into
     /// `size`×`size` pixels, optionally over a solid premultiplied background.
-    pub fn render_node_thumbnail(&mut self, doc: &Document, n: &Node, size: u32, background: Option<[u8; 4]>) -> Option<Rendered> {
+    pub fn render_node_thumbnail(
+        &mut self,
+        doc: &Document,
+        n: &Node,
+        size: u32,
+        background: Option<[u8; 4]>,
+    ) -> Option<Rendered> {
         self.render_node_thumbnail_with(doc, n, size, background, &RenderOptions::default())
     }
 
     /// [`Self::render_thumbnail`] with `opts` (e.g. [`RenderOptions::image_mips`]).
-    pub fn render_thumbnail_with(&mut self, doc: &Document, id: NodeId, size: u32, opts: &RenderOptions) -> Option<Rendered> {
+    pub fn render_thumbnail_with(
+        &mut self,
+        doc: &Document,
+        id: NodeId,
+        size: u32,
+        opts: &RenderOptions,
+    ) -> Option<Rendered> {
         self.render_node_thumbnail_with(doc, doc.node(id)?, size, None, opts)
     }
 
@@ -801,14 +989,24 @@ impl Renderer {
     ) -> Option<Rendered> {
         let b = brush_fx::cull_bounds(n)?;
         let s = (size as f64 - 2.0) / b.width().max(b.height()).max(1e-6);
-        let view = Affine::translate((size as f64 / 2.0, size as f64 / 2.0)) * Affine::scale(s) * Affine::translate(-b.center().to_vec2());
+        let view = Affine::translate((size as f64 / 2.0, size as f64 / 2.0))
+            * Affine::scale(s)
+            * Affine::translate(-b.center().to_vec2());
         let w = size.clamp(1, u16::MAX as u32) as u16;
         let mut ctx = single_threaded_context(w, w);
         if let Some(bg) = background {
             ctx.set_paint(peniko::Color::from_rgba8(bg[0], bg[1], bg[2], bg[3]));
             ctx.fill_rect(&kurbo::Rect::new(0.0, 0.0, w as f64, w as f64));
         }
-        let frame = Frame { mt: false, doc, view, visible: b.inflate(1.0, 1.0), px: 1.0 / s, opts, ink: Ink::Display };
+        let frame = Frame {
+            mt: false,
+            doc,
+            view,
+            visible: b.inflate(1.0, 1.0),
+            px: 1.0 / s,
+            opts,
+            ink: Ink::Display,
+        };
         self.begin_frame();
         (self.knockout, self.nested, self.backdrop) = (false, 0, None);
         self.clip_paths.clear();
@@ -817,7 +1015,11 @@ impl Renderer {
         let mut pm = Pixmap::new(w, w);
         ctx.render(&mut pm, &mut self.resources);
         self.end_frame();
-        Some(Rendered { width: size, height: size, pixels: pm.data_as_u8_slice().to_vec() })
+        Some(Rendered {
+            width: size,
+            height: size,
+            pixels: pm.data_as_u8_slice().to_vec(),
+        })
     }
 
     /// Cached cull bounds of a node (containers union their cached children).
@@ -830,10 +1032,23 @@ impl Renderer {
             return e.bounds;
         }
         let b = match &a.kind {
-            NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } if !fx::has_object_fx(a) => {
+            NodeKind::Layer {
+                children,
+                clip: false,
+                ..
+            }
+            | NodeKind::Group {
+                children,
+                clip: false,
+            } if !fx::has_object_fx(a) => {
                 let mut acc: Option<Rect> = None;
                 // An Image Trace object's hidden source image shows in some of its views.
-                let source = a.extras().trace.is_some().then(|| children.first()).flatten();
+                let source = a
+                    .extras()
+                    .trace
+                    .is_some()
+                    .then(|| children.first())
+                    .flatten();
                 for c in children {
                     if c.visible || source.is_some_and(|s| Arc::ptr_eq(s, c)) {
                         acc = vectorcraft_geom::union_opt(acc, self.bounds_of(c));
@@ -843,7 +1058,15 @@ impl Renderer {
             }
             _ => brush_fx::cull_bounds(a),
         };
-        self.geom.insert(key, GeomEntry { node: a.clone(), bounds: b, path: None, stamp: self.stamp });
+        self.geom.insert(
+            key,
+            GeomEntry {
+                node: a.clone(),
+                bounds: b,
+                path: None,
+                stamp: self.stamp,
+            },
+        );
         b
     }
 
@@ -858,7 +1081,8 @@ impl Renderer {
         }
         let region = effects::clip_outline(a).map(Arc::new);
         let bytes = size_of::<ClipEntry>() + region.as_ref().map_or(0, |r| lru::path_bytes(&r.0));
-        self.clips.insert(key, (a.clone(), region.clone()), bytes, self.stamp);
+        self.clips
+            .insert(key, (a.clone(), region.clone()), bytes, self.stamp);
         region
     }
 
@@ -873,8 +1097,18 @@ impl Renderer {
         }
         let paint = a.clip_paint();
         let (fill, stroke) = (paint.fill.map(Arc::new), paint.stroke.map(Arc::new));
-        let bytes = size_of::<ClipPaintEntry>() + [&fill, &stroke].iter().filter_map(|p| p.as_deref()).map(lru::node_bytes).sum::<usize>();
-        self.clip_paints.insert(key, (a.clone(), fill.clone(), stroke.clone()), bytes, self.stamp);
+        let bytes = size_of::<ClipPaintEntry>()
+            + [&fill, &stroke]
+                .iter()
+                .filter_map(|p| p.as_deref())
+                .map(lru::node_bytes)
+                .sum::<usize>();
+        self.clip_paints.insert(
+            key,
+            (a.clone(), fill.clone(), stroke.clone()),
+            bytes,
+            self.stamp,
+        );
         (fill, stroke)
     }
 
@@ -889,13 +1123,25 @@ impl Renderer {
         }
         let p = Arc::new(a.path_data()?.to_bezpath());
         let bounds = self.bounds_of(a);
-        self.geom.insert(key, GeomEntry { node: a.clone(), bounds, path: Some(p.clone()), stamp: self.stamp });
+        self.geom.insert(
+            key,
+            GeomEntry {
+                node: a.clone(),
+                bounds,
+                path: Some(p.clone()),
+                stamp: self.stamp,
+            },
+        );
         Some(p)
     }
 
     /// Whether `a` is left out of this frame: hidden, a skipped template or guide, or culled.
     fn skipped(&mut self, f: &Frame, a: &Arc<Node>) -> bool {
-        let skipped_template = f.opts.skip_templates && matches!(a.kind, NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. });
+        let skipped_template = f.opts.skip_templates
+            && matches!(
+                a.kind,
+                NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. }
+            );
         if !a.visible || skipped_template || f.opts.hidden.contains(&a.id) {
             return true;
         }
@@ -903,8 +1149,8 @@ impl Renderer {
             Some(b) => {
                 let pad = f.px * 2.0;
                 // Level of detail: leaves smaller than a quarter pixel are invisible.
-                let culled =
-                    !rects_overlap(b.inflate(pad, pad), f.visible) || (!a.is_container() && b.width() < f.px * 0.25 && b.height() < f.px * 0.25);
+                let culled = !rects_overlap(b.inflate(pad, pad), f.visible)
+                    || (!a.is_container() && b.width() < f.px * 0.25 && b.height() < f.px * 0.25);
                 self.stats.culled += culled as usize;
                 culled
             }
@@ -923,33 +1169,72 @@ impl Renderer {
         {
             // A masked object is a non-isolated group of its own.
             let mask = Some(self.opacity_mask(f, m, ctx.width(), ctx.height()));
-            let blends = a.blend != vectorcraft_color::BlendMode::Normal || (!a.isolate && self.blends_through(a));
+            let blends = a.blend != vectorcraft_color::BlendMode::Normal
+                || (!a.isolate && self.blends_through(a));
             let bounds = if blends { self.bounds_of(a) } else { None };
-            self.group(ctx, f, Composite { mask, blends, bounds, ..Default::default() }, &mut |r, c, fr| r.draw_arc_body(c, fr, a));
+            self.group(
+                ctx,
+                f,
+                Composite {
+                    mask,
+                    blends,
+                    bounds,
+                    ..Default::default()
+                },
+                &mut |r, c, fr| r.draw_arc_body(c, fr, a),
+            );
             return;
         }
         self.draw_arc_body(ctx, f, a);
     }
 
     /// Render an opacity mask's art offscreen and turn its luminance into a coverage mask.
-    fn opacity_mask(&mut self, f: &Frame, m: &vectorcraft_doc::OpacityMask, w: u16, h: u16) -> vello_cpu::Mask {
+    fn opacity_mask(
+        &mut self,
+        f: &Frame,
+        m: &vectorcraft_doc::OpacityMask,
+        w: u16,
+        h: u16,
+    ) -> vello_cpu::Mask {
         vello_cpu::Mask::from_parts(self.mask_values(f, m, w, h), w, h)
     }
 
     /// The coverage of opacity mask `m` per output pixel (row-major): its art rendered offscreen,
     /// as luminance ([`mask_value`]).
-    fn mask_values(&mut self, f: &Frame, m: &vectorcraft_doc::OpacityMask, w: u16, h: u16) -> Vec<u8> {
+    fn mask_values(
+        &mut self,
+        f: &Frame,
+        m: &vectorcraft_doc::OpacityMask,
+        w: u16,
+        h: u16,
+    ) -> Vec<u8> {
         let mut mctx = f.offscreen_context(w, h);
         // Mask art is a picture of its own: it takes no part in a knockout group around the object,
         // and its luminance is that of its screen colours.
-        let outer =
-            (std::mem::take(&mut self.knockout), std::mem::take(&mut self.nested), self.backdrop.take(), std::mem::take(&mut self.clip_paths));
-        self.draw_node(&mut mctx, &Frame { mt: false, ink: Ink::Display, ..*f }, &m.art, true);
+        let outer = (
+            std::mem::take(&mut self.knockout),
+            std::mem::take(&mut self.nested),
+            self.backdrop.take(),
+            std::mem::take(&mut self.clip_paths),
+        );
+        self.draw_node(
+            &mut mctx,
+            &Frame {
+                mt: false,
+                ink: Ink::Display,
+                ..*f
+            },
+            &m.art,
+            true,
+        );
         (self.knockout, self.nested, self.backdrop, self.clip_paths) = outer;
         mctx.flush();
         let mut pm = Pixmap::new(w, h);
         mctx.render_with(&mut pm, &mut self.resources, self.raster);
-        pm.data().iter().map(|p| mask_value(p.r, p.g, p.b, p.a, m.clip, m.invert)).collect()
+        pm.data()
+            .iter()
+            .map(|p| mask_value(p.r, p.g, p.b, p.a, m.clip, m.invert))
+            .collect()
     }
 
     /// Everything [`Self::draw_arc`] does after culling.
@@ -958,7 +1243,9 @@ impl Renderer {
         // A blend mode on a single plain fill applies per draw (exact for one paint operation);
         // a blend layer would composite the whole viewport.
         let blended = a.blend != vectorcraft_color::BlendMode::Normal;
-        if let NodeKind::Path { rule, guide: false, .. } = &a.kind
+        if let NodeKind::Path {
+            rule, guide: false, ..
+        } = &a.kind
             && !f.opts.outline
             && (!blended || single_plain_fill(a))
             && !a.isolate
@@ -1024,18 +1311,29 @@ impl Renderer {
         // Layer Options on screen: a layer whose Preview is off draws in outline, and Dim Images
         // fades its images (exports and thumbnails, which leave templates out, ignore both).
         // (A template is dimmed as a whole already.)
-        if let NodeKind::Layer { preview, dim_images, template, .. } = &n.kind
+        if let NodeKind::Layer {
+            preview,
+            dim_images,
+            template,
+            ..
+        } = &n.kind
             && f.opts.dim_templates
             && !f.opts.skip_templates
         {
             // A template layer stays in Preview while the view is in Outline (and whatever its own
             // Preview option says): its picture is there to be traced (#1486).
             if *template && f.opts.outline {
-                let opts = RenderOptions { outline: false, ..f.opts.clone() };
+                let opts = RenderOptions {
+                    outline: false,
+                    ..f.opts.clone()
+                };
                 return self.draw_node(ctx, &Frame { opts: &opts, ..*f }, n, force);
             }
             if !preview && !template && !f.opts.outline {
-                let opts = RenderOptions { outline: true, ..f.opts.clone() };
+                let opts = RenderOptions {
+                    outline: true,
+                    ..f.opts.clone()
+                };
                 return self.draw_node(ctx, &Frame { opts: &opts, ..*f }, n, force);
             }
             if let Some(p) = dim_images.filter(|_| !template) {
@@ -1075,17 +1373,33 @@ impl Renderer {
     fn isolation_path(&mut self, f: &Frame) -> Option<(NodeId, Vec<NodeId>)> {
         let isolated = f.opts.isolated.filter(|_| !self.isolation_settled)?;
         let doc = std::ptr::from_ref(f.doc) as usize;
-        if self.isolation.as_ref().is_none_or(|(stamp, d, id, _)| (*stamp, *d, *id) != (self.stamp, doc, isolated)) {
-            self.isolation = Some((self.stamp, doc, isolated, f.doc.ancestry(isolated).unwrap_or_default()));
+        if self
+            .isolation
+            .as_ref()
+            .is_none_or(|(stamp, d, id, _)| (*stamp, *d, *id) != (self.stamp, doc, isolated))
+        {
+            self.isolation = Some((
+                self.stamp,
+                doc,
+                isolated,
+                f.doc.ancestry(isolated).unwrap_or_default(),
+            ));
         }
-        let path = self.isolation.as_ref().map(|(.., path)| path.clone()).filter(|p| !p.is_empty())?;
+        let path = self
+            .isolation
+            .as_ref()
+            .map(|(.., path)| path.clone())
+            .filter(|p| !p.is_empty())?;
         Some((isolated, path))
     }
 
     /// `draw` at [`ISOLATION_DIM`], with nothing inside dimmed again.
     fn dimmed(&mut self, ctx: &mut RenderContext, f: &Frame, draw: &mut group::Content) {
         let settled = std::mem::replace(&mut self.isolation_settled, true);
-        let comp = Composite { opacity: ISOLATION_DIM, ..Default::default() };
+        let comp = Composite {
+            opacity: ISOLATION_DIM,
+            ..Default::default()
+        };
         self.group(ctx, f, comp, draw);
         self.isolation_settled = settled;
     }
@@ -1096,16 +1410,35 @@ impl Renderer {
             return self.draw_object_fx(ctx, f, &Arc::new(n.clone()), false);
         }
         let outline = f.opts.outline;
-        let template_dim = matches!(n.kind, NodeKind::Layer { template: true, .. }) && f.opts.dim_templates;
-        let opacity = if template_dim { self.opacity_of(n) * 0.5 } else { self.opacity_of(n) };
+        let template_dim =
+            matches!(n.kind, NodeKind::Layer { template: true, .. }) && f.opts.dim_templates;
+        let opacity = if template_dim {
+            self.opacity_of(n) * 0.5
+        } else {
+            self.opacity_of(n)
+        };
         // Whether this container's children knock each other out.
         let knockout = !outline && n.knocks_out(self.knockout);
         let enclosing = std::mem::replace(&mut self.knockout, knockout);
-        if !outline && (opacity < 1.0 || n.blend != vectorcraft_color::BlendMode::Normal || n.isolate || knockout) {
+        if !outline
+            && (opacity < 1.0
+                || n.blend != vectorcraft_color::BlendMode::Normal
+                || n.isolate
+                || knockout)
+        {
             let blends = self.blends_through(n);
             let bounds = if blends { self.node_bounds(n) } else { None };
-            let comp = Composite { blend: n.blend, opacity, isolated: n.isolate, blends, bounds, ..Default::default() };
-            self.group(ctx, f, comp, &mut |r, c, fr| r.draw_content(c, fr, n, knockout));
+            let comp = Composite {
+                blend: n.blend,
+                opacity,
+                isolated: n.isolate,
+                blends,
+                bounds,
+                ..Default::default()
+            };
+            self.group(ctx, f, comp, &mut |r, c, fr| {
+                r.draw_content(c, fr, n, knockout)
+            });
         } else {
             self.draw_content(ctx, f, n, knockout);
         }
@@ -1116,18 +1449,43 @@ impl Renderer {
     /// What `n` draws inside its transparency group (`knockout`: its children knock each other out).
     fn draw_content(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, knockout: bool) {
         match &n.kind {
-            NodeKind::Group { children, clip: false } if f.opts.trace_views && !f.opts.outline && n.trace_view() != TraceView::Result => {
+            NodeKind::Group {
+                children,
+                clip: false,
+            } if f.opts.trace_views && !f.opts.outline && n.trace_view() != TraceView::Result => {
                 self.draw_trace_view(ctx, f, children, n.trace_view(), knockout)
             }
-            NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
-                self.draw_children(ctx, f, children, knockout)
+            NodeKind::Layer {
+                children,
+                clip: false,
+                ..
             }
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } if f.opts.outline => {
+            | NodeKind::Group {
+                children,
+                clip: false,
+            } => self.draw_children(ctx, f, children, knockout),
+            NodeKind::Group {
+                children,
+                clip: true,
+            }
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } if f.opts.outline => {
                 for c in children {
                     self.draw_node(ctx, f, c, false);
                 }
             }
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => {
+            NodeKind::Group {
+                children,
+                clip: true,
+            }
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } => {
                 // Nothing to clip by hides the clipped art (as in the SVG and PDF output). A clip
                 // group doesn't isolate: blending inside it reaches the art below. The clipping
                 // path's fill paints behind the clipped art and its stroke over it, unclipped.
@@ -1146,8 +1504,17 @@ impl Renderer {
                         return;
                     }
                     let blends = self.blends_through(n);
-                    let bounds = if blends { Some(region.0.bounding_box()) } else { None };
-                    let comp = Composite { clip: Some((&region.0, region.1)), blends, bounds, ..Default::default() };
+                    let bounds = if blends {
+                        Some(region.0.bounding_box())
+                    } else {
+                        None
+                    };
+                    let comp = Composite {
+                        clip: Some((&region.0, region.1)),
+                        blends,
+                        bounds,
+                        ..Default::default()
+                    };
                     self.group(ctx, f, comp, &mut |r, c, fr| {
                         if let Some(fill) = &fill {
                             r.draw_arc(c, fr, fill);
@@ -1159,7 +1526,9 @@ impl Renderer {
                     }
                 }
             }
-            NodeKind::Path { path, rule, guide, .. } => {
+            NodeKind::Path {
+                path, rule, guide, ..
+            } => {
                 let bp = path.to_bezpath();
                 if *guide {
                     let ([r, g, b], dots) = f.opts.guide;
@@ -1194,16 +1563,27 @@ impl Renderer {
                     self.draw_node(ctx, f, &art, true);
                 }
             }
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_) => {
-                self.draw_live_node(ctx, f, n)
-            }
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_)
+            | NodeKind::PlacedDocument(_) => self.draw_live_node(ctx, f, n),
         }
     }
 
     /// An Image Trace object's `children` (the hidden source image, then the traced shapes) as
     /// `view` shows them on screen.
-    fn draw_trace_view(&mut self, ctx: &mut RenderContext, f: &Frame, children: &[Arc<Node>], view: TraceView, knockout: bool) {
-        let Some((source, shapes)) = children.split_first() else { return };
+    fn draw_trace_view(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        children: &[Arc<Node>],
+        view: TraceView,
+        knockout: bool,
+    ) {
+        let Some((source, shapes)) = children.split_first() else {
+            return;
+        };
         if view.shows_source() && matches!(source.kind, NodeKind::Image(_)) {
             self.draw_node(ctx, f, source, true);
         }
@@ -1211,7 +1591,10 @@ impl Renderer {
             self.draw_children(ctx, f, shapes, knockout);
         }
         if view.shows_outlines() {
-            let opts = RenderOptions { outline: true, ..f.opts.clone() };
+            let opts = RenderOptions {
+                outline: true,
+                ..f.opts.clone()
+            };
             let frame = Frame { opts: &opts, ..*f };
             for c in shapes {
                 self.draw_node(ctx, &frame, c, false);
@@ -1220,7 +1603,13 @@ impl Renderer {
     }
 
     /// The children of a group: as the elements of a knockout group when `knockout`.
-    fn draw_children(&mut self, ctx: &mut RenderContext, f: &Frame, children: &[Arc<Node>], knockout: bool) {
+    fn draw_children(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        children: &[Arc<Node>],
+        knockout: bool,
+    ) {
         if knockout {
             self.draw_knockout(ctx, f, children);
         } else if let Some((_, path)) = self.isolation_path(f) {
@@ -1230,14 +1619,20 @@ impl Renderer {
             while let Some(i) = rest.iter().position(|c| path.contains(&c.id)) {
                 let (around, from) = rest.split_at(i);
                 if !around.is_empty() {
-                    self.dimmed(ctx, f, &mut |r, c, fr| around.iter().for_each(|n| r.draw_arc(c, fr, n)));
+                    self.dimmed(ctx, f, &mut |r, c, fr| {
+                        around.iter().for_each(|n| r.draw_arc(c, fr, n))
+                    });
                 }
-                let Some((on_path, after)) = from.split_first() else { break };
+                let Some((on_path, after)) = from.split_first() else {
+                    break;
+                };
                 self.draw_arc(ctx, f, on_path);
                 rest = after;
             }
             if !rest.is_empty() {
-                self.dimmed(ctx, f, &mut |r, c, fr| rest.iter().for_each(|n| r.draw_arc(c, fr, n)));
+                self.dimmed(ctx, f, &mut |r, c, fr| {
+                    rest.iter().for_each(|n| r.draw_arc(c, fr, n))
+                });
             }
         } else {
             for c in children {
@@ -1292,7 +1687,14 @@ impl Renderer {
         ctx.stroke_path(&screen);
     }
 
-    fn draw_shape(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, bp: &BezPath, rule: FillRule) {
+    fn draw_shape(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        n: &Node,
+        bp: &BezPath,
+        rule: FillRule,
+    ) {
         if !drawable(bp, f.view, n) {
             return;
         }
@@ -1304,22 +1706,38 @@ impl Renderer {
             return;
         }
         // Bounds only matter to gradients and patterns (their geometry is relative to the object).
-        let solid = |p: &vectorcraft_color::Paint| matches!(p, vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None);
+        let solid = |p: &vectorcraft_color::Paint| {
+            matches!(
+                p,
+                vectorcraft_color::Paint::Solid { .. } | vectorcraft_color::Paint::None
+            )
+        };
         let needs_bounds = n.appearance.items.iter().any(|i| match i {
             AppearanceItem::Fill(fl) => !solid(&fl.paint),
             AppearanceItem::Stroke(st) => !solid(&st.paint),
         });
-        let bounds = if needs_bounds { bp.bounding_box() } else { Rect::ZERO };
+        let bounds = if needs_bounds {
+            bp.bounding_box()
+        } else {
+            Rect::ZERO
+        };
         for item in &n.appearance.items {
             match item {
                 AppearanceItem::Fill(fl) => {
                     if !fl.visible || fl.paint.is_none() {
                         continue;
                     }
-                    let layered = fl.opacity < 1.0 || fl.blend != vectorcraft_color::BlendMode::Normal;
+                    let layered =
+                        fl.opacity < 1.0 || fl.blend != vectorcraft_color::BlendMode::Normal;
                     if layered {
                         ctx.set_transform(Affine::IDENTITY);
-                        ctx.push_layer(None, Some(blend_mode(fl.blend)), Some(fl.opacity), None, None);
+                        ctx.push_layer(
+                            None,
+                            Some(blend_mode(fl.blend)),
+                            Some(fl.opacity),
+                            None,
+                            None,
+                        );
                     }
                     ctx.set_transform(f.view);
                     if paint::set_paint(ctx, &fl.paint, bounds, f) {
@@ -1356,13 +1774,28 @@ impl Renderer {
     /// Paint stroke `st` of the shape `bp` (in the space `xf` maps to the document; `bounds`: its
     /// geometric bounds there) with its alignment, dashes, profile, arrowheads, opacity and blend.
     #[allow(clippy::too_many_arguments)]
-    fn draw_stroke(&mut self, ctx: &mut RenderContext, f: &Frame, xf: Affine, bp: &BezPath, rule: FillRule, st: &StrokeLayer, bounds: Rect) {
+    fn draw_stroke(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        xf: Affine,
+        bp: &BezPath,
+        rule: FillRule,
+        st: &StrokeLayer,
+        bounds: Rect,
+    ) {
         let pieces = effects::stroke::stroke_pieces(bp, st);
         // The line and its heads overlap: they take the opacity once, in one layer, instead of
         // each folding it into its paint.
-        let folded = if pieces.heads.is_empty() { 1.0 } else { std::mem::replace(&mut self.alpha, 1.0) };
+        let folded = if pieces.heads.is_empty() {
+            1.0
+        } else {
+            std::mem::replace(&mut self.alpha, 1.0)
+        };
         let opacity = st.opacity * folded;
-        let layered = opacity < 1.0 || st.blend != vectorcraft_color::BlendMode::Normal || st.align == StrokeAlign::Outside;
+        let layered = opacity < 1.0
+            || st.blend != vectorcraft_color::BlendMode::Normal
+            || st.align == StrokeAlign::Outside;
         if layered {
             ctx.set_transform(Affine::IDENTITY);
             ctx.push_layer(None, Some(blend_mode(st.blend)), Some(opacity), None, None);
@@ -1370,7 +1803,8 @@ impl Renderer {
         ctx.set_transform(f.view * xf);
         let closed = effects::stroke::is_closed(bp);
         // Keep hairlines visible when zoomed far out (at least ~1 device pixel).
-        let width = effects::stroke::aligned_width(st, closed).max(f.px * 0.5 / xf.determinant().abs().sqrt().max(1e-9));
+        let width = effects::stroke::aligned_width(st, closed)
+            .max(f.px * 0.5 / xf.determinant().abs().sqrt().max(1e-9));
         let inside = st.align == StrokeAlign::Inside && closed;
         if inside {
             ctx.set_fill_rule(fill_rule(rule));
@@ -1385,7 +1819,12 @@ impl Renderer {
             ctx.set_fill_rule(peniko::Fill::NonZero);
             match self.cached_stroke(f, &pieces.line, st, width) {
                 Some(o) => ctx.fill_path(&o),
-                None => ctx.fill_path(&effects::stroke::line_outline(&pieces.line, st, width, f.px * 0.25)),
+                None => ctx.fill_path(&effects::stroke::line_outline(
+                    &pieces.line,
+                    st,
+                    width,
+                    f.px * 0.25,
+                )),
             }
             for head in &pieces.heads {
                 ctx.fill_path(&head.outline);
@@ -1451,7 +1890,14 @@ impl Renderer {
                     }
                     _ => {
                         let slices = make();
-                        self.stroke_slices.insert(key, SliceEntry { node, slices: slices.clone(), stamp: self.stamp });
+                        self.stroke_slices.insert(
+                            key,
+                            SliceEntry {
+                                node,
+                                slices: slices.clone(),
+                                stamp: self.stamp,
+                            },
+                        );
                         slices
                     }
                 }
@@ -1460,7 +1906,12 @@ impl Renderer {
         };
         let line = match self.cached_stroke(f, &pieces.line, st, width) {
             Some(o) => o,
-            None => Arc::new(effects::stroke::line_outline(&pieces.line, st, width, f.px * 0.25)),
+            None => Arc::new(effects::stroke::line_outline(
+                &pieces.line,
+                st,
+                width,
+                f.px * 0.25,
+            )),
         };
         ctx.set_fill_rule(peniko::Fill::NonZero);
         for clip in std::iter::once(&*line).chain(pieces.heads.iter().map(|h| &h.outline)) {
@@ -1484,7 +1935,13 @@ impl Renderer {
     /// [`effects::stroke::line_outline`]), cached across frames. The tolerance (vello's 0.25
     /// device px) is bucketed to powers of two, never coarser than needed, so zooming reuses
     /// outlines until the level changes.
-    fn cached_stroke(&mut self, f: &Frame, line: &BezPath, st: &StrokeLayer, width: f64) -> Option<Arc<BezPath>> {
+    fn cached_stroke(
+        &mut self,
+        f: &Frame,
+        line: &BezPath,
+        st: &StrokeLayer,
+        width: f64,
+    ) -> Option<Arc<BezPath>> {
         let node = self.cur.clone()?;
         let level = (f.px * 0.25).log2().floor() as i32;
         let key = (st as *const StrokeLayer as usize, width.to_bits(), level);
@@ -1494,8 +1951,20 @@ impl Renderer {
             e.stamp = self.stamp;
             return Some(e.outline.clone());
         }
-        let outline = Arc::new(effects::stroke::line_outline(line, st, width, 2f64.powi(level)));
-        self.strokes.insert(key, StrokeEntry { node, outline: outline.clone(), stamp: self.stamp });
+        let outline = Arc::new(effects::stroke::line_outline(
+            line,
+            st,
+            width,
+            2f64.powi(level),
+        ));
+        self.strokes.insert(
+            key,
+            StrokeEntry {
+                node,
+                outline: outline.clone(),
+                stamp: self.stamp,
+            },
+        );
         Some(outline)
     }
 
@@ -1516,16 +1985,30 @@ impl Renderer {
             return;
         }
         for r in t.runs.iter().filter_map(|r| r.inline.as_ref()) {
-            if !f.doc.symbols.iter().any(|s| s.name == r.symbol) && !MISSING_INLINE_LOGGED.swap(true, std::sync::atomic::Ordering::Relaxed) {
-                log::warn!("inline graphic shows symbol {:?}, which the document doesn't have: it draws nothing", r.symbol);
+            if !f.doc.symbols.iter().any(|s| s.name == r.symbol)
+                && !MISSING_INLINE_LOGGED.swap(true, std::sync::atomic::Ordering::Relaxed)
+            {
+                log::warn!(
+                    "inline graphic shows symbol {:?}, which the document doesn't have: it draws nothing",
+                    r.symbol
+                );
             }
         }
         self.inline_depth += 1;
         for ig in &g.inlines {
-            let Some(art) = t.runs.get(ig.run).and_then(|r| r.inline.as_ref()) else { continue };
-            let Some(sym) = f.doc.symbols.iter().find(|s| s.name == art.symbol) else { continue };
+            let Some(art) = t.runs.get(ig.run).and_then(|r| r.inline.as_ref()) else {
+                continue;
+            };
+            let Some(sym) = f.doc.symbols.iter().find(|s| s.name == art.symbol) else {
+                continue;
+            };
             // Strokes scale with the art (it is sized to the type, as in the SVG `<use>`).
-            let node = self.placed_art(&sym.art, t.xf * ig.xf * f.doc.symbol_natural_xf(&art.symbol), true, None);
+            let node = self.placed_art(
+                &sym.art,
+                t.xf * ig.xf * f.doc.symbol_natural_xf(&art.symbol),
+                true,
+                None,
+            );
             self.draw_node(ctx, f, &node, true);
         }
         self.inline_depth -= 1;
@@ -1539,15 +2022,29 @@ impl Renderer {
     /// symbol instances, type with inline graphics, images, placed documents, live blends,
     /// envelopes or repeats, or raster effects ([`depends_on_document`]). Art that holds type is
     /// placed again when the fonts change.
-    fn placed_art(&mut self, art: &Arc<Node>, xf: Affine, scale_strokes: bool, inst: Option<&Node>) -> Arc<Node> {
-        if !matches!(art.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }) || fx::has_object_fx(art) {
+    fn placed_art(
+        &mut self,
+        art: &Arc<Node>,
+        xf: Affine,
+        scale_strokes: bool,
+        inst: Option<&Node>,
+    ) -> Arc<Node> {
+        if !matches!(art.kind, NodeKind::Group { .. } | NodeKind::Layer { .. })
+            || fx::has_object_fx(art)
+        {
             return place(art, xf, scale_strokes, inst);
         }
         let stain = stain_bits(inst.and_then(vectorcraft_brush::stain));
-        let key = (Arc::as_ptr(art) as usize, xf.as_coeffs().map(f64::to_bits), scale_strokes, stain);
+        let key = (
+            Arc::as_ptr(art) as usize,
+            xf.as_coeffs().map(f64::to_bits),
+            scale_strokes,
+            stain,
+        );
         if let Some(e) = self.placed_arts.get(&key, self.stamp)
             && std::ptr::eq(e.art.as_ptr(), Arc::as_ptr(art))
-            && e.fonts.is_none_or(|g| g == vectorcraft_text::FontDb::global().generation())
+            && e.fonts
+                .is_none_or(|g| g == vectorcraft_text::FontDb::global().generation())
         {
             return match &e.placed {
                 Some(placed) => placed.clone(),
@@ -1556,11 +2053,22 @@ impl Renderer {
         }
         let placed = place(art, xf, scale_strokes, inst);
         let kept = (!depends_on_document(art)).then(|| placed.clone());
-        let fonts = (kept.is_some() && holds_type(art)).then(|| vectorcraft_text::FontDb::global().generation());
+        let fonts = (kept.is_some() && holds_type(art))
+            .then(|| vectorcraft_text::FontDb::global().generation());
         // The bytes count the key and the entry, the art's allocation that the weak reference
         // keeps, and the kept art.
-        let bytes = size_of::<(PlacedKey, PlacedEntry, Node)>() + kept.as_deref().map_or(0, lru::node_bytes);
-        self.placed_arts.insert(key, PlacedEntry { art: Arc::downgrade(art), placed: kept, fonts }, bytes, self.stamp);
+        let bytes = size_of::<(PlacedKey, PlacedEntry, Node)>()
+            + kept.as_deref().map_or(0, lru::node_bytes);
+        self.placed_arts.insert(
+            key,
+            PlacedEntry {
+                art: Arc::downgrade(art),
+                placed: kept,
+                fonts,
+            },
+            bytes,
+            self.stamp,
+        );
         placed
     }
 
@@ -1578,11 +2086,19 @@ impl Renderer {
             return g.clone();
         }
         let g = Arc::new(text_geom(t));
-        self.texts.insert(key, (a.clone(), g.clone()), g.bytes(), self.stamp);
+        self.texts
+            .insert(key, (a.clone(), g.clone()), g.bytes(), self.stamp);
         g
     }
 
-    fn draw_text_geom(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, t: &TextObject, g: &TextGeom) {
+    fn draw_text_geom(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        n: &Node,
+        t: &TextObject,
+        g: &TextGeom,
+    ) {
         let xf = f.view * t.xf;
         if f.opts.outline {
             let mut p = g.all.clone();
@@ -1600,7 +2116,11 @@ impl Renderer {
         let overprints = proof::overprints(f.opts);
         let overprint = |ctx: &mut RenderContext, on: bool| {
             if overprints {
-                ctx.set_blend_mode(if on { blend_mode(vectorcraft_color::BlendMode::Multiply) } else { BlendMode::default() });
+                ctx.set_blend_mode(if on {
+                    blend_mode(vectorcraft_color::BlendMode::Multiply)
+                } else {
+                    BlendMode::default()
+                });
             }
         };
         // The object's own fills and strokes paint the whole outline: those below the Characters
@@ -1616,8 +2136,10 @@ impl Renderer {
         }
         if f.opts.highlight_substitutions {
             let setup = &f.doc.setup;
-            for (on, path) in [(setup.highlight_substituted_fonts, &g.substituted_fonts), (setup.highlight_substituted_glyphs, &g.substituted_glyphs)]
-            {
+            for (on, path) in [
+                (setup.highlight_substituted_fonts, &g.substituted_fonts),
+                (setup.highlight_substituted_glyphs, &g.substituted_glyphs),
+            ] {
                 if on && !path.elements().is_empty() {
                     ctx.set_transform(xf);
                     ctx.set_fill_rule(peniko::Fill::NonZero);
@@ -1642,7 +2164,15 @@ impl Renderer {
             if run.style.has_stroke() {
                 // Character strokes are drawn in text space, with their cap, join and dashes.
                 overprint(ctx, run.style.overprint_stroke);
-                self.draw_stroke(ctx, f, t.xf, path, FillRule::NonZero, &run.style.stroke_layer(), g.bounds);
+                self.draw_stroke(
+                    ctx,
+                    f,
+                    t.xf,
+                    path,
+                    FillRule::NonZero,
+                    &run.style.stroke_layer(),
+                    g.bounds,
+                );
             }
         }
         overprint(ctx, false);
@@ -1655,14 +2185,29 @@ impl Renderer {
     /// Paint some of type `n`'s own fills and strokes (`items`) on its glyph outlines `all`
     /// (document space; `tb` their bounds). Fills composite with their own opacity and blend mode;
     /// strokes take every stroke option, as on paths.
-    fn draw_text_items(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, items: &[AppearanceItem], all: &BezPath, tb: Rect) {
+    fn draw_text_items(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        n: &Node,
+        items: &[AppearanceItem],
+        all: &BezPath,
+        tb: Rect,
+    ) {
         for item in items.iter().filter(|i| i.visible() && !i.paint().is_none()) {
             match item {
                 AppearanceItem::Fill(fl) => {
-                    let layered = fl.opacity < 1.0 || fl.blend != vectorcraft_color::BlendMode::Normal;
+                    let layered =
+                        fl.opacity < 1.0 || fl.blend != vectorcraft_color::BlendMode::Normal;
                     if layered {
                         ctx.set_transform(Affine::IDENTITY);
-                        ctx.push_layer(None, Some(blend_mode(fl.blend)), Some(fl.opacity), None, None);
+                        ctx.push_layer(
+                            None,
+                            Some(blend_mode(fl.blend)),
+                            Some(fl.opacity),
+                            None,
+                            None,
+                        );
                     }
                     ctx.set_transform(f.view);
                     if paint::set_paint(ctx, &fl.paint, tb, f) {
@@ -1683,28 +2228,65 @@ impl Renderer {
         }
     }
 
-    fn draw_image(&mut self, ctx: &mut RenderContext, f: &Frame, im: &vectorcraft_doc::ImageObject) {
+    fn draw_image(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        im: &vectorcraft_doc::ImageObject,
+    ) {
         self.draw_image_in(ctx, f, im, None);
     }
 
     /// Draw an image, or with `area` (a region in the document inside the image's frame, see
     /// [`plain_image`]) the image painted into that region.
-    fn draw_image_in(&mut self, ctx: &mut RenderContext, f: &Frame, im: &vectorcraft_doc::ImageObject, area: Option<&(BezPath, FillRule)>) {
+    fn draw_image_in(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        im: &vectorcraft_doc::ImageObject,
+        area: Option<&(BezPath, FillRule)>,
+    ) {
         let rect = Rect::new(0.0, 0.0, im.width as f64, im.height as f64);
         // Outline mode draws the image's frame, and with Document Setup → Show Images in Outline
         // Mode its pixels in greyscale under the frame.
         let outline = f.opts.outline;
         // With mips the full pixels are only looked at (not marked used) until they're drawn.
         let mips = f.opts.image_mips;
-        let pixels = if outline && !f.doc.setup.outline_images { None } else { self.image_pixmap(f.doc, &im.key, outline, !mips) };
+        let pixels = if outline && !f.doc.setup.outline_images {
+            None
+        } else {
+            self.image_pixmap(f.doc, &im.key, outline, !mips)
+        };
         if let Some((key, pm)) = pixels {
-            let (key, pm) = if outline { (key, pm) } else { ink::ink_image(&key, &pm, f.ink, f.doc.images.get(&im.key), !mips) };
-            let pm = if mips { image_mip(&key, pm, f.view * im.xf * Affine::scale_non_uniform(im.width as f64, im.height as f64)) } else { pm };
+            let (key, pm) = if outline {
+                (key, pm)
+            } else {
+                ink::ink_image(&key, &pm, f.ink, f.doc.images.get(&im.key), !mips)
+            };
+            let pm = if mips {
+                image_mip(
+                    &key,
+                    pm,
+                    f.view * im.xf * Affine::scale_non_uniform(im.width as f64, im.height as f64),
+                )
+            } else {
+                pm
+            };
             let sx = im.width as f64 / pm.width().max(1) as f64;
             let sy = im.height as f64 / pm.height().max(1) as f64;
-            let quality = if f.opts.smooth_images { peniko::ImageQuality::Medium } else { peniko::ImageQuality::Low };
-            let sampler = peniko::ImageSampler { quality, ..Default::default() };
-            ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(pm), sampler });
+            let quality = if f.opts.smooth_images {
+                peniko::ImageQuality::Medium
+            } else {
+                peniko::ImageQuality::Low
+            };
+            let sampler = peniko::ImageSampler {
+                quality,
+                ..Default::default()
+            };
+            ctx.set_paint(vello_cpu::Image {
+                image: vello_cpu::ImageSource::Pixmap(pm),
+                sampler,
+            });
             match area {
                 Some((bp, rule)) => {
                     ctx.set_transform(f.view);
@@ -1721,7 +2303,10 @@ impl Renderer {
             ctx.reset_paint_transform();
             // A dimmed layer's images: white over them, so they show at that opacity on paper.
             if let Some(dim) = self.dim_images.filter(|d| *d < 1.0 && !outline) {
-                ctx.set_paint(f.ink.fixed([255, 255, 255, ((1.0 - dim) * 255.0).round() as u8]));
+                ctx.set_paint(
+                    f.ink
+                        .fixed([255, 255, 255, ((1.0 - dim) * 255.0).round() as u8]),
+                );
                 match area {
                     Some((bp, rule)) => {
                         ctx.set_transform(f.view);
@@ -1746,7 +2331,13 @@ impl Renderer {
     /// art's image takes): drawing `derived` draws the recoloured pixels, made when first drawn and
     /// kept with the decoded images. Names past a limit drop the art made with them too, so it is
     /// made again.
-    fn adjusted_image(&mut self, key: &str, derived: String, hash: u64, map: &vectorcraft_effects::ColorMap) {
+    fn adjusted_image(
+        &mut self,
+        key: &str,
+        derived: String,
+        hash: u64,
+        map: &vectorcraft_effects::ColorMap,
+    ) {
         if self.adjusts.contains_key(&derived) {
             return;
         }
@@ -1754,19 +2345,29 @@ impl Renderer {
             self.adjusts.clear();
             self.fx_arts.clear();
         }
-        self.adjusts.insert(derived, (key.to_string(), hash, map.clone()));
+        self.adjusts
+            .insert(derived, (key.to_string(), hash, map.clone()));
     }
 
     /// The pixels of image `key` (a blob of `doc`, or a recoloured one named by
     /// [`Self::adjusted_image`]), or a greyscale copy of them, with their key in the shared store.
     /// `touch` marks them used there.
-    fn image_pixmap(&mut self, doc: &Document, key: &str, grey: bool, touch: bool) -> Option<(images::ImageKey, Arc<Pixmap>)> {
+    fn image_pixmap(
+        &mut self,
+        doc: &Document,
+        key: &str,
+        grey: bool,
+        touch: bool,
+    ) -> Option<(images::ImageKey, Arc<Pixmap>)> {
         let (key, colour) = match doc.images.get(key) {
             Some(blob) => blob_pixmap(blob, touch)?,
             None => {
                 let (src, hash, map) = self.adjusts.get(key)?.clone();
                 let (src_key, src) = self.image_pixmap(doc, &src, false, touch)?;
-                let key = images::ImageKey { adjust: Some(hash), ..src_key };
+                let key = images::ImageKey {
+                    adjust: Some(hash),
+                    ..src_key
+                };
                 match lookup(&key, touch) {
                     Some(pm) => (key, pm),
                     None => {
@@ -1774,11 +2375,14 @@ impl Renderer {
                         let mut memo: HashMap<[u8; 4], [u8; 3]> = HashMap::new();
                         for px in pm.data_mut().iter_mut().filter(|p| p.a > 0) {
                             let a = px.a as u32;
-                            let [r, g, b] = *memo.entry([px.r, px.g, px.b, px.a]).or_insert_with(|| {
-                                // Premultiplied to straight, adjusted, then premultiplied again.
-                                let straight = [px.r, px.g, px.b].map(|v| ((v as u32 * 255 + a / 2) / a).min(255) as u8);
-                                map.apply_rgb8(straight).map(|v| ((v as u32 * a + 127) / 255) as u8)
-                            });
+                            let [r, g, b] =
+                                *memo.entry([px.r, px.g, px.b, px.a]).or_insert_with(|| {
+                                    // Premultiplied to straight, adjusted, then premultiplied again.
+                                    let straight = [px.r, px.g, px.b]
+                                        .map(|v| ((v as u32 * 255 + a / 2) / a).min(255) as u8);
+                                    map.apply_rgb8(straight)
+                                        .map(|v| ((v as u32 * a + 127) / 255) as u8)
+                                });
                             (px.r, px.g, px.b) = (r, g, b);
                         }
                         let pm = images::store().insert(key.clone(), Arc::new(pm));
@@ -1797,7 +2401,8 @@ impl Renderer {
         let mut pm = (*colour).clone();
         for px in pm.data_mut() {
             // The luma of premultiplied components is the premultiplied luma.
-            let l = (0.2126 * px.r as f32 + 0.7152 * px.g as f32 + 0.0722 * px.b as f32 + 0.5) as u8;
+            let l =
+                (0.2126 * px.r as f32 + 0.7152 * px.g as f32 + 0.0722 * px.b as f32 + 0.5) as u8;
             (px.r, px.g, px.b) = (l, l, l);
         }
         let pm = images::store().insert(key.clone(), Arc::new(pm));
@@ -1813,11 +2418,20 @@ fn lookup(key: &images::ImageKey, touch: bool) -> Option<Arc<Pixmap>> {
 
 /// The decoded pixels of `blob` (a CMYK image's inks shown through the working CMYK profile, again
 /// when the colour settings change), from the shared store, and their key there.
-fn blob_pixmap(blob: &vectorcraft_doc::ImageBlob, touch: bool) -> Option<(images::ImageKey, Arc<Pixmap>)> {
+fn blob_pixmap(
+    blob: &vectorcraft_doc::ImageBlob,
+    touch: bool,
+) -> Option<(images::ImageKey, Arc<Pixmap>)> {
     let id = images::blob_id(blob);
     let lut = id.cmyk.then(ink::display_lut);
-    let key =
-        images::ImageKey { content: id.content, adjust: None, grey: false, ink: Ink::Display, luts: (lut.as_ref().map_or(0, |l| l.1), 0), mip: 0 };
+    let key = images::ImageKey {
+        content: id.content,
+        adjust: None,
+        grey: false,
+        ink: Ink::Display,
+        luts: (lut.as_ref().map_or(0, |l| l.1), 0),
+        mip: 0,
+    };
     if let Some(pm) = lookup(&key, touch) {
         return Some((key, pm));
     }
@@ -1835,18 +2449,28 @@ fn blob_pixmap(blob: &vectorcraft_doc::ImageBlob, touch: bool) -> Option<(images
 /// pixels drawn are marked used in the store.
 fn image_mip(key: &images::ImageKey, pm: Arc<Pixmap>, m: Affine) -> Arc<Pixmap> {
     let (w, h) = (pm.width(), pm.height());
-    let level = images::mip_level(m * Affine::scale_non_uniform(1.0 / w.max(1) as f64, 1.0 / h.max(1) as f64), w, h);
+    let level = images::mip_level(
+        m * Affine::scale_non_uniform(1.0 / w.max(1) as f64, 1.0 / h.max(1) as f64),
+        w,
+        h,
+    );
     let mut s = images::store();
     if level == 0 {
         let _ = s.get(key); // Marks the full pixels used (they were only looked at).
         return pm;
     }
-    let at = |l: u8| images::ImageKey { mip: l, ..key.clone() };
+    let at = |l: u8| images::ImageKey {
+        mip: l,
+        ..key.clone()
+    };
     if let Some(p) = s.get(&at(level)) {
         return p;
     }
     // From the finest level kept below it.
-    let (mut l, mut cur) = (1..level).rev().find_map(|l| s.peek(&at(l)).map(|p| (l, p))).unwrap_or((0, pm));
+    let (mut l, mut cur) = (1..level)
+        .rev()
+        .find_map(|l| s.peek(&at(l)).map(|p| (l, p)))
+        .unwrap_or((0, pm));
     drop(s);
     while l < level {
         l += 1;
@@ -1860,7 +2484,11 @@ fn image_mip(key: &images::ImageKey, pm: Arc<Pixmap>, m: Affine) -> Arc<Pixmap> 
 /// with no transparency, effects or paint of its own, and the region inside the image's frame
 /// (within a pixel), so no paint past the image's edge shows?
 fn plain_image(n: &Node, im: &vectorcraft_doc::ImageObject, region: &BezPath) -> bool {
-    if !(n.visible && n.has_default_transparency() && n.appearance.items.is_empty() && n.appearance.effects.is_empty()) {
+    if !(n.visible
+        && n.has_default_transparency()
+        && n.appearance.items.is_empty()
+        && n.appearance.effects.is_empty())
+    {
         return false;
     }
     let det = im.xf.determinant();
@@ -1896,14 +2524,36 @@ const MAX_DEVICE: f64 = 1e10;
 fn drawable(bp: &BezPath, view: Affine, n: &Node) -> bool {
     let b = view.transform_rect_bbox(bp.control_box());
     let scale = view.determinant().abs().sqrt();
-    let widest = n.appearance.items.iter().filter_map(|i| if let AppearanceItem::Stroke(st) = i { Some(st.width) } else { None }).fold(0.0, f64::max);
-    [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_DEVICE) && (widest * scale).is_finite() && widest * scale <= MAX_DEVICE
+    let widest = n
+        .appearance
+        .items
+        .iter()
+        .filter_map(|i| {
+            if let AppearanceItem::Stroke(st) = i {
+                Some(st.width)
+            } else {
+                None
+            }
+        })
+        .fold(0.0, f64::max);
+    [b.x0, b.y0, b.x1, b.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= MAX_DEVICE)
+        && (widest * scale).is_finite()
+        && widest * scale <= MAX_DEVICE
 }
 
 /// A render context on the calling thread. vello_cpu's `RenderContext::new` defaults to a
 /// multithreaded dispatcher, which panics on filter effects (glows, shadows, blur).
 pub(crate) fn single_threaded_context(w: u16, h: u16) -> RenderContext {
-    RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: 0, ..Default::default() })
+    RenderContext::new_with(
+        w,
+        h,
+        vello_cpu::RenderSettings {
+            num_threads: 0,
+            ..Default::default()
+        },
+    )
 }
 
 /// Exactly one visible painted item, a fill with its own Normal blend and full opacity (one
@@ -1944,7 +2594,8 @@ fn place(art: &Node, xf: Affine, scale_strokes: bool, inst: Option<&Node>) -> Ar
 /// with an inline graphic, an image, a placed document, a blend, an envelope, a repeat, or an
 /// object or a fill or stroke with a visible raster effect?
 fn depends_on_document(n: &Node) -> bool {
-    let raster = |fx: &[vectorcraft_doc::Effect]| fx.iter().any(|e| e.visible && effects::is_raster(&e.id));
+    let raster =
+        |fx: &[vectorcraft_doc::Effect]| fx.iter().any(|e| e.visible && effects::is_raster(&e.id));
     let mut depends = false;
     n.walk(&mut |c| {
         depends |= match &c.kind {
@@ -1958,7 +2609,10 @@ fn depends_on_document(n: &Node) -> bool {
             _ => false,
         } || raster(&c.appearance.effects)
             || c.appearance.items.iter().any(|i| raster(i.effects()))
-            || c.extras().mask.as_ref().is_some_and(|m| depends_on_document(&m.art));
+            || c.extras()
+                .mask
+                .as_ref()
+                .is_some_and(|m| depends_on_document(&m.art));
     });
     depends
 }
@@ -1966,7 +2620,10 @@ fn depends_on_document(n: &Node) -> bool {
 /// Does `n` hold type, in it or in the opacity masks of the objects in it?
 fn holds_type(n: &Node) -> bool {
     let mut holds = false;
-    n.walk(&mut |c| holds |= matches!(c.kind, NodeKind::Text(_)) || c.extras().mask.as_ref().is_some_and(|m| holds_type(&m.art)));
+    n.walk(&mut |c| {
+        holds |= matches!(c.kind, NodeKind::Text(_))
+            || c.extras().mask.as_ref().is_some_and(|m| holds_type(&m.art))
+    });
     holds
 }
 
@@ -1974,14 +2631,23 @@ fn holds_type(n: &Node) -> bool {
 /// model, the color's components and the amount (all 0 without a stain).
 fn stain_bits(stain: Option<(vectorcraft_color::Color, f32)>) -> [u32; 6] {
     use vectorcraft_color::Color;
-    let Some((color, amount)) = stain else { return [0; 6] };
+    let Some((color, amount)) = stain else {
+        return [0; 6];
+    };
     let (model, [p, q, r, s]) = match color {
         Color::Rgb { r, g, b } => (1, [r, g, b, 0.0]),
         Color::Cmyk { c, m, y, k } => (2, [c, m, y, k]),
         Color::Gray { k } => (3, [k, 0.0, 0.0, 0.0]),
         Color::Lab { l, a, b } => (4, [l, a, b, 0.0]),
     };
-    [model, p.to_bits(), q.to_bits(), r.to_bits(), s.to_bits(), amount.to_bits()]
+    [
+        model,
+        p.to_bits(),
+        q.to_bits(),
+        r.to_bits(),
+        s.to_bits(),
+        amount.to_bits(),
+    ]
 }
 
 /// Preferred rasterizer thread count set by the app (Preferences → Performance); negative = automatic.
@@ -1989,7 +2655,10 @@ static THREADS_OVERRIDE: std::sync::atomic::AtomicI32 = std::sync::atomic::Atomi
 
 /// Override the worker-thread count used by renderers created from now on (`None` = automatic).
 pub fn set_default_threads(n: Option<u16>) {
-    THREADS_OVERRIDE.store(n.map_or(-1, i32::from), std::sync::atomic::Ordering::Relaxed);
+    THREADS_OVERRIDE.store(
+        n.map_or(-1, i32::from),
+        std::sync::atomic::Ordering::Relaxed,
+    );
 }
 
 /// Rasterizer worker threads: 0 on wasm; otherwise one per core up to 8, leaving a core free. On a
@@ -2007,9 +2676,14 @@ pub fn default_threads() -> u16 {
             return o.min(64) as u16;
         }
         if std::env::var_os("VECTORCRAFT_RENDER_THREADS").is_some() {
-            return std::env::var("VECTORCRAFT_RENDER_THREADS").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+            return std::env::var("VECTORCRAFT_RENDER_THREADS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
         }
-        std::thread::available_parallelism().map(|n| (n.get().saturating_sub(1)).min(8) as u16).unwrap_or(0)
+        std::thread::available_parallelism()
+            .map(|n| (n.get().saturating_sub(1)).min(8) as u16)
+            .unwrap_or(0)
     }
 }
 
@@ -2049,7 +2723,10 @@ impl TextGeom {
     /// Approximate heap bytes, for the cache's budget.
     fn bytes(&self) -> usize {
         size_of::<Self>()
-            + [&self.all, &self.substituted_fonts, &self.substituted_glyphs].into_iter().map(lru::path_bytes).sum::<usize>()
+            + [&self.all, &self.substituted_fonts, &self.substituted_glyphs]
+                .into_iter()
+                .map(lru::path_bytes)
+                .sum::<usize>()
             + self.spans.len() * size_of::<(usize, usize, usize)>()
             + self.inlines.len() * size_of::<vectorcraft_text::InlineGlyph>()
     }
@@ -2085,19 +2762,29 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
     let faces: Vec<(bool, Option<u32>)> = t
         .runs
         .iter()
-        .map(|r| match db.resolve(&r.style.font_family, &r.style.font_style) {
-            // The version the type names, when it's installed (see `FontDb::face_version`).
-            Some((f, m)) => {
-                let face = db.face_version(&r.style.font_family, &r.style.font_style, r.style.font_version.as_deref()).unwrap_or(f);
-                (m == vectorcraft_text::FontMatch::Missing, Some(face.id()))
-            }
-            None => (true, None),
-        })
+        .map(
+            |r| match db.resolve(&r.style.font_family, &r.style.font_style) {
+                // The version the type names, when it's installed (see `FontDb::face_version`).
+                Some((f, m)) => {
+                    let face = db
+                        .face_version(
+                            &r.style.font_family,
+                            &r.style.font_style,
+                            r.style.font_version.as_deref(),
+                        )
+                        .unwrap_or(f);
+                    (m == vectorcraft_text::FontMatch::Missing, Some(face.id()))
+                }
+                None => (true, None),
+            },
+        )
         .collect();
     let (mut substituted_fonts, mut substituted_glyphs) = (BezPath::new(), BezPath::new());
     for g in &layout.glyphs {
         push(&mut all, g.run, &g.outline);
-        let Some(&(missing, face)) = faces.get(g.run) else { continue };
+        let Some(&(missing, face)) = faces.get(g.run) else {
+            continue;
+        };
         let target = if missing {
             &mut substituted_fonts
         } else if face.is_some_and(|f| f != g.font_id) {
@@ -2105,8 +2792,16 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
         } else {
             continue;
         };
-        let Some(line) = layout.lines.get(g.line) else { continue };
-        let mut cell = Rect::new(g.origin.x, g.origin.y - line.ascent, g.origin.x + g.advance, g.origin.y + line.descent).to_path(0.1);
+        let Some(line) = layout.lines.get(g.line) else {
+            continue;
+        };
+        let mut cell = Rect::new(
+            g.origin.x,
+            g.origin.y - line.ascent,
+            g.origin.x + g.advance,
+            g.origin.y + line.descent,
+        )
+        .to_path(0.1);
         cell.apply_affine(Affine::rotate_about(g.angle, g.origin));
         target.extend(cell.iter());
     }
@@ -2114,14 +2809,24 @@ fn text_geom_snapped(t: &TextObject, snap: Option<Affine>) -> TextGeom {
     for (run, bar) in vectorcraft_text::decorations(&layout, db, t) {
         push(&mut all, run, &bar);
     }
-    TextGeom { all, spans, bounds: layout.bounds, substituted_fonts, substituted_glyphs, inlines: layout.inlines }
+    TextGeom {
+        all,
+        spans,
+        bounds: layout.bounds,
+        substituted_fonts,
+        substituted_glyphs,
+        inlines: layout.inlines,
+    }
 }
 
 /// Document Setup's highlight behind substituted fonts and glyphs (screen only).
 const SUBSTITUTED: peniko::Color = peniko::Color::from_rgba8(255, 120, 190, 110);
 /// The pixel size of `region` rendered at `scale` pixels per point (at least 1×1).
 pub fn region_pixels(region: Rect, scale: f64) -> (u32, u32) {
-    ((region.width() * scale).round().max(1.0) as u32, (region.height() * scale).round().max(1.0) as u32)
+    (
+        (region.width() * scale).round().max(1.0) as u32,
+        (region.height() * scale).round().max(1.0) as u32,
+    )
 }
 
 fn rects_overlap(a: Rect, b: Rect) -> bool {
@@ -2161,7 +2866,10 @@ pub(crate) fn blend_mode(b: vectorcraft_color::BlendMode) -> BlendMode {
 #[cfg(not(target_arch = "wasm32"))]
 fn now() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_micros() as u64)
+        .unwrap_or(0)
 }
 #[cfg(target_arch = "wasm32")]
 fn now() -> u64 {

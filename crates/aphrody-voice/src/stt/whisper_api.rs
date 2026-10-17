@@ -67,7 +67,11 @@ impl WhisperApiProvider {
     pub fn with_base_url(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
         let raw = base_url.into();
         let base_url = raw.trim_end_matches('/').to_owned();
-        Self { api_key: api_key.into(), base_url, client: reqwest::Client::new() }
+        Self {
+            api_key: api_key.into(),
+            base_url,
+            client: reqwest::Client::new(),
+        }
     }
 
     /// Construct by reading `OPENAI_API_KEY` from the environment.
@@ -96,11 +100,21 @@ impl WhisperApiProvider {
 ///
 /// Unknown or malformed segment entries are silently skipped.
 pub fn parse_verbose_response(payload: &Value) -> Result<Transcript, SttError> {
-    let text = payload.get("text").and_then(Value::as_str).unwrap_or("").to_owned();
+    let text = payload
+        .get("text")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_owned();
 
-    let language = payload.get("language").and_then(Value::as_str).map(str::to_owned);
+    let language = payload
+        .get("language")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
 
-    let duration_s = payload.get("duration").and_then(Value::as_f64).map(|d| d as f32);
+    let duration_s = payload
+        .get("duration")
+        .and_then(Value::as_f64)
+        .map(|d| d as f32);
 
     let segments = payload
         .get("segments")
@@ -108,7 +122,12 @@ pub fn parse_verbose_response(payload: &Value) -> Result<Transcript, SttError> {
         .map(|arr| arr.iter().filter_map(parse_segment).collect::<Vec<_>>())
         .unwrap_or_default();
 
-    Ok(Transcript { text, language, duration_s, segments })
+    Ok(Transcript {
+        text,
+        language,
+        duration_s,
+        segments,
+    })
 }
 
 /// Parse a plain-text response (response_format = "text") into a [`Transcript`].
@@ -131,7 +150,12 @@ fn parse_segment(value: &Value) -> Option<TranscriptSegment> {
     let start = obj.get("start").and_then(Value::as_f64)? as f32;
     let end = obj.get("end").and_then(Value::as_f64)? as f32;
     let text = obj.get("text").and_then(Value::as_str)?.to_owned();
-    Some(TranscriptSegment { id, start, end, text })
+    Some(TranscriptSegment {
+        id,
+        start,
+        end,
+        text,
+    })
 }
 
 // ── Helper: check HTTP status ─────────────────────────────────────────────────
@@ -142,7 +166,10 @@ async fn check_status(resp: reqwest::Response) -> Result<reqwest::Response, SttE
         return Ok(resp);
     }
     let code = status.as_u16();
-    let body = resp.text().await.unwrap_or_else(|_| String::from("<unreadable body>"));
+    let body = resp
+        .text()
+        .await
+        .unwrap_or_else(|_| String::from("<unreadable body>"));
     Err(SttError::Api { status: code, body })
 }
 
@@ -209,7 +236,10 @@ impl SttProvider for WhisperApiProvider {
         let resp = self
             .client
             .post(&url)
-            .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", self.api_key))
+            .header(
+                reqwest::header::AUTHORIZATION,
+                format!("Bearer {}", self.api_key),
+            )
             .multipart(form)
             .send()
             .await?;
@@ -220,12 +250,12 @@ impl SttProvider for WhisperApiProvider {
             TranscriptFormat::VerboseJson => {
                 let payload: Value = resp.json().await?;
                 parse_verbose_response(&payload)
-            },
+            }
             // text / srt / vtt: all return a UTF-8 body; treat as plain text.
             _ => {
                 let body = resp.text().await.map_err(SttError::Transport)?;
                 Ok(parse_text_response(&body))
-            },
+            }
         }
     }
 
@@ -250,7 +280,11 @@ impl SttProvider for WhisperApiProvider {
 
         let transcript = self.transcribe(&buf, opts).await?;
 
-        let delta = TranscriptDelta { text: transcript.text, is_final: true, segment_id: 0 };
+        let delta = TranscriptDelta {
+            text: transcript.text,
+            is_final: true,
+            segment_id: 0,
+        };
 
         Ok(futures::stream::once(async move { Ok(delta) }))
     }

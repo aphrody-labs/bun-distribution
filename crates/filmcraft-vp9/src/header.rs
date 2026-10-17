@@ -51,7 +51,13 @@ pub struct ColorConfig {
 
 impl Default for ColorConfig {
     fn default() -> Self {
-        ColorConfig { bit_depth: 8, color_space: 0, color_range: false, subsampling_x: true, subsampling_y: true }
+        ColorConfig {
+            bit_depth: 8,
+            color_space: 0,
+            color_range: false,
+            subsampling_x: true,
+            subsampling_y: true,
+        }
     }
 }
 
@@ -129,7 +135,11 @@ impl Default for HeaderState {
         let fc = FrameContext::default();
         HeaderState {
             contexts: [fc.clone(), fc.clone(), fc.clone(), fc],
-            lf: LoopFilterParams { ref_deltas: [1, 0, -1, -1], delta_enabled: true, ..Default::default() },
+            lf: LoopFilterParams {
+                ref_deltas: [1, 0, -1, -1],
+                delta_enabled: true,
+                ..Default::default()
+            },
             seg: Segmentation::default(),
             color: ColorConfig::default(),
             last_frame_type: KEY_FRAME,
@@ -145,33 +155,60 @@ fn read_s(r: &mut BitReader, bits: u32) -> Result<i32> {
 }
 
 fn read_delta_q(r: &mut BitReader) -> Result<i8> {
-    Ok(if r.read_flag()? { read_s(r, 4)? as i8 } else { 0 })
+    Ok(if r.read_flag()? {
+        read_s(r, 4)? as i8
+    } else {
+        0
+    })
 }
 
 fn read_prob(r: &mut BitReader) -> Result<u8> {
-    Ok(if r.read_flag()? { r.read_bits(8)? as u8 } else { 255 })
+    Ok(if r.read_flag()? {
+        r.read_bits(8)? as u8
+    } else {
+        255
+    })
 }
 
 fn frame_sync_code(r: &mut BitReader) -> Result<()> {
     let (a, b, c) = (r.read_bits(8)?, r.read_bits(8)?, r.read_bits(8)?);
-    ensure!(a == 0x49 && b == 0x83 && c == 0x42, "invalid frame sync code");
+    ensure!(
+        a == 0x49 && b == 0x83 && c == 0x42,
+        "invalid frame sync code"
+    );
     Ok(())
 }
 
 fn color_config(r: &mut BitReader, profile: u8) -> Result<ColorConfig> {
-    let bit_depth = if profile >= 2 { if r.read_flag()? { 12 } else { 10 } } else { 8 };
+    let bit_depth = if profile >= 2 {
+        if r.read_flag()? { 12 } else { 10 }
+    } else {
+        8
+    };
     let color_space = r.read_bits(3)? as u8;
-    let mut c = ColorConfig { bit_depth, color_space, color_range: true, subsampling_x: true, subsampling_y: true };
+    let mut c = ColorConfig {
+        bit_depth,
+        color_space,
+        color_range: true,
+        subsampling_x: true,
+        subsampling_y: true,
+    };
     if color_space != 7 {
         c.color_range = r.read_flag()?;
         if profile == 1 || profile == 3 {
             c.subsampling_x = r.read_flag()?;
             c.subsampling_y = r.read_flag()?;
-            ensure!(!(c.subsampling_x && c.subsampling_y), "4:2:0 subsampling in profile {profile}");
+            ensure!(
+                !(c.subsampling_x && c.subsampling_y),
+                "4:2:0 subsampling in profile {profile}"
+            );
             ensure!(!r.read_flag()?, "reserved bit set in color config");
         }
     } else {
-        ensure!(profile == 1 || profile == 3, "RGB color space in profile {profile}");
+        ensure!(
+            profile == 1 || profile == 3,
+            "RGB color space in profile {profile}"
+        );
         c.subsampling_x = false;
         c.subsampling_y = false;
         ensure!(!r.read_flag()?, "reserved bit set in color config");
@@ -219,7 +256,11 @@ fn setup_past_independence(st: &mut HeaderState, fc: &mut FrameContext) {
 /// Parse the uncompressed header (6.2). `refs` gives the sizes of the eight reference slots.
 /// Updates the persistent state (probability contexts on reset, loop filter deltas,
 /// segmentation, colour configuration).
-pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefInfo>; 8]) -> Result<FrameHeader> {
+pub fn parse_uncompressed(
+    data: &[u8],
+    st: &mut HeaderState,
+    refs: &[Option<RefInfo>; 8],
+) -> Result<FrameHeader> {
     let mut r = BitReader::new(data);
     let mut h = FrameHeader::default();
     ensure!(r.read_bits(2)? == 2, "invalid frame marker");
@@ -250,13 +291,23 @@ pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefI
     } else {
         h.intra_only = if h.show_frame { false } else { r.read_flag()? };
         h.frame_is_intra = h.intra_only;
-        h.reset_frame_context = if h.error_resilient_mode { 0 } else { r.read_bits(2)? as u8 };
+        h.reset_frame_context = if h.error_resilient_mode {
+            0
+        } else {
+            r.read_bits(2)? as u8
+        };
         if h.intra_only {
             frame_sync_code(&mut r)?;
             h.color = if h.profile > 0 {
                 color_config(&mut r, h.profile)?
             } else {
-                ColorConfig { bit_depth: 8, color_space: 1, color_range: false, subsampling_x: true, subsampling_y: true }
+                ColorConfig {
+                    bit_depth: 8,
+                    color_space: 1,
+                    color_range: false,
+                    subsampling_x: true,
+                    subsampling_y: true,
+                }
             };
             h.refresh_frame_flags = r.read_bits(8)? as u8;
             frame_size(&mut r, &mut h)?;
@@ -274,7 +325,9 @@ pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefI
                 if r.read_flag()? {
                     let idx = h.ref_frame_idx[i] as usize;
                     let Some(info) = refs[idx] else {
-                        return Err(Error::MissingReference(format!("frame size from empty slot {idx}")));
+                        return Err(Error::MissingReference(format!(
+                            "frame size from empty slot {idx}"
+                        )));
                     };
                     h.width = info.width;
                     h.height = info.height;
@@ -289,7 +342,11 @@ pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefI
             render_size(&mut r, &mut h)?;
             h.allow_high_precision_mv = r.read_flag()?;
             // read_interpolation_filter (6.2.7)
-            h.interp_filter = if r.read_flag()? { SWITCHABLE } else { LITERAL_TO_TYPE[r.read_bits(2)? as usize] };
+            h.interp_filter = if r.read_flag()? {
+                SWITCHABLE
+            } else {
+                LITERAL_TO_TYPE[r.read_bits(2)? as usize]
+            };
         }
     }
     compute_image_size(&mut h);
@@ -334,7 +391,8 @@ pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefI
     h.delta_q_y_dc = read_delta_q(&mut r)?;
     h.delta_q_uv_dc = read_delta_q(&mut r)?;
     h.delta_q_uv_ac = read_delta_q(&mut r)?;
-    h.lossless = h.base_q_idx == 0 && h.delta_q_y_dc == 0 && h.delta_q_uv_dc == 0 && h.delta_q_uv_ac == 0;
+    h.lossless =
+        h.base_q_idx == 0 && h.delta_q_y_dc == 0 && h.delta_q_uv_dc == 0 && h.delta_q_uv_ac == 0;
     // segmentation_params (6.2.11)
     let seg = &mut st.seg;
     seg.enabled = r.read_flag()?;
@@ -348,7 +406,11 @@ pub fn parse_uncompressed(data: &[u8], st: &mut HeaderState, refs: &[Option<RefI
             }
             seg.temporal_update = r.read_flag()?;
             for i in 0..3 {
-                seg.pred_probs[i] = if seg.temporal_update { read_prob(&mut r)? } else { 255 };
+                seg.pred_probs[i] = if seg.temporal_update {
+                    read_prob(&mut r)?
+                } else {
+                    255
+                };
             }
         }
         if r.read_flag()? {
@@ -441,7 +503,11 @@ fn inv_recenter_nonneg(v: i32, m: i32) -> i32 {
 fn inv_remap_prob(delta: usize, prob: u8) -> u8 {
     let v = INV_MAP_TABLE[delta.min(254)] as i32;
     let m = prob as i32 - 1;
-    let r = if (m << 1) <= 255 { 1 + inv_recenter_nonneg(v, m) } else { 255 - inv_recenter_nonneg(v, 255 - 1 - m) };
+    let r = if (m << 1) <= 255 {
+        1 + inv_recenter_nonneg(v, m)
+    } else {
+        255 - inv_recenter_nonneg(v, 255 - 1 - m)
+    };
     r.clamp(1, 255) as u8
 }
 

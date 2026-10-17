@@ -101,7 +101,13 @@ pub(super) fn used_fonts(d: &Document) -> BTreeSet<UsedFont> {
     let mut fonts = BTreeSet::new();
     let mut add = |n: &Node| {
         if let NodeKind::Text(t) = &n.kind {
-            fonts.extend(t.runs.iter().map(|r| (r.style.font_family.clone(), r.style.font_style.clone(), r.style.font_version.clone())));
+            fonts.extend(t.runs.iter().map(|r| {
+                (
+                    r.style.font_family.clone(),
+                    r.style.font_style.clone(),
+                    r.style.font_version.clone(),
+                )
+            }));
         }
     };
     d.walk(&mut add);
@@ -117,7 +123,10 @@ pub(super) fn substitution_warning(d: &Document) -> Option<String> {
     let db = vectorcraft_text::FontDb::global();
     let mut missing: Vec<String> = used_fonts(d)
         .into_iter()
-        .filter(|(family, style, _)| db.resolve(family, style).is_none_or(|(_, m)| m == vectorcraft_text::FontMatch::Missing))
+        .filter(|(family, style, _)| {
+            db.resolve(family, style)
+                .is_none_or(|(_, m)| m == vectorcraft_text::FontMatch::Missing)
+        })
         .map(|(family, _, _)| family)
         .collect();
     // Sorted by family: its styles and versions are neighbours.
@@ -145,7 +154,13 @@ fn fonts(s: &mut Session, p: &Value) -> Result<Value> {
     let mut found: BTreeMap<UsedFont, (usize, Vec<NodeId>, String)> = BTreeMap::new();
     for id in ids {
         for r in text(d, id).map(|t| t.runs.as_slice()).unwrap_or_default() {
-            let e = found.entry((r.style.font_family.clone(), r.style.font_style.clone(), r.style.font_version.clone())).or_default();
+            let e = found
+                .entry((
+                    r.style.font_family.clone(),
+                    r.style.font_style.clone(),
+                    r.style.font_version.clone(),
+                ))
+                .or_default();
             e.0 += 1;
             e.2.push_str(&r.text);
             if !e.1.contains(&id) {
@@ -181,9 +196,15 @@ fn fonts(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn font_param(p: &Value, k: &str, c: &str) -> Result<(String, Option<String>)> {
     let v = p.get(k).ok_or_else(|| bad(c, format!("missing `{k}`")))?;
-    let family =
-        v.get("family").and_then(Value::as_str).filter(|f| !f.trim().is_empty()).ok_or_else(|| bad(c, format!("`{k}.family` is required")))?;
-    Ok((family.to_string(), v.get("style").and_then(Value::as_str).map(str::to_string)))
+    let family = v
+        .get("family")
+        .and_then(Value::as_str)
+        .filter(|f| !f.trim().is_empty())
+        .ok_or_else(|| bad(c, format!("`{k}.family` is required")))?;
+    Ok((
+        family.to_string(),
+        v.get("style").and_then(Value::as_str).map(str::to_string),
+    ))
 }
 
 fn replace(s: &mut Session, p: &Value) -> Result<Value> {
@@ -198,12 +219,17 @@ fn replace(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let ids = scope(s, bool_or(p, "selectionOnly", false))?;
     let matches = |st: &vectorcraft_doc::CharStyle| {
-        st.font_family.eq_ignore_ascii_case(&ff) && fs.as_ref().is_none_or(|x| st.font_style.eq_ignore_ascii_case(x))
+        st.font_family.eq_ignore_ascii_case(&ff)
+            && fs
+                .as_ref()
+                .is_none_or(|x| st.font_style.eq_ignore_ascii_case(x))
     };
     let n = s.edit("Replace Font", |d, _| {
         let mut n = 0;
         for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
             let mut changed = false;
             for r in &mut t.runs {
                 if matches(&r.style) {
@@ -231,7 +257,9 @@ fn replace(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn select_font(s: &mut Session, p: &Value) -> Result<Value> {
-    let family = str_param(p, "family").ok_or_else(|| bad("select.font", "missing `family`"))?.to_string();
+    let family = str_param(p, "family")
+        .ok_or_else(|| bad("select.font", "missing `family`"))?
+        .to_string();
     let style = str_param(p, "style").map(str::to_string);
     let ids = scope(s, false)?;
     let d = &s.doc()?.doc;
@@ -240,7 +268,10 @@ fn select_font(s: &mut Session, p: &Value) -> Result<Value> {
         .filter(|id| {
             text(d, *id).is_some_and(|t| {
                 t.runs.iter().any(|r| {
-                    r.style.font_family.eq_ignore_ascii_case(&family) && style.as_ref().is_none_or(|x| r.style.font_style.eq_ignore_ascii_case(x))
+                    r.style.font_family.eq_ignore_ascii_case(&family)
+                        && style
+                            .as_ref()
+                            .is_none_or(|x| r.style.font_style.eq_ignore_ascii_case(x))
                 })
             })
         })
@@ -255,10 +286,18 @@ fn font_list(_: &mut Session, p: &Value) -> Result<Value> {
     match str_param(p, "family") {
         Some(family) => {
             if !db.has_family(family) {
-                return Err(bad("text.fontList", format!("font family `{family}` is not available")));
+                return Err(bad(
+                    "text.fontList",
+                    format!("font family `{family}` is not available"),
+                ));
             }
             // The name as the font spells it.
-            let name = db.family_list().iter().find(|f| f.eq_ignore_ascii_case(family)).cloned().unwrap_or_else(|| family.to_string());
+            let name = db
+                .family_list()
+                .iter()
+                .find(|f| f.eq_ignore_ascii_case(family))
+                .cloned()
+                .unwrap_or_else(|| family.to_string());
             Ok(json!({ "family": name, "styles": db.styles(family) }))
         }
         None => Ok(json!({ "families": *db.menu_family_list() })),
@@ -307,32 +346,80 @@ mod tests {
     fn the_additional_fonts_folder_joins_the_font_scan() {
         let mut s = Session::new();
         let dir = std::env::temp_dir().join("vectorcraft-fonts-folder-pref");
-        s.execute("prefs.set", &json!({"key": "fontsFolder", "value": format!("  {}  ", dir.display())})).unwrap();
-        assert_eq!(vectorcraft_text::user_font_dirs(), std::slice::from_ref(&dir));
+        s.execute(
+            "prefs.set",
+            &json!({"key": "fontsFolder", "value": format!("  {}  ", dir.display())}),
+        )
+        .unwrap();
+        assert_eq!(
+            vectorcraft_text::user_font_dirs(),
+            std::slice::from_ref(&dir)
+        );
         if !cfg!(target_arch = "wasm32") {
             assert!(vectorcraft_text::system_font_dirs().contains(&dir));
         }
-        s.execute("prefs.set", &json!({"key": "fontsFolder", "value": ""})).unwrap();
-        assert!(vectorcraft_text::user_font_dirs().is_empty() && !vectorcraft_text::system_font_dirs().contains(&dir));
+        s.execute("prefs.set", &json!({"key": "fontsFolder", "value": ""}))
+            .unwrap();
+        assert!(
+            vectorcraft_text::user_font_dirs().is_empty()
+                && !vectorcraft_text::system_font_dirs().contains(&dir)
+        );
     }
 
     #[test]
     fn list_flag_missing_replace_and_select() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
-        let a = s.execute("text.create", &json!({"x": 10, "y": 20, "text": "Serif", "font": "Source Serif 4"})).unwrap()["id"].as_u64().unwrap();
-        let b = s.execute("text.create", &json!({"x": 10, "y": 60, "text": "Gone", "font": "No Such Font Family"})).unwrap()["id"].as_u64().unwrap();
+        s.execute("file.new", &json!({"width": 200, "height": 200}))
+            .unwrap();
+        let a = s
+            .execute(
+                "text.create",
+                &json!({"x": 10, "y": 20, "text": "Serif", "font": "Source Serif 4"}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let b = s
+            .execute(
+                "text.create",
+                &json!({"x": 10, "y": 60, "text": "Gone", "font": "No Such Font Family"}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let list = s.execute("text.fonts", &json!({})).unwrap();
-        let missing: Vec<&str> = list.as_array().unwrap().iter().filter(|f| f["missing"] == true).map(|f| f["family"].as_str().unwrap()).collect();
+        let missing: Vec<&str> = list
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|f| f["missing"] == true)
+            .map(|f| f["family"].as_str().unwrap())
+            .collect();
         assert_eq!(missing, ["No Such Font Family"]);
-        assert_eq!(s.execute("select.font", &json!({"family": "No Such Font Family"})).unwrap()["count"], 1);
+        assert_eq!(
+            s.execute("select.font", &json!({"family": "No Such Font Family"}))
+                .unwrap()["count"],
+            1
+        );
         assert_eq!(s.doc().unwrap().selection.objects, [NodeId(b)]);
         let r = s.execute("text.replaceFont", &json!({"from": {"family": "No Such Font Family"}, "to": {"family": "Source Sans 3"}})).unwrap();
         assert_eq!(r["runs"], 1);
-        let fams: Vec<String> =
-            s.execute("text.fonts", &json!({})).unwrap().as_array().unwrap().iter().map(|f| f["family"].as_str().unwrap().to_string()).collect();
+        let fams: Vec<String> = s
+            .execute("text.fonts", &json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| f["family"].as_str().unwrap().to_string())
+            .collect();
         assert_eq!(fams, ["Source Sans 3", "Source Serif 4"]);
-        assert!(s.execute("text.replaceFont", &json!({"from": {"family": "Source Serif 4"}, "to": {"family": "Nope"}})).is_err());
+        assert!(
+            s.execute(
+                "text.replaceFont",
+                &json!({"from": {"family": "Source Serif 4"}, "to": {"family": "Nope"}})
+            )
+            .is_err()
+        );
         let _ = a;
     }
 }
@@ -344,13 +431,20 @@ mod open_tests {
     #[test]
     fn list_says_how_each_font_resolved() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+        s.execute("file.new", &json!({"width": 200, "height": 200}))
+            .unwrap();
         // "Black Wide" is a style no Source Sans 3 has, bundled or installed, so it is always a
         // substitute (the installed family can hold a real Black).
-        for (text, font, style) in
-            [("Exact", "Source Sans 3", "Semibold"), ("Closest", "Source Sans 3", "Black Wide"), ("Gone", "No Such Font Family", "Regular")]
-        {
-            s.execute("text.create", &json!({"x": 10, "y": 20, "text": text, "font": font, "style": style})).unwrap();
+        for (text, font, style) in [
+            ("Exact", "Source Sans 3", "Semibold"),
+            ("Closest", "Source Sans 3", "Black Wide"),
+            ("Gone", "No Such Font Family", "Regular"),
+        ] {
+            s.execute(
+                "text.create",
+                &json!({"x": 10, "y": 20, "text": text, "font": font, "style": style}),
+            )
+            .unwrap();
         }
         let list = s.execute("text.fonts", &json!({})).unwrap();
         let rows: Vec<(String, String, String, String)> = list
@@ -370,26 +464,70 @@ mod open_tests {
         assert_eq!(row("Semibold").1, "exact");
         assert_eq!(row("Black Wide").1, "substitute", "{rows:?}");
         assert_eq!(row("Black Wide").2, "Source Sans 3");
-        assert_eq!((row("Regular").1.as_str(), row("Regular").2.as_str()), ("missing", vectorcraft_text::FALLBACK_FAMILY));
-        s.execute("text.create", &json!({"x": 10, "y": 90, "text": "Ab 雅楽", "font": "Inter"})).unwrap();
-        let inter = s.execute("text.fonts", &json!({})).unwrap().as_array().unwrap().iter().find(|f| f["family"] == "Inter").cloned().unwrap();
-        assert_eq!(inter["missingGlyphs"], 2, "雅 and 楽 come from a fallback font: {inter}");
+        assert_eq!(
+            (row("Regular").1.as_str(), row("Regular").2.as_str()),
+            ("missing", vectorcraft_text::FALLBACK_FAMILY)
+        );
+        s.execute(
+            "text.create",
+            &json!({"x": 10, "y": 90, "text": "Ab 雅楽", "font": "Inter"}),
+        )
+        .unwrap();
+        let inter = s
+            .execute("text.fonts", &json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["family"] == "Inter")
+            .cloned()
+            .unwrap();
+        assert_eq!(
+            inter["missingGlyphs"], 2,
+            "雅 and 楽 come from a fallback font: {inter}"
+        );
     }
 
     #[test]
     fn opened_documents_have_exact_text_bounds() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 400, "height": 200})).unwrap();
-        let id = s.execute("text.create", &json!({"x": 10, "y": 60, "text": "WIDE TRACKED", "size": 40})).unwrap()["id"].as_u64().unwrap();
-        s.execute("text.setStyle", &json!({"tracking": 400})).unwrap();
-        let want = s.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();
+        s.execute("file.new", &json!({"width": 400, "height": 200}))
+            .unwrap();
+        let id = s
+            .execute(
+                "text.create",
+                &json!({"x": 10, "y": 60, "text": "WIDE TRACKED", "size": 40}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        s.execute("text.setStyle", &json!({"tracking": 400}))
+            .unwrap();
+        let want = s
+            .doc()
+            .unwrap()
+            .doc
+            .node(NodeId(id))
+            .unwrap()
+            .geometric_bounds()
+            .unwrap();
         // Save and reopen: the cache isn't in the file, yet the bounds must match.
         let bytes = vectorcraft_format::save(&s.doc().unwrap().doc, false);
         let reopened = vectorcraft_format::load(&bytes).unwrap();
         let mut t = Session::new();
         t.add_document(reopened, None);
-        let got = t.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();
-        assert!((got.width() - want.width()).abs() < 1e-6, "{got:?} vs {want:?}");
+        let got = t
+            .doc()
+            .unwrap()
+            .doc
+            .node(NodeId(id))
+            .unwrap()
+            .geometric_bounds()
+            .unwrap();
+        assert!(
+            (got.width() - want.width()).abs() < 1e-6,
+            "{got:?} vs {want:?}"
+        );
     }
 }
 
@@ -401,12 +539,19 @@ mod dirty_tests {
     fn selection_never_marks_modified_and_undo_to_saved_is_clean() {
         let mut s = Session::new();
         s.add_document(Document::new(100.0, 100.0), None);
-        let id = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap()["id"].clone();
+        let id = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap()["id"]
+            .clone();
         s.doc_mut().unwrap().mark_saved();
         s.execute("select.none", &json!({})).unwrap();
         s.execute("select.set", &json!({"ids": [id]})).unwrap();
         assert!(!s.doc().unwrap().is_dirty(), "selecting is not an edit");
-        s.execute("object.move", &json!({"dx": 5, "dy": 0})).unwrap();
+        s.execute("object.move", &json!({"dx": 5, "dy": 0}))
+            .unwrap();
         assert!(s.doc().unwrap().is_dirty());
         s.execute("edit.undo", &json!({})).unwrap();
         assert!(!s.doc().unwrap().is_dirty(), "back to the saved state");

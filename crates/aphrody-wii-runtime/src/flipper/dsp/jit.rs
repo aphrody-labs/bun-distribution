@@ -70,10 +70,16 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         flag_builder.set("enable_verifier", "false").unwrap();
         flag_builder.set("enable_probestack", "false").unwrap();
         flag_builder.set("unwind_info", "false").unwrap();
-        flag_builder.set("enable_heap_access_spectre_mitigation", "false").unwrap();
-        flag_builder.set("enable_table_access_spectre_mitigation", "false").unwrap();
+        flag_builder
+            .set("enable_heap_access_spectre_mitigation", "false")
+            .unwrap();
+        flag_builder
+            .set("enable_table_access_spectre_mitigation", "false")
+            .unwrap();
         let isa_builder = cranelift_native::builder().expect("host ISA");
-        let isa = isa_builder.finish(settings::Flags::new(flag_builder)).expect("ISA finish");
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .expect("ISA finish");
 
         let mut jit_builder = JITBuilder::with_isa(isa, default_libcall_names());
 
@@ -85,8 +91,14 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         }
         let syms: Syms = match SYSTEM {
             GC => Syms {
-                read_dmem: ("gecko_dsp_jit_rdmem_gc", runtime::dsp_read_dmem_gc as *const u8),
-                write_dmem: ("gecko_dsp_jit_wdmem_gc", runtime::dsp_write_dmem_gc as *const u8),
+                read_dmem: (
+                    "gecko_dsp_jit_rdmem_gc",
+                    runtime::dsp_read_dmem_gc as *const u8,
+                ),
+                write_dmem: (
+                    "gecko_dsp_jit_wdmem_gc",
+                    runtime::dsp_write_dmem_gc as *const u8,
+                ),
                 read_reg_full: (
                     "gecko_dsp_jit_rdregf_gc",
                     runtime::dsp_read_reg_full_gc as *const u8,
@@ -97,8 +109,14 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 ),
             },
             WII => Syms {
-                read_dmem: ("gecko_dsp_jit_rdmem_wii", runtime::dsp_read_dmem_wii as *const u8),
-                write_dmem: ("gecko_dsp_jit_wdmem_wii", runtime::dsp_write_dmem_wii as *const u8),
+                read_dmem: (
+                    "gecko_dsp_jit_rdmem_wii",
+                    runtime::dsp_read_dmem_wii as *const u8,
+                ),
+                write_dmem: (
+                    "gecko_dsp_jit_wdmem_wii",
+                    runtime::dsp_write_dmem_wii as *const u8,
+                ),
                 read_reg_full: (
                     "gecko_dsp_jit_rdregf_wii",
                     runtime::dsp_read_reg_full_wii as *const u8,
@@ -154,9 +172,15 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
 
         arena.set_floor();
 
-        let table =
-            vec![DspBlockLookupSlot { pc: 0, _pad: 0, entry: 0 }; DSP_BLOCK_LOOKUP_TABLE_SIZE]
-                .into_boxed_slice();
+        let table = vec![
+            DspBlockLookupSlot {
+                pc: 0,
+                _pad: 0,
+                entry: 0
+            };
+            DSP_BLOCK_LOOKUP_TABLE_SIZE
+        ]
+        .into_boxed_slice();
         let block_lookup_table_addr = Box::leak(table).as_mut_ptr() as usize;
 
         Self {
@@ -258,7 +282,11 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         let entry = unsafe {
             let table = self.block_lookup_table_addr as *const DspBlockLookupSlot;
             let slot = &*table.add(idx);
-            if slot.pc == pc_u32 && slot.entry != 0 { Some(slot.entry) } else { None }
+            if slot.pc == pc_u32 && slot.entry != 0 {
+                Some(slot.entry)
+            } else {
+                None
+            }
         };
 
         #[cfg(feature = "jit-stats")]
@@ -415,8 +443,12 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
             &self.loop_end_table,
         );
 
-        self.module.define_function(func_id, &mut self.ctx).expect("define dsp block");
-        self.module.finalize_definitions().expect("finalize dsp jit");
+        self.module
+            .define_function(func_id, &mut self.ctx)
+            .expect("define dsp block");
+        self.module
+            .finalize_definitions()
+            .expect("finalize dsp jit");
 
         let entry = self.module.get_finalized_function(func_id) as usize;
 
@@ -459,7 +491,9 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 let dispatch_hits = self.hits.get(&pc).copied().unwrap_or(0);
                 let spec = self.block_specs.get(&pc);
                 let len = spec.map(|s| s.instrs.len()).unwrap_or(0);
-                let term = spec.map(|s| format!("{:?}", s.terminator)).unwrap_or_default();
+                let term = spec
+                    .map(|s| format!("{:?}", s.terminator))
+                    .unwrap_or_default();
                 let lead = spec
                     .and_then(|s| s.instrs.first())
                     .map(|e| disasm_mnemonic(e.raw))
@@ -508,7 +542,11 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         let total_instrs: u64 = entries
             .iter()
             .map(|(pc, n)| {
-                let len = self.block_specs.get(pc).map(|s| s.instrs.len() as u64).unwrap_or(0);
+                let len = self
+                    .block_specs
+                    .get(pc)
+                    .map(|s| s.instrs.len() as u64)
+                    .unwrap_or(0);
                 n.saturating_mul(len)
             })
             .sum();
@@ -524,7 +562,11 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
         if self.dispatcher_entries_total > 0 {
             let avg_depth = self.chain_depth_total as f64 / self.dispatcher_entries_total as f64;
             let budget_bucket = super::DSP_JIT_CHAIN_BUDGET as usize;
-            let saturated = self.chain_depth_histogram.get(budget_bucket).copied().unwrap_or(0);
+            let saturated = self
+                .chain_depth_histogram
+                .get(budget_bucket)
+                .copied()
+                .unwrap_or(0);
             let zero_depth = self.chain_depth_histogram[0];
             let saturated_pct = (saturated as f64) * 100.0 / (self.dispatcher_entries_total as f64);
             let zero_pct = (zero_depth as f64) * 100.0 / (self.dispatcher_entries_total as f64);
@@ -547,7 +589,10 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
                 .filter(|(_, n)| **n > 0)
                 .map(|(i, n)| format!("{}:{}", i, n))
                 .collect();
-            tracing::info!("    chain depth histogram (non-zero): {}", buckets.join(" "));
+            tracing::info!(
+                "    chain depth histogram (non-zero): {}",
+                buckets.join(" ")
+            );
         } else {
             tracing::info!("    chain link: no run_block entries observed yet");
         }
@@ -566,7 +611,9 @@ impl<const SYSTEM: SystemId> JitEngine<SYSTEM> {
             let pct = (*hits as f64) * 100.0 / (total_entries as f64);
             let spec = self.block_specs.get(pc);
             let len = spec.map(|s| s.instrs.len()).unwrap_or(0);
-            let term = spec.map(|s| format!("{:?}", s.terminator)).unwrap_or_default();
+            let term = spec
+                .map(|s| format!("{:?}", s.terminator))
+                .unwrap_or_default();
 
             let total_block_entries = self
                 .block_entry_counter_ptrs
@@ -636,7 +683,10 @@ fn disasm_mnemonic(raw: u32) -> String {
     };
 
     let s = format!("{ins}");
-    s.split_whitespace().next().map(|m| m.to_string()).unwrap_or_else(|| s)
+    s.split_whitespace()
+        .next()
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| s)
 }
 
 impl<const SYSTEM: SystemId> Default for JitEngine<SYSTEM> {
@@ -685,8 +735,12 @@ fn build_trampoline(
         builder.finalize();
     }
 
-    module.define_function(id, &mut ctx).expect("define dsp trampoline");
-    module.finalize_definitions().expect("finalize dsp trampoline");
+    module
+        .define_function(id, &mut ctx)
+        .expect("define dsp trampoline");
+    module
+        .finalize_definitions()
+        .expect("finalize dsp trampoline");
 
     let raw = module.get_finalized_function(id);
     unsafe { core::mem::transmute::<*const u8, TrampolineFn>(raw) }

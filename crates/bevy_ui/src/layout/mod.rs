@@ -1,10 +1,10 @@
 #[cfg(feature = "ghost_nodes")]
 use crate::experimental::GhostNode;
 use crate::{
-    experimental::{UiChildren, UiRootNodes},
-    ui_transform::{UiGlobalTransform, UiTransform},
     ComputedNode, ComputedUiRenderTargetInfo, ContentSize, Display, FixedNode, IgnoreScroll,
     LayoutConfig, Node, Outline, OverflowAxis, ScrollPosition,
+    experimental::{UiChildren, UiRootNodes},
+    ui_transform::{UiGlobalTransform, UiTransform},
 };
 use bevy_ecs::{
     change_detection::{DetectChanges, DetectChangesMut},
@@ -20,7 +20,7 @@ use bevy_math::{Affine2, Vec2};
 use bevy_sprite::BorderRect;
 use ui_surface::UiSurface;
 
-use bevy_text::{ComputedTextBlock, EmSize, FontCx, RemSize, TextFont, DEFAULT_REM_SIZE_PX};
+use bevy_text::{ComputedTextBlock, DEFAULT_REM_SIZE_PX, EmSize, FontCx, RemSize, TextFont};
 
 use bevy_log::warn;
 
@@ -525,11 +525,11 @@ pub fn ui_layout_system(
 mod tests {
     use crate::sync_font_size_to_em_size;
     use crate::{
+        ContentSize, LayoutContext,
         layout::{clipping::update_clipping_system, ui_surface::UiSurface},
         prelude::*,
         ui_layout_system,
         update::propagate_ui_target_cameras,
-        ContentSize, LayoutContext,
     };
     use bevy_app::{App, HierarchyPropagatePlugin, PostUpdate, PropagateSet, TaskPoolPlugin};
     use bevy_camera::{Camera, Camera2d, ComputedCameraValues, RenderTargetInfo, Viewport};
@@ -784,24 +784,30 @@ mod tests {
             let child_node = child_node_map[child_entity];
             assert_eq!(ui_surface.entity_to_taffy[child_entity], child_node);
             assert_eq!(ui_surface.parent(*child_entity), Some(ui_parent_node.id));
-            assert!(ui_surface
-                .taffy
-                .children(ui_parent_node.id)
-                .unwrap()
-                .contains(&child_node.id));
+            assert!(
+                ui_surface
+                    .taffy
+                    .children(ui_parent_node.id)
+                    .unwrap()
+                    .contains(&child_node.id)
+            );
         }
 
         // the nodes of the deleted children should have been removed from the layout tree
         for deleted_child_entity in &deleted_children {
-            assert!(!ui_surface
-                .entity_to_taffy
-                .contains_key(deleted_child_entity));
+            assert!(
+                !ui_surface
+                    .entity_to_taffy
+                    .contains_key(deleted_child_entity)
+            );
             let deleted_child_node = child_node_map[deleted_child_entity];
-            assert!(!ui_surface
-                .taffy
-                .children(ui_parent_node.id)
-                .unwrap()
-                .contains(&deleted_child_node.id));
+            assert!(
+                !ui_surface
+                    .taffy
+                    .children(ui_parent_node.id)
+                    .unwrap()
+                    .contains(&deleted_child_node.id)
+            );
         }
 
         // despawn the parent entity and its descendants
@@ -967,7 +973,10 @@ mod tests {
         let Some((_rect, is_overlapping)) = overlap_check else {
             unreachable!("test not setup properly");
         };
-        assert!(is_overlapping, "root ui nodes are expected to behave like they have absolute position and be independent from each other");
+        assert!(
+            is_overlapping,
+            "root ui nodes are expected to behave like they have absolute position and be independent from each other"
+        );
     }
 
     #[test]
@@ -1112,7 +1121,9 @@ mod tests {
         let world = app.world();
         let current_taffy_node_count = get_taffy_node_count(world);
         if current_taffy_node_count > expected_max_taffy_node_count {
-            panic!("extra taffy nodes detected: current: {current_taffy_node_count} max expected: {expected_max_taffy_node_count}");
+            panic!(
+                "extra taffy nodes detected: current: {current_taffy_node_count} max expected: {expected_max_taffy_node_count}"
+            );
         }
     }
 
@@ -1517,10 +1528,12 @@ mod tests {
                 .len(),
             1
         );
-        assert!(world
-            .resource_mut::<UiSurface>()
-            .root_entity_to_viewport_node
-            .contains_key(&ui_root_entity_1));
+        assert!(
+            world
+                .resource_mut::<UiSurface>()
+                .root_entity_to_viewport_node
+                .contains_key(&ui_root_entity_1)
+        );
     }
 
     #[test]
@@ -1810,12 +1823,14 @@ mod tests {
         app.update();
 
         let world = app.world_mut();
-        assert!(world
-            .entity(ui_root)
-            .get::<ComputedNode>()
-            .unwrap()
-            .size()
-            .abs_diff_eq(Vec2::ZERO, 1e-5));
+        assert!(
+            world
+                .entity(ui_root)
+                .get::<ComputedNode>()
+                .unwrap()
+                .size()
+                .abs_diff_eq(Vec2::ZERO, 1e-5)
+        );
     }
 
     #[test]
@@ -2639,18 +2654,22 @@ mod tests {
         app.update();
 
         let world = app.world_mut();
-        assert!(world
-            .entity(ui_root)
-            .get::<ComputedNode>()
-            .unwrap()
-            .size()
-            .abs_diff_eq(Vec2::new(200., 150.), 1e-5));
-        assert!(world
-            .entity(child)
-            .get::<ComputedNode>()
-            .unwrap()
-            .size()
-            .abs_diff_eq(Vec2::new(75., 40.), 1e-5));
+        assert!(
+            world
+                .entity(ui_root)
+                .get::<ComputedNode>()
+                .unwrap()
+                .size()
+                .abs_diff_eq(Vec2::new(200., 150.), 1e-5)
+        );
+        assert!(
+            world
+                .entity(child)
+                .get::<ComputedNode>()
+                .unwrap()
+                .size()
+                .abs_diff_eq(Vec2::new(75., 40.), 1e-5)
+        );
     }
 
     #[cfg(feature = "ghost_nodes")]
@@ -2914,24 +2933,26 @@ mod tests {
 
             app.update();
 
-            assert!(app
-                .world()
-                .entity(root)
-                .get::<ComputedNode>()
-                .unwrap()
-                .size()
-                .abs_diff_eq(Vec2::ZERO, 1e-5));
+            assert!(
+                app.world()
+                    .entity(root)
+                    .get::<ComputedNode>()
+                    .unwrap()
+                    .size()
+                    .abs_diff_eq(Vec2::ZERO, 1e-5)
+            );
             app.world_mut().entity_mut(ghost).insert(GhostNode);
 
             app.update();
 
-            assert!(app
-                .world()
-                .entity(root)
-                .get::<ComputedNode>()
-                .unwrap()
-                .size()
-                .abs_diff_eq(Vec2::new(50., 30.), 1e-5));
+            assert!(
+                app.world()
+                    .entity(root)
+                    .get::<ComputedNode>()
+                    .unwrap()
+                    .size()
+                    .abs_diff_eq(Vec2::new(50., 30.), 1e-5)
+            );
         }
     }
 }

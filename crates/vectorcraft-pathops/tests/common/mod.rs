@@ -9,7 +9,10 @@ const SEED: u64 = 0x5eed_9a7f;
 /// at random. Explore further locally with `PROPTEST_CASES=5000 PROPTEST_RNG_SEED=<n>`; keep
 /// every minimal failure found that way as a test in `regressions.rs`.
 pub fn config(cases: u32) -> Config {
-    let mut c = Config { failure_persistence: None, ..Config::default() };
+    let mut c = Config {
+        failure_persistence: None,
+        ..Config::default()
+    };
     if std::env::var_os("PROPTEST_CASES").is_none() {
         c.cases = cases;
     }

@@ -23,7 +23,12 @@ pub struct GraphicsNotice {
 
 impl GraphicsNotice {
     pub fn new(mode: &str, reset: ResetFn) -> Self {
-        Self { mode: mode.to_string(), reset, reset_done: false, closed: false }
+        Self {
+            mode: mode.to_string(),
+            reset,
+            reset_done: false,
+            closed: false,
+        }
     }
 
     /// Use Default Graphics: save the default mode for the next start.
@@ -36,7 +41,9 @@ impl GraphicsNotice {
 
 /// Draw the notice (bottom right, above the status bar) until it is closed.
 pub(crate) fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut notice) = app.graphics_notice.take() else { return };
+    let Some(mut notice) = app.graphics_notice.take() else {
+        return;
+    };
     if notice.closed {
         app.graphics_notice = Some(notice);
         return;

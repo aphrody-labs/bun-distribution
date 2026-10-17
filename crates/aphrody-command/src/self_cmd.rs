@@ -55,7 +55,8 @@ impl InstallPathCommand {
                          --locked",
                         bin.display()
                     );
-                    let status = std::process::Command::new("cargo").no_window()
+                    let status = std::process::Command::new("cargo")
+                        .no_window()
                         .args(["build", "-p", "aphrody", "--release", "--locked"])
                         .status()
                         .into_diagnostic()
@@ -89,11 +90,18 @@ impl InstallPathCommand {
 /// (an old standalone build) is moved under `<link dir>/../lib/aphrody/replaced/` for rollback.
 fn install_aliases(bin: &Path, dry_run: bool) -> miette::Result<()> {
     let link_dir = alias_dir(bin)?;
-    let replaced = link_dir.parent().unwrap_or(&link_dir).join("lib/aphrody/replaced");
+    let replaced = link_dir
+        .parent()
+        .unwrap_or(&link_dir)
+        .join("lib/aphrody/replaced");
     for alias in crate::multicall::aliases() {
         let link = link_dir.join(format!("{alias}{}", std::env::consts::EXE_SUFFIX));
         if dry_run {
-            println!("[dry-run] would link {} -> {}", link.display(), bin.display());
+            println!(
+                "[dry-run] would link {} -> {}",
+                link.display(),
+                bin.display()
+            );
             continue;
         }
         match link.symlink_metadata() {
@@ -103,12 +111,18 @@ fn install_aliases(bin: &Path, dry_run: bool) -> miette::Result<()> {
             Ok(_) => {
                 std::fs::create_dir_all(&replaced).into_diagnostic()?;
                 let backup = replaced.join(link.file_name().unwrap_or_default());
-                std::fs::rename(&link, &backup).into_diagnostic().wrap_err_with(|| {
-                    format!("failed to move {} to {}", link.display(), backup.display())
-                })?;
-                println!("moved former binary {} -> {}", link.display(), backup.display());
-            },
-            Err(_) => {},
+                std::fs::rename(&link, &backup)
+                    .into_diagnostic()
+                    .wrap_err_with(|| {
+                        format!("failed to move {} to {}", link.display(), backup.display())
+                    })?;
+                println!(
+                    "moved former binary {} -> {}",
+                    link.display(),
+                    backup.display()
+                );
+            }
+            Err(_) => {}
         }
         link_alias(bin, &link)?;
         println!("linked {} -> {}", link.display(), bin.display());
@@ -120,8 +134,9 @@ fn install_aliases(bin: &Path, dry_run: bool) -> miette::Result<()> {
 /// the binary, whose directory is on PATH.
 #[cfg(not(target_os = "windows"))]
 pub(crate) fn alias_dir(_bin: &Path) -> miette::Result<PathBuf> {
-    let home =
-        std::env::var("HOME").into_diagnostic().wrap_err("HOME environment variable is not set")?;
+    let home = std::env::var("HOME")
+        .into_diagnostic()
+        .wrap_err("HOME environment variable is not set")?;
     Ok(PathBuf::from(home).join(".local").join("bin"))
 }
 
@@ -143,7 +158,13 @@ fn link_alias(bin: &Path, link: &Path) -> miette::Result<()> {
 fn link_alias(bin: &Path, link: &Path) -> miette::Result<()> {
     std::fs::hard_link(bin, link)
         .into_diagnostic()
-        .wrap_err_with(|| format!("failed to hard-link {} -> {}", link.display(), bin.display()))
+        .wrap_err_with(|| {
+            format!(
+                "failed to hard-link {} -> {}",
+                link.display(),
+                bin.display()
+            )
+        })
 }
 
 /// Resolve the binary path, defaulting to `<cwd>/target/release/aphrody[.exe]`.
@@ -154,7 +175,11 @@ fn resolve_bin_path(explicit: Option<PathBuf>) -> miette::Result<PathBuf> {
     let cwd = std::env::current_dir()
         .into_diagnostic()
         .wrap_err("failed to read current working directory")?;
-    let exe_name = if cfg!(windows) { "aphrody.exe" } else { "aphrody" };
+    let exe_name = if cfg!(windows) {
+        "aphrody.exe"
+    } else {
+        "aphrody"
+    };
     Ok(cwd.join("target").join("release").join(exe_name))
 }
 
@@ -175,8 +200,9 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
         .parent()
         .ok_or_else(|| miette::miette!("binary path has no parent directory: {}", bin.display()))?
         .to_path_buf();
-    let bin_dir_str =
-        bin_dir.to_str().ok_or_else(|| miette::miette!("non-UTF-8 binary directory"))?;
+    let bin_dir_str = bin_dir
+        .to_str()
+        .ok_or_else(|| miette::miette!("non-UTF-8 binary directory"))?;
 
     // Open HKCU\Environment for read first to inspect current PATH.
     let subkey: Vec<u16> = "Environment\0".encode_utf16().collect();
@@ -186,7 +212,9 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
         let mut hkey: HKEY = std::ptr::null_mut();
         let rc = RegOpenKeyExW(HKEY_CURRENT_USER, subkey.as_ptr(), 0, KEY_READ, &mut hkey);
         if rc != ERROR_SUCCESS {
-            return Err(miette::miette!("RegOpenKeyExW(HKCU\\Environment) failed with code {rc}"));
+            return Err(miette::miette!(
+                "RegOpenKeyExW(HKCU\\Environment) failed with code {rc}"
+            ));
         }
 
         let mut buf_size: u32 = 0;
@@ -216,7 +244,9 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
             );
             if rc2 != ERROR_SUCCESS {
                 let _ = RegCloseKey(hkey);
-                return Err(miette::miette!("RegQueryValueExW(Path) failed with code {rc2}"));
+                return Err(miette::miette!(
+                    "RegQueryValueExW(Path) failed with code {rc2}"
+                ));
             }
             // Strip trailing NUL if present.
             let len = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
@@ -237,7 +267,10 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
     });
 
     if already_present {
-        println!("{} is already on HKCU\\Environment\\Path", bin_dir.display());
+        println!(
+            "{} is already on HKCU\\Environment\\Path",
+            bin_dir.display()
+        );
         print_verify_hints();
         return Ok(());
     }
@@ -258,12 +291,21 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
     let mut wide: Vec<u16> = new_path.encode_utf16().collect();
     wide.push(0);
 
-    let preserve_type = if current_type == REG_EXPAND_SZ { REG_EXPAND_SZ } else { REG_SZ };
+    let preserve_type = if current_type == REG_EXPAND_SZ {
+        REG_EXPAND_SZ
+    } else {
+        REG_SZ
+    };
 
     unsafe {
         let mut hkey: HKEY = std::ptr::null_mut();
-        let rc =
-            RegOpenKeyExW(HKEY_CURRENT_USER, subkey.as_ptr(), 0, KEY_READ | KEY_WRITE, &mut hkey);
+        let rc = RegOpenKeyExW(
+            HKEY_CURRENT_USER,
+            subkey.as_ptr(),
+            0,
+            KEY_READ | KEY_WRITE,
+            &mut hkey,
+        );
         if rc != ERROR_SUCCESS {
             return Err(miette::miette!(
                 "RegOpenKeyExW(HKCU\\Environment, RW) failed with code {rc}"
@@ -280,7 +322,9 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
         );
         let _ = RegCloseKey(hkey);
         if rc2 != ERROR_SUCCESS {
-            return Err(miette::miette!("RegSetValueExW(Path) failed with code {rc2}"));
+            return Err(miette::miette!(
+                "RegSetValueExW(Path) failed with code {rc2}"
+            ));
         }
     }
 
@@ -325,14 +369,22 @@ fn broadcast_setting_change() {
 // ── Unix: symlink into $HOME/.local/bin ─────────────────────────────────────
 #[cfg(not(target_os = "windows"))]
 fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
-    let home =
-        std::env::var("HOME").into_diagnostic().wrap_err("HOME environment variable is not set")?;
+    let home = std::env::var("HOME")
+        .into_diagnostic()
+        .wrap_err("HOME environment variable is not set")?;
     let link_dir = PathBuf::from(&home).join(".local").join("bin");
     let link = link_dir.join("aphrody");
 
     if dry_run {
-        println!("[dry-run] would create directory {} (if missing)", link_dir.display());
-        println!("[dry-run] would symlink {} -> {}", link.display(), bin.display());
+        println!(
+            "[dry-run] would create directory {} (if missing)",
+            link_dir.display()
+        );
+        println!(
+            "[dry-run] would symlink {} -> {}",
+            link.display(),
+            bin.display()
+        );
     } else {
         std::fs::create_dir_all(&link_dir)
             .into_diagnostic()
@@ -347,9 +399,11 @@ fn platform_install_path(bin: &Path, dry_run: bool) -> miette::Result<()> {
         }
 
         #[cfg(unix)]
-        std::os::unix::fs::symlink(bin, &link).into_diagnostic().wrap_err_with(|| {
-            format!("failed to symlink {} -> {}", link.display(), bin.display())
-        })?;
+        std::os::unix::fs::symlink(bin, &link)
+            .into_diagnostic()
+            .wrap_err_with(|| {
+                format!("failed to symlink {} -> {}", link.display(), bin.display())
+            })?;
 
         println!("symlinked {} -> {}", link.display(), bin.display());
     }
@@ -400,7 +454,10 @@ impl TerminalCommand for BootstrapCommand {
         // Optional but recommended.
         let optional = ["cargo-zigbuild", "wasm-bindgen", "cargo-deny", "cargo-vet"];
 
-        println!("aphrody self bootstrap{}", if self.check { " --check" } else { "" });
+        println!(
+            "aphrody self bootstrap{}",
+            if self.check { " --check" } else { "" }
+        );
         println!();
         println!("Required tools:");
         let mut missing_required: Vec<&str> = Vec::new();
@@ -410,7 +467,7 @@ impl TerminalCommand for BootstrapCommand {
                 Err(_) => {
                     println!("  [--] {name:<18} (missing)");
                     missing_required.push(name);
-                },
+                }
             }
         }
         println!();
@@ -423,14 +480,18 @@ impl TerminalCommand for BootstrapCommand {
         }
 
         // Target inventory (best-effort — needs rustup).
-        let targets =
-            ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc", "wasm32-unknown-unknown"];
+        let targets = [
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "wasm32-unknown-unknown",
+        ];
         println!();
         println!("Rust targets (priority order: Linux > Windows > wasm):");
         let rustup_present = which::which("rustup").is_ok();
         for t in targets {
             if rustup_present {
-                let out = std::process::Command::new("rustup").no_window()
+                let out = std::process::Command::new("rustup")
+                    .no_window()
                     .args(["target", "list", "--installed"])
                     .output();
                 match out {
@@ -438,7 +499,7 @@ impl TerminalCommand for BootstrapCommand {
                         let installed = String::from_utf8_lossy(&o.stdout);
                         let ok = installed.lines().any(|l| l.trim() == t);
                         println!("  [{}] {t}", if ok { "ok" } else { "--" });
-                    },
+                    }
                     Err(_) => println!("  [??] {t} (rustup query failed)"),
                 }
             } else {
@@ -470,20 +531,26 @@ impl TerminalCommand for BootstrapCommand {
         println!();
         println!("Installing missing rust targets via rustup...");
         for t in targets {
-            let status = std::process::Command::new("rustup").no_window()
+            let status = std::process::Command::new("rustup")
+                .no_window()
                 .args(["target", "add", t])
                 .status()
                 .into_diagnostic()
                 .wrap_err_with(|| format!("failed to spawn rustup target add {t}"))?;
             if !status.success() {
-                eprintln!("  warning: rustup target add {t} exited with code {:?}", status.code());
+                eprintln!(
+                    "  warning: rustup target add {t} exited with code {:?}",
+                    status.code()
+                );
             }
         }
 
         println!();
         println!("Installing rust-src component (needed for build-std on wasm/embedded)...");
-        let _ =
-            std::process::Command::new("rustup").no_window().args(["component", "add", "rust-src"]).status();
+        let _ = std::process::Command::new("rustup")
+            .no_window()
+            .args(["component", "add", "rust-src"])
+            .status();
 
         Ok(())
     }

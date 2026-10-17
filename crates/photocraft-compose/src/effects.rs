@@ -23,8 +23,8 @@
 use photocraft_color::blend::BlendMode;
 use photocraft_doc::Pattern;
 use photocraft_doc::{
-    Bevel, BevelStyle, BevelTechnique, Contour, Effect, FxPaint, GlobalLight, Glow, GlowSource, GlowTechnique, Gradient, GradientStyle, Layer, Shadow,
-    StrokePosition,
+    Bevel, BevelStyle, BevelTechnique, Contour, Effect, FxPaint, GlobalLight, Glow, GlowSource,
+    GlowTechnique, Gradient, GradientStyle, Layer, Shadow, StrokePosition,
 };
 use photocraft_geom::Rect;
 
@@ -68,13 +68,20 @@ pub const MAX_REACH: f32 = 512.0;
 /// arithmetic depends on where the region starts) and noise (it speckles any coverage above
 /// zero, so it would pick up the blur's float noise, which depends on where the region starts).
 pub(crate) fn maps_are_local(layer: &Layer) -> bool {
-    layer.effects.items.iter().filter(|e| e.enabled()).all(|e| match e {
-        Effect::Stroke(s) => !matches!(s.paint, FxPaint::Gradient(_)),
-        Effect::DropShadow(s) | Effect::InnerShadow(s) => s.noise <= 0.0,
-        Effect::OuterGlow(g) | Effect::InnerGlow(g) => g.technique != GlowTechnique::Precise && g.noise <= 0.0,
-        Effect::BevelEmboss(b) => b.technique == BevelTechnique::Smooth,
-        _ => true,
-    })
+    layer
+        .effects
+        .items
+        .iter()
+        .filter(|e| e.enabled())
+        .all(|e| match e {
+            Effect::Stroke(s) => !matches!(s.paint, FxPaint::Gradient(_)),
+            Effect::DropShadow(s) | Effect::InnerShadow(s) => s.noise <= 0.0,
+            Effect::OuterGlow(g) | Effect::InnerGlow(g) => {
+                g.technique != GlowTechnique::Precise && g.noise <= 0.0
+            }
+            Effect::BevelEmboss(b) => b.technique == BevelTechnique::Smooth,
+            _ => true,
+        })
 }
 
 /// A single-channel map over a rectangle.
@@ -87,21 +94,41 @@ struct Map {
 
 impl Map {
     fn new(w: usize, h: usize, fill: f32) -> Self {
-        Map { w, h, v: vec![fill; w * h] }
+        Map {
+            w,
+            h,
+            v: vec![fill; w * h],
+        }
     }
     fn get(&self, x: i64, y: i64) -> f32 {
-        if x < 0 || y < 0 || x >= self.w as i64 || y >= self.h as i64 { 0.0 } else { self.v[y as usize * self.w + x as usize] }
+        if x < 0 || y < 0 || x >= self.w as i64 || y >= self.h as i64 {
+            0.0
+        } else {
+            self.v[y as usize * self.w + x as usize]
+        }
     }
     /// Shifted copy (bilinear), outside reads `outside`.
     fn shifted(&self, dx: f32, dy: f32, outside: f32) -> Map {
         let mut out = Map::new(self.w, self.h, 0.0);
         // A hostile distance (±1e30, inf, NaN) would overflow the i64 offsets below; no shift beyond
         // 2^30 px can land inside a map, so clamp (non-finite shifts read as none).
-        let reach = |d: f32| if d.is_finite() { d.clamp(-1.0e9, 1.0e9) } else { 0.0 };
+        let reach = |d: f32| {
+            if d.is_finite() {
+                d.clamp(-1.0e9, 1.0e9)
+            } else {
+                0.0
+            }
+        };
         let (dx, dy) = (reach(dx), reach(dy));
         let (fx, fy) = (dx.floor(), dy.floor());
         let (ax, ay) = (dx - fx, dy - fy);
-        let s = |x: i64, y: i64| if x < 0 || y < 0 || x >= self.w as i64 || y >= self.h as i64 { outside } else { self.v[y as usize * self.w + x as usize] };
+        let s = |x: i64, y: i64| {
+            if x < 0 || y < 0 || x >= self.w as i64 || y >= self.h as i64 {
+                outside
+            } else {
+                self.v[y as usize * self.w + x as usize]
+            }
+        };
         for y in 0..self.h as i64 {
             for x in 0..self.w as i64 {
                 let (sx, sy) = (x - fx as i64, y - fy as i64);
@@ -134,7 +161,8 @@ fn dt1(f: &[f32], out: &mut [f32], v: &mut [usize], z: &mut [f32], near: &mut [u
     for q in 1..n {
         loop {
             let p = v[k];
-            let s = ((f[q] + (q * q) as f32) - (f[p] + (p * p) as f32)) / (2.0 * q as f32 - 2.0 * p as f32);
+            let s = ((f[q] + (q * q) as f32) - (f[p] + (p * p) as f32))
+                / (2.0 * q as f32 - 2.0 * p as f32);
             if s <= z[k] && k > 0 {
                 k -= 1;
                 continue;
@@ -190,7 +218,13 @@ fn par_threads(work: usize) -> usize {
     if let Some(n) = THREADS.with(std::cell::Cell::get) {
         return n;
     }
-    if cfg!(target_arch = "wasm32") || work < PAR_MIN { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).clamp(1, PAR_THREADS) }
+    if cfg!(target_arch = "wasm32") || work < PAR_MIN {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .clamp(1, PAR_THREADS)
+    }
 }
 
 /// Runs `f(scratch, u, a_u, b_u)` for every unit `u` of two slices: unit `u` of `a` is
@@ -231,7 +265,10 @@ fn par_units<S, A: Send, B: Send>(
     let worker = || {
         let mut scratch = init();
         loop {
-            let next = queue.lock().unwrap_or_else(std::sync::PoisonError::into_inner).next();
+            let next = queue
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .next();
             let Some((first, ga, gb)) = next else { break };
             run_units(&mut scratch, first, ga, unit_a, gb, unit_b, &f);
         }
@@ -245,17 +282,40 @@ fn par_units<S, A: Send, B: Send>(
     });
 }
 
-fn run_units<S, A, B>(scratch: &mut S, first: usize, a: &mut [A], unit_a: usize, b: &mut [B], unit_b: usize, f: &impl Fn(&mut S, usize, &mut [A], &mut [B])) {
+fn run_units<S, A, B>(
+    scratch: &mut S,
+    first: usize,
+    a: &mut [A],
+    unit_a: usize,
+    b: &mut [B],
+    unit_b: usize,
+    f: &impl Fn(&mut S, usize, &mut [A], &mut [B]),
+) {
     for (k, ua) in a.chunks_mut(unit_a).enumerate() {
-        let ub = b.get_mut(k * unit_b..((k + 1) * unit_b).min(b.len())).unwrap_or(&mut []);
+        let ub = b
+            .get_mut(k * unit_b..((k + 1) * unit_b).min(b.len()))
+            .unwrap_or(&mut []);
         f(scratch, first + k, ua, ub);
     }
 }
 
 /// A `w × h` buffer of `fill`, then filled row by row through `f(y, row)`.
-fn par_fill<T: Clone + Send>(w: usize, h: usize, fill: T, f: impl Fn(usize, &mut [T]) + Sync) -> Vec<T> {
+fn par_fill<T: Clone + Send>(
+    w: usize,
+    h: usize,
+    fill: T,
+    f: impl Fn(usize, &mut [T]) + Sync,
+) -> Vec<T> {
     let mut out = vec![fill; w.saturating_mul(h)];
-    par_units(out.len(), &mut out, w.max(1), &mut [] as &mut [()], 0, || (), |_, y, row, _| f(y, row));
+    par_units(
+        out.len(),
+        &mut out,
+        w.max(1),
+        &mut [] as &mut [()],
+        0,
+        || (),
+        |_, y, row, _| f(y, row),
+    );
     out
 }
 
@@ -270,7 +330,13 @@ struct Dt1Scratch {
 
 impl Dt1Scratch {
     fn new(n: usize) -> Self {
-        Dt1Scratch { f: vec![0.0; n], o: vec![0.0; n], v: vec![0; n], z: vec![0.0; n + 1], near: vec![0; n] }
+        Dt1Scratch {
+            f: vec![0.0; n],
+            o: vec![0.0; n],
+            v: vec![0; n],
+            z: vec![0.0; n + 1],
+            near: vec![0; n],
+        }
     }
 }
 
@@ -299,7 +365,13 @@ fn edt_nearest(inside: &[bool], w: usize, h: usize) -> (Vec<f32>, Vec<u32>) {
             for (y, f) in t.f[..h].iter_mut().enumerate() {
                 *f = if inside[y * w + x] { 0.0 } else { INF };
             }
-            dt1(&t.f[..h], &mut t.o[..h], &mut t.v, &mut t.z, &mut t.near[..h]);
+            dt1(
+                &t.f[..h],
+                &mut t.o[..h],
+                &mut t.v,
+                &mut t.z,
+                &mut t.near[..h],
+            );
             g.copy_from_slice(&t.o[..h]);
             for (d, &p) in near.iter_mut().zip(&t.near[..h]) {
                 *d = p as u32;
@@ -319,7 +391,13 @@ fn edt_nearest(inside: &[bool], w: usize, h: usize) -> (Vec<f32>, Vec<u32>) {
             for (x, f) in t.f[..w].iter_mut().enumerate() {
                 *f = gc[x * h + y];
             }
-            dt1(&t.f[..w], &mut t.o[..w], &mut t.v, &mut t.z, &mut t.near[..w]);
+            dt1(
+                &t.f[..w],
+                &mut t.o[..w],
+                &mut t.v,
+                &mut t.z,
+                &mut t.near[..w],
+            );
             for (x, (d, ne)) in out.iter_mut().zip(near.iter_mut()).enumerate() {
                 *d = t.o[x].sqrt();
                 let px = t.near[x];
@@ -336,7 +414,14 @@ fn edt_nearest(inside: &[bool], w: usize, h: usize) -> (Vec<f32>, Vec<u32>) {
 /// and 3.650 = √5 + √2 at (2, 3), where the exact distances are 3.162 and 3.606.
 #[cfg(test)]
 fn chamfer_nearest(inside: &[bool], w: usize, h: usize) -> (Vec<f32>, Vec<usize>) {
-    chamfer_from(inside.iter().map(|&b| if b { 0.0 } else { CHAMFER_INF }).collect(), w, h)
+    chamfer_from(
+        inside
+            .iter()
+            .map(|&b| if b { 0.0 } else { CHAMFER_INF })
+            .collect(),
+        w,
+        h,
+    )
 }
 
 const CHAMFER_INF: f32 = 1e20;
@@ -348,7 +433,16 @@ fn chamfer_from(mut d: Vec<f32>, w: usize, h: usize) -> (Vec<f32>, Vec<usize>) {
     const S2: f32 = std::f32::consts::SQRT_2;
     const S5: f32 = 2.236_068;
     // Forward-pass neighbours (already visited in raster order); the backward pass mirrors them.
-    const FWD: [(i64, i64, f32); 8] = [(-1, 0, 1.0), (-1, -1, S2), (0, -1, 1.0), (1, -1, S2), (-1, -2, S5), (1, -2, S5), (-2, -1, S5), (2, -1, S5)];
+    const FWD: [(i64, i64, f32); 8] = [
+        (-1, 0, 1.0),
+        (-1, -1, S2),
+        (0, -1, 1.0),
+        (1, -1, S2),
+        (-1, -2, S5),
+        (1, -2, S5),
+        (-2, -1, S5),
+        (2, -1, S5),
+    ];
     let mut near: Vec<usize> = (0..w * h).collect();
     let (wi, hi) = (w as i64, h as i64);
     let relax = |x: i64, y: i64, sign: i64, d: &mut Vec<f32>, near: &mut Vec<usize>| {
@@ -403,16 +497,33 @@ enum Metric {
 fn dist_outside_by(s: &Map, m: Metric) -> Vec<f32> {
     if m == Metric::Chamfer {
         // Seeds start at their sub-pixel edge offset (1 − coverage).
-        let start = s.v.iter().map(|&a| if a > INSIDE_EPS { 1.0 - a.min(1.0) } else { CHAMFER_INF }).collect();
+        let start =
+            s.v.iter()
+                .map(|&a| {
+                    if a > INSIDE_EPS {
+                        1.0 - a.min(1.0)
+                    } else {
+                        CHAMFER_INF
+                    }
+                })
+                .collect();
         let (d, _) = chamfer_from(start, s.w, s.h);
-        return d.iter().zip(&s.v).map(|(d, &a)| if a > INSIDE_EPS { -0.5 } else { d - 0.5 }).collect();
+        return d
+            .iter()
+            .zip(&s.v)
+            .map(|(d, &a)| if a > INSIDE_EPS { -0.5 } else { d - 0.5 })
+            .collect();
     }
     let inside = covered(s, |a| a > INSIDE_EPS);
     let (d, near) = edt_nearest(&inside, s.w, s.h);
     par_fill(s.w, s.h, 0.0f32, |y, row| {
         for (x, out) in row.iter_mut().enumerate() {
             let i = y * s.w + x;
-            *out = if inside[i] { -0.5 } else { d[i] - 0.5 + (1.0 - s.v[near[i] as usize].min(1.0)) };
+            *out = if inside[i] {
+                -0.5
+            } else {
+                d[i] - 0.5 + (1.0 - s.v[near[i] as usize].min(1.0))
+            };
         }
     })
 }
@@ -451,7 +562,11 @@ fn dist_inside_by(s: &Map, m: Metric) -> Vec<f32> {
                 })
                 .collect();
         let (d, _) = chamfer_from(start, s.w, s.h);
-        return d.iter().zip(&s.v).map(|(d, &a)| if a <= INSIDE_EPS { -0.5 } else { d - 0.5 }).collect();
+        return d
+            .iter()
+            .zip(&s.v)
+            .map(|(d, &a)| if a <= INSIDE_EPS { -0.5 } else { d - 0.5 })
+            .collect();
     }
     let outside = covered(s, |a| a <= INSIDE_EPS);
     let (d, _) = edt_nearest(&outside, s.w, s.h);
@@ -503,7 +618,11 @@ fn edge_offset(n: [f32; 2], a: f32) -> f32 {
     let c = c.clamp(0.0, 0.5);
     // The coverage below which the edge only cuts off a corner.
     let corner = if u > 0.0 { v / (2.0 * u) } else { 0.0 };
-    let r = if c >= corner { (0.5 - c) * u } else { 0.5 * (u + v) - (2.0 * u * v * c).sqrt() };
+    let r = if c >= corner {
+        (0.5 - c) * u
+    } else {
+        0.5 * (u + v) - (2.0 * u * v * c).sqrt()
+    };
     if inside { r } else { -r }
 }
 
@@ -560,7 +679,12 @@ struct SharpEdges {
 
 impl SharpEdges {
     fn empty(w: usize, h: usize) -> Self {
-        SharpEdges { w, h, slot: Vec::new(), pixels: Vec::new() }
+        SharpEdges {
+            w,
+            h,
+            slot: Vec::new(),
+            pixels: Vec::new(),
+        }
     }
 
     /// The edge of pixel `i`, if it is a sharp edge pixel.
@@ -571,7 +695,11 @@ impl SharpEdges {
 
     /// The edge of pixel `(x, y)`, if it is a sharp edge pixel (`None` off the map).
     fn at(&self, x: usize, y: usize) -> Option<SharpEdge> {
-        if x >= self.w || y >= self.h { None } else { self.get(y * self.w + x) }
+        if x >= self.w || y >= self.h {
+            None
+        } else {
+            self.get(y * self.w + x)
+        }
     }
 
     fn has(&self, x: usize, y: usize) -> bool {
@@ -659,11 +787,24 @@ fn sharp_edges(s: &Map) -> SharpEdges {
                     continue;
                 }
                 let at = &cov_clamped;
-                let gx = (at(x + 1, y - 1) + 2.0 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2.0 * at(x - 1, y) + at(x - 1, y + 1));
-                let gy = (at(x - 1, y + 1) + 2.0 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2.0 * at(x, y - 1) + at(x + 1, y - 1));
+                let gx = (at(x + 1, y - 1) + 2.0 * at(x + 1, y) + at(x + 1, y + 1))
+                    - (at(x - 1, y - 1) + 2.0 * at(x - 1, y) + at(x - 1, y + 1));
+                let gy = (at(x - 1, y + 1) + 2.0 * at(x, y + 1) + at(x + 1, y + 1))
+                    - (at(x - 1, y - 1) + 2.0 * at(x, y - 1) + at(x + 1, y - 1));
                 let len = gx.hypot(gy);
-                let (normal, n) = if len.is_finite() && len > 1e-6 { ([gx / len, gy / len], [gx / len, gy / len]) } else { ([0.0, 0.0], [1.0, 0.0]) };
-                row.push(EdgePixel { at: i as u32, cov: c, edge: SharpEdge { offset: edge_offset(n, c), normal } });
+                let (normal, n) = if len.is_finite() && len > 1e-6 {
+                    ([gx / len, gy / len], [gx / len, gy / len])
+                } else {
+                    ([0.0, 0.0], [1.0, 0.0])
+                };
+                row.push(EdgePixel {
+                    at: i as u32,
+                    cov: c,
+                    edge: SharpEdge {
+                        offset: edge_offset(n, c),
+                        normal,
+                    },
+                });
             }
         },
     );
@@ -694,55 +835,87 @@ fn refine_edge_normals(pixels: &mut [EdgePixel], slot: &[u32], w: usize, h: usiz
     let (wi, hi) = (w as i64, h as i64);
     let points: Vec<[f32; 2]> = pixels
         .iter()
-        .map(|p| [(p.at as i64 % wi) as f32 - p.edge.offset * p.edge.normal[0], (p.at as i64 / wi) as f32 - p.edge.offset * p.edge.normal[1]])
+        .map(|p| {
+            [
+                (p.at as i64 % wi) as f32 - p.edge.offset * p.edge.normal[0],
+                (p.at as i64 / wi) as f32 - p.edge.offset * p.edge.normal[1],
+            ]
+        })
         .collect();
     let before: Vec<SharpEdge> = pixels.iter().map(|p| p.edge).collect();
     // Every pixel reads the unrefined edges around it and writes its own, so they go in parallel.
     let work = pixels.len().saturating_mul(32);
-    par_units(work, pixels, 1, &mut [] as &mut [()], 0, Vec::<[f32; 2]>::new, |near, k, pixel, _| {
-        let (Some(pixel), Some(&e)) = (pixel.first_mut(), before.get(k)) else { return };
-        let (x, y) = (pixel.at as i64 % wi, pixel.at as i64 / wi);
-        let (mut n, mut sum) = (0.0f32, [0.0f32; 2]);
-        near.clear();
-        for (dx, dy) in (-NORMAL_RADIUS..=NORMAL_RADIUS).flat_map(|dy| (-NORMAL_RADIUS..=NORMAL_RADIUS).map(move |dx| (dx, dy))) {
-            let (nx, ny) = (x + dx, y + dy);
-            if dx * dx + dy * dy > NORMAL_RADIUS * NORMAL_RADIUS || nx < 0 || ny < 0 || nx >= wi || ny >= hi {
-                continue;
+    par_units(
+        work,
+        pixels,
+        1,
+        &mut [] as &mut [()],
+        0,
+        Vec::<[f32; 2]>::new,
+        |near, k, pixel, _| {
+            let (Some(pixel), Some(&e)) = (pixel.first_mut(), before.get(k)) else {
+                return;
+            };
+            let (x, y) = (pixel.at as i64 % wi, pixel.at as i64 / wi);
+            let (mut n, mut sum) = (0.0f32, [0.0f32; 2]);
+            near.clear();
+            for (dx, dy) in (-NORMAL_RADIUS..=NORMAL_RADIUS)
+                .flat_map(|dy| (-NORMAL_RADIUS..=NORMAL_RADIUS).map(move |dx| (dx, dy)))
+            {
+                let (nx, ny) = (x + dx, y + dy);
+                if dx * dx + dy * dy > NORMAL_RADIUS * NORMAL_RADIUS
+                    || nx < 0
+                    || ny < 0
+                    || nx >= wi
+                    || ny >= hi
+                {
+                    continue;
+                }
+                let Some(j) = slot
+                    .get((ny * wi + nx) as usize)
+                    .and_then(|&s| (s as usize).checked_sub(1))
+                else {
+                    continue;
+                };
+                let (Some(o), Some(&p)) = (before.get(j), points.get(j)) else {
+                    continue;
+                };
+                if o.normal[0] * e.normal[0] + o.normal[1] * e.normal[1] > 0.9 {
+                    near.push(p);
+                    sum = [sum[0] + p[0], sum[1] + p[1]];
+                    n += 1.0;
+                }
             }
-            let Some(j) = slot.get((ny * wi + nx) as usize).and_then(|&s| (s as usize).checked_sub(1)) else { continue };
-            let (Some(o), Some(&p)) = (before.get(j), points.get(j)) else { continue };
-            if o.normal[0] * e.normal[0] + o.normal[1] * e.normal[1] > 0.9 {
-                near.push(p);
-                sum = [sum[0] + p[0], sum[1] + p[1]];
-                n += 1.0;
+            if near.len() < 3 {
+                return;
             }
-        }
-        if near.len() < 3 {
-            return;
-        }
-        let mean = [sum[0] / n, sum[1] / n];
-        let (mut sxx, mut sxy, mut syy) = (0.0f32, 0.0f32, 0.0f32);
-        for p in near.iter() {
-            let (dx, dy) = (p[0] - mean[0], p[1] - mean[1]);
-            sxx += dx * dx;
-            sxy += dx * dy;
-            syy += dy * dy;
-        }
-        // Spread along and across the best line through the points.
-        let half = 0.5 * (sxx + syy);
-        let root = (0.25 * (sxx - syy) * (sxx - syy) + sxy * sxy).sqrt();
-        let (along, across) = (((half + root) / n).max(0.0).sqrt(), ((half - root) / n).max(0.0).sqrt());
-        if !(along > EDGE_LINE_MIN_SPREAD && across < EDGE_LINE_MAX_OFF) {
-            return;
-        }
-        let angle = 0.5 * (2.0 * sxy).atan2(sxx - syy);
-        let mut normal = [-angle.sin(), angle.cos()];
-        if normal[0] * e.normal[0] + normal[1] * e.normal[1] < 0.0 {
-            normal = [-normal[0], -normal[1]];
-        }
-        pixel.edge.normal = normal;
-        pixel.edge.offset = edge_offset(normal, pixel.cov);
-    });
+            let mean = [sum[0] / n, sum[1] / n];
+            let (mut sxx, mut sxy, mut syy) = (0.0f32, 0.0f32, 0.0f32);
+            for p in near.iter() {
+                let (dx, dy) = (p[0] - mean[0], p[1] - mean[1]);
+                sxx += dx * dx;
+                sxy += dx * dy;
+                syy += dy * dy;
+            }
+            // Spread along and across the best line through the points.
+            let half = 0.5 * (sxx + syy);
+            let root = (0.25 * (sxx - syy) * (sxx - syy) + sxy * sxy).sqrt();
+            let (along, across) = (
+                ((half + root) / n).max(0.0).sqrt(),
+                ((half - root) / n).max(0.0).sqrt(),
+            );
+            if !(along > EDGE_LINE_MIN_SPREAD && across < EDGE_LINE_MAX_OFF) {
+                return;
+            }
+            let angle = 0.5 * (2.0 * sxy).atan2(sxx - syy);
+            let mut normal = [-angle.sin(), angle.cos()];
+            if normal[0] * e.normal[0] + normal[1] * e.normal[1] < 0.0 {
+                normal = [-normal[0], -normal[1]];
+            }
+            pixel.edge.normal = normal;
+            pixel.edge.offset = edge_offset(normal, pixel.cov);
+        },
+    );
 }
 
 /// The edge points around a pixel must spread at least this far (px, standard deviation) along
@@ -764,7 +937,10 @@ fn edge_distance(sharp: &SharpEdges, p: [usize; 2], q: [usize; 2], inside: bool)
     let mut best = e.distance(px - q[0] as f32, py - q[1] as f32, inside)?;
     // Where p's perpendicular meets q's line.
     let signed = e.offset + (px - q[0] as f32) * e.normal[0] + (py - q[1] as f32) * e.normal[1];
-    let (fx, fy) = ((px - signed * e.normal[0]).round() as i64, (py - signed * e.normal[1]).round() as i64);
+    let (fx, fy) = (
+        (px - signed * e.normal[0]).round() as i64,
+        (py - signed * e.normal[1]).round() as i64,
+    );
     for sy in (fy - FOOT_RADIUS).max(0)..=(fy + FOOT_RADIUS).min(sharp.h as i64 - 1) {
         for sx in (fx - FOOT_RADIUS).max(0)..=(fx + FOOT_RADIUS).min(sharp.w as i64 - 1) {
             if let Some(near) = sharp.at(sx as usize, sy as usize)
@@ -800,12 +976,22 @@ fn bevel_dist_inside(s: &Map, sharp: &SharpEdges, reach: f32) -> Vec<f32> {
         }
         // The sharp pixel next to the nearest empty one that is nearest to this pixel.
         let (px, py) = (x as i64, y as i64);
-        let (ox, oy) = ((near[i] as usize % s.w) as i64, (near[i] as usize / s.w) as i64);
+        let (ox, oy) = (
+            (near[i] as usize % s.w) as i64,
+            (near[i] as usize / s.w) as i64,
+        );
         let q = (-1..=1)
             .flat_map(|dy| (-1..=1).map(move |dx| (ox + dx, oy + dy)))
             .filter(|&(x, y)| x >= 0 && y >= 0 && sharp.has(x as usize, y as usize))
             .min_by_key(|&(x, y)| (x - px) * (x - px) + (y - py) * (y - py));
-        match q.and_then(|(x, y)| edge_distance(sharp, [px as usize, py as usize], [x as usize, y as usize], true)) {
+        match q.and_then(|(x, y)| {
+            edge_distance(
+                sharp,
+                [px as usize, py as usize],
+                [x as usize, y as usize],
+                true,
+            )
+        }) {
             Some(refined) => refined.min(plain),
             None => plain,
         }
@@ -830,12 +1016,18 @@ fn bevel_dist_outside(s: &Map, sharp: &SharpEdges, reach: f32) -> Vec<f32> {
             return -0.5;
         }
         let q = near[i] as usize;
-        let Some(e) = sharp.get(q) else { return d[i] - (s.v[q].min(1.0) - 0.5) };
+        let Some(e) = sharp.get(q) else {
+            return d[i] - (s.v[q].min(1.0) - 0.5);
+        };
         let (p, qp) = ([x, y], [q % s.w, q / s.w]);
         let measured = if d[i] <= reach + EDGE_MARGIN {
             edge_distance(sharp, p, qp, false)
         } else {
-            e.distance(p[0] as f32 - qp[0] as f32, p[1] as f32 - qp[1] as f32, false)
+            e.distance(
+                p[0] as f32 - qp[0] as f32,
+                p[1] as f32 - qp[1] as f32,
+                false,
+            )
         };
         measured.unwrap_or(d[i] - e.offset)
     };
@@ -875,7 +1067,11 @@ fn dilate(s: &Map, r: f32) -> Map {
     for (o, d) in out.v.iter_mut().zip(d) {
         // Partly covered pixels (distance sentinel < 0) grow by `r` from their own coverage, so a
         // 2 % spread doesn't make every anti-aliased edge pixel opaque (ag-psd drop shadow).
-        *o = if d < 0.0 { (*o + r).min(1.0) } else { o.max((r + 0.5 - d).clamp(0.0, 1.0)) };
+        *o = if d < 0.0 {
+            (*o + r).min(1.0)
+        } else {
+            o.max((r + 0.5 - d).clamp(0.0, 1.0))
+        };
     }
     out
 }
@@ -883,7 +1079,9 @@ fn dilate(s: &Map, r: f32) -> Map {
 fn contour_lut(c: &Contour) -> Option<Vec<f32>> {
     match c {
         Contour::Linear => None,
-        Contour::Custom { points, corners, .. } => Some(crate::adjust::contour_curve_lut(points, corners)),
+        Contour::Custom {
+            points, corners, ..
+        } => Some(crate::adjust::contour_curve_lut(points, corners)),
     }
 }
 
@@ -915,7 +1113,11 @@ pub fn glow_lut(g: &Glow) -> Option<Vec<f32>> {
 /// A contour applied over a Range (`contour(min(v / range, 1))`); `None` = identity.
 pub fn ranged_lut(contour: &Contour, range: f32) -> Option<Vec<f32>> {
     let base = contour_lut(contour);
-    let range = if range.is_finite() { range.clamp(0.01, 1.0) } else { 1.0 };
+    let range = if range.is_finite() {
+        range.clamp(0.01, 1.0)
+    } else {
+        1.0
+    };
     if range >= 0.999 {
         return base;
     }
@@ -951,7 +1153,9 @@ fn apply_lut(m: Map, l: Option<Vec<f32>>) -> Map {
 /// (the same hash as the GPU's `dissolve_noise`), so the speckle is stable
 /// across renders, frames and tiles.
 pub fn hash_noise(x: i64, y: i64) -> f32 {
-    let mut h = (x as i32 as u32).wrapping_mul(0x8da6_b343) ^ (y as i32 as u32).wrapping_mul(0xd816_3841) ^ 0x9e37_79b9;
+    let mut h = (x as i32 as u32).wrapping_mul(0x8da6_b343)
+        ^ (y as i32 as u32).wrapping_mul(0xd816_3841)
+        ^ 0x9e37_79b9;
     h ^= h >> 15;
     h = h.wrapping_mul(0x2c1b_3c6d);
     h ^= h >> 12;
@@ -1017,7 +1221,16 @@ pub fn gradient_units(angle: f32, w: f32, h: f32) -> (f32, f32) {
 
 /// Gradient parameter `t` in `0..=1` for pixel centre `(x, y)` inside `bounds`.
 #[allow(clippy::too_many_arguments)]
-pub fn gradient_t(style: GradientStyle, angle: f32, scale: f32, reverse: bool, offset: (f32, f32), bounds: Rect, x: f32, y: f32) -> f32 {
+pub fn gradient_t(
+    style: GradientStyle,
+    angle: f32,
+    scale: f32,
+    reverse: bool,
+    offset: (f32, f32),
+    bounds: Rect,
+    x: f32,
+    y: f32,
+) -> f32 {
     let w = bounds.width().max(1) as f32;
     let h = bounds.height().max(1) as f32;
     let cx = bounds.x0 as f32 + w / 2.0 + offset.0 * w;
@@ -1039,7 +1252,9 @@ pub fn gradient_t(style: GradientStyle, angle: f32, scale: f32, reverse: bool, o
         GradientStyle::Radial => (dx * dx + dy * dy).sqrt() / (len / 2.0),
         GradientStyle::Diamond => (along.abs() + across.abs()) / (len / 2.0),
         // Clockwise sweep starting at the gradient angle.
-        GradientStyle::Angle => ((angle.to_radians() - (-dy).atan2(dx)) / std::f32::consts::TAU).rem_euclid(1.0),
+        GradientStyle::Angle => {
+            ((angle.to_radians() - (-dy).atan2(dx)) / std::f32::consts::TAU).rem_euclid(1.0)
+        }
     };
     t = t.clamp(0.0, 1.0);
     if reverse { 1.0 - t } else { t }
@@ -1058,12 +1273,19 @@ struct PreparedGradient {
 
 impl PreparedGradient {
     fn new(g: &Gradient) -> Self {
-        Self { color: g.stops.iter().map(|(p, c)| (*p, rgb(c))).collect(), opacity: g.opacity_stops.iter().map(|(p, a)| (*p, [*a; 3])).collect() }
+        Self {
+            color: g.stops.iter().map(|(p, c)| (*p, rgb(c))).collect(),
+            opacity: g.opacity_stops.iter().map(|(p, a)| (*p, [*a; 3])).collect(),
+        }
     }
 
     fn sample(&self, t: f32) -> [f32; 4] {
         let color = sample_stops(&self.color, t);
-        let alpha = if self.opacity.is_empty() { 1.0 } else { sample_stops(&self.opacity, t)[0] };
+        let alpha = if self.opacity.is_empty() {
+            1.0
+        } else {
+            sample_stops(&self.opacity, t)[0]
+        };
         [color[0], color[1], color[2], alpha]
     }
 }
@@ -1078,7 +1300,11 @@ fn sample_stops(stops: &[(f32, [f32; 3])], t: f32) -> [f32; 3] {
             }
             for w in stops.windows(2) {
                 if t <= w[1].0 {
-                    let k = if w[1].0 > w[0].0 { (t - w[0].0) / (w[1].0 - w[0].0) } else { 0.0 };
+                    let k = if w[1].0 > w[0].0 {
+                        (t - w[0].0) / (w[1].0 - w[0].0)
+                    } else {
+                        0.0
+                    };
                     return std::array::from_fn(|i| w[0].1[i] + (w[1].1[i] - w[0].1[i]) * k);
                 }
             }
@@ -1088,7 +1314,13 @@ fn sample_stops(stops: &[(f32, [f32; 3])], t: f32) -> [f32; 3] {
 }
 
 /// Composite `color × coverage` into `dst` (both over the same rectangle).
-fn paint(dst: &mut Buffer, m: &Map, color: impl Fn(usize) -> [f32; 4], blend: BlendMode, opacity: f32) {
+fn paint(
+    dst: &mut Buffer,
+    m: &Map,
+    color: impl Fn(usize) -> [f32; 4],
+    blend: BlendMode,
+    opacity: f32,
+) {
     for (i, p) in dst.px.iter_mut().enumerate() {
         let a = m.v[i] * opacity;
         if a <= 0.0 {
@@ -1110,10 +1342,24 @@ pub fn spread_split(size: f32, spread: f32) -> (f32, f32) {
     ((size * spread).round(), size * (1.0 - spread))
 }
 
-fn shadow_map(shape: &Map, s: &Shadow, light: &GlobalLight, inner: bool, origin: (i32, i32)) -> Map {
-    let angle = if s.use_global_light { light.angle } else { s.angle };
+fn shadow_map(
+    shape: &Map,
+    s: &Shadow,
+    light: &GlobalLight,
+    inner: bool,
+    origin: (i32, i32),
+) -> Map {
+    let angle = if s.use_global_light {
+        light.angle
+    } else {
+        s.angle
+    };
     let (dx, dy) = offset(angle, s.distance);
-    let src = if inner { shape.clone().map(|a| 1.0 - a) } else { shape.clone() };
+    let src = if inner {
+        shape.clone().map(|a| 1.0 - a)
+    } else {
+        shape.clone()
+    };
     let mut m = src.shifted(dx, dy, if inner { 1.0 } else { 0.0 });
     let (r, bw) = spread_split(s.size, s.spread);
     m = dilate(&m, r);
@@ -1132,7 +1378,11 @@ fn glow_map(shape: &Map, g: &Glow, inner: bool, origin: (i32, i32)) -> Map {
     // An inner glow is built from the edge inwards; a centre-source glow is its inverse, taken
     // after the contour and Range (Photoshop 27.11, measured: the centre glow is exactly
     // 1 − the edge glow, for both techniques).
-    let src = if inner { shape.clone().map(|a| 1.0 - a) } else { shape.clone() };
+    let src = if inner {
+        shape.clone().map(|a| 1.0 - a)
+    } else {
+        shape.clone()
+    };
     let mut m = match g.technique {
         GlowTechnique::Precise => {
             // Coverage falls linearly from 0.5 at the edge to 0 at `size + 1` px (centre to
@@ -1140,13 +1390,21 @@ fn glow_map(shape: &Map, g: &Glow, inner: bool, origin: (i32, i32)) -> Map {
             // Photoshop's 1 − D / (size + 1) beyond the solid part (measured: outer and inner,
             // sizes 10 and 20, spread 0 and 40 %, choke 0 and 30 %: within 1 level; other Range
             // values are unmeasured). The distances here are 0.5 px short of centre to centre.
-            let d = if inner { dist_inside(shape) } else { dist_outside(&src) };
+            let d = if inner {
+                dist_inside(shape)
+            } else {
+                dist_outside(&src)
+            };
             let solid = g.size * g.spread;
             let soft = (g.size + 1.0 - solid).max(1e-3);
             let mut m = Map::new(shape.w, shape.h, 0.0);
             for (o, d) in m.v.iter_mut().zip(d) {
                 let d = d + 0.5;
-                *o = if d <= solid { 1.0 } else { 0.5 * (1.0 - (d - solid) / soft).clamp(0.0, 1.0) };
+                *o = if d <= solid {
+                    1.0
+                } else {
+                    0.5 * (1.0 - (d - solid) / soft).clamp(0.0, 1.0)
+                };
             }
             m
         }
@@ -1183,13 +1441,18 @@ fn paint_pattern(
     blend: BlendMode,
     opacity: f32,
 ) {
-    let Some(tile) = patterns.get(id, name) else { return };
+    let Some(tile) = patterns.get(id, name) else {
+        return;
+    };
     let w = big.width() as usize;
     paint(
         dst,
         m,
         |i| {
-            let (x, y) = (f64::from(big.x0 + (i % w) as i32) + 0.5, f64::from(big.y0 + (i / w) as i32) + 0.5);
+            let (x, y) = (
+                f64::from(big.x0 + (i % w) as i32) + 0.5,
+                f64::from(big.y0 + (i / w) as i32) + 0.5,
+            );
             let (u, v) = place.map(x, y);
             tile.sample(u, v)
         },
@@ -1214,28 +1477,58 @@ fn paint_fx(
         FxPaint::Color(c) => paint_color(dst, m, rgb(c), blend, opacity),
         FxPaint::Gradient(g) => {
             let prepared = PreparedGradient::new(g);
-            let (angle, scale, offset) = crate::fill_layout::gradient_layout(g.style, g.angle, g.scale, g.offset, shape_bounds);
+            let (angle, scale, offset) = crate::fill_layout::gradient_layout(
+                g.style,
+                g.angle,
+                g.scale,
+                g.offset,
+                shape_bounds,
+            );
             let w = big.width() as usize;
             paint(
                 dst,
                 m,
                 |i| {
-                    let (x, y) = ((big.x0 + (i % w) as i32) as f32 + 0.5, (big.y0 + (i / w) as i32) as f32 + 0.5);
-                    prepared.sample(gradient_t(g.style, angle, scale, g.reverse, offset, shape_bounds, x, y))
+                    let (x, y) = (
+                        (big.x0 + (i % w) as i32) as f32 + 0.5,
+                        (big.y0 + (i / w) as i32) as f32 + 0.5,
+                    );
+                    prepared.sample(gradient_t(
+                        g.style,
+                        angle,
+                        scale,
+                        g.reverse,
+                        offset,
+                        shape_bounds,
+                        x,
+                        y,
+                    ))
                 },
                 blend,
                 opacity,
             )
         }
-        FxPaint::Pattern { name, id, scale } => {
-            paint_pattern(dst, m, patterns, name, id, Placement::anchored(anchor, true, (0.0, 0.0), *scale, 0.0), big, blend, opacity)
-        }
+        FxPaint::Pattern { name, id, scale } => paint_pattern(
+            dst,
+            m,
+            patterns,
+            name,
+            id,
+            Placement::anchored(anchor, true, (0.0, 0.0), *scale, 0.0),
+            big,
+            blend,
+            opacity,
+        ),
     }
 }
 
 /// The opacity gain of a gradient glow: it is opaque from strength `range²` on (see [`paint_glow`]).
 pub fn glow_gradient_gain(range: f32) -> f32 {
-    let r = if range.is_finite() { range.clamp(0.01, 1.0) } else { 1.0 };
+    let r = if range.is_finite() {
+        range.clamp(0.01, 1.0)
+    } else {
+        1.0
+    };
     1.0 / (r * r)
 }
 
@@ -1245,21 +1538,53 @@ pub fn glow_gradient_gain(range: f32) -> f32 {
 /// on (photoshop corpus outer-glow-gradient.psd: 1.4/255 mean, against bands across the canvas;
 /// psd-tools layer_params.psd). Glows have no gradient angle, style or Reverse.
 #[allow(clippy::too_many_arguments)]
-fn paint_glow(dst: &mut Buffer, m: &Map, g: &Glow, shape_bounds: Rect, anchor: (f64, f64), big: Rect, patterns: &PreparedPatterns<'_>) {
+fn paint_glow(
+    dst: &mut Buffer,
+    m: &Map,
+    g: &Glow,
+    shape_bounds: Rect,
+    anchor: (f64, f64),
+    big: Rect,
+    patterns: &PreparedPatterns<'_>,
+) {
     let FxPaint::Gradient(gradient) = &g.paint else {
-        return paint_fx(dst, m, &g.paint, shape_bounds, anchor, big, g.common.blend, g.common.opacity, patterns);
+        return paint_fx(
+            dst,
+            m,
+            &g.paint,
+            shape_bounds,
+            anchor,
+            big,
+            g.common.blend,
+            g.common.opacity,
+            patterns,
+        );
     };
     let prepared = PreparedGradient::new(gradient);
     let gain = glow_gradient_gain(g.range);
-    let strength = Map { w: m.w, h: m.h, v: m.v.iter().map(|v| (v * gain).min(1.0)).collect() };
-    paint(dst, &strength, |i| prepared.sample(1.0 - m.v.get(i).copied().unwrap_or(0.0).clamp(0.0, 1.0)), g.common.blend, g.common.opacity);
+    let strength = Map {
+        w: m.w,
+        h: m.h,
+        v: m.v.iter().map(|v| (v * gain).min(1.0)).collect(),
+    };
+    paint(
+        dst,
+        &strength,
+        |i| prepared.sample(1.0 - m.v.get(i).copied().unwrap_or(0.0).clamp(0.0, 1.0)),
+        g.common.blend,
+        g.common.opacity,
+    );
 }
 
 /// A box width as the blurs use it: at least 1, at most [`MAX_REACH`] (an effect never reaches
 /// further, see [`margin`]), and 1 for NaN. A size or softness from a command or a file can be
 /// anything, and an unbounded width sizes the kernel and its buffers (#1543).
 fn box_width(w: f32) -> f32 {
-    if w.is_nan() { 1.0 } else { w.clamp(1.0, MAX_REACH) }
+    if w.is_nan() {
+        1.0
+    } else {
+        w.clamp(1.0, MAX_REACH)
+    }
 }
 
 /// Normalised weights of a centred box of (fractional) width `w`: tap `i` gets the overlap of
@@ -1268,7 +1593,9 @@ fn box_weights(w: f32) -> Vec<f32> {
     let w = box_width(w);
     let half = w / 2.0;
     let r = (half - 0.5).ceil().max(0.0) as i64;
-    let v: Vec<f32> = (-r..=r).map(|i| ((i as f32 + 0.5).min(half) - (i as f32 - 0.5).max(-half)).max(0.0)).collect();
+    let v: Vec<f32> = (-r..=r)
+        .map(|i| ((i as f32 + 0.5).min(half) - (i as f32 - 0.5).max(-half)).max(0.0))
+        .collect();
     let sum: f32 = v.iter().sum();
     v.iter().map(|x| x / sum).collect()
 }
@@ -1303,7 +1630,13 @@ fn box_geom(bw: f32) -> (i64, f64, f64) {
 fn box_line(src: &[f64], x0: i64, dst: &mut [f64], bw: f32) {
     let n = src.len() as i64;
     let (r, f, norm) = box_geom(bw);
-    let at = |i: i64| if i >= 0 && i < n { src[i as usize] } else { 0.0 };
+    let at = |i: i64| {
+        if i >= 0 && i < n {
+            src[i as usize]
+        } else {
+            0.0
+        }
+    };
     if r == 0 {
         for (k, d) in dst.iter_mut().enumerate() {
             *d = at(x0 + k as i64);
@@ -1341,10 +1674,17 @@ fn rows_par(src: &[f32], dst: &mut [f32], w: usize, f: impl Fn(&[f32], &mut [f32
     if w == 0 {
         return;
     }
-    let threads =
-        if cfg!(target_arch = "wasm32") || src.len() < 1 << 16 { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).clamp(1, 16) };
+    let threads = if cfg!(target_arch = "wasm32") || src.len() < 1 << 16 {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .clamp(1, 16)
+    };
     if threads == 1 {
-        dst.chunks_mut(w).zip(src.chunks(w)).for_each(|(d, s)| f(s, d));
+        dst.chunks_mut(w)
+            .zip(src.chunks(w))
+            .for_each(|(d, s)| f(s, d));
         return;
     }
     let rows = (src.len() / w).div_ceil(threads);
@@ -1474,7 +1814,11 @@ pub fn bevel_geom(b: &Bevel) -> BevelGeom {
         // edge (the tent), a chisel with the constant slope of its ramp (see `bevel_chisel_h`).
         depth: b.depth * if smooth { width } else { size / 2.0 } * sign,
         pillow: b.style == BevelStyle::PillowEmboss,
-        chisel_soft: if b.technique == BevelTechnique::ChiselSoft { (size / 4.0).max(1.0) } else { 0.0 },
+        chisel_soft: if b.technique == BevelTechnique::ChiselSoft {
+            (size / 4.0).max(1.0)
+        } else {
+            0.0
+        },
     }
 }
 
@@ -1483,7 +1827,13 @@ pub fn bevel_geom(b: &Bevel) -> BevelGeom {
 /// edge), slightly blurred for Chisel Soft. The distance puts the edge by the anti-aliased
 /// coverage of its pixels ([`bevel_dist_inside`]), so a facet is planar at any angle. Soften blurs
 /// the result.
-fn bevel_height(shape: &Map, b: &Bevel, g: &BevelGeom, tex: &TextureCtx, patterns: &PreparedPatterns<'_>) -> Map {
+fn bevel_height(
+    shape: &Map,
+    b: &Bevel,
+    g: &BevelGeom,
+    tex: &TextureCtx,
+    patterns: &PreparedPatterns<'_>,
+) -> Map {
     let size = b.size.max(1.0);
     let mut h = if b.technique == BevelTechnique::Smooth {
         let mut h = shape.clone();
@@ -1491,7 +1841,10 @@ fn bevel_height(shape: &Map, b: &Bevel, g: &BevelGeom, tex: &TextureCtx, pattern
         h
     } else {
         let sharp = sharp_edges(shape);
-        let (din, dout) = (bevel_dist_inside(shape, &sharp, size), bevel_dist_outside(shape, &sharp, size));
+        let (din, dout) = (
+            bevel_dist_inside(shape, &sharp, size),
+            bevel_dist_outside(shape, &sharp, size),
+        );
         let mut h = Map::new(shape.w, shape.h, 0.0);
         let soft = g.chisel_soft > 0.0;
         for i in 0..h.v.len() {
@@ -1513,13 +1866,20 @@ fn bevel_height(shape: &Map, b: &Bevel, g: &BevelGeom, tex: &TextureCtx, pattern
     if let Some(t) = &b.texture
         && let Some(tile) = patterns.get(&t.id, &t.name)
     {
-        let unit = if b.depth.abs() > 1e-6 { (g.depth / b.depth).abs().max(1e-3) } else { g.width.max(1.0) };
+        let unit = if b.depth.abs() > 1e-6 {
+            (g.depth / b.depth).abs().max(1e-3)
+        } else {
+            g.width.max(1.0)
+        };
         let place = Placement::anchored(tex.anchor, t.link, t.phase, t.scale, 0.0);
         let k = t.depth / unit;
         let (x0, y0) = (tex.rect.x0, tex.rect.y0);
         for y in 0..h.h {
             for x in 0..h.w {
-                let (u, v) = place.map(f64::from(x0 + x as i32) + 0.5, f64::from(y0 + y as i32) + 0.5);
+                let (u, v) = place.map(
+                    f64::from(x0 + x as i32) + 0.5,
+                    f64::from(y0 + y as i32) + 0.5,
+                );
                 let p = tile.sample(u, v);
                 let l = (0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]) * p[3];
                 h.v[y * h.w + x] += k * if t.invert { 1.0 - l } else { l };
@@ -1553,7 +1913,11 @@ pub fn bevel_chisel_h(paint: BevelPaint, size: f32, din: f32, dout: f32, soft: b
     match paint {
         BevelPaint::Outer if !soft => {
             let top = (size + 2.0) / ramp;
-            if dout > 0.0 { ((size + 1.5 - dout) / ramp).clamp(0.0, top) } else { top }
+            if dout > 0.0 {
+                ((size + 1.5 - dout) / ramp).clamp(0.0, top)
+            } else {
+                top
+            }
         }
         // Outer Soft: Outer Hard's ramp a pixel shorter, with a steeper edge pixel.
         BevelPaint::Outer => {
@@ -1565,7 +1929,11 @@ pub fn bevel_chisel_h(paint: BevelPaint, size: f32, din: f32, dout: f32, soft: b
         }
         BevelPaint::Both => {
             let half = size / 2.0 + 0.5;
-            if din > 0.0 { 0.5 + 0.5 * (din / half).clamp(0.0, 1.0) } else { 0.5 - 0.5 * (dout / half).clamp(0.0, 1.0) }
+            if din > 0.0 {
+                0.5 + 0.5 * (din / half).clamp(0.0, 1.0)
+            } else {
+                0.5 - 0.5 * (dout / half).clamp(0.0, 1.0)
+            }
         }
         BevelPaint::Inner if soft => {
             if din > 0.0 {
@@ -1586,10 +1954,20 @@ pub fn bevel_chisel_h(paint: BevelPaint, size: f32, din: f32, dout: f32, soft: b
 
 /// Bevel highlight and shadow maps: `[hi, sh]` (inner or outer) or `[hi, sh, hi_out, sh_out]`
 /// (emboss styles).
-fn bevel_maps(shape: &Map, b: &Bevel, light: &GlobalLight, tex: &TextureCtx, patterns: &PreparedPatterns<'_>) -> (Vec<Map>, BevelPaint) {
+fn bevel_maps(
+    shape: &Map,
+    b: &Bevel,
+    light: &GlobalLight,
+    tex: &TextureCtx,
+    patterns: &PreparedPatterns<'_>,
+) -> (Vec<Map>, BevelPaint) {
     let g = bevel_geom(b);
     let hmap = bevel_height(shape, b, &g, tex, patterns);
-    let (angle, altitude) = if b.use_global_light { (light.angle, light.altitude) } else { (b.angle, b.altitude) };
+    let (angle, altitude) = if b.use_global_light {
+        (light.angle, light.altitude)
+    } else {
+        (b.angle, b.altitude)
+    };
     let (sa, ca) = angle.to_radians().sin_cos();
     let (se, ce) = altitude.to_radians().sin_cos();
     let light_v = [ca * ce, -sa * ce, se];
@@ -1600,12 +1978,20 @@ fn bevel_maps(shape: &Map, b: &Bevel, light: &GlobalLight, tex: &TextureCtx, pat
     // bevel-outer-smooth).
     // Outer chisel bevels too: the pixel where their ramp reaches zero still slopes (Photoshop
     // 27.11 shades it, half strength, at `size + 1½` px out).
-    let reach_past = g.paint == BevelPaint::Both || (g.paint == BevelPaint::Outer && b.technique != BevelTechnique::Smooth);
+    let reach_past = g.paint == BevelPaint::Both
+        || (g.paint == BevelPaint::Outer && b.technique != BevelTechnique::Smooth);
     let on_bevel = |x: i64, y: i64| {
-        hmap.get(x, y) > BEVEL_H_EPS || (reach_past && [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().any(|(dx, dy)| hmap.get(x + dx, y + dy) > BEVEL_H_EPS))
+        hmap.get(x, y) > BEVEL_H_EPS
+            || (reach_past
+                && [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .iter()
+                    .any(|(dx, dy)| hmap.get(x + dx, y + dy) > BEVEL_H_EPS))
     };
     let shade_into = |depth: f32, region_kind: u8| -> (Map, Map) {
-        let (mut hi, mut sh) = (Map::new(shape.w, shape.h, 0.0), Map::new(shape.w, shape.h, 0.0));
+        let (mut hi, mut sh) = (
+            Map::new(shape.w, shape.h, 0.0),
+            Map::new(shape.w, shape.h, 0.0),
+        );
         for y in 0..shape.h as i64 {
             for x in 0..shape.w as i64 {
                 let i = y as usize * shape.w + x as usize;
@@ -1614,7 +2000,11 @@ fn bevel_maps(shape: &Map, b: &Bevel, light: &GlobalLight, tex: &TextureCtx, pat
                 let n = [-gx, -gy, 1.0];
                 let len = (n[0] * n[0] + n[1] * n[1] + 1.0).sqrt();
                 let shade = (n[0] * light_v[0] + n[1] * light_v[1] + n[2] * light_v[2]) / len;
-                let region = if region_kind == 0 { shape.v[i] } else { f32::from(shape.v[i] < 1.0 - INSIDE_EPS && on_bevel(x, y)) };
+                let region = if region_kind == 0 {
+                    shape.v[i]
+                } else {
+                    f32::from(shape.v[i] < 1.0 - INSIDE_EPS && on_bevel(x, y))
+                };
                 let k = shade - se;
                 if k > 0.0 {
                     hi.v[i] = (k / (1.0 - se).max(1e-3)).clamp(0.0, 1.0) * region;
@@ -1623,7 +2013,10 @@ fn bevel_maps(shape: &Map, b: &Bevel, light: &GlobalLight, tex: &TextureCtx, pat
                 }
             }
         }
-        (apply_contour(hi, &b.gloss_contour), apply_contour(sh, &b.gloss_contour))
+        (
+            apply_contour(hi, &b.gloss_contour),
+            apply_contour(sh, &b.gloss_contour),
+        )
     };
     let maps = match g.paint {
         BevelPaint::Inner | BevelPaint::Outer => {
@@ -1669,7 +2062,10 @@ pub struct FxMaps {
 impl FxMaps {
     /// The frame of a gradient stroke `st` of this layer (see [`stroke_frame`]), if built.
     pub fn stroke_frame(&self, st: &photocraft_doc::StrokeFx) -> Option<Rect> {
-        self.frames.iter().find(|f| f.0 == stroke_widths(st).1.to_bits()).map(|f| f.1)
+        self.frames
+            .iter()
+            .find(|f| f.0 == stroke_widths(st).1.to_bits())
+            .map(|f| f.1)
     }
 }
 
@@ -1678,7 +2074,12 @@ impl FxMaps {
     pub fn bytes(&self) -> usize {
         let n = self.shape.v.len();
         let maps: usize = self.per.iter().map(Vec::len).sum();
-        (1 + maps + usize::from(self.din.is_some()) + usize::from(self.dout.is_some()) + usize::from(self.vdout.is_some())) * n * 4
+        (1 + maps
+            + usize::from(self.din.is_some())
+            + usize::from(self.dout.is_some())
+            + usize::from(self.vdout.is_some()))
+            * n
+            * 4
     }
 
     fn crop_vec(&self, v: &[f32], to: Rect, fill: f32) -> Vec<f32> {
@@ -1700,7 +2101,11 @@ impl FxMaps {
     }
 
     fn crop(&self, m: &Map, to: Rect, fill: f32) -> Map {
-        Map { w: to.width() as usize, h: to.height() as usize, v: self.crop_vec(&m.v, to, fill) }
+        Map {
+            w: to.width() as usize,
+            h: to.height() as usize,
+            v: self.crop_vec(&m.v, to, fill),
+        }
     }
 }
 
@@ -1717,7 +2122,11 @@ fn satin_map(shape: &Map, s: &photocraft_doc::effects::Satin) -> Map {
     // Two box passes of the satin size (fitted: 0.2 % mean error on psd-tools layer_effects).
     tent(&mut a, s.size);
     tent(&mut b, s.size);
-    let mut m = Map { w: shape.w, h: shape.h, v: a.v.iter().zip(&b.v).map(|(x, y)| (x - y).abs()).collect() };
+    let mut m = Map {
+        w: shape.w,
+        h: shape.h,
+        v: a.v.iter().zip(&b.v).map(|(x, y)| (x - y).abs()).collect(),
+    };
     if s.invert {
         m = m.map(|v| 1.0 - v);
     }
@@ -1729,7 +2138,13 @@ fn satin_map(shape: &Map, s: &photocraft_doc::effects::Satin) -> Map {
 }
 
 /// Build every effect map for `layer` from its alpha `shape` over `rect`.
-pub fn build_maps(layer: &Layer, shape: Vec<f32>, rect: Rect, light: &GlobalLight, tex: &TextureCtx) -> FxMaps {
+pub fn build_maps(
+    layer: &Layer,
+    shape: Vec<f32>,
+    rect: Rect,
+    light: &GlobalLight,
+    tex: &TextureCtx,
+) -> FxMaps {
     let prepared = PreparedPatterns::new(tex.patterns, PREPARED_PATTERN_BYTES);
     build_maps_prepared(layer, shape, rect, light, tex, &prepared)
 }
@@ -1765,10 +2180,18 @@ pub(crate) fn build_maps_prepared(
         .collect();
     let has_stroke = items.iter().any(|e| matches!(e, Effect::Stroke(_)));
     let vector_shape = matches!(layer.content, photocraft_doc::LayerContent::Shape(_));
-    let (din, dout) = if has_stroke { (Some(dist_inside_by(&shape, Metric::Chamfer)), Some(dist_outside_by(&shape, Metric::Chamfer))) } else { (None, None) };
+    let (din, dout) = if has_stroke {
+        (
+            Some(dist_inside_by(&shape, Metric::Chamfer)),
+            Some(dist_outside_by(&shape, Metric::Chamfer)),
+        )
+    } else {
+        (None, None)
+    };
     // Without an outline (unfilled shapes), estimate the vector outline from local coverage.
     let outline = crate::effect_outline(layer).is_some();
-    let vdout = (has_stroke && vector_shape && !outline).then(|| dist_outside_by(&local_coverage(&shape), Metric::Chamfer));
+    let vdout = (has_stroke && vector_shape && !outline)
+        .then(|| dist_outside_by(&local_coverage(&shape), Metric::Chamfer));
     let mut frames: Vec<(u32, Rect)> = Vec::new();
     for e in &items {
         if let Effect::Stroke(st) = e
@@ -1780,7 +2203,17 @@ pub(crate) fn build_maps_prepared(
             }
         }
     }
-    FxMaps { rect, shape, per, bevel_paint, din, dout, vdout, outline, frames }
+    FxMaps {
+        rect,
+        shape,
+        per,
+        bevel_paint,
+        din,
+        dout,
+        vdout,
+        outline,
+        frames,
+    }
 }
 
 /// Far outside any shape (distance fill for cropped distance fields).
@@ -1801,14 +2234,33 @@ fn knock_out_exterior(map: &mut Map, shape: &Map, fill_opacity: f32) {
 /// into the backdrop before they paint, so an Overlay colour overlay on a black Color-mode layer
 /// tints the grey beneath it (#3996). Normal-like modes give the same result either way.
 pub fn premerges_layer(layer: &Layer) -> bool {
-    !layer.advanced.blend_interior && !matches!(layer.blend, BlendMode::Normal | BlendMode::PassThrough | BlendMode::Dissolve)
+    !layer.advanced.blend_interior
+        && !matches!(
+            layer.blend,
+            BlendMode::Normal | BlendMode::PassThrough | BlendMode::Dissolve
+        )
 }
 
 /// Composites `content` (the layer's own pixels over `big`, alpha already
 /// masked, clipped layers applied) plus its effects into `backdrop`.
-pub fn composite_with_effects(layer: &Layer, content: &Buffer, backdrop: &mut Buffer, maps: &FxMaps, layer_bounds: Rect, patterns: &[Pattern]) {
+pub fn composite_with_effects(
+    layer: &Layer,
+    content: &Buffer,
+    backdrop: &mut Buffer,
+    maps: &FxMaps,
+    layer_bounds: Rect,
+    patterns: &[Pattern],
+) {
     let prepared = PreparedPatterns::new(patterns, PREPARED_PATTERN_BYTES);
-    composite_with_effects_prepared(layer, content, backdrop, maps, layer_bounds, &prepared, None);
+    composite_with_effects_prepared(
+        layer,
+        content,
+        backdrop,
+        maps,
+        layer_bounds,
+        &prepared,
+        None,
+    );
 }
 
 pub(crate) fn composite_with_effects_prepared(
@@ -1824,8 +2276,20 @@ pub(crate) fn composite_with_effects_prepared(
     let (w, h) = (big.width() as usize, big.height() as usize);
     // The effect shape: the content's alpha (with a split-off vector stroke, `content` is the
     // unmasked fill and the mask applies to fill ∪ stroke), joined with a filled shape's outline.
-    let kmask = |i: usize| vstroke.as_ref().and_then(|v| v.mask).and_then(|m| m.get(i)).copied().unwrap_or(1.0);
-    let union = |i: usize, a: f32| vstroke.as_ref().and_then(|v| v.stroke.px.get(i)).map_or(a, |s| kmask(i) * (a + s[3] * (1.0 - a)));
+    let kmask = |i: usize| {
+        vstroke
+            .as_ref()
+            .and_then(|v| v.mask)
+            .and_then(|m| m.get(i))
+            .copied()
+            .unwrap_or(1.0)
+    };
+    let union = |i: usize, a: f32| {
+        vstroke
+            .as_ref()
+            .and_then(|v| v.stroke.px.get(i))
+            .map_or(a, |s| kmask(i) * (a + s[3] * (1.0 - a)))
+    };
     // Transparency Shapes Layer off: the shape is the whole layer (its masks, as the maps were
     // built), and the content's own transparency acts like fill opacity within it.
     let shapeless = !layer.advanced.transparency_shapes;
@@ -1833,9 +2297,27 @@ pub(crate) fn composite_with_effects_prepared(
         maps.crop(&maps.shape, big, 0.0)
     } else if maps.outline {
         let o = maps.crop(&maps.shape, big, 0.0);
-        Map { w, h, v: o.v.iter().zip(&content.px).enumerate().map(|(i, (o, p))| o.max(union(i, p[3]))).collect() }
+        Map {
+            w,
+            h,
+            v: o.v
+                .iter()
+                .zip(&content.px)
+                .enumerate()
+                .map(|(i, (o, p))| o.max(union(i, p[3])))
+                .collect(),
+        }
     } else {
-        Map { w, h, v: content.px.iter().enumerate().map(|(i, p)| union(i, p[3])).collect() }
+        Map {
+            w,
+            h,
+            v: content
+                .px
+                .iter()
+                .enumerate()
+                .map(|(i, p)| union(i, p[3]))
+                .collect(),
+        }
     };
     let relative = shapeless || maps.outline || vstroke.is_some();
     let fx = |i: usize, k: usize| maps.crop(&maps.per[i][k], big, 0.0);
@@ -1843,7 +2325,10 @@ pub(crate) fn composite_with_effects_prepared(
     // independent of the render rect).
     let sb = layer_bounds;
     // Linked patterns tile from the effects reference point (else the layer's top-left).
-    let anchor = layer.effects.reference.unwrap_or((f64::from(sb.x0), f64::from(sb.y0)));
+    let anchor = layer
+        .effects
+        .reference
+        .unwrap_or((f64::from(sb.x0), f64::from(sb.y0)));
     let rect = backdrop.rect;
     let before = backdrop.clone();
     // Exterior effects are painted on a backdrop copy extended to `big`.
@@ -1867,7 +2352,13 @@ pub(crate) fn composite_with_effects_prepared(
                 // attenuated twice), at 0 % the shape shows the bare backdrop.
                 knock_out_exterior(&mut m, &shape, layer.fill_opacity);
             }
-            paint_color(&mut work, &m, rgb(&s.color), s.common.blend, s.common.opacity);
+            paint_color(
+                &mut work,
+                &m,
+                rgb(&s.color),
+                s.common.blend,
+                s.common.opacity,
+            );
         }
     }
     for (i, e) in rev() {
@@ -1901,7 +2392,16 @@ pub(crate) fn composite_with_effects_prepared(
             content_fill
         }
     };
-    let mut lay = Buffer { rect: big, px: content.px.iter().zip(&shape.v).enumerate().map(|(i, (p, a))| [p[0], p[1], p[2], lay_alpha(i, p, *a)]).collect() };
+    let mut lay = Buffer {
+        rect: big,
+        px: content
+            .px
+            .iter()
+            .zip(&shape.v)
+            .enumerate()
+            .map(|(i, (p, a))| [p[0], p[1], p[2], lay_alpha(i, p, *a)])
+            .collect(),
+    };
     let gamma = crate::text_gamma(layer);
     let premerge = premerges_layer(layer);
     if premerge {
@@ -1910,18 +2410,62 @@ pub(crate) fn composite_with_effects_prepared(
         }
     }
     let rel = |m: Map| -> Map {
-        let v = m.v.iter().zip(&shape.v).map(|(m, a)| if inside(*a) { (m / a).min(1.0) } else { 0.0 }).collect();
+        let v =
+            m.v.iter()
+                .zip(&shape.v)
+                .map(|(m, a)| if inside(*a) { (m / a).min(1.0) } else { 0.0 })
+                .collect();
         Map { w: m.w, h: m.h, v }
     };
-    let full = Map { w, h, v: shape.v.iter().map(|a| if inside(*a) { 1.0 } else { 0.0 }).collect() };
+    let full = Map {
+        w,
+        h,
+        v: shape
+            .v
+            .iter()
+            .map(|a| if inside(*a) { 1.0 } else { 0.0 })
+            .collect(),
+    };
     for (_, e) in rev() {
-        if let Effect::PatternOverlay { common, name, id, scale, angle, link, phase } = e {
-            paint_pattern(&mut lay, &full, patterns, name, id, Placement::anchored(anchor, *link, *phase, *scale, *angle), big, common.blend, common.opacity);
+        if let Effect::PatternOverlay {
+            common,
+            name,
+            id,
+            scale,
+            angle,
+            link,
+            phase,
+        } = e
+        {
+            paint_pattern(
+                &mut lay,
+                &full,
+                patterns,
+                name,
+                id,
+                Placement::anchored(anchor, *link, *phase, *scale, *angle),
+                big,
+                common.blend,
+                common.opacity,
+            );
         }
     }
     for (_, e) in rev() {
-        if let Effect::GradientOverlay { common, gradient, .. } = e {
-            paint_fx(&mut lay, &full, &FxPaint::Gradient(gradient.clone()), sb, anchor, big, common.blend, common.opacity, patterns)
+        if let Effect::GradientOverlay {
+            common, gradient, ..
+        } = e
+        {
+            paint_fx(
+                &mut lay,
+                &full,
+                &FxPaint::Gradient(gradient.clone()),
+                sb,
+                anchor,
+                big,
+                common.blend,
+                common.opacity,
+                patterns,
+            )
         }
     }
     for (_, e) in rev() {
@@ -1932,7 +2476,13 @@ pub(crate) fn composite_with_effects_prepared(
     for (i, e) in rev() {
         if let Effect::Satin(s) = e {
             let m = rel(fx(i, 0));
-            paint_color(&mut lay, &m, rgb(&s.color), s.common.blend, s.common.opacity);
+            paint_color(
+                &mut lay,
+                &m,
+                rgb(&s.color),
+                s.common.blend,
+                s.common.opacity,
+            );
         }
     }
     for (i, e) in rev() {
@@ -1948,23 +2498,51 @@ pub(crate) fn composite_with_effects_prepared(
     for (i, e) in rev() {
         if let Effect::InnerShadow(s) = e {
             let m = rel(fx(i, 0));
-            paint_color(&mut lay, &m, rgb(&s.color), s.common.blend, s.common.opacity);
+            paint_color(
+                &mut lay,
+                &m,
+                rgb(&s.color),
+                s.common.blend,
+                s.common.opacity,
+            );
         }
     }
     // A stroked shape's vector stroke: Photoshop draws it above the fill's clipped layers and
     // interior effects, below the stroke effect (psd-tools stroke-composite).
     if let Some(vs) = &vstroke {
-        for (i, ((p, s), a)) in lay.px.iter_mut().zip(&vs.stroke.px).zip(&shape.v).enumerate() {
+        for (i, ((p, s), a)) in lay
+            .px
+            .iter_mut()
+            .zip(&vs.stroke.px)
+            .zip(&shape.v)
+            .enumerate()
+        {
             if s[3] > 0.0 && inside(*a) {
-                *p = psblend::composite(BlendMode::Normal, *p, [s[0], s[1], s[2], fill * (kmask(i) * s[3] / a).min(1.0)], 1.0);
+                *p = psblend::composite(
+                    BlendMode::Normal,
+                    *p,
+                    [s[0], s[1], s[2], fill * (kmask(i) * s[3] / a).min(1.0)],
+                    1.0,
+                );
             }
         }
     }
     // Strokes. Inside parts are painted over the layer (bottom instance first); outside parts
     // are slid beneath it, so the first listed (top) instance is processed first.
-    let strokes: Vec<&photocraft_doc::StrokeFx> = items.iter().filter_map(|e| if let Effect::Stroke(s) = e { Some(s) } else { None }).collect();
+    let strokes: Vec<&photocraft_doc::StrokeFx> = items
+        .iter()
+        .filter_map(|e| {
+            if let Effect::Stroke(s) = e {
+                Some(s)
+            } else {
+                None
+            }
+        })
+        .collect();
     let (din, dout) = match (&maps.din, &maps.dout) {
-        (Some(a), Some(b)) if !strokes.is_empty() => (maps.crop_vec(a, big, 0.0), maps.crop_vec(b, big, FAR)),
+        (Some(a), Some(b)) if !strokes.is_empty() => {
+            (maps.crop_vec(a, big, 0.0), maps.crop_vec(b, big, FAR))
+        }
         _ => (Vec::new(), Vec::new()),
     };
     let widths = stroke_widths;
@@ -1977,24 +2555,54 @@ pub(crate) fn composite_with_effects_prepared(
         }
         let mut m = Map::new(w, h, 0.0);
         for ((mv, a), dv) in m.v.iter_mut().zip(&shape.v).zip(&din) {
-            *mv = if inside(*a) { (in_w + 0.5 - dv).clamp(0.0, 1.0) } else { 0.0 };
+            *mv = if inside(*a) {
+                (in_w + 0.5 - dv).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
         }
-        paint_fx(&mut lay, &m, &st.paint, frame(st), anchor, big, st.common.blend, st.common.opacity, patterns);
+        paint_fx(
+            &mut lay,
+            &m,
+            &st.paint,
+            frame(st),
+            anchor,
+            big,
+            st.common.blend,
+            st.common.opacity,
+            patterns,
+        );
     }
     for (i, e) in rev() {
         if let Effect::BevelEmboss(b) = e
             && maps.bevel_paint[i] == BevelPaint::Inner
         {
             let (hi, sh) = (rel(fx(i, 0)), rel(fx(i, 1)));
-            paint_color(&mut lay, &hi, rgb(&b.highlight_color), b.highlight.blend, b.highlight.opacity);
-            paint_color(&mut lay, &sh, rgb(&b.shadow_color), b.shadow.blend, b.shadow.opacity);
+            paint_color(
+                &mut lay,
+                &hi,
+                rgb(&b.highlight_color),
+                b.highlight.blend,
+                b.highlight.opacity,
+            );
+            paint_color(
+                &mut lay,
+                &sh,
+                rgb(&b.shadow_color),
+                b.shadow.blend,
+                b.shadow.opacity,
+            );
         }
     }
     // The shape's own alpha.
     for (p, a) in lay.px.iter_mut().zip(&shape.v) {
         p[3] *= a.min(1.0);
     }
-    let vdout = maps.vdout.as_ref().filter(|_| vector_shape && !strokes.is_empty()).map(|v| maps.crop_vec(v, big, FAR));
+    let vdout = maps
+        .vdout
+        .as_ref()
+        .filter(|_| vector_shape && !strokes.is_empty())
+        .map(|v| maps.crop_vec(v, big, FAR));
     // Outside parts lie beneath the layer and blend onto the backdrop with their own mode. A
     // higher stroke covers the ones below it (Photoshop: a Multiply stroke listed above a wider
     // Normal stroke multiplies the backdrop, not the lower stroke). Each stroke's share is its
@@ -2028,7 +2636,11 @@ pub(crate) fn composite_with_effects_prepared(
                         // (1 - a) / (1 - c). At 100 % fill that is 1 (the layer hides the rest, as
                         // before); at 0 % fill the interior stays clear (Fill 0 % + Outside stroke).
                         let c = lay.px[i][3].clamp(0.0, 1.0);
-                        if c >= 1.0 { 1.0 } else { ((1.0 - shape.v[i].clamp(0.0, 1.0)) / (1.0 - c)).clamp(0.0, 1.0) }
+                        if c >= 1.0 {
+                            1.0
+                        } else {
+                            ((1.0 - shape.v[i].clamp(0.0, 1.0)) / (1.0 - c)).clamp(0.0, 1.0)
+                        }
                     }
                 } else {
                     band
@@ -2038,8 +2650,25 @@ pub(crate) fn composite_with_effects_prepared(
             }
             // The stroke blended over the backdrop at full coverage.
             let mut blended = base.clone();
-            let ones = Map { w, h, v: share.iter().map(|&s| if s > 0.0 { 1.0 } else { 0.0 }).collect() };
-            paint_fx(&mut blended, &ones, &st.paint, frame(st), anchor, big, st.common.blend, 1.0, patterns);
+            let ones = Map {
+                w,
+                h,
+                v: share
+                    .iter()
+                    .map(|&s| if s > 0.0 { 1.0 } else { 0.0 })
+                    .collect(),
+            };
+            paint_fx(
+                &mut blended,
+                &ones,
+                &st.paint,
+                frame(st),
+                anchor,
+                big,
+                st.common.blend,
+                1.0,
+                patterns,
+            );
             for ((a, b), s) in acc.iter_mut().zip(&blended.px).zip(&share) {
                 if *s > 0.0 {
                     for c in 0..3 {
@@ -2056,7 +2685,12 @@ pub(crate) fn composite_with_effects_prepared(
             let k = 1.0 - c.min(1.0);
             let alpha = p[3] * k + a[3];
             if alpha > 0.0 {
-                *p = [(p[0] * p[3] * k + a[0]) / alpha, (p[1] * p[3] * k + a[1]) / alpha, (p[2] * p[3] * k + a[2]) / alpha, alpha.min(1.0)];
+                *p = [
+                    (p[0] * p[3] * k + a[0]) / alpha,
+                    (p[1] * p[3] * k + a[1]) / alpha,
+                    (p[2] * p[3] * k + a[2]) / alpha,
+                    alpha.min(1.0),
+                ];
             }
         }
     }
@@ -2065,13 +2699,29 @@ pub(crate) fn composite_with_effects_prepared(
             && maps.bevel_paint[i] == BevelPaint::Outer
         {
             let (hi, sh) = (fx(i, 0), fx(i, 1));
-            paint_color(&mut work, &hi, rgb(&b.highlight_color), b.highlight.blend, b.highlight.opacity);
-            paint_color(&mut work, &sh, rgb(&b.shadow_color), b.shadow.blend, b.shadow.opacity);
+            paint_color(
+                &mut work,
+                &hi,
+                rgb(&b.highlight_color),
+                b.highlight.blend,
+                b.highlight.opacity,
+            );
+            paint_color(
+                &mut work,
+                &sh,
+                rgb(&b.shadow_color),
+                b.shadow.blend,
+                b.shadow.opacity,
+            );
         }
     }
 
     // Layer (with interior effects) onto the exterior result, in the layer's mode.
-    let mode = if premerge || layer.blend == BlendMode::PassThrough { BlendMode::Normal } else { layer.blend };
+    let mode = if premerge || layer.blend == BlendMode::PassThrough {
+        BlendMode::Normal
+    } else {
+        layer.blend
+    };
     for (wp, lp) in work.px.iter_mut().zip(&lay.px) {
         if lp[3] > 0.0 {
             *wp = psblend::composite_gamma(mode, *wp, *lp, 1.0, gamma);
@@ -2084,8 +2734,20 @@ pub(crate) fn composite_with_effects_prepared(
         if let Effect::BevelEmboss(b) = e
             && maps.bevel_paint[i] == BevelPaint::Both
         {
-            paint_color(&mut work, &fx(i, 0), rgb(&b.highlight_color), b.highlight.blend, b.highlight.opacity);
-            paint_color(&mut work, &fx(i, 1), rgb(&b.shadow_color), b.shadow.blend, b.shadow.opacity);
+            paint_color(
+                &mut work,
+                &fx(i, 0),
+                rgb(&b.highlight_color),
+                b.highlight.blend,
+                b.highlight.opacity,
+            );
+            paint_color(
+                &mut work,
+                &fx(i, 1),
+                rgb(&b.shadow_color),
+                b.shadow.blend,
+                b.shadow.opacity,
+            );
         }
     }
     // Layer opacity applies to the whole stack.
@@ -2094,7 +2756,11 @@ pub(crate) fn composite_with_effects_prepared(
         for x in rect.x0..rect.x1 {
             let i = ((y - rect.y0) as usize) * rect.width() as usize + (x - rect.x0) as usize;
             let a = before.px[i];
-            let b = if x >= big.x0 && x < big.x1 && y >= big.y0 && y < big.y1 { work.px[((y - big.y0) as usize) * w + (x - big.x0) as usize] } else { a };
+            let b = if x >= big.x0 && x < big.x1 && y >= big.y0 && y < big.y1 {
+                work.px[((y - big.y0) as usize) * w + (x - big.x0) as usize]
+            } else {
+                a
+            };
             backdrop.px[i] = mix_premul(a, b, op);
         }
     }
@@ -2109,7 +2775,11 @@ pub(crate) fn composite_with_effects_prepared(
 pub fn outline_share(cov: f32, l: f32) -> f32 {
     let outside = (1.0 - cov.clamp(0.0, 1.0)).max(0.0);
     let rest = 1.0 - l.clamp(0.0, 1.0);
-    if rest <= 1e-6 { 1.0 } else { (outside / rest).min(1.0) }
+    if rest <= 1e-6 {
+        1.0
+    } else {
+        (outside / rest).min(1.0)
+    }
 }
 
 /// (inside width, outside width) of a stroke.
@@ -2138,8 +2808,18 @@ fn stroke_frame(shape: &Map, out_w: f32, rect: Rect) -> Rect {
     if x0 == usize::MAX {
         return rect;
     }
-    let grow = if out_w.is_finite() { (out_w.min(MAX_REACH).ceil() as i32 - 1).max(0) } else { 0 };
-    Rect::new(rect.x0 + x0 as i32, rect.y0 + y0 as i32, rect.x0 + x1 as i32, rect.y0 + y1 as i32).inflate(grow)
+    let grow = if out_w.is_finite() {
+        (out_w.min(MAX_REACH).ceil() as i32 - 1).max(0)
+    } else {
+        0
+    };
+    Rect::new(
+        rect.x0 + x0 as i32,
+        rect.y0 + y0 as i32,
+        rect.x0 + x1 as i32,
+        rect.y0 + y1 as i32,
+    )
+    .inflate(grow)
 }
 
 /// A stroked shape's vector stroke, composited apart from its fill (which the compositor then
@@ -2189,7 +2869,13 @@ pub enum FieldKind {
 
 /// The `kind` distance field of the shape `alpha` (row-major `w × h`). Values past `reach` pixels
 /// from the shape's edge are only meant to be large (the bevel fields skip refining them).
-pub fn distance_field(kind: FieldKind, alpha: Vec<f32>, w: usize, h: usize, reach: f32) -> Vec<f32> {
+pub fn distance_field(
+    kind: FieldKind,
+    alpha: Vec<f32>,
+    w: usize,
+    h: usize,
+    reach: f32,
+) -> Vec<f32> {
     let s = Map { w, h, v: alpha };
     match kind {
         FieldKind::Outside => dist_outside(&s),
@@ -2270,7 +2956,16 @@ mod tests {
         assert!((t(GradientStyle::Diamond, 75.0, 75.0) - 1.0).abs() < 1e-6);
         let ang = t(GradientStyle::Angle, 50.0, 0.0);
         assert!((ang - 0.75).abs() < 1e-3, "{ang}");
-        let rev = gradient_t(GradientStyle::Linear, 0.0, 1.0, true, (0.0, 0.0), b, 0.0, 50.0);
+        let rev = gradient_t(
+            GradientStyle::Linear,
+            0.0,
+            1.0,
+            true,
+            (0.0, 0.0),
+            b,
+            0.0,
+            50.0,
+        );
         assert!(rev > 0.99);
     }
 
@@ -2279,7 +2974,13 @@ mod tests {
         // 87° over 600 × 60 at (99, 422): end points (397, 482) and (400, 422), so the overlay runs
         // along (3, -60) from its midpoint (398.5, 452), sampled at pixel corners.
         let frame = Rect::new(99, 422, 699, 482);
-        let (a, sc, o) = crate::fill_layout::gradient_layout(GradientStyle::Linear, 87.0, 1.0, (0.0, 0.0), frame);
+        let (a, sc, o) = crate::fill_layout::gradient_layout(
+            GradientStyle::Linear,
+            87.0,
+            1.0,
+            (0.0, 0.0),
+            frame,
+        );
         assert!((a - (60f32).atan2(3.0).to_degrees()).abs() < 1e-3, "{a}");
         let t = |x: f32, y: f32| gradient_t(GradientStyle::Linear, a, sc, false, o, frame, x, y);
         assert!((t(399.0, 452.5) - 0.5).abs() < 1e-4, "{}", t(399.0, 452.5));
@@ -2296,7 +2997,10 @@ mod tests {
         assert!((at(3, 0) - 3.0).abs() < 1e-5);
         assert!((at(2, 2) - 2.0 * std::f32::consts::SQRT_2).abs() < 1e-5);
         assert!((at(1, 2) - 5f32.sqrt()).abs() < 1e-5);
-        assert!((at(1, 3) - (5f32.sqrt() + 1.0)).abs() < 1e-5, "knight + straight, not √10");
+        assert!(
+            (at(1, 3) - (5f32.sqrt() + 1.0)).abs() < 1e-5,
+            "knight + straight, not √10"
+        );
         assert!((at(2, 3) - (5f32.sqrt() + std::f32::consts::SQRT_2)).abs() < 1e-5);
         assert!(near.iter().all(|&n| n == 0));
     }
@@ -2310,18 +3014,32 @@ mod tests {
         let d = dilate(&m, 3.0);
         assert!((d.v[7 * 9 + 5] - 0.764).abs() < 1e-3, "{}", d.v[7 * 9 + 5]);
         // (2, 3): √5 + √2 = 3.650 (Euclidean 3.606) leaves 0.350; axis steps are exact.
-        assert!((d.v[7 * 9 + 6] - (4.0 - 5f32.sqrt() - std::f32::consts::SQRT_2)).abs() < 1e-4, "{}", d.v[7 * 9 + 6]);
+        assert!(
+            (d.v[7 * 9 + 6] - (4.0 - 5f32.sqrt() - std::f32::consts::SQRT_2)).abs() < 1e-4,
+            "{}",
+            d.v[7 * 9 + 6]
+        );
         assert_eq!(d.v[4 * 9 + 7], 1.0);
     }
 
     #[test]
     fn running_sum_tent_matches_the_kernel() {
         let (w, h) = (37usize, 23usize);
-        let src: Vec<f32> = (0..w * h).map(|i| ((i * 7919) % 101) as f32 / 100.0).collect();
+        let src: Vec<f32> = (0..w * h)
+            .map(|i| ((i * 7919) % 101) as f32 / 100.0)
+            .collect();
         for width in [1.0f32, 2.0, 3.5, 5.0, 8.25, 41.0] {
-            let mut m = Map { w, h, v: src.clone() };
+            let mut m = Map {
+                w,
+                h,
+                v: src.clone(),
+            };
             tent(&mut m, width);
-            let mut want = Map { w, h, v: src.clone() };
+            let mut want = Map {
+                w,
+                h,
+                v: src.clone(),
+            };
             tent_direct(&mut want, width);
             for (a, b) in m.v.iter().zip(&want.v) {
                 assert!((a - b).abs() < 1e-5, "width {width}: {a} vs {b}");
@@ -2349,7 +3067,11 @@ mod tests {
     }
 
     fn no_tex() -> TextureCtx<'static> {
-        TextureCtx { rect: Rect::new(0, 0, 1, 1), patterns: &[], anchor: (0.0, 0.0) }
+        TextureCtx {
+            rect: Rect::new(0, 0, 1, 1),
+            patterns: &[],
+            anchor: (0.0, 0.0),
+        }
     }
 
     fn square(n: usize, x0: usize, x1: usize) -> Map {
@@ -2420,18 +3142,39 @@ mod tests {
         let maps = |style, technique| {
             let mut b = bevel_of(style, technique);
             b.size = 10.0;
-            bevel_maps(&shape, &b, &GlobalLight::default(), &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES)).0
+            bevel_maps(
+                &shape,
+                &b,
+                &GlobalLight::default(),
+                &no_tex(),
+                &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+            )
+            .0
         };
         let at = |m: &Map, y: usize| m.v[y * n + 40];
         let facet = amount(10.0 / 22.0);
         let hard = maps(BevelStyle::InnerBevel, BevelTechnique::ChiselHard);
         for y in 20..30 {
-            assert!((at(&hard[0], y) - facet).abs() < 0.01, "inner hard facet at row {y}: {} vs {facet}", at(&hard[0], y));
+            assert!(
+                (at(&hard[0], y) - facet).abs() < 0.01,
+                "inner hard facet at row {y}: {} vs {facet}",
+                at(&hard[0], y)
+            );
         }
-        assert!(at(&hard[0], 30) > 0.05 && at(&hard[0], 30) < facet, "one partial pixel at the end");
+        assert!(
+            at(&hard[0], 30) > 0.05 && at(&hard[0], 30) < facet,
+            "one partial pixel at the end"
+        );
         let soft = maps(BevelStyle::InnerBevel, BevelTechnique::ChiselSoft);
-        assert!((at(&soft[0], 20) - amount(1.5 * 10.0 / 22.0)).abs() < 0.01, "steeper edge pixel: {}", at(&soft[0], 20));
-        assert!((at(&soft[0], 24) - facet).abs() < 0.01, "then Chisel Hard's facet");
+        assert!(
+            (at(&soft[0], 20) - amount(1.5 * 10.0 / 22.0)).abs() < 0.01,
+            "steeper edge pixel: {}",
+            at(&soft[0], 20)
+        );
+        assert!(
+            (at(&soft[0], 24) - facet).abs() < 0.01,
+            "then Chisel Hard's facet"
+        );
         let outer = maps(BevelStyle::OuterBevel, BevelTechnique::ChiselHard);
         // Below the shape (rows 60..): shadow facet through 10½ px, partial at 11½.
         assert!((at(&outer[1], 70) - at(&outer[1], 61)).abs() < 1e-4);
@@ -2443,15 +3186,28 @@ mod tests {
     fn emboss_paints_both_sides_and_pillow_flips_the_outside() {
         let shape = square(40, 10, 30);
         let l = GlobalLight::default();
-        let (e, paint) =
-            bevel_maps(&shape, &bevel_of(BevelStyle::Emboss, BevelTechnique::Smooth), &l, &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
+        let (e, paint) = bevel_maps(
+            &shape,
+            &bevel_of(BevelStyle::Emboss, BevelTechnique::Smooth),
+            &l,
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
         assert_eq!((paint, e.len()), (BevelPaint::Both, 2));
         let at = |m: &Map, x: usize, y: usize| m.v[y * 40 + x];
         // Emboss: the slope across the top edge faces the light on both sides.
         assert!(at(&e[0], 20, 10) > 0.3 && at(&e[0], 20, 9) > 0.3);
-        let (p, _) =
-            bevel_maps(&shape, &bevel_of(BevelStyle::PillowEmboss, BevelTechnique::Smooth), &l, &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
-        assert!(at(&p[0], 20, 10) > 0.3 && at(&p[1], 20, 9) > 0.3, "pillow: outside top edge in shadow");
+        let (p, _) = bevel_maps(
+            &shape,
+            &bevel_of(BevelStyle::PillowEmboss, BevelTechnique::Smooth),
+            &l,
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
+        assert!(
+            at(&p[0], 20, 10) > 0.3 && at(&p[1], 20, 9) > 0.3,
+            "pillow: outside top edge in shadow"
+        );
     }
 
     #[test]
@@ -2467,7 +3223,13 @@ mod tests {
         let shape = square(60, 20, 40);
         b.size = 9.0;
         b.angle = 90.0;
-        let (m, _) = bevel_maps(&shape, &b, &GlobalLight::default(), &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
+        let (m, _) = bevel_maps(
+            &shape,
+            &b,
+            &GlobalLight::default(),
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
         let reach = tent_kernel(bevel_geom(&b).width).0 as usize;
         let row = 39 + reach + 1; // last shape row + reach + 1: height 0, neighbour above raised
         assert!(m[1].v[row * 60 + 30] > 0.0, "{}", m[1].v[row * 60 + 30]);
@@ -2486,7 +3248,10 @@ mod tests {
                 let mut hit = 0;
                 for sy in 0..N {
                     for sx in 0..N {
-                        let (px, py) = (x as f32 + (sx as f32 + 0.5) / N as f32 - cx, y as f32 + (sy as f32 + 0.5) / N as f32 - cy);
+                        let (px, py) = (
+                            x as f32 + (sx as f32 + 0.5) / N as f32 - cx,
+                            y as f32 + (sy as f32 + 0.5) / N as f32 - cy,
+                        );
                         let (u, v) = (px * cs + py * sn, -px * sn + py * cs);
                         hit += usize::from(u.abs() <= len / 2.0 && v.abs() <= wid / 2.0);
                     }
@@ -2506,9 +3271,16 @@ mod tests {
         let mut bins: Vec<Vec<f32>> = vec![Vec::new(); 16];
         for y in 0..h {
             for x in 0..w {
-                let (px, py) = (x as f32 + 0.5 - w as f32 / 2.0, y as f32 + 0.5 - h as f32 / 2.0);
+                let (px, py) = (
+                    x as f32 + 0.5 - w as f32 / 2.0,
+                    y as f32 + 0.5 - h as f32 / 2.0,
+                );
                 let (u, v) = (px * cs + py * sn, -px * sn + py * cs);
-                let truth = if inside { wid / 2.0 - v.abs() } else { v.abs() - wid / 2.0 };
+                let truth = if inside {
+                    wid / 2.0 - v.abs()
+                } else {
+                    v.abs() - wid / 2.0
+                };
                 if u.abs() < 40.0 && (0.6..8.0).contains(&truth) {
                     bins[(truth * 2.0) as usize].push(f[y * w + x] - truth);
                 }
@@ -2517,7 +3289,8 @@ mod tests {
         let (mut ripple, mut bias) = (0.0f32, 0.0f32);
         for b in bins.iter().filter(|b| b.len() > 8) {
             let mean = b.iter().sum::<f32>() / b.len() as f32;
-            let sd = (b.iter().map(|e| (e - mean) * (e - mean)).sum::<f32>() / b.len() as f32).sqrt();
+            let sd =
+                (b.iter().map(|e| (e - mean) * (e - mean)).sum::<f32>() / b.len() as f32).sqrt();
             ripple = ripple.max(sd);
             bias = bias.max(mean.abs());
         }
@@ -2531,20 +3304,32 @@ mod tests {
         let bar = aa_bar(w, h, deg, 150.0, 16.0);
         let mut b = bevel_of(BevelStyle::InnerBevel, BevelTechnique::ChiselHard);
         (b.size, b.depth, b.angle, b.altitude) = (8.0, 2.2, light, 32.0);
-        let (m, _) = bevel_maps(&bar, &b, &GlobalLight::default(), &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
+        let (m, _) = bevel_maps(
+            &bar,
+            &b,
+            &GlobalLight::default(),
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
         let (sn, cs) = deg.to_radians().sin_cos();
         let mut worst = 0.0f32;
         for o in [-6.0f32, -5.0, -4.0, -3.0, -2.0, 2.0, 3.0, 4.0, 5.0, 6.0] {
             let line: Vec<f32> = (-60..=60)
                 .map(|k| {
                     let t = k as f32 * 0.5;
-                    let (x, y) = (w as f32 / 2.0 + t * cs - o * sn, h as f32 / 2.0 + t * sn + o * cs);
+                    let (x, y) = (
+                        w as f32 / 2.0 + t * cs - o * sn,
+                        h as f32 / 2.0 + t * sn + o * cs,
+                    );
                     let i = y.floor() as usize * w + x.floor() as usize;
                     m[0].v[i] - m[1].v[i]
                 })
                 .collect();
             let mean = line.iter().sum::<f32>() / line.len() as f32;
-            worst = worst.max((line.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>() / line.len() as f32).sqrt());
+            worst = worst.max(
+                (line.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>() / line.len() as f32)
+                    .sqrt(),
+            );
         }
         worst
     }
@@ -2556,7 +3341,10 @@ mod tests {
         let mut hit = 0;
         for y in 0..N {
             for x in 0..N {
-                let (px, py) = ((x as f32 + 0.5) / N as f32 - 0.5, (y as f32 + 0.5) / N as f32 - 0.5);
+                let (px, py) = (
+                    (x as f32 + 0.5) / N as f32 - 0.5,
+                    (y as f32 + 0.5) / N as f32 - 0.5,
+                );
                 hit += usize::from(n[0] * px + n[1] * py + s >= 0.0);
             }
         }
@@ -2575,7 +3363,11 @@ mod tests {
                     continue;
                 }
                 let got = edge_offset([cs, sn], a);
-                assert!((got - s).abs() < 0.03, "{}deg s {s}: coverage {a} gave {got}", step as f32 * 7.5);
+                assert!(
+                    (got - s).abs() < 0.03,
+                    "{}deg s {s}: coverage {a} gave {got}",
+                    step as f32 * 7.5
+                );
             }
         }
         // Axis-aligned edges keep `alpha - 1/2`; a pixel no coverage says anything about is 0.
@@ -2611,8 +3403,16 @@ mod tests {
         for (i, m) in maps.iter().enumerate() {
             let sharp = sharp_edges(m);
             assert!(sharp.is_empty(), "map {i} has no anti-aliased edge");
-            assert_eq!(bevel_dist_inside(m, &sharp, 1e9), dist_inside(m), "inside, map {i}");
-            assert_eq!(bevel_dist_outside(m, &sharp, 1e9), dist_outside(m), "outside, map {i}");
+            assert_eq!(
+                bevel_dist_inside(m, &sharp, 1e9),
+                dist_inside(m),
+                "inside, map {i}"
+            );
+            assert_eq!(
+                bevel_dist_outside(m, &sharp, 1e9),
+                dist_outside(m),
+                "outside, map {i}"
+            );
         }
     }
 
@@ -2624,15 +3424,35 @@ mod tests {
         for deg in [0.0f32, 30.0, 45.0, 60.0, 75.0, 120.0, 150.0] {
             let bar = aa_bar(w, h, deg, 120.0, 40.0);
             let sharp = sharp_edges(&bar);
-            let inside = bar_ripple(&bevel_dist_inside(&bar, &sharp, 40.0), w, h, deg, 40.0, true);
-            let outside = bar_ripple(&bevel_dist_outside(&bar, &sharp, 40.0), w, h, deg, 40.0, false);
+            let inside = bar_ripple(
+                &bevel_dist_inside(&bar, &sharp, 40.0),
+                w,
+                h,
+                deg,
+                40.0,
+                true,
+            );
+            let outside = bar_ripple(
+                &bevel_dist_outside(&bar, &sharp, 40.0),
+                w,
+                h,
+                deg,
+                40.0,
+                false,
+            );
             for (what, (ripple, bias)) in [("inside", inside), ("outside", outside)] {
-                assert!(ripple < 0.008 && bias < 0.01, "{deg} deg {what}: ripple {ripple}, bias {bias}");
+                assert!(
+                    ripple < 0.008 && bias < 0.01,
+                    "{deg} deg {what}: ripple {ripple}, bias {bias}"
+                );
             }
         }
         let plain = aa_bar(w, h, 60.0, 120.0, 40.0);
         let (ripple, _) = bar_ripple(&dist_inside(&plain), w, h, 60.0, 40.0, true);
-        assert!(ripple > 0.1, "the plain field still ripples ({ripple}), so the test above means something");
+        assert!(
+            ripple > 0.1,
+            "the plain field still ripples ({ripple}), so the test above means something"
+        );
     }
 
     #[test]
@@ -2645,16 +3465,27 @@ mod tests {
             let (sn, cs) = deg.to_radians().sin_cos();
             let (mut worst, mut seen) = (0.0f32, 0);
             for (i, e) in sharp.iter() {
-                let (px, py) = ((i % w) as f32 + 0.5 - w as f32 / 2.0, (i / w) as f32 + 0.5 - h as f32 / 2.0);
+                let (px, py) = (
+                    (i % w) as f32 + 0.5 - w as f32 / 2.0,
+                    (i / w) as f32 + 0.5 - h as f32 / 2.0,
+                );
                 let (u, v) = (px * cs + py * sn, -px * sn + py * cs);
                 if u.abs() > 40.0 || (wid / 2.0 - v.abs()).abs() > 1.5 {
                     continue;
                 }
                 let into = if v > 0.0 { [sn, -cs] } else { [-sn, cs] };
-                worst = worst.max((e.normal[0] * into[0] + e.normal[1] * into[1]).clamp(-1.0, 1.0).acos().to_degrees());
+                worst = worst.max(
+                    (e.normal[0] * into[0] + e.normal[1] * into[1])
+                        .clamp(-1.0, 1.0)
+                        .acos()
+                        .to_degrees(),
+                );
                 seen += 1;
             }
-            assert!(seen > 100 && worst < 0.6, "{deg} deg: {seen} edge pixels, normal off by up to {worst} deg");
+            assert!(
+                seen > 100 && worst < 0.6,
+                "{deg} deg: {seen} edge pixels, normal off by up to {worst} deg"
+            );
         }
     }
 
@@ -2682,19 +3513,34 @@ mod tests {
             let m = aa_disc(w, h, r);
             let sharp = sharp_edges(&m);
             let sdf = |x: f32, y: f32| (x - 100.0).hypot(y - 100.0) - r;
-            let (i, o) = (worst(&bevel_dist_inside(&m, &sharp, 12.0), w, h, &sdf, true), worst(&bevel_dist_outside(&m, &sharp, 12.0), w, h, &sdf, false));
-            assert!(i < 0.05 && o < 0.07, "disc {r}: inside off by {i}, outside by {o}");
+            let (i, o) = (
+                worst(&bevel_dist_inside(&m, &sharp, 12.0), w, h, &sdf, true),
+                worst(&bevel_dist_outside(&m, &sharp, 12.0), w, h, &sdf, false),
+            );
+            assert!(
+                i < 0.05 && o < 0.07,
+                "disc {r}: inside off by {i}, outside by {o}"
+            );
         }
         for rad in [6.0f32, 12.0, 24.0] {
             let (w, h) = (200usize, 160usize);
             let m = aa_round_rect(w, h, 20.0, 20.0, 180.0, 140.0, rad);
             let sharp = sharp_edges(&m);
             let sdf = |x: f32, y: f32| {
-                let (qx, qy) = ((x - 100.0).abs() - (80.0 - rad), (y - 80.0).abs() - (60.0 - rad));
+                let (qx, qy) = (
+                    (x - 100.0).abs() - (80.0 - rad),
+                    (y - 80.0).abs() - (60.0 - rad),
+                );
                 qx.max(0.0).hypot(qy.max(0.0)) + qx.max(qy).min(0.0) - rad
             };
-            let (i, o) = (worst(&bevel_dist_inside(&m, &sharp, 12.0), w, h, &sdf, true), worst(&bevel_dist_outside(&m, &sharp, 12.0), w, h, &sdf, false));
-            assert!(i < 0.08 && o < 0.2, "rounded rect, radius {rad}: inside off by {i}, outside by {o}");
+            let (i, o) = (
+                worst(&bevel_dist_inside(&m, &sharp, 12.0), w, h, &sdf, true),
+                worst(&bevel_dist_outside(&m, &sharp, 12.0), w, h, &sdf, false),
+            );
+            assert!(
+                i < 0.08 && o < 0.2,
+                "rounded rect, radius {rad}: inside off by {i}, outside by {o}"
+            );
         }
     }
 
@@ -2704,14 +3550,25 @@ mod tests {
         for deg in [0.0f32, 30.0, 45.0, 60.0, 75.0, 120.0, 150.0] {
             for light in [-90.0f32, 0.0, 45.0, 120.0] {
                 let ripple = bar_shade_ripple(deg, light);
-                assert!(ripple < 0.03, "{deg} deg bar, light {light}: shading ripple {ripple}");
+                assert!(
+                    ripple < 0.03,
+                    "{deg} deg bar, light {light}: shading ripple {ripple}"
+                );
             }
         }
     }
 
     #[test]
     fn bevel_distances_survive_degenerate_maps() {
-        let cases: [(usize, usize, f32); 7] = [(0, 0, 0.0), (1, 1, 0.5), (1, 1, 1.0), (2, 2, 0.5), (3, 1, 0.3), (5, 5, f32::NAN), (4, 4, 1.0)];
+        let cases: [(usize, usize, f32); 7] = [
+            (0, 0, 0.0),
+            (1, 1, 0.5),
+            (1, 1, 1.0),
+            (2, 2, 0.5),
+            (3, 1, 0.3),
+            (5, 5, f32::NAN),
+            (4, 4, 1.0),
+        ];
         for (w, h, a) in cases {
             let m = Map::new(w, h, a);
             let sharp = sharp_edges(&m);
@@ -2723,20 +3580,34 @@ mod tests {
         // A single partly covered pixel in an empty map, and an edge on the map's border.
         let mut m = Map::new(5, 5, 0.0);
         m.v[12] = 0.4;
-        let _ = (bevel_dist_inside(&m, &sharp_edges(&m), 4.0), bevel_dist_outside(&m, &sharp_edges(&m), 4.0));
+        let _ = (
+            bevel_dist_inside(&m, &sharp_edges(&m), 4.0),
+            bevel_dist_outside(&m, &sharp_edges(&m), 4.0),
+        );
         let mut m = Map::new(8, 8, 0.0);
         for y in 0..8 {
             m.v[y * 8 + 7] = 1.0;
             m.v[y * 8 + 6] = 0.5;
         }
-        let _ = (bevel_dist_inside(&m, &sharp_edges(&m), 4.0), bevel_dist_outside(&m, &sharp_edges(&m), 4.0));
+        let _ = (
+            bevel_dist_inside(&m, &sharp_edges(&m), 4.0),
+            bevel_dist_outside(&m, &sharp_edges(&m), 4.0),
+        );
     }
 
     #[test]
     fn par_units_visits_every_unit_once_with_its_own_slices() {
         // Lengths that leave a short last unit, no second slice, units of different sizes, and nothing at all.
-        let cases: [(usize, usize, usize, usize); 8] =
-            [(0, 3, 0, 0), (1, 1, 1, 1), (10, 3, 0, 0), (64, 8, 64, 8), (65, 8, 13, 1), (200, 1, 200, 1), (7, 7, 14, 2), (9, 4, 0, 5)];
+        let cases: [(usize, usize, usize, usize); 8] = [
+            (0, 3, 0, 0),
+            (1, 1, 1, 1),
+            (10, 3, 0, 0),
+            (64, 8, 64, 8),
+            (65, 8, 13, 1),
+            (200, 1, 200, 1),
+            (7, 7, 14, 2),
+            (9, 4, 0, 5),
+        ];
         for (la, ua, lb, ub) in cases {
             for threads in [1, 2, 3, 8, 64] {
                 let (mut a, mut b) = (vec![0u32; la], vec![0u32; lb]);
@@ -2761,23 +3632,50 @@ mod tests {
                         },
                     );
                 });
-                assert_eq!(calls.into_inner(), la.div_ceil(ua), "{la} {ua} {lb} {ub} on {threads}");
-                assert!(a.iter().enumerate().all(|(i, &v)| v == i as u32 + 1), "a: {la} {ua} {lb} {ub} on {threads}");
+                assert_eq!(
+                    calls.into_inner(),
+                    la.div_ceil(ua),
+                    "{la} {ua} {lb} {ub} on {threads}"
+                );
+                assert!(
+                    a.iter().enumerate().all(|(i, &v)| v == i as u32 + 1),
+                    "a: {la} {ua} {lb} {ub} on {threads}"
+                );
                 // `b` is written for the units that exist in `a` and no further.
                 let written = (la.div_ceil(ua) * ub).min(lb);
-                assert!(b.iter().enumerate().all(|(i, &v)| v == if i < written { i as u32 + 1 } else { 0 }), "b: {la} {ua} {lb} {ub} on {threads}");
+                assert!(
+                    b.iter()
+                        .enumerate()
+                        .all(|(i, &v)| v == if i < written { i as u32 + 1 } else { 0 }),
+                    "b: {la} {ua} {lb} {ub} on {threads}"
+                );
             }
         }
         // A unit size of 0 does nothing.
         let mut a = vec![1u8; 4];
-        par_units(4, &mut a, 0, &mut [] as &mut [()], 0, || (), |_, _, _, _| panic!("no units"));
+        par_units(
+            4,
+            &mut a,
+            0,
+            &mut [] as &mut [()],
+            0,
+            || (),
+            |_, _, _, _| panic!("no units"),
+        );
     }
 
     #[test]
     fn nearest_distances_do_not_depend_on_the_threads() {
         // Sizes that do not divide into the thread groups, lines of 1 pixel, and a noisy map where
         // many pixels are equally far from two seeds (the nearest one must resolve the same way).
-        for (w, h) in [(37usize, 23usize), (1, 40), (40, 1), (2, 2), (101, 3), (64, 64)] {
+        for (w, h) in [
+            (37usize, 23usize),
+            (1, 40),
+            (40, 1),
+            (2, 2),
+            (101, 3),
+            (64, 64),
+        ] {
             let mut seed = 7u32;
             let inside: Vec<bool> = (0..w * h)
                 .map(|_| {
@@ -2788,13 +3686,23 @@ mod tests {
             let (d1, n1) = with_threads(1, || edt_nearest(&inside, w, h));
             for threads in [2, 3, 8] {
                 let (d, n) = with_threads(threads, || edt_nearest(&inside, w, h));
-                assert_eq!((bits(&d), n), (bits(&d1), n1.clone()), "{w}x{h} on {threads} threads");
+                assert_eq!(
+                    (bits(&d), n),
+                    (bits(&d1), n1.clone()),
+                    "{w}x{h} on {threads} threads"
+                );
             }
             // And the nearest pixel is a seed at exactly that distance.
             for (i, (&d, &q)) in d1.iter().zip(&n1).enumerate() {
                 if inside.iter().any(|&b| b) {
-                    let (dx, dy) = ((i % w) as f32 - (q as usize % w) as f32, (i / w) as f32 - (q as usize / w) as f32);
-                    assert!(inside[q as usize] && (dx.hypot(dy) - d).abs() < 1e-3, "{w}x{h} at {i}: {d} vs seed {q}");
+                    let (dx, dy) = (
+                        (i % w) as f32 - (q as usize % w) as f32,
+                        (i / w) as f32 - (q as usize / w) as f32,
+                    );
+                    assert!(
+                        inside[q as usize] && (dx.hypot(dy) - d).abs() < 1e-3,
+                        "{w}x{h} at {i}: {d} vs seed {q}"
+                    );
                 }
             }
         }
@@ -2803,7 +3711,14 @@ mod tests {
     #[test]
     fn nearest_distances_survive_degenerate_sizes() {
         // The slice does not match the size, or there is nothing: no panic, and a result per input pixel.
-        for (len, w, h) in [(0usize, 0usize, 0usize), (0, 5, 0), (0, 0, 5), (6, 2, 2), (6, 4, 2), (1, 0, 1)] {
+        for (len, w, h) in [
+            (0usize, 0usize, 0usize),
+            (0, 5, 0),
+            (0, 0, 5),
+            (6, 2, 2),
+            (6, 4, 2),
+            (1, 0, 1),
+        ] {
             let (d, n) = edt_nearest(&vec![true; len], w, h);
             assert_eq!((d.len(), n.len()), (len, len), "{len} px as {w}x{h}");
         }
@@ -2831,14 +3746,36 @@ mod tests {
             for reach in [3.0f32, 12.0] {
                 let one = with_threads(1, || (sharp_edges(m), distance_field_of(m, reach)));
                 for threads in [2, 5, 16] {
-                    let many = with_threads(threads, || (sharp_edges(m), distance_field_of(m, reach)));
-                    assert_eq!(one.0.slot, many.0.slot, "map {k} sharp slots on {threads} threads");
+                    let many =
+                        with_threads(threads, || (sharp_edges(m), distance_field_of(m, reach)));
+                    assert_eq!(
+                        one.0.slot, many.0.slot,
+                        "map {k} sharp slots on {threads} threads"
+                    );
                     let edges = |s: &SharpEdges| {
-                        s.pixels.iter().map(|p| (p.at, p.cov.to_bits(), p.edge.offset.to_bits(), p.edge.normal.map(f32::to_bits))).collect::<Vec<_>>()
+                        s.pixels
+                            .iter()
+                            .map(|p| {
+                                (
+                                    p.at,
+                                    p.cov.to_bits(),
+                                    p.edge.offset.to_bits(),
+                                    p.edge.normal.map(f32::to_bits),
+                                )
+                            })
+                            .collect::<Vec<_>>()
                     };
-                    assert_eq!(edges(&one.0), edges(&many.0), "map {k} sharp edges on {threads} threads");
+                    assert_eq!(
+                        edges(&one.0),
+                        edges(&many.0),
+                        "map {k} sharp edges on {threads} threads"
+                    );
                     for (a, b) in one.1.iter().zip(&many.1) {
-                        assert_eq!(bits(a), bits(b), "map {k}, reach {reach} on {threads} threads");
+                        assert_eq!(
+                            bits(a),
+                            bits(b),
+                            "map {k}, reach {reach} on {threads} threads"
+                        );
                     }
                 }
             }
@@ -2847,9 +3784,14 @@ mod tests {
 
     /// The four fields that use the distance transform, of `m`.
     fn distance_field_of(m: &Map, reach: f32) -> Vec<Vec<f32>> {
-        [FieldKind::Inside, FieldKind::Outside, FieldKind::BevelInside, FieldKind::BevelOutside]
-            .map(|k| distance_field(k, m.v.clone(), m.w, m.h, reach))
-            .to_vec()
+        [
+            FieldKind::Inside,
+            FieldKind::Outside,
+            FieldKind::BevelInside,
+            FieldKind::BevelOutside,
+        ]
+        .map(|k| distance_field(k, m.v.clone(), m.w, m.h, reach))
+        .to_vec()
     }
 
     fn aa_disc(w: usize, h: usize, r: f32) -> Map {
@@ -2860,7 +3802,10 @@ mod tests {
                 let mut hit = 0;
                 for sy in 0..N {
                     for sx in 0..N {
-                        let (px, py) = (x as f32 + (sx as f32 + 0.5) / N as f32 - w as f32 / 2.0, y as f32 + (sy as f32 + 0.5) / N as f32 - h as f32 / 2.0);
+                        let (px, py) = (
+                            x as f32 + (sx as f32 + 0.5) / N as f32 - w as f32 / 2.0,
+                            y as f32 + (sy as f32 + 0.5) / N as f32 - h as f32 / 2.0,
+                        );
                         hit += usize::from(px * px + py * py <= r * r);
                     }
                 }
@@ -2874,7 +3819,10 @@ mod tests {
     fn aa_round_rect(w: usize, h: usize, x0: f32, y0: f32, x1: f32, y1: f32, rad: f32) -> Map {
         let sdf = |px: f32, py: f32| {
             let (cx, cy) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
-            let (qx, qy) = ((px - cx).abs() - ((x1 - x0) / 2.0 - rad), (py - cy).abs() - ((y1 - y0) / 2.0 - rad));
+            let (qx, qy) = (
+                (px - cx).abs() - ((x1 - x0) / 2.0 - rad),
+                (py - cy).abs() - ((y1 - y0) / 2.0 - rad),
+            );
             qx.max(0.0).hypot(qy.max(0.0)) + qx.max(qy).min(0.0) - rad
         };
         let mut m = Map::new(w, h, 0.0);
@@ -2884,7 +3832,12 @@ mod tests {
                 let mut hit = 0;
                 for sy in 0..N {
                     for sx in 0..N {
-                        hit += usize::from(sdf(x as f32 + (sx as f32 + 0.5) / N as f32, y as f32 + (sy as f32 + 0.5) / N as f32) <= 0.0);
+                        hit += usize::from(
+                            sdf(
+                                x as f32 + (sx as f32 + 0.5) / N as f32,
+                                y as f32 + (sy as f32 + 0.5) / N as f32,
+                            ) <= 0.0,
+                        );
                     }
                 }
                 m.v[y * w + x] = hit as f32 / (N * N) as f32;
@@ -2911,9 +3864,17 @@ mod tests {
     #[test]
     fn linear_bevel_contour_leaves_the_height_alone_at_any_range() {
         for range in [0.5, 0.7, 1.0] {
-            let lut = bevel_contour_lut(&photocraft_doc::BevelContour { contour: Contour::Linear, range, anti_alias: false });
+            let lut = bevel_contour_lut(&photocraft_doc::BevelContour {
+                contour: Contour::Linear,
+                range,
+                anti_alias: false,
+            });
             for v in [0.0f32, 0.25, 0.5, 0.75, 1.0] {
-                assert!((lut_at(&lut, v) - v).abs() < 1e-3, "range {range}: {v} -> {}", lut_at(&lut, v));
+                assert!(
+                    (lut_at(&lut, v) - v).abs() < 1e-3,
+                    "range {range}: {v} -> {}",
+                    lut_at(&lut, v)
+                );
             }
         }
     }
@@ -2923,20 +3884,45 @@ mod tests {
         let shape = square(40, 6, 34);
         let l = GlobalLight::default();
         let plain = bevel_of(BevelStyle::InnerBevel, BevelTechnique::Smooth);
-        let (a, _) = bevel_maps(&shape, &plain, &l, &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
+        let (a, _) = bevel_maps(
+            &shape,
+            &plain,
+            &l,
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
         // A contour reshapes the profile (here a ramp folded at its middle).
         let mut c = plain.clone();
         let fold = vec![
-            photocraft_doc::adjust::CurvePoint { input: 0.0, output: 0.0 },
-            photocraft_doc::adjust::CurvePoint { input: 0.5, output: 1.0 },
-            photocraft_doc::adjust::CurvePoint { input: 1.0, output: 0.0 },
+            photocraft_doc::adjust::CurvePoint {
+                input: 0.0,
+                output: 0.0,
+            },
+            photocraft_doc::adjust::CurvePoint {
+                input: 0.5,
+                output: 1.0,
+            },
+            photocraft_doc::adjust::CurvePoint {
+                input: 1.0,
+                output: 0.0,
+            },
         ];
         c.contour = Some(photocraft_doc::BevelContour {
-            contour: Contour::Custom { name: "fold".into(), points: fold, corners: vec![] },
+            contour: Contour::Custom {
+                name: "fold".into(),
+                points: fold,
+                corners: vec![],
+            },
             range: 1.0,
             anti_alias: false,
         });
-        let (b, _) = bevel_maps(&shape, &c, &l, &no_tex(), &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES));
+        let (b, _) = bevel_maps(
+            &shape,
+            &c,
+            &l,
+            &no_tex(),
+            &PreparedPatterns::new(&[], PREPARED_PATTERN_BYTES),
+        );
         let diff: f32 = a[1].v.iter().zip(&b[1].v).map(|(x, y)| (x - y).abs()).sum();
         assert!(diff > 5.0, "{diff}");
         // A striped texture lights the flat middle.
@@ -2954,10 +3940,24 @@ mod tests {
             link: true,
             phase: (0.0, 0.0),
         });
-        let tex = TextureCtx { rect: Rect::new(0, 0, 40, 40), patterns: &pats, anchor: (0.0, 0.0) };
-        let (m, _) = bevel_maps(&shape, &t, &l, &tex, &PreparedPatterns::new(&pats, PREPARED_PATTERN_BYTES));
-        let mid: f32 = (16..24).map(|y| m[0].v[y * 40 + 20] + m[1].v[y * 40 + 20]).sum();
-        let flat: f32 = (16..24).map(|y| a[0].v[y * 40 + 20] + a[1].v[y * 40 + 20]).sum();
+        let tex = TextureCtx {
+            rect: Rect::new(0, 0, 40, 40),
+            patterns: &pats,
+            anchor: (0.0, 0.0),
+        };
+        let (m, _) = bevel_maps(
+            &shape,
+            &t,
+            &l,
+            &tex,
+            &PreparedPatterns::new(&pats, PREPARED_PATTERN_BYTES),
+        );
+        let mid: f32 = (16..24)
+            .map(|y| m[0].v[y * 40 + 20] + m[1].v[y * 40 + 20])
+            .sum();
+        let flat: f32 = (16..24)
+            .map(|y| a[0].v[y * 40 + 20] + a[1].v[y * 40 + 20])
+            .sum();
         assert!(mid > flat + 0.5, "{mid} vs {flat}");
     }
 
@@ -3009,13 +4009,26 @@ mod tests {
         let at = |m: &Map, x: usize| m.v[30 * n + x];
         // Outer, precise, size 10: Photoshop's black glow over white reads 47, 93, 140, 186, 232
         // at 2, 4, 6, 8 and 10 px out from the edge pixel (alpha 1 − D / 11).
-        let m = glow_map(&shape, &glow(GlowTechnique::Precise, 10.0, 0.0, GlowSource::Edge), false, (0, 0));
+        let m = glow_map(
+            &shape,
+            &glow(GlowTechnique::Precise, 10.0, 0.0, GlowSource::Edge),
+            false,
+            (0, 0),
+        );
         for (d, ps) in [(2, 47.0f32), (4, 93.0), (6, 140.0), (8, 186.0), (10, 232.0)] {
             let got = 255.0 * (1.0 - at(&m, 20 - d));
-            assert!((got - ps).abs() <= 1.5, "outer precise at {d} px: {got} vs Photoshop {ps}");
+            assert!(
+                (got - ps).abs() <= 1.5,
+                "outer precise at {d} px: {got} vs Photoshop {ps}"
+            );
         }
         // Spread 40 %: solid for the first 4 px.
-        let m = glow_map(&shape, &glow(GlowTechnique::Precise, 10.0, 0.4, GlowSource::Edge), false, (0, 0));
+        let m = glow_map(
+            &shape,
+            &glow(GlowTechnique::Precise, 10.0, 0.4, GlowSource::Edge),
+            false,
+            (0, 0),
+        );
         assert!((at(&m, 16) - 1.0).abs() < 1e-6 && at(&m, 14) < 1.0);
         // Centre source = 1 − edge, for both techniques.
         for t in [GlowTechnique::Precise, GlowTechnique::Softer] {
@@ -3079,7 +4092,13 @@ mod tests {
             noise,
             knocks_out: true,
         };
-        shadow_map(&square_shape(40), &s, &GlobalLight::default(), false, origin)
+        shadow_map(
+            &square_shape(40),
+            &s,
+            &GlobalLight::default(),
+            false,
+            origin,
+        )
     }
 
     #[test]
@@ -3103,7 +4122,10 @@ mod tests {
         assert_ne!(noisy.v, moved.v, "hashed from document coordinates");
         // Full noise can punch holes even in the solid part.
         let heavy = shadow(1.0, (0, 0));
-        assert!(heavy.v.iter().any(|v| *v < 0.5) && heavy.v.iter().any(|v| *v > 0.5), "heavy noise spans the range",);
+        assert!(
+            heavy.v.iter().any(|v| *v < 0.5) && heavy.v.iter().any(|v| *v > 0.5),
+            "heavy noise spans the range",
+        );
     }
 
     #[test]
@@ -3123,7 +4145,12 @@ mod tests {
         };
         let plain = glow_map(&square_shape(40), &g(0.0), false, (0, 0));
         let noisy = glow_map(&square_shape(40), &g(0.6), false, (0, 0));
-        let diff: f32 = plain.v.iter().zip(&noisy.v).map(|(a, b)| (a - b).abs()).sum();
+        let diff: f32 = plain
+            .v
+            .iter()
+            .zip(&noisy.v)
+            .map(|(a, b)| (a - b).abs())
+            .sum();
         assert!(diff > 5.0, "glow noise changes the coverage: {diff}");
     }
 

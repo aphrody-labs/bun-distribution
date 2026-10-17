@@ -43,21 +43,39 @@ impl NvDecoder {
             NalCodec::H264 => bits == 8,
             NalCodec::Hevc => matches!(bits, 8 | 10),
         };
-        if !taken || info.chroma_format_idc != 1 || info.bit_depth_chroma != bits || info.interlaced {
+        if !taken || info.chroma_format_idc != 1 || info.bit_depth_chroma != bits || info.interlaced
+        {
             return Err(format!(
                 "{} chroma format {} at {bits}/{}-bit is not taken",
-                if info.interlaced { "interlaced" } else { "progressive" },
+                if info.interlaced {
+                    "interlaced"
+                } else {
+                    "progressive"
+                },
                 info.chroma_format_idc,
                 info.bit_depth_chroma
             ));
         }
-        let geometry = Geometry { crop: info.crop, bits, color: info.color, par: info.par };
+        let geometry = Geometry {
+            crop: info.crop,
+            bits,
+            color: info.color,
+            par: info.par,
+        };
         let session = cuvid::Session::new(info.codec, info.coded, geometry, info.reorder)?;
         let name = match info.codec {
             NalCodec::H264 => "NVDEC H.264",
             NalCodec::Hevc => "NVDEC HEVC",
         };
-        Ok(Self { session, info, name, primed: false, skip_rasl: false, fed: 0, fail_after: None })
+        Ok(Self {
+            session,
+            info,
+            name,
+            primed: false,
+            skip_rasl: false,
+            fed: 0,
+            fail_after: None,
+        })
     }
 
     /// Test hook: fail every decode call after the first `n` (a GPU lost mid-stream).
@@ -67,14 +85,22 @@ impl NvDecoder {
 }
 
 fn frames(out: Vec<(i64, filmcraft_frame::VideoFrame)>) -> Vec<DecodedFrame> {
-    out.into_iter().map(|(pts, frame)| DecodedFrame { pts, frame, draft: false }).collect()
+    out.into_iter()
+        .map(|(pts, frame)| DecodedFrame {
+            pts,
+            frame,
+            draft: false,
+        })
+        .collect()
 }
 
 impl VideoDecoder for NvDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
         self.fed += 1;
         if self.fail_after.is_some_and(|n| self.fed > n) {
-            return Err(CodecError::Decode("NVDEC decoder failed (test hook)".into()));
+            return Err(CodecError::Decode(
+                "NVDEC decoder failed (test hook)".into(),
+            ));
         }
         if self.info.codec == NalCodec::Hevc {
             let types = self.info.nal_types(sample);
@@ -89,7 +115,10 @@ impl VideoDecoder for NvDecoder {
         }
         let data = to_annex_b(&self.info, sample, !self.primed).map_err(CodecError::Decode)?;
         self.primed = true;
-        self.session.feed(&data, pts).map(frames).map_err(CodecError::Decode)
+        self.session
+            .feed(&data, pts)
+            .map(frames)
+            .map_err(CodecError::Decode)
     }
 
     fn flush(&mut self) -> Vec<DecodedFrame> {

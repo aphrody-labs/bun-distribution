@@ -75,7 +75,7 @@ impl NewElfSignature {
             let target_symbol = match relocation.target() {
                 RelocationTarget::Symbol(symbol_index) => {
                     object.symbol_by_index(symbol_index).unwrap()
-                },
+                }
                 target => bail!("Invalid relocation target {target:?}"),
             };
             let name = target_symbol.name().unwrap().to_string();
@@ -87,7 +87,7 @@ impl NewElfSignature {
                     // `ins` may be `None` if the relocation is R_ARM_ABS32
                     let is_branch = matches!(ins, Some(Ins::B { .. }));
                     RelocationKind::from_elf_relocation_type(r_type, dest_thumb, is_branch).unwrap()
-                },
+                }
                 flags => bail!("Invalid relocation flags {flags:?}"),
             };
             let addend = match kind {

@@ -42,9 +42,15 @@ use std::path::{Path, PathBuf};
 
 /// Le chemin de l'include, sur le montage qui le porte.
 fn include() -> Option<PathBuf> {
-    let depot = std::env::var("NIE_GAME_DIR")
-        .map_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."), PathBuf::from);
-    for base in ["data", "data/lua_dump", "data/re/40-derived/dumps/lua-vfs-all"] {
+    let depot = std::env::var("NIE_GAME_DIR").map_or_else(
+        |_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."),
+        PathBuf::from,
+    );
+    for base in [
+        "data",
+        "data/lua_dump",
+        "data/re/40-derived/dumps/lua-vfs-all",
+    ] {
         let dossier = depot.join(base).join("common/script/lua/include/menu");
         let Ok(entrees) = std::fs::read_dir(&dossier) else {
             continue;
@@ -86,7 +92,10 @@ fn ce_que_linclude_reclame_avant_de_definir() {
     match aphrody_nie_lua::discover_host_calls(&octets, &nom) {
         Ok(globales) => {
             eprintln!("{nom} : {} globales hôte réclamées", globales.len());
-            eprintln!("  premières : {:?}", globales.iter().take(25).collect::<Vec<_>>());
+            eprintln!(
+                "  premières : {:?}",
+                globales.iter().take(25).collect::<Vec<_>>()
+            );
             // La question à laquelle ce relevé répond : l'include va-t-il jusqu'au bout ?
             // S'il définit bien ses cinq fonctions dans une VM qui stube tout, alors ce n'est
             // pas SA faute — c'est le rejeu qui ne l'exécute pas. Sinon, c'est ici que ça casse.
@@ -98,12 +107,12 @@ fn ce_que_linclude_reclame_avant_de_definir() {
                     .collect::<Vec<_>>()
                     .join(" ")
             );
-        },
+        }
         Err(erreur) => {
             // Une erreur EST la réponse : l'include ne s'exécute pas jusqu'au bout, et le
             // message dit sur quoi il s'arrête.
             eprintln!("{nom} ÉCHOUE : {erreur}");
-        },
+        }
     }
 }
 
@@ -133,7 +142,10 @@ fn linclude_se_resout_sur_les_chemins_du_rejeu() {
     let (by_name, by_logical) =
         aphrody_nie_lua::index_script_paths(chemins.iter().map(String::as_str));
     for nom in ["LUA_MAIN_MENU_INC", "MAIN_MENU_INC", "main_menu_inc"] {
-        eprintln!("{nom} → {:?}", aphrody_nie_lua::resolve_script_path(nom, &by_name, &by_logical));
+        eprintln!(
+            "{nom} → {:?}",
+            aphrody_nie_lua::resolve_script_path(nom, &by_name, &by_logical)
+        );
     }
     assert!(
         aphrody_nie_lua::resolve_script_path("LUA_MAIN_MENU_INC", &by_name, &by_logical).is_some(),
@@ -188,7 +200,11 @@ fn ou_vit_lappel_include_dans_un_ecran() {
         if cite {
             return Some(niveau);
         }
-        proto.protos.iter().filter_map(|enfant| profondeur(enfant, cible, niveau + 1)).min()
+        proto
+            .protos
+            .iter()
+            .filter_map(|enfant| profondeur(enfant, cible, niveau + 1))
+            .min()
     }
 
     let Ok(entrees) = std::fs::read_dir(&menus) else {
@@ -222,15 +238,18 @@ fn ou_vit_lappel_include_dans_un_ecran() {
                         chemin.file_name().unwrap_or_default().to_string_lossy()
                     ));
                 }
-            },
-            None => {},
+            }
+            None => {}
         }
     }
     eprintln!(
         "écrans lisant une fonction de main_menu_inc : {examines} — INCLUDE au niveau principal : \
          {au_principal}, dans une fonction : {enfoui} {exemples:?}"
     );
-    assert!(examines > 0, "aucun écran concerné : le relevé ne mesure rien");
+    assert!(
+        examines > 0,
+        "aucun écran concerné : le relevé ne mesure rien"
+    );
 }
 
 /// À quelle PROFONDEUR l'include définit-il ses fonctions ?
@@ -272,6 +291,9 @@ fn a_quelle_profondeur_linclude_definit_ses_fonctions() {
     }
 
     for cible in DEFINIES_ICI {
-        eprintln!("  {cible} : écrite au niveau {:?}", profondeur_ecriture(&chunk.main, cible, 0));
+        eprintln!(
+            "  {cible} : écrite au niveau {:?}",
+            profondeur_ecriture(&chunk.main, cible, 0)
+        );
     }
 }

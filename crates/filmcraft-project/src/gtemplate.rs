@@ -62,8 +62,14 @@ pub enum ControlKind {
 }
 
 impl ControlKind {
-    pub const ALL: [ControlKind; 6] =
-        [ControlKind::Text, ControlKind::Color, ControlKind::Slider, ControlKind::Checkbox, ControlKind::Font, ControlKind::Position];
+    pub const ALL: [ControlKind; 6] = [
+        ControlKind::Text,
+        ControlKind::Color,
+        ControlKind::Slider,
+        ControlKind::Checkbox,
+        ControlKind::Font,
+        ControlKind::Position,
+    ];
     pub fn name(self) -> &'static str {
         match self {
             ControlKind::Text => "text",
@@ -76,7 +82,11 @@ impl ControlKind {
     }
     pub fn from_name(s: &str) -> Option<ControlKind> {
         let s = s.to_ascii_lowercase();
-        let s = if s == "colour" { "color".to_string() } else { s };
+        let s = if s == "colour" {
+            "color".to_string()
+        } else {
+            s
+        };
         ControlKind::ALL.into_iter().find(|k| k.name() == s)
     }
     /// The kind that edits parameter `param` of a layer.
@@ -215,7 +225,9 @@ pub enum TemplateError {
     ForeignPackage,
     #[error("not a FilmCraft graphics template: {0}")]
     NotTemplate(String),
-    #[error("this graphics template was made by a newer FilmCraft (format version {0}; this build reads up to {TEMPLATE_VERSION})")]
+    #[error(
+        "this graphics template was made by a newer FilmCraft (format version {0}; this build reads up to {TEMPLATE_VERSION})"
+    )]
     TooNew(u32),
     #[error("invalid graphics template: {0}")]
     Invalid(String),
@@ -247,11 +259,14 @@ impl GraphicsTemplate {
         if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
             return Err(TemplateError::ForeignPackage);
         }
-        let text =
-            std::str::from_utf8(bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes)).map_err(|_| TemplateError::NotTemplate("not UTF-8 text".into()))?;
-        let v: serde_json::Value = serde_json::from_str(text).map_err(|e| TemplateError::NotTemplate(e.to_string()))?;
+        let text = std::str::from_utf8(bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes))
+            .map_err(|_| TemplateError::NotTemplate("not UTF-8 text".into()))?;
+        let v: serde_json::Value =
+            serde_json::from_str(text).map_err(|e| TemplateError::NotTemplate(e.to_string()))?;
         if v.get("format").and_then(|f| f.as_str()) != Some(TEMPLATE_FORMAT) {
-            return Err(TemplateError::NotTemplate(format!("`format` is not \"{TEMPLATE_FORMAT}\"")));
+            return Err(TemplateError::NotTemplate(format!(
+                "`format` is not \"{TEMPLATE_FORMAT}\""
+            )));
         }
         let ver = v.get("version").and_then(|x| x.as_u64()).unwrap_or(0) as u32;
         if ver > TEMPLATE_VERSION {
@@ -260,7 +275,8 @@ impl GraphicsTemplate {
         if ver == 0 {
             return Err(TemplateError::Invalid("missing `version`".into()));
         }
-        let t: GraphicsTemplate = serde_json::from_value(v).map_err(|e| TemplateError::Invalid(e.to_string()))?;
+        let t: GraphicsTemplate =
+            serde_json::from_value(v).map_err(|e| TemplateError::Invalid(e.to_string()))?;
         t.validate()?;
         Ok(t)
     }
@@ -275,7 +291,11 @@ impl GraphicsTemplate {
         if self.layers.is_empty() {
             return bad("the template has no layers".into());
         }
-        if self.canvas[0] == 0 || self.canvas[1] == 0 || self.canvas[0] > 16384 || self.canvas[1] > 16384 {
+        if self.canvas[0] == 0
+            || self.canvas[1] == 0
+            || self.canvas[0] > 16384
+            || self.canvas[1] > 16384
+        {
             return bad(format!("bad canvas size {:?}", self.canvas));
         }
         let mut uids = Vec::new();
@@ -299,7 +319,10 @@ impl GraphicsTemplate {
                 return bad(format!("control `{}` points at a missing layer", c.name));
             };
             if c.param != "enabled" && !l.params.contains_key(&c.param) {
-                return bad(format!("control `{}`: the layer has no parameter `{}`", c.name, c.param));
+                return bad(format!(
+                    "control `{}`: the layer has no parameter `{}`",
+                    c.name, c.param
+                ));
             }
         }
         for f in &self.resources.fonts {
@@ -323,7 +346,9 @@ impl GraphicsTemplate {
             for l in &mut layers {
                 if let Some(p) = l.params.get_mut("position") {
                     p.map_values(|v| match v {
-                        ParamValue::Vec2(q) if !q.x.is_nan() => ParamValue::Vec2(Vec2::new(q.x * s + off.x, q.y * s + off.y)),
+                        ParamValue::Vec2(q) if !q.x.is_nan() => {
+                            ParamValue::Vec2(Vec2::new(q.x * s + off.x, q.y * s + off.y))
+                        }
                         o => o,
                     });
                 }
@@ -339,7 +364,11 @@ impl GraphicsTemplate {
             }
         }
         let mut meta = self.graphic.clone();
-        meta.template = Some(TemplateLink { id: self.id.clone(), name: self.name.clone(), controls: self.controls.clone() });
+        meta.template = Some(TemplateLink {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            controls: self.controls.clone(),
+        });
         (layers, meta)
     }
 }
@@ -369,7 +398,9 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn base64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         for k in 0..4 {
             if k <= c.len() {
                 out.push(B64[(n >> (18 - 6 * k) & 63) as usize] as char);
@@ -419,30 +450,70 @@ fn text(uid: u64, name: &str, s: &str, pos: (f64, f64), size: f64, style: &str) 
     set(&mut e, "name", ParamValue::Text(name.into()));
     set(&mut e, "font", ParamValue::Text("Inter".into()));
     set(&mut e, "font_style", ParamValue::Text(style.into()));
-    e.layer = Some(Box::new(LayerExtra { uid, ..Default::default() }));
+    e.layer = Some(Box::new(LayerExtra {
+        uid,
+        ..Default::default()
+    }));
     e
 }
 
-fn shape(uid: u64, name: &str, kind: u32, pos: (f64, f64), size: (f64, f64), color: u32) -> EffectInstance {
-    let mut e = new_shape_layer(kind, Vec2::new(pos.0, pos.1), Vec2::new(size.0, size.1), vec![]);
+fn shape(
+    uid: u64,
+    name: &str,
+    kind: u32,
+    pos: (f64, f64),
+    size: (f64, f64),
+    color: u32,
+) -> EffectInstance {
+    let mut e = new_shape_layer(
+        kind,
+        Vec2::new(pos.0, pos.1),
+        Vec2::new(size.0, size.1),
+        vec![],
+    );
     set(&mut e, "name", ParamValue::Text(name.into()));
     set(&mut e, "fill_color", rgb(color));
-    e.layer = Some(Box::new(LayerExtra { uid, ..Default::default() }));
+    e.layer = Some(Box::new(LayerExtra {
+        uid,
+        ..Default::default()
+    }));
     e
 }
 
 fn pin(e: &mut EffectInstance, to: u64, edges: [bool; 4], offsets: [f64; 4]) {
-    let p =
-        Pin { to: if to == 0 { PinTarget::Frame } else { PinTarget::Layer(to) }, left: edges[0], top: edges[1], right: edges[2], bottom: edges[3], offsets };
+    let p = Pin {
+        to: if to == 0 {
+            PinTarget::Frame
+        } else {
+            PinTarget::Layer(to)
+        },
+        left: edges[0],
+        top: edges[1],
+        right: edges[2],
+        bottom: edges[3],
+        offsets,
+    };
     e.layer.get_or_insert_with(Default::default).pin = Some(p);
 }
 
 fn ctl(id: &str, name: &str, layer: u64, param: &str) -> TemplateControl {
-    TemplateControl { id: id.into(), name: name.into(), kind: ControlKind::for_param(param), layer, param: param.into(), min: None, max: None }
+    TemplateControl {
+        id: id.into(),
+        name: name.into(),
+        kind: ControlKind::for_param(param),
+        layer,
+        param: param.into(),
+        min: None,
+        max: None,
+    }
 }
 
 fn slider(id: &str, name: &str, layer: u64, param: &str, min: f64, max: f64) -> TemplateControl {
-    TemplateControl { min: Some(min), max: Some(max), ..ctl(id, name, layer, param) }
+    TemplateControl {
+        min: Some(min),
+        max: Some(max),
+        ..ctl(id, name, layer, param)
+    }
 }
 
 fn builtin(
@@ -478,9 +549,19 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
     {
         let mut slab = shape(1, "Slab", 0, (400.0, 900.0), (560.0, 150.0), 0x1d4ed8);
         set(&mut slab, "opacity", ParamValue::Float(92.0));
-        pin(&mut slab, 2, [true, false, true, false], [-40.0, 0.0, 48.0, 0.0]);
+        pin(
+            &mut slab,
+            2,
+            [true, false, true, false],
+            [-40.0, 0.0, 48.0, 0.0],
+        );
         let mut accent = shape(4, "Accent", 0, (130.0, 900.0), (12.0, 150.0), 0xfacc15);
-        pin(&mut accent, 1, [true, false, false, false], [-12.0, 0.0, 0.0, 0.0]);
+        pin(
+            &mut accent,
+            1,
+            [true, false, false, false],
+            [-12.0, 0.0, 0.0, 0.0],
+        );
         let mut name = text(2, "Name", "Alex Morgan", (160.0, 895.0), 62.0, "SemiBold");
         set(&mut name, "fill_color", rgb(0xffffff));
         let mut role = text(3, "Role", "Field Producer", (162.0, 950.0), 36.0, "Regular");
@@ -514,7 +595,12 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
         };
         shadow(&mut name);
         let mut rule = shape(2, "Rule", 0, (300.0, 920.0), (320.0, 5.0), 0x22d3ee);
-        pin(&mut rule, 1, [true, false, true, false], [0.0, 0.0, 0.0, 0.0]);
+        pin(
+            &mut rule,
+            1,
+            [true, false, true, false],
+            [0.0, 0.0, 0.0, 0.0],
+        );
         let mut role = text(3, "Role", "Lead Engineer", (140.0, 966.0), 34.0, "Medium");
         set(&mut role, "tracking", ParamValue::Float(40.0));
         shadow(&mut role);
@@ -536,12 +622,26 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
     }
     // Centred title with a subtitle and a short rule between them.
     {
-        let mut title = text(1, "Title", "THE LONG WAY HOME", (960.0, 520.0), 112.0, "Bold");
+        let mut title = text(
+            1,
+            "Title",
+            "THE LONG WAY HOME",
+            (960.0, 520.0),
+            112.0,
+            "Bold",
+        );
         set(&mut title, "align", ParamValue::Choice(1));
         set(&mut title, "tracking", ParamValue::Float(60.0));
         let mut rule = shape(2, "Rule", 0, (960.0, 556.0), (220.0, 4.0), 0xf97316);
         set(&mut rule, "opacity", ParamValue::Float(90.0));
-        let mut sub = text(3, "Subtitle", "a story in three parts", (960.0, 628.0), 44.0, "Italic");
+        let mut sub = text(
+            3,
+            "Subtitle",
+            "a story in three parts",
+            (960.0, 628.0),
+            44.0,
+            "Italic",
+        );
         set(&mut sub, "align", ParamValue::Choice(1));
         set(&mut sub, "fill_color", rgb(0xe5e7eb));
         v.push(builtin(
@@ -586,7 +686,14 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
                 ctl("title", "Title", 1, "text"),
                 ctl("text_color", "Text Color", 1, "fill_color"),
                 ctl("box_color", "Box Color", 1, "background_color"),
-                slider("box_opacity", "Box Opacity", 1, "background_opacity", 0.0, 100.0),
+                slider(
+                    "box_opacity",
+                    "Box Opacity",
+                    1,
+                    "background_opacity",
+                    0.0,
+                    100.0,
+                ),
                 ctl("position", "Position", 1, "position"),
             ],
         ));
@@ -614,7 +721,12 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
                 ctl("color", "Text Color", 2, "fill_color"),
             ],
         );
-        t.graphic.roll = Roll { mode: RollMode::Roll, start_off_screen: true, end_off_screen: true, ..Default::default() };
+        t.graphic.roll = Roll {
+            mode: RollMode::Roll,
+            start_off_screen: true,
+            end_off_screen: true,
+            ..Default::default()
+        };
         v.push(t);
     }
     // Callout: a label on a box with a pointer that follows it.
@@ -630,7 +742,12 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
         set(&mut dot, "stroke", ParamValue::Bool(true));
         set(&mut dot, "stroke_color", rgb(0xffffff));
         set(&mut dot, "stroke_width", ParamValue::Float(5.0));
-        pin(&mut dot, 1, [true, true, false, false], [-60.0, 55.0, 0.0, 0.0]);
+        pin(
+            &mut dot,
+            1,
+            [true, true, false, false],
+            [-60.0, 55.0, 0.0, 0.0],
+        );
         v.push(builtin(
             "callout-pointer",
             "Callout – Pointer",
@@ -653,7 +770,12 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
         set(&mut tag, "opacity", ParamValue::Float(88.0));
         pin(&mut tag, 2, [true; 4], [-70.0, -18.0, 30.0, 18.0]);
         let mut dot = shape(3, "Dot", 1, (190.0, 140.0), (22.0, 22.0), 0x22c55e);
-        pin(&mut dot, 2, [true, false, false, false], [-44.0, 0.0, 0.0, 0.0]);
+        pin(
+            &mut dot,
+            2,
+            [true, false, false, false],
+            [-44.0, 0.0, 0.0, 0.0],
+        );
         let mut label = text(2, "Text", "LIVE", (220.0, 155.0), 40.0, "Bold");
         set(&mut label, "tracking", ParamValue::Float(80.0));
         v.push(builtin(
@@ -692,9 +814,18 @@ pub fn builtin_templates() -> Vec<GraphicsTemplate> {
             "A news-style line that crawls in from the right and leaves at the left.",
             15,
             vec![line],
-            vec![ctl("text", "Text", 1, "text"), ctl("text_color", "Text Color", 1, "fill_color"), ctl("bar_color", "Bar Color", 1, "background_color")],
+            vec![
+                ctl("text", "Text", 1, "text"),
+                ctl("text_color", "Text Color", 1, "fill_color"),
+                ctl("bar_color", "Bar Color", 1, "background_color"),
+            ],
         );
-        t.graphic.roll = Roll { mode: RollMode::CrawlLeft, start_off_screen: true, end_off_screen: true, ..Default::default() };
+        t.graphic.roll = Roll {
+            mode: RollMode::CrawlLeft,
+            start_off_screen: true,
+            end_off_screen: true,
+            ..Default::default()
+        };
         v.push(t);
     }
     v
@@ -734,11 +865,20 @@ mod tests {
 
     #[test]
     fn refuses_foreign_and_newer_files() {
-        assert_eq!(GraphicsTemplate::from_bytes(b"PK\x03\x04rest"), Err(TemplateError::ForeignPackage));
-        assert!(matches!(GraphicsTemplate::from_bytes(b"{\"format\":\"x\"}"), Err(TemplateError::NotTemplate(_))));
+        assert_eq!(
+            GraphicsTemplate::from_bytes(b"PK\x03\x04rest"),
+            Err(TemplateError::ForeignPackage)
+        );
+        assert!(matches!(
+            GraphicsTemplate::from_bytes(b"{\"format\":\"x\"}"),
+            Err(TemplateError::NotTemplate(_))
+        ));
         let mut t = builtin_templates().remove(0);
         t.version = 99;
-        assert_eq!(GraphicsTemplate::from_bytes(t.to_json().as_bytes()), Err(TemplateError::TooNew(99)));
+        assert_eq!(
+            GraphicsTemplate::from_bytes(t.to_json().as_bytes()),
+            Err(TemplateError::TooNew(99))
+        );
         let mut t = builtin_templates().remove(0);
         t.controls[0].layer = 999;
         assert!(matches!(t.validate(), Err(TemplateError::Invalid(_))));
@@ -746,19 +886,33 @@ mod tests {
 
     #[test]
     fn instantiates_on_other_frame_sizes() {
-        let t = builtin_templates().into_iter().find(|t| t.id == "builtin:title-centered").unwrap();
+        let t = builtin_templates()
+            .into_iter()
+            .find(|t| t.id == "builtin:title-centered")
+            .unwrap();
         let (same, meta) = t.instantiate((1920, 1080));
         assert_eq!(same, t.layers);
         assert_eq!(meta.template.as_ref().unwrap().id, t.id);
         let (half, _) = t.instantiate((960, 540));
-        assert_eq!(half[0].params["position"].value, ParamValue::Vec2(Vec2::new(480.0, 260.0)));
+        assert_eq!(
+            half[0].params["position"].value,
+            ParamValue::Vec2(Vec2::new(480.0, 260.0))
+        );
         assert_eq!(half[0].params["scale"].value, ParamValue::Float(50.0));
         // a vertical frame: fit to width, centred vertically
         let (tall, _) = t.instantiate((1080, 1920));
-        let ParamValue::Vec2(p) = tall[0].params["position"].value else { panic!() };
-        assert!((p.x - 540.0).abs() < 1e-9 && (p.y - (520.0 * 0.5625 + (1920.0 - 1080.0 * 0.5625) / 2.0)).abs() < 1e-9);
+        let ParamValue::Vec2(p) = tall[0].params["position"].value else {
+            panic!()
+        };
+        assert!(
+            (p.x - 540.0).abs() < 1e-9
+                && (p.y - (520.0 * 0.5625 + (1920.0 - 1080.0 * 0.5625) / 2.0)).abs() < 1e-9
+        );
         assert_eq!(slug("My Lower Third!"), "my-lower-third");
-        assert_eq!(ControlKind::for_param("background_opacity"), ControlKind::Slider);
+        assert_eq!(
+            ControlKind::for_param("background_opacity"),
+            ControlKind::Slider
+        );
         assert_eq!(ControlKind::for_param("shadow"), ControlKind::Checkbox);
     }
 }

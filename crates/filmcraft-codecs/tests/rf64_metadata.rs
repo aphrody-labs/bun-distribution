@@ -24,7 +24,11 @@ fn fixture(rf64: bool, trailing: bool) -> Vec<u8> {
     fmt.extend_from_slice(&96_000u32.to_le_bytes());
     fmt.extend_from_slice(&2u16.to_le_bytes());
     fmt.extend_from_slice(&16u16.to_le_bytes());
-    let mut out = if rf64 { b"RF64\xff\xff\xff\xffWAVE".to_vec() } else { b"RIFF\0\0\0\0WAVE".to_vec() };
+    let mut out = if rf64 {
+        b"RF64\xff\xff\xff\xffWAVE".to_vec()
+    } else {
+        b"RIFF\0\0\0\0WAVE".to_vec()
+    };
     if rf64 {
         let mut ds = vec![0u8; 28];
         ds[8..16].copy_from_slice(&8u64.to_le_bytes());
@@ -51,7 +55,11 @@ fn fixture(rf64: bool, trailing: bool) -> Vec<u8> {
 
 #[test]
 fn rf64_metadata_stays_outside_audio() {
-    for (name, rf64, trailing) in [("rf64.wav", true, false), ("riff_ixml.wav", false, true), ("rf64_ixml.wav", true, true)] {
+    for (name, rf64, trailing) in [
+        ("rf64.wav", true, false),
+        ("riff_ixml.wav", false, true),
+        ("rf64_ixml.wav", true, true),
+    ] {
         let bytes: Arc<[u8]> = fixture(rf64, trailing).into();
         let src = filmcraft_codecs::open_bytes(name, bytes.clone()).unwrap();
         let stream = filmcraft_media::reader::open_reader(
@@ -63,7 +71,11 @@ fn rf64_metadata_stays_outside_audio() {
         .unwrap();
         for s in [&src, &stream] {
             assert_eq!(s.info().duration, Tick::from_units(4, 48_000), "{name}");
-            assert_eq!(s.audio(0, 20, 48_000).unwrap().channels.remove(0), vec![0.0; 20], "{name}");
+            assert_eq!(
+                s.audio(0, 20, 48_000).unwrap().channels.remove(0),
+                vec![0.0; 20],
+                "{name}"
+            );
         }
     }
 }

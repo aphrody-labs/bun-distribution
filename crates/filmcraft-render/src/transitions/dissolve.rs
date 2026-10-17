@@ -1,7 +1,9 @@
 //! Dissolves (the classic Cross Dissolve / Dip / Film / Additive family stays in `legacy.rs`,
 //! whose output the golden images pin).
 
-use super::{Tx, add_light, bell, blurred, fbm, hash, luma, mid_mix, mix, paint, scale4, smoothstep};
+use super::{
+    Tx, add_light, bell, blurred, fbm, hash, luma, mid_mix, mix, paint, scale4, smoothstep,
+};
 use crate::image::Image;
 
 /// Perceptual (≈ gamma 2.2) luma of a premultiplied linear pixel, 0..1.
@@ -17,8 +19,16 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let k = smoothstep(0.25, 0.75, p);
             let sa = sigma * smoothstep(0.0, 0.6, p);
             let sb = sigma * (1.0 - smoothstep(0.4, 1.0, p));
-            let ba = if k < 1.0 { blurred(t.a, sa) } else { t.a.clone() };
-            let bb = if k > 0.0 { blurred(t.b, sb) } else { t.b.clone() };
+            let ba = if k < 1.0 {
+                blurred(t.a, sa)
+            } else {
+                t.a.clone()
+            };
+            let bb = if k > 0.0 {
+                blurred(t.b, sb)
+            } else {
+                t.b.clone()
+            };
             ba.lerp(&bb, k)
         }
         "burn_alpha" => {
@@ -36,8 +46,21 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
                 let k = 1.0 - smoothstep(-soft * 0.3, soft * 0.3, d);
                 let base = mix(a, t.pb(x, y), k);
                 let edge = (-(d / (soft * 0.6)).powi(2)).exp() * fade;
-                let charred = if d > 0.0 { 1.0 - 0.6 * (-(d / soft).powi(2)).exp() * fade } else { 1.0 };
-                add_light([base[0] * charred, base[1] * charred, base[2] * charred, base[3]], col, edge * 2.0)
+                let charred = if d > 0.0 {
+                    1.0 - 0.6 * (-(d / soft).powi(2)).exp() * fade
+                } else {
+                    1.0
+                };
+                add_light(
+                    [
+                        base[0] * charred,
+                        base[1] * charred,
+                        base[2] * charred,
+                        base[3],
+                    ],
+                    col,
+                    edge * 2.0,
+                )
             })
         }
         "dip_to_color" => {

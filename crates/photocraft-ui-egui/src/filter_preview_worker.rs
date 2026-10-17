@@ -11,7 +11,10 @@ use photocraft_engine::jobs::JobCtx;
 use crate::filter_dialog::FilterPreviewKey;
 
 pub(crate) struct Computed {
-    pub result: Option<(std::sync::Arc<photocraft_doc::Document>, photocraft_compose::Buffer)>,
+    pub result: Option<(
+        std::sync::Arc<photocraft_doc::Document>,
+        photocraft_compose::Buffer,
+    )>,
     pub ms: f64,
 }
 
@@ -41,7 +44,12 @@ impl Worker {
 
     /// Never wait for a previous computation and never spawn a second concurrent preview.
     /// `compute` gets the preview's cancellation context ([`Worker::supersede`]).
-    pub fn start(&mut self, key: FilterPreviewKey, ctx: egui::Context, compute: impl FnOnce(&JobCtx) -> Computed + Send + 'static) -> Result<bool, String> {
+    pub fn start(
+        &mut self,
+        key: FilterPreviewKey,
+        ctx: egui::Context,
+        compute: impl FnOnce(&JobCtx) -> Computed + Send + 'static,
+    ) -> Result<bool, String> {
         if self.busy() {
             return Ok(false);
         }
@@ -51,7 +59,9 @@ impl Worker {
         std::thread::Builder::new()
             .name("filter-preview".into())
             .spawn(move || {
-                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| compute(&work))).map_err(|_| "Filter preview failed".to_string());
+                let result =
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| compute(&work)))
+                        .map_err(|_| "Filter preview failed".to_string());
                 let _ = tx.send(result);
                 ctx.request_repaint();
             })
@@ -86,7 +96,9 @@ impl Worker {
         let result = match self.running.as_ref()?.rx.try_recv() {
             Ok(result) => result,
             Err(TryRecvError::Empty) => return None,
-            Err(TryRecvError::Disconnected) => Err("Filter preview worker disconnected".to_string()),
+            Err(TryRecvError::Disconnected) => {
+                Err("Filter preview worker disconnected".to_string())
+            }
         };
         let key = self.running.take()?.key;
         Some((key, result))
@@ -95,8 +107,13 @@ impl Worker {
 
 /// Stop and release previews of closed dialogs even when their canvas is no longer being drawn.
 pub(crate) fn discard_closed(app: &mut crate::PhotocraftApp) {
-    let visible =
-        app.ui.dialogs.iter().any(|d| d.fields.contains_key("__filter") && d.fields.get("__preview").and_then(serde_json::Value::as_bool) == Some(true));
+    let visible = app.ui.dialogs.iter().any(|d| {
+        d.fields.contains_key("__filter")
+            && d.fields
+                .get("__preview")
+                .and_then(serde_json::Value::as_bool)
+                == Some(true)
+    });
     if !visible {
         if let Some(r) = &app.filter_preview_worker.running {
             r.job.cancel();
@@ -129,7 +146,10 @@ mod tests {
             if let Some(result) = worker.poll() {
                 return result;
             }
-            assert!(std::time::Instant::now() < deadline, "preview worker did not finish");
+            assert!(
+                std::time::Instant::now() < deadline,
+                "preview worker did not finish"
+            );
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
     }
@@ -142,8 +162,12 @@ mod tests {
         assert!(
             worker
                 .start(key(1, 0, 8), ctx.clone(), move |_| {
-                    wait.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
-                    Computed { result: None, ms: 0.0 }
+                    wait.recv_timeout(std::time::Duration::from_secs(5))
+                        .unwrap();
+                    Computed {
+                        result: None,
+                        ms: 0.0,
+                    }
                 })
                 .unwrap()
         );
@@ -154,14 +178,27 @@ mod tests {
             .textures_delta
             .clear();
             assert!(worker.poll().is_none());
-            assert!(!worker.start(key(1, 0, colors), ctx.clone(), |_| panic!("queued an intermediate request")).unwrap());
+            assert!(
+                !worker
+                    .start(key(1, 0, colors), ctx.clone(), |_| panic!(
+                        "queued an intermediate request"
+                    ))
+                    .unwrap()
+            );
         }
         release.send(()).unwrap();
         let (old, result) = finish(&mut worker);
         assert!(result.is_ok());
         let latest = key(1, 0, 256);
         assert_ne!(old, latest); // The canvas must discard this result before uploading.
-        assert!(worker.start(latest.clone(), ctx, |_| Computed { result: None, ms: 1.0 }).unwrap());
+        assert!(
+            worker
+                .start(latest.clone(), ctx, |_| Computed {
+                    result: None,
+                    ms: 1.0
+                })
+                .unwrap()
+        );
         assert_eq!(finish(&mut worker).0, latest);
     }
 
@@ -179,10 +216,19 @@ mod tests {
     #[test]
     fn escaped_panic_is_an_error_and_worker_can_be_reused() {
         let mut worker = Worker::default();
-        worker.start(key(1, 0, 64), Default::default(), |_| panic!("synthetic preview failure")).unwrap();
+        worker
+            .start(key(1, 0, 64), Default::default(), |_| {
+                panic!("synthetic preview failure")
+            })
+            .unwrap();
         assert!(finish(&mut worker).1.is_err());
         assert!(!worker.busy());
-        worker.start(key(1, 0, 128), Default::default(), |_| Computed { result: None, ms: 0.0 }).unwrap();
+        worker
+            .start(key(1, 0, 128), Default::default(), |_| Computed {
+                result: None,
+                ms: 0.0,
+            })
+            .unwrap();
         assert!(finish(&mut worker).1.is_ok());
     }
 
@@ -196,7 +242,10 @@ mod tests {
             .start(key(1, 0, 8), Default::default(), move |ctx| {
                 send_job.send(ctx.clone()).unwrap();
                 let _ = wait.recv_timeout(std::time::Duration::from_secs(5));
-                Computed { result: None, ms: 0.0 }
+                Computed {
+                    result: None,
+                    ms: 0.0,
+                }
             })
             .unwrap();
         let job = job.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
@@ -219,7 +268,10 @@ mod tests {
         worker
             .start(key(1, 0, 128), Default::default(), move |ctx| {
                 send_job.send(ctx.clone()).unwrap();
-                Computed { result: None, ms: 0.0 }
+                Computed {
+                    result: None,
+                    ms: 0.0,
+                }
             })
             .unwrap();
         let job = job.recv_timeout(std::time::Duration::from_secs(5)).unwrap();

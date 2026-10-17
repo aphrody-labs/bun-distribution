@@ -17,7 +17,10 @@ use effectcraft_color::Label;
 use effectcraft_keyframe::{Gradient, Justify, ShapePath, TextDoc, Value};
 use effectcraft_project::build::{self, Ids};
 use effectcraft_project::styles::{self, STYLE_BLEND_MODES};
-use effectcraft_project::{AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, Layer, LayerSource, MaskMode, Project, PropGroup, Solid, SourceLayer};
+use effectcraft_project::{
+    AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, Layer, LayerSource, MaskMode, Project,
+    PropGroup, Solid, SourceLayer,
+};
 use effectcraft_psd::{Adjustment, DValue, Descriptor, Node, Psd};
 use effectcraft_time::{FrameRate, Tick};
 
@@ -108,21 +111,64 @@ struct Ctx<'a> {
 }
 
 /// Import `psd` (read from `path`) as a composition named `name`.
-pub fn import(proj: &mut Project, psd: &Psd, path: &str, name: &str, retain: bool, rate: FrameRate, duration: Tick) -> PsdImport {
-    let folder = proj.add_item(&format!("{name} Layers"), Label::Yellow, None, ItemKind::Folder);
-    let mut cx = Ctx { psd, path, retain, folder, rate, duration, items: vec![], warnings: vec![] };
+pub fn import(
+    proj: &mut Project,
+    psd: &Psd,
+    path: &str,
+    name: &str,
+    retain: bool,
+    rate: FrameRate,
+    duration: Tick,
+) -> PsdImport {
+    let folder = proj.add_item(
+        &format!("{name} Layers"),
+        Label::Yellow,
+        None,
+        ItemKind::Folder,
+    );
+    let mut cx = Ctx {
+        psd,
+        path,
+        retain,
+        folder,
+        rate,
+        duration,
+        items: vec![],
+        warnings: vec![],
+    };
     let comp = build_comp(proj, &mut cx, name, &psd.tree(), None);
-    PsdImport { comp, folder, items: cx.items, warnings: cx.warnings }
+    PsdImport {
+        comp,
+        folder,
+        items: cx.items,
+        warnings: cx.warnings,
+    }
 }
 
 fn new_comp(cx: &Ctx) -> Comp {
     // A PSB can be 300,000 px a side; a composition is at most 30,000 (#788).
     let size = |v: u32| effectcraft_project::limits::size(v.into());
-    Comp::new(size(cx.psd.width), size(cx.psd.height), cx.rate, cx.duration)
+    Comp::new(
+        size(cx.psd.width),
+        size(cx.psd.height),
+        cx.rate,
+        cx.duration,
+    )
 }
 
-fn build_comp(proj: &mut Project, cx: &mut Ctx, name: &str, nodes: &[Node], parent: Option<ItemId>) -> ItemId {
-    let cid = proj.add_item(name, Label::Sandstone, parent, ItemKind::Comp(Arc::new(new_comp(cx))));
+fn build_comp(
+    proj: &mut Project,
+    cx: &mut Ctx,
+    name: &str,
+    nodes: &[Node],
+    parent: Option<ItemId>,
+) -> ItemId {
+    let cid = proj.add_item(
+        name,
+        Label::Sandstone,
+        parent,
+        ItemKind::Comp(Arc::new(new_comp(cx))),
+    );
     cx.items.push(cid);
     let mut comp = new_comp(cx);
     for n in nodes {
@@ -137,11 +183,23 @@ fn build_comp(proj: &mut Project, cx: &mut Ctx, name: &str, nodes: &[Node], pare
     cid
 }
 
-fn footage_item(proj: &mut Project, cx: &mut Ctx, index: usize, name: &str) -> (ItemId, (u32, u32)) {
+fn footage_item(
+    proj: &mut Project,
+    cx: &mut Ctx,
+    index: usize,
+    name: &str,
+) -> (ItemId, (u32, u32)) {
     let l = &cx.psd.layers[index];
     let retain = cx.retain;
-    let (w, h) = if retain && !l.rect.is_empty() { (l.rect.width(), l.rect.height()) } else { (cx.psd.width, cx.psd.height) };
-    let file = std::path::Path::new(cx.path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let (w, h) = if retain && !l.rect.is_empty() {
+        (l.rect.width(), l.rect.height())
+    } else {
+        (cx.psd.width, cx.psd.height)
+    };
+    let file = std::path::Path::new(cx.path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
     let f = Footage {
         path: cx.path.to_string(),
         kind: FootageKind::Still,
@@ -160,10 +218,21 @@ fn footage_item(proj: &mut Project, cx: &mut Ctx, index: usize, name: &str) -> (
         missing: false,
         sequence: vec![],
         color_profile: None,
-        layer: Some(SourceLayer { index: index as u32, name: name.to_string(), layer_size: retain && !l.rect.is_empty(), embedded: None, placed: false }),
+        layer: Some(SourceLayer {
+            index: index as u32,
+            name: name.to_string(),
+            layer_size: retain && !l.rect.is_empty(),
+            embedded: None,
+            placed: false,
+        }),
         ..Default::default()
     };
-    let id = proj.add_item(&format!("{name}/{file}"), Label::Lavender, Some(cx.folder), ItemKind::Footage(f));
+    let id = proj.add_item(
+        &format!("{name}/{file}"),
+        Label::Lavender,
+        Some(cx.folder),
+        ItemKind::Footage(f),
+    );
     cx.items.push(id);
     (id, (w, h))
 }
@@ -189,12 +258,24 @@ fn embedded_size(so: &effectcraft_psd::SmartObject, data: &[u8]) -> Option<(u32,
 
 /// A smart object layer as footage of its embedded file, placed by the smart object's
 /// transform. `None` when the file is not embedded (linked externally) or unreadable.
-fn smart_object_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, index: usize, name: &str) -> Option<Layer> {
+fn smart_object_layer(
+    proj: &mut Project,
+    cx: &mut Ctx,
+    comp: &Comp,
+    index: usize,
+    name: &str,
+) -> Option<Layer> {
     let pl = &cx.psd.layers[index];
     let so = pl.smart_object.clone()?;
     let data = cx.psd.linked_data(&so.uuid)?;
     let (cw, ch) = embedded_size(&so, data).filter(|s| s.0 > 0 && s.1 > 0)?;
-    let file = cx.psd.linked.iter().find(|f| f.uuid == so.uuid).map(|f| f.name.clone()).unwrap_or_default();
+    let file = cx
+        .psd
+        .linked
+        .iter()
+        .find(|f| f.uuid == so.uuid)
+        .map(|f| f.name.clone())
+        .unwrap_or_default();
     // Perspective quads and warps are baked over the placed bounds, at up to 4× the document
     // resolution when the embedded content has that much detail.
     let bake = so.needs_bake();
@@ -217,17 +298,46 @@ fn smart_object_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, index: usiz
         has_video: true,
         alpha: AlphaMode::Straight,
         loop_count: 1,
-        codec: if effectcraft_psd::is_psd(data) { "PSD".into() } else { "PSD (embedded image)".into() },
-        layer: Some(SourceLayer { index: index as u32, name: name.to_string(), layer_size: true, embedded: Some(so.uuid.clone()), placed: bake }),
+        codec: if effectcraft_psd::is_psd(data) {
+            "PSD".into()
+        } else {
+            "PSD (embedded image)".into()
+        },
+        layer: Some(SourceLayer {
+            index: index as u32,
+            name: name.to_string(),
+            layer_size: true,
+            embedded: Some(so.uuid.clone()),
+            placed: bake,
+        }),
         ..Default::default()
     };
-    let label = if file.is_empty() { name.to_string() } else { file };
-    let id = proj.add_item(&format!("{label} (Smart Object)"), Label::Lavender, Some(cx.folder), ItemKind::Footage(f));
+    let label = if file.is_empty() {
+        name.to_string()
+    } else {
+        file
+    };
+    let id = proj.add_item(
+        &format!("{label} (Smart Object)"),
+        Label::Lavender,
+        Some(cx.folder),
+        ItemKind::Footage(f),
+    );
     cx.items.push(id);
-    let mut l = build::layer(proj, comp, name, LayerSource::Footage { item: id }, (w, h), None);
+    let mut l = build::layer(
+        proj,
+        comp,
+        name,
+        LayerSource::Footage { item: id },
+        (w, h),
+        None,
+    );
     if bake {
         // The baked pixels cover the placed bounds: centred there, scaled back to 1×.
-        let c = [bounds[0] + w as f64 / k / 2.0, bounds[1] + h as f64 / k / 2.0];
+        let c = [
+            bounds[0] + w as f64 / k / 2.0,
+            bounds[1] + h as f64 / k / 2.0,
+        ];
         set_vec2(&mut l, "transform/position", c);
         set_vec2(&mut l, "transform/scale", [100.0 / k, 100.0 / k]);
         return Some(l);
@@ -247,10 +357,21 @@ fn build_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, n: &Node) -> Optio
         Node::Group { layer, children } => (*layer, Some(children)),
     };
     let pl = cx.psd.layers[index].clone();
-    let name = if pl.name.is_empty() { format!("Layer {}", index + 1) } else { pl.name.clone() };
+    let name = if pl.name.is_empty() {
+        format!("Layer {}", index + 1)
+    } else {
+        pl.name.clone()
+    };
     let mut layer = if let Some(children) = children {
         let sub = build_comp(proj, cx, &name, children, Some(cx.folder));
-        let mut l = build::layer(proj, comp, &name, LayerSource::Comp { item: sub }, (comp.width, comp.height), None);
+        let mut l = build::layer(
+            proj,
+            comp,
+            &name,
+            LayerSource::Comp { item: sub },
+            (comp.width, comp.height),
+            None,
+        );
         // Pass-through groups composite their layers straight into the parent.
         l.switches.collapse = pl.blend_key() == "pass";
         l
@@ -260,13 +381,24 @@ fn build_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, n: &Node) -> Optio
         let mut l = adjustment_layer(proj, comp, &name);
         add_adjustment_effect(proj, &mut l, adj, comp, &mut cx.warnings, &name);
         l
-    } else if let Some(l) = pl.smart_object.as_ref().and_then(|_| smart_object_layer(proj, cx, comp, index, &name)) {
+    } else if let Some(l) = pl
+        .smart_object
+        .as_ref()
+        .and_then(|_| smart_object_layer(proj, cx, comp, index, &name))
+    {
         l
     } else if pl.has_pixels() || pl.fill.is_some() {
         let (item, size) = footage_item(proj, cx, index, &name);
         let mut l = build::layer(proj, comp, &name, LayerSource::Footage { item }, size, None);
         if cx.retain && !pl.rect.is_empty() {
-            set_vec2(&mut l, "transform/position", [pl.rect.left as f64 + size.0 as f64 / 2.0, pl.rect.top as f64 + size.1 as f64 / 2.0]);
+            set_vec2(
+                &mut l,
+                "transform/position",
+                [
+                    pl.rect.left as f64 + size.0 as f64 / 2.0,
+                    pl.rect.top as f64 + size.1 as f64 / 2.0,
+                ],
+            );
         }
         l
     } else {
@@ -277,7 +409,11 @@ fn build_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, n: &Node) -> Optio
     layer.blend_mode = blend_mode(pl.blend_key());
     layer.switches.video = !pl.hidden;
     layer.preserve_transparency = pl.clipping;
-    set_scalar(&mut layer, "transform/opacity", pl.opacity as f64 / 255.0 * 100.0);
+    set_scalar(
+        &mut layer,
+        "transform/opacity",
+        pl.opacity as f64 / 255.0 * 100.0,
+    );
     // Vector mask → a mask in layer space.
     let origin = layer_origin(&pl, cx.retain, &layer);
     if let Some(vm) = pl.vector_mask.as_ref().filter(|v| !v.disabled)
@@ -286,18 +422,39 @@ fn build_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, n: &Node) -> Optio
         let mut ids = Ids(&mut proj.next_id);
         for (k, sp) in vm.subpaths.iter().enumerate() {
             let n = sp.knots.len();
-            let mut path = ShapePath { vertices: vec![], in_tangents: vec![], out_tangents: vec![], closed: sp.closed, feather: Vec::new() };
+            let mut path = ShapePath {
+                vertices: vec![],
+                in_tangents: vec![],
+                out_tangents: vec![],
+                closed: sp.closed,
+                feather: Vec::new(),
+            };
             for kn in &sp.knots {
                 let v = [kn[1][0] - origin[0], kn[1][1] - origin[1]];
                 path.vertices.push(v);
-                path.in_tangents.push([kn[0][0] - kn[1][0], kn[0][1] - kn[1][1]]);
-                path.out_tangents.push([kn[2][0] - kn[1][0], kn[2][1] - kn[1][1]]);
+                path.in_tangents
+                    .push([kn[0][0] - kn[1][0], kn[0][1] - kn[1][1]]);
+                path.out_tangents
+                    .push([kn[2][0] - kn[1][0], kn[2][1] - kn[1][1]]);
             }
             if n == 0 {
                 continue;
             }
-            let mode = if vm.inverted { MaskMode::Subtract } else { MaskMode::Add };
-            masks.children.push(build::mask(&mut ids, &format!("Mask {}", k + 1), path, mode, [255, 255, 0]).into());
+            let mode = if vm.inverted {
+                MaskMode::Subtract
+            } else {
+                MaskMode::Add
+            };
+            masks.children.push(
+                build::mask(
+                    &mut ids,
+                    &format!("Mask {}", k + 1),
+                    path,
+                    mode,
+                    [255, 255, 0],
+                )
+                .into(),
+            );
         }
     }
     // Layer effects → Layer Styles; Fill Opacity → Advanced Blending.
@@ -312,10 +469,19 @@ fn build_layer(proj: &mut Project, cx: &mut Ctx, comp: &Comp, n: &Node) -> Optio
         let mut ids = Ids(&mut proj.next_id);
         if layer.props.sub(styles::GROUP).is_none() {
             let g = styles::layer_styles(&mut ids, &gl);
-            let at = layer.props.children.iter().position(|c| c.match_id() == "transform").map(|i| i + 1).unwrap_or(layer.props.children.len());
+            let at = layer
+                .props
+                .children
+                .iter()
+                .position(|c| c.match_id() == "transform")
+                .map(|i| i + 1)
+                .unwrap_or(layer.props.children.len());
             layer.props.children.insert(at, g.into());
         }
-        if let Some(p) = layer.props.prop_mut("layerStyles/blendingOptions/advancedBlending/fillOpacity") {
+        if let Some(p) = layer
+            .props
+            .prop_mut("layerStyles/blendingOptions/advancedBlending/fillOpacity")
+        {
             p.value = Value::Scalar(pl.fill_opacity as f64 / 255.0 * 100.0);
         }
     }
@@ -403,7 +569,11 @@ fn text_layer(proj: &mut Project, comp: &Comp, name: &str, t: &effectcraft_psd::
     if let Some(p) = l.props.prop_mut("text/sourceText") {
         p.value = Value::Text(Box::new(text_doc(t)));
     }
-    set_vec2(&mut l, "transform/position", [t.transform[4], t.transform[5]]);
+    set_vec2(
+        &mut l,
+        "transform/position",
+        [t.transform[4], t.transform[5]],
+    );
     let [xx, xy, _, _, _, _] = t.transform;
     let rot = xy.atan2(xx).to_degrees();
     if rot.abs() > 1e-6 {
@@ -413,23 +583,50 @@ fn text_layer(proj: &mut Project, comp: &Comp, name: &str, t: &effectcraft_psd::
 }
 
 fn adjustment_layer(proj: &mut Project, comp: &Comp, name: &str) -> Layer {
-    let folder = proj.folder_named("Solids").unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
+    let folder = proj
+        .folder_named("Solids")
+        .unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
     let sid = proj.add_item(
         name,
         Label::Red,
         Some(folder),
-        ItemKind::Solid(Solid { color: [1.0, 1.0, 1.0], width: comp.width, height: comp.height, pixel_aspect: 1.0 }),
+        ItemKind::Solid(Solid {
+            color: [1.0, 1.0, 1.0],
+            width: comp.width,
+            height: comp.height,
+            pixel_aspect: 1.0,
+        }),
     );
-    let mut l = build::layer(proj, comp, name, LayerSource::Solid { item: sid }, (comp.width, comp.height), None);
+    let mut l = build::layer(
+        proj,
+        comp,
+        name,
+        LayerSource::Solid { item: sid },
+        (comp.width, comp.height),
+        None,
+    );
     l.switches.adjustment = true;
     l.label = Label::Purple;
     l
 }
 
-fn add_effect(proj: &mut Project, l: &mut Layer, effect: &str, comp: &Comp, params: &[(&str, Value)]) {
-    let Some(spec) = effectcraft_effects::lookup(effect) else { return };
+fn add_effect(
+    proj: &mut Project,
+    l: &mut Layer,
+    effect: &str,
+    comp: &Comp,
+    params: &[(&str, Value)],
+) {
+    let Some(spec) = effectcraft_effects::lookup(effect) else {
+        return;
+    };
     let mut ids = Ids(&mut proj.next_id);
-    let mut g = effectcraft_effects::instantiate(spec, &mut ids, spec.name, [comp.width as f64, comp.height as f64]);
+    let mut g = effectcraft_effects::instantiate(
+        spec,
+        &mut ids,
+        spec.name,
+        [comp.width as f64, comp.height as f64],
+    );
     for (k, v) in params {
         // Paths reach parameters in twirl-down groups (`master/exposure`).
         if let Some(p) = g.prop_mut(k) {
@@ -441,18 +638,42 @@ fn add_effect(proj: &mut Project, l: &mut Layer, effect: &str, comp: &Comp, para
     }
 }
 
-fn add_adjustment_effect(proj: &mut Project, l: &mut Layer, adj: &Adjustment, comp: &Comp, warnings: &mut Vec<String>, name: &str) {
+fn add_adjustment_effect(
+    proj: &mut Project,
+    l: &mut Layer,
+    adj: &Adjustment,
+    comp: &Comp,
+    warnings: &mut Vec<String>,
+    name: &str,
+) {
     match adj {
         Adjustment::Invert => add_effect(proj, l, "Invert", comp, &[]),
-        Adjustment::BrightnessContrast { brightness, contrast, legacy } => add_effect(
+        Adjustment::BrightnessContrast {
+            brightness,
+            contrast,
+            legacy,
+        } => add_effect(
             proj,
             l,
             "Brightness & Contrast",
             comp,
-            &[("brightness", Value::Scalar(*brightness)), ("contrast", Value::Scalar(*contrast)), ("useLegacy", Value::Bool(*legacy))],
+            &[
+                ("brightness", Value::Scalar(*brightness)),
+                ("contrast", Value::Scalar(*contrast)),
+                ("useLegacy", Value::Bool(*legacy)),
+            ],
         ),
-        Adjustment::HueSaturation { hue, saturation, lightness, colorize } => {
-            let mut p = vec![("hue", Value::Scalar(*hue)), ("saturation", Value::Scalar(*saturation)), ("lightness", Value::Scalar(*lightness))];
+        Adjustment::HueSaturation {
+            hue,
+            saturation,
+            lightness,
+            colorize,
+        } => {
+            let mut p = vec![
+                ("hue", Value::Scalar(*hue)),
+                ("saturation", Value::Scalar(*saturation)),
+                ("lightness", Value::Scalar(*lightness)),
+            ];
             if *colorize {
                 p = vec![
                     ("colorize", Value::Bool(true)),
@@ -463,7 +684,13 @@ fn add_adjustment_effect(proj: &mut Project, l: &mut Layer, adj: &Adjustment, co
             }
             add_effect(proj, l, "Hue/Saturation", comp, &p)
         }
-        Adjustment::Levels { in_black, in_white, gamma, out_black, out_white } => add_effect(
+        Adjustment::Levels {
+            in_black,
+            in_white,
+            gamma,
+            out_black,
+            out_white,
+        } => add_effect(
             proj,
             l,
             "Levels",
@@ -476,14 +703,24 @@ fn add_adjustment_effect(proj: &mut Project, l: &mut Layer, adj: &Adjustment, co
                 ("outWhite", Value::Scalar(out_white / 255.0)),
             ],
         ),
-        Adjustment::Exposure { exposure, offset, gamma } => add_effect(
+        Adjustment::Exposure {
+            exposure,
+            offset,
+            gamma,
+        } => add_effect(
             proj,
             l,
             "Exposure",
             comp,
-            &[("master/exposure", Value::Scalar(*exposure)), ("master/offset", Value::Scalar(*offset)), ("master/gamma", Value::Scalar(*gamma))],
+            &[
+                ("master/exposure", Value::Scalar(*exposure)),
+                ("master/offset", Value::Scalar(*offset)),
+                ("master/gamma", Value::Scalar(*gamma)),
+            ],
         ),
-        Adjustment::Other(k) => warnings.push(format!("{name}: adjustment `{k}` is not converted (layer kept as an empty adjustment layer)")),
+        Adjustment::Other(k) => warnings.push(format!(
+            "{name}: adjustment `{k}` is not converted (layer kept as an empty adjustment layer)"
+        )),
     }
 }
 
@@ -511,8 +748,15 @@ fn common(g: &mut PropGroup, d: &Descriptor) {
     if let Some(c) = d.color("Clr ") {
         set(g, "color", color4(c));
     }
-    for (k, prop) in [("Opct", "opacity"), ("Nose", "noise"), ("Dstn", "distance"), ("blur", "size"), ("lagl", "angle"), ("ShdN", "jitter"), ("Inpr", "range")]
-    {
+    for (k, prop) in [
+        ("Opct", "opacity"),
+        ("Nose", "noise"),
+        ("Dstn", "distance"),
+        ("blur", "size"),
+        ("lagl", "angle"),
+        ("ShdN", "jitter"),
+        ("Inpr", "range"),
+    ] {
         if let Some(v) = d.num(k) {
             set(g, prop, Value::Scalar(v));
         }
@@ -533,7 +777,10 @@ fn gradient_of(d: &Descriptor) -> Option<Gradient> {
         .filter_map(|c| match c {
             DValue::Descriptor(s) => {
                 let col = s.color("Clr ")?;
-                Some((s.num("Lctn").unwrap_or(0.0) / 4096.0, [col[0] as f32, col[1] as f32, col[2] as f32, 1.0]))
+                Some((
+                    s.num("Lctn").unwrap_or(0.0) / 4096.0,
+                    [col[0] as f32, col[1] as f32, col[2] as f32, 1.0],
+                ))
             }
             _ => None,
         })
@@ -541,11 +788,21 @@ fn gradient_of(d: &Descriptor) -> Option<Gradient> {
     let opacities: Vec<(f64, f32)> = list("Trns")
         .iter()
         .filter_map(|c| match c {
-            DValue::Descriptor(s) => Some((s.num("Lctn").unwrap_or(0.0) / 4096.0, (s.num("Opct").unwrap_or(100.0) / 100.0) as f32)),
+            DValue::Descriptor(s) => Some((
+                s.num("Lctn").unwrap_or(0.0) / 4096.0,
+                (s.num("Opct").unwrap_or(100.0) / 100.0) as f32,
+            )),
             _ => None,
         })
         .collect();
-    (!colors.is_empty()).then(|| Gradient { colors, opacities: if opacities.is_empty() { vec![(0.0, 1.0), (1.0, 1.0)] } else { opacities } })
+    (!colors.is_empty()).then(|| Gradient {
+        colors,
+        opacities: if opacities.is_empty() {
+            vec![(0.0, 1.0), (1.0, 1.0)]
+        } else {
+            opacities
+        },
+    })
 }
 
 /// The effect descriptor for `key`, or the first enabled one of its `…Multi` list.
@@ -572,11 +829,17 @@ fn apply_effects(proj: &mut Project, layer: &mut Layer, fx: &Descriptor, gl: &st
         ("FrFX", "frameFXMulti", "stroke"),
     ];
     for (key, multi, id) in MAP {
-        let Some(d) = effect(fx, key, multi) else { continue };
+        let Some(d) = effect(fx, key, multi) else {
+            continue;
+        };
         let enabled = d.bool("enab").unwrap_or(true);
         let mut ids = Ids(&mut proj.next_id);
-        let Some(uid) = styles::add_style(layer, &mut ids, id, gl, enabled) else { continue };
-        let Some(g) = layer.props.find_group_mut(uid) else { continue };
+        let Some(uid) = styles::add_style(layer, &mut ids, id, gl, enabled) else {
+            continue;
+        };
+        let Some(g) = layer.props.find_group_mut(uid) else {
+            continue;
+        };
         common(g, d);
         match *id {
             "dropShadow" => {
@@ -618,7 +881,11 @@ fn apply_effects(proj: &mut Project, layer: &mut Layer, fx: &Descriptor, gl: &st
                 if let Some(v) = d.num("srgR") {
                     set(g, "depth", Value::Scalar(v));
                 }
-                set(g, "direction", Value::Enum(u32::from(d.enum_value("bvlD") == Some("Out "))));
+                set(
+                    g,
+                    "direction",
+                    Value::Enum(u32::from(d.enum_value("bvlD") == Some("Out "))),
+                );
                 if let Some(v) = d.num("Sftn") {
                     set(g, "soften", Value::Scalar(v));
                 }
@@ -689,7 +956,13 @@ fn apply_effects(proj: &mut Project, layer: &mut Layer, fx: &Descriptor, gl: &st
 
 /// Layer ▸ Create ▸ Convert to Editable Text: a footage layer showing a Photoshop type layer
 /// becomes a text layer (`None` when the layer's source has no text data).
-pub fn editable_text(proj: &mut Project, comp: &Comp, layer: &Layer, psd: &Psd, index: usize) -> Option<Layer> {
+pub fn editable_text(
+    proj: &mut Project,
+    comp: &Comp,
+    layer: &Layer,
+    psd: &Psd,
+    index: usize,
+) -> Option<Layer> {
     let t = psd.layers.get(index)?.text.as_ref()?;
     let mut l = text_layer(proj, comp, &layer.name, t);
     l.name = layer.name.clone();
@@ -698,8 +971,14 @@ pub fn editable_text(proj: &mut Project, comp: &Comp, layer: &Layer, psd: &Psd, 
     l.in_point = layer.in_point;
     l.out_point = layer.out_point;
     l.start_time = layer.start_time;
-    if let (Some(o), Some(p)) = (layer.props.prop("transform/opacity"), l.props.prop_mut("transform/opacity")) {
-        *p = effectcraft_project::Property { uid: p.uid, ..o.clone() };
+    if let (Some(o), Some(p)) = (
+        layer.props.prop("transform/opacity"),
+        l.props.prop_mut("transform/opacity"),
+    ) {
+        *p = effectcraft_project::Property {
+            uid: p.uid,
+            ..o.clone()
+        };
     }
     Some(l)
 }
@@ -713,7 +992,10 @@ mod tests {
         assert_eq!(blend_mode("mul "), BlendMode::Multiply);
         assert_eq!(blend_mode("smud"), BlendMode::Exclusion);
         assert_eq!(blend_mode("pass"), BlendMode::Normal);
-        assert_eq!(desc_blend(Some("linearDodge")), Some(BlendMode::LinearDodge));
+        assert_eq!(
+            desc_blend(Some("linearDodge")),
+            Some(BlendMode::LinearDodge)
+        );
         assert_eq!(font_names("Inter-Bold"), ("Inter".into(), "Bold".into()));
     }
 }

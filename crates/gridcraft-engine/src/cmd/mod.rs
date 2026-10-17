@@ -83,7 +83,12 @@ pub fn is_secret_param(key: &str) -> bool {
 /// Replaying such an entry runs the command without that param.
 pub fn journal_params(params: &Json) -> Json {
     match params {
-        Json::Object(o) => Json::Object(o.iter().filter(|(k, _)| !is_secret_param(k)).map(|(k, v)| (k.clone(), v.clone())).collect()),
+        Json::Object(o) => Json::Object(
+            o.iter()
+                .filter(|(k, _)| !is_secret_param(k))
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        ),
         other => other.clone(),
     }
 }
@@ -92,19 +97,33 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no workbook open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no workbook open".into())
 }
 pub fn can_undo(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.undo.is_empty()) { Ok(()) } else { Err("nothing to undo".into()) }
+    if s.active().is_some_and(|d| !d.undo.is_empty()) {
+        Ok(())
+    } else {
+        Err("nothing to undo".into())
+    }
 }
 pub fn can_redo(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.redo.is_empty()) { Ok(()) } else { Err("nothing to redo".into()) }
+    if s.active().is_some_and(|d| !d.redo.is_empty()) {
+        Ok(())
+    } else {
+        Err("nothing to redo".into())
+    }
 }
 pub fn has_clipboard(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.clipboard.is_some() { Ok(()) } else { Err("the clipboard is empty".into()) }
+    if s.clipboard.is_some() {
+        Ok(())
+    } else {
+        Err("the clipboard is empty".into())
+    }
 }
 
 macro_rules! cmd {
@@ -157,7 +176,8 @@ pub fn find_command(id: &str) -> Option<&'static CommandSpec> {
     test_commands().iter().find(|c| c.id == id).copied()
 }
 
-static TEST_COMMANDS: std::sync::Mutex<Vec<&'static CommandSpec>> = std::sync::Mutex::new(Vec::new());
+static TEST_COMMANDS: std::sync::Mutex<Vec<&'static CommandSpec>> =
+    std::sync::Mutex::new(Vec::new());
 
 /// Test-only: register an extra command so UI integration tests can prove a pending
 /// keytip becomes live the moment its command lands (see crates/ui-egui/tests/keytips.rs).
@@ -190,7 +210,10 @@ fn test_commands() -> std::sync::MutexGuard<'static, Vec<&'static CommandSpec>> 
 // ---------------------------------------------------------------- param helpers
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 pub(crate) fn str_param<'a>(p: &'a Json, key: &str) -> Option<&'a str> {
     p.get(key).and_then(Json::as_str)
@@ -202,7 +225,9 @@ pub(crate) fn bool_param(p: &Json, key: &str) -> Option<bool> {
     p.get(key).and_then(Json::as_bool)
 }
 pub(crate) fn u32_param(p: &Json, key: &str) -> Option<u32> {
-    p.get(key).and_then(Json::as_u64).map(|v| v.min(u32::MAX as u64) as u32)
+    p.get(key)
+        .and_then(Json::as_u64)
+        .map(|v| v.min(u32::MAX as u64) as u32)
 }
 
 /// An object anchor mode from Excel's wording or the model's: `"moveAndSize"`/`"twoCell"`,
@@ -212,10 +237,20 @@ pub(crate) fn anchor_mode_param(p: &Json) -> Option<gridcraft_model::AnchorMode>
 }
 
 pub(crate) fn parse_anchor_mode(s: &str) -> Option<gridcraft_model::AnchorMode> {
-    match s.to_ascii_lowercase().replace([' ', '-', '_', '\''], "").as_str() {
-        "moveandsize" | "moveandsizeandcells" | "twocell" => Some(gridcraft_model::AnchorMode::MoveAndSize),
-        "moveonly" | "movebutdontsize" | "movebutdontsizewithcells" | "onecell" => Some(gridcraft_model::AnchorMode::MoveOnly),
-        "absolute" | "dontmoveorsize" | "dontmoveorsizewithcells" | "none" => Some(gridcraft_model::AnchorMode::Absolute),
+    match s
+        .to_ascii_lowercase()
+        .replace([' ', '-', '_', '\''], "")
+        .as_str()
+    {
+        "moveandsize" | "moveandsizeandcells" | "twocell" => {
+            Some(gridcraft_model::AnchorMode::MoveAndSize)
+        }
+        "moveonly" | "movebutdontsize" | "movebutdontsizewithcells" | "onecell" => {
+            Some(gridcraft_model::AnchorMode::MoveOnly)
+        }
+        "absolute" | "dontmoveorsize" | "dontmoveorsizewithcells" | "none" => {
+            Some(gridcraft_model::AnchorMode::Absolute)
+        }
         _ => None,
     }
 }
@@ -239,7 +274,10 @@ pub(crate) fn target_ranges(s: &Session, p: &Json) -> Result<Vec<RangeRef>> {
         let (_, body) = split_sheet(r);
         let mut out = Vec::new();
         for part in body.split(',') {
-            out.push(RangeRef::parse(part).ok_or_else(|| bad("range", format!("not a range: `{part}`")))?);
+            out.push(
+                RangeRef::parse(part)
+                    .ok_or_else(|| bad("range", format!("not a range: `{part}`")))?,
+            );
         }
         return Ok(out);
     }
@@ -255,16 +293,26 @@ pub(crate) fn target_sheet(s: &Session, p: &Json) -> Result<usize> {
     let d = s.doc()?;
     if let Some(v) = p.get("sheet") {
         if let Some(i) = v.as_u64() {
-            return if (i as usize) < d.wb.sheets.len() { Ok(i as usize) } else { Err(bad("sheet", "no such sheet")) };
+            return if (i as usize) < d.wb.sheets.len() {
+                Ok(i as usize)
+            } else {
+                Err(bad("sheet", "no such sheet"))
+            };
         }
         if let Some(n) = v.as_str() {
-            return d.wb.sheet_index(n).ok_or_else(|| bad("sheet", format!("no sheet named `{n}`")));
+            return d
+                .wb
+                .sheet_index(n)
+                .ok_or_else(|| bad("sheet", format!("no sheet named `{n}`")));
         }
     }
     if let Some(r) = str_param(p, "range").or_else(|| str_param(p, "cell"))
         && let (Some(sh), _) = split_sheet(r)
     {
-        return d.wb.sheet_index(&sh).ok_or_else(|| bad("range", format!("no sheet named `{sh}`")));
+        return d
+            .wb
+            .sheet_index(&sh)
+            .ok_or_else(|| bad("range", format!("no sheet named `{sh}`")));
     }
     Ok(d.wb.active_sheet)
 }
@@ -285,18 +333,32 @@ pub(crate) fn cell_param(s: &Session, p: &Json, key: &str) -> Result<Option<Cell
 }
 
 /// Like [`cell_param`], for a command that operates on `sheet` (a `Sheet!` prefix must name it).
-pub(crate) fn cell_param_on(s: &Session, p: &Json, key: &str, sheet: usize) -> Result<Option<CellRef>> {
+pub(crate) fn cell_param_on(
+    s: &Session,
+    p: &Json,
+    key: &str,
+    sheet: usize,
+) -> Result<Option<CellRef>> {
     let t = match p.get(key) {
         None | Some(Json::Null) => return Ok(None),
         Some(Json::String(t)) => t,
-        Some(v) => return Err(bad("cell", format!("invalid cell reference `{v}` for `{key}`"))),
+        Some(v) => {
+            return Err(bad(
+                "cell",
+                format!("invalid cell reference `{v}` for `{key}`"),
+            ));
+        }
     };
     let (sh, body) = split_sheet(t);
-    let c = CellRef::parse(body).ok_or_else(|| bad("cell", format!("invalid cell reference `{t}` for `{key}`")))?;
+    let c = CellRef::parse(body)
+        .ok_or_else(|| bad("cell", format!("invalid cell reference `{t}` for `{key}`")))?;
     if let Some(name) = sh
         && s.doc()?.wb.sheet_index(&name) != Some(sheet)
     {
-        return Err(bad("cell", format!("`{t}` for `{key}` names a sheet other than the one this command works on")));
+        return Err(bad(
+            "cell",
+            format!("`{t}` for `{key}` names a sheet other than the one this command works on"),
+        ));
     }
     Ok(Some(c))
 }
@@ -329,11 +391,29 @@ pub(crate) fn commit<R>(d: &mut DocState, f: impl FnOnce(&mut Ctx) -> Result<R>)
     // `GRIDCRAFT_PROFILE` timing. Read the clock only when profiling, and never on wasm: there
     // `Instant::now` traps (`RuntimeError: unreachable`), which broke every edit in the web app.
     #[allow(clippy::disallowed_methods)]
-    let t0 = if cfg!(target_arch = "wasm32") { None } else { std::env::var_os("GRIDCRAFT_PROFILE").map(|_| std::time::Instant::now()) };
+    let t0 = if cfg!(target_arch = "wasm32") {
+        None
+    } else {
+        std::env::var_os("GRIDCRAFT_PROFILE").map(|_| std::time::Instant::now())
+    };
     let mut sel = d.selection.clone();
-    let mut ctx = Ctx { wb: (*d.wb).clone(), changed: Vec::new(), structural: false, sel: &mut sel, fit_rows: Vec::new(), protection_checked: false };
+    let mut ctx = Ctx {
+        wb: (*d.wb).clone(),
+        changed: Vec::new(),
+        structural: false,
+        sel: &mut sel,
+        fit_rows: Vec::new(),
+        protection_checked: false,
+    };
     let r = f(&mut ctx)?;
-    let Ctx { mut wb, changed, structural, mut fit_rows, protection_checked, .. } = ctx;
+    let Ctx {
+        mut wb,
+        changed,
+        structural,
+        mut fit_rows,
+        protection_checked,
+        ..
+    } = ctx;
     if !protection_checked {
         check_protection(&d.wb, &wb, &d.unlocked_ranges)?;
     }
@@ -368,7 +448,8 @@ pub(crate) fn commit<R>(d: &mut DocState, f: impl FnOnce(&mut Ctx) -> Result<R>)
 }
 
 /// Excel's message for an edit of a locked cell on a protected sheet.
-pub(crate) const PROTECTED: &str = "The cell or chart you're trying to change is on a protected sheet.";
+pub(crate) const PROTECTED: &str =
+    "The cell or chart you're trying to change is on a protected sheet.";
 
 /// Refuses an edit that changed what a locked cell on a protected sheet holds (its value or
 /// formula), whichever command made it. Sheets are matched by name, so moving, renaming or
@@ -378,7 +459,9 @@ fn check_protection(old: &Workbook, new: &Workbook, unlocked: &[(String, String)
         if !sh.is_protected() {
             continue;
         }
-        let Some(after) = new.sheet_index(&sh.name).and_then(|i| new.sheets.get(i)) else { continue };
+        let Some(after) = new.sheet_index(&sh.name).and_then(|i| new.sheets.get(i)) else {
+            continue;
+        };
         if std::sync::Arc::ptr_eq(sh, after) || !after.is_protected() {
             continue;
         }
@@ -396,7 +479,11 @@ fn check_protection(old: &Workbook, new: &Workbook, unlocked: &[(String, String)
 
 /// Whether a locked cell on a protected sheet stays locked: `None` when it's in an Allow Edit
 /// Range without a password or one unlocked in this session, else the message to show.
-pub(crate) fn locked_cell_error(sh: &gridcraft_model::Sheet, c: CellRef, unlocked: &[(String, String)]) -> Option<String> {
+pub(crate) fn locked_cell_error(
+    sh: &gridcraft_model::Sheet,
+    c: CellRef,
+    unlocked: &[(String, String)],
+) -> Option<String> {
     let mut needs_password = None;
     for r in sh.edit_ranges.iter().filter(|r| r.contains(c)) {
         if r.password.is_none() || unlocked.iter().any(|(s, t)| *s == sh.name && *t == r.title) {
@@ -405,7 +492,9 @@ pub(crate) fn locked_cell_error(sh: &gridcraft_model::Sheet, c: CellRef, unlocke
         needs_password.get_or_insert(r.title.as_str());
     }
     Some(match needs_password {
-        Some(t) => format!("The range \"{t}\" needs its password before it can be changed (Review › Allow Edit Ranges)."),
+        Some(t) => format!(
+            "The range \"{t}\" needs its password before it can be changed (Review › Allow Edit Ranges)."
+        ),
         None => PROTECTED.into(),
     })
 }
@@ -419,21 +508,31 @@ fn check_arrays(old: &Workbook, new: &Workbook) -> Result<()> {
         if sh.spill.is_empty() {
             continue;
         }
-        let Some(after) = new.sheet_index(&sh.name).and_then(|i| new.sheets.get(i)) else { continue };
+        let Some(after) = new.sheet_index(&sh.name).and_then(|i| new.sheets.get(i)) else {
+            continue;
+        };
         if std::sync::Arc::ptr_eq(sh, after) {
             continue;
         }
         for c in sh.cells.diff(&after.cells) {
-            let filled = after.cell(c).is_some_and(|x| x.formula.is_some() || !x.value.is_empty());
+            let filled = after
+                .cell(c)
+                .is_some_and(|x| x.formula.is_some() || !x.value.is_empty());
             if !filled || !sh.spill.contains_key(&c) || same_content(sh.cell(c), after.cell(c)) {
                 continue;
             }
             let in_array = sh.spill_ranges.keys().any(|&anchor| {
                 anchor != c
-                    && after.cell(anchor).and_then(|x| x.formula.as_ref()).and_then(|f| f.array).is_some_and(|a| a.start == anchor && a.contains(c))
+                    && after
+                        .cell(anchor)
+                        .and_then(|x| x.formula.as_ref())
+                        .and_then(|f| f.array)
+                        .is_some_and(|a| a.start == anchor && a.contains(c))
             });
             if in_array {
-                return Err(EngineError::Other("You can't change part of an array.".into()));
+                return Err(EngineError::Other(
+                    "You can't change part of an array.".into(),
+                ));
             }
         }
     }
@@ -442,7 +541,9 @@ fn check_arrays(old: &Workbook, new: &Workbook) -> Result<()> {
 
 /// Two cells hold the same value or formula (formats aside).
 fn same_content(a: Option<&gridcraft_model::Cell>, b: Option<&gridcraft_model::Cell>) -> bool {
-    let empty = |c: Option<&gridcraft_model::Cell>| c.is_none_or(|c| c.formula.is_none() && c.value.is_empty());
+    let empty = |c: Option<&gridcraft_model::Cell>| {
+        c.is_none_or(|c| c.formula.is_none() && c.value.is_empty())
+    };
     match (a, b) {
         (Some(a), Some(b)) => match (&a.formula, &b.formula) {
             (Some(x), Some(y)) => x.text == y.text && x.array == y.array,
@@ -462,10 +563,15 @@ pub fn auto_row_height(wb: &mut Workbook, si: usize, row: u32) {
     }
     let default = sh.default_row_height;
     // Fast path: rows of default-size, unwrapped, single-line content keep the default height.
-    let plain = sh.cells.row(row, 0, gridcraft_core::MAX_COLS - 1).all(|(_, cell)| {
-        let st = wb.styles.get(cell.style);
-        st.font.size <= gridcraft_model::DEFAULT_FONT_SIZE && !st.align.wrap && !cell.value.as_text().is_some_and(|t| t.contains('\n'))
-    });
+    let plain = sh
+        .cells
+        .row(row, 0, gridcraft_core::MAX_COLS - 1)
+        .all(|(_, cell)| {
+            let st = wb.styles.get(cell.style);
+            st.font.size <= gridcraft_model::DEFAULT_FONT_SIZE
+                && !st.align.wrap
+                && !cell.value.as_text().is_some_and(|t| t.contains('\n'))
+        });
     if plain {
         if sh.rows.get(&row).is_some_and(|i| i.size.is_some())
             && let Some(shm) = wb.sheet_mut(si)
@@ -484,7 +590,9 @@ pub fn auto_row_height(wb: &mut Workbook, si: usize, row: u32) {
     for (c, cell) in sh.cells.row(row, 0, gridcraft_core::MAX_COLS - 1) {
         let st = wb.styles.get(cell.style);
         let size = st.font.size;
-        let line = (size * 1.8).round().max(default * size / gridcraft_model::DEFAULT_FONT_SIZE);
+        let line = (size * 1.8)
+            .round()
+            .max(default * size / gridcraft_model::DEFAULT_FONT_SIZE);
         let mut lines = 1.0f32;
         if !cell.value.is_empty() || cell.formula.is_some() {
             let text = crate::display::cell_text(wb, sh, CellRef::new(row, c));
@@ -492,7 +600,11 @@ pub fn auto_row_height(wb: &mut Workbook, si: usize, row: u32) {
             lines = if st.align.wrap {
                 let w = sh.col_width(c).max(1.0) - 6.0;
                 text.lines()
-                    .map(|l| (crate::cmd::format::approx_text_width(l, size, st.font.bold) / w.max(1.0)).ceil().max(1.0))
+                    .map(|l| {
+                        (crate::cmd::format::approx_text_width(l, size, st.font.bold) / w.max(1.0))
+                            .ceil()
+                            .max(1.0)
+                    })
                     .sum::<f32>()
                     .max(1.0)
             } else {
@@ -501,12 +613,20 @@ pub fn auto_row_height(wb: &mut Workbook, si: usize, row: u32) {
         } else if st.font.size <= gridcraft_model::DEFAULT_FONT_SIZE {
             continue;
         }
-        let h = if lines > 1.0 { (size * 96.0 / 72.0 * 1.22 * lines + 5.0).ceil() } else { line };
+        let h = if lines > 1.0 {
+            (size * 96.0 / 72.0 * 1.22 * lines + 5.0).ceil()
+        } else {
+            line
+        };
         need = need.max(h.min(546.0));
     }
     let Some(shm) = wb.sheet_mut(si) else { return };
     let e = shm.rows.entry(row).or_default();
-    e.size = if (need - default).abs() < 0.5 { None } else { Some(need) };
+    e.size = if (need - default).abs() < 0.5 {
+        None
+    } else {
+        Some(need)
+    };
     if *e == gridcraft_model::LineInfo::default() {
         shm.rows.remove(&row);
     }
@@ -517,7 +637,9 @@ impl Ctx<'_> {
         self.wb.active_sheet
     }
     pub fn sheet_mut(&mut self, i: usize) -> Result<&mut gridcraft_model::Sheet> {
-        self.wb.sheet_mut(i).ok_or_else(|| EngineError::Other("no such sheet".into()))
+        self.wb
+            .sheet_mut(i)
+            .ok_or_else(|| EngineError::Other("no such sheet".into()))
     }
     pub fn touch(&mut self, sheet: usize, c: CellRef) {
         self.changed.push((sheet, c));

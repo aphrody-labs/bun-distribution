@@ -237,7 +237,9 @@ impl NotificationServiceImpl {
     }
 
     fn get_alarm_from_id(&self, id: AlarmSettingId) -> Option<usize> {
-        self.alarms.iter().position(|alarm| alarm.alarm_setting_id == id)
+        self.alarms
+            .iter()
+            .position(|alarm| alarm.alarm_setting_id == id)
     }
 }
 

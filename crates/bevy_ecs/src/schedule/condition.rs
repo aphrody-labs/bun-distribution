@@ -1645,7 +1645,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{common_conditions::*, SystemCondition};
+    use super::{SystemCondition, common_conditions::*};
     use crate::error::{BevyError, ErrorContext, FallbackErrorHandler};
     use crate::{
         change_detection::{Res, ResMut},
@@ -1818,7 +1818,8 @@ mod tests {
             );
 
             assert_eq!(
-                counter, expected_counter,
+                counter,
+                expected_counter,
                 "At {}:{} System `{name}` did not increment counter as expected: expected `{expected_counter}`, got `{counter}`",
                 caller.file(),
                 caller.line(),

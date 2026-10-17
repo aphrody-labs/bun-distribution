@@ -5,7 +5,14 @@
 //! Everything goes through `effectcraft_engine::Session::execute` (or `menus::invoke` for
 //! frontend-only commands) so every gesture is also available to agents.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod audio;
 pub mod automation;
@@ -114,14 +121,25 @@ pub enum FileDialog {
     Folder,
     /// Where to save `default` (a file name or path) with extension `ext` (empty: no filter);
     /// `project`: the project save dialog, given the file name.
-    Save { default: String, ext: String, project: bool },
+    Save {
+        default: String,
+        ext: String,
+        project: bool,
+    },
 }
 
 impl FileDialog {
     /// The save dialog for `default`, as [`Hooks::save_dialog`] picks it.
     pub fn save(default: &str) -> Self {
-        let ext = std::path::Path::new(default).extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
-        Self::Save { default: default.to_string(), project: ext.eq_ignore_ascii_case("ecproj"), ext }
+        let ext = std::path::Path::new(default)
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default();
+        Self::Save {
+            default: default.to_string(),
+            project: ext.eq_ignore_ascii_case("ecproj"),
+            ext,
+        }
     }
 }
 
@@ -177,10 +195,18 @@ impl Hooks {
     /// host has no save dialog; `Some(None)` when it was cancelled.
     pub fn save_dialog(&self, default: &str) -> Option<Option<String>> {
         let path = std::path::Path::new(default);
-        let ext = path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+        let ext = path
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default();
         match (&self.pick_save_file, &self.pick_save) {
             (Some(pick), _) if !ext.eq_ignore_ascii_case("ecproj") => Some(pick(default, &ext)),
-            (_, Some(pick)) => Some(pick(&path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default())),
+            (_, Some(pick)) => Some(pick(
+                &path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+            )),
             (Some(pick), None) => Some(pick(default, &ext)),
             (None, None) => None,
         }
@@ -235,7 +261,8 @@ impl Playback {
     /// frames were shown, while caching, or stopped).
     pub fn achieved_fps(&self) -> Option<f64> {
         let (a, b) = (self.shown_at.front()?, self.shown_at.back()?);
-        (self.playing && !self.caching && self.shown_at.len() > 1 && b > a).then(|| (self.shown_at.len() - 1) as f64 / (b - a))
+        (self.playing && !self.caching && self.shown_at.len() > 1 && b > a)
+            .then(|| (self.shown_at.len() - 1) as f64 / (b - a))
     }
 
     /// The preview keeps up with its frame rate (within 5 %; previews that skip frames count
@@ -250,8 +277,13 @@ impl Playback {
     pub fn keeps_up(&self, now: f64) -> bool {
         let step = self.plan.map_or(1, |p| p.step).max(1) as f64;
         let frame = step / self.fps.max(1.0);
-        let (Some(a), Some(b)) = (self.shown_at.front(), self.shown_at.back()) else { return false };
-        self.shown_at.len() >= 3 && b - a >= (2.0 * frame).max(0.25) && now - b <= 2.0 * frame && self.real_time() == Some(true)
+        let (Some(a), Some(b)) = (self.shown_at.front(), self.shown_at.back()) else {
+            return false;
+        };
+        self.shown_at.len() >= 3
+            && b - a >= (2.0 * frame).max(0.25)
+            && now - b <= 2.0 * frame
+            && self.real_time() == Some(true)
     }
 }
 
@@ -278,7 +310,13 @@ pub struct EffectcraftApp {
     /// Control requests waiting for an offloaded job (`wait: true` in the browser).
     pub(crate) job_waiters: Vec<(control::JobWaiter, Sender<serde_json::Value>)>,
     queued_screenshots: Vec<(u64, f64, u32)>,
-    pending_screenshots: Vec<(u64, Option<String>, Option<[f32; 4]>, Sender<serde_json::Value>, f64)>,
+    pending_screenshots: Vec<(
+        u64,
+        Option<String>,
+        Option<[f32; 4]>,
+        Sender<serde_json::Value>,
+        f64,
+    )>,
     next_token: u64,
     pub(crate) last_ui_time: f64,
     /// When the user last did something (input or an edit): Cache Frames When Idle waits for
@@ -291,16 +329,24 @@ pub struct EffectcraftApp {
     /// was averaged down by for the magnification (`panels::viewer::minify_factor`).
     pub(crate) viewer_tex: Option<(egui::TextureHandle, FrameKey, usize)>,
     /// The frames the other (passive) Composition viewers show, by viewer id.
-    pub(crate) passive_tex: std::collections::HashMap<u32, (FrameKey, panels::viewers::PassiveTexture)>,
+    pub(crate) passive_tex:
+        std::collections::HashMap<u32, (FrameKey, panels::viewers::PassiveTexture)>,
     /// The last GPU frame shown: its egui texture id (registered with egui-wgpu), key and texture.
-    pub(crate) viewer_native: Option<(egui::TextureId, FrameKey, Arc<effectcraft_gpu::DisplayFrame>)>,
+    pub(crate) viewer_native: Option<(
+        egui::TextureId,
+        FrameKey,
+        Arc<effectcraft_gpu::DisplayFrame>,
+    )>,
     /// The texture the viewer draws and its frame key (CPU or GPU frame).
     pub(crate) viewer_shown: Option<(egui::TextureId, FrameKey)>,
     /// Last displayed image (Info panel colour, eyedroppers, histograms). GPU frames fill it on
     /// demand ([`EffectcraftApp::viewer_pixels`]).
     pub(crate) viewer_image: Option<Arc<egui::ColorImage>>,
     /// wasm32: an asynchronous readback of a GPU viewer frame (key asked for, result).
-    viewer_readback: (Option<FrameKey>, Arc<std::sync::Mutex<Option<(FrameKey, Arc<egui::ColorImage>)>>>),
+    viewer_readback: (
+        Option<FrameKey>,
+        Arc<std::sync::Mutex<Option<(FrameKey, Arc<egui::ColorImage>)>>>,
+    ),
     /// egui-wgpu's device, once the first frame arrives (desktop and WebGPU).
     pub(crate) wgpu: Option<eframe::egui_wgpu::RenderState>,
     /// The GPU compositor on that device (None: no usable adapter → CPU only).
@@ -347,7 +393,10 @@ pub struct EffectcraftApp {
     /// Home ▸ Templates: thumbnail textures by template id (None = not renderable).
     pub(crate) template_thumbs: std::collections::HashMap<String, Option<egui::TextureHandle>>,
     /// Home ▸ Templates: the gallery, and the user template files it was listed from.
-    pub(crate) template_list: Option<(Vec<String>, Vec<effectcraft_engine::templates::TemplateInfo>)>,
+    pub(crate) template_list: Option<(
+        Vec<String>,
+        Vec<effectcraft_engine::templates::TemplateInfo>,
+    )>,
 }
 
 /// The saved workspaces in the settings store ([`effectcraft_engine::config::ConfigStore`]).
@@ -364,7 +413,8 @@ struct SavedWorkspaces {
 impl EffectcraftApp {
     pub fn new(session: Session) -> Self {
         let mut ui = UiState::default();
-        let workspace_store = workspace_state::WorkspaceStore::load(session.config.as_deref(), &mut ui);
+        let workspace_store =
+            workspace_state::WorkspaceStore::load(session.config.as_deref(), &mut ui);
         EffectcraftApp {
             session,
             ui,
@@ -437,7 +487,11 @@ impl EffectcraftApp {
     fn with_ui_commands(mut self) -> Self {
         let cmds = menus::UI_COMMANDS
             .iter()
-            .map(|c| effectcraft_engine::shortcuts::UiCommand { id: c.id.into(), label: c.label.into(), shortcut: c.shortcut.map(str::to_string) })
+            .map(|c| effectcraft_engine::shortcuts::UiCommand {
+                id: c.id.into(),
+                label: c.label.into(),
+                shortcut: c.shortcut.map(str::to_string),
+            })
             .collect();
         self.session.set_ui_commands(cmds);
         self
@@ -455,25 +509,36 @@ impl EffectcraftApp {
     pub fn apply_prefs(&mut self, ctx: &egui::Context) {
         // Sync with System re-applies when the system appearance changes (the host wakes the UI;
         // nothing polls).
-        let system = if self.session.prefs.appearance.appearance_mode == "auto" { self.system_light(ctx) } else { None };
+        let system = if self.session.prefs.appearance.appearance_mode == "auto" {
+            self.system_light(ctx)
+        } else {
+            None
+        };
         if self.applied_prefs == Some((self.session.prefs_revision, system)) {
             return;
         }
         self.applied_prefs = Some((self.session.prefs_revision, system));
         let p = &self.session.prefs;
-        self.ui.theme = theme::ThemeKind::from_name(p.appearance.resolved_theme(system)).unwrap_or_default();
+        self.ui.theme =
+            theme::ThemeKind::from_name(p.appearance.resolved_theme(system)).unwrap_or_default();
         self.tokens = Tokens::from_prefs(p, self.ui.theme);
         theme::apply_visuals(ctx, &self.tokens);
-        ctx.set_theme(theme::theme_preference(&p.appearance.appearance_mode, self.ui.theme.is_light()));
+        ctx.set_theme(theme::theme_preference(
+            &p.appearance.appearance_mode,
+            self.ui.theme.is_light(),
+        ));
         let tips = p.general.show_tool_tips;
-        ctx.all_styles_mut(|s| s.interaction.tooltip_delay = if tips { 0.5 } else { f32::INFINITY });
+        ctx.all_styles_mut(|s| {
+            s.interaction.tooltip_delay = if tips { 0.5 } else { f32::INFINITY }
+        });
         // Settings ▸ Appearance ▸ UI Scale (#284). egui's own Ctrl+= / Ctrl+- / Ctrl+0 zoom stays
         // off: Ctrl+0 is Window ▸ Project, and the scale is a setting.
         ctx.options_mut(|o| o.zoom_with_keyboard = false);
         ctx.set_zoom_factor(p.appearance.ui_scale as f32 / 100.0);
         self.ui.cache_when_idle = p.previews.cache_frames_when_idle;
         self.ui.viewer.fast_preview = p.previews.fast_previews;
-        self.frames.set_budget(p.cache_budgets(self.session.sys_memory).preview);
+        self.frames
+            .set_budget(p.cache_budgets(self.session.sys_memory).preview);
     }
 
     /// Change settings from the UI (applied next frame and saved).
@@ -501,7 +566,12 @@ impl EffectcraftApp {
     /// The system appearance: light (`Some(true)`), dark, or unknown. The host's answer (the Linux
     /// desktop portal) wins over egui's, which Wayland compositors often leave empty.
     pub fn system_light(&self, ctx: &egui::Context) -> Option<bool> {
-        self.hooks.system_theme.as_ref().and_then(|read| read(ctx)).or_else(|| ctx.system_theme()).map(|t| t == egui::Theme::Light)
+        self.hooks
+            .system_theme
+            .as_ref()
+            .and_then(|read| read(ctx))
+            .or_else(|| ctx.system_theme())
+            .map(|t| t == egui::Theme::Light)
     }
 
     /// The Tools bar's appearance button (`view.theme.toggle`): Sync with System, then Light, then
@@ -531,8 +601,18 @@ impl EffectcraftApp {
             self.ui.home_learn = false;
         }
         self.ui.workspace = name.to_string();
-        self.ui.dock = self.ui.saved_workspaces.get(name).cloned().unwrap_or_else(|| dock::workspace(name));
-        self.ui.floating = self.ui.saved_floating.get(name).cloned().unwrap_or_else(|| dock::workspace_floating(name));
+        self.ui.dock = self
+            .ui
+            .saved_workspaces
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| dock::workspace(name));
+        self.ui.floating = self
+            .ui
+            .saved_floating
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| dock::workspace_floating(name));
         self.ui.maximized = None;
     }
 
@@ -546,7 +626,12 @@ impl EffectcraftApp {
     /// The workspaces the user saved under a new name (built-ins whose changes were saved are
     /// not repeated), in name order.
     pub fn saved_workspace_names(&self) -> Vec<String> {
-        self.ui.saved_workspaces.keys().filter(|k| !dock::WORKSPACES.contains(&k.as_str())).cloned().collect()
+        self.ui
+            .saved_workspaces
+            .keys()
+            .filter(|k| !dock::WORKSPACES.contains(&k.as_str()))
+            .cloned()
+            .collect()
     }
 
     /// The open Gradient Editor's draft (`panels::gradient_editor`): what OK would set.
@@ -566,14 +651,29 @@ impl EffectcraftApp {
     pub fn feed_synthetic(&mut self, raw_input: &mut egui::RawInput) {
         if !self.synthetic.is_empty() {
             // Pointer events go one per frame so egui sees press → moves → release as a real drag.
-            let pointer = |e: &egui::Event| matches!(e, egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. } | egui::Event::MouseWheel { .. });
+            let pointer = |e: &egui::Event| {
+                matches!(
+                    e,
+                    egui::Event::PointerMoved(_)
+                        | egui::Event::PointerButton { .. }
+                        | egui::Event::MouseWheel { .. }
+                )
+            };
             let n = if pointer(&self.synthetic[0]) {
                 1
             } else {
                 self.synthetic
                     .iter()
-                    .position(|e| pointer(e) || matches!(e, egui::Event::Key { pressed: false, .. }))
-                    .map_or(self.synthetic.len(), |i| if pointer(&self.synthetic[i]) { i.max(1) } else { i + 1 })
+                    .position(|e| {
+                        pointer(e) || matches!(e, egui::Event::Key { pressed: false, .. })
+                    })
+                    .map_or(self.synthetic.len(), |i| {
+                        if pointer(&self.synthetic[i]) {
+                            i.max(1)
+                        } else {
+                            i + 1
+                        }
+                    })
             };
             raw_input.events.extend(self.synthetic.drain(..n));
         }
@@ -582,7 +682,9 @@ impl EffectcraftApp {
     /// Show panel `p` (opening it in its usual place if it is closed), bring it to the front and
     /// give it the focus: Window ▸ <panel>.
     pub fn show_panel(&mut self, p: PanelKind) {
-        if !self.ui.floating.iter().any(|f| f.panels.contains(&p)) && self.ui.maximized.is_some_and(|m| m != p) {
+        if !self.ui.floating.iter().any(|f| f.panels.contains(&p))
+            && self.ui.maximized.is_some_and(|m| m != p)
+        {
             self.ui.maximized = None;
         }
         self.raise_panel(p);
@@ -593,8 +695,17 @@ impl EffectcraftApp {
     /// without moving the focus (a comp opening brings up its viewer, an effect applied brings up
     /// Effect Controls).
     pub fn raise_panel(&mut self, p: PanelKind) {
-        if self.ui.floating.iter().any(|group| group.panels.contains(&p)) {
-            self.edit_layout(|layout| layout.apply(craft_ui::docking::Action::Activate { panel: p }).is_ok());
+        if self
+            .ui
+            .floating
+            .iter()
+            .any(|group| group.panels.contains(&p))
+        {
+            self.edit_layout(|layout| {
+                layout
+                    .apply(craft_ui::docking::Action::Activate { panel: p })
+                    .is_ok()
+            });
             return;
         }
         if !self.ui.dock.contains(p) {
@@ -603,18 +714,32 @@ impl EffectcraftApp {
             let centre = |d: &dock::DockNode| {
                 let mut v = Vec::new();
                 d.panels(&mut v);
-                v.into_iter().find(|q| matches!(q, PanelKind::Layer | PanelKind::Viewer(_) | PanelKind::Flowchart | PanelKind::Footage))
+                v.into_iter().find(|q| {
+                    matches!(
+                        q,
+                        PanelKind::Layer
+                            | PanelKind::Viewer(_)
+                            | PanelKind::Flowchart
+                            | PanelKind::Footage
+                    )
+                })
             };
             let near = match p {
                 PanelKind::Composition => match centre(&self.ui.dock) {
                     Some(q) => q,
-                    None if self.ui.dock.dock_panel(p, PanelKind::Timeline, dock::Zone::Top) => {
+                    None if self
+                        .ui
+                        .dock
+                        .dock_panel(p, PanelKind::Timeline, dock::Zone::Top) =>
+                    {
                         self.ui.dock.activate(p);
                         return;
                     }
                     None => PanelKind::EffectsPresets,
                 },
-                PanelKind::Layer | PanelKind::Flowchart | PanelKind::Viewer(_) => PanelKind::Composition,
+                PanelKind::Layer | PanelKind::Flowchart | PanelKind::Viewer(_) => {
+                    PanelKind::Composition
+                }
                 PanelKind::RenderQueue => PanelKind::Timeline,
                 PanelKind::EffectControls | PanelKind::History => PanelKind::Project,
                 _ => PanelKind::EffectsPresets,
@@ -665,14 +790,18 @@ impl EffectcraftApp {
     }
 
     fn apply_gpu_failure(&mut self, ctx: &egui::Context) {
-        let Some(bridge) = &self.gpu_failures else { return };
+        let Some(bridge) = &self.gpu_failures else {
+            return;
+        };
         // Readback deadlines can retire the compositor without a host device notification.
         if let Some(gpu) = &self.gpu
             && let Err(reason) = gpu.context().check_health()
         {
             bridge.report(&reason, false);
         }
-        let Some(failure) = bridge.failure() else { return };
+        let Some(failure) = bridge.failure() else {
+            return;
+        };
         if self.gpu_failure_applied == Some(failure.presentation_lost) {
             return;
         }
@@ -695,8 +824,12 @@ impl EffectcraftApp {
             }
         }
         self.viewer_native = None;
-        self.passive_tex.retain(|_, (_, texture)| matches!(texture, panels::viewers::PassiveTexture::Cpu(_)));
-        self.viewer_shown = self.viewer_tex.as_ref().map(|(texture, key, _)| (texture.id(), *key));
+        self.passive_tex
+            .retain(|_, (_, texture)| matches!(texture, panels::viewers::PassiveTexture::Cpu(_)));
+        self.viewer_shown = self
+            .viewer_tex
+            .as_ref()
+            .map(|(texture, key, _)| (texture.id(), *key));
         self.viewer_image = None;
         // Old completion closures retain only their detached slot, not the replacement.
         self.viewer_readback = Default::default();
@@ -751,10 +884,16 @@ impl EffectcraftApp {
             return;
         }
         self.gpu_checked = true;
-        if self.gpu_failures.as_ref().is_some_and(|bridge| bridge.failure().is_some()) {
+        if self
+            .gpu_failures
+            .as_ref()
+            .is_some_and(|bridge| bridge.failure().is_some())
+        {
             return;
         }
-        let Some(rs) = frame.wgpu_render_state() else { return };
+        let Some(rs) = frame.wgpu_render_state() else {
+            return;
+        };
         // Help ▸ System Compatibility Report names the adapter and backend the window got.
         let info = rs.adapter.get_info();
         self.session.window_adapter = Some(format!(
@@ -762,11 +901,17 @@ impl EffectcraftApp {
             info.name,
             info.backend,
             info.device_type,
-            if info.driver.is_empty() { String::new() } else { format!(", {} {}", info.driver, info.driver_info) }
+            if info.driver.is_empty() {
+                String::new()
+            } else {
+                format!(", {} {}", info.driver, info.driver_info)
+            }
         ));
         // Backend validation can panic on shader compilation even when device creation
         // succeeded. Keep the document and the egui renderer, and use CPU compositing.
-        let gpu = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| effectcraft_gpu::Gpu::new(&rs.adapter, rs.device.clone(), rs.queue.clone())));
+        let gpu = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            effectcraft_gpu::Gpu::new(&rs.adapter, rs.device.clone(), rs.queue.clone())
+        }));
         match gpu {
             Ok(Ok(g)) => {
                 if let Some(bridge) = &self.gpu_failures {
@@ -775,7 +920,10 @@ impl EffectcraftApp {
                         return;
                     }
                 }
-                log::info!("GPU compositor: {}", effectcraft_engine::render::Accelerator::name(&g));
+                log::info!(
+                    "GPU compositor: {}",
+                    effectcraft_engine::render::Accelerator::name(&g)
+                );
                 self.session.accel = Some(Arc::new(g.clone()));
                 self.gpu = Some(g);
                 self.wgpu = Some(rs.clone());
@@ -785,7 +933,11 @@ impl EffectcraftApp {
                 self.session.accel_note = Some(format!("GPU compositor unavailable: {e}"));
             }
             Err(e) => {
-                let reason = e.downcast_ref::<String>().map(String::as_str).or_else(|| e.downcast_ref::<&str>().copied()).unwrap_or("backend panicked");
+                let reason = e
+                    .downcast_ref::<String>()
+                    .map(String::as_str)
+                    .or_else(|| e.downcast_ref::<&str>().copied())
+                    .unwrap_or("backend panicked");
                 log::warn!("GPU compositor setup failed; using CPU compositing: {reason}");
                 self.session.accel_note = Some(format!("GPU compositor setup failed: {reason}"));
             }
@@ -799,7 +951,9 @@ impl EffectcraftApp {
 
     /// The GPU compositor's adapter, when the viewer has one.
     pub fn gpu_adapter(&self) -> Option<String> {
-        self.gpu.as_ref().map(effectcraft_engine::render::Accelerator::name)
+        self.gpu
+            .as_ref()
+            .map(effectcraft_engine::render::Accelerator::name)
     }
 
     /// The size of the viewer frame's texture (CPU frames; fitted to the GPU's texture limit).
@@ -814,7 +968,12 @@ impl EffectcraftApp {
     /// and returns `None`; a later call (the next frame) has the pixels.
     pub fn viewer_pixels(&mut self) -> Option<Arc<egui::ColorImage>> {
         let to_image = |bytes: Vec<u8>, w: u32, h: u32| {
-            let px = bytes.as_chunks::<4>().0.iter().map(|c| egui::Color32::from_rgba_premultiplied(c[0], c[1], c[2], c[3])).collect();
+            let px = bytes
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| egui::Color32::from_rgba_premultiplied(c[0], c[1], c[2], c[3]))
+                .collect();
             Arc::new(egui::ColorImage::new([w as usize, h as usize], px))
         };
         if self.viewer_image.is_none()
@@ -822,12 +981,18 @@ impl EffectcraftApp {
             && self.viewer_shown.as_ref().map(|s| s.1) == Some(*key)
         {
             if cfg!(target_arch = "wasm32") {
-                let ready = self.viewer_readback.1.lock().ok().and_then(|mut r| r.take_if(|r| r.0 == *key));
+                let ready = self
+                    .viewer_readback
+                    .1
+                    .lock()
+                    .ok()
+                    .and_then(|mut r| r.take_if(|r| r.0 == *key));
                 if let Some((_, img)) = ready {
                     self.viewer_image = Some(img);
                 } else if self.viewer_readback.0 != Some(*key) {
                     self.viewer_readback.0 = Some(*key);
-                    let (slot, k, (w, h)) = (self.viewer_readback.1.clone(), *key, (f.width, f.height));
+                    let (slot, k, (w, h)) =
+                        (self.viewer_readback.1.clone(), *key, (f.width, f.height));
                     let ctx = self.frames.context();
                     g.read_display_async(f, move |bytes| {
                         if let (Some(b), Ok(mut s)) = (bytes, slot.lock()) {
@@ -847,7 +1012,10 @@ impl EffectcraftApp {
 
     /// The viewer's Resolution: the active composition's (saved with the project).
     pub fn viewer_res(&self) -> state::Resolution {
-        self.session.active_comp().map(|c| c.resolution).unwrap_or_default()
+        self.session
+            .active_comp()
+            .map(|c| c.resolution)
+            .unwrap_or_default()
     }
 
     /// The render scale used by the viewer right now.
@@ -863,7 +1031,12 @@ impl EffectcraftApp {
         let res = self.viewer_res();
         let full = res.scale(zoom, ppp);
         // Fast Previews ▸ Adaptive Resolution / Fast Draft: lower resolution while dragging.
-        let (_, k) = self.session.state.viewer.fast_previews.render(self.ui.viewer.interacting || self.ui.viewer.property_interacting);
+        let (_, k) = self
+            .session
+            .state
+            .viewer
+            .fast_previews
+            .render(self.ui.viewer.interacting || self.ui.viewer.property_interacting);
         if k < 1.0 && res.is_auto() {
             return full.min((full * 0.5).max(self.session.prefs.adaptive_limit()));
         }
@@ -872,7 +1045,10 @@ impl EffectcraftApp {
 
     /// The cache key of viewer frame `frame` of `comp` at `scale` (see [`Self::frame_series`]).
     pub fn frame_key(&self, comp: ItemId, frame: i64, scale: f64) -> FrameKey {
-        FrameKey { frame, ..self.frame_series(comp, scale) }
+        FrameKey {
+            frame,
+            ..self.frame_series(comp, scale)
+        }
     }
 
     /// The key of frame 0 of `comp`'s viewer frames at `scale` (the content, view and render
@@ -880,7 +1056,9 @@ impl EffectcraftApp {
     pub fn frame_series(&self, comp: ItemId, scale: f64) -> FrameKey {
         FrameKey {
             revision: self.session.revision,
-            content: self.frames.content_of(&self.session.project, self.session.revision, comp),
+            content: self
+                .frames
+                .content_of(&self.session.project, self.session.revision, comp),
             comp: comp.0,
             frame: 0,
             scale: (scale * 1000.0).round() as u32,
@@ -892,7 +1070,11 @@ impl EffectcraftApp {
     /// The frame series the viewer of `comp` shows now (its scale, view and options, for the
     /// comp's current content): what the cache bars count.
     pub fn shown_series(&self, comp: ItemId) -> FrameKey {
-        let scale = self.viewer_shown.as_ref().filter(|(_, k)| k.comp == comp.0).map_or(1000, |(_, k)| k.scale);
+        let scale = self
+            .viewer_shown
+            .as_ref()
+            .filter(|(_, k)| k.comp == comp.0)
+            .map_or(1000, |(_, k)| k.scale);
         self.frame_series(comp, scale as f64 / 1000.0)
     }
 
@@ -905,7 +1087,9 @@ impl EffectcraftApp {
         if let Some(r) = roi {
             r.map(f64::to_bits).hash(&mut h);
         }
-        let Some(cam) = self.session.view_camera(comp) else { return if roi.is_some() { h.finish() | 1 } else { 0 } };
+        let Some(cam) = self.session.view_camera(comp) else {
+            return if roi.is_some() { h.finish() | 1 } else { 0 };
+        };
         for row in cam.view.0 {
             for v in row {
                 v.to_bits().hash(&mut h);
@@ -922,7 +1106,10 @@ impl EffectcraftApp {
         if self.session.active_comp_id() != Some(comp) {
             return None;
         }
-        self.session.state.region_of_interest.or(self.ui.viewer.extended)
+        self.session
+            .state
+            .region_of_interest
+            .or(self.ui.viewer.extended)
     }
 
     /// Request a prefetch frame render (no-op if cached/in flight).
@@ -937,7 +1124,12 @@ impl EffectcraftApp {
 
     /// Render options of viewer frames of `comp` at `scale`.
     pub fn frame_opts(&self, comp: ItemId, scale: f64) -> RenderOpts {
-        let (draft, _) = self.session.state.viewer.fast_previews.render(self.ui.viewer.interacting || self.ui.viewer.property_interacting);
+        let (draft, _) = self
+            .session
+            .state
+            .viewer
+            .fast_previews
+            .render(self.ui.viewer.interacting || self.ui.viewer.property_interacting);
         let roi = self.viewer_region(comp);
         RenderOpts {
             scale,
@@ -954,14 +1146,18 @@ impl EffectcraftApp {
     }
 
     fn request_frame_with(&self, comp: ItemId, frame: i64, scale: f64, urgent: bool) {
-        let Some(c) = self.session.project.comp(comp) else { return };
+        let Some(c) = self.session.project.comp(comp) else {
+            return;
+        };
         let key = self.frame_key(comp, frame, scale);
         let t = c.frame_rate.tick_of(frame);
         let opts = self.frame_opts(comp, scale);
         if urgent {
-            self.frames.request_urgent(&self.render_source(), key, comp, t, opts);
+            self.frames
+                .request_urgent(&self.render_source(), key, comp, t, opts);
         } else {
-            self.frames.request(&self.render_source(), key, comp, t, opts);
+            self.frames
+                .request(&self.render_source(), key, comp, t, opts);
         }
     }
 
@@ -975,7 +1171,9 @@ impl EffectcraftApp {
     /// Start the preview of a Preview panel shortcut (its range, play-from, rate, skip,
     /// resolution, loop, caching, full screen and include options).
     pub fn play_with(&mut self, now: f64, sc: effectcraft_engine::preview::PreviewShortcut) {
-        let Some(c) = self.session.active_comp_arc() else { return };
+        let Some(c) = self.session.active_comp_arc() else {
+            return;
+        };
         let preset = self.session.prefs.preview.get(sc).clone();
         let plan = effectcraft_engine::preview::plan(&preset, &c, self.session.time());
         let fr = c.frame_rate;
@@ -1017,10 +1215,16 @@ impl EffectcraftApp {
 
     /// The preview includes audio at the comp's frame rate and the comp has something audible.
     fn audio_plays(&self) -> bool {
-        let (Some(pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else { return false };
-        let Some(c) = self.session.project.comp(cid) else { return false };
+        let (Some(pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else {
+            return false;
+        };
+        let Some(c) = self.session.project.comp(cid) else {
+            return false;
+        };
         // A preview at another frame rate plays slower or faster than real time: silent.
-        pl.audio && (pl.fps - c.frame_rate.as_f64()).abs() <= 0.01 && effectcraft_engine::render::audio::comp_has_audio(&self.session.project, cid)
+        pl.audio
+            && (pl.fps - c.frame_rate.as_f64()).abs() <= 0.01
+            && effectcraft_engine::render::audio::comp_has_audio(&self.session.project, cid)
     }
 
     /// Start audio preview from comp time `t` when [`Self::audio_plays`] and an output device
@@ -1028,13 +1232,33 @@ impl EffectcraftApp {
     fn start_audio(&mut self, t: Tick) {
         self.audio = None;
         self.meter.clipped = [false; 2];
-        let (Some(pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else { return };
-        let Some(c) = self.session.project.comp_arc(cid).filter(|_| self.audio_plays()) else { return };
+        let (Some(pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else {
+            return;
+        };
+        let Some(c) = self
+            .session
+            .project
+            .comp_arc(cid)
+            .filter(|_| self.audio_plays())
+        else {
+            return;
+        };
         let out = audio::AudioOutput::from_prefs(&self.session.prefs);
-        let Some(dev) = self.hooks.audio_device.as_ref().and_then(|f| f(&out)) else { return };
+        let Some(dev) = self.hooks.audio_device.as_ref().and_then(|f| f(&out)) else {
+            return;
+        };
         let mix = self.session.prefs.audio.preview_sample_rate;
         let fr = c.frame_rate;
-        match audio::AudioPlayback::start(dev, self.render_source(), cid, t, fr.tick_of(pl.start), fr.tick_of(pl.end + 1), pl.looping, mix) {
+        match audio::AudioPlayback::start(
+            dev,
+            self.render_source(),
+            cid,
+            t,
+            fr.tick_of(pl.start),
+            fr.tick_of(pl.end + 1),
+            pl.looping,
+            mix,
+        ) {
             Ok(a) => self.audio = Some(a),
             Err(e) => log::warn!("audio preview: {e}"),
         }
@@ -1043,12 +1267,16 @@ impl EffectcraftApp {
     /// Audio scrubbing: play the frame of `comp` at `t` (see [`audio::AudioScrub`]), opening the
     /// output on first use. Silent comps and missing devices do nothing.
     pub fn scrub_audio(&mut self, comp: ItemId, t: Tick, now: f64) {
-        if self.playback.playing || !effectcraft_engine::render::audio::comp_has_audio(&self.session.project, comp) {
+        if self.playback.playing
+            || !effectcraft_engine::render::audio::comp_has_audio(&self.session.project, comp)
+        {
             return;
         }
         if self.scrub.is_none() {
             let out = audio::AudioOutput::from_prefs(&self.session.prefs);
-            let Some(dev) = self.hooks.audio_device.as_ref().and_then(|f| f(&out)) else { return };
+            let Some(dev) = self.hooks.audio_device.as_ref().and_then(|f| f(&out)) else {
+                return;
+            };
             match audio::AudioScrub::open(dev, now) {
                 Ok(s) => self.scrub = Some(s),
                 Err(e) => {
@@ -1075,7 +1303,12 @@ impl EffectcraftApp {
             self.ui.maximized = m;
         }
         let Some(pl) = self.playback.plan else { return };
-        let move_time = self.session.prefs.preview.get(self.playback.shortcut).move_time_to_preview_time;
+        let move_time = self
+            .session
+            .prefs
+            .preview
+            .get(self.playback.shortcut)
+            .move_time_to_preview_time;
         if !move_time {
             self.session.set_time(pl.origin);
         } else if let Some(f) = self.playback.audio_frame
@@ -1099,7 +1332,15 @@ impl EffectcraftApp {
             self.play_with(now, sc);
             return;
         }
-        if self.playback.caching && self.session.prefs.preview.get(self.playback.shortcut).play_cached_frames && self.play_cached(now) {
+        if self.playback.caching
+            && self
+                .session
+                .prefs
+                .preview
+                .get(self.playback.shortcut)
+                .play_cached_frames
+            && self.play_cached(now)
+        {
             return;
         }
         self.stop();
@@ -1107,8 +1348,14 @@ impl EffectcraftApp {
 
     /// Cut the caching preview down to the frames cached from its first frame on and play them.
     fn play_cached(&mut self, now: f64) -> bool {
-        let (Some(mut pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else { return false };
-        let scale = self.viewer_shown.as_ref().map(|(_, k)| k.scale as f64 / 1000.0).unwrap_or(1.0);
+        let (Some(mut pl), Some(cid)) = (self.playback.plan, self.session.active_comp_id()) else {
+            return false;
+        };
+        let scale = self
+            .viewer_shown
+            .as_ref()
+            .map(|(_, k)| k.scale as f64 / 1000.0)
+            .unwrap_or(1.0);
         let series = self.frame_series(cid, scale);
         let mut last = None;
         let mut f = pl.first;
@@ -1123,7 +1370,11 @@ impl EffectcraftApp {
         self.playback.caching = false;
         self.playback.start_wall = now;
         self.playback.start_frame = pl.first;
-        let t = self.session.active_comp().map(|c| c.frame_rate.tick_of(pl.first)).unwrap_or_default();
+        let t = self
+            .session
+            .active_comp()
+            .map(|c| c.frame_rate.tick_of(pl.first))
+            .unwrap_or_default();
         self.start_audio(t);
         true
     }
@@ -1137,20 +1388,28 @@ impl EffectcraftApp {
     /// The viewer shows layer handles and paths (View ▸ Show Layer Controls, and Include Layer
     /// Controls while a preview plays).
     pub fn layer_controls_visible(&self) -> bool {
-        self.ui.viewer.show_layer_controls && (!self.playback.playing || self.playback.layer_controls)
+        self.ui.viewer.show_layer_controls
+            && (!self.playback.playing || self.playback.layer_controls)
     }
 
     /// RAM preview: advance at the preview's frame rate when frames are cached; otherwise hold
     /// and keep rendering ahead (the green cache bar fills, then playback runs in real time).
     fn advance_playback(&mut self, ctx: &egui::Context, scale: f64) {
-        let Some(cid) = self.session.active_comp_id() else { return };
-        let Some(c) = self.session.project.comp_arc(cid) else { return };
+        let Some(cid) = self.session.active_comp_id() else {
+            return;
+        };
+        let Some(c) = self.session.project.comp_arc(cid) else {
+            return;
+        };
         let now = ctx.input(|i| i.time);
         let fr = c.frame_rate;
         let plan = self.playback.plan.filter(|_| self.playback.playing);
         let (wa, wb) = match plan {
             Some(p) => (p.start, p.end),
-            None => (fr.frame_at(c.work_area.0), fr.frame_at(c.work_area.1 - c.frame_duration())),
+            None => (
+                fr.frame_at(c.work_area.0),
+                fr.frame_at(c.work_area.1 - c.frame_duration()),
+            ),
         };
         let looping = plan.is_none_or(|p| p.looping);
         let video = plan.is_none_or(|p| p.video);
@@ -1175,7 +1434,14 @@ impl EffectcraftApp {
         let mut queued = self.frames.inflight();
         let series = self.frame_series(cid, scale);
         // The preview's position orders prefetch and eviction (#595).
-        let playhead = plan.filter(|p| p.video).map(|p| frames::Playhead { series, cur, start: p.start, end: p.end, step: p.step, looping: p.looping });
+        let playhead = plan.filter(|p| p.video).map(|p| frames::Playhead {
+            series,
+            cur,
+            start: p.start,
+            end: p.end,
+            step: p.step,
+            looping: p.looping,
+        });
         self.frames.set_playhead(playhead);
         if self.playback.caching
             && let Some(p) = plan
@@ -1190,7 +1456,12 @@ impl EffectcraftApp {
                 let mut cut = p;
                 (cut.start, cut.end) = (p.first, (p.first + (fit - 1) * p.step).min(p.end));
                 self.playback.plan = Some(cut);
-                self.toast = Some((format!("Preview cut to {fit} of {n} frames: no more fit in the RAM preview (Settings ▸ Memory & CPU)"), now));
+                self.toast = Some((
+                    format!(
+                        "Preview cut to {fit} of {n} frames: no more fit in the RAM preview (Settings ▸ Memory & CPU)"
+                    ),
+                    now,
+                ));
                 ctx.request_repaint();
                 return;
             }
@@ -1267,7 +1538,9 @@ impl EffectcraftApp {
         let fit = self.frames_that_fit(&c, scale);
         if self.playback.audio_held
             && let Some(p) = plan
-            && ((self.playback.keeps_up(now) && self.cached_ahead(&p, &series, cur, ahead.min(fit))) || self.cached_ahead(&p, &series, cur, fit))
+            && ((self.playback.keeps_up(now)
+                && self.cached_ahead(&p, &series, cur, ahead.min(fit)))
+                || self.cached_ahead(&p, &series, cur, fit))
         {
             self.playback.audio_held = false;
             self.playback.start_wall = now;
@@ -1288,7 +1561,10 @@ impl EffectcraftApp {
             let target = snap(audio::frame_of_sample(a.clock(), a.rate, fr).clamp(wa, wb));
             if !video {
                 self.playback.audio_frame = Some(target);
-            } else if self.frames.is_cached(&FrameKey { frame: target, ..series }) {
+            } else if self.frames.is_cached(&FrameKey {
+                frame: target,
+                ..series
+            }) {
                 self.playback.waiting = false;
                 if target != cur {
                     self.session.set_time(fr.tick_of(target));
@@ -1338,7 +1614,10 @@ impl EffectcraftApp {
             ctx.request_repaint();
             return;
         }
-        if self.frames.is_cached(&FrameKey { frame: target, ..series }) {
+        if self.frames.is_cached(&FrameKey {
+            frame: target,
+            ..series
+        }) {
             self.playback.waiting = false;
             if target != cur {
                 self.session.set_time(fr.tick_of(target));
@@ -1347,8 +1626,13 @@ impl EffectcraftApp {
         } else {
             // Not cached yet: hold the clock at the current frame (cache first, then play).
             self.playback.waiting = true;
-            let next = plan.and_then(|p| p.frame_after(cur, 1)).unwrap_or(if cur + 1 > wb { wa } else { cur + 1 });
-            if self.frames.is_cached(&FrameKey { frame: next, ..series }) {
+            let next = plan
+                .and_then(|p| p.frame_after(cur, 1))
+                .unwrap_or(if cur + 1 > wb { wa } else { cur + 1 });
+            if self.frames.is_cached(&FrameKey {
+                frame: next,
+                ..series
+            }) {
                 self.session.set_time(fr.tick_of(next));
             }
             self.playback.start_wall = now;
@@ -1370,8 +1654,16 @@ impl EffectcraftApp {
     /// Composition ▸ Preview ▸ Cache Frames When Idle: after a second without input or edits,
     /// render the work area's frames (from the current time on, then from its start) in the
     /// background, a few at a time, until it is cached or the RAM preview budget is full.
-    fn cache_when_idle(&mut self, ctx: &egui::Context, comp: &effectcraft_engine::project::Comp, series: &FrameKey, now: f64, (wa, wb): (i64, i64)) {
-        let active = ctx.input(|i| !i.events.is_empty() || i.pointer.any_down() || i.pointer.is_moving());
+    fn cache_when_idle(
+        &mut self,
+        ctx: &egui::Context,
+        comp: &effectcraft_engine::project::Comp,
+        series: &FrameKey,
+        now: f64,
+        (wa, wb): (i64, i64),
+    ) {
+        let active =
+            ctx.input(|i| !i.events.is_empty() || i.pointer.any_down() || i.pointer.is_moving());
         if active || self.last_activity.1 != self.session.revision {
             self.last_activity = (now, self.session.revision);
         }
@@ -1389,14 +1681,19 @@ impl EffectcraftApp {
             return;
         }
         let cur = comp.frame_rate.frame_at(self.session.time()).clamp(wa, wb);
-        let fit = self.frames_that_fit(comp, series.scale as f64 / 1000.0).min(n);
+        let fit = self
+            .frames_that_fit(comp, series.scale as f64 / 1000.0)
+            .min(n);
         let slots = (self.frames_parallelism() / 2).max(1);
         let mut queued = self.frames.inflight();
         let scale = series.scale as f64 / 1000.0;
         let mut pending = false;
         for k in 0..fit {
             let f = wa + (cur - wa + k).rem_euclid(n);
-            if self.frames.is_cached(&FrameKey { frame: f, ..*series }) {
+            if self.frames.is_cached(&FrameKey {
+                frame: f,
+                ..*series
+            }) {
                 continue;
             }
             pending = true;
@@ -1415,9 +1712,18 @@ impl EffectcraftApp {
     /// at least one).
     /// The frames of `plan` from `cur` to its end, or as many as fit in the RAM preview, are
     /// cached: sound can play from `cur` in real time.
-    fn cached_ahead(&self, plan: &effectcraft_engine::preview::PreviewPlan, series: &FrameKey, cur: i64, fit: i64) -> bool {
+    fn cached_ahead(
+        &self,
+        plan: &effectcraft_engine::preview::PreviewPlan,
+        series: &FrameKey,
+        cur: i64,
+        fit: i64,
+    ) -> bool {
         let cached = self.frames.cached_frames(series);
-        (0..fit).map_while(|k| plan.frame_after(cur, k)).take_while(|f| *f >= cur).all(|f| cached.binary_search(&f).is_ok())
+        (0..fit)
+            .map_while(|k| plan.frame_after(cur, k))
+            .take_while(|f| *f >= cur)
+            .all(|f| cached.binary_search(&f).is_ok())
     }
 
     fn frames_that_fit(&self, comp: &effectcraft_engine::project::Comp, scale: f64) -> i64 {
@@ -1442,7 +1748,9 @@ impl EffectcraftApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         let now = ctx.input(|i| i.time);
         let mut reqs: Vec<(ControlRequest, f64)> = std::mem::take(&mut self.deferred);
         while let Ok(req) = rx.try_recv() {
@@ -1470,7 +1778,9 @@ impl EffectcraftApp {
                 control::Outcome::Screenshot { path, crop } => {
                     // A covered or minimized window presents no frames (macOS skips its redraws), so
                     // a screenshot would never arrive and nothing would tick its timeout.
-                    if ctx.input(|i| i.viewport().occluded == Some(true) || i.viewport().minimized == Some(true)) {
+                    if ctx.input(|i| {
+                        i.viewport().occluded == Some(true) || i.viewport().minimized == Some(true)
+                    }) {
                         let _ = reply.send(json!({"ok": false, "error": "window is covered or minimized: call ui.focus first (render.frame renders comp pixels without the window)"}));
                         continue;
                     }
@@ -1478,7 +1788,13 @@ impl EffectcraftApp {
                     self.next_token += 1;
                     let settle = now + 0.35;
                     self.queued_screenshots.push((token, settle, 0));
-                    self.pending_screenshots.push((token, path, crop, reply, settle + SCREENSHOT_TIMEOUT_S));
+                    self.pending_screenshots.push((
+                        token,
+                        path,
+                        crop,
+                        reply,
+                        settle + SCREENSHOT_TIMEOUT_S,
+                    ));
                 }
             }
         }
@@ -1516,7 +1832,9 @@ impl EffectcraftApp {
             any = true;
             // Wait for the viewer's frame to finish rendering (bounded by the timeout below).
             if now >= *at && *frames >= 3 && (!busy || now > *at + 2.5) {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -1546,8 +1864,14 @@ impl EffectcraftApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -1555,7 +1879,11 @@ impl EffectcraftApp {
                 .collect()
         });
         for (token, image) in events {
-            if let Some(i) = self.pending_screenshots.iter().position(|(t, ..)| *t == token) {
+            if let Some(i) = self
+                .pending_screenshots
+                .iter()
+                .position(|(t, ..)| *t == token)
+            {
                 let (_, path, crop, reply, _) = self.pending_screenshots.remove(i);
                 let r = control::save_screenshot(ctx, &image, path.as_deref(), crop);
                 let _ = reply.send(r);
@@ -1572,8 +1900,12 @@ impl EffectcraftApp {
                     panels::viewers::on_open_comp(self, c);
                     self.ui.timeline.pps = None;
                 }
-                effectcraft_engine::Event::Toast { message, .. } => self.toast = Some((message, ctx.input(|i| i.time))),
-                effectcraft_engine::Event::OpenUrl(url) => ctx.open_url(egui::OpenUrl::new_tab(url)),
+                effectcraft_engine::Event::Toast { message, .. } => {
+                    self.toast = Some((message, ctx.input(|i| i.time)))
+                }
+                effectcraft_engine::Event::OpenUrl(url) => {
+                    ctx.open_url(egui::OpenUrl::new_tab(url))
+                }
                 // Frames are keyed by content: an edit keeps those of comps it doesn't touch.
                 effectcraft_engine::Event::ProjectChanged { .. } => {}
                 effectcraft_engine::Event::Frontend { command, params } => {
@@ -1582,7 +1914,11 @@ impl EffectcraftApp {
                     }
                 }
                 effectcraft_engine::Event::PurgeCaches => self.frames.clear(),
-                effectcraft_engine::Event::CopyImage { width, height, rgba } => {
+                effectcraft_engine::Event::CopyImage {
+                    width,
+                    height,
+                    rgba,
+                } => {
                     if let Err(e) = copy_image(ctx, width, height, &rgba) {
                         self.ui.status = e;
                     }
@@ -1669,9 +2005,15 @@ impl EffectcraftApp {
             top = mb.max.y;
         }
         let header_h = 40.0;
-        let header = egui::Rect::from_min_size(egui::pos2(full.min.x, top), egui::vec2(full.width(), header_h));
+        let header = egui::Rect::from_min_size(
+            egui::pos2(full.min.x, top),
+            egui::vec2(full.width(), header_h),
+        );
         header::show(self, ui, header);
-        let body = egui::Rect::from_min_max(egui::pos2(full.min.x + 4.0, header.max.y + 2.0), egui::pos2(full.max.x - 4.0, full.max.y - 4.0));
+        let body = egui::Rect::from_min_max(
+            egui::pos2(full.min.x + 4.0, header.max.y + 2.0),
+            egui::pos2(full.max.x - 4.0, full.max.y - 4.0),
+        );
         self.dock_area(ui, body);
         #[cfg(not(target_arch = "wasm32"))]
         prefs_live::dropped_files(self, ui, full);
@@ -1686,7 +2028,10 @@ impl EffectcraftApp {
         panels::learn::coach(self, &ctx);
         let lift = panels::media_panels::import_card(self, ui, full);
         self.draw_toast(ui, full, lift);
-        if self.session.config.is_some() && self.workspace_store.has_changes(&self.ui) && !ctx.input(|i| i.pointer.any_down()) {
+        if self.session.config.is_some()
+            && self.workspace_store.has_changes(&self.ui)
+            && !ctx.input(|i| i.pointer.any_down())
+        {
             if self.workspace_store.due(ctx.input(|i| i.time)) {
                 self.save_workspace_state();
             }
@@ -1697,7 +2042,10 @@ impl EffectcraftApp {
     }
 
     fn save_workspace_state(&mut self) {
-        if let Err(error) = self.workspace_store.save(self.session.config.as_deref(), &self.ui) {
+        if let Err(error) = self
+            .workspace_store
+            .save(self.session.config.as_deref(), &self.ui)
+        {
             if self.workspace_store.error.as_ref() != Some(&error) {
                 log::warn!("{error}");
                 self.ui.status = error.clone();
@@ -1713,24 +2061,40 @@ impl EffectcraftApp {
         let msg = if !self.ui.status.is_empty() {
             Some(self.ui.status.clone())
         } else {
-            self.toast.as_ref().filter(|(_, at)| now - at < 4.0).map(|(m, _)| m.clone())
+            self.toast
+                .as_ref()
+                .filter(|(_, at)| now - at < 4.0)
+                .map(|(m, _)| m.clone())
         };
         if let Some(m) = msg {
             let t = &self.tokens;
-            let galley = ui.painter().layout_no_wrap(m.clone(), Tokens::ui(12.0), t.text);
-            let r = egui::Rect::from_min_size(egui::pos2(full.min.x + 16.0, full.max.y - 44.0 - lift), galley.size() + egui::vec2(24.0, 14.0));
+            let galley = ui
+                .painter()
+                .layout_no_wrap(m.clone(), Tokens::ui(12.0), t.text);
+            let r = egui::Rect::from_min_size(
+                egui::pos2(full.min.x + 16.0, full.max.y - 44.0 - lift),
+                galley.size() + egui::vec2(24.0, 14.0),
+            );
             ui.painter().rect_filled(r, 6.0, t.panel_bg);
-            ui.painter().rect_stroke(r, 6.0, egui::Stroke::new(1.0, t.field_border), egui::StrokeKind::Inside);
-            ui.painter().galley(r.min + egui::vec2(12.0, 7.0), galley, t.text);
+            ui.painter().rect_stroke(
+                r,
+                6.0,
+                egui::Stroke::new(1.0, t.field_border),
+                egui::StrokeKind::Inside,
+            );
+            ui.painter()
+                .galley(r.min + egui::vec2(12.0, 7.0), galley, t.text);
             self.auto.add("toast", r, &m);
             let resp = ui.interact(r, egui::Id::new("toast"), egui::Sense::click());
             if resp.clicked() {
                 self.ui.status.clear();
                 self.toast = None;
             }
-            ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(500));
             if !self.ui.status.is_empty() {
-                let since: f64 = ui.data(|d| d.get_temp(egui::Id::new("status-since")).unwrap_or(now));
+                let since: f64 =
+                    ui.data(|d| d.get_temp(egui::Id::new("status-since")).unwrap_or(now));
                 ui.data_mut(|d| d.insert_temp(egui::Id::new("status-since"), since));
                 if now - since > 5.0 {
                     self.ui.status.clear();
@@ -1749,10 +2113,23 @@ impl EffectcraftApp {
         if self.session.script_ui.task_hosts.is_empty() {
             return;
         }
-        let Some(r) = effectcraft_engine::scriptui::ScriptUi::run_tasks(&mut self.session) else { return };
-        if let Some(msg) = r["errors"].as_array().and_then(|e| e.first()).and_then(|e| e["message"].as_str()) {
-            self.toast = Some((format!("Scheduled script task: {msg}"), ctx.input(|i| i.time)));
-        } else if let Some(line) = r["output"].as_array().and_then(|o| o.last()).and_then(|l| l.as_str()) {
+        let Some(r) = effectcraft_engine::scriptui::ScriptUi::run_tasks(&mut self.session) else {
+            return;
+        };
+        if let Some(msg) = r["errors"]
+            .as_array()
+            .and_then(|e| e.first())
+            .and_then(|e| e["message"].as_str())
+        {
+            self.toast = Some((
+                format!("Scheduled script task: {msg}"),
+                ctx.input(|i| i.time),
+            ));
+        } else if let Some(line) = r["output"]
+            .as_array()
+            .and_then(|o| o.last())
+            .and_then(|l| l.as_str())
+        {
             self.ui.status = line.to_string();
         }
         if let Some(next) = r["next"].as_u64() {
@@ -1762,7 +2139,10 @@ impl EffectcraftApp {
 
     /// Auto-save a dirty project when the interval has passed (Settings ▸ Project ▸ Auto-Save).
     fn tick_autosave(&mut self, ctx: &egui::Context) {
-        let now = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs_f64()).unwrap_or(0.0);
+        let now = web_time::SystemTime::now()
+            .duration_since(web_time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
         if let Some(Err(e)) = self.session.autosave_tick(now) {
             self.ui.status = e.to_string();
         }
@@ -1775,7 +2155,10 @@ impl EffectcraftApp {
             let last: f64 = ctx.data(|d| d.get_temp(key)).unwrap_or(0.0);
             if now - last >= 10.0 {
                 ctx.data_mut(|d| d.insert_temp(key, now));
-                match self.session.execute("file.watchFolder.poll", serde_json::json!({})) {
+                match self
+                    .session
+                    .execute("file.watchFolder.poll", serde_json::json!({}))
+                {
                     Ok(r) => {
                         if let Some(n) = r["rendered"].as_array().map(Vec::len).filter(|n| *n > 0) {
                             self.ui.status = format!("Watch Folder: rendered {n} project(s)");
@@ -1797,11 +2180,16 @@ impl EffectcraftApp {
         if let Some(Err(e)) = footage_reload::poll_scan(&mut self.session) {
             self.ui.status = e.to_string();
         }
-        let (last_key, focus_key) = (egui::Id::new("footageReload.lastScan"), egui::Id::new("footageReload.focused"));
+        let (last_key, focus_key) = (
+            egui::Id::new("footageReload.lastScan"),
+            egui::Id::new("footageReload.focused"),
+        );
         let focused = ctx.input(|i| i.focused);
         let was_focused: bool = ctx.data(|d| d.get_temp(focus_key)).unwrap_or(focused);
         ctx.data_mut(|d| d.insert_temp(focus_key, focused));
-        if self.session.prefs.import.auto_reload_footage == "off" || self.session.project.items.is_empty() {
+        if self.session.prefs.import.auto_reload_footage == "off"
+            || self.session.project.items.is_empty()
+        {
             return;
         }
         let last: f64 = ctx.data(|d| d.get_temp(last_key)).unwrap_or(0.0);
@@ -1891,7 +2279,15 @@ impl eframe::App for EffectcraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         pointer_wrap::finish_native(&ctx, frame);
         // wasm32: no frame threads; render queued frames now, between UI frames.
-        if cfg!(target_arch = "wasm32") && self.frames.pump(std::time::Duration::from_millis(if self.playback.playing { 24 } else { 40 })) {
+        if cfg!(target_arch = "wasm32")
+            && self
+                .frames
+                .pump(std::time::Duration::from_millis(if self.playback.playing {
+                    24
+                } else {
+                    40
+                }))
+        {
             ctx.request_repaint();
         }
         self.last_ui_time = ctx.input(|i| i.time);
@@ -1920,7 +2316,9 @@ pub(crate) fn tick_playback(app: &mut EffectcraftApp, ctx: &egui::Context, scale
 fn copy_image(ctx: &egui::Context, width: u32, height: u32, rgba: &[u8]) -> Result<(), String> {
     let (w, h) = (width as usize, height as usize);
     if w == 0 || h == 0 || w.checked_mul(h).and_then(|n| n.checked_mul(4)) != Some(rgba.len()) {
-        return Err(format!("cannot copy a malformed {width}×{height} image to the clipboard"));
+        return Err(format!(
+            "cannot copy a malformed {width}×{height} image to the clipboard"
+        ));
     }
     ctx.copy_image(egui::ColorImage::from_rgba_unmultiplied([w, h], rgba));
     Ok(())
@@ -1931,7 +2329,12 @@ fn copy_image(ctx: &egui::Context, width: u32, height: u32, rgba: &[u8]) -> Resu
 /// size, so with its title bar it ran under the taskbar and cut menus off at the bottom of the
 /// screen (#269).
 fn fit_window(ctx: &egui::Context) {
-    let (monitor, window) = ctx.input(|i| (i.viewport().monitor_size, i.viewport().outer_rect.or(i.viewport().inner_rect)));
+    let (monitor, window) = ctx.input(|i| {
+        (
+            i.viewport().monitor_size,
+            i.viewport().outer_rect.or(i.viewport().inner_rect),
+        )
+    });
     if let (Some(monitor), Some(window)) = (monitor, window)
         && overflows_screen(window.size(), monitor)
     {
@@ -1955,7 +2358,10 @@ mod fit_window_tests {
         // The default window on a 1366 × 768 laptop (shrunk to the monitor) and on 1080p.
         assert!(overflows_screen(vec2(1366.0, 799.0), vec2(1366.0, 768.0)));
         assert!(overflows_screen(vec2(1680.0, 1051.0), vec2(1920.0, 1080.0)));
-        assert!(!overflows_screen(vec2(1680.0, 1051.0), vec2(2560.0, 1440.0)));
+        assert!(!overflows_screen(
+            vec2(1680.0, 1051.0),
+            vec2(2560.0, 1440.0)
+        ));
     }
 }
 
@@ -1979,8 +2385,15 @@ mod copy_frame_tests {
     #[test]
     fn copy_frame_puts_the_frame_on_the_clipboard() {
         let mut session = Session::default();
-        session.execute("comp.new", json!({"name": "Copy", "width": 8, "height": 6, "duration": 1})).unwrap();
-        session.execute("layer.newSolid", json!({"color": "#ff0000"})).unwrap();
+        session
+            .execute(
+                "comp.new",
+                json!({"name": "Copy", "width": 8, "height": 6, "duration": 1}),
+            )
+            .unwrap();
+        session
+            .execute("layer.newSolid", json!({"color": "#ff0000"}))
+            .unwrap();
         let mut app = EffectcraftApp::new(session);
         let ctx = egui::Context::default();
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
@@ -1991,7 +2404,12 @@ mod copy_frame_tests {
         let images = copied(&output);
         assert_eq!(images.len(), 1);
         assert_eq!(images[0].size, [8, 6]);
-        assert!(images[0].pixels.iter().all(|p| *p == egui::Color32::from_rgb(255, 0, 0)));
+        assert!(
+            images[0]
+                .pixels
+                .iter()
+                .all(|p| *p == egui::Color32::from_rgb(255, 0, 0))
+        );
     }
 
     /// A malformed image never reaches egui's panicking constructor.
@@ -2015,8 +2433,22 @@ mod gpu_failure_tests {
     #[test]
     fn host_failure_preserves_document_undo_and_cpu_pixels_and_detaches_late_readbacks() {
         let mut session = Session::default();
-        let comp = ItemId(session.execute("comp.new", json!({"name": "Recovery", "width": 4, "height": 4, "duration": 1})).unwrap()["comp"].as_u64().unwrap());
-        session.execute("layer.newSolid", json!({"comp": comp.0, "color": "#ff0000"})).unwrap();
+        let comp = ItemId(
+            session
+                .execute(
+                    "comp.new",
+                    json!({"name": "Recovery", "width": 4, "height": 4, "duration": 1}),
+                )
+                .unwrap()["comp"]
+                .as_u64()
+                .unwrap(),
+        );
+        session
+            .execute(
+                "layer.newSolid",
+                json!({"comp": comp.0, "color": "#ff0000"}),
+            )
+            .unwrap();
         let before = session.render(comp, Tick::ZERO, RenderOpts::default());
         let project = session.project.clone();
         let revision = session.revision;
@@ -2026,24 +2458,51 @@ mod gpu_failure_tests {
         let bridge = gpu_failure::GpuFailureBridge::new(&ctx);
         app.set_gpu_failure_bridge(bridge.clone());
         let late_slot = app.viewer_readback.1.clone();
-        let key = FrameKey { revision, content: 1, comp: comp.0, frame: 0, scale: 1000, view: 0, opts: 0 };
+        let key = FrameKey {
+            revision,
+            content: 1,
+            comp: comp.0,
+            frame: 0,
+            scale: 1000,
+            view: 0,
+            opts: 0,
+        };
         app.viewer_readback.0 = Some(key);
         bridge.report("synthetic host device failure", true);
         app.apply_gpu_failure(&ctx);
         assert!(Arc::ptr_eq(&project, &app.session.project));
         assert_eq!(app.session.revision, revision);
         assert_eq!(serde_json::to_value(&app.session.prefs).unwrap(), prefs);
-        assert!(app.gpu_checked, "failed device cannot be initialized again next frame");
+        assert!(
+            app.gpu_checked,
+            "failed device cannot be initialized again next frame"
+        );
         assert!(app.session.accel.is_none());
         assert!(app.ui.status.contains("presentation requires restarting"));
-        assert_eq!(app.session.render(comp, Tick::ZERO, RenderOpts::default()).data, before.data);
-        *late_slot.lock().unwrap() = Some((key, Arc::new(egui::ColorImage::new([1, 1], vec![egui::Color32::RED]))));
+        assert_eq!(
+            app.session
+                .render(comp, Tick::ZERO, RenderOpts::default())
+                .data,
+            before.data
+        );
+        *late_slot.lock().unwrap() = Some((
+            key,
+            Arc::new(egui::ColorImage::new([1, 1], vec![egui::Color32::RED])),
+        ));
         assert!(app.viewer_readback.0.is_none());
-        assert!(app.viewer_readback.1.lock().unwrap().is_none(), "a late completion cannot refill the replacement slot");
+        assert!(
+            app.viewer_readback.1.lock().unwrap().is_none(),
+            "a late completion cannot refill the replacement slot"
+        );
         app.session.execute("edit.undo", json!({})).unwrap();
         assert!(app.session.project.comp(comp).unwrap().layers.is_empty());
         app.session.execute("edit.redo", json!({})).unwrap();
-        assert_eq!(app.session.render(comp, Tick::ZERO, RenderOpts::default()).data, before.data);
+        assert_eq!(
+            app.session
+                .render(comp, Tick::ZERO, RenderOpts::default())
+                .data,
+            before.data
+        );
     }
 }
 
@@ -2063,10 +2522,16 @@ mod appearance_tests {
         let ctx = egui::Context::default();
         let mut app = app();
         app.hooks.system_theme = Some(Box::new(|_| Some(egui::Theme::Dark)));
-        app.set_pref("appearance.darkTheme", json!("darker")).unwrap();
+        app.set_pref("appearance.darkTheme", json!("darker"))
+            .unwrap();
         app.apply_prefs(&ctx);
         assert_eq!(app.ui.theme, ThemeKind::Darker);
-        for (mode, shown) in [("auto", ThemeKind::Darker), ("light", ThemeKind::Light), ("dark", ThemeKind::Darker), ("auto", ThemeKind::Darker)] {
+        for (mode, shown) in [
+            ("auto", ThemeKind::Darker),
+            ("light", ThemeKind::Light),
+            ("dark", ThemeKind::Darker),
+            ("auto", ThemeKind::Darker),
+        ] {
             menus::invoke(&mut app, &ctx, "view.theme.toggle", json!({})).unwrap();
             assert_eq!(app.session.prefs.appearance.appearance_mode, mode);
             assert_eq!(app.ui.theme, shown, "{mode}");
@@ -2085,19 +2550,29 @@ mod appearance_tests {
         let mut app = app();
         let system = Arc::new(Mutex::new(Some(egui::Theme::Light)));
         let read = Arc::clone(&system);
-        app.hooks.system_theme = Some(Box::new(move |_| *read.lock().unwrap_or_else(std::sync::PoisonError::into_inner)));
-        app.set_pref("appearance.appearanceMode", json!("auto")).unwrap();
+        app.hooks.system_theme = Some(Box::new(move |_| {
+            *read
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+        }));
+        app.set_pref("appearance.appearanceMode", json!("auto"))
+            .unwrap();
         app.apply_prefs(&ctx);
         assert_eq!(app.ui.theme, ThemeKind::Light);
         *system.lock().unwrap() = Some(egui::Theme::Dark);
         app.apply_prefs(&ctx);
-        assert_eq!(app.ui.theme, ThemeKind::Dark, "a system change applies without a settings change");
+        assert_eq!(
+            app.ui.theme,
+            ThemeKind::Dark,
+            "a system change applies without a settings change"
+        );
         *system.lock().unwrap() = None;
         app.apply_prefs(&ctx);
         assert_eq!(app.ui.theme, ThemeKind::Dark);
         // A fixed mode ignores the system.
         *system.lock().unwrap() = Some(egui::Theme::Light);
-        app.set_pref("appearance.appearanceMode", json!("dark")).unwrap();
+        app.set_pref("appearance.appearanceMode", json!("dark"))
+            .unwrap();
         app.apply_prefs(&ctx);
         assert_eq!(app.ui.theme, ThemeKind::Dark);
     }
@@ -2111,23 +2586,43 @@ mod appearance_tests {
         let ctx = egui::Context::default();
         let mut app = app();
         app.hooks.system_theme = Some(Box::new(|_| Some(egui::Theme::Light)));
-        app.set_pref("appearance.appearanceMode", json!("auto")).unwrap();
+        app.set_pref("appearance.appearanceMode", json!("auto"))
+            .unwrap();
         app.apply_prefs(&ctx);
         assert_eq!(app.ui.theme, ThemeKind::Light);
-        assert_eq!(ctx.options(|o| o.theme_preference), egui::ThemePreference::System);
+        assert_eq!(
+            ctx.options(|o| o.theme_preference),
+            egui::ThemePreference::System
+        );
         for theme in [egui::Theme::Light, egui::Theme::Dark] {
-            assert_eq!(ctx.style_of(theme).visuals.panel_fill, app.tokens.panel_bg, "{theme:?}");
+            assert_eq!(
+                ctx.style_of(theme).visuals.panel_fill,
+                app.tokens.panel_bg,
+                "{theme:?}"
+            );
         }
         // egui asks the window to follow the system, never to take Light or Dark.
         let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
         out.textures_delta.clear();
-        let cmds = out.viewport_output.values().flat_map(|v| v.commands.iter()).collect::<Vec<_>>();
+        let cmds = out
+            .viewport_output
+            .values()
+            .flat_map(|v| v.commands.iter())
+            .collect::<Vec<_>>();
         assert!(!cmds.iter().any(|c| matches!(c, egui::ViewportCommand::SetTheme(t) if t != &egui::SystemTheme::SystemDefault)), "{cmds:?}");
-        for (mode, pref) in [("light", egui::ThemePreference::Light), ("dark", egui::ThemePreference::Dark)] {
-            app.set_pref("appearance.appearanceMode", json!(mode)).unwrap();
+        for (mode, pref) in [
+            ("light", egui::ThemePreference::Light),
+            ("dark", egui::ThemePreference::Dark),
+        ] {
+            app.set_pref("appearance.appearanceMode", json!(mode))
+                .unwrap();
             app.apply_prefs(&ctx);
             assert_eq!(ctx.options(|o| o.theme_preference), pref, "{mode}");
-            assert_eq!(ctx.global_style().visuals.panel_fill, app.tokens.panel_bg, "{mode}");
+            assert_eq!(
+                ctx.global_style().visuals.panel_fill,
+                app.tokens.panel_bg,
+                "{mode}"
+            );
         }
     }
 
@@ -2136,7 +2631,8 @@ mod appearance_tests {
     fn picking_a_theme_fixes_its_mode() {
         let ctx = egui::Context::default();
         let mut app = app();
-        app.set_pref("appearance.appearanceMode", json!("auto")).unwrap();
+        app.set_pref("appearance.appearanceMode", json!("auto"))
+            .unwrap();
         menus::invoke(&mut app, &ctx, "view.theme.light", json!({})).unwrap();
         assert_eq!(app.session.prefs.appearance.appearance_mode, "light");
         assert_eq!(app.ui.theme, ThemeKind::Light);

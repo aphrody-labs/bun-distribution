@@ -3,7 +3,9 @@
 use serde::{Deserialize, Serialize};
 
 /// A civil date-time as recorded by the camera; `offset_minutes` is the UTC offset when known.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct DateTime {
     pub year: u16,
     pub month: u8,
@@ -28,7 +30,8 @@ impl DateTime {
         // A timestamp must represent a real Gregorian calendar day, not just
         // numbers in the range 1..=31. Invalid dates would otherwise be
         // accepted from EXIF/XMP and silently normalized during time arithmetic.
-        let leap = self.year.is_multiple_of(4) && (!self.year.is_multiple_of(100) || self.year.is_multiple_of(400));
+        let leap = self.year.is_multiple_of(4)
+            && (!self.year.is_multiple_of(100) || self.year.is_multiple_of(400));
         let max_day = match self.month {
             1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
             4 | 6 | 9 | 11 => 30,
@@ -54,7 +57,11 @@ impl DateTime {
         if dp.len() != 3 {
             return None;
         }
-        let tp: Vec<&str> = if t.is_empty() { vec![] } else { t.split(':').collect() };
+        let tp: Vec<&str> = if t.is_empty() {
+            vec![]
+        } else {
+            t.split(':').collect()
+        };
         let g = |v: &Vec<&str>, i: usize| v.get(i).map(|x| num(x.trim())).unwrap_or(Some(0));
         DateTime {
             year: num(dp[0])?.try_into().ok()?,
@@ -93,7 +100,12 @@ impl DateTime {
 
     /// Set the sub-second part from an Exif `SubSecTime*` string (digits are a decimal fraction).
     pub fn with_subsec(mut self, s: &str) -> DateTime {
-        let digits: String = s.trim().chars().take_while(|c| c.is_ascii_digit()).take(3).collect();
+        let digits: String = s
+            .trim()
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .take(3)
+            .collect();
         if !digits.is_empty() {
             let v: u16 = digits.parse().unwrap_or(0);
             self.millis = v * 10u16.pow(3 - digits.len() as u32);
@@ -107,12 +119,27 @@ impl DateTime {
         let (d, t) = s.split_once('T').unwrap_or((s, ""));
         let dp: Vec<&str> = d.split('-').collect();
         let year = num(dp.first()?)?.try_into().ok()?;
-        let month = dp.get(1).map(|m| num(m)).unwrap_or(Some(1))?.try_into().ok()?;
-        let day = dp.get(2).map(|m| num(m)).unwrap_or(Some(1))?.try_into().ok()?;
+        let month = dp
+            .get(1)
+            .map(|m| num(m))
+            .unwrap_or(Some(1))?
+            .try_into()
+            .ok()?;
+        let day = dp
+            .get(2)
+            .map(|m| num(m))
+            .unwrap_or(Some(1))?
+            .try_into()
+            .ok()?;
         if dp.len() > 3 {
             return None;
         }
-        let mut dt = DateTime { year, month, day, ..Default::default() };
+        let mut dt = DateTime {
+            year,
+            month,
+            day,
+            ..Default::default()
+        };
         if !t.is_empty() {
             let (clock, off) = match t.find(['Z', '+', '-']) {
                 Some(i) => (&t[..i], Some(&t[i..])),
@@ -135,12 +162,18 @@ impl DateTime {
 
     /// Exif form `YYYY:MM:DD HH:MM:SS`.
     pub fn to_exif(&self) -> String {
-        format!("{:04}:{:02}:{:02} {:02}:{:02}:{:02}", self.year, self.month, self.day, self.hour, self.minute, self.second)
+        format!(
+            "{:04}:{:02}:{:02} {:02}:{:02}:{:02}",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        )
     }
 
     /// ISO 8601 with milliseconds when non-zero and the offset when known.
     pub fn to_iso(&self) -> String {
-        let mut s = format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}", self.year, self.month, self.day, self.hour, self.minute, self.second);
+        let mut s = format!(
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        );
         if self.millis != 0 {
             s += &format!(".{:03}", self.millis);
         }
@@ -154,13 +187,18 @@ impl DateTime {
     /// Seconds since 1970-01-01T00:00:00 of the civil time (UTC when the offset is known, else "local" seconds).
     pub fn unix_seconds(&self) -> i64 {
         // days from civil (proleptic Gregorian), Howard Hinnant's public-domain algorithm
-        let (y, m, d) = (self.year as i64 - if self.month <= 2 { 1 } else { 0 }, self.month as i64, self.day as i64);
+        let (y, m, d) = (
+            self.year as i64 - if self.month <= 2 { 1 } else { 0 },
+            self.month as i64,
+            self.day as i64,
+        );
         let era = y.div_euclid(400);
         let yoe = y - era * 400;
         let doy = (153 * (m + if m > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
         let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
         let days = era * 146097 + doe - 719468;
-        days * 86400 + self.hour as i64 * 3600 + self.minute as i64 * 60 + self.second as i64 - self.offset_minutes.unwrap_or(0) as i64 * 60
+        days * 86400 + self.hour as i64 * 3600 + self.minute as i64 * 60 + self.second as i64
+            - self.offset_minutes.unwrap_or(0) as i64 * 60
     }
 }
 
@@ -171,24 +209,50 @@ mod tests {
     #[test]
     fn exif_forms() {
         let d = DateTime::parse_exif("2024:06:01 13:45:59").unwrap();
-        assert_eq!((d.year, d.month, d.day, d.hour, d.minute, d.second), (2024, 6, 1, 13, 45, 59));
+        assert_eq!(
+            (d.year, d.month, d.day, d.hour, d.minute, d.second),
+            (2024, 6, 1, 13, 45, 59)
+        );
         assert_eq!(d.to_exif(), "2024:06:01 13:45:59");
         assert!(DateTime::parse_exif("0000:00:00 00:00:00").is_none());
         assert!(DateTime::parse_exif("    :  :     :  :  ").is_none());
         assert!(DateTime::parse_exif("2024:13:01 00:00:00").is_none());
         // Invalid calendar days must never enter persisted capture metadata.
-        for value in ["2023:02:29", "2024:02:30", "2024:04:31", "1900:02:29", "2024:01:00"] {
+        for value in [
+            "2023:02:29",
+            "2024:02:30",
+            "2024:04:31",
+            "1900:02:29",
+            "2024:01:00",
+        ] {
             assert!(DateTime::parse_exif(value).is_none(), "{value}");
         }
         assert!(DateTime::parse_exif("2024:02:29").is_some());
         assert!(DateTime::parse_exif("2000:02:29").is_some());
-        for value in ["2023-02-29", "2024-02-30", "1900-02-29", "2024-06-31T10:00:00Z"] {
+        for value in [
+            "2023-02-29",
+            "2024-02-30",
+            "1900-02-29",
+            "2024-06-31T10:00:00Z",
+        ] {
             assert!(DateTime::parse_iso(value).is_none(), "{value}");
         }
         assert!(DateTime::parse_iso("2000-02-29T23:59:59Z").is_some());
         assert_eq!(DateTime::parse_exif("2024-06-01").unwrap().hour, 0);
-        assert_eq!(DateTime::parse_exif("2024:06:01 13:45:59").unwrap().with_subsec("5").millis, 500);
-        assert_eq!(DateTime::parse_exif("2024:06:01 13:45:59").unwrap().with_subsec("0123").millis, 12);
+        assert_eq!(
+            DateTime::parse_exif("2024:06:01 13:45:59")
+                .unwrap()
+                .with_subsec("5")
+                .millis,
+            500
+        );
+        assert_eq!(
+            DateTime::parse_exif("2024:06:01 13:45:59")
+                .unwrap()
+                .with_subsec("0123")
+                .millis,
+            12
+        );
     }
 
     #[test]
@@ -206,20 +270,39 @@ mod tests {
         for offset in ["+1€", "-1€", "+€1", "-€1"] {
             assert_eq!(DateTime::parse_offset(offset), None);
             let date = format!("2024-06-01T13:45:59{offset}");
-            let metadata = crate::Metadata { capture_time: DateTime::parse_iso("2024-06-01T13:45:59Z"), ..Default::default() };
+            let metadata = crate::Metadata {
+                capture_time: DateTime::parse_iso("2024-06-01T13:45:59Z"),
+                ..Default::default()
+            };
             let xmp = crate::write_xmp(&metadata, None).replace("2024-06-01T13:45:59+00:00", &date);
-            assert!(crate::parse_xmp(&xmp).unwrap().metadata.capture_time.is_none());
+            assert!(
+                crate::parse_xmp(&xmp)
+                    .unwrap()
+                    .metadata
+                    .capture_time
+                    .is_none()
+            );
         }
     }
 
     #[test]
     fn iso_roundtrip() {
-        for s in ["2024-06-01T13:45:59", "2024-06-01T13:45:59.250+02:00", "1999-12-31T23:59:00-05:30", "2024-02-29T00:00:00Z"] {
+        for s in [
+            "2024-06-01T13:45:59",
+            "2024-06-01T13:45:59.250+02:00",
+            "1999-12-31T23:59:00-05:30",
+            "2024-02-29T00:00:00Z",
+        ] {
             let d = DateTime::parse_iso(s).unwrap();
             let again = DateTime::parse_iso(&d.to_iso()).unwrap();
             assert_eq!(d, again, "{s}");
         }
-        assert_eq!(DateTime::parse_iso("2024-02-29T00:00:00Z").unwrap().to_iso(), "2024-02-29T00:00:00+00:00");
+        assert_eq!(
+            DateTime::parse_iso("2024-02-29T00:00:00Z")
+                .unwrap()
+                .to_iso(),
+            "2024-02-29T00:00:00+00:00"
+        );
         let d = DateTime::parse_iso("2019").unwrap();
         assert_eq!((d.year, d.month, d.day), (2019, 1, 1));
         assert_eq!(DateTime::parse_iso("2019-07-04T10:11").unwrap().minute, 11);
@@ -229,8 +312,23 @@ mod tests {
 
     #[test]
     fn unix() {
-        assert_eq!(DateTime::parse_iso("1970-01-01T00:00:00Z").unwrap().unix_seconds(), 0);
-        assert_eq!(DateTime::parse_iso("2000-03-01T00:00:00Z").unwrap().unix_seconds(), 951868800);
-        assert_eq!(DateTime::parse_iso("2000-03-01T02:00:00+02:00").unwrap().unix_seconds(), 951868800);
+        assert_eq!(
+            DateTime::parse_iso("1970-01-01T00:00:00Z")
+                .unwrap()
+                .unix_seconds(),
+            0
+        );
+        assert_eq!(
+            DateTime::parse_iso("2000-03-01T00:00:00Z")
+                .unwrap()
+                .unix_seconds(),
+            951868800
+        );
+        assert_eq!(
+            DateTime::parse_iso("2000-03-01T02:00:00+02:00")
+                .unwrap()
+                .unix_seconds(),
+            951868800
+        );
     }
 }

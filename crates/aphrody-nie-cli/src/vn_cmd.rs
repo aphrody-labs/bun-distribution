@@ -91,9 +91,22 @@ pub enum VnCmd {
 /// Point d'entrée de `nie vn`.
 pub fn run(cmd: &VnCmd, vfs: &Vfs) -> Result<()> {
     match cmd {
-        VnCmd::Casting { langue, limit, json, chercher, langue_noms, genre } => {
-            casting(vfs, langue, *limit, *json, chercher.as_deref(), langue_noms, genre.as_deref())
-        },
+        VnCmd::Casting {
+            langue,
+            limit,
+            json,
+            chercher,
+            langue_noms,
+            genre,
+        } => casting(
+            vfs,
+            langue,
+            *limit,
+            *json,
+            chercher.as_deref(),
+            langue_noms,
+            genre.as_deref(),
+        ),
         VnCmd::Export {
             out,
             casting: codes,
@@ -151,9 +164,11 @@ fn chercher_chemin(vfs: &Vfs, prefixe: &str, suffixe: &str) -> Option<String> {
 /// Rend une liste vide — sans erreur — quand l'installation ne porte pas ces tables : le
 /// pipeline doit rester utilisable avec les seuls codes internes.
 fn identites(vfs: &Vfs, langue_noms: &str) -> Vec<CharacterIdentity> {
-    let Some(chemin_base) =
-        chercher_chemin(vfs, "data/common/gamedata/character/chara_base_", ".cfg.bin")
-    else {
+    let Some(chemin_base) = chercher_chemin(
+        vfs,
+        "data/common/gamedata/character/chara_base_",
+        ".cfg.bin",
+    ) else {
         return Vec::new();
     };
     let chemin_texte = format!("data/common/text/{langue_noms}/chara_text.cfg.bin");
@@ -174,7 +189,8 @@ fn identites(vfs: &Vfs, langue_noms: &str) -> Vec<CharacterIdentity> {
 /// Toutes les banques `sound_asset/<langue>/c########.acb`, triées par poids décroissant.
 fn banques(vfs: &Vfs, langue: &str) -> Vec<VoiceBank> {
     discover_voice_banks(
-        vfs.iter().map(|(path, entry)| (path.to_owned(), u64::from(entry.file_size))),
+        vfs.iter()
+            .map(|(path, entry)| (path.to_owned(), u64::from(entry.file_size))),
         langue,
     )
 }
@@ -193,8 +209,10 @@ fn casting(
         anyhow::bail!("aucune banque de voix sous data/common/sound_asset/{langue}/");
     }
 
-    let index: BTreeMap<String, CharacterIdentity> =
-        identites(vfs, langue_noms).into_iter().map(|f| (f.code.clone(), f)).collect();
+    let index: BTreeMap<String, CharacterIdentity> = identites(vfs, langue_noms)
+        .into_iter()
+        .map(|f| (f.code.clone(), f))
+        .collect();
 
     let retenues = casting_entries(
         banques.iter().cloned(),
@@ -273,10 +291,17 @@ fn relever_dialogues(
     let mut out: BTreeMap<String, Vec<serde_json::Value>> = BTreeMap::new();
 
     for chemin in &scripts {
-        if !out.is_empty() && codes.iter().all(|c| out.get(c).is_some_and(|v| v.len() >= max)) {
+        if !out.is_empty()
+            && codes
+                .iter()
+                .all(|c| out.get(c).is_some_and(|v| v.len() >= max))
+        {
             break;
         }
-        let Some(evenement) = chemin.rsplit('/').next().and_then(|f| f.strip_suffix(".cfg.bin"))
+        let Some(evenement) = chemin
+            .rsplit('/')
+            .next()
+            .and_then(|f| f.strip_suffix(".cfg.bin"))
         else {
             continue;
         };
@@ -352,7 +377,9 @@ fn table_des_balises(vfs: &Vfs, langue: &str) -> BTreeMap<String, String> {
     for (hash, forme) in &roma {
         // Seules les formes tout en majuscules servent de balise.
         if forme.is_empty()
-            || !forme.chars().all(|c| c.is_ascii_uppercase() || c == '_' || c.is_ascii_digit())
+            || !forme
+                .chars()
+                .all(|c| c.is_ascii_uppercase() || c == '_' || c.is_ascii_digit())
         {
             continue;
         }
@@ -386,13 +413,19 @@ fn export(
         anyhow::bail!("aucune banque de voix sous data/common/sound_asset/{langue}/");
     }
 
-    let index: BTreeMap<String, CharacterIdentity> =
-        identites(vfs, langue_noms).into_iter().map(|f| (f.code.clone(), f)).collect();
+    let index: BTreeMap<String, CharacterIdentity> = identites(vfs, langue_noms)
+        .into_iter()
+        .map(|f| (f.code.clone(), f))
+        .collect();
 
     let plan = plan_export(
         &toutes,
         &index.values().cloned().collect::<Vec<_>>(),
-        &ExportOptions { codes: codes.to_vec(), names: noms.to_vec(), language: langue.to_owned() },
+        &ExportOptions {
+            codes: codes.to_vec(),
+            names: noms.to_vec(),
+            language: langue.to_owned(),
+        },
     )
     .map_err(anyhow::Error::msg)?;
     for warning in plan.warnings {
@@ -436,7 +469,11 @@ fn export(
         }));
     }
 
-    let musique = if bgm_max > 0 { exporter_bgm(vfs, out, bgm_max)? } else { Vec::new() };
+    let musique = if bgm_max > 0 {
+        exporter_bgm(vfs, out, bgm_max)?
+    } else {
+        Vec::new()
+    };
 
     let catalogue = construire_catalogue(langue, personnages, musique.clone());
     let chemin = out.join("catalogue.json");
@@ -462,7 +499,9 @@ fn exporter_voix(
     if banque.acb.is_empty() {
         return Ok(Vec::new());
     }
-    let raw = vfs.read(&banque.acb).with_context(|| format!("lecture de {}", banque.acb))?;
+    let raw = vfs
+        .read(&banque.acb)
+        .with_context(|| format!("lecture de {}", banque.acb))?;
     let Some((awb, _source)) = audio::resoudre_awb(vfs, &banque.acb, &raw) else {
         eprintln!("  {} — banque d'octets introuvable, ignorée", banque.code);
         return Ok(Vec::new());
@@ -578,9 +617,21 @@ mod tests {
     #[test]
     fn casting_adapter_preserves_cli_json_field_names() {
         let entries = casting_entries(
-            [VoiceBank { code: "c1".into(), acb: "c1.acb".into(), awb_bytes: 7 }],
-            [CharacterIdentity { code: "c1".into(), name: "Mark".into(), gender: "m".into() }],
-            &CastingOptions { limit: 1, search: None, gender: None },
+            [VoiceBank {
+                code: "c1".into(),
+                acb: "c1.acb".into(),
+                awb_bytes: 7,
+            }],
+            [CharacterIdentity {
+                code: "c1".into(),
+                name: "Mark".into(),
+                gender: "m".into(),
+            }],
+            &CastingOptions {
+                limit: 1,
+                search: None,
+                gender: None,
+            },
         );
         let value = serde_json::json!({
             "code": entries[0].code,

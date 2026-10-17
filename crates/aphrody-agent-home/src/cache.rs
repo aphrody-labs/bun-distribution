@@ -62,7 +62,12 @@ impl FileIdentity {
             // never wraps.
             .map_or(0i128, |d| i128::try_from(d.as_nanos()).unwrap_or(i128::MAX));
         let (dev, ino) = platform_dev_ino(meta);
-        Self { dev, ino, size, mtime_ns }
+        Self {
+            dev,
+            ino,
+            size,
+            mtime_ns,
+        }
     }
 }
 
@@ -133,7 +138,9 @@ impl WorkspaceState {
     /// Path to the state file under a workspace root.
     #[must_use]
     pub fn path_for(workspace_root: &Path) -> PathBuf {
-        workspace_root.join(WORKSPACE_STATE_DIRNAME).join(WORKSPACE_STATE_FILENAME)
+        workspace_root
+            .join(WORKSPACE_STATE_DIRNAME)
+            .join(WORKSPACE_STATE_FILENAME)
     }
 
     /// Load the state file, returning the default when it does not exist.
@@ -150,7 +157,7 @@ impl WorkspaceState {
                 // ship one schema, so we normalise rather than reject.
                 state.version = WORKSPACE_STATE_VERSION;
                 Ok(state)
-            },
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
             Err(e) => Err(HomeError::io(path, e)),
         }
@@ -179,7 +186,9 @@ impl WorkspaceState {
     /// `isWorkspaceSetupCompleted`).
     #[must_use]
     pub fn is_setup_completed(&self) -> bool {
-        self.setup_completed_at.as_deref().is_some_and(|s| !s.trim().is_empty())
+        self.setup_completed_at
+            .as_deref()
+            .is_some_and(|s| !s.trim().is_empty())
     }
 }
 
@@ -231,7 +240,10 @@ impl FileCache {
 
         // Fast path: identity matches the cached entry.
         {
-            let guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let guard = self
+                .entries
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if let Some(entry) = guard.get(rel_path)
                 && entry.identity == identity
             {
@@ -246,12 +258,23 @@ impl FileCache {
         // Miss / stale: map + hash.
         let bytes = MappedBytes::load(abs_path)?;
         let content_hash = blake3::hash(bytes.as_slice()).to_hex().to_string();
-        let mut guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut guard = self
+            .entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         guard.insert(
             rel_path.to_string(),
-            CachedFile { identity, content_hash: content_hash.clone(), bytes: bytes.clone() },
+            CachedFile {
+                identity,
+                content_hash: content_hash.clone(),
+                bytes: bytes.clone(),
+            },
         );
-        Ok(CacheHit { bytes, content_hash, from_cache: false })
+        Ok(CacheHit {
+            bytes,
+            content_hash,
+            from_cache: false,
+        })
     }
 
     /// Seed the cache's identity table from a persisted [`WorkspaceState`].
@@ -259,7 +282,10 @@ impl FileCache {
     /// [`FileCache::load`] of each file re-maps it but skips re-hashing when
     /// the identity matches. This is the "survive the restart" win.
     pub fn seed_from_state(&self, state: &WorkspaceState, workspace_root: &Path) {
-        let mut guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut guard = self
+            .entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         for rec in &state.cache {
             let abs = workspace_root.join(&rec.rel_path);
             let Ok(meta) = std::fs::metadata(&abs) else {
@@ -274,7 +300,11 @@ impl FileCache {
             if let Ok(bytes) = MappedBytes::load(&abs) {
                 guard.insert(
                     rec.rel_path.clone(),
-                    CachedFile { identity, content_hash: rec.content_hash.clone(), bytes },
+                    CachedFile {
+                        identity,
+                        content_hash: rec.content_hash.clone(),
+                        bytes,
+                    },
                 );
             }
         }
@@ -284,7 +314,10 @@ impl FileCache {
     /// for deterministic, prompt-cache-friendly output).
     #[must_use]
     pub fn export_records(&self) -> Vec<CacheRecord> {
-        let guard = self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let guard = self
+            .entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut out: Vec<CacheRecord> = guard
             .iter()
             .map(|(rel, entry)| CacheRecord {
@@ -300,7 +333,10 @@ impl FileCache {
     /// Number of live entries.
     #[must_use]
     pub fn len(&self) -> usize {
-        self.entries.lock().unwrap_or_else(std::sync::PoisonError::into_inner).len()
+        self.entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .len()
     }
 
     /// True when the cache holds no entries.
@@ -371,7 +407,12 @@ mod tests {
         };
         state.cache.push(CacheRecord {
             rel_path: "SOUL.md".to_string(),
-            identity: FileIdentity { dev: 1, ino: 2, size: 3, mtime_ns: 4 },
+            identity: FileIdentity {
+                dev: 1,
+                ino: 2,
+                size: 3,
+                mtime_ns: 4,
+            },
             content_hash: "deadbeef".to_string(),
         });
         state.save(root).unwrap();
@@ -415,7 +456,10 @@ mod tests {
         // Build state by loading once + exporting.
         let cache1 = FileCache::new();
         let hit = cache1.load("SOUL.md", &p).unwrap();
-        let state = WorkspaceState { cache: cache1.export_records(), ..WorkspaceState::default() };
+        let state = WorkspaceState {
+            cache: cache1.export_records(),
+            ..WorkspaceState::default()
+        };
         // New cache seeded from state: the file is unchanged -> entry restored.
         let cache2 = FileCache::new();
         cache2.seed_from_state(&state, root);

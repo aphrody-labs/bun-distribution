@@ -8,15 +8,15 @@ use crate::{
     component::{Component, ComponentId, Components, Mutable, StorageType},
     entity::{Entities, Entity, EntityLocation},
     query::{
-        access_iter::{EcsAccessLevel, EcsAccessType},
         Access, DebugCheckedUnwrap, FilteredAccess, FilteredAccessSet, QueryFilter, QueryState,
         WorldQuery,
+        access_iter::{EcsAccessLevel, EcsAccessType},
     },
     storage::{ComponentSparseSet, Table, TableRow},
     system::Query,
     world::{
-        unsafe_world_cell::UnsafeWorldCell, EntityMut, EntityMutExcept, EntityRef, EntityRefExcept,
-        FilteredEntityMut, FilteredEntityRef, Mut, Ref, World,
+        EntityMut, EntityMutExcept, EntityRef, EntityRefExcept, FilteredEntityMut,
+        FilteredEntityRef, Mut, Ref, World, unsafe_world_cell::UnsafeWorldCell,
     },
 };
 use bevy_ptr::{ThinSlicePtr, UnsafeCellDeref};
@@ -4301,7 +4301,7 @@ mod tests {
     use crate::batching::BatchingStrategy;
     use crate::change_detection::DetectChanges;
     use crate::query::{QueryNotDenseError, Without};
-    use crate::system::{assert_is_system, Query};
+    use crate::system::{Query, assert_is_system};
     use alloc::sync::Arc;
     use alloc::{vec, vec::Vec};
     use bevy_ecs::prelude::Schedule;
@@ -4887,13 +4887,15 @@ mod tests {
             .collect::<Vec<_>>();
 
         // Make sure every row was visited.
-        assert!(all_jobs
-            .iter()
-            .fold(FixedBitSet::with_capacity(135), |mut acc, item| {
-                acc.union_with(item);
-                acc
-            })
-            .is_full());
+        assert!(
+            all_jobs
+                .iter()
+                .fold(FixedBitSet::with_capacity(135), |mut acc, item| {
+                    acc.union_with(item);
+                    acc
+                })
+                .is_full()
+        );
 
         // Make sure every row was visited once.
         assert_eq!(
@@ -5024,13 +5026,15 @@ mod tests {
             .collect::<Vec<_>>();
 
         // Make sure every row was visited.
-        assert!(all_jobs
-            .iter()
-            .fold(FixedBitSet::with_capacity(256), |mut acc, item| {
-                acc.union_with(item);
-                acc
-            })
-            .is_full());
+        assert!(
+            all_jobs
+                .iter()
+                .fold(FixedBitSet::with_capacity(256), |mut acc, item| {
+                    acc.union_with(item);
+                    acc
+                })
+                .is_full()
+        );
 
         // Make sure every row was visited once.
         assert_eq!(

@@ -92,7 +92,12 @@ pub struct InsertMark {
 
 /// The move handle's square (page points), just past the table's top-left corner.
 pub fn handle(geom: &ResizeTarget) -> Rect {
-    Rect::new(geom.left() - HANDLE_GAP - HANDLE, geom.top() - HANDLE_GAP - HANDLE, HANDLE, HANDLE)
+    Rect::new(
+        geom.left() - HANDLE_GAP - HANDLE,
+        geom.top() - HANDLE_GAP - HANDLE,
+        HANDLE,
+        HANDLE,
+    )
 }
 
 /// Whether the table's first row is on this page (its move handle is there).
@@ -102,27 +107,48 @@ fn starts_here(geom: &ResizeTarget) -> bool {
 
 fn on_handle(geom: &ResizeTarget, x: f32, y: f32, reach: f32) -> bool {
     let h = handle(geom);
-    starts_here(geom) && x >= h.x - reach / 2.0 && x <= h.right() + reach / 2.0 && y >= h.y - reach / 2.0 && y <= h.bottom() + reach / 2.0
+    starts_here(geom)
+        && x >= h.x - reach / 2.0
+        && x <= h.right() + reach / 2.0
+        && y >= h.y - reach / 2.0
+        && y <= h.bottom() + reach / 2.0
 }
 
 fn clean_reach(reach: f32) -> f32 {
-    if reach.is_finite() { reach.clamp(0.5, 24.0) } else { REACH }
+    if reach.is_finite() {
+        reach.clamp(0.5, 24.0)
+    } else {
+        REACH
+    }
 }
 
 /// Of `lines` (index, position), the one nearest `at` within `reach`.
 fn nearest(lines: impl Iterator<Item = (usize, f32)>, at: f32, reach: f32) -> Option<usize> {
-    lines.map(|(i, v)| (i, (at - v).abs())).filter(|(_, d)| *d <= reach).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(i, _)| i)
+    lines
+        .map(|(i, v)| (i, (at - v).abs()))
+        .filter(|(_, d)| *d <= reach)
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(i, _)| i)
 }
 
 /// The grid column at page x `x` (the first or the last beyond the table).
 fn column_at(geom: &ResizeTarget, x: f32) -> usize {
     let n = geom.cols.len().saturating_sub(1);
-    geom.cols.iter().skip(1).take_while(|cx| **cx <= x).count().min(n.saturating_sub(1))
+    geom.cols
+        .iter()
+        .skip(1)
+        .take_while(|cx| **cx <= x)
+        .count()
+        .min(n.saturating_sub(1))
 }
 
 /// The drawn row at page y `y` (the first or the last beyond the table).
 fn row_at(geom: &ResizeTarget, y: f32) -> usize {
-    geom.rows.iter().find(|r| y < r.bottom).or(geom.rows.last()).map_or(0, |r| r.row)
+    geom.rows
+        .iter()
+        .find(|r| y < r.bottom)
+        .or(geom.rows.last())
+        .map_or(0, |r| r.row)
 }
 
 /// The spot of one table at (`x`, `y`): the handle, then the insert buttons, then the selection
@@ -133,8 +159,17 @@ fn spot_in(geom: &ResizeTarget, cells: &[&CellBox], x: f32, y: f32, reach: f32) 
     }
     let (left, right, top, bottom) = (geom.left(), geom.right(), geom.top(), geom.bottom());
     // Above the table: the insert buttons over its column borders, and the column areas.
-    if y >= top - INSERT_OUT && y <= top + COLUMN_BELOW && x >= left - INSERT_REACH && x <= right + INSERT_REACH {
-        let lines = geom.cols.iter().copied().enumerate().filter(|(i, _)| geom.rows.iter().any(|r| r.edges.contains(i)));
+    if y >= top - INSERT_OUT
+        && y <= top + COLUMN_BELOW
+        && x >= left - INSERT_REACH
+        && x <= right + INSERT_REACH
+    {
+        let lines = geom
+            .cols
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|(i, _)| geom.rows.iter().any(|r| r.edges.contains(i)));
         if y < top
             && let Some(line) = nearest(lines, x, INSERT_REACH)
         {
@@ -146,7 +181,10 @@ fn spot_in(geom: &ResizeTarget, cells: &[&CellBox], x: f32, y: f32, reach: f32) 
     }
     // Left of the table: the insert buttons beside its row borders, and the row areas.
     if x >= left - ROW_LEFT && x < left && y >= top - INSERT_REACH && y <= bottom + INSERT_REACH {
-        let borders = geom.rows.iter().flat_map(|r| [(r.row, r.top), (r.row + 1, r.bottom)]);
+        let borders = geom
+            .rows
+            .iter()
+            .flat_map(|r| [(r.row, r.top), (r.row + 1, r.bottom)]);
         if let Some(line) = nearest(borders, y, INSERT_REACH) {
             return Some(Spot::InsertRow(line));
         }
@@ -156,13 +194,24 @@ fn spot_in(geom: &ResizeTarget, cells: &[&CellBox], x: f32, y: f32, reach: f32) 
     }
     // Inside a cell, along its left edge.
     let edge = CELL_EDGE.max(reach + 2.5);
-    cells.iter().find(|b| x >= b.rect.x && x <= b.rect.x + edge && y >= b.rect.y && y <= b.rect.bottom()).map(|b| Spot::Cell(b.row, b.cell))
+    cells
+        .iter()
+        .find(|b| x >= b.rect.x && x <= b.rect.x + edge && y >= b.rect.y && y <= b.rect.bottom())
+        .map(|b| Spot::Cell(b.row, b.cell))
 }
 
 /// The spot under page point (`x`, `y`) of a table in `story`, of nested tables the innermost's.
 /// None on a column or row border or the resize handle: those resize (`table_resize`). `reach`
 /// is their resize reach (points).
-pub fn target_at(l: &DocLayout, doc: &Document, story: StoryRef, page: usize, x: f32, y: f32, reach: f32) -> Option<Target> {
+pub fn target_at(
+    l: &DocLayout,
+    doc: &Document,
+    story: StoryRef,
+    page: usize,
+    x: f32,
+    y: f32,
+    reach: f32,
+) -> Option<Target> {
     if !x.is_finite() || !y.is_finite() {
         return None;
     }
@@ -175,7 +224,10 @@ pub fn target_at(l: &DocLayout, doc: &Document, story: StoryRef, page: usize, x:
         .into_iter()
         .filter(|g| g.story == story)
         .filter_map(|geom| {
-            let cells: Vec<&CellBox> = boxes.iter().filter(|b| b.story == geom.story && b.table == geom.table).collect();
+            let cells: Vec<&CellBox> = boxes
+                .iter()
+                .filter(|b| b.story == geom.story && b.table == geom.table)
+                .collect();
             spot_in(&geom, &cells, x, y, reach).map(|spot| Target { spot, geom })
         })
         .max_by_key(|t| t.geom.table.0.len())
@@ -183,7 +235,15 @@ pub fn target_at(l: &DocLayout, doc: &Document, story: StoryRef, page: usize, x:
 
 /// The table whose move handle shows with the pointer at (`x`, `y`): the innermost table of
 /// `story` starting on this page that the pointer is over, or on its way to the handle.
-pub fn handle_table(l: &DocLayout, doc: &Document, story: StoryRef, page: usize, x: f32, y: f32, reach: f32) -> Option<ResizeTarget> {
+pub fn handle_table(
+    l: &DocLayout,
+    doc: &Document,
+    story: StoryRef,
+    page: usize,
+    x: f32,
+    y: f32,
+    reach: f32,
+) -> Option<ResizeTarget> {
     if !x.is_finite() || !y.is_finite() {
         return None;
     }
@@ -192,7 +252,12 @@ pub fn handle_table(l: &DocLayout, doc: &Document, story: StoryRef, page: usize,
         .into_iter()
         .filter(|g| {
             let h = handle(g);
-            g.story == story && starts_here(g) && x >= h.x - pad && x <= g.right() && y >= h.y - pad && y <= g.bottom()
+            g.story == story
+                && starts_here(g)
+                && x >= h.x - pad
+                && x <= g.right()
+                && y >= h.y - pad
+                && y <= g.bottom()
         })
         .max_by_key(|g| g.table.0.len())
 }
@@ -203,12 +268,25 @@ pub fn insert_mark(t: &Target) -> Option<InsertMark> {
     match t.spot {
         Spot::InsertRow(line) => {
             // The bottom of the row above the border, or the top of the first row.
-            let y = g.rows.iter().find(|r| r.row + 1 == line).map(|r| r.bottom).or_else(|| g.rows.iter().find(|r| r.row == line).map(|r| r.top))?;
-            Some(InsertMark { center: (g.left() - BUTTON_OUT, y), from: (g.left(), y), to: (g.right(), y) })
+            let y = g
+                .rows
+                .iter()
+                .find(|r| r.row + 1 == line)
+                .map(|r| r.bottom)
+                .or_else(|| g.rows.iter().find(|r| r.row == line).map(|r| r.top))?;
+            Some(InsertMark {
+                center: (g.left() - BUTTON_OUT, y),
+                from: (g.left(), y),
+                to: (g.right(), y),
+            })
         }
         Spot::InsertColumn(line) => {
             let x = g.cols.get(line).copied()?;
-            Some(InsertMark { center: (x, g.top() - BUTTON_OUT), from: (x, g.top()), to: (x, g.bottom()) })
+            Some(InsertMark {
+                center: (x, g.top() - BUTTON_OUT),
+                from: (x, g.top()),
+                to: (x, g.bottom()),
+            })
         }
         _ => None,
     }
@@ -222,9 +300,18 @@ pub fn movable(geom: &ResizeTarget) -> bool {
 /// Where a move-handle drag by (`dx`, `dy`) puts the table's top-left corner on `page`: on the
 /// page, its part there above the bottom margin.
 pub fn moved_to(l: &DocLayout, page: usize, geom: &ResizeTarget, dx: f32, dy: f32) -> (f32, f32) {
-    let clean = |d: f32| if d.is_finite() { d.clamp(-MAX_MOVE, MAX_MOVE) } else { 0.0 };
+    let clean = |d: f32| {
+        if d.is_finite() {
+            d.clamp(-MAX_MOVE, MAX_MOVE)
+        } else {
+            0.0
+        }
+    };
     let (w, h) = (geom.right() - geom.left(), geom.bottom() - geom.top());
-    let (page_w, body_bottom) = l.pages.get(page).map_or((0.0, 0.0), |pg| (pg.w, pg.body.bottom()));
+    let (page_w, body_bottom) = l
+        .pages
+        .get(page)
+        .map_or((0.0, 0.0), |pg| (pg.w, pg.body.bottom()));
     let x = (geom.left() + clean(dx)).clamp(0.0, (page_w - w).max(0.0));
     let y = (geom.top() + clean(dy)).clamp(0.0, (body_bottom - h).max(0.0));
     (x, y)
@@ -232,14 +319,23 @@ pub fn moved_to(l: &DocLayout, page: usize, geom: &ResizeTarget, dx: f32, dy: f3
 
 /// Where the selected cells are drawn (page, rect), for shading them.
 pub fn cell_rects(l: &DocLayout, doc: &Document, range: &CellRange) -> Vec<(usize, Rect)> {
-    let Some(t) = doc.table(range.story, &range.table) else { return Vec::new() };
+    let Some(t) = doc.table(range.story, &range.table) else {
+        return Vec::new();
+    };
     let picked: std::collections::BTreeSet<(usize, usize)> = range.cells(t).into_iter().collect();
     let mut out = Vec::new();
     for (pi, pg) in l.pages.iter().enumerate() {
         for it in &pg.items {
             // A vertically merged cell's box spans its rows (#640); its continuation rows'
             // `covered` boxes would shade it twice.
-            if let Placed::Cell { rect, table, row, cell, story, covered: false } = it
+            if let Placed::Cell {
+                rect,
+                table,
+                row,
+                cell,
+                story,
+                covered: false,
+            } = it
                 && *story == range.story
                 && *table == range.table
                 && picked.contains(&(*row, *cell))
@@ -253,9 +349,15 @@ pub fn cell_rects(l: &DocLayout, doc: &Document, range: &CellRange) -> Vec<(usiz
 
 /// The click: `page`, `x`, `y` and the resize `reach`.
 fn point(v: &Value) -> Result<(usize, f32, f32, f32), CmdError> {
-    let page =
-        p::u64(v, "page").map(|n| usize::try_from(n).unwrap_or(usize::MAX)).ok_or_else(|| CmdError::Params("`page` (number) is required".into()))?;
-    Ok((page, p::req_f32(v, "x")?, p::req_f32(v, "y")?, p::f32(v, "reach").unwrap_or(REACH)))
+    let page = p::u64(v, "page")
+        .map(|n| usize::try_from(n).unwrap_or(usize::MAX))
+        .ok_or_else(|| CmdError::Params("`page` (number) is required".into()))?;
+    Ok((
+        page,
+        p::req_f32(v, "x")?,
+        p::req_f32(v, "y")?,
+        p::f32(v, "reach").unwrap_or(REACH),
+    ))
 }
 
 /// The spot under the click, in the caret's story.
@@ -273,11 +375,20 @@ fn select_at(s: &mut Session, v: &Value) -> CmdResult {
     let Target { spot, geom } = target(s, page, x, y, reach)?;
     let to = p::f32(v, "toX").zip(p::f32(v, "toY"));
     let story = geom.story;
-    let t = s.doc.table(story, &geom.table).ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
+    let t = s
+        .doc
+        .table(story, &geom.table)
+        .ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
     let (last_row, last_col) = (t.rows.len().saturating_sub(1), t.cols().saturating_sub(1));
     let (rows, cols) = match spot {
-        Spot::Column(g) => ((0, last_row), (g, to.map_or(g, |(tx, _)| column_at(&geom, tx)))),
-        Spot::Row(r) => ((r, to.map_or(r, |(_, ty)| row_at(&geom, ty))), (0, last_col)),
+        Spot::Column(g) => (
+            (0, last_row),
+            (g, to.map_or(g, |(tx, _)| column_at(&geom, tx))),
+        ),
+        Spot::Row(r) => (
+            (r, to.map_or(r, |(_, ty)| row_at(&geom, ty))),
+            (0, last_col),
+        ),
         Spot::Cell(r, c) => {
             let (g0, g1) = table::grid_cols(t, r, c);
             match to {
@@ -289,7 +400,11 @@ fn select_at(s: &mut Session, v: &Value) -> CmdResult {
             }
         }
         Spot::Handle => ((0, last_row), (0, last_col)),
-        Spot::InsertRow(_) | Spot::InsertColumn(_) => return Err(CmdError::Failed("there's an insert button there, not a selection area".into())),
+        Spot::InsertRow(_) | Spot::InsertColumn(_) => {
+            return Err(CmdError::Failed(
+                "there's an insert button there, not a selection area".into(),
+            ));
+        }
     };
     table::select_range(s, story, &geom.table, rows, cols)
 }
@@ -324,27 +439,49 @@ fn insert_at(s: &mut Session, v: &Value) -> CmdResult {
             None => (0, 0, false, true, line),
         },
         Spot::InsertColumn(line) => {
-            let t = s.doc.table(story, &geom.table).ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
-            let (r, c, after) = beside_line(t, line).ok_or_else(|| CmdError::Failed("there's no column border there".into()))?;
+            let t = s
+                .doc
+                .table(story, &geom.table)
+                .ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
+            let (r, c, after) = beside_line(t, line)
+                .ok_or_else(|| CmdError::Failed("there's no column border there".into()))?;
             (r, c, after, false, line)
         }
-        _ => return Err(CmdError::Failed("there's a selection area there, not an insert button".into())),
+        _ => {
+            return Err(CmdError::Failed(
+                "there's a selection area there, not an insert button".into(),
+            ));
+        }
     };
-    let size = |s: &Session| s.doc.table(story, &geom.table).map(|t| (t.rows.len(), t.cols()));
+    let size = |s: &Session| {
+        s.doc
+            .table(story, &geom.table)
+            .map(|t| (t.rows.len(), t.cols()))
+    };
     let before = size(s);
     let mut path = geom.table.0.clone();
     path.extend([r as u32, c as u32, 0]);
     s.column = None;
-    s.sel = Selection::caret(Pos { story, path: Path(path), off: 0 });
+    s.sel = Selection::caret(Pos {
+        story,
+        path: Path(path),
+        off: 0,
+    });
     if rows {
         table::row(s, after)?;
     } else {
         table::col(s, after)?;
     }
     if size(s) == before {
-        return Err(CmdError::Failed("the table can't take another row or column".into()));
+        return Err(CmdError::Failed(
+            "the table can't take another row or column".into(),
+        ));
     }
-    let (sel_rows, sel_cols) = if rows { ((line, line), (0, usize::MAX)) } else { ((0, usize::MAX), (line, line)) };
+    let (sel_rows, sel_cols) = if rows {
+        ((line, line), (0, usize::MAX))
+    } else {
+        ((0, usize::MAX), (line, line))
+    };
     table::select_range(s, story, &geom.table, sel_rows, sel_cols)
 }
 
@@ -352,10 +489,19 @@ fn insert_at(s: &mut Session, v: &Value) -> CmdResult {
 fn corner(l: &DocLayout, story: StoryRef, table: &Path) -> Option<(usize, f32, f32)> {
     l.pages.iter().enumerate().find_map(|(pi, pg)| {
         let cells = pg.items.iter().filter_map(|it| match it {
-            Placed::Cell { rect, table: t, story: st, .. } if *st == story && t == table => Some(*rect),
+            Placed::Cell {
+                rect,
+                table: t,
+                story: st,
+                ..
+            } if *st == story && t == table => Some(*rect),
             _ => None,
         });
-        cells.fold(None, |acc: Option<(f32, f32)>, r| Some(acc.map_or((r.x, r.y), |(x, y)| (x.min(r.x), y.min(r.y))))).map(|(x, y)| (pi, x, y))
+        cells
+            .fold(None, |acc: Option<(f32, f32)>, r| {
+                Some(acc.map_or((r.x, r.y), |(x, y)| (x.min(r.x), y.min(r.y))))
+            })
+            .map(|(x, y)| (pi, x, y))
     })
 }
 
@@ -364,10 +510,14 @@ fn move_drag(s: &mut Session, v: &Value) -> CmdResult {
     let (to_x, to_y) = (p::req_f32(v, "toX")?, p::req_f32(v, "toY")?);
     let Target { spot, geom } = target(s, page, x, y, reach)?;
     if spot != Spot::Handle {
-        return Err(CmdError::Failed("there's no table move handle there".into()));
+        return Err(CmdError::Failed(
+            "there's no table move handle there".into(),
+        ));
     }
     if !movable(&geom) {
-        return Err(CmdError::Failed("only a table in the main text can be moved".into()));
+        return Err(CmdError::Failed(
+            "only a table in the main text can be moved".into(),
+        ));
     }
     let (gx, gy) = moved_to(&s.layout(), page, &geom, to_x - x, to_y - y);
     if (gx - geom.left()).abs() < 0.01 && (gy - geom.top()).abs() < 0.01 {
@@ -392,7 +542,13 @@ fn move_drag(s: &mut Session, v: &Value) -> CmdResult {
     if let Some((p0, x0, y0)) = corner(&s.layout(), geom.story, &geom.table)
         && p0 == page
     {
-        let fix = |v: f32| if v.is_finite() { v.clamp(-MAX_MOVE, MAX_MOVE) } else { 0.0 };
+        let fix = |v: f32| {
+            if v.is_finite() {
+                v.clamp(-MAX_MOVE, MAX_MOVE)
+            } else {
+                0.0
+            }
+        };
         let t = s.doc.table_mut(geom.story, &geom.table)?;
         if let Some(f) = t.props.float.as_mut() {
             f.x = fix(f.x + gx - x0);
@@ -406,20 +562,32 @@ fn move_drag(s: &mut Session, v: &Value) -> CmdResult {
 fn fit_column(s: &mut Session, v: &Value) -> CmdResult {
     let (page, x, y, reach) = point(v)?;
     let l = s.layout();
-    let Some((target, line)) = table_resize::resize_target(&l, &s.doc, page, x, y, reach).and_then(|t| match t.edge {
-        Edge::Column(line) => Some((t, line)),
-        _ => None,
-    }) else {
+    let Some((target, line)) =
+        table_resize::resize_target(&l, &s.doc, page, x, y, reach).and_then(|t| match t.edge {
+            Edge::Column(line) => Some((t, line)),
+            _ => None,
+        })
+    else {
         return Err(CmdError::Failed("there's no column border there".into()));
     };
-    let t = s.doc.table(target.story, &target.table).ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
-    let g = line.checked_sub(1).ok_or_else(|| CmdError::Failed("there's no column left of that border".into()))?;
-    let (narrowest, widest) =
-        wordcraft_layout::measure_table_columns(&s.doc, t).get(g).copied().ok_or_else(|| CmdError::Failed("there's no such column".into()))?;
+    let t = s
+        .doc
+        .table(target.story, &target.table)
+        .ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
+    let g = line
+        .checked_sub(1)
+        .ok_or_else(|| CmdError::Failed("there's no column left of that border".into()))?;
+    let (narrowest, widest) = wordcraft_layout::measure_table_columns(&s.doc, t)
+        .get(g)
+        .copied()
+        .ok_or_else(|| CmdError::Failed("there's no such column".into()))?;
     let current = target.widths().get(g).copied().unwrap_or(0.0);
     // As in Word, the columns right of it keep their widths and move with the border, so the
     // table narrows or widens: up to the right margin, never below the column's narrowest content.
-    let room = current + l.pages.get(page).map_or(0.0, |pg| (pg.body.right() - target.right()).max(0.0));
+    let room = current
+        + l.pages
+            .get(page)
+            .map_or(0.0, |pg| (pg.body.right() - target.right()).max(0.0));
     let want = widest.min(room.max(narrowest));
     if let Some(w) = target.plan(want - current, 0.0, true).widths {
         let t = s.doc.table_mut(target.story, &target.table)?;
@@ -437,22 +605,38 @@ mod tests {
 
     fn table_session(rows: usize, cols: usize) -> Session {
         let mut s = Session::new(Document::new());
-        s.run("insert.table", &json!({"rows": rows, "cols": cols})).unwrap();
+        s.run("insert.table", &json!({"rows": rows, "cols": cols}))
+            .unwrap();
         s
     }
 
     fn table_path(s: &Session) -> Path {
-        Path(vec![s.doc.body.iter().position(|b| b.as_table().is_some()).unwrap() as u32])
+        Path(vec![
+            s.doc
+                .body
+                .iter()
+                .position(|b| b.as_table().is_some())
+                .unwrap() as u32,
+        ])
     }
 
     fn first_table(s: &Session) -> Table {
-        s.doc.body.iter().find_map(|b| b.as_table()).cloned().unwrap()
+        s.doc
+            .body
+            .iter()
+            .find_map(|b| b.as_table())
+            .cloned()
+            .unwrap()
     }
 
     fn cell_pos(s: &Session, r: usize, c: usize) -> Pos {
         let mut path = table_path(s).0;
         path.extend([r as u32, c as u32, 0]);
-        Pos { story: StoryRef::Body, path: Path(path), off: 0 }
+        Pos {
+            story: StoryRef::Body,
+            path: Path(path),
+            off: 0,
+        }
     }
 
     /// Type "r{row}c{cell}" into every cell.
@@ -461,18 +645,26 @@ mod tests {
         for (r, row) in t.rows.iter().enumerate() {
             for c in 0..row.cells.len() {
                 s.sel = Selection::caret(cell_pos(s, r, c));
-                s.run("text.insert", &json!({"text": format!("r{r}c{c}")})).unwrap();
+                s.run("text.insert", &json!({"text": format!("r{r}c{c}")}))
+                    .unwrap();
             }
         }
     }
 
     fn para(s: &Session, r: usize, c: usize) -> wordcraft_doc::Paragraph {
-        s.doc.para(StoryRef::Body, &cell_pos(s, r, c).path).cloned().unwrap()
+        s.doc
+            .para(StoryRef::Body, &cell_pos(s, r, c).path)
+            .cloned()
+            .unwrap()
     }
 
     fn bold(s: &Session, r: usize, c: usize) -> bool {
         let p = para(s, r, c);
-        if p.is_empty() { p.mark.bold == Some(true) } else { p.run_ranges().all(|(_, ch)| ch.bold == Some(true)) }
+        if p.is_empty() {
+            p.mark.bold == Some(true)
+        } else {
+            p.run_ranges().all(|(_, ch)| ch.bold == Some(true))
+        }
     }
 
     fn cell_rect(s: &mut Session, row: usize, cell: usize) -> Rect {
@@ -480,7 +672,12 @@ mod tests {
             .items
             .iter()
             .find_map(|it| match it {
-                Placed::Cell { rect, row: r, cell: c, .. } if *r == row && *c == cell => Some(*rect),
+                Placed::Cell {
+                    rect,
+                    row: r,
+                    cell: c,
+                    ..
+                } if *r == row && *c == cell => Some(*rect),
                 _ => None,
             })
             .unwrap()
@@ -502,23 +699,58 @@ mod tests {
         let mut s = table_session(3, 3);
         let (a, b) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 0, 1));
         let (left, top) = (a.x, a.y);
-        assert_eq!(spot_at(&mut s, b.x + b.w / 2.0, top - 3.0), Some(Spot::Column(1)));
-        assert_eq!(spot_at(&mut s, b.x + b.w / 2.0, top + 1.0), Some(Spot::Column(1)));
+        assert_eq!(
+            spot_at(&mut s, b.x + b.w / 2.0, top - 3.0),
+            Some(Spot::Column(1))
+        );
+        assert_eq!(
+            spot_at(&mut s, b.x + b.w / 2.0, top + 1.0),
+            Some(Spot::Column(1))
+        );
         let r1 = cell_rect(&mut s, 1, 0);
         assert_eq!(spot_at(&mut s, left - 10.0, mid_y(r1)), Some(Spot::Row(1)));
         let c = cell_rect(&mut s, 1, 2);
         assert_eq!(spot_at(&mut s, c.x + 4.5, mid_y(c)), Some(Spot::Cell(1, 2)));
-        assert_eq!(spot_at(&mut s, r1.x + 2.0, mid_y(r1)), Some(Spot::Cell(1, 0)), "the first column's edge has no resize border");
-        assert_eq!(spot_at(&mut s, c.x + 20.0, mid_y(c)), None, "the text is the caret's");
-        assert_eq!(spot_at(&mut s, b.x, mid_y(a)), None, "a column border resizes");
+        assert_eq!(
+            spot_at(&mut s, r1.x + 2.0, mid_y(r1)),
+            Some(Spot::Cell(1, 0)),
+            "the first column's edge has no resize border"
+        );
+        assert_eq!(
+            spot_at(&mut s, c.x + 20.0, mid_y(c)),
+            None,
+            "the text is the caret's"
+        );
+        assert_eq!(
+            spot_at(&mut s, b.x, mid_y(a)),
+            None,
+            "a column border resizes"
+        );
         assert_eq!(spot_at(&mut s, b.x, top - 8.0), Some(Spot::InsertColumn(1)));
-        assert_eq!(spot_at(&mut s, left - 10.0, a.bottom()), Some(Spot::InsertRow(1)));
+        assert_eq!(
+            spot_at(&mut s, left - 10.0, a.bottom()),
+            Some(Spot::InsertRow(1))
+        );
         assert_eq!(spot_at(&mut s, left - 10.0, top), Some(Spot::InsertRow(0)));
         let h = handle(&table_resize::tables_on(&s.layout(), &s.doc, 0)[0]);
-        assert_eq!(spot_at(&mut s, h.x + h.w / 2.0, h.y + h.h / 2.0), Some(Spot::Handle));
+        assert_eq!(
+            spot_at(&mut s, h.x + h.w / 2.0, h.y + h.h / 2.0),
+            Some(Spot::Handle)
+        );
         // Another story's tables aren't in reach.
         let l = s.layout();
-        assert!(target_at(&l, &s.doc, StoryRef::Part(7), 0, b.x + b.w / 2.0, top - 3.0, REACH).is_none());
+        assert!(
+            target_at(
+                &l,
+                &s.doc,
+                StoryRef::Part(7),
+                0,
+                b.x + b.w / 2.0,
+                top - 3.0,
+                REACH
+            )
+            .is_none()
+        );
     }
 
     /// A selected column's text is its own cells', so the status bar and Word Count count only
@@ -528,7 +760,11 @@ mod tests {
         let mut s = table_session(3, 3);
         fill(&mut s);
         let b = cell_rect(&mut s, 0, 1);
-        s.run("table.selectAt", &json!({"page": 0, "x": b.x + b.w / 2.0, "y": b.y - 3.0})).unwrap();
+        s.run(
+            "table.selectAt",
+            &json!({"page": 0, "x": b.x + b.w / 2.0, "y": b.y - 3.0}),
+        )
+        .unwrap();
         assert_eq!(s.selected_text(), "r0c1\nr1c1\nr2c1");
         assert_eq!(s.run("review.wordCount", &json!({})).unwrap()["words"], 3);
     }
@@ -540,22 +776,38 @@ mod tests {
         let mut s = table_session(3, 3);
         fill(&mut s);
         let b = cell_rect(&mut s, 0, 1);
-        s.run("table.selectAt", &json!({"page": 0, "x": b.x + b.w / 2.0, "y": b.y - 3.0})).unwrap();
+        s.run(
+            "table.selectAt",
+            &json!({"page": 0, "x": b.x + b.w / 2.0, "y": b.y - 3.0}),
+        )
+        .unwrap();
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.rows, range.cols, range.stream), ((0, 2), (1, 1), false));
+        assert_eq!(
+            (range.rows, range.cols, range.stream),
+            ((0, 2), (1, 1), false)
+        );
         assert_eq!(s.column_segments().unwrap().len(), 3);
         s.run("format.bold", &json!({})).unwrap();
         for r in 0..3 {
             assert!(bold(&s, r, 1), "row {r} of the column is bold");
-            assert!(!bold(&s, r, 0) && !bold(&s, r, 2), "row {r}'s other cells aren't");
+            assert!(
+                !bold(&s, r, 0) && !bold(&s, r, 2),
+                "row {r}'s other cells aren't"
+            );
         }
         s.run("para.alignCenter", &json!({})).unwrap();
         assert_eq!(para(&s, 1, 1).props.align, Some(Align::Center));
-        assert_eq!(para(&s, 0, 2).props.align, None, "the cells between the corners keep theirs");
+        assert_eq!(
+            para(&s, 0, 2).props.align,
+            None,
+            "the cells between the corners keep theirs"
+        );
         assert!(s.cell_range().is_some(), "formatting keeps the selection");
         s.run("table.shading", &json!({"color": "FF0000"})).unwrap();
         let t = first_table(&s);
-        assert!(t.rows.iter().all(|row| row.cells[1].props.shading.is_some() && row.cells[0].props.shading.is_none()));
+        assert!(t.rows.iter().all(
+            |row| row.cells[1].props.shading.is_some() && row.cells[0].props.shading.is_none()
+        ));
         let depth = s.undo_depth();
         s.run("text.delete", &json!({})).unwrap();
         assert_eq!(s.undo_depth(), depth + 1);
@@ -566,7 +818,11 @@ mod tests {
         }
         s.run("edit.undo", &json!({})).unwrap();
         assert_eq!(para(&s, 2, 1).plain_text(), "r2c1");
-        assert_eq!(s.cell_range().map(|r| r.cols), Some((1, 1)), "undo brings the column selection back");
+        assert_eq!(
+            s.cell_range().map(|r| r.cols),
+            Some((1, 1)),
+            "undo brings the column selection back"
+        );
     }
 
     /// Numbering a column numbers its cells as one list, like Word.
@@ -577,8 +833,13 @@ mod tests {
         s.sel = Selection::caret(cell_pos(&s, 1, 0));
         s.run("table.selectColumn", &json!({})).unwrap();
         s.run("para.numbering", &json!({})).unwrap();
-        let nums: Vec<_> = (0..3).map(|r| para(&s, r, 0).props.numbering.map(|n| n.num)).collect();
-        assert!(nums[0].is_some_and(|n| n != 0) && nums.iter().all(|n| *n == nums[0]), "{nums:?}");
+        let nums: Vec<_> = (0..3)
+            .map(|r| para(&s, r, 0).props.numbering.map(|n| n.num))
+            .collect();
+        assert!(
+            nums[0].is_some_and(|n| n != 0) && nums.iter().all(|n| *n == nums[0]),
+            "{nums:?}"
+        );
         assert!((0..3).all(|r| para(&s, r, 1).props.numbering.is_none()));
     }
 
@@ -600,7 +861,11 @@ mod tests {
         // A selected empty cell's corners are one place; clicking there ends the selection.
         let mut s = table_session(2, 2);
         let c = cell_rect(&mut s, 1, 1);
-        s.run("table.selectAt", &json!({"page": 0, "x": c.x + 4.5, "y": mid_y(c)})).unwrap();
+        s.run(
+            "table.selectAt",
+            &json!({"page": 0, "x": c.x + 4.5, "y": mid_y(c)}),
+        )
+        .unwrap();
         assert!(s.cell_range().is_some() && s.sel.is_collapsed());
         let at = serde_json::to_value(s.sel.focus.clone()).unwrap();
         s.run("caret.set", &json!({"pos": at})).unwrap();
@@ -614,10 +879,20 @@ mod tests {
         let mut s = table_session(3, 3);
         fill(&mut s);
         let r1 = cell_rect(&mut s, 1, 0);
-        s.run("table.selectAt", &json!({"page": 0, "x": r1.x - 10.0, "y": mid_y(r1)})).unwrap();
+        s.run(
+            "table.selectAt",
+            &json!({"page": 0, "x": r1.x - 10.0, "y": mid_y(r1)}),
+        )
+        .unwrap();
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.rows, range.cols, range.stream), ((1, 1), (0, 2), true));
-        assert!(s.column_segments().is_none(), "a row is one run of the text");
+        assert_eq!(
+            (range.rows, range.cols, range.stream),
+            ((1, 1), (0, 2), true)
+        );
+        assert!(
+            s.column_segments().is_none(),
+            "a row is one run of the text"
+        );
         let r2 = cell_rect(&mut s, 2, 0);
         s.run("table.selectAt", &json!({"page": 0, "x": r1.x - 10.0, "y": mid_y(r1), "toX": r1.x - 10.0, "toY": mid_y(r2) + 50.0})).unwrap();
         assert_eq!(s.cell_range().map(|r| r.rows), Some((1, 2)));
@@ -625,23 +900,43 @@ mod tests {
         let (a, d) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 1, 1));
         s.run("table.selectAt", &json!({"page": 0, "x": a.x + 2.0, "y": mid_y(a), "toX": d.x + d.w / 2.0, "toY": mid_y(d)})).unwrap();
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.rows, range.cols, range.stream), ((0, 1), (0, 1), false));
+        assert_eq!(
+            (range.rows, range.cols, range.stream),
+            ((0, 1), (0, 1), false)
+        );
         s.run("format.italic", &json!({})).unwrap();
-        let italic = |s: &Session, r, c| para(s, r, c).run_ranges().all(|(_, ch)| ch.italic == Some(true));
+        let italic = |s: &Session, r, c| {
+            para(s, r, c)
+                .run_ranges()
+                .all(|(_, ch)| ch.italic == Some(true))
+        };
         assert!(italic(&s, 0, 0) && italic(&s, 1, 1) && !italic(&s, 0, 2) && !italic(&s, 1, 2));
         // Dragging across columns: from the first to the last is every column, all rows.
         let (c0, c2) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 0, 2));
         s.run("table.selectAt", &json!({"page": 0, "x": c0.x + 20.0, "y": c0.y - 3.0, "toX": c2.right() + 30.0, "toY": c0.y})).unwrap();
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.rows, range.cols, range.stream), ((0, 2), (0, 2), true));
+        assert_eq!(
+            (range.rows, range.cols, range.stream),
+            ((0, 2), (0, 2), true)
+        );
         // The move handle selects the table.
         let h = handle(&table_resize::tables_on(&s.layout(), &s.doc, 0)[0]);
-        s.run("table.selectAt", &json!({"page": 0, "x": h.x + 4.0, "y": h.y + 4.0})).unwrap();
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 2), (0, 2))));
+        s.run(
+            "table.selectAt",
+            &json!({"page": 0, "x": h.x + 4.0, "y": h.y + 4.0}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 2), (0, 2)))
+        );
         // The ribbon's Select Row is the same whole-cell selection.
         s.sel = Selection::caret(cell_pos(&s, 2, 1));
         s.run("table.selectRow", &json!({})).unwrap();
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols, r.stream)), Some(((2, 2), (0, 2), true)));
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols, r.stream)),
+            Some(((2, 2), (0, 2), true))
+        );
     }
 
     /// The insert buttons add a row or column at their border, one undo step, and select it (as
@@ -651,34 +946,64 @@ mod tests {
         let mut s = table_session(2, 3);
         fill(&mut s);
         let a = cell_rect(&mut s, 0, 0);
-        s.run("table.insertAt", &json!({"page": 0, "x": a.x - 10.0, "y": a.bottom()})).unwrap();
+        s.run(
+            "table.insertAt",
+            &json!({"page": 0, "x": a.x - 10.0, "y": a.bottom()}),
+        )
+        .unwrap();
         let t = first_table(&s);
         assert_eq!(t.rows.len(), 3);
-        assert!(para(&s, 1, 0).is_empty() && para(&s, 2, 0).plain_text() == "r1c0", "the new row is the second");
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 1), (0, 2))), "it's selected");
+        assert!(
+            para(&s, 1, 0).is_empty() && para(&s, 2, 0).plain_text() == "r1c0",
+            "the new row is the second"
+        );
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 1), (0, 2))),
+            "it's selected"
+        );
         s.run("text.insert", &json!({"text": "x"})).unwrap();
         assert_eq!(para(&s, 1, 0).plain_text(), "x");
-        assert_eq!((first_table(&s).rows.len(), para(&s, 2, 0).plain_text()), (3, "r1c0".to_string()));
+        assert_eq!(
+            (first_table(&s).rows.len(), para(&s, 2, 0).plain_text()),
+            (3, "r1c0".to_string())
+        );
         s.run("edit.undo", &json!({})).unwrap();
         s.run("edit.undo", &json!({})).unwrap();
         assert_eq!(first_table(&s).rows.len(), 2);
         // Above the first row.
-        s.run("table.insertAt", &json!({"page": 0, "x": a.x - 10.0, "y": a.y})).unwrap();
+        s.run(
+            "table.insertAt",
+            &json!({"page": 0, "x": a.x - 10.0, "y": a.y}),
+        )
+        .unwrap();
         assert!(para(&s, 0, 0).is_empty() && para(&s, 1, 0).plain_text() == "r0c0");
         assert_eq!(s.cell_range().map(|r| r.rows), Some((0, 0)));
         s.run("edit.undo", &json!({})).unwrap();
         // A column at the border between the first two, the table keeping its width.
         let width: f32 = first_table(&s).grid.iter().sum();
         let b = cell_rect(&mut s, 0, 1);
-        s.run("table.insertAt", &json!({"page": 0, "x": b.x, "y": a.y - 8.0})).unwrap();
+        s.run(
+            "table.insertAt",
+            &json!({"page": 0, "x": b.x, "y": a.y - 8.0}),
+        )
+        .unwrap();
         let t = first_table(&s);
         assert_eq!(t.cols(), 4);
         assert!(para(&s, 0, 1).is_empty() && para(&s, 0, 2).plain_text() == "r0c1");
         assert!((t.grid.iter().sum::<f32>() - width).abs() < 0.5);
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (1, 1))), "it's selected");
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (1, 1))),
+            "it's selected"
+        );
         // And at the right edge.
         let e = cell_rect(&mut s, 0, 3);
-        s.run("table.insertAt", &json!({"page": 0, "x": e.right(), "y": a.y - 8.0})).unwrap();
+        s.run(
+            "table.insertAt",
+            &json!({"page": 0, "x": e.right(), "y": a.y - 8.0}),
+        )
+        .unwrap();
         assert_eq!(first_table(&s).cols(), 5);
         assert!(para(&s, 0, 4).is_empty() && para(&s, 0, 3).plain_text() == "r0c2");
         assert_eq!(s.cell_range().map(|r| r.cols), Some((4, 4)));
@@ -692,19 +1017,43 @@ mod tests {
         let a = cell_rect(&mut s, 0, 0);
         let h = handle(&table_resize::tables_on(&s.layout(), &s.doc, 0)[0]);
         let (hx, hy) = (h.x + h.w / 2.0, h.y + h.h / 2.0);
-        s.run("table.moveDrag", &json!({"page": 0, "x": hx, "y": hy, "toX": hx, "toY": hy})).unwrap();
-        assert!(first_table(&s).props.float.is_none(), "a click doesn't move it");
-        s.run("table.moveDrag", &json!({"page": 0, "x": hx, "y": hy, "toX": hx + 50.0, "toY": hy + 30.0})).unwrap();
+        s.run(
+            "table.moveDrag",
+            &json!({"page": 0, "x": hx, "y": hy, "toX": hx, "toY": hy}),
+        )
+        .unwrap();
+        assert!(
+            first_table(&s).props.float.is_none(),
+            "a click doesn't move it"
+        );
+        s.run(
+            "table.moveDrag",
+            &json!({"page": 0, "x": hx, "y": hy, "toX": hx + 50.0, "toY": hy + 30.0}),
+        )
+        .unwrap();
         let f = first_table(&s).props.float.unwrap();
-        assert_eq!((f.h_rel, f.v_rel, f.overlap), (Anchor::Column, Anchor::Paragraph, true));
+        assert_eq!(
+            (f.h_rel, f.v_rel, f.overlap),
+            (Anchor::Column, Anchor::Paragraph, true)
+        );
         let moved = cell_rect(&mut s, 0, 0);
-        assert!((moved.x - (a.x + 50.0)).abs() < 0.5 && (moved.y - (a.y + 30.0)).abs() < 0.5, "{a:?} → {moved:?}");
+        assert!(
+            (moved.x - (a.x + 50.0)).abs() < 0.5 && (moved.y - (a.y + 30.0)).abs() < 0.5,
+            "{a:?} → {moved:?}"
+        );
         // Moving it again starts from where it floats.
         let h = handle(&table_resize::tables_on(&s.layout(), &s.doc, 0)[0]);
         let (hx, hy) = (h.x + h.w / 2.0, h.y + h.h / 2.0);
-        s.run("table.moveDrag", &json!({"page": 0, "x": hx, "y": hy, "toX": hx - 20.0, "toY": hy + 10.0})).unwrap();
+        s.run(
+            "table.moveDrag",
+            &json!({"page": 0, "x": hx, "y": hy, "toX": hx - 20.0, "toY": hy + 10.0}),
+        )
+        .unwrap();
         let again = cell_rect(&mut s, 0, 0);
-        assert!((again.x - (moved.x - 20.0)).abs() < 0.5 && (again.y - (moved.y + 10.0)).abs() < 0.5, "{moved:?} → {again:?}");
+        assert!(
+            (again.x - (moved.x - 20.0)).abs() < 0.5 && (again.y - (moved.y + 10.0)).abs() < 0.5,
+            "{moved:?} → {again:?}"
+        );
         s.run("edit.undo", &json!({})).unwrap();
         s.run("edit.undo", &json!({})).unwrap();
         assert!(first_table(&s).props.float.is_none());
@@ -724,16 +1073,45 @@ mod tests {
         let mut s = table_session(1, 3);
         s.sel = Selection::caret(cell_pos(&s, 0, 0));
         s.run("text.insert", &json!({"text": "ab"})).unwrap();
-        let (a, b, c) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 0, 1), cell_rect(&mut s, 0, 2));
+        let (a, b, c) = (
+            cell_rect(&mut s, 0, 0),
+            cell_rect(&mut s, 0, 1),
+            cell_rect(&mut s, 0, 2),
+        );
         let fit = wordcraft_layout::measure_table_columns(&s.doc, &first_table(&s));
-        s.run("table.fitColumn", &json!({"page": 0, "x": a.right(), "y": mid_y(a)})).unwrap();
-        let (a1, b1, c1) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 0, 1), cell_rect(&mut s, 0, 2));
-        assert!((a1.w - fit[0].1).abs() < 0.5 && a1.w < a.w - 50.0, "{a:?} → {a1:?}, {fit:?}");
-        assert!((b1.w - b.w).abs() < 0.5 && (c1.w - c.w).abs() < 0.5, "the columns right of it keep their widths");
-        assert!((b1.x - b.x - (a1.w - a.w)).abs() < 0.5 && (c1.right() - c.right() - (a1.w - a.w)).abs() < 0.5, "and move along");
-        s.run("table.fitColumn", &json!({"page": 0, "x": c1.right(), "y": mid_y(c1)})).unwrap();
+        s.run(
+            "table.fitColumn",
+            &json!({"page": 0, "x": a.right(), "y": mid_y(a)}),
+        )
+        .unwrap();
+        let (a1, b1, c1) = (
+            cell_rect(&mut s, 0, 0),
+            cell_rect(&mut s, 0, 1),
+            cell_rect(&mut s, 0, 2),
+        );
+        assert!(
+            (a1.w - fit[0].1).abs() < 0.5 && a1.w < a.w - 50.0,
+            "{a:?} → {a1:?}, {fit:?}"
+        );
+        assert!(
+            (b1.w - b.w).abs() < 0.5 && (c1.w - c.w).abs() < 0.5,
+            "the columns right of it keep their widths"
+        );
+        assert!(
+            (b1.x - b.x - (a1.w - a.w)).abs() < 0.5
+                && (c1.right() - c.right() - (a1.w - a.w)).abs() < 0.5,
+            "and move along"
+        );
+        s.run(
+            "table.fitColumn",
+            &json!({"page": 0, "x": c1.right(), "y": mid_y(c1)}),
+        )
+        .unwrap();
         let c2 = cell_rect(&mut s, 0, 2);
-        assert!((c2.w - fit[2].1).abs() < 0.5 && c2.w < c.w, "{c:?} → {c2:?}");
+        assert!(
+            (c2.w - fit[2].1).abs() < 0.5 && c2.w < c.w,
+            "{c:?} → {c2:?}"
+        );
     }
 
     /// Pasting formatting onto a selected column leaves its text (it used to clear it).
@@ -752,7 +1130,8 @@ mod tests {
 
     /// Where the app extends the selection while dragging (`caret.set` with `extend`).
     fn drag_to(s: &mut Session, to: Pos) {
-        s.run("caret.set", &json!({"pos": to, "extend": true})).unwrap();
+        s.run("caret.set", &json!({"pos": to, "extend": true}))
+            .unwrap();
     }
 
     /// An ordinary drag from one cell into another selects the rectangle of whole cells between
@@ -762,34 +1141,66 @@ mod tests {
     fn a_drag_across_cells_selects_their_rectangle() {
         let mut s = table_session(3, 3);
         fill(&mut s);
-        let start = Pos { off: 1, ..cell_pos(&s, 0, 1) };
+        let start = Pos {
+            off: 1,
+            ..cell_pos(&s, 0, 1)
+        };
         s.run("caret.set", &json!({"pos": start})).unwrap();
-        let down = Pos { off: 2, ..cell_pos(&s, 2, 1) };
+        let down = Pos {
+            off: 2,
+            ..cell_pos(&s, 2, 1)
+        };
         drag_to(&mut s, down);
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.rows, range.cols, range.stream), ((0, 2), (1, 1), false));
+        assert_eq!(
+            (range.rows, range.cols, range.stream),
+            ((0, 2), (1, 1), false)
+        );
         s.run("format.bold", &json!({})).unwrap();
         for r in 0..3 {
-            assert!(bold(&s, r, 1) && !bold(&s, r, 0) && !bold(&s, r, 2), "row {r}: just the dragged column");
+            assert!(
+                bold(&s, r, 1) && !bold(&s, r, 0) && !bold(&s, r, 2),
+                "row {r}: just the dragged column"
+            );
         }
         // On to the left: the rectangle still runs from the cell the drag started in.
         let left = cell_pos(&s, 1, 0);
         drag_to(&mut s, left);
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (0, 1))));
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (0, 1)))
+        );
         // Back in that cell: its text, from where the drag started.
-        let back = Pos { off: 3, ..cell_pos(&s, 0, 1) };
+        let back = Pos {
+            off: 3,
+            ..cell_pos(&s, 0, 1)
+        };
         drag_to(&mut s, back.clone());
         assert!(s.cell_range().is_none());
-        assert_eq!(s.sel, Selection { anchor: start, focus: back });
+        assert_eq!(
+            s.sel,
+            Selection {
+                anchor: start,
+                focus: back
+            }
+        );
         // From a nested table's cell into another cell of the table around it.
         let mut s = table_session(2, 2);
         s.sel = Selection::caret(cell_pos(&s, 0, 0));
-        s.run("insert.table", &json!({"rows": 2, "cols": 2})).unwrap();
-        assert_eq!(s.sel.focus.path.0.len(), 7, "the caret is in the nested table");
+        s.run("insert.table", &json!({"rows": 2, "cols": 2}))
+            .unwrap();
+        assert_eq!(
+            s.sel.focus.path.0.len(),
+            7,
+            "the caret is in the nested table"
+        );
         let to = cell_pos(&s, 1, 1);
         drag_to(&mut s, to);
         let range = s.cell_range().cloned().unwrap();
-        assert_eq!((range.table, range.rows, range.cols), (table_path(&s), (0, 1), (0, 1)));
+        assert_eq!(
+            (range.table, range.rows, range.cols),
+            (table_path(&s), (0, 1), (0, 1))
+        );
     }
 
     /// Shift+Down from a cell takes it and the cell below, whole; on past the table, the anchor's
@@ -801,7 +1212,8 @@ mod tests {
         let mut s = Session::new(Document::new());
         s.run("text.insert", &json!({"text": "Intro"})).unwrap();
         s.run("text.newParagraph", &json!({})).unwrap();
-        s.run("insert.table", &json!({"rows": 3, "cols": 3})).unwrap();
+        s.run("insert.table", &json!({"rows": 3, "cols": 3}))
+            .unwrap();
         fill(&mut s);
         let after = table_path(&s).last() + 1;
         let shift = |s: &mut Session, id: &str| {
@@ -809,30 +1221,60 @@ mod tests {
         };
         s.sel = Selection::caret(cell_pos(&s, 1, 1));
         shift(&mut s, "caret.down");
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 2), (1, 1))));
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 2), (1, 1)))
+        );
         shift(&mut s, "caret.down");
         assert!(s.cell_range().is_none());
-        assert_eq!(s.sel.anchor, cell_pos(&s, 1, 0), "from the start of the anchor's row");
+        assert_eq!(
+            s.sel.anchor,
+            cell_pos(&s, 1, 0),
+            "from the start of the anchor's row"
+        );
         assert_eq!(s.sel.focus.path, Path::top(after));
         s.run("format.italic", &json!({})).unwrap();
-        let italic = |s: &Session, r, c| para(s, r, c).run_ranges().all(|(_, ch)| ch.italic == Some(true));
-        assert!(italic(&s, 1, 0) && italic(&s, 2, 2) && !italic(&s, 0, 1), "whole rows from the anchor's");
+        let italic = |s: &Session, r, c| {
+            para(s, r, c)
+                .run_ranges()
+                .all(|(_, ch)| ch.italic == Some(true))
+        };
+        assert!(
+            italic(&s, 1, 0) && italic(&s, 2, 2) && !italic(&s, 0, 1),
+            "whole rows from the anchor's"
+        );
         shift(&mut s, "caret.up");
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 2), (1, 1))));
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 2), (1, 1)))
+        );
         shift(&mut s, "caret.up");
         assert!(s.cell_range().is_none());
         assert_eq!(s.sel.anchor, cell_pos(&s, 1, 1));
         assert_eq!(s.sel.focus.path, cell_pos(&s, 1, 1).path);
         // Shift+click: the rectangle from the anchor's cell.
         let corner = cell_pos(&s, 0, 0);
-        s.run("caret.set", &json!({"pos": corner, "extend": true})).unwrap();
-        assert_eq!(s.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (0, 1))));
+        s.run("caret.set", &json!({"pos": corner, "extend": true}))
+            .unwrap();
+        assert_eq!(
+            s.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (0, 1)))
+        );
         // From the text before the table into a cell: the rows down to that cell's, whole.
         s.sel = Selection::caret(Pos::body(0, 2));
         let into = cell_pos(&s, 1, 1);
         drag_to(&mut s, into);
         assert!(s.cell_range().is_none());
-        assert_eq!(s.sel, Selection { anchor: Pos::body(0, 2), focus: Pos { off: 4, ..cell_pos(&s, 1, 2) } });
+        assert_eq!(
+            s.sel,
+            Selection {
+                anchor: Pos::body(0, 2),
+                focus: Pos {
+                    off: 4,
+                    ..cell_pos(&s, 1, 2)
+                }
+            }
+        );
     }
 
     /// Clicks away from the areas, and hostile numbers: an error and no change, never a panic.
@@ -842,23 +1284,51 @@ mod tests {
         let start = first_table(&s);
         let c = cell_rect(&mut s, 1, 1);
         let mid = json!({"page": 0, "x": c.x + c.w / 2.0, "y": mid_y(c), "toX": 1, "toY": 1});
-        for id in ["table.selectAt", "table.insertAt", "table.moveDrag", "table.fitColumn"] {
+        for id in [
+            "table.selectAt",
+            "table.insertAt",
+            "table.moveDrag",
+            "table.fitColumn",
+        ] {
             assert!(s.run(id, &mid).is_err(), "{id}");
-            assert!(s.run(id, &json!({"page": 99, "x": 1, "y": 1, "toX": 1, "toY": 1})).is_err(), "{id}");
+            assert!(
+                s.run(id, &json!({"page": 99, "x": 1, "y": 1, "toX": 1, "toY": 1}))
+                    .is_err(),
+                "{id}"
+            );
             assert!(s.run(id, &json!({"page": 0, "x": 1e30, "y": -1e30, "toX": 1e30, "toY": 1e30, "reach": 1e30})).is_err(), "{id}");
             assert!(s.run(id, &json!({})).is_err(), "{id}");
         }
         // An insert button isn't a selection area, nor a selection area a button.
         let a = cell_rect(&mut s, 0, 0);
-        assert!(s.run("table.selectAt", &json!({"page": 0, "x": a.x - 10.0, "y": a.bottom()})).is_err());
-        assert!(s.run("table.insertAt", &json!({"page": 0, "x": a.x - 10.0, "y": mid_y(a)})).is_err());
+        assert!(
+            s.run(
+                "table.selectAt",
+                &json!({"page": 0, "x": a.x - 10.0, "y": a.bottom()})
+            )
+            .is_err()
+        );
+        assert!(
+            s.run(
+                "table.insertAt",
+                &json!({"page": 0, "x": a.x - 10.0, "y": mid_y(a)})
+            )
+            .is_err()
+        );
         assert_eq!(first_table(&s), start);
         // A drag to the ends of the earth keeps the table on its page.
         let h = handle(&table_resize::tables_on(&s.layout(), &s.doc, 0)[0]);
-        s.run("table.moveDrag", &json!({"page": 0, "x": h.x + 4.0, "y": h.y + 4.0, "toX": 3e38, "toY": -3e38})).unwrap();
+        s.run(
+            "table.moveDrag",
+            &json!({"page": 0, "x": h.x + 4.0, "y": h.y + 4.0, "toX": 3e38, "toY": -3e38}),
+        )
+        .unwrap();
         let f = first_table(&s).props.float.unwrap();
         assert!(f.x.is_finite() && f.y.is_finite());
         let moved = cell_rect(&mut s, 0, 0);
-        assert!(moved.x >= -0.5 && moved.right() <= 612.5 && moved.y >= -0.5, "{moved:?}");
+        assert!(
+            moved.x >= -0.5 && moved.right() <= 612.5 && moved.y >= -0.5,
+            "{moved:?}"
+        );
     }
 }

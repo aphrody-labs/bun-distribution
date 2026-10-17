@@ -1,7 +1,7 @@
 use crate::{
     change_detection::{CheckChangeTicks, ComponentTickCells, ComponentTicks, MaybeLocation, Tick},
     component::{ComponentId, Components},
-    storage::{blob_array::BlobArray, SparseSet},
+    storage::{SparseSet, blob_array::BlobArray},
 };
 use bevy_ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 use bevy_utils::prelude::DebugName;

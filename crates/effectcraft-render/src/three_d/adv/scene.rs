@@ -218,10 +218,22 @@ pub(crate) struct Builder {
 }
 
 impl Builder {
-    fn texture_from(&mut self, w: u32, h: u32, wrap: [u32; 2], data: impl Iterator<Item = [f32; 4]>) -> i32 {
+    fn texture_from(
+        &mut self,
+        w: u32,
+        h: u32,
+        wrap: [u32; 2],
+        data: impl Iterator<Item = [f32; 4]>,
+    ) -> i32 {
         let offset = self.s.texels.len() as u32;
         self.s.texels.extend(data);
-        self.s.textures.push(TexInfo { offset, width: w, height: h, wrap_u: wrap[0], wrap_v: wrap[1] });
+        self.s.textures.push(TexInfo {
+            offset,
+            width: w,
+            height: h,
+            wrap_u: wrap[0],
+            wrap_v: wrap[1],
+        });
         (self.s.textures.len() - 1) as i32
     }
 
@@ -241,7 +253,18 @@ impl Builder {
             t.width,
             t.height,
             wrap,
-            t.data.iter().map(|p| if lin { [srgb_to_linear(p[0]), srgb_to_linear(p[1]), srgb_to_linear(p[2]), p[3]] } else { *p }),
+            t.data.iter().map(|p| {
+                if lin {
+                    [
+                        srgb_to_linear(p[0]),
+                        srgb_to_linear(p[1]),
+                        srgb_to_linear(p[2]),
+                        p[3],
+                    ]
+                } else {
+                    *p
+                }
+            }),
         );
         self.tex_keys.insert(key, i);
         i
@@ -264,10 +287,22 @@ impl Builder {
                     return [0.0; 4];
                 }
                 let s = [p[0] / a, p[1] / a, p[2] / a];
-                if lin { [srgb_to_linear(s[0]), srgb_to_linear(s[1]), srgb_to_linear(s[2]), a] } else { [s[0], s[1], s[2], a] }
+                if lin {
+                    [
+                        srgb_to_linear(s[0]),
+                        srgb_to_linear(s[1]),
+                        srgb_to_linear(s[2]),
+                        a,
+                    ]
+                } else {
+                    [s[0], s[1], s[2], a]
+                }
             })
             .collect();
-        (self.texture_from(b.img.width, b.img.height, [1, 1], data.into_iter()), opaque)
+        (
+            self.texture_from(b.img.width, b.img.height, [1, 1], data.into_iter()),
+            opaque,
+        )
     }
 
     fn material(&mut self, m: Material) -> u32 {
@@ -285,11 +320,17 @@ impl Builder {
         let uniform = xf(usize::MAX);
         let normal_of = |m: &Mat4| -> (Mat4, f64) {
             let a = &m.0;
-            let det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+            let det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+                - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
                 + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
-            let inv = Mat4([[a[0][0], a[0][1], a[0][2], 0.0], [a[1][0], a[1][1], a[1][2], 0.0], [a[2][0], a[2][1], a[2][2], 0.0], [0.0, 0.0, 0.0, 1.0]])
-                .inverse()
-                .unwrap_or(Mat4::IDENTITY);
+            let inv = Mat4([
+                [a[0][0], a[0][1], a[0][2], 0.0],
+                [a[1][0], a[1][1], a[1][2], 0.0],
+                [a[2][0], a[2][1], a[2][2], 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ])
+            .inverse()
+            .unwrap_or(Mat4::IDENTITY);
             (inv.transpose(), det)
         };
         let (un, udet) = normal_of(&uniform);
@@ -308,13 +349,23 @@ impl Builder {
             let q = p.positions[k];
             let w = m.apply(vec3(q[0] as f64, q[1] as f64, q[2] as f64));
             let nn = p.normals.get(k).copied().unwrap_or([0.0, 0.0, 1.0]);
-            let wn = n.apply_vec(vec3(nn[0] as f64, nn[1] as f64, nn[2] as f64)).normalize();
+            let wn = n
+                .apply_vec(vec3(nn[0] as f64, nn[1] as f64, nn[2] as f64))
+                .normalize();
             let t = p.tangents.get(k).copied().unwrap_or([1.0, 0.0, 0.0, 1.0]);
-            let wt = m.apply_vec(vec3(t[0] as f64, t[1] as f64, t[2] as f64)).normalize();
+            let wt = m
+                .apply_vec(vec3(t[0] as f64, t[1] as f64, t[2] as f64))
+                .normalize();
             // Degenerate normals and tangents (zero length: NaN once normalised) get the shader's
             // fallbacks here, so every rasteriser shades them alike (GPU compilers may not keep
             // NaN comparisons).
-            let finite = |v: Vec3, or: [f32; 3]| if v.x.is_finite() && v.y.is_finite() && v.z.is_finite() { [v.x as f32, v.y as f32, v.z as f32] } else { or };
+            let finite = |v: Vec3, or: [f32; 3]| {
+                if v.x.is_finite() && v.y.is_finite() && v.z.is_finite() {
+                    [v.x as f32, v.y as f32, v.z as f32]
+                } else {
+                    or
+                }
+            };
             let [tx, ty, tz] = finite(wt, [1.0, 0.0, 0.0]);
             self.s.vertices.push(Vertex {
                 pos: [w.x as f32, w.y as f32, w.z as f32],
@@ -333,19 +384,40 @@ impl Builder {
             } else {
                 self.s.indices.extend([a, b, c])
             }
-            let z = [a, b, c].iter().map(|&i| self.cam.depth(Vec3::from(self.s.vertices[i as usize].pos.map(|v| v as f64)))).sum::<f64>() / 3.0;
+            let z = [a, b, c]
+                .iter()
+                .map(|&i| {
+                    self.cam.depth(Vec3::from(
+                        self.s.vertices[i as usize].pos.map(|v| v as f64),
+                    ))
+                })
+                .sum::<f64>()
+                / 3.0;
             self.tri_depth.push((transparent, z as f32));
         }
     }
 
     /// Opaque triangles first, then transparent ones back to front.
     fn sort_triangles(&mut self) {
-        let tris: Vec<[u32; 3]> = self.s.indices.as_chunks::<3>().0.iter().map(|t| [t[0], t[1], t[2]]).collect();
+        let tris: Vec<[u32; 3]> = self
+            .s
+            .indices
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .map(|t| [t[0], t[1], t[2]])
+            .collect();
         let mut order: Vec<usize> = (0..tris.len()).collect();
         order.sort_by(|&a, &b| {
             let (ta, za) = self.tri_depth[a];
             let (tb, zb) = self.tri_depth[b];
-            ta.cmp(&tb).then_with(|| if ta { zb.total_cmp(&za) } else { std::cmp::Ordering::Equal })
+            ta.cmp(&tb).then_with(|| {
+                if ta {
+                    zb.total_cmp(&za)
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            })
         });
         self.s.opaque_count = 3 * self.tri_depth.iter().filter(|t| !t.0).count() as u32;
         self.s.indices = order.into_iter().flat_map(|i| tris[i]).collect();
@@ -372,8 +444,14 @@ fn card_material(ctx: &EvalCtx, layer: &Layer) -> Material {
 /// Shadow/light switches and the primitive material of a model or primitive layer.
 fn model_options(ctx: &EvalCtx, layer: &Layer, lin: bool) -> (Material, Option<model::Material>) {
     let g = layer.props.sub("materialOptions");
-    let e = |m: &str, d: u32| g.and_then(|g| g.get(m)).map_or(d, |p| ctx.value(layer, p).as_enum());
-    let b = |m: &str| g.and_then(|g| g.get(m)).is_none_or(|p| ctx.value(layer, p).as_bool());
+    let e = |m: &str, d: u32| {
+        g.and_then(|g| g.get(m))
+            .map_or(d, |p| ctx.value(layer, p).as_enum())
+    };
+    let b = |m: &str| {
+        g.and_then(|g| g.get(m))
+            .is_none_or(|p| ctx.value(layer, p).as_bool())
+    };
     let casts = e("castsShadows", 0);
     let opts = Material {
         accepts_lights: b("acceptsLights"),
@@ -413,11 +491,20 @@ fn prim_kind(k: PrimitiveKind) -> model::prim::PrimitiveKind {
 }
 
 /// The primitive model of a primitive layer at the context time.
-pub fn primitive_model(ctx: &EvalCtx, layer: &Layer, kind: PrimitiveKind, mat: model::Material) -> model::Model {
+pub fn primitive_model(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    kind: PrimitiveKind,
+    mat: model::Material,
+) -> model::Model {
     let g = layer.props.sub("geometryOptions");
     let f = |m: &str, d: f64| g.map_or(d, |g| ctx.f(layer, g, m, d));
     let pr = model::prim::PrimParams {
-        size: [f("width", 300.0) as f32, f("height", 300.0) as f32, f("depth", 300.0) as f32],
+        size: [
+            f("width", 300.0) as f32,
+            f("height", 300.0) as f32,
+            f("depth", 300.0) as f32,
+        ],
         radius: f("radius", 150.0) as f32,
         tube: f("tubeRadius", 50.0) as f32,
         height: f("height", 300.0) as f32,
@@ -438,11 +525,27 @@ fn model_layer(r: &Renderer, ctx: &EvalCtx, layer: &Layer, b: &mut Builder) {
     let opacity = (ctx.opacity(layer) as f32 * r.opacity_mul()).clamp(0.0, 1.0);
     let geo = layer.props.sub("geometryOptions");
     let (mdl, unit, clip, t): (Arc<model::Model>, f64, Option<usize>, f64) = match &layer.source {
-        LayerSource::Primitive { kind } => (Arc::new(primitive_model(ctx, layer, *kind, prim_mat.unwrap_or_default())), 1.0, None, 0.0),
+        LayerSource::Primitive { kind } => (
+            Arc::new(primitive_model(
+                ctx,
+                layer,
+                *kind,
+                prim_mat.unwrap_or_default(),
+            )),
+            1.0,
+            None,
+            0.0,
+        ),
         LayerSource::Model { item } => {
-            let Some(it) = r.project.item(*item) else { return };
-            let ItemKind::Footage(f) = &it.kind else { return };
-            let Some(m) = r.footage.model(*item, f) else { return };
+            let Some(it) = r.project.item(*item) else {
+                return;
+            };
+            let ItemKind::Footage(f) = &it.kind else {
+                return;
+            };
+            let Some(m) = r.footage.model(*item, f) else {
+                return;
+            };
             let unit = geo.map_or(1.0, |g| ctx.f(layer, g, "unitScale", 1.0));
             let clip = geo.map_or(0, |g| ctx.e(layer, g, "animation")) as usize;
             let clip = clip.checked_sub(1).filter(|c| *c < m.animations.len());
@@ -463,10 +566,15 @@ fn model_layer(r: &Renderer, ctx: &EvalCtx, layer: &Layer, b: &mut Builder) {
     // Materials of the model (one default when it has none).
     let mut mats: Vec<u32> = vec![];
     let defaults = [model::Material::plain([0.8, 0.8, 0.8, 1.0], 0.0, 0.5)];
-    let src: &[model::Material] = if mdl.materials.is_empty() { &defaults } else { &mdl.materials };
+    let src: &[model::Material] = if mdl.materials.is_empty() {
+        &defaults
+    } else {
+        &mdl.materials
+    };
     for mm in src {
         let tex = |b: &mut Builder, t: Option<model::TexRef>, srgb: bool| -> i32 {
-            t.and_then(|t| mdl.textures.get(t.texture)).map_or(-1, |t| b.model_texture(t, srgb))
+            t.and_then(|t| mdl.textures.get(t.texture))
+                .map_or(-1, |t| b.model_texture(t, srgb))
         };
         let m = Material {
             base: mm.base_color,
@@ -496,7 +604,13 @@ fn model_layer(r: &Renderer, ctx: &EvalCtx, layer: &Layer, b: &mut Builder) {
     for inst in mdl.instances(clip, t) {
         for p in &inst.mesh.primitives {
             let mat = mats[p.material.unwrap_or(0).min(mats.len() - 1)];
-            b.emit(p, mat, &|k| if k == usize::MAX { world * inst.world } else { world * model::vertex_matrix(&inst, p, k) });
+            b.emit(p, mat, &|k| {
+                if k == usize::MAX {
+                    world * inst.world
+                } else {
+                    world * model::vertex_matrix(&inst, p, k)
+                }
+            });
         }
     }
 }
@@ -545,9 +659,19 @@ pub fn extrusion_params(ctx: &EvalCtx, layer: &Layer) -> Option<model::extrude::
 /// Text extrudes each character in its own space, so per-character 3D animation (position,
 /// rotation, scale in Z) carries over. A paint whose Front / Bevel / Side / Back are coloured
 /// (shape surface items, text animators) comes as one mesh per surface, in that order.
-pub fn extruded_meshes(ctx: &EvalCtx, layer: &Layer, p: &model::extrude::ExtrudeParams) -> Vec<(Primitive, [f32; 4], Mat4)> {
+pub fn extruded_meshes(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    p: &model::extrude::ExtrudeParams,
+) -> Vec<(Primitive, [f32; 4], Mat4)> {
     // (paths, colour, mesh → layer, stacking level, surface colours)
-    let mut groups: Vec<(Vec<kurbo::BezPath>, [f32; 4], Mat4, usize, crate::shapes::SurfaceColors)> = vec![];
+    let mut groups: Vec<(
+        Vec<kurbo::BezPath>,
+        [f32; 4],
+        Mat4,
+        usize,
+        crate::shapes::SurfaceColors,
+    )> = vec![];
     match layer.source {
         LayerSource::Text => {
             if let Some(tg) = crate::text::text_geom(ctx, layer) {
@@ -562,13 +686,31 @@ pub fn extruded_meshes(ctx: &EvalCtx, layer: &Layer, p: &model::extrude::Extrude
                     let op = (g.xf.opacity / 100.0).clamp(0.0, 1.0) as f32;
                     if g.apply_fill && g.fill[3] * op > 0.0 {
                         let c = [g.fill[0], g.fill[1], g.fill[2], g.fill[3] * op];
-                        groups.push((vec![g.local.clone()], c, g.m, usize::from(!stroke_on_top), g.xf.surface_colors(c)));
+                        groups.push((
+                            vec![g.local.clone()],
+                            c,
+                            g.m,
+                            usize::from(!stroke_on_top),
+                            g.xf.surface_colors(c),
+                        ));
                     }
                     if g.stroke_width > 0.0 && g.stroke[3] * op > 0.0 {
-                        let st = effectcraft_path::StrokeStyle { width: g.stroke_width, join: effectcraft_path::Join::Round, ..Default::default() };
-                        if let Some(region) = crate::shapes::stroke_region(std::slice::from_ref(&g.local), &st) {
+                        let st = effectcraft_path::StrokeStyle {
+                            width: g.stroke_width,
+                            join: effectcraft_path::Join::Round,
+                            ..Default::default()
+                        };
+                        if let Some(region) =
+                            crate::shapes::stroke_region(std::slice::from_ref(&g.local), &st)
+                        {
                             let c = [g.stroke[0], g.stroke[1], g.stroke[2], g.stroke[3] * op];
-                            groups.push((vec![region], c, g.m, usize::from(stroke_on_top), g.xf.surface_colors(c)));
+                            groups.push((
+                                vec![region],
+                                c,
+                                g.m,
+                                usize::from(stroke_on_top),
+                                g.xf.surface_colors(c),
+                            ));
                         }
                     }
                 }
@@ -576,8 +718,11 @@ pub fn extruded_meshes(ctx: &EvalCtx, layer: &Layer, p: &model::extrude::Extrude
         }
         LayerSource::Shape => {
             if let Some(c) = layer.props.sub("contents") {
-                groups =
-                    crate::shapes::extrusion_outlines(ctx, layer, c).into_iter().enumerate().map(|(k, (ps, c, s))| (ps, c, Mat4::IDENTITY, k, s)).collect();
+                groups = crate::shapes::extrusion_outlines(ctx, layer, c)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(k, (ps, c, s))| (ps, c, Mat4::IDENTITY, k, s))
+                    .collect();
             }
         }
         _ => {}
@@ -590,10 +735,17 @@ pub fn extruded_meshes(ctx: &EvalCtx, layer: &Layer, p: &model::extrude::Extrude
             continue;
         }
         if surfaces.iter().all(Option::is_none) {
-            out.push((model::extrude::extrude_stacked(&outlines, p, level), color, m));
+            out.push((
+                model::extrude::extrude_stacked(&outlines, p, level),
+                color,
+                m,
+            ));
             continue;
         }
-        for (mesh, s) in model::extrude::extrude_surfaces_stacked(&outlines, p, level).into_iter().zip(surfaces) {
+        for (mesh, s) in model::extrude::extrude_surfaces_stacked(&outlines, p, level)
+            .into_iter()
+            .zip(surfaces)
+        {
             if mesh.indices.is_empty() {
                 continue;
             }
@@ -604,7 +756,13 @@ pub fn extruded_meshes(ctx: &EvalCtx, layer: &Layer, p: &model::extrude::Extrude
     out
 }
 
-fn extruded_layer(r: &Renderer, ctx: &EvalCtx, layer: &Layer, p: &model::extrude::ExtrudeParams, b: &mut Builder) {
+fn extruded_layer(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    layer: &Layer,
+    p: &model::extrude::ExtrudeParams,
+    b: &mut Builder,
+) {
     let base = card_material(ctx, layer);
     let opacity = (ctx.opacity(layer) as f32 * r.opacity_mul()).clamp(0.0, 1.0);
     let world = b.outer * ctx.world_matrix(layer);
@@ -633,10 +791,18 @@ fn card(b: &mut Builder, buf: &Buf, world: Mat4, mut mat: Material) {
     let m = b.material(mat);
     let s = buf.scale.max(1e-9);
     let (x0, y0) = (-buf.offset[0] / s, -buf.offset[1] / s);
-    let (x1, y1) = ((buf.img.width as f64 - buf.offset[0]) / s, (buf.img.height as f64 - buf.offset[1]) / s);
+    let (x1, y1) = (
+        (buf.img.width as f64 - buf.offset[0]) / s,
+        (buf.img.height as f64 - buf.offset[1]) / s,
+    );
     // Faces the camera (−z) in layer space; uv (0,0) at the buffer's top-left texel corner.
     let p = Primitive {
-        positions: vec![[x0 as f32, y0 as f32, 0.0], [x1 as f32, y0 as f32, 0.0], [x1 as f32, y1 as f32, 0.0], [x0 as f32, y1 as f32, 0.0]],
+        positions: vec![
+            [x0 as f32, y0 as f32, 0.0],
+            [x1 as f32, y0 as f32, 0.0],
+            [x1 as f32, y1 as f32, 0.0],
+            [x0 as f32, y1 as f32, 0.0],
+        ],
         normals: vec![[0.0, 0.0, -1.0]; 4],
         uvs: vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
         tangents: vec![[1.0, 0.0, 0.0, 1.0]; 4],
@@ -665,14 +831,26 @@ fn card_layer(r: &Renderer, ctx: &EvalCtx, layer: &Layer, b: &mut Builder) {
 
 /// Evaluated lights: (scene lights, ambient sum, environment light (layer, intensity × colour,
 /// rotation)).
-fn lights(ctx: &EvalCtx, lin: bool) -> (Vec<Light>, [f32; 3], Option<(Option<u64>, [f32; 3], f32)>) {
+fn lights(
+    ctx: &EvalCtx,
+    lin: bool,
+) -> (Vec<Light>, [f32; 3], Option<(Option<u64>, [f32; 3], f32)>) {
     let mut out = vec![];
     let mut ambient = [0.0f32; 3];
     let mut env = None;
     let l = |v: f32| if lin { v } else { srgb_to_linear(v) };
-    for layer in ctx.comp.layers.iter().filter(|l| l.is_light() && l.switches.video && l.is_active_at(ctx.time)) {
-        let LayerSource::Light { kind } = layer.source else { continue };
-        let Some(g) = layer.props.sub("lightOptions") else { continue };
+    for layer in ctx
+        .comp
+        .layers
+        .iter()
+        .filter(|l| l.is_light() && l.switches.video && l.is_active_at(ctx.time))
+    {
+        let LayerSource::Light { kind } = layer.source else {
+            continue;
+        };
+        let Some(g) = layer.props.sub("lightOptions") else {
+            continue;
+        };
         let k = (ctx.f(layer, g, "intensity", 100.0) / 100.0) as f32;
         let c = ctx.color(layer, g, "color");
         let color = [l(c[0]) * k, l(c[1]) * k, l(c[2]) * k];
@@ -690,7 +868,9 @@ fn lights(ctx: &EvalCtx, lin: bool) -> (Vec<Light>, [f32; 3], Option<(Option<u64
                 }
             }
             _ => {
-                let Some(st) = LightState::from_layer(ctx, layer) else { continue };
+                let Some(st) = LightState::from_layer(ctx, layer) else {
+                    continue;
+                };
                 let f = |v: Vec3| [v.x as f32, v.y as f32, v.z as f32];
                 out.push(Light {
                     kind: match kind {
@@ -752,13 +932,21 @@ pub fn irradiance_map(sw: u32, sh: u32, src: &[[f32; 4]], w: u32, h: u32) -> Vec
         .map(|(x, y)| {
             let (u, v) = ((x as f32 + 0.5) / sw as f32, (y as f32 + 0.5) / sh as f32);
             let p = src[(y * sw + x) as usize];
-            (equirect_dir(u, v, 0.0), (v * std::f32::consts::PI).sin(), [p[0], p[1], p[2]])
+            (
+                equirect_dir(u, v, 0.0),
+                (v * std::f32::consts::PI).sin(),
+                [p[0], p[1], p[2]],
+            )
         })
         .collect();
     let mut out = vec![[0.0f32; 4]; (w * h) as usize];
     for y in 0..h {
         for x in 0..w {
-            let n = equirect_dir((x as f32 + 0.5) / w as f32, (y as f32 + 0.5) / h as f32, 0.0);
+            let n = equirect_dir(
+                (x as f32 + 0.5) / w as f32,
+                (y as f32 + 0.5) / h as f32,
+                0.0,
+            );
             let (mut acc, mut wsum) = ([0.0f32; 3], 0.0f32);
             for (d, sa, c) in &dirs {
                 let k = dot(n, *d).max(0.0) * sa;
@@ -777,7 +965,14 @@ pub fn irradiance_map(sw: u32, sh: u32, src: &[[f32; 4]], w: u32, h: u32) -> Vec
 }
 
 /// Prefilter an environment image into the scene's textures.
-pub(crate) fn add_environment(b: &mut Builder, w: u32, h: u32, data: Vec<[f32; 4]>, intensity: [f32; 3], rotation: f32) {
+pub(crate) fn add_environment(
+    b: &mut Builder,
+    w: u32,
+    h: u32,
+    data: Vec<[f32; 4]>,
+    intensity: [f32; 3],
+    rotation: f32,
+) {
     // Radiance level 0 at most 1024 wide.
     let (mut w, mut h, mut d) = (w, h, data);
     while w > 1024 {
@@ -806,21 +1001,38 @@ pub(crate) fn add_environment(b: &mut Builder, w: u32, h: u32, data: Vec<[f32; 4
         let tint = intensity.map(|c| c / k);
         for t in first..=ii {
             let ti = b.s.textures[t as usize];
-            for p in &mut b.s.texels[ti.offset as usize..(ti.offset + ti.width * ti.height) as usize] {
+            for p in
+                &mut b.s.texels[ti.offset as usize..(ti.offset + ti.width * ti.height) as usize]
+            {
                 for c in 0..3 {
                     p[c] *= tint[c];
                 }
             }
         }
     }
-    b.s.env = Some(EnvInfo { radiance: first, mips: levels, irradiance: ii, intensity: k, rotation });
+    b.s.env = Some(EnvInfo {
+        radiance: first,
+        mips: levels,
+        irradiance: ii,
+        intensity: k,
+        rotation,
+    });
 }
 
 /// The environment layer's pixels as linear straight RGBA.
-fn env_pixels(r: &Renderer, ctx: &EvalCtx, src: Option<u64>, lin: bool) -> Option<(u32, u32, Vec<[f32; 4]>)> {
+fn env_pixels(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    src: Option<u64>,
+    lin: bool,
+) -> Option<(u32, u32, Vec<[f32; 4]>)> {
     let layer = match src {
         Some(id) => ctx.comp.layer(effectcraft_project::LayerId(id))?,
-        None => ctx.comp.layers.iter().find(|l| l.environment && l.is_active_at(ctx.time))?,
+        None => ctx
+            .comp
+            .layers
+            .iter()
+            .find(|l| l.environment && l.is_active_at(ctx.time))?,
     };
     let buf = r.blend_layer_buf(ctx, layer)?;
     let img = &buf.img;
@@ -833,7 +1045,16 @@ fn env_pixels(r: &Renderer, ctx: &EvalCtx, src: Option<u64>, lin: bool) -> Optio
                 return [0.0, 0.0, 0.0, 1.0];
             }
             let s = [p[0] / a, p[1] / a, p[2] / a];
-            if lin { [s[0], s[1], s[2], 1.0] } else { [srgb_to_linear(s[0]), srgb_to_linear(s[1]), srgb_to_linear(s[2]), 1.0] }
+            if lin {
+                [s[0], s[1], s[2], 1.0]
+            } else {
+                [
+                    srgb_to_linear(s[0]),
+                    srgb_to_linear(s[1]),
+                    srgb_to_linear(s[2]),
+                    1.0,
+                ]
+            }
         })
         .collect();
     Some((img.width, img.height, data))
@@ -841,13 +1062,21 @@ fn env_pixels(r: &Renderer, ctx: &EvalCtx, src: Option<u64>, lin: bool) -> Optio
 
 /// Supersampling factor: 2×2 unless draft or very large.
 fn ssaa_for(r: &Renderer, out: (u32, u32)) -> u32 {
-    if r.opts.draft || (out.0 as u64 * out.1 as u64) > 8_000_000 { 1 } else { 2 }
+    if r.opts.draft || (out.0 as u64 * out.1 as u64) > 8_000_000 {
+        1
+    } else {
+        2
+    }
 }
 
 /// Add one layer of a run: a model or primitive mesh, an extruded text/shape layer, the nested
 /// layers of a collapsed precomp, or a textured card.
 fn emit_layer<'a>(r: &Renderer<'a>, ctx: &EvalCtx<'a>, layer: &Layer, b: &mut Builder) {
-    if layer.environment || layer.switches.adjustment || ctx.opacity(layer) <= 0.0 || !layer.has_video() {
+    if layer.environment
+        || layer.switches.adjustment
+        || ctx.opacity(layer) <= 0.0
+        || !layer.has_video()
+    {
         return;
     }
     if let Some(item) = r.collapsed(ctx, layer) {
@@ -867,13 +1096,25 @@ fn emit_layer<'a>(r: &Renderer<'a>, ctx: &EvalCtx<'a>, layer: &Layer, b: &mut Bu
 /// (meshes, extrusions, cards) placed by the precomp layer's world transform, so they
 /// intersect, occlude and shadow the parent's layers. Nested 2D layers lie on the precomp
 /// layer's plane; nested lights and cameras are ignored (the parent's light the scene).
-fn collapsed_layer<'a>(r: &Renderer<'a>, ctx: &EvalCtx<'a>, layer: &Layer, item: effectcraft_project::ItemId, b: &mut Builder) {
+fn collapsed_layer<'a>(
+    r: &Renderer<'a>,
+    ctx: &EvalCtx<'a>,
+    layer: &Layer,
+    item: effectcraft_project::ItemId,
+    b: &mut Builder,
+) {
     let op = ctx.opacity(layer) as f32 * r.opacity_mul();
-    let Some((sub, nctx)) = r.collapse_into(ctx, layer, item, op) else { return };
+    let Some((sub, nctx)) = r.collapse_into(ctx, layer, item, op) else {
+        return;
+    };
     let saved = b.outer;
     b.outer = saved * ctx.world_matrix(layer);
     let t = nctx.time;
-    let any_solo = nctx.comp.layers.iter().any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(t));
+    let any_solo = nctx
+        .comp
+        .layers
+        .iter()
+        .any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(t));
     for l in nctx.comp.layers.iter().rev() {
         if !l.is_active_at(t)
             || l.is_light()
@@ -901,7 +1142,13 @@ pub(crate) fn motion_blurred(r: &Renderer, ctx: &EvalCtx, layer: &Layer) -> bool
 
 /// [`build`] at a motion-blur sub-sample: layers with Motion Blur on, the camera and the lights
 /// are evaluated at `sub`'s time; the other layers stay at `ctx`'s.
-pub(crate) fn build_at(r: &Renderer, ctx: &EvalCtx, sub: Option<&EvalCtx>, run: &[&Layer], out: (u32, u32)) -> Scene {
+pub(crate) fn build_at(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    sub: Option<&EvalCtx>,
+    run: &[&Layer],
+    out: (u32, u32),
+) -> Scene {
     let base = ctx;
     let at = sub.unwrap_or(ctx);
     let ctx = at;
@@ -909,14 +1156,24 @@ pub(crate) fn build_at(r: &Renderer, ctx: &EvalCtx, sub: Option<&EvalCtx>, run: 
     let lin = r.pipe.linear || r.pipe.linear_blend;
     let ssaa = ssaa_for(r, out);
     let mut b = Builder {
-        s: Scene { width: out.0 * ssaa, height: out.1 * ssaa, ssaa, linear_io: lin, ..Scene::default() },
+        s: Scene {
+            width: out.0 * ssaa,
+            height: out.1 * ssaa,
+            ssaa,
+            linear_io: lin,
+            ..Scene::default()
+        },
         tex_keys: HashMap::new(),
         tri_depth: vec![],
         cam,
         outer: r.collapse3d.map_or(Mat4::IDENTITY, |c| c.world),
     };
     for layer in run {
-        let ctx = if sub.is_some() && motion_blurred(r, base, layer) { at } else { base };
+        let ctx = if sub.is_some() && motion_blurred(r, base, layer) {
+            at
+        } else {
+            base
+        };
         emit_layer(r, ctx, layer, &mut b);
     }
     b.sort_triangles();
@@ -961,9 +1218,19 @@ pub(crate) fn build_at(r: &Renderer, ctx: &EvalCtx, sub: Option<&EvalCtx>, run: 
         let pad = (zmax - zmin).abs() * 0.01 + 1.0;
         let (zmin, zmax) = (zmin - pad, zmax + pad);
         let zr = zmax - zmin;
-        Mat4([[a, 0.0, 0.0, bb], [0.0, -c, 0.0, -d], [0.0, 0.0, -1.0 / zr, zmax / zr], [0.0, 0.0, 0.0, 1.0]])
+        Mat4([
+            [a, 0.0, 0.0, bb],
+            [0.0, -c, 0.0, -d],
+            [0.0, 0.0, -1.0 / zr, zmax / zr],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
     } else {
-        Mat4([[a, 0.0, bb, 0.0], [0.0, -c, -d, 0.0], [0.0, 0.0, 0.0, NEAR], [0.0, 0.0, 1.0, 0.0]])
+        Mat4([
+            [a, 0.0, bb, 0.0],
+            [0.0, -c, -d, 0.0],
+            [0.0, 0.0, 0.0, NEAR],
+            [0.0, 0.0, 1.0, 0.0],
+        ])
     };
     b.s.clip = m32(&(proj * cam.view));
     b.s.view = m32(&cam.view);

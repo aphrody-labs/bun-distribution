@@ -164,7 +164,7 @@ impl super::SpiDevice for EepromFram {
             SaveReloadContents::Existing(contents) => {
                 self.contents[..contents.len()].copy_from_slice(&contents);
                 self.contents[contents.len()..].fill(0);
-            },
+            }
             SaveReloadContents::New => self.contents.fill(0xFF),
         }
     }
@@ -197,13 +197,13 @@ impl super::SpiDevice for EepromFram {
                 // Write enable
                 self.status.set_write_enabled(true);
                 0xFF // High-Z
-            },
+            }
 
             0x04 => {
                 // Write disable
                 self.status.set_write_enabled(false);
                 0xFF // High-Z
-            },
+            }
 
             0x05 => {
                 // Read status register
@@ -213,7 +213,7 @@ impl super::SpiDevice for EepromFram {
                 } else {
                     self.status.0
                 }
-            },
+            }
 
             0x01 => {
                 // Write status register
@@ -224,7 +224,7 @@ impl super::SpiDevice for EepromFram {
                     }
                 }
                 0xFF // High-Z
-            },
+            }
 
             0x03 => {
                 // Read
@@ -233,7 +233,7 @@ impl super::SpiDevice for EepromFram {
                         self.cur_addr = 0;
                         self.cur_command_pos += 1;
                         0xFF // High-Z
-                    },
+                    }
                     pos => {
                         if pos <= self.addr_bytes {
                             self.cur_addr =
@@ -246,9 +246,9 @@ impl super::SpiDevice for EepromFram {
                             self.cur_addr = (self.cur_addr + 1) & self.contents_len_mask;
                             result
                         }
-                    },
+                    }
                 }
-            },
+            }
 
             0x02 => {
                 // Write
@@ -257,7 +257,7 @@ impl super::SpiDevice for EepromFram {
                         0 => {
                             self.cur_addr = 0;
                             self.cur_command_pos += 1;
-                        },
+                        }
                         pos => {
                             if pos <= self.addr_bytes {
                                 self.cur_addr =
@@ -270,7 +270,7 @@ impl super::SpiDevice for EepromFram {
                                 self.cur_addr = (self.cur_addr & self.write_fixed_addr_mask)
                                     | ((self.cur_addr + 1) & self.page_mask);
                             }
-                        },
+                        }
                     }
                     if last {
                         self.status.set_write_enabled(false);
@@ -278,7 +278,7 @@ impl super::SpiDevice for EepromFram {
                     }
                 }
                 0xFF // High-Z
-            },
+            }
 
             _ => {
                 if first {
@@ -286,7 +286,7 @@ impl super::SpiDevice for EepromFram {
                     slog::warn!(self.logger, "Unrecognized command: {:#X}", self.cur_command);
                 }
                 0xFF // High-Z
-            },
+            }
         }
     }
 }

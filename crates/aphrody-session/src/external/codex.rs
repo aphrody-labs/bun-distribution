@@ -89,7 +89,9 @@ fn collect_rollouts(
         return;
     }
     for entry in read_dir_or_issue(dir, AGENT, issues) {
-        let Ok(kind) = entry.file_type() else { continue };
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
         let path = entry.path();
         if kind.is_dir() {
             collect_rollouts(&path, depth + 1, out, issues);
@@ -136,7 +138,7 @@ pub(super) fn parse_line(value: &Value, ctx: &mut LineContext) -> Vec<Draft> {
             let payload = value.get("payload").unwrap_or(value);
             ctx.learn_workspace(str_field(payload, "cwd"));
             return out;
-        },
+        }
         Some("response_item") => match value.get("payload") {
             Some(payload) => payload,
             None => return out,
@@ -147,10 +149,10 @@ pub(super) fn parse_line(value: &Value, ctx: &mut LineContext) -> Vec<Draft> {
                 push(&mut out, Role::System, format!("[compacted] {message}"), ts);
             }
             return out;
-        },
+        }
         Some(kind) if RESPONSE_ITEM_TYPES.contains(&kind) && value.get("payload").is_none() => {
             value
-        },
+        }
         _ => return out,
     };
     parse_response_item(item, ts, &mut out);
@@ -188,7 +190,7 @@ fn parse_response_item(
                 role = Role::System;
             }
             push(out, role, content_text(item.get("content")), ts);
-        },
+        }
         "reasoning" => {
             // Only reasoning stored in clear text; `encrypted_content` stays out.
             let mut parts = Vec::new();
@@ -199,51 +201,68 @@ fn parse_response_item(
                 }
             }
             push(out, Role::Reasoning, parts.join("\n"), ts);
-        },
+        }
         "function_call" => {
             let name = str_field(item, "name").unwrap_or("function");
             let name = match str_field(item, "namespace") {
                 Some(namespace) if !namespace.is_empty() => format!("{namespace}.{name}"),
                 _ => name.to_owned(),
             };
-            push(out, Role::ToolCall, format!("{name} {}", render_args(item.get("arguments"))), ts);
-        },
+            push(
+                out,
+                Role::ToolCall,
+                format!("{name} {}", render_args(item.get("arguments"))),
+                ts,
+            );
+        }
         "custom_tool_call" => {
             let name = str_field(item, "name").unwrap_or("tool");
-            push(out, Role::ToolCall, format!("{name} {}", render_args(item.get("input"))), ts);
-        },
+            push(
+                out,
+                Role::ToolCall,
+                format!("{name} {}", render_args(item.get("input"))),
+                ts,
+            );
+        }
         "local_shell_call" => {
             let command = item
                 .get("action")
                 .and_then(|action| action.get("command"))
                 .map(|command| match command {
-                    Value::Array(words) => {
-                        words.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(" ")
-                    },
+                    Value::Array(words) => words
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .collect::<Vec<_>>()
+                        .join(" "),
                     other => render_args(Some(other)),
                 })
                 .unwrap_or_default();
             push(out, Role::ToolCall, format!("shell {command}"), ts);
-        },
+        }
         "web_search_call" => {
             let query = item
                 .get("action")
                 .and_then(|action| str_field(action, "query"))
                 .unwrap_or_default();
             push(out, Role::ToolCall, format!("web_search {query}"), ts);
-        },
+        }
         "function_call_output" | "custom_tool_call_output" | "local_shell_call_output" => {
             push(out, Role::ToolResult, output_text(item.get("output")), ts);
-        },
+        }
         "agent_message" => {
             let author = str_field(item, "author").unwrap_or("?");
             let recipient = str_field(item, "recipient").unwrap_or("?");
             let text = content_text(item.get("content"));
             if !text.trim().is_empty() {
-                push(out, Role::System, format!("[{author} -> {recipient}] {text}"), ts);
+                push(
+                    out,
+                    Role::System,
+                    format!("[{author} -> {recipient}] {text}"),
+                    ts,
+                );
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -251,12 +270,13 @@ fn parse_response_item(
 /// `content` / `output`.
 fn output_text(output: Option<&Value>) -> String {
     match output {
-        Some(Value::Object(object)) => {
-            object.get("content").or_else(|| object.get("output")).map_or_else(
+        Some(Value::Object(object)) => object
+            .get("content")
+            .or_else(|| object.get("output"))
+            .map_or_else(
                 || Value::Object(object.clone()).to_string(),
                 |inner| content_text(Some(inner)),
-            )
-        },
+            ),
         other => content_text(other),
     }
 }
@@ -273,7 +293,10 @@ mod domain_bootstrap_tests {
                 Role::System,
             ),
             (serde_json::json!(["user.text"]), Role::User),
-            (serde_json::json!(["agents_md.instructions", "user.text"]), Role::User),
+            (
+                serde_json::json!(["agents_md.instructions", "user.text"]),
+                Role::User,
+            ),
             (serde_json::json!([]), Role::User),
             (serde_json::Value::Null, Role::User),
         ] {

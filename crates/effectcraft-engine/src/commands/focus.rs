@@ -11,14 +11,29 @@ use super::{CommandSpec, bad, comp_id, layer_mut, resolve_layer};
 use crate::{EngineError, Result, Session, cmd};
 
 /// (comp, camera, target?) from `{camera?, layer?}` or the selection (a camera plus another layer).
-fn refs(s: &Session, p: &Value, cmd: &str, need_target: bool) -> Result<(ItemId, LayerId, Option<LayerId>)> {
+fn refs(
+    s: &Session,
+    p: &Value,
+    cmd: &str,
+    need_target: bool,
+) -> Result<(ItemId, LayerId, Option<LayerId>)> {
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let sel: Vec<LayerId> = s.state.selected_layers.iter().copied().filter(|l| comp.layer(*l).is_some()).collect();
+    let sel: Vec<LayerId> = s
+        .state
+        .selected_layers
+        .iter()
+        .copied()
+        .filter(|l| comp.layer(*l).is_some())
+        .collect();
     let is_cam = |c: &Comp, l: LayerId| c.layer(l).is_some_and(|l| l.is_camera());
     let cam = match p.get("camera") {
         Some(v) => resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no layer {v}")))?,
-        None => sel.iter().copied().find(|l| is_cam(comp, *l)).ok_or_else(|| bad(cmd, "select a camera layer"))?,
+        None => sel
+            .iter()
+            .copied()
+            .find(|l| is_cam(comp, *l))
+            .ok_or_else(|| bad(cmd, "select a camera layer"))?,
     };
     if !is_cam(comp, cam) {
         return Err(bad(cmd, "`camera` is not a camera layer"));
@@ -33,18 +48,36 @@ fn refs(s: &Session, p: &Value, cmd: &str, need_target: bool) -> Result<(ItemId,
     Ok((cid, cam, target))
 }
 
-fn set_focus_expr(s: &mut Session, cid: ItemId, cam: LayerId, label: &str, text: String) -> Result<Value> {
+fn set_focus_expr(
+    s: &mut Session,
+    cid: ItemId,
+    cam: LayerId,
+    label: &str,
+    text: String,
+) -> Result<Value> {
     s.edit(label, None, |proj, _| {
         let l = layer_mut(proj, cid, cam)?;
-        let pr = l.props.prop_mut("cameraOptions/focusDistance").ok_or_else(|| bad("camera", "the camera has no Focus Distance"))?;
-        pr.expr = Some(Expression { text: text.clone(), enabled: true });
+        let pr = l
+            .props
+            .prop_mut("cameraOptions/focusDistance")
+            .ok_or_else(|| bad("camera", "the camera has no Focus Distance"))?;
+        pr.expr = Some(Expression {
+            text: text.clone(),
+            enabled: true,
+        });
         Ok(json!({"expression": text}))
     })
 }
 
 fn link_poi(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, cam, _) = refs(s, p, "camera.linkFocusToPoi", false)?;
-    set_focus_expr(s, cid, cam, "Link Focus Distance to Point of Interest", "length(transform.pointOfInterest, transform.position)".into())
+    set_focus_expr(
+        s,
+        cid,
+        cam,
+        "Link Focus Distance to Point of Interest",
+        "length(transform.pointOfInterest, transform.position)".into(),
+    )
 }
 
 /// The focus expression for a target layer: its anchor point's distance along the camera's view
@@ -58,8 +91,19 @@ fn layer_expr(name: &str) -> String {
 
 fn link_layer(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, cam, target) = refs(s, p, "camera.linkFocusToLayer", true)?;
-    let name = s.project.comp(cid).and_then(|c| c.layer(target?)).map(|l| l.name.clone()).ok_or(EngineError::NoComp)?;
-    set_focus_expr(s, cid, cam, "Link Focus Distance to Layer", layer_expr(&name))
+    let name = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(target?))
+        .map(|l| l.name.clone())
+        .ok_or(EngineError::NoComp)?;
+    set_focus_expr(
+        s,
+        cid,
+        cam,
+        "Link Focus Distance to Layer",
+        layer_expr(&name),
+    )
 }
 
 /// Camera depth of `target`'s anchor point at the current time.
@@ -70,14 +114,18 @@ pub(crate) fn focus_depth(s: &Session, cid: ItemId, cam: LayerId, target: LayerI
     let c = ctx.comp.layer(cam)?;
     let t = ctx.comp.layer(target)?;
     let cs = effectcraft_render::three_d::camera::layer_camera(&ctx, c);
-    let a = t.transform().map(|tr| ctx.v3(t, tr, "anchor", [0.0; 3])).unwrap_or([0.0; 3]);
+    let a = t
+        .transform()
+        .map(|tr| ctx.v3(t, tr, "anchor", [0.0; 3]))
+        .unwrap_or([0.0; 3]);
     Some(cs.depth(ctx.world_matrix(t).apply(vec3(a[0], a[1], a[2]))))
 }
 
 fn set_to_layer(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "camera.setFocusToLayer";
     let (cid, cam, target) = refs(s, p, c, true)?;
-    let d = focus_depth(s, cid, cam, target.ok_or_else(|| bad(c, "no layer"))?).ok_or_else(|| bad(c, "can't evaluate the layers"))?;
+    let d = focus_depth(s, cid, cam, target.ok_or_else(|| bad(c, "no layer"))?)
+        .ok_or_else(|| bad(c, "can't evaluate the layers"))?;
     if d <= 0.0 {
         return Err(bad(c, "the layer is behind the camera"));
     }
@@ -85,7 +133,10 @@ fn set_to_layer(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit("Set Focus Distance to Layer", None, |proj, _| {
         let l = layer_mut(proj, cid, cam)?;
         let lt = l.layer_time(t);
-        let pr = l.props.prop_mut("cameraOptions/focusDistance").ok_or_else(|| bad(c, "the camera has no Focus Distance"))?;
+        let pr = l
+            .props
+            .prop_mut("cameraOptions/focusDistance")
+            .ok_or_else(|| bad(c, "the camera has no Focus Distance"))?;
         pr.set_value_at(lt, KV::Scalar(d));
         Ok(json!({"focusDistance": d}))
     })
@@ -93,13 +144,45 @@ fn set_to_layer(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn camera_selected(s: &Session) -> std::result::Result<(), String> {
     let c = s.active_comp().ok_or("no composition is open")?;
-    if s.state.selected_layers.iter().any(|l| c.layer(*l).is_some_and(|l| l.is_camera())) { Ok(()) } else { Err("select a camera layer".into()) }
+    if s.state
+        .selected_layers
+        .iter()
+        .any(|l| c.layer(*l).is_some_and(|l| l.is_camera()))
+    {
+        Ok(())
+    } else {
+        Err("select a camera layer".into())
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("camera.linkFocusToPoi", "Link Focus Distance to Point of Interest", ["Layer", "Camera"], None, "{comp?, camera?}", camera_selected, link_poi),
-        cmd!("camera.linkFocusToLayer", "Link Focus Distance to Layer", ["Layer", "Camera"], None, "{comp?, camera?, layer?}", camera_selected, link_layer),
-        cmd!("camera.setFocusToLayer", "Set Focus Distance to Layer", ["Layer", "Camera"], None, "{comp?, camera?, layer?}", camera_selected, set_to_layer),
+        cmd!(
+            "camera.linkFocusToPoi",
+            "Link Focus Distance to Point of Interest",
+            ["Layer", "Camera"],
+            None,
+            "{comp?, camera?}",
+            camera_selected,
+            link_poi
+        ),
+        cmd!(
+            "camera.linkFocusToLayer",
+            "Link Focus Distance to Layer",
+            ["Layer", "Camera"],
+            None,
+            "{comp?, camera?, layer?}",
+            camera_selected,
+            link_layer
+        ),
+        cmd!(
+            "camera.setFocusToLayer",
+            "Set Focus Distance to Layer",
+            ["Layer", "Camera"],
+            None,
+            "{comp?, camera?, layer?}",
+            camera_selected,
+            set_to_layer
+        ),
     ]
 }

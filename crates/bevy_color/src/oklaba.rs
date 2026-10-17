@@ -1,7 +1,7 @@
 use crate::{
-    color_difference::EuclideanDistance, impl_componentwise_vector_space,
-    okcolor_convert::libm_cbrtf, Alpha, ColorToComponents, Gray, Hsla, Hsva, Hwba, Lcha,
-    LinearRgba, Luminance, Mix, Srgba, StandardColor, Xyza,
+    Alpha, ColorToComponents, Gray, Hsla, Hsva, Hwba, Lcha, LinearRgba, Luminance, Mix, Srgba,
+    StandardColor, Xyza, color_difference::EuclideanDistance, impl_componentwise_vector_space,
+    okcolor_convert::libm_cbrtf,
 };
 use bevy_math::{FloatPow, Vec3, Vec4};
 #[cfg(feature = "bevy_reflect")]

@@ -87,7 +87,11 @@ pub struct BenchSlots {
 }
 
 /// Capacities used by the IEVR team builder.
-pub const BENCH_SLOTS: BenchSlots = BenchSlots { manager: 1, reserves: 5, support: 3 };
+pub const BENCH_SLOTS: BenchSlots = BenchSlots {
+    manager: 1,
+    reserves: 5,
+    support: 3,
+};
 
 /// Role/color pairs in the same stable order as the TypeScript record.
 pub const ROLE_COLORS: [(&str, &str); 4] = [
@@ -126,17 +130,25 @@ pub const fn role_label(role: PositionRole) -> &'static str {
 /// Looks up a role color by its string code.
 #[must_use]
 pub fn role_color_code(role: &str) -> Option<&'static str> {
-    ROLE_COLORS.iter().find_map(|(code, color)| (*code == role).then_some(*color))
+    ROLE_COLORS
+        .iter()
+        .find_map(|(code, color)| (*code == role).then_some(*color))
 }
 
 /// Looks up a French role label by its string code.
 #[must_use]
 pub fn role_label_code(role: &str) -> Option<&'static str> {
-    ROLE_LABELS.iter().find_map(|(code, label)| (*code == role).then_some(*label))
+    ROLE_LABELS
+        .iter()
+        .find_map(|(code, label)| (*code == role).then_some(*label))
 }
 
-const GK: PositionCoord =
-    PositionCoord { index: 10, left: 40.0, role: PositionRole::Gk, top: 43.0 };
+const GK: PositionCoord = PositionCoord {
+    index: 10,
+    left: 40.0,
+    role: PositionRole::Gk,
+    top: 43.0,
+};
 
 /// Returns the eight legacy formations in their persisted order.
 #[must_use]
@@ -289,7 +301,12 @@ fn formation(
 ) -> Formation {
     let mut projected = positions
         .iter()
-        .map(|&(index, top, left, role)| PositionCoord { index, top, left, role })
+        .map(|&(index, top, left, role)| PositionCoord {
+            index,
+            top,
+            left,
+            role,
+        })
         .collect::<Vec<_>>();
     projected.push(GK);
     Formation {
@@ -419,7 +436,11 @@ mod tests {
         assert_eq!(forms[0].id, "diamond442");
         assert!(forms.iter().all(|form| form.positions.len() == 11));
         assert!(forms.iter().all(|form| {
-            form.positions.iter().find(|position| position.role == PositionRole::Gk).unwrap().index
+            form.positions
+                .iter()
+                .find(|position| position.role == PositionRole::Gk)
+                .unwrap()
+                .index
                 == 10
         }));
     }
@@ -441,7 +462,11 @@ mod tests {
         assert!(forms.iter().all(|form| form.id.starts_with("g_")));
         assert!(forms.iter().all(|form| form.positions.len() == 11));
         assert!(forms.iter().all(|form| {
-            form.positions.iter().find(|position| position.role == PositionRole::Gk).unwrap().index
+            form.positions
+                .iter()
+                .find(|position| position.role == PositionRole::Gk)
+                .unwrap()
+                .index
                 == 0
         }));
         let all = formations();

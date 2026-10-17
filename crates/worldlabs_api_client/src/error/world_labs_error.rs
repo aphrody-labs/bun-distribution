@@ -5,47 +5,47 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum WorldLabsError {
-  Client(WorldLabsClientError),
-  ApiSpecific(WorldLabsSpecificApiError),
-  ApiGeneric(WorldLabsGenericApiError),
+    Client(WorldLabsClientError),
+    ApiSpecific(WorldLabsSpecificApiError),
+    ApiGeneric(WorldLabsGenericApiError),
 }
 
 impl WorldLabsError {
-  pub fn is_403_forbidden(&self) -> bool {
-    match self {
-      Self::ApiSpecific(e) => e.is_403_forbidden(),
-      Self::ApiGeneric(e) => e.is_403_forbidden(),
-      Self::Client(_) => false,
+    pub fn is_403_forbidden(&self) -> bool {
+        match self {
+            Self::ApiSpecific(e) => e.is_403_forbidden(),
+            Self::ApiGeneric(e) => e.is_403_forbidden(),
+            Self::Client(_) => false,
+        }
     }
-  }
 }
 
 impl Error for WorldLabsError {}
 
 impl std::fmt::Display for WorldLabsError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Self::Client(e) => write!(f, "WorldLabsClientError: {:?}", e),
-      Self::ApiSpecific(e) => write!(f, "WorldLabsSpecificApiError: {:?}", e),
-      Self::ApiGeneric(e) => write!(f, "WorldLabsGenericApiError: {:?}", e),
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Client(e) => write!(f, "WorldLabsClientError: {:?}", e),
+            Self::ApiSpecific(e) => write!(f, "WorldLabsSpecificApiError: {:?}", e),
+            Self::ApiGeneric(e) => write!(f, "WorldLabsGenericApiError: {:?}", e),
+        }
     }
-  }
 }
 
 impl From<WorldLabsClientError> for WorldLabsError {
-  fn from(error: WorldLabsClientError) -> Self {
-    Self::Client(error)
-  }
+    fn from(error: WorldLabsClientError) -> Self {
+        Self::Client(error)
+    }
 }
 
 impl From<WorldLabsSpecificApiError> for WorldLabsError {
-  fn from(error: WorldLabsSpecificApiError) -> Self {
-    Self::ApiSpecific(error)
-  }
+    fn from(error: WorldLabsSpecificApiError) -> Self {
+        Self::ApiSpecific(error)
+    }
 }
 
 impl From<WorldLabsGenericApiError> for WorldLabsError {
-  fn from(error: WorldLabsGenericApiError) -> Self {
-    Self::ApiGeneric(error)
-  }
+    fn from(error: WorldLabsGenericApiError) -> Self {
+        Self::ApiGeneric(error)
+    }
 }

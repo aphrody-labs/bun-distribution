@@ -44,8 +44,19 @@ fn accent(ctx: &Ctx, style: &str) -> Rgba {
 /// fill, text and the borders on its region's edges (its inside lines within it).
 fn look_def(ctx: &Ctx, def: &TableStyleDef, t: &Table, r: usize, c: usize) -> CellLook {
     let (rows, cols) = (t.rows.len(), t.cols.len());
-    let (r1, c1) = t.cell(r, c).map(|cell| (r + cell.row_span.max(1) as usize - 1, c + cell.grid_span.max(1) as usize - 1)).unwrap_or((r, c));
-    let (r1, c1) = (r1.min(rows.saturating_sub(1)), c1.min(cols.saturating_sub(1)));
+    let (r1, c1) = t
+        .cell(r, c)
+        .map(|cell| {
+            (
+                r + cell.row_span.max(1) as usize - 1,
+                c + cell.grid_span.max(1) as usize - 1,
+            )
+        })
+        .unwrap_or((r, c));
+    let (r1, c1) = (
+        r1.min(rows.saturating_sub(1)),
+        c1.min(cols.saturating_sub(1)),
+    );
     let last_r = rows.saturating_sub(1);
     let last_c = cols.saturating_sub(1);
     let header = t.first_row && r == 0;
@@ -54,15 +65,34 @@ fn look_def(ctx: &Ctx, def: &TableStyleDef, t: &Table, r: usize, c: usize) -> Ce
     let last_col = t.last_col && c1 == last_c && cols > 1;
     let body_r = r.saturating_sub(usize::from(t.first_row));
     let body_c = c.saturating_sub(usize::from(t.first_col));
-    let mut look = CellLook { fill: None, text: None, bold: false, border: None, sides: [None; 4], paint: None };
+    let mut look = CellLook {
+        fill: None,
+        text: None,
+        bold: false,
+        border: None,
+        sides: [None; 4],
+        paint: None,
+    };
     for part in TablePart::ALL {
         // (applies, region rows, region cols)
         let (on, region) = match part {
             TablePart::WholeTbl => (true, (0, last_r, 0, last_c)),
-            TablePart::Band1H => (t.band_row && !header && !total && body_r % 2 == 0, (r, r1, 0, last_c)),
-            TablePart::Band2H => (t.band_row && !header && !total && body_r % 2 == 1, (r, r1, 0, last_c)),
-            TablePart::Band1V => (t.band_col && !first_col && !last_col && body_c % 2 == 0, (0, last_r, c, c1)),
-            TablePart::Band2V => (t.band_col && !first_col && !last_col && body_c % 2 == 1, (0, last_r, c, c1)),
+            TablePart::Band1H => (
+                t.band_row && !header && !total && body_r % 2 == 0,
+                (r, r1, 0, last_c),
+            ),
+            TablePart::Band2H => (
+                t.band_row && !header && !total && body_r % 2 == 1,
+                (r, r1, 0, last_c),
+            ),
+            TablePart::Band1V => (
+                t.band_col && !first_col && !last_col && body_c % 2 == 0,
+                (0, last_r, c, c1),
+            ),
+            TablePart::Band2V => (
+                t.band_col && !first_col && !last_col && body_c % 2 == 1,
+                (0, last_r, c, c1),
+            ),
             TablePart::LastCol => (last_col, (0, last_r, c, last_c)),
             TablePart::FirstCol => (first_col, (0, last_r, 0, c1)),
             TablePart::LastRow => (total, (r, last_r, 0, last_c)),
@@ -88,7 +118,12 @@ fn look_def(ctx: &Ctx, def: &TableStyleDef, t: &Table, r: usize, c: usize) -> Ce
         }
         let (r0, rr1, c0, cc1) = region;
         // Left, right, top, bottom of the cell: the part's edge or its inside line.
-        let pick = [if c == c0 { 0 } else { 5 }, if c1 == cc1 { 1 } else { 5 }, if r == r0 { 2 } else { 4 }, if r1 == rr1 { 3 } else { 4 }];
+        let pick = [
+            if c == c0 { 0 } else { 5 },
+            if c1 == cc1 { 1 } else { 5 },
+            if r == r0 { 2 } else { 4 },
+            if r1 == rr1 { 3 } else { 4 },
+        ];
         for (side, i) in pick.iter().enumerate() {
             if let (Some(Some(b)), Some(slot)) = (ps.borders.get(*i), look.sides.get_mut(side)) {
                 *slot = Some(border_look(ctx, b));
@@ -103,11 +138,19 @@ fn look_def(ctx: &Ctx, def: &TableStyleDef, t: &Table, r: usize, c: usize) -> Ce
 fn style_fill(ctx: &Ctx, ps: &TablePartStyle) -> Option<(Fill, Option<Rgba>)> {
     if let Some((idx, col)) = &ps.fill_ref {
         let ph = ctx.color(col, None);
-        return Some(match ctx.master.theme.format.fills.get((*idx as usize).saturating_sub(1)) {
-            Some(f) if *idx > 0 => (f.clone(), Some(ph)),
-            _ if *idx == 0 => (Fill::None, None),
-            _ => (Fill::solid(ColorRef::rgb(ph)), None),
-        });
+        return Some(
+            match ctx
+                .master
+                .theme
+                .format
+                .fills
+                .get((*idx as usize).saturating_sub(1))
+            {
+                Some(f) if *idx > 0 => (f.clone(), Some(ph)),
+                _ if *idx == 0 => (Fill::None, None),
+                _ => (Fill::solid(ColorRef::rgb(ph)), None),
+            },
+        );
     }
     ps.fill.clone().map(|f| (f, None))
 }
@@ -128,18 +171,40 @@ fn border_look(ctx: &Ctx, b: &TableBorder) -> (Rgba, f64) {
     match b {
         TableBorder::Line { line } => match &line.fill {
             Some(Fill::Solid { color: c }) => (ctx.color(c, None), line.width.unwrap_or(0.75)),
-            Some(Fill::Gradient(g)) => (g.stops.first().map(|s| ctx.color(&s.color, None)).unwrap_or(Rgba::BLACK), line.width.unwrap_or(0.75)),
+            Some(Fill::Gradient(g)) => (
+                g.stops
+                    .first()
+                    .map(|s| ctx.color(&s.color, None))
+                    .unwrap_or(Rgba::BLACK),
+                line.width.unwrap_or(0.75),
+            ),
             _ => (Rgba::TRANSPARENT, 0.0),
         },
         TableBorder::Ref { idx, color } => {
-            let w = ctx.master.theme.format.lines.get((*idx as usize).saturating_sub(1)).and_then(|l| l.width).unwrap_or(0.75);
-            if *idx == 0 { (Rgba::TRANSPARENT, 0.0) } else { (ctx.color(color, None), w) }
+            let w = ctx
+                .master
+                .theme
+                .format
+                .lines
+                .get((*idx as usize).saturating_sub(1))
+                .and_then(|l| l.width)
+                .unwrap_or(0.75);
+            if *idx == 0 {
+                (Rgba::TRANSPARENT, 0.0)
+            } else {
+                (ctx.color(color, None), w)
+            }
         }
     }
 }
 
 pub fn look(ctx: &Ctx, t: &Table, r: usize, c: usize) -> CellLook {
-    if let Some(def) = ctx.pres.table_styles.iter().find(|d| d.id.eq_ignore_ascii_case(&t.style)) {
+    if let Some(def) = ctx
+        .pres
+        .table_styles
+        .iter()
+        .find(|d| d.id.eq_ignore_ascii_case(&t.style))
+    {
         return look_def(ctx, def, t, r, c);
     }
     let a = accent(ctx, &t.style);
@@ -155,10 +220,28 @@ pub fn look(ctx: &Ctx, t: &Table, r: usize, c: usize) -> CellLook {
     let white = Rgba::WHITE;
     let dark_text = ctx.color(&ColorRef::scheme(SchemeSlot::Tx1), None);
     match kind {
-        "none" => CellLook { fill: None, text: None, bold: false, border: None, sides: [None; 4], paint: None },
-        "grid" => CellLook { fill: None, text: None, bold: false, border: Some((dark_text, 0.75)), sides: [None; 4], paint: None },
+        "none" => CellLook {
+            fill: None,
+            text: None,
+            bold: false,
+            border: None,
+            sides: [None; 4],
+            paint: None,
+        },
+        "grid" => CellLook {
+            fill: None,
+            text: None,
+            bold: false,
+            border: Some((dark_text, 0.75)),
+            sides: [None; 4],
+            paint: None,
+        },
         "light1" => CellLook {
-            fill: if band || band_c { Some(tint(20000)) } else { None },
+            fill: if band || band_c {
+                Some(tint(20000))
+            } else {
+                None
+            },
             text: None,
             bold: header || total || first_col || last_col,
             border: if header { Some((a, 1.0)) } else { None },
@@ -188,7 +271,11 @@ pub fn look(ctx: &Ctx, t: &Table, r: usize, c: usize) -> CellLook {
             paint: None,
         },
         "medium4" => CellLook {
-            fill: Some(if header || band || band_c { tint(40000) } else { tint(20000) }),
+            fill: Some(if header || band || band_c {
+                tint(40000)
+            } else {
+                tint(20000)
+            }),
             text: None,
             bold: header || total || first_col || last_col,
             border: Some((a, 0.75)),
@@ -204,7 +291,11 @@ pub fn look(ctx: &Ctx, t: &Table, r: usize, c: usize) -> CellLook {
             } else {
                 tint(20000)
             }),
-            text: if header || total || first_col || last_col { Some(white) } else { None },
+            text: if header || total || first_col || last_col {
+                Some(white)
+            } else {
+                None
+            },
             bold: header || total || first_col || last_col,
             border: Some((white, 1.0)),
             sides: [None; 4],
@@ -260,14 +351,30 @@ pub fn row_heights(rctx: &Ctx, t: &Table, fields: &dyn Fields) -> Vec<f64> {
     for (ri, row) in t.rows.iter().enumerate() {
         let mut h = row.height.max(0.0);
         for (ci, cell) in row.cells.iter().enumerate().take(t.cols.len()) {
-            if cell.is_covered() || cell.row_span > 1 || !matches!(cell.vertical, None | Some(TextDir::Horizontal)) {
+            if cell.is_covered()
+                || cell.row_span > 1
+                || !matches!(cell.vertical, None | Some(TextDir::Horizontal))
+            {
                 continue;
             }
-            let c1 = ci.saturating_add(cell.grid_span.max(1) as usize).min(t.cols.len());
-            let (Some(x0), Some(x1)) = (xs.get(ci), xs.get(c1)) else { continue };
+            let c1 = ci
+                .saturating_add(cell.grid_span.max(1) as usize)
+                .min(t.cols.len());
+            let (Some(x0), Some(x1)) = (xs.get(ci), xs.get(c1)) else {
+                continue;
+            };
             let body = cell_body(rctx, t, ri, ci, cell);
-            let tmp = Shape { text: Some(body.clone()), ..Default::default() };
-            let need = deckcraft_text::fit_height(rctx, &tmp, &body, Rect::new(*x0, 0.0, *x1, h.max(1.0)), fields);
+            let tmp = Shape {
+                text: Some(body.clone()),
+                ..Default::default()
+            };
+            let need = deckcraft_text::fit_height(
+                rctx,
+                &tmp,
+                &body,
+                Rect::new(*x0, 0.0, *x1, h.max(1.0)),
+                fields,
+            );
             if need.is_finite() {
                 h = h.max(need.min(20_000.0));
             }
@@ -290,7 +397,11 @@ pub fn cell_rects(t: &Table, heights: &[f64]) -> Vec<(usize, usize, Rect)> {
             }
             let c1 = (ci + cell.grid_span.max(1) as usize).min(t.cols.len());
             let r1 = (ri + cell.row_span.max(1) as usize).min(t.rows.len());
-            let (Some(x0), Some(x1), Some(y0), Some(y1)) = (xs.get(ci), xs.get(c1), ys.get(ri), ys.get(r1)) else { continue };
+            let (Some(x0), Some(x1), Some(y0), Some(y1)) =
+                (xs.get(ci), xs.get(c1), ys.get(ri), ys.get(r1))
+            else {
+                continue;
+            };
             out.push((ri, ci, Rect::new(*x0, *y0, *x1, *y1)));
         }
     }
@@ -324,7 +435,18 @@ pub fn draw(
     if let Some(all) = rects.iter().map(|(_, _, r)| *r).reduce(|a, b| a.union(b)) {
         for (bg, ph) in style_bg.into_iter().chain(own_bg) {
             ctx.set_transform(m);
-            crate::paint::fill_path(ctx, rctx, &bg, ph, &all.to_path(0.1), all, m, deckcraft_geom::preset::FillMode::Norm, 1.0, rctx.pres);
+            crate::paint::fill_path(
+                ctx,
+                rctx,
+                &bg,
+                ph,
+                &all.to_path(0.1),
+                all,
+                m,
+                deckcraft_geom::preset::FillMode::Norm,
+                1.0,
+                rctx.pres,
+            );
         }
     }
     for (r, c, rect) in &rects {
@@ -332,13 +454,31 @@ pub fn draw(
         let lk = look(rctx, t, *r, *c);
         ctx.set_transform(m);
         match &cell.fill {
-            Some(f) => {
-                crate::paint::fill_path(ctx, rctx, f, None, &rect.to_path(0.1), *rect, m, deckcraft_geom::preset::FillMode::Norm, 1.0, rctx.pres)
-            }
+            Some(f) => crate::paint::fill_path(
+                ctx,
+                rctx,
+                f,
+                None,
+                &rect.to_path(0.1),
+                *rect,
+                m,
+                deckcraft_geom::preset::FillMode::Norm,
+                1.0,
+                rctx.pres,
+            ),
             None => match &lk.paint {
-                Some((f, ph)) => {
-                    crate::paint::fill_path(ctx, rctx, f, *ph, &rect.to_path(0.1), *rect, m, deckcraft_geom::preset::FillMode::Norm, 1.0, rctx.pres)
-                }
+                Some((f, ph)) => crate::paint::fill_path(
+                    ctx,
+                    rctx,
+                    f,
+                    *ph,
+                    &rect.to_path(0.1),
+                    *rect,
+                    m,
+                    deckcraft_geom::preset::FillMode::Norm,
+                    1.0,
+                    rctx.pres,
+                ),
                 None => {
                     if let Some(fc) = lk.fill.filter(|f| f.a > 0) {
                         ctx.set_paint(color(fc, 1.0));
@@ -362,7 +502,9 @@ pub fn draw(
             let line = cell.borders.get(i).and_then(|b| b.as_ref());
             let (col, wd) = match line {
                 Some(l) => match &l.fill {
-                    Some(Fill::Solid { color: cc }) => (rctx.color(cc, None), l.width.unwrap_or(1.0)),
+                    Some(Fill::Solid { color: cc }) => {
+                        (rctx.color(cc, None), l.width.unwrap_or(1.0))
+                    }
                     Some(Fill::None) => continue,
                     _ => continue,
                 },
@@ -387,7 +529,10 @@ pub fn draw(
             continue;
         }
         let body = cell_body(rctx, t, *r, *c, cell);
-        let tmp = Shape { text: Some(body.clone()), ..Default::default() };
+        let tmp = Shape {
+            text: Some(body.clone()),
+            ..Default::default()
+        };
         crate::draw_text(ctx, rctx, &tmp, &body, *rect, m, fields, None);
         let _ = peniko::Fill::NonZero;
     }

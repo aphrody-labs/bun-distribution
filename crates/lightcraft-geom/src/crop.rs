@@ -19,7 +19,10 @@ pub struct CropGeometry {
 
 impl Default for CropGeometry {
     fn default() -> Self {
-        Self { rect: Rect::UNIT, angle: 0.0 }
+        Self {
+            rect: Rect::UNIT,
+            angle: 0.0,
+        }
     }
 }
 
@@ -38,7 +41,8 @@ impl CropGeometry {
     pub fn output_to_source(&self, w: f64, h: f64, out_w: f64, out_h: f64) -> Affine {
         let r = self.rect_px(w, h);
         // output -> crop rect in rotated frame
-        let to_rot = Affine::translate(Vec2::new(r.x0, r.y0)) * Affine::scale(r.width() / out_w, r.height() / out_h);
+        let to_rot = Affine::translate(Vec2::new(r.x0, r.y0))
+            * Affine::scale(r.width() / out_w, r.height() / out_h);
         // rotated frame -> source: inverse rotation about the image centre
         let c = Point::new(w / 2.0, h / 2.0);
         Affine::rotate_about(-self.angle.to_radians(), c) * to_rot
@@ -50,7 +54,10 @@ impl CropGeometry {
         let back = Affine::rotate_about(-self.angle.to_radians(), Point::new(w / 2.0, h / 2.0));
         r.corners().iter().all(|p| {
             let q = back.apply(*p);
-            q.x >= -1e-6 * w && q.y >= -1e-6 * h && q.x <= w * (1.0 + 1e-6) && q.y <= h * (1.0 + 1e-6)
+            q.x >= -1e-6 * w
+                && q.y >= -1e-6 * h
+                && q.x <= w * (1.0 + 1e-6)
+                && q.y <= h * (1.0 + 1e-6)
         })
     }
 
@@ -67,7 +74,10 @@ impl CropGeometry {
         for i in 1..=32 {
             let t = i as f64 / 32.0;
             let nc = r.center().lerp(c, t);
-            let cand = CropGeometry { rect: Rect::from_center(nc, r.width(), r.height()).scale(1.0 / w, 1.0 / h), angle: self.angle };
+            let cand = CropGeometry {
+                rect: Rect::from_center(nc, r.width(), r.height()).scale(1.0 / w, 1.0 / h),
+                angle: self.angle,
+            };
             if cand.is_within_image(w, h) {
                 return cand;
             }
@@ -77,7 +87,10 @@ impl CropGeometry {
         let s = max_inscribed_scale(w, h, self.angle, r.width(), r.height());
         let nr = Rect::from_center(c, r.width() * s, r.height() * s);
         let _ = best;
-        CropGeometry { rect: nr.scale(1.0 / w, 1.0 / h), angle: self.angle }
+        CropGeometry {
+            rect: nr.scale(1.0 / w, 1.0 / h),
+            angle: self.angle,
+        }
     }
 
     /// This crop turned to `angle_deg` on a `w × h` image: kept as it is when it still fits inside
@@ -92,10 +105,18 @@ impl CropGeometry {
         // a degenerate rect has no aspect to keep: fall back to the image's own
         let aspect = Some(r.width() / r.height()).filter(|a| a.is_finite() && *a > 0.0);
         let largest = crop_fit_angle(w, h, self.angle, aspect).rect;
-        let is_largest = [(self.rect.x0, largest.x0), (self.rect.y0, largest.y0), (self.rect.x1, largest.x1), (self.rect.y1, largest.y1)]
-            .iter()
-            .all(|(a, b)| (a - b).abs() < 1e-9);
-        let cand = CropGeometry { rect: self.rect, angle: angle_deg };
+        let is_largest = [
+            (self.rect.x0, largest.x0),
+            (self.rect.y0, largest.y0),
+            (self.rect.x1, largest.x1),
+            (self.rect.y1, largest.y1),
+        ]
+        .iter()
+        .all(|(a, b)| (a - b).abs() < 1e-9);
+        let cand = CropGeometry {
+            rect: self.rect,
+            angle: angle_deg,
+        };
         if !is_largest && cand.is_within_image(w, h) {
             return cand;
         }
@@ -121,8 +142,15 @@ pub fn crop_fit_angle(w: f64, h: f64, angle_deg: f64, aspect: Option<f64>) -> Cr
     let a = aspect.unwrap_or(w / h);
     let base = Rect::new(0.0, 0.0, w, h).fit_aspect(a);
     let s = max_inscribed_scale(w, h, angle_deg, base.width(), base.height()).min(1.0);
-    let r = Rect::from_center(Point::new(w / 2.0, h / 2.0), base.width() * s, base.height() * s);
-    CropGeometry { rect: r.scale(1.0 / w, 1.0 / h), angle: angle_deg }
+    let r = Rect::from_center(
+        Point::new(w / 2.0, h / 2.0),
+        base.width() * s,
+        base.height() * s,
+    );
+    CropGeometry {
+        rect: r.scale(1.0 / w, 1.0 / h),
+        angle: angle_deg,
+    }
 }
 
 #[cfg(test)]
@@ -143,14 +171,24 @@ mod tests {
             let c = crop_fit_angle(600.0, 400.0, ang, None);
             assert!(c.is_within_image(600.0, 400.0), "{ang}");
             // and maximal: 1% bigger does not fit (except angle 0 where it equals the image)
-            let big = CropGeometry { rect: Rect::from_center(c.rect.center(), c.rect.width() * 1.01, c.rect.height() * 1.01), angle: ang };
+            let big = CropGeometry {
+                rect: Rect::from_center(
+                    c.rect.center(),
+                    c.rect.width() * 1.01,
+                    c.rect.height() * 1.01,
+                ),
+                angle: ang,
+            };
             assert!(!big.is_within_image(600.0, 400.0), "{ang}");
         }
     }
 
     #[test]
     fn constrain_pulls_crop_inside() {
-        let c = CropGeometry { rect: Rect::new(0.5, 0.5, 1.4, 1.2), angle: 12.0 };
+        let c = CropGeometry {
+            rect: Rect::new(0.5, 0.5, 1.4, 1.2),
+            angle: 12.0,
+        };
         let k = c.constrained(300.0, 200.0);
         assert!(k.is_within_image(300.0, 200.0));
     }
@@ -158,7 +196,10 @@ mod tests {
     #[test]
     fn with_angle_keeps_a_crop_that_still_fits() {
         // a small centred crop fits at a few degrees: the angle changes, the rect does not
-        let c = CropGeometry { rect: Rect::new(0.3, 0.3, 0.7, 0.7), angle: 0.0 };
+        let c = CropGeometry {
+            rect: Rect::new(0.3, 0.3, 0.7, 0.7),
+            angle: 0.0,
+        };
         for ang in [-3.0, 0.5, 2.0, 5.0] {
             let t = c.with_angle(ang, 600.0, 400.0);
             assert_eq!(t.rect, c.rect, "{ang}°");
@@ -168,12 +209,21 @@ mod tests {
 
     #[test]
     fn with_angle_shrinks_a_crop_that_no_longer_fits_keeping_its_aspect() {
-        for (rect, ang) in [(Rect::UNIT, 15.0), (Rect::new(0.0, 0.1, 0.8, 0.9), -20.0), (Rect::new(0.2, 0.0, 0.8, 1.0), 45.0)] {
+        for (rect, ang) in [
+            (Rect::UNIT, 15.0),
+            (Rect::new(0.0, 0.1, 0.8, 0.9), -20.0),
+            (Rect::new(0.2, 0.0, 0.8, 1.0), 45.0),
+        ] {
             let c = CropGeometry { rect, angle: 0.0 };
             let t = c.with_angle(ang, 600.0, 400.0);
             assert!(t.is_within_image(600.0, 400.0), "{rect:?} at {ang}°");
             let (a, b) = (c.rect_px(600.0, 400.0), t.rect_px(600.0, 400.0));
-            assert!((a.aspect() - b.aspect()).abs() < 1e-9, "aspect kept: {} vs {}", a.aspect(), b.aspect());
+            assert!(
+                (a.aspect() - b.aspect()).abs() < 1e-9,
+                "aspect kept: {} vs {}",
+                a.aspect(),
+                b.aspect()
+            );
             assert_eq!(t.angle, ang);
         }
     }
@@ -188,7 +238,8 @@ mod tests {
                 c = c.with_angle(ang, 600.0, 400.0);
                 let want = crop_fit_angle(600.0, 400.0, ang, aspect);
                 assert!(
-                    (c.rect.width() - want.rect.width()).abs() < 1e-9 && (c.rect.height() - want.rect.height()).abs() < 1e-9,
+                    (c.rect.width() - want.rect.width()).abs() < 1e-9
+                        && (c.rect.height() - want.rect.height()).abs() < 1e-9,
                     "{aspect:?} at {ang}°: {c:?} vs {want:?}"
                 );
             }
@@ -198,15 +249,25 @@ mod tests {
     #[test]
     fn with_angle_survives_a_degenerate_crop() {
         // zero height: no aspect to keep (width / height = ∞)
-        let c = CropGeometry { rect: Rect::new(0.0, 0.5, 1.0, 0.5), angle: 0.0 };
+        let c = CropGeometry {
+            rect: Rect::new(0.0, 0.5, 1.0, 0.5),
+            angle: 0.0,
+        };
         let t = c.with_angle(30.0, 600.0, 400.0);
         assert!(t.is_within_image(600.0, 400.0));
-        assert!([t.rect.x0, t.rect.y0, t.rect.x1, t.rect.y1].iter().all(|v| v.is_finite()));
+        assert!(
+            [t.rect.x0, t.rect.y0, t.rect.x1, t.rect.y1]
+                .iter()
+                .all(|v| v.is_finite())
+        );
     }
 
     #[test]
     fn half_crop_maps_to_centre_quadrant() {
-        let c = CropGeometry { rect: Rect::new(0.25, 0.25, 0.75, 0.75), angle: 0.0 };
+        let c = CropGeometry {
+            rect: Rect::new(0.25, 0.25, 0.75, 0.75),
+            angle: 0.0,
+        };
         let t = c.output_to_source(100.0, 100.0, 50.0, 50.0);
         let p = t.apply(Point::new(0.0, 0.0));
         assert!((p.x - 25.0).abs() < 1e-9 && (p.y - 25.0).abs() < 1e-9);

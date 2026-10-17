@@ -75,21 +75,39 @@ pub fn build(doc: &Document, region: Rect, scale: f64, kind: MapKind, file: usiz
     }
     areas.reverse();
     let (width, height) = vectorcraft_render::region_pixels(region, scale);
-    (!areas.is_empty()).then_some(Map { kind, file, width, height, areas })
+    (!areas.is_empty()).then_some(Map {
+        kind,
+        file,
+        width,
+        height,
+        areas,
+    })
 }
 
 fn collect(n: &Node, region: Rect, scale: f64, out: &mut Vec<Area>) {
     if !n.visible || matches!(n.kind, NodeKind::Layer { template: true, .. }) {
         return;
     }
-    let shape = n.extras().attrs.as_deref().filter(|a| !a.url.is_empty()).map(|a| a.image_map).unwrap_or_default();
-    let px = |x: f64, y: f64| [((x - region.x0) * scale).round() as i64, ((y - region.y0) * scale).round() as i64];
+    let shape = n
+        .extras()
+        .attrs
+        .as_deref()
+        .filter(|a| !a.url.is_empty())
+        .map(|a| a.image_map)
+        .unwrap_or_default();
+    let px = |x: f64, y: f64| {
+        [
+            ((x - region.x0) * scale).round() as i64,
+            ((y - region.y0) * scale).round() as i64,
+        ]
+    };
     if let (Some(href), Some(b)) = (n.url(), n.visual_bounds().filter(|b| b.overlaps(region)))
         && shape != ImageMap::None
     {
         let outline = match (&n.kind, shape) {
             (NodeKind::Path { path, .. }, ImageMap::Polygon) => {
-                polygon(&path.to_bezpath(), 0.5 / scale).map(|pts| pts.into_iter().map(|p| px(p.x, p.y)).collect())
+                polygon(&path.to_bezpath(), 0.5 / scale)
+                    .map(|pts| pts.into_iter().map(|p| px(p.x, p.y)).collect())
             }
             _ => None,
         };
@@ -100,7 +118,11 @@ fn collect(n: &Node, region: Rect, scale: f64, out: &mut Vec<Area>) {
                 Outline::Rect([x0, y0, x1, y1])
             }
         };
-        out.push(Area { shape, href: href.to_string(), alt: n.name.clone().unwrap_or_default() });
+        out.push(Area {
+            shape,
+            href: href.to_string(),
+            alt: n.name.clone().unwrap_or_default(),
+        });
     }
     for c in n.children().into_iter().flatten() {
         collect(c, region, scale, out);
@@ -127,22 +149,29 @@ fn polygon(path: &kurbo::BezPath, tolerance: f64) -> Option<Vec<kurbo::Point>> {
 
 /// Escape text for an HTML attribute (or element text).
 pub(crate) fn attr(s: &str) -> String {
-    s.chars().filter(|c| !c.is_control()).fold(String::with_capacity(s.len()), |mut o, c| {
-        match c {
-            '&' => o.push_str("&amp;"),
-            '"' => o.push_str("&quot;"),
-            '<' => o.push_str("&lt;"),
-            '>' => o.push_str("&gt;"),
-            c => o.push(c),
-        }
-        o
-    })
+    s.chars()
+        .filter(|c| !c.is_control())
+        .fold(String::with_capacity(s.len()), |mut o, c| {
+            match c {
+                '&' => o.push_str("&amp;"),
+                '"' => o.push_str("&quot;"),
+                '<' => o.push_str("&lt;"),
+                '>' => o.push_str("&gt;"),
+                c => o.push(c),
+            }
+            o
+        })
 }
 
 impl Map {
     /// The map file's text for an image named `image` (its file name).
     pub fn text(&self, image: &str) -> String {
-        let join = |pts: &[[i64; 2]], sep: &str| pts.iter().map(|[x, y]| format!("{x},{y}")).collect::<Vec<_>>().join(sep);
+        let join = |pts: &[[i64; 2]], sep: &str| {
+            pts.iter()
+                .map(|[x, y]| format!("{x},{y}"))
+                .collect::<Vec<_>>()
+                .join(sep)
+        };
         let mut out = String::new();
         match self.kind {
             MapKind::Server => {
@@ -150,23 +179,43 @@ impl Map {
                     // NCSA format: no spaces inside a URL.
                     let href = a.href.replace(char::is_whitespace, "%20");
                     let _ = match &a.shape {
-                        Outline::Rect([x0, y0, x1, y1]) => writeln!(out, "rect {href} {x0},{y0} {x1},{y1}"),
+                        Outline::Rect([x0, y0, x1, y1]) => {
+                            writeln!(out, "rect {href} {x0},{y0} {x1},{y1}")
+                        }
                         Outline::Poly(pts) => writeln!(out, "poly {href} {}", join(pts, " ")),
                     };
                 }
             }
             _ => {
-                let name = attr(std::path::Path::new(image).file_stem().map_or("image".into(), |s| s.to_string_lossy()).as_ref());
-                let _ = writeln!(out, "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{name}</title>\n</head>\n<body>");
-                let _ =
-                    writeln!(out, "<img src=\"{}\" width=\"{}\" height=\"{}\" usemap=\"#{name}\" alt=\"\">", attr(image), self.width, self.height);
+                let name = attr(
+                    std::path::Path::new(image)
+                        .file_stem()
+                        .map_or("image".into(), |s| s.to_string_lossy())
+                        .as_ref(),
+                );
+                let _ = writeln!(
+                    out,
+                    "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{name}</title>\n</head>\n<body>"
+                );
+                let _ = writeln!(
+                    out,
+                    "<img src=\"{}\" width=\"{}\" height=\"{}\" usemap=\"#{name}\" alt=\"\">",
+                    attr(image),
+                    self.width,
+                    self.height
+                );
                 let _ = writeln!(out, "<map name=\"{name}\">");
                 for a in &self.areas {
                     let (shape, coords) = match &a.shape {
                         Outline::Rect(r) => ("rect", r.map(|v| v.to_string()).join(",")),
                         Outline::Poly(pts) => ("poly", join(pts, ",")),
                     };
-                    let _ = writeln!(out, "<area shape=\"{shape}\" coords=\"{coords}\" href=\"{}\" alt=\"{}\">", attr(&a.href), attr(&a.alt));
+                    let _ = writeln!(
+                        out,
+                        "<area shape=\"{shape}\" coords=\"{coords}\" href=\"{}\" alt=\"{}\">",
+                        attr(&a.href),
+                        attr(&a.alt)
+                    );
                 }
                 out.push_str("</map>\n</body>\n</html>\n");
             }

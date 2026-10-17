@@ -72,8 +72,16 @@ pub struct DeviceWatch {
 }
 
 impl DeviceWatch {
-    pub fn new(scanner: impl Fn() -> Vec<Device> + Send + Sync + 'static, max_age: Duration) -> Arc<Self> {
-        Arc::new(DeviceWatch { scanner: Box::new(scanner), max_age, state: Mutex::default(), notify: Mutex::new(None) })
+    pub fn new(
+        scanner: impl Fn() -> Vec<Device> + Send + Sync + 'static,
+        max_age: Duration,
+    ) -> Arc<Self> {
+        Arc::new(DeviceWatch {
+            scanner: Box::new(scanner),
+            max_age,
+            state: Mutex::default(),
+            notify: Mutex::new(None),
+        })
     }
 
     fn state(&self) -> std::sync::MutexGuard<'_, WatchState> {
@@ -93,10 +101,12 @@ impl DeviceWatch {
             s.refreshing = true;
             let me = self.clone();
             // the scan runs without the state lock; `get` only ever waits for a list clone
-            let spawned = std::thread::Builder::new().name("lightcraft-devices".into()).spawn(move || {
-                let list = (me.scanner)();
-                me.store(list);
-            });
+            let spawned = std::thread::Builder::new()
+                .name("lightcraft-devices".into())
+                .spawn(move || {
+                    let list = (me.scanner)();
+                    me.store(list);
+                });
             if spawned.is_err() {
                 s.refreshing = false;
             }
@@ -124,7 +134,11 @@ impl DeviceWatch {
             changed
         };
         if changed {
-            let f = self.notify.lock().unwrap_or_else(|e| e.into_inner()).clone();
+            let f = self
+                .notify
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .clone();
             if let Some(f) = f {
                 f();
             }
@@ -181,9 +195,16 @@ pub fn devices_in(parents: &[std::path::PathBuf], extra: Vec<std::path::PathBuf>
     let mut out: Vec<Device> = Vec::new();
     for root in roots {
         let Some(dcim) = dcim_in(&root) else { continue };
-        let name = root.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| root.to_string_lossy().to_string());
+        let name = root
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| root.to_string_lossy().to_string());
         if !out.iter().any(|d| d.root == root.to_string_lossy()) {
-            out.push(Device { name, path: dcim.to_string_lossy().to_string(), root: root.to_string_lossy().to_string() });
+            out.push(Device {
+                name,
+                path: dcim.to_string_lossy().to_string(),
+                root: root.to_string_lossy().to_string(),
+            });
         }
     }
     out
@@ -192,13 +213,25 @@ pub fn devices_in(parents: &[std::path::PathBuf], extra: Vec<std::path::PathBuf>
 /// The volume's `DCIM` folder: the usual spellings are checked directly, so a volume's root is
 /// only listed (other spellings on a case-sensitive volume) off Windows, whose drives aren't.
 pub fn dcim_in(root: &std::path::Path) -> Option<std::path::PathBuf> {
-    if let Some(p) = ["DCIM", "dcim"].iter().map(|n| root.join(n)).find(|p| p.is_dir()) {
+    if let Some(p) = ["DCIM", "dcim"]
+        .iter()
+        .map(|n| root.join(n))
+        .find(|p| p.is_dir())
+    {
         return Some(p);
     }
     if cfg!(windows) {
         return None;
     }
-    std::fs::read_dir(root).ok()?.flatten().map(|e| e.path()).find(|p| p.file_name().is_some_and(|n| n.eq_ignore_ascii_case("DCIM")) && p.is_dir())
+    std::fs::read_dir(root)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| {
+            p.file_name()
+                .is_some_and(|n| n.eq_ignore_ascii_case("DCIM"))
+                && p.is_dir()
+        })
 }
 
 #[cfg(test)]
@@ -220,13 +253,22 @@ mod tests {
         // the DCIM folder itself, in a spelling that opens on that volume
         for x in &d {
             let p = std::path::Path::new(&x.path);
-            assert!(p.is_dir() && p.file_name().is_some_and(|n| n.eq_ignore_ascii_case("DCIM")), "{x:?}");
+            assert!(
+                p.is_dir()
+                    && p.file_name()
+                        .is_some_and(|n| n.eq_ignore_ascii_case("DCIM")),
+                "{x:?}"
+            );
         }
         let _ = std::fs::remove_dir_all(&base);
     }
 
     fn card(name: &str) -> Device {
-        Device { name: name.into(), path: format!("/v/{name}/DCIM"), root: format!("/v/{name}") }
+        Device {
+            name: name.into(),
+            path: format!("/v/{name}/DCIM"),
+            root: format!("/v/{name}"),
+        }
     }
 
     /// Wait (bounded) for `f`.
@@ -266,18 +308,36 @@ mod tests {
         for _ in 0..50 {
             assert!(watch.get().is_empty());
         }
-        assert!(t.elapsed() < SLOW / 2, "get() waited for the scan: {:?}", t.elapsed());
+        assert!(
+            t.elapsed() < SLOW / 2,
+            "get() waited for the scan: {:?}",
+            t.elapsed()
+        );
         assert!(watch.refreshing());
         assert!(until(|| !watch.refreshing()));
-        assert_eq!(runs.load(Ordering::SeqCst), 1, "requests while scanning are coalesced");
+        assert_eq!(
+            runs.load(Ordering::SeqCst),
+            1,
+            "requests while scanning are coalesced"
+        );
         assert_eq!(changes.load(Ordering::SeqCst), 0, "nothing changed");
         // a card is plugged in: the next stale request starts a rescan, still without waiting
         mounted.lock().unwrap().push(card("EOS_DIGITAL"));
         std::thread::sleep(Duration::from_millis(40));
         let t = std::time::Instant::now();
-        assert!(watch.get().is_empty(), "the old list is served while rescanning");
-        assert!(t.elapsed() < SLOW / 2, "warm get() waited: {:?}", t.elapsed());
-        assert!(until(|| changes.load(Ordering::SeqCst) == 1), "a changed scan notifies");
+        assert!(
+            watch.get().is_empty(),
+            "the old list is served while rescanning"
+        );
+        assert!(
+            t.elapsed() < SLOW / 2,
+            "warm get() waited: {:?}",
+            t.elapsed()
+        );
+        assert!(
+            until(|| changes.load(Ordering::SeqCst) == 1),
+            "a changed scan notifies"
+        );
         assert_eq!(watch.get(), [card("EOS_DIGITAL")]);
         // explicit requests scan synchronously
         assert!(until(|| !watch.refreshing()));

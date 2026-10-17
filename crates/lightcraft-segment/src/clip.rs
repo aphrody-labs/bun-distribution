@@ -48,7 +48,9 @@ impl TextEncoder {
         }
         Ok(Self {
             tokens: candle_nn::embedding(49408, HIDDEN, e.pp("token_embedding"))?,
-            positions: e.get((CONTEXT, HIDDEN), "position_embedding.weight")?.unsqueeze(0)?,
+            positions: e
+                .get((CONTEXT, HIDDEN), "position_embedding.weight")?
+                .unsqueeze(0)?,
             layers,
             final_ln: ln(HIDDEN, EPS, vb.pp("final_layer_norm"))?,
             device: vb.device().clone(),

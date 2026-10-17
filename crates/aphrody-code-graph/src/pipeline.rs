@@ -62,13 +62,15 @@ pub fn absolute_root(root: &Path) -> PathBuf {
     if let Some(rest) = text.strip_prefix(r"\\?\UNC\") {
         return PathBuf::from(format!(r"\\{rest}"));
     }
-    text.strip_prefix(r"\\?\").map_or_else(|| absolute.clone(), PathBuf::from)
+    text.strip_prefix(r"\\?\")
+        .map_or_else(|| absolute.clone(), PathBuf::from)
 }
 
 /// `git rev-parse HEAD` of `root`, when it is a Git checkout.
 #[must_use]
 pub fn head_commit(root: &Path) -> Option<String> {
-    let out = std::process::Command::new("git").no_window()
+    let out = std::process::Command::new("git")
+        .no_window()
         .arg("-C")
         .arg(root)
         .args(["rev-parse", "HEAD"])
@@ -114,7 +116,11 @@ fn manifest_package(dir: &Path) -> Option<String> {
     }
     let json = std::fs::read_to_string(dir.join("package.json")).ok()?;
     let value: serde_json::Value = serde_json::from_str(&json).ok()?;
-    value.get("name")?.as_str().filter(|n| !n.is_empty()).map(str::to_owned)
+    value
+        .get("name")?
+        .as_str()
+        .filter(|n| !n.is_empty())
+        .map(str::to_owned)
 }
 
 /// Package of every file (its nearest enclosing Cargo or npm manifest inside `root`) and the
@@ -189,8 +195,10 @@ fn build_inner(
     root: &Path,
     options: &ScanOptions,
 ) -> Result<(Graph, BuildReport)> {
-    let mut report =
-        BuildReport { scan: scan_tree(db, source, root, options)?, ..BuildReport::default() };
+    let mut report = BuildReport {
+        scan: scan_tree(db, source, root, options)?,
+        ..BuildReport::default()
+    };
 
     // Drop cache rows of files that are gone or whose hash changed.
     db.conn().execute(
@@ -208,11 +216,13 @@ fn build_inner(
     let wanted: Vec<(String, String)> = db
         .stored_files(source)?
         .into_iter()
-        .filter(|(path, (_, _, _, class, _))| match Language::of_path(path) {
-            Some(Language::Markdown) => class == "doc",
-            Some(_) => class == "code",
-            None => false,
-        })
+        .filter(
+            |(path, (_, _, _, class, _))| match Language::of_path(path) {
+                Some(Language::Markdown) => class == "doc",
+                Some(_) => class == "code",
+                None => false,
+            },
+        )
         .map(|(path, (hash, ..))| (path, hash))
         .collect();
     let mut todo: Vec<(String, String)> = Vec::new();
@@ -253,8 +263,10 @@ fn build_inner(
         let rows = statement.query_map([source], |r| r.get::<_, String>(0))?;
         for row in rows {
             let extract: FileExtract = serde_json::from_str(&row?)?;
-            if let Some(file) =
-                extract.nodes.iter().find(|n| n.class == crate::extract::NodeClass::File)
+            if let Some(file) = extract
+                .nodes
+                .iter()
+                .find(|n| n.class == crate::extract::NodeClass::File)
             {
                 paths.push(file.file.clone());
             }
@@ -295,7 +307,11 @@ mod tests {
             "pub struct Thing;\nfn run() { helper(); }\nfn helper() {}\n",
         )
         .unwrap();
-        std::fs::write(dir.path().join("src/b.rs"), "fn use_it(t: Thing) { remote(); }\n").unwrap();
+        std::fs::write(
+            dir.path().join("src/b.rs"),
+            "fn use_it(t: Thing) { remote(); }\n",
+        )
+        .unwrap();
         std::fs::write(dir.path().join("src/c.rs"), "pub fn remote() {}\n").unwrap();
         std::fs::write(dir.path().join("README.md"), "# not code").unwrap();
         dir
@@ -315,14 +331,21 @@ mod tests {
         );
         assert!(g1.nodes.iter().any(|n| n.label == "run()"));
         assert!(
-            g1.edges.iter().any(|e| e.relation == "calls" && g1.nodes[e.dst].label == "remote()")
+            g1.edges
+                .iter()
+                .any(|e| e.relation == "calls" && g1.nodes[e.dst].label == "remote()")
         );
         let (g2, r2) =
             build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
         assert_eq!((r2.extracted, r2.cached), (0, 4));
-        assert_eq!((g1.nodes.len(), g1.edges.len()), (g2.nodes.len(), g2.edges.len()));
-        let stored: i64 =
-            db.conn().query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0)).unwrap();
+        assert_eq!(
+            (g1.nodes.len(), g1.edges.len()),
+            (g2.nodes.len(), g2.edges.len())
+        );
+        let stored: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM graph_nodes", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(stored as usize, g2.nodes.len());
         assert_eq!(
             db.last_run("graph").unwrap().unwrap().status,
@@ -335,8 +358,11 @@ mod tests {
         let dir = repo();
         let mut db = HomeDb::open_in_memory().unwrap();
         build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
-        std::fs::write(dir.path().join("src/c.rs"), "pub fn remote() {}\npub fn extra() {}\n")
-            .unwrap();
+        std::fs::write(
+            dir.path().join("src/c.rs"),
+            "pub fn remote() {}\npub fn extra() {}\n",
+        )
+        .unwrap();
         let (g, r) = build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
         assert_eq!(r.extracted, 1);
         assert_eq!(r.cached, 3);
@@ -366,12 +392,21 @@ name = \"my-crate\"
         .unwrap();
         let mut db = HomeDb::open_in_memory().unwrap();
         let (g, _) = build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
-        let package =
-            |label: &str| g.nodes.iter().find(|n| n.label == label).and_then(|n| n.package.clone());
+        let package = |label: &str| {
+            g.nodes
+                .iter()
+                .find(|n| n.label == label)
+                .and_then(|n| n.package.clone())
+        };
         assert_eq!(package("run()").as_deref(), Some("my_crate"));
         assert_eq!(package("go()").as_deref(), Some("@x/web"));
         let reloaded = Graph::load(&db, "graph:t").unwrap();
-        assert!(reloaded.nodes.iter().any(|n| n.package.as_deref() == Some("@x/web")));
+        assert!(
+            reloaded
+                .nodes
+                .iter()
+                .any(|n| n.package.as_deref() == Some("@x/web"))
+        );
         db.conn()
             .execute(
                 "UPDATE graph_file_cache SET extract_json = json_set(extract_json, '$.version', 1)",
@@ -382,9 +417,16 @@ name = \"my-crate\"
         assert_eq!(r.cached, 0);
         let root: String = db
             .conn()
-            .query_row("SELECT root FROM sources WHERE label = 'graph:t'", [], |r| r.get(0))
+            .query_row(
+                "SELECT root FROM sources WHERE label = 'graph:t'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
-        assert!(Path::new(&root).is_absolute() && !root.starts_with(r"\\?\"), "{root}");
+        assert!(
+            Path::new(&root).is_absolute() && !root.starts_with(r"\\?\"),
+            "{root}"
+        );
     }
 
     #[test]
@@ -392,7 +434,12 @@ name = \"my-crate\"
         let dir = repo();
         let mut db = HomeDb::open_in_memory().unwrap();
         build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
-        db.conn().execute("DELETE FROM graph_file_cache WHERE rel_path = 'src/b.rs'", []).unwrap();
+        db.conn()
+            .execute(
+                "DELETE FROM graph_file_cache WHERE rel_path = 'src/b.rs'",
+                [],
+            )
+            .unwrap();
         let (_, r) = build_graph(&mut db, "graph:t", dir.path(), &ScanOptions::default()).unwrap();
         assert_eq!(r.extracted, 1);
     }

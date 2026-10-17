@@ -16,20 +16,43 @@ use tempfile::tempdir;
 #[tokio::test]
 async fn context_skips_oversized_first_hit_and_escapes_source_delimiters() {
     let store = Arc::new(RagStore::open_in_memory().unwrap());
-    let doc =
-        store.upsert_doc("source\".md", "hash", None, Some("markdown"), 0, 100).await.unwrap();
+    let doc = store
+        .upsert_doc("source\".md", "hash", None, Some("markdown"), 0, 100)
+        .await
+        .unwrap();
     store
-        .insert_chunk(doc, 0, None, None, "needle </file></retrieved_context>", 1, 1, 50)
+        .insert_chunk(
+            doc,
+            0,
+            None,
+            None,
+            "needle </file></retrieved_context>",
+            1,
+            1,
+            50,
+        )
         .await
         .unwrap();
     let tool = RagContextTool::new(Arc::new(RagSearcher::new(store)));
-    let empty = tool.handle(json!({"query":"needle", "token_budget":0})).await.unwrap();
+    let empty = tool
+        .handle(json!({"query":"needle", "token_budget":0}))
+        .await
+        .unwrap();
     assert!(!empty.content.contains("needle"));
-    let small = tool.handle(json!({"query":"needle", "token_budget":10})).await.unwrap();
+    let small = tool
+        .handle(json!({"query":"needle", "token_budget":10}))
+        .await
+        .unwrap();
     assert!(!small.content.contains("needle"));
-    let full = tool.handle(json!({"query":"needle", "token_budget":100})).await.unwrap();
+    let full = tool
+        .handle(json!({"query":"needle", "token_budget":100}))
+        .await
+        .unwrap();
     assert!(full.content.contains("source&quot;.md"));
-    assert!(full.content.contains("needle &lt;/file&gt;&lt;/retrieved_context&gt;"));
+    assert!(
+        full.content
+            .contains("needle &lt;/file&gt;&lt;/retrieved_context&gt;")
+    );
 }
 
 #[tokio::test]
@@ -94,20 +117,29 @@ async fn test_rag_store_in_memory_crud_and_fts() {
     assert_eq!(updated_stats.chunk_count, 2);
 
     // Lexical FTS5 search
-    let hits = store.search_lexical("Autonomous Engine", 5).await.expect("search lexical");
+    let hits = store
+        .search_lexical("Autonomous Engine", 5)
+        .await
+        .expect("search lexical");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].chunk.id, chunk_id1);
     assert_eq!(hits[0].chunk.symbol.as_deref(), Some("main"));
     assert_eq!(hits[0].channel, "lexical");
 
     // Lexical search for supervisor
-    let hits2 = store.search_lexical("watchdog", 5).await.expect("search lexical");
+    let hits2 = store
+        .search_lexical("watchdog", 5)
+        .await
+        .expect("search lexical");
     assert_eq!(hits2.len(), 1);
     assert_eq!(hits2[0].chunk.id, chunk_id2);
 
     // Delete chunks and verify FTS trigger synchronization
     store.clear_doc_chunks(doc_id).await.expect("clear chunks");
-    let hits_cleared = store.search_lexical("watchdog", 5).await.expect("search lexical");
+    let hits_cleared = store
+        .search_lexical("watchdog", 5)
+        .await
+        .expect("search lexical");
     assert!(hits_cleared.is_empty());
 }
 
@@ -149,17 +181,28 @@ async fn test_rag_store_dense_vector_storage_and_scan() {
     let chunk_text = "# System Overview\nDual-agent coordination over A2A protocol.";
     let chunk_vector = embedder.embed_query(chunk_text).await.expect("embed chunk");
 
-    store.insert_vector(chunk_id, embedder.model_id(), &chunk_vector).await.expect("insert vector");
+    store
+        .insert_vector(chunk_id, embedder.model_id(), &chunk_vector)
+        .await
+        .expect("insert vector");
 
     let stats = store.stats().await.expect("stats");
     assert_eq!(stats.vector_count, 1);
     assert_eq!(stats.embedding_model.as_deref(), Some(embedder.model_id()));
-    let mismatch = store.insert_vector(chunk_id, "other-space", &chunk_vector).await.unwrap_err();
-    assert!(matches!(mismatch, aphrody_rag::RagError::ModelMismatch { .. }));
+    let mismatch = store
+        .insert_vector(chunk_id, "other-space", &chunk_vector)
+        .await
+        .unwrap_err();
+    assert!(matches!(
+        mismatch,
+        aphrody_rag::RagError::ModelMismatch { .. }
+    ));
 
     // Scan vectors with exact chunk vector -> similarity should be ~1.0
-    let exact_results =
-        store.search_vector(&chunk_vector, embedder.model_id(), 5).await.expect("search vector");
+    let exact_results = store
+        .search_vector(&chunk_vector, embedder.model_id(), 5)
+        .await
+        .expect("search vector");
 
     assert_eq!(exact_results.len(), 1);
     assert_eq!(exact_results[0].chunk.id, chunk_id);
@@ -167,8 +210,10 @@ async fn test_rag_store_dense_vector_storage_and_scan() {
     assert!((exact_results[0].score - 1.0).abs() < 1e-4);
 
     // Scan with query vector -> similarity is within [-1.0, 1.0]
-    let query_results =
-        store.search_vector(&query_vector, embedder.model_id(), 5).await.expect("search vector");
+    let query_results = store
+        .search_vector(&query_vector, embedder.model_id(), 5)
+        .await
+        .expect("search vector");
 
     assert_eq!(query_results.len(), 1);
     assert!(query_results[0].score >= -1.0 && query_results[0].score <= 1.0);
@@ -179,7 +224,14 @@ async fn test_rag_hybrid_searcher_and_honest_degrade() {
     let store = Arc::new(RagStore::open_in_memory().expect("open store"));
 
     let doc_id = store
-        .upsert_doc("crates/demo/test.rs", "hash_demo", None, Some("rust"), 1710000000, 500)
+        .upsert_doc(
+            "crates/demo/test.rs",
+            "hash_demo",
+            None,
+            Some("rust"),
+            1710000000,
+            500,
+        )
         .await
         .expect("upsert doc");
 
@@ -199,9 +251,16 @@ async fn test_rag_hybrid_searcher_and_honest_degrade() {
 
     // Case 1: Searcher WITHOUT embedder requested in Hybrid mode -> Honest degrade to Lexical
     let searcher_no_emb = RagSearcher::new(store.clone());
-    let opts = SearchOptions { limit: 5, mode: SearchMode::Hybrid, ..Default::default() };
+    let opts = SearchOptions {
+        limit: 5,
+        mode: SearchMode::Hybrid,
+        ..Default::default()
+    };
 
-    let res1 = searcher_no_emb.search("calculate_fib", &opts).await.expect("search");
+    let res1 = searcher_no_emb
+        .search("calculate_fib", &opts)
+        .await
+        .expect("search");
     assert_eq!(res1.mode_served, SearchMode::Lexical);
     assert!(res1.fallback_reason.is_some());
     assert_eq!(res1.hits.len(), 1);
@@ -215,13 +274,20 @@ async fn test_rag_hybrid_searcher_and_honest_degrade() {
         .await
         .expect("embed");
 
-    store.insert_vector(c1, embedder.model_id(), &emb_vec).await.expect("insert vector");
+    store
+        .insert_vector(c1, embedder.model_id(), &emb_vec)
+        .await
+        .expect("insert vector");
 
     let reranker = Arc::new(NoopReranker::new());
-    let searcher_full =
-        RagSearcher::new(store.clone()).with_embedder(embedder).with_reranker(reranker);
+    let searcher_full = RagSearcher::new(store.clone())
+        .with_embedder(embedder)
+        .with_reranker(reranker);
 
-    let res2 = searcher_full.search("fibonacci sequence", &opts).await.expect("hybrid search");
+    let res2 = searcher_full
+        .search("fibonacci sequence", &opts)
+        .await
+        .expect("hybrid search");
 
     assert_eq!(res2.mode_served, SearchMode::Hybrid);
     assert!(res2.fallback_reason.is_none());
@@ -240,7 +306,9 @@ impl Reranker for FailingReranker {
     }
 
     async fn rerank(&self, _query: &str, _candidates: &mut [ScoredChunk]) -> Result<()> {
-        Err(RagError::RerankFailed("deliberate test failure".to_string()))
+        Err(RagError::RerankFailed(
+            "deliberate test failure".to_string(),
+        ))
     }
 }
 
@@ -257,9 +325,15 @@ async fn test_reranker_failure_is_reported_as_an_honest_fallback() {
         .expect("insert chunk");
 
     let searcher = RagSearcher::new(store).with_reranker(Arc::new(FailingReranker));
-    let options =
-        SearchOptions { mode: SearchMode::Lexical, rerank: true, ..SearchOptions::default() };
-    let result = searcher.search("reranking fallback", &options).await.expect("search");
+    let options = SearchOptions {
+        mode: SearchMode::Lexical,
+        rerank: true,
+        ..SearchOptions::default()
+    };
+    let result = searcher
+        .search("reranking fallback", &options)
+        .await
+        .expect("search");
 
     assert_eq!(result.mode_served, SearchMode::Lexical);
     assert_eq!(result.hits[0].channel, "lexical");
@@ -277,9 +351,12 @@ async fn test_rag_indexer_incremental_walk() {
     tokio::fs::write(&file1, "pub fn alpha() {\n    // alpha code\n}\n")
         .await
         .expect("write file1");
-    tokio::fs::write(&file2, "# Title Beta\n\nSection details about beta implementation.\n")
-        .await
-        .expect("write file2");
+    tokio::fs::write(
+        &file2,
+        "# Title Beta\n\nSection details about beta implementation.\n",
+    )
+    .await
+    .expect("write file2");
 
     let store = Arc::new(RagStore::open_in_memory().expect("open store"));
     let embedder = Arc::new(StubEmbedder::new());
@@ -288,7 +365,10 @@ async fn test_rag_indexer_incremental_walk() {
     let opts = IndexOptions::default();
 
     // 1st run: all files indexed
-    let stats1 = indexer.index_directory(tmp.path(), &opts).await.expect("index 1");
+    let stats1 = indexer
+        .index_directory(tmp.path(), &opts)
+        .await
+        .expect("index 1");
 
     assert_eq!(stats1.scanned_files, 2);
     assert_eq!(stats1.indexed_files, 2);
@@ -297,18 +377,27 @@ async fn test_rag_indexer_incremental_walk() {
     assert!(stats1.total_vectors >= 2);
 
     // 2nd run: unchanged hashes -> all files skipped
-    let stats2 = indexer.index_directory(tmp.path(), &opts).await.expect("index 2");
+    let stats2 = indexer
+        .index_directory(tmp.path(), &opts)
+        .await
+        .expect("index 2");
 
     assert_eq!(stats2.scanned_files, 2);
     assert_eq!(stats2.indexed_files, 0);
     assert_eq!(stats2.skipped_files, 2);
 
     // 3rd run: modify file1 -> only file1 re-indexed
-    tokio::fs::write(&file1, "pub fn alpha_updated() {\n    // updated alpha\n}\n")
-        .await
-        .expect("modify file1");
+    tokio::fs::write(
+        &file1,
+        "pub fn alpha_updated() {\n    // updated alpha\n}\n",
+    )
+    .await
+    .expect("modify file1");
 
-    let stats3 = indexer.index_directory(tmp.path(), &opts).await.expect("index 3");
+    let stats3 = indexer
+        .index_directory(tmp.path(), &opts)
+        .await
+        .expect("index 3");
 
     assert_eq!(stats3.indexed_files, 1);
     assert_eq!(stats3.skipped_files, 1);
@@ -320,7 +409,14 @@ async fn test_rag_agent_tools() {
     let embedder = Arc::new(StubEmbedder::new());
 
     let doc_id = store
-        .upsert_doc("crates/cli/src/exec.rs", "hash_exec", None, Some("rust"), 1710000000, 1000)
+        .upsert_doc(
+            "crates/cli/src/exec.rs",
+            "hash_exec",
+            None,
+            Some("rust"),
+            1710000000,
+            1000,
+        )
         .await
         .expect("upsert doc");
 
@@ -339,8 +435,14 @@ async fn test_rag_agent_tools() {
         .await
         .expect("insert chunk");
 
-    let emb = embedder.embed_query("pub async fn run_exec_subcommand").await.expect("embed");
-    store.insert_vector(chunk_id, embedder.model_id(), &emb).await.expect("insert vector");
+    let emb = embedder
+        .embed_query("pub async fn run_exec_subcommand")
+        .await
+        .expect("embed");
+    store
+        .insert_vector(chunk_id, embedder.model_id(), &emb)
+        .await
+        .expect("insert vector");
 
     let searcher = Arc::new(RagSearcher::new(store).with_embedder(embedder));
 
@@ -395,7 +497,13 @@ async fn test_index_document_ingests_scraped_content_under_a_url_key() {
     let opts = IndexOptions::default();
 
     let first = indexer
-        .index_document(url, markdown, markdown.len() as i64, 1_700_000_000_000, &opts)
+        .index_document(
+            url,
+            markdown,
+            markdown.len() as i64,
+            1_700_000_000_000,
+            &opts,
+        )
         .await
         .expect("first ingest")
         .expect("first ingest indexes");
@@ -403,20 +511,42 @@ async fn test_index_document_ingests_scraped_content_under_a_url_key() {
 
     // The URL is the document key, so identical content is a no-op.
     let repeat = indexer
-        .index_document(url, markdown, markdown.len() as i64, 1_700_000_000_001, &opts)
+        .index_document(
+            url,
+            markdown,
+            markdown.len() as i64,
+            1_700_000_000_001,
+            &opts,
+        )
         .await
         .expect("repeat ingest");
     assert!(repeat.is_none(), "unchanged content must not be re-indexed");
 
-    let forced = IndexOptions { force_reindex: true, ..IndexOptions::default() };
+    let forced = IndexOptions {
+        force_reindex: true,
+        ..IndexOptions::default()
+    };
     let again = indexer
-        .index_document(url, markdown, markdown.len() as i64, 1_700_000_000_002, &forced)
+        .index_document(
+            url,
+            markdown,
+            markdown.len() as i64,
+            1_700_000_000_002,
+            &forced,
+        )
         .await
         .expect("forced ingest");
-    assert!(again.is_some(), "force_reindex must re-index identical content");
+    assert!(
+        again.is_some(),
+        "force_reindex must re-index identical content"
+    );
 
     // Re-ingesting replaces chunks rather than accumulating them.
-    let doc = store.get_doc_by_path(url).await.expect("lookup").expect("document present");
+    let doc = store
+        .get_doc_by_path(url)
+        .await
+        .expect("lookup")
+        .expect("document present");
     assert_eq!(doc.path, url);
 }
 
@@ -448,12 +578,21 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
 
     // 3. Initialize RAG store with 512-dim stub representing Qwen3-Embedding-0.6B truncated MRL
     let store = Arc::new(RagStore::open_in_memory().expect("open store"));
-    let embedder =
-        Arc::new(StubEmbedder::with_model_and_dim("qwen3-embedding-0.6b", MATRYOSHKA_512_DIM));
+    let embedder = Arc::new(StubEmbedder::with_model_and_dim(
+        "qwen3-embedding-0.6b",
+        MATRYOSHKA_512_DIM,
+    ));
 
     // Index 6 documents
     let doc_id = store
-        .upsert_doc("docs/architecture.md", "hash_qwen3", Some("Arch"), Some("markdown"), 0, 1000)
+        .upsert_doc(
+            "docs/architecture.md",
+            "hash_qwen3",
+            Some("Arch"),
+            Some("markdown"),
+            0,
+            1000,
+        )
         .await
         .expect("upsert doc");
 
@@ -474,9 +613,16 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
             .expect("insert chunk");
         chunk_ids.push(cid);
 
-        let vec = embedder.embed_batch(&[text.to_string()]).await.expect("embed batch")[0].clone();
+        let vec = embedder
+            .embed_batch(&[text.to_string()])
+            .await
+            .expect("embed batch")[0]
+            .clone();
         assert_eq!(vec.len(), 512);
-        store.insert_vector(cid, embedder.model_id(), &vec).await.expect("insert vector");
+        store
+            .insert_vector(cid, embedder.model_id(), &vec)
+            .await
+            .expect("insert vector");
     }
 
     // Custom cross-encoder Mock scoring mimicking Qwen3-Reranker-0.6B-q8
@@ -510,8 +656,9 @@ async fn test_qwen3_hybrid_rag_with_mrl_and_reranker() {
     }
 
     let reranker = Arc::new(MockQwen3Reranker);
-    let searcher =
-        RagSearcher::new(store.clone()).with_embedder(embedder.clone()).with_reranker(reranker);
+    let searcher = RagSearcher::new(store.clone())
+        .with_embedder(embedder.clone())
+        .with_reranker(reranker);
 
     // Search query asking for Qwen3 reranker and Matryoshka
     let opts = SearchOptions {
@@ -548,34 +695,77 @@ async fn index_document_failure_preserves_previous_corpus_and_retries() {
     let opts = IndexOptions::default();
     let original = "# Original\n\nneedle original corpus.";
     let replacement = "# Replacement\n\nreplacement corpus.";
-    indexer.index_document("source.md", original, 42, 1, &opts).await.unwrap();
+    indexer
+        .index_document("source.md", original, 42, 1, &opts)
+        .await
+        .unwrap();
     let before = store.get_doc_by_path("source.md").await.unwrap().unwrap();
     let before_stats = store.stats().await.unwrap();
     assert!(before_stats.vector_count > 0);
     let conn = rusqlite::Connection::open(&db).unwrap();
     conn.execute_batch("CREATE TRIGGER reject_replacement BEFORE INSERT ON chunks BEGIN SELECT RAISE(ABORT, 'injected failure'); END;").unwrap();
 
-    assert!(indexer.index_document("source.md", replacement, 99, 2, &opts).await.is_err());
+    assert!(
+        indexer
+            .index_document("source.md", replacement, 99, 2, &opts)
+            .await
+            .is_err()
+    );
     let after = store.get_doc_by_path("source.md").await.unwrap().unwrap();
     assert_eq!(after.id, before.id);
     assert_eq!(after.hash, before.hash);
     assert_eq!(
-        (after.title, after.language, after.size_bytes, after.mtime_ms),
-        (before.title, before.language, before.size_bytes, before.mtime_ms)
+        (
+            after.title,
+            after.language,
+            after.size_bytes,
+            after.mtime_ms
+        ),
+        (
+            before.title,
+            before.language,
+            before.size_bytes,
+            before.mtime_ms
+        )
     );
     let after_stats = store.stats().await.unwrap();
     assert_eq!(after_stats.chunk_count, before_stats.chunk_count);
     assert_eq!(after_stats.vector_count, before_stats.vector_count);
     assert!(!store.search_lexical("needle", 10).await.unwrap().is_empty());
-    assert!(store.search_lexical("replacement", 10).await.unwrap().is_empty());
-
-    conn.execute_batch("DROP TRIGGER reject_replacement;").unwrap();
     assert!(
-        indexer.index_document("source.md", replacement, 99, 2, &opts).await.unwrap().is_some()
+        store
+            .search_lexical("replacement", 10)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+
+    conn.execute_batch("DROP TRIGGER reject_replacement;")
+        .unwrap();
+    assert!(
+        indexer
+            .index_document("source.md", replacement, 99, 2, &opts)
+            .await
+            .unwrap()
+            .is_some()
     );
     assert!(store.search_lexical("needle", 10).await.unwrap().is_empty());
-    assert!(!store.search_lexical("replacement", 10).await.unwrap().is_empty());
-    assert_eq!(store.get_doc_by_path("source.md").await.unwrap().unwrap().mtime_ms, 2);
+    assert!(
+        !store
+            .search_lexical("replacement", 10)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        store
+            .get_doc_by_path("source.md")
+            .await
+            .unwrap()
+            .unwrap()
+            .mtime_ms,
+        2
+    );
 }
 
 #[tokio::test]
@@ -584,23 +774,66 @@ async fn index_document_empty_replacement_clears_chunks_and_vectors() {
     let indexer = RagIndexer::new(store.clone())
         .with_embedder(Arc::new(StubEmbedder::with_model_and_dim("stub-8", 8)));
     let opts = IndexOptions::default();
-    indexer.index_document("source.md", "original needle", 15, 1, &opts).await.unwrap();
+    indexer
+        .index_document("source.md", "original needle", 15, 1, &opts)
+        .await
+        .unwrap();
     assert!(store.stats().await.unwrap().vector_count > 0);
-    assert_eq!(indexer.index_document("source.md", "", 0, 2, &opts).await.unwrap(), Some((0, 0)));
+    assert_eq!(
+        indexer
+            .index_document("source.md", "", 0, 2, &opts)
+            .await
+            .unwrap(),
+        Some((0, 0))
+    );
     let stats = store.stats().await.unwrap();
-    assert_eq!((stats.doc_count, stats.chunk_count, stats.vector_count), (1, 0, 0));
+    assert_eq!(
+        (stats.doc_count, stats.chunk_count, stats.vector_count),
+        (1, 0, 0)
+    );
     assert!(store.search_lexical("needle", 10).await.unwrap().is_empty());
-    assert_eq!(indexer.index_document("source.md", "", 0, 3, &opts).await.unwrap(), None);
+    assert_eq!(
+        indexer
+            .index_document("source.md", "", 0, 3, &opts)
+            .await
+            .unwrap(),
+        None
+    );
 }
 
 #[tokio::test]
 async fn upsert_doc_returns_its_own_id_after_other_inserts() {
     let store = RagStore::open_in_memory().unwrap();
-    let first = store.upsert_doc("first.md", "old", None, None, 1, 10).await.unwrap();
-    let second = store.upsert_doc("second.md", "second", None, None, 1, 10).await.unwrap();
+    let first = store
+        .upsert_doc("first.md", "old", None, None, 1, 10)
+        .await
+        .unwrap();
+    let second = store
+        .upsert_doc("second.md", "second", None, None, 1, 10)
+        .await
+        .unwrap();
     assert_ne!(first, second);
-    let updated = store.upsert_doc("first.md", "new", None, None, 2, 20).await.unwrap();
+    let updated = store
+        .upsert_doc("first.md", "new", None, None, 2, 20)
+        .await
+        .unwrap();
     assert_eq!(updated, first);
-    assert_eq!(store.get_doc_by_path("first.md").await.unwrap().unwrap().hash, "new");
-    assert_eq!(store.get_doc_by_path("second.md").await.unwrap().unwrap().id, second);
+    assert_eq!(
+        store
+            .get_doc_by_path("first.md")
+            .await
+            .unwrap()
+            .unwrap()
+            .hash,
+        "new"
+    );
+    assert_eq!(
+        store
+            .get_doc_by_path("second.md")
+            .await
+            .unwrap()
+            .unwrap()
+            .id,
+        second
+    );
 }

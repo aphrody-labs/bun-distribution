@@ -4,12 +4,12 @@ use crate::{
     kind::{ReflectKind, ReflectMut, ReflectOwned, ReflectRef},
     list::{List, ListInfo, ListIter},
     prelude::*,
-    reflect::{impl_full_reflect, ApplyError},
+    reflect::{ApplyError, impl_full_reflect},
     type_registry::{
         GetTypeRegistration, ReflectDeserialize, ReflectFromPtr, ReflectSerialize,
         TypeRegistration, TypeRegistry,
     },
-    utility::{reflect_hasher, GenericTypeInfoCell, NonGenericTypeInfoCell},
+    utility::{GenericTypeInfoCell, NonGenericTypeInfoCell, reflect_hasher},
 };
 use alloc::borrow::Cow;
 use alloc::vec::Vec;

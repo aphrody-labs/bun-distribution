@@ -58,7 +58,11 @@ impl WLayer {
     /// [`WLayer::group_end`]).
     pub fn group(name: &str, open: bool, blend: [u8; 4]) -> WLayer {
         let mut l = WLayer::pixels(name, Rect::default(), vec![]);
-        l.section = if open { Section::OpenFolder } else { Section::ClosedFolder };
+        l.section = if open {
+            Section::OpenFolder
+        } else {
+            Section::ClosedFolder
+        };
         l.blend = blend;
         l
     }
@@ -110,7 +114,16 @@ pub struct WDoc {
 
 impl WDoc {
     pub fn new(width: u32, height: u32) -> WDoc {
-        WDoc { width, height, depth: 8, mode: ColorMode::Rgb, rle: true, layers: vec![], composite: None, linked: vec![] }
+        WDoc {
+            width,
+            height,
+            depth: 8,
+            mode: ColorMode::Rgb,
+            rle: true,
+            layers: vec![],
+            composite: None,
+            linked: vec![],
+        }
     }
 }
 
@@ -127,7 +140,11 @@ fn mode_channels(mode: ColorMode, p: [f32; 4]) -> Vec<f32> {
         ColorMode::Cmyk => {
             // Stored values are inverted ink amounts: k = max, c = r / max (reader: r = c * k).
             let m = p[0].max(p[1]).max(p[2]);
-            if m <= 0.0 { vec![0.0, 0.0, 0.0, 0.0] } else { vec![p[0] / m, p[1] / m, p[2] / m, m] }
+            if m <= 0.0 {
+                vec![0.0, 0.0, 0.0, 0.0]
+            } else {
+                vec![p[0] / m, p[1] / m, p[2] / m, m]
+            }
         }
         ColorMode::Grayscale => vec![p[0]],
         _ => vec![p[0], p[1], p[2]],
@@ -169,7 +186,11 @@ fn channel_data(v: &[f32], w: usize, h: usize, depth: u16, rle: bool) -> Vec<u8>
 }
 
 fn pascal4(out: &mut Vec<u8>, s: &str) {
-    let b: Vec<u8> = s.bytes().map(|c| if c < 0x80 { c } else { b'?' }).take(255).collect();
+    let b: Vec<u8> = s
+        .bytes()
+        .map(|c| if c < 0x80 { c } else { b'?' })
+        .take(255)
+        .collect();
     out.push(b.len() as u8);
     out.extend_from_slice(&b);
     let total = 1 + b.len();
@@ -196,13 +217,27 @@ fn layer_info(doc: &WDoc) -> Vec<u8> {
         let alpha: Vec<f32> = l.pixels.iter().take(n).map(|p| p[3]).collect();
         chans.push((-1, channel_data(&alpha, w, h, doc.depth, doc.rle)));
         let cc = doc.mode.color_channels();
-        let planes: Vec<Vec<f32>> = l.pixels.iter().take(n).map(|p| mode_channels(doc.mode, *p)).collect();
+        let planes: Vec<Vec<f32>> = l
+            .pixels
+            .iter()
+            .take(n)
+            .map(|p| mode_channels(doc.mode, *p))
+            .collect();
         for c in 0..cc {
             let plane: Vec<f32> = planes.iter().map(|v| v[c]).collect();
             chans.push((c as i16, channel_data(&plane, w, h, doc.depth, doc.rle)));
         }
         if let Some(m) = &l.mask {
-            chans.push((-2, channel_data(&m.data, m.rect.width() as usize, m.rect.height() as usize, doc.depth, doc.rle)));
+            chans.push((
+                -2,
+                channel_data(
+                    &m.data,
+                    m.rect.width() as usize,
+                    m.rect.height() as usize,
+                    doc.depth,
+                    doc.rle,
+                ),
+            ));
         }
         // record
         for v in [l.rect.top, l.rect.left, l.rect.bottom, l.rect.right] {
@@ -289,10 +324,17 @@ fn unicode_plain(s: &str) -> Vec<u8> {
 fn flatten(doc: &WDoc) -> Vec<[f32; 4]> {
     let (w, h) = (doc.width as i32, doc.height as i32);
     let mut acc = vec![[0.0f32; 4]; (w * h) as usize];
-    for l in doc.layers.iter().filter(|l| !l.hidden && l.section == Section::Layer) {
+    for l in doc
+        .layers
+        .iter()
+        .filter(|l| !l.hidden && l.section == Section::Layer)
+    {
         let lw = l.rect.width() as i32;
         for (i, p) in l.pixels.iter().enumerate() {
-            let (x, y) = (l.rect.left + i as i32 % lw.max(1), l.rect.top + i as i32 / lw.max(1));
+            let (x, y) = (
+                l.rect.left + i as i32 % lw.max(1),
+                l.rect.top + i as i32 / lw.max(1),
+            );
             if x < 0 || y < 0 || x >= w || y >= h {
                 continue;
             }
@@ -300,7 +342,11 @@ fn flatten(doc: &WDoc) -> Vec<[f32; 4]> {
             let d = &mut acc[(y * w + x) as usize];
             let oa = a + d[3] * (1.0 - a);
             for c in 0..3 {
-                d[c] = if oa > 0.0 { (p[c] * a + d[c] * d[3] * (1.0 - a)) / oa } else { 0.0 };
+                d[c] = if oa > 0.0 {
+                    (p[c] * a + d[c] * d[3] * (1.0 - a)) / oa
+                } else {
+                    0.0
+                };
             }
             d[3] = oa;
         }
@@ -356,12 +402,21 @@ pub fn write(doc: &WDoc) -> Vec<u8> {
     let comp = doc.composite.clone().unwrap_or_else(|| flatten(doc));
     let (w, h) = (doc.width as usize, doc.height as usize);
     let planes: Vec<Vec<f32>> = comp.iter().map(|p| mode_channels(doc.mode, *p)).collect();
-    let mut chans: Vec<Vec<f32>> = (0..cc).map(|c| planes.iter().map(|v| v[c]).collect()).collect();
+    let mut chans: Vec<Vec<f32>> = (0..cc)
+        .map(|c| planes.iter().map(|v| v[c]).collect())
+        .collect();
     chans.push(comp.iter().map(|p| p[3]).collect());
     if doc.rle {
         u16b(&mut out, 1);
-        let rows: Vec<Vec<Vec<u8>>> =
-            chans.iter().map(|c| encode_samples(c, doc.depth).chunks((w * if doc.depth == 16 { 2 } else { 1 }).max(1)).map(pack_bits).collect()).collect();
+        let rows: Vec<Vec<Vec<u8>>> = chans
+            .iter()
+            .map(|c| {
+                encode_samples(c, doc.depth)
+                    .chunks((w * if doc.depth == 16 { 2 } else { 1 }).max(1))
+                    .map(pack_bits)
+                    .collect()
+            })
+            .collect();
         for c in &rows {
             for r in c {
                 u16b(&mut out, r.len() as u16);
@@ -419,7 +474,14 @@ pub fn smart_object_block(uuid: &str, quad: [[f64; 2]; 4], size: [f64; 2]) -> ([
 
 /// A `warp` descriptor: a named style (bend and distortions in %) over `bounds` (left, top,
 /// right, bottom), or with `mesh` (16 points, content pixels) a custom envelope.
-pub fn warp_descriptor(style: &str, bend: f64, h: f64, v: f64, bounds: [f64; 4], mesh: Option<&[[f64; 2]]>) -> Descriptor {
+pub fn warp_descriptor(
+    style: &str,
+    bend: f64,
+    h: f64,
+    v: f64,
+    bounds: [f64; 4],
+    mesh: Option<&[[f64; 2]]>,
+) -> Descriptor {
     let mut d = Descriptor::new("warp")
         .with("warpStyle", DValue::Enum("warpStyle".into(), style.into()))
         .with("warpValue", DValue::Double(bend))
@@ -440,16 +502,32 @@ pub fn warp_descriptor(style: &str, bend: f64, h: f64, v: f64, bounds: [f64; 4],
         .with("vOrder", DValue::Integer(4));
     if let Some(m) = mesh {
         let pts = Descriptor::new("rationalPoint")
-            .with("Hrzn", DValue::UnitFloats("#Pxl".into(), m.iter().map(|p| p[0]).collect()))
-            .with("Vrtc", DValue::UnitFloats("#Pxl".into(), m.iter().map(|p| p[1]).collect()));
-        d = d
-            .with("customEnvelopeWarp", DValue::Descriptor(Descriptor::new("customEnvelopeWarp").with("meshPoints", DValue::ObjectArray(m.len() as u32, pts))));
+            .with(
+                "Hrzn",
+                DValue::UnitFloats("#Pxl".into(), m.iter().map(|p| p[0]).collect()),
+            )
+            .with(
+                "Vrtc",
+                DValue::UnitFloats("#Pxl".into(), m.iter().map(|p| p[1]).collect()),
+            );
+        d = d.with(
+            "customEnvelopeWarp",
+            DValue::Descriptor(
+                Descriptor::new("customEnvelopeWarp")
+                    .with("meshPoints", DValue::ObjectArray(m.len() as u32, pts)),
+            ),
+        );
     }
     d
 }
 
 /// `SoLd` with an optional warp; `quad` may be non-affine (perspective).
-pub fn smart_object_block_warped(uuid: &str, quad: [[f64; 2]; 4], size: [f64; 2], warp: Option<Descriptor>) -> ([u8; 4], Vec<u8>) {
+pub fn smart_object_block_warped(
+    uuid: &str,
+    quad: [[f64; 2]; 4],
+    size: [f64; 2],
+    warp: Option<Descriptor>,
+) -> ([u8; 4], Vec<u8>) {
     let list = |v: &[f64]| DValue::List(v.iter().map(|x| DValue::Double(*x)).collect());
     let t: Vec<f64> = quad.iter().flat_map(|p| [p[0], p[1]]).collect();
     let mut d = Descriptor::new("null")
@@ -457,7 +535,14 @@ pub fn smart_object_block_warped(uuid: &str, quad: [[f64; 2]; 4], size: [f64; 2]
         .with("placed", DValue::Text(uuid.to_string()))
         .with("Trnf", list(&t))
         .with("nonAffineTransform", list(&t))
-        .with("Sz  ", DValue::Descriptor(Descriptor::new("Pnt ").with("Wdth", DValue::Double(size[0])).with("Hght", DValue::Double(size[1]))));
+        .with(
+            "Sz  ",
+            DValue::Descriptor(
+                Descriptor::new("Pnt ")
+                    .with("Wdth", DValue::Double(size[0]))
+                    .with("Hght", DValue::Double(size[1])),
+            ),
+        );
     if let Some(w) = warp {
         d = d.with("warp", DValue::Descriptor(w));
     }
@@ -469,7 +554,14 @@ pub fn smart_object_block_warped(uuid: &str, quad: [[f64; 2]; 4], size: [f64; 2]
 }
 
 /// `TySh`: a type layer with one style run; the text origin sits at `origin`.
-pub fn text_block(text: &str, origin: [f64; 2], font: &str, size: f64, color: [f64; 3], justification: u8) -> ([u8; 4], Vec<u8>) {
+pub fn text_block(
+    text: &str,
+    origin: [f64; 2],
+    font: &str,
+    size: f64,
+    color: [f64; 3],
+    justification: u8,
+) -> ([u8; 4], Vec<u8>) {
     let mut d = vec![];
     u16b(&mut d, 1);
     for v in [1.0, 0.0, 0.0, 1.0, origin[0], origin[1]] {
@@ -479,14 +571,26 @@ pub fn text_block(text: &str, origin: [f64; 2], font: &str, size: f64, color: [f
     u32b(&mut d, 16);
     let desc = Descriptor::new("TxLr")
         .with("Txt ", DValue::Text(text.replace('\n', "\r")))
-        .with("textGridding", DValue::Enum("textGridding".into(), "None".into()))
+        .with(
+            "textGridding",
+            DValue::Enum("textGridding".into(), "None".into()),
+        )
         .with("Ornt", DValue::Enum("Ornt".into(), "Hrzn".into()))
-        .with("EngineData", DValue::Raw(engine_data::minimal(text, font, size, color, justification)));
+        .with(
+            "EngineData",
+            DValue::Raw(engine_data::minimal(text, font, size, color, justification)),
+        );
     descriptor::write_descriptor(&mut d, &desc);
     // Warp: version, descriptor version, an empty warp descriptor.
     u16b(&mut d, 1);
     u32b(&mut d, 16);
-    descriptor::write_descriptor(&mut d, &Descriptor::new("warp").with("warpStyle", DValue::Enum("warpStyle".into(), "warpNone".into())));
+    descriptor::write_descriptor(
+        &mut d,
+        &Descriptor::new("warp").with(
+            "warpStyle",
+            DValue::Enum("warpStyle".into(), "warpNone".into()),
+        ),
+    );
     for _ in 0..4 {
         u32b(&mut d, 0);
     }
@@ -506,7 +610,10 @@ pub fn effects_block(desc: &Descriptor) -> ([u8; 4], Vec<u8>) {
 pub fn solid_color_block(rgb: [f64; 3]) -> ([u8; 4], Vec<u8>) {
     let mut d = vec![];
     u32b(&mut d, 16);
-    descriptor::write_descriptor(&mut d, &Descriptor::new("null").with("Clr ", DValue::Descriptor(Descriptor::rgb(rgb))));
+    descriptor::write_descriptor(
+        &mut d,
+        &Descriptor::new("null").with("Clr ", DValue::Descriptor(Descriptor::rgb(rgb))),
+    );
     (*b"SoCo", d)
 }
 
@@ -524,10 +631,22 @@ pub fn hue_sat_block(hue: i16, sat: i16, light: i16) -> ([u8; 4], Vec<u8>) {
 }
 
 /// `levl`: Levels (composite record).
-pub fn levels_block(in_black: i16, in_white: i16, out_black: i16, out_white: i16, gamma: f64) -> ([u8; 4], Vec<u8>) {
+pub fn levels_block(
+    in_black: i16,
+    in_white: i16,
+    out_black: i16,
+    out_white: i16,
+    gamma: f64,
+) -> ([u8; 4], Vec<u8>) {
     let mut d = vec![];
     u16b(&mut d, 2);
-    for v in [in_black, in_white, out_black, out_white, (gamma * 100.0).round() as i16] {
+    for v in [
+        in_black,
+        in_white,
+        out_black,
+        out_white,
+        (gamma * 100.0).round() as i16,
+    ] {
         d.extend_from_slice(&v.to_be_bytes());
     }
     for _ in 0..28 {
@@ -561,7 +680,12 @@ pub fn exposure_block(exposure: f32, offset: f32, gamma: f32) -> ([u8; 4], Vec<u
 }
 
 /// `vmsk`: a vector mask from closed polygons/curves given as (in, anchor, out) knots in pixels.
-pub fn vector_mask_block(subpaths: &[Vec<[[f64; 2]; 3]>], width: u32, height: u32, inverted: bool) -> ([u8; 4], Vec<u8>) {
+pub fn vector_mask_block(
+    subpaths: &[Vec<[[f64; 2]; 3]>],
+    width: u32,
+    height: u32,
+    inverted: bool,
+) -> ([u8; 4], Vec<u8>) {
     let mut d = vec![];
     u32b(&mut d, 3);
     u32b(&mut d, inverted as u32);

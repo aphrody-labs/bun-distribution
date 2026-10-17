@@ -142,7 +142,9 @@ impl ConfigureDialog {
         let advanced_graphics = configure_graphics_advanced::page(runtime_lock);
         let (ui_page, update_screenshot_info) = configure_ui::page_with_screenshot_info();
         let graphics = configure_graphics::page_with_screenshot_info(
-            advanced_graphics.expose_compute_option, runtime_lock, update_screenshot_info,
+            advanced_graphics.expose_compute_option,
+            runtime_lock,
+            update_screenshot_info,
         );
 
         let reset_requested = Rc::new(Cell::new(false));
@@ -353,7 +355,8 @@ impl ConfigureDialog {
         } else {
             self.window.remove_css_class(marker);
         }
-        self.controller_navigation_hint.set_visible(configuring_inputs);
+        self.controller_navigation_hint
+            .set_visible(configuring_inputs);
 
         while self.notebook.n_pages() > 0 {
             self.notebook.remove_page(Some(0));
@@ -386,7 +389,9 @@ impl ConfigureDialog {
         let external = common::settings::values().external_content_dirs.clone();
         super::qt_config::save_external_content_dirs(&external)?;
         #[cfg(target_os = "linux")]
-        crate::gui_settings::set_force_x11(crate::uisettings::with(|values| *values.gui_force_x11.get_value()))?;
+        crate::gui_settings::set_force_x11(crate::uisettings::with(|values| {
+            *values.gui_force_x11.get_value()
+        }))?;
         common::settings::log_settings(&common::settings::values());
         Ok(())
     }
@@ -451,24 +456,40 @@ fn finish_input_configuration(
 
 /// GTK-specific focus bridge between the selector, tab strip and page content.
 /// Qt owns this widget traversal upstream; settings application is unchanged.
-fn install_directional_navigation(split: &gtk::Box, selector: &gtk::ListBox, notebook: &gtk::Notebook) {
+fn install_directional_navigation(
+    split: &gtk::Box,
+    selector: &gtk::ListBox,
+    notebook: &gtk::Notebook,
+) {
     let shortcuts = gtk::ShortcutController::new();
     shortcuts.set_name(Some("ruzu-directional-navigation"));
     shortcuts.set_propagation_phase(gtk::PropagationPhase::Capture);
-    for key in [gtk::gdk::Key::Right, gtk::gdk::Key::Left, gtk::gdk::Key::Down] {
+    for key in [
+        gtk::gdk::Key::Right,
+        gtk::gdk::Key::Left,
+        gtk::gdk::Key::Down,
+    ] {
         let selector = selector.downgrade();
         let notebook = notebook.downgrade();
         let action = gtk::CallbackAction::new(move |widget, _| {
             let (Some(selector), Some(notebook)) = (selector.upgrade(), notebook.upgrade()) else {
                 return glib::Propagation::Proceed;
             };
-            let focus = widget.root().and_downcast::<gtk::Window>()
+            let focus = widget
+                .root()
+                .and_downcast::<gtk::Window>()
                 .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window));
-            let Some(focus) = focus else { return glib::Propagation::Proceed; };
+            let Some(focus) = focus else {
+                return glib::Propagation::Proceed;
+            };
             let in_selector = focus == selector || focus.is_ancestor(&selector);
-            let page = notebook.current_page().and_then(|index| notebook.nth_page(Some(index)));
+            let page = notebook
+                .current_page()
+                .and_then(|index| notebook.nth_page(Some(index)));
             let on_tabs = (focus == notebook || focus.is_ancestor(&notebook))
-                && !page.as_ref().is_some_and(|page| focus == *page || focus.is_ancestor(page));
+                && !page
+                    .as_ref()
+                    .is_some_and(|page| focus == *page || focus.is_ancestor(page));
             let moved = if in_selector && key == gtk::gdk::Key::Right {
                 notebook.set_current_page(Some(0));
                 notebook.grab_focus()
@@ -479,10 +500,19 @@ fn install_directional_navigation(split: &gtk::Box, selector: &gtk::ListBox, not
             } else {
                 false
             };
-            if moved { glib::Propagation::Stop } else { glib::Propagation::Proceed }
+            if moved {
+                glib::Propagation::Stop
+            } else {
+                glib::Propagation::Proceed
+            }
         });
         shortcuts.add_shortcut(gtk::Shortcut::new(
-            Some(gtk::KeyvalTrigger::new(key, gtk::gdk::ModifierType::empty())), Some(action)));
+            Some(gtk::KeyvalTrigger::new(
+                key,
+                gtk::gdk::ModifierType::empty(),
+            )),
+            Some(action),
+        ));
     }
     split.add_controller(shortcuts);
 }
@@ -507,27 +537,45 @@ mod tests {
         let scroll = gtk::ScrolledWindow::new();
         scroll.set_child(Some(&page));
         notebook.append_page(&scroll, Some(&gtk::Label::new(Some("General"))));
-        notebook.append_page(&gtk::Button::with_label("Other control"), Some(&gtk::Label::new(Some("Other"))));
+        notebook.append_page(
+            &gtk::Button::with_label("Other control"),
+            Some(&gtk::Label::new(Some("Other"))),
+        );
         let split = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         split.append(&selector);
         split.append(&notebook);
         install_directional_navigation(&split, &selector, &notebook);
-        let window = gtk::Window::builder().default_width(600).default_height(400).child(&split).build();
+        let window = gtk::Window::builder()
+            .default_width(600)
+            .default_height(400)
+            .child(&split)
+            .build();
         window.present();
         let context = glib::MainContext::default();
-        while context.pending() { context.iteration(false); }
+        while context.pending() {
+            context.iteration(false);
+        }
         for index in [0, 1] {
             let row = selector.row_at_index(index).unwrap();
             selector.select_row(Some(&row));
             row.grab_focus();
             navigate_window(&window, Key::Right);
-            assert_eq!(gtk::prelude::GtkWindowExt::focus(&window), Some(notebook.clone().upcast()));
+            assert_eq!(
+                gtk::prelude::GtkWindowExt::focus(&window),
+                Some(notebook.clone().upcast())
+            );
             assert_eq!(notebook.current_page(), Some(0));
             navigate_window(&window, Key::Left);
-            assert_eq!(gtk::prelude::GtkWindowExt::focus(&window), Some(row.clone().upcast()));
+            assert_eq!(
+                gtk::prelude::GtkWindowExt::focus(&window),
+                Some(row.clone().upcast())
+            );
             navigate_window(&window, Key::Right);
             navigate_window(&window, Key::Down);
-            assert_eq!(gtk::prelude::GtkWindowExt::focus(&window), Some(first.clone().upcast()));
+            assert_eq!(
+                gtk::prelude::GtkWindowExt::focus(&window),
+                Some(first.clone().upcast())
+            );
             assert!(!first.is_active(), "moving focus must not toggle a setting");
         }
         window.destroy();

@@ -146,7 +146,9 @@ pub fn page(runtime_lock: bool) -> Page {
 
     let host_mmu = w::check_row(
         "Enable Host MMU Emulation (fastmem)",
-        *common::settings::values().cpuopt_unsafe_host_mmu.get_value(),
+        *common::settings::values()
+            .cpuopt_unsafe_host_mmu
+            .get_value(),
     );
     let unfuse_fma = w::check_row(
         "Unfuse FMA (improve performance on CPUs without FMA)",

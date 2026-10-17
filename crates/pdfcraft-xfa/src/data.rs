@@ -43,7 +43,8 @@ impl DataNode {
 
     /// How many children of the node at `parent` are named `name`.
     pub fn count(&self, parent: &[(String, usize)], name: &str) -> usize {
-        self.get(parent).map_or(0, |n| n.children.iter().filter(|c| c.name == name).count())
+        self.get(parent)
+            .map_or(0, |n| n.children.iter().filter(|c| c.name == name).count())
     }
 
     pub fn text_at(&self, path: &[(String, usize)]) -> Option<&str> {
@@ -57,17 +58,39 @@ impl DataNode {
         if n.children.is_empty() || !n.children.iter().all(|c| c.name == "value") {
             return Some(n.text.clone());
         }
-        Some(n.children.iter().map(|c| c.text.trim()).filter(|t| !t.is_empty()).take(1000).collect::<Vec<_>>().join("\n"))
+        Some(
+            n.children
+                .iter()
+                .map(|c| c.text.trim())
+                .filter(|t| !t.is_empty())
+                .take(1000)
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
     }
 }
 
 fn to_node(n: roxmltree::Node, depth: usize) -> DataNode {
     let name = n.tag_name().name().to_string();
-    let children: Vec<DataNode> =
-        if depth < MAX_DEPTH { n.children().filter(|c| c.is_element()).map(|c| to_node(c, depth + 1)).collect() } else { Vec::new() };
+    let children: Vec<DataNode> = if depth < MAX_DEPTH {
+        n.children()
+            .filter(|c| c.is_element())
+            .map(|c| to_node(c, depth + 1))
+            .collect()
+    } else {
+        Vec::new()
+    };
     // The text of a leaf is its value; a container's own text is whitespace.
-    let text = if children.is_empty() { n.children().filter_map(|c| c.text()).collect::<String>() } else { String::new() };
-    DataNode { name, text, children }
+    let text = if children.is_empty() {
+        n.children().filter_map(|c| c.text()).collect::<String>()
+    } else {
+        String::new()
+    };
+    DataNode {
+        name,
+        text,
+        children,
+    }
 }
 
 /// The `xfa:data` element of the datasets packet in `xdp` (or a bare datasets document), as a
@@ -76,10 +99,17 @@ pub fn parse_datasets(xdp: &str) -> Option<DataNode> {
     if crate::xml_nesting_depth(xdp) > crate::MAX_XML_DEPTH {
         return None;
     }
-    let opts = roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
     let doc = roxmltree::Document::parse_with_options(xdp, opts).ok()?;
-    let datasets = doc.descendants().find(|n| n.is_element() && n.tag_name().name() == "datasets")?;
-    let data = datasets.children().find(|n| n.is_element() && n.tag_name().name() == "data")?;
+    let datasets = doc
+        .descendants()
+        .find(|n| n.is_element() && n.tag_name().name() == "datasets")?;
+    let data = datasets
+        .children()
+        .find(|n| n.is_element() && n.tag_name().name() == "data")?;
     Some(to_node(data, 0))
 }
 
@@ -113,7 +143,9 @@ pub fn data_path(tpl: &Template, som: &str) -> DataPath {
     let mut level: Option<&[Node]> = None;
     for (i, (name, index)) in som_to_path(som).into_iter().enumerate() {
         let found = match level {
-            None if i == 0 && tpl.root.common.name.as_deref() == Some(name.as_str()) => Some(Container::Children(&tpl.root.children)),
+            None if i == 0 && tpl.root.common.name.as_deref() == Some(name.as_str()) => {
+                Some(Container::Children(&tpl.root.children))
+            }
             None => None,
             Some(children) => match named(children, &name, 0) {
                 Some(Node::Subform(sf)) => Some(Container::Children(&sf.children)),
@@ -148,13 +180,18 @@ fn named<'a>(nodes: &'a [Node], name: &str, depth: usize) -> Option<&'a Node> {
     if depth > MAX_DEPTH {
         return None;
     }
-    nodes.iter().find(|n| n.common().name.as_deref() == Some(name)).or_else(|| {
-        nodes.iter().find_map(|n| match n {
-            Node::Subform(sf) if sf.common.name.is_none() => named(&sf.children, name, depth + 1),
-            Node::Area(a) if a.common.name.is_none() => named(&a.children, name, depth + 1),
-            _ => None,
+    nodes
+        .iter()
+        .find(|n| n.common().name.as_deref() == Some(name))
+        .or_else(|| {
+            nodes.iter().find_map(|n| match n {
+                Node::Subform(sf) if sf.common.name.is_none() => {
+                    named(&sf.children, name, depth + 1)
+                }
+                Node::Area(a) if a.common.name.is_none() => named(&a.children, name, depth + 1),
+                _ => None,
+            })
         })
-    })
 }
 
 /// What a field holds, for writing the datasets.
@@ -180,12 +217,17 @@ pub struct FieldDatum {
 }
 
 fn text_of(doc: &Document, d: &Dict, key: &[u8]) -> Option<String> {
-    d.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_string().map(|s| s.to_text()))
+    d.get(key)
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_string().map(|s| s.to_text()))
 }
 
 /// The SOM path of a field: its `/PCSom` when PdfCraft generated it, else its name.
 fn som_of(doc: &Document, f: &FieldDatum) -> String {
-    doc.get(f.obj).as_dict().and_then(|d| text_of(doc, d, crate::pdf::SOM_KEY)).unwrap_or_else(|| f.name.clone())
+    doc.get(f.obj)
+        .as_dict()
+        .and_then(|d| text_of(doc, d, crate::pdf::SOM_KEY))
+        .unwrap_or_else(|| f.name.clone())
 }
 
 /// The on and off item values of a check box (`/PCItems`), or the widget's on state.
@@ -194,7 +236,13 @@ fn items_of(doc: &Document, f: &FieldDatum) -> (String, String) {
     let items: Vec<String> = d
         .as_dict()
         .and_then(|d| d.get(b"PCItems").map(|o| doc.resolve(o)))
-        .and_then(|a| a.as_array().map(|a| a.iter().filter_map(|x| x.as_string().map(|s| s.to_text())).collect()))
+        .and_then(|a| {
+            a.as_array().map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_string().map(|s| s.to_text()))
+                    .collect()
+            })
+        })
         .unwrap_or_default();
     let on = items.first().cloned().unwrap_or_else(|| "1".into());
     let off = items.get(1).cloned().unwrap_or_default();
@@ -240,8 +288,12 @@ fn date_tokens(pattern: &str) -> Vec<String> {
 /// non-dates come back as they are.
 pub fn iso_to_pattern(iso: &str, pattern: &str) -> String {
     let parts: Vec<&str> = iso.trim().splitn(3, '-').collect();
-    let [y, m, d] = parts[..] else { return iso.to_string() };
-    let (Ok(y), Ok(m), Ok(d)) = (y.parse::<u32>(), m.parse::<u32>(), d.parse::<u32>()) else { return iso.to_string() };
+    let [y, m, d] = parts[..] else {
+        return iso.to_string();
+    };
+    let (Ok(y), Ok(m), Ok(d)) = (y.parse::<u32>(), m.parse::<u32>(), d.parse::<u32>()) else {
+        return iso.to_string();
+    };
     let mut out = String::new();
     for t in date_tokens(pattern) {
         match t.as_str() {
@@ -271,7 +323,10 @@ pub fn pattern_to_iso(text: &str, pattern: &str) -> Option<String> {
                 let width = if fixed {
                     t.len()
                 } else {
-                    rest.chars().take_while(|c| c.is_ascii_digit()).count().min(if t == "d" || t == "m" { 2 } else { 4 })
+                    rest.chars()
+                        .take_while(|c| c.is_ascii_digit())
+                        .count()
+                        .min(if t == "d" || t == "m" { 2 } else { 4 })
                 };
                 let digits: String = rest.chars().take(width).collect();
                 if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit()) {
@@ -296,11 +351,23 @@ pub fn pattern_to_iso(text: &str, pattern: &str) -> Option<String> {
         return None;
     }
     let (y, m, d) = (y?, m?, d?);
-    (1..=12).contains(&m).then(|| format!("{y:04}-{m:02}-{d:02}")).filter(|_| (1..=31).contains(&d))
+    (1..=12)
+        .contains(&m)
+        .then(|| format!("{y:04}-{m:02}-{d:02}"))
+        .filter(|_| (1..=31).contains(&d))
 }
 
 fn xml_name(s: &str) -> String {
-    let mut out: String = s.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.' { c } else { '_' }).collect();
+    let mut out: String = s
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     if out.is_empty() || !(out.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')) {
         out.insert(0, '_');
     }
@@ -367,7 +434,10 @@ impl Build {
                 for _ in 0..need {
                     let pos = node.children.len();
                     node.by_name.entry(name.clone()).or_default().push(pos);
-                    node.children.push(Build { name: name.clone(), ..Default::default() });
+                    node.children.push(Build {
+                        name: name.clone(),
+                        ..Default::default()
+                    });
                 }
             }
             let pos = *node.by_name.get(&name)?.get(*idx)?;
@@ -379,7 +449,12 @@ impl Build {
     /// The tree as XML. Depth is bounded by [`Build::at`].
     fn write(&self, out: &mut String) {
         if self.children.is_empty() {
-            out.push_str(&format!("<{}>{}</{}>", self.name, escape(&self.text).0, self.name));
+            out.push_str(&format!(
+                "<{}>{}</{}>",
+                self.name,
+                escape(&self.text).0,
+                self.name
+            ));
             return;
         }
         out.push_str(&format!("<{}>", self.name));
@@ -404,7 +479,11 @@ struct Want {
 }
 
 /// `tpl`, or the document's own template when none is given (parsed once).
-fn with_template<T>(doc: &Document, tpl: Option<&Template>, f: impl FnOnce(Option<&Template>) -> T) -> T {
+fn with_template<T>(
+    doc: &Document,
+    tpl: Option<&Template>,
+    f: impl FnOnce(Option<&Template>) -> T,
+) -> T {
     match tpl {
         Some(t) => f(Some(t)),
         None => {
@@ -442,7 +521,12 @@ fn wanted(doc: &Document, fields: &[FieldDatum], tpl: Option<&Template>) -> Vec<
             FieldData::Radio(sel) => sel.clone().unwrap_or_default(),
             FieldData::None => continue,
         };
-        out.push(Want { som, path, text, ensure: false });
+        out.push(Want {
+            som,
+            path,
+            text,
+            ensure: false,
+        });
     }
     out
 }
@@ -474,9 +558,11 @@ fn skipped(warnings: &mut Vec<String>, reason: &str, som: &str) {
     }
 }
 
-const TOO_MANY: &str = "XFA data not written for fields whose data path is too deep or repeats too often";
+const TOO_MANY: &str =
+    "XFA data not written for fields whose data path is too deep or repeats too often";
 const STRUCTURED: &str = "XFA data not written for fields whose data node holds structured content";
-const CONFLICT: &str = "XFA data not written for fields bound to the same data node as another field";
+const CONFLICT: &str =
+    "XFA data not written for fields bound to the same data node as another field";
 const CONTROL: &str = "Characters XML can't hold were left out of the XFA data of";
 
 /// Fresh data for `wants`: the children of an `xfa:data` element.
@@ -500,11 +586,16 @@ fn build_children(wants: &[Want], warnings: &mut Vec<String>) -> String {
 /// The `xfa:data` element for `fields`, built afresh.
 pub fn build_data(doc: &Document, fields: &[FieldDatum]) -> String {
     let wants = with_template(doc, None, |t| wanted(doc, fields, t));
-    format!("<xfa:data>{}</xfa:data>", build_children(&wants, &mut Vec::new()))
+    format!(
+        "<xfa:data>{}</xfa:data>",
+        build_children(&wants, &mut Vec::new())
+    )
 }
 
 fn fresh_datasets(data_children: &str) -> String {
-    format!("<xfa:datasets xmlns:xfa=\"{XFA_DATA_NS}\"><xfa:data>{data_children}</xfa:data></xfa:datasets>")
+    format!(
+        "<xfa:datasets xmlns:xfa=\"{XFA_DATA_NS}\"><xfa:data>{data_children}</xfa:data></xfa:datasets>"
+    )
 }
 
 /// Where an element's start tag ends (the index of its `>`), skipping quoted attribute values.
@@ -545,10 +636,18 @@ fn append_edit(src: &str, node: roxmltree::Node, inner: &str) -> Option<Edit> {
     if tag_end.checked_add(1)? == range.end && src.get(..tag_end)?.ends_with('/') {
         // `<a/>` becomes `<a>inner</a>`.
         let name = qname(src, &range)?;
-        return Some(Edit { start: tag_end.checked_sub(1)?, end: range.end, text: format!(">{inner}</{name}>") });
+        return Some(Edit {
+            start: tag_end.checked_sub(1)?,
+            end: range.end,
+            text: format!(">{inner}</{name}>"),
+        });
     }
     let close = range.start + src.get(range.clone())?.rfind("</")?;
-    Some(Edit { start: close, end: close, text: inner.to_string() })
+    Some(Edit {
+        start: close,
+        end: close,
+        text: inner.to_string(),
+    })
 }
 
 /// The edit that makes `text` (escaped) the whole content of the leaf `node`.
@@ -557,10 +656,18 @@ fn replace_edit(src: &str, node: roxmltree::Node, text: &str) -> Option<Edit> {
     let tag_end = start_tag_end(src, &range)?;
     if tag_end.checked_add(1)? == range.end && src.get(..tag_end)?.ends_with('/') {
         let name = qname(src, &range)?;
-        return Some(Edit { start: tag_end.checked_sub(1)?, end: range.end, text: format!(">{text}</{name}>") });
+        return Some(Edit {
+            start: tag_end.checked_sub(1)?,
+            end: range.end,
+            text: format!(">{text}</{name}>"),
+        });
     }
     let close = range.start + src.get(range.clone())?.rfind("</")?;
-    (close > tag_end).then(|| Edit { start: tag_end + 1, end: close, text: text.to_string() })
+    (close > tag_end).then(|| Edit {
+        start: tag_end + 1,
+        end: close,
+        text: text.to_string(),
+    })
 }
 
 /// What merging the values into a packet's text came to.
@@ -589,7 +696,11 @@ const WRAP_CLOSE: &str = "</pdfcraft-wrap>";
 /// The prefix bound to the XFA data namespace where `n` is (`None`: unbound or the default
 /// namespace, which attributes can't use).
 fn xfa_prefix(n: roxmltree::Node) -> Option<String> {
-    n.namespaces().find(|ns| ns.uri() == XFA_DATA_NS).and_then(|ns| ns.name()).filter(|p| !p.is_empty()).map(str::to_string)
+    n.namespaces()
+        .find(|ns| ns.uri() == XFA_DATA_NS)
+        .and_then(|ns| ns.name())
+        .filter(|p| !p.is_empty())
+        .map(str::to_string)
 }
 
 /// Data read from a file, held as a tree so it can be written into any packet with the
@@ -633,8 +744,16 @@ fn import_node(n: roxmltree::Node, depth: usize, budget: &mut usize) -> Option<I
         ns: n.tag_name().namespace().map(str::to_string),
         attrs: n
             .attributes()
-            .filter(|a| a.name() != "xmlns" && a.namespace() != Some("http://www.w3.org/2000/xmlns/"))
-            .map(|a| (a.namespace().map(str::to_string), a.name().to_string(), a.value().to_string()))
+            .filter(|a| {
+                a.name() != "xmlns" && a.namespace() != Some("http://www.w3.org/2000/xmlns/")
+            })
+            .map(|a| {
+                (
+                    a.namespace().map(str::to_string),
+                    a.name().to_string(),
+                    a.value().to_string(),
+                )
+            })
             .collect(),
         text,
         children,
@@ -718,7 +837,10 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
         warnings.push("The XFA data nests XML elements deeper than the reader accepts; the field values were not written to it".into());
         return Merged::Failed;
     }
-    let opts = || roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
+    let opts = || roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
     // A packet of an array may use the prefixes the XDP envelope declares: read it inside
     // an element declaring the usual ones.
     let wrapped;
@@ -726,7 +848,10 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
         Ok(d) => (text, 0, d),
         Err(first) => {
             wrapped = format!("{WRAP_OPEN}{text}{WRAP_CLOSE}");
-            match (within, roxmltree::Document::parse_with_options(&wrapped, opts())) {
+            match (
+                within,
+                roxmltree::Document::parse_with_options(&wrapped, opts()),
+            ) {
                 (Within::Packet, Ok(d)) => (wrapped.as_str(), WRAP_OPEN.len(), d),
                 _ => {
                     warnings.push(format!("The XFA data could not be read ({first}); the field values were not written to it"));
@@ -763,7 +888,10 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
             Some(d) => data = Some(d),
             None if matches!(op, Op::Remove(_) | Op::Picture(..)) => return Merged::Unchanged,
             None => {
-                let prefix = qname(src, &ds.range()).and_then(|q| q.split_once(':')).map(|(p, _)| format!("{p}:")).unwrap_or_default();
+                let prefix = qname(src, &ds.range())
+                    .and_then(|q| q.split_once(':'))
+                    .map(|(p, _)| format!("{p}:"))
+                    .unwrap_or_default();
                 let children = fresh_children(warnings);
                 let element = format!("<{prefix}data>{}</{prefix}data>", children);
                 match append_edit(src, ds, &element) {
@@ -786,13 +914,27 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
                 let markup = serialize_nodes(nodes, prefix.as_deref().unwrap_or("xfa"));
                 let range = data.range();
                 match (start_tag_end(src, &range), qname(src, &range)) {
-                    (Some(tag_end), Some(name)) if tag_end + 1 == range.end && src.get(..tag_end).is_some_and(|s| s.ends_with('/')) => {
-                        edits.push(Edit { start: range.start, end: range.end, text: format!("<{name}>{markup}</{name}>") });
+                    (Some(tag_end), Some(name))
+                        if tag_end + 1 == range.end
+                            && src.get(..tag_end).is_some_and(|s| s.ends_with('/')) =>
+                    {
+                        edits.push(Edit {
+                            start: range.start,
+                            end: range.end,
+                            text: format!("<{name}>{markup}</{name}>"),
+                        });
                     }
                     (Some(tag_end), _) => {
-                        let close = src.get(range.clone()).and_then(|s| s.rfind("</")).map(|c| range.start + c);
+                        let close = src
+                            .get(range.clone())
+                            .and_then(|s| s.rfind("</"))
+                            .map(|c| range.start + c);
                         match close {
-                            Some(close) if tag_end < close => edits.push(Edit { start: tag_end + 1, end: close, text: markup }),
+                            Some(close) if tag_end < close => edits.push(Edit {
+                                start: tag_end + 1,
+                                end: close,
+                                text: markup,
+                            }),
                             _ => {
                                 warnings.push("The XFA data element could not be rewritten; the data was not imported".into());
                                 return Merged::Failed;
@@ -809,12 +951,26 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
                 let mut node = Some(data);
                 for (name, idx) in path.iter() {
                     let want = xml_name(name);
-                    node = node.and_then(|n| n.children().filter(|c| c.is_element() && c.tag_name().name() == want).nth(*idx));
+                    node = node.and_then(|n| {
+                        n.children()
+                            .filter(|c| c.is_element() && c.tag_name().name() == want)
+                            .nth(*idx)
+                    });
                 }
-                let Some(n) = node else { return Merged::Unchanged };
+                let Some(n) = node else {
+                    return Merged::Unchanged;
+                };
                 if n.children().any(|c| c.is_element()) {
                     // A data group, not a leaf: a picture would wipe what's under it.
-                    skipped(warnings, STRUCTURED, &path.iter().map(|(n, i)| format!("{n}[{i}]")).collect::<Vec<_>>().join("."));
+                    skipped(
+                        warnings,
+                        STRUCTURED,
+                        &path
+                            .iter()
+                            .map(|(n, i)| format!("{n}[{i}]"))
+                            .collect::<Vec<_>>()
+                            .join("."),
+                    );
                     return Merged::Failed;
                 }
                 let name = qname(src, &n.range()).unwrap_or("value").to_string();
@@ -823,18 +979,32 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
                     Some(p) => format!("{p}:contentType=\"{ct}\""),
                     None => format!("xmlns:xfa=\"{XFA_DATA_NS}\" xfa:contentType=\"{ct}\""),
                 };
-                edits.push(Edit { start: n.range().start, end: n.range().end, text: format!("<{name} {attr}>{base64}</{name}>") });
+                edits.push(Edit {
+                    start: n.range().start,
+                    end: n.range().end,
+                    text: format!("<{name} {attr}>{base64}</{name}>"),
+                });
             }
             Op::Remove(path) => {
                 // The element at `path`, with the whitespace before it.
                 let mut node = Some(data);
                 for (name, idx) in path {
-                    node = node.and_then(|n| n.children().filter(|c| c.is_element() && c.tag_name().name() == name).nth(*idx));
+                    node = node.and_then(|n| {
+                        n.children()
+                            .filter(|c| c.is_element() && c.tag_name().name() == name)
+                            .nth(*idx)
+                    });
                 }
                 if let Some(n) = node {
                     let r = n.range();
-                    let start = src.get(..r.start).map_or(r.start, |before| r.start - before.len() + before.trim_end().len());
-                    edits.push(Edit { start, end: r.end, text: String::new() });
+                    let start = src.get(..r.start).map_or(r.start, |before| {
+                        r.start - before.len() + before.trim_end().len()
+                    });
+                    edits.push(Edit {
+                        start,
+                        end: r.end,
+                        text: String::new(),
+                    });
                 }
             }
         }
@@ -848,7 +1018,9 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
     let mut kept: Vec<Edit> = Vec::with_capacity(edits.len());
     for e in edits {
         if kept.last().is_some_and(|k| e.start < k.end) {
-            if kept.last().is_some_and(|k| k.text != e.text) && !warnings.iter().any(|w| w == CONFLICT) {
+            if kept.last().is_some_and(|k| k.text != e.text)
+                && !warnings.iter().any(|w| w == CONFLICT)
+            {
                 warnings.push(CONFLICT.into());
             }
             continue;
@@ -858,7 +1030,9 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
     let mut out = src.to_string();
     for e in kept.iter().rev() {
         if out.get(e.start..e.end).is_none() {
-            warnings.push("The XFA data could not be updated; the field values were not written to it".into());
+            warnings.push(
+                "The XFA data could not be updated; the field values were not written to it".into(),
+            );
             return Merged::Failed;
         }
         out.replace_range(e.start..e.end, &e.text);
@@ -873,9 +1047,16 @@ fn merge(text: &str, within: Within, op: Op, warnings: &mut Vec<String>) -> Merg
 }
 
 /// The edits that put `wants` into the `data` element.
-fn merge_values(src: &str, data: roxmltree::Node, wants: &[Want], edits: &mut Vec<Edit>, warnings: &mut Vec<String>) {
+fn merge_values(
+    src: &str,
+    data: roxmltree::Node,
+    wants: &[Want],
+    edits: &mut Vec<Edit>,
+    warnings: &mut Vec<String>,
+) {
     // Element children by local name, per element visited (built once each).
-    let mut index: HashMap<roxmltree::NodeId, HashMap<String, Vec<roxmltree::NodeId>>> = HashMap::new();
+    let mut index: HashMap<roxmltree::NodeId, HashMap<String, Vec<roxmltree::NodeId>>> =
+        HashMap::new();
     let tree = data.document();
     // Nodes to add, per existing element they go into.
     let mut added: Vec<(roxmltree::NodeId, Build)> = Vec::new();
@@ -889,12 +1070,17 @@ fn merge_values(src: &str, data: roxmltree::Node, wants: &[Want], edits: &mut Ve
             let kids = index.entry(node.id()).or_insert_with(|| {
                 let mut by: HashMap<String, Vec<roxmltree::NodeId>> = HashMap::new();
                 for c in node.children().filter(|c| c.is_element()) {
-                    by.entry(c.tag_name().name().to_string()).or_default().push(c.id());
+                    by.entry(c.tag_name().name().to_string())
+                        .or_default()
+                        .push(c.id());
                 }
                 by
             });
             let same = kids.get(name.as_str());
-            match same.and_then(|v| v.get(*idx)).and_then(|id| tree.get_node(*id)) {
+            match same
+                .and_then(|v| v.get(*idx))
+                .and_then(|id| tree.get_node(*id))
+            {
                 Some(next) => {
                     node = next;
                     depth += 1;
@@ -911,9 +1097,17 @@ fn merge_values(src: &str, data: roxmltree::Node, wants: &[Want], edits: &mut Ve
             if w.ensure && w.text.is_empty() {
                 continue;
             }
-            let current: String = node.children().filter(|c| c.is_text()).filter_map(|c| c.text()).collect();
+            let current: String = node
+                .children()
+                .filter(|c| c.is_text())
+                .filter_map(|c| c.text())
+                .collect();
             if node.children().any(|c| c.is_element()) {
-                let all: String = node.descendants().filter(|c| c.is_text()).filter_map(|c| c.text()).collect();
+                let all: String = node
+                    .descendants()
+                    .filter(|c| c.is_text())
+                    .filter_map(|c| c.text())
+                    .collect();
                 if all.trim() != w.text.trim() {
                     skipped(warnings, STRUCTURED, &w.som);
                 }
@@ -943,7 +1137,9 @@ fn merge_values(src: &str, data: roxmltree::Node, wants: &[Want], edits: &mut Ve
                     added.len() - 1
                 }
             };
-            let built = added.get_mut(pos).and_then(|(_, b)| b.at(&rest, &mut budget));
+            let built = added
+                .get_mut(pos)
+                .and_then(|(_, b)| b.at(&rest, &mut budget));
             match built {
                 Some(b) => b.text = w.text.clone(),
                 None => {
@@ -957,12 +1153,17 @@ fn merge_values(src: &str, data: roxmltree::Node, wants: &[Want], edits: &mut Ve
         }
     }
     for (id, build) in added {
-        let Some(node) = tree.get_node(id) else { continue };
+        let Some(node) = tree.get_node(id) else {
+            continue;
+        };
         let mut inner = String::new();
         build.write_children(&mut inner);
         match append_edit(src, node, &inner) {
             Some(e) => edits.push(e),
-            None => warnings.push("Some XFA data nodes could not be added; their field values were not written".into()),
+            None => warnings.push(
+                "Some XFA data nodes could not be added; their field values were not written"
+                    .into(),
+            ),
         }
     }
 }
@@ -979,16 +1180,24 @@ pub struct DatasetsWrite {
 }
 
 /// A packet stream's text and encoding; `None` (with a warning) when it can't be read exactly.
-fn packet_text(doc: &Document, o: &Object, warnings: &mut Vec<String>) -> Option<(String, Encoding)> {
+fn packet_text(
+    doc: &Document,
+    o: &Object,
+    warnings: &mut Vec<String>,
+) -> Option<(String, Encoding)> {
     let s = doc.resolve(o);
     let Object::Stream(s) = &*s else {
-        warnings.push("The XFA data packet is not a stream; the field values were not written to it".into());
+        warnings.push(
+            "The XFA data packet is not a stream; the field values were not written to it".into(),
+        );
         return None;
     };
     let bytes = match s.decoded_within(64 << 20) {
         Ok(b) => b,
         Err(e) => {
-            warnings.push(format!("The XFA data could not be decoded ({e}); the field values were not written to it"));
+            warnings.push(format!(
+                "The XFA data could not be decoded ({e}); the field values were not written to it"
+            ));
             return None;
         }
     };
@@ -1002,13 +1211,20 @@ fn packet_text(doc: &Document, o: &Object, warnings: &mut Vec<String>) -> Option
 /// Write the fields' values into the datasets packet, keeping all the data no field binds to.
 /// Nothing is written when the document has no XFA entry or the data already holds the values;
 /// values that can't be written are reported, never silently dropped.
-pub fn write_datasets(doc: &mut Document, fields: &[FieldDatum]) -> Result<DatasetsWrite, XfaError> {
+pub fn write_datasets(
+    doc: &mut Document,
+    fields: &[FieldDatum],
+) -> Result<DatasetsWrite, XfaError> {
     write_datasets_reusing(doc, fields, None)
 }
 
 /// [`write_datasets`], replacing the stream `reuse` in place when the packet is that stream
 /// (written earlier in the same edit) rather than adding another.
-pub fn write_datasets_reusing(doc: &mut Document, fields: &[FieldDatum], reuse: Option<ObjRef>) -> Result<DatasetsWrite, XfaError> {
+pub fn write_datasets_reusing(
+    doc: &mut Document,
+    fields: &[FieldDatum],
+    reuse: Option<ObjRef>,
+) -> Result<DatasetsWrite, XfaError> {
     write_datasets_with(doc, None, fields, reuse)
 }
 
@@ -1031,7 +1247,11 @@ pub enum DataOp {
     Value { path: DataPath, text: String },
     /// Make sure the node at `parent` has at least `count` children named `name` (a script
     /// added rows: the layout repeats the subform once per data instance).
-    Instances { parent: DataPath, name: String, count: usize },
+    Instances {
+        parent: DataPath,
+        name: String,
+        count: usize,
+    },
     /// Take the node at `path` out (a script removed a row).
     Remove(DataPath),
 }
@@ -1047,9 +1267,16 @@ impl DataNode {
             }
             let have = node.children.iter().filter(|c| &c.name == name).count();
             for _ in have..=*idx {
-                node.children.push(DataNode { name: name.clone(), ..Default::default() });
+                node.children.push(DataNode {
+                    name: name.clone(),
+                    ..Default::default()
+                });
             }
-            node = node.children.iter_mut().filter(|c| &c.name == name).nth(*idx)?;
+            node = node
+                .children
+                .iter_mut()
+                .filter(|c| &c.name == name)
+                .nth(*idx)?;
         }
         Some(node)
     }
@@ -1065,7 +1292,11 @@ impl DataNode {
                     n.text = text.clone();
                 }
             }
-            DataOp::Instances { parent, name, count } => {
+            DataOp::Instances {
+                parent,
+                name,
+                count,
+            } => {
                 if let Some(&last) = count.checked_sub(1).as_ref() {
                     let mut path = parent.clone();
                     path.push((name.clone(), last.min(MAX_INDEX.saturating_sub(1))));
@@ -1073,13 +1304,25 @@ impl DataNode {
                 }
             }
             DataOp::Remove(path) => {
-                let Some(((name, idx), parent)) = path.split_last() else { return };
+                let Some(((name, idx), parent)) = path.split_last() else {
+                    return;
+                };
                 let mut node = self;
                 for (n, i) in parent {
-                    let Some(next) = node.children.iter_mut().filter(|c| &c.name == n).nth(*i) else { return };
+                    let Some(next) = node.children.iter_mut().filter(|c| &c.name == n).nth(*i)
+                    else {
+                        return;
+                    };
                     node = next;
                 }
-                if let Some(at) = node.children.iter().enumerate().filter(|(_, c)| &c.name == name).nth(*idx).map(|(at, _)| at) {
+                if let Some(at) = node
+                    .children
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, c)| &c.name == name)
+                    .nth(*idx)
+                    .map(|(at, _)| at)
+                {
                     node.children.remove(at);
                 }
             }
@@ -1088,23 +1331,53 @@ impl DataNode {
 }
 
 fn path_som(path: &DataPath) -> String {
-    path.iter().map(|(n, i)| format!("{n}[{i}]")).collect::<Vec<_>>().join(".")
+    path.iter()
+        .map(|(n, i)| format!("{n}[{i}]"))
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// Make sure the data has at least `count` instances of `name` under `parent` (a script added
 /// rows: the layout repeats the subform once per data instance).
-pub fn add_data_instances(doc: &mut Document, parent: &DataPath, name: &str, count: usize) -> Result<DatasetsWrite, XfaError> {
-    write_data_ops(doc, &[DataOp::Instances { parent: parent.clone(), name: name.to_string(), count }], None)
+pub fn add_data_instances(
+    doc: &mut Document,
+    parent: &DataPath,
+    name: &str,
+    count: usize,
+) -> Result<DatasetsWrite, XfaError> {
+    write_data_ops(
+        doc,
+        &[DataOp::Instances {
+            parent: parent.clone(),
+            name: name.to_string(),
+            count,
+        }],
+        None,
+    )
 }
 
 /// Put `text` at the data node `path` (a field with no widget, a hidden one or a draw, that a
 /// script gave a value), adding the node as needed.
-pub fn write_data_value(doc: &mut Document, path: &DataPath, text: &str) -> Result<DatasetsWrite, XfaError> {
-    write_data_ops(doc, &[DataOp::Value { path: path.clone(), text: text.to_string() }], None)
+pub fn write_data_value(
+    doc: &mut Document,
+    path: &DataPath,
+    text: &str,
+) -> Result<DatasetsWrite, XfaError> {
+    write_data_ops(
+        doc,
+        &[DataOp::Value {
+            path: path.clone(),
+            text: text.to_string(),
+        }],
+        None,
+    )
 }
 
 /// Remove the data node at `path` (a script removed a row).
-pub fn remove_data_instance(doc: &mut Document, path: &DataPath) -> Result<DatasetsWrite, XfaError> {
+pub fn remove_data_instance(
+    doc: &mut Document,
+    path: &DataPath,
+) -> Result<DatasetsWrite, XfaError> {
     write_data_ops(doc, &[DataOp::Remove(path.clone())], None)
 }
 
@@ -1130,12 +1403,28 @@ pub fn write_data_image(
         return Err(XfaError::Malformed("a picture needs a data path".into()));
     }
     if bytes.len() > MAX_DATA_IMAGE {
-        return Err(XfaError::TooLarge(format!("the picture is larger than {} MB", MAX_DATA_IMAGE >> 20)));
+        return Err(XfaError::TooLarge(format!(
+            "the picture is larger than {} MB",
+            MAX_DATA_IMAGE >> 20
+        )));
     }
-    let ct: String = content_type.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '.' | '+')).take(64).collect();
+    let ct: String = content_type
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '.' | '+'))
+        .take(64)
+        .collect();
     let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
-    let ensure = [Want { som: String::new(), path: path.clone(), text: String::new(), ensure: true }];
-    rewrite(doc, &[Op::Values(&ensure), Op::Picture(path, &ct, &b64)], reuse)
+    let ensure = [Want {
+        som: String::new(),
+        path: path.clone(),
+        text: String::new(),
+        ensure: true,
+    }];
+    rewrite(
+        doc,
+        &[Op::Values(&ensure), Op::Picture(path, &ct, &b64)],
+        reuse,
+    )
 }
 
 /// What an import of a data file did.
@@ -1154,45 +1443,70 @@ pub struct DataImport {
 /// refused: a form's data is never replaced by what is not its data.
 pub fn parse_data_file(text: &str, expect_root: Option<&str>) -> Result<Vec<ImportNode>, XfaError> {
     if text.len() > MAX_IMPORT {
-        return Err(XfaError::TooLarge(format!("the data file is larger than {} MB", MAX_IMPORT >> 20)));
+        return Err(XfaError::TooLarge(format!(
+            "the data file is larger than {} MB",
+            MAX_IMPORT >> 20
+        )));
     }
     let text = text.trim_start_matches('\u{feff}');
     if crate::xml_nesting_depth(text) > MAX_IMPORT_DEPTH {
-        return Err(XfaError::TooLarge(format!("the data file nests more than {MAX_IMPORT_DEPTH} levels deep")));
+        return Err(XfaError::TooLarge(format!(
+            "the data file nests more than {MAX_IMPORT_DEPTH} levels deep"
+        )));
     }
-    let opts = roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
-    let parsed = roxmltree::Document::parse_with_options(text, opts).map_err(|e| XfaError::Malformed(format!("the data file is not XML: {e}")))?;
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
+    let parsed = roxmltree::Document::parse_with_options(text, opts)
+        .map_err(|e| XfaError::Malformed(format!("the data file is not XML: {e}")))?;
     let root = parsed.root_element();
     let local = root.tag_name().name();
     let in_xfa = |n: &roxmltree::Node| n.tag_name().namespace().is_none_or(|ns| ns == XFA_DATA_NS);
-    let is = |n: &roxmltree::Node, name: &str| n.is_element() && n.tag_name().name() == name && in_xfa(n);
+    let is = |n: &roxmltree::Node, name: &str| {
+        n.is_element() && n.tag_name().name() == name && in_xfa(n)
+    };
     let data = match local {
         "xdp" => {
-            let ds = root.children().find(|n| is(n, "datasets")).ok_or_else(|| XfaError::Malformed("the XDP holds no datasets".into()))?;
-            ds.children().find(|n| is(n, "data")).ok_or_else(|| XfaError::Malformed("the datasets hold no data element".into()))?
+            let ds = root
+                .children()
+                .find(|n| is(n, "datasets"))
+                .ok_or_else(|| XfaError::Malformed("the XDP holds no datasets".into()))?;
+            ds.children()
+                .find(|n| is(n, "data"))
+                .ok_or_else(|| XfaError::Malformed("the datasets hold no data element".into()))?
         }
-        "datasets" if in_xfa(&root) => {
-            root.children().find(|n| is(n, "data")).ok_or_else(|| XfaError::Malformed("the datasets hold no data element".into()))?
-        }
+        "datasets" if in_xfa(&root) => root
+            .children()
+            .find(|n| is(n, "data"))
+            .ok_or_else(|| XfaError::Malformed("the datasets hold no data element".into()))?,
         "data" if in_xfa(&root) => root,
         _ => {
             if root.tag_name().namespace().is_some() {
-                return Err(XfaError::Malformed(format!("<{local}> is not XFA form data")));
+                return Err(XfaError::Malformed(format!(
+                    "<{local}> is not XFA form data"
+                )));
             }
             if let Some(want) = expect_root
                 && local != want
             {
-                return Err(XfaError::Malformed(format!("the data file's root is <{local}>; this form's data root is <{want}>")));
+                return Err(XfaError::Malformed(format!(
+                    "the data file's root is <{local}>; this form's data root is <{want}>"
+                )));
             }
             let mut budget = MAX_NODES as usize;
-            let node = import_node(root, 0, &mut budget).ok_or_else(|| XfaError::TooLarge("the data file holds too many nodes".into()))?;
+            let node = import_node(root, 0, &mut budget)
+                .ok_or_else(|| XfaError::TooLarge("the data file holds too many nodes".into()))?;
             return Ok(vec![node]);
         }
     };
     let mut budget = MAX_NODES as usize;
     let mut out = Vec::new();
     for c in data.children().filter(|c| c.is_element()) {
-        out.push(import_node(c, 1, &mut budget).ok_or_else(|| XfaError::TooLarge("the data file holds too many nodes".into()))?);
+        out.push(
+            import_node(c, 1, &mut budget)
+                .ok_or_else(|| XfaError::TooLarge("the data file holds too many nodes".into()))?,
+        );
     }
     Ok(out)
 }
@@ -1200,35 +1514,69 @@ pub fn parse_data_file(text: &str, expect_root: Option<&str>) -> Result<Vec<Impo
 /// Replace the form's data with what the file `text` holds (see [`parse_data_file`]), keeping
 /// the rest of the datasets (data descriptions, say). `reuse`: the stream this edit already
 /// wrote.
-pub fn import_data(doc: &mut Document, text: &str, expect_root: Option<&str>, reuse: Option<ObjRef>) -> Result<DataImport, XfaError> {
+pub fn import_data(
+    doc: &mut Document,
+    text: &str,
+    expect_root: Option<&str>,
+    reuse: Option<ObjRef>,
+) -> Result<DataImport, XfaError> {
     let nodes = parse_data_file(text, expect_root)?;
     fn count(n: &[ImportNode]) -> usize {
         n.iter().map(|c| 1 + count(&c.children)).sum()
     }
     let r = rewrite(doc, &[Op::ReplaceData(&nodes)], reuse)?;
     if !r.written {
-        return Err(XfaError::Malformed(r.warnings.first().cloned().unwrap_or_else(|| "the data could not be written".into())));
+        return Err(XfaError::Malformed(
+            r.warnings
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "the data could not be written".into()),
+        ));
     }
-    Ok(DataImport { nodes: count(&nodes), warnings: r.warnings, stream: r.stream })
+    Ok(DataImport {
+        nodes: count(&nodes),
+        warnings: r.warnings,
+        stream: r.stream,
+    })
 }
 
 /// The datasets packet's text: from the XFA array's `datasets` item, or the whole XDP.
 fn datasets_packet(doc: &Document) -> Result<Option<String>, XfaError> {
-    let Some(root) = doc.root() else { return Ok(None) };
+    let Some(root) = doc.root() else {
+        return Ok(None);
+    };
     let catalog = doc.get(root);
-    let Some(acro) = catalog.as_dict().and_then(|c| c.get(b"AcroForm")).map(|a| doc.resolve(a)) else { return Ok(None) };
-    let Some(xfa) = acro.as_dict().and_then(|a| a.get(b"XFA")).map(|x| doc.resolve(x)) else { return Ok(None) };
+    let Some(acro) = catalog
+        .as_dict()
+        .and_then(|c| c.get(b"AcroForm"))
+        .map(|a| doc.resolve(a))
+    else {
+        return Ok(None);
+    };
+    let Some(xfa) = acro
+        .as_dict()
+        .and_then(|a| a.get(b"XFA"))
+        .map(|x| doc.resolve(x))
+    else {
+        return Ok(None);
+    };
     let text_of = |o: &Object| -> Result<Option<String>, XfaError> {
         match &*doc.resolve(o) {
-            Object::Stream(s) => Ok(crate::packets::decode(&s.decoded_within(64 << 20)?).map(|(t, _)| t)),
+            Object::Stream(s) => {
+                Ok(crate::packets::decode(&s.decoded_within(64 << 20)?).map(|(t, _)| t))
+            }
             _ => Ok(None),
         }
     };
     match &*xfa {
         Object::Array(items) => {
-            let at = (0..items.len())
-                .step_by(2)
-                .find(|&i| items.get(i).and_then(|n| n.as_string()).is_some_and(|s| s.to_text() == "datasets") && i + 1 < items.len());
+            let at = (0..items.len()).step_by(2).find(|&i| {
+                items
+                    .get(i)
+                    .and_then(|n| n.as_string())
+                    .is_some_and(|s| s.to_text() == "datasets")
+                    && i + 1 < items.len()
+            });
             match at.and_then(|i| items.get(i + 1)) {
                 Some(o) => text_of(o),
                 None => Ok(None),
@@ -1261,7 +1609,9 @@ pub fn export_data(doc: &Document, xdp: bool, pdf_name: &str) -> Result<String, 
         let (name, _) = escape(pdf_name);
         out.push_str("<xdp:xdp xmlns:xdp=\"http://ns.adobe.com/xdp/\">\n");
         out.push_str(&datasets);
-        out.push_str(&format!("\n<pdf href=\"{name}\" xmlns=\"http://ns.adobe.com/xdp/pdf/\"/>\n</xdp:xdp>\n"));
+        out.push_str(&format!(
+            "\n<pdf href=\"{name}\" xmlns=\"http://ns.adobe.com/xdp/pdf/\"/>\n</xdp:xdp>\n"
+        ));
     } else {
         out.push_str(if data.is_empty() { &datasets } else { &data });
         out.push('\n');
@@ -1273,17 +1623,30 @@ pub fn export_data(doc: &Document, xdp: bool, pdf_name: &str) -> Result<String, 
 /// data element), each with the namespaces it uses declared on it. `Ok(None)`: no datasets
 /// element; `Err`: the text can't be read.
 fn datasets_markup(text: &str) -> Result<Option<(String, String)>, ()> {
-    let opts = roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
     if crate::xml_nesting_depth(text) > crate::MAX_XML_DEPTH {
         return Err(());
     }
     let wrapped = format!("{WRAP_OPEN}{text}{WRAP_CLOSE}");
     let (src, parsed) = match roxmltree::Document::parse_with_options(text, opts) {
         Ok(d) => (text, d),
-        Err(_) => (wrapped.as_str(), roxmltree::Document::parse_with_options(&wrapped, opts).map_err(|_| ())?),
+        Err(_) => (
+            wrapped.as_str(),
+            roxmltree::Document::parse_with_options(&wrapped, opts).map_err(|_| ())?,
+        ),
     };
-    let Some(ds) = parsed.descendants().find(|n| n.is_element() && n.tag_name().name() == "datasets") else { return Ok(None) };
-    let data = ds.children().find(|n| n.is_element() && n.tag_name().name() == "data");
+    let Some(ds) = parsed
+        .descendants()
+        .find(|n| n.is_element() && n.tag_name().name() == "datasets")
+    else {
+        return Ok(None);
+    };
+    let data = ds
+        .children()
+        .find(|n| n.is_element() && n.tag_name().name() == "data");
     let data_alone = match data {
         Some(d) => {
             let kids: Vec<roxmltree::Node> = d.children().filter(|c| c.is_element()).collect();
@@ -1318,38 +1681,65 @@ fn element_markup(src: &str, n: roxmltree::Node) -> Option<String> {
         return Some(text.to_string());
     }
     let name_end = qname(src, &range)?.len() + 1;
-    Some(format!("{}{decls}{}", text.get(..name_end)?, text.get(name_end..)?))
+    Some(format!(
+        "{}{decls}{}",
+        text.get(..name_end)?,
+        text.get(name_end..)?
+    ))
 }
 
 /// Apply `ops` to the datasets packet, in order, as one rewrite of it: everything one script
 /// event changed becomes a single new datasets stream. When the packet is already the stream
 /// `reuse` (written earlier for the same event), that stream is replaced in place instead of
 /// a new one being added. The stream written is in the report.
-pub fn write_data_ops(doc: &mut Document, ops: &[DataOp], reuse: Option<ObjRef>) -> Result<DatasetsWrite, XfaError> {
+pub fn write_data_ops(
+    doc: &mut Document,
+    ops: &[DataOp],
+    reuse: Option<ObjRef>,
+) -> Result<DatasetsWrite, XfaError> {
     // Runs of values (and instances) merge in one pass; a value set twice keeps the last.
     let mut steps: Vec<Vec<Want>> = Vec::new();
     let mut removes: Vec<Option<DataPath>> = Vec::new();
     let mut run: Vec<Want> = Vec::new();
-    let flush = |run: &mut Vec<Want>, steps: &mut Vec<Vec<Want>>, removes: &mut Vec<Option<DataPath>>| {
-        if !run.is_empty() {
-            let mut seen = std::collections::HashSet::new();
-            let mut kept: Vec<Want> = std::mem::take(run).into_iter().rev().filter(|w| seen.insert((w.ensure, w.path.clone()))).collect();
-            kept.reverse();
-            steps.push(kept);
-            removes.push(None);
-        }
-    };
+    let flush =
+        |run: &mut Vec<Want>, steps: &mut Vec<Vec<Want>>, removes: &mut Vec<Option<DataPath>>| {
+            if !run.is_empty() {
+                let mut seen = std::collections::HashSet::new();
+                let mut kept: Vec<Want> = std::mem::take(run)
+                    .into_iter()
+                    .rev()
+                    .filter(|w| seen.insert((w.ensure, w.path.clone())))
+                    .collect();
+                kept.reverse();
+                steps.push(kept);
+                removes.push(None);
+            }
+        };
     for op in ops {
         match op {
             DataOp::Value { path, text } if !path.is_empty() => {
                 // An empty value clears an existing node and needs no new one.
-                run.push(Want { som: path_som(path), path: path.clone(), text: text.clone(), ensure: false });
+                run.push(Want {
+                    som: path_som(path),
+                    path: path.clone(),
+                    text: text.clone(),
+                    ensure: false,
+                });
             }
-            DataOp::Instances { parent, name, count } => {
+            DataOp::Instances {
+                parent,
+                name,
+                count,
+            } => {
                 for k in 0..(*count).min(MAX_INDEX) {
                     let mut path = parent.clone();
                     path.push((name.clone(), k));
-                    run.push(Want { som: format!("{name}[{k}]"), path, text: String::new(), ensure: true });
+                    run.push(Want {
+                        som: format!("{name}[{k}]"),
+                        path,
+                        text: String::new(),
+                        ensure: true,
+                    });
                 }
             }
             DataOp::Remove(path) if !path.is_empty() => {
@@ -1374,7 +1764,12 @@ pub fn write_data_ops(doc: &mut Document, ops: &[DataOp], reuse: Option<ObjRef>)
 
 /// Put `bytes` in the document as a datasets stream: in place of `old` when that is the stream
 /// `reuse`, else as a new object.
-fn put_stream(doc: &mut Document, old: Option<&Object>, reuse: Option<ObjRef>, bytes: &[u8]) -> ObjRef {
+fn put_stream(
+    doc: &mut Document,
+    old: Option<&Object>,
+    reuse: Option<ObjRef>,
+    bytes: &[u8],
+) -> ObjRef {
     let stream = Object::Stream(Stream::flate(Dict::new(), bytes));
     match (old.and_then(Object::as_ref), reuse) {
         (Some(r), Some(keep)) if r == keep => {
@@ -1406,41 +1801,77 @@ const MAX_PACKET_WRITE: usize = 48 << 20;
 /// isn't is not written: better the old data than an unreadable packet.
 fn readable(text: &str, within: Within, warnings: &mut Vec<String>) -> bool {
     if text.len() > MAX_PACKET_WRITE {
-        warnings.push(format!("The XFA data would be larger than {} MB; it was not written", MAX_PACKET_WRITE >> 20));
+        warnings.push(format!(
+            "The XFA data would be larger than {} MB; it was not written",
+            MAX_PACKET_WRITE >> 20
+        ));
         return false;
     }
-    let opts = roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
     let ok = roxmltree::Document::parse_with_options(text, opts).is_ok()
-        || (within == Within::Packet && roxmltree::Document::parse_with_options(&format!("{WRAP_OPEN}{text}{WRAP_CLOSE}"), opts).is_ok());
+        || (within == Within::Packet
+            && roxmltree::Document::parse_with_options(
+                &format!("{WRAP_OPEN}{text}{WRAP_CLOSE}"),
+                opts,
+            )
+            .is_ok());
     if !ok {
-        warnings.push("The XFA data would not be well-formed XML after this change; it was not written".into());
+        warnings.push(
+            "The XFA data would not be well-formed XML after this change; it was not written"
+                .into(),
+        );
     }
     ok
 }
 
-fn rewrite(doc: &mut Document, ops: &[Op], reuse: Option<ObjRef>) -> Result<DatasetsWrite, XfaError> {
+fn rewrite(
+    doc: &mut Document,
+    ops: &[Op],
+    reuse: Option<ObjRef>,
+) -> Result<DatasetsWrite, XfaError> {
     let mut report = DatasetsWrite::default();
     if ops.is_empty() {
         return Ok(report);
     }
-    let Some(root) = doc.root() else { return Ok(report) };
+    let Some(root) = doc.root() else {
+        return Ok(report);
+    };
     let catalog = doc.get(root);
-    let Some(acro_obj) = catalog.as_dict().and_then(|c| c.get(b"AcroForm")).cloned() else { return Ok(report) };
+    let Some(acro_obj) = catalog.as_dict().and_then(|c| c.get(b"AcroForm")).cloned() else {
+        return Ok(report);
+    };
     let acro_ref = acro_obj.as_ref();
-    let Some(mut acro) = doc.resolve(&acro_obj).as_dict().cloned() else { return Ok(report) };
-    let Some(xfa) = acro.get(b"XFA").cloned() else { return Ok(report) };
+    let Some(mut acro) = doc.resolve(&acro_obj).as_dict().cloned() else {
+        return Ok(report);
+    };
+    let Some(xfa) = acro.get(b"XFA").cloned() else {
+        return Ok(report);
+    };
     let warnings = &mut report.warnings;
     match &*doc.resolve(&xfa) {
         Object::Array(items) => {
             let mut items = items.clone();
-            let at = (0..items.len())
-                .step_by(2)
-                .find(|&i| items.get(i).and_then(|n| n.as_string()).is_some_and(|s| s.to_text() == "datasets") && i + 1 < items.len());
+            let at = (0..items.len()).step_by(2).find(|&i| {
+                items
+                    .get(i)
+                    .and_then(|n| n.as_string())
+                    .is_some_and(|s| s.to_text() == "datasets")
+                    && i + 1 < items.len()
+            });
             match at {
                 Some(i) => {
-                    let Some(existing) = items.get(i + 1).cloned() else { return Ok(report) };
-                    let Some((text, encoding)) = packet_text(doc, &existing, warnings) else { return Ok(report) };
-                    let Some(t) = merge_all(&text, Within::Packet, ops, warnings) else { return Ok(report) };
+                    let Some(existing) = items.get(i + 1).cloned() else {
+                        return Ok(report);
+                    };
+                    let Some((text, encoding)) = packet_text(doc, &existing, warnings) else {
+                        return Ok(report);
+                    };
+                    let Some(t) = merge_all(&text, Within::Packet, ops, warnings) else {
+                        return Ok(report);
+                    };
                     if !readable(&t, Within::Packet, warnings) {
                         return Ok(report);
                     }
@@ -1453,16 +1884,29 @@ fn rewrite(doc: &mut Document, ops: &[Op], reuse: Option<ObjRef>) -> Result<Data
                 None => {
                     // No datasets packet yet: made from the first values, then the rest merged
                     // in; before the postamble, or last.
-                    let Some(first) = ops.iter().position(|op| matches!(op, Op::Values(_))) else { return Ok(report) };
-                    let Some(Op::Values(wants)) = ops.get(first) else { return Ok(report) };
+                    let Some(first) = ops.iter().position(|op| matches!(op, Op::Values(_))) else {
+                        return Ok(report);
+                    };
+                    let Some(Op::Values(wants)) = ops.get(first) else {
+                        return Ok(report);
+                    };
                     let fresh = fresh_datasets(&build_children(wants, warnings));
-                    let text = merge_all(&fresh, Within::Packet, ops.get(first + 1..).unwrap_or_default(), warnings).unwrap_or(fresh);
+                    let text = merge_all(
+                        &fresh,
+                        Within::Packet,
+                        ops.get(first + 1..).unwrap_or_default(),
+                        warnings,
+                    )
+                    .unwrap_or(fresh);
                     if !readable(&text, Within::Packet, warnings) {
                         return Ok(report);
                     }
                     let r = doc.add(Object::Stream(Stream::flate(Dict::new(), text.as_bytes())));
                     report.stream = Some(r);
-                    let pos = items.iter().position(|n| n.as_string().is_some_and(|s| s.to_text() == "postamble")).unwrap_or(items.len());
+                    let pos = items
+                        .iter()
+                        .position(|n| n.as_string().is_some_and(|s| s.to_text() == "postamble"))
+                        .unwrap_or(items.len());
                     items.insert(pos, Object::Ref(r));
                     items.insert(pos, Object::String(PdfString::text("datasets")));
                 }
@@ -1470,8 +1914,12 @@ fn rewrite(doc: &mut Document, ops: &[Op], reuse: Option<ObjRef>) -> Result<Data
             acro.set(b"XFA".to_vec(), Object::Array(items));
         }
         Object::Stream(_) => {
-            let Some((text, encoding)) = packet_text(doc, &xfa, warnings) else { return Ok(report) };
-            let Some(new) = merge_all(&text, Within::Xdp, ops, warnings) else { return Ok(report) };
+            let Some((text, encoding)) = packet_text(doc, &xfa, warnings) else {
+                return Ok(report);
+            };
+            let Some(new) = merge_all(&text, Within::Xdp, ops, warnings) else {
+                return Ok(report);
+            };
             if !readable(&new, Within::Xdp, warnings) {
                 return Ok(report);
             }
@@ -1497,17 +1945,31 @@ pub fn read_values(doc: &Document, fields: &[FieldDatum]) -> Vec<(String, FieldD
 
 /// [`read_values`] with the form's parsed template when the caller has it; `None` parses the
 /// document's.
-pub fn read_values_with(doc: &Document, tpl: Option<&Template>, fields: &[FieldDatum]) -> Vec<(String, FieldData)> {
+pub fn read_values_with(
+    doc: &Document,
+    tpl: Option<&Template>,
+    fields: &[FieldDatum],
+) -> Vec<(String, FieldData)> {
     with_template(doc, tpl, |t| values_at(doc, t, fields))
 }
 
-fn values_at(doc: &Document, tpl: Option<&Template>, fields: &[FieldDatum]) -> Vec<(String, FieldData)> {
-    let Ok(Some(p)) = crate::read_packets(doc) else { return Vec::new() };
-    let Some(data) = parse_datasets(&p.xdp) else { return Vec::new() };
+fn values_at(
+    doc: &Document,
+    tpl: Option<&Template>,
+    fields: &[FieldDatum],
+) -> Vec<(String, FieldData)> {
+    let Ok(Some(p)) = crate::read_packets(doc) else {
+        return Vec::new();
+    };
+    let Some(data) = parse_datasets(&p.xdp) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for f in fields {
         let path = path_of(tpl, &som_of(doc, f));
-        let Some(text) = data.value_at(&path) else { continue };
+        let Some(text) = data.value_at(&path) else {
+            continue;
+        };
         let text = text.as_str();
         let value = match &f.data {
             FieldData::Text(_) => FieldData::Text(match date_pattern_of(doc, f) {
@@ -1518,7 +1980,9 @@ fn values_at(doc: &Document, tpl: Option<&Template>, fields: &[FieldDatum]) -> V
                 let (on, _) = items_of(doc, f);
                 FieldData::Check(is_on(text, &on))
             }
-            FieldData::Radio(_) => FieldData::Radio((!text.trim().is_empty()).then(|| text.trim().to_string())),
+            FieldData::Radio(_) => {
+                FieldData::Radio((!text.trim().is_empty()).then(|| text.trim().to_string()))
+            }
             FieldData::None => continue,
         };
         out.push((f.name.clone(), value));
@@ -1532,5 +1996,8 @@ pub fn is_on(text: &str, on: &str) -> bool {
     if t == on {
         return true;
     }
-    !matches!(t.to_ascii_lowercase().as_str(), "" | "0" | "off" | "false" | "no") && on.trim().is_empty()
+    !matches!(
+        t.to_ascii_lowercase().as_str(),
+        "" | "0" | "off" | "false" | "no"
+    ) && on.trim().is_empty()
 }

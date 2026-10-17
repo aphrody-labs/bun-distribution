@@ -5,13 +5,13 @@
 
 use std::{ffi::OsString, path::PathBuf, sync::Arc, time::Duration};
 
-use aphrody_rag::{
-    Embedder, LlamaServerEmbedder, LlamaServerReranker, OpenAiCompatEmbedder, RagSearcher,
-    RagStore, Reranker, SearchMode,
-};
 use crate::{
     EvalError, EvalOptions, EvalTarget, HttpTarget, LocalIndexTarget, McpTarget, parse_gold,
     run_eval,
+};
+use aphrody_rag::{
+    Embedder, LlamaServerEmbedder, LlamaServerReranker, OpenAiCompatEmbedder, RagSearcher,
+    RagStore, Reranker, SearchMode,
 };
 use clap::{Parser, ValueEnum};
 
@@ -128,12 +128,15 @@ struct Args {
 /// Entry point of the `rag-eval` tool: `argv[0]` is the invocation name; returns the process exit code.
 pub fn cli_main(argv: Vec<OsString>) -> i32 {
     let args = Args::parse_from(argv);
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("Error: cannot start the async runtime: {error}");
             return 1;
-        },
+        }
     };
     runtime.block_on(run(args))
 }
@@ -143,18 +146,20 @@ async fn run(args: Args) -> i32 {
     // crypto provider before any HTTP client exists (building one without it panics).
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-
     let gold_text = match tokio::fs::read_to_string(&args.gold).await {
         Ok(t) => t,
         Err(err) => {
             eprintln!("Error reading gold set {}: {err}", args.gold.display());
             return 1;
-        },
+        }
     };
 
     let cases = parse_gold(&gold_text);
     if cases.is_empty() {
-        eprintln!("Error: no valid gold cases parsed from {}", args.gold.display());
+        eprintln!(
+            "Error: no valid gold cases parsed from {}",
+            args.gold.display()
+        );
         return 1;
     }
 
@@ -177,27 +182,27 @@ async fn run(args: Args) -> i32 {
                     .with_tool_name(args.mcp_tool.clone())
                     .with_rate_limit(interval),
             )
-        },
+        }
         "local" => match build_local_target(&args) {
             Ok(target) => Box::new(target),
             Err(message) => {
                 eprintln!("Error: {message} (exit code 2).");
                 return 2;
-            },
+            }
         },
         "http" => match args.url.as_deref().filter(|url| !url.is_empty()) {
             Some(url) => Box::new(HttpTarget::new(url.to_owned()).with_rate_limit(interval)),
             None => {
                 eprintln!("Error: --target http requires --url <search endpoint> (exit code 2).");
                 return 2;
-            },
+            }
         },
         other => {
             eprintln!(
                 "Error: unknown --target `{other}`; expected http, mcp or local (exit code 2)."
             );
             return 2;
-        },
+        }
     };
 
     let opts = EvalOptions {
@@ -223,18 +228,18 @@ async fn run(args: Args) -> i32 {
             } else {
                 0
             }
-        },
+        }
         Err(EvalError::ConditionMismatch { expected, observed }) => {
             eprintln!(
                 "Condition mismatch error: expected `{expected}`, observed `{observed}` (exit \
                  code 4)."
             );
             4
-        },
+        }
         Err(err) => {
             eprintln!("Evaluation failed: {err}");
             1
-        },
+        }
     }
 }
 
@@ -261,7 +266,10 @@ fn mcp_endpoint_url(explicit: Option<&str>) -> String {
 }
 
 fn valid_mcp_tool(name: &str) -> bool {
-    matches!(name, "rag_search" | "shenron_rag_search" | "aphrody_shenron_rag_search")
+    matches!(
+        name,
+        "rag_search" | "shenron_rag_search" | "aphrody_shenron_rag_search"
+    )
 }
 
 /// Normalise `raw` into a full `/v1/<suffix>` endpoint, accepting a server
@@ -279,7 +287,10 @@ fn endpoint(raw: &str, suffix: &str) -> String {
 
 /// Validate the `local` target flags without opening anything.
 fn validate_local_args(args: &Args) -> Result<PathBuf, String> {
-    let db = args.db.clone().ok_or("--target local requires --db <PATH>")?;
+    let db = args
+        .db
+        .clone()
+        .ok_or("--target local requires --db <PATH>")?;
     if !db.is_file() {
         return Err(format!(
             "local index `{}` does not exist; run `aphrody rag index` first",
@@ -314,7 +325,9 @@ fn build_local_target(args: &Args) -> Result<LocalIndexTarget, String> {
         // Both unwraps are guaranteed by `validate_local_args`.
         let raw = args.embed_endpoint.as_deref().unwrap_or_default();
         let model = args.embed_model.as_deref().unwrap_or_default();
-        let api_key = std::env::var("APHRODY_RAG_API_KEY").ok().filter(|key| !key.is_empty());
+        let api_key = std::env::var("APHRODY_RAG_API_KEY")
+            .ok()
+            .filter(|key| !key.is_empty());
         let embedder: Arc<dyn Embedder> = match args.embed_dialect {
             EmbedDialect::LlamaServer => Arc::new(LlamaServerEmbedder::new(
                 endpoint(raw, "embeddings"),
@@ -342,12 +355,13 @@ fn build_local_target(args: &Args) -> Result<LocalIndexTarget, String> {
             let reranker: Arc<dyn Reranker> = Arc::new(reranker);
             searcher = searcher.with_reranker(reranker);
             true
-        },
+        }
         _ => false,
     };
 
-    let mut target =
-        LocalIndexTarget::new(Arc::new(searcher)).with_mode(args.mode.into()).with_rerank(rerank);
+    let mut target = LocalIndexTarget::new(Arc::new(searcher))
+        .with_mode(args.mode.into())
+        .with_rerank(rerank);
     if let Some(prefix) = &args.path_prefix {
         target = target.with_path_prefix(prefix.clone());
     }
@@ -360,7 +374,11 @@ mod tests {
 
     #[test]
     fn cli_accepts_only_read_only_mcp_search_tools() {
-        for name in ["rag_search", "shenron_rag_search", "aphrody_shenron_rag_search"] {
+        for name in [
+            "rag_search",
+            "shenron_rag_search",
+            "aphrody_shenron_rag_search",
+        ] {
             assert!(valid_mcp_tool(name));
         }
         assert!(!valid_mcp_tool("delete_document"));
@@ -382,16 +400,31 @@ mod tests {
     }
 
     fn args(extra: &[&str]) -> Args {
-        let mut argv = vec!["aphrody-rag-eval", "--gold", "gold.jsonl", "--target", "local"];
+        let mut argv = vec![
+            "aphrody-rag-eval",
+            "--gold",
+            "gold.jsonl",
+            "--target",
+            "local",
+        ];
         argv.extend_from_slice(extra);
         Args::parse_from(argv)
     }
 
     #[test]
     fn endpoint_accepts_base_v1_or_full_url() {
-        assert_eq!(endpoint("http://h:1", "embeddings"), "http://h:1/v1/embeddings");
-        assert_eq!(endpoint("http://h:1/v1", "embeddings"), "http://h:1/v1/embeddings");
-        assert_eq!(endpoint("http://h:1/v1/embeddings/", "embeddings"), "http://h:1/v1/embeddings");
+        assert_eq!(
+            endpoint("http://h:1", "embeddings"),
+            "http://h:1/v1/embeddings"
+        );
+        assert_eq!(
+            endpoint("http://h:1/v1", "embeddings"),
+            "http://h:1/v1/embeddings"
+        );
+        assert_eq!(
+            endpoint("http://h:1/v1/embeddings/", "embeddings"),
+            "http://h:1/v1/embeddings"
+        );
     }
 
     #[test]

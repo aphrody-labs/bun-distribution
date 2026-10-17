@@ -36,15 +36,34 @@ fn components(doc: &Document, s: &Stream) -> Option<usize> {
 /// `Ok(Some(copy))` with the covered pixels cleared, `Ok(None)` when no pixel centre is covered,
 /// `Err(())` when the image can't be cleared (the caller removes it).
 #[allow(clippy::result_unit_err)]
-pub(crate) fn clear(doc: &Document, s: &Stream, ctm: &Matrix, rects: &[[f64; 4]]) -> Result<Option<Stream>, ()> {
+pub(crate) fn clear(
+    doc: &Document,
+    s: &Stream,
+    ctm: &Matrix,
+    rects: &[[f64; 4]],
+) -> Result<Option<Stream>, ()> {
     decode_and_clear(doc, s, ctm, rects).ok_or(())
 }
 
-fn decode_and_clear(doc: &Document, s: &Stream, ctm: &Matrix, rects: &[[f64; 4]]) -> Option<Option<Stream>> {
+fn decode_and_clear(
+    doc: &Document,
+    s: &Stream,
+    ctm: &Matrix,
+    rects: &[[f64; 4]],
+) -> Option<Option<Stream>> {
     let supported = |n: &[u8]| {
         matches!(
             n,
-            b"FlateDecode" | b"Fl" | b"LZWDecode" | b"LZW" | b"ASCII85Decode" | b"A85" | b"ASCIIHexDecode" | b"AHx" | b"RunLengthDecode" | b"RL"
+            b"FlateDecode"
+                | b"Fl"
+                | b"LZWDecode"
+                | b"LZW"
+                | b"ASCII85Decode"
+                | b"A85"
+                | b"ASCIIHexDecode"
+                | b"AHx"
+                | b"RunLengthDecode"
+                | b"RL"
         )
     };
     let ok = match s.dict.get(b"Filter") {
@@ -62,7 +81,14 @@ fn decode_and_clear(doc: &Document, s: &Stream, ctm: &Matrix, rects: &[[f64; 4]]
     }
     let (w, h) = (w as usize, h as usize);
     let mask = matches!(s.dict.get(b"ImageMask"), Some(Object::Bool(true)));
-    let (ncomp, bpc) = if mask { (1, 1) } else { (components(doc, s)?, s.dict.int(b"BitsPerComponent")? as usize) };
+    let (ncomp, bpc) = if mask {
+        (1, 1)
+    } else {
+        (
+            components(doc, s)?,
+            s.dict.int(b"BitsPerComponent")? as usize,
+        )
+    };
     if !matches!(bpc, 1 | 2 | 4 | 8 | 16) {
         return None;
     }
@@ -74,7 +100,13 @@ fn decode_and_clear(doc: &Document, s: &Stream, ctm: &Matrix, rects: &[[f64; 4]]
     data.truncate(row * h);
     // Image masks: a sample of 0 paints unless /Decode is [1 0]; cleared samples must not paint.
     let clear_bit = if mask {
-        let inverted = s.dict.get(b"Decode").and_then(Object::as_array).and_then(|d| d.first()).and_then(Object::as_f64) == Some(1.0);
+        let inverted = s
+            .dict
+            .get(b"Decode")
+            .and_then(Object::as_array)
+            .and_then(|d| d.first())
+            .and_then(Object::as_f64)
+            == Some(1.0);
         !inverted
     } else {
         false
@@ -87,13 +119,22 @@ fn decode_and_clear(doc: &Document, s: &Stream, ctm: &Matrix, rects: &[[f64; 4]]
         let (ax, ay) = ctm.apply(0.0, v);
         let (bx, by) = ctm.apply(1.0, v);
         let row_box = [ax.min(bx), ay.min(by), ax.max(bx), ay.max(by)];
-        if !rects.iter().any(|r| overlaps(*r, [row_box[0], row_box[1] - 0.01, row_box[2], row_box[3] + 0.01], 0.0)) {
+        if !rects.iter().any(|r| {
+            overlaps(
+                *r,
+                [row_box[0], row_box[1] - 0.01, row_box[2], row_box[3] + 0.01],
+                0.0,
+            )
+        }) {
             continue;
         }
         for i in 0..w {
             let u = (i as f64 + 0.5) / w as f64;
             let (x, y) = ctm.apply(u, v);
-            if !rects.iter().any(|r| x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3]) {
+            if !rects
+                .iter()
+                .any(|r| x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3])
+            {
                 continue;
             }
             cleared += 1;

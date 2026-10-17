@@ -109,7 +109,11 @@ impl MissionConfigInfo {
         for (i, slot) in raw.iter_mut().enumerate() {
             *slot = node.hash(i + 2);
         }
-        Some(Self { mission_id, mission_code, raw })
+        Some(Self {
+            mission_id,
+            mission_code,
+            raw,
+        })
     }
 }
 

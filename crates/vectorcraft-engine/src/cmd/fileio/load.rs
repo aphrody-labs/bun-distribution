@@ -8,7 +8,9 @@ use vectorcraft_geom::Affine;
 
 use super::super::*;
 use super::pdfimport::LoadOptions;
-use super::{Format, SAVE_FORMATS, absolute_path, file_stamp, format, format_for_name, psdread, read_file};
+use super::{
+    Format, SAVE_FORMATS, absolute_path, file_stamp, format, format_for_name, psdread, read_file,
+};
 use crate::{EngineError, Prefs};
 
 /// A file read into a document, with its format and non-fatal import notes.
@@ -56,7 +58,10 @@ pub(super) fn err(e: impl std::fmt::Display) -> EngineError {
 
 /// The last component of a path or file name.
 pub fn file_name(name: &str) -> String {
-    std::path::Path::new(name).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| name.to_string())
+    std::path::Path::new(name)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| name.to_string())
 }
 
 /// The readable format of a file: from its content (magic bytes) when that tells, else from the
@@ -68,7 +73,9 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
     }
     if vectorcraft_format::sniff(bytes) {
         // A template keeps its meaning from the extension, like .ait.
-        return by_name.filter(|f| f.id == "template").or_else(|| format("vectorcraft"));
+        return by_name
+            .filter(|f| f.id == "template")
+            .or_else(|| format("vectorcraft"));
     }
     if vectorcraft_svg::is_svgz(bytes) {
         return format("svgz");
@@ -76,11 +83,15 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
     if vectorcraft_pdf::is_postscript(bytes) {
         // PostScript (.eps, and .ai saved without PDF compatibility) by any name; .ai and .ait
         // keep their meaning (a template), read as PostScript all the same.
-        return by_name.filter(|f| matches!(f.id, "ai" | "ait")).or_else(|| format("eps"));
+        return by_name
+            .filter(|f| matches!(f.id, "ai" | "ait"))
+            .or_else(|| format("eps"));
     }
     if bytes.starts_with(b"%PDF") {
         // .ai and .ait files are PDF inside; the extension keeps the template meaning.
-        return by_name.filter(|f| matches!(f.id, "ai" | "ait")).or_else(|| format("pdf"));
+        return by_name
+            .filter(|f| matches!(f.id, "ai" | "ait"))
+            .or_else(|| format("pdf"));
     }
     if vectorcraft_cad::is_dxf(bytes) {
         return format("dxf");
@@ -102,14 +113,18 @@ pub fn detect(name: &str, bytes: &[u8]) -> Option<&'static Format> {
 
 /// The readable raster format behind an `image` crate format.
 fn image_format(f: image::ImageFormat) -> Option<&'static Format> {
-    f.extensions_str().iter().find_map(|e| format(e)).filter(|f| f.read && f.raster)
+    f.extensions_str()
+        .iter()
+        .find_map(|e| format(e))
+        .filter(|f| f.read && f.raster)
 }
 
 /// Why a file carrying editing data (an SVG or PDF saved with Preserve Editing) opened as plain
 /// artwork: it was changed in another app after it was saved.
 pub const EDITING_STALE: &str = "this file was changed in another app after it was saved with its editing data: it opened as plain artwork";
 /// Why a file carrying editing data opened as plain artwork: the data can't be read.
-pub const EDITING_DAMAGED: &str = "this file's editing data can't be read: it opened as plain artwork";
+pub const EDITING_DAMAGED: &str =
+    "this file's editing data can't be read: it opened as plain artwork";
 
 /// Preserve Editing, for every format that carries the native document: that document when the
 /// file around it is unchanged (`editing`: whether it is, and how to get the document's bytes) and
@@ -124,7 +139,13 @@ fn restore_or_import(
         let native = if intact { bytes() } else { None };
         match native.and_then(|b| native_file(&b).ok()) {
             Some((doc, _, warnings)) => return Ok((doc, warnings, true)),
-            None => fallback = Some(if intact { EDITING_DAMAGED } else { EDITING_STALE }),
+            None => {
+                fallback = Some(if intact {
+                    EDITING_DAMAGED
+                } else {
+                    EDITING_STALE
+                })
+            }
         }
     }
     let (doc, mut warnings) = import()?;
@@ -136,7 +157,9 @@ fn restore_or_import(
 
 /// A native file's document and details, the colour profiles it carries installed where missing
 /// (with a warning for each that can't be used).
-pub(crate) fn native_file(bytes: &[u8]) -> Result<(Document, vectorcraft_format::FileInfo, Vec<String>)> {
+pub(crate) fn native_file(
+    bytes: &[u8],
+) -> Result<(Document, vectorcraft_format::FileInfo, Vec<String>)> {
     let f = vectorcraft_format::load_file(bytes).map_err(err)?;
     let warnings = super::native::install_profiles(f.profiles);
     Ok((f.doc, f.info, warnings))
@@ -152,27 +175,40 @@ pub fn load(name: &str, bytes: &[u8]) -> Result<Loaded> {
 /// of its art, which it carries: its layers and hidden objects as they were, and the art outside
 /// its artboard (its PDF part has only what is on the artboards), as an EPS of the editor is read.
 /// Anything else as it was.
-fn through_editing_data(bytes: &[u8], opts: &LoadOptions, doc: Document, warnings: Vec<String>) -> (Document, Vec<String>) {
+fn through_editing_data(
+    bytes: &[u8],
+    opts: &LoadOptions,
+    doc: Document,
+    warnings: Vec<String>,
+) -> (Document, Vec<String>) {
     if opts.pages.is_some() || !opts.layers || !opts.editing_data {
         return (doc, warnings);
     }
-    let Some(private) = vectorcraft_pdf::illustrator_data(bytes, opts.password.as_deref()) else { return (doc, warnings) };
+    let Some(private) = vectorcraft_pdf::illustrator_data(bytes, opts.password.as_deref()) else {
+        return (doc, warnings);
+    };
     let outlined = opts.text_as == vectorcraft_pdf::TextAs::Outlines;
-    let (doc, mut warnings, read) = vectorcraft_eps::layered_ai(&private, doc, warnings, outlined, opts.trust_editing_data);
+    let (doc, mut warnings, read) =
+        vectorcraft_eps::layered_ai(&private, doc, warnings, outlined, opts.trust_editing_data);
     // The layers weren't read (or couldn't be): the notes of reading the PDF part still hold.
     if !read {
         return (doc, warnings);
     }
     // The layers hold the art that the PDF part leaves out or, in a PDF, that the import clipped
     // to the page.
-    warnings.retain(|w| w != vectorcraft_pdf::OFF_ARTBOARD_NOTE && w != vectorcraft_pdf::PAST_PAGE_NOTE);
+    warnings.retain(|w| {
+        w != vectorcraft_pdf::OFF_ARTBOARD_NOTE && w != vectorcraft_pdf::PAST_PAGE_NOTE
+    });
     (doc, warnings)
 }
 
 /// A `.ai` saved without PDF compatibility (its PDF part is a placeholder page) from the editor's
 /// own copy of its art alone: `None` when the file has none (or pages are picked, or layers or the
 /// editing data are off), an error when it can't be read.
-fn from_editing_data_alone(bytes: &[u8], opts: &LoadOptions) -> Option<Result<(Document, Vec<String>)>> {
+fn from_editing_data_alone(
+    bytes: &[u8],
+    opts: &LoadOptions,
+) -> Option<Result<(Document, Vec<String>)>> {
     if opts.pages.is_some() || !opts.layers || !opts.editing_data {
         return None;
     }
@@ -185,32 +221,43 @@ fn from_editing_data_alone(bytes: &[u8], opts: &LoadOptions) -> Option<Result<(D
 
 /// [`load`] with `document.open` options (the PDF pages, box and password; the DXF options).
 pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded> {
-    let format = detect(name, bytes).ok_or_else(|| match super::unsupported(&super::extension(name)) {
-        Some(u) => err(format!("can't open `{}`: {}", file_name(name), u.hint)),
-        None => err(format!("can't open `{name}`: not a format VectorCraft reads (see document.formats)")),
-    })?;
+    let format =
+        detect(name, bytes).ok_or_else(|| match super::unsupported(&super::extension(name)) {
+            Some(u) => err(format!("can't open `{}`: {}", file_name(name), u.hint)),
+            None => err(format!(
+                "can't open `{name}`: not a format VectorCraft reads (see document.formats)"
+            )),
+        })?;
     let title = file_name(name);
     let mut converted = false;
     let mut preview_only = false;
     let (mut doc, mut warnings, restored) = match format.id {
         // EPS and PostScript .ai: the document our EPS files carry, else the PostScript read.
         _ if format.id == "eps" || vectorcraft_pdf::is_postscript(bytes) => {
-            let editing = vectorcraft_eps::has_native(bytes).then_some((true, || vectorcraft_eps::native(bytes)));
+            let editing = vectorcraft_eps::has_native(bytes)
+                .then_some((true, || vectorcraft_eps::native(bytes)));
             restore_or_import(editing, || {
-                let r = vectorcraft_eps::import_with(bytes, opts.editing_data).map_err(|e| err(format!("can't open `{}`: {e}", file_name(name))))?;
+                let r = vectorcraft_eps::import_with(bytes, opts.editing_data)
+                    .map_err(|e| err(format!("can't open `{}`: {e}", file_name(name))))?;
                 Ok((r.document, r.warnings))
             })?
         }
         "vectorcraft" | "template" => {
             let (d, info, warnings) = native_file(bytes)?;
-            converted = info.is_old() || super::extension(name) == vectorcraft_format::LEGACY_EXTENSION;
+            converted =
+                info.is_old() || super::extension(name) == vectorcraft_format::LEGACY_EXTENSION;
             (d, warnings, false)
         }
         "svg" | "svgz" => {
             let text = vectorcraft_svg::text_of(bytes).map_err(err)?;
-            let editing = vectorcraft_svg::editing(&text).map(|e| (e.intact, move || vectorcraft_format::base64_decode(&e.data)));
+            let editing = vectorcraft_svg::editing(&text)
+                .map(|e| (e.intact, move || vectorcraft_format::base64_decode(&e.data)));
             // Relative links are found in the SVG's folder (when `name` is a path).
-            let folder = std::path::Path::new(name).parent().map(|f| f.to_string_lossy()).filter(|f| !f.is_empty()).map(|f| absolute_path(&f));
+            let folder = std::path::Path::new(name)
+                .parent()
+                .map(|f| f.to_string_lossy())
+                .filter(|f| !f.is_empty())
+                .map(|f| absolute_path(&f));
             restore_or_import(editing, || import_svg(&text, folder.as_deref()))?
         }
         "pdf" | "ai" | "ait" => {
@@ -221,18 +268,29 @@ pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded>
                 .then(|| vectorcraft_pdf::editing_with(bytes, opts.password.as_deref()))
                 .flatten()
                 .map(|e| (e.intact, move || Some(e.data)));
-            restore_or_import(editing, || match super::pdfimport::import(bytes, opts, format.id != "pdf") {
-                Ok(r) => {
-                    // Pages of text alone: the editing copy alone where it reads, as for a file
-                    // saved without its PDF part (#1387: else the page, which is the art).
-                    let alone = r.only_text.then(|| from_editing_data_alone(bytes, opts)).flatten().and_then(|read| read.ok());
-                    Ok(alone.unwrap_or_else(|| through_editing_data(bytes, opts, r.document, r.warnings)))
+            restore_or_import(editing, || {
+                match super::pdfimport::import(bytes, opts, format.id != "pdf") {
+                    Ok(r) => {
+                        // Pages of text alone: the editing copy alone where it reads, as for a file
+                        // saved without its PDF part (#1387: else the page, which is the art).
+                        let alone = r
+                            .only_text
+                            .then(|| from_editing_data_alone(bytes, opts))
+                            .flatten()
+                            .and_then(|read| read.ok());
+                        Ok(alone.unwrap_or_else(|| {
+                            through_editing_data(bytes, opts, r.document, r.warnings)
+                        }))
+                    }
+                    // Saved without its PDF part: the editing copy is all the file has.
+                    Err(e)
+                        if e.to_string()
+                            == vectorcraft_pdf::PdfError::PlaceholderOnly.to_string() =>
+                    {
+                        from_editing_data_alone(bytes, opts).unwrap_or(Err(e))
+                    }
+                    Err(e) => Err(e),
                 }
-                // Saved without its PDF part: the editing copy is all the file has.
-                Err(e) if e.to_string() == vectorcraft_pdf::PdfError::PlaceholderOnly.to_string() => {
-                    from_editing_data_alone(bytes, opts).unwrap_or(Err(e))
-                }
-                Err(e) => Err(e),
             })?
         }
         "dxf" => {
@@ -264,7 +322,14 @@ pub fn load_with(name: &str, bytes: &[u8], opts: &LoadOptions) -> Result<Loaded>
         doc.title = title;
     }
     warnings.extend(doc.images.values().filter_map(|b| too_large_note(&b.bytes)));
-    Ok(Loaded { doc, format, warnings, restored, converted, preview_only })
+    Ok(Loaded {
+        doc,
+        format,
+        warnings,
+        restored,
+        converted,
+        preview_only,
+    })
 }
 
 /// Import SVG text, reading the files its images link to (relative links from `folder`, the SVG's
@@ -278,7 +343,14 @@ pub(crate) fn import_svg(text: &str, folder: Option<&str>) -> Result<(Document, 
         let link = crate::cmd::links::link_info(path, &bytes);
         Some((bytes, link))
     };
-    vectorcraft_svg::import_with(text, &vectorcraft_svg::ImportOptions { folder, read: Some(&read) }).map_err(err)
+    vectorcraft_svg::import_with(
+        text,
+        &vectorcraft_svg::ImportOptions {
+            folder,
+            read: Some(&read),
+        },
+    )
+    .map_err(err)
 }
 
 /// Open a file's bytes as the new active document (what `document.open` does) →
@@ -286,12 +358,23 @@ pub(crate) fn import_svg(text: &str, folder: Option<&str>) -> Result<(Document, 
 /// document keeps `path` (and its format, for Save) when Save can write that format back: not a
 /// template, a partly read PDF, or a `.ai` file whose native document didn't come back. The
 /// document's linked files are looked for from `path` ([`crate::cmd::links::resolve`]).
-pub fn open_bytes(s: &mut Session, name: &str, bytes: &[u8], path: Option<String>) -> Result<Value> {
+pub fn open_bytes(
+    s: &mut Session,
+    name: &str,
+    bytes: &[u8],
+    path: Option<String>,
+) -> Result<Value> {
     open_bytes_with(s, name, bytes, path, &Value::Null)
 }
 
 /// [`open_bytes`] with the `document.open` options in `p` ([`LoadOptions::from_params`]).
-pub fn open_bytes_with(s: &mut Session, name: &str, bytes: &[u8], path: Option<String>, p: &Value) -> Result<Value> {
+pub fn open_bytes_with(
+    s: &mut Session,
+    name: &str,
+    bytes: &[u8],
+    path: Option<String>,
+    p: &Value,
+) -> Result<Value> {
     open_read(s, read_for_open(name, bytes, p)?, path)
 }
 
@@ -305,7 +388,10 @@ pub struct ReadFile {
 /// app may do it on another thread) → what [`open_read`] opens.
 pub fn read_for_open(name: &str, bytes: &[u8], p: &Value) -> Result<ReadFile> {
     let opts = LoadOptions::from_params("document.open", p)?;
-    Ok(ReadFile { loaded: load_with(name, bytes, &opts)?, opts })
+    Ok(ReadFile {
+        loaded: load_with(name, bytes, &opts)?,
+        opts,
+    })
 }
 
 /// The second half of [`open_bytes_with`]: open a file [`read_for_open`] read as the new active
@@ -316,23 +402,51 @@ pub fn open_read(s: &mut Session, file: ReadFile, path: Option<String>) -> Resul
 
 /// File → New from Template: any readable file (at `path`, if it is one: its links are looked for
 /// from there) as a new untitled document.
-pub fn open_template(s: &mut Session, name: &str, bytes: &[u8], path: Option<&str>) -> Result<Value> {
+pub fn open_template(
+    s: &mut Session,
+    name: &str,
+    bytes: &[u8],
+    path: Option<&str>,
+) -> Result<Value> {
     let loaded = load(name, bytes)?;
     if loaded.preview_only {
         return Err(err(
             "only this Affinity file's embedded preview could be read: use File › Open to see it with its warning, or export SVG or PDF from Affinity first",
         ));
     }
-    open_loaded(s, loaded, path.map(str::to_string), &LoadOptions::default(), true)
+    open_loaded(
+        s,
+        loaded,
+        path.map(str::to_string),
+        &LoadOptions::default(),
+        true,
+    )
 }
 
 /// Make a loaded file the new active document; `opts` are the options it was read with.
-fn open_loaded(s: &mut Session, loaded: Loaded, path: Option<String>, opts: &LoadOptions, as_template: bool) -> Result<Value> {
-    let Loaded { mut doc, format, warnings, restored, converted, .. } = loaded.with_grid_prefs(&s.prefs);
+fn open_loaded(
+    s: &mut Session,
+    loaded: Loaded,
+    path: Option<String>,
+    opts: &LoadOptions,
+    as_template: bool,
+) -> Result<Value> {
+    let Loaded {
+        mut doc,
+        format,
+        warnings,
+        restored,
+        converted,
+        ..
+    } = loaded.with_grid_prefs(&s.prefs);
     // What reading the file left out of the document, if anything.
     let losses: Vec<String> = warnings.iter().filter(|w| is_loss(w)).cloned().collect();
     let source_path = path.clone().filter(|_| !losses.is_empty());
-    let links = crate::cmd::links::resolve(&mut doc, path.as_deref(), s.prefs.update_links == "automatically");
+    let links = crate::cmd::links::resolve(
+        &mut doc,
+        path.as_deref(),
+        s.prefs.update_links == "automatically",
+    );
     // A template (saved by Save as Template, or an .ait/.vctemplate file) opens as a new untitled
     // document.
     let template = as_template || doc.template || matches!(format.id, "ait" | "template");
@@ -345,7 +459,8 @@ fn open_loaded(s: &mut Session, loaded: Loaded, path: Option<String>, opts: &Loa
     // writes .ai that way).
     let partial = format.id == "pdf" && opts.is_partial();
     let lossy_ai = format.id == "ai" && !restored;
-    let path = path.filter(|_| !template && !partial && !lossy_ai && SAVE_FORMATS.contains(&format.id));
+    let path =
+        path.filter(|_| !template && !partial && !lossy_ai && SAVE_FORMATS.contains(&format.id));
     let saves_back = path.is_some();
     let converted = saves_back && converted && s.prefs.append_converted;
     let index = s.add_document(doc, path);
@@ -357,7 +472,10 @@ fn open_loaded(s: &mut Session, loaded: Loaded, path: Option<String>, opts: &Loa
     st.imported_from = source_path;
     st.import_losses = losses;
     let title = s.documents()[index].title();
-    Ok(super::merge(json!({ "index": index, "title": title, "format": format.id, "warnings": warnings, "restored": restored }), links.to_json()))
+    Ok(super::merge(
+        json!({ "index": index, "title": title, "format": format.id, "warnings": warnings, "restored": restored }),
+        links.to_json(),
+    ))
 }
 
 /// A file named by a command's params: `{path}` (read from disk) or `{name, dataBase64}`.
@@ -371,10 +489,19 @@ pub(crate) struct Source<'a> {
 /// The file `p` names for command `cmd` (see [`Source`]).
 pub(crate) fn source<'a>(p: &'a Value, cmd: &str) -> Result<Source<'a>> {
     match (str_param(p, "path"), str_param(p, "dataBase64")) {
-        (Some(path), _) => Ok(Source { name: path, bytes: read_file(path)?, path: Some(path) }),
+        (Some(path), _) => Ok(Source {
+            name: path,
+            bytes: read_file(path)?,
+            path: Some(path),
+        }),
         (None, Some(b64)) => {
-            let bytes = vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(cmd, "bad base64"))?;
-            Ok(Source { name: str_param(p, "name").unwrap_or("Untitled"), bytes, path: None })
+            let bytes =
+                vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(cmd, "bad base64"))?;
+            Ok(Source {
+                name: str_param(p, "name").unwrap_or("Untitled"),
+                bytes,
+                path: None,
+            })
         }
         _ => Err(bad(cmd, "give path, or name and dataBase64")),
     }
@@ -385,19 +512,34 @@ pub(super) fn open(s: &mut Session, p: &Value) -> Result<Value> {
     // A relative path is the file in the working directory: its folder is where relative links
     // are found (a bare file name has no folder of its own).
     let path = src.path.map(super::absolute_path);
-    open_bytes_with(s, path.as_deref().unwrap_or(src.name), &src.bytes, path.clone(), p)
+    open_bytes_with(
+        s,
+        path.as_deref().unwrap_or(src.name),
+        &src.bytes,
+        path.clone(),
+        p,
+    )
 }
 
 pub(super) fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
     let src = source(p, "file.newFromTemplate")?;
     let path = src.path.map(super::absolute_path);
-    open_template(s, path.as_deref().unwrap_or(src.name), &src.bytes, path.as_deref())
+    open_template(
+        s,
+        path.as_deref().unwrap_or(src.name),
+        &src.bytes,
+        path.as_deref(),
+    )
 }
 
 /// The most memory decoding one image may take: a 60 in print sheet at 300 ppi (18000 × 6600 px)
 /// is ~475 MB as RGBA, past the decoder's 512 MB default once it is converted. The web app keeps
 /// that default: wasm32 has 4 GB to address and aborts when an allocation fails.
-pub(crate) const MAX_RASTER_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 << 20 } else { 2 << 30 };
+pub(crate) const MAX_RASTER_ALLOC: u64 = if cfg!(target_arch = "wasm32") {
+    512 << 20
+} else {
+    2 << 30
+};
 
 /// What to say of encoded image `bytes` that need more than [`MAX_RASTER_ALLOC`] to decode (its
 /// header says so; the pixels aren't read): the renderer, which has the same allowance, draws
@@ -405,9 +547,14 @@ pub(crate) const MAX_RASTER_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 <
 /// decode, and for bytes that aren't an image.
 pub(crate) fn too_large_note(bytes: &[u8]) -> Option<String> {
     use image::ImageDecoder as _;
-    let d = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().ok()?.into_decoder().ok()?;
+    let d = image::ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?
+        .into_decoder()
+        .ok()?;
     let (w, h) = d.dimensions();
-    (d.total_bytes() > MAX_RASTER_ALLOC).then(|| format!("an image of {w} × {h} pixels is too large to draw"))
+    (d.total_bytes() > MAX_RASTER_ALLOC)
+        .then(|| format!("an image of {w} × {h} pixels is too large to draw"))
 }
 
 /// Decode an image's header (and, for formats stored as PNG, its pixels). CMYK TIFFs are kept as
@@ -419,14 +566,26 @@ pub fn raster_image(bytes: &[u8]) -> Result<RasterImage> {
     let ppi = super::ppi::resolution(bytes);
     if psdread::is_psd(bytes) {
         let cms = vectorcraft_color::cms::active();
-        return as_png(psdread::decode(bytes, MAX_RASTER_ALLOC, |c| cms.cmyk_to_srgb(c, false)).map_err(err)?, ppi);
+        return as_png(
+            psdread::decode(bytes, MAX_RASTER_ALLOC, |c| cms.cmyk_to_srgb(c, false))
+                .map_err(err)?,
+            ppi,
+        );
     }
-    let mut reader = image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().map_err(err)?;
+    let mut reader = image::ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(err)?;
     let mut limits = image::Limits::default();
     limits.max_alloc = Some(MAX_RASTER_ALLOC);
     reader.limits(limits);
-    let kind = reader.format().ok_or_else(|| err("not an image VectorCraft reads (see document.formats)"))?;
-    let f = image_format(kind).ok_or_else(|| err(format!("{kind:?} images can't be opened (see document.formats)")))?;
+    let kind = reader
+        .format()
+        .ok_or_else(|| err("not an image VectorCraft reads (see document.formats)"))?;
+    let f = image_format(kind).ok_or_else(|| {
+        err(format!(
+            "{kind:?} images can't be opened (see document.formats)"
+        ))
+    })?;
     let cmyk = || ImageBlob::new(f.mime, bytes.to_vec()).cmyk().is_some();
     if matches!(f.id, "png" | "jpg" | "gif" | "webp") || (f.id == "tiff" && cmyk()) {
         let (width, height) = reader.into_dimensions().map_err(err)?;
@@ -447,7 +606,8 @@ pub fn raster_image(bytes: &[u8]) -> Result<RasterImage> {
 fn as_png(img: image::RgbaImage, ppi: Option<(f64, f64)>) -> Result<RasterImage> {
     let size = img.dimensions();
     let mut png = Vec::new();
-    img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).map_err(err)?;
+    img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(err)?;
     let png = match ppi {
         Some(r) => super::ppi::with_png_resolution(&png, r),
         None => png,
@@ -456,25 +616,51 @@ fn as_png(img: image::RgbaImage, ppi: Option<(f64, f64)>) -> Result<RasterImage>
 }
 
 /// An image's encoded `bytes`, `width` × `height` pixels, ready to embed.
-fn stored(bytes: Vec<u8>, mime: &'static str, (width, height): (u32, u32), ppi: Option<(f64, f64)>) -> Result<RasterImage> {
+fn stored(
+    bytes: Vec<u8>,
+    mime: &'static str,
+    (width, height): (u32, u32),
+    ppi: Option<(f64, f64)>,
+) -> Result<RasterImage> {
     if width == 0 || height == 0 {
         return Err(err("the image is empty"));
     }
     let blob = ImageBlob::new(mime, bytes);
-    Ok(RasterImage { key: blob.content_key(), blob, width, height, ppi })
+    Ok(RasterImage {
+        key: blob.content_key(),
+        blob,
+        width,
+        height,
+        ppi,
+    })
 }
 
 /// An image as a document of its physical size at the resolution it declares (as Place sizes it;
 /// 72 ppi, 1 px = 1 pt, when it declares none), the image named after the file.
 pub(super) fn raster_doc(name: &str, bytes: &[u8]) -> Result<Document> {
-    let RasterImage { key, blob, width, height, ppi } = raster_image(bytes)?;
+    let RasterImage {
+        key,
+        blob,
+        width,
+        height,
+        ppi,
+    } = raster_image(bytes)?;
     let (sx, sy) = crate::cmd::place::pt_per_px(ppi);
     let mut d = Document::new(width as f64 * sx, height as f64 * sy);
     let layer = d.layers[0].id;
     let id = d.alloc_id();
     let xf = Affine::scale_non_uniform(sx, sy);
-    let mut n =
-        Node::new(id, NodeKind::Image(Box::new(ImageObject { key: key.clone(), width, height, xf, link: None, placement: Default::default() })));
+    let mut n = Node::new(
+        id,
+        NodeKind::Image(Box::new(ImageObject {
+            key: key.clone(),
+            width,
+            height,
+            xf,
+            link: None,
+            placement: Default::default(),
+        })),
+    );
     n.name = Some(name.to_string());
     d.images.insert(key, blob);
     d.insert(Some(layer), 0, n).map_err(err)?;
@@ -489,8 +675,15 @@ fn is_loss(note: &str) -> bool {
 /// Writing the file `target` for document `st`: not over the file `st` was read from when reading
 /// it left something out (hidden text, art or layers), unless `p` has `acknowledgeLoss: true`.
 /// Another name keeps the original file, with all it has.
-pub(crate) fn check_not_lossy_overwrite(st: &crate::DocState, target: &str, p: &Value, cmd: &str) -> Result<()> {
-    let Some(losses) = overwrite_losses(st, target, p) else { return Ok(()) };
+pub(crate) fn check_not_lossy_overwrite(
+    st: &crate::DocState,
+    target: &str,
+    p: &Value,
+    cmd: &str,
+) -> Result<()> {
+    let Some(losses) = overwrite_losses(st, target, p) else {
+        return Ok(());
+    };
     let what = losses_summary(losses);
     Err(bad(
         cmd,
@@ -503,14 +696,27 @@ pub(crate) fn check_not_lossy_overwrite(st: &crate::DocState, target: &str, p: &
 /// What writing the file `target` for document `st` would lose for good: the notes of what reading
 /// it left out when `target` is the file `st` was read from, unless `p` has `acknowledgeLoss: true`.
 /// The UI asks before such a write and repeats it with `acknowledgeLoss` ([`check_not_lossy_overwrite`]).
-pub fn overwrite_losses<'a>(st: &'a crate::DocState, target: &str, p: &Value) -> Option<&'a [String]> {
-    let source = st.imported_from.as_deref().filter(|_| !st.import_losses.is_empty())?;
-    (!bool_or(p, "acknowledgeLoss", false) && same_file(source, target)).then_some(st.import_losses.as_slice())
+pub fn overwrite_losses<'a>(
+    st: &'a crate::DocState,
+    target: &str,
+    p: &Value,
+) -> Option<&'a [String]> {
+    let source = st
+        .imported_from
+        .as_deref()
+        .filter(|_| !st.import_losses.is_empty())?;
+    (!bool_or(p, "acknowledgeLoss", false) && same_file(source, target))
+        .then_some(st.import_losses.as_slice())
 }
 
 /// Up to three of `losses`, quoted, and how many more.
 pub fn losses_summary(losses: &[String]) -> String {
-    let mut what = losses.iter().take(3).map(|n| format!("“{n}”")).collect::<Vec<_>>().join("; ");
+    let mut what = losses
+        .iter()
+        .take(3)
+        .map(|n| format!("“{n}”"))
+        .collect::<Vec<_>>()
+        .join("; ");
     if losses.len() > 3 {
         what.push_str(&format!("; {} more", losses.len() - 3));
     }

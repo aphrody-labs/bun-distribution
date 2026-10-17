@@ -64,17 +64,33 @@ impl ListDrag {
         // Escape cancels (and goes no further: it doesn't deselect or close what the list is in); a
         // drag whose release this list never saw (it wasn't shown) is over.
         if dragging.is_some()
-            && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape) || !(i.pointer.primary_down() || i.pointer.any_released()))
+            && ui.input_mut(|i| {
+                i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)
+                    || !(i.pointer.primary_down() || i.pointer.any_released())
+            })
         {
             ui.data_mut(|d| d.remove::<usize>(id));
             dragging = None;
         }
-        Self { list, reversed, dragging, rows: Vec::new(), label: None }
+        Self {
+            list,
+            reversed,
+            dragging,
+            rows: Vec::new(),
+            label: None,
+        }
     }
 
     /// Item `index` (model order) was laid out with its main row at `header`, covering `extent`
     /// (the header plus anything open under it). Its grip starts a drag carrying `label`.
-    pub fn row(&mut self, ui: &mut Ui, index: usize, header: Rect, extent: Rect, label: impl FnOnce() -> String) {
+    pub fn row(
+        &mut self,
+        ui: &mut Ui,
+        index: usize,
+        header: Rect,
+        extent: Rect,
+        label: impl FnOnce() -> String,
+    ) {
         let grip = Rect::from_min_max(header.min, pos2(header.min.x + PAD, header.max.y));
         let resp = ui.interact(grip, grip_of(self.list, index), Sense::drag());
         // The handle shows while the pointer is over the row (or the row is being dragged).
@@ -97,9 +113,16 @@ impl ListDrag {
 
     /// Item `index` laid out over `extent`, dragged by the whole row (`resp` senses drags; the
     /// pages list).
-    pub fn row_by(&mut self, resp: &egui::Response, index: usize, extent: Rect, label: impl FnOnce() -> String) {
+    pub fn row_by(
+        &mut self,
+        resp: &egui::Response,
+        index: usize,
+        extent: Rect,
+        label: impl FnOnce() -> String,
+    ) {
         if resp.drag_started() {
-            resp.ctx.data_mut(|d| d.insert_temp(drag_id(self.list), index));
+            resp.ctx
+                .data_mut(|d| d.insert_temp(drag_id(self.list), index));
             self.dragging = Some(index);
         }
         if self.dragging == Some(index) {
@@ -140,10 +163,18 @@ impl ListDrag {
 /// Where item `from` lands when dropped at `p` over `rows` (top to bottom; the model's last item
 /// first when `reversed`): its new model index and the insertion line's y. None outside the list
 /// (half a row of slack above and below) or where it would stay put.
-fn drop_slot(rows: &[(usize, Rect)], from: usize, p: egui::Pos2, reversed: bool) -> Option<(usize, f32)> {
+fn drop_slot(
+    rows: &[(usize, Rect)],
+    from: usize,
+    p: egui::Pos2,
+    reversed: bool,
+) -> Option<(usize, f32)> {
     let (first, last) = (rows.first()?.1, rows.last()?.1);
     let slack = first.height().min(last.height()) / 2.0;
-    let area = Rect::from_min_max(pos2(first.min.x.min(last.min.x), first.min.y - slack), pos2(first.max.x.max(last.max.x), last.max.y + slack));
+    let area = Rect::from_min_max(
+        pos2(first.min.x.min(last.min.x), first.min.y - slack),
+        pos2(first.max.x.max(last.max.x), last.max.y + slack),
+    );
     if !area.contains(p) {
         return None;
     }
@@ -168,7 +199,9 @@ fn drop_slot(rows: &[(usize, Rect)], from: usize, p: egui::Pos2, reversed: bool)
 /// when item `from` of a `len`-long list moves to `to`.
 pub fn move_flags(ui: &Ui, salt: &'static str, len: usize, from: usize, to: usize) {
     ui.data_mut(|d| {
-        let flags: Vec<Option<bool>> = (0..len).map(|i| d.get_temp::<bool>(Id::new((salt, i)))).collect();
+        let flags: Vec<Option<bool>> = (0..len)
+            .map(|i| d.get_temp::<bool>(Id::new((salt, i))))
+            .collect();
         for (i, f) in flags.into_iter().enumerate() {
             let j = figcraft_engine::cmd::lists::moved_index(i, from, to);
             match f {
@@ -187,7 +220,14 @@ mod tests {
 
     fn rows(n: usize) -> Vec<(usize, Rect)> {
         // Shown topmost first: model index n-1 at the top.
-        (0..n).map(|k| (n - 1 - k, Rect::from_min_size(pos2(0.0, k as f32 * 32.0), vec2(240.0, 32.0)))).collect()
+        (0..n)
+            .map(|k| {
+                (
+                    n - 1 - k,
+                    Rect::from_min_size(pos2(0.0, k as f32 * 32.0), vec2(240.0, 32.0)),
+                )
+            })
+            .collect()
     }
 
     #[test]
@@ -212,7 +252,14 @@ mod tests {
     #[test]
     fn lists_in_model_order_drop_at_the_shown_slot() {
         // Shown in model order: model index k at row k.
-        let r: Vec<(usize, Rect)> = (0..3).map(|k| (k, Rect::from_min_size(pos2(0.0, k as f32 * 32.0), vec2(240.0, 32.0)))).collect();
+        let r: Vec<(usize, Rect)> = (0..3)
+            .map(|k| {
+                (
+                    k,
+                    Rect::from_min_size(pos2(0.0, k as f32 * 32.0), vec2(240.0, 32.0)),
+                )
+            })
+            .collect();
         // The first item below the last: model 2.
         assert_eq!(drop_slot(&r, 0, pos2(100.0, 95.0), false), Some((2, 96.0)));
         // The last item above the first: model 0.

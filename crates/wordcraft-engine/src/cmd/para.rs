@@ -3,7 +3,10 @@
 use serde_json::{Value, json};
 use wordcraft_doc::collate::{SortKey, sort_key};
 use wordcraft_doc::numbering::ListKind;
-use wordcraft_doc::props::{Align, Border, BorderStyle, Borders, LineSpacing, NumRef, ParaProps, Rgb, TabAlign, TabLeader, TabStop};
+use wordcraft_doc::props::{
+    Align, Border, BorderStyle, Borders, LineSpacing, NumRef, ParaProps, Rgb, TabAlign, TabLeader,
+    TabStop,
+};
 use wordcraft_doc::styles::{Style, StyleKind};
 use wordcraft_doc::{Block, CharProps, Pos};
 
@@ -247,9 +250,17 @@ fn cur(s: &Session) -> wordcraft_doc::resolve::ResolvedPara {
         && last != at.path
         && at == b
     {
-        at = Pos { path: last, off: 0, ..at };
+        at = Pos {
+            path: last,
+            off: 0,
+            ..at
+        };
     }
-    let props = s.doc.para_at(&at).map(|p| p.props.clone()).unwrap_or_default();
+    let props = s
+        .doc
+        .para_at(&at)
+        .map(|p| p.props.clone())
+        .unwrap_or_default();
     s.doc.styles.resolve_para(&props)
 }
 
@@ -269,7 +280,11 @@ fn align(s: &mut Session, a: Align) -> CmdResult {
     let r = cur(s);
     // Clicking the active alignment again returns to the start edge (Word).
     let logical = a.visual(r.bidi);
-    let target = if r.align == logical && logical != Align::Left { None } else { Some(a) };
+    let target = if r.align == logical && logical != Align::Left {
+        None
+    } else {
+        Some(a)
+    };
     let focus_rtl = r.bidi;
     fmt(s, &|p| {
         let rtl = p.bidi.unwrap_or(focus_rtl);
@@ -280,7 +295,9 @@ fn align(s: &mut Session, a: Align) -> CmdResult {
 /// Set the alignment as seen on the page in every selected paragraph, in its own direction.
 fn set_align(s: &mut Session, a: Align) -> CmdResult {
     let focus_rtl = cur(s).bidi;
-    fmt(s, &|p| p.align = Some(a.visual(p.bidi.unwrap_or(focus_rtl))))
+    fmt(s, &|p| {
+        p.align = Some(a.visual(p.bidi.unwrap_or(focus_rtl)))
+    })
 }
 
 /// Paragraph reading order (Word's Right-to-Left / Left-to-Right Text Direction buttons). Only
@@ -292,10 +309,19 @@ fn direction(s: &mut Session, v: &Value, rtl: bool) -> CmdResult {
     fmt(s, &|p| p.bidi = Some(want))
 }
 
-fn tog(s: &mut Session, v: &Value, get: fn(&ParaProps) -> Option<bool>, set: fn(&mut ParaProps, bool)) -> CmdResult {
+fn tog(
+    s: &mut Session,
+    v: &Value,
+    get: fn(&ParaProps) -> Option<bool>,
+    set: fn(&mut ParaProps, bool),
+) -> CmdResult {
     let on = p::bool(v, "value").unwrap_or_else(|| {
         let r = cur(s);
-        let props = s.doc.para_at(&s.sel.focus).map(|p| p.props.clone()).unwrap_or_default();
+        let props = s
+            .doc
+            .para_at(&s.sel.focus)
+            .map(|p| p.props.clone())
+            .unwrap_or_default();
         let _ = r;
         !get(&props).unwrap_or(false)
     });
@@ -306,9 +332,18 @@ fn tog(s: &mut Session, v: &Value, get: fn(&ParaProps) -> Option<bool>, set: fn(
 /// paragraph and returns the resolved flags at the caret.
 fn asian_typography(s: &mut Session, v: &Value) -> CmdResult {
     let flag = |k: &str| p::bool(v, k);
-    let (kinsoku, word_wrap, overflow, top_line, de, dn) =
-        (flag("kinsoku"), flag("wordWrap"), flag("overflowPunct"), flag("topLinePunct"), flag("autoSpaceDE"), flag("autoSpaceDN"));
-    let mut out = if [kinsoku, word_wrap, overflow, top_line, de, dn].iter().any(Option::is_some) {
+    let (kinsoku, word_wrap, overflow, top_line, de, dn) = (
+        flag("kinsoku"),
+        flag("wordWrap"),
+        flag("overflowPunct"),
+        flag("topLinePunct"),
+        flag("autoSpaceDE"),
+        flag("autoSpaceDN"),
+    );
+    let mut out = if [kinsoku, word_wrap, overflow, top_line, de, dn]
+        .iter()
+        .any(Option::is_some)
+    {
         fmt(s, &|p| {
             let set = |field: &mut Option<bool>, val: Option<bool>| {
                 if val.is_some() {
@@ -344,12 +379,22 @@ pub fn indent(s: &mut Session, _: &Value) -> CmdResult {
     let tab = s.doc.settings.default_tab.max(1.0);
     for path in paths {
         let (num, left) = {
-            let Some(p) = s.doc.para(a.story, &path) else { continue };
-            (p.props.numbering.filter(|n| n.num != 0), s.doc.styles.resolve_para(&p.props).indent_left)
+            let Some(p) = s.doc.para(a.story, &path) else {
+                continue;
+            };
+            (
+                p.props.numbering.filter(|n| n.num != 0),
+                s.doc.styles.resolve_para(&p.props).indent_left,
+            )
         };
         let para = s.doc.para_mut(a.story, &path)?;
         match num {
-            Some(n) => para.props.numbering = Some(NumRef { num: n.num, level: (n.level + 1).min(8) }),
+            Some(n) => {
+                para.props.numbering = Some(NumRef {
+                    num: n.num,
+                    level: (n.level + 1).min(8),
+                })
+            }
             None => {
                 para.props.indent_left = Some(((left / tab).floor() + 1.0) * tab);
                 para.props.cancel_char_indents(true, false, false);
@@ -366,12 +411,22 @@ pub fn outdent(s: &mut Session, _: &Value) -> CmdResult {
     let tab = s.doc.settings.default_tab.max(1.0);
     for path in paths {
         let (num, left) = {
-            let Some(p) = s.doc.para(a.story, &path) else { continue };
-            (p.props.numbering.filter(|n| n.num != 0), s.doc.styles.resolve_para(&p.props).indent_left)
+            let Some(p) = s.doc.para(a.story, &path) else {
+                continue;
+            };
+            (
+                p.props.numbering.filter(|n| n.num != 0),
+                s.doc.styles.resolve_para(&p.props).indent_left,
+            )
         };
         let para = s.doc.para_mut(a.story, &path)?;
         match num {
-            Some(n) => para.props.numbering = Some(NumRef { num: n.num, level: n.level.saturating_sub(1) }),
+            Some(n) => {
+                para.props.numbering = Some(NumRef {
+                    num: n.num,
+                    level: n.level.saturating_sub(1),
+                })
+            }
             None => {
                 para.props.indent_left = Some((((left / tab).ceil() - 1.0) * tab).max(0.0));
                 para.props.cancel_char_indents(true, false, false);
@@ -398,7 +453,11 @@ fn line_spacing(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn style_id(s: &Session, name: &str) -> Result<String, CmdError> {
-    s.doc.styles.find(name).map(|x| x.id.clone()).ok_or_else(|| CmdError::Params(format!("no style `{name}`")))
+    s.doc
+        .styles
+        .find(name)
+        .map(|x| x.id.clone())
+        .ok_or_else(|| CmdError::Params(format!("no style `{name}`")))
 }
 
 /// Apply Styles. Pure itself: with a `style` it runs `para.style` as its own command (so undo,
@@ -410,9 +469,13 @@ fn apply_styles(s: &mut Session, v: &Value) -> CmdResult {
             s.view.styles_pane = true;
             Ok(json!({"pane": true}))
         }
-        Some(Value::String(name)) if !name.trim().is_empty() => s.run("para.style", &json!({"style": name})),
+        Some(Value::String(name)) if !name.trim().is_empty() => {
+            s.run("para.style", &json!({"style": name}))
+        }
         Some(Value::String(_)) => Err(CmdError::Params("`style` must not be empty".into())),
-        Some(_) => Err(CmdError::Params("`style` must be a string (name or id)".into())),
+        Some(_) => Err(CmdError::Params(
+            "`style` must be a string (name or id)".into(),
+        )),
     }
 }
 
@@ -427,7 +490,9 @@ fn apply_style(s: &mut Session, v: &Value) -> CmdResult {
     fmt(s, &|p| {
         p.style = Some(id.clone());
         // Applying a heading or Normal removes direct list numbering (except list styles).
-        if (id.starts_with("Heading") || id == "Title" || id == "Normal") && p.numbering.is_some_and(|n| n.num != 0) {
+        if (id.starts_with("Heading") || id == "Title" || id == "Normal")
+            && p.numbering.is_some_and(|n| n.num != 0)
+        {
             p.numbering = None;
         }
     })?;
@@ -459,22 +524,33 @@ fn apply_style(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn list(s: &mut Session, v: &Value, default: ListKind) -> CmdResult {
-    let kind = p::str(v, "kind").and_then(ListKind::parse).unwrap_or(default);
+    let kind = p::str(v, "kind")
+        .and_then(ListKind::parse)
+        .unwrap_or(default);
     let off = p::bool(v, "off").unwrap_or(false);
     let a = s.sel.ordered().0;
     // Toggle: if every selected paragraph already has this kind of list, remove it.
-    let current: Vec<Option<NumRef>> =
-        super::selected_paths(s).iter().map(|p| s.doc.para(a.story, p).and_then(|x| x.props.numbering).filter(|n| n.num != 0)).collect();
+    let current: Vec<Option<NumRef>> = super::selected_paths(s)
+        .iter()
+        .map(|p| {
+            s.doc
+                .para(a.story, p)
+                .and_then(|x| x.props.numbering)
+                .filter(|n| n.num != 0)
+        })
+        .collect();
     let same_kind = |n: &NumRef| {
         s.doc.numbering.level(n.num, 0).is_some_and(|l| {
             let want = wordcraft_doc::numbering::levels_for(kind);
             want.first().is_some_and(|w| {
-                (w.format == wordcraft_doc::section::NumFormat::Bullet) == (l.format == wordcraft_doc::section::NumFormat::Bullet)
+                (w.format == wordcraft_doc::section::NumFormat::Bullet)
+                    == (l.format == wordcraft_doc::section::NumFormat::Bullet)
                     && (p::str(v, "kind").is_none() || w.text == l.text)
             })
         })
     };
-    let remove = off || (!current.is_empty() && current.iter().all(|n| n.as_ref().is_some_and(same_kind)));
+    let remove =
+        off || (!current.is_empty() && current.iter().all(|n| n.as_ref().is_some_and(same_kind)));
     if remove {
         return fmt(s, &|p| {
             p.numbering = Some(NumRef { num: 0, level: 0 });
@@ -496,12 +572,20 @@ fn list(s: &mut Session, v: &Value, default: ListKind) -> CmdResult {
     let num = match prev_num {
         Some(n) => n.num,
         None => match kind {
-            ListKind::Bullet | ListKind::BulletChar(_) => s.doc.numbering.find_kind(kind).unwrap_or_else(|| s.doc.numbering.add_list(kind)),
+            ListKind::Bullet | ListKind::BulletChar(_) => s
+                .doc
+                .numbering
+                .find_kind(kind)
+                .unwrap_or_else(|| s.doc.numbering.add_list(kind)),
             _ => s.doc.numbering.add_list(kind),
         },
     };
     fmt(s, &|p| {
-        let level = p.numbering.filter(|n| n.num != 0).map(|n| n.level).unwrap_or(0);
+        let level = p
+            .numbering
+            .filter(|n| n.num != 0)
+            .map(|n| n.level)
+            .unwrap_or(0);
         p.numbering = Some(NumRef { num, level });
         p.indent_left = None;
         p.indent_first = None;
@@ -515,17 +599,34 @@ fn list(s: &mut Session, v: &Value, default: ListKind) -> CmdResult {
 
 fn restart_numbering(s: &mut Session, _: &Value) -> CmdResult {
     let f = s.sel.focus.clone();
-    let Some(n) = s.doc.para_at(&f).and_then(|p| p.props.numbering).filter(|n| n.num != 0) else {
+    let Some(n) = s
+        .doc
+        .para_at(&f)
+        .and_then(|p| p.props.numbering)
+        .filter(|n| n.num != 0)
+    else {
         return Err(CmdError::Failed("not in a numbered list".into()));
     };
-    let new = s.doc.numbering.restart(n.num).ok_or_else(|| CmdError::Failed("bad list".into()))?;
+    let new = s
+        .doc
+        .numbering
+        .restart(n.num)
+        .ok_or_else(|| CmdError::Failed("bad list".into()))?;
     // This paragraph and the following ones of the same list use the new instance.
-    let paths: Vec<_> = s.doc.para_paths(f.story).into_iter().filter(|p| *p >= f.path).collect();
+    let paths: Vec<_> = s
+        .doc
+        .para_paths(f.story)
+        .into_iter()
+        .filter(|p| *p >= f.path)
+        .collect();
     for path in paths {
         let para = s.doc.para_mut(f.story, &path)?;
         match para.props.numbering {
             Some(x) if x.num == n.num => {
-                para.props.numbering = Some(NumRef { num: new, level: x.level });
+                para.props.numbering = Some(NumRef {
+                    num: new,
+                    level: x.level,
+                });
                 para.touch();
             }
             _ => {
@@ -545,13 +646,21 @@ const MAX_TABS: usize = 64;
 /// one step. Clearing a stop the paragraph style defines records a clear stop over it.
 fn tabs(s: &mut Session, v: &Value) -> CmdResult {
     let stops = |k: &str| -> Result<Option<Vec<TabStop>>, CmdError> {
-        let Some(x) = v.get(k).filter(|x| !x.is_null()) else { return Ok(None) };
-        let list: Vec<TabStop> = serde_json::from_value(x.clone()).map_err(|e| CmdError::Params(format!("`{k}`: {e}")))?;
+        let Some(x) = v.get(k).filter(|x| !x.is_null()) else {
+            return Ok(None);
+        };
+        let list: Vec<TabStop> = serde_json::from_value(x.clone())
+            .map_err(|e| CmdError::Params(format!("`{k}`: {e}")))?;
         if list.len() > MAX_TABS {
             return Err(CmdError::Params(format!("at most {MAX_TABS} tab stops")));
         }
-        if list.iter().any(|t| !t.pos.is_finite() || t.pos.abs() > 1584.0) {
-            return Err(CmdError::Params("tab positions are points within ±1584".into()));
+        if list
+            .iter()
+            .any(|t| !t.pos.is_finite() || t.pos.abs() > 1584.0)
+        {
+            return Err(CmdError::Params(
+                "tab positions are points within ±1584".into(),
+            ));
         }
         Ok(Some(list))
     };
@@ -560,9 +669,12 @@ fn tabs(s: &mut Session, v: &Value) -> CmdResult {
     let clear: Vec<f32> = match v.get("clear").filter(|x| !x.is_null()) {
         None => Vec::new(),
         Some(x) => {
-            let list: Vec<f32> = serde_json::from_value(x.clone()).map_err(|e| CmdError::Params(format!("`clear`: {e}")))?;
+            let list: Vec<f32> = serde_json::from_value(x.clone())
+                .map_err(|e| CmdError::Params(format!("`clear`: {e}")))?;
             if list.len() > MAX_TABS || list.iter().any(|p| !p.is_finite()) {
-                return Err(CmdError::Params(format!("`clear` is at most {MAX_TABS} positions in points")));
+                return Err(CmdError::Params(format!(
+                    "`clear` is at most {MAX_TABS} positions in points"
+                )));
             }
             list
         }
@@ -578,12 +690,23 @@ fn tabs(s: &mut Session, v: &Value) -> CmdResult {
     let near = |a: f32, b: f32| (a - b).abs() < 0.5;
     fmt(s, &|p| {
         // The stops the paragraph inherits from its style.
-        let inherited = styles.resolve_para(&ParaProps { tabs: None, ..p.clone() }).tabs;
-        let mut list = replace.clone().unwrap_or_else(|| p.tabs.clone().unwrap_or_default());
+        let inherited = styles
+            .resolve_para(&ParaProps {
+                tabs: None,
+                ..p.clone()
+            })
+            .tabs;
+        let mut list = replace
+            .clone()
+            .unwrap_or_else(|| p.tabs.clone().unwrap_or_default());
         let clear_at = |list: &mut Vec<TabStop>, pos: f32| {
             list.retain(|t| !near(t.pos, pos));
             if inherited.iter().any(|t| near(t.pos, pos)) {
-                list.push(TabStop { pos, align: TabAlign::Clear, leader: TabLeader::None });
+                list.push(TabStop {
+                    pos,
+                    align: TabAlign::Clear,
+                    leader: TabLeader::None,
+                });
             }
         };
         if clear_all {
@@ -607,12 +730,21 @@ fn tabs(s: &mut Session, v: &Value) -> CmdResult {
 
 /// A `sides` object: exactly the sides it names, each `{"style", "width", "color"}`.
 pub fn border_sides(v: &Value, space_tb: f32, space_lr: f32) -> Result<Borders, CmdError> {
-    let obj = v.as_object().ok_or_else(|| CmdError::Params("`sides` is an object".into()))?;
+    let obj = v
+        .as_object()
+        .ok_or_else(|| CmdError::Params("`sides` is an object".into()))?;
     let side = |k: &str, space: f32| -> Option<Border> {
         let x = obj.get(k).filter(|x| x.is_object())?;
-        let style = p::str(x, "style").map(BorderStyle::from_ooxml).unwrap_or(BorderStyle::Single);
+        let style = p::str(x, "style")
+            .map(BorderStyle::from_ooxml)
+            .unwrap_or(BorderStyle::Single);
         let width = p::f32(x, "width").unwrap_or(0.5).clamp(0.25, 6.0);
-        Some(Border { style, width, color: p::str(x, "color").and_then(Rgb::parse), space })
+        Some(Border {
+            style,
+            width,
+            color: p::str(x, "color").and_then(Rgb::parse),
+            space,
+        })
     };
     Ok(Borders {
         top: side("top", space_tb),
@@ -637,7 +769,9 @@ fn move_paras(s: &mut Session, up: bool) -> CmdResult {
     }
     let (a, b) = s.sel.ordered();
     if a.story != b.story || a.path.parent() != b.path.parent() {
-        return Err(CmdError::Failed("select paragraphs in one place (not across table cells) to move them".into()));
+        return Err(CmdError::Failed(
+            "select paragraphs in one place (not across table cells) to move them".into(),
+        ));
     }
     let i0 = a.path.last();
     let mut i1 = b.path.last();
@@ -647,7 +781,9 @@ fn move_paras(s: &mut Session, up: bool) -> CmdResult {
     }
     let bl = s.doc.container_mut(a.story, &a.path)?;
     let (lo, hi) = if up {
-        let Some(n) = i0.checked_sub(1) else { return Err(CmdError::Failed("already at the top".into())) };
+        let Some(n) = i0.checked_sub(1) else {
+            return Err(CmdError::Failed("already at the top".into()));
+        };
         (n, i1)
     } else {
         let n = i1.saturating_add(1);
@@ -660,9 +796,16 @@ fn move_paras(s: &mut Session, up: bool) -> CmdResult {
     if !matches!(bl.get(neighbour).map(|b| &**b), Some(Block::Para(_))) {
         return Err(CmdError::Failed("a table is in the way".into()));
     }
-    let Some(slice) = bl.get_mut(lo..=hi) else { return Err(CmdError::Failed("bad range".into())) };
-    if slice.iter().any(|b| b.as_para().is_some_and(|p| p.section.is_some())) {
-        return Err(CmdError::Failed("paragraphs don't move across a section break".into()));
+    let Some(slice) = bl.get_mut(lo..=hi) else {
+        return Err(CmdError::Failed("bad range".into()));
+    };
+    if slice
+        .iter()
+        .any(|b| b.as_para().is_some_and(|p| p.section.is_some()))
+    {
+        return Err(CmdError::Failed(
+            "paragraphs don't move across a section break".into(),
+        ));
     }
     if up {
         slice.rotate_left(1);
@@ -678,29 +821,53 @@ fn move_paras(s: &mut Session, up: bool) -> CmdResult {
         } else if !up && i == i1 + 1 {
             // The end just past the range: the start of whatever follows it now.
             return if i1 + 2 < len {
-                Pos { path: p.path.with_last(i1 + 2), off: 0, ..p.clone() }
+                Pos {
+                    path: p.path.with_last(i1 + 2),
+                    off: 0,
+                    ..p.clone()
+                }
             } else {
-                Pos { path: p.path.with_last(i1 + 1), off: usize::MAX, ..p.clone() }
+                Pos {
+                    path: p.path.with_last(i1 + 1),
+                    off: usize::MAX,
+                    ..p.clone()
+                }
             };
         } else {
             i
         };
-        Pos { path: p.path.with_last(j), ..p.clone() }
+        Pos {
+            path: p.path.with_last(j),
+            ..p.clone()
+        }
     };
     let (anchor, focus) = (shift(&s.sel.anchor), shift(&s.sel.focus));
-    s.sel = crate::Selection { anchor: s.doc.clamp(&anchor), focus: s.doc.clamp(&focus) };
+    s.sel = crate::Selection {
+        anchor: s.doc.clamp(&anchor),
+        focus: s.doc.clamp(&focus),
+    };
     s.goal_x = None;
     sel_result(s)
 }
 
 /// The heading level (1–9) a paragraph's style gives it, if it is a heading.
 fn heading_level(s: &Session, props: &ParaProps) -> Option<u8> {
-    s.doc.styles.resolve_para(props).outline_level.filter(|l| *l < 9).map(|l| l + 1)
+    s.doc
+        .styles
+        .resolve_para(props)
+        .outline_level
+        .filter(|l| *l < 9)
+        .map(|l| l + 1)
 }
 
 /// Give paragraph `path` Heading `level` (1–9), or make it body text (`None`: the default
 /// paragraph style); its own outline level goes, so the style's counts.
-pub(crate) fn set_heading(s: &mut Session, story: wordcraft_doc::StoryRef, path: &wordcraft_doc::Path, level: Option<u8>) -> Result<(), CmdError> {
+pub(crate) fn set_heading(
+    s: &mut Session,
+    story: wordcraft_doc::StoryRef,
+    path: &wordcraft_doc::Path,
+    level: Option<u8>,
+) -> Result<(), CmdError> {
     let style = level.map(|n| ensure_heading_style(s, n.clamp(1, 9)));
     let para = s.doc.para_mut(story, path)?;
     para.props.style = style;
@@ -742,16 +909,26 @@ fn outline_step(s: &mut Session, promote: bool) -> CmdResult {
         .para_paths(a.story)
         .into_iter()
         .take_while(|p| *p < a.path)
-        .filter_map(|p| s.doc.para(a.story, &p).and_then(|q| heading_level(s, &q.props)))
+        .filter_map(|p| {
+            s.doc
+                .para(a.story, &p)
+                .and_then(|q| heading_level(s, &q.props))
+        })
         .last()
         .unwrap_or(1);
     let mut changed = false;
     for path in paths {
-        let Some(p) = s.doc.para(a.story, &path) else { continue };
+        let Some(p) = s.doc.para(a.story, &path) else {
+            continue;
+        };
         let list = p.props.numbering.filter(|n| n.num != 0);
         let target = match (list, heading_level(s, &p.props)) {
             (Some(n), _) => {
-                let level = if promote { n.level.saturating_sub(1) } else { (n.level + 1).min(8) };
+                let level = if promote {
+                    n.level.saturating_sub(1)
+                } else {
+                    (n.level + 1).min(8)
+                };
                 if level != n.level {
                     let para = s.doc.para_mut(a.story, &path)?;
                     para.props.numbering = Some(NumRef { num: n.num, level });
@@ -774,12 +951,25 @@ fn outline_step(s: &mut Session, promote: bool) -> CmdResult {
         changed = true;
     }
     if !changed {
-        return Err(CmdError::Failed(if promote { "nothing to promote".into() } else { "nothing to demote".into() }));
+        return Err(CmdError::Failed(if promote {
+            "nothing to promote".into()
+        } else {
+            "nothing to demote".into()
+        }));
     }
     for (j, h) in carried {
-        let n = if promote { h.saturating_sub(1).max(1) } else { (h + 1).min(9) };
+        let n = if promote {
+            h.saturating_sub(1).max(1)
+        } else {
+            (h + 1).min(9)
+        };
         if n != h {
-            set_heading(s, wordcraft_doc::StoryRef::Body, &wordcraft_doc::Path::top(j), Some(n))?;
+            set_heading(
+                s,
+                wordcraft_doc::StoryRef::Body,
+                &wordcraft_doc::Path::top(j),
+                Some(n),
+            )?;
         }
     }
     sel_result(s)
@@ -794,11 +984,27 @@ fn borders(s: &mut Session, v: &Value) -> CmdResult {
     let kind = p::str(v, "kind").unwrap_or("bottom");
     let width = p::f32(v, "width").unwrap_or(0.5).clamp(0.25, 6.0);
     let color = p::str(v, "color").and_then(Rgb::parse);
-    let style = p::str(v, "style").map(BorderStyle::from_ooxml).unwrap_or(BorderStyle::Single);
-    let b = Border { style, width, color, space: if kind == "left" || kind == "right" { 4.0 } else { 1.0 } };
+    let style = p::str(v, "style")
+        .map(BorderStyle::from_ooxml)
+        .unwrap_or(BorderStyle::Single);
+    let b = Border {
+        style,
+        width,
+        color,
+        space: if kind == "left" || kind == "right" {
+            4.0
+        } else {
+            1.0
+        },
+    };
     if kind == "horizontalLine" {
         // A paragraph with a bottom border, like Word's Horizontal Line.
-        return fmt(s, &|p| p.borders = Some(Borders { bottom: Some(Border { width: 1.5, ..b }), ..Default::default() }));
+        return fmt(s, &|p| {
+            p.borders = Some(Borders {
+                bottom: Some(Border { width: 1.5, ..b }),
+                ..Default::default()
+            })
+        });
     }
     fmt(s, &|p| {
         let mut cur = p.borders.unwrap_or_default();
@@ -812,13 +1018,41 @@ fn borders(s: &mut Session, v: &Value) -> CmdResult {
                 cur.right = Some(b);
             }
             "inside" => cur.between = Some(b),
-            "top" => cur.top = if cur.top.is_some_and(|x| x.is_visible()) { None } else { Some(b) },
-            "bottom" => cur.bottom = if cur.bottom.is_some_and(|x| x.is_visible()) { None } else { Some(b) },
-            "left" => cur.left = if cur.left.is_some_and(|x| x.is_visible()) { None } else { Some(b) },
-            "right" => cur.right = if cur.right.is_some_and(|x| x.is_visible()) { None } else { Some(b) },
+            "top" => {
+                cur.top = if cur.top.is_some_and(|x| x.is_visible()) {
+                    None
+                } else {
+                    Some(b)
+                }
+            }
+            "bottom" => {
+                cur.bottom = if cur.bottom.is_some_and(|x| x.is_visible()) {
+                    None
+                } else {
+                    Some(b)
+                }
+            }
+            "left" => {
+                cur.left = if cur.left.is_some_and(|x| x.is_visible()) {
+                    None
+                } else {
+                    Some(b)
+                }
+            }
+            "right" => {
+                cur.right = if cur.right.is_some_and(|x| x.is_visible()) {
+                    None
+                } else {
+                    Some(b)
+                }
+            }
             _ => {}
         }
-        p.borders = if cur.any_visible() { Some(cur) } else { Some(Borders::default()) };
+        p.borders = if cur.any_visible() {
+            Some(cur)
+        } else {
+            Some(Borders::default())
+        };
     })
 }
 
@@ -827,17 +1061,37 @@ fn sort(s: &mut Session, v: &Value) -> CmdResult {
     let desc = p::bool(v, "descending").unwrap_or(false);
     let (a, b) = s.sel.ordered();
     if a.path.parent() != b.path.parent() {
-        return Err(CmdError::Failed("select paragraphs in one place to sort".into()));
+        return Err(CmdError::Failed(
+            "select paragraphs in one place to sort".into(),
+        ));
     }
     let (i0, i1) = (a.path.last(), b.path.last());
-    let lang = s.doc.para(a.story, &a.path).and_then(|p| super::para_lang(&s.doc, p)).or_else(|| super::default_lang(s));
+    let lang = s
+        .doc
+        .para(a.story, &a.path)
+        .and_then(|p| super::para_lang(&s.doc, p))
+        .or_else(|| super::default_lang(s));
     let bl = s.doc.container_mut(a.story, &a.path)?;
-    let Some(slice) = bl.get_mut(i0..=i1) else { return Err(CmdError::Failed("bad range".into())) };
+    let Some(slice) = bl.get_mut(i0..=i1) else {
+        return Err(CmdError::Failed("bad range".into()));
+    };
     if slice.iter().any(|b| !matches!(**b, Block::Para(_))) {
-        return Err(CmdError::Failed("sorting tables isn't supported here; use Table › Sort".into()));
+        return Err(CmdError::Failed(
+            "sorting tables isn't supported here; use Table › Sort".into(),
+        ));
     }
-    let mut keyed: Vec<_> =
-        slice.iter().map(|b| (natural_key(&b.as_para().map(|p| p.plain_text()).unwrap_or_default(), lang.as_deref()), b.clone())).collect();
+    let mut keyed: Vec<_> = slice
+        .iter()
+        .map(|b| {
+            (
+                natural_key(
+                    &b.as_para().map(|p| p.plain_text()).unwrap_or_default(),
+                    lang.as_deref(),
+                ),
+                b.clone(),
+            )
+        })
+        .collect();
     keyed.sort_by(|(x, _), (y, _)| {
         let o = natural_cmp(x, y);
         if desc { o.reverse() } else { o }
@@ -846,13 +1100,20 @@ fn sort(s: &mut Session, v: &Value) -> CmdResult {
         *dst = blk;
     }
     // Keep a section break on the last paragraph of the range where it was.
-    s.sel = crate::Selection { anchor: Pos { off: 0, ..a }, focus: b };
+    s.sel = crate::Selection {
+        anchor: Pos { off: 0, ..a },
+        focus: b,
+    };
     sel_result(s)
 }
 
 /// A paragraph's sort key: the number it starts with, then its text in its language's order.
 fn natural_key(text: &str, lang: Option<&str>) -> (Option<f64>, SortKey) {
-    let num = text.trim().split(|c: char| !c.is_ascii_digit()).next().and_then(|n| n.parse::<f64>().ok());
+    let num = text
+        .trim()
+        .split(|c: char| !c.is_ascii_digit())
+        .next()
+        .and_then(|n| n.parse::<f64>().ok());
     (num, sort_key(text, lang))
 }
 
@@ -874,10 +1135,14 @@ fn create_style(s: &mut Session, v: &Value) -> CmdResult {
         return Err(CmdError::Params("name is empty".into()));
     }
     if s.doc.styles.find(&name).is_some() {
-        return Err(CmdError::Failed(format!("a style named `{name}` already exists")));
+        return Err(CmdError::Failed(format!(
+            "a style named `{name}` already exists"
+        )));
     }
     let id = s.doc.styles.new_id(&name);
-    let based = p::str(v, "basedOn").and_then(|b| s.doc.styles.find(b).map(|x| x.id.clone())).or(Some("Normal".into()));
+    let based = p::str(v, "basedOn")
+        .and_then(|b| s.doc.styles.find(b).map(|x| x.id.clone()))
+        .or(Some("Normal".into()));
     let mut st = Style {
         id: id.clone(),
         name,
@@ -909,12 +1174,23 @@ fn create_style(s: &mut Session, v: &Value) -> CmdResult {
 
 fn modify_style(s: &mut Session, v: &Value) -> CmdResult {
     let id = style_id(s, p::req_str(v, "style")?)?;
-    let chr: Option<CharProps> = v.get("chr").map(|c| serde_json::from_value(c.clone())).transpose().map_err(|e| CmdError::Params(e.to_string()))?;
-    let para: Option<ParaProps> =
-        v.get("para").map(|c| serde_json::from_value(c.clone())).transpose().map_err(|e| CmdError::Params(e.to_string()))?;
+    let chr: Option<CharProps> = v
+        .get("chr")
+        .map(|c| serde_json::from_value(c.clone()))
+        .transpose()
+        .map_err(|e| CmdError::Params(e.to_string()))?;
+    let para: Option<ParaProps> = v
+        .get("para")
+        .map(|c| serde_json::from_value(c.clone()))
+        .transpose()
+        .map_err(|e| CmdError::Params(e.to_string()))?;
     let next = p::str(v, "next").map(str::to_string);
     let name = p::str(v, "name").map(str::to_string);
-    let st = s.doc.styles.get_mut(&id).ok_or_else(|| CmdError::Params("no such style".into()))?;
+    let st = s
+        .doc
+        .styles
+        .get_mut(&id)
+        .ok_or_else(|| CmdError::Params("no such style".into()))?;
     if let Some(c) = chr {
         st.chr.overlay(&c);
     }
@@ -939,17 +1215,29 @@ fn modify_style(s: &mut Session, v: &Value) -> CmdResult {
 /// a bold word say, stays). The style keeps its outline level and list numbering.
 fn update_to_match(s: &mut Session, v: &Value) -> CmdResult {
     let (a, b) = s.sel.ordered();
-    let Some(para) = s.doc.para_at(&a).cloned() else { return sel_result(s) };
+    let Some(para) = s.doc.para_at(&a).cloned() else {
+        return sel_result(s);
+    };
     let id = match p::str(v, "style") {
         Some(n) => style_id(s, n)?,
         None => para.props.style.clone().unwrap_or_else(|| "Normal".into()),
     };
     let sheet = &s.doc.styles;
-    let Some(target) = sheet.get(&id).cloned() else { return Err(CmdError::Params(format!("no style `{id}`"))) };
+    let Some(target) = sheet.get(&id).cloned() else {
+        return Err(CmdError::Params(format!("no style `{id}`")));
+    };
     if !matches!(target.kind, StyleKind::Paragraph | StyleKind::Character) {
-        return Err(CmdError::Failed(format!("`{}` can't be updated to match the selection", target.name)));
+        return Err(CmdError::Failed(format!(
+            "`{}` can't be updated to match the selection",
+            target.name
+        )));
     }
-    let direct = if s.sel.is_collapsed() { para.props_at(a.off) } else { para.props_of_char(a.off) }.clone();
+    let direct = if s.sel.is_collapsed() {
+        para.props_at(a.off)
+    } else {
+        para.props_of_char(a.off)
+    }
+    .clone();
     let para_style = para.props.style.clone().unwrap_or_else(|| "Normal".into());
     // How the selection looks: document defaults, its paragraph style chain, its character
     // style chain, direct formatting (the resolve order, before defaults are filled in).
@@ -962,8 +1250,15 @@ fn update_to_match(s: &mut Session, v: &Value) -> CmdResult {
         }
     };
     char_chain(&mut want_c, direct.style.as_deref());
-    want_c.overlay(&CharProps { style: None, ..direct.formatting() });
-    want_p.overlay(&ParaProps { style: None, numbering: None, ..para.props.formatting() });
+    want_c.overlay(&CharProps {
+        style: None,
+        ..direct.formatting()
+    });
+    want_p.overlay(&ParaProps {
+        style: None,
+        numbering: None,
+        ..para.props.formatting()
+    });
     // How the style looks now, in the same terms.
     let (have_p, have_c) = match target.kind {
         StyleKind::Character => {
@@ -974,7 +1269,11 @@ fn update_to_match(s: &mut Session, v: &Value) -> CmdResult {
         _ => sheet.para_style_props(&id),
     };
     let chr = retarget(&target.chr, &have_c, &want_c, CHAR_KEEP)?;
-    let pp = if target.kind == StyleKind::Paragraph { retarget(&target.para, &have_p, &want_p, PARA_KEEP)? } else { target.para.clone() };
+    let pp = if target.kind == StyleKind::Paragraph {
+        retarget(&target.para, &have_p, &want_p, PARA_KEEP)?
+    } else {
+        target.para.clone()
+    };
     if let Some(st) = s.doc.styles.get_mut(&id) {
         st.chr = chr;
         st.para = pp;
@@ -1000,7 +1299,13 @@ fn update_to_match(s: &mut Session, v: &Value) -> CmdResult {
 const CHAR_KEEP: &[&str] = &["style", "link", "ins", "del", "fmtChange"];
 /// Paragraph properties Update to Match leaves alone: the style, its outline level (a heading
 /// stays a heading), list numbering and revisions.
-const PARA_KEEP: &[&str] = &["style", "outlineLevel", "numbering", "numChange", "fmtChange"];
+const PARA_KEEP: &[&str] = &[
+    "style",
+    "outlineLevel",
+    "numbering",
+    "numChange",
+    "fmtChange",
+];
 
 fn props_map<T: serde::Serialize>(t: &T) -> serde_json::Map<String, Value> {
     match serde_json::to_value(t) {
@@ -1012,7 +1317,12 @@ fn props_map<T: serde::Serialize>(t: &T) -> serde_json::Map<String, Value> {
 /// A style's own properties `own`, changed so that its chain gives `want` where it gave `have`:
 /// a property that differs is set to the wanted value, or dropped (inherited again) when the
 /// selection doesn't set it at all.
-fn retarget<T: serde::Serialize + serde::de::DeserializeOwned>(own: &T, have: &T, want: &T, keep: &[&str]) -> Result<T, CmdError> {
+fn retarget<T: serde::Serialize + serde::de::DeserializeOwned>(
+    own: &T,
+    have: &T,
+    want: &T,
+    keep: &[&str],
+) -> Result<T, CmdError> {
     let (mut out, have, want) = (props_map(own), props_map(have), props_map(want));
     let keys: std::collections::BTreeSet<&String> = have.keys().chain(want.keys()).collect();
     for k in keys {
@@ -1028,7 +1338,11 @@ fn retarget<T: serde::Serialize + serde::de::DeserializeOwned>(own: &T, have: &T
 }
 
 /// `direct` without the properties that have the same value in `inherited` (outside `keep`).
-fn strip_matching<T: serde::Serialize + serde::de::DeserializeOwned + Clone>(direct: &T, inherited: &T, keep: &[&str]) -> T {
+fn strip_matching<T: serde::Serialize + serde::de::DeserializeOwned + Clone>(
+    direct: &T,
+    inherited: &T,
+    keep: &[&str],
+) -> T {
     let (mut out, inherited) = (props_map(direct), props_map(inherited));
     out.retain(|k, v| keep.contains(&k.as_str()) || inherited.get(k) != Some(v));
     serde_json::from_value(Value::Object(out)).unwrap_or_else(|_| direct.clone())
@@ -1039,7 +1353,9 @@ fn strip_matching<T: serde::Serialize + serde::de::DeserializeOwned + Clone>(dir
 /// goes with it. Built-in styles are refused.
 fn delete_style(s: &mut Session, v: &Value) -> CmdResult {
     let id = style_id(s, p::req_str(v, "style")?)?;
-    let Some(st) = s.doc.styles.get(&id).cloned() else { return Err(CmdError::Params(format!("no style `{id}`"))) };
+    let Some(st) = s.doc.styles.get(&id).cloned() else {
+        return Err(CmdError::Params(format!("no style `{id}`")));
+    };
     // Table styles: their tables take Table Grid and styles based on them keep their look.
     if st.kind == StyleKind::Table {
         let mut out = super::table_style::delete(s, &id)?;
@@ -1051,7 +1367,10 @@ fn delete_style(s: &mut Session, v: &Value) -> CmdResult {
         return Ok(out);
     }
     if st.builtin {
-        return Err(CmdError::Failed(format!("`{}` is a built-in style and can't be deleted", st.name)));
+        return Err(CmdError::Failed(format!(
+            "`{}` is a built-in style and can't be deleted",
+            st.name
+        )));
     }
     let mut gone = vec![st.clone()];
     if let Some(partner) = st.linked.as_deref().and_then(|l| s.doc.styles.get(l))
@@ -1064,11 +1383,16 @@ fn delete_style(s: &mut Session, v: &Value) -> CmdResult {
     for g in &gone {
         s.doc.styles.remove(&g.id);
         // Fall back to the base only while it is a style of the same kind that still exists.
-        let base = g.based_on.clone().filter(|b| s.doc.styles.get(b).is_some_and(|x| x.kind == g.kind));
+        let base = g
+            .based_on
+            .clone()
+            .filter(|b| s.doc.styles.get(b).is_some_and(|x| x.kind == g.kind));
         changed += s.doc.restyle(&g.id, base);
     }
     touch_all(s);
-    Ok(json!({"deleted": gone.iter().map(|g| g.id.clone()).collect::<Vec<_>>(), "restyled": changed}))
+    Ok(
+        json!({"deleted": gone.iter().map(|g| g.id.clone()).collect::<Vec<_>>(), "restyled": changed}),
+    )
 }
 
 /// Styles gallery and style list visibility (`w:qFormat` / `w:semiHidden`).
@@ -1078,7 +1402,11 @@ fn set_visibility(s: &mut Session, v: &Value) -> CmdResult {
     if gallery.is_none() && hidden.is_none() {
         return Err(CmdError::Params("give `gallery` and/or `hidden`".into()));
     }
-    let st = s.doc.styles.get_mut(&id).ok_or_else(|| CmdError::Params(format!("no style `{id}`")))?;
+    let st = s
+        .doc
+        .styles
+        .get_mut(&id)
+        .ok_or_else(|| CmdError::Params(format!("no style `{id}`")))?;
     if let Some(h) = hidden {
         st.hidden = h;
     }
@@ -1098,16 +1426,20 @@ fn set_visibility(s: &mut Session, v: &Value) -> CmdResult {
 /// its paragraph half), sorted as recommended (priority, then name) or alphabetically.
 pub fn manage_list(s: &Session, alphabetical: bool) -> Value {
     let sheet = &s.doc.styles;
-    let links_back = |a: &Style, b: &str| sheet.get(b).is_some_and(|x| x.linked.as_deref() == Some(a.id.as_str()));
+    let links_back = |a: &Style, b: &str| {
+        sheet
+            .get(b)
+            .is_some_and(|x| x.linked.as_deref() == Some(a.id.as_str()))
+    };
     let mut list: Vec<&Style> = sheet
         .styles
         .iter()
         .filter(|st| match st.kind {
             StyleKind::Numbering => false,
             // The character half of a linked pair is listed as the linked style.
-            StyleKind::Character => {
-                !st.linked.as_deref().is_some_and(|l| sheet.get(l).is_some_and(|x| x.kind == StyleKind::Paragraph) && links_back(st, l))
-            }
+            StyleKind::Character => !st.linked.as_deref().is_some_and(|l| {
+                sheet.get(l).is_some_and(|x| x.kind == StyleKind::Paragraph) && links_back(st, l)
+            }),
             _ => true,
         })
         .collect();
@@ -1156,7 +1488,12 @@ fn own_format(st: &Style) -> Value {
     if let Some(x) = c.size {
         f.insert("size".into(), json!(x));
     }
-    for (k, v) in [("bold", c.bold), ("italic", c.italic), ("caps", c.caps), ("smallCaps", c.small_caps)] {
+    for (k, v) in [
+        ("bold", c.bold),
+        ("italic", c.italic),
+        ("caps", c.caps),
+        ("smallCaps", c.small_caps),
+    ] {
         if let Some(b) = v {
             f.insert(k.into(), json!(b));
         }
@@ -1202,15 +1539,28 @@ pub struct ListButtons {
 /// Numbering (a numbered one); Multilevel is on too when the list numbers its levels together:
 /// some level's label shows another level's number (`1.1.`) or uses legal numbering.
 pub fn list_buttons(doc: &wordcraft_doc::Document, numbering: Option<NumRef>) -> ListButtons {
-    let Some(n) = numbering.filter(|n| n.num != 0) else { return ListButtons::default() };
-    let Some(level) = doc.numbering.level(n.num, n.level) else { return ListButtons::default() };
+    let Some(n) = numbering.filter(|n| n.num != 0) else {
+        return ListButtons::default();
+    };
+    let Some(level) = doc.numbering.level(n.num, n.level) else {
+        return ListButtons::default();
+    };
     let bullets = level.format == wordcraft_doc::section::NumFormat::Bullet;
     let joined = |i: u8| {
         doc.numbering.level(n.num, i).is_some_and(|l| {
             let own = u32::from(i) + 1;
-            l.legal || l.text.split('%').skip(1).filter_map(|t| t.chars().next()?.to_digit(10)).any(|k| k != own)
+            l.legal
+                || l.text
+                    .split('%')
+                    .skip(1)
+                    .filter_map(|t| t.chars().next()?.to_digit(10))
+                    .any(|k| k != own)
         })
     };
     let multilevel = (0..9u8).any(joined);
-    ListButtons { bullets, numbering: !bullets, multilevel }
+    ListButtons {
+        bullets,
+        numbering: !bullets,
+        multilevel,
+    }
 }

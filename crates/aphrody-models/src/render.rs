@@ -55,7 +55,13 @@ impl Format {
     /// Every format, in declaration order.
     #[must_use]
     pub const fn all() -> &'static [Self] {
-        &[Self::Text, Self::Json, Self::Markdown, Self::Html, Self::Csv]
+        &[
+            Self::Text,
+            Self::Json,
+            Self::Markdown,
+            Self::Html,
+            Self::Csv,
+        ]
     }
 
     /// Parse a format name, accepting the common aliases people type:
@@ -191,7 +197,11 @@ impl Report {
             let _ = write!(header_line, "{:<width$}  ", header, width = widths[index]);
         }
         let _ = writeln!(out, "{}", header_line.trim_end());
-        let _ = writeln!(out, "{}", "-".repeat(header_line.trim_end().chars().count().max(1)));
+        let _ = writeln!(
+            out,
+            "{}",
+            "-".repeat(header_line.trim_end().chars().count().max(1))
+        );
 
         for row in &self.rows {
             let mut line = String::new();
@@ -221,10 +231,21 @@ impl Report {
         let _ = writeln!(
             out,
             "| {} |",
-            self.headers.iter().map(|h| escape_markdown(h)).collect::<Vec<_>>().join(" | ")
+            self.headers
+                .iter()
+                .map(|h| escape_markdown(h))
+                .collect::<Vec<_>>()
+                .join(" | ")
         );
-        let _ =
-            writeln!(out, "|{}|", self.headers.iter().map(|_| "---").collect::<Vec<_>>().join("|"));
+        let _ = writeln!(
+            out,
+            "|{}|",
+            self.headers
+                .iter()
+                .map(|_| "---")
+                .collect::<Vec<_>>()
+                .join("|")
+        );
         for row in &self.rows {
             let cells: Vec<String> = (0..self.headers.len())
                 .map(|index| escape_markdown(Self::cell(row, index)))
@@ -260,7 +281,11 @@ impl Report {
         for row in &self.rows {
             let _ = writeln!(body, "      <tr>");
             for index in 0..self.headers.len() {
-                let _ = writeln!(body, "        <td>{}</td>", escape_html(Self::cell(row, index)));
+                let _ = writeln!(
+                    body,
+                    "        <td>{}</td>",
+                    escape_html(Self::cell(row, index))
+                );
             }
             let _ = writeln!(body, "      </tr>");
         }
@@ -294,11 +319,16 @@ impl Report {
         let _ = writeln!(
             out,
             "{}",
-            self.headers.iter().map(|h| escape_csv(h)).collect::<Vec<_>>().join(",")
+            self.headers
+                .iter()
+                .map(|h| escape_csv(h))
+                .collect::<Vec<_>>()
+                .join(",")
         );
         for row in &self.rows {
-            let cells: Vec<String> =
-                (0..self.headers.len()).map(|i| escape_csv(Self::cell(row, i))).collect();
+            let cells: Vec<String> = (0..self.headers.len())
+                .map(|i| escape_csv(Self::cell(row, i)))
+                .collect();
             let _ = writeln!(out, "{}", cells.join(","));
         }
         out
@@ -347,7 +377,9 @@ tbody tr:last-child td { border-bottom: none; }
 /// everything else Markdown does to text inside a table cell is cosmetic.
 #[must_use]
 pub fn escape_markdown(raw: &str) -> String {
-    raw.replace('\\', "\\\\").replace('|', "\\|").replace(['\n', '\r'], " ")
+    raw.replace('\\', "\\\\")
+        .replace('|', "\\|")
+        .replace(['\n', '\r'], " ")
 }
 
 /// Escape text for an HTML text node or a quoted attribute.
@@ -386,8 +418,16 @@ mod tests {
         let mut report = Report::new("Installed models", &["SIZE", "FORMAT", "REFERENCE"])
             .with_summary("2 models under ~/.aphrody/models")
             .with_footer("total 288 MiB");
-        report.push(vec!["141.11 MiB".into(), "ggml".into(), "hf:a/b/base.bin".into()]);
-        report.push(vec!["147.00 MiB".into(), "gguf".into(), "hf:c/d/m.gguf".into()]);
+        report.push(vec![
+            "141.11 MiB".into(),
+            "ggml".into(),
+            "hf:a/b/base.bin".into(),
+        ]);
+        report.push(vec![
+            "147.00 MiB".into(),
+            "gguf".into(),
+            "hf:c/d/m.gguf".into(),
+        ]);
         report
     }
 
@@ -424,7 +464,10 @@ mod tests {
         assert!(out.starts_with("# Installed models\n"), "{out}");
         assert!(out.contains("| SIZE | FORMAT | REFERENCE |"), "{out}");
         assert!(out.contains("|---|---|---|"), "{out}");
-        assert!(out.contains("| 141.11 MiB | ggml | hf:a/b/base.bin |"), "{out}");
+        assert!(
+            out.contains("| 141.11 MiB | ggml | hf:a/b/base.bin |"),
+            "{out}"
+        );
         assert!(out.trim_end().ends_with("total 288 MiB"), "{out}");
         // Header row, delimiter row, and one row per record.
         let table_rows = out.lines().filter(|l| l.starts_with('|')).count();
@@ -449,7 +492,10 @@ mod tests {
         assert!(out.contains("color-scheme: light dark"));
         assert!(out.contains("prefers-color-scheme: dark"));
         // No external resource may be referenced.
-        assert!(!out.contains("http://") && !out.contains("https://"), "{out}");
+        assert!(
+            !out.contains("http://") && !out.contains("https://"),
+            "{out}"
+        );
         assert!(out.contains("<td>141.11 MiB</td>"));
     }
 
@@ -475,7 +521,10 @@ mod tests {
         assert!(!out.contains("<img"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
         assert!(out.contains("&lt;img src=x onerror=alert(1)&gt;"), "{out}");
-        assert!(out.contains("<title>&lt;title&gt; &amp; &quot;quotes&quot;</title>"), "{out}");
+        assert!(
+            out.contains("<title>&lt;title&gt; &amp; &quot;quotes&quot;</title>"),
+            "{out}"
+        );
     }
 
     #[test]

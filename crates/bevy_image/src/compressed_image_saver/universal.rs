@@ -1,4 +1,4 @@
-use bevy_asset::{io::Writer, saver::SavedAsset, AssetPath, AsyncWriteExt};
+use bevy_asset::{AssetPath, AsyncWriteExt, io::Writer, saver::SavedAsset};
 
 use super::{CompressedImageSaverError, CompressedImageSaverSettings};
 use crate::{Image, ImageFormat, ImageFormatSetting, ImageLoaderSettings};

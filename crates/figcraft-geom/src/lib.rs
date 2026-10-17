@@ -3,7 +3,14 @@
 //! Re-exports [`kurbo`] and adds the shape builders a design tool needs: rectangles with independent
 //! corner radii and corner smoothing (the "squircle" continuous-curvature corner), regular polygons
 //! and stars (with rounded vertices), and ellipse arcs / rings. Coordinates are y-down.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub use kurbo;
 pub use kurbo::{Affine, BezPath, Point, Rect, Shape, Size, Vec2};
@@ -47,10 +54,30 @@ pub fn rounded_rect(width: f64, height: f64, radii: Radii, smoothing: f64) -> Be
     }
     // Corners clockwise starting top-right, each: (corner, incoming edge direction, outgoing).
     let corners: [(Point, Vec2, Vec2, f64); 4] = [
-        (Point::new(w, 0.0), Vec2::new(1.0, 0.0), Vec2::new(0.0, 1.0), radii[1]),
-        (Point::new(w, h), Vec2::new(0.0, 1.0), Vec2::new(-1.0, 0.0), radii[2]),
-        (Point::new(0.0, h), Vec2::new(-1.0, 0.0), Vec2::new(0.0, -1.0), radii[3]),
-        (Point::new(0.0, 0.0), Vec2::new(0.0, -1.0), Vec2::new(1.0, 0.0), radii[0]),
+        (
+            Point::new(w, 0.0),
+            Vec2::new(1.0, 0.0),
+            Vec2::new(0.0, 1.0),
+            radii[1],
+        ),
+        (
+            Point::new(w, h),
+            Vec2::new(0.0, 1.0),
+            Vec2::new(-1.0, 0.0),
+            radii[2],
+        ),
+        (
+            Point::new(0.0, h),
+            Vec2::new(-1.0, 0.0),
+            Vec2::new(0.0, -1.0),
+            radii[3],
+        ),
+        (
+            Point::new(0.0, 0.0),
+            Vec2::new(0.0, -1.0),
+            Vec2::new(1.0, 0.0),
+            radii[0],
+        ),
     ];
     let first = corner_profile(radii[0], s, max_r);
     // Start on the top edge just after the top-left corner.
@@ -78,7 +105,14 @@ struct CornerProfile {
 fn corner_profile(r: f64, smoothing: f64, max_p: f64) -> CornerProfile {
     let r = r.max(0.0);
     if r <= 0.0 {
-        return CornerProfile { r: 0.0, p: 0.0, a: 0.0, b: 0.0, c: 0.0, d: 0.0 };
+        return CornerProfile {
+            r: 0.0,
+            p: 0.0,
+            a: 0.0,
+            b: 0.0,
+            c: 0.0,
+            d: 0.0,
+        };
     }
     let mut s = smoothing;
     // Reduce smoothing first when the smoothed corner doesn't fit along the edge.
@@ -185,7 +219,11 @@ pub fn rounded_polygon(points: &[Point], radius: f64) -> BezPath {
     // For each vertex: the tangent points on its two edges and the bezier between them.
     let mut corners: Vec<(Point, Point, Point, Point)> = Vec::with_capacity(n);
     for i in 0..n {
-        let (Some(prev), Some(cur), Some(next)) = (points.get((i + n - 1) % n), points.get(i), points.get((i + 1) % n)) else {
+        let (Some(prev), Some(cur), Some(next)) = (
+            points.get((i + n - 1) % n),
+            points.get(i),
+            points.get((i + 1) % n),
+        ) else {
             continue;
         };
         let v1 = *prev - *cur;
@@ -317,7 +355,12 @@ pub fn points_bounds(points: impl IntoIterator<Item = Point>) -> Option<Rect> {
 
 /// The axis-aligned bounds of `rect` after `xf`.
 pub fn transform_rect_bbox(xf: Affine, rect: Rect) -> Rect {
-    let pts = [Point::new(rect.x0, rect.y0), Point::new(rect.x1, rect.y0), Point::new(rect.x1, rect.y1), Point::new(rect.x0, rect.y1)];
+    let pts = [
+        Point::new(rect.x0, rect.y0),
+        Point::new(rect.x1, rect.y0),
+        Point::new(rect.x1, rect.y1),
+        Point::new(rect.x0, rect.y1),
+    ];
     points_bounds(pts.into_iter().map(|p| xf * p)).unwrap_or(Rect::ZERO)
 }
 

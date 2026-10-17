@@ -18,7 +18,11 @@ use crate::{
 use core::intrinsics::{likely, unlikely};
 
 pub fn mrs<const SPSR: bool>(emu: &mut Emu<Interpreter>, instr: u32) {
-    let result = if SPSR { spsr!(emu.arm9).raw() } else { emu.arm9.engine_data.regs.cpsr.raw() };
+    let result = if SPSR {
+        spsr!(emu.arm9).raw()
+    } else {
+        emu.arm9.engine_data.regs.cpsr.raw()
+    };
     let dst_reg = (instr >> 12 & 0xF) as u8;
     if likely(!cfg!(feature = "interp-r15-write-checks") || dst_reg != 15) {
         write_reg_clear_interlock_ab(emu, dst_reg, result);
@@ -80,26 +84,26 @@ pub fn undefined<const MAYBE_HLE_BIOS_SWI: bool, const MAYBE_DLDI_CALL: bool>(
             0 => {
                 hle_bios::arm9::resume_intr_wait(emu);
                 return;
-            },
+            }
             1 => {
                 enter_hle_irq::<false>(emu, reg!(emu.arm9, 14));
                 return;
-            },
+            }
             2 => {
                 return_from_hle_irq(emu);
                 return;
-            },
+            }
             3 => {
                 hle_bios::arm9::handle_undefined_instr(emu);
                 return;
-            },
+            }
             4 => {
                 let return_addr = reg!(emu.arm9, 14);
                 let number = bus::read_8::<CpuAccess, _>(emu, return_addr.wrapping_sub(2));
                 enter_hle_swi::<false>(emu, number, return_addr);
                 return;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     } else if MAYBE_DLDI_CALL
         && instr & dldi::CALL_INSTR_MASK == dldi::CALL_INSTR

@@ -39,9 +39,19 @@ pub struct ControlRequest {
 }
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Value) -> (Self, std::sync::mpsc::Receiver<Value>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Value,
+    ) -> (Self, std::sync::mpsc::Receiver<Value>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -75,7 +85,10 @@ pub struct JobWaiter {
 /// Commands that block with `wait` (and its default).
 fn waits(command: &str, params: &Value) -> bool {
     let default = command == "renderQueue.render";
-    params.get("wait").and_then(Value::as_bool).unwrap_or(default)
+    params
+        .get("wait")
+        .and_then(Value::as_bool)
+        .unwrap_or(default)
 }
 
 /// Run an engine command. A waiting command (`wait: true`) whose job the session offloads
@@ -83,18 +96,37 @@ fn waits(command: &str, params: &Value) -> bool {
 /// so the browser's UI keeps drawing while it runs.
 fn execute_engine(app: &mut EffectcraftApp, id: &str, params: Value) -> Result<Outcome, String> {
     if !app.session.offloads() || !waits(id, &params) {
-        return app.session.execute_checked(id, params).map(ok).map_err(|e| e.to_string());
+        return app
+            .session
+            .execute_checked(id, params)
+            .map(ok)
+            .map_err(|e| e.to_string());
     }
     let before: Vec<String> = app.session.jobs().into_iter().map(|j| j.id).collect();
     let log_len = app.session.offload_log.len();
     let mut p = params.clone();
     p["wait"] = json!(false);
-    let result = app.session.execute_checked(id, p).map_err(|e| e.to_string())?;
-    let jobs: Vec<String> = app.session.jobs().into_iter().map(|j| j.id).filter(|j| !before.contains(j)).collect();
+    let result = app
+        .session
+        .execute_checked(id, p)
+        .map_err(|e| e.to_string())?;
+    let jobs: Vec<String> = app
+        .session
+        .jobs()
+        .into_iter()
+        .map(|j| j.id)
+        .filter(|j| !before.contains(j))
+        .collect();
     if jobs.is_empty() {
         return Ok(ok(result));
     }
-    Ok(Outcome::AwaitJobs(JobWaiter { command: id.to_string(), params, result, jobs, log_len }))
+    Ok(Outcome::AwaitJobs(JobWaiter {
+        command: id.to_string(),
+        params,
+        result,
+        jobs,
+        log_len,
+    }))
 }
 
 impl JobWaiter {
@@ -108,7 +140,12 @@ impl JobWaiter {
     pub fn finish(self, app: &mut EffectcraftApp) -> Value {
         let s = &mut app.session;
         s.poll_render();
-        let errors: Vec<String> = s.offload_log.iter().skip(self.log_len).filter_map(|(_, e)| e.clone()).collect();
+        let errors: Vec<String> = s
+            .offload_log
+            .iter()
+            .skip(self.log_len)
+            .filter_map(|(_, e)| e.clone())
+            .collect();
         if let Some(e) = errors.first() {
             return json!({"ok": false, "error": e});
         }
@@ -117,17 +154,31 @@ impl JobWaiter {
             r["running"] = json!(false);
         }
         if self.command == "renderQueue.render" {
-            let ids: Vec<Value> = r["items"].as_array().map(|a| a.iter().map(|i| i["id"].clone()).collect()).unwrap_or_default();
+            let ids: Vec<Value> = r["items"]
+                .as_array()
+                .map(|a| a.iter().map(|i| i["id"].clone()).collect())
+                .unwrap_or_default();
             if let Ok(list) = s.execute("renderQueue.list", json!({})) {
-                r["items"] =
-                    json!(list["items"].as_array().map(|a| a.iter().filter(|i| ids.contains(&i["id"])).cloned().collect::<Vec<_>>()).unwrap_or_default());
+                r["items"] = json!(
+                    list["items"]
+                        .as_array()
+                        .map(|a| a
+                            .iter()
+                            .filter(|i| ids.contains(&i["id"]))
+                            .cloned()
+                            .collect::<Vec<_>>())
+                        .unwrap_or_default()
+                );
             }
             r["rendering"] = json!(s.is_rendering());
         }
         let prefix = self.command.split('.').next().unwrap_or("");
         if matches!(prefix, "warp" | "camera" | "roto")
             && r.get("layer").is_some()
-            && let Ok(st) = s.execute(&format!("{prefix}.status"), json!({"layer": r["layer"], "effect": r["effect"]}))
+            && let Ok(st) = s.execute(
+                &format!("{prefix}.status"),
+                json!({"layer": r["layer"], "effect": r["effect"]}),
+            )
         {
             r["status"] = st;
         }
@@ -148,18 +199,33 @@ fn err(e: impl std::fmt::Display) -> Outcome {
 fn modifiers(p: &Value) -> egui::Modifiers {
     let m = p.get("modifiers").unwrap_or(p);
     let b = |k: &str| m.get(k).and_then(Value::as_bool).unwrap_or(false);
-    egui::Modifiers { alt: b("alt"), ctrl: b("ctrl"), shift: b("shift"), mac_cmd: cfg!(target_os = "macos") && b("command"), command: b("command") }
+    egui::Modifiers {
+        alt: b("alt"),
+        ctrl: b("ctrl"),
+        shift: b("shift"),
+        mac_cmd: cfg!(target_os = "macos") && b("command"),
+        command: b("command"),
+    }
 }
 
 /// Resolve a point from `{id}` (element centre) or `{x, y}`.
 fn point(app: &EffectcraftApp, p: &Value) -> Result<egui::Pos2, String> {
     if let Some(id) = p.get("id").and_then(Value::as_str) {
-        let e = app.auto.find(id).ok_or_else(|| format!("{RETRY}no element `{id}` (see ui.elements)"))?;
+        let e = app
+            .auto
+            .find(id)
+            .ok_or_else(|| format!("{RETRY}no element `{id}` (see ui.elements)"))?;
         let fx = p.get("fx").and_then(Value::as_f64).unwrap_or(0.5) as f32;
         let fy = p.get("fy").and_then(Value::as_f64).unwrap_or(0.5) as f32;
-        return Ok(egui::pos2(e.rect[0] + e.rect[2] * fx, e.rect[1] + e.rect[3] * fy));
+        return Ok(egui::pos2(
+            e.rect[0] + e.rect[2] * fx,
+            e.rect[1] + e.rect[3] * fy,
+        ));
     }
-    let x = p.get("x").and_then(Value::as_f64).ok_or("need `id` or `x`,`y`")?;
+    let x = p
+        .get("x")
+        .and_then(Value::as_f64)
+        .ok_or("need `id` or `x`,`y`")?;
     let y = p.get("y").and_then(Value::as_f64).ok_or("need `y`")?;
     Ok(egui::pos2(x as f32, y as f32))
 }
@@ -169,12 +235,20 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
     let s = |k: &str| p.get(k).and_then(Value::as_str);
     match req.method.as_str() {
         "engine.execute" | "ui.menu.invoke" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
-            let params = p.get("params").cloned().filter(|v| !v.is_null()).unwrap_or(json!({}));
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
+            let params = p
+                .get("params")
+                .cloned()
+                .filter(|v| !v.is_null())
+                .unwrap_or(json!({}));
             // `engine.execute` runs engine commands exactly as headless (never opens a dialog, e.g.
             // `comp.new {}` creates a default comp); UI-only ids (`tool.*`, `view.*`, `window.*`,
             // `playback.*` …) and `ui.menu.invoke` go through the menu dispatcher like a click.
-            let r = if req.method == "engine.execute" && effectcraft_engine::find_command(id).is_some() {
+            let r = if req.method == "engine.execute"
+                && effectcraft_engine::find_command(id).is_some()
+            {
                 execute_engine(app, id, params)
             } else {
                 crate::menus::invoke(app, ctx, id, params).map(ok)
@@ -187,11 +261,16 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
                 }
             }
         }
-        "engine.commands" => match app.session.execute("command.list", json!({"filter": p.get("filter"), "enabledOnly": p.get("enabledOnly")})) {
+        "engine.commands" => match app.session.execute(
+            "command.list",
+            json!({"filter": p.get("filter"), "enabledOnly": p.get("enabledOnly")}),
+        ) {
             Ok(v) => ok(v),
             Err(e) => err(e),
         },
-        "ui.menu.list" => ok(serde_json::to_value(crate::menus::menu_items(app)).unwrap_or_default()),
+        "ui.menu.list" => {
+            ok(serde_json::to_value(crate::menus::menu_items(app)).unwrap_or_default())
+        }
         "ui.inspect" => ok(inspect(app, ctx)),
         "ui.elements" => {
             let prefix = s("prefix").unwrap_or("");
@@ -205,7 +284,10 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
                 }
             }
             if let Some(w) = s("workspace") {
-                match crate::dock::WORKSPACES.iter().find(|x| x.eq_ignore_ascii_case(w)) {
+                match crate::dock::WORKSPACES
+                    .iter()
+                    .find(|x| x.eq_ignore_ascii_case(w))
+                {
                     Some(w) => app.set_workspace(w),
                     None => return err(format!("unknown workspace `{w}`")),
                 }
@@ -225,8 +307,13 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
                 }
                 // The active comp's Resolution (`view.res.*`), saved with the project.
                 if let Some(r) = v.get("res").and_then(Value::as_str) {
-                    let Some(res) = Resolution::ALL.into_iter().find(|x| x.label().eq_ignore_ascii_case(r)) else {
-                        return err(format!("unknown resolution `{r}` (auto, full, half, third, quarter)"));
+                    let Some(res) = Resolution::ALL
+                        .into_iter()
+                        .find(|x| x.label().eq_ignore_ascii_case(r))
+                    else {
+                        return err(format!(
+                            "unknown resolution `{r}` (auto, full, half, third, quarter)"
+                        ));
                     };
                     if let Some(cid) = app.session.active_comp_id()
                         && let Err(e) = app.session.set_resolution(cid, res)
@@ -235,7 +322,10 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
                     }
                 }
                 if let Some(Value::Array(a)) = v.get("pan") {
-                    app.ui.viewer.pan = [a.first().and_then(Value::as_f64).unwrap_or(0.0) as f32, a.get(1).and_then(Value::as_f64).unwrap_or(0.0) as f32];
+                    app.ui.viewer.pan = [
+                        a.first().and_then(Value::as_f64).unwrap_or(0.0) as f32,
+                        a.get(1).and_then(Value::as_f64).unwrap_or(0.0) as f32,
+                    ];
                 }
                 for (k, slot) in [
                     ("grid", &mut app.ui.viewer.grid),
@@ -301,7 +391,9 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
             ok(Value::Null)
         }
         "ui.panel.show" | "ui.panel.close" => {
-            let Some(panel) = s("panel").and_then(PanelKind::from_name) else { return err("unknown `panel`") };
+            let Some(panel) = s("panel").and_then(PanelKind::from_name) else {
+                return err("unknown `panel`");
+            };
             if req.method == "ui.panel.show" {
                 app.show_panel(panel);
             } else {
@@ -312,7 +404,9 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
         "ui.click" | "ui.move" => {
             let pos = match point(app, p) {
                 Ok(p) => p,
-                Err(e) if e.starts_with(RETRY) => return Outcome::Retry(e.trim_start_matches(RETRY).to_string()),
+                Err(e) if e.starts_with(RETRY) => {
+                    return Outcome::Retry(e.trim_start_matches(RETRY).to_string());
+                }
                 Err(e) => return err(e),
             };
             let m = modifiers(p);
@@ -328,31 +422,58 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
                 };
                 let count = p.get("count").and_then(Value::as_u64).unwrap_or(1);
                 for _ in 0..count {
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: true, modifiers: m });
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: false, modifiers: m });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: true,
+                        modifiers: m,
+                    });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: false,
+                        modifiers: m,
+                    });
                 }
             }
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.drag" => {
-            let (Some(from), Some(to)) = (p.get("from"), p.get("to")) else { return err("need `from` and `to`") };
+            let (Some(from), Some(to)) = (p.get("from"), p.get("to")) else {
+                return err("need `from` and `to`");
+            };
             let (a, b) = match (point(app, from), point(app, to)) {
                 (Ok(a), Ok(b)) => (a, b),
-                (Err(e), _) | (_, Err(e)) if e.starts_with(RETRY) => return Outcome::Retry(e.trim_start_matches(RETRY).to_string()),
+                (Err(e), _) | (_, Err(e)) if e.starts_with(RETRY) => {
+                    return Outcome::Retry(e.trim_start_matches(RETRY).to_string());
+                }
                 (Err(e), _) | (_, Err(e)) => return err(e),
             };
             let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(12).max(2);
             let m = modifiers(p);
             app.synthetic.push(egui::Event::ModifiersChanged(m));
             app.synthetic.push(egui::Event::PointerMoved(a));
-            app.synthetic.push(egui::Event::PointerButton { pos: a, button: egui::PointerButton::Primary, pressed: true, modifiers: m });
+            app.synthetic.push(egui::Event::PointerButton {
+                pos: a,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: m,
+            });
             for i in 1..=steps {
                 let f = i as f32 / steps as f32;
-                app.synthetic.push(egui::Event::PointerMoved(a + (b - a) * f));
+                app.synthetic
+                    .push(egui::Event::PointerMoved(a + (b - a) * f));
             }
-            app.synthetic.push(egui::Event::PointerButton { pos: b, button: egui::PointerButton::Primary, pressed: false, modifiers: m });
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic.push(egui::Event::PointerButton {
+                pos: b,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: m,
+            });
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.scroll" => {
@@ -378,22 +499,49 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
             Outcome::AfterInput
         }
         "ui.key" => {
-            let Some(name) = s("key") else { return err("missing `key`") };
-            let Some((mut m, key)) = crate::menus::parse_shortcut(name) else { return err(format!("unknown key `{name}`")) };
+            let Some(name) = s("key") else {
+                return err("missing `key`");
+            };
+            let Some((mut m, key)) = crate::menus::parse_shortcut(name) else {
+                return err(format!("unknown key `{name}`"));
+            };
             let extra = modifiers(p);
             m |= extra;
-            app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: m });
-            app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers: m });
+            app.synthetic.push(egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: m,
+            });
+            app.synthetic.push(egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: m,
+            });
             Outcome::AfterInput
         }
         "ui.type" => {
-            let Some(text) = s("text") else { return err("missing `text`") };
+            let Some(text) = s("text") else {
+                return err("missing `text`");
+            };
             app.synthetic.push(egui::Event::Text(text.to_string()));
-            app.synthetic.push(egui::Event::Key { key: egui::Key::F35, physical_key: None, pressed: false, repeat: false, modifiers: Default::default() });
+            app.synthetic.push(egui::Event::Key {
+                key: egui::Key::F35,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: Default::default(),
+            });
             Outcome::AfterInput
         }
         "ui.viewer.locate" => {
-            let (Some(x), Some(y)) = (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) else {
+            let (Some(x), Some(y)) = (
+                p.get("x").and_then(Value::as_f64),
+                p.get("y").and_then(Value::as_f64),
+            ) else {
                 return err("need `x`, `y` (comp pixels)");
             };
             match crate::panels::viewer::comp_to_screen(ctx, [x as f32, y as f32]) {
@@ -412,7 +560,9 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
             }
         }
         "ui.timeline.locate" => {
-            let Some(l) = p.get("layer").and_then(Value::as_u64) else { return err("need `layer` (id)") };
+            let Some(l) = p.get("layer").and_then(Value::as_u64) else {
+                return err("need `layer` (id)");
+            };
             match crate::panels::timeline::locate(app, l, p.get("time").and_then(Value::as_f64)) {
                 Some((x, y)) => ok(json!({"x": x, "y": y})),
                 None => Outcome::Retry("layer not visible in the timeline".into()),
@@ -431,11 +581,16 @@ pub fn handle(app: &mut EffectcraftApp, ctx: &egui::Context, req: &ControlReques
             )
         }
         "ui.screenshot" => {
-            let crop = s("panel").and_then(PanelKind::from_name).and_then(|pk| app.auto.find(&format!("panel.{}", pk.id())).map(|e| e.rect));
+            let crop = s("panel")
+                .and_then(PanelKind::from_name)
+                .and_then(|pk| app.auto.find(&format!("panel.{}", pk.id())).map(|e| e.rect));
             let crop = crop.or_else(|| s("id").and_then(|id| app.auto.find(id).map(|e| e.rect)));
             // Bring the window on screen so a frame is presented, without taking keyboard focus.
             app.raise_for_control(ctx);
-            Outcome::Screenshot { path: s("path").map(str::to_string), crop }
+            Outcome::Screenshot {
+                path: s("path").map(str::to_string),
+                crop,
+            }
         }
         "render.frame" => render_frame(app, p),
         "ui.resize" => {
@@ -470,9 +625,21 @@ fn render_frame(app: &EffectcraftApp, p: &Value) -> Outcome {
         Ok(c) => c,
         Err(e) => return err(e),
     };
-    let t = p.get("time").or(p.get("seconds")).and_then(Value::as_f64).map(effectcraft_time::Tick::from_seconds_f64).unwrap_or_else(|| s.time());
-    let max_side = p.get("max_side").or(p.get("maxSide")).and_then(Value::as_u64).unwrap_or(0) as u32;
-    let transparent = p.get("transparent").and_then(Value::as_bool).unwrap_or(false);
+    let t = p
+        .get("time")
+        .or(p.get("seconds"))
+        .and_then(Value::as_f64)
+        .map(effectcraft_time::Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time());
+    let max_side = p
+        .get("max_side")
+        .or(p.get("maxSide"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0) as u32;
+    let transparent = p
+        .get("transparent")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let (w, h, rgba) = match s.render_rgba8_alpha(cid, t, max_side, transparent) {
         Ok(r) => r,
         Err(e) => return err(e),
@@ -483,7 +650,10 @@ fn render_frame(app: &EffectcraftApp, p: &Value) -> Outcome {
     };
     let mut out = json!({"comp": cid.0, "time": t.seconds(), "width": w, "height": h});
     // (the web has no file system: inline unless a path is given)
-    let inline = p.get("base64").and_then(Value::as_bool).unwrap_or(cfg!(target_arch = "wasm32") && p.get("path").is_none());
+    let inline = p
+        .get("base64")
+        .and_then(Value::as_bool)
+        .unwrap_or(cfg!(target_arch = "wasm32") && p.get("path").is_none());
     if inline {
         out["png"] = json!(base64(&png));
         return ok(out);
@@ -492,7 +662,12 @@ fn render_frame(app: &EffectcraftApp, p: &Value) -> Outcome {
         .get("path")
         .and_then(Value::as_str)
         .map(str::to_string)
-        .unwrap_or_else(|| std::env::temp_dir().join(format!("effectcraft-frame-{}.png", std::process::id())).to_string_lossy().to_string());
+        .unwrap_or_else(|| {
+            std::env::temp_dir()
+                .join(format!("effectcraft-frame-{}.png", std::process::id()))
+                .to_string_lossy()
+                .to_string()
+        });
     match std::fs::write(&path, png) {
         Ok(()) => {
             out["path"] = json!(path);
@@ -507,7 +682,9 @@ pub fn base64(data: &[u8]) -> String {
     const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut s = String::with_capacity(data.len().div_ceil(3) * 4);
     for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         for i in 0..4 {
             if i <= c.len() {
                 s.push(A[(n >> (18 - 6 * i) & 63) as usize] as char);
@@ -561,14 +738,24 @@ pub fn inspect(app: &EffectcraftApp, ctx: &egui::Context) -> Value {
 }
 
 /// Save a screenshot (optionally cropped to a rect in points) as PNG; returns the reply JSON.
-pub fn save_screenshot(ctx: &egui::Context, image: &egui::ColorImage, path: Option<&str>, crop: Option<[f32; 4]>) -> Value {
+pub fn save_screenshot(
+    ctx: &egui::Context,
+    image: &egui::ColorImage,
+    path: Option<&str>,
+    crop: Option<[f32; 4]>,
+) -> Value {
     let ppp = ctx.pixels_per_point();
     let [w, h] = image.size;
     let (x0, y0, cw, ch) = match crop {
         Some([x, y, cw, ch]) => {
             let x0 = ((x * ppp) as usize).min(w);
             let y0 = ((y * ppp) as usize).min(h);
-            (x0, y0, ((cw * ppp) as usize).min(w - x0), ((ch * ppp) as usize).min(h - y0))
+            (
+                x0,
+                y0,
+                ((cw * ppp) as usize).min(w - x0),
+                ((ch * ppp) as usize).min(h - y0),
+            )
         }
         None => (0, 0, w, h),
     };
@@ -582,11 +769,18 @@ pub fn save_screenshot(ctx: &egui::Context, image: &egui::ColorImage, path: Opti
     if path.is_none() && cfg!(target_arch = "wasm32") {
         // no file system on the web: inline PNG
         return match encode_png(&rgba, cw as u32, ch as u32) {
-            Ok(png) => json!({"ok": true, "result": {"png": base64(&png), "width": cw, "height": ch}}),
+            Ok(png) => {
+                json!({"ok": true, "result": {"png": base64(&png), "width": cw, "height": ch}})
+            }
             Err(e) => json!({"ok": false, "error": e}),
         };
     }
-    let path = path.map(str::to_string).unwrap_or_else(|| std::env::temp_dir().join("effectcraft-screenshot.png").to_string_lossy().to_string());
+    let path = path.map(str::to_string).unwrap_or_else(|| {
+        std::env::temp_dir()
+            .join("effectcraft-screenshot.png")
+            .to_string_lossy()
+            .to_string()
+    });
     match encode_png(&rgba, cw as u32, ch as u32) {
         Ok(png) => match std::fs::write(&path, png) {
             Ok(()) => json!({"ok": true, "result": {"path": path, "width": cw, "height": ch}}),
@@ -611,7 +805,11 @@ pub fn encode_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>, String> {
         for &b in d {
             c ^= b as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { (c >> 1) ^ 0xEDB8_8320 } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    (c >> 1) ^ 0xEDB8_8320
+                } else {
+                    c >> 1
+                };
             }
         }
         !c
@@ -651,7 +849,15 @@ pub fn encode_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>, String> {
 mod tests {
     #[test]
     fn base64_rfc4648_vectors() {
-        for (i, o) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")] {
+        for (i, o) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
             assert_eq!(super::base64(i.as_bytes()), o);
         }
     }

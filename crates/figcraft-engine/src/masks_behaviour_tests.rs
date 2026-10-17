@@ -19,7 +19,15 @@ fn ex(s: &mut Session, cmd: &str, p: Value) -> Value {
     s.execute(cmd, &p).unwrap_or_else(|e| panic!("{cmd}: {e}"))
 }
 
-fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64, fill: &str, parent: Option<NodeId>) -> NodeId {
+fn rect(
+    s: &mut Session,
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
+    fill: &str,
+    parent: Option<NodeId>,
+) -> NodeId {
     let mut p = json!({"x": x, "y": y, "width": w, "height": h, "props": {"fills": [fill]}});
     if let Some(parent) = parent {
         p["parent"] = json!(parent);
@@ -29,7 +37,11 @@ fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64, fill: &str, parent: Opt
 
 /// A white frame to draw a case in.
 fn board(s: &mut Session, w: f64, h: f64) -> NodeId {
-    id(ex(s, "frame.create", json!({"x": 0, "y": 0, "width": w, "height": h})))
+    id(ex(
+        s,
+        "frame.create",
+        json!({"x": 0, "y": 0, "width": w, "height": h}),
+    ))
 }
 
 /// The RGB of `node` rendered at 1x, at (`x`, `y`) of its export box.
@@ -63,7 +75,10 @@ fn use_as_mask_groups_the_layers_over_the_bottom_one() {
     let g = id(ex(&mut s, "object.mask", json!({"ids": [c, a, b]})));
     let doc = s.doc().unwrap();
     let gn = doc.node(g).unwrap();
-    assert_eq!((gn.name.as_str(), gn.children.clone()), ("Mask group", vec![a, b, c]));
+    assert_eq!(
+        (gn.name.as_str(), gn.children.clone()),
+        ("Mask group", vec![a, b, c])
+    );
     assert!(doc.node(a).unwrap().is_mask && !doc.node(b).unwrap().is_mask);
     let page = s.page().unwrap();
     assert_eq!(doc.node(page).unwrap().children, vec![g, top]);
@@ -108,16 +123,32 @@ fn a_mask_covers_every_layer_above_it_in_its_parent() {
         assert_eq!(rgb(&s, f, x, y), want, "({x}, {y})");
     }
     // A hidden mask masks nothing (silent on whether it's drawn: it isn't).
-    ex(&mut s, "node.set", json!({"id": m, "props": {"visible": false}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": m, "props": {"visible": false}}),
+    );
     assert_eq!(rgb(&s, f, 10, 50), RED);
-    ex(&mut s, "node.set", json!({"id": m, "props": {"visible": true}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": m, "props": {"visible": true}}),
+    );
     // Silent on a second mask higher up: pinned, it starts its own masked run (the green band is
     // masked by it alone).
     let m2 = rect(&mut s, 120.0, 0.0, 50.0, 100.0, "#888888", Some(f));
     ex(&mut s, "node.reorder", json!({"id": m2, "index": 3}));
     ex(&mut s, "object.mask", json!({"ids": [m2]}));
     assert_eq!(s.doc().unwrap().node(f).unwrap().children.get(3), Some(&m2));
-    assert_eq!((rgb(&s, f, 75, 50), rgb(&s, f, 75, 80), rgb(&s, f, 150, 80), rgb(&s, f, 150, 50)), (RED, WHITE, GREEN, WHITE));
+    assert_eq!(
+        (
+            rgb(&s, f, 75, 50),
+            rgb(&s, f, 75, 80),
+            rgb(&s, f, 150, 80),
+            rgb(&s, f, 150, 50)
+        ),
+        (RED, WHITE, GREEN, WHITE)
+    );
     let _ = red;
 }
 
@@ -142,10 +173,17 @@ fn alpha_vector_and_luminance_masks() {
         let f = board(&mut s, 100.0, 20.0);
         let m = rect(&mut s, 0.0, 0.0, 100.0, 20.0, fill, Some(f));
         rect(&mut s, 0.0, 0.0, 100.0, 20.0, "#FF0000", Some(f));
-        ex(&mut s, "node.set", json!({"id": m, "props": {"opacity": opacity, "maskType": kind}}));
+        ex(
+            &mut s,
+            "node.set",
+            json!({"id": m, "props": {"opacity": opacity, "maskType": kind}}),
+        );
         ex(&mut s, "object.mask", json!({"ids": [m]}));
         let [r, g, b] = rgb(&s, f, 50, 10);
-        assert!(r == 255 && gb.contains(&g) && gb.contains(&b), "{kind} {fill} {opacity}: {r} {g} {b}");
+        assert!(
+            r == 255 && gb.contains(&g) && gb.contains(&b),
+            "{kind} {fill} {opacity}: {r} {g} {b}"
+        );
     }
 }
 
@@ -161,7 +199,10 @@ fn a_group_can_be_the_mask() {
     let red = rect(&mut s, 0.0, 0.0, 100.0, 20.0, "#FF0000", Some(f));
     ex(&mut s, "object.mask", json!({"ids": [g, red]}));
     assert!(s.doc().unwrap().node(g).unwrap().is_mask);
-    assert_eq!([10, 40, 70, 90].map(|x| rgb(&s, f, x, 10)), [RED, WHITE, RED, WHITE]);
+    assert_eq!(
+        [10, 40, 70, 90].map(|x| rgb(&s, f, x, 10)),
+        [RED, WHITE, RED, WHITE]
+    );
 }
 
 #[test]
@@ -173,7 +214,8 @@ fn masked_out_areas_dont_take_clicks() {
     let behind = rect(&mut s, 60.0, 60.0, 40.0, 40.0, "#0000FF", None);
     let m = rect(&mut s, 0.0, 0.0, 50.0, 50.0, "#000000", None);
     let c = rect(&mut s, 0.0, 0.0, 100.0, 100.0, "#FF0000", None);
-    let hit = |s: &Session, x: f64, y: f64| s.doc().unwrap().hit_test(page, Point::new(x, y), 0.0, None);
+    let hit =
+        |s: &Session, x: f64, y: f64| s.doc().unwrap().hit_test(page, Point::new(x, y), 0.0, None);
     // Before there's a mask, the layer is hit everywhere (and the next edit makes the mask count).
     assert_eq!(hit(&s, 75.0, 75.0), Some(c));
     let g = id(ex(&mut s, "object.mask", json!({"ids": [m, c]})));
@@ -190,11 +232,28 @@ fn masked_out_areas_dont_take_clicks() {
     }
     // Select layer lists only what's there.
     let layers = ex(&mut s, "select.layersAt", json!({"x": 75, "y": 75}));
-    let got: Vec<NodeId> = layers["layers"].as_array().unwrap().iter().map(|l| id_of(&l["id"]).unwrap()).collect();
+    let got: Vec<NodeId> = layers["layers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|l| id_of(&l["id"]).unwrap())
+        .collect();
     assert_eq!(got, vec![behind]);
     // A click selects the mask group (a group is picked whole).
-    s.pointer(&crate::tools::PointerEvent::at(crate::tools::PointerKind::Down, 25.0, 25.0, 1.0)).unwrap();
-    s.pointer(&crate::tools::PointerEvent::at(crate::tools::PointerKind::Up, 25.0, 25.0, 1.0)).unwrap();
+    s.pointer(&crate::tools::PointerEvent::at(
+        crate::tools::PointerKind::Down,
+        25.0,
+        25.0,
+        1.0,
+    ))
+    .unwrap();
+    s.pointer(&crate::tools::PointerEvent::at(
+        crate::tools::PointerKind::Up,
+        25.0,
+        25.0,
+        1.0,
+    ))
+    .unwrap();
     assert_eq!(s.selection(), vec![g]);
 }
 
@@ -210,17 +269,31 @@ fn a_mask_groups_box_and_exports_are_the_masks() {
     let px = figcraft_render::render_node(s.doc().unwrap(), g, 1.0).unwrap();
     assert_eq!((px.width(), px.height()), (50, 40));
     assert_eq!(rgb(&s, g, 25, 20), RED);
-    let svg = figcraft_svg::export_svg(s.doc().unwrap(), &[g], &figcraft_svg::SvgOptions::default()).unwrap();
+    let svg =
+        figcraft_svg::export_svg(s.doc().unwrap(), &[g], &figcraft_svg::SvgOptions::default())
+            .unwrap();
     assert!(svg.contains("viewBox=\"0 0 50 40\""), "{svg}");
     assert!(figcraft_pdf::export_nodes_pdf(s.doc().unwrap(), &[g]).is_ok());
     // Moving the masked layer doesn't change the box; moving the mask does.
-    ex(&mut s, "transform.move", json!({"ids": [c], "dx": 10, "dy": 0}));
+    ex(
+        &mut s,
+        "transform.move",
+        json!({"ids": [c], "dx": 10, "dy": 0}),
+    );
     assert_eq!(wb(&s, g), (0.0, 0.0, 50.0, 40.0));
-    ex(&mut s, "transform.move", json!({"ids": [m], "dx": 10, "dy": 0}));
+    ex(
+        &mut s,
+        "transform.move",
+        json!({"ids": [m], "dx": 10, "dy": 0}),
+    );
     assert_eq!(wb(&s, g), (10.0, 0.0, 50.0, 40.0));
     // A layer under the mask counts.
     let under = rect(&mut s, -40.0, 0.0, 10.0, 10.0, "#0000FF", None);
-    ex(&mut s, "node.reparent", json!({"ids": [under], "parent": g, "index": 0}));
+    ex(
+        &mut s,
+        "node.reparent",
+        json!({"ids": [under], "parent": g, "index": 0}),
+    );
     assert_eq!(wb(&s, g), (-40.0, 0.0, 100.0, 40.0));
     let _ = (GREEN, BLUE);
 }

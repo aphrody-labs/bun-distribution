@@ -70,28 +70,56 @@ pub const PIXEL_EFFECTS: [&str; 28] = [
 pub enum PixelFx {
     /// Artistic › Film Grain: monochrome grain in shadows and midtones, a wider bright
     /// highlight area (0..20), and tonal intensity (0..10), preserving coverage.
-    FilmGrain { grain: f64, highlight: f64, intensity: f64 },
+    FilmGrain {
+        grain: f64,
+        highlight: f64,
+        intensity: f64,
+    },
     /// Blur › Radial Blur around the object's centre: along arcs (spin, an arc of `amount`°) or
     /// along rays (zoom, the content scaled by up to about ±`amount`/2 %), averaging 2^`passes` samples.
-    RadialBlur { amount: f64, zoom: bool, passes: u32 },
+    RadialBlur {
+        amount: f64,
+        zoom: bool,
+        passes: u32,
+    },
     /// Blur › Smart Blur (Normal mode): each pixel averaged with the neighbours within `radius`
     /// whose colour differs from its own by no more than `threshold` levels, over a grid of
     /// `samples` × `samples` neighbours at most.
-    SmartBlur { radius: f64, threshold: f64, samples: u32 },
+    SmartBlur {
+        radius: f64,
+        threshold: f64,
+        samples: u32,
+    },
     /// Brush Strokes › Accented Edges: the edges, about `width` (1..14) wide, accented towards
     /// white chalk or black ink as `brightness` (0..50) says; `smoothness` (1..15) softens them.
-    AccentedEdges { width: f64, brightness: f64, smoothness: f64 },
+    AccentedEdges {
+        width: f64,
+        brightness: f64,
+        smoothness: f64,
+    },
     /// Brush Strokes › Angled Strokes: diagonal strokes `length` long, the light areas' and the
     /// dark areas' going opposite ways, split as `balance` (0..100) says, as crisp as `sharpness`
     /// (0..10).
-    AngledStrokes { balance: f64, length: f64, sharpness: f64 },
+    AngledStrokes {
+        balance: f64,
+        length: f64,
+        sharpness: f64,
+    },
     /// Brush Strokes › Crosshatch: pencil hatching `length` long along both diagonals, as crisp
     /// as `sharpness` (0..20), in `strength` (1..3) passes.
-    Crosshatch { length: f64, sharpness: f64, strength: u32 },
+    Crosshatch {
+        length: f64,
+        sharpness: f64,
+        strength: u32,
+    },
     /// Brush Strokes › Dark Strokes: short strokes towards black in the dark areas, long ones
     /// towards white in the light areas, split by `balance` (0..10), as dark as `black` (0..10)
     /// and as light as `white` (0..10).
-    DarkStrokes { balance: f64, black: f64, white: f64 },
+    DarkStrokes {
+        balance: f64,
+        black: f64,
+        white: f64,
+    },
     /// Brush Strokes › Ink Outlines: pen-and-ink outlines and strokes `length` long, the shadows
     /// darkened by `dark` (0..50) and the highlights lightened by `light` (0..50).
     InkOutlines { length: f64, dark: f64, light: f64 },
@@ -100,25 +128,51 @@ pub enum PixelFx {
     Spatter { radius: f64, smoothness: f64 },
     /// Brush Strokes › Sprayed Strokes: sprayed strokes `length` long along `direction`, scattered
     /// as `radius` (0..25) says.
-    SprayedStrokes { length: f64, radius: f64, direction: StrokeDirection },
+    SprayedStrokes {
+        length: f64,
+        radius: f64,
+        direction: StrokeDirection,
+    },
     /// Brush Strokes › Sumi-e: wet black brush strokes `width` (3..15) across on rice paper, as
     /// loaded as `pressure` (0..15) says, with `contrast` (0..40).
-    SumiE { width: f64, pressure: f64, contrast: f64 },
+    SumiE {
+        width: f64,
+        pressure: f64,
+        contrast: f64,
+    },
     /// Distort › Diffuse Glow: the highlights glow white as strongly as `glow` (0..20), from the
     /// brightness `clear` (0..20) leaves clear, under white grain as dense as `graininess` (0..10).
-    DiffuseGlow { graininess: f64, glow: f64, clear: f64 },
+    DiffuseGlow {
+        graininess: f64,
+        glow: f64,
+        clear: f64,
+    },
     /// Distort › Glass: the object seen through a `texture` surface scaled by `scaling` (0.5..2),
     /// bent by `distortion` (0..20), smoothed by `smoothness` (1..15), its heights turned over when
     /// `invert`.
-    Glass { distortion: f64, smoothness: f64, texture: GlassTexture, scaling: f64, invert: bool },
+    Glass {
+        distortion: f64,
+        smoothness: f64,
+        texture: GlassTexture,
+        scaling: f64,
+        invert: bool,
+    },
     /// Distort › Ocean Ripple: the object under ripples of `size` (1..15) shifting it as much as
     /// `magnitude` (0..20) says.
     OceanRipple { size: f64, magnitude: f64 },
     /// Sharpen › Unsharp Mask: colours pushed away from a Gaussian blur of σ = `radius` by `amount`
     /// (1 = 100 %), where they differ from it by at least `threshold` levels.
-    UnsharpMask { amount: f64, radius: f64, threshold: f64 },
+    UnsharpMask {
+        amount: f64,
+        radius: f64,
+        threshold: f64,
+    },
     /// Stylize › Glowing Edges: bright coloured Sobel outlines on black.
-    GlowingEdges { width: f64, brightness: f64, smoothness: f64 },
+    GlowingEdges {
+        width: f64,
+        brightness: f64,
+        smoothness: f64,
+    },
     /// Pixelate › Color Halftone: each colour channel screened at its angle (`angles`° of channels
     /// 1 to 4) into dots of up to `max_radius`, whose area follows the channel's strength.
     ColorHalftone { max_radius: f64, angles: [f64; 4] },
@@ -131,10 +185,18 @@ pub enum PixelFx {
     Pointillize { cell: f64 },
     /// Texture › Craquelure: cracked relief plaster, plates about `spacing` apart, cracks as deep
     /// as `depth` (0..10), lit as brightly as `brightness` (0..10).
-    Craquelure { spacing: f64, depth: f64, brightness: f64 },
+    Craquelure {
+        spacing: f64,
+        depth: f64,
+        brightness: f64,
+    },
     /// Texture › Grain: noise of `kind` as strong as `intensity` (0..100), the image's contrast
     /// set by `contrast` (0..100, 50 leaves it).
-    Grain { intensity: f64, contrast: f64, kind: Grain },
+    Grain {
+        intensity: f64,
+        contrast: f64,
+        kind: Grain,
+    },
     /// Texture › Mosaic Tiles: irregular tiles about `tile` across with sunken grout `grout` / 2
     /// wide (1..15), lightened by `lighten` (0..10).
     MosaicTiles { tile: f64, grout: f64, lighten: f64 },
@@ -146,7 +208,13 @@ pub enum PixelFx {
     StainedGlass { cell: f64, border: f64, light: f64 },
     /// Texture › Texturizer: a `texture` surface scaled by `scaling` (0.5..2), in relief as strong
     /// as `relief` (0..50), lit from `light`, its heights turned over when `invert`.
-    Texturizer { texture: Texture, scaling: f64, relief: f64, light: Light, invert: bool },
+    Texturizer {
+        texture: Texture,
+        scaling: f64,
+        relief: f64,
+        light: Light,
+        invert: bool,
+    },
     /// Video › De-Interlace: the odd (or `even`) field lines made again from the others, by
     /// duplication or, with `interpolate`, by averaging.
     DeInterlace { even: bool, interpolate: bool },
@@ -194,7 +262,10 @@ pub struct PixelSpace {
 pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
     let quality = |levels: [(&str, u32); 3], default: u32| {
         let q = text(p, "quality", "");
-        levels.iter().find(|(name, _)| name.eq_ignore_ascii_case(q)).map_or(default, |(_, v)| *v)
+        levels
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case(q))
+            .map_or(default, |(_, v)| *v)
     };
     Some(match id {
         "artistic.filmGrain" => PixelFx::FilmGrain {
@@ -237,9 +308,10 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             dark: num(p, "darkIntensity", 20.0).clamp(0.0, 50.0),
             light: num(p, "lightIntensity", 10.0).clamp(0.0, 50.0),
         },
-        "brushStrokes.spatter" => {
-            PixelFx::Spatter { radius: num(p, "sprayRadius", 10.0).clamp(0.0, 25.0), smoothness: num(p, "smoothness", 5.0).clamp(1.0, 15.0) }
-        }
+        "brushStrokes.spatter" => PixelFx::Spatter {
+            radius: num(p, "sprayRadius", 10.0).clamp(0.0, 25.0),
+            smoothness: num(p, "smoothness", 5.0).clamp(1.0, 15.0),
+        },
         "brushStrokes.sprayedStrokes" => PixelFx::SprayedStrokes {
             length: num(p, "strokeLength", 12.0).clamp(0.0, 20.0),
             radius: num(p, "sprayRadius", 7.0).clamp(0.0, 25.0),
@@ -262,9 +334,10 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             scaling: num(p, "scaling", 100.0).clamp(50.0, 200.0) / 100.0,
             invert: flag(p, "invert", false),
         },
-        "distort.oceanRipple" => {
-            PixelFx::OceanRipple { size: num(p, "rippleSize", 9.0).clamp(1.0, 15.0), magnitude: num(p, "rippleMagnitude", 9.0).clamp(0.0, 20.0) }
-        }
+        "distort.oceanRipple" => PixelFx::OceanRipple {
+            size: num(p, "rippleSize", 9.0).clamp(1.0, 15.0),
+            magnitude: num(p, "rippleMagnitude", 9.0).clamp(0.0, 20.0),
+        },
         "sharpen.unsharpMask" => PixelFx::UnsharpMask {
             amount: num(p, "amount", 50.0).clamp(1.0, 500.0) / 100.0,
             radius: num(p, "radius", 1.0).clamp(0.1, 250.0),
@@ -277,12 +350,23 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
         },
         "pixelate.colorHalftone" => PixelFx::ColorHalftone {
             max_radius: num(p, "maxRadius", 8.0).clamp(4.0, 127.0),
-            angles: [("channel1", 108.0), ("channel2", 162.0), ("channel3", 90.0), ("channel4", 45.0)]
-                .map(|(k, d)| num(p, k, d).clamp(-360.0, 360.0)),
+            angles: [
+                ("channel1", 108.0),
+                ("channel2", 162.0),
+                ("channel3", 90.0),
+                ("channel4", 45.0),
+            ]
+            .map(|(k, d)| num(p, k, d).clamp(-360.0, 360.0)),
         },
-        "pixelate.crystallize" => PixelFx::Crystallize { cell: num(p, "cellSize", 10.0).clamp(3.0, 300.0) },
-        "pixelate.mezzotint" => PixelFx::Mezzotint { kind: Mezzotint::parse(text(p, "type", "fineDots")) },
-        "pixelate.pointillize" => PixelFx::Pointillize { cell: num(p, "cellSize", 5.0).clamp(3.0, 300.0) },
+        "pixelate.crystallize" => PixelFx::Crystallize {
+            cell: num(p, "cellSize", 10.0).clamp(3.0, 300.0),
+        },
+        "pixelate.mezzotint" => PixelFx::Mezzotint {
+            kind: Mezzotint::parse(text(p, "type", "fineDots")),
+        },
+        "pixelate.pointillize" => PixelFx::Pointillize {
+            cell: num(p, "cellSize", 5.0).clamp(3.0, 300.0),
+        },
         "texture.craquelure" => PixelFx::Craquelure {
             spacing: num(p, "crackSpacing", 15.0).clamp(2.0, 100.0),
             depth: num(p, "crackDepth", 6.0).clamp(0.0, 10.0),
@@ -298,9 +382,10 @@ pub(crate) fn parse(id: &str, p: &Value) -> Option<PixelFx> {
             grout: num(p, "groutWidth", 3.0).clamp(1.0, 15.0),
             lighten: num(p, "lightenGrout", 9.0).clamp(0.0, 10.0),
         },
-        "texture.patchwork" => {
-            PixelFx::Patchwork { square: num(p, "squareSize", 4.0).clamp(0.0, 10.0), relief: num(p, "relief", 8.0).clamp(0.0, 25.0) }
-        }
+        "texture.patchwork" => PixelFx::Patchwork {
+            square: num(p, "squareSize", 4.0).clamp(0.0, 10.0),
+            relief: num(p, "relief", 8.0).clamp(0.0, 25.0),
+        },
         "texture.stainedGlass" => PixelFx::StainedGlass {
             cell: num(p, "cellSize", 10.0).clamp(2.0, 50.0),
             border: num(p, "borderThickness", 4.0).clamp(1.0, 20.0),
@@ -331,15 +416,23 @@ impl PixelFx {
         match *self {
             // A rotated corner reaches the circle through the corners.
             PixelFx::RadialBlur { zoom: false, .. } => (far - near).max(0.0),
-            PixelFx::RadialBlur { amount, zoom: true, .. } => far * (blur::zoom_extent(amount).exp() - 1.0),
+            PixelFx::RadialBlur {
+                amount, zoom: true, ..
+            } => far * (blur::zoom_extent(amount).exp() - 1.0),
             PixelFx::SmartBlur { radius, .. } => radius,
             PixelFx::AccentedEdges { .. } => 0.0,
             // Strokes reach out of the object as far as they reach into it.
-            PixelFx::AngledStrokes { length, .. } | PixelFx::InkOutlines { length, .. } => brushstrokes::stroke_reach(length),
-            PixelFx::Crosshatch { length, .. } => brushstrokes::stroke_reach(length) + brushstrokes::rough(length),
+            PixelFx::AngledStrokes { length, .. } | PixelFx::InkOutlines { length, .. } => {
+                brushstrokes::stroke_reach(length)
+            }
+            PixelFx::Crosshatch { length, .. } => {
+                brushstrokes::stroke_reach(length) + brushstrokes::rough(length)
+            }
             PixelFx::DarkStrokes { .. } => brushstrokes::stroke_reach(brushstrokes::LIGHT_LENGTH),
             PixelFx::Spatter { radius, .. } => brushstrokes::spatter_shift(radius),
-            PixelFx::SprayedStrokes { length, radius, .. } => brushstrokes::stroke_reach(length) + brushstrokes::spray_shift(radius),
+            PixelFx::SprayedStrokes { length, radius, .. } => {
+                brushstrokes::stroke_reach(length) + brushstrokes::spray_shift(radius)
+            }
             // Sumi-e keeps the object's shape.
             PixelFx::SumiE { .. } => 0.0,
             PixelFx::DiffuseGlow { .. } => 0.0,
@@ -347,7 +440,9 @@ impl PixelFx {
             PixelFx::Glass { distortion, .. } => distort::glass_shift(distortion),
             PixelFx::OceanRipple { size, magnitude } => distort::ripple_shift(size, magnitude),
             PixelFx::UnsharpMask { .. } => 0.0,
-            PixelFx::GlowingEdges { width, smoothness, .. } => width.max(smoothness * 3.0),
+            PixelFx::GlowingEdges {
+                width, smoothness, ..
+            } => width.max(smoothness * 3.0),
             PixelFx::FilmGrain { .. }
             | PixelFx::ColorHalftone { .. }
             | PixelFx::Mezzotint { .. }
@@ -358,7 +453,9 @@ impl PixelFx {
             | PixelFx::DeInterlace { .. }
             | PixelFx::NtscColors => 0.0,
             // A crystal's, dot's or pane's point inside the object reaches out by up to its cell.
-            PixelFx::Crystallize { cell } | PixelFx::Pointillize { cell } | PixelFx::StainedGlass { cell, .. } => 1.5 * cell,
+            PixelFx::Crystallize { cell }
+            | PixelFx::Pointillize { cell }
+            | PixelFx::StainedGlass { cell, .. } => 1.5 * cell,
             // A square whose centre is on the object is drawn whole.
             PixelFx::Patchwork { square, .. } => square.max(1.0),
         }
@@ -370,31 +467,49 @@ impl PixelFx {
         match *self {
             PixelFx::RadialBlur { .. } => None,
             PixelFx::SmartBlur { radius, .. } => Some(radius),
-            PixelFx::AccentedEdges { width, smoothness, .. } => Some(brushstrokes::accent_reach(width, smoothness)),
+            PixelFx::AccentedEdges {
+                width, smoothness, ..
+            } => Some(brushstrokes::accent_reach(width, smoothness)),
             // The strokes, and the softened tones that choose them.
-            PixelFx::AngledStrokes { length, .. } => Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH)),
-            PixelFx::Crosshatch { length, .. } => {
-                Some((brushstrokes::stroke_reach(length) + brushstrokes::rough(length)).max(brushstrokes::TONE_REACH))
+            PixelFx::AngledStrokes { length, .. } => {
+                Some(brushstrokes::stroke_reach(length).max(brushstrokes::TONE_REACH))
             }
-            PixelFx::DarkStrokes { .. } => Some(brushstrokes::stroke_reach(brushstrokes::LIGHT_LENGTH).max(brushstrokes::TONE_REACH)),
+            PixelFx::Crosshatch { length, .. } => Some(
+                (brushstrokes::stroke_reach(length) + brushstrokes::rough(length))
+                    .max(brushstrokes::TONE_REACH),
+            ),
+            PixelFx::DarkStrokes { .. } => Some(
+                brushstrokes::stroke_reach(brushstrokes::LIGHT_LENGTH)
+                    .max(brushstrokes::TONE_REACH),
+            ),
             PixelFx::InkOutlines { length, .. } => Some(brushstrokes::ink_reach(length)),
             PixelFx::Spatter { radius, .. } => Some(brushstrokes::spatter_shift(radius)),
-            PixelFx::SprayedStrokes { length, radius, .. } => Some(brushstrokes::stroke_reach(length) + brushstrokes::spray_shift(radius)),
+            PixelFx::SprayedStrokes { length, radius, .. } => {
+                Some(brushstrokes::stroke_reach(length) + brushstrokes::spray_shift(radius))
+            }
             PixelFx::SumiE { width, .. } => Some(brushstrokes::sumi_reach(width)),
             PixelFx::DiffuseGlow { .. } => Some(3.0 * distort::GLOW_SPREAD),
             PixelFx::Glass { distortion, .. } => Some(distort::glass_shift(distortion)),
-            PixelFx::OceanRipple { size, magnitude } => Some(distort::ripple_shift(size, magnitude)),
+            PixelFx::OceanRipple { size, magnitude } => {
+                Some(distort::ripple_shift(size, magnitude))
+            }
             PixelFx::UnsharpMask { radius, .. } => Some(3.0 * radius),
-            PixelFx::GlowingEdges { width, smoothness, .. } => Some(width.max(smoothness * 3.0)),
+            PixelFx::GlowingEdges {
+                width, smoothness, ..
+            } => Some(width.max(smoothness * 3.0)),
             // The cells around the pixel's, and the cells around theirs.
-            PixelFx::ColorHalftone { max_radius, .. } => Some(3.0 * std::f64::consts::SQRT_2 * max_radius),
+            PixelFx::ColorHalftone { max_radius, .. } => {
+                Some(3.0 * std::f64::consts::SQRT_2 * max_radius)
+            }
             PixelFx::Crystallize { cell } => Some(1.5 * cell),
             PixelFx::FilmGrain { .. } | PixelFx::Mezzotint { .. } => Some(0.0),
             // The dots' points, and the softened colour around them.
             PixelFx::Pointillize { cell } => Some(2.5 * cell),
             // The softened tones around the pixel.
             PixelFx::Craquelure { spacing, .. } => Some(3.0 * texture::CONTOUR_SOFTNESS * spacing),
-            PixelFx::Grain { .. } | PixelFx::MosaicTiles { .. } | PixelFx::Texturizer { .. } => Some(0.0),
+            PixelFx::Grain { .. } | PixelFx::MosaicTiles { .. } | PixelFx::Texturizer { .. } => {
+                Some(0.0)
+            }
             // The square's or pane's point, and the softened colour around it.
             PixelFx::Patchwork { square, .. } => Some(2.0 * square.max(1.0)),
             PixelFx::StainedGlass { cell, .. } => Some(2.5 * cell),
@@ -410,37 +525,125 @@ impl PixelFx {
         let Some(px) = pixels(data, w, h) else { return };
         let to_px = |len: f64| len / space.px.max(1e-9);
         match *self {
-            PixelFx::FilmGrain { grain, highlight, intensity } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
-            PixelFx::RadialBlur { amount, zoom, passes } => blur::radial(px, w, h, space, amount, zoom, passes),
-            PixelFx::SmartBlur { radius, threshold, samples } => blur::smart(px, w, h, to_px(radius), threshold, samples),
-            PixelFx::AccentedEdges { width, brightness, smoothness } => brushstrokes::accented_edges(px, w, h, space, width, brightness, smoothness),
-            PixelFx::AngledStrokes { balance, length, sharpness } => brushstrokes::angled_strokes(px, w, h, space, balance, length, sharpness),
-            PixelFx::Crosshatch { length, sharpness, strength } => brushstrokes::crosshatch(px, w, h, space, length, sharpness, strength),
-            PixelFx::DarkStrokes { balance, black, white } => brushstrokes::dark_strokes(px, w, h, space, balance, black, white),
-            PixelFx::InkOutlines { length, dark, light } => brushstrokes::ink_outlines(px, w, h, space, length, dark, light),
-            PixelFx::Spatter { radius, smoothness } => brushstrokes::spatter(px, w, h, space, radius, smoothness),
-            PixelFx::SprayedStrokes { length, radius, direction } => brushstrokes::sprayed_strokes(px, w, h, space, length, radius, direction),
-            PixelFx::SumiE { width, pressure, contrast } => brushstrokes::sumi_e(px, w, h, space, width, pressure, contrast),
-            PixelFx::DiffuseGlow { graininess, glow, clear } => distort::diffuse_glow(px, w, h, space, graininess, glow, clear),
-            PixelFx::Glass { distortion, smoothness, texture, scaling, invert } => {
-                distort::glass(px, w, h, space, distortion, smoothness, texture, scaling, invert)
+            PixelFx::FilmGrain {
+                grain,
+                highlight,
+                intensity,
+            } => artistic::film_grain(px, w, h, space, grain, highlight, intensity),
+            PixelFx::RadialBlur {
+                amount,
+                zoom,
+                passes,
+            } => blur::radial(px, w, h, space, amount, zoom, passes),
+            PixelFx::SmartBlur {
+                radius,
+                threshold,
+                samples,
+            } => blur::smart(px, w, h, to_px(radius), threshold, samples),
+            PixelFx::AccentedEdges {
+                width,
+                brightness,
+                smoothness,
+            } => brushstrokes::accented_edges(px, w, h, space, width, brightness, smoothness),
+            PixelFx::AngledStrokes {
+                balance,
+                length,
+                sharpness,
+            } => brushstrokes::angled_strokes(px, w, h, space, balance, length, sharpness),
+            PixelFx::Crosshatch {
+                length,
+                sharpness,
+                strength,
+            } => brushstrokes::crosshatch(px, w, h, space, length, sharpness, strength),
+            PixelFx::DarkStrokes {
+                balance,
+                black,
+                white,
+            } => brushstrokes::dark_strokes(px, w, h, space, balance, black, white),
+            PixelFx::InkOutlines {
+                length,
+                dark,
+                light,
+            } => brushstrokes::ink_outlines(px, w, h, space, length, dark, light),
+            PixelFx::Spatter { radius, smoothness } => {
+                brushstrokes::spatter(px, w, h, space, radius, smoothness)
             }
-            PixelFx::OceanRipple { size, magnitude } => distort::ocean_ripple(px, w, h, space, size, magnitude),
-            PixelFx::UnsharpMask { amount, radius, threshold } => sharpen::unsharp(px, w, h, amount, to_px(radius), threshold),
-            PixelFx::GlowingEdges { width, brightness, smoothness } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
-            PixelFx::ColorHalftone { max_radius, angles } => pixelate::color_halftone(px, w, h, space, max_radius, angles),
+            PixelFx::SprayedStrokes {
+                length,
+                radius,
+                direction,
+            } => brushstrokes::sprayed_strokes(px, w, h, space, length, radius, direction),
+            PixelFx::SumiE {
+                width,
+                pressure,
+                contrast,
+            } => brushstrokes::sumi_e(px, w, h, space, width, pressure, contrast),
+            PixelFx::DiffuseGlow {
+                graininess,
+                glow,
+                clear,
+            } => distort::diffuse_glow(px, w, h, space, graininess, glow, clear),
+            PixelFx::Glass {
+                distortion,
+                smoothness,
+                texture,
+                scaling,
+                invert,
+            } => distort::glass(
+                px, w, h, space, distortion, smoothness, texture, scaling, invert,
+            ),
+            PixelFx::OceanRipple { size, magnitude } => {
+                distort::ocean_ripple(px, w, h, space, size, magnitude)
+            }
+            PixelFx::UnsharpMask {
+                amount,
+                radius,
+                threshold,
+            } => sharpen::unsharp(px, w, h, amount, to_px(radius), threshold),
+            PixelFx::GlowingEdges {
+                width,
+                brightness,
+                smoothness,
+            } => edges::glow(px, w, h, to_px(width), brightness, to_px(smoothness)),
+            PixelFx::ColorHalftone { max_radius, angles } => {
+                pixelate::color_halftone(px, w, h, space, max_radius, angles)
+            }
             PixelFx::Crystallize { cell } => pixelate::crystallize(px, w, h, space, cell),
             PixelFx::Mezzotint { kind } => pixelate::mezzotint(px, w, h, space, kind),
             PixelFx::Pointillize { cell } => pixelate::pointillize(px, w, h, space, cell),
-            PixelFx::Craquelure { spacing, depth, brightness } => texture::craquelure(px, w, h, space, spacing, depth, brightness),
-            PixelFx::Grain { intensity, contrast, kind } => texture::grain(px, w, h, space, intensity, contrast, kind),
-            PixelFx::MosaicTiles { tile, grout, lighten } => texture::mosaic_tiles(px, w, h, space, tile, grout, lighten),
-            PixelFx::Patchwork { square, relief } => texture::patchwork(px, w, h, space, square, relief),
-            PixelFx::StainedGlass { cell, border, light } => texture::stained_glass(px, w, h, space, cell, border, light),
-            PixelFx::Texturizer { texture, scaling, relief, light, invert } => {
-                texture::texturizer(px, w, h, space, texture, scaling, relief, light, invert)
+            PixelFx::Craquelure {
+                spacing,
+                depth,
+                brightness,
+            } => texture::craquelure(px, w, h, space, spacing, depth, brightness),
+            PixelFx::Grain {
+                intensity,
+                contrast,
+                kind,
+            } => texture::grain(px, w, h, space, intensity, contrast, kind),
+            PixelFx::MosaicTiles {
+                tile,
+                grout,
+                lighten,
+            } => texture::mosaic_tiles(px, w, h, space, tile, grout, lighten),
+            PixelFx::Patchwork { square, relief } => {
+                texture::patchwork(px, w, h, space, square, relief)
             }
-            PixelFx::DeInterlace { even, interpolate } => video::deinterlace(px, w, h, space, even, interpolate),
+            PixelFx::StainedGlass {
+                cell,
+                border,
+                light,
+            } => texture::stained_glass(px, w, h, space, cell, border, light),
+            PixelFx::Texturizer {
+                texture,
+                scaling,
+                relief,
+                light,
+                invert,
+            } => texture::texturizer(px, w, h, space, texture, scaling, relief, light, invert),
+            PixelFx::DeInterlace { even, interpolate } => {
+                video::deinterlace(px, w, h, space, even, interpolate)
+            }
             PixelFx::NtscColors => video::ntsc(px),
         }
     }
@@ -449,7 +652,11 @@ impl PixelFx {
 /// The entry of `all` whose value in `table` (the same order) is `value`, any case; `default`
 /// otherwise.
 fn pick<T: Copy>(table: &[(&str, &str)], all: &[T], value: &str, default: T) -> T {
-    table.iter().zip(all).find(|((_, v), _)| v.eq_ignore_ascii_case(value)).map_or(default, |(_, t)| *t)
+    table
+        .iter()
+        .zip(all)
+        .find(|((_, v), _)| v.eq_ignore_ascii_case(value))
+        .map_or(default, |(_, t)| *t)
 }
 
 /// `data` as `w` × `h` RGBA pixels, `None` when it isn't that size (or is empty).
@@ -463,7 +670,11 @@ const MAX_BOX: usize = 1 << 17;
 
 /// Radii of three box blurs approximating a Gaussian of `sigma` pixels.
 pub fn gauss_boxes(sigma: f64) -> [usize; 3] {
-    let sigma = if sigma.is_finite() { sigma.clamp(0.0, MAX_BOX as f64 / 2.0) } else { 0.0 };
+    let sigma = if sigma.is_finite() {
+        sigma.clamp(0.0, MAX_BOX as f64 / 2.0)
+    } else {
+        0.0
+    };
     let n = 3.0;
     let w_ideal = (12.0 * sigma * sigma / n + 1.0).sqrt();
     let mut wl = w_ideal.floor() as i64;
@@ -471,7 +682,8 @@ pub fn gauss_boxes(sigma: f64) -> [usize; 3] {
         wl -= 1;
     }
     let wu = wl + 2;
-    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f64 - 4.0 * n * wl as f64 - 3.0 * n) / (-4.0 * wl as f64 - 4.0);
+    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f64 - 4.0 * n * wl as f64 - 3.0 * n)
+        / (-4.0 * wl as f64 - 4.0);
     let m = m_ideal.round() as i64;
     let r = |i: i64| ((((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize).min(MAX_BOX);
     [r(0), r(1), r(2)]
@@ -578,8 +790,11 @@ fn box_cols(src: &[Px16], dst: &mut [Px16], w: usize, r: usize) {
     let n = 2 * r as u64 + 1;
     let rows: Vec<&[Px16]> = src.chunks_exact(w).collect();
     let mut acc = vec![[0u64; 4]; w];
-    let add_row = |acc: &mut [[u64; 4]], row: &[Px16]| acc.iter_mut().zip(row).for_each(|(a, p)| add(a, p));
-    rows.iter().take(r + 1).for_each(|row| add_row(&mut acc, row));
+    let add_row =
+        |acc: &mut [[u64; 4]], row: &[Px16]| acc.iter_mut().zip(row).for_each(|(a, p)| add(a, p));
+    rows.iter()
+        .take(r + 1)
+        .for_each(|row| add_row(&mut acc, row));
     for (y, out) in dst.chunks_exact_mut(w).enumerate() {
         for (o, a) in out.iter_mut().zip(&acc) {
             *o = mean(a, n);

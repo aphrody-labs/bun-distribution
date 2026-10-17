@@ -25,24 +25,42 @@ impl Catalog {
     }
     /// Photo → (stack, position in the stack), for every stacked photo.
     pub fn stack_index(&self) -> HashMap<PhotoId, (StackId, usize)> {
-        self.stacks.values().flat_map(|s| s.photos.iter().enumerate().map(move |(i, p)| (*p, (s.id, i)))).collect()
+        self.stacks
+            .values()
+            .flat_map(|s| {
+                s.photos
+                    .iter()
+                    .enumerate()
+                    .map(move |(i, p)| (*p, (s.id, i)))
+            })
+            .collect()
     }
 
     pub(crate) fn validate_stack(&self, id: StackId, photos: &[PhotoId]) -> Result<()> {
         if photos.len() < 2 {
-            return Err(CatalogError::Invalid("a stack needs at least two photos".into()));
+            return Err(CatalogError::Invalid(
+                "a stack needs at least two photos".into(),
+            ));
         }
         let mut seen = HashSet::new();
         for p in photos {
             if !seen.insert(*p) {
-                return Err(CatalogError::Invalid(format!("photo {p:?} twice in a stack")));
+                return Err(CatalogError::Invalid(format!(
+                    "photo {p:?} twice in a stack"
+                )));
             }
             if !self.photos.contains_key(p) {
                 return Err(CatalogError::NoPhoto(*p));
             }
         }
-        if self.stacks.values().any(|s| s.id != id && s.photos.iter().any(|p| seen.contains(p))) {
-            return Err(CatalogError::Invalid("a photo can be in only one stack".into()));
+        if self
+            .stacks
+            .values()
+            .any(|s| s.id != id && s.photos.iter().any(|p| seen.contains(p)))
+        {
+            return Err(CatalogError::Invalid(
+                "a photo can be in only one stack".into(),
+            ));
         }
         Ok(())
     }
@@ -77,12 +95,26 @@ impl Catalog {
         if order.len() < 2 || order.first() != Some(&top) {
             return None;
         }
-        let mut ops: Vec<Op> = touched.iter().skip(1).map(|id| Op::RemoveStack { id: *id }).collect();
+        let mut ops: Vec<Op> = touched
+            .iter()
+            .skip(1)
+            .map(|id| Op::RemoveStack { id: *id })
+            .collect();
         match touched.first() {
-            Some(keep) => ops.push(Op::SetStack { id: *keep, photos: order, collapsed }),
+            Some(keep) => ops.push(Op::SetStack {
+                id: *keep,
+                photos: order,
+                collapsed,
+            }),
             None => {
                 let id = self.alloc_stack_id();
-                ops.push(Op::AddStack { stack: Stack { id, photos: order, collapsed } });
+                ops.push(Op::AddStack {
+                    stack: Stack {
+                        id,
+                        photos: order,
+                        collapsed,
+                    },
+                });
             }
         }
         Some(Op::Batch { ops })
@@ -106,7 +138,11 @@ impl Catalog {
         let mut photos = st.photos.clone();
         let p = photos.remove(i);
         photos.insert(to, p);
-        Some(Op::SetStack { id: st.id, photos, collapsed: st.collapsed })
+        Some(Op::SetStack {
+            id: st.id,
+            photos,
+            collapsed: st.collapsed,
+        })
     }
 
     /// Split `photo`'s stack in two: the photos before it stay, it and the ones after it form a
@@ -119,20 +155,34 @@ impl Catalog {
         }
         let (head, tail) = st.photos.split_at(i);
         let mut ops = vec![if head.len() >= 2 {
-            Op::SetStack { id: st.id, photos: head.to_vec(), collapsed: st.collapsed }
+            Op::SetStack {
+                id: st.id,
+                photos: head.to_vec(),
+                collapsed: st.collapsed,
+            }
         } else {
             Op::RemoveStack { id: st.id }
         }];
         if tail.len() >= 2 {
             let id = self.alloc_stack_id();
-            ops.push(Op::AddStack { stack: Stack { id, photos: tail.to_vec(), collapsed: st.collapsed } });
+            ops.push(Op::AddStack {
+                stack: Stack {
+                    id,
+                    photos: tail.to_vec(),
+                    collapsed: st.collapsed,
+                },
+            });
         }
         Some(Op::Batch { ops })
     }
 
     /// Ops that dissolve every stack containing one of `photos`.
     pub fn ungroup_ops(&self, photos: &[PhotoId]) -> Vec<Op> {
-        self.stacks.values().filter(|s| s.photos.iter().any(|p| photos.contains(p))).map(|s| Op::RemoveStack { id: s.id }).collect()
+        self.stacks
+            .values()
+            .filter(|s| s.photos.iter().any(|p| photos.contains(p)))
+            .map(|s| Op::RemoveStack { id: s.id })
+            .collect()
     }
 
     /// Ops that take `photos` out of their stacks (a stack left with one photo is dissolved).
@@ -141,8 +191,21 @@ impl Catalog {
             .values()
             .filter(|s| s.photos.iter().any(|p| photos.contains(p)))
             .map(|s| {
-                let rest: Vec<PhotoId> = s.photos.iter().copied().filter(|p| !photos.contains(p)).collect();
-                if rest.len() < 2 { Op::RemoveStack { id: s.id } } else { Op::SetStack { id: s.id, photos: rest, collapsed: s.collapsed } }
+                let rest: Vec<PhotoId> = s
+                    .photos
+                    .iter()
+                    .copied()
+                    .filter(|p| !photos.contains(p))
+                    .collect();
+                if rest.len() < 2 {
+                    Op::RemoveStack { id: s.id }
+                } else {
+                    Op::SetStack {
+                        id: s.id,
+                        photos: rest,
+                        collapsed: s.collapsed,
+                    }
+                }
             })
             .collect()
     }
@@ -155,7 +218,11 @@ impl Catalog {
         }
         let mut photos = vec![photo];
         photos.extend(s.photos.iter().copied().filter(|p| *p != photo));
-        Some(Op::SetStack { id: s.id, photos, collapsed: s.collapsed })
+        Some(Op::SetStack {
+            id: s.id,
+            photos,
+            collapsed: s.collapsed,
+        })
     }
 
     /// Ops that collapse or expand stacks.
@@ -164,7 +231,11 @@ impl Catalog {
             .iter()
             .filter_map(|id| self.stacks.get(id))
             .filter(|s| s.collapsed != collapsed)
-            .map(|s| Op::SetStack { id: s.id, photos: s.photos.clone(), collapsed })
+            .map(|s| Op::SetStack {
+                id: s.id,
+                photos: s.photos.clone(),
+                collapsed,
+            })
             .collect()
     }
 
@@ -208,10 +279,20 @@ impl Catalog {
             .iter()
             .filter_map(|id| self.photos.get(id))
             .filter(|p| !p.deleted && !index.contains_key(&p.id))
-            .filter_map(|p| Some((iso_seconds(p.captured.as_deref()?)?, p.file_name.as_str(), p.id)))
+            .filter_map(|p| {
+                Some((
+                    iso_seconds(p.captured.as_deref()?)?,
+                    p.file_name.as_str(),
+                    p.id,
+                ))
+            })
             .collect();
         // a burst within one second stays in file name order (the first file is the stack's cover)
-        timed.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| cmp_name(a.1, b.1)).then(a.2.cmp(&b.2)));
+        timed.sort_by(|a, b| {
+            a.0.cmp(&b.0)
+                .then_with(|| cmp_name(a.1, b.1))
+                .then(a.2.cmp(&b.2))
+        });
         // equal ids are the same photo, so same time and name: adjacent after the sort
         timed.dedup_by_key(|(_, _, id)| *id);
         let mut groups: Vec<Vec<PhotoId>> = Vec::new();
@@ -232,12 +313,20 @@ impl Catalog {
 /// `2026-04-01`; fractions and zone suffixes are ignored). `None` if it doesn't parse.
 pub fn iso_seconds(s: &str) -> Option<i64> {
     let s = s.trim();
-    let num = |a: usize, b: usize| -> Option<i64> { s.get(a..b).filter(|x| x.bytes().all(|c| c.is_ascii_digit())).and_then(|x| x.parse().ok()) };
+    let num = |a: usize, b: usize| -> Option<i64> {
+        s.get(a..b)
+            .filter(|x| x.bytes().all(|c| c.is_ascii_digit()))
+            .and_then(|x| x.parse().ok())
+    };
     let (y, m, d) = (num(0, 4)?, num(5, 7)?, num(8, 10)?);
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
-    let (hh, mm, ss) = if s.len() >= 16 { (num(11, 13)?, num(14, 16)?, num(17, 19).unwrap_or(0)) } else { (0, 0, 0) };
+    let (hh, mm, ss) = if s.len() >= 16 {
+        (num(11, 13)?, num(14, 16)?, num(17, 19).unwrap_or(0))
+    } else {
+        (0, 0, 0)
+    };
     // days from civil (proleptic Gregorian)
     let y2 = if m <= 2 { y - 1 } else { y };
     let era = y2.div_euclid(400);
@@ -259,7 +348,15 @@ mod tests {
         let mut ids = Vec::new();
         for i in 0..n {
             let id = c.alloc_photo_id();
-            let mut p = Photo::new(id, Source::Demo { scene: 1 }, &format!("{i}.jpg"), "JPEG", 60, 40, "2026-01-01T00:00:00");
+            let mut p = Photo::new(
+                id,
+                Source::Demo { scene: 1 },
+                &format!("{i}.jpg"),
+                "JPEG",
+                60,
+                40,
+                "2026-01-01T00:00:00",
+            );
             p.captured = times.get(i).map(|t| t.to_string());
             c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
             ids.push(id);
@@ -271,24 +368,46 @@ mod tests {
     fn auto_stack_keeps_a_burst_in_file_order() {
         let mut c = Catalog::new();
         let mut by_name = Vec::new();
-        for (n, name) in ["DSC_0001.ARW", "dsc_0002.ARW", "DSC_0003.ARW"].iter().enumerate() {
+        for (n, name) in ["DSC_0001.ARW", "dsc_0002.ARW", "DSC_0003.ARW"]
+            .iter()
+            .enumerate()
+        {
             let id = PhotoId(1000 - n as u64);
-            let mut p = Photo::new(id, Source::Demo { scene: 1 }, name, "ARW", 60, 40, "2026-01-01T00:00:00");
+            let mut p = Photo::new(
+                id,
+                Source::Demo { scene: 1 },
+                name,
+                "ARW",
+                60,
+                40,
+                "2026-01-01T00:00:00",
+            );
             p.captured = Some("2026-04-01T10:00:00".into());
             c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
             by_name.push(id);
         }
         let groups = c.auto_stack_groups(&[by_name[2], by_name[0], by_name[1]], 1.0);
         assert_eq!(groups, vec![by_name.clone()]);
-        assert_eq!(groups[0][0], by_name[0], "the first file is the stack's cover");
+        assert_eq!(
+            groups[0][0], by_name[0],
+            "the first file is the stack's cover"
+        );
     }
 
     #[test]
     fn iso_seconds_parses() {
         assert_eq!(iso_seconds("1970-01-01T00:00:00"), Some(0));
         assert_eq!(iso_seconds("1970-01-02"), Some(86_400));
-        assert_eq!(iso_seconds("2026-04-01T10:00:05.123+02:00").unwrap() - iso_seconds("2026-04-01T10:00:00").unwrap(), 5);
-        assert_eq!(iso_seconds("2024-03-01").unwrap() - iso_seconds("2024-02-28").unwrap(), 2 * 86_400, "leap year");
+        assert_eq!(
+            iso_seconds("2026-04-01T10:00:05.123+02:00").unwrap()
+                - iso_seconds("2026-04-01T10:00:00").unwrap(),
+            5
+        );
+        assert_eq!(
+            iso_seconds("2024-03-01").unwrap() - iso_seconds("2024-02-28").unwrap(),
+            2 * 86_400,
+            "leap year"
+        );
         assert_eq!(iso_seconds("2000-01-01T00:00:00"), Some(946_684_800));
         assert_eq!(iso_seconds("garbage"), None);
     }
@@ -296,7 +415,9 @@ mod tests {
     #[test]
     fn group_merge_set_top_remove_and_arrange() {
         let (mut c, ids) = cat(6, &[]);
-        let [a, b, x, d, e, f] = ids[..] else { panic!("six ids") };
+        let [a, b, x, d, e, f] = ids[..] else {
+            panic!("six ids")
+        };
         let op = c.group_ops(b, &[a, b, x], false).unwrap();
         let inv = c.apply(op).unwrap();
         let s = c.stack_of(a).unwrap().clone();
@@ -320,15 +441,24 @@ mod tests {
         c.apply(c.set_top_ops(x).unwrap()).unwrap();
         assert_eq!(c.stack_of(f).unwrap().top(), x);
         assert!(c.set_top_ops(x).is_none());
-        c.apply(Op::Batch { ops: c.remove_from_stacks_ops(&[x, a, e, b]) }).unwrap();
+        c.apply(Op::Batch {
+            ops: c.remove_from_stacks_ops(&[x, a, e, b]),
+        })
+        .unwrap();
         assert_eq!(c.stack_of(f).unwrap().photos, vec![f, d]);
-        c.apply(Op::Batch { ops: c.remove_from_stacks_ops(&[d]) }).unwrap();
+        c.apply(Op::Batch {
+            ops: c.remove_from_stacks_ops(&[d]),
+        })
+        .unwrap();
         assert_eq!(c.stacks().count(), 0, "a one-photo stack dissolves");
         // undo everything back to the first group's inverse state
         let (mut c2, _) = cat(6, &[]);
         let op = c2.group_ops(a, &[b], false).unwrap();
         c2.apply(op).unwrap();
-        c2.apply(Op::Batch { ops: c2.ungroup_ops(&[b]) }).unwrap();
+        c2.apply(Op::Batch {
+            ops: c2.ungroup_ops(&[b]),
+        })
+        .unwrap();
         assert_eq!(c2.stacks().count(), 0);
         let _ = inv;
     }
@@ -337,12 +467,59 @@ mod tests {
     fn stack_validation_and_permanent_delete() {
         let (mut c, ids) = cat(3, &[]);
         let id = c.alloc_stack_id();
-        assert!(c.apply(Op::AddStack { stack: Stack { id, photos: vec![ids[0]], collapsed: false } }).is_err(), "one photo");
-        assert!(c.apply(Op::AddStack { stack: Stack { id, photos: vec![ids[0], ids[0]], collapsed: false } }).is_err(), "duplicate");
-        assert!(c.apply(Op::AddStack { stack: Stack { id, photos: vec![ids[0], PhotoId(99)], collapsed: false } }).is_err(), "missing");
-        c.apply(Op::AddStack { stack: Stack { id, photos: vec![ids[0], ids[1]], collapsed: true } }).unwrap();
+        assert!(
+            c.apply(Op::AddStack {
+                stack: Stack {
+                    id,
+                    photos: vec![ids[0]],
+                    collapsed: false
+                }
+            })
+            .is_err(),
+            "one photo"
+        );
+        assert!(
+            c.apply(Op::AddStack {
+                stack: Stack {
+                    id,
+                    photos: vec![ids[0], ids[0]],
+                    collapsed: false
+                }
+            })
+            .is_err(),
+            "duplicate"
+        );
+        assert!(
+            c.apply(Op::AddStack {
+                stack: Stack {
+                    id,
+                    photos: vec![ids[0], PhotoId(99)],
+                    collapsed: false
+                }
+            })
+            .is_err(),
+            "missing"
+        );
+        c.apply(Op::AddStack {
+            stack: Stack {
+                id,
+                photos: vec![ids[0], ids[1]],
+                collapsed: true,
+            },
+        })
+        .unwrap();
         let id2 = c.alloc_stack_id();
-        assert!(c.apply(Op::AddStack { stack: Stack { id: id2, photos: vec![ids[1], ids[2]], collapsed: false } }).is_err(), "one stack per photo");
+        assert!(
+            c.apply(Op::AddStack {
+                stack: Stack {
+                    id: id2,
+                    photos: vec![ids[1], ids[2]],
+                    collapsed: false
+                }
+            })
+            .is_err(),
+            "one stack per photo"
+        );
         // deleting a member permanently dissolves the 2-photo stack; undo restores it
         let before = c.to_snapshot();
         let inv = c.apply(c.delete_permanently_ops(ids[1])).unwrap();
@@ -357,11 +534,20 @@ mod tests {
 
     #[test]
     fn auto_stack_by_capture_time() {
-        let times = ["2026-04-01T10:00:00", "2026-04-01T10:00:02", "2026-04-01T10:00:09", "2026-04-01T11:00:00", "2026-04-01T11:00:01"];
+        let times = [
+            "2026-04-01T10:00:00",
+            "2026-04-01T10:00:02",
+            "2026-04-01T10:00:09",
+            "2026-04-01T11:00:00",
+            "2026-04-01T11:00:01",
+        ];
         let (mut c, ids) = cat(6, &times);
         let g = c.auto_stack_groups(&ids, 5.0);
         assert_eq!(g, vec![vec![ids[0], ids[1]], vec![ids[3], ids[4]]]);
-        assert_eq!(c.auto_stack_groups(&ids, 10.0), vec![vec![ids[0], ids[1], ids[2]], vec![ids[3], ids[4]]]);
+        assert_eq!(
+            c.auto_stack_groups(&ids, 10.0),
+            vec![vec![ids[0], ids[1], ids[2]], vec![ids[3], ids[4]]]
+        );
         assert_eq!(c.auto_stack_groups(&ids, 3600.0).len(), 1);
         // already stacked photos are skipped
         let op = c.group_ops(ids[0], &[ids[1]], true).unwrap();

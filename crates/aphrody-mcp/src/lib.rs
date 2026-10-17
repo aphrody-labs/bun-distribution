@@ -15,8 +15,6 @@ mod http_rest;
 mod kernel_tools;
 #[path = "native_crawl_tools.rs"]
 mod native_crawl_tools;
-#[cfg(not(target_arch = "wasm32"))]
-mod site_tools;
 #[path = "public_web_tools.rs"]
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
@@ -28,6 +26,8 @@ mod shenron_gemini_web;
 #[cfg(not(target_arch = "wasm32"))]
 mod shenron_llm_backend;
 mod shenron_vector;
+#[cfg(not(target_arch = "wasm32"))]
+mod site_tools;
 mod x_tools;
 // Voice MCP tools (TTS via aphrody-voice + STT via aphrody-voice-stt).
 // Native-only: the module itself is `#[cfg(not(target_arch = "wasm32"))]`.
@@ -173,9 +173,11 @@ pub struct WebFetchRequest {
     /// converts them in-process. Naming a profile renders the page in the
     /// in-process Obscura browser, which can run JavaScript. That is strictly
     /// more expensive, hence opt-in rather than default.
-    #[schemars(description = "Optional Aphrody browser retrieval profile for pages that need a \
+    #[schemars(
+        description = "Optional Aphrody browser retrieval profile for pages that need a \
                               real browser: static | fast | http | stealth | max. Omit for the \
-                              fast, local, direct fetch.")]
+                              fast, local, direct fetch."
+    )]
     pub profile: Option<String>,
 }
 
@@ -189,8 +191,10 @@ pub struct WebExtractHtmlRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ScreenCaptureRequest {
-    #[schemars(description = "Optional window title substring (case-insensitive). When omitted, \
-                              the whole primary screen is captured.")]
+    #[schemars(
+        description = "Optional window title substring (case-insensitive). When omitted, \
+                              the whole primary screen is captured."
+    )]
     pub window: Option<String>,
     #[schemars(description = "Optional path to also save the PNG to disk.")]
     pub save_path: Option<String>,
@@ -212,59 +216,81 @@ pub struct StartDashboardRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ReTriageRequest {
-    #[schemars(description = "Absolute or workspace-relative path to a binary file to triage \
+    #[schemars(
+        description = "Absolute or workspace-relative path to a binary file to triage \
                               (PE32/PE64/ELF32/ELF64). The file is read into memory in full — \
-                              best for binaries under 100 MB.")]
+                              best for binaries under 100 MB."
+    )]
     pub path: String,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ReStringsRequest {
-    #[schemars(description = "Absolute or workspace-relative path to a binary or data file. The \
-                              file is read into memory in full — best for files under 100 MB.")]
+    #[schemars(
+        description = "Absolute or workspace-relative path to a binary or data file. The \
+                              file is read into memory in full — best for files under 100 MB."
+    )]
     pub path: String,
-    #[schemars(description = "Minimum length in characters for a string to be included. \
-                              Defaults to 6 when unset. Must be at least 1.")]
+    #[schemars(
+        description = "Minimum length in characters for a string to be included. \
+                              Defaults to 6 when unset. Must be at least 1."
+    )]
     pub min_len: Option<usize>,
-    #[schemars(description = "Maximum number of strings to return. Defaults to 64 when unset. \
-                              Capped at 4096 to bound response size.")]
+    #[schemars(
+        description = "Maximum number of strings to return. Defaults to 64 when unset. \
+                              Capped at 4096 to bound response size."
+    )]
     pub limit: Option<usize>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ReSectionsRequest {
-    #[schemars(description = "Absolute or workspace-relative path to a binary file to triage \
+    #[schemars(
+        description = "Absolute or workspace-relative path to a binary file to triage \
                               (PE32/PE64/ELF32/ELF64). The file is read into memory in full — \
-                              best for binaries under 100 MB.")]
+                              best for binaries under 100 MB."
+    )]
     pub path: String,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ReDisasmRequest {
-    #[schemars(description = "Absolute or workspace-relative path to a binary or raw byte file \
+    #[schemars(
+        description = "Absolute or workspace-relative path to a binary or raw byte file \
                               to disassemble. The file is read into memory in full — best for \
-                              files under 100 MB.")]
+                              files under 100 MB."
+    )]
     pub path: String,
-    #[schemars(description = "Byte offset into the file at which to start disassembly. Defaults \
+    #[schemars(
+        description = "Byte offset into the file at which to start disassembly. Defaults \
                               to 0 (beginning of file). Useful to target a specific section or \
-                              function without extracting it first.")]
+                              function without extracting it first."
+    )]
     pub offset: Option<u64>,
-    #[schemars(description = "Virtual address (RIP base) assigned to the first byte decoded. \
+    #[schemars(
+        description = "Virtual address (RIP base) assigned to the first byte decoded. \
                               Defaults to 0 when unset. Pass the section virtual address for \
-                              correct RIP-relative operand display.")]
+                              correct RIP-relative operand display."
+    )]
     pub rip: Option<u64>,
-    #[schemars(description = "Maximum number of instructions to decode. Defaults to 256 when \
-                              unset. Capped at 4096 to bound response size.")]
+    #[schemars(
+        description = "Maximum number of instructions to decode. Defaults to 256 when \
+                              unset. Capped at 4096 to bound response size."
+    )]
     pub limit: Option<usize>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct Context7ResolveRequest {
-    #[schemars(description = "The task you need help with. Used to rank library results by \
-                              relevance (e.g. 'streaming SSR with App Router').")]
+    #[schemars(
+        description = "The task you need help with. Used to rank library results by \
+                              relevance (e.g. 'streaming SSR with App Router')."
+    )]
     pub query: String,
-    #[schemars(description = "Official library name to search for (e.g. 'Next.js', 'tokio', \
-                              'wgpu'). Required.")]
+    #[schemars(
+        description = "Official library name to search for (e.g. 'Next.js', 'tokio', \
+                              'wgpu'). Required."
+    )]
     pub library_name: String,
 }
 
@@ -279,8 +305,10 @@ pub struct Context7DocsRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct MsLearnSearchRequest {
-    #[schemars(description = "Search query — concepts, services, configuration, limits, best \
-                              practices (e.g. 'Azure Functions Python v2 timeout limits').")]
+    #[schemars(
+        description = "Search query — concepts, services, configuration, limits, best \
+                              practices (e.g. 'Azure Functions Python v2 timeout limits')."
+    )]
     pub query: String,
 }
 
@@ -294,42 +322,58 @@ pub struct MsLearnFetchRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct MsLearnCodeSampleRequest {
-    #[schemars(description = "Search query for Microsoft / Azure code samples (e.g. 'upload \
-                              blob managed identity').")]
+    #[schemars(
+        description = "Search query for Microsoft / Azure code samples (e.g. 'upload \
+                              blob managed identity')."
+    )]
     pub query: String,
-    #[schemars(description = "Optional programming language filter (e.g. 'csharp', 'python', \
-                              'javascript', 'typescript', 'rust').")]
+    #[schemars(
+        description = "Optional programming language filter (e.g. 'csharp', 'python', \
+                              'javascript', 'typescript', 'rust')."
+    )]
     pub language: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct DocsAutoSearchRequest {
-    #[schemars(description = "Free-form natural-language question (e.g. 'How do I configure \
+    #[schemars(
+        description = "Free-form natural-language question (e.g. 'How do I configure \
                               Next.js middleware for app router', 'Azure Functions Python v2 \
                               timeout limits', 'tokio JoinSet vs spawn'). Passed verbatim to \
-                              every backend so each can rank on relevance.")]
+                              every backend so each can rank on relevance."
+    )]
     pub query: String,
-    #[schemars(description = "Optional library / framework / SDK name (e.g. 'Next.js', 'tokio', \
+    #[schemars(
+        description = "Optional library / framework / SDK name (e.g. 'Next.js', 'tokio', \
                               'Azure Storage'). When set, Context7 does a two-step \
-                              resolve→fetch chain; when unset, Context7 only resolves.")]
+                              resolve→fetch chain; when unset, Context7 only resolves."
+    )]
     pub library_name: Option<String>,
-    #[schemars(description = "Optional programming language filter for the Microsoft \
-                              code-sample backend (e.g. 'csharp', 'python', 'rust').")]
+    #[schemars(
+        description = "Optional programming language filter for the Microsoft \
+                              code-sample backend (e.g. 'csharp', 'python', 'rust')."
+    )]
     pub language: Option<String>,
-    #[schemars(description = "Whether to search GitHub for open-source repositories, llms.txt, \
-                              and documentation (default: true).")]
+    #[schemars(
+        description = "Whether to search GitHub for open-source repositories, llms.txt, \
+                              and documentation (default: true)."
+    )]
     pub include_github: Option<bool>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct GitHubDocsSearchRequest {
-    #[schemars(description = "Repository search query or keyword (e.g. 'ratatui', 'tokio-rs', \
-                              'gitingest').")]
+    #[schemars(
+        description = "Repository search query or keyword (e.g. 'ratatui', 'tokio-rs', \
+                              'gitingest')."
+    )]
     pub query: String,
     #[schemars(description = "Max number of top repositories to inspect (default: 3, max: 5).")]
     pub limit: Option<u8>,
-    #[schemars(description = "Whether to fetch full GitIngest digests for repositories lacking \
-                              llms.txt (default: false).")]
+    #[schemars(
+        description = "Whether to fetch full GitIngest digests for repositories lacking \
+                              llms.txt (default: false)."
+    )]
     pub include_digest: Option<bool>,
 }
 
@@ -409,7 +453,7 @@ async fn upstream_query(action: &'static str, request: UpstreamRequest) -> Strin
         _ => {
             aphrody_git::upstream::search(&client, entry, request.query.as_deref().unwrap_or(""))
                 .await
-        },
+        }
     };
     match result {
         Ok(value) => serde_json::to_string_pretty(&value).unwrap_or_default(),
@@ -448,38 +492,52 @@ pub struct AwesomeSearchRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct AphrodyMcpCallRequest {
-    #[schemars(description = "Logical server name as keyed under `mcpServers` of the mcp.json \
+    #[schemars(
+        description = "Logical server name as keyed under `mcpServers` of the mcp.json \
                               config (e.g. 'context7', 'github'). The server must be reachable \
-                              via stdio or HTTP per its config entry.")]
+                              via stdio or HTTP per its config entry."
+    )]
     pub server: String,
-    #[schemars(description = "Tool name as advertised by the target server's `tools/list` \
-                              response (e.g. 'search_repositories').")]
+    #[schemars(
+        description = "Tool name as advertised by the target server's `tools/list` \
+                              response (e.g. 'search_repositories')."
+    )]
     pub tool: String,
-    #[schemars(description = "Optional JSON object of arguments forwarded verbatim as the \
+    #[schemars(
+        description = "Optional JSON object of arguments forwarded verbatim as the \
                               tool's `arguments` payload. Must be a JSON object when set; \
-                              defaults to `{}` (no args).")]
+                              defaults to `{}` (no args)."
+    )]
     pub args: Option<serde_json::Value>,
-    #[schemars(description = "Optional absolute path to an alternative mcp.json config file. \
+    #[schemars(
+        description = "Optional absolute path to an alternative mcp.json config file. \
                               When unset, resolution follows the standard precedence \
-                              (APHRODY_MCP_CONFIG → XDG/APPDATA → repo .mcp.json).")]
+                              (APHRODY_MCP_CONFIG → XDG/APPDATA → repo .mcp.json)."
+    )]
     pub config: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct N2bRequest {
-    #[schemars(description = "Path to the directory or file to scan, fix, or migrate (default: \
-                              current directory).")]
+    #[schemars(
+        description = "Path to the directory or file to scan, fix, or migrate (default: \
+                              current directory)."
+    )]
     pub path: Option<String>,
-    #[schemars(description = "Execution mode: 'scan' (default, read-only analysis), 'fix' \
+    #[schemars(
+        description = "Execution mode: 'scan' (default, read-only analysis), 'fix' \
                               (apply safe automatic refactorings), or 'migrate' (full migration \
-                              including environment and lockfile changes).")]
+                              including environment and lockfile changes)."
+    )]
     pub mode: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct WebCallRequest {
-    #[schemars(description = "Tool name from this server's tools/list (aphrody_*) or the web \
-                              backend's own name.")]
+    #[schemars(
+        description = "Tool name from this server's tools/list (aphrody_*) or the web \
+                              backend's own name."
+    )]
     pub tool: String,
     #[schemars(description = "JSON object forwarded to the tool. Defaults to an empty object.")]
     pub args: Option<std::collections::BTreeMap<String, serde_json::Value>>,
@@ -487,8 +545,10 @@ pub struct WebCallRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct A2aCallRequest {
-    #[schemars(description = "A2A v1 JSON-RPC method (SendMessage, GetTask, ListTasks, \
-                              CancelTask, \u{2026}).")]
+    #[schemars(
+        description = "A2A v1 JSON-RPC method (SendMessage, GetTask, ListTasks, \
+                              CancelTask, \u{2026})."
+    )]
     pub method: String,
     #[schemars(description = "A2A method parameters as a JSON object.")]
     pub params: std::collections::BTreeMap<String, serde_json::Value>,
@@ -624,7 +684,12 @@ fn clip_section(text: &str, max: usize) -> String {
     while !text.is_char_boundary(end) {
         end -= 1;
     }
-    format!("{}\n\n… (truncated: {} of {} bytes shown)", &text[..end], end, text.len())
+    format!(
+        "{}\n\n… (truncated: {} of {} bytes shown)",
+        &text[..end],
+        end,
+        text.len()
+    )
 }
 
 /// Picks the Context7 library titled `name` (case-insensitive, then `id` ending in it) out of a
@@ -663,7 +728,11 @@ fn pick_context7_library(resolved: &str, name: &str) -> (Option<String>, String)
         .take(5)
         .map(|r| {
             let description: String = field(r, "description").chars().take(160).collect();
-            format!("- `{}` — {}: {description}", field(r, "id"), field(r, "title"))
+            format!(
+                "- `{}` — {}: {description}",
+                field(r, "id"),
+                field(r, "title")
+            )
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -708,7 +777,7 @@ async fn context7_get(path: &str, params: &[(&str, &str)]) -> String {
                         return serde_json::to_string_pretty(&env).unwrap_or_else(|_| body.clone());
                     }
                     body
-                },
+                }
                 Err(e) => {
                     let env = json!({
                         "error": "CONTEXT7_INVALID_RESPONSE",
@@ -716,18 +785,22 @@ async fn context7_get(path: &str, params: &[(&str, &str)]) -> String {
                         "endpoint": url,
                     });
                     serde_json::to_string_pretty(&env).unwrap_or_default()
-                },
+                }
             }
-        },
+        }
         Err(e) => {
-            let kind = if e.is_timeout() { "CONTEXT7_TIMEOUT" } else { "CONTEXT7_UNAVAILABLE" };
+            let kind = if e.is_timeout() {
+                "CONTEXT7_TIMEOUT"
+            } else {
+                "CONTEXT7_UNAVAILABLE"
+            };
             let env = json!({
                 "error": kind,
                 "reason": format!("{url}: {e}"),
                 "endpoint": url,
             });
             serde_json::to_string_pretty(&env).unwrap_or_default()
-        },
+        }
     }
 }
 
@@ -825,7 +898,7 @@ async fn mslearn_call(tool: &str, args: serde_json::Value) -> String {
                             }
                             // Fall back to the raw envelope as JSON text.
                             serde_json::to_string_pretty(&env).unwrap_or_else(|_| inner.to_string())
-                        },
+                        }
                         Err(e) => serde_json::to_string_pretty(&json!({
                             "error": "MSLEARN_INVALID_RESPONSE",
                             "reason": format!("parse JSON-RPC envelope: {e}"),
@@ -834,7 +907,7 @@ async fn mslearn_call(tool: &str, args: serde_json::Value) -> String {
                         }))
                         .unwrap_or_default(),
                     }
-                },
+                }
                 Err(e) => serde_json::to_string_pretty(&json!({
                     "error": "MSLEARN_INVALID_RESPONSE",
                     "reason": format!("read body: {e}"),
@@ -842,16 +915,20 @@ async fn mslearn_call(tool: &str, args: serde_json::Value) -> String {
                 }))
                 .unwrap_or_default(),
             }
-        },
+        }
         Err(e) => {
-            let kind = if e.is_timeout() { "MSLEARN_TIMEOUT" } else { "MSLEARN_UNAVAILABLE" };
+            let kind = if e.is_timeout() {
+                "MSLEARN_TIMEOUT"
+            } else {
+                "MSLEARN_UNAVAILABLE"
+            };
             serde_json::to_string_pretty(&json!({
                 "error": kind,
                 "reason": format!("{MSLEARN_ENDPOINT}: {e}"),
                 "endpoint": MSLEARN_ENDPOINT,
             }))
             .unwrap_or_default()
-        },
+        }
     }
 }
 
@@ -918,7 +995,9 @@ async fn fetch_page(url: &str, profile: Option<&str>) -> String {
 #[tool_router(router = core_router)]
 impl GoogleMcpServer {
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Read the native Aphrody product documentation/template catalog from an explicit workspace root. Read-only, no network or host execution. Section docs/templates matches HTTP; omit for both.")]
+    #[tool(
+        description = "Read the native Aphrody product documentation/template catalog from an explicit workspace root. Read-only, no network or host execution. Section docs/templates matches HTTP; omit for both."
+    )]
     async fn aphrody_site_catalog(
         &self,
         Parameters(request): Parameters<site_tools::SiteCatalogRequest>,
@@ -934,8 +1013,10 @@ impl GoogleMcpServer {
     // reason to route them through a rented reader — and doing so told that
     // reader which style guide this machine was consulting, on every call.
     // -----------------------------------------------------------------------
-    #[tool(description = "Fetch official coding style guidelines for Google projects (Chromium, \
-                          Android, C++, Python, TypeScript, etc.).")]
+    #[tool(
+        description = "Fetch official coding style guidelines for Google projects (Chromium, \
+                          Android, C++, Python, TypeScript, etc.)."
+    )]
     async fn coding_style_guide(
         &self,
         Parameters(StyleGuideRequest { topic }): Parameters<StyleGuideRequest>,
@@ -943,12 +1024,27 @@ impl GoogleMcpServer {
         let mut map = std::collections::HashMap::new();
         map.insert("cpp", "https://google.github.io/styleguide/cppguide.html");
         map.insert("python", "https://google.github.io/styleguide/pyguide.html");
-        map.insert("typescript", "https://google.github.io/styleguide/tsguide.html");
-        map.insert("javascript", "https://google.github.io/styleguide/jsguide.html");
+        map.insert(
+            "typescript",
+            "https://google.github.io/styleguide/tsguide.html",
+        );
+        map.insert(
+            "javascript",
+            "https://google.github.io/styleguide/jsguide.html",
+        );
         map.insert("java", "https://google.github.io/styleguide/javaguide.html");
-        map.insert("shell", "https://google.github.io/styleguide/shellguide.html");
-        map.insert("html", "https://google.github.io/styleguide/htmlcssguide.html");
-        map.insert("android_build", "https://source.android.com/setup/contribute/code-style");
+        map.insert(
+            "shell",
+            "https://google.github.io/styleguide/shellguide.html",
+        );
+        map.insert(
+            "html",
+            "https://google.github.io/styleguide/htmlcssguide.html",
+        );
+        map.insert(
+            "android_build",
+            "https://source.android.com/setup/contribute/code-style",
+        );
         map.insert(
             "chromium_build_win",
             "https://chromium.googlesource.com/chromium/src/+/master/docs/\
@@ -983,10 +1079,12 @@ impl GoogleMcpServer {
     // cap, and no status check, so a 402 or 429 from the proxy reached the
     // model as if it were the page. All five of those are fixed by the fetch module.
     // -----------------------------------------------------------------------
-    #[tool(description = "Fetch any webpage from the internet and convert it to clean Markdown. \
+    #[tool(
+        description = "Fetch any webpage from the internet and convert it to clean Markdown. \
                           Fetched directly by aphrody and converted in-process (no third-party \
                           reader). Highly recommended for reading online developer \
-                          documentation, issue trackers, or tutorials.")]
+                          documentation, issue trackers, or tutorials."
+    )]
     async fn universal_web_fetch(
         &self,
         Parameters(WebFetchRequest { url, profile }): Parameters<WebFetchRequest>,
@@ -994,8 +1092,10 @@ impl GoogleMcpServer {
         fetch_page(&url, profile.as_deref()).await
     }
 
-    #[tool(description = "Extract article text, Markdown and metadata from supplied HTML using \
-                          the shared Aphrody Rust Web library. No browser subprocess is started.")]
+    #[tool(
+        description = "Extract article text, Markdown and metadata from supplied HTML using \
+                          the shared Aphrody Rust Web library. No browser subprocess is started."
+    )]
     async fn aphrody_web_extract_html(
         &self,
         Parameters(WebExtractHtmlRequest { html, url }): Parameters<WebExtractHtmlRequest>,
@@ -1025,11 +1125,13 @@ impl GoogleMcpServer {
     // `lookup_host` and `TcpStream::connect`. A model told a tool does OSINT
     // calls it instead of doing the research, gets back a DNS line and three
     // port verdicts, and reports that as the reconnaissance.
-    #[tool(description = "Resolve a host's A/AAAA records and probe a list of TCP ports for OPEN \
+    #[tool(
+        description = "Resolve a host's A/AAAA records and probe a list of TCP ports for OPEN \
                           / CLOSED-FILTERED / TIMEOUT, using async tokio sockets (5 s resolve \
                           budget, 200 ms per port; ports default to 80, 443, 8080). That is the \
                           whole tool: it performs NO OSINT — no WHOIS, no certificate \
-                          transparency, no passive DNS, no subdomain enumeration.")]
+                          transparency, no passive DNS, no subdomain enumeration."
+    )]
     async fn advanced_recon(
         &self,
         Parameters(AdvancedReconRequest { target, ports }): Parameters<AdvancedReconRequest>,
@@ -1060,10 +1162,12 @@ impl GoogleMcpServer {
                 } else {
                     output.push_str(&format!("[DNS] A/AAAA records: {}\n", ips.join(", ")));
                 }
-            },
+            }
             Ok(Err(e)) => output.push_str(&format!("[DNS] Resolution failed: {e}\n")),
-            Err(_) => output
-                .push_str(&format!("[DNS] Resolution timed out after {}s\n", RESOLVE.as_secs())),
+            Err(_) => output.push_str(&format!(
+                "[DNS] Resolution timed out after {}s\n",
+                RESOLVE.as_secs()
+            )),
         }
 
         output.push_str(&format!("\n[TCP] Probing ports {ports_to_check:?}:\n"));
@@ -1077,11 +1181,13 @@ impl GoogleMcpServer {
                         Ok(Ok(mut addrs)) => addrs.next(),
                         _ => None,
                     }
-                },
+                }
             };
 
             let Some(addr) = resolved else {
-                output.push_str(&format!("  Port {port}: UNRESOLVED (no address for {target})\n"));
+                output.push_str(&format!(
+                    "  Port {port}: UNRESOLVED (no address for {target})\n"
+                ));
                 continue;
             };
 
@@ -1104,8 +1210,10 @@ impl GoogleMcpServer {
     //    GlobalMemoryStatusEx (Win32 API). Linux: reads /proc/meminfo + /proc/cpuinfo via sysinfo
     //    crate. wasm: platform not supported.
     // -----------------------------------------------------------------------
-    #[tool(description = "Query native OS state (CPU count, memory usage, page size) directly \
-                          via OS APIs, bypassing WMI or higher-level abstractions.")]
+    #[tool(
+        description = "Query native OS state (CPU count, memory usage, page size) directly \
+                          via OS APIs, bypassing WMI or higher-level abstractions."
+    )]
     async fn native_hooks(&self) -> String {
         let pid = std::process::id();
 
@@ -1196,12 +1304,14 @@ impl GoogleMcpServer {
     // 8. start_dashboard — real axum HTTP server spawned in a tokio task. Exposes GET /health and
     //    GET /info (PID, uptime, memory).
     // -----------------------------------------------------------------------
-    #[tool(description = "Start a loopback HTTP server exposing live telemetry about THIS MCP \
+    #[tool(
+        description = "Start a loopback HTTP server exposing live telemetry about THIS MCP \
                           process: GET /health (liveness) and GET /info (PID, uptime, memory, \
                           and a counter of /info hits). Binds 127.0.0.1 only - set \
                           APHRODY_MCP_DASHBOARD_HOST to widen it deliberately. Runs in the \
                           background for the lifetime of the MCP process and cannot be stopped \
-                          by a tool call.")]
+                          by a tool call."
+    )]
     async fn start_dashboard(
         &self,
         Parameters(StartDashboardRequest { port }): Parameters<StartDashboardRequest>,
@@ -1270,7 +1380,7 @@ impl GoogleMcpServer {
                 return format!(
                     "Failed to bind dashboard on port {port}: {e}. Is the port already in use?"
                 );
-            },
+            }
         };
 
         // Confirm the actual bound address (OS may assign a different port if 0 was given).
@@ -1300,9 +1410,11 @@ impl GoogleMcpServer {
     //     is not exposed over stdio.
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Synthesise speech from text via the aphrody-voice ElevenLabs adapter. \
+    #[tool(
+        description = "Synthesise speech from text via the aphrody-voice ElevenLabs adapter. \
                           Returns { audio_base64, mime_type, duration_ms, bytes, voice }. \
-                          Requires ELEVENLABS_API_KEY in env.")]
+                          Requires ELEVENLABS_API_KEY in env."
+    )]
     async fn voice_synthesize(
         &self,
         Parameters(req): Parameters<voice_tools::VoiceSynthesizeRequest>,
@@ -1316,14 +1428,16 @@ impl GoogleMcpServer {
     //     REST API on NotImplemented or any other provider error.
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Transcribe base64-encoded audio via aphrody-voice-stt. Prefers offline \
+    #[tool(
+        description = "Transcribe base64-encoded audio via aphrody-voice-stt. Prefers offline \
                           whisper.cpp (set APHRODY_WHISPER_MODEL to a GGML model path); falls \
                           back to the OpenAI Whisper REST API (OPENAI_API_KEY) — so this tool \
                           MAY upload the audio; use `aphrody_transcribe` (feature stt-local) \
                           when it must not leave the machine. Returns { text, confidence, \
                           confidence_note, language, duration_s, segments, backend, mime_type }. \
                           `confidence` is always null: neither backend reports one and this tool \
-                          does not invent one.")]
+                          does not invent one."
+    )]
     async fn voice_transcribe(
         &self,
         Parameters(req): Parameters<voice_tools::VoiceTranscribeRequest>,
@@ -1334,11 +1448,13 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // firefly_generate — Adobe Firefly Services image generation.
     // -----------------------------------------------------------------------
-    #[tool(description = "Generate image(s) with Adobe Firefly Services (v3, async). OAuth \
+    #[tool(
+        description = "Generate image(s) with Adobe Firefly Services (v3, async). OAuth \
                           server-to-server: set FIREFLY_CLIENT_ID and FIREFLY_CLIENT_SECRET in \
                           the environment. Cross-platform, headless cloud API (no Photoshop \
                           install). Optionally save to a directory. Returns { count, outputs:[{ \
-                          seed, content_type, bytes, saved_path? }] }.")]
+                          seed, content_type, bytes, saved_path? }] }."
+    )]
     async fn firefly_generate(
         &self,
         Parameters(req): Parameters<firefly_tools::FireflyGenerateRequest>,
@@ -1351,10 +1467,12 @@ impl GoogleMcpServer {
     // in-policy replacement for the TypeScript photoshop-mcp: no local
     // Photoshop, no JS. Same IMS auth as Firefly.
     // -----------------------------------------------------------------------
-    #[tool(description = "Get the layer manifest (tree, dimensions, mode) of a PSD/image via the \
+    #[tool(
+        description = "Get the layer manifest (tree, dimensions, mode) of a PSD/image via the \
                           cloud Photoshop API. input_url must be readable by Adobe (presigned S3 \
                           / Azure SAS / Dropbox / Creative Cloud). Returns the Photoshop job \
-                          JSON.")]
+                          JSON."
+    )]
     async fn photoshop_manifest(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsManifestRequest>,
@@ -1362,9 +1480,11 @@ impl GoogleMcpServer {
         photoshop_tools::manifest(req).await
     }
 
-    #[tool(description = "Render a PSD/image to an output URL via the cloud Photoshop API \
+    #[tool(
+        description = "Render a PSD/image to an output URL via the cloud Photoshop API \
                           (renditionCreate). format = png|jpg|psd|tiff|dng. output_url must be a \
-                          writable destination (presigned PUT / SAS / CC). Returns the job JSON.")]
+                          writable destination (presigned PUT / SAS / CC). Returns the job JSON."
+    )]
     async fn photoshop_rendition(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsRenditionRequest>,
@@ -1372,9 +1492,11 @@ impl GoogleMcpServer {
         photoshop_tools::rendition(req).await
     }
 
-    #[tool(description = "Apply layer edits (and optionally render) on a PSD via the cloud \
+    #[tool(
+        description = "Apply layer edits (and optionally render) on a PSD via the cloud \
                           Photoshop API (documentOperations). `options` is the layer-edit JSON \
-                          tree. Returns the job JSON.")]
+                          tree. Returns the job JSON."
+    )]
     async fn photoshop_document_operations(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsDocOpsRequest>,
@@ -1382,10 +1504,12 @@ impl GoogleMcpServer {
         photoshop_tools::document_operations(req).await
     }
 
-    #[tool(description = "Bridge: generate an image with Adobe Firefly, then route it through \
+    #[tool(
+        description = "Bridge: generate an image with Adobe Firefly, then route it through \
                           the cloud Photoshop API. With output_url it converts the result to \
                           that URL/format (e.g. an editable PSD); without it, returns the layer \
-                          manifest of the generated image. Set FIREFLY_CLIENT_ID/SECRET.")]
+                          manifest of the generated image. Set FIREFLY_CLIENT_ID/SECRET."
+    )]
     async fn firefly_to_photoshop(
         &self,
         Parameters(req): Parameters<photoshop_tools::FireflyToPhotoshopRequest>,
@@ -1393,9 +1517,11 @@ impl GoogleMcpServer {
         photoshop_tools::firefly_to_photoshop(req).await
     }
 
-    #[tool(description = "Auto-tone an image via the cloud Lightroom API (AI exposure, contrast, \
+    #[tool(
+        description = "Auto-tone an image via the cloud Lightroom API (AI exposure, contrast, \
                           highlights, shadows, whites, blacks, vibrance). input_url readable by \
-                          Adobe; output_url writable. format = png|jpg|psd|tiff|dng. Job JSON.")]
+                          Adobe; output_url writable. format = png|jpg|psd|tiff|dng. Job JSON."
+    )]
     async fn photoshop_auto_tone(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1403,9 +1529,11 @@ impl GoogleMcpServer {
         photoshop_tools::auto_tone(req).await
     }
 
-    #[tool(description = "Auto-straighten (Upright perspective correction) via the cloud \
+    #[tool(
+        description = "Auto-straighten (Upright perspective correction) via the cloud \
                           Lightroom API. input_url readable, output_url writable. Returns the \
-                          job JSON.")]
+                          job JSON."
+    )]
     async fn photoshop_auto_straighten(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1413,10 +1541,12 @@ impl GoogleMcpServer {
         photoshop_tools::auto_straighten(req).await
     }
 
-    #[tool(description = "Apply explicit Camera-Raw adjustments via the cloud Lightroom API \
+    #[tool(
+        description = "Apply explicit Camera-Raw adjustments via the cloud Lightroom API \
                           (edit): exposure, contrast, highlights, shadows, whites, blacks, \
                           temperature, tint, vibrance, saturation, clarity, dehaze, texture, \
-                          sharpness. Only the set fields are applied. Returns the job JSON.")]
+                          sharpness. Only the set fields are applied. Returns the job JSON."
+    )]
     async fn photoshop_edit(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsAdjustRequest>,
@@ -1424,9 +1554,11 @@ impl GoogleMcpServer {
         photoshop_tools::edit(req).await
     }
 
-    #[tool(description = "Remove the background of an image (Sensei cutout), returning a \
+    #[tool(
+        description = "Remove the background of an image (Sensei cutout), returning a \
                           transparent cut-out. input_url readable, output_url writable (png \
-                          recommended). Returns the job JSON.")]
+                          recommended). Returns the job JSON."
+    )]
     async fn photoshop_remove_background(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1434,8 +1566,10 @@ impl GoogleMcpServer {
         photoshop_tools::remove_background(req).await
     }
 
-    #[tool(description = "Create a subject/background alpha mask for an image (Sensei mask). \
-                          input_url readable, output_url writable. Returns the job JSON.")]
+    #[tool(
+        description = "Create a subject/background alpha mask for an image (Sensei mask). \
+                          input_url readable, output_url writable. Returns the job JSON."
+    )]
     async fn photoshop_create_mask(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1443,8 +1577,10 @@ impl GoogleMcpServer {
         photoshop_tools::create_mask(req).await
     }
 
-    #[tool(description = "Content-aware product crop via the cloud Photoshop API (productCrop). \
-                          input_url readable, output_url writable. Returns the job JSON.")]
+    #[tool(
+        description = "Content-aware product crop via the cloud Photoshop API (productCrop). \
+                          input_url readable, output_url writable. Returns the job JSON."
+    )]
     async fn photoshop_product_crop(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1452,8 +1588,10 @@ impl GoogleMcpServer {
         photoshop_tools::product_crop(req).await
     }
 
-    #[tool(description = "Depth-of-field blur via the cloud Photoshop API (depthBlur Neural \
-                          Filter). input_url readable, output_url writable. Returns the job JSON.")]
+    #[tool(
+        description = "Depth-of-field blur via the cloud Photoshop API (depthBlur Neural \
+                          Filter). input_url readable, output_url writable. Returns the job JSON."
+    )]
     async fn photoshop_depth_blur(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsEditRequest>,
@@ -1461,9 +1599,11 @@ impl GoogleMcpServer {
         photoshop_tools::depth_blur(req).await
     }
 
-    #[tool(description = "Play an actionJSON program (a recorded Photoshop action set as JSON) \
+    #[tool(
+        description = "Play an actionJSON program (a recorded Photoshop action set as JSON) \
                           over a PSD/image via the cloud Photoshop API (documentOperations). \
-                          `actions` is the actionJSON array. Returns the job JSON.")]
+                          `actions` is the actionJSON array. Returns the job JSON."
+    )]
     async fn photoshop_action_json(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsActionJsonRequest>,
@@ -1471,10 +1611,12 @@ impl GoogleMcpServer {
         photoshop_tools::action_json(req).await
     }
 
-    #[tool(description = "Generative expand (Adobe Firefly v3): enlarge an image's canvas to \
+    #[tool(
+        description = "Generative expand (Adobe Firefly v3): enlarge an image's canvas to \
                           width×height, AI-filling the new area (optional prompt). image_url \
                           must be Adobe-readable. Optionally save_dir. Returns { count, \
-                          image_urls, saved_paths }. Set FIREFLY_CLIENT_ID/SECRET.")]
+                          image_urls, saved_paths }. Set FIREFLY_CLIENT_ID/SECRET."
+    )]
     async fn firefly_generative_expand(
         &self,
         Parameters(req): Parameters<photoshop_tools::FireflyExpandRequest>,
@@ -1482,10 +1624,12 @@ impl GoogleMcpServer {
         photoshop_tools::generative_expand(req).await
     }
 
-    #[tool(description = "Generative fill (Adobe Firefly v3): replace the masked region of an \
+    #[tool(
+        description = "Generative fill (Adobe Firefly v3): replace the masked region of an \
                           image with prompt-guided content. image_url + mask_url (white = fill) \
                           must be Adobe-readable. Optionally save_dir. Returns { count, \
-                          image_urls, saved_paths }. Set FIREFLY_CLIENT_ID/SECRET.")]
+                          image_urls, saved_paths }. Set FIREFLY_CLIENT_ID/SECRET."
+    )]
     async fn firefly_generative_fill(
         &self,
         Parameters(req): Parameters<photoshop_tools::FireflyFillRequest>,
@@ -1499,20 +1643,24 @@ impl GoogleMcpServer {
     // (127.0.0.1:8765 by default; port via APHRODY_PS_BRIDGE_PORT). batchPlay
     // + eval expose the entire Photoshop surface.
     // -----------------------------------------------------------------------
-    #[tool(description = "Report the running Photoshop's state via the in-app UXP plugin: app \
+    #[tool(
+        description = "Report the running Photoshop's state via the in-app UXP plugin: app \
                           version, active document (name, dimensions, mode), and the layer tree. \
                           Requires the aphrody UXP panel loaded in Photoshop. Returns { ok, \
-                          result }.")]
+                          result }."
+    )]
     async fn photoshop_live_info(&self) -> String {
         photoshop_tools::live_info().await
     }
 
-    #[tool(description = "Run a batchPlay command array inside the RUNNING Photoshop (in-app UXP \
+    #[tool(
+        description = "Run a batchPlay command array inside the RUNNING Photoshop (in-app UXP \
                           plugin) — the universal driver for ANY Photoshop operation (the same \
                           ActionDescriptor JSON ScriptListener/Alchemist emit). `commands` is \
                           the array; `options` is optional. Returns { ok, result } with \
                           batchPlay's response descriptors. Requires the aphrody UXP panel \
-                          loaded.")]
+                          loaded."
+    )]
     async fn photoshop_live_batchplay(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsBatchPlayRequest>,
@@ -1520,11 +1668,13 @@ impl GoogleMcpServer {
         photoshop_tools::live_batchplay(req).await
     }
 
-    #[tool(description = "Evaluate arbitrary UXP JavaScript inside the RUNNING Photoshop (in-app \
+    #[tool(
+        description = "Evaluate arbitrary UXP JavaScript inside the RUNNING Photoshop (in-app \
                           plugin) with app/photoshop/constants/core/batchPlay in scope — full \
                           internal access for anything not expressible as one batchPlay array. \
                           `return` a JSON-serializable value. Requires the aphrody UXP panel \
-                          loaded.")]
+                          loaded."
+    )]
     async fn photoshop_live_exec(
         &self,
         Parameters(req): Parameters<photoshop_tools::PsExecRequest>,
@@ -1535,10 +1685,12 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // screen_capture — capture the screen (or a window) as a PNG for vision.
     // -----------------------------------------------------------------------
-    #[tool(description = "Capture the whole primary screen (or a window by title substring) as a \
+    #[tool(
+        description = "Capture the whole primary screen (or a window by title substring) as a \
                           PNG and return it base64-encoded so a vision model can see it. \
                           Optionally also save to disk. Local-only. Returns { mime, bytes, \
-                          base64, saved_path }.")]
+                          base64, saved_path }."
+    )]
     async fn screen_capture(
         &self,
         Parameters(ScreenCaptureRequest { window, save_path }): Parameters<ScreenCaptureRequest>,
@@ -1575,12 +1727,14 @@ impl GoogleMcpServer {
     //     that needs sections or strings already gets them in re_triage's response.
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Triage a binary file (PE32/PE64/ELF32/ELF64): detect format via magic, \
+    #[tool(
+        description = "Triage a binary file (PE32/PE64/ELF32/ELF64): detect format via magic, \
                           parse with goblin, extract sections with per-section Shannon entropy, \
                           imports, exports, ASCII/UTF-16LE strings sample (≤ 64 entries, min \
                           length 6), and a SHA-256 fingerprint. Pure Rust, no GPL deps. Returns \
                           a TriageReport JSON object. Errors with structured envelope on read \
-                          failures or oversized inputs.")]
+                          failures or oversized inputs."
+    )]
     async fn re_triage(
         &self,
         Parameters(ReTriageRequest { path }): Parameters<ReTriageRequest>,
@@ -1595,7 +1749,7 @@ impl GoogleMcpServer {
                     "reason": format!("unable to stat '{path}': {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         if meta.len() > MAX_BYTES {
             return serde_json::to_string_pretty(&json!({
@@ -1615,11 +1769,14 @@ impl GoogleMcpServer {
                     "reason": format!("read '{path}' failed: {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         match aphrody_re::triage(&bytes) {
             Ok(report) => serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
-                format!(r#"{{"error":"RE_ENCODE","reason":"{}"}}"#, e.to_string().replace('"', "'"))
+                format!(
+                    r#"{{"error":"RE_ENCODE","reason":"{}"}}"#,
+                    e.to_string().replace('"', "'")
+                )
             }),
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "RE_PARSE",
@@ -1637,14 +1794,20 @@ impl GoogleMcpServer {
     // it works on arbitrary blobs (firmware dumps, data files, PE/ELF alike).
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Extract printable ASCII and UTF-16LE strings from any file (binary, \
+    #[tool(
+        description = "Extract printable ASCII and UTF-16LE strings from any file (binary, \
                           firmware, PE, ELF, data blob). Returns a JSON object with `path`, \
                           `min_len`, `limit`, and a `strings` array of deduplicated runs. Works \
                           on any file format — no binary parsing required. Errors with a \
-                          structured envelope on read failure or if the file exceeds 100 MB.")]
+                          structured envelope on read failure or if the file exceeds 100 MB."
+    )]
     async fn re_strings(
         &self,
-        Parameters(ReStringsRequest { path, min_len, limit }): Parameters<ReStringsRequest>,
+        Parameters(ReStringsRequest {
+            path,
+            min_len,
+            limit,
+        }): Parameters<ReStringsRequest>,
     ) -> String {
         const MAX_BYTES: u64 = 100 * 1024 * 1024; // 100 MB
         const DEFAULT_MIN_LEN: usize = 6;
@@ -1662,7 +1825,7 @@ impl GoogleMcpServer {
                     "reason": format!("unable to stat '{path}': {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         if meta.len() > MAX_BYTES {
             return serde_json::to_string_pretty(&json!({
@@ -1682,7 +1845,7 @@ impl GoogleMcpServer {
                     "reason": format!("read '{path}' failed: {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         let strings = aphrody_re::extract_strings(&bytes, min_len, limit);
         serde_json::to_string_pretty(&json!({
@@ -1693,7 +1856,10 @@ impl GoogleMcpServer {
             "strings": strings,
         }))
         .unwrap_or_else(|e| {
-            format!(r#"{{"error":"RE_ENCODE","reason":"{}"}}"#, e.to_string().replace('"', "'"))
+            format!(
+                r#"{{"error":"RE_ENCODE","reason":"{}"}}"#,
+                e.to_string().replace('"', "'")
+            )
         })
     }
 
@@ -1706,13 +1872,15 @@ impl GoogleMcpServer {
     // callers a lightweight, focused view without the full triage payload.
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Parse a PE32/PE64/ELF32/ELF64 binary and return its section table as a \
+    #[tool(
+        description = "Parse a PE32/PE64/ELF32/ELF64 binary and return its section table as a \
                           JSON object. Each entry contains `name` (string), `vaddr` (u64), \
                           `size` (u64 bytes on disk), and `entropy` (Shannon bits/byte, null for \
                           .bss-style sections with no on-disk content). High entropy (>= 7.0) \
                           signals compression or encryption (UPX, custom packers). Returns a \
                           structured envelope on read failure, oversized inputs, or unknown \
-                          binary formats.")]
+                          binary formats."
+    )]
     async fn re_sections(
         &self,
         Parameters(ReSectionsRequest { path }): Parameters<ReSectionsRequest>,
@@ -1727,7 +1895,7 @@ impl GoogleMcpServer {
                     "reason": format!("unable to stat '{path}': {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         if meta.len() > MAX_BYTES {
             return serde_json::to_string_pretty(&json!({
@@ -1747,7 +1915,7 @@ impl GoogleMcpServer {
                     "reason": format!("read '{path}' failed: {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         match aphrody_re::triage(&bytes) {
             Ok(report) => serde_json::to_string_pretty(&json!({
@@ -1757,7 +1925,10 @@ impl GoogleMcpServer {
                 "sections": report.sections,
             }))
             .unwrap_or_else(|e| {
-                format!(r#"{{"error":"RE_ENCODE","reason":"{}"}}"#, e.to_string().replace('"', "'"))
+                format!(
+                    r#"{{"error":"RE_ENCODE","reason":"{}"}}"#,
+                    e.to_string().replace('"', "'")
+                )
             }),
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "RE_PARSE",
@@ -1775,7 +1946,8 @@ impl GoogleMcpServer {
     // the virtual RIP base for operand display, and the instruction count cap.
     // -----------------------------------------------------------------------
     #[cfg(not(target_arch = "wasm32"))]
-    #[tool(description = "Disassemble x86-64 instructions from a binary file (PE, ELF, raw \
+    #[tool(
+        description = "Disassemble x86-64 instructions from a binary file (PE, ELF, raw \
                           shellcode, firmware dump — any byte sequence). Returns a JSON object \
                           with `path`, `offset`, `rip`, `limit`, `count`, and an `instructions` \
                           array. Each instruction entry contains `offset` (byte offset from the \
@@ -1785,10 +1957,16 @@ impl GoogleMcpServer {
                           Intel-syntax line, e.g. `\"mov rbp,rsp\"`). Decoding stops at the \
                           instruction limit, the end of the slice, or the first invalid/unknown \
                           encoding — whichever comes first. Errors with a structured envelope on \
-                          read failure, oversized inputs (> 100 MB), or out-of-bounds offset.")]
+                          read failure, oversized inputs (> 100 MB), or out-of-bounds offset."
+    )]
     async fn re_disasm(
         &self,
-        Parameters(ReDisasmRequest { path, offset, rip, limit }): Parameters<ReDisasmRequest>,
+        Parameters(ReDisasmRequest {
+            path,
+            offset,
+            rip,
+            limit,
+        }): Parameters<ReDisasmRequest>,
     ) -> String {
         const MAX_BYTES: u64 = 100 * 1024 * 1024; // 100 MB
         const DEFAULT_LIMIT: usize = aphrody_re::DISASM_LIMIT; // 256
@@ -1806,7 +1984,7 @@ impl GoogleMcpServer {
                     "reason": format!("unable to stat '{path}': {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         if meta.len() > MAX_BYTES {
             return serde_json::to_string_pretty(&json!({
@@ -1826,7 +2004,7 @@ impl GoogleMcpServer {
                     "reason": format!("read '{path}' failed: {e}"),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         let slice = match file_bytes.get(byte_offset as usize..) {
             Some(s) if !s.is_empty() => s,
@@ -1839,7 +2017,7 @@ impl GoogleMcpServer {
                     ),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         let instructions = aphrody_re::disasm(slice, rip_base, insn_limit);
         serde_json::to_string_pretty(&json!({
@@ -1851,7 +2029,10 @@ impl GoogleMcpServer {
             "instructions": instructions,
         }))
         .unwrap_or_else(|e| {
-            format!(r#"{{"error":"RE_ENCODE","reason":"{}"}}"#, e.to_string().replace('"', "'"))
+            format!(
+                r#"{{"error":"RE_ENCODE","reason":"{}"}}"#,
+                e.to_string().replace('"', "'")
+            )
         })
     }
 
@@ -1861,15 +2042,18 @@ impl GoogleMcpServer {
     //     public Context7 API tolerates unauthenticated requests; CONTEXT7_API_KEY (Bearer) unlocks
     //     larger quotas.
     // -----------------------------------------------------------------------
-    #[tool(description = "Resolve a package or product name to a Context7-compatible library ID \
+    #[tool(
+        description = "Resolve a package or product name to a Context7-compatible library ID \
                           (e.g. '/vercel/next.js') and return matching libraries with \
                           descriptions and source reputation. First step before \
-                          `context7_query_docs`.")]
+                          `context7_query_docs`."
+    )]
     async fn context7_resolve_library_id(
         &self,
-        Parameters(Context7ResolveRequest { query, library_name }): Parameters<
-            Context7ResolveRequest,
-        >,
+        Parameters(Context7ResolveRequest {
+            query,
+            library_name,
+        }): Parameters<Context7ResolveRequest>,
     ) -> String {
         // Context7 v1 search takes a single `query`; fold the library name in
         // for ranking when present.
@@ -1886,9 +2070,11 @@ impl GoogleMcpServer {
     //     library ID. Returns raw markdown (the Context7 API returns text/markdown directly, not
     //     wrapped JSON).
     // -----------------------------------------------------------------------
-    #[tool(description = "Retrieve up-to-date documentation and code examples from Context7 for \
+    #[tool(
+        description = "Retrieve up-to-date documentation and code examples from Context7 for \
                           a specific library and topic. Pass a libraryId resolved via \
-                          `context7_resolve_library_id`. Returns raw markdown.")]
+                          `context7_resolve_library_id`. Returns raw markdown."
+    )]
     async fn context7_query_docs(
         &self,
         Parameters(Context7DocsRequest { library_id, query }): Parameters<Context7DocsRequest>,
@@ -1896,7 +2082,15 @@ impl GoogleMcpServer {
         // Context7 v1 docs are path-based: /api/v1/<libraryId>?type=txt&topic=&tokens=.
         // libraryId is returned with a leading '/' (e.g. "/websites/rs_tokio").
         let path = format!("v1/{}", library_id.trim_start_matches('/'));
-        context7_get(&path, &[("type", "txt"), ("topic", query.as_str()), ("tokens", "5000")]).await
+        context7_get(
+            &path,
+            &[
+                ("type", "txt"),
+                ("topic", query.as_str()),
+                ("tokens", "5000"),
+            ],
+        )
+        .await
     }
 
     // -----------------------------------------------------------------------
@@ -1904,10 +2098,12 @@ impl GoogleMcpServer {
     //     (`learn.microsoft.com/api/mcp`). Single binary, no separate `mcpServers.microsoft-learn`
     //     entry needed.
     // -----------------------------------------------------------------------
-    #[tool(description = "Search official Microsoft documentation and return up to 10 concise, \
+    #[tool(
+        description = "Search official Microsoft documentation and return up to 10 concise, \
                           high-quality content chunks (max 500 tokens each), including title, \
                           URL and excerpt. Use first to get a quick, reliable overview of any \
-                          Microsoft / Azure / .NET / Windows / M365 / Power Platform technology.")]
+                          Microsoft / Azure / .NET / Windows / M365 / Power Platform technology."
+    )]
     async fn microsoft_docs_search(
         &self,
         Parameters(MsLearnSearchRequest { query }): Parameters<MsLearnSearchRequest>,
@@ -1919,9 +2115,11 @@ impl GoogleMcpServer {
     // 22. microsoft_docs_fetch — full-page fetch on a Microsoft Learn URL, converted to markdown by
     //     the upstream server.
     // -----------------------------------------------------------------------
-    #[tool(description = "Fetch and convert a Microsoft documentation page into markdown format. \
+    #[tool(
+        description = "Fetch and convert a Microsoft documentation page into markdown format. \
                           Use after `microsoft_docs_search` when an excerpt is cut off or you \
-                          need the full tutorial / configuration guide / API reference page.")]
+                          need the full tutorial / configuration guide / API reference page."
+    )]
     async fn microsoft_docs_fetch(
         &self,
         Parameters(MsLearnFetchRequest { url }): Parameters<MsLearnFetchRequest>,
@@ -1933,10 +2131,12 @@ impl GoogleMcpServer {
     // 23. microsoft_code_sample_search — official Microsoft / Azure code snippet search, optionally
     //     filtered by language.
     // -----------------------------------------------------------------------
-    #[tool(description = "Search for official Microsoft / Azure code snippets and examples. Use \
+    #[tool(
+        description = "Search for official Microsoft / Azure code snippets and examples. Use \
                           before writing code (find a working pattern to follow) or after errors \
                           (compare your code against a known-good sample). Optional language \
-                          filter narrows results to a single SDK ecosystem.")]
+                          filter narrows results to a single SDK ecosystem."
+    )]
     async fn microsoft_code_sample_search(
         &self,
         Parameters(MsLearnCodeSampleRequest { query, language }): Parameters<
@@ -1950,7 +2150,11 @@ impl GoogleMcpServer {
         {
             args.insert("language".into(), json!(lang));
         }
-        mslearn_call("microsoft_code_sample_search", serde_json::Value::Object(args)).await
+        mslearn_call(
+            "microsoft_code_sample_search",
+            serde_json::Value::Object(args),
+        )
+        .await
     }
 
     // -----------------------------------------------------------------------
@@ -1969,12 +2173,14 @@ impl GoogleMcpServer {
     //     search, and GitHub (intelligent repository discovery, llms.txt, and docs). One tool
     //     call instead of four round-trips.
     // -----------------------------------------------------------------------
-    #[tool(description = "Single-shot documentation lookup that queries four backends in \
+    #[tool(
+        description = "Single-shot documentation lookup that queries four backends in \
                           parallel — Context7, Microsoft Learn, Microsoft code samples, and \
                           GitHub (authoritative repos, llms.txt, and READMEs) — and returns \
                           one fused markdown report. Provide `library_name` when known to unlock \
                           the Context7 deep fetch and targeted GitHub repo discovery; provide \
-                          `language` to narrow Microsoft code samples.")]
+                          `language` to narrow Microsoft code samples."
+    )]
     async fn docs_auto_search(
         &self,
         Parameters(DocsAutoSearchRequest {
@@ -2000,7 +2206,11 @@ impl GoogleMcpServer {
                     let path = format!("v1/{}", id.trim_start_matches('/'));
                     let docs = context7_get(
                         &path,
-                        &[("type", "txt"), ("topic", query.as_str()), ("tokens", "3000")],
+                        &[
+                            ("type", "txt"),
+                            ("topic", query.as_str()),
+                            ("tokens", "3000"),
+                        ],
                     )
                     .await;
                     format!(
@@ -2035,7 +2245,10 @@ impl GoogleMcpServer {
         let (ctx7, ms_search, ms_code, gh_docs) = tokio::join!(
             ctx7_future,
             mslearn_call("microsoft_docs_search", json!({ "query": query })),
-            mslearn_call("microsoft_code_sample_search", serde_json::Value::Object(ms_code_args),),
+            mslearn_call(
+                "microsoft_code_sample_search",
+                serde_json::Value::Object(ms_code_args),
+            ),
             gh_future,
         );
 
@@ -2078,17 +2291,22 @@ impl GoogleMcpServer {
     // mapped to a structured `MCP_*` error envelope so callers can branch on
     // `error` strings instead of stringly-matching anyhow messages.
     // -----------------------------------------------------------------------
-    #[tool(description = "Proxy-invoke a tool on any MCP server configured in mcp.json. \
+    #[tool(
+        description = "Proxy-invoke a tool on any MCP server configured in mcp.json. \
                           Spawns/connects the target server transparently (stdio or HTTP), runs \
                           the `initialize` + `tools/call` handshake, and returns the target \
                           tool's raw `result` payload wrapped in a small envelope { server, \
                           tool, result }. Use to chain MCP servers (e.g. delegate to `github`, \
-                          `context7`) without separate client wiring.")]
+                          `context7`) without separate client wiring."
+    )]
     async fn aphrody_mcp_call(
         &self,
-        Parameters(AphrodyMcpCallRequest { server, tool, args, config }): Parameters<
-            AphrodyMcpCallRequest,
-        >,
+        Parameters(AphrodyMcpCallRequest {
+            server,
+            tool,
+            args,
+            config,
+        }): Parameters<AphrodyMcpCallRequest>,
     ) -> String {
         // Reject empty identifiers up front — `find_server` would still
         // surface a useful error, but a typed envelope is friendlier for
@@ -2117,7 +2335,7 @@ impl GoogleMcpServer {
                     "reason": e.to_string(),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
         let entry = match crate::client_cmd::find_server(&cfg, &server) {
             Ok(e) => e,
@@ -2127,7 +2345,7 @@ impl GoogleMcpServer {
                     "reason": e.to_string(),
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
 
         let mut client = match crate::client_cmd::connect_from_config(entry).await {
@@ -2139,7 +2357,7 @@ impl GoogleMcpServer {
                     "server": server,
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
 
         if let Err(e) = client.initialize().await {
@@ -2172,7 +2390,7 @@ impl GoogleMcpServer {
                     "tool": tool,
                 }))
                 .unwrap_or_default();
-            },
+            }
         };
 
         // Best-effort shutdown so the spawned stdio child does not linger
@@ -2187,13 +2405,18 @@ impl GoogleMcpServer {
             "result": result,
         }))
         .unwrap_or_else(|e| {
-            format!(r#"{{"error":"MCP_ENCODE","reason":"{}"}}"#, e.to_string().replace('"', "'"))
+            format!(
+                r#"{{"error":"MCP_ENCODE","reason":"{}"}}"#,
+                e.to_string().replace('"', "'")
+            )
         })
     }
 
-    #[tool(description = "Call native Aphrody Web tools by their public or historical name \
+    #[tool(
+        description = "Call native Aphrody Web tools by their public or historical name \
                           through this endpoint (browser, crawl, Google, Gemini, X, archive). \
-                          Use aphrody_capabilities to inspect the tools available in this build.")]
+                          Use aphrody_capabilities to inspect the tools available in this build."
+    )]
     async fn aphrody_web_call(
         &self,
         Parameters(WebCallRequest { tool, args }): Parameters<WebCallRequest>,
@@ -2208,17 +2431,19 @@ impl GoogleMcpServer {
         match bxc_tools::call_raw(&backend, arguments).await {
             Ok(result) => {
                 json!({ "backend": "aphrody-web", "tool": tool, "result": result }).to_string()
-            },
+            }
             Err(reason) => {
                 json!({ "error": "WEB_CALL", "reason": reason, "tool": tool }).to_string()
-            },
+            }
         }
     }
 
-    #[tool(description = "Call the local Aphrody A2A v1 JSON-RPC backend through aphrody-mcp. \
+    #[tool(
+        description = "Call the local Aphrody A2A v1 JSON-RPC backend through aphrody-mcp. \
                           The endpoint is APHRODY_A2A_ENDPOINT (legacy APHRODY_A2A_URL) or \
                           http://127.0.0.1:8788/; only \
-                          canonical A2A methods are accepted.")]
+                          canonical A2A methods are accepted."
+    )]
     async fn aphrody_a2a_call(
         &self,
         Parameters(A2aCallRequest { method, params }): Parameters<A2aCallRequest>,
@@ -2266,7 +2491,7 @@ impl GoogleMcpServer {
                     })
                     .to_string(),
                 }
-            },
+            }
             Err(error) => json!({
                 "error": "A2A_CONNECT",
                 "reason": error.to_string(),
@@ -2276,11 +2501,13 @@ impl GoogleMcpServer {
         }
     }
 
-    #[tool(description = "Return machine-readable backend contracts from the unified endpoint. \
+    #[tool(
+        description = "Return machine-readable backend contracts from the unified endpoint. \
                           `aphrody` returns the live MCP tool schemas, `web` lists the web \
                           backend tools, `n2b` returns its canonical report JSON Schema, `a2a` \
                           returns the A2A v1 JSON-RPC contract, and `all` returns every local \
-                          contract plus the live web catalogue when available.")]
+                          contract plus the live web catalogue when available."
+    )]
     async fn aphrody_schema(
         &self,
         Parameters(SchemaRequest { domain }): Parameters<SchemaRequest>,
@@ -2313,7 +2540,7 @@ impl GoogleMcpServer {
                     Err(reason) => json!({ "error": "WEB_CATALOG", "reason": reason }),
                 };
                 json!({ "aphrody": aphrody(), "web": web, "n2b": n2b(), "a2a": a2a_contract() })
-            },
+            }
             unknown => json!({
                 "error": "UNKNOWN_SCHEMA_DOMAIN",
                 "domain": unknown,
@@ -2328,9 +2555,11 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // n2b — run the n2b migration tool on the given path.
     // -----------------------------------------------------------------------
-    #[tool(description = "Scan and migrate a Node.js codebase to Bun using n2b. Detects \
+    #[tool(
+        description = "Scan and migrate a Node.js codebase to Bun using n2b. Detects \
                           Node-specific patterns, shims, polyfills, package configurations, and \
-                          automatically migrates or fixes them.")]
+                          automatically migrates or fixes them."
+    )]
     async fn n2b(&self, Parameters(N2bRequest { path, mode }): Parameters<N2bRequest>) -> String {
         let target_path = path.unwrap_or_else(|| ".".to_string());
         let m = mode.unwrap_or_else(|| "scan".to_string());
@@ -2361,15 +2590,19 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // github_docs_search — search GitHub repositories for docs & llms.txt.
     // -----------------------------------------------------------------------
-    #[tool(description = "Search GitHub repositories intelligently for documentation, \
+    #[tool(
+        description = "Search GitHub repositories intelligently for documentation, \
                           llms.txt, llms-full.txt, and prompt-ready digests. Discovers \
                           authoritative open-source repositories matching the query, inspects \
-                          llms.txt and README, and optionally generates full GitIngest digests.")]
+                          llms.txt and README, and optionally generates full GitIngest digests."
+    )]
     async fn github_docs_search(
         &self,
-        Parameters(GitHubDocsSearchRequest { query, limit, include_digest }): Parameters<
-            GitHubDocsSearchRequest,
-        >,
+        Parameters(GitHubDocsSearchRequest {
+            query,
+            limit,
+            include_digest,
+        }): Parameters<GitHubDocsSearchRequest>,
     ) -> String {
         let limit = limit.unwrap_or(3).min(5) as usize;
         let digest = include_digest.unwrap_or(false);
@@ -2386,9 +2619,11 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // git_ingest — turn any Git repository or directory into a prompt-ready digest.
     // -----------------------------------------------------------------------
-    #[tool(description = "Ingest a Git repository URL or local directory into a prompt-ready \
+    #[tool(
+        description = "Ingest a Git repository URL or local directory into a prompt-ready \
                           LLM digest (GitIngest standard with directory tree, token counts, and \
-                          curated file contents).")]
+                          curated file contents)."
+    )]
     async fn git_ingest(
         &self,
         Parameters(GitIngestRequest {
@@ -2463,22 +2698,28 @@ impl GoogleMcpServer {
         upstream_query("info", request).await
     }
 
-    #[tool(description = "List a directory of one catalogue upstream at its live ref (no clone). \
-                          `path` defaults to the repository root.")]
+    #[tool(
+        description = "List a directory of one catalogue upstream at its live ref (no clone). \
+                          `path` defaults to the repository root."
+    )]
     async fn upstream_tree(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
         upstream_query("tree", request).await
     }
 
-    #[tool(description = "Read one file of a catalogue upstream at its live ref (no clone). \
-                          Text over 256 KiB is cut and flagged `truncated`.")]
+    #[tool(
+        description = "Read one file of a catalogue upstream at its live ref (no clone). \
+                          Text over 256 KiB is cut and flagged `truncated`."
+    )]
     async fn upstream_read(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
         upstream_query("read", request).await
     }
 
-    #[tool(description = "Code search inside one catalogue upstream: GitHub code search with a \
+    #[tool(
+        description = "Code search inside one catalogue upstream: GitHub code search with a \
                           token (GH_TOKEN, GITHUB_TOKEN or gh auth); without one, the entry's \
                           local checkout (every word, case-insensitive, 20 hits) with a \
-                          `degraded` note.")]
+                          `degraded` note."
+    )]
     async fn upstream_search(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
         upstream_query("search", request).await
     }
@@ -2486,10 +2727,12 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // awesome_fetch — fetch and structure a canonical curated Awesome list.
     // -----------------------------------------------------------------------
-    #[tool(description = "Fetch, parse, and structure a canonical curated Awesome list from \
+    #[tool(
+        description = "Fetch, parse, and structure a canonical curated Awesome list from \
                           GitHub (e.g. 'sindresorhus/awesome', 'oven-sh/awesome-bun', \
                           'rust-unofficial/awesome-rust', 'tauri-apps/awesome-tauri'). \
-                          Returns structured categories, entries, and GitHub metadata.")]
+                          Returns structured categories, entries, and GitHub metadata."
+    )]
     async fn awesome_fetch(
         &self,
         Parameters(AwesomeFetchRequest { source, enrich }): Parameters<AwesomeFetchRequest>,
@@ -2504,7 +2747,7 @@ impl GoogleMcpServer {
                     }
                 }
                 index.to_markdown()
-            },
+            }
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "AWESOME_FETCH_FAILED",
                 "reason": e.to_string(),
@@ -2516,9 +2759,11 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // awesome_search — search across curated Awesome lists.
     // -----------------------------------------------------------------------
-    #[tool(description = "Search across curated Awesome lists (Bun, Rust, Tauri, \
+    #[tool(
+        description = "Search across curated Awesome lists (Bun, Rust, Tauri, \
                           Sindresorhus/Awesome) for libraries, frameworks, tools, and \
-                          resources matching a keyword.")]
+                          resources matching a keyword."
+    )]
     async fn awesome_search(
         &self,
         Parameters(AwesomeSearchRequest { query, preset }): Parameters<AwesomeSearchRequest>,
@@ -2538,7 +2783,10 @@ impl GoogleMcpServer {
                 let mut md = format!("# Awesome Search Results — `{query}`\n\n");
                 md.push_str(&format!("*Found {} curated entries:*\n\n", items.len()));
                 for item in items {
-                    md.push_str(&format!("- [{}]({}) `[{}]`", item.title, item.url, item.category));
+                    md.push_str(&format!(
+                        "- [{}]({}) `[{}]`",
+                        item.title, item.url, item.category
+                    ));
                     if !item.description.is_empty() {
                         md.push_str(&format!(" — {}", item.description));
                     }
@@ -2548,7 +2796,7 @@ impl GoogleMcpServer {
                     md.push('\n');
                 }
                 md
-            },
+            }
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "AWESOME_SEARCH_FAILED",
                 "reason": e.to_string(),
@@ -2573,9 +2821,11 @@ impl GoogleMcpServer {
 
 #[tool_router(router = shenron_router)]
 impl GoogleMcpServer {
-    #[tool(description = "Search the Dragon Ball corpus held by Aphrody. Accepts q, limit, lang, \
+    #[tool(
+        description = "Search the Dragon Ball corpus held by Aphrody. Accepts q, limit, lang, \
                           kind, sourceId (the original corpus ID), and entity. Returns stable \
-                          sourceId values, source URL, a bounded passage, and lexical mode.")]
+                          sourceId values, source URL, a bounded passage, and lexical mode."
+    )]
     async fn aphrody_shenron_rag_search(
         &self,
         Parameters(request): Parameters<http_rest::ShenronSearchQuery>,
@@ -2583,9 +2833,11 @@ impl GoogleMcpServer {
         http_rest::mcp_shenron_rag_search(request).await
     }
 
-    #[tool(description = "Upsert one Shenron passage into Aphrody's RAG corpus using a stable \
+    #[tool(
+        description = "Upsert one Shenron passage into Aphrody's RAG corpus using a stable \
                           sourceId such as shenron:<rowid>. Optional originSourceId, kind, lang \
-                          and entity preserve source metadata. Requires the Aphrody RAG database.")]
+                          and entity preserve source metadata. Requires the Aphrody RAG database."
+    )]
     async fn aphrody_shenron_rag_ingest(
         &self,
         Parameters(request): Parameters<http_rest::ShenronDocument>,
@@ -2593,9 +2845,11 @@ impl GoogleMcpServer {
         http_rest::mcp_shenron_rag_ingest(request).await
     }
 
-    #[tool(description = "Chat through Aphrody's configured local OpenAI-compatible model for \
+    #[tool(
+        description = "Chat through Aphrody's configured local OpenAI-compatible model for \
                           Shenron. Returns answer and model. Requires the configured model \
-                          backend.")]
+                          backend."
+    )]
     async fn aphrody_shenron_llm_chat(
         &self,
         Parameters(request): Parameters<http_rest::ChatRequest>,
@@ -2607,9 +2861,11 @@ impl GoogleMcpServer {
 #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
 #[tool_router(router = shenron_ocr_router)]
 impl GoogleMcpServer {
-    #[tool(description = "Transcribe one base64 image with Aphrody's local OCR for Shenron. \
+    #[tool(
+        description = "Transcribe one base64 image with Aphrody's local OCR for Shenron. \
                           Returns text, textless, suspect, findings and languageApplied=false. \
-                          Requires a binary built with the ocr feature and installed OCR model.")]
+                          Requires a binary built with the ocr feature and installed OCR model."
+    )]
     async fn aphrody_shenron_ocr(
         &self,
         Parameters(request): Parameters<http_rest::OcrRequest>,
@@ -2626,7 +2882,8 @@ impl GoogleMcpServer {
     // Distinct from any cloud OCR: nothing leaves the machine, and a page with
     // no readable text comes back as `markdown: null` + `textless: true`
     // rather than as an empty string or a description of the picture.
-    #[tool(description = "Read an image with a local vision-language model (llama.cpp + an \
+    #[tool(
+        description = "Read an image with a local vision-language model (llama.cpp + an \
                           installed GGUF from the aphrody model store) and return markdown. \
                           Fully offline; nothing is downloaded. A page with no readable text \
                           returns markdown=null and textless=true — never an empty string and \
@@ -2635,7 +2892,8 @@ impl GoogleMcpServer {
                           should stop a deposit (a stuck/repeating generation, a leaked control \
                           token, surviving markup), with the individual `findings` listed. The \
                           audit annotates, it never removes text. Returns { image, markdown, \
-                          textless, suspect, findings, elapsed_ms, model, runner, raw? }.")]
+                          textless, suspect, findings, elapsed_ms, model, runner, raw? }."
+    )]
     async fn aphrody_ocr(&self, Parameters(req): Parameters<ocr_tools::OcrReadRequest>) -> String {
         ocr_tools::read(req).await
     }
@@ -2650,13 +2908,15 @@ impl GoogleMcpServer {
     // the model different permissions. OCR may not describe (a caption filed
     // as a transcription corrupts a corpus); this one may, because that is the
     // request. One flag away from each other, that distinction gets erased.
-    #[tool(description = "Describe an image with a local vision-language model: caption (one \
+    #[tool(
+        description = "Describe an image with a local vision-language model: caption (one \
                           short description), dense_region (per-region descriptions with \
                           normalised boxes), full_page_ocr (text only, never a description), or \
                           vqa (a free-form question, needs `question`). Fully offline; nothing \
                           is downloaded. Unlike aphrody_ocr this tool MAY describe a picture — \
                           use aphrody_ocr when the answer must be a transcription. Returns { \
-                          image, mode, model, text, description, elapsed_ms, raw? }.")]
+                          image, mode, model, text, description, elapsed_ms, raw? }."
+    )]
     async fn aphrody_describe_image(
         &self,
         Parameters(req): Parameters<vision_tools::DescribeImageRequest>,
@@ -2673,12 +2933,14 @@ impl GoogleMcpServer {
     // The counterpart of `voice_transcribe`: that one may fall back to a REST
     // API, this one never leaves the machine. Two tools so the choice is made
     // by name at the call site and stays auditable.
-    #[tool(description = "Transcribe audio fully locally by driving whisper.cpp with weights \
+    #[tool(
+        description = "Transcribe audio fully locally by driving whisper.cpp with weights \
                           from the aphrody model store (catalog id such as whisper-base-en, or a \
                           GGML path). Never falls back to a network API and never downloads: a \
                           missing runtime or missing weights is a structured error. Audio must \
                           be 16 kHz mono WAV. Returns { text, language, duration_s, segments, \
-                          backend, binary, model, weights }.")]
+                          backend, binary, model, weights }."
+    )]
     async fn aphrody_transcribe(
         &self,
         Parameters(req): Parameters<stt_local_tools::LocalTranscribeRequest>,
@@ -2704,10 +2966,12 @@ impl GoogleMcpServer {
         jobs_tools::submit(req).await
     }
 
-    #[tool(description = "Inspect the background job queue. With `id`: the job plus its trailing \
+    #[tool(
+        description = "Inspect the background job queue. With `id`: the job plus its trailing \
                           NDJSON log lines. Without: a filtered listing (state/kind/limit). Both \
                           include queue-wide counts so a job that no worker handles is visible \
-                          as queued rather than mistaken for slow.")]
+                          as queued rather than mistaken for slow."
+    )]
     async fn aphrody_job_status(
         &self,
         Parameters(req): Parameters<jobs_tools::JobStatusRequest>,
@@ -2734,7 +2998,8 @@ impl GoogleMcpServer {
 #[cfg(not(target_arch = "wasm32"))]
 #[tool_router(router = external_sessions_router)]
 impl GoogleMcpServer {
-    #[tool(description = "Mirror the sessions of the other coding agents on this machine \
+    #[tool(
+        description = "Mirror the sessions of the other coding agents on this machine \
                           (Antigravity CLI `agy`, Codex, Claude Code) into \
                           ~/.aphrody/sessions/<agent>/<session_id>.jsonl, incrementally: \
                           per-file byte offsets mean a re-run only ingests lines appended since, \
@@ -2743,7 +3008,8 @@ impl GoogleMcpServer {
                           processes to the sessions they write (live, default true) and feeds \
                           user/assistant turns into the local memory store (memory, default \
                           true). Returns the JSON summary { records_ingested, sources_scanned, \
-                          sources_updated, agents, sessions, live_processes, memory, issues }.")]
+                          sources_updated, agents, sessions, live_processes, memory, issues }."
+    )]
     async fn sync_external_agents(
         &self,
         Parameters(request): Parameters<sync_tools::SyncExternalAgentsRequest>,
@@ -2756,7 +3022,8 @@ impl GoogleMcpServer {
 #[cfg(not(target_arch = "wasm32"))]
 #[tool_router(router = remote_router)]
 impl GoogleMcpServer {
-    #[tool(description = "Computer use on any VNC (RFB) server: a tunnel member (`omar`), \
+    #[tool(
+        description = "Computer use on any VNC (RFB) server: a tunnel member (`omar`), \
                           `host[:port]` or `vnc://host:port`, e.g. `aphrody infra remote serve` \
                           on a WireGuard peer. Actions: screenshot (JPEG image), click, \
                           double_click, move, drag (x,y -> end_x,end_y), scroll (delta_x/delta_y \
@@ -2764,7 +3031,8 @@ impl GoogleMcpServer {
                           (`Enter`, `ctrl+s`), wait, close. The session is kept open between \
                           calls. The password comes from the credential store \
                           (APHRODY_VNC_PASSWORD or `aphrody infra remote token set vnc`), never \
-                          from the arguments.")]
+                          from the arguments."
+    )]
     async fn aphrody_remote_vnc(
         &self,
         Parameters(req): Parameters<remote_tools::RemoteVncRequest>,
@@ -2776,9 +3044,11 @@ impl GoogleMcpServer {
 #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
 #[tool_router(router = rag_router)]
 impl GoogleMcpServer {
-    #[tool(description = "Search the local aphrody RAG index (SQLite FTS5, built by `aphrody rag \
+    #[tool(
+        description = "Search the local aphrody RAG index (SQLite FTS5, built by `aphrody rag \
                           index`; $APHRODY_RAG_DB or ~/.aphrody/rag/index.db). Returns ranked \
-                          chunks with path, lines and score as JSON.")]
+                          chunks with path, lines and score as JSON."
+    )]
     async fn aphrody_rag_search(
         &self,
         Parameters(req): Parameters<rag_tools::RagSearchRequest>,
@@ -2786,8 +3056,10 @@ impl GoogleMcpServer {
         rag_tools::search(req).await
     }
 
-    #[tool(description = "Same retrieval as aphrody_rag_search, rendered as a numbered, citable \
-                          Markdown context block ready to paste into a prompt.")]
+    #[tool(
+        description = "Same retrieval as aphrody_rag_search, rendered as a numbered, citable \
+                          Markdown context block ready to paste into a prompt."
+    )]
     async fn aphrody_rag_context(
         &self,
         Parameters(req): Parameters<rag_tools::RagSearchRequest>,
@@ -3058,7 +3330,10 @@ impl ServerHandler for GoogleMcpServer {
         _request: Option<rmcp::model::PaginatedRequestParams>,
         context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ListResourcesResult, rmcp::ErrorData> {
-        Ok(protocol::cacheable_result(protocol::list_resources(), context.protocol_version()))
+        Ok(protocol::cacheable_result(
+            protocol::list_resources(),
+            context.protocol_version(),
+        ))
     }
 
     async fn list_resource_templates(
@@ -3093,7 +3368,10 @@ impl ServerHandler for GoogleMcpServer {
         _request: Option<rmcp::model::PaginatedRequestParams>,
         context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ListPromptsResult, rmcp::ErrorData> {
-        Ok(protocol::cacheable_result(protocol::list_prompts(), context.protocol_version()))
+        Ok(protocol::cacheable_result(
+            protocol::list_prompts(),
+            context.protocol_version(),
+        ))
     }
 
     async fn get_prompt(
@@ -3101,9 +3379,11 @@ impl ServerHandler for GoogleMcpServer {
         request: rmcp::model::GetPromptRequestParams,
         _context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::GetPromptResponse, rmcp::ErrorData> {
-        protocol::get_prompt(&request.name, request.arguments.as_ref()).map(Into::into).ok_or_else(
-            || rmcp::ErrorData::invalid_params(format!("unknown prompt {}", request.name), None),
-        )
+        protocol::get_prompt(&request.name, request.arguments.as_ref())
+            .map(Into::into)
+            .ok_or_else(|| {
+                rmcp::ErrorData::invalid_params(format!("unknown prompt {}", request.name), None)
+            })
     }
 
     /// Identify as `aphrody-mcp`, not as the transport library.
@@ -3259,25 +3539,28 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             let code = err.exit_code();
             let _ = err.print();
             return code;
-        },
+        }
     };
     if let Err(error) = init_adaptive_env(cli.env_file.as_deref()) {
         eprintln!("Error: {error}");
         return 1;
     }
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(err) => {
             eprintln!("Error: failed to build tokio runtime: {err}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run(cli)) {
         Ok(()) => 0,
         Err(err) => {
             eprintln!("Error: {err:?}");
             1
-        },
+        }
     }
 }
 
@@ -3292,7 +3575,10 @@ async fn run(cli: Cli) -> Result<()> {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     // `try_init`: the multi-call host may already own the global subscriber.
-    let _ = tracing_subscriber::fmt().with_writer(std::io::stderr).with_ansi(false).try_init();
+    let _ = tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_ansi(false)
+        .try_init();
 
     let google_runtime = aphrody_google::GoogleRuntime::from_env();
     tracing::info!(
@@ -3313,12 +3599,15 @@ async fn run(cli: Cli) -> Result<()> {
         Some(TopCommand::Guide) => {
             println!("{}", protocol::USAGE_GUIDE);
             Ok(())
-        },
+        }
     }
 }
 
 async fn run_http_server(bind: SocketAddr) -> Result<()> {
-    anyhow::ensure!(bind.ip().is_loopback(), "HTTP MCP must bind to a loopback address");
+    anyhow::ensure!(
+        bind.ip().is_loopback(),
+        "HTTP MCP must bind to a loopback address"
+    );
 
     let auth = http_auth::McpAuth::from_env();
     auth.warn_if_unusable();
@@ -3344,7 +3633,10 @@ fn http_app(auth: http_auth::McpAuth) -> Router {
     );
     let mcp = Router::new()
         .nest_service("/mcp", service)
-        .layer(middleware::from_fn_with_state(auth, http_auth::require_bearer));
+        .layer(middleware::from_fn_with_state(
+            auth,
+            http_auth::require_bearer,
+        ));
     mcp.merge(http_rest::router())
 }
 
@@ -3397,7 +3689,7 @@ async fn run_server() -> Result<()> {
                     stdout.flush().await?;
                     tracing::info!("Handled pre-init ping probe");
                     continue;
-                },
+                }
                 "initialize" => break (line, false),
                 _ => break (line, false),
             }
@@ -3416,9 +3708,12 @@ async fn run_server() -> Result<()> {
             None,
         )
     } else {
-        GoogleMcpServer.serve((chained_stdin, stdout)).await.inspect_err(|e| {
-            tracing::error!("Serving error: {:?}", e);
-        })?
+        GoogleMcpServer
+            .serve((chained_stdin, stdout))
+            .await
+            .inspect_err(|e| {
+                tracing::error!("Serving error: {:?}", e);
+            })?
     };
 
     service.waiting().await?;
@@ -3473,7 +3768,11 @@ mod cli_tests {
 
     #[tokio::test]
     async fn native_web_extraction_is_in_the_single_mcp_catalog() {
-        assert!(GoogleMcpServer::all_tools().get("aphrody_web_extract_html").is_some());
+        assert!(
+            GoogleMcpServer::all_tools()
+                .get("aphrody_web_extract_html")
+                .is_some()
+        );
         let response = GoogleMcpServer
             .aphrody_web_extract_html(Parameters(WebExtractHtmlRequest {
                 html: "<article><h1>Page</h1><p>A sufficiently long paragraph for extraction.</p></article>".to_owned(),
@@ -3510,7 +3809,9 @@ mod cli_tests {
     #[tokio::test]
     async fn http_rejects_non_loopback_bind() {
         let bind = "0.0.0.0:8789".parse().unwrap();
-        let error = run_http_server(bind).await.expect_err("public bind must fail");
+        let error = run_http_server(bind)
+            .await
+            .expect_err("public bind must fail");
         assert!(error.to_string().contains("loopback"));
     }
 
@@ -3555,7 +3856,10 @@ mod cli_tests {
         assert!(response.status().is_success());
         assert!(response.headers().contains_key("Mcp-Session-Id"));
         let body = response.text().await.unwrap();
-        assert!(body.contains("serverInfo"), "unexpected MCP response: {body}");
+        assert!(
+            body.contains("serverInfo"),
+            "unexpected MCP response: {body}"
+        );
 
         server.abort();
     }
@@ -3567,12 +3871,32 @@ mod cli_tests {
         let anonymous = initialize(address, None).send().await.unwrap();
         assert_eq!(anonymous.status(), 401);
         assert!(!anonymous.headers().contains_key("Mcp-Session-Id"));
-        assert_eq!(initialize(address, Some("wrong")).send().await.unwrap().status(), 401);
+        assert_eq!(
+            initialize(address, Some("wrong"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            401
+        );
         // The session endpoints are behind the same layer: no token, no stream and no session teardown.
         let client = reqwest::Client::new();
-        assert_eq!(client.get(format!("http://{address}/mcp")).send().await.unwrap().status(), 401);
         assert_eq!(
-            client.delete(format!("http://{address}/mcp")).send().await.unwrap().status(),
+            client
+                .get(format!("http://{address}/mcp"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            401
+        );
+        assert_eq!(
+            client
+                .delete(format!("http://{address}/mcp"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
             401
         );
 
@@ -3583,16 +3907,28 @@ mod cli_tests {
     async fn http_mcp_refuses_everything_when_no_token_is_configured() {
         let (address, server) = serve_http(http_auth::McpAuth::unconfigured()).await;
 
-        assert_eq!(initialize(address, None).send().await.unwrap().status(), 503);
-        assert_eq!(initialize(address, Some(TEST_TOKEN)).send().await.unwrap().status(), 503);
+        assert_eq!(
+            initialize(address, None).send().await.unwrap().status(),
+            503
+        );
+        assert_eq!(
+            initialize(address, Some(TEST_TOKEN))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            503
+        );
 
         server.abort();
     }
 
     #[tokio::test]
     async fn http_healthz_needs_no_token() {
-        for auth in [http_auth::McpAuth::with_token(TEST_TOKEN), http_auth::McpAuth::unconfigured()]
-        {
+        for auth in [
+            http_auth::McpAuth::with_token(TEST_TOKEN),
+            http_auth::McpAuth::unconfigured(),
+        ] {
             let (address, server) = serve_http(auth).await;
             let response = reqwest::Client::new()
                 .get(format!("http://{address}/healthz"))
@@ -3611,10 +3947,13 @@ mod cli_tests {
             .expect("client list must parse");
         match cli.command {
             Some(TopCommand::Client(args)) => match args.op {
-                crate::client_cmd::ClientOp::List { server_name, config } => {
+                crate::client_cmd::ClientOp::List {
+                    server_name,
+                    config,
+                } => {
                     assert_eq!(server_name, "bxc");
                     assert!(config.is_none());
-                },
+                }
                 other => panic!("expected List, got {other:?}"),
             },
             other => panic!("expected Client, got {other:?}"),
@@ -3623,14 +3962,19 @@ mod cli_tests {
 
     #[test]
     fn cli_parses_client_probe_subcommand() {
-        let cli =
-            Cli::try_parse_from(["aphrody-mcp", "client", "probe", "--stdio", "/bin/echo hello"])
-                .expect("client probe must parse");
+        let cli = Cli::try_parse_from([
+            "aphrody-mcp",
+            "client",
+            "probe",
+            "--stdio",
+            "/bin/echo hello",
+        ])
+        .expect("client probe must parse");
         match cli.command {
             Some(TopCommand::Client(args)) => match args.op {
                 crate::client_cmd::ClientOp::Probe { stdio } => {
                     assert_eq!(stdio, "/bin/echo hello");
-                },
+                }
                 other => panic!("expected Probe, got {other:?}"),
             },
             other => panic!("expected Client, got {other:?}"),
@@ -3711,7 +4055,10 @@ mod aphrody_mcp_call_tests {
         let v = parse(&body);
         assert_eq!(v["error"], "MCP_UNKNOWN_SERVER");
         assert!(
-            v["reason"].as_str().unwrap_or_default().contains("no-such-server"),
+            v["reason"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("no-such-server"),
             "reason should echo the missing server: {v}"
         );
     }
@@ -3756,7 +4103,10 @@ mod aphrody_mcp_call_tests {
             .await;
         let v = parse(&body);
         let kind = v["error"].as_str().unwrap_or_default();
-        assert!(kind.starts_with("MCP_"), "expected structured MCP_* error envelope, got {v}");
+        assert!(
+            kind.starts_with("MCP_"),
+            "expected structured MCP_* error envelope, got {v}"
+        );
     }
 
     #[test]
@@ -3839,7 +4189,10 @@ mod aphrody_mcp_call_tests {
             "aphrody_shenron_rag_ingest",
             "aphrody_shenron_llm_chat",
         ] {
-            assert!(router.get(name).is_some(), "unified MCP tool missing: {name}");
+            assert!(
+                router.get(name).is_some(),
+                "unified MCP tool missing: {name}"
+            );
         }
         #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
         assert!(router.get("aphrody_shenron_ocr").is_some());
@@ -3851,7 +4204,10 @@ mod aphrody_mcp_call_tests {
         );
         #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
         for name in ["aphrody_home_query", "aphrody_home_status"] {
-            assert!(router.get(name).is_some(), "agent home MCP tool missing: {name}");
+            assert!(
+                router.get(name).is_some(),
+                "agent home MCP tool missing: {name}"
+            );
         }
     }
 
@@ -3860,7 +4216,11 @@ mod aphrody_mcp_call_tests {
         let contract = a2a_contract();
         let methods = contract["methods"].as_array().expect("methods array");
         assert_eq!(methods.len(), a2a_methods().len());
-        assert!(methods.iter().any(|method| method == aphrody_a2a::jsonrpc::methods::SEND_MESSAGE));
+        assert!(
+            methods
+                .iter()
+                .any(|method| method == aphrody_a2a::jsonrpc::methods::SEND_MESSAGE)
+        );
         assert_eq!(contract["request"]["properties"]["jsonrpc"]["const"], "2.0");
     }
 
@@ -3870,7 +4230,10 @@ mod aphrody_mcp_call_tests {
             resolve_a2a_endpoint(Some("http://canonical/a2a"), Some("http://legacy/a2a")),
             "http://canonical/a2a"
         );
-        assert_eq!(resolve_a2a_endpoint(Some(" "), Some("http://legacy/a2a")), "http://legacy/a2a");
+        assert_eq!(
+            resolve_a2a_endpoint(Some(" "), Some("http://legacy/a2a")),
+            "http://legacy/a2a"
+        );
         assert_eq!(resolve_a2a_endpoint(None, None), "http://127.0.0.1:8788/");
     }
 

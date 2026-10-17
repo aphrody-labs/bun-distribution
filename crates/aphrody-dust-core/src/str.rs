@@ -35,7 +35,10 @@ impl<const N: usize> FromStr for AsciiArray<N> {
         let mut chars = [0u8; N];
         for (i, ch) in s.chars().take(N).enumerate() {
             if !ch.is_ascii() {
-                return NotAsciiSnafu { string: s.to_string() }.fail();
+                return NotAsciiSnafu {
+                    string: s.to_string(),
+                }
+                .fail();
             }
             chars[i] = ch as u8;
         }

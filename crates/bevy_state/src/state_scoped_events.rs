@@ -213,28 +213,32 @@ mod tests {
 
         app.world_mut().write_message(StandardMessage).unwrap();
         app.world_mut().write_message(StateScopedMessage).unwrap();
-        assert!(!app
-            .world()
-            .resource::<Messages<StandardMessage>>()
-            .is_empty());
-        assert!(!app
-            .world()
-            .resource::<Messages<StateScopedMessage>>()
-            .is_empty());
+        assert!(
+            !app.world()
+                .resource::<Messages<StandardMessage>>()
+                .is_empty()
+        );
+        assert!(
+            !app.world()
+                .resource::<Messages<StateScopedMessage>>()
+                .is_empty()
+        );
 
         app.world_mut()
             .resource_mut::<NextState<TestState>>()
             .set(TestState::B);
         app.update();
 
-        assert!(!app
-            .world()
-            .resource::<Messages<StandardMessage>>()
-            .is_empty());
-        assert!(app
-            .world()
-            .resource::<Messages<StateScopedMessage>>()
-            .is_empty());
+        assert!(
+            !app.world()
+                .resource::<Messages<StandardMessage>>()
+                .is_empty()
+        );
+        assert!(
+            app.world()
+                .resource::<Messages<StateScopedMessage>>()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -249,27 +253,31 @@ mod tests {
 
         app.world_mut().write_message(StandardMessage).unwrap();
         app.world_mut().write_message(StateScopedMessage).unwrap();
-        assert!(!app
-            .world()
-            .resource::<Messages<StandardMessage>>()
-            .is_empty());
-        assert!(!app
-            .world()
-            .resource::<Messages<StateScopedMessage>>()
-            .is_empty());
+        assert!(
+            !app.world()
+                .resource::<Messages<StandardMessage>>()
+                .is_empty()
+        );
+        assert!(
+            !app.world()
+                .resource::<Messages<StateScopedMessage>>()
+                .is_empty()
+        );
 
         app.world_mut()
             .resource_mut::<NextState<TestState>>()
             .set(TestState::B);
         app.update();
 
-        assert!(!app
-            .world()
-            .resource::<Messages<StandardMessage>>()
-            .is_empty());
-        assert!(app
-            .world()
-            .resource::<Messages<StateScopedMessage>>()
-            .is_empty());
+        assert!(
+            !app.world()
+                .resource::<Messages<StandardMessage>>()
+                .is_empty()
+        );
+        assert!(
+            app.world()
+                .resource::<Messages<StateScopedMessage>>()
+                .is_empty()
+        );
     }
 }

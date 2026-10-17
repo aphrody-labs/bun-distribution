@@ -63,7 +63,9 @@ fn cstr_to_string(ptr: *const c_char) -> String {
     }
     // SAFETY: caller (JS glue via ccall/cwrap) passes a NUL-terminated UTF-8 string it owns
     // for the duration of this call; we copy it out before returning.
-    unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned()
+    unsafe { CStr::from_ptr(ptr) }
+        .to_string_lossy()
+        .into_owned()
 }
 
 fn string_to_cstr(value: String) -> *mut c_char {
@@ -181,7 +183,9 @@ pub extern "C" fn nie_lua_web_clear_scripts() {
 fn runtime_readiness(screen: &str) -> Result<String, String> {
     if screen.is_empty()
         || screen.len() > 96
-        || !screen.bytes().all(|ch| ch.is_ascii_alphanumeric() || ch == b'_')
+        || !screen
+            .bytes()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == b'_')
     {
         return Err("invalid menu screen".to_owned());
     }
@@ -197,7 +201,10 @@ fn runtime_readiness(screen: &str) -> Result<String, String> {
             (
                 scripts.len(),
                 scripts.values().map(Vec::len).sum::<usize>(),
-                paths.iter().filter(|path| path.ends_with(".lua.bin")).count(),
+                paths
+                    .iter()
+                    .filter(|path| path.ends_with(".lua.bin"))
+                    .count(),
                 scripts.contains_key(&config_path),
                 script_path,
             )
@@ -276,12 +283,12 @@ pub unsafe extern "C" fn nie_lua_web_replay(
                 "panic in replay".to_string()
             };
             Err(msg)
-        },
+        }
     };
     string_to_cstr(match result {
         Ok(output) => {
             serde_json::to_string(&output).unwrap_or_else(|error| json_error(&error.to_string()))
-        },
+        }
         Err(message) => json_error(&message),
     })
 }
@@ -289,7 +296,9 @@ pub unsafe extern "C" fn nie_lua_web_replay(
 fn run_replay(screen: &str, request_json: &str) -> Result<ReplayOutput, String> {
     if screen.is_empty()
         || screen.len() > 96
-        || !screen.bytes().all(|ch| ch.is_ascii_alphanumeric() || ch == b'_')
+        || !screen
+            .bytes()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == b'_')
     {
         return Err("invalid menu screen".into());
     }
@@ -311,15 +320,22 @@ fn run_replay(screen: &str, request_json: &str) -> Result<ReplayOutput, String> 
             let root = aphrody_nie_formats::cfgbin::to_iecode_json(&config_bytes)
                 .ok_or("menu config bytes did not decode as cfg.bin")?;
             let setting = aphrody_nie_data::menu_setting::parse(&root);
-            setting.layers.iter().map(|layer| layer.layer_id.0).collect()
-        },
+            setting
+                .layers
+                .iter()
+                .map(|layer| layer.layer_id.0)
+                .collect()
+        }
         None => Vec::new(),
     };
 
     let (paths, by_name, by_logical) = SCRIPTS.with(|scripts| {
         let scripts = scripts.borrow();
-        let paths: Vec<String> =
-            scripts.keys().filter(|path| path.ends_with(".lua.bin")).cloned().collect();
+        let paths: Vec<String> = scripts
+            .keys()
+            .filter(|path| path.ends_with(".lua.bin"))
+            .cloned()
+            .collect();
         let (by_name, by_logical) =
             aphrody_nie_lua::index_script_paths(paths.iter().map(String::as_str));
         (paths, by_name, by_logical)
@@ -392,7 +408,10 @@ mod tests {
             serde_json::from_str(&runtime_readiness("main_menu").unwrap()).unwrap();
         assert_eq!(ready["localizedTextEntries"], 1);
         assert_eq!(ready["readyForInitialRender"], true);
-        assert_eq!(ready["scriptPath"], "data/common/script/lua/menu/main_menu_1.02.92.00.lua.bin");
+        assert_eq!(
+            ready["scriptPath"],
+            "data/common/script/lua/menu/main_menu_1.02.92.00.lua.bin"
+        );
         reset();
     }
 

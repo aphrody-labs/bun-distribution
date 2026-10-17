@@ -20,7 +20,10 @@ pub(crate) enum Input {
 
 pub(crate) enum ResultKind {
     Conversion(Arc<Vec<u8>>),
-    Prepared { bytes: Arc<Vec<u8>>, result: Box<Result<PreparedDocument, OpenError>> },
+    Prepared {
+        bytes: Arc<Vec<u8>>,
+        result: Box<Result<PreparedDocument, OpenError>>,
+    },
     ReadFailed(String),
     RemoteFailed(String),
     RecoveryFailed(String),
@@ -58,9 +61,18 @@ pub(crate) struct OpenWorker {
 
 impl OpenWorker {
     pub fn new(#[cfg(test)] gate: Option<Arc<PrepareGate>>) -> std::io::Result<Self> {
-        let queue = Arc::new((Mutex::new(Queue { jobs: VecDeque::new(), shutdown: false, repaint: None }), Condvar::new()));
+        let queue = Arc::new((
+            Mutex::new(Queue {
+                jobs: VecDeque::new(),
+                shutdown: false,
+                repaint: None,
+            }),
+            Condvar::new(),
+        ));
         let worker_queue = queue.clone();
-        std::thread::Builder::new().name("pdfcraft-open".into()).spawn(move || run(worker_queue))?;
+        std::thread::Builder::new()
+            .name("pdfcraft-open".into())
+            .spawn(move || run(worker_queue))?;
         Ok(Self {
             queue,
             #[cfg(test)]
@@ -143,11 +155,16 @@ fn run(queue: Arc<(Mutex<Queue>, Condvar)>) {
         #[cfg(test)]
         let gate = job.gate.clone();
         let kind = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| prepare(job)))
-            .unwrap_or_else(|_| ResultKind::Failed("opening failed unexpectedly in the background worker".into()));
+            .unwrap_or_else(|_| {
+                ResultKind::Failed("opening failed unexpectedly in the background worker".into())
+            });
         let _ = reply.send(ResultMessage { token, kind });
         let repaint = {
             let (lock, _) = &*queue;
-            lock.lock().unwrap_or_else(PoisonError::into_inner).repaint.clone()
+            lock.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .repaint
+                .clone()
         };
         if let Some(ctx) = repaint {
             ctx.request_repaint();
@@ -175,11 +192,19 @@ fn prepare(job: Job) -> ResultKind {
         },
         Input::Bytes(bytes) => bytes.clone(),
     };
-    if matches!(pdfcraft_engine::source_kind(&job.name, &bytes), Some(SourceKind::Image | SourceKind::Text)) {
+    if matches!(
+        pdfcraft_engine::source_kind(&job.name, &bytes),
+        Some(SourceKind::Image | SourceKind::Text)
+    ) {
         return ResultKind::Conversion(bytes);
     }
-    let result = job.context.prepare_open(job.name, job.path, bytes.clone(), job.password.as_deref());
-    ResultKind::Prepared { bytes, result: Box::new(result) }
+    let result =
+        job.context
+            .prepare_open(job.name, job.path, bytes.clone(), job.password.as_deref());
+    ResultKind::Prepared {
+        bytes,
+        result: Box::new(result),
+    }
 }
 
 #[cfg(test)]
@@ -204,5 +229,14 @@ pub(crate) fn prepare_gate() -> (Arc<PrepareGate>, Receiver<()>, Sender<()>, Rec
     let (started, started_rx) = mpsc::channel();
     let (release_tx, release) = mpsc::channel();
     let (finished, finished_rx) = mpsc::channel();
-    (Arc::new(PrepareGate { started, release: Mutex::new(release), finished }), started_rx, release_tx, finished_rx)
+    (
+        Arc::new(PrepareGate {
+            started,
+            release: Mutex::new(release),
+            finished,
+        }),
+        started_rx,
+        release_tx,
+        finished_rx,
+    )
 }

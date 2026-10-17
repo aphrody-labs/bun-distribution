@@ -1,7 +1,10 @@
 //! Sprms → model properties, and style-chain resolution.
 
 use wordcraft_doc::Rgb;
-use wordcraft_doc::props::{Align, CharProps, Highlight, LineSpacing, ParaProps, TabAlign, TabLeader, TabStop, TextColor, Underline, VertAlign};
+use wordcraft_doc::props::{
+    Align, CharProps, Highlight, LineSpacing, ParaProps, TabAlign, TabLeader, TabStop, TextColor,
+    Underline, VertAlign,
+};
 use wordcraft_doc::styles::{Style, StyleKind, StyleSheet};
 
 use crate::sprm::{self, Prl, Toggle};
@@ -119,11 +122,27 @@ pub(crate) fn apply_char(p: &mut CharProps, prl: &Prl, base: &CharProps, fonts: 
     let op = prl.op;
     match op {
         C_BOLD => set(&mut p.bold, sprm::toggle(prl), base.bold.unwrap_or(false)),
-        C_ITALIC => set(&mut p.italic, sprm::toggle(prl), base.italic.unwrap_or(false)),
-        C_STRIKE => set(&mut p.strike, sprm::toggle(prl), base.strike.unwrap_or(false)),
-        C_SMALL_CAPS => set(&mut p.small_caps, sprm::toggle(prl), base.small_caps.unwrap_or(false)),
+        C_ITALIC => set(
+            &mut p.italic,
+            sprm::toggle(prl),
+            base.italic.unwrap_or(false),
+        ),
+        C_STRIKE => set(
+            &mut p.strike,
+            sprm::toggle(prl),
+            base.strike.unwrap_or(false),
+        ),
+        C_SMALL_CAPS => set(
+            &mut p.small_caps,
+            sprm::toggle(prl),
+            base.small_caps.unwrap_or(false),
+        ),
         C_CAPS => set(&mut p.caps, sprm::toggle(prl), base.caps.unwrap_or(false)),
-        C_HIDDEN => set(&mut p.hidden, sprm::toggle(prl), base.hidden.unwrap_or(false)),
+        C_HIDDEN => set(
+            &mut p.hidden,
+            sprm::toggle(prl),
+            base.hidden.unwrap_or(false),
+        ),
         C_KUL => {
             p.underline = match prl.operand.first().copied().unwrap_or(0) {
                 0x00 => Some(Underline::None),
@@ -147,7 +166,11 @@ pub(crate) fn apply_char(p: &mut CharProps, prl: &Prl, base: &CharProps, fonts: 
         }
         C_ICO => {
             if let Some(rgb) = ICO.get(prl.operand.first().copied().unwrap_or(0) as usize) {
-                p.color = Some(if rgb == &Rgb::BLACK && prl.operand.first() == Some(&0) { TextColor::Auto } else { TextColor::Rgb(*rgb) });
+                p.color = Some(if rgb == &Rgb::BLACK && prl.operand.first() == Some(&0) {
+                    TextColor::Auto
+                } else {
+                    TextColor::Rgb(*rgb)
+                });
             }
         }
         C_CR => {
@@ -192,7 +215,10 @@ pub(crate) fn apply_char(p: &mut CharProps, prl: &Prl, base: &CharProps, fonts: 
 /// stops added carry their alignment and leader (TBD: jc in bits 0–2, tlc in bits 3–5).
 fn change_tabs(p: &mut ParaProps, prl: &Prl) {
     let op = prl.operand;
-    let i16_at = |i: usize| op.get(i..i + 2).map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 20.0);
+    let i16_at = |i: usize| {
+        op.get(i..i + 2)
+            .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 20.0)
+    };
     // Both operands start with cb; sprmPChgTabs's removals also carry a "close" distance each.
     let close = prl.op == sprm::P_CHG_TABS;
     let mut at = 1;
@@ -213,10 +239,16 @@ fn change_tabs(p: &mut ParaProps, prl: &Prl) {
     // Removed within 25 twips (1.25 pt), as the format says.
     tabs.retain(|t| !removed.iter().any(|x| (t.pos - x).abs() <= 1.25));
     for x in removed {
-        tabs.push(TabStop { pos: x, align: TabAlign::Clear, leader: TabLeader::None });
+        tabs.push(TabStop {
+            pos: x,
+            align: TabAlign::Clear,
+            leader: TabLeader::None,
+        });
     }
     for k in 0..add {
-        let (Some(pos), Some(&tbd)) = (i16_at(at + 2 * k), op.get(at + 2 * add + k)) else { break };
+        let (Some(pos), Some(&tbd)) = (i16_at(at + 2 * k), op.get(at + 2 * add + k)) else {
+            break;
+        };
         let align = match tbd & 7 {
             1 => TabAlign::Center,
             2 => TabAlign::Right,
@@ -348,11 +380,16 @@ pub(crate) fn stylesheet(raw: &[crate::stsh::RawStyle], fonts: &[String]) -> Sty
             4 => StyleKind::Numbering,
             _ => StyleKind::Paragraph,
         };
-        let base = base_of(raw, istd).and_then(|i| raw.get(i)).map(|b| style_id(&b.name));
+        let base = base_of(raw, istd)
+            .and_then(|i| raw.get(i))
+            .map(|b| style_id(&b.name));
         // Inherit: properties come from the base chain, root first, then our own grpprls.
         let mut chr = CharProps::default();
         let mut para = ParaProps::default();
-        for s in style_chain(raw, istd).into_iter().filter_map(|i| raw.get(i)) {
+        for s in style_chain(raw, istd)
+            .into_iter()
+            .filter_map(|i| raw.get(i))
+        {
             apply_chain(&mut chr, &s.chpx, fonts);
             apply_chain_para(&mut para, &s.papx);
         }
@@ -362,7 +399,15 @@ pub(crate) fn stylesheet(raw: &[crate::stsh::RawStyle], fonts: &[String]) -> Sty
                 para.outline_level = Some(h - 1);
             }
         }
-        sheet.styles.push(Style { id, name: display_name(&st.name), kind, based_on: base, chr, para, ..Default::default() });
+        sheet.styles.push(Style {
+            id,
+            name: display_name(&st.name),
+            kind,
+            based_on: base,
+            chr,
+            para,
+            ..Default::default()
+        });
     }
     sheet
 }
@@ -402,7 +447,8 @@ pub(crate) fn style_id(name: &str) -> String {
         "normal" => "Normal".into(),
         "title" => "Title".into(),
         "subtitle" => "Subtitle".into(),
-        "quote" | "body text" | "body text 2" | "body text 3" | "body text indent" | "body text indent 2" | "body text indent 3" => {
+        "quote" | "body text" | "body text 2" | "body text 3" | "body text indent"
+        | "body text indent 2" | "body text indent 3" => {
             let mut c = lower.chars();
             match c.next() {
                 Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
@@ -432,7 +478,11 @@ pub(crate) fn style_id(name: &str) -> String {
 /// "heading 3" → 3; 0 when not a heading.
 fn heading_level(name: &str) -> u8 {
     let lower = name.trim().to_ascii_lowercase();
-    lower.strip_prefix("heading ").and_then(|d| d.parse().ok()).filter(|&l: &u8| (1..=9).contains(&l)).unwrap_or(0)
+    lower
+        .strip_prefix("heading ")
+        .and_then(|d| d.parse().ok())
+        .filter(|&l: &u8| (1..=9).contains(&l))
+        .unwrap_or(0)
 }
 
 fn display_name(name: &str) -> String {

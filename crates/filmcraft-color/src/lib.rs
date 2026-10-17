@@ -5,7 +5,17 @@
 //! The compositor works in **linear-light, premultiplied RGBA f32** in the sequence working space
 //! (Rec.709 primaries by default). Decoded frames carry [`ColorInfo`] so conversions are explicit.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
@@ -20,7 +30,10 @@ pub use grade::GradeSpace;
 pub use log::LogCurve;
 pub use lut::{Lut, Lut1d, Lut3d, LutFormat};
 pub use spaces::{ColorPipeline, ColorSpace, Curve, Gamut, WorkingSpace};
-pub use transform::{DecodeTable, GpuCurve, GpuInputParams, InputTransform, OutputTransform, REFERENCE_WHITE_NITS, ToneMap};
+pub use transform::{
+    DecodeTable, GpuCurve, GpuInputParams, InputTransform, OutputTransform, REFERENCE_WHITE_NITS,
+    ToneMap,
+};
 
 /// YUV ↔ RGB matrix coefficients.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -133,8 +146,18 @@ impl HdrMetadata {
 }
 
 impl ColorInfo {
-    pub const SRGB_FULL: ColorInfo = ColorInfo { matrix: Matrix::Bt709, transfer: Transfer::Srgb, primaries: Primaries::Bt709, range: Range::Full };
-    pub const REC709: ColorInfo = ColorInfo { matrix: Matrix::Bt709, transfer: Transfer::Bt709, primaries: Primaries::Bt709, range: Range::Limited };
+    pub const SRGB_FULL: ColorInfo = ColorInfo {
+        matrix: Matrix::Bt709,
+        transfer: Transfer::Srgb,
+        primaries: Primaries::Bt709,
+        range: Range::Full,
+    };
+    pub const REC709: ColorInfo = ColorInfo {
+        matrix: Matrix::Bt709,
+        transfer: Transfer::Bt709,
+        primaries: Primaries::Bt709,
+        range: Range::Limited,
+    };
 }
 
 /// Convert normalised Y'CbCr (Y in 0..1, Cb/Cr in -0.5..0.5) to non-linear R'G'B'.
@@ -154,7 +177,11 @@ pub fn rgb_to_ycbcr(r: f32, g: f32, b: f32, m: Matrix) -> [f32; 3] {
     let (kr, kb) = m.kr_kb();
     let kg = 1.0 - kr - kb;
     let y = kr * r + kg * g + kb * b;
-    [y, (b - y) / (2.0 * (1.0 - kb)), (r - y) / (2.0 * (1.0 - kr))]
+    [
+        y,
+        (b - y) / (2.0 * (1.0 - kb)),
+        (r - y) / (2.0 * (1.0 - kr)),
+    ]
 }
 
 /// Normalise an integer code value to (Y 0..1, C -0.5..0.5) given bit depth and range.
@@ -178,11 +205,19 @@ pub fn normalize_c(v: u32, bits: u32, range: Range) -> f32 {
 /// sRGB electro-optical transfer (encoded → linear).
 #[inline]
 pub fn srgb_to_linear(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 #[inline]
 pub fn linear_to_srgb(v: f32) -> f32 {
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// Encoded → linear for a transfer function (display-referred; PQ normalised to 100 nits = 1.0).
@@ -222,11 +257,19 @@ pub fn pq_inverse_eotf(y: f32) -> f32 {
 }
 pub fn hlg_oetf(l: f32) -> f32 {
     let (a, b, c) = (0.178_832_77_f32, 0.284_668_92_f32, 0.559_910_7_f32);
-    if l <= 1.0 / 12.0 { (3.0 * l.max(0.0)).sqrt() } else { a * (12.0 * l - b).ln() + c }
+    if l <= 1.0 / 12.0 {
+        (3.0 * l.max(0.0)).sqrt()
+    } else {
+        a * (12.0 * l - b).ln() + c
+    }
 }
 pub fn hlg_inverse_oetf(e: f32) -> f32 {
     let (a, b, c) = (0.178_832_77_f32, 0.284_668_92_f32, 0.559_910_7_f32);
-    if e <= 0.5 { e * e / 3.0 } else { (((e - c) / a).exp() + b) / 12.0 }
+    if e <= 0.5 {
+        e * e / 3.0
+    } else {
+        (((e - c) / a).exp() + b) / 12.0
+    }
 }
 
 /// 256-entry table: sRGB-encoded u8 → linear f32.
@@ -238,7 +281,11 @@ pub fn srgb_u8_to_linear_table() -> &'static [f32; 256] {
 /// 4096-entry table: linear (0..1, quantised to 12 bits) → sRGB-encoded u8.
 pub fn linear_to_srgb_u8_table() -> &'static [u8; 4096] {
     static T: OnceLock<[u8; 4096]> = OnceLock::new();
-    T.get_or_init(|| std::array::from_fn(|i| (linear_to_srgb(i as f32 / 4095.0) * 255.0 + 0.5).clamp(0.0, 255.0) as u8))
+    T.get_or_init(|| {
+        std::array::from_fn(|i| {
+            (linear_to_srgb(i as f32 / 4095.0) * 255.0 + 0.5).clamp(0.0, 255.0) as u8
+        })
+    })
 }
 
 #[inline]
@@ -262,7 +309,11 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> [f32; 3] {
         return [0.0, 0.0, l];
     }
     let d = max - min;
-    let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
     let h = if max == r {
         (g - b) / d + if g < b { 6.0 } else { 0.0 }
     } else if max == g {
@@ -277,7 +328,11 @@ pub fn hsl_to_rgb(h: f32, s: f32, l: f32) -> [f32; 3] {
     if s <= 0.0 {
         return [l, l, l];
     }
-    let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
     let p = 2.0 * l - q;
     let f = |mut t: f32| {
         t = t.rem_euclid(1.0);
@@ -297,7 +352,11 @@ pub fn hsl_to_rgb(h: f32, s: f32, l: f32) -> [f32; 3] {
 /// Parse `#rrggbb` / `#rrggbbaa` into 0..1 floats.
 pub fn parse_hex(s: &str) -> Option<[f32; 4]> {
     let s = s.trim().trim_start_matches('#');
-    let b = |i: usize| u8::from_str_radix(s.get(i..i + 2)?, 16).ok().map(|v| v as f32 / 255.0);
+    let b = |i: usize| {
+        u8::from_str_radix(s.get(i..i + 2)?, 16)
+            .ok()
+            .map(|v| v as f32 / 255.0)
+    };
     match s.len() {
         6 => Some([b(0)?, b(2)?, b(4)?, 1.0]),
         8 => Some([b(0)?, b(2)?, b(4)?, b(6)?]),
@@ -310,7 +369,13 @@ pub fn to_hex(c: [f32; 4]) -> String {
     if c[3] >= 0.999 {
         format!("#{:02x}{:02x}{:02x}", q(c[0]), q(c[1]), q(c[2]))
     } else {
-        format!("#{:02x}{:02x}{:02x}{:02x}", q(c[0]), q(c[1]), q(c[2]), q(c[3]))
+        format!(
+            "#{:02x}{:02x}{:02x}{:02x}",
+            q(c[0]),
+            q(c[1]),
+            q(c[2]),
+            q(c[3])
+        )
     }
 }
 
@@ -340,7 +405,12 @@ mod tests {
 
     #[test]
     fn transfer_roundtrips() {
-        for t in [Transfer::Srgb, Transfer::Pq, Transfer::Hlg, Transfer::Linear] {
+        for t in [
+            Transfer::Srgb,
+            Transfer::Pq,
+            Transfer::Hlg,
+            Transfer::Linear,
+        ] {
             for v in [0.0, 0.1, 0.5, 0.9] {
                 let l = to_linear(v, t);
                 assert!((from_linear(l, t) - v).abs() < 1e-3, "{t:?} {v}");

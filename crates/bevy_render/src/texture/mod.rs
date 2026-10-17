@@ -13,9 +13,9 @@ pub use texture_attachment::*;
 pub use texture_cache::*;
 
 use crate::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     extract_resource::ExtractResourcePlugin, init_gpu_resource, render_asset::RenderAssetPlugin,
-    render_resource::DefaultImageSamplerDescriptor, GpuResourceAppExt, Render, RenderApp,
-    RenderStartup, RenderSystems,
+    render_resource::DefaultImageSamplerDescriptor,
 };
 use bevy_app::{App, Plugin};
 use bevy_asset::AssetApp;
@@ -51,8 +51,10 @@ impl Plugin for TexturePlugin {
             {
                 resource.0
             } else {
-                warn!("CompressedImageFormatSupport resource not found. It should either be initialized in finish() of \
-                       RenderPlugin, or manually if not using the RenderPlugin or the WGPU backend.");
+                warn!(
+                    "CompressedImageFormatSupport resource not found. It should either be initialized in finish() of \
+                       RenderPlugin, or manually if not using the RenderPlugin or the WGPU backend."
+                );
                 CompressedImageFormats::NONE
             };
 

@@ -34,7 +34,11 @@ pub enum FindLocalDataError {
     #[snafu(display(
         "Local function call from {from:#010x} in {module_kind} to {to:#010x} leads to no function"
     ))]
-    LocalFunctionNotFound { from: u32, to: u32, module_kind: ModuleKind },
+    LocalFunctionNotFound {
+        from: u32,
+        to: u32,
+        module_kind: ModuleKind,
+    },
     #[snafu(transparent)]
     SymbolMap { source: SymbolMapError },
     #[snafu(transparent)]
@@ -90,7 +94,7 @@ pub fn find_local_data_from_pools(
                     } else {
                         None
                     }
-                },
+                }
                 SymbolKind::Undefined
                 | SymbolKind::PoolConstant
                 | SymbolKind::JumpTable(_)
@@ -156,7 +160,10 @@ pub fn find_local_data_from_section(
         ..
     } = options;
 
-    let address_range = options.address_range.clone().unwrap_or(section.address_range());
+    let address_range = options
+        .address_range
+        .clone()
+        .unwrap_or(section.address_range());
 
     for word in section.iter_words(code, Some(address_range.clone())) {
         let pointer = word.value;
@@ -202,7 +209,13 @@ fn add_symbol_from_pointer(
     options: FindLocalDataOptions,
     analysis_options: &AnalysisOptions,
 ) -> Result<(), FindLocalDataError> {
-    let FindLocalDataOptions { module_kind, symbol_map, relocations, name_prefix, .. } = options;
+    let FindLocalDataOptions {
+        module_kind,
+        symbol_map,
+        relocations,
+        name_prefix,
+        ..
+    } = options;
 
     if relocations.get(address).is_some() {
         // This relocation was already found in a previous analysis phase, e.g. dsprot relocations
@@ -225,15 +238,15 @@ fn add_symbol_from_pointer(
             } else {
                 return Ok(());
             }
-        },
+        }
         SectionKind::Data | SectionKind::Rodata => {
             symbol_map.add_data(Some(name), pointer, SymData::Any)?;
             relocations.add_load(address, pointer, 0, module_kind.into())?
-        },
+        }
         SectionKind::Bss => {
             symbol_map.add_bss(Some(name), pointer, SymBss { size: None })?;
             relocations.add_load(address, pointer, 0, module_kind.into())?
-        },
+        }
     };
     if analysis_options.provide_reloc_source {
         reloc.comments.post_comment = Some(function!().to_string());
@@ -273,14 +286,18 @@ fn insert_unknown_function_symbols(
 ) -> Result<(), FindLocalDataError> {
     for (&address, called_function) in iter_function_calls(function) {
         let local_module = module;
-        let is_local =
-            local_module.sections().get_by_contained_address(called_function.address).is_some();
+        let is_local = local_module
+            .sections()
+            .get_by_contained_address(called_function.address)
+            .is_some();
         if !is_local {
             continue;
         }
 
         let module_kind = local_module.kind();
-        if symbol_map.get_function_containing(called_function.address).is_none()
+        if symbol_map
+            .get_function_containing(called_function.address)
+            .is_none()
             && symbol_map.get_label(called_function.address)?.is_none()
         {
             log::warn!(
@@ -294,8 +311,10 @@ fn insert_unknown_function_symbols(
             let function_address = called_function.address | thumb_bit;
 
             if symbol_map.get_function(function_address)?.is_none() {
-                let name =
-                    format!("{}{:08x}_unk", local_module.default_func_prefix, function_address);
+                let name = format!(
+                    "{}{:08x}_unk",
+                    local_module.default_func_prefix, function_address
+                );
                 symbol_map.add_unknown_function(name, function_address, called_function.thumb);
             }
         }
@@ -309,8 +328,10 @@ fn add_external_labels(
     symbol_map: &mut SymbolMap,
 ) -> Result<(), FindLocalDataError> {
     for (&address, called_function) in iter_function_calls(function) {
-        let is_local =
-            module.sections().get_by_contained_address(called_function.address).is_some();
+        let is_local = module
+            .sections()
+            .get_by_contained_address(called_function.address)
+            .is_some();
         if !is_local {
             continue;
         }

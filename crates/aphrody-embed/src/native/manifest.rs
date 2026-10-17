@@ -148,14 +148,17 @@ pub fn model_dir_name(id: &str) -> String {
 
 /// Root directory holding all models: `$APHRODY_MODELS_DIR`, else Aphrody's shared models directory.
 pub fn models_root() -> PathBuf {
-    let explicit =
-        std::env::var_os("APHRODY_MODELS_DIR").filter(|v| !v.is_empty()).map(PathBuf::from);
+    let explicit = std::env::var_os("APHRODY_MODELS_DIR")
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from);
     let shared = aphrody_models::paths::models_dir().ok();
     resolve_models_root(explicit, shared)
 }
 
 fn resolve_models_root(explicit: Option<PathBuf>, shared: Option<PathBuf>) -> PathBuf {
-    explicit.or(shared).unwrap_or_else(|| PathBuf::from(".aphrody").join("models"))
+    explicit
+        .or(shared)
+        .unwrap_or_else(|| PathBuf::from(".aphrody").join("models"))
 }
 
 /// Look up a model by id (exact match, or match on the part after the slash).
@@ -165,7 +168,11 @@ pub fn find_model(id: &str) -> Option<ModelSpec> {
     manifest
         .iter()
         .find(|m| m.id == wanted || m.dir_name() == wanted)
-        .or_else(|| manifest.iter().find(|m| m.id.rsplit('/').next() == Some(wanted)))
+        .or_else(|| {
+            manifest
+                .iter()
+                .find(|m| m.id.rsplit('/').next() == Some(wanted))
+        })
         .cloned()
 }
 
@@ -423,9 +430,15 @@ mod tests {
     fn model_root_prefers_override_then_shared_state() {
         let explicit = PathBuf::from("/custom/models");
         let shared = PathBuf::from("/state/models");
-        assert_eq!(resolve_models_root(Some(explicit.clone()), Some(shared.clone())), explicit);
+        assert_eq!(
+            resolve_models_root(Some(explicit.clone()), Some(shared.clone())),
+            explicit
+        );
         assert_eq!(resolve_models_root(None, Some(shared.clone())), shared);
-        assert_eq!(resolve_models_root(None, None), PathBuf::from(".aphrody/models"));
+        assert_eq!(
+            resolve_models_root(None, None),
+            PathBuf::from(".aphrody/models")
+        );
     }
 
     #[test]
@@ -453,15 +466,24 @@ mod tests {
         for spec in reranker_manifest() {
             assert_eq!(spec.revision.len(), 40);
             assert_eq!(spec.files.len(), 3);
-            assert!(spec.files.iter().all(|f| f.sha256.len() == 64 && f.size > 0));
+            assert!(
+                spec.files
+                    .iter()
+                    .all(|f| f.sha256.len() == 64 && f.size > 0)
+            );
             assert!(spec.versioned_id().ends_with(&spec.revision));
         }
         assert_eq!(default_reranker().activation, ScoreActivation::Identity);
         assert_eq!(
-            find_reranker("cross-encoder/ms-marco-MiniLM-L-6-v2").unwrap().id,
+            find_reranker("cross-encoder/ms-marco-MiniLM-L-6-v2")
+                .unwrap()
+                .id,
             DEFAULT_RERANKER_ID
         );
-        assert_eq!(find_reranker("ms-marco-MiniLM-L-6-v2").unwrap().id, DEFAULT_RERANKER_ID);
+        assert_eq!(
+            find_reranker("ms-marco-MiniLM-L-6-v2").unwrap().id,
+            DEFAULT_RERANKER_ID
+        );
         assert_eq!(
             find_reranker("bge-reranker-base").unwrap().activation,
             ScoreActivation::Sigmoid
@@ -472,10 +494,21 @@ mod tests {
     #[test]
     fn lookup_by_id_short_name_and_dir_name() {
         assert_eq!(find_model(DEFAULT_MODEL_ID).unwrap().dim, 384);
-        assert_eq!(find_model("bge-small-en-v1.5").unwrap().id, "BAAI/bge-small-en-v1.5");
-        assert_eq!(find_model("intfloat--multilingual-e5-small").unwrap().query_prefix, "query: ");
+        assert_eq!(
+            find_model("bge-small-en-v1.5").unwrap().id,
+            "BAAI/bge-small-en-v1.5"
+        );
+        assert_eq!(
+            find_model("intfloat--multilingual-e5-small")
+                .unwrap()
+                .query_prefix,
+            "query: "
+        );
         assert!(find_model("nope").is_none());
-        assert_eq!(default_model().dir_name(), "sentence-transformers--all-MiniLM-L6-v2");
+        assert_eq!(
+            default_model().dir_name(),
+            "sentence-transformers--all-MiniLM-L6-v2"
+        );
         assert_eq!(
             default_model().versioned_id(),
             "sentence-transformers/all-MiniLM-L6-v2@1110a243fdf4706b3f48f1d95db1a4f5529b4d41"

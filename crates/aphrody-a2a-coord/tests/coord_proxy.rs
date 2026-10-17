@@ -33,7 +33,11 @@ async fn collect_ok(
 
 /// Append `bytes` to `path` and flush.
 async fn append(path: &std::path::Path, bytes: &[u8]) {
-    let mut f = tokio::fs::OpenOptions::new().append(true).open(path).await.expect("open append");
+    let mut f = tokio::fs::OpenOptions::new()
+        .append(true)
+        .open(path)
+        .await
+        .expect("open append");
     f.write_all(bytes).await.expect("append");
     f.flush().await.expect("flush");
 }
@@ -41,7 +45,10 @@ async fn append(path: &std::path::Path, bytes: &[u8]) {
 #[test]
 fn coord_proxy_defaults() {
     let proxy = CoordProxy::new("inbox-from-aphrody.jsonl".into());
-    assert_eq!(proxy.jsonl_path(), std::path::Path::new("inbox-from-aphrody.jsonl"));
+    assert_eq!(
+        proxy.jsonl_path(),
+        std::path::Path::new("inbox-from-aphrody.jsonl")
+    );
     assert_eq!(proxy.tail_interval(), DEFAULT_TAIL_INTERVAL);
     let proxy = proxy.with_tail_interval(Duration::from_millis(5));
     assert_eq!(proxy.tail_interval(), Duration::from_millis(5));
@@ -58,7 +65,10 @@ async fn coord_proxy_serves_jsonl_snapshot() {
     let proxy = CoordProxy::new(path);
 
     // handle_get_coord with no Accept header → NDJSON snapshot.
-    let resp = proxy.handle_get_coord(None).await.expect("handle_get_coord");
+    let resp = proxy
+        .handle_get_coord(None)
+        .await
+        .expect("handle_get_coord");
     assert_eq!(resp.status, 200);
     assert_eq!(resp.content_type, NDJSON_CONTENT_TYPE);
 
@@ -75,7 +85,10 @@ async fn coord_proxy_missing_file_returns_empty() {
     let proxy = CoordProxy::new(path);
 
     // Snapshot path.
-    let resp = proxy.handle_get_coord(None).await.expect("missing file must NOT error");
+    let resp = proxy
+        .handle_get_coord(None)
+        .await
+        .expect("missing file must NOT error");
     assert_eq!(resp.status, 200);
     let chunks = collect_ok(resp.body).await;
     assert!(chunks.is_empty(), "expected empty body, got {chunks:?}");
@@ -95,11 +108,15 @@ async fn coord_proxy_missing_file_returns_empty() {
 async fn coord_proxy_sse_format() {
     let dir = tempdir().expect("tempdir");
     let path = dir.path().join("inbox-from-aphrody.jsonl");
-    tokio::fs::write(&path, "{\"a\":1}\n{\"b\":2}\n").await.expect("write fixture");
+    tokio::fs::write(&path, "{\"a\":1}\n{\"b\":2}\n")
+        .await
+        .expect("write fixture");
 
     let proxy = CoordProxy::new(path);
-    let resp =
-        proxy.handle_get_coord(Some("text/event-stream")).await.expect("handle_get_coord SSE");
+    let resp = proxy
+        .handle_get_coord(Some("text/event-stream"))
+        .await
+        .expect("handle_get_coord SSE");
     assert_eq!(resp.status, 200);
     assert_eq!(resp.content_type, SSE_CONTENT_TYPE);
 
@@ -108,12 +125,21 @@ async fn coord_proxy_sse_format() {
 
     // Each chunk must be one well-formed SSE event.
     for chunk in &chunks {
-        assert!(chunk.ends_with("\n\n"), "SSE chunk missing terminator: {chunk:?}");
-        assert!(chunk.starts_with("data: "), "SSE chunk missing `data: ` prefix: {chunk:?}");
+        assert!(
+            chunk.ends_with("\n\n"),
+            "SSE chunk missing terminator: {chunk:?}"
+        );
+        assert!(
+            chunk.starts_with("data: "),
+            "SSE chunk missing `data: ` prefix: {chunk:?}"
+        );
     }
 
     // Sanity-check the kind classifier independently.
-    assert_eq!(CoordResponseKind::from_accept(Some("text/event-stream")), CoordResponseKind::Sse);
+    assert_eq!(
+        CoordResponseKind::from_accept(Some("text/event-stream")),
+        CoordResponseKind::Sse
+    );
 }
 
 #[tokio::test]
@@ -123,7 +149,9 @@ async fn coord_proxy_tail_stream_emits_new_lines() {
 
     // Pre-seed the file with one line that must NOT be replayed by tail
     // (tail starts at the current EOF, mirroring `tail -f`).
-    tokio::fs::write(&path, "{\"old\":true}\n").await.expect("seed file");
+    tokio::fs::write(&path, "{\"old\":true}\n")
+        .await
+        .expect("seed file");
 
     let proxy = CoordProxy::new(path.clone()).with_tail_interval(Duration::from_millis(25));
     let mut tail = proxy.tail_stream().await;
@@ -134,7 +162,10 @@ async fn coord_proxy_tail_stream_emits_new_lines() {
         .expect("tail stream should emit within 2s")
         .expect("tail stream should not end")
         .expect("tail item should be Ok");
-    assert_eq!(line, "{\"new\":1}\n", "tail must emit only the freshly appended line");
+    assert_eq!(
+        line, "{\"new\":1}\n",
+        "tail must emit only the freshly appended line"
+    );
 
     // A line written in two pieces is emitted once, whole.
     append(&path, b"{\"new\":").await;

@@ -3,7 +3,7 @@
 pub struct OperationId(pub String);
 
 impl OperationId {
-  pub fn as_str(&self) -> &str {
-    &self.0
-  }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }

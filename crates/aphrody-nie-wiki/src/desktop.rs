@@ -17,11 +17,11 @@ pub fn execute(conn: &Connection, operation: &str, args: &Value) -> anyhow::Resu
         "search_character" => {
             let q = required_string(args, "query")?;
             Ok(serde_json::to_value(query::search_characters(conn, q)?)?)
-        },
+        }
         "search_skill" => {
             let q = required_string(args, "query")?;
             Ok(serde_json::to_value(query::search_skills(conn, q)?)?)
-        },
+        }
         "load_name_index" => index_names(conn),
         "load_roster" => contract_rows(
             conn,
@@ -61,7 +61,11 @@ fn readonly_rows(conn: &Connection, sql: &str) -> anyhow::Result<Value> {
 /// The unrestricted read-only SQL inspector deliberately retains raw storage types.
 fn contract_rows(conn: &Connection, sql: &str, numbers: &[&str]) -> anyhow::Result<Value> {
     let mut statement = conn.prepare(sql)?;
-    let columns = statement.column_names().into_iter().map(str::to_owned).collect::<Vec<_>>();
+    let columns = statement
+        .column_names()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
     let rows = statement
         .query_map([], |row| {
             let mut record = crate::entities::ligne_en_json(row, &columns)?;
@@ -153,14 +157,34 @@ fn resolve_many(conn: &Connection, args: &Value) -> anyhow::Result<Value> {
     if codes.is_empty() {
         return Ok(Value::Array(Vec::new()));
     }
-    let placeholders = std::iter::repeat_n("?", codes.len()).collect::<Vec<_>>().join(",");
-    let params = codes.iter().map(|code| code as &dyn ToSql).collect::<Vec<_>>();
+    let placeholders = std::iter::repeat_n("?", codes.len())
+        .collect::<Vec<_>>()
+        .join(",");
+    let params = codes
+        .iter()
+        .map(|code| code as &dyn ToSql)
+        .collect::<Vec<_>>();
     let mut rows = Vec::new();
 
     for (table, kind, key, projection) in [
-        ("inagle_characters", "chara", "internal_code", "element, position, NULL AS category"),
-        ("inagle_skills", "skill", "internal_code", "element, NULL AS position, category"),
-        ("inagle_items", "item", "internal_code", "NULL AS element, NULL AS position, category"),
+        (
+            "inagle_characters",
+            "chara",
+            "internal_code",
+            "element, position, NULL AS category",
+        ),
+        (
+            "inagle_skills",
+            "skill",
+            "internal_code",
+            "element, NULL AS position, category",
+        ),
+        (
+            "inagle_items",
+            "item",
+            "internal_code",
+            "NULL AS element, NULL AS position, category",
+        ),
         (
             "inagle_teams",
             "team",
@@ -216,7 +240,11 @@ fn mirror_stats(conn: &Connection) -> anyhow::Result<Value> {
         if !present.contains(table) {
             return Ok(None);
         }
-        Ok(Some(conn.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row.get(0))?))
+        Ok(Some(conn.query_row(
+            &format!("SELECT count(*) FROM {table}"),
+            [],
+            |row| row.get(0),
+        )?))
     };
     Ok(json!({
         "tables": present.len(),
@@ -236,16 +264,23 @@ mod tests {
     fn typed_contracts_normalize_numbers_without_touching_raw_inspection() {
         let connection = Connection::open_in_memory().unwrap();
         connection.execute_batch("CREATE TABLE sample(id,stat,marker,marker2,name); INSERT INTO sample VALUES('2',' 238 ','\\N','\\\\N','Native'); INSERT INTO sample VALUES(3,'invalid',NULL,'','Other');").unwrap();
-        let rows = contract_rows(&connection, "SELECT * FROM sample ORDER BY id", &["id", "stat"])
-            .unwrap();
+        let rows = contract_rows(
+            &connection,
+            "SELECT * FROM sample ORDER BY id",
+            &["id", "stat"],
+        )
+        .unwrap();
         let values = rows.as_array().unwrap();
         let row = values.iter().find(|row| row["id"] == 2).unwrap();
         assert_eq!(row["stat"], 238);
         assert!(row["marker"].is_null() && row["marker2"].is_null());
         assert_eq!(row["name"], "Native");
         assert!(values.iter().find(|row| row["id"] == 3).unwrap()["stat"].is_null());
-        let raw =
-            readonly_rows(&connection, "SELECT id,stat FROM sample WHERE name='Native'").unwrap();
+        let raw = readonly_rows(
+            &connection,
+            "SELECT id,stat FROM sample WHERE name='Native'",
+        )
+        .unwrap();
         assert_eq!(raw[0]["id"], "2");
         assert_eq!(raw[0]["stat"], " 238 ");
     }

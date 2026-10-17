@@ -23,11 +23,20 @@ fn thread_cpu_secs() -> Option<f64> {
 }
 
 fn load_average() -> String {
-    let out = std::process::Command::new("sysctl").args(["-n", "vm.loadavg"]).output().ok();
+    let out = std::process::Command::new("sysctl")
+        .args(["-n", "vm.loadavg"])
+        .output()
+        .ok();
     if let Some(o) = out.filter(|o| o.status.success()) {
-        return String::from_utf8_lossy(&o.stdout).trim().trim_matches(|c| c == '{' || c == '}').trim().to_string();
+        return String::from_utf8_lossy(&o.stdout)
+            .trim()
+            .trim_matches(|c| c == '{' || c == '}')
+            .trim()
+            .to_string();
     }
-    std::fs::read_to_string("/proc/loadavg").map(|s| s.split_whitespace().take(3).collect::<Vec<_>>().join(" ")).unwrap_or_else(|_| "?".into())
+    std::fs::read_to_string("/proc/loadavg")
+        .map(|s| s.split_whitespace().take(3).collect::<Vec<_>>().join(" "))
+        .unwrap_or_else(|_| "?".into())
 }
 
 struct Run {
@@ -47,7 +56,12 @@ fn run(frames: &[Vec<u8>], threads: usize) -> Run {
     }
     shown += dec.flush().len();
     let cpu = c0.and_then(|c0| thread_cpu_secs().map(|c1| c1 - c0));
-    Run { wall: t.elapsed().as_secs_f64(), cpu, shown, stats: dec.stats() }
+    Run {
+        wall: t.elapsed().as_secs_f64(),
+        cpu,
+        shown,
+        stats: dec.stats(),
+    }
 }
 
 fn bench(spec: &Spec) {
@@ -68,7 +82,10 @@ fn bench(spec: &Spec) {
         }
     }
     let b = best.unwrap();
-    let cpu_fps = b.cpu.map(|c| format!("{:6.1}", b.shown as f64 / c)).unwrap_or_else(|| "     ?".into());
+    let cpu_fps = b
+        .cpu
+        .map(|c| format!("{:6.1}", b.shown as f64 / c))
+        .unwrap_or_else(|| "     ?".into());
     println!(
         "{:<26} {:>3} shown {:>3} decoded {:>3} tiles/frame | 1 thread: {} fps (thread CPU) {:6.1} fps (wall)",
         spec.name,
@@ -80,7 +97,9 @@ fn bench(spec: &Spec) {
     );
     println!("{}", stage_line("    ms/frame:", &b.stats));
     // All cores: best of 3 by wall time.
-    let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     let mut best: Option<Run> = None;
     for _ in 0..3 {
         let r = run(&frames, threads);
@@ -90,9 +109,16 @@ fn bench(spec: &Spec) {
         }
     }
     let m = best.unwrap();
-    println!("    {threads} threads: {:6.1} fps (wall, load average {})", b.shown as f64 / m.wall, load_average());
+    println!(
+        "    {threads} threads: {:6.1} fps (wall, load average {})",
+        b.shown as f64 / m.wall,
+        load_average()
+    );
     // Per-stage wall time on the frame workers (stages of different frames overlap).
-    println!("{}", stage_line(&format!("    {threads} threads, ms/frame:"), &m.stats));
+    println!(
+        "{}",
+        stage_line(&format!("    {threads} threads, ms/frame:"), &m.stats)
+    );
 }
 
 /// Per-stage milliseconds per frame and share of the total.
@@ -103,7 +129,12 @@ fn stage_line(label: &str, stats: &DecodeStats) -> String {
     for s in Stage::ALL {
         let v = stats.secs(s);
         if v > 0.0005 {
-            line += &format!(" {} {:.2} ({:.0}%)", s.name(), 1e3 * v / n, 100.0 * v / total);
+            line += &format!(
+                " {} {:.2} ({:.0}%)",
+                s.name(),
+                1e3 * v / n,
+                100.0 * v / total
+            );
         }
     }
     line
@@ -112,17 +143,61 @@ fn stage_line(label: &str, stats: &DecodeStats) -> String {
 #[test]
 #[ignore]
 fn decode_throughput() {
-    let p = |crf: &'static str, params: &'static str| -> Vec<&'static str> { vec!["-preset", "8", "-crf", crf, "-svtav1-params", params] };
+    let p = |crf: &'static str, params: &'static str| -> Vec<&'static str> {
+        vec!["-preset", "8", "-crf", crf, "-svtav1-params", params]
+    };
     let src = "testsrc2=s=1920x1080:r=25,noise=alls=6:allf=t";
-    bench(&Spec::new("perf_1080p_intra", src, 10, "yuv420p", &p("30", "keyint=1")));
-    bench(&Spec::new("perf_1080p_gop", src, 60, "yuv420p", &p("30", "keyint=60")));
-    bench(&Spec::new("perf_1080p_gop_10bit", src, 60, "yuv420p10le", &p("30", "keyint=60")));
+    bench(&Spec::new(
+        "perf_1080p_intra",
+        src,
+        10,
+        "yuv420p",
+        &p("30", "keyint=1"),
+    ));
+    bench(&Spec::new(
+        "perf_1080p_gop",
+        src,
+        60,
+        "yuv420p",
+        &p("30", "keyint=60"),
+    ));
+    bench(&Spec::new(
+        "perf_1080p_gop_10bit",
+        src,
+        60,
+        "yuv420p10le",
+        &p("30", "keyint=60"),
+    ));
     // Higher quality (more coefficients, finer partitions) and a multi-tile stream (4x2 tiles).
-    bench(&Spec::new("perf_1080p_gop_hq", src, 60, "yuv420p", &p("18", "keyint=60")));
-    bench(&Spec::new("perf_1080p_gop_tiles", src, 60, "yuv420p", &p("30", "keyint=60:tile-columns=2:tile-rows=1")));
+    bench(&Spec::new(
+        "perf_1080p_gop_hq",
+        src,
+        60,
+        "yuv420p",
+        &p("18", "keyint=60"),
+    ));
+    bench(&Spec::new(
+        "perf_1080p_gop_tiles",
+        src,
+        60,
+        "yuv420p",
+        &p("30", "keyint=60:tile-columns=2:tile-rows=1"),
+    ));
     // Low delay (each frame references the previous one, as screen and camera recorders encode):
     // frames cannot overlap, so a frame's own parallelism decides the speed.
-    bench(&Spec::new("perf_1080p_lowdelay", src, 60, "yuv420p", &p("30", "keyint=60:pred-struct=1")));
+    bench(&Spec::new(
+        "perf_1080p_lowdelay",
+        src,
+        60,
+        "yuv420p",
+        &p("30", "keyint=60:pred-struct=1"),
+    ));
     // One tile at 2160p: the post-filters' row bands are most of the parallelism there.
-    bench(&Spec::new("perf_2160p_gop", "testsrc2=s=3840x2160:r=25,noise=alls=6:allf=t", 30, "yuv420p", &p("30", "keyint=30")));
+    bench(&Spec::new(
+        "perf_2160p_gop",
+        "testsrc2=s=3840x2160:r=25,noise=alls=6:allf=t",
+        30,
+        "yuv420p",
+        &p("30", "keyint=30"),
+    ));
 }

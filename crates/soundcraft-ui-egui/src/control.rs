@@ -25,7 +25,14 @@ pub struct ControlRequest {
 impl ControlRequest {
     pub fn new(method: impl Into<String>, params: Value) -> (Self, Receiver<Value>) {
         let (tx, rx) = channel();
-        (ControlRequest { method: method.into(), params, reply: tx }, rx)
+        (
+            ControlRequest {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -47,7 +54,9 @@ fn err(e: impl std::fmt::Display) -> Value {
 }
 
 pub fn drain(app: &mut SoundApp, ctx: &egui::Context) {
-    let Some(rx) = app.control_rx.take() else { return };
+    let Some(rx) = app.control_rx.take() else {
+        return;
+    };
     let mut n = 0;
     while let Ok(req) = rx.try_recv() {
         n += 1;
@@ -93,7 +102,11 @@ fn handle(app: &mut SoundApp, ctx: &egui::Context, req: &ControlRequest) -> Opti
     let p = &req.params;
     let f = |k: &str| p.get(k).and_then(Value::as_f64).unwrap_or(0.0) as f32;
     let pos = egui::pos2(f("x"), f("y"));
-    let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 200);
+    let steps = p
+        .get("steps")
+        .and_then(Value::as_u64)
+        .unwrap_or(8)
+        .clamp(1, 200);
     Some(match req.method.as_str() {
         "engine.execute" | "command" => {
             let id = p.get("command").or_else(|| p.get("id")).and_then(Value::as_str).unwrap_or("");
@@ -245,9 +258,13 @@ pub fn collect_screenshots(app: &mut SoundApp, ctx: &egui::Context) {
             .events
             .iter()
             .filter_map(|e| match e {
-                egui::Event::Screenshot { user_data, image, .. } => {
-                    user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).map(|t| (*t, image.clone()))
-                }
+                egui::Event::Screenshot {
+                    user_data, image, ..
+                } => user_data
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.downcast_ref::<u64>())
+                    .map(|t| (*t, image.clone())),
                 _ => None,
             })
             .collect()
@@ -260,11 +277,15 @@ pub fn collect_screenshots(app: &mut SoundApp, ctx: &egui::Context) {
         }
         s.frames += 1;
         if !s.sent && s.frames >= 3 {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(s.token)));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                s.token,
+            )));
             s.sent = true;
         }
         if s.frames > s.deadline_frames {
-            let _ = s.reply.send(err("no frame was presented (is the window visible?)"));
+            let _ = s
+                .reply
+                .send(err("no frame was presented (is the window visible?)"));
             continue;
         }
         keep.push(s);
@@ -279,10 +300,15 @@ pub fn png_bytes(img: &egui::ColorImage) -> Result<Vec<u8>, String> {
     for c in &img.pixels {
         raw.extend_from_slice(&c.to_array());
     }
-    let buf = image::RgbaImage::from_raw(u32::try_from(w).map_err(|e| e.to_string())?, u32::try_from(h).map_err(|e| e.to_string())?, raw)
-        .ok_or("bad image size")?;
+    let buf = image::RgbaImage::from_raw(
+        u32::try_from(w).map_err(|e| e.to_string())?,
+        u32::try_from(h).map_err(|e| e.to_string())?,
+        raw,
+    )
+    .ok_or("bad image size")?;
     let mut out = std::io::Cursor::new(Vec::new());
-    buf.write_to(&mut out, image::ImageFormat::Png).map_err(|e| e.to_string())?;
+    buf.write_to(&mut out, image::ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
     Ok(out.into_inner())
 }
 
@@ -296,7 +322,9 @@ fn encode(img: &egui::ColorImage, path: Option<&str>) -> Value {
             Ok(()) => ok(json!({"path": p, "width": img.size[0], "height": img.size[1]})),
             Err(e) => err(format!("{p}: {e}")),
         },
-        None => ok(json!({"png_base64": base64(&bytes), "width": img.size[0], "height": img.size[1]})),
+        None => {
+            ok(json!({"png_base64": base64(&bytes), "width": img.size[0], "height": img.size[1]}))
+        }
     }
 }
 
@@ -305,7 +333,11 @@ pub fn base64(data: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
-        let b = [chunk.first().copied().unwrap_or(0), chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk.first().copied().unwrap_or(0),
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
         for i in 0..4 {
             if i <= chunk.len() {

@@ -41,7 +41,9 @@ impl ImportSymbols {
         for section in object.sections() {
             let section_name = section.name()?;
             log::debug!("Section: {section_name}");
-            let Some(module_kind) = Self::parse_module_kind(section_name)? else { continue };
+            let Some(module_kind) = Self::parse_module_kind(section_name)? else {
+                continue;
+            };
             let symbol_map = symbol_maps.get_mut(module_kind);
             log::debug!("Module: {module_kind}");
             for symbol in object.symbols() {

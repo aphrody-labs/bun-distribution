@@ -63,8 +63,15 @@ pub const SCAN_ROOTS: &[&str] = &[
 ];
 
 /// Directory names never descended into, whatever the root.
-const SKIP_DIRS: &[&str] =
-    &["target", "node_modules", ".git", ".next", "incremental", "__pycache__", ".venv"];
+const SKIP_DIRS: &[&str] = &[
+    "target",
+    "node_modules",
+    ".git",
+    ".next",
+    "incremental",
+    "__pycache__",
+    ".venv",
+];
 
 /// Connection to the atlas database.
 pub struct Atlas {
@@ -277,7 +284,9 @@ impl Atlas {
     pub fn get_meta(&self, key: &str) -> Result<Option<String>> {
         Ok(self
             .conn
-            .query_row("SELECT value FROM atlas_meta WHERE key = ?1", [key], |r| r.get(0))
+            .query_row("SELECT value FROM atlas_meta WHERE key = ?1", [key], |r| {
+                r.get(0)
+            })
             .optional()?)
     }
 
@@ -313,14 +322,16 @@ impl Atlas {
                 }
                 stats.roots += 1;
                 let mut walker = ignore::WalkBuilder::new(&abs);
-                walker.standard_filters(false).hidden(false).follow_links(false).filter_entry(
-                    |entry| {
+                walker
+                    .standard_filters(false)
+                    .hidden(false)
+                    .follow_links(false)
+                    .filter_entry(|entry| {
                         entry
                             .file_name()
                             .to_str()
                             .is_none_or(|n| !SKIP_DIRS.contains(&n) && !n.ends_with(".sqlite-wal"))
-                    },
-                );
+                    });
                 for entry in walker.build().flatten() {
                     if !entry.file_type().is_some_and(|t| t.is_file()) {
                         continue;
@@ -337,13 +348,21 @@ impl Atlas {
                         .ok()
                         .and_then(|m| m.duration_since(UNIX_EPOCH).ok())
                         .map_or(0, |d| d.as_secs()) as i64;
-                    let ext =
-                        path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
+                    let ext = path
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(str::to_ascii_lowercase);
                     let kind = classify_kind(&rel, ext.as_deref());
                     let zone = classify_zone(&rel, kind);
-                    let sha = if bytes <= cfg.hash_limit { sha256_file(path).ok() } else { None };
+                    let sha = if bytes <= cfg.hash_limit {
+                        sha256_file(path).ok()
+                    } else {
+                        None
+                    };
                     let lines = if is_text(kind) && bytes <= cfg.text_limit {
-                        std::fs::read_to_string(path).ok().map(|s| s.lines().count() as i64)
+                        std::fs::read_to_string(path)
+                            .ok()
+                            .map(|s| s.lines().count() as i64)
                     } else {
                         None
                     };
@@ -401,9 +420,10 @@ impl Atlas {
             return self.write_crates(root, &manifests);
         };
         for entry in apps.flatten() {
-            for candidate in
-                [entry.path().join("Cargo.toml"), entry.path().join("src-tauri/Cargo.toml")]
-            {
+            for candidate in [
+                entry.path().join("Cargo.toml"),
+                entry.path().join("src-tauri/Cargo.toml"),
+            ] {
                 if candidate.is_file() {
                     manifests.push((candidate, "app".to_string()));
                 }
@@ -443,8 +463,11 @@ impl Atlas {
                 let parsed = parse_manifest(&raw);
                 let Some(name) = parsed.name else { continue };
                 let dir = manifest.parent().unwrap_or(root);
-                let rel_dir =
-                    dir.strip_prefix(root).unwrap_or(dir).to_string_lossy().replace('\\', "/");
+                let rel_dir = dir
+                    .strip_prefix(root)
+                    .unwrap_or(dir)
+                    .to_string_lossy()
+                    .replace('\\', "/");
                 let src = source_stats(&dir.join("src"));
                 let in_workspace = i64::from(tier != "archive");
 
@@ -561,15 +584,21 @@ impl Atlas {
                     mtime,
                 ])?;
                 let doc_id: i64 =
-                    tx.query_row("SELECT id FROM atlas_doc WHERE path = ?1", [rel], |r| r.get(0))?;
+                    tx.query_row("SELECT id FROM atlas_doc WHERE path = ?1", [rel], |r| {
+                        r.get(0)
+                    })?;
                 for (level, title, line) in &doc.sections {
                     sec_stmt.execute(params![doc_id, *level as i64, title, *line as i64])?;
                 }
                 for (line, kind, value) in &doc.refs {
                     ref_stmt.execute(params![doc_id, *line as i64, kind, value])?;
                 }
-                let headings =
-                    doc.sections.iter().map(|(_, t, _)| t.as_str()).collect::<Vec<_>>().join(" · ");
+                let headings = doc
+                    .sections
+                    .iter()
+                    .map(|(_, t, _)| t.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" · ");
                 text.execute(params![
                     rel,
                     format!("{} {headings}", doc.title.clone().unwrap_or_default()),
@@ -591,8 +620,12 @@ impl Atlas {
     /// `row_cap` so a single `COUNT(*)` cannot walk a multi-million-row table for minutes;
     /// a table hitting the cap is recorded as `table-capped`.
     pub fn import_kb(&mut self, kb_path: &Path, row_cap: i64) -> Result<KbDigest> {
-        let uri = format!("file:{}?mode=ro", kb_path.to_string_lossy().replace('?', "%3f"));
-        self.conn.execute_batch(&format!("ATTACH DATABASE '{uri}' AS kb"))?;
+        let uri = format!(
+            "file:{}?mode=ro",
+            kb_path.to_string_lossy().replace('?', "%3f")
+        );
+        self.conn
+            .execute_batch(&format!("ATTACH DATABASE '{uri}' AS kb"))?;
         let digest = self.import_kb_attached(row_cap);
         let _ = self.conn.execute_batch("DETACH DATABASE kb");
         let digest = digest?;
@@ -621,7 +654,11 @@ impl Atlas {
             if capped {
                 digest.capped += 1;
             }
-            let kind = if capped { format!("{ty}-capped") } else { ty.clone() };
+            let kind = if capped {
+                format!("{ty}-capped")
+            } else {
+                ty.clone()
+            };
             self.conn.execute(
                 "INSERT INTO atlas_kb_table(name, n_rows, kind, counted_at)
                  VALUES(?1,?2,?3, datetime('now'))
@@ -667,9 +704,21 @@ impl Atlas {
             return Ok(0);
         }
         let size = if cols.contains("size") { "size" } else { "0" };
-        let src = if cols.contains("name_source") { "name_source" } else { "NULL" };
-        let subsystem = if cols.contains("subsystem") { "subsystem" } else { "NULL" };
-        let confidence = if cols.contains("confidence") { "confidence" } else { "0.0" };
+        let src = if cols.contains("name_source") {
+            "name_source"
+        } else {
+            "NULL"
+        };
+        let subsystem = if cols.contains("subsystem") {
+            "subsystem"
+        } else {
+            "NULL"
+        };
+        let confidence = if cols.contains("confidence") {
+            "confidence"
+        } else {
+            "0.0"
+        };
         let sql = format!(
             "INSERT INTO atlas_symbol(vaddr, name, size, name_source, subsystem, confidence)
              SELECT vaddr, name, {size}, {src}, {subsystem}, {confidence}
@@ -1050,8 +1099,10 @@ impl Atlas {
                 let setting_cfg = recipe.map(|r| r.setting.as_str());
                 let ref_objbins = recipe.map_or(0, |r| r.referenced_objbins);
                 let miss_objbins = recipe.map_or(0, |r| r.missing_objbins);
-                let has_lua =
-                    entry.resource_counts.as_ref().map_or(0, |r| if r.lua > 0 { 1 } else { 0 });
+                let has_lua = entry
+                    .resource_counts
+                    .as_ref()
+                    .map_or(0, |r| if r.lua > 0 { 1 } else { 0 });
 
                 stmt.execute(params![
                     entry.file,
@@ -1067,7 +1118,10 @@ impl Atlas {
 
                 text.execute(params![
                     entry.file,
-                    format!("menu screen {} {} {}", screen_id, entry.pairing_status, entry.file),
+                    format!(
+                        "menu screen {} {} {}",
+                        screen_id, entry.pairing_status, entry.file
+                    ),
                     setting_cfg.unwrap_or(""),
                 ])?;
 
@@ -1196,8 +1250,18 @@ impl Atlas {
 
         // Knowledge-base coverage, as measured by the RE loop.
         for (metric, area, weight, action) in [
-            ("forge.produced", "forge.produced", 9.0, "just forge (split -> lift -> cc -> build)"),
-            ("forge.code_rust", "forge.code", 6.0, "aphrody-nie-forge lift --max-len"),
+            (
+                "forge.produced",
+                "forge.produced",
+                9.0,
+                "just forge (split -> lift -> cc -> build)",
+            ),
+            (
+                "forge.code_rust",
+                "forge.code",
+                6.0,
+                "aphrody-nie-forge lift --max-len",
+            ),
             (
                 "forge.lifted",
                 "forge.lifted",
@@ -1235,7 +1299,10 @@ impl Atlas {
                     "pct",
                     weight,
                     Some(action),
-                    Some(&format!("{source} value={value} total={}", total.unwrap_or(0.0))),
+                    Some(&format!(
+                        "{source} value={value} total={}",
+                        total.unwrap_or(0.0)
+                    )),
                 )?;
                 created += 1;
             }
@@ -1374,7 +1441,10 @@ impl Atlas {
 
     /// The next thing to work on: the highest-scoring open gap.
     pub fn next_gap(&self) -> Result<Option<Gap>> {
-        Ok(self.gaps(8)?.into_iter().find(|g| g.status == "open" || g.status == "running"))
+        Ok(self
+            .gaps(8)?
+            .into_iter()
+            .find(|g| g.status == "open" || g.status == "running"))
     }
 
     /// Read every indexed native menu screen and its asset pairing.
@@ -1463,9 +1533,17 @@ impl Atlas {
              LIMIT ?4",
         )?;
         let rows = stmt
-            .query_map(params![like, query, format!("{query}%"), limit as i64], |r| {
-                Ok(Hit { kind: r.get(0)?, key: r.get(1)?, body: r.get(2)?, reference: r.get(3)? })
-            })?
+            .query_map(
+                params![like, query, format!("{query}%"), limit as i64],
+                |r| {
+                    Ok(Hit {
+                        kind: r.get(0)?,
+                        key: r.get(1)?,
+                        body: r.get(2)?,
+                        reference: r.get(3)?,
+                    })
+                },
+            )?
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(rows)
     }
@@ -1500,12 +1578,16 @@ impl Atlas {
         let _: () = conn.set(format!("{prefix}:gaps"), serde_json::to_string(&gaps)?)?;
         written += 1;
         for gap in &gaps {
-            let _: () =
-                conn.set(format!("{prefix}:gap:{}", gap.area), serde_json::to_string(gap)?)?;
+            let _: () = conn.set(
+                format!("{prefix}:gap:{}", gap.area),
+                serde_json::to_string(gap)?,
+            )?;
             written += 1;
         }
 
-        let mut stmt = self.conn.prepare("SELECT name, vaddr FROM atlas_symbol ORDER BY name")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name, vaddr FROM atlas_symbol ORDER BY name")?;
         let mut rows = stmt.query([])?;
         let mut pipe = redis::pipe();
         let mut pending = 0usize;
@@ -1514,8 +1596,10 @@ impl Atlas {
             let vaddr: i64 = row.get(1)?;
             // Le nom peut se répéter (même symbole à plusieurs adresses) : la clé inverse,
             // elle, est unique, et c'est elle qui répond « qu'y a-t-il en 0x… ».
-            pipe.set(format!("{prefix}:sym:{name}"), format!("0x{vaddr:x}")).ignore();
-            pipe.set(format!("{prefix}:addr:0x{vaddr:x}"), &name).ignore();
+            pipe.set(format!("{prefix}:sym:{name}"), format!("0x{vaddr:x}"))
+                .ignore();
+            pipe.set(format!("{prefix}:addr:0x{vaddr:x}"), &name)
+                .ignore();
             pending += 2;
             written += 2;
             if pending >= 2000 {
@@ -1538,7 +1622,11 @@ impl Atlas {
             let name: String = row.get(1)?;
             let path: String = row.get(2)?;
             let summary: String = row.get(3)?;
-            pipe.set(format!("{prefix}:tool:{kind}:{name}"), format!("{path}\t{summary}")).ignore();
+            pipe.set(
+                format!("{prefix}:tool:{kind}:{name}"),
+                format!("{path}\t{summary}"),
+            )
+            .ignore();
             written += 1;
         }
         let _: () = pipe.query(&mut conn)?;
@@ -1639,12 +1727,18 @@ struct RegistryProof {
 
 /// First path of `candidates` that exists under `root`.
 fn first_existing(root: &Path, candidates: &[&str]) -> Option<PathBuf> {
-    candidates.iter().map(|c| root.join(c)).find(|p| p.is_file())
+    candidates
+        .iter()
+        .map(|c| root.join(c))
+        .find(|p| p.is_file())
 }
 
 /// Path relative to the repository root, with forward slashes.
 fn relative(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 /// Parse `0x14004d750` (or a decimal address) into an integer.
@@ -1652,11 +1746,16 @@ fn parse_hex(raw: &str) -> Option<i64> {
     let raw = raw.trim();
     raw.strip_prefix("0x")
         .or_else(|| raw.strip_prefix("0X"))
-        .map_or_else(|| raw.parse::<i64>().ok(), |hex| i64::from_str_radix(hex, 16).ok())
+        .map_or_else(
+            || raw.parse::<i64>().ok(),
+            |hex| i64::from_str_radix(hex, 16).ok(),
+        )
 }
 
 fn now_secs() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
 }
 
 /// SHA-256 of a file, streamed.
@@ -1713,7 +1812,7 @@ pub fn classify_kind(rel: &str, ext: Option<&str>) -> &'static str {
             } else {
                 "other"
             }
-        },
+        }
     }
 }
 
@@ -1812,15 +1911,15 @@ fn parse_manifest(raw: &str) -> Manifest {
                     "name" => out.name = Some(scalar),
                     "version" => out.version = Some(scalar),
                     "description" => out.description = Some(scalar),
-                    _ => {},
+                    _ => {}
                 }
-            },
+            }
             "dependencies" | "dev-dependencies" | "build-dependencies"
                 if !key.is_empty() && !key.starts_with('#') =>
             {
                 out.deps.push(key.to_string());
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     if out.version.as_deref() == Some("workspace") || out.version.is_none() {
@@ -2129,8 +2228,10 @@ fn extract_refs(line: &str, line_no: usize, out: &mut Vec<(usize, &'static str, 
         while let Some(pos) = line[from..].find(keyword) {
             let abs = from + pos + keyword.len();
             let rest = &line[abs..];
-            let word: String =
-                rest.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '-').collect();
+            let word: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+                .collect();
             if !word.is_empty() {
                 out.push((
                     line_no,
@@ -2158,7 +2259,7 @@ fn columns_from_ddl(sql: &str) -> BTreeSet<String> {
         match c {
             '(' => depth += 1,
             ')' => depth -= 1,
-            _ => {},
+            _ => {}
         }
         c == ',' && depth == 0
     }) {
@@ -2197,9 +2298,18 @@ mod tests {
     fn zones_and_kinds_follow_the_repository_layout() {
         assert_eq!(classify_kind("forge/asm/lifted.s", Some("s")), "asm");
         assert_eq!(classify_zone("forge/asm/lifted.s", "asm"), "forge");
-        assert_eq!(classify_zone("crates/nie/aphrody-nie-re/src/lib.rs", "rust"), "crate");
-        assert_eq!(classify_zone("crates/nie/aphrody-nie-re/README.md", "md"), "doc");
-        assert_eq!(classify_zone("data/re/40-derived/x.json", "json"), "re-data");
+        assert_eq!(
+            classify_zone("crates/nie/aphrody-nie-re/src/lib.rs", "rust"),
+            "crate"
+        );
+        assert_eq!(
+            classify_zone("crates/nie/aphrody-nie-re/README.md", "md"),
+            "doc"
+        );
+        assert_eq!(
+            classify_zone("data/re/40-derived/x.json", "json"),
+            "re-data"
+        );
         assert_eq!(classify_zone("dist/nie.exe", "exe"), "binary");
         assert_eq!(classify_zone("docs/RE.md", "md"), "doc");
         assert_eq!(classify_zone("AGENTS.md", "md"), "doc");
@@ -2211,11 +2321,31 @@ mod tests {
         let doc = parse_markdown(raw);
         assert_eq!(doc.title.as_deref(), Some("Titre"));
         assert_eq!(doc.sections.len(), 2);
-        assert!(doc.refs.iter().any(|(_, k, v)| *k == "func" && v == "FUN_140452820"));
-        assert!(doc.refs.iter().any(|(_, k, v)| *k == "vaddr" && v == "0x140452820"));
-        assert!(doc.refs.iter().any(|(_, k, v)| *k == "crate" && v == "aphrody-nie-re"));
-        assert!(doc.refs.iter().any(|(_, k, v)| *k == "cmd" && v == "nie coverage"));
-        assert!(doc.refs.iter().any(|(_, k, v)| *k == "table" && v == "function"));
+        assert!(
+            doc.refs
+                .iter()
+                .any(|(_, k, v)| *k == "func" && v == "FUN_140452820")
+        );
+        assert!(
+            doc.refs
+                .iter()
+                .any(|(_, k, v)| *k == "vaddr" && v == "0x140452820")
+        );
+        assert!(
+            doc.refs
+                .iter()
+                .any(|(_, k, v)| *k == "crate" && v == "aphrody-nie-re")
+        );
+        assert!(
+            doc.refs
+                .iter()
+                .any(|(_, k, v)| *k == "cmd" && v == "nie coverage")
+        );
+        assert!(
+            doc.refs
+                .iter()
+                .any(|(_, k, v)| *k == "table" && v == "function")
+        );
         assert!(doc.re_score > 0);
     }
 
@@ -2231,9 +2361,15 @@ mod tests {
     #[test]
     fn gaps_rank_by_remaining_times_weight() {
         let atlas = Atlas::open_in_memory().unwrap();
-        atlas.upsert_gap("a", "m", 50.0, 100.0, "pct", 1.0, None, None).unwrap();
-        atlas.upsert_gap("b", "m", 90.0, 100.0, "pct", 10.0, None, None).unwrap();
-        atlas.upsert_gap("c", "m", 100.0, 100.0, "pct", 10.0, None, None).unwrap();
+        atlas
+            .upsert_gap("a", "m", 50.0, 100.0, "pct", 1.0, None, None)
+            .unwrap();
+        atlas
+            .upsert_gap("b", "m", 90.0, 100.0, "pct", 10.0, None, None)
+            .unwrap();
+        atlas
+            .upsert_gap("c", "m", 100.0, 100.0, "pct", 10.0, None, None)
+            .unwrap();
         let gaps = atlas.gaps(10).unwrap();
         assert_eq!(gaps.len(), 2, "a done gap leaves the ranking");
         assert_eq!(gaps[0].area, "b");
@@ -2246,7 +2382,14 @@ mod tests {
         let atlas = Atlas::open_in_memory().unwrap();
         assert_eq!(atlas.refresh_gaps().unwrap(), 0, "no metric, no gap");
         atlas
-            .record_metric("re.classified", 100_664.0, Some(108_650.0), "nie coverage", None, None)
+            .record_metric(
+                "re.classified",
+                100_664.0,
+                Some(108_650.0),
+                "nie coverage",
+                None,
+                None,
+            )
             .unwrap();
         atlas.refresh_gaps().unwrap();
         let gaps = atlas.gaps(10).unwrap();
@@ -2271,8 +2414,10 @@ mod tests {
 
     #[test]
     fn a_qualified_name_needs_every_segment() {
-        let tokens: HashSet<String> =
-            ["CGameCameraCtrl", "Update", "shoot"].into_iter().map(str::to_string).collect();
+        let tokens: HashSet<String> = ["CGameCameraCtrl", "Update", "shoot"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
         assert!(name_is_ported("CGameCameraCtrl::Update", &tokens));
         // `Update` seul ne doit pas faire passer toutes les méthodes du binaire pour portées.
         assert!(!name_is_ported("CKeeperCtrl::Update", &tokens));

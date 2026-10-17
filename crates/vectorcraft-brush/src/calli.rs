@@ -37,11 +37,18 @@ impl Nib {
         let u = Vec2::new(t.cos(), -t.sin());
         let v = Vec2::new(-u.y, u.x);
         let a = (size / 2.0).max(1e-4);
-        Nib { u, v, a, b: (a * roundness.clamp(0.01, 1.0)).max(1e-4) }
+        Nib {
+            u,
+            v,
+            a,
+            b: (a * roundness.clamp(0.01, 1.0)).max(1e-4),
+        }
     }
     pub fn support(&self, d: Vec2) -> Vec2 {
         let (du, dv) = (self.u.dot(d), self.v.dot(d));
-        let den = ((self.a * du).powi(2) + (self.b * dv).powi(2)).sqrt().max(1e-12);
+        let den = ((self.a * du).powi(2) + (self.b * dv).powi(2))
+            .sqrt()
+            .max(1e-12);
         (self.u * (self.a * self.a * du) + self.v * (self.b * self.b * dv)) / den
     }
 }
@@ -78,7 +85,11 @@ fn samples(t: &Track, step: Option<f64>) -> Vec<(Point, Vec2, f64)> {
             let pieces = (seg / step).ceil().clamp(1.0, MAX_STEPS) as usize;
             for k in 1..pieces {
                 let u = k as f64 / pieces as f64;
-                out.push((p.lerp(t.verts[i + 1], u), t.dirs[i], (t.cum[i] + seg * u) / len));
+                out.push((
+                    p.lerp(t.verts[i + 1], u),
+                    t.dirs[i],
+                    (t.cum[i] + seg * u) / len,
+                ));
             }
         }
     }
@@ -89,8 +100,14 @@ fn samples(t: &Track, step: Option<f64>) -> Vec<(Point, Vec2, f64)> {
 /// closed subpaths. `step`: how often a varying nib is sampled (None: a constant nib).
 pub(crate) fn sweep(t: &Track, nib: &dyn Fn(f64) -> Nib, step: Option<f64>) -> Vec<SubPath> {
     let s = samples(t, step);
-    let left: Vec<Point> = s.iter().map(|(p, tg, f)| *p + nib(*f).support(normal(*tg))).collect();
-    let right: Vec<Point> = s.iter().map(|(p, tg, f)| *p + nib(*f).support(-normal(*tg))).collect();
+    let left: Vec<Point> = s
+        .iter()
+        .map(|(p, tg, f)| *p + nib(*f).support(normal(*tg)))
+        .collect();
+    let right: Vec<Point> = s
+        .iter()
+        .map(|(p, tg, f)| *p + nib(*f).support(-normal(*tg)))
+        .collect();
     if t.closed {
         let mut r = right;
         r.reverse();
@@ -105,7 +122,9 @@ pub(crate) fn sweep(t: &Track, nib: &dyn Fn(f64) -> Nib, step: Option<f64>) -> V
     };
     let half = std::f64::consts::FRAC_PI_2;
     let mut poly = left.clone();
-    let (Some(&end), Some(&start)) = (s.last(), s.first()) else { return Vec::new() };
+    let (Some(&end), Some(&start)) = (s.last(), s.first()) else {
+        return Vec::new();
+    };
     cap(end, half, -half, &mut poly);
     poly.extend(right.iter().rev());
     cap(start, -half, -3.0 * half, &mut poly);
@@ -134,32 +153,55 @@ fn pressured(c: &Calligraphic, base: [f64; 3], p: f64) -> [f64; 3] {
     let values = [c.angle, c.roundness, c.size];
     let mut out = base;
     for (i, (v, mode)) in out.iter_mut().zip(c.modes()).enumerate() {
-        let (Some(&value), Some(&var), Some(&(lo, hi))) = (values.get(i), c.variation.get(i), Calligraphic::RANGES.get(i)) else { continue };
+        let (Some(&value), Some(&var), Some(&(lo, hi))) = (
+            values.get(i),
+            c.variation.get(i),
+            Calligraphic::RANGES.get(i),
+        ) else {
+            continue;
+        };
         if mode == Variation::Pressure {
             let x = value + var * (2.0 * p.clamp(0.0, 1.0) - 1.0);
-            *v = if x.is_finite() { x.clamp(lo, hi) } else { value.clamp(lo, hi) };
+            *v = if x.is_finite() {
+                x.clamp(lo, hi)
+            } else {
+                value.clamp(lo, hi)
+            };
         }
     }
     let [angle, round, size] = out;
     [angle, round.clamp(1.0, 100.0), size.max(0.05)]
 }
 
-pub(crate) fn calligraphic(c: &Calligraphic, bp: &BezPath, weight: f64, stroke: &StrokeLayer, name: &str) -> Vec<Node> {
+pub(crate) fn calligraphic(
+    c: &Calligraphic,
+    bp: &BezPath,
+    weight: f64,
+    stroke: &StrokeLayer,
+    name: &str,
+) -> Vec<Node> {
     let mut rng = Rng::new(seed_of(bp, name));
     let base = randomized(c, &mut rng);
     let subs: Vec<SubPath> = if c.uses_pressure() {
         let pressure = stroke.pressure.as_ref();
         let nib = |f: f64| {
-            let [angle, round, size] = pressured(c, base, pressure.map_or(PressureProfile::MID, |p| p.at(f)));
+            let [angle, round, size] =
+                pressured(c, base, pressure.map_or(PressureProfile::MID, |p| p.at(f)));
             Nib::new(angle, round / 100.0, size * weight)
         };
         // Flattened for the largest nib the pressure gives.
         let size = pressured(c, base, 0.0)[2].max(pressured(c, base, 1.0)[2]) * weight;
-        tracks(bp, tolerance(size)).iter().flat_map(|t| sweep(t, &nib, Some((t.len() / MAX_STEPS).max(0.25)))).collect()
+        tracks(bp, tolerance(size))
+            .iter()
+            .flat_map(|t| sweep(t, &nib, Some((t.len() / MAX_STEPS).max(0.25))))
+            .collect()
     } else {
         let [angle, round, size] = base;
         let nib = Nib::new(angle, round / 100.0, size * weight);
-        tracks(bp, tolerance(size * weight)).iter().flat_map(|t| sweep(t, &|_| nib, None)).collect()
+        tracks(bp, tolerance(size * weight))
+            .iter()
+            .flat_map(|t| sweep(t, &|_| nib, None))
+            .collect()
     };
     if subs.is_empty() {
         return vec![];
@@ -197,14 +239,24 @@ fn offset_track(t: &Track, d: f64, trim0: f64, trim1: f64) -> Option<BezPath> {
     Some(bp)
 }
 
-pub(crate) fn bristle(b: &Bristle, bp: &BezPath, weight: f64, paint: &Paint, name: &str) -> Vec<Node> {
+pub(crate) fn bristle(
+    b: &Bristle,
+    bp: &BezPath,
+    weight: f64,
+    paint: &Paint,
+    name: &str,
+) -> Vec<Node> {
     let mut rng = Rng::new(seed_of(bp, name));
     let size = b.size.max(0.1) * weight;
     let strands = (3.0 + b.density.clamp(1.0, 100.0) / 100.0 * 13.0).round() as usize;
     let thick = (size * b.thickness.clamp(1.0, 100.0) / 100.0 * 0.45).max(0.15);
     let flat = matches!(
         b.shape,
-        BristleShape::FlatPoint | BristleShape::FlatBlunt | BristleShape::FlatCurve | BristleShape::FlatAngle | BristleShape::FlatFan
+        BristleShape::FlatPoint
+            | BristleShape::FlatBlunt
+            | BristleShape::FlatCurve
+            | BristleShape::FlatAngle
+            | BristleShape::FlatFan
     );
     let wobble = (100.0 - b.stiffness.clamp(1.0, 100.0)) / 100.0;
     let ragged = b.length.clamp(25.0, 300.0) / 100.0;
@@ -215,14 +267,25 @@ pub(crate) fn bristle(b: &Bristle, bp: &BezPath, weight: f64, paint: &Paint, nam
         for k in 0..strands {
             // Round tips concentrate strands near the centre; flat tips spread them evenly.
             let lane = (k as f64 + 0.5) / strands as f64 * 2.0 - 1.0;
-            let off = if flat { lane } else { lane.signum() * lane.abs().powf(1.4) } * size / 2.0 + rng.range(-wobble, wobble) * size * 0.08;
+            let off = if flat {
+                lane
+            } else {
+                lane.signum() * lane.abs().powf(1.4)
+            } * size
+                / 2.0
+                + rng.range(-wobble, wobble) * size * 0.08;
             let edge = 1.0 - lane.abs();
             let trim = |r: &mut Rng| r.unit() * ragged * size * (1.2 - edge) * 0.8;
             let (t0, t1) = (trim(&mut rng), trim(&mut rng));
-            let Some(sp) = offset_track(&t, off, t0.min(l * 0.3), t1.min(l * 0.3)) else { continue };
+            let Some(sp) = offset_track(&t, off, t0.min(l * 0.3), t1.min(l * 0.3)) else {
+                continue;
+            };
             let w = thick * (0.6 + 0.4 * edge) * rng.range(0.8, 1.2);
             let nib = Nib::new(0.0, 1.0, w);
-            let subs: Vec<SubPath> = tracks(&sp, tolerance(w)).iter().flat_map(|tt| sweep(tt, &|_| nib, None)).collect();
+            let subs: Vec<SubPath> = tracks(&sp, tolerance(w))
+                .iter()
+                .flat_map(|tt| sweep(tt, &|_| nib, None))
+                .collect();
             if subs.is_empty() {
                 continue;
             }

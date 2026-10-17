@@ -46,7 +46,14 @@ pub struct Handle {
 
 impl Handle {
     fn new(index: usize, origin: Point, dir: Vec2, value: f64, min: f64, max: f64) -> Self {
-        Handle { index, pos: origin + dir * value, origin, dir, min, max }
+        Handle {
+            index,
+            pos: origin + dir * value,
+            origin,
+            dir,
+            min,
+            max,
+        }
     }
     /// The adjust value for a pointer at `p` (shape-local space).
     pub fn value_at(&self, p: Point) -> f64 {
@@ -58,7 +65,8 @@ impl Handle {
         if !v.is_finite() {
             return self.min;
         }
-        v.clamp(self.min.min(self.max), self.max.max(self.min)).round()
+        v.clamp(self.min.min(self.max), self.max.max(self.min))
+            .round()
     }
 }
 
@@ -152,21 +160,66 @@ pub static CATALOG: &[PresetInfo] = &[
     p!("bentConnector2", "Connector: Elbow (one bend)", Lines, []),
     p!("lineInv", "Line: Rising", Lines, []),
     p!("rect", "Rectangle", Rectangles, []),
-    p!("roundRect", "Rectangle: Rounded Corners", Rectangles, [16667]),
-    p!("snip1Rect", "Rectangle: Single Corner Snipped", Rectangles, [16667]),
-    p!("snip2SameRect", "Rectangle: Top Corners Snipped", Rectangles, [16667, 0]),
-    p!("snip2DiagRect", "Rectangle: Diagonal Corners Snipped", Rectangles, [0, 16667]),
-    p!("snipRoundRect", "Rectangle: Top Corners One Rounded and One Snipped", Rectangles, [16667, 16667]),
-    p!("round1Rect", "Rectangle: Single Corner Rounded", Rectangles, [16667]),
-    p!("round2SameRect", "Rectangle: Top Corners Rounded", Rectangles, [16667, 0]),
-    p!("round2DiagRect", "Rectangle: Diagonal Corners Rounded", Rectangles, [16667, 0]),
+    p!(
+        "roundRect",
+        "Rectangle: Rounded Corners",
+        Rectangles,
+        [16667]
+    ),
+    p!(
+        "snip1Rect",
+        "Rectangle: Single Corner Snipped",
+        Rectangles,
+        [16667]
+    ),
+    p!(
+        "snip2SameRect",
+        "Rectangle: Top Corners Snipped",
+        Rectangles,
+        [16667, 0]
+    ),
+    p!(
+        "snip2DiagRect",
+        "Rectangle: Diagonal Corners Snipped",
+        Rectangles,
+        [0, 16667]
+    ),
+    p!(
+        "snipRoundRect",
+        "Rectangle: Top Corners One Rounded and One Snipped",
+        Rectangles,
+        [16667, 16667]
+    ),
+    p!(
+        "round1Rect",
+        "Rectangle: Single Corner Rounded",
+        Rectangles,
+        [16667]
+    ),
+    p!(
+        "round2SameRect",
+        "Rectangle: Top Corners Rounded",
+        Rectangles,
+        [16667, 0]
+    ),
+    p!(
+        "round2DiagRect",
+        "Rectangle: Diagonal Corners Rounded",
+        Rectangles,
+        [16667, 0]
+    ),
     p!("textBox", "Text Box", BasicShapes, []),
     p!("ellipse", "Oval", BasicShapes, []),
     p!("triangle", "Isosceles Triangle", BasicShapes, [50000]),
     p!("rtTriangle", "Right Triangle", BasicShapes, []),
     p!("parallelogram", "Parallelogram", BasicShapes, [25000]),
     p!("trapezoid", "Trapezoid", BasicShapes, [25000]),
-    p!("nonIsoscelesTrapezoid", "Trapezoid: Uneven Sides", BasicShapes, [25000, 25000]),
+    p!(
+        "nonIsoscelesTrapezoid",
+        "Trapezoid: Uneven Sides",
+        BasicShapes,
+        [25000, 25000]
+    ),
     p!("diamond", "Diamond", BasicShapes, []),
     p!("pentagon", "Regular Pentagon", BasicShapes, []),
     p!("hexagon", "Hexagon", BasicShapes, [25000]),
@@ -181,7 +234,12 @@ pub static CATALOG: &[PresetInfo] = &[
     p!("frame", "Frame", BasicShapes, [12500]),
     p!("cornerTabs", "Corner Tabs: Triangles", BasicShapes, []),
     p!("squareTabs", "Corner Tabs: Squares", BasicShapes, []),
-    p!("plaqueTabs", "Corner Tabs: Quarter Circles", BasicShapes, []),
+    p!(
+        "plaqueTabs",
+        "Corner Tabs: Quarter Circles",
+        BasicShapes,
+        []
+    ),
     p!("halfFrame", "Half Frame", BasicShapes, [33333, 33333]),
     p!("corner", "L-Shape", BasicShapes, [50000, 50000]),
     p!("diagStripe", "Diagonal Stripe", BasicShapes, [50000]),
@@ -217,70 +275,285 @@ pub static CATALOG: &[PresetInfo] = &[
     p!("leftArrow", "Arrow: Left", BlockArrows, [50000, 50000]),
     p!("upArrow", "Arrow: Up", BlockArrows, [50000, 50000]),
     p!("downArrow", "Arrow: Down", BlockArrows, [50000, 50000]),
-    p!("leftRightArrow", "Arrow: Left-Right", BlockArrows, [50000, 50000]),
+    p!(
+        "leftRightArrow",
+        "Arrow: Left-Right",
+        BlockArrows,
+        [50000, 50000]
+    ),
     p!("upDownArrow", "Arrow: Up-Down", BlockArrows, [50000, 50000]),
-    p!("quadArrow", "Arrow: Quad", BlockArrows, [22500, 22500, 22500]),
-    p!("leftRightUpArrow", "Arrow: Left-Right-Up", BlockArrows, [25000, 25000, 25000]),
-    p!("bentArrow", "Arrow: Bent", BlockArrows, [25000, 25000, 25000, 43750]),
-    p!("uturnArrow", "Arrow: U-Turn", BlockArrows, [25000, 25000, 25000, 43750, 75000]),
-    p!("curvedRightArrow", "Arrow: Curved Right", BlockArrows, [25000, 50000, 25000]),
-    p!("curvedLeftArrow", "Arrow: Curved Left", BlockArrows, [25000, 50000, 25000]),
-    p!("curvedUpArrow", "Arrow: Curved Up", BlockArrows, [25000, 50000, 25000]),
-    p!("curvedDownArrow", "Arrow: Curved Down", BlockArrows, [25000, 50000, 25000]),
-    p!("leftUpArrow", "Arrow: Left-Up", BlockArrows, [25000, 25000, 25000]),
-    p!("bentUpArrow", "Arrow: Bent-Up", BlockArrows, [25000, 25000, 25000]),
-    p!("stripedRightArrow", "Arrow: Striped Right", BlockArrows, [50000, 50000]),
-    p!("notchedRightArrow", "Arrow: Notched Right", BlockArrows, [50000, 50000]),
+    p!(
+        "quadArrow",
+        "Arrow: Quad",
+        BlockArrows,
+        [22500, 22500, 22500]
+    ),
+    p!(
+        "leftRightUpArrow",
+        "Arrow: Left-Right-Up",
+        BlockArrows,
+        [25000, 25000, 25000]
+    ),
+    p!(
+        "bentArrow",
+        "Arrow: Bent",
+        BlockArrows,
+        [25000, 25000, 25000, 43750]
+    ),
+    p!(
+        "uturnArrow",
+        "Arrow: U-Turn",
+        BlockArrows,
+        [25000, 25000, 25000, 43750, 75000]
+    ),
+    p!(
+        "curvedRightArrow",
+        "Arrow: Curved Right",
+        BlockArrows,
+        [25000, 50000, 25000]
+    ),
+    p!(
+        "curvedLeftArrow",
+        "Arrow: Curved Left",
+        BlockArrows,
+        [25000, 50000, 25000]
+    ),
+    p!(
+        "curvedUpArrow",
+        "Arrow: Curved Up",
+        BlockArrows,
+        [25000, 50000, 25000]
+    ),
+    p!(
+        "curvedDownArrow",
+        "Arrow: Curved Down",
+        BlockArrows,
+        [25000, 50000, 25000]
+    ),
+    p!(
+        "leftUpArrow",
+        "Arrow: Left-Up",
+        BlockArrows,
+        [25000, 25000, 25000]
+    ),
+    p!(
+        "bentUpArrow",
+        "Arrow: Bent-Up",
+        BlockArrows,
+        [25000, 25000, 25000]
+    ),
+    p!(
+        "stripedRightArrow",
+        "Arrow: Striped Right",
+        BlockArrows,
+        [50000, 50000]
+    ),
+    p!(
+        "notchedRightArrow",
+        "Arrow: Notched Right",
+        BlockArrows,
+        [50000, 50000]
+    ),
     p!("homePlate", "Arrow: Pentagon", BlockArrows, [50000]),
     p!("chevron", "Arrow: Chevron", BlockArrows, [50000]),
-    p!("circularArrow", "Arrow: Circular", BlockArrows, [12500, 1142319, 20457681, 10800000, 12500]),
-    p!("leftCircularArrow", "Arrow: Circular Counter-clockwise", BlockArrows, [12500, -1142319, 1142319, 10800000, 12500]),
-    p!("leftRightCircularArrow", "Arrow: Circular Two-headed", BlockArrows, [12500, 1142319, 20457681, 11942319, 12500]),
+    p!(
+        "circularArrow",
+        "Arrow: Circular",
+        BlockArrows,
+        [12500, 1142319, 20457681, 10800000, 12500]
+    ),
+    p!(
+        "leftCircularArrow",
+        "Arrow: Circular Counter-clockwise",
+        BlockArrows,
+        [12500, -1142319, 1142319, 10800000, 12500]
+    ),
+    p!(
+        "leftRightCircularArrow",
+        "Arrow: Circular Two-headed",
+        BlockArrows,
+        [12500, 1142319, 20457681, 11942319, 12500]
+    ),
     p!("swooshArrow", "Arrow: Swoosh", BlockArrows, [25000, 16667]),
-    p!("rightArrowCallout", "Callout: Right Arrow", BlockArrows, [25000, 25000, 25000, 64977]),
-    p!("downArrowCallout", "Callout: Down Arrow", BlockArrows, [25000, 25000, 25000, 64977]),
-    p!("leftArrowCallout", "Callout: Left Arrow", BlockArrows, [25000, 25000, 25000, 64977]),
-    p!("upArrowCallout", "Callout: Up Arrow", BlockArrows, [25000, 25000, 25000, 64977]),
-    p!("leftRightArrowCallout", "Callout: Left-Right Arrow", BlockArrows, [25000, 25000, 25000, 48123]),
-    p!("upDownArrowCallout", "Callout: Up-Down Arrow", BlockArrows, [25000, 25000, 25000, 48123]),
-    p!("quadArrowCallout", "Callout: Quad Arrow", BlockArrows, [18515, 18515, 18515, 48123]),
+    p!(
+        "rightArrowCallout",
+        "Callout: Right Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 64977]
+    ),
+    p!(
+        "downArrowCallout",
+        "Callout: Down Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 64977]
+    ),
+    p!(
+        "leftArrowCallout",
+        "Callout: Left Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 64977]
+    ),
+    p!(
+        "upArrowCallout",
+        "Callout: Up Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 64977]
+    ),
+    p!(
+        "leftRightArrowCallout",
+        "Callout: Left-Right Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 48123]
+    ),
+    p!(
+        "upDownArrowCallout",
+        "Callout: Up-Down Arrow",
+        BlockArrows,
+        [25000, 25000, 25000, 48123]
+    ),
+    p!(
+        "quadArrowCallout",
+        "Callout: Quad Arrow",
+        BlockArrows,
+        [18515, 18515, 18515, 48123]
+    ),
     p!("mathPlus", "Plus Sign", EquationShapes, [23520]),
     p!("mathMinus", "Minus Sign", EquationShapes, [23520]),
-    p!("mathMultiply", "Multiplication Sign", EquationShapes, [23520]),
-    p!("mathDivide", "Division Sign", EquationShapes, [23520, 5880, 11760]),
+    p!(
+        "mathMultiply",
+        "Multiplication Sign",
+        EquationShapes,
+        [23520]
+    ),
+    p!(
+        "mathDivide",
+        "Division Sign",
+        EquationShapes,
+        [23520, 5880, 11760]
+    ),
     p!("mathEqual", "Equals", EquationShapes, [23520, 11760]),
-    p!("mathNotEqual", "Not Equal", EquationShapes, [23520, 6600000, 11760]),
+    p!(
+        "mathNotEqual",
+        "Not Equal",
+        EquationShapes,
+        [23520, 6600000, 11760]
+    ),
     p!("flowChartProcess", "Flowchart: Process", Flowchart, []),
-    p!("flowChartAlternateProcess", "Flowchart: Alternate Process", Flowchart, []),
+    p!(
+        "flowChartAlternateProcess",
+        "Flowchart: Alternate Process",
+        Flowchart,
+        []
+    ),
     p!("flowChartDecision", "Flowchart: Decision", Flowchart, []),
     p!("flowChartInputOutput", "Flowchart: Data", Flowchart, []),
-    p!("flowChartPredefinedProcess", "Flowchart: Predefined Process", Flowchart, []),
-    p!("flowChartInternalStorage", "Flowchart: Internal Storage", Flowchart, []),
+    p!(
+        "flowChartPredefinedProcess",
+        "Flowchart: Predefined Process",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartInternalStorage",
+        "Flowchart: Internal Storage",
+        Flowchart,
+        []
+    ),
     p!("flowChartDocument", "Flowchart: Document", Flowchart, []),
-    p!("flowChartMultidocument", "Flowchart: Multidocument", Flowchart, []),
-    p!("flowChartTerminator", "Flowchart: Terminator", Flowchart, []),
-    p!("flowChartPreparation", "Flowchart: Preparation", Flowchart, []),
-    p!("flowChartManualInput", "Flowchart: Manual Input", Flowchart, []),
-    p!("flowChartManualOperation", "Flowchart: Manual Operation", Flowchart, []),
+    p!(
+        "flowChartMultidocument",
+        "Flowchart: Multidocument",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartTerminator",
+        "Flowchart: Terminator",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartPreparation",
+        "Flowchart: Preparation",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartManualInput",
+        "Flowchart: Manual Input",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartManualOperation",
+        "Flowchart: Manual Operation",
+        Flowchart,
+        []
+    ),
     p!("flowChartConnector", "Flowchart: Connector", Flowchart, []),
-    p!("flowChartOffpageConnector", "Flowchart: Off-page Connector", Flowchart, []),
+    p!(
+        "flowChartOffpageConnector",
+        "Flowchart: Off-page Connector",
+        Flowchart,
+        []
+    ),
     p!("flowChartPunchedCard", "Flowchart: Card", Flowchart, []),
-    p!("flowChartPunchedTape", "Flowchart: Punched Tape", Flowchart, []),
-    p!("flowChartSummingJunction", "Flowchart: Summing Junction", Flowchart, []),
+    p!(
+        "flowChartPunchedTape",
+        "Flowchart: Punched Tape",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartSummingJunction",
+        "Flowchart: Summing Junction",
+        Flowchart,
+        []
+    ),
     p!("flowChartOr", "Flowchart: Or", Flowchart, []),
     p!("flowChartCollate", "Flowchart: Collate", Flowchart, []),
     p!("flowChartSort", "Flowchart: Sort", Flowchart, []),
     p!("flowChartExtract", "Flowchart: Extract", Flowchart, []),
     p!("flowChartMerge", "Flowchart: Merge", Flowchart, []),
-    p!("flowChartOnlineStorage", "Flowchart: Stored Data", Flowchart, []),
+    p!(
+        "flowChartOnlineStorage",
+        "Flowchart: Stored Data",
+        Flowchart,
+        []
+    ),
     p!("flowChartDelay", "Flowchart: Delay", Flowchart, []),
-    p!("flowChartMagneticTape", "Flowchart: Sequential Access Storage", Flowchart, []),
-    p!("flowChartMagneticDisk", "Flowchart: Magnetic Disk", Flowchart, []),
-    p!("flowChartMagneticDrum", "Flowchart: Direct Access Storage", Flowchart, []),
+    p!(
+        "flowChartMagneticTape",
+        "Flowchart: Sequential Access Storage",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartMagneticDisk",
+        "Flowchart: Magnetic Disk",
+        Flowchart,
+        []
+    ),
+    p!(
+        "flowChartMagneticDrum",
+        "Flowchart: Direct Access Storage",
+        Flowchart,
+        []
+    ),
     p!("flowChartDisplay", "Flowchart: Display", Flowchart, []),
-    p!("flowChartOfflineStorage", "Flowchart: Offline Storage", Flowchart, []),
+    p!(
+        "flowChartOfflineStorage",
+        "Flowchart: Offline Storage",
+        Flowchart,
+        []
+    ),
     p!("irregularSeal1", "Explosion: 8 Points", StarsAndBanners, []),
-    p!("irregularSeal2", "Explosion: 14 Points", StarsAndBanners, []),
+    p!(
+        "irregularSeal2",
+        "Explosion: 14 Points",
+        StarsAndBanners,
+        []
+    ),
     p!("star4", "Star: 4 Points", StarsAndBanners, [12500]),
     p!("star5", "Star: 5 Points", StarsAndBanners, [19098]),
     p!("star6", "Star: 6 Points", StarsAndBanners, [28868]),
@@ -291,48 +564,213 @@ pub static CATALOG: &[PresetInfo] = &[
     p!("star16", "Star: 16 Points", StarsAndBanners, [37500]),
     p!("star24", "Star: 24 Points", StarsAndBanners, [37500]),
     p!("star32", "Star: 32 Points", StarsAndBanners, [37500]),
-    p!("ribbon2", "Ribbon: Tilted Up", StarsAndBanners, [16667, 50000]),
-    p!("ribbon", "Ribbon: Tilted Down", StarsAndBanners, [16667, 50000]),
-    p!("ellipseRibbon2", "Ribbon: Curved and Tilted Up", StarsAndBanners, [25000, 50000, 12500]),
-    p!("ellipseRibbon", "Ribbon: Curved and Tilted Down", StarsAndBanners, [25000, 50000, 12500]),
-    p!("leftRightRibbon", "Ribbon: Left-Right Fold", StarsAndBanners, [50000, 50000, 16667]),
-    p!("verticalScroll", "Scroll: Vertical", StarsAndBanners, [12500]),
-    p!("horizontalScroll", "Scroll: Horizontal", StarsAndBanners, [12500]),
+    p!(
+        "ribbon2",
+        "Ribbon: Tilted Up",
+        StarsAndBanners,
+        [16667, 50000]
+    ),
+    p!(
+        "ribbon",
+        "Ribbon: Tilted Down",
+        StarsAndBanners,
+        [16667, 50000]
+    ),
+    p!(
+        "ellipseRibbon2",
+        "Ribbon: Curved and Tilted Up",
+        StarsAndBanners,
+        [25000, 50000, 12500]
+    ),
+    p!(
+        "ellipseRibbon",
+        "Ribbon: Curved and Tilted Down",
+        StarsAndBanners,
+        [25000, 50000, 12500]
+    ),
+    p!(
+        "leftRightRibbon",
+        "Ribbon: Left-Right Fold",
+        StarsAndBanners,
+        [50000, 50000, 16667]
+    ),
+    p!(
+        "verticalScroll",
+        "Scroll: Vertical",
+        StarsAndBanners,
+        [12500]
+    ),
+    p!(
+        "horizontalScroll",
+        "Scroll: Horizontal",
+        StarsAndBanners,
+        [12500]
+    ),
     p!("wave", "Wave", StarsAndBanners, [12500, 0]),
     p!("doubleWave", "Double Wave", StarsAndBanners, [6250, 0]),
-    p!("wedgeRectCallout", "Speech Bubble: Rectangle", Callouts, [-20833, 62500]),
-    p!("wedgeRoundRectCallout", "Speech Bubble: Rectangle with Corners Rounded", Callouts, [-20833, 62500, 16667]),
-    p!("wedgeEllipseCallout", "Speech Bubble: Oval", Callouts, [-20833, 62500]),
-    p!("cloudCallout", "Thought Bubble: Cloud", Callouts, [-20833, 62500]),
-    p!("borderCallout1", "Callout: Line", Callouts, [18750, -8333, 112500, -38333]),
-    p!("borderCallout2", "Callout: Bent Line", Callouts, [18750, -8333, 18750, -16667, 112500, -46667]),
-    p!("borderCallout3", "Callout: Double Bent Line", Callouts, [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]),
-    p!("accentCallout1", "Callout: Line with Accent Bar", Callouts, [18750, -8333, 112500, -38333]),
-    p!("accentCallout2", "Callout: Bent Line with Accent Bar", Callouts, [18750, -8333, 18750, -16667, 112500, -46667]),
-    p!("accentCallout3", "Callout: Double Bent Line with Accent Bar", Callouts, [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]),
-    p!("callout1", "Callout: Line with No Border", Callouts, [18750, -8333, 112500, -38333]),
-    p!("callout2", "Callout: Bent Line with No Border", Callouts, [18750, -8333, 18750, -16667, 112500, -46667]),
-    p!("callout3", "Callout: Double Bent Line with No Border", Callouts, [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]),
-    p!("accentBorderCallout1", "Callout: Line with Border and Accent Bar", Callouts, [18750, -8333, 112500, -38333]),
-    p!("accentBorderCallout2", "Callout: Bent Line with Border and Accent Bar", Callouts, [18750, -8333, 18750, -16667, 112500, -46667]),
+    p!(
+        "wedgeRectCallout",
+        "Speech Bubble: Rectangle",
+        Callouts,
+        [-20833, 62500]
+    ),
+    p!(
+        "wedgeRoundRectCallout",
+        "Speech Bubble: Rectangle with Corners Rounded",
+        Callouts,
+        [-20833, 62500, 16667]
+    ),
+    p!(
+        "wedgeEllipseCallout",
+        "Speech Bubble: Oval",
+        Callouts,
+        [-20833, 62500]
+    ),
+    p!(
+        "cloudCallout",
+        "Thought Bubble: Cloud",
+        Callouts,
+        [-20833, 62500]
+    ),
+    p!(
+        "borderCallout1",
+        "Callout: Line",
+        Callouts,
+        [18750, -8333, 112500, -38333]
+    ),
+    p!(
+        "borderCallout2",
+        "Callout: Bent Line",
+        Callouts,
+        [18750, -8333, 18750, -16667, 112500, -46667]
+    ),
+    p!(
+        "borderCallout3",
+        "Callout: Double Bent Line",
+        Callouts,
+        [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]
+    ),
+    p!(
+        "accentCallout1",
+        "Callout: Line with Accent Bar",
+        Callouts,
+        [18750, -8333, 112500, -38333]
+    ),
+    p!(
+        "accentCallout2",
+        "Callout: Bent Line with Accent Bar",
+        Callouts,
+        [18750, -8333, 18750, -16667, 112500, -46667]
+    ),
+    p!(
+        "accentCallout3",
+        "Callout: Double Bent Line with Accent Bar",
+        Callouts,
+        [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]
+    ),
+    p!(
+        "callout1",
+        "Callout: Line with No Border",
+        Callouts,
+        [18750, -8333, 112500, -38333]
+    ),
+    p!(
+        "callout2",
+        "Callout: Bent Line with No Border",
+        Callouts,
+        [18750, -8333, 18750, -16667, 112500, -46667]
+    ),
+    p!(
+        "callout3",
+        "Callout: Double Bent Line with No Border",
+        Callouts,
+        [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]
+    ),
+    p!(
+        "accentBorderCallout1",
+        "Callout: Line with Border and Accent Bar",
+        Callouts,
+        [18750, -8333, 112500, -38333]
+    ),
+    p!(
+        "accentBorderCallout2",
+        "Callout: Bent Line with Border and Accent Bar",
+        Callouts,
+        [18750, -8333, 18750, -16667, 112500, -46667]
+    ),
     p!(
         "accentBorderCallout3",
         "Callout: Double Bent Line with Border and Accent Bar",
         Callouts,
         [18750, -8333, 18750, -16667, 100000, -16667, 112963, -8333]
     ),
-    p!("actionButtonBackPrevious", "Action Button: Go Back or Previous", ActionButtons, []),
-    p!("actionButtonForwardNext", "Action Button: Go Forward or Next", ActionButtons, []),
-    p!("actionButtonBeginning", "Action Button: Go to Beginning", ActionButtons, []),
-    p!("actionButtonEnd", "Action Button: Go to End", ActionButtons, []),
-    p!("actionButtonHome", "Action Button: Go Home", ActionButtons, []),
-    p!("actionButtonInformation", "Action Button: Get Information", ActionButtons, []),
-    p!("actionButtonReturn", "Action Button: Go Back", ActionButtons, []),
-    p!("actionButtonMovie", "Action Button: Video", ActionButtons, []),
-    p!("actionButtonDocument", "Action Button: Document", ActionButtons, []),
-    p!("actionButtonSound", "Action Button: Sound", ActionButtons, []),
+    p!(
+        "actionButtonBackPrevious",
+        "Action Button: Go Back or Previous",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonForwardNext",
+        "Action Button: Go Forward or Next",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonBeginning",
+        "Action Button: Go to Beginning",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonEnd",
+        "Action Button: Go to End",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonHome",
+        "Action Button: Go Home",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonInformation",
+        "Action Button: Get Information",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonReturn",
+        "Action Button: Go Back",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonMovie",
+        "Action Button: Video",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonDocument",
+        "Action Button: Document",
+        ActionButtons,
+        []
+    ),
+    p!(
+        "actionButtonSound",
+        "Action Button: Sound",
+        ActionButtons,
+        []
+    ),
     p!("actionButtonHelp", "Action Button: Help", ActionButtons, []),
-    p!("actionButtonBlank", "Action Button: Custom", ActionButtons, []),
+    p!(
+        "actionButtonBlank",
+        "Action Button: Custom",
+        ActionButtons,
+        []
+    ),
 ];
 
 pub fn info(name: &str) -> Option<&'static PresetInfo> {
@@ -340,8 +778,15 @@ pub fn info(name: &str) -> Option<&'static PresetInfo> {
 }
 
 pub fn is_line_like(name: &str) -> bool {
-    matches!(name, "line" | "straightConnector1" | "bentConnector2" | "bentConnector3" | "curvedConnector3" | "arc")
-        || name.starts_with("bentConnector")
+    matches!(
+        name,
+        "line"
+            | "straightConnector1"
+            | "bentConnector2"
+            | "bentConnector3"
+            | "curvedConnector3"
+            | "arc"
+    ) || name.starts_with("bentConnector")
         || name.starts_with("curvedConnector")
 }
 
@@ -354,7 +799,10 @@ struct Pb {
 
 impl Pb {
     fn new() -> Self {
-        Pb { p: BezPath::new(), cur: Point::ZERO }
+        Pb {
+            p: BezPath::new(),
+            cur: Point::ZERO,
+        }
     }
     fn m(&mut self, x: f64, y: f64) -> &mut Self {
         self.cur = Point::new(x, y);
@@ -368,7 +816,8 @@ impl Pb {
     }
     fn c(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, x: f64, y: f64) -> &mut Self {
         self.cur = Point::new(x, y);
-        self.p.curve_to(Point::new(x1, y1), Point::new(x2, y2), self.cur);
+        self.p
+            .curve_to(Point::new(x1, y1), Point::new(x2, y2), self.cur);
         self
     }
     fn q(&mut self, x1: f64, y1: f64, x: f64, y: f64) -> &mut Self {
@@ -413,19 +862,44 @@ impl Pb {
 }
 
 fn fill(p: BezPath) -> SubPath {
-    SubPath { path: p, fill: FillMode::Norm, stroke: true, even_odd: false }
+    SubPath {
+        path: p,
+        fill: FillMode::Norm,
+        stroke: true,
+        even_odd: false,
+    }
 }
 fn fill_eo(p: BezPath) -> SubPath {
-    SubPath { path: p, fill: FillMode::Norm, stroke: true, even_odd: true }
+    SubPath {
+        path: p,
+        fill: FillMode::Norm,
+        stroke: true,
+        even_odd: true,
+    }
 }
 fn shade(p: BezPath, m: FillMode) -> SubPath {
-    SubPath { path: p, fill: m, stroke: true, even_odd: false }
+    SubPath {
+        path: p,
+        fill: m,
+        stroke: true,
+        even_odd: false,
+    }
 }
 fn stroke_only(p: BezPath) -> SubPath {
-    SubPath { path: p, fill: FillMode::None, stroke: true, even_odd: false }
+    SubPath {
+        path: p,
+        fill: FillMode::None,
+        stroke: true,
+        even_odd: false,
+    }
 }
 fn fill_only(p: BezPath) -> SubPath {
-    SubPath { path: p, fill: FillMode::Norm, stroke: false, even_odd: false }
+    SubPath {
+        path: p,
+        fill: FillMode::Norm,
+        stroke: false,
+        even_odd: false,
+    }
 }
 
 /// Parametric angle on an rx×ry ellipse for a visual angle `deg` (file angles are visual).
@@ -455,7 +929,9 @@ fn normalize(pts: &[(f64, f64)], w: f64, h: f64) -> Vec<(f64, f64)> {
     }
     let sx = if x1 - x0 > 1e-12 { w / (x1 - x0) } else { 0.0 };
     let sy = if y1 - y0 > 1e-12 { h / (y1 - y0) } else { 0.0 };
-    pts.iter().map(|(x, y)| ((x - x0) * sx, (y - y0) * sy)).collect()
+    pts.iter()
+        .map(|(x, y)| ((x - x0) * sx, (y - y0) * sy))
+        .collect()
 }
 
 fn star(n: usize, w: f64, h: f64, inner: f64, normalized: bool) -> Vec<(f64, f64)> {
@@ -465,7 +941,13 @@ fn star(n: usize, w: f64, h: f64, inner: f64, normalized: bool) -> Vec<(f64, f64
         let r = if i % 2 == 0 { 1.0 } else { inner };
         pts.push((r * a.cos(), r * a.sin()));
     }
-    if normalized { normalize(&pts, w, h) } else { pts.iter().map(|(x, y)| (w / 2.0 + x * w / 2.0, h / 2.0 + y * h / 2.0)).collect() }
+    if normalized {
+        normalize(&pts, w, h)
+    } else {
+        pts.iter()
+            .map(|(x, y)| (w / 2.0 + x * w / 2.0, h / 2.0 + y * h / 2.0))
+            .collect()
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -533,7 +1015,12 @@ fn corner_rect(w: f64, h: f64, c: [Corner; 4]) -> BezPath {
 }
 
 fn mid_sites(w: f64, h: f64) -> Vec<Point> {
-    vec![Point::new(w / 2.0, 0.0), Point::new(0.0, h / 2.0), Point::new(w / 2.0, h), Point::new(w, h / 2.0)]
+    vec![
+        Point::new(w / 2.0, 0.0),
+        Point::new(0.0, h / 2.0),
+        Point::new(w / 2.0, h),
+        Point::new(w, h / 2.0),
+    ]
 }
 
 /// Orientation for single-axis arrows built along +x.
@@ -571,12 +1058,30 @@ fn arrow(d: Dir, w: f64, h: f64, a1: f64, a2: f64) -> Geometry {
     let dx = (ss * a2.clamp(0.0, 100000.0 * l / ss.max(1e-9)) / 100000.0).min(l);
     let y1 = t / 2.0 - t * a1 / 2.0;
     let y2 = t / 2.0 + t * a1 / 2.0;
-    let pts = [(0.0, y1), (l - dx, y1), (l - dx, 0.0), (l, t / 2.0), (l - dx, t), (l - dx, y2), (0.0, y2)];
+    let pts = [
+        (0.0, y1),
+        (l - dx, y1),
+        (l - dx, 0.0),
+        (l, t / 2.0),
+        (l - dx, t),
+        (l - dx, y2),
+        (0.0, y2),
+    ];
     let pts = orient(d, w, h, &pts);
-    let tr = orient(d, w, h, &[(0.0, y1), (l - dx + dx * (y1 / (t / 2.0).max(1e-9)), y2)]);
+    let tr = orient(
+        d,
+        w,
+        h,
+        &[(0.0, y1), (l - dx + dx * (y1 / (t / 2.0).max(1e-9)), y2)],
+    );
     let mut text = Rect::from_points(tr[0], tr[1]);
     text = text.abs();
-    let mut g = Geometry { paths: vec![fill(Pb::new().poly(&pts).take())], text_rect: text, handles: vec![], sites: mid_sites(w, h) };
+    let mut g = Geometry {
+        paths: vec![fill(Pb::new().poly(&pts).take())],
+        text_rect: text,
+        handles: vec![],
+        sites: mid_sites(w, h),
+    };
     // handle 0: shaft thickness on the head base; handle 1: head length.
     let o = orient(d, w, h, &[(l - dx, t / 2.0), (l, t / 2.0)]);
     let (o0, o1) = (Point::new(o[0].0, o[0].1), Point::new(o[1].0, o[1].1));
@@ -585,9 +1090,17 @@ fn arrow(d: Dir, w: f64, h: f64, a1: f64, a2: f64) -> Geometry {
         Dir::Up | Dir::Down => Vec2::new(-t / 2.0 / 100000.0, 0.0),
     };
     let along = (o0 - o1) * (ss / 100000.0 / dx.max(1e-9));
-    g.handles.push(Handle::new(0, o0, across, a1 * 100000.0, 0.0, 100000.0));
+    g.handles
+        .push(Handle::new(0, o0, across, a1 * 100000.0, 0.0, 100000.0));
     if dx > 1e-9 {
-        g.handles.push(Handle::new(1, o1, along, a2, 0.0, 100000.0 * l / ss.max(1e-9)));
+        g.handles.push(Handle::new(
+            1,
+            o1,
+            along,
+            a2,
+            0.0,
+            100000.0 * l / ss.max(1e-9),
+        ));
     }
     g
 }
@@ -599,14 +1112,39 @@ fn double_arrow(vertical: bool, w: f64, h: f64, a1: f64, a2: f64) -> Geometry {
     let dx = (ss * a2.max(0.0) / 100000.0).min(l / 2.0);
     let y1 = t / 2.0 - t * a1 / 2.0;
     let y2 = t / 2.0 + t * a1 / 2.0;
-    let pts = [(0.0, t / 2.0), (dx, 0.0), (dx, y1), (l - dx, y1), (l - dx, 0.0), (l, t / 2.0), (l - dx, t), (l - dx, y2), (dx, y2), (dx, t)];
+    let pts = [
+        (0.0, t / 2.0),
+        (dx, 0.0),
+        (dx, y1),
+        (l - dx, y1),
+        (l - dx, 0.0),
+        (l, t / 2.0),
+        (l - dx, t),
+        (l - dx, y2),
+        (dx, y2),
+        (dx, t),
+    ];
     let pts = orient(if vertical { Dir::Down } else { Dir::Right }, w, h, &pts);
-    let r = if vertical { Rect::new(y1, dx, y2, h - dx) } else { Rect::new(dx, y1, w - dx, y2) };
-    Geometry { paths: vec![fill(Pb::new().poly(&pts).take())], text_rect: r, handles: vec![], sites: mid_sites(w, h) }
+    let r = if vertical {
+        Rect::new(y1, dx, y2, h - dx)
+    } else {
+        Rect::new(dx, y1, w - dx, y2)
+    };
+    Geometry {
+        paths: vec![fill(Pb::new().poly(&pts).take())],
+        text_rect: r,
+        handles: vec![],
+        sites: mid_sites(w, h),
+    }
 }
 
 fn simple(path: BezPath, text: Rect, w: f64, h: f64) -> Geometry {
-    Geometry { paths: vec![fill(path)], text_rect: text, handles: vec![], sites: mid_sites(w, h) }
+    Geometry {
+        paths: vec![fill(path)],
+        text_rect: text,
+        handles: vec![],
+        sites: mid_sites(w, h),
+    }
 }
 
 /// Builds the geometry for preset `name` at size `w`×`h` with adjust values `adj` (missing
@@ -619,14 +1157,20 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
     let h = h.max(0.0);
     let defaults = info(name).map(|i| i.defaults).unwrap_or(&[]);
     let a = |i: usize| -> f64 {
-        let v = adj.get(i).copied().or_else(|| defaults.get(i).copied()).unwrap_or(0.0);
+        let v = adj
+            .get(i)
+            .copied()
+            .or_else(|| defaults.get(i).copied())
+            .unwrap_or(0.0);
         if v.is_finite() { v } else { 0.0 }
     };
     let ss = w.min(h);
     let full = Rect::new(0.0, 0.0, w, h);
     let mut b = Pb::new();
     let g = match name {
-        "rect" | "textBox" | "flowChartProcess" => simple(corner_rect(w, h, [Corner::Square; 4]), full, w, h),
+        "rect" | "textBox" | "flowChartProcess" => {
+            simple(corner_rect(w, h, [Corner::Square; 4]), full, w, h)
+        }
         "actionButtonBlank"
         | "actionButtonBackPrevious"
         | "actionButtonForwardNext"
@@ -642,67 +1186,202 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
         "roundRect" => {
             let v = a(0).clamp(0.0, 50000.0);
             let r = ss * v / 100000.0;
-            let mut g = simple(corner_rect(w, h, [Corner::Round(r); 4]), full.inset(-r * 0.29289), w, h);
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            let mut g = simple(
+                corner_rect(w, h, [Corner::Round(r); 4]),
+                full.inset(-r * 0.29289),
+                w,
+                h,
+            );
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
-        "flowChartAlternateProcess" => simple(corner_rect(w, h, [Corner::Round(ss / 6.0); 4]), full.inset(-ss / 6.0 * 0.29289), w, h),
+        "flowChartAlternateProcess" => simple(
+            corner_rect(w, h, [Corner::Round(ss / 6.0); 4]),
+            full.inset(-ss / 6.0 * 0.29289),
+            w,
+            h,
+        ),
         "snip1Rect" => {
             let v = a(0).clamp(0.0, 50000.0);
             let d = ss * v / 100000.0;
             let mut g = simple(
-                corner_rect(w, h, [Corner::Square, Corner::Snip(d), Corner::Square, Corner::Square]),
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Square,
+                        Corner::Snip(d),
+                        Corner::Square,
+                        Corner::Square,
+                    ],
+                ),
                 Rect::new(0.0, d / 2.0, w - d / 2.0, h),
                 w,
                 h,
             );
-            g.handles.push(Handle::new(0, Point::new(w, 0.0), Vec2::new(-ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::new(w, 0.0),
+                Vec2::new(-ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "snip2SameRect" => {
-            let (d1, d2) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
-            simple(corner_rect(w, h, [Corner::Snip(d1), Corner::Snip(d1), Corner::Snip(d2), Corner::Snip(d2)]), full.inset(-d1.max(d2) / 2.0), w, h)
+            let (d1, d2) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
+            simple(
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Snip(d1),
+                        Corner::Snip(d1),
+                        Corner::Snip(d2),
+                        Corner::Snip(d2),
+                    ],
+                ),
+                full.inset(-d1.max(d2) / 2.0),
+                w,
+                h,
+            )
         }
         "snip2DiagRect" => {
-            let (d1, d2) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
-            simple(corner_rect(w, h, [Corner::Snip(d1), Corner::Snip(d2), Corner::Snip(d1), Corner::Snip(d2)]), full.inset(-d1.max(d2) / 2.0), w, h)
+            let (d1, d2) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
+            simple(
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Snip(d1),
+                        Corner::Snip(d2),
+                        Corner::Snip(d1),
+                        Corner::Snip(d2),
+                    ],
+                ),
+                full.inset(-d1.max(d2) / 2.0),
+                w,
+                h,
+            )
         }
         "snipRoundRect" => {
-            let (r, d) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
-            simple(corner_rect(w, h, [Corner::Round(r), Corner::Snip(d), Corner::Square, Corner::Square]), full.inset(-r.max(d) / 2.0), w, h)
+            let (r, d) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
+            simple(
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Round(r),
+                        Corner::Snip(d),
+                        Corner::Square,
+                        Corner::Square,
+                    ],
+                ),
+                full.inset(-r.max(d) / 2.0),
+                w,
+                h,
+            )
         }
         "round1Rect" => {
             let r = ss * a(0).clamp(0.0, 50000.0) / 1e5;
-            simple(corner_rect(w, h, [Corner::Square, Corner::Round(r), Corner::Square, Corner::Square]), full.inset(-r * 0.29289), w, h)
+            simple(
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Square,
+                        Corner::Round(r),
+                        Corner::Square,
+                        Corner::Square,
+                    ],
+                ),
+                full.inset(-r * 0.29289),
+                w,
+                h,
+            )
         }
         "round2SameRect" => {
-            let (r1, r2) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
+            let (r1, r2) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
             simple(
-                corner_rect(w, h, [Corner::Round(r1), Corner::Round(r1), Corner::Round(r2), Corner::Round(r2)]),
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Round(r1),
+                        Corner::Round(r1),
+                        Corner::Round(r2),
+                        Corner::Round(r2),
+                    ],
+                ),
                 full.inset(-r1.max(r2) * 0.29289),
                 w,
                 h,
             )
         }
         "round2DiagRect" => {
-            let (r1, r2) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
+            let (r1, r2) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
             simple(
-                corner_rect(w, h, [Corner::Round(r1), Corner::Round(r2), Corner::Round(r1), Corner::Round(r2)]),
+                corner_rect(
+                    w,
+                    h,
+                    [
+                        Corner::Round(r1),
+                        Corner::Round(r2),
+                        Corner::Round(r1),
+                        Corner::Round(r2),
+                    ],
+                ),
                 full.inset(-r1.max(r2) * 0.29289),
                 w,
                 h,
             )
         }
         "ellipse" | "flowChartConnector" => {
-            let mut g =
-                simple(b.ellipse(w / 2.0, h / 2.0, w / 2.0, h / 2.0).take(), Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355), w, h);
+            let mut g = simple(
+                b.ellipse(w / 2.0, h / 2.0, w / 2.0, h / 2.0).take(),
+                Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
+                w,
+                h,
+            );
             g.sites = ellipse_sites(w, h);
             g
         }
         "triangle" | "flowChartExtract" => {
-            let v = if name == "triangle" { a(0).clamp(0.0, 100000.0) } else { 50000.0 };
+            let v = if name == "triangle" {
+                a(0).clamp(0.0, 100000.0)
+            } else {
+                50000.0
+            };
             let ax = w * v / 100000.0;
-            let mut g = simple(b.poly(&[(0.0, h), (ax, 0.0), (w, h)]).take(), Rect::new(ax / 2.0, h / 2.0, (ax + w) / 2.0, h), w, h);
+            let mut g = simple(
+                b.poly(&[(0.0, h), (ax, 0.0), (w, h)]).take(),
+                Rect::new(ax / 2.0, h / 2.0, (ax + w) / 2.0, h),
+                w,
+                h,
+            );
             g.sites = vec![
                 Point::new(ax, 0.0),
                 Point::new(ax / 2.0, h / 2.0),
@@ -712,47 +1391,98 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 Point::new((ax + w) / 2.0, h / 2.0),
             ];
             if name == "triangle" {
-                g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(w / 100000.0, 0.0), v, 0.0, 100000.0));
+                g.handles.push(Handle::new(
+                    0,
+                    Point::ZERO,
+                    Vec2::new(w / 100000.0, 0.0),
+                    v,
+                    0.0,
+                    100000.0,
+                ));
             }
             g
         }
-        "flowChartMerge" => simple(b.poly(&[(0.0, 0.0), (w, 0.0), (w / 2.0, h)]).take(), Rect::new(w / 4.0, 0.0, w * 0.75, h / 2.0), w, h),
-        "rtTriangle" => {
-            simple(b.poly(&[(0.0, 0.0), (0.0, h), (w, h)]).take(), Rect::new(w / 12.0, h * 7.0 / 12.0, w * 7.0 / 12.0, h * 11.0 / 12.0), w, h)
-        }
+        "flowChartMerge" => simple(
+            b.poly(&[(0.0, 0.0), (w, 0.0), (w / 2.0, h)]).take(),
+            Rect::new(w / 4.0, 0.0, w * 0.75, h / 2.0),
+            w,
+            h,
+        ),
+        "rtTriangle" => simple(
+            b.poly(&[(0.0, 0.0), (0.0, h), (w, h)]).take(),
+            Rect::new(w / 12.0, h * 7.0 / 12.0, w * 7.0 / 12.0, h * 11.0 / 12.0),
+            w,
+            h,
+        ),
         "parallelogram" | "flowChartInputOutput" => {
-            let v = if name == "parallelogram" { a(0).clamp(0.0, 100000.0 * w / ss.max(1e-9)) } else { 20000.0 * w / ss.max(1e-9) };
+            let v = if name == "parallelogram" {
+                a(0).clamp(0.0, 100000.0 * w / ss.max(1e-9))
+            } else {
+                20000.0 * w / ss.max(1e-9)
+            };
             let off = ss * v / 100000.0;
             let mut g = simple(
-                b.poly(&[(0.0, h), (off, 0.0), (w, 0.0), (w - off, h)]).take(),
-                Rect::new(off / 2.0 + off * 0.2, h * 0.08, w - off / 2.0 - off * 0.2, h * 0.92),
+                b.poly(&[(0.0, h), (off, 0.0), (w, 0.0), (w - off, h)])
+                    .take(),
+                Rect::new(
+                    off / 2.0 + off * 0.2,
+                    h * 0.08,
+                    w - off / 2.0 - off * 0.2,
+                    h * 0.92,
+                ),
                 w,
                 h,
             );
             if name == "parallelogram" {
-                g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 100000.0 * w / ss.max(1e-9)));
+                g.handles.push(Handle::new(
+                    0,
+                    Point::ZERO,
+                    Vec2::new(ss / 100000.0, 0.0),
+                    v,
+                    0.0,
+                    100000.0 * w / ss.max(1e-9),
+                ));
             }
             g
         }
         "trapezoid" => {
             let v = a(0).clamp(0.0, 50000.0 * w / ss.max(1e-9));
             let off = ss * v / 100000.0;
-            let mut g =
-                simple(b.poly(&[(0.0, h), (off, 0.0), (w - off, 0.0), (w, h)]).take(), Rect::new(off * 0.66, h * 0.2, w - off * 0.66, h), w, h);
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0 * w / ss.max(1e-9)));
+            let mut g = simple(
+                b.poly(&[(0.0, h), (off, 0.0), (w - off, 0.0), (w, h)])
+                    .take(),
+                Rect::new(off * 0.66, h * 0.2, w - off * 0.66, h),
+                w,
+                h,
+            );
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0 * w / ss.max(1e-9),
+            ));
             g
         }
-        "flowChartManualOperation" => {
-            simple(b.poly(&[(0.0, 0.0), (w, 0.0), (w * 0.8, h), (w * 0.2, h)]).take(), Rect::new(w * 0.2, 0.0, w * 0.8, h), w, h)
-        }
+        "flowChartManualOperation" => simple(
+            b.poly(&[(0.0, 0.0), (w, 0.0), (w * 0.8, h), (w * 0.2, h)])
+                .take(),
+            Rect::new(w * 0.2, 0.0, w * 0.8, h),
+            w,
+            h,
+        ),
         "diamond" | "flowChartDecision" => simple(
-            b.poly(&[(w / 2.0, 0.0), (w, h / 2.0), (w / 2.0, h), (0.0, h / 2.0)]).take(),
+            b.poly(&[(w / 2.0, 0.0), (w, h / 2.0), (w / 2.0, h), (0.0, h / 2.0)])
+                .take(),
             Rect::new(w / 4.0, h / 4.0, w * 0.75, h * 0.75),
             w,
             h,
         ),
         "flowChartSort" => {
-            let d = b.poly(&[(w / 2.0, 0.0), (w, h / 2.0), (w / 2.0, h), (0.0, h / 2.0)]).take();
+            let d = b
+                .poly(&[(w / 2.0, 0.0), (w, h / 2.0), (w / 2.0, h), (0.0, h / 2.0)])
+                .take();
             let line = Pb::new().m(0.0, h / 2.0).l(w, h / 2.0).take();
             Geometry {
                 paths: vec![fill(d), stroke_only(line)],
@@ -761,21 +1491,60 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 sites: mid_sites(w, h),
             }
         }
-        "pentagon" => simple(b.poly(&polygon_regular(5, w, h, -90.0)).take(), Rect::new(w * 0.2, h * 0.27, w * 0.8, h * 0.9), w, h),
-        "heptagon" => simple(b.poly(&polygon_regular(7, w, h, -90.0)).take(), Rect::new(w * 0.16, h * 0.2, w * 0.84, h * 0.86), w, h),
-        "decagon" => simple(b.poly(&polygon_regular(10, w, h, 0.0)).take(), Rect::new(w * 0.1, h * 0.17, w * 0.9, h * 0.83), w, h),
-        "dodecagon" => simple(b.poly(&polygon_regular(12, w, h, 15.0)).take(), Rect::new(w * 0.13, h * 0.13, w * 0.87, h * 0.87), w, h),
+        "pentagon" => simple(
+            b.poly(&polygon_regular(5, w, h, -90.0)).take(),
+            Rect::new(w * 0.2, h * 0.27, w * 0.8, h * 0.9),
+            w,
+            h,
+        ),
+        "heptagon" => simple(
+            b.poly(&polygon_regular(7, w, h, -90.0)).take(),
+            Rect::new(w * 0.16, h * 0.2, w * 0.84, h * 0.86),
+            w,
+            h,
+        ),
+        "decagon" => simple(
+            b.poly(&polygon_regular(10, w, h, 0.0)).take(),
+            Rect::new(w * 0.1, h * 0.17, w * 0.9, h * 0.83),
+            w,
+            h,
+        ),
+        "dodecagon" => simple(
+            b.poly(&polygon_regular(12, w, h, 15.0)).take(),
+            Rect::new(w * 0.13, h * 0.13, w * 0.87, h * 0.87),
+            w,
+            h,
+        ),
         "hexagon" | "flowChartPreparation" => {
-            let v = if name == "hexagon" { a(0).clamp(0.0, 50000.0 * w / ss.max(1e-9)) } else { 20000.0 * w / ss.max(1e-9) };
+            let v = if name == "hexagon" {
+                a(0).clamp(0.0, 50000.0 * w / ss.max(1e-9))
+            } else {
+                20000.0 * w / ss.max(1e-9)
+            };
             let off = ss * v / 100000.0;
             let mut g = simple(
-                b.poly(&[(0.0, h / 2.0), (off, 0.0), (w - off, 0.0), (w, h / 2.0), (w - off, h), (off, h)]).take(),
+                b.poly(&[
+                    (0.0, h / 2.0),
+                    (off, 0.0),
+                    (w - off, 0.0),
+                    (w, h / 2.0),
+                    (w - off, h),
+                    (off, h),
+                ])
+                .take(),
                 Rect::new(off * 0.6, h * 0.14, w - off * 0.6, h * 0.86),
                 w,
                 h,
             );
             if name == "hexagon" {
-                g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0 * w / ss.max(1e-9)));
+                g.handles.push(Handle::new(
+                    0,
+                    Point::ZERO,
+                    Vec2::new(ss / 100000.0, 0.0),
+                    v,
+                    0.0,
+                    50000.0 * w / ss.max(1e-9),
+                ));
             }
             g
         }
@@ -783,12 +1552,29 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let v = a(0).clamp(0.0, 50000.0);
             let d = ss * v / 100000.0;
             let mut g = simple(
-                b.poly(&[(d, 0.0), (w - d, 0.0), (w, d), (w, h - d), (w - d, h), (d, h), (0.0, h - d), (0.0, d)]).take(),
+                b.poly(&[
+                    (d, 0.0),
+                    (w - d, 0.0),
+                    (w, d),
+                    (w, h - d),
+                    (w - d, h),
+                    (d, h),
+                    (0.0, h - d),
+                    (0.0, d),
+                ])
+                .take(),
                 full.inset(-d / 2.0),
                 w,
                 h,
             );
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "plus" => {
@@ -814,7 +1600,14 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 w,
                 h,
             );
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "frame" => {
@@ -822,21 +1615,71 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let t = ss * v / 100000.0;
             b.poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]);
             b.poly(&[(t, t), (w - t, t), (w - t, h - t), (t, h - t)]);
-            let mut g = Geometry { paths: vec![fill_eo(b.take())], text_rect: full.inset(-t), handles: vec![], sites: mid_sites(w, h) };
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            let mut g = Geometry {
+                paths: vec![fill_eo(b.take())],
+                text_rect: full.inset(-t),
+                handles: vec![],
+                sites: mid_sites(w, h),
+            };
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "halfFrame" => {
-            let (t1, t2) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5);
-            simple(b.poly(&[(0.0, 0.0), (w, 0.0), (w - t1, t1), (t2, t1), (t2, h - t2), (0.0, h)]).take(), full, w, h)
+            let (t1, t2) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+            );
+            simple(
+                b.poly(&[
+                    (0.0, 0.0),
+                    (w, 0.0),
+                    (w - t1, t1),
+                    (t2, t1),
+                    (t2, h - t2),
+                    (0.0, h),
+                ])
+                .take(),
+                full,
+                w,
+                h,
+            )
         }
         "corner" => {
-            let (t1, t2) = (ss * a(0).clamp(0.0, 100000.0) / 1e5, ss * a(1).clamp(0.0, 100000.0) / 1e5);
-            simple(b.poly(&[(0.0, 0.0), (t2, 0.0), (t2, h - t1), (w, h - t1), (w, h), (0.0, h)]).take(), Rect::new(0.0, h - t1, w, h), w, h)
+            let (t1, t2) = (
+                ss * a(0).clamp(0.0, 100000.0) / 1e5,
+                ss * a(1).clamp(0.0, 100000.0) / 1e5,
+            );
+            simple(
+                b.poly(&[
+                    (0.0, 0.0),
+                    (t2, 0.0),
+                    (t2, h - t1),
+                    (w, h - t1),
+                    (w, h),
+                    (0.0, h),
+                ])
+                .take(),
+                Rect::new(0.0, h - t1, w, h),
+                w,
+                h,
+            )
         }
         "diagStripe" => {
             let k = a(0).clamp(0.0, 100000.0) / 1e5;
-            simple(b.poly(&[(0.0, h * k), (w * k, 0.0), (w, 0.0), (0.0, h)]).take(), Rect::new(0.0, 0.0, w / 2.0, h / 2.0), w, h)
+            simple(
+                b.poly(&[(0.0, h * k), (w * k, 0.0), (w, 0.0), (0.0, h)])
+                    .take(),
+                Rect::new(0.0, 0.0, w / 2.0, h / 2.0),
+                w,
+                h,
+            )
         }
         "plaque" => {
             let v = a(0).clamp(0.0, 50000.0);
@@ -851,30 +1694,75 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 .arc(r, r, 0.0, -90.0)
                 .z();
             let mut g = simple(b.take(), full.inset(-r * 0.7), w, h);
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "can" | "flowChartMagneticDisk" => {
-            let v = if name == "can" { a(0).clamp(0.0, 50000.0 * h / ss.max(1e-9)) } else { 33333.0 * h / ss.max(1e-9) / 2.0 };
+            let v = if name == "can" {
+                a(0).clamp(0.0, 50000.0 * h / ss.max(1e-9))
+            } else {
+                33333.0 * h / ss.max(1e-9) / 2.0
+            };
             let eh = ss * v / 100000.0;
             let r = eh / 2.0;
-            let body = Pb::new().m(0.0, r).l(0.0, h - r).arc(w / 2.0, r, 180.0, -180.0).l(w, r).arc(w / 2.0, r, 0.0, -180.0).z().take();
+            let body = Pb::new()
+                .m(0.0, r)
+                .l(0.0, h - r)
+                .arc(w / 2.0, r, 180.0, -180.0)
+                .l(w, r)
+                .arc(w / 2.0, r, 0.0, -180.0)
+                .z()
+                .take();
             let top = Pb::new().ellipse(w / 2.0, r, w / 2.0, r).take();
             let mut g = Geometry {
-                paths: vec![fill(body), shade(top, if name == "can" { FillMode::Lighten } else { FillMode::Norm })],
+                paths: vec![
+                    fill(body),
+                    shade(
+                        top,
+                        if name == "can" {
+                            FillMode::Lighten
+                        } else {
+                            FillMode::Norm
+                        },
+                    ),
+                ],
                 text_rect: Rect::new(0.0, eh, w, h - r),
                 handles: vec![],
                 sites: mid_sites(w, h),
             };
             if name == "can" {
-                g.handles.push(Handle::new(0, Point::new(w / 2.0, 0.0), Vec2::new(0.0, ss / 100000.0), v, 0.0, 50000.0 * h / ss.max(1e-9)));
+                g.handles.push(Handle::new(
+                    0,
+                    Point::new(w / 2.0, 0.0),
+                    Vec2::new(0.0, ss / 100000.0),
+                    v,
+                    0.0,
+                    50000.0 * h / ss.max(1e-9),
+                ));
             }
             g
         }
         "flowChartMagneticDrum" => {
             let r = w / 6.0 / 2.0;
-            let body = Pb::new().m(r, 0.0).l(w - r, 0.0).arc(r, h / 2.0, 270.0, 180.0).l(r, h).arc(r, h / 2.0, 90.0, 180.0).z().take();
-            let side = Pb::new().m(w - r, 0.0).arc(r, h / 2.0, 270.0, -180.0).take();
+            let body = Pb::new()
+                .m(r, 0.0)
+                .l(w - r, 0.0)
+                .arc(r, h / 2.0, 270.0, 180.0)
+                .l(r, h)
+                .arc(r, h / 2.0, 90.0, 180.0)
+                .z()
+                .take();
+            let side = Pb::new()
+                .m(w - r, 0.0)
+                .arc(r, h / 2.0, 270.0, -180.0)
+                .take();
             Geometry {
                 paths: vec![fill(body), stroke_only(side)],
                 text_rect: Rect::new(r, 0.0, w - 2.0 * r, h),
@@ -885,26 +1773,53 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
         "cube" => {
             let v = a(0).clamp(0.0, 100000.0);
             let d = ss * v / 100000.0;
-            let front = Pb::new().poly(&[(0.0, d), (w - d, d), (w - d, h), (0.0, h)]).take();
-            let top = Pb::new().poly(&[(0.0, d), (d, 0.0), (w, 0.0), (w - d, d)]).take();
-            let side = Pb::new().poly(&[(w - d, d), (w, 0.0), (w, h - d), (w - d, h)]).take();
+            let front = Pb::new()
+                .poly(&[(0.0, d), (w - d, d), (w - d, h), (0.0, h)])
+                .take();
+            let top = Pb::new()
+                .poly(&[(0.0, d), (d, 0.0), (w, 0.0), (w - d, d)])
+                .take();
+            let side = Pb::new()
+                .poly(&[(w - d, d), (w, 0.0), (w, h - d), (w - d, h)])
+                .take();
             let mut g = Geometry {
-                paths: vec![fill(front), shade(top, FillMode::LightenLess), shade(side, FillMode::DarkenLess)],
+                paths: vec![
+                    fill(front),
+                    shade(top, FillMode::LightenLess),
+                    shade(side, FillMode::DarkenLess),
+                ],
                 text_rect: Rect::new(0.0, d, w - d, h),
                 handles: vec![],
                 sites: mid_sites(w, h),
             };
-            g.handles.push(Handle::new(0, Point::new(0.0, 0.0), Vec2::new(0.0, ss / 100000.0), v, 0.0, 100000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::new(0.0, 0.0),
+                Vec2::new(0.0, ss / 100000.0),
+                v,
+                0.0,
+                100000.0,
+            ));
             g
         }
         "bevel" => {
             let v = a(0).clamp(0.0, 50000.0);
             let d = ss * v / 100000.0;
-            let inner = Pb::new().poly(&[(d, d), (w - d, d), (w - d, h - d), (d, h - d)]).take();
-            let top = Pb::new().poly(&[(0.0, 0.0), (w, 0.0), (w - d, d), (d, d)]).take();
-            let left = Pb::new().poly(&[(0.0, 0.0), (d, d), (d, h - d), (0.0, h)]).take();
-            let right = Pb::new().poly(&[(w, 0.0), (w, h), (w - d, h - d), (w - d, d)]).take();
-            let bottom = Pb::new().poly(&[(0.0, h), (d, h - d), (w - d, h - d), (w, h)]).take();
+            let inner = Pb::new()
+                .poly(&[(d, d), (w - d, d), (w - d, h - d), (d, h - d)])
+                .take();
+            let top = Pb::new()
+                .poly(&[(0.0, 0.0), (w, 0.0), (w - d, d), (d, d)])
+                .take();
+            let left = Pb::new()
+                .poly(&[(0.0, 0.0), (d, d), (d, h - d), (0.0, h)])
+                .take();
+            let right = Pb::new()
+                .poly(&[(w, 0.0), (w, h), (w - d, h - d), (w - d, d)])
+                .take();
+            let bottom = Pb::new()
+                .poly(&[(0.0, h), (d, h - d), (w - d, h - d), (w, h)])
+                .take();
             let mut g = Geometry {
                 paths: vec![
                     fill(inner),
@@ -917,21 +1832,40 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 handles: vec![],
                 sites: mid_sites(w, h),
             };
-            g.handles.push(Handle::new(0, Point::ZERO, Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::ZERO,
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "donut" => {
             let v = a(0).clamp(0.0, 50000.0);
             let t = ss * v / 100000.0;
             b.ellipse(w / 2.0, h / 2.0, w / 2.0, h / 2.0);
-            b.ellipse(w / 2.0, h / 2.0, (w / 2.0 - t).max(0.0), (h / 2.0 - t).max(0.0));
+            b.ellipse(
+                w / 2.0,
+                h / 2.0,
+                (w / 2.0 - t).max(0.0),
+                (h / 2.0 - t).max(0.0),
+            );
             let mut g = Geometry {
                 paths: vec![fill_eo(b.take())],
                 text_rect: Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
                 handles: vec![],
                 sites: ellipse_sites(w, h),
             };
-            g.handles.push(Handle::new(0, Point::new(0.0, h / 2.0), Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0));
+            g.handles.push(Handle::new(
+                0,
+                Point::new(0.0, h / 2.0),
+                Vec2::new(ss / 100000.0, 0.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "noSmoking" => {
@@ -943,15 +1877,31 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let ring = b.take();
             let th = (h).atan2(w);
             let dir = Vec2::new(th.cos(), th.sin());
-            let r = if rx > 0.0 && ry > 0.0 { rx * ry / ((ry * th.cos()).powi(2) + (rx * th.sin()).powi(2)).sqrt() } else { 0.0 };
+            let r = if rx > 0.0 && ry > 0.0 {
+                rx * ry / ((ry * th.cos()).powi(2) + (rx * th.sin()).powi(2)).sqrt()
+            } else {
+                0.0
+            };
             let perp = Vec2::new(-dir.y, dir.x) * (t / 2.0);
             let c = Point::new(w / 2.0, h / 2.0);
-            let p = [c - dir * r - perp, c + dir * r - perp, c + dir * r + perp, c - dir * r + perp];
+            let p = [
+                c - dir * r - perp,
+                c + dir * r - perp,
+                c + dir * r + perp,
+                c - dir * r + perp,
+            ];
             let bar = Pb::new().poly(&p.map(|q| (q.x, q.y))).take();
             Geometry {
                 paths: vec![fill_eo(ring), fill(bar)],
                 text_rect: Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
-                handles: vec![Handle::new(0, Point::new(0.0, h / 2.0), Vec2::new(ss / 100000.0, 0.0), v, 0.0, 50000.0)],
+                handles: vec![Handle::new(
+                    0,
+                    Point::new(0.0, h / 2.0),
+                    Vec2::new(ss / 100000.0, 0.0),
+                    v,
+                    0.0,
+                    50000.0,
+                )],
                 sites: ellipse_sites(w, h),
             }
         }
@@ -977,9 +1927,15 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             if isweep >= 0.0 {
                 isweep -= 360.0;
             }
-            let p0 = Point::new(w / 2.0 + rx * s0.to_radians().cos(), h / 2.0 + ry * s0.to_radians().sin());
+            let p0 = Point::new(
+                w / 2.0 + rx * s0.to_radians().cos(),
+                h / 2.0 + ry * s0.to_radians().sin(),
+            );
             b.m(p0.x, p0.y).arc(rx, ry, s0, sweep);
-            let pi = Point::new(w / 2.0 + irx * si.to_radians().cos(), h / 2.0 + iry * si.to_radians().sin());
+            let pi = Point::new(
+                w / 2.0 + irx * si.to_radians().cos(),
+                h / 2.0 + iry * si.to_radians().sin(),
+            );
             b.l(pi.x, pi.y).arc(irx, iry, si, isweep).z();
             simple(b.take(), full, w, h)
         }
@@ -991,7 +1947,10 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             if sw <= 0.0 {
                 sw += 360.0;
             }
-            let p0 = Point::new(rx + rx * s.to_radians().cos(), ry + ry * s.to_radians().sin());
+            let p0 = Point::new(
+                rx + rx * s.to_radians().cos(),
+                ry + ry * s.to_radians().sin(),
+            );
             b.m(p0.x, p0.y).arc(rx, ry, s, sw);
             let text = Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355);
             match name {
@@ -1008,7 +1967,12 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                     let mut f = BezPath::from_vec(open.elements().to_vec());
                     f.line_to(Point::new(rx, ry));
                     f.close_path();
-                    Geometry { paths: vec![fill_only(f), stroke_only(open)], text_rect: text, handles: vec![], sites: mid_sites(w, h) }
+                    Geometry {
+                        paths: vec![fill_only(f), stroke_only(open)],
+                        text_rect: text,
+                        handles: vec![],
+                        sites: mid_sites(w, h),
+                    }
                 }
             }
         }
@@ -1016,15 +1980,28 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let k = a(0).clamp(0.0, 200000.0) / 100000.0;
             let tip = (w / 2.0 + w / 2.0 * k, h / 2.0 - h / 2.0 * k);
             b.m(0.0, h / 2.0).arc(w / 2.0, h / 2.0, 180.0, 90.0);
-            b.q(w / 2.0 + w / 4.0 * k, 0.0, tip.0, tip.1).q(w, h / 2.0 - h / 4.0 * k, w, h / 2.0);
+            b.q(w / 2.0 + w / 4.0 * k, 0.0, tip.0, tip.1)
+                .q(w, h / 2.0 - h / 4.0 * k, w, h / 2.0);
             b.arc(w / 2.0, h / 2.0, 0.0, 180.0).z();
-            simple(b.take(), Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355), w, h)
+            simple(
+                b.take(),
+                Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
+                w,
+                h,
+            )
         }
         "foldedCorner" => {
             let v = a(0).clamp(0.0, 50000.0);
             let d = ss * v / 100000.0;
-            let body = Pb::new().poly(&[(0.0, 0.0), (w, 0.0), (w, h - d), (w - d, h), (0.0, h)]).take();
-            let fold = Pb::new().m(w - d, h).l(w - d + d * 0.2, h - d + d * 0.2).l(w, h - d).z().take();
+            let body = Pb::new()
+                .poly(&[(0.0, 0.0), (w, 0.0), (w, h - d), (w - d, h), (0.0, h)])
+                .take();
+            let fold = Pb::new()
+                .m(w - d, h)
+                .l(w - d + d * 0.2, h - d + d * 0.2)
+                .l(w, h - d)
+                .z()
+                .take();
             Geometry {
                 paths: vec![fill(body), shade(fold, FillMode::DarkenLess)],
                 text_rect: Rect::new(0.0, 0.0, w, h - d),
@@ -1039,9 +2016,16 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             eyes.ellipse(w * 0.35, h * 0.37, w * 0.05, h * 0.05);
             eyes.ellipse(w * 0.65, h * 0.37, w * 0.05, h * 0.05);
             let ys = h * (0.72 - k);
-            let smile = Pb::new().m(w * 0.22, ys).q(w / 2.0, ys + h * k * 4.0 + h * 0.0, w * 0.78, ys).take();
+            let smile = Pb::new()
+                .m(w * 0.22, ys)
+                .q(w / 2.0, ys + h * k * 4.0 + h * 0.0, w * 0.78, ys)
+                .take();
             Geometry {
-                paths: vec![fill(face), shade(eyes.take(), FillMode::DarkenLess), stroke_only(smile)],
+                paths: vec![
+                    fill(face),
+                    shade(eyes.take(), FillMode::DarkenLess),
+                    stroke_only(smile),
+                ],
                 text_rect: Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
                 handles: vec![],
                 sites: ellipse_sites(w, h),
@@ -1054,25 +2038,55 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             b.c(w * 0.38, h * 0.78, 0.0, h * 0.6, 0.0, h * 0.32);
             b.c(0.0, h * 0.0, w * 0.38, h * -0.02, w / 2.0, h * 0.25);
             b.z();
-            simple(b.take(), Rect::new(w * 0.2, h * 0.25, w * 0.8, h * 0.7), w, h)
+            simple(
+                b.take(),
+                Rect::new(w * 0.2, h * 0.25, w * 0.8, h * 0.7),
+                w,
+                h,
+            )
         }
         "lightningBolt" => {
-            let pts = normalize(&[(0.36, 0.0), (0.68, 0.0), (0.53, 0.34), (0.79, 0.34), (0.24, 1.0), (0.39, 0.53), (0.15, 0.53)], w, h);
-            simple(b.poly(&pts).take(), Rect::new(w * 0.3, h * 0.35, w * 0.65, h * 0.6), w, h)
+            let pts = normalize(
+                &[
+                    (0.36, 0.0),
+                    (0.68, 0.0),
+                    (0.53, 0.34),
+                    (0.79, 0.34),
+                    (0.24, 1.0),
+                    (0.39, 0.53),
+                    (0.15, 0.53),
+                ],
+                w,
+                h,
+            );
+            simple(
+                b.poly(&pts).take(),
+                Rect::new(w * 0.3, h * 0.35, w * 0.65, h * 0.6),
+                w,
+                h,
+            )
         }
         "sun" => {
             let k = a(0).clamp(12500.0, 46875.0) / 100000.0;
             let (cx, cy) = (w / 2.0, h / 2.0);
             let cr = 0.5 - k;
-            let core = Pb::new().ellipse(cx, cy, w * cr * 0.72, h * cr * 0.72).take();
+            let core = Pb::new()
+                .ellipse(cx, cy, w * cr * 0.72, h * cr * 0.72)
+                .take();
             let mut rays = Pb::new();
             for i in 0..8 {
                 let ang = (i as f64 * 45.0).to_radians();
                 let half = 9f64.to_radians();
                 let rb = cr * 0.72 + 0.06;
                 let tip = (cx + w * 0.5 * ang.cos(), cy + h * 0.5 * ang.sin());
-                let b1 = (cx + w * rb * (ang - half).cos(), cy + h * rb * (ang - half).sin());
-                let b2 = (cx + w * rb * (ang + half).cos(), cy + h * rb * (ang + half).sin());
+                let b1 = (
+                    cx + w * rb * (ang - half).cos(),
+                    cy + h * rb * (ang - half).sin(),
+                );
+                let b2 = (
+                    cx + w * rb * (ang + half).cos(),
+                    cy + h * rb * (ang + half).sin(),
+                );
                 rays.poly(&[tip, b1, b2]);
             }
             Geometry {
@@ -1085,15 +2099,29 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
         "moon" => {
             let k = a(0).clamp(0.0, 87500.0) / 100000.0;
             let g0 = w * k;
-            b.m(w, 0.0).arc(w, h / 2.0, 270.0, -180.0).arc((w - g0).max(0.0), h / 2.0, 90.0, 180.0).z();
-            simple(b.take(), Rect::new(w * 0.1, h * 0.25, w * (1.0 - k).max(0.2) * 0.8, h * 0.75), w, h)
+            b.m(w, 0.0)
+                .arc(w, h / 2.0, 270.0, -180.0)
+                .arc((w - g0).max(0.0), h / 2.0, 90.0, 180.0)
+                .z();
+            simple(
+                b.take(),
+                Rect::new(w * 0.1, h * 0.25, w * (1.0 - k).max(0.2) * 0.8, h * 0.75),
+                w,
+                h,
+            )
         }
         "cloud" | "cloudCallout" => cloud(name, w, h, a(0), a(1)),
         "bracketPair" => {
             let r = ss * a(0).clamp(0.0, 50000.0) / 1e5;
             let mut l = Pb::new();
-            l.m(r, h).arc(r, r, 90.0, 90.0).l(0.0, r).arc(r, r, 180.0, 90.0);
-            l.m(w - r, 0.0).arc(r, r, 270.0, 90.0).l(w, h - r).arc(r, r, 0.0, 90.0);
+            l.m(r, h)
+                .arc(r, r, 90.0, 90.0)
+                .l(0.0, r)
+                .arc(r, r, 180.0, 90.0);
+            l.m(w - r, 0.0)
+                .arc(r, r, 270.0, 90.0)
+                .l(w, h - r)
+                .arc(r, r, 0.0, 90.0);
             let f = corner_rect(w, h, [Corner::Round(r); 4]);
             Geometry {
                 paths: vec![fill_only(f), stroke_only(l.take())],
@@ -1105,7 +2133,13 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
         "bracePair" => {
             let r = ss * a(0).clamp(0.0, 25000.0) / 1e5;
             let mut l = Pb::new();
-            l.m(2.0 * r, h).arc(r, r, 90.0, 90.0).l(r, h / 2.0 + r).arc(r, r, 0.0, -90.0).arc(r, r, 90.0, -90.0).l(r, r).arc(r, r, 180.0, 90.0);
+            l.m(2.0 * r, h)
+                .arc(r, r, 90.0, 90.0)
+                .l(r, h / 2.0 + r)
+                .arc(r, r, 0.0, -90.0)
+                .arc(r, r, 90.0, -90.0)
+                .l(r, r)
+                .arc(r, r, 180.0, 90.0);
             l.m(w - 2.0 * r, 0.0)
                 .arc(r, r, 270.0, 90.0)
                 .l(w - r, h / 2.0 - r)
@@ -1114,29 +2148,53 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 .l(w - r, h - r)
                 .arc(r, r, 0.0, 90.0);
             let f = corner_rect(w, h, [Corner::Round(r); 4]);
-            Geometry { paths: vec![fill_only(f), stroke_only(l.take())], text_rect: full.inset(-r * 1.2), handles: vec![], sites: mid_sites(w, h) }
+            Geometry {
+                paths: vec![fill_only(f), stroke_only(l.take())],
+                text_rect: full.inset(-r * 1.2),
+                handles: vec![],
+                sites: mid_sites(w, h),
+            }
         }
         "leftBracket" | "rightBracket" => {
             let r = (ss * a(0).clamp(0.0, 50000.0 * h / ss.max(1e-9)) / 1e5).min(h / 2.0);
             let mut l = Pb::new();
-            l.m(w, h).arc(w, r, 90.0, 90.0).l(0.0, r).arc(w, r, 180.0, 90.0);
+            l.m(w, h)
+                .arc(w, r, 90.0, 90.0)
+                .l(0.0, r)
+                .arc(w, r, 180.0, 90.0);
             let mut path = l.take();
             if name == "rightBracket" {
                 path.apply_affine(kurbo::Affine::new([-1.0, 0.0, 0.0, 1.0, w, 0.0]));
             }
-            Geometry { paths: vec![stroke_only(path)], text_rect: full, handles: vec![], sites: mid_sites(w, h) }
+            Geometry {
+                paths: vec![stroke_only(path)],
+                text_rect: full,
+                handles: vec![],
+                sites: mid_sites(w, h),
+            }
         }
         "leftBrace" | "rightBrace" => {
             let r = (ss * a(0).clamp(0.0, 25000.0 * h / ss.max(1e-9)) / 1e5).min(h / 4.0);
             let my = h * a(1).clamp(0.0, 100000.0) / 1e5;
             let hw = w / 2.0;
             let mut l = Pb::new();
-            l.m(w, h).arc(hw, r, 90.0, 90.0).l(hw, my + r).arc(hw, r, 0.0, -90.0).arc(hw, r, 90.0, -90.0).l(hw, r).arc(hw, r, 180.0, 90.0);
+            l.m(w, h)
+                .arc(hw, r, 90.0, 90.0)
+                .l(hw, my + r)
+                .arc(hw, r, 0.0, -90.0)
+                .arc(hw, r, 90.0, -90.0)
+                .l(hw, r)
+                .arc(hw, r, 180.0, 90.0);
             let mut path = l.take();
             if name == "rightBrace" {
                 path.apply_affine(kurbo::Affine::new([-1.0, 0.0, 0.0, 1.0, w, 0.0]));
             }
-            Geometry { paths: vec![stroke_only(path)], text_rect: full, handles: vec![], sites: mid_sites(w, h) }
+            Geometry {
+                paths: vec![stroke_only(path)],
+                text_rect: full,
+                handles: vec![],
+                sites: mid_sites(w, h),
+            }
         }
         "rightArrow" => arrow(Dir::Right, w, h, a(0), a(1)),
         "leftArrow" => arrow(Dir::Left, w, h, a(0), a(1)),
@@ -1151,12 +2209,29 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let dx = (ss * a(1).max(0.0) / 1e5).min(w);
             if name == "notchedRightArrow" {
                 let n = dx * (k / 2.0) * 0.9;
-                let pts = [(0.0, y1), (w - dx, y1), (w - dx, 0.0), (w, h / 2.0), (w - dx, h), (w - dx, y2), (0.0, y2), (n, h / 2.0)];
+                let pts = [
+                    (0.0, y1),
+                    (w - dx, y1),
+                    (w - dx, 0.0),
+                    (w, h / 2.0),
+                    (w - dx, h),
+                    (w - dx, y2),
+                    (0.0, y2),
+                    (n, h / 2.0),
+                ];
                 g.paths = vec![fill(Pb::new().poly(&pts).take())];
             } else {
                 let s = ss / 32.0;
                 let start = 5.0 * s;
-                let pts = [(start, y1), (w - dx, y1), (w - dx, 0.0), (w, h / 2.0), (w - dx, h), (w - dx, y2), (start, y2)];
+                let pts = [
+                    (start, y1),
+                    (w - dx, y1),
+                    (w - dx, 0.0),
+                    (w, h / 2.0),
+                    (w - dx, h),
+                    (w - dx, y2),
+                    (start, y2),
+                ];
                 let mut stripes = Pb::new();
                 stripes.poly(&[(0.0, y1), (s, y1), (s, y2), (0.0, y2)]);
                 stripes.poly(&[(2.0 * s, y1), (4.0 * s, y1), (4.0 * s, y2), (2.0 * s, y2)]);
@@ -1170,15 +2245,38 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let pts: Vec<(f64, f64)> = if name == "homePlate" {
                 vec![(0.0, 0.0), (w - d, 0.0), (w, h / 2.0), (w - d, h), (0.0, h)]
             } else {
-                vec![(0.0, 0.0), (w - d, 0.0), (w, h / 2.0), (w - d, h), (0.0, h), (d, h / 2.0)]
+                vec![
+                    (0.0, 0.0),
+                    (w - d, 0.0),
+                    (w, h / 2.0),
+                    (w - d, h),
+                    (0.0, h),
+                    (d, h / 2.0),
+                ]
             };
             let tx = if name == "homePlate" { 0.0 } else { d };
-            let mut g = simple(b.poly(&pts).take(), Rect::new(tx, 0.0, w - d / 2.0, h), w, h);
-            g.handles.push(Handle::new(0, Point::new(w, 0.0), Vec2::new(-ss / 1e5, 0.0), v, 0.0, 100000.0 * w / ss.max(1e-9)));
+            let mut g = simple(
+                b.poly(&pts).take(),
+                Rect::new(tx, 0.0, w - d / 2.0, h),
+                w,
+                h,
+            );
+            g.handles.push(Handle::new(
+                0,
+                Point::new(w, 0.0),
+                Vec2::new(-ss / 1e5, 0.0),
+                v,
+                0.0,
+                100000.0 * w / ss.max(1e-9),
+            ));
             g
         }
         "quadArrow" => {
-            let (t, hw, hl) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5, ss * a(2).clamp(0.0, 50000.0) / 1e5);
+            let (t, hw, hl) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+                ss * a(2).clamp(0.0, 50000.0) / 1e5,
+            );
             let (cx, cy) = (w / 2.0, h / 2.0);
             let (t2, hw2) = (t / 2.0, hw);
             let pts = [
@@ -1207,10 +2305,19 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 (hl, cy + t2),
                 (hl, cy + hw2),
             ];
-            simple(b.poly(&pts).take(), Rect::new(cx - t2, cy - t2, cx + t2, cy + t2), w, h)
+            simple(
+                b.poly(&pts).take(),
+                Rect::new(cx - t2, cy - t2, cx + t2, cy + t2),
+                w,
+                h,
+            )
         }
         "leftRightUpArrow" => {
-            let (t, hw, hl) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5, ss * a(2).clamp(0.0, 50000.0) / 1e5);
+            let (t, hw, hl) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+                ss * a(2).clamp(0.0, 50000.0) / 1e5,
+            );
             let cx = w / 2.0;
             let by = h - hw; // horizontal shaft centre
             let pts = [
@@ -1232,10 +2339,19 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 (hl, by + t / 2.0),
                 (hl, h),
             ];
-            simple(b.poly(&pts).take(), Rect::new(hl, by - t / 2.0, w - hl, by + t / 2.0), w, h)
+            simple(
+                b.poly(&pts).take(),
+                Rect::new(hl, by - t / 2.0, w - hl, by + t / 2.0),
+                w,
+                h,
+            )
         }
         "leftUpArrow" | "bentUpArrow" => {
-            let (t, hw, hl) = (ss * a(0).clamp(0.0, 50000.0) / 1e5, ss * a(1).clamp(0.0, 50000.0) / 1e5, ss * a(2).clamp(0.0, 50000.0) / 1e5);
+            let (t, hw, hl) = (
+                ss * a(0).clamp(0.0, 50000.0) / 1e5,
+                ss * a(1).clamp(0.0, 50000.0) / 1e5,
+                ss * a(2).clamp(0.0, 50000.0) / 1e5,
+            );
             let pts: Vec<(f64, f64)> = if name == "leftUpArrow" {
                 let cx = w - hw;
                 let cy = h - hw;
@@ -1305,8 +2421,17 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let ax = w - hw; // arrow shaft centre x
             let ro = r.max(t).min((ax + t / 2.0) / 2.0);
             let ri = (ro - t).max(0.0);
-            b.m(0.0, h).l(0.0, ro).arc(ro, ro, 180.0, 90.0).l(ax + t / 2.0 - ro, 0.0).arc(ro, ro, 270.0, 90.0);
-            b.l(ax + t / 2.0, hy - hl).l(w, hy - hl).l(ax, hy).l(ax - hw, hy - hl).l(ax - t / 2.0, hy - hl).l(ax - t / 2.0, ro);
+            b.m(0.0, h)
+                .l(0.0, ro)
+                .arc(ro, ro, 180.0, 90.0)
+                .l(ax + t / 2.0 - ro, 0.0)
+                .arc(ro, ro, 270.0, 90.0);
+            b.l(ax + t / 2.0, hy - hl)
+                .l(w, hy - hl)
+                .l(ax, hy)
+                .l(ax - hw, hy - hl)
+                .l(ax - t / 2.0, hy - hl)
+                .l(ax - t / 2.0, ro);
             if ri > 0.0 {
                 b.arc(ri, ri, 0.0, -90.0);
             }
@@ -1346,13 +2471,25 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             ];
             let pts = orient(d, w, h, &pts);
             let tr = orient(d, w, h, &[(0.0, 0.0), (boxl, t)]);
-            simple(b.poly(&pts).take(), Rect::from_points(Point::new(tr[0].0, tr[0].1), Point::new(tr[1].0, tr[1].1)).abs(), w, h)
+            simple(
+                b.poly(&pts).take(),
+                Rect::from_points(Point::new(tr[0].0, tr[0].1), Point::new(tr[1].0, tr[1].1)).abs(),
+                w,
+                h,
+            )
         }
-        "mathPlus" | "mathMinus" | "mathEqual" | "mathDivide" | "mathMultiply" | "mathNotEqual" => math(name, w, h, a(0), a(1), a(2)),
+        "mathPlus" | "mathMinus" | "mathEqual" | "mathDivide" | "mathMultiply" | "mathNotEqual" => {
+            math(name, w, h, a(0), a(1), a(2))
+        }
         "flowChartPredefinedProcess" => {
-            let r = Pb::new().poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]).take();
+            let r = Pb::new()
+                .poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)])
+                .take();
             let mut l = Pb::new();
-            l.m(w / 8.0, 0.0).l(w / 8.0, h).m(w * 7.0 / 8.0, 0.0).l(w * 7.0 / 8.0, h);
+            l.m(w / 8.0, 0.0)
+                .l(w / 8.0, h)
+                .m(w * 7.0 / 8.0, 0.0)
+                .l(w * 7.0 / 8.0, h);
             Geometry {
                 paths: vec![fill(r), stroke_only(l.take())],
                 text_rect: Rect::new(w / 8.0, 0.0, w * 7.0 / 8.0, h),
@@ -1361,9 +2498,14 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             }
         }
         "flowChartInternalStorage" => {
-            let r = Pb::new().poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]).take();
+            let r = Pb::new()
+                .poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)])
+                .take();
             let mut l = Pb::new();
-            l.m(w / 8.0, 0.0).l(w / 8.0, h).m(0.0, h / 8.0).l(w, h / 8.0);
+            l.m(w / 8.0, 0.0)
+                .l(w / 8.0, h)
+                .m(0.0, h / 8.0)
+                .l(w, h / 8.0);
             Geometry {
                 paths: vec![fill(r), stroke_only(l.take())],
                 text_rect: Rect::new(w / 8.0, h / 8.0, w, h),
@@ -1372,15 +2514,39 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             }
         }
         "flowChartDocument" => {
-            b.m(0.0, 0.0).l(w, 0.0).l(w, h * 0.8).c(w * 0.7, h * 0.62, w * 0.35, h * 1.08, 0.0, h * 0.88).z();
+            b.m(0.0, 0.0)
+                .l(w, 0.0)
+                .l(w, h * 0.8)
+                .c(w * 0.7, h * 0.62, w * 0.35, h * 1.08, 0.0, h * 0.88)
+                .z();
             simple(b.take(), Rect::new(0.0, 0.0, w, h * 0.78), w, h)
         }
         "flowChartMultidocument" => {
             let (dx, dy) = (w * 0.1, h * 0.1);
             let mut back = Pb::new();
-            back.poly(&[(2.0 * dx, 0.0), (w, 0.0), (w, h * 0.7), (w - dx * 0.5, h * 0.7), (w - dx * 0.5, dy * 0.5), (2.0 * dx, dy * 0.5)]);
-            back.poly(&[(dx, dy * 0.5), (w - dx * 0.5, dy * 0.5), (w - dx * 0.5, h * 0.78), (w - dx, h * 0.78), (w - dx, dy), (dx, dy)]);
-            let front = Pb::new().m(0.0, dy).l(w - dx, dy).l(w - dx, h * 0.84).c(w * 0.62, h * 0.7, w * 0.32, h * 1.08, 0.0, h * 0.9).z().take();
+            back.poly(&[
+                (2.0 * dx, 0.0),
+                (w, 0.0),
+                (w, h * 0.7),
+                (w - dx * 0.5, h * 0.7),
+                (w - dx * 0.5, dy * 0.5),
+                (2.0 * dx, dy * 0.5),
+            ]);
+            back.poly(&[
+                (dx, dy * 0.5),
+                (w - dx * 0.5, dy * 0.5),
+                (w - dx * 0.5, h * 0.78),
+                (w - dx, h * 0.78),
+                (w - dx, dy),
+                (dx, dy),
+            ]);
+            let front = Pb::new()
+                .m(0.0, dy)
+                .l(w - dx, dy)
+                .l(w - dx, h * 0.84)
+                .c(w * 0.62, h * 0.7, w * 0.32, h * 1.08, 0.0, h * 0.9)
+                .z()
+                .take();
             Geometry {
                 paths: vec![fill(back.take()), fill(front)],
                 text_rect: Rect::new(0.0, dy, w - dx, h * 0.8),
@@ -1390,30 +2556,73 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
         }
         "flowChartTerminator" => {
             let rx = (w * 0.16).min(w / 2.0);
-            b.m(rx, 0.0).l(w - rx, 0.0).arc(rx, h / 2.0, 270.0, 180.0).l(rx, h).arc(rx, h / 2.0, 90.0, 180.0).z();
-            simple(b.take(), Rect::new(rx * 0.3, h * 0.15, w - rx * 0.3, h * 0.85), w, h)
+            b.m(rx, 0.0)
+                .l(w - rx, 0.0)
+                .arc(rx, h / 2.0, 270.0, 180.0)
+                .l(rx, h)
+                .arc(rx, h / 2.0, 90.0, 180.0)
+                .z();
+            simple(
+                b.take(),
+                Rect::new(rx * 0.3, h * 0.15, w - rx * 0.3, h * 0.85),
+                w,
+                h,
+            )
         }
-        "flowChartManualInput" => simple(b.poly(&[(0.0, h / 5.0), (w, 0.0), (w, h), (0.0, h)]).take(), Rect::new(0.0, h / 5.0, w, h), w, h),
-        "flowChartOffpageConnector" => {
-            simple(b.poly(&[(0.0, 0.0), (w, 0.0), (w, h * 0.8), (w / 2.0, h), (0.0, h * 0.8)]).take(), Rect::new(0.0, 0.0, w, h * 0.8), w, h)
-        }
-        "flowChartPunchedCard" => {
-            simple(b.poly(&[(w * 0.2, 0.0), (w, 0.0), (w, h), (0.0, h), (0.0, h * 0.2)]).take(), Rect::new(0.0, h * 0.2, w, h), w, h)
-        }
+        "flowChartManualInput" => simple(
+            b.poly(&[(0.0, h / 5.0), (w, 0.0), (w, h), (0.0, h)]).take(),
+            Rect::new(0.0, h / 5.0, w, h),
+            w,
+            h,
+        ),
+        "flowChartOffpageConnector" => simple(
+            b.poly(&[
+                (0.0, 0.0),
+                (w, 0.0),
+                (w, h * 0.8),
+                (w / 2.0, h),
+                (0.0, h * 0.8),
+            ])
+            .take(),
+            Rect::new(0.0, 0.0, w, h * 0.8),
+            w,
+            h,
+        ),
+        "flowChartPunchedCard" => simple(
+            b.poly(&[(w * 0.2, 0.0), (w, 0.0), (w, h), (0.0, h), (0.0, h * 0.2)])
+                .take(),
+            Rect::new(0.0, h * 0.2, w, h),
+            w,
+            h,
+        ),
         "flowChartPunchedTape" => {
             let a1 = h * 0.1;
-            b.m(0.0, a1).c(w * 0.25, a1 * 3.0, w * 0.25, -a1, w / 2.0, a1).c(w * 0.75, a1 * 3.0, w * 0.75, -a1, w, a1).l(w, h - a1);
-            b.c(w * 0.75, h - 3.0 * a1, w * 0.75, h + a1, w / 2.0, h - a1).c(w * 0.25, h - 3.0 * a1, w * 0.25, h + a1, 0.0, h - a1).z();
+            b.m(0.0, a1)
+                .c(w * 0.25, a1 * 3.0, w * 0.25, -a1, w / 2.0, a1)
+                .c(w * 0.75, a1 * 3.0, w * 0.75, -a1, w, a1)
+                .l(w, h - a1);
+            b.c(w * 0.75, h - 3.0 * a1, w * 0.75, h + a1, w / 2.0, h - a1)
+                .c(w * 0.25, h - 3.0 * a1, w * 0.25, h + a1, 0.0, h - a1)
+                .z();
             simple(b.take(), Rect::new(0.0, h * 0.2, w, h * 0.8), w, h)
         }
         "flowChartSummingJunction" | "flowChartOr" => {
             let e = Pb::new().ellipse(w / 2.0, h / 2.0, w / 2.0, h / 2.0).take();
             let mut l = Pb::new();
             if name == "flowChartOr" {
-                l.m(w / 2.0, 0.0).l(w / 2.0, h).m(0.0, h / 2.0).l(w, h / 2.0);
+                l.m(w / 2.0, 0.0)
+                    .l(w / 2.0, h)
+                    .m(0.0, h / 2.0)
+                    .l(w, h / 2.0);
             } else {
-                let (dx, dy) = (w / 2.0 * std::f64::consts::FRAC_1_SQRT_2, h / 2.0 * std::f64::consts::FRAC_1_SQRT_2);
-                l.m(w / 2.0 - dx, h / 2.0 - dy).l(w / 2.0 + dx, h / 2.0 + dy).m(w / 2.0 + dx, h / 2.0 - dy).l(w / 2.0 - dx, h / 2.0 + dy);
+                let (dx, dy) = (
+                    w / 2.0 * std::f64::consts::FRAC_1_SQRT_2,
+                    h / 2.0 * std::f64::consts::FRAC_1_SQRT_2,
+                );
+                l.m(w / 2.0 - dx, h / 2.0 - dy)
+                    .l(w / 2.0 + dx, h / 2.0 + dy)
+                    .m(w / 2.0 + dx, h / 2.0 - dy)
+                    .l(w / 2.0 - dx, h / 2.0 + dy);
             }
             Geometry {
                 paths: vec![fill(e), stroke_only(l.take())],
@@ -1422,39 +2631,75 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 sites: ellipse_sites(w, h),
             }
         }
-        "flowChartCollate" => simple(b.poly(&[(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]).take(), Rect::new(w / 4.0, h / 4.0, w * 0.75, h * 0.75), w, h),
+        "flowChartCollate" => simple(
+            b.poly(&[(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]).take(),
+            Rect::new(w / 4.0, h / 4.0, w * 0.75, h * 0.75),
+            w,
+            h,
+        ),
         "flowChartOnlineStorage" => {
             let rx = w / 6.0;
-            b.m(rx, 0.0).l(w, 0.0).arc(rx, h / 2.0, 270.0, -180.0).l(rx, h).arc(rx, h / 2.0, 90.0, 180.0).z();
+            b.m(rx, 0.0)
+                .l(w, 0.0)
+                .arc(rx, h / 2.0, 270.0, -180.0)
+                .l(rx, h)
+                .arc(rx, h / 2.0, 90.0, 180.0)
+                .z();
             simple(b.take(), Rect::new(rx, 0.0, w - rx, h), w, h)
         }
         "flowChartDelay" => {
-            b.m(0.0, 0.0).l(w / 2.0, 0.0).arc(w / 2.0, h / 2.0, 270.0, 180.0).l(0.0, h).z();
+            b.m(0.0, 0.0)
+                .l(w / 2.0, 0.0)
+                .arc(w / 2.0, h / 2.0, 270.0, 180.0)
+                .l(0.0, h)
+                .z();
             simple(b.take(), Rect::new(0.0, h * 0.15, w * 0.85, h * 0.85), w, h)
         }
         "flowChartMagneticTape" => {
-            b.m(w / 2.0, h).arc(w / 2.0, h / 2.0, 90.0, 90.0).arc(w / 2.0, h / 2.0, 180.0, 90.0).arc(w / 2.0, h / 2.0, 270.0, 90.0).arc(
-                w / 2.0,
-                h / 2.0,
-                0.0,
-                45.0,
-            );
+            b.m(w / 2.0, h)
+                .arc(w / 2.0, h / 2.0, 90.0, 90.0)
+                .arc(w / 2.0, h / 2.0, 180.0, 90.0)
+                .arc(w / 2.0, h / 2.0, 270.0, 90.0)
+                .arc(w / 2.0, h / 2.0, 0.0, 45.0);
             let p = b.cur;
             b.l(w, p.y).l(w, h).z();
-            simple(b.take(), Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355), w, h)
+            simple(
+                b.take(),
+                Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
+                w,
+                h,
+            )
         }
         "flowChartDisplay" => {
             let rx = w / 6.0;
-            b.m(0.0, h / 2.0).l(rx, 0.0).l(w - rx, 0.0).arc(rx, h / 2.0, 270.0, 180.0).l(rx, h).z();
+            b.m(0.0, h / 2.0)
+                .l(rx, 0.0)
+                .l(w - rx, 0.0)
+                .arc(rx, h / 2.0, 270.0, 180.0)
+                .l(rx, h)
+                .z();
             simple(b.take(), Rect::new(rx, 0.0, w - rx, h), w, h)
         }
-        "star4" | "star5" | "star6" | "star7" | "star8" | "star10" | "star12" | "star16" | "star24" | "star32" => {
+        "star4" | "star5" | "star6" | "star7" | "star8" | "star10" | "star12" | "star16"
+        | "star24" | "star32" => {
             let n: usize = name.trim_start_matches("star").parse().unwrap_or(5);
             let v = a(0).clamp(0.0, 50000.0);
             let inner = v / 50000.0;
             let normalized = matches!(n, 5 | 7);
-            let mut g = simple(b.poly(&star(n, w, h, inner, normalized)).take(), full.inset(-ss * (0.5 - inner * 0.5) * 0.5), w, h);
-            g.handles.push(Handle::new(0, Point::new(w / 2.0, h / 2.0), Vec2::new(0.0, -h / 2.0 / 50000.0), v, 0.0, 50000.0));
+            let mut g = simple(
+                b.poly(&star(n, w, h, inner, normalized)).take(),
+                full.inset(-ss * (0.5 - inner * 0.5) * 0.5),
+                w,
+                h,
+            );
+            g.handles.push(Handle::new(
+                0,
+                Point::new(w / 2.0, h / 2.0),
+                Vec2::new(0.0, -h / 2.0 / 50000.0),
+                v,
+                0.0,
+                50000.0,
+            ));
             g
         }
         "irregularSeal1" | "irregularSeal2" => {
@@ -1512,7 +2757,12 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
                 ]
             };
             let pts: Vec<(f64, f64)> = pts.iter().map(|(x, y)| (x * w, y * h)).collect();
-            simple(b.poly(&pts).take(), Rect::new(w * 0.25, h * 0.3, w * 0.75, h * 0.7), w, h)
+            simple(
+                b.poly(&pts).take(),
+                Rect::new(w * 0.25, h * 0.3, w * 0.75, h * 0.7),
+                w,
+                h,
+            )
         }
         "ribbon" | "ribbon2" => ribbon(name == "ribbon2", w, h, a(0), a(1)),
         "verticalScroll" | "horizontalScroll" => scroll(name == "verticalScroll", w, h, a(0)),
@@ -1520,65 +2770,161 @@ pub fn build(name: &str, w: f64, h: f64, adj: &[f64]) -> Option<Geometry> {
             let amp = h * a(0).clamp(0.0, 20000.0) / 1e5;
             let shift = w * a(1).clamp(-10000.0, 10000.0) / 1e5;
             if name == "wave" {
-                b.m(shift.max(0.0), amp).c(w / 3.0, -amp, 2.0 * w / 3.0, 3.0 * amp, w + shift.min(0.0), amp);
-                b.l(w - shift.max(0.0), h - amp).c(2.0 * w / 3.0, h - 3.0 * amp, w / 3.0, h + amp, -shift.min(0.0), h - amp).z();
+                b.m(shift.max(0.0), amp).c(
+                    w / 3.0,
+                    -amp,
+                    2.0 * w / 3.0,
+                    3.0 * amp,
+                    w + shift.min(0.0),
+                    amp,
+                );
+                b.l(w - shift.max(0.0), h - amp)
+                    .c(
+                        2.0 * w / 3.0,
+                        h - 3.0 * amp,
+                        w / 3.0,
+                        h + amp,
+                        -shift.min(0.0),
+                        h - amp,
+                    )
+                    .z();
             } else {
-                b.m(0.0, amp).c(w / 6.0, -amp, w / 3.0, 3.0 * amp, w / 2.0, amp).c(2.0 * w / 3.0, -amp, 5.0 * w / 6.0, 3.0 * amp, w, amp);
+                b.m(0.0, amp)
+                    .c(w / 6.0, -amp, w / 3.0, 3.0 * amp, w / 2.0, amp)
+                    .c(2.0 * w / 3.0, -amp, 5.0 * w / 6.0, 3.0 * amp, w, amp);
                 b.l(w, h - amp)
-                    .c(5.0 * w / 6.0, h - 3.0 * amp, 2.0 * w / 3.0, h + amp, w / 2.0, h - amp)
+                    .c(
+                        5.0 * w / 6.0,
+                        h - 3.0 * amp,
+                        2.0 * w / 3.0,
+                        h + amp,
+                        w / 2.0,
+                        h - amp,
+                    )
                     .c(w / 3.0, h - 3.0 * amp, w / 6.0, h + amp, 0.0, h - amp)
                     .z();
             }
             simple(b.take(), Rect::new(0.0, amp * 2.0, w, h - amp * 2.0), w, h)
         }
         "wedgeRectCallout" | "wedgeRoundRectCallout" => {
-            let r = if name == "wedgeRoundRectCallout" { ss * a(2).clamp(0.0, 50000.0) / 1e5 } else { 0.0 };
+            let r = if name == "wedgeRoundRectCallout" {
+                ss * a(2).clamp(0.0, 50000.0) / 1e5
+            } else {
+                0.0
+            };
             wedge_rect(w, h, a(0), a(1), r)
         }
         "wedgeEllipseCallout" => {
             let tip = Point::new(w / 2.0 + w * a(0) / 1e5, h / 2.0 + h * a(1) / 1e5);
             let ang = (tip.y - h / 2.0).atan2(tip.x - w / 2.0).to_degrees();
             let s = vis(ang + 10.0, w / 2.0, h / 2.0);
-            let p0 = Point::new(w / 2.0 + w / 2.0 * s.to_radians().cos(), h / 2.0 + h / 2.0 * s.to_radians().sin());
+            let p0 = Point::new(
+                w / 2.0 + w / 2.0 * s.to_radians().cos(),
+                h / 2.0 + h / 2.0 * s.to_radians().sin(),
+            );
             let e = vis(ang - 10.0, w / 2.0, h / 2.0);
             let mut sw = e - s;
             if sw <= 0.0 {
                 sw += 360.0;
             }
-            b.m(p0.x, p0.y).arc(w / 2.0, h / 2.0, s, sw).l(tip.x, tip.y).z();
-            let mut g = simple(b.take(), Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355), w, h);
-            g.handles.push(Handle::new(0, Point::new(w / 2.0, h / 2.0), Vec2::new(w / 1e5, 0.0), a(0), -1e6, 1e6));
-            g.handles.push(Handle::new(1, Point::new(w / 2.0, h / 2.0), Vec2::new(0.0, h / 1e5), a(1), -1e6, 1e6));
+            b.m(p0.x, p0.y)
+                .arc(w / 2.0, h / 2.0, s, sw)
+                .l(tip.x, tip.y)
+                .z();
+            let mut g = simple(
+                b.take(),
+                Rect::new(w * 0.14645, h * 0.14645, w * 0.85355, h * 0.85355),
+                w,
+                h,
+            );
+            g.handles.push(Handle::new(
+                0,
+                Point::new(w / 2.0, h / 2.0),
+                Vec2::new(w / 1e5, 0.0),
+                a(0),
+                -1e6,
+                1e6,
+            ));
+            g.handles.push(Handle::new(
+                1,
+                Point::new(w / 2.0, h / 2.0),
+                Vec2::new(0.0, h / 1e5),
+                a(1),
+                -1e6,
+                1e6,
+            ));
             g.handles.retain(|_| false);
             g.handles.push(tip_handle(w, h, tip));
             g
         }
         "borderCallout1" => {
-            let r = Pb::new().poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]).take();
+            let r = Pb::new()
+                .poly(&[(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)])
+                .take();
             let p1 = (w * a(1) / 1e5, h * a(0) / 1e5);
             let p2 = (w * a(3) / 1e5, h * a(2) / 1e5);
             let l = Pb::new().m(p1.0, p1.1).l(p2.0, p2.1).take();
-            Geometry { paths: vec![fill(r), stroke_only(l)], text_rect: full, handles: vec![], sites: mid_sites(w, h) }
+            Geometry {
+                paths: vec![fill(r), stroke_only(l)],
+                text_rect: full,
+                handles: vec![],
+                sites: mid_sites(w, h),
+            }
         }
         "line" | "straightConnector1" => {
             let l = Pb::new().m(0.0, 0.0).l(w, h).take();
-            Geometry { paths: vec![stroke_only(l)], text_rect: full, handles: vec![], sites: vec![Point::ZERO, Point::new(w, h)] }
+            Geometry {
+                paths: vec![stroke_only(l)],
+                text_rect: full,
+                handles: vec![],
+                sites: vec![Point::ZERO, Point::new(w, h)],
+            }
         }
         "bentConnector2" => {
             let l = Pb::new().m(0.0, 0.0).l(w, 0.0).l(w, h).take();
-            Geometry { paths: vec![stroke_only(l)], text_rect: full, handles: vec![], sites: vec![Point::ZERO, Point::new(w, h)] }
+            Geometry {
+                paths: vec![stroke_only(l)],
+                text_rect: full,
+                handles: vec![],
+                sites: vec![Point::ZERO, Point::new(w, h)],
+            }
         }
         "bentConnector3" | "bentConnector4" | "bentConnector5" => {
             let x = w * a(0) / 1e5;
             let l = Pb::new().m(0.0, 0.0).l(x, 0.0).l(x, h).l(w, h).take();
-            let mut g = Geometry { paths: vec![stroke_only(l)], text_rect: full, handles: vec![], sites: vec![Point::ZERO, Point::new(w, h)] };
-            g.handles.push(Handle::new(0, Point::new(0.0, h / 2.0), Vec2::new(w / 1e5, 0.0), a(0), -1e6, 1e6));
+            let mut g = Geometry {
+                paths: vec![stroke_only(l)],
+                text_rect: full,
+                handles: vec![],
+                sites: vec![Point::ZERO, Point::new(w, h)],
+            };
+            g.handles.push(Handle::new(
+                0,
+                Point::new(0.0, h / 2.0),
+                Vec2::new(w / 1e5, 0.0),
+                a(0),
+                -1e6,
+                1e6,
+            ));
             g
         }
         "curvedConnector2" | "curvedConnector3" | "curvedConnector4" | "curvedConnector5" => {
-            let x = w * if name == "curvedConnector2" { 100000.0 } else { a(0) } / 1e5;
-            let l = Pb::new().m(0.0, 0.0).c(x / 2.0, 0.0, x, h / 4.0, x, h / 2.0).c(x, h * 0.75, (x + w) / 2.0, h, w, h).take();
-            Geometry { paths: vec![stroke_only(l)], text_rect: full, handles: vec![], sites: vec![Point::ZERO, Point::new(w, h)] }
+            let x = w * if name == "curvedConnector2" {
+                100000.0
+            } else {
+                a(0)
+            } / 1e5;
+            let l = Pb::new()
+                .m(0.0, 0.0)
+                .c(x / 2.0, 0.0, x, h / 4.0, x, h / 2.0)
+                .c(x, h * 0.75, (x + w) / 2.0, h, w, h)
+                .take();
+            Geometry {
+                paths: vec![stroke_only(l)],
+                text_rect: full,
+                handles: vec![],
+                sites: vec![Point::ZERO, Point::new(w, h)],
+            }
         }
         _ => return extra::build(name, w, h, &a),
     };
@@ -1596,21 +2942,39 @@ fn ellipse_sites(w: f64, h: f64) -> Vec<Point> {
 
 fn tip_handle(w: f64, h: f64, tip: Point) -> Handle {
     // A free 2-D handle is represented as index 0 with zero direction; callers move both values.
-    Handle { index: 0, pos: tip, origin: Point::new(w / 2.0, h / 2.0), dir: Vec2::new(w / 1e5, h / 1e5), min: -1e6, max: 1e6 }
+    Handle {
+        index: 0,
+        pos: tip,
+        origin: Point::new(w / 2.0, h / 2.0),
+        dir: Vec2::new(w / 1e5, h / 1e5),
+        min: -1e6,
+        max: 1e6,
+    }
 }
 
 fn wedge_rect(w: f64, h: f64, a0: f64, a1: f64, r: f64) -> Geometry {
     let tip = Point::new(w / 2.0 + w * a0 / 1e5, h / 2.0 + h * a1 / 1e5);
     let inside = tip.x > 0.0 && tip.x < w && tip.y > 0.0 && tip.y < h;
-    let (dx, dy) = ((tip.x - w / 2.0) / w.max(1e-9), (tip.y - h / 2.0) / h.max(1e-9));
+    let (dx, dy) = (
+        (tip.x - w / 2.0) / w.max(1e-9),
+        (tip.y - h / 2.0) / h.max(1e-9),
+    );
     let mut b = Pb::new();
     let r = r.min(w / 2.0).min(h / 2.0);
     // Walk clockwise from the top-left; insert the wedge on the edge facing the tip.
     let horiz = dx.abs() > dy.abs();
     let (bx0, bx1) = (w * 5.0 / 12.0, w * 7.0 / 12.0);
     let (by0, by1) = (h * 5.0 / 12.0, h * 7.0 / 12.0);
-    let (bx0, bx1) = if tip.x < w / 2.0 { (w * 2.0 / 12.0, w * 5.0 / 12.0) } else { (bx0 + w / 12.0 * 2.0 - w / 12.0 * 2.0, bx1 + w * 2.0 / 12.0) };
-    let (by0, by1) = if tip.y < h / 2.0 { (h * 2.0 / 12.0, h * 5.0 / 12.0) } else { (by0, by1 + h * 2.0 / 12.0) };
+    let (bx0, bx1) = if tip.x < w / 2.0 {
+        (w * 2.0 / 12.0, w * 5.0 / 12.0)
+    } else {
+        (bx0 + w / 12.0 * 2.0 - w / 12.0 * 2.0, bx1 + w * 2.0 / 12.0)
+    };
+    let (by0, by1) = if tip.y < h / 2.0 {
+        (h * 2.0 / 12.0, h * 5.0 / 12.0)
+    } else {
+        (by0, by1 + h * 2.0 / 12.0)
+    };
     b.m(r, 0.0);
     if !inside && !horiz && dy < 0.0 {
         b.l(bx0, 0.0).l(tip.x, tip.y).l(bx1, 0.0);
@@ -1641,7 +3005,12 @@ fn wedge_rect(w: f64, h: f64, a0: f64, a1: f64, r: f64) -> Geometry {
         b.arc(r, r, 180.0, 90.0);
     }
     b.z();
-    let mut g = simple(b.take(), Rect::new(0.0, 0.0, w, h).inset(-r * 0.29289), w, h);
+    let mut g = simple(
+        b.take(),
+        Rect::new(0.0, 0.0, w, h).inset(-r * 0.29289),
+        w,
+        h,
+    );
     g.handles.push(tip_handle(w, h, tip));
     g
 }
@@ -1671,9 +3040,19 @@ fn cloud(name: &str, w: f64, h: f64, a0: f64, a1: f64) -> Geometry {
     b.z();
     let mut path = b.take();
     let bb = path.bounding_box();
-    let sx = if bb.width() > 0.0 { w / bb.width() } else { 1.0 };
-    let sy = if bb.height() > 0.0 { h / bb.height() } else { 1.0 };
-    path.apply_affine(kurbo::Affine::scale_non_uniform(sx, sy) * kurbo::Affine::translate(-bb.origin().to_vec2()));
+    let sx = if bb.width() > 0.0 {
+        w / bb.width()
+    } else {
+        1.0
+    };
+    let sy = if bb.height() > 0.0 {
+        h / bb.height()
+    } else {
+        1.0
+    };
+    path.apply_affine(
+        kurbo::Affine::scale_non_uniform(sx, sy) * kurbo::Affine::translate(-bb.origin().to_vec2()),
+    );
     let mut paths = vec![fill(path)];
     let text_rect = Rect::new(w * 0.2, h * 0.22, w * 0.8, h * 0.78);
     let mut handles = vec![];
@@ -1690,7 +3069,12 @@ fn cloud(name: &str, w: f64, h: f64, a0: f64, a1: f64) -> Geometry {
         paths.push(fill(bubbles.take()));
         handles.push(tip_handle(w, h, tip));
     }
-    Geometry { paths, text_rect, handles, sites: mid_sites(w, h) }
+    Geometry {
+        paths,
+        text_rect,
+        handles,
+        sites: mid_sites(w, h),
+    }
 }
 
 fn math(name: &str, w: f64, h: f64, a0: f64, a1: f64, a2: f64) -> Geometry {
@@ -1719,29 +3103,64 @@ fn math(name: &str, w: f64, h: f64, a0: f64, a1: f64, a2: f64) -> Geometry {
             ]);
         }
         "mathMinus" => {
-            b.poly(&[(mx, cy - t / 2.0), (w - mx, cy - t / 2.0), (w - mx, cy + t / 2.0), (mx, cy + t / 2.0)]);
+            b.poly(&[
+                (mx, cy - t / 2.0),
+                (w - mx, cy - t / 2.0),
+                (w - mx, cy + t / 2.0),
+                (mx, cy + t / 2.0),
+            ]);
         }
         "mathEqual" => {
             let gap = h * a1.clamp(0.0, 100000.0) / 1e5;
-            b.poly(&[(mx, cy - gap / 2.0 - t), (w - mx, cy - gap / 2.0 - t), (w - mx, cy - gap / 2.0), (mx, cy - gap / 2.0)]);
-            b.poly(&[(mx, cy + gap / 2.0), (w - mx, cy + gap / 2.0), (w - mx, cy + gap / 2.0 + t), (mx, cy + gap / 2.0 + t)]);
+            b.poly(&[
+                (mx, cy - gap / 2.0 - t),
+                (w - mx, cy - gap / 2.0 - t),
+                (w - mx, cy - gap / 2.0),
+                (mx, cy - gap / 2.0),
+            ]);
+            b.poly(&[
+                (mx, cy + gap / 2.0),
+                (w - mx, cy + gap / 2.0),
+                (w - mx, cy + gap / 2.0 + t),
+                (mx, cy + gap / 2.0 + t),
+            ]);
         }
         "mathNotEqual" => {
             let gap = h * a2.clamp(0.0, 100000.0) / 1e5;
-            b.poly(&[(mx, cy - gap / 2.0 - t), (w - mx, cy - gap / 2.0 - t), (w - mx, cy - gap / 2.0), (mx, cy - gap / 2.0)]);
-            b.poly(&[(mx, cy + gap / 2.0), (w - mx, cy + gap / 2.0), (w - mx, cy + gap / 2.0 + t), (mx, cy + gap / 2.0 + t)]);
+            b.poly(&[
+                (mx, cy - gap / 2.0 - t),
+                (w - mx, cy - gap / 2.0 - t),
+                (w - mx, cy - gap / 2.0),
+                (mx, cy - gap / 2.0),
+            ]);
+            b.poly(&[
+                (mx, cy + gap / 2.0),
+                (w - mx, cy + gap / 2.0),
+                (w - mx, cy + gap / 2.0 + t),
+                (mx, cy + gap / 2.0 + t),
+            ]);
             let ang = (a1 / 60000.0).to_radians();
             let dir = Vec2::new(ang.cos(), ang.sin());
             let len = (h / 2.0 - my) / ang.sin().abs().max(0.2);
             let perp = Vec2::new(-dir.y, dir.x) * (t / 2.0);
             let c = Point::new(cx, cy);
-            let p = [c - dir * len - perp, c + dir * len - perp, c + dir * len + perp, c - dir * len + perp];
+            let p = [
+                c - dir * len - perp,
+                c + dir * len - perp,
+                c + dir * len + perp,
+                c - dir * len + perp,
+            ];
             b.poly(&p.map(|q| (q.x, q.y)));
         }
         "mathDivide" => {
             let gap = h * a1.clamp(0.0, 100000.0) / 1e5;
             let r = ss * a2.clamp(0.0, 50000.0) / 1e5 / 2.0;
-            b.poly(&[(mx, cy - t / 2.0), (w - mx, cy - t / 2.0), (w - mx, cy + t / 2.0), (mx, cy + t / 2.0)]);
+            b.poly(&[
+                (mx, cy - t / 2.0),
+                (w - mx, cy - t / 2.0),
+                (w - mx, cy + t / 2.0),
+                (mx, cy + t / 2.0),
+            ]);
             b.ellipse(cx, cy - t / 2.0 - gap - r, r, r);
             b.ellipse(cx, cy + t / 2.0 + gap + r, r, r);
         }
@@ -1752,12 +3171,22 @@ fn math(name: &str, w: f64, h: f64, a0: f64, a1: f64, a2: f64) -> Geometry {
             for d in [Vec2::new(cx - mx, cy - my), Vec2::new(cx - mx, -(cy - my))] {
                 let dir = d / d.hypot().max(1e-9);
                 let perp = Vec2::new(-dir.y, dir.x) * (t / 2.0);
-                let p = [c - dir * len - perp, c + dir * len - perp, c + dir * len + perp, c - dir * len + perp];
+                let p = [
+                    c - dir * len - perp,
+                    c + dir * len - perp,
+                    c + dir * len + perp,
+                    c - dir * len + perp,
+                ];
                 b.poly(&p.map(|q| (q.x, q.y)));
             }
         }
     }
-    Geometry { paths: vec![fill(b.take())], text_rect: Rect::new(mx, cy - t / 2.0, w - mx, cy + t / 2.0), handles: vec![], sites: mid_sites(w, h) }
+    Geometry {
+        paths: vec![fill(b.take())],
+        text_rect: Rect::new(mx, cy - t / 2.0, w - mx, cy + t / 2.0),
+        handles: vec![],
+        sites: mid_sites(w, h),
+    }
 }
 
 fn ribbon(up: bool, w: f64, h: f64, a0: f64, a1: f64) -> Geometry {
@@ -1773,13 +3202,37 @@ fn ribbon(up: bool, w: f64, h: f64, a0: f64, a1: f64) -> Geometry {
         // centre band sits high; ends hang low.
         b.poly(&[(x0, top), (x1, top), (x1, bot - fold), (x0, bot - fold)]);
         let mut ends = Pb::new();
-        ends.poly(&[(0.0, fold), (x0 + ear * 0.5, fold), (x0 + ear * 0.5, bot), (0.0, bot), (ear, (fold + bot) / 2.0)]);
-        ends.poly(&[(w, fold), (x1 - ear * 0.5, fold), (x1 - ear * 0.5, bot), (w, bot), (w - ear, (fold + bot) / 2.0)]);
-        shade_p.poly(&[(x0, bot - fold), (x0 + ear * 0.5, bot - fold), (x0 + ear * 0.5, bot)]);
-        shade_p.poly(&[(x1, bot - fold), (x1 - ear * 0.5, bot - fold), (x1 - ear * 0.5, bot)]);
+        ends.poly(&[
+            (0.0, fold),
+            (x0 + ear * 0.5, fold),
+            (x0 + ear * 0.5, bot),
+            (0.0, bot),
+            (ear, (fold + bot) / 2.0),
+        ]);
+        ends.poly(&[
+            (w, fold),
+            (x1 - ear * 0.5, fold),
+            (x1 - ear * 0.5, bot),
+            (w, bot),
+            (w - ear, (fold + bot) / 2.0),
+        ]);
+        shade_p.poly(&[
+            (x0, bot - fold),
+            (x0 + ear * 0.5, bot - fold),
+            (x0 + ear * 0.5, bot),
+        ]);
+        shade_p.poly(&[
+            (x1, bot - fold),
+            (x1 - ear * 0.5, bot - fold),
+            (x1 - ear * 0.5, bot),
+        ]);
         let text = Rect::new(x0, top, x1, bot - fold);
         return Geometry {
-            paths: vec![fill(ends.take()), shade(shade_p.take(), FillMode::DarkenLess), fill(b.take())],
+            paths: vec![
+                fill(ends.take()),
+                shade(shade_p.take(), FillMode::DarkenLess),
+                fill(b.take()),
+            ],
             text_rect: text,
             handles: vec![],
             sites: mid_sites(w, h),
@@ -1787,13 +3240,37 @@ fn ribbon(up: bool, w: f64, h: f64, a0: f64, a1: f64) -> Geometry {
     }
     b.poly(&[(x0, top + fold), (x1, top + fold), (x1, bot), (x0, bot)]);
     let mut ends = Pb::new();
-    ends.poly(&[(0.0, top), (x0 + ear * 0.5, top), (x0 + ear * 0.5, bot - fold), (0.0, bot - fold), (ear, (bot - fold) / 2.0)]);
-    ends.poly(&[(w, top), (x1 - ear * 0.5, top), (x1 - ear * 0.5, bot - fold), (w, bot - fold), (w - ear, (bot - fold) / 2.0)]);
-    shade_p.poly(&[(x0, top + fold), (x0 + ear * 0.5, top + fold), (x0 + ear * 0.5, top)]);
-    shade_p.poly(&[(x1, top + fold), (x1 - ear * 0.5, top + fold), (x1 - ear * 0.5, top)]);
+    ends.poly(&[
+        (0.0, top),
+        (x0 + ear * 0.5, top),
+        (x0 + ear * 0.5, bot - fold),
+        (0.0, bot - fold),
+        (ear, (bot - fold) / 2.0),
+    ]);
+    ends.poly(&[
+        (w, top),
+        (x1 - ear * 0.5, top),
+        (x1 - ear * 0.5, bot - fold),
+        (w, bot - fold),
+        (w - ear, (bot - fold) / 2.0),
+    ]);
+    shade_p.poly(&[
+        (x0, top + fold),
+        (x0 + ear * 0.5, top + fold),
+        (x0 + ear * 0.5, top),
+    ]);
+    shade_p.poly(&[
+        (x1, top + fold),
+        (x1 - ear * 0.5, top + fold),
+        (x1 - ear * 0.5, top),
+    ]);
     let text = Rect::new(x0, top + fold, x1, bot);
     Geometry {
-        paths: vec![fill(ends.take()), shade(shade_p.take(), FillMode::DarkenLess), fill(b.take())],
+        paths: vec![
+            fill(ends.take()),
+            shade(shade_p.take(), FillMode::DarkenLess),
+            fill(b.take()),
+        ],
         text_rect: text,
         handles: vec![],
         sites: mid_sites(w, h),
@@ -1823,7 +3300,12 @@ fn scroll(vertical: bool, w: f64, h: f64, a0: f64) -> Geometry {
     curl.ellipse(w - r, r, r, r);
     curl.ellipse(r, h - r * 2.0, r * 0.5, r * 0.5);
     let text = Rect::new(r * 2.0, r, w - r, h - r);
-    Geometry { paths: vec![fill(b.take()), shade(curl.take(), FillMode::DarkenLess)], text_rect: text, handles: vec![], sites: mid_sites(w, h) }
+    Geometry {
+        paths: vec![fill(b.take()), shade(curl.take(), FillMode::DarkenLess)],
+        text_rect: text,
+        handles: vec![],
+        sites: mid_sites(w, h),
+    }
 }
 
 fn action_button(name: &str, w: f64, h: f64) -> Geometry {
@@ -1841,11 +3323,21 @@ fn action_button(name: &str, w: f64, h: f64) -> Geometry {
         }
         "actionButtonBeginning" => {
             g.poly(&[(cx + s, cy - s), (cx + s, cy + s), (cx - s * 0.6, cy)]);
-            g.poly(&[(cx - s, cy - s), (cx - s * 0.7, cy - s), (cx - s * 0.7, cy + s), (cx - s, cy + s)]);
+            g.poly(&[
+                (cx - s, cy - s),
+                (cx - s * 0.7, cy - s),
+                (cx - s * 0.7, cy + s),
+                (cx - s, cy + s),
+            ]);
         }
         "actionButtonEnd" => {
             g.poly(&[(cx - s, cy - s), (cx - s, cy + s), (cx + s * 0.6, cy)]);
-            g.poly(&[(cx + s * 0.7, cy - s), (cx + s, cy - s), (cx + s, cy + s), (cx + s * 0.7, cy + s)]);
+            g.poly(&[
+                (cx + s * 0.7, cy - s),
+                (cx + s, cy - s),
+                (cx + s, cy + s),
+                (cx + s * 0.7, cy + s),
+            ]);
         }
         "actionButtonHome" => {
             g.poly(&[
@@ -1862,7 +3354,10 @@ fn action_button(name: &str, w: f64, h: f64) -> Geometry {
             g.ellipse(cx, cy, s, s);
         }
         "actionButtonReturn" => {
-            g.m(cx + s, cy - s * 0.6).l(cx + s, cy + s * 0.2).q(cx + s, cy + s * 0.8, cx + s * 0.4, cy + s * 0.8).l(cx - s * 0.5, cy + s * 0.8);
+            g.m(cx + s, cy - s * 0.6)
+                .l(cx + s, cy + s * 0.2)
+                .q(cx + s, cy + s * 0.8, cx + s * 0.4, cy + s * 0.8)
+                .l(cx - s * 0.5, cy + s * 0.8);
             g.l(cx - s * 0.5, cy + s * 0.4)
                 .l(cx - s, cy + s * 0.9)
                 .l(cx - s * 0.5, cy + s * 1.4)
@@ -1872,11 +3367,26 @@ fn action_button(name: &str, w: f64, h: f64) -> Geometry {
                 .z();
         }
         "actionButtonMovie" => {
-            g.poly(&[(cx - s, cy - s * 0.6), (cx + s * 0.4, cy - s * 0.6), (cx + s * 0.4, cy + s * 0.6), (cx - s, cy + s * 0.6)]);
-            g.poly(&[(cx + s * 0.4, cy), (cx + s, cy - s * 0.5), (cx + s, cy + s * 0.5)]);
+            g.poly(&[
+                (cx - s, cy - s * 0.6),
+                (cx + s * 0.4, cy - s * 0.6),
+                (cx + s * 0.4, cy + s * 0.6),
+                (cx - s, cy + s * 0.6),
+            ]);
+            g.poly(&[
+                (cx + s * 0.4, cy),
+                (cx + s, cy - s * 0.5),
+                (cx + s, cy + s * 0.5),
+            ]);
         }
         "actionButtonDocument" => {
-            g.poly(&[(cx - s * 0.7, cy - s), (cx + s * 0.3, cy - s), (cx + s * 0.7, cy - s * 0.6), (cx + s * 0.7, cy + s), (cx - s * 0.7, cy + s)]);
+            g.poly(&[
+                (cx - s * 0.7, cy - s),
+                (cx + s * 0.3, cy - s),
+                (cx + s * 0.7, cy - s * 0.6),
+                (cx + s * 0.7, cy + s),
+                (cx - s * 0.7, cy + s),
+            ]);
         }
         "actionButtonSound" => {
             g.poly(&[
@@ -1906,18 +3416,41 @@ mod tests {
     #[test]
     fn every_catalog_preset_builds_within_bounds() {
         for p in CATALOG {
-            for (w, h) in [(200.0, 100.0), (100.0, 200.0), (50.0, 50.0), (0.0, 0.0), (1.0, 300.0)] {
-                let g = build(p.name, w, h, &[]).unwrap_or_else(|| panic!("{} did not build", p.name));
+            for (w, h) in [
+                (200.0, 100.0),
+                (100.0, 200.0),
+                (50.0, 50.0),
+                (0.0, 0.0),
+                (1.0, 300.0),
+            ] {
+                let g =
+                    build(p.name, w, h, &[]).unwrap_or_else(|| panic!("{} did not build", p.name));
                 assert!(!g.paths.is_empty(), "{} has no paths", p.name);
                 for s in &g.paths {
                     let bb = s.path.bounding_box();
-                    if w > 0.0 && h > 0.0 && !p.name.contains("Connector") && !p.name.contains("allout") {
+                    if w > 0.0
+                        && h > 0.0
+                        && !p.name.contains("Connector")
+                        && !p.name.contains("allout")
+                    {
                         let tol = w.max(h) * 0.35 + 1.0;
-                        assert!(bb.x0 >= -tol && bb.y0 >= -tol && bb.x1 <= w + tol && bb.y1 <= h + tol, "{} {w}x{h} out of bounds: {bb:?}", p.name);
+                        assert!(
+                            bb.x0 >= -tol && bb.y0 >= -tol && bb.x1 <= w + tol && bb.y1 <= h + tol,
+                            "{} {w}x{h} out of bounds: {bb:?}",
+                            p.name
+                        );
                     }
-                    assert!(bb.x0.is_finite() && bb.y1.is_finite(), "{} produced non-finite geometry", p.name);
+                    assert!(
+                        bb.x0.is_finite() && bb.y1.is_finite(),
+                        "{} produced non-finite geometry",
+                        p.name
+                    );
                 }
-                assert!(g.text_rect.x0.is_finite() && g.text_rect.y1.is_finite(), "{}", p.name);
+                assert!(
+                    g.text_rect.x0.is_finite() && g.text_rect.y1.is_finite(),
+                    "{}",
+                    p.name
+                );
             }
         }
     }

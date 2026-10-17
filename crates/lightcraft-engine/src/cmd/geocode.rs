@@ -20,7 +20,9 @@ use crate::{Result, Session};
 
 /// Where the place names live: `dataset` (a folder) or `<settings>/geonames`.
 fn dataset_dir(p: &Value) -> Option<PathBuf> {
-    str_param(p, "dataset").map(PathBuf::from).or_else(|| crate::config::config_dir().map(|d| d.join("geonames")))
+    str_param(p, "dataset")
+        .map(PathBuf::from)
+        .or_else(|| crate::config::config_dir().map(|d| d.join("geonames")))
 }
 
 /// How a place-names download ended.
@@ -64,10 +66,16 @@ impl PlaceNames {
     }
 
     /// The gazetteer in `dir`, parsed once and re-read only when the cities file's size or time changes.
-    fn load(&mut self, dir: &Path) -> std::result::Result<Arc<GeoNames>, lightcraft_geocode::GeocodeError> {
+    fn load(
+        &mut self,
+        dir: &Path,
+    ) -> std::result::Result<Arc<GeoNames>, lightcraft_geocode::GeocodeError> {
         let file = dir.join(GEONAMES_FILES[0]);
         let meta = std::fs::metadata(&file).ok();
-        let (len, mtime) = (meta.as_ref().map_or(0, |m| m.len()), meta.as_ref().and_then(|m| m.modified().ok()));
+        let (len, mtime) = (
+            meta.as_ref().map_or(0, |m| m.len()),
+            meta.as_ref().and_then(|m| m.modified().ok()),
+        );
         if let Some((f, l, t, g)) = &self.cache
             && meta.is_some()
             && *f == file
@@ -84,7 +92,10 @@ impl PlaceNames {
 
 fn status(s: &mut Session, p: &Value) -> Result<Value> {
     let dir = dataset_dir(p);
-    let size = dir.as_ref().and_then(|d| std::fs::metadata(d.join(GEONAMES_FILES[0])).ok()).map(|m| m.len());
+    let size = dir
+        .as_ref()
+        .and_then(|d| std::fs::metadata(d.join(GEONAMES_FILES[0])).ok())
+        .map(|m| m.len());
     let sh = s.place_names.lock();
     let (last, error) = match &sh.last {
         None => (Value::Null, Value::Null),
@@ -128,24 +139,41 @@ fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "none of these photos has a GPS position"));
     }
     let dir = dataset_dir(p).ok_or_else(|| bad(C, "no settings folder: give `dataset`"))?;
-    let names = s.place_names.load(&dir).map_err(|e| bad(C, format!("{e}: download the place names first (Photo ▸ Download Place Names)")))?;
+    let names = s.place_names.load(&dir).map_err(|e| {
+        bad(
+            C,
+            format!("{e}: download the place names first (Photo ▸ Download Place Names)"),
+        )
+    })?;
     // a large selection shows in the activity stack and can be stopped
-    let task = (todo.len() > 1).then(|| s.activity.start("geocode", "Looking up places", Cancel::Yes));
+    let task = (todo.len() > 1).then(|| {
+        s.activity
+            .start("geocode", "Looking up places", Cancel::Yes)
+    });
     let mut ops = Vec::new();
     let mut found = Vec::new();
     for (n, (id, at)) in todo.iter().enumerate() {
         if let Some(t) = &task {
-            if t.cancel_flag().is_some_and(|f| f.load(std::sync::atomic::Ordering::Relaxed)) {
+            if t.cancel_flag()
+                .is_some_and(|f| f.load(std::sync::atomic::Ordering::Relaxed))
+            {
                 return Err(bad(C, "cancelled"));
             }
             t.progress(n as u64, todo.len() as u64);
         }
-        let Some(place) = names.reverse(*at) else { continue };
-        let Some(ph) = s.catalog.photo(*id) else { continue };
+        let Some(place) = names.reverse(*at) else {
+            continue;
+        };
+        let Some(ph) = s.catalog.photo(*id) else {
+            continue;
+        };
         let mut meta = ph.meta.clone();
         fill(&mut meta, &place, overwrite);
         if meta != ph.meta {
-            ops.push(Op::SetMeta { id: *id, meta: Box::new(meta) });
+            ops.push(Op::SetMeta {
+                id: *id,
+                meta: Box::new(meta),
+            });
         }
         found.push(json!({"id": id.0, "place": place}));
     }
@@ -154,7 +182,9 @@ fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
     if !bool_or(p, "dryRun", false) && changed > 0 {
         s.commit("Reverse Geocode", Op::Batch { ops })?;
     }
-    Ok(json!({"looked": todo.len(), "found": found.len(), "changed": changed, "photos": found, "attribution": GEONAMES_ATTRIBUTION}))
+    Ok(
+        json!({"looked": todo.len(), "found": found.len(), "changed": changed, "photos": found, "attribution": GEONAMES_ATTRIBUTION}),
+    )
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -171,31 +201,58 @@ mod download {
     const MAX_ZIP: u64 = 64 * 1024 * 1024;
     const MAX_TEXT: usize = 256 * 1024 * 1024;
 
-    fn get(name: &str, base: &str, dir: &Path, cancel: &AtomicBool, task: &crate::activity::TaskHandle) -> std::result::Result<(), String> {
+    fn get(
+        name: &str,
+        base: &str,
+        dir: &Path,
+        cancel: &AtomicBool,
+        task: &crate::activity::TaskHandle,
+    ) -> std::result::Result<(), String> {
         let _ = std::fs::remove_file(dir.join(name));
-        let file = lightcraft_fetch::FileSpec { name, size: None, sha256: None, max: MAX_ZIP };
-        lightcraft_fetch::download_url(&file, &format!("{base}{name}"), dir, &lightcraft_fetch::Options::default(), cancel, &mut |pr| {
-            task.progress(pr.done, pr.total.max(pr.done))
-        })
+        let file = lightcraft_fetch::FileSpec {
+            name,
+            size: None,
+            sha256: None,
+            max: MAX_ZIP,
+        };
+        lightcraft_fetch::download_url(
+            &file,
+            &format!("{base}{name}"),
+            dir,
+            &lightcraft_fetch::Options::default(),
+            cancel,
+            &mut |pr| task.progress(pr.done, pr.total.max(pr.done)),
+        )
         .map_err(|e| e.to_string())
     }
 
     /// Fetch and unpack the place names into `dir`; the new files replace the old ones only when complete.
-    pub(super) fn run(base: &str, dir: &Path, cancel: &AtomicBool, task: &crate::activity::TaskHandle) -> std::result::Result<usize, String> {
+    pub(super) fn run(
+        base: &str,
+        dir: &Path,
+        cancel: &AtomicBool,
+        task: &crate::activity::TaskHandle,
+    ) -> std::result::Result<usize, String> {
         let staging = dir.join(".download");
-        std::fs::create_dir_all(&staging).map_err(|e| format!("could not create {}: {e}", staging.display()))?;
+        std::fs::create_dir_all(&staging)
+            .map_err(|e| format!("could not create {}: {e}", staging.display()))?;
         get(GEONAMES_ZIP, base, &staging, cancel, task)?;
         let zip = std::fs::read(staging.join(GEONAMES_ZIP)).map_err(|e| e.to_string())?;
-        let cities = lightcraft_geocode::unzip::extract(&zip, GEONAMES_FILES[0], MAX_TEXT).map_err(|e| e.to_string())?;
+        let cities = lightcraft_geocode::unzip::extract(&zip, GEONAMES_FILES[0], MAX_TEXT)
+            .map_err(|e| e.to_string())?;
         let places = GeoNames::parse(&String::from_utf8_lossy(&cities), None, None).len();
         if places == 0 {
             return Err("the downloaded place list is empty".into());
         }
         let _ = std::fs::remove_file(staging.join(GEONAMES_ZIP));
-        let write = |name: &str, data: &[u8]| std::fs::write(dir.join(name), data).map_err(|e| format!("could not save {name}: {e}"));
+        let write = |name: &str, data: &[u8]| {
+            std::fs::write(dir.join(name), data).map_err(|e| format!("could not save {name}: {e}"))
+        };
         for name in &GEONAMES_FILES[1..] {
             // optional: without them states stay blank and countries are ISO codes
-            match get(name, base, &staging, cancel, task).and_then(|()| std::fs::read(staging.join(name)).map_err(|e| e.to_string())) {
+            match get(name, base, &staging, cancel, task)
+                .and_then(|()| std::fs::read(staging.join(name)).map_err(|e| e.to_string()))
+            {
                 Ok(b) => write(name, &b)?,
                 Err(e) => log::warn!("place names: {name}: {e}"),
             }
@@ -211,7 +268,9 @@ mod download {
     /// is refused.
     pub(super) fn base_allowed(base: &str) -> bool {
         base.starts_with("https://")
-            || base.strip_prefix("http://127.0.0.1").is_some_and(|rest| rest.is_empty() || rest.starts_with(':') || rest.starts_with('/'))
+            || base.strip_prefix("http://127.0.0.1").is_some_and(|rest| {
+                rest.is_empty() || rest.starts_with(':') || rest.starts_with('/')
+            })
     }
 
     /// `metadata.downloadPlaceNames`: starts a background download (shown in the activity stack, cancellable).
@@ -231,7 +290,11 @@ mod download {
             sh.running = true;
         }
         let cancel = Arc::new(AtomicBool::new(false));
-        let task = s.activity.start("download", "Downloading place names", Cancel::Flag(cancel.clone()));
+        let task = s.activity.start(
+            "download",
+            "Downloading place names",
+            Cancel::Flag(cancel.clone()),
+        );
         task.set_unit(Unit::Bytes);
         task.detail("GeoNames");
         let handle = task.handle();
@@ -256,7 +319,10 @@ mod download {
             sh.unreported = Some(outcome);
         });
         if let Err(e) = spawned {
-            shared.lock().unwrap_or_else(PoisonError::into_inner).running = false;
+            shared
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .running = false;
             return Err(bad(C, format!("could not start the download: {e}")));
         }
         Ok(json!({"started": true, "path": dir, "attribution": GEONAMES_ATTRIBUTION}))
@@ -298,12 +364,23 @@ mod tests {
                           2643743\tLondon\tLondon\t\t51.50853\t-0.12574\tP\tPPLC\tGB\t\tENG\t\t\t\t8961989\t\t25\tEurope/London\t2024-01-01\n";
 
     fn dataset(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("lightcraft-geocode-cmd-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "lightcraft-geocode-cmd-{tag}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join(GEONAMES_FILES[0]), CITIES).unwrap();
-        std::fs::write(dir.join(GEONAMES_FILES[1]), "FR.11\tÎle-de-France\nGB.ENG\tEngland\n").unwrap();
-        std::fs::write(dir.join(GEONAMES_FILES[2]), "#c\nFR\tFRA\t250\tFR\tFrance\nGB\tGBR\t826\tUK\tUnited Kingdom\n").unwrap();
+        std::fs::write(
+            dir.join(GEONAMES_FILES[1]),
+            "FR.11\tÎle-de-France\nGB.ENG\tEngland\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join(GEONAMES_FILES[2]),
+            "#c\nFR\tFRA\t250\tFR\tFrance\nGB\tGBR\t826\tUK\tUnited Kingdom\n",
+        )
+        .unwrap();
         dir
     }
 
@@ -314,7 +391,14 @@ mod tests {
         meta.state.clear();
         meta.country.clear();
         meta.location.clear();
-        s.commit("test", Op::SetMeta { id, meta: Box::new(meta) }).unwrap();
+        s.commit(
+            "test",
+            Op::SetMeta {
+                id,
+                meta: Box::new(meta),
+            },
+        )
+        .unwrap();
     }
 
     #[test]
@@ -326,19 +410,45 @@ mod tests {
         set_gps(&mut s, ids[1], Some((51.5, -0.1)), "Westminster");
         set_gps(&mut s, ids[2], Some((f64::NAN, 0.0)), "");
         set_gps(&mut s, ids[3], Some((0.0, 0.0)), "");
-        let r = s.execute("metadata.reverseGeocode", &json!({"ids": [ids[0].0, ids[1].0, ids[2].0, ids[3].0], "dataset": dir})).unwrap();
-        assert_eq!((r["looked"].as_u64(), r["found"].as_u64(), r["changed"].as_u64()), (Some(3), Some(2), Some(2)), "{r}");
+        let r = s
+            .execute(
+                "metadata.reverseGeocode",
+                &json!({"ids": [ids[0].0, ids[1].0, ids[2].0, ids[3].0], "dataset": dir}),
+            )
+            .unwrap();
+        assert_eq!(
+            (
+                r["looked"].as_u64(),
+                r["found"].as_u64(),
+                r["changed"].as_u64()
+            ),
+            (Some(3), Some(2), Some(2)),
+            "{r}"
+        );
         let m0 = s.catalog.photo(ids[0]).unwrap().meta.clone();
-        assert_eq!((m0.city.as_str(), m0.state.as_str(), m0.country.as_str()), ("Paris", "Île-de-France", "France"));
+        assert_eq!(
+            (m0.city.as_str(), m0.state.as_str(), m0.country.as_str()),
+            ("Paris", "Île-de-France", "France")
+        );
         let m1 = s.catalog.photo(ids[1]).unwrap().meta.clone();
-        assert_eq!((m1.city.as_str(), m1.state.as_str(), m1.country.as_str()), ("Westminster", "England", "United Kingdom"));
-        assert!(s.activity.list().is_empty(), "the activity row ends with the command");
+        assert_eq!(
+            (m1.city.as_str(), m1.state.as_str(), m1.country.as_str()),
+            ("Westminster", "England", "United Kingdom")
+        );
+        assert!(
+            s.activity.list().is_empty(),
+            "the activity row ends with the command"
+        );
         // one undo step
         s.undo_step().unwrap();
         assert!(s.catalog.photo(ids[0]).unwrap().meta.city.is_empty());
         assert_eq!(s.catalog.photo(ids[1]).unwrap().meta.city, "Westminster");
         // overwrite replaces typed text
-        s.execute("metadata.reverseGeocode", &json!({"ids": [ids[1].0], "dataset": dir, "overwrite": true})).unwrap();
+        s.execute(
+            "metadata.reverseGeocode",
+            &json!({"ids": [ids[1].0], "dataset": dir, "overwrite": true}),
+        )
+        .unwrap();
         assert_eq!(s.catalog.photo(ids[1]).unwrap().meta.city, "London");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -348,13 +458,23 @@ mod tests {
         let mut s = Session::with_demo();
         let ids = s.visible_cloned();
         set_gps(&mut s, ids[0], None, "");
-        let e = s.execute("metadata.reverseGeocode", &json!({"ids": [ids[0].0]})).unwrap_err();
+        let e = s
+            .execute("metadata.reverseGeocode", &json!({"ids": [ids[0].0]}))
+            .unwrap_err();
         assert!(e.to_string().contains("GPS"), "{e}");
         set_gps(&mut s, ids[0], Some((48.86, 2.34)), "");
-        let missing = std::env::temp_dir().join(format!("lightcraft-geocode-none-{}", std::process::id()));
-        let e = s.execute("metadata.reverseGeocode", &json!({"ids": [ids[0].0], "dataset": missing})).unwrap_err();
+        let missing =
+            std::env::temp_dir().join(format!("lightcraft-geocode-none-{}", std::process::id()));
+        let e = s
+            .execute(
+                "metadata.reverseGeocode",
+                &json!({"ids": [ids[0].0], "dataset": missing}),
+            )
+            .unwrap_err();
         assert!(e.to_string().contains("download"), "{e}");
-        let st = s.execute("metadata.placeNamesStatus", &json!({"dataset": missing})).unwrap();
+        let st = s
+            .execute("metadata.placeNamesStatus", &json!({"dataset": missing}))
+            .unwrap();
         assert_eq!(st["downloaded"], false);
     }
 
@@ -363,14 +483,24 @@ mod tests {
         let dir = dataset("cache");
         let mut names = PlaceNames::default();
         let a = names.load(&dir).unwrap();
-        assert!(Arc::ptr_eq(&a, &names.load(&dir).unwrap()), "unchanged file: no re-read");
+        assert!(
+            Arc::ptr_eq(&a, &names.load(&dir).unwrap()),
+            "unchanged file: no re-read"
+        );
         // a different size invalidates it (a new download)
-        std::fs::write(dir.join(GEONAMES_FILES[0]), "1\tRome\tRome\t\t41.9\t12.5\tP\tP\tIT\t\t07\n").unwrap();
+        std::fs::write(
+            dir.join(GEONAMES_FILES[0]),
+            "1\tRome\tRome\t\t41.9\t12.5\tP\tP\tIT\t\t07\n",
+        )
+        .unwrap();
         let b = names.load(&dir).unwrap();
         assert!(!Arc::ptr_eq(&a, &b));
         assert_eq!(b.reverse(LatLon::new(41.9, 12.5)).unwrap().city, "Rome");
         std::fs::remove_file(dir.join(GEONAMES_FILES[0])).unwrap();
-        assert!(names.load(&dir).is_err(), "a deleted file is not served from the cache");
+        assert!(
+            names.load(&dir).is_err(),
+            "a deleted file is not served from the cache"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -395,15 +525,25 @@ mod tests {
                     }
                 }
                 let path = line.split(' ').nth(1).unwrap_or("").to_string();
-                let (status, body, len): (&str, Vec<u8>, Option<usize>) = match (path.split('/').nth(1).unwrap_or(""), path.ends_with(".zip")) {
-                    ("good", true) => ("200 OK", zip.clone(), None),
-                    ("good", false) if path.contains("countryInfo") => ("200 OK", b"FR\tFRA\t250\tFR\tFrance\n".to_vec(), None),
-                    ("garbage", true) => ("200 OK", b"<html>not a zip</html>".to_vec(), None),
-                    ("short", true) => ("200 OK", zip[..zip.len() / 2].to_vec(), Some(zip.len())),
-                    _ => ("404 Not Found", b"nope".to_vec(), None),
-                };
+                let (status, body, len): (&str, Vec<u8>, Option<usize>) =
+                    match (path.split('/').nth(1).unwrap_or(""), path.ends_with(".zip")) {
+                        ("good", true) => ("200 OK", zip.clone(), None),
+                        ("good", false) if path.contains("countryInfo") => {
+                            ("200 OK", b"FR\tFRA\t250\tFR\tFrance\n".to_vec(), None)
+                        }
+                        ("garbage", true) => ("200 OK", b"<html>not a zip</html>".to_vec(), None),
+                        ("short", true) => {
+                            ("200 OK", zip[..zip.len() / 2].to_vec(), Some(zip.len()))
+                        }
+                        _ => ("404 Not Found", b"nope".to_vec(), None),
+                    };
                 let n = len.unwrap_or(body.len());
-                let _ = c.write_all(format!("HTTP/1.1 {status}\r\nContent-Length: {n}\r\nConnection: close\r\n\r\n").as_bytes());
+                let _ = c.write_all(
+                    format!(
+                        "HTTP/1.1 {status}\r\nContent-Length: {n}\r\nConnection: close\r\n\r\n"
+                    )
+                    .as_bytes(),
+                );
                 let _ = c.write_all(&body);
             }
         });
@@ -412,7 +552,11 @@ mod tests {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn download(s: &mut Session, base: &str, dir: &Path) -> DownloadOutcome {
-        s.execute("metadata.downloadPlaceNames", &json!({"dataset": dir, "base": base})).unwrap();
+        s.execute(
+            "metadata.downloadPlaceNames",
+            &json!({"dataset": dir, "base": base}),
+        )
+        .unwrap();
         assert!(s.place_names.downloading() || s.place_names.lock().unreported.is_some());
         let started = std::time::Instant::now();
         loop {
@@ -435,34 +579,70 @@ mod tests {
         let mut s = Session::with_demo();
         let ids = s.visible_cloned();
         let base = serve();
-        let dir = std::env::temp_dir().join(format!("lightcraft-geocode-dl-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("lightcraft-geocode-dl-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        assert!(s.execute("metadata.downloadPlaceNames", &json!({"dataset": dir, "base": "http://example.com/"})).is_err());
+        assert!(
+            s.execute(
+                "metadata.downloadPlaceNames",
+                &json!({"dataset": dir, "base": "http://example.com/"})
+            )
+            .is_err()
+        );
 
         for bad in ["missing", "garbage", "short"] {
             let o = download(&mut s, &format!("{base}/{bad}/"), &dir);
-            let DownloadOutcome::Failed(e) = o else { panic!("{bad}: {o:?}") };
+            let DownloadOutcome::Failed(e) = o else {
+                panic!("{bad}: {o:?}")
+            };
             assert!(e.contains("try again"), "{bad}: {e}");
-            let st = s.execute("metadata.placeNamesStatus", &json!({"dataset": dir})).unwrap();
-            assert_eq!((st["downloaded"].as_bool(), st["lastDownload"].as_str()), (Some(false), Some("failed")), "{bad}: {st}");
+            let st = s
+                .execute("metadata.placeNamesStatus", &json!({"dataset": dir}))
+                .unwrap();
+            assert_eq!(
+                (st["downloaded"].as_bool(), st["lastDownload"].as_str()),
+                (Some(false), Some("failed")),
+                "{bad}: {st}"
+            );
             assert_eq!(st["lastError"].as_str(), Some(e.as_str()));
             assert!(s.place_names.take_outcome().is_none(), "reported once");
         }
 
-        assert_eq!(download(&mut s, &format!("{base}/good/"), &dir), DownloadOutcome::Done(2));
-        let st = s.execute("metadata.placeNamesStatus", &json!({"dataset": dir})).unwrap();
-        assert_eq!((st["downloaded"].as_bool(), st["lastError"].is_null(), st["lastDownload"]["places"].as_u64()), (Some(true), true, Some(2)));
+        assert_eq!(
+            download(&mut s, &format!("{base}/good/"), &dir),
+            DownloadOutcome::Done(2)
+        );
+        let st = s
+            .execute("metadata.placeNamesStatus", &json!({"dataset": dir}))
+            .unwrap();
+        assert_eq!(
+            (
+                st["downloaded"].as_bool(),
+                st["lastError"].is_null(),
+                st["lastDownload"]["places"].as_u64()
+            ),
+            (Some(true), true, Some(2))
+        );
         set_gps(&mut s, ids[0], Some((48.86, 2.34)), "");
-        s.execute("metadata.reverseGeocode", &json!({"ids": [ids[0].0], "dataset": dir})).unwrap();
+        s.execute(
+            "metadata.reverseGeocode",
+            &json!({"ids": [ids[0].0], "dataset": dir}),
+        )
+        .unwrap();
         let m = s.catalog.photo(ids[0]).unwrap().meta.clone();
         // admin1 was a 404 (optional): the state stays blank, the rest is filled
-        assert_eq!((m.city.as_str(), m.state.as_str(), m.country.as_str()), ("Paris", "", "France"));
+        assert_eq!(
+            (m.city.as_str(), m.state.as_str(), m.country.as_str()),
+            ("Paris", "", "France")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn download_base_is_https_or_loopback_only() {
-        assert!(download::base_allowed("https://download.geonames.org/export/dump/"));
+        assert!(download::base_allowed(
+            "https://download.geonames.org/export/dump/"
+        ));
         assert!(download::base_allowed("http://127.0.0.1:8080"));
         assert!(download::base_allowed("http://127.0.0.1/dump"));
         assert!(!download::base_allowed("http://127.0.0.1.example.com/"));

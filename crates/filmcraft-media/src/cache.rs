@@ -27,7 +27,16 @@ pub struct FrameCache<K: Eq + Hash + Clone = (u64, i64, u16)> {
 
 impl<K: Eq + Hash + Clone> FrameCache<K> {
     pub fn new(budget_bytes: usize) -> Self {
-        Self { inner: Mutex::new(Inner { map: HashMap::new(), bytes: 0, clock: 0, hits: 0, misses: 0 }), budget: budget_bytes }
+        Self {
+            inner: Mutex::new(Inner {
+                map: HashMap::new(),
+                bytes: 0,
+                clock: 0,
+                hits: 0,
+                misses: 0,
+            }),
+            budget: budget_bytes,
+        }
     }
 
     pub fn get(&self, k: &K) -> Option<Arc<VideoFrame>> {
@@ -53,13 +62,24 @@ impl<K: Eq + Hash + Clone> FrameCache<K> {
         let mut g = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         g.clock += 1;
         let stamp = g.clock;
-        if let Some(old) = g.map.insert(k, Entry { frame, bytes, stamp }) {
+        if let Some(old) = g.map.insert(
+            k,
+            Entry {
+                frame,
+                bytes,
+                stamp,
+            },
+        ) {
             g.bytes -= old.bytes;
         }
         g.bytes += bytes;
         if g.bytes > self.budget {
             // Evict oldest entries until under 90% of budget.
-            let mut v: Vec<(u64, K, usize)> = g.map.iter().map(|(k, e)| (e.stamp, k.clone(), e.bytes)).collect();
+            let mut v: Vec<(u64, K, usize)> = g
+                .map
+                .iter()
+                .map(|(k, e)| (e.stamp, k.clone(), e.bytes))
+                .collect();
             v.sort_unstable_by_key(|x| x.0);
             let target = self.budget * 9 / 10;
             for (_, k, b) in v {
@@ -72,7 +92,11 @@ impl<K: Eq + Hash + Clone> FrameCache<K> {
         }
     }
 
-    pub fn get_or_insert_with<E>(&self, k: K, f: impl FnOnce() -> Result<Arc<VideoFrame>, E>) -> Result<Arc<VideoFrame>, E> {
+    pub fn get_or_insert_with<E>(
+        &self,
+        k: K,
+        f: impl FnOnce() -> Result<Arc<VideoFrame>, E>,
+    ) -> Result<Arc<VideoFrame>, E> {
         if let Some(v) = self.get(&k) {
             return Ok(v);
         }

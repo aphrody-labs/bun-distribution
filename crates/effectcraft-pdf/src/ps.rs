@@ -105,7 +105,10 @@ impl Src<'_> {
                 }
                 // DSC: skip embedded binary / data sections.
                 let line = &self.d[s..self.pos];
-                if line.starts_with(b"%%BeginData:") || line.starts_with(b"%%BeginBinary:") || line.starts_with(b"%%BeginPreview") {
+                if line.starts_with(b"%%BeginData:")
+                    || line.starts_with(b"%%BeginBinary:")
+                    || line.starts_with(b"%%BeginPreview")
+                {
                     let end: &[u8] = if line.starts_with(b"%%BeginData:") {
                         b"%%EndData"
                     } else if line.starts_with(b"%%BeginBinary:") {
@@ -128,7 +131,12 @@ impl Src<'_> {
         let s = self.pos;
         while self.pos < self.d.len() {
             let c = self.d[self.pos];
-            if is_white(c) || matches!(c, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%') {
+            if is_white(c)
+                || matches!(
+                    c,
+                    b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+                )
+            {
                 break;
             }
             self.pos += 1;
@@ -177,7 +185,11 @@ impl Src<'_> {
                 }
                 let w = String::from_utf8_lossy(self.word()).into_owned();
                 // `//name` (immediately evaluated) is treated like a plain name.
-                if imm { V::Name(w.into()) } else { V::Lit(w.into()) }
+                if imm {
+                    V::Name(w.into())
+                } else {
+                    V::Lit(w.into())
+                }
             }
             b'(' => {
                 self.pos += 1;
@@ -237,7 +249,9 @@ impl Src<'_> {
             }
             b'<' if self.d.get(self.pos + 1) == Some(&b'~') => {
                 let s = self.pos;
-                while self.pos + 1 < self.d.len() && !(self.d[self.pos] == b'~' && self.d[self.pos + 1] == b'>') {
+                while self.pos + 1 < self.d.len()
+                    && !(self.d[self.pos] == b'~' && self.d[self.pos + 1] == b'>')
+                {
                     self.pos += 1;
                 }
                 self.pos = (self.pos + 2).min(self.d.len());
@@ -257,7 +271,9 @@ impl Src<'_> {
                     hex.push(b'0');
                 }
                 let h = |c: u8| (c as char).to_digit(16).unwrap_or(0) as u8;
-                V::Str(Rc::new(RefCell::new(hex.chunks(2).map(|p| (h(p[0]) << 4) | h(p[1])).collect())))
+                V::Str(Rc::new(RefCell::new(
+                    hex.chunks(2).map(|p| (h(p[0]) << 4) | h(p[1])).collect(),
+                )))
             }
             b'[' | b']' => {
                 self.pos += 1;
@@ -278,7 +294,13 @@ impl Src<'_> {
                     None => {
                         // Radix numbers (16#FF).
                         let s = String::from_utf8_lossy(w).into_owned();
-                        match s.split_once('#').and_then(|(r, v)| i64::from_str_radix(v, r.parse::<u32>().ok().filter(|r| (2..=36).contains(r))?).ok()) {
+                        match s.split_once('#').and_then(|(r, v)| {
+                            i64::from_str_radix(
+                                v,
+                                r.parse::<u32>().ok().filter(|r| (2..=36).contains(r))?,
+                            )
+                            .ok()
+                        }) {
                             Some(n) => V::Num(n as f64),
                             None => V::Name(s.into()),
                         }
@@ -291,14 +313,21 @@ impl Src<'_> {
     /// Step over inline image data that follows an `image` operator reading `currentfile`.
     fn skip_image_data(&mut self) {
         self.skip_ws();
-        if self.d[self.pos..].starts_with(b"<~") || self.d.get(self.pos).is_some_and(|c| (b'!'..=b'u').contains(c) && !c.is_ascii_hexdigit()) {
+        if self.d[self.pos..].starts_with(b"<~")
+            || self
+                .d
+                .get(self.pos)
+                .is_some_and(|c| (b'!'..=b'u').contains(c) && !c.is_ascii_hexdigit())
+        {
             match self.d[self.pos..].windows(2).position(|w| w == b"~>") {
                 Some(p) => self.pos += p + 2,
                 None => self.pos = self.d.len(),
             }
             return;
         }
-        while self.pos < self.d.len() && (self.d[self.pos].is_ascii_hexdigit() || is_white(self.d[self.pos])) {
+        while self.pos < self.d.len()
+            && (self.d[self.pos].is_ascii_hexdigit() || is_white(self.d[self.pos]))
+        {
             self.pos += 1;
         }
         if self.d.get(self.pos) == Some(&b'>') {
@@ -400,7 +429,10 @@ impl Interp {
     }
 
     fn lookup(&self, k: &str) -> Option<V> {
-        self.dicts.iter().rev().find_map(|d| d.borrow().get(k).cloned())
+        self.dicts
+            .iter()
+            .rev()
+            .find_map(|d| d.borrow().get(k).cloned())
     }
 
     /// A token read from the file: procedures are pushed, names executed.
@@ -538,20 +570,38 @@ impl Interp {
         let st = stroke.then(|| Stroke {
             paint: Paint::Color(self.gs.color),
             opacity: 1.0,
-            width: if self.gs.lw <= 0.0 { 1.0 } else { self.gs.lw * s },
+            width: if self.gs.lw <= 0.0 {
+                1.0
+            } else {
+                self.gs.lw * s
+            },
             cap: self.gs.cap,
             join: self.gs.join,
             miter: self.gs.miter.max(1.0),
-            dash: self.gs.dash.as_ref().map(|(a, o)| (a.iter().map(|v| v * s).collect(), o * s)),
+            dash: self
+                .gs
+                .dash
+                .as_ref()
+                .map(|(a, o)| (a.iter().map(|v| v * s).collect(), o * s)),
         });
-        self.b.fill_stroke(path, Affine::IDENTITY, fill.map(|r| (Paint::Color(self.gs.color), 1.0, r)), st);
+        self.b.fill_stroke(
+            path,
+            Affine::IDENTITY,
+            fill.map(|r| (Paint::Color(self.gs.color), 1.0, r)),
+            st,
+        );
     }
 
     fn rect_path(&mut self) -> Vec<BezPath> {
         // x y w h, or an array / string of numbers.
         let top = self.pop();
         let nums: Vec<f64> = match &top {
-            V::Array(_) | V::Proc(_) => top.items().unwrap_or_default().iter().filter_map(V::num).collect(),
+            V::Array(_) | V::Proc(_) => top
+                .items()
+                .unwrap_or_default()
+                .iter()
+                .filter_map(V::num)
+                .collect(),
             V::Num(h) => {
                 let w = self.popn();
                 let y = self.popn();
@@ -621,7 +671,11 @@ impl Interp {
             },
             "index" => {
                 let k = self.popn().max(0.0) as usize;
-                let v = if k < self.st.len() { self.st[self.st.len() - 1 - k].clone() } else { V::Null };
+                let v = if k < self.st.len() {
+                    self.st[self.st.len() - 1 - k].clone()
+                } else {
+                    V::Null
+                };
                 self.push(v);
             }
             "roll" => {
@@ -644,17 +698,32 @@ impl Interp {
                 }
             }
             "counttomark" => {
-                let k = self.st.iter().rev().position(|v| matches!(v, V::Mark)).unwrap_or(self.st.len());
+                let k = self
+                    .st
+                    .iter()
+                    .rev()
+                    .position(|v| matches!(v, V::Mark))
+                    .unwrap_or(self.st.len());
                 self.push(V::Num(k as f64));
             }
             "]" => {
-                let k = self.st.iter().rev().position(|v| matches!(v, V::Mark)).unwrap_or(self.st.len());
+                let k = self
+                    .st
+                    .iter()
+                    .rev()
+                    .position(|v| matches!(v, V::Mark))
+                    .unwrap_or(self.st.len());
                 let items = self.st.split_off(self.st.len() - k);
                 self.st.pop();
                 self.push(array(items));
             }
             ">>" => {
-                let k = self.st.iter().rev().position(|v| matches!(v, V::Mark)).unwrap_or(self.st.len());
+                let k = self
+                    .st
+                    .iter()
+                    .rev()
+                    .position(|v| matches!(v, V::Mark))
+                    .unwrap_or(self.st.len());
                 let items = self.st.split_off(self.st.len() - k);
                 self.st.pop();
                 let d = new_dict();
@@ -699,7 +768,8 @@ impl Interp {
                 };
                 self.push(V::Num(if v.is_finite() { v } else { 0.0 }));
             }
-            "neg" | "abs" | "sqrt" | "sin" | "cos" | "ln" | "log" | "cvi" | "cvr" | "round" | "floor" | "ceiling" | "truncate" => {
+            "neg" | "abs" | "sqrt" | "sin" | "cos" | "ln" | "log" | "cvi" | "cvr" | "round"
+            | "floor" | "ceiling" | "truncate" => {
                 let a = match self.pop() {
                     V::Str(s) => parse_num(&s.borrow()).unwrap_or(0.0),
                     v => v.num().unwrap_or(0.0),
@@ -803,7 +873,10 @@ impl Interp {
                 let inc = self.popn();
                 let mut i = self.popn();
                 let mut guard = 0;
-                while inc != 0.0 && ((inc > 0.0 && i <= lim) || (inc < 0.0 && i >= lim)) && guard < 1_000_000 {
+                while inc != 0.0
+                    && ((inc > 0.0 && i <= lim) || (inc < 0.0 && i >= lim))
+                    && guard < 1_000_000
+                {
                     self.push(V::Num(i));
                     match self.exec_obj(p.clone(), src) {
                         Err(Flow::Exit) => break,
@@ -826,7 +899,11 @@ impl Interp {
                 let p = self.pop();
                 match self.pop() {
                     V::Dict(d) => {
-                        let items: Vec<(String, V)> = d.borrow().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+                        let items: Vec<(String, V)> = d
+                            .borrow()
+                            .iter()
+                            .map(|(k, v)| (k.clone(), v.clone()))
+                            .collect();
                         for (k, v) in items {
                             self.push(V::Lit(k.into()));
                             self.push(v);
@@ -881,7 +958,13 @@ impl Interp {
             "store" => {
                 let v = self.pop();
                 let k = self.pop().key();
-                let d = self.dicts.iter().rev().find(|d| d.borrow().contains_key(&k)).or(self.dicts.last()).cloned();
+                let d = self
+                    .dicts
+                    .iter()
+                    .rev()
+                    .find(|d| d.borrow().contains_key(&k))
+                    .or(self.dicts.last())
+                    .cloned();
                 if let Some(d) = d {
                     d.borrow_mut().insert(k, v);
                 }
@@ -923,7 +1006,13 @@ impl Interp {
             }
             "where" => {
                 let k = self.pop().key();
-                match self.dicts.iter().rev().find(|d| d.borrow().contains_key(&k)).cloned() {
+                match self
+                    .dicts
+                    .iter()
+                    .rev()
+                    .find(|d| d.borrow().contains_key(&k))
+                    .cloned()
+                {
                     Some(d) => {
                         self.push(V::Dict(d));
                         self.push(V::Bool(true));
@@ -942,7 +1031,11 @@ impl Interp {
             "countdictstack" => self.push(V::Num(self.dicts.len() as f64)),
             "cleardictstack" => self.dicts.truncate(1),
             "findresource" | "findfont" | "findencoding" => {
-                let category = if n == "findresource" { self.pop().key() } else { String::new() };
+                let category = if n == "findresource" {
+                    self.pop().key()
+                } else {
+                    String::new()
+                };
                 let key = self.pop().key();
                 match (n, category.as_str()) {
                     ("findfont", _) | (_, "Font") => {
@@ -989,8 +1082,16 @@ impl Interp {
                 let k = self.pop();
                 let v = match self.pop() {
                     V::Dict(d) => d.borrow().get(&k.key()).cloned().unwrap_or(V::Null),
-                    V::Str(s) => V::Num(s.borrow().get(k.num().unwrap_or(0.0) as usize).copied().unwrap_or(0) as f64),
-                    a => a.items().and_then(|i| i.get(k.num().unwrap_or(0.0) as usize).cloned()).unwrap_or(V::Null),
+                    V::Str(s) => V::Num(
+                        s.borrow()
+                            .get(k.num().unwrap_or(0.0) as usize)
+                            .copied()
+                            .unwrap_or(0) as f64,
+                    ),
+                    a => a
+                        .items()
+                        .and_then(|i| i.get(k.num().unwrap_or(0.0) as usize).cloned())
+                        .unwrap_or(V::Null),
                 };
                 self.push(v);
             }
@@ -1022,13 +1123,19 @@ impl Interp {
                 match self.pop() {
                     V::Str(s) => {
                         let b = s.borrow();
-                        let part = b.get(i.min(b.len())..(i + c).min(b.len())).unwrap_or(&[]).to_vec();
+                        let part = b
+                            .get(i.min(b.len())..(i + c).min(b.len()))
+                            .unwrap_or(&[])
+                            .to_vec();
                         drop(b);
                         self.push(V::Str(Rc::new(RefCell::new(part))));
                     }
                     a => {
                         let items = a.items().unwrap_or_default();
-                        let part = items.get(i.min(items.len())..(i + c).min(items.len())).unwrap_or(&[]).to_vec();
+                        let part = items
+                            .get(i.min(items.len())..(i + c).min(items.len()))
+                            .unwrap_or(&[])
+                            .to_vec();
                         self.push(array(part));
                     }
                 }
@@ -1120,8 +1227,8 @@ impl Interp {
                 self.push(V::Str(Rc::new(RefCell::new(vec![]))));
                 self.push(V::Bool(false));
             }
-            "flushfile" | "closefile" | "print" | "==" | "=" | "pstack" | "setpagedevice" | "setglobal" | "setpacking" | "setshared" | "setobjectformat"
-            | "setsmoothness" => {
+            "flushfile" | "closefile" | "print" | "==" | "=" | "pstack" | "setpagedevice"
+            | "setglobal" | "setpacking" | "setshared" | "setobjectformat" | "setsmoothness" => {
                 if !matches!(n, "pstack") {
                     self.pop();
                 }
@@ -1151,15 +1258,28 @@ impl Interp {
             }
             "setlinewidth" => self.gs.lw = self.popn(),
             "currentlinewidth" => self.push(V::Num(self.gs.lw)),
-            "setlinecap" => self.gs.cap = [Cap::Butt, Cap::Round, Cap::Square][(self.popn().max(0.0) as usize).min(2)],
-            "setlinejoin" => self.gs.join = [Join::Miter, Join::Round, Join::Bevel][(self.popn().max(0.0) as usize).min(2)],
+            "setlinecap" => {
+                self.gs.cap =
+                    [Cap::Butt, Cap::Round, Cap::Square][(self.popn().max(0.0) as usize).min(2)]
+            }
+            "setlinejoin" => {
+                self.gs.join =
+                    [Join::Miter, Join::Round, Join::Bevel][(self.popn().max(0.0) as usize).min(2)]
+            }
             "setmiterlimit" => self.gs.miter = self.popn(),
             "setdash" => {
                 let off = self.popn();
-                let a: Vec<f64> = self.pop().items().unwrap_or_default().iter().filter_map(V::num).collect();
+                let a: Vec<f64> = self
+                    .pop()
+                    .items()
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(V::num)
+                    .collect();
                 self.gs.dash = (!a.is_empty() && a.iter().any(|v| *v > 0.0)).then_some((a, off));
             }
-            "setflat" | "setstrokeadjust" | "setoverprint" | "setrenderingintent" | "setcolorrendering" | "sethalftone" | "setscreen" | "settransfer" => {
+            "setflat" | "setstrokeadjust" | "setoverprint" | "setrenderingintent"
+            | "setcolorrendering" | "sethalftone" | "setscreen" | "settransfer" => {
                 self.pop();
             }
             "setgray" => {
@@ -1192,23 +1312,44 @@ impl Interp {
                 let y = self.popn().clamp(0.0, 1.0);
                 let m = self.popn().clamp(0.0, 1.0);
                 let c = self.popn().clamp(0.0, 1.0);
-                self.gs.color = [(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)];
+                self.gs.color = [
+                    (1.0 - c) * (1.0 - k),
+                    (1.0 - m) * (1.0 - k),
+                    (1.0 - y) * (1.0 - k),
+                ];
             }
             "setcolorspace" => {
                 self.pop();
             }
             "setcolor" => {
                 // Device colour by operand count (patterns are not drawn).
-                let k = self.st.iter().rev().take_while(|v| matches!(v, V::Num(_))).count().min(4);
-                let c: Vec<f64> = self.st.split_off(self.st.len() - k).iter().filter_map(V::num).collect();
+                let k = self
+                    .st
+                    .iter()
+                    .rev()
+                    .take_while(|v| matches!(v, V::Num(_)))
+                    .count()
+                    .min(4);
+                let c: Vec<f64> = self
+                    .st
+                    .split_off(self.st.len() - k)
+                    .iter()
+                    .filter_map(V::num)
+                    .collect();
                 self.gs.color = match c.len() {
                     1 => [c[0]; 3],
                     3 => [c[0], c[1], c[2]],
-                    4 => [(1.0 - c[0]) * (1.0 - c[3]), (1.0 - c[1]) * (1.0 - c[3]), (1.0 - c[2]) * (1.0 - c[3])],
+                    4 => [
+                        (1.0 - c[0]) * (1.0 - c[3]),
+                        (1.0 - c[1]) * (1.0 - c[3]),
+                        (1.0 - c[2]) * (1.0 - c[3]),
+                    ],
                     _ => self.gs.color,
                 };
             }
-            "currentgray" => self.push(V::Num((self.gs.color[0] + self.gs.color[1] + self.gs.color[2]) / 3.0)),
+            "currentgray" => self.push(V::Num(
+                (self.gs.color[0] + self.gs.color[1] + self.gs.color[2]) / 3.0,
+            )),
             "currentrgbcolor" => {
                 for c in self.gs.color {
                     self.push(V::Num(c));
@@ -1238,13 +1379,18 @@ impl Interp {
                 self.pop();
                 let b = self.pop();
                 let a = self.pop();
-                let (a, b) = (matrix_of(&a).unwrap_or(Affine::IDENTITY), matrix_of(&b).unwrap_or(Affine::IDENTITY));
+                let (a, b) = (
+                    matrix_of(&a).unwrap_or(Affine::IDENTITY),
+                    matrix_of(&b).unwrap_or(Affine::IDENTITY),
+                );
                 self.push(matrix_val(b * a));
             }
             "invertmatrix" => {
                 self.pop();
                 let a = self.pop();
-                self.push(matrix_val(matrix_of(&a).unwrap_or(Affine::IDENTITY).inverse()));
+                self.push(matrix_val(
+                    matrix_of(&a).unwrap_or(Affine::IDENTITY).inverse(),
+                ));
             }
             "translate" | "scale" => {
                 let top = self.pop();
@@ -1253,7 +1399,11 @@ impl Interp {
                     v => (None, v.num().unwrap_or(0.0)),
                 };
                 let x = self.popn();
-                let t = if n == "translate" { Affine::translate((x, y)) } else { Affine::scale_non_uniform(x, y) };
+                let t = if n == "translate" {
+                    Affine::translate((x, y))
+                } else {
+                    Affine::scale_non_uniform(x, y)
+                };
                 match m_out {
                     Some(_) => self.push(matrix_val(t)),
                     None => self.gs.ctm *= t,
@@ -1272,7 +1422,9 @@ impl Interp {
             "transform" | "itransform" | "dtransform" | "idtransform" => {
                 let top = self.pop();
                 let (m, y) = match top {
-                    V::Array(_) | V::Proc(_) => (matrix_of(&top).unwrap_or(Affine::IDENTITY), self.popn()),
+                    V::Array(_) | V::Proc(_) => {
+                        (matrix_of(&top).unwrap_or(Affine::IDENTITY), self.popn())
+                    }
                     v => (self.gs.ctm, v.num().unwrap_or(0.0)),
                 };
                 let x = self.popn();
@@ -1346,14 +1498,19 @@ impl Interp {
             "flattenpath" | "reversepath" | "strokepath" | "initclip" => {}
             "clippath" => {
                 let p = self.page;
-                self.gs.path = kurbo::Shape::to_path(&kurbo::Rect::new(p[0], p[1], p[2], p[3]), 0.1);
+                self.gs.path =
+                    kurbo::Shape::to_path(&kurbo::Rect::new(p[0], p[1], p[2], p[3]), 0.1);
             }
             // Painting.
             "fill" => self.paint(Some(FillRule::NonZero), false),
             "eofill" => self.paint(Some(FillRule::EvenOdd), false),
             "stroke" => self.paint(None, true),
             "clip" | "eoclip" => {
-                let rule = if n == "clip" { FillRule::NonZero } else { FillRule::EvenOdd };
+                let rule = if n == "clip" {
+                    FillRule::NonZero
+                } else {
+                    FillRule::EvenOdd
+                };
                 let p = self.gs.path.clone();
                 if !p.elements().iter().all(|e| matches!(e, PathEl::MoveTo(_))) {
                     self.b.clip(p, rule);
@@ -1372,7 +1529,14 @@ impl Interp {
                     "rectclip" => self.b.clip(all, FillRule::NonZero),
                     _ => {
                         let saved = std::mem::replace(&mut self.gs.path, all);
-                        self.paint(if n == "rectfill" { Some(FillRule::NonZero) } else { None }, n == "rectstroke");
+                        self.paint(
+                            if n == "rectfill" {
+                                Some(FillRule::NonZero)
+                            } else {
+                                None
+                            },
+                            n == "rectstroke",
+                        );
                         self.gs.path = saved;
                     }
                 }
@@ -1382,14 +1546,18 @@ impl Interp {
                 self.b.skip("smooth shading (shfill)");
             }
             // Text (see `text_op`).
-            "scalefont" | "makefont" | "selectfont" | "setfont" | "show" | "charpath" | "glyphshow" | "rootfont" | "currentfont" | "setcachedevice"
-            | "setcharwidth" | "ashow" | "widthshow" | "awidthshow" | "xshow" | "yshow" | "xyshow" | "kshow" | "cshow" | "stringwidth" | "definefont"
-            | "StandardEncoding" | "ISOLatin1Encoding" | "eexec" | "StartData" | "undefinefont" => self.text_op(n, src)?,
+            "scalefont" | "makefont" | "selectfont" | "setfont" | "show" | "charpath"
+            | "glyphshow" | "rootfont" | "currentfont" | "setcachedevice" | "setcharwidth"
+            | "ashow" | "widthshow" | "awidthshow" | "xshow" | "yshow" | "xyshow" | "kshow"
+            | "cshow" | "stringwidth" | "definefont" | "StandardEncoding" | "ISOLatin1Encoding"
+            | "eexec" | "StartData" | "undefinefont" => self.text_op(n, src)?,
             // Images: operands popped, inline data skipped.
             "image" | "imagemask" | "colorimage" => {
                 let mut reads_file = false;
                 let check = |v: &V, rf: &mut bool| {
-                    if matches!(v, V::File) || matches!(v, V::Proc(p) if p.iter().any(|x| matches!(x, V::Name(n) if &**n == "currentfile"))) {
+                    if matches!(v, V::File)
+                        || matches!(v, V::Proc(p) if p.iter().any(|x| matches!(x, V::Name(n) if &**n == "currentfile")))
+                    {
                         *rf = true;
                     }
                 };
@@ -1447,8 +1615,14 @@ pub fn eps_parts(bytes: &[u8]) -> Option<(&[u8], [f64; 4])> {
         let mut from = 0;
         while let Some(p) = ps[from..].windows(key.len()).position(|w| w == key) {
             let s = from + p + key.len();
-            let e = ps[s..].iter().position(|c| matches!(c, b'\n' | b'\r')).map_or(ps.len(), |q| s + q);
-            let v: Vec<f64> = String::from_utf8_lossy(&ps[s..e]).split_whitespace().filter_map(|t| t.parse().ok()).collect();
+            let e = ps[s..]
+                .iter()
+                .position(|c| matches!(c, b'\n' | b'\r'))
+                .map_or(ps.len(), |q| s + q);
+            let v: Vec<f64> = String::from_utf8_lossy(&ps[s..e])
+                .split_whitespace()
+                .filter_map(|t| t.parse().ok())
+                .collect();
             if v.len() == 4 && v[2] > v[0] && v[3] > v[1] {
                 return Some([v[0], v[1], v[2], v[3]]);
             }
@@ -1465,16 +1639,35 @@ pub fn eps_parts(bytes: &[u8]) -> Option<(&[u8], [f64; 4])> {
 /// An encoding array of glyph names (`StandardEncoding`; `ISOLatin1Encoding` and others are
 /// approximated by WinAnsi, which agrees with ISO Latin-1 on the printable codes).
 fn encoding_array(name: &str) -> V {
-    let base = if name == "StandardEncoding" { crate::encoding::Base::Standard } else { crate::encoding::Base::WinAnsi };
-    array((0..256).map(|c| V::Lit(base.name(c as u8).unwrap_or_else(|| ".notdef".into()).into())).collect())
+    let base = if name == "StandardEncoding" {
+        crate::encoding::Base::Standard
+    } else {
+        crate::encoding::Base::WinAnsi
+    };
+    array(
+        (0..256)
+            .map(|c| {
+                V::Lit(
+                    base.name(c as u8)
+                        .unwrap_or_else(|| ".notdef".into())
+                        .into(),
+                )
+            })
+            .collect(),
+    )
 }
 
 fn find_from(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
-    hay.get(from..)?.windows(needle.len()).position(|w| w == needle).map(|p| p + from)
+    hay.get(from..)?
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|p| p + from)
 }
 
 fn rfind_before(hay: &[u8], needle: &[u8], to: usize) -> Option<usize> {
-    hay.get(..to)?.windows(needle.len()).rposition(|w| w == needle)
+    hay.get(..to)?
+        .windows(needle.len())
+        .rposition(|w| w == needle)
 }
 
 /// The name after `key` (`/FontName /Name`).
@@ -1482,7 +1675,10 @@ fn name_after(b: &[u8], key: &[u8]) -> Option<String> {
     let p = find_from(b, key, 0)? + key.len();
     let rest = &b[p..];
     let s = rest.iter().position(|c| *c == b'/')? + 1;
-    let e = rest[s..].iter().position(|c| is_white(*c) || matches!(c, b'/' | b'[' | b'(' | b'{')).map_or(rest.len(), |q| s + q);
+    let e = rest[s..]
+        .iter()
+        .position(|c| is_white(*c) || matches!(c, b'/' | b'[' | b'(' | b'{'))
+        .map_or(rest.len(), |q| s + q);
     (e > s).then(|| String::from_utf8_lossy(&rest[s..e]).into_owned())
 }
 
@@ -1509,9 +1705,17 @@ fn embedded_fonts(ps: &[u8]) -> HashMap<String, (Rc<Vec<u8>>, bool)> {
     while let Some(sd) = find_from(ps, b"StartData", from) {
         from = sd + 9;
         let head = String::from_utf8_lossy(&ps[sd.saturating_sub(64)..sd]).into_owned();
-        let Some(len) = head.split_whitespace().last().and_then(|t| t.parse::<usize>().ok()) else { continue };
+        let Some(len) = head
+            .split_whitespace()
+            .last()
+            .and_then(|t| t.parse::<usize>().ok())
+        else {
+            continue;
+        };
         let s = sd + 10;
-        let Some(data) = ps.get(s..s.saturating_add(len)) else { continue };
+        let Some(data) = ps.get(s..s.saturating_add(len)) else {
+            continue;
+        };
         if let Some(name) = crate::cff::font_name(data) {
             out.insert(name, (Rc::new(data.to_vec()), true));
         }
@@ -1521,7 +1725,10 @@ fn embedded_fonts(ps: &[u8]) -> HashMap<String, (Rc<Vec<u8>>, bool)> {
 }
 
 fn dict_matrix(d: &DictRef, key: &str) -> Affine {
-    d.borrow().get(key).and_then(matrix_of).unwrap_or(Affine::IDENTITY)
+    d.borrow()
+        .get(key)
+        .and_then(matrix_of)
+        .unwrap_or(Affine::IDENTITY)
 }
 
 /// A copy of a font dictionary with `m` applied after its matrix (`scalefont`, `makefont`).
@@ -1565,18 +1772,25 @@ impl Interp {
         let (base, names) = {
             let m = d.borrow();
             let base = m.get("__base").or_else(|| m.get("FontName")).map(V::key)?;
-            let names: Option<Vec<Option<String>>> = m.get("Encoding").and_then(V::items).map(|a| {
-                a.iter()
-                    .map(|v| match v {
-                        V::Lit(n) | V::Name(n) if &**n != ".notdef" => Some(n.to_string()),
-                        _ => None,
-                    })
-                    .collect()
-            });
+            let names: Option<Vec<Option<String>>> =
+                m.get("Encoding").and_then(V::items).map(|a| {
+                    a.iter()
+                        .map(|v| match v {
+                            V::Lit(n) | V::Name(n) if &**n != ".notdef" => Some(n.to_string()),
+                            _ => None,
+                        })
+                        .collect()
+                });
             (base, names)
         };
         let key = match &names {
-            Some(n) => format!("{base}\u{0}{}", n.iter().map(|x| x.as_deref().unwrap_or("")).collect::<Vec<_>>().join(" ")),
+            Some(n) => format!(
+                "{base}\u{0}{}",
+                n.iter()
+                    .map(|x| x.as_deref().unwrap_or(""))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ),
             None => base.clone(),
         };
         let font = match self.font_cache.get(&key) {
@@ -1584,7 +1798,11 @@ impl Interp {
             None => {
                 // Not embedded: a bundled stand-in, as for PDF.
                 let prog = self.embedded.get(&base).cloned();
-                let f = Rc::new(Font::standalone(&base, prog.as_ref().map(|(d, cff)| (d.as_slice(), *cff)), names));
+                let f = Rc::new(Font::standalone(
+                    &base,
+                    prog.as_ref().map(|(d, cff)| (d.as_slice(), *cff)),
+                    names,
+                ));
                 self.font_cache.insert(key, f.clone());
                 f
             }
@@ -1595,7 +1813,11 @@ impl Interp {
     /// A string's glyph outlines (device space) from the current point, with an extra
     /// displacement `extra(index, code)` (user space) after each glyph; moves the current
     /// point.
-    fn text_path(&mut self, bytes: &[u8], mut extra: impl FnMut(usize, u32) -> (f64, f64)) -> Option<(BezPath, String)> {
+    fn text_path(
+        &mut self,
+        bytes: &[u8],
+        mut extra: impl FnMut(usize, u32) -> (f64, f64),
+    ) -> Option<(BezPath, String)> {
         let d = self.gs.font.clone()?;
         let (font, m) = self.font_of(&d)?;
         let mut p = self.current_user();
@@ -1618,8 +1840,18 @@ impl Interp {
 
     fn fill_text(&mut self, path: BezPath, text: &str) {
         let label: String = text.chars().filter(|c| !c.is_control()).take(40).collect();
-        let name = if label.trim().is_empty() { "Text".to_string() } else { format!("Text: {}", label.trim()) };
-        self.b.fill_stroke_named(&name, path, Affine::IDENTITY, Some((Paint::Color(self.gs.color), 1.0, FillRule::NonZero)), None);
+        let name = if label.trim().is_empty() {
+            "Text".to_string()
+        } else {
+            format!("Text: {}", label.trim())
+        };
+        self.b.fill_stroke_named(
+            &name,
+            path,
+            Affine::IDENTITY,
+            Some((Paint::Color(self.gs.color), 1.0, FillRule::NonZero)),
+            None,
+        );
     }
 
     fn pop_string(&mut self) -> Vec<u8> {
@@ -1677,8 +1909,10 @@ impl Interp {
                 if let V::Dict(d) = &v {
                     if !d.borrow().contains_key("__base") {
                         // A font the file defines itself: its embedded program, by name.
-                        d.borrow_mut().insert("__base".into(), V::Lit(key.as_str().into()));
-                        d.borrow_mut().insert("__m".into(), matrix_val(Affine::IDENTITY));
+                        d.borrow_mut()
+                            .insert("__base".into(), V::Lit(key.as_str().into()));
+                        d.borrow_mut()
+                            .insert("__m".into(), matrix_val(Affine::IDENTITY));
                     }
                     self.font_dir.insert(key, d.clone());
                 }
@@ -1713,7 +1947,13 @@ impl Interp {
                 let ch = self.popn() as u32;
                 let cy = self.popn();
                 let cx = self.popn();
-                self.show_with(&s, |_, c| if c == ch { (cx + ax, cy + ay) } else { (ax, ay) });
+                self.show_with(&s, |_, c| {
+                    if c == ch {
+                        (cx + ax, cy + ay)
+                    } else {
+                        (ax, ay)
+                    }
+                });
             }
             "kshow" | "cshow" => {
                 // The procedure between characters is not run.
@@ -1722,13 +1962,21 @@ impl Interp {
                 self.show_with(&s, |_, _| (0.0, 0.0));
             }
             "xshow" | "yshow" | "xyshow" => {
-                let disp: Vec<f64> = self.pop().items().unwrap_or_default().iter().filter_map(V::num).collect();
+                let disp: Vec<f64> = self
+                    .pop()
+                    .items()
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(V::num)
+                    .collect();
                 let s = self.pop_string();
                 self.explicit_show(&s, &disp, n);
             }
             "glyphshow" => {
                 let name = self.pop().key();
-                let Some(d) = self.gs.font.clone() else { return Ok(()) };
+                let Some(d) = self.gs.font.clone() else {
+                    return Ok(());
+                };
                 // Drawn through a one-glyph encoding.
                 let mut e: Vec<V> = (0..256).map(|_| V::Lit(".notdef".into())).collect();
                 e[65] = V::Lit(name.as_str().into());
@@ -1784,14 +2032,21 @@ impl Interp {
             "eexec" => {
                 if matches!(self.pop(), V::File) {
                     let rest = &src.d[src.pos.min(src.d.len())..];
-                    src.pos += rest.windows(11).position(|w| w == b"cleartomark").map_or(rest.len(), |p| p + 11);
+                    src.pos += rest
+                        .windows(11)
+                        .position(|w| w == b"cleartomark")
+                        .map_or(rest.len(), |p| p + 11);
                 }
             }
             // A CFF font set's binary data (read by `embedded_fonts`).
             "StartData" => {
                 let len = self.popn().max(0.0) as usize;
                 self.pop();
-                src.pos = src.pos.saturating_add(1).saturating_add(len).min(src.d.len());
+                src.pos = src
+                    .pos
+                    .saturating_add(1)
+                    .saturating_add(len)
+                    .min(src.d.len());
             }
             _ => {}
         }
@@ -1817,7 +2072,9 @@ impl Interp {
             self.b.skip("text (no font)");
             return;
         };
-        let Some((font, m)) = self.font_of(&fd) else { return };
+        let Some((font, m)) = self.font_of(&fd) else {
+            return;
+        };
         self.show_with(s, move |k, c| {
             let adv = m * Point::new(font.width(c), 0.0) - m * Point::ZERO;
             let (dx, dy) = d.get(k).copied().unwrap_or((0.0, 0.0));

@@ -36,7 +36,10 @@ fn opponents_et_conditions() {
 fn dispatch_typed() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
-    assert_eq!(family_key("soccer_opponent_info_0.00.00.cfg.bin"), "soccer_opponent_info");
+    assert_eq!(
+        family_key("soccer_opponent_info_0.00.00.cfg.bin"),
+        "soccer_opponent_info"
+    );
     let (label, json) = decode_by_key("soccer_opponent_info", &root).expect("câblé");
     assert_eq!(label, "soccer_opponent");
     assert_eq!(json["opponents"].as_array().map(Vec::len), Some(155));

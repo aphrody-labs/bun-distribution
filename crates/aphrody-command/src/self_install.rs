@@ -93,7 +93,8 @@ pub(crate) fn canonical_root() -> miette::Result<PathBuf> {
 
 #[cfg(unix)]
 fn is_root() -> bool {
-    std::env::var("USER").is_ok_and(|u| u == "root") || std::env::var("EUID").is_ok_and(|u| u == "0")
+    std::env::var("USER").is_ok_and(|u| u == "root")
+        || std::env::var("EUID").is_ok_and(|u| u == "0")
 }
 #[cfg(not(unix))]
 fn is_root() -> bool {
@@ -105,8 +106,9 @@ fn exe_name() -> String {
 }
 
 fn sha256_file(path: &Path) -> miette::Result<(String, u64)> {
-    let data =
-        fs::read(path).into_diagnostic().wrap_err_with(|| format!("read {}", path.display()))?;
+    let data = fs::read(path)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("read {}", path.display()))?;
     Ok((hex_lower(&Sha256::digest(&data)), data.len() as u64))
 }
 
@@ -122,11 +124,17 @@ fn same_path(a: &Path, b: &Path) -> bool {
 }
 
 fn is_binary(path: &Path) -> bool {
-    let Some(name) = path.file_name().and_then(|n| n.to_str()) else { return false };
+    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+        return false;
+    };
     if !path.is_file() {
         return false;
     }
-    if cfg!(windows) { name.ends_with(".exe") } else { !name.contains('.') }
+    if cfg!(windows) {
+        name.ends_with(".exe")
+    } else {
+        !name.contains('.')
+    }
 }
 
 /// Copy `src` to `dest` through a temporary name so an interrupted copy never leaves a half
@@ -136,11 +144,15 @@ fn copy_atomic(src: &Path, dest: &Path) -> miette::Result<()> {
         fs::create_dir_all(parent).into_diagnostic()?;
     }
     let tmp = dest.with_extension("new");
-    fs::copy(src, &tmp).into_diagnostic().wrap_err_with(|| format!("copy {}", src.display()))?;
+    fs::copy(src, &tmp)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("copy {}", src.display()))?;
     if dest.symlink_metadata().is_ok() && fs::remove_file(dest).is_err() {
         let old = dest.with_extension("old");
         let _ = fs::remove_file(&old);
-        fs::rename(dest, &old).into_diagnostic().wrap_err("replace running binary")?;
+        fs::rename(dest, &old)
+            .into_diagnostic()
+            .wrap_err("replace running binary")?;
     }
     fs::rename(&tmp, dest).into_diagnostic()
 }
@@ -152,7 +164,12 @@ fn collect_sources(src_dir: &Path) -> Vec<PathBuf> {
         .flatten()
         .flatten()
         .map(|e| e.path())
-        .filter(|p| is_binary(p) && !p.symlink_metadata().is_ok_and(|m| m.file_type().is_symlink()))
+        .filter(|p| {
+            is_binary(p)
+                && !p
+                    .symlink_metadata()
+                    .is_ok_and(|m| m.file_type().is_symlink())
+        })
         .collect();
     found.sort();
     found
@@ -173,7 +190,10 @@ fn copy_tree(src: &Path, dest: &Path) -> miette::Result<()> {
 fn walk_files(dir: &Path, out: &mut Vec<PathBuf>) {
     for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
         let path = entry.path();
-        if path.symlink_metadata().is_ok_and(|m| m.file_type().is_symlink()) {
+        if path
+            .symlink_metadata()
+            .is_ok_and(|m| m.file_type().is_symlink())
+        {
             continue;
         }
         if path.is_dir() {
@@ -196,16 +216,28 @@ pub(crate) fn build_manifest(
         walk_files(&root.join(sub), &mut paths);
         paths.sort();
         for path in paths {
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
-            let stem = name.strip_suffix(std::env::consts::EXE_SUFFIX).unwrap_or(name);
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default();
+            let stem = name
+                .strip_suffix(std::env::consts::EXE_SUFFIX)
+                .unwrap_or(name);
             if name.ends_with(".new") || name.ends_with(".old") || aliases.iter().any(|a| a == stem)
             {
                 continue;
             }
-            let rel =
-                path.strip_prefix(root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+            let rel = path
+                .strip_prefix(root)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/");
             let (sha256, size) = sha256_file(&path)?;
-            files.push(ManifestFile { path: rel, sha256, size });
+            files.push(ManifestFile {
+                path: rel,
+                sha256,
+                size,
+            });
         }
     }
     Ok(InstallManifest {
@@ -263,9 +295,14 @@ fn ensure_shell_profile(dry_run: bool) -> miette::Result<()> {
             continue;
         }
         let current = fs::read_to_string(&path).unwrap_or_default();
-        let Some(next) = profile_with_path(&current) else { continue };
+        let Some(next) = profile_with_path(&current) else {
+            continue;
+        };
         if dry_run {
-            println!("[dry-run] would add ~/.local/bin to PATH in {}", path.display());
+            println!(
+                "[dry-run] would add ~/.local/bin to PATH in {}",
+                path.display()
+            );
         } else {
             fs::write(&path, next).into_diagnostic()?;
             println!("PATH block written to {}", path.display());
@@ -293,7 +330,10 @@ fn clean_legacy(root: &Path, running: &Path, dry_run: bool) {
             continue;
         }
         if dry_run {
-            println!("[dry-run] would remove former installation {}", dir.display());
+            println!(
+                "[dry-run] would remove former installation {}",
+                dir.display()
+            );
         } else if fs::remove_dir_all(&dir).is_ok() {
             println!("removed former installation {}", dir.display());
         } else {
@@ -360,7 +400,10 @@ impl InstallCommand {
                     copy_atomic(&release, &bin_dir.join("release.json"))?;
                 }
             }
-            let out = Command::new(&dest).arg("--version").output().into_diagnostic()?;
+            let out = Command::new(&dest)
+                .arg("--version")
+                .output()
+                .into_diagnostic()?;
             if !out.status.success() {
                 return Err(miette::miette!("installed {} does not run", dest.display()));
             }
@@ -444,7 +487,9 @@ impl InstallCommand {
             .as_array()
             .and_then(|a| a.iter().find(|x| x["kind"] == "wasm"))
             .ok_or_else(|| miette::miette!("no wasm artifact in {base}/latest.json"))?;
-        let url = art["url"].as_str().ok_or_else(|| miette::miette!("wasm artifact has no url"))?;
+        let url = art["url"]
+            .as_str()
+            .ok_or_else(|| miette::miette!("wasm artifact has no url"))?;
         let want = art["sha256"].as_str().unwrap_or_default().to_lowercase();
         let bytes = client
             .get(url)
@@ -480,7 +525,10 @@ impl InstallCommand {
         fs::remove_file(&archive).into_diagnostic()?;
         let _ = fs::remove_dir_all(&dest);
         fs::rename(&staging, &dest).into_diagnostic()?;
-        println!("wasm artifact installed in {} (package: @aphrody/cli-wasm)", dest.display());
+        println!(
+            "wasm artifact installed in {} (package: @aphrody/cli-wasm)",
+            dest.display()
+        );
         if root.join("bin").join(exe_name()).exists() {
             let path = write_manifest(&root, &build_manifest(&root, None)?)?;
             println!("manifest {}", path.display());
@@ -490,7 +538,11 @@ impl InstallCommand {
 
     /// Remote host: the one-line installer, run through `aphrody infra ssh exec`.
     fn install_remote(&self, host: InstallHost) -> miette::Result<()> {
-        let name = if host == InstallHost::Vps { "vps" } else { "dbfr" };
+        let name = if host == InstallHost::Vps {
+            "vps"
+        } else {
+            "dbfr"
+        };
         let cmd = format!("curl -fsSL {}/install.sh | sh", self.base());
         if self.dry_run {
             println!("[dry-run] would run on {name}: {cmd}");
@@ -503,7 +555,9 @@ impl InstallCommand {
             .status()
             .into_diagnostic()?;
         if !status.success() {
-            return Err(miette::miette!("remote install on {name} failed ({status})"));
+            return Err(miette::miette!(
+                "remote install on {name} failed ({status})"
+            ));
         }
         Ok(())
     }

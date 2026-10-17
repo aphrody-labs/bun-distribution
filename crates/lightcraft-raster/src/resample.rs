@@ -33,9 +33,16 @@ impl Filter {
             Filter::Mitchell => {
                 let (b, c) = (1.0 / 3.0, 1.0 / 3.0);
                 if x < 1.0 {
-                    ((12.0 - 9.0 * b - 6.0 * c) * x * x * x + (-18.0 + 12.0 * b + 6.0 * c) * x * x + (6.0 - 2.0 * b)) / 6.0
+                    ((12.0 - 9.0 * b - 6.0 * c) * x * x * x
+                        + (-18.0 + 12.0 * b + 6.0 * c) * x * x
+                        + (6.0 - 2.0 * b))
+                        / 6.0
                 } else if x < 2.0 {
-                    ((-b - 6.0 * c) * x * x * x + (6.0 * b + 30.0 * c) * x * x + (-12.0 * b - 48.0 * c) * x + (8.0 * b + 24.0 * c)) / 6.0
+                    ((-b - 6.0 * c) * x * x * x
+                        + (6.0 * b + 30.0 * c) * x * x
+                        + (-12.0 * b - 48.0 * c) * x
+                        + (8.0 * b + 24.0 * c))
+                        / 6.0
                 } else {
                     0.0
                 }
@@ -65,7 +72,9 @@ pub fn weights(src: usize, dst: usize, filter: Filter) -> Vec<(usize, Vec<f32>)>
             let center = (i as f32 + 0.5) * scale;
             let lo = ((center - support).floor() as isize).max(0) as usize;
             let hi = ((center + support).ceil() as usize).min(src);
-            let mut w: Vec<f32> = (lo..hi).map(|j| filter.eval((j as f32 + 0.5 - center) / fscale)).collect();
+            let mut w: Vec<f32> = (lo..hi)
+                .map(|j| filter.eval((j as f32 + 0.5 - center) / fscale))
+                .collect();
             let sum: f32 = w.iter().sum();
             if sum.abs() > 1e-8 {
                 w.iter_mut().for_each(|v| *v /= sum);
@@ -110,7 +119,12 @@ impl Pixel for [f32; 4] {
     }
     #[inline]
     fn madd(self, o: Self, w: f32) -> Self {
-        [self[0] + o[0] * w, self[1] + o[1] * w, self[2] + o[2] * w, self[3] + o[3] * w]
+        [
+            self[0] + o[0] * w,
+            self[1] + o[1] * w,
+            self[2] + o[2] * w,
+            self[3] + o[3] * w,
+        ]
     }
 }
 
@@ -149,7 +163,9 @@ pub fn resize<T: Pixel>(img: &Image<T>, w: usize, h: usize, filter: Filter) -> I
 
 /// Fit within `max_w × max_h` preserving aspect (never upscales).
 pub fn fit<T: Pixel>(img: &Image<T>, max_w: usize, max_h: usize, filter: Filter) -> Image<T> {
-    let s = (max_w as f64 / img.width as f64).min(max_h as f64 / img.height as f64).min(1.0);
+    let s = (max_w as f64 / img.width as f64)
+        .min(max_h as f64 / img.height as f64)
+        .min(1.0);
     let w = ((img.width as f64 * s).round() as usize).max(1);
     let h = ((img.height as f64 * s).round() as usize).max(1);
     resize(img, w, h, filter)
@@ -180,10 +196,18 @@ mod tests {
     #[test]
     fn constant_image_stays_constant() {
         let img = Image::<f32>::filled(37, 21, 0.42);
-        for f in [Filter::Box, Filter::Bilinear, Filter::Mitchell, Filter::Lanczos3] {
+        for f in [
+            Filter::Box,
+            Filter::Bilinear,
+            Filter::Mitchell,
+            Filter::Lanczos3,
+        ] {
             for (w, h) in [(10, 7), (80, 40), (37, 21), (1, 1)] {
                 let r = resize(&img, w, h, f);
-                assert!(r.data.iter().all(|v| (v - 0.42).abs() < 1e-5), "{f:?} {w}x{h}");
+                assert!(
+                    r.data.iter().all(|v| (v - 0.42).abs() < 1e-5),
+                    "{f:?} {w}x{h}"
+                );
             }
         }
     }

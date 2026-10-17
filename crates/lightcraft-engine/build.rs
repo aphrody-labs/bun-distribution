@@ -16,7 +16,10 @@ fn main() {
     let required = std::env::var_os("CRAFT_FONTS_REQUIRED").is_some();
     let mut src = String::from("pub static CRAFT_FONTS: &[CraftFont] = &[\n");
     let mut embedded = 0;
-    if let Some(dir) = std::env::var_os("CRAFT_FONTS_DIR").map(PathBuf::from).map(resolve) {
+    if let Some(dir) = std::env::var_os("CRAFT_FONTS_DIR")
+        .map(PathBuf::from)
+        .map(resolve)
+    {
         match craft_fonts(&dir, required) {
             Ok(entries) => {
                 embedded = entries.lines().count();
@@ -25,7 +28,10 @@ fn main() {
             Err(e) if required => {
                 println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!(
+                "cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}",
+                dir.display()
+            ),
         }
     } else if required {
         println!("cargo::error=CRAFT_FONTS_REQUIRED is set but CRAFT_FONTS_DIR is missing");
@@ -55,33 +61,52 @@ fn resolve(dir: PathBuf) -> PathBuf {
         return dir;
     }
     let package = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap_or_default());
-    let workspace = package.parent().and_then(Path::parent).unwrap_or(package.as_path());
+    let workspace = package
+        .parent()
+        .and_then(Path::parent)
+        .unwrap_or(package.as_path());
     let candidates = [workspace.join(&dir), package.join(&dir)];
-    candidates.iter().find(|candidate| candidate.is_dir()).cloned().unwrap_or_else(|| candidates[0].clone())
+    candidates
+        .iter()
+        .find(|candidate| candidate.is_dir())
+        .cloned()
+        .unwrap_or_else(|| candidates[0].clone())
 }
 
 /// One `CraftFont { .. }` initialiser per manifest line.
 fn craft_fonts(dir: &Path, required: bool) -> Result<String, String> {
     let manifest = dir.join("fonts/manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let text = std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
+    let text =
+        std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
     let mut out = String::new();
     let mut has_japanese_ui = false;
     let mut has_chinese_ui = false;
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
         };
         has_japanese_ui |= (*family, *style) == ("BIZ UDPGothic", "Regular");
-        has_chinese_ui |= (*family, *style) == ("Noto Sans CJK SC", "Regular") && scripts.split(',').any(|script| script.trim() == "Hans");
+        has_chinese_ui |= (*family, *style) == ("Noto Sans CJK SC", "Regular")
+            && scripts.split(',').any(|script| script.trim() == "Hans");
         if wasm && (*family, *style) != ("BIZ UDPGothic", "Regular") {
             continue;
         }
-        let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
+        let path = dir
+            .join(file)
+            .canonicalize()
+            .map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
-        let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
+        let scripts: Vec<String> = scripts
+            .split(',')
+            .map(|s| format!("{:?}", s.trim()))
+            .collect();
         let _ = writeln!(
             out,
             "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",
@@ -90,7 +115,10 @@ fn craft_fonts(dir: &Path, required: bool) -> Result<String, String> {
         );
     }
     if required && !has_japanese_ui {
-        return Err("required Japanese UI face BIZ UDPGothic Regular is missing from fonts/manifest.txt".into());
+        return Err(
+            "required Japanese UI face BIZ UDPGothic Regular is missing from fonts/manifest.txt"
+                .into(),
+        );
     }
     if required && !wasm && !has_chinese_ui {
         return Err("required Simplified Chinese UI face Noto Sans CJK SC Regular (Hans) is missing from fonts/manifest.txt".into());

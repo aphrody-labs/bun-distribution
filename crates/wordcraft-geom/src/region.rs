@@ -13,26 +13,38 @@ use serde::{Deserialize, Serialize};
 use crate::Unit;
 
 /// Territories whose default paper is US Letter (CLDR `paperSize type="US-Letter"`).
-const LETTER: &[&str] = &["BZ", "CA", "CL", "CO", "CR", "GT", "MX", "NI", "PA", "PH", "PR", "SV", "US", "VE"];
+const LETTER: &[&str] = &[
+    "BZ", "CA", "CL", "CO", "CR", "GT", "MX", "NI", "PA", "PH", "PR", "SV", "US", "VE",
+];
 
 /// Territories that measure in inches (CLDR `measurementSystem type="US"`).
 const INCHES: &[&str] = &["LR", "MM", "US"];
 
 /// Languages whose numbers use a decimal comma in most of their territories.
 const COMMA_LANGUAGES: &[&str] = &[
-    "af", "az", "be", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fi", "fo", "fr", "gl", "hr", "hu", "hy", "id", "is", "it", "ka",
-    "kk", "ky", "lb", "lt", "lv", "mk", "nb", "nl", "nn", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "tr", "uk", "uz", "vi",
+    "af", "az", "be", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fi", "fo", "fr",
+    "gl", "hr", "hu", "hy", "id", "is", "it", "ka", "kk", "ky", "lb", "lt", "lv", "mk", "nb", "nl",
+    "nn", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "tr", "uk", "uz", "vi",
 ];
 
 /// Territories where those languages use a decimal point after all.
-const POINT_EXCEPTIONS: &[(&str, &[&str])] =
-    &[("de", &["CH", "LI"]), ("it", &["CH"]), ("es", &["CU", "DO", "GT", "HN", "MX", "NI", "PA", "PE", "PR", "SV", "US", "419"])];
+const POINT_EXCEPTIONS: &[(&str, &[&str])] = &[
+    ("de", &["CH", "LI"]),
+    ("it", &["CH"]),
+    (
+        "es",
+        &[
+            "CU", "DO", "GT", "HN", "MX", "NI", "PA", "PE", "PR", "SV", "US", "419",
+        ],
+    ),
+];
 
 /// Territories where English (and other decimal-point languages) is written with a decimal
 /// comma: most of continental Europe, South Africa and much of South America.
 const COMMA_TERRITORIES: &[&str] = &[
-    "AR", "AT", "BE", "BG", "BO", "BR", "CL", "CO", "CZ", "DE", "DK", "EC", "EE", "ES", "FI", "FR", "GR", "HR", "HU", "ID", "IS", "IT", "LT", "LU",
-    "LV", "NL", "NO", "PL", "PT", "PY", "RO", "RS", "RU", "SE", "SI", "SK", "TR", "UA", "UY", "VE", "VN", "ZA",
+    "AR", "AT", "BE", "BG", "BO", "BR", "CL", "CO", "CZ", "DE", "DK", "EC", "EE", "ES", "FI", "FR",
+    "GR", "HR", "HU", "ID", "IS", "IT", "LT", "LU", "LV", "NL", "NO", "PL", "PT", "PY", "RO", "RS",
+    "RU", "SE", "SI", "SK", "TR", "UA", "UY", "VE", "VN", "ZA",
 ];
 
 /// A region: a language and a territory, read from a locale tag like `pl-PL`, `de_AT.UTF-8` or
@@ -55,7 +67,12 @@ pub struct Region {
 
 impl Default for Region {
     fn default() -> Self {
-        Region { language: "en".into(), territory: "US".into(), letter: None, inches: None }
+        Region {
+            language: "en".into(),
+            territory: "US".into(),
+            letter: None,
+            inches: None,
+        }
     }
 }
 
@@ -72,7 +89,8 @@ impl Region {
         }
         let mut parts = tag.split(['-', '_']);
         let language = parts.next().unwrap_or_default();
-        if !(2..=3).contains(&language.len()) || !language.chars().all(|c| c.is_ascii_alphabetic()) {
+        if !(2..=3).contains(&language.len()) || !language.chars().all(|c| c.is_ascii_alphabetic())
+        {
             return Region::default();
         }
         let language = language.to_ascii_lowercase();
@@ -92,14 +110,20 @@ impl Region {
         if territory.is_empty() && language == "en" {
             territory = "US".into();
         }
-        Region { language, territory, letter: None, inches: None }
+        Region {
+            language,
+            territory,
+            letter: None,
+            inches: None,
+        }
     }
 
     /// This region with another territory (from a platform setting that names only the
     /// territory, like Windows' home location). A value that isn't a territory code is ignored.
     pub fn with_territory(mut self, territory: &str) -> Region {
         let t = territory.trim();
-        let ok = (t.len() == 2 && t.chars().all(|c| c.is_ascii_alphabetic())) || (t.len() == 3 && t.chars().all(|c| c.is_ascii_digit()));
+        let ok = (t.len() == 2 && t.chars().all(|c| c.is_ascii_alphabetic()))
+            || (t.len() == 3 && t.chars().all(|c| c.is_ascii_digit()));
         if ok {
             self.territory = t.to_ascii_uppercase();
         }
@@ -109,7 +133,11 @@ impl Region {
     /// This region with the paper and the measurement system taken from their own locale tags,
     /// when the platform sets them apart (Unix `LC_PAPER`, `LC_MEASUREMENT`): `LANG=pl_PL.UTF-8`
     /// with `LC_PAPER=en_US.UTF-8` writes `2,54 cm` on Letter.
-    pub fn with_paper_and_measurement(mut self, paper: Option<&str>, measurement: Option<&str>) -> Region {
+    pub fn with_paper_and_measurement(
+        mut self,
+        paper: Option<&str>,
+        measurement: Option<&str>,
+    ) -> Region {
         if let Some(t) = paper {
             self.letter = Some(Region::from_tag(t).uses_letter());
         }
@@ -121,17 +149,29 @@ impl Region {
 
     /// Does a new document start on US Letter here (otherwise A4)?
     pub fn uses_letter(&self) -> bool {
-        self.letter.unwrap_or_else(|| LETTER.contains(&self.territory.as_str()))
+        self.letter
+            .unwrap_or_else(|| LETTER.contains(&self.territory.as_str()))
     }
 
     /// The default paper's name and portrait size in points: Letter (612 × 792) or A4.
     pub fn paper(&self) -> (&'static str, f32, f32) {
-        if self.uses_letter() { ("Letter", 612.0, 792.0) } else { ("A4", 595.28, 841.89) }
+        if self.uses_letter() {
+            ("Letter", 612.0, 792.0)
+        } else {
+            ("A4", 595.28, 841.89)
+        }
     }
 
     /// The unit lengths are shown in by default: inches in the US, centimetres elsewhere.
     pub fn units(&self) -> Unit {
-        if self.inches.unwrap_or_else(|| INCHES.contains(&self.territory.as_str())) { Unit::Inches } else { Unit::Centimeters }
+        if self
+            .inches
+            .unwrap_or_else(|| INCHES.contains(&self.territory.as_str()))
+        {
+            Unit::Inches
+        } else {
+            Unit::Centimeters
+        }
     }
 
     /// The decimal separator numbers are written with here (`,` or `.`).
@@ -139,10 +179,16 @@ impl Region {
         let lang = self.language.as_str();
         let t = self.territory.as_str();
         if COMMA_LANGUAGES.contains(&lang) {
-            let point = POINT_EXCEPTIONS.iter().any(|(l, ts)| *l == lang && ts.contains(&t));
+            let point = POINT_EXCEPTIONS
+                .iter()
+                .any(|(l, ts)| *l == lang && ts.contains(&t));
             return if point { '.' } else { ',' };
         }
-        if lang == "en" && COMMA_TERRITORIES.contains(&t) { ',' } else { '.' }
+        if lang == "en" && COMMA_TERRITORIES.contains(&t) {
+            ','
+        } else {
+            '.'
+        }
     }
 
     /// `pt` in `unit` written the way this region writes numbers (`2,54 cm` in Poland).
@@ -157,42 +203,100 @@ mod tests {
 
     #[test]
     fn reads_locale_tags() {
-        assert_eq!(Region::from_tag("pl-PL"), Region { language: "pl".into(), territory: "PL".into(), ..Region::default() });
+        assert_eq!(
+            Region::from_tag("pl-PL"),
+            Region {
+                language: "pl".into(),
+                territory: "PL".into(),
+                ..Region::default()
+            }
+        );
         assert_eq!(Region::from_tag("de_AT.UTF-8@euro").territory, "AT");
         assert_eq!(Region::from_tag("zh-Hans-CN").territory, "CN");
         assert_eq!(Region::from_tag("es-419").territory, "419");
-        assert_eq!(Region::from_tag("en-u-ms-metric").territory, "US", "bare English is the US");
+        assert_eq!(
+            Region::from_tag("en-u-ms-metric").territory,
+            "US",
+            "bare English is the US"
+        );
         assert_eq!(Region::from_tag("fr").territory, "");
-        for junk in ["", "C", "POSIX", "1234", "x", "--", "ünïcode-ÄÄ", &"a".repeat(10_000)] {
+        for junk in [
+            "",
+            "C",
+            "POSIX",
+            "1234",
+            "x",
+            "--",
+            "ünïcode-ÄÄ",
+            &"a".repeat(10_000),
+        ] {
             assert_eq!(Region::from_tag(junk), Region::default(), "{junk:?}");
         }
-        assert_eq!(Region::from_tag("en-US").with_territory("de").territory, "DE");
-        assert_eq!(Region::from_tag("en-US").with_territory("Germany").territory, "US");
+        assert_eq!(
+            Region::from_tag("en-US").with_territory("de").territory,
+            "DE"
+        );
+        assert_eq!(
+            Region::from_tag("en-US")
+                .with_territory("Germany")
+                .territory,
+            "US"
+        );
     }
 
     /// Paper and units follow the territory, not the language (#838).
     #[test]
     fn paper_and_units_follow_the_territory() {
         let pl = Region::from_tag("pl-PL");
-        assert_eq!((pl.paper().0, pl.units(), pl.decimal()), ("A4", Unit::Centimeters, ','));
+        assert_eq!(
+            (pl.paper().0, pl.units(), pl.decimal()),
+            ("A4", Unit::Centimeters, ',')
+        );
         let us = Region::from_tag("en-US");
-        assert_eq!((us.paper().0, us.units(), us.decimal()), ("Letter", Unit::Inches, '.'));
+        assert_eq!(
+            (us.paper().0, us.units(), us.decimal()),
+            ("Letter", Unit::Inches, '.')
+        );
         let ca = Region::from_tag("fr-CA");
-        assert_eq!((ca.paper().0, ca.units(), ca.decimal()), ("Letter", Unit::Centimeters, ','));
+        assert_eq!(
+            (ca.paper().0, ca.units(), ca.decimal()),
+            ("Letter", Unit::Centimeters, ',')
+        );
         let en_de = Region::from_tag("en-DE");
-        assert_eq!((en_de.paper().0, en_de.units(), en_de.decimal()), ("A4", Unit::Centimeters, ','));
+        assert_eq!(
+            (en_de.paper().0, en_de.units(), en_de.decimal()),
+            ("A4", Unit::Centimeters, ',')
+        );
         let gb = Region::from_tag("en-GB");
-        assert_eq!((gb.paper().0, gb.units(), gb.decimal()), ("A4", Unit::Centimeters, '.'));
+        assert_eq!(
+            (gb.paper().0, gb.units(), gb.decimal()),
+            ("A4", Unit::Centimeters, '.')
+        );
         assert_eq!(Region::from_tag("de-CH").decimal(), '.');
         assert_eq!(Region::from_tag("es-MX").paper().0, "Letter");
         assert_eq!(Region::from_tag("ja-JP").paper().0, "A4");
         assert_eq!(pl.format(Unit::Centimeters, 72.0), "2,54 cm");
         // Unix sets paper and measurement apart from the number locale.
-        let mixed = Region::from_tag("pl_PL.UTF-8").with_paper_and_measurement(Some("en_US.UTF-8"), None);
-        assert_eq!((mixed.paper().0, mixed.units(), mixed.decimal()), ("Letter", Unit::Centimeters, ','));
-        let mixed = Region::from_tag("en_US.UTF-8").with_paper_and_measurement(Some("de_DE.UTF-8"), Some("de_DE.UTF-8"));
-        assert_eq!((mixed.paper().0, mixed.units(), mixed.decimal()), ("A4", Unit::Centimeters, '.'));
-        assert_eq!(Region::from_tag("pl-PL").with_paper_and_measurement(Some(""), Some("junk")).paper().0, "Letter", "junk is en-US");
+        let mixed =
+            Region::from_tag("pl_PL.UTF-8").with_paper_and_measurement(Some("en_US.UTF-8"), None);
+        assert_eq!(
+            (mixed.paper().0, mixed.units(), mixed.decimal()),
+            ("Letter", Unit::Centimeters, ',')
+        );
+        let mixed = Region::from_tag("en_US.UTF-8")
+            .with_paper_and_measurement(Some("de_DE.UTF-8"), Some("de_DE.UTF-8"));
+        assert_eq!(
+            (mixed.paper().0, mixed.units(), mixed.decimal()),
+            ("A4", Unit::Centimeters, '.')
+        );
+        assert_eq!(
+            Region::from_tag("pl-PL")
+                .with_paper_and_measurement(Some(""), Some("junk"))
+                .paper()
+                .0,
+            "Letter",
+            "junk is en-US"
+        );
         assert_eq!(us.format(Unit::Inches, 90.0), "1.25\"");
     }
 }

@@ -19,23 +19,29 @@ trailer << /Root 1 0 R >>
 
 #[test]
 fn the_identity_name_signs_new_comments_and_is_remembered() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, PDF.to_vec()).expect("opens");
-        app.set_option("author", "Tester").unwrap();
-        app.set_option("dialog", "preferences").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, PDF.to_vec())
+                .expect("opens");
+            app.set_option("author", "Tester").unwrap();
+            app.set_option("dialog", "preferences").unwrap();
+            app
+        });
     h.run_steps(4);
     h.get_by_label_contains("Name on new comments");
     // Replace the name in the field (the preferences scroll to it in a 900-point window).
-    h.get_by_role_and_label(Role::TextInput, "Name on new comments").scroll_to_me();
+    h.get_by_role_and_label(Role::TextInput, "Name on new comments")
+        .scroll_to_me();
     h.run_steps(4);
-    h.get_by_role_and_label(Role::TextInput, "Name on new comments").click();
+    h.get_by_role_and_label(Role::TextInput, "Name on new comments")
+        .click();
     h.run_steps(1);
     h.key_press_modifiers(Modifiers::COMMAND, Key::A);
-    h.get_by_role_and_label(Role::TextInput, "Name on new comments").type_text("Grace Hopper");
+    h.get_by_role_and_label(Role::TextInput, "Name on new comments")
+        .type_text("Grace Hopper");
     h.run_steps(2);
     assert_eq!(h.state().comment_prefs.author, "Grace Hopper");
     // New comments carry it. Wait for the page (and its text) to finish loading first: selecting

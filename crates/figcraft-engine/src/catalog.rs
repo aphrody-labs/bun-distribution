@@ -12,7 +12,11 @@ pub struct MenuItem {
 
 macro_rules! m {
     ($menu:expr, $label:expr, $id:expr) => {
-        MenuItem { menu: $menu, label: $label, id: $id }
+        MenuItem {
+            menu: $menu,
+            label: $label,
+            id: $id,
+        }
     };
 }
 
@@ -71,7 +75,11 @@ pub static MENU: &[MenuItem] = &[
     m!("Edit", "Copy properties", "edit.copyProperties"),
     m!("Edit", "Paste properties", "edit.pasteProperties"),
     m!("Edit", "Pick color", "edit.pickColor"),
-    m!("Edit", "Set default properties", "edit.setDefaultProperties"),
+    m!(
+        "Edit",
+        "Set default properties",
+        "edit.setDefaultProperties"
+    ),
     m!("Edit", SEP, ""),
     m!("Edit", "Select all", "select.all"),
     m!("Edit", "Select matching layers", "select.matching"),
@@ -80,10 +88,22 @@ pub static MENU: &[MenuItem] = &[
     m!("Edit/Select all with same", "Fill", "select.sameFill"),
     m!("Edit/Select all with same", "Stroke", "select.sameStroke"),
     m!("Edit/Select all with same", "Effect", "select.sameEffect"),
-    m!("Edit/Select all with same", "Text properties", "select.sameText"),
+    m!(
+        "Edit/Select all with same",
+        "Text properties",
+        "select.sameText"
+    ),
     m!("Edit/Select all with same", "Font", "select.sameFont"),
-    m!("Edit/Select all with same", "Instance", "select.sameInstance"),
-    m!("Edit/Select all with same", "Properties", "select.sameProperties"),
+    m!(
+        "Edit/Select all with same",
+        "Instance",
+        "select.sameInstance"
+    ),
+    m!(
+        "Edit/Select all with same",
+        "Properties",
+        "select.sameProperties"
+    ),
     // View
     m!("View", "Pixel grid", "view.pixelGrid"),
     m!("View", "Layout grids", "view.layoutGrids"),
@@ -93,10 +113,22 @@ pub static MENU: &[MenuItem] = &[
     m!("View", "Multiplayer cursors", "view.multiplayerCursors"),
     m!("View", SEP, ""),
     m!("View/Outlines", "Show outlines", "view.outlines"),
-    m!("View/Outlines", "Show outlines for selection", "view.outlinesSelection"),
+    m!(
+        "View/Outlines",
+        "Show outlines for selection",
+        "view.outlinesSelection"
+    ),
     m!("View/Outlines", SEP, ""),
-    m!("View/Outlines", "Include hidden layers", "view.outlinesHiddenLayers"),
-    m!("View/Outlines", "Include object bounds", "view.outlinesObjectBounds"),
+    m!(
+        "View/Outlines",
+        "Include hidden layers",
+        "view.outlinesHiddenLayers"
+    ),
+    m!(
+        "View/Outlines",
+        "Include object bounds",
+        "view.outlinesObjectBounds"
+    ),
     m!("View", "Pixel preview", "view.pixelPreview"),
     m!("View", "Mask outlines", "view.maskOutlines"),
     m!("View", "Frame outlines", "view.frameOutlines"),
@@ -137,12 +169,20 @@ pub static MENU: &[MenuItem] = &[
     m!("Object", "Suggest auto layout", "layout.suggest"),
     m!("Object", SEP, ""),
     m!("Object", "Create component", "component.create"),
-    m!("Object", "Create multiple components", "component.createMultiple"),
+    m!(
+        "Object",
+        "Create multiple components",
+        "component.createMultiple"
+    ),
     m!("Object", "Combine as variants", "component.combineVariants"),
     m!("Object", "Reset all changes", "component.resetInstance"),
     m!("Object", "Detach instance", "component.detach"),
     m!("Object", "Go to main component", "component.goToMain"),
-    m!("Object", "Push changes to main component", "component.pushChanges"),
+    m!(
+        "Object",
+        "Push changes to main component",
+        "component.pushChanges"
+    ),
     m!("Object", "Restore main component", "component.restoreMain"),
     m!("Object", SEP, ""),
     m!("Object", "Use as mask", "object.mask"),
@@ -184,7 +224,11 @@ pub static MENU: &[MenuItem] = &[
     m!("Object/Select layer", "Select children", "select.children"),
     m!("Object/Select layer", "Select parent", "select.parent"),
     m!("Object/Select layer", "Select next sibling", "select.next"),
-    m!("Object/Select layer", "Select previous sibling", "select.previous"),
+    m!(
+        "Object/Select layer",
+        "Select previous sibling",
+        "select.previous"
+    ),
     // Text
     m!("Text", "Bold", "text.bold"),
     m!("Text", "Italic", "text.italic"),
@@ -198,7 +242,11 @@ pub static MENU: &[MenuItem] = &[
     m!("Text/Alignment", "Text align left", "text.alignLeft"),
     m!("Text/Alignment", "Text align center", "text.alignCenter"),
     m!("Text/Alignment", "Text align right", "text.alignRight"),
-    m!("Text/Alignment", "Text align justified", "text.alignJustify"),
+    m!(
+        "Text/Alignment",
+        "Text align justified",
+        "text.alignJustify"
+    ),
     m!("Text/Adjust", "Increase font size", "text.sizeUp"),
     m!("Text/Adjust", "Decrease font size", "text.sizeDown"),
     m!("Text/Adjust", "Increase font weight", "text.weightUp"),
@@ -206,7 +254,11 @@ pub static MENU: &[MenuItem] = &[
     m!("Text/Adjust", "Increase line height", "text.lineHeightUp"),
     m!("Text/Adjust", "Decrease line height", "text.lineHeightDown"),
     m!("Text/Adjust", "Increase letter spacing", "text.trackingUp"),
-    m!("Text/Adjust", "Decrease letter spacing", "text.trackingDown"),
+    m!(
+        "Text/Adjust",
+        "Decrease letter spacing",
+        "text.trackingDown"
+    ),
     m!("Text/Case", "Original case", "text.caseOriginal"),
     m!("Text/Case", "Uppercase", "text.caseUpper"),
     m!("Text/Case", "Lowercase", "text.caseLower"),
@@ -219,8 +271,16 @@ pub static MENU: &[MenuItem] = &[
     m!("Arrange", "Align vertical centers", "align.vcenter"),
     m!("Arrange", "Align bottom", "align.bottom"),
     m!("Arrange", SEP, ""),
-    m!("Arrange", "Distribute horizontal spacing", "distribute.horizontal"),
-    m!("Arrange", "Distribute vertical spacing", "distribute.vertical"),
+    m!(
+        "Arrange",
+        "Distribute horizontal spacing",
+        "distribute.horizontal"
+    ),
+    m!(
+        "Arrange",
+        "Distribute vertical spacing",
+        "distribute.vertical"
+    ),
     m!("Arrange", "Tidy up", "arrange.tidy"),
     m!("Arrange", SEP, ""),
     m!("Arrange", "Pack horizontal", "arrange.packH"),
@@ -237,22 +297,50 @@ pub static MENU: &[MenuItem] = &[
     // Plugins
     m!("Plugins", "Run last plugin", "plugins.runLast"),
     m!("Plugins", "Manage plugins…", "plugins.manage"),
-    m!("Plugins/Development", "Import plugin from manifest…", "plugin.import"),
+    m!(
+        "Plugins/Development",
+        "Import plugin from manifest…",
+        "plugin.import"
+    ),
     // Preferences
     m!("Preferences", "Snap to geometry", "view.snapGeometry"),
     m!("Preferences", "Snap to objects", "view.snapObjects"),
     m!("Preferences", "Snap to pixel grid", "view.snapPixel"),
-    m!("Preferences", "Keep tool selected after use", "pref.keepTool"),
-    m!("Preferences", "Highlight layers on hover", "pref.highlightHover"),
-    m!("Preferences", "Rename duplicated layers", "pref.renameDuplicates"),
-    m!("Preferences", "Show dimensions on objects", "pref.showDimensions"),
-    m!("Preferences", "Use number keys for opacity", "pref.numberKeysOpacity"),
+    m!(
+        "Preferences",
+        "Keep tool selected after use",
+        "pref.keepTool"
+    ),
+    m!(
+        "Preferences",
+        "Highlight layers on hover",
+        "pref.highlightHover"
+    ),
+    m!(
+        "Preferences",
+        "Rename duplicated layers",
+        "pref.renameDuplicates"
+    ),
+    m!(
+        "Preferences",
+        "Show dimensions on objects",
+        "pref.showDimensions"
+    ),
+    m!(
+        "Preferences",
+        "Use number keys for opacity",
+        "pref.numberKeysOpacity"
+    ),
     m!("Preferences", "Nudge amount…", "pref.nudge"),
     m!("Preferences", "Preferences…", "app.preferences"),
     // Libraries
     m!("Libraries", "Open libraries", "libraries.open"),
     m!("Libraries", "Publish library…", "libraries.publish"),
-    m!("Libraries", "Hide when publishing", "component.hideWhenPublishing"),
+    m!(
+        "Libraries",
+        "Hide when publishing",
+        "component.hideWhenPublishing"
+    ),
     // Help
     m!("Help", "Getting started", "help.gettingStarted"),
     m!("Help", "Keyboard shortcuts", "help.shortcuts"),

@@ -60,7 +60,10 @@ fn apply(tool: &str, edit: &Edit, input: &Path, output: &Path) -> i32 {
 }
 
 fn strip(args: Vec<OsString>) -> i32 {
-    let mut edit = Edit { strip_all: true, ..Edit::default() };
+    let mut edit = Edit {
+        strip_all: true,
+        ..Edit::default()
+    };
     let mut output: Option<PathBuf> = None;
     let mut files = Vec::new();
     let mut iter = args.into_iter().skip(1);
@@ -72,7 +75,10 @@ fn strip(args: Vec<OsString>) -> i32 {
             }
             Some("-s" | "--strip-all") => edit.strip_all = true,
             Some("-o") => output = iter.next().map(PathBuf::from),
-            Some("-R") => edit.remove.extend(iter.next().map(|n| n.to_string_lossy().into_owned().into_bytes())),
+            Some("-R") => edit.remove.extend(
+                iter.next()
+                    .map(|n| n.to_string_lossy().into_owned().into_bytes()),
+            ),
             _ => files.push(PathBuf::from(arg)),
         }
     }
@@ -97,10 +103,14 @@ fn objcopy(args: Vec<OsString>) -> i32 {
             "-g" | "--strip-debug" => edit.strip_debug = true,
             "-S" | "--strip-all" => edit.strip_all = true,
             "-R" | "--remove-section" => {
-                edit.remove.extend(iter.next().map(|n| n.to_string_lossy().into_owned().into_bytes()));
+                edit.remove.extend(
+                    iter.next()
+                        .map(|n| n.to_string_lossy().into_owned().into_bytes()),
+                );
             }
             _ if text.starts_with("--remove-section=") => {
-                edit.remove.push(text["--remove-section=".len()..].as_bytes().to_vec());
+                edit.remove
+                    .push(text["--remove-section=".len()..].as_bytes().to_vec());
             }
             _ if text.starts_with('-') => {
                 eprintln!("objcopy: unsupported option {text}");
@@ -142,7 +152,9 @@ fn write_archive(archive: &Path, entries: &[(Vec<u8>, Vec<u8>)]) -> Result<(), S
     let mut builder = ar::GnuBuilder::new(file, names);
     for (name, bytes) in entries {
         let header = ar::Header::new(name.clone(), bytes.len() as u64);
-        builder.append(&header, bytes.as_slice()).map_err(|e| e.to_string())?;
+        builder
+            .append(&header, bytes.as_slice())
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -162,7 +174,8 @@ pub fn ar_write(op: &str, archive: &Path, operands: &[OsString]) -> Option<i32> 
             match mode {
                 'd' => entries.retain(|(n, _)| *n != name),
                 _ => {
-                    let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+                    let bytes =
+                        std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
                     match entries.iter_mut().find(|(n, _)| *n == name) {
                         Some(entry) if mode == 'r' => entry.1 = bytes,
                         _ => entries.push((name, bytes)),

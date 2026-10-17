@@ -47,20 +47,43 @@ impl Driver {
 #[test]
 fn properties_panel_scrolls_to_its_lower_sections() {
     let mut session = Session::default();
-    session.execute("file.openDemoProject", json!({})).expect("demo project");
+    session
+        .execute("file.openDemoProject", json!({}))
+        .expect("demo project");
     let (tx, rx) = channel();
     let app = FilmcraftApp::new(session).with_control(rx);
-    let harness = Harness::builder().with_size(egui::vec2(1600.0, 560.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+    let harness = Harness::builder()
+        .with_size(egui::vec2(1600.0, 560.0))
+        .with_max_steps(10_000)
+        .build_eframe(move |_cc| app);
     let mut d = Driver { harness, tx };
     d.frames(4);
-    let seq = d.ok("engine.execute", json!({"command": "sequence.inspect", "params": {}}));
-    let clip = seq["video"][0]["items"][0]["clip"].as_u64().expect("first video clip");
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [clip]}}));
+    let seq = d.ok(
+        "engine.execute",
+        json!({"command": "sequence.inspect", "params": {}}),
+    );
+    let clip = seq["video"][0]["items"][0]["clip"]
+        .as_u64()
+        .expect("first video clip");
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [clip]}}),
+    );
     d.ok("ui.panel.show", json!({"panel": "Properties"}));
     d.frames(3);
-    let before = d.top("properties.speed").expect("the speed button is laid out");
-    d.ok("ui.scroll", json!({"id": "panel.Properties", "dy": -2000.0}));
+    let before = d
+        .top("properties.speed")
+        .expect("the speed button is laid out");
+    d.ok(
+        "ui.scroll",
+        json!({"id": "panel.Properties", "dy": -2000.0}),
+    );
     d.frames(3);
-    let after = d.top("properties.speed").expect("the speed button is still laid out");
-    assert!(after < before - 20.0, "the wheel scrolls the panel: {before} -> {after}");
+    let after = d
+        .top("properties.speed")
+        .expect("the speed button is still laid out");
+    assert!(
+        after < before - 20.0,
+        "the wheel scrolls the panel: {before} -> {after}"
+    );
 }

@@ -8,7 +8,7 @@ pub const LIST_SESSION_MESH_MEDIA_FILES_URL_PATH: &str = "/v1/media_files/mesh/l
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ListSessionMeshMediaFilesSuccessResponse {
-  pub success: bool,
-  pub results: Vec<SessionMediaFileInfo>,
-  pub pagination: PaginationCursors,
+    pub success: bool,
+    pub results: Vec<SessionMediaFileInfo>,
+    pub pagination: PaginationCursors,
 }

@@ -11,18 +11,31 @@ type Harness = egui_kittest::Harness<'static, SheetApp>;
 fn harness(initial: &str) -> Harness {
     let mut session = Session::new();
     session.new_workbook();
-    session.execute("range.setValues", json!({"range": "A1", "values": [["sentinel", 2], [3, "untouched"]]})).unwrap();
-    session.execute("cell.set", json!({"cell": "C3", "input": "123"})).unwrap();
-    session.execute("cell.set", json!({"cell": "F7", "input": "=C3*2"})).unwrap();
-    session.execute("selection.set", json!({"cell": initial})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    session
+        .execute(
+            "range.setValues",
+            json!({"range": "A1", "values": [["sentinel", 2], [3, "untouched"]]}),
+        )
+        .unwrap();
+    session
+        .execute("cell.set", json!({"cell": "C3", "input": "123"}))
+        .unwrap();
+    session
+        .execute("cell.set", json!({"cell": "F7", "input": "=C3*2"}))
+        .unwrap();
+    session
+        .execute("selection.set", json!({"cell": initial}))
+        .unwrap();
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     h
 }
@@ -30,12 +43,20 @@ fn harness(initial: &str) -> Harness {
 fn point(h: &Harness, a1: &str) -> Pos2 {
     let app = h.state();
     let sheet = app.session.active().unwrap().wb.active().unwrap();
-    Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll).cell_rect(sheet, CellRef::parse(a1).unwrap()).center()
+    Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll)
+        .cell_rect(sheet, CellRef::parse(a1).unwrap())
+        .center()
 }
 
 fn cells(h: &Harness) -> Value {
     let sheet = h.state().session.active().unwrap().wb.active().unwrap();
-    json!(sheet.cells.iter().map(|(pos, cell)| (pos.a1(), cell)).collect::<Vec<_>>())
+    json!(
+        sheet
+            .cells
+            .iter()
+            .map(|(pos, cell)| (pos.a1(), cell))
+            .collect::<Vec<_>>()
+    )
 }
 
 fn frame(h: &mut Harness, event: Event) {
@@ -44,7 +65,12 @@ fn frame(h: &mut Harness, event: Event) {
 }
 
 fn button(pos: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }
+    Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    }
 }
 
 fn press(h: &mut Harness, cell: &str) {
@@ -56,14 +82,22 @@ fn press(h: &mut Harness, cell: &str) {
 fn assert_selection(h: &Harness, start: &str, end: &str) {
     let selection = &h.state().session.active().unwrap().selection;
     let start = CellRef::parse(start).unwrap();
-    assert_eq!(selection.current(), RangeRef::new(start, CellRef::parse(end).unwrap()));
+    assert_eq!(
+        selection.current(),
+        RangeRef::new(start, CellRef::parse(end).unwrap())
+    );
     assert_eq!(selection.anchor, start);
     assert_eq!(selection.active, start);
 }
 
 #[test]
 fn single_movement_selects_from_the_pressed_cell_in_both_directions() {
-    for (initial, start, end) in [("A1", "C3", "F7"), ("C3", "C3", "F7"), ("A1", "F7", "C3"), ("F7", "F7", "C3")] {
+    for (initial, start, end) in [
+        ("A1", "C3", "F7"),
+        ("C3", "C3", "F7"),
+        ("A1", "F7", "C3"),
+        ("F7", "F7", "C3"),
+    ] {
         let mut h = harness(initial);
         let before = cells(&h);
         press(&mut h, start);
@@ -142,20 +176,38 @@ fn formula_point_mode_consumes_first_movement_and_release() {
 fn formula_point_drag_keeps_the_sheet_qualifier() {
     let mut h = harness("A1");
     let before = cells(&h);
-    h.state_mut().session.execute("home.insertSheet", json!({"name": "Other sheet"})).unwrap();
-    h.state_mut().session.execute("sheet.activate", json!({"sheet": "Sheet1"})).unwrap();
+    h.state_mut()
+        .session
+        .execute("home.insertSheet", json!({"name": "Other sheet"}))
+        .unwrap();
+    h.state_mut()
+        .session
+        .execute("sheet.activate", json!({"sheet": "Sheet1"}))
+        .unwrap();
     h.state_mut().begin_edit(Some("=".into()), false);
-    h.state_mut().session.execute("sheet.activate", json!({"sheet": "Other sheet"})).unwrap();
+    h.state_mut()
+        .session
+        .execute("sheet.activate", json!({"sheet": "Other sheet"}))
+        .unwrap();
     h.run_steps(2);
     let other_before = cells(&h);
     press(&mut h, "C3");
     let mid = point(&h, "D4");
     frame(&mut h, Event::PointerMoved(mid));
-    assert_eq!(h.state().editor.as_ref().unwrap().text, "='Other sheet'!C3:D4");
+    assert_eq!(
+        h.state().editor.as_ref().unwrap().text,
+        "='Other sheet'!C3:D4"
+    );
     let to = point(&h, "F7");
     frame(&mut h, button(to, false));
-    assert_eq!(h.state().editor.as_ref().unwrap().text, "='Other sheet'!C3:F7");
+    assert_eq!(
+        h.state().editor.as_ref().unwrap().text,
+        "='Other sheet'!C3:F7"
+    );
     assert_eq!(cells(&h), other_before);
-    h.state_mut().session.execute("sheet.activate", json!({"sheet": "Sheet1"})).unwrap();
+    h.state_mut()
+        .session
+        .execute("sheet.activate", json!({"sheet": "Sheet1"}))
+        .unwrap();
     assert_eq!(cells(&h), before);
 }

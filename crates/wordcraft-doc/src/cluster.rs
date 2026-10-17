@@ -103,7 +103,11 @@ pub fn next_cluster(text: &str, off: usize) -> usize {
     let mut off = char_floor(text, off);
     loop {
         let mut c = unicode_segmentation::GraphemeCursor::new(off, text.len(), true);
-        off = c.next_boundary(text, 0).ok().flatten().unwrap_or(text.len());
+        off = c
+            .next_boundary(text, 0)
+            .ok()
+            .flatten()
+            .unwrap_or(text.len());
         if is_cluster_boundary(text, off) {
             return off;
         }
@@ -139,19 +143,28 @@ fn myanmar_syllable_start(c: char) -> bool {
 /// sorted; only between two Myanmar characters.
 pub fn myanmar_breaks(text: &str) -> Vec<usize> {
     let chars: Vec<(usize, char)> = text.char_indices().collect();
-    let myanmar = |c: char| matches!(u32::from(c), 0x1000..=0x109F | 0xA9E0..=0xA9FF | 0xAA60..=0xAA7F);
+    let myanmar =
+        |c: char| matches!(u32::from(c), 0x1000..=0x109F | 0xA9E0..=0xA9FF | 0xAA60..=0xAA7F);
     let mut out = Vec::new();
     for k in 1..chars.len() {
-        let (Some(&(i, c)), Some(&(_, prev))) = (chars.get(k), chars.get(k - 1)) else { continue };
+        let (Some(&(i, c)), Some(&(_, prev))) = (chars.get(k), chars.get(k - 1)) else {
+            continue;
+        };
         if !myanmar(prev) || !myanmar_syllable_start(c) || is_stacker(prev) {
             continue;
         }
         // Skip one medial ya/ha, then look for a killer.
         let mut j = k + 1;
-        if chars.get(j).is_some_and(|&(_, n)| matches!(n, '\u{103B}' | '\u{103E}')) {
+        if chars
+            .get(j)
+            .is_some_and(|&(_, n)| matches!(n, '\u{103B}' | '\u{103E}'))
+        {
             j += 1;
         }
-        if chars.get(j).is_some_and(|&(_, n)| matches!(n, '\u{1037}' | '\u{1039}' | '\u{103A}')) {
+        if chars
+            .get(j)
+            .is_some_and(|&(_, n)| matches!(n, '\u{1037}' | '\u{1039}' | '\u{103A}'))
+        {
             continue;
         }
         out.push(i);
@@ -178,14 +191,20 @@ mod tests {
     #[test]
     fn myanmar_vowel_signs_stay_in_their_syllable() {
         // Graphemes alone would cut "မာ" before the aa sign U+102C.
-        assert_eq!(split(MYANMAR, &cluster_starts(MYANMAR)), vec!["မြ", "န်", "မာ", "စာ"]);
+        assert_eq!(
+            split(MYANMAR, &cluster_starts(MYANMAR)),
+            vec!["မြ", "န်", "မာ", "စာ"]
+        );
         // The prevowel ေ (U+1031) follows its consonant in memory: one cluster, as is visarga း.
         assert_eq!(split("ကြေး", &cluster_starts("ကြေး")), vec!["ကြေး"]);
         // Stacked consonants (virama U+1039) and kinzi join the syllable they hang from.
         let stacked = "\u{1019}\u{1039}\u{1018}\u{102C}"; // မ္ဘာ
         assert_eq!(cluster_starts(stacked), vec![0]);
         let kinzi = "\u{1021}\u{1004}\u{103A}\u{1039}\u{1002}\u{101C}\u{102D}\u{1015}\u{103A}"; // အင်္ဂလိပ်
-        assert_eq!(split(kinzi, &cluster_starts(kinzi)), vec!["အ", "င်္ဂ", "လိ", "ပ်"]);
+        assert_eq!(
+            split(kinzi, &cluster_starts(kinzi)),
+            vec!["အ", "င်္ဂ", "လိ", "ပ်"]
+        );
     }
 
     #[test]
@@ -193,9 +212,15 @@ mod tests {
         // ខ្មែរ: ខ + coeng + ម + ែ, then រ.
         assert_eq!(split("ខ្មែរ", &cluster_starts("ខ្មែរ")), vec!["ខ្មែ", "រ"]);
         // Devanagari conjuncts are grapheme clusters already.
-        assert_eq!(split("क्षि हि", &cluster_starts("क्षि हि")), vec!["क्षि", " ", "हि"]);
+        assert_eq!(
+            split("क्षि हि", &cluster_starts("क्षि हि")),
+            vec!["क्षि", " ", "हि"]
+        );
         // Latin is untouched: one cluster per letter, combining accents included.
-        assert_eq!(split("e\u{301}a", &cluster_starts("e\u{301}a")), vec!["e\u{301}", "a"]);
+        assert_eq!(
+            split("e\u{301}a", &cluster_starts("e\u{301}a")),
+            vec!["e\u{301}", "a"]
+        );
     }
 
     #[test]
@@ -231,6 +256,8 @@ mod tests {
     #[test]
     fn backspace_by_character_in_brahmic_scripts_only() {
         assert!(backspaces_by_char('ေ') && backspaces_by_char('ि') && backspaces_by_char('្'));
-        assert!(!backspaces_by_char('\u{301}') && !backspaces_by_char('a') && !backspaces_by_char('語'));
+        assert!(
+            !backspaces_by_char('\u{301}') && !backspaces_by_char('a') && !backspaces_by_char('語')
+        );
     }
 }

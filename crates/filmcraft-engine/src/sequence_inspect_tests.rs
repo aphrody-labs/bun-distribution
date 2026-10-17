@@ -11,21 +11,43 @@ fn sequence_inspect_reports_clip_ends_gain_and_marker_comments() {
     s.execute("file.openDemoProject", json!({})).unwrap();
     let rate = s.sequence_rate();
     // a clip at 200 %, a clip with gain and a marker with a comment, all made through commands
-    s.execute("sequence.linkedSelection", json!({"on": false})).unwrap();
+    s.execute("sequence.linkedSelection", json!({"on": false}))
+        .unwrap();
     let (fast, loud) = {
         let q = s.active_sequence().unwrap();
-        (q.video_tracks[0].items.last().unwrap().id, q.audio_tracks[0].items[0].id)
+        (
+            q.video_tracks[0].items.last().unwrap().id,
+            q.audio_tracks[0].items[0].id,
+        )
     };
-    s.execute("timeline.select", json!({"clips": [fast.0]})).unwrap();
-    s.execute("clip.speedDuration", json!({"speed": 200})).unwrap();
-    s.execute("timeline.select", json!({"clips": [loud.0]})).unwrap();
-    s.execute("clip.audioGain", json!({"mode": "set", "db": -6.5})).unwrap();
-    let marker = s.execute("markers.add", json!({"time": rate.tick_of(12).0, "name": "Beat", "comment": "cut on the downbeat"})).unwrap()["marker"].clone();
+    s.execute("timeline.select", json!({"clips": [fast.0]}))
+        .unwrap();
+    s.execute("clip.speedDuration", json!({"speed": 200}))
+        .unwrap();
+    s.execute("timeline.select", json!({"clips": [loud.0]}))
+        .unwrap();
+    s.execute("clip.audioGain", json!({"mode": "set", "db": -6.5}))
+        .unwrap();
+    let marker = s
+        .execute(
+            "markers.add",
+            json!({"time": rate.tick_of(12).0, "name": "Beat", "comment": "cut on the downbeat"}),
+        )
+        .unwrap()["marker"]
+        .clone();
 
     let q = s.active_sequence().unwrap().clone();
     let js = s.execute("sequence.inspect", json!({})).unwrap();
-    let m = js["markers"].as_array().unwrap().iter().find(|m| m["id"] == marker).unwrap();
-    assert_eq!((m["name"].as_str(), m["comment"].as_str()), (Some("Beat"), Some("cut on the downbeat")));
+    let m = js["markers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["id"] == marker)
+        .unwrap();
+    assert_eq!(
+        (m["name"].as_str(), m["comment"].as_str()),
+        (Some("Beat"), Some("cut on the downbeat"))
+    );
     let mut seen = 0;
     for (key, tracks) in [("video", &q.video_tracks), ("audio", &q.audio_tracks)] {
         for (ti, t) in tracks.iter().enumerate() {
@@ -33,12 +55,31 @@ fn sequence_inspect_reports_clip_ends_gain_and_marker_comments() {
                 let j = &js[key][ti]["items"][ci];
                 assert_eq!(j["clip"], c.id.0);
                 assert_eq!(j["end"], c.end().0, "{j}");
-                assert_eq!(j["end"].as_i64(), j["start"].as_i64().zip(j["duration"].as_i64()).map(|(a, b)| a + b));
+                assert_eq!(
+                    j["end"].as_i64(),
+                    j["start"]
+                        .as_i64()
+                        .zip(j["duration"].as_i64())
+                        .map(|(a, b)| a + b)
+                );
                 assert_eq!(j["endFrame"], rate.frame_at(c.end()));
                 assert_eq!(j["sourceOut"], c.source_out().0, "{j}");
                 assert_eq!(j["gainDb"], c.gain_db);
                 // the keys that were there before stay
-                for old in ["item", "name", "start", "duration", "startFrame", "durationFrames", "sourceIn", "speed", "enabled", "link", "label", "effects"] {
+                for old in [
+                    "item",
+                    "name",
+                    "start",
+                    "duration",
+                    "startFrame",
+                    "durationFrames",
+                    "sourceIn",
+                    "speed",
+                    "enabled",
+                    "link",
+                    "label",
+                    "effects",
+                ] {
                     assert!(j.get(old).is_some(), "{old} is still reported");
                 }
                 if c.id == fast {
@@ -72,16 +113,33 @@ fn sequence_inspect_reports_a_reversed_clip() {
             .iter()
             .flat_map(|k| js[*k].as_array().unwrap().iter())
             .flat_map(|t| t["items"].as_array().unwrap().iter())
-            .map(|i| (i["clip"].as_u64().unwrap(), i["reverse"].as_bool().expect("every clip reports `reverse`")))
+            .map(|i| {
+                (
+                    i["clip"].as_u64().unwrap(),
+                    i["reverse"]
+                        .as_bool()
+                        .expect("every clip reports `reverse`"),
+                )
+            })
             .collect()
     };
     let js = s.execute("sequence.inspect", json!({})).unwrap();
-    assert!(all(&js).iter().all(|(_, reversed)| !reversed), "nothing plays backward yet");
-    s.execute("sequence.linkedSelection", json!({"on": false})).unwrap();
-    s.execute("timeline.select", json!({"clips": [backward.0]})).unwrap();
-    s.execute("clip.speedDuration", json!({"speed": 100, "reverse": true})).unwrap();
+    assert!(
+        all(&js).iter().all(|(_, reversed)| !reversed),
+        "nothing plays backward yet"
+    );
+    s.execute("sequence.linkedSelection", json!({"on": false}))
+        .unwrap();
+    s.execute("timeline.select", json!({"clips": [backward.0]}))
+        .unwrap();
+    s.execute("clip.speedDuration", json!({"speed": 100, "reverse": true}))
+        .unwrap();
     let js = s.execute("sequence.inspect", json!({})).unwrap();
-    let reversed: Vec<u64> = all(&js).into_iter().filter(|(_, r)| *r).map(|(c, _)| c).collect();
+    let reversed: Vec<u64> = all(&js)
+        .into_iter()
+        .filter(|(_, r)| *r)
+        .map(|(c, _)| c)
+        .collect();
     assert_eq!(reversed, vec![backward.0], "only the reversed clip says so");
     s.execute("edit.undo", json!({})).unwrap();
     let js = s.execute("sequence.inspect", json!({})).unwrap();

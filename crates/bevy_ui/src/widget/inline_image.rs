@@ -1,7 +1,7 @@
-use bevy_asset::asset_changed::AssetChanged;
 use bevy_asset::AsAssetId;
 use bevy_asset::Assets;
 use bevy_asset::Handle;
+use bevy_asset::asset_changed::AssetChanged;
 use bevy_color::Color;
 use bevy_ecs::change_detection::DetectChangesMut;
 use bevy_ecs::component::Component;
@@ -13,8 +13,8 @@ use bevy_ecs::system::Res;
 use bevy_image::Image;
 use bevy_image::TRANSPARENT_IMAGE_HANDLE;
 use bevy_math::Vec2;
-use bevy_reflect::std_traits::ReflectDefault;
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 use bevy_text::InlineBox;
 
 /// An inline image

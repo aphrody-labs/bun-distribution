@@ -18,13 +18,23 @@ pub(crate) fn grid_value(p: Point, step: f64) -> f32 {
 }
 
 /// Render a source of `w × h` where each pixel shows `pattern` at `undistort(pixel centre)`.
-pub(crate) fn synth(w: usize, h: usize, undistort: impl Fn(Point) -> Point + Sync, pattern: impl Fn(Point) -> [f32; 3] + Sync) -> Rgb32f {
-    Rgb32f::from_fn(w, h, |x, y| pattern(undistort(Point::new(x as f64 + 0.5, y as f64 + 0.5))))
+pub(crate) fn synth(
+    w: usize,
+    h: usize,
+    undistort: impl Fn(Point) -> Point + Sync,
+    pattern: impl Fn(Point) -> [f32; 3] + Sync,
+) -> Rgb32f {
+    Rgb32f::from_fn(w, h, |x, y| {
+        pattern(undistort(Point::new(x as f64 + 0.5, y as f64 + 0.5)))
+    })
 }
 
 /// Sub-pixel x of the dark vertical line nearest `x0` on row `y` (green channel darkness centroid).
 pub(crate) fn line_x(img: &Rgba8, y: usize, x0: f64, win: f64) -> f64 {
-    let (a, b) = ((x0 - win).max(0.0) as usize, ((x0 + win) as usize).min(img.width - 1));
+    let (a, b) = (
+        (x0 - win).max(0.0) as usize,
+        ((x0 + win) as usize).min(img.width - 1),
+    );
     let row: Vec<f64> = (a..=b).map(|x| img.get(x, y)[1] as f64).collect();
     let max = row.iter().cloned().fold(0.0, f64::max);
     let (mut s, mut sw) = (0.0, 0.0);
@@ -38,7 +48,10 @@ pub(crate) fn line_x(img: &Rgba8, y: usize, x0: f64, win: f64) -> f64 {
 
 /// Sub-pixel y of the dark horizontal line nearest `y0` in column `x`.
 pub(crate) fn line_y(img: &Rgba8, x: usize, y0: f64, win: f64) -> f64 {
-    let (a, b) = ((y0 - win).max(0.0) as usize, ((y0 + win) as usize).min(img.height - 1));
+    let (a, b) = (
+        (y0 - win).max(0.0) as usize,
+        ((y0 + win) as usize).min(img.height - 1),
+    );
     let col: Vec<f64> = (a..=b).map(|y| img.get(x, y)[1] as f64).collect();
     let max = col.iter().cloned().fold(0.0, f64::max);
     let (mut s, mut sw) = (0.0, 0.0);
@@ -79,20 +92,31 @@ fn manual_distortion_straightens_barrel_grid() {
     let (w, h) = (480usize, 320usize);
     // the Distortion slider at +60 corrects exactly this barrel
     let k = -0.2 * 0.6;
-    let src = synth(w, h, barrel_undistort(w as f64, h as f64, k), |p| [grid_value(p, 40.0); 3]);
+    let src = synth(w, h, barrel_undistort(w as f64, h as f64, k), |p| {
+        [grid_value(p, 40.0); 3]
+    });
     let rows = [12usize, 150, 308];
     let measure = |s: &DevelopSettings| {
         let img = render(&src, &SourceInfo::default(), s, &RenderRequest::fit(w, h)).image;
         let xs: Vec<f64> = rows.iter().map(|&y| line_x(&img, y, 40.0, 15.0)).collect();
-        let ys: Vec<f64> = [12usize, 220, 468].iter().map(|&x| line_y(&img, x, 40.0, 15.0)).collect();
+        let ys: Vec<f64> = [12usize, 220, 468]
+            .iter()
+            .map(|&x| line_y(&img, x, 40.0, 15.0))
+            .collect();
         (spread(&xs), spread(&ys))
     };
     let (bx, by) = measure(&DevelopSettings::default());
-    assert!(bx > 4.0 && by > 3.0, "the synthetic barrel should bend lines: {bx} {by}");
+    assert!(
+        bx > 4.0 && by > 3.0,
+        "the synthetic barrel should bend lines: {bx} {by}"
+    );
     let mut s = DevelopSettings::default();
     s.optics.distortion = 60.0;
     let (cx, cy) = measure(&s);
-    assert!(cx < 1.0 && cy < 1.0, "corrected lines should be straight: {cx} {cy}");
+    assert!(
+        cx < 1.0 && cy < 1.0,
+        "corrected lines should be straight: {cx} {cy}"
+    );
 }
 
 /// CA: red plane magnified by `ar`, blue by `ab`, on a neutral disc grid.
@@ -100,26 +124,44 @@ fn ca_source(w: usize, h: usize, ar: f64, ab: f64) -> Rgb32f {
     let (cx, cy) = (w as f64 / 2.0, h as f64 / 2.0);
     let disc = move |p: Point| -> f32 {
         let cell = 40.0;
-        let (fx, fy) = ((p.x / cell).rem_euclid(1.0) - 0.5, (p.y / cell).rem_euclid(1.0) - 0.5);
+        let (fx, fy) = (
+            (p.x / cell).rem_euclid(1.0) - 0.5,
+            (p.y / cell).rem_euclid(1.0) - 0.5,
+        );
         let d = fx.hypot(fy) * cell - 11.0;
         (0.04 + 0.8 * (d / 1.2 + 0.5).clamp(0.0, 1.0)) as f32
     };
     Rgb32f::from_fn(w, h, |x, y| {
         let p = Point::new(x as f64 + 0.5, y as f64 + 0.5);
-        let at = |a: f64| disc(Point::new(cx + (p.x - cx) / (1.0 + a), cy + (p.y - cy) / (1.0 + a)));
+        let at = |a: f64| {
+            disc(Point::new(
+                cx + (p.x - cx) / (1.0 + a),
+                cy + (p.y - cy) / (1.0 + a),
+            ))
+        };
         [at(ar), at(0.0), at(ab)]
     })
 }
 
 fn fringe(img: &Rgba8) -> f64 {
-    img.data.iter().map(|p| (p[0] as f64 - p[1] as f64).abs() + (p[2] as f64 - p[1] as f64).abs()).sum::<f64>() / img.len() as f64
+    img.data
+        .iter()
+        .map(|p| (p[0] as f64 - p[1] as f64).abs() + (p[2] as f64 - p[1] as f64).abs())
+        .sum::<f64>()
+        / img.len() as f64
 }
 
 #[test]
 fn remove_ca_aligns_colour_planes() {
     let (w, h) = (640usize, 420usize);
     let src = ca_source(w, h, 0.005, -0.004);
-    let before = render(&src, &SourceInfo::default(), &DevelopSettings::default(), &RenderRequest::fit(w, h)).image;
+    let before = render(
+        &src,
+        &SourceInfo::default(),
+        &DevelopSettings::default(),
+        &RenderRequest::fit(w, h),
+    )
+    .image;
     let mut s = DevelopSettings::default();
     s.optics.remove_ca = true;
     let after = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(w, h)).image;
@@ -138,15 +180,29 @@ fn profile_corrections_use_embedded_lens_only_when_enabled() {
     let (w, h) = (300usize, 200usize);
     let src = synth(w, h, |p| p, |p| [grid_value(p, 30.0); 3]);
     let lens = EmbeddedLens {
-        warp: Some(EmbeddedWarp { planes: [[1.0, -0.08, 0.0, 0.0, 0.0, 0.0]; 3], center: Point::new(0.5, 0.5), radius: 0.6 }),
-        vignette: Some(EmbeddedVignette { k: [0.5, 0.0, 0.0, 0.0, 0.0], center: Point::new(0.5, 0.5), radius: 0.6 }),
+        warp: Some(EmbeddedWarp {
+            planes: [[1.0, -0.08, 0.0, 0.0, 0.0, 0.0]; 3],
+            center: Point::new(0.5, 0.5),
+            radius: 0.6,
+        }),
+        vignette: Some(EmbeddedVignette {
+            k: [0.5, 0.0, 0.0, 0.0, 0.0],
+            center: Point::new(0.5, 0.5),
+            radius: 0.6,
+        }),
         ..Default::default()
     };
-    let info = SourceInfo { lens: Some(lens), ..SourceInfo::default() };
+    let info = SourceInfo {
+        lens: Some(lens),
+        ..SourceInfo::default()
+    };
     let mut s = DevelopSettings::default();
     let off = render(&src, &info, &s, &RenderRequest::fit(w, h)).image;
     let plain = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(w, h)).image;
-    assert_eq!(off.data, plain.data, "profile corrections off: embedded data ignored");
+    assert_eq!(
+        off.data, plain.data,
+        "profile corrections off: embedded data ignored"
+    );
     s.optics.lens_profile = true;
     let on = render(&src, &info, &s, &RenderRequest::fit(w, h)).image;
     assert_ne!(on.data, off.data);
@@ -160,7 +216,17 @@ fn profile_corrections_use_embedded_lens_only_when_enabled() {
 
 fn mean_abs_diff_downscaled(small: &Rgba8, big: &Rgba8) -> f32 {
     let down = resize(&big.to_linear(), small.width, small.height, Filter::Box).to_srgb8();
-    small.data.iter().zip(&down.data).map(|(a, b)| (0..3).map(|i| (a[i] as f32 - b[i] as f32).abs()).sum::<f32>() / 3.0).sum::<f32>()
+    small
+        .data
+        .iter()
+        .zip(&down.data)
+        .map(|(a, b)| {
+            (0..3)
+                .map(|i| (a[i] as f32 - b[i] as f32).abs())
+                .sum::<f32>()
+                / 3.0
+        })
+        .sum::<f32>()
         / small.len() as f32
 }
 
@@ -173,8 +239,20 @@ fn optics_preview_matches_export() {
     s.optics.vignetting_midpoint = 30.0;
     s.optics.ca_red = 30.0;
     s.optics.defringe_purple_amount = 8.0;
-    let small = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(240, 240)).image;
-    let big = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(960, 960)).image;
+    let small = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(240, 240),
+    )
+    .image;
+    let big = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(960, 960),
+    )
+    .image;
     let err = mean_abs_diff_downscaled(&small, &big);
     assert!(err < 4.0, "mean abs error {err}");
 }
@@ -199,17 +277,40 @@ fn keystoned_grid(w: usize, h: usize, fwd: lightcraft_geom::Homography, step: f6
 
 #[test]
 fn manual_vertical_keystone_widens_the_top() {
-    let g = lightcraft_develop::Geometry { vertical: -50.0, ..Default::default() };
+    let g = lightcraft_develop::Geometry {
+        vertical: -50.0,
+        ..Default::default()
+    };
     let hm = crate::transform::manual(&g);
-    let (tl, tr) = (hm.apply(Point::new(-1.0, -0.66)), hm.apply(Point::new(1.0, -0.66)));
-    let (bl, br) = (hm.apply(Point::new(-1.0, 0.66)), hm.apply(Point::new(1.0, 0.66)));
-    assert!(tr.x - tl.x > (br.x - bl.x) * 1.15, "top {} bottom {}", tr.x - tl.x, br.x - bl.x);
+    let (tl, tr) = (
+        hm.apply(Point::new(-1.0, -0.66)),
+        hm.apply(Point::new(1.0, -0.66)),
+    );
+    let (bl, br) = (
+        hm.apply(Point::new(-1.0, 0.66)),
+        hm.apply(Point::new(1.0, 0.66)),
+    );
+    assert!(
+        tr.x - tl.x > (br.x - bl.x) * 1.15,
+        "top {} bottom {}",
+        tr.x - tl.x,
+        br.x - bl.x
+    );
     let c = hm.apply(Point::new(0.0, 0.0));
     assert!(c.dist(Point::new(0.0, 0.0)) < 1e-9, "centre stays put");
-    let g = lightcraft_develop::Geometry { horizontal: -50.0, ..Default::default() };
+    let g = lightcraft_develop::Geometry {
+        horizontal: -50.0,
+        ..Default::default()
+    };
     let hm = crate::transform::manual(&g);
-    let (lt, lb) = (hm.apply(Point::new(-0.9, -0.6)), hm.apply(Point::new(-0.9, 0.6)));
-    let (rt, rb) = (hm.apply(Point::new(0.9, -0.6)), hm.apply(Point::new(0.9, 0.6)));
+    let (lt, lb) = (
+        hm.apply(Point::new(-0.9, -0.6)),
+        hm.apply(Point::new(-0.9, 0.6)),
+    );
+    let (rt, rb) = (
+        hm.apply(Point::new(0.9, -0.6)),
+        hm.apply(Point::new(0.9, 0.6)),
+    );
     assert!(lb.y - lt.y > rb.y - rt.y, "left side enlarged");
 }
 
@@ -217,47 +318,125 @@ fn manual_vertical_keystone_widens_the_top() {
 fn manual_transforms_straighten_known_keystone() {
     let (w, h) = (480usize, 320usize);
     for g in [
-        lightcraft_develop::Geometry { vertical: -40.0, ..Default::default() },
-        lightcraft_develop::Geometry { horizontal: 35.0, rotate: 3.0, ..Default::default() },
-        lightcraft_develop::Geometry { vertical: 25.0, aspect: 30.0, scale: 110.0, offset_x: 6.0, offset_y: -4.0, ..Default::default() },
+        lightcraft_develop::Geometry {
+            vertical: -40.0,
+            ..Default::default()
+        },
+        lightcraft_develop::Geometry {
+            horizontal: 35.0,
+            rotate: 3.0,
+            ..Default::default()
+        },
+        lightcraft_develop::Geometry {
+            vertical: 25.0,
+            aspect: 30.0,
+            scale: 110.0,
+            offset_x: 6.0,
+            offset_y: -4.0,
+            ..Default::default()
+        },
     ] {
         // the source was "shot" with the inverse transform; correcting with `g` must give the straight grid back
         let fwd = crate::transform::manual(&g);
         let src = keystoned_grid(w, h, fwd, 40.0);
-        let s = DevelopSettings { geometry: g.clone(), ..Default::default() };
+        let s = DevelopSettings {
+            geometry: g.clone(),
+            ..Default::default()
+        };
         let img = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(w, h)).image;
-        let xs: Vec<f64> = [60usize, 150, 260].iter().map(|&y| line_x(&img, y, 200.0, 15.0)).collect();
-        let ys: Vec<f64> = [60usize, 220, 420].iter().map(|&x| line_y(&img, x, 200.0, 15.0)).collect();
-        assert!(spread(&xs) < 1.0 && (xs[0] - 200.0).abs() < 1.0, "{g:?}: vertical line at {xs:?}");
-        assert!(spread(&ys) < 1.0 && (ys[0] - 200.0).abs() < 1.0, "{g:?}: horizontal line at {ys:?}");
+        let xs: Vec<f64> = [60usize, 150, 260]
+            .iter()
+            .map(|&y| line_x(&img, y, 200.0, 15.0))
+            .collect();
+        let ys: Vec<f64> = [60usize, 220, 420]
+            .iter()
+            .map(|&x| line_y(&img, x, 200.0, 15.0))
+            .collect();
+        assert!(
+            spread(&xs) < 1.0 && (xs[0] - 200.0).abs() < 1.0,
+            "{g:?}: vertical line at {xs:?}"
+        );
+        assert!(
+            spread(&ys) < 1.0 && (ys[0] - 200.0).abs() < 1.0,
+            "{g:?}: horizontal line at {ys:?}"
+        );
         // and without the correction the lines are not straight/where they belong
-        let raw = render(&src, &SourceInfo::default(), &DevelopSettings::default(), &RenderRequest::fit(w, h)).image;
-        let rx: Vec<f64> = [60usize, 150, 260].iter().map(|&y| line_x(&raw, y, 200.0, 15.0)).collect();
-        let ry: Vec<f64> = [60usize, 220, 420].iter().map(|&x| line_y(&raw, x, 200.0, 15.0)).collect();
-        assert!(spread(&rx) > 1.5 || spread(&ry) > 1.5 || (rx[0] - 200.0).abs() > 1.5, "{g:?}: source should be distorted");
+        let raw = render(
+            &src,
+            &SourceInfo::default(),
+            &DevelopSettings::default(),
+            &RenderRequest::fit(w, h),
+        )
+        .image;
+        let rx: Vec<f64> = [60usize, 150, 260]
+            .iter()
+            .map(|&y| line_x(&raw, y, 200.0, 15.0))
+            .collect();
+        let ry: Vec<f64> = [60usize, 220, 420]
+            .iter()
+            .map(|&x| line_y(&raw, x, 200.0, 15.0))
+            .collect();
+        assert!(
+            spread(&rx) > 1.5 || spread(&ry) > 1.5 || (rx[0] - 200.0).abs() > 1.5,
+            "{g:?}: source should be distorted"
+        );
     }
 }
 
 fn blank_fraction(img: &Rgba8) -> f64 {
-    let blank =
-        crate::render(&Rgb32f::filled(4, 4, crate::geometry::BLANK), &SourceInfo::default(), &DevelopSettings::default(), &RenderRequest::fit(4, 4))
-            .image
-            .get(1, 1);
-    img.data.iter().filter(|p| (0..3).all(|i| (p[i] as i32 - blank[i] as i32).abs() <= 1)).count() as f64 / img.len() as f64
+    let blank = crate::render(
+        &Rgb32f::filled(4, 4, crate::geometry::BLANK),
+        &SourceInfo::default(),
+        &DevelopSettings::default(),
+        &RenderRequest::fit(4, 4),
+    )
+    .image
+    .get(1, 1);
+    img.data
+        .iter()
+        .filter(|p| (0..3).all(|i| (p[i] as i32 - blank[i] as i32).abs() <= 1))
+        .count() as f64
+        / img.len() as f64
 }
 
 #[test]
 fn constrain_crop_removes_blank_areas() {
-    let src = Rgb32f::from_fn(300, 200, |x, y| [0.05 + 0.002 * x as f32, 0.1 + 0.002 * y as f32, 0.3]);
+    let src = Rgb32f::from_fn(300, 200, |x, y| {
+        [0.05 + 0.002 * x as f32, 0.1 + 0.002 * y as f32, 0.3]
+    });
     let mut s = DevelopSettings::default();
     s.geometry.vertical = -60.0;
     s.geometry.rotate = 4.0;
-    let free = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(300, 300)).image;
-    assert!(blank_fraction(&free) > 0.03, "keystone leaves blank corners: {}", blank_fraction(&free));
+    let free = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(300, 300),
+    )
+    .image;
+    assert!(
+        blank_fraction(&free) > 0.03,
+        "keystone leaves blank corners: {}",
+        blank_fraction(&free)
+    );
     s.geometry.constrain_crop = true;
-    let c = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(300, 300)).image;
-    assert_eq!((c.width, c.height), (free.width, free.height), "constrain keeps the aspect");
-    assert!(blank_fraction(&c) < 0.002, "constrained: {}", blank_fraction(&c));
+    let c = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(300, 300),
+    )
+    .image;
+    assert_eq!(
+        (c.width, c.height),
+        (free.width, free.height),
+        "constrain keeps the aspect"
+    );
+    assert!(
+        blank_fraction(&c) < 0.002,
+        "constrained: {}",
+        blank_fraction(&c)
+    );
 }
 
 #[test]
@@ -269,8 +448,20 @@ fn transforms_preview_matches_export() {
     s.geometry.rotate = 2.5;
     s.geometry.scale = 105.0;
     s.geometry.constrain_crop = true;
-    let small = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(240, 240)).image;
-    let big = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(960, 960)).image;
+    let small = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(240, 240),
+    )
+    .image;
+    let big = render(
+        &src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(960, 960),
+    )
+    .image;
     assert_eq!(small.width * 4, big.width);
     let err = mean_abs_diff_downscaled(&small, &big);
     assert!(err < 4.0, "mean abs error {err}");
@@ -296,7 +487,10 @@ fn segment_detector_finds_known_lines() {
     };
     let lum = lightcraft_raster::Plane::from_fn(480, 320, |x, y| {
         let p = Point::new(x as f64 + 0.5, y as f64 + 0.5);
-        let d = lines.iter().map(|(a, b)| dist(p, *a, *b)).fold(f64::MAX, f64::min);
+        let d = lines
+            .iter()
+            .map(|(a, b)| dist(p, *a, *b))
+            .fold(f64::MAX, f64::min);
         (0.15 + 0.7 * ((d - 1.0) / 1.2).clamp(0.0, 1.0)) as f32
     });
     let segs = detect_segments(&lum);
@@ -319,30 +513,62 @@ fn segment_detector_finds_known_lines() {
 /// x of the same dark vertical line at the top, bottom and middle of the output (tracked from the middle).
 fn vertical_line_track(img: &Rgba8, x0: f64) -> Vec<f64> {
     let mid = line_x(img, img.height / 2 + 7, x0, 14.0);
-    [img.height / 6 + 7, img.height * 5 / 6 - 7].iter().map(|&y| line_x(img, y, mid, 10.0)).chain([mid]).collect()
+    [img.height / 6 + 7, img.height * 5 / 6 - 7]
+        .iter()
+        .map(|&y| line_x(img, y, mid, 10.0))
+        .chain([mid])
+        .collect()
 }
 
 fn horizontal_line_track(img: &Rgba8, y0: f64) -> Vec<f64> {
     let mid = line_y(img, img.width / 2 + 7, y0, 14.0);
-    [img.width / 6 + 7, img.width * 5 / 6 - 7].iter().map(|&x| line_y(img, x, mid, 10.0)).chain([mid]).collect()
+    [img.width / 6 + 7, img.width * 5 / 6 - 7]
+        .iter()
+        .map(|&x| line_y(img, x, mid, 10.0))
+        .chain([mid])
+        .collect()
 }
 
 fn upright_render(src: &Rgb32f, mode: Upright) -> Rgba8 {
     let mut s = DevelopSettings::default();
     s.geometry.upright = mode;
-    s.geometry.upright_transform = Some(crate::upright::auto_transform(src, &SourceInfo::default(), &s, mode));
-    render(src, &SourceInfo::default(), &s, &RenderRequest::fit(src.width, src.height)).image
+    s.geometry.upright_transform = Some(crate::upright::auto_transform(
+        src,
+        &SourceInfo::default(),
+        &s,
+        mode,
+    ));
+    render(
+        src,
+        &SourceInfo::default(),
+        &s,
+        &RenderRequest::fit(src.width, src.height),
+    )
+    .image
 }
 
 #[test]
 fn upright_vertical_fixes_converging_verticals() {
     let (w, h) = (720usize, 480usize);
     // "shot from below" and slightly rolled: the inverse of what the correction should do
-    let shot = lightcraft_develop::Geometry { vertical: 35.0, rotate: -2.0, ..Default::default() };
+    let shot = lightcraft_develop::Geometry {
+        vertical: 35.0,
+        rotate: -2.0,
+        ..Default::default()
+    };
     let src = keystoned_grid(w, h, crate::transform::manual(&shot), 48.0);
-    let raw = render(&src, &SourceInfo::default(), &DevelopSettings::default(), &RenderRequest::fit(w, h)).image;
+    let raw = render(
+        &src,
+        &SourceInfo::default(),
+        &DevelopSettings::default(),
+        &RenderRequest::fit(w, h),
+    )
+    .image;
     let before = vertical_line_track(&raw, 130.0);
-    assert!(spread(&before) > 6.0, "source verticals converge: {before:?}");
+    assert!(
+        spread(&before) > 6.0,
+        "source verticals converge: {before:?}"
+    );
     for mode in [Upright::Vertical, Upright::Auto, Upright::Full] {
         let img = upright_render(&src, mode);
         for x0 in [130.0, 360.0, 590.0] {
@@ -357,7 +583,10 @@ fn upright_vertical_fixes_converging_verticals() {
 #[test]
 fn upright_level_straightens_a_tilted_horizon() {
     let (w, h) = (720usize, 480usize);
-    let shot = lightcraft_develop::Geometry { rotate: 3.5, ..Default::default() };
+    let shot = lightcraft_develop::Geometry {
+        rotate: 3.5,
+        ..Default::default()
+    };
     let src = keystoned_grid(w, h, crate::transform::manual(&shot), 48.0);
     let img = upright_render(&src, Upright::Level);
     for y0 in [120.0, 240.0, 360.0] {
@@ -369,7 +598,11 @@ fn upright_level_straightens_a_tilted_horizon() {
 #[test]
 fn upright_full_fixes_both_families() {
     let (w, h) = (720usize, 480usize);
-    let shot = lightcraft_develop::Geometry { vertical: 25.0, horizontal: -25.0, ..Default::default() };
+    let shot = lightcraft_develop::Geometry {
+        vertical: 25.0,
+        horizontal: -25.0,
+        ..Default::default()
+    };
     let src = keystoned_grid(w, h, crate::transform::manual(&shot), 48.0);
     let img = upright_render(&src, Upright::Full);
     for x0 in [200.0, 360.0, 520.0] {
@@ -385,7 +618,10 @@ fn upright_full_fixes_both_families() {
 #[test]
 fn guided_upright_from_two_vertical_guides() {
     let (w, h) = (720usize, 480usize);
-    let shot = lightcraft_develop::Geometry { vertical: 30.0, ..Default::default() };
+    let shot = lightcraft_develop::Geometry {
+        vertical: 30.0,
+        ..Default::default()
+    };
     let fwd = crate::transform::manual(&shot);
     let src = keystoned_grid(w, h, fwd, 48.0);
     // guides drawn along two building edges: straight lines of the "true" image, seen through fwd⁻¹
@@ -397,38 +633,72 @@ fn guided_upright_from_two_vertical_guides() {
     };
     let mut s = DevelopSettings::default();
     s.geometry.upright = Upright::Guided;
-    s.geometry.guides =
-        vec![(norm(Point::new(-0.5, -0.5)), norm(Point::new(-0.5, 0.5))), (norm(Point::new(0.55, -0.4)), norm(Point::new(0.55, 0.5)))];
+    s.geometry.guides = vec![
+        (norm(Point::new(-0.5, -0.5)), norm(Point::new(-0.5, 0.5))),
+        (norm(Point::new(0.55, -0.4)), norm(Point::new(0.55, 0.5))),
+    ];
     let img = render(&src, &SourceInfo::default(), &s, &RenderRequest::fit(w, h)).image;
     for x0 in [180.0, 360.0, 540.0] {
         let t = vertical_line_track(&img, x0);
         assert!(spread(&t) < 1.2, "guided: line near {x0} at {t:?}");
     }
     // a single guide only levels (rotation): it becomes vertical
-    let one = solve_guided(&[Segment { a: Point::new(0.1, -0.5), b: Point::new(0.12, 0.5) }]);
+    let one = solve_guided(&[Segment {
+        a: Point::new(0.1, -0.5),
+        b: Point::new(0.12, 0.5),
+    }]);
     let p = one.apply(Point::new(0.1, -0.5));
     let q = one.apply(Point::new(0.12, 0.5));
-    assert!((p.x - q.x).abs() < 1e-9, "single vertical guide becomes vertical: {p:?} {q:?}");
+    assert!(
+        (p.x - q.x).abs() < 1e-9,
+        "single vertical guide becomes vertical: {p:?} {q:?}"
+    );
 }
 
 #[test]
 fn upright_analysis_is_resolution_independent() {
-    let shot = lightcraft_develop::Geometry { vertical: 30.0, rotate: 1.5, ..Default::default() };
+    let shot = lightcraft_develop::Geometry {
+        vertical: 30.0,
+        rotate: 1.5,
+        ..Default::default()
+    };
     let fwd = crate::transform::manual(&shot);
     let big = keystoned_grid(1200, 800, fwd, 80.0);
     let small = keystoned_grid(600, 400, fwd, 40.0);
     let s = DevelopSettings::default();
     let a = crate::upright::auto_transform(&big, &SourceInfo::default(), &s, Upright::Vertical);
     let b = crate::upright::auto_transform(&small, &SourceInfo::default(), &s, Upright::Vertical);
-    for p in [Point::new(-1.0, -0.66), Point::new(1.0, -0.66), Point::new(1.0, 0.66), Point::new(-1.0, 0.66)] {
-        assert!(a.apply(p).dist(b.apply(p)) < 0.006, "{:?} vs {:?}", a.apply(p), b.apply(p));
+    for p in [
+        Point::new(-1.0, -0.66),
+        Point::new(1.0, -0.66),
+        Point::new(1.0, 0.66),
+        Point::new(-1.0, 0.66),
+    ] {
+        assert!(
+            a.apply(p).dist(b.apply(p)) < 0.006,
+            "{:?} vs {:?}",
+            a.apply(p),
+            b.apply(p)
+        );
     }
     // a setting that names the mode without a stored transform renders like the stored one
     let mut s1 = DevelopSettings::default();
     s1.geometry.upright = Upright::Vertical;
-    let lazy = render(&small, &SourceInfo::default(), &s1, &RenderRequest::fit(300, 300)).image;
+    let lazy = render(
+        &small,
+        &SourceInfo::default(),
+        &s1,
+        &RenderRequest::fit(300, 300),
+    )
+    .image;
     s1.geometry.upright_transform = Some(b);
-    let stored = render(&small, &SourceInfo::default(), &s1, &RenderRequest::fit(300, 300)).image;
+    let stored = render(
+        &small,
+        &SourceInfo::default(),
+        &s1,
+        &RenderRequest::fit(300, 300),
+    )
+    .image;
     assert_eq!(lazy.data, stored.data);
 }
 
@@ -439,7 +709,12 @@ fn upright_auto_leaves_natural_scenes_nearly_alone() {
     use lightcraft_develop::Upright;
     for scene in lightcraft_scenes::demo_library() {
         let src = scene.render_fit(768);
-        let h = crate::upright::auto_transform(&src, &SourceInfo::default(), &DevelopSettings::default(), Upright::Auto);
+        let h = crate::upright::auto_transform(
+            &src,
+            &SourceInfo::default(),
+            &DevelopSettings::default(),
+            Upright::Auto,
+        );
         // how far the corners of the centred unit frame move
         let worst = [(-1.0, -0.66), (1.0, -0.66), (-1.0, 0.66), (1.0, 0.66)]
             .iter()
@@ -448,7 +723,11 @@ fn upright_auto_leaves_natural_scenes_nearly_alone() {
                 (p.x - x).hypot(p.y - y)
             })
             .fold(0.0f64, f64::max);
-        assert!(worst < 0.06, "{}: Auto moved a corner by {worst:.3} (centred units)", scene.name);
+        assert!(
+            worst < 0.06,
+            "{}: Auto moved a corner by {worst:.3} (centred units)",
+            scene.name
+        );
     }
 }
 
@@ -456,15 +735,39 @@ fn upright_auto_leaves_natural_scenes_nearly_alone() {
 #[test]
 #[ignore]
 fn debug_upright_scene() {
-    let scene =
-        lightcraft_scenes::demo_library().into_iter().find(|s| s.name.starts_with(std::env::var("SCENE").as_deref().unwrap_or("Lake"))).unwrap();
+    let scene = lightcraft_scenes::demo_library()
+        .into_iter()
+        .find(|s| {
+            s.name
+                .starts_with(std::env::var("SCENE").as_deref().unwrap_or("Lake"))
+        })
+        .unwrap();
     let src = scene.render_fit(768);
-    let a = crate::upright::analyze_source(&src, &SourceInfo::default(), &DevelopSettings::default());
-    eprintln!("vert {} horiz {} vvp {:?} hvp {:?}", a.vertical.len(), a.horizontal.len(), a.vertical_vp, a.horizontal_vp);
+    let a =
+        crate::upright::analyze_source(&src, &SourceInfo::default(), &DevelopSettings::default());
+    eprintln!(
+        "vert {} horiz {} vvp {:?} hvp {:?}",
+        a.vertical.len(),
+        a.horizontal.len(),
+        a.vertical_vp,
+        a.horizontal_vp
+    );
     for s in a.vertical.iter().take(20) {
-        eprintln!("  v {:.3},{:.3} -> {:.3},{:.3} len {:.3}", s.a.x, s.a.y, s.b.x, s.b.y, s.len());
+        eprintln!(
+            "  v {:.3},{:.3} -> {:.3},{:.3} len {:.3}",
+            s.a.x,
+            s.a.y,
+            s.b.x,
+            s.b.y,
+            s.len()
+        );
     }
-    for m in [Upright::Level, Upright::Vertical, Upright::Full, Upright::Auto] {
+    for m in [
+        Upright::Level,
+        Upright::Vertical,
+        Upright::Full,
+        Upright::Auto,
+    ] {
         eprintln!("{m:?}: {:?}", crate::upright::solve(m, &a).0);
     }
 }
@@ -485,6 +788,8 @@ fn level_degrees_sign_matches_crop_angle() {
             [0.1, 0.2, 0.3]
         }
     });
-    let deg = crate::upright::level_degrees(&src, &SourceInfo::default(), &DevelopSettings::default()).expect("lines found");
+    let deg =
+        crate::upright::level_degrees(&src, &SourceInfo::default(), &DevelopSettings::default())
+            .expect("lines found");
     assert!((deg + 6.0).abs() < 0.5, "{deg}");
 }

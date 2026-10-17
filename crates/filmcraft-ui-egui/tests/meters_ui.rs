@@ -44,13 +44,18 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         session.prefs.audio.scrub_audio = true;
         let (tx, rx) = channel();
         let fill = Arc::new(Mutex::new(None));
         let mut app = FilmcraftApp::new(session).with_control(rx);
         app.audio = Some(Box::new(Out { fill: fill.clone() }));
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx, fill };
         d.frames(4);
         d
@@ -82,17 +87,24 @@ impl Driver {
     }
     fn element(&mut self, id: &str) -> Option<Value> {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        v.as_array().unwrap().iter().find(|e| e["id"] == id).cloned()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .cloned()
     }
     fn label(&mut self, id: &str) -> String {
-        self.element(id).and_then(|e| e["label"].as_str().map(str::to_string)).unwrap_or_default()
+        self.element(id)
+            .and_then(|e| e["label"].as_str().map(str::to_string))
+            .unwrap_or_default()
     }
     /// Give the Audio Meters panel `width` points (it sits in a fixed-width split beside the
     /// Timeline).
     fn meters_width(&mut self, width: f32) {
         fn set(n: &mut DockNode, width: f32) -> bool {
             match n {
-                DockNode::Split { size, b, .. } if matches!(&**b, DockNode::Tabs { panels, .. } if panels.as_slice() == [PanelKind::AudioMeters]) => {
+                DockNode::Split { size, b, .. } if matches!(&**b, DockNode::Tabs { panels, .. } if panels.as_slice() == [PanelKind::AudioMeters]) =>
+                {
                     *size = SplitSize::FixedB(width);
                     true
                 }
@@ -106,7 +118,11 @@ impl Driver {
     /// The level the left bar shows, in dB.
     fn left_db(&mut self) -> f32 {
         let label = self.label("audioMeters.channel.L");
-        label.split_whitespace().nth(1).and_then(|v| v.parse().ok()).unwrap_or_else(|| panic!("label {label:?}"))
+        label
+            .split_whitespace()
+            .nth(1)
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_else(|| panic!("label {label:?}"))
     }
 }
 
@@ -115,16 +131,32 @@ impl Driver {
 #[test]
 fn a_narrow_meter_panel_drops_the_readout_and_then_the_scale() {
     let mut d = Driver::demo();
-    assert!(d.element("audioMeters.loudness").is_some(), "the readout at the default width");
-    assert_eq!(d.label("audioMeters.scale").split(' ').count(), 20, "0 to -57 every 3 dB");
+    assert!(
+        d.element("audioMeters.loudness").is_some(),
+        "the readout at the default width"
+    );
+    assert_eq!(
+        d.label("audioMeters.scale").split(' ').count(),
+        20,
+        "0 to -57 every 3 dB"
+    );
     d.meters_width(60.0);
-    assert!(d.element("audioMeters.loudness").is_none(), "no room for the readout");
+    assert!(
+        d.element("audioMeters.loudness").is_none(),
+        "no room for the readout"
+    );
     assert!(d.element("audioMeters.scale").is_some());
     d.meters_width(44.0);
-    assert!(d.element("audioMeters.scale").is_none(), "no room for the scale");
+    assert!(
+        d.element("audioMeters.scale").is_none(),
+        "no room for the scale"
+    );
     for name in ["L", "R"] {
         let bar = d.element(&format!("audioMeters.channel.{name}")).unwrap();
-        assert!(bar["rect"][2].as_f64().unwrap() >= 5.0, "the {name} bar stays readable: {bar}");
+        assert!(
+            bar["rect"][2].as_f64().unwrap() >= 5.0,
+            "the {name} bar stays readable: {bar}"
+        );
     }
     d.meters_width(116.0);
     assert!(d.element("audioMeters.loudness").is_some());
@@ -138,17 +170,30 @@ fn the_meters_move_while_scrubbing() {
     assert_eq!(d.left_db(), -90.0, "silent before");
     let ruler = d.element("timeline.ruler").expect("the Timeline ruler");
     let r = &ruler["rect"];
-    let (x, y, w) = (r[0].as_f64().unwrap() as f32, r[1].as_f64().unwrap() as f32 + r[3].as_f64().unwrap() as f32 / 2.0, r[2].as_f64().unwrap() as f32);
+    let (x, y, w) = (
+        r[0].as_f64().unwrap() as f32,
+        r[1].as_f64().unwrap() as f32 + r[3].as_f64().unwrap() as f32 / 2.0,
+        r[2].as_f64().unwrap() as f32,
+    );
     let (from, to) = (egui::pos2(x + w * 0.2, y), egui::pos2(x + w * 0.3, y));
-    d.harness.input_mut().events.push(egui::Event::PointerMoved(from));
-    d.harness.input_mut().events.push(egui::Event::PointerButton {
-        pos: from,
-        button: egui::PointerButton::Primary,
-        pressed: true,
-        modifiers: Default::default(),
-    });
+    d.harness
+        .input_mut()
+        .events
+        .push(egui::Event::PointerMoved(from));
+    d.harness
+        .input_mut()
+        .events
+        .push(egui::Event::PointerButton {
+            pos: from,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: Default::default(),
+        });
     d.frames(1);
-    d.harness.input_mut().events.push(egui::Event::PointerMoved(to));
+    d.harness
+        .input_mut()
+        .events
+        .push(egui::Event::PointerMoved(to));
     // the playhead moves in this frame; the next one hears it
     d.frames(2);
     // the device asks for the grain
@@ -162,11 +207,14 @@ fn the_meters_move_while_scrubbing() {
     d.frames(2);
     let db = d.left_db();
     assert!(db > -60.0, "the meter shows the grain: {db} dB");
-    d.harness.input_mut().events.push(egui::Event::PointerButton {
-        pos: to,
-        button: egui::PointerButton::Primary,
-        pressed: false,
-        modifiers: Default::default(),
-    });
+    d.harness
+        .input_mut()
+        .events
+        .push(egui::Event::PointerButton {
+            pos: to,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        });
     d.frames(1);
 }

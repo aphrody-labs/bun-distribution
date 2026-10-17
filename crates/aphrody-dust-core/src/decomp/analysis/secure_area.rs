@@ -20,50 +20,85 @@ impl SecureAreaState {
     pub fn handle(self, address: u32, ins: &Ins) -> Self {
         match self {
             Self::Start => match ins {
-                Ins::Svc { cond: Cond::Al, imm: interrupt } => {
+                Ins::Svc {
+                    cond: Cond::Al,
+                    imm: interrupt,
+                } => {
                     if let Ok(function) = SwiFunction::try_from(*interrupt) {
-                        Self::Return { start: address, function, return_reg: Reg::R0 }
-                    } else {
-                        Self::default()
-                    }
-                },
-                Ins::Mov { s: _, thumb: _, cond: Cond::Al, rd: _, op2: Op2::Imm(_) } => {
-                    Self::Arg { start: address }
-                },
-                _ => Self::default(),
-            },
-            Self::Arg { start } => match ins {
-                Ins::Svc { cond: Cond::Al, imm: interrupt } => {
-                    if let Ok(function) = SwiFunction::try_from(*interrupt) {
-                        if function.allows_arg() {
-                            Self::Return { start, function, return_reg: Reg::R0 }
-                        } else {
-                            // Ignore the mov
-                            Self::Return { start: address, function, return_reg: Reg::R0 }
+                        Self::Return {
+                            start: address,
+                            function,
+                            return_reg: Reg::R0,
                         }
                     } else {
                         Self::default()
                     }
-                },
+                }
+                Ins::Mov {
+                    s: _,
+                    thumb: _,
+                    cond: Cond::Al,
+                    rd: _,
+                    op2: Op2::Imm(_),
+                } => Self::Arg { start: address },
                 _ => Self::default(),
             },
-            Self::Return { start, function, return_reg } => match ins {
+            Self::Arg { start } => match ins {
+                Ins::Svc {
+                    cond: Cond::Al,
+                    imm: interrupt,
+                } => {
+                    if let Ok(function) = SwiFunction::try_from(*interrupt) {
+                        if function.allows_arg() {
+                            Self::Return {
+                                start,
+                                function,
+                                return_reg: Reg::R0,
+                            }
+                        } else {
+                            // Ignore the mov
+                            Self::Return {
+                                start: address,
+                                function,
+                                return_reg: Reg::R0,
+                            }
+                        }
+                    } else {
+                        Self::default()
+                    }
+                }
+                _ => Self::default(),
+            },
+            Self::Return {
+                start,
+                function,
+                return_reg,
+            } => match ins {
                 Ins::Add {
                     s: _,
                     thumb: _,
                     cond: Cond::Al,
                     rd,
                     rn,
-                    op2: Op2::Imm(Op2Imm { imm: 0, rotate_imm: _ }),
-                } if *rd == return_reg => Self::Return { start, function, return_reg: *rn },
-                Ins::Bx { cond: Cond::Al, rm: Reg::Lr } => {
-                    Self::ValidFunction(SecureAreaFunction {
-                        function,
-                        return_reg,
-                        start,
-                        end: address + 2,
-                    })
+                    op2:
+                        Op2::Imm(Op2Imm {
+                            imm: 0,
+                            rotate_imm: _,
+                        }),
+                } if *rd == return_reg => Self::Return {
+                    start,
+                    function,
+                    return_reg: *rn,
                 },
+                Ins::Bx {
+                    cond: Cond::Al,
+                    rm: Reg::Lr,
+                } => Self::ValidFunction(SecureAreaFunction {
+                    function,
+                    return_reg,
+                    start,
+                    end: address + 2,
+                }),
                 _ => Self::default(),
             },
             Self::ValidFunction { .. } => Self::default(),
@@ -71,7 +106,9 @@ impl SecureAreaState {
     }
 
     pub fn get_function(self) -> Option<SecureAreaFunction> {
-        let Self::ValidFunction(function) = self else { return None };
+        let Self::ValidFunction(function) = self else {
+            return None;
+        };
         Some(function)
     }
 }

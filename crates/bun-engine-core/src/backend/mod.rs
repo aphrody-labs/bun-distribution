@@ -180,17 +180,28 @@ impl Backend {
     }
 }
 
-const DUST_CAPABILITIES: &[Capability] =
-    &[Capability::Execute, Capability::Homebrew, Capability::Inspect];
-const GECKO_CAPABILITIES: &[Capability] =
-    &[Capability::Execute, Capability::Homebrew, Capability::Debug, Capability::Memory];
+const DUST_CAPABILITIES: &[Capability] = &[
+    Capability::Execute,
+    Capability::Homebrew,
+    Capability::Inspect,
+];
+const GECKO_CAPABILITIES: &[Capability] = &[
+    Capability::Execute,
+    Capability::Homebrew,
+    Capability::Debug,
+    Capability::Memory,
+];
 const AZAHAR_CAPABILITIES: &[Capability] = &[Capability::Execute, Capability::Inspect];
 const DOLPHIN_CAPABILITIES: &[Capability] = &[Capability::Execute, Capability::Inspect];
 const NXEMU_CAPABILITIES: &[Capability] = &[Capability::Execute, Capability::Homebrew];
 const PROTON_CAPABILITIES: &[Capability] = &[Capability::Launch];
 const INSPECT_CAPABILITIES: &[Capability] = &[Capability::Inspect];
-const WINDS_INAZUMA_CAPABILITIES: &[Capability] =
-    &[Capability::Execute, Capability::Inspect, Capability::Memory, Capability::Debug];
+const WINDS_INAZUMA_CAPABILITIES: &[Capability] = &[
+    Capability::Execute,
+    Capability::Inspect,
+    Capability::Memory,
+    Capability::Debug,
+];
 
 static BACKENDS: &[Backend] = &[
     Backend {
@@ -276,7 +287,10 @@ impl BackendRegistry {
     /// Creates a registry over a static descriptor set.
     #[must_use]
     pub const fn new(backends: &'static [Backend]) -> Self {
-        Self { backends, adapters: &[] }
+        Self {
+            backends,
+            adapters: &[],
+        }
     }
 
     /// Adds a static capability/adapters matrix to this registry.
@@ -342,7 +356,14 @@ const fn adapter(
     owner: &'static str,
     status: AdapterStatus,
 ) -> Adapter {
-    Adapter { id, platform, capability, backend_id, owner, status }
+    Adapter {
+        id,
+        platform,
+        capability,
+        backend_id,
+        owner,
+        status,
+    }
 }
 
 static ADAPTERS: &[Adapter] = &[
@@ -570,7 +591,14 @@ static ADAPTERS: &[Adapter] = &[
         "",
         AdapterStatus::Unavailable,
     ),
-    adapter("switch_mod", Platform::Switch, Capability::Mod, None, "", AdapterStatus::Unavailable),
+    adapter(
+        "switch_mod",
+        Platform::Switch,
+        Capability::Mod,
+        None,
+        "",
+        AdapterStatus::Unavailable,
+    ),
     adapter(
         "steam_execute",
         Platform::Steam,
@@ -587,7 +615,14 @@ static ADAPTERS: &[Adapter] = &[
         "",
         AdapterStatus::Unavailable,
     ),
-    adapter("steam_save", Platform::Steam, Capability::Save, None, "", AdapterStatus::Unavailable),
+    adapter(
+        "steam_save",
+        Platform::Steam,
+        Capability::Save,
+        None,
+        "",
+        AdapterStatus::Unavailable,
+    ),
     adapter(
         "steam_memory",
         Platform::Steam,
@@ -596,7 +631,14 @@ static ADAPTERS: &[Adapter] = &[
         "",
         AdapterStatus::Unavailable,
     ),
-    adapter("steam_mod", Platform::Steam, Capability::Mod, None, "", AdapterStatus::Unavailable),
+    adapter(
+        "steam_mod",
+        Platform::Steam,
+        Capability::Mod,
+        None,
+        "",
+        AdapterStatus::Unavailable,
+    ),
     adapter(
         "android_execute",
         Platform::Android,
@@ -700,13 +742,23 @@ mod tests {
             Platform::Steam,
             Platform::Android,
         ] {
-            assert!(backends().iter().any(|backend| backend.platform == platform));
+            assert!(
+                backends()
+                    .iter()
+                    .any(|backend| backend.platform == platform)
+            );
         }
     }
 
     #[test]
     fn wii_prefers_the_rust_debug_backend() {
-        assert_eq!(REGISTRY.select(Platform::Wii, Capability::Debug).unwrap().id, "gecko-wii");
+        assert_eq!(
+            REGISTRY
+                .select(Platform::Wii, Capability::Debug)
+                .unwrap()
+                .id,
+            "gecko-wii"
+        );
     }
 
     #[test]
@@ -716,7 +768,9 @@ mod tests {
             assert!(!entry.id.is_empty());
             assert!(!entry.source.is_empty());
             assert!(
-                entries[index + 1..].iter().all(|other| other.id != entry.id),
+                entries[index + 1..]
+                    .iter()
+                    .all(|other| other.id != entry.id),
                 "duplicate backend id: {}",
                 entry.id
             );
@@ -737,7 +791,11 @@ mod tests {
             backend_for(Platform::Wii, Capability::Debug)
         );
         assert!(REGISTRY.find("missing").is_none());
-        assert!(REGISTRY.select(Platform::Android, Capability::Execute).is_none());
+        assert!(
+            REGISTRY
+                .select(Platform::Android, Capability::Execute)
+                .is_none()
+        );
     }
 
     #[test]
@@ -757,7 +815,11 @@ mod tests {
                 assert_eq!(adapter.capability, *capability);
             }
         }
-        assert!(REGISTRY.common_adapter(Platform::Ds, Capability::Launch).is_none());
+        assert!(
+            REGISTRY
+                .common_adapter(Platform::Ds, Capability::Launch)
+                .is_none()
+        );
         assert!(
             REGISTRY
                 .all()
@@ -773,10 +835,25 @@ mod tests {
         assert!(dust.supports(Capability::Homebrew));
         assert!(!dust.supports(Capability::Debug));
         assert!(dust.is_runtime());
-        assert!(REGISTRY.adapter(Platform::Ds, Capability::Execute).unwrap().is_available());
-        assert!(REGISTRY.adapter(Platform::Ds, Capability::Homebrew).unwrap().is_available());
+        assert!(
+            REGISTRY
+                .adapter(Platform::Ds, Capability::Execute)
+                .unwrap()
+                .is_available()
+        );
+        assert!(
+            REGISTRY
+                .adapter(Platform::Ds, Capability::Homebrew)
+                .unwrap()
+                .is_available()
+        );
         assert!(REGISTRY.find("gecko-wii").unwrap().is_in_process());
-        assert!(REGISTRY.find("android-inspection").unwrap().supports(Capability::Inspect));
+        assert!(
+            REGISTRY
+                .find("android-inspection")
+                .unwrap()
+                .supports(Capability::Inspect)
+        );
     }
 
     #[test]

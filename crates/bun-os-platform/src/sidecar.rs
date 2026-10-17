@@ -42,7 +42,11 @@ fn bun() -> String {
 impl Sidecar {
     /// Starts `bun <repo>/packages/bun-os-platform/src/sidecar.ts`.
     pub fn spawn(repo: &Path) -> std::io::Result<Self> {
-        let script = repo.join("packages").join("bun-os-platform").join("src").join("sidecar.ts");
+        let script = repo
+            .join("packages")
+            .join("bun-os-platform")
+            .join("src")
+            .join("sidecar.ts");
         let mut command = Command::new(bun());
         command
             .arg(script)
@@ -67,7 +71,9 @@ impl Sidecar {
             .spawn(move || {
                 for line in BufReader::new(stdout).lines() {
                     let Ok(line) = line else { break };
-                    let Ok(message) = serde_json::from_str::<Value>(&line) else { continue };
+                    let Ok(message) = serde_json::from_str::<Value>(&line) else {
+                        continue;
+                    };
                     if let Some(name) = message.get("event").and_then(Value::as_str) {
                         let _ = tx.send(Event {
                             name: name.to_string(),
@@ -75,15 +81,25 @@ impl Sidecar {
                         });
                     } else if let Some(id) = message.get("id").and_then(Value::as_u64) {
                         let reply = match message.get("error") {
-                            Some(e) => Err(e.as_str().map_or_else(|| e.to_string(), str::to_string)),
+                            Some(e) => {
+                                Err(e.as_str().map_or_else(|| e.to_string(), str::to_string))
+                            }
                             None => Ok(message.get("result").cloned().unwrap_or(Value::Null)),
                         };
-                        if let Some(sender) = reader_pending.lock().unwrap_or_else(|e| e.into_inner()).remove(&id) {
+                        if let Some(sender) = reader_pending
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .remove(&id)
+                        {
                             let _ = sender.send(reply);
                         }
                     }
                 }
-                for (_, sender) in reader_pending.lock().unwrap_or_else(|e| e.into_inner()).drain() {
+                for (_, sender) in reader_pending
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .drain()
+                {
                     let _ = sender.send(Err("platform sidecar exited".into()));
                 }
             })?;
@@ -100,11 +116,20 @@ impl Sidecar {
     pub fn request(&self, method: &str, params: Value) -> Receiver<Result<Value, String>> {
         let id = self.next.fetch_add(1, Ordering::SeqCst);
         let (tx, rx) = mpsc::channel();
-        self.pending.lock().unwrap_or_else(|e| e.into_inner()).insert(id, tx.clone());
+        self.pending
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(id, tx.clone());
         let line = json!({ "id": id, "method": method, "params": params }).to_string();
         let mut stdin = self.stdin.lock().unwrap_or_else(|e| e.into_inner());
-        if writeln!(stdin, "{line}").and_then(|()| stdin.flush()).is_err() {
-            self.pending.lock().unwrap_or_else(|e| e.into_inner()).remove(&id);
+        if writeln!(stdin, "{line}")
+            .and_then(|()| stdin.flush())
+            .is_err()
+        {
+            self.pending
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .remove(&id);
             let _ = tx.send(Err("platform sidecar is not running".into()));
         }
         rx
@@ -119,7 +144,11 @@ impl Sidecar {
 
     /// Events received since the last drain.
     pub fn drain_events(&self) -> Vec<Event> {
-        self.events.lock().unwrap_or_else(|e| e.into_inner()).try_iter().collect()
+        self.events
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .try_iter()
+            .collect()
     }
 }
 

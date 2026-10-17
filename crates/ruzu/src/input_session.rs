@@ -3,12 +3,12 @@
 //! This diagnostic frontend facility has no Eden counterpart.
 
 use std::io;
+#[cfg(windows)]
+use std::net::UdpSocket as ControlSocket;
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 #[cfg(unix)]
 use std::os::unix::net::UnixDatagram as ControlSocket;
-#[cfg(windows)]
-use std::net::UdpSocket as ControlSocket;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -52,9 +52,13 @@ pub(crate) fn start(handler: impl FnMut(Command) -> Result<Value, String> + 'sta
         let mut secret = [0u8; 32];
         getrandom::getrandom(&mut secret).map_err(|error| io::Error::other(error.to_string()))?;
         let token: String = secret.iter().map(|byte| format!("{byte:02x}")).collect();
-        std::fs::write(directory.join("control.json"), json!({
-            "port": socket.local_addr()?.port(), "token": token,
-        }).to_string())?;
+        std::fs::write(
+            directory.join("control.json"),
+            json!({
+                "port": socket.local_addr()?.port(), "token": token,
+            })
+            .to_string(),
+        )?;
         Ok((socket, token))
     };
     let transport = match setup() {
@@ -71,10 +75,7 @@ pub(crate) fn start(handler: impl FnMut(Command) -> Result<Value, String> + 'sta
     let socket = transport;
     #[cfg(windows)]
     let (socket, token) = transport;
-    log::info!(
-        "Input session ready: {}",
-        directory.display()
-    );
+    log::info!("Input session ready: {}", directory.display());
     let mut control = Control {
         socket,
         #[cfg(windows)]
@@ -120,7 +121,8 @@ impl Control {
                     .map_err(|error| error.to_string())
                     .and_then(|request: Value| {
                         #[cfg(windows)]
-                        if request.get("token").and_then(Value::as_str) != Some(self.token.as_str()) {
+                        if request.get("token").and_then(Value::as_str) != Some(self.token.as_str())
+                        {
                             return Err("invalid session token".into());
                         }
                         self.execute(request)
@@ -171,19 +173,35 @@ impl Control {
                 } else {
                     parse_press(&request)?
                 };
-                let old = self.held.as_ref().map(|(ids, _)| ids.clone()).unwrap_or_default();
+                let old = self
+                    .held
+                    .as_ref()
+                    .map(|(ids, _)| ids.clone())
+                    .unwrap_or_default();
                 let released = old.iter().copied().filter(|id| !ids.contains(id)).collect();
                 let pressed = ids.iter().copied().filter(|id| !old.contains(id)).collect();
                 // Retain the union until both operations succeed, so errors cannot
                 // leave injected buttons outside the watchdog's ownership.
                 let mut owned = old;
                 for id in &ids {
-                    if !owned.contains(id) { owned.push(*id); }
+                    if !owned.contains(id) {
+                        owned.push(*id);
+                    }
                 }
                 self.held = Some((owned, Instant::now() + duration));
-                (self.handler)(Command::Buttons { ids: released, pressed: false })?;
-                (self.handler)(Command::Buttons { ids: pressed, pressed: true })?;
-                self.held = if ids.is_empty() { None } else { Some((ids, Instant::now() + duration)) };
+                (self.handler)(Command::Buttons {
+                    ids: released,
+                    pressed: false,
+                })?;
+                (self.handler)(Command::Buttons {
+                    ids: pressed,
+                    pressed: true,
+                })?;
+                self.held = if ids.is_empty() {
+                    None
+                } else {
+                    Some((ids, Instant::now() + duration))
+                };
                 Ok(json!({"updated": true}))
             }
             Some("capture") => {
@@ -289,9 +307,13 @@ mod tests {
 
     fn test_socket() -> ControlSocket {
         #[cfg(unix)]
-        { ControlSocket::unbound().unwrap() }
+        {
+            ControlSocket::unbound().unwrap()
+        }
         #[cfg(windows)]
-        { ControlSocket::bind("127.0.0.1:0").unwrap() }
+        {
+            ControlSocket::bind("127.0.0.1:0").unwrap()
+        }
     }
 
     #[test]
@@ -314,9 +336,22 @@ mod tests {
             }),
         };
         let client = test_socket();
-        client.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-        for (token, accepted) in [(None, false), (Some("wrong"), false), (Some("test-token"), true)] {
-            client.send_to(json!({"command":"status", "token":token}).to_string().as_bytes(), address).unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        for (token, accepted) in [
+            (None, false),
+            (Some("wrong"), false),
+            (Some("test-token"), true),
+        ] {
+            client
+                .send_to(
+                    json!({"command":"status", "token":token})
+                        .to_string()
+                        .as_bytes(),
+                    address,
+                )
+                .unwrap();
             control.poll();
             let mut bytes = [0; 1024];
             let len = client.recv(&mut bytes).unwrap();
@@ -340,8 +375,12 @@ mod tests {
             handler: Box::new(|_| Ok(json!({"received": true}))),
         };
         let client = ControlSocket::bind(directory.path().join("reply.sock")).unwrap();
-        client.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-        client.send_to(br#"{"command":"status"}"#, &server_path).unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        client
+            .send_to(br#"{"command":"status"}"#, &server_path)
+            .unwrap();
         control.poll();
         let mut response = [0u8; 1024];
         let len = client.recv(&mut response).unwrap();
@@ -404,21 +443,38 @@ mod tests {
             held: None,
             handler: Box::new(move |event| {
                 if let Command::Buttons { ids, pressed } = event {
-                    if !ids.is_empty() { output.borrow_mut().push((ids, pressed)); }
+                    if !ids.is_empty() {
+                        output.borrow_mut().push((ids, pressed));
+                    }
                 }
                 Ok(Value::Null)
             }),
         };
         control.socket.set_nonblocking(true).unwrap();
-        for buttons in [json!(["L"]), json!(["L", "R"]), json!(["L", "R"]), json!(["R"])] {
-            control.execute(json!({"command":"set_buttons", "buttons":buttons, "hold_ms":1000})).unwrap();
+        for buttons in [
+            json!(["L"]),
+            json!(["L", "R"]),
+            json!(["L", "R"]),
+            json!(["R"]),
+        ] {
+            control
+                .execute(json!({"command":"set_buttons", "buttons":buttons, "hold_ms":1000}))
+                .unwrap();
         }
-        assert!(control.execute(json!({"command":"set_buttons", "buttons":["INVALID"], "hold_ms":1000})).is_err());
+        assert!(control
+            .execute(json!({"command":"set_buttons", "buttons":["INVALID"], "hold_ms":1000}))
+            .is_err());
         control.held.as_mut().unwrap().1 = Instant::now();
         control.poll();
-        assert_eq!(&*events.borrow(), &[
-            (vec![6], true), (vec![7], true), (vec![6], false), (vec![7], false),
-        ]);
+        assert_eq!(
+            &*events.borrow(),
+            &[
+                (vec![6], true),
+                (vec![7], true),
+                (vec![6], false),
+                (vec![7], false),
+            ]
+        );
         assert!(control.held.is_none());
     }
 

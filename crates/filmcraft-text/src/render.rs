@@ -59,14 +59,22 @@ impl OutlinePen for Rec {
 fn outline(face: FaceId, gid: u32) -> Option<Arc<Vec<Cmd>>> {
     static C: OnceLock<Mutex<HashMap<(FaceId, u32), Option<Arc<Vec<Cmd>>>>>> = OnceLock::new();
     let c = C.get_or_init(Default::default);
-    if let Some(v) = c.lock().unwrap_or_else(|e| e.into_inner()).get(&(face, gid)) {
+    if let Some(v) = c
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&(face, gid))
+    {
         return v.clone();
     }
     let f = fonts::face(face);
     let v = f.font().and_then(|font| {
         let g = font.outline_glyphs().get(GlyphId::new(gid))?;
         let mut rec = Rec(Vec::new());
-        g.draw(DrawSettings::unhinted(Size::unscaled(), LocationRef::default()), &mut rec).ok()?;
+        g.draw(
+            DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
+            &mut rec,
+        )
+        .ok()?;
         Some(Arc::new(rec.0))
     });
     let mut m = c.lock().unwrap_or_else(|e| e.into_inner());
@@ -81,9 +89,15 @@ fn outline(face: FaceId, gid: u32) -> Option<Arc<Vec<Cmd>>> {
 /// at the glyph's size) to the output.
 pub fn glyph_path(g: &Glyph, m: &Xform) -> Path {
     let mut p = Path::new();
-    let Some(cmds) = outline(g.face, g.id) else { return p };
+    let Some(cmds) = outline(g.face, g.id) else {
+        return p;
+    };
     let k = g.size / fonts::face(g.face).units_per_em();
-    let slant = if g.synth_italic { SYNTH_ITALIC_SLANT } else { 0.0 };
+    let slant = if g.synth_italic {
+        SYNTH_ITALIC_SLANT
+    } else {
+        0.0
+    };
     // font units (y up) → glyph px (y down), slanted
     let local: Xform = [k, 0.0, slant * k, -k, 0.0, 0.0];
     let t = compose(m, &local);
@@ -141,19 +155,32 @@ pub fn glyph_mask(g: &Glyph, px: f32, frac: f32) -> Option<Arc<GlyphMask>> {
     let size_q = (px * 8.0).round().max(1.0) as u32;
     let frac_q = ((frac.rem_euclid(1.0) * 4.0).round() as u8) % 4;
     let key = (g.face, g.id, size_q, frac_q, g.synth_bold, g.synth_italic);
-    if let Some(v) = glyph_cache().lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+    if let Some(v) = glyph_cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&key)
+    {
         return v.clone();
     }
     let px = size_q as f32 / 8.0;
     let fq = frac_q as f32 / 4.0;
-    let gg = Glyph { x: 0.0, y: 0.0, size: px, ..*g };
+    let gg = Glyph {
+        x: 0.0,
+        y: 0.0,
+        size: px,
+        ..*g
+    };
     let path = glyph_path(&gg, &[1.0, 0.0, 0.0, 1.0, fq, 0.0]);
     let v = path.bounds().map(|(x0, y0, x1, y1)| {
         let left = x0.floor() as i32;
         let top = y0.floor() as i32;
         let w = (x1.ceil() as i32 - left).max(1) as usize;
         let h = (y1.ceil() as i32 - top).max(1) as usize;
-        Arc::new(GlyphMask { mask: fill(&path, w, h, -left as f32, -top as f32), left, top })
+        Arc::new(GlyphMask {
+            mask: fill(&path, w, h, -left as f32, -top as f32),
+            left,
+            top,
+        })
     });
     let mut m = glyph_cache().lock().unwrap_or_else(|e| e.into_inner());
     if m.len() > 16_384 {
@@ -165,7 +192,10 @@ pub fn glyph_mask(g: &Glyph, px: f32, frac: f32) -> Option<Arc<GlyphMask>> {
 
 /// Whether `m` is a uniform positive scale plus translation (the glyph-cache path applies).
 pub fn is_axis_uniform(m: &Xform) -> bool {
-    m[1].abs() < 1e-6 && m[2].abs() < 1e-6 && m[0] > 0.0 && (m[0] - m[3]).abs() < 1e-4 * m[0].max(1.0)
+    m[1].abs() < 1e-6
+        && m[2].abs() < 1e-6
+        && m[0] > 0.0
+        && (m[0] - m[3]).abs() < 1e-4 * m[0].max(1.0)
 }
 
 /// The whole layout (glyphs + underlines) as one device-space path.
@@ -192,7 +222,12 @@ pub fn layout_path_run(l: &Layout, m: &Xform, run: Option<u16>) -> Path {
 pub fn device_bounds(l: &Layout, m: &Xform) -> [f32; 4] {
     let b = l.bounds;
     let pad = l.glyphs.iter().map(|g| g.size).fold(0.0f32, f32::max) * 0.35;
-    let pts = [(b[0] - pad, b[1] - pad), (b[2] + pad, b[1] - pad), (b[0] - pad, b[3] + pad), (b[2] + pad, b[3] + pad)];
+    let pts = [
+        (b[0] - pad, b[1] - pad),
+        (b[2] + pad, b[1] - pad),
+        (b[0] - pad, b[3] + pad),
+        (b[2] + pad, b[3] + pad),
+    ];
     let mut o = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
     for (x, y) in pts {
         let (a, c) = apply(m, x, y);
@@ -222,7 +257,11 @@ pub fn draw_run(l: &Layout, m: &Xform, out: &mut Mask, origin: (i32, i32), run: 
             }
             let xi = x.floor();
             if let Some(gm) = glyph_mask(g, px, x - xi) {
-                out.add(&gm.mask, xi as i32 + gm.left - ox, y.round() as i32 + gm.top - oy);
+                out.add(
+                    &gm.mask,
+                    xi as i32 + gm.left - ox,
+                    y.round() as i32 + gm.top - oy,
+                );
             }
         }
         if !l.underlines.is_empty() {
@@ -246,7 +285,10 @@ pub fn draw_run(l: &Layout, m: &Xform, out: &mut Mask, origin: (i32, i32), run: 
 pub fn rasterize(l: &Layout, m: &Xform) -> (Mask, i32, i32) {
     let b = device_bounds(l, m);
     let (x0, y0) = (b[0].floor() as i32 - 1, b[1].floor() as i32 - 1);
-    let (w, h) = ((b[2].ceil() as i32 + 1 - x0).max(1) as usize, (b[3].ceil() as i32 + 1 - y0).max(1) as usize);
+    let (w, h) = (
+        (b[2].ceil() as i32 + 1 - x0).max(1) as usize,
+        (b[3].ceil() as i32 + 1 - y0).max(1) as usize,
+    );
     let mut mask = Mask::new(w, h);
     draw(l, m, &mut mask, (x0, y0));
     (mask, x0, y0)
@@ -271,7 +313,14 @@ mod tests {
 
     #[test]
     fn h_has_two_stems() {
-        let l = layout("H", &TextStyle { size: 40.0, ..Default::default() }, &ParagraphStyle::default());
+        let l = layout(
+            "H",
+            &TextStyle {
+                size: 40.0,
+                ..Default::default()
+            },
+            &ParagraphStyle::default(),
+        );
         let g = glyph_mask(&l.glyphs[0], 40.0, 0.0).unwrap();
         let y = g.mask.h / 4;
         let row: Vec<f32> = (0..g.mask.w).map(|x| g.mask.get(x, y)).collect();
@@ -282,7 +331,14 @@ mod tests {
 
     #[test]
     fn cached_and_outline_paths_agree() {
-        let l = layout("Title 42", &TextStyle { size: 48.0, ..Default::default() }, &ParagraphStyle::default());
+        let l = layout(
+            "Title 42",
+            &TextStyle {
+                size: 48.0,
+                ..Default::default()
+            },
+            &ParagraphStyle::default(),
+        );
         let fast = rasterize(&l, &at(20.25, 60.0));
         // a tiny rotation forces the outline path
         let a = 1e-4f32;
@@ -293,11 +349,28 @@ mod tests {
 
     #[test]
     fn synthetic_styles() {
-        let base = TextStyle { size: 60.0, ..Default::default() };
+        let base = TextStyle {
+            size: 60.0,
+            ..Default::default()
+        };
         let l = layout("Hello", &base, &ParagraphStyle::default());
-        let b = layout("Hello", &TextStyle { faux_bold: true, ..base.clone() }, &ParagraphStyle::default());
+        let b = layout(
+            "Hello",
+            &TextStyle {
+                faux_bold: true,
+                ..base.clone()
+            },
+            &ParagraphStyle::default(),
+        );
         assert!(ink(&rasterize(&b, &IDENTITY).0) > ink(&rasterize(&l, &IDENTITY).0) * 1.1);
-        let i = layout("l", &TextStyle { faux_italic: true, ..base.clone() }, &ParagraphStyle::default());
+        let i = layout(
+            "l",
+            &TextStyle {
+                faux_italic: true,
+                ..base.clone()
+            },
+            &ParagraphStyle::default(),
+        );
         let (mi, _, _) = rasterize(&i, &IDENTITY);
         // the top of an italic l is further right than its bottom
         let row_centre = |y: usize| {
@@ -305,13 +378,22 @@ mod tests {
             let s: f32 = r.iter().sum();
             r.iter().enumerate().map(|(x, v)| x as f32 * v).sum::<f32>() / s.max(1e-6)
         };
-        let rows: Vec<usize> = (0..mi.h).filter(|&y| (0..mi.w).any(|x| mi.get(x, y) > 0.5)).collect();
+        let rows: Vec<usize> = (0..mi.h)
+            .filter(|&y| (0..mi.w).any(|x| mi.get(x, y) > 0.5))
+            .collect();
         assert!(row_centre(rows[2]) > row_centre(rows[rows.len() - 3]) + 3.0);
     }
 
     #[test]
     fn rotated_text_draws() {
-        let l = layout("ROT", &TextStyle { size: 40.0, ..Default::default() }, &ParagraphStyle::default());
+        let l = layout(
+            "ROT",
+            &TextStyle {
+                size: 40.0,
+                ..Default::default()
+            },
+            &ParagraphStyle::default(),
+        );
         let a = 30f32.to_radians();
         let (m, _, _) = rasterize(&l, &[a.cos(), a.sin(), -a.sin(), a.cos(), 0.0, 0.0]);
         let (m0, _, _) = rasterize(&l, &IDENTITY);

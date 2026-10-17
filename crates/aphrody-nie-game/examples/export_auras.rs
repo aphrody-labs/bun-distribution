@@ -45,10 +45,15 @@ fn load(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::Value
 }
 
 fn main() {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "var/auras-resolved.json".into());
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "var/auras-resolved.json".into());
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg = load(
         &vfs,

@@ -4,7 +4,14 @@
 //! [`Paint`] is one entry of a node's fill or stroke list: solid, the four gradient kinds, an
 //! image or a pattern (a layer tiled), each with its own opacity, visibility and blend mode. [`ColorProfile`] says which RGB
 //! space (sRGB or Display P3) a document's values are in and converts between them.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use serde::{Deserialize, Serialize};
 
@@ -52,15 +59,22 @@ impl<'de> Deserialize<'de> for Color {
             ColorRepr::Arr(v) => match v.as_slice() {
                 [r, g, b] => Ok(Color::new(*r, *g, *b, 1.0)),
                 [r, g, b, a] => Ok(Color::new(*r, *g, *b, *a)),
-                _ => Err(serde::de::Error::custom("colour arrays have 3 or 4 components")),
+                _ => Err(serde::de::Error::custom(
+                    "colour arrays have 3 or 4 components",
+                )),
             },
-            ColorRepr::Text(t) => Color::parse_css(&t).ok_or_else(|| serde::de::Error::custom(format!("not a colour: {t}"))),
+            ColorRepr::Text(t) => Color::parse_css(&t)
+                .ok_or_else(|| serde::de::Error::custom(format!("not a colour: {t}"))),
         }
     }
 }
 
 fn clamp01(v: f32) -> f32 {
-    if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 impl Default for Color {
@@ -70,9 +84,24 @@ impl Default for Color {
 }
 
 impl Color {
-    pub const BLACK: Color = Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
-    pub const WHITE: Color = Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-    pub const TRANSPARENT: Color = Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 };
+    pub const BLACK: Color = Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    pub const WHITE: Color = Color {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+    pub const TRANSPARENT: Color = Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 0.0,
+    };
     /// Figma's default shape fill (#D9D9D9).
     pub const DEFAULT_SHAPE: Color = Color::from_rgb8_const(0xD9, 0xD9, 0xD9);
     /// Default page background (#F5F5F5).
@@ -81,15 +110,30 @@ impl Color {
     pub const DARK_PAGE: Color = Color::from_rgb8_const(0x1E, 0x1E, 0x1E);
 
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-        Self { r: clamp01(r), g: clamp01(g), b: clamp01(b), a: clamp01(a) }
+        Self {
+            r: clamp01(r),
+            g: clamp01(g),
+            b: clamp01(b),
+            a: clamp01(a),
+        }
     }
 
     pub const fn from_rgb8_const(r: u8, g: u8, b: u8) -> Self {
-        Self { r: r as f32 / 255.0, g: g as f32 / 255.0, b: b as f32 / 255.0, a: 1.0 }
+        Self {
+            r: r as f32 / 255.0,
+            g: g as f32 / 255.0,
+            b: b as f32 / 255.0,
+            a: 1.0,
+        }
     }
 
     pub fn from_rgba8(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self { r: f32::from(r) / 255.0, g: f32::from(g) / 255.0, b: f32::from(b) / 255.0, a: f32::from(a) / 255.0 }
+        Self {
+            r: f32::from(r) / 255.0,
+            g: f32::from(g) / 255.0,
+            b: f32::from(b) / 255.0,
+            a: f32::from(a) / 255.0,
+        }
     }
 
     pub fn to_rgba8(self) -> [u8; 4] {
@@ -98,7 +142,10 @@ impl Color {
     }
 
     pub fn with_alpha(self, a: f32) -> Self {
-        Self { a: clamp01(a), ..self }
+        Self {
+            a: clamp01(a),
+            ..self
+        }
     }
 
     /// Clamp every component into range and replace NaN (untrusted input).
@@ -115,7 +162,11 @@ impl Color {
     /// `#RRGGBB` or `#RRGGBBAA` when not opaque.
     pub fn to_css_hex(self) -> String {
         let [r, g, b, a] = self.to_rgba8();
-        if a == 255 { format!("#{r:02X}{g:02X}{b:02X}") } else { format!("#{r:02X}{g:02X}{b:02X}{a:02X}") }
+        if a == 255 {
+            format!("#{r:02X}{g:02X}{b:02X}")
+        } else {
+            format!("#{r:02X}{g:02X}{b:02X}{a:02X}")
+        }
     }
 
     /// Parse hex the way the colour field does: `#` optional, 1, 2, 3, 4, 6 or 8 digits
@@ -125,7 +176,11 @@ impl Color {
         if !s.chars().all(|c| c.is_ascii_hexdigit()) {
             return None;
         }
-        let digits: Vec<u8> = s.chars().filter_map(|c| c.to_digit(16)).map(|d| d as u8).collect();
+        let digits: Vec<u8> = s
+            .chars()
+            .filter_map(|c| c.to_digit(16))
+            .map(|d| d as u8)
+            .collect();
         let byte = |hi: u8, lo: u8| hi * 16 + lo;
         let (r, g, b, a) = match digits.as_slice() {
             [d] => (byte(*d, *d), byte(*d, *d), byte(*d, *d), 255),
@@ -133,7 +188,12 @@ impl Color {
             [r, g, b] => (byte(*r, *r), byte(*g, *g), byte(*b, *b), 255),
             [r, g, b, a] => (byte(*r, *r), byte(*g, *g), byte(*b, *b), byte(*a, *a)),
             [r1, r2, g1, g2, b1, b2] => (byte(*r1, *r2), byte(*g1, *g2), byte(*b1, *b2), 255),
-            [r1, r2, g1, g2, b1, b2, a1, a2] => (byte(*r1, *r2), byte(*g1, *g2), byte(*b1, *b2), byte(*a1, *a2)),
+            [r1, r2, g1, g2, b1, b2, a1, a2] => (
+                byte(*r1, *r2),
+                byte(*g1, *g2),
+                byte(*b1, *b2),
+                byte(*a1, *a2),
+            ),
             _ => return None,
         };
         Some(Self::from_rgba8(r, g, b, a))
@@ -145,7 +205,11 @@ impl Color {
         if t.starts_with('#') {
             return Self::from_hex(&t);
         }
-        if let Some(inner) = t.strip_prefix("rgba(").or_else(|| t.strip_prefix("rgb(")).and_then(|r| r.strip_suffix(')')) {
+        if let Some(inner) = t
+            .strip_prefix("rgba(")
+            .or_else(|| t.strip_prefix("rgb("))
+            .and_then(|r| r.strip_suffix(')'))
+        {
             let parts = css_args(inner);
             let num = |i: usize| -> Option<f32> {
                 let p = parts.get(i)?;
@@ -158,7 +222,11 @@ impl Color {
             let alpha = parts.get(3).and_then(|a| parse_alpha(a)).unwrap_or(1.0);
             return Some(Self::new(num(0)?, num(1)?, num(2)?, alpha));
         }
-        if let Some(inner) = t.strip_prefix("hsla(").or_else(|| t.strip_prefix("hsl(")).and_then(|r| r.strip_suffix(')')) {
+        if let Some(inner) = t
+            .strip_prefix("hsla(")
+            .or_else(|| t.strip_prefix("hsl("))
+            .and_then(|r| r.strip_suffix(')'))
+        {
             let parts = css_args(inner);
             let h = parts.first()?.trim_end_matches("deg").parse::<f32>().ok()?;
             let s = parts.get(1)?.trim_end_matches('%').parse::<f32>().ok()? / 100.0;
@@ -186,18 +254,33 @@ impl Color {
     /// CSS `rgba(...)` / hex text for copy-as-CSS.
     pub fn to_css(self) -> String {
         let [r, g, b, _] = self.to_rgba8();
-        if self.a >= 0.999 { self.to_css_hex() } else { format!("rgba({r}, {g}, {b}, {:.2})", self.a) }
+        if self.a >= 0.999 {
+            self.to_css_hex()
+        } else {
+            format!("rgba({r}, {g}, {b}, {:.2})", self.a)
+        }
     }
 
     /// Linear interpolation in sRGB (as gradients render).
     pub fn lerp(self, other: Color, t: f32) -> Color {
         let t = clamp01(t);
-        Color::new(self.r + (other.r - self.r) * t, self.g + (other.g - self.g) * t, self.b + (other.b - self.b) * t, self.a + (other.a - self.a) * t)
+        Color::new(
+            self.r + (other.r - self.r) * t,
+            self.g + (other.g - self.g) * t,
+            self.b + (other.b - self.b) * t,
+            self.a + (other.a - self.a) * t,
+        )
     }
 
     /// Relative luminance (WCAG).
     pub fn luminance(self) -> f32 {
-        let lin = |c: f32| if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) };
+        let lin = |c: f32| {
+            if c <= 0.04045 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        };
         0.2126 * lin(self.r) + 0.7152 * lin(self.g) + 0.0722 * lin(self.b)
     }
 
@@ -214,11 +297,21 @@ impl Color {
 }
 
 fn css_args(inner: &str) -> Vec<String> {
-    inner.replace('/', ",").split([',', ' ']).map(str::trim).filter(|p| !p.is_empty()).map(str::to_string).collect()
+    inner
+        .replace('/', ",")
+        .split([',', ' '])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 fn parse_alpha(a: &str) -> Option<f32> {
-    if let Some(pc) = a.strip_suffix('%') { pc.parse::<f32>().ok().map(|v| v / 100.0) } else { a.parse::<f32>().ok() }
+    if let Some(pc) = a.strip_suffix('%') {
+        pc.parse::<f32>().ok().map(|v| v / 100.0)
+    } else {
+        a.parse::<f32>().ok()
+    }
 }
 
 /// One colour stop of a gradient.
@@ -263,7 +356,16 @@ impl Gradient {
         };
         Self {
             kind,
-            stops: vec![ColorStop { position: 0.0, color: base.with_alpha(1.0) }, ColorStop { position: 1.0, color: base.with_alpha(0.0) }],
+            stops: vec![
+                ColorStop {
+                    position: 0.0,
+                    color: base.with_alpha(1.0),
+                },
+                ColorStop {
+                    position: 1.0,
+                    color: base.with_alpha(0.0),
+                },
+            ],
             from,
             to,
             width,
@@ -274,7 +376,11 @@ impl Gradient {
     /// bands cross the axis at right angles on screen (the canvas has no handle for it; imported
     /// files can still skew it). Moving the start or end handle calls this.
     pub fn square_linear_width(&mut self, w: f64, h: f64) {
-        let (w, h) = if w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0 { (w, h) } else { (1.0, 1.0) };
+        let (w, h) = if w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0 {
+            (w, h)
+        } else {
+            (1.0, 1.0)
+        };
         let (dx, dy) = ((self.to.0 - self.from.0) * w, (self.to.1 - self.from.1) * h);
         self.width = (self.from.0 - dy / w, self.from.1 + dx / h);
     }
@@ -285,11 +391,17 @@ impl Gradient {
             .stops
             .iter()
             .filter(|s| s.position.is_finite())
-            .map(|s| ColorStop { position: clamp01(s.position), color: s.color.sanitized() })
+            .map(|s| ColorStop {
+                position: clamp01(s.position),
+                color: s.color.sanitized(),
+            })
             .collect();
         s.sort_by(|a, b| a.position.total_cmp(&b.position));
         if s.is_empty() {
-            s.push(ColorStop { position: 0.0, color: Color::BLACK });
+            s.push(ColorStop {
+                position: 0.0,
+                color: Color::BLACK,
+            });
         }
         s
     }
@@ -308,7 +420,11 @@ impl Gradient {
         for s in stops.iter().skip(1) {
             if t <= s.position {
                 let span = s.position - prev.position;
-                let f = if span > 1e-6 { (t - prev.position) / span } else { 1.0 };
+                let f = if span > 1e-6 {
+                    (t - prev.position) / span
+                } else {
+                    1.0
+                };
                 return prev.color.lerp(s.color, f);
             }
             prev = *s;
@@ -348,29 +464,103 @@ impl ImageFilters {
 
     /// The built-in adjustment presets: `(id, label, adjustments)`. "Reset" is the identity.
     pub const PRESETS: [(&'static str, &'static str, ImageFilters); 7] = [
-        ("vivid", "Vivid", ImageFilters { contrast: 0.2, saturation: 0.45, highlights: -0.1, shadows: 0.1, ..ImageFilters::NONE }),
-        ("muted", "Muted", ImageFilters { contrast: -0.15, saturation: -0.45, ..ImageFilters::NONE }),
-        ("warm", "Warm", ImageFilters { temperature: 0.5, tint: 0.1, saturation: 0.1, ..ImageFilters::NONE }),
-        ("cool", "Cool", ImageFilters { temperature: -0.5, tint: -0.05, ..ImageFilters::NONE }),
-        ("blackAndWhite", "Black & white", ImageFilters { saturation: -1.0, contrast: 0.15, ..ImageFilters::NONE }),
-        ("fade", "Fade", ImageFilters { contrast: -0.35, saturation: -0.2, shadows: 0.35, highlights: -0.1, ..ImageFilters::NONE }),
+        (
+            "vivid",
+            "Vivid",
+            ImageFilters {
+                contrast: 0.2,
+                saturation: 0.45,
+                highlights: -0.1,
+                shadows: 0.1,
+                ..ImageFilters::NONE
+            },
+        ),
+        (
+            "muted",
+            "Muted",
+            ImageFilters {
+                contrast: -0.15,
+                saturation: -0.45,
+                ..ImageFilters::NONE
+            },
+        ),
+        (
+            "warm",
+            "Warm",
+            ImageFilters {
+                temperature: 0.5,
+                tint: 0.1,
+                saturation: 0.1,
+                ..ImageFilters::NONE
+            },
+        ),
+        (
+            "cool",
+            "Cool",
+            ImageFilters {
+                temperature: -0.5,
+                tint: -0.05,
+                ..ImageFilters::NONE
+            },
+        ),
+        (
+            "blackAndWhite",
+            "Black & white",
+            ImageFilters {
+                saturation: -1.0,
+                contrast: 0.15,
+                ..ImageFilters::NONE
+            },
+        ),
+        (
+            "fade",
+            "Fade",
+            ImageFilters {
+                contrast: -0.35,
+                saturation: -0.2,
+                shadows: 0.35,
+                highlights: -0.1,
+                ..ImageFilters::NONE
+            },
+        ),
         ("reset", "Reset", ImageFilters::NONE),
     ];
 
     /// No adjustment (a `const` [`Default`]).
-    pub const NONE: ImageFilters =
-        ImageFilters { exposure: 0.0, contrast: 0.0, saturation: 0.0, temperature: 0.0, tint: 0.0, highlights: 0.0, shadows: 0.0 };
+    pub const NONE: ImageFilters = ImageFilters {
+        exposure: 0.0,
+        contrast: 0.0,
+        saturation: 0.0,
+        temperature: 0.0,
+        tint: 0.0,
+        highlights: 0.0,
+        shadows: 0.0,
+    };
 
     /// The built-in preset `name` (its id or label, ignoring case, spaces, `-`, `_` and `&`).
     pub fn preset(name: &str) -> Option<ImageFilters> {
-        let key = |s: &str| s.chars().filter(|c| c.is_alphanumeric()).flat_map(char::to_lowercase).collect::<String>();
+        let key = |s: &str| {
+            s.chars()
+                .filter(|c| c.is_alphanumeric())
+                .flat_map(char::to_lowercase)
+                .collect::<String>()
+        };
         let k = key(name);
-        Self::PRESETS.iter().find(|(id, label, _)| key(id) == k || key(label) == k).map(|(_, _, f)| *f)
+        Self::PRESETS
+            .iter()
+            .find(|(id, label, _)| key(id) == k || key(label) == k)
+            .map(|(_, _, f)| *f)
     }
 
     /// Every value clamped into `-1..=1` (NaN → 0).
     pub fn sanitized(self) -> Self {
-        let c = |v: f32| if v.is_finite() { v.clamp(-1.0, 1.0) } else { 0.0 };
+        let c = |v: f32| {
+            if v.is_finite() {
+                v.clamp(-1.0, 1.0)
+            } else {
+                0.0
+            }
+        };
         Self {
             exposure: c(self.exposure),
             contrast: c(self.contrast),
@@ -405,7 +595,11 @@ pub struct ImagePaint {
 impl ImagePaint {
     /// Size of the image after its 90° rotation.
     pub fn rotated_size(&self, iw: f64, ih: f64) -> (f64, f64) {
-        if self.rotation.rem_euclid(2) == 1 { (ih, iw) } else { (iw, ih) }
+        if self.rotation.rem_euclid(2) == 1 {
+            (ih, iw)
+        } else {
+            (iw, ih)
+        }
     }
 
     /// The crop transform in effect: the stored one, or (when unset) the Fill placement so that
@@ -422,7 +616,14 @@ impl ImagePaint {
         let (w, h) = (w.max(1e-6), h.max(1e-6));
         let s = (w / rw).max(h / rh);
         let (x0, y0) = ((w - rw * s) / 2.0, (h - rh * s) / 2.0);
-        [w / (rw * s), 0.0, 0.0, h / (rh * s), -x0 / (rw * s), -y0 / (rh * s)]
+        [
+            w / (rw * s),
+            0.0,
+            0.0,
+            h / (rh * s),
+            -x0 / (rw * s),
+            -y0 / (rh * s),
+        ]
     }
 
     /// The image's rectangle in the node's unit box `(x0, y0, x1, y1)` for an axis-aligned crop.
@@ -501,14 +702,30 @@ impl PatternPaint {
     pub const MAX_SPACING: f64 = 10_000.0;
 
     pub fn new(source: u64) -> Self {
-        Self { source, tile: PatternTile::Grid, scale: 1.0, spacing: (0.0, 0.0), align: PatternAlign::Start }
+        Self {
+            source,
+            tile: PatternTile::Grid,
+            scale: 1.0,
+            spacing: (0.0, 0.0),
+            align: PatternAlign::Start,
+        }
     }
 
     /// The cell for a `tw`×`th` source filling a `w`×`h` box; `None` when the source has no size.
     pub fn cell(&self, tw: f64, th: f64, w: f64, h: f64) -> Option<PatternCell> {
         let (lo, hi) = Self::SCALE_RANGE;
-        let scale = if self.scale.is_finite() { self.scale.clamp(lo, hi) } else { 1.0 };
-        let gap = |v: f64| if v.is_finite() { v.clamp(0.0, Self::MAX_SPACING) } else { 0.0 };
+        let scale = if self.scale.is_finite() {
+            self.scale.clamp(lo, hi)
+        } else {
+            1.0
+        };
+        let gap = |v: f64| {
+            if v.is_finite() {
+                v.clamp(0.0, Self::MAX_SPACING)
+            } else {
+                0.0
+            }
+        };
         let (tw, th) = (tw * scale, th * scale);
         if !(tw.is_finite() && th.is_finite() && tw > 1e-6 && th > 1e-6) {
             return None;
@@ -517,8 +734,14 @@ impl PatternPaint {
         let (size, tiles) = match self.tile {
             PatternTile::Grid => ((px, py), vec![(0.0, 0.0)]),
             // The shifted row (column) is drawn on both sides so it wraps across the cell's edge.
-            PatternTile::HorizontalHex => ((px, py * 2.0), vec![(0.0, 0.0), (px / 2.0, py), (-px / 2.0, py)]),
-            PatternTile::VerticalHex => ((px * 2.0, py), vec![(0.0, 0.0), (px, py / 2.0), (px, -py / 2.0)]),
+            PatternTile::HorizontalHex => (
+                (px, py * 2.0),
+                vec![(0.0, 0.0), (px / 2.0, py), (-px / 2.0, py)],
+            ),
+            PatternTile::VerticalHex => (
+                (px * 2.0, py),
+                vec![(0.0, 0.0), (px, py / 2.0), (px, -py / 2.0)],
+            ),
         };
         let k = match self.align {
             PatternAlign::Start => 0.0,
@@ -526,7 +749,12 @@ impl PatternPaint {
             PatternAlign::End => 1.0,
         };
         let fin = |v: f64| if v.is_finite() { v } else { 0.0 };
-        Some(PatternCell { size, origin: (fin((w - tw) * k), fin((h - th) * k)), tiles, scale })
+        Some(PatternCell {
+            size,
+            origin: (fin((w - tw) * k), fin((h - th) * k)),
+            tiles,
+            scale,
+        })
     }
 }
 
@@ -559,11 +787,23 @@ fn yes() -> bool {
 
 impl Paint {
     pub fn solid(color: Color) -> Self {
-        Self { kind: PaintKind::Solid { color: color.with_alpha(1.0) }, opacity: color.a, visible: true, blend: BlendMode::Normal }
+        Self {
+            kind: PaintKind::Solid {
+                color: color.with_alpha(1.0),
+            },
+            opacity: color.a,
+            visible: true,
+            blend: BlendMode::Normal,
+        }
     }
 
     pub fn gradient(g: Gradient) -> Self {
-        Self { kind: PaintKind::Gradient(g), opacity: 1.0, visible: true, blend: BlendMode::Normal }
+        Self {
+            kind: PaintKind::Gradient(g),
+            opacity: 1.0,
+            visible: true,
+            blend: BlendMode::Normal,
+        }
     }
 
     pub fn image(hash: impl Into<String>, mode: ImageScaleMode) -> Self {
@@ -584,7 +824,12 @@ impl Paint {
 
     /// Layer `source` (a node id) tiled at its own size.
     pub fn pattern(source: u64) -> Self {
-        Self { kind: PaintKind::Pattern(PatternPaint::new(source)), opacity: 1.0, visible: true, blend: BlendMode::Normal }
+        Self {
+            kind: PaintKind::Pattern(PatternPaint::new(source)),
+            opacity: 1.0,
+            visible: true,
+            blend: BlendMode::Normal,
+        }
     }
 
     /// The solid colour (with the paint opacity folded into alpha), if solid.

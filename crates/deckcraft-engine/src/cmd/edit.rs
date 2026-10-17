@@ -12,12 +12,52 @@ pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(noundo "edit.undo", "Undo", ["Edit"], Some("Cmd+Z"), "{}", can_undo, undo),
         cmd!(noundo "edit.redo", "Redo", ["Edit"], Some("Cmd+Y"), "{}", can_redo, redo),
-        cmd!("edit.cut", "Cut", ["Home", "Clipboard"], Some("Cmd+X"), "{scope?: slides}", has_doc, cut),
+        cmd!(
+            "edit.cut",
+            "Cut",
+            ["Home", "Clipboard"],
+            Some("Cmd+X"),
+            "{scope?: slides}",
+            has_doc,
+            cut
+        ),
         cmd!(noundo "edit.copy", "Copy", ["Home", "Clipboard"], Some("Cmd+C"), "{scope?: slides} → {text}", has_doc, copy),
-        cmd!("edit.paste", "Paste", ["Home", "Clipboard"], Some("Cmd+V"), "{text?: plain text to paste, scope?: slides}", has_doc, paste),
-        cmd!("edit.pasteText", "Paste and Match Formatting", ["Edit"], Some("Cmd+Shift+V"), "{text?}", has_doc, paste_text),
-        cmd!("edit.duplicate", "Duplicate", ["Edit"], Some("Cmd+D"), "{ids?}", has_selection, duplicate),
-        cmd!("edit.delete", "Delete", ["Edit"], Some("Delete"), "{ids?, scope?: slides}", has_doc, delete),
+        cmd!(
+            "edit.paste",
+            "Paste",
+            ["Home", "Clipboard"],
+            Some("Cmd+V"),
+            "{text?: plain text to paste, scope?: slides}",
+            has_doc,
+            paste
+        ),
+        cmd!(
+            "edit.pasteText",
+            "Paste and Match Formatting",
+            ["Edit"],
+            Some("Cmd+Shift+V"),
+            "{text?}",
+            has_doc,
+            paste_text
+        ),
+        cmd!(
+            "edit.duplicate",
+            "Duplicate",
+            ["Edit"],
+            Some("Cmd+D"),
+            "{ids?}",
+            has_selection,
+            duplicate
+        ),
+        cmd!(
+            "edit.delete",
+            "Delete",
+            ["Edit"],
+            Some("Delete"),
+            "{ids?, scope?: slides}",
+            has_doc,
+            delete
+        ),
         cmd!(noundo "edit.selectAll", "Select All", ["Edit"], Some("Cmd+A"), "{}", has_slide, select_all),
         cmd!(noundo "edit.deselect", "Deselect", [], Some("Escape"), "{}", has_doc, deselect),
         cmd!(noundo "edit.select", "Select Objects", [], None, "{ids: [id], add?: bool, toggle?: bool}", has_slide, select),
@@ -26,9 +66,17 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn restore(s: &mut Session, redo: bool) -> Result<Value> {
     let st = s.doc_mut()?;
-    let (from, to) = if redo { (&mut st.history.redo, &mut st.history.undo) } else { (&mut st.history.undo, &mut st.history.redo) };
+    let (from, to) = if redo {
+        (&mut st.history.redo, &mut st.history.undo)
+    } else {
+        (&mut st.history.undo, &mut st.history.redo)
+    };
     let Some(e) = from.pop() else { return ok() };
-    to.push(HistoryEntry { label: e.label.clone(), doc: st.doc.clone(), selection: st.selection.clone() });
+    to.push(HistoryEntry {
+        label: e.label.clone(),
+        doc: st.doc.clone(),
+        selection: st.selection.clone(),
+    });
     st.doc = e.doc;
     st.selection = e.selection;
     st.interaction = None;
@@ -45,7 +93,11 @@ fn redo(s: &mut Session, _p: &Value) -> Result<Value> {
 
 fn slides_scope(s: &Session, p: &Value) -> bool {
     str_param(p, "scope") == Some("slides")
-        || s.active().is_some_and(|d| d.selection.shapes.is_empty() && d.selection.text.is_none() && !d.selection.slides.is_empty())
+        || s.active().is_some_and(|d| {
+            d.selection.shapes.is_empty()
+                && d.selection.text.is_none()
+                && !d.selection.slides.is_empty()
+        })
 }
 
 fn media_of_shapes(shapes: &[Shape], out: &mut Vec<MediaId>) {
@@ -75,22 +127,47 @@ fn copy_inner(s: &mut Session, p: &Value) -> Result<String> {
             let (a, b) = t.ordered();
             let plain = deckcraft_model::edit::text_range(&body, a, b);
             let sliced = deckcraft_model::edit::slice(&body, a, b);
-            s.clipboard = crate::Clipboard { text: Some(sliced), plain: plain.clone(), ..Default::default() };
+            s.clipboard = crate::Clipboard {
+                text: Some(sliced),
+                plain: plain.clone(),
+                ..Default::default()
+            };
             return Ok(plain);
         }
         return Ok(String::new());
     }
     if slides_scope(s, p) {
-        let ids: Vec<SlideId> =
-            if st.selection.slides.is_empty() { st.current_slide().map(|x| vec![x.id]).unwrap_or_default() } else { st.selection.slides.clone() };
-        let slides: Vec<Slide> = ids.iter().filter_map(|id| st.doc.slide(*id).cloned()).collect();
+        let ids: Vec<SlideId> = if st.selection.slides.is_empty() {
+            st.current_slide().map(|x| vec![x.id]).unwrap_or_default()
+        } else {
+            st.selection.slides.clone()
+        };
+        let slides: Vec<Slide> = ids
+            .iter()
+            .filter_map(|id| st.doc.slide(*id).cloned())
+            .collect();
         let mut mids = vec![];
         for sl in &slides {
             media_of_shapes(&sl.shapes, &mut mids);
         }
-        let media = st.doc.media.iter().filter(|m| mids.contains(&m.id)).cloned().collect();
-        let plain = slides.iter().map(|x| x.title()).collect::<Vec<_>>().join("\n");
-        s.clipboard = crate::Clipboard { slides, media, plain: plain.clone(), ..Default::default() };
+        let media = st
+            .doc
+            .media
+            .iter()
+            .filter(|m| mids.contains(&m.id))
+            .cloned()
+            .collect();
+        let plain = slides
+            .iter()
+            .map(|x| x.title())
+            .collect::<Vec<_>>()
+            .join("\n");
+        s.clipboard = crate::Clipboard {
+            slides,
+            media,
+            plain: plain.clone(),
+            ..Default::default()
+        };
         return Ok(plain);
     }
     let shapes: Vec<Shape> = st
@@ -108,9 +185,24 @@ fn copy_inner(s: &mut Session, p: &Value) -> Result<String> {
         .collect();
     let mut mids = vec![];
     media_of_shapes(&shapes, &mut mids);
-    let media = st.doc.media.iter().filter(|m| mids.contains(&m.id)).cloned().collect();
-    let plain = shapes.iter().filter_map(|x| x.text.as_ref().map(|t| t.text())).collect::<Vec<_>>().join("\n");
-    s.clipboard = crate::Clipboard { shapes, media, plain: plain.clone(), ..Default::default() };
+    let media = st
+        .doc
+        .media
+        .iter()
+        .filter(|m| mids.contains(&m.id))
+        .cloned()
+        .collect();
+    let plain = shapes
+        .iter()
+        .filter_map(|x| x.text.as_ref().map(|t| t.text()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    s.clipboard = crate::Clipboard {
+        shapes,
+        media,
+        plain: plain.clone(),
+        ..Default::default()
+    };
     Ok(plain)
 }
 
@@ -181,13 +273,20 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
                 sl.id = SlideId(doc.alloc_id());
                 reid(doc, &mut sl.shapes);
                 if doc.layout(sl.layout).is_none() {
-                    sl.layout = doc.masters.first().and_then(|m| m.layouts.first()).map(|l| l.id).unwrap_or_default();
+                    sl.layout = doc
+                        .masters
+                        .first()
+                        .and_then(|m| m.layouts.first())
+                        .map(|l| l.id)
+                        .unwrap_or_default();
                 }
                 new_ids.push(sl.id);
                 let i = (at + k).min(doc.slides.len());
                 doc.slides.insert(i, Arc::new(sl));
             }
-            sel.slide = (at + new_ids.len()).saturating_sub(1).min(doc.slides.len().saturating_sub(1));
+            sel.slide = (at + new_ids.len())
+                .saturating_sub(1)
+                .min(doc.slides.len().saturating_sub(1));
             sel.slides = new_ids.clone();
             sel.shapes.clear();
             Ok(json!({"slides": new_ids.len()}))
@@ -197,7 +296,10 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
         s.clipboard.pastes += 1;
         let off = s.prefs.duplicate_offset * s.clipboard.pastes as f64;
         // Pasting on another slide keeps the position; on the same slide it offsets.
-        let same_slide = s.doc().ok().is_some_and(|d| clip.shapes.iter().any(|c| d.shape(c.id).is_some()));
+        let same_slide = s
+            .doc()
+            .ok()
+            .is_some_and(|d| clip.shapes.iter().any(|c| d.shape(c.id).is_some()));
         let off = if same_slide { off } else { 0.0 };
         return s.edit(|doc, sel| {
             bring_media(doc, &clip.media);
@@ -240,7 +342,9 @@ fn paste_plain(s: &mut Session, text: &str) -> Result<Value> {
 }
 
 fn paste_text(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = str_param(p, "text").map(String::from).unwrap_or_else(|| s.clipboard.plain.clone());
+    let t = str_param(p, "text")
+        .map(String::from)
+        .unwrap_or_else(|| s.clipboard.plain.clone());
     paste_plain(s, &t)
 }
 
@@ -249,7 +353,11 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let off = s.prefs.duplicate_offset;
     s.edit(|doc, sel| {
         let list = super::current_shapes(doc, sel).cloned().unwrap_or_default();
-        let mut copies: Vec<Shape> = list.iter().filter(|x| ids.contains(&x.id)).cloned().collect();
+        let mut copies: Vec<Shape> = list
+            .iter()
+            .filter(|x| ids.contains(&x.id))
+            .cloned()
+            .collect();
         let boxes: Vec<_> = copies.iter().map(|c| xfrm_of(doc, sel, c)).collect();
         reid(doc, &mut copies);
         for (c, b) in copies.iter_mut().zip(boxes) {
@@ -265,7 +373,8 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         let new_ids: Vec<ShapeId> = copies.iter().map(|c| c.id).collect();
-        let shapes = crate::shapes_mut(doc, sel).ok_or_else(|| bad("edit.duplicate", "no slide"))?;
+        let shapes =
+            crate::shapes_mut(doc, sel).ok_or_else(|| bad("edit.duplicate", "no slide"))?;
         shapes.extend(copies);
         sel.shapes = new_ids.clone();
         Ok(json!({"ids": new_ids}))
@@ -290,7 +399,9 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
         if sel.target == crate::Target::Slides
             && let Some(sl) = doc.slides.get_mut(sel.slide)
         {
-            Arc::make_mut(sl).animations.retain(|a| !ids.contains(&a.shape));
+            Arc::make_mut(sl)
+                .animations
+                .retain(|a| !ids.contains(&a.shape));
         }
         sel.shapes.retain(|i| !ids.contains(i));
         sel.text = None;
@@ -330,7 +441,13 @@ fn select_all(s: &mut Session, _p: &Value) -> Result<Value> {
     s.select(|_, sel| {
         sel.text = None;
     })?;
-    let ids: Vec<ShapeId> = s.doc()?.shapes().iter().filter(|x| !x.hidden && !x.locked).map(|x| x.id).collect();
+    let ids: Vec<ShapeId> = s
+        .doc()?
+        .shapes()
+        .iter()
+        .filter(|x| !x.hidden && !x.locked)
+        .map(|x| x.id)
+        .collect();
     s.select(|_, sel| sel.shapes = ids.clone())?;
     Ok(json!({"ids": ids}))
 }
@@ -353,10 +470,15 @@ fn deselect(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids = ids_param(p, "ids").or_else(|| id_param(p, "id").map(|i| vec![i])).unwrap_or_default();
+    let ids = ids_param(p, "ids")
+        .or_else(|| id_param(p, "id").map(|i| vec![i]))
+        .unwrap_or_default();
     let add = bool_or(p, "add", false);
     let toggle = bool_or(p, "toggle", false);
-    let valid: Vec<ShapeId> = ids.into_iter().filter(|i| s.active().is_some_and(|d| d.shape(*i).is_some())).collect();
+    let valid: Vec<ShapeId> = ids
+        .into_iter()
+        .filter(|i| s.active().is_some_and(|d| d.shape(*i).is_some()))
+        .collect();
     s.select(|_, sel| {
         sel.text = None;
         sel.cells = None;

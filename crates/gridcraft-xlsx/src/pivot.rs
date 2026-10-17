@@ -18,7 +18,8 @@ use gridcraft_core::date::datetime_from_serial;
 use gridcraft_core::{CellRef, DateSystem, RangeRef, Value, number_to_text};
 use gridcraft_formula::quote_sheet;
 use gridcraft_model::{
-    PivotCalcField, PivotDateGroup, PivotField, PivotFilter, PivotFunc, PivotLayout, PivotShowAs, PivotSort, PivotTable, PivotValue, Workbook,
+    PivotCalcField, PivotDateGroup, PivotField, PivotFilter, PivotFunc, PivotLayout, PivotShowAs,
+    PivotSort, PivotTable, PivotValue, Workbook,
 };
 
 use crate::IoError;
@@ -26,9 +27,12 @@ use crate::read::Ctx;
 use crate::write::{NS_MAIN, NS_REL, Out, Rels, XML_DECL, abs_range};
 use crate::xml::{El, esc_attr};
 
-pub const CT_PIVOT_TABLE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml";
-pub const CT_PIVOT_CACHE_DEF: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml";
-pub const CT_PIVOT_CACHE_REC: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml";
+pub const CT_PIVOT_TABLE: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotTable+xml";
+pub const CT_PIVOT_CACHE_DEF: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheDefinition+xml";
+pub const CT_PIVOT_CACHE_REC: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotCacheRecords+xml";
 
 /// Largest source block scanned for a cache (cells); bigger sources are not written.
 const MAX_SOURCE_CELLS: u64 = 10_000_000;
@@ -42,7 +46,9 @@ const MAX_FIELDS: usize = 16_384;
 const EXT_X14_DATA_FIELD: &str = "{E15A36E0-9728-4e99-A89B-3F7291B0FE68}";
 const NS_X14: &str = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main";
 
-const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS: [&str; 12] = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 // ================================================================ shared helpers
 
@@ -134,7 +140,10 @@ fn group_caption(g: PivotDateGroup) -> &'static str {
 /// `2024-03-05T00:00:00` for a date serial.
 fn iso(sys: DateSystem, serial: f64) -> Option<String> {
     let d = datetime_from_serial(sys, serial)?;
-    Some(format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}", d.year, d.month, d.day, d.hour, d.minute, d.second))
+    Some(format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+        d.year, d.month, d.day, d.hour, d.minute, d.second
+    ))
 }
 
 /// `3/5/2024` for a date serial (group boundary captions).
@@ -209,7 +218,10 @@ impl Stats {
         }
     }
     fn kinds(&self) -> usize {
-        [self.text, self.number, self.boolean, self.error].iter().filter(|b| **b).count()
+        [self.text, self.number, self.boolean, self.error]
+            .iter()
+            .filter(|b| **b)
+            .count()
     }
 }
 
@@ -283,28 +295,58 @@ impl PivotWriter {
     pub fn add_sheet(&mut self, wb: &Workbook, si: usize, out: &mut Out, rels: &mut Rels) {
         let Some(sheet) = wb.sheet(si) else { return };
         for (idx, pt) in sheet.pivots.iter().enumerate() {
-            let Some(cache) = build_cache(wb, pt, si) else { continue };
+            let Some(cache) = build_cache(wb, pt, si) else {
+                continue;
+            };
             let n = self.caches.len() as u32 + 1;
             let cache_part = format!("xl/pivotCache/pivotCacheDefinition{n}.xml");
             let rec_rid = if let Some((count, xml)) = &cache.records {
                 let mut r = Rels::default();
                 let rid = r.add("pivotCacheRecords", &format!("pivotCacheRecords{n}.xml"));
-                out.part(&format!("xl/pivotCache/_rels/pivotCacheDefinition{n}.xml.rels"), None, r.xml().into_bytes());
-                let s = format!("{XML_DECL}<pivotCacheRecords xmlns=\"{NS_MAIN}\" xmlns:r=\"{NS_REL}\" count=\"{count}\">{xml}</pivotCacheRecords>");
-                out.part(&format!("xl/pivotCache/pivotCacheRecords{n}.xml"), Some(CT_PIVOT_CACHE_REC), s.into_bytes());
+                out.part(
+                    &format!("xl/pivotCache/_rels/pivotCacheDefinition{n}.xml.rels"),
+                    None,
+                    r.xml().into_bytes(),
+                );
+                let s = format!(
+                    "{XML_DECL}<pivotCacheRecords xmlns=\"{NS_MAIN}\" xmlns:r=\"{NS_REL}\" count=\"{count}\">{xml}</pivotCacheRecords>"
+                );
+                out.part(
+                    &format!("xl/pivotCache/pivotCacheRecords{n}.xml"),
+                    Some(CT_PIVOT_CACHE_REC),
+                    s.into_bytes(),
+                );
                 Some(rid)
             } else {
                 None
             };
-            out.part(&cache_part, Some(CT_PIVOT_CACHE_DEF), cache_xml(&cache, rec_rid.as_deref(), wb.date_system).into_bytes());
-            self.caches.push((n, format!("pivotCache/pivotCacheDefinition{n}.xml")));
+            out.part(
+                &cache_part,
+                Some(CT_PIVOT_CACHE_DEF),
+                cache_xml(&cache, rec_rid.as_deref(), wb.date_system).into_bytes(),
+            );
+            self.caches
+                .push((n, format!("pivotCache/pivotCacheDefinition{n}.xml")));
             self.tables += 1;
             let t = self.tables;
             rels.add("pivotTable", &format!("../pivotTables/pivotTable{t}.xml"));
             let mut tr = Rels::default();
-            tr.add("pivotCacheDefinition", &format!("../pivotCache/pivotCacheDefinition{n}.xml"));
-            out.part(&format!("xl/pivotTables/_rels/pivotTable{t}.xml.rels"), None, tr.xml().into_bytes());
-            self.pending.push(Pending { part: format!("xl/pivotTables/pivotTable{t}.xml"), sheet: si, idx, cache_id: n, cache });
+            tr.add(
+                "pivotCacheDefinition",
+                &format!("../pivotCache/pivotCacheDefinition{n}.xml"),
+            );
+            out.part(
+                &format!("xl/pivotTables/_rels/pivotTable{t}.xml.rels"),
+                None,
+                tr.xml().into_bytes(),
+            );
+            self.pending.push(Pending {
+                part: format!("xl/pivotTables/pivotTable{t}.xml"),
+                sheet: si,
+                idx,
+                cache_id: n,
+                cache,
+            });
         }
     }
 
@@ -343,7 +385,9 @@ impl PivotWriter {
     /// Writes the PivotTable parts. `fmt_id` maps a number format code to its styles id.
     pub fn finish(self, wb: &Workbook, out: &mut Out, fmt_id: &dyn Fn(&str) -> Option<u32>) {
         for p in self.pending {
-            let Some(pt) = wb.sheet(p.sheet).and_then(|s| s.pivots.get(p.idx)) else { continue };
+            let Some(pt) = wb.sheet(p.sheet).and_then(|s| s.pivots.get(p.idx)) else {
+                continue;
+            };
             let xml = table_xml(pt, p.idx, p.cache_id, &p.cache, fmt_id);
             out.part(&p.part, Some(CT_PIVOT_TABLE), xml.into_bytes());
         }
@@ -351,7 +395,12 @@ impl PivotWriter {
 }
 
 /// Resolves a pivot source to (sheet, range including the header row, worksheetSource XML).
-fn resolve_source(wb: &Workbook, text: &str, default_sheet: usize, depth: u32) -> Option<(usize, RangeRef, String)> {
+fn resolve_source(
+    wb: &Workbook,
+    text: &str,
+    default_sheet: usize,
+    depth: u32,
+) -> Option<(usize, RangeRef, String)> {
     let t = text.trim().trim_start_matches('=').trim();
     if t.is_empty() || depth > 4 {
         return None;
@@ -363,14 +412,26 @@ fn resolve_source(wb: &Workbook, text: &str, default_sheet: usize, depth: u32) -
         if !tb.header_row {
             return None;
         }
-        let end_row = tb.range.end.row.saturating_sub(tb.totals_row as u32).max(tb.range.start.row);
+        let end_row = tb
+            .range
+            .end
+            .row
+            .saturating_sub(tb.totals_row as u32)
+            .max(tb.range.start.row);
         let r = RangeRef::new(tb.range.start, CellRef::new(end_row, tb.range.end.col));
         // Table names are sanitized when written; refer by range when this one would change.
         let valid = !tb.name.is_empty()
-            && tb.name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.')
+            && tb
+                .name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '.')
             && tb.name.starts_with(|c: char| c.is_alphabetic() || c == '_')
             && CellRef::parse(&tb.name).is_none();
-        let xml = if valid { format!("<worksheetSource name=\"{}\"/>", esc_attr(&tb.name)) } else { range_source_xml(&sh.name, r) };
+        let xml = if valid {
+            format!("<worksheetSource name=\"{}\"/>", esc_attr(&tb.name))
+        } else {
+            range_source_xml(&sh.name, r)
+        };
         return Some((si, r, xml));
     }
     let (sheet, body) = match t.rsplit_once('!') {
@@ -383,7 +444,11 @@ fn resolve_source(wb: &Workbook, text: &str, default_sheet: usize, depth: u32) -
             None => default_sheet,
         };
         let sh = wb.sheet(si)?;
-        let r = if r.is_full_cols() || r.is_full_rows() { r.intersection(&sh.used_range()?)? } else { r };
+        let r = if r.is_full_cols() || r.is_full_rows() {
+            r.intersection(&sh.used_range()?)?
+        } else {
+            r
+        };
         return Some((si, r, range_source_xml(&sh.name, r)));
     }
     if sheet.is_none()
@@ -402,7 +467,11 @@ fn resolve_source(wb: &Workbook, text: &str, default_sheet: usize, depth: u32) -
 
 fn range_source_xml(sheet: &str, r: RangeRef) -> String {
     let name: String = sheet.chars().take(31).collect();
-    format!("<worksheetSource ref=\"{}\" sheet=\"{}\"/>", r.a1(), esc_attr(&name))
+    format!(
+        "<worksheetSource ref=\"{}\" sheet=\"{}\"/>",
+        r.a1(),
+        esc_attr(&name)
+    )
 }
 
 fn header_text(v: &Value) -> String {
@@ -446,13 +515,18 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
             formula: None,
         });
     }
-    let find = |fields: &[CField], name: &str| fields.iter().position(|f| f.col.is_some() && same(&f.name, name));
+    let find = |fields: &[CField], name: &str| {
+        fields
+            .iter()
+            .position(|f| f.col.is_some() && same(&f.name, name))
+    };
 
     // Records (rows that aren't entirely blank), read once.
     let mut rows: Vec<u32> = Vec::new();
     if r.end.row > r.start.row {
         for row in r.start.row + 1..=r.end.row {
-            let blank = (r.start.col..=r.end.col).all(|c| sh.value(CellRef::new(row, c)).scalar().is_empty());
+            let blank = (r.start.col..=r.end.col)
+                .all(|c| sh.value(CellRef::new(row, c)).scalar().is_empty());
             if !blank {
                 rows.push(row);
             }
@@ -481,7 +555,9 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
     // (base column field, groupings fine → coarse)
     let mut groupings: Vec<(usize, Vec<PivotDateGroup>)> = Vec::new();
     for pf in &axis {
-        let Some(b) = find(&fields, &pf.source_col) else { continue };
+        let Some(b) = find(&fields, &pf.source_col) else {
+            continue;
+        };
         if pf.date_group == PivotDateGroup::None || !fields.get(b).is_some_and(groupable) {
             continue;
         }
@@ -503,9 +579,19 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
     };
     for (b, list) in groupings.iter_mut() {
         list.sort_by_key(fineness);
-        let (min, max) = fields.get(*b).map(|f| (f.stats.min, f.stats.max)).unwrap_or((0.0, 0.0));
+        let (min, max) = fields
+            .get(*b)
+            .map(|f| (f.stats.min, f.stats.max))
+            .unwrap_or((0.0, 0.0));
         let (start, end) = (min.floor(), max.floor() + 1.0);
-        let make = |by: PivotDateGroup| Group { by, base: *b, par: None, start, end, items: group_items(wb.date_system, by, start, end) };
+        let make = |by: PivotDateGroup| Group {
+            by,
+            base: *b,
+            par: None,
+            start,
+            end,
+            items: group_items(wb.date_system, by, start, end),
+        };
         let mut prev = *b;
         for (k, by) in list.iter().enumerate() {
             if k == 0 {
@@ -544,7 +630,11 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
             axis_map.push(None);
             continue;
         };
-        let grouped = fields.iter().position(|f| f.group.as_ref().is_some_and(|g| g.base == b && g.by == pf.date_group));
+        let grouped = fields.iter().position(|f| {
+            f.group
+                .as_ref()
+                .is_some_and(|g| g.base == b && g.by == pf.date_group)
+        });
         match grouped {
             Some(i) if pf.date_group != PivotDateGroup::None => axis_map.push(Some(i)),
             _ => {
@@ -616,7 +706,10 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
     for cf in &pt.calculated_fields {
         let f = cf.formula.trim();
         let f = f.strip_prefix('=').unwrap_or(f).trim();
-        if cf.name.trim().is_empty() || f.is_empty() || fields.iter().any(|x| same(&x.name, &cf.name)) {
+        if cf.name.trim().is_empty()
+            || f.is_empty()
+            || fields.iter().any(|x| same(&x.name, &cf.name))
+        {
             continue;
         }
         fields.push(CField {
@@ -630,15 +723,25 @@ fn build_cache(wb: &Workbook, pt: &PivotTable, pivot_sheet: usize) -> Option<Cac
             formula: Some(f.to_string()),
         });
     }
-    Some(Cache { fields, axis_map, source_xml, records })
+    Some(Cache {
+        fields,
+        axis_map,
+        source_xml,
+        records,
+    })
 }
 
 fn group_items(sys: DateSystem, by: PivotDateGroup, start: f64, end: f64) -> Vec<String> {
     let mut v = vec![format!("<{}", mdy(sys, start))];
     match by {
         PivotDateGroup::Years => {
-            let y0 = datetime_from_serial(sys, start).map(|d| d.year).unwrap_or(1900);
-            let y1 = datetime_from_serial(sys, end - 1.0).map(|d| d.year).unwrap_or(y0).max(y0);
+            let y0 = datetime_from_serial(sys, start)
+                .map(|d| d.year)
+                .unwrap_or(1900);
+            let y1 = datetime_from_serial(sys, end - 1.0)
+                .map(|d| d.year)
+                .unwrap_or(y0)
+                .max(y0);
             for y in y0..=y1.min(y0 + 10_000) {
                 v.push(y.to_string());
             }
@@ -684,11 +787,19 @@ fn cache_xml(c: &Cache, records_rid: Option<&str>, sys: DateSystem) -> String {
         _ => s.push_str(" saveData=\"0\""),
     }
     s.push_str(" refreshOnLoad=\"1\" refreshedBy=\"GridCraft\" createdVersion=\"6\" refreshedVersion=\"6\" minRefreshableVersion=\"3\">");
-    let _ = write!(s, "<cacheSource type=\"worksheet\">{}</cacheSource>", c.source_xml);
+    let _ = write!(
+        s,
+        "<cacheSource type=\"worksheet\">{}</cacheSource>",
+        c.source_xml
+    );
     let _ = write!(s, "<cacheFields count=\"{}\">", c.fields.len());
     for f in &c.fields {
         let fmt = if f.group.is_some() { 14 } else { 0 };
-        let _ = write!(s, "<cacheField name=\"{}\" numFmtId=\"{fmt}\"", esc_attr(&f.name));
+        let _ = write!(
+            s,
+            "<cacheField name=\"{}\" numFmtId=\"{fmt}\"",
+            esc_attr(&f.name)
+        );
         if let Some(formula) = &f.formula {
             let _ = write!(s, " formula=\"{}\"", esc_attr(formula));
         }
@@ -727,7 +838,12 @@ fn cache_xml(c: &Cache, records_rid: Option<&str>, sys: DateSystem) -> String {
                     if !st.non_int {
                         s.push_str(" containsInteger=\"1\"");
                     }
-                    let _ = write!(s, " minValue=\"{}\" maxValue=\"{}\"", crate::xml::num(st.min), crate::xml::num(st.max));
+                    let _ = write!(
+                        s,
+                        " minValue=\"{}\" maxValue=\"{}\"",
+                        crate::xml::num(st.min),
+                        crate::xml::num(st.max)
+                    );
                 }
                 if st.long {
                     s.push_str(" longText=\"1\"");
@@ -765,16 +881,40 @@ fn cache_xml(c: &Cache, records_rid: Option<&str>, sys: DateSystem) -> String {
     s
 }
 
-fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn Fn(&str) -> Option<u32>) -> String {
+fn table_xml(
+    pt: &PivotTable,
+    idx: usize,
+    cache_id: u32,
+    c: &Cache,
+    fmt_id: &dyn Fn(&str) -> Option<u32>,
+) -> String {
     let nf = c.fields.len();
-    let find_db = |name: &str| c.fields.iter().position(|f| f.col.is_some() && same(&f.name, name));
-    let row_idx: Vec<usize> = c.axis_map.iter().take(pt.rows.len()).filter_map(|x| *x).collect();
-    let col_idx: Vec<usize> = c.axis_map.iter().skip(pt.rows.len()).filter_map(|x| *x).collect();
+    let find_db = |name: &str| {
+        c.fields
+            .iter()
+            .position(|f| f.col.is_some() && same(&f.name, name))
+    };
+    let row_idx: Vec<usize> = c
+        .axis_map
+        .iter()
+        .take(pt.rows.len())
+        .filter_map(|x| *x)
+        .collect();
+    let col_idx: Vec<usize> = c
+        .axis_map
+        .iter()
+        .skip(pt.rows.len())
+        .filter_map(|x| *x)
+        .collect();
     // Filters: on an axis field → hidden items there; otherwise a page field.
     let mut hidden: HashMap<usize, &PivotFilter> = HashMap::new();
     let mut pages: Vec<(usize, &PivotFilter)> = Vec::new();
     for f in &pt.filters {
-        let axis_pos = pt.rows.iter().chain(pt.columns.iter()).position(|a| same(&a.source_col, &f.source_col));
+        let axis_pos = pt
+            .rows
+            .iter()
+            .chain(pt.columns.iter())
+            .position(|a| same(&a.source_col, &f.source_col));
         match axis_pos {
             Some(p) => {
                 if let Some(Some(i)) = c.axis_map.get(p) {
@@ -791,23 +931,40 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
             }
         }
     }
-    let find_calc = |name: &str| c.fields.iter().position(|f| f.formula.is_some() && same(&f.name, name));
-    let vals: Vec<(usize, &PivotValue)> =
-        pt.values.iter().filter_map(|v| find_db(&v.source_col).or_else(|| find_calc(&v.source_col)).map(|i| (i, v))).collect();
+    let find_calc = |name: &str| {
+        c.fields
+            .iter()
+            .position(|f| f.formula.is_some() && same(&f.name, name))
+    };
+    let vals: Vec<(usize, &PivotValue)> = pt
+        .values
+        .iter()
+        .filter_map(|v| {
+            find_db(&v.source_col)
+                .or_else(|| find_calc(&v.source_col))
+                .map(|i| (i, v))
+        })
+        .collect();
     let axis_field = |i: usize| -> Option<&PivotField> {
         let p = c.axis_map.iter().position(|x| *x == Some(i))?;
         pt.rows.iter().chain(pt.columns.iter()).nth(p)
     };
 
     let compact = pt.layout == PivotLayout::Compact;
-    let name = if pt.name.trim().is_empty() { format!("PivotTable{}", idx + 1) } else { pt.name.clone() };
+    let name = if pt.name.trim().is_empty() {
+        format!("PivotTable{}", idx + 1)
+    } else {
+        pt.name.clone()
+    };
     let mut s = format!(
         "{XML_DECL}<pivotTableDefinition xmlns=\"{NS_MAIN}\" name=\"{}\" cacheId=\"{cache_id}\" applyNumberFormats=\"0\" applyBorderFormats=\"0\" applyFontFormats=\"0\" applyPatternFormats=\"0\" applyAlignmentFormats=\"0\" applyWidthHeightFormats=\"1\" dataCaption=\"Values\" updatedVersion=\"6\" minRefreshableVersion=\"3\" useAutoFormatting=\"1\" itemPrintTitles=\"1\" createdVersion=\"6\" indent=\"0\"",
         esc_attr(&name)
     );
     match pt.layout {
         PivotLayout::Compact => s.push_str(" outline=\"1\" outlineData=\"1\""),
-        PivotLayout::Outline => s.push_str(" compact=\"0\" compactData=\"0\" outline=\"1\" outlineData=\"1\""),
+        PivotLayout::Outline => {
+            s.push_str(" compact=\"0\" compactData=\"0\" outline=\"1\" outlineData=\"1\"")
+        }
         PivotLayout::Tabular => s.push_str(" compact=\"0\" compactData=\"0\""),
     }
     if pt.values_on_rows {
@@ -831,11 +988,18 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
     let k = vals.len();
     // Σ Values (two or more value fields): its index among the written fields of its axis.
     let (row_map, _) = c.axis_map.split_at(pt.rows.len().min(c.axis_map.len()));
-    let values_at = |map: &[Option<usize>], n: usize| pt.values_position.map_or(n, |p| map.iter().take(p).filter(|x| x.is_some()).count());
+    let values_at = |map: &[Option<usize>], n: usize| {
+        pt.values_position
+            .map_or(n, |p| map.iter().take(p).filter(|x| x.is_some()).count())
+    };
     let row_values = (k > 1 && pt.values_on_rows).then(|| values_at(row_map, row_idx.len()));
     // In Columns Σ Values comes after the last field: the column layout doesn't place it elsewhere.
     let col_values = (k > 1 && !pt.values_on_rows).then_some(col_idx.len());
-    let first_data_row = if col_idx.is_empty() { 1 } else { 1 + col_idx.len() + usize::from(col_values.is_some()) };
+    let first_data_row = if col_idx.is_empty() {
+        1
+    } else {
+        1 + col_idx.len() + usize::from(col_values.is_some())
+    };
     let row_levels = row_idx.len() + usize::from(row_values.is_some());
     let first_data_col = if row_levels == 0 && col_idx.is_empty() {
         0
@@ -844,7 +1008,11 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
     } else {
         row_levels.max(1)
     };
-    let _ = write!(s, "<location ref=\"{}\" firstHeaderRow=\"1\" firstDataRow=\"{first_data_row}\" firstDataCol=\"{first_data_col}\"", loc.a1());
+    let _ = write!(
+        s,
+        "<location ref=\"{}\" firstHeaderRow=\"1\" firstDataRow=\"{first_data_row}\" firstDataCol=\"{first_data_col}\"",
+        loc.a1()
+    );
     if !pages.is_empty() {
         let _ = write!(s, " rowPageCount=\"{}\" colPageCount=\"1\"", pages.len());
     }
@@ -885,7 +1053,10 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
         let is_page = axis == Some("axisPage");
         // Hidden items; never hide every item (a field needs one visible item).
         let mut hide: Vec<bool> = match filter.and_then(|f| f.selected.as_ref()) {
-            Some(sel) if !(is_page && sel.len() == 1) => labels.iter().map(|l| !sel.iter().any(|x| same(x, l))).collect(),
+            Some(sel) if !(is_page && sel.len() == 1) => labels
+                .iter()
+                .map(|l| !sel.iter().any(|x| same(x, l)))
+                .collect(),
             _ => vec![false; labels.len()],
         };
         if !hide.is_empty() && hide.iter().all(|h| *h) {
@@ -909,7 +1080,9 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
             s.push_str(" subtotalTop=\"0\"");
         }
         if axis.is_some() {
-            let collapsed: &[String] = axis_field(i).map(|f| f.collapsed_items.as_slice()).unwrap_or(&[]);
+            let collapsed: &[String] = axis_field(i)
+                .map(|f| f.collapsed_items.as_slice())
+                .unwrap_or(&[]);
             let count = labels.len() + usize::from(pt.subtotals);
             let _ = write!(s, "><items count=\"{count}\">");
             for (x, l) in labels.iter().enumerate() {
@@ -941,7 +1114,10 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
             if let Some(sel) = &f.selected
                 && sel.len() == 1
                 && let Some(one) = sel.first()
-                && let Some(x) = c.fields.get(*i).and_then(|cf| cf.item_labels().iter().position(|l| same(l, one)))
+                && let Some(x) = c
+                    .fields
+                    .get(*i)
+                    .and_then(|cf| cf.item_labels().iter().position(|l| same(l, one)))
             {
                 let _ = write!(s, " item=\"{x}\"");
             }
@@ -954,7 +1130,11 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
         let mut used: Vec<String> = Vec::new();
         for (i, v) in &vals {
             let base = if v.name.trim().is_empty() {
-                format!("{} of {}", func_caption(v.func), c.fields.get(*i).map(|f| f.name.as_str()).unwrap_or(""))
+                format!(
+                    "{} of {}",
+                    func_caption(v.func),
+                    c.fields.get(*i).map(|f| f.name.as_str()).unwrap_or("")
+                )
             } else {
                 v.name.clone()
             };
@@ -972,11 +1152,20 @@ fn table_xml(pt: &PivotTable, idx: usize, cache_id: u32, c: &Cache, fmt_id: &dyn
             let base_field = row_idx.first().or(col_idx.first()).copied().unwrap_or(0);
             match v.show_as {
                 PivotShowAs::Normal => s.push_str(" baseField=\"0\" baseItem=\"0\""),
-                PivotShowAs::PercentOfGrandTotal => s.push_str(" showDataAs=\"percentOfTotal\" baseField=\"0\" baseItem=\"0\""),
-                PivotShowAs::PercentOfColumnTotal => s.push_str(" showDataAs=\"percentOfCol\" baseField=\"0\" baseItem=\"0\""),
-                PivotShowAs::PercentOfRowTotal => s.push_str(" showDataAs=\"percentOfRow\" baseField=\"0\" baseItem=\"0\""),
+                PivotShowAs::PercentOfGrandTotal => {
+                    s.push_str(" showDataAs=\"percentOfTotal\" baseField=\"0\" baseItem=\"0\"")
+                }
+                PivotShowAs::PercentOfColumnTotal => {
+                    s.push_str(" showDataAs=\"percentOfCol\" baseField=\"0\" baseItem=\"0\"")
+                }
+                PivotShowAs::PercentOfRowTotal => {
+                    s.push_str(" showDataAs=\"percentOfRow\" baseField=\"0\" baseItem=\"0\"")
+                }
                 PivotShowAs::RunningTotal => {
-                    let _ = write!(s, " showDataAs=\"runTotal\" baseField=\"{base_field}\" baseItem=\"0\"");
+                    let _ = write!(
+                        s,
+                        " showDataAs=\"runTotal\" baseField=\"{base_field}\" baseItem=\"0\""
+                    );
                 }
                 PivotShowAs::Rank => {
                     let _ = write!(s, " baseField=\"{base_field}\" baseItem=\"0\"");
@@ -1074,7 +1263,11 @@ impl CachesIn {
                 }
             }
         }
-        CachesIn { by_id, parsed: HashMap::new(), next_id: 1 }
+        CachesIn {
+            by_id,
+            parsed: HashMap::new(),
+            next_id: 1,
+        }
     }
 }
 
@@ -1082,9 +1275,22 @@ fn item_label_el(e: &El, sys: DateSystem) -> String {
     let v = e.attr("v").unwrap_or("");
     match e.name.as_str() {
         "m" => "(blank)".into(),
-        "n" => v.trim().parse::<f64>().ok().filter(|n| n.is_finite()).map(number_to_text).unwrap_or_else(|| v.to_string()),
-        "b" => if matches!(v.trim(), "1" | "true") { "TRUE" } else { "FALSE" }.into(),
-        "d" => crate::sheet_read::parse_iso_datetime(v, sys).map(number_to_text).unwrap_or_else(|| v.to_string()),
+        "n" => v
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|n| n.is_finite())
+            .map(number_to_text)
+            .unwrap_or_else(|| v.to_string()),
+        "b" => if matches!(v.trim(), "1" | "true") {
+            "TRUE"
+        } else {
+            "FALSE"
+        }
+        .into(),
+        "d" => crate::sheet_read::parse_iso_datetime(v, sys)
+            .map(number_to_text)
+            .unwrap_or_else(|| v.to_string()),
         _ => v.to_string(),
     }
 }
@@ -1092,28 +1298,42 @@ fn item_label_el(e: &El, sys: DateSystem) -> String {
 fn read_cache(cx: &mut Ctx<'_>, part: &str, sheet_name: &str) -> Option<CacheIn> {
     let x = cx.optional_xml(part).ok().flatten()?;
     if x.name != "pivotCacheDefinition" {
-        cx.warn(format!("{part} is not a pivot cache definition; its PivotTable was kept as plain cells"));
+        cx.warn(format!(
+            "{part} is not a pivot cache definition; its PivotTable was kept as plain cells"
+        ));
         return None;
     }
     let src = x.child("cacheSource");
     let ty = src.and_then(|s| s.attr("type")).unwrap_or("worksheet");
     if ty != "worksheet" {
-        cx.warn(format!("PivotTables with a {ty} data source are not supported; kept as plain cells"));
+        cx.warn(format!(
+            "PivotTables with a {ty} data source are not supported; kept as plain cells"
+        ));
         return None;
     }
     let ws = src.and_then(|s| s.child("worksheetSource"));
     let source = match ws {
-        Some(w) if w.attr("name").is_some_and(|n| !n.trim().is_empty()) => w.attr("name").unwrap_or("").trim().to_string(),
+        Some(w) if w.attr("name").is_some_and(|n| !n.trim().is_empty()) => {
+            w.attr("name").unwrap_or("").trim().to_string()
+        }
         Some(w) => {
             if w.attr("id").is_some() {
                 cx.warn("a PivotTable's source is in another workbook; its source reference may not resolve");
             }
-            let r = w.attr("ref").map(|r| r.replace('$', "")).and_then(|r| RangeRef::parse(&r));
+            let r = w
+                .attr("ref")
+                .map(|r| r.replace('$', ""))
+                .and_then(|r| RangeRef::parse(&r));
             let Some(r) = r else {
-                cx.warn("a PivotTable's source reference is missing or invalid; kept as plain cells");
+                cx.warn(
+                    "a PivotTable's source reference is missing or invalid; kept as plain cells",
+                );
                 return None;
             };
-            let sheet = w.attr("sheet").filter(|s| !s.is_empty()).unwrap_or(sheet_name);
+            let sheet = w
+                .attr("sheet")
+                .filter(|s| !s.is_empty())
+                .unwrap_or(sheet_name);
             format!("{}!{}", quote_sheet(sheet), abs_range(&r))
         }
         None => {
@@ -1125,17 +1345,26 @@ fn read_cache(cx: &mut Ctx<'_>, part: &str, sheet_name: &str) -> Option<CacheIn>
     let mut fields = Vec::new();
     if let Some(cf) = x.child("cacheFields") {
         for f in cf.kids("cacheField").take(MAX_FIELDS) {
-            let items = f.child("sharedItems").map(|si| si.children.iter().map(|e| item_label_el(e, sys)).collect()).unwrap_or_default();
+            let items = f
+                .child("sharedItems")
+                .map(|si| si.children.iter().map(|e| item_label_el(e, sys)).collect())
+                .unwrap_or_default();
             let group = f.child("fieldGroup").map(|g| {
                 let base = g.attr_u32("base").map(|b| b as usize);
-                let by = match g.child("rangePr").map(|r| r.attr("groupBy").unwrap_or("range")) {
+                let by = match g
+                    .child("rangePr")
+                    .map(|r| r.attr("groupBy").unwrap_or("range"))
+                {
                     Some("years") => Some(PivotDateGroup::Years),
                     Some("quarters") => Some(PivotDateGroup::Quarters),
                     Some("months") => Some(PivotDateGroup::Months),
                     Some("days") => Some(PivotDateGroup::Days),
                     _ => None,
                 };
-                let gi = g.child("groupItems").map(|gi| gi.children.iter().map(|e| item_label_el(e, sys)).collect()).unwrap_or_default();
+                let gi = g
+                    .child("groupItems")
+                    .map(|gi| gi.children.iter().map(|e| item_label_el(e, sys)).collect())
+                    .unwrap_or_default();
                 (base, by, gi)
             });
             fields.push(FieldIn {
@@ -1155,13 +1384,26 @@ fn read_cache(cx: &mut Ctx<'_>, part: &str, sheet_name: &str) -> Option<CacheIn>
 }
 
 /// Reads the PivotTables related to a worksheet part.
-pub fn read_pivots(cx: &mut Ctx<'_>, caches: &mut CachesIn, sheet_part: &str, sheet_name: &str) -> Result<Vec<PivotTable>, IoError> {
+pub fn read_pivots(
+    cx: &mut Ctx<'_>,
+    caches: &mut CachesIn,
+    sheet_part: &str,
+    sheet_name: &str,
+) -> Result<Vec<PivotTable>, IoError> {
     let rels = cx.pkg.rels(sheet_part)?;
     let mut out = Vec::new();
-    for rel in rels.iter().filter(|r| r.kind == "pivotTable" && !r.external) {
-        let Some(x) = cx.optional_xml(&rel.target)? else { continue };
+    for rel in rels
+        .iter()
+        .filter(|r| r.kind == "pivotTable" && !r.external)
+    {
+        let Some(x) = cx.optional_xml(&rel.target)? else {
+            continue;
+        };
         if x.name != "pivotTableDefinition" {
-            cx.warn(format!("{} is not a PivotTable definition; skipped", rel.target));
+            cx.warn(format!(
+                "{} is not a PivotTable definition; skipped",
+                rel.target
+            ));
             continue;
         }
         // The cache: the table's own relationship, else the workbook's cache id.
@@ -1170,9 +1412,15 @@ pub fn read_pivots(cx: &mut Ctx<'_>, caches: &mut CachesIn, sheet_part: &str, sh
             .iter()
             .find(|r| r.kind == "pivotCacheDefinition" && !r.external)
             .map(|r| r.target.clone())
-            .or_else(|| x.attr_u32("cacheId").and_then(|id| caches.by_id.get(&id).cloned()));
+            .or_else(|| {
+                x.attr_u32("cacheId")
+                    .and_then(|id| caches.by_id.get(&id).cloned())
+            });
         let Some(cache_part) = cache_part else {
-            cx.warn(format!("PivotTable in {} has no cache; kept as plain cells", rel.target));
+            cx.warn(format!(
+                "PivotTable in {} has no cache; kept as plain cells",
+                rel.target
+            ));
             continue;
         };
         let cache = match caches.parsed.get(&cache_part) {
@@ -1194,7 +1442,13 @@ pub fn read_pivots(cx: &mut Ctx<'_>, caches: &mut CachesIn, sheet_part: &str, sh
 
 /// A pivot field's data items (not subtotal or grand-total items).
 fn items_of(e: &El) -> Vec<&El> {
-    e.child("items").map(|it| it.kids("item").filter(|i| i.attr("t").is_none_or(|t| t == "data")).collect()).unwrap_or_default()
+    e.child("items")
+        .map(|it| {
+            it.kids("item")
+                .filter(|i| i.attr("t").is_none_or(|t| t == "data"))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// (source column name, date grouping) of a cache field used on an axis.
@@ -1209,15 +1463,25 @@ fn field_ref(cx: &mut Ctx<'_>, cache: &CacheIn, i: usize) -> Option<(String, Piv
             let by = match by {
                 Some(b) => *b,
                 None => {
-                    cx.warn(format!("PivotTable grouping of \"{}\" is not supported; the field is ungrouped", f.name));
+                    cx.warn(format!(
+                        "PivotTable grouping of \"{}\" is not supported; the field is ungrouped",
+                        f.name
+                    ));
                     PivotDateGroup::None
                 }
             };
-            let base_name = if f.database { f.name.clone() } else { base.and_then(|b| cache.fields.get(b))?.name.clone() };
+            let base_name = if f.database {
+                f.name.clone()
+            } else {
+                base.and_then(|b| cache.fields.get(b))?.name.clone()
+            };
             Some((base_name, by))
         }
         None if !f.database => {
-            cx.warn(format!("PivotTable field \"{}\" (grouped items) is not supported", f.name));
+            cx.warn(format!(
+                "PivotTable field \"{}\" (grouped items) is not supported",
+                f.name
+            ));
             None
         }
         None => Some((f.name.clone(), PivotDateGroup::None)),
@@ -1225,28 +1489,50 @@ fn field_ref(cx: &mut Ctx<'_>, cache: &CacheIn, i: usize) -> Option<(String, Piv
 }
 
 fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<PivotTable> {
-    let mut pt = PivotTable { id, ..PivotTable::default() };
+    let mut pt = PivotTable {
+        id,
+        ..PivotTable::default()
+    };
     if let Some(n) = x.attr("name").filter(|n| !n.trim().is_empty()) {
         pt.name = n.to_string();
     } else {
         pt.name = format!("PivotTable{id}");
     }
     pt.source = cache.source.clone();
-    let Some(loc) = x.child("location").and_then(|l| l.attr("ref")).and_then(|r| RangeRef::parse(&r.replace('$', ""))) else {
-        cx.warn(format!("PivotTable \"{}\" has no valid location; kept as plain cells", pt.name));
+    let Some(loc) = x
+        .child("location")
+        .and_then(|l| l.attr("ref"))
+        .and_then(|r| RangeRef::parse(&r.replace('$', "")))
+    else {
+        cx.warn(format!(
+            "PivotTable \"{}\" has no valid location; kept as plain cells",
+            pt.name
+        ));
         return None;
     };
-    let pfs: Vec<&El> = x.child("pivotFields").map(|p| p.kids("pivotField").collect()).unwrap_or_default();
+    let pfs: Vec<&El> = x
+        .child("pivotFields")
+        .map(|p| p.kids("pivotField").collect())
+        .unwrap_or_default();
     let pf = |i: usize| pfs.get(i).copied();
     let idx_list = |name: &str, attr: &str| -> Vec<i64> {
-        x.child(name).map(|e| e.children.iter().filter_map(|f| f.attr_i64(attr)).collect()).unwrap_or_default()
+        x.child(name)
+            .map(|e| e.children.iter().filter_map(|f| f.attr_i64(attr)).collect())
+            .unwrap_or_default()
     };
     let row_x = idx_list("rowFields", "x");
     let col_x = idx_list("colFields", "x");
-    let pages: Vec<&El> = x.child("pageFields").map(|p| p.kids("pageField").collect()).unwrap_or_default();
+    let pages: Vec<&El> = x
+        .child("pageFields")
+        .map(|p| p.kids("pageField").collect())
+        .unwrap_or_default();
 
     // Layout from the first axis field (pivotField defaults: compact and outline on).
-    let first_axis = row_x.iter().chain(col_x.iter()).find(|i| **i >= 0).and_then(|i| pf(*i as usize));
+    let first_axis = row_x
+        .iter()
+        .chain(col_x.iter())
+        .find(|i| **i >= 0)
+        .and_then(|i| pf(*i as usize));
     let (compact, outline) = match first_axis {
         Some(f) => (f.flag("compact", true), f.flag("outline", true)),
         None => (x.flag("compact", true), x.flag("outline", false)),
@@ -1265,15 +1551,25 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
     pt.grand_totals_rows = x.flag("rowGrandTotals", true);
     pt.grand_totals_cols = x.flag("colGrandTotals", true);
     pt.show_headers = x.flag("showHeaders", true);
-    pt.style = x.child("pivotTableStyleInfo").and_then(|s| s.attr("name")).unwrap_or("").to_string();
+    pt.style = x
+        .child("pivotTableStyleInfo")
+        .and_then(|s| s.attr("name"))
+        .unwrap_or("")
+        .to_string();
     if x.child("calculatedItems").is_some() || x.path(&["filters", "filter"]).is_some() {
-        cx.warn(format!("PivotTable \"{}\": calculated items and label/value filters are not supported", pt.name));
+        cx.warn(format!(
+            "PivotTable \"{}\": calculated items and label/value filters are not supported",
+            pt.name
+        ));
     }
 
     let mut filters: Vec<PivotFilter> = Vec::new();
 
     // (fields, position of Σ Values (`-2`) among them)
-    let axis = |cx: &mut Ctx<'_>, list: &[i64], filters: &mut Vec<PivotFilter>| -> (Vec<PivotField>, Option<usize>) {
+    let axis = |cx: &mut Ctx<'_>,
+                list: &[i64],
+                filters: &mut Vec<PivotFilter>|
+     -> (Vec<PivotField>, Option<usize>) {
         let mut v = Vec::new();
         let mut values_at = None;
         for &i in list {
@@ -1285,9 +1581,20 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
                 continue;
             }
             let i = i as usize;
-            let Some((name, group)) = field_ref(cx, cache, i) else { continue };
-            let labels = cache.fields.get(i).map(|f| f.labels().to_vec()).unwrap_or_default();
-            let mut f = PivotField { source_col: name.clone(), date_group: group, sort: PivotSort::None, collapsed_items: vec![] };
+            let Some((name, group)) = field_ref(cx, cache, i) else {
+                continue;
+            };
+            let labels = cache
+                .fields
+                .get(i)
+                .map(|f| f.labels().to_vec())
+                .unwrap_or_default();
+            let mut f = PivotField {
+                source_col: name.clone(),
+                date_group: group,
+                sort: PivotSort::None,
+                collapsed_items: vec![],
+            };
             if let Some(e) = pf(i) {
                 f.sort = match e.attr("sortType") {
                     Some("ascending") => PivotSort::Asc,
@@ -1295,12 +1602,27 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
                     _ => PivotSort::None,
                 };
                 let items = items_of(e);
-                let lab = |it: &El| it.attr_u32("x").and_then(|k| labels.get(k as usize)).cloned();
-                f.collapsed_items = items.iter().filter(|it| !it.flag("sd", true)).filter_map(|it| lab(it)).collect();
+                let lab = |it: &El| {
+                    it.attr_u32("x")
+                        .and_then(|k| labels.get(k as usize))
+                        .cloned()
+                };
+                f.collapsed_items = items
+                    .iter()
+                    .filter(|it| !it.flag("sd", true))
+                    .filter_map(|it| lab(it))
+                    .collect();
                 if items.iter().any(|it| it.flag("h", false)) {
-                    let shown: Vec<String> = items.iter().filter(|it| !it.flag("h", false)).filter_map(|it| lab(it)).collect();
+                    let shown: Vec<String> = items
+                        .iter()
+                        .filter(|it| !it.flag("h", false))
+                        .filter_map(|it| lab(it))
+                        .collect();
                     if !filters.iter().any(|ff| same(&ff.source_col, &name)) {
-                        filters.push(PivotFilter { source_col: name.clone(), selected: Some(shown) });
+                        filters.push(PivotFilter {
+                            source_col: name.clone(),
+                            selected: Some(shown),
+                        });
                     }
                 }
             }
@@ -1310,9 +1632,17 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
     };
     let mut page_filters = Vec::new();
     for p in &pages {
-        let Some(i) = p.attr_i64("fld").filter(|i| *i >= 0).map(|i| i as usize) else { continue };
-        let Some((name, _)) = field_ref(cx, cache, i) else { continue };
-        let labels = cache.fields.get(i).map(|f| f.labels().to_vec()).unwrap_or_default();
+        let Some(i) = p.attr_i64("fld").filter(|i| *i >= 0).map(|i| i as usize) else {
+            continue;
+        };
+        let Some((name, _)) = field_ref(cx, cache, i) else {
+            continue;
+        };
+        let labels = cache
+            .fields
+            .get(i)
+            .map(|f| f.labels().to_vec())
+            .unwrap_or_default();
         let selected = if let Some(k) = p.attr_u32("item") {
             labels.get(k as usize).map(|l| vec![l.clone()])
         } else {
@@ -1322,12 +1652,19 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
                     items
                         .iter()
                         .filter(|it| !it.flag("h", false))
-                        .filter_map(|it| it.attr_u32("x").and_then(|k| labels.get(k as usize)).cloned())
+                        .filter_map(|it| {
+                            it.attr_u32("x")
+                                .and_then(|k| labels.get(k as usize))
+                                .cloned()
+                        })
                         .collect()
                 })
             })
         };
-        page_filters.push(PivotFilter { source_col: name, selected });
+        page_filters.push(PivotFilter {
+            source_col: name,
+            selected,
+        });
     }
     let mut axis_filters = Vec::new();
     let (rows, rows_values) = axis(cx, &row_x, &mut axis_filters);
@@ -1336,9 +1673,15 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
     pt.columns = columns;
     // Σ Values: where its `-2` entry is, else `dataOnRows` and `dataPosition`; after the last
     // field by default. In Columns it always comes last, as the column layout puts it there.
-    pt.values_on_rows = rows_values.is_some() || (cols_values.is_none() && x.flag("dataOnRows", false));
-    pt.values_position =
-        if pt.values_on_rows { rows_values.or_else(|| x.attr_u32("dataPosition").map(|p| p as usize)).filter(|p| *p < pt.rows.len()) } else { None };
+    pt.values_on_rows =
+        rows_values.is_some() || (cols_values.is_none() && x.flag("dataOnRows", false));
+    pt.values_position = if pt.values_on_rows {
+        rows_values
+            .or_else(|| x.attr_u32("dataPosition").map(|p| p as usize))
+            .filter(|p| *p < pt.rows.len())
+    } else {
+        None
+    };
     filters.extend(page_filters);
     filters.extend(axis_filters);
     pt.filters = filters;
@@ -1346,12 +1689,18 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
     // Values.
     if let Some(df) = x.child("dataFields") {
         for d in df.kids("dataField") {
-            let Some(i) = d.attr_u32("fld").map(|i| i as usize) else { continue };
-            let Some(f) = cache.fields.get(i) else { continue };
+            let Some(i) = d.attr_u32("fld").map(|i| i as usize) else {
+                continue;
+            };
+            let Some(f) = cache.fields.get(i) else {
+                continue;
+            };
             let func = match d.attr("subtotal") {
                 None => PivotFunc::Sum,
                 Some(s) => func_from(s).unwrap_or_else(|| {
-                    cx.warn(format!("PivotTable function {s} is not supported; using Sum"));
+                    cx.warn(format!(
+                        "PivotTable function {s} is not supported; using Sum"
+                    ));
                     PivotFunc::Sum
                 }),
             };
@@ -1364,7 +1713,9 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
             let show_as = match (ext.as_deref(), d.attr("showDataAs")) {
                 (Some("rankDescending"), _) => PivotShowAs::Rank,
                 (Some(other), _) => {
-                    cx.warn(format!("PivotTable show-values-as {other} is not supported"));
+                    cx.warn(format!(
+                        "PivotTable show-values-as {other} is not supported"
+                    ));
                     PivotShowAs::Normal
                 }
                 (None, None | Some("normal")) => PivotShowAs::Normal,
@@ -1373,16 +1724,28 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
                 (None, Some("percentOfRow")) => PivotShowAs::PercentOfRowTotal,
                 (None, Some("runTotal")) => PivotShowAs::RunningTotal,
                 (None, Some(other)) => {
-                    cx.warn(format!("PivotTable show-values-as {other} is not supported"));
+                    cx.warn(format!(
+                        "PivotTable show-values-as {other} is not supported"
+                    ));
                     PivotShowAs::Normal
                 }
             };
-            let number_format = d
-                .attr_u32("numFmtId")
-                .filter(|id| *id != 0)
-                .and_then(|id| crate::tables::builtin_format(id).map(str::to_string).or_else(|| cx.num_fmts.get(&id).cloned()));
-            let name = d.attr("name").map(str::to_string).unwrap_or_else(|| format!("{} of {}", func_caption(func), f.name));
-            pt.values.push(PivotValue { source_col: f.name.clone(), func, name, show_as, number_format });
+            let number_format = d.attr_u32("numFmtId").filter(|id| *id != 0).and_then(|id| {
+                crate::tables::builtin_format(id)
+                    .map(str::to_string)
+                    .or_else(|| cx.num_fmts.get(&id).cloned())
+            });
+            let name = d
+                .attr("name")
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("{} of {}", func_caption(func), f.name));
+            pt.values.push(PivotValue {
+                source_col: f.name.clone(),
+                func,
+                name,
+                show_as,
+                number_format,
+            });
         }
     }
 
@@ -1393,13 +1756,27 @@ fn read_table(cx: &mut Ctx<'_>, x: &El, cache: &CacheIn, id: u32) -> Option<Pivo
             && !pt.calculated_fields.iter().any(|c| same(&c.name, &f.name))
         {
             let formula = formula.trim();
-            let formula = if formula.starts_with('=') { formula.to_string() } else { format!("={formula}") };
-            pt.calculated_fields.push(PivotCalcField { name: f.name.clone(), formula });
+            let formula = if formula.starts_with('=') {
+                formula.to_string()
+            } else {
+                format!("={formula}")
+            };
+            pt.calculated_fields.push(PivotCalcField {
+                name: f.name.clone(),
+                formula,
+            });
         }
     }
 
     pt.anchor = loc.start;
-    let above = if pages.is_empty() { 0 } else { pages.len() as u32 + 1 };
-    pt.last_range = Some(RangeRef::new(CellRef::new(loc.start.row.saturating_sub(above), loc.start.col), loc.end));
+    let above = if pages.is_empty() {
+        0
+    } else {
+        pages.len() as u32 + 1
+    };
+    pt.last_range = Some(RangeRef::new(
+        CellRef::new(loc.start.row.saturating_sub(above), loc.start.col),
+        loc.end,
+    ));
     Some(pt)
 }

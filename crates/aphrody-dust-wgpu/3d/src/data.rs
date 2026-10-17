@@ -77,8 +77,11 @@ impl RenderingData {
     pub fn prepare(&mut self, state: &RenderingState) {
         self.control = state.control;
 
-        self.alpha_test_ref =
-            if state.control.alpha_test_enabled() { state.alpha_test_ref } else { 0 };
+        self.alpha_test_ref = if state.control.alpha_test_enabled() {
+            state.alpha_test_ref
+        } else {
+            0
+        };
 
         self.clear_color = state.clear_color;
         self.clear_poly_id = state.clear_poly_id;

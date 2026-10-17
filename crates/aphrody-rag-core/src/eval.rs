@@ -63,7 +63,9 @@ pub struct UrlNormalizer {
 
 impl Default for UrlNormalizer {
     fn default() -> Self {
-        Self { strip_origin: Regex::new(r"(?i)^https?://(www\.)?dragonballfr\.com").ok() }
+        Self {
+            strip_origin: Regex::new(r"(?i)^https?://(www\.)?dragonballfr\.com").ok(),
+        }
     }
 }
 
@@ -123,8 +125,14 @@ pub fn matches_expected_url_with(normalizer: &UrlNormalizer, actual: &str, expec
 pub fn is_hit(hit: &RetrievedHit, case: &GoldCase) -> bool {
     if !case.expect_url.is_empty() || !case.expect_title.is_empty() {
         let title = hit.title.to_lowercase();
-        return case.expect_url.iter().any(|p| matches_expected_url(&hit.url, p))
-            || case.expect_title.iter().any(|t| title.contains(&t.to_lowercase()));
+        return case
+            .expect_url
+            .iter()
+            .any(|p| matches_expected_url(&hit.url, p))
+            || case
+                .expect_title
+                .iter()
+                .any(|t| title.contains(&t.to_lowercase()));
     }
     let hay = format!("{}\n{}", hit.title, hit.snippet).to_lowercase();
     case.expect.iter().any(|m| hay.contains(&m.to_lowercase()))
@@ -204,9 +212,20 @@ pub fn run_case(
     let top = results
         .iter()
         .take(3)
-        .map(|h| TopHit { title: h.title.clone(), url: h.url.clone(), kind: h.kind.clone() })
+        .map(|h| TopHit {
+            title: h.title.clone(),
+            url: h.url.clone(),
+            kind: h.kind.clone(),
+        })
         .collect();
-    CaseResult { case, rank, ndcg, top, latency_ms, mode: mode.to_string() }
+    CaseResult {
+        case,
+        rank,
+        ndcg,
+        top,
+        latency_ms,
+        mode: mode.to_string(),
+    }
 }
 
 /// Aggregate metrics over a set of cases (`Metrics`, `rag-eval.ts:89-94`).
@@ -226,13 +245,24 @@ pub fn aggregate(results: &[CaseResult]) -> Aggregate {
     let n = (results.len().max(1)) as f64;
     let mut recall = BTreeMap::new();
     for &k in &RANKS {
-        let within = results.iter().filter(|r| r.rank > 0 && r.rank as u32 <= k).count();
+        let within = results
+            .iter()
+            .filter(|r| r.rank > 0 && r.rank as u32 <= k)
+            .count();
         recall.insert(k, within as f64 / n);
     }
-    let mrr =
-        results.iter().map(|r| if r.rank > 0 { 1.0 / r.rank as f64 } else { 0.0 }).sum::<f64>() / n;
+    let mrr = results
+        .iter()
+        .map(|r| if r.rank > 0 { 1.0 / r.rank as f64 } else { 0.0 })
+        .sum::<f64>()
+        / n;
     let ndcg = results.iter().map(|r| r.ndcg).sum::<f64>() / n;
-    Aggregate { cases: results.len(), recall, mrr, ndcg }
+    Aggregate {
+        cases: results.len(),
+        recall,
+        mrr,
+        ndcg,
+    }
 }
 
 /// `aggregateByTag` (`rag-eval.ts:117-127`): a case with no `tags` counts
@@ -242,13 +272,19 @@ pub fn aggregate(results: &[CaseResult]) -> Aggregate {
 pub fn aggregate_by_tag(results: &[CaseResult]) -> BTreeMap<String, Aggregate> {
     let mut groups: BTreeMap<String, Vec<CaseResult>> = BTreeMap::new();
     for r in results {
-        let tags =
-            if r.case.tags.is_empty() { vec!["untagged".to_string()] } else { r.case.tags.clone() };
+        let tags = if r.case.tags.is_empty() {
+            vec!["untagged".to_string()]
+        } else {
+            r.case.tags.clone()
+        };
         for t in tags {
             groups.entry(t).or_default().push(r.clone());
         }
     }
-    groups.into_iter().map(|(t, g)| (t, aggregate(&g))).collect()
+    groups
+        .into_iter()
+        .map(|(t, g)| (t, aggregate(&g)))
+        .collect()
 }
 
 /// `parseGold` (`rag-eval.ts:130-144`): one JSON object per non-empty,
@@ -262,7 +298,9 @@ pub fn parse_gold(text: &str) -> Vec<GoldCase> {
         if t.is_empty() || t.starts_with("//") {
             continue;
         }
-        let Ok(case) = serde_json::from_str::<GoldCase>(t) else { continue };
+        let Ok(case) = serde_json::from_str::<GoldCase>(t) else {
+            continue;
+        };
         if !case.q.is_empty()
             && (!case.expect_url.is_empty()
                 || !case.expect_title.is_empty()
@@ -301,7 +339,10 @@ pub struct LatencyStats {
 /// Build [`LatencyStats`] from a set of per-case latencies (milliseconds).
 #[must_use]
 pub fn latency_stats(latencies_ms: &[f64]) -> LatencyStats {
-    LatencyStats { p50_ms: quantile(latencies_ms, 0.5), p95_ms: quantile(latencies_ms, 0.95) }
+    LatencyStats {
+        p50_ms: quantile(latencies_ms, 0.5),
+        p95_ms: quantile(latencies_ms, 0.95),
+    }
 }
 
 /// A full evaluation run: the served condition, overall + per-tag
@@ -402,7 +443,9 @@ impl Gate {
             .ok_or_else(|| EvalError::InvalidGate(expr.to_string()))?;
         let metric = if let Some(r) = caps.get(2) {
             GateMetric::RecallAt(
-                r.as_str().parse().map_err(|_| EvalError::InvalidGate(expr.to_string()))?,
+                r.as_str()
+                    .parse()
+                    .map_err(|_| EvalError::InvalidGate(expr.to_string()))?,
             )
         } else if caps[1].starts_with("mrr") {
             GateMetric::Mrr
@@ -417,9 +460,14 @@ impl Gate {
             "<" => GateOp::Lt,
             _ => return Err(EvalError::InvalidGate(expr.to_string())),
         };
-        let threshold: f64 =
-            caps[5].parse().map_err(|_| EvalError::InvalidGate(expr.to_string()))?;
-        Ok(Self { metric, op, threshold })
+        let threshold: f64 = caps[5]
+            .parse()
+            .map_err(|_| EvalError::InvalidGate(expr.to_string()))?;
+        Ok(Self {
+            metric,
+            op,
+            threshold,
+        })
     }
 
     /// Check `agg` against this gate.
@@ -432,7 +480,11 @@ impl Gate {
         if self.op.eval(actual, self.threshold) {
             Ok(())
         } else {
-            Err(GateFailure { expr: self.describe(), actual, threshold: self.threshold })
+            Err(GateFailure {
+                expr: self.describe(),
+                actual,
+                threshold: self.threshold,
+            })
         }
     }
 
@@ -475,7 +527,11 @@ pub struct MetricDelta {
 }
 
 fn delta(baseline: f64, candidate: f64) -> MetricDelta {
-    MetricDelta { baseline, candidate, delta: candidate - baseline }
+    MetricDelta {
+        baseline,
+        candidate,
+        delta: candidate - baseline,
+    }
 }
 
 /// The result of [`compare`]: per-metric deltas plus every tag where

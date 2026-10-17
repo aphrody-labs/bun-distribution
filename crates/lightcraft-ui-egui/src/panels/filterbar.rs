@@ -25,11 +25,21 @@ fn filter(app: &mut LightcraftApp, patch: Value) {
 /// A small label before a group of controls.
 fn caption(ui: &mut egui::Ui, text: &str) {
     let t = Tokens::get(ui.ctx());
-    ui.label(egui::RichText::new(crate::i18n::tr(text)).font(t.font(12.0)).color(t.text_dim));
+    ui.label(
+        egui::RichText::new(crate::i18n::tr(text))
+            .font(t.font(12.0))
+            .color(t.text_dim),
+    );
 }
 
 /// A square toggle with an icon or a colour swatch.
-fn toggle(ui: &mut egui::Ui, id: &str, on: bool, tip: &str, draw: impl FnOnce(&egui::Painter, Rect, Color32)) -> egui::Response {
+fn toggle(
+    ui: &mut egui::Ui,
+    id: &str,
+    on: bool,
+    tip: &str,
+    draw: impl FnOnce(&egui::Painter, Rect, Color32),
+) -> egui::Response {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(26.0, 26.0), Sense::click());
     register(ui.ctx(), format!("filter:{id}"), r);
@@ -55,37 +65,57 @@ fn toggle(ui: &mut egui::Ui, id: &str, on: bool, tip: &str, draw: impl FnOnce(&e
 }
 
 /// A dropdown showing `current`; `items` are (label, filter patch, selected).
-fn picker(app: &mut LightcraftApp, ui: &mut egui::Ui, id: &str, current: &str, active: bool, items: Vec<(String, Value, bool)>) {
+fn picker(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    id: &str,
+    current: &str,
+    active: bool,
+    items: Vec<(String, Value, bool)>,
+) {
     let t = Tokens::get(ui.ctx());
     let r = crate::widgets::dropdown(
         ui,
         &format!("filter-{id}"),
-        if active && matches!(id, "camera" | "lens" | "keyword") { current } else { crate::i18n::tr(current) },
+        if active && matches!(id, "camera" | "lens" | "keyword") {
+            current
+        } else {
+            crate::i18n::tr(current)
+        },
         t.font(12.5),
         if active { t.text } else { t.text_label },
     );
     if active {
-        ui.painter().rect_stroke(r.rect.expand(2.0), 4.0, Stroke::new(1.0, t.accent.gamma_multiply(0.7)), StrokeKind::Outside);
+        ui.painter().rect_stroke(
+            r.rect.expand(2.0),
+            4.0,
+            Stroke::new(1.0, t.accent.gamma_multiply(0.7)),
+            StrokeKind::Outside,
+        );
     }
     let mut chosen = None;
     egui::Popup::menu(&r).show(|ui| {
-        egui::ScrollArea::vertical().max_height(320.0).show(ui, |ui| {
-            for (label, patch, sel) in &items {
-                if ui
-                    .selectable_label(
-                        *sel,
-                        if matches!(id, "camera" | "lens" | "keyword") && patch.get(id).is_some_and(|value| !value.is_null()) {
-                            label.as_str()
-                        } else {
-                            crate::i18n::tr(label)
-                        },
-                    )
-                    .clicked()
-                {
-                    chosen = Some(patch.clone());
+        egui::ScrollArea::vertical()
+            .max_height(320.0)
+            .show(ui, |ui| {
+                for (label, patch, sel) in &items {
+                    if ui
+                        .selectable_label(
+                            *sel,
+                            if matches!(id, "camera" | "lens" | "keyword")
+                                && patch.get(id).is_some_and(|value| !value.is_null())
+                            {
+                                label.as_str()
+                            } else {
+                                crate::i18n::tr(label)
+                            },
+                        )
+                        .clicked()
+                    {
+                        chosen = Some(patch.clone());
+                    }
                 }
-            }
-        });
+            });
     });
     if let Some(p) = chosen {
         filter(app, p);
@@ -96,14 +126,30 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     // one row when there is room, else the metadata pickers and actions go to a second row
     let two_rows = ui.available_width() < WIDE;
-    let (bar, _) = ui.allocate_exact_size(vec2(ui.available_width(), if two_rows { 2.0 * HEIGHT - 8.0 } else { HEIGHT }), Sense::hover());
+    let (bar, _) = ui.allocate_exact_size(
+        vec2(
+            ui.available_width(),
+            if two_rows { 2.0 * HEIGHT - 8.0 } else { HEIGHT },
+        ),
+        Sense::hover(),
+    );
     ui.painter().rect_filled(bar, 0.0, t.chrome);
-    ui.painter().line_segment([bar.left_bottom(), bar.right_bottom()], Stroke::new(1.0, t.divider));
+    ui.painter().line_segment(
+        [bar.left_bottom(), bar.right_bottom()],
+        Stroke::new(1.0, t.divider),
+    );
     register(ui.ctx(), "filterbar", bar);
     let f = app.session.filter.clone();
     let row = |ui: &mut egui::Ui, i: f32| {
-        let r = Rect::from_min_size(bar.min + vec2(16.0, 4.0 + i * (HEIGHT - 8.0)), vec2(bar.width() - 32.0, HEIGHT - 8.0));
-        let mut c = ui.new_child(egui::UiBuilder::new().max_rect(r).layout(egui::Layout::left_to_right(egui::Align::Center)));
+        let r = Rect::from_min_size(
+            bar.min + vec2(16.0, 4.0 + i * (HEIGHT - 8.0)),
+            vec2(bar.width() - 32.0, HEIGHT - 8.0),
+        );
+        let mut c = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(r)
+                .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        );
         c.spacing_mut().item_spacing.x = 4.0;
         c
     };
@@ -124,10 +170,14 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         "ratingOp",
         op_label,
         false,
-        [("≥  at least", "atLeast", RatingOp::AtLeast), ("=  exactly", "exactly", RatingOp::Exactly), ("≤  at most", "atMost", RatingOp::AtMost)]
-            .into_iter()
-            .map(|(l, k, op)| (l.to_string(), json!({"ratingOp": k}), f.rating_op == op))
-            .collect(),
+        [
+            ("≥  at least", "atLeast", RatingOp::AtLeast),
+            ("=  exactly", "exactly", RatingOp::Exactly),
+            ("≤  at most", "atMost", RatingOp::AtMost),
+        ]
+        .into_iter()
+        .map(|(l, k, op)| (l.to_string(), json!({"ratingOp": k}), f.rating_op == op))
+        .collect(),
     );
     for i in 1..=5u8 {
         let (r, resp) = ui.allocate_exact_size(vec2(17.0, 26.0), Sense::click());
@@ -140,7 +190,12 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         } else {
             t.icon
         };
-        paint(ui.painter(), Rect::from_center_size(r.center(), vec2(14.0, 14.0)), if filled { Icon::StarFilled } else { Icon::Star }, c);
+        paint(
+            ui.painter(),
+            Rect::from_center_size(r.center(), vec2(14.0, 14.0)),
+            if filled { Icon::StarFilled } else { Icon::Star },
+            c,
+        );
         if resp.clicked() {
             filter(app, json!({"rating": if f.rating == i { 0 } else { i }}));
         }
@@ -160,9 +215,23 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             Flag::Reject if on => t.reject,
             _ => Color32::TRANSPARENT,
         };
-        let resp = toggle(ui, id, on, tip, |p, r, c| paint(p, r, icon, if color == Color32::TRANSPARENT { c } else { color }));
+        let resp = toggle(ui, id, on, tip, |p, r, c| {
+            paint(
+                p,
+                r,
+                icon,
+                if color == Color32::TRANSPARENT {
+                    c
+                } else {
+                    color
+                },
+            )
+        });
         if resp.clicked() {
-            filter(app, json!({"flag": if on { Value::Null } else { json!(id) }}));
+            filter(
+                app,
+                json!({"flag": if on { Value::Null } else { json!(id) }}),
+            );
         }
     }
     ui.add_space(14.0);
@@ -179,7 +248,10 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     for l in ColorLabel::ALL {
         let on = chosen.contains(&l);
         let name = format!("{l:?}").to_lowercase();
-        let tip = crate::i18n::tr_format!("{} label (click more labels to show any of them)", crate::i18n::color_label(&app.session.catalog, l));
+        let tip = crate::i18n::tr_format!(
+            "{} label (click more labels to show any of them)",
+            crate::i18n::color_label(&app.session.catalog, l)
+        );
         let resp = toggle(ui, &format!("label-{name}"), on, &tip, |p, r, _| {
             p.circle_filled(r.center(), 5.5, label_color(l));
         });
@@ -191,7 +263,10 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                 next.push(l);
             }
             next.sort();
-            let names: Vec<String> = next.iter().map(|x| format!("{x:?}").to_lowercase()).collect();
+            let names: Vec<String> = next
+                .iter()
+                .map(|x| format!("{x:?}").to_lowercase())
+                .collect();
             filter(app, json!({"label": Value::Null, "labels": names}));
         }
     }
@@ -224,11 +299,27 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             ("Videos", json!("video"), Some(MediaKind::Video)),
         ]
         .into_iter()
-        .map(|(l, v, k)| (l.to_string(), json!({"kind": v, "merged": null}), f.kind == k && f.merged.is_none()))
+        .map(|(l, v, k)| {
+            (
+                l.to_string(),
+                json!({"kind": v, "merged": null}),
+                f.kind == k && f.merged.is_none(),
+            )
+        })
         .chain(
-            [("HDR", "hdr"), ("Panoramas", "panorama"), ("HDR Panoramas", "hdrPanorama")]
-                .into_iter()
-                .map(|(l, m)| (l.to_string(), json!({"kind": null, "merged": m}), f.merged.as_deref() == Some(m))),
+            [
+                ("HDR", "hdr"),
+                ("Panoramas", "panorama"),
+                ("HDR Panoramas", "hdrPanorama"),
+            ]
+            .into_iter()
+            .map(|(l, m)| {
+                (
+                    l.to_string(),
+                    json!({"kind": null, "merged": m}),
+                    f.merged.as_deref() == Some(m),
+                )
+            }),
         )
         .collect(),
     );
@@ -243,37 +334,67 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
         "edited",
         edited_label,
         f.edited.is_some(),
-        [("Edited or not", Value::Null, None), ("Edited", json!(true), Some(true)), ("Unedited", json!(false), Some(false))]
-            .into_iter()
-            .map(|(l, v, e)| (l.to_string(), json!({"edited": v}), f.edited == e))
-            .collect(),
+        [
+            ("Edited or not", Value::Null, None),
+            ("Edited", json!(true), Some(true)),
+            ("Unedited", json!(false), Some(false)),
+        ]
+        .into_iter()
+        .map(|(l, v, e)| (l.to_string(), json!({"edited": v}), f.edited == e))
+        .collect(),
     );
 
     // metadata pickers
     let ui: &mut egui::Ui = if two_rows { &mut row2 } else { &mut row1 };
     let values = app.caches.filter_values(&app.session.catalog);
-    let (cameras, lenses, keywords) = (values.cameras.clone(), values.lenses.clone(), values.keywords.clone());
+    let (cameras, lenses, keywords) = (
+        values.cameras.clone(),
+        values.lenses.clone(),
+        values.keywords.clone(),
+    );
     for (id, key, all_label, current, values) in [
         ("camera", "camera", "Camera", f.camera.clone(), cameras),
         ("lens", "lens", "Lens", f.lens.clone(), lenses),
         ("keyword", "keyword", "Keyword", f.keyword.clone(), keywords),
     ] {
-        let mut items = vec![(format!("Any {}", all_label.to_lowercase()), json!({key: Value::Null}), current.is_none())];
-        items.extend(values.into_iter().map(|v| (v.clone(), json!({key: v.clone()}), current.as_deref() == Some(v.as_str()))));
+        let mut items = vec![(
+            format!("Any {}", all_label.to_lowercase()),
+            json!({key: Value::Null}),
+            current.is_none(),
+        )];
+        items.extend(values.into_iter().map(|v| {
+            (
+                v.clone(),
+                json!({key: v.clone()}),
+                current.as_deref() == Some(v.as_str()),
+            )
+        }));
         let shown = current.clone().unwrap_or_else(|| all_label.to_string());
-        let shown = if shown.chars().count() > 22 { format!("{}…", shown.chars().take(21).collect::<String>()) } else { shown };
+        let shown = if shown.chars().count() > 22 {
+            format!("{}…", shown.chars().take(21).collect::<String>())
+        } else {
+            shown
+        };
         picker(app, ui, id, &shown, current.is_some(), items);
     }
 
     // save / clear
     ui.add_space(14.0);
     let filtering = app.session.filter != Default::default();
-    let save = ui.add_enabled(filtering, egui::Button::new(egui::RichText::new(crate::i18n::tr("Save as Smart Album…")).font(t.font(12.5))));
+    let save = ui.add_enabled(
+        filtering,
+        egui::Button::new(
+            egui::RichText::new(crate::i18n::tr("Save as Smart Album…")).font(t.font(12.5)),
+        ),
+    );
     register(ui.ctx(), "button:filterSave", save.rect);
     if save.clicked() {
         let _ = app.run("dialog.newSmartAlbum", json!({}));
     }
-    let clear = ui.add_enabled(filtering, egui::Button::new(egui::RichText::new(crate::i18n::tr("Clear")).font(t.font(12.5))));
+    let clear = ui.add_enabled(
+        filtering,
+        egui::Button::new(egui::RichText::new(crate::i18n::tr("Clear")).font(t.font(12.5))),
+    );
     register(ui.ctx(), "button:filterClear", clear.rect);
     if clear.clicked() {
         app.ui.search.clear();
@@ -283,7 +404,12 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let presets = ui.button(egui::RichText::new(crate::i18n::tr("Presets ▾")).font(t.font(12.5)));
     register(ui.ctx(), "button:filterPresets", presets.rect);
     egui::Popup::menu(&presets).show(|ui| {
-        let names: Vec<String> = app.session.filter_presets.iter().map(|f| f.name.clone()).collect();
+        let names: Vec<String> = app
+            .session
+            .filter_presets
+            .iter()
+            .map(|f| f.name.clone())
+            .collect();
         for n in &names {
             let r = ui.button(n);
             if r.clicked() {
@@ -296,11 +422,27 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             });
         }
         if names.is_empty() {
-            ui.label(egui::RichText::new(crate::i18n::tr("No filter presets yet")).color(t.text_dim));
+            ui.label(
+                egui::RichText::new(crate::i18n::tr("No filter presets yet")).color(t.text_dim),
+            );
         }
         ui.separator();
-        if ui.add_enabled(filtering, egui::Button::new(crate::i18n::tr("Save Current Filter as Preset…"))).clicked() {
-            crate::panels::dialogs::prompt(app, "Save Filter Preset", "Preset name", "", "filter.savePreset", json!({}), "name");
+        if ui
+            .add_enabled(
+                filtering,
+                egui::Button::new(crate::i18n::tr("Save Current Filter as Preset…")),
+            )
+            .clicked()
+        {
+            crate::panels::dialogs::prompt(
+                app,
+                "Save Filter Preset",
+                "Preset name",
+                "",
+                "filter.savePreset",
+                json!({}),
+                "name",
+            );
         }
     });
 }

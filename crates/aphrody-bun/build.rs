@@ -40,26 +40,43 @@ fn main() {
     println!("cargo::rerun-if-env-changed=APHRODY_MATERIAL_CHECKOUT");
 
     let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("set by cargo"));
-    let workspace = manifest.ancestors().nth(3).expect("crates/ui/bun sits three levels down");
+    let workspace = manifest
+        .ancestors()
+        .nth(3)
+        .expect("crates/ui/bun sits three levels down");
     let material = env::var_os("APHRODY_MATERIAL_CHECKOUT")
         .filter(|path| !path.is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|| workspace.parent().expect("Aphrody workspace parent").join("material"));
+        .unwrap_or_else(|| {
+            workspace
+                .parent()
+                .expect("Aphrody workspace parent")
+                .join("material")
+        });
     let fonts_package = material.join("packages/m3-fonts");
     let lock = fonts_package.join("fonts.lock.json");
-    let explicit =
-        env::var_os("APHRODY_SYMBOLS_DIR").filter(|dir| !dir.is_empty()).map(PathBuf::from);
-    let dir =
-        explicit.clone().unwrap_or_else(|| fonts_package.join("fonts/upstream/material-symbols"));
+    let explicit = env::var_os("APHRODY_SYMBOLS_DIR")
+        .filter(|dir| !dir.is_empty())
+        .map(PathBuf::from);
+    let dir = explicit
+        .clone()
+        .unwrap_or_else(|| fonts_package.join("fonts/upstream/material-symbols"));
 
     if lock.is_file() {
         println!("cargo::rerun-if-changed={}", lock.display());
     }
     // Watch the nearest existing directory, never a missing path (Cargo reruns the script on
     // every build for one), so a later `fonts-sync` re-embeds the fonts.
-    let floor =
-        if explicit.is_some() { dir.parent().unwrap_or(&dir) } else { fonts_package.as_path() };
-    if let Some(watch) = dir.ancestors().take_while(|p| p.starts_with(floor)).find(|p| p.is_dir()) {
+    let floor = if explicit.is_some() {
+        dir.parent().unwrap_or(&dir)
+    } else {
+        fonts_package.as_path()
+    };
+    if let Some(watch) = dir
+        .ancestors()
+        .take_while(|p| p.starts_with(floor))
+        .find(|p| p.is_dir())
+    {
         println!("cargo::rerun-if-changed={}", watch.display());
     }
 
@@ -69,16 +86,16 @@ fn main() {
             let dir = dir.canonicalize().expect("verified directory exists");
             println!("cargo::rustc-env=APHRODY_SYMBOLS_DIR={}", dir.display());
             println!("cargo::rustc-cfg=aphrody_symbols");
-        },
+        }
         Err(reason) if explicit.is_some() => {
             panic!("APHRODY_SYMBOLS_DIR={}: {reason}", dir.display());
-        },
+        }
         Err(reason) => {
             println!(
                 "cargo::warning=Material Symbols not embedded ({reason}); from the Material checkout run `bun packages/m3/scripts/fonts-sync.ts` \
                  or set APHRODY_SYMBOLS_DIR, then rebuild"
             );
-        },
+        }
     }
 }
 
@@ -87,7 +104,9 @@ fn main() {
 fn read_pins(lock: &Path) -> Option<Vec<(String, Pin)>> {
     let text = fs::read_to_string(lock).ok()?;
     let value: serde_json::Value = serde_json::from_str(&text).expect("fonts.lock.json is JSON");
-    let files = value["files"].as_array().expect("fonts.lock.json has a files array");
+    let files = value["files"]
+        .as_array()
+        .expect("fonts.lock.json has a files array");
     Some(
         files
             .iter()
@@ -114,7 +133,10 @@ fn verify(dir: &Path, pins: Option<&[(String, Pin)]>) -> Result<(), String> {
             .ok_or_else(|| format!("fonts.lock.json does not pin material-symbols/{name}"))?;
         let digest = hex(&Sha256::digest(&bytes));
         if bytes.len() as u64 != pin.bytes || digest != pin.sha256 {
-            return Err(format!("{} differs from its fonts.lock.json pin", path.display()));
+            return Err(format!(
+                "{} differs from its fonts.lock.json pin",
+                path.display()
+            ));
         }
     }
     Ok(())

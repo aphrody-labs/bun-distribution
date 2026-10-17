@@ -8,7 +8,9 @@ use figcraft_collab::{Client, Limits, Outgoing, Server};
 use figcraft_doc::{Document, NodeId};
 use serde_json::json;
 
-use crate::live::{Access, Event, HostOptions, LiveLink, Peer, Presence, PublishOptions, Role, SessionInfo, Status};
+use crate::live::{
+    Access, Event, HostOptions, LiveLink, Peer, Presence, PublishOptions, Role, SessionInfo, Status,
+};
 use crate::{EngineError, Session};
 
 /// What the scripted link was asked to do, and the events it hands out next.
@@ -80,7 +82,10 @@ impl LiveLink for Mock {
     fn poll(&mut self) -> Vec<(u64, Event)> {
         let mut s = self.0.lock().unwrap();
         let session = s.session;
-        std::mem::take(&mut s.events).into_iter().map(|e| (session, e)).collect()
+        std::mem::take(&mut s.events)
+            .into_iter()
+            .map(|e| (session, e))
+            .collect()
     }
 }
 
@@ -101,7 +106,11 @@ pub(crate) fn info(role: Role, me: u32) -> SessionInfo {
 }
 
 pub(crate) fn peer(id: u32, name: &str) -> Peer {
-    Peer { client_id: id, name: name.into(), color: "#9747FF".into() }
+    Peer {
+        client_id: id,
+        name: name.into(),
+        color: "#9747FF".into(),
+    }
 }
 
 pub(crate) fn session() -> (Session, Arc<Mutex<Script>>) {
@@ -123,9 +132,20 @@ pub(crate) fn serve(doc: &Document) -> (Server, u32, Event) {
 /// [`serve`] for a client that may do `access`.
 pub(crate) fn serve_as(doc: &Document, access: Access) -> (Server, u32, Event) {
     let mut server = Server::new(doc.clone(), "", Limits::default());
-    let ClientMsg::Hello(h) = Client::hello("f", "", "Me", "") else { panic!("no hello") };
+    let ClientMsg::Hello(h) = Client::hello("f", "", "Me", "") else {
+        panic!("no hello")
+    };
     let (id, outs) = server.join_as(h, access).unwrap();
-    let w = outs.into_iter().find_map(|o| if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o { Some(w) } else { None }).unwrap();
+    let w = outs
+        .into_iter()
+        .find_map(|o| {
+            if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o {
+                Some(w)
+            } else {
+                None
+            }
+        })
+        .unwrap();
     (server, id, Event::Sync(w))
 }
 
@@ -136,7 +156,11 @@ pub(crate) fn relay(script: &Arc<Mutex<Script>>, server: &mut Server, from: u32)
     for m in msgs {
         for o in server.receive(from, m) {
             match o {
-                Outgoing::To(id, m) | Outgoing::Others(id, m) if id == from && !matches!(m, ServerMsg::Presence { .. }) => out.push(Event::Sync(m)),
+                Outgoing::To(id, m) | Outgoing::Others(id, m)
+                    if id == from && !matches!(m, ServerMsg::Presence { .. }) =>
+                {
+                    out.push(Event::Sync(m))
+                }
                 Outgoing::All(m) => out.push(Event::Sync(m)),
                 _ => {}
             }
@@ -146,17 +170,28 @@ pub(crate) fn relay(script: &Arc<Mutex<Script>>, server: &mut Server, from: u32)
 }
 
 fn viewport(page: NodeId, x: f64, y: f64, w: f64, h: f64) -> Presence {
-    Presence { viewport: Some((page, x, y, w, h)), ..Presence::default() }
+    Presence {
+        viewport: Some((page, x, y, w, h)),
+        ..Presence::default()
+    }
 }
 
 #[test]
 fn without_a_link_live_sessions_are_unavailable() {
     let mut s = Session::new();
     for cmd in ["collab.host", "collab.join"] {
-        let e = s.execute(cmd, &json!({"link": "figcraft://join?host=a:1&file=f&token=t"})).unwrap_err();
+        let e = s
+            .execute(
+                cmd,
+                &json!({"link": "figcraft://join?host=a:1&file=f&token=t"}),
+            )
+            .unwrap_err();
         assert!(matches!(e, EngineError::Disabled(..)), "{cmd}: {e}");
     }
-    assert_eq!(s.execute("collab.leave", &json!({})).unwrap()["ended"], false);
+    assert_eq!(
+        s.execute("collab.leave", &json!({})).unwrap()["ended"],
+        false
+    );
     let p = s.execute("collab.peers", &json!({})).unwrap();
     assert_eq!(p["available"], false);
     assert_eq!(p["status"], "off");
@@ -165,33 +200,69 @@ fn without_a_link_live_sessions_are_unavailable() {
 #[test]
 fn hosting_and_joining_drive_the_link() {
     let (mut s, script) = session();
-    let r = s.execute("collab.host", &json!({"bind": "lan", "port": 50000})).unwrap();
+    let r = s
+        .execute("collab.host", &json!({"bind": "lan", "port": 50000}))
+        .unwrap();
     assert_eq!(r["status"], "live");
     assert_eq!(r["role"], "host");
-    assert_eq!(r["link"], "figcraft://join?host=127.0.0.1:47900&file=f&token=t");
+    assert_eq!(
+        r["link"],
+        "figcraft://join?host=127.0.0.1:47900&file=f&token=t"
+    );
     {
         let sc = script.lock().unwrap();
         assert_eq!(sc.hosted.len(), 1);
         assert_eq!(sc.hosted[0].port, Some(50000));
         assert_eq!(sc.hosted[0].bind, crate::live::Bind::Lan);
         assert_eq!(sc.hosted[0].doc.name, "Untitled");
-        assert_eq!(sc.hosted[0].name, "", "the default name lets the host pick one");
+        assert_eq!(
+            sc.hosted[0].name, "",
+            "the default name lets the host pick one"
+        );
     }
-    for bad in [json!({"bind": "everywhere"}), json!({"port": 70000}), json!({"port": -1}), json!({"port": "x"})] {
-        assert!(matches!(s.execute("collab.host", &bad), Err(EngineError::BadParams { .. })), "{bad}");
+    for bad in [
+        json!({"bind": "everywhere"}),
+        json!({"port": 70000}),
+        json!({"port": -1}),
+        json!({"port": "x"}),
+    ] {
+        assert!(
+            matches!(
+                s.execute("collab.host", &bad),
+                Err(EngineError::BadParams { .. })
+            ),
+            "{bad}"
+        );
     }
-    assert!(s.execute("collab.host", &json!({"bind": "10.1.2.3"})).is_ok());
-    assert!(matches!(s.execute("collab.join", &json!({"link": "http://x"})), Err(EngineError::BadParams { .. })));
-    let r = s.execute("collab.join", &json!({"link": " figcraft://join?host=a:1&file=f&token=t "})).unwrap();
+    assert!(
+        s.execute("collab.host", &json!({"bind": "10.1.2.3"}))
+            .is_ok()
+    );
+    assert!(matches!(
+        s.execute("collab.join", &json!({"link": "http://x"})),
+        Err(EngineError::BadParams { .. })
+    ));
+    let r = s
+        .execute(
+            "collab.join",
+            &json!({"link": " figcraft://join?host=a:1&file=f&token=t "}),
+        )
+        .unwrap();
     assert_eq!(r["status"], "connecting");
-    assert_eq!(script.lock().unwrap().joined, ["figcraft://join?host=a:1&file=f&token=t"]);
+    assert_eq!(
+        script.lock().unwrap().joined,
+        ["figcraft://join?host=a:1&file=f&token=t"]
+    );
     // The join is a session of its own: this file's goes on until it is stopped, and then the
     // join still on its way shows here.
     assert_eq!(s.live().role(), Some(Role::Host));
     assert_eq!(s.execute("collab.stop", &json!({})).unwrap()["ended"], true);
     assert!(script.lock().unwrap().left >= 1);
     assert_eq!(s.live().status, Status::Connecting);
-    assert_eq!(s.execute("collab.leave", &json!({})).unwrap()["ended"], true);
+    assert_eq!(
+        s.execute("collab.leave", &json!({})).unwrap()["ended"],
+        true
+    );
     assert_eq!(s.live().status, Status::Off);
     assert_eq!(s.live.iter().count(), 0);
 }
@@ -199,14 +270,33 @@ fn hosting_and_joining_drive_the_link() {
 #[test]
 fn events_build_who_is_here() {
     let (mut s, script) = session();
-    s.execute("collab.join", &json!({"link": "figcraft://join?host=a:1&file=f&token=t"})).unwrap();
-    push(&script, vec![Event::Welcome { info: info(Role::Guest, 2), peers: vec![peer(1, "Hana")] }, Event::PeerJoined(peer(3, "Bo"))]);
+    s.execute(
+        "collab.join",
+        &json!({"link": "figcraft://join?host=a:1&file=f&token=t"}),
+    )
+    .unwrap();
+    push(
+        &script,
+        vec![
+            Event::Welcome {
+                info: info(Role::Guest, 2),
+                peers: vec![peer(1, "Hana")],
+            },
+            Event::PeerJoined(peer(3, "Bo")),
+        ],
+    );
     assert!(s.live_poll());
     assert_eq!(s.live().status, Status::Live);
     assert_eq!(s.live().peers.len(), 2);
     assert_eq!(s.message.as_deref(), Some("Bo joined"));
     // Presence of someone not in the session is ignored; a leaver's presence goes with them.
-    push(&script, vec![Event::Presence(9, viewport(NodeId(1), 0.0, 0.0, 10.0, 10.0)), Event::Presence(3, viewport(NodeId(1), 0.0, 0.0, 10.0, 10.0))]);
+    push(
+        &script,
+        vec![
+            Event::Presence(9, viewport(NodeId(1), 0.0, 0.0, 10.0, 10.0)),
+            Event::Presence(3, viewport(NodeId(1), 0.0, 0.0, 10.0, 10.0)),
+        ],
+    );
     s.live_poll();
     assert_eq!(s.live().presence.keys().copied().collect::<Vec<_>>(), [3]);
     push(&script, vec![Event::PeerLeft(3)]);
@@ -217,11 +307,19 @@ fn events_build_who_is_here() {
     assert_eq!(p["peers"][0]["name"], "Hana");
     assert_eq!(p["fileName"], "Shared");
     // Reconnecting forgets who's here until the next welcome; failing ends it all.
-    push(&script, vec![Event::Status(Status::Reconnecting { attempt: 1 })]);
+    push(
+        &script,
+        vec![Event::Status(Status::Reconnecting { attempt: 1 })],
+    );
     s.live_poll();
     assert!(s.live().peers.is_empty());
     assert_eq!(s.live_summary()["attempt"], 1);
-    push(&script, vec![Event::Status(Status::Failed { reason: "Lost the connection".into() })]);
+    push(
+        &script,
+        vec![Event::Status(Status::Failed {
+            reason: "Lost the connection".into(),
+        })],
+    );
     s.live_poll();
     assert!(s.live().info.is_none());
     assert_eq!(s.live_summary()["reason"], "Lost the connection");
@@ -246,10 +344,17 @@ fn presence_is_sent_when_it_changes_and_only_when_live() {
     assert_eq!(sent[0].selection, Some(vec![]));
     let v = sent[0].viewport.unwrap();
     assert_eq!(v.0, page);
-    assert!((v.3 - 1200.0).abs() < 1e-9 && (v.4 - 800.0).abs() < 1e-9, "the viewport at 100%: {v:?}");
+    assert!(
+        (v.3 - 1200.0).abs() < 1e-9 && (v.4 - 800.0).abs() < 1e-9,
+        "the viewport at 100%: {v:?}"
+    );
     // `collab.cursor` moves it (agents); a non-finite pointer never goes out.
-    s.execute("collab.cursor", &json!({"x": 1, "y": 2})).unwrap();
-    assert_eq!(script.lock().unwrap().sent.last().unwrap().cursor, Some((page, 1.0, 2.0)));
+    s.execute("collab.cursor", &json!({"x": 1, "y": 2}))
+        .unwrap();
+    assert_eq!(
+        script.lock().unwrap().sent.last().unwrap().cursor,
+        Some((page, 1.0, 2.0))
+    );
     assert!(s.execute("collab.cursor", &json!({"x": 1})).is_err());
     s.live_mut().unwrap().cursor = Some((f64::NAN, 0.0));
     s.live_sync();
@@ -262,10 +367,19 @@ fn presence_is_sent_when_it_changes_and_only_when_live() {
 fn following_shows_their_viewport_and_page() {
     let (mut s, script) = session();
     s.execute("collab.host", &json!({})).unwrap();
-    let second = s.execute("page.add", &json!({"name": "Two"})).unwrap()["id"].as_u64().map(NodeId).unwrap();
+    let second = s.execute("page.add", &json!({"name": "Two"})).unwrap()["id"]
+        .as_u64()
+        .map(NodeId)
+        .unwrap();
     let first = s.doc().unwrap().pages[0];
     s.execute("page.select", &json!({"id": first.0})).unwrap();
-    push(&script, vec![Event::PeerJoined(peer(5, "Ada")), Event::Presence(5, viewport(second, 100.0, 200.0, 600.0, 400.0))]);
+    push(
+        &script,
+        vec![
+            Event::PeerJoined(peer(5, "Ada")),
+            Event::Presence(5, viewport(second, 100.0, 200.0, 600.0, 400.0)),
+        ],
+    );
     s.live_poll();
     assert!(s.execute("collab.follow", &json!({"client": 6})).is_err());
     // Before the document syncs, their page ids aren't this document's: only the viewport counts.
@@ -280,9 +394,18 @@ fn following_shows_their_viewport_and_page() {
     let ds = s.ds().unwrap();
     assert_eq!(ds.page, second, "their page, in a shared document");
     assert_eq!((ds.view.cx, ds.view.cy), (400.0, 400.0));
-    assert!((ds.view.zoom - 2.0).abs() < 1e-9, "their area fills the viewport");
+    assert!(
+        (ds.view.zoom - 2.0).abs() < 1e-9,
+        "their area fills the viewport"
+    );
     // A page this document doesn't have: only the viewport.
-    push(&script, vec![Event::Presence(5, viewport(NodeId(987_654), 0.0, 0.0, 1200.0, 800.0))]);
+    push(
+        &script,
+        vec![Event::Presence(
+            5,
+            viewport(NodeId(987_654), 0.0, 0.0, 1200.0, 800.0),
+        )],
+    );
     s.live_poll();
     assert_eq!(s.ds().unwrap().page, second);
     assert_eq!(s.ds().unwrap().view.cx, 600.0);
@@ -297,17 +420,35 @@ fn following_shows_their_viewport_and_page() {
     assert_eq!(s.live().follow, None);
     // And `collab.follow {}`.
     s.execute("collab.follow", &json!({"client": 5})).unwrap();
-    assert_eq!(s.execute("collab.follow", &json!({})).unwrap()["follow"], serde_json::Value::Null);
+    assert_eq!(
+        s.execute("collab.follow", &json!({})).unwrap()["follow"],
+        serde_json::Value::Null
+    );
 }
 
 #[test]
 fn the_host_ending_resets_everything() {
     let (mut s, script) = session();
-    s.execute("collab.join", &json!({"link": "figcraft://join?host=a:1&file=f&token=t"})).unwrap();
-    push(&script, vec![Event::Welcome { info: info(Role::Guest, 2), peers: vec![peer(1, "Hana")] }]);
+    s.execute(
+        "collab.join",
+        &json!({"link": "figcraft://join?host=a:1&file=f&token=t"}),
+    )
+    .unwrap();
+    push(
+        &script,
+        vec![Event::Welcome {
+            info: info(Role::Guest, 2),
+            peers: vec![peer(1, "Hana")],
+        }],
+    );
     s.live_poll();
     s.execute("collab.follow", &json!({"client": 1})).unwrap();
-    push(&script, vec![Event::Ended { reason: "The host ended the session".into() }]);
+    push(
+        &script,
+        vec![Event::Ended {
+            reason: "The host ended the session".into(),
+        }],
+    );
     s.live_poll();
     assert_eq!(s.live().status, Status::Off);
     assert!(s.live().peers.is_empty() && s.live().follow.is_none() && s.live().info.is_none());
@@ -324,7 +465,10 @@ fn collab_commands_survive_junk() {
         json!({"text": 5, "on": "yes"}),
         json!({"text": "\u{0}\u{7f}".repeat(10_000), "on": null}),
     ];
-    for cmd in crate::all_commands().iter().filter(|c| c.id.starts_with("collab.")) {
+    for cmd in crate::all_commands()
+        .iter()
+        .filter(|c| c.id.starts_with("collab."))
+    {
         for j in &junk {
             let (mut s, _) = session();
             if let Err(EngineError::Internal { msg, .. }) = s.execute(cmd.id, j) {
@@ -342,17 +486,36 @@ fn edits_sync_through_the_server_and_remote_ones_skip_undo() {
     push(&script, vec![welcome]);
     s.live_poll();
     assert!(s.live().syncing() && s.live_shared());
-    assert!(!s.ds().unwrap().is_dirty(), "starting a session doesn't dirty the file");
+    assert!(
+        !s.ds().unwrap().is_dirty(),
+        "starting a session doesn't dirty the file"
+    );
     // An edit made while hosting goes out as one batch, and the server confirms it.
-    let r = s.execute("shape.rectangle", &json!({"x": 10, "y": 20, "width": 30, "height": 40})).unwrap();
+    let r = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 10, "y": 20, "width": 30, "height": 40}),
+        )
+        .unwrap();
     let rect = NodeId(r["id"].as_u64().unwrap());
-    assert_eq!(rect.0 >> 32, u64::from(me), "new layers take ids in this client's space");
+    assert_eq!(
+        rect.0 >> 32,
+        u64::from(me),
+        "new layers take ids in this client's space"
+    );
     s.live_sync();
     assert_eq!(script.lock().unwrap().msgs.len(), 1);
     s.live_sync();
-    assert_eq!(script.lock().unwrap().msgs.len(), 1, "nothing new, nothing sent");
+    assert_eq!(
+        script.lock().unwrap().msgs.len(),
+        1,
+        "nothing new, nothing sent"
+    );
     let back = relay(&script, &mut server, me);
-    assert!(server.document().contains(rect), "the server has the rectangle");
+    assert!(
+        server.document().contains(rect),
+        "the server has the rectangle"
+    );
     push(&script, back);
     s.live_poll();
     // A gesture is sent once, when it ends.
@@ -365,7 +528,10 @@ fn edits_sync_through_the_server_and_remote_ones_skip_undo() {
     })
     .unwrap();
     s.live_sync();
-    assert!(script.lock().unwrap().msgs.is_empty(), "nothing while dragging");
+    assert!(
+        script.lock().unwrap().msgs.is_empty(),
+        "nothing while dragging"
+    );
     s.commit_interaction().unwrap();
     s.live_sync();
     assert_eq!(script.lock().unwrap().msgs.len(), 1);
@@ -373,9 +539,16 @@ fn edits_sync_through_the_server_and_remote_ones_skip_undo() {
     s.live_poll();
     // Someone else recolours it: applied, with no undo step of its own.
     let undo_before = s.ds().unwrap().history.undo.len();
-    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "") else { panic!("no hello") };
+    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "") else {
+        panic!("no hello")
+    };
     let (ada, outs) = server.join(h).unwrap();
-    let Some(Outgoing::To(_, w)) = outs.into_iter().find(|o| matches!(o, Outgoing::To(_, ServerMsg::Welcome { .. }))) else { panic!("no welcome") };
+    let Some(Outgoing::To(_, w)) = outs
+        .into_iter()
+        .find(|o| matches!(o, Outgoing::To(_, ServerMsg::Welcome { .. })))
+    else {
+        panic!("no welcome")
+    };
     let mut other = Client::join(w).unwrap();
     let mut doc = other.document().clone();
     doc.node_mut(rect).unwrap().opacity = 0.25;
@@ -389,14 +562,31 @@ fn edits_sync_through_the_server_and_remote_ones_skip_undo() {
     push(&script, remote);
     assert!(s.live_poll());
     assert_eq!(s.doc().unwrap().node(rect).unwrap().opacity, 0.25);
-    assert_eq!(s.ds().unwrap().history.undo.len(), undo_before, "remote edits never enter your undo history");
-    assert_eq!(s.doc().unwrap().node(rect), server.document().node(rect), "the same as the server");
+    assert_eq!(
+        s.ds().unwrap().history.undo.len(),
+        undo_before,
+        "remote edits never enter your undo history"
+    );
+    assert_eq!(
+        s.doc().unwrap().node(rect),
+        server.document().node(rect),
+        "the same as the server"
+    );
     // While a gesture shows, remote batches wait for it to end.
     let mut doc = other.document().clone();
     doc.node_mut(rect).unwrap().name = "Card".into();
     let batch = other.edit(&doc).unwrap().unwrap();
-    let remote: Vec<Event> =
-        server.receive(ada, batch).into_iter().filter_map(|o| if let Outgoing::All(m) = o { Some(Event::Sync(m)) } else { None }).collect();
+    let remote: Vec<Event> = server
+        .receive(ada, batch)
+        .into_iter()
+        .filter_map(|o| {
+            if let Outgoing::All(m) = o {
+                Some(Event::Sync(m))
+            } else {
+                None
+            }
+        })
+        .collect();
     s.begin_interaction("Move").unwrap();
     push(&script, remote);
     s.live_poll();
@@ -408,7 +598,8 @@ fn edits_sync_through_the_server_and_remote_ones_skip_undo() {
     let uid = s.live().doc_uid.unwrap();
     s.execute("file.new", &json!({})).unwrap();
     let i = s.docs.iter().position(|d| d.uid == uid).unwrap();
-    s.execute("file.close", &json!({"index": i, "force": true})).unwrap();
+    s.execute("file.close", &json!({"index": i, "force": true}))
+        .unwrap();
     s.live_sync();
     assert_eq!(s.live_of(uid).status, Status::Off);
     assert_eq!(s.live.iter().count(), 0);
@@ -420,11 +611,31 @@ fn a_guest_opens_the_hosts_file_as_a_new_tab() {
     let mut host_doc = Document::new("Team file");
     host_doc.repair();
     let (mut server, _, _) = serve(&host_doc);
-    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "") else { panic!("no hello") };
+    let ClientMsg::Hello(h) = Client::hello("f", "", "Ada", "") else {
+        panic!("no hello")
+    };
     let (ada, outs) = server.join(h).unwrap();
-    let Some(Outgoing::To(_, w)) = outs.into_iter().find(|o| matches!(o, Outgoing::To(_, ServerMsg::Welcome { .. }))) else { panic!("no welcome") };
-    s.execute("collab.join", &json!({"link": "figcraft://join?host=a:1&file=f&token=t"})).unwrap();
-    push(&script, vec![Event::Welcome { info: info(Role::Guest, ada), peers: vec![peer(1, "Hana")] }, Event::Sync(w)]);
+    let Some(Outgoing::To(_, w)) = outs
+        .into_iter()
+        .find(|o| matches!(o, Outgoing::To(_, ServerMsg::Welcome { .. })))
+    else {
+        panic!("no welcome")
+    };
+    s.execute(
+        "collab.join",
+        &json!({"link": "figcraft://join?host=a:1&file=f&token=t"}),
+    )
+    .unwrap();
+    push(
+        &script,
+        vec![
+            Event::Welcome {
+                info: info(Role::Guest, ada),
+                peers: vec![peer(1, "Hana")],
+            },
+            Event::Sync(w),
+        ],
+    );
     s.live_poll();
     assert_eq!(s.docs.len(), 2, "your own file stays open");
     assert_eq!(s.doc().unwrap().name, "Team file");
@@ -432,10 +643,19 @@ fn a_guest_opens_the_hosts_file_as_a_new_tab() {
     assert_eq!(s.message.as_deref(), Some("Joined Team file"));
     assert!(s.live_shared());
     // Your edit reaches the server.
-    let r = s.execute("shape.ellipse", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+    let r = s
+        .execute(
+            "shape.ellipse",
+            &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
     s.live_sync();
     let back = relay(&script, &mut server, ada);
-    assert!(server.document().contains(NodeId(r["id"].as_u64().unwrap())));
+    assert!(
+        server
+            .document()
+            .contains(NodeId(r["id"].as_u64().unwrap()))
+    );
     push(&script, back);
     s.live_poll();
     // Leaving keeps the file as a local copy.
@@ -448,19 +668,58 @@ fn a_guest_opens_the_hosts_file_as_a_new_tab() {
 fn hosting_commands_check_what_they_are_given() {
     let mut s = Session::new();
     // The publish server preference: a WebSocket address without a key, or nothing.
-    assert_eq!(s.execute("pref.publishServer", &json!({"url": " wss://figcraft.example.com/ "})).unwrap()["url"], "wss://figcraft.example.com/");
-    for bad in ["https://figcraft.example.com/", "wss://host/?key=secret", "wss://a b/"] {
-        assert!(s.execute("pref.publishServer", &json!({"url": bad})).is_err(), "{bad}");
+    assert_eq!(
+        s.execute(
+            "pref.publishServer",
+            &json!({"url": " wss://figcraft.example.com/ "})
+        )
+        .unwrap()["url"],
+        "wss://figcraft.example.com/"
+    );
+    for bad in [
+        "https://figcraft.example.com/",
+        "wss://host/?key=secret",
+        "wss://a b/",
+    ] {
+        assert!(
+            s.execute("pref.publishServer", &json!({"url": bad}))
+                .is_err(),
+            "{bad}"
+        );
     }
-    assert_eq!(s.prefs.publish_server, "wss://figcraft.example.com/", "a refused address changes nothing");
-    s.execute("pref.publishServer", &json!({"url": ""})).unwrap();
+    assert_eq!(
+        s.prefs.publish_server, "wss://figcraft.example.com/",
+        "a refused address changes nothing"
+    );
+    s.execute("pref.publishServer", &json!({"url": ""}))
+        .unwrap();
     assert!(s.prefs.publish_server.is_empty());
     // No network here: the server can't be asked, nothing can be reported.
-    let e = s.execute("collab.serverInfo", &json!({"server": "wss://figcraft.example.com/"})).unwrap_err().to_string();
+    let e = s
+        .execute(
+            "collab.serverInfo",
+            &json!({"server": "wss://figcraft.example.com/"}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("desktop app or the MCP server"), "{e}");
-    let e = s.execute("collab.manageFile", &json!({"server": "wss://x/", "file": "f", "owner": "o", "action": "explode"})).unwrap_err().to_string();
+    let e = s
+        .execute(
+            "collab.manageFile",
+            &json!({"server": "wss://x/", "file": "f", "owner": "o", "action": "explode"}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("`action` must be"), "{e}");
-    let e = s.execute("collab.report", &json!({"reason": "Spam"})).unwrap_err().to_string();
+    let e = s
+        .execute("collab.report", &json!({"reason": "Spam"}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("join a file"), "{e}");
-    assert!(s.execute("collab.report", &json!({"reason": " \n "})).unwrap_err().to_string().contains("few words"));
+    assert!(
+        s.execute("collab.report", &json!({"reason": " \n "}))
+            .unwrap_err()
+            .to_string()
+            .contains("few words")
+    );
 }

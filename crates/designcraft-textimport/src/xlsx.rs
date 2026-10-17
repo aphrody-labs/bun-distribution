@@ -21,24 +21,49 @@ fn cell_ref(r: &str) -> Option<(usize, usize)> {
 }
 
 /// The worksheet part of the first sheet (workbook order), via the workbook relationships.
-fn first_sheet(zip: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> Result<Option<String>, ImportError> {
-    let Some(wb) = part(zip, "xl/workbook.xml")? else { return Ok(None) };
-    let Some(rels) = part(zip, "xl/_rels/workbook.xml.rels")? else { return Ok(None) };
+fn first_sheet(
+    zip: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+) -> Result<Option<String>, ImportError> {
+    let Some(wb) = part(zip, "xl/workbook.xml")? else {
+        return Ok(None);
+    };
+    let Some(rels) = part(zip, "xl/_rels/workbook.xml.rels")? else {
+        return Ok(None);
+    };
     Ok(first_sheet_target(&wb, &rels))
 }
 
 fn first_sheet_target(wb: &str, rels: &str) -> Option<String> {
     let wb = parse(wb).ok()?;
-    let rid = wb.child("sheets")?.els().find(|e| e.name == "sheet")?.attr("id")?.to_string();
+    let rid = wb
+        .child("sheets")?
+        .els()
+        .find(|e| e.name == "sheet")?
+        .attr("id")?
+        .to_string();
     let rels = parse(rels).ok()?;
-    let target = rels.els().find(|r| r.attr("Id") == Some(rid.as_str()))?.attr("Target")?.trim_start_matches('/').to_string();
-    Some(if target.starts_with("xl/") { target } else { format!("xl/{target}") })
+    let target = rels
+        .els()
+        .find(|r| r.attr("Id") == Some(rid.as_str()))?
+        .attr("Target")?
+        .trim_start_matches('/')
+        .to_string();
+    Some(if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{target}")
+    })
 }
 
 fn value(c: &El, shared: &[String]) -> String {
     let v = || c.child("v").map(El::text).unwrap_or_default();
     match c.attr("t") {
-        Some("s") => v().trim().parse::<usize>().ok().and_then(|i| shared.get(i).cloned()).unwrap_or_default(),
+        Some("s") => v()
+            .trim()
+            .parse::<usize>()
+            .ok()
+            .and_then(|i| shared.get(i).cloned())
+            .unwrap_or_default(),
         Some("inlineStr") => c.child("is").map(El::text).unwrap_or_default(),
         Some("b") => {
             if v().trim() == "1" {
@@ -64,9 +89,12 @@ fn value(c: &El, shared: &[String]) -> String {
 /// Cells past the header are kept so the caller can warn. Over 200 columns or 100,000
 /// data rows is an error and the grid is not built.
 pub fn records(bytes: &[u8], sheet: Option<&str>) -> Result<Vec<Vec<String>>, ImportError> {
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| ImportError::Corrupt(e.to_string()))?;
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
+        .map_err(|e| ImportError::Corrupt(e.to_string()))?;
     let sheet_part = sheet_target(&mut zip, sheet)?;
-    let sheet_xml = parse(&part(&mut zip, &sheet_part)?.ok_or_else(|| ImportError::Corrupt(format!("no {sheet_part} (not an Excel workbook)")))?)?;
+    let sheet_xml = parse(&part(&mut zip, &sheet_part)?.ok_or_else(|| {
+        ImportError::Corrupt(format!("no {sheet_part} (not an Excel workbook)"))
+    })?)?;
     let shared: Vec<String> = part(&mut zip, "xl/sharedStrings.xml")?
         .map(|x| parse(&x))
         .transpose()?
@@ -100,7 +128,10 @@ pub fn records(bytes: &[u8], sheet: Option<&str>) -> Result<Vec<Vec<String>>, Im
     }
     let width = max_c.saturating_sub(min_c).saturating_add(1);
     if width > crate::DATA_MERGE_MAX_COLS {
-        return Err(ImportError::Corrupt(format!("the sheet has {width} columns; the limit is {}", crate::DATA_MERGE_MAX_COLS)));
+        return Err(ImportError::Corrupt(format!(
+            "the sheet has {width} columns; the limit is {}",
+            crate::DATA_MERGE_MAX_COLS
+        )));
     }
     // Group by row. Gaps (empty rows) are not materialised.
     let mut by_row: BTreeMap<usize, Vec<(usize, String)>> = BTreeMap::new();
@@ -118,7 +149,10 @@ pub fn records(bytes: &[u8], sheet: Option<&str>) -> Result<Vec<Vec<String>>, Im
         }
     }
     if data_rows > crate::DATA_MERGE_MAX_ROWS {
-        return Err(ImportError::Corrupt(format!("the sheet has {data_rows} data rows; the limit is {}", crate::DATA_MERGE_MAX_ROWS)));
+        return Err(ImportError::Corrupt(format!(
+            "the sheet has {data_rows} data rows; the limit is {}",
+            crate::DATA_MERGE_MAX_ROWS
+        )));
     }
     let mut out = Vec::with_capacity(data_rows.saturating_add(1));
     for (r, cols) in &by_row {
@@ -151,30 +185,56 @@ pub fn records(bytes: &[u8], sheet: Option<&str>) -> Result<Vec<Vec<String>>, Im
 }
 
 /// Workbook order, or the sheet named `wanted`.
-fn sheet_target(zip: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>, wanted: Option<&str>) -> Result<String, ImportError> {
-    let wb = parse(&part(zip, "xl/workbook.xml")?.ok_or_else(|| ImportError::Corrupt("no xl/workbook.xml (not an Excel workbook)".into()))?)?;
+fn sheet_target(
+    zip: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    wanted: Option<&str>,
+) -> Result<String, ImportError> {
+    let wb = parse(&part(zip, "xl/workbook.xml")?.ok_or_else(|| {
+        ImportError::Corrupt("no xl/workbook.xml (not an Excel workbook)".into())
+    })?)?;
     let sheets: Vec<(String, String)> = wb
         .child("sheets")
-        .map(|s| s.els().filter(|e| e.name == "sheet").filter_map(|e| Some((e.attr("name")?.to_string(), e.attr("id")?.to_string()))).collect())
+        .map(|s| {
+            s.els()
+                .filter(|e| e.name == "sheet")
+                .filter_map(|e| Some((e.attr("name")?.to_string(), e.attr("id")?.to_string())))
+                .collect()
+        })
         .unwrap_or_default();
     let (name, rid) = match wanted {
-        None => sheets.first().cloned().ok_or_else(|| ImportError::Corrupt("the workbook has no sheets".into()))?,
-        Some(w) => sheets.into_iter().find(|(n, _)| n == w).ok_or_else(|| ImportError::Corrupt(format!("no worksheet \"{w}\"")))?,
+        None => sheets
+            .first()
+            .cloned()
+            .ok_or_else(|| ImportError::Corrupt("the workbook has no sheets".into()))?,
+        Some(w) => sheets
+            .into_iter()
+            .find(|(n, _)| n == w)
+            .ok_or_else(|| ImportError::Corrupt(format!("no worksheet \"{w}\"")))?,
     };
-    let rels = parse(&part(zip, "xl/_rels/workbook.xml.rels")?.ok_or_else(|| ImportError::Corrupt("no workbook relationships".into()))?)?;
+    let rels = parse(
+        &part(zip, "xl/_rels/workbook.xml.rels")?
+            .ok_or_else(|| ImportError::Corrupt("no workbook relationships".into()))?,
+    )?;
     let target = rels
         .els()
         .find(|r| r.attr("Id") == Some(rid.as_str()))
         .and_then(|r| r.attr("Target"))
         .ok_or_else(|| ImportError::Corrupt(format!("worksheet \"{name}\" has no file")))?;
     let target = target.trim_start_matches('/');
-    Ok(if target.starts_with("xl/") { target.to_string() } else { format!("xl/{target}") })
+    Ok(if target.starts_with("xl/") {
+        target.to_string()
+    } else {
+        format!("xl/{target}")
+    })
 }
 
 pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| ImportError::Corrupt(e.to_string()))?;
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
+        .map_err(|e| ImportError::Corrupt(e.to_string()))?;
     let sheet_part = first_sheet(&mut zip)?.unwrap_or_else(|| "xl/worksheets/sheet1.xml".into());
-    let sheet = parse(&part(&mut zip, &sheet_part)?.ok_or_else(|| ImportError::Corrupt(format!("no {sheet_part} (not an Excel workbook)")))?)?;
+    let sheet = parse(&part(&mut zip, &sheet_part)?.ok_or_else(|| {
+        ImportError::Corrupt(format!("no {sheet_part} (not an Excel workbook)"))
+    })?)?;
     let shared: Vec<String> = part(&mut zip, "xl/sharedStrings.xml")?
         .map(|x| parse(&x))
         .transpose()?
@@ -200,9 +260,19 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
     // table is capped before anything is allocated for it.
     const MAX_CELLS: usize = 100_000;
     const MAX_COLS: usize = 1_000;
-    let (r0, c0) = cells.iter().fold((usize::MAX, usize::MAX), |(r, c), ((a, b), _)| (r.min(*a), c.min(*b)));
-    let (r1, c1) = cells.iter().fold((0, 0), |(r, c), ((a, b), _)| (r.max(*a), c.max(*b)));
-    let (nrows, ncols) = if cells.is_empty() { (1, 1) } else { ((r1 - r0).saturating_add(1), (c1 - c0).saturating_add(1)) };
+    let (r0, c0) = cells
+        .iter()
+        .fold((usize::MAX, usize::MAX), |(r, c), ((a, b), _)| {
+            (r.min(*a), c.min(*b))
+        });
+    let (r1, c1) = cells
+        .iter()
+        .fold((0, 0), |(r, c), ((a, b), _)| (r.max(*a), c.max(*b)));
+    let (nrows, ncols) = if cells.is_empty() {
+        (1, 1)
+    } else {
+        ((r1 - r0).saturating_add(1), (c1 - c0).saturating_add(1))
+    };
     let ncols_kept = ncols.min(MAX_COLS);
     if ncols_kept < ncols {
         warnings.push(format!("only the first {ncols_kept} columns were placed"));
@@ -219,9 +289,20 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
     }
     let mut story = Story::new(StoryId(0));
     let width = 72.0 * ncols_kept as f64;
-    let t = Table::from_strings(1, &rows, width, &ParaFormat::default(), &CharFormat::default());
+    let t = Table::from_strings(
+        1,
+        &rows,
+        width,
+        &ParaFormat::default(),
+        &CharFormat::default(),
+    );
     story.insert_table(0, t);
-    Ok(Imported { story, para_styles: vec![], char_styles: vec![], warnings })
+    Ok(Imported {
+        story,
+        para_styles: vec![],
+        char_styles: vec![],
+        warnings,
+    })
 }
 
 #[cfg(test)]
@@ -250,7 +331,10 @@ mod tests {
                     "xl/_rels/workbook.xml.rels",
                     r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="x" Target="worksheets/sheet1.xml"/></Relationships>"#,
                 ),
-                ("xl/sharedStrings.xml", r#"<sst><si><t>Item</t></si><si><t>Price</t></si><si><r><t>Te</t></r><r><t>a</t></r></si></sst>"#),
+                (
+                    "xl/sharedStrings.xml",
+                    r#"<sst><si><t>Item</t></si><si><t>Price</t></si><si><r><t>Te</t></r><r><t>a</t></r></si></sst>"#,
+                ),
                 ("xl/worksheets/sheet1.xml", sheet),
             ] {
                 z.start_file(name, o).unwrap();
@@ -267,7 +351,17 @@ mod tests {
         let t = imp.story.tables.values().next().expect("a table");
         assert_eq!((t.nrows(), t.ncols()), (3, 2), "the used range B2:C4");
         let cell = |r, c| t.cell(r, c).unwrap().text.text.clone();
-        assert_eq!([cell(0, 0), cell(0, 1), cell(1, 0), cell(1, 1), cell(2, 0), cell(2, 1)], ["Item", "Price", "Tea", "3.5", "Cake", "12"]);
+        assert_eq!(
+            [
+                cell(0, 0),
+                cell(0, 1),
+                cell(1, 0),
+                cell(1, 1),
+                cell(2, 0),
+                cell(2, 1)
+            ],
+            ["Item", "Price", "Tea", "3.5", "Cake", "12"]
+        );
         assert_eq!(cell_ref("AA10"), Some((9, 26)));
     }
 
@@ -325,11 +419,35 @@ mod tests {
             ),
         ]);
         let rows = records(&book, Some("People")).unwrap();
-        assert_eq!(rows[0], vec!["Name".to_string(), "Qty".to_string(), "On".to_string(), "When".to_string()]);
-        assert_eq!(rows[1], vec!["Ada".to_string(), "12".to_string(), "TRUE".to_string(), "44927".to_string()]);
+        assert_eq!(
+            rows[0],
+            vec![
+                "Name".to_string(),
+                "Qty".to_string(),
+                "On".to_string(),
+                "When".to_string()
+            ]
+        );
+        assert_eq!(
+            rows[1],
+            vec![
+                "Ada".to_string(),
+                "12".to_string(),
+                "TRUE".to_string(),
+                "44927".to_string()
+            ]
+        );
         // Formula with no cached value is empty. The short row is padded. The all-empty gap is skipped
         // only when every cell is empty; row 4 has a Qty, so it stays, and Name is empty.
-        assert_eq!(rows[2], vec!["Grace".to_string(), String::new(), String::new(), String::new()]);
+        assert_eq!(
+            rows[2],
+            vec![
+                "Grace".to_string(),
+                String::new(),
+                String::new(),
+                String::new()
+            ]
+        );
         assert_eq!(rows[3][0], "");
         assert_eq!(rows[3][1], "1");
         assert!(records(&book, Some("Missing")).is_err());

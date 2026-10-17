@@ -30,7 +30,10 @@ pub struct SanitizeOptions {
 
 impl Default for SanitizeOptions {
     fn default() -> Self {
-        Self { allow_external_refs: false, strip_metadata: true }
+        Self {
+            allow_external_refs: false,
+            strip_metadata: true,
+        }
     }
 }
 
@@ -79,9 +82,16 @@ pub fn is_safe_url(value: &str, options: SanitizeOptions) -> bool {
         return false;
     }
     if let Some(rest) = compact.strip_prefix("data:") {
-        return ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/avif"]
-            .iter()
-            .any(|mime| rest.starts_with(mime));
+        return [
+            "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/gif",
+            "image/webp",
+            "image/avif",
+        ]
+        .iter()
+        .any(|mime| rest.starts_with(mime));
     }
     options.allow_external_refs
 }
@@ -115,14 +125,20 @@ struct Sanitizer(SanitizeOptions);
 impl Rules for Sanitizer {
     fn keep_element(&self, node: Node<'_, '_>) -> bool {
         let tag = node.tag_name();
-        if BLOCKED_ELEMENTS.iter().any(|b| b.eq_ignore_ascii_case(tag.name())) {
+        if BLOCKED_ELEMENTS
+            .iter()
+            .any(|b| b.eq_ignore_ascii_case(tag.name()))
+        {
             return false;
         }
         if self.0.strip_metadata {
             if tag.name() == "metadata" {
                 return false;
             }
-            if tag.namespace().is_some_and(|ns| EDITOR_NAMESPACES.contains(&ns)) {
+            if tag
+                .namespace()
+                .is_some_and(|ns| EDITOR_NAMESPACES.contains(&ns))
+            {
                 return false;
             }
         }
@@ -146,13 +162,13 @@ impl Rules for Sanitizer {
         match local {
             "href" | "src" | "action" | "formaction" => {
                 is_safe_url(value, self.0).then(|| value.to_owned())
-            },
+            }
             "style" => css_is_safe(value, self.0).then(|| value.to_owned()),
             _ if value.contains("url(") => css_is_safe(value, self.0).then(|| value.to_owned()),
             _ => {
                 let lower = value.to_ascii_lowercase();
                 (!lower.trim_start().starts_with("javascript:")).then(|| value.to_owned())
-            },
+            }
         }
     }
 
@@ -202,14 +218,24 @@ mod tests {
     fn external_refs_are_opt_in() {
         let svg =
             r#"<svg xmlns="http://www.w3.org/2000/svg"><image href="https://cdn/x.png"/></svg>"#;
-        let opts = SanitizeOptions { allow_external_refs: true, ..SanitizeOptions::default() };
-        assert!(sanitize(svg, opts).expect("ok").contains("https://cdn/x.png"));
+        let opts = SanitizeOptions {
+            allow_external_refs: true,
+            ..SanitizeOptions::default()
+        };
+        assert!(
+            sanitize(svg, opts)
+                .expect("ok")
+                .contains("https://cdn/x.png")
+        );
     }
 
     #[test]
     fn strips_editor_metadata() {
         let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" inkscape:version="1"><metadata>m</metadata><inkscape:grid/><path d="M0 0"/></svg>"#;
         let out = sanitize(svg, SanitizeOptions::default()).expect("ok");
-        assert_eq!(out, r#"<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>"#);
+        assert_eq!(
+            out,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>"#
+        );
     }
 }

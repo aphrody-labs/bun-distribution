@@ -58,7 +58,11 @@ pub struct DeviceRequest<'a> {
 impl<'a> DeviceRequest<'a> {
     #[must_use]
     pub const fn new(label: Option<&'a str>, limits: DeviceLimits) -> Self {
-        Self { label, limits, features: wgpu::Features::empty() }
+        Self {
+            label,
+            limits,
+            features: wgpu::Features::empty(),
+        }
     }
 
     /// Request `features` in addition to the shared defaults. The caller checks
@@ -85,7 +89,7 @@ pub async fn request_device(
         DeviceLimits::Adapter => adapter.limits(),
         DeviceLimits::DownlevelWithAdapterResolution => {
             wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
-        },
+        }
     };
 
     let descriptor = wgpu::DeviceDescriptor {
@@ -143,16 +147,20 @@ pub fn surface_configuration(
             .copied()
             .find(|format| !format.is_srgb())
             .or_else(|| capabilities.formats.first().copied()),
-        SurfaceFormat::Require(preferred) => {
-            capabilities.formats.iter().copied().find(|format| preferred.contains(format))
-        },
+        SurfaceFormat::Require(preferred) => capabilities
+            .formats
+            .iter()
+            .copied()
+            .find(|format| preferred.contains(format)),
     }?;
 
     let present_mode = request
         .present_mode
         .filter(|mode| capabilities.present_modes.contains(mode))
         .or_else(|| capabilities.present_modes.first().copied())?;
-    let alpha_mode = request.alpha_mode.or_else(|| capabilities.alpha_modes.first().copied())?;
+    let alpha_mode = request
+        .alpha_mode
+        .or_else(|| capabilities.alpha_modes.first().copied())?;
 
     Some(wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,

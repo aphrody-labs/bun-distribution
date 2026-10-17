@@ -51,8 +51,12 @@ mod native {
         let out_file = tempfile::tempfile().ok();
         let err_file = tempfile::tempfile().ok();
 
-        let out_redirect = out_file.as_ref().and_then(|file| Redirect::stdout(file).ok());
-        let err_redirect = err_file.as_ref().and_then(|file| Redirect::stderr(file).ok());
+        let out_redirect = out_file
+            .as_ref()
+            .and_then(|file| Redirect::stdout(file).ok());
+        let err_redirect = err_file
+            .as_ref()
+            .and_then(|file| Redirect::stderr(file).ok());
 
         let code = f();
 
@@ -99,13 +103,19 @@ mod native {
             pub(super) fn stdout(file: &File) -> io::Result<Self> {
                 let saved = rustix::io::dup(rustix::stdio::stdout()).map_err(io::Error::from)?;
                 rustix::stdio::dup2_stdout(file).map_err(io::Error::from)?;
-                Ok(Self { saved, stream: Stream::Stdout })
+                Ok(Self {
+                    saved,
+                    stream: Stream::Stdout,
+                })
             }
 
             pub(super) fn stderr(file: &File) -> io::Result<Self> {
                 let saved = rustix::io::dup(rustix::stdio::stderr()).map_err(io::Error::from)?;
                 rustix::stdio::dup2_stderr(file).map_err(io::Error::from)?;
-                Ok(Self { saved, stream: Stream::Stderr })
+                Ok(Self {
+                    saved,
+                    stream: Stream::Stderr,
+                })
             }
         }
 

@@ -36,13 +36,9 @@ pub enum RasterFx {
         center: bool,
     },
     /// Soften the object's edges inward over `radius`.
-    Feather {
-        radius: f64,
-    },
+    Feather { radius: f64 },
     /// Blur the whole object (σ = radius / 2).
-    GaussianBlur {
-        radius: f64,
-    },
+    GaussianBlur { radius: f64 },
     /// A Photoshop-style filter over the object's pixels (Radial Blur, Unsharp Mask…).
     Pixel(PixelFx),
 }
@@ -50,12 +46,17 @@ pub enum RasterFx {
 impl RasterFx {
     /// Painted below the object (shadows, outer glows)?
     pub fn is_below(&self) -> bool {
-        matches!(self, RasterFx::DropShadow { .. } | RasterFx::OuterGlow { .. })
+        matches!(
+            self,
+            RasterFx::DropShadow { .. } | RasterFx::OuterGlow { .. }
+        )
     }
     /// The blend mode it paints with (shadows and glows).
     pub fn mode(&self) -> Option<BlendMode> {
         match self {
-            RasterFx::DropShadow { mode, .. } | RasterFx::OuterGlow { mode, .. } | RasterFx::InnerGlow { mode, .. } => Some(*mode),
+            RasterFx::DropShadow { mode, .. }
+            | RasterFx::OuterGlow { mode, .. }
+            | RasterFx::InnerGlow { mode, .. } => Some(*mode),
             _ => None,
         }
     }
@@ -74,8 +75,16 @@ impl RasterFx {
 
 /// Parse a blend mode name (`"multiply"`, `"Screen"`, `"color-burn"`…).
 pub fn blend_mode(s: &str) -> BlendMode {
-    let key: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
-    BlendMode::ALL.iter().copied().find(|m| format!("{m:?}").to_ascii_lowercase() == key).unwrap_or(BlendMode::Normal)
+    let key: String = s
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase();
+    BlendMode::ALL
+        .iter()
+        .copied()
+        .find(|m| format!("{m:?}").to_ascii_lowercase() == key)
+        .unwrap_or(BlendMode::Normal)
 }
 
 /// An effect's `color` parameter (`"#rrggbb"`, `[r, g, b]` 0..1 or a colour object).
@@ -125,8 +134,12 @@ pub fn raster_effects(effects: &[Effect]) -> Vec<RasterFx> {
                     color: color_param(&p, Color::WHITE),
                     center: text(&p, "source", "edge").eq_ignore_ascii_case("center"),
                 },
-                "stylize.feather" => RasterFx::Feather { radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0) },
-                "blur.gaussian" => RasterFx::GaussianBlur { radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0) },
+                "stylize.feather" => RasterFx::Feather {
+                    radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0),
+                },
+                "blur.gaussian" => RasterFx::GaussianBlur {
+                    radius: num(&p, "radius", 5.0).clamp(0.0, 1000.0),
+                },
                 id => RasterFx::Pixel(pixel::parse(id, &p)?),
             })
         })
@@ -136,5 +149,8 @@ pub fn raster_effects(effects: &[Effect]) -> Vec<RasterFx> {
 /// How far the visible raster effects of `effects` paint beyond `bounds`, the (effected)
 /// geometry's, in document units. Geometry effects are accounted for by evaluating them.
 pub fn outset(effects: &[Effect], bounds: Rect) -> f64 {
-    raster_effects(effects).iter().map(|fx| fx.outset(bounds)).fold(0.0, f64::max)
+    raster_effects(effects)
+        .iter()
+        .map(|fx| fx.outset(bounds))
+        .fold(0.0, f64::max)
 }

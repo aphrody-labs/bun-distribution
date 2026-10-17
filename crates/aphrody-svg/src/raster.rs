@@ -26,7 +26,11 @@ impl RenderOptions {
     /// Square output of `size` px.
     #[must_use]
     pub fn square(size: u32) -> Self {
-        Self { width: Some(size), height: Some(size), ..Self::default() }
+        Self {
+            width: Some(size),
+            height: Some(size),
+            ..Self::default()
+        }
     }
 }
 
@@ -106,7 +110,11 @@ pub fn render(svg: &str, options: RenderOptions) -> Result<Raster> {
             [c.red(), c.green(), c.blue(), c.alpha()]
         })
         .collect();
-    Ok(Raster { width: pixmap.width(), height: pixmap.height(), rgba })
+    Ok(Raster {
+        width: pixmap.width(),
+        height: pixmap.height(),
+        rgba,
+    })
 }
 
 /// Renders `svg` to PNG bytes.
@@ -114,7 +122,9 @@ pub fn render(svg: &str, options: RenderOptions) -> Result<Raster> {
 /// # Errors
 /// As [`render`], plus PNG encoding failures.
 pub fn render_png(svg: &str, options: RenderOptions) -> Result<Vec<u8>> {
-    render_pixmap(svg, options)?.encode_png().map_err(|e| Error::Raster(e.to_string()))
+    render_pixmap(svg, options)?
+        .encode_png()
+        .map_err(|e| Error::Raster(e.to_string()))
 }
 
 /// The Windows shell icon sizes.
@@ -150,7 +160,9 @@ pub fn pack_ico(images: &[(u32, Vec<u8>)]) -> Result<Vec<u8>> {
         out.extend_from_slice(&32u16.to_le_bytes());
         out.extend_from_slice(&len.to_le_bytes());
         out.extend_from_slice(&offset.to_le_bytes());
-        offset = offset.checked_add(len).ok_or_else(|| Error::Invalid("ICO too large".into()))?;
+        offset = offset
+            .checked_add(len)
+            .ok_or_else(|| Error::Invalid("ICO too large".into()))?;
     }
     for (_, png) in images {
         out.extend_from_slice(png);
@@ -178,8 +190,14 @@ mod tests {
 
     #[test]
     fn renders_with_aspect_ratio() {
-        let r =
-            render(RED, RenderOptions { width: Some(20), ..RenderOptions::default() }).expect("ok");
+        let r = render(
+            RED,
+            RenderOptions {
+                width: Some(20),
+                ..RenderOptions::default()
+            },
+        )
+        .expect("ok");
         assert_eq!((r.width, r.height), (20, 40));
         assert_eq!(&r.rgba[..4], &[255, 0, 0, 255]);
     }

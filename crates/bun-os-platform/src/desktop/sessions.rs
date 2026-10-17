@@ -15,14 +15,24 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum SessionKind {
     /// Bun Engine machine inside the shell (`system`: nes, gba, nds, psx, ...).
-    Machine { system: String },
+    Machine {
+        system: String,
+    },
     /// Release emulator or RetroArch owned by the shell (`bun-engine library command <id>`).
-    Emulator { command: String },
-    Steam { app_id: u32 },
+    Emulator {
+        command: String,
+    },
+    Steam {
+        app_id: u32,
+    },
     /// Remote game stream (Moonlight host or play.aphrody.app peer).
-    Stream { host: String },
+    Stream {
+        host: String,
+    },
     /// Web core in a browser.
-    Web { url: String },
+    Web {
+        url: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -122,7 +132,12 @@ impl Workspaces {
 
     /// Activate an existing session from the switcher.
     pub fn activate(&mut self, id: &str) -> Vec<Transition> {
-        match self.sessions.iter().find(|s| s.id == id && s.state != SessionState::Ended).cloned() {
+        match self
+            .sessions
+            .iter()
+            .find(|s| s.id == id && s.state != SessionState::Ended)
+            .cloned()
+        {
             Some(session) => self.open(session),
             None => Vec::new(),
         }
@@ -130,7 +145,9 @@ impl Workspaces {
 
     /// Suspend the active session (Home, overlay, another launch).
     pub fn suspend_active(&mut self) -> Vec<Transition> {
-        let Some(id) = self.active.take() else { return Vec::new() };
+        let Some(id) = self.active.take() else {
+            return Vec::new();
+        };
         match self.sessions.iter_mut().find(|s| s.id == id) {
             Some(s) if s.state == SessionState::Running => {
                 s.state = SessionState::Suspended;
@@ -169,7 +186,11 @@ impl Workspaces {
     fn enforce_limit(&mut self) -> Vec<Transition> {
         let mut out = Vec::new();
         loop {
-            let suspended = self.sessions.iter().filter(|s| s.state == SessionState::Suspended).count();
+            let suspended = self
+                .sessions
+                .iter()
+                .filter(|s| s.state == SessionState::Suspended)
+                .count();
             if suspended <= self.max_suspended {
                 break;
             }
@@ -205,7 +226,11 @@ impl Workspaces {
         let order = self.ordered();
         let at = order.iter().position(|s| s.id == from)?;
         let n = order.len();
-        let next = if forward { (at + 1) % n } else { (at + n - 1) % n };
+        let next = if forward {
+            (at + 1) % n
+        } else {
+            (at + n - 1) % n
+        };
         order.get(next).copied()
     }
 }

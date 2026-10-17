@@ -4,7 +4,9 @@
 
 use std::path::Path;
 
-use aphrody_nds_sdk::{Format, Handheld, Input as SdkInput, Options, Platform, ScreenId, Step as SdkStep};
+use aphrody_nds_sdk::{
+    Format, Handheld, Input as SdkInput, Options, Platform, ScreenId, Step as SdkStep,
+};
 
 use super::{Input, Machine, Screen, Step};
 
@@ -20,21 +22,34 @@ fn rgb(machine: &dyn Handheld, id: ScreenId) -> Screen {
     Screen {
         width: image.width as usize,
         height: image.height as usize,
-        rgb: image.rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect(),
+        rgb: image
+            .rgba
+            .chunks_exact(4)
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect(),
     }
 }
 
 impl HandheldMachine {
     /// Boots an image held in memory (browser hosts); the format is detected from the content.
     pub fn from_image(name: &str, image: &[u8]) -> Result<Self, String> {
-        let inner = aphrody_nds_sdk::boot(name, image, &Options::default()).map_err(|e| e.to_string())?;
-        Ok(Self { inner, fault: None, console: Vec::new() })
+        let inner =
+            aphrody_nds_sdk::boot(name, image, &Options::default()).map_err(|e| e.to_string())?;
+        Ok(Self {
+            inner,
+            fault: None,
+            console: Vec::new(),
+        })
     }
 
     /// Boots the image at `path` (DS games keep their backup in `<path>.sav`).
     pub fn from_path(path: &Path) -> Result<Self, String> {
         let inner = aphrody_nds_sdk::open(path, &Options::default()).map_err(|e| e.to_string())?;
-        Ok(Self { inner, fault: None, console: Vec::new() })
+        Ok(Self {
+            inner,
+            fault: None,
+            console: Vec::new(),
+        })
     }
 
     /// Whether `image` is a DS or 3DS image the SDK boots.
@@ -69,16 +84,24 @@ impl Machine for HandheldMachine {
                 Step::Shutdown
             }
         };
-        self.console.extend_from_slice(self.inner.take_console().as_bytes());
+        self.console
+            .extend_from_slice(self.inner.take_console().as_bytes());
         step
     }
 
     fn screens(&self) -> Vec<Screen> {
-        vec![rgb(&*self.inner, ScreenId::Top), rgb(&*self.inner, ScreenId::Bottom)]
+        vec![
+            rgb(&*self.inner, ScreenId::Top),
+            rgb(&*self.inner, ScreenId::Bottom),
+        ]
     }
 
     fn set_input(&mut self, input: Input) {
-        self.inner.set_input(&SdkInput { buttons: input.keys, touch: input.touch, ..SdkInput::default() });
+        self.inner.set_input(&SdkInput {
+            buttons: input.keys,
+            touch: input.touch,
+            ..SdkInput::default()
+        });
     }
 
     fn diagnostic(&self) -> Option<String> {

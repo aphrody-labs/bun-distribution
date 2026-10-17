@@ -175,12 +175,17 @@ impl FsIndex {
                  ON CONFLICT(path) DO UPDATE SET
                      size=excluded.size, mtime_unix=excluded.mtime_unix, is_dir=excluded.is_dir",
             )?;
-            for entry in walkdir::WalkDir::new(root).into_iter().filter_map(Result::ok) {
+            for entry in walkdir::WalkDir::new(root)
+                .into_iter()
+                .filter_map(Result::ok)
+            {
                 let path = entry.path();
                 let path_str = path.to_string_lossy().to_string();
                 let name = entry.file_name().to_string_lossy().to_string();
-                let parent =
-                    path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+                let parent = path
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_default();
                 let extension = path
                     .extension()
                     .map(|e| e.to_string_lossy().to_ascii_lowercase())
@@ -188,7 +193,11 @@ impl FsIndex {
                 let meta = entry.metadata().ok();
                 let is_dir = meta.as_ref().is_some_and(std::fs::Metadata::is_dir);
                 // SQLite integers are i64; rusqlite 0.40 no longer binds u64 implicitly.
-                let size = if is_dir { 0 } else { meta.as_ref().map_or(0, std::fs::Metadata::len) };
+                let size = if is_dir {
+                    0
+                } else {
+                    meta.as_ref().map_or(0, std::fs::Metadata::len)
+                };
                 let size = i64::try_from(size).unwrap_or(i64::MAX);
                 let mtime_unix = meta
                     .as_ref()
@@ -250,7 +259,9 @@ impl FsIndex {
     ///
     /// [`FsIndexError::Sqlite`] on failure.
     pub fn len(&self) -> Result<usize, FsIndexError> {
-        let n: i64 = self.conn.query_row("SELECT COUNT(*) FROM files", [], |r| r.get(0))?;
+        let n: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM files", [], |r| r.get(0))?;
         Ok(usize::try_from(n).unwrap_or(0))
     }
 
@@ -272,7 +283,11 @@ fn build_fts_query(query: &str) -> Option<String> {
         .filter(|t| !t.is_empty())
         .map(|t| format!("\"{t}\"*"))
         .collect();
-    if terms.is_empty() { None } else { Some(terms.join(" ")) }
+    if terms.is_empty() {
+        None
+    } else {
+        Some(terms.join(" "))
+    }
 }
 
 #[cfg(test)]
@@ -299,7 +314,10 @@ mod tests {
 
         // prefix match
         let hits = idx.search("mai", 10).unwrap();
-        assert!(hits.iter().any(|h| h.name == "main.rs" && h.extension == "rs"));
+        assert!(
+            hits.iter()
+                .any(|h| h.name == "main.rs" && h.extension == "rs")
+        );
 
         // directory indexed
         let hits = idx.search("src", 10).unwrap();
@@ -320,13 +338,22 @@ mod tests {
     #[test]
     fn empty_query_is_rejected() {
         let idx = FsIndex::open_in_memory().unwrap();
-        assert!(matches!(idx.search("   !!! ", 10), Err(FsIndexError::EmptyQuery)));
+        assert!(matches!(
+            idx.search("   !!! ", 10),
+            Err(FsIndexError::EmptyQuery)
+        ));
     }
 
     #[test]
     fn fts_query_quotes_and_prefixes() {
-        assert_eq!(build_fts_query("foo bar").as_deref(), Some("\"foo\"* \"bar\"*"));
-        assert_eq!(build_fts_query("a.b-c").as_deref(), Some("\"a\"* \"b\"* \"c\"*"));
+        assert_eq!(
+            build_fts_query("foo bar").as_deref(),
+            Some("\"foo\"* \"bar\"*")
+        );
+        assert_eq!(
+            build_fts_query("a.b-c").as_deref(),
+            Some("\"a\"* \"b\"* \"c\"*")
+        );
         assert_eq!(build_fts_query("  "), None);
     }
 }

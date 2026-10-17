@@ -64,8 +64,14 @@ struct Active {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Outcome {
     /// Send `action` back to `app` (platform event `notifications.action`).
-    Invoked { id: u32, app: String, action: String },
-    Dismissed { id: u32 },
+    Invoked {
+        id: u32,
+        app: String,
+        action: String,
+    },
+    Dismissed {
+        id: u32,
+    },
 }
 
 /// Active toasts and the history.

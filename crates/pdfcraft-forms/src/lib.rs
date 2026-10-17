@@ -11,7 +11,14 @@
 //! Not yet: JavaScript actions (format, keystroke, validate, calculate — M6.4/M6.5) and rich text
 //! values (`/RV`, which is removed when a value is set so it can't contradict `/V`).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object, PdfString};
 
@@ -23,12 +30,12 @@ pub mod detect;
 mod scripting;
 pub use actions::{FieldAction, Trigger, field_actions, set_field_actions};
 pub use author::{
-    BorderStyle, CheckStyle, FieldFont, FieldProps, Look, LookPatch, NewField, add_field, check_style, delete_field, duplicate_field, look,
-    redraw_field, set_button_icon, set_props,
+    BorderStyle, CheckStyle, FieldFont, FieldProps, Look, LookPatch, NewField, add_field,
+    check_style, delete_field, duplicate_field, look, redraw_field, set_button_icon, set_props,
 };
 pub use scripting::{
-    FieldChange, FieldEvent, NoScripts, ScriptResult, Scripts, apply_script_changes, document_scripts, document_scripts_named, set_document_script,
-    set_field_script,
+    FieldChange, FieldEvent, NoScripts, ScriptResult, Scripts, apply_script_changes,
+    document_scripts, document_scripts_named, set_document_script, set_field_script,
 };
 
 #[cfg(test)]
@@ -149,30 +156,44 @@ impl Field {
     /// Check boxes and radio groups with `/Opt` (PDF 1.4): one export value per widget, in widget
     /// order. Their on states are then often just positions (`/0`, `/1` …), as pdf-lib writes them.
     fn button_exports(&self) -> Option<&[(String, String)]> {
-        (matches!(self.kind, FieldKind::CheckBox | FieldKind::Radio) && !self.options.is_empty() && self.options.len() == self.widgets.len())
-            .then_some(self.options.as_slice())
+        (matches!(self.kind, FieldKind::CheckBox | FieldKind::Radio)
+            && !self.options.is_empty()
+            && self.options.len() == self.widgets.len())
+        .then_some(self.options.as_slice())
     }
 
     /// The export value of widget `i` of a check box or radio group: its `/Opt` entry when the
     /// field has one per widget, otherwise the widget's on-state name.
     pub fn export_of(&self, i: usize) -> Option<&str> {
         let on = self.widgets.get(i)?.on_state.as_deref()?;
-        Some(self.button_exports().and_then(|o| o.get(i)).map_or(on, |(e, _)| e.as_str()))
+        Some(
+            self.button_exports()
+                .and_then(|o| o.get(i))
+                .map_or(on, |(e, _)| e.as_str()),
+        )
     }
 
     /// The on-state name that selects `choice` in a check box or radio group, where `choice` is an
     /// on-state name or an export value from `/Opt`.
     pub fn state_for(&self, choice: &str) -> Option<&str> {
-        self.widgets.iter().filter_map(|w| w.on_state.as_deref()).find(|s| *s == choice).or_else(|| {
-            let i = (0..self.widgets.len()).find(|&i| self.export_of(i) == Some(choice))?;
-            self.widgets.get(i)?.on_state.as_deref()
-        })
+        self.widgets
+            .iter()
+            .filter_map(|w| w.on_state.as_deref())
+            .find(|s| *s == choice)
+            .or_else(|| {
+                let i = (0..self.widgets.len()).find(|&i| self.export_of(i) == Some(choice))?;
+                self.widgets.get(i)?.on_state.as_deref()
+            })
     }
 
     /// The export value for an on-state name such as the field's value; the name itself when the
     /// field has no `/Opt`.
     pub fn export_for_state<'a>(&'a self, state: &'a str) -> &'a str {
-        self.widgets.iter().position(|w| w.on_state.as_deref() == Some(state)).and_then(|i| self.export_of(i)).unwrap_or(state)
+        self.widgets
+            .iter()
+            .position(|w| w.on_state.as_deref() == Some(state))
+            .and_then(|i| self.export_of(i))
+            .unwrap_or(state)
     }
 
     /// The value as one string: text, the state name, or the selected display texts.
@@ -181,7 +202,12 @@ impl Field {
             FieldKind::Combo | FieldKind::List => self
                 .value
                 .iter()
-                .map(|v| self.options.iter().find(|(e, _)| e == v).map_or(v.clone(), |(_, d)| d.clone()))
+                .map(|v| {
+                    self.options
+                        .iter()
+                        .find(|(e, _)| e == v)
+                        .map_or(v.clone(), |(_, d)| d.clone())
+                })
                 .collect::<Vec<_>>()
                 .join(", "),
             _ => self.value.join(", "),
@@ -218,7 +244,16 @@ pub fn name_text(bytes: &[u8]) -> String {
     let escape = |b: u8| format!("#{b:02X}");
     match std::str::from_utf8(bytes) {
         Ok(s) => s.replace('#', "#23"),
-        Err(_) => bytes.iter().map(|&b| if (0x21..=0x7e).contains(&b) && b != b'#' { char::from(b).to_string() } else { escape(b) }).collect(),
+        Err(_) => bytes
+            .iter()
+            .map(|&b| {
+                if (0x21..=0x7e).contains(&b) && b != b'#' {
+                    char::from(b).to_string()
+                } else {
+                    escape(b)
+                }
+            })
+            .collect(),
     }
 }
 
@@ -256,13 +291,24 @@ const MAX_LAYER_STATE: usize = 1024;
 fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::ButtonAction> {
     // A button PdfCraft generated for an XFA image field (`/PCXfaImage true`, no PDF action):
     // clicking it picks a picture, as `buttonImportIcon()` does.
-    if matches!(d.get(b"PCXfaImage").map(|o| doc.resolve(o)).as_deref(), Some(Object::Bool(true))) {
+    if matches!(
+        d.get(b"PCXfaImage").map(|o| doc.resolve(o)).as_deref(),
+        Some(Object::Bool(true))
+    ) {
         return Some(af::ButtonAction::ImportIcon);
     }
     let pick = |dict: &Dict| -> Option<Object> {
-        dict.get(b"A").cloned().or_else(|| dict.get(b"AA").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().and_then(|aa| aa.get(b"U").cloned())))
+        dict.get(b"A").cloned().or_else(|| {
+            dict.get(b"AA")
+                .map(|a| doc.resolve(a))
+                .and_then(|a| a.as_dict().and_then(|aa| aa.get(b"U").cloned()))
+        })
     };
-    let action = pick(d).or_else(|| widgets.iter().find_map(|w| doc.get(*w).as_dict().and_then(pick)))?;
+    let action = pick(d).or_else(|| {
+        widgets
+            .iter()
+            .find_map(|w| doc.get(*w).as_dict().and_then(pick))
+    })?;
     let a = doc.resolve(&action);
     let a = a.as_dict()?;
     let s = |k: &[u8]| a.get(k).and_then(|v| text_of(&doc.resolve(v)));
@@ -275,11 +321,19 @@ fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::But
                 .unwrap_or_default()
                 .iter()
                 .filter_map(|o| match o {
-                    Object::Ref(r) => doc.get(*r).as_dict().and_then(|fd| fd.get(b"T").and_then(|t| text_of(&doc.resolve(t)))),
+                    Object::Ref(r) => doc
+                        .get(*r)
+                        .as_dict()
+                        .and_then(|fd| fd.get(b"T").and_then(|t| text_of(&doc.resolve(t)))),
                     other => text_of(&doc.resolve(other)),
                 })
                 .collect();
-            let exclude = a.get(b"Flags").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0) & 1 != 0;
+            let exclude = a
+                .get(b"Flags")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0)
+                & 1
+                != 0;
             af::ButtonAction::Reset { fields, exclude }
         }
         b"Named" => af::ButtonAction::Named(String::from_utf8_lossy(a.name(b"N")?).into_owned()),
@@ -287,7 +341,11 @@ fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::But
         b"SubmitForm" => af::ButtonAction::Submit(
             a.get(b"F")
                 .map(|f| doc.resolve(f))
-                .and_then(|f| f.as_dict().and_then(|fd| fd.get(b"F").and_then(|x| text_of(&doc.resolve(x)))).or_else(|| text_of(&f)))
+                .and_then(|f| {
+                    f.as_dict()
+                        .and_then(|fd| fd.get(b"F").and_then(|x| text_of(&doc.resolve(x))))
+                        .or_else(|| text_of(&f))
+                })
                 .unwrap_or_default(),
         ),
         b"GoTo" => {
@@ -308,7 +366,9 @@ fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::But
                 },
                 None => Vec::new(),
             };
-            let hide = !a.get(b"H").is_some_and(|h| matches!(&*doc.resolve(h), Object::Bool(false)));
+            let hide = !a
+                .get(b"H")
+                .is_some_and(|h| matches!(&*doc.resolve(h), Object::Bool(false)));
             af::ButtonAction::ShowHide { fields, hide }
         }
         b"SetOCGState" => {
@@ -316,7 +376,13 @@ fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::But
             let mut changes = Vec::new();
             if let Some(state) = a.get(b"State") {
                 let mut op = None;
-                for item in doc.resolve(state).as_array().into_iter().flatten().take(MAX_LAYER_STATE) {
+                for item in doc
+                    .resolve(state)
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .take(MAX_LAYER_STATE)
+                {
                     match item {
                         Object::Name(n) => {
                             op = match n.as_slice() {
@@ -331,8 +397,13 @@ fn button_action(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> Option<af::But
                     }
                 }
             }
-            let preserve_rb = !a.get(b"PreserveRB").is_some_and(|p| matches!(&*doc.resolve(p), Object::Bool(false)));
-            af::ButtonAction::SetLayers { changes, preserve_rb }
+            let preserve_rb = !a
+                .get(b"PreserveRB")
+                .is_some_and(|p| matches!(&*doc.resolve(p), Object::Bool(false)));
+            af::ButtonAction::SetLayers {
+                changes,
+                preserve_rb,
+            }
         }
         b"JavaScript" => af::button_script(&script(doc, &action)?),
         _ => return None,
@@ -366,7 +437,10 @@ fn script(doc: &Document, action: &Object) -> Option<String> {
     let js = a.as_dict()?.get(b"JS")?.clone();
     match &*doc.resolve(&js) {
         Object::String(s) => Some(s.to_text()),
-        Object::Stream(s) => s.decoded().ok().map(|b| String::from_utf8_lossy(&b).into_owned()),
+        Object::Stream(s) => s
+            .decoded()
+            .ok()
+            .map(|b| String::from_utf8_lossy(&b).into_owned()),
         _ => None,
     }
 }
@@ -374,12 +448,19 @@ fn script(doc: &Document, action: &Object) -> Option<String> {
 /// A field's format/keystroke, validate and calculate scripts (field dictionary, or its only
 /// widget's when the field has none).
 fn actions_of(doc: &Document, d: &Dict, widgets: &[ObjRef]) -> af::Actions {
-    let aa = d.get(b"AA").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()).or_else(|| {
-        (widgets.len() == 1)
-            .then(|| doc.get(widgets[0]))
-            .and_then(|w| w.as_dict().and_then(|wd| wd.get(b"AA").map(|a| doc.resolve(a))))
-            .and_then(|a| a.as_dict().cloned())
-    });
+    let aa = d
+        .get(b"AA")
+        .map(|a| doc.resolve(a))
+        .and_then(|a| a.as_dict().cloned())
+        .or_else(|| {
+            (widgets.len() == 1)
+                .then(|| doc.get(widgets[0]))
+                .and_then(|w| {
+                    w.as_dict()
+                        .and_then(|wd| wd.get(b"AA").map(|a| doc.resolve(a)))
+                })
+                .and_then(|a| a.as_dict().cloned())
+        });
     let mut out = af::Actions::default();
     let Some(aa) = aa else { return out };
     let js = |k: &[u8]| aa.get(k).and_then(|a| script(doc, a));
@@ -434,20 +515,35 @@ fn values_of(doc: &Document, o: Option<&Object>) -> Vec<String> {
     let Some(o) = o else { return Vec::new() };
     match &*doc.resolve(o) {
         Object::Array(a) => a.iter().filter_map(|x| text_of(&doc.resolve(x))).collect(),
-        Object::Stream(s) => s.decoded().ok().map(|b| PdfString::literal(b).to_text()).into_iter().collect(),
-        other => text_of(other).filter(|s| s != "Off" && !s.is_empty()).into_iter().collect(),
+        Object::Stream(s) => s
+            .decoded()
+            .ok()
+            .map(|b| PdfString::literal(b).to_text())
+            .into_iter()
+            .collect(),
+        other => text_of(other)
+            .filter(|s| s != "Off" && !s.is_empty())
+            .into_iter()
+            .collect(),
     }
 }
 
 fn nums(doc: &Document, o: Option<&Object>) -> Option<Vec<f64>> {
     let o = doc.resolve(o?);
-    o.as_array()?.iter().map(|x| doc.resolve(x).as_f64()).collect()
+    o.as_array()?
+        .iter()
+        .map(|x| doc.resolve(x).as_f64())
+        .collect()
 }
 
 /// Leaf page objects in order (a small walker; `organize` and `annot` have their own).
 pub(crate) fn page_refs(doc: &Document) -> Vec<ObjRef> {
-    let Some(root) = doc.root() else { return Vec::new() };
-    let Some(pages) = doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")) else { return Vec::new() };
+    let Some(root) = doc.root() else {
+        return Vec::new();
+    };
+    let Some(pages) = doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     let mut seen = std::collections::HashSet::new();
     let mut stack = vec![pages];
@@ -513,7 +609,10 @@ pub struct Fields {
 /// Read all terminal fields and the page-only adoption count in one enumeration.
 pub fn fields_with_adopted(doc: &Document) -> Fields {
     let (items, adopted_page_fields) = enumerate(doc);
-    Fields { items, adopted_page_fields }
+    Fields {
+        items,
+        adopted_page_fields,
+    }
 }
 
 fn enumerate(doc: &Document) -> (Vec<Field>, usize) {
@@ -522,7 +621,11 @@ fn enumerate(doc: &Document) -> (Vec<Field>, usize) {
     let mut annot_index = std::collections::HashMap::new();
     let pages = page_refs(doc);
     for (i, p) in pages.iter().enumerate() {
-        if let Some(a) = doc.get(*p).as_dict().and_then(|d| d.get(b"Annots").cloned()) {
+        if let Some(a) = doc
+            .get(*p)
+            .as_dict()
+            .and_then(|d| d.get(b"Annots").cloned())
+        {
             for (k, e) in doc.resolve(&a).as_array().into_iter().flatten().enumerate() {
                 if let Some(r) = e.as_ref() {
                     page_of.entry(r).or_insert(i);
@@ -542,7 +645,12 @@ fn enumerate(doc: &Document) -> (Vec<Field>, usize) {
     let mut out = Vec::new();
     let mut seen = std::collections::HashSet::new();
     if let Some(af) = &af {
-        for f in af.get(b"Fields").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default() {
+        for f in af
+            .get(b"Fields")
+            .map(|o| doc.resolve(o))
+            .and_then(|o| o.as_array().cloned())
+            .unwrap_or_default()
+        {
             if let Some(r) = f.as_ref() {
                 walk(doc, r, &base, &page_of, &mut seen, &mut out, 0);
             }
@@ -568,9 +676,17 @@ fn adopt_page_fields(
     out: &mut Vec<Field>,
 ) {
     for p in pages {
-        let Some(a) = doc.get(*p).as_dict().and_then(|d| d.get(b"Annots").cloned()) else { continue };
+        let Some(a) = doc
+            .get(*p)
+            .as_dict()
+            .and_then(|d| d.get(b"Annots").cloned())
+        else {
+            continue;
+        };
         let annots = doc.resolve(&a);
-        let Some(annots) = annots.as_array() else { continue };
+        let Some(annots) = annots.as_array() else {
+            continue;
+        };
         for e in annots {
             let Some(r) = e.as_ref() else { continue };
             if seen.contains(&r) {
@@ -593,7 +709,11 @@ fn adopt_page_fields(
 
 /// The topmost field above `r` (itself without a `/Parent`), or `None` when `r` or an ancestor is
 /// already reachable from the `/Fields` tree, or a `/Parent` loop hides the top.
-fn unlisted_root(doc: &Document, r: ObjRef, seen: &std::collections::HashSet<ObjRef>) -> Option<ObjRef> {
+fn unlisted_root(
+    doc: &Document,
+    r: ObjRef,
+    seen: &std::collections::HashSet<ObjRef>,
+) -> Option<ObjRef> {
     let mut top = r;
     let mut visited = std::collections::HashSet::from([r]);
     loop {
@@ -639,12 +759,23 @@ impl TabOrder {
 type TabItem = (usize, usize, usize, [f64; 4], usize);
 
 /// Every widget's place in the tab order.
-fn rank_tabs(doc: &Document, pages: &[ObjRef], annot_index: &std::collections::HashMap<ObjRef, usize>, out: &mut [Field]) {
+fn rank_tabs(
+    doc: &Document,
+    pages: &[ObjRef],
+    annot_index: &std::collections::HashMap<ObjRef, usize>,
+    out: &mut [Field],
+) {
     let mut items: Vec<TabItem> = Vec::new();
     for (fi, f) in out.iter().enumerate() {
         for (wi, w) in f.widgets.iter().enumerate() {
             if let Some(p) = w.page {
-                items.push((p, fi, wi, w.rect, annot_index.get(&w.obj).copied().unwrap_or(usize::MAX)));
+                items.push((
+                    p,
+                    fi,
+                    wi,
+                    w.rect,
+                    annot_index.get(&w.obj).copied().unwrap_or(usize::MAX),
+                ));
             }
         }
     }
@@ -659,15 +790,23 @@ fn rank_tabs(doc: &Document, pages: &[ObjRef], annot_index: &std::collections::H
             TabOrder::Row | TabOrder::Column => {
                 let row = tabs == TabOrder::Row;
                 // Primary axis: rows by top edge (down the page), columns by left edge.
-                on.sort_by(|a, b| if row { b.3[3].total_cmp(&a.3[3]) } else { a.3[0].total_cmp(&b.3[0]) });
+                on.sort_by(|a, b| {
+                    if row {
+                        b.3[3].total_cmp(&a.3[3])
+                    } else {
+                        a.3[0].total_cmp(&b.3[0])
+                    }
+                });
                 let mut groups: Vec<Vec<&TabItem>> = Vec::new();
                 for it in on {
                     let fits = groups.last().is_some_and(|g| {
                         let first = g[0];
                         if row {
-                            (first.3[3] - it.3[3]).abs() < ((first.3[3] - first.3[1]) / 2.0).max(2.0)
+                            (first.3[3] - it.3[3]).abs()
+                                < ((first.3[3] - first.3[1]) / 2.0).max(2.0)
                         } else {
-                            (it.3[0] - first.3[0]).abs() < ((first.3[2] - first.3[0]) / 2.0).max(2.0)
+                            (it.3[0] - first.3[0]).abs()
+                                < ((first.3[2] - first.3[0]) / 2.0).max(2.0)
                         }
                     });
                     if fits && let Some(g) = groups.last_mut() {
@@ -677,7 +816,13 @@ fn rank_tabs(doc: &Document, pages: &[ObjRef], annot_index: &std::collections::H
                     }
                 }
                 for mut g in groups {
-                    g.sort_by(|a, b| if row { a.3[0].total_cmp(&b.3[0]) } else { b.3[3].total_cmp(&a.3[3]) });
+                    g.sort_by(|a, b| {
+                        if row {
+                            a.3[0].total_cmp(&b.3[0])
+                        } else {
+                            b.3[3].total_cmp(&a.3[3])
+                        }
+                    });
                     ordered.extend(g.iter().map(|i| (i.1, i.2)));
                 }
             }
@@ -698,10 +843,16 @@ fn rank_tabs(doc: &Document, pages: &[ObjRef], annot_index: &std::collections::H
 }
 
 /// Set the tab order of pages (0-based).
-pub fn set_tab_order(doc: &mut Document, pages: &[usize], order: TabOrder) -> Result<(), FormError> {
+pub fn set_tab_order(
+    doc: &mut Document,
+    pages: &[usize],
+    order: TabOrder,
+) -> Result<(), FormError> {
     let refs = page_refs(doc);
     for &p in pages {
-        let r = *refs.get(p).ok_or_else(|| FormError::Invalid(format!("page {} does not exist", p + 1)))?;
+        let r = *refs
+            .get(p)
+            .ok_or_else(|| FormError::Invalid(format!("page {} does not exist", p + 1)))?;
         doc.update_dict(r, |d| match order {
             TabOrder::Row => d.set(b"Tabs".to_vec(), Object::name("R")),
             TabOrder::Column => d.set(b"Tabs".to_vec(), Object::name("C")),
@@ -730,7 +881,11 @@ fn walk(
     let Some(d) = obj.as_dict() else { return };
     let mut inh = parent.clone();
     if let Some(t) = d.get(b"T").and_then(|o| text_of(&doc.resolve(o))) {
-        inh.name = if inh.name.is_empty() { t } else { format!("{}.{t}", inh.name) };
+        inh.name = if inh.name.is_empty() {
+            t
+        } else {
+            format!("{}.{t}", inh.name)
+        };
     }
     if let Some(ft) = d.name(b"FT") {
         inh.ft = Some(ft.to_vec());
@@ -752,10 +907,20 @@ fn walk(
     if let Some(m) = d.get(b"MaxLen").and_then(|o| doc.resolve(o).as_int()) {
         inh.max_len = usize::try_from(m).ok();
     }
-    let kids: Vec<ObjRef> =
-        d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default().iter().filter_map(|k| k.as_ref()).collect();
+    let kids: Vec<ObjRef> = d
+        .get(b"Kids")
+        .map(|k| doc.resolve(k))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|k| k.as_ref())
+        .collect();
     // Kids with /T are fields; kids without are this field's widgets.
-    let field_kids: Vec<ObjRef> = kids.iter().copied().filter(|k| doc.get(*k).as_dict().is_some_and(|kd| kd.contains(b"T"))).collect();
+    let field_kids: Vec<ObjRef> = kids
+        .iter()
+        .copied()
+        .filter(|k| doc.get(*k).as_dict().is_some_and(|kd| kd.contains(b"T")))
+        .collect();
     if !field_kids.is_empty() {
         for k in field_kids {
             walk(doc, k, &inh, page_of, seen, out, depth + 1);
@@ -764,8 +929,10 @@ fn walk(
     }
     let widget_refs: Vec<ObjRef> = if d.contains(b"Rect") { vec![r] } else { kids };
     let actions = actions_of(doc, d, &widget_refs);
-    let button =
-        (inh.ft.as_deref() == Some(b"Btn") && inh.ff.unwrap_or(0) & flags::PUSH_BUTTON != 0).then(|| button_action(doc, d, &widget_refs)).flatten();
+    let button = (inh.ft.as_deref() == Some(b"Btn")
+        && inh.ff.unwrap_or(0) & flags::PUSH_BUTTON != 0)
+        .then(|| button_action(doc, d, &widget_refs))
+        .flatten();
     let ff = inh.ff.unwrap_or(0);
     let kind = match inh.ft.as_deref() {
         Some(b"Tx") => FieldKind::Text,
@@ -782,8 +949,13 @@ fn walk(
         .filter_map(|w| {
             let wo = doc.get(w);
             let wd = wo.as_dict()?;
-            let rect = nums(doc, wd.get(b"Rect")).filter(|r| r.len() == 4).unwrap_or_else(|| vec![0.0; 4]);
-            let annot_flags = wd.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0);
+            let rect = nums(doc, wd.get(b"Rect"))
+                .filter(|r| r.len() == 4)
+                .unwrap_or_else(|| vec![0.0; 4]);
+            let annot_flags = wd
+                .get(b"F")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0);
             let on_state = wd
                 .get(b"AP")
                 .map(|ap| doc.resolve(ap))
@@ -793,8 +965,14 @@ fn walk(
             Some(Widget {
                 obj: w,
                 page: page_of.get(&w).copied(),
-                rect: [rect[0].min(rect[2]), rect[1].min(rect[3]), rect[0].max(rect[2]), rect[1].max(rect[3])],
-                on_state: on_state.filter(|_| matches!(kind, FieldKind::CheckBox | FieldKind::Radio)),
+                rect: [
+                    rect[0].min(rect[2]),
+                    rect[1].min(rect[3]),
+                    rect[0].max(rect[2]),
+                    rect[1].max(rect[3]),
+                ],
+                on_state: on_state
+                    .filter(|_| matches!(kind, FieldKind::CheckBox | FieldKind::Radio)),
                 state: wd.name(b"AS").map(name_text),
                 tab: usize::MAX,
                 locked: annot_flags & 128 != 0,
@@ -810,7 +988,10 @@ fn walk(
         .unwrap_or_default()
         .iter()
         .filter_map(|o| match &*doc.resolve(o) {
-            Object::Array(pair) if pair.len() >= 2 => Some((text_of(&doc.resolve(&pair[0]))?, text_of(&doc.resolve(&pair[1]))?)),
+            Object::Array(pair) if pair.len() >= 2 => Some((
+                text_of(&doc.resolve(&pair[0]))?,
+                text_of(&doc.resolve(&pair[1]))?,
+            )),
             other => text_of(other).map(|t| (t.clone(), t)),
         })
         .collect();
@@ -833,7 +1014,9 @@ fn walk(
 }
 
 fn field_flags(doc: &Document, dict: &Dict) -> Option<u32> {
-    dict.get(b"Ff").and_then(|value| doc.resolve(value).as_int()).and_then(|value| u32::try_from(value).ok())
+    dict.get(b"Ff")
+        .and_then(|value| doc.resolve(value).as_int())
+        .and_then(|value| u32::try_from(value).ok())
 }
 
 // ── writing ─────────────────────────────────────────────────────────────────────────────────
@@ -844,12 +1027,20 @@ pub fn set_value(doc: &mut Document, name: &str, value: &FieldValue) -> Result<(
 }
 
 /// [`set_value`], running the fields' JavaScript through `scripts`.
-pub fn set_value_with(doc: &mut Document, name: &str, value: &FieldValue, scripts: &mut dyn Scripts) -> Result<(), FormError> {
+pub fn set_value_with(
+    doc: &mut Document,
+    name: &str,
+    value: &FieldValue,
+    scripts: &mut dyn Scripts,
+) -> Result<(), FormError> {
     let all = fields(doc);
     if all.is_empty() {
         return Err(FormError::NoForm);
     }
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
     if f.read_only() {
         return Err(FormError::ReadOnly(name.into()));
     }
@@ -867,17 +1058,27 @@ pub fn recalculate(doc: &mut Document) -> Result<usize, FormError> {
 /// [`recalculate`], running custom Calculate (and Format) scripts through `scripts`.
 pub fn recalculate_with(doc: &mut Document, scripts: &mut dyn Scripts) -> Result<usize, FormError> {
     let mut all = fields(doc);
-    let calculated = |f: &Field| f.actions.calculate != af::Calculate::None || f.actions.scripts.calculate.is_some();
+    let calculated = |f: &Field| {
+        f.actions.calculate != af::Calculate::None || f.actions.scripts.calculate.is_some()
+    };
     if !all.iter().any(calculated) {
         return Ok(0);
     }
     let co: Vec<ObjRef> = acroform(doc)
-        .and_then(|af| af.get(b"CO").map(|c| doc.resolve(c)).and_then(|c| c.as_array().cloned()))
+        .and_then(|af| {
+            af.get(b"CO")
+                .map(|c| doc.resolve(c))
+                .and_then(|c| c.as_array().cloned())
+        })
         .unwrap_or_default()
         .iter()
         .filter_map(Object::as_ref)
         .collect();
-    let mut order: Vec<String> = co.iter().filter_map(|r| all.iter().find(|f| f.obj == *r)).map(|f| f.name.clone()).collect();
+    let mut order: Vec<String> = co
+        .iter()
+        .filter_map(|r| all.iter().find(|f| f.obj == *r))
+        .map(|f| f.name.clone())
+        .collect();
     for f in &all {
         if calculated(f) && !order.contains(&f.name) {
             order.push(f.name.clone());
@@ -885,10 +1086,15 @@ pub fn recalculate_with(doc: &mut Document, scripts: &mut dyn Scripts) -> Result
     }
     let mut changed = 0;
     for name in order {
-        let Some(f) = all.iter().find(|f| f.name == name).cloned() else { continue };
+        let Some(f) = all.iter().find(|f| f.name == name).cloned() else {
+            continue;
+        };
         let lookup = |n: &str| -> Vec<String> {
             let prefix = format!("{n}.");
-            all.iter().filter(|x| x.name == n || x.name.starts_with(&prefix)).flat_map(|x| x.value.first().cloned()).collect()
+            all.iter()
+                .filter(|x| x.name == n || x.name.starts_with(&prefix))
+                .flat_map(|x| x.value.first().cloned())
+                .collect()
         };
         let current = f.value.first().cloned().unwrap_or_default();
         let v = if let Some(js) = &f.actions.scripts.calculate {
@@ -902,7 +1108,9 @@ pub fn recalculate_with(doc: &mut Document, scripts: &mut dyn Scripts) -> Result
             }
             r.value
         } else {
-            let Some(v) = af::calculate(&f.actions.calculate, &lookup) else { continue };
+            let Some(v) = af::calculate(&f.actions.calculate, &lookup) else {
+                continue;
+            };
             v
         };
         if current != v && matches!(f.kind, FieldKind::Text | FieldKind::Combo) {
@@ -921,7 +1129,12 @@ fn invalid<T>(m: impl Into<String>) -> Result<T, FormError> {
     Err(FormError::Invalid(m.into()))
 }
 
-fn write_value(doc: &mut Document, f: &Field, value: &FieldValue, scripts: &mut dyn Scripts) -> Result<(), FormError> {
+fn write_value(
+    doc: &mut Document,
+    f: &Field,
+    value: &FieldValue,
+    scripts: &mut dyn Scripts,
+) -> Result<(), FormError> {
     match (f.kind, value) {
         (FieldKind::Text, FieldValue::Text(t)) => {
             if let Some(max) = f.max_len
@@ -944,22 +1157,35 @@ fn write_value(doc: &mut Document, f: &Field, value: &FieldValue, scripts: &mut 
             redraw(doc, f, std::slice::from_ref(t), scripts)
         }
         (FieldKind::CheckBox, v) => {
-            let state = f.widgets.iter().find_map(|w| w.on_state.clone()).unwrap_or_else(|| "Yes".into());
+            let state = f
+                .widgets
+                .iter()
+                .find_map(|w| w.on_state.clone())
+                .unwrap_or_else(|| "Yes".into());
             let on = match v {
                 FieldValue::Check(on) => *on,
                 // The on-state name or a yes/no word also work (agents, FDF-style data).
                 FieldValue::Text(t) | FieldValue::Radio(Some(t)) => {
                     let t = t.trim();
-                    if t == state || f.state_for(t).is_some() || ["yes", "true", "on", "1", "x", "checked"].contains(&t.to_lowercase().as_str()) {
+                    if t == state
+                        || f.state_for(t).is_some()
+                        || ["yes", "true", "on", "1", "x", "checked"]
+                            .contains(&t.to_lowercase().as_str())
+                    {
                         true
-                    } else if t.is_empty() || ["no", "false", "off", "0", "unchecked"].contains(&t.to_lowercase().as_str()) {
+                    } else if t.is_empty()
+                        || ["no", "false", "off", "0", "unchecked"]
+                            .contains(&t.to_lowercase().as_str())
+                    {
                         false
                     } else {
                         return invalid(format!("{:?} is a check box: use true or false", f.name));
                     }
                 }
                 FieldValue::Radio(None) => false,
-                FieldValue::Choice(_) => return invalid(format!("{:?} is a check box: use true or false", f.name)),
+                FieldValue::Choice(_) => {
+                    return invalid(format!("{:?} is a check box: use true or false", f.name));
+                }
             };
             set_states(doc, f, on.then_some(state.as_str()))
         }
@@ -969,15 +1195,29 @@ fn write_value(doc: &mut Document, f: &Field, value: &FieldValue, scripts: &mut 
                 FieldValue::Text(t) if t.is_empty() => None,
                 FieldValue::Text(t) => Some(t.clone()),
                 FieldValue::Check(false) => None,
-                _ => return invalid(format!("{:?} is a radio group: choose one of its options", f.name)),
+                _ => {
+                    return invalid(format!(
+                        "{:?} is a radio group: choose one of its options",
+                        f.name
+                    ));
+                }
             };
             // An export value from /Opt selects its widget's on state.
             let choice = choice.map(|c| f.state_for(&c).map(str::to_owned).unwrap_or(c));
             if let Some(c) = &choice
-                && !f.widgets.iter().any(|w| w.on_state.as_deref() == Some(c.as_str()))
+                && !f
+                    .widgets
+                    .iter()
+                    .any(|w| w.on_state.as_deref() == Some(c.as_str()))
             {
-                let opts: Vec<&str> = (0..f.widgets.len()).filter_map(|i| f.export_of(i)).collect();
-                return invalid(format!("{:?} has no option {c:?} (options: {})", f.name, opts.join(", ")));
+                let opts: Vec<&str> = (0..f.widgets.len())
+                    .filter_map(|i| f.export_of(i))
+                    .collect();
+                return invalid(format!(
+                    "{:?} has no option {c:?} (options: {})",
+                    f.name,
+                    opts.join(", ")
+                ));
             }
             if choice.is_none() && f.has(flags::NO_TOGGLE_TO_OFF) && !f.value.is_empty() {
                 return invalid(format!("{:?} must keep one option selected", f.name));
@@ -999,23 +1239,39 @@ fn write_value(doc: &mut Document, f: &Field, value: &FieldValue, scripts: &mut 
             for v in &vals {
                 match f.options.iter().find(|(e, d)| e == v || d == v) {
                     Some((e, _)) => exports.push(e.clone()),
-                    None if f.kind == FieldKind::Combo && f.has(flags::EDIT) => exports.push(v.clone()),
+                    None if f.kind == FieldKind::Combo && f.has(flags::EDIT) => {
+                        exports.push(v.clone())
+                    }
                     None if f.options.is_empty() => exports.push(v.clone()),
                     None => {
                         let opts: Vec<&str> = f.options.iter().map(|(_, d)| d.as_str()).collect();
-                        return invalid(format!("{:?} has no option {v:?} (options: {})", f.name, opts.join(", ")));
+                        return invalid(format!(
+                            "{:?} has no option {v:?} (options: {})",
+                            f.name,
+                            opts.join(", ")
+                        ));
                     }
                 }
             }
-            let indices: Vec<Object> =
-                exports.iter().filter_map(|e| f.options.iter().position(|(x, _)| x == e)).map(|i| Object::Int(i as i64)).collect();
+            let indices: Vec<Object> = exports
+                .iter()
+                .filter_map(|e| f.options.iter().position(|(x, _)| x == e))
+                .map(|i| Object::Int(i as i64))
+                .collect();
             doc.update_dict(f.obj, |d| {
                 match exports.as_slice() {
                     [] => {
                         d.remove(b"V");
                     }
                     [one] => d.set(b"V".to_vec(), PdfString::text(one)),
-                    many => d.set(b"V".to_vec(), Object::Array(many.iter().map(|e| Object::String(PdfString::text(e))).collect())),
+                    many => d.set(
+                        b"V".to_vec(),
+                        Object::Array(
+                            many.iter()
+                                .map(|e| Object::String(PdfString::text(e)))
+                                .collect(),
+                        ),
+                    ),
                 }
                 if indices.is_empty() {
                     d.remove(b"I");
@@ -1026,8 +1282,14 @@ fn write_value(doc: &mut Document, f: &Field, value: &FieldValue, scripts: &mut 
             redraw(doc, f, &exports, scripts)
         }
         (FieldKind::PushButton, _) => invalid(format!("{:?} is a button; it has no value", f.name)),
-        (FieldKind::Signature, _) => invalid(format!("{:?} is a signature field; sign it with Fill & Sign or a digital ID", f.name)),
-        (kind, v) => invalid(format!("{:?} is a {kind:?} field and can't take {v:?}", f.name)),
+        (FieldKind::Signature, _) => invalid(format!(
+            "{:?} is a signature field; sign it with Fill & Sign or a digital ID",
+            f.name
+        )),
+        (kind, v) => invalid(format!(
+            "{:?} is a {kind:?} field and can't take {v:?}",
+            f.name
+        )),
     }
 }
 
@@ -1041,9 +1303,16 @@ fn set_states(doc: &mut Document, f: &Field, on: Option<&str>) -> Result<(), For
             _ => "Off",
         };
         // A widget without appearances for its states gets PdfCraft's own.
-        let has_ap = doc.get(w.obj).as_dict().and_then(|d| d.get(b"AP").cloned()).is_some();
+        let has_ap = doc
+            .get(w.obj)
+            .as_dict()
+            .and_then(|d| d.get(b"AP").cloned())
+            .is_some();
         if !has_ap {
-            let on_name = w.on_state.clone().unwrap_or_else(|| on.unwrap_or("Yes").to_string());
+            let on_name = w
+                .on_state
+                .clone()
+                .unwrap_or_else(|| on.unwrap_or("Yes").to_string());
             let ap = appearance::check_box_states(doc, w, f.kind, &on_name);
             doc.update_dict(w.obj, |d| d.set(b"AP".to_vec(), Object::Dict(ap)))?;
         }
@@ -1054,7 +1323,11 @@ fn set_states(doc: &mut Document, f: &Field, on: Option<&str>) -> Result<(), For
 
 /// Copy an existing appearance dictionary before replacing its normal appearance.
 fn appearance_dict(doc: &Document, widget: ObjRef) -> Dict {
-    doc.get(widget).as_dict().and_then(|d| d.get(b"AP").map(|a| doc.resolve(a))).and_then(|a| a.as_dict().cloned()).unwrap_or_default()
+    doc.get(widget)
+        .as_dict()
+        .and_then(|d| d.get(b"AP").map(|a| doc.resolve(a)))
+        .and_then(|a| a.as_dict().cloned())
+        .unwrap_or_default()
 }
 
 /// `widget`'s appearance dictionary (a copy, so a shared one is left alone) with the freshly
@@ -1069,7 +1342,10 @@ pub(crate) fn merged_appearance(doc: &Document, widget: ObjRef, fresh: &Dict) ->
         Object::Dict(d) => Some(d.clone()),
         _ => None,
     };
-    let states: Option<Vec<Vec<u8>>> = fresh.get(b"N").and_then(states_of).map(|d| d.iter().map(|(k, _)| k.clone()).collect());
+    let states: Option<Vec<Vec<u8>>> = fresh
+        .get(b"N")
+        .and_then(states_of)
+        .map(|d| d.iter().map(|(k, _)| k.clone()).collect());
     for key in [&b"D"[..], &b"R"[..]] {
         if fresh.contains(key) {
             continue;
@@ -1096,15 +1372,24 @@ pub(crate) fn merged_appearance(doc: &Document, widget: ObjRef, fresh: &Dict) ->
 }
 
 /// Regenerate the normal appearance of every widget of a text or choice field.
-fn redraw(doc: &mut Document, f: &Field, values: &[String], scripts: &mut dyn Scripts) -> Result<(), FormError> {
+fn redraw(
+    doc: &mut Document,
+    f: &Field,
+    values: &[String],
+    scripts: &mut dyn Scripts,
+) -> Result<(), FormError> {
     let shown = match values {
-        [one] if matches!(f.kind, FieldKind::Text | FieldKind::Combo) => scripting::formatted(doc, f, one, scripts),
+        [one] if matches!(f.kind, FieldKind::Text | FieldKind::Combo) => {
+            scripting::formatted(doc, f, one, scripts)
+        }
         _ => None,
     };
     let mut undrawn = false;
     for w in &f.widgets {
         let (stream, missing) = match &shown {
-            Some(s) => appearance::field_appearance_drawn(doc, f, w, std::slice::from_ref(s), false),
+            Some(s) => {
+                appearance::field_appearance_drawn(doc, f, w, std::slice::from_ref(s), false)
+            }
             None => appearance::field_appearance_drawn(doc, f, w, values, true),
         };
         undrawn |= missing.is_some();
@@ -1133,10 +1418,17 @@ pub(crate) fn ask_viewers_to_redraw(doc: &mut Document) -> Result<(), FormError>
     if declares_pdfa(doc) || need_appearances(doc) {
         return Ok(());
     }
-    let Some(root) = doc.root() else { return Ok(()) };
-    let entry = doc.get(root).as_dict().and_then(|c| c.get(b"AcroForm").cloned());
+    let Some(root) = doc.root() else {
+        return Ok(());
+    };
+    let entry = doc
+        .get(root)
+        .as_dict()
+        .and_then(|c| c.get(b"AcroForm").cloned());
     match entry {
-        Some(Object::Ref(r)) => doc.update_dict(r, |d| d.set(b"NeedAppearances".to_vec(), Object::Bool(true)))?,
+        Some(Object::Ref(r)) => doc.update_dict(r, |d| {
+            d.set(b"NeedAppearances".to_vec(), Object::Bool(true))
+        })?,
         Some(Object::Dict(mut af)) => {
             af.set(b"NeedAppearances".to_vec(), Object::Bool(true));
             doc.update_dict(root, |c| c.set(b"AcroForm".to_vec(), Object::Dict(af)))?;
@@ -1148,16 +1440,31 @@ pub(crate) fn ask_viewers_to_redraw(doc: &mut Document) -> Result<(), FormError>
 
 /// Whether the form asks viewers to draw its fields' appearances themselves (`/NeedAppearances`).
 pub fn need_appearances(doc: &Document) -> bool {
-    acroform(doc).is_some_and(|af| matches!(af.get(b"NeedAppearances").map(|o| doc.resolve(o)).as_deref(), Some(Object::Bool(true))))
+    acroform(doc).is_some_and(|af| {
+        matches!(
+            af.get(b"NeedAppearances")
+                .map(|o| doc.resolve(o))
+                .as_deref(),
+            Some(Object::Bool(true))
+        )
+    })
 }
 
 /// Whether the document's XMP metadata declares PDF/A conformance (`pdfaid:part`).
 pub fn declares_pdfa(doc: &Document) -> bool {
     let Some(root) = doc.root() else { return false };
-    let Some(m) = doc.get(root).as_dict().and_then(|c| c.get(b"Metadata").cloned()) else { return false };
+    let Some(m) = doc
+        .get(root)
+        .as_dict()
+        .and_then(|c| c.get(b"Metadata").cloned())
+    else {
+        return false;
+    };
     let m = doc.resolve(&m);
     match &*m {
-        Object::Stream(s) => s.decoded().is_ok_and(|b| b.windows(11).any(|w| w == b"pdfaid:part")),
+        Object::Stream(s) => s
+            .decoded()
+            .is_ok_and(|b| b.windows(11).any(|w| w == b"pdfaid:part")),
         _ => false,
     }
 }
@@ -1169,7 +1476,11 @@ pub fn undrawn_fields(doc: &Document) -> Vec<(String, char)> {
     fields(doc)
         .into_iter()
         .filter_map(|f| {
-            let c = f.widgets.iter().find_map(|w| doc.get(w.obj).as_dict().and_then(pdfcraft_fonts::undrawn_mark))?;
+            let c = f.widgets.iter().find_map(|w| {
+                doc.get(w.obj)
+                    .as_dict()
+                    .and_then(pdfcraft_fonts::undrawn_mark)
+            })?;
             Some((f.name, c))
         })
         .collect()
@@ -1187,7 +1498,10 @@ pub fn reset(doc: &mut Document, names: Option<&[String]>) -> Result<usize, Form
         return Err(FormError::NoSuchField(missing.clone()));
     }
     let mut changed = 0;
-    for f in all.iter().filter(|f| names.is_none_or(|n| n.contains(&f.name))) {
+    for f in all
+        .iter()
+        .filter(|f| names.is_none_or(|n| n.contains(&f.name)))
+    {
         if f.value == f.default {
             continue;
         }
@@ -1214,15 +1528,38 @@ pub fn reset(doc: &mut Document, names: Option<&[String]>) -> Result<usize, Form
 /// annotations keep their places.
 pub fn move_in_tab_order(doc: &mut Document, name: &str, earlier: bool) -> Result<(), FormError> {
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
-    let page = f.widgets.iter().filter_map(|w| w.page).min().ok_or_else(|| FormError::Invalid(format!("{name} is not on a page")))?;
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
+    let page = f
+        .widgets
+        .iter()
+        .filter_map(|w| w.page)
+        .min()
+        .ok_or_else(|| FormError::Invalid(format!("{name} is not on a page")))?;
     // The page's fields in their current tab order (a field counts once, at its first widget).
-    let mut order: Vec<(usize, &str)> =
-        all.iter().filter_map(|g| g.widgets.iter().filter(|w| w.page == Some(page)).map(|w| w.tab).min().map(|t| (t, g.name.as_str()))).collect();
+    let mut order: Vec<(usize, &str)> = all
+        .iter()
+        .filter_map(|g| {
+            g.widgets
+                .iter()
+                .filter(|w| w.page == Some(page))
+                .map(|w| w.tab)
+                .min()
+                .map(|t| (t, g.name.as_str()))
+        })
+        .collect();
     order.sort();
     let names: Vec<&str> = order.iter().map(|(_, n)| *n).collect();
-    let Some(i) = names.iter().position(|n| *n == name) else { return invalid(format!("{name} is not on a page")) };
-    let j = if earlier { i.checked_sub(1) } else { Some(i + 1).filter(|j| *j < names.len()) };
+    let Some(i) = names.iter().position(|n| *n == name) else {
+        return invalid(format!("{name} is not on a page"));
+    };
+    let j = if earlier {
+        i.checked_sub(1)
+    } else {
+        Some(i + 1).filter(|j| *j < names.len())
+    };
     let Some(j) = j else { return Ok(()) };
     let mut names = names.into_iter().map(str::to_string).collect::<Vec<_>>();
     names.swap(i, j);
@@ -1230,19 +1567,43 @@ pub fn move_in_tab_order(doc: &mut Document, name: &str, earlier: bool) -> Resul
     let mut widgets: Vec<ObjRef> = Vec::new();
     for n in &names {
         if let Some(g) = all.iter().find(|g| &g.name == n) {
-            widgets.extend(g.widgets.iter().filter(|w| w.page == Some(page)).map(|w| w.obj));
+            widgets.extend(
+                g.widgets
+                    .iter()
+                    .filter(|w| w.page == Some(page))
+                    .map(|w| w.obj),
+            );
         }
     }
-    let pr = *page_refs(doc).get(page).ok_or_else(|| FormError::Invalid("no such page".into()))?;
-    let annots_obj =
-        doc.get(pr).as_dict().and_then(|d| d.get(b"Annots").cloned()).ok_or_else(|| FormError::Invalid("the page has no annotations".into()))?;
-    let list = doc.resolve(&annots_obj).as_array().cloned().unwrap_or_default();
+    let pr = *page_refs(doc)
+        .get(page)
+        .ok_or_else(|| FormError::Invalid("no such page".into()))?;
+    let annots_obj = doc
+        .get(pr)
+        .as_dict()
+        .and_then(|d| d.get(b"Annots").cloned())
+        .ok_or_else(|| FormError::Invalid("the page has no annotations".into()))?;
+    let list = doc
+        .resolve(&annots_obj)
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     let mut next = widgets.into_iter();
-    let set: std::collections::HashSet<ObjRef> = all.iter().flat_map(|g| g.widgets.iter().filter(|w| w.page == Some(page)).map(|w| w.obj)).collect();
+    let set: std::collections::HashSet<ObjRef> = all
+        .iter()
+        .flat_map(|g| {
+            g.widgets
+                .iter()
+                .filter(|w| w.page == Some(page))
+                .map(|w| w.obj)
+        })
+        .collect();
     let new_list: Vec<Object> = list
         .iter()
         .map(|o| match o.as_ref() {
-            Some(r) if set.contains(&r) => next.next().map(Object::Ref).unwrap_or_else(|| o.clone()),
+            Some(r) if set.contains(&r) => {
+                next.next().map(Object::Ref).unwrap_or_else(|| o.clone())
+            }
             _ => o.clone(),
         })
         .collect();

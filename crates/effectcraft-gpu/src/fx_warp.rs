@@ -60,7 +60,14 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// A same-size per-pixel kernel.
-fn run(e: &mut Enc, entry: &str, p: &Params, src: &GpuImage, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> GpuImage {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    src: &GpuImage,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> GpuImage {
     let out = e.scratch(src.width, src.height);
     e.pixels(entry, p, src, aux, &out, data);
     out
@@ -72,7 +79,11 @@ fn f4(v: [f64; 4]) -> [f32; 4] {
 
 /// The buffer's geometry without its pixels (the CPU set-up functions read only that).
 fn geometry(b: &GBuf) -> Buf {
-    Buf { img: Image::new(0, 0), offset: b.offset, scale: b.scale }
+    Buf {
+        img: Image::new(0, 0),
+        offset: b.offset,
+        scale: b.scale,
+    }
 }
 
 /// Points as f32 pairs.
@@ -91,9 +102,14 @@ fn warp(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     }
     let style = ctx.params.e("warpStyle");
     let vertical = ctx.params.e("warpAxis") == 1;
-    let (hx, hy) = (ctx.layer_size[0] * b.scale * 0.5, ctx.layer_size[1] * b.scale * 0.5);
+    let (hx, hy) = (
+        ctx.layer_size[0] * b.scale * 0.5,
+        ctx.layer_size[1] * b.scale * 0.5,
+    );
     if !ctx.adjustment {
-        let pad = ((k.abs() + hd.abs() + vd.abs()) * 0.6 * hx.max(hy)).ceil().min(4096.0);
+        let pad = ((k.abs() + hd.abs() + vd.abs()) * 0.6 * hx.max(hy))
+            .ceil()
+            .min(4096.0);
         b.pad(e, pad as u32 + 1)?;
     }
     // Fisheye / Twist (a crease at the unit circle) bent past 50 % or with Horizontal /
@@ -101,8 +117,17 @@ fn warp(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     // fold, so f32 would land on other pixels than the CPU's f64. The inverse map is solved on
     // the CPU (the CPU effect's own solver) and sampled here.
     if matches!(style, 11 | 14) && (k.abs() > 0.5 || hd != 0.0 || vd != 0.0) {
-        let geo = Buf { img: Image::new(0, 0), offset: b.offset, scale: b.scale };
-        let map = e.g.upload_image(&effectcraft_effects::warp_inverse_map(ctx, &geo, b.img.width, b.img.height))?;
+        let geo = Buf {
+            img: Image::new(0, 0),
+            offset: b.offset,
+            scale: b.scale,
+        };
+        let map = e.g.upload_image(&effectcraft_effects::warp_inverse_map(
+            ctx,
+            &geo,
+            b.img.width,
+            b.img.height,
+        ))?;
         b.img = run(e, "fxw_remap", &Params::default(), &b.img, Some(&map), None);
         return Some(b);
     }
@@ -178,7 +203,9 @@ fn page_turn(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 // ---------------------------------------------------------------- Smear (distort3::smear)
 
 fn smear(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
-    let Some(s) = effectcraft_effects::smear_setup(ctx, &geometry(&b)) else { return Some(b) };
+    let Some(s) = effectcraft_effects::smear_setup(ctx, &geometry(&b)) else {
+        return Some(b);
+    };
     let mut data = Vec::with_capacity(2 * (s.bound.len() + s.moved.len()));
     points(&mut data, &s.bound);
     points(&mut data, &s.moved);
@@ -195,7 +222,9 @@ fn smear(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 // ---------------------------------------------------------------- Reshape (distort3::reshape)
 
 fn reshape(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
-    let Some(s) = effectcraft_effects::reshape_setup(ctx, &geometry(&b)) else { return Some(b) };
+    let Some(s) = effectcraft_effects::reshape_setup(ctx, &geometry(&b)) else {
+        return Some(b);
+    };
     debug_assert_eq!(s.dest.len(), effectcraft_effects::RESHAPE_POINTS);
     let mut data = Vec::new();
     points(&mut data, &s.dest);
@@ -218,7 +247,12 @@ fn color_emboss(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let ang = ctx.params.f("direction").to_radians();
     let relief = ctx.params.f("relief") * b.scale;
     let mut p = Params::default();
-    p.f[0] = [(ang.cos() * relief) as f32, (-ang.sin() * relief) as f32, ctx.params.f("contrast") as f32 / 100.0, ctx.params.f("blend") as f32 / 100.0];
+    p.f[0] = [
+        (ang.cos() * relief) as f32,
+        (-ang.sin() * relief) as f32,
+        ctx.params.f("contrast") as f32 / 100.0,
+        ctx.params.f("blend") as f32 / 100.0,
+    ];
     b.img = run(e, "fxw_coloremboss", &p, &b.img, None, None);
     Some(b)
 }
@@ -237,7 +271,9 @@ fn cartoon(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let es = pr.f("edge/edgeSoftness") as f32 / 100.0;
     let eo = pr.f("edge/edgeOpacity") as f32 / 100.0;
     let black = (pr.f("advanced/edgeBlackLevel") as f32 / 100.0).clamp(0.0, 1.0);
-    let contrast = ((pr.f("advanced/edgeContrast").clamp(0.0, 0.999) * std::f64::consts::FRAC_PI_2).tan() as f32).min(100.0);
+    let contrast = ((pr.f("advanced/edgeContrast").clamp(0.0, 0.999) * std::f64::consts::FRAC_PI_2)
+        .tan() as f32)
+        .min(100.0);
     let none = Params::default();
     // Edge-preserving smoothing: guided filter on each premultiplied colour channel, guided by
     // the luma; alpha stays.
@@ -272,7 +308,8 @@ fn cartoon(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         ep.f[0] = [t0, t1.max(t0 + 1e-4), 0.0, 0.0];
         let mut edges = run(e, "fxw_edges", &ep, &luma, None, None);
         if ew > 1.0 {
-            edges = crate::fx_color::morph_frac(e, &edges, (ew - 1.0) * 0.5, crate::fx_color::DILATE_X);
+            edges =
+                crate::fx_color::morph_frac(e, &edges, (ew - 1.0) * 0.5, crate::fx_color::DILATE_X);
         } else {
             edge_k *= ew.max(0.0) as f32;
         }
@@ -280,9 +317,21 @@ fn cartoon(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     } else {
         None
     };
-    p.u[0] = [0, render, rows.as_ref().map_or(0, |r| r.1), rows.is_some() as u32];
+    p.u[0] = [
+        0,
+        render,
+        rows.as_ref().map_or(0, |r| r.1),
+        rows.is_some() as u32,
+    ];
     p.f[0] = [steps, smooth, edge_k, black];
     p.f[1][0] = contrast;
-    b.img = run(e, "fxw_cartoon", &p, &b.img, Some(&smoothed), rows.as_ref().map(|r| &r.0));
+    b.img = run(
+        e,
+        "fxw_cartoon",
+        &p,
+        &b.img,
+        Some(&smoothed),
+        rows.as_ref().map(|r| &r.0),
+    );
     Some(b)
 }

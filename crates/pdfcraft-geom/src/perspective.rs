@@ -13,7 +13,12 @@ impl Homography {
     /// The transform that takes each of `from` to the point at the same index of `to`. `None`
     /// when three of either set are collinear or a coordinate is not finite.
     pub fn from_points(from: [Point; 4], to: [Point; 4]) -> Option<Self> {
-        if from.iter().chain(to.iter()).flatten().any(|v| !v.is_finite()) {
+        if from
+            .iter()
+            .chain(to.iter())
+            .flatten()
+            .any(|v| !v.is_finite())
+        {
             return None;
         }
         // x' = (h0 x + h1 y + h2) / (h6 x + h7 y + 1), y' likewise with h3..h5: eight unknowns,
@@ -92,15 +97,25 @@ pub fn order_quad(points: [Point; 4]) -> Option<[Point; 4]> {
     let cy = points.iter().map(|p| p[1]).sum::<f64>() / 4.0;
     let mut q = points;
     // Ascending angle about the centre is clockwise on screen (y down): top, right, bottom, left.
-    q.sort_by(|a, b| (a[1] - cy).atan2(a[0] - cx).total_cmp(&(b[1] - cy).atan2(b[0] - cx)));
+    q.sort_by(|a, b| {
+        (a[1] - cy)
+            .atan2(a[0] - cx)
+            .total_cmp(&(b[1] - cy).atan2(b[0] - cx))
+    });
     let first = (0..4).min_by(|&a, &b| (q[a][0] + q[a][1]).total_cmp(&(q[b][0] + q[b][1])))?;
     q.rotate_left(first);
     // Convex, with every turn the same way, and not a sliver.
-    let cross = |o: Point, a: Point, b: Point| (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-    let turns: Vec<f64> = (0..4).map(|i| cross(q[i], q[(i + 1) % 4], q[(i + 2) % 4])).collect();
+    let cross = |o: Point, a: Point, b: Point| {
+        (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    };
+    let turns: Vec<f64> = (0..4)
+        .map(|i| cross(q[i], q[(i + 1) % 4], q[(i + 2) % 4]))
+        .collect();
     let area = turns.iter().sum::<f64>() / 2.0;
-    let span = q.iter().map(|p| p[0]).fold(f64::MIN, f64::max) - q.iter().map(|p| p[0]).fold(f64::MAX, f64::min);
-    let rise = q.iter().map(|p| p[1]).fold(f64::MIN, f64::max) - q.iter().map(|p| p[1]).fold(f64::MAX, f64::min);
+    let span = q.iter().map(|p| p[0]).fold(f64::MIN, f64::max)
+        - q.iter().map(|p| p[0]).fold(f64::MAX, f64::min);
+    let rise = q.iter().map(|p| p[1]).fold(f64::MIN, f64::max)
+        - q.iter().map(|p| p[1]).fold(f64::MAX, f64::min);
     let size = span.max(rise);
     let convex = turns.iter().all(|&t| t > 1e-9 * size * size);
     (convex && area > 1e-6 * size * size).then_some(q)
@@ -135,7 +150,10 @@ mod tests {
     fn the_inverse_takes_points_back() {
         let from = [[50.0, 40.0], [300.0, 70.0], [320.0, 400.0], [30.0, 380.0]];
         let to = [[0.0, 0.0], [200.0, 0.0], [200.0, 300.0], [0.0, 300.0]];
-        let (h, back) = (Homography::from_points(from, to).unwrap(), Homography::from_points(to, from).unwrap());
+        let (h, back) = (
+            Homography::from_points(from, to).unwrap(),
+            Homography::from_points(to, from).unwrap(),
+        );
         let p = [120.0, 210.0];
         assert!(close(back.apply(h.apply(p).unwrap()).unwrap(), p));
     }
@@ -143,10 +161,21 @@ mod tests {
     #[test]
     fn collinear_or_non_finite_points_have_no_transform() {
         let to = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-        assert!(Homography::from_points([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], to).is_none());
+        assert!(
+            Homography::from_points([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], to).is_none()
+        );
         assert!(Homography::from_points([[0.0, 0.0]; 4], to).is_none());
-        assert!(Homography::from_points([[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], to).is_none());
-        assert!(Homography::from_points([[f64::INFINITY, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], to).is_none());
+        assert!(
+            Homography::from_points([[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]], to)
+                .is_none()
+        );
+        assert!(
+            Homography::from_points(
+                [[f64::INFINITY, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+                to
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -155,7 +184,12 @@ mod tests {
         let tr = [200.0, 5.0];
         let br = [210.0, 300.0];
         let bl = [0.0, 290.0];
-        for q in [[br, tl, bl, tr], [bl, br, tr, tl], [tl, tr, br, bl], [tr, bl, tl, br]] {
+        for q in [
+            [br, tl, bl, tr],
+            [bl, br, tr, tl],
+            [tl, tr, br, bl],
+            [tr, bl, tl, br],
+        ] {
             assert_eq!(order_quad(q), Some([tl, tr, br, bl]), "{q:?}");
         }
     }
@@ -163,9 +197,18 @@ mod tests {
     #[test]
     fn concave_degenerate_or_non_finite_quads_are_refused() {
         // A dart: one corner inside the triangle of the other three.
-        assert_eq!(order_quad([[0.0, 0.0], [100.0, 0.0], [20.0, 20.0], [0.0, 100.0]]), None);
-        assert_eq!(order_quad([[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0]]), None);
+        assert_eq!(
+            order_quad([[0.0, 0.0], [100.0, 0.0], [20.0, 20.0], [0.0, 100.0]]),
+            None
+        );
+        assert_eq!(
+            order_quad([[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0]]),
+            None
+        );
         assert_eq!(order_quad([[5.0, 5.0]; 4]), None);
-        assert_eq!(order_quad([[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]), None);
+        assert_eq!(
+            order_quad([[f64::NAN, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]),
+            None
+        );
     }
 }

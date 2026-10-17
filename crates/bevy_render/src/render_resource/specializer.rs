@@ -8,8 +8,8 @@ use bevy_ecs::error::BevyError;
 use bevy_log::error;
 use bevy_platform::{
     collections::{
-        hash_map::{Entry, VacantEntry},
         HashMap,
+        hash_map::{Entry, VacantEntry},
     },
     hash::FixedHasher,
 };

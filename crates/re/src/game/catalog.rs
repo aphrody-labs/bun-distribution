@@ -4,8 +4,8 @@
 //! Provides metadata, engines, asset formats, canonical status, save locations,
 //! and discovery/detection methods across PC/Steam and Android filesystems.
 
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// Target gaming platform.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -571,18 +571,24 @@ pub fn get_dragon_ball_catalog() -> Vec<DragonBallGame> {
 
 /// Find a Dragon Ball game in the catalog by its internal id.
 pub fn find_game_by_id(id: &str) -> Option<DragonBallGame> {
-    get_dragon_ball_catalog().into_iter().find(|g| g.id.eq_ignore_ascii_case(id))
+    get_dragon_ball_catalog()
+        .into_iter()
+        .find(|g| g.id.eq_ignore_ascii_case(id))
 }
 
 /// Find a Dragon Ball game in the catalog by its Steam App ID.
 pub fn find_game_by_steam_app_id(app_id: u32) -> Option<DragonBallGame> {
-    get_dragon_ball_catalog().into_iter().find(|g| g.steam_app_id == Some(app_id))
+    get_dragon_ball_catalog()
+        .into_iter()
+        .find(|g| g.steam_app_id == Some(app_id))
 }
 
 /// Find a Dragon Ball game in the catalog by an Android package / application ID.
 pub fn find_game_by_android_package(package_id: &str) -> Option<DragonBallGame> {
     get_dragon_ball_catalog().into_iter().find(|g| {
-        g.android_package_ids.iter().any(|pkg| pkg.eq_ignore_ascii_case(package_id))
+        g.android_package_ids
+            .iter()
+            .any(|pkg| pkg.eq_ignore_ascii_case(package_id))
     })
 }
 
@@ -617,8 +623,12 @@ pub fn search_catalog(query: &str) -> Vec<DragonBallGame> {
                 || g.title_ja.as_deref().unwrap_or("").contains(&q)
                 || g.developer.to_ascii_lowercase().contains(&q)
                 || g.publisher.to_ascii_lowercase().contains(&q)
-                || g.android_package_ids.iter().any(|p| p.to_ascii_lowercase().contains(&q))
-                || g.steam_app_id.map(|id| id.to_string().contains(&q)).unwrap_or(false)
+                || g.android_package_ids
+                    .iter()
+                    .any(|p| p.to_ascii_lowercase().contains(&q))
+                || g.steam_app_id
+                    .map(|id| id.to_string().contains(&q))
+                    .unwrap_or(false)
         })
         .collect()
 }
@@ -660,36 +670,42 @@ pub fn scan_installed_steam_games(libraries: &[PathBuf]) -> std::io::Result<Vec<
                     Err(_) => continue,
                 };
 
-                let Ok(manifest) = bun_steam::AppManifest::parse(&content) else { continue };
+                let Ok(manifest) = bun_steam::AppManifest::parse(&content) else {
+                    continue;
+                };
                 let app_id = manifest.app_id;
                 let name = manifest.name;
                 let install_dir = manifest.install_dir;
 
                 // Match by Steam AppID first, then by title
-                let matched_game = catalog.iter().find(|g| g.steam_app_id == Some(app_id)).cloned().or_else(|| {
-                    if name.to_ascii_lowercase().contains("dragon ball") {
-                        Some(make_game(
-                            &format!("steam_{app_id}"),
-                            &name,
-                            None,
-                            &[Platform::Steam, Platform::Windows],
-                            Some(app_id),
-                            &[],
-                            "Bandai Namco",
-                            "Bandai Namco Entertainment",
-                            None,
-                            GameEngine::Custom("Unknown".into()),
-                            None,
-                            &[],
-                            CANON_STATUS_DERIVED_GAME,
-                            &[],
-                            &[&install_dir],
-                            Some("Discovered via Steam app manifest scan"),
-                        ))
-                    } else {
-                        None
-                    }
-                });
+                let matched_game = catalog
+                    .iter()
+                    .find(|g| g.steam_app_id == Some(app_id))
+                    .cloned()
+                    .or_else(|| {
+                        if name.to_ascii_lowercase().contains("dragon ball") {
+                            Some(make_game(
+                                &format!("steam_{app_id}"),
+                                &name,
+                                None,
+                                &[Platform::Steam, Platform::Windows],
+                                Some(app_id),
+                                &[],
+                                "Bandai Namco",
+                                "Bandai Namco Entertainment",
+                                None,
+                                GameEngine::Custom("Unknown".into()),
+                                None,
+                                &[],
+                                CANON_STATUS_DERIVED_GAME,
+                                &[],
+                                &[&install_dir],
+                                Some("Discovered via Steam app manifest scan"),
+                            ))
+                        } else {
+                            None
+                        }
+                    });
 
                 if let Some(game) = matched_game {
                     let install_path = steamapps.join("common").join(&install_dir);
@@ -737,7 +753,11 @@ pub fn scan_installed_android_packages(roots: &[PathBuf]) -> std::io::Result<Vec
                 let dir_str = file_name.to_string_lossy();
 
                 for game in &catalog {
-                    if game.android_package_ids.iter().any(|pkg| pkg.eq_ignore_ascii_case(&dir_str)) {
+                    if game
+                        .android_package_ids
+                        .iter()
+                        .any(|pkg| pkg.eq_ignore_ascii_case(&dir_str))
+                    {
                         let path = entry.path();
                         let is_installed = path.is_dir();
                         detected.push(DetectedGame {
@@ -775,15 +795,36 @@ mod tests {
     #[test]
     fn test_catalog_entries_count_and_completeness() {
         let catalog = get_dragon_ball_catalog();
-        assert!(catalog.len() >= 10, "Expected at least 10 Dragon Ball games in registry");
+        assert!(
+            catalog.len() >= 10,
+            "Expected at least 10 Dragon Ball games in registry"
+        );
 
         // Verify key Steam games
-        assert!(find_game_by_steam_app_id(323470).is_some(), "DBXV must exist");
-        assert!(find_game_by_steam_app_id(454650).is_some(), "DBXV2 must exist");
-        assert!(find_game_by_steam_app_id(678950).is_some(), "DBFZ must exist");
-        assert!(find_game_by_steam_app_id(851850).is_some(), "DBZK must exist");
-        assert!(find_game_by_steam_app_id(1790600).is_some(), "Sparking! ZERO must exist");
-        assert!(find_game_by_steam_app_id(1276760).is_some(), "The Breakers must exist");
+        assert!(
+            find_game_by_steam_app_id(323470).is_some(),
+            "DBXV must exist"
+        );
+        assert!(
+            find_game_by_steam_app_id(454650).is_some(),
+            "DBXV2 must exist"
+        );
+        assert!(
+            find_game_by_steam_app_id(678950).is_some(),
+            "DBFZ must exist"
+        );
+        assert!(
+            find_game_by_steam_app_id(851850).is_some(),
+            "DBZK must exist"
+        );
+        assert!(
+            find_game_by_steam_app_id(1790600).is_some(),
+            "Sparking! ZERO must exist"
+        );
+        assert!(
+            find_game_by_steam_app_id(1276760).is_some(),
+            "The Breakers must exist"
+        );
 
         // Verify key Android games
         let legends = find_game_by_android_package("com.bandainamcoent.dblegends_ww");

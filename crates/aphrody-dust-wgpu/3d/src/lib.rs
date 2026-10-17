@@ -165,7 +165,10 @@ impl BatchKind {
                 .with_fog_enabled(global_fog_enabled)
                 .with_edge_marking_enabled(control.edge_marking_enabled());
             let texture = texture_mapping_enabled.then(|| {
-                (TextureKey::new(poly.tex_params, poly.tex_palette_base), poly.tex_params.into())
+                (
+                    TextureKey::new(poly.tex_params, poly.tex_palette_base),
+                    poly.tex_params.into(),
+                )
             });
 
             let alpha = poly.attrs.alpha();
@@ -302,7 +305,11 @@ fn create_texture(
     let total_shift = texture_key.width_shift() + texture_key.height_shift();
     let len = 64 << total_shift;
 
-    let size = crate::wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+    let size = crate::wgpu::Extent3d {
+        width,
+        height,
+        depth_or_array_layers: 1,
+    };
 
     let raw = device.create_texture(&crate::wgpu::TextureDescriptor {
         label: Some("3D renderer texture"),
@@ -326,7 +333,10 @@ fn create_texture(
 
     macro_rules! calc_range {
         ($range: ident, $bits_per_pixel: expr) => {
-            let $range = (tex_base, (tex_base + ((8 * $bits_per_pixel) << total_shift)) & 0x7_FFFF);
+            let $range = (
+                tex_base,
+                (tex_base + ((8 * $bits_per_pixel) << total_shift)) & 0x7_FFFF,
+            );
             let texture_region_range = ($range.0 >> 17, $range.1.wrapping_sub(1) >> 17 & 3);
             let mut i = texture_region_range.0;
             loop {
@@ -362,7 +372,7 @@ fn create_texture(
                 )));
                 i = (i + 1) & 0x7_FFFF;
             }
-        },
+        }
 
         2 => {
             calc_range!(range, 2);
@@ -384,7 +394,7 @@ fn create_texture(
                 }
                 i = (i + 1) & 0x7_FFFF;
             }
-        },
+        }
 
         3 => {
             calc_range!(range, 4);
@@ -406,7 +416,7 @@ fn create_texture(
                 }
                 i = (i + 1) & 0x7_FFFF;
             }
-        },
+        }
 
         4 => {
             calc_range!(range, 8);
@@ -416,11 +426,15 @@ fn create_texture(
                 let color_index = unsafe { *frame.rendering.texture.get_unchecked(i) } as usize;
                 decode_buffer.push(rgb5_to_rgb6(read_palette!(
                     color_index,
-                    if texture_key.color_0_is_transparent() && color_index == 0 { 0 } else { 0x1F }
+                    if texture_key.color_0_is_transparent() && color_index == 0 {
+                        0
+                    } else {
+                        0x1F
+                    }
                 )));
                 i = (i + 1) & 0x7_FFFF;
             }
-        },
+        }
 
         5 => {
             let slot_0_2_range = (
@@ -440,8 +454,10 @@ fn create_texture(
                 unsafe {
                     let mut pixels = frame.rendering.texture.read_le_aligned_unchecked::<u32>(i);
                     let pal_data_addr = 0x2_0000 | (i >> 1 & 0xFFFE) | (i >> 2 & 0x1_0000);
-                    let pal_data =
-                        frame.rendering.texture.read_le_aligned_unchecked::<u16>(pal_data_addr);
+                    let pal_data = frame
+                        .rendering
+                        .texture
+                        .read_le_aligned_unchecked::<u16>(pal_data_addr);
                     let pal_base = pal_base + (pal_data << 2) as usize;
                     let mode = pal_data >> 14;
 
@@ -467,7 +483,10 @@ fn create_texture(
                                 {
                                     let addr = (pal_base + ($i << 1)) & 0x1_FFFE;
                                     tex_pal_region_mask |= 1 << (addr >> 14);
-                                    frame.rendering.tex_pal.read_le_aligned_unchecked::<u16>(addr)
+                                    frame
+                                        .rendering
+                                        .tex_pal
+                                        .read_le_aligned_unchecked::<u16>(addr)
                                 },
                                 0x1F,
                             )
@@ -524,7 +543,7 @@ fn create_texture(
             unsafe {
                 decode_buffer.set_len(len);
             }
-        },
+        }
 
         6 => {
             calc_range!(range, 8);
@@ -537,7 +556,7 @@ fn create_texture(
                 decode_buffer.push(rgb5_to_rgb6(read_palette!(color_index, raw_alpha)));
                 i = (i + 1) & 0x7_FFFF;
             }
-        },
+        }
 
         _ => {
             calc_range!(range, 16);
@@ -551,7 +570,7 @@ fn create_texture(
                 )));
                 i = (i + 2) & 0x7_FFFF;
             }
-        },
+        }
     }
 
     unsafe {
@@ -569,7 +588,11 @@ fn create_texture(
 
     let view = raw.create_view(&crate::wgpu::TextureViewDescriptor::default());
 
-    Texture { view, texture_region_mask, tex_pal_region_mask: tex_pal_region_mask & 0x3F }
+    Texture {
+        view,
+        texture_region_mask,
+        tex_pal_region_mask: tex_pal_region_mask & 0x3F,
+    }
 }
 
 fn create_sampler(device: &crate::wgpu::Device, sampler_key: SamplerKey) -> crate::wgpu::Sampler {
@@ -598,7 +621,11 @@ fn create_sampler(device: &crate::wgpu::Device, sampler_key: SamplerKey) -> crat
 }
 
 struct OutputAttachments {
-    color: [(crate::wgpu::Texture, crate::wgpu::TextureView, crate::wgpu::BindGroup); 2],
+    color: [(
+        crate::wgpu::Texture,
+        crate::wgpu::TextureView,
+        crate::wgpu::BindGroup,
+    ); 2],
     depth_view: crate::wgpu::TextureView,
     attrs_view: crate::wgpu::TextureView,
     depth_attrs_bg: crate::wgpu::BindGroup,
@@ -705,7 +732,12 @@ impl OutputAttachments {
             ],
         });
 
-        OutputAttachments { color, depth_view, attrs_view, depth_attrs_bg }
+        OutputAttachments {
+            color,
+            depth_view,
+            attrs_view,
+            depth_attrs_bg,
+        }
     }
 }
 
@@ -1188,7 +1220,8 @@ impl Renderer {
                 | (texture.tex_pal_region_mask & frame.rendering.tex_pal_dirty)
                 == 0
         });
-        self.texture_bgs.retain(|(texture, _), _| self.textures.contains_key(texture));
+        self.texture_bgs
+            .retain(|(texture, _), _| self.textures.contains_key(texture));
 
         let control_flags = ControlFlags::from(frame.rendering.control);
 
@@ -1196,9 +1229,10 @@ impl Renderer {
         let mut fog_used = false;
 
         let mut command_encoder =
-            self.device.create_command_encoder(&crate::wgpu::CommandEncoderDescriptor {
-                label: Some("3D renderer command encoder"),
-            });
+            self.device
+                .create_command_encoder(&crate::wgpu::CommandEncoderDescriptor {
+                    label: Some("3D renderer command encoder"),
+                });
 
         let mut color_attachments = vec![Some(crate::wgpu::RenderPassColorAttachment {
             view: &self.output_attachments.color[0].1,
@@ -1288,33 +1322,38 @@ impl Renderer {
             let mut cur_batch_indices_start = 0;
 
             let mut prepare_texture = |(texture_key, sampler_key): (TextureKey, SamplerKey)| {
-                self.texture_bgs.entry((texture_key, sampler_key)).or_insert_with(|| {
-                    let texture = self.textures.entry(texture_key).or_insert_with(|| {
-                        create_texture(
-                            &self.device,
-                            &self.queue,
-                            texture_key,
-                            frame,
-                            &mut self.texture_decode_buffer,
-                        )
+                self.texture_bgs
+                    .entry((texture_key, sampler_key))
+                    .or_insert_with(|| {
+                        let texture = self.textures.entry(texture_key).or_insert_with(|| {
+                            create_texture(
+                                &self.device,
+                                &self.queue,
+                                texture_key,
+                                frame,
+                                &mut self.texture_decode_buffer,
+                            )
+                        });
+                        let sampler = self.samplers[sampler_key.0 as usize]
+                            .get_or_insert_with(|| create_sampler(&self.device, sampler_key));
+                        self.device
+                            .create_bind_group(&crate::wgpu::BindGroupDescriptor {
+                                label: Some("3D renderer texture bind group"),
+                                layout: &self.bg_layouts.texture,
+                                entries: &[
+                                    crate::wgpu::BindGroupEntry {
+                                        binding: 0,
+                                        resource: crate::wgpu::BindingResource::TextureView(
+                                            &texture.view,
+                                        ),
+                                    },
+                                    crate::wgpu::BindGroupEntry {
+                                        binding: 1,
+                                        resource: crate::wgpu::BindingResource::Sampler(sampler),
+                                    },
+                                ],
+                            })
                     });
-                    let sampler = self.samplers[sampler_key.0 as usize]
-                        .get_or_insert_with(|| create_sampler(&self.device, sampler_key));
-                    self.device.create_bind_group(&crate::wgpu::BindGroupDescriptor {
-                        label: Some("3D renderer texture bind group"),
-                        layout: &self.bg_layouts.texture,
-                        entries: &[
-                            crate::wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: crate::wgpu::BindingResource::TextureView(&texture.view),
-                            },
-                            crate::wgpu::BindGroupEntry {
-                                binding: 1,
-                                resource: crate::wgpu::BindingResource::Sampler(sampler),
-                            },
-                        ],
-                    })
-                });
             };
 
             let mut prepare_batch = |batch_kind: BatchKind, cur_batch_kind: Option<BatchKind>| {
@@ -1357,9 +1396,14 @@ impl Renderer {
                         // it's not checked)
 
                         PreparedBatchKind::ShadowMask { depth_test_equal }
-                    },
+                    }
 
-                    BatchKind::Opaque { pipeline, id, texture, fog_enabled } => {
+                    BatchKind::Opaque {
+                        pipeline,
+                        id,
+                        texture,
+                        fog_enabled,
+                    } => {
                         field_updates!(
                             Opaque;
                             pipeline, cur_pipeline, pipeline_changed;
@@ -1379,9 +1423,10 @@ impl Renderer {
                         }
 
                         if (texture_changed || pipeline_changed)
-                            && let Some(texture) = texture {
-                                prepare_texture(texture);
-                            }
+                            && let Some(texture) = texture
+                        {
+                            prepare_texture(texture);
+                        }
 
                         bg_indices!(
                             0,
@@ -1403,7 +1448,7 @@ impl Renderer {
                                 toon_bg_index: pipeline_changed.then_some(toon_bg_index),
                             }
                         )
-                    },
+                    }
 
                     BatchKind::Translucent {
                         pipeline,
@@ -1433,9 +1478,10 @@ impl Renderer {
                         }
 
                         if (texture_changed || pipeline_changed)
-                            && let Some(texture) = texture {
-                                prepare_texture(texture);
-                            }
+                            && let Some(texture) = texture
+                        {
+                            prepare_texture(texture);
+                        }
 
                         bg_indices!(
                             1,
@@ -1457,7 +1503,7 @@ impl Renderer {
                                 toon_bg_index: pipeline_changed.then_some(toon_bg_index),
                             }
                         )
-                    },
+                    }
 
                     BatchKind::TranslucentNoDepthUpdate {
                         pipeline,
@@ -1476,22 +1522,23 @@ impl Renderer {
                         );
 
                         if pipeline_changed {
-                            self.trans_no_depth_update_pipelines.entry(pipeline).or_insert_with(
-                                || {
+                            self.trans_no_depth_update_pipelines
+                                .entry(pipeline)
+                                .or_insert_with(|| {
                                     render::trans::create_pipeline(
                                         pipeline,
                                         false,
                                         &self.device,
                                         &self.bg_layouts,
                                     )
-                                },
-                            );
+                                });
                         }
 
                         if (texture_changed || pipeline_changed)
-                            && let Some(texture) = texture {
-                                prepare_texture(texture);
-                            }
+                            && let Some(texture) = texture
+                        {
+                            prepare_texture(texture);
+                        }
 
                         bg_indices!(
                             1,
@@ -1513,9 +1560,14 @@ impl Renderer {
                                 toon_bg_index: pipeline_changed.then_some(toon_bg_index),
                             }
                         )
-                    },
+                    }
 
-                    BatchKind::Wireframe { pipeline, id, texture, fog_enabled } => {
+                    BatchKind::Wireframe {
+                        pipeline,
+                        id,
+                        texture,
+                        fog_enabled,
+                    } => {
                         field_updates!(
                             Wireframe;
                             pipeline, cur_pipeline, pipeline_changed;
@@ -1529,9 +1581,10 @@ impl Renderer {
                         }
 
                         if (texture_changed || pipeline_changed)
-                            && let Some(texture) = texture {
-                                prepare_texture(texture);
-                            }
+                            && let Some(texture) = texture
+                        {
+                            prepare_texture(texture);
+                        }
 
                         bg_indices!(
                             0,
@@ -1553,7 +1606,7 @@ impl Renderer {
                                 toon_bg_index: pipeline_changed.then_some(toon_bg_index),
                             }
                         )
-                    },
+                    }
                 }
             };
 
@@ -1600,8 +1653,10 @@ impl Renderer {
                 let id = poly.attrs.id();
                 let base_idx = self.vtx_buffer_contents.len() as u16;
                 self.vtx_buffer_contents.extend(
-                    poly.verts[..verts_len.get() as usize].iter().enumerate().map(
-                        |(i, vert_addr)| {
+                    poly.verts[..verts_len.get() as usize]
+                        .iter()
+                        .enumerate()
+                        .map(|(i, vert_addr)| {
                             Vertex::new(
                                 &frame.gx.vert_ram[vert_addr.get() as usize],
                                 // self.hi_res_coords_mask,
@@ -1609,12 +1664,12 @@ impl Renderer {
                                 poly.w_values[i],
                                 id,
                             )
-                        },
-                    ),
+                        }),
                 );
 
                 for i in base_idx..base_idx + (verts_len.get() - 1) as u16 {
-                    self.idx_buffer_contents.extend_from_slice(&[base_idx, i, i + 1]);
+                    self.idx_buffer_contents
+                        .extend_from_slice(&[base_idx, i, i + 1]);
                 }
             }
             finish_batch!();
@@ -1666,7 +1721,7 @@ impl Renderer {
             let mut cur_idx_base = 0;
             for batch in &self.batches {
                 match batch.kind {
-                    PreparedBatchKind::ShadowMask { .. } => {},
+                    PreparedBatchKind::ShadowMask { .. } => {}
 
                     PreparedBatchKind::Opaque {
                         pipeline_changed,
@@ -1717,7 +1772,7 @@ impl Renderer {
                                 0..1,
                             );
                         }
-                    },
+                    }
 
                     PreparedBatchKind::Translucent {
                         pipeline,
@@ -1785,7 +1840,7 @@ impl Renderer {
                                 );
                             }
                         }
-                    },
+                    }
 
                     PreparedBatchKind::TranslucentNoDepthUpdate {
                         pipeline,
@@ -1853,9 +1908,9 @@ impl Renderer {
                                 );
                             }
                         }
-                    },
+                    }
 
-                    PreparedBatchKind::Wireframe { .. } => {},
+                    PreparedBatchKind::Wireframe { .. } => {}
                 }
 
                 cur_idx_base += batch.idxs as u32;
@@ -1876,9 +1931,10 @@ impl Renderer {
                     dst.write(src.cast::<u32>().to_array());
                 }
 
-                self.queue.write_buffer(&self.edge_colors_buffer, 0, unsafe {
-                    slice::from_raw_parts(edge_colors.as_ptr() as *const u8, 0x80)
-                });
+                self.queue
+                    .write_buffer(&self.edge_colors_buffer, 0, unsafe {
+                        slice::from_raw_parts(edge_colors.as_ptr() as *const u8, 0x80)
+                    });
             }
 
             let mut render_pass =
@@ -1974,7 +2030,9 @@ mod pipeline_key_tests {
     fn fog_and_edge_marking_have_independent_shader_keys() {
         for fog in [false, true] {
             for edges in [false, true] {
-                let key = PipelineKey(0).with_fog_enabled(fog).with_edge_marking_enabled(edges);
+                let key = PipelineKey(0)
+                    .with_fog_enabled(fog)
+                    .with_edge_marking_enabled(edges);
                 assert_eq!(key.fog_enabled(), fog);
                 assert_eq!(key.edge_marking_enabled(), edges);
             }

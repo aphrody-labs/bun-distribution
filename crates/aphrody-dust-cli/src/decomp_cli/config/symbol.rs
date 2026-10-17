@@ -69,10 +69,13 @@ impl SymbolMapsExt for SymbolMaps {
             };
 
             let weak = match symbol.flags() {
-                dsd_object::SymbolFlags::Elf { st_info, st_other: _ } => {
+                dsd_object::SymbolFlags::Elf {
+                    st_info,
+                    st_other: _,
+                } => {
                     let st_bind = st_info >> 4;
                     st_bind == STB_MWARM_WEAK
-                },
+                }
                 _ => false,
             };
 
@@ -144,11 +147,11 @@ impl SymbolExt for Symbol {
             SymbolKind::Function(_) => elf::STT_FUNC,
             SymbolKind::PoolConstant | SymbolKind::Label { .. } | SymbolKind::JumpTable(_) => {
                 elf::STT_NOTYPE
-            },
+            }
             SymbolKind::Data(_) | SymbolKind::Bss(_) => elf::STT_OBJECT,
             SymbolKind::Undefined => {
                 return dsd_object::SymbolFlags::None;
-            },
+            }
         };
         let st_bind = match self.scope {
             SymbolScope::Global => elf::STB_GLOBAL,
@@ -156,7 +159,10 @@ impl SymbolExt for Symbol {
             SymbolScope::Weak => STB_MWARM_WEAK,
         };
         let st_info = (st_bind << 4) | st_type;
-        dsd_object::SymbolFlags::Elf { st_info, st_other: STV_DEFAULT }
+        dsd_object::SymbolFlags::Elf {
+            st_info,
+            st_other: STV_DEFAULT,
+        }
     }
 }
 
@@ -224,7 +230,7 @@ impl SymDataExt for SymData {
                         SymData::Short { .. } => write!(w, "    .short {:#x}", bytes[0])?,
                         SymData::Word { .. } => {
                             write!(w, "    .word {:#x}", u32::from_le_slice(bytes))?
-                        },
+                        }
                     }
                     data_directive = true;
                 }
@@ -312,7 +318,10 @@ impl SymbolLookup<'_> {
                             i64::from(symbol_address - symbol.addr) + relocation.addend()
                         );
                     }
-                    write!(w, "{symbol_address:#010x} ; ERROR: Symbol not found for relocation")?;
+                    write!(
+                        w,
+                        "{symbol_address:#010x} ; ERROR: Symbol not found for relocation"
+                    )?;
                 }
 
                 if relocation.addend() > 0 {
@@ -347,8 +356,12 @@ impl SymbolLookup<'_> {
         source: u32,
         destination: u32,
     ) -> Result<()> {
-        let Some(relocations) = self.relocations else { return Ok(()) };
-        let Some(relocation) = relocations.get(source) else { return Ok(()) };
+        let Some(relocations) = self.relocations else {
+            return Ok(());
+        };
+        let Some(relocation) = relocations.get(source) else {
+            return Ok(());
+        };
 
         if let Some(overlays) = relocation.module().other_modules() {
             write!(w, " ; ")?;
@@ -392,6 +405,8 @@ impl SymbolLookup<'_> {
         let module_kind = relocation.module().first_module()?;
         let external_symbol_map = self.symbol_maps.get(module_kind).unwrap();
 
-        external_symbol_map.first_at_address(destination).map(|(_, symbol)| symbol.name.as_str())
+        external_symbol_map
+            .first_at_address(destination)
+            .map(|(_, symbol)| symbol.name.as_str())
     }
 }

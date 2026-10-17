@@ -7,7 +7,10 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{BlendMode, Paint};
 use vectorcraft_doc::corners::set_corners;
-use vectorcraft_doc::{Appearance, Document, Knockout, LiveCorners, LiveShape, Node, NodeId, NodeKind, OrientedBox, Scaling};
+use vectorcraft_doc::{
+    Appearance, Document, Knockout, LiveCorners, LiveShape, Node, NodeId, NodeKind, OrientedBox,
+    Scaling,
+};
 use vectorcraft_geom::shapes::CornerKind;
 use vectorcraft_geom::{Affine, FillRule, PathData, Point, Rect, Vec2};
 
@@ -90,30 +93,114 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection_or_guides,
             nudge
         ),
-        cmd!("object.arrange.bringToFront", "Bring to Front", ["Object", "Arrange"], Some("Cmd+Shift+]"), "{}", has_selection, |s, _| arrange(
-            s,
-            Arrange::Front
-        )),
-        cmd!("object.arrange.bringForward", "Bring Forward", ["Object", "Arrange"], Some("Cmd+]"), "{}", has_selection, |s, _| arrange(
-            s,
-            Arrange::Forward
-        )),
-        cmd!("object.arrange.sendBackward", "Send Backward", ["Object", "Arrange"], Some("Cmd+["), "{}", has_selection, |s, _| arrange(
-            s,
-            Arrange::Backward
-        )),
-        cmd!("object.arrange.sendToBack", "Send to Back", ["Object", "Arrange"], Some("Cmd+Shift+["), "{}", has_selection, |s, _| arrange(
-            s,
-            Arrange::Back
-        )),
-        cmd!("object.arrange.sendToCurrentLayer", "Send to Current Layer", ["Object", "Arrange"], None, "{}", has_selection, send_to_current_layer),
-        cmd!("object.group", "Group", ["Object"], Some("Cmd+G"), "{} → {id}", has_selection, group),
-        cmd!("object.ungroup", "Ungroup", ["Object"], Some("Cmd+Shift+G"), "{}", has_selection, ungroup),
-        cmd!("object.lock", "Selection", ["Object", "Lock"], Some("Cmd+2"), "{}", has_selection, lock),
-        cmd!("object.unlockAll", "Unlock All", ["Object"], Some("Cmd+Alt+2"), "{}", has_doc, unlock_all),
-        cmd!("object.hide", "Selection", ["Object", "Hide"], Some("Cmd+3"), "{}", has_selection, hide),
-        cmd!("object.showAll", "Show All", ["Object"], Some("Cmd+Alt+3"), "{}", has_doc, show_all),
-        cmd!("object.compoundPath.make", "Make", ["Object", "Compound Path"], Some("Cmd+8"), "{}", has_selection, compound_make),
+        cmd!(
+            "object.arrange.bringToFront",
+            "Bring to Front",
+            ["Object", "Arrange"],
+            Some("Cmd+Shift+]"),
+            "{}",
+            has_selection,
+            |s, _| arrange(s, Arrange::Front)
+        ),
+        cmd!(
+            "object.arrange.bringForward",
+            "Bring Forward",
+            ["Object", "Arrange"],
+            Some("Cmd+]"),
+            "{}",
+            has_selection,
+            |s, _| arrange(s, Arrange::Forward)
+        ),
+        cmd!(
+            "object.arrange.sendBackward",
+            "Send Backward",
+            ["Object", "Arrange"],
+            Some("Cmd+["),
+            "{}",
+            has_selection,
+            |s, _| arrange(s, Arrange::Backward)
+        ),
+        cmd!(
+            "object.arrange.sendToBack",
+            "Send to Back",
+            ["Object", "Arrange"],
+            Some("Cmd+Shift+["),
+            "{}",
+            has_selection,
+            |s, _| arrange(s, Arrange::Back)
+        ),
+        cmd!(
+            "object.arrange.sendToCurrentLayer",
+            "Send to Current Layer",
+            ["Object", "Arrange"],
+            None,
+            "{}",
+            has_selection,
+            send_to_current_layer
+        ),
+        cmd!(
+            "object.group",
+            "Group",
+            ["Object"],
+            Some("Cmd+G"),
+            "{} → {id}",
+            has_selection,
+            group
+        ),
+        cmd!(
+            "object.ungroup",
+            "Ungroup",
+            ["Object"],
+            Some("Cmd+Shift+G"),
+            "{}",
+            has_selection,
+            ungroup
+        ),
+        cmd!(
+            "object.lock",
+            "Selection",
+            ["Object", "Lock"],
+            Some("Cmd+2"),
+            "{}",
+            has_selection,
+            lock
+        ),
+        cmd!(
+            "object.unlockAll",
+            "Unlock All",
+            ["Object"],
+            Some("Cmd+Alt+2"),
+            "{}",
+            has_doc,
+            unlock_all
+        ),
+        cmd!(
+            "object.hide",
+            "Selection",
+            ["Object", "Hide"],
+            Some("Cmd+3"),
+            "{}",
+            has_selection,
+            hide
+        ),
+        cmd!(
+            "object.showAll",
+            "Show All",
+            ["Object"],
+            Some("Cmd+Alt+3"),
+            "{}",
+            has_doc,
+            show_all
+        ),
+        cmd!(
+            "object.compoundPath.make",
+            "Make",
+            ["Object", "Compound Path"],
+            Some("Cmd+8"),
+            "{}",
+            has_selection,
+            compound_make
+        ),
         cmd!(
             "object.compoundPath.release",
             "Release",
@@ -159,8 +246,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             |s, _| clip_edit(s, true)
         ),
-        cmd!("object.isolate", "Enter Isolation Mode", [], None, "{id}", has_doc, isolate),
-        cmd!("object.exitIsolation", "Exit Isolation Mode", [], None, "{}", has_doc, exit_isolation),
+        cmd!(
+            "object.isolate",
+            "Enter Isolation Mode",
+            [],
+            None,
+            "{id}",
+            has_doc,
+            isolate
+        ),
+        cmd!(
+            "object.exitIsolation",
+            "Exit Isolation Mode",
+            [],
+            None,
+            "{}",
+            has_doc,
+            exit_isolation
+        ),
         cmd!(
             "object.setProps",
             "Object Properties",
@@ -206,7 +309,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             set_bounds
         ),
-        cmd!("object.expandShape", "Expand Shape", ["Object", "Shape"], None, "{} convert live shapes to plain paths", has_selection, expand_shape),
+        cmd!(
+            "object.expandShape",
+            "Expand Shape",
+            ["Object", "Shape"],
+            None,
+            "{} convert live shapes to plain paths",
+            has_selection,
+            expand_shape
+        ),
         cmd!(
             "object.setLiveShape",
             "Live Shape Properties",
@@ -226,11 +337,15 @@ fn origin_of(s: &Session, p: &Value, ids: &[NodeId]) -> Result<Point> {
     // Direct-selected anchors transform alone (see [`apply_transform`]), about their own centre.
     let st = s.doc()?;
     if !bool_or(p, "copy", false)
-        && let Some(b) = st.selection.anchor_bounds(&st.doc, s.prefs.use_preview_bounds)
+        && let Some(b) = st
+            .selection
+            .anchor_bounds(&st.doc, s.prefs.use_preview_bounds)
     {
         return Ok(b.center());
     }
-    s.transform_box(ids).map(|b| b.center()).ok_or_else(|| EngineError::Other("selection has no bounds".into()))
+    s.transform_box(ids)
+        .map(|b| b.center())
+        .ok_or_else(|| EngineError::Other("selection has no bounds".into()))
 }
 
 /// What a transform command scales besides geometry: Scale Strokes & Effects and Scale Corners from
@@ -258,7 +373,11 @@ pub(crate) fn transform_patterns(s: &mut Session, p: &Value, ids: &[NodeId]) -> 
     let d = &s.doc()?.doc;
     let mut uses = false;
     let paths = d.index_paths(ids.iter().copied());
-    for n in ids.iter().filter_map(|id| paths.get(id)).filter_map(|p| d.node_at(p)) {
+    for n in ids
+        .iter()
+        .filter_map(|id| paths.get(id))
+        .filter_map(|p| d.node_at(p))
+    {
         n.walk(&mut |c| uses |= vectorcraft_doc::pattern::uses_pattern(c, None));
     }
     if uses {
@@ -291,11 +410,22 @@ pub(crate) fn transform_node(n: &mut Node, xf: Affine, sc: Scaling, objects: boo
 ///
 /// `anchors` (`ids` being the selection): with anchors selected with Direct Selection and no
 /// copy, only those anchors transform, their handles with them, and the objects selected whole.
-pub(crate) fn apply_transform(s: &mut Session, label: &str, ids: Vec<NodeId>, xf: Affine, p: &Value, anchors: bool) -> Result<Value> {
+pub(crate) fn apply_transform(
+    s: &mut Session,
+    label: &str,
+    ids: Vec<NodeId>,
+    xf: Affine,
+    p: &Value,
+    anchors: bool,
+) -> Result<Value> {
     let copy = bool_or(p, "copy", false);
     let areas = bool_or(p, "typeAreas", false);
     let objects = transforms_objects(p);
-    let mut sc = if Scaling::factor(xf).is_some() { scaling(s, p) } else { Scaling::default() };
+    let mut sc = if Scaling::factor(xf).is_some() {
+        scaling(s, p)
+    } else {
+        Scaling::default()
+    };
     sc.patterns = transform_patterns(s, p, &ids)?;
     // A transform of ids that name no object, or an identity transform without a copy, moves
     // nothing: the document and its undo history stay as they are, and Transform Again repeats it.
@@ -357,7 +487,9 @@ pub(crate) fn apply_transform(s: &mut Session, label: &str, ids: Vec<NodeId>, xf
 /// after an earlier edit there: the transform then copies the current document.
 fn preview_copies(s: &mut Session, roots: &[NodeId]) -> Result<Option<Arc<crate::PreviewCopies>>> {
     let st = s.doc_mut()?;
-    let Some(it) = &mut st.interaction else { return Ok(None) };
+    let Some(it) = &mut st.interaction else {
+        return Ok(None);
+    };
     if !Arc::ptr_eq(&st.doc, &it.doc) {
         return Ok(None);
     }
@@ -369,8 +501,19 @@ fn preview_copies(s: &mut Session, roots: &[NodeId]) -> Result<Option<Arc<crate:
     }
     let mut doc = it.doc.clone();
     let mut selection = st.selection.clone();
-    let ids = duplicate_in(Arc::make_mut(&mut doc), &mut selection, roots, Affine::IDENTITY)?;
-    let k = Arc::new(crate::PreviewCopies { from: it.doc.clone(), roots: roots.to_vec(), doc, selection, ids });
+    let ids = duplicate_in(
+        Arc::make_mut(&mut doc),
+        &mut selection,
+        roots,
+        Affine::IDENTITY,
+    )?;
+    let k = Arc::new(crate::PreviewCopies {
+        from: it.doc.clone(),
+        roots: roots.to_vec(),
+        doc,
+        selection,
+        ids,
+    });
     it.copies = Some(k.clone());
     Ok(Some(k))
 }
@@ -382,12 +525,15 @@ fn resize_type_area(n: &mut Node, xf: Affine) -> bool {
     if n.extras().perspective.is_some() {
         return false;
     }
-    let NodeKind::Text(t) = &mut n.kind else { return false };
+    let NodeKind::Text(t) = &mut n.kind else {
+        return false;
+    };
     super::typecmd::reshape_area_with(t, |t| t.transform_area(xf))
 }
 
 fn transform(s: &mut Session, p: &Value) -> Result<Value> {
-    let m = matrix_param(p, "matrix").ok_or_else(|| bad("object.transform", "missing matrix [a,b,c,d,e,f]"))?;
+    let m = matrix_param(p, "matrix")
+        .ok_or_else(|| bad("object.transform", "missing matrix [a,b,c,d,e,f]"))?;
     let (ids, anchors) = match ids_param(p, "ids") {
         Some(v) => (v, false),
         None => (selected_roots(s)?, bool_or(p, "anchors", false)),
@@ -397,7 +543,14 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn move_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
-    apply_transform(s, "Move", ids, Affine::translate((f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0))), p, true)
+    apply_transform(
+        s,
+        "Move",
+        ids,
+        Affine::translate((f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0))),
+        p,
+        true,
+    )
 }
 
 fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
@@ -409,7 +562,10 @@ fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
         if dx == 0.0 && dy == 0.0 {
             return ok();
         }
-        return super::path::move_anchors(s, &json!({ "dx": dx, "dy": dy, "patterns": p.get("patterns") }));
+        return super::path::move_anchors(
+            s,
+            &json!({ "dx": dx, "dy": dy, "patterns": p.get("patterns") }),
+        );
     }
     if s.doc()?.selection.is_empty() {
         let copy = bool_or(p, "copy", false);
@@ -447,7 +603,14 @@ fn scale(s: &mut Session, p: &Value) -> Result<Value> {
     if sx == 0.0 || sy == 0.0 {
         return Err(bad("object.scale", "scale must be non-zero"));
     }
-    apply_transform(s, "Scale", ids, about(o, Affine::scale_non_uniform(sx, sy)), p, true)
+    apply_transform(
+        s,
+        "Scale",
+        ids,
+        about(o, Affine::scale_non_uniform(sx, sy)),
+        p,
+        true,
+    )
 }
 
 fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
@@ -463,7 +626,12 @@ fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::String(a)) if a == "vertical" => Affine::scale_non_uniform(-1.0, 1.0),
         Some(v) => {
             let given = v.as_str().map_or_else(|| v.to_string(), str::to_string);
-            return Err(bad("object.reflect", format!("axis must be \"vertical\", \"horizontal\" or an angle in degrees, not `{given}`")));
+            return Err(bad(
+                "object.reflect",
+                format!(
+                    "axis must be \"vertical\", \"horizontal\" or an angle in degrees, not `{given}`"
+                ),
+            ));
         }
     };
     apply_transform(s, "Reflect", ids, about(o, m), p, true)
@@ -472,9 +640,17 @@ fn reflect(s: &mut Session, p: &Value) -> Result<Value> {
 fn shear(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     let o = origin_of(s, p, &ids)?;
-    let t = f64_or(p, "angle", 0.0).clamp(-89.0, 89.0).to_radians().tan();
-    let vertical = choice(p, "object.shear", "axis", &["horizontal", "vertical"])? == Some("vertical");
-    let m = if vertical { Affine::new([1.0, t, 0.0, 1.0, 0.0, 0.0]) } else { Affine::new([1.0, 0.0, -t, 1.0, 0.0, 0.0]) };
+    let t = f64_or(p, "angle", 0.0)
+        .clamp(-89.0, 89.0)
+        .to_radians()
+        .tan();
+    let vertical =
+        choice(p, "object.shear", "axis", &["horizontal", "vertical"])? == Some("vertical");
+    let m = if vertical {
+        Affine::new([1.0, t, 0.0, 1.0, 0.0, 0.0])
+    } else {
+        Affine::new([1.0, 0.0, -t, 1.0, 0.0, 0.0])
+    };
     apply_transform(s, "Shear", ids, about(o, m), p, true)
 }
 
@@ -484,9 +660,18 @@ fn transform_again(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(again) = s.doc()?.last_perspective.clone() {
         return super::distortcmds::transform_again(s, &again);
     }
-    let (m, mut options) = s.doc()?.last_transform.clone().ok_or_else(|| EngineError::Other("no previous transform".into()))?;
+    let (m, mut options) = s
+        .doc()?
+        .last_transform
+        .clone()
+        .ok_or_else(|| EngineError::Other("no previous transform".into()))?;
     if let (Some(o), Some(given)) = (options.as_object_mut(), p.as_object()) {
-        o.extend(given.iter().filter(|(_, v)| v.is_boolean()).map(|(k, v)| (k.clone(), v.clone())));
+        o.extend(
+            given
+                .iter()
+                .filter(|(_, v)| v.is_boolean())
+                .map(|(k, v)| (k.clone(), v.clone())),
+        );
     }
     let ids = selected_roots(s)?;
     apply_transform(s, "Transform Again", ids, m, &options, true)
@@ -514,7 +699,10 @@ fn arrange(s: &mut Session, how: Arrange) -> Result<Value> {
     super::overprint::edit_counted(s, label, |d| {
         let mut moved = 0;
         // Arrange within each parent independently (selections may span layers/groups).
-        let mut by_parent: Vec<(Option<vectorcraft_doc::NodeId>, Vec<vectorcraft_doc::NodeId>)> = vec![];
+        let mut by_parent: Vec<(
+            Option<vectorcraft_doc::NodeId>,
+            Vec<vectorcraft_doc::NodeId>,
+        )> = vec![];
         for id in &ids {
             let par = d.parent_of(*id);
             match by_parent.iter_mut().find(|(p, _)| *p == par) {
@@ -524,7 +712,9 @@ fn arrange(s: &mut Session, how: Arrange) -> Result<Value> {
         }
         for (par, group) in by_parent {
             for (k, id) in group.iter().enumerate() {
-                let Some((_, idx, len)) = d.position(*id) else { continue };
+                let Some((_, idx, len)) = d.position(*id) else {
+                    continue;
+                };
                 if len == 0 {
                     continue;
                 }
@@ -550,15 +740,26 @@ fn send_to_current_layer(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     // Ids are reused after undo: the remembered current layer must still be a layer.
     let st = s.doc()?;
-    let layer = st.current_layer().or_else(|| st.doc.default_layer()).ok_or_else(|| EngineError::Other("no current layer".into()))?;
+    let layer = st
+        .current_layer()
+        .or_else(|| st.doc.default_layer())
+        .ok_or_else(|| EngineError::Other("no current layer".into()))?;
     // When the current layer is hidden or locked, or is inside a hidden or locked layer, the
     // command fails with the error that `DocState::target_parent` gives for new art.
     if !st.doc.is_editable(layer) {
-        return Err(EngineError::Other("the target layer is locked or hidden".into()));
+        return Err(EngineError::Other(
+            "the target layer is locked or hidden".into(),
+        ));
     }
     // When the selected objects are already the topmost in the current layer, in paint order, the
     // document and its undo history stay as they are.
-    if st.doc.children(Some(layer)).is_some_and(|c| c.iter().rev().map(|n| n.id).take(ids.len()).eq(ids.iter().rev().copied())) {
+    if st.doc.children(Some(layer)).is_some_and(|c| {
+        c.iter()
+            .rev()
+            .map(|n| n.id)
+            .take(ids.len())
+            .eq(ids.iter().rev().copied())
+    }) {
         return ok();
     }
     s.edit("Send to Current Layer", |d, _| {
@@ -592,7 +793,10 @@ fn ungroup(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     // With no group selected, the document, the selection and the undo history stay as they are.
     let d = &s.doc()?.doc;
-    if !ids.iter().any(|id| d.node(*id).is_some_and(|n| matches!(n.kind, NodeKind::Group { .. }))) {
+    if !ids.iter().any(|id| {
+        d.node(*id)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Group { .. }))
+    }) {
         return ok();
     }
     s.edit("Ungroup", |d, sel| {
@@ -717,26 +921,43 @@ fn show_all(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn compound_make(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
-    let Some(backmost) = ids.first().copied() else { return Err(EngineError::Other("nothing selected".into())) };
+    let Some(backmost) = ids.first().copied() else {
+        return Err(EngineError::Other("nothing selected".into()));
+    };
     let id = s.edit("Make Compound Path", |d, sel| {
         d.node(backmost).ok_or(EngineError::NoNode(backmost))?;
         let mut units: Vec<Vec<Arc<Node>>> = vec![];
         let mut appearance = None;
         for id in &ids {
             let n = d.node(*id).ok_or(EngineError::NoNode(*id))?;
-            if !matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Group { .. }) {
-                return Err(EngineError::Other("compound paths can only contain paths".into()));
+            if !matches!(
+                n.kind,
+                NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Group { .. }
+            ) {
+                return Err(EngineError::Other(
+                    "compound paths can only contain paths".into(),
+                ));
             }
             compound_members(n, &mut appearance, &mut units);
         }
         let cid = d.alloc_id();
-        let mut c = Node::new(cid, NodeKind::Compound { children: vec![], rule: FillRule::NonZero });
+        let mut c = Node::new(
+            cid,
+            NodeKind::Compound {
+                children: vec![],
+                rule: FillRule::NonZero,
+            },
+        );
         c.appearance = appearance.unwrap_or_default();
         let ch = c.children_mut().ok_or(EngineError::NoNode(cid))?;
         // The paths in front run against the backmost one, so where they overlap it they cut holes
         // under the non-zero fill rule (#1197). A compound path's paths turn together, by its
         // first: its own holes (a letter's counters) stay holes.
-        let direction = |n: &Node| n.path_data().and_then(|pd| pd.subpaths.first()).map_or(0.0, |sp| sp.signed_area().signum());
+        let direction = |n: &Node| {
+            n.path_data()
+                .and_then(|pd| pd.subpaths.first())
+                .map_or(0.0, |sp| sp.signed_area().signum())
+        };
         let first = |unit: &[Arc<Node>]| unit.first().map_or(0.0, |p| direction(p));
         let back = units.first().map_or(0.0, |u| first(u));
         for (i, unit) in units.into_iter().enumerate() {
@@ -765,11 +986,20 @@ fn compound_make(s: &mut Session, _: &Value) -> Result<Value> {
 /// the backmost found so far: the path's own, or its compound path's, which is what painted it. A
 /// group has no paint of its own to give: a group of outlined type made a compound path that drew
 /// nothing.
-fn compound_members(n: &Node, paint: &mut Option<vectorcraft_doc::Shared<Appearance>>, out: &mut Vec<Vec<Arc<Node>>>) {
+fn compound_members(
+    n: &Node,
+    paint: &mut Option<vectorcraft_doc::Shared<Appearance>>,
+    out: &mut Vec<Vec<Arc<Node>>>,
+) {
     match (&n.kind, n.children()) {
         (NodeKind::Path { .. }, _) => out.push(vec![Arc::new(n.clone())]),
         (NodeKind::Compound { .. }, Some(paths)) if !paths.is_empty() => out.push(paths.clone()),
-        (_, children) => return children.into_iter().flatten().for_each(|c| compound_members(c, paint, out)),
+        (_, children) => {
+            return children
+                .into_iter()
+                .flatten()
+                .for_each(|c| compound_members(c, paint, out));
+        }
     }
     paint.get_or_insert_with(|| n.appearance.clone());
 }
@@ -796,7 +1026,9 @@ fn compound_release(s: &mut Session, _: &Value) -> Result<Value> {
         let mut out = vec![];
         let mut released = vec![];
         for id in &ids {
-            let Some(n) = d.node(*id).cloned().filter(releases) else { continue };
+            let Some(n) = d.node(*id).cloned().filter(releases) else {
+                continue;
+            };
             let mut parts = vec![];
             match &n.kind {
                 NodeKind::Compound { children, .. } => {
@@ -838,8 +1070,14 @@ pub(super) fn make_clipping_path(d: &mut Document, top: NodeId) -> Result<()> {
 
 /// Turn path, compound path or text `c` into a clipping path (its paint goes).
 pub(super) fn as_clipping_path(c: &mut Node) -> Result<()> {
-    if !matches!(c.kind, NodeKind::Path { guide: false, .. } | NodeKind::Compound { .. } | NodeKind::Text(_)) {
-        return Err(EngineError::Other("the top object must be a path, compound path or text object to use as a clipping mask".into()));
+    if !matches!(
+        c.kind,
+        NodeKind::Path { guide: false, .. } | NodeKind::Compound { .. } | NodeKind::Text(_)
+    ) {
+        return Err(EngineError::Other(
+            "the top object must be a path, compound path or text object to use as a clipping mask"
+                .into(),
+        ));
     }
     c.appearance = Appearance::basic(Paint::None, Paint::None, 0.0).into();
     match &mut c.kind {
@@ -856,7 +1094,9 @@ pub(super) fn as_clipping_path(c: &mut Node) -> Result<()> {
 
 /// Stop clip group or clipped layer `id` clipping; its clipping path stays, with its paint.
 pub(super) fn release_clip(d: &mut Document, id: NodeId) {
-    let Some(n) = d.node_mut(id).filter(|n| n.clips()) else { return };
+    let Some(n) = d.node_mut(id).filter(|n| n.clips()) else {
+        return;
+    };
     n.set_clips(false);
     let clip = n.children().and_then(|c| c.first()).map(|c| c.id);
     if let Some(c) = clip.and_then(|c| d.node_mut(c))
@@ -868,14 +1108,22 @@ pub(super) fn release_clip(d: &mut Document, id: NodeId) {
 
 fn clip_make(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
-    let Some(&top) = ids.last() else { return Err(EngineError::Other("nothing selected".into())) };
+    let Some(&top) = ids.last() else {
+        return Err(EngineError::Other("nothing selected".into()));
+    };
     let gid = s.edit("Make Clipping Mask", |d, sel| {
         make_clipping_path(d, top)?;
         let gid = d.alloc_id();
         // The topmost object, the clipping path, goes first, and the others follow in paint order.
         d.wrap(&ids, |mut children| {
             children.rotate_right(1);
-            Node::new(gid, NodeKind::Group { children, clip: true })
+            Node::new(
+                gid,
+                NodeKind::Group {
+                    children,
+                    clip: true,
+                },
+            )
         })?;
         sel.set([gid]);
         Ok(gid)
@@ -907,7 +1155,11 @@ fn clip_edit(s: &mut Session, mask: bool) -> Result<Value> {
     for id in st.selection.objects.iter().copied() {
         let mut cur = Some(id);
         while let Some(c) = cur {
-            if let Some(NodeKind::Group { children, clip: true }) = st.doc.node(c).map(|n| &n.kind) {
+            if let Some(NodeKind::Group {
+                children,
+                clip: true,
+            }) = st.doc.node(c).map(|n| &n.kind)
+            {
                 if mask {
                     ids.extend(children.first().map(|c| c.id));
                 } else {
@@ -928,15 +1180,27 @@ fn clip_edit(s: &mut Session, mask: bool) -> Result<Value> {
 
 fn isolate(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id")
-        .or_else(|| s.active().and_then(|d| d.selection.objects.first().copied()))
+        .or_else(|| {
+            s.active()
+                .and_then(|d| d.selection.objects.first().copied())
+        })
         .ok_or_else(|| bad("object.isolate", "missing id"))?;
     let st = s.doc_mut()?;
     // Groups, layers and single objects (a path, a compound path, an image…); type isn't
     // isolated: a double-click on it edits its text.
-    if matches!(st.doc.node(id).ok_or(EngineError::NoNode(id))?.kind, NodeKind::Text(_)) {
+    if matches!(
+        st.doc.node(id).ok_or(EngineError::NoNode(id))?.kind,
+        NodeKind::Text(_)
+    ) {
         return Err(bad("object.isolate", "type objects can't be isolated"));
     }
-    let isolation = st.doc.node(id).filter(|n| n.extras().shaper.is_some()).and_then(|n| n.children()).and_then(|c| c.first()).map_or(id, |n| n.id);
+    let isolation = st
+        .doc
+        .node(id)
+        .filter(|n| n.extras().shaper.is_some())
+        .and_then(|n| n.children())
+        .and_then(|c| c.first())
+        .map_or(id, |n| n.id);
     st.isolation = Some(isolation);
     st.selection.clear();
     st.revision += 1;
@@ -947,7 +1211,11 @@ fn exit_isolation(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
     if let Some(i) = st.isolation.take() {
         super::distortcmds::finish_edit_text(st, i);
-        let target = st.doc.parent_of(i).filter(|p| st.doc.node(*p).is_some_and(|n| n.extras().shaper.is_some())).unwrap_or(i);
+        let target = st
+            .doc
+            .parent_of(i)
+            .filter(|p| st.doc.node(*p).is_some_and(|n| n.extras().shaper.is_some()))
+            .unwrap_or(i);
         st.selection.set([target]);
     }
     st.revision += 1;
@@ -962,13 +1230,25 @@ const MAX_DATA: usize = 256;
 fn data_param(m: &serde_json::Map<String, Value>) -> Result<Vec<(String, Option<String>)>> {
     const C: &str = "object.setProps";
     if m.len() > MAX_DATA {
-        return Err(bad(C, format!("data takes at most {MAX_DATA} keys at once")));
+        return Err(bad(
+            C,
+            format!("data takes at most {MAX_DATA} keys at once"),
+        ));
     }
     m.iter()
         .map(|(k, v)| {
             let k = k.strip_prefix("data-").unwrap_or(k);
-            if k.is_empty() || !k.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.')) || k == "name" || k.starts_with("vc-") {
-                return Err(bad(C, format!("data key `{k}`: letters, digits, -, _ and . (not name or vc-…)")));
+            if k.is_empty()
+                || !k
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+                || k == "name"
+                || k.starts_with("vc-")
+            {
+                return Err(bad(
+                    C,
+                    format!("data key `{k}`: letters, digits, -, _ and . (not name or vc-…)"),
+                ));
             }
             let v = match v {
                 Value::Null => None,
@@ -984,22 +1264,33 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
     let opacity = p.get("opacity").and_then(Value::as_f64).map(percent);
     let blend = match str_param(p, "blend") {
-        Some(b) => Some(BlendMode::parse(b).ok_or_else(|| bad("object.setProps", format!("unknown blend mode `{b}`")))?),
+        Some(b) => Some(
+            BlendMode::parse(b)
+                .ok_or_else(|| bad("object.setProps", format!("unknown blend mode `{b}`")))?,
+        ),
         None => None,
     };
     let data = match p.get("data") {
         None | Some(Value::Null) => None,
         Some(Value::Object(m)) => Some(data_param(m)?),
-        Some(v) => return Err(bad("object.setProps", format!("data must be an object of key: value, not {v}"))),
+        Some(v) => {
+            return Err(bad(
+                "object.setProps",
+                format!("data must be an object of key: value, not {v}"),
+            ));
+        }
     };
     let knockout = match p.get("knockout") {
-        Some(v) => Some(
-            Knockout::from_value(v)
-                .ok_or_else(|| bad("object.setProps", format!("knockout must be \"on\", \"off\", \"neutral\" or a bool, not {v}")))?,
-        ),
+        Some(v) => Some(Knockout::from_value(v).ok_or_else(|| {
+            bad(
+                "object.setProps",
+                format!("knockout must be \"on\", \"off\", \"neutral\" or a bool, not {v}"),
+            )
+        })?),
         None => None,
     };
-    let hides = p.get("visible").and_then(Value::as_bool) == Some(false) || p.get("locked").and_then(Value::as_bool) == Some(true);
+    let hides = p.get("visible").and_then(Value::as_bool) == Some(false)
+        || p.get("locked").and_then(Value::as_bool) == Some(true);
     // When every object already has every value given, the document and its undo history stay as
     // they are.
     let flag = |k: &str| p.get(k).and_then(Value::as_bool);
@@ -1013,7 +1304,12 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
             && knockout.is_none_or(|k| n.knockout == k)
             && flag("knockoutShape").is_none_or(|v| n.knockout_shape == v)
             && data.iter().flatten().all(|(k, v)| {
-                n.extras().attrs.as_ref().and_then(|a| a.data.iter().find(|(key, _)| key == k)).map(|(_, now)| now.as_str()) == v.as_deref()
+                n.extras()
+                    .attrs
+                    .as_ref()
+                    .and_then(|a| a.data.iter().find(|(key, _)| key == k))
+                    .map(|(_, now)| now.as_str())
+                    == v.as_deref()
             })
     };
     let d = &s.doc()?.doc;
@@ -1028,7 +1324,11 @@ fn set_props(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &ids {
             let n = d.node_mut(*id).ok_or(EngineError::NoNode(*id))?;
             if let Some(v) = str_param(p, "name") {
-                n.name = if v.is_empty() { None } else { Some(v.to_string()) };
+                n.name = if v.is_empty() {
+                    None
+                } else {
+                    Some(v.to_string())
+                };
             }
             if let Some(v) = p.get("visible").and_then(Value::as_bool) {
                 n.visible = v;
@@ -1083,12 +1383,18 @@ impl Session {
     /// The bounds of `ids` the Transform panel, the bounding box, Align and Distribute measure:
     /// visual bounds (strokes included) with Use Preview Bounds on, else geometric bounds.
     pub fn transform_bounds(&self, ids: &[NodeId]) -> Option<Rect> {
-        self.doc().ok()?.doc.bounds_of(ids, self.prefs.use_preview_bounds)
+        self.doc()
+            .ok()?
+            .doc
+            .bounds_of(ids, self.prefs.use_preview_bounds)
     }
     /// [`Session::transform_bounds`] square to the objects' own angle (their rotated bounding
     /// box, see [`Document::oriented_bounds`]).
     pub fn transform_box(&self, ids: &[NodeId]) -> Option<OrientedBox> {
-        self.doc().ok()?.doc.oriented_bounds(ids, self.prefs.use_preview_bounds)
+        self.doc()
+            .ok()?
+            .doc
+            .oriented_bounds(ids, self.prefs.use_preview_bounds)
     }
 }
 
@@ -1103,29 +1409,51 @@ fn preview_bounds(s: &Session, p: &Value, cmd: &str) -> Result<bool> {
 /// Param `key` of the Align commands and Shear: one of `values`, or `None` when it is missing or
 /// null. Any other value is an error that lists `values`.
 fn choice<'a>(p: &'a Value, cmd: &str, key: &str, values: &[&str]) -> Result<Option<&'a str>> {
-    let Some(v) = p.get(key).filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get(key).filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     match v.as_str() {
         Some(s) if values.contains(&s) => Ok(Some(s)),
-        _ => Err(bad(cmd, format!("`{key}` must be one of {}", values.join(", ")))),
+        _ => Err(bad(
+            cmd,
+            format!("`{key}` must be one of {}", values.join(", ")),
+        )),
     }
 }
 
 /// `horizontal` and `vertical` of `object.align` and `object.distribute`, each checked by [`choice`].
 fn direction<'a>(p: &'a Value, cmd: &str) -> Result<(Option<&'a str>, Option<&'a str>)> {
-    Ok((choice(p, cmd, "horizontal", &["left", "center", "right"])?, choice(p, cmd, "vertical", &["top", "center", "bottom"])?))
+    Ok((
+        choice(p, cmd, "horizontal", &["left", "center", "right"])?,
+        choice(p, cmd, "vertical", &["top", "center", "bottom"])?,
+    ))
 }
 
 /// `ids` with their bounds (`preview`: visual bounds).
 fn items_bounds(d: &Document, ids: &[NodeId], preview: bool) -> Vec<(NodeId, Rect)> {
-    ids.iter().filter_map(|id| Some((*id, d.bounds_of(&[*id], preview)?))).collect()
+    ids.iter()
+        .filter_map(|id| Some((*id, d.bounds_of(&[*id], preview)?)))
+        .collect()
 }
 
 /// Move each object of `moves` by its offset, as undo step `label`; pattern tiles move too when
 /// [`transform_patterns`] says so for `ids`. When every move is a rounding error (1e-9 pt or less
 /// on both axes), the document and its undo history stay as they are.
-fn apply_moves(s: &mut Session, label: &str, p: &Value, ids: &[NodeId], moves: &[(NodeId, Vec2)]) -> Result<Value> {
-    let sc = Scaling { patterns: transform_patterns(s, p, ids)?, ..Scaling::default() };
-    if moves.iter().all(|(_, dv)| dv.x.abs() <= 1e-9 && dv.y.abs() <= 1e-9) {
+fn apply_moves(
+    s: &mut Session,
+    label: &str,
+    p: &Value,
+    ids: &[NodeId],
+    moves: &[(NodeId, Vec2)],
+) -> Result<Value> {
+    let sc = Scaling {
+        patterns: transform_patterns(s, p, ids)?,
+        ..Scaling::default()
+    };
+    if moves
+        .iter()
+        .all(|(_, dv)| dv.x.abs() <= 1e-9 && dv.y.abs() <= 1e-9)
+    {
         return ok();
     }
     s.edit(label, |d, _| {
@@ -1153,15 +1481,30 @@ fn reference_rect(s: &Session, p: &Value, ids: &[NodeId], preview: bool) -> Resu
             // Align to Artboard uses artboard `artboard` (the app passes the active one). Without
             // it, or with an index the document doesn't have, it uses the artboard under the center
             // of the selection, or the first one when no artboard is there.
-            let named = p.get("artboard").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()).and_then(|i| st.doc.artboards.get(i));
+            let named = p
+                .get("artboard")
+                .and_then(Value::as_u64)
+                .and_then(|i| usize::try_from(i).ok())
+                .and_then(|i| st.doc.artboards.get(i));
             let i = st.doc.artboard_at(b.center()).unwrap_or(0);
-            Ok(named.or(st.doc.artboards.get(i)).map(|a| a.rect).unwrap_or(b))
+            Ok(named
+                .or(st.doc.artboards.get(i))
+                .map(|a| a.rect)
+                .unwrap_or(b))
         }
         Some("key") => {
-            let k = st.selection.key.ok_or_else(|| EngineError::Other("no key object".into()))?;
-            st.doc.bounds_of(&[k], preview).ok_or(EngineError::NoNode(k))
+            let k = st
+                .selection
+                .key
+                .ok_or_else(|| EngineError::Other("no key object".into()))?;
+            st.doc
+                .bounds_of(&[k], preview)
+                .ok_or(EngineError::NoNode(k))
         }
-        _ => st.doc.bounds_of(ids, preview).ok_or_else(|| EngineError::Other("nothing to align".into())),
+        _ => st
+            .doc
+            .bounds_of(ids, preview)
+            .ok_or_else(|| EngineError::Other("nothing to align".into())),
     }
 }
 
@@ -1215,18 +1558,43 @@ fn align(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// [`align`] of the selected anchor points (whole paths among them give all theirs): each point
 /// moves to the edge or centre of the points' bounds, or of the artboard with Align To Artboard.
-fn align_anchors(s: &mut Session, p: &Value, ids: &[NodeId], (h, v): (Option<&str>, Option<&str>)) -> Result<Value> {
+fn align_anchors(
+    s: &mut Session,
+    p: &Value,
+    ids: &[NodeId],
+    (h, v): (Option<&str>, Option<&str>),
+) -> Result<Value> {
     let targets = super::path::anchor_targets(s)?;
     let d = &s.doc()?.doc;
     let pts: Vec<Point> = targets
         .iter()
-        .flat_map(|(id, refs)| refs.iter().filter_map(move |(si, ai)| d.node(*id)?.path_data()?.subpaths.get(*si)?.anchors.get(*ai).map(|a| a.p)))
+        .flat_map(|(id, refs)| {
+            refs.iter().filter_map(move |(si, ai)| {
+                d.node(*id)?
+                    .path_data()?
+                    .subpaths
+                    .get(*si)?
+                    .anchors
+                    .get(*ai)
+                    .map(|a| a.p)
+            })
+        })
         .collect();
-    let Some(bounds) = pts.iter().skip(1).fold(pts.first().map(|q| Rect::from_points(*q, *q)), |b, q| b.map(|b| b.union_pt(*q))) else {
+    let Some(bounds) = pts
+        .iter()
+        .skip(1)
+        .fold(pts.first().map(|q| Rect::from_points(*q, *q)), |b, q| {
+            b.map(|b| b.union_pt(*q))
+        })
+    else {
         return ok();
     };
     // shortcut: no key anchor yet, so Align To Key Object aligns to the points' bounds as Selection does.
-    let r = if align_to(s, p) == Some("artboard") { reference_rect(s, p, ids, false)? } else { bounds };
+    let r = if align_to(s, p) == Some("artboard") {
+        reference_rect(s, p, ids, false)?
+    } else {
+        bounds
+    };
     let target = |q: Point| {
         let x = match h {
             Some("left") => r.x0,
@@ -1298,7 +1666,14 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
         .map(|(i, (id, r))| {
             let target = first + (last - first) * i as f64 / (n - 1) as f64;
             let delta = target - key(r, horiz);
-            (*id, if horiz { Vec2::new(delta, 0.0) } else { Vec2::new(0.0, delta) })
+            (
+                *id,
+                if horiz {
+                    Vec2::new(delta, 0.0)
+                } else {
+                    Vec2::new(0.0, delta)
+                },
+            )
         })
         .collect();
     apply_moves(s, "Distribute", p, &ids, &moves)
@@ -1306,25 +1681,46 @@ fn distribute(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
-    let horiz = choice(p, "object.distributeSpacing", "axis", &["horizontal", "vertical"])? != Some("vertical");
+    let horiz = choice(
+        p,
+        "object.distributeSpacing",
+        "axis",
+        &["horizontal", "vertical"],
+    )? != Some("vertical");
     let preview = preview_bounds(s, p, "object.distributeSpacing")?;
     let mut items = items_bounds(&s.doc()?.doc, &ids, preview);
-    items.sort_by(|a, b| if horiz { a.1.x0.total_cmp(&b.1.x0) } else { a.1.y0.total_cmp(&b.1.y0) });
+    items.sort_by(|a, b| {
+        if horiz {
+            a.1.x0.total_cmp(&b.1.x0)
+        } else {
+            a.1.y0.total_cmp(&b.1.y0)
+        }
+    });
     let n = items.len();
     let &[(_, first), .., (_, last)] = items.as_slice() else {
-        return Err(EngineError::Other("select two or more objects to distribute".into()));
+        return Err(EngineError::Other(
+            "select two or more objects to distribute".into(),
+        ));
     };
     let size = |r: &Rect| if horiz { r.width() } else { r.height() };
     let start = |r: &Rect| if horiz { r.x0 } else { r.y0 };
     let spacing = p
         .get("spacing")
         .filter(|v| !v.is_null())
-        .map(|v| v.as_f64().filter(|g| g.is_finite()).ok_or_else(|| bad("object.distributeSpacing", "`spacing` must be a number")))
+        .map(|v| {
+            v.as_f64()
+                .filter(|g| g.is_finite())
+                .ok_or_else(|| bad("object.distributeSpacing", "`spacing` must be a number"))
+        })
         .transpose()?;
     let gap = match spacing {
         Some(g) => g,
         None => {
-            let span = if horiz { last.x1 - first.x0 } else { last.y1 - first.y0 };
+            let span = if horiz {
+                last.x1 - first.x0
+            } else {
+                last.y1 - first.y0
+            };
             (span - items.iter().map(|i| size(&i.1)).sum::<f64>()) / (n - 1) as f64
         }
     };
@@ -1337,9 +1733,22 @@ fn distribute_spacing(s: &mut Session, p: &Value) -> Result<Value> {
     // With a spacing (aligning to a key object) the key object stays where it is, with the
     // compound path or selected group it is in: the others are spaced from it.
     let key = key_root(s, &ids);
-    let fixed = spacing.and_then(|_| deltas.iter().find(|(id, _)| Some(*id) == key)).map_or(0.0, |k| k.1);
-    let moves: Vec<(NodeId, Vec2)> =
-        deltas.into_iter().map(|(id, d)| (id, if horiz { Vec2::new(d - fixed, 0.0) } else { Vec2::new(0.0, d - fixed) })).collect();
+    let fixed = spacing
+        .and_then(|_| deltas.iter().find(|(id, _)| Some(*id) == key))
+        .map_or(0.0, |k| k.1);
+    let moves: Vec<(NodeId, Vec2)> = deltas
+        .into_iter()
+        .map(|(id, d)| {
+            (
+                id,
+                if horiz {
+                    Vec2::new(d - fixed, 0.0)
+                } else {
+                    Vec2::new(0.0, d - fixed)
+                },
+            )
+        })
+        .collect();
     apply_moves(s, "Distribute Spacing", p, &ids, &moves)
 }
 
@@ -1348,11 +1757,17 @@ fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
     // Sizes are measured square to the bounding box, which a rotation turns with the objects:
     // the math below runs in its frame.
-    let frame = d.oriented_bounds(&ids, false).ok_or_else(|| EngineError::Other("no bounds".into()))?;
+    let frame = d
+        .oriented_bounds(&ids, false)
+        .ok_or_else(|| EngineError::Other("no bounds".into()))?;
     let g = frame.rect;
     // With Use Preview Bounds the values measure the visual box, whose margins around the
     // geometric box (left, top, right, bottom) scale with the strokes or stay.
-    let v = if s.prefs.use_preview_bounds { d.oriented_bounds(&ids, true).map_or(g, |b| b.rect) } else { g };
+    let v = if s.prefs.use_preview_bounds {
+        d.oriented_bounds(&ids, true).map_or(g, |b| b.rect)
+    } else {
+        g
+    };
     let m = [g.x0 - v.x0, g.y0 - v.y0, v.x1 - g.x1, v.y1 - g.y1];
     let refi = p.get("reference").and_then(Value::as_u64).unwrap_or(4) as usize;
     let rp = vectorcraft_geom::reference_point(v, refi);
@@ -1368,10 +1783,19 @@ fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
     // The geometric scale that gives the visual size: margins grow by the strokes' scale `f`
     // (exact for proportional scales, which scale the visual box alike).
     let strokes = bool_or(p, "strokes", s.prefs.scale_strokes);
-    let ratio = |size: f64, geo: f64, margin: f64| if geo > 1e-9 { (size - margin) / geo } else { 1.0 };
+    let ratio = |size: f64, geo: f64, margin: f64| {
+        if geo > 1e-9 {
+            (size - margin) / geo
+        } else {
+            1.0
+        }
+    };
     let f = |sx: f64, sy: f64| if strokes { (sx * sy).abs().sqrt() } else { 1.0 };
     let (lx, ly) = (ratio(w, v.width(), 0.0), ratio(h, v.height(), 0.0));
-    let f0 = f(if g.width() > 1e-9 { lx } else { 1.0 }, if g.height() > 1e-9 { ly } else { 1.0 });
+    let f0 = f(
+        if g.width() > 1e-9 { lx } else { 1.0 },
+        if g.height() > 1e-9 { ly } else { 1.0 },
+    );
     let sx = ratio(w, g.width(), (m[0] + m[2]) * f0);
     let sy = ratio(h, g.height(), (m[1] + m[3]) * f0);
     let scale = about(rp, Affine::scale_non_uniform(sx, sy));
@@ -1384,18 +1808,32 @@ fn set_bounds(s: &mut Session, p: &Value) -> Result<Value> {
     // When every value given is the current one, the transform is the identity. Computing it can
     // leave a rounding error in it on a rotated object or with Use Preview Bounds.
     let current = |k: &str, now: f64| p.get(k).and_then(Value::as_f64).is_none_or(|x| x == now);
-    if current("x", page.x) && current("y", page.y) && current("width", v.width()) && current("height", v.height()) {
+    if current("x", page.x)
+        && current("y", page.y)
+        && current("width", v.width())
+        && current("height", v.height())
+    {
         return apply_transform(s, "Transform", ids, Affine::IDENTITY, p, false);
     }
     let to = frame.to_local(Point::new(f64_or(p, "x", page.x), f64_or(p, "y", page.y)));
-    apply_transform(s, "Transform", ids, frame.conjugate(Affine::translate(to - new_rp) * scale), p, false)
+    apply_transform(
+        s,
+        "Transform",
+        ids,
+        frame.conjugate(Affine::translate(to - new_rp) * scale),
+        p,
+        false,
+    )
 }
 
 fn expand_shape(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     // With no live shape selected, the document and its undo history stay as they are.
     let d = &s.doc()?.doc;
-    if !ids.iter().any(|id| d.node(*id).is_some_and(|n| matches!(n.kind, NodeKind::Path { live: Some(_), .. }))) {
+    if !ids.iter().any(|id| {
+        d.node(*id)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Path { live: Some(_), .. }))
+    }) {
         return ok();
     }
     s.edit("Expand Shape", |d, _| {
@@ -1411,10 +1849,24 @@ fn expand_shape(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// The `corners` of `object.setLiveShape`: anchor indices of a path's uncut outline.
 fn corners_param(p: &Value) -> Result<Option<BTreeSet<usize>>> {
-    let Some(v) = p.get("corners").filter(|v| !v.is_null()) else { return Ok(None) };
-    let err = || bad("object.setLiveShape", format!("`corners` must list anchor indices (0, 1, 2…), not {v}"));
+    let Some(v) = p.get("corners").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
+    let err = || {
+        bad(
+            "object.setLiveShape",
+            format!("`corners` must list anchor indices (0, 1, 2…), not {v}"),
+        )
+    };
     let list = v.as_array().ok_or_else(err)?;
-    list.iter().map(|k| k.as_u64().and_then(|k| usize::try_from(k).ok()).ok_or_else(err)).collect::<Result<_>>().map(Some)
+    list.iter()
+        .map(|k| {
+            k.as_u64()
+                .and_then(|k| usize::try_from(k).ok())
+                .ok_or_else(err)
+        })
+        .collect::<Result<_>>()
+        .map(Some)
 }
 
 fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1441,15 +1893,22 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let shared = corners_param(p)?;
     let corners_of = |id: NodeId| match &items {
-        Some(items) => items.iter().find(|(i, _)| *i == id).and_then(|(_, c)| c.clone()),
+        Some(items) => items
+            .iter()
+            .find(|(i, _)| *i == id)
+            .and_then(|(_, c)| c.clone()),
         None => shared.clone(),
     };
     let kind = p
         .get("kind")
         .filter(|v| !v.is_null())
         .map(|v| {
-            serde_json::from_value::<CornerKind>(v.clone())
-                .map_err(|_| bad("object.setLiveShape", format!("`kind` must be \"round\", \"invertedRound\" or \"chamfer\", not {v}")))
+            serde_json::from_value::<CornerKind>(v.clone()).map_err(|_| {
+                bad(
+                    "object.setLiveShape",
+                    format!("`kind` must be \"round\", \"invertedRound\" or \"chamfer\", not {v}"),
+                )
+            })
         })
         .transpose()?;
     let radius = p.get("radius").and_then(Value::as_f64);
@@ -1462,35 +1921,63 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
                 .as_f64()
                 .filter(|x| x.is_finite() && ok(*x))
                 .map(Some)
-                .ok_or_else(|| bad("object.setLiveShape", format!("`{k}` must be {what}, not {v}"))),
+                .ok_or_else(|| {
+                    bad(
+                        "object.setLiveShape",
+                        format!("`{k}` must be {what}, not {v}"),
+                    )
+                }),
         }
     };
-    let angle = |k: &str| Ok::<_, EngineError>(number(k, |_| true, "an angle in degrees")?.map(|a| a.rem_euclid(360.0)));
-    let length = |k: &str| number(k, |x| x > 0.0 && x <= crate::MAX_COORD, "a length in points above 0");
+    let angle = |k: &str| {
+        Ok::<_, EngineError>(
+            number(k, |_| true, "an angle in degrees")?.map(|a| a.rem_euclid(360.0)),
+        )
+    };
+    let length = |k: &str| {
+        number(
+            k,
+            |x| x > 0.0 && x <= crate::MAX_COORD,
+            "a length in points above 0",
+        )
+    };
     // An ellipse's pie (Ellipse Properties: Pie Start and End Angle, degrees; Invert Pie swaps them).
     let (pie_start, pie_end) = (angle("pieStart")?, angle("pieEnd")?);
     let invert = p.get("invertPie").and_then(Value::as_bool) == Some(true);
     // A polygon's Polygon Properties: its angle, radius or side length, Make Sides Equal.
-    let (polygon_angle, polygon_radius, side) = (angle("polygonAngle")?, length("polygonRadius")?, length("sideLength")?);
+    let (polygon_angle, polygon_radius, side) = (
+        angle("polygonAngle")?,
+        length("polygonRadius")?,
+        length("sideLength")?,
+    );
     let equal = p.get("makeSidesEqual").and_then(Value::as_bool) == Some(true);
     // An ellipse's pie becomes `pie_of(pie)`. An end of 0 is a full turn (Illustrator shows a whole
     // ellipse as 0° to 360°).
     let end_of = |a: f64| if a == 0.0 { 360.0 } else { a };
     let pie_of = |pie: (f64, f64)| {
         let pie = (pie_start.unwrap_or(pie.0), pie_end.map_or(pie.1, end_of));
-        if invert { (pie.1.rem_euclid(360.0), end_of(pie.0)) } else { pie }
+        if invert {
+            (pie.1.rem_euclid(360.0), end_of(pie.0))
+        } else {
+            pie
+        }
     };
     // When every value given is the current one, the document and its undo history stay as they
     // are.
     let st = s.doc()?;
     let has_values = |id: &NodeId| {
-        let Some(NodeKind::Path { path, live, .. }) = st.doc.node(*id).map(|n| &n.kind) else { return true };
+        let Some(NodeKind::Path { path, live, .. }) = st.doc.node(*id).map(|n| &n.kind) else {
+            return true;
+        };
         match live.as_deref() {
             Some(l @ LiveShape::Polygon { sides: now, .. })
                 if !(sides.is_none_or(|n| n.clamp(3, 1000) == u64::from(*now))
                     && (!equal || l.polygon_sides_equal())
                     && polygon_angle.is_none_or(|a| l.polygon_angle() == Some(a))
-                    && side.and_then(|len| l.polygon_radius_for_side(len)).or(polygon_radius).is_none_or(|r| l.polygon_radius() == Some(r))) =>
+                    && side
+                        .and_then(|len| l.polygon_radius_for_side(len))
+                        .or(polygon_radius)
+                        .is_none_or(|r| l.polygon_radius() == Some(r))) =>
             {
                 return false;
             }
@@ -1500,23 +1987,34 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
         if radius.is_none() && kind.is_none() {
             return true;
         }
-        let Some(c) = LiveCorners::new(path, live.as_deref()) else { return true };
+        let Some(c) = LiveCorners::new(path, live.as_deref()) else {
+            return true;
+        };
         let picked = corners_of(*id).unwrap_or_else(|| c.picked(st.selection.anchors.get(id)));
         // Setting corners folds a scale left in a rectangle's transform into its size, which
         // changes it.
         live.as_deref().is_none_or(|l| l.folded() == *l)
-            && picked
-                .iter()
-                .all(|k| *k < c.base.anchor_count() && radius.is_none_or(|r| c.radius(*k) == r.max(0.0)) && kind.is_none_or(|kd| c.kind(*k) == kd))
+            && picked.iter().all(|k| {
+                *k < c.base.anchor_count()
+                    && radius.is_none_or(|r| c.radius(*k) == r.max(0.0))
+                    && kind.is_none_or(|kd| c.kind(*k) == kd)
+            })
     };
     if ids.iter().all(has_values) {
         return ok();
     }
     s.edit("Live Shape", |d, sel| {
         for id in &ids {
-            let Some(NodeKind::Path { path, live, .. }) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Path { path, live, .. }) = d.node_mut(*id).map(|n| &mut n.kind)
+            else {
+                continue;
+            };
             if let Some(l @ LiveShape::Polygon { .. }) = live.as_deref_mut()
-                && (sides.is_some() || polygon_angle.is_some() || polygon_radius.is_some() || side.is_some() || equal)
+                && (sides.is_some()
+                    || polygon_angle.is_some()
+                    || polygon_radius.is_some()
+                    || side.is_some()
+                    || equal)
             {
                 if let Some(n) = sides {
                     l.set_sides(n);
@@ -1528,7 +2026,10 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
                     l.set_polygon_angle(a);
                 }
                 // A side length sets the radius that gives it (with the new side count).
-                if let Some(r) = side.and_then(|len| l.polygon_radius_for_side(len)).or(polygon_radius) {
+                if let Some(r) = side
+                    .and_then(|len| l.polygon_radius_for_side(len))
+                    .or(polygon_radius)
+                {
                     l.set_polygon_radius(r);
                 }
                 *path = l.to_path();
@@ -1546,18 +2047,29 @@ fn set_live_shape(s: &mut Session, p: &Value) -> Result<Value> {
             }
             let partial = sel.anchors.get_mut(id);
             // The corners to edit, the Direct-Selected ones and the anchor layout before the edit.
-            let Some(c) = LiveCorners::new(path, live.as_deref()) else { continue };
+            let Some(c) = LiveCorners::new(path, live.as_deref()) else {
+                continue;
+            };
             let corners = corners_of(*id);
             let picked = match &corners {
                 Some(k) if k.last().is_some_and(|k| *k >= c.base.anchor_count()) => {
                     let n = c.base.anchor_count();
                     let past: Vec<_> = k.range(n..).collect();
-                    return Err(bad("object.setLiveShape", format!("object {id} has anchors 0–{} for `corners`, not {past:?}", n.saturating_sub(1))));
+                    return Err(bad(
+                        "object.setLiveShape",
+                        format!(
+                            "object {id} has anchors 0–{} for `corners`, not {past:?}",
+                            n.saturating_sub(1)
+                        ),
+                    ));
                 }
                 Some(k) => k.clone(),
                 None => c.picked(partial.as_deref()),
             };
-            let (selected, layout) = (partial.as_deref().map(|a| c.corners_of(a)), c.sources().to_vec());
+            let (selected, layout) = (
+                partial.as_deref().map(|a| c.corners_of(a)),
+                c.sources().to_vec(),
+            );
             set_corners(path, live, &picked, radius, kind);
             // Direct-Selected corners stay selected as they gain or lose anchors.
             if let (Some(anchors), Some(selected)) = (partial, selected)

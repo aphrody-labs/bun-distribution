@@ -12,15 +12,21 @@ type Harness = egui_kittest::Harness<'static, SheetApp>;
 fn harness(input: &str) -> Harness {
     let mut session = Session::new();
     session.new_workbook();
-    session.execute("home.mergeCells", json!({"range": "A1:B2"})).unwrap();
-    session.execute("cell.set", json!({"cell": "A1", "input": input})).unwrap();
-    let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    session
+        .execute("home.mergeCells", json!({"range": "A1:B2"}))
+        .unwrap();
+    session
+        .execute("cell.set", json!({"cell": "A1", "input": input}))
+        .unwrap();
+    let mut h = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     h
 }
@@ -36,8 +42,18 @@ fn click_cell(h: &mut Harness, cell: &str) {
     let pos = cell_center(h, cell);
     h.input_mut().events.extend([
         Event::PointerMoved(pos),
-        Event::PointerButton { pos, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE },
-        Event::PointerButton { pos, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE },
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        },
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        },
     ]);
     h.run_steps(2);
 }
@@ -49,28 +65,55 @@ fn text(h: &mut Harness, text: &str) {
 
 fn key(h: &mut Harness, key: Key) {
     for pressed in [true, false] {
-        h.input_mut().events.push(Event::Key { key, physical_key: None, pressed, repeat: false, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Modifiers::NONE,
+        });
     }
     h.run_steps(2);
 }
 
 fn value(h: &Harness, cell: &str) -> Value {
-    h.state().session.active().unwrap().wb.active().unwrap().value(CellRef::parse(cell).unwrap())
+    h.state()
+        .session
+        .active()
+        .unwrap()
+        .wb
+        .active()
+        .unwrap()
+        .value(CellRef::parse(cell).unwrap())
 }
 
 #[test]
 fn typing_into_a_covered_cell_remains_visible_after_clicking_away() {
     let mut h = harness("");
     click_cell(&mut h, "B2");
-    assert_eq!(h.state().session.active().unwrap().selection.active.a1(), "B2");
+    assert_eq!(
+        h.state().session.active().unwrap().selection.active.a1(),
+        "B2"
+    );
     text(&mut h, "hello");
     click_cell(&mut h, "D4");
 
     assert!(h.state().editor.is_none());
-    assert_eq!(value(&h, "A1"), Value::from("hello"), "the cell painted for the merge must contain the committed text");
-    assert_eq!(value(&h, "B2"), Value::Empty, "editing a merge must not hide text in a covered cell");
+    assert_eq!(
+        value(&h, "A1"),
+        Value::from("hello"),
+        "the cell painted for the merge must contain the committed text"
+    );
+    assert_eq!(
+        value(&h, "B2"),
+        Value::Empty,
+        "editing a merge must not hide text in a covered cell"
+    );
     click_cell(&mut h, "B2");
-    assert!(h.query_by_label("hello").is_some(), "the formula bar must show the merged content when a covered cell is selected");
+    assert!(
+        h.query_by_label("hello").is_some(),
+        "the formula bar must show the merged content when a covered cell is selected"
+    );
 }
 
 #[test]

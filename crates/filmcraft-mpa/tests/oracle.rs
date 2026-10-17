@@ -192,19 +192,52 @@ fn make_encoded(ff: &Path, s: &Encoded) -> Option<PathBuf> {
         return filmcraft_testkit::fixtures::generate(&out, |tmp| {
             let wav = tmp.with_extension("wav");
             let made = Command::new(ff)
-                .args(["-hide_banner", "-v", "error", "-y", "-f", "lavfi", "-i", &format!("{}:s={}", s.input, s.rate), "-t", "1", "-c:a", "pcm_s16le"])
+                .args([
+                    "-hide_banner",
+                    "-v",
+                    "error",
+                    "-y",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    &format!("{}:s={}", s.input, s.rate),
+                    "-t",
+                    "1",
+                    "-c:a",
+                    "pcm_s16le",
+                ])
                 .arg(&wav)
                 .stdin(Stdio::null())
                 .status()
                 .is_ok_and(|x| x.success())
-                && Command::new(twolame).arg("--quiet").args(s.enc).arg(&wav).arg(tmp).stdin(Stdio::null()).status().is_ok_and(|x| x.success());
+                && Command::new(twolame)
+                    .arg("--quiet")
+                    .args(s.enc)
+                    .arg(&wav)
+                    .arg(tmp)
+                    .stdin(Stdio::null())
+                    .status()
+                    .is_ok_and(|x| x.success());
             let _ = std::fs::remove_file(&wav);
             made
         });
     }
     filmcraft_testkit::fixtures::generate(&out, |tmp| {
         Command::new(ff)
-            .args(["-hide_banner", "-v", "error", "-y", "-f", "lavfi", "-i", s.input, "-t", "1", "-c:a", "mp2"])
+            .args([
+                "-hide_banner",
+                "-v",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                s.input,
+                "-t",
+                "1",
+                "-c:a",
+                "mp2",
+            ])
             .args(s.enc)
             .args(["-f", "mp2"])
             .arg(tmp)
@@ -219,7 +252,9 @@ fn frames(data: &[u8]) -> Vec<&[u8]> {
     let mut out = Vec::new();
     let mut p = 0;
     while let Some(h) = data.get(p..).and_then(|b| parse_header(b).ok()) {
-        let Some(f) = data.get(p..p + h.frame_bytes).filter(|_| h.frame_bytes > 0) else { break };
+        let Some(f) = data.get(p..p + h.frame_bytes).filter(|_| h.frame_bytes > 0) else {
+            break;
+        };
         out.push(f);
         p += h.frame_bytes;
     }
@@ -228,9 +263,24 @@ fn frames(data: &[u8]) -> Vec<&[u8]> {
 
 /// ffmpeg's decode of `file`, interleaved f32.
 fn ffmpeg_decode(ff: &Path, file: &Path) -> Vec<f32> {
-    let o = Command::new(ff).args(["-v", "error", "-f", "mp3", "-i"]).arg(file).args(["-f", "f32le", "-"]).output().unwrap();
-    assert!(o.status.success(), "{}: {}", file.display(), String::from_utf8_lossy(&o.stderr));
-    o.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+    let o = Command::new(ff)
+        .args(["-v", "error", "-f", "mp3", "-i"])
+        .arg(file)
+        .args(["-f", "f32le", "-"])
+        .output()
+        .unwrap();
+    assert!(
+        o.status.success(),
+        "{}: {}",
+        file.display(),
+        String::from_utf8_lossy(&o.stderr)
+    );
+    o.stdout
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect()
 }
 
 /// Decode `file` with our decoder and return the worst channel's SNR against ffmpeg (dB).
@@ -242,12 +292,23 @@ fn snr_vs_ffmpeg(ff: &Path, file: &Path, rate: u32, channels: usize) -> f64 {
     let n = want.len() / channels;
     // ffmpeg drops the first frame of a stream whose second frame changes the channel mode
     // (twolame starts in joint stereo and switches to stereo): start there too
-    let first = if first_frame_mode_changes(&data) { 1 } else { 0 };
+    let first = if first_frame_mode_changes(&data) {
+        1
+    } else {
+        0
+    };
     let mut dec = Decoder::new();
     let mut ours: Vec<Vec<f32>> = vec![Vec::new(); channels];
     for f in &fr[first..] {
-        let d = dec.decode(f).unwrap_or_else(|e| panic!("{}: {e}", file.display()));
-        assert_eq!((d.header.sample_rate, d.channels.len()), (rate, channels), "{}", file.display());
+        let d = dec
+            .decode(f)
+            .unwrap_or_else(|e| panic!("{}: {e}", file.display()));
+        assert_eq!(
+            (d.header.sample_rate, d.channels.len()),
+            (rate, channels),
+            "{}",
+            file.display()
+        );
         for (o, c) in ours.iter_mut().zip(d.channels) {
             o.extend(c);
         }
@@ -287,9 +348,17 @@ fn encoded_streams_match_ffmpeg() {
         };
         let data = std::fs::read(&f).unwrap();
         let h = parse_header(&data).unwrap();
-        assert_eq!((h.layer, h.bitrate_kbps, h.mode), (2, s.kbps, s.mode), "{}", s.name);
+        assert_eq!(
+            (h.layer, h.bitrate_kbps, h.mode),
+            (2, s.kbps, s.mode),
+            "{}",
+            s.name
+        );
         let snr = snr_vs_ffmpeg(&ff, &f, s.rate, s.channels);
-        println!("{}: {} Hz, {} kbit/s, {:?}: SNR vs ffmpeg {snr:.1} dB", s.name, s.rate, s.kbps, s.mode);
+        println!(
+            "{}: {} Hz, {} kbit/s, {:?}: SNR vs ffmpeg {snr:.1} dB",
+            s.name, s.rate, s.kbps, s.mode
+        );
         assert!(snr >= MIN_SNR, "{}: SNR {snr:.1} dB < {MIN_SNR}", s.name);
     }
 }
@@ -310,7 +379,12 @@ impl Rng {
 /// Header bytes (no CRC): `lsf` MPEG-2, `layer` 1/2, the indices, `mode` 0-3, `ext`.
 fn header(lsf: bool, layer: u8, bitrate_index: u8, rate_index: u8, mode: u8, ext: u8) -> [u8; 4] {
     let version = if lsf { 0b10 } else { 0b11 };
-    [0xFF, 0xE0 | version << 3 | (4 - layer) << 1 | 1, bitrate_index << 4 | rate_index << 2, mode << 6 | ext << 4]
+    [
+        0xFF,
+        0xE0 | version << 3 | (4 - layer) << 1 | 1,
+        bitrate_index << 4 | rate_index << 2,
+        mode << 6 | ext << 4,
+    ]
 }
 
 /// A valid random Layer I frame: random allocations (as many as the frame holds), scalefactors
@@ -318,7 +392,11 @@ fn header(lsf: bool, layer: u8, bitrate_index: u8, rate_index: u8, mode: u8, ext
 fn random_layer1(rng: &mut Rng, h: [u8; 4]) -> Vec<u8> {
     let hd = parse_header(&h).unwrap();
     let nch = hd.channels();
-    let bound = if hd.mode == Mode::JointStereo { 4 * (hd.mode_extension as usize + 1) } else { 32 };
+    let bound = if hd.mode == Mode::JointStereo {
+        4 * (hd.mode_extension as usize + 1)
+    } else {
+        32
+    };
     let mut alloc = [[0u32; 32]; 2];
     for sb in 0..32 {
         for ch in 0..nch {
@@ -389,7 +467,11 @@ fn random_layer1(rng: &mut Rng, h: [u8; 4]) -> Vec<u8> {
 /// Allocation field widths (nbal) per subband of the Layer II table the test frames use, by the
 /// same selection as the decoder; every table's allocation value 1 is the 3-step class.
 fn nbal(lsf: bool, rate: u32, kbps_per_channel: u32) -> Vec<u32> {
-    let rep = |v: &[(u32, usize)]| v.iter().flat_map(|&(n, k)| std::iter::repeat_n(n, k)).collect::<Vec<_>>();
+    let rep = |v: &[(u32, usize)]| {
+        v.iter()
+            .flat_map(|&(n, k)| std::iter::repeat_n(n, k))
+            .collect::<Vec<_>>()
+    };
     if lsf {
         rep(&[(4, 4), (3, 7), (2, 19)])
     } else if (rate == 48_000 && kbps_per_channel >= 56) || (56..=80).contains(&kbps_per_channel) {
@@ -407,14 +489,26 @@ fn nbal(lsf: bool, rate: u32, kbps_per_channel: u32) -> Vec<u32> {
 fn random_layer2(rng: &mut Rng, h: [u8; 4]) -> Vec<u8> {
     let hd = parse_header(&h).unwrap();
     let nch = hd.channels();
-    let nbal = nbal(h[1] & 0x08 == 0, hd.sample_rate, hd.bitrate_kbps / nch as u32);
+    let nbal = nbal(
+        h[1] & 0x08 == 0,
+        hd.sample_rate,
+        hd.bitrate_kbps / nch as u32,
+    );
     let sblimit = nbal.len();
-    let bound = if hd.mode == Mode::JointStereo { (4 * (hd.mode_extension as usize + 1)).min(sblimit) } else { sblimit };
+    let bound = if hd.mode == Mode::JointStereo {
+        (4 * (hd.mode_extension as usize + 1)).min(sblimit)
+    } else {
+        sblimit
+    };
     let mut alloc = [[false; 32]; 2];
     let mut scfsi = [[0u32; 32]; 2];
     for sb in 0..sblimit {
         for ch in 0..nch {
-            alloc[ch][sb] = if ch == 1 && sb >= bound { alloc[0][sb] } else { rng.below(3) != 0 };
+            alloc[ch][sb] = if ch == 1 && sb >= bound {
+                alloc[0][sb]
+            } else {
+                rng.below(3) != 0
+            };
             scfsi[ch][sb] = rng.below(4);
         }
     }
@@ -514,7 +608,15 @@ fn synthetic_streams_match_ffmpeg() {
         let f = filmcraft_testkit::fixtures::generate(&out, |tmp| {
             let mut rng = Rng(0x9E37_79B9 ^ k as u32);
             let h = header(lsf, layer, br, sr, mode, ext);
-            let data: Vec<u8> = (0..40).flat_map(|_| if layer == 1 { random_layer1(&mut rng, h) } else { random_layer2(&mut rng, h) }).collect();
+            let data: Vec<u8> = (0..40)
+                .flat_map(|_| {
+                    if layer == 1 {
+                        random_layer1(&mut rng, h)
+                    } else {
+                        random_layer2(&mut rng, h)
+                    }
+                })
+                .collect();
             std::fs::write(tmp, data).is_ok()
         })
         .unwrap();
@@ -530,9 +632,18 @@ fn synthetic_streams_match_ffmpeg() {
 fn damaged_frames_never_panic() {
     let ff = filmcraft_testkit::require_ffmpeg!();
     let mut rng = Rng(0x00C0_FFEE);
-    let mut streams: Vec<Vec<u8>> = ENCODED.iter().filter(|s| !s.twolame).take(5).map(|s| std::fs::read(make_encoded(&ff, s).unwrap()).unwrap()).collect();
+    let mut streams: Vec<Vec<u8>> = ENCODED
+        .iter()
+        .filter(|s| !s.twolame)
+        .take(5)
+        .map(|s| std::fs::read(make_encoded(&ff, s).unwrap()).unwrap())
+        .collect();
     let mut synth = Rng(7);
-    streams.push((0..8).flat_map(|_| random_layer1(&mut synth, header(false, 1, 12, 1, 1, 1))).collect());
+    streams.push(
+        (0..8)
+            .flat_map(|_| random_layer1(&mut synth, header(false, 1, 12, 1, 1, 1)))
+            .collect(),
+    );
     for data in &streams {
         let mut dec = Decoder::new();
         for fr in frames(data).into_iter().take(8) {
@@ -564,9 +675,15 @@ fn damaged_frames_never_panic() {
 #[test]
 #[ignore]
 fn generate_fixtures() {
-    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("mpa fixtures") else { return };
+    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("mpa fixtures") else {
+        return;
+    };
     for s in ENCODED {
         let out = filmcraft_testkit::fixtures_dir("mpa").join(format!("{}.mp2", s.name));
-        filmcraft_testkit::fixtures::generate_and_report(&format!("mpa/{}", s.name), &[out], || make_encoded(&ff, s));
+        filmcraft_testkit::fixtures::generate_and_report(
+            &format!("mpa/{}", s.name),
+            &[out],
+            || make_encoded(&ff, s),
+        );
     }
 }

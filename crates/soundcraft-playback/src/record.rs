@@ -31,13 +31,22 @@ struct CaptureRing {
 impl CaptureRing {
     fn new(capacity: usize) -> CaptureRing {
         let n = capacity.max(2).next_power_of_two();
-        CaptureRing { slots: (0..n).map(|_| AtomicU32::new(0)).collect(), mask: n - 1, head: AtomicUsize::new(0), tail: AtomicUsize::new(0) }
+        CaptureRing {
+            slots: (0..n).map(|_| AtomicU32::new(0)).collect(),
+            mask: n - 1,
+            head: AtomicUsize::new(0),
+            tail: AtomicUsize::new(0),
+        }
     }
 
     /// Queue up to `n` samples (`sample(i)` is the i-th); returns how many fit.
     fn push(&self, n: usize, sample: impl Fn(usize) -> f32) -> usize {
         let head = self.head.load(Ordering::Relaxed);
-        let n = n.min(self.slots.len().saturating_sub(head.wrapping_sub(self.tail.load(Ordering::Acquire))));
+        let n = n.min(
+            self.slots
+                .len()
+                .saturating_sub(head.wrapping_sub(self.tail.load(Ordering::Acquire))),
+        );
         for i in 0..n {
             if let Some(slot) = self.slots.get(head.wrapping_add(i) & self.mask) {
                 slot.store(sample(i).to_bits(), Ordering::Relaxed);
@@ -48,11 +57,15 @@ impl CaptureRing {
     }
 
     fn pop_all(&self, out: &mut Vec<f32>) {
-        let (tail, head) = (self.tail.load(Ordering::Relaxed), self.head.load(Ordering::Acquire));
-        out.extend(
-            (0..head.wrapping_sub(tail))
-                .map(|i| self.slots.get(tail.wrapping_add(i) & self.mask).map_or(0.0, |s| f32::from_bits(s.load(Ordering::Relaxed)))),
+        let (tail, head) = (
+            self.tail.load(Ordering::Relaxed),
+            self.head.load(Ordering::Acquire),
         );
+        out.extend((0..head.wrapping_sub(tail)).map(|i| {
+            self.slots
+                .get(tail.wrapping_add(i) & self.mask)
+                .map_or(0.0, |s| f32::from_bits(s.load(Ordering::Relaxed)))
+        }));
         self.tail.store(head, Ordering::Release);
     }
 }
@@ -69,7 +82,12 @@ impl Shared {
     /// as silence before the next block, so the take keeps its timing.
     fn capture(&self, data: &[f32], owed: &mut usize) {
         *owed -= self.ring.push(*owed, |_| 0.0);
-        let kept = if *owed == 0 { self.ring.push(data.len(), |i| data.get(i).copied().unwrap_or(0.0)) } else { 0 };
+        let kept = if *owed == 0 {
+            self.ring
+                .push(data.len(), |i| data.get(i).copied().unwrap_or(0.0))
+        } else {
+            0
+        };
         *owed = owed.saturating_add(data.len() - kept);
         self.dropped.fetch_add(data.len() - kept, Ordering::Relaxed);
     }
@@ -98,12 +116,23 @@ impl Recorder {
         let name = device.name().unwrap_or_else(|_| "Input".into());
         let cfg = device.default_input_config().map_err(|e| e.to_string())?;
         if cfg.sample_format() != cpal::SampleFormat::F32 {
-            return Err(format!("unsupported input sample format {:?}", cfg.sample_format()));
+            return Err(format!(
+                "unsupported input sample format {:?}",
+                cfg.sample_format()
+            ));
         }
         let config = cfg.config();
         let channels = usize::from(config.channels).max(1);
-        let ring = CaptureRing::new((config.sample_rate.0 as usize).saturating_mul(channels * RING_SECONDS).min(1 << 25));
-        let shared = Arc::new(Shared { armed: AtomicBool::new(false), ring, dropped: AtomicUsize::new(0) });
+        let ring = CaptureRing::new(
+            (config.sample_rate.0 as usize)
+                .saturating_mul(channels * RING_SECONDS)
+                .min(1 << 25),
+        );
+        let shared = Arc::new(Shared {
+            armed: AtomicBool::new(false),
+            ring,
+            dropped: AtomicUsize::new(0),
+        });
         let sh = Arc::clone(&shared);
         let monitor = InputRing::new(usize::from(config.channels), config.sample_rate.0);
         let mon = Arc::clone(&monitor);
@@ -129,7 +158,15 @@ impl Recorder {
             )
             .map_err(|e| e.to_string())?;
         stream.play().map_err(|e| e.to_string())?;
-        Ok(Recorder { monitor, shared, _stream: Some(stream), device_name: name, sample_rate: config.sample_rate.0, channels, writer: None })
+        Ok(Recorder {
+            monitor,
+            shared,
+            _stream: Some(stream),
+            device_name: name,
+            sample_rate: config.sample_rate.0,
+            channels,
+            writer: None,
+        })
     }
 
     #[cfg(target_os = "freebsd")]
@@ -143,13 +180,19 @@ impl Recorder {
         if self.writer.is_some() {
             return Err("already recording".into());
         }
-        let takes =
-            takes.into_iter().map(|(id, inputs, path)| TakeWriter::create(id, inputs, path, self.sample_rate)).collect::<Result<Vec<_>, _>>()?;
+        let takes = takes
+            .into_iter()
+            .map(|(id, inputs, path)| TakeWriter::create(id, inputs, path, self.sample_rate))
+            .collect::<Result<Vec<_>, _>>()?;
         let ring = &self.shared.ring;
-        ring.tail.store(ring.head.load(Ordering::Acquire), Ordering::Release);
+        ring.tail
+            .store(ring.head.load(Ordering::Acquire), Ordering::Release);
         self.shared.armed.store(true, Ordering::Release);
         let (shared, channels) = (Arc::clone(&self.shared), self.channels);
-        match std::thread::Builder::new().name("take writer".into()).spawn(move || write_takes(&shared, takes, channels)) {
+        match std::thread::Builder::new()
+            .name("take writer".into())
+            .spawn(move || write_takes(&shared, takes, channels))
+        {
             Ok(w) => self.writer = Some(w),
             Err(e) => {
                 self.shared.armed.store(false, Ordering::Release);
@@ -161,10 +204,18 @@ impl Recorder {
 
     pub fn finish(&mut self) -> Takes {
         self.shared.armed.store(false, Ordering::Release);
-        let (takes, problem) = self.writer.take().and_then(|w| w.join().ok()).unwrap_or_default();
+        let (takes, problem) = self
+            .writer
+            .take()
+            .and_then(|w| w.join().ok())
+            .unwrap_or_default();
         let lost = self.shared.dropped.swap(0, Ordering::Relaxed) / self.channels.max(1);
-        let slow =
-            (lost > 0).then(|| format!("{} ms of input lost: the disk was too slow", lost.saturating_mul(1000) / self.sample_rate.max(1) as usize));
+        let slow = (lost > 0).then(|| {
+            format!(
+                "{} ms of input lost: the disk was too slow",
+                lost.saturating_mul(1000) / self.sample_rate.max(1) as usize
+            )
+        });
         (takes, problem.or(slow))
     }
 }
@@ -183,7 +234,9 @@ fn write_takes(shared: &Shared, mut takes: Vec<TakeWriter>, channels: usize) -> 
         // keep the remainder for the next pop, so channels never shift.
         shared.ring.pop_all(&mut block);
         let whole = block.len() - block.len() % channels.max(1);
-        takes.iter_mut().for_each(|t| t.write(&block[..whole], channels));
+        takes
+            .iter_mut()
+            .for_each(|t| t.write(&block[..whole], channels));
         block.drain(..whole);
         if stopping {
             break;
@@ -219,10 +272,26 @@ struct TakeWriter {
 }
 
 impl TakeWriter {
-    fn create(id: TrackId, inputs: Vec<usize>, path: PathBuf, rate: u32) -> Result<TakeWriter, String> {
-        let file = path.parent().map_or(Ok(()), std::fs::create_dir_all).and_then(|()| File::create_new(&path));
+    fn create(
+        id: TrackId,
+        inputs: Vec<usize>,
+        path: PathBuf,
+        rate: u32,
+    ) -> Result<TakeWriter, String> {
+        let file = path
+            .parent()
+            .map_or(Ok(()), std::fs::create_dir_all)
+            .and_then(|()| File::create_new(&path));
         let file = file.map_err(|e| format!("{}: {e}", path.display()))?;
-        let mut take = TakeWriter { id, inputs, path, file, rate, frames: 0, error: None };
+        let mut take = TakeWriter {
+            id,
+            inputs,
+            path,
+            file,
+            rate,
+            frames: 0,
+            error: None,
+        };
         take.write_header();
         take.error.take().map_or(Ok(take), Err)
     }
@@ -235,7 +304,11 @@ impl TakeWriter {
         }
         let bytes: Vec<u8> = block
             .chunks_exact(channels)
-            .flat_map(|f| self.inputs.iter().flat_map(move |&i| f.get(i).copied().unwrap_or(0.0).to_le_bytes()))
+            .flat_map(|f| {
+                self.inputs
+                    .iter()
+                    .flat_map(move |&i| f.get(i).copied().unwrap_or(0.0).to_le_bytes())
+            })
             .collect();
         match self.file.write_all(&bytes) {
             Ok(()) => self.frames += (block.len() / channels) as u64,
@@ -244,18 +317,27 @@ impl TakeWriter {
     }
 
     fn write_header(&mut self) {
-        let header = match soundcraft_audio_io::wav_float_header(self.inputs.len(), self.rate, self.frames) {
+        let header = match soundcraft_audio_io::wav_float_header(
+            self.inputs.len(),
+            self.rate,
+            self.frames,
+        ) {
             Ok(h) => h,
             Err(e) => return self.fail(e),
         };
         let f = &mut self.file;
-        if let Err(e) = f.seek(SeekFrom::Start(0)).and_then(|_| f.write_all(&header)).and_then(|()| f.seek(SeekFrom::End(0))) {
+        if let Err(e) = f
+            .seek(SeekFrom::Start(0))
+            .and_then(|_| f.write_all(&header))
+            .and_then(|()| f.seek(SeekFrom::End(0)))
+        {
             self.fail(e);
         }
     }
 
     fn fail(&mut self, e: impl std::fmt::Display) {
-        self.error.get_or_insert_with(|| format!("{}: {e}", self.path.display()));
+        self.error
+            .get_or_insert_with(|| format!("{}: {e}", self.path.display()));
     }
 }
 
@@ -264,19 +346,29 @@ mod tests {
     use super::*;
 
     fn decode(path: &PathBuf) -> Vec<Vec<f32>> {
-        soundcraft_audio_io::decode(&std::fs::read(path).unwrap(), None).unwrap().1.channels
+        soundcraft_audio_io::decode(&std::fs::read(path).unwrap(), None)
+            .unwrap()
+            .1
+            .channels
     }
 
     #[test]
     fn a_full_ring_owes_the_lost_samples_as_silence() {
-        let shared = Shared { armed: AtomicBool::new(true), ring: CaptureRing::new(8), dropped: AtomicUsize::new(0) };
+        let shared = Shared {
+            armed: AtomicBool::new(true),
+            ring: CaptureRing::new(8),
+            dropped: AtomicUsize::new(0),
+        };
         let (mut owed, mut out) = (0, Vec::new());
         shared.capture(&[1.0; 6], &mut owed);
         shared.capture(&[2.0; 4], &mut owed);
         shared.ring.pop_all(&mut out);
         shared.capture(&[3.0; 2], &mut owed);
         shared.ring.pop_all(&mut out);
-        assert_eq!(out, [vec![1.0; 6], vec![2.0; 2], vec![0.0; 2], vec![3.0; 2]].concat());
+        assert_eq!(
+            out,
+            [vec![1.0; 6], vec![2.0; 2], vec![0.0; 2], vec![3.0; 2]].concat()
+        );
         assert_eq!((owed, shared.dropped.load(Ordering::Relaxed)), (0, 2));
     }
 
@@ -284,26 +376,51 @@ mod tests {
     fn takes_stream_into_their_files() {
         let dir = std::env::temp_dir().join(format!("soundcraft-takes-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        let gtr = TakeWriter::create(TrackId(1), vec![1, 2], dir.join("Gtr_01.wav"), 48_000).unwrap();
-        let mut vox = TakeWriter::create(TrackId(2), vec![0], dir.join("Vox_01.wav"), 48_000).unwrap();
-        assert!(TakeWriter::create(TrackId(3), vec![0], dir.join("Vox_01.wav"), 48_000).is_err(), "never overwrites a file");
+        let gtr =
+            TakeWriter::create(TrackId(1), vec![1, 2], dir.join("Gtr_01.wav"), 48_000).unwrap();
+        let mut vox =
+            TakeWriter::create(TrackId(2), vec![0], dir.join("Vox_01.wav"), 48_000).unwrap();
+        assert!(
+            TakeWriter::create(TrackId(3), vec![0], dir.join("Vox_01.wav"), 48_000).is_err(),
+            "never overwrites a file"
+        );
         vox.write(&[0.5; 300], 3);
         vox.write_header();
         vox.write(&[0.25; 150], 3);
-        assert_eq!(decode(&dir.join("Vox_01.wav"))[0].len(), 100, "the header covers what it has seen");
+        assert_eq!(
+            decode(&dir.join("Vox_01.wav"))[0].len(),
+            100,
+            "the header covers what it has seen"
+        );
 
-        let shared = Arc::new(Shared { armed: AtomicBool::new(true), ring: CaptureRing::new(1 << 16), dropped: AtomicUsize::new(0) });
+        let shared = Arc::new(Shared {
+            armed: AtomicBool::new(true),
+            ring: CaptureRing::new(1 << 16),
+            dropped: AtomicUsize::new(0),
+        });
         let sh = Arc::clone(&shared);
         let writer = std::thread::spawn(move || write_takes(&sh, vec![gtr, vox], 3));
         let input: Vec<f32> = (0..3 * 4_800).map(|i| i as f32 / 20_000.0).collect();
         let mut owed = 0;
-        input.chunks(3 * 480).for_each(|block| shared.capture(block, &mut owed));
+        input
+            .chunks(3 * 480)
+            .for_each(|block| shared.capture(block, &mut owed));
         shared.armed.store(false, Ordering::Release);
         let (done, problem) = writer.join().unwrap();
-        let channel = |c: usize| input.iter().skip(c).step_by(3).copied().collect::<Vec<f32>>();
+        let channel = |c: usize| {
+            input
+                .iter()
+                .skip(c)
+                .step_by(3)
+                .copied()
+                .collect::<Vec<f32>>()
+        };
         assert_eq!((done.len(), problem), (2, None));
         assert_eq!(decode(&done[0].1), vec![channel(1), channel(2)]);
-        assert_eq!(decode(&done[1].1), vec![[vec![0.5; 100], vec![0.25; 50], channel(0)].concat()]);
+        assert_eq!(
+            decode(&done[1].1),
+            vec![[vec![0.5; 100], vec![0.25; 50], channel(0)].concat()]
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
@@ -333,7 +450,10 @@ impl InputRing {
         let ch = channels.max(1);
         let frames = if rate == 0 { 24_000 } else { rate as usize / 2 };
         Arc::new(InputRing {
-            state: Mutex::new(RingState { data: std::collections::VecDeque::with_capacity(rate.max(48_000) as usize * ch), phase: 0.0 }),
+            state: Mutex::new(RingState {
+                data: std::collections::VecDeque::with_capacity(rate.max(48_000) as usize * ch),
+                phase: 0.0,
+            }),
             channels: std::sync::atomic::AtomicUsize::new(ch),
             rate,
             cap: frames * ch,
@@ -356,9 +476,15 @@ impl InputRing {
         for c in out.iter_mut() {
             c.iter_mut().take(frames).for_each(|x| *x = 0.0);
         }
-        let Ok(mut s) = self.state.try_lock() else { return };
+        let Ok(mut s) = self.state.try_lock() else {
+            return;
+        };
         // Input frames consumed per output frame.
-        let step = if self.rate == 0 || session_rate == 0 { 1.0 } else { f64::from(self.rate) / f64::from(session_rate) };
+        let step = if self.rate == 0 || session_rate == 0 {
+            1.0
+        } else {
+            f64::from(self.rate) / f64::from(session_rate)
+        };
         for f in 0..frames {
             // Drop input frames we have moved past; keep the one at `phase` and the next one.
             while s.phase >= 1.0 && s.data.len() >= 2 * ch {
@@ -389,14 +515,17 @@ mod ring_tests {
     #[test]
     fn monitor_converts_input_rate_to_session_rate() {
         let ring = InputRing::new(1, 16_000);
-        let input: Vec<f32> = (0..4_000).map(|i| (2.0 * std::f64::consts::PI * 1_000.0 * f64::from(i) / 16_000.0).sin() as f32).collect();
+        let input: Vec<f32> = (0..4_000)
+            .map(|i| (2.0 * std::f64::consts::PI * 1_000.0 * f64::from(i) / 16_000.0).sin() as f32)
+            .collect();
         ring.push(&input);
         let mut out = vec![vec![0.0f32; 48]];
         let mut k = 0usize;
         for _ in 0..10 {
             ring.pop_into(&mut out, 48, 48_000);
             for v in &out[0] {
-                let want = (2.0 * std::f64::consts::PI * 1_000.0 * k as f64 / 48_000.0).sin() as f32;
+                let want =
+                    (2.0 * std::f64::consts::PI * 1_000.0 * k as f64 / 48_000.0).sin() as f32;
                 assert!((v - want).abs() < 0.05, "sample {k}: got {v}, want {want}");
                 k += 1;
             }

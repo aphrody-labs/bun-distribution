@@ -89,9 +89,17 @@ pub fn parse_tokens_from_html(html: &str, language: Option<&str>) -> Result<Sess
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_string())
         .ok_or_else(|| GeminiError::Bootstrap("cfb2h (bl) token not found in page".into()))?;
-    let fsid = RE_FSID.captures(html).and_then(|c| c.get(1)).map(|m| m.as_str().to_string());
+    let fsid = RE_FSID
+        .captures(html)
+        .and_then(|c| c.get(1))
+        .map(|m| m.as_str().to_string());
 
-    Ok(SessionTokens { at, bl, fsid, language: language.map(str::to_string) })
+    Ok(SessionTokens {
+        at,
+        bl,
+        fsid,
+        language: language.map(str::to_string),
+    })
 }
 
 #[cfg(test)]

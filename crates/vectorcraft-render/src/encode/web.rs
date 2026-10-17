@@ -17,7 +17,12 @@ pub enum ColorSort {
 }
 
 impl ColorSort {
-    pub const ALL: [ColorSort; 4] = [ColorSort::None, ColorSort::Hue, ColorSort::Luminance, ColorSort::Popularity];
+    pub const ALL: [ColorSort; 4] = [
+        ColorSort::None,
+        ColorSort::Hue,
+        ColorSort::Luminance,
+        ColorSort::Popularity,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -38,7 +43,9 @@ impl ColorSort {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|v| v.id().eq_ignore_ascii_case(s) || v.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|v| v.id().eq_ignore_ascii_case(s) || v.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -56,7 +63,9 @@ pub fn snap(c: [u8; 3], tolerance: u8) -> Option<[u8; 3]> {
 /// index → new index map (`None`: the entry went).
 pub fn to_transparent(ix: &mut Indexed, mapped: impl Fn(usize) -> bool) -> Vec<Option<u8>> {
     let n = ix.palette.len();
-    let gone: Vec<bool> = (0..n).map(|i| Some(i) != ix.transparent.map(usize::from) && mapped(i)).collect();
+    let gone: Vec<bool> = (0..n)
+        .map(|i| Some(i) != ix.transparent.map(usize::from) && mapped(i))
+        .collect();
     if !gone.contains(&true) {
         return (0..n).map(|i| u8::try_from(i).ok()).collect();
     }
@@ -64,7 +73,12 @@ pub fn to_transparent(ix: &mut Indexed, mapped: impl Fn(usize) -> bool) -> Vec<O
     let mut palette = Vec::with_capacity(n);
     // The transparent entry first: the old one, or a new one (the first entry mapped's colour).
     let first_gone = gone.iter().position(|g| *g).unwrap_or(0);
-    palette.push(ix.palette.get(clear.unwrap_or(first_gone)).copied().unwrap_or_default());
+    palette.push(
+        ix.palette
+            .get(clear.unwrap_or(first_gone))
+            .copied()
+            .unwrap_or_default(),
+    );
     let mut map = vec![Some(0u8); n];
     for (i, c) in ix.palette.iter().enumerate() {
         if gone[i] || Some(i) == clear {
@@ -78,7 +92,10 @@ pub fn to_transparent(ix: &mut Indexed, mapped: impl Fn(usize) -> bool) -> Vec<O
     }
     ix.palette = palette;
     ix.transparent = Some(0);
-    map.into_iter().enumerate().map(|(i, m)| if gone[i] { None } else { m }).collect()
+    map.into_iter()
+        .enumerate()
+        .map(|(i, m)| if gone[i] { None } else { m })
+        .collect()
 }
 
 /// Lossy GIF compression: a pixel takes the entry of the pixel left of it when that entry is
@@ -98,8 +115,12 @@ pub fn lossy(ix: &mut Indexed, rgba: &[u8], amount: u8) {
             if prev == cur || ix.transparent.is_some_and(|t| t == prev || t == cur) {
                 continue;
             }
-            let (Some(c), Some(p)) = (src.get(x), ix.palette.get(prev as usize)) else { continue };
-            let d: f32 = (0..3).map(|i| (f32::from(c[i]) - f32::from(p[i])).powi(2)).sum();
+            let (Some(c), Some(p)) = (src.get(x), ix.palette.get(prev as usize)) else {
+                continue;
+            };
+            let d: f32 = (0..3)
+                .map(|i| (f32::from(c[i]) - f32::from(p[i])).powi(2))
+                .sum();
             if d <= limit {
                 row[x] = prev;
             }
@@ -124,7 +145,12 @@ pub fn sort(ix: &mut Indexed, order: ColorSort) -> Vec<usize> {
     let fixed = ix.transparent.map(usize::from);
     let mut rest: Vec<usize> = identity.into_iter().filter(|i| Some(*i) != fixed).collect();
     let key = |i: usize| -> (f32, f32) {
-        let [r, g, b] = ix.palette.get(i).copied().unwrap_or_default().map(|v| f32::from(v) / 255.0);
+        let [r, g, b] = ix
+            .palette
+            .get(i)
+            .copied()
+            .unwrap_or_default()
+            .map(|v| f32::from(v) / 255.0);
         let luma = 0.299 * r + 0.587 * g + 0.114 * b;
         match order {
             ColorSort::Hue => (hue(r, g, b), luma),
@@ -143,7 +169,10 @@ pub fn sort(ix: &mut Indexed, order: ColorSort) -> Vec<usize> {
             *r = v;
         }
     }
-    ix.palette = order.iter().filter_map(|&i| ix.palette.get(i).copied()).collect();
+    ix.palette = order
+        .iter()
+        .filter_map(|&i| ix.palette.get(i).copied())
+        .collect();
     for v in &mut ix.indices {
         *v = remap.get(*v as usize).copied().unwrap_or(0);
     }

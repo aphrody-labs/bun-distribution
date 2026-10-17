@@ -48,7 +48,12 @@ impl CandleBert {
         pooling: Pooling,
     ) -> Result<Vec<Vec<f32>>> {
         let batch = idx.len();
-        let seq_len = idx.iter().map(|&i| encodings[i].get_ids().len()).max().unwrap_or(0).max(1);
+        let seq_len = idx
+            .iter()
+            .map(|&i| encodings[i].get_ids().len())
+            .max()
+            .unwrap_or(0)
+            .max(1);
 
         let mut ids = vec![0u32; batch * seq_len];
         let mut mask = vec![0u32; batch * seq_len];
@@ -70,7 +75,7 @@ impl CandleBert {
                 let summed = hidden.broadcast_mul(&m)?.sum(1)?;
                 let counts = m.sum(1)?.clamp(1e-9f32, f32::MAX)?;
                 summed.broadcast_div(&counts)?
-            },
+            }
         };
         Ok(pooled.to_vec2::<f32>()?)
     }

@@ -49,9 +49,17 @@ impl Guest {
         if let Some(t) = self.timeout.take() {
             w.clear_timeout_with_handle(t);
         }
-        let Some(at) = self.driver.deadline() else { return };
-        let ms = i32::try_from(at.saturating_duration_since(Instant::now()).as_millis()).unwrap_or(i32::MAX);
-        self.timeout = w.set_timeout_with_callback_and_timeout_and_arguments_0(self.timer.as_ref().unchecked_ref(), ms).ok();
+        let Some(at) = self.driver.deadline() else {
+            return;
+        };
+        let ms = i32::try_from(at.saturating_duration_since(Instant::now()).as_millis())
+            .unwrap_or(i32::MAX);
+        self.timeout = w
+            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                self.timer.as_ref().unchecked_ref(),
+                ms,
+            )
+            .ok();
     }
 }
 
@@ -64,7 +72,9 @@ thread_local! {
 /// once it's over. (Callbacks may drop their own closures: wasm-bindgen frees a closure only
 /// after it has returned.)
 fn with_driver(id: u64, f: impl FnOnce(&mut Driver<BrowserSocket>, Instant)) {
-    let Some(g) = GUESTS.with(|t| t.borrow().get(&id).cloned()) else { return };
+    let Some(g) = GUESTS.with(|t| t.borrow().get(&id).cloned()) else {
+        return;
+    };
     let done = {
         let Ok(mut g) = g.try_borrow_mut() else {
             log::warn!("live session: an event arrived while the session was busy");
@@ -95,17 +105,22 @@ struct BrowserSocket {
 impl Socket for BrowserSocket {
     fn open(&mut self, url: &str) -> Result<(), String> {
         self.close();
-        let ws = WebSocket::new(url).map_err(|e| format!("the browser won't open {url}: {}", js_error(&e)))?;
+        let ws = WebSocket::new(url)
+            .map_err(|e| format!("the browser won't open {url}: {}", js_error(&e)))?;
         ws.set_binary_type(BinaryType::Arraybuffer);
         let id = self.id;
         let open = Closure::<dyn FnMut()>::new(move || with_driver(id, |d, now| d.opened(now)));
-        let message = Closure::<dyn FnMut(MessageEvent)>::new(move |e: MessageEvent| match e.data().dyn_into::<js_sys::ArrayBuffer>() {
-            Ok(buf) => {
-                let bytes = js_sys::Uint8Array::new(&buf).to_vec();
-                with_driver(id, |d, now| d.message(&bytes, now));
-            }
-            Err(_) => with_driver(id, |d, now| d.text(now)),
-        });
+        let message =
+            Closure::<dyn FnMut(MessageEvent)>::new(move |e: MessageEvent| match e
+                .data()
+                .dyn_into::<js_sys::ArrayBuffer>(
+            ) {
+                Ok(buf) => {
+                    let bytes = js_sys::Uint8Array::new(&buf).to_vec();
+                    with_driver(id, |d, now| d.message(&bytes, now));
+                }
+                Err(_) => with_driver(id, |d, now| d.text(now)),
+            });
         let close = Closure::<dyn FnMut(CloseEvent)>::new(move |e: CloseEvent| {
             let (code, reason) = (e.code(), e.reason());
             with_driver(id, |d, now| d.closed(code, &reason, now));
@@ -113,16 +128,27 @@ impl Socket for BrowserSocket {
         ws.set_onopen(Some(open.as_ref().unchecked_ref()));
         ws.set_onmessage(Some(message.as_ref().unchecked_ref()));
         ws.set_onclose(Some(close.as_ref().unchecked_ref()));
-        self.ws = Some((ws, Handlers { _open: open, _message: message, _close: close }));
+        self.ws = Some((
+            ws,
+            Handlers {
+                _open: open,
+                _message: message,
+                _close: close,
+            },
+        ));
         Ok(())
     }
 
     fn send(&mut self, bytes: &[u8]) -> bool {
-        self.ws.as_ref().is_some_and(|(ws, _)| ws.ready_state() == WebSocket::OPEN && ws.send_with_u8_array(bytes).is_ok())
+        self.ws.as_ref().is_some_and(|(ws, _)| {
+            ws.ready_state() == WebSocket::OPEN && ws.send_with_u8_array(bytes).is_ok()
+        })
     }
 
     fn close(&mut self) {
-        let Some((ws, _handlers)) = self.ws.take() else { return };
+        let Some((ws, _handlers)) = self.ws.take() else {
+            return;
+        };
         ws.set_onopen(None);
         ws.set_onmessage(None);
         ws.set_onclose(None);
@@ -131,12 +157,15 @@ impl Socket for BrowserSocket {
 }
 
 fn js_error(e: &wasm_bindgen::JsValue) -> String {
-    e.dyn_ref::<js_sys::Error>().map_or_else(|| format!("{e:?}"), |e| String::from(e.message()))
+    e.dyn_ref::<js_sys::Error>()
+        .map_or_else(|| format!("{e:?}"), |e| String::from(e.message()))
 }
 
 /// The page was loaded over `https://`.
 fn secure_page() -> bool {
-    web_sys::window().and_then(|w| w.location().protocol().ok()).is_some_and(|p| p == "https:")
+    web_sys::window()
+        .and_then(|w| w.location().protocol().ok())
+        .is_some_and(|p| p == "https:")
 }
 
 /// The browser's [`LiveLink`]: joins sessions; hosting needs the desktop app.
@@ -148,7 +177,9 @@ pub struct NetLink {
 impl NetLink {
     /// `wake` is called whenever something arrives for the UI (egui's `request_repaint`).
     pub fn new(wake: Waker) -> Self {
-        Self { sessions: Sessions::new(wake) }
+        Self {
+            sessions: Sessions::new(wake),
+        }
     }
 
     fn with(&self, session: SessionId, f: impl FnOnce(&mut Driver<BrowserSocket>, Instant)) {
@@ -174,10 +205,22 @@ impl LiveLink for NetLink {
         }
         let id = NEXT_ID.with(|n| n.replace(n.get() + 1));
         let inbox = self.sessions.inbox();
-        let cfg = GuestConfig { code, ..GuestConfig::new(invite, name.to_string()) };
-        let driver = Driver::start(BrowserSocket { id, ws: None }, cfg, inbox.clone(), Instant::now());
+        let cfg = GuestConfig {
+            code,
+            ..GuestConfig::new(invite, name.to_string())
+        };
+        let driver = Driver::start(
+            BrowserSocket { id, ws: None },
+            cfg,
+            inbox.clone(),
+            Instant::now(),
+        );
         let timer = Closure::<dyn FnMut()>::new(move || with_driver(id, |d, now| d.tick(now)));
-        let mut g = Guest { driver, timer, timeout: None };
+        let mut g = Guest {
+            driver,
+            timer,
+            timeout: None,
+        };
         g.arm();
         if !g.driver.done() {
             GUESTS.with(|t| t.borrow_mut().insert(id, Rc::new(RefCell::new(g))));

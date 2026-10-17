@@ -52,7 +52,11 @@ fn root_fixture() -> serde_json::Value {
 #[test]
 fn skill_technic_six_entrees() {
     let parsed = parse_skill_technic_config(&root_fixture());
-    assert_eq!(parsed.len(), 6, "exactement 6 entrées dans m_SkillTechnicInfoList");
+    assert_eq!(
+        parsed.len(),
+        6,
+        "exactement 6 entrées dans m_SkillTechnicInfoList"
+    );
 }
 
 #[test]

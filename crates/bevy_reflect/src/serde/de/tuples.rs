@@ -1,7 +1,7 @@
 use crate::{
+    TypeRegistration, TypeRegistry,
     serde::de::tuple_utils::visit_tuple,
     tuple::{DynamicTuple, TupleInfo},
-    TypeRegistration, TypeRegistry,
 };
 use core::{fmt, fmt::Formatter};
 use serde::de::{SeqAccess, Visitor};

@@ -192,7 +192,10 @@ impl RdbnStringTable {
     /// Résout un hash en chaîne, ou retourne `None`.
     #[must_use]
     pub fn resolve(&self, hash: u32) -> Option<&str> {
-        self.entries.iter().find(|(h, _)| *h == hash).map(|(_, s)| s.as_str())
+        self.entries
+            .iter()
+            .find(|(h, _)| *h == hash)
+            .map(|(_, s)| s.as_str())
     }
 }
 
@@ -258,7 +261,10 @@ pub fn is_rdbn(data: &[u8]) -> bool {
 /// - [`FormatError::Corrupt`] pour toute incohérence interne.
 pub fn parse(data: &[u8]) -> Result<RdbnData, FormatError> {
     if data.len() < MIN_SIZE {
-        return Err(FormatError::TooShort { got: data.len(), need: MIN_SIZE });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: MIN_SIZE,
+        });
     }
     if !is_rdbn(data) {
         return Err(FormatError::BadMagic { format: "RDBN" });
@@ -279,10 +285,23 @@ pub fn parse(data: &[u8]) -> Result<RdbnData, FormatError> {
     let types = parse_types(data, type_abs, header.type_count as usize)?;
     let fields = parse_fields(data, field_abs, header.field_count as usize)?;
     let roots = parse_roots(data, root_abs, header.root_count as usize)?;
-    let strings =
-        parse_strings(data, header.hash_count as usize, hash_abs, offsets_abs, string_abs)?;
+    let strings = parse_strings(
+        data,
+        header.hash_count as usize,
+        hash_abs,
+        offsets_abs,
+        string_abs,
+    )?;
 
-    Ok(RdbnData { header, types, fields, roots, strings, value_abs, string_abs })
+    Ok(RdbnData {
+        header,
+        types,
+        fields,
+        roots,
+        strings,
+        value_abs,
+        string_abs,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -378,13 +397,16 @@ pub fn read_values(rdbn: &RdbnData, data: &[u8]) -> Vec<RdbnList> {
     let mut lists = Vec::with_capacity(rdbn.roots.len());
 
     for root in &rdbn.roots {
-        let name = rdbn
-            .strings
-            .resolve(root.name_hash)
-            .map_or_else(|| alloc::format!("Unknown_0x{:08X}", root.name_hash), String::from);
+        let name = rdbn.strings.resolve(root.name_hash).map_or_else(
+            || alloc::format!("Unknown_0x{:08X}", root.name_hash),
+            String::from,
+        );
 
         // type_index doit être un index valide dans la table de types.
-        let Some(ty) = usize::try_from(root.type_index).ok().and_then(|i| rdbn.types.get(i)) else {
+        let Some(ty) = usize::try_from(root.type_index)
+            .ok()
+            .and_then(|i| rdbn.types.get(i))
+        else {
             // Type hors plage : on émet une liste vide nommée, sans fabriquer de lignes.
             lists.push(RdbnList {
                 name,
@@ -394,10 +416,10 @@ pub fn read_values(rdbn: &RdbnData, data: &[u8]) -> Vec<RdbnList> {
             continue;
         };
 
-        let type_name = rdbn
-            .strings
-            .resolve(ty.name_hash)
-            .map_or_else(|| alloc::format!("Type_0x{:08X}", ty.name_hash), String::from);
+        let type_name = rdbn.strings.resolve(ty.name_hash).map_or_else(
+            || alloc::format!("Type_0x{:08X}", ty.name_hash),
+            String::from,
+        );
 
         let root_value_offset = rdbn.value_abs.wrapping_add(root.value_offset as usize);
         let mut rows = Vec::with_capacity(root.value_count.max(0) as usize);
@@ -409,7 +431,9 @@ pub fn read_values(rdbn: &RdbnData, data: &[u8]) -> Vec<RdbnList> {
 
             for f in 0..ty.field_count.max(0) {
                 let field_idx = ty.field_index as i64 + f as i64;
-                let Some(field) = usize::try_from(field_idx).ok().and_then(|i| rdbn.fields.get(i))
+                let Some(field) = usize::try_from(field_idx)
+                    .ok()
+                    .and_then(|i| rdbn.fields.get(i))
                 else {
                     continue;
                 };
@@ -426,7 +450,11 @@ pub fn read_values(rdbn: &RdbnData, data: &[u8]) -> Vec<RdbnList> {
             rows.push(RdbnRow { fields });
         }
 
-        lists.push(RdbnList { name, type_name, rows });
+        lists.push(RdbnList {
+            name,
+            type_name,
+            rows,
+        });
     }
 
     lists
@@ -450,33 +478,33 @@ fn read_field_value(
         RdbnFieldType::Byte => RdbnValue::Byte(data[offset]),
         RdbnFieldType::Short => {
             read_i16_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Short)
-        },
+        }
         RdbnFieldType::Int => read_i32_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Int),
         RdbnFieldType::ActType => {
             read_i16_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::ActType)
-        },
+        }
         RdbnFieldType::Flag => {
             read_i32_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Flag)
-        },
+        }
         RdbnFieldType::Float => {
             read_f32_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Float)
-        },
+        }
         RdbnFieldType::Hash => {
             read_u32_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Hash)
-        },
+        }
         RdbnFieldType::Rates => {
             read_vec4_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Rates)
-        },
+        }
         RdbnFieldType::Position => {
             read_vec4_le(data, offset).map_or(RdbnValue::Invalid, RdbnValue::Position)
-        },
+        }
         RdbnFieldType::Condition => read_condition_value(data, offset, string_abs),
         RdbnFieldType::ShortTuple => {
             match (read_i16_le(data, offset), read_i16_le(data, offset + 2)) {
                 (Ok(a), Ok(b)) => RdbnValue::ShortTuple([a, b]),
                 _ => RdbnValue::Invalid,
             }
-        },
+        }
         // Types 0/1/2 (AbilityData/EnhanceData/StatusRate) et inconnus ⇒ blob brut.
         RdbnFieldType::AbilityData
         | RdbnFieldType::EnhanceData
@@ -743,7 +771,11 @@ const fn build_crc32_slices() -> [[u32; 256]; 8] {
         let mut crc = i as u32;
         let mut j = 0;
         while j < 8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ CRC32_POLY } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ CRC32_POLY
+            } else {
+                crc >> 1
+            };
             j += 1;
         }
         t[0][i] = crc;
@@ -828,7 +860,10 @@ pub fn cfgbin_parse(data: &[u8]) -> Result<CfgBinFile, FormatError> {
 /// Parse un fichier binaire T2B Level-5.
 pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
     if data.len() < 16 {
-        return Err(FormatError::TooShort { got: data.len(), need: 16 });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: 16,
+        });
     }
 
     let entries_count = i32::from_le_bytes(data[0..4].try_into().unwrap());
@@ -853,9 +888,12 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
     let string_table_off = string_table_off_i as usize;
     let string_table_len = string_table_len_i as usize;
 
-    let string_table_end = string_table_off
-        .checked_add(string_table_len)
-        .ok_or(FormatError::Corrupt("T2B string table offset/length overflow"))?;
+    let string_table_end =
+        string_table_off
+            .checked_add(string_table_len)
+            .ok_or(FormatError::Corrupt(
+                "T2B string table offset/length overflow",
+            ))?;
     if string_table_off < 16 || string_table_end > data.len() {
         return Err(FormatError::Corrupt("String table offset out of bounds"));
     }
@@ -878,18 +916,26 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
     let key_table_offset = string_table_end.div_ceil(16) * 16;
     let mut key_table = BTreeMap::new();
     if key_table_offset + 16 <= data.len() {
-        let key_length =
-            i32::from_le_bytes(data[key_table_offset..key_table_offset + 4].try_into().unwrap())
-                as usize;
+        let key_length = i32::from_le_bytes(
+            data[key_table_offset..key_table_offset + 4]
+                .try_into()
+                .unwrap(),
+        ) as usize;
         if key_length > 0 && key_table_offset + key_length <= data.len() {
             let key_count = i32::from_le_bytes(
-                data[key_table_offset + 4..key_table_offset + 8].try_into().unwrap(),
+                data[key_table_offset + 4..key_table_offset + 8]
+                    .try_into()
+                    .unwrap(),
             ) as usize;
             let key_str_off = i32::from_le_bytes(
-                data[key_table_offset + 8..key_table_offset + 12].try_into().unwrap(),
+                data[key_table_offset + 8..key_table_offset + 12]
+                    .try_into()
+                    .unwrap(),
             ) as usize;
             let key_str_len = i32::from_le_bytes(
-                data[key_table_offset + 12..key_table_offset + 16].try_into().unwrap(),
+                data[key_table_offset + 12..key_table_offset + 16]
+                    .try_into()
+                    .unwrap(),
             ) as usize;
 
             let max_possible = key_length / 8;
@@ -973,24 +1019,28 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
                             String::new()
                         };
                         variables.push(Value::String(s));
-                    },
+                    }
                     1 => {
                         let val = i32::from_le_bytes(val_bytes.try_into().unwrap());
                         variables.push(Value::Int(val));
-                    },
+                    }
                     2 => {
                         let val = f32::from_le_bytes(val_bytes.try_into().unwrap());
                         variables.push(Value::Float(val));
-                    },
+                    }
                     _ => {
                         let val = i32::from_le_bytes(val_bytes.try_into().unwrap());
                         variables.push(Value::Int(val));
-                    },
+                    }
                 }
                 pos += 4;
             }
 
-            flat_entries.push(CfgEntry { name, variables, children: Vec::new() });
+            flat_entries.push(CfgEntry {
+                name,
+                variables,
+                children: Vec::new(),
+            });
         }
     }
 
@@ -1024,7 +1074,10 @@ pub fn parse_t2b(data: &[u8]) -> Result<CfgBinFile, FormatError> {
     let mut iter = flat_entries.into_iter();
     let entries = parse_sub(&mut iter);
 
-    Ok(CfgBinFile { format: Format::T2b, entries })
+    Ok(CfgBinFile {
+        format: Format::T2b,
+        entries,
+    })
 }
 
 /// Encode un arbre `CfgEntry` en fichier T2B binaire — inverse de [`parse_t2b`]. Écrit suite à
@@ -1133,9 +1186,13 @@ pub fn encode_t2b(entries: &[CfgEntry]) -> Vec<u8> {
         for v in variables {
             match v {
                 Value::String(s) => {
-                    let off = if s.is_empty() { -1 } else { intern_value_string(s) };
+                    let off = if s.is_empty() {
+                        -1
+                    } else {
+                        intern_value_string(s)
+                    };
                     body.extend_from_slice(&off.to_le_bytes());
-                },
+                }
                 Value::Int(n) => body.extend_from_slice(&n.to_le_bytes()),
                 Value::Float(f) => body.extend_from_slice(&f.to_le_bytes()),
             }
@@ -1265,25 +1322,38 @@ fn rdbn_column_wire_type(list: &RdbnList, field_index: usize) -> Result<(i16, i3
         }
     }
     fallback.ok_or_else(|| {
-        alloc::format!("liste {:?} : champ {field_index} sans aucune ligne", list.name)
+        alloc::format!(
+            "liste {:?} : champ {field_index} sans aucune ligne",
+            list.name
+        )
     })
 }
 
 fn rdbn_compute_layout(list: &RdbnList) -> Result<RdbnTypeLayout, String> {
     let Some(reference) = list.rows.first() else {
-        return Ok(RdbnTypeLayout { record_size: 0, fields: Vec::new() });
+        return Ok(RdbnTypeLayout {
+            record_size: 0,
+            fields: Vec::new(),
+        });
     };
     let mut offset = 0i32;
     let mut fields = Vec::with_capacity(reference.fields.len());
     for i in 0..reference.fields.len() {
         let (wire_type, size) = rdbn_column_wire_type(list, i)?;
-        fields.push(RdbnFieldLayout { offset, size, wire_type });
+        fields.push(RdbnFieldLayout {
+            offset,
+            size,
+            wire_type,
+        });
         offset += size;
     }
     if offset % 4 != 0 {
         offset += 4 - (offset % 4);
     }
-    Ok(RdbnTypeLayout { record_size: offset, fields })
+    Ok(RdbnTypeLayout {
+        record_size: offset,
+        fields,
+    })
 }
 
 /// Encode la valeur d'un champ RDBN dans `out` (taille exacte = `layout.size`), en sens inverse de
@@ -1306,7 +1376,7 @@ fn rdbn_encode_value(
             for (i, f) in r.iter().enumerate() {
                 out[i * 4..i * 4 + 4].copy_from_slice(&f.to_le_bytes());
             }
-        },
+        }
         RdbnValue::Condition(s) => {
             // Toujours une chaîne résolue avec succès à la lecture (cf. `read_condition_value` :
             // le cas non résoluble produit `RdbnValue::Hash`, jamais `Condition`) — le pool DOIT
@@ -1315,11 +1385,11 @@ fn rdbn_encode_value(
                 alloc::format!("chaîne Condition {s:?} absente du pool interne (bug interne)")
             })?;
             out.copy_from_slice(&(off as u32).to_le_bytes());
-        },
+        }
         RdbnValue::ShortTuple([a, b]) => {
             out[0..2].copy_from_slice(&a.to_le_bytes());
             out[2..4].copy_from_slice(&b.to_le_bytes());
-        },
+        }
         RdbnValue::Blob(b) => out[..b.len()].copy_from_slice(b),
         RdbnValue::Invalid => unreachable!("filtré par rdbn_value_wire avant l'appel"),
     }
@@ -1421,7 +1491,10 @@ pub fn encode_rdbn(lists: &[RdbnList]) -> Result<Vec<u8>, String> {
             }
             field_count = reference.fields.len() as i16;
         }
-        types_info.push(RdbnTypeInfo { field_start, field_count });
+        types_info.push(RdbnTypeInfo {
+            field_start,
+            field_count,
+        });
         layouts.push(layout);
     }
 
@@ -1730,7 +1803,11 @@ pub fn t2b_to_iecode_json(data: &[u8]) -> Option<serde_json::Value> {
 /// module) — à distinguer de [`decode`] plus haut, qui rend la structure BRUTE.
 #[must_use]
 pub fn to_iecode_json(data: &[u8]) -> Option<serde_json::Value> {
-    if is_rdbn(data) { rdbn_to_iecode_json(data) } else { t2b_to_iecode_json(data) }
+    if is_rdbn(data) {
+        rdbn_to_iecode_json(data)
+    } else {
+        t2b_to_iecode_json(data)
+    }
 }
 
 /// Un nœud T2B porte-t-il un sous-arbre ? La réponse est dans son **nom**, pas dans ses enfants.
@@ -1757,7 +1834,7 @@ fn strip_iecode_index(name: &str) -> &str {
     match name.rsplit_once('_') {
         Some((base, index)) if !index.is_empty() && index.bytes().all(|b| b.is_ascii_digit()) => {
             base
-        },
+        }
         _ => name,
     }
 }
@@ -1787,23 +1864,31 @@ fn iecode_json_to_t2b_value(value: &serde_json::Value) -> Result<Value, alloc::s
             .parse::<f32>()
             .map(Value::Float)
             .map_err(|error| alloc::format!("valeur Float invalide {raw:?} : {error}")),
-        other => {
-            Err(alloc::format!("type de variable inconnu : {other:?} (attendu String/Int/Float)"))
-        },
+        other => Err(alloc::format!(
+            "type de variable inconnu : {other:?} (attendu String/Int/Float)"
+        )),
     }
 }
 
 /// Reconstruit un nœud T2B depuis sa forme iecode.
 fn iecode_json_to_t2b_entry(value: &serde_json::Value) -> Result<CfgEntry, alloc::string::String> {
-    let name =
-        value.get("name").and_then(serde_json::Value::as_str).ok_or("nœud sans champ \"name\"")?;
+    let name = value
+        .get("name")
+        .and_then(serde_json::Value::as_str)
+        .ok_or("nœud sans champ \"name\"")?;
     let variables = match value.get("variables").and_then(serde_json::Value::as_array) {
         None => Vec::new(),
-        Some(items) => items.iter().map(iecode_json_to_t2b_value).collect::<Result<Vec<_>, _>>()?,
+        Some(items) => items
+            .iter()
+            .map(iecode_json_to_t2b_value)
+            .collect::<Result<Vec<_>, _>>()?,
     };
     let children = match value.get("children").and_then(serde_json::Value::as_array) {
         None => Vec::new(),
-        Some(items) => items.iter().map(iecode_json_to_t2b_entry).collect::<Result<Vec<_>, _>>()?,
+        Some(items) => items
+            .iter()
+            .map(iecode_json_to_t2b_entry)
+            .collect::<Result<Vec<_>, _>>()?,
     };
     let name = strip_iecode_index(name);
     // Le silence serait pire que l'erreur : `encode_t2b` n'écrit le sous-arbre que des nœuds
@@ -1816,7 +1901,11 @@ fn iecode_json_to_t2b_entry(value: &serde_json::Value) -> Result<CfgEntry, alloc
             children.len()
         ));
     }
-    Ok(CfgEntry { name: alloc::string::String::from(name), variables, children })
+    Ok(CfgEntry {
+        name: alloc::string::String::from(name),
+        variables,
+        children,
+    })
 }
 
 /// Inverse de [`t2b_to_iecode_json`] : reconstruit l'arbre `CfgEntry` depuis la forme iecode
@@ -2003,7 +2092,10 @@ mod tests {
 
     #[test]
     fn rdbn_field_type_inconnu() {
-        assert!(matches!(RdbnFieldType::from_i16(0x7F), RdbnFieldType::Unknown(0x7F)));
+        assert!(matches!(
+            RdbnFieldType::from_i16(0x7F),
+            RdbnFieldType::Unknown(0x7F)
+        ));
     }
 
     // -------------------------------------------------------------------
@@ -2043,8 +2135,14 @@ mod tests {
         // 9 chaînes : 1 type + 7 champs + 1 liste.
         assert_eq!(rdbn.strings.entries.len(), 9);
         // Hashes vérifiés via crc32() : tous présents.
-        assert_eq!(rdbn.strings.resolve(crc32(b"FONT_COLOR")), Some("FONT_COLOR"));
-        assert_eq!(rdbn.strings.resolve(crc32(b"fontColorId")), Some("fontColorId"));
+        assert_eq!(
+            rdbn.strings.resolve(crc32(b"FONT_COLOR")),
+            Some("FONT_COLOR")
+        );
+        assert_eq!(
+            rdbn.strings.resolve(crc32(b"fontColorId")),
+            Some("fontColorId")
+        );
         assert_eq!(rdbn.strings.resolve(crc32(b"red")), Some("red"));
         assert_eq!(
             rdbn.strings.resolve(crc32(b"m_FontColorDataList")),
@@ -2066,12 +2164,17 @@ mod tests {
                 names(&e.children, out);
             }
         }
-        let fx = parse_t2b(include_bytes!("../tests/fixtures/t2b/chr_pbrt1_cutout.fxbin"))
-            .expect("fxbin parse T2B");
+        let fx = parse_t2b(include_bytes!(
+            "../tests/fixtures/t2b/chr_pbrt1_cutout.fxbin"
+        ))
+        .expect("fxbin parse T2B");
         let mut fxn = Vec::new();
         names(&fx.entries, &mut fxn);
         assert!(!fxn.is_empty());
-        assert!(fxn.iter().any(|n| n == "SHADERFX_MEMB_NUM"), "fxbin = FX shader T2B");
+        assert!(
+            fxn.iter().any(|n| n == "SHADERFX_MEMB_NUM"),
+            "fxbin = FX shader T2B"
+        );
         assert!(fxn.iter().any(|n| n == "TEC_BGN"), "technique présente");
 
         let pt = parse_t2b(include_bytes!("../tests/fixtures/t2b/ega0077a.ptlb"))
@@ -2088,15 +2191,24 @@ mod tests {
             .expect("clobin parse T2B");
         let mut cln = Vec::new();
         names(&cl.entries, &mut cln);
-        assert!(cln.iter().any(|n| n == "DA_BONE_LINE_START"), "clobin = bone-line T2B");
+        assert!(
+            cln.iter().any(|n| n == "DA_BONE_LINE_START"),
+            "clobin = bone-line T2B"
+        );
 
         // .linb (effet de ligne/locus) est aussi un T2B → cfgbin le lit.
         let lb =
             parse_t2b(include_bytes!("../tests/fixtures/t2b/sample.linb")).expect("linb parse T2B");
         let mut lbn = Vec::new();
         names(&lb.entries, &mut lbn);
-        assert!(lbn.iter().any(|n| n == "LINE_EFF_NODE_NUM"), "linb = effet de ligne T2B");
-        assert!(lbn.iter().any(|n| n == "LINE_EFF_INFO_BGN"), "linb : table d'infos présente");
+        assert!(
+            lbn.iter().any(|n| n == "LINE_EFF_NODE_NUM"),
+            "linb = effet de ligne T2B"
+        );
+        assert!(
+            lbn.iter().any(|n| n == "LINE_EFF_INFO_BGN"),
+            "linb : table d'infos présente"
+        );
     }
 
     #[cfg(feature = "real-fixtures")]
@@ -2119,7 +2231,15 @@ mod tests {
         let names: Vec<&str> = r0.fields.iter().map(|(n, _)| n.as_str()).collect();
         assert_eq!(
             names,
-            ["fontColorId", "red", "green", "blue", "rubiRed", "rubiGreen", "rubiBlue"]
+            [
+                "fontColorId",
+                "red",
+                "green",
+                "blue",
+                "rubiRed",
+                "rubiGreen",
+                "rubiBlue"
+            ]
         );
 
         // Valeurs golden de la ligne 0, lues @0x1B8 (tracées au xxd) :
@@ -2146,7 +2266,10 @@ mod tests {
             value_offset: 0,
             value_count: 1,
         };
-        assert_eq!(read_field_value(&[1], 0, &f(RdbnFieldType::Bool, 1), 0), RdbnValue::Bool(true));
+        assert_eq!(
+            read_field_value(&[1], 0, &f(RdbnFieldType::Bool, 1), 0),
+            RdbnValue::Bool(true)
+        );
         assert_eq!(
             read_field_value(&[0], 0, &f(RdbnFieldType::Bool, 1), 0),
             RdbnValue::Bool(false)
@@ -2168,7 +2291,12 @@ mod tests {
             RdbnValue::Float(1.5)
         );
         assert_eq!(
-            read_field_value(&0xDEAD_BEEFu32.to_le_bytes(), 0, &f(RdbnFieldType::Hash, 4), 0),
+            read_field_value(
+                &0xDEAD_BEEFu32.to_le_bytes(),
+                0,
+                &f(RdbnFieldType::Hash, 4),
+                0
+            ),
             RdbnValue::Hash(0xDEAD_BEEF)
         );
         // ShortTuple (21) : 2 i16.
@@ -2252,7 +2380,10 @@ mod tests {
             0xb0, 0x5b, 0xef, 0xff, 0x11, 0xf6, 0xf3, 0x46, 0x8f, 0xb9, 0xa1, 0x85, 0xd9, 0x3f,
         ];
         let r = parse_t2b(&data);
-        assert!(r.is_err(), "données chiffrées doivent échouer proprement, got {r:?}");
+        assert!(
+            r.is_err(),
+            "données chiffrées doivent échouer proprement, got {r:?}"
+        );
     }
 
     #[test]
@@ -2282,7 +2413,9 @@ mod tests {
     /// jeu avec le même contenu.
     #[test]
     fn encode_t2b_round_trip_sur_le_vrai_jeu() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip encode_t2b_round_trip_sur_le_vrai_jeu : jeu absent");
@@ -2298,7 +2431,11 @@ mod tests {
                 (p.contains("/gamedata/") || p.contains("/text/")) && p.ends_with(".cfg.bin")
             })
             .collect();
-        assert!(candidates.len() > 100, "attendu > 100 candidats, obtenu {}", candidates.len());
+        assert!(
+            candidates.len() > 100,
+            "attendu > 100 candidats, obtenu {}",
+            candidates.len()
+        );
 
         let step = (candidates.len() / 500).max(1);
         let mut n_t2b = 0usize;
@@ -2322,7 +2459,7 @@ mod tests {
                     } else {
                         failed.push((path.clone(), "arbre différent après round-trip".to_string()));
                     }
-                },
+                }
                 Err(e) => failed.push((path.clone(), alloc::format!("redécodage échoué : {e}"))),
             }
         }
@@ -2360,7 +2497,9 @@ mod tests {
     /// types non dédupliquée), mais un contenu logique STRICTEMENT identique.
     #[test]
     fn encode_rdbn_round_trip_sur_le_vrai_jeu() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip encode_rdbn_round_trip_sur_le_vrai_jeu : jeu absent");
@@ -2376,7 +2515,11 @@ mod tests {
                 (p.contains("/gamedata/") || p.contains("/text/")) && p.ends_with(".cfg.bin")
             })
             .collect();
-        assert!(candidates.len() > 100, "attendu > 100 candidats, obtenu {}", candidates.len());
+        assert!(
+            candidates.len() > 100,
+            "attendu > 100 candidats, obtenu {}",
+            candidates.len()
+        );
 
         // Pas plus fin que le test T2B : le RDBN est nettement plus rare parmi les `.cfg.bin`
         // (constaté : 3 RDBN pour ~500 échantillons au pas `/500`) — `/5000` échantillonne assez
@@ -2406,10 +2549,10 @@ mod tests {
                                 "listes différentes après round-trip".to_string(),
                             ));
                         }
-                    },
+                    }
                     Err(e) => {
                         failed.push((path.clone(), alloc::format!("redécodage échoué : {e}")))
-                    },
+                    }
                 },
                 Err(e) => failed.push((path.clone(), alloc::format!("encode_rdbn échoué : {e}"))),
             }
@@ -2452,9 +2595,12 @@ mod tests {
             }
             !crc
         }
-        for len in [0usize, 1, 7, 8, 15, 16, 31, 32, 33, 63, 64, 127, 255, 1024, 4097] {
-            let data: Vec<u8> =
-                (0..len).map(|i| (i.wrapping_mul(31).wrapping_add(7)) as u8).collect();
+        for len in [
+            0usize, 1, 7, 8, 15, 16, 31, 32, 33, 63, 64, 127, 255, 1024, 4097,
+        ] {
+            let data: Vec<u8> = (0..len)
+                .map(|i| (i.wrapping_mul(31).wrapping_add(7)) as u8)
+                .collect();
             assert_eq!(
                 crc32(&data),
                 table_seule(&data),
@@ -2462,6 +2608,10 @@ mod tests {
             );
         }
         // Et une valeur connue, pour que le test ne se contente pas de comparer deux erreurs.
-        assert_eq!(crc32(b"123456789"), 0xCBF4_3926, "vecteur de reference CRC-32/ISO-HDLC");
+        assert_eq!(
+            crc32(b"123456789"),
+            0xCBF4_3926,
+            "vecteur de reference CRC-32/ISO-HDLC"
+        );
     }
 }

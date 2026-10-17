@@ -58,7 +58,10 @@ pub fn import<R: BufRead>(
 ) -> anyhow::Result<ImportReport> {
     ensure!(
         provenance.sha256.len() == 64
-            && provenance.sha256.bytes().all(|byte| byte.is_ascii_hexdigit()),
+            && provenance
+                .sha256
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit()),
         "source SHA-256 must contain 64 hexadecimal digits"
     );
     let tx = connection.transaction()?;
@@ -115,7 +118,11 @@ pub fn import<R: BufRead>(
                 "empty location identity at row {}",
                 index + 1
             );
-            ensure!(row.n_deps == row.deps.len(), "dependency count mismatch at row {}", index + 1);
+            ensure!(
+                row.n_deps == row.deps.len(),
+                "dependency count mismatch at row {}",
+                index + 1
+            );
             if row.kind == "asset" {
                 ensure!(
                     row.guid.as_ref().is_some_and(|guid| !guid.is_empty()),
@@ -137,7 +144,11 @@ pub fn import<R: BufRead>(
                 line
             ])?;
             for (position, dependency) in row.deps.iter().enumerate() {
-                edge.execute(params![report.indexed_rows as i64, position as i64, dependency])?;
+                edge.execute(params![
+                    report.indexed_rows as i64,
+                    position as i64,
+                    dependency
+                ])?;
                 report.dependency_edges += 1;
             }
         }
@@ -148,7 +159,10 @@ pub fn import<R: BufRead>(
         [],
         |row| row.get::<_, i64>(0).map(|v| v as usize),
     )?;
-    if let Some(totals) = documents.get("catalog-stats").and_then(|doc| doc.get("totals")) {
+    if let Some(totals) = documents
+        .get("catalog-stats")
+        .and_then(|doc| doc.get("totals"))
+    {
         for (name, actual) in [
             ("index_lines_written", report.indexed_rows),
             ("loadable_objects", report.loadable_objects),
@@ -170,7 +184,10 @@ pub fn import<R: BufRead>(
     }
     tx.execute(
         "INSERT INTO nie_cross_import VALUES (1, ?1, ?2)",
-        params![serde_json::to_string(provenance)?, serde_json::to_string(&report)?],
+        params![
+            serde_json::to_string(provenance)?,
+            serde_json::to_string(&report)?
+        ],
     )?;
     tx.commit()?;
     Ok(report)
@@ -229,7 +246,10 @@ pub fn search(connection: &Connection, query: &CatalogQuery) -> anyhow::Result<C
     let q = query.q.as_deref().unwrap_or("").trim().to_lowercase();
     ensure!(q.len() <= 512, "catalogue query exceeds 512 bytes");
     let kind = query.kind.as_deref().unwrap_or("asset");
-    ensure!(matches!(kind, "asset" | "bundle" | "cri"), "invalid location kind");
+    ensure!(
+        matches!(kind, "asset" | "bundle" | "cri"),
+        "invalid location kind"
+    );
     let limit = query.limit.unwrap_or(50).clamp(1, 200);
     let offset = query.offset.unwrap_or(0).min(i64::MAX as usize);
     let filter = " FROM nie_cross_locations WHERE kind = ?1
@@ -244,30 +264,47 @@ pub fn search(connection: &Connection, query: &CatalogQuery) -> anyhow::Result<C
         "SELECT payload{filter} ORDER BY key, asset_type, ordinal LIMIT ?5 OFFSET ?6"
     ))?;
     let rows = statement.query_map(
-        params![kind, q, query.asset_type, query.guid, limit as i64, offset as i64],
+        params![
+            kind,
+            q,
+            query.asset_type,
+            query.guid,
+            limit as i64,
+            offset as i64
+        ],
         |row| row.get::<_, String>(0),
     )?;
     let assets = rows
         .map(|row| Ok(CatalogAsset::from(serde_json::from_str::<Location>(&row?)?)))
         .collect::<anyhow::Result<Vec<_>>>()?;
-    Ok(CatalogPage { assets, total, limit, offset })
+    Ok(CatalogPage {
+        assets,
+        total,
+        limit,
+        offset,
+    })
 }
 
 /// Retrieve one source document (schema, enums, taxonomy or extraction status).
 /// Source documents are administrative and may include original extraction paths.
 pub fn document(connection: &Connection, name: &str) -> anyhow::Result<Option<Value>> {
     let json: Option<String> = connection
-        .query_row("SELECT payload FROM nie_cross_documents WHERE name = ?1", [name], |row| {
-            row.get(0)
-        })
+        .query_row(
+            "SELECT payload FROM nie_cross_documents WHERE name = ?1",
+            [name],
+            |row| row.get(0),
+        )
         .optional()?;
-    json.map(|value| serde_json::from_str(&value).map_err(Into::into)).transpose()
+    json.map(|value| serde_json::from_str(&value).map_err(Into::into))
+        .transpose()
 }
 
 pub fn report(connection: &Connection) -> anyhow::Result<ImportReport> {
-    let json: String =
-        connection
-            .query_row("SELECT report FROM nie_cross_import WHERE id = 1", [], |row| row.get(0))?;
+    let json: String = connection.query_row(
+        "SELECT report FROM nie_cross_import WHERE id = 1",
+        [],
+        |row| row.get(0),
+    )?;
     Ok(serde_json::from_str(&json)?)
 }
 
@@ -279,13 +316,19 @@ pub fn verify_mirror_preserved(
     candidate: &Connection,
 ) -> anyhow::Result<usize> {
     let mut tables = source.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'inagle_%' ORDER BY name")?;
-    let names =
-        tables.query_map([], |row| row.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()?;
+    let names = tables
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
     ensure!(!names.is_empty(), "base mirror has no inagle tables");
     for name in &names {
         let table = format!("\"{}\"", name.replace('"', "\"\""));
-        let columns = source.prepare(&format!("SELECT * FROM {table} LIMIT 0"))?.column_count();
-        let order = (1..=columns).map(|column| column.to_string()).collect::<Vec<_>>().join(",");
+        let columns = source
+            .prepare(&format!("SELECT * FROM {table} LIMIT 0"))?
+            .column_count();
+        let order = (1..=columns)
+            .map(|column| column.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
         let sql = format!("SELECT * FROM {table} ORDER BY {order}");
         let mut original_statement = source.prepare(&sql)?;
         let mut candidate_statement = candidate.prepare(&sql)?;
@@ -305,7 +348,7 @@ pub fn verify_mirror_preserved(
                             "base mirror row changed: {name}"
                         );
                     }
-                },
+                }
                 _ => anyhow::bail!("base mirror row count changed: {name}"),
             }
         }
@@ -330,22 +373,28 @@ pub struct TableSummary {
 pub fn tables(connection: &Connection, query: Option<&str>) -> anyhow::Result<Vec<TableSummary>> {
     let schema = document(connection, "masterdata-schema")?
         .context("Cross masterdata schema is unavailable")?;
-    let schema = schema.as_object().context("Cross schema must be an object")?;
+    let schema = schema
+        .as_object()
+        .context("Cross schema must be an object")?;
     let needle = query.unwrap_or("").trim().to_lowercase();
     ensure!(needle.len() <= 512, "table query exceeds 512 bytes");
     let mut summaries = Vec::new();
     for (name, table) in schema {
         let short = name.rsplit('.').next().unwrap_or(name).to_owned();
-        let file =
-            table.get("file").and_then(Value::as_str).context("schema table filename missing")?;
+        let file = table
+            .get("file")
+            .and_then(Value::as_str)
+            .context("schema table filename missing")?;
         if !needle.is_empty()
             && !short.to_lowercase().contains(&needle)
             && !file.to_lowercase().contains(&needle)
         {
             continue;
         }
-        let columns =
-            table.get("columns").and_then(Value::as_array).context("schema columns missing")?;
+        let columns = table
+            .get("columns")
+            .and_then(Value::as_array)
+            .context("schema columns missing")?;
         summaries.push(TableSummary {
             slug: short.clone(),
             short,
@@ -360,7 +409,10 @@ pub fn tables(connection: &Connection, query: Option<&str>) -> anyhow::Result<Ve
                 .iter()
                 .filter(|column| column.get("kind").and_then(Value::as_str) == Some("enum"))
                 .count(),
-            extends: table.get("extends").and_then(Value::as_str).map(str::to_owned),
+            extends: table
+                .get("extends")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
         });
     }
     summaries.sort_by(|left, right| left.short.cmp(&right.short));
@@ -400,7 +452,10 @@ mod tests {
     );
 
     fn provenance() -> Provenance {
-        Provenance { source: "fixture".into(), sha256: "0".repeat(64) }
+        Provenance {
+            source: "fixture".into(),
+            sha256: "0".repeat(64),
+        }
     }
 
     #[test]
@@ -411,13 +466,23 @@ mod tests {
             connection.execute_batch("CREATE TABLE inagle_fixture(id TEXT, value INTEGER); INSERT INTO inagle_fixture VALUES ('a', 1), ('a', 1), ('b', 2)").unwrap();
         }
         assert_eq!(verify_mirror_preserved(&source, &candidate).unwrap(), 1);
-        candidate.execute("UPDATE inagle_fixture SET id = 'c' WHERE id = 'b'", []).unwrap();
+        candidate
+            .execute("UPDATE inagle_fixture SET id = 'c' WHERE id = 'b'", [])
+            .unwrap();
         assert!(verify_mirror_preserved(&source, &candidate).is_err());
-        candidate.execute("UPDATE inagle_fixture SET id = 'b' WHERE id = 'c'", []).unwrap();
-        candidate.execute("UPDATE inagle_fixture SET value = 3 WHERE id = 'b'", []).unwrap();
+        candidate
+            .execute("UPDATE inagle_fixture SET id = 'b' WHERE id = 'c'", [])
+            .unwrap();
+        candidate
+            .execute("UPDATE inagle_fixture SET value = 3 WHERE id = 'b'", [])
+            .unwrap();
         assert!(verify_mirror_preserved(&source, &candidate).is_err());
-        candidate.execute("UPDATE inagle_fixture SET value = 2 WHERE id = 'b'", []).unwrap();
-        candidate.execute("DELETE FROM inagle_fixture WHERE rowid = 1", []).unwrap();
+        candidate
+            .execute("UPDATE inagle_fixture SET value = 2 WHERE id = 'b'", [])
+            .unwrap();
+        candidate
+            .execute("DELETE FROM inagle_fixture WHERE rowid = 1", [])
+            .unwrap();
         assert!(verify_mirror_preserved(&source, &candidate).is_err());
     }
 
@@ -429,26 +494,46 @@ mod tests {
             serde_json::json!({"Example":{"columns":[{"kind":"ref","ref":"Other"}]}}),
         )]);
         let first = import(&mut db, Cursor::new(INPUT), &docs, &provenance()).unwrap();
-        assert_eq!(import(&mut db, Cursor::new(INPUT), &docs, &provenance()).unwrap(), first);
         assert_eq!(
-            (first.indexed_rows, first.distinct_asset_guids, first.dependency_edges),
+            import(&mut db, Cursor::new(INPUT), &docs, &provenance()).unwrap(),
+            first
+        );
+        assert_eq!(
+            (
+                first.indexed_rows,
+                first.distinct_asset_guids,
+                first.dependency_edges
+            ),
             (3, 1, 2)
         );
         assert_eq!(
             document(&db, "masterdata-schema").unwrap(),
             docs.get("masterdata-schema").cloned()
         );
-        let page =
-            search(&db, &CatalogQuery { guid: Some("same".into()), ..Default::default() }).unwrap();
+        let page = search(
+            &db,
+            &CatalogQuery {
+                guid: Some("same".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(page.total, 2);
         let payload: String = db
-            .query_row("SELECT payload FROM nie_cross_locations WHERE ordinal = 1", [], |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT payload FROM nie_cross_locations WHERE ordinal = 1",
+                [],
+                |row| row.get(0),
+            )
             .unwrap();
         let stored: Location = serde_json::from_str(&payload).unwrap();
         assert_eq!(stored.extra["alt_keys"], serde_json::json!(["remote"]));
-        assert!(serde_json::to_value(&page.assets[0]).unwrap().get("alt_keys").is_none());
+        assert!(
+            serde_json::to_value(&page.assets[0])
+                .unwrap()
+                .get("alt_keys")
+                .is_none()
+        );
         assert!(!first.masterdata_records_available);
     }
 
@@ -510,8 +595,14 @@ mod tests {
     fn search_preserves_literal_filters_and_bounds() {
         let mut db = Connection::open_in_memory().unwrap();
         import(&mut db, Cursor::new(INPUT), &BTreeMap::new(), &provenance()).unwrap();
-        let page =
-            search(&db, &CatalogQuery { q: Some("_%".into()), ..Default::default() }).unwrap();
+        let page = search(
+            &db,
+            &CatalogQuery {
+                q: Some("_%".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(page.total, 0);
         let page = search(
             &db,
@@ -527,8 +618,14 @@ mod tests {
         assert_eq!(page.assets.len(), 1);
         assert_eq!(page.assets[0].asset_type, "Texture2D");
         assert!(
-            search(&db, &CatalogQuery { kind: Some("unknown".into()), ..Default::default() })
-                .is_err()
+            search(
+                &db,
+                &CatalogQuery {
+                    kind: Some("unknown".into()),
+                    ..Default::default()
+                }
+            )
+            .is_err()
         );
     }
 }

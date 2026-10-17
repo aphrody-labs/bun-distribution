@@ -10,15 +10,30 @@ use crate::Session;
 fn three() -> (Session, Vec<ItemId>) {
     let mut s = Session::default();
     s.execute("file.openDemoProject", json!({})).unwrap();
-    let items: Vec<ItemId> = s.project.items.values().filter(|i| i.has_video() && i.has_audio() && i.as_media().is_some()).map(|i| i.id).take(3).collect();
+    let items: Vec<ItemId> = s
+        .project
+        .items
+        .values()
+        .filter(|i| i.has_video() && i.has_audio() && i.as_media().is_some())
+        .map(|i| i.id)
+        .take(3)
+        .collect();
     assert!(items.len() >= 2, "the demo project has media to place");
-    s.execute("file.newSequence", json!({"name": "Back to back", "video": 2, "audio": 2})).unwrap();
+    s.execute(
+        "file.newSequence",
+        json!({"name": "Back to back", "video": 2, "audio": 2}),
+    )
+    .unwrap();
     (s, items)
 }
 
 fn ends(s: &Session) -> Vec<(i64, i64)> {
     let q = s.active_sequence().unwrap();
-    q.video_tracks[0].items.iter().map(|i| (i.start.0, i.end().0)).collect()
+    q.video_tracks[0]
+        .items
+        .iter()
+        .map(|i| (i.start.0, i.end().0))
+        .collect()
 }
 
 /// Dragging several selected items placed them one by one, each one an undo step.
@@ -26,7 +41,12 @@ fn ends(s: &Session) -> Vec<(i64, i64)> {
 fn items_land_back_to_back_in_one_undo_step() {
     let (mut s, items) = three();
     let steps = s.history.undo.len();
-    let r = s.execute("timeline.place", json!({"items": items.iter().map(|i| i.0).collect::<Vec<_>>(), "time": 0})).unwrap();
+    let r = s
+        .execute(
+            "timeline.place",
+            json!({"items": items.iter().map(|i| i.0).collect::<Vec<_>>(), "time": 0}),
+        )
+        .unwrap();
     assert_eq!(r["placed"].as_array().unwrap().len(), items.len());
     let spans = ends(&s);
     assert_eq!(spans.len(), items.len());
@@ -34,8 +54,15 @@ fn items_land_back_to_back_in_one_undo_step() {
     for w in spans.windows(2) {
         assert_eq!(w[0].1, w[1].0, "each item starts where the one before ends");
     }
-    assert_eq!(s.history.undo.len(), steps + 1, "one undo step for all of them");
-    assert_eq!(s.history.undo.last().map(|u| u.0.as_str()), Some("Place Clips"));
+    assert_eq!(
+        s.history.undo.len(),
+        steps + 1,
+        "one undo step for all of them"
+    );
+    assert_eq!(
+        s.history.undo.last().map(|u| u.0.as_str()),
+        Some("Place Clips")
+    );
     s.undo();
     assert!(ends(&s).is_empty(), "one undo takes them all off");
     s.redo();
@@ -48,7 +75,10 @@ fn a_failing_item_places_nothing() {
     let (mut s, items) = three();
     let steps = s.history.undo.len();
     let list = vec![items[0].0, u64::MAX - 1];
-    assert!(s.execute("timeline.place", json!({"items": list, "time": 0})).is_err());
+    assert!(
+        s.execute("timeline.place", json!({"items": list, "time": 0}))
+            .is_err()
+    );
     assert!(ends(&s).is_empty());
     assert_eq!(s.history.undo.len(), steps);
 }
@@ -77,12 +107,19 @@ fn new_sequence_from_items_is_one_undo_step() {
     let (mut s, items) = three();
     let steps = s.history.undo.len();
     let sequences = s.project.sequences().count();
-    s.execute("file.newSequence", json!({"fromItems": items.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    s.execute(
+        "file.newSequence",
+        json!({"fromItems": items.iter().map(|i| i.0).collect::<Vec<_>>()}),
+    )
+    .unwrap();
     assert_eq!(ends(&s).len(), items.len());
     assert_eq!(s.history.undo.len(), steps + 1);
     s.undo();
     assert_eq!(s.project.sequences().count(), sequences);
-    assert!(s.execute("file.newSequence", json!({"fromItems": 3})).is_err());
+    assert!(
+        s.execute("file.newSequence", json!({"fromItems": 3}))
+            .is_err()
+    );
 }
 
 /// Times at the edge of the number range are refused or placed, never a panic, and a refusal
@@ -104,7 +141,10 @@ fn hostile_times_never_panic_and_leave_nothing_half_placed() {
     }
     // zero-length and many items: capped, not unbounded
     let many = vec![items[0].0; 10_001];
-    assert!(s.execute("timeline.place", json!({"items": many, "time": 0})).is_err());
+    assert!(
+        s.execute("timeline.place", json!({"items": many, "time": 0}))
+            .is_err()
+    );
     assert!(ends(&s).is_empty());
 }
 
@@ -115,13 +155,25 @@ fn items_on_a_new_track_share_that_one_track() {
     let tracks = s.active_sequence().unwrap().video_tracks.len();
     let steps = s.history.undo.len();
     let list: Vec<u64> = items.iter().map(|i| i.0).collect();
-    s.execute("timeline.place", json!({"items": list, "track": "new", "time": 0})).unwrap();
+    s.execute(
+        "timeline.place",
+        json!({"items": list, "track": "new", "time": 0}),
+    )
+    .unwrap();
     let q = s.active_sequence().unwrap();
-    assert_eq!(q.video_tracks.len(), tracks + 1, "one new video track, not one per item");
+    assert_eq!(
+        q.video_tracks.len(),
+        tracks + 1,
+        "one new video track, not one per item"
+    );
     assert_eq!(q.video_tracks[tracks].items.len(), items.len());
     assert_eq!(s.history.undo.len(), steps + 1);
     s.undo();
-    assert_eq!(s.active_sequence().unwrap().video_tracks.len(), tracks, "undo removes the track too");
+    assert_eq!(
+        s.active_sequence().unwrap().video_tracks.len(),
+        tracks,
+        "undo removes the track too"
+    );
 }
 
 /// A panic inside a group leaves the project, the history and its limit as they were.

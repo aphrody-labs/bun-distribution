@@ -7,11 +7,11 @@ use crate::{
     component::{Component, ComponentId, Components, Mutable, StorageType},
     entity::{Entity, EntityCloner, EntityClonerBuilder, EntityLocation, OptIn, OptOut},
     event::{EntityComponentsTrigger, EntityEvent},
-    lifecycle::{DespawnEvent, DiscardEvent, RemoveEvent, DESPAWN, DISCARD, REMOVE},
+    lifecycle::{DESPAWN, DISCARD, DespawnEvent, DiscardEvent, REMOVE, RemoveEvent},
     observer::IntoEntityObserver,
     query::{
-        has_conflicts, DebugCheckedUnwrap, QueryAccessError, ReadOnlyQueryData,
-        ReleaseStateQueryData, SingleEntityQueryData,
+        DebugCheckedUnwrap, QueryAccessError, ReadOnlyQueryData, ReleaseStateQueryData,
+        SingleEntityQueryData, has_conflicts,
     },
     relationship::RelationshipHookMode,
     resource::{Resource, ResourceEntities},
@@ -19,14 +19,14 @@ use crate::{
     system::EntityCommands,
     template::{SceneEntityReferences, Template, TemplateContext},
     world::{
-        error::EntityComponentError, unsafe_world_cell::UnsafeEntityCell, ComponentEntry,
-        DynamicComponentFetch, EntityMut, EntityRef, FilteredEntityMut, FilteredEntityRef, Mut,
-        OccupiedComponentEntry, Ref, VacantComponentEntry, World,
+        ComponentEntry, DynamicComponentFetch, EntityMut, EntityRef, FilteredEntityMut,
+        FilteredEntityRef, Mut, OccupiedComponentEntry, Ref, VacantComponentEntry, World,
+        error::EntityComponentError, unsafe_world_cell::UnsafeEntityCell,
     },
 };
 
 use alloc::vec::Vec;
-use bevy_ptr::{move_as_ptr, MovingPtr, OwningPtr};
+use bevy_ptr::{MovingPtr, OwningPtr, move_as_ptr};
 use core::{any::TypeId, marker::PhantomData, mem::MaybeUninit};
 
 /// A mutable reference to a particular [`Entity`], and the entire world.

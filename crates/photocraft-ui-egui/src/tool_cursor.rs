@@ -18,16 +18,31 @@ mod hand;
 /// hardware cursor planes commonly cap cursors at 256 px and fall back to slow software cursors (or
 /// reject them) past that, so stay within it there (#968 used 128). Either way it keeps allocations
 /// bounded for hostile brush sizes or zooms.
-const MAX_SIDE: u16 = if cfg!(any(target_os = "windows", target_os = "macos")) { 2048 } else { 255 };
+const MAX_SIDE: u16 = if cfg!(any(target_os = "windows", target_os = "macos")) {
+    2048
+} else {
+    255
+};
 
 /// What a bitmap cursor shows. `Hand` is the Hand tool's open hand, or its fist while it drags.
 /// `Outline` is a brush tip outline: closed rings of logical-point offsets from the hotspot.
 #[derive(Clone, Debug, PartialEq)]
 enum Shape {
-    Circle { radius: f32, centre: bool },
-    Crosshair { length: f32, gap: f32 },
-    Hand { closed: bool },
-    Outline { rings: Arc<[Vec<Vec2>]>, centre: bool },
+    Circle {
+        radius: f32,
+        centre: bool,
+    },
+    Crosshair {
+        length: f32,
+        gap: f32,
+    },
+    Hand {
+        closed: bool,
+    },
+    Outline {
+        rings: Arc<[Vec<Vec2>]>,
+        centre: bool,
+    },
 }
 
 #[derive(Clone)]
@@ -73,8 +88,20 @@ pub(crate) fn crosshair(painter: &Painter, at: Pos2, length: f32, gap: f32) -> C
     show(painter, at, Shape::Crosshair { length, gap })
 }
 
-pub(crate) fn outline(painter: &Painter, at: Pos2, rings: Vec<Vec<Vec2>>, centre: bool) -> CursorIcon {
-    show(painter, at, Shape::Outline { rings: rings.into(), centre })
+pub(crate) fn outline(
+    painter: &Painter,
+    at: Pos2,
+    rings: Vec<Vec<Vec2>>,
+    centre: bool,
+) -> CursorIcon {
+    show(
+        painter,
+        at,
+        Shape::Outline {
+            rings: rings.into(),
+            centre,
+        },
+    )
 }
 
 /// The Pen's pointer over the anchor a click would close the path on (#4596): the centre cross
@@ -84,7 +111,10 @@ pub(crate) fn close_path(painter: &Painter, at: Pos2) -> CursorIcon {
 }
 
 fn close_ring() -> Vec<Vec2> {
-    (0..16).map(|i| (i as f32 / 16.0 * std::f32::consts::TAU, vec2(9.0, 9.0))).map(|(a, c)| c + vec2(a.cos(), a.sin()) * 3.5).collect()
+    (0..16)
+        .map(|i| (i as f32 / 16.0 * std::f32::consts::TAU, vec2(9.0, 9.0)))
+        .map(|(a, c)| c + vec2(a.cos(), a.sin()) * 3.5)
+        .collect()
 }
 
 /// Can this pass show an OS cursor bitmap? eframe's immediate viewports and its web integration
@@ -98,14 +128,22 @@ fn native(ctx: &egui::Context) -> bool {
 /// a second time on Retina displays); Windows, X11 and Wayland take physical pixels. (The macOS
 /// sizing is from @jerrykimo's #968.)
 pub(crate) fn native_scale(ctx: &egui::Context) -> f32 {
-    if cfg!(target_os = "macos") { ctx.zoom_factor() } else { ctx.pixels_per_point() }
+    if cfg!(target_os = "macos") {
+        ctx.zoom_factor()
+    } else {
+        ctx.pixels_per_point()
+    }
 }
 
 /// The Hand tool's pointer: an open hand, a fist while it drags (`closed`). winit maps `Grab` and
 /// `Grabbing` to the four-arrow move cursor on Windows, so there it is a bitmap; macOS and the
 /// Linux themes already draw hands, and the OS moves those without waiting for a frame.
 pub(crate) fn hand(ctx: &egui::Context, closed: bool) -> CursorIcon {
-    hand_with(ctx, closed, cfg!(target_os = "windows") && ctx.viewport_id() == egui::ViewportId::ROOT)
+    hand_with(
+        ctx,
+        closed,
+        cfg!(target_os = "windows") && ctx.viewport_id() == egui::ViewportId::ROOT,
+    )
 }
 
 fn hand_with(ctx: &egui::Context, closed: bool, bitmap: bool) -> CursorIcon {
@@ -113,7 +151,11 @@ fn hand_with(ctx: &egui::Context, closed: bool, bitmap: bool) -> CursorIcon {
         ctx.set_cursor_image(Some(image));
         return CursorIcon::None;
     }
-    if closed { CursorIcon::Grabbing } else { CursorIcon::Grab }
+    if closed {
+        CursorIcon::Grabbing
+    } else {
+        CursorIcon::Grab
+    }
 }
 
 fn show(painter: &Painter, at: Pos2, shape: Shape) -> CursorIcon {
@@ -128,7 +170,14 @@ fn show(painter: &Painter, at: Pos2, shape: Shape) -> CursorIcon {
         // An enormous tip cannot fit an OS cursor. Preserve its full-size outline, with an OS
         // crosshair at the hotspot so the user still gets immediate position feedback.
         paint(painter, at, &shape);
-        if let Some(image) = cached_image(ctx, &Shape::Crosshair { length: 6.0, gap: 2.0 }, scale) {
+        if let Some(image) = cached_image(
+            ctx,
+            &Shape::Crosshair {
+                length: 6.0,
+                gap: 2.0,
+            },
+            scale,
+        ) {
             ctx.set_cursor_image(Some(image));
         }
         return CursorIcon::None;
@@ -146,7 +195,16 @@ fn cached_image(ctx: &egui::Context, shape: &Shape, scale: f32) -> Option<Custom
         return Some(cached.image);
     }
     let image = rasterize(shape, scale)?;
-    ctx.data_mut(|d| d.insert_temp(id, Cached { shape: shape.clone(), scale, image: image.clone() }));
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            id,
+            Cached {
+                shape: shape.clone(),
+                scale,
+                image: image.clone(),
+            },
+        )
+    });
     Some(image)
 }
 
@@ -168,7 +226,10 @@ fn paint(painter: &Painter, at: Pos2, shape: &Shape) {
             Shape::Outline { rings, centre } => {
                 for ring in rings.iter() {
                     if ring.len() >= 2 {
-                        painter.add(egui::Shape::closed_line(ring.iter().map(|v| at + *v).collect(), stroke));
+                        painter.add(egui::Shape::closed_line(
+                            ring.iter().map(|v| at + *v).collect(),
+                            stroke,
+                        ));
                     }
                 }
                 if *centre {
@@ -182,7 +243,12 @@ fn paint(painter: &Painter, at: Pos2, shape: &Shape) {
 }
 
 fn paint_crosshair(painter: &Painter, at: Pos2, length: f32, gap: f32, stroke: Stroke) {
-    for d in [vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, -1.0)] {
+    for d in [
+        vec2(1.0, 0.0),
+        vec2(-1.0, 0.0),
+        vec2(0.0, 1.0),
+        vec2(0.0, -1.0),
+    ] {
         painter.line_segment([at + d * gap, at + d * length], stroke);
     }
 }
@@ -230,7 +296,8 @@ fn extent(shape: &Shape) -> Option<f32> {
 /// Distance from (`x`, `y`) to the segment `a`-`b`, all in the same units.
 fn seg_distance(x: f32, y: f32, a: Vec2, b: Vec2) -> f32 {
     let (abx, aby) = (b.x - a.x, b.y - a.y);
-    let t = (((x - a.x) * abx + (y - a.y) * aby) / (abx * abx + aby * aby).max(1e-12)).clamp(0.0, 1.0);
+    let t =
+        (((x - a.x) * abx + (y - a.y) * aby) / (abx * abx + aby * aby).max(1e-12)).clamp(0.0, 1.0);
     ((x - a.x - abx * t).powi(2) + (y - a.y - aby * t).powi(2)).sqrt()
 }
 
@@ -242,10 +309,16 @@ fn coverage(shape: &Shape, dx: f32, dy: f32, scale: f32) -> (f32, f32) {
     match shape {
         Shape::Circle { radius, centre } => {
             let ring = (x.hypot(y) - radius * scale).abs();
-            let distance = if *centre { ring.min(cross_distance(x, y, 3.0 * scale, 0.0)) } else { ring };
+            let distance = if *centre {
+                ring.min(cross_distance(x, y, 3.0 * scale, 0.0))
+            } else {
+                ring
+            };
             stroke_coverage(distance, scale)
         }
-        Shape::Crosshair { length, gap } => stroke_coverage(cross_distance(x, y, length * scale, gap * scale), scale),
+        Shape::Crosshair { length, gap } => {
+            stroke_coverage(cross_distance(x, y, length * scale, gap * scale), scale)
+        }
         Shape::Outline { rings, centre } => {
             let (lx, ly) = (dx / scale, dy / scale);
             let mut distance = f32::INFINITY;
@@ -268,7 +341,8 @@ fn coverage(shape: &Shape, dx: f32, dy: f32, scale: f32) -> (f32, f32) {
             let edge = hand::shape(*closed, lx, ly) * scale;
             let inside = (0.5 - edge).clamp(0.0, 1.0);
             let outline = (scale + 0.5 - edge).clamp(0.0, 1.0);
-            let crease = (0.45 * scale + 0.5 - hand::crease(*closed, lx, ly) * scale).clamp(0.0, 1.0);
+            let crease =
+                (0.45 * scale + 0.5 - hand::crease(*closed, lx, ly) * scale).clamp(0.0, 1.0);
             (inside * (1.0 - crease), outline.max(inside * crease))
         }
     }
@@ -276,7 +350,10 @@ fn coverage(shape: &Shape, dx: f32, dy: f32, scale: f32) -> (f32, f32) {
 
 /// A 1 px light line with a 1 px dark one on each side, `distance` physical pixels from its centre.
 fn stroke_coverage(distance: f32, scale: f32) -> (f32, f32) {
-    ((0.5 * scale + 0.5 - distance).clamp(0.0, 1.0), (1.5 * scale + 0.5 - distance).clamp(0.0, 1.0))
+    (
+        (0.5 * scale + 0.5 - distance).clamp(0.0, 1.0),
+        (1.5 * scale + 0.5 - distance).clamp(0.0, 1.0),
+    )
 }
 
 /// Splat the distance to one ring segment into an outline's side × side distance buffer.
@@ -326,7 +403,11 @@ fn stroke_pixel((fill, outline): (f32, f32), dark: egui::Color32, light: egui::C
     let a_dark = outline * f32::from(dark.a()) / 255.0;
     let a_light = fill * f32::from(light.a()) / 255.0;
     let alpha = a_light + a_dark * (1.0 - a_light);
-    let white = if alpha > 0.0 { (255.0 * a_light / alpha).round() as u8 } else { 0 };
+    let white = if alpha > 0.0 {
+        (255.0 * a_light / alpha).round() as u8
+    } else {
+        0
+    };
     [white, white, white, (255.0 * alpha).round() as u8]
 }
 
@@ -339,7 +420,11 @@ fn ring_spans(dy: f32, r: f32, reach: f32) -> Option<[(f32, f32); 2]> {
         return None;
     }
     let xo = (ro * ro - dy * dy).max(0.0).sqrt();
-    let xi = if dy.abs() < ri { (ri * ri - dy * dy).sqrt() } else { 0.0 };
+    let xi = if dy.abs() < ri {
+        (ri * ri - dy * dy).sqrt()
+    } else {
+        0.0
+    };
     Some([(-xo, -xi), (xi, xo)])
 }
 
@@ -356,7 +441,9 @@ fn rasterize(shape: &Shape, scale: f32) -> Option<CustomCursorImage> {
     }
     let hot = half as u16;
     let side = hot * 2 + 1;
-    let bytes = usize::from(side).checked_mul(usize::from(side))?.checked_mul(4)?;
+    let bytes = usize::from(side)
+        .checked_mul(usize::from(side))?
+        .checked_mul(4)?;
     // Transparent to start; only pixels a shape can reach are evaluated below (a big tip's
     // outline is a thin ring in a large square, #1343).
     let mut rgba = vec![0u8; bytes];
@@ -364,7 +451,11 @@ fn rasterize(shape: &Shape, scale: f32) -> Option<CustomCursorImage> {
     let n = usize::from(side);
     let hotf = f32::from(hot);
     let mut put = |col: usize, row: usize, cov: (f32, f32)| {
-        if let Some(px) = row.checked_mul(n).and_then(|i| i.checked_add(col)).and_then(|i| rgba.get_mut(i * 4..i * 4 + 4)) {
+        if let Some(px) = row
+            .checked_mul(n)
+            .and_then(|i| i.checked_add(col))
+            .and_then(|i| rgba.get_mut(i * 4..i * 4 + 4))
+        {
             px.copy_from_slice(&stroke_pixel(cov, dark, light));
         }
     };
@@ -379,7 +470,14 @@ fn rasterize(shape: &Shape, scale: f32) -> Option<CustomCursorImage> {
                 continue;
             }
             for (i, &a) in ring.iter().enumerate() {
-                splat_segment(&mut dist, n, hotf, a * scale, ring[(i + 1) % len] * scale, reach);
+                splat_segment(
+                    &mut dist,
+                    n,
+                    hotf,
+                    a * scale,
+                    ring[(i + 1) % len] * scale,
+                    reach,
+                );
             }
         }
         if *centre {
@@ -390,7 +488,11 @@ fn rasterize(shape: &Shape, scale: f32) -> Option<CustomCursorImage> {
                 put(i % n, i / n, stroke_coverage(d, scale));
             }
         }
-        return Some(CustomCursorImage { rgba: Arc::from(rgba), size: [side, side], hotspot: [hot, hot] });
+        return Some(CustomCursorImage {
+            rgba: Arc::from(rgba),
+            size: [side, side],
+            hotspot: [hot, hot],
+        });
     }
     // Columns to evaluate in each row: the ring's two arcs (and the centre mark) for a circle,
     // the whole row otherwise.
@@ -411,13 +513,20 @@ fn rasterize(shape: &Shape, scale: f32) -> Option<CustomCursorImage> {
             spans[0] = Some((-hotf, hotf));
         }
         for (a, b) in spans.into_iter().flatten() {
-            let (c0, c1) = ((hotf + a).floor().clamp(0.0, last) as usize, (hotf + b).ceil().clamp(0.0, last) as usize);
+            let (c0, c1) = (
+                (hotf + a).floor().clamp(0.0, last) as usize,
+                (hotf + b).ceil().clamp(0.0, last) as usize,
+            );
             for col in c0..=c1 {
                 put(col, row, coverage(shape, col as f32 - hotf, dy, scale));
             }
         }
     }
-    Some(CustomCursorImage { rgba: Arc::from(rgba), size: [side, side], hotspot: [hot, hot] })
+    Some(CustomCursorImage {
+        rgba: Arc::from(rgba),
+        size: [side, side],
+        hotspot: [hot, hot],
+    })
 }
 
 #[cfg(test)]

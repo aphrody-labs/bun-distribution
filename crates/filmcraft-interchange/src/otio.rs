@@ -15,15 +15,17 @@ use std::collections::HashMap;
 
 use filmcraft_media::{Generator, MediaInfo};
 use filmcraft_project::{
-    ClipId, EffectInstance, ItemId, ItemKind, Label, Marker, MarkerId, MarkerKind, MediaRef, ParamValue, Project, Sequence, SequenceSettings, Track, TrackItem,
-    TrackKind, Transition, TransitionAlign, TransitionId,
+    ClipId, EffectInstance, ItemId, ItemKind, Label, Marker, MarkerId, MarkerKind, MediaRef,
+    ParamValue, Project, Sequence, SequenceSettings, Track, TrackItem, TrackKind, Transition,
+    TransitionAlign, TransitionId,
 };
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick};
 use serde_json::{Value, json};
 
 use crate::common::{
-    Builder, MediaSpec, base_item, empty_sequence, file_name, generator_of, item_media, path_to_file_url, rate_from_f64, relative_path, resolve_path,
-    settings_for, transition_effect, transition_name,
+    Builder, MediaSpec, base_item, empty_sequence, file_name, generator_of, item_media,
+    path_to_file_url, rate_from_f64, relative_path, resolve_path, settings_for, transition_effect,
+    transition_name,
 };
 use crate::{Error, ExportOptions, Format, ImportOptions, Imported, Report, Result};
 
@@ -33,7 +35,11 @@ use crate::{Error, ExportOptions, Format, ImportOptions, Imported, Report, Resul
 
 fn rt(t: Tick, rate: FrameRate) -> Value {
     let f = rate.frame_at(t);
-    let value = if rate.tick_of(f) == t { json!(f as f64) } else { json!(t.0 as f64 * rate.num as f64 / (rate.den as f64 * TICKS_PER_SECOND as f64)) };
+    let value = if rate.tick_of(f) == t {
+        json!(f as f64)
+    } else {
+        json!(t.0 as f64 * rate.num as f64 / (rate.den as f64 * TICKS_PER_SECOND as f64))
+    };
     json!({"OTIO_SCHEMA": "RationalTime.1", "rate": rate.as_f64(), "value": value})
 }
 
@@ -49,7 +55,9 @@ fn read_rt(v: &Value) -> Option<Tick> {
     if value == value.round() && value.abs() < 9e15 {
         return Some(Tick::from_rational(value as i64, r.den, r.num));
     }
-    Some(Tick((value * TICKS_PER_SECOND as f64 * r.den as f64 / r.num as f64).round() as i64))
+    Some(Tick(
+        (value * TICKS_PER_SECOND as f64 * r.den as f64 / r.num as f64).round() as i64,
+    ))
 }
 
 fn read_rate(v: &Value) -> Option<FrameRate> {
@@ -76,7 +84,10 @@ fn fc(v: &Value) -> Option<&Value> {
 }
 
 fn name_of(v: &Value) -> String {
-    v.get("name").and_then(Value::as_str).unwrap_or("").to_string()
+    v.get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string()
 }
 
 fn color_name(l: Label) -> &'static str {
@@ -120,11 +131,24 @@ struct Exp<'a, 'r> {
     stack: Vec<ItemId>,
 }
 
-pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: &mut Report) -> Result<String> {
+pub(crate) fn export(
+    p: &Project,
+    seq_id: ItemId,
+    opts: &ExportOptions,
+    report: &mut Report,
+) -> Result<String> {
     let seq = p.sequence(seq_id).ok_or(Error::NoSequence(seq_id))?;
     let rate = seq.settings.frame_rate;
-    let mut x = Exp { p, opts, report, stack: vec![seq_id] };
-    let name = opts.name.clone().unwrap_or_else(|| p.item(seq_id).map(|i| i.name.clone()).unwrap_or_default());
+    let mut x = Exp {
+        p,
+        opts,
+        report,
+        stack: vec![seq_id],
+    };
+    let name = opts
+        .name
+        .clone()
+        .unwrap_or_else(|| p.item(seq_id).map(|i| i.name.clone()).unwrap_or_default());
     let stack = x.stack_json(seq_id, &name, None);
     let tl = json!({
         "OTIO_SCHEMA": "Timeline.1",
@@ -138,7 +162,9 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
 
 impl Exp<'_, '_> {
     fn seq_meta(&self, id: ItemId) -> Value {
-        let Some((it, s)) = self.p.item(id).and_then(|it| Some((it, it.as_sequence()?))) else { return json!({}) };
+        let Some((it, s)) = self.p.item(id).and_then(|it| Some((it, it.as_sequence()?))) else {
+            return json!({});
+        };
         json!({
             "item": id.0,
             "label": it.label,
@@ -150,7 +176,12 @@ impl Exp<'_, '_> {
     }
 
     /// The `Stack` for a sequence; `range` = (source in, duration) when nested in a track.
-    fn stack_json(&mut self, id: ItemId, name: &str, range: Option<(Tick, Tick, FrameRate)>) -> Value {
+    fn stack_json(
+        &mut self,
+        id: ItemId,
+        name: &str,
+        range: Option<(Tick, Tick, FrameRate)>,
+    ) -> Value {
         let Some(seq) = self.p.sequence(id) else {
             self.report.warn("missing nested sequence skipped");
             return json!({"OTIO_SCHEMA": "Stack.1", "name": name, "children": [], "effects": [], "markers": [], "enabled": true, "metadata": {}});
@@ -187,7 +218,11 @@ impl Exp<'_, '_> {
                 children.push(self.transition_json(x, it.start, rate));
             }
             children.push(self.item_json(it, kind, rate));
-            for x in t.transitions.iter().filter(|x| x.from == Some(it.id) && x.to.is_none()) {
+            for x in t
+                .transitions
+                .iter()
+                .filter(|x| x.from == Some(it.id) && x.to.is_none())
+            {
                 children.push(self.transition_json(x, it.end(), rate));
             }
             pos = it.end();
@@ -209,7 +244,10 @@ impl Exp<'_, '_> {
     }
 
     fn transition_json(&mut self, x: &Transition, cut: Tick, rate: FrameRate) -> Value {
-        let dissolve = matches!(x.effect.effect.as_str(), "cross_dissolve" | "constant_power" | "constant_gain" | "film_dissolve");
+        let dissolve = matches!(
+            x.effect.effect.as_str(),
+            "cross_dissolve" | "constant_power" | "constant_gain" | "film_dissolve"
+        );
         json!({
             "OTIO_SCHEMA": "Transition.1",
             "name": transition_name(&x.effect),
@@ -221,11 +259,22 @@ impl Exp<'_, '_> {
     }
 
     fn media_ref(&mut self, item: ItemId, rate: FrameRate) -> Value {
-        let name = self.p.item(item).map(|i| i.name.clone()).unwrap_or_default();
+        let name = self
+            .p
+            .item(item)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
         let Some(m) = item_media(self.p, item) else {
             return json!({"OTIO_SCHEMA": "MissingReference.1", "name": name, "available_range": null, "metadata": {}});
         };
-        let avail = tr(m.info.start_timecode.map(|f| m.frame_rate().tick_of(f)).unwrap_or(Tick::ZERO), m.info.duration, rate);
+        let avail = tr(
+            m.info
+                .start_timecode
+                .map(|f| m.frame_rate().tick_of(f))
+                .unwrap_or(Tick::ZERO),
+            m.info.duration,
+            rate,
+        );
         let meta = json!({"filmcraft": {"item": item.0, "label": self.p.item(item).map(|i| i.label), "info": m.info, "offline": m.offline}});
         match &m.media {
             MediaRef::Generator(g) => json!({
@@ -264,7 +313,10 @@ impl Exp<'_, '_> {
         }});
         let markers: Vec<Value> = it.markers.iter().map(|m| marker_json(m, rate)).collect();
         let _ = kind;
-        if matches!(self.p.item(base).map(|i| &i.kind), Some(ItemKind::Sequence(_))) {
+        if matches!(
+            self.p.item(base).map(|i| &i.kind),
+            Some(ItemKind::Sequence(_))
+        ) {
             if self.stack.contains(&base) {
                 self.report.warn("recursive nested sequence skipped");
                 return json!({"OTIO_SCHEMA": "Gap.1", "name": "", "source_range": tr(Tick::ZERO, it.duration, rate), "effects": [], "markers": [], "enabled": true, "metadata": {}});
@@ -286,8 +338,22 @@ impl Exp<'_, '_> {
         }
         let mref = self.media_ref(base, rate);
         // OTIO source times are in the reference's time (which starts at its available_range start).
-        let origin = item_media(self.p, base).and_then(|m| m.info.start_timecode.map(|f| m.frame_rate().tick_of(f))).unwrap_or(Tick::ZERO);
-        let markers: Vec<Value> = it.markers.iter().map(|m| marker_json(&Marker { start: m.start + origin, ..m.clone() }, rate)).collect();
+        let origin = item_media(self.p, base)
+            .and_then(|m| m.info.start_timecode.map(|f| m.frame_rate().tick_of(f)))
+            .unwrap_or(Tick::ZERO);
+        let markers: Vec<Value> = it
+            .markers
+            .iter()
+            .map(|m| {
+                marker_json(
+                    &Marker {
+                        start: m.start + origin,
+                        ..m.clone()
+                    },
+                    rate,
+                )
+            })
+            .collect();
         json!({
             "OTIO_SCHEMA": "Clip.2",
             "name": it.name,
@@ -303,7 +369,11 @@ impl Exp<'_, '_> {
 }
 
 fn abs_url(path: &str) -> String {
-    if crate::common::is_absolute(path) { path_to_file_url(path, false) } else { path.to_string() }
+    if crate::common::is_absolute(path) {
+        path_to_file_url(path, false)
+    } else {
+        path.to_string()
+    }
 }
 
 fn marker_json(m: &Marker, rate: FrameRate) -> Value {
@@ -372,13 +442,23 @@ struct Imp<'a, 'r> {
 }
 
 pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> Result<Imported> {
-    let v: Value = serde_json::from_str(text).map_err(|e| Error::parse(Format::Otio, e.to_string()))?;
+    let v: Value =
+        serde_json::from_str(text).map_err(|e| Error::parse(Format::Otio, e.to_string()))?;
     let mut timelines = Vec::new();
     collect_timelines(&v, &mut timelines);
     if timelines.is_empty() {
-        return Err(Error::parse(Format::Otio, format!("no Timeline in a {} document", schema(&v))));
+        return Err(Error::parse(
+            Format::Otio,
+            format!("no Timeline in a {} document", schema(&v)),
+        ));
     }
-    let mut imp = Imp { b: Builder::new(&name_of(&v)), opts, report, links: HashMap::new(), groups: HashMap::new() };
+    let mut imp = Imp {
+        b: Builder::new(&name_of(&v)),
+        opts,
+        report,
+        links: HashMap::new(),
+        groups: HashMap::new(),
+    };
     if imp.b.p.name.is_empty() {
         imp.b.p.name = "Imported OTIO".into();
     }
@@ -393,7 +473,12 @@ fn collect_timelines<'v>(v: &'v Value, out: &mut Vec<&'v Value>) {
     match schema_name(v) {
         "Timeline" | "Stack" => out.push(v),
         "SerializableCollection" => {
-            for c in v.get("children").and_then(Value::as_array).into_iter().flatten() {
+            for c in v
+                .get("children")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+            {
                 collect_timelines(c, out);
             }
         }
@@ -406,13 +491,21 @@ fn first_rate(v: &Value) -> Option<FrameRate> {
     if let Some(sr) = v.get("source_range").filter(|s| !s.is_null()) {
         return sr.get("duration").and_then(read_rate);
     }
-    v.get("children").and_then(Value::as_array).into_iter().flatten().find_map(first_rate)
+    v.get("children")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .find_map(first_rate)
 }
 
 impl Imp<'_, '_> {
     fn timeline(&mut self, tl: &Value) -> ItemId {
         let name = name_of(tl);
-        let name = if name.is_empty() { self.opts.name.clone().unwrap_or_else(|| "Timeline".into()) } else { name };
+        let name = if name.is_empty() {
+            self.opts.name.clone().unwrap_or_else(|| "Timeline".into())
+        } else {
+            name
+        };
         let stack_owned;
         let stack = match schema_name(tl) {
             "Timeline" => tl.get("tracks").unwrap_or(&Value::Null),
@@ -423,7 +516,11 @@ impl Imp<'_, '_> {
             _ => tl,
         };
         let meta = fc(tl).or_else(|| fc(stack));
-        let rate = tl.get("global_start_time").and_then(read_rate).or_else(|| first_rate(stack)).unwrap_or_default();
+        let rate = tl
+            .get("global_start_time")
+            .and_then(read_rate)
+            .or_else(|| first_rate(stack))
+            .unwrap_or_default();
         let id = self.sequence(stack, &name, meta, rate);
         if let Some(st) = tl.get("global_start_time").and_then(read_rt)
             && let Some(s) = self.b.p.sequence_mut(id)
@@ -433,11 +530,21 @@ impl Imp<'_, '_> {
         id
     }
 
-    fn sequence(&mut self, stack: &Value, name: &str, meta: Option<&Value>, rate: FrameRate) -> ItemId {
-        let settings: SequenceSettings =
-            meta.and_then(|m| m.get("settings")).and_then(|s| serde_json::from_value(s.clone()).ok()).unwrap_or_else(|| settings_for(rate, 1920, 1080, false));
+    fn sequence(
+        &mut self,
+        stack: &Value,
+        name: &str,
+        meta: Option<&Value>,
+        rate: FrameRate,
+    ) -> ItemId {
+        let settings: SequenceSettings = meta
+            .and_then(|m| m.get("settings"))
+            .and_then(|s| serde_json::from_value(s.clone()).ok())
+            .unwrap_or_else(|| settings_for(rate, 1920, 1080, false));
         let id = self.b.reserve_sequence(name, settings.clone(), None);
-        if let Some(l) = meta.and_then(|m| m.get("label")).and_then(|l| serde_json::from_value::<Label>(l.clone()).ok())
+        if let Some(l) = meta
+            .and_then(|m| m.get("label"))
+            .and_then(|l| serde_json::from_value::<Label>(l.clone()).ok())
             && let Some(it) = self.b.p.item_mut(id)
         {
             it.label = l;
@@ -445,17 +552,31 @@ impl Imp<'_, '_> {
         let mut seq = empty_sequence(settings);
         if let Some(m) = meta {
             seq.start_timecode = m.get("start_timecode").and_then(Value::as_i64).unwrap_or(0);
-            seq.master_volume_db = m.get("master_volume_db").and_then(Value::as_f64).unwrap_or(0.0);
+            seq.master_volume_db = m
+                .get("master_volume_db")
+                .and_then(Value::as_f64)
+                .unwrap_or(0.0);
             seq.master_effects = effects_from(m.get("master_effects")).unwrap_or_default();
         }
         seq.markers = self.markers(stack);
-        for t in stack.get("children").and_then(Value::as_array).into_iter().flatten() {
+        for t in stack
+            .get("children")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
             match schema_name(t) {
                 "Track" => {
-                    let kind = if t.get("kind").and_then(Value::as_str) == Some("Audio") { TrackKind::Audio } else { TrackKind::Video };
+                    let kind = if t.get("kind").and_then(Value::as_str) == Some("Audio") {
+                        TrackKind::Audio
+                    } else {
+                        TrackKind::Video
+                    };
                     self.track(&mut seq, t, kind);
                 }
-                other => self.report.warn(format!("OTIO {other} directly in a stack is not supported")),
+                other => self
+                    .report
+                    .warn(format!("OTIO {other} directly in a stack is not supported")),
             }
         }
         self.b.ensure_tracks(&mut seq, TrackKind::Video, 1);
@@ -480,12 +601,18 @@ impl Imp<'_, '_> {
             track.solo = g("solo").unwrap_or(false);
             track.volume_db = m.get("volume_db").and_then(Value::as_f64).unwrap_or(0.0);
             track.pan = m.get("pan").and_then(Value::as_f64).unwrap_or(0.0);
-            if let Some(c) = m.get("channels").and_then(|c| serde_json::from_value(c.clone()).ok()) {
+            if let Some(c) = m
+                .get("channels")
+                .and_then(|c| serde_json::from_value(c.clone()).ok())
+            {
                 track.channels = c;
             }
             track.effects = effects_from(m.get("effects")).unwrap_or_default();
         }
-        if t.get("markers").and_then(Value::as_array).is_some_and(|m| !m.is_empty()) {
+        if t.get("markers")
+            .and_then(Value::as_array)
+            .is_some_and(|m| !m.is_empty())
+        {
             let ms = self.markers(t);
             seq.markers.extend(ms);
             seq.markers.sort_by_key(|m| m.start);
@@ -494,7 +621,11 @@ impl Imp<'_, '_> {
         let mut slots: Vec<(Option<ClipId>, Tick, Tick)> = Vec::new();
         let mut pending: Vec<(usize, &Value)> = Vec::new();
         let mut pos = Tick::ZERO;
-        let kids = t.get("children").and_then(Value::as_array).cloned().unwrap_or_default();
+        let kids = t
+            .get("children")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
         for c in &kids {
             match schema_name(c) {
                 "Transition" => {
@@ -502,12 +633,20 @@ impl Imp<'_, '_> {
                     continue;
                 }
                 "Gap" => {
-                    let d = c.get("source_range").and_then(read_tr).map(|r| r.1).unwrap_or(Tick::ZERO);
+                    let d = c
+                        .get("source_range")
+                        .and_then(read_tr)
+                        .map(|r| r.1)
+                        .unwrap_or(Tick::ZERO);
                     slots.push((None, pos, pos + d));
                     pos += d;
                 }
                 "Clip" | "Stack" => {
-                    let item = if schema_name(c) == "Clip" { self.clip(c, kind, pos) } else { self.nested(c, kind, pos) };
+                    let item = if schema_name(c) == "Clip" {
+                        self.clip(c, kind, pos)
+                    } else {
+                        self.nested(c, kind, pos)
+                    };
                     match item {
                         Some(ti) => {
                             let (s, e, id) = (ti.start, ti.end(), ti.id);
@@ -516,19 +655,29 @@ impl Imp<'_, '_> {
                             pos = e;
                         }
                         None => {
-                            let d = c.get("source_range").and_then(read_tr).map(|r| r.1).unwrap_or(Tick::ZERO);
+                            let d = c
+                                .get("source_range")
+                                .and_then(read_tr)
+                                .map(|r| r.1)
+                                .unwrap_or(Tick::ZERO);
                             slots.push((None, pos, pos + d));
                             pos += d;
                         }
                     }
                 }
                 other => {
-                    self.report.warn(format!("OTIO {other} items are not supported and were skipped"));
+                    self.report.warn(format!(
+                        "OTIO {other} items are not supported and were skipped"
+                    ));
                 }
             }
         }
         for (slot, c) in pending {
-            let cut = if slot < slots.len() { slots[slot].1 } else { pos };
+            let cut = if slot < slots.len() {
+                slots[slot].1
+            } else {
+                pos
+            };
             let from = slot.checked_sub(1).and_then(|i| slots[i].0);
             let to = slots.get(slot).and_then(|s| s.0);
             if from.is_none() && to.is_none() {
@@ -537,23 +686,49 @@ impl Imp<'_, '_> {
             let inn = c.get("in_offset").and_then(read_rt).unwrap_or(Tick::ZERO);
             let out = c.get("out_offset").and_then(read_rt).unwrap_or(Tick::ZERO);
             let meta = fc(c);
-            let effect: EffectInstance = match meta.and_then(|m| m.get("effect")).and_then(|e| effects_from(Some(&json!([e])))).and_then(|mut v| v.pop()) {
+            let effect: EffectInstance = match meta
+                .and_then(|m| m.get("effect"))
+                .and_then(|e| effects_from(Some(&json!([e]))))
+                .and_then(|mut v| v.pop())
+            {
                 Some(e) => e,
                 None => {
                     let n = name_of(c);
-                    let ty = c.get("transition_type").and_then(Value::as_str).unwrap_or("SMPTE_Dissolve");
-                    transition_effect(if n.is_empty() { ty } else { &n }, kind == TrackKind::Audio, self.report)
+                    let ty = c
+                        .get("transition_type")
+                        .and_then(Value::as_str)
+                        .unwrap_or("SMPTE_Dissolve");
+                    transition_effect(
+                        if n.is_empty() { ty } else { &n },
+                        kind == TrackKind::Audio,
+                        self.report,
+                    )
                 }
             };
-            let align = meta.and_then(|m| m.get("align")).and_then(|a| serde_json::from_value(a.clone()).ok()).unwrap_or(if inn == Tick::ZERO {
-                TransitionAlign::StartAtCut
-            } else if out == Tick::ZERO {
-                TransitionAlign::EndAtCut
-            } else {
-                TransitionAlign::CenterAtCut
+            let align = meta
+                .and_then(|m| m.get("align"))
+                .and_then(|a| serde_json::from_value(a.clone()).ok())
+                .unwrap_or(if inn == Tick::ZERO {
+                    TransitionAlign::StartAtCut
+                } else if out == Tick::ZERO {
+                    TransitionAlign::EndAtCut
+                } else {
+                    TransitionAlign::CenterAtCut
+                });
+            let reverse = meta
+                .and_then(|m| m.get("reverse"))
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            track.transitions.push(Transition {
+                id: TransitionId(self.b.alloc()),
+                effect,
+                start: cut - inn,
+                duration: inn + out,
+                from,
+                to,
+                align,
+                reverse,
             });
-            let reverse = meta.and_then(|m| m.get("reverse")).and_then(Value::as_bool).unwrap_or(false);
-            track.transitions.push(Transition { id: TransitionId(self.b.alloc()), effect, start: cut - inn, duration: inn + out, from, to, align, reverse });
         }
         track.sort();
         seq.tracks_mut(kind).push(track);
@@ -561,7 +736,12 @@ impl Imp<'_, '_> {
 
     fn apply_clip_meta(&mut self, ti: &mut TrackItem, c: &Value, meta: Option<&Value>) {
         ti.enabled = c.get("enabled").and_then(Value::as_bool).unwrap_or(true);
-        for e in c.get("effects").and_then(Value::as_array).into_iter().flatten() {
+        for e in c
+            .get("effects")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
             match schema_name(e) {
                 "LinearTimeWarp" => {
                     let s = e.get("time_scalar").and_then(Value::as_f64).unwrap_or(1.0);
@@ -573,18 +753,31 @@ impl Imp<'_, '_> {
                     }
                 }
                 "FreezeFrame" => {
-                    ti.frame_hold = Some(fc(e).and_then(|m| m.get("hold")).and_then(|h| h.as_i64()).map(Tick).unwrap_or(ti.source_in));
+                    ti.frame_hold = Some(
+                        fc(e)
+                            .and_then(|m| m.get("hold"))
+                            .and_then(|h| h.as_i64())
+                            .map(Tick)
+                            .unwrap_or(ti.source_in),
+                    );
                 }
                 _ => {
                     if meta.and_then(|m| m.get("effects")).is_none() {
-                        let n = e.get("effect_name").and_then(Value::as_str).unwrap_or("effect");
-                        self.report.warn(format!("OTIO effect \"{n}\" is not supported"));
+                        let n = e
+                            .get("effect_name")
+                            .and_then(Value::as_str)
+                            .unwrap_or("effect");
+                        self.report
+                            .warn(format!("OTIO effect \"{n}\" is not supported"));
                     }
                 }
             }
         }
         let Some(m) = meta else { return };
-        if let Some(l) = m.get("label").and_then(|l| serde_json::from_value::<Label>(l.clone()).ok()) {
+        if let Some(l) = m
+            .get("label")
+            .and_then(|l| serde_json::from_value::<Label>(l.clone()).ok())
+        {
             ti.label = l;
         }
         if let Some(effects) = effects_from(m.get("effects")) {
@@ -599,14 +792,19 @@ impl Imp<'_, '_> {
             ti.group = Some(*self.groups.entry(g).or_insert(next));
         }
         ti.gain_db = m.get("gain_db").and_then(Value::as_f64).unwrap_or(0.0);
-        ti.scale_to_frame = m.get("scale_to_frame").and_then(Value::as_bool).unwrap_or(false);
+        ti.scale_to_frame = m
+            .get("scale_to_frame")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         // Exact ticks for sub-frame values (audio) when the rational values were rounded.
         if let Some(s) = m.get("source_in_ticks").and_then(Value::as_i64)
             && (Tick(s) - ti.source_in).abs() < Tick(TICKS_PER_SECOND / 1000)
         {
             ti.source_in = Tick(s);
             if let Some(h) = &mut ti.frame_hold
-                && c.get("effects").and_then(Value::as_array).is_some_and(|e| e.iter().any(|x| schema_name(x) == "LinearTimeWarp"))
+                && c.get("effects")
+                    .and_then(Value::as_array)
+                    .is_some_and(|e| e.iter().any(|x| schema_name(x) == "LinearTimeWarp"))
             {
                 *h = Tick(s);
             }
@@ -621,8 +819,12 @@ impl Imp<'_, '_> {
     fn clip(&mut self, c: &Value, kind: TrackKind, pos: Tick) -> Option<TrackItem> {
         let mref = match c.get("media_references") {
             Some(refs) => {
-                let key = c.get("active_media_reference_key").and_then(Value::as_str).unwrap_or("DEFAULT_MEDIA");
-                refs.get(key).or_else(|| refs.as_object().and_then(|o| o.values().next()))
+                let key = c
+                    .get("active_media_reference_key")
+                    .and_then(Value::as_str)
+                    .unwrap_or("DEFAULT_MEDIA");
+                refs.get(key)
+                    .or_else(|| refs.as_object().and_then(|o| o.values().next()))
             }
             None => c.get("media_reference"),
         }
@@ -637,7 +839,14 @@ impl Imp<'_, '_> {
         let item = self.media(&mref, &name, kind, avail)?;
         // Sources are media time: subtract the media's start time (available_range start).
         let origin = avail.map(|a| a.0).unwrap_or(Tick::ZERO);
-        let mut ti = self.b.clip(item, kind, if name.is_empty() { "Clip" } else { &name }, pos, dur, src_in - origin);
+        let mut ti = self.b.clip(
+            item,
+            kind,
+            if name.is_empty() { "Clip" } else { &name },
+            pos,
+            dur,
+            src_in - origin,
+        );
         ti.markers = self.markers(c);
         for m in &mut ti.markers {
             m.start -= origin;
@@ -650,7 +859,13 @@ impl Imp<'_, '_> {
     fn nested(&mut self, c: &Value, kind: TrackKind, pos: Tick) -> Option<TrackItem> {
         let (src_in, dur) = c.get("source_range").and_then(read_tr)?;
         let meta = fc(c);
-        let key = format!("stack:{}", meta.and_then(|m| m.get("item")).and_then(Value::as_u64).map(|i| i.to_string()).unwrap_or_else(|| name_of(c)));
+        let key = format!(
+            "stack:{}",
+            meta.and_then(|m| m.get("item"))
+                .and_then(Value::as_u64)
+                .map(|i| i.to_string())
+                .unwrap_or_else(|| name_of(c))
+        );
         let item = match self.b.find_media(&key) {
             Some(i) => i,
             None => {
@@ -658,13 +873,33 @@ impl Imp<'_, '_> {
                 let mut inner = c.clone();
                 inner["source_range"] = Value::Null;
                 let name = name_of(c);
-                let id = self.sequence(&inner, if name.is_empty() { "Nested Sequence" } else { &name }, meta, rate);
+                let id = self.sequence(
+                    &inner,
+                    if name.is_empty() {
+                        "Nested Sequence"
+                    } else {
+                        &name
+                    },
+                    meta,
+                    rate,
+                );
                 self.b.register_media(&key, id);
                 id
             }
         };
         let name = name_of(c);
-        let mut ti = self.b.clip(item, kind, if name.is_empty() { "Nested Sequence" } else { &name }, pos, dur, src_in);
+        let mut ti = self.b.clip(
+            item,
+            kind,
+            if name.is_empty() {
+                "Nested Sequence"
+            } else {
+                &name
+            },
+            pos,
+            dur,
+            src_in,
+        );
         let clip_meta = meta.and_then(|m| m.get("clip")).cloned();
         // Stack markers belong to the nested sequence; instance markers are on filmcraft.clip.
         if let Some(ref cm) = clip_meta {
@@ -674,12 +909,24 @@ impl Imp<'_, '_> {
         Some(ti)
     }
 
-    fn media(&mut self, r: &Value, clip_name: &str, kind: TrackKind, avail: Option<(Tick, Tick)>) -> Option<ItemId> {
+    fn media(
+        &mut self,
+        r: &Value,
+        clip_name: &str,
+        kind: TrackKind,
+        avail: Option<(Tick, Tick)>,
+    ) -> Option<ItemId> {
         let meta = fc(r);
-        let info: Option<MediaInfo> = meta.and_then(|m| m.get("info")).and_then(|i| serde_json::from_value(i.clone()).ok());
+        let info: Option<MediaInfo> = meta
+            .and_then(|m| m.get("info"))
+            .and_then(|i| serde_json::from_value(i.clone()).ok());
         let name = {
             let n = name_of(r);
-            if n.is_empty() { clip_name.to_string() } else { n }
+            if n.is_empty() {
+                clip_name.to_string()
+            } else {
+                n
+            }
         };
         let spec = MediaSpec {
             duration: avail.map(|a| a.1),
@@ -690,9 +937,17 @@ impl Imp<'_, '_> {
         };
         let id = match schema_name(r) {
             "ExternalReference" | "ImageSequenceReference" => {
-                let url = r.get("target_url").and_then(Value::as_str).or_else(|| r.get("target_url_base").and_then(Value::as_str)).unwrap_or("");
+                let url = r
+                    .get("target_url")
+                    .and_then(Value::as_str)
+                    .or_else(|| r.get("target_url_base").and_then(Value::as_str))
+                    .unwrap_or("");
                 let path = resolve_path(url, self.opts.base_dir.as_deref());
-                let display = if name.is_empty() { file_name(&path).to_string() } else { name.clone() };
+                let display = if name.is_empty() {
+                    file_name(&path).to_string()
+                } else {
+                    name.clone()
+                };
                 let key = format!("file:{path}");
                 let existed = self.b.find_media(&key);
                 let id = self.b.file_media(&key, &display, &path, &spec, None);
@@ -722,7 +977,13 @@ impl Imp<'_, '_> {
                 });
                 let key = format!("gen:{}", serde_json::to_string(&g).unwrap_or_default());
                 let existed = self.b.find_media(&key);
-                let id = self.b.generator_media(&key, if name.is_empty() { "Generator" } else { &name }, g, &spec, None);
+                let id = self.b.generator_media(
+                    &key,
+                    if name.is_empty() { "Generator" } else { &name },
+                    g,
+                    &spec,
+                    None,
+                );
                 if existed.is_none() {
                     self.fill_media(id, info, None, kind);
                 }
@@ -730,7 +991,10 @@ impl Imp<'_, '_> {
             }
             _ => {
                 if schema_name(r) != "MissingReference" && !r.is_null() {
-                    self.report.warn(format!("OTIO media reference {} is not supported; imported offline", schema(r)));
+                    self.report.warn(format!(
+                        "OTIO media reference {} is not supported; imported offline",
+                        schema(r)
+                    ));
                 }
                 let key = format!("missing:{name}");
                 let existed = self.b.find_media(&key);
@@ -748,10 +1012,20 @@ impl Imp<'_, '_> {
         Some(id)
     }
 
-    fn fill_media(&mut self, id: ItemId, info: Option<MediaInfo>, meta: Option<&Value>, kind: TrackKind) {
-        let label = meta.and_then(|m| m.get("label")).and_then(|l| serde_json::from_value::<Label>(l.clone()).ok());
+    fn fill_media(
+        &mut self,
+        id: ItemId,
+        info: Option<MediaInfo>,
+        meta: Option<&Value>,
+        kind: TrackKind,
+    ) {
+        let label = meta
+            .and_then(|m| m.get("label"))
+            .and_then(|l| serde_json::from_value::<Label>(l.clone()).ok());
         let offline = meta.and_then(|m| m.get("offline")).and_then(Value::as_bool);
-        let Some(it) = self.b.p.item_mut(id) else { return };
+        let Some(it) = self.b.p.item_mut(id) else {
+            return;
+        };
         if let Some(l) = label {
             it.label = l;
         }
@@ -771,15 +1045,27 @@ impl Imp<'_, '_> {
 
     fn markers(&mut self, v: &Value) -> Vec<Marker> {
         let mut out = Vec::new();
-        for m in v.get("markers").and_then(Value::as_array).into_iter().flatten() {
-            let (mut start, mut duration) = m.get("marked_range").and_then(read_tr).unwrap_or((Tick::ZERO, Tick::ZERO));
+        for m in v
+            .get("markers")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let (mut start, mut duration) = m
+                .get("marked_range")
+                .and_then(read_tr)
+                .unwrap_or((Tick::ZERO, Tick::ZERO));
             let meta = fc(m);
-            if let Some(s) = meta.and_then(|x| x.get("start_ticks")).and_then(Value::as_i64)
+            if let Some(s) = meta
+                .and_then(|x| x.get("start_ticks"))
+                .and_then(Value::as_i64)
                 && (Tick(s) - start).abs() < Tick(TICKS_PER_SECOND / 1000)
             {
                 start = Tick(s);
             }
-            if let Some(d) = meta.and_then(|x| x.get("duration_ticks")).and_then(Value::as_i64)
+            if let Some(d) = meta
+                .and_then(|x| x.get("duration_ticks"))
+                .and_then(Value::as_i64)
                 && (Tick(d) - duration).abs() < Tick(TICKS_PER_SECOND / 1000)
             {
                 duration = Tick(d);
@@ -787,14 +1073,23 @@ impl Imp<'_, '_> {
             let color = meta
                 .and_then(|x| x.get("label"))
                 .and_then(|l| serde_json::from_value::<Label>(l.clone()).ok())
-                .unwrap_or_else(|| color_label(m.get("color").and_then(Value::as_str).unwrap_or("")));
+                .unwrap_or_else(|| {
+                    color_label(m.get("color").and_then(Value::as_str).unwrap_or(""))
+                });
             out.push(Marker {
                 id: MarkerId(self.b.alloc()),
                 start,
                 duration,
                 name: name_of(m),
-                comment: m.get("comment").and_then(Value::as_str).unwrap_or("").to_string(),
-                kind: meta.and_then(|x| x.get("kind")).and_then(|k| serde_json::from_value::<MarkerKind>(k.clone()).ok()).unwrap_or_default(),
+                comment: m
+                    .get("comment")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string(),
+                kind: meta
+                    .and_then(|x| x.get("kind"))
+                    .and_then(|k| serde_json::from_value::<MarkerKind>(k.clone()).ok())
+                    .unwrap_or_default(),
                 color,
             });
         }

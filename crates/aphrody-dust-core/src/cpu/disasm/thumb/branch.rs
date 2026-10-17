@@ -29,7 +29,11 @@ pub(super) fn bl_suffix<const EXCHANGE: bool>(ctx: &mut Context, instr: u16) {
     let offset = ((instr & 0x7FF) << 1) as u32;
     let exchange = if EXCHANGE { "x" } else { "" };
     ctx.next_instr.opcode = if let Some(branch_addr_base) = ctx.branch_addr_base {
-        format!("b{}x #{:#010X}", exchange, branch_addr_base.wrapping_add(offset))
+        format!(
+            "b{}x #{:#010X}",
+            exchange,
+            branch_addr_base.wrapping_add(offset)
+        )
     } else {
         format!("<b{exchange}x suffix>")
     };

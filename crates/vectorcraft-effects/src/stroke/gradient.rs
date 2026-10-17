@@ -16,7 +16,9 @@
 use kurbo::{BezPath, Point, Shape, Vec2};
 use vectorcraft_doc::color::{Gradient, GradientGeom, GradientPaint, Paint};
 use vectorcraft_doc::live::{H_DOWN, H_LEFT, H_RIGHT, H_UP, lerp_color};
-use vectorcraft_doc::{GradientMesh, LineJoin, MeshPoint, StrokeAlign, StrokeGradientMode, StrokeLayer};
+use vectorcraft_doc::{
+    GradientMesh, LineJoin, MeshPoint, StrokeAlign, StrokeGradientMode, StrokeLayer,
+};
 use vectorcraft_geom::FillRule;
 
 use super::width::{flatten, left, length, split_at};
@@ -61,7 +63,14 @@ impl Rib {
     /// A rib square to direction `d`, reaching `r` either side of `c`.
     fn square(c: Point, d: Vec2, r: f64, t: f64, band: (f64, f64)) -> Self {
         let n = left(d);
-        Rib { c, l: c + n * r, r: c - n * r, reach: (r, r), t, band }
+        Rib {
+            c,
+            l: c + n * r,
+            r: c - n * r,
+            reach: (r, r),
+            t,
+            band,
+        }
     }
     /// The point `x` left of the path along the rib (negative: right).
     fn at(&self, x: f64) -> Point {
@@ -104,18 +113,38 @@ impl Lay<'_> {
     fn turn(&self, p: Point, din: Vec2, dout: Vec2, r: f64, t: f64, band: (f64, f64)) -> Vec<Rib> {
         let (nin, nout) = (left(din), left(dout));
         let den = 1.0 + nin.dot(nout);
-        let stretch = if den > 1e-12 { (2.0 / den).sqrt() } else { f64::INFINITY };
+        let stretch = if den > 1e-12 {
+            (2.0 / den).sqrt()
+        } else {
+            f64::INFINITY
+        };
         if stretch <= SHARP {
             let m = (nin + nout) / den;
-            return vec![Rib { c: p, l: p + m * r, r: p - m * r, reach: (r, r), t, band }];
+            return vec![Rib {
+                c: p,
+                l: p + m * r,
+                r: p - m * r,
+                reach: (r, r),
+                t,
+                band,
+            }];
         }
         // `s` is 1 when the outside of the turn is on the left; `out_dir` the outward bisector.
         let s = if dout.dot(nin) > 0.0 { -1.0 } else { 1.0 };
         let sum = nin + nout;
-        let out_dir = if sum.hypot() > 1e-9 { unit(sum) * s } else { din };
+        let out_dir = if sum.hypot() > 1e-9 {
+            unit(sum) * s
+        } else {
+            din
+        };
         let (o1, o2) = (p + nin * (s * r), p + nout * (s * r));
-        let mitered = stretch <= std::f64::consts::SQRT_2 || (self.st.join == LineJoin::Miter && stretch <= self.st.miter_limit);
-        let outer = if mitered { vec![o1, p + out_dir * (stretch * r), o2] } else { vec![o1, o1 + din * r, o2 - dout * r, o2] };
+        let mitered = stretch <= std::f64::consts::SQRT_2
+            || (self.st.join == LineJoin::Miter && stretch <= self.st.miter_limit);
+        let outer = if mitered {
+            vec![o1, p + out_dir * (stretch * r), o2]
+        } else {
+            vec![o1, o1 + din * r, o2 - dout * r, o2]
+        };
         let last = outer.len() - 1;
         outer
             .into_iter()
@@ -129,9 +158,23 @@ impl Lay<'_> {
                 };
                 let o_reach = o.distance(p);
                 if s > 0.0 {
-                    Rib { c: p, l: o, r: inner, reach: (o_reach, inner_reach), t, band }
+                    Rib {
+                        c: p,
+                        l: o,
+                        r: inner,
+                        reach: (o_reach, inner_reach),
+                        t,
+                        band,
+                    }
                 } else {
-                    Rib { c: p, l: inner, r: o, reach: (inner_reach, o_reach), t, band }
+                    Rib {
+                        c: p,
+                        l: inner,
+                        r: o,
+                        reach: (inner_reach, o_reach),
+                        t,
+                        band,
+                    }
                 }
             })
             .collect()
@@ -141,7 +184,15 @@ impl Lay<'_> {
 /// The ribs of each subpath of `bp` (filled with `rule`) under stroke `st`, flattened to `tol`,
 /// reaching `margin` past what the stroke paints. Fractions `marks` of each subpath get ribs of
 /// their own, and no two are more than `max_dt` of it apart.
-fn strips(bp: &BezPath, rule: FillRule, st: &StrokeLayer, tol: f64, margin: f64, marks: &[f64], max_dt: f64) -> Vec<Vec<Rib>> {
+fn strips(
+    bp: &BezPath,
+    rule: FillRule,
+    st: &StrokeLayer,
+    tol: f64,
+    margin: f64,
+    marks: &[f64],
+    max_dt: f64,
+) -> Vec<Vec<Rib>> {
     let closed_path = is_closed(bp);
     let hw = aligned_width(st, closed_path) / 2.0;
     if !(hw > 0.0 && hw.is_finite()) {
@@ -150,34 +201,66 @@ fn strips(bp: &BezPath, rule: FillRule, st: &StrokeLayer, tol: f64, margin: f64,
     let full = hw * st.profile_max();
     let heads = (st.head_reach(false), st.head_reach(true));
     let cap = cap_extent(st.cap, 2.0 * full);
-    let lay = Lay { st, hw, cover: full + margin, margin, ext: (cap.max(heads.0) + margin, cap.max(heads.1) + margin) };
+    let lay = Lay {
+        st,
+        hw,
+        cover: full + margin,
+        margin,
+        ext: (cap.max(heads.0) + margin, cap.max(heads.1) + margin),
+    };
     let subs = subpaths(bp);
     let count = subs.len();
     let mut out = vec![];
     for (k, (range, closed)) in subs.into_iter().enumerate() {
         let (pts, corner) = flatten(&segments(&bp.elements()[range]), closed, tol.max(1e-4));
-        let side =
-            (st.align != StrokeAlign::Center && closed_path && closed).then(|| band_on_left(bp, rule, &pts, st.align, (4.0 * tol).min(hw / 2.0)));
+        let side = (st.align != StrokeAlign::Center && closed_path && closed)
+            .then(|| band_on_left(bp, rule, &pts, st.align, (4.0 * tol).min(hw / 2.0)));
         // Arrowheads sit on the start of the first subpath and the end of the last one.
-        let heads = (if k == 0 { heads.0 } else { 0.0 }, if k + 1 == count { heads.1 } else { 0.0 });
+        let heads = (
+            if k == 0 { heads.0 } else { 0.0 },
+            if k + 1 == count { heads.1 } else { 0.0 },
+        );
         let ribs = match pts.len() {
             0 => continue,
             // A subpath of no length: a dot (round and projecting caps paint it).
             1 => {
-                let (d, b, e) = (Vec2::new(1.0, 0.0), lay.band(0.0, side), lay.ext.0.max(lay.ext.1));
-                vec![Rib::square(pts[0] - d * e, d, lay.cover, 0.0, b), Rib::square(pts[0] + d * e, d, lay.cover, 0.0, b)]
+                let (d, b, e) = (
+                    Vec2::new(1.0, 0.0),
+                    lay.band(0.0, side),
+                    lay.ext.0.max(lay.ext.1),
+                );
+                vec![
+                    Rib::square(pts[0] - d * e, d, lay.cover, 0.0, b),
+                    Rib::square(pts[0] + d * e, d, lay.cover, 0.0, b),
+                ]
             }
             _ => {
                 let total = length(&pts, closed);
                 if total <= 1e-12 {
                     continue;
                 }
-                let steps = if max_dt < 1.0 { (1.0 / max_dt).ceil() as usize } else { 1 };
+                let steps = if max_dt < 1.0 {
+                    (1.0 / max_dt).ceil() as usize
+                } else {
+                    1
+                };
                 let profile = st.profile.iter().flat_map(|p| p.points.iter().map(|q| q.0));
-                let at: Vec<f64> =
-                    marks.iter().copied().chain(profile).chain((1..steps).map(|i| i as f64 / steps as f64)).map(|t| t * total).collect();
+                let at: Vec<f64> = marks
+                    .iter()
+                    .copied()
+                    .chain(profile)
+                    .chain((1..steps).map(|i| i as f64 / steps as f64))
+                    .map(|t| t * total)
+                    .collect();
                 let (pts, _) = split_at(&pts, &corner, closed, &at);
-                strip(&lay, &pts, closed, total, side, if closed { (0.0, 0.0) } else { heads })
+                strip(
+                    &lay,
+                    &pts,
+                    closed,
+                    total,
+                    side,
+                    if closed { (0.0, 0.0) } else { heads },
+                )
             }
         };
         out.push(ribs);
@@ -190,20 +273,39 @@ fn strips(bp: &BezPath, rule: FillRule, st: &StrokeLayer, tol: f64, margin: f64,
 /// flattening moved it).
 fn band_on_left(bp: &BezPath, rule: FillRule, pts: &[Point], align: StrokeAlign, off: f64) -> bool {
     let n = pts.len();
-    let Some(i) = (0..n).max_by(|&a, &b| pts[a].distance(pts[(a + 1) % n]).total_cmp(&pts[b].distance(pts[(b + 1) % n]))) else { return true };
+    let Some(i) = (0..n).max_by(|&a, &b| {
+        pts[a]
+            .distance(pts[(a + 1) % n])
+            .total_cmp(&pts[b].distance(pts[(b + 1) % n]))
+    }) else {
+        return true;
+    };
     let (a, b) = (pts[i], pts[(i + 1) % n]);
     let probe = a.midpoint(b) + left(unit(b - a)) * off.max(1e-6);
     let w = bp.winding(probe);
-    let inside = if rule == FillRule::EvenOdd { w % 2 != 0 } else { w != 0 };
+    let inside = if rule == FillRule::EvenOdd {
+        w % 2 != 0
+    } else {
+        w != 0
+    };
     inside == (align == StrokeAlign::Inside)
 }
 
 /// The ribs along one flattened subpath `pts` of length `total` (`heads`: how far arrowheads
 /// reach from its start and end).
-fn strip(lay: &Lay, pts: &[Point], closed: bool, total: f64, side: Option<bool>, heads: (f64, f64)) -> Vec<Rib> {
+fn strip(
+    lay: &Lay,
+    pts: &[Point],
+    closed: bool,
+    total: f64,
+    side: Option<bool>,
+    heads: (f64, f64),
+) -> Vec<Rib> {
     let n = pts.len();
     let seg_count = if closed { n } else { n - 1 };
-    let dir: Vec<Vec2> = (0..seg_count).map(|i| unit(pts[(i + 1) % n] - pts[i])).collect();
+    let dir: Vec<Vec2> = (0..seg_count)
+        .map(|i| unit(pts[(i + 1) % n] - pts[i]))
+        .collect();
     // Ribs near an arrowhead reach across it.
     let reach = |s: f64| {
         let mut r = lay.cover;
@@ -227,18 +329,38 @@ fn strip(lay: &Lay, pts: &[Point], closed: bool, total: f64, side: Option<bool>,
     for i in first..last {
         let v = i % n;
         let t = s / total;
-        let ribs = lay.turn(pts[v], dir[(v + seg_count - 1) % seg_count], dir[v % seg_count], reach(s), t, lay.band(t, side));
+        let ribs = lay.turn(
+            pts[v],
+            dir[(v + seg_count - 1) % seg_count],
+            dir[v % seg_count],
+            reach(s),
+            t,
+            lay.band(t, side),
+        );
         // A closed subpath starts after the fan of its first corner and ends with it.
         let skip = if closed && i == 0 { ribs.len() - 1 } else { 0 };
         out.extend(ribs.into_iter().skip(skip));
         s += pts[v].distance(pts[(v + 1) % n]);
     }
     if closed {
-        out.extend(lay.turn(pts[0], dir[seg_count - 1], dir[0], reach(total), 1.0, lay.band(1.0, side)));
+        out.extend(lay.turn(
+            pts[0],
+            dir[seg_count - 1],
+            dir[0],
+            reach(total),
+            1.0,
+            lay.band(1.0, side),
+        ));
     } else {
         let (d, b) = (dir[seg_count - 1], lay.band(1.0, side));
         out.push(Rib::square(pts[n - 1], d, reach(total), 1.0, b));
-        out.push(Rib::square(pts[n - 1] + d * lay.ext.1, d, reach(total), 1.0, b));
+        out.push(Rib::square(
+            pts[n - 1] + d * lay.ext.1,
+            d,
+            reach(total),
+            1.0,
+            b,
+        ));
     }
     out
 }
@@ -259,9 +381,22 @@ impl Slice {
     /// The slice's paint: its piece of `g` as a linear gradient placed from `from` to `to`.
     pub fn paint(&self, g: &Gradient) -> Paint {
         let gradient = g.span(self.span.0 as f32, self.span.1 as f32);
-        let end = if self.from.distance(self.to) > 1e-9 { self.to } else { self.from + Vec2::new(1.0, 0.0) };
-        let geom = GradientGeom { start: self.from, end, aspect: 1.0, focal: None };
-        Paint::Gradient(Box::new(GradientPaint { geom: Some(geom), angle: geom.angle_deg(), ..GradientPaint::new(gradient) }))
+        let end = if self.from.distance(self.to) > 1e-9 {
+            self.to
+        } else {
+            self.from + Vec2::new(1.0, 0.0)
+        };
+        let geom = GradientGeom {
+            start: self.from,
+            end,
+            aspect: 1.0,
+            focal: None,
+        };
+        Paint::Gradient(Box::new(GradientPaint {
+            geom: Some(geom),
+            angle: geom.angle_deg(),
+            ..GradientPaint::new(gradient)
+        }))
     }
 }
 
@@ -271,10 +406,21 @@ impl Slice {
 /// slice reaches that much past its edges into its neighbours, so antialiased edges show no
 /// seams: filled so that each replaces what it covers (copy), they paint each point once; filled
 /// over each other, only opaque gradients may grow (translucent ones would darken there).
-pub fn gradient_slices(bp: &BezPath, rule: FillRule, st: &StrokeLayer, tol: f64, margin: f64, grow: f64) -> Vec<Slice> {
+pub fn gradient_slices(
+    bp: &BezPath,
+    rule: FillRule,
+    st: &StrokeLayer,
+    tol: f64,
+    margin: f64,
+    grow: f64,
+) -> Vec<Slice> {
     let across = st.gradient_mode == StrokeGradientMode::Across;
     // A width profile changes the across band along the path: ribs close enough to follow it.
-    let max_dt = if across && st.profile.is_some() { PROFILE_STEP } else { 1.0 };
+    let max_dt = if across && st.profile.is_some() {
+        PROFILE_STEP
+    } else {
+        1.0
+    };
     let mut out = vec![];
     for ribs in strips(bp, rule, st, tol, margin, &[], max_dt) {
         for w in ribs.windows(2) {
@@ -285,14 +431,23 @@ pub fn gradient_slices(bp: &BezPath, rule: FillRule, st: &StrokeLayer, tol: f64,
             }
             let (from, to, span) = if across {
                 let axis = b.c - a.c;
-                let n = if axis.hypot() > 1e-9 { left(unit(axis)) } else { unit((a.l - a.r) + (b.l - b.r)) };
+                let n = if axis.hypot() > 1e-9 {
+                    left(unit(axis))
+                } else {
+                    unit((a.l - a.r) + (b.l - b.r))
+                };
                 let mid = a.c.midpoint(b.c);
                 let (l, r) = ((a.band.0 + b.band.0) / 2.0, (a.band.1 + b.band.1) / 2.0);
                 (mid + n * l, mid - n * r, (0.0, 1.0))
             } else {
                 (a.c, b.c, (a.t, b.t))
             };
-            out.push(Slice { shape, from, to, span });
+            out.push(Slice {
+                shape,
+                from,
+                to,
+                span,
+            });
         }
     }
     out
@@ -306,7 +461,11 @@ fn polygon(pts: &[Point], grow: f64) -> BezPath {
     loop {
         let n = v.len();
         let same = |a: Point, b: Point| a.distance(b) <= 1e-9;
-        let Some(i) = (0..n).find(|&i| n > 2 && (same(v[i], v[(i + 1) % n]) || same(v[(i + n - 1) % n], v[(i + 1) % n]))) else { break };
+        let Some(i) = (0..n).find(|&i| {
+            n > 2 && (same(v[i], v[(i + 1) % n]) || same(v[(i + n - 1) % n], v[(i + 1) % n]))
+        }) else {
+            break;
+        };
         v.remove(i);
     }
     let mut out = BezPath::new();
@@ -315,7 +474,9 @@ fn polygon(pts: &[Point], grow: f64) -> BezPath {
     }
     let n = v.len();
     if grow > 0.0 {
-        let area: f64 = (0..n).map(|i| v[i].to_vec2().cross(v[(i + 1) % n].to_vec2())).sum();
+        let area: f64 = (0..n)
+            .map(|i| v[i].to_vec2().cross(v[(i + 1) % n].to_vec2()))
+            .sum();
         let side = if area >= 0.0 { 1.0 } else { -1.0 };
         let normal = |i: usize| {
             let d = unit(v[(i + 1) % n] - v[i]);
@@ -326,7 +487,11 @@ fn polygon(pts: &[Point], grow: f64) -> BezPath {
                 let (n1, n2) = (normal((i + n - 1) % n), normal(i));
                 let den = 1.0 + n1.dot(n2);
                 let m = if den > 1e-9 { (n1 + n2) / den } else { n1 };
-                let m = if m.hypot() > 4.0 { m * (4.0 / m.hypot()) } else { m };
+                let m = if m.hypot() > 4.0 {
+                    m * (4.0 / m.hypot())
+                } else {
+                    m
+                };
                 v[i] + m * grow
             })
             .collect();
@@ -353,13 +518,22 @@ pub struct WrittenSlices {
 /// stroke ([`for_writer`](super::for_writer)): [`gradient_slices`] clipped to them. Where the
 /// gradient is opaque the slices overlap a little, so viewers that antialias every shape show no
 /// seams. `None` without such a gradient.
-pub fn written_slices(bp: &BezPath, rule: FillRule, st: &StrokeLayer, outlines: &[BezPath]) -> Option<WrittenSlices> {
+pub fn written_slices(
+    bp: &BezPath,
+    rule: FillRule,
+    st: &StrokeLayer,
+    outlines: &[BezPath],
+) -> Option<WrittenSlices> {
     let g = &st.path_gradient()?.gradient;
     let clip = match outlines {
         [one] => one.clone(),
         _ => vectorcraft_pathops::stroke_region(outlines).to_bezpath(),
     };
-    let grow = if g.stops.iter().all(|s| s.opacity >= 1.0) { SLICE_GROW } else { 0.0 };
+    let grow = if g.stops.iter().all(|s| s.opacity >= 1.0) {
+        SLICE_GROW
+    } else {
+        0.0
+    };
     let slices = gradient_slices(bp, rule, st, SLICE_TOL, SLICE_MARGIN, grow)
         .into_iter()
         .map(|s| {
@@ -373,11 +547,20 @@ pub fn written_slices(bp: &BezPath, rule: FillRule, st: &StrokeLayer, outlines: 
 /// Outline Stroke of stroke `st` of `bp` (filled with `rule`) whose gradient `g` runs along or
 /// across it: a gradient mesh per subpath over all the stroke can paint there (clip it to the
 /// stroke's outline), coloured as [`gradient_slices`] paint it.
-pub fn gradient_meshes(bp: &BezPath, rule: FillRule, st: &StrokeLayer, g: &Gradient) -> Vec<GradientMesh> {
+pub fn gradient_meshes(
+    bp: &BezPath,
+    rule: FillRule,
+    st: &StrokeLayer,
+    g: &Gradient,
+) -> Vec<GradientMesh> {
     let across = st.gradient_mode == StrokeGradientMode::Across;
     let color = |t: f64| g.sample_with(t.clamp(0.0, 1.0) as f32, lerp_color);
     // Along: a column at each stop (colours are linear between columns), close enough to look smooth.
-    let marks: Vec<f64> = if across { vec![] } else { g.expanded_stops().iter().map(|s| s.0 as f64).collect() };
+    let marks: Vec<f64> = if across {
+        vec![]
+    } else {
+        g.expanded_stops().iter().map(|s| s.0 as f64).collect()
+    };
     let max_dt = match (across, st.profile.is_some()) {
         (false, _) => MESH_STEP,
         (true, true) => PROFILE_STEP,
@@ -385,7 +568,10 @@ pub fn gradient_meshes(bp: &BezPath, rule: FillRule, st: &StrokeLayer, g: &Gradi
     };
     // Rows across: the strip's edges, then (across) the band's left edge to its right edge with a row at each stop.
     let mut us: Vec<f64> = if across {
-        (0..=MESH_ROWS).map(|i| i as f64 / MESH_ROWS as f64).chain(g.expanded_stops().iter().map(|s| s.0 as f64)).collect()
+        (0..=MESH_ROWS)
+            .map(|i| i as f64 / MESH_ROWS as f64)
+            .chain(g.expanded_stops().iter().map(|s| s.0 as f64))
+            .collect()
     } else {
         vec![0.5]
     };
@@ -410,7 +596,9 @@ pub fn gradient_meshes(bp: &BezPath, rule: FillRule, st: &StrokeLayer, g: &Gradi
                 }
             };
             let level = &level;
-            let pos: Vec<Point> = (0..=rows).flat_map(|row| ribs.iter().map(move |rib| level(row, rib).0)).collect();
+            let pos: Vec<Point> = (0..=rows)
+                .flat_map(|row| ribs.iter().map(move |rib| level(row, rib).0))
+                .collect();
             let at = |row: usize, col: usize| pos[row * (cols + 1) + col];
             let mut points = Vec::with_capacity(pos.len());
             for row in 0..=rows {
@@ -423,10 +611,19 @@ pub fn gradient_meshes(bp: &BezPath, rule: FillRule, st: &StrokeLayer, g: &Gradi
                     handles[H_DOWN] = toward((row < rows).then(|| at(row + 1, col)));
                     handles[H_UP] = toward(row.checked_sub(1).map(|r| at(r, col)));
                     let (color, opacity) = color(level(row, rib).1);
-                    points.push(MeshPoint { p, color, opacity, handles });
+                    points.push(MeshPoint {
+                        p,
+                        color,
+                        opacity,
+                        handles,
+                    });
                 }
             }
-            GradientMesh { rows: rows as u32, cols: cols as u32, points }
+            GradientMesh {
+                rows: rows as u32,
+                cols: cols as u32,
+                points,
+            }
         })
         .collect()
 }

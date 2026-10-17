@@ -12,7 +12,10 @@ use crate::run_code;
 use crate::tasks::run_tasks_at;
 
 fn session() -> Session {
-    let mut s = Session { expr: Some(Arc::new(effectcraft_expr::Expressions)), ..Default::default() };
+    let mut s = Session {
+        expr: Some(Arc::new(effectcraft_expr::Expressions)),
+        ..Default::default()
+    };
     crate::install(&mut s);
     s.config = Some(Arc::new(effectcraft_engine::config::MemoryConfig::default()));
     s
@@ -20,11 +23,23 @@ fn session() -> Session {
 
 fn ok(s: &mut Session, code: &str) {
     let o = run_code(s, code, "tasks.jsx");
-    assert!(o.error.is_none(), "script failed: {:?}\noutput: {:?}", o.error, o.output);
+    assert!(
+        o.error.is_none(),
+        "script failed: {:?}\noutput: {:?}",
+        o.error,
+        o.output
+    );
 }
 
 fn console(s: &mut Session, code: &str) -> crate::Outcome {
-    let o = crate::run(s, &ScriptRequest { code, name: "console", console: true });
+    let o = crate::run(
+        s,
+        &ScriptRequest {
+            code,
+            name: "console",
+            console: true,
+        },
+    );
     assert!(o.error.is_none(), "console failed: {:?}", o.error);
     o
 }
@@ -34,11 +49,21 @@ fn ms(n: u64) -> Duration {
 }
 
 fn output(r: &Value) -> Vec<String> {
-    r["output"].as_array().into_iter().flatten().filter_map(Value::as_str).map(str::to_string).collect()
+    r["output"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_string)
+        .collect()
 }
 
 fn comps(s: &Session) -> usize {
-    s.project.items.values().filter(|i| i.as_comp().is_some()).count()
+    s.project
+        .items
+        .values()
+        .filter(|i| i.as_comp().is_some())
+        .count()
 }
 
 #[test]
@@ -54,8 +79,16 @@ fn a_repeating_task_runs_every_interval_until_cancelled() {
     assert_eq!(r["ran"], json!(0));
     assert!(r["next"].as_u64().is_some_and(|n| n <= 1000), "{r}");
     let r = run_tasks_at(&mut s, t0 + ms(1500));
-    assert_eq!((r["ran"].clone(), output(&r)), (json!(1), vec!["tick 1".to_string()]), "{r}");
-    assert_eq!(comps(&s), 1, "the task edits the project through engine commands");
+    assert_eq!(
+        (r["ran"].clone(), output(&r)),
+        (json!(1), vec!["tick 1".to_string()]),
+        "{r}"
+    );
+    assert_eq!(
+        comps(&s),
+        1,
+        "the task edits the project through engine commands"
+    );
     // Due again an interval after it ran, once per pass (no catch-up burst).
     assert_eq!(run_tasks_at(&mut s, t0 + ms(1500))["ran"], json!(0));
     assert_eq!(run_tasks_at(&mut s, t0 + ms(2600))["ran"], json!(1));
@@ -63,7 +96,11 @@ fn a_repeating_task_runs_every_interval_until_cancelled() {
     assert_eq!(output(&r), vec!["tick 3"]);
     // Cancelled: the script (no windows, no tasks) has ended.
     let r = run_tasks_at(&mut s, t0 + ms(20_000));
-    assert_eq!((r["ran"].clone(), r["next"].clone()), (json!(0), Value::Null), "{r}");
+    assert_eq!(
+        (r["ran"].clone(), r["next"].clone()),
+        (json!(0), Value::Null),
+        "{r}"
+    );
     assert_eq!(comps(&s), 3);
     assert!(s.history.undo.len() >= 3, "every run is undoable");
 }
@@ -82,11 +119,19 @@ w.show();
 "#,
     );
     let win = s.script_ui.windows[0].id;
-    let text = |s: &Session| s.script_ui.window(win).map(|w| w.root.children[0].text.clone());
+    let text = |s: &Session| {
+        s.script_ui
+            .window(win)
+            .map(|w| w.root.children[0].text.clone())
+    };
     let t0 = Instant::now();
     run_tasks_at(&mut s, t0 + ms(500));
     run_tasks_at(&mut s, t0 + ms(1000));
-    assert_eq!(text(&s).as_deref(), Some("2"), "the window shows what the task set");
+    assert_eq!(
+        text(&s).as_deref(),
+        Some("2"),
+        "the window shows what the task set"
+    );
     // A project change doesn't stop a script whose window is open.
     s.execute("file.closeProject", json!({})).unwrap();
     assert_eq!(run_tasks_at(&mut s, t0 + ms(1500))["ran"], json!(1));
@@ -94,22 +139,38 @@ w.show();
     // Closing the window ends the script and its tasks.
     s.execute("scriptui.close", json!({"window": win})).unwrap();
     let r = run_tasks_at(&mut s, t0 + ms(5000));
-    assert_eq!((r["ran"].clone(), r["next"].clone()), (json!(0), Value::Null), "{r}");
+    assert_eq!(
+        (r["ran"].clone(), r["next"].clone()),
+        (json!(0), Value::Null),
+        "{r}"
+    );
 }
 
 #[test]
 fn a_throwing_task_is_reported_once_and_cancelled() {
     let mut s = session();
-    ok(&mut s, "app.scheduleTask('undefinedThing.go()', 100, true); app.scheduleTask('writeLn(\"fine\")', 100, true);");
+    ok(
+        &mut s,
+        "app.scheduleTask('undefinedThing.go()', 100, true); app.scheduleTask('writeLn(\"fine\")', 100, true);",
+    );
     let t0 = Instant::now();
     let r = run_tasks_at(&mut s, t0 + ms(500));
     assert_eq!(r["ran"], json!(2));
     let errors = r["errors"].as_array().cloned().unwrap_or_default();
     assert_eq!(errors.len(), 1, "{r}");
-    assert!(errors[0]["message"].as_str().is_some_and(|m| m.contains("undefinedThing") && m.contains("cancelled")), "{r}");
+    assert!(
+        errors[0]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("undefinedThing") && m.contains("cancelled")),
+        "{r}"
+    );
     // The other task goes on; the failing one doesn't run again.
     let r = run_tasks_at(&mut s, t0 + ms(1000));
-    assert_eq!((r["ran"].clone(), output(&r), r["errors"].clone()), (json!(1), vec!["fine".to_string()], json!([])), "{r}");
+    assert_eq!(
+        (r["ran"].clone(), output(&r), r["errors"].clone()),
+        (json!(1), vec!["fine".to_string()], json!([])),
+        "{r}"
+    );
 }
 
 #[test]
@@ -118,15 +179,37 @@ fn tasks_are_bounded() {
     // Repeating tasks run at most every MIN_REPEAT_MS.
     ok(&mut s, "var hits = 0; app.scheduleTask('hits++', 0, true);");
     let t0 = Instant::now();
-    assert_eq!(run_tasks_at(&mut s, t0 + ms(crate::MIN_REPEAT_MS) + ms(20))["ran"], json!(1));
-    assert_eq!(run_tasks_at(&mut s, t0 + ms(crate::MIN_REPEAT_MS) + ms(30))["ran"], json!(0));
+    assert_eq!(
+        run_tasks_at(&mut s, t0 + ms(crate::MIN_REPEAT_MS) + ms(20))["ran"],
+        json!(1)
+    );
+    assert_eq!(
+        run_tasks_at(&mut s, t0 + ms(crate::MIN_REPEAT_MS) + ms(30))["ran"],
+        json!(0)
+    );
     // At most MAX_TASKS pending tasks per script.
-    let o = run_code(&mut s, "for (var i = 0; i < 1000; i++) app.scheduleTask('1', 1000, true);", "many.jsx");
-    assert!(o.error.as_ref().is_some_and(|e| e.message.contains(&format!("at most {}", crate::MAX_TASKS))), "{:?}", o.error);
+    let o = run_code(
+        &mut s,
+        "for (var i = 0; i < 1000; i++) app.scheduleTask('1', 1000, true);",
+        "many.jsx",
+    );
+    assert!(
+        o.error
+            .as_ref()
+            .is_some_and(|e| e.message.contains(&format!("at most {}", crate::MAX_TASKS))),
+        "{:?}",
+        o.error
+    );
     // Task code nested too deeply for the parser is refused up front.
     let deep = format!("app.scheduleTask('{}', 10, false);", "(".repeat(10_000));
     let o = run_code(&mut s, &deep, "deep.jsx");
-    assert!(o.error.as_ref().is_some_and(|e| e.message.contains("nested too deeply")), "{:?}", o.error);
+    assert!(
+        o.error
+            .as_ref()
+            .is_some_and(|e| e.message.contains("nested too deeply")),
+        "{:?}",
+        o.error
+    );
     // Odd delays and ids are harmless.
     ok(
         &mut s,
@@ -138,25 +221,46 @@ fn tasks_are_bounded() {
 fn closing_the_project_stops_tasks_of_scripts_without_windows() {
     let mut s = session();
     ok(&mut s, "app.scheduleTask('writeLn(1)', 100, true);");
-    console(&mut s, "var cid = app.scheduleTask('writeLn(2)', 100, true);");
+    console(
+        &mut s,
+        "var cid = app.scheduleTask('writeLn(2)', 100, true);",
+    );
     let t0 = Instant::now();
     assert_eq!(run_tasks_at(&mut s, t0 + ms(500))["ran"], json!(2));
     s.execute("file.closeProject", json!({})).unwrap();
     let r = run_tasks_at(&mut s, t0 + ms(5000));
-    assert_eq!((r["ran"].clone(), r["next"].clone()), (json!(0), Value::Null), "{r}");
+    assert_eq!(
+        (r["ran"].clone(), r["next"].clone()),
+        (json!(0), Value::Null),
+        "{r}"
+    );
 }
 
 #[test]
 fn console_tasks_run_in_the_console_and_cancel_there() {
     let mut s = session();
-    console(&mut s, "var hits = 0; var tid = app.scheduleTask('hits++', 100, true); app.scheduleTask('writeLn(\"once \" + hits)', 300, false);");
+    console(
+        &mut s,
+        "var hits = 0; var tid = app.scheduleTask('hits++', 100, true); app.scheduleTask('writeLn(\"once \" + hits)', 300, false);",
+    );
     let t0 = Instant::now();
     assert_eq!(run_tasks_at(&mut s, t0 + ms(200))["ran"], json!(1));
     let r = run_tasks_at(&mut s, t0 + ms(400));
-    assert_eq!((r["ran"].clone(), output(&r)), (json!(2), vec!["once 2".to_string()]), "{r}");
-    assert_eq!(console(&mut s, "app.cancelTask(tid); hits").result, json!(2));
+    assert_eq!(
+        (r["ran"].clone(), output(&r)),
+        (json!(2), vec!["once 2".to_string()]),
+        "{r}"
+    );
+    assert_eq!(
+        console(&mut s, "app.cancelTask(tid); hits").result,
+        json!(2)
+    );
     let r = run_tasks_at(&mut s, t0 + ms(5000));
-    assert_eq!((r["ran"].clone(), r["next"].clone()), (json!(0), Value::Null), "{r}");
+    assert_eq!(
+        (r["ran"].clone(), r["next"].clone()),
+        (json!(0), Value::Null),
+        "{r}"
+    );
 }
 
 #[test]
@@ -171,10 +275,14 @@ b.onClick = function () { app.scheduleTask("writeLn('later')", 100, false); };
 w.show();
 "#,
     );
-    s.execute("scriptui.click", json!({"widget": "go"})).unwrap();
+    s.execute("scriptui.click", json!({"widget": "go"}))
+        .unwrap();
     let r = run_tasks_at(&mut s, Instant::now() + ms(500));
     assert_eq!(output(&r), vec!["later"], "{r}");
     // The engine command runs the same pass (headless hosts, agents).
-    assert_eq!(s.execute("script.runTasks", json!({})).unwrap()["ran"], json!(0));
+    assert_eq!(
+        s.execute("script.runTasks", json!({})).unwrap()["ran"],
+        json!(0)
+    );
     s.execute("scriptui.close", json!({})).unwrap();
 }

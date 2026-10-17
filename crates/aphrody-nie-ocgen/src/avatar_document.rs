@@ -34,7 +34,7 @@ pub fn adapt_avatar_document(document: &OcAvatarDocument) -> AvatarDocumentAdapt
                 recipe: None,
                 blockers: vec![format!("generationRecipe is invalid: {error}")],
             };
-        },
+        }
     };
     let mut blockers = Vec::new();
     if recipe.slug != document.slug {
@@ -45,7 +45,10 @@ pub fn adapt_avatar_document(document: &OcAvatarDocument) -> AvatarDocumentAdapt
             "generationRecipe.internal_code differs from the OC document internalCode".to_string(),
         );
     }
-    AvatarDocumentAdapter { recipe: blockers.is_empty().then_some(recipe), blockers }
+    AvatarDocumentAdapter {
+        recipe: blockers.is_empty().then_some(recipe),
+        blockers,
+    }
 }
 
 #[cfg(test)]

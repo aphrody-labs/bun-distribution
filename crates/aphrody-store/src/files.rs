@@ -37,8 +37,14 @@ pub enum Stage {
 
 impl Stage {
     /// All stages in order.
-    pub const ALL: [Self; 6] =
-        [Self::Scan, Self::Classify, Self::Extract, Self::Chunk, Self::Embed, Self::Index];
+    pub const ALL: [Self; 6] = [
+        Self::Scan,
+        Self::Classify,
+        Self::Extract,
+        Self::Chunk,
+        Self::Embed,
+        Self::Index,
+    ];
 
     /// Database label.
     #[must_use]
@@ -172,7 +178,9 @@ impl HomeDb {
     /// [`StoreError::Invalid`] for an empty kind or label, or SQLite failures.
     pub fn upsert_source(&self, kind: &str, label: &str, root: Option<&str>) -> Result<i64> {
         if kind.is_empty() || label.is_empty() {
-            return Err(StoreError::Invalid("source kind and label must not be empty".into()));
+            return Err(StoreError::Invalid(
+                "source kind and label must not be empty".into(),
+            ));
         }
         let now = now_ms();
         self.conn.execute(
@@ -182,7 +190,11 @@ impl HomeDb {
                  updated_at_ms = excluded.updated_at_ms",
             params![kind, label, root, now],
         )?;
-        Ok(self.conn.query_row("SELECT id FROM sources WHERE label = ?1", [label], |r| r.get(0))?)
+        Ok(self
+            .conn
+            .query_row("SELECT id FROM sources WHERE label = ?1", [label], |r| {
+                r.get(0)
+            })?)
     }
 
     /// Source id for a label, if it exists.
@@ -193,7 +205,9 @@ impl HomeDb {
     pub fn source_id(&self, label: &str) -> Result<Option<i64>> {
         Ok(self
             .conn
-            .query_row("SELECT id FROM sources WHERE label = ?1", [label], |r| r.get(0))
+            .query_row("SELECT id FROM sources WHERE label = ?1", [label], |r| {
+                r.get(0)
+            })
             .optional()?)
     }
 
@@ -214,8 +228,11 @@ impl HomeDb {
                 Some(_) => delta.changed.push(file.rel_path.clone()),
             }
         }
-        delta.removed =
-            stored.keys().filter(|p| !seen.contains(p.as_str())).cloned().collect::<Vec<_>>();
+        delta.removed = stored
+            .keys()
+            .filter(|p| !seen.contains(p.as_str()))
+            .cloned()
+            .collect::<Vec<_>>();
         Ok(delta)
     }
 
@@ -288,7 +305,9 @@ impl HomeDb {
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .optional()?;
-        let Some((hash, label)) = current else { return Ok(false) };
+        let Some((hash, label)) = current else {
+            return Ok(false);
+        };
         if hash != blake3 || Stage::parse(&label)? >= stage {
             return Ok(false);
         }
@@ -344,14 +363,18 @@ impl HomeDb {
             .conn
             .prepare("SELECT stage, count(*) FROM files WHERE source_id = ?1 GROUP BY stage")?;
         let rows = statement.query_map([source_id], |r| {
-            Ok((r.get::<_, String>(0)?, u64::try_from(r.get::<_, i64>(1)?).unwrap_or(0)))
+            Ok((
+                r.get::<_, String>(0)?,
+                u64::try_from(r.get::<_, i64>(1)?).unwrap_or(0),
+            ))
         })?;
         Ok(rows.collect::<std::result::Result<_, _>>()?)
     }
 
     fn stored_hashes(&self, source_id: i64) -> Result<BTreeMap<String, String>> {
-        let mut statement =
-            self.conn.prepare("SELECT rel_path, blake3 FROM files WHERE source_id = ?1")?;
+        let mut statement = self
+            .conn
+            .prepare("SELECT rel_path, blake3 FROM files WHERE source_id = ?1")?;
         let rows = statement.query_map([source_id], |r| Ok((r.get(0)?, r.get(1)?)))?;
         Ok(rows.collect::<std::result::Result<_, _>>()?)
     }
@@ -398,15 +421,30 @@ mod tests {
     fn changed_files_restart_and_unchanged_files_keep_their_stage() {
         let mut db = HomeDb::open_in_memory().unwrap();
         let source = db.upsert_source("fs", "repo", None).unwrap();
-        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2")]).unwrap();
+        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2")])
+            .unwrap();
         for stage in Stage::ALL.into_iter().skip(1) {
             assert!(db.complete_stage(source, "a.rs", "h1", stage).unwrap());
         }
-        assert!(db.complete_stage(source, "b.rs", "h2", Stage::Chunk).unwrap());
+        assert!(
+            db.complete_stage(source, "b.rs", "h2", Stage::Chunk)
+                .unwrap()
+        );
         // Same hash for a.rs, new hash for b.rs, new file c.rs.
-        let delta =
-            db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h3"), fp("c.rs", "h4")]).unwrap();
-        assert_eq!((delta.added.len(), delta.changed.len(), delta.unchanged.len()), (1, 1, 1));
+        let delta = db
+            .apply_scan(
+                source,
+                &[fp("a.rs", "h1"), fp("b.rs", "h3"), fp("c.rs", "h4")],
+            )
+            .unwrap();
+        assert_eq!(
+            (
+                delta.added.len(),
+                delta.changed.len(),
+                delta.unchanged.len()
+            ),
+            (1, 1, 1)
+        );
         let counts = db.stage_counts(source).unwrap();
         assert_eq!(counts.get("index"), Some(&1));
         assert_eq!(counts.get("scan"), Some(&2));
@@ -416,7 +454,8 @@ mod tests {
     fn removed_files_leave_the_fingerprint_table() {
         let mut db = HomeDb::open_in_memory().unwrap();
         let source = db.upsert_source("fs", "repo", None).unwrap();
-        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2")]).unwrap();
+        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2")])
+            .unwrap();
         let delta = db.apply_scan(source, &[fp("a.rs", "h1")]).unwrap();
         assert_eq!(delta.removed, ["b.rs"]);
         assert_eq!(db.stage_counts(source).unwrap().values().sum::<u64>(), 1);
@@ -427,10 +466,22 @@ mod tests {
         let mut db = HomeDb::open_in_memory().unwrap();
         let source = db.upsert_source("fs", "repo", None).unwrap();
         db.apply_scan(source, &[fp("a.rs", "h1")]).unwrap();
-        assert!(db.complete_stage(source, "a.rs", "h1", Stage::Chunk).unwrap());
-        assert!(!db.complete_stage(source, "a.rs", "h1", Stage::Classify).unwrap());
-        assert!(!db.complete_stage(source, "a.rs", "stale", Stage::Index).unwrap());
-        assert!(!db.complete_stage(source, "missing.rs", "h1", Stage::Index).unwrap());
+        assert!(
+            db.complete_stage(source, "a.rs", "h1", Stage::Chunk)
+                .unwrap()
+        );
+        assert!(
+            !db.complete_stage(source, "a.rs", "h1", Stage::Classify)
+                .unwrap()
+        );
+        assert!(
+            !db.complete_stage(source, "a.rs", "stale", Stage::Index)
+                .unwrap()
+        );
+        assert!(
+            !db.complete_stage(source, "missing.rs", "h1", Stage::Index)
+                .unwrap()
+        );
     }
 
     #[test]
@@ -439,11 +490,20 @@ mod tests {
         let source = db.upsert_source("fs", "repo", None).unwrap();
         let mut ignored = fp("c.bin", "h3");
         ignored.class = FileClass::Ignored;
-        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2"), ignored]).unwrap();
-        db.complete_stage(source, "a.rs", "h1", Stage::Index).unwrap();
-        db.complete_stage(source, "b.rs", "h2", Stage::Chunk).unwrap();
+        db.apply_scan(source, &[fp("a.rs", "h1"), fp("b.rs", "h2"), ignored])
+            .unwrap();
+        db.complete_stage(source, "a.rs", "h1", Stage::Index)
+            .unwrap();
+        db.complete_stage(source, "b.rs", "h2", Stage::Chunk)
+            .unwrap();
         let queue = db.pending(source, Stage::Embed).unwrap();
-        assert_eq!(queue.iter().map(|f| f.rel_path.as_str()).collect::<Vec<_>>(), ["b.rs"]);
+        assert_eq!(
+            queue
+                .iter()
+                .map(|f| f.rel_path.as_str())
+                .collect::<Vec<_>>(),
+            ["b.rs"]
+        );
         assert!(db.pending(source, Stage::Index).unwrap().len() == 1);
     }
 

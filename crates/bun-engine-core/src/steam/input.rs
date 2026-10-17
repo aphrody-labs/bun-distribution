@@ -37,10 +37,34 @@ pub enum Source {
 
 /// The `emulator` set: one action per bit of [`crate::machine::keys`].
 pub const EMULATOR_ACTIONS: [Action; 12] = [
-    Action { name: "a", title: "A", key: keys::A, pad: pad_buttons::A, source: Source::Diamond("button_a") },
-    Action { name: "b", title: "B", key: keys::B, pad: pad_buttons::B, source: Source::Diamond("button_b") },
-    Action { name: "x", title: "X", key: keys::X, pad: pad_buttons::X, source: Source::Diamond("button_x") },
-    Action { name: "y", title: "Y", key: keys::Y, pad: pad_buttons::Y, source: Source::Diamond("button_y") },
+    Action {
+        name: "a",
+        title: "A",
+        key: keys::A,
+        pad: pad_buttons::A,
+        source: Source::Diamond("button_a"),
+    },
+    Action {
+        name: "b",
+        title: "B",
+        key: keys::B,
+        pad: pad_buttons::B,
+        source: Source::Diamond("button_b"),
+    },
+    Action {
+        name: "x",
+        title: "X",
+        key: keys::X,
+        pad: pad_buttons::X,
+        source: Source::Diamond("button_x"),
+    },
+    Action {
+        name: "y",
+        title: "Y",
+        key: keys::Y,
+        pad: pad_buttons::Y,
+        source: Source::Diamond("button_y"),
+    },
     Action {
         name: "l",
         title: "L",
@@ -69,7 +93,13 @@ pub const EMULATOR_ACTIONS: [Action; 12] = [
         pad: pad_buttons::BACK,
         source: Source::Switch("button_menu"),
     },
-    Action { name: "up", title: "Up", key: keys::UP, pad: pad_buttons::DPAD_UP, source: Source::Dpad("dpad_north") },
+    Action {
+        name: "up",
+        title: "Up",
+        key: keys::UP,
+        pad: pad_buttons::DPAD_UP,
+        source: Source::Dpad("dpad_north"),
+    },
     Action {
         name: "down",
         title: "Down",
@@ -180,7 +210,11 @@ impl Kv {
 }
 
 fn set_title(set: &str) -> &'static str {
-    if set == EMULATOR_SET { "Emulator" } else { "Menu" }
+    if set == EMULATOR_SET {
+        "Emulator"
+    } else {
+        "Menu"
+    }
 }
 
 fn sets() -> [(&'static str, &'static [Action]); 2] {
@@ -229,7 +263,11 @@ pub fn action_manifest(app_id: u32) -> String {
     kv.open("Action Manifest");
     kv.open("configurations").open(&app_id.to_string());
     for controller in CONTROLLER_TYPES {
-        kv.open(controller).open("0").kv("path", &controller_file(controller)).close().close();
+        kv.open(controller)
+            .open("0")
+            .kv("path", &controller_file(controller))
+            .close()
+            .close();
     }
     kv.close().close();
     write_actions(&mut kv);
@@ -243,9 +281,17 @@ pub fn controller_file(controller: &str) -> String {
 }
 
 fn binding(kv: &mut Kv, input: &str, set: &str, action: &str) {
-    kv.open(input).open("activators").open("Full_Press").open("bindings");
+    kv.open(input)
+        .open("activators")
+        .open("Full_Press")
+        .open("bindings");
     kv.kv("binding", &format!("game_action {set} {action}"));
-    kv.close().close().close().open("disabled_activators").close().close();
+    kv.close()
+        .close()
+        .close()
+        .open("disabled_activators")
+        .close()
+        .close();
 }
 
 /// A default controller configuration: face buttons, d-pad, left stick as a d-pad, bumpers,
@@ -256,7 +302,10 @@ pub fn controller_config(controller: &str) -> String {
         .kv("version", "3")
         .kv("revision", "1")
         .kv("title", "Bun Engine")
-        .kv("description", "Bun Engine default layout: machine keys and the controller-first menu")
+        .kv(
+            "description",
+            "Bun Engine default layout: machine keys and the controller-first menu",
+        )
         .kv("creator", "0")
         .kv("progenitor", "")
         .kv("url", "")
@@ -281,14 +330,20 @@ pub fn controller_config(controller: &str) -> String {
             let inputs: Vec<(&str, &str)> = actions
                 .iter()
                 .filter_map(|a| match (a.source, pick) {
-                    (Source::Diamond(i), 0) | (Source::Dpad(i), 1) | (Source::Switch(i), 2) => Some((i, a.name)),
+                    (Source::Diamond(i), 0) | (Source::Dpad(i), 1) | (Source::Switch(i), 2) => {
+                        Some((i, a.name))
+                    }
                     _ => None,
                 })
                 .collect();
             if inputs.is_empty() {
                 continue;
             }
-            kv.open("group").kv("id", &group.to_string()).kv("mode", mode).kv("name", "").kv("description", "");
+            kv.open("group")
+                .kv("id", &group.to_string())
+                .kv("mode", mode)
+                .kv("name", "")
+                .kv("description", "");
             kv.open("inputs");
             for (input, action) in inputs {
                 binding(&mut kv, input, set, action);
@@ -357,7 +412,8 @@ impl SteamInput {
         if !input.init(false) {
             return Err("ISteamInput::Init failed".into());
         }
-        let manifest_accepted = input.set_input_action_manifest_file_path(&manifest.to_string_lossy());
+        let manifest_accepted =
+            input.set_input_action_manifest_file_path(&manifest.to_string_lossy());
         input.run_frame();
         let mut this = Self {
             input,
@@ -377,9 +433,15 @@ impl SteamInput {
     /// from [`Self::poll`] until the handles exist.
     fn resolve(&mut self) {
         let input = &self.input;
-        self.sets = [input.get_action_set_handle(EMULATOR_SET), input.get_action_set_handle(MENU_SET)];
+        self.sets = [
+            input.get_action_set_handle(EMULATOR_SET),
+            input.get_action_set_handle(MENU_SET),
+        ];
         let resolve = |actions: &[Action]| {
-            actions.iter().map(|a| (input.get_digital_action_handle(a.name), a.pad)).collect::<Vec<_>>()
+            actions
+                .iter()
+                .map(|a| (input.get_digital_action_handle(a.name), a.pad))
+                .collect::<Vec<_>>()
         };
         self.emulator = resolve(&EMULATOR_ACTIONS);
         self.menu = resolve(&MENU_ACTIONS);
@@ -390,7 +452,11 @@ impl SteamInput {
     }
 
     pub fn resolved_actions(&self) -> usize {
-        self.emulator.iter().chain(&self.menu).filter(|(h, _)| *h != 0).count()
+        self.emulator
+            .iter()
+            .chain(&self.menu)
+            .filter(|(h, _)| *h != 0)
+            .count()
     }
 
     /// Connected controller handles (steamworks-rs 0.13 `get_connected_controllers` returns the
@@ -436,7 +502,10 @@ impl SteamInput {
                         buttons |= bit;
                     }
                 }
-                Pad { buttons, ..Pad::default() }
+                Pad {
+                    buttons,
+                    ..Pad::default()
+                }
             });
             if pad != self.last[usize::from(slot)] {
                 self.last[usize::from(slot)] = pad;
@@ -448,9 +517,16 @@ impl SteamInput {
     /// Key bits currently held across controllers (for headless consumers).
     pub fn keys(&self) -> u32 {
         let emulator_ready = self.emulator.iter().any(|(h, _)| *h != 0);
-        let actions = if self.menu_active || !emulator_ready { &MENU_ACTIONS[..] } else { &EMULATOR_ACTIONS[..] };
+        let actions = if self.menu_active || !emulator_ready {
+            &MENU_ACTIONS[..]
+        } else {
+            &EMULATOR_ACTIONS[..]
+        };
         self.last.iter().flatten().fold(0, |acc, pad| {
-            actions.iter().filter(|a| pad.buttons & a.pad != 0).fold(acc, |acc, a| acc | a.key)
+            actions
+                .iter()
+                .filter(|a| pad.buttons & a.pad != 0)
+                .fold(acc, |acc, a| acc | a.key)
         })
     }
 }

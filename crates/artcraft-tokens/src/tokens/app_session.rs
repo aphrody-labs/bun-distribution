@@ -14,4 +14,9 @@ pub struct AppSessionToken(pub String);
 
 impl_mysql_token_from_row!(AppSessionToken);
 impl_string_token!(AppSessionToken);
-impl_crockford_generator!(AppSessionToken, 32usize, TokenPrefix::AppSession, CrockfordMixed);
+impl_crockford_generator!(
+    AppSessionToken,
+    32usize,
+    TokenPrefix::AppSession,
+    CrockfordMixed
+);

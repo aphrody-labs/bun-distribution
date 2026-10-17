@@ -11,7 +11,12 @@ fn survive(data: &[u8]) {
     let Some(p) = d.first_page() else { return };
     if let Ok(f) = import_svg(&mut d, data, p, 0.0, 0.0, "x") {
         assert!(d.validate().is_empty(), "{:?}", d.validate());
-        let view = figcraft_render::View { origin: (0.0, 0.0), scale: 0.5, width: 64, height: 64 };
+        let view = figcraft_render::View {
+            origin: (0.0, 0.0),
+            scale: 0.5,
+            width: 64,
+            height: 64,
+        };
         if let Some(mut pix) = figcraft_render::Pixmap::new(64, 64) {
             figcraft_render::render_nodes_into(&d, &[f], &view, &mut pix);
         }
@@ -90,14 +95,30 @@ fn references_to_themselves() {
 
 #[test]
 fn deep_and_wide_documents_are_bounded() {
-    survive(&svg(&format!("{}<rect width=\"1\" height=\"1\"/>{}", "<g>".repeat(3000), "</g>".repeat(3000))));
-    survive(&svg(&format!("{}<rect width=\"1\" height=\"1\"/>{}", "<g transform=\"scale(1.01)\" opacity=\"0.99\">".repeat(200), "</g>".repeat(200))));
-    let many: String = (0..5000).map(|i| format!("<rect x=\"{}\" width=\"1\" height=\"1\"/>", i % 100)).collect();
+    survive(&svg(&format!(
+        "{}<rect width=\"1\" height=\"1\"/>{}",
+        "<g>".repeat(3000),
+        "</g>".repeat(3000)
+    )));
+    survive(&svg(&format!(
+        "{}<rect width=\"1\" height=\"1\"/>{}",
+        "<g transform=\"scale(1.01)\" opacity=\"0.99\">".repeat(200),
+        "</g>".repeat(200)
+    )));
+    let many: String = (0..5000)
+        .map(|i| format!("<rect x=\"{}\" width=\"1\" height=\"1\"/>", i % 100))
+        .collect();
     survive(&svg(&many));
-    let prims: String = (0..500).map(|i| format!("<feOffset dx=\"{i}\"/>")).collect();
-    survive(&svg(&format!(r##"<filter id="f">{prims}</filter><rect width="10" height="10" filter="url(#f)"/>"##)));
+    let prims: String = (0..500)
+        .map(|i| format!("<feOffset dx=\"{i}\"/>"))
+        .collect();
+    survive(&svg(&format!(
+        r##"<filter id="f">{prims}</filter><rect width="10" height="10" filter="url(#f)"/>"##
+    )));
     let dashes: String = (0..10_000).map(|i| format!("{} ", i % 7 + 1)).collect();
-    survive(&svg(&format!(r##"<line x2="100" stroke="black" stroke-dasharray="{dashes}"/>"##)));
+    survive(&svg(&format!(
+        r##"<line x2="100" stroke="black" stroke-dasharray="{dashes}"/>"##
+    )));
 }
 
 /// A small deterministic generator for the mangling.
@@ -118,10 +139,25 @@ impl Rng {
 #[test]
 fn the_corpus_mangled_byte_by_byte() {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus");
-    let files: Vec<Vec<u8>> = std::fs::read_dir(dir).unwrap().filter_map(|e| std::fs::read(e.ok()?.path()).ok()).collect();
+    let files: Vec<Vec<u8>> = std::fs::read_dir(dir)
+        .unwrap()
+        .filter_map(|e| std::fs::read(e.ok()?.path()).ok())
+        .collect();
     assert!(files.len() > 10);
     let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
-    let junk: &[&[u8]] = &[b"<", b">", b"\"", b"-", b"e", b"9999999", b"url(#", b"NaN", b"\0", b"</g>", b"<g transform=\"scale(1e30)\">"];
+    let junk: &[&[u8]] = &[
+        b"<",
+        b">",
+        b"\"",
+        b"-",
+        b"e",
+        b"9999999",
+        b"url(#",
+        b"NaN",
+        b"\0",
+        b"</g>",
+        b"<g transform=\"scale(1e30)\">",
+    ];
     for f in &files {
         // Cut short at a spread of points.
         for k in 1..12 {
@@ -156,11 +192,24 @@ fn the_corpus_mangled_byte_by_byte() {
 #[test]
 fn nesting_is_measured_before_parsing() {
     use super::nesting;
-    assert_eq!(nesting(b"<svg><g><g/><g a='>' b=\"/>\"></g></g></svg>", 99), 3);
-    assert_eq!(nesting(b"<?xml version='1.0'?><!-- <g><g> --><svg><![CDATA[<g><g>]]></svg>", 99), 1);
+    assert_eq!(
+        nesting(b"<svg><g><g/><g a='>' b=\"/>\"></g></g></svg>", 99),
+        3
+    );
+    assert_eq!(
+        nesting(
+            b"<?xml version='1.0'?><!-- <g><g> --><svg><![CDATA[<g><g>]]></svg>",
+            99
+        ),
+        1
+    );
     assert_eq!(nesting(b"<svg><g", 99), 2);
     let deep = format!("{}{}", "<g>".repeat(5000), "</g>".repeat(5000));
-    assert_eq!(nesting(deep.as_bytes(), 512), 513, "stops once past the limit");
+    assert_eq!(
+        nesting(deep.as_bytes(), 512),
+        513,
+        "stops once past the limit"
+    );
     // Far too deep for the parser's stack: refused.
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();

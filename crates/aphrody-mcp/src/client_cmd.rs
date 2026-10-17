@@ -100,10 +100,16 @@ pub(crate) enum ClientOp {
 /// exit and a structured error JSON line on stderr).
 pub(crate) async fn run(args: ClientArgs) -> Result<()> {
     match args.op {
-        ClientOp::List { server_name, config } => run_list(&server_name, config.as_deref()).await,
-        ClientOp::Call { server_name, tool_name, args, config } => {
-            run_call(&server_name, &tool_name, &args, config.as_deref()).await
-        },
+        ClientOp::List {
+            server_name,
+            config,
+        } => run_list(&server_name, config.as_deref()).await,
+        ClientOp::Call {
+            server_name,
+            tool_name,
+            args,
+            config,
+        } => run_call(&server_name, &tool_name, &args, config.as_deref()).await,
         ClientOp::Probe { stdio } => run_probe(&stdio).await,
     }
 }
@@ -211,8 +217,10 @@ async fn run_probe(stdio_cmdline: &str) -> Result<()> {
         .initialize()
         .await
         .with_context(|| format!("MCP initialize handshake against `{command}`"))?;
-    let tools =
-        client.list_tools().await.with_context(|| format!("MCP tools/list against `{command}`"))?;
+    let tools = client
+        .list_tools()
+        .await
+        .with_context(|| format!("MCP tools/list against `{command}`"))?;
 
     let tool_entries: Vec<JsonValue> = tools
         .into_iter()
@@ -266,13 +274,20 @@ pub(crate) fn find_server<'a>(
     cfg: &'a McpConfig,
     server_name: &str,
 ) -> Result<&'a McpServerConfig> {
-    cfg.servers.iter().find(|s| s.name == server_name).ok_or_else(|| {
-        let known: Vec<&str> = cfg.servers.iter().map(|s| s.name.as_str()).collect();
-        anyhow!(
-            "no MCP server named `{server_name}` in config (known: {})",
-            if known.is_empty() { "<none>".to_owned() } else { known.join(", ") }
-        )
-    })
+    cfg.servers
+        .iter()
+        .find(|s| s.name == server_name)
+        .ok_or_else(|| {
+            let known: Vec<&str> = cfg.servers.iter().map(|s| s.name.as_str()).collect();
+            anyhow!(
+                "no MCP server named `{server_name}` in config (known: {})",
+                if known.is_empty() {
+                    "<none>".to_owned()
+                } else {
+                    known.join(", ")
+                }
+            )
+        })
 }
 
 /// Connect to a server described by an `McpServerConfig` entry. Picks the
@@ -284,7 +299,7 @@ pub(crate) async fn connect_from_config(entry: &McpServerConfig) -> Result<McpCl
             McpClient::from_stdio(command, &arg_refs, env)
                 .await
                 .map_err(|e| anyhow!("stdio connect to `{command}`: {e}"))
-        },
+        }
         McpTransportConfig::Http { url, headers }
         | McpTransportConfig::StreamableHttp { url, headers } => {
             let resolved = headers
@@ -296,7 +311,7 @@ pub(crate) async fn connect_from_config(entry: &McpServerConfig) -> Result<McpCl
                 .collect::<Result<HashMap<_, _>, _>>()?;
             McpClient::from_http_headers(url.clone(), &resolved)
                 .map_err(|e| anyhow!("http client for `{url}`: {e}"))
-        },
+        }
     }
 }
 
@@ -305,7 +320,9 @@ pub(crate) async fn connect_from_config(entry: &McpServerConfig) -> Result<McpCl
 /// the command via a wrapper script). Returns an error for empty input.
 pub(crate) fn split_stdio_command(cmdline: &str) -> Result<(String, Vec<String>)> {
     let mut iter = cmdline.split_whitespace().map(str::to_owned);
-    let command = iter.next().ok_or_else(|| anyhow!("--stdio must not be empty"))?;
+    let command = iter
+        .next()
+        .ok_or_else(|| anyhow!("--stdio must not be empty"))?;
     let args: Vec<String> = iter.collect();
     Ok((command, args))
 }
@@ -381,7 +398,7 @@ mod tests {
             Err(err) => {
                 let msg = err.to_string();
                 assert!(msg.contains("stdio connect to"), "unexpected error: {msg}");
-            },
+            }
         }
     }
 
@@ -459,12 +476,25 @@ mod tests {
             },
         };
         let mut client = connect_from_config(&entry).await.unwrap();
-        client.initialize().await.expect("actual rmcp initialize SSE");
-        let tools = client.list_tools().await.expect("actual rmcp tools/list SSE");
+        client
+            .initialize()
+            .await
+            .expect("actual rmcp initialize SSE");
+        let tools = client
+            .list_tools()
+            .await
+            .expect("actual rmcp tools/list SSE");
         assert!(tools.iter().any(|tool| tool.name == "aphrody_job_cancel"));
-        let result =
-            client.call_tool("aphrody_job_cancel", serde_json::json!({"id":""})).await.unwrap();
-        assert!(result["content"][0]["text"].as_str().unwrap().contains("JOB_BAD_REQUEST"));
+        let result = client
+            .call_tool("aphrody_job_cancel", serde_json::json!({"id":""}))
+            .await
+            .unwrap();
+        assert!(
+            result["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("JOB_BAD_REQUEST")
+        );
         client.shutdown().await;
         server.abort();
         let requests = seen.lock().unwrap();

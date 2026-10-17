@@ -3,7 +3,14 @@
 //! [`Image`] stores premultiplied RGBA in `f32` (values may exceed 1.0 in 32 bpc projects). Every
 //! heavy operation is row-parallel with rayon.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod blur;
 pub mod channels3d;
@@ -18,7 +25,9 @@ use rayon::prelude::*;
 
 pub use blur::{box_blur, directional_blur, gaussian_blur, radial_blur};
 pub use channels3d::AuxChannels;
-pub use warp::{Sampling, WarpOpts, accumulate_warp, composite_warp, composite_warp_reference, resample};
+pub use warp::{
+    Sampling, WarpOpts, accumulate_warp, composite_warp, composite_warp_reference, resample,
+};
 
 pub type Px = [f32; 4];
 
@@ -31,10 +40,18 @@ pub struct Image {
 
 impl Image {
     pub fn new(width: u32, height: u32) -> Image {
-        Image { width, height, data: vec![[0.0; 4]; width as usize * height as usize] }
+        Image {
+            width,
+            height,
+            data: vec![[0.0; 4]; width as usize * height as usize],
+        }
     }
     pub fn filled(width: u32, height: u32, px: Px) -> Image {
-        Image { width, height, data: vec![px; width as usize * height as usize] }
+        Image {
+            width,
+            height,
+            data: vec![px; width as usize * height as usize],
+        }
     }
     pub fn is_empty(&self) -> bool {
         self.width == 0 || self.height == 0
@@ -45,7 +62,11 @@ impl Image {
     }
     #[inline]
     pub fn get(&self, x: i64, y: i64) -> Px {
-        if x < 0 || y < 0 || x >= self.width as i64 || y >= self.height as i64 { [0.0; 4] } else { self.data[y as usize * self.width as usize + x as usize] }
+        if x < 0 || y < 0 || x >= self.width as i64 || y >= self.height as i64 {
+            [0.0; 4]
+        } else {
+            self.data[y as usize * self.width as usize + x as usize]
+        }
     }
     #[inline]
     pub fn get_clamped(&self, x: i64, y: i64) -> Px {
@@ -117,7 +138,12 @@ impl Image {
         let w = |t: f64| -> [f32; 4] {
             let t2 = t * t;
             let t3 = t2 * t;
-            [(-0.5 * t3 + t2 - 0.5 * t) as f32, (1.5 * t3 - 2.5 * t2 + 1.0) as f32, (-1.5 * t3 + 2.0 * t2 + 0.5 * t) as f32, (0.5 * t3 - 0.5 * t2) as f32]
+            [
+                (-0.5 * t3 + t2 - 0.5 * t) as f32,
+                (1.5 * t3 - 2.5 * t2 + 1.0) as f32,
+                (-1.5 * t3 + 2.0 * t2 + 0.5 * t) as f32,
+                (0.5 * t3 - 0.5 * t2) as f32,
+            ]
         };
         let wx = w(tx);
         let wy = w(ty);
@@ -172,11 +198,14 @@ impl Image {
     }
     /// Multiply each pixel by a coverage value from `mask` (same size).
     pub fn mul_mask(&mut self, mask: &[f32]) {
-        self.data.par_iter_mut().zip(mask.par_iter()).for_each(|(p, &m)| {
-            for c in p.iter_mut() {
-                *c *= m;
-            }
-        });
+        self.data
+            .par_iter_mut()
+            .zip(mask.par_iter())
+            .for_each(|(p, &m)| {
+                for c in p.iter_mut() {
+                    *c *= m;
+                }
+            });
     }
     /// Clamp to [0, 1] (8/16 bpc working space).
     pub fn clamp01(&mut self) {
@@ -200,41 +229,57 @@ impl Image {
     /// Straight-alpha 8-bit RGBA (sRGB-encoded values as stored).
     pub fn to_rgba8(&self) -> Vec<u8> {
         let mut out = vec![0u8; self.data.len() * 4];
-        out.par_chunks_mut(4).zip(self.data.par_iter()).for_each(|(o, p)| {
-            let a = p[3].clamp(0.0, 1.0);
-            let inv = if a > 0.0 { 1.0 / p[3] } else { 0.0 };
-            for c in 0..3 {
-                o[c] = ((p[c] * inv).clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
-            }
-            o[3] = (a * 255.0 + 0.5) as u8;
-        });
+        out.par_chunks_mut(4)
+            .zip(self.data.par_iter())
+            .for_each(|(o, p)| {
+                let a = p[3].clamp(0.0, 1.0);
+                let inv = if a > 0.0 { 1.0 / p[3] } else { 0.0 };
+                for c in 0..3 {
+                    o[c] = ((p[c] * inv).clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+                }
+                o[3] = (a * 255.0 + 0.5) as u8;
+            });
         out
     }
     /// Composite over an opaque background colour and return opaque 8-bit RGBA.
     pub fn to_rgba8_over(&self, bg: [f32; 3]) -> Vec<u8> {
         let mut out = vec![0u8; self.data.len() * 4];
-        out.par_chunks_mut(4).zip(self.data.par_iter()).for_each(|(o, p)| {
-            let k = 1.0 - p[3].clamp(0.0, 1.0);
-            for c in 0..3 {
-                o[c] = ((p[c] + bg[c] * k).clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
-            }
-            o[3] = 255;
-        });
+        out.par_chunks_mut(4)
+            .zip(self.data.par_iter())
+            .for_each(|(o, p)| {
+                let k = 1.0 - p[3].clamp(0.0, 1.0);
+                for c in 0..3 {
+                    o[c] = ((p[c] + bg[c] * k).clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
+                }
+                o[3] = 255;
+            });
         out
     }
     /// From straight-alpha 8-bit RGBA.
     pub fn from_rgba8(width: u32, height: u32, rgba: &[u8]) -> Image {
         let mut img = Image::new(width, height);
-        img.data.par_iter_mut().zip(rgba.par_chunks(4)).for_each(|(p, s)| {
-            let a = s[3] as f32 / 255.0;
-            *p = [s[0] as f32 / 255.0 * a, s[1] as f32 / 255.0 * a, s[2] as f32 / 255.0 * a, a];
-        });
+        img.data
+            .par_iter_mut()
+            .zip(rgba.par_chunks(4))
+            .for_each(|(p, s)| {
+                let a = s[3] as f32 / 255.0;
+                *p = [
+                    s[0] as f32 / 255.0 * a,
+                    s[1] as f32 / 255.0 * a,
+                    s[2] as f32 / 255.0 * a,
+                    a,
+                ];
+            });
         img
     }
     /// Straight-alpha colour at a pixel.
     pub fn straight(&self, x: i64, y: i64) -> Px {
         let p = self.get(x, y);
-        if p[3] > 0.0 { [p[0] / p[3], p[1] / p[3], p[2] / p[3], p[3]] } else { [0.0; 4] }
+        if p[3] > 0.0 {
+            [p[0] / p[3], p[1] / p[3], p[2] / p[3], p[3]]
+        } else {
+            [0.0; 4]
+        }
     }
     /// Map every pixel through `f` on straight colour (keeps alpha).
     pub fn map_straight(&mut self, f: impl Fn([f32; 3]) -> [f32; 3] + Sync) {
@@ -250,19 +295,27 @@ impl Image {
     /// Blend `src` (same size) onto self with a mode and opacity.
     pub fn blend_from(&mut self, src: &Image, mode: BlendMode, opacity: f32, seed: u32) {
         let w = self.width as usize;
-        self.data.par_chunks_mut(w.max(1)).zip(src.data.par_chunks(w.max(1))).enumerate().for_each(|(y, (d, s))| {
-            for x in 0..d.len() {
-                let mut sp = s[x];
-                if sp[3] <= 0.0 && !mode.is_stencil() {
-                    continue;
+        self.data
+            .par_chunks_mut(w.max(1))
+            .zip(src.data.par_chunks(w.max(1)))
+            .enumerate()
+            .for_each(|(y, (d, s))| {
+                for x in 0..d.len() {
+                    let mut sp = s[x];
+                    if sp[3] <= 0.0 && !mode.is_stencil() {
+                        continue;
+                    }
+                    for c in sp.iter_mut() {
+                        *c *= opacity;
+                    }
+                    let n = if matches!(mode, BlendMode::Dissolve | BlendMode::DancingDissolve) {
+                        hash_noise(x as u32, y as u32, seed)
+                    } else {
+                        0.5
+                    };
+                    d[x] = blend_pixel(mode, d[x], sp, n);
                 }
-                for c in sp.iter_mut() {
-                    *c *= opacity;
-                }
-                let n = if matches!(mode, BlendMode::Dissolve | BlendMode::DancingDissolve) { hash_noise(x as u32, y as u32, seed) } else { 0.5 };
-                d[x] = blend_pixel(mode, d[x], sp, n);
-            }
-        });
+            });
     }
     /// Bounding box of non-transparent pixels (x0, y0, x1, y1), None if empty.
     pub fn alpha_bounds(&self) -> Option<(u32, u32, u32, u32)> {
@@ -285,7 +338,8 @@ impl Image {
 /// Deterministic per-pixel noise in 0..1.
 #[inline]
 pub fn hash_noise(x: u32, y: u32, seed: u32) -> f32 {
-    let mut h = x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841) ^ seed.wrapping_mul(0xcb1a_b31f);
+    let mut h =
+        x.wrapping_mul(0x8da6_b343) ^ y.wrapping_mul(0xd816_3841) ^ seed.wrapping_mul(0xcb1a_b31f);
     h ^= h >> 13;
     h = h.wrapping_mul(0x5bd1_e995);
     h ^= h >> 15;
@@ -302,13 +356,25 @@ pub struct Mask {
 
 impl Mask {
     pub fn new(width: u32, height: u32, v: f32) -> Mask {
-        Mask { width, height, data: vec![v; width as usize * height as usize] }
+        Mask {
+            width,
+            height,
+            data: vec![v; width as usize * height as usize],
+        }
     }
     pub fn to_image(&self) -> Image {
-        Image { width: self.width, height: self.height, data: self.data.iter().map(|&a| [a, a, a, a]).collect() }
+        Image {
+            width: self.width,
+            height: self.height,
+            data: self.data.iter().map(|&a| [a, a, a, a]).collect(),
+        }
     }
     pub fn from_alpha(img: &Image) -> Mask {
-        Mask { width: img.width, height: img.height, data: img.data.iter().map(|p| p[3]).collect() }
+        Mask {
+            width: img.width,
+            height: img.height,
+            data: img.data.iter().map(|p| p[3]).collect(),
+        }
     }
 }
 
@@ -323,7 +389,12 @@ mod tests {
         let back = img.to_rgba8();
         for (a, b) in src.chunks(4).zip(back.chunks(4)) {
             if a[3] >= 128 {
-                assert!(a.iter().zip(b).all(|(x, y)| (*x as i32 - *y as i32).abs() <= 1), "{a:?} {b:?}");
+                assert!(
+                    a.iter()
+                        .zip(b)
+                        .all(|(x, y)| (*x as i32 - *y as i32).abs() <= 1),
+                    "{a:?} {b:?}"
+                );
             } else {
                 assert!((a[3] as i32 - b[3] as i32).abs() <= 1);
             }

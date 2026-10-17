@@ -148,7 +148,8 @@ fn extract_text_findings(
         }
 
         let contains_ci = |needle: &[u8]| {
-            text.windows(needle.len()).any(|window| window.eq_ignore_ascii_case(needle))
+            text.windows(needle.len())
+                .any(|window| window.eq_ignore_ascii_case(needle))
         };
         let is_updater = [
             b"auto-updater".as_slice(),
@@ -161,7 +162,9 @@ fn extract_text_findings(
         .iter()
         .any(|needle| contains_ci(needle))
             || (contains_ci(b".run.app")
-                && (text.get(..7).is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"http://"))
+                && (text
+                    .get(..7)
+                    .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"http://"))
                     || text
                         .get(..8)
                         .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"https://"))));
@@ -196,8 +199,11 @@ fn extract_text_findings(
         indicators.push(format!("OAuth client_id: {id}"));
     }
     for endpoint in &endpoints {
-        let label =
-            if endpoint.contains(".run.app") { "Cloud Run endpoint" } else { "Google endpoint" };
+        let label = if endpoint.contains(".run.app") {
+            "Cloud Run endpoint"
+        } else {
+            "Google endpoint"
+        };
         indicators.push(format!("{label}: {endpoint}"));
     }
     for url in &updater_urls {
@@ -229,7 +235,12 @@ fn extract_text_findings(
         }
     });
 
-    TextFindings { oauth_client_ids: oauth_ids, google_endpoints: endpoints, updater_urls, wga }
+    TextFindings {
+        oauth_client_ids: oauth_ids,
+        google_endpoints: endpoints,
+        updater_urls,
+        wga,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -619,8 +630,10 @@ fn detect_family(bytes: &[u8], indicators: &mut Vec<String>) -> BinaryFamily {
     // Checked before generic WebView2 / Electron because it carries distinct WGA markers.
     for needle in WGA_MARKERS {
         if contains_ascii_or_utf16le(bytes, needle) {
-            indicators
-                .push(format!("WGA marker: {}", std::str::from_utf8(needle).unwrap_or("<binary>")));
+            indicators.push(format!(
+                "WGA marker: {}",
+                std::str::from_utf8(needle).unwrap_or("<binary>")
+            ));
         }
     }
     if indicators.iter().any(|s| s.starts_with("WGA marker:")) {
@@ -629,8 +642,12 @@ fn detect_family(bytes: &[u8], indicators: &mut Vec<String>) -> BinaryFamily {
 
     // Electron: ships `app.asar` packager artefact or the `electron` string,
     // and always embeds a Chromium PAK resource.
-    let electron_needles: &[&[u8]] =
-        &[b"app.asar", b"electron", b"chrome_100_percent.pak", b"ELECTRON_RUN_AS_NODE"];
+    let electron_needles: &[&[u8]] = &[
+        b"app.asar",
+        b"electron",
+        b"chrome_100_percent.pak",
+        b"ELECTRON_RUN_AS_NODE",
+    ];
     for needle in electron_needles {
         if memmem::find(bytes, needle).is_some() {
             indicators.push(format!(
@@ -669,8 +686,13 @@ fn detect_family(bytes: &[u8], indicators: &mut Vec<String>) -> BinaryFamily {
     }
 
     // Chromium: core browser or headless shell.
-    let chromium_needles: &[&[u8]] =
-        &[b"Chrome/", b"chrome.dll", b"Crashpad", b"ChromeDriver", b"HeadlessChrome"];
+    let chromium_needles: &[&[u8]] = &[
+        b"Chrome/",
+        b"chrome.dll",
+        b"Crashpad",
+        b"ChromeDriver",
+        b"HeadlessChrome",
+    ];
     for needle in chromium_needles {
         if memmem::find(bytes, needle).is_some() {
             indicators.push(format!(
@@ -685,11 +707,18 @@ fn detect_family(bytes: &[u8], indicators: &mut Vec<String>) -> BinaryFamily {
 
     // Go binary: build-id tag injected by the Go linker, or the PC-line table
     // section name embedded in the binary.
-    let go_needles: &[&[u8]] = &[b"go:buildid", b"Go build ID:", b".gopclntab", b"runtime.goexit"];
+    let go_needles: &[&[u8]] = &[
+        b"go:buildid",
+        b"Go build ID:",
+        b".gopclntab",
+        b"runtime.goexit",
+    ];
     for needle in go_needles {
         if memmem::find(bytes, needle).is_some() {
-            indicators
-                .push(format!("Go marker: {}", std::str::from_utf8(needle).unwrap_or("<binary>")));
+            indicators.push(format!(
+                "Go marker: {}",
+                std::str::from_utf8(needle).unwrap_or("<binary>")
+            ));
         }
     }
     if indicators.iter().any(|s| s.starts_with("Go")) {
@@ -757,8 +786,10 @@ fn detect_code_sign_subject(bytes: &[u8], indicators: &mut Vec<String>) -> Optio
     let subjects: &[&[u8]] = &[b"Google LLC", b"Google Inc", b"Google Inc."];
     for needle in subjects {
         if memmem::find(bytes, needle).is_some() {
-            let subject =
-                std::str::from_utf8(needle).unwrap_or("Google").trim_end_matches('.').to_owned();
+            let subject = std::str::from_utf8(needle)
+                .unwrap_or("Google")
+                .trim_end_matches('.')
+                .to_owned();
             indicators.push(format!("Code-sign subject: {subject}"));
             return Some(subject);
         }
@@ -811,8 +842,10 @@ fn extract_grpc_surface(
     // --- Pass 1a: routing paths (most authoritative) on raw bytes -----------
     for cap in path_re.captures_iter(bytes) {
         if let (Some(svc), Some(meth)) = (cap.get(1), cap.get(2))
-            && let (Ok(svc), Ok(meth)) =
-                (std::str::from_utf8(svc.as_bytes()), std::str::from_utf8(meth.as_bytes()))
+            && let (Ok(svc), Ok(meth)) = (
+                std::str::from_utf8(svc.as_bytes()),
+                std::str::from_utf8(meth.as_bytes()),
+            )
         {
             services.insert(svc.to_owned());
             methods.insert(meth.to_owned());
@@ -832,7 +865,10 @@ fn extract_grpc_surface(
             // Skip if this match is actually the prefix of a full service name
             // already recorded — keep only standalone package symbols.
             let pkg = pkg.to_owned();
-            if !services.iter().any(|s| s.starts_with(&pkg) && s.len() > pkg.len()) {
+            if !services
+                .iter()
+                .any(|s| s.starts_with(&pkg) && s.len() > pkg.len())
+            {
                 services.insert(pkg);
             }
         }
@@ -904,7 +940,12 @@ mod tests {
     fn google_family_electron_detected() {
         let buf = make_electron_buf();
         let r = analyze_google(&buf);
-        assert_eq!(r.family, BinaryFamily::Electron, "should detect Electron, got {:?}", r.family);
+        assert_eq!(
+            r.family,
+            BinaryFamily::Electron,
+            "should detect Electron, got {:?}",
+            r.family
+        );
         assert!(
             r.indicators.iter().any(|s| s.contains("app.asar")),
             "should record app.asar indicator"
@@ -915,7 +956,12 @@ mod tests {
     fn google_family_go_binary_detected() {
         let buf = make_go_buf();
         let r = analyze_google(&buf);
-        assert_eq!(r.family, BinaryFamily::GoBinary, "should detect GoBinary, got {:?}", r.family);
+        assert_eq!(
+            r.family,
+            BinaryFamily::GoBinary,
+            "should detect GoBinary, got {:?}",
+            r.family
+        );
         assert!(r.indicators.iter().any(|s| s.contains("go:buildid")));
     }
 
@@ -996,7 +1042,11 @@ mod tests {
         buf.push(b' ');
         buf.extend_from_slice(id);
         let r = analyze_google(&buf);
-        assert_eq!(r.oauth_client_ids.len(), 1, "duplicate client_id must be deduplicated");
+        assert_eq!(
+            r.oauth_client_ids.len(),
+            1,
+            "duplicate client_id must be deduplicated"
+        );
     }
 
     // Google endpoint tests ---------------------------------------------------
@@ -1006,7 +1056,9 @@ mod tests {
         let buf = b"GET https://oauth2.googleapis.com/token HTTP/1.1\x00".to_vec();
         let r = analyze_google(&buf);
         assert!(
-            r.google_endpoints.iter().any(|e| e.contains("googleapis.com")),
+            r.google_endpoints
+                .iter()
+                .any(|e| e.contains("googleapis.com")),
             "should extract googleapis.com endpoint, got {:?}",
             r.google_endpoints
         );
@@ -1077,7 +1129,12 @@ mod tests {
         let buf = b"subject=Google Inc\x00".to_vec();
         let r = analyze_google(&buf);
         assert!(r.code_sign_subject.is_some());
-        assert!(r.code_sign_subject.as_deref().unwrap().starts_with("Google Inc"));
+        assert!(
+            r.code_sign_subject
+                .as_deref()
+                .unwrap()
+                .starts_with("Google Inc")
+        );
     }
 
     // JSON serialization -------------------------------------------------------
@@ -1116,13 +1173,17 @@ mod tests {
 
         // Service from the path is recorded (full FQN).
         assert!(
-            r.grpc_services.iter().any(|s| s == "exa.language_server_pb.LanguageServerService"),
+            r.grpc_services
+                .iter()
+                .any(|s| s == "exa.language_server_pb.LanguageServerService"),
             "expected service FQN, got {:?}",
             r.grpc_services
         );
         // Codeium proto package marker recorded.
         assert!(
-            r.grpc_services.iter().any(|s| s == "codeium_common_go_proto"),
+            r.grpc_services
+                .iter()
+                .any(|s| s == "codeium_common_go_proto"),
             "expected codeium_common_go_proto, got {:?}",
             r.grpc_services
         );
@@ -1161,11 +1222,18 @@ mod tests {
         let mut sorted_meth = r.grpc_methods.clone();
         sorted_meth.sort();
         sorted_meth.dedup();
-        assert_eq!(r.grpc_methods, sorted_meth, "methods must be sorted + deduped");
+        assert_eq!(
+            r.grpc_methods, sorted_meth,
+            "methods must be sorted + deduped"
+        );
 
         // Allowlisted verbs captured.
-        for expected in ["GetAuthStatus", "GetAvailableModels", "FetchUserInfo", "GetModelResponse"]
-        {
+        for expected in [
+            "GetAuthStatus",
+            "GetAvailableModels",
+            "FetchUserInfo",
+            "GetModelResponse",
+        ] {
             assert!(
                 r.grpc_methods.iter().any(|m| m == expected),
                 "expected method {expected}, got {:?}",
@@ -1174,13 +1242,18 @@ mod tests {
         }
         // FetchUserInfo only once despite appearing twice.
         assert_eq!(
-            r.grpc_methods.iter().filter(|m| *m == "FetchUserInfo").count(),
+            r.grpc_methods
+                .iter()
+                .filter(|m| *m == "FetchUserInfo")
+                .count(),
             1,
             "FetchUserInfo must be deduplicated"
         );
         // Non-allowlisted identifiers excluded.
         assert!(
-            !r.grpc_methods.iter().any(|m| m == "RenderTemplate" || m == "ComputeHash"),
+            !r.grpc_methods
+                .iter()
+                .any(|m| m == "RenderTemplate" || m == "ComputeHash"),
             "non-allowlisted identifiers must not be captured, got {:?}",
             r.grpc_methods
         );
@@ -1193,8 +1266,16 @@ mod tests {
         let buf = b"go:buildid\x00GetUserInfo FetchData StartServer\x00".to_vec();
         let r = analyze_google(&buf);
         assert_eq!(r.family, BinaryFamily::GoBinary);
-        assert!(r.grpc_services.is_empty(), "no services expected, got {:?}", r.grpc_services);
-        assert!(r.grpc_methods.is_empty(), "no methods expected, got {:?}", r.grpc_methods);
+        assert!(
+            r.grpc_services.is_empty(),
+            "no services expected, got {:?}",
+            r.grpc_services
+        );
+        assert!(
+            r.grpc_methods.is_empty(),
+            "no methods expected, got {:?}",
+            r.grpc_methods
+        );
     }
 
     #[test]
@@ -1223,8 +1304,14 @@ mod tests {
     fn google_report_serializes_grpc_arrays() {
         let r = analyze_google(b"");
         let json = serde_json::to_value(&r).expect("serialize");
-        assert!(json["grpc_services"].is_array(), "grpc_services must serialize as array");
-        assert!(json["grpc_methods"].is_array(), "grpc_methods must serialize as array");
+        assert!(
+            json["grpc_services"].is_array(),
+            "grpc_services must serialize as array"
+        );
+        assert!(
+            json["grpc_methods"].is_array(),
+            "grpc_methods must serialize as array"
+        );
     }
 
     // Combined test -----------------------------------------------------------
@@ -1258,7 +1345,11 @@ mod tests {
         assert_eq!(w.proto_descriptors[0], "search/wga/proto/lens/inputs.proto");
         assert_eq!(w.flags.len(), 1);
         assert_eq!(w.flags[0], "--aim-sys-color");
-        assert!(w.wga_endpoints.iter().any(|endpoint| endpoint == "wga.google.com"));
+        assert!(
+            w.wga_endpoints
+                .iter()
+                .any(|endpoint| endpoint == "wga.google.com")
+        );
     }
 
     #[test]
@@ -1337,10 +1428,18 @@ aim_eligible: true
             assert!(r.wga.is_some(), "Wga report must be populated");
             let w = r.wga.as_ref().unwrap();
             assert!(w.lens_detected, "Lens must be detected");
-            assert!(!w.proto_descriptors.is_empty(), "Proto descriptors should be extracted");
-            assert!(!w.wga_endpoints.is_empty(), "WGA endpoints should be extracted");
             assert!(
-                r.oauth_client_ids.iter().any(|id| id.contains("apps.googleusercontent.com")),
+                !w.proto_descriptors.is_empty(),
+                "Proto descriptors should be extracted"
+            );
+            assert!(
+                !w.wga_endpoints.is_empty(),
+                "WGA endpoints should be extracted"
+            );
+            assert!(
+                r.oauth_client_ids
+                    .iter()
+                    .any(|id| id.contains("apps.googleusercontent.com")),
                 "OAuth client ID should be extracted"
             );
         }

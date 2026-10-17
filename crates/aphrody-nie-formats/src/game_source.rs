@@ -2,18 +2,27 @@
 use crate::FormatError;
 use std::path::{Path, PathBuf};
 
-pub const SOURCE_ENV: [&str; 4] =
-    ["NIE_GAME_SOURCE", "NIE_GAME_DIR", "IECODE_GAME_PATH", "NIE_GAME_PATH"];
+pub const SOURCE_ENV: [&str; 4] = [
+    "NIE_GAME_SOURCE",
+    "NIE_GAME_DIR",
+    "IECODE_GAME_PATH",
+    "NIE_GAME_PATH",
+];
 
 #[must_use]
 pub fn is_remote(source: &str) -> bool {
-    ["http://", "https://", "ssh://", "sftp://"].iter().any(|scheme| source.starts_with(scheme))
+    ["http://", "https://", "ssh://", "sftp://"]
+        .iter()
+        .any(|scheme| source.starts_with(scheme))
 }
 
 /// Normalize an installation root, its data directory, or nie.exe without reading game bytes.
 #[must_use]
 pub fn local_data_dir(path: &Path) -> Option<PathBuf> {
-    let path = if path.file_name().is_some_and(|n| n.eq_ignore_ascii_case("nie.exe")) {
+    let path = if path
+        .file_name()
+        .is_some_and(|n| n.eq_ignore_ascii_case("nie.exe"))
+    {
         path.parent()?
     } else {
         path
@@ -24,25 +33,29 @@ pub fn local_data_dir(path: &Path) -> Option<PathBuf> {
 }
 
 fn config_dir() -> Option<PathBuf> {
-    std::env::var_os("NIE_CONFIG_DIR").map(PathBuf::from).or_else(|| {
-        std::env::var_os("XDG_CONFIG_HOME")
-            .map(PathBuf::from)
-            .or_else(|| std::env::var_os("APPDATA").map(PathBuf::from))
-            .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
-            .map(|root| root.join("nie"))
-    })
+    std::env::var_os("NIE_CONFIG_DIR")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("XDG_CONFIG_HOME")
+                .map(PathBuf::from)
+                .or_else(|| std::env::var_os("APPDATA").map(PathBuf::from))
+                .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
+                .map(|root| root.join("nie"))
+        })
 }
 
 /// Store one credential-free source reference atomically, never game records.
 pub fn remember(source: &str) -> Result<(), FormatError> {
     let source = normalize(source)?;
-    let root = config_dir()
-        .ok_or(FormatError::Corrupt("NIE_CONFIG_DIR or user config directory required"))?;
+    let root = config_dir().ok_or(FormatError::Corrupt(
+        "NIE_CONFIG_DIR or user config directory required",
+    ))?;
     std::fs::create_dir_all(&root).map_err(|e| FormatError::Malformed(e.to_string()))?;
     use std::io::Write;
     let mut file = tempfile::NamedTempFile::new_in(&root)
         .map_err(|e| FormatError::Malformed(e.to_string()))?;
-    file.write_all(source.as_bytes()).map_err(|e| FormatError::Malformed(e.to_string()))?;
+    file.write_all(source.as_bytes())
+        .map_err(|e| FormatError::Malformed(e.to_string()))?;
     file.persist(root.join("game-source"))
         .map(|_| ())
         .map_err(|e| FormatError::Malformed(e.to_string()))
@@ -53,14 +66,17 @@ fn normalize(source: &str) -> Result<String, FormatError> {
         return Err(FormatError::Corrupt("invalid game source"));
     }
     if is_remote(source) {
-        let (_, rest) =
-            source.split_once("://").ok_or(FormatError::Corrupt("invalid game source URI"))?;
+        let (_, rest) = source
+            .split_once("://")
+            .ok_or(FormatError::Corrupt("invalid game source URI"))?;
         let authority = rest.split('/').next().unwrap_or_default();
         if authority.is_empty()
             || authority.contains(['%', '\\'])
             || source.chars().any(char::is_control)
             || source.contains(['?', '#'])
-            || authority.split_once('@').is_some_and(|(user, _)| user.contains(':'))
+            || authority
+                .split_once('@')
+                .is_some_and(|(user, _)| user.contains(':'))
             || (source.starts_with("http") && authority.contains('@'))
         {
             return Err(FormatError::Corrupt(
@@ -96,7 +112,9 @@ pub fn resolve(hint: Option<&str>) -> Result<String, FormatError> {
     }
     for start in [
         std::env::current_dir().ok(),
-        std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)),
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(Path::to_path_buf)),
     ]
     .into_iter()
     .flatten()
@@ -112,8 +130,9 @@ pub fn resolve(hint: Option<&str>) -> Result<String, FormatError> {
             }
         }
     }
-    let home =
-        std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from);
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from);
     let mut steam_roots = Vec::new();
     if let Some(home) = home {
         steam_roots.extend([
@@ -131,7 +150,11 @@ pub fn resolve(hint: Option<&str>) -> Result<String, FormatError> {
                 let mut fields = line.split('"');
                 fields.next()?;
                 (fields.next()? == "path")
-                    .then(|| fields.nth(1).map(|p| PathBuf::from(p.replace("\\\\", "\\"))))
+                    .then(|| {
+                        fields
+                            .nth(1)
+                            .map(|p| PathBuf::from(p.replace("\\\\", "\\")))
+                    })
                     .flatten()
             }));
         }
@@ -144,7 +167,9 @@ pub fn resolve(hint: Option<&str>) -> Result<String, FormatError> {
             .find_map(|line| {
                 let mut fields = line.split('"');
                 fields.next()?;
-                (fields.next()? == "installdir").then(|| fields.nth(1)).flatten()
+                (fields.next()? == "installdir")
+                    .then(|| fields.nth(1))
+                    .flatten()
             })
             .unwrap_or("INAZUMA ELEVEN Victory Road");
         if let Some(data) = local_data_dir(&steam.join("steamapps/common").join(folder)) {
@@ -182,7 +207,9 @@ pub fn scan(root: &Path) -> Result<String, FormatError> {
             }
         }
     }
-    Err(FormatError::Corrupt("no installed VFS found under scan root"))
+    Err(FormatError::Corrupt(
+        "no installed VFS found under scan root",
+    ))
 }
 
 #[cfg(test)]
@@ -195,7 +222,11 @@ mod tests {
         std::fs::create_dir_all(&data).unwrap();
         std::fs::write(data.join("cpk_list.cfg.bin"), []).unwrap();
         std::fs::write(data.join("nie.exe"), []).unwrap();
-        for path in [data.clone(), data.parent().unwrap().to_path_buf(), data.join("nie.exe")] {
+        for path in [
+            data.clone(),
+            data.parent().unwrap().to_path_buf(),
+            data.join("nie.exe"),
+        ] {
             assert_eq!(local_data_dir(&path), Some(data.clone()));
             assert_eq!(
                 resolve(path.to_str()).unwrap(),
@@ -203,8 +234,11 @@ mod tests {
             );
         }
         assert!(resolve(Some("missing-install")).is_err());
-        for source in ["http:///game", "ssh://user%3Asecret@host/game", "https://host/game?token=x"]
-        {
+        for source in [
+            "http:///game",
+            "ssh://user%3Asecret@host/game",
+            "https://host/game?token=x",
+        ] {
             assert!(resolve(Some(source)).is_err());
         }
         assert_eq!(

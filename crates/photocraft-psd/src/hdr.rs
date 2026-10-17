@@ -70,7 +70,11 @@ pub fn default_toning_data() -> Vec<u8> {
 /// records for 32-bit files, nothing otherwise (indexed and duotone data come
 /// from the document).
 pub fn color_mode_data_for_depth(depth: u16) -> Vec<u8> {
-    if depth == 32 { default_toning_data() } else { Vec::new() }
+    if depth == 32 {
+        default_toning_data()
+    } else {
+        Vec::new()
+    }
 }
 
 #[cfg(test)]

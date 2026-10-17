@@ -33,12 +33,14 @@ fn map_err(f: Format, e: image::ImageError) -> CodecError {
 }
 
 pub(crate) fn bmp_palette(bytes: &[u8]) -> Result<Option<Vec<[u8; 3]>>, CodecError> {
-    let decoder = image::codecs::bmp::BmpDecoder::new(Cursor::new(bytes)).map_err(|e| map_err(Format::Bmp, e))?;
+    let decoder = image::codecs::bmp::BmpDecoder::new(Cursor::new(bytes))
+        .map_err(|e| map_err(Format::Bmp, e))?;
     Ok(decoder.get_palette().map(|palette| palette.to_vec()))
 }
 
 pub(crate) fn decode(f: Format, bytes: &[u8], limits: &Limits) -> Result<Image, CodecError> {
-    let fmt = image_format(f).ok_or_else(|| CodecError::unsupported(f, "not handled by image backend"))?;
+    let fmt = image_format(f)
+        .ok_or_else(|| CodecError::unsupported(f, "not handled by image backend"))?;
     let mut reader = image::ImageReader::with_format(Cursor::new(bytes), fmt);
     let mut il = image::Limits::default();
     il.max_image_width = Some(limits.max_width);
@@ -64,7 +66,13 @@ pub(crate) fn decode(f: Format, bytes: &[u8], limits: &Limits) -> Result<Image, 
 /// The total is unknown when the blocks end before the trailer or break off.
 fn gif_more_frames(b: &[u8]) -> Option<DecodeWarning> {
     // Size of the colour table a packed-fields byte announces.
-    let table = |flags: u8| if flags & 0x80 != 0 { 3usize << ((flags & 7) + 1) } else { 0 };
+    let table = |flags: u8| {
+        if flags & 0x80 != 0 {
+            3usize << ((flags & 7) + 1)
+        } else {
+            0
+        }
+    };
     // Skips the data sub-blocks starting at `i` (each length-prefixed, ended by a zero length).
     let skip = |mut i: usize| -> Option<usize> {
         loop {
@@ -105,14 +113,17 @@ pub(crate) fn from_dynamic(f: Format, d: DynamicImage) -> Result<Image, CodecErr
         DynamicImage::ImageRgb8(b) => Image::from_u8(w, h, ChannelLayout::Rgb, b.into_raw())?,
         DynamicImage::ImageRgba8(b) => Image::from_u8(w, h, ChannelLayout::Rgba, b.into_raw())?,
         DynamicImage::ImageLuma16(b) => Image::from_u16(w, h, ChannelLayout::Gray, &b.into_raw())?,
-        DynamicImage::ImageLumaA16(b) => Image::from_u16(w, h, ChannelLayout::GrayA, &b.into_raw())?,
+        DynamicImage::ImageLumaA16(b) => {
+            Image::from_u16(w, h, ChannelLayout::GrayA, &b.into_raw())?
+        }
         DynamicImage::ImageRgb16(b) => Image::from_u16(w, h, ChannelLayout::Rgb, &b.into_raw())?,
         DynamicImage::ImageRgba16(b) => Image::from_u16(w, h, ChannelLayout::Rgba, &b.into_raw())?,
         DynamicImage::ImageRgb32F(b) => Image::from_f32(w, h, ChannelLayout::Rgb, &b.into_raw())?,
         DynamicImage::ImageRgba32F(b) => Image::from_f32(w, h, ChannelLayout::Rgba, &b.into_raw())?,
         other => {
             let b = other.into_rgba32f();
-            Image::from_f32(w, h, ChannelLayout::Rgba, &b.into_raw()).map_err(|e| CodecError::malformed(f, e))?
+            Image::from_f32(w, h, ChannelLayout::Rgba, &b.into_raw())
+                .map_err(|e| CodecError::malformed(f, e))?
         }
     })
 }
@@ -121,28 +132,49 @@ fn to_dynamic(img: &Image) -> Result<DynamicImage, CodecError> {
     let (w, h) = img.dimensions();
     let bad = || CodecError::InvalidImage("buffer size mismatch".into());
     Ok(match (img.layout(), img.sample_type()) {
-        (ChannelLayout::Gray, SampleType::U8) => DynamicImage::ImageLuma8(image::GrayImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?),
-        (ChannelLayout::GrayA, SampleType::U8) => DynamicImage::ImageLumaA8(image::GrayAlphaImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?),
-        (ChannelLayout::Rgb, SampleType::U8) => DynamicImage::ImageRgb8(image::RgbImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?),
-        (ChannelLayout::Rgba, SampleType::U8) => DynamicImage::ImageRgba8(image::RgbaImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?),
-        (ChannelLayout::Rgb, SampleType::F32) => {
-            DynamicImage::ImageRgb32F(image::Rgb32FImage::from_raw(w, h, img.to_f32_samples().unwrap_or_default()).ok_or_else(bad)?)
-        }
-        (ChannelLayout::Rgba, SampleType::F32) => {
-            DynamicImage::ImageRgba32F(image::Rgba32FImage::from_raw(w, h, img.to_f32_samples().unwrap_or_default()).ok_or_else(bad)?)
-        }
+        (ChannelLayout::Gray, SampleType::U8) => DynamicImage::ImageLuma8(
+            image::GrayImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?,
+        ),
+        (ChannelLayout::GrayA, SampleType::U8) => DynamicImage::ImageLumaA8(
+            image::GrayAlphaImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?,
+        ),
+        (ChannelLayout::Rgb, SampleType::U8) => DynamicImage::ImageRgb8(
+            image::RgbImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?,
+        ),
+        (ChannelLayout::Rgba, SampleType::U8) => DynamicImage::ImageRgba8(
+            image::RgbaImage::from_raw(w, h, img.data().to_vec()).ok_or_else(bad)?,
+        ),
+        (ChannelLayout::Rgb, SampleType::F32) => DynamicImage::ImageRgb32F(
+            image::Rgb32FImage::from_raw(w, h, img.to_f32_samples().unwrap_or_default())
+                .ok_or_else(bad)?,
+        ),
+        (ChannelLayout::Rgba, SampleType::F32) => DynamicImage::ImageRgba32F(
+            image::Rgba32FImage::from_raw(w, h, img.to_f32_samples().unwrap_or_default())
+                .ok_or_else(bad)?,
+        ),
         (l, s) => {
-            return Err(CodecError::InvalidImage(format!("no image-crate mapping for {l:?} {s:?}")));
+            return Err(CodecError::InvalidImage(format!(
+                "no image-crate mapping for {l:?} {s:?}"
+            )));
         }
     })
 }
 
-pub(crate) fn encode(f: Format, src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Vec<u8>, CodecError> {
-    let fmt = image_format(f).ok_or_else(|| CodecError::unsupported(f, "not handled by image backend"))?;
+pub(crate) fn encode(
+    f: Format,
+    src: &Image,
+    plan: Plan,
+    opts: &EncodeOptions,
+) -> Result<Vec<u8>, CodecError> {
+    let fmt = image_format(f)
+        .ok_or_else(|| CodecError::unsupported(f, "not handled by image backend"))?;
     if let Some((mw, mh)) = f.max_dimensions()
         && (src.width() > mw || src.height() > mh)
     {
-        return Err(CodecError::encode(f, format!("dimensions exceed {mw}x{mh}")));
+        return Err(CodecError::encode(
+            f,
+            format!("dimensions exceed {mw}x{mh}"),
+        ));
     }
     let img = src.converted(plan.layout, plan.sample);
     let dynimg = to_dynamic(&img)?;
@@ -150,12 +182,20 @@ pub(crate) fn encode(f: Format, src: &Image, plan: Plan, opts: &EncodeOptions) -
     match f {
         #[cfg(feature = "avif")]
         Format::Avif => {
-            let enc = image::codecs::avif::AvifEncoder::new_with_speed_quality(&mut cursor, 8, opts.jpeg_quality.clamp(1, 100));
-            dynimg.write_with_encoder(enc).map_err(|e| CodecError::encode(f, e))?;
+            let enc = image::codecs::avif::AvifEncoder::new_with_speed_quality(
+                &mut cursor,
+                8,
+                opts.jpeg_quality.clamp(1, 100),
+            );
+            dynimg
+                .write_with_encoder(enc)
+                .map_err(|e| CodecError::encode(f, e))?;
         }
         _ => {
             let _ = opts;
-            dynimg.write_to(&mut cursor, fmt).map_err(|e| CodecError::encode(f, e))?;
+            dynimg
+                .write_to(&mut cursor, fmt)
+                .map_err(|e| CodecError::encode(f, e))?;
         }
     }
     Ok(cursor.into_inner())

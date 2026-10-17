@@ -3,7 +3,12 @@
 //! RW2 / ORF / RAF builders. The files are written from the public specifications only and
 //! are meant to exercise the decoder, not to be camera-accurate.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing
+)]
 
 // ---------------------------------------------------------------- lossless JPEG
 
@@ -20,7 +25,10 @@ pub fn cr3_preview(jpeg: &[u8], orientation: u16) -> Vec<u8> {
         let mut tiff = TiffBuilder::default();
         let ifd = tiff.ifd(vec![(274, Val::Short(vec![orientation]))]);
         tiff.chain = vec![ifd];
-        let mut meta = vec![0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b, 0x6a, 0x48];
+        let mut meta = vec![
+            0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b,
+            0x6a, 0x48,
+        ];
         meta.extend(bx(b"CMT1", &tiff.build()));
         let mut entry = vec![0; 82];
         entry.extend(bx(b"JPEG", &[0; 4]));
@@ -31,15 +39,29 @@ pub fn cr3_preview(jpeg: &[u8], orientation: u16) -> Vec<u8> {
         sizes.extend_from_slice(&1u32.to_be_bytes());
         let mut offsets = vec![0, 0, 0, 0, 0, 0, 0, 1];
         offsets.extend_from_slice(&offset.to_be_bytes());
-        let mapping: Vec<u8> = [0u32, 1, 1, 1, 1].iter().flat_map(|n| n.to_be_bytes()).collect();
-        let table = [bx(b"stsd", &description), bx(b"stsz", &sizes), bx(b"co64", &offsets), bx(b"stsc", &mapping)].concat();
+        let mapping: Vec<u8> = [0u32, 1, 1, 1, 1]
+            .iter()
+            .flat_map(|n| n.to_be_bytes())
+            .collect();
+        let table = [
+            bx(b"stsd", &description),
+            bx(b"stsz", &sizes),
+            bx(b"co64", &offsets),
+            bx(b"stsc", &mapping),
+        ]
+        .concat();
         let track = bx(b"trak", &bx(b"mdia", &bx(b"minf", &bx(b"stbl", &table))));
         bx(b"moov", &[bx(b"uuid", &meta), track].concat())
     }
     let ftyp = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
     let header = moov(jpeg.len(), 0, orientation);
     let offset = ftyp.len() + header.len() + 8;
-    [ftyp, moov(jpeg.len(), offset as u64, orientation), bx(b"mdat", jpeg)].concat()
+    [
+        ftyp,
+        moov(jpeg.len(), offset as u64, orientation),
+        bx(b"mdat", jpeg),
+    ]
+    .concat()
 }
 
 /// Huffman code lengths assigned to categories in decreasing frequency
@@ -89,7 +111,15 @@ impl BitWriter {
 /// Encodes `samples` (raster order, `components` interleaved, values below
 /// `2^precision`) as a lossless JPEG with the given predictor (1–7) and an
 /// optional restart interval in rows.
-pub fn lj92_encode(samples: &[u16], width: usize, height: usize, components: usize, precision: u8, predictor: u8, restart_rows: Option<usize>) -> Vec<u8> {
+pub fn lj92_encode(
+    samples: &[u16],
+    width: usize,
+    height: usize,
+    components: usize,
+    precision: u8,
+    predictor: u8,
+    restart_rows: Option<usize>,
+) -> Vec<u8> {
     assert_eq!(samples.len(), width * height * components);
     let row = width * components;
     let interval = restart_rows.unwrap_or(usize::MAX);
@@ -102,7 +132,11 @@ pub fn lj92_encode(samples: &[u16], width: usize, height: usize, components: usi
             for c in 0..components {
                 let i = y * row + x * components + c;
                 let px = if x == 0 {
-                    if first_line { initial } else { i32::from(samples[i - row]) }
+                    if first_line {
+                        initial
+                    } else {
+                        i32::from(samples[i - row])
+                    }
                 } else if first_line {
                     i32::from(samples[i - components])
                 } else {
@@ -194,7 +228,11 @@ pub fn lj92_encode(samples: &[u16], width: usize, height: usize, components: usi
         let (c, l) = code_of[s as usize];
         w.put(c, l);
         if (1..16).contains(&s) {
-            let extra = if d < 0 { (d - 1) as u32 & ((1 << s) - 1) } else { d as u32 };
+            let extra = if d < 0 {
+                (d - 1) as u32 & ((1 << s) - 1)
+            } else {
+                d as u32
+            };
             w.put(extra, s);
         }
     }
@@ -275,7 +313,18 @@ impl TiffBuilder {
         let mut ifd_pos = vec![0usize; self.ifds.len()];
         let mut val_pos: Vec<Vec<usize>> = vec![Vec::new(); self.ifds.len()];
         // Maker-note IFDs are written inside their owner's value area.
-        let embedded: Vec<usize> = self.ifds.iter().flatten().filter_map(|(_, v)| if let Val::IfdBytes(i) = v { Some(*i) } else { None }).collect();
+        let embedded: Vec<usize> = self
+            .ifds
+            .iter()
+            .flatten()
+            .filter_map(|(_, v)| {
+                if let Val::IfdBytes(i) = v {
+                    Some(*i)
+                } else {
+                    None
+                }
+            })
+            .collect();
         for i in 0..self.ifds.len() {
             if embedded.contains(&i) {
                 continue;
@@ -320,8 +369,12 @@ impl TiffBuilder {
         }
         let mut out = vec![0u8; pos];
         let be = self.big_endian;
-        let w16 = |o: &mut [u8], at: usize, v: u16| o[at..at + 2].copy_from_slice(&if be { v.to_be_bytes() } else { v.to_le_bytes() });
-        let w32 = |o: &mut [u8], at: usize, v: u32| o[at..at + 4].copy_from_slice(&if be { v.to_be_bytes() } else { v.to_le_bytes() });
+        let w16 = |o: &mut [u8], at: usize, v: u16| {
+            o[at..at + 2].copy_from_slice(&if be { v.to_be_bytes() } else { v.to_le_bytes() })
+        };
+        let w32 = |o: &mut [u8], at: usize, v: u32| {
+            o[at..at + 4].copy_from_slice(&if be { v.to_be_bytes() } else { v.to_le_bytes() })
+        };
         out[0..4].copy_from_slice(if be { b"MM\0*" } else { b"II*\0" });
         w32(&mut out, 4, ifd_pos[self.chain[0]] as u32);
         if let Some(r) = self.cr2_raw_ifd {
@@ -348,7 +401,13 @@ impl TiffBuilder {
                     }
                 }
             }
-            let next = self.chain.iter().position(|&c| c == i).and_then(|p| self.chain.get(p + 1)).map(|&n| ifd_pos[n]).unwrap_or(0);
+            let next = self
+                .chain
+                .iter()
+                .position(|&c| c == i)
+                .and_then(|p| self.chain.get(p + 1))
+                .map(|&n| ifd_pos[n])
+                .unwrap_or(0);
             w32(&mut out, at + 2 + 12 * entries.len(), next as u32);
         }
         for (b, &p) in self.blobs.iter().zip(&blob_pos) {
@@ -378,11 +437,35 @@ impl TiffBuilder {
             }
             Val::Short(s) => (3, s.len() as u32, s.iter().flat_map(|&v| b16(v)).collect()),
             Val::Long(l) => (4, l.len() as u32, l.iter().flat_map(|&v| b32(v)).collect()),
-            Val::Double(d) => (12, d.len() as u32, d.iter().flat_map(|v| b64(v.to_bits())).collect()),
-            Val::Rational(r) => (5, r.len() as u32, r.iter().flat_map(|&(n, d)| [b32(n), b32(d)].concat()).collect()),
-            Val::SRational(r) => (10, r.len() as u32, r.iter().flat_map(|&(n, d)| [b32(n as u32), b32(d as u32)].concat()).collect()),
-            Val::Blobs(b) => (4, b.len() as u32, b.iter().flat_map(|&i| b32(blob_pos[i] as u32)).collect()),
-            Val::Ifds(i) => (4, i.len() as u32, i.iter().flat_map(|&k| b32(ifd_pos[k] as u32)).collect()),
+            Val::Double(d) => (
+                12,
+                d.len() as u32,
+                d.iter().flat_map(|v| b64(v.to_bits())).collect(),
+            ),
+            Val::Rational(r) => (
+                5,
+                r.len() as u32,
+                r.iter()
+                    .flat_map(|&(n, d)| [b32(n), b32(d)].concat())
+                    .collect(),
+            ),
+            Val::SRational(r) => (
+                10,
+                r.len() as u32,
+                r.iter()
+                    .flat_map(|&(n, d)| [b32(n as u32), b32(d as u32)].concat())
+                    .collect(),
+            ),
+            Val::Blobs(b) => (
+                4,
+                b.len() as u32,
+                b.iter().flat_map(|&i| b32(blob_pos[i] as u32)).collect(),
+            ),
+            Val::Ifds(i) => (
+                4,
+                i.len() as u32,
+                i.iter().flat_map(|&k| b32(ifd_pos[k] as u32)).collect(),
+            ),
             Val::IfdBytes(i) => (7, self.ifd_size(*i) as u32, vec![0; 8]),
         }
     }
@@ -508,7 +591,10 @@ impl DngSpec {
     /// A monochrome (one-sample LinearRaw) DNG around `data`, as monochrome cameras and film
     /// scanners write them: no CFA tags and no colour matrices.
     pub fn monochrome(width: usize, height: usize, data: Vec<u16>) -> Self {
-        DngSpec { monochrome: true, ..Self::cfa(width, height, data) }
+        DngSpec {
+            monochrome: true,
+            ..Self::cfa(width, height, data)
+        }
     }
 
     fn is_cfa(&self) -> bool {
@@ -520,7 +606,16 @@ impl DngSpec {
         let vals = &self.data[rows.start * n..rows.end * n];
         match self.bits {
             8 => vals.iter().map(|&v| v as u8).collect(),
-            16 => vals.iter().flat_map(|&v| if self.big_endian { v.to_be_bytes() } else { v.to_le_bytes() }).collect(),
+            16 => vals
+                .iter()
+                .flat_map(|&v| {
+                    if self.big_endian {
+                        v.to_be_bytes()
+                    } else {
+                        v.to_le_bytes()
+                    }
+                })
+                .collect(),
             b => {
                 // MSB-first bit packing, each row padded to a byte.
                 let mut out = Vec::new();
@@ -545,17 +640,26 @@ impl DngSpec {
     }
 
     pub fn build(&self) -> Vec<u8> {
-        let mut t = TiffBuilder { big_endian: self.big_endian, ..Default::default() };
+        let mut t = TiffBuilder {
+            big_endian: self.big_endian,
+            ..Default::default()
+        };
         let mut raw: Vec<(u16, Val)> = vec![
             (254, Val::Long(vec![0])),
             (256, Val::Long(vec![self.width as u32])),
             (257, Val::Long(vec![self.height as u32])),
             (258, Val::Short(vec![self.bits; self.samples])),
-            (262, Val::Short(vec![if self.is_cfa() { 32803 } else { 34892 }])),
+            (
+                262,
+                Val::Short(vec![if self.is_cfa() { 32803 } else { 34892 }]),
+            ),
             (277, Val::Short(vec![self.samples as u16])),
             (284, Val::Short(vec![1])),
             (50717, Val::Long(vec![self.white; self.samples])),
-            (50713, Val::Short(vec![self.black_repeat.0, self.black_repeat.1])),
+            (
+                50713,
+                Val::Short(vec![self.black_repeat.0, self.black_repeat.1]),
+            ),
             (50714, Val::Long(self.black.clone())),
         ];
         if self.is_cfa() {
@@ -586,10 +690,20 @@ impl DngSpec {
                     // Pack the delta'd values with the file's byte order and bit depth.
                     let bytes: Vec<u8> = match self.bits {
                         8 => v.iter().map(|&x| x as u8).collect(),
-                        16 => v.iter().flat_map(|&x| if self.big_endian { x.to_be_bytes() } else { x.to_le_bytes() }).collect(),
+                        16 => v
+                            .iter()
+                            .flat_map(|&x| {
+                                if self.big_endian {
+                                    x.to_be_bytes()
+                                } else {
+                                    x.to_le_bytes()
+                                }
+                            })
+                            .collect(),
                         _ => v.iter().flat_map(|x| x.to_le_bytes()).collect(),
                     };
-                    let mut e = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+                    let mut e =
+                        flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
                     e.write_all(&bytes).expect("zlib");
                     let z = e.finish().expect("zlib");
                     lens.push(z.len() as u32);
@@ -614,7 +728,10 @@ impl DngSpec {
                 raw.push((273, Val::Blobs(offs)));
                 raw.push((279, Val::Long(lens)));
             }
-            DngStorage::LossyJpegTiles { width: tw, height: th } => {
+            DngStorage::LossyJpegTiles {
+                width: tw,
+                height: th,
+            } => {
                 let mut offs = Vec::new();
                 let mut lens = Vec::new();
                 let s = self.samples;
@@ -628,15 +745,21 @@ impl DngSpec {
                                 let sy = (ty + y).min(self.height - 1);
                                 let sx = (tx + x).min(self.width - 1);
                                 for c in 0..s {
-                                    tile[(y * tw + x) * s + c] = (self.data[(sy * self.width + sx) * s + c] >> 8) as u8;
+                                    tile[(y * tw + x) * s + c] =
+                                        (self.data[(sy * self.width + sx) * s + c] >> 8) as u8;
                                 }
                             }
                         }
-                        let colour = if s == 3 { image::ExtendedColorType::Rgb8 } else { image::ExtendedColorType::L8 };
+                        let colour = if s == 3 {
+                            image::ExtendedColorType::Rgb8
+                        } else {
+                            image::ExtendedColorType::L8
+                        };
                         let mut j = Vec::new();
                         let enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut j, 60);
                         use image::ImageEncoder as _;
-                        enc.write_image(&tile, tw as u32, th as u32, colour).expect("jpeg tile");
+                        enc.write_image(&tile, tw as u32, th as u32, colour)
+                            .expect("jpeg tile");
                         lens.push(j.len() as u32);
                         offs.push(t.blob(j));
                     }
@@ -653,7 +776,15 @@ impl DngSpec {
                 for y in (0..self.height).step_by(rows) {
                     let r = (y + rows).min(self.height) - y;
                     let n = self.width * self.samples;
-                    let j = lj92_encode(&self.data[y * n..(y + r) * n], self.width, r, self.samples, self.bits as u8, 1, None);
+                    let j = lj92_encode(
+                        &self.data[y * n..(y + r) * n],
+                        self.width,
+                        r,
+                        self.samples,
+                        self.bits as u8,
+                        1,
+                        None,
+                    );
                     lens.push(j.len() as u32);
                     offs.push(t.blob(j));
                 }
@@ -662,7 +793,10 @@ impl DngSpec {
                 raw.push((273, Val::Blobs(offs)));
                 raw.push((279, Val::Long(lens)));
             }
-            DngStorage::Lj92Tiles { width: tw, height: th } => {
+            DngStorage::Lj92Tiles {
+                width: tw,
+                height: th,
+            } => {
                 let mut offs = Vec::new();
                 let mut lens = Vec::new();
                 let s = self.samples;
@@ -675,7 +809,8 @@ impl DngSpec {
                                 let sy = (ty + y).min(self.height - 1);
                                 let sx = (tx + x).min(self.width - 1);
                                 for c in 0..s {
-                                    tile[(y * tw + x) * s + c] = self.data[(sy * self.width + sx) * s + c];
+                                    tile[(y * tw + x) * s + c] =
+                                        self.data[(sy * self.width + sx) * s + c];
                                 }
                             }
                         }
@@ -697,15 +832,26 @@ impl DngSpec {
             }
             DngStorage::JxlStrips { rows } => {
                 let lens = self.jxl_segments.iter().map(|j| j.len() as u32).collect();
-                let offs = self.jxl_segments.iter().map(|j| t.blob(j.clone())).collect();
+                let offs = self
+                    .jxl_segments
+                    .iter()
+                    .map(|j| t.blob(j.clone()))
+                    .collect();
                 raw.push((259, Val::Short(vec![52546])));
                 raw.push((278, Val::Long(vec![rows as u32])));
                 raw.push((273, Val::Blobs(offs)));
                 raw.push((279, Val::Long(lens)));
             }
-            DngStorage::JxlTiles { width: tw, height: th } => {
+            DngStorage::JxlTiles {
+                width: tw,
+                height: th,
+            } => {
                 let lens = self.jxl_segments.iter().map(|j| j.len() as u32).collect();
-                let offs = self.jxl_segments.iter().map(|j| t.blob(j.clone())).collect();
+                let offs = self
+                    .jxl_segments
+                    .iter()
+                    .map(|j| t.blob(j.clone()))
+                    .collect();
                 raw.push((259, Val::Short(vec![52546])));
                 raw.push((322, Val::Long(vec![tw as u32])));
                 raw.push((323, Val::Long(vec![th as u32])));
@@ -717,7 +863,10 @@ impl DngSpec {
             raw.push((50829, Val::Long(a.to_vec())));
         }
         if let Some((o, s)) = self.default_crop {
-            let origin = self.default_crop_origin_double.map(|d| Val::Double(d.to_vec())).unwrap_or_else(|| Val::Long(o.to_vec()));
+            let origin = self
+                .default_crop_origin_double
+                .map(|d| Val::Double(d.to_vec()))
+                .unwrap_or_else(|| Val::Long(o.to_vec()));
             raw.push((50719, origin));
             raw.push((50720, Val::Long(s.to_vec())));
         } else if let Some(origin) = self.default_crop_origin_double {
@@ -833,7 +982,11 @@ impl Cr2Spec {
     pub fn build(&self) -> Vec<u8> {
         let (w, h) = (self.width, self.height);
         // Slice the sensor data into the JPEG sample order.
-        let widths: Vec<usize> = if self.slices.is_empty() { vec![w] } else { self.slices.clone() };
+        let widths: Vec<usize> = if self.slices.is_empty() {
+            vec![w]
+        } else {
+            self.slices.clone()
+        };
         assert_eq!(widths.iter().sum::<usize>(), w);
         let mut seq = Vec::with_capacity(w * h);
         let mut x0 = 0;
@@ -848,10 +1001,17 @@ impl Cr2Spec {
         let jpeg = lj92_encode(&seq, w / c, h, c, self.precision, 1, None);
         let mut t = TiffBuilder::default();
         let jb = t.blob(jpeg.clone());
-        let mut raw = vec![(259, Val::Short(vec![6])), (273, Val::Blobs(vec![jb])), (279, Val::Long(vec![jpeg.len() as u32]))];
+        let mut raw = vec![
+            (259, Val::Short(vec![6])),
+            (273, Val::Blobs(vec![jb])),
+            (279, Val::Long(vec![jpeg.len() as u32])),
+        ];
         if !self.slices.is_empty() {
             let n = widths.len() - 1;
-            raw.push((50752, Val::Short(vec![n as u16, widths[0] as u16, widths[n] as u16])));
+            raw.push((
+                50752,
+                Val::Short(vec![n as u16, widths[0] as u16, widths[n] as u16]),
+            ));
         }
         let raw_ifd = t.ifd(raw);
         let mut mn: Vec<(u16, Val)> = Vec::new();
@@ -859,7 +1019,12 @@ impl Cr2Spec {
             mn.push((0x0010, Val::Long(vec![id])));
         }
         if let Some([l, tp, r, b]) = self.borders {
-            mn.push((0x00E0, Val::Short(vec![34, w as u16, h as u16, 0, 0, l, tp, r, b, 0, 0, 0, 0, 0, 0, 0, 0])));
+            mn.push((
+                0x00E0,
+                Val::Short(vec![
+                    34, w as u16, h as u16, 0, 0, l, tp, r, b, 0, 0, 0, 0, 0, 0, 0, 0,
+                ]),
+            ));
         }
         if let Some(wb) = self.wb_rggb {
             // Canon writes ColorData (0x4001) as UNDEFINED bytes that are 16-bit words; the
@@ -903,7 +1068,15 @@ impl Cr2Spec {
 
 /// A synthetic uncompressed TIFF/EP raw (NEF / ARW-like): IFD0 with Make, the
 /// CFA image in a SubIFD with 16-bit samples.
-pub fn tiff_ep(make: &str, width: usize, height: usize, data: &[u16], cfa: [u8; 4], bits: u16, extra_raw_tags: Vec<(u16, Val)>) -> Vec<u8> {
+pub fn tiff_ep(
+    make: &str,
+    width: usize,
+    height: usize,
+    data: &[u16],
+    cfa: [u8; 4],
+    bits: u16,
+    extra_raw_tags: Vec<(u16, Val)>,
+) -> Vec<u8> {
     let mut t = TiffBuilder::default();
     let strip = t.blob(data.iter().flat_map(|v| v.to_le_bytes()).collect());
     let mut raw = vec![
@@ -943,8 +1116,19 @@ pub fn tiff_ep(make: &str, width: usize, height: usize, data: &[u16], cfa: [u8; 
 /// Make and an EXIF IFD whose maker note (`Nikon\0`, version 2.10, then an
 /// embedded TIFF in the given byte order) holds `note_tags` (for example
 /// `0x0096`, the decode table, and `0x003d`, BlackLevel).
-pub fn nef_compressed(width: usize, height: usize, bits: u16, strip: Vec<u8>, cfa: [u8; 4], note_big_endian: bool, note_tags: Vec<(u16, Val)>) -> Vec<u8> {
-    let mut note = TiffBuilder { big_endian: note_big_endian, ..Default::default() };
+pub fn nef_compressed(
+    width: usize,
+    height: usize,
+    bits: u16,
+    strip: Vec<u8>,
+    cfa: [u8; 4],
+    note_big_endian: bool,
+    note_tags: Vec<(u16, Val)>,
+) -> Vec<u8> {
+    let mut note = TiffBuilder {
+        big_endian: note_big_endian,
+        ..Default::default()
+    };
     let n = note.ifd(note_tags);
     note.chain = vec![n];
     let mut maker = b"Nikon\0\x02\x10\0\0".to_vec();
@@ -967,7 +1151,11 @@ pub fn nef_compressed(width: usize, height: usize, bits: u16, strip: Vec<u8>, cf
         (33422, Val::Byte(cfa.to_vec())),
     ]);
     let exif = t.ifd(vec![(37500, Val::Undefined(maker))]);
-    let ifd0 = t.ifd(vec![(271, Val::Ascii("NIKON CORPORATION".into())), (330, Val::Ifds(vec![raw_ifd])), (34665, Val::Ifds(vec![exif]))]);
+    let ifd0 = t.ifd(vec![
+        (271, Val::Ascii("NIKON CORPORATION".into())),
+        (330, Val::Ifds(vec![raw_ifd])),
+        (34665, Val::Ifds(vec![exif])),
+    ]);
     t.chain = vec![ifd0];
     t.build()
 }
@@ -989,7 +1177,8 @@ pub fn craw_block(codes: &[u16; 16]) -> [u8; 16] {
     while (128u16 << sh) <= max - min {
         sh += 1;
     }
-    let mut v: u128 = u128::from(max) | u128::from(min) << 11 | (imax as u128) << 22 | (imin as u128) << 26;
+    let mut v: u128 =
+        u128::from(max) | u128::from(min) << 11 | (imax as u128) << 22 | (imin as u128) << 26;
     let mut at = 30;
     for (i, &c) in codes.iter().enumerate() {
         if i != imax && i != imin {
@@ -1042,7 +1231,11 @@ pub fn sony_craw(width: usize, height: usize, codes: &[u16], curve: [u16; 4]) ->
         (0x7313, Val::Short(vec![2048, 1024, 1024, 1536])),
         (50717, Val::Short(vec![16383])),
     ]);
-    let ifd0 = t.ifd(vec![(271, Val::Ascii("SONY".into())), (272, Val::Ascii("ILCE-Synthetic".into())), (330, Val::Ifds(vec![raw_ifd]))]);
+    let ifd0 = t.ifd(vec![
+        (271, Val::Ascii("SONY".into())),
+        (272, Val::Ascii("ILCE-Synthetic".into())),
+        (330, Val::Ifds(vec![raw_ifd])),
+    ]);
     t.chain = vec![ifd0];
     t.build()
 }
@@ -1164,19 +1357,32 @@ pub fn orf(width: usize, height: usize, data: &[u16]) -> Vec<u8> {
         64,
     );
     // CameraSettings with a preview JPEG (SOI, SOF0 16×8, EOI) right after it.
-    let jpeg = [0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 0x08, 0x00, 0x10, 1, 1, 0x11, 0, 0xFF, 0xD9];
+    let jpeg = [
+        0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 0x08, 0x00, 0x10, 1, 1, 0x11, 0, 0xFF, 0xD9,
+    ];
     let cs_at = 64 + ip.len().next_multiple_of(4);
     let cs_len = 2 + 12 * 3 + 4;
     let cs = relative_ifd(
         &[
             (0x0100, 4, 1, 1u32.to_le_bytes().to_vec()),
-            (0x0101, 4, 1, ((cs_at + cs_len) as u32).to_le_bytes().to_vec()),
+            (
+                0x0101,
+                4,
+                1,
+                ((cs_at + cs_len) as u32).to_le_bytes().to_vec(),
+            ),
             (0x0102, 4, 1, (jpeg.len() as u32).to_le_bytes().to_vec()),
         ],
         cs_at,
     );
     let mut note = b"OLYMPUS\0II\x03\0".to_vec();
-    note.extend_from_slice(&relative_ifd(&[(0x2020, 13, 1, (cs_at as u32).to_le_bytes().to_vec()), (0x2040, 13, 1, 64u32.to_le_bytes().to_vec())], 12));
+    note.extend_from_slice(&relative_ifd(
+        &[
+            (0x2020, 13, 1, (cs_at as u32).to_le_bytes().to_vec()),
+            (0x2040, 13, 1, 64u32.to_le_bytes().to_vec()),
+        ],
+        12,
+    ));
     note.resize(64, 0);
     note.extend_from_slice(&ip);
     note.resize(cs_at, 0);
@@ -1184,7 +1390,10 @@ pub fn orf(width: usize, height: usize, data: &[u16]) -> Vec<u8> {
     note.extend_from_slice(&jpeg);
     let mut t = TiffBuilder::default();
     let strip = t.blob(data.iter().flat_map(|v| (v << 4).to_le_bytes()).collect());
-    let exif = t.ifd(vec![(37500, Val::Undefined(note)), (41730, Val::Undefined(vec![2, 0, 2, 0, 1, 0, 2, 1]))]);
+    let exif = t.ifd(vec![
+        (37500, Val::Undefined(note)),
+        (41730, Val::Undefined(vec![2, 0, 2, 0, 1, 0, 2, 1])),
+    ]);
     let ifd0 = t.ifd(vec![
         (256, Val::Long(vec![width as u32])),
         (257, Val::Long(vec![height as u32])),
@@ -1274,7 +1483,11 @@ impl RafSpec {
     /// The samples as stored.
     fn strip(&self) -> Vec<u8> {
         match self.packing {
-            RafPacking::U16 { le } => self.data.iter().flat_map(|v| if le { v.to_le_bytes() } else { v.to_be_bytes() }).collect(),
+            RafPacking::U16 { le } => self
+                .data
+                .iter()
+                .flat_map(|v| if le { v.to_le_bytes() } else { v.to_be_bytes() })
+                .collect(),
             RafPacking::Lsb12 => {
                 let (mut out, mut acc, mut n) = (Vec::new(), 0u64, 0u32);
                 for &v in &self.data {
@@ -1305,7 +1518,10 @@ impl RafSpec {
                     logical.push((acc << (8 - n)) as u8);
                 }
                 logical.resize(logical.len().next_multiple_of(4), 0);
-                logical.chunks(4).flat_map(|w| w.iter().rev().copied().collect::<Vec<u8>>()).collect()
+                logical
+                    .chunks(4)
+                    .flat_map(|w| w.iter().rev().copied().collect::<Vec<u8>>())
+                    .collect()
             }
             RafPacking::Compressed => {
                 let mut v = b"IS\x01\x00".to_vec();
@@ -1333,7 +1549,11 @@ impl RafSpec {
         .into_iter()
         .chain(self.wb_grb.map(|w| (0xF00E, w.to_vec())))
         .collect();
-        let mut out = if le { b"II*\0".to_vec() } else { b"MM\0*".to_vec() };
+        let mut out = if le {
+            b"II*\0".to_vec()
+        } else {
+            b"MM\0*".to_vec()
+        };
         out.extend_from_slice(&u32b(8));
         // IFD0: one entry, 0xF000 (type IFD) → the Fuji IFD at 26.
         out.extend_from_slice(&u16b(1));
@@ -1372,14 +1592,20 @@ impl RafSpec {
     /// orientation; SOF0 32×24; EOI).
     fn preview(&self) -> Vec<u8> {
         let mut t = TiffBuilder::default();
-        let ifd0 = t.ifd(vec![(271, Val::Ascii("FUJIFILM".into())), (272, Val::Ascii("X-Synthetic".into())), (274, Val::Short(vec![self.orientation]))]);
+        let ifd0 = t.ifd(vec![
+            (271, Val::Ascii("FUJIFILM".into())),
+            (272, Val::Ascii("X-Synthetic".into())),
+            (274, Val::Short(vec![self.orientation])),
+        ]);
         t.chain = vec![ifd0];
         let mut app1 = b"Exif\0\0".to_vec();
         app1.extend_from_slice(&t.build());
         let mut j = vec![0xFF, 0xD8, 0xFF, 0xE1];
         j.extend_from_slice(&((app1.len() + 2) as u16).to_be_bytes());
         j.extend_from_slice(&app1);
-        j.extend_from_slice(&[0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 24, 0x00, 32, 1, 1, 0x11, 0, 0xFF, 0xD9]);
+        j.extend_from_slice(&[
+            0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 24, 0x00, 32, 1, 1, 0x11, 0, 0xFF, 0xD9,
+        ]);
         j
     }
 
@@ -1430,10 +1656,21 @@ impl RafSpec {
         b.resize(160, 0);
         let preview = self.preview();
         let meta = self.meta();
-        let region = if self.cfa_tiff { self.cfa_region() } else { self.strip() };
+        let region = if self.cfa_tiff {
+            self.cfa_region()
+        } else {
+            self.strip()
+        };
         let (p_at, m_at) = (b.len(), b.len() + preview.len());
         let c_at = m_at + meta.len();
-        for (at, v) in [(84, p_at), (88, preview.len()), (92, m_at), (96, meta.len()), (100, c_at), (104, region.len())] {
+        for (at, v) in [
+            (84, p_at),
+            (88, preview.len()),
+            (92, m_at),
+            (96, meta.len()),
+            (100, c_at),
+            (104, region.len()),
+        ] {
             b[at..at + 4].copy_from_slice(&(v as u32).to_be_bytes());
         }
         b.extend_from_slice(&preview);
@@ -1445,7 +1682,14 @@ impl RafSpec {
 
 /// Mosaics linear RGB through any CFA repeat (`cfa`: `cfa_w` colours per
 /// row) anchored at (0, 0), like [`mosaic`].
-pub fn mosaic_cfa(rgb: &[[f32; 3]], width: usize, cfa: &[u8], cfa_w: usize, black: u16, white: u16) -> Vec<u16> {
+pub fn mosaic_cfa(
+    rgb: &[[f32; 3]],
+    width: usize,
+    cfa: &[u8],
+    cfa_w: usize,
+    black: u16,
+    white: u16,
+) -> Vec<u16> {
     let cfa_h = cfa.len() / cfa_w;
     rgb.iter()
         .enumerate()
@@ -1463,8 +1707,15 @@ pub fn mosaic_cfa(rgb: &[[f32; 3]], width: usize, cfa: &[u8], cfa_w: usize, blac
 pub fn scene(width: usize, height: usize) -> Vec<[f32; 3]> {
     (0..width * height)
         .map(|i| {
-            let (x, y) = ((i % width) as f32 / width.max(1) as f32, (i / width) as f32 / height.max(1) as f32);
-            [0.1 + 0.7 * x, 0.15 + 0.5 * (1.0 - y) * x + 0.2 * y, 0.6 - 0.4 * y + 0.2 * x]
+            let (x, y) = (
+                (i % width) as f32 / width.max(1) as f32,
+                (i / width) as f32 / height.max(1) as f32,
+            );
+            [
+                0.1 + 0.7 * x,
+                0.15 + 0.5 * (1.0 - y) * x + 0.2 * y,
+                0.6 - 0.4 * y + 0.2 * x,
+            ]
         })
         .collect()
 }

@@ -40,7 +40,11 @@ pub enum FileDialog {
     /// Save a FilmCraft project, suggesting `name`.
     SaveProject { name: String },
     /// Save a file, suggesting `name`.
-    SaveAs { filter: String, exts: Vec<String>, name: String },
+    SaveAs {
+        filter: String,
+        exts: Vec<String>,
+        name: String,
+    },
     /// Choose a folder, starting at `at` when there is one.
     Folder { at: Option<String> },
     /// Choose one file to relink to (Link Media ▸ Locate…, Attach Proxies, Reconnect Full
@@ -50,7 +54,8 @@ pub enum FileDialog {
 
 /// What to do with the chosen paths (none: cancelled). Its result is the request's (control
 /// channel, menu) when the dialog answers at once; otherwise an error goes to the status line.
-pub(crate) type Continuation = Box<dyn FnOnce(&mut FilmcraftApp, Vec<String>) -> Result<Value, String>>;
+pub(crate) type Continuation =
+    Box<dyn FnOnce(&mut FilmcraftApp, Vec<String>) -> Result<Value, String>>;
 
 /// The dialog a host is showing, and what to do with its answer.
 pub(crate) struct PendingDialog {
@@ -64,13 +69,22 @@ fn strings(v: &[&str]) -> Vec<String> {
 
 impl FileDialog {
     pub fn open_files(exts: &[&str]) -> Self {
-        Self::OpenFiles { exts: strings(exts) }
+        Self::OpenFiles {
+            exts: strings(exts),
+        }
     }
     pub fn open_file(filter: &str, exts: &[&str]) -> Self {
-        Self::OpenFile { filter: filter.to_string(), exts: strings(exts) }
+        Self::OpenFile {
+            filter: filter.to_string(),
+            exts: strings(exts),
+        }
     }
     pub fn save_as(filter: &str, exts: &[&str], name: &str) -> Self {
-        Self::SaveAs { filter: filter.to_string(), exts: strings(exts), name: name.to_string() }
+        Self::SaveAs {
+            filter: filter.to_string(),
+            exts: strings(exts),
+            name: name.to_string(),
+        }
     }
 
     /// Whether `hooks` can show this dialog at all (a host without the picker leaves it out).
@@ -82,8 +96,12 @@ impl FileDialog {
                 Self::OpenProject => hooks.pick_open_project.is_some(),
                 Self::SaveProject { .. } => hooks.pick_save.is_some(),
                 Self::SaveAs { .. } => hooks.pick_save_as.is_some(),
-                Self::Folder { at } => hooks.pick_folder.is_some() || (at.is_some() && hooks.pick_folder_at.is_some()),
-                Self::Relink { .. } => hooks.pick_file_for_relink.is_some() || hooks.pick_files.is_some(),
+                Self::Folder { at } => {
+                    hooks.pick_folder.is_some() || (at.is_some() && hooks.pick_folder_at.is_some())
+                }
+                Self::Relink { .. } => {
+                    hooks.pick_file_for_relink.is_some() || hooks.pick_files.is_some()
+                }
             }
     }
 
@@ -91,18 +109,35 @@ impl FileDialog {
     fn run_now(self, hooks: &mut HostHooks) -> Vec<String> {
         let one = |p: Option<String>| p.into_iter().collect::<Vec<_>>();
         match self {
-            Self::OpenFiles { exts } => hooks.pick_files.as_mut().map(|f| f(&refs(&exts))).unwrap_or_default(),
-            Self::OpenFile { filter, exts } => one(hooks.pick_open_file.as_mut().and_then(|f| f(&filter, &refs(&exts)))),
+            Self::OpenFiles { exts } => hooks
+                .pick_files
+                .as_mut()
+                .map(|f| f(&refs(&exts)))
+                .unwrap_or_default(),
+            Self::OpenFile { filter, exts } => one(hooks
+                .pick_open_file
+                .as_mut()
+                .and_then(|f| f(&filter, &refs(&exts)))),
             Self::OpenProject => one(hooks.pick_open_project.as_mut().and_then(|f| f())),
             Self::SaveProject { name } => one(hooks.pick_save.as_mut().and_then(|f| f(&name))),
-            Self::SaveAs { filter, exts, name } => one(hooks.pick_save_as.as_mut().and_then(|f| f(&filter, &refs(&exts), &name))),
+            Self::SaveAs { filter, exts, name } => one(hooks
+                .pick_save_as
+                .as_mut()
+                .and_then(|f| f(&filter, &refs(&exts), &name))),
             Self::Folder { at } => one(match (at, hooks.pick_folder_at.as_mut()) {
                 (Some(dir), Some(f)) => f(&dir),
                 _ => hooks.pick_folder.as_mut().and_then(|f| f()),
             }),
             Self::Relink { exts, hint } => match hooks.pick_file_for_relink.as_mut() {
                 Some(f) => one(f(&refs(&exts), Some(hint))),
-                None => hooks.pick_files.as_mut().map(|f| f(&refs(&exts))).unwrap_or_default().into_iter().take(1).collect(),
+                None => hooks
+                    .pick_files
+                    .as_mut()
+                    .map(|f| f(&refs(&exts)))
+                    .unwrap_or_default()
+                    .into_iter()
+                    .take(1)
+                    .collect(),
             },
         }
     }
@@ -117,12 +152,19 @@ impl FilmcraftApp {
     /// that shows dialogs without blocking, this returns `{"dialog": "open"}` and `then` runs on a
     /// later frame; otherwise `then` runs now and its result is returned. While a dialog is open
     /// another one is refused.
-    pub fn pick(&mut self, dialog: FileDialog, then: impl FnOnce(&mut FilmcraftApp, Vec<String>) -> Result<Value, String> + 'static) -> Result<Value, String> {
+    pub fn pick(
+        &mut self,
+        dialog: FileDialog,
+        then: impl FnOnce(&mut FilmcraftApp, Vec<String>) -> Result<Value, String> + 'static,
+    ) -> Result<Value, String> {
         if self.native_dialog.is_some() {
             return Err(tl!("A file dialog is already open").into());
         }
         if let Some(run) = self.hooks.run_dialog.as_mut() {
-            self.native_dialog = Some(PendingDialog { answer: run(dialog), then: Box::new(then) });
+            self.native_dialog = Some(PendingDialog {
+                answer: run(dialog),
+                then: Box::new(then),
+            });
             return Ok(json!({"dialog": "open"}));
         }
         let paths = dialog.run_now(&mut self.hooks);
@@ -133,7 +175,11 @@ impl FilmcraftApp {
     /// open) goes to the status line. `then` always runs at the start of a later frame, also with
     /// the host's synchronous pickers: a panel works on a copy of its state and writes it back at
     /// the end of the frame, which would overwrite a path written in the middle of it.
-    pub fn pick_ui(&mut self, dialog: FileDialog, then: impl FnOnce(&mut FilmcraftApp, Vec<String>) + 'static) {
+    pub fn pick_ui(
+        &mut self,
+        dialog: FileDialog,
+        then: impl FnOnce(&mut FilmcraftApp, Vec<String>) + 'static,
+    ) {
         if self.native_dialog.is_some() {
             self.ui.status = tl!("A file dialog is already open").into();
             return;
@@ -162,7 +208,9 @@ impl FilmcraftApp {
     /// Run the open dialog's continuation once it has answered (called first thing every frame).
     /// While it is open the frame loop keeps polling at a low rate.
     pub(crate) fn poll_native_dialog(&mut self, ctx: &egui::Context) {
-        let Some(pending) = &self.native_dialog else { return };
+        let Some(pending) = &self.native_dialog else {
+            return;
+        };
         let paths = match pending.answer.try_recv() {
             Ok(paths) => paths,
             Err(TryRecvError::Empty) => {
@@ -172,7 +220,9 @@ impl FilmcraftApp {
             // the host's dialog ended without an answer (its thread failed): as if cancelled
             Err(TryRecvError::Disconnected) => Vec::new(),
         };
-        let Some(pending) = self.native_dialog.take() else { return };
+        let Some(pending) = self.native_dialog.take() else {
+            return;
+        };
         if let Err(e) = (pending.then)(self, paths) {
             self.ui.status = e;
         }

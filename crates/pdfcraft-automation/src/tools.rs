@@ -60,7 +60,10 @@ fn color() -> Value {
 fn comment_ref(mut extra: Value) -> Value {
     if let Some(props) = extra.as_object_mut() {
         props.insert("doc".into(), doc());
-        props.insert("id".into(), json!({ "type": "string", "description": "The comment's id (from comment_list)." }));
+        props.insert(
+            "id".into(),
+            json!({ "type": "string", "description": "The comment's id (from comment_list)." }),
+        );
         props.insert("page".into(), json!({ "type": "integer", "minimum": 1, "description": "With `index`, instead of `id`." }));
         props.insert(
             "index".into(),
@@ -84,7 +87,14 @@ struct T {
 }
 
 const fn t(name: &'static str, title: &'static str, description: &'static str) -> T {
-    T { name, title, description, read_only: false, destructive: false, command: None }
+    T {
+        name,
+        title,
+        description,
+        read_only: false,
+        destructive: false,
+        command: None,
+    }
 }
 
 impl T {
@@ -1276,15 +1286,32 @@ pub(crate) fn tool_for_command(id: &str) -> Option<&'static str> {
 
 /// Reject unknown and missing arguments (types are checked when each value is read).
 pub(crate) fn check_args(def: &ToolDef, args: &Value) -> Result<(), ToolError> {
-    let obj = args.as_object().ok_or_else(|| ToolError::InvalidArgs("arguments must be a JSON object".into()))?;
-    let props = def.input_schema["properties"].as_object().cloned().unwrap_or_default();
+    let obj = args
+        .as_object()
+        .ok_or_else(|| ToolError::InvalidArgs("arguments must be a JSON object".into()))?;
+    let props = def.input_schema["properties"]
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
     if let Some(k) = obj.keys().find(|k| !props.contains_key(*k)) {
         let known: Vec<&str> = props.keys().map(String::as_str).collect();
-        return Err(ToolError::InvalidArgs(format!("{}: unknown argument {k:?} (expected: {})", def.name, known.join(", "))));
+        return Err(ToolError::InvalidArgs(format!(
+            "{}: unknown argument {k:?} (expected: {})",
+            def.name,
+            known.join(", ")
+        )));
     }
-    for r in def.input_schema["required"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+    for r in def.input_schema["required"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+    {
         if obj.get(r).is_none_or(Value::is_null) {
-            return Err(ToolError::InvalidArgs(format!("{}: missing argument {r}", def.name)));
+            return Err(ToolError::InvalidArgs(format!(
+                "{}: missing argument {r}",
+                def.name
+            )));
         }
     }
     Ok(())

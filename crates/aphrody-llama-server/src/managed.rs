@@ -220,7 +220,10 @@ impl ManagedLlamaServer {
     /// Use `binary` with an already configured supervisor.
     #[must_use]
     pub fn new(binary: impl Into<PathBuf>, supervisor: Supervisor) -> Self {
-        Self { binary: binary.into(), supervisor }
+        Self {
+            binary: binary.into(),
+            supervisor,
+        }
     }
 
     /// Use the daemon installed beside the current executable and store state under `state_root`.
@@ -233,7 +236,10 @@ impl ManagedLlamaServer {
         state_root: impl Into<PathBuf>,
     ) -> Result<Self, ManagedError> {
         let daemon = DaemonCommand::sibling_binary()?;
-        Ok(Self::new(binary, Supervisor::new(StateDirs::new(state_root), daemon)))
+        Ok(Self::new(
+            binary,
+            Supervisor::new(StateDirs::new(state_root), daemon),
+        ))
     }
 
     /// Underlying supervisor, for status inspection and side-channel access.
@@ -274,7 +280,9 @@ impl ManagedLlamaServer {
             Resolved::Catalog(entry) => entry.primary().map(|file| store.path_for(&file.reference)),
             Resolved::Direct(reference) => Some(store.path_for(reference)),
         }
-        .ok_or_else(|| ManagedError::MissingWeights { model: model_id.clone() })?;
+        .ok_or_else(|| ManagedError::MissingWeights {
+            model: model_id.clone(),
+        })?;
         let artifacts = resolved.artifacts();
         let mut all_paths = Vec::with_capacity(artifacts.len());
         let mut already_present = true;
@@ -343,12 +351,20 @@ impl ManagedLlamaServer {
             .iter()
             .skip(1)
             .find(|path| {
-                path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+                path.file_name()
+                    .is_some_and(|name| name.to_string_lossy().contains("mmproj"))
             })
             .cloned();
         let plan = crate::plan(&facts, &capabilities, budget, &plan_request);
-        let endpoint = self.supervisor.ensure(&self.binary, &plan, options.ensure).await?;
-        Ok(ManagedEndpoint { model, plan, endpoint })
+        let endpoint = self
+            .supervisor
+            .ensure(&self.binary, &plan, options.ensure)
+            .await?;
+        Ok(ManagedEndpoint {
+            model,
+            plan,
+            endpoint,
+        })
     }
 
     /// Prepare and launch a managed endpoint in one call.
@@ -411,7 +427,9 @@ fn require_role_support(
     if supported {
         Ok(())
     } else {
-        Err(ManagedError::UnsupportedRole { role: category.role().as_str() })
+        Err(ManagedError::UnsupportedRole {
+            role: category.role().as_str(),
+        })
     }
 }
 
@@ -422,7 +440,9 @@ mod tests {
     #[test]
     fn category_defaults_are_catalogued_llama_models() {
         for category in [ManagedCategory::Embedding, ManagedCategory::Reranking] {
-            let entry = Catalog::builtin().get(category.default_model()).expect("default entry");
+            let entry = Catalog::builtin()
+                .get(category.default_model())
+                .expect("default entry");
             assert_eq!(entry.task, category.task());
             assert_eq!(entry.backend, Backend::LlamaCpp);
         }
@@ -433,13 +453,21 @@ mod tests {
         let catalog = Catalog::builtin();
         let wrong_task = catalog.resolve(DEFAULT_RERANK_MODEL).expect("resolve");
         assert!(matches!(
-            validate_resolved(DEFAULT_RERANK_MODEL, ManagedCategory::Embedding, &wrong_task),
+            validate_resolved(
+                DEFAULT_RERANK_MODEL,
+                ManagedCategory::Embedding,
+                &wrong_task
+            ),
             Err(ManagedError::TaskMismatch { .. })
         ));
 
         let wrong_backend = catalog.resolve("bge-small-en-v1.5").expect("resolve");
         assert!(matches!(
-            validate_resolved("bge-small-en-v1.5", ManagedCategory::Embedding, &wrong_backend),
+            validate_resolved(
+                "bge-small-en-v1.5",
+                ManagedCategory::Embedding,
+                &wrong_backend
+            ),
             Err(ManagedError::BackendMismatch { .. })
         ));
     }

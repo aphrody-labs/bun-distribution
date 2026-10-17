@@ -46,7 +46,12 @@ pub enum TileKind {
     /// On/off state; accept toggles and runs `command` with the new state.
     Toggle { on: bool },
     /// A value the left/right intents change by `step` within `min..=max`.
-    Slider { value: f32, min: f32, max: f32, step: f32 },
+    Slider {
+        value: f32,
+        min: f32,
+        max: f32,
+        step: f32,
+    },
     /// Read-only value (status bar indicators, quick-menu readouts).
     Status { value: String },
 }
@@ -107,7 +112,13 @@ impl Applet {
 
     /// Move a slider by `steps` (negative = left); returns the new value.
     pub fn nudge(&mut self, steps: i32) -> Option<f32> {
-        if let TileKind::Slider { value, min, max, step } = &mut self.kind {
+        if let TileKind::Slider {
+            value,
+            min,
+            max,
+            step,
+        } = &mut self.kind
+        {
             *value = (*value + *step * steps as f32).clamp(*min, *max);
             return Some(*value);
         }
@@ -147,7 +158,12 @@ impl AppletRegistry {
             action("frame-limit", "speed", 50),
             action("scaling", "aspect_ratio", 60),
             Applet {
-                kind: TileKind::Slider { value: 0.5, min: 0.0, max: 1.0, step: 0.05 },
+                kind: TileKind::Slider {
+                    value: 0.5,
+                    min: 0.0,
+                    max: 1.0,
+                    step: 0.05,
+                },
                 size: TileSize::Wide,
                 ..action("volume", "volume_up", 70)
             },
@@ -184,7 +200,11 @@ impl AppletRegistry {
 
     /// Applets of one host, by order then id.
     pub fn placed(&self, placement: Placement) -> Vec<&Applet> {
-        let mut out: Vec<&Applet> = self.applets.iter().filter(|a| a.placement == placement).collect();
+        let mut out: Vec<&Applet> = self
+            .applets
+            .iter()
+            .filter(|a| a.placement == placement)
+            .collect();
         out.sort_by(|a, b| a.order.cmp(&b.order).then_with(|| a.id.cmp(&b.id)));
         out
     }

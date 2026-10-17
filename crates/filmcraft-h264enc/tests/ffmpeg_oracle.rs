@@ -5,11 +5,21 @@
 
 mod common;
 
-use common::{Yuv, annexb_nals, ffmpeg, ffmpeg_decode, ffmpeg_source, ffprobe, out_dir, psnr, synth};
+use common::{
+    Yuv, annexb_nals, ffmpeg, ffmpeg_decode, ffmpeg_source, ffprobe, out_dir, psnr, synth,
+};
 use filmcraft_h264enc::*;
 use std::process::Command;
 
-fn cfg(w: usize, h: usize, profile: Profile, preset: Preset, bframes: u8, rate: RateControl, slices: usize) -> EncoderConfig {
+fn cfg(
+    w: usize,
+    h: usize,
+    profile: Profile,
+    preset: Preset,
+    bframes: u8,
+    rate: RateControl,
+    slices: usize,
+) -> EncoderConfig {
     let mut c = EncoderConfig::new(w as u32, h as u32, 30, 1);
     c.profile = profile;
     c.preset = preset;
@@ -36,8 +46,15 @@ fn encode(c: EncoderConfig, frames: &[Yuv]) -> Run {
     packets.extend(enc.flush());
     let mut recon = enc.take_recon();
     recon.sort_by_key(|r| r.pts);
-    let stream = packets.iter().flat_map(|p| p.data.iter().copied()).collect();
-    Run { stream, packets, recon }
+    let stream = packets
+        .iter()
+        .flat_map(|p| p.data.iter().copied())
+        .collect();
+    Run {
+        stream,
+        packets,
+        recon,
+    }
 }
 
 /// Decode with ffmpeg, check zero errors, exact frame count and bit-exact match with the reconstruction.
@@ -46,15 +63,27 @@ fn verify(name: &str, run: &Run, w: usize, h: usize, n: usize) -> Vec<u8> {
     let path = out_dir("oracle").join(format!("{name}.h264"));
     std::fs::write(&path, &run.stream).unwrap();
     let (err, dec) = ffmpeg_decode(&path);
-    assert!(err.trim().is_empty(), "{name}: ffmpeg reported errors: {err}");
+    assert!(
+        err.trim().is_empty(),
+        "{name}: ffmpeg reported errors: {err}"
+    );
     let fs = w * h * 3 / 2;
     assert_eq!(dec.len(), n * fs, "{name}: decoded frame count");
     assert_eq!(run.recon.len(), n);
     for (i, r) in run.recon.iter().enumerate() {
         let d = &dec[i * fs..(i + 1) * fs];
-        assert!(d[..w * h] == r.y[..], "{name}: frame {i} luma differs from reconstruction");
-        assert!(d[w * h..w * h * 5 / 4] == r.u[..], "{name}: frame {i} Cb differs");
-        assert!(d[w * h * 5 / 4..] == r.v[..], "{name}: frame {i} Cr differs");
+        assert!(
+            d[..w * h] == r.y[..],
+            "{name}: frame {i} luma differs from reconstruction"
+        );
+        assert!(
+            d[w * h..w * h * 5 / 4] == r.u[..],
+            "{name}: frame {i} Cb differs"
+        );
+        assert!(
+            d[w * h * 5 / 4..] == r.v[..],
+            "{name}: frame {i} Cr differs"
+        );
     }
     dec
 }
@@ -79,12 +108,66 @@ fn bit_exact_profiles_presets() {
         return;
     }
     let cases: [(&str, usize, usize, Profile, Preset, u8, RateControl, usize); 6] = [
-        ("baseline_speed", 176, 144, Profile::Baseline, Preset::Speed, 0, RateControl::Qp(26), 1),
-        ("baseline_lowqp_slices", 176, 144, Profile::Baseline, Preset::Balanced, 0, RateControl::Qp(8), 3),
-        ("main_b2", 320, 240, Profile::Main, Preset::Balanced, 2, RateControl::Qp(30), 2),
-        ("high_crf_b2", 320, 240, Profile::High, Preset::Balanced, 2, RateControl::Crf(23.0), 1),
-        ("high_quality_b3_slices", 320, 240, Profile::High, Preset::Quality, 3, RateControl::Qp(22), 3),
-        ("high_speed_odd_size", 330, 250, Profile::High, Preset::Speed, 1, RateControl::Qp(34), 4),
+        (
+            "baseline_speed",
+            176,
+            144,
+            Profile::Baseline,
+            Preset::Speed,
+            0,
+            RateControl::Qp(26),
+            1,
+        ),
+        (
+            "baseline_lowqp_slices",
+            176,
+            144,
+            Profile::Baseline,
+            Preset::Balanced,
+            0,
+            RateControl::Qp(8),
+            3,
+        ),
+        (
+            "main_b2",
+            320,
+            240,
+            Profile::Main,
+            Preset::Balanced,
+            2,
+            RateControl::Qp(30),
+            2,
+        ),
+        (
+            "high_crf_b2",
+            320,
+            240,
+            Profile::High,
+            Preset::Balanced,
+            2,
+            RateControl::Crf(23.0),
+            1,
+        ),
+        (
+            "high_quality_b3_slices",
+            320,
+            240,
+            Profile::High,
+            Preset::Quality,
+            3,
+            RateControl::Qp(22),
+            3,
+        ),
+        (
+            "high_speed_odd_size",
+            330,
+            250,
+            Profile::High,
+            Preset::Speed,
+            1,
+            RateControl::Qp(34),
+            4,
+        ),
     ];
     for (name, w, h, profile, preset, b, rate, slices) in cases {
         let n = 12;
@@ -111,10 +194,16 @@ fn oracle_reports_damaged_slices() {
     let (w, h, n) = (176, 144, 6);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
     for (name, profile) in [("cavlc", Profile::Baseline), ("cabac", Profile::High)] {
-        let run = encode(cfg(w, h, profile, Preset::Balanced, 0, RateControl::Qp(26), 3), &frames);
+        let run = encode(
+            cfg(w, h, profile, Preset::Balanced, 0, RateControl::Qp(26), 3),
+            &frames,
+        );
         // the undamaged 3-slice stream decodes without a single message
         verify(&format!("damage_{name}_clean"), &run, w, h, n);
-        let slices: Vec<_> = annexb_nals(&run.stream).into_iter().filter(|r| matches!(run.stream[r.start + 3] & 0x1f, 1 | 5)).collect();
+        let slices: Vec<_> = annexb_nals(&run.stream)
+            .into_iter()
+            .filter(|r| matches!(run.stream[r.start + 3] & 0x1f, 1 | 5))
+            .collect();
         assert_eq!(slices.len(), 3 * n, "{name}: three slices per picture");
         for (k, slice) in [(1usize, &slices[4]), (3, &slices[10])] {
             let mut dropped = run.stream.clone();
@@ -125,7 +214,10 @@ fn oracle_reports_damaged_slices() {
                 let path = out_dir("oracle").join(format!("damage_{name}_{damage}_{k}.h264"));
                 std::fs::write(&path, &stream).unwrap();
                 let (err, _) = ffmpeg_decode(&path);
-                assert!(!err.trim().is_empty(), "{name}: the oracle missed a {damage} slice in picture {k}");
+                assert!(
+                    !err.trim().is_empty(),
+                    "{name}: the oracle missed a {damage} slice in picture {k}"
+                );
             }
         }
     }
@@ -139,10 +231,24 @@ fn bit_exact_lavfi_sources() {
     for src in ["testsrc2", "mandelbrot"] {
         let (w, h, n) = (352, 288, 20);
         let frames = ffmpeg_source(src, w, h, n);
-        let run = encode(cfg(w, h, Profile::High, Preset::Balanced, 3, RateControl::Crf(22.0), 2), &frames);
+        let run = encode(
+            cfg(
+                w,
+                h,
+                Profile::High,
+                Preset::Balanced,
+                3,
+                RateControl::Crf(22.0),
+                2,
+            ),
+            &frames,
+        );
         let dec = verify(src, &run, w, h, n);
         let fs = w * h * 3 / 2;
-        let mean: f64 = (0..n).map(|i| psnr(&dec[i * fs..i * fs + w * h], &frames[i].y)).sum::<f64>() / n as f64;
+        let mean: f64 = (0..n)
+            .map(|i| psnr(&dec[i * fs..i * fs + w * h], &frames[i].y))
+            .sum::<f64>()
+            / n as f64;
         assert!(mean > 38.0, "{src}: mean psnr {mean:.2}");
     }
 }
@@ -154,12 +260,22 @@ fn psnr_1080p_crf20() {
     }
     let (w, h, n) = (1920, 1080, 6);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    let mut c = cfg(w, h, Profile::High, Preset::Speed, 2, RateControl::Crf(20.0), 0);
+    let mut c = cfg(
+        w,
+        h,
+        Profile::High,
+        Preset::Speed,
+        2,
+        RateControl::Crf(20.0),
+        0,
+    );
     c.threads = 0;
     let run = encode(c, &frames);
     let dec = verify("psnr1080", &run, w, h, n);
     let fs = w * h * 3 / 2;
-    let ps: Vec<f64> = (0..n).map(|i| psnr(&dec[i * fs..i * fs + w * h], &frames[i].y)).collect();
+    let ps: Vec<f64> = (0..n)
+        .map(|i| psnr(&dec[i * fs..i * fs + w * h], &frames[i].y))
+        .collect();
     let mean = ps.iter().sum::<f64>() / n as f64;
     eprintln!("1080p CRF 20 luma PSNR per frame: {ps:.2?} mean {mean:.2}");
     assert!(mean >= 40.0, "mean luma PSNR {mean:.2} < 40 dB");
@@ -177,13 +293,25 @@ fn abr_hits_target() {
     }
     let (w, h, n) = (640, 360, 90);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    for (name, rate, target) in [("cbr", RateControl::Cbr { kbps: 1500 }, 1500.0), ("vbr1pass", RateControl::Vbr { target_kbps: 1000, max_kbps: 2000 }, 1000.0)]
-    {
+    for (name, rate, target) in [
+        ("cbr", RateControl::Cbr { kbps: 1500 }, 1500.0),
+        (
+            "vbr1pass",
+            RateControl::Vbr {
+                target_kbps: 1000,
+                max_kbps: 2000,
+            },
+            1000.0,
+        ),
+    ] {
         let run = encode(cfg(w, h, Profile::High, Preset::Speed, 2, rate, 0), &frames);
         verify(name, &run, w, h, n);
         let k = bitrate(&run, n);
         eprintln!("{name}: {k:.1} kbps (target {target})");
-        assert!((k - target).abs() / target <= 0.10, "{name}: {k:.1} kbps vs target {target}");
+        assert!(
+            (k - target).abs() / target <= 0.10,
+            "{name}: {k:.1} kbps vs target {target}"
+        );
     }
 }
 
@@ -197,20 +325,41 @@ fn vbr_opening_second_is_not_starved() {
     }
     let (w, h, n, fps) = (640, 360, 120, 60);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    let mut c = cfg(w, h, Profile::High, Preset::Balanced, 2, RateControl::Vbr { target_kbps: 2000, max_kbps: 3000 }, 0);
+    let mut c = cfg(
+        w,
+        h,
+        Profile::High,
+        Preset::Balanced,
+        2,
+        RateControl::Vbr {
+            target_kbps: 2000,
+            max_kbps: 3000,
+        },
+        0,
+    );
     c.fps_num = fps;
     c.keyint = 2 * fps;
     let run = encode(c, &frames);
     let dec = verify("vbr_opening", &run, w, h, n);
     let fs = w * h * 3 / 2;
-    let ps: Vec<f64> = frames.iter().enumerate().map(|(i, f)| psnr(&dec[i * fs..i * fs + w * h], &f.y)).collect();
+    let ps: Vec<f64> = frames
+        .iter()
+        .enumerate()
+        .map(|(i, f)| psnr(&dec[i * fs..i * fs + w * h], &f.y))
+        .collect();
     let mean = |r: std::ops::Range<usize>| ps[r.clone()].iter().sum::<f64>() / r.len() as f64;
     // 0.1–0.5 s against everything after the first second (the same GOP, so no new I frame in between).
     let (opening, settled) = (mean(6..30), mean(60..n));
     let kbps = run.stream.len() as f64 * 8.0 / (n as f64 / fps as f64) / 1000.0;
     eprintln!("opening {opening:.2} dB, after 1 s {settled:.2} dB, {kbps:.1} kbps");
-    assert!(settled - opening <= 3.0, "opening second starved: {opening:.2} dB vs {settled:.2} dB after 1 s");
-    assert!((kbps - 2000.0).abs() / 2000.0 <= 0.10, "{kbps:.1} kbps vs target 2000");
+    assert!(
+        settled - opening <= 3.0,
+        "opening second starved: {opening:.2} dB vs {settled:.2} dB after 1 s"
+    );
+    assert!(
+        (kbps - 2000.0).abs() / 2000.0 <= 0.10,
+        "{kbps:.1} kbps vs target 2000"
+    );
 }
 
 #[test]
@@ -220,7 +369,10 @@ fn two_pass_vbr_hits_target() {
     }
     let (w, h, n) = (640, 360, 90);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    let rate = RateControl::Vbr { target_kbps: 800, max_kbps: 2400 };
+    let rate = RateControl::Vbr {
+        target_kbps: 800,
+        max_kbps: 2400,
+    };
     let mut c1 = cfg(w, h, Profile::High, Preset::Speed, 2, rate, 0);
     c1.pass = Pass::First;
     let mut enc = Encoder::new(c1.clone()).unwrap();
@@ -231,7 +383,11 @@ fn two_pass_vbr_hits_target() {
     let stats = enc.pass_stats().unwrap();
     assert_eq!(stats.frames.len(), n);
     let p1: u64 = stats.frames.iter().map(|f| f.bits).sum();
-    eprintln!("pass 1: {:.1} kbps; {:?}", p1 as f64 / (n as f64 / 30.0) / 1000.0, &stats.frames[..6]);
+    eprintln!(
+        "pass 1: {:.1} kbps; {:?}",
+        p1 as f64 / (n as f64 / 30.0) / 1000.0,
+        &stats.frames[..6]
+    );
     let stats = PassStats::from_text(&stats.to_text()).unwrap();
     let mut c2 = c1;
     c2.pass = Pass::Second(stats);
@@ -239,7 +395,10 @@ fn two_pass_vbr_hits_target() {
     verify("twopass", &run, w, h, n);
     let k = bitrate(&run, n);
     eprintln!("2-pass: {k:.1} kbps (target 800)");
-    assert!((k - 800.0).abs() / 800.0 <= 0.10, "2-pass: {k:.1} kbps vs 800");
+    assert!(
+        (k - 800.0).abs() / 800.0 <= 0.10,
+        "2-pass: {k:.1} kbps vs 800"
+    );
 }
 
 #[test]
@@ -249,21 +408,46 @@ fn bframes_order_via_ffprobe() {
     }
     let (w, h, n) = (176, 144, 13);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    let run = encode(cfg(w, h, Profile::High, Preset::Balanced, 3, RateControl::Qp(28), 1), &frames);
+    let run = encode(
+        cfg(
+            w,
+            h,
+            Profile::High,
+            Preset::Balanced,
+            3,
+            RateControl::Qp(28),
+            1,
+        ),
+        &frames,
+    );
     verify("bframes", &run, w, h, n);
     check_timestamps(&run, n);
     let path = out_dir("oracle").join("bframes.h264");
     let out = Command::new(ffprobe().unwrap())
-        .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "frame=pict_type,coded_picture_number", "-of", "csv=p=0"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "frame=pict_type,coded_picture_number",
+            "-of",
+            "csv=p=0",
+        ])
         .arg(&path)
         .output()
         .unwrap();
     let text = String::from_utf8_lossy(&out.stdout);
-    let types: Vec<String> = text.lines().map(|l| l.split(',').next().unwrap_or("").trim().to_string()).filter(|s| !s.is_empty()).collect();
+    let types: Vec<String> = text
+        .lines()
+        .map(|l| l.split(',').next().unwrap_or("").trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
     assert_eq!(types.len(), n, "{text}");
     // Display order as reported by the decoder must match what we encoded: I B B B P B B B P B B B P
     let ours: Vec<char> = {
-        let mut v: Vec<(i64, FrameType)> = run.packets.iter().map(|p| (p.pts, p.frame_type)).collect();
+        let mut v: Vec<(i64, FrameType)> =
+            run.packets.iter().map(|p| (p.pts, p.frame_type)).collect();
         v.sort_by_key(|x| x.0);
         v.iter()
             .map(|x| match x.1 {
@@ -285,7 +469,15 @@ fn length_prefixed_with_avcc() {
     }
     let (w, h, n) = (176, 144, 8);
     let frames: Vec<Yuv> = (0..n).map(|t| synth(w, h, t)).collect();
-    let mut c = cfg(w, h, Profile::High, Preset::Speed, 1, RateControl::Qp(26), 1);
+    let mut c = cfg(
+        w,
+        h,
+        Profile::High,
+        Preset::Speed,
+        1,
+        RateControl::Qp(26),
+        1,
+    );
     c.format = PacketFormat::LengthPrefixed;
     let mut enc = Encoder::new(c).unwrap();
     enc.set_recon_capture(true);
@@ -319,7 +511,17 @@ fn length_prefixed_with_avcc() {
     }
     let mut recon = enc.take_recon();
     recon.sort_by_key(|r| r.pts);
-    verify("avcc", &Run { stream, packets, recon }, w, h, n);
+    verify(
+        "avcc",
+        &Run {
+            stream,
+            packets,
+            recon,
+        },
+        w,
+        h,
+        n,
+    );
 }
 
 #[test]
@@ -332,5 +534,17 @@ fn rejects_bad_config() {
     assert!(Encoder::new(c).is_err());
     let mut enc = Encoder::new(EncoderConfig::new(64, 64, 30, 1)).unwrap();
     let y = vec![0u8; 10];
-    assert!(enc.try_encode(&YuvFrame { y: &y, u: &y, v: &y, y_stride: 64, uv_stride: 32 }, 0).is_err());
+    assert!(
+        enc.try_encode(
+            &YuvFrame {
+                y: &y,
+                u: &y,
+                v: &y,
+                y_stride: 64,
+                uv_stride: 32
+            },
+            0
+        )
+        .is_err()
+    );
 }

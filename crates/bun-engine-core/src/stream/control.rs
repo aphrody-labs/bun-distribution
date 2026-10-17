@@ -65,8 +65,12 @@ impl Cipher {
     fn open(&self, iv: &[u8], data: &mut Vec<u8>, tag: &[u8]) -> bool {
         let tag = Tag::from_slice(tag);
         match self {
-            Self::V2(c) => c.decrypt_in_place_detached(Nonce::from_slice(iv), b"", data, tag).is_ok(),
-            Self::Legacy(c) => c.decrypt_in_place_detached(GenericArray::from_slice(iv), b"", data, tag).is_ok(),
+            Self::V2(c) => c
+                .decrypt_in_place_detached(Nonce::from_slice(iv), b"", data, tag)
+                .is_ok(),
+            Self::Legacy(c) => c
+                .decrypt_in_place_detached(GenericArray::from_slice(iv), b"", data, tag)
+                .is_ok(),
         }
     }
 }
@@ -149,7 +153,10 @@ impl Framer {
 #[cfg(windows)]
 fn rumble(controller: u16, low: u16, high: u16) {
     use windows::Win32::UI::Input::XboxController::{XINPUT_VIBRATION, XInputSetState};
-    let vibration = XINPUT_VIBRATION { wLeftMotorSpeed: low, wRightMotorSpeed: high };
+    let vibration = XINPUT_VIBRATION {
+        wLeftMotorSpeed: low,
+        wRightMotorSpeed: high,
+    };
     // SAFETY: valid pointer to a stack value for the call.
     unsafe {
         XInputSetState(u32::from(controller & 3), &vibration);
@@ -160,17 +167,32 @@ fn rumble(controller: u16, low: u16, high: u16) {
 fn rumble(_controller: u16, _low: u16, _high: u16) {}
 
 /// Run the control stream until the host terminates the session or `commands` closes.
-pub fn run(address: SocketAddr, connect_data: u32, key: [u8; 16], protection: Protection, commands: Receiver<Command>, status: Arc<Status>) {
+pub fn run(
+    address: SocketAddr,
+    connect_data: u32,
+    key: [u8; 16],
+    protection: Protection,
+    commands: Receiver<Command>,
+    status: Arc<Status>,
+) {
     let finish = |why: String| {
         *status.termination.lock().unwrap() = Some(why);
         status.stopped.store(true, Ordering::SeqCst);
     };
-    let bind: SocketAddr = if address.is_ipv6() { "[::]:0".parse().unwrap() } else { "0.0.0.0:0".parse().unwrap() };
+    let bind: SocketAddr = if address.is_ipv6() {
+        "[::]:0".parse().unwrap()
+    } else {
+        "0.0.0.0:0".parse().unwrap()
+    };
     let socket = match UdpSocket::bind(bind) {
         Ok(s) => s,
         Err(e) => return finish(format!("control socket: {e}")),
     };
-    let settings = HostSettings { peer_limit: 1, channel_limit: channel::COUNT, ..Default::default() };
+    let settings = HostSettings {
+        peer_limit: 1,
+        channel_limit: channel::COUNT,
+        ..Default::default()
+    };
     let mut host = match Host::new(socket, settings) {
         Ok(h) => h,
         Err(e) => return finish(format!("ENet host: {e:?}")),
@@ -181,10 +203,17 @@ pub fn run(address: SocketAddr, connect_data: u32, key: [u8; 16], protection: Pr
     };
     let cipher = match protection {
         Protection::None => None,
-        Protection::V2 => Some(Cipher::V2(Aes128Gcm::new(Key::<Aes128Gcm>::from_slice(&key)))),
-        Protection::Legacy => Some(Cipher::Legacy(AesGcm::<aes::Aes128, U16>::new(GenericArray::from_slice(&key)))),
+        Protection::V2 => Some(Cipher::V2(Aes128Gcm::new(Key::<Aes128Gcm>::from_slice(
+            &key,
+        )))),
+        Protection::Legacy => Some(Cipher::Legacy(AesGcm::<aes::Aes128, U16>::new(
+            GenericArray::from_slice(&key),
+        ))),
     };
-    let mut framer = Framer { cipher, sequence: 0 };
+    let mut framer = Framer {
+        cipher,
+        sequence: 0,
+    };
     let deadline = Instant::now() + Duration::from_secs(10);
     let mut connected = false;
     let mut next_ping = Instant::now();
@@ -195,22 +224,30 @@ pub fn run(address: SocketAddr, connect_data: u32, key: [u8; 16], protection: Pr
                 Ok(Some(EventNoRef::Connect { .. })) => {
                     connected = true;
                     status.connected.store(true, Ordering::SeqCst);
-                    let start = [framer.seal(REQUEST_IDR, &[0, 0]), framer.seal(START_B, &[0])];
+                    let start = [
+                        framer.seal(REQUEST_IDR, &[0, 0]),
+                        framer.seal(START_B, &[0]),
+                    ];
                     let p = host.peer_mut(peer);
                     for msg in start {
                         let _ = p.send(channel::GENERIC, &Packet::reliable(msg));
                     }
                 }
-                Ok(Some(EventNoRef::Disconnect { data, .. })) => return finish(format!("host closed the control stream ({data:#x})")),
+                Ok(Some(EventNoRef::Disconnect { data, .. })) => {
+                    return finish(format!("host closed the control stream ({data:#x})"));
+                }
                 Ok(Some(EventNoRef::Receive { packet, .. })) => {
                     if let Some((kind, payload)) = framer.open(packet.data()) {
                         match kind {
                             TERMINATION | TERMINATION_EXTENDED => {
-                                let code = payload.get(0..4).map_or(0, |b| u32::from_be_bytes(b.try_into().unwrap()));
+                                let code = payload
+                                    .get(0..4)
+                                    .map_or(0, |b| u32::from_be_bytes(b.try_into().unwrap()));
                                 return finish(format!("host ended the session ({code:#010x})"));
                             }
                             RUMBLE if payload.len() >= 10 => {
-                                let at = |i: usize| u16::from_le_bytes([payload[i], payload[i + 1]]);
+                                let at =
+                                    |i: usize| u16::from_le_bytes([payload[i], payload[i + 1]]);
                                 rumble(at(4), at(6), at(8));
                             }
                             _ => {}
@@ -232,18 +269,26 @@ pub fn run(address: SocketAddr, connect_data: u32, key: [u8; 16], protection: Pr
                 ping.extend_from_slice(&4u32.to_le_bytes());
                 ping.extend_from_slice(&0u32.to_le_bytes());
                 let msg = framer.seal(PING, &ping);
-                let _ = host.peer_mut(peer).send(channel::GENERIC, &Packet::reliable(msg));
+                let _ = host
+                    .peer_mut(peer)
+                    .send(channel::GENERIC, &Packet::reliable(msg));
             }
             loop {
                 match commands.try_recv() {
                     Ok(Command::Input(input)) => {
                         let msg = framer.seal(INPUT, &input.payload);
-                        let packet = if input.reliable { Packet::reliable(msg) } else { Packet::unreliable_unsequenced(msg) };
+                        let packet = if input.reliable {
+                            Packet::reliable(msg)
+                        } else {
+                            Packet::unreliable_unsequenced(msg)
+                        };
                         let _ = host.peer_mut(peer).send(input.channel, &packet);
                     }
                     Ok(Command::RequestIdr) => {
                         let msg = framer.seal(REQUEST_IDR, &[0, 0]);
-                        let _ = host.peer_mut(peer).send(channel::URGENT, &Packet::reliable(msg));
+                        let _ = host
+                            .peer_mut(peer)
+                            .send(channel::URGENT, &Packet::reliable(msg));
                     }
                     Ok(Command::Invalidate(first, last)) => {
                         let mut body = Vec::with_capacity(24);
@@ -252,7 +297,9 @@ pub fn run(address: SocketAddr, connect_data: u32, key: [u8; 16], protection: Pr
                         body.extend_from_slice(&last.to_le_bytes());
                         body.extend_from_slice(&[0u8; 12]);
                         let msg = framer.seal(INVALIDATE_REFERENCE_FRAMES, &body);
-                        let _ = host.peer_mut(peer).send(channel::URGENT, &Packet::reliable(msg));
+                        let _ = host
+                            .peer_mut(peer)
+                            .send(channel::URGENT, &Packet::reliable(msg));
                     }
                     Err(TryRecvError::Empty) => break,
                     Err(TryRecvError::Disconnected) => {

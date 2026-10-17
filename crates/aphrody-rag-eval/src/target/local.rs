@@ -74,8 +74,11 @@ impl EvalTarget for LocalIndexTarget {
             .hits
             .into_iter()
             .map(|sc| {
-                let title =
-                    sc.chunk.heading.or(sc.chunk.symbol).unwrap_or_else(|| sc.chunk.path.clone());
+                let title = sc
+                    .chunk
+                    .heading
+                    .or(sc.chunk.symbol)
+                    .unwrap_or_else(|| sc.chunk.path.clone());
 
                 RetrievedHit {
                     rowid: Some(sc.chunk.id),
@@ -92,6 +95,10 @@ impl EvalTarget for LocalIndexTarget {
 
         let mode_str = format!("{:?}", result.mode_served).to_lowercase();
 
-        Ok(TargetResponse { hits, mode_served: mode_str, latency_ms: result.elapsed_ms })
+        Ok(TargetResponse {
+            hits,
+            mode_served: mode_str,
+            latency_ms: result.elapsed_ms,
+        })
     }
 }

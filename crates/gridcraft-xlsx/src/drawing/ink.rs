@@ -31,7 +31,9 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
         || !only_children(obj, &["nvSpPr", "spPr"])
         || !only_attrs(obj, &["macro", "textlink"])
         || obj.attrs.iter().any(|(_, v)| !v.is_empty())
-        || obj.path(&["nvSpPr", "cNvSpPr"]).is_some_and(|e| e.flag("txBox", false))
+        || obj
+            .path(&["nvSpPr", "cNvSpPr"])
+            .is_some_and(|e| e.flag("txBox", false))
     {
         return None;
     }
@@ -54,23 +56,43 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
     let ext = one(xf, "ext")?;
     let ew = ext.attr_i64("cx")?;
     let eh = ext.attr_i64("cy")?;
-    if ew <= 0 || eh <= 0 || anchor.width <= 0.0 || anchor.height <= 0.0 || !bounded(anchor.width as f64) || !bounded(anchor.height as f64) {
+    if ew <= 0
+        || eh <= 0
+        || anchor.width <= 0.0
+        || anchor.height <= 0.0
+        || !bounded(anchor.width as f64)
+        || !bounded(anchor.height as f64)
+    {
         return None;
     }
-    let same_extent =
-        |emu: i64, extent: f32| (emu as f64 / EMU_PER_PX - extent as f64).abs() <= 0.001_f64.max(extent as f64 * f32::EPSILON as f64 * 2.0);
+    let same_extent = |emu: i64, extent: f32| {
+        (emu as f64 / EMU_PER_PX - extent as f64).abs()
+            <= 0.001_f64.max(extent as f64 * f32::EPSILON as f64 * 2.0)
+    };
     if !same_extent(ew, anchor.width) || !same_extent(eh, anchor.height) {
         return None;
     }
     let geom = one(sp, "custGeom")?;
-    if !geom.attrs.is_empty() || !only_children(geom, &["avLst", "gdLst", "ahLst", "cxnLst", "rect", "pathLst"]) {
+    if !geom.attrs.is_empty()
+        || !only_children(
+            geom,
+            &["avLst", "gdLst", "ahLst", "cxnLst", "rect", "pathLst"],
+        )
+    {
         return None;
     }
     // Text bounds have no effect on this unfilled geometry, which has no caption.
-    if geom.children.iter().any(|c| !matches!(c.name.as_str(), "pathLst" | "rect") && (!c.children.is_empty() || !c.attrs.is_empty())) {
+    if geom.children.iter().any(|c| {
+        !matches!(c.name.as_str(), "pathLst" | "rect")
+            && (!c.children.is_empty() || !c.attrs.is_empty())
+    }) {
         return None;
     }
-    if geom.kids("rect").count() > 1 || geom.kids("rect").any(|r| !r.children.is_empty() || !only_attrs(r, &["l", "t", "r", "b"])) {
+    if geom.kids("rect").count() > 1
+        || geom
+            .kids("rect")
+            .any(|r| !r.children.is_empty() || !only_attrs(r, &["l", "t", "r", "b"]))
+    {
         return None;
     }
     let paths = one(geom, "pathLst")?;
@@ -84,8 +106,12 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
         || h <= 0
         || path.attr("fill") != Some("none")
         || !only_attrs(path, &["w", "h", "fill", "stroke", "extrusionOk"])
-        || path.attr("stroke").is_some_and(|_| path.attr_bool("stroke") != Some(true))
-        || path.attr("extrusionOk").is_some_and(|_| path.attr_bool("extrusionOk") != Some(false))
+        || path
+            .attr("stroke")
+            .is_some_and(|_| path.attr_bool("stroke") != Some(true))
+        || path
+            .attr("extrusionOk")
+            .is_some_and(|_| path.attr_bool("extrusionOk") != Some(false))
         || !(2..=MAX_POINTS).contains(&path.children.len())
     {
         return None;
@@ -124,14 +150,20 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
         }
     } else {
         let alpha = one(color, "alpha")?;
-        if !only_attrs(alpha, &["val"]) || !alpha.children.is_empty() || alpha.attr_i64("val")? != expected_alpha {
+        if !only_attrs(alpha, &["val"])
+            || !alpha.children.is_empty()
+            || alpha.attr_i64("val")? != expected_alpha
+        {
             return None;
         }
     }
     let line = Color::from_hex(color.attr("val")?)?;
     let mut text = String::new();
     for (i, command) in path.children.iter().enumerate() {
-        if command.name != if i == 0 { "moveTo" } else { "lnTo" } || !command.attrs.is_empty() || command.children.len() != 1 {
+        if command.name != if i == 0 { "moveTo" } else { "lnTo" }
+            || !command.attrs.is_empty()
+            || command.children.len() != 1
+        {
             return None;
         }
         let pt = one(command, "pt")?;
@@ -148,7 +180,15 @@ pub(super) fn read(obj: &El, anchor: Anchor) -> Option<Shape> {
         }
         let _ = write!(text, "{},{}", x as f32, y as f32);
     }
-    Some(Shape { id: 0, kind: ShapeKind::Ink, anchor, fill: Color::Rgb((width as u32) << 16), line, text, format: Default::default() })
+    Some(Shape {
+        id: 0,
+        kind: ShapeKind::Ink,
+        anchor,
+        fill: Color::Rgb((width as u32) << 16),
+        line,
+        text,
+        format: Default::default(),
+    })
 }
 
 /// Invalid/native out-of-range data uses the existing rectangle fallback. A successful
@@ -165,7 +205,13 @@ pub(super) fn write(shape: &Shape, theme: &Theme, id: usize) -> Option<String> {
         return None;
     }
     let a = &shape.anchor;
-    if !bounded(a.width as f64) || !bounded(a.height as f64) || a.width <= 0.0 || a.height <= 0.0 || !a.dx.is_finite() || !a.dy.is_finite() {
+    if !bounded(a.width as f64)
+        || !bounded(a.height as f64)
+        || a.width <= 0.0
+        || a.height <= 0.0
+        || !a.dx.is_finite()
+        || !a.dy.is_finite()
+    {
         return None;
     }
     let w = (a.width as f64 * EMU_PER_PX).round().max(1.0) as i64;
@@ -180,7 +226,10 @@ pub(super) fn write(shape: &Shape, theme: &Theme, id: usize) -> Option<String> {
         if !bounded(x) || !bounded(y) {
             return None;
         }
-        points.push(((x * EMU_PER_PX).round() as i64, (y * EMU_PER_PX).round() as i64));
+        points.push((
+            (x * EMU_PER_PX).round() as i64,
+            (y * EMU_PER_PX).round() as i64,
+        ));
     }
     if points.len() < 2 {
         return None;

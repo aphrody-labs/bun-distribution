@@ -6,7 +6,7 @@ use bevy_ecs::{
     reflect::ReflectComponent, system::Query, template::FromTemplate,
 };
 use bevy_platform::{collections::HashSet, hash::FixedHasher};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_transform::components::Transform;
 use core::any::TypeId;
 use derive_more::derive::From;

@@ -51,7 +51,11 @@ fn log2lin(in_log_q7: i32) -> i32 {
     }
     let out = 1i32 << (in_log_q7 >> 7);
     let frac = in_log_q7 & 0x7F;
-    if in_log_q7 < 2048 { out + ((out * smlawb(frac, frac * (128 - frac), -174)) >> 7) } else { out + (out >> 7) * smlawb(frac, frac * (128 - frac), -174) }
+    if in_log_q7 < 2048 {
+        out + ((out * smlawb(frac, frac * (128 - frac), -174)) >> 7)
+    } else {
+        out + (out >> 7) * smlawb(frac, frac * (128 - frac), -174)
+    }
 }
 
 fn gain_q16(index: i32) -> i32 {
@@ -85,7 +89,12 @@ struct DecState {
 
 impl DecState {
     fn new() -> Self {
-        DecState { prev_gain_q16: 65536, s_lpc_q14: [0; MAX_LPC_ORDER], out_buf: [0; MAX_FRAME], last_gain_index: 10 }
+        DecState {
+            prev_gain_q16: 65536,
+            s_lpc_q14: [0; MAX_LPC_ORDER],
+            out_buf: [0; MAX_FRAME],
+            last_gain_index: 10,
+        }
     }
 
     /// The decoder's reset of the side channel when it is coded again after mid-only frames.
@@ -165,19 +174,31 @@ impl Channel {
         let start = 2 * l;
         let rms = (x.iter().map(|v| v * v).sum::<f32>() / l as f32).sqrt();
         let vad = rms > VAD_RMS;
-        let pitch = if vad { Some(analysis::pitch_search(&buf, start, l, self.fs_khz)) } else { None };
+        let pitch = if vad {
+            Some(analysis::pitch_search(&buf, start, l, self.fs_khz))
+        } else {
+            None
+        };
         let mut voiced = pitch.as_ref().is_some_and(|p| p.score > VOICING_THRESHOLD);
 
         let a = analysis::lpc(&buf[start - l / 4..], order, self.fs_khz);
         let target: Vec<f64> = match analysis::a2nlsf(&a) {
-            Some(w) => w.iter().map(|v| v / std::f64::consts::PI * 32768.0).collect(),
-            None => (1..=order).map(|k| k as f64 * 32768.0 / (order + 1) as f64).collect(),
+            Some(w) => w
+                .iter()
+                .map(|v| v / std::f64::consts::PI * 32768.0)
+                .collect(),
+            None => (1..=order)
+                .map(|k| k as f64 * 32768.0 / (order + 1) as f64)
+                .collect(),
         };
         let quant = |signal_type: usize| {
             let (ix, nlsf) = nlsf::quantize(&target, signal_type, wb);
             (ix, nlsf2a(&nlsf[..order]))
         };
-        let mut p = Params { vad, ..Default::default() };
+        let mut p = Params {
+            vad,
+            ..Default::default()
+        };
         let (mut ix, mut a_q12) = quant(if voiced { 2 } else { 1 });
         // Open-loop residual with the quantised predictor.
         let mut r = vec![0f64; buf.len()];
@@ -205,7 +226,10 @@ impl Channel {
         // Gains follow the short-term residual level (the long-term predictor then only
         // reduces the number of pulses), which keeps the noise-to-signal ratio steady.
         for k in 0..4 {
-            let e: f64 = r[start + k * sub..start + (k + 1) * sub].iter().map(|v| v * v).sum();
+            let e: f64 = r[start + k * sub..start + (k + 1) * sub]
+                .iter()
+                .map(|v| v * v)
+                .sum();
             p.res_rms[k] = (e / sub as f64).sqrt() as f32;
         }
         p.signal_type = if !vad {
@@ -224,13 +248,24 @@ impl Channel {
     /// Chooses gains and pulses for target `x` by running the decoder's reconstruction, and
     /// advances the mirrored decoder state. `offset` scales the gains (log2), `floor` gives
     /// minimum gains (Q16) per subframe. Returns the coded values and the decoded frame.
-    fn quantize(&mut self, p: &Params, x: &[f32], offset: f64, floor: Option<&[i32; 4]>, seed: usize) -> (Coded, Vec<i16>) {
+    fn quantize(
+        &mut self,
+        p: &Params,
+        x: &[f32],
+        offset: f64,
+        floor: Option<&[i32; 4]>,
+        seed: usize,
+    ) -> (Coded, Vec<i16>) {
         let l = self.len;
         let sub = self.sub;
         let order = self.order;
         let st = &mut self.dec;
         let nf = &mut self.nf;
-        let off = if p.signal_type == 0 { offset + INACTIVE_OFFSET } else { offset };
+        let off = if p.signal_type == 0 {
+            offset + INACTIVE_OFFSET
+        } else {
+            offset
+        };
         let gamma = nf_gamma(off);
         let mut nf_c = [0f64; MAX_LPC_ORDER];
         let mut gpow = 1.0;
@@ -247,7 +282,9 @@ impl Channel {
             if let Some(f) = floor {
                 g = g.max(f[k] as f64 / 65536.0);
             }
-            let want = (((g * 65536.0).max(1.0).log2() * 128.0 - 2090.0) / (1_907_825.0 / 65536.0)).round().clamp(0.0, 63.0) as i32;
+            let want = (((g * 65536.0).max(1.0).log2() * 128.0 - 2090.0) / (1_907_825.0 / 65536.0))
+                .round()
+                .clamp(0.0, 63.0) as i32;
             if k == 0 {
                 gain_ix[0] = want;
                 prev = want.max(prev - 16).clamp(0, 63);
@@ -256,7 +293,12 @@ impl Channel {
                 for ind in 0..41 {
                     let tmp = ind - 4;
                     let thr = 2 * 36 - 64 + prev;
-                    let d = if tmp > thr { prev + (tmp << 1) - thr } else { prev + tmp }.clamp(0, 63);
+                    let d = if tmp > thr {
+                        prev + (tmp << 1) - thr
+                    } else {
+                        prev + tmp
+                    }
+                    .clamp(0, 63);
                     let e = (d - want).abs();
                     if e < best.0 {
                         best = (e, ind, d);
@@ -313,11 +355,21 @@ impl Channel {
             if voiced {
                 let lag_u = lag as usize;
                 if k == 0 {
-                    let start_idx = (ltp_mem as isize - lag as isize - order as isize - (LTP_ORDER / 2) as isize).max(0) as usize;
-                    lpc_analysis_filter(&mut s_ltp[start_idx..ltp_mem], &st.out_buf[start_idx..ltp_mem], a_q12, order);
+                    let start_idx = (ltp_mem as isize
+                        - lag as isize
+                        - order as isize
+                        - (LTP_ORDER / 2) as isize)
+                        .max(0) as usize;
+                    lpc_analysis_filter(
+                        &mut s_ltp[start_idx..ltp_mem],
+                        &st.out_buf[start_idx..ltp_mem],
+                        a_q12,
+                        order,
+                    );
                     inv_gain_q31 = smulwb(inv_gain_q31, ltp_scale_q14) << 2;
                     for i in 0..(lag_u + LTP_ORDER / 2).min(ltp_mem) {
-                        s_ltp_q15[ltp_buf_idx - i - 1] = smulwb(inv_gain_q31, s_ltp[ltp_mem - i - 1] as i32);
+                        s_ltp_q15[ltp_buf_idx - i - 1] =
+                            smulwb(inv_gain_q31, s_ltp[ltp_mem - i - 1] as i32);
                     }
                 } else if gain_adj_q16 != 1 << 16 {
                     for i in 0..(lag_u + LTP_ORDER / 2).min(ltp_buf_idx) {
@@ -332,7 +384,13 @@ impl Channel {
                 seed_v = seed_v.wrapping_mul(196_314_165).wrapping_add(907_633_515);
                 let ltp_q14 = if voiced {
                     let base = ltp_buf_idx as isize - lag as isize + (LTP_ORDER / 2) as isize;
-                    let g = |o: isize| -> i32 { if base - o >= 0 { s_ltp_q15[(base - o) as usize] } else { 0 } };
+                    let g = |o: isize| -> i32 {
+                        if base - o >= 0 {
+                            s_ltp_q15[(base - o) as usize]
+                        } else {
+                            0
+                        }
+                    };
                     let mut pred = 2i32;
                     for o in 0..LTP_ORDER {
                         pred = smlawb(pred, g(o as isize), b_q14[o]);
@@ -348,11 +406,17 @@ impl Channel {
                 let lpc_q14 = lpc_pred.saturating_mul(16);
                 // Target excitation (Q14) for this sample.
                 let fb: f64 = (0..order).map(|j| nf_c[j] * nf[j]).sum();
-                let tgt = (x[n] as f64 + fb).clamp(-32768.0, 32767.0) * inv_g - lpc_q14 as f64 - ltp_q14 as f64;
+                let tgt = (x[n] as f64 + fb).clamp(-32768.0, 32767.0) * inv_g
+                    - lpc_q14 as f64
+                    - ltp_q14 as f64;
                 let sgn = if seed_v < 0 { -1.0 } else { 1.0 };
                 let u = sgn * tgt;
                 let pf = (u - off16 as f64) / 16384.0;
-                let p0 = if pf > 0.0 { (pf + 0.078_125).round() } else { (pf - 0.078_125).round() } as i32;
+                let p0 = if pf > 0.0 {
+                    (pf + 0.078_125).round()
+                } else {
+                    (pf - 0.078_125).round()
+                } as i32;
                 let level = |q: i32| -> i32 {
                     let mut e = q << 14;
                     if e > 0 {
@@ -393,7 +457,15 @@ impl Channel {
         }
         st.s_lpc_q14.copy_from_slice(&s_lpc[..MAX_LPC_ORDER]);
         st.out_buf[..l].copy_from_slice(&xq);
-        (Coded { gain_ix, gains_q16, seed, pulses }, xq)
+        (
+            Coded {
+                gain_ix,
+                gains_q16,
+                seed,
+                pulses,
+            },
+            xq,
+        )
     }
 
     /// Writes the frame's indices and pulses (`decode_indices` + `decode_pulses` order, coded
@@ -412,9 +484,17 @@ impl Channel {
         }
         let wb = self.order == 16;
         let i1 = p.nlsf_ix[0] as usize;
-        enc.icdf(i1, NLSF_STAGE1[(p.signal_type >> 1) + if wb { 2 } else { 0 }], 8);
+        enc.icdf(
+            i1,
+            NLSF_STAGE1[(p.signal_type >> 1) + if wb { 2 } else { 0 }],
+            8,
+        );
         for i in 0..self.order {
-            let cb = if wb { 8 + NLSF_SEL_WB[i1][i] as usize } else { NLSF_SEL_NBMB[i1][i] as usize };
+            let cb = if wb {
+                8 + NLSF_SEL_WB[i1][i] as usize
+            } else {
+                NLSF_SEL_NBMB[i1][i] as usize
+            };
             let v = p.nlsf_ix[i + 1] + 4;
             if v <= 0 {
                 enc.icdf(0, NLSF_STAGE2[cb], 8);
@@ -437,7 +517,15 @@ impl Channel {
                 _ => PITCH_LOW[2],
             };
             enc.icdf((p.lag_index % half) as usize, low, 8);
-            enc.icdf(p.contour, if self.fs_khz == 8 { PITCH_CONTOUR[1] } else { PITCH_CONTOUR[3] }, 8);
+            enc.icdf(
+                p.contour,
+                if self.fs_khz == 8 {
+                    PITCH_CONTOUR[1]
+                } else {
+                    PITCH_CONTOUR[3]
+                },
+                8,
+            );
             enc.icdf(p.per_index, &LTP_PERIODICITY, 8);
             for k in 0..4 {
                 enc.icdf(p.ltp_index[k], LTP_FILTER[p.per_index], 8);
@@ -516,7 +604,13 @@ impl SilkEncoder {
         if self.channels == 1 {
             let x = input[0].clone();
             let p = self.ch[0].analyze(&x);
-            return Prep { x: [x, vec![0.0; l]], params: [p, Params::default()], mid_only: true, pred_ix: [[0; 3]; 2], pred_q13: [0; 2] };
+            return Prep {
+                x: [x, vec![0.0; l]],
+                params: [p, Params::default()],
+                mid_only: true,
+                pred_ix: [[0; 3]; 2],
+                pred_q13: [0; 2],
+            };
         }
         let mid: Vec<f32> = (0..l).map(|i| 0.5 * (input[0][i] + input[1][i])).collect();
         let side: Vec<f32> = (0..l).map(|i| 0.5 * (input[0][i] - input[1][i])).collect();
@@ -526,7 +620,8 @@ impl SilkEncoder {
             (a as f64 + 2.0 * mid[j] as f64 + c as f64) / 4.0
         };
         // Least-squares prediction of the side from the low-passed mid and the mid.
-        let (mut r00, mut r01, mut r11, mut c0, mut c1, mut ss, mut mm) = (0f64, 0f64, 0f64, 0f64, 0f64, 0f64, 0f64);
+        let (mut r00, mut r01, mut r11, mut c0, mut c1, mut ss, mut mm) =
+            (0f64, 0f64, 0f64, 0f64, 0f64, 0f64, 0f64);
         for j in 0..l {
             let (a, b, s) = (lp(j), mid[j] as f64, side[j] as f64);
             r00 += a * a;
@@ -553,8 +648,14 @@ impl SilkEncoder {
         let denom_q16 = (1 << 16) / (8 * fs);
         let interp = 8 * self.fs_khz;
         let residual = |pred_q13: [i32; 2]| -> Vec<f32> {
-            let d0 = rshift_round((pred_q13[0] - self.pred_prev_q13[0]) as i16 as i32 * denom_q16 as i16 as i32, 16);
-            let d1 = rshift_round((pred_q13[1] - self.pred_prev_q13[1]) as i16 as i32 * denom_q16 as i16 as i32, 16);
+            let d0 = rshift_round(
+                (pred_q13[0] - self.pred_prev_q13[0]) as i16 as i32 * denom_q16 as i16 as i32,
+                16,
+            );
+            let d1 = rshift_round(
+                (pred_q13[1] - self.pred_prev_q13[1]) as i16 as i32 * denom_q16 as i16 as i32,
+                16,
+            );
             let (mut pp0, mut pp1) = (self.pred_prev_q13[0] + d0, self.pred_prev_q13[1] + d1);
             (0..l)
                 .map(|j| {
@@ -565,7 +666,8 @@ impl SilkEncoder {
                         pp0 = pred_q13[0];
                         pp1 = pred_q13[1];
                     }
-                    (side[j] as f64 - (pp0 as f64 * lp(j) + pp1 as f64 * mid[j] as f64) / 8192.0) as f32
+                    (side[j] as f64 - (pp0 as f64 * lp(j) + pp1 as f64 * mid[j] as f64) / 8192.0)
+                        as f32
                 })
                 .collect()
         };
@@ -583,8 +685,18 @@ impl SilkEncoder {
         let mid_rms = (mm / l as f64).sqrt();
         let mid_only = res_rms < 0.01 * mid_rms + 1.0;
         let pm = self.ch[0].analyze(&mid);
-        let ps = if mid_only { Params::default() } else { self.ch[1].analyze(&res) };
-        Prep { x: [mid, res], params: [pm, ps], mid_only, pred_ix, pred_q13 }
+        let ps = if mid_only {
+            Params::default()
+        } else {
+            self.ch[1].analyze(&res)
+        };
+        Prep {
+            x: [mid, res],
+            params: [pm, ps],
+            mid_only,
+            pred_ix,
+            pred_q13,
+        }
     }
 
     /// Codes one frame into `enc` with gain offset `offset`.
@@ -614,7 +726,13 @@ impl SilkEncoder {
                 if self.prev_mid_only {
                     self.ch[1].dec.reset_side();
                 }
-                let (cs, _) = self.ch[1].quantize(&prep.params[1], &prep.x[1], offset, Some(&cm.gains_q16), seed);
+                let (cs, _) = self.ch[1].quantize(
+                    &prep.params[1],
+                    &prep.x[1],
+                    offset,
+                    Some(&cm.gains_q16),
+                    seed,
+                );
                 self.ch[1].write(enc, &prep.params[1], &cs);
             }
             self.pred_prev_q13 = prep.pred_q13;
@@ -624,7 +742,13 @@ impl SilkEncoder {
 
     /// Encodes one 20 ms frame (`input`: one internal-rate, 16-bit-scale vector per channel)
     /// into `enc`, aiming at `target_bits` total and never exceeding `max_bits`.
-    pub fn encode(&mut self, input: &[Vec<f32>], target_bits: f64, max_bits: i32, enc: &mut RangeEncoder) {
+    pub fn encode(
+        &mut self,
+        input: &[Vec<f32>],
+        target_bits: f64,
+        max_bits: i32,
+        enc: &mut RangeEncoder,
+    ) {
         let prep = self.prepare(input);
         let start_bits = enc.tell();
         let trial = |s: &Self, o: f64| -> i32 {

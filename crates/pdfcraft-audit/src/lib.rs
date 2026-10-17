@@ -20,7 +20,14 @@
 //! malformed annotations, form XObjects nested deeper than 32 or in a cycle) is an error, never
 //! an empty finding list.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Document};
 use pdfcraft_edit::TextLine;
@@ -86,7 +93,8 @@ const COVER_CONTRAST: f64 = 3.0;
 pub fn audit_redactions(doc: &Document) -> Result<Vec<AuditFinding>, AuditError> {
     let mut out = Vec::new();
     for (n, page) in pdfcraft_model::pages(doc).iter().enumerate() {
-        let lines = pdfcraft_edit::text_lines(doc, n).map_err(|e| AuditError::Text(n, e.to_string()))?;
+        let lines =
+            pdfcraft_edit::text_lines(doc, n).map_err(|e| AuditError::Text(n, e.to_string()))?;
         // 1. Opaque filled rectangles over extractable text.
         for r in cover::filled_rects(doc, &page.dict)? {
             let mut covered = String::new();
@@ -99,7 +107,12 @@ pub fn audit_redactions(doc: &Document) -> Result<Vec<AuditFinding>, AuditError>
                 }
             }
             if !covered.trim().is_empty() {
-                out.push(AuditFinding { page: n, kind: FindingKind::CoveredText, rect: r.rect, covered_text: covered });
+                out.push(AuditFinding {
+                    page: n,
+                    kind: FindingKind::CoveredText,
+                    rect: r.rect,
+                    covered_text: covered,
+                });
             }
         }
         // 2. Redact annotations that were never applied.
@@ -114,7 +127,12 @@ pub fn audit_redactions(doc: &Document) -> Result<Vec<AuditFinding>, AuditError>
                 }
             }
             if !covered.trim().is_empty() {
-                out.push(AuditFinding { page: n, kind: FindingKind::UnappliedMark, rect: annot, covered_text: covered });
+                out.push(AuditFinding {
+                    page: n,
+                    kind: FindingKind::UnappliedMark,
+                    rect: annot,
+                    covered_text: covered,
+                });
             }
         }
     }
@@ -126,7 +144,9 @@ pub fn audit_redactions(doc: &Document) -> Result<Vec<AuditFinding>, AuditError>
 /// make the text unreadable. Light covers (table shading, highlights) over dark text fail the
 /// contrast check and are not flagged.
 fn is_cover(rect: &cover::FilledRect, line: &TextLine) -> bool {
-    rect.pos > line.paint_pos() && covers(&rect.rect, &line.rect) && contrast(line.color, rect.rgb) < COVER_CONTRAST
+    rect.pos > line.paint_pos()
+        && covers(&rect.rect, &line.rect)
+        && contrast(line.color, rect.rgb) < COVER_CONTRAST
 }
 
 /// Does `cover` hide a substantial part of `line`?
@@ -149,7 +169,11 @@ fn covers(cover: &[f64; 4], line: &[f64; 4]) -> bool {
 fn luminance(rgb: [f64; 3]) -> f64 {
     let lin = rgb.map(|c| {
         let c = c.clamp(0.0, 1.0);
-        if c <= 0.03928 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+        if c <= 0.03928 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
     });
     0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
 }
@@ -164,7 +188,9 @@ fn contrast(a: [f64; 3], b: [f64; 3]) -> f64 {
 /// Rectangles of `/Redact` annotations on a page (unrotated user space). A missing `/Annots`
 /// means no marks; a malformed one fails the audit rather than silently passing.
 fn annots(doc: &Document, page: &Dict) -> Result<Vec<[f64; 4]>, AuditError> {
-    let Some(a) = page.get(b"Annots") else { return Ok(Vec::new()) };
+    let Some(a) = page.get(b"Annots") else {
+        return Ok(Vec::new());
+    };
     let resolved = doc.resolve(a);
     let items: Vec<pdfcraft_cos::Object> = match &*resolved {
         pdfcraft_cos::Object::Array(items) => items.clone(),
@@ -182,10 +208,19 @@ fn annots(doc: &Document, page: &Dict) -> Result<Vec<[f64; 4]>, AuditError> {
         }
         let v: Vec<f64> = match dict.get(b"Rect") {
             None => continue,
-            Some(r) => doc.resolve(r).as_array().map(|arr| arr.iter().filter_map(|o| doc.resolve(o).as_f64()).collect()).unwrap_or_default(),
+            Some(r) => doc
+                .resolve(r)
+                .as_array()
+                .map(|arr| arr.iter().filter_map(|o| doc.resolve(o).as_f64()).collect())
+                .unwrap_or_default(),
         };
         if v.len() == 4 && v.iter().all(|x| x.is_finite()) {
-            out.push([v[0].min(v[2]), v[1].min(v[3]), v[0].max(v[2]), v[1].max(v[3])]);
+            out.push([
+                v[0].min(v[2]),
+                v[1].min(v[3]),
+                v[0].max(v[2]),
+                v[1].max(v[3]),
+            ]);
         }
     }
     Ok(out)

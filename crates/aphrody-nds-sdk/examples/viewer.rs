@@ -58,16 +58,27 @@ fn setup(mut commands: Commands, screens: Res<HandheldScreens>, mut layout: ResM
     commands.spawn((
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
-            scaling_mode: ScalingMode::AutoMin { min_width: width, min_height: height },
+            scaling_mode: ScalingMode::AutoMin {
+                min_width: width,
+                min_height: height,
+            },
             ..OrthographicProjection::default_2d()
         }),
     ));
     commands.spawn((
-        Sprite { image: screens.top.clone(), custom_size: Some(top), ..default() },
+        Sprite {
+            image: screens.top.clone(),
+            custom_size: Some(top),
+            ..default()
+        },
         Transform::from_xyz(0.0, height / 2.0 - top.y / 2.0, 0.0),
     ));
     commands.spawn((
-        Sprite { image: screens.bottom.clone(), custom_size: Some(bottom), ..default() },
+        Sprite {
+            image: screens.bottom.clone(),
+            custom_size: Some(bottom),
+            ..default()
+        },
         Transform::from_xyz(0.0, -height / 2.0 + bottom.y / 2.0, 0.0),
     ));
 }

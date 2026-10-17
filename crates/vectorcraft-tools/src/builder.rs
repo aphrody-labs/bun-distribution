@@ -18,7 +18,9 @@ use vectorcraft_doc::{Document, Node, NodeId, NodeKind};
 use vectorcraft_geom::{BezPath, FillRule, PathData, Point, Rect, Shape as _};
 use vectorcraft_pathops as po;
 
-use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, json_ids};
+use crate::{
+    Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, json_ids,
+};
 
 /// Names starting with this mark a Live Paint group.
 pub const LIVE_PAINT_PREFIX: &str = "Live Paint";
@@ -35,7 +37,10 @@ pub const HIGHLIGHT_RED: [u8; 3] = [0xff, 0x2a, 0x2a];
 
 /// Is `n` a Live Paint group?
 pub fn is_live_paint(n: &Node) -> bool {
-    matches!(n.kind, NodeKind::Group { clip: false, .. }) && n.name.as_deref().is_some_and(|s| s.starts_with(LIVE_PAINT_PREFIX))
+    matches!(n.kind, NodeKind::Group { clip: false, .. })
+        && n.name
+            .as_deref()
+            .is_some_and(|s| s.starts_with(LIVE_PAINT_PREFIX))
 }
 
 fn named(n: &Node, name: &str) -> bool {
@@ -44,12 +49,18 @@ fn named(n: &Node, name: &str) -> bool {
 
 /// Face children of a Live Paint group (paint order).
 pub fn faces(group: &Node) -> Vec<&Arc<Node>> {
-    group.children().map(|c| c.iter().filter(|n| named(n, FACE_NAME)).collect()).unwrap_or_default()
+    group
+        .children()
+        .map(|c| c.iter().filter(|n| named(n, FACE_NAME)).collect())
+        .unwrap_or_default()
 }
 
 /// Edge children of a Live Paint group.
 pub fn edges(group: &Node) -> Vec<&Arc<Node>> {
-    group.children().map(|c| c.iter().filter(|n| named(n, EDGE_NAME)).collect()).unwrap_or_default()
+    group
+        .children()
+        .map(|c| c.iter().filter(|n| named(n, EDGE_NAME)).collect())
+        .unwrap_or_default()
 }
 
 /// The hidden sources group of a Live Paint group.
@@ -59,7 +70,10 @@ pub fn sources(group: &Node) -> Option<&Arc<Node>> {
 
 /// Does the path (filled) contain `p`?
 pub fn path_contains(path: &PathData, rule: FillRule, p: Point) -> bool {
-    if path.bounds().is_none_or(|b| !b.inflate(1e-6, 1e-6).contains(p)) {
+    if path
+        .bounds()
+        .is_none_or(|b| !b.inflate(1e-6, 1e-6).contains(p))
+    {
         return false;
     }
     let w = path.to_bezpath().winding(p);
@@ -71,7 +85,10 @@ pub fn path_contains(path: &PathData, rule: FillRule, p: Point) -> bool {
 
 /// The face of `group` under `p` (front-most).
 pub fn face_at(group: &Node, p: Point) -> Option<&Arc<Node>> {
-    faces(group).into_iter().rev().find(|f| f.path_data().is_some_and(|pd| path_contains(pd, FillRule::NonZero, p)))
+    faces(group).into_iter().rev().find(|f| {
+        f.path_data()
+            .is_some_and(|pd| path_contains(pd, FillRule::NonZero, p))
+    })
 }
 
 /// The edge of `group` nearest to `p` within `tol`.
@@ -128,7 +145,11 @@ pub fn node_outline(n: &Node) -> Option<(PathData, FillRule)> {
     match &n.kind {
         NodeKind::Path { path, rule, .. } => Some((path.clone(), *rule)),
         NodeKind::Compound { children, rule } => {
-            let subs = children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect();
+            let subs = children
+                .iter()
+                .filter_map(|c| c.path_data())
+                .flat_map(|p| p.subpaths.iter().cloned())
+                .collect();
             Some((PathData::new(subs), *rule))
         }
         _ => None,
@@ -149,7 +170,11 @@ pub fn shapes_for<'a>(doc: &'a Document, roots: &[NodeId]) -> (Vec<po::Shape>, V
     for l in lv {
         if let Some((p, r)) = node_outline(l)
             && !p.is_empty()
-            && p.subpaths.iter().all(|s| s.anchors.iter().all(|a| a.p.x.is_finite() && a.p.y.is_finite()))
+            && p.subpaths.iter().all(|s| {
+                s.anchors
+                    .iter()
+                    .all(|a| a.p.x.is_finite() && a.p.y.is_finite())
+            })
         {
             shapes.push(po::Shape::new(p, r, used.len() as u64));
             used.push(l);
@@ -161,7 +186,10 @@ pub fn shapes_for<'a>(doc: &'a Document, roots: &[NodeId]) -> (Vec<po::Shape>, V
 /// Shape Builder inputs: [`shapes_for`], with the open subpaths of filled paths closed where that
 /// encloses an area (the fill bounds a region, as if an invisible edge closed it). Unfilled open
 /// paths and straight lines stay open and cut the regions they cross.
-fn shape_builder_shapes<'a>(doc: &'a Document, roots: &[NodeId]) -> (Vec<po::Shape>, Vec<&'a Node>) {
+fn shape_builder_shapes<'a>(
+    doc: &'a Document,
+    roots: &[NodeId],
+) -> (Vec<po::Shape>, Vec<&'a Node>) {
     let (mut shapes, leaves) = shapes_for(doc, roots);
     for (s, l) in shapes.iter_mut().zip(&leaves) {
         if l.appearance.fill_paint().is_none() {
@@ -242,28 +270,42 @@ impl BuilderMap {
                 })
                 .collect()
         };
-        (Self { shapes, regions: faces_of(arr.regions), lines: bounded(arr.lines), edges: bounded(arr.edges) }, leaves)
+        (
+            Self {
+                shapes,
+                regions: faces_of(arr.regions),
+                lines: bounded(arr.lines),
+                edges: bounded(arr.edges),
+            },
+            leaves,
+        )
     }
 
     /// The region containing `p`.
     pub fn region_at(&self, p: Point) -> Option<usize> {
-        self.regions.iter().position(|(_, bp, b)| b.contains(p) && bp.winding(p) != 0)
+        self.regions
+            .iter()
+            .position(|(_, bp, b)| b.contains(p) && bp.winding(p) != 0)
     }
 
     /// What a gesture at `p` touches: with `piece_tol` (erasing), the line piece or edge that
     /// close, else the region under it.
     pub fn hit(&self, p: Point, piece_tol: Option<f64>) -> Option<Hit> {
-        let piece = piece_tol.and_then(|t| match (piece_near(&self.lines, p, t), piece_near(&self.edges, p, t)) {
-            (Some(l), Some(e)) if e.0 < l.0 => Some(Hit::Edge(e.1)),
-            (Some(l), _) => Some(Hit::Line(l.1)),
-            (None, e) => e.map(|e| Hit::Edge(e.1)),
+        let piece = piece_tol.and_then(|t| {
+            match (piece_near(&self.lines, p, t), piece_near(&self.edges, p, t)) {
+                (Some(l), Some(e)) if e.0 < l.0 => Some(Hit::Edge(e.1)),
+                (Some(l), _) => Some(Hit::Line(l.1)),
+                (None, e) => e.map(|e| Hit::Edge(e.1)),
+            }
         });
         piece.or_else(|| self.region_at(p).map(Hit::Region))
     }
 
     /// The regions just either side of the middle of `piece` (None: outside every region).
     pub fn sides(&self, piece: &po::Shape) -> [Option<usize>; 2] {
-        let Some(sp) = piece.path.subpaths.first() else { return [None; 2] };
+        let Some(sp) = piece.path.subpaths.first() else {
+            return [None; 2];
+        };
         let n = sp.segment_count();
         if n == 0 {
             return [None; 2];
@@ -283,14 +325,27 @@ impl BuilderMap {
     /// Does line piece `i` run between two of `regions` (an edge that merging or deleting them
     /// removes)?
     pub fn line_between(&self, i: usize, regions: &[usize]) -> bool {
-        self.lines.get(i).is_some_and(|(l, _)| self.sides(l).iter().all(|r| r.is_some_and(|r| regions.contains(&r))))
+        self.lines.get(i).is_some_and(|(l, _)| {
+            self.sides(l)
+                .iter()
+                .all(|r| r.is_some_and(|r| regions.contains(&r)))
+        })
     }
 
     /// The edges `touched` deletes: those that bound none of its regions (deleting a region takes
     /// its edges with it, so an erase drag that crosses an edge into a region deletes the region).
     pub fn erased_edges(&self, touched: &Touched) -> Vec<usize> {
-        let bounds_one = |(e, _): &(po::Shape, Rect)| self.sides(e).iter().any(|r| r.is_some_and(|r| touched.regions.contains(&r)));
-        touched.edges.iter().copied().filter(|&k| self.edges.get(k).is_some_and(|e| !bounds_one(e))).collect()
+        let bounds_one = |(e, _): &(po::Shape, Rect)| {
+            self.sides(e)
+                .iter()
+                .any(|r| r.is_some_and(|r| touched.regions.contains(&r)))
+        };
+        touched
+            .edges
+            .iter()
+            .copied()
+            .filter(|&k| self.edges.get(k).is_some_and(|e| !bounds_one(e)))
+            .collect()
     }
 }
 
@@ -322,7 +377,10 @@ impl Touched {
 
 /// Selected roots sorted back → front in document order.
 pub fn sorted_roots(doc: &Document, ids: &[NodeId]) -> Vec<NodeId> {
-    let mut v: Vec<(Vec<usize>, NodeId)> = ids.iter().filter_map(|id| doc.index_path(*id).map(|p| (p, *id))).collect();
+    let mut v: Vec<(Vec<usize>, NodeId)> = ids
+        .iter()
+        .filter_map(|id| doc.index_path(*id).map(|p| (p, *id)))
+        .collect();
     v.sort();
     v.dedup_by(|a, b| a.1 == b.1);
     v.into_iter().map(|(_, id)| id).collect()
@@ -420,17 +478,30 @@ struct RegionCache {
 
 impl RegionCache {
     fn live_paint() -> Self {
-        Self { live: true, ..Default::default() }
+        Self {
+            live: true,
+            ..Default::default()
+        }
     }
     /// The map, with the outline edges when `edges` (built the first time they're wanted).
     fn get(&mut self, cx: &ToolContext, edges: bool) -> &BuilderMap {
-        let key = (cx.doc as *const Document as usize, cx.selection.objects.clone());
+        let key = (
+            cx.doc as *const Document as usize,
+            cx.selection.objects.clone(),
+        );
         if self.key.as_ref() != Some(&key) || (edges && !self.edges) {
             let roots = sorted_roots(cx.doc, &cx.selection.objects);
             self.map = if self.live {
                 let (shapes, _) = shapes_for(cx.doc, &roots);
-                let regions = if shapes.is_empty() { vec![] } else { faces_of(po::live_paint(&shapes).0) };
-                BuilderMap { regions, ..Default::default() }
+                let regions = if shapes.is_empty() {
+                    vec![]
+                } else {
+                    faces_of(po::live_paint(&shapes).0)
+                };
+                BuilderMap {
+                    regions,
+                    ..Default::default()
+                }
             } else {
                 BuilderMap::new(cx.doc, &roots, edges).0
             };
@@ -492,7 +563,10 @@ impl Tool for ShapeBuilderTool {
         match ev.kind {
             PointerKind::Move => {
                 self.alt = ev.mods.alt;
-                self.hover = self.cache.get(cx, self.alt).hit(p, Self::line_tol(cx, self.alt));
+                self.hover = self
+                    .cache
+                    .get(cx, self.alt)
+                    .hit(p, Self::line_tol(cx, self.alt));
                 vec![]
             }
             PointerKind::Down => {
@@ -547,7 +621,10 @@ impl Tool for ShapeBuilderTool {
         let show: Vec<Hit> = if self.dragging {
             let t = &self.touched;
             let regions = t.regions.iter().map(|&i| Hit::Region(i));
-            regions.chain(t.lines.iter().map(|&i| Hit::Line(i))).chain(map.erased_edges(t).into_iter().map(Hit::Edge)).collect()
+            regions
+                .chain(t.lines.iter().map(|&i| Hit::Line(i)))
+                .chain(map.erased_edges(t).into_iter().map(Hit::Edge))
+                .collect()
         } else {
             self.hover.into_iter().collect()
         };
@@ -555,14 +632,33 @@ impl Tool for ShapeBuilderTool {
             match hit {
                 Hit::Region(i) => {
                     if let Some((_, bp, _)) = map.regions.get(i) {
-                        out.push(Overlay::Path { path: hatch(bp, cx.tol(4.0)), color, width: 1.0, dashed: false });
-                        out.push(Overlay::Path { path: bp.clone(), color, width: 1.0, dashed: false });
+                        out.push(Overlay::Path {
+                            path: hatch(bp, cx.tol(4.0)),
+                            color,
+                            width: 1.0,
+                            dashed: false,
+                        });
+                        out.push(Overlay::Path {
+                            path: bp.clone(),
+                            color,
+                            width: 1.0,
+                            dashed: false,
+                        });
                     }
                 }
                 Hit::Line(i) | Hit::Edge(i) => {
-                    let pieces = if matches!(hit, Hit::Line(_)) { &map.lines } else { &map.edges };
+                    let pieces = if matches!(hit, Hit::Line(_)) {
+                        &map.lines
+                    } else {
+                        &map.edges
+                    };
                     if let Some((l, _)) = pieces.get(i) {
-                        out.push(Overlay::Path { path: l.path.to_bezpath(), color: HIGHLIGHT_RED, width: 3.0, dashed: false });
+                        out.push(Overlay::Path {
+                            path: l.path.to_bezpath(),
+                            color: HIGHLIGHT_RED,
+                            width: 3.0,
+                            dashed: false,
+                        });
                     }
                 }
             }
@@ -573,7 +669,12 @@ impl Tool for ShapeBuilderTool {
             for q in &self.points[1..] {
                 bp.line_to(*q);
             }
-            out.push(Overlay::Path { path: bp, color, width: 1.0, dashed: false });
+            out.push(Overlay::Path {
+                path: bp,
+                color,
+                width: 1.0,
+                dashed: false,
+            });
         }
         out
     }
@@ -581,7 +682,11 @@ impl Tool for ShapeBuilderTool {
     fn cursor(&self, _cx: &ToolContext, _p: Point, m: Mods) -> Cursor {
         // A drag keeps the mode it started in; hovering follows the key.
         let erase = if self.dragging { self.alt } else { m.alt };
-        if erase { Cursor::ShapeBuilderErase } else { Cursor::ShapeBuilder }
+        if erase {
+            Cursor::ShapeBuilderErase
+        } else {
+            Cursor::ShapeBuilder
+        }
     }
 
     fn busy(&self) -> bool {
@@ -604,8 +709,15 @@ enum LpHover {
 
 fn lp_hover(cx: &ToolContext, cache: &mut RegionCache, p: Point, edge: bool) -> LpHover {
     if let Some(g) = live_paint_at(cx.doc, p).and_then(|id| cx.doc.node(id)) {
-        let part = if edge { edge_near(g, p, cx.tol(4.0)) } else { face_at(g, p) };
-        return part.and_then(|n| n.path_data()).map(|pd| LpHover::Part(pd.to_bezpath())).unwrap_or_default();
+        let part = if edge {
+            edge_near(g, p, cx.tol(4.0))
+        } else {
+            face_at(g, p)
+        };
+        return part
+            .and_then(|n| n.path_data())
+            .map(|pd| LpHover::Part(pd.to_bezpath()))
+            .unwrap_or_default();
     }
     if edge {
         // Edges of every Live Paint group near the pointer.
@@ -621,7 +733,11 @@ fn lp_hover(cx: &ToolContext, cache: &mut RegionCache, p: Point, edge: bool) -> 
             return LpHover::Part(bp);
         }
     }
-    let sel_is_live = cx.selection.objects.iter().any(|id| cx.doc.node(*id).is_some_and(is_live_paint));
+    let sel_is_live = cx
+        .selection
+        .objects
+        .iter()
+        .any(|id| cx.doc.node(*id).is_some_and(is_live_paint));
     if !sel_is_live && let Some(i) = cache.at(cx, p) {
         return LpHover::Region(i);
     }
@@ -631,12 +747,24 @@ fn lp_hover(cx: &ToolContext, cache: &mut RegionCache, p: Point, edge: bool) -> 
 fn lp_overlays(h: &LpHover, cache: &RegionCache) -> Vec<Overlay> {
     match h {
         LpHover::None => vec![],
-        LpHover::Part(bp) => vec![Overlay::Path { path: bp.clone(), color: HIGHLIGHT_RED, width: 4.0, dashed: false }],
+        LpHover::Part(bp) => vec![Overlay::Path {
+            path: bp.clone(),
+            color: HIGHLIGHT_RED,
+            width: 4.0,
+            dashed: false,
+        }],
         LpHover::Region(i) => cache
             .map
             .regions
             .get(*i)
-            .map(|(_, bp, _)| vec![Overlay::Path { path: bp.clone(), color: HIGHLIGHT_RED, width: 4.0, dashed: false }])
+            .map(|(_, bp, _)| {
+                vec![Overlay::Path {
+                    path: bp.clone(),
+                    color: HIGHLIGHT_RED,
+                    width: 4.0,
+                    dashed: false,
+                }]
+            })
             .unwrap_or_default(),
     }
 }
@@ -651,7 +779,10 @@ pub struct LivePaintBucketTool {
 
 impl Default for LivePaintBucketTool {
     fn default() -> Self {
-        Self { cache: RegionCache::live_paint(), hover: LpHover::None }
+        Self {
+            cache: RegionCache::live_paint(),
+            hover: LpHover::None,
+        }
     }
 }
 
@@ -681,18 +812,27 @@ impl Tool for LivePaintBucketTool {
                     }
                     return match group {
                         Some(g) => {
-                            vec![Action::Exec("livePaint.strokeEdge".into(), json!({ "group": g.0, "point": point, "tolerance": cx.tol(4.0) }))]
+                            vec![Action::Exec(
+                                "livePaint.strokeEdge".into(),
+                                json!({ "group": g.0, "point": point, "tolerance": cx.tol(4.0) }),
+                            )]
                         }
                         None => vec![],
                     };
                 }
                 if let Some(g) = live_paint_at(cx.doc, p) {
-                    return vec![Action::Exec("livePaint.fill".into(), json!({ "group": g.0, "point": point }))];
+                    return vec![Action::Exec(
+                        "livePaint.fill".into(),
+                        json!({ "group": g.0, "point": point }),
+                    )];
                 }
                 if self.cache.at(cx, p).is_some() {
                     self.cache.key = None;
                     let roots = sorted_roots(cx.doc, &cx.selection.objects);
-                    return vec![Action::Exec("livePaint.fill".into(), json!({ "ids": json_ids(&roots), "point": point }))];
+                    return vec![Action::Exec(
+                        "livePaint.fill".into(),
+                        json!({ "ids": json_ids(&roots), "point": point }),
+                    )];
                 }
                 vec![]
             }
@@ -719,7 +859,10 @@ pub struct LivePaintSelectionTool {
 
 impl Default for LivePaintSelectionTool {
     fn default() -> Self {
-        Self { cache: RegionCache::live_paint(), hover: LpHover::None }
+        Self {
+            cache: RegionCache::live_paint(),
+            hover: LpHover::None,
+        }
     }
 }
 
@@ -741,12 +884,20 @@ impl Tool for LivePaintSelectionTool {
             PointerKind::Down => {
                 let mut hit = None;
                 if let Some(g) = live_paint_at(cx.doc, p).and_then(|id| cx.doc.node(id)) {
-                    let part = if ev.mods.alt { edge_near(g, p, cx.tol(4.0)) } else { face_at(g, p) };
+                    let part = if ev.mods.alt {
+                        edge_near(g, p, cx.tol(4.0))
+                    } else {
+                        face_at(g, p)
+                    };
                     hit = part.map(|n| n.id);
                 }
                 match (hit, ev.mods.shift) {
-                    (Some(id), true) => vec![Action::Exec("select.toggle".into(), json!({ "id": id.0 }))],
-                    (Some(id), false) => vec![Action::Exec("select.set".into(), json!({ "ids": [id.0] }))],
+                    (Some(id), true) => {
+                        vec![Action::Exec("select.toggle".into(), json!({ "id": id.0 }))]
+                    }
+                    (Some(id), false) => {
+                        vec![Action::Exec("select.set".into(), json!({ "ids": [id.0] }))]
+                    }
                     (None, true) => vec![],
                     (None, false) => vec![Action::Exec("select.none".into(), json!({}))],
                 }
@@ -785,9 +936,27 @@ mod tests {
         let mut d = Document::new(500.0, 500.0);
         let l = d.layers[0].id;
         let a = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let b = d.alloc_id();
-        d.insert(Some(l), 1, Node::path(b, shapes::rectangle(Rect::new(50.0, 0.0, 150.0, 100.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            1,
+            Node::path(
+                b,
+                shapes::rectangle(Rect::new(50.0, 0.0, 150.0, 100.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         (d, a, b)
     }
 
@@ -803,12 +972,20 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeBuilderTool::default();
-        assert!(t.pointer(&cx, &ev(PointerKind::Move, 75.0, 50.0)).is_empty());
+        assert!(
+            t.pointer(&cx, &ev(PointerKind::Move, 75.0, 50.0))
+                .is_empty()
+        );
         let ov = t.overlays(&cx);
         assert_eq!(ov.len(), 2);
-        let Overlay::Path { path, .. } = &ov[1] else { panic!() };
+        let Overlay::Path { path, .. } = &ov[1] else {
+            panic!()
+        };
         let bb = path.bounding_box();
-        assert!((bb.x0 - 50.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6, "{bb:?}");
+        assert!(
+            (bb.x0 - 50.0).abs() < 1e-6 && (bb.x1 - 100.0).abs() < 1e-6,
+            "{bb:?}"
+        );
         t.pointer(&cx, &ev(PointerKind::Move, 400.0, 400.0));
         assert!(t.overlays(&cx).is_empty());
     }
@@ -826,7 +1003,9 @@ mod tests {
         assert_eq!(t.touched.regions.len(), 2);
         assert!(t.busy());
         let acts = t.pointer(&cx, &ev(PointerKind::Up, 75.0, 50.0));
-        let Action::Exec(id, v) = &acts[0] else { panic!("{acts:?}") };
+        let Action::Exec(id, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
         assert_eq!(id, "shapeBuilder.merge");
         assert_eq!(v["erase"], false);
         assert_eq!(v["ids"], json!([a.0, b.0]), "sorted back to front");
@@ -841,13 +1020,21 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeBuilderTool::default();
-        let alt = Mods { alt: true, ..Default::default() };
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
         t.pointer(&cx, &ev(PointerKind::Down, 125.0, 50.0).with_mods(alt));
         let acts = t.pointer(&cx, &ev(PointerKind::Up, 125.0, 50.0).with_mods(alt));
-        let Action::Exec(_, v) = &acts[0] else { panic!() };
+        let Action::Exec(_, v) = &acts[0] else {
+            panic!()
+        };
         assert_eq!(v["erase"], true);
         t.pointer(&cx, &ev(PointerKind::Down, 300.0, 300.0));
-        assert!(t.pointer(&cx, &ev(PointerKind::Up, 300.0, 300.0)).is_empty());
+        assert!(
+            t.pointer(&cx, &ev(PointerKind::Up, 300.0, 300.0))
+                .is_empty()
+        );
     }
 
     /// Squares A (0..100) and B (50..150 both ways), overlapping at a corner, selected.
@@ -855,16 +1042,35 @@ mod tests {
         let mut d = Document::new(500.0, 500.0);
         let l = d.layers[0].id;
         let mut s = Selection::default();
-        for (k, r) in [Rect::new(0.0, 0.0, 100.0, 100.0), Rect::new(50.0, 50.0, 150.0, 150.0)].into_iter().enumerate() {
+        for (k, r) in [
+            Rect::new(0.0, 0.0, 100.0, 100.0),
+            Rect::new(50.0, 50.0, 150.0, 150.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let id = d.alloc_id();
-            d.insert(Some(l), k, Node::path(id, shapes::rectangle(r), Appearance::default_art())).unwrap();
+            d.insert(
+                Some(l),
+                k,
+                Node::path(id, shapes::rectangle(r), Appearance::default_art()),
+            )
+            .unwrap();
             s.add(id);
         }
         (d, s)
     }
 
     fn colors(ov: &[Overlay]) -> Vec<[u8; 3]> {
-        ov.iter().map(|o| if let Overlay::Path { color, .. } = o { *color } else { panic!("{o:?}") }).collect()
+        ov.iter()
+            .map(|o| {
+                if let Overlay::Path { color, .. } = o {
+                    *color
+                } else {
+                    panic!("{o:?}")
+                }
+            })
+            .collect()
     }
 
     #[test]
@@ -873,7 +1079,10 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeBuilderTool::default();
-        let alt = Mods { alt: true, ..Default::default() };
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
         let at = Point::new(75.0, 75.0);
         // Merge mode: a grey mesh and the plus pointer.
         t.pointer(&cx, &ev(PointerKind::Move, at.x, at.y));
@@ -889,9 +1098,14 @@ mod tests {
         assert_eq!(t.cursor(&cx, at, Mods::default()), Cursor::ShapeBuilder);
         // A drag keeps the mode it started in.
         t.pointer(&cx, &ev(PointerKind::Down, at.x, at.y).with_mods(alt));
-        assert_eq!(t.cursor(&cx, at, Mods::default()), Cursor::ShapeBuilderErase);
+        assert_eq!(
+            t.cursor(&cx, at, Mods::default()),
+            Cursor::ShapeBuilderErase
+        );
         let acts = t.pointer(&cx, &ev(PointerKind::Up, at.x, at.y));
-        let Action::Exec(_, v) = &acts[0] else { panic!("{acts:?}") };
+        let Action::Exec(_, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
         assert_eq!(v["erase"], true);
     }
 
@@ -901,12 +1115,25 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeBuilderTool::default();
-        let alt = Mods { alt: true, ..Default::default() };
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
         // A's side inside B, between the points where B's outline crosses it.
         t.pointer(&cx, &ev(PointerKind::Move, 101.0, 75.0).with_mods(alt));
         assert!(matches!(t.hover, Some(Hit::Edge(_))), "{:?}", t.hover);
         let ov = t.overlays(&cx);
-        let [Overlay::Path { path, color: HIGHLIGHT_RED, width: 3.0, .. }] = ov.as_slice() else { panic!("{ov:?}") };
+        let [
+            Overlay::Path {
+                path,
+                color: HIGHLIGHT_RED,
+                width: 3.0,
+                ..
+            },
+        ] = ov.as_slice()
+        else {
+            panic!("{ov:?}")
+        };
         assert_eq!(path.bounding_box(), Rect::new(50.0, 50.0, 100.0, 100.0));
         // Without Alt it's the region under the pointer.
         t.pointer(&cx, &ev(PointerKind::Move, 101.0, 75.0));
@@ -914,8 +1141,13 @@ mod tests {
         t.pointer(&cx, &ev(PointerKind::Down, 101.0, 75.0).with_mods(alt));
         assert_eq!(t.touched.edges.len(), 1);
         let acts = t.pointer(&cx, &ev(PointerKind::Up, 101.0, 75.0).with_mods(alt));
-        let Action::Exec(id, v) = &acts[0] else { panic!("{acts:?}") };
-        assert_eq!((id.as_str(), &v["erase"], &v["tolerance"]), ("shapeBuilder.merge", &json!(true), &json!(4.0)));
+        let Action::Exec(id, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
+        assert_eq!(
+            (id.as_str(), &v["erase"], &v["tolerance"]),
+            ("shapeBuilder.merge", &json!(true), &json!(4.0))
+        );
     }
 
     #[test]
@@ -924,12 +1156,18 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeBuilderTool::default();
-        let alt = Mods { alt: true, ..Default::default() };
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
         t.pointer(&cx, &ev(PointerKind::Down, 25.0, 25.0).with_mods(alt));
         t.pointer(&cx, &ev(PointerKind::Drag, 75.0, 75.0).with_mods(alt));
         assert_eq!(t.touched.regions.len(), 2);
         assert!(!t.touched.edges.is_empty(), "the drag crossed B's outline");
-        assert!(t.cache.map.erased_edges(&t.touched).is_empty(), "which goes with the regions");
+        assert!(
+            t.cache.map.erased_edges(&t.touched).is_empty(),
+            "which goes with the regions"
+        );
         // Two regions (mesh + outline each) and the drag's trail, all red.
         assert_eq!(colors(&t.overlays(&cx)), [HIGHLIGHT_RED; 5]);
     }
@@ -949,11 +1187,23 @@ mod tests {
         let f1 = d.alloc_id();
         let f2 = d.alloc_id();
         let e = d.alloc_id();
-        let mut face1 = Node::path(f1, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default());
+        let mut face1 = Node::path(
+            f1,
+            shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+            Appearance::default(),
+        );
         face1.name = Some(FACE_NAME.into());
-        let mut face2 = Node::path(f2, shapes::rectangle(Rect::new(50.0, 0.0, 100.0, 50.0)), Appearance::default());
+        let mut face2 = Node::path(
+            f2,
+            shapes::rectangle(Rect::new(50.0, 0.0, 100.0, 50.0)),
+            Appearance::default(),
+        );
         face2.name = Some(FACE_NAME.into());
-        let mut edge = Node::path(e, shapes::line(Point::new(50.0, 0.0), Point::new(50.0, 50.0)), Appearance::default());
+        let mut edge = Node::path(
+            e,
+            shapes::line(Point::new(50.0, 0.0), Point::new(50.0, 50.0)),
+            Appearance::default(),
+        );
         edge.name = Some(EDGE_NAME.into());
         let gid = d.alloc_id();
         let mut g = Node::group(gid, vec![Arc::new(face1), Arc::new(face2), Arc::new(edge)]);
@@ -966,21 +1216,39 @@ mod tests {
     fn bucket_click_fills_face_and_shift_click_strokes_edge() {
         let (d, gid, f2, _e) = live_group_doc();
         assert_eq!(live_paint_at(&d, Point::new(75.0, 25.0)), Some(gid));
-        assert_eq!(face_at(d.node(gid).unwrap(), Point::new(75.0, 25.0)).unwrap().id, f2);
+        assert_eq!(
+            face_at(d.node(gid).unwrap(), Point::new(75.0, 25.0))
+                .unwrap()
+                .id,
+            f2
+        );
         let s = Selection::default();
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = LivePaintBucketTool::default();
         t.pointer(&cx, &ev(PointerKind::Move, 75.0, 25.0));
         let ov = t.overlays(&cx);
-        assert!(matches!(&ov[0], Overlay::Path { color: HIGHLIGHT_RED, .. }));
+        assert!(matches!(
+            &ov[0],
+            Overlay::Path {
+                color: HIGHLIGHT_RED,
+                ..
+            }
+        ));
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 75.0, 25.0));
-        let Action::Exec(id, v) = &acts[0] else { panic!() };
+        let Action::Exec(id, v) = &acts[0] else {
+            panic!()
+        };
         assert_eq!(id, "livePaint.fill");
         assert_eq!(v["group"], gid.0);
-        let shift = Mods { shift: true, ..Default::default() };
+        let shift = Mods {
+            shift: true,
+            ..Default::default()
+        };
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 51.0, 25.0).with_mods(shift));
-        let Action::Exec(id, _) = &acts[0] else { panic!() };
+        let Action::Exec(id, _) = &acts[0] else {
+            panic!()
+        };
         assert_eq!(id, "livePaint.strokeEdge");
     }
 
@@ -993,7 +1261,9 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = LivePaintBucketTool::default();
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 75.0, 50.0));
-        let Action::Exec(id, v) = &acts[0] else { panic!() };
+        let Action::Exec(id, v) = &acts[0] else {
+            panic!()
+        };
         assert_eq!(id, "livePaint.fill");
         assert_eq!(v["ids"], json!([a.0, b.0]));
     }
@@ -1006,10 +1276,19 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = LivePaintSelectionTool::default();
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 75.0, 25.0));
-        assert_eq!(acts, vec![Action::Exec("select.set".into(), json!({ "ids": [f2.0] }))]);
-        let alt = Mods { alt: true, ..Default::default() };
+        assert_eq!(
+            acts,
+            vec![Action::Exec("select.set".into(), json!({ "ids": [f2.0] }))]
+        );
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 51.0, 25.0).with_mods(alt));
-        assert_eq!(acts, vec![Action::Exec("select.set".into(), json!({ "ids": [e.0] }))]);
+        assert_eq!(
+            acts,
+            vec![Action::Exec("select.set".into(), json!({ "ids": [e.0] }))]
+        );
         let acts = t.pointer(&cx, &ev(PointerKind::Down, 300.0, 300.0));
         assert_eq!(acts, vec![Action::Exec("select.none".into(), json!({}))]);
     }

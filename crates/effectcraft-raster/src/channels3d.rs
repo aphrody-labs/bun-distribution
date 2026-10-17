@@ -34,12 +34,21 @@ pub struct AuxChannels {
 
 impl AuxChannels {
     pub fn new(width: u32, height: u32, scale: f64) -> AuxChannels {
-        AuxChannels { width, height, scale, channels: vec![], manifests: vec![] }
+        AuxChannels {
+            width,
+            height,
+            scale,
+            channels: vec![],
+            manifests: vec![],
+        }
     }
 
     /// A channel by exact name (case-insensitive).
     pub fn get(&self, name: &str) -> Option<&[f32]> {
-        self.channels.iter().find(|(n, _)| n.eq_ignore_ascii_case(name)).map(|(_, v)| v.as_slice())
+        self.channels
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v.as_slice())
     }
 
     /// The first channel present among `names` (also matching `*.name` suffixes, so `Z` finds
@@ -52,7 +61,11 @@ impl AuxChannels {
         }
         for n in names {
             let suffix = format!(".{}", n.to_ascii_lowercase());
-            if let Some((_, v)) = self.channels.iter().find(|(c, _)| c.to_ascii_lowercase().ends_with(&suffix)) {
+            if let Some((_, v)) = self
+                .channels
+                .iter()
+                .find(|(c, _)| c.to_ascii_lowercase().ends_with(&suffix))
+            {
                 return Some(v);
             }
         }
@@ -80,14 +93,36 @@ impl AuxChannels {
     /// its R, G, B, A channels (or red / green / blue / alpha, X / Y / Z, U / V); a layer of one
     /// channel (depth, an ID) shows it in all three colours.
     pub fn layer_rgba(&self, layer: &str) -> [String; 4] {
-        let chans: Vec<&str> = self.channels.iter().map(|(n, _)| n.as_str()).filter(|n| split_channel(n).0 == layer).collect();
+        let chans: Vec<&str> = self
+            .channels
+            .iter()
+            .map(|(n, _)| n.as_str())
+            .filter(|n| split_channel(n).0 == layer)
+            .collect();
         let pick = |names: &[&str]| -> String {
-            chans.iter().find(|c| names.iter().any(|n| split_channel(c).1.eq_ignore_ascii_case(n))).map_or(String::new(), |c| c.to_string())
+            chans
+                .iter()
+                .find(|c| {
+                    names
+                        .iter()
+                        .any(|n| split_channel(c).1.eq_ignore_ascii_case(n))
+                })
+                .map_or(String::new(), |c| c.to_string())
         };
         if let [one] = chans.as_slice() {
-            return [one.to_string(), one.to_string(), one.to_string(), String::new()];
+            return [
+                one.to_string(),
+                one.to_string(),
+                one.to_string(),
+                String::new(),
+            ];
         }
-        [pick(&["R", "red", "X", "U"]), pick(&["G", "green", "Y", "V"]), pick(&["B", "blue", "Z"]), pick(&["A", "alpha"])]
+        [
+            pick(&["R", "red", "X", "U"]),
+            pick(&["G", "green", "Y", "V"]),
+            pick(&["B", "blue", "Z"]),
+            pick(&["A", "alpha"]),
+        ]
     }
 }
 
@@ -113,8 +148,15 @@ impl AuxChannels {
 
     /// Cryptomatte layer names present (prefixes with a `00.R` channel).
     pub fn crypto_layers(&self) -> Vec<String> {
-        let mut v: Vec<String> =
-            self.channels.iter().filter_map(|(n, _)| n.strip_suffix("00.R").or_else(|| n.strip_suffix("00.r")).map(str::to_string)).collect();
+        let mut v: Vec<String> = self
+            .channels
+            .iter()
+            .filter_map(|(n, _)| {
+                n.strip_suffix("00.R")
+                    .or_else(|| n.strip_suffix("00.r"))
+                    .map(str::to_string)
+            })
+            .collect();
         v.sort();
         v.dedup();
         v
@@ -152,7 +194,13 @@ impl AuxChannels {
 
     /// Manifest entry name for a hash in Cryptomatte layer `layer`.
     pub fn manifest_name(&self, layer: &str, hash: u32) -> Option<&str> {
-        self.manifests.iter().find(|(l, _)| l == layer)?.1.iter().find(|(_, h)| *h == hash).map(|(n, _)| n.as_str())
+        self.manifests
+            .iter()
+            .find(|(l, _)| l == layer)?
+            .1
+            .iter()
+            .find(|(_, h)| *h == hash)
+            .map(|(n, _)| n.as_str())
     }
 }
 
@@ -212,7 +260,10 @@ mod tests {
         assert_eq!(murmur3_32(b"a", 0x9747_b28c), 0x7fa0_9ea6);
         assert_eq!(murmur3_32(b"aaaa", 0x9747_b28c), 0x5a97_808a);
         assert_eq!(murmur3_32(b"Hello, world!", 0x9747_b28c), 0x2488_4cba);
-        assert_eq!(murmur3_32(b"The quick brown fox jumps over the lazy dog", 0x9747_b28c), 0x2fa8_26cd);
+        assert_eq!(
+            murmur3_32(b"The quick brown fox jumps over the lazy dog", 0x9747_b28c),
+            0x2fa8_26cd
+        );
     }
 
     #[test]
@@ -220,7 +271,10 @@ mod tests {
         for n in ["bunny", "set", "ground", "a", ""] {
             let h = crypto_hash(n);
             let f = crypto_float(h);
-            assert!(f.is_finite() && (f == 0.0 || f.is_normal() || f.abs() > 0.0), "{n}");
+            assert!(
+                f.is_finite() && (f == 0.0 || f.is_normal() || f.abs() > 0.0),
+                "{n}"
+            );
             assert_eq!(f.to_bits(), h);
         }
     }

@@ -13,7 +13,10 @@ pub struct Plane {
 
 impl Plane {
     pub fn new(width: usize, height: usize) -> Self {
-        Plane { data: vec![0; width * height], width }
+        Plane {
+            data: vec![0; width * height],
+            width,
+        }
     }
 
     #[inline]
@@ -23,7 +26,10 @@ impl Plane {
         } else if x < 0 {
             129
         } else {
-            self.data.get(y as usize * self.width + x as usize).copied().unwrap_or(127)
+            self.data
+                .get(y as usize * self.width + x as usize)
+                .copied()
+                .unwrap_or(127)
         }
     }
 
@@ -101,7 +107,11 @@ pub fn predict_block(plane: &Plane, x: usize, y: usize, n: usize, mode: u8, out:
                     ((s + (1 << (shift - 1))) >> shift) as u8
                 }
                 (false, false) => {
-                    let s: u32 = above[..n].iter().chain(&left[..n]).map(|&v| u32::from(v)).sum();
+                    let s: u32 = above[..n]
+                        .iter()
+                        .chain(&left[..n])
+                        .map(|&v| u32::from(v))
+                        .sum();
                     ((s + (1 << shift)) >> (shift + 1)) as u8
                 }
             };
@@ -145,7 +155,11 @@ impl SubEdges {
             // Right column: the above-right pixels are those above the macroblock's right edge.
             let last_col = mx / 16 + 1 == mb_cols;
             for i in 0..4 {
-                let ax = if last_col { mx as isize + 15 } else { mx as isize + 16 + i as isize };
+                let ax = if last_col {
+                    mx as isize + 15
+                } else {
+                    mx as isize + 16 + i as isize
+                };
                 above[4 + i] = plane.at(ax, my as isize - 1);
             }
         } else {
@@ -341,9 +355,15 @@ mod tests {
         predict_block(&p, 0, 0, 16, DC_PRED, &mut out);
         assert!(out.iter().all(|&v| v == 128), "top-left is 128");
         predict_block(&p, 16, 0, 16, DC_PRED, &mut out);
-        assert!(out.iter().all(|&v| v == 10), "top row averages the left column only");
+        assert!(
+            out.iter().all(|&v| v == 10),
+            "top row averages the left column only"
+        );
         predict_block(&p, 0, 16, 16, DC_PRED, &mut out);
-        assert!(out.iter().all(|&v| v == 10), "left column averages the above row only");
+        assert!(
+            out.iter().all(|&v| v == 10),
+            "left column averages the above row only"
+        );
         predict_block(&p, 16, 16, 16, DC_PRED, &mut out);
         assert!(out.iter().all(|&v| v == (10 + 200) / 2));
         predict_block(&p, 16, 16, 16, TM_PRED, &mut out);
@@ -366,7 +386,11 @@ mod tests {
                 predict_sub(&e, mode, &mut out);
             }
             predict_sub(&e, B_DC_PRED, &mut out);
-            let s: u32 = e.above[..4].iter().chain(&e.left).map(|&v| u32::from(v)).sum();
+            let s: u32 = e.above[..4]
+                .iter()
+                .chain(&e.left)
+                .map(|&v| u32::from(v))
+                .sum();
             assert!(out.iter().all(|&v| u32::from(v) == (s + 4) >> 3));
         }
         // Rightmost macroblock: the above-right pixels replicate (-1, 15).

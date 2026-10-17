@@ -42,12 +42,22 @@ pub fn encode_png(img: &Rgba8) -> Result<Vec<u8>, String> {
     {
         let mut enc = png::Encoder::new(&mut out, img.w, img.h);
         let opaque = img.opaque();
-        enc.set_color(if opaque { png::ColorType::Rgb } else { png::ColorType::Rgba });
+        enc.set_color(if opaque {
+            png::ColorType::Rgb
+        } else {
+            png::ColorType::Rgba
+        });
         enc.set_depth(png::BitDepth::Eight);
         enc.set_compression(png::Compression::High);
         let mut w = enc.write_header().map_err(|e| e.to_string())?;
         if opaque {
-            let rgb: Vec<u8> = img.px.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
+            let rgb: Vec<u8> = img
+                .px
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect();
             w.write_image_data(&rgb).map_err(|e| e.to_string())?;
         } else {
             w.write_image_data(&img.px).map_err(|e| e.to_string())?;
@@ -68,8 +78,18 @@ pub fn decode_png(bytes: &[u8]) -> Result<Rgba8, String> {
     let n = w as usize * h as usize;
     let px = match info.color_type {
         png::ColorType::Rgba => buf[..n * 4].to_vec(),
-        png::ColorType::Rgb => buf[..n * 3].as_chunks::<3>().0.iter().flat_map(|p| [p[0], p[1], p[2], 255]).collect(),
-        png::ColorType::GrayscaleAlpha => buf[..n * 2].as_chunks::<2>().0.iter().flat_map(|p| [p[0], p[0], p[0], p[1]]).collect(),
+        png::ColorType::Rgb => buf[..n * 3]
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2], 255])
+            .collect(),
+        png::ColorType::GrayscaleAlpha => buf[..n * 2]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[0], p[0], p[1]])
+            .collect(),
         png::ColorType::Grayscale => buf[..n].iter().flat_map(|&g| [g, g, g, 255]).collect(),
         png::ColorType::Indexed => return Err("unexpanded palette PNG".into()),
     };
@@ -107,7 +127,11 @@ pub struct Diff {
 
 impl std::fmt::Display for Diff {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PSNR {:.2} dB, max {}, p99 {}, mean {:.3}, {} pixels differ", self.psnr, self.max_abs, self.p99, self.mean_abs, self.differing)
+        write!(
+            f,
+            "PSNR {:.2} dB, max {}, p99 {}, mean {:.3}, {} pixels differ",
+            self.psnr, self.max_abs, self.p99, self.mean_abs, self.differing
+        )
     }
 }
 
@@ -143,8 +167,18 @@ pub fn diff(a: &Rgba8, b: &Rgba8) -> Result<Diff, String> {
     }
     let n = (pixels * 4) as f64;
     let mse = sq as f64 / n;
-    let psnr = if mse == 0.0 { f64::INFINITY } else { 10.0 * (255.0f64 * 255.0 / mse).log10() };
-    Ok(Diff { max_abs: max, mean_abs: sum as f64 / n, p99, psnr, differing })
+    let psnr = if mse == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (255.0f64 * 255.0 / mse).log10()
+    };
+    Ok(Diff {
+        max_abs: max,
+        mean_abs: sum as f64 / n,
+        p99,
+        psnr,
+        differing,
+    })
 }
 
 /// Acceptance thresholds; every set limit must hold.
@@ -157,10 +191,18 @@ pub struct Tolerance {
 
 impl Tolerance {
     /// Bit-exact.
-    pub const EXACT: Tolerance = Tolerance { min_psnr: f64::INFINITY, max_abs: 0, p99: 0 };
+    pub const EXACT: Tolerance = Tolerance {
+        min_psnr: f64::INFINITY,
+        max_abs: 0,
+        p99: 0,
+    };
     /// Default for CPU renders compared with CPU-made references: absorbs float differences
     /// between platforms (FMA, SIMD widths, thread scheduling of reductions) but not real changes.
-    pub const RENDER: Tolerance = Tolerance { min_psnr: 45.0, max_abs: 12, p99: 2 };
+    pub const RENDER: Tolerance = Tolerance {
+        min_psnr: 45.0,
+        max_abs: 12,
+        p99: 2,
+    };
 
     pub fn accepts(&self, d: &Diff) -> bool {
         d.psnr >= self.min_psnr && d.max_abs <= self.max_abs && d.p99 <= self.p99
@@ -169,12 +211,19 @@ impl Tolerance {
 
 /// Whether `FILMCRAFT_BLESS` asks to regenerate references.
 pub fn blessing() -> bool {
-    std::env::var("FILMCRAFT_BLESS").is_ok_and(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+    std::env::var("FILMCRAFT_BLESS").is_ok_and(|v| {
+        matches!(
+            v.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        )
+    })
 }
 
 /// Where failing comparisons write `<name>.actual.png` / `<name>.diff.png`.
 pub fn failures_dir() -> PathBuf {
-    crate::workspace_root().join("target").join("golden-failures")
+    crate::workspace_root()
+        .join("target")
+        .join("golden-failures")
 }
 
 /// Difference image: |a − b| per channel ×8, opaque.
@@ -195,7 +244,10 @@ pub fn diff_image(a: &Rgba8, b: &Rgba8) -> Rgba8 {
 
 /// Today's date (UTC) as YYYY-MM-DD, for attribution sidecars.
 fn today() -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
     // civil-from-days (Howard Hinnant)
     let z = (secs / 86_400) as i64 + 719_468;
     let era = z.div_euclid(146_097);
@@ -226,33 +278,66 @@ pub fn sidecar_text(file_name: &str, title: &str, generated_by: &str) -> String 
 
 /// The `ATTRIBUTION.md` table row for a golden image at workspace-relative `rel`.
 pub fn attribution_row(rel: &str, generated_by: &str) -> String {
-    format!("| `{rel}` | FilmCraft contributors | Original work: golden reference rendered by FilmCraft ({generated_by}) | MIT OR Apache-2.0 |")
+    format!(
+        "| `{rel}` | FilmCraft contributors | Original work: golden reference rendered by FilmCraft ({generated_by}) | MIT OR Apache-2.0 |"
+    )
 }
 
 /// Compare `actual` with the golden PNG at `golden` (or bless it). `title` and `generated_by`
 /// fill the attribution sidecar written on bless. Returns the difference on success.
-pub fn check_golden(golden: &Path, actual: &Rgba8, tol: Tolerance, title: &str, generated_by: &str) -> Result<Diff, String> {
-    let name = golden.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+pub fn check_golden(
+    golden: &Path,
+    actual: &Rgba8,
+    tol: Tolerance,
+    title: &str,
+    generated_by: &str,
+) -> Result<Diff, String> {
+    let name = golden
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     if blessing() {
         let size = write_png(golden, actual)?;
         if size > MAX_GOLDEN_BYTES {
-            return Err(format!("{}: {size} bytes exceeds the {MAX_GOLDEN_BYTES}-byte golden limit; render smaller", golden.display()));
+            return Err(format!(
+                "{}: {size} bytes exceeds the {MAX_GOLDEN_BYTES}-byte golden limit; render smaller",
+                golden.display()
+            ));
         }
         let side = PathBuf::from(format!("{}.attribution", golden.display()));
         if !side.exists() {
-            let file = golden.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-            std::fs::write(&side, sidecar_text(&file, title, generated_by)).map_err(|e| e.to_string())?;
+            let file = golden
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            std::fs::write(&side, sidecar_text(&file, title, generated_by))
+                .map_err(|e| e.to_string())?;
         }
         let root = crate::workspace_root();
-        let rel = golden.strip_prefix(&root).unwrap_or(golden).to_string_lossy().replace('\\', "/");
+        let rel = golden
+            .strip_prefix(&root)
+            .unwrap_or(golden)
+            .to_string_lossy()
+            .replace('\\', "/");
         let index = std::fs::read_to_string(root.join("ATTRIBUTION.md")).unwrap_or_default();
         if !index.contains(&format!("`{rel}`")) {
-            eprintln!("golden {rel}: add this row to ATTRIBUTION.md:\n{}", attribution_row(&rel, generated_by));
+            eprintln!(
+                "golden {rel}: add this row to ATTRIBUTION.md:\n{}",
+                attribution_row(&rel, generated_by)
+            );
         }
         eprintln!("blessed {rel} ({size} bytes)");
-        return Ok(Diff { max_abs: 0, mean_abs: 0.0, p99: 0, psnr: f64::INFINITY, differing: 0 });
+        return Ok(Diff {
+            max_abs: 0,
+            mean_abs: 0.0,
+            p99: 0,
+            psnr: f64::INFINITY,
+            differing: 0,
+        });
     }
-    let expected = read_png(golden).map_err(|e| format!("{e}\n(missing or unreadable golden; generate it with FILMCRAFT_BLESS=1)"))?;
+    let expected = read_png(golden).map_err(|e| {
+        format!("{e}\n(missing or unreadable golden; generate it with FILMCRAFT_BLESS=1)")
+    })?;
     let d = diff(&expected, actual).map_err(|e| format!("{}: {e}", golden.display()))?;
     if tol.accepts(&d) {
         return Ok(d);
@@ -260,7 +345,10 @@ pub fn check_golden(golden: &Path, actual: &Rgba8, tol: Tolerance, title: &str, 
     let dir = failures_dir();
     let a = dir.join(format!("{name}.actual.png"));
     let _ = write_png(&a, actual);
-    let _ = write_png(&dir.join(format!("{name}.diff.png")), &diff_image(&expected, actual));
+    let _ = write_png(
+        &dir.join(format!("{name}.diff.png")),
+        &diff_image(&expected, actual),
+    );
     Err(format!(
         "{}: {d} (tolerance: PSNR ≥ {} dB, max ≤ {}, p99 ≤ {}); actual and diff written to {}",
         golden.display(),
@@ -272,7 +360,13 @@ pub fn check_golden(golden: &Path, actual: &Rgba8, tol: Tolerance, title: &str, 
 }
 
 /// [`check_golden`] that panics on failure.
-pub fn assert_golden(golden: &Path, actual: &Rgba8, tol: Tolerance, title: &str, generated_by: &str) -> Diff {
+pub fn assert_golden(
+    golden: &Path,
+    actual: &Rgba8,
+    tol: Tolerance,
+    title: &str,
+    generated_by: &str,
+) -> Diff {
     match check_golden(golden, actual, tol, title, generated_by) {
         Ok(d) => d,
         Err(e) => panic!("golden mismatch: {e}"),
@@ -284,7 +378,9 @@ mod tests {
     use super::*;
 
     fn ramp(w: u32, h: u32, alpha: u8) -> Rgba8 {
-        let px = (0..w * h).flat_map(|i| [(i % w * 255 / w) as u8, (i / w * 255 / h) as u8, 77, alpha]).collect();
+        let px = (0..w * h)
+            .flat_map(|i| [(i % w * 255 / w) as u8, (i / w * 255 / h) as u8, 77, alpha])
+            .collect();
         Rgba8::new(w, h, px)
     }
 
@@ -318,7 +414,8 @@ mod tests {
         if blessing() {
             return;
         }
-        let dir = std::env::temp_dir().join(format!("filmcraft-testkit-golden-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-testkit-golden-{}", std::process::id()));
         let path = dir.join("ramp.png");
         let img = ramp(32, 16, 255);
         write_png(&path, &img).unwrap();
@@ -330,7 +427,17 @@ mod tests {
         far.px.iter_mut().step_by(4).for_each(|v| *v = 255 - *v);
         let e = check_golden(&path, &far, Tolerance::RENDER, "t", "unit test").unwrap_err();
         assert!(e.contains("PSNR"), "{e}");
-        assert!(check_golden(&dir.join("missing.png"), &img, Tolerance::RENDER, "t", "unit test").unwrap_err().contains("FILMCRAFT_BLESS"));
+        assert!(
+            check_golden(
+                &dir.join("missing.png"),
+                &img,
+                Tolerance::RENDER,
+                "t",
+                "unit test"
+            )
+            .unwrap_err()
+            .contains("FILMCRAFT_BLESS")
+        );
     }
 
     #[test]
@@ -339,8 +446,13 @@ mod tests {
         assert_eq!(t.len(), 10);
         assert!(t.starts_with("20"));
         let s = sidecar_text("x.png", "X", "test y");
-        for f in ["asset:", "title:", "author:", "source:", "license:", "added:"] {
-            assert!(s.lines().any(|l| l.starts_with(f) && l.len() > f.len() + 2), "{f}");
+        for f in [
+            "asset:", "title:", "author:", "source:", "license:", "added:",
+        ] {
+            assert!(
+                s.lines().any(|l| l.starts_with(f) && l.len() > f.len() + 2),
+                "{f}"
+            );
         }
     }
 }

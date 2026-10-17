@@ -41,7 +41,9 @@ fn matching_descendants(
     first_only: bool,
 ) -> Result<Vec<NodeId>, String> {
     if first_only {
-        return tree.query_selector_from(scope, selector).map(|found| found.into_iter().collect());
+        return tree
+            .query_selector_from(scope, selector)
+            .map(|found| found.into_iter().collect());
     }
     tree.query_selector_all_from(scope, selector)
 }
@@ -54,9 +56,11 @@ fn matching_descendants(
 /// the duration of this call. A non-null result must eventually be passed
 /// exactly once to [`web_internal_tree_destroy`].
 pub unsafe extern "C" fn web_internal_parse_html(html_ptr: *const c_char) -> *mut DomTree {
-    guard(std::ptr::null_mut(), || match unsafe { borrow_str(html_ptr) } {
-        Some(html) => Box::into_raw(Box::new(obscura_dom::parse_html(html))),
-        None => std::ptr::null_mut(),
+    guard(std::ptr::null_mut(), || {
+        match unsafe { borrow_str(html_ptr) } {
+            Some(html) => Box::into_raw(Box::new(obscura_dom::parse_html(html))),
+            None => std::ptr::null_mut(),
+        }
     })
 }
 
@@ -123,7 +127,7 @@ pub unsafe extern "C" fn web_internal_query_selector_all(
             Ok(ids) => {
                 let results: Vec<String> = ids.into_iter().map(|id| tree.outer_html(id)).collect();
                 into_c_string(serde_json::to_string(&results).unwrap_or_else(|_| "[]".to_string()))
-            },
+            }
             Err(_) => error_json("invalid selector"),
         }
     })
@@ -159,7 +163,7 @@ pub unsafe extern "C" fn web_internal_query_selector_all_nodes(
             Ok(ids) => {
                 let raw: Vec<u32> = ids.into_iter().map(NodeId::raw).collect();
                 into_c_string(serde_json::to_string(&raw).unwrap_or_else(|_| "[]".to_string()))
-            },
+            }
             Err(e) => error_json(e),
         }
     })
@@ -212,7 +216,9 @@ unsafe fn with_live_node(
         if tree.with_node(id, |_| ()).is_none() {
             return std::ptr::null_mut();
         }
-        f(tree, id).map(into_c_string).unwrap_or(std::ptr::null_mut())
+        f(tree, id)
+            .map(into_c_string)
+            .unwrap_or(std::ptr::null_mut())
     })
 }
 
@@ -264,8 +270,10 @@ pub unsafe extern "C" fn web_internal_node_tag_name(
 ) -> *mut c_char {
     unsafe {
         with_live_node(tree_ptr, node, |tree, id| {
-            tree.with_node(id, |n| n.as_element().map(|q| str::to_ascii_lowercase(&q.local)))
-                .flatten()
+            tree.with_node(id, |n| {
+                n.as_element().map(|q| str::to_ascii_lowercase(&q.local))
+            })
+            .flatten()
         })
     }
 }
@@ -286,7 +294,8 @@ pub unsafe extern "C" fn web_internal_node_attribute(
     };
     unsafe {
         with_live_node(tree_ptr, node, |tree, id| {
-            tree.with_node(id, |n| n.get_attribute(name).map(str::to_string)).flatten()
+            tree.with_node(id, |n| n.get_attribute(name).map(str::to_string))
+                .flatten()
         })
     }
 }
@@ -334,7 +343,9 @@ mod tests {
         if ptr.is_null() {
             return None;
         }
-        let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        let value = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
         unsafe { crate::web_internal_free_string(ptr) };
         Some(value)
     }
@@ -355,14 +366,22 @@ mod tests {
 
             let li_sel = CString::new("li.x").unwrap();
             let all: Vec<u32> = serde_json::from_str(
-                &take(web_internal_query_selector_all_nodes(tree, DOCUMENT_SCOPE, li_sel.as_ptr()))
-                    .unwrap(),
+                &take(web_internal_query_selector_all_nodes(
+                    tree,
+                    DOCUMENT_SCOPE,
+                    li_sel.as_ptr(),
+                ))
+                .unwrap(),
             )
             .unwrap();
             assert_eq!(all.len(), 2);
             let scoped: Vec<u32> = serde_json::from_str(
-                &take(web_internal_query_selector_all_nodes(tree, ul as u32, li_sel.as_ptr()))
-                    .unwrap(),
+                &take(web_internal_query_selector_all_nodes(
+                    tree,
+                    ul as u32,
+                    li_sel.as_ptr(),
+                ))
+                .unwrap(),
             )
             .unwrap();
             assert_eq!(scoped.len(), 1);
@@ -374,8 +393,12 @@ mod tests {
             // Combinators may match ancestors outside the scope (DOM semantics).
             let desc_sel = CString::new("ul li").unwrap();
             let desc: Vec<u32> = serde_json::from_str(
-                &take(web_internal_query_selector_all_nodes(tree, ul as u32, desc_sel.as_ptr()))
-                    .unwrap(),
+                &take(web_internal_query_selector_all_nodes(
+                    tree,
+                    ul as u32,
+                    desc_sel.as_ptr(),
+                ))
+                .unwrap(),
             )
             .unwrap();
             assert_eq!(desc.len(), 1);
@@ -384,7 +407,10 @@ mod tests {
                 take(web_internal_node_text_content(tree, all[0])).as_deref(),
                 Some("One & two")
             );
-            assert_eq!(take(web_internal_node_tag_name(tree, all[0])).as_deref(), Some("li"));
+            assert_eq!(
+                take(web_internal_node_tag_name(tree, all[0])).as_deref(),
+                Some("li")
+            );
             let key = CString::new("data-k").unwrap();
             assert_eq!(
                 take(web_internal_node_attribute(tree, all[0], key.as_ptr())).as_deref(),
@@ -454,7 +480,8 @@ pub(crate) fn extract_anchors(html: &str, base: Option<&url::Url>) -> Vec<serde_
         .ok()
         .flatten()
         .and_then(|id| {
-            tree.with_node(id, |n| n.get_attribute("href").map(str::to_string)).flatten()
+            tree.with_node(id, |n| n.get_attribute("href").map(str::to_string))
+                .flatten()
         })
         .and_then(|href| match base {
             Some(b) => b.join(&href).ok(),
@@ -464,7 +491,10 @@ pub(crate) fn extract_anchors(html: &str, base: Option<&url::Url>) -> Vec<serde_
 
     let mut order: Vec<String> = Vec::new();
     let mut anchors: std::collections::HashMap<String, Anchor> = std::collections::HashMap::new();
-    for id in tree.query_selector_all("a[href], area[href]").unwrap_or_default() {
+    for id in tree
+        .query_selector_all("a[href], area[href]")
+        .unwrap_or_default()
+    {
         let Some((href, rel)) = tree
             .with_node(id, |n| {
                 n.get_attribute("href").map(|h| {
@@ -485,7 +515,9 @@ pub(crate) fn extract_anchors(html: &str, base: Option<&url::Url>) -> Vec<serde_
             Some(b) => b.join(&href).ok(),
             None => url::Url::parse(&href).ok(),
         };
-        let Some(mut resolved) = resolved else { continue };
+        let Some(mut resolved) = resolved else {
+            continue;
+        };
         if !matches!(resolved.scheme(), "http" | "https") {
             continue;
         }
@@ -501,11 +533,18 @@ pub(crate) fn extract_anchors(html: &str, base: Option<&url::Url>) -> Vec<serde_
                 if existing.text.is_empty() {
                     existing.text = text;
                 }
-            },
+            }
             None => {
                 order.push(key.clone());
-                anchors.insert(key.clone(), Anchor { url: key, text, nofollow });
-            },
+                anchors.insert(
+                    key.clone(),
+                    Anchor {
+                        url: key,
+                        text,
+                        nofollow,
+                    },
+                );
+            }
         }
     }
     order

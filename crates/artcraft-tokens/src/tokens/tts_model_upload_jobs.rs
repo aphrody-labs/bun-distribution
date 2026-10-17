@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct TtsModelUploadJobToken(pub String);
 
 impl_string_token!(TtsModelUploadJobToken);
-impl_crockford_generator!(TtsModelUploadJobToken, 32usize, LegacyTokenPrefix::TtsModelUploadJob, CrockfordLower);
+impl_crockford_generator!(
+    TtsModelUploadJobToken,
+    32usize,
+    LegacyTokenPrefix::TtsModelUploadJob,
+    CrockfordLower
+);

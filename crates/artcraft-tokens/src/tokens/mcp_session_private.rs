@@ -19,4 +19,9 @@ pub struct McpSessionPrivateToken(pub String);
 
 impl_string_token!(McpSessionPrivateToken);
 impl_mysql_token_from_row!(McpSessionPrivateToken);
-impl_crockford_generator!(McpSessionPrivateToken, 64usize, TokenPrefix::McpSessionPrivate, CrockfordLower);
+impl_crockford_generator!(
+    McpSessionPrivateToken,
+    64usize,
+    TokenPrefix::McpSessionPrivate,
+    CrockfordLower
+);

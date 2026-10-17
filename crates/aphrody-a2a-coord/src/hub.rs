@@ -49,7 +49,13 @@ fn sanitize(label: &str) -> String {
         .trim()
         .to_ascii_lowercase()
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '_' | '-') { c } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '_' | '-') {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect::<String>()
         .trim_matches('-')
         .chars()
@@ -61,7 +67,9 @@ fn sanitize(label: &str) -> String {
 pub(crate) fn valid_segment(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
-        && value.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+        && value
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
 }
 
 impl SelfIdentity {
@@ -91,9 +99,14 @@ impl SelfIdentity {
             .unwrap_or_else(|| {
                 if present("CLAUDECODE") {
                     "claude".to_owned()
-                } else if ["CODEX_THREAD_ID", "CODEX_SESSION_ID", "CODEX_SANDBOX", "CODEX_CI"]
-                    .iter()
-                    .any(|key| present(key))
+                } else if [
+                    "CODEX_THREAD_ID",
+                    "CODEX_SESSION_ID",
+                    "CODEX_SANDBOX",
+                    "CODEX_CI",
+                ]
+                .iter()
+                .any(|key| present(key))
                 {
                     "codex".to_owned()
                 } else {
@@ -104,7 +117,12 @@ impl SelfIdentity {
             .map(|value| value.trim().to_owned())
             .filter(|value| valid_segment(value))
             .unwrap_or_else(|| format!("{agent}-{host}"));
-        Self { id, agent, host, os }
+        Self {
+            id,
+            agent,
+            host,
+            os,
+        }
     }
 }
 
@@ -171,8 +189,12 @@ async fn list_peers(State(dir): State<Arc<PathBuf>>) -> impl IntoResponse {
             if entry.path().extension().is_none_or(|ext| ext != "json") {
                 continue;
             }
-            let Ok(bytes) = tokio::fs::read(entry.path()).await else { continue };
-            let Ok(mut peer) = serde_json::from_slice::<PeerRecord>(&bytes) else { continue };
+            let Ok(bytes) = tokio::fs::read(entry.path()).await else {
+                continue;
+            };
+            let Ok(mut peer) = serde_json::from_slice::<PeerRecord>(&bytes) else {
+                continue;
+            };
             peer.online = is_online(&peer.last_seen, now);
             peers.push(peer);
         }
@@ -244,7 +266,9 @@ fn checked_credential(value: &str) -> Result<String, HubError> {
 /// Bearer credential: `APHRODY_A2A_TOKEN_FILE`, then `APHRODY_A2A_TOKEN`, then
 /// `APHRODY_A2A_COORD_TOKEN`. An unreadable configured file is an error, never an
 /// anonymous fallback.
-pub fn bearer_from_lookup(get: impl Fn(&str) -> Option<String>) -> Result<Option<String>, HubError> {
+pub fn bearer_from_lookup(
+    get: impl Fn(&str) -> Option<String>,
+) -> Result<Option<String>, HubError> {
     if let Some(path) = get("APHRODY_A2A_TOKEN_FILE").filter(|value| !value.trim().is_empty()) {
         let file = std::fs::File::open(&path)
             .map_err(|_| HubError::Credential("credential file unavailable"))?;
@@ -281,7 +305,11 @@ impl HubClient {
             .timeout(Duration::from_secs(15))
             .build()
             .unwrap_or_default();
-        Self { base: base.trim().trim_end_matches('/').to_owned(), token, http }
+        Self {
+            base: base.trim().trim_end_matches('/').to_owned(),
+            token,
+            http,
+        }
     }
 
     /// `Some` when `APHRODY_A2A_HUB_URL` is configured.
@@ -313,7 +341,10 @@ impl HubClient {
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(HubError::Status { status: status.as_u16(), body: body.chars().take(300).collect() });
+            return Err(HubError::Status {
+                status: status.as_u16(),
+                body: body.chars().take(300).collect(),
+            });
         }
         Ok(response.json::<Value>().await?)
     }
@@ -333,8 +364,10 @@ impl HubClient {
     pub async fn peers(&self) -> Result<Vec<PeerRecord>, HubError> {
         let response = self.request(reqwest::Method::GET, "/peers").send().await?;
         let value = Self::json(response).await?;
-        Ok(serde_json::from_value(value.get("peers").cloned().unwrap_or(json!([])))
-            .unwrap_or_default())
+        Ok(
+            serde_json::from_value(value.get("peers").cloned().unwrap_or(json!([])))
+                .unwrap_or_default(),
+        )
     }
 
     /// Deliver one envelope to the recipient's durable mailbox on the hub.
@@ -367,12 +400,17 @@ impl HubClient {
             return Err(HubError::InvalidPeer(id.to_owned()));
         }
         let response = self
-            .request(reqwest::Method::GET, &format!("/coord/{id}/envelopes?limit={limit}"))
+            .request(
+                reqwest::Method::GET,
+                &format!("/coord/{id}/envelopes?limit={limit}"),
+            )
             .send()
             .await?;
         let value = Self::json(response).await?;
-        Ok(serde_json::from_value(value.get("envelopes").cloned().unwrap_or(json!([])))
-            .unwrap_or_default())
+        Ok(
+            serde_json::from_value(value.get("envelopes").cloned().unwrap_or(json!([])))
+                .unwrap_or_default(),
+        )
     }
 
     /// Send a read receipt for `envelope` back to its sender.
@@ -408,31 +446,36 @@ mod tests {
     use super::*;
 
     fn lookup<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
-        move |key| pairs.iter().find(|(k, _)| *k == key).map(|(_, v)| (*v).to_owned())
+        move |key| {
+            pairs
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, v)| (*v).to_owned())
+        }
     }
 
     #[test]
     fn identity_prefers_explicit_peer_id_then_agent_and_host() {
-        let explicit = SelfIdentity::from_lookup(lookup(&[
-            (ENV_PEER_ID, "codex-vps"),
-            ("CLAUDECODE", "1"),
-        ]));
+        let explicit =
+            SelfIdentity::from_lookup(lookup(&[(ENV_PEER_ID, "codex-vps"), ("CLAUDECODE", "1")]));
         assert_eq!(explicit.id, "codex-vps");
 
         let claude =
             SelfIdentity::from_lookup(lookup(&[("CLAUDECODE", "1"), (ENV_HOST_ID, "Windows")]));
-        assert_eq!((claude.id.as_str(), claude.agent.as_str()), ("claude-windows", "claude"));
+        assert_eq!(
+            (claude.id.as_str(), claude.agent.as_str()),
+            ("claude-windows", "claude")
+        );
 
-        let codex = SelfIdentity::from_lookup(lookup(&[
-            ("CODEX_THREAD_ID", "t-1"),
-            (ENV_HOST_ID, "vps"),
-        ]));
+        let codex =
+            SelfIdentity::from_lookup(lookup(&[("CODEX_THREAD_ID", "t-1"), (ENV_HOST_ID, "vps")]));
         assert_eq!(codex.id, "codex-vps");
 
         let bare = SelfIdentity::from_lookup(lookup(&[]));
         assert_eq!(bare.id, format!("aphrody-{}", std::env::consts::OS));
 
-        let invalid = SelfIdentity::from_lookup(lookup(&[(ENV_PEER_ID, "../x"), (ENV_AGENT, "Grok")]));
+        let invalid =
+            SelfIdentity::from_lookup(lookup(&[(ENV_PEER_ID, "../x"), (ENV_AGENT, "Grok")]));
         assert_eq!(invalid.id, format!("grok-{}", std::env::consts::OS));
     }
 
@@ -472,7 +515,12 @@ mod tests {
     }
 
     fn identity(id: &str, agent: &str, host: &str) -> SelfIdentity {
-        SelfIdentity { id: id.into(), agent: agent.into(), host: host.into(), os: "test".into() }
+        SelfIdentity {
+            id: id.into(),
+            agent: agent.into(),
+            host: host.into(),
+            os: "test".into(),
+        }
     }
 
     #[tokio::test]
@@ -493,12 +541,24 @@ mod tests {
         codex.register(&codex_id).await.unwrap();
         let peers = claude.peers().await.unwrap();
         assert_eq!(
-            peers.iter().map(|p| (p.id.as_str(), p.host.as_str(), p.online)).collect::<Vec<_>>(),
-            [("claude-windows", "windows", true), ("codex-vps", "vps", true)]
+            peers
+                .iter()
+                .map(|p| (p.id.as_str(), p.host.as_str(), p.online))
+                .collect::<Vec<_>>(),
+            [
+                ("claude-windows", "windows", true),
+                ("codex-vps", "vps", true)
+            ]
         );
 
         let ask = claude
-            .send("claude-windows", "codex-vps", EnvelopeKind::Ask, "a2a.test", "ping from windows")
+            .send(
+                "claude-windows",
+                "codex-vps",
+                EnvelopeKind::Ask,
+                "a2a.test",
+                "ping from windows",
+            )
             .await
             .unwrap();
         let inbox = codex.inbox("codex-vps", 10).await.unwrap();
@@ -506,7 +566,11 @@ mod tests {
         assert_eq!(inbox[0]["id"], ask.id);
         assert_eq!(inbox[0]["body"], "ping from windows");
 
-        let receipt = codex.acknowledge("codex-vps", &inbox[0]).await.unwrap().unwrap();
+        let receipt = codex
+            .acknowledge("codex-vps", &inbox[0])
+            .await
+            .unwrap()
+            .unwrap();
         let back = claude.inbox("claude-windows", 10).await.unwrap();
         assert_eq!(back.len(), 1);
         assert_eq!(back[0]["kind"], "ack");
@@ -514,14 +578,22 @@ mod tests {
         assert_eq!(back[0]["id"], receipt.id);
 
         let reply = codex
-            .send("codex-vps", "claude-windows", EnvelopeKind::Fact, "a2a.test", "pong from vps")
+            .send(
+                "codex-vps",
+                "claude-windows",
+                EnvelopeKind::Fact,
+                "a2a.test",
+                "pong from vps",
+            )
             .await
             .unwrap();
         let back = claude.inbox("claude-windows", 10).await.unwrap();
         assert!(back.iter().any(|e| e["id"] == reply.id));
 
         assert!(matches!(
-            claude.send("claude-windows", "../x", EnvelopeKind::Ping, "t", "b").await,
+            claude
+                .send("claude-windows", "../x", EnvelopeKind::Ping, "t", "b")
+                .await,
             Err(HubError::InvalidPeer(_))
         ));
     }
@@ -531,7 +603,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let url = serve_hub(dir.path(), None).await;
         let client = HubClient::new(&url, None);
-        client.register(&identity("claude-windows", "claude", "windows")).await.unwrap();
+        client
+            .register(&identity("claude-windows", "claude", "windows"))
+            .await
+            .unwrap();
 
         let stale = PeerRecord {
             id: "codex-old".into(),
@@ -542,14 +617,19 @@ mod tests {
             online: false,
         };
         let peers_path = peers_dir(dir.path());
-        std::fs::write(peers_path.join("codex-old.json"), serde_json::to_vec(&stale).unwrap())
-            .unwrap();
+        std::fs::write(
+            peers_path.join("codex-old.json"),
+            serde_json::to_vec(&stale).unwrap(),
+        )
+        .unwrap();
 
         let peers = client.peers().await.unwrap();
         let online: Vec<_> = peers.iter().map(|p| (p.id.as_str(), p.online)).collect();
         assert_eq!(online, [("claude-windows", true), ("codex-old", false)]);
 
-        let bad = client.http.clone()
+        let bad = client
+            .http
+            .clone()
             .post(format!("{url}/peers"))
             .json(&json!({ "id": "../escape", "agent": "x" }))
             .send()

@@ -51,7 +51,10 @@ fn component_list_tsx(plan: &ReproductionPlan) -> String {
     plan.components
         .iter()
         .map(|c| {
-            format!("        <li>{} — from <code>{}</code></li>\n", c.component, c.source_hint)
+            format!(
+                "        <li>{} — from <code>{}</code></li>\n",
+                c.component, c.source_hint
+            )
         })
         .collect()
 }
@@ -101,7 +104,9 @@ mod tests {
 
     fn sample_plan() -> ReproductionPlan {
         ReproductionPlan {
-            source: crate::plan::ReproductionSource::Url { url: "https://example.com".to_owned() },
+            source: crate::plan::ReproductionSource::Url {
+                url: "https://example.com".to_owned(),
+            },
             theme: theme_from_seed(0xFF67_50A4, "test"),
             font_stacks: vec!["\"Google Sans\", sans-serif".to_owned()],
             corner_radius_dp: Some(16.0),
@@ -122,7 +127,13 @@ mod tests {
         let plan = sample_plan();
         emit_scaffold(&plan, &dir).expect("emit_scaffold");
 
-        for rel in ["m3.config.ts", "tokens.css", "plan.json", "src/index.html", "src/App.tsx"] {
+        for rel in [
+            "m3.config.ts",
+            "tokens.css",
+            "plan.json",
+            "src/index.html",
+            "src/App.tsx",
+        ] {
             let path = dir.join(rel);
             assert!(path.exists(), "missing {rel}");
         }

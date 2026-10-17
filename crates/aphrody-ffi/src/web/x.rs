@@ -137,18 +137,24 @@ fn session_from(value: &Value) -> Result<XSession, XError> {
             if let Some(path) = map.get("session_file").and_then(Value::as_str) {
                 return XSession::load_from(std::path::Path::new(path));
             }
-            let field = |key: &str| map.get(key).and_then(Value::as_str).filter(|v| !v.is_empty());
+            let field = |key: &str| {
+                map.get(key)
+                    .and_then(Value::as_str)
+                    .filter(|v| !v.is_empty())
+            };
             match (field("auth_token"), field("ct0")) {
                 (Some(auth_token), Some(ct0)) => {
                     let mut session = XSession::new(auth_token, ct0);
                     session.handle = field("handle").map(str::to_owned);
                     session.transaction_id = field("transaction_id").map(str::to_owned);
                     Ok(session)
-                },
+                }
                 (None, None) => XSession::discover(),
-                _ => Err(XError::Auth("a session needs both auth_token and ct0".into())),
+                _ => Err(XError::Auth(
+                    "a session needs both auth_token and ct0".into(),
+                )),
             }
-        },
+        }
         _ => XSession::discover(),
     }
 }
@@ -233,7 +239,7 @@ pub unsafe extern "C" fn aphrody_web_x_call(
         let text = match prepared {
             Ok((client, op, args)) => {
                 ops::execute_local(client.as_deref(), None, &op, &args).to_string()
-            },
+            }
             Err(info) => error_text(&info),
         };
         into_c_string(text)
@@ -298,7 +304,9 @@ pub unsafe extern "C" fn aphrody_web_x_submit(
         match prepared {
             Err(info) => jobs::resolved(error_text(&info)),
             Ok((client, op, args, id, run)) => jobs::submit(0, async move {
-                ops::execute(client.as_deref(), id.as_deref(), &op, &args, &run).await.to_string()
+                ops::execute(client.as_deref(), id.as_deref(), &op, &args, &run)
+                    .await
+                    .to_string()
             }),
         }
     })
@@ -402,7 +410,7 @@ pub extern "C" fn aphrody_web_x_batch_cancel(batch: u64) -> i32 {
         Some(entry) => {
             entry.abort.abort();
             1
-        },
+        }
         None => 0,
     })
 }
@@ -423,7 +431,9 @@ mod tests {
     fn text(ptr: *mut c_char) -> Value {
         assert!(!ptr.is_null());
         // SAFETY: the pointer was just returned by this library and is freed exactly once.
-        let value = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
+        let value = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
         unsafe { crate::aphrody_string_free(ptr) };
         serde_json::from_str(&value).unwrap()
     }
@@ -486,7 +496,10 @@ mod tests {
         assert_eq!(envelope["ok"], true, "{envelope}");
         assert_eq!(envelope["id"], "call-1");
         assert_eq!(envelope["data"]["screen_name"], "aphrody_code");
-        assert_eq!(server.requests()[0].header("x-csrf-token"), Some("CT0_PLACEHOLDER"));
+        assert_eq!(
+            server.requests()[0].header("x-csrf-token"),
+            Some("CT0_PLACEHOLDER")
+        );
         assert_eq!(aphrody_web_x_client_close(client), 1);
         assert_eq!(aphrody_web_x_client_close(client), 0);
     }
@@ -498,7 +511,11 @@ mod tests {
         // SAFETY: strings outlive the call.
         let id = unsafe { aphrody_web_x_submit(0, op.as_ptr(), args.as_ptr(), std::ptr::null()) };
         assert!(id > 0);
-        assert_eq!(jobs::web_internal_job_status(id), 1, "resolved without running");
+        assert_eq!(
+            jobs::web_internal_job_status(id),
+            1,
+            "resolved without running"
+        );
         let envelope = wait_job(id);
         assert_eq!(envelope["ok"], false);
         assert_eq!(envelope["error"]["kind"], "invalid");
@@ -511,7 +528,12 @@ mod tests {
         let unknown = unsafe {
             aphrody_web_x_submit(99_999, op.as_ptr(), std::ptr::null(), std::ptr::null())
         };
-        assert!(wait_job(unknown)["error"]["message"].as_str().unwrap().contains("unknown client"));
+        assert!(
+            wait_job(unknown)["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("unknown client")
+        );
     }
 
     #[test]
@@ -526,7 +548,12 @@ mod tests {
         let net = c("search");
         let refused = text(unsafe { aphrody_web_x_call(0, net.as_ptr(), std::ptr::null()) });
         assert_eq!(refused["ok"], false);
-        assert!(refused["error"]["message"].as_str().unwrap().contains("network operation"));
+        assert!(
+            refused["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("network operation")
+        );
 
         let meta = c("meta");
         let table = text(unsafe { aphrody_web_x_call(0, meta.as_ptr(), std::ptr::null()) });
@@ -539,14 +566,22 @@ mod tests {
         // SAFETY: strings outlive the call.
         let refused = text(unsafe { aphrody_web_x_client_open(half.as_ptr(), std::ptr::null()) });
         assert_eq!(refused["ok"], false);
-        assert!(refused["error"]["message"].as_str().unwrap().contains("both auth_token and ct0"));
+        assert!(
+            refused["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("both auth_token and ct0")
+        );
         let bad = c("{oops");
         let refused = text(unsafe { aphrody_web_x_client_open(bad.as_ptr(), std::ptr::null()) });
         assert_eq!(refused["error"]["kind"], "invalid");
         let cookie = c(r#""auth_token=AAA; ct0=BBB""#);
         let opened = text(unsafe { aphrody_web_x_client_open(cookie.as_ptr(), std::ptr::null()) });
         assert_eq!(opened["ok"], true);
-        assert_eq!(aphrody_web_x_client_close(opened["client"].as_u64().unwrap()), 1);
+        assert_eq!(
+            aphrody_web_x_client_close(opened["client"].as_u64().unwrap()),
+            1
+        );
     }
 
     #[test]
@@ -586,7 +621,10 @@ mod tests {
         assert_eq!(items.len(), 3);
         let failed = items.iter().find(|i| i["id"] == "b").unwrap();
         assert_eq!(failed["error"]["kind"], "terminal");
-        assert_eq!((summary["ok"].clone(), summary["failed"].clone()), (json!(2), json!(1)));
+        assert_eq!(
+            (summary["ok"].clone(), summary["failed"].clone()),
+            (json!(2), json!(1))
+        );
 
         // The final poll forgot the batch.
         let gone = text(aphrody_web_x_batch_poll(batch, 10));
@@ -606,7 +644,12 @@ mod tests {
             aphrody_web_x_batch_submit(client, duplicate.as_ptr(), std::ptr::null())
         });
         assert_eq!(refused["ok"], false);
-        assert!(refused["error"]["message"].as_str().unwrap().contains("duplicate operation id"));
+        assert!(
+            refused["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("duplicate operation id")
+        );
         let garbage = c(r#"{"not":"a list"}"#);
         let refused =
             text(unsafe { aphrody_web_x_batch_submit(client, garbage.as_ptr(), std::ptr::null()) });
@@ -614,7 +657,12 @@ mod tests {
         let ops = c("[]");
         let refused =
             text(unsafe { aphrody_web_x_batch_submit(0, ops.as_ptr(), std::ptr::null()) });
-        assert!(refused["error"]["message"].as_str().unwrap().contains("open client"));
+        assert!(
+            refused["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("open client")
+        );
         assert_eq!(server.count(), 0);
         aphrody_web_x_client_close(client);
     }

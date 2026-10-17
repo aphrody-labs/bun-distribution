@@ -97,7 +97,9 @@ impl SoccerPerformanceConfig {
     /// Vérité terrain : entrée 0 → `"performance_img/img_performance_type_01"`.
     #[must_use]
     pub fn image_name(&self) -> String {
-        self.texture_file_path.replacen(IMG_PREFIX, "", 1).replacen(IMG_SUFFIX, "", 1)
+        self.texture_file_path
+            .replacen(IMG_PREFIX, "", 1)
+            .replacen(IMG_SUFFIX, "", 1)
     }
 }
 

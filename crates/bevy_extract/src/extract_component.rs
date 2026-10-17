@@ -1,7 +1,7 @@
 use crate::{
+    Extract, ExtractSchedule,
     sync_component::{SyncComponent, SyncComponentPlugin},
     sync_world::SubEntity,
-    Extract, ExtractSchedule,
 };
 use bevy_app::{App, AppLabel, Plugin};
 use bevy_camera::visibility::ViewVisibility;
@@ -78,11 +78,8 @@ impl<C, L: AppLabel, F> ExtractComponentPlugin<C, L, F> {
     }
 }
 
-impl<
-        C: ExtractComponent<L, F>,
-        L: AppLabel + Default + Clone + Copy + Eq,
-        F: 'static + Send + Sync,
-    > Plugin for ExtractComponentPlugin<C, L, F>
+impl<C: ExtractComponent<L, F>, L: AppLabel + Default + Clone + Copy + Eq, F: 'static + Send + Sync>
+    Plugin for ExtractComponentPlugin<C, L, F>
 {
     fn build(&self, app: &mut App) {
         app.add_plugins(SyncComponentPlugin::<C, L, F>::default());

@@ -32,14 +32,28 @@ fn settle(u: &mut Ui) -> Vec<Shape> {
 
 fn click(u: &mut Ui, p: Pos2) {
     for pressed in [true, false] {
-        u.frame(vec![Event::PointerMoved(p), Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }]);
+        u.frame(vec![
+            Event::PointerMoved(p),
+            Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed,
+                modifiers: Modifiers::NONE,
+            },
+        ]);
     }
     u.frame(vec![]);
 }
 
 fn press(u: &mut Ui, key: Key) {
     for pressed in [true, false] {
-        u.frame(vec![Event::Key { key, physical_key: None, pressed, repeat: false, modifiers: Modifiers::NONE }]);
+        u.frame(vec![Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Modifiers::NONE,
+        }]);
     }
 }
 
@@ -58,14 +72,38 @@ fn the_sidebar_has_recents_online_and_templates_and_no_placeholders() {
     assert!(!has_text(&s, "Drafts") && !has_text(&s, "Community"));
     u.ctx.enable_accesskit();
     u.frame(vec![]);
-    let nodes: Vec<_> = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes.into_iter().map(|(_, n)| n).collect();
-    let tab = |label: &str| nodes.iter().find(|n| n.role() == Role::Tab && n.label() == Some(label)).unwrap_or_else(|| panic!("no tab {label}"));
-    assert_eq!((tab("Recents").is_selected(), tab("Online").is_selected(), tab("Templates").is_selected()), (Some(true), Some(false), Some(false)));
+    let nodes: Vec<_> = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes
+        .into_iter()
+        .map(|(_, n)| n)
+        .collect();
+    let tab = |label: &str| {
+        nodes
+            .iter()
+            .find(|n| n.role() == Role::Tab && n.label() == Some(label))
+            .unwrap_or_else(|| panic!("no tab {label}"))
+    };
+    assert_eq!(
+        (
+            tab("Recents").is_selected(),
+            tab("Online").is_selected(),
+            tab("Templates").is_selected()
+        ),
+        (Some(true), Some(false), Some(false))
+    );
     // In reading order: Recents, Online, Templates.
     let top = |label: &str| tab(label).bounds().unwrap().y0;
     assert!(top("Recents") < top("Online") && top("Online") < top("Templates"));
     // Each is clicked into, and `ui.inspect` and `ui.set {homeSection}` name them the same way.
-    for (label, section) in [("Online", Section::Online), ("Templates", Section::Templates), ("Recents", Section::Recents)] {
+    for (label, section) in [
+        ("Online", Section::Online),
+        ("Templates", Section::Templates),
+        ("Recents", Section::Recents),
+    ] {
         let s = shapes(&mut u);
         click(&mut u, text_center(&s, label));
         assert_eq!(u.app.ui.home_view.section, section);
@@ -78,7 +116,11 @@ fn the_sidebar_has_recents_online_and_templates_and_no_placeholders() {
     // The Online section is the online files' own.
     u.app.ui.home_view.section = Section::Online;
     let s = settle(&mut u);
-    assert!(has_text(&s, "Online files") && !has_text(&s, "Getting started") && !has_text(&s, "Start from a template"));
+    assert!(
+        has_text(&s, "Online files")
+            && !has_text(&s, "Getting started")
+            && !has_text(&s, "Start from a template")
+    );
 }
 
 #[test]
@@ -89,12 +131,19 @@ fn the_templates_grid_shows_every_template_and_a_click_opens_a_new_document() {
         assert!(has_text(&s, t.name), "{}", t.name);
     }
     assert!(has_text(&s, "Apps · 390 × 844"), "the kind and size tag");
-    assert_eq!(cached_thumbnails(&u.ctx, false).len(), TEMPLATES.len(), "every card has its picture");
+    assert_eq!(
+        cached_thumbnails(&u.ctx, false).len(),
+        TEMPLATES.len(),
+        "every card has its picture"
+    );
     click(&mut u, text_center(&s, "Dashboard"));
     assert_eq!(u.app.session.docs.len(), 1);
     let ds = u.app.session.ds().unwrap();
     assert_eq!(ds.doc.name, "Dashboard");
-    assert!(ds.path.is_none() && !ds.is_dirty(), "a new, untitled-on-disk document");
+    assert!(
+        ds.path.is_none() && !ds.is_dirty(),
+        "a new, untitled-on-disk document"
+    );
     assert!(!u.app.ui.home, "and the editor shows it");
     // Again: another document, the first untouched.
     let before = u.app.session.docs[0].doc.clone();
@@ -112,10 +161,23 @@ fn cards_are_reached_with_tab_named_for_screen_readers_and_opened_with_enter() {
     templates_tab(&mut u);
     u.ctx.enable_accesskit();
     u.frame(vec![]);
-    let nodes: Vec<_> = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes.into_iter().map(|(_, n)| n).collect();
+    let nodes: Vec<_> = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes
+        .into_iter()
+        .map(|(_, n)| n)
+        .collect();
     for t in TEMPLATES {
         let name = format!("{}: {}", t.name, t.description);
-        assert!(nodes.iter().any(|n| n.role() == Role::Button && n.label() == Some(name.as_str())), "no button named {name:?}");
+        assert!(
+            nodes
+                .iter()
+                .any(|n| n.role() == Role::Button && n.label() == Some(name.as_str())),
+            "no button named {name:?}"
+        );
     }
     assert!(nodes.iter().any(|n| n.label() == Some("Search templates")));
     // Tab walks the controls; the first card it reaches opens with Enter.
@@ -149,7 +211,11 @@ fn search_and_kind_filter_the_grid_and_nothing_found_offers_a_way_back() {
     let s = settle(&mut u);
     click(&mut u, text_center(&s, "Websites"));
     let s = settle(&mut u);
-    assert!(has_text(&s, "Landing page") && !has_text(&s, "Mobile app") && !has_text(&s, "Icon set starter"));
+    assert!(
+        has_text(&s, "Landing page")
+            && !has_text(&s, "Mobile app")
+            && !has_text(&s, "Icon set starter")
+    );
     u.app.ui.home_view.query = "zzz".into();
     let s = settle(&mut u);
     assert!(has_text(&s, "No templates match your search"));
@@ -181,8 +247,16 @@ fn thumbnails_are_cached_per_theme() {
     assert!(cached_thumbnails(&u.ctx, true).is_empty());
     u.app.session.prefs.theme = "dark".into();
     settle(&mut u);
-    assert_eq!(cached_thumbnails(&u.ctx, true).len(), TEMPLATES.len(), "the dark theme's pictures");
-    assert_eq!(cached_thumbnails(&u.ctx, false).len(), TEMPLATES.len(), "the light ones are kept");
+    assert_eq!(
+        cached_thumbnails(&u.ctx, true).len(),
+        TEMPLATES.len(),
+        "the dark theme's pictures"
+    );
+    assert_eq!(
+        cached_thumbnails(&u.ctx, false).len(),
+        TEMPLATES.len(),
+        "the light ones are kept"
+    );
 }
 
 #[test]
@@ -193,7 +267,11 @@ fn the_home_screen_draws_no_frames_once_its_thumbnails_are_in() {
         h.app.ui.home_view.section = tab;
         h.frames(60);
         let (_, delay) = h.frame(vec![]);
-        assert!(delay >= std::time::Duration::from_secs(1), "{tab:?} asks for a frame in {delay:?}: {:?}", h.ctx.repaint_causes());
+        assert!(
+            delay >= std::time::Duration::from_secs(1),
+            "{tab:?} asks for a frame in {delay:?}: {:?}",
+            h.ctx.repaint_causes()
+        );
     }
     assert_eq!(cached_thumbnails(&h.ctx, false).len(), TEMPLATES.len());
 }
@@ -219,7 +297,10 @@ fn a_first_run_offers_templates_on_recents_and_recent_files_replace_them() {
     let s = settle(&mut u);
     assert!(has_text(&s, "Recent files") && has_text(&s, "ridgeline.figcraft"));
     assert!(!has_text(&s, "Start from a template") && !has_text(&s, "See all templates"));
-    assert!(has_text(&s, "Open files"), "the document opened from the template is listed");
+    assert!(
+        has_text(&s, "Open files"),
+        "the document opened from the template is listed"
+    );
 }
 
 #[test]
@@ -227,7 +308,14 @@ fn the_getting_started_card_closes_stays_closed_and_comes_back_from_help() {
     let mut u = first_run();
     let s = settle(&mut u);
     assert!(has_text(&s, "Getting started"));
-    for tip in ["Draw a frame", "Add auto layout", "Make a component", "Prototype", "Share with a code", "Export"] {
+    for tip in [
+        "Draw a frame",
+        "Add auto layout",
+        "Make a component",
+        "Prototype",
+        "Share with a code",
+        "Export",
+    ] {
         assert!(has_text(&s, tip), "{tip}");
     }
     // Shortcuts come from the keymap.
@@ -236,23 +324,43 @@ fn the_getting_started_card_closes_stays_closed_and_comes_back_from_help() {
     // The close button is named, and closes the card.
     u.ctx.enable_accesskit();
     u.frame(vec![]);
-    let nodes = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
-    let close = nodes.iter().map(|(_, n)| n).find(|n| n.label().is_some_and(|l| l.starts_with("Hide these tips"))).expect("a named close button");
+    let nodes = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes;
+    let close = nodes
+        .iter()
+        .map(|(_, n)| n)
+        .find(|n| n.label().is_some_and(|l| l.starts_with("Hide these tips")))
+        .expect("a named close button");
     let b = close.bounds().unwrap();
-    click(&mut u, Pos2::new(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32));
+    click(
+        &mut u,
+        Pos2::new(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32),
+    );
     assert!(u.app.session.prefs.getting_started_dismissed);
     let s = settle(&mut u);
     assert!(!has_text(&s, "Getting started") && !has_text(&s, "Draw a frame"));
-    assert!(has_text(&s, "Start from a template"), "the rest of the screen stays");
+    assert!(
+        has_text(&s, "Start from a template"),
+        "the rest of the screen stays"
+    );
     // The preference is kept with the others, so it stays closed next time.
-    let kept: figcraft_engine::Prefs = serde_json::from_value(serde_json::to_value(&u.app.session.prefs).unwrap()).unwrap();
+    let kept: figcraft_engine::Prefs =
+        serde_json::from_value(serde_json::to_value(&u.app.session.prefs).unwrap()).unwrap();
     assert!(kept.getting_started_dismissed);
     // Help ▸ Getting started: back on the home screen, from wherever.
     u.app.run("file.new", json!({}));
     u.app.ui.home = false;
     u.app.ui.home_view.section = Section::Templates;
     crate::menus::invoke(&mut u.app, "help.gettingStarted");
-    assert!(u.app.ui.home && u.app.ui.home_view.section == Section::Recents && !u.app.session.prefs.getting_started_dismissed);
+    assert!(
+        u.app.ui.home
+            && u.app.ui.home_view.section == Section::Recents
+            && !u.app.session.prefs.getting_started_dismissed
+    );
     assert!(has_text(&settle(&mut u), "Getting started"));
 }
 
@@ -262,7 +370,11 @@ fn the_file_menu_item_shows_the_templates() {
     u.app.ui.home = false;
     crate::menus::invoke(&mut u.app, "file.newFromTemplate");
     assert!(u.app.ui.home && u.app.ui.home_view.section == Section::Templates);
-    assert_eq!(u.app.session.docs.len(), 1, "nothing opens until one is chosen");
+    assert_eq!(
+        u.app.session.docs.len(),
+        1,
+        "nothing opens until one is chosen"
+    );
     assert!(has_text(&settle(&mut u), "Wireframe kit"));
 }
 
@@ -277,6 +389,16 @@ fn tab_walks_the_sidebar_in_order_before_a_sections_controls() {
             names.push(name);
         }
     }
-    let at = |name: &str| names.iter().position(|n| n == name).unwrap_or_else(|| panic!("Tab never reached {name:?}: {names:?}"));
-    assert!(at("Recents") < at("Online") && at("Online") < at("Templates") && at("Templates") < at("Open file"), "{names:?}");
+    let at = |name: &str| {
+        names
+            .iter()
+            .position(|n| n == name)
+            .unwrap_or_else(|| panic!("Tab never reached {name:?}: {names:?}"))
+    };
+    assert!(
+        at("Recents") < at("Online")
+            && at("Online") < at("Templates")
+            && at("Templates") < at("Open file"),
+        "{names:?}"
+    );
 }

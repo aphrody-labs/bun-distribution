@@ -6,23 +6,40 @@ use photocraft_engine::Session;
 use serde_json::{Value, json};
 
 fn text(s: &Session, id: LayerId) -> TextLayer {
-    let LayerContent::Text(t) = &s.active().unwrap().doc.layer(id).unwrap().content else { panic!("not type") };
+    let LayerContent::Text(t) = &s.active().unwrap().doc.layer(id).unwrap().content else {
+        panic!("not type")
+    };
     t.clone()
 }
 
 fn select(s: &mut Session, ids: &[LayerId]) {
     for (i, id) in ids.iter().enumerate() {
-        s.execute("layer.select", json!({"layer": id.0, "mode": if i == 0 { "replace" } else { "add" }})).unwrap();
+        s.execute(
+            "layer.select",
+            json!({"layer": id.0, "mode": if i == 0 { "replace" } else { "add" }}),
+        )
+        .unwrap();
     }
 }
 
 fn fixture() -> (Session, Vec<LayerId>, LayerId) {
     let mut s = Session::new();
-    s.execute("file.new", json!({"width": 400, "height": 240, "background": "white"})).unwrap();
+    s.execute(
+        "file.new",
+        json!({"width": 400, "height": 240, "background": "white"}),
+    )
+    .unwrap();
     let raster = s.active().unwrap().active_layer.unwrap();
     let mut ids = Vec::new();
-    for (i, (size, weight, italic, kern)) in
-        [(50, 400, false, 0), (30, 700, false, 0), (20, 400, true, -100), (10, 400, false, -50), (18, 600, false, 25)].into_iter().enumerate()
+    for (i, (size, weight, italic, kern)) in [
+        (50, 400, false, 0),
+        (30, 700, false, 0),
+        (20, 400, true, -100),
+        (10, 400, false, -50),
+        (18, 600, false, 25),
+    ]
+    .into_iter()
+    .enumerate()
     {
         let id = s
             .execute(
@@ -32,7 +49,11 @@ fn fixture() -> (Session, Vec<LayerId>, LayerId) {
             .unwrap()["layer"]
             .as_u64()
             .unwrap();
-        s.execute("type.setStyle", json!({"layer": id, "range": [1, 3], "tracking": 30 + i, "underline": i % 2 == 0})).unwrap();
+        s.execute(
+            "type.setStyle",
+            json!({"layer": id, "range": [1, 3], "tracking": 30 + i, "underline": i % 2 == 0}),
+        )
+        .unwrap();
         ids.push(LayerId(id));
     }
     (s, ids, raster)
@@ -69,12 +90,21 @@ fn selected_type_properties_preserve_each_layers_other_attributes_and_one_histor
         let mut selected: Vec<_> = indices.iter().map(|i| ids[*i]).collect();
         selected.push(raster); // The primary layer need not be Type.
         select(&mut s, &selected);
-        let target = (s.active().unwrap().active_layer, s.active().unwrap().selected_layers());
+        let target = (
+            s.active().unwrap().active_layer,
+            s.active().unwrap().selected_layers(),
+        );
         let before: Vec<_> = ids.iter().map(|id| text(&s, *id)).collect();
         let steps = s.active().unwrap().history.entries().len();
         s.execute("type.setStyle", params).unwrap();
         assert_eq!(s.active().unwrap().history.entries().len(), steps + 1);
-        assert_eq!((s.active().unwrap().active_layer, s.active().unwrap().selected_layers()), target);
+        assert_eq!(
+            (
+                s.active().unwrap().active_layer,
+                s.active().unwrap().selected_layers()
+            ),
+            target
+        );
         for (i, id) in ids.iter().enumerate() {
             let mut expected = before[i].clone();
             if indices.contains(&i) {
@@ -85,7 +115,10 @@ fn selected_type_properties_preserve_each_layers_other_attributes_and_one_histor
             let actual = text(&s, *id);
             assert_styles(&actual, &expected);
             if indices.contains(&i) {
-                assert_ne!(actual.psd_raw, before[i].psd_raw, "editable PSD data refreshed");
+                assert_ne!(
+                    actual.psd_raw, before[i].psd_raw,
+                    "editable PSD data refreshed"
+                );
                 let damage = s.active().unwrap().last_damage.unwrap();
                 for t in [&before[i], &actual] {
                     let bounds = t.cache.as_ref().unwrap().tile_bounds();
@@ -98,7 +131,13 @@ fn selected_type_properties_preserve_each_layers_other_attributes_and_one_histor
             assert_styles(&text(&s, *id), old);
         }
         assert!(s.redo());
-        assert_eq!((s.active().unwrap().active_layer, s.active().unwrap().selected_layers()), target);
+        assert_eq!(
+            (
+                s.active().unwrap().active_layer,
+                s.active().unwrap().selected_layers()
+            ),
+            target
+        );
     }
 }
 
@@ -107,7 +146,11 @@ fn explicit_type_layer_ranges_and_batch_paragraph_properties_keep_their_scope() 
     let (mut s, ids, raster) = fixture();
     select(&mut s, &ids[..4]);
     let before: Vec<_> = ids.iter().map(|id| text(&s, *id)).collect();
-    s.execute("type.setStyle", json!({"layer": ids[0].0, "range": [1, 3], "fauxBold": true})).unwrap();
+    s.execute(
+        "type.setStyle",
+        json!({"layer": ids[0].0, "range": [1, 3], "fauxBold": true}),
+    )
+    .unwrap();
     let changed = text(&s, ids[0]);
     assert!(!changed.runs[0].style.faux_bold);
     assert!(changed.runs[1].style.faux_bold);
@@ -138,17 +181,33 @@ fn explicit_type_layer_ranges_and_batch_paragraph_properties_keep_their_scope() 
 #[test]
 fn shown_type_metrics_convert_per_target_coalesce_and_fail_atomically() {
     let (mut s, ids, _) = fixture();
-    s.execute("type.edit", json!({"layer": ids[0].0, "transform": [2, 0, 0, 2, 20, 80]})).unwrap();
-    s.execute("type.edit", json!({"layer": ids[1].0, "transform": [0.5, 0, 0, 0.5, 75, 80]})).unwrap();
+    s.execute(
+        "type.edit",
+        json!({"layer": ids[0].0, "transform": [2, 0, 0, 2, 20, 80]}),
+    )
+    .unwrap();
+    s.execute(
+        "type.edit",
+        json!({"layer": ids[1].0, "transform": [0.5, 0, 0, 0.5, 75, 80]}),
+    )
+    .unwrap();
     select(&mut s, &ids[..2]);
     let before = [text(&s, ids[0]), text(&s, ids[1])];
     let steps = s.active().unwrap().history.entries().len();
     for size in [24, 30] {
-        s.execute("type.setStyle", json!({"metricsAsShown": true, "size": size, "leading": 40, "coalesce": "batch-size"})).unwrap();
+        s.execute(
+            "type.setStyle",
+            json!({"metricsAsShown": true, "size": size, "leading": 40, "coalesce": "batch-size"}),
+        )
+        .unwrap();
     }
     for (i, scale) in [2.0, 0.5].into_iter().enumerate() {
         let t = text(&s, ids[i]);
-        assert!(t.runs.iter().all(|r| r.style.size_pt == 30.0 / scale && r.style.leading_pt == Some(40.0 / scale)));
+        assert!(
+            t.runs.iter().all(
+                |r| r.style.size_pt == 30.0 / scale && r.style.leading_pt == Some(40.0 / scale)
+            )
+        );
         assert_eq!(t.transform, before[i].transform);
     }
     assert_eq!(s.active().unwrap().history.entries().len(), steps + 1);
@@ -161,15 +220,27 @@ fn shown_type_metrics_convert_per_target_coalesce_and_fail_atomically() {
     let revision = s.active().unwrap().revision;
     let steps = s.active().unwrap().history.entries().len();
     // The second target would exceed the existing 1296pt limit after conversion.
-    assert!(s.execute("type.setStyle", json!({"metricsAsShown": true, "size": 700})).is_err());
+    assert!(
+        s.execute(
+            "type.setStyle",
+            json!({"metricsAsShown": true, "size": 700})
+        )
+        .is_err()
+    );
     assert_eq!(s.active().unwrap().revision, revision);
     assert_eq!(s.active().unwrap().history.entries().len(), steps);
     for i in 0..2 {
         assert_styles(&text(&s, ids[i]), &unchanged[i]);
     }
-    s.execute("type.setStyle", json!({"size": 22, "leading": 26})).unwrap();
+    s.execute("type.setStyle", json!({"size": 22, "leading": 26}))
+        .unwrap();
     for id in &ids[..2] {
-        assert!(text(&s, *id).runs.iter().all(|r| r.style.size_pt == 22.0 && r.style.leading_pt == Some(26.0)));
+        assert!(
+            text(&s, *id)
+                .runs
+                .iter()
+                .all(|r| r.style.size_pt == 22.0 && r.style.leading_pt == Some(26.0))
+        );
     }
 }
 
@@ -186,7 +257,10 @@ fn direct_type_formatting_menu_routes_batch_without_enabling_structural_commands
         ("type.warpText", json!({"style": "arc", "bend": 15})),
         ("type.loadDefaultTypeStyles", json!({})),
     ] {
-        assert!(s.is_enabled(command), "{command} supports selected Type peers");
+        assert!(
+            s.is_enabled(command),
+            "{command} supports selected Type peers"
+        );
         assert!(!s.is_enabled("type.convertToShape"));
         let before: Vec<_> = ids.iter().map(|id| text(&s, *id)).collect();
         let steps = s.active().unwrap().history.entries().len();
@@ -201,7 +275,10 @@ fn direct_type_formatting_menu_routes_batch_without_enabling_structural_commands
                     "type.orientation.vertical" => expected.orientation = Orientation::Vertical,
                     "type.openType.fractions" => {
                         for run in &mut expected.runs {
-                            run.style.features.push(photocraft_doc::text::FontFeature { tag: "frac".into(), value: 1 });
+                            run.style.features.push(photocraft_doc::text::FontFeature {
+                                tag: "frac".into(),
+                                value: 1,
+                            });
                         }
                     }
                     "type.warpText" => {
@@ -209,7 +286,10 @@ fn direct_type_formatting_menu_routes_batch_without_enabling_structural_commands
                         expected.warp = actual.warp.clone();
                     }
                     _ => {
-                        expected.runs = vec![photocraft_doc::text::TextRun { len: expected.text.len(), style: defaults.runs[0].style.clone() }];
+                        expected.runs = vec![photocraft_doc::text::TextRun {
+                            len: expected.text.len(),
+                            style: defaults.runs[0].style.clone(),
+                        }];
                         expected.paragraphs = defaults.paragraphs.clone();
                     }
                 }
@@ -228,7 +308,10 @@ fn invalid_explicit_type_targets_leave_the_whole_batch_unchanged() {
     let (mut s, ids, _) = fixture();
     let before = text(&s, ids[0]);
     let revision = s.active().unwrap().revision;
-    for params in [json!({"layers": [ids[0].0, u64::MAX], "size": 40}), json!({"layers": [ids[0].0, "bad"], "size": 40})] {
+    for params in [
+        json!({"layers": [ids[0].0, u64::MAX], "size": 40}),
+        json!({"layers": [ids[0].0, "bad"], "size": 40}),
+    ] {
         assert!(s.execute("type.setStyle", params).is_err());
         assert_eq!(s.active().unwrap().revision, revision);
         assert_styles(&text(&s, ids[0]), &before);

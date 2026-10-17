@@ -4,7 +4,11 @@ use vectorcraft_geom::{Affine, BezPath};
 
 use super::*;
 
-const RED: Color = Color::Rgb { r: 0.8, g: 0.2, b: 0.1 };
+const RED: Color = Color::Rgb {
+    r: 0.8,
+    g: 0.2,
+    b: 0.1,
+};
 
 fn square_node() -> Node {
     let mut b = BezPath::new();
@@ -13,7 +17,11 @@ fn square_node() -> Node {
     b.line_to((200.0, 200.0));
     b.line_to((100.0, 200.0));
     b.close_path();
-    Node::path(NodeId(1), PathData::from_bezpath(&b), Appearance::basic(Paint::solid(RED), Paint::solid(Color::BLACK), 4.0))
+    Node::path(
+        NodeId(1),
+        PathData::from_bezpath(&b),
+        Appearance::basic(Paint::solid(RED), Paint::solid(Color::BLACK), 4.0),
+    )
 }
 
 fn fx(id: &str, params: Value) -> Effect {
@@ -22,7 +30,11 @@ fn fx(id: &str, params: Value) -> Effect {
 
 /// The shaded faces of every surface of `art`, bottom first.
 fn faces(art: &Node) -> Vec<&Node> {
-    art.children().unwrap().iter().flat_map(|s| s.children().unwrap().iter().map(|f| &**f)).collect()
+    art.children()
+        .unwrap()
+        .iter()
+        .flat_map(|s| s.children().unwrap().iter().map(|f| &**f))
+        .collect()
 }
 
 fn fill_rgb(n: &Node) -> [f32; 3] {
@@ -44,13 +56,21 @@ fn every_solid_draws_shaded_faces_and_leaves_the_source_editable() {
         // The faces are the fill's red, shaded: never brighter, never another hue.
         for f in faces(&art) {
             let [r, g, b] = fill_rgb(f);
-            assert!(r <= 0.8 + 1e-6 && (g * 4.0 - r).abs() < 1e-4 && (b * 8.0 - r).abs() < 1e-4 || id == ROTATE, "{id}: {r} {g} {b}");
+            assert!(
+                r <= 0.8 + 1e-6 && (g * 4.0 - r).abs() < 1e-4 && (b * 8.0 - r).abs() < 1e-4
+                    || id == ROTATE,
+                "{id}: {r} {g} {b}"
+            );
         }
         // The art follows the source when it moves.
         let before = art.visual_bounds().unwrap();
         n.transform(Affine::translate((50.0, -30.0)), false);
         let after = solid_art(&n).unwrap().visual_bounds().unwrap();
-        assert!((after.x0 - before.x0 - 50.0).abs() < 1e-6 && (after.y0 - before.y0 + 30.0).abs() < 1e-6, "{id}");
+        assert!(
+            (after.x0 - before.x0 - 50.0).abs() < 1e-6
+                && (after.y0 - before.y0 + 30.0).abs() < 1e-6,
+            "{id}"
+        );
         // Hidden, the effect draws nothing of its own.
         n.appearance.effects[0].visible = false;
         assert!(solid_art(&n).is_none(), "{id}");
@@ -66,12 +86,20 @@ fn rotate_turns_every_fill_and_stroke_and_the_solids_use_the_top_fill() {
     let surfaces = art.children().unwrap();
     assert_eq!(surfaces.len(), 2);
     let paint = |s: &Node| fill_rgb(&s.children().unwrap()[0]);
-    assert!(paint(&surfaces[0])[0] > paint(&surfaces[0])[1], "the red fill below");
-    assert!(paint(&surfaces[1]).iter().all(|c| *c < 0.05), "the black stroke above");
+    assert!(
+        paint(&surfaces[0])[0] > paint(&surfaces[0])[1],
+        "the red fill below"
+    );
+    assert!(
+        paint(&surfaces[1]).iter().all(|c| *c < 0.05),
+        "the black stroke above"
+    );
     // Turned 60° about y with no perspective, the stroke's outline spans half its width plus the
     // stroke's own outset, foreshortened as well.
     n.appearance.effects[0].params = json!({"rotationX": 0, "rotationY": 60, "rotationZ": 0});
-    let b = solid_art(&n).unwrap().children().unwrap()[1].visual_bounds().unwrap();
+    let b = solid_art(&n).unwrap().children().unwrap()[1]
+        .visual_bounds()
+        .unwrap();
     assert!((b.width() - 104.0 * 0.5 - 0.75).abs() < 1e-6, "{b:?}");
     // Extrude & Bevel paints one surface with the top fill.
     let mut n = square_node();
@@ -93,7 +121,13 @@ fn transparency_stays_on_the_whole_surface_and_items_take_their_own_effect() {
     // The fill inflated, the stroke drawn flat as it was.
     assert_eq!(surfaces.len(), 2);
     assert_eq!(surfaces[0].opacity, 0.4);
-    assert!(surfaces[0].children().unwrap().iter().all(|c| c.opacity == 1.0));
+    assert!(
+        surfaces[0]
+            .children()
+            .unwrap()
+            .iter()
+            .all(|c| c.opacity == 1.0)
+    );
     assert!(matches!(surfaces[1].kind, NodeKind::Path { .. }));
 }
 
@@ -103,7 +137,9 @@ fn export_and_expand_bake_faces_with_their_own_ids() {
         let mut d = Document::new(400.0, 400.0);
         let mut n = square_node();
         n.id = d.alloc_id();
-        n.appearance.effects.push(fx(id, json!({"bevel": "rounded"})));
+        n.appearance
+            .effects
+            .push(fx(id, json!({"bevel": "rounded"})));
         assert_eq!(crate::bake_appearance(&n), solid_art(&n), "{id}");
         let mut stroke = |_: &mut Document, _: &PathData, _: FillRule, _: &StrokeLayer| None;
         let art = crate::expand_leaf(&mut d, &n, &mut stroke).unwrap();
@@ -149,25 +185,56 @@ fn a_twisted_tapered_hollow_inflate_exports_and_expands() {
 #[test]
 fn effects_before_it_shape_the_solid_and_effects_after_it_bend_the_result() {
     let mut n = square_node();
-    n.appearance.effects.push(fx("path.offsetPath", json!({"offset": 20})));
-    n.appearance.effects.push(fx(EXTRUDE, json!({"rotationX": 0, "rotationY": 0, "rotationZ": 0, "perspective": 0})));
+    n.appearance
+        .effects
+        .push(fx("path.offsetPath", json!({"offset": 20})));
+    n.appearance.effects.push(fx(
+        EXTRUDE,
+        json!({"rotationX": 0, "rotationY": 0, "rotationZ": 0, "perspective": 0}),
+    ));
     // Straight on, the extrusion shows its front: the offset square.
     let b = solid_art(&n).unwrap().visual_bounds().unwrap();
     assert!((b.width() - 140.0 - 0.75).abs() < 1e-6, "{b:?}");
-    n.appearance.effects.push(fx("distort.twist", json!({"angle": 30})));
+    n.appearance
+        .effects
+        .push(fx("distort.twist", json!({"angle": 30})));
     let art = solid_art(&n).unwrap();
-    assert!(art.appearance.effects.iter().any(|e| e.id == "distort.twist"), "applied to the result as a whole");
-    assert!(art.appearance.effects.iter().all(|e| e.id != "path.offsetPath" && !is_three_d(&e.id)));
+    assert!(
+        art.appearance
+            .effects
+            .iter()
+            .any(|e| e.id == "distort.twist"),
+        "applied to the result as a whole"
+    );
+    assert!(
+        art.appearance
+            .effects
+            .iter()
+            .all(|e| e.id != "path.offsetPath" && !is_three_d(&e.id))
+    );
 }
 
 #[test]
 fn parameters_are_validated_and_lengths_scale_with_the_object() {
     let n = square_node();
     assert!(validate_solid(&n, EXTRUDE, &json!({"bevel": "rounded", "depth": 80})).is_ok());
-    assert!(validate_solid(&n, EXTRUDE, &json!({"bevel": "fancy"})).unwrap_err().contains("bevel must be"));
+    assert!(
+        validate_solid(&n, EXTRUDE, &json!({"bevel": "fancy"}))
+            .unwrap_err()
+            .contains("bevel must be")
+    );
     let text = Node::group(NodeId(2), vec![]);
-    assert!(validate_solid(&text, INFLATE, &json!({})).unwrap_err().contains("requires a path"));
-    for (id, key) in [(EXTRUDE, "depth"), (EXTRUDE, "bevelWidth"), (EXTRUDE, "bevelHeight"), (INFLATE, "depth")] {
+    assert!(
+        validate_solid(&text, INFLATE, &json!({}))
+            .unwrap_err()
+            .contains("requires a path")
+    );
+    for (id, key) in [
+        (EXTRUDE, "depth"),
+        (EXTRUDE, "bevelWidth"),
+        (EXTRUDE, "bevelHeight"),
+        (INFLATE, "depth"),
+    ] {
         assert!(crate::is_length(id, key, false), "{id} {key}");
     }
     assert!(!crate::is_length(EXTRUDE, "twist", false));
@@ -176,7 +243,9 @@ fn parameters_are_validated_and_lengths_scale_with_the_object() {
         assert!(crate::default_params(id).is_some());
     }
     // Options read from parameters, with the documented ranges' defaults.
-    let o = extrude_options(&json!({"taper": 40, "bevel": "step", "bevelSpace": 30, "bevelRepeat": 99}));
+    let o = extrude_options(
+        &json!({"taper": 40, "bevel": "step", "bevelSpace": 30, "bevelRepeat": 99}),
+    );
     assert_eq!(o.taper, 0.4);
     let b = o.bevel.unwrap();
     assert_eq!((b.shape, b.space, b.repeat), (BevelShape::Step, 0.3, 32));

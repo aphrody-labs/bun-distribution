@@ -8,7 +8,9 @@ use std::sync::Arc;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use vectorcraft_doc::{Document, Node, NodeKind};
-use vectorcraft_pdf::{Overprint, PdfError, PdfOptions, PdfPreset, PdfSettings, Standard, THUMBNAIL_SIZE, Thumbnail};
+use vectorcraft_pdf::{
+    Overprint, PdfError, PdfOptions, PdfPreset, PdfSettings, Standard, THUMBNAIL_SIZE, Thumbnail,
+};
 
 use super::super::flatten::{FlattenOptions, flatten_document, see_through_images};
 use super::super::*;
@@ -50,8 +52,18 @@ pub(super) const OPTIONS: &[FormatOption] = &[
         default: "true",
         description: "embed the native document so VectorCraft reopens the PDF editable (the default preset's choice)",
     },
-    FormatOption { name: "compression", ty: "object", default: "null", description: "{color, gray, mono, compressText} (see document.exportPdf)" },
-    FormatOption { name: "marks", ty: "object", default: "null", description: "printer's marks (see document.exportPdf)" },
+    FormatOption {
+        name: "compression",
+        ty: "object",
+        default: "null",
+        description: "{color, gray, mono, compressText} (see document.exportPdf)",
+    },
+    FormatOption {
+        name: "marks",
+        ty: "object",
+        default: "null",
+        description: "printer's marks (see document.exportPdf)",
+    },
     FormatOption {
         name: "bleed",
         ty: "object",
@@ -132,19 +144,34 @@ pub fn presets(s: &Session) -> Vec<String> {
 
 /// The built-in preset names, then those of `saved`.
 fn names(saved: &[PdfPreset]) -> Vec<String> {
-    vectorcraft_pdf::builtin_presets().into_iter().map(|p| p.name).chain(saved.iter().map(|p| p.name.clone())).collect()
+    vectorcraft_pdf::builtin_presets()
+        .into_iter()
+        .map(|p| p.name)
+        .chain(saved.iter().map(|p| p.name.clone()))
+        .collect()
 }
 
 /// The preset `name` names: a built-in one (any case; `default` is the app default) or one of
 /// `saved`.
 pub fn find_preset(name: &str, saved: &[PdfPreset]) -> Option<PdfPreset> {
-    vectorcraft_pdf::builtin_preset(name).or_else(|| saved.iter().find(|p| p.name.eq_ignore_ascii_case(name.trim())).cloned())
+    vectorcraft_pdf::builtin_preset(name).or_else(|| {
+        saved
+            .iter()
+            .find(|p| p.name.eq_ignore_ascii_case(name.trim()))
+            .cloned()
+    })
 }
 
 fn preset(cmd: &str, name: &str, saved: &[PdfPreset]) -> Result<PdfSettings> {
-    find_preset(name, saved)
-        .map(|p| p.settings)
-        .ok_or_else(|| bad(cmd, format!("unknown PDF preset `{name}` (presets: {})", names(saved).join(", "))))
+    find_preset(name, saved).map(|p| p.settings).ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "unknown PDF preset `{name}` (presets: {})",
+                names(saved).join(", ")
+            ),
+        )
+    })
 }
 
 /// The settings of the preset `p` names (default: [`DEFAULT_PRESET`]), before `p`'s options.
@@ -223,7 +250,10 @@ pub fn expand_preset<'a>(s: &Session, cmd: &str, p: &'a Value) -> Result<Cow<'a,
         Some(name) if vectorcraft_pdf::builtin_preset(name).is_none() => {
             let set = settings_with(cmd, p, &s.prefs.pdf_presets)?;
             let mut q = p.clone();
-            merge(&mut q, &serde_json::to_value(set).map_err(|e| EngineError::Other(e.to_string()))?);
+            merge(
+                &mut q,
+                &serde_json::to_value(set).map_err(|e| EngineError::Other(e.to_string()))?,
+            );
             if let Some(o) = q.as_object_mut() {
                 o.remove("preset");
             }
@@ -236,14 +266,21 @@ pub fn expand_preset<'a>(s: &Session, cmd: &str, p: &'a Value) -> Result<Cow<'a,
 
 /// The full export options for `doc`: settings plus the artboards `p` picks (default all).
 pub fn options(cmd: &str, doc: &Document, p: &Value) -> Result<PdfOptions> {
-    let pick = if p.is_object() { ArtboardPick::deserialize(p).map_err(|e| bad(cmd, format!("PDF options: {e}")))? } else { ArtboardPick::default() };
+    let pick = if p.is_object() {
+        ArtboardPick::deserialize(p).map_err(|e| bad(cmd, format!("PDF options: {e}")))?
+    } else {
+        ArtboardPick::default()
+    };
     let artboards = pick.resolve(doc.artboards.len()).map_err(|e| bad(cmd, e))?;
-    Ok(PdfOptions { settings: settings(cmd, p)?, artboards, ..Default::default() })
+    Ok(PdfOptions {
+        settings: settings(cmd, p)?,
+        artboards,
+        ..Default::default()
+    })
 }
 
 /// Why a PDF of some artboards carries no editing data.
-pub const EDITING_NEEDS_EVERY_ARTBOARD: &str =
-    "Preserve editing was left out: it needs a PDF of every artboard, in order (reopened, this one would show the others too)";
+pub const EDITING_NEEDS_EVERY_ARTBOARD: &str = "Preserve editing was left out: it needs a PDF of every artboard, in order (reopened, this one would show the others too)";
 
 /// Encode `doc` as PDF with the options in `p` → (bytes, warnings). Raster effects are rendered
 /// to images at the document's raster effects resolution. Preserve Editing embeds `doc` itself
@@ -251,21 +288,31 @@ pub const EDITING_NEEDS_EVERY_ARTBOARD: &str =
 pub fn encode(cmd: &str, doc: &Document, p: &Value) -> Result<(Vec<u8>, Vec<String>)> {
     // Keep the editable object tree independent of preview fallbacks used by the drawn pages.
     let (full, mut warnings) = crate::cmd::place::document::full_documents(doc);
-    let (bytes, drawn_warnings) = encode_carrying(cmd, &full, p, || Ok(vectorcraft_format::save(doc, false)))?;
+    let (bytes, drawn_warnings) =
+        encode_carrying(cmd, &full, p, || Ok(vectorcraft_format::save(doc, false)))?;
     warnings.extend(drawn_warnings);
     Ok((bytes, warnings))
 }
 
 /// [`encode`] the pages of `doc`, carrying `native()` as the editing data (a `.ai` file: the
 /// native document with its save options, whose pages may be left blank).
-pub(super) fn encode_carrying(cmd: &str, doc: &Document, p: &Value, native: impl FnOnce() -> Result<Vec<u8>>) -> Result<(Vec<u8>, Vec<String>)> {
+pub(super) fn encode_carrying(
+    cmd: &str,
+    doc: &Document,
+    p: &Value,
+    native: impl FnOnce() -> Result<Vec<u8>>,
+) -> Result<(Vec<u8>, Vec<String>)> {
     let mut opts = options(cmd, doc, p)?;
     if opts.settings.thumbnails {
         opts.thumbnails = thumbnails(doc, &opts).map_err(|e| pdf_error(cmd, e))?;
     }
     let mut warnings = vec![];
     if opts.settings.preserve_editing {
-        if opts.artboards.as_ref().is_none_or(|v| v.iter().copied().eq(0..doc.artboards.len())) {
+        if opts
+            .artboards
+            .as_ref()
+            .is_none_or(|v| v.iter().copied().eq(0..doc.artboards.len()))
+        {
             opts.native = Some(native()?);
         } else {
             opts.settings.preserve_editing = false;
@@ -275,10 +322,15 @@ pub(super) fn encode_carrying(cmd: &str, doc: &Document, p: &Value, native: impl
     let set = &opts.settings;
     let flat = flatten_for(cmd, doc, set, p)?;
     if flat.is_some() {
-        let kind = if set.standard.flattens() { set.standard.label() } else { set.compatibility.label() };
+        let kind = if set.standard.flattens() {
+            set.standard.label()
+        } else {
+            set.compatibility.label()
+        };
         warnings.push(format!("transparency is flattened into opaque art and images ({kind} files have none): see the flattener preset"));
     }
-    let r = super::super::rasterfx::export_pdf_with_report(flat.as_ref().unwrap_or(doc), &opts).map_err(|e| pdf_error(cmd, e))?;
+    let r = super::super::rasterfx::export_pdf_with_report(flat.as_ref().unwrap_or(doc), &opts)
+        .map_err(|e| pdf_error(cmd, e))?;
     warnings.extend(r.warnings);
     warnings.extend(crate::cmd::fonts::substitution_warning(doc));
     Ok((r.bytes, warnings))
@@ -292,12 +344,20 @@ pub const DEFAULT_FLATTENER: &str = "High Resolution";
 /// options over it; images with see-through pixels count as transparency, rasterized areas are
 /// clipped to their regions, and discarded overprints are dropped. `None` when nothing changes (or
 /// the file keeps transparency).
-fn flatten_for(cmd: &str, doc: &Document, set: &PdfSettings, p: &Value) -> Result<Option<Document>> {
+fn flatten_for(
+    cmd: &str,
+    doc: &Document,
+    set: &PdfSettings,
+    p: &Value,
+) -> Result<Option<Document>> {
     if !set.pdf13() {
         return Ok(None);
     }
-    let name = Some(set.flattener_preset.trim()).filter(|n| !n.is_empty()).unwrap_or(DEFAULT_FLATTENER);
-    let mut o = FlattenOptions::for_export(Some(name), p.get("flattener"), &[]).map_err(|e| bad(cmd, format!("PDF flattener: {e}")))?;
+    let name = Some(set.flattener_preset.trim())
+        .filter(|n| !n.is_empty())
+        .unwrap_or(DEFAULT_FLATTENER);
+    let mut o = FlattenOptions::for_export(Some(name), p.get("flattener"), &[])
+        .map_err(|e| bad(cmd, format!("PDF flattener: {e}")))?;
     o.preserve_overprints &= set.advanced.overprint == Overprint::Preserve;
     o.no_transparency = Some(see_through_images(doc));
     // Without soft masks a rasterized area can't be a rectangle with see-through pixels around
@@ -312,7 +372,11 @@ fn flatten_for(cmd: &str, doc: &Document, set: &PdfSettings, p: &Value) -> Resul
 fn thumbnails(doc: &Document, opts: &PdfOptions) -> std::result::Result<Vec<Thumbnail>, PdfError> {
     let areas = vectorcraft_pdf::page_areas(doc, opts)?;
     let set = &opts.settings;
-    let printed = if set.include_non_printing || set.create_layers { None } else { without_non_printing(&doc.layers) };
+    let printed = if set.include_non_printing || set.create_layers {
+        None
+    } else {
+        without_non_printing(&doc.layers)
+    };
     let shown = printed.map(|layers| {
         let mut d = doc.clone();
         d.layers = layers;
@@ -323,10 +387,25 @@ fn thumbnails(doc: &Document, opts: &PdfOptions) -> std::result::Result<Vec<Thum
     Ok(areas
         .into_iter()
         .map(|a| {
-            let img = r.render_region(doc, a, f64::from(THUMBNAIL_SIZE) / a.width().max(a.height()).max(1.0), true);
+            let img = r.render_region(
+                doc,
+                a,
+                f64::from(THUMBNAIL_SIZE) / a.width().max(a.height()).max(1.0),
+                true,
+            );
             // Drawn on white: every pixel is opaque.
-            let rgb = img.pixels.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
-            Thumbnail { width: img.width, height: img.height, rgb }
+            let rgb = img
+                .pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect();
+            Thumbnail {
+                width: img.width,
+                height: img.height,
+                rgb,
+            }
         })
         .collect())
 }
@@ -336,7 +415,14 @@ fn thumbnails(doc: &Document, opts: &PdfOptions) -> std::result::Result<Vec<Thum
 fn without_non_printing(layers: &[Arc<Node>]) -> Option<Vec<Arc<Node>>> {
     let mut out: Option<Vec<Arc<Node>>> = None;
     for (i, l) in layers.iter().enumerate() {
-        let NodeKind::Layer { printable, children, .. } = &l.kind else { continue };
+        let NodeKind::Layer {
+            printable,
+            children,
+            ..
+        } = &l.kind
+        else {
+            continue;
+        };
         let new = if !printable {
             l.visible.then(|| {
                 let mut n = (**l).clone();
@@ -352,7 +438,9 @@ fn without_non_printing(layers: &[Arc<Node>]) -> Option<Vec<Arc<Node>>> {
                 Arc::new(n)
             })
         };
-        if let Some(slot) = new.and_then(|new| Some((out.get_or_insert_with(|| layers.to_vec()).get_mut(i)?, new))) {
+        if let Some(slot) =
+            new.and_then(|new| Some((out.get_or_insert_with(|| layers.to_vec()).get_mut(i)?, new)))
+        {
             *slot.0 = slot.1;
         }
     }
@@ -366,7 +454,11 @@ fn export_pdf(s: &mut Session, p: &Value) -> Result<Value> {
     let expanded = expand_preset(s, C, p)?;
     let p = &*expanded;
     let (bytes, warnings) = encode(C, &s.doc()?.doc, p)?;
-    write_or_return(str_param(p, "path"), &bytes, json!({ "warnings": warnings }))
+    write_or_return(
+        str_param(p, "path"),
+        &bytes,
+        json!({ "warnings": warnings }),
+    )
 }
 
 /// `(path, value)` for every leaf of `v` that differs from `default` (`compression.color.ppi`).
@@ -374,7 +466,11 @@ pub fn changed(prefix: &str, v: &Value, default: &Value, out: &mut Vec<Value>) {
     match (v, default) {
         (Value::Object(o), Value::Object(d)) => {
             for (k, x) in o {
-                let path = if prefix.is_empty() { k.clone() } else { format!("{prefix}.{k}") };
+                let path = if prefix.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{prefix}.{k}")
+                };
                 changed(&path, x, d.get(k).unwrap_or(&Value::Null), out);
             }
         }
@@ -386,7 +482,9 @@ pub fn changed(prefix: &str, v: &Value, default: &Value, out: &mut Vec<Value>) {
 /// `[{option, value}]` for every setting of `set` that differs from `base`
 /// (`compression.color.ppi`).
 pub fn changes(set: &PdfSettings, base: &PdfSettings) -> Vec<Value> {
-    let (Ok(v), Ok(base)) = (serde_json::to_value(set), serde_json::to_value(base)) else { return vec![] };
+    let (Ok(v), Ok(base)) = (serde_json::to_value(set), serde_json::to_value(base)) else {
+        return vec![];
+    };
     let mut diff = vec![];
     changed("", &v, &base, &mut diff);
     diff
@@ -398,7 +496,9 @@ fn pdf_settings(s: &mut Session, p: &Value) -> Result<Value> {
     let set = settings_with(Q, p, saved)?;
     let diff = changes(&set, &preset_settings(Q, p, saved)?);
     let warnings = match s.active() {
-        Some(st) if bool_or(p, "includeDocument", false) => encode(Q, &st.doc, &*expand_preset(s, Q, p)?)?.1,
+        Some(st) if bool_or(p, "includeDocument", false) => {
+            encode(Q, &st.doc, &*expand_preset(s, Q, p)?)?.1
+        }
         _ => set.warnings(),
     };
     let v = serde_json::to_value(&set).map_err(|e| EngineError::Other(e.to_string()))?;
@@ -407,6 +507,8 @@ fn pdf_settings(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Is `key` a top-level PDF setting (a [`PdfSettings`] field as `document.exportPdf` names it)?
 pub fn is_setting(key: &str) -> bool {
-    static DEFAULTS: std::sync::LazyLock<Value> = std::sync::LazyLock::new(|| serde_json::to_value(PdfSettings::default()).unwrap_or_default());
+    static DEFAULTS: std::sync::LazyLock<Value> = std::sync::LazyLock::new(|| {
+        serde_json::to_value(PdfSettings::default()).unwrap_or_default()
+    });
     DEFAULTS.get(key).is_some()
 }

@@ -69,7 +69,11 @@ fn invalid(why: impl Into<String>) -> ModelError {
 /// # Errors
 /// [`ModelError`] for I/O failures, unknown extensions or malformed files.
 pub fn load_model(path: &Path, material: Material) -> Result<Vec<Node3d>, ModelError> {
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
     match ext.as_str() {
         "obj" => parse_obj(&std::fs::read(path)?, material),
         "glb" | "gltf" => parse_gltf(&std::fs::read(path)?, path.parent(), material),
@@ -82,7 +86,11 @@ pub fn load_model(path: &Path, material: Material) -> Result<Vec<Node3d>, ModelE
 /// # Errors
 /// [`ModelError::Invalid`] for malformed OBJ or a file without faces.
 pub fn parse_obj(bytes: &[u8], material: Material) -> Result<Vec<Node3d>, ModelError> {
-    let options = tobj::LoadOptions { triangulate: true, single_index: true, ..Default::default() };
+    let options = tobj::LoadOptions {
+        triangulate: true,
+        single_index: true,
+        ..Default::default()
+    };
     let (models, _) = tobj::load_obj_buf(&mut std::io::Cursor::new(bytes), &options, |_| {
         Err(tobj::LoadError::OpenFileFailed)
     })
@@ -91,13 +99,26 @@ pub fn parse_obj(bytes: &[u8], material: Material) -> Result<Vec<Node3d>, ModelE
         .into_iter()
         .filter(|m| !m.mesh.indices.is_empty())
         .map(|m| {
-            let positions: Vec<[f32; 3]> =
-                m.mesh.positions.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
-            let normals = (m.mesh.normals.len() == m.mesh.positions.len())
-                .then(|| m.mesh.normals.chunks_exact(3).map(|n| [n[0], n[1], n[2]]).collect());
+            let positions: Vec<[f32; 3]> = m
+                .mesh
+                .positions
+                .chunks_exact(3)
+                .map(|p| [p[0], p[1], p[2]])
+                .collect();
+            let normals = (m.mesh.normals.len() == m.mesh.positions.len()).then(|| {
+                m.mesh
+                    .normals
+                    .chunks_exact(3)
+                    .map(|n| [n[0], n[1], n[2]])
+                    .collect()
+            });
             Node3d::Mesh {
                 transform: Transform::IDENTITY,
-                geometry: Geometry::Mesh { positions, normals, indices: m.mesh.indices },
+                geometry: Geometry::Mesh {
+                    positions,
+                    normals,
+                    indices: m.mesh.indices,
+                },
                 material,
             }
         })
@@ -114,9 +135,10 @@ fn buffers(gltf: &gltf::Gltf, base_dir: Option<&Path>) -> Result<Vec<Vec<u8>>, M
     gltf.document
         .buffers()
         .map(|buffer| match buffer.source() {
-            gltf::buffer::Source::Bin => {
-                gltf.blob.clone().ok_or_else(|| invalid("GLB buffer without a BIN chunk"))
-            },
+            gltf::buffer::Source::Bin => gltf
+                .blob
+                .clone()
+                .ok_or_else(|| invalid("GLB buffer without a BIN chunk")),
             gltf::buffer::Source::Uri(uri) if uri.starts_with("data:") => {
                 let payload = uri
                     .split_once(";base64,")
@@ -125,14 +147,16 @@ fn buffers(gltf: &gltf::Gltf, base_dir: Option<&Path>) -> Result<Vec<Vec<u8>>, M
                 base64::engine::general_purpose::STANDARD
                     .decode(payload)
                     .map_err(|e| invalid(format!("buffer base64: {e}")))
-            },
+            }
             gltf::buffer::Source::Uri(uri) => {
                 let dir = base_dir.ok_or_else(|| invalid("external buffer without a directory"))?;
                 if uri.contains("..") || Path::new(uri).is_absolute() || uri.contains(':') {
-                    return Err(invalid(format!("buffer uri outside the model directory: {uri}")));
+                    return Err(invalid(format!(
+                        "buffer uri outside the model directory: {uri}"
+                    )));
                 }
                 Ok(std::fs::read(dir.join(uri))?)
-            },
+            }
         })
         .collect()
 }
@@ -147,11 +171,22 @@ fn gltf_material(material: &gltf::Material<'_>, fallback: Material) -> Material 
     let enc = |c: f32| (linear_to_srgb(c) * 255.0).round() as u8;
     let [er, eg, eb] = material.emissive_factor();
     Material {
-        base: Paint::Fixed(Rgba8 { r: enc(r), g: enc(g), b: enc(b), a: 255 }),
+        base: Paint::Fixed(Rgba8 {
+            r: enc(r),
+            g: enc(g),
+            b: enc(b),
+            a: 255,
+        }),
         metallic: pbr.metallic_factor(),
         roughness: pbr.roughness_factor(),
-        emissive: (er > 0.0 || eg > 0.0 || eb > 0.0)
-            .then(|| Paint::Fixed(Rgba8 { r: enc(er), g: enc(eg), b: enc(eb), a: 255 })),
+        emissive: (er > 0.0 || eg > 0.0 || eb > 0.0).then(|| {
+            Paint::Fixed(Rgba8 {
+                r: enc(er),
+                g: enc(eg),
+                b: enc(eb),
+                a: 255,
+            })
+        }),
         emissive_intensity: material.emissive_strength().unwrap_or(1.0),
         opacity: if material.alpha_mode() == gltf::material::AlphaMode::Blend {
             a.clamp(0.0, 1.0)
@@ -182,13 +217,18 @@ pub fn parse_gltf(
         None => doc.nodes().collect(),
     };
     let mut out = Vec::new();
-    let mut stack: Vec<(gltf::Node<'_>, Mat4, usize)> =
-        roots.into_iter().rev().map(|n| (n, Mat4::IDENTITY, 0)).collect();
+    let mut stack: Vec<(gltf::Node<'_>, Mat4, usize)> = roots
+        .into_iter()
+        .rev()
+        .map(|n| (n, Mat4::IDENTITY, 0))
+        .collect();
     while let Some((node, parent, depth)) = stack.pop() {
         if depth > 64 {
             return Err(invalid("glTF node hierarchy deeper than 64"));
         }
-        let world = parent.mul(&Mat4 { cols: node.transform().matrix() });
+        let world = parent.mul(&Mat4 {
+            cols: node.transform().matrix(),
+        });
         for child in node.children() {
             stack.push((child, world, depth + 1));
         }
@@ -203,12 +243,17 @@ pub fn parse_gltf(
                 continue; // points, lines and strips are not triangle lists
             }
             let reader = primitive.reader(|buffer| data.get(buffer.index()).map(Vec::as_slice));
-            let Some(positions) = reader.read_positions() else { continue };
-            let positions: Vec<[f32; 3]> =
-                positions.map(|p| world.transform_point(Vec3::from_array(p)).to_array()).collect();
+            let Some(positions) = reader.read_positions() else {
+                continue;
+            };
+            let positions: Vec<[f32; 3]> = positions
+                .map(|p| world.transform_point(Vec3::from_array(p)).to_array())
+                .collect();
             let normals: Option<Vec<[f32; 3]>> = reader.read_normals().map(|n| {
                 n.map(|v| {
-                    mul_normal(&normal_matrix, Vec3::from_array(v)).normalize_or(Vec3::Y).to_array()
+                    mul_normal(&normal_matrix, Vec3::from_array(v))
+                        .normalize_or(Vec3::Y)
+                        .to_array()
                 })
                 .collect()
             });
@@ -274,7 +319,9 @@ pub fn inspect(nodes: &[Node3d]) -> ModelInfo {
         materials: Vec::new(),
     };
     walk(nodes, &mut |world, geometry, material| {
-        let Ok(mesh) = geometry.tessellate() else { return };
+        let Ok(mesh) = geometry.tessellate() else {
+            return;
+        };
         info.meshes += 1;
         info.vertices += mesh.positions.len();
         info.triangles += mesh.triangle_count();
@@ -302,15 +349,22 @@ pub fn inspect(nodes: &[Node3d]) -> ModelInfo {
 fn walk(nodes: &[Node3d], f: &mut dyn FnMut(&Mat4, &Geometry, &Material)) {
     fn visit(node: &Node3d, parent: &Mat4, f: &mut dyn FnMut(&Mat4, &Geometry, &Material)) {
         match node {
-            Node3d::Group { transform, children } => {
+            Node3d::Group {
+                transform,
+                children,
+            } => {
                 let world = parent.mul(&transform.matrix());
                 for child in children {
                     visit(child, &world, f);
                 }
-            },
-            Node3d::Mesh { transform, geometry, material } => {
+            }
+            Node3d::Mesh {
+                transform,
+                geometry,
+                material,
+            } => {
                 f(&parent.mul(&transform.matrix()), geometry, material);
-            },
+            }
         }
     }
     for node in nodes {
@@ -360,7 +414,7 @@ pub fn write_glb(nodes: &[Node3d], scheme: &DynamicScheme) -> Result<Vec<u8>, Mo
             Err(e) => {
                 error = Some(invalid(e.to_string()));
                 return;
-            },
+            }
         };
         let normal_matrix = world.normal_matrix();
         let positions: Vec<[f32; 3]> = mesh
@@ -372,7 +426,9 @@ pub fn write_glb(nodes: &[Node3d], scheme: &DynamicScheme) -> Result<Vec<u8>, Mo
             .normals
             .iter()
             .map(|n| {
-                mul_normal(&normal_matrix, Vec3::from_array(*n)).normalize_or(Vec3::Y).to_array()
+                mul_normal(&normal_matrix, Vec3::from_array(*n))
+                    .normalize_or(Vec3::Y)
+                    .to_array()
             })
             .collect();
         let mut push_view = |bytes: &[u8], target: u32| -> usize {
@@ -438,7 +494,7 @@ pub fn write_glb(nodes: &[Node3d], scheme: &DynamicScheme) -> Result<Vec<u8>, Mo
                 material_index.push(*material);
                 materials.push(m);
                 materials.len() - 1
-            },
+            }
         };
         meshes.push(json!({ "primitives": [{ "attributes": { "POSITION": pos_acc, "NORMAL": nrm_acc }, "indices": idx_acc, "material": mat }] }));
         gnodes.push(json!({ "mesh": meshes.len() - 1 }));
@@ -576,7 +632,12 @@ pub fn studio_scene(
     use crate::scene3d::{Light, Scene3d, ShadowSettings};
 
     let (center, radius) = bounds(&nodes).ok_or_else(|| invalid("the model has no geometry"))?;
-    let white = Paint::Fixed(Rgba8 { r: 255, g: 255, b: 255, a: 255 });
+    let white = Paint::Fixed(Rgba8 {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+    });
     Ok(Scene3d {
         width,
         height,
@@ -613,7 +674,10 @@ pub fn studio_scene(
                 cast_shadow: false,
             },
         ],
-        shadows: ShadowSettings { enabled: options.shadows, resolution: 2048 },
+        shadows: ShadowSettings {
+            enabled: options.shadows,
+            resolution: 2048,
+        },
         nodes,
     })
 }
@@ -683,7 +747,10 @@ mod tests {
         assert_eq!(&glb[..4], b"glTF");
         let back = parse_gltf(&glb, None, fallback()).expect("re-import");
         let (a, b) = (inspect(&scene.nodes), inspect(&back));
-        assert_eq!((a.meshes, a.vertices, a.triangles), (b.meshes, b.vertices, b.triangles));
+        assert_eq!(
+            (a.meshes, a.vertices, a.triangles),
+            (b.meshes, b.vertices, b.triangles)
+        );
         for axis in 0..3 {
             assert!((a.min[axis] - b.min[axis]).abs() < 1e-4);
             assert!((a.max[axis] - b.max[axis]).abs() < 1e-4);
@@ -695,16 +762,32 @@ mod tests {
 
     #[test]
     fn glb_base_colour_round_trips_to_the_same_srgb_bytes() {
-        let red =
-            Material { base: Paint::Fixed(Rgba8 { r: 200, g: 30, b: 60, a: 255 }), ..fallback() };
+        let red = Material {
+            base: Paint::Fixed(Rgba8 {
+                r: 200,
+                g: 30,
+                b: 60,
+                a: 255,
+            }),
+            ..fallback()
+        };
         let nodes = vec![Node3d::Mesh {
-            transform: Transform { translation: [1.0, 2.0, 3.0], ..Transform::IDENTITY },
+            transform: Transform {
+                translation: [1.0, 2.0, 3.0],
+                ..Transform::IDENTITY
+            },
             geometry: Geometry::Box { size: [1.0; 3] },
             material: red,
         }];
-        let back = parse_gltf(&write_glb(&nodes, &scheme()).expect("export"), None, fallback())
-            .expect("import");
-        let Node3d::Mesh { material, .. } = &back[0] else { panic!("mesh") };
+        let back = parse_gltf(
+            &write_glb(&nodes, &scheme()).expect("export"),
+            None,
+            fallback(),
+        )
+        .expect("import");
+        let Node3d::Mesh { material, .. } = &back[0] else {
+            panic!("mesh")
+        };
         assert_eq!(material.base, red.base);
         let (center, _) = bounds(&back).expect("bounds");
         assert!((center.x - 1.0).abs() < 1e-5 && (center.z - 3.0).abs() < 1e-5);
@@ -712,9 +795,19 @@ mod tests {
 
     #[test]
     fn framing_puts_the_whole_sphere_in_view() {
-        let cam = frame_camera(Vec3::new(1.0, 2.0, 3.0), 2.0, Vec3::new(0.0, 0.0, 1.0), 40.0, 1.1);
-        let Projection::Perspective { near, far, .. } = cam.projection else { panic!() };
-        let d = Vec3::from_array(cam.eye).sub(Vec3::new(1.0, 2.0, 3.0)).length();
+        let cam = frame_camera(
+            Vec3::new(1.0, 2.0, 3.0),
+            2.0,
+            Vec3::new(0.0, 0.0, 1.0),
+            40.0,
+            1.1,
+        );
+        let Projection::Perspective { near, far, .. } = cam.projection else {
+            panic!()
+        };
+        let d = Vec3::from_array(cam.eye)
+            .sub(Vec3::new(1.0, 2.0, 3.0))
+            .length();
         assert!(near < d - 2.0 && far > d + 2.0);
         assert!(bounds(&[]).is_none());
     }

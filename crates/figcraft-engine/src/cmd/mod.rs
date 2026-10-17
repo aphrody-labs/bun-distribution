@@ -44,7 +44,10 @@ pub struct CommandSpec {
 
 impl CommandSpec {
     pub fn menu(&self) -> Option<&'static str> {
-        crate::catalog::MENU.iter().find(|m| m.id == self.id).map(|m| m.menu)
+        crate::catalog::MENU
+            .iter()
+            .find(|m| m.id == self.id)
+            .map(|m| m.menu)
     }
     pub fn shortcut(&self) -> Option<&'static str> {
         crate::catalog::shortcut(self.id)
@@ -55,7 +58,13 @@ impl CommandSpec {
 #[macro_export]
 macro_rules! spec {
     ($id:expr, $label:expr, $params:expr, $hist:expr, $run:expr) => {
-        $crate::cmd::CommandSpec { id: $id, label: $label, params: $params, history: $hist, run: $run }
+        $crate::cmd::CommandSpec {
+            id: $id,
+            label: $label,
+            params: $params,
+            history: $hist,
+            run: $run,
+        }
     };
 }
 

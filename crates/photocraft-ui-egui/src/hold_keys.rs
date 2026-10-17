@@ -115,12 +115,17 @@ pub fn cmd_nudges(app: &PhotocraftApp) -> bool {
 
 /// Is ⌘ alone (no other temporary key) making the Move tool now?
 fn cmd_move_held(app: &PhotocraftApp, i: &InputState) -> bool {
-    i.modifiers.command && cmd_moves(app.ui.tool) && app.ui.transform.is_none() && app.ui.text_edit.is_none()
+    i.modifiers.command
+        && cmd_moves(app.ui.tool)
+        && app.ui.transform.is_none()
+        && app.ui.text_edit.is_none()
 }
 
 /// Is `id` a held temporary tool rather than a command?
 pub fn is_temporary(id: &str) -> bool {
-    photocraft_engine::prefs::TEMPORARY_TOOLS.iter().any(|t| t.0 == id)
+    photocraft_engine::prefs::TEMPORARY_TOOLS
+        .iter()
+        .any(|t| t.0 == id)
 }
 
 /// The key binding of a temporary tool in effect (`None` when removed or unparsable).
@@ -130,7 +135,10 @@ pub fn binding(app: &PhotocraftApp, t: Temporary) -> Option<KeyboardShortcut> {
 
 /// [`binding`] by id.
 fn binding_of(app: &PhotocraftApp, id: &str) -> Option<KeyboardShortcut> {
-    let def = photocraft_engine::prefs::TEMPORARY_TOOLS.iter().find(|x| x.0 == id).map(|x| x.2);
+    let def = photocraft_engine::prefs::TEMPORARY_TOOLS
+        .iter()
+        .find(|x| x.0 == id)
+        .map(|x| x.2);
     parse(app.session.prefs().shortcut(id, def)?)
 }
 
@@ -174,7 +182,13 @@ pub fn held_tool(app: &PhotocraftApp, ctx: &egui::Context) -> Option<Temporary> 
     });
     // ⌥ turns a held Zoom In around, as it does the Zoom tool: ⌘⌥Space zooms out (and wins the
     // tie with ⌥Space), unless ⌥ is part of the Zoom In key itself.
-    let held = best.map(|(_, t, sc)| if t == Temporary::ZoomIn && alt && !sc.modifiers.alt { Temporary::ZoomOut } else { t });
+    let held = best.map(|(_, t, sc)| {
+        if t == Temporary::ZoomIn && alt && !sc.modifiers.alt {
+            Temporary::ZoomOut
+        } else {
+            t
+        }
+    });
     // A bound key (⌘Space is Zoom In) wins over ⌘ alone.
     held.or(cmd_move.then_some(Temporary::Move))
 }
@@ -190,17 +204,24 @@ pub fn erases_while_held(t: Tool) -> bool {
 /// Is the erase key (`~` by default) held with a tool that [`erases_while_held`]? Never while a
 /// text field has the keyboard.
 pub fn erase_held(app: &PhotocraftApp, ctx: &egui::Context) -> bool {
-    erases_while_held(app.ui.tool) && !ctx.text_edit_focused() && binding_of(app, ERASE).is_some_and(|sc| ctx.input(|i| held(i, &sc)))
+    erases_while_held(app.ui.tool)
+        && !ctx.text_edit_focused()
+        && binding_of(app, ERASE).is_some_and(|sc| ctx.input(|i| held(i, &sc)))
 }
 
 /// Is the reposition key (the Hand key, any modifiers) down?
 pub fn reposition_held(app: &PhotocraftApp, ctx: &egui::Context) -> bool {
-    !ctx.text_edit_focused() && app.ui.text_edit.is_none() && binding(app, Temporary::Hand).is_some_and(|sc| ctx.input(|i| i.key_down(sc.logical_key)))
+    !ctx.text_edit_focused()
+        && app.ui.text_edit.is_none()
+        && binding(app, Temporary::Hand).is_some_and(|sc| ctx.input(|i| i.key_down(sc.logical_key)))
 }
 
 /// Tools whose in-progress drag the reposition key moves.
 pub fn repositions(t: Tool) -> bool {
-    matches!(t, Tool::RectMarquee | Tool::EllipseMarquee | Tool::Lasso | Tool::ObjectSelection) || crate::vector_ui::is_shape_tool(t)
+    matches!(
+        t,
+        Tool::RectMarquee | Tool::EllipseMarquee | Tool::Lasso | Tool::ObjectSelection
+    ) || crate::vector_ui::is_shape_tool(t)
 }
 
 fn latch_id() -> egui::Id {
@@ -213,7 +234,9 @@ fn latch_id() -> egui::Id {
 /// what commits the move).
 pub fn for_frame(app: &PhotocraftApp, ctx: &egui::Context, drawing: bool) -> Option<Temporary> {
     let (down, released) = ctx.input(|i| (i.pointer.primary_down(), i.pointer.primary_released()));
-    let latched = ctx.data(|d| d.get_temp::<Option<Temporary>>(latch_id())).flatten();
+    let latched = ctx
+        .data(|d| d.get_temp::<Option<Temporary>>(latch_id()))
+        .flatten();
     let t = if (down || released) && latched.is_some() {
         latched
     } else if drawing {

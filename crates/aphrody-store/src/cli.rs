@@ -125,7 +125,10 @@ fn sync(layout: &HomeLayout, profile: Option<&str>, apply: bool) -> Result<serde
     let ro = HomeDb::open_read_only(&layout.db_path)?;
     let latest = crate::db::migrations()?.latest_version().unwrap_or(0);
     let current = ro.schema_version()?;
-    let integrity = ro.integrity_check().map(|()| "ok".to_owned()).unwrap_or_else(|e| e.to_string());
+    let integrity = ro
+        .integrity_check()
+        .map(|()| "ok".to_owned())
+        .unwrap_or_else(|e| e.to_string());
     let ledger = ro.verify_ledger()?;
     let plan = sessions::plan_sessions(&ro, &sessions_dir)?;
     drop(ro);
@@ -171,8 +174,17 @@ pub fn run(store: &StoreArgs, command: &Command) -> Result<serde_json::Value> {
                 out["schema_version"] = db.schema_version()?.into();
                 let mut tables = serde_json::Map::new();
                 for table in [
-                    "sources", "files", "docs", "chunks", "vectors", "graph_nodes", "graph_edges",
-                    "memories", "sessions", "messages", "backups",
+                    "sources",
+                    "files",
+                    "docs",
+                    "chunks",
+                    "vectors",
+                    "graph_nodes",
+                    "graph_edges",
+                    "memories",
+                    "sessions",
+                    "messages",
+                    "backups",
                 ] {
                     let n: Option<i64> = db
                         .conn()
@@ -185,13 +197,13 @@ pub fn run(store: &StoreArgs, command: &Command) -> Result<serde_json::Value> {
                 out["tables"] = tables.into();
             }
             Ok(out)
-        },
+        }
         Command::Sync { apply } => sync(&layout, store.profile.as_deref(), *apply),
         Command::Backup { reason } => {
             let db = HomeDb::open_path(&layout.db_path)?;
             let report = db.backup(&layout.backup_dir(now_ms()), &layout.scope.label(), reason)?;
             Ok(serde_json::to_value(report)?)
-        },
+        }
         Command::Import { apply, what } => {
             let mut db = open_for_write(&layout, *apply, "pre-import")?;
             let report = match what {
@@ -201,26 +213,37 @@ pub fn run(store: &StoreArgs, command: &Command) -> Result<serde_json::Value> {
                             .parent()
                             .and_then(|p| p.parent())
                             .and_then(|p| p.file_name())
-                            .map_or_else(|| "graph".to_owned(), |n| n.to_string_lossy().into_owned());
+                            .map_or_else(
+                                || "graph".to_owned(),
+                                |n| n.to_string_lossy().into_owned(),
+                            );
                         format!("graph:{name}")
                     });
                     graphify::import_graph_json(&mut db, path, &label, None, *apply)?
-                },
+                }
                 ImportWhat::Memory { path } => {
-                    let origin = format!("legacy:{}", path.file_name().map_or_else(String::new, |n| n.to_string_lossy().into_owned()));
+                    let origin = format!(
+                        "legacy:{}",
+                        path.file_name()
+                            .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+                    );
                     memory::import_memories(&mut db, path, &origin, *apply)?
-                },
+                }
                 ImportWhat::Rag { path } => {
-                    let label = format!("legacy-rag:{}", path.file_name().map_or_else(String::new, |n| n.to_string_lossy().into_owned()));
+                    let label = format!(
+                        "legacy-rag:{}",
+                        path.file_name()
+                            .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+                    );
                     rag::import_rag(&mut db, path, &label, *apply)?
-                },
+                }
                 ImportWhat::Sessions { path } => {
                     let dir = path.clone().unwrap_or_else(|| layout.home.join("sessions"));
                     sessions::import_sessions(&mut db, &dir, store.profile.as_deref(), *apply)?
-                },
+                }
             };
             Ok(serde_json::to_value(report)?)
-        },
+        }
     }
 }
 
@@ -232,17 +255,20 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return i32::from(error.use_stderr());
-        },
+        }
     };
     match run(&cli.store, &cli.command) {
         Ok(value) => {
-            println!("{}", serde_json::to_string_pretty(&value).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value).unwrap_or_default()
+            );
             0
-        },
+        }
         Err(error) => {
             eprintln!("aphrody home: {error}");
             1
-        },
+        }
     }
 }
 
@@ -251,7 +277,10 @@ mod tests {
     use super::*;
 
     fn args(state: &std::path::Path) -> StoreArgs {
-        StoreArgs { profile: Some("ie".into()), state: Some(state.to_path_buf()) }
+        StoreArgs {
+            profile: Some("ie".into()),
+            state: Some(state.to_path_buf()),
+        }
     }
 
     #[test]
@@ -268,16 +297,31 @@ mod tests {
         assert_eq!(preview["mode"], "preview");
         assert_eq!(preview["integrity"], "ok");
         assert_eq!(preview["sessions"]["counts"]["new"], 1);
-        assert_eq!(std::fs::read(&layout.db_path).unwrap(), before, "a preview must not touch the database");
-        assert!(!layout.state.join("private").exists(), "a preview must not create backups");
+        assert_eq!(
+            std::fs::read(&layout.db_path).unwrap(),
+            before,
+            "a preview must not touch the database"
+        );
+        assert!(
+            !layout.state.join("private").exists(),
+            "a preview must not create backups"
+        );
 
         let applied = run(&args(state.path()), &Command::Sync { apply: true }).unwrap();
         assert_eq!(applied["mode"], "apply");
         assert_eq!(applied["applied"]["counts"]["indexed_or_updated"], 1);
         let backups = layout.backup_dir(now_ms());
         let produced: Vec<_> = std::fs::read_dir(&backups).unwrap().flatten().collect();
-        assert!(produced.iter().any(|e| e.file_name().to_string_lossy().ends_with(".sqlite")));
-        assert!(produced.iter().any(|e| e.file_name().to_string_lossy().ends_with(".sha256")));
+        assert!(
+            produced
+                .iter()
+                .any(|e| e.file_name().to_string_lossy().ends_with(".sqlite"))
+        );
+        assert!(
+            produced
+                .iter()
+                .any(|e| e.file_name().to_string_lossy().ends_with(".sha256"))
+        );
 
         let again = run(&args(state.path()), &Command::Sync { apply: false }).unwrap();
         assert_eq!(again["sessions"]["counts"]["unchanged"], 1);

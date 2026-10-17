@@ -7,7 +7,14 @@ use filmcraft_media::still::decode_raster;
 /// A YCbCr TIFF: `width` × `height`, subsampling `sub` (horizontal, vertical), `data` the strip
 /// as stored (data units, already compressed when `compression` is 32773), plus `extra` entries
 /// (tag, type, values).
-fn ycbcr_tiff(width: u32, height: u32, sub: (u16, u16), compression: u16, data: &[u8], extra: &[(u16, u16, Vec<u32>)]) -> Vec<u8> {
+fn ycbcr_tiff(
+    width: u32,
+    height: u32,
+    sub: (u16, u16),
+    compression: u16,
+    data: &[u8],
+    extra: &[(u16, u16, Vec<u32>)],
+) -> Vec<u8> {
     let mut entries: Vec<(u16, u16, Vec<u32>)> = vec![
         (256, 4, vec![width]),
         (257, 4, vec![height]),
@@ -29,7 +36,11 @@ fn ycbcr_tiff(width: u32, height: u32, sub: (u16, u16), compression: u16, data: 
     let data_at = ifd_at + ifd_len;
     let mut values_at = data_at + data.len() as u32;
     for (tag, ty, vals) in &entries {
-        let vals = if *tag == 273 { vec![data_at] } else { vals.clone() };
+        let vals = if *tag == 273 {
+            vec![data_at]
+        } else {
+            vals.clone()
+        };
         let mut bytes: Vec<u8> = Vec::new();
         for v in &vals {
             match ty {
@@ -77,8 +88,16 @@ fn subsampled_ycbcr_places_each_data_unit() {
     let r = decode_raster("frame.tiff", &ycbcr_tiff(4, 2, (2, 2), 1, &data, &[])).unwrap();
     assert_eq!((r.width, r.height), (4, 2));
     for y in 0..2 {
-        assert!(near(px(&r, 0, y), [128, 128, 128, 255]) && near(px(&r, 1, y), [128, 128, 128, 255]), "{:?}", px(&r, 0, y));
-        assert!(near(px(&r, 2, y), [254, 0, 0, 255]) && near(px(&r, 3, y), [254, 0, 0, 255]), "{:?}", px(&r, 2, y));
+        assert!(
+            near(px(&r, 0, y), [128, 128, 128, 255]) && near(px(&r, 1, y), [128, 128, 128, 255]),
+            "{:?}",
+            px(&r, 0, y)
+        );
+        assert!(
+            near(px(&r, 2, y), [254, 0, 0, 255]) && near(px(&r, 3, y), [254, 0, 0, 255]),
+            "{:?}",
+            px(&r, 2, y)
+        );
     }
 }
 
@@ -90,8 +109,16 @@ fn packbits_ycbcr_with_video_range_reference_levels() {
     let mut data = vec![5u8];
     data.extend(units);
     let rbw = vec![16, 1, 235, 1, 128, 1, 240, 1, 128, 1, 240, 1];
-    let r = decode_raster("frame.tif", &ycbcr_tiff(2, 1, (1, 1), 32773, &data, &[(532, 5, rbw)])).unwrap();
-    assert!(near(px(&r, 0, 0), [255, 255, 255, 255]), "{:?}", px(&r, 0, 0));
+    let r = decode_raster(
+        "frame.tif",
+        &ycbcr_tiff(2, 1, (1, 1), 32773, &data, &[(532, 5, rbw)]),
+    )
+    .unwrap();
+    assert!(
+        near(px(&r, 0, 0), [255, 255, 255, 255]),
+        "{:?}",
+        px(&r, 0, 0)
+    );
     assert!(near(px(&r, 1, 0), [0, 0, 0, 255]), "{:?}", px(&r, 1, 0));
 }
 
@@ -123,7 +150,11 @@ fn damaged_ycbcr_tiffs_fail_without_panicking() {
     cases.push(ycbcr_tiff(4, 4, (0, 2), 1, &data, &[]));
     cases.push(ycbcr_tiff(4, 4, (2, 2), 32773, &[0x81, 7], &[]));
     for (i, b) in cases.into_iter().enumerate() {
-        assert!(std::panic::catch_unwind(|| decode_raster("damaged.tiff", &b).map(|r| r.rgba.len())).is_ok(), "case {i} panicked");
+        assert!(
+            std::panic::catch_unwind(|| decode_raster("damaged.tiff", &b).map(|r| r.rgba.len()))
+                .is_ok(),
+            "case {i} panicked"
+        );
     }
 }
 
@@ -132,25 +163,51 @@ fn damaged_ycbcr_tiffs_fail_without_panicking() {
 /// across a data unit) does not dominate; 95 × 63 so the data units do not line up.
 #[test]
 fn ffmpeg_ycbcr_tiffs_match_ffmpeg_decode() {
-    let Some(ff) = filmcraft_testkit::oracle::ffmpeg_or_skip("YCbCr TIFF oracle") else { return };
+    let Some(ff) = filmcraft_testkit::oracle::ffmpeg_or_skip("YCbCr TIFF oracle") else {
+        return;
+    };
     let dir = filmcraft_testkit::fixtures::fixtures_dir("media/tiff_ycbcr");
     for pix_fmt in ["yuv420p", "yuv422p", "yuv444p"] {
         let tiff = dir.join(format!("gradient_{pix_fmt}.tiff"));
         let made = filmcraft_testkit::fixtures::generate(&tiff, |tmp| {
             std::process::Command::new(&ff)
-                .args(["-y", "-v", "error", "-f", "lavfi", "-i", "gradients=size=95x63:seed=7", "-frames:v", "1", "-pix_fmt", pix_fmt])
+                .args([
+                    "-y",
+                    "-v",
+                    "error",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    "gradients=size=95x63:seed=7",
+                    "-frames:v",
+                    "1",
+                    "-pix_fmt",
+                    pix_fmt,
+                ])
                 .arg(tmp)
                 .status()
                 .is_ok_and(|s| s.success())
         });
         let Some(tiff) = made else { continue };
-        let out = std::process::Command::new(&ff).args(["-v", "error", "-i"]).arg(&tiff).args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"]).output().unwrap();
+        let out = std::process::Command::new(&ff)
+            .args(["-v", "error", "-i"])
+            .arg(&tiff)
+            .args(["-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+            .output()
+            .unwrap();
         let ours = decode_raster("gradient.tiff", &std::fs::read(&tiff).unwrap()).unwrap();
         assert_eq!((ours.width, ours.height), (95, 63), "{pix_fmt}");
         let theirs = out.stdout;
         assert_eq!(theirs.len(), 95 * 63 * 3, "{pix_fmt}");
-        let worst =
-            ours.rgba.as_chunks::<4>().0.iter().zip(theirs.as_chunks::<3>().0).flat_map(|(a, b)| (0..3).map(move |c| a[c].abs_diff(b[c]))).max().unwrap();
+        let worst = ours
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(theirs.as_chunks::<3>().0)
+            .flat_map(|(a, b)| (0..3).map(move |c| a[c].abs_diff(b[c])))
+            .max()
+            .unwrap();
         assert!(worst <= 6, "{pix_fmt}: worst channel difference {worst}");
     }
 }

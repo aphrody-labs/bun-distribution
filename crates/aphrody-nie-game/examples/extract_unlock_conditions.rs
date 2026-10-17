@@ -63,7 +63,9 @@ fn load(vfs: &Vfs, prefix: &str) -> Option<Value> {
         .iter()
         .map(|(p, _)| p.to_string())
         .filter(|p| {
-            p.rsplit('/').next().is_some_and(|b| b.starts_with(prefix) && b.ends_with(".cfg.bin"))
+            p.rsplit('/')
+                .next()
+                .is_some_and(|b| b.starts_with(prefix) && b.ends_with(".cfg.bin"))
         })
         .min()?;
     eprintln!("{prefix} = {path}");
@@ -80,9 +82,12 @@ fn kind_name(k: UnlockType) -> &'static str {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let mut dist: BTreeMap<&'static str, usize> = BTreeMap::new();
     let mut total = 0usize;

@@ -22,7 +22,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             append_anchor
         ),
-        cmd!("path.close", "Close Path", [], None, "{id, in?: [x,y] (handle into the first anchor), independent?: bool}", has_doc, close),
+        cmd!(
+            "path.close",
+            "Close Path",
+            [],
+            None,
+            "{id, in?: [x,y] (handle into the first anchor), independent?: bool}",
+            has_doc,
+            close
+        ),
         cmd!(
             "path.moveAnchors",
             "Move Anchors",
@@ -104,7 +112,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             reshape
         ),
-        cmd!("path.insertAnchor", "Add Anchor Point", [], None, "{id, subpath, segment, t: 0..1}", has_doc, insert_anchor),
+        cmd!(
+            "path.insertAnchor",
+            "Add Anchor Point",
+            [],
+            None,
+            "{id, subpath, segment, t: 0..1}",
+            has_doc,
+            insert_anchor
+        ),
         cmd!(
             "path.cutAtAnchors",
             "Cut Path at Selected Anchor Points",
@@ -152,7 +168,12 @@ fn close(s: &mut Session, p: &Value) -> Result<Value> {
     let independent = bool_or(p, "independent", false);
     s.edit("Close Path", |d, sel| {
         let path = path_mut(d, id)?;
-        let sp = path.subpaths.iter_mut().rev().find(|s| !s.closed).ok_or_else(|| EngineError::Other("path is already closed".into()))?;
+        let sp = path
+            .subpaths
+            .iter_mut()
+            .rev()
+            .find(|s| !s.closed)
+            .ok_or_else(|| EngineError::Other("path is already closed".into()))?;
         sp.closed = true;
         if let (Some(h), Some(first)) = (h_in, sp.anchors.first_mut()) {
             first.h_in = h;
@@ -172,14 +193,22 @@ pub(crate) fn move_anchors(s: &mut Session, p: &Value) -> Result<Value> {
     // Objects selected whole move as objects, and their pattern tiles move with them when
     // `patterns` (default: General › Transform Pattern Tiles) is on.
     let whole = s.doc()?.selection.whole();
-    let sc = Scaling { patterns: super::object::transform_patterns(s, p, &whole)?, ..Scaling::default() };
+    let sc = Scaling {
+        patterns: super::object::transform_patterns(s, p, &whole)?,
+        ..Scaling::default()
+    };
     transform_anchors(s, "Move", vectorcraft_geom::Affine::translate(d), sc)?;
     ok()
 }
 
 /// Apply `xf` to the direct-selected anchors, their handles with them, and (with `sc`) to the
 /// objects selected whole (those with no entry in the selection's `anchors`).
-pub(crate) fn transform_anchors(s: &mut Session, label: &str, xf: vectorcraft_geom::Affine, sc: Scaling) -> Result<()> {
+pub(crate) fn transform_anchors(
+    s: &mut Session,
+    label: &str,
+    xf: vectorcraft_geom::Affine,
+    sc: Scaling,
+) -> Result<()> {
     let sel = s.doc()?.selection.clone();
     s.edit(label, |doc, _| {
         for id in &sel.objects {
@@ -206,13 +235,21 @@ pub(crate) fn transform_anchors(s: &mut Session, label: &str, xf: vectorcraft_ge
 fn set_handle(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.setHandle", "missing id"))?;
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let ai = p.get("anchor").and_then(Value::as_u64).ok_or_else(|| bad("path.setHandle", "missing anchor"))? as usize;
+    let ai = p
+        .get("anchor")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad("path.setHandle", "missing anchor"))? as usize;
     let out = str_param(p, "which") != Some("in");
-    let pos = Point::new(f64_req(p, "x", "path.setHandle")?, f64_req(p, "y", "path.setHandle")?);
+    let pos = Point::new(
+        f64_req(p, "x", "path.setHandle")?,
+        f64_req(p, "y", "path.setHandle")?,
+    );
     let independent = bool_or(p, "independent", false);
     s.edit("Reshape", |d, _| {
         let path = path_mut(d, id)?;
-        let a = path.anchor_mut(si, ai).ok_or_else(|| EngineError::Other("no such anchor".into()))?;
+        let a = path
+            .anchor_mut(si, ai)
+            .ok_or_else(|| EngineError::Other("no such anchor".into()))?;
         a.set_handle(out, pos, independent);
         Ok(())
     })?;
@@ -221,7 +258,10 @@ fn set_handle(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_anchors(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.setAnchors", "missing id"))?;
-    let subs = p.get("subpaths").and_then(Value::as_array).ok_or_else(|| bad("path.setAnchors", "missing subpaths"))?;
+    let subs = p
+        .get("subpaths")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("path.setAnchors", "missing subpaths"))?;
     let data = PathData::new(
         subs.iter()
             .map(|sp| {
@@ -250,7 +290,18 @@ fn set_anchors(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn selected_paths(s: &Session) -> Result<Vec<NodeId>> {
     let st = s.doc()?;
-    Ok(st.selection.objects.iter().copied().filter(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Path { .. }))).collect())
+    Ok(st
+        .selection
+        .objects
+        .iter()
+        .copied()
+        .filter(|id| {
+            matches!(
+                st.doc.node(*id).map(|n| &n.kind),
+                Some(NodeKind::Path { .. })
+            )
+        })
+        .collect())
 }
 
 /// The paths in the subtrees of `ids` (in groups and compound paths too), each once.
@@ -268,7 +319,13 @@ pub(super) fn paths_in(d: &vectorcraft_doc::Document, ids: &[NodeId]) -> Vec<Nod
 
 fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "path.reverse";
-    let want = p.get("reversed").map(|v| v.as_bool().ok_or_else(|| bad(C, "`reversed` must be true or false"))).transpose()?;
+    let want = p
+        .get("reversed")
+        .map(|v| {
+            v.as_bool()
+                .ok_or_else(|| bad(C, "`reversed` must be true or false"))
+        })
+        .transpose()?;
     let ids = paths_in(&s.doc()?.doc, &targets(s, p)?);
     if ids.is_empty() {
         return Err(bad(C, "select paths"));
@@ -280,7 +337,12 @@ fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
             let flip: Vec<bool> = d
                 .node(*id)
                 .and_then(|n| n.path_data())
-                .map_or(vec![], |pd| pd.subpaths.iter().map(|sp| want.is_none_or(|ccw| (sp.signed_area() < 0.0) != ccw)).collect());
+                .map_or(vec![], |pd| {
+                    pd.subpaths
+                        .iter()
+                        .map(|sp| want.is_none_or(|ccw| (sp.signed_area() < 0.0) != ccw))
+                        .collect()
+                });
             if flip.contains(&true) {
                 for (sp, f) in path_mut(d, *id)?.subpaths.iter_mut().zip(flip) {
                     if f {
@@ -336,7 +398,12 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = match ids_param(p, "ids") {
         Some(ids) => {
             let st = s.doc()?;
-            if let Some(id) = ids.iter().find(|id| !matches!(st.doc.node(**id).map(|n| &n.kind), Some(NodeKind::Path { .. }))) {
+            if let Some(id) = ids.iter().find(|id| {
+                !matches!(
+                    st.doc.node(**id).map(|n| &n.kind),
+                    Some(NodeKind::Path { .. })
+                )
+            }) {
                 return Err(bad(C, format!("{} isn't a path", id.0)));
             }
             ids
@@ -349,8 +416,15 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
         let st = s.doc()?;
         let mut merged = vec![];
         for (id, picked) in &st.selection.anchors {
-            let Some(mut path) = st.doc.node(*id).and_then(|n| n.path_data()).cloned() else { continue };
-            let n: usize = path.subpaths.iter_mut().enumerate().map(|(si, sp)| merge_coincident(sp, |ai| picked.contains(&(si, ai)))).sum();
+            let Some(mut path) = st.doc.node(*id).and_then(|n| n.path_data()).cloned() else {
+                continue;
+            };
+            let n: usize = path
+                .subpaths
+                .iter_mut()
+                .enumerate()
+                .map(|(si, sp)| merge_coincident(sp, |ai| picked.contains(&(si, ai))))
+                .sum();
             if n > 0 {
                 merged.push((*id, path));
             }
@@ -372,8 +446,14 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
     // must come last, the second's first.
     let ends = match p.get("ends") {
         None => None,
-        Some(e) => match e.as_array().map(|a| a.iter().map(Value::as_str).collect::<Vec<_>>()).as_deref() {
-            Some([Some(a @ ("first" | "last")), Some(b @ ("first" | "last"))]) => Some((*a == "first", *b == "last")),
+        Some(e) => match e
+            .as_array()
+            .map(|a| a.iter().map(Value::as_str).collect::<Vec<_>>())
+            .as_deref()
+        {
+            Some([Some(a @ ("first" | "last")), Some(b @ ("first" | "last"))]) => {
+                Some((*a == "first", *b == "last"))
+            }
             _ => return Err(bad(C, "ends must be two of \"first\" and \"last\"")),
         },
     };
@@ -382,7 +462,11 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
             let id = *one;
             s.edit("Join", |d, _| {
                 let path = path_mut(d, id)?;
-                let sp = path.subpaths.iter_mut().find(|s| !s.closed).ok_or_else(|| EngineError::Other("path is already closed".into()))?;
+                let sp = path
+                    .subpaths
+                    .iter_mut()
+                    .find(|s| !s.closed)
+                    .ok_or_else(|| EngineError::Other("path is already closed".into()))?;
                 // Merge coincident end points.
                 if sp.anchors.len() > 2
                     && end_points(sp).is_some_and(|(f, l)| f.distance(l) < 1e-6)
@@ -401,9 +485,16 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
                 return Err(bad(C, "join two different paths"));
             }
             s.edit("Join", |d, sel| {
-                let pb = d.node(b).and_then(|n| n.path_data()).cloned().ok_or(EngineError::NoNode(b))?;
+                let pb = d
+                    .node(b)
+                    .and_then(|n| n.path_data())
+                    .cloned()
+                    .ok_or(EngineError::NoNode(b))?;
                 let pa = path_mut(d, a)?;
-                let (Some(sa), Some(sb)) = (pa.subpaths.iter().position(|s| !s.closed), pb.subpaths.iter().position(|s| !s.closed)) else {
+                let (Some(sa), Some(sb)) = (
+                    pa.subpaths.iter().position(|s| !s.closed),
+                    pb.subpaths.iter().position(|s| !s.closed),
+                ) else {
                     return Err(EngineError::Other("join needs open paths".into()));
                 };
                 let mut x = pa.subpaths[sa].clone();
@@ -412,18 +503,28 @@ fn join(s: &mut Session, p: &Value) -> Result<Value> {
                     return Err(EngineError::Other("join needs open paths".into()));
                 };
                 // The ends asked for, else the closest pair.
-                let cands =
-                    [(xl.distance(yf), false, false), (xl.distance(yl), false, true), (xf.distance(yf), true, false), (xf.distance(yl), true, true)];
-                let (rx, ry) =
-                    ends.unwrap_or_else(|| cands.into_iter().min_by(|p, q| p.0.total_cmp(&q.0)).map_or((false, false), |(_, rx, ry)| (rx, ry)));
+                let cands = [
+                    (xl.distance(yf), false, false),
+                    (xl.distance(yl), false, true),
+                    (xf.distance(yf), true, false),
+                    (xf.distance(yl), true, true),
+                ];
+                let (rx, ry) = ends.unwrap_or_else(|| {
+                    cands
+                        .into_iter()
+                        .min_by(|p, q| p.0.total_cmp(&q.0))
+                        .map_or((false, false), |(_, rx, ry)| (rx, ry))
+                });
                 if rx {
                     x.reverse();
                 }
                 if ry {
                     y.reverse();
                 }
-                if let (Some(xe), Some(ys)) = (x.anchors.last().map(|a| a.p), y.anchors.first().map(|a| a.p))
-                    && xe.distance(ys) < 1e-6
+                if let (Some(xe), Some(ys)) = (
+                    x.anchors.last().map(|a| a.p),
+                    y.anchors.first().map(|a| a.p),
+                ) && xe.distance(ys) < 1e-6
                 {
                     let first = y.anchors.remove(0);
                     if let Some(l) = x.anchors.last_mut() {
@@ -448,7 +549,9 @@ pub(super) fn anchor_targets(s: &Session) -> Result<AnchorTargets> {
     let st = s.doc()?;
     let mut out = vec![];
     for id in &st.selection.objects {
-        let Some(pd) = st.doc.node(*id).and_then(|n| n.path_data()) else { continue };
+        let Some(pd) = st.doc.node(*id).and_then(|n| n.path_data()) else {
+            continue;
+        };
         let v: Vec<(usize, usize)> = match st.selection.anchors.get(id) {
             Some(set) => set.iter().copied().collect(),
             None => pd.anchors().map(|(s, a, _)| (s, a)).collect(),
@@ -463,12 +566,25 @@ fn average(s: &mut Session, p: &Value) -> Result<Value> {
     let d0 = &s.doc()?.doc;
     let pts: Vec<Point> = t
         .iter()
-        .flat_map(|(id, v)| v.iter().filter_map(move |(si, ai)| d0.node(*id)?.path_data()?.subpaths.get(*si)?.anchors.get(*ai).map(|a| a.p)))
+        .flat_map(|(id, v)| {
+            v.iter().filter_map(move |(si, ai)| {
+                d0.node(*id)?
+                    .path_data()?
+                    .subpaths
+                    .get(*si)?
+                    .anchors
+                    .get(*ai)
+                    .map(|a| a.p)
+            })
+        })
         .collect();
     if pts.is_empty() {
         return ok();
     }
-    let c = Point::new(pts.iter().map(|p| p.x).sum::<f64>() / pts.len() as f64, pts.iter().map(|p| p.y).sum::<f64>() / pts.len() as f64);
+    let c = Point::new(
+        pts.iter().map(|p| p.x).sum::<f64>() / pts.len() as f64,
+        pts.iter().map(|p| p.y).sum::<f64>() / pts.len() as f64,
+    );
     let axis = str_param(p, "axis").unwrap_or("both").to_string();
     s.edit("Average", |d, _| {
         for (id, v) in &t {
@@ -504,7 +620,9 @@ fn convert_anchors(s: &mut Session, p: &Value) -> Result<Value> {
         for (id, v) in &t {
             let path = path_mut(d, *id)?;
             for &(si, ai) in v {
-                let Some(sp) = path.subpaths.get_mut(si) else { continue };
+                let Some(sp) = path.subpaths.get_mut(si) else {
+                    continue;
+                };
                 if smooth {
                     sp.smooth_anchor(ai);
                 } else if let Some(a) = sp.anchors.get_mut(ai) {
@@ -533,7 +651,10 @@ pub(crate) fn delete_anchors(s: &mut Session, _: &Value) -> Result<Value> {
                         .into_iter()
                         .enumerate()
                         .flat_map(|(si, sp)| {
-                            let cuts = refs.iter().filter_map(|&(s, seg)| (s == si).then_some(seg)).collect();
+                            let cuts = refs
+                                .iter()
+                                .filter_map(|&(s, seg)| (s == si).then_some(seg))
+                                .collect();
                             without_segments(sp, &cuts)
                         })
                         .collect();
@@ -573,8 +694,14 @@ pub(crate) fn delete_anchors(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// Remove connections, splitting open/closed contours into their surviving open runs.
 fn without_segments(sp: SubPath, removed: &BTreeSet<usize>) -> Vec<SubPath> {
-    let cuts: BTreeSet<usize> = removed.iter().copied().filter(|&i| i < sp.segment_count()).collect();
-    let Some(&first) = cuts.first() else { return vec![sp] };
+    let cuts: BTreeSet<usize> = removed
+        .iter()
+        .copied()
+        .filter(|&i| i < sp.segment_count())
+        .collect();
+    let Some(&first) = cuts.first() else {
+        return vec![sp];
+    };
     let n = sp.anchors.len();
     let start = if sp.closed { (first + 1) % n } else { 0 };
     let mut result = vec![];
@@ -607,15 +734,26 @@ fn open_run(mut anchors: Vec<vectorcraft_geom::Anchor>) -> Option<SubPath> {
 
 fn reshape(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.reshape", "missing id"))?;
-    let at = Point::new(f64_req(p, "x", "path.reshape")?, f64_req(p, "y", "path.reshape")?);
+    let at = Point::new(
+        f64_req(p, "x", "path.reshape")?,
+        f64_req(p, "y", "path.reshape")?,
+    );
     let delta = Vec2::new(f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0));
     let tol = f64_or(p, "tol", 3.0).max(0.0);
     let radius = p.get("radius").and_then(Value::as_f64);
     s.edit("Reshape", |d, _| {
         let path = path_mut(d, id)?;
-        let (si, seg, t, _, _) = path.nearest(at).ok_or_else(|| EngineError::Other("empty path".into()))?;
+        let (si, seg, t, _, _) = path
+            .nearest(at)
+            .ok_or_else(|| EngineError::Other("empty path".into()))?;
         let sp = &mut path.subpaths[si];
-        let grabbed = match sp.anchors.iter().enumerate().map(|(i, a)| (i, a.p.distance(at))).min_by(|a, b| a.1.total_cmp(&b.1)) {
+        let grabbed = match sp
+            .anchors
+            .iter()
+            .enumerate()
+            .map(|(i, a)| (i, a.p.distance(at)))
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+        {
             Some((i, dist)) if dist <= tol => i,
             _ => sp.insert_anchor(seg, t),
         };
@@ -646,11 +784,17 @@ fn reshape(s: &mut Session, p: &Value) -> Result<Value> {
 fn insert_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     let id = id_param(p, "id").ok_or_else(|| bad("path.insertAnchor", "missing id"))?;
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let seg = p.get("segment").and_then(Value::as_u64).ok_or_else(|| bad("path.insertAnchor", "missing segment"))? as usize;
+    let seg = p
+        .get("segment")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad("path.insertAnchor", "missing segment"))? as usize;
     let t = f64_or(p, "t", 0.5).clamp(0.0, 1.0);
     let idx = s.edit("Add Anchor Point", |d, _| {
         let path = path_mut(d, id)?;
-        let sp = path.subpaths.get_mut(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let sp = path
+            .subpaths
+            .get_mut(si)
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
         if seg >= sp.segment_count() {
             return Err(EngineError::Other("no such segment".into()));
         }
@@ -665,14 +809,25 @@ fn cut_at_anchors(s: &mut Session, _: &Value) -> Result<Value> {
     // Each selected path's subpaths cut at its selected anchors, those that cut anything.
     let mut cuts: Vec<(NodeId, Vec<SubPath>, Vec<bool>)> = vec![];
     for (id, set) in &st.selection.anchors {
-        let Some(pd) = st.doc.node(*id).and_then(|n| n.path_data()) else { continue };
+        let Some(pd) = st.doc.node(*id).and_then(|n| n.path_data()) else {
+            continue;
+        };
         let (mut subs, mut starts) = (vec![], vec![]);
         for (si, sp) in pd.subpaths.iter().enumerate() {
-            let at: BTreeSet<usize> = set.iter().filter(|(s, _)| *s == si).map(|(_, a)| *a).collect();
+            let at: BTreeSet<usize> = set
+                .iter()
+                .filter(|(s, _)| *s == si)
+                .map(|(_, a)| *a)
+                .collect();
             let pieces = sp.cut_at(&at);
             // The pieces that start at a cut: every piece of an opened closed subpath, all but the
             // first of an open one.
-            starts.extend(pieces.iter().enumerate().map(|(k, piece)| if sp.closed { !piece.closed } else { k > 0 }));
+            starts.extend(
+                pieces
+                    .iter()
+                    .enumerate()
+                    .map(|(k, piece)| if sp.closed { !piece.closed } else { k > 0 }),
+            );
             subs.extend(pieces);
         }
         if starts.contains(&true) {
@@ -680,7 +835,10 @@ fn cut_at_anchors(s: &mut Session, _: &Value) -> Result<Value> {
         }
     }
     if cuts.is_empty() {
-        return Err(bad(C, "direct-select anchor points to cut at (not the end points of open paths)"));
+        return Err(bad(
+            C,
+            "direct-select anchor points to cut at (not the end points of open paths)",
+        ));
     }
     let ids = s.edit("Cut Path", |d, sel| {
         let (mut all, mut picked) = (vec![], vec![]);
@@ -688,13 +846,32 @@ fn cut_at_anchors(s: &mut Session, _: &Value) -> Result<Value> {
         for (id, subs, starts) in cuts {
             // A path of one subpath becomes one path per piece (the first keeps the id); the
             // pieces of a compound shape stay subpaths of it.
-            if d.node(id).and_then(|n| n.path_data()).is_some_and(|pd| pd.subpaths.len() == 1) {
-                let ids = super::draw2::replace_with_pieces(d, &mut cut, id, subs.into_iter().map(PathData::single).collect())?;
-                picked.extend(ids.iter().zip(&starts).filter(|(_, s)| **s).map(|(id, _)| (*id, (0, 0))));
+            if d.node(id)
+                .and_then(|n| n.path_data())
+                .is_some_and(|pd| pd.subpaths.len() == 1)
+            {
+                let ids = super::draw2::replace_with_pieces(
+                    d,
+                    &mut cut,
+                    id,
+                    subs.into_iter().map(PathData::single).collect(),
+                )?;
+                picked.extend(
+                    ids.iter()
+                        .zip(&starts)
+                        .filter(|(_, s)| **s)
+                        .map(|(id, _)| (*id, (0, 0))),
+                );
                 all.extend(ids);
             } else {
                 path_mut(d, id)?.subpaths = subs;
-                picked.extend(starts.iter().enumerate().filter(|(_, s)| **s).map(|(si, _)| (id, (si, 0))));
+                picked.extend(
+                    starts
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, s)| **s)
+                        .map(|(si, _)| (id, (si, 0))),
+                );
                 all.push(id);
             }
         }

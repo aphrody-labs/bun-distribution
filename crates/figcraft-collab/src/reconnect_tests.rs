@@ -11,14 +11,18 @@ use crate::undo_tests::run_with_undo;
 use crate::{BatchKind, CatchUp, Client, Limits, NoRecompute, Notice, Outgoing, Server};
 
 fn hello() -> Hello {
-    let ClientMsg::Hello(h) = Client::hello("f", "tok", "Ada", "#FF8800") else { panic!("not a hello") };
+    let ClientMsg::Hello(h) = Client::hello("f", "tok", "Ada", "#FF8800") else {
+        panic!("not a hello")
+    };
     h
 }
 
 /// Join `s` and return the client and the welcome's other messages.
 fn join(s: &mut Server) -> Client {
     let (_, out) = s.join(hello()).unwrap();
-    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else { panic!("no welcome") };
+    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else {
+        panic!("no welcome")
+    };
     Client::join(welcome).unwrap()
 }
 
@@ -40,7 +44,9 @@ fn deliver(c: &mut Client, out: &[Outgoing]) -> Vec<ClientMsg> {
 
 /// `c` comes back: it says hello again and gets its welcome. Returns what it sends then.
 fn come_back(s: &mut Server, c: &mut Client) -> Vec<ClientMsg> {
-    let ClientMsg::Hello(h) = c.reconnect(hello()) else { panic!() };
+    let ClientMsg::Hello(h) = c.reconnect(hello()) else {
+        panic!()
+    };
     let (id, out) = s.join(h).unwrap();
     assert_eq!(id, c.id(), "a reconnecting client keeps its id");
     deliver(c, &out)
@@ -58,7 +64,8 @@ fn a_batch_whose_confirmation_was_lost_is_confirmed_by_the_catch_up() {
     let mut a = join(&mut s);
     let page = s.document().first_page().unwrap();
     let msg = edit(&mut a, |d| {
-        d.create(page, NodeKind::Rectangle, "R", 0.0, 0.0, 5.0, 5.0).unwrap();
+        d.create(page, NodeKind::Rectangle, "R", 0.0, 0.0, 5.0, 5.0)
+            .unwrap();
     })
     .unwrap();
     // The server applies it, but the connection drops before the echo arrives.
@@ -93,7 +100,16 @@ fn a_batch_refused_while_offline_is_dropped_with_a_reason() {
     let resend = come_back(&mut s, &mut a);
     assert_eq!(resend.len(), 1, "the offline edit goes out");
     let notices = a.take_notices();
-    assert!(matches!(notices.as_slice(), [Notice::Rejected { kind: BatchKind::Edit, .. }]), "{notices:?}");
+    assert!(
+        matches!(
+            notices.as_slice(),
+            [Notice::Rejected {
+                kind: BatchKind::Edit,
+                ..
+            }]
+        ),
+        "{notices:?}"
+    );
     let out = s.receive(a.id(), resend.into_iter().next().unwrap());
     deliver(&mut a, &out);
     deliver(&mut b, &out);
@@ -104,20 +120,41 @@ fn a_batch_refused_while_offline_is_dropped_with_a_reason() {
 
 #[test]
 fn a_long_absence_catches_up_with_a_snapshot() {
-    let mut s = Server::new(base(), "tok", Limits { max_log_batches: 3, ..Limits::default() });
+    let mut s = Server::new(
+        base(),
+        "tok",
+        Limits {
+            max_log_batches: 3,
+            ..Limits::default()
+        },
+    );
     let mut a = join(&mut s);
     let mut b = join(&mut s);
     let page = s.document().first_page().unwrap();
     a.disconnect();
     s.leave(a.id());
     for i in 0..5 {
-        let m = edit(&mut b, |d| d.node_mut(page).unwrap().name = format!("Page {i}")).unwrap();
+        let m = edit(&mut b, |d| {
+            d.node_mut(page).unwrap().name = format!("Page {i}")
+        })
+        .unwrap();
         let out = s.receive(b.id(), m);
         deliver(&mut b, &out);
     }
-    let ClientMsg::Hello(h) = a.reconnect(hello()) else { panic!() };
+    let ClientMsg::Hello(h) = a.reconnect(hello()) else {
+        panic!()
+    };
     let (_, out) = s.join(h).unwrap();
-    assert!(matches!(&out[0], Outgoing::To(_, ServerMsg::Welcome { catch_up: CatchUp::Snapshot(_), .. })));
+    assert!(matches!(
+        &out[0],
+        Outgoing::To(
+            _,
+            ServerMsg::Welcome {
+                catch_up: CatchUp::Snapshot(_),
+                ..
+            }
+        )
+    ));
     deliver(&mut a, &out);
     assert_eq!(a.view(), s.replica());
     // A short absence gets the missed batches only.
@@ -126,16 +163,27 @@ fn a_long_absence_catches_up_with_a_snapshot() {
     let m = edit(&mut b, |d| d.node_mut(page).unwrap().name = "Later".into()).unwrap();
     let out = s.receive(b.id(), m);
     deliver(&mut b, &out);
-    let ClientMsg::Hello(h) = a.reconnect(hello()) else { panic!() };
+    let ClientMsg::Hello(h) = a.reconnect(hello()) else {
+        panic!()
+    };
     let (_, out) = s.join(h).unwrap();
-    assert!(matches!(&out[0], Outgoing::To(_, ServerMsg::Welcome { catch_up: CatchUp::Delta(d), .. }) if d.len() == 1));
+    assert!(
+        matches!(&out[0], Outgoing::To(_, ServerMsg::Welcome { catch_up: CatchUp::Delta(d), .. }) if d.len() == 1)
+    );
     deliver(&mut a, &out);
     assert_eq!(a.view(), s.replica());
 }
 
 #[test]
 fn after_a_snapshot_undo_leaves_what_others_changed_meanwhile() {
-    let mut s = Server::new(base(), "tok", Limits { max_log_batches: 2, ..Limits::default() });
+    let mut s = Server::new(
+        base(),
+        "tok",
+        Limits {
+            max_log_batches: 2,
+            ..Limits::default()
+        },
+    );
     let mut a = join(&mut s);
     let mut b = join(&mut s);
     let page = s.document().first_page().unwrap();
@@ -152,13 +200,27 @@ fn after_a_snapshot_undo_leaves_what_others_changed_meanwhile() {
     a.disconnect();
     s.leave(a.id());
     for i in 0..4 {
-        let m = edit(&mut b, |d| d.node_mut(f).unwrap().name = format!("B frame {i}")).unwrap();
+        let m = edit(&mut b, |d| {
+            d.node_mut(f).unwrap().name = format!("B frame {i}")
+        })
+        .unwrap();
         let out = s.receive(b.id(), m);
         deliver(&mut b, &out);
     }
-    let ClientMsg::Hello(h) = a.reconnect(hello()) else { panic!() };
+    let ClientMsg::Hello(h) = a.reconnect(hello()) else {
+        panic!()
+    };
     let (_, out) = s.join(h).unwrap();
-    assert!(matches!(&out[0], Outgoing::To(_, ServerMsg::Welcome { catch_up: CatchUp::Snapshot(_), .. })));
+    assert!(matches!(
+        &out[0],
+        Outgoing::To(
+            _,
+            ServerMsg::Welcome {
+                catch_up: CatchUp::Snapshot(_),
+                ..
+            }
+        )
+    ));
     deliver(&mut a, &out);
     // Undo: the page name goes back, the frame keeps b's later name.
     let msgs = a.undo(&NoRecompute).unwrap();
@@ -183,7 +245,14 @@ fn a_copy_sent_again_is_ignored_and_a_stale_connection_is_taken_over() {
     assert_eq!(s.seq(), 1);
     deliver(&mut a, &out);
     // a comes back before the server noticed its old connection is gone: same id, no "full".
-    let mut tight = Server::new(base(), "tok", Limits { max_peers: 1, ..Limits::default() });
+    let mut tight = Server::new(
+        base(),
+        "tok",
+        Limits {
+            max_peers: 1,
+            ..Limits::default()
+        },
+    );
     let mut b = join(&mut tight);
     let resend = come_back(&mut tight, &mut b);
     assert!(resend.is_empty());
@@ -197,18 +266,27 @@ fn an_unknown_client_joins_as_new_and_its_queue_is_dropped() {
     let mut a = join(&mut s);
     let page = s.document().first_page().unwrap();
     a.disconnect();
-    edit(&mut a, |d| d.node_mut(page).unwrap().name = "Offline".into());
+    edit(&mut a, |d| {
+        d.node_mut(page).unwrap().name = "Offline".into()
+    });
     // A different session (it never gave out a's id).
     let mut other = Server::new(base(), "tok", Limits::default());
     join(&mut other);
-    let ClientMsg::Hello(h) = a.reconnect(hello()) else { panic!() };
+    let ClientMsg::Hello(h) = a.reconnect(hello()) else {
+        panic!()
+    };
     let (id, out) = other.join(h).unwrap();
-    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else { panic!("no welcome") };
+    let Some(Outgoing::To(_, welcome)) = out.into_iter().next() else {
+        panic!("no welcome")
+    };
     assert!(a.receive(welcome, &NoRecompute).unwrap().is_empty());
     assert_eq!(a.id(), id);
     assert_eq!(a.pending(), 0);
     assert_eq!(a.view(), other.replica());
-    assert!(matches!(a.take_notices().as_slice(), [Notice::Lost { batches: 1 }]));
+    assert!(matches!(
+        a.take_notices().as_slice(),
+        [Notice::Lost { batches: 1 }]
+    ));
 }
 
 #[test]
@@ -222,7 +300,10 @@ fn the_session_state_survives_a_restart() {
     // Saved in both encodings and read back.
     let state = s.state().unwrap();
     let bytes = message::encode(&state).unwrap();
-    assert_eq!(message::decode::<crate::SessionState>(&bytes, usize::MAX).unwrap(), state);
+    assert_eq!(
+        message::decode::<crate::SessionState>(&bytes, usize::MAX).unwrap(),
+        state
+    );
     let json = message::encode_json(&state).unwrap();
     let state = message::decode_json::<crate::SessionState>(&json, usize::MAX).unwrap();
     let mut restarted = Server::restore(state, "tok", Limits::default()).unwrap();
@@ -246,7 +327,10 @@ fn random_drops_and_reconnects_converge() {
     // A short log: long absences fall back to snapshots.
     let mut snapshots = 0;
     for seed in 20..30 {
-        let limits = Limits { max_log_batches: 4, ..Limits::default() };
+        let limits = Limits {
+            max_log_batches: 4,
+            ..Limits::default()
+        };
         let sim = Sim::with_limits(base(), 3, seed, 12, limits).unwrap();
         let sim = run_with_undo(seed, 3, 90, &Width, true, Some(sim));
         snapshots += sim.snapshots;

@@ -126,7 +126,10 @@ impl Mem0V3Provider {
         let tag_refs: Vec<&str> = rec.tags.iter().map(String::as_str).collect();
         let body = AddBody {
             user_id: &rec.agent_id,
-            messages: vec![Mem0Message { role: "user", content: &rec.content }],
+            messages: vec![Mem0Message {
+                role: "user",
+                content: &rec.content,
+            }],
             categories: tag_refs,
         };
         let resp = self
@@ -141,7 +144,9 @@ impl Mem0V3Provider {
         }
         let parsed: AddAsyncResponse = resp.json().await?;
         if parsed.event_id.is_empty() {
-            return Err(MemoryError::Unexpected("async add returned no event_id".into()));
+            return Err(MemoryError::Unexpected(
+                "async add returned no event_id".into(),
+            ));
         }
         Ok(parsed.event_id)
     }
@@ -165,20 +170,22 @@ impl Mem0V3Provider {
             let event: EventStatus = resp.json().await?;
             match event.classify() {
                 EventClass::Done => {
-                    return Ok(EventOutcome::Done { memory_id: event.first_memory_id() });
-                },
+                    return Ok(EventOutcome::Done {
+                        memory_id: event.first_memory_id(),
+                    });
+                }
                 EventClass::Failed => {
                     return Ok(EventOutcome::Failed {
                         reason: event.status.unwrap_or_else(|| "unknown".into()),
                     });
-                },
+                }
                 EventClass::Pending => {
                     // Sleep before the next attempt, but never after the last.
                     if attempt + 1 < MAX_POLL_ATTEMPTS {
                         tokio::time::sleep(std::time::Duration::from_millis(POLL_INTERVAL_MS))
                             .await;
                     }
-                },
+                }
             }
         }
         Ok(EventOutcome::Pending)
@@ -239,7 +246,12 @@ enum EventClass {
 
 impl EventStatus {
     fn classify(&self) -> EventClass {
-        match self.status.as_deref().map(str::to_ascii_uppercase).as_deref() {
+        match self
+            .status
+            .as_deref()
+            .map(str::to_ascii_uppercase)
+            .as_deref()
+        {
             Some("DONE" | "COMPLETED" | "SUCCESS" | "SUCCEEDED" | "FINISHED") => EventClass::Done,
             Some("FAILED" | "ERROR" | "FAILURE") => EventClass::Failed,
             // Missing / PENDING / PROCESSING / QUEUED / anything else → keep waiting.
@@ -254,7 +266,10 @@ impl EventStatus {
         if let Some(id) = self.memory_ids.first() {
             return id.clone();
         }
-        self.results.iter().find_map(|r| r.id.clone()).unwrap_or_default()
+        self.results
+            .iter()
+            .find_map(|r| r.id.clone())
+            .unwrap_or_default()
     }
 }
 
@@ -302,8 +317,11 @@ struct Mem0Memory {
 
 impl Mem0Memory {
     fn into_record(self, fallback_agent: &str) -> MemoryRecord {
-        let created_at_unix_ms =
-            self.created_at.as_deref().and_then(parse_iso_to_unix_ms).unwrap_or_else(now_unix_ms);
+        let created_at_unix_ms = self
+            .created_at
+            .as_deref()
+            .and_then(parse_iso_to_unix_ms)
+            .unwrap_or_else(now_unix_ms);
         MemoryRecord {
             id: self.id,
             agent_id: self.user_id.unwrap_or_else(|| fallback_agent.to_string()),
@@ -385,7 +403,11 @@ impl MemoryProvider for Mem0V3Provider {
         }
         // Keyword present → v2 semantic search; absent → v3 owner-scoped list.
         let resp = if let Some(needle) = q.q.as_deref() {
-            let body = SearchBody { query: needle, user_id: &q.agent_id, top_k: q.limit };
+            let body = SearchBody {
+                query: needle,
+                user_id: &q.agent_id,
+                top_k: q.limit,
+            };
             self.client
                 .post(self.endpoint("/v2/memories/search/"))
                 .header(reqwest::header::AUTHORIZATION, self.auth_header())
@@ -410,8 +432,11 @@ impl MemoryProvider for Mem0V3Provider {
         }
         let envelope: ResultsEnvelope = resp.json().await?;
         let agent_id = q.agent_id;
-        let mut out: Vec<MemoryRecord> =
-            envelope.results.into_iter().map(|m| m.into_record(&agent_id)).collect();
+        let mut out: Vec<MemoryRecord> = envelope
+            .results
+            .into_iter()
+            .map(|m| m.into_record(&agent_id))
+            .collect();
         if !q.tags.is_empty() {
             out.retain(|r| q.tags.iter().all(|t| r.tags.iter().any(|rt| rt == t)));
         }
@@ -486,8 +511,12 @@ mod tests {
         };
         assert!(matches!(pending.classify(), EventClass::Pending));
 
-        let missing =
-            EventStatus { status: None, memory_id: None, memory_ids: vec![], results: vec![] };
+        let missing = EventStatus {
+            status: None,
+            memory_id: None,
+            memory_ids: vec![],
+            results: vec![],
+        };
         assert!(matches!(missing.classify(), EventClass::Pending));
     }
 
@@ -513,12 +542,18 @@ mod tests {
             status: None,
             memory_id: None,
             memory_ids: vec![],
-            results: vec![IdOnly { id: Some("m4".into()) }],
+            results: vec![IdOnly {
+                id: Some("m4".into()),
+            }],
         };
         assert_eq!(results.first_memory_id(), "m4");
 
-        let none =
-            EventStatus { status: None, memory_id: None, memory_ids: vec![], results: vec![] };
+        let none = EventStatus {
+            status: None,
+            memory_id: None,
+            memory_ids: vec![],
+            results: vec![],
+        };
         assert_eq!(none.first_memory_id(), "");
     }
 

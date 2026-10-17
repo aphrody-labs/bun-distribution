@@ -58,7 +58,14 @@ pub(crate) struct WheelPager {
 impl Default for WheelPager {
     fn default() -> Self {
         // Infinitely long ago, so the first event never looks like part of a stream.
-        Self { accum: 0.0, turned: None, touch: None, finger_up: None, last_event: f64::NEG_INFINITY, last_smooth: f64::NEG_INFINITY }
+        Self {
+            accum: 0.0,
+            turned: None,
+            touch: None,
+            finger_up: None,
+            last_event: f64::NEG_INFINITY,
+            last_smooth: f64::NEG_INFINITY,
+        }
     }
 }
 
@@ -72,7 +79,14 @@ impl WheelPager {
     /// Feed one `Event::MouseWheel`: `dy` is its vertical delta (negative scrolls forward) and
     /// `now` is egui time. With `can_turn` false (the page doesn't fit, a dialog is open…) the
     /// gesture is followed but never turns. Returns the way to turn (`true` = forward).
-    pub(crate) fn feed(&mut self, unit: MouseWheelUnit, dy: f32, phase: TouchPhase, now: f64, can_turn: bool) -> Option<bool> {
+    pub(crate) fn feed(
+        &mut self,
+        unit: MouseWheelUnit,
+        dy: f32,
+        phase: TouchPhase,
+        now: f64,
+        can_turn: bool,
+    ) -> Option<bool> {
         if !now.is_finite() {
             return None;
         }
@@ -83,8 +97,15 @@ impl WheelPager {
         }
         match phase {
             TouchPhase::Start => {
-                let momentum = self.finger_up.take().is_some_and(|up| now - up <= MOMENTUM_GAP_SECS);
-                self.touch = Some(if momentum { Touch::Momentum } else { Touch::Finger });
+                let momentum = self
+                    .finger_up
+                    .take()
+                    .is_some_and(|up| now - up <= MOMENTUM_GAP_SECS);
+                self.touch = Some(if momentum {
+                    Touch::Momentum
+                } else {
+                    Touch::Finger
+                });
                 if !momentum {
                     self.new_gesture();
                 }
@@ -105,7 +126,14 @@ impl WheelPager {
         self.turned = None;
     }
 
-    fn motion(&mut self, unit: MouseWheelUnit, dy: f32, now: f64, idle: f64, can_turn: bool) -> Option<bool> {
+    fn motion(
+        &mut self,
+        unit: MouseWheelUnit,
+        dy: f32,
+        now: f64,
+        idle: f64,
+        can_turn: bool,
+    ) -> Option<bool> {
         if !dy.is_finite() || dy == 0.0 {
             return None;
         }
@@ -141,7 +169,11 @@ impl WheelPager {
         if self.turned == Some(forward) {
             return None;
         }
-        let points = if unit == MouseWheelUnit::Point { dy } else { dy * NOTCH_POINTS };
+        let points = if unit == MouseWheelUnit::Point {
+            dy
+        } else {
+            dy * NOTCH_POINTS
+        };
         // One event never counts for more than a turn, which also bounds hostile deltas. Net
         // motion counts, so trackpad jitter cancels out.
         self.accum += points.clamp(-NOTCH_POINTS, NOTCH_POINTS);
@@ -161,8 +193,14 @@ mod tests {
     use TouchPhase::{End, Move, Start};
 
     /// Feeds `(unit, dy, phase, seconds)` events and returns the turns, in order.
-    fn turns(pager: &mut WheelPager, events: &[(MouseWheelUnit, f32, TouchPhase, f64)]) -> Vec<bool> {
-        events.iter().filter_map(|&(unit, dy, phase, at)| pager.feed(unit, dy, phase, at, true)).collect()
+    fn turns(
+        pager: &mut WheelPager,
+        events: &[(MouseWheelUnit, f32, TouchPhase, f64)],
+    ) -> Vec<bool> {
+        events
+            .iter()
+            .filter_map(|&(unit, dy, phase, at)| pager.feed(unit, dy, phase, at, true))
+            .collect()
     }
 
     /// A trackpad swipe at 60 fps from `t`: six finger frames of `dy`, then momentum decaying
@@ -190,11 +228,22 @@ mod tests {
     fn every_notch_turns_one_page_however_fast() {
         let mut p = WheelPager::default();
         // A brisk spin: five notches 50 ms apart, then one back.
-        let mut events: Vec<_> = (0..5).map(|i| (Line, -1.0, Move, 1.0 + f64::from(i) * 0.05)).collect();
+        let mut events: Vec<_> = (0..5)
+            .map(|i| (Line, -1.0, Move, 1.0 + f64::from(i) * 0.05))
+            .collect();
         events.push((Line, 1.0, Move, 1.5));
-        assert_eq!(turns(&mut p, &events), [true, true, true, true, true, false]);
+        assert_eq!(
+            turns(&mut p, &events),
+            [true, true, true, true, true, false]
+        );
         // Pixel-unit wheels (a Logitech mouse on a Mac reports ~14 points a notch).
-        assert_eq!(turns(&mut p, &[(Point, -14.0, Move, 3.0), (Point, -14.0, Move, 3.1)]), [true, true]);
+        assert_eq!(
+            turns(
+                &mut p,
+                &[(Point, -14.0, Move, 3.0), (Point, -14.0, Move, 3.1)]
+            ),
+            [true, true]
+        );
     }
 
     #[test]
@@ -207,7 +256,10 @@ mod tests {
         slow.push((Point, 0.0, End, 4.0));
         assert_eq!(turns(&mut p, &slow), [true]);
         // Resting fingers that drift a little don't turn.
-        let nudge: Vec<_> = [(Point, 0.0, Start, 6.0)].into_iter().chain((1..=5).map(|i| (Point, -2.0, Move, 6.0 + f64::from(i) / 60.0))).collect();
+        let nudge: Vec<_> = [(Point, 0.0, Start, 6.0)]
+            .into_iter()
+            .chain((1..=5).map(|i| (Point, -2.0, Move, 6.0 + f64::from(i) / 60.0)))
+            .collect();
         assert!(turns(&mut p, &nudge).is_empty());
     }
 
@@ -230,9 +282,17 @@ mod tests {
         let mut p = WheelPager::default();
         let mut events = vec![(Point, 0.0, Start, 1.0), (Point, -45.0, Move, 1.02)];
         // Jitter right after the turn neither turns back nor re-arms the forward turn.
-        events.extend([(Point, 2.0, Move, 1.04), (Point, -20.0, Move, 1.06), (Point, -20.0, Move, 1.08)]);
+        events.extend([
+            (Point, 2.0, Move, 1.04),
+            (Point, -20.0, Move, 1.06),
+            (Point, -20.0, Move, 1.08),
+        ]);
         // A deliberate push the other way turns back, once.
-        events.extend([(Point, 25.0, Move, 1.10), (Point, 25.0, Move, 1.12), (Point, 25.0, Move, 1.14)]);
+        events.extend([
+            (Point, 25.0, Move, 1.10),
+            (Point, 25.0, Move, 1.12),
+            (Point, 25.0, Move, 1.14),
+        ]);
         assert_eq!(turns(&mut p, &events), [true, false]);
     }
 
@@ -241,14 +301,20 @@ mod tests {
         // Web and some touchpads send no touch phases: small dense deltas, possibly big ones
         // in a fast flick, all one gesture until the input pauses.
         let mut p = WheelPager::default();
-        let mut burst: Vec<_> = (0..30).map(|i| (Point, -5.0, Move, 1.0 + f64::from(i) * 0.008)).collect();
+        let mut burst: Vec<_> = (0..30)
+            .map(|i| (Point, -5.0, Move, 1.0 + f64::from(i) * 0.008))
+            .collect();
         burst.extend((0..10).map(|i| (Point, -30.0, Move, 1.3 + f64::from(i) * 0.008)));
         assert_eq!(turns(&mut p, &burst), [true]);
         // A burst that starts big is one gesture too.
-        let fast: Vec<_> = (0..20).map(|i| (Point, -30.0, Move, 3.0 + f64::from(i) * 0.008)).collect();
+        let fast: Vec<_> = (0..20)
+            .map(|i| (Point, -30.0, Move, 3.0 + f64::from(i) * 0.008))
+            .collect();
         assert_eq!(turns(&mut p, &fast), [true]);
         // After a pause, the next burst turns again.
-        let next: Vec<_> = (0..20).map(|i| (Point, -5.0, Move, 4.0 + f64::from(i) * 0.008)).collect();
+        let next: Vec<_> = (0..20)
+            .map(|i| (Point, -5.0, Move, 4.0 + f64::from(i) * 0.008))
+            .collect();
         assert_eq!(turns(&mut p, &next), [true]);
     }
 
@@ -257,7 +323,9 @@ mod tests {
     fn fractional_lines_are_touchpad_motion_off_macos() {
         // Windows and X11 touchpads report many small line deltas.
         let mut p = WheelPager::default();
-        let stream: Vec<_> = (0..40).map(|i| (Line, -0.1, Move, 1.0 + f64::from(i) * 0.008)).collect();
+        let stream: Vec<_> = (0..40)
+            .map(|i| (Line, -0.1, Move, 1.0 + f64::from(i) * 0.008))
+            .collect();
         assert_eq!(turns(&mut p, &stream), [true]);
     }
 
@@ -291,6 +359,16 @@ mod tests {
         }
         // A huge notch is still one notch; a huge smooth delta is still one turn.
         assert_eq!(turns(&mut p, &[(Point, -1e30, Move, 2.0)]), [true]);
-        assert_eq!(turns(&mut p, &[(Point, 0.0, Start, 3.0), (Point, -1e30, Move, 3.01), (Point, -1e30, Move, 3.02)]), [true]);
+        assert_eq!(
+            turns(
+                &mut p,
+                &[
+                    (Point, 0.0, Start, 3.0),
+                    (Point, -1e30, Move, 3.01),
+                    (Point, -1e30, Move, 3.02)
+                ]
+            ),
+            [true]
+        );
     }
 }

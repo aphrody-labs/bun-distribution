@@ -15,13 +15,35 @@ const MULTIPLY: u32 = 3;
 fn setup() -> (Project, ItemId, Comp) {
     let mut p = Project::default();
     let comp = Comp::new(200, 100, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let cid = p.add_item(
+        "Comp",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     (p, cid, comp)
 }
 
 fn solid(p: &mut Project, comp: &Comp, color: [f32; 3], w: u32, h: u32) -> Layer {
-    let sid = p.add_item("Solid", Label::Red, None, ItemKind::Solid(Solid { color, width: w, height: h, pixel_aspect: 1.0 }));
-    build::layer(p, comp, "Solid", LayerSource::Solid { item: sid }, (w, h), None)
+    let sid = p.add_item(
+        "Solid",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color,
+            width: w,
+            height: h,
+            pixel_aspect: 1.0,
+        }),
+    );
+    build::layer(
+        p,
+        comp,
+        "Solid",
+        LayerSource::Solid { item: sid },
+        (w, h),
+        None,
+    )
 }
 
 fn add(p: &mut Project, comp: &Comp, l: &mut Layer, style: &str) {
@@ -31,12 +53,19 @@ fn add(p: &mut Project, comp: &Comp, l: &mut Layer, style: &str) {
 }
 
 fn set(l: &mut Layer, path: &str, v: Value) {
-    l.props.prop_mut(&format!("{GROUP}/{path}")).unwrap_or_else(|| panic!("no {path}")).value = v;
+    l.props
+        .prop_mut(&format!("{GROUP}/{path}"))
+        .unwrap_or_else(|| panic!("no {path}"))
+        .value = v;
 }
 
 /// A 40×40 square of `color` centred in a 200×100 comp (x 80..120, y 30..70) over an optional
 /// full-frame background.
-fn scene(color: [f32; 3], bg: Option<[f32; 3]>, f: impl FnOnce(&mut Project, &Comp, &mut Layer)) -> (Project, ItemId) {
+fn scene(
+    color: [f32; 3],
+    bg: Option<[f32; 3]>,
+    f: impl FnOnce(&mut Project, &Comp, &mut Layer),
+) -> (Project, ItemId) {
     let (mut p, cid, comp) = setup();
     let mut l = solid(&mut p, &comp, color, 40, 40);
     f(&mut p, &comp, &mut l);
@@ -67,8 +96,15 @@ fn drop_shadow_offset_colour_and_opacity() {
     });
     let img = render(&p, cid);
     // Global light 120° → the shadow falls down-right by (5, 8.66).
-    assert!(near(img.get(123, 75)[0], 0.0, 0.02), "shadow: {:?}", img.get(123, 75));
-    assert!(near(img.get(82, 75)[0], 0.5, 0.01), "left of the shadow stays grey");
+    assert!(
+        near(img.get(123, 75)[0], 0.0, 0.02),
+        "shadow: {:?}",
+        img.get(123, 75)
+    );
+    assert!(
+        near(img.get(82, 75)[0], 0.5, 0.01),
+        "left of the shadow stays grey"
+    );
     assert!(near(img.get(100, 50)[0], 1.0, 0.01), "layer on top");
     assert!(near(img.get(100, 20)[0], 0.5, 0.01), "above the layer");
 
@@ -80,7 +116,11 @@ fn drop_shadow_offset_colour_and_opacity() {
         set(l, "dropShadow/color", Value::Color([0.0, 0.0, 0.0, 1.0]));
     });
     let img = render(&p, cid);
-    assert!(near(img.get(123, 75)[0], 0.125, 0.02), "{:?}", img.get(123, 75));
+    assert!(
+        near(img.get(123, 75)[0], 0.125, 0.02),
+        "{:?}",
+        img.get(123, 75)
+    );
 
     // Coloured shadow on a transparent comp extends the layer's bounds.
     let (p, cid) = scene([1.0; 3], None, |p, c, l| {
@@ -93,7 +133,10 @@ fn drop_shadow_offset_colour_and_opacity() {
     });
     let img = render(&p, cid);
     let px = img.straight(123, 75);
-    assert!(near(px[3], 0.5, 0.02) && near(px[2], 1.0, 0.01) && px[0] < 0.01, "{px:?}");
+    assert!(
+        near(px[3], 0.5, 0.02) && near(px[2], 1.0, 0.01) && px[0] < 0.01,
+        "{px:?}"
+    );
 }
 
 #[test]
@@ -126,7 +169,11 @@ fn stroke_positions() {
     let white = |px: [f32; 4]| px[0] > 0.98 && px[1] > 0.98 && px[3] > 0.98;
     // Outside: 4 px ring beyond the right edge (x = 120).
     let o = render_stroke(0);
-    assert!(red(o.get(122, 50)) && red(o.get(123, 50)), "{:?}", o.get(122, 50));
+    assert!(
+        red(o.get(122, 50)) && red(o.get(123, 50)),
+        "{:?}",
+        o.get(122, 50)
+    );
     assert!(o.get(126, 50)[3] < 0.01);
     assert!(white(o.get(118, 50)));
     // Inside: the ring is within the layer.
@@ -158,7 +205,10 @@ fn colour_overlay_blend_modes() {
     });
     let img = render(&p, cid);
     let px = img.get(100, 50);
-    assert!(near(px[0], 0.5, 0.01) && near(px[1], 0.5, 0.01) && near(px[2], 0.0, 0.01), "{px:?}");
+    assert!(
+        near(px[0], 0.5, 0.01) && near(px[1], 0.5, 0.01) && near(px[2], 0.0, 0.01),
+        "{px:?}"
+    );
     // Overlays stay inside the layer.
     assert!(img.get(130, 50)[3] < 0.01);
 }
@@ -194,8 +244,20 @@ fn overlays_leave_antialiased_edges_clean() {
         let (p, cid) = scene(color, Some(bg), |p, c, l| {
             let mut next = p.next_id;
             let pts = vec![[0.5, 0.0], [39.5, 0.0], [39.5, 40.0], [0.5, 40.0]];
-            let sp = ShapePath { in_tangents: vec![[0.0; 2]; 4], out_tangents: vec![[0.0; 2]; 4], vertices: pts, closed: true, feather: Vec::new() };
-            let m = build::mask(&mut Ids(&mut next), "Mask 1", sp, MaskMode::Add, [255, 255, 0]);
+            let sp = ShapePath {
+                in_tangents: vec![[0.0; 2]; 4],
+                out_tangents: vec![[0.0; 2]; 4],
+                vertices: pts,
+                closed: true,
+                feather: Vec::new(),
+            };
+            let m = build::mask(
+                &mut Ids(&mut next),
+                "Mask 1",
+                sp,
+                MaskMode::Add,
+                [255, 255, 0],
+            );
             p.next_id = next;
             l.props.group_mut("masks").unwrap().children.push(m.into());
             f(p, c, l);
@@ -204,10 +266,19 @@ fn overlays_leave_antialiased_edges_clean() {
         [img.get(80, 50), img.get(119, 50), img.get(100, 50)]
     };
     let plain = edge(blue, &|_, _, _| {});
-    assert!(near(plain[0][0], 0.5 * (blue[0] + bg[0]), 0.01), "half covered: {:?}", plain[0]);
+    assert!(
+        near(plain[0][0], 0.5 * (blue[0] + bg[0]), 0.01),
+        "half covered: {:?}",
+        plain[0]
+    );
     let color = Value::Color([blue[0] as f64, blue[1] as f64, blue[2] as f64, 1.0]);
-    let flat =
-        Gradient { colors: vec![(0.0, [blue[0], blue[1], blue[2], 1.0]), (1.0, [blue[0], blue[1], blue[2], 1.0])], opacities: vec![(0.0, 1.0), (1.0, 1.0)] };
+    let flat = Gradient {
+        colors: vec![
+            (0.0, [blue[0], blue[1], blue[2], 1.0]),
+            (1.0, [blue[0], blue[1], blue[2], 1.0]),
+        ],
+        opacities: vec![(0.0, 1.0), (1.0, 1.0)],
+    };
     let styled: [(&str, Box<dyn Fn(&mut Project, &Comp, &mut Layer)>); 3] = [
         (
             "Color Overlay",
@@ -237,7 +308,10 @@ fn overlays_leave_antialiased_edges_clean() {
         let px = edge([1.0; 3], f.as_ref());
         for (a, b) in px.iter().zip(&plain) {
             for ch in 0..4 {
-                assert!(near(a[ch], b[ch], 0.01), "{name}: {a:?} against the plain layer {b:?}");
+                assert!(
+                    near(a[ch], b[ch], 0.01),
+                    "{name}: {a:?} against the plain layer {b:?}"
+                );
             }
         }
     }
@@ -256,7 +330,13 @@ fn bevel_scene(angle: f64) -> Image {
 fn bevel_lights_the_side_facing_the_light() {
     // Light from the upper left (120°): left and top edges brighten, right and bottom darken.
     let img = bevel_scene(120.0);
-    let (l, r, t, b, mid) = (img.get(82, 50)[0], img.get(117, 50)[0], img.get(100, 32)[0], img.get(100, 67)[0], img.get(100, 50)[0]);
+    let (l, r, t, b, mid) = (
+        img.get(82, 50)[0],
+        img.get(117, 50)[0],
+        img.get(100, 32)[0],
+        img.get(100, 67)[0],
+        img.get(100, 50)[0],
+    );
     assert!(l > 0.6 && t > 0.6, "highlights {l} {t}");
     assert!(r < 0.4 && b < 0.4, "shadows {r} {b}");
     assert!(near(mid, 0.5, 0.02), "flat centre {mid}");
@@ -299,11 +379,17 @@ fn glows_and_inner_shadow() {
     });
     let img = render(&p, cid);
     let out_near = img.straight(121, 50);
-    assert!(out_near[3] > 0.6 && out_near[0] > 0.9 && out_near[2] < 0.9, "glow colour {out_near:?}");
+    assert!(
+        out_near[3] > 0.6 && out_near[0] > 0.9 && out_near[2] < 0.9,
+        "glow colour {out_near:?}"
+    );
     assert!(img.get(140, 50)[3] < 0.02, "glow fades");
     let edge = img.get(119, 50);
     let centre = img.get(100, 50);
-    assert!(edge[0] > 0.6 && centre[0] < 0.05, "inner glow from the edge {edge:?} {centre:?}");
+    assert!(
+        edge[0] > 0.6 && centre[0] < 0.05,
+        "inner glow from the edge {edge:?} {centre:?}"
+    );
 
     // Inner glow from the centre instead.
     let (p, cid) = scene([0.0; 3], None, |p, c, l| {
@@ -322,7 +408,11 @@ fn glows_and_inner_shadow() {
     });
     let img = render(&p, cid);
     // Light from the upper left: the shadow lines the top-left inside edges.
-    assert!(img.get(81, 50)[0] < 0.05 && img.get(100, 32)[0] < 0.05, "{:?}", img.get(81, 50));
+    assert!(
+        img.get(81, 50)[0] < 0.05 && img.get(100, 32)[0] < 0.05,
+        "{:?}",
+        img.get(81, 50)
+    );
     assert!(img.get(117, 50)[0] > 0.95 && img.get(100, 66)[0] > 0.95);
     assert!(img.get(76, 50)[3] < 0.01, "inner shadow stays inside");
 }
@@ -342,7 +432,11 @@ fn fill_opacity_knockout_and_channels() {
     // Fill 0: the content disappears but the stroke stays.
     let (p, cid) = scene([1.0; 3], None, |p, c, l| {
         add(p, c, l, "stroke");
-        set(l, "blendingOptions/advancedBlending/fillOpacity", Value::Scalar(0.0));
+        set(
+            l,
+            "blendingOptions/advancedBlending/fillOpacity",
+            Value::Scalar(0.0),
+        );
     });
     let img = render(&p, cid);
     assert!(img.get(100, 50)[3] < 0.01 && img.get(122, 50)[0] > 0.98);
@@ -351,8 +445,16 @@ fn fill_opacity_knockout_and_channels() {
     let overlay = |group: bool| {
         let (p, cid) = scene([1.0; 3], None, |p, c, l| {
             add(p, c, l, "colorOverlay");
-            set(l, "blendingOptions/advancedBlending/fillOpacity", Value::Scalar(0.0));
-            set(l, "blendingOptions/advancedBlending/blendInteriorAsGroup", Value::Bool(group));
+            set(
+                l,
+                "blendingOptions/advancedBlending/fillOpacity",
+                Value::Scalar(0.0),
+            );
+            set(
+                l,
+                "blendingOptions/advancedBlending/blendInteriorAsGroup",
+                Value::Bool(group),
+            );
         });
         render(&p, cid).get(100, 50)
     };
@@ -361,8 +463,16 @@ fn fill_opacity_knockout_and_channels() {
     // Knockout with Fill 0 punches through the background.
     let (p, cid) = scene([1.0; 3], Some([0.5; 3]), |p, c, l| {
         add(p, c, l, "stroke");
-        set(l, "blendingOptions/advancedBlending/fillOpacity", Value::Scalar(0.0));
-        set(l, "blendingOptions/advancedBlending/knockout", Value::Enum(2));
+        set(
+            l,
+            "blendingOptions/advancedBlending/fillOpacity",
+            Value::Scalar(0.0),
+        );
+        set(
+            l,
+            "blendingOptions/advancedBlending/knockout",
+            Value::Enum(2),
+        );
     });
     let img = render(&p, cid);
     assert!(img.get(100, 50)[3] < 0.01 && img.get(150, 50)[3] > 0.99);
@@ -370,7 +480,11 @@ fn fill_opacity_knockout_and_channels() {
     // Red channel off: the white layer leaves red from below.
     let (p, cid) = scene([1.0; 3], Some([0.0; 3]), |p, c, l| {
         add(p, c, l, "stroke");
-        set(l, "blendingOptions/advancedBlending/red", Value::Bool(false));
+        set(
+            l,
+            "blendingOptions/advancedBlending/red",
+            Value::Bool(false),
+        );
     });
     let px = render(&p, cid).get(100, 50);
     assert!(px[0] < 0.01 && px[1] > 0.99 && px[2] > 0.99, "{px:?}");
@@ -382,10 +496,22 @@ fn eye_switch_and_group_switch() {
         add(p, c, l, "stroke");
     });
     assert!(render(&p, cid).get(122, 50)[3] > 0.98);
-    p.comp_mut(cid).unwrap().layers[0].props.group_mut(&format!("{GROUP}/stroke")).unwrap().enabled = false;
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .group_mut(&format!("{GROUP}/stroke"))
+        .unwrap()
+        .enabled = false;
     assert!(render(&p, cid).get(122, 50)[3] < 0.01);
-    p.comp_mut(cid).unwrap().layers[0].props.group_mut(&format!("{GROUP}/stroke")).unwrap().enabled = true;
-    p.comp_mut(cid).unwrap().layers[0].props.group_mut(GROUP).unwrap().enabled = false;
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .group_mut(&format!("{GROUP}/stroke"))
+        .unwrap()
+        .enabled = true;
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .group_mut(GROUP)
+        .unwrap()
+        .enabled = false;
     assert!(render(&p, cid).get(122, 50)[3] < 0.01);
 }
 
@@ -413,8 +539,13 @@ fn styles_respect_render_scale() {
 fn animated_style_properties() {
     let (mut p, cid) = scene([1.0; 3], None, |p, c, l| add(p, c, l, "stroke"));
     let l = &mut p.comp_mut(cid).unwrap().layers[0];
-    l.props.prop_mut(&format!("{GROUP}/stroke/size")).unwrap().keys =
-        vec![Keyframe::new(Tick::ZERO, Value::Scalar(2.0)), Keyframe::new(Tick::from_seconds_f64(1.0), Value::Scalar(10.0))];
+    l.props
+        .prop_mut(&format!("{GROUP}/stroke/size"))
+        .unwrap()
+        .keys = vec![
+        Keyframe::new(Tick::ZERO, Value::Scalar(2.0)),
+        Keyframe::new(Tick::from_seconds_f64(1.0), Value::Scalar(10.0)),
+    ];
     let a = render_frame(&p, cid, Tick::ZERO, 1.0);
     let b = render_frame(&p, cid, Tick::from_seconds_f64(1.0), 1.0);
     assert!(a.get(126, 50)[3] < 0.01 && b.get(126, 50)[3] > 0.98);
@@ -441,19 +572,32 @@ fn style_edits_invalidate_the_cache() {
     // from the cache.
     let hits0 = cache.stats().hits;
     let l = &mut p.comp_mut(cid).unwrap().layers[0];
-    l.props.prop_mut(&format!("{GROUP}/stroke/color")).unwrap().value = Value::Color([0.0, 1.0, 0.0, 1.0]);
+    l.props
+        .prop_mut(&format!("{GROUP}/stroke/color"))
+        .unwrap()
+        .value = Value::Color([0.0, 1.0, 0.0, 1.0]);
     let b = render_cached(&p, cid, &cache);
     assert_eq!(b.data, render(&p, cid).data);
     assert_ne!(a.data, b.data);
-    assert!(cache.stats().hits >= hits0 + 2, "content + background reused");
+    assert!(
+        cache.stats().hits >= hits0 + 2,
+        "content + background reused"
+    );
     // Global light change (linked) also invalidates.
     let l = &mut p.comp_mut(cid).unwrap().layers[0];
-    l.props.prop_mut(&format!("{GROUP}/blendingOptions/globalLightAngle")).unwrap().value = Value::Scalar(0.0);
+    l.props
+        .prop_mut(&format!("{GROUP}/blendingOptions/globalLightAngle"))
+        .unwrap()
+        .value = Value::Scalar(0.0);
     let c = render_cached(&p, cid, &cache);
     assert_eq!(c.data, render(&p, cid).data);
     assert_ne!(b.data, c.data);
     // Eye switch off.
-    p.comp_mut(cid).unwrap().layers[0].props.group_mut(&format!("{GROUP}/dropShadow")).unwrap().enabled = false;
+    p.comp_mut(cid).unwrap().layers[0]
+        .props
+        .group_mut(&format!("{GROUP}/dropShadow"))
+        .unwrap()
+        .enabled = false;
     let d = render_cached(&p, cid, &cache);
     assert_eq!(d.data, render(&p, cid).data);
     assert_ne!(c.data, d.data);
@@ -468,10 +612,16 @@ fn gradient_glow_uses_gradient() {
         set(
             l,
             "outerGlow/colors",
-            Value::Gradient(Gradient { colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (1.0, [0.0, 0.0, 1.0, 1.0])], opacities: vec![(0.0, 1.0), (1.0, 0.0)] }),
+            Value::Gradient(Gradient {
+                colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (1.0, [0.0, 0.0, 1.0, 1.0])],
+                opacities: vec![(0.0, 1.0), (1.0, 0.0)],
+            }),
         );
     });
     let img = render(&p, cid);
     let px = img.straight(121, 50);
-    assert!(px[0] > px[2], "near the edge the glow takes the gradient's start colour {px:?}");
+    assert!(
+        px[0] > px[2],
+        "near the edge the glow takes the gradient's start colour {px:?}"
+    );
 }

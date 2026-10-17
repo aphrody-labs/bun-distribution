@@ -14,14 +14,14 @@ use bevy_ecs::{
     system::{Commands, Query, Res},
 };
 use bevy_input_focus::tab_navigation::TabIndex;
-use bevy_picking::{cursor::EntityCursor, hover::Hovered, PickingSystems};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_picking::{PickingSystems, cursor::EntityCursor, hover::Hovered};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
 use bevy_text::{FontWeight, TextLayout};
 use bevy_ui::{
-    percent, px, widget::Text, AlignItems, BackgroundGradient, ColorStop, Display, FlexDirection,
-    Gradient, InteractionDisabled, InterpolationColorSpace, JustifyContent, LinearGradient, Node,
-    PositionType, Pressed, UiRect,
+    AlignItems, BackgroundGradient, ColorStop, Display, FlexDirection, Gradient,
+    InteractionDisabled, InterpolationColorSpace, JustifyContent, LinearGradient, Node,
+    PositionType, Pressed, UiRect, percent, px, widget::Text,
 };
 use bevy_ui_widgets::{
     Slider, SliderOrientation, SliderPrecision, SliderRange, SliderValue, TrackClick,

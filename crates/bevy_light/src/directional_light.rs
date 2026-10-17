@@ -1,8 +1,8 @@
 use bevy_asset::Handle;
 use bevy_camera::{
+    Camera,
     primitives::{CascadesFrusta, Frustum},
     visibility::{self, CascadesVisibleEntities, ViewVisibility, Visibility, VisibilityClass},
-    Camera,
 };
 use bevy_color::Color;
 use bevy_ecs::prelude::*;
@@ -13,7 +13,7 @@ use bevy_transform::components::Transform;
 use tracing::warn;
 
 use super::{
-    cascade::CascadeShadowConfig, cluster::ClusterVisibilityClass, light_consts, Cascades,
+    Cascades, cascade::CascadeShadowConfig, cluster::ClusterVisibilityClass, light_consts,
 };
 
 /// A Directional light.
@@ -208,7 +208,10 @@ impl Default for DirectionalLightShadowMap {
 pub fn validate_shadow_map_size(mut shadow_map: ResMut<DirectionalLightShadowMap>) {
     if shadow_map.is_changed() && !shadow_map.size.is_power_of_two() {
         let new_size = shadow_map.size.next_power_of_two();
-        warn!("Non-power-of-two DirectionalLightShadowMap sizes are not supported, correcting {} to {new_size}", shadow_map.size);
+        warn!(
+            "Non-power-of-two DirectionalLightShadowMap sizes are not supported, correcting {} to {new_size}",
+            shadow_map.size
+        );
         shadow_map.size = new_size;
     }
 }

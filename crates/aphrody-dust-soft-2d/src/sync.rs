@@ -1,16 +1,16 @@
 mod impls;
 
 use crate::common::{
-    self, BgObjPixel, ObjPixel, WindowPixel, capture,
+    self, capture,
     render::{self, objs::prerender_objs},
-    rgb5_to_rgb6_64,
+    rgb5_to_rgb6_64, BgObjPixel, ObjPixel, WindowPixel,
 };
 use aphrody_dust_core::{
     gpu::{
-        Framebuffer, SCREEN_HEIGHT, SCREEN_WIDTH, Scanline,
         engine_2d::{Engine2d, EngineA, EngineB, Renderer as RendererTrait, Role},
         engine_3d,
         vram::Vram,
+        Framebuffer, Scanline, SCREEN_HEIGHT, SCREEN_WIDTH,
     },
     utils::mem_prelude::*,
 };
@@ -150,11 +150,16 @@ impl Renderer {
                 window.0[x_start..x_end].fill(WindowPixel(engine.window_control()[i].0));
             }
 
-            let backdrop =
-                BgObjPixel(rgb5_to_rgb6_64(vram.palette.read_le::<u16>((!R::IS_A as usize) << 10)))
-                    .with_color_effects_mask(1 << 5)
-                    .0;
-            buffers.bg_obj_scanline.get_mut().0.fill(BgObjPixel(backdrop | backdrop << 32));
+            let backdrop = BgObjPixel(rgb5_to_rgb6_64(
+                vram.palette.read_le::<u16>((!R::IS_A as usize) << 10),
+            ))
+            .with_color_effects_mask(1 << 5)
+            .0;
+            buffers
+                .bg_obj_scanline
+                .get_mut()
+                .0
+                .fill(BgObjPixel(backdrop | backdrop << 32));
 
             unsafe {
                 fns.render_scanline_bgs_and_objs[engine.control().bg_mode() as usize](
@@ -173,23 +178,25 @@ impl Renderer {
         match display_mode {
             0 => {
                 scanline_buffer.0.fill(0xFFFF_FFFF);
-            },
+            }
 
             1 => {
-                for (dst, src) in
-                    scanline_buffer.0.iter_mut().zip(buffers.bg_obj_scanline.get_mut().0.iter())
+                for (dst, src) in scanline_buffer
+                    .0
+                    .iter_mut()
+                    .zip(buffers.bg_obj_scanline.get_mut().0.iter())
                 {
                     *dst = src.0 as u32;
                 }
-            },
+            }
 
             2 => {
                 render::render_scanline_vram_display(scanline_buffer, vcount, engine, vram);
-            },
+            }
 
             _ => {
                 // TODO: Main memory display mode
-            },
+            }
         }
 
         unsafe {

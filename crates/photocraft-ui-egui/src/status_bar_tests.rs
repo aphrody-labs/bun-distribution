@@ -15,13 +15,23 @@ fn bottom_id() -> egui::Id {
 }
 
 fn harness(kind: ThemeKind) -> Harness<'static, PhotocraftApp> {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.run("file.new", json!({"width": 1080, "height": 1080, "resolution": 72, "background": "white"})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.run(
+        "file.new",
+        json!({"width": 1080, "height": 1080, "resolution": 72, "background": "white"}),
+    )
+    .unwrap();
     app.sync_views();
     let mut h = Harness::builder().with_size(SIZE).build_ui_state(
         |ui, app: &mut PhotocraftApp| {
             // The first frame runs before `setup_context` installs the theme's fonts.
-            if ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
+            if ui.ctx().fonts(|f| {
+                f.families()
+                    .contains(&egui::FontFamily::Name("medium".into()))
+            }) {
                 // Where the bar goes: the bottom of the harness's (margined) root Ui.
                 let bottom = ui.max_rect().bottom();
                 ui.ctx().data_mut(|d| d.insert_temp(bottom_id(), bottom));
@@ -49,34 +59,57 @@ fn status_bar_controls_sit_inside_the_bar_with_even_margins() {
         let inner = bar.shrink2(vec2(margin, margin - 0.5));
         // The zoom number (its box is painted around it, `control_h` tall and centred).
         let number = h.get_by_role(egui::accesskit::Role::SpinButton).rect();
-        assert!(inner.contains_rect(number), "{kind:?}: bar {bar:?}, number {number:?}");
+        assert!(
+            inner.contains_rect(number),
+            "{kind:?}: bar {bar:?}, number {number:?}"
+        );
         // Pro (Photoshop) has no Fit button in the status bar.
         if t.pro {
             assert!(h.query_by_label("Fit").is_none(), "{kind:?}");
             continue;
         }
         let fit = h.get_by_label("Fit").rect();
-        assert!(inner.contains_rect(fit), "{kind:?}: bar {bar:?}, Fit {fit:?}");
-        assert!((fit.center().y - bar.center().y).abs() < 0.51, "{kind:?}: bar {bar:?}, Fit {fit:?}");
-        assert!((fit.height() - control_h).abs() < 0.01, "{kind:?}: Fit {fit:?}");
+        assert!(
+            inner.contains_rect(fit),
+            "{kind:?}: bar {bar:?}, Fit {fit:?}"
+        );
+        assert!(
+            (fit.center().y - bar.center().y).abs() < 0.51,
+            "{kind:?}: bar {bar:?}, Fit {fit:?}"
+        );
+        assert!(
+            (fit.height() - control_h).abs() < 0.01,
+            "{kind:?}: Fit {fit:?}"
+        );
     }
 }
 
 fn cursor_warp(h: &Harness<'_, PhotocraftApp>) -> Option<egui::Pos2> {
-    h.output().viewport_output.values().flat_map(|v| &v.commands).find_map(|c| match c {
-        egui::ViewportCommand::CursorPosition(p) => Some(*p),
-        _ => None,
-    })
+    h.output()
+        .viewport_output
+        .values()
+        .flat_map(|v| &v.commands)
+        .find_map(|c| match c {
+            egui::ViewportCommand::CursorPosition(p) => Some(*p),
+            _ => None,
+        })
 }
 
 fn fullscreen(h: &mut Harness<'_, PhotocraftApp>, on: bool) {
-    h.input_mut().viewports.entry(egui::ViewportId::ROOT).or_default().fullscreen = Some(on);
+    h.input_mut()
+        .viewports
+        .entry(egui::ViewportId::ROOT)
+        .or_default()
+        .fullscreen = Some(on);
     h.state_mut().ui.views[0].zoom = 10.0;
     h.run_steps(2);
 }
 
 fn begin_zoom_drag(h: &mut Harness<'_, PhotocraftApp>) -> egui::Pos2 {
-    let start = h.get_by_role(egui::accesskit::Role::SpinButton).rect().center();
+    let start = h
+        .get_by_role(egui::accesskit::Role::SpinButton)
+        .rect()
+        .center();
     h.hover_at(start);
     h.run_steps(1);
     h.drag_at(start);
@@ -102,18 +135,32 @@ fn fullscreen_status_zoom_wraps_without_turning_the_warp_into_a_value_change() {
             let at_edge = h.state().ui.views[0].zoom;
             h.hover_at(target);
             h.run_steps(1);
-            assert_eq!(h.state().ui.views[0].zoom, at_edge, "{kind:?}: cursor teleport must not change zoom");
-            assert!(cursor_warp(&h).is_none(), "{kind:?}: landing margin must not bounce");
+            assert_eq!(
+                h.state().ui.views[0].zoom,
+                at_edge,
+                "{kind:?}: cursor teleport must not change zoom"
+            );
+            assert!(
+                cursor_warp(&h).is_none(),
+                "{kind:?}: landing margin must not bounce"
+            );
             let next = target + vec2(if left { -40.0 } else { 40.0 }, 0.0);
             h.hover_at(next);
             h.run_steps(1);
             let continued = h.state().ui.views[0].zoom;
-            assert!((continued - at_edge - if left { -0.2 } else { 0.2 }).abs() < 0.015, "{kind:?}: {at_edge} -> {continued}");
+            assert!(
+                (continued - at_edge - if left { -0.2 } else { 0.2 }).abs() < 0.015,
+                "{kind:?}: {at_edge} -> {continued}"
+            );
             h.drop_at(next);
             h.run_steps(2);
             h.hover_at(edge);
             h.run_steps(1);
-            assert_eq!(h.state().ui.views[0].zoom, continued, "{kind:?}: pointer movement after release is not scrubbing");
+            assert_eq!(
+                h.state().ui.views[0].zoom,
+                continued,
+                "{kind:?}: pointer movement after release is not scrubbing"
+            );
             assert!(cursor_warp(&h).is_none());
         }
     }
@@ -162,7 +209,10 @@ fn fullscreen_status_zoom_keeps_typing_and_clears_a_pending_warp_on_release() {
     h.run_steps(2);
     h.key_press(egui::Key::ArrowUp);
     h.run_steps(2);
-    assert!((h.state().ui.views[0].zoom - 2.51).abs() < 0.0001, "keep keyboard stepping in fullscreen");
+    assert!(
+        (h.state().ui.views[0].zoom - 2.51).abs() < 0.0001,
+        "keep keyboard stepping in fullscreen"
+    );
 }
 
 #[test]
@@ -174,7 +224,10 @@ fn fullscreen_status_zoom_preserves_shift_precision_and_recovers_from_the_minimu
     let to = start + vec2(40.0, 0.0);
     h.hover_at(to);
     h.run_steps(1);
-    assert!((h.state().ui.views[0].zoom - 10.02).abs() < 0.005, "Shift reduces sensitivity by ten");
+    assert!(
+        (h.state().ui.views[0].zoom - 10.02).abs() < 0.005,
+        "Shift reduces sensitivity by ten"
+    );
     h.drop_at(to);
     h.event(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
     h.run_steps(2);
@@ -194,5 +247,8 @@ fn fullscreen_status_zoom_preserves_shift_precision_and_recovers_from_the_minimu
     assert_eq!(h.state().ui.views[0].zoom, minimum);
     h.hover_at(next + vec2(20.0, 0.0));
     h.run_steps(1);
-    assert!(h.state().ui.views[0].zoom > minimum, "reversing direction responds immediately after reaching a bound");
+    assert!(
+        h.state().ui.views[0].zoom > minimum,
+        "reversing direction responds immediately after reaching a bound"
+    );
 }

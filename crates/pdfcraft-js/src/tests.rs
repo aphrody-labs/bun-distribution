@@ -4,7 +4,11 @@ fn fields() -> Vec<FieldState> {
     let mut agree = FieldState::new("agree", FieldType::CheckBox, vec![]);
     agree.options = vec![("Yes".into(), "Yes".into())];
     let mut size = FieldState::new("size", FieldType::ComboBox, vec!["m".into()]);
-    size.options = vec![("s".into(), "Small".into()), ("m".into(), "Medium".into()), ("l".into(), "Large".into())];
+    size.options = vec![
+        ("s".into(), "Small".into()),
+        ("m".into(), "Medium".into()),
+        ("l".into(), "Large".into()),
+    ];
     vec![
         FieldState::new("price", FieldType::Text, vec!["12.5".into()]),
         FieldState::new("qty", FieldType::Text, vec!["4".into()]),
@@ -16,7 +20,12 @@ fn fields() -> Vec<FieldState> {
 }
 
 fn doc() -> DocInfo {
-    DocInfo { file_name: "order.pdf".into(), num_pages: 3, page: 0, info: vec![("title".into(), "Order".into())] }
+    DocInfo {
+        file_name: "order.pdf".into(),
+        num_pages: 3,
+        page: 0,
+        info: vec![("title".into(), "Order".into())],
+    }
 }
 
 fn go(script: &str, event: &Event) -> Outcome {
@@ -25,7 +34,10 @@ fn go(script: &str, event: &Event) -> Outcome {
 
 #[test]
 fn calculate_scripts_read_fields_and_set_the_value() {
-    let o = go("event.value = this.getField('price').value * getField('qty').value;", &Event::field("Calculate", "total", ""));
+    let o = go(
+        "event.value = this.getField('price').value * getField('qty').value;",
+        &Event::field("Calculate", "total", ""),
+    );
     assert_eq!(o.error, None);
     assert_eq!(o.value, "50");
     assert!(o.rc);
@@ -33,16 +45,25 @@ fn calculate_scripts_read_fields_and_set_the_value() {
 
 #[test]
 fn numbers_with_leading_zeros_stay_text() {
-    let o = go("event.value = typeof getField('zip').value + ':' + typeof getField('qty').value;", &Event::field("Calculate", "total", ""));
+    let o = go(
+        "event.value = typeof getField('zip').value + ':' + typeof getField('qty').value;",
+        &Event::field("Calculate", "total", ""),
+    );
     assert_eq!(o.value, "string:number");
 }
 
 #[test]
 fn validate_scripts_reject_with_rc_and_alert() {
-    let o = go("if (event.value > 10) { app.alert('Too many'); event.rc = false; }", &Event::field("Validate", "qty", "11"));
+    let o = go(
+        "if (event.value > 10) { app.alert('Too many'); event.rc = false; }",
+        &Event::field("Validate", "qty", "11"),
+    );
     assert!(!o.rc);
     assert_eq!(o.alerts, ["Too many"]);
-    let o = go("if (event.value > 10) { event.rc = false; }", &Event::field("Validate", "qty", "3"));
+    let o = go(
+        "if (event.value > 10) { event.rc = false; }",
+        &Event::field("Validate", "qty", "3"),
+    );
     assert!(o.rc);
 }
 
@@ -67,9 +88,18 @@ fn scripts_change_other_fields_and_their_properties() {
     assert_eq!(total.value, ["99"]);
     assert!(total.readonly);
     assert_eq!(total.display, DISPLAY_HIDDEN);
-    assert_eq!(total.text_color.as_deref(), Some(&["RGB".to_string(), "1".into(), "0".into(), "0".into()][..]));
-    assert_eq!(o.changed.iter().find(|f| f.name == "agree").unwrap().value, ["Yes"]);
-    assert_eq!(o.changed.iter().find(|f| f.name == "size").unwrap().value, ["l"]);
+    assert_eq!(
+        total.text_color.as_deref(),
+        Some(&["RGB".to_string(), "1".into(), "0".into(), "0".into()][..])
+    );
+    assert_eq!(
+        o.changed.iter().find(|f| f.name == "agree").unwrap().value,
+        ["Yes"]
+    );
+    assert_eq!(
+        o.changed.iter().find(|f| f.name == "size").unwrap().value,
+        ["l"]
+    );
 }
 
 #[test]
@@ -91,47 +121,77 @@ fn util_printf_printd_and_printx() {
         &Event::field("Calculate", "total", ""),
     );
     assert_eq!(o.error, None);
-    assert_eq!(o.value, "1,234,567.89|00042|hi|FF|1.234,50|Jan 5, 2024 09:07|Friday|(555) 123-4567|ABC");
+    assert_eq!(
+        o.value,
+        "1,234,567.89|00042|hi|FF|1.234,50|Jan 5, 2024 09:07|Friday|(555) 123-4567|ABC"
+    );
 }
 
 fn assert_printf_error(script: &str, message: &str) {
     let o = go(script, &Event::doc("Open"));
-    assert!(o.error.as_deref().is_some_and(|e| e.starts_with(message)), "{script}: {:?}", o.error);
+    assert!(
+        o.error.as_deref().is_some_and(|e| e.starts_with(message)),
+        "{script}: {:?}",
+        o.error
+    );
     let o = xfa::run_xfa(
         script,
-        &xfa::XfaEvent { activity: "initialize".into(), target: "form1[0]".into(), ..Default::default() },
+        &xfa::XfaEvent {
+            activity: "initialize".into(),
+            target: "form1[0]".into(),
+            ..Default::default()
+        },
         &xfa::XfaDoc::default(),
         &xfa_model::form(),
         Limits::default(),
     );
-    assert!(o.error.as_deref().is_some_and(|e| e.starts_with(message)), "XFA: {script}: {:?}", o.error);
+    assert!(
+        o.error.as_deref().is_some_and(|e| e.starts_with(message)),
+        "XFA: {script}: {:?}",
+        o.error
+    );
 }
 
 #[test]
 fn util_printf_rejects_large_width() {
-    assert_printf_error("util.printf('%99999999999d', 1)", "TypeError: util.printf width or precision exceeds 4096");
+    assert_printf_error(
+        "util.printf('%99999999999d', 1)",
+        "TypeError: util.printf width or precision exceeds 4096",
+    );
 }
 
 #[test]
 fn util_printf_rejects_large_precision() {
-    assert_printf_error("util.printf('%.99999999999f', 1)", "TypeError: util.printf width or precision exceeds 4096");
+    assert_printf_error(
+        "util.printf('%.99999999999f', 1)",
+        "TypeError: util.printf width or precision exceeds 4096",
+    );
 }
 
 #[test]
 fn util_printf_rejects_overflowing_width() {
-    assert_printf_error("util.printf('%9999999999999999999999999999999999999999d', 1)", "TypeError: util.printf width or precision exceeds 4096");
+    assert_printf_error(
+        "util.printf('%9999999999999999999999999999999999999999d', 1)",
+        "TypeError: util.printf width or precision exceeds 4096",
+    );
 }
 
 #[test]
 fn util_printf_rejects_overflowing_precision() {
-    assert_printf_error("util.printf('%.9999999999999999999999999999999999999999f', 1)", "TypeError: util.printf width or precision exceeds 4096");
+    assert_printf_error(
+        "util.printf('%.9999999999999999999999999999999999999999f', 1)",
+        "TypeError: util.printf width or precision exceeds 4096",
+    );
 }
 
 #[test]
 fn util_printf_rejects_limits_for_all_conversions() {
     for conv in ['d', 'f', 's', 'x'] {
         for spec in ["4097", ".4097", "99999999999", ".99999999999"] {
-            assert_printf_error(&format!("util.printf('%{spec}{conv}', 1)"), "TypeError: util.printf width or precision exceeds 4096");
+            assert_printf_error(
+                &format!("util.printf('%{spec}{conv}', 1)"),
+                "TypeError: util.printf width or precision exceeds 4096",
+            );
         }
     }
 }
@@ -147,7 +207,10 @@ fn util_printf_bounds_total_output() {
         "util.printf('%s', 'aa'.repeat(524288) + 'a')",
         "util.printf('%s%s', 'aa'.repeat(524288), 'b')",
     ] {
-        assert_printf_error(script, "TypeError: util.printf output exceeds 1048576 bytes");
+        assert_printf_error(
+            script,
+            "TypeError: util.printf output exceeds 1048576 bytes",
+        );
     }
 }
 
@@ -162,12 +225,21 @@ fn util_printf_accepts_limits_and_preserves_formats() {
         &Event::field("Calculate", "total", ""),
     );
     assert_eq!(o.error, None);
-    assert_eq!(o.value, "4096|4096|4098|4096|4096|FF|1048575|1048576|524288|a%b:+00042|   é|é界|FF");
+    assert_eq!(
+        o.value,
+        "4096|4096|4098|4096|4096|FF|1048575|1048576|524288|a%b:+00042|   é|é界|FF"
+    );
 }
 
 fn assert_array_error(script: &str) {
     let o = go(script, &Event::field("Calculate", "total", ""));
-    assert!(o.error.as_deref().is_some_and(|e| e.starts_with("TypeError: array length exceeds 1048576")), "{script}: {:?}", o.error);
+    assert!(
+        o.error
+            .as_deref()
+            .is_some_and(|e| e.starts_with("TypeError: array length exceeds 1048576")),
+        "{script}: {:?}",
+        o.error
+    );
     assert!(o.requests.is_empty() && o.changed.is_empty(), "{script}");
 }
 
@@ -186,10 +258,18 @@ fn reset_form_and_field_setters_refuse_huge_arrays() {
 
 #[test]
 fn reset_form_and_field_setters_take_arrays_up_to_the_limit() {
-    let o = go("this.resetForm(new Array(1 << 20)); getField('total').value = new Array(1 << 20);", &Event::field("Calculate", "total", ""));
+    let o = go(
+        "this.resetForm(new Array(1 << 20)); getField('total').value = new Array(1 << 20);",
+        &Event::field("Calculate", "total", ""),
+    );
     assert_eq!(o.error, None);
-    assert!(matches!(&o.requests[..], [Request::Reset(names)] if names.len() == 1 << 20 && names.iter().all(String::is_empty)));
-    assert_eq!(o.changed.iter().find(|f| f.name == "total").unwrap().value, [""]);
+    assert!(
+        matches!(&o.requests[..], [Request::Reset(names)] if names.len() == 1 << 20 && names.iter().all(String::is_empty))
+    );
+    assert_eq!(
+        o.changed.iter().find(|f| f.name == "total").unwrap().value,
+        [""]
+    );
     assert_array_error("this.resetForm(new Array((1 << 20) + 1))");
     assert_array_error("getField('total').value = new Array((1 << 20) + 1)");
 }
@@ -208,8 +288,14 @@ fn reset_form_and_field_setters_still_read_short_arrays() {
     );
     assert_eq!(o.error, None);
     assert_eq!(o.requests, [Request::Reset(vec!["a".into(), "b".into()])]);
-    assert_eq!(o.changed.iter().find(|f| f.name == "pick").unwrap().value, ["x", "y", "z"]);
-    assert_eq!(o.changed.iter().find(|f| f.name == "total").unwrap().value, ["x"]);
+    assert_eq!(
+        o.changed.iter().find(|f| f.name == "pick").unwrap().value,
+        ["x", "y", "z"]
+    );
+    assert_eq!(
+        o.changed.iter().find(|f| f.name == "total").unwrap().value,
+        ["x"]
+    );
 }
 
 #[test]
@@ -248,9 +334,22 @@ fn document_level_functions_are_available() {
 
 #[test]
 fn errors_and_runaway_scripts_are_contained() {
-    let o = go("event.value = nosuch.thing;", &Event::field("Calculate", "total", "keep"));
+    let o = go(
+        "event.value = nosuch.thing;",
+        &Event::field("Calculate", "total", "keep"),
+    );
     assert!(o.error.is_some());
-    let o = run("while (true) {}", &Event::doc("Open"), &doc(), &fields(), &[], Limits { loop_iterations: 10_000, recursion: 64 });
+    let o = run(
+        "while (true) {}",
+        &Event::doc("Open"),
+        &doc(),
+        &fields(),
+        &[],
+        Limits {
+            loop_iterations: 10_000,
+            recursion: 64,
+        },
+    );
     assert!(o.error.is_some(), "the loop limit stops it");
     let o = go("function f() { return f(); } f();", &Event::doc("Open"));
     assert!(o.error.is_some(), "the recursion limit stops it");
@@ -286,19 +385,34 @@ fn deeply_nested_scripts_fail_instead_of_crashing() {
         assert!(o.error.is_some(), "{}…", &s[..20]);
     }
     // A hostile document-level script is refused too, before the field script runs.
-    let o = run("event.value = 'ran';", &Event::field("Calculate", "a", ""), &doc(), &fields(), &[hostile[0].clone()], Limits::default());
+    let o = run(
+        "event.value = 'ran';",
+        &Event::field("Calculate", "a", ""),
+        &doc(),
+        &fields(),
+        &[hostile[0].clone()],
+        Limits::default(),
+    );
     assert!(o.error.is_some());
 }
 
 #[test]
 fn ordinary_nesting_still_runs() {
     let n = 40;
-    let s = format!("event.value = {}1{} + [[[2]]][0][0][0] + (1 ? 2 : 3);", "(".repeat(n), ")".repeat(n));
+    let s = format!(
+        "event.value = {}1{} + [[[2]]][0][0][0] + (1 ? 2 : 3);",
+        "(".repeat(n),
+        ")".repeat(n)
+    );
     let o = go(&s, &Event::field("Calculate", "a", ""));
     assert_eq!(o.error, None);
     assert_eq!(o.value, "5");
     // Brackets in strings and comments don't count.
-    let s = format!("// {}\nevent.value = '{}'.length;", "(".repeat(1000), "[".repeat(1000));
+    let s = format!(
+        "// {}\nevent.value = '{}'.length;",
+        "(".repeat(1000),
+        "[".repeat(1000)
+    );
     assert_eq!(go(&s, &Event::field("Calculate", "a", "")).value, "1000");
 }
 
@@ -329,8 +443,18 @@ mod xfa_model {
             occur_max: None,
             index: i,
             children: vec![
-                field("what", &format!("form1[0].page1[0].table[0].row[{i}].what[0]"), if i == 0 { "Rent" } else { "" }, false),
-                field("amount", &format!("form1[0].page1[0].table[0].row[{i}].amount[0]"), if i == 0 { "10" } else { "5" }, true),
+                field(
+                    "what",
+                    &format!("form1[0].page1[0].table[0].row[{i}].what[0]"),
+                    if i == 0 { "Rent" } else { "" },
+                    false,
+                ),
+                field(
+                    "amount",
+                    &format!("form1[0].page1[0].table[0].row[{i}].amount[0]"),
+                    if i == 0 { "10" } else { "5" },
+                    true,
+                ),
             ],
             ..Default::default()
         };
@@ -351,7 +475,12 @@ mod xfa_model {
                         som: "form1[0].page1[0].details[0]".into(),
                         kind: Some(XfaKind::Subform),
                         presence: "hidden".into(),
-                        children: vec![field("note", "form1[0].page1[0].details[0].note[0]", "", false)],
+                        children: vec![field(
+                            "note",
+                            "form1[0].page1[0].details[0].note[0]",
+                            "",
+                            false,
+                        )],
                         ..Default::default()
                     },
                     XfaNode {
@@ -370,31 +499,65 @@ mod xfa_model {
     }
 
     fn go(script: &str, target: &str, activity: &str) -> XfaOutcome {
-        let ev = XfaEvent { activity: activity.into(), target: target.into(), ..Default::default() };
-        let doc = XfaDoc { file_name: "f.pdf".into(), page: 1, page_count: 3 };
+        let ev = XfaEvent {
+            activity: activity.into(),
+            target: target.into(),
+            ..Default::default()
+        };
+        let doc = XfaDoc {
+            file_name: "f.pdf".into(),
+            page: 1,
+            page_count: 3,
+        };
         run_xfa(script, &ev, &doc, &form(), Limits::default())
     }
 
     #[test]
     fn calculate_scripts_see_siblings_by_name_and_yield_their_last_expression() {
-        let o = go("qty.rawValue * price.rawValue", "form1[0].page1[0].total[0]", "calculate");
+        let o = go(
+            "qty.rawValue * price.rawValue",
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
         assert_eq!(o.error, None, "{o:?}");
         assert_eq!(o.result.as_deref(), Some("10"));
-        let o = go("this.rawValue = xfa.form.form1.page1.qty.rawValue + 1;", "form1[0].page1[0].total[0]", "calculate");
-        assert_eq!(o.effects, vec![XfaEffect::SetValue { som: "form1[0].page1[0].total[0]".into(), value: "5".into() }]);
+        let o = go(
+            "this.rawValue = xfa.form.form1.page1.qty.rawValue + 1;",
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
+        assert_eq!(
+            o.effects,
+            vec![XfaEffect::SetValue {
+                som: "form1[0].page1[0].total[0]".into(),
+                value: "5".into()
+            }]
+        );
     }
 
     #[test]
     fn long_values_and_results_are_cut_where_they_are_stored() {
         // The value kept for later reads is the one the effect saves.
-        let o = go("details.note.rawValue = new Array(100001).join('x'); details.note.rawValue.length", "form1[0].page1[0].total[0]", "calculate");
+        let o = go(
+            "details.note.rawValue = new Array(100001).join('x'); details.note.rawValue.length",
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
         assert_eq!(o.error, None, "{o:?}");
         assert_eq!(o.result.as_deref(), Some("65536"));
         assert!(o.notes.iter().any(|n| n.contains("cut")), "{:?}", o.notes);
         // A calculate's result is cut like a value set, and noted.
-        let o = go("new Array(100001).join('x')", "form1[0].page1[0].details[0].note[0]", "calculate");
+        let o = go(
+            "new Array(100001).join('x')",
+            "form1[0].page1[0].details[0].note[0]",
+            "calculate",
+        );
         assert_eq!(o.result.map(|r| r.chars().count()), Some(65_536));
-        assert!(o.notes.iter().any(|n| n.contains("result")), "{:?}", o.notes);
+        assert!(
+            o.notes.iter().any(|n| n.contains("result")),
+            "{:?}",
+            o.notes
+        );
     }
 
     #[test]
@@ -415,18 +578,31 @@ mod xfa_model {
             "click",
         );
         assert_eq!(o.error, None, "{o:?}");
-        assert_eq!(o.result.as_deref(), Some("page1/subform/4/5/6/2/form1[0].page1[0].table[0].row[0].amount[0]"));
+        assert_eq!(
+            o.result.as_deref(),
+            Some("page1/subform/4/5/6/2/form1[0].page1[0].table[0].row[0].amount[0]")
+        );
     }
 
     #[test]
     fn presence_and_access_changes_are_effects() {
-        let o = go("details.presence = 'visible'; details.note.access = 'readOnly'; this.presence = 'nonsense';", "form1[0].page1[0].go[0]", "click");
+        let o = go(
+            "details.presence = 'visible'; details.note.access = 'readOnly'; this.presence = 'nonsense';",
+            "form1[0].page1[0].go[0]",
+            "click",
+        );
         assert_eq!(o.error, None, "{o:?}");
         assert_eq!(
             o.effects,
             vec![
-                XfaEffect::SetPresence { som: "form1[0].page1[0].details[0]".into(), presence: "visible".into() },
-                XfaEffect::SetAccess { som: "form1[0].page1[0].details[0].note[0]".into(), access: "readOnly".into() },
+                XfaEffect::SetPresence {
+                    som: "form1[0].page1[0].details[0]".into(),
+                    presence: "visible".into()
+                },
+                XfaEffect::SetAccess {
+                    som: "form1[0].page1[0].details[0].note[0]".into(),
+                    access: "readOnly".into()
+                },
             ]
         );
     }
@@ -439,12 +615,20 @@ mod xfa_model {
             "click",
         );
         assert_eq!(o.error, None, "{o:?}");
-        assert_eq!(o.result.as_deref(), Some("2/3/form1[0].page1[0].table[0].row[2]/2"));
+        assert_eq!(
+            o.result.as_deref(),
+            Some("2/3/form1[0].page1[0].table[0].row[2]/2")
+        );
         assert_eq!(
             o.effects,
             vec![
-                XfaEffect::AddInstance { som: "form1[0].page1[0].table[0].row[2]".into() },
-                XfaEffect::SetValue { som: "form1[0].page1[0].table[0].row[2].what[0]".into(), value: "New".into() },
+                XfaEffect::AddInstance {
+                    som: "form1[0].page1[0].table[0].row[2]".into()
+                },
+                XfaEffect::SetValue {
+                    som: "form1[0].page1[0].table[0].row[2].what[0]".into(),
+                    value: "New".into()
+                },
             ]
         );
         // Through the instance manager property, from inside a row; removing renumbers.
@@ -454,8 +638,17 @@ mod xfa_model {
             "click",
         );
         assert_eq!(o.error, None, "{o:?}");
-        assert_eq!(o.result.as_deref(), Some("5"), "the second row is now the first");
-        assert_eq!(o.effects, vec![XfaEffect::RemoveInstance { som: "form1[0].page1[0].table[0].row[0]".into() }]);
+        assert_eq!(
+            o.result.as_deref(),
+            Some("5"),
+            "the second row is now the first"
+        );
+        assert_eq!(
+            o.effects,
+            vec![XfaEffect::RemoveInstance {
+                som: "form1[0].page1[0].table[0].row[0]".into()
+            }]
+        );
         // setInstances, and the floor of one instance.
         let o = go(
             "table._row.setInstances(4); var a = table._row.count; table._row.setInstances(0); a + '/' + table._row.count",
@@ -492,9 +685,17 @@ mod xfa_model {
     #[test]
     fn field_names_never_shadow_javascript_builtins() {
         let mut f = form();
-        f.children[0].children.push(field("Date", "form1[0].page1[0].Date[0]", "x", false));
-        f.children[0].children.push(field("eval", "form1[0].page1[0].eval[0]", "y", false));
-        let ev = XfaEvent { activity: "click".into(), target: "form1[0].page1[0].go[0]".into(), ..Default::default() };
+        f.children[0]
+            .children
+            .push(field("Date", "form1[0].page1[0].Date[0]", "x", false));
+        f.children[0]
+            .children
+            .push(field("eval", "form1[0].page1[0].eval[0]", "y", false));
+        let ev = XfaEvent {
+            activity: "click".into(),
+            target: "form1[0].page1[0].go[0]".into(),
+            ..Default::default()
+        };
         let o = run_xfa(
             "typeof new Date().getTime() + ':' + this.parent.Date.rawValue + ':' + this.parent.eval.rawValue",
             &ev,
@@ -508,7 +709,11 @@ mod xfa_model {
 
     #[test]
     fn validate_scripts_give_a_verdict_and_errors_are_reported() {
-        let o = go("this.rawValue === null || this.rawValue <= 3", "form1[0].page1[0].qty[0]", "validate");
+        let o = go(
+            "this.rawValue === null || this.rawValue <= 3",
+            "form1[0].page1[0].qty[0]",
+            "validate",
+        );
         assert_eq!(o.result_bool, Some(false));
         let o = go("nosuch.rawValue = 1", "form1[0].page1[0].qty[0]", "click");
         assert!(o.error.is_some() && o.effects.is_empty());
@@ -517,31 +722,82 @@ mod xfa_model {
         let o = go(&"(".repeat(200), "form1[0].page1[0].qty[0]", "click");
         assert!(o.error.is_some());
         // Adding instances is capped; a runaway loop can't blow the tree up.
-        let o = go("for (var i = 0; i < 5000; i++) table._row.addInstance(1); table._row.count", "form1[0].page1[0].go[0]", "click");
+        let o = go(
+            "for (var i = 0; i < 5000; i++) table._row.addInstance(1); table._row.count",
+            "form1[0].page1[0].go[0]",
+            "click",
+        );
         assert_eq!(o.result.as_deref(), Some("1002"));
     }
 
     #[test]
     fn values_set_again_merge_and_hostile_loops_are_capped() {
         // A calculate that sets its own value in a loop leaves one effect: the last value.
-        let o = go("for (var i = 0; i < 50000; i++) this.rawValue = i;", "form1[0].page1[0].total[0]", "calculate");
-        assert_eq!(o.effects, vec![XfaEffect::SetValue { som: "form1[0].page1[0].total[0]".into(), value: "49999".into() }], "{:?}", o.error);
+        let o = go(
+            "for (var i = 0; i < 50000; i++) this.rawValue = i;",
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
+        assert_eq!(
+            o.effects,
+            vec![XfaEffect::SetValue {
+                som: "form1[0].page1[0].total[0]".into(),
+                value: "49999".into()
+            }],
+            "{:?}",
+            o.error
+        );
         // Order-dependent effects in between keep the values on either side.
-        let o = go("qty.rawValue = 1; xfa.host.resetData(); qty.rawValue = 2; qty.rawValue = 3;", "form1[0].page1[0]", "click");
+        let o = go(
+            "qty.rawValue = 1; xfa.host.resetData(); qty.rawValue = 2; qty.rawValue = 3;",
+            "form1[0].page1[0]",
+            "click",
+        );
         assert_eq!(o.effects.len(), 3, "{:?}", o.effects);
-        assert_eq!(o.effects.last(), Some(&XfaEffect::SetValue { som: "form1[0].page1[0].qty[0]".into(), value: "3".into() }));
+        assert_eq!(
+            o.effects.last(),
+            Some(&XfaEffect::SetValue {
+                som: "form1[0].page1[0].qty[0]".into(),
+                value: "3".into()
+            })
+        );
         // Message boxes and console lines in a loop stop at their caps, and say so.
-        let o = go("for (var i = 0; i < 100000; i++) { xfa.host.messageBox('m' + i); console.println('c' + i); }", "form1[0].page1[0]", "initialize");
-        let alerts = o.effects.iter().filter(|e| matches!(e, XfaEffect::MessageBox(_))).count();
+        let o = go(
+            "for (var i = 0; i < 100000; i++) { xfa.host.messageBox('m' + i); console.println('c' + i); }",
+            "form1[0].page1[0]",
+            "initialize",
+        );
+        let alerts = o
+            .effects
+            .iter()
+            .filter(|e| matches!(e, XfaEffect::MessageBox(_)))
+            .count();
         assert_eq!(alerts, MAX_ALERTS);
         assert_eq!(o.console.len(), MAX_CONSOLE);
-        assert!(o.notes.iter().any(|n| n.contains("messages")) && o.notes.iter().any(|n| n.contains("console")), "{:?}", o.notes);
+        assert!(
+            o.notes.iter().any(|n| n.contains("messages"))
+                && o.notes.iter().any(|n| n.contains("console")),
+            "{:?}",
+            o.notes
+        );
         // Distinct effects stop at the effect cap.
-        let o = go("for (var i = 0; i < 30000; i++) xfa.host.beep();", "form1[0].page1[0]", "click");
+        let o = go(
+            "for (var i = 0; i < 30000; i++) xfa.host.beep();",
+            "form1[0].page1[0]",
+            "click",
+        );
         assert_eq!(o.effects.len(), MAX_EFFECTS);
-        assert!(o.notes.iter().any(|n| n.contains("changes")), "{:?}", o.notes);
+        assert!(
+            o.notes.iter().any(|n| n.contains("changes")),
+            "{:?}",
+            o.notes
+        );
         // Long messages are cut.
-        let o = go("xfa.host.messageBox(new Array(100000).join('x'));", "form1[0].page1[0]", "click");
+        let o = go(
+            "xfa.host.messageBox(new Array(100000).join('x'));",
+            "form1[0].page1[0]",
+            "click",
+        );
         assert!(matches!(&o.effects[0], XfaEffect::MessageBox(m) if m.chars().count() <= 4_097));
     }
 
@@ -553,7 +809,10 @@ mod xfa_model {
         let o = run_within_limits("test", ms(10_000), ms(500), move |started| {
             std::thread::sleep(ms(1_500));
             started();
-            XfaOutcome { result: Some("ran".into()), ..Default::default() }
+            XfaOutcome {
+                result: Some("ran".into()),
+                ..Default::default()
+            }
         });
         assert!(!o.abandoned, "{o:?}");
         assert_eq!(o.result.as_deref(), Some("ran"));
@@ -563,17 +822,29 @@ mod xfa_model {
             std::thread::sleep(ms(2_000));
             XfaOutcome::default()
         });
-        assert!(o.abandoned && o.error.as_deref().is_some_and(|e| e.contains("ran longer")), "{o:?}");
+        assert!(
+            o.abandoned && o.error.as_deref().is_some_and(|e| e.contains("ran longer")),
+            "{o:?}"
+        );
         // Start-up has a limit of its own, so nobody waits forever for an engine.
         let o = run_within_limits("test", ms(200), ms(10_000), move |started| {
             std::thread::sleep(ms(2_000));
             started();
             XfaOutcome::default()
         });
-        assert!(o.abandoned && o.error.as_deref().is_some_and(|e| e.contains("to start")), "{o:?}");
+        assert!(
+            o.abandoned && o.error.as_deref().is_some_and(|e| e.contains("to start")),
+            "{o:?}"
+        );
         // A script that finishes without saying it started (refused at once) isn't abandoned.
-        let o = run_within_limits("test", ms(10_000), ms(200), |_| XfaOutcome { error: Some("refused".into()), ..Default::default() });
-        assert!(!o.abandoned && o.error.as_deref() == Some("refused"), "{o:?}");
+        let o = run_within_limits("test", ms(10_000), ms(200), |_| XfaOutcome {
+            error: Some("refused".into()),
+            ..Default::default()
+        });
+        assert!(
+            !o.abandoned && o.error.as_deref() == Some("refused"),
+            "{o:?}"
+        );
     }
 }
 
@@ -584,8 +855,16 @@ mod formcalc {
     use crate::xfa::*;
 
     fn go(script: &str, target: &str, activity: &str) -> XfaOutcome {
-        let ev = XfaEvent { activity: activity.into(), target: target.into(), ..Default::default() };
-        let doc = XfaDoc { file_name: "f.pdf".into(), page: 1, page_count: 3 };
+        let ev = XfaEvent {
+            activity: activity.into(),
+            target: target.into(),
+            ..Default::default()
+        };
+        let doc = XfaDoc {
+            file_name: "f.pdf".into(),
+            page: 1,
+            page_count: 3,
+        };
         run_formcalc(script, &ev, &doc, &form(), Limits::default())
     }
 
@@ -620,7 +899,11 @@ mod formcalc {
         assert_eq!(calc("null == null"), "1");
         assert_eq!(calc("1 == null"), "0");
         assert_eq!(calc("1 <> null"), "1");
-        assert!(go("1 / 0", "form1[0].page1[0].total[0]", "calculate").error.is_some());
+        assert!(
+            go("1 / 0", "form1[0].page1[0].total[0]", "calculate")
+                .error
+                .is_some()
+        );
         // Comments and newlines inside brackets.
         assert_eq!(calc("; a comment\n// another\nSum(1,\n 2,\n 3)"), "6");
     }
@@ -662,12 +945,18 @@ mod formcalc {
         assert_eq!(calc(r#"Format("$z,zz9.99", -5)"#), "-$5.00");
         assert_eq!(calc(r#"Format("MM/DD/YYYY", "2024-02-29")"#), "02/29/2024");
         assert_eq!(calc(r#"Parse("zzz,zz9.99", "1,234.50")"#), "1234.5");
-        assert_eq!(calc(r#"Parse("MMM D, YYYY", "Mar 15, 1996")"#), "1996-03-15");
+        assert_eq!(
+            calc(r#"Parse("MMM D, YYYY", "Mar 15, 1996")"#),
+            "1996-03-15"
+        );
         assert_eq!(calc(r#"Date2Num("1900-01-01")"#), "1");
         assert_eq!(calc(r#"Date2Num("2024-02-29")"#), "45350");
         assert_eq!(calc(r#"Date2Num("29/02/2024", "DD/MM/YYYY")"#), "45350");
         assert_eq!(calc(r#"Num2Date(45350, "YYYY-MM-DD")"#), "2024-02-29");
-        assert_eq!(calc(r#"Num2Date(Date2Num("2024-02-29") + 1, "MMMM D, YYYY")"#), "March 1, 2024");
+        assert_eq!(
+            calc(r#"Num2Date(Date2Num("2024-02-29") + 1, "MMMM D, YYYY")"#),
+            "March 1, 2024"
+        );
         assert_eq!(calc(r#"Time2Num("01:00:00")"#), "3600000");
         assert_eq!(calc(r#"Num2Time(3661000)"#), "01:01:01");
         assert_eq!(calc("Round(Pmt(10000, 0.01, 12), 2)"), "888.49");
@@ -677,20 +966,53 @@ mod formcalc {
         assert_eq!(calc(r#"UnitType("2.5cm")"#), "cm");
         assert_eq!(calc(r#"Encode("a b&c", "url")"#), "a%20b%26c");
         assert_eq!(calc(r#"Decode("a%20b", "url")"#), "a b");
-        assert!(go(r#"Get("http://example.com")"#, "form1[0].page1[0].total[0]", "calculate").error.unwrap().contains("network"));
-        assert!(go("Nope(1)", "form1[0].page1[0].total[0]", "calculate").error.unwrap().contains("unknown function"));
+        assert!(
+            go(
+                r#"Get("http://example.com")"#,
+                "form1[0].page1[0].total[0]",
+                "calculate"
+            )
+            .error
+            .unwrap()
+            .contains("network")
+        );
+        assert!(
+            go("Nope(1)", "form1[0].page1[0].total[0]", "calculate")
+                .error
+                .unwrap()
+                .contains("unknown function")
+        );
     }
 
     #[test]
     fn control_flow_variables_and_functions_work() {
-        assert_eq!(calc("var x = 3\nif (x > 2) then 10 elseif (x > 1) then 20 else 30 endif"), "10");
+        assert_eq!(
+            calc("var x = 3\nif (x > 2) then 10 elseif (x > 1) then 20 else 30 endif"),
+            "10"
+        );
         // An assignment is an expression: its value is the script's result.
         assert_eq!(calc("qty = 7"), "7");
         assert_eq!(calc("var y = 8"), "8");
-        assert_eq!(calc("var x = 1\nif (x > 2) then 10 elseif (x > 0) then 20 else 30 endif"), "20");
-        assert_eq!(calc("var i = 0\nvar s = 0\nwhile (i < 5) do\n i = i + 1\n if (i == 3) then continue endif\n s = s + i\nendwhile\ns"), "12");
-        assert_eq!(calc("var s = 0\nfor i = 1 upto 10 step 3 do s = s + i endfor\ns"), "22");
-        assert_eq!(calc("var s = 0\nfor i = 5 downto 1 do\n if (i == 2) then break endif\n s = s + i\nendfor\ns"), "12");
+        assert_eq!(
+            calc("var x = 1\nif (x > 2) then 10 elseif (x > 0) then 20 else 30 endif"),
+            "20"
+        );
+        assert_eq!(
+            calc(
+                "var i = 0\nvar s = 0\nwhile (i < 5) do\n i = i + 1\n if (i == 3) then continue endif\n s = s + i\nendwhile\ns"
+            ),
+            "12"
+        );
+        assert_eq!(
+            calc("var s = 0\nfor i = 1 upto 10 step 3 do s = s + i endfor\ns"),
+            "22"
+        );
+        assert_eq!(
+            calc(
+                "var s = 0\nfor i = 5 downto 1 do\n if (i == 2) then break endif\n s = s + i\nendfor\ns"
+            ),
+            "12"
+        );
         assert_eq!(
             calc(
                 r#"var s = ""
@@ -702,23 +1024,54 @@ s"#
         assert_eq!(calc("func sq(n) do n * n endfunc\nsq(4) + sq(3)"), "25");
         assert_eq!(calc("func Sq(n) do n * n endfunc\nSQ(4)"), "16");
         // `exit` inside a function ends the whole script.
-        let o = go("func f() do exit endfunc\nf()\n$host.messageBox(\"still ran\")\n5", "form1[0].page1[0].go[0]", "click");
+        let o = go(
+            "func f() do exit endfunc\nf()\n$host.messageBox(\"still ran\")\n5",
+            "form1[0].page1[0].go[0]",
+            "click",
+        );
         assert_eq!(o.error, None);
         assert!(o.effects.is_empty(), "{:?}", o.effects);
         // Rows can be walked as objects.
-        assert_eq!(calc("var s = 0\nforeach r in (table.row[*]) do s = s + r.amount endfor\ns"), "15");
+        assert_eq!(
+            calc("var s = 0\nforeach r in (table.row[*]) do s = s + r.amount endfor\ns"),
+            "15"
+        );
         // A long sum is not deep nesting.
         let long = format!("1{}", " + 1".repeat(500));
-        let ev = XfaEvent { activity: "calculate".into(), target: "form1[0].page1[0].total[0]".into(), ..Default::default() };
-        let o = run_formcalc(&long, &ev, &XfaDoc::default(), &form(), Limits { loop_iterations: 1000, recursion: 64 });
+        let ev = XfaEvent {
+            activity: "calculate".into(),
+            target: "form1[0].page1[0].total[0]".into(),
+            ..Default::default()
+        };
+        let o = run_formcalc(
+            &long,
+            &ev,
+            &XfaDoc::default(),
+            &form(),
+            Limits {
+                loop_iterations: 1000,
+                recursion: 64,
+            },
+        );
         assert_eq!(o.result.as_deref(), Some("501"), "{o:?}");
         // Null is an empty result with no truth value, as in JavaScript.
-        let o = go("if (0) then 5 endif", "form1[0].page1[0].total[0]", "calculate");
+        let o = go(
+            "if (0) then 5 endif",
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
         assert_eq!(o.result.as_deref(), Some(""));
         assert_eq!(o.result_bool, None);
-        assert_eq!(calc("func f(n) do if (n < 2) then return 1 endif\n return n * f(n - 1) endfunc\nf(5)"), "120");
+        assert_eq!(
+            calc("func f(n) do if (n < 2) then return 1 endif\n return n * f(n - 1) endfunc\nf(5)"),
+            "120"
+        );
         assert_eq!(calc("IF (1) THEN 5 ENDIF"), "5");
-        let o = go(r#"throw "stop here""#, "form1[0].page1[0].total[0]", "calculate");
+        let o = go(
+            r#"throw "stop here""#,
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
         assert_eq!(o.error.as_deref(), Some("stop here"));
         let o = go("if (1) then 1", "form1[0].page1[0].total[0]", "calculate");
         assert!(o.error.unwrap().contains("endif"));
@@ -737,11 +1090,18 @@ s"#
         assert_eq!(calc("Count(table.row[*].what)"), "1");
         // Lists hold each object once, however they were reached.
         assert_eq!(calc("Count((table.row[*].parent..row).parent..row)"), "2");
-        assert_eq!(calc("Count(xfa.resolveNodes(\"table.row[*].parent.row[*].parent.row[*]\"))"), "2");
+        assert_eq!(
+            calc("Count(xfa.resolveNodes(\"table.row[*].parent.row[*].parent.row[*]\"))"),
+            "2"
+        );
         // Bare names in a row see every sibling row, and `[-1]`/`[+1]` are relative to the row
         // the script runs in.
         let in_row = |s: &str| {
-            let o = go(s, "form1[0].page1[0].table[0].row[1].amount[0]", "calculate");
+            let o = go(
+                s,
+                "form1[0].page1[0].table[0].row[1].amount[0]",
+                "calculate",
+            );
             assert_eq!(o.error, None, "{s}");
             o.result.unwrap_or_default()
         };
@@ -750,10 +1110,18 @@ s"#
         assert_eq!(in_row("row[1].amount"), "5");
         assert_eq!(in_row("row[-1].amount"), "10");
         // Past the ends there is no object, so a property of it is an error (as in Acrobat).
-        let past = go("row[+1].amount", "form1[0].page1[0].table[0].row[1].amount[0]", "calculate");
+        let past = go(
+            "row[+1].amount",
+            "form1[0].page1[0].table[0].row[1].amount[0]",
+            "calculate",
+        );
         assert!(past.error.unwrap().contains("no object"));
         assert_eq!(in_row("Exists(row[-5])"), "0");
-        let o = go("row[+1].amount", "form1[0].page1[0].table[0].row[0].amount[0]", "calculate");
+        let o = go(
+            "row[+1].amount",
+            "form1[0].page1[0].table[0].row[0].amount[0]",
+            "calculate",
+        );
         assert_eq!(o.result.as_deref(), Some("5"));
         assert_eq!(calc("table.row[1].amount"), "5");
         assert_eq!(calc("table.row.amount"), "10");
@@ -766,7 +1134,12 @@ s"#
         assert_eq!(calc("$event.name"), "calculate");
         assert_eq!(calc("xfa.resolveNode(\"page1.price\").rawValue"), "2.5");
         assert_eq!(calc("$.border.fill.color.value"), "");
-        assert!(go("nothing + 1", "form1[0].page1[0].total[0]", "calculate").error.unwrap().contains("unknown name"));
+        assert!(
+            go("nothing + 1", "form1[0].page1[0].total[0]", "calculate")
+                .error
+                .unwrap()
+                .contains("unknown name")
+        );
         // Assignment to a field (by name and by path), a property and a variable.
         let o = go(
             r#"page1.qty = 6
@@ -786,12 +1159,23 @@ table._row.count"#,
         assert_eq!(
             o.effects,
             vec![
-                XfaEffect::SetValue { som: "form1[0].page1[0].qty[0]".into(), value: "7".into() },
-                XfaEffect::SetPresence { som: "form1[0].page1[0].details[0]".into(), presence: "visible".into() },
-                XfaEffect::SetAccess { som: "form1[0].page1[0].price[0]".into(), access: "readOnly".into() },
+                XfaEffect::SetValue {
+                    som: "form1[0].page1[0].qty[0]".into(),
+                    value: "7".into()
+                },
+                XfaEffect::SetPresence {
+                    som: "form1[0].page1[0].details[0]".into(),
+                    presence: "visible".into()
+                },
+                XfaEffect::SetAccess {
+                    som: "form1[0].page1[0].price[0]".into(),
+                    access: "readOnly".into()
+                },
                 XfaEffect::MessageBox("Total 17.5".into()),
                 XfaEffect::SetFocus("form1[0].page1[0].qty[0]".into()),
-                XfaEffect::AddInstance { som: "form1[0].page1[0].table[0].row[2]".into() },
+                XfaEffect::AddInstance {
+                    som: "form1[0].page1[0].table[0].row[2]".into()
+                },
             ]
         );
         // Instance managers: remove, setInstances, count assignment, and the floor of one.
@@ -803,7 +1187,11 @@ table._row.count"#,
         assert_eq!(o.error, None, "{o:?}");
         assert_eq!(o.result.as_deref(), Some("1"));
         // Validate scripts give a truth value; a value the script sets wins over the result.
-        let o = go("$ == null or $ <= 100", "form1[0].page1[0].qty[0]", "validate");
+        let o = go(
+            "$ == null or $ <= 100",
+            "form1[0].page1[0].qty[0]",
+            "validate",
+        );
         assert_eq!(o.result_bool, Some(true));
         let o = go("$ > 100", "form1[0].page1[0].qty[0]", "validate");
         assert_eq!(o.result_bool, Some(false));
@@ -817,15 +1205,26 @@ $host.gotoURL("https://example.org")"#,
         );
         assert_eq!(
             o.effects,
-            vec![XfaEffect::ResetData(vec!["qty".into(), "price".into()]), XfaEffect::Print, XfaEffect::LaunchUrl("https://example.org".into())]
+            vec![
+                XfaEffect::ResetData(vec!["qty".into(), "price".into()]),
+                XfaEffect::Print,
+                XfaEffect::LaunchUrl("https://example.org".into())
+            ]
         );
     }
 
     #[test]
     fn formcalc_values_results_and_errors_stay_bounded() {
         let total = "form1[0].page1[0].total[0]";
-        let fast = Limits { loop_iterations: 10_000, recursion: 32 };
-        let ev = XfaEvent { activity: "calculate".into(), target: total.into(), ..Default::default() };
+        let fast = Limits {
+            loop_iterations: 10_000,
+            recursion: 32,
+        };
+        let ev = XfaEvent {
+            activity: "calculate".into(),
+            target: total.into(),
+            ..Default::default()
+        };
         let doc = XfaDoc::default();
         let run = |s: &str| run_formcalc(s, &ev, &doc, &form(), fast);
         // A long value is cut where it is stored, so it reads back as saved.
@@ -835,7 +1234,11 @@ $host.gotoURL("https://example.org")"#,
         // A calculate's result is cut as values are, with a note.
         let o = run("Space(100000)");
         assert_eq!(o.result.map(|r| r.chars().count()), Some(65_536));
-        assert!(o.notes.iter().any(|n| n.contains("result")), "{:?}", o.notes);
+        assert!(
+            o.notes.iter().any(|n| n.contains("result")),
+            "{:?}",
+            o.notes
+        );
         // A thrown value is the error message: cut like one.
         let e = run("throw Space(100000)").error.unwrap();
         assert!(e.chars().count() <= 4_097, "{}", e.len());
@@ -850,37 +1253,101 @@ $host.gotoURL("https://example.org")"#,
         // Exists answers no for a name that isn't there, but a limit inside it still stops the script.
         assert_eq!(run("Exists(nothing.here)").result.as_deref(), Some("0"));
         assert_eq!(run("Exists(qty)").result.as_deref(), Some("1"));
-        assert!(run("func f(n) do Exists(f(n + 1)) endfunc\nf(1)").error.unwrap().contains("nested"));
+        assert!(
+            run("func f(n) do Exists(f(n + 1)) endfunc\nf(1)")
+                .error
+                .unwrap()
+                .contains("nested")
+        );
         // An elseif condition's chain counts from zero, not from the last statement of the arm before.
-        let script = format!("if 0 then\nvar x = 1{}\nelseif 1{} then\n2\nendif", "+1".repeat(900), "+1".repeat(200));
+        let script = format!(
+            "if 0 then\nvar x = 1{}\nelseif 1{} then\n2\nendif",
+            "+1".repeat(900),
+            "+1".repeat(200)
+        );
         assert_eq!(run(&script).result.as_deref(), Some("2"));
     }
 
     #[test]
     fn hostile_formcalc_scripts_end_with_an_error_and_bounded_output() {
         let total = "form1[0].page1[0].total[0]";
-        let fast = Limits { loop_iterations: 10_000, recursion: 32 };
-        let ev = XfaEvent { activity: "calculate".into(), target: total.into(), ..Default::default() };
+        let fast = Limits {
+            loop_iterations: 10_000,
+            recursion: 32,
+        };
+        let ev = XfaEvent {
+            activity: "calculate".into(),
+            target: total.into(),
+            ..Default::default()
+        };
         let doc = XfaDoc::default();
         let run = |s: &str| run_formcalc(s, &ev, &doc, &form(), fast);
-        assert!(run("while (1) do endwhile").error.unwrap().contains("looped"));
-        assert!(run("for i = 1 upto 1000000 do endfor").error.unwrap().contains("looped"));
-        assert!(run("func f(n) do f(n + 1) endfunc\nf(1)").error.unwrap().contains("nested"));
-        assert!(run(&format!("{}1{}", "(".repeat(500), ")".repeat(500))).error.is_some());
+        assert!(
+            run("while (1) do endwhile")
+                .error
+                .unwrap()
+                .contains("looped")
+        );
+        assert!(
+            run("for i = 1 upto 1000000 do endfor")
+                .error
+                .unwrap()
+                .contains("looped")
+        );
+        assert!(
+            run("func f(n) do f(n + 1) endfunc\nf(1)")
+                .error
+                .unwrap()
+                .contains("nested")
+        );
+        assert!(
+            run(&format!("{}1{}", "(".repeat(500), ")".repeat(500)))
+                .error
+                .is_some()
+        );
         // A 120k-term chain is refused at parse time (its tree would be as deep as it is long).
-        assert!(run(&format!("1{}", "+1".repeat(120_000))).error.unwrap().contains("too long"));
-        assert!(run(&format!("$form{}", ".a".repeat(120_000))).error.unwrap().contains("too long"));
+        assert!(
+            run(&format!("1{}", "+1".repeat(120_000)))
+                .error
+                .unwrap()
+                .contains("too long")
+        );
+        assert!(
+            run(&format!("$form{}", ".a".repeat(120_000)))
+                .error
+                .unwrap()
+                .contains("too long")
+        );
         assert!(run("nothing.x = 1").error.unwrap().contains("unknown name"));
-        assert!(run("$form.nothing = 1").error.unwrap().contains("no nothing"));
+        assert!(
+            run("$form.nothing = 1")
+                .error
+                .unwrap()
+                .contains("no nothing")
+        );
         // Values go into fields only: a subform or the form itself is refused, nothing is recorded.
         let o = run("details = \"junk\"");
         assert!(o.error.unwrap().contains("not a field"));
         assert!(o.effects.is_empty());
-        assert!(run("$form = \"junk\"").error.unwrap().contains("not a field"));
+        assert!(
+            run("$form = \"junk\"")
+                .error
+                .unwrap()
+                .contains("not a field")
+        );
         // Hostile numbers into the string functions.
-        assert_eq!(run(r#"Stuff("abc", 2, 1e300, "X")"#).result.as_deref(), Some("aX"));
-        assert_eq!(run(r#"Stuff("abc", -1e300, 1, "X")"#).result.as_deref(), Some("Xbc"));
-        assert_eq!(run(r#"Substr("abc", 1e300, 1e300)"#).result.as_deref(), Some(""));
+        assert_eq!(
+            run(r#"Stuff("abc", 2, 1e300, "X")"#).result.as_deref(),
+            Some("aX")
+        );
+        assert_eq!(
+            run(r#"Stuff("abc", -1e300, 1, "X")"#).result.as_deref(),
+            Some("Xbc")
+        );
+        assert_eq!(
+            run(r#"Substr("abc", 1e300, 1e300)"#).result.as_deref(),
+            Some("")
+        );
         assert_eq!(run(r#"Left("abc", -1e300)"#).result.as_deref(), Some(""));
         assert!(run(r#"Str(1e300, 1e300, 1e300)"#).error.is_none());
         assert!(run(r#"Round(1e300, 1e300)"#).error.is_none());
@@ -892,14 +1359,32 @@ $host.gotoURL("https://example.org")"#,
                 .unwrap()
                 .contains("too long")
         );
-        assert!(run("Upper(Concat(Space(600000), Space(600000)))").error.unwrap().contains("too long"));
+        assert!(
+            run("Upper(Concat(Space(600000), Space(600000)))")
+                .error
+                .unwrap()
+                .contains("too long")
+        );
         let o = run("$host.messageBox(Space(100000))");
-        assert!(matches!(o.effects.as_slice(), [XfaEffect::MessageBox(m)] if m.chars().count() <= 4100), "{:?}", o.effects.len());
+        assert!(
+            matches!(o.effects.as_slice(), [XfaEffect::MessageBox(m)] if m.chars().count() <= 4100),
+            "{:?}",
+            o.effects.len()
+        );
         let o = run("qty = Space(100000)");
-        assert!(matches!(o.effects.as_slice(), [XfaEffect::SetValue { value, .. }] if value.chars().count() == 65_536), "{:?}", o.effects.len());
+        assert!(
+            matches!(o.effects.as_slice(), [XfaEffect::SetValue { value, .. }] if value.chars().count() == 65_536),
+            "{:?}",
+            o.effects.len()
+        );
         assert!(o.notes.iter().any(|n| n.contains("cut")), "{:?}", o.notes);
         // A comment of dashes is not deep nesting.
-        assert_eq!(run(&format!("; {}\n1 + 1", "-".repeat(70))).result.as_deref(), Some("2"));
+        assert_eq!(
+            run(&format!("; {}\n1 + 1", "-".repeat(70)))
+                .result
+                .as_deref(),
+            Some("2")
+        );
         // Parentheses don't reset the chain count: a tree is never deeper than the cap.
         let mut nested = "1+1+1+1+1+1+1+1+1+1".to_string();
         for _ in 0..30 {
@@ -908,7 +1393,11 @@ $host.gotoURL("https://example.org")"#,
         assert!(run(&nested).error.unwrap().contains("too long"));
         assert_eq!(run("(1+2)*(3+4) + (5+6)").result.as_deref(), Some("32"));
         // Nested statements inside recursion count against the depth limit.
-        let deep = format!("func f(n) do\n{}return f(n - 1)\n{}endfunc\nf(1000)", "if (n > 0) then\n".repeat(20), "endif\n".repeat(20));
+        let deep = format!(
+            "func f(n) do\n{}return f(n - 1)\n{}endfunc\nf(1000)",
+            "if (n > 0) then\n".repeat(20),
+            "endif\n".repeat(20)
+        );
         assert!(run(&deep).error.unwrap().contains("nested"));
         // A deadline already passed stops the script at its first look at the clock.
         let o = crate::formcalc::run_formcalc_at(
@@ -916,43 +1405,106 @@ $host.gotoURL("https://example.org")"#,
             &ev,
             &doc,
             form(),
-            Limits { loop_iterations: u64::MAX, recursion: 32 },
+            Limits {
+                loop_iterations: u64::MAX,
+                recursion: 32,
+            },
             Some(std::time::Duration::ZERO),
         );
         assert!(o.error.unwrap().contains("too long"));
         assert!(run(&format!("{}1{}", "-".repeat(5000), "")).error.is_some());
-        assert!(run("var s = \"x\"\nfor i = 1 upto 100 do s = Concat(s, s) endfor\nLen(s)").error.unwrap().contains("too long"));
+        assert!(
+            run("var s = \"x\"\nfor i = 1 upto 100 do s = Concat(s, s) endfor\nLen(s)")
+                .error
+                .unwrap()
+                .contains("too long")
+        );
         assert!(run("Space(1e12)").error.is_none());
-        assert!(run("Replace(Space(100000), \" \", Space(100000))").error.unwrap().contains("too long"));
+        assert!(
+            run("Replace(Space(100000), \" \", Space(100000))")
+                .error
+                .unwrap()
+                .contains("too long")
+        );
         assert_eq!(run(r#"Format("YYYY-MM-DD", 1e300)"#).error, None);
-        assert_eq!(run(r#"Date2Num("99999999999999999999-01-01", "YYYYYYYYYYYYYYYYYYYY-MM-DD")"#).error, None);
+        assert_eq!(
+            run(r#"Date2Num("99999999999999999999-01-01", "YYYYYYYYYYYYYYYYYYYY-MM-DD")"#).error,
+            None
+        );
         assert_eq!(run(r#"Time2Num("99999999999999999999:0:0")"#).error, None);
-        assert_eq!(run(r#"Num2Date(1e300, "YYYY")"#).result.as_deref(), Some(""));
-        assert!(run("for i = 1 upto 1000 do nothing endfor").error.unwrap().contains("unknown name"));
-        assert!(run("\"unterminated").error.unwrap().contains("unterminated"));
+        assert_eq!(
+            run(r#"Num2Date(1e300, "YYYY")"#).result.as_deref(),
+            Some("")
+        );
+        assert!(
+            run("for i = 1 upto 1000 do nothing endfor")
+                .error
+                .unwrap()
+                .contains("unknown name")
+        );
+        assert!(
+            run("\"unterminated")
+                .error
+                .unwrap()
+                .contains("unterminated")
+        );
         assert!(run("1 ) 2").error.is_some());
-        assert!(run("Eval(\"Eval(\"\"Eval(\"\"\"\"1\"\"\"\")\"\")\")").error.is_none());
+        assert!(
+            run("Eval(\"Eval(\"\"Eval(\"\"\"\"1\"\"\"\")\"\")\")")
+                .error
+                .is_none()
+        );
         // Adding rows forever stops at the instance cap with the effects it managed.
         let o = run("for i = 1 upto 100000 do table._row.addInstance(1) endfor\ntable._row.count");
         assert!(o.error.unwrap().contains("looped"));
-        assert!(o.effects.iter().filter(|e| matches!(e, XfaEffect::AddInstance { .. })).count() <= 1000, "{}", o.effects.len());
+        assert!(
+            o.effects
+                .iter()
+                .filter(|e| matches!(e, XfaEffect::AddInstance { .. }))
+                .count()
+                <= 1000,
+            "{}",
+            o.effects.len()
+        );
         let o = run("for i = 1 upto 5000 do table._row.addInstance(1) endfor\ntable._row.count");
         assert_eq!(o.error, None);
         assert_eq!(o.result.as_deref(), Some("1002"));
         // Message boxes past the cap are dropped and noted.
         let o = run("for i = 1 upto 500 do $host.messageBox(i) endfor");
-        assert_eq!(o.effects.iter().filter(|e| matches!(e, XfaEffect::MessageBox(_))).count(), 100);
+        assert_eq!(
+            o.effects
+                .iter()
+                .filter(|e| matches!(e, XfaEffect::MessageBox(_)))
+                .count(),
+            100
+        );
         assert!(!o.notes.is_empty());
         // On a small stack (the wasm build's), the limits stop the script before the stack does.
         let small = std::thread::Builder::new()
             .stack_size(1 << 20)
             .spawn(move || {
-                let fast = Limits { loop_iterations: 10_000, recursion: 256 };
-                let ev = XfaEvent { activity: "click".into(), target: "form1[0].page1[0].go[0]".into(), ..Default::default() };
+                let fast = Limits {
+                    loop_iterations: 10_000,
+                    recursion: 256,
+                };
+                let ev = XfaEvent {
+                    activity: "click".into(),
+                    target: "form1[0].page1[0].go[0]".into(),
+                    ..Default::default()
+                };
                 let doc = XfaDoc::default();
                 let run = |s: &str| run_formcalc(s, &ev, &doc, &form(), fast);
-                assert!(run("func f(n) do f(n + 1) endfunc\nf(1)").error.unwrap().contains("nested"));
-                let deep = format!("func f(n) do\n{}return f(n - 1)\n{}endfunc\nf(1000)", "if (n > 0) then\n".repeat(20), "endif\n".repeat(20));
+                assert!(
+                    run("func f(n) do f(n + 1) endfunc\nf(1)")
+                        .error
+                        .unwrap()
+                        .contains("nested")
+                );
+                let deep = format!(
+                    "func f(n) do\n{}return f(n - 1)\n{}endfunc\nf(1000)",
+                    "if (n > 0) then\n".repeat(20),
+                    "endif\n".repeat(20)
+                );
                 assert!(run(&deep).error.unwrap().contains("nested"));
                 let mut nested = "1".to_string();
                 for _ in 0..30 {
@@ -974,7 +1526,10 @@ $host.gotoURL("https://example.org")"#,
             &ev,
             &doc,
             form(),
-            Limits { loop_iterations: u64::MAX, recursion: 32 },
+            Limits {
+                loop_iterations: u64::MAX,
+                recursion: 32,
+            },
             std::time::Duration::from_millis(200),
         );
         assert!(o.abandoned || o.error.is_some(), "{o:?}");
@@ -991,7 +1546,11 @@ mod session {
         Script {
             source: source.into(),
             formcalc,
-            event: XfaEvent { activity: activity.into(), target: target.into(), ..Default::default() },
+            event: XfaEvent {
+                activity: activity.into(),
+                target: target.into(),
+                ..Default::default()
+            },
             root: form(),
             limits: Limits::default(),
             timeout: std::time::Duration::from_secs(3),
@@ -1000,41 +1559,103 @@ mod session {
 
     #[test]
     fn scripts_of_one_event_run_on_one_thread_each_on_the_form_the_caller_sends() {
-        let mut s = XfaSession::new(XfaDoc { page_count: 3, ..Default::default() });
+        let mut s = XfaSession::new(XfaDoc {
+            page_count: 3,
+            ..Default::default()
+        });
         assert_eq!(s.dead(), None);
         // JavaScript, then FormCalc, on the same thread.
-        let o = s.run(script("qty.rawValue = 10; qty.rawValue", false, "form1[0].page1[0].total[0]", "calculate"));
+        let o = s.run(script(
+            "qty.rawValue = 10; qty.rawValue",
+            false,
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        ));
         assert_eq!(o.error, None, "{o:?}");
         assert_eq!(o.effects.len(), 1);
         assert_eq!(o.result.as_deref(), Some("10"));
         // The next script sees the form the caller sends, not what the last script did on
         // its copy: nothing a script changed leaks past the caller.
-        let o = s.run(script("qty * price", true, "form1[0].page1[0].total[0]", "calculate"));
+        let o = s.run(script(
+            "qty * price",
+            true,
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        ));
         assert_eq!(o.result.as_deref(), Some("10"), "{o:?}");
-        let mut with = script("qty * price", true, "form1[0].page1[0].total[0]", "calculate");
+        let mut with = script(
+            "qty * price",
+            true,
+            "form1[0].page1[0].total[0]",
+            "calculate",
+        );
         with.root.children[0].children[0].value = "10".into();
         assert_eq!(s.run(with).result.as_deref(), Some("25"));
         // Nor do variables, globals, prototype changes or kept objects.
-        s.run(script("leak = 5; String.prototype.trim = function () { return 'P' }; kept = qty; 1", false, "form1[0].page1[0].qty[0]", "calculate"));
-        let o = s.run(script("typeof leak + ':' + ' x '.trim() + ':' + typeof kept", false, "form1[0].page1[0].qty[0]", "calculate"));
+        s.run(script(
+            "leak = 5; String.prototype.trim = function () { return 'P' }; kept = qty; 1",
+            false,
+            "form1[0].page1[0].qty[0]",
+            "calculate",
+        ));
+        let o = s.run(script(
+            "typeof leak + ':' + ' x '.trim() + ':' + typeof kept",
+            false,
+            "form1[0].page1[0].qty[0]",
+            "calculate",
+        ));
         assert_eq!(o.result.as_deref(), Some("undefined:x:undefined"));
-        s.run(script("Object.freeze(globalThis); 1", false, "form1[0].page1[0].qty[0]", "calculate"));
-        let o = s.run(script("xfa.host.numPages", false, "form1[0].page1[0].qty[0]", "calculate"));
+        s.run(script(
+            "Object.freeze(globalThis); 1",
+            false,
+            "form1[0].page1[0].qty[0]",
+            "calculate",
+        ));
+        let o = s.run(script(
+            "xfa.host.numPages",
+            false,
+            "form1[0].page1[0].qty[0]",
+            "calculate",
+        ));
         assert_eq!(o.result.as_deref(), Some("3"), "{o:?}");
         // `this` and `event` follow each script's target.
-        let o = s.run(script("this.name + ':' + xfa.event.name", false, "form1[0].page1[0].price[0]", "change"));
+        let o = s.run(script(
+            "this.name + ':' + xfa.event.name",
+            false,
+            "form1[0].page1[0].price[0]",
+            "change",
+        ));
         assert_eq!(o.result.as_deref(), Some("price:change"));
         // A failing script doesn't end the session.
-        let o = s.run(script("throw new Error('no')", false, "form1[0].page1[0].go[0]", "click"));
+        let o = s.run(script(
+            "throw new Error('no')",
+            false,
+            "form1[0].page1[0].go[0]",
+            "click",
+        ));
         assert!(o.error.is_some() && !o.abandoned);
-        assert_eq!(s.run(script("1 + 1", true, "form1[0].page1[0].go[0]", "click")).result.as_deref(), Some("2"));
+        assert_eq!(
+            s.run(script("1 + 1", true, "form1[0].page1[0].go[0]", "click"))
+                .result
+                .as_deref(),
+            Some("2")
+        );
         // Hundreds of scripts on the one thread.
         let started = std::time::Instant::now();
         for i in 0..300 {
-            let o = s.run(script(&format!("{i} + qty.rawValue"), i % 2 == 0, "form1[0].page1[0].total[0]", "calculate"));
+            let o = s.run(script(
+                &format!("{i} + qty.rawValue"),
+                i % 2 == 0,
+                "form1[0].page1[0].total[0]",
+                "calculate",
+            ));
             assert_eq!(o.error, None, "{o:?}");
         }
-        assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
+        assert!(
+            started.elapsed() < std::time::Duration::from_secs(10),
+            "{:?}",
+            started.elapsed()
+        );
     }
 
     #[test]
@@ -1061,7 +1682,10 @@ mod session {
     fn a_script_past_its_time_is_abandoned_and_the_session_is_dead_after_it() {
         let mut s = XfaSession::new(XfaDoc::default());
         let mut slow = script("while (true) {}", false, "form1[0].page1[0].go[0]", "click");
-        slow.limits = Limits { loop_iterations: u64::MAX, recursion: 32 };
+        slow.limits = Limits {
+            loop_iterations: u64::MAX,
+            recursion: 32,
+        };
         slow.timeout = std::time::Duration::from_millis(200);
         let started = std::time::Instant::now();
         let o = s.run(slow);
@@ -1069,13 +1693,27 @@ mod session {
         assert!(started.elapsed() < std::time::Duration::from_secs(2));
         assert!(s.dead().is_some_and(|w| w.contains("abandoned")));
         let o = s.run(script("1", false, "form1[0].page1[0].go[0]", "click"));
-        assert!(o.abandoned && o.result.is_none(), "nothing more runs: {o:?}");
+        assert!(
+            o.abandoned && o.result.is_none(),
+            "nothing more runs: {o:?}"
+        );
         // FormCalc past its time too (it stops itself at the deadline and is reported).
         let mut s = XfaSession::new(XfaDoc::default());
-        let mut slow = script("while (1) do endwhile", true, "form1[0].page1[0].go[0]", "click");
-        slow.limits = Limits { loop_iterations: u64::MAX, recursion: 32 };
+        let mut slow = script(
+            "while (1) do endwhile",
+            true,
+            "form1[0].page1[0].go[0]",
+            "click",
+        );
+        slow.limits = Limits {
+            loop_iterations: u64::MAX,
+            recursion: 32,
+        };
         slow.timeout = std::time::Duration::from_millis(200);
         let o = s.run(slow);
-        assert!(o.abandoned || o.error.as_deref().is_some_and(|e| e.contains("too long")), "{o:?}");
+        assert!(
+            o.abandoned || o.error.as_deref().is_some_and(|e| e.contains("too long")),
+            "{o:?}"
+        );
     }
 }

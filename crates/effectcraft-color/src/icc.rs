@@ -94,13 +94,24 @@ impl Trc {
                 den += x.ln() * x.ln();
             }
         }
-        if den > 0.0 { (num / den).clamp(0.1, 10.0) } else { 1.0 }
+        if den > 0.0 {
+            (num / den).clamp(0.1, 10.0)
+        } else {
+            1.0
+        }
     }
 
     /// Whether the curve is the sRGB (IEC 61966-2-1) piecewise curve, within 8-bit precision.
     pub fn is_srgb(&self) -> bool {
-        let srgb = |x: f64| if x <= 0.04045 { x / 12.92 } else { ((x + 0.055) / 1.055).powf(2.4) };
-        !matches!(self, Trc::Gamma(_)) && (0..=32).all(|i| (self.eval(i as f64 / 32.0) - srgb(i as f64 / 32.0)).abs() < 0.004)
+        let srgb = |x: f64| {
+            if x <= 0.04045 {
+                x / 12.92
+            } else {
+                ((x + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        !matches!(self, Trc::Gamma(_))
+            && (0..=32).all(|i| (self.eval(i as f64 / 32.0) - srgb(i as f64 / 32.0)).abs() < 0.004)
     }
 }
 
@@ -130,7 +141,11 @@ fn s15f16(b: &[u8], o: usize) -> Option<f64> {
 
 fn xy(v: [f64; 3]) -> [f64; 2] {
     let s = v[0] + v[1] + v[2];
-    if s.abs() < 1e-12 { D50 } else { [v[0] / s, v[1] / s] }
+    if s.abs() < 1e-12 {
+        D50
+    } else {
+        [v[0] / s, v[1] / s]
+    }
 }
 
 fn xyz_of(c: [f64; 2]) -> [f64; 3] {
@@ -154,35 +169,58 @@ pub fn parse(b: &[u8]) -> Result<RgbProfile, String> {
         let off = be32(b, o + 4).ok_or("truncated tag table")? as usize;
         let size = be32(b, o + 8).ok_or("truncated tag table")? as usize;
         if off.checked_add(size).is_some_and(|e| e <= b.len()) {
-            tags.insert(String::from_utf8_lossy(sig).into_owned(), &b[off..off + size]);
+            tags.insert(
+                String::from_utf8_lossy(sig).into_owned(),
+                &b[off..off + size],
+            );
         }
     }
     let xyz_tag = |name: &str| -> Result<[f64; 3], String> {
-        let t = tags.get(name).ok_or_else(|| format!("the profile has no {name} tag (only matrix/TRC profiles are supported)"))?;
+        let t = tags.get(name).ok_or_else(|| {
+            format!("the profile has no {name} tag (only matrix/TRC profiles are supported)")
+        })?;
         if t.get(0..4) != Some(b"XYZ ") {
             return Err(format!("{name}: not an XYZ tag"));
         }
-        Ok([s15f16(t, 8).ok_or("bad XYZ")?, s15f16(t, 12).ok_or("bad XYZ")?, s15f16(t, 16).ok_or("bad XYZ")?])
+        Ok([
+            s15f16(t, 8).ok_or("bad XYZ")?,
+            s15f16(t, 12).ok_or("bad XYZ")?,
+            s15f16(t, 16).ok_or("bad XYZ")?,
+        ])
     };
     let trc_tag = |name: &str| -> Result<Trc, String> {
-        let t = tags.get(name).ok_or_else(|| format!("the profile has no {name} tag"))?;
+        let t = tags
+            .get(name)
+            .ok_or_else(|| format!("the profile has no {name} tag"))?;
         match t.get(0..4) {
             Some(b"curv") => {
                 let count = be32(t, 8).ok_or("bad curv")? as usize;
                 match count {
                     0 => Ok(Trc::Gamma(1.0)),
                     1 => Ok(Trc::Gamma(be16(t, 12).ok_or("bad curv")? as f64 / 256.0)),
-                    _ => Ok(Trc::Table((0..count).map(|i| be16(t, 12 + i * 2)).collect::<Option<Vec<_>>>().ok_or("truncated curv")?)),
+                    _ => Ok(Trc::Table(
+                        (0..count)
+                            .map(|i| be16(t, 12 + i * 2))
+                            .collect::<Option<Vec<_>>>()
+                            .ok_or("truncated curv")?,
+                    )),
                 }
             }
             Some(b"para") => {
                 let ty = be16(t, 8).ok_or("bad para")?;
-                let np = [1, 3, 4, 5, 7].get(ty as usize).copied().ok_or("unknown para function")?;
+                let np = [1, 3, 4, 5, 7]
+                    .get(ty as usize)
+                    .copied()
+                    .ok_or("unknown para function")?;
                 let mut p = [0.0; 7];
                 for (k, v) in p.iter_mut().enumerate().take(np) {
                     *v = s15f16(t, 12 + k * 4).ok_or("truncated para")?;
                 }
-                Ok(if ty == 0 { Trc::Gamma(p[0]) } else { Trc::Parametric(ty, p) })
+                Ok(if ty == 0 {
+                    Trc::Gamma(p[0])
+                } else {
+                    Trc::Parametric(ty, p)
+                })
             }
             _ => Err(format!("{name}: unsupported curve type")),
         }
@@ -191,10 +229,15 @@ pub fn parse(b: &[u8]) -> Result<RgbProfile, String> {
     // The device white: from the chromatic adaptation (v4, and many v2 profiles), else the media
     // white point (v2 profiles that keep it un-adapted), else D50.
     let d50 = xyz_of(D50);
-    let chad = tags.get("chad").filter(|t| t.get(0..4) == Some(b"sf32") && t.len() >= 44).map(|t| {
-        let v: Vec<f64> = (0..9).map(|i| s15f16(t, 8 + i * 4).unwrap_or(0.0)).collect();
-        [[v[0], v[1], v[2]], [v[3], v[4], v[5]], [v[6], v[7], v[8]]]
-    });
+    let chad = tags
+        .get("chad")
+        .filter(|t| t.get(0..4) == Some(b"sf32") && t.len() >= 44)
+        .map(|t| {
+            let v: Vec<f64> = (0..9)
+                .map(|i| s15f16(t, 8 + i * 4).unwrap_or(0.0))
+                .collect();
+            [[v[0], v[1], v[2]], [v[3], v[4], v[5]], [v[6], v[7], v[8]]]
+        });
     let white = match (chad, xyz_tag("wtpt").ok()) {
         (Some(m), _) => xy(mul_vec(&invert(&m), d50)),
         (None, Some(w)) => xy(w),
@@ -207,7 +250,13 @@ pub fn parse(b: &[u8]) -> Result<RgbProfile, String> {
     };
     let primaries = col.map(|c| xy(mul_vec(&undo, c)));
     let trc = [trc_tag("rTRC")?, trc_tag("gTRC")?, trc_tag("bTRC")?];
-    Ok(RgbProfile { description: description(tags.get("desc").copied()).unwrap_or_default(), primaries, white, trc, version })
+    Ok(RgbProfile {
+        description: description(tags.get("desc").copied()).unwrap_or_default(),
+        primaries,
+        white,
+        trc,
+        version,
+    })
 }
 
 fn description(t: Option<&[u8]>) -> Option<String> {
@@ -216,14 +265,28 @@ fn description(t: Option<&[u8]>) -> Option<String> {
         b"desc" => {
             let n = be32(t, 8)? as usize;
             let s = t.get(12..12 + n)?;
-            Some(String::from_utf8_lossy(s).trim_end_matches('\0').to_string())
+            Some(
+                String::from_utf8_lossy(s)
+                    .trim_end_matches('\0')
+                    .to_string(),
+            )
         }
         b"mluc" => {
             // The first record: UTF-16BE.
             let len = be32(t, 20)? as usize;
             let off = be32(t, 24)? as usize;
-            let u: Vec<u16> = t.get(off..off + len)?.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
-            Some(String::from_utf16_lossy(&u).trim_end_matches('\0').to_string())
+            let u: Vec<u16> = t
+                .get(off..off + len)?
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| u16::from_be_bytes(*c))
+                .collect();
+            Some(
+                String::from_utf16_lossy(&u)
+                    .trim_end_matches('\0')
+                    .to_string(),
+            )
         }
         _ => None,
     }
@@ -231,7 +294,12 @@ fn description(t: Option<&[u8]>) -> Option<String> {
 
 /// Build a minimal v2 matrix/TRC RGB profile (tests, and saving a custom simulation): colorants
 /// Bradford-adapted to D50, `wtpt` the device white, gamma curves.
-pub fn write_matrix_profile(desc: &str, primaries: [[f64; 2]; 3], white: [f64; 2], gamma: f64) -> Vec<u8> {
+pub fn write_matrix_profile(
+    desc: &str,
+    primaries: [[f64; 2]; 3],
+    white: [f64; 2],
+    gamma: f64,
+) -> Vec<u8> {
     let m = crate::space::rgb_to_xyz(primaries, white);
     let a = bradford(white, D50);
     let col = |j: usize| mul_vec(&a, [m[0][j], m[1][j], m[2][j]]);
@@ -385,8 +453,16 @@ impl Lut {
         let mut v: Vec<f64> = x.iter().map(|v| v.clamp(0.0, 1.0)).collect();
         for s in &self.stages {
             v = match s {
-                Stage::Curves(c) => v.iter().enumerate().map(|(i, x)| c.get(i).map_or(*x, |t| t.eval(*x))).collect(),
-                Stage::Matrix(m, o) if v.len() == 3 => (0..3).map(|i| (m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] + o[i]).clamp(0.0, 1.0)).collect(),
+                Stage::Curves(c) => v
+                    .iter()
+                    .enumerate()
+                    .map(|(i, x)| c.get(i).map_or(*x, |t| t.eval(*x)))
+                    .collect(),
+                Stage::Matrix(m, o) if v.len() == 3 => (0..3)
+                    .map(|i| {
+                        (m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] + o[i]).clamp(0.0, 1.0)
+                    })
+                    .collect(),
                 Stage::Matrix(..) => v,
                 Stage::Clut(c) => c.eval(&v),
             };
@@ -409,13 +485,33 @@ fn lab_to_xyz(l: [f64; 3]) -> [f64; 3] {
     let fy = (l[0] + 16.0) / 116.0;
     let fx = fy + l[1] / 500.0;
     let fz = fy - l[2] / 200.0;
-    let inv = |t: f64| if t > 6.0 / 29.0 { t * t * t } else { 3.0 * (6.0f64 / 29.0).powi(2) * (t - 4.0 / 29.0) };
-    [D50_XYZ[0] * inv(fx), D50_XYZ[1] * inv(fy), D50_XYZ[2] * inv(fz)]
+    let inv = |t: f64| {
+        if t > 6.0 / 29.0 {
+            t * t * t
+        } else {
+            3.0 * (6.0f64 / 29.0).powi(2) * (t - 4.0 / 29.0)
+        }
+    };
+    [
+        D50_XYZ[0] * inv(fx),
+        D50_XYZ[1] * inv(fy),
+        D50_XYZ[2] * inv(fz),
+    ]
 }
 
 fn xyz_to_lab(x: [f64; 3]) -> [f64; 3] {
-    let f = |t: f64| if t > (6.0f64 / 29.0).powi(3) { t.cbrt() } else { t / (3.0 * (6.0f64 / 29.0).powi(2)) + 4.0 / 29.0 };
-    let (fx, fy, fz) = (f(x[0] / D50_XYZ[0]), f(x[1] / D50_XYZ[1]), f(x[2] / D50_XYZ[2]));
+    let f = |t: f64| {
+        if t > (6.0f64 / 29.0).powi(3) {
+            t.cbrt()
+        } else {
+            t / (3.0 * (6.0f64 / 29.0).powi(2)) + 4.0 / 29.0
+        }
+    };
+    let (fx, fy, fz) = (
+        f(x[0] / D50_XYZ[0]),
+        f(x[1] / D50_XYZ[1]),
+        f(x[2] / D50_XYZ[2]),
+    );
     [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
 }
 
@@ -426,7 +522,11 @@ pub fn pcs_to_xyz(pcs: Pcs, legacy: bool, n: &[f64]) -> [f64; 3] {
         Pcs::Xyz => [0, 1, 2].map(|i| g(i) * 65535.0 / 32768.0),
         Pcs::Lab => {
             let k = if legacy { 65535.0 / 65280.0 } else { 1.0 };
-            lab_to_xyz([g(0) * k * 100.0, g(1) * k * 255.0 - 128.0, g(2) * k * 255.0 - 128.0])
+            lab_to_xyz([
+                g(0) * k * 100.0,
+                g(1) * k * 255.0 - 128.0,
+                g(2) * k * 255.0 - 128.0,
+            ])
         }
     }
 }
@@ -438,7 +538,11 @@ pub fn xyz_to_pcs(pcs: Pcs, legacy: bool, xyz: [f64; 3]) -> [f64; 3] {
         Pcs::Lab => {
             let l = xyz_to_lab(xyz);
             let k = if legacy { 65280.0 / 65535.0 } else { 1.0 };
-            [(l[0] / 100.0 * k).clamp(0.0, 1.0), ((l[1] + 128.0) / 255.0 * k).clamp(0.0, 1.0), ((l[2] + 128.0) / 255.0 * k).clamp(0.0, 1.0)]
+            [
+                (l[0] / 100.0 * k).clamp(0.0, 1.0),
+                ((l[1] + 128.0) / 255.0 * k).clamp(0.0, 1.0),
+                ((l[2] + 128.0) / 255.0 * k).clamp(0.0, 1.0),
+            ]
         }
     }
 }
@@ -496,7 +600,8 @@ impl LutProfile {
                     j[r][c] = (ey[r] - e[r]) / d;
                 }
             }
-            let det = j[0][0] * (j[1][1] * j[2][2] - j[1][2] * j[2][1]) - j[0][1] * (j[1][0] * j[2][2] - j[1][2] * j[2][0])
+            let det = j[0][0] * (j[1][1] * j[2][2] - j[1][2] * j[2][1])
+                - j[0][1] * (j[1][0] * j[2][2] - j[1][2] * j[2][0])
                 + j[0][2] * (j[1][0] * j[2][1] - j[1][1] * j[2][0]);
             if det.abs() < 1e-12 {
                 break;
@@ -530,7 +635,14 @@ impl LutProfile {
     pub fn approximate(&self) -> ([[f64; 2]; 3], [f64; 2], f64) {
         let prim = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]].map(|c| xy(self.to_xyz(c)));
         let wy = self.to_xyz([1.0; 3])[1].max(1e-9);
-        let ramp = Trc::Table((0..=64).map(|i| ((self.to_xyz([i as f64 / 64.0; 3])[1] / wy).clamp(0.0, 1.0) * 65535.0).round() as u16).collect());
+        let ramp = Trc::Table(
+            (0..=64)
+                .map(|i| {
+                    ((self.to_xyz([i as f64 / 64.0; 3])[1] / wy).clamp(0.0, 1.0) * 65535.0).round()
+                        as u16
+                })
+                .collect(),
+        );
         (prim, D50, ramp.fit_gamma())
     }
 }
@@ -552,7 +664,10 @@ fn tag_table(b: &[u8]) -> Result<std::collections::HashMap<String, &[u8]>, Strin
         let off = be32(b, o + 4).ok_or("truncated tag table")? as usize;
         let size = be32(b, o + 8).ok_or("truncated tag table")? as usize;
         if off.checked_add(size).is_some_and(|e| e <= b.len()) {
-            tags.insert(String::from_utf8_lossy(sig).into_owned(), &b[off..off + size]);
+            tags.insert(
+                String::from_utf8_lossy(sig).into_owned(),
+                &b[off..off + size],
+            );
         }
     }
     Ok(tags)
@@ -572,7 +687,9 @@ pub fn parse_profile(b: &[u8]) -> Result<Profile, String> {
         _ => return Err("unknown profile connection space".into()),
     };
     let tags = tag_table(b)?;
-    let Some(a2b) = tags.get("A2B0") else { return parse(b).map(Profile::Matrix) };
+    let Some(a2b) = tags.get("A2B0") else {
+        return parse(b).map(Profile::Matrix);
+    };
     let a2b = parse_lut(a2b, false).map_err(|e| format!("A2B0: {e}"))?;
     if a2b.inputs != 3 || a2b.outputs != 3 {
         return Err("A2B0 must map 3 device channels to 3 PCS values".into());
@@ -581,7 +698,13 @@ pub fn parse_profile(b: &[u8]) -> Result<Profile, String> {
         Some(Ok(l)) if l.inputs == 3 && l.outputs == 3 => Some(l),
         _ => None,
     };
-    Ok(Profile::Lut(LutProfile { description: description(tags.get("desc").copied()).unwrap_or_default(), pcs, a2b, b2a, version: b[8] }))
+    Ok(Profile::Lut(LutProfile {
+        description: description(tags.get("desc").copied()).unwrap_or_default(),
+        pcs,
+        a2b,
+        b2a,
+        version: b[8],
+    }))
 }
 
 /// A `curv` or `para` element at `o` of `t`; returns it and its padded length.
@@ -592,18 +715,33 @@ fn curve_at(t: &[u8], o: usize) -> Result<(Trc, usize), String> {
             let trc = match count {
                 0 => Trc::Gamma(1.0),
                 1 => Trc::Gamma(be16(t, o + 12).ok_or("bad curv")? as f64 / 256.0),
-                _ => Trc::Table((0..count).map(|i| be16(t, o + 12 + i * 2)).collect::<Option<Vec<_>>>().ok_or("truncated curv")?),
+                _ => Trc::Table(
+                    (0..count)
+                        .map(|i| be16(t, o + 12 + i * 2))
+                        .collect::<Option<Vec<_>>>()
+                        .ok_or("truncated curv")?,
+                ),
             };
             Ok((trc, (12 + count * 2).div_ceil(4) * 4))
         }
         Some(b"para") => {
             let ty = be16(t, o + 8).ok_or("bad para")?;
-            let np = [1, 3, 4, 5, 7].get(ty as usize).copied().ok_or("unknown para function")?;
+            let np = [1, 3, 4, 5, 7]
+                .get(ty as usize)
+                .copied()
+                .ok_or("unknown para function")?;
             let mut p = [0.0; 7];
             for (k, v) in p.iter_mut().enumerate().take(np) {
                 *v = s15f16(t, o + 12 + k * 4).ok_or("truncated para")?;
             }
-            Ok((if ty == 0 { Trc::Gamma(p[0]) } else { Trc::Parametric(ty, p) }, 12 + np * 4))
+            Ok((
+                if ty == 0 {
+                    Trc::Gamma(p[0])
+                } else {
+                    Trc::Parametric(ty, p)
+                },
+                12 + np * 4,
+            ))
         }
         _ => Err("unsupported curve element".into()),
     }
@@ -621,7 +759,9 @@ fn curves_at(t: &[u8], o: usize, n: usize) -> Result<Vec<Trc>, String> {
 }
 
 fn clut_len(grid: &[usize], outputs: usize) -> Option<usize> {
-    grid.iter().try_fold(outputs, |a, g| a.checked_mul(*g)).filter(|n| *n <= 1 << 26)
+    grid.iter()
+        .try_fold(outputs, |a, g| a.checked_mul(*g))
+        .filter(|n| *n <= 1 << 26)
 }
 
 /// `lut8Type` / `lut16Type` / `lutAToBType` / `lutBToAType`. `b2a`: the element order of a
@@ -631,7 +771,11 @@ pub fn parse_lut(t: &[u8], b2a: bool) -> Result<Lut, String> {
     match sig {
         b"mft1" | b"mft2" => {
             let wide = sig == b"mft2";
-            let (i, o, g) = (*t.get(8).ok_or("truncated")? as usize, *t.get(9).ok_or("truncated")? as usize, *t.get(10).ok_or("truncated")? as usize);
+            let (i, o, g) = (
+                *t.get(8).ok_or("truncated")? as usize,
+                *t.get(9).ok_or("truncated")? as usize,
+                *t.get(10).ok_or("truncated")? as usize,
+            );
             if i == 0 || o == 0 || i > 8 || o > 15 || g < 2 {
                 return Err("bad table dimensions".into());
             }
@@ -639,24 +783,47 @@ pub fn parse_lut(t: &[u8], b2a: bool) -> Result<Lut, String> {
             for (k, v) in m.iter_mut().flatten().enumerate() {
                 *v = s15f16(t, 12 + k * 4).ok_or("truncated matrix")?;
             }
-            let (n_in, n_out, mut p) =
-                if wide { (be16(t, 48).ok_or("truncated")? as usize, be16(t, 50).ok_or("truncated")? as usize, 52) } else { (256, 256, 48) };
+            let (n_in, n_out, mut p) = if wide {
+                (
+                    be16(t, 48).ok_or("truncated")? as usize,
+                    be16(t, 50).ok_or("truncated")? as usize,
+                    52,
+                )
+            } else {
+                (256, 256, 48)
+            };
             if n_in < 2 || n_out < 2 {
                 return Err("bad table sizes".into());
             }
             let w = if wide { 2 } else { 1 };
-            let read = |p: usize| -> Option<u16> { if wide { be16(t, p) } else { t.get(p).map(|v| *v as u16 * 257) } };
+            let read = |p: usize| -> Option<u16> {
+                if wide {
+                    be16(t, p)
+                } else {
+                    t.get(p).map(|v| *v as u16 * 257)
+                }
+            };
             let table = |n: usize, p: &mut usize| -> Result<Trc, String> {
-                let v = (0..n).map(|k| read(*p + k * w)).collect::<Option<Vec<_>>>().ok_or("truncated table")?;
+                let v = (0..n)
+                    .map(|k| read(*p + k * w))
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or("truncated table")?;
                 *p += n * w;
                 Ok(Trc::Table(v))
             };
-            let ins = (0..i).map(|_| table(n_in, &mut p)).collect::<Result<Vec<_>, _>>()?;
+            let ins = (0..i)
+                .map(|_| table(n_in, &mut p))
+                .collect::<Result<Vec<_>, _>>()?;
             let grid = vec![g; i];
             let len = clut_len(&grid, o).ok_or("table too large")?;
-            let data = (0..len).map(|k| read(p + k * w).map(|v| v as f32 / 65535.0)).collect::<Option<Vec<_>>>().ok_or("truncated table")?;
+            let data = (0..len)
+                .map(|k| read(p + k * w).map(|v| v as f32 / 65535.0))
+                .collect::<Option<Vec<_>>>()
+                .ok_or("truncated table")?;
             p += len * w;
-            let outs = (0..o).map(|_| table(n_out, &mut p)).collect::<Result<Vec<_>, _>>()?;
+            let outs = (0..o)
+                .map(|_| table(n_out, &mut p))
+                .collect::<Result<Vec<_>, _>>()?;
             let mut stages = vec![];
             // The matrix applies only to XYZ input (a PCS → device table); identity is skipped.
             let ident = m == [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
@@ -664,31 +831,68 @@ pub fn parse_lut(t: &[u8], b2a: bool) -> Result<Lut, String> {
                 stages.push(Stage::Matrix(m, [0.0; 3]));
             }
             stages.push(Stage::Curves(ins));
-            stages.push(Stage::Clut(Clut { grid, outputs: o, data }));
+            stages.push(Stage::Clut(Clut {
+                grid,
+                outputs: o,
+                data,
+            }));
             stages.push(Stage::Curves(outs));
-            Ok(Lut { inputs: i, outputs: o, stages, legacy_lab: wide })
+            Ok(Lut {
+                inputs: i,
+                outputs: o,
+                stages,
+                legacy_lab: wide,
+            })
         }
         b"mAB " | b"mBA " => {
-            let (i, o) = (*t.get(8).ok_or("truncated")? as usize, *t.get(9).ok_or("truncated")? as usize);
+            let (i, o) = (
+                *t.get(8).ok_or("truncated")? as usize,
+                *t.get(9).ok_or("truncated")? as usize,
+            );
             if i == 0 || o == 0 || i > 15 || o > 15 {
                 return Err("bad channel counts".into());
             }
-            let off = |k: usize| be32(t, 12 + k * 4).map(|v| v as usize).ok_or("truncated offsets");
+            let off = |k: usize| {
+                be32(t, 12 + k * 4)
+                    .map(|v| v as usize)
+                    .ok_or("truncated offsets")
+            };
             let (ob, om, oc, oclut, oa) = (off(0)?, off(1)?, off(2)?, off(3)?, off(4)?);
             let a_n = if sig == b"mAB " { i } else { o };
             let b_n = if sig == b"mAB " { o } else { i };
-            let bc = if ob > 0 { Some(Stage::Curves(curves_at(t, ob, b_n)?)) } else { None };
-            let ac = if oa > 0 { Some(Stage::Curves(curves_at(t, oa, a_n)?)) } else { None };
-            let mtx = if om > 0 {
-                let v = (0..12).map(|k| s15f16(t, om + k * 4)).collect::<Option<Vec<_>>>().ok_or("truncated matrix")?;
-                Some(Stage::Matrix([[v[0], v[1], v[2]], [v[3], v[4], v[5]], [v[6], v[7], v[8]]], [v[9], v[10], v[11]]))
+            let bc = if ob > 0 {
+                Some(Stage::Curves(curves_at(t, ob, b_n)?))
             } else {
                 None
             };
-            let mc = if oc > 0 { Some(Stage::Curves(curves_at(t, oc, 3)?)) } else { None };
+            let ac = if oa > 0 {
+                Some(Stage::Curves(curves_at(t, oa, a_n)?))
+            } else {
+                None
+            };
+            let mtx = if om > 0 {
+                let v = (0..12)
+                    .map(|k| s15f16(t, om + k * 4))
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or("truncated matrix")?;
+                Some(Stage::Matrix(
+                    [[v[0], v[1], v[2]], [v[3], v[4], v[5]], [v[6], v[7], v[8]]],
+                    [v[9], v[10], v[11]],
+                ))
+            } else {
+                None
+            };
+            let mc = if oc > 0 {
+                Some(Stage::Curves(curves_at(t, oc, 3)?))
+            } else {
+                None
+            };
             let clut = if oclut > 0 {
                 let (ci, co) = (i, o);
-                let grid: Vec<usize> = (0..ci).map(|k| t.get(oclut + k).map(|v| *v as usize)).collect::<Option<_>>().ok_or("truncated clut")?;
+                let grid: Vec<usize> = (0..ci)
+                    .map(|k| t.get(oclut + k).map(|v| *v as usize))
+                    .collect::<Option<_>>()
+                    .ok_or("truncated clut")?;
                 if grid.iter().any(|g| *g < 2) {
                     return Err("bad grid".into());
                 }
@@ -696,12 +900,20 @@ pub fn parse_lut(t: &[u8], b2a: bool) -> Result<Lut, String> {
                 let len = clut_len(&grid, co).ok_or("table too large")?;
                 let d = oclut + 20;
                 let data = match prec {
-                    1 => (0..len).map(|k| t.get(d + k).map(|v| *v as f32 / 255.0)).collect::<Option<Vec<_>>>(),
-                    2 => (0..len).map(|k| be16(t, d + k * 2).map(|v| v as f32 / 65535.0)).collect::<Option<Vec<_>>>(),
+                    1 => (0..len)
+                        .map(|k| t.get(d + k).map(|v| *v as f32 / 255.0))
+                        .collect::<Option<Vec<_>>>(),
+                    2 => (0..len)
+                        .map(|k| be16(t, d + k * 2).map(|v| v as f32 / 65535.0))
+                        .collect::<Option<Vec<_>>>(),
                     _ => return Err("bad clut precision".into()),
                 }
                 .ok_or("truncated clut")?;
-                Some(Stage::Clut(Clut { grid, outputs: co, data }))
+                Some(Stage::Clut(Clut {
+                    grid,
+                    outputs: co,
+                    data,
+                }))
             } else {
                 None
             };
@@ -709,10 +921,22 @@ pub fn parse_lut(t: &[u8], b2a: bool) -> Result<Lut, String> {
                 return Err("the B curves are required".into());
             }
             // A → CLUT → M → matrix → B (A2B); B → matrix → M → CLUT → A (B2A).
-            let order = if sig == b"mAB " { [ac, clut, mc, mtx, bc] } else { [bc, mtx, mc, clut, ac] };
-            Ok(Lut { inputs: i, outputs: o, stages: order.into_iter().flatten().collect(), legacy_lab: false })
+            let order = if sig == b"mAB " {
+                [ac, clut, mc, mtx, bc]
+            } else {
+                [bc, mtx, mc, clut, ac]
+            };
+            Ok(Lut {
+                inputs: i,
+                outputs: o,
+                stages: order.into_iter().flatten().collect(),
+                legacy_lab: false,
+            })
         }
-        _ => Err(format!("unsupported table type `{}`", String::from_utf8_lossy(sig))),
+        _ => Err(format!(
+            "unsupported table type `{}`",
+            String::from_utf8_lossy(sig)
+        )),
     }
 }
 
@@ -757,7 +981,15 @@ pub fn write_lut_profile(
                 if let Some(f) = from_xyz {
                     // A lut16 B2A0 over XYZ gets cube-root input curves (even steps in lightness).
                     let node = [pt(r), pt(g), pt(b)];
-                    let x = pcs_to_xyz(pcs, legacy, &if kind == LutKind::Lut16 { node.map(|v| v * v * v) } else { node });
+                    let x = pcs_to_xyz(
+                        pcs,
+                        legacy,
+                        &if kind == LutKind::Lut16 {
+                            node.map(|v| v * v * v)
+                        } else {
+                            node
+                        },
+                    );
                     let d = f(x).map(|v| v.clamp(0.0, 1.0));
                     b2a_vals.extend(d);
                 }
@@ -771,7 +1003,11 @@ pub fn write_lut_profile(
         }
     };
     let mft = |vals: &[f64], wide: bool, cube_in: bool| -> Vec<u8> {
-        let mut t = if wide { b"mft2\0\0\0\0".to_vec() } else { b"mft1\0\0\0\0".to_vec() };
+        let mut t = if wide {
+            b"mft2\0\0\0\0".to_vec()
+        } else {
+            b"mft1\0\0\0\0".to_vec()
+        };
         t.extend([3, 3, grid as u8, 0]);
         for k in 0..9 {
             t.extend(s15(if k % 4 == 0 { 1.0 } else { 0.0 }));
@@ -782,7 +1018,11 @@ pub fn write_lut_profile(
             t.extend((n as u16).to_be_bytes());
         }
         let put = |t: &mut Vec<u8>, v: f64| {
-            if wide { t.extend(((v.clamp(0.0, 1.0) * 65535.0).round() as u16).to_be_bytes()) } else { t.push((v.clamp(0.0, 1.0) * 255.0).round() as u8) }
+            if wide {
+                t.extend(((v.clamp(0.0, 1.0) * 65535.0).round() as u16).to_be_bytes())
+            } else {
+                t.push((v.clamp(0.0, 1.0) * 255.0).round() as u8)
+            }
         };
         for _ in 0..3 {
             for k in 0..n {
@@ -808,7 +1048,11 @@ pub fn write_lut_profile(
         t
     };
     let mab = |vals: &[f64], a2b: bool| -> Vec<u8> {
-        let mut t = if a2b { b"mAB \0\0\0\0".to_vec() } else { b"mBA \0\0\0\0".to_vec() };
+        let mut t = if a2b {
+            b"mAB \0\0\0\0".to_vec()
+        } else {
+            b"mBA \0\0\0\0".to_vec()
+        };
         t.extend([3, 3, 0, 0]);
         let offsets_at = t.len();
         t.extend([0u8; 20]);
@@ -844,7 +1088,8 @@ pub fn write_lut_profile(
             t.extend(para_gamma(if a2b { a_gamma } else { 1.0 }));
         }
         for (k, o) in [ob, om, oc, oclut, oa].into_iter().enumerate() {
-            t[offsets_at + k * 4..offsets_at + k * 4 + 4].copy_from_slice(&(o as u32).to_be_bytes());
+            t[offsets_at + k * 4..offsets_at + k * 4 + 4]
+                .copy_from_slice(&(o as u32).to_be_bytes());
         }
         t
     };
@@ -862,7 +1107,8 @@ pub fn write_lut_profile(
         pad4(&mut t);
         t
     };
-    let mut tags: Vec<(&[u8; 4], Vec<u8>)> = vec![(b"desc", dsc), (b"A2B0", table(&a2b_vals, true))];
+    let mut tags: Vec<(&[u8; 4], Vec<u8>)> =
+        vec![(b"desc", dsc), (b"A2B0", table(&a2b_vals, true))];
     if from_xyz.is_some() {
         tags.push((b"B2A0", table(&b2a_vals, false)));
     }
@@ -929,7 +1175,9 @@ impl Lut3d {
         let mut out = [0f32; 3];
         for corner in 0..8 {
             let (dr, dg, db) = (corner >> 2 & 1, corner >> 1 & 1, corner & 1);
-            let w = (if dr == 1 { f[0] } else { 1.0 - f[0] }) * (if dg == 1 { f[1] } else { 1.0 - f[1] }) * (if db == 1 { f[2] } else { 1.0 - f[2] });
+            let w = (if dr == 1 { f[0] } else { 1.0 - f[0] })
+                * (if dg == 1 { f[1] } else { 1.0 - f[1] })
+                * (if db == 1 { f[2] } else { 1.0 - f[2] });
             if w == 0.0 {
                 continue;
             }
@@ -956,19 +1204,45 @@ mod tests {
         assert_eq!(p.description, "Test RGB");
         assert_eq!(p.version, 2);
         for (a, e) in p.primaries.iter().zip(P709) {
-            assert!((a[0] - e[0]).abs() < 2e-4 && (a[1] - e[1]).abs() < 2e-4, "{a:?} vs {e:?}");
+            assert!(
+                (a[0] - e[0]).abs() < 2e-4 && (a[1] - e[1]).abs() < 2e-4,
+                "{a:?} vs {e:?}"
+            );
         }
-        assert!((p.white[0] - D65[0]).abs() < 2e-4 && (p.white[1] - D65[1]).abs() < 2e-4, "{:?}", p.white);
+        assert!(
+            (p.white[0] - D65[0]).abs() < 2e-4 && (p.white[1] - D65[1]).abs() < 2e-4,
+            "{:?}",
+            p.white
+        );
         assert!((p.trc[0].fit_gamma() - 2.2).abs() < 0.01);
         assert!(!p.trc[0].is_srgb());
     }
 
     #[test]
     fn curves() {
-        let srgb = Trc::Parametric(3, [2.4, 1.0 / 1.055, 0.055 / 1.055, 1.0 / 12.92, 0.04045, 0.0, 0.0]);
+        let srgb = Trc::Parametric(
+            3,
+            [
+                2.4,
+                1.0 / 1.055,
+                0.055 / 1.055,
+                1.0 / 12.92,
+                0.04045,
+                0.0,
+                0.0,
+            ],
+        );
         assert!(srgb.is_srgb());
-        assert!((srgb.fit_gamma() - 2.2).abs() < 0.15, "{}", srgb.fit_gamma());
-        let table = Trc::Table((0..256).map(|i| ((i as f64 / 255.0).powf(1.8) * 65535.0).round() as u16).collect());
+        assert!(
+            (srgb.fit_gamma() - 2.2).abs() < 0.15,
+            "{}",
+            srgb.fit_gamma()
+        );
+        let table = Trc::Table(
+            (0..256)
+                .map(|i| ((i as f64 / 255.0).powf(1.8) * 65535.0).round() as u16)
+                .collect(),
+        );
         assert!((table.fit_gamma() - 1.8).abs() < 0.02);
         assert!((Trc::Gamma(2.0).eval(0.5) - 0.25).abs() < 1e-12);
     }
@@ -986,7 +1260,10 @@ mod tests {
         let p3 = [[0.680, 0.320], [0.265, 0.690], [0.150, 0.060]];
         let m = crate::space::mul(&bradford(D65, D50), &crate::space::rgb_to_xyz(p3, D65));
         let mi = invert(&m);
-        (move |c: [f64; 3]| mul_vec(&m, c.map(|v| v.powf(2.2))), move |x: [f64; 3]| mul_vec(&mi, x).map(|v| v.clamp(0.0, 1.0).powf(1.0 / 2.2)))
+        (
+            move |c: [f64; 3]| mul_vec(&m, c.map(|v| v.powf(2.2))),
+            move |x: [f64; 3]| mul_vec(&mi, x).map(|v| v.clamp(0.0, 1.0).powf(1.0 / 2.2)),
+        )
     }
 
     fn lab_de(a: [f64; 3], b: [f64; 3]) -> f64 {
@@ -997,14 +1274,24 @@ mod tests {
     #[test]
     fn lut_profiles_evaluate_their_a2b0() {
         let (to, from) = device();
-        for (kind, grid, tol) in [(LutKind::Lut16, 17, 2.5), (LutKind::Lut8, 17, 3.0), (LutKind::AToB, 17, 1.5)] {
+        for (kind, grid, tol) in [
+            (LutKind::Lut16, 17, 2.5),
+            (LutKind::Lut8, 17, 3.0),
+            (LutKind::AToB, 17, 1.5),
+        ] {
             let b = write_lut_profile("LUT Monitor", kind, grid, &to, Some(&from));
-            let Profile::Lut(p) = parse_profile(&b).unwrap() else { panic!("{kind:?}: not a LUT profile") };
+            let Profile::Lut(p) = parse_profile(&b).unwrap() else {
+                panic!("{kind:?}: not a LUT profile")
+            };
             assert_eq!(p.description, "LUT Monitor");
             assert!(p.b2a.is_some());
             let mut worst = 0.0f64;
             for k in 0..125 {
-                let c = [(k / 25) as f64 / 4.0, (k / 5 % 5) as f64 / 4.0, (k % 5) as f64 / 4.0];
+                let c = [
+                    (k / 25) as f64 / 4.0,
+                    (k / 5 % 5) as f64 / 4.0,
+                    (k % 5) as f64 / 4.0,
+                ];
                 worst = worst.max(lab_de(p.to_xyz(c), to(c)));
                 // PCS → device through B2A0 lands back on mid-gamut colours (a coarse grid
                 // over linear XYZ can't follow the gamma curve: checked at its nodes below).
@@ -1023,16 +1310,26 @@ mod tests {
             };
             for node in [[0.5, 0.5, 0.5], [0.25, 0.5, 0.75], [1.0, 0.0, 0.5]] {
                 // (lut16: through its cube-root input curves)
-                let node = if kind == LutKind::Lut16 { node.map(|v: f64| v * v * v) } else { node };
+                let node = if kind == LutKind::Lut16 {
+                    node.map(|v: f64| v * v * v)
+                } else {
+                    node
+                };
                 let want = from(pcs_to_xyz(p.pcs, b2a.legacy_lab, &node));
                 let got = b2a.eval(&node);
-                assert!((0..3).all(|i| (got[i] - want[i]).abs() < q), "{kind:?} {node:?}: {got:?} vs {want:?}");
+                assert!(
+                    (0..3).all(|i| (got[i] - want[i]).abs() < q),
+                    "{kind:?} {node:?}: {got:?} vs {want:?}"
+                );
             }
             // The matrix reader rejects it; the approximation finds the primaries.
             assert!(parse(&b).is_err());
             let (prim, _, gamma) = p.approximate();
             let red = xy(to([1.0, 0.0, 0.0]));
-            assert!((prim[0][0] - red[0]).abs() < 0.01 && (prim[0][1] - red[1]).abs() < 0.01, "{kind:?} {prim:?}");
+            assert!(
+                (prim[0][0] - red[0]).abs() < 0.01 && (prim[0][1] - red[1]).abs() < 0.01,
+                "{kind:?} {prim:?}"
+            );
             assert!((gamma - 2.2).abs() < 0.1, "{kind:?} gamma {gamma}");
         }
     }
@@ -1041,15 +1338,26 @@ mod tests {
     fn a2b0_without_b2a0_is_inverted() {
         let (to, _) = device();
         let b = write_lut_profile("A2B only", LutKind::Lut16, 17, &to, None);
-        let Profile::Lut(p) = parse_profile(&b).unwrap() else { panic!() };
+        let Profile::Lut(p) = parse_profile(&b).unwrap() else {
+            panic!()
+        };
         assert!(p.b2a.is_none());
-        for c in [[0.2, 0.5, 0.8], [0.9, 0.1, 0.3], [0.5, 0.5, 0.5], [1.0, 1.0, 1.0], [0.0, 0.0, 0.0]] {
+        for c in [
+            [0.2, 0.5, 0.8],
+            [0.9, 0.1, 0.3],
+            [0.5, 0.5, 0.5],
+            [1.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0],
+        ] {
             let x = to(c);
             let back = p.from_xyz(x, [0.5; 3]);
             assert!(lab_de(p.to_xyz(back), x) < 0.5, "{c:?} → {back:?}");
         }
         // A matrix/TRC profile still parses as one.
-        assert!(matches!(parse_profile(&write_matrix_profile("m", P709, D65, 2.2)).unwrap(), Profile::Matrix(_)));
+        assert!(matches!(
+            parse_profile(&write_matrix_profile("m", P709, D65, 2.2)).unwrap(),
+            Profile::Matrix(_)
+        ));
     }
 
     #[test]
@@ -1063,12 +1371,21 @@ mod tests {
                 }
             }
         }
-        let c = Clut { grid: vec![2; 3], outputs: 3, data };
+        let c = Clut {
+            grid: vec![2; 3],
+            outputs: 3,
+            data,
+        };
         let v = c.eval(&[0.25, 0.5, 0.75]);
-        assert!((v[0] - 0.25).abs() < 1e-6 && (v[1] - 0.5).abs() < 1e-6 && (v[2] - 0.75).abs() < 1e-6);
+        assert!(
+            (v[0] - 0.25).abs() < 1e-6 && (v[1] - 0.5).abs() < 1e-6 && (v[2] - 0.75).abs() < 1e-6
+        );
         let l = Lut3d::bake(5, |c| [c[0] * c[0], c[1], 1.0 - c[2]]);
         let o = l.eval([0.5, 0.3, 0.2]);
-        assert!((o[0] - 0.25).abs() < 1e-6 && (o[1] - 0.3).abs() < 1e-6 && (o[2] - 0.8).abs() < 1e-6, "{o:?}");
+        assert!(
+            (o[0] - 0.25).abs() < 1e-6 && (o[1] - 0.3).abs() < 1e-6 && (o[2] - 0.8).abs() < 1e-6,
+            "{o:?}"
+        );
         assert!(parse_lut(b"xxxx\0\0\0\0", false).is_err());
     }
 }

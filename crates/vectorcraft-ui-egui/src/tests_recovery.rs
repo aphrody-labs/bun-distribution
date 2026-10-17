@@ -11,14 +11,30 @@ use crate::{Services, VectorcraftApp, background, dialogs, recovery, theme};
 
 /// An app keeping its copies in `store`, with a modified document.
 fn app_with(store: &Arc<MemoryStore>, services: Services) -> VectorcraftApp {
-    let mut app = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..services });
-    app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 20})).unwrap();
+    let mut app = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..services
+        },
+    );
+    app.run("file.new", json!({"width": 200, "height": 100}))
+        .unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 50, "height": 20}),
+    )
+    .unwrap();
     app
 }
 
 fn copies(store: &MemoryStore) -> usize {
-    store.list().unwrap().iter().filter(|n| n.ends_with(".vectorcraft")).count()
+    store
+        .list()
+        .unwrap()
+        .iter()
+        .filter(|n| n.ends_with(".vectorcraft"))
+        .count()
 }
 
 /// One headless frame of the dialog layer.
@@ -43,19 +59,35 @@ fn the_timer_writes_modified_documents_every_interval() {
     assert_eq!(app.ui.status, "Saved recovery data for Untitled-1");
     // Unchanged: the next round writes nothing.
     assert_eq!(recovery::tick(&mut app, 250.0), 0);
-    app.run("shape.ellipse", json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap();
-    assert_eq!(recovery::tick(&mut app, 300.0), 0, "the interval runs from the last round");
+    app.run(
+        "shape.ellipse",
+        json!({"x": 100, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
+    assert_eq!(
+        recovery::tick(&mut app, 300.0),
+        0,
+        "the interval runs from the last round"
+    );
     assert_eq!(recovery::tick(&mut app, 370.0), 1);
     assert_eq!(copies(&store), 1, "the same copy, rewritten");
     // Turned off: no copies, and the clock starts again when turned back on.
     app.session.prefs.autosave_recovery = false;
-    app.run("shape.ellipse", json!({"x": 150, "y": 10, "width": 20, "height": 20})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 150, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
     assert_eq!(recovery::tick(&mut app, 1000.0), 0);
     app.session.prefs.autosave_recovery = true;
     assert_eq!(recovery::tick(&mut app, 1001.0), 0);
     assert_eq!(recovery::tick(&mut app, 1121.0), 1);
     // A clock that goes back restarts the interval instead of writing.
-    app.run("shape.ellipse", json!({"x": 10, "y": 50, "width": 20, "height": 20})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 10, "y": 50, "width": 20, "height": 20}),
+    )
+    .unwrap();
     assert_eq!(recovery::tick(&mut app, 5.0), 0);
     assert_eq!(recovery::tick(&mut app, 125.0), 1);
 }
@@ -72,12 +104,19 @@ fn copies_are_written_in_the_background_and_go_on_save() {
     recovery::tick(&mut app, 0.0);
     assert_eq!(recovery::tick(&mut app, 120.0), 1);
     assert_eq!(app.background.jobs.len(), 1, "on the worker");
-    assert!(app.ui.status.starts_with("Saving recovery data for Untitled-1"), "{}", app.ui.status);
+    assert!(
+        app.ui
+            .status
+            .starts_with("Saving recovery data for Untitled-1"),
+        "{}",
+        app.ui.status
+    );
     background::wait_all(&mut app);
     assert_eq!(copies(&store), 1);
     assert!(app.session.doc().unwrap().recovery.is_some());
     // Saving (in the background too) removes it.
-    app.run("file.save", json!({"path": "/docs/a.vectorcraft"})).unwrap();
+    app.run("file.save", json!({"path": "/docs/a.vectorcraft"}))
+        .unwrap();
     background::wait_all(&mut app);
     assert_eq!(copies(&store), 0);
 }
@@ -90,10 +129,19 @@ fn launching_after_a_crash_offers_the_copies() {
     drop(crashed);
 
     // Restore.
-    let mut app = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut app = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     recovery::frame(&mut app, 0.0);
     let d = app.ui.dialog.clone().expect("the Recover Documents dialog");
-    assert_eq!((d.kind.as_str(), d.fields["copies"][0]["title"].as_str()), (recovery::KIND, Some("Untitled-1")));
+    assert_eq!(
+        (d.kind.as_str(), d.fields["copies"][0]["title"].as_str()),
+        (recovery::KIND, Some("Untitled-1"))
+    );
     frame(&mut app);
     assert!(app.ui.dialog.is_some(), "drawing keeps it open");
     dialogs::confirm(&mut app).unwrap();
@@ -107,10 +155,21 @@ fn launching_after_a_crash_offers_the_copies() {
     assert!(app.ui.dialog.is_none());
     // Closing it discards its copy; nothing is offered next time.
     app.run("file.close", json!({})).unwrap();
-    app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+    app.ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert("discard".into(), json!(true));
     dialogs::confirm(&mut app).unwrap();
     assert_eq!(copies(&store), 0);
-    let mut next = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut next = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     recovery::frame(&mut next, 0.0);
     assert!(next.ui.dialog.is_none());
 }
@@ -122,14 +181,31 @@ fn discard_at_launch_deletes_the_copies_and_cancel_keeps_them() {
     crashed.run("file.recovery.save", json!({})).unwrap();
     drop(crashed);
     // Cancel: asked again next launch.
-    let mut app = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut app = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     assert!(recovery::offer(&mut app));
     dialogs::cancel(&mut app);
     assert_eq!(copies(&store), 1);
     // Discard (as agents do: set discard, confirm).
-    let mut app = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut app = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     assert!(recovery::offer(&mut app));
-    app.ui.dialog.as_mut().unwrap().fields.insert("discard".into(), json!(true));
+    app.ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert("discard".into(), json!(true));
     dialogs::confirm(&mut app).unwrap();
     assert_eq!(copies(&store), 0);
     assert!(app.session.documents().is_empty());
@@ -154,15 +230,30 @@ fn a_second_app_never_asks_about_a_running_apps_copies() {
     let mut a = app_with(&store, Services::default());
     a.run("file.recovery.save", json!({})).unwrap();
     // B launches while A runs: no Recover Documents dialog, A's copy untouched.
-    let mut b = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut b = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     recovery::frame(&mut b, 0.0);
     assert!(b.ui.dialog.is_none());
     assert_eq!(copies(&store), 1);
     // A crashes: the next launch asks.
     drop(a);
-    let mut c = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut c = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     recovery::frame(&mut c, 0.0);
-    assert_eq!(c.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(recovery::KIND));
+    assert_eq!(
+        c.ui.dialog.as_ref().map(|d| d.kind.as_str()),
+        Some(recovery::KIND)
+    );
 }
 
 #[test]
@@ -188,12 +279,22 @@ fn a_resumed_tab_writes_again_the_copies_another_tab_discarded() {
     a.run("file.recovery.save", json!({})).unwrap();
     recovery::frame(&mut a, 0.0);
     store.set_now(1_000_000 + 400);
-    let mut b = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
+    let mut b = VectorcraftApp::new(
+        Session::new(),
+        Services {
+            recovery_store: Some(store.clone()),
+            ..Default::default()
+        },
+    );
     b.run("file.recovery.discard", json!({})).unwrap();
     assert_eq!(copies(&store), 0);
     store.set_now(1_000_000 + 410);
     recovery::frame(&mut a, 30.0);
-    assert_eq!(copies(&store), 0, "the store is looked at with the heartbeat, not every frame");
+    assert_eq!(
+        copies(&store),
+        0,
+        "the store is looked at with the heartbeat, not every frame"
+    );
     recovery::frame(&mut a, 410.0);
     assert_eq!(copies(&store), 1);
     assert_eq!(a.ui.status, "Saved recovery data for Untitled-1");

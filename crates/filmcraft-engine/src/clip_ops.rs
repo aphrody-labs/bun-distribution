@@ -12,15 +12,16 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use filmcraft_edit as edit;
 use filmcraft_project::{
-    AudioChannelMap, AudioChannels, BinEntry, ClipId, FieldOptions, FieldProcessing, ItemId, ItemKind, Label, MediaClip, MediaRef, ParamValue, Project,
-    TimeInterpolation, TrackItem, TrackKind,
+    AudioChannelMap, AudioChannels, BinEntry, ClipId, FieldOptions, FieldProcessing, ItemId,
+    ItemKind, Label, MediaClip, MediaRef, ParamValue, Project, TimeInterpolation, TrackItem,
+    TrackKind,
 };
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick, TimeRange, parse_timecode};
 use serde_json::{Value, json};
 
 use crate::commands::{
-    CommandSpec, always, bad, bool_p, clips_p, f64_p, has_project_selection, has_selection, has_seq, item_p, place_item, source_range, str_p, time_p, u64_p,
-    with_links,
+    CommandSpec, always, bad, bool_p, clips_p, f64_p, has_project_selection, has_selection,
+    has_seq, item_p, place_item, source_range, str_p, time_p, u64_p, with_links,
 };
 use crate::{EngineError, Result, Session};
 
@@ -36,7 +37,16 @@ fn spec(
     enabled: Enabled,
     run: Run,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut, params, enabled, run, journal: true }
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal: true,
+    }
 }
 
 macro_rules! label_cmd {
@@ -58,7 +68,15 @@ macro_rules! label_cmd {
 pub(crate) fn commands() -> Vec<CommandSpec> {
     vec![
         // ---------------- File ----------------
-        spec("file.newSequenceFromClip", "Sequence From Clip", &["File", "New"], None, r#"{"items":[id]?}"#, has_clip_items, sequence_from_clip),
+        spec(
+            "file.newSequenceFromClip",
+            "Sequence From Clip",
+            &["File", "New"],
+            None,
+            r#"{"items":[id]?}"#,
+            has_clip_items,
+            sequence_from_clip,
+        ),
         spec(
             "file.newBinFromSelection",
             "Bin From Selection",
@@ -77,8 +95,24 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             always,
             offline_file,
         ),
-        spec("file.closeProject", "Close Project", &["File"], Some("Cmd+Shift+W"), r#"{"force":bool?}"#, always, close_project),
-        spec("file.saveAll", "Save All", &["File"], None, "{}", always, |s, _| s.execute("file.save", json!({}))),
+        spec(
+            "file.closeProject",
+            "Close Project",
+            &["File"],
+            Some("Cmd+Shift+W"),
+            r#"{"force":bool?}"#,
+            always,
+            close_project,
+        ),
+        spec(
+            "file.saveAll",
+            "Save All",
+            &["File"],
+            None,
+            "{}",
+            always,
+            |s, _| s.execute("file.save", json!({})),
+        ),
         // ---------------- Edit ----------------
         spec(
             "edit.pasteAttributes",
@@ -98,8 +132,24 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             has_selection,
             remove_attributes,
         ),
-        spec("edit.selectAllMatching", "Select All Matching", &["Edit"], None, r#"{"clips":[id]?}"#, has_selection, select_all_matching),
-        spec("edit.selectLabelGroup", "Select Label Group", &["Edit", "Label"], None, "{}", can_label, select_label_group),
+        spec(
+            "edit.selectAllMatching",
+            "Select All Matching",
+            &["Edit"],
+            None,
+            r#"{"clips":[id]?}"#,
+            has_selection,
+            select_all_matching,
+        ),
+        spec(
+            "edit.selectLabelGroup",
+            "Select Label Group",
+            &["Edit", "Label"],
+            None,
+            "{}",
+            can_label,
+            select_label_group,
+        ),
         label_cmd!("edit.label.violet", "Violet", Label::Violet),
         label_cmd!("edit.label.iris", "Iris", Label::Iris),
         label_cmd!("edit.label.caribbean", "Caribbean", Label::Caribbean),
@@ -116,8 +166,24 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
         label_cmd!("edit.label.green", "Green", Label::Green),
         label_cmd!("edit.label.brown", "Brown", Label::Brown),
         label_cmd!("edit.label.yellow", "Yellow", Label::Yellow),
-        spec("edit.removeUnused", "Remove Unused", &["Edit"], None, "{}", has_project_items, remove_unused),
-        spec("edit.consolidateDuplicates", "Consolidate Duplicates", &["Edit"], None, "{}", has_project_items, consolidate_duplicates),
+        spec(
+            "edit.removeUnused",
+            "Remove Unused",
+            &["Edit"],
+            None,
+            "{}",
+            has_project_items,
+            remove_unused,
+        ),
+        spec(
+            "edit.consolidateDuplicates",
+            "Consolidate Duplicates",
+            &["Edit"],
+            None,
+            "{}",
+            has_project_items,
+            consolidate_duplicates,
+        ),
         // ---------------- Clip ----------------
         spec(
             "clip.makeSubclip",
@@ -217,17 +283,57 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             r#"{"clips":[id]?,"mode":"frameSampling|frameBlending|opticalFlow"}"#,
             has_selection,
             |s, p| {
-                let m = str_p(p, "mode").and_then(TimeInterpolation::from_name).ok_or_else(|| bad("clip.setTimeInterpolation", "need `mode`"))?;
+                let m = str_p(p, "mode")
+                    .and_then(TimeInterpolation::from_name)
+                    .ok_or_else(|| bad("clip.setTimeInterpolation", "need `mode`"))?;
                 set_interpolation(s, p, m)
             },
         ),
-        spec("clip.fitToFrame", "Fit to frame", &["Clip", "Video Options"], None, r#"{"clips":[id]?}"#, has_selection, |s, p| fit_fill(s, p, false)),
-        spec("clip.fillFrame", "Fill frame", &["Clip", "Video Options"], None, r#"{"clips":[id]?}"#, has_selection, |s, p| fit_fill(s, p, true)),
-        spec("clip.breakoutToMono", "Breakout to Mono", &["Clip", "Audio Options"], None, r#"{"items":[id]?}"#, has_audio_items, breakout_to_mono),
-        spec("clip.extractAudio", "Extract Audio", &["Clip", "Audio Options"], None, r#"{"items":[id]?,"dir":str?}"#, has_extractable, extract_audio),
-        spec("clip.replaceFromSource", "From Source Monitor", &["Clip", "Replace With Clip"], None, r#"{"clips":[id]?}"#, can_replace_from_source, |s, p| {
-            replace_with(s, p, Replace::Source)
-        }),
+        spec(
+            "clip.fitToFrame",
+            "Fit to frame",
+            &["Clip", "Video Options"],
+            None,
+            r#"{"clips":[id]?}"#,
+            has_selection,
+            |s, p| fit_fill(s, p, false),
+        ),
+        spec(
+            "clip.fillFrame",
+            "Fill frame",
+            &["Clip", "Video Options"],
+            None,
+            r#"{"clips":[id]?}"#,
+            has_selection,
+            |s, p| fit_fill(s, p, true),
+        ),
+        spec(
+            "clip.breakoutToMono",
+            "Breakout to Mono",
+            &["Clip", "Audio Options"],
+            None,
+            r#"{"items":[id]?}"#,
+            has_audio_items,
+            breakout_to_mono,
+        ),
+        spec(
+            "clip.extractAudio",
+            "Extract Audio",
+            &["Clip", "Audio Options"],
+            None,
+            r#"{"items":[id]?,"dir":str?}"#,
+            has_extractable,
+            extract_audio,
+        ),
+        spec(
+            "clip.replaceFromSource",
+            "From Source Monitor",
+            &["Clip", "Replace With Clip"],
+            None,
+            r#"{"clips":[id]?}"#,
+            can_replace_from_source,
+            |s, p| replace_with(s, p, Replace::Source),
+        ),
         spec(
             "clip.replaceFromSourceMatchFrame",
             "From Source Monitor, Match Frame",
@@ -282,11 +388,20 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
     edit_tail.extend(LABEL_IDS);
     edit_tail.extend(["edit.removeUnused", "edit.consolidateDuplicates"]);
     let layout: Vec<(At, Vec<&'static str>)> = vec![
-        (At::After("file.newSequence"), vec!["file.newSequenceFromClip"]),
-        (At::After("file.newBin"), vec!["file.newBinFromSelection", "file.newOfflineFile"]),
+        (
+            At::After("file.newSequence"),
+            vec!["file.newSequenceFromClip"],
+        ),
+        (
+            At::After("file.newBin"),
+            vec!["file.newBinFromSelection", "file.newOfflineFile"],
+        ),
         (At::Before("file.save"), vec!["file.closeProject"]),
         (At::After("file.saveCopy"), vec!["file.saveAll"]),
-        (At::After("edit.pasteInsert"), vec!["edit.pasteAttributes", "edit.removeAttributes"]),
+        (
+            At::After("edit.pasteInsert"),
+            vec!["edit.pasteAttributes", "edit.removeAttributes"],
+        ),
         (At::After("edit.selectAll"), vec!["edit.selectAllMatching"]),
         (At::After("edit.duplicate"), edit_tail),
         (
@@ -312,7 +427,14 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
                 "clip.extractAudio",
             ],
         ),
-        (At::After("source.overwrite"), vec!["clip.replaceFromSource", "clip.replaceFromSourceMatchFrame", "clip.replaceFromBin"]),
+        (
+            At::After("source.overwrite"),
+            vec![
+                "clip.replaceFromSource",
+                "clip.replaceFromSourceMatchFrame",
+                "clip.replaceFromBin",
+            ],
+        ),
     ];
     for (at, ids) in layout {
         let mut run = Vec::new();
@@ -338,56 +460,131 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
 // ---------------------------------------------------------------------------------------------
 
 fn can_label(s: &Session) -> std::result::Result<(), String> {
-    if s.state.selection.is_empty() && s.state.project_selection.is_empty() { Err("select clips or project items".into()) } else { Ok(()) }
+    if s.state.selection.is_empty() && s.state.project_selection.is_empty() {
+        Err("select clips or project items".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_project_items(s: &Session) -> std::result::Result<(), String> {
-    if s.project.items.values().any(|i| !matches!(i.kind, ItemKind::Graphic { .. })) { Ok(()) } else { Err("the project is empty".into()) }
+    if s.project
+        .items
+        .values()
+        .any(|i| !matches!(i.kind, ItemKind::Graphic { .. }))
+    {
+        Ok(())
+    } else {
+        Err("the project is empty".into())
+    }
 }
 fn is_clip_item(p: &Project, id: ItemId) -> bool {
-    p.item(id).is_some_and(|i| matches!(i.kind, ItemKind::Media(_) | ItemKind::Subclip { .. } | ItemKind::Sequence(_) | ItemKind::AdjustmentLayer { .. }))
+    p.item(id).is_some_and(|i| {
+        matches!(
+            i.kind,
+            ItemKind::Media(_)
+                | ItemKind::Subclip { .. }
+                | ItemKind::Sequence(_)
+                | ItemKind::AdjustmentLayer { .. }
+        )
+    })
 }
 fn has_clip_items(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.iter().any(|i| is_clip_item(&s.project, *i)) { Ok(()) } else { Err("select a clip in the Project panel".into()) }
+    if s.state
+        .project_selection
+        .iter()
+        .any(|i| is_clip_item(&s.project, *i))
+    {
+        Ok(())
+    } else {
+        Err("select a clip in the Project panel".into())
+    }
 }
 fn can_paste_attributes(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if s.state.clipboard.is_empty() { Err("copy a clip first".into()) } else { Ok(()) }
+    if s.state.clipboard.is_empty() {
+        Err("copy a clip first".into())
+    } else {
+        Ok(())
+    }
 }
 fn subclip_source(s: &Session) -> Option<ItemId> {
     s.state
         .source_item
         .filter(|i| media_root(&s.project, *i).is_some())
-        .or_else(|| s.state.project_selection.iter().copied().find(|i| media_root(&s.project, *i).is_some()))
+        .or_else(|| {
+            s.state
+                .project_selection
+                .iter()
+                .copied()
+                .find(|i| media_root(&s.project, *i).is_some())
+        })
 }
 fn can_make_subclip(s: &Session) -> std::result::Result<(), String> {
-    if subclip_source(s).is_some() || !s.state.selection.is_empty() { Ok(()) } else { Err("open a clip in the Source monitor or select one".into()) }
+    if subclip_source(s).is_some() || !s.state.selection.is_empty() {
+        Ok(())
+    } else {
+        Err("open a clip in the Source monitor or select one".into())
+    }
 }
 fn has_subclip(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.iter().any(|i| s.project.item(*i).is_some_and(|it| matches!(it.kind, ItemKind::Subclip { .. }))) {
+    if s.state.project_selection.iter().any(|i| {
+        s.project
+            .item(*i)
+            .is_some_and(|it| matches!(it.kind, ItemKind::Subclip { .. }))
+    }) {
         Ok(())
     } else {
         Err("select a subclip in the Project panel".into())
     }
 }
 fn has_media_selection(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.iter().any(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some()) {
+    if s.state
+        .project_selection
+        .iter()
+        .any(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some())
+    {
         Ok(())
     } else {
         Err("select a clip in the Project panel".into())
     }
 }
 fn audio_items(s: &Session) -> Vec<ItemId> {
-    s.state.project_selection.iter().copied().filter(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some_and(|m| m.info.has_audio())).collect()
+    s.state
+        .project_selection
+        .iter()
+        .copied()
+        .filter(|i| {
+            s.project
+                .item(*i)
+                .and_then(|it| it.as_media())
+                .is_some_and(|m| m.info.has_audio())
+        })
+        .collect()
 }
 fn has_audio_items(s: &Session) -> std::result::Result<(), String> {
-    if audio_items(s).is_empty() { Err("select a clip with audio in the Project panel".into()) } else { Ok(()) }
+    if audio_items(s).is_empty() {
+        Err("select a clip with audio in the Project panel".into())
+    } else {
+        Ok(())
+    }
 }
 fn selected_audio_clips(s: &Session) -> Vec<ClipId> {
-    let Some(q) = s.active_sequence() else { return Vec::new() };
-    s.state.selection.iter().copied().filter(|c| q.audio_tracks.iter().any(|t| t.item(*c).is_some())).collect()
+    let Some(q) = s.active_sequence() else {
+        return Vec::new();
+    };
+    s.state
+        .selection
+        .iter()
+        .copied()
+        .filter(|c| q.audio_tracks.iter().any(|t| t.item(*c).is_some()))
+        .collect()
 }
 fn has_audio_target(s: &Session) -> std::result::Result<(), String> {
-    if audio_items(s).is_empty() && selected_audio_clips(s).is_empty() { Err("select a clip with audio".into()) } else { Ok(()) }
+    if audio_items(s).is_empty() && selected_audio_clips(s).is_empty() {
+        Err("select a clip with audio".into())
+    } else {
+        Ok(())
+    }
 }
 fn extract_items(s: &Session) -> Vec<ItemId> {
     let mut out: Vec<ItemId> = s.state.project_selection.clone();
@@ -406,15 +603,30 @@ fn extract_items(s: &Session) -> Vec<ItemId> {
     out
 }
 fn has_extractable(s: &Session) -> std::result::Result<(), String> {
-    if extract_items(s).is_empty() { Err("select a clip with audio".into()) } else { Ok(()) }
+    if extract_items(s).is_empty() {
+        Err("select a clip with audio".into())
+    } else {
+        Ok(())
+    }
 }
 fn can_replace_from_source(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    s.state.source_item.map(|_| ()).ok_or_else(|| "open a clip in the Source monitor".into())
+    s.state
+        .source_item
+        .map(|_| ())
+        .ok_or_else(|| "open a clip in the Source monitor".into())
 }
 fn can_replace_from_bin(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if s.state.project_selection.iter().any(|i| is_clip_item(&s.project, *i)) { Ok(()) } else { Err("select a clip in the Project panel".into()) }
+    if s.state
+        .project_selection
+        .iter()
+        .any(|i| is_clip_item(&s.project, *i))
+    {
+        Ok(())
+    } else {
+        Err("select a clip in the Project panel".into())
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -454,8 +666,15 @@ impl SourceView {
         if self.start.0 < 0 || self.end <= self.start {
             return TimeRange::new(self.start, Tick::ZERO);
         }
-        let start = self.mark_in.unwrap_or(self.start).clamp(self.start, self.end);
-        let end = self.mark_out.map(|o| Tick(o.0.saturating_add(self.rate.frame_duration().0))).unwrap_or(self.end).clamp(start, self.end);
+        let start = self
+            .mark_in
+            .unwrap_or(self.start)
+            .clamp(self.start, self.end);
+        let end = self
+            .mark_out
+            .map(|o| Tick(o.0.saturating_add(self.rate.frame_duration().0)))
+            .unwrap_or(self.end)
+            .clamp(start, self.end);
         TimeRange::from_bounds(start, end)
     }
 
@@ -472,12 +691,28 @@ impl SourceView {
 /// The Source monitor view of `item` (see [`SourceView`]).
 pub fn source_view(s: &Session, item: ItemId) -> Option<SourceView> {
     let pi = s.project.item(item)?;
-    let still = |m: &MediaClip| matches!(m.info.kind, filmcraft_media::MediaKind::Still) || m.info.duration.0 <= 0;
+    let still = |m: &MediaClip| {
+        matches!(m.info.kind, filmcraft_media::MediaKind::Still) || m.info.duration.0 <= 0
+    };
     Some(match &pi.kind {
         ItemKind::Media(m) => {
             let rate = m.frame_rate();
-            let end = if still(m) { s.prefs.timeline.still_duration(rate) } else { m.duration() };
-            SourceView { item, media: item, start: Tick::ZERO, end, rate, mark_in: m.mark_in, mark_out: m.mark_out, markers: m.markers.clone(), subclip: None }
+            let end = if still(m) {
+                s.prefs.timeline.still_duration(rate)
+            } else {
+                m.duration()
+            };
+            SourceView {
+                item,
+                media: item,
+                start: Tick::ZERO,
+                end,
+                rate,
+                mark_in: m.mark_in,
+                mark_out: m.mark_out,
+                markers: m.markers.clone(),
+                subclip: None,
+            }
         }
         ItemKind::Sequence(q) => SourceView {
             item,
@@ -490,15 +725,41 @@ pub fn source_view(s: &Session, item: ItemId) -> Option<SourceView> {
             markers: q.markers.clone(),
             subclip: None,
         },
-        ItemKind::Subclip { range, restrict_trims, .. } => {
+        ItemKind::Subclip {
+            range,
+            restrict_trims,
+            ..
+        } => {
             let (root, m, _) = media_root(&s.project, item)?;
             let rate = m.frame_rate();
             let fd = rate.frame_duration();
-            let markers = m.markers.iter().filter(|k| k.start >= range.start && k.start < range.end()).cloned().collect();
-            let full = if still(m) { range.end() } else { m.duration().max(range.end()) };
-            let (start, end, mi, mo) =
-                if *restrict_trims { (range.start, range.end(), None, None) } else { (Tick::ZERO, full, Some(range.start), Some(range.end() - fd)) };
-            SourceView { item, media: root, start, end, rate, mark_in: mi, mark_out: mo, markers, subclip: Some((*range, *restrict_trims)) }
+            let markers = m
+                .markers
+                .iter()
+                .filter(|k| k.start >= range.start && k.start < range.end())
+                .cloned()
+                .collect();
+            let full = if still(m) {
+                range.end()
+            } else {
+                m.duration().max(range.end())
+            };
+            let (start, end, mi, mo) = if *restrict_trims {
+                (range.start, range.end(), None, None)
+            } else {
+                (Tick::ZERO, full, Some(range.start), Some(range.end() - fd))
+            };
+            SourceView {
+                item,
+                media: root,
+                start,
+                end,
+                rate,
+                mark_in: mi,
+                mark_out: mo,
+                markers,
+                subclip: Some((*range, *restrict_trims)),
+            }
         }
         _ => SourceView {
             item,
@@ -525,7 +786,9 @@ fn item_rate(p: &Project, id: ItemId) -> FrameRate {
 fn items_p(s: &Session, p: &Value) -> Vec<ItemId> {
     match p.get("items").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(|v| v.as_u64().map(ItemId)).collect(),
-        None => item_p(p, "item").map(|i| vec![i]).unwrap_or_else(|| s.state.project_selection.clone()),
+        None => item_p(p, "item")
+            .map(|i| vec![i])
+            .unwrap_or_else(|| s.state.project_selection.clone()),
     }
 }
 
@@ -578,7 +841,8 @@ pub(crate) fn collect_ids(v: &Value, out: &mut BTreeSet<ItemId>, p: &Project) {
             for (k, x) in m {
                 if matches!(k.as_str(), "item" | "items" | "video" | "audio") {
                     for n in x.as_array().cloned().unwrap_or_else(|| vec![x.clone()]) {
-                        if let Some(id) = n.as_u64().map(ItemId).filter(|i| p.items.contains_key(i)) {
+                        if let Some(id) = n.as_u64().map(ItemId).filter(|i| p.items.contains_key(i))
+                        {
                             out.insert(id);
                         }
                     }
@@ -593,7 +857,12 @@ pub(crate) fn collect_ids(v: &Value, out: &mut BTreeSet<ItemId>, p: &Project) {
 
 /// Remove Unused removes clips only: never sequences or graphic sources.
 fn is_removable(p: &Project, id: ItemId) -> bool {
-    p.item(id).is_some_and(|i| matches!(i.kind, ItemKind::Media(_) | ItemKind::Subclip { .. } | ItemKind::AdjustmentLayer { .. }))
+    p.item(id).is_some_and(|i| {
+        matches!(
+            i.kind,
+            ItemKind::Media(_) | ItemKind::Subclip { .. } | ItemKind::AdjustmentLayer { .. }
+        )
+    })
 }
 
 fn remove_items(p: &mut Project, ids: &[ItemId]) {
@@ -604,7 +873,12 @@ fn remove_items(p: &mut Project, ids: &[ItemId]) {
 }
 
 /// Keyframe times of an effect instance shifted / scaled from clip `from` to clip `to` (media time).
-fn retime_effect(e: &mut filmcraft_project::EffectInstance, from: &TrackItem, to: &TrackItem, scale: bool) {
+fn retime_effect(
+    e: &mut filmcraft_project::EffectInstance,
+    from: &TrackItem,
+    to: &TrackItem,
+    scale: bool,
+) {
     let (f0, f1) = (from.source_in, from.source_out());
     let (t0, t1) = (to.source_in, to.source_out());
     let map = |k: Tick| -> Tick {
@@ -621,7 +895,12 @@ fn retime_effect(e: &mut filmcraft_project::EffectInstance, from: &TrackItem, to
         }
     }
     for m in &mut e.masks {
-        for p in [&mut m.path, &mut m.feather, &mut m.opacity, &mut m.expansion] {
+        for p in [
+            &mut m.path,
+            &mut m.feather,
+            &mut m.opacity,
+            &mut m.expansion,
+        ] {
             for k in &mut p.keyframes {
                 k.time = map(k.time);
             }
@@ -634,27 +913,60 @@ fn retime_effect(e: &mut filmcraft_project::EffectInstance, from: &TrackItem, to
 // ---------------------------------------------------------------------------------------------
 
 fn sequence_from_clip(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<ItemId> = items_p(s, p).into_iter().filter(|i| is_clip_item(&s.project, *i)).collect();
-    let first = *items.first().ok_or_else(|| bad("file.newSequenceFromClip", "select a clip in the Project panel"))?;
-    let pi = s.project.item(first).ok_or_else(|| bad("file.newSequenceFromClip", "no such item"))?.clone();
+    let items: Vec<ItemId> = items_p(s, p)
+        .into_iter()
+        .filter(|i| is_clip_item(&s.project, *i))
+        .collect();
+    let first = *items.first().ok_or_else(|| {
+        bad(
+            "file.newSequenceFromClip",
+            "select a clip in the Project panel",
+        )
+    })?;
+    let pi = s
+        .project
+        .item(first)
+        .ok_or_else(|| bad("file.newSequenceFromClip", "no such item"))?
+        .clone();
     let mut settings = match &pi.kind {
         ItemKind::Sequence(q) => q.settings.clone(),
-        _ => media_root(&s.project, first).map(|(_, m, _)| crate::commands::default_seq_settings_for(m)).unwrap_or_default(),
+        _ => media_root(&s.project, first)
+            .map(|(_, m, _)| crate::commands::default_seq_settings_for(m))
+            .unwrap_or_default(),
     };
-    if let ItemKind::AdjustmentLayer { width, height, rate, .. } = &pi.kind {
+    if let ItemKind::AdjustmentLayer {
+        width,
+        height,
+        rate,
+        ..
+    } = &pi.kind
+    {
         settings.width = *width;
         settings.height = *height;
         settings.frame_rate = *rate;
     }
-    let channels = media_root(&s.project, first).and_then(|(_, m, _)| m.info.audio().map(|a| a.channels)).unwrap_or(2);
+    let channels = media_root(&s.project, first)
+        .and_then(|(_, m, _)| m.info.audio().map(|a| a.channels))
+        .unwrap_or(2);
     let n_audio = media_root(&s.project, first)
         .map(|(_, m, _)| {
-            crate::commands::audio_placement_specs(m.interpret.audio_channels.as_ref().map_or(&[], |a| a.clips.as_slice()), m.info.audio_streams.len()).len()
+            crate::commands::audio_placement_specs(
+                m.interpret
+                    .audio_channels
+                    .as_ref()
+                    .map_or(&[], |a| a.clips.as_slice()),
+                m.info.audio_streams.len(),
+            )
+            .len()
         })
         .unwrap_or(1);
     let n0 = s.history.undo.len();
     let name = pi.name.clone();
-    let bin = s.project.root.parent_of(first).filter(|b| *b != s.project.root.id);
+    let bin = s
+        .project
+        .root
+        .parent_of(first)
+        .filter(|b| *b != s.project.root.id);
     let seq = s.edit("New Sequence From Clip", |pr, st| {
         let id = pr.new_sequence(&name, settings, 1, n_audio.max(1), bin);
         if channels == 1
@@ -672,9 +984,21 @@ fn sequence_from_clip(s: &mut Session, p: &Value) -> Result<Value> {
     let mut placed = Vec::new();
     for item in items {
         let still = s.prefs.timeline.still_duration(item_rate(&s.project, item));
-        let Some(range) = item_range(&s.project, item, still) else { continue };
+        let Some(range) = item_range(&s.project, item, still) else {
+            continue;
+        };
         let tg = s.targeting();
-        let ids = place_item(s, item, range, at, tg.video_dest, tg.audio_dest, false, "New Sequence From Clip", None)?;
+        let ids = place_item(
+            s,
+            item,
+            range,
+            at,
+            tg.video_dest,
+            tg.audio_dest,
+            false,
+            "New Sequence From Clip",
+            None,
+        )?;
         at = s.active_sequence().map(|q| q.duration()).unwrap_or(at);
         placed.extend(ids.iter().map(|c| c.0));
     }
@@ -691,15 +1015,25 @@ pub(crate) fn item_range(p: &Project, id: ItemId, still: Tick) -> Option<TimeRan
     Some(match &it.kind {
         ItemKind::Media(m) => {
             let is_still = matches!(m.info.kind, filmcraft_media::MediaKind::Still);
-            let full = if m.info.duration.0 > 0 && !is_still { m.info.duration } else { still };
+            let full = if m.info.duration.0 > 0 && !is_still {
+                m.info.duration
+            } else {
+                still
+            };
             let a = m.mark_in.unwrap_or(Tick::ZERO);
-            let b = m.mark_out.map(|o| o + rate.frame_duration()).unwrap_or(full);
+            let b = m
+                .mark_out
+                .map(|o| o + rate.frame_duration())
+                .unwrap_or(full);
             TimeRange::from_bounds(a, b.max(a + rate.frame_duration()))
         }
         ItemKind::Subclip { range, .. } => *range,
         ItemKind::Sequence(q) => {
             let a = q.mark_in.unwrap_or(Tick::ZERO);
-            let b = q.mark_out.map(|o| o + q.settings.frame_rate.frame_duration()).unwrap_or(q.duration());
+            let b = q
+                .mark_out
+                .map(|o| o + q.settings.frame_rate.frame_duration())
+                .unwrap_or(q.duration());
             TimeRange::from_bounds(a, b.max(a + q.settings.frame_rate.frame_duration()))
         }
         _ => TimeRange::new(Tick::ZERO, it.duration()),
@@ -709,9 +1043,16 @@ pub(crate) fn item_range(p: &Project, id: ItemId, still: Tick) -> Option<TimeRan
 fn bin_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let items = items_p(s, p);
     if items.is_empty() {
-        return Err(bad("file.newBinFromSelection", "select items in the Project panel"));
+        return Err(bad(
+            "file.newBinFromSelection",
+            "select items in the Project panel",
+        ));
     }
-    let parent = s.project.root.parent_of(items[0]).filter(|b| *b != s.project.root.id);
+    let parent = s
+        .project
+        .root
+        .parent_of(items[0])
+        .filter(|b| *b != s.project.root.id);
     let name = match str_p(p, "name") {
         Some(n) => n.to_string(),
         None => {
@@ -742,26 +1083,51 @@ fn bin_names(b: &filmcraft_project::Bin, out: &mut Vec<String>) {
 }
 
 fn offline_file(s: &mut Session, p: &Value) -> Result<Value> {
-    let st = s.active_sequence().map(|q| q.settings.clone()).unwrap_or_default();
+    let st = s
+        .active_sequence()
+        .map(|q| q.settings.clone())
+        .unwrap_or_default();
     let has_v = bool_p(p, "video").unwrap_or(true);
     let has_a = bool_p(p, "audio").unwrap_or(true);
     if !has_v && !has_a {
-        return Err(bad("file.newOfflineFile", "an offline file needs video or audio"));
+        return Err(bad(
+            "file.newOfflineFile",
+            "an offline file needs video or audio",
+        ));
     }
-    let rate = f64_p(p, "fps").map(FrameRate::from_f64).unwrap_or(st.frame_rate);
+    let rate = f64_p(p, "fps")
+        .map(FrameRate::from_f64)
+        .unwrap_or(st.frame_rate);
     let width = u64_p(p, "width").map(|v| v as u32).unwrap_or(st.width);
     let height = u64_p(p, "height").map(|v| v as u32).unwrap_or(st.height);
-    let secs = f64_p(p, "seconds").unwrap_or(10.0).max(rate.frame_duration().seconds());
-    let duration = rate.snap_nearest(Tick::from_seconds_f64(secs)).max(rate.frame_duration());
+    let secs = f64_p(p, "seconds")
+        .unwrap_or(10.0)
+        .max(rate.frame_duration().seconds());
+    let duration = rate
+        .snap_nearest(Tick::from_seconds_f64(secs))
+        .max(rate.frame_duration());
     let start_tc = match str_p(p, "timecode") {
-        Some(tc) => Some(parse_timecode(tc, rate, false, 0).map_err(|e| bad("file.newOfflineFile", format!("timecode: {e:?}")))?),
+        Some(tc) => Some(
+            parse_timecode(tc, rate, false, 0)
+                .map_err(|e| bad("file.newOfflineFile", format!("timecode: {e:?}")))?,
+        ),
         None => None,
     };
-    let file_name = str_p(p, "fileName").map(str::to_string).filter(|n| !n.is_empty()).unwrap_or_else(|| "Offline.mov".into());
-    let name = str_p(p, "name").map(str::to_string).filter(|n| !n.is_empty()).unwrap_or_else(|| file_name.clone());
+    let file_name = str_p(p, "fileName")
+        .map(str::to_string)
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| "Offline.mov".into());
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| file_name.clone());
     let info = filmcraft_media::MediaInfo {
         name: file_name.clone(),
-        kind: if has_v { filmcraft_media::MediaKind::Movie } else { filmcraft_media::MediaKind::AudioOnly },
+        kind: if has_v {
+            filmcraft_media::MediaKind::Movie
+        } else {
+            filmcraft_media::MediaKind::AudioOnly
+        },
         duration,
         video: has_v.then(|| filmcraft_media::VideoStreamInfo {
             width,
@@ -834,7 +1200,9 @@ fn close_project(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.revision += 1;
     s.saved_revision = s.revision;
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     Ok(json!({"closed": true}))
 }
 
@@ -881,30 +1249,66 @@ fn apply_label(s: &mut Session, p: &Value, l: Label) -> Result<Value> {
 fn select_label_group(s: &mut Session, _: &Value) -> Result<Value> {
     if !s.state.selection.is_empty() {
         let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
-        let labels: BTreeSet<&str> = s.state.selection.iter().filter_map(|c| q.find_item(*c).map(|(_, i)| i.label.name())).collect();
-        let sel: Vec<ClipId> = q.all_tracks().flat_map(|t| t.items.iter()).filter(|i| labels.contains(i.label.name())).map(|i| i.id).collect();
+        let labels: BTreeSet<&str> = s
+            .state
+            .selection
+            .iter()
+            .filter_map(|c| q.find_item(*c).map(|(_, i)| i.label.name()))
+            .collect();
+        let sel: Vec<ClipId> = q
+            .all_tracks()
+            .flat_map(|t| t.items.iter())
+            .filter(|i| labels.contains(i.label.name()))
+            .map(|i| i.id)
+            .collect();
         s.state.selection = sel;
         return Ok(json!({"clips": s.state.selection.iter().map(|c| c.0).collect::<Vec<_>>()}));
     }
-    let labels: BTreeSet<&str> = s.state.project_selection.iter().filter_map(|i| s.project.item(*i).map(|it| it.label.name())).collect();
+    let labels: BTreeSet<&str> = s
+        .state
+        .project_selection
+        .iter()
+        .filter_map(|i| s.project.item(*i).map(|it| it.label.name()))
+        .collect();
     let mut all = Vec::new();
     s.project.root.all_items(&mut all);
-    let sel: Vec<ItemId> = all.into_iter().filter(|i| s.project.item(*i).is_some_and(|it| labels.contains(it.label.name()))).collect();
+    let sel: Vec<ItemId> = all
+        .into_iter()
+        .filter(|i| {
+            s.project
+                .item(*i)
+                .is_some_and(|it| labels.contains(it.label.name()))
+        })
+        .collect();
     s.state.project_selection = sel;
     Ok(json!({"items": s.state.project_selection.iter().map(|i| i.0).collect::<Vec<_>>()}))
 }
 
 fn select_all_matching(s: &mut Session, p: &Value) -> Result<Value> {
     let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let sources: BTreeSet<ItemId> = clips_p(s, p).iter().filter_map(|c| q.find_item(*c).map(|(_, i)| i.item)).collect();
-    let sel: Vec<ClipId> = q.all_tracks().flat_map(|t| t.items.iter()).filter(|i| sources.contains(&i.item)).map(|i| i.id).collect();
+    let sources: BTreeSet<ItemId> = clips_p(s, p)
+        .iter()
+        .filter_map(|c| q.find_item(*c).map(|(_, i)| i.item))
+        .collect();
+    let sel: Vec<ClipId> = q
+        .all_tracks()
+        .flat_map(|t| t.items.iter())
+        .filter(|i| sources.contains(&i.item))
+        .map(|i| i.id)
+        .collect();
     s.state.selection = sel;
     Ok(json!({"clips": s.state.selection.iter().map(|c| c.0).collect::<Vec<_>>()}))
 }
 
 fn remove_unused(s: &mut Session, _: &Value) -> Result<Value> {
     let used = used_items(&s.project);
-    let unused: Vec<ItemId> = s.project.items.keys().copied().filter(|i| is_removable(&s.project, *i) && !used.contains(i)).collect();
+    let unused: Vec<ItemId> = s
+        .project
+        .items
+        .keys()
+        .copied()
+        .filter(|i| is_removable(&s.project, *i) && !used.contains(i))
+        .collect();
     if unused.is_empty() {
         return Ok(json!({"removed": []}));
     }
@@ -931,7 +1335,8 @@ fn consolidate_duplicates(s: &mut Session, _: &Value) -> Result<Value> {
         if let ItemKind::Media(m) = &it.kind {
             // same file (or generator), interpretation and streams
             let shape = (m.info.video.is_some(), m.info.has_audio(), m.info.duration);
-            let key = serde_json::to_string(&(&m.media, &m.interpret, m.offline, shape)).unwrap_or_default();
+            let key = serde_json::to_string(&(&m.media, &m.interpret, m.offline, shape))
+                .unwrap_or_default();
             groups.entry(key).or_default().push(it.id);
         }
     }
@@ -969,10 +1374,18 @@ fn consolidate_duplicates(s: &mut Session, _: &Value) -> Result<Value> {
         // keep the marks / markers of the kept item; carry markers of duplicates over
         let dups: Vec<ItemId> = map.keys().copied().collect();
         for d in &dups {
-            let markers = pr.item(*d).and_then(|i| i.as_media()).map(|m| m.markers.clone()).unwrap_or_default();
+            let markers = pr
+                .item(*d)
+                .and_then(|i| i.as_media())
+                .map(|m| m.markers.clone())
+                .unwrap_or_default();
             if let Some(m) = pr.item_mut(map[d]).and_then(|i| i.as_media_mut()) {
                 for mk in markers {
-                    if !m.markers.iter().any(|x| x.start == mk.start && x.name == mk.name) {
+                    if !m
+                        .markers
+                        .iter()
+                        .any(|x| x.start == mk.start && x.name == mk.name)
+                    {
                         m.markers.push(mk);
                     }
                 }
@@ -994,7 +1407,9 @@ fn consolidate_duplicates(s: &mut Session, _: &Value) -> Result<Value> {
     for d in remap.keys() {
         s.media.remove(*d);
     }
-    Ok(json!({"removed": remap.keys().map(|i| i.0).collect::<Vec<_>>(), "kept": remap.values().map(|i| i.0).collect::<BTreeSet<_>>()}))
+    Ok(
+        json!({"removed": remap.keys().map(|i| i.0).collect::<Vec<_>>(), "kept": remap.values().map(|i| i.0).collect::<BTreeSet<_>>()}),
+    )
 }
 
 /// Which attributes a Paste / Remove Attributes call touches.
@@ -1021,33 +1436,61 @@ fn attr_sel(p: &Value) -> AttrSel {
     }
     let effects = match p.get("effects") {
         Some(Value::Bool(false)) => Some(Vec::new()),
-        Some(Value::Array(a)) => Some(a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect()),
+        Some(Value::Array(a)) => Some(
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect(),
+        ),
         _ => None,
     };
     AttrSel { intrinsic, effects }
 }
 
 fn is_standard(e: &filmcraft_project::EffectInstance) -> bool {
-    e.def().is_some_and(|d| !d.intrinsic) && !filmcraft_project::graphic::is_layer(e) && !e.essential
+    e.def().is_some_and(|d| !d.intrinsic)
+        && !filmcraft_project::graphic::is_layer(e)
+        && !e.essential
 }
 
 fn wants_effect(sel: &AttrSel, e: &filmcraft_project::EffectInstance) -> bool {
-    sel.effects.as_ref().is_none_or(|ids| ids.contains(&e.effect))
+    sel.effects
+        .as_ref()
+        .is_none_or(|ids| ids.contains(&e.effect))
 }
 
 fn paste_attributes(s: &mut Session, p: &Value) -> Result<Value> {
     let sel = attr_sel(p);
     let scale = bool_p(p, "scaleTimes").unwrap_or(true);
-    let src_v = s.state.clipboard.iter().find(|c| c.0 == TrackKind::Video).map(|c| c.2.clone());
-    let src_a = s.state.clipboard.iter().find(|c| c.0 == TrackKind::Audio).map(|c| c.2.clone());
+    let src_v = s
+        .state
+        .clipboard
+        .iter()
+        .find(|c| c.0 == TrackKind::Video)
+        .map(|c| c.2.clone());
+    let src_a = s
+        .state
+        .clipboard
+        .iter()
+        .find(|c| c.0 == TrackKind::Audio)
+        .map(|c| c.2.clone());
     let targets = with_links(s, &clips_p(s, p));
     let n = s.edit_sequence("Paste Attributes", |q, _, _| {
         let mut n = 0;
         for c in &targets {
-            let Some((tid, _)) = q.find_item(*c) else { continue };
+            let Some((tid, _)) = q.find_item(*c) else {
+                continue;
+            };
             let kind = q.track(tid).map(|t| t.kind).unwrap_or_default();
-            let Some(src) = (if kind == TrackKind::Video { src_v.as_ref() } else { src_a.as_ref() }) else { continue };
-            let Some((_, dst)) = q.find_item_mut(*c) else { continue };
+            let Some(src) = (if kind == TrackKind::Video {
+                src_v.as_ref()
+            } else {
+                src_a.as_ref()
+            }) else {
+                continue;
+            };
+            let Some((_, dst)) = q.find_item_mut(*c) else {
+                continue;
+            };
             let before = dst.clone();
             for id in &sel.intrinsic {
                 let Some(e) = src.effect(id) else { continue };
@@ -1058,7 +1501,11 @@ fn paste_attributes(s: &mut Session, p: &Value) -> Result<Value> {
                     None => dst.effects.push(e),
                 }
             }
-            for e in src.effects.iter().filter(|e| is_standard(e) && wants_effect(&sel, e)) {
+            for e in src
+                .effects
+                .iter()
+                .filter(|e| is_standard(e) && wants_effect(&sel, e))
+            {
                 let mut e = e.clone();
                 retime_effect(&mut e, src, &before, scale);
                 dst.effects.push(e);
@@ -1077,23 +1524,39 @@ fn remove_attributes(s: &mut Session, p: &Value) -> Result<Value> {
     let targets = with_links(s, &clips_p(s, p));
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let frame = (seq.settings.width, seq.settings.height);
-    let sizes: BTreeMap<ClipId, (u32, u32)> =
-        targets.iter().filter_map(|c| seq.find_item(*c).map(|(_, i)| (*c, filmcraft_render::source_size(&s.project, i.item).unwrap_or(frame)))).collect();
+    let sizes: BTreeMap<ClipId, (u32, u32)> = targets
+        .iter()
+        .filter_map(|c| {
+            seq.find_item(*c).map(|(_, i)| {
+                (
+                    *c,
+                    filmcraft_render::source_size(&s.project, i.item).unwrap_or(frame),
+                )
+            })
+        })
+        .collect();
     let n = s.edit_sequence("Remove Attributes", |q, _, _| {
         let mut n = 0;
         for c in &targets {
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
             let before = it.clone();
             for id in &sel.intrinsic {
                 if let Some(slot) = it.effects.iter_mut().find(|x| x.effect == *id)
                     && let Some(def) = slot.def()
                 {
                     let mut fresh = def.instance();
-                    filmcraft_project::resolve_auto_points(&mut fresh, frame, sizes.get(c).copied().unwrap_or(frame));
+                    filmcraft_project::resolve_auto_points(
+                        &mut fresh,
+                        frame,
+                        sizes.get(c).copied().unwrap_or(frame),
+                    );
                     *slot = fresh;
                 }
             }
-            it.effects.retain(|e| !(is_standard(e) && wants_effect(&sel, e)));
+            it.effects
+                .retain(|e| !(is_standard(e) && wants_effect(&sel, e)));
             if *it != before {
                 n += 1;
             }
@@ -1111,22 +1574,46 @@ fn remove_attributes(s: &mut Session, p: &Value) -> Result<Value> {
 fn subclip_plan(s: &Session, p: &Value) -> Result<(ItemId, TimeRange, String, Label)> {
     Ok(if let Some(c) = clip_p_or_selection(s, p) {
         let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
-        let (_, it) = q.find_item(c).ok_or_else(|| bad("clip.makeSubclip", "no such clip"))?;
-        let (root, _, _) = media_root(&s.project, it.item).ok_or_else(|| bad("clip.makeSubclip", "only media clips can be subclipped"))?;
-        (root, TimeRange::from_bounds(it.source_in, it.source_out()), it.name.clone(), it.label)
+        let (_, it) = q
+            .find_item(c)
+            .ok_or_else(|| bad("clip.makeSubclip", "no such clip"))?;
+        let (root, _, _) = media_root(&s.project, it.item)
+            .ok_or_else(|| bad("clip.makeSubclip", "only media clips can be subclipped"))?;
+        (
+            root,
+            TimeRange::from_bounds(it.source_in, it.source_out()),
+            it.name.clone(),
+            it.label,
+        )
     } else {
-        let item = item_p(p, "item").or_else(|| subclip_source(s)).ok_or_else(|| bad("clip.makeSubclip", "open a clip in the Source monitor"))?;
-        let (root, m, sub) = media_root(&s.project, item).ok_or_else(|| bad("clip.makeSubclip", "only media clips can be subclipped"))?;
-        let pi = s.project.item(item).ok_or_else(|| EngineError::Other("no such item".into()))?;
+        let item = item_p(p, "item")
+            .or_else(|| subclip_source(s))
+            .ok_or_else(|| bad("clip.makeSubclip", "open a clip in the Source monitor"))?;
+        let (root, m, sub) = media_root(&s.project, item)
+            .ok_or_else(|| bad("clip.makeSubclip", "only media clips can be subclipped"))?;
+        let pi = s
+            .project
+            .item(item)
+            .ok_or_else(|| EngineError::Other("no such item".into()))?;
         let rate = m.frame_rate();
         let still = s.prefs.timeline.still_duration(rate);
         let is_still = matches!(m.info.kind, filmcraft_media::MediaKind::Still);
-        let full = sub.unwrap_or(TimeRange::new(Tick::ZERO, if m.info.duration.0 > 0 && !is_still { m.info.duration } else { still }));
+        let full = sub.unwrap_or(TimeRange::new(
+            Tick::ZERO,
+            if m.info.duration.0 > 0 && !is_still {
+                m.info.duration
+            } else {
+                still
+            },
+        ));
         let range = if sub.is_some() {
             full
         } else {
             let a = m.mark_in.unwrap_or(full.start);
-            let b = m.mark_out.map(|o| o + rate.frame_duration()).unwrap_or(full.end());
+            let b = m
+                .mark_out
+                .map(|o| o + rate.frame_duration())
+                .unwrap_or(full.end());
             TimeRange::from_bounds(a, b)
         };
         (root, range, pi.name.clone(), pi.label)
@@ -1137,7 +1624,9 @@ fn subclip_plan(s: &Session, p: &Value) -> Result<(ItemId, TimeRange, String, La
 pub fn subclip_defaults(s: &Session, p: &Value) -> Option<Value> {
     let (parent, range, base, _) = subclip_plan(s, p).ok()?;
     let rate = item_rate(&s.project, parent);
-    Some(json!({"name": format!("{base}.Subclip"), "startFrame": rate.frame_at(range.start), "endFrame": rate.frame_at(range.end()), "fps": rate.as_f64()}))
+    Some(
+        json!({"name": format!("{base}.Subclip"), "startFrame": rate.frame_at(range.start), "endFrame": rate.frame_at(range.end()), "fps": rate.as_f64()}),
+    )
 }
 
 fn make_subclip(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1147,18 +1636,49 @@ fn make_subclip(s: &mut Session, p: &Value) -> Result<Value> {
         .get("start")
         .and_then(Value::as_i64)
         .map(Tick)
-        .or_else(|| p.get("startFrame").and_then(Value::as_i64).map(|f| rate.tick_of(f)))
+        .or_else(|| {
+            p.get("startFrame")
+                .and_then(Value::as_i64)
+                .map(|f| rate.tick_of(f))
+        })
         .unwrap_or(range.start);
-    let b =
-        p.get("end").and_then(Value::as_i64).map(Tick).or_else(|| p.get("endFrame").and_then(Value::as_i64).map(|f| rate.tick_of(f))).unwrap_or(range.end());
+    let b = p
+        .get("end")
+        .and_then(Value::as_i64)
+        .map(Tick)
+        .or_else(|| {
+            p.get("endFrame")
+                .and_then(Value::as_i64)
+                .map(|f| rate.tick_of(f))
+        })
+        .unwrap_or(range.end());
     if b <= a || a < Tick::ZERO {
-        return Err(bad("clip.makeSubclip", "the subclip's end must be after its start"));
+        return Err(bad(
+            "clip.makeSubclip",
+            "the subclip's end must be after its start",
+        ));
     }
     let restrict = bool_p(p, "restrictTrims").unwrap_or(true);
-    let name = str_p(p, "name").map(str::to_string).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("{base}.Subclip"));
-    let bin = s.project.root.parent_of(parent).filter(|b| *b != s.project.root.id);
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| format!("{base}.Subclip"));
+    let bin = s
+        .project
+        .root
+        .parent_of(parent)
+        .filter(|b| *b != s.project.root.id);
     let id = s.edit("Make Subclip", |pr, st| {
-        let id = pr.add_item(&name, label, ItemKind::Subclip { parent, range: TimeRange::from_bounds(a, b), restrict_trims: restrict }, bin);
+        let id = pr.add_item(
+            &name,
+            label,
+            ItemKind::Subclip {
+                parent,
+                range: TimeRange::from_bounds(a, b),
+                restrict_trims: restrict,
+            },
+            bin,
+        );
         st.project_selection = vec![id];
         Ok(id)
     })?;
@@ -1179,9 +1699,20 @@ fn clip_p_or_selection(s: &Session, p: &Value) -> Option<ClipId> {
 
 fn edit_subclip(s: &mut Session, p: &Value) -> Result<Value> {
     let item = item_p(p, "item")
-        .or_else(|| s.state.project_selection.iter().copied().find(|i| s.project.item(*i).is_some_and(|it| matches!(it.kind, ItemKind::Subclip { .. }))))
+        .or_else(|| {
+            s.state.project_selection.iter().copied().find(|i| {
+                s.project
+                    .item(*i)
+                    .is_some_and(|it| matches!(it.kind, ItemKind::Subclip { .. }))
+            })
+        })
         .ok_or_else(|| bad("clip.editSubclip", "select a subclip"))?;
-    let Some(ItemKind::Subclip { parent, range, restrict_trims }) = s.project.item(item).map(|i| i.kind.clone()) else {
+    let Some(ItemKind::Subclip {
+        parent,
+        range,
+        restrict_trims,
+    }) = s.project.item(item).map(|i| i.kind.clone())
+    else {
         return Err(bad("clip.editSubclip", "not a subclip"));
     };
     let rate = item_rate(&s.project, parent);
@@ -1189,29 +1720,51 @@ fn edit_subclip(s: &mut Session, p: &Value) -> Result<Value> {
         .get("start")
         .and_then(Value::as_i64)
         .map(Tick)
-        .or_else(|| p.get("startFrame").and_then(Value::as_i64).map(|f| rate.tick_of(f)))
+        .or_else(|| {
+            p.get("startFrame")
+                .and_then(Value::as_i64)
+                .map(|f| rate.tick_of(f))
+        })
         .unwrap_or(range.start);
-    let b =
-        p.get("end").and_then(Value::as_i64).map(Tick).or_else(|| p.get("endFrame").and_then(Value::as_i64).map(|f| rate.tick_of(f))).unwrap_or(range.end());
+    let b = p
+        .get("end")
+        .and_then(Value::as_i64)
+        .map(Tick)
+        .or_else(|| {
+            p.get("endFrame")
+                .and_then(Value::as_i64)
+                .map(|f| rate.tick_of(f))
+        })
+        .unwrap_or(range.end());
     if b <= a || a < Tick::ZERO {
-        return Err(bad("clip.editSubclip", "the subclip's end must be after its start"));
+        return Err(bad(
+            "clip.editSubclip",
+            "the subclip's end must be after its start",
+        ));
     }
     let restrict = bool_p(p, "restrictTrims").unwrap_or(restrict_trims);
     let convert = bool_p(p, "convertToMaster").unwrap_or(false);
     let parent_media = s.project.item(parent).and_then(|i| i.as_media()).cloned();
     s.edit("Edit Subclip", |pr, _| {
-        let it = pr.item_mut(item).ok_or_else(|| bad("clip.editSubclip", "no such item"))?;
+        let it = pr
+            .item_mut(item)
+            .ok_or_else(|| bad("clip.editSubclip", "no such item"))?;
         if convert {
             // a master clip of the whole media, marked with the subclip's range; the parent's
             // markers inside that range come along (they were the subclip's inherited markers)
-            let mut m = parent_media.ok_or_else(|| bad("clip.editSubclip", "the subclip's media is gone"))?;
+            let mut m = parent_media
+                .ok_or_else(|| bad("clip.editSubclip", "the subclip's media is gone"))?;
             let fd = m.frame_rate().frame_duration();
             m.mark_in = Some(a);
             m.mark_out = Some((b - fd).max(a));
             m.markers.retain(|k| k.start >= a && k.start < b);
             it.kind = ItemKind::Media(m);
         } else {
-            it.kind = ItemKind::Subclip { parent, range: TimeRange::from_bounds(a, b), restrict_trims: restrict };
+            it.kind = ItemKind::Subclip {
+                parent,
+                range: TimeRange::from_bounds(a, b),
+                restrict_trims: restrict,
+            };
         }
         Ok(())
     })?;
@@ -1232,16 +1785,32 @@ fn parse_format(f: &str) -> Option<AudioChannels> {
 }
 
 fn audio_channels(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<ItemId> =
-        items_p(s, p).into_iter().filter(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some_and(|m| m.info.has_audio())).collect();
+    let items: Vec<ItemId> = items_p(s, p)
+        .into_iter()
+        .filter(|i| {
+            s.project
+                .item(*i)
+                .and_then(|it| it.as_media())
+                .is_some_and(|m| m.info.has_audio())
+        })
+        .collect();
     if items.is_empty() || p.get("channels").is_some() {
         // timeline audio clips: which source channels each plays
         let clips = match p.get("clips").and_then(Value::as_array) {
-            Some(a) if a.iter().all(Value::is_u64) => a.iter().filter_map(|v| v.as_u64().map(ClipId)).collect(),
+            Some(a) if a.iter().all(Value::is_u64) => {
+                a.iter().filter_map(|v| v.as_u64().map(ClipId)).collect()
+            }
             _ => selected_audio_clips(s),
         };
-        let chans: Vec<u16> =
-            p.get("channels").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_u64().map(|c| c as u16)).collect()).unwrap_or_default();
+        let chans: Vec<u16> = p
+            .get("channels")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_u64().map(|c| c as u16))
+                    .collect()
+            })
+            .unwrap_or_default();
         if clips.is_empty() {
             return Err(bad("clip.audioChannels", "select a clip with audio"));
         }
@@ -1253,28 +1822,60 @@ fn audio_channels(s: &mut Session, p: &Value) -> Result<Value> {
             }
             Ok(())
         })?;
-        return Ok(json!({"clips": clips.iter().map(|c| c.0).collect::<Vec<_>>(), "channels": chans}));
+        return Ok(
+            json!({"clips": clips.iter().map(|c| c.0).collect::<Vec<_>>(), "channels": chans}),
+        );
     }
     let format = match str_p(p, "format") {
-        Some(f) => Some(parse_format(f).ok_or_else(|| bad("clip.audioChannels", "format is mono, stereo, 5.1 or adaptive"))?),
+        Some(f) => Some(parse_format(f).ok_or_else(|| {
+            bad(
+                "clip.audioChannels",
+                "format is mono, stereo, 5.1 or adaptive",
+            )
+        })?),
         None => None,
     };
-    let custom: Option<Vec<Vec<u16>>> = p
-        .get("clips")
-        .and_then(Value::as_array)
-        .map(|a| a.iter().map(|c| c.as_array().map(|x| x.iter().filter_map(|v| v.as_u64().map(|n| n as u16)).collect()).unwrap_or_default()).collect());
+    let custom: Option<Vec<Vec<u16>>> = p.get("clips").and_then(Value::as_array).map(|a| {
+        a.iter()
+            .map(|c| {
+                c.as_array()
+                    .map(|x| {
+                        x.iter()
+                            .filter_map(|v| v.as_u64().map(|n| n as u16))
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            })
+            .collect()
+    });
     let mut out = Vec::new();
     let mut maps = Vec::new();
     for i in &items {
-        let Some(m) = s.project.item(*i).and_then(|it| it.as_media()) else { continue };
+        let Some(m) = s.project.item(*i).and_then(|it| it.as_media()) else {
+            continue;
+        };
         let n = m.info.audio().map_or(2, |a| a.channels) as u16;
-        let fmt = format.unwrap_or_else(|| m.interpret.audio_channels.as_ref().map_or(AudioChannels::Stereo, |a| a.format));
+        let fmt = format.unwrap_or_else(|| {
+            m.interpret
+                .audio_channels
+                .as_ref()
+                .map_or(AudioChannels::Stereo, |a| a.format)
+        });
         let map = match &custom {
             Some(c) => {
-                if c.is_empty() || c.iter().any(|x| x.is_empty() || x.iter().any(|ch| *ch >= n)) {
-                    return Err(bad("clip.audioChannels", format!("each clip needs source channels between 0 and {}", n - 1)));
+                if c.is_empty()
+                    || c.iter()
+                        .any(|x| x.is_empty() || x.iter().any(|ch| *ch >= n))
+                {
+                    return Err(bad(
+                        "clip.audioChannels",
+                        format!("each clip needs source channels between 0 and {}", n - 1),
+                    ));
                 }
-                AudioChannelMap { format: fmt, clips: c.clone() }
+                AudioChannelMap {
+                    format: fmt,
+                    clips: c.clone(),
+                }
             }
             None => AudioChannelMap::for_format(fmt, n),
         };
@@ -1285,7 +1886,12 @@ fn audio_channels(s: &mut Session, p: &Value) -> Result<Value> {
         for (i, map) in maps {
             if let Some(m) = pr.item_mut(i).and_then(|it| it.as_media_mut()) {
                 // the default stereo pair is no override
-                m.interpret.audio_channels = if map == AudioChannelMap::for_format(AudioChannels::Stereo, 2) { None } else { Some(map) };
+                m.interpret.audio_channels =
+                    if map == AudioChannelMap::for_format(AudioChannels::Stereo, 2) {
+                        None
+                    } else {
+                        Some(map)
+                    };
             }
         }
         Ok(())
@@ -1295,26 +1901,44 @@ fn audio_channels(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn modify_timecode(s: &mut Session, p: &Value) -> Result<Value> {
     let item = item_p(p, "item")
-        .or_else(|| s.state.project_selection.iter().copied().find(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some()))
+        .or_else(|| {
+            s.state
+                .project_selection
+                .iter()
+                .copied()
+                .find(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some())
+        })
         .ok_or_else(|| bad("clip.modifyTimecode", "select a clip"))?;
-    let m = s.project.item(item).and_then(|i| i.as_media()).ok_or_else(|| bad("clip.modifyTimecode", "not a media clip"))?;
+    let m = s
+        .project
+        .item(item)
+        .and_then(|i| i.as_media())
+        .ok_or_else(|| bad("clip.modifyTimecode", "not a media clip"))?;
     let rate = m.frame_rate();
     let reset = bool_p(p, "reset").unwrap_or(false);
     let frame = if let Some(tc) = str_p(p, "timecode") {
-        Some(parse_timecode(tc, rate, false, 0).map_err(|e| bad("clip.modifyTimecode", format!("timecode: {e:?}")))?)
+        Some(
+            parse_timecode(tc, rate, false, 0)
+                .map_err(|e| bad("clip.modifyTimecode", format!("timecode: {e:?}")))?,
+        )
     } else {
         p.get("frame").and_then(Value::as_i64)
     };
     let tape = str_p(p, "tapeName").map(str::to_string);
     if frame.is_none() && tape.is_none() && !reset {
-        return Err(bad("clip.modifyTimecode", "need `timecode`, `frame`, `tapeName` or `reset`"));
+        return Err(bad(
+            "clip.modifyTimecode",
+            "need `timecode`, `frame`, `tapeName` or `reset`",
+        ));
     }
     if frame.is_some_and(|f| f < 0) {
         return Err(bad("clip.modifyTimecode", "timecode must not be negative"));
     }
     const FILE_TC: &str = "File Timecode";
     let r = s.edit("Modify Timecode", |pr, _| {
-        let it = pr.item_mut(item).ok_or_else(|| bad("clip.modifyTimecode", "no such item"))?;
+        let it = pr
+            .item_mut(item)
+            .ok_or_else(|| bad("clip.modifyTimecode", "no such item"))?;
         let cur = it.as_media().and_then(|m| m.info.start_timecode);
         if reset {
             // back to the file's own timecode ("none" = the file had none)
@@ -1324,7 +1948,9 @@ fn modify_timecode(s: &mut Session, p: &Value) -> Result<Value> {
                 m.info.start_timecode = orig.parse::<i64>().ok();
             }
         } else if let Some(f) = frame {
-            it.metadata.entry(FILE_TC.to_string()).or_insert_with(|| cur.map(|c| c.to_string()).unwrap_or_else(|| "none".into()));
+            it.metadata
+                .entry(FILE_TC.to_string())
+                .or_insert_with(|| cur.map(|c| c.to_string()).unwrap_or_else(|| "none".into()));
             if let Some(m) = it.as_media_mut() {
                 m.info.start_timecode = Some(f);
             }
@@ -1346,8 +1972,13 @@ fn modify_timecode(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------------------------------------------------------------------------------------------
 
 fn video_clips(s: &Session, p: &Value) -> Vec<ClipId> {
-    let Some(q) = s.active_sequence() else { return Vec::new() };
-    clips_p(s, p).into_iter().filter(|c| q.video_tracks.iter().any(|t| t.item(*c).is_some())).collect()
+    let Some(q) = s.active_sequence() else {
+        return Vec::new();
+    };
+    clips_p(s, p)
+        .into_iter()
+        .filter(|c| q.video_tracks.iter().any(|t| t.item(*c).is_some()))
+        .collect()
 }
 
 fn frame_hold_options(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1367,7 +1998,9 @@ fn frame_hold_options(s: &mut Session, p: &Value) -> Result<Value> {
             .iter()
             .filter_map(|c| {
                 let (_, it) = q.find_item(*c)?;
-                let start_tc = media_root(&s.project, it.item).and_then(|(_, m, _)| m.info.start_timecode).unwrap_or(0);
+                let start_tc = media_root(&s.project, it.item)
+                    .and_then(|(_, m, _)| m.info.start_timecode)
+                    .unwrap_or(0);
                 Some((*c, (item_rate(&s.project, it.item), start_tc)))
             })
             .collect()
@@ -1376,31 +2009,54 @@ fn frame_hold_options(s: &mut Session, p: &Value) -> Result<Value> {
     let held = s.edit_sequence("Frame Hold Options", |q, _, _| {
         let mut out = Vec::new();
         for c in &clips {
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
             if !enabled {
                 it.frame_hold = None;
                 it.hold_filters = false;
                 continue;
             }
             let last = it.end() - Tick(1);
-            let unheld = |it: &TrackItem, t: Tick| it.moving_source_time_at(t.clamp(it.start, last));
+            let unheld =
+                |it: &TrackItem, t: Tick| it.moving_source_time_at(t.clamp(it.start, last));
             let h = match mode.as_str() {
                 "in" => unheld(it, it.start),
                 "out" => unheld(it, last),
                 "playhead" => unheld(it, ph),
-                "sequenceTime" => unheld(it, seq_t.ok_or_else(|| bad("clip.frameHoldOptions", "sequenceTime needs `time`/`timecode`"))?),
+                "sequenceTime" => unheld(
+                    it,
+                    seq_t.ok_or_else(|| {
+                        bad(
+                            "clip.frameHoldOptions",
+                            "sequenceTime needs `time`/`timecode`",
+                        )
+                    })?,
+                ),
                 "sourceTimecode" => {
                     let (rate, start_tc) = rates[c];
                     match (&tc, raw_time) {
                         (Some(tc), _) => {
-                            let f = parse_timecode(tc, rate, false, 0).map_err(|e| bad("clip.frameHoldOptions", format!("timecode: {e:?}")))?;
+                            let f = parse_timecode(tc, rate, false, 0).map_err(|e| {
+                                bad("clip.frameHoldOptions", format!("timecode: {e:?}"))
+                            })?;
                             rate.tick_of(f - start_tc)
                         }
                         (None, Some(t)) => t,
-                        (None, None) => return Err(bad("clip.frameHoldOptions", "sourceTimecode needs `timecode` or `time` (media ticks)")),
+                        (None, None) => {
+                            return Err(bad(
+                                "clip.frameHoldOptions",
+                                "sourceTimecode needs `timecode` or `time` (media ticks)",
+                            ));
+                        }
                     }
                 }
-                m => return Err(bad("clip.frameHoldOptions", format!("unknown holdOn `{m}`"))),
+                m => {
+                    return Err(bad(
+                        "clip.frameHoldOptions",
+                        format!("unknown holdOn `{m}`"),
+                    ));
+                }
             };
             let rate = rates.get(c).map(|r| r.0).unwrap_or_default();
             let h = rate.snap(h.max(Tick::ZERO));
@@ -1418,20 +2074,40 @@ fn frame_hold_options(s: &mut Session, p: &Value) -> Result<Value> {
 pub(crate) fn add_frame_hold(s: &mut Session, p: &Value) -> Result<Value> {
     let t = time_p(s, p, "").unwrap_or(s.playhead());
     let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let mut clips: Vec<ClipId> = video_clips(s, p).into_iter().filter(|c| q.find_item(*c).is_some_and(|(_, i)| i.start <= t && t < i.end())).collect();
+    let mut clips: Vec<ClipId> = video_clips(s, p)
+        .into_iter()
+        .filter(|c| {
+            q.find_item(*c)
+                .is_some_and(|(_, i)| i.start <= t && t < i.end())
+        })
+        .collect();
     if clips.is_empty() && p.get("clips").is_none() && p.get("clip").is_none() {
         let tg = s.targeting().targeted;
-        clips = q.video_tracks.iter().filter(|tr| tg.contains(&tr.id) && !tr.locked).filter_map(|tr| tr.item_at(t).map(|i| i.id)).take(1).collect();
+        clips = q
+            .video_tracks
+            .iter()
+            .filter(|tr| tg.contains(&tr.id) && !tr.locked)
+            .filter_map(|tr| tr.item_at(t).map(|i| i.id))
+            .take(1)
+            .collect();
     }
     if clips.is_empty() {
-        return Err(EngineError::Other("place the playhead over a selected video clip".into()));
+        return Err(EngineError::Other(
+            "place the playhead over a selected video clip".into(),
+        ));
     }
     let held = s.edit_sequence("Add Frame Hold", |q, ctx, st| {
         let mut out = Vec::new();
         for c in &clips {
-            let Some((_, it)) = q.find_item(*c) else { continue };
+            let Some((_, it)) = q.find_item(*c) else {
+                continue;
+            };
             let hold = it.moving_source_time_at(t);
-            let target = if it.start < t { edit::razor_items(q, &[*c], t, ctx).first().copied() } else { Some(*c) };
+            let target = if it.start < t {
+                edit::razor_items(q, &[*c], t, ctx).first().copied()
+            } else {
+                Some(*c)
+            };
             if let Some(id) = target
                 && let Some((_, r)) = q.find_item_mut(id)
             {
@@ -1449,15 +2125,30 @@ fn insert_frame_hold_segment(s: &mut Session, p: &Value) -> Result<Value> {
     let t = time_p(s, p, "").unwrap_or(s.playhead());
     let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let rate = q.settings.frame_rate;
-    let pick = |c: &ClipId| q.video_tracks.iter().find_map(|tr| tr.item(*c).filter(|i| i.start <= t && t < i.end()).map(|i| (tr.id, i.clone())));
-    let mut hit = crate::commands::clip_p(p, "clip").and_then(|c| pick(&c)).or_else(|| s.state.selection.iter().find_map(pick));
+    let pick = |c: &ClipId| {
+        q.video_tracks.iter().find_map(|tr| {
+            tr.item(*c)
+                .filter(|i| i.start <= t && t < i.end())
+                .map(|i| (tr.id, i.clone()))
+        })
+    };
+    let mut hit = crate::commands::clip_p(p, "clip")
+        .and_then(|c| pick(&c))
+        .or_else(|| s.state.selection.iter().find_map(pick));
     if hit.is_none() && crate::commands::clip_p(p, "clip").is_none() {
         let tg = s.targeting().targeted;
-        hit = q.video_tracks.iter().filter(|tr| tg.contains(&tr.id) && !tr.locked).find_map(|tr| tr.item_at(t).map(|i| (tr.id, i.clone())));
+        hit = q
+            .video_tracks
+            .iter()
+            .filter(|tr| tg.contains(&tr.id) && !tr.locked)
+            .find_map(|tr| tr.item_at(t).map(|i| (tr.id, i.clone())));
     }
-    let (track, it) = hit.ok_or_else(|| EngineError::Other("place the playhead over a video clip".into()))?;
+    let (track, it) =
+        hit.ok_or_else(|| EngineError::Other("place the playhead over a video clip".into()))?;
     let secs = f64_p(p, "seconds").unwrap_or(2.0);
-    let dur = rate.snap_nearest(Tick((secs * TICKS_PER_SECOND as f64).round() as i64)).max(rate.frame_duration());
+    let dur = rate
+        .snap_nearest(Tick((secs * TICKS_PER_SECOND as f64).round() as i64))
+        .max(rate.frame_duration());
     let hold = it.moving_source_time_at(t);
     let id = s.edit_sequence("Insert Frame Hold Segment", |q, ctx, st| {
         let mut seg = it.clone();
@@ -1484,9 +2175,17 @@ fn field_options(s: &mut Session, p: &Value) -> Result<Value> {
         "none" => FieldProcessing::None,
         "alwaysDeinterlace" => FieldProcessing::AlwaysDeinterlace,
         "flickerRemoval" => FieldProcessing::FlickerRemoval,
-        x => return Err(bad("clip.fieldOptions", format!("unknown processing `{x}`"))),
+        x => {
+            return Err(bad(
+                "clip.fieldOptions",
+                format!("unknown processing `{x}`"),
+            ));
+        }
     };
-    let fo = FieldOptions { reverse_field_dominance: bool_p(p, "reverseFieldDominance").unwrap_or(false), processing };
+    let fo = FieldOptions {
+        reverse_field_dominance: bool_p(p, "reverseFieldDominance").unwrap_or(false),
+        processing,
+    };
     s.edit_sequence("Field Options", |q, _, _| {
         for c in &clips {
             if let Some((_, it)) = q.find_item_mut(*c) {
@@ -1526,26 +2225,47 @@ fn fit_fill(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
         .iter()
         .filter_map(|c| {
             let (_, i) = q.find_item(*c)?;
-            Some((*c, filmcraft_render::source_size(&s.project, i.item)?, s.project.conformed_source_size(i.item, frame_par)?))
+            Some((
+                *c,
+                filmcraft_render::source_size(&s.project, i.item)?,
+                s.project.conformed_source_size(i.item, frame_par)?,
+            ))
         })
         .collect();
     if sizes.is_empty() {
-        return Err(bad(if fill { "clip.fillFrame" } else { "clip.fitToFrame" }, "select a video clip"));
+        return Err(bad(
+            if fill {
+                "clip.fillFrame"
+            } else {
+                "clip.fitToFrame"
+            },
+            "select a video clip",
+        ));
     }
     let label = if fill { "Fill Frame" } else { "Fit to Frame" };
     let out = s.edit_sequence(label, |q, _, _| {
         let mut out = Vec::new();
         for (c, (w, h), (dw, dh)) in &sizes {
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
             let (sx, sy) = (fw / dw.max(1.0), fh / dh.max(1.0));
             let pct = (if fill { sx.max(sy) } else { sx.min(sy) }) * 100.0;
             it.scale_to_frame = false;
-            let Some(m) = it.effect_mut("motion") else { continue };
+            let Some(m) = it.effect_mut("motion") else {
+                continue;
+            };
             for (k, v) in [
                 ("scale", ParamValue::Float(pct)),
                 ("uniform_scale", ParamValue::Bool(true)),
-                ("position", ParamValue::Vec2(filmcraft_geom::Vec2::new(fw / 2.0, fh / 2.0))),
-                ("anchor", ParamValue::Vec2(filmcraft_geom::Vec2::new(*w as f64 / 2.0, *h as f64 / 2.0))),
+                (
+                    "position",
+                    ParamValue::Vec2(filmcraft_geom::Vec2::new(fw / 2.0, fh / 2.0)),
+                ),
+                (
+                    "anchor",
+                    ParamValue::Vec2(filmcraft_geom::Vec2::new(*w as f64 / 2.0, *h as f64 / 2.0)),
+                ),
             ] {
                 match m.param_mut(k) {
                     Some(prm) => {
@@ -1553,7 +2273,8 @@ fn fit_fill(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
                         prm.value = v;
                     }
                     None => {
-                        m.params.insert(k.to_string(), filmcraft_project::Param::new(v));
+                        m.params
+                            .insert(k.to_string(), filmcraft_project::Param::new(v));
                     }
                 }
             }
@@ -1569,15 +2290,27 @@ fn fit_fill(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
 // ---------------------------------------------------------------------------------------------
 
 fn breakout_to_mono(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<ItemId> =
-        items_p(s, p).into_iter().filter(|i| s.project.item(*i).and_then(|it| it.as_media()).is_some_and(|m| m.info.has_audio())).collect();
+    let items: Vec<ItemId> = items_p(s, p)
+        .into_iter()
+        .filter(|i| {
+            s.project
+                .item(*i)
+                .and_then(|it| it.as_media())
+                .is_some_and(|m| m.info.has_audio())
+        })
+        .collect();
     if items.is_empty() {
-        return Err(bad("clip.breakoutToMono", "select a clip with audio in the Project panel"));
+        return Err(bad(
+            "clip.breakoutToMono",
+            "select a clip with audio in the Project panel",
+        ));
     }
     let made = s.edit("Breakout to Mono", |pr, st| {
         let mut made = Vec::new();
         for i in &items {
-            let Some(it) = pr.item(*i).cloned() else { continue };
+            let Some(it) = pr.item(*i).cloned() else {
+                continue;
+            };
             let Some(m) = it.as_media() else { continue };
             let n = m.info.audio().map_or(1, |a| a.channels).max(1) as u16;
             let bin = pr.root.parent_of(*i).filter(|b| *b != pr.root.id);
@@ -1588,12 +2321,20 @@ fn breakout_to_mono(s: &mut Session, p: &Value) -> Result<Value> {
                     _ => format!("Ch {}", c + 1),
                 };
                 let mut mm = m.clone();
-                mm.interpret.audio_channels = Some(AudioChannelMap { format: AudioChannels::Mono, clips: vec![vec![c]] });
+                mm.interpret.audio_channels = Some(AudioChannelMap {
+                    format: AudioChannels::Mono,
+                    clips: vec![vec![c]],
+                });
                 mm.mark_in = None;
                 mm.mark_out = None;
                 mm.markers.clear();
                 mm.proxy = None;
-                let id = pr.add_item(&format!("{} {suffix}", it.name), it.label, ItemKind::Media(mm), bin);
+                let id = pr.add_item(
+                    &format!("{} {suffix}", it.name),
+                    it.label,
+                    ItemKind::Media(mm),
+                    bin,
+                );
                 made.push(id);
             }
         }
@@ -1614,8 +2355,13 @@ fn extract_audio(s: &mut Session, p: &Value) -> Result<Value> {
     let n0 = s.history.undo.len();
     let mut out = Vec::new();
     for item in items {
-        let (root, m, sub) = media_root(&s.project, item).ok_or_else(|| bad("clip.extractAudio", "not a media clip"))?;
-        let a = m.info.audio().cloned().ok_or_else(|| bad("clip.extractAudio", "the clip has no audio"))?;
+        let (root, m, sub) = media_root(&s.project, item)
+            .ok_or_else(|| bad("clip.extractAudio", "not a media clip"))?;
+        let a = m
+            .info
+            .audio()
+            .cloned()
+            .ok_or_else(|| bad("clip.extractAudio", "the clip has no audio"))?;
         let range = sub.unwrap_or(TimeRange::new(Tick::ZERO, m.info.duration));
         let dir = match str_p(p, "dir") {
             Some(d) => d.to_string(),
@@ -1625,24 +2371,47 @@ fn extract_audio(s: &mut Session, p: &Value) -> Result<Value> {
                 .and_then(|x| std::path::Path::new(x).parent())
                 .map(|d| d.to_string_lossy().into_owned())
                 .or_else(|| match &m.media {
-                    MediaRef::File { path } => std::path::Path::new(path).parent().map(|d| d.to_string_lossy().into_owned()),
+                    MediaRef::File { path } => std::path::Path::new(path)
+                        .parent()
+                        .map(|d| d.to_string_lossy().into_owned()),
                     _ => None,
                 })
-                .ok_or_else(|| EngineError::Other("save the project first: extracted audio is written next to it".into()))?,
+                .ok_or_else(|| {
+                    EngineError::Other(
+                        "save the project first: extracted audio is written next to it".into(),
+                    )
+                })?,
         };
-        let pi = s.project.item(item).ok_or_else(|| EngineError::Other("no such item".into()))?;
+        let pi = s
+            .project
+            .item(item)
+            .ok_or_else(|| EngineError::Other("no such item".into()))?;
         let name = pi.name.clone();
-        let stem = std::path::Path::new(&name).file_stem().map(|x| x.to_string_lossy().into_owned()).unwrap_or_else(|| name.clone());
-        let src = s.media.full_res_source(&s.project, root, &*s.services).ok_or_else(|| EngineError::Other(format!("{name}: media is offline")))?;
+        let stem = std::path::Path::new(&name)
+            .file_stem()
+            .map(|x| x.to_string_lossy().into_owned())
+            .unwrap_or_else(|| name.clone());
+        let src = s
+            .media
+            .full_res_source(&s.project, root, &*s.services)
+            .ok_or_else(|| EngineError::Other(format!("{name}: media is offline")))?;
         let sr = a.sample_rate.max(8000);
         let start = range.start.to_units_floor(sr as i64);
         let frames = (range.end().to_units_floor(sr as i64) - start).max(0) as usize;
-        let buf = src.audio(start, frames, sr).map_err(|e| EngineError::Other(format!("{name}: {e}")))?;
+        let buf = src
+            .audio(start, frames, sr)
+            .map_err(|e| EngineError::Other(format!("{name}: {e}")))?;
         let ch = buf.channel_count().max(1);
         let mut inter = Vec::with_capacity(frames * ch);
         for i in 0..frames {
             for c in 0..ch {
-                inter.push(buf.channels.get(c).and_then(|x| x.get(i)).copied().unwrap_or(0.0));
+                inter.push(
+                    buf.channels
+                        .get(c)
+                        .and_then(|x| x.get(i))
+                        .copied()
+                        .unwrap_or(0.0),
+                );
             }
         }
         let bytes = filmcraft_media::wav::write_wav16(&inter, ch as u16, sr);
@@ -1653,8 +2422,14 @@ fn extract_audio(s: &mut Session, p: &Value) -> Result<Value> {
             k += 1;
         }
         let path_s = path.to_string_lossy().into_owned();
-        s.services.write_file(&path_s, &bytes).map_err(|e| EngineError::Other(format!("{path_s}: {e}")))?;
-        let bin = s.project.root.parent_of(item).filter(|b| *b != s.project.root.id);
+        s.services
+            .write_file(&path_s, &bytes)
+            .map_err(|e| EngineError::Other(format!("{path_s}: {e}")))?;
+        let bin = s
+            .project
+            .root
+            .parent_of(item)
+            .filter(|b| *b != s.project.root.id);
         let id = crate::commands::import_bytes(s, &path_s, bytes.into(), bin)?;
         out.push(json!({"item": id.0, "path": path_s, "from": item.0}));
     }
@@ -1680,15 +2455,31 @@ fn replace_with(s: &mut Session, p: &Value, how: Replace) -> Result<Value> {
         Replace::Bin => "clip.replaceFromBin",
     };
     let new_item = match how {
-        Replace::Bin => item_p(p, "item").or_else(|| s.state.project_selection.iter().copied().find(|i| is_clip_item(&s.project, *i))),
+        Replace::Bin => item_p(p, "item").or_else(|| {
+            s.state
+                .project_selection
+                .iter()
+                .copied()
+                .find(|i| is_clip_item(&s.project, *i))
+        }),
         _ => s.state.source_item,
     }
     .ok_or_else(|| bad(cmd, "no replacement clip"))?;
-    let pi = s.project.item(new_item).ok_or_else(|| bad(cmd, "no such item"))?.clone();
+    let pi = s
+        .project
+        .item(new_item)
+        .ok_or_else(|| bad(cmd, "no such item"))?
+        .clone();
     let (has_v, has_a) = (pi.has_video(), pi.has_audio());
     // where the replacement starts in its media: Source In (or the subclip / item start)
     let in_point = match how {
-        Replace::Bin => item_range(&s.project, new_item, s.prefs.timeline.still_duration(s.sequence_rate())).map(|r| r.start).unwrap_or_default(),
+        Replace::Bin => item_range(
+            &s.project,
+            new_item,
+            s.prefs.timeline.still_duration(s.sequence_rate()),
+        )
+        .map(|r| r.start)
+        .unwrap_or_default(),
         _ => source_range(s).map(|(_, r)| r.start).unwrap_or_default(),
     };
     // From Bin starts at the item's In point, as Premiere does; `keepSourceIn` keeps each clip's own
@@ -1696,29 +2487,44 @@ fn replace_with(s: &mut Session, p: &Value, how: Replace) -> Result<Value> {
     // ...but a subclip that restricts trims has no media outside its range: a kept In stays on
     // one of its frames (first frame, last frame)
     let keep_within = match &pi.kind {
-        ItemKind::Subclip { range, restrict_trims: true, .. } => {
-            Some((range.start, (range.end() - item_rate(&s.project, new_item).frame_duration()).max(range.start)))
-        }
+        ItemKind::Subclip {
+            range,
+            restrict_trims: true,
+            ..
+        } => Some((
+            range.start,
+            (range.end() - item_rate(&s.project, new_item).frame_duration()).max(range.start),
+        )),
         _ => None,
     };
     let src_ph = s.state.source_playhead;
     let ph = s.playhead();
     let targets = with_links(s, &clips_p(s, p));
-    let src_channels = pi.as_media().and_then(|m| m.interpret.audio_channels.as_ref()).and_then(|a| a.clips.first().cloned()).unwrap_or_default();
+    let src_channels = pi
+        .as_media()
+        .and_then(|m| m.interpret.audio_channels.as_ref())
+        .and_then(|a| a.clips.first().cloned())
+        .unwrap_or_default();
     let (replaced, clamped) = s.edit_sequence("Replace With Clip", |q, _, _| {
         let (mut out, mut clamped) = (Vec::new(), Vec::new());
         for c in &targets {
-            let Some((tid, _)) = q.find_item(*c) else { continue };
+            let Some((tid, _)) = q.find_item(*c) else {
+                continue;
+            };
             let kind = q.track(tid).map(|t| t.kind).unwrap_or_default();
             if (kind == TrackKind::Video && !has_v) || (kind == TrackKind::Audio && !has_a) {
                 continue;
             }
-            let Some((_, it)) = q.find_item_mut(*c) else { continue };
+            let Some((_, it)) = q.find_item_mut(*c) else {
+                continue;
+            };
             let src_in = match how {
                 // the Source monitor frame lines up with the sequence playhead (reverse-aware)
                 Replace::MatchFrame => src_ph - (it.moving_source_time_at(ph) - it.source_in),
                 _ if keep_in => {
-                    let kept = keep_within.map(|(first, last)| it.source_in.clamp(first, last)).unwrap_or(it.source_in);
+                    let kept = keep_within
+                        .map(|(first, last)| it.source_in.clamp(first, last))
+                        .unwrap_or(it.source_in);
                     if kept != it.source_in {
                         clamped.push(c.0);
                     }
@@ -1727,7 +2533,9 @@ fn replace_with(s: &mut Session, p: &Value, how: Replace) -> Result<Value> {
                 _ => in_point,
             };
             if src_in < Tick::ZERO {
-                return Err(EngineError::Other("not enough media before the Source monitor playhead to match the frame".into()));
+                return Err(EngineError::Other(
+                    "not enough media before the Source monitor playhead to match the frame".into(),
+                ));
             }
             it.item = new_item;
             it.name = pi.name.clone();
@@ -1741,11 +2549,14 @@ fn replace_with(s: &mut Session, p: &Value, how: Replace) -> Result<Value> {
             out.push(c.0);
         }
         if out.is_empty() {
-            return Err(EngineError::Other("the replacement has no video or audio for the selected clips".into()));
+            return Err(EngineError::Other(
+                "the replacement has no video or audio for the selected clips".into(),
+            ));
         }
         Ok((out, clamped))
     })?;
-    let mut result = json!({"clips": replaced, "item": new_item.0, "short": short_clips(s, &replaced)});
+    let mut result =
+        json!({"clips": replaced, "item": new_item.0, "short": short_clips(s, &replaced)});
     if keep_in {
         // the clips whose In was outside a trims-restricted subclip and now sits on its nearest frame
         result["sourceInClamped"] = json!(clamped);
@@ -1757,7 +2568,9 @@ fn replace_with(s: &mut Session, p: &Value, how: Replace) -> Result<Value> {
 /// of the clip have no media (at most the clip's own length). The edit is left as it is (the
 /// renderer holds the last frame there); this is so whoever replaced the clip knows.
 fn short_clips(s: &Session, clips: &[u64]) -> Vec<Value> {
-    let Some(q) = s.active_sequence() else { return Vec::new() };
+    let Some(q) = s.active_sequence() else {
+        return Vec::new();
+    };
     let frame = q.settings.frame_rate.frame_duration().0.max(1);
     clips
         .iter()
@@ -1771,7 +2584,10 @@ fn short_clips(s: &Session, clips: &[u64]) -> Vec<Value> {
             }
             // media ticks past the end, as sequence ticks of this clip
             let length = it.duration.0.max(0);
-            let ticks = ((over as f64 / it.speed.abs().max(1e-9)).round().min(length as f64) as i64).min(length);
+            let ticks = ((over as f64 / it.speed.abs().max(1e-9))
+                .round()
+                .min(length as f64) as i64)
+                .min(length);
             let frames = ticks.saturating_add(frame - 1) / frame;
             (frames > 0).then(|| json!({"clip": c, "shortByFrames": frames}))
         })

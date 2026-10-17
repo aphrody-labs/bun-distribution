@@ -14,7 +14,14 @@ pub fn get<'a>(p: &'a Value, key: &str) -> Option<&'a Value> {
 pub fn f64_of(v: &Value) -> Option<f64> {
     match v {
         Value::Number(n) => n.as_f64().filter(|f| f.is_finite()),
-        Value::String(s) => s.trim().trim_end_matches("px").trim_end_matches('%').trim().parse::<f64>().ok().filter(|f| f.is_finite()),
+        Value::String(s) => s
+            .trim()
+            .trim_end_matches("px")
+            .trim_end_matches('%')
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|f| f.is_finite()),
         Value::Bool(b) => Some(if *b { 1.0 } else { 0.0 }),
         _ => None,
     }
@@ -103,7 +110,10 @@ pub fn targets(s: &Session, p: &Value) -> Vec<NodeId> {
 pub fn req_targets(cmd: &str, s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     let t = targets(s, p);
     if t.is_empty() {
-        return Err(EngineError::Disabled(cmd.to_string(), "nothing is selected (pass `ids`)".into()));
+        return Err(EngineError::Disabled(
+            cmd.to_string(),
+            "nothing is selected (pass `ids`)".into(),
+        ));
     }
     if let Ok(doc) = s.doc() {
         for i in &t {
@@ -118,9 +128,15 @@ pub fn req_targets(cmd: &str, s: &Session, p: &Value) -> Result<Vec<NodeId>> {
 pub fn color_of(v: &Value) -> Option<Color> {
     match v {
         Value::String(s) => Color::parse_css(s),
-        Value::Object(_) => serde_json::from_value::<Color>(v.clone()).ok().map(Color::sanitized),
+        Value::Object(_) => serde_json::from_value::<Color>(v.clone())
+            .ok()
+            .map(Color::sanitized),
         Value::Array(a) => {
-            let c: Vec<f32> = a.iter().filter_map(|x| x.as_f64()).map(|f| f as f32).collect();
+            let c: Vec<f32> = a
+                .iter()
+                .filter_map(|x| x.as_f64())
+                .map(|f| f as f32)
+                .collect();
             match c.as_slice() {
                 [r, g, b] => Some(Color::new(*r, *g, *b, 1.0)),
                 [r, g, b, a] => Some(Color::new(*r, *g, *b, *a)),
@@ -141,7 +157,11 @@ pub fn paint_of(v: &Value) -> Option<Paint> {
         return Some(Paint::solid(c));
     }
     let mut p: Paint = serde_json::from_value(v.clone()).ok()?;
-    p.opacity = if p.opacity.is_finite() { p.opacity.clamp(0.0, 1.0) } else { 1.0 };
+    p.opacity = if p.opacity.is_finite() {
+        p.opacity.clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
     Some(p)
 }
 
@@ -160,6 +180,8 @@ pub fn blend(p: &Value, key: &str) -> Option<BlendMode> {
 pub fn parse<T: serde::de::DeserializeOwned>(cmd: &str, p: &Value, key: &str) -> Result<Option<T>> {
     match get(p, key) {
         None => Ok(None),
-        Some(v) => serde_json::from_value(v.clone()).map(Some).map_err(|e| bad(cmd, format!("`{key}`: {e}"))),
+        Some(v) => serde_json::from_value(v.clone())
+            .map(Some)
+            .map_err(|e| bad(cmd, format!("`{key}`: {e}"))),
     }
 }

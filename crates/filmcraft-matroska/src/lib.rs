@@ -10,7 +10,17 @@
 //!
 //! Layer L0: no dependencies beyond `std`, no `unsafe`, builds for `wasm32-unknown-unknown`.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod codec;
 mod demux;
@@ -27,10 +37,16 @@ mod track;
 pub use codec::Codec;
 pub use demux::{Demuxer, Keyframe, MkvFile, OpenOptions, Packet, SeekPoint, open, open_with};
 pub use error::{Error, Result};
-pub use meta::{Attachment, Chapter, ChapterDisplay, ClusterInfo, CuePoint, CuePosition, Edition, SeekEntry, SegmentInfo, SimpleTag, Tag, TagTargets};
+pub use meta::{
+    Attachment, Chapter, ChapterDisplay, ClusterInfo, CuePoint, CuePosition, Edition, SeekEntry,
+    SegmentInfo, SimpleTag, Tag, TagTargets,
+};
 pub use mux::{LacingMode, MkvWriter, MuxOptions, TrackSpec};
 pub use source::{ByteSource, ReadSeekSource};
-pub use track::{AudioInfo, Colour, ContentEncoding, MasteringMetadata, Projection, Sample, Track, TrackKind, VideoInfo};
+pub use track::{
+    AudioInfo, Colour, ContentEncoding, MasteringMetadata, Projection, Sample, Track, TrackKind,
+    VideoInfo,
+};
 
 /// Element IDs used by the demuxer (marker bits included), for callers inspecting raw elements.
 pub mod element_ids {

@@ -82,9 +82,10 @@ pub fn validate_request(body: &Value) -> Option<Vec<String>> {
     }
     let inputs: Vec<String> = match body.get("input")? {
         Value::String(text) => vec![text.clone()],
-        Value::Array(items) => {
-            items.iter().map(|item| item.as_str().map(str::to_owned)).collect::<Option<_>>()?
-        },
+        Value::Array(items) => items
+            .iter()
+            .map(|item| item.as_str().map(str::to_owned))
+            .collect::<Option<_>>()?,
         _ => return None,
     };
     let valid = (1..=MAX_INPUTS).contains(&inputs.len())
@@ -102,9 +103,19 @@ pub fn validate_request(body: &Value) -> Option<Vec<String>> {
 pub fn load_model(config: &ServerConfig) -> crate::native::Result<Embedder> {
     let spec = find_model(NATIVE_MODEL)
         .ok_or_else(|| crate::native::Error::UnknownModel(NATIVE_MODEL.into()))?;
-    let dir = config.model_dir.clone().unwrap_or_else(|| spec.default_dir());
+    let dir = config
+        .model_dir
+        .clone()
+        .unwrap_or_else(|| spec.default_dir());
     let dir = require_installed(&spec, &dir)?;
-    Embedder::load(&dir, &spec, EmbedOptions { threads: config.threads, ..EmbedOptions::default() })
+    Embedder::load(
+        &dir,
+        &spec,
+        EmbedOptions {
+            threads: config.threads,
+            ..EmbedOptions::default()
+        },
+    )
 }
 
 fn error(status: StatusCode, message: &str) -> Response {
@@ -115,9 +126,11 @@ async fn health(State(state): State<AppState>) -> Response {
     let (code, status, reason) = match state.status() {
         Status::Ready(_) => (StatusCode::OK, "ready", None),
         Status::Loading => (StatusCode::SERVICE_UNAVAILABLE, "loading", None),
-        Status::Unavailable(reason) => {
-            (StatusCode::SERVICE_UNAVAILABLE, "unavailable", Some(reason.as_str()))
-        },
+        Status::Unavailable(reason) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "unavailable",
+            Some(reason.as_str()),
+        ),
     };
     let mut body = json!({ "status": status, "model": SERVED_MODEL, "dimensions": DIMENSION });
     if let Some(reason) = reason {
@@ -142,7 +155,9 @@ async fn embeddings(State(state): State<AppState>, body: axum::body::Bytes) -> R
         let refs: Vec<&str> = inputs.iter().map(String::as_str).collect();
         let vectors = embedder.embed_batch(&refs, TextKind::Raw).ok()?;
         let valid = vectors.len() == refs.len()
-            && vectors.iter().all(|v| v.len() == DIMENSION && v.iter().all(|x| x.is_finite()));
+            && vectors
+                .iter()
+                .all(|v| v.len() == DIMENSION && v.iter().all(|x| x.is_finite()));
         valid.then_some(vectors)
     });
     match task.await {
@@ -174,7 +189,9 @@ fn router(state: AppState) -> Router {
 /// Returns the bind or accept error.
 pub async fn serve(config: ServerConfig) -> std::io::Result<()> {
     let listener = tokio::net::TcpListener::bind(config.addr).await?;
-    let state = AppState { status: Arc::new(OnceLock::new()) };
+    let state = AppState {
+        status: Arc::new(OnceLock::new()),
+    };
     let loader = state.status.clone();
     tokio::task::spawn_blocking(move || {
         let status = match load_model(&config) {
@@ -182,7 +199,7 @@ pub async fn serve(config: ServerConfig) -> std::io::Result<()> {
             Err(err) => {
                 tracing::error!(error = %err, "E5 model unavailable");
                 Status::Unavailable(err.to_string())
-            },
+            }
         };
         let _ = loader.set(status);
     });
@@ -199,10 +216,16 @@ mod tests {
         let ok = json!({ "model": SERVED_MODEL, "input": ["query: Goku", "passage: Son Goku"] });
         assert_eq!(
             validate_request(&ok),
-            Some(vec!["query: Goku".to_owned(), "passage: Son Goku".to_owned()])
+            Some(vec![
+                "query: Goku".to_owned(),
+                "passage: Son Goku".to_owned()
+            ])
         );
         let single = json!({ "model": NATIVE_MODEL, "input": "query: Goku" });
-        assert_eq!(validate_request(&single), Some(vec!["query: Goku".to_owned()]));
+        assert_eq!(
+            validate_request(&single),
+            Some(vec!["query: Goku".to_owned()])
+        );
         assert!(validate_request(&json!({ "model": "other", "input": ["query: Goku"] })).is_none());
         assert!(validate_request(&json!({ "model": SERVED_MODEL, "input": [""] })).is_none());
         assert!(validate_request(&json!({ "model": SERVED_MODEL, "input": [1] })).is_none());
@@ -214,7 +237,9 @@ mod tests {
 
     #[tokio::test]
     async fn health_is_503_and_embeddings_refuse_while_unavailable() {
-        let state = AppState { status: Arc::new(OnceLock::new()) };
+        let state = AppState {
+            status: Arc::new(OnceLock::new()),
+        };
         let _ = state.status.set(Status::Unavailable("missing".into()));
         let response = health(State(state.clone())).await;
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);

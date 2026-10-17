@@ -34,7 +34,11 @@ impl IDaemonController {
             (6, s, "SetGlobalDownloadEnabledForAccount"),
             (10, s, "GetForbiddenSaveDataIndication"),
             (11, s, "GetStopperObject"),
-            (12, Some(Self::get_autonomy_task_status_handler), "GetAutonomyTaskStatus"),
+            (
+                12,
+                Some(Self::get_autonomy_task_status_handler),
+                "GetAutonomyTaskStatus",
+            ),
         ]);
         Self {
             handlers,
@@ -116,11 +120,15 @@ mod tests {
     fn autonomy_task_status_reply_includes_idle_byte_and_zero_padding() {
         let service = IDaemonController::new();
         for user_id in [0, 1, u128::MAX] {
-            assert_eq!(service.get_autonomy_task_status(user_id), (RESULT_SUCCESS, 0));
+            assert_eq!(
+                service.get_autonomy_task_status(user_id),
+                (RESULT_SUCCESS, 0)
+            );
             let mut ctx = HLERequestContext::new();
             ctx.command_buffer_mut().fill(u32::MAX);
             for (word, bytes) in ctx.command_buffer_mut()[2..6]
-                .iter_mut().zip(user_id.to_le_bytes().chunks_exact(4))
+                .iter_mut()
+                .zip(user_id.to_le_bytes().chunks_exact(4))
             {
                 *word = u32::from_le_bytes(bytes.try_into().unwrap());
             }

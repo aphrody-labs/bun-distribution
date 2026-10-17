@@ -5,16 +5,20 @@
 //! Only sampler references use argument buffers; data buffers and textures keep
 //! their explicit bindings. Metal's encoder owns the opaque binary layout.
 
-use std::sync::Arc;
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 use objc2_foundation::NSArray;
-use objc2_metal::{MTLArgumentDescriptor, MTLArgumentEncoder, MTLDataType, MTLDevice, MTLSamplerState};
+use objc2_metal::{
+    MTLArgumentDescriptor, MTLArgumentEncoder, MTLDataType, MTLDevice, MTLSamplerState,
+};
+use std::sync::Arc;
 use thiserror::Error;
 
 use super::metal_buffer::{MetalBuffer, MetalBufferError};
 use super::metal_device::MetalDevice;
-use super::metal_shader::{validate_native_binding_layout, MetalResourceKind, MetalShaderBindingLayout, MetalShaderError};
+use super::metal_shader::{
+    validate_native_binding_layout, MetalResourceKind, MetalShaderBindingLayout, MetalShaderError,
+};
 
 #[derive(Debug, Error)]
 pub enum MetalDescriptorError {
@@ -40,16 +44,23 @@ impl MetalSamplerArgumentBuffer {
         layout: &MetalShaderBindingLayout,
         samplers: impl IntoIterator<Item = (u32, &'a Retained<ProtocolObject<dyn MTLSamplerState>>)>,
     ) -> Result<Option<Self>, MetalDescriptorError> {
-        let Some(index) = layout.sampler_argument_buffer_index else { return Ok(None) };
+        let Some(index) = layout.sampler_argument_buffer_index else {
+            return Ok(None);
+        };
         validate_native_binding_layout(device.profile(), layout)?;
         let mut descriptors = Vec::new();
         let mut ids = vec![false; layout.sampler_count as usize];
         for resource in &layout.resources {
-            if !matches!(resource.kind, MetalResourceKind::SampledImage | MetalResourceKind::SeparateSampler) {
+            if !matches!(
+                resource.kind,
+                MetalResourceKind::SampledImage | MetalResourceKind::SeparateSampler
+            ) {
                 continue;
             }
             let count = resource.count.map_or(1, |count| count.get());
-            let end = resource.sampler_index.checked_add(count)
+            let end = resource
+                .sampler_index
+                .checked_add(count)
                 .filter(|end| *end <= layout.sampler_count)
                 .ok_or(MetalDescriptorError::Sampler(resource.sampler_index))?;
             for id in resource.sampler_index..end {
@@ -67,7 +78,8 @@ impl MetalSamplerArgumentBuffer {
         if let Some(id) = ids.iter().position(|present| !*present) {
             return Err(MetalDescriptorError::Sampler(id as u32));
         }
-        let encoder = device.device()
+        let encoder = device
+            .device()
             .newArgumentEncoderWithArguments(&NSArray::from_retained_slice(&descriptors))
             .ok_or(MetalDescriptorError::Encoder)?;
         let buffer = Arc::new(MetalBuffer::new(device, encoder.encodedLength())?);
@@ -75,7 +87,9 @@ impl MetalSamplerArgumentBuffer {
         unsafe { encoder.setArgumentBuffer_offset(Some(buffer.handle()), 0) };
         ids.fill(false);
         for (id, sampler) in samplers {
-            let present = ids.get_mut(id as usize).ok_or(MetalDescriptorError::Sampler(id))?;
+            let present = ids
+                .get_mut(id as usize)
+                .ok_or(MetalDescriptorError::Sampler(id))?;
             if std::mem::replace(present, true) {
                 return Err(MetalDescriptorError::Sampler(id));
             }

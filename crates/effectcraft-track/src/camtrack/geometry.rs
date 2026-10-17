@@ -38,9 +38,20 @@ impl Rng {
 /// Hartley normalisation (H&Z §4.4.4): centroid to the origin, mean distance √2.
 fn normalizer(p: &[[f64; 2]]) -> M3 {
     let n = p.len().max(1) as f64;
-    let c = [p.iter().map(|q| q[0]).sum::<f64>() / n, p.iter().map(|q| q[1]).sum::<f64>() / n];
-    let d = p.iter().map(|q| (q[0] - c[0]).hypot(q[1] - c[1])).sum::<f64>() / n;
-    let s = if d > 1e-12 { std::f64::consts::SQRT_2 / d } else { 1.0 };
+    let c = [
+        p.iter().map(|q| q[0]).sum::<f64>() / n,
+        p.iter().map(|q| q[1]).sum::<f64>() / n,
+    ];
+    let d = p
+        .iter()
+        .map(|q| (q[0] - c[0]).hypot(q[1] - c[1]))
+        .sum::<f64>()
+        / n;
+    let s = if d > 1e-12 {
+        std::f64::consts::SQRT_2 / d
+    } else {
+        1.0
+    };
     [[s, 0.0, -s * c[0]], [0.0, s, -s * c[1]], [0.0, 0.0, 1.0]]
 }
 
@@ -61,7 +72,17 @@ pub fn essential_8pt(x1: &[[f64; 2]], x2: &[[f64; 2]]) -> Option<M3> {
     for i in 0..n {
         let p = h2(&t1, x1[i]);
         let q = h2(&t2, x2[i]);
-        a.extend_from_slice(&[q[0] * p[0], q[0] * p[1], q[0], q[1] * p[0], q[1] * p[1], q[1], p[0], p[1], 1.0]);
+        a.extend_from_slice(&[
+            q[0] * p[0],
+            q[0] * p[1],
+            q[0],
+            q[1] * p[0],
+            q[1] * p[1],
+            q[1],
+            p[0],
+            p[1],
+            1.0,
+        ]);
     }
     let e = null_vector(&a, n, 9);
     let en = [[e[0], e[1], e[2]], [e[3], e[4], e[5]], [e[6], e[7], e[8]]];
@@ -85,12 +106,22 @@ pub fn sampson2(e: &M3, p: [f64; 2], q: [f64; 2]) -> f64 {
     let etx2 = mtv(e, x2);
     let num = dot(x2, ex1);
     let den = ex1[0] * ex1[0] + ex1[1] * ex1[1] + etx2[0] * etx2[0] + etx2[1] * etx2[1];
-    if den < 1e-300 { f64::INFINITY } else { num * num / den }
+    if den < 1e-300 {
+        f64::INFINITY
+    } else {
+        num * num / den
+    }
 }
 
 /// RANSAC essential matrix (8-point samples, Sampson distance below `thr`), refitted on the
 /// consensus set. Returns the matrix and the inlier mask.
-pub fn ransac_essential(x1: &[[f64; 2]], x2: &[[f64; 2]], thr: f64, iterations: usize, seed: u64) -> Option<(M3, Vec<bool>)> {
+pub fn ransac_essential(
+    x1: &[[f64; 2]],
+    x2: &[[f64; 2]],
+    thr: f64,
+    iterations: usize,
+    seed: u64,
+) -> Option<(M3, Vec<bool>)> {
     let n = x1.len().min(x2.len());
     if n < 8 {
         return None;
@@ -112,7 +143,9 @@ pub fn ransac_essential(x1: &[[f64; 2]], x2: &[[f64; 2]], thr: f64, iterations: 
             s1[k] = x1[i];
             s2[k] = x2[i];
         }
-        let Some(e) = essential_8pt(&s1, &s2) else { continue };
+        let Some(e) = essential_8pt(&s1, &s2) else {
+            continue;
+        };
         let (mut c, mut err) = (0, 0.0);
         for i in 0..n {
             let d = sampson2(&e, x1[i], x2[i]);
@@ -121,7 +154,10 @@ pub fn ransac_essential(x1: &[[f64; 2]], x2: &[[f64; 2]], thr: f64, iterations: 
                 err += d;
             }
         }
-        if best.as_ref().is_none_or(|b| c > b.0 || (c == b.0 && err < b.1)) {
+        if best
+            .as_ref()
+            .is_none_or(|b| c > b.0 || (c == b.0 && err < b.1))
+        {
             best = Some((c, err, e));
             // Adaptive iteration count for 99 % confidence.
             let w = c as f64 / n as f64;
@@ -141,7 +177,8 @@ pub fn ransac_essential(x1: &[[f64; 2]], x2: &[[f64; 2]], thr: f64, iterations: 
         for i in 0..n {
             inl[i] = sampson2(&e, x1[i], x2[i]) < t2;
         }
-        let (a, b): (Vec<[f64; 2]>, Vec<[f64; 2]>) = (0..n).filter(|i| inl[*i]).map(|i| (x1[i], x2[i])).unzip();
+        let (a, b): (Vec<[f64; 2]>, Vec<[f64; 2]>) =
+            (0..n).filter(|i| inl[*i]).map(|i| (x1[i], x2[i])).unzip();
         match essential_8pt(&a, &b) {
             Some(e2) => e = e2,
             None => break,
@@ -184,7 +221,10 @@ impl Pose {
     pub const IDENTITY: Pose = Pose { r: I3, c: [0.0; 3] };
     /// From `x_cam = R X + t`.
     pub fn from_rt(r: M3, t: V3) -> Pose {
-        Pose { r, c: scale(mtv(&r, t), -1.0) }
+        Pose {
+            r,
+            c: scale(mtv(&r, t), -1.0),
+        }
     }
     pub fn t(&self) -> V3 {
         scale(mv(&self.r, self.c), -1.0)
@@ -203,7 +243,11 @@ pub fn triangulate(views: &[(Pose, [f64; 2])]) -> Option<V3> {
     let mut ata = [0.0f64; 16];
     for (p, x) in views {
         let t = p.t();
-        let rows = [[p.r[0][0], p.r[0][1], p.r[0][2], t[0]], [p.r[1][0], p.r[1][1], p.r[1][2], t[1]], [p.r[2][0], p.r[2][1], p.r[2][2], t[2]]];
+        let rows = [
+            [p.r[0][0], p.r[0][1], p.r[0][2], t[0]],
+            [p.r[1][0], p.r[1][1], p.r[1][2], t[1]],
+            [p.r[2][0], p.r[2][1], p.r[2][2], t[2]],
+        ];
         let a0: Vec<f64> = (0..4).map(|j| x[0] * rows[2][j] - rows[0][j]).collect();
         let a1: Vec<f64> = (0..4).map(|j| x[1] * rows[2][j] - rows[1][j]).collect();
         for a in [a0, a1] {
@@ -273,7 +317,11 @@ pub fn decompose_homography(h: &M3, x1: &[[f64; 2]], x2: &[[f64; 2]]) -> Vec<(M3
     }
     let mut hn = mscale(h, 1.0 / s[1]);
     // Sign: x2ᵀ H x1 > 0 for the correspondences (positive depth).
-    let pos = x1.iter().zip(x2).filter(|(p, q)| dot([q[0], q[1], 1.0], mv(&hn, [p[0], p[1], 1.0])) > 0.0).count();
+    let pos = x1
+        .iter()
+        .zip(x2)
+        .filter(|(p, q)| dot([q[0], q[1], 1.0], mv(&hn, [p[0], p[1], 1.0])) > 0.0)
+        .count();
     if pos * 2 < x1.len() {
         hn = mscale(&hn, -1.0);
     }
@@ -305,7 +353,10 @@ pub fn decompose_homography(h: &M3, x1: &[[f64; 2]], x2: &[[f64; 2]]) -> Vec<(M3
         for sgn in [1.0, -1.0] {
             let (n2, t2) = (scale(n, sgn), scale(t, sgn));
             // The plane must be in front of the first camera: nᵀ x1 > 0 (with n pointing away).
-            let front = x1.iter().filter(|p| dot(n2, [p[0], p[1], 1.0]) > 0.0).count();
+            let front = x1
+                .iter()
+                .filter(|p| dot(n2, [p[0], p[1], 1.0]) > 0.0)
+                .count();
             if front * 2 >= x1.len() {
                 out.push((r, t2, n2));
             }
@@ -368,10 +419,17 @@ mod tests {
         let pts: Vec<V3> = (0..60)
             .map(|_| {
                 let f = |r: &mut Rng| (r.next_u64() % 10_000) as f64 / 10_000.0 - 0.5;
-                [f(&mut rng) * 4.0, f(&mut rng) * 3.0, 5.0 + f(&mut rng) * 3.0]
+                [
+                    f(&mut rng) * 4.0,
+                    f(&mut rng) * 3.0,
+                    5.0 + f(&mut rng) * 3.0,
+                ]
             })
             .collect();
-        let p2 = Pose { r: rodrigues([0.02, -0.15, 0.03]), c: [0.6, 0.1, -0.2] };
+        let p2 = Pose {
+            r: rodrigues([0.02, -0.15, 0.03]),
+            c: [0.6, 0.1, -0.2],
+        };
         (pts, p2)
     }
 
@@ -396,14 +454,30 @@ mod tests {
         let r_err = norm(log_rot(&mm(&pose.r, &mt(&p2.r))));
         assert!(r_err < 1e-6, "{r_err}");
         let dir = normalize(p2.c);
-        assert!(norm(sub(normalize(pose.c), dir)) < 1e-5, "{:?} {:?}", pose.c, dir);
+        assert!(
+            norm(sub(normalize(pose.c), dir)) < 1e-5,
+            "{:?} {:?}",
+            pose.c,
+            dir
+        );
     }
 
     #[test]
     fn homography_decomposition_contains_the_motion() {
         // Plane z = 4 (normal (0,0,1) in camera 1), seen after a motion.
-        let p2 = Pose { r: rodrigues([0.05, 0.2, -0.04]), c: [0.8, -0.3, 0.4] };
-        let pts: Vec<V3> = (0..30).map(|i| [((i * 37) % 17) as f64 / 8.0 - 1.0, ((i * 11) % 13) as f64 / 6.0 - 1.0, 4.0]).collect();
+        let p2 = Pose {
+            r: rodrigues([0.05, 0.2, -0.04]),
+            c: [0.8, -0.3, 0.4],
+        };
+        let pts: Vec<V3> = (0..30)
+            .map(|i| {
+                [
+                    ((i * 37) % 17) as f64 / 8.0 - 1.0,
+                    ((i * 11) % 13) as f64 / 6.0 - 1.0,
+                    4.0,
+                ]
+            })
+            .collect();
         let x1: Vec<[f64; 2]> = pts.iter().map(|x| proj(&Pose::IDENTITY, *x)).collect();
         let x2: Vec<[f64; 2]> = pts.iter().map(|x| proj(&p2, *x)).collect();
         // H = R + t nᵀ / d with t = −R C, n = (0,0,1), d = 4.
@@ -411,9 +485,11 @@ mod tests {
         let h = madd(&p2.r, &outer(t, [0.0, 0.0, 0.25]), 1.0);
         let sols = decompose_homography(&mscale(&h, 3.7), &x1, &x2);
         assert!(!sols.is_empty());
-        let ok = sols
-            .iter()
-            .any(|(r, td, n)| norm(log_rot(&mm(r, &mt(&p2.r)))) < 1e-6 && norm(sub(*td, scale(t, 0.25))) < 1e-6 && norm(sub(*n, [0.0, 0.0, 1.0])) < 1e-6);
+        let ok = sols.iter().any(|(r, td, n)| {
+            norm(log_rot(&mm(r, &mt(&p2.r)))) < 1e-6
+                && norm(sub(*td, scale(t, 0.25))) < 1e-6
+                && norm(sub(*n, [0.0, 0.0, 1.0])) < 1e-6
+        });
         assert!(ok, "{sols:?}");
     }
 
@@ -421,10 +497,16 @@ mod tests {
     fn triangulation_and_plane() {
         let (pts, p2) = scene();
         for x in &pts[..5] {
-            let y = triangulate(&[(Pose::IDENTITY, proj(&Pose::IDENTITY, *x)), (p2, proj(&p2, *x))]).unwrap();
+            let y = triangulate(&[
+                (Pose::IDENTITY, proj(&Pose::IDENTITY, *x)),
+                (p2, proj(&p2, *x)),
+            ])
+            .unwrap();
             assert!(norm(sub(*x, y)) < 1e-8);
         }
-        let plane: Vec<V3> = (0..10).map(|i| [i as f64, (i * i % 7) as f64, 2.0 * i as f64 + 1.0]).collect();
+        let plane: Vec<V3> = (0..10)
+            .map(|i| [i as f64, (i * i % 7) as f64, 2.0 * i as f64 + 1.0])
+            .collect();
         let (_, n, _) = fit_plane(&plane).unwrap();
         // All points satisfy z = 2x + 1: normal ∝ (2, 0, −1).
         assert!(norm(cross(n, normalize([2.0, 0.0, -1.0]))) < 1e-9);

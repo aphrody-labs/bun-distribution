@@ -73,7 +73,9 @@ fn relever_entrees(clair: &[u8]) -> Result<Vec<Entree>, String> {
         return Err("en-tête T2B invalide (fichier chiffré ou corrompu ?)".to_string());
     }
     let (st_off, st_len, st_count) = (st_off as usize, st_len as usize, st_count as usize);
-    let st_end = st_off.checked_add(st_len).ok_or("débordement table de chaînes")?;
+    let st_end = st_off
+        .checked_add(st_len)
+        .ok_or("débordement table de chaînes")?;
     if st_off < 16 || st_end > clair.len() {
         return Err("table de chaînes hors limites".to_string());
     }
@@ -97,7 +99,11 @@ fn relever_entrees(clair: &[u8]) -> Result<Vec<Entree>, String> {
         }
     }
     let lire_chaine = |off: i32| -> Option<String> {
-        if off == CHAINE_VIDE { Some(String::new()) } else { strings.get(&off).cloned() }
+        if off == CHAINE_VIDE {
+            Some(String::new())
+        } else {
+            strings.get(&off).cloned()
+        }
     };
 
     let mut out = Vec::new();
@@ -181,7 +187,7 @@ pub fn patcher_clair(clair: &mut [u8], chemins: &[String]) -> Result<PatchReport
                 clair[e.offset_cpk..e.offset_cpk + 4].copy_from_slice(&CHAINE_VIDE.to_le_bytes());
                 rapport.octets_modifies += 4;
                 rapport.rendus_loose.push(cle);
-            },
+            }
         }
     }
     Ok(rapport)

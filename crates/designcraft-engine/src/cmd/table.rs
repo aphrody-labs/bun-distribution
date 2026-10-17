@@ -8,8 +8,8 @@
 
 use designcraft_compose as compose;
 use designcraft_doc::{
-    AltFills, CellAddr, CellRange, CellStroke, Document, RowHeightMode, Selection, StoryId, StrokeType, Table, TableSel, TextSel,
-    VerticalJustification,
+    AltFills, CellAddr, CellRange, CellStroke, Document, RowHeightMode, Selection, StoryId,
+    StrokeType, Table, TableSel, TextSel, VerticalJustification,
 };
 use serde_json::{Value, json};
 
@@ -60,7 +60,15 @@ fn style_specs() -> Vec<CommandSpec> {
             has_doc,
             table_style_create
         ),
-        cmd!("style.table.apply", "Apply Table Style", [], None, "{name, story?, table?}", in_table, table_style_apply),
+        cmd!(
+            "style.table.apply",
+            "Apply Table Style",
+            [],
+            None,
+            "{name, story?, table?}",
+            in_table,
+            table_style_apply
+        ),
         cmd!(
             "style.table.edit",
             "Table Style Options…",
@@ -102,16 +110,96 @@ fn table_specs() -> Vec<CommandSpec> {
             in_table,
             convert_to_text
         ),
-        cmd!("table.insertRow", "Insert Row", [], None, "{where?: above|below, count? (1)}", in_table, |s, p| insert_row(s, p, None)),
-        cmd!("table.insertRowAbove", "Insert Row Above", ["Table", "Insert"], None, "{count?}", in_table, |s, p| insert_row(s, p, Some(true))),
-        cmd!("table.insertRowBelow", "Insert Row Below", ["Table", "Insert"], None, "{count?}", in_table, |s, p| insert_row(s, p, Some(false))),
-        cmd!("table.insertColumn", "Insert Column", [], None, "{where?: left|right, count? (1), width?}", in_table, |s, p| insert_col(s, p, None)),
-        cmd!("table.insertColumnLeft", "Insert Column Left", ["Table", "Insert"], None, "{count?}", in_table, |s, p| insert_col(s, p, Some(true))),
-        cmd!("table.insertColumnRight", "Insert Column Right", ["Table", "Insert"], None, "{count?}", in_table, |s, p| insert_col(s, p, Some(false))),
-        cmd!("table.deleteRow", "Delete Row", ["Table", "Delete"], None, "{} — the rows of the target cells", in_table, delete_rows),
-        cmd!("table.deleteColumn", "Delete Column", ["Table", "Delete"], None, "{} — the columns of the target cells", in_table, delete_cols),
-        cmd!("table.delete", "Delete Table", ["Table", "Delete"], None, "{}", in_table, delete_table),
-        cmd!("table.merge", "Merge Cells", ["Table"], None, "{} — merge the target cell range", in_table, merge),
+        cmd!(
+            "table.insertRow",
+            "Insert Row",
+            [],
+            None,
+            "{where?: above|below, count? (1)}",
+            in_table,
+            |s, p| insert_row(s, p, None)
+        ),
+        cmd!(
+            "table.insertRowAbove",
+            "Insert Row Above",
+            ["Table", "Insert"],
+            None,
+            "{count?}",
+            in_table,
+            |s, p| insert_row(s, p, Some(true))
+        ),
+        cmd!(
+            "table.insertRowBelow",
+            "Insert Row Below",
+            ["Table", "Insert"],
+            None,
+            "{count?}",
+            in_table,
+            |s, p| insert_row(s, p, Some(false))
+        ),
+        cmd!(
+            "table.insertColumn",
+            "Insert Column",
+            [],
+            None,
+            "{where?: left|right, count? (1), width?}",
+            in_table,
+            |s, p| insert_col(s, p, None)
+        ),
+        cmd!(
+            "table.insertColumnLeft",
+            "Insert Column Left",
+            ["Table", "Insert"],
+            None,
+            "{count?}",
+            in_table,
+            |s, p| insert_col(s, p, Some(true))
+        ),
+        cmd!(
+            "table.insertColumnRight",
+            "Insert Column Right",
+            ["Table", "Insert"],
+            None,
+            "{count?}",
+            in_table,
+            |s, p| insert_col(s, p, Some(false))
+        ),
+        cmd!(
+            "table.deleteRow",
+            "Delete Row",
+            ["Table", "Delete"],
+            None,
+            "{} — the rows of the target cells",
+            in_table,
+            delete_rows
+        ),
+        cmd!(
+            "table.deleteColumn",
+            "Delete Column",
+            ["Table", "Delete"],
+            None,
+            "{} — the columns of the target cells",
+            in_table,
+            delete_cols
+        ),
+        cmd!(
+            "table.delete",
+            "Delete Table",
+            ["Table", "Delete"],
+            None,
+            "{}",
+            in_table,
+            delete_table
+        ),
+        cmd!(
+            "table.merge",
+            "Merge Cells",
+            ["Table"],
+            None,
+            "{} — merge the target cell range",
+            in_table,
+            merge
+        ),
         cmd!(
             "table.dropCells",
             "Drag Rows or Columns",
@@ -160,9 +248,15 @@ fn table_specs() -> Vec<CommandSpec> {
             in_table,
             |s, p| move_rc(s, p, true)
         ),
-        cmd!("table.moveColumn", "Move Column", [], None, "{from?, to} (0-based; from defaults to the target column)", in_table, |s, p| move_rc(
-            s, p, false
-        )),
+        cmd!(
+            "table.moveColumn",
+            "Move Column",
+            [],
+            None,
+            "{from?, to} (0-based; from defaults to the target column)",
+            in_table,
+            |s, p| move_rc(s, p, false)
+        ),
         cmd!(
             "table.sortRows",
             "Sort",
@@ -172,7 +266,15 @@ fn table_specs() -> Vec<CommandSpec> {
             in_table,
             sort_rows
         ),
-        cmd!("table.unmerge", "Unmerge Cells", ["Table"], None, "{}", in_table, unmerge),
+        cmd!(
+            "table.unmerge",
+            "Unmerge Cells",
+            ["Table"],
+            None,
+            "{}",
+            in_table,
+            unmerge
+        ),
         cmd!(
             "table.splitHorizontally",
             "Split Cell Horizontally",
@@ -200,9 +302,33 @@ fn table_specs() -> Vec<CommandSpec> {
             in_table,
             set_cell
         ),
-        cmd!("table.setRowHeight", "Row Height", [], None, "{height, mode?: atLeast|exactly}", in_table, set_row_height),
-        cmd!("table.setColumnWidth", "Column Width", [], None, "{width}", in_table, set_col_width),
-        cmd!("table.distributeColumns", "Distribute Columns Evenly", ["Table"], None, "{}", in_table, distribute_cols),
+        cmd!(
+            "table.setRowHeight",
+            "Row Height",
+            [],
+            None,
+            "{height, mode?: atLeast|exactly}",
+            in_table,
+            set_row_height
+        ),
+        cmd!(
+            "table.setColumnWidth",
+            "Column Width",
+            [],
+            None,
+            "{width}",
+            in_table,
+            set_col_width
+        ),
+        cmd!(
+            "table.distributeColumns",
+            "Distribute Columns Evenly",
+            ["Table"],
+            None,
+            "{}",
+            in_table,
+            distribute_cols
+        ),
         cmd!(
             "table.distributeRows",
             "Distribute Rows Evenly",
@@ -246,7 +372,10 @@ fn in_table(s: &Session) -> std::result::Result<(), String> {
         return Ok(());
     }
     if let Some(t) = st.selection.text
-        && st.doc.story(t.story).is_some_and(|x| x.table_at(t.focus).is_some())
+        && st
+            .doc
+            .story(t.story)
+            .is_some_and(|x| x.table_at(t.focus).is_some())
     {
         return Ok(());
     }
@@ -259,7 +388,13 @@ fn in_table_or_ids(s: &Session) -> std::result::Result<(), String> {
 
 fn in_cell(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.text.is_some_and(|t| t.cell.is_some())) { Ok(()) } else { Err("not in a table cell".into()) }
+    if s.active()
+        .is_some_and(|d| d.selection.text.is_some_and(|t| t.cell.is_some()))
+    {
+        Ok(())
+    } else {
+        Err("not in a table cell".into())
+    }
 }
 
 /// The table a command acts on and its target cell range.
@@ -270,7 +405,10 @@ struct Tgt {
 }
 
 fn find_table(doc: &Document, id: u64) -> Option<StoryId> {
-    doc.stories.iter().find(|(_, s)| s.tables.contains_key(&id)).map(|(k, _)| *k)
+    doc.stories
+        .iter()
+        .find(|(_, s)| s.tables.contains_key(&id))
+        .map(|(k, _)| *k)
 }
 
 fn pair(p: &Value, many: &str, one: &str) -> Option<(usize, usize)> {
@@ -279,7 +417,9 @@ fn pair(p: &Value, many: &str, one: &str) -> Option<(usize, usize)> {
         let a1 = a.get(1).and_then(Value::as_u64).map_or(a0, |v| v as usize);
         return Some((a0.min(a1), a0.max(a1)));
     }
-    p.get(one).and_then(Value::as_u64).map(|v| (v as usize, v as usize))
+    p.get(one)
+        .and_then(Value::as_u64)
+        .map(|v| (v as usize, v as usize))
 }
 
 fn target(s: &Session, p: &Value, cmd: &str) -> Result<Tgt> {
@@ -288,7 +428,9 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<Tgt> {
     let explicit_table = p.get("table").and_then(Value::as_u64);
     let explicit_story = p.get("story").and_then(Value::as_u64).map(StoryId);
     let (story, table, range) = if let Some(tid) = explicit_table {
-        let sid = explicit_story.or_else(|| find_table(doc, tid)).ok_or_else(|| bad(cmd, format!("no table {tid}")))?;
+        let sid = explicit_story
+            .or_else(|| find_table(doc, tid))
+            .ok_or_else(|| bad(cmd, format!("no table {tid}")))?;
         (sid, tid, None)
     } else if let Some(c) = st.selection.cells {
         (c.story, c.table, Some(c.range))
@@ -296,16 +438,27 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<Tgt> {
         match t.cell {
             Some(c) => (t.story, c.table, Some(CellRange::cell(c.row, c.col))),
             None => {
-                let tid = doc.story(t.story).and_then(|x| x.table_at(t.focus)).ok_or_else(|| bad(cmd, "the insertion point is not in a table"))?;
+                let tid = doc
+                    .story(t.story)
+                    .and_then(|x| x.table_at(t.focus))
+                    .ok_or_else(|| bad(cmd, "the insertion point is not in a table"))?;
                 (t.story, tid, None)
             }
         }
     } else {
         return Err(bad(cmd, "place the insertion point in a table"));
     };
-    let t = doc.story(story).and_then(|x| x.tables.get(&table)).ok_or_else(|| bad(cmd, format!("no table {table}")))?;
+    let t = doc
+        .story(story)
+        .and_then(|x| x.tables.get(&table))
+        .ok_or_else(|| bad(cmd, format!("no table {table}")))?;
     let (nr, nc) = (t.nrows(), t.ncols());
-    let mut range = range.unwrap_or(CellRange { r0: 0, c0: 0, r1: nr - 1, c1: nc - 1 });
+    let mut range = range.unwrap_or(CellRange {
+        r0: 0,
+        c0: 0,
+        r1: nr - 1,
+        c1: nc - 1,
+    });
     if let Some((a, b)) = pair(p, "rows", "row") {
         range.r0 = a;
         range.r1 = b;
@@ -315,13 +468,25 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<Tgt> {
         range.c1 = b;
     }
     if range.r1 >= nr || range.c1 >= nc {
-        return Err(bad(cmd, format!("cell range out of bounds ({nr}×{nc} table)")));
+        return Err(bad(
+            cmd,
+            format!("cell range out of bounds ({nr}×{nc} table)"),
+        ));
     }
-    Ok(Tgt { story, table, range })
+    Ok(Tgt {
+        story,
+        table,
+        range,
+    })
 }
 
 /// Edit the target table; afterwards selections pointing into it are clamped to its new shape.
-fn edit_table<T>(s: &mut Session, g: &Tgt, cmd: &str, f: impl FnOnce(&mut Table) -> Result<T>) -> Result<T> {
+fn edit_table<T>(
+    s: &mut Session,
+    g: &Tgt,
+    cmd: &str,
+    f: impl FnOnce(&mut Table) -> Result<T>,
+) -> Result<T> {
     let cmd = cmd.to_string();
     s.edit(|d, sel| {
         let st = d.story_mut(g.story).ok_or_else(|| bad(&cmd, "no story"))?;
@@ -339,7 +504,10 @@ fn clamp_selection(d: &Document, sel: &mut Selection) {
             Some(t) => {
                 let (mr, mc) = (t.nrows() - 1, t.ncols() - 1);
                 let r = ts.range;
-                sel.cells = Some(TableSel { range: CellRange::new(r.r0.min(mr), r.c0.min(mc), r.r1.min(mr), r.c1.min(mc)), ..ts });
+                sel.cells = Some(TableSel {
+                    range: CellRange::new(r.r0.min(mr), r.c0.min(mc), r.r1.min(mr), r.c1.min(mc)),
+                    ..ts
+                });
             }
             None => sel.cells = None,
         }
@@ -352,19 +520,35 @@ fn clamp_selection(d: &Document, sel: &mut Selection) {
             Some(tb) => {
                 let (r, col) = tb.owner(c.row.min(tb.nrows() - 1), c.col.min(tb.ncols() - 1));
                 let len = tb.cell(r, col).map_or(0, |x| x.text.len());
-                sel.text =
-                    Some(TextSel { anchor: t.anchor.min(len), focus: t.focus.min(len), cell: Some(CellAddr { table: c.table, row: r, col }), ..t });
+                sel.text = Some(TextSel {
+                    anchor: t.anchor.min(len),
+                    focus: t.focus.min(len),
+                    cell: Some(CellAddr {
+                        table: c.table,
+                        row: r,
+                        col,
+                    }),
+                    ..t
+                });
             }
             None => {
                 let len = story.map_or(0, |x| x.len());
-                sel.text = Some(TextSel { anchor: t.anchor.min(len), focus: t.anchor.min(len), cell: None, ..t });
+                sel.text = Some(TextSel {
+                    anchor: t.anchor.min(len),
+                    focus: t.anchor.min(len),
+                    cell: None,
+                    ..t
+                });
             }
         }
     }
 }
 
 fn count(p: &Value) -> usize {
-    p.get("count").and_then(Value::as_u64).unwrap_or(1).clamp(1, 1000) as usize
+    p.get("count")
+        .and_then(Value::as_u64)
+        .unwrap_or(1)
+        .clamp(1, 1000) as usize
 }
 
 fn color_param(p: &Value, key: &str) -> Option<String> {
@@ -377,8 +561,12 @@ fn color_param(p: &Value, key: &str) -> Option<String> {
 fn column_width(s: &Session, t: &TextSel) -> f64 {
     let Some(st) = s.active() else { return 300.0 };
     let specs = compose::frame_specs(&st.doc, t.story);
-    let spec = t.frame.and_then(|f| specs.iter().find(|x| x.id == f)).or(specs.first());
-    spec.and_then(|f| f.columns().first().map(|c| c.width())).unwrap_or(300.0)
+    let spec = t
+        .frame
+        .and_then(|f| specs.iter().find(|x| x.id == f))
+        .or(specs.first());
+    spec.and_then(|f| f.columns().first().map(|c| c.width()))
+        .unwrap_or(300.0)
 }
 
 /// The direction of the paragraph at `offset` in `story`, as composition resolves it (its style
@@ -386,57 +574,117 @@ fn column_width(s: &Session, t: &TextSel) -> f64 {
 fn para_direction(d: &Document, story: StoryId, offset: usize) -> designcraft_doc::TextDirection {
     d.story(story)
         .and_then(|st| st.paras.get(st.para_at(offset)))
-        .map_or(designcraft_doc::TextDirection::LeftToRight, |pf| d.styles.resolve_para(pf).0.direction)
+        .map_or(designcraft_doc::TextDirection::LeftToRight, |pf| {
+            d.styles.resolve_para(pf).0.direction
+        })
 }
 
 fn insert(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = s.doc()?.selection.text.ok_or_else(|| bad("table.insert", "no insertion point"))?;
+    let t = s
+        .doc()?
+        .selection
+        .text
+        .ok_or_else(|| bad("table.insert", "no insertion point"))?;
     if t.cell.is_some() {
         return Err(bad("table.insert", "tables can't be nested in cells"));
     }
-    let rows = p.get("rows").and_then(Value::as_u64).unwrap_or(4).clamp(1, 500) as usize;
-    let cols = p.get("cols").or_else(|| p.get("columns")).and_then(Value::as_u64).unwrap_or(4).clamp(1, 200) as usize;
-    let header = p.get("headerRows").and_then(Value::as_u64).unwrap_or(0).min(100) as usize;
-    let footer = p.get("footerRows").and_then(Value::as_u64).unwrap_or(0).min(100) as usize;
-    let width = p.get("width").and_then(Value::as_f64).unwrap_or_else(|| column_width(s, &t));
+    let rows = p
+        .get("rows")
+        .and_then(Value::as_u64)
+        .unwrap_or(4)
+        .clamp(1, 500) as usize;
+    let cols = p
+        .get("cols")
+        .or_else(|| p.get("columns"))
+        .and_then(Value::as_u64)
+        .unwrap_or(4)
+        .clamp(1, 200) as usize;
+    let header = p
+        .get("headerRows")
+        .and_then(Value::as_u64)
+        .unwrap_or(0)
+        .min(100) as usize;
+    let footer = p
+        .get("footerRows")
+        .and_then(Value::as_u64)
+        .unwrap_or(0)
+        .min(100) as usize;
+    let width = p
+        .get("width")
+        .and_then(Value::as_f64)
+        .unwrap_or_else(|| column_width(s, &t));
     s.edit(|d, sel| {
         let id = d.alloc();
         let mut table = Table::new(id, rows, cols, header, footer, width);
         table.options.direction = para_direction(d, t.story, t.range().start);
-        let st = d.story_mut(t.story).ok_or_else(|| bad("table.insert", "no story"))?;
+        let st = d
+            .story_mut(t.story)
+            .ok_or_else(|| bad("table.insert", "no story"))?;
         // Cells start with the paragraph format at the caret.
         let pf = st.paras[st.para_at(t.range().start)].clone();
         let cf = st.char_format_at(t.range().start).clone();
         for c in &mut table.cells {
-            c.text.paras[0] = designcraft_doc::ParaFormat { table: None, ..pf.clone() };
+            c.text.paras[0] = designcraft_doc::ParaFormat {
+                table: None,
+                ..pf.clone()
+            };
             c.text.chars[0].format = cf.clone();
         }
         let r = t.range();
         st.delete(r.clone());
         st.insert_table(r.start, table);
-        *sel = Selection::text(TextSel { story: t.story, anchor: 0, focus: 0, frame: t.frame, cell: Some(CellAddr { table: id, row: 0, col: 0 }) });
+        *sel = Selection::text(TextSel {
+            story: t.story,
+            anchor: 0,
+            focus: 0,
+            frame: t.frame,
+            cell: Some(CellAddr {
+                table: id,
+                row: 0,
+                col: 0,
+            }),
+        });
         Ok(json!({"story": t.story.0, "table": id}))
     })
 }
 
 fn convert_from_text(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = s.doc()?.selection.text.ok_or_else(|| bad("table.convertFromText", "no text selected"))?;
+    let t = s
+        .doc()?
+        .selection
+        .text
+        .ok_or_else(|| bad("table.convertFromText", "no text selected"))?;
     if t.cell.is_some() {
         return Err(bad("table.convertFromText", "select text outside tables"));
     }
-    let sep = if str_param(p, "columnSeparator") == Some("comma") { ',' } else { '\t' };
-    let width = p.get("width").and_then(Value::as_f64).unwrap_or_else(|| column_width(s, &t));
+    let sep = if str_param(p, "columnSeparator") == Some("comma") {
+        ','
+    } else {
+        '\t'
+    };
+    let width = p
+        .get("width")
+        .and_then(Value::as_f64)
+        .unwrap_or_else(|| column_width(s, &t));
     s.edit(|d, sel| {
         let id = d.alloc();
         let direction = para_direction(d, t.story, t.range().start);
-        let st = d.story_mut(t.story).ok_or_else(|| bad("table.convertFromText", "no story"))?;
+        let st = d
+            .story_mut(t.story)
+            .ok_or_else(|| bad("table.convertFromText", "no story"))?;
         let ranges = st.para_ranges();
         let (pa, pb) = (st.para_at(t.range().start), st.para_at(t.range().end));
         if (pa..=pb).any(|i| st.paras[i].table.is_some()) {
-            return Err(bad("table.convertFromText", "the selection contains a table"));
+            return Err(bad(
+                "table.convertFromText",
+                "the selection contains a table",
+            ));
         }
         let (a, b) = (ranges[pa].start, ranges[pb].end);
-        let data: Vec<Vec<String>> = st.text[a..b].split('\n').map(|line| line.split(sep).map(|c| c.trim().to_string()).collect()).collect();
+        let data: Vec<Vec<String>> = st.text[a..b]
+            .split('\n')
+            .map(|line| line.split(sep).map(|c| c.trim().to_string()).collect())
+            .collect();
         let pf = st.paras[pa].clone();
         let cf = st.format_after(a).clone();
         let mut table = Table::from_strings(id, &data, width, &pf, &cf);
@@ -451,9 +699,17 @@ fn convert_from_text(s: &mut Session, p: &Value) -> Result<Value> {
 fn convert_to_text(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.convertToText")?;
     s.edit(|d, sel| {
-        let st = d.story_mut(g.story).ok_or_else(|| bad("table.convertToText", "no story"))?;
-        let text = st.tables.get(&g.table).map(|t| t.plain_text()).unwrap_or_default();
-        let a = st.table_anchor(g.table).ok_or_else(|| bad("table.convertToText", "no anchor"))?;
+        let st = d
+            .story_mut(g.story)
+            .ok_or_else(|| bad("table.convertToText", "no story"))?;
+        let text = st
+            .tables
+            .get(&g.table)
+            .map(|t| t.plain_text())
+            .unwrap_or_default();
+        let a = st
+            .table_anchor(g.table)
+            .ok_or_else(|| bad("table.convertToText", "no anchor"))?;
         st.replace(a..a + designcraft_doc::TABLE_ANCHOR.len_utf8(), &text);
         *sel = Selection::text(TextSel::caret(g.story, a + text.len()));
         ok()
@@ -463,8 +719,12 @@ fn convert_to_text(s: &mut Session, p: &Value) -> Result<Value> {
 fn delete_table(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.delete")?;
     s.edit(|d, sel| {
-        let st = d.story_mut(g.story).ok_or_else(|| bad("table.delete", "no story"))?;
-        let a = st.table_anchor(g.table).ok_or_else(|| bad("table.delete", "no anchor"))?;
+        let st = d
+            .story_mut(g.story)
+            .ok_or_else(|| bad("table.delete", "no story"))?;
+        let a = st
+            .table_anchor(g.table)
+            .ok_or_else(|| bad("table.delete", "no anchor"))?;
         // Remove the anchor paragraph (with one separator) so no empty paragraph is left behind.
         let end = a + designcraft_doc::TABLE_ANCHOR.len_utf8();
         let r = if &st.text[end..] == "\n" && a > 0 && st.text[..a].ends_with('\n') {
@@ -513,7 +773,11 @@ fn shift_selection(s: &mut Session, table: u64, at: usize, n: usize, rows: bool)
     if let Some(ts) = st.selection.cells.as_mut()
         && ts.table == table
     {
-        let (a, b) = if rows { (&mut ts.range.r0, &mut ts.range.r1) } else { (&mut ts.range.c0, &mut ts.range.c1) };
+        let (a, b) = if rows {
+            (&mut ts.range.r0, &mut ts.range.r1)
+        } else {
+            (&mut ts.range.c0, &mut ts.range.c1)
+        };
         if *a >= at {
             *a += n;
         }
@@ -533,7 +797,11 @@ fn insert_col(s: &mut Session, p: &Value, left: Option<bool>) -> Result<Value> {
         .and_then(|st| st.tables.get(&g.table))
         .is_some_and(|t| t.options.direction == designcraft_doc::TextDirection::RightToLeft);
     let n = count(p);
-    let at = if left != rtl { g.range.c0 } else { g.range.c1 + 1 };
+    let at = if left != rtl {
+        g.range.c0
+    } else {
+        g.range.c1 + 1
+    };
     let width = p.get("width").and_then(Value::as_f64);
     let r = edit_table(s, &g, "table.insertColumn", |t| {
         let w = width.unwrap_or_else(|| t.columns[g.range.c0.min(t.ncols() - 1)].width);
@@ -546,7 +814,12 @@ fn insert_col(s: &mut Session, p: &Value, left: Option<bool>) -> Result<Value> {
 
 fn delete_rows(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.deleteRow")?;
-    let all = s.doc()?.doc.story(g.story).and_then(|x| x.tables.get(&g.table)).is_some_and(|t| g.range.r0 == 0 && g.range.r1 + 1 >= t.nrows());
+    let all = s
+        .doc()?
+        .doc
+        .story(g.story)
+        .and_then(|x| x.tables.get(&g.table))
+        .is_some_and(|t| g.range.r0 == 0 && g.range.r1 + 1 >= t.nrows());
     if all {
         return delete_table(s, p);
     }
@@ -558,7 +831,12 @@ fn delete_rows(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn delete_cols(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.deleteColumn")?;
-    let all = s.doc()?.doc.story(g.story).and_then(|x| x.tables.get(&g.table)).is_some_and(|t| g.range.c0 == 0 && g.range.c1 + 1 >= t.ncols());
+    let all = s
+        .doc()?
+        .doc
+        .story(g.story)
+        .and_then(|x| x.tables.get(&g.table))
+        .is_some_and(|t| g.range.c0 == 0 && g.range.c1 + 1 >= t.ncols());
     if all {
         return delete_table(s, p);
     }
@@ -581,7 +859,11 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
         anchor: 0,
         focus: 0,
         frame: st.selection.text.and_then(|t| t.frame),
-        cell: Some(CellAddr { table: g.table, row: r.r0, col: r.c0 }),
+        cell: Some(CellAddr {
+            table: g.table,
+            row: r.r0,
+            col: r.c0,
+        }),
     });
     ok()
 }
@@ -589,7 +871,8 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
 fn split(s: &mut Session, p: &Value, horizontal: bool) -> Result<Value> {
     let g = target(s, p, "table.split")?;
     edit_table(s, &g, "table.split", |t| {
-        t.split_cells(g.range, horizontal).map_err(|e| bad("table.split", e))?;
+        t.split_cells(g.range, horizontal)
+            .map_err(|e| bad("table.split", e))?;
         Ok(json!({"rows": t.nrows(), "cols": t.ncols()}))
     })
 }
@@ -617,7 +900,11 @@ fn parse_stroke(v: &Value, mut base: CellStroke) -> CellStroke {
         base.tint = t.clamp(0.0, 1.0) as f32;
     }
     match str_param(v, "type") {
-        Some("dashed") => base.kind = StrokeType::Dashed { pattern: vec![base.weight.max(1.0) * 3.0, base.weight.max(1.0) * 2.0] },
+        Some("dashed") => {
+            base.kind = StrokeType::Dashed {
+                pattern: vec![base.weight.max(1.0) * 3.0, base.weight.max(1.0) * 2.0],
+            }
+        }
         Some("dotted") => base.kind = StrokeType::Dotted,
         Some("solid") => base.kind = StrokeType::Solid,
         _ => {}
@@ -628,11 +915,17 @@ fn parse_stroke(v: &Value, mut base: CellStroke) -> CellStroke {
 fn set_cell(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.setCell")?;
     let fill = color_param(p, "fill");
-    let tint = p.get("tint").and_then(Value::as_f64).map(|t| t.clamp(0.0, 1.0) as f32);
+    let tint = p
+        .get("tint")
+        .and_then(Value::as_f64)
+        .map(|t| t.clamp(0.0, 1.0) as f32);
     let insets: Option<[f64; 4]> = match p.get("insets") {
         Some(Value::Number(n)) => n.as_f64().map(|v| [v.max(0.0); 4]),
         Some(Value::Array(a)) if a.len() == 4 => {
-            let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(0.0).max(0.0)).collect();
+            let v: Vec<f64> = a
+                .iter()
+                .map(|x| x.as_f64().unwrap_or(0.0).max(0.0))
+                .collect();
             Some([v[0], v[1], v[2], v[3]])
         }
         _ => None,
@@ -652,16 +945,23 @@ fn set_cell(s: &mut Session, p: &Value) -> Result<Value> {
         let nc = t.ncols();
         let nr = t.nrows();
         let rtl = t.options.direction == designcraft_doc::TextDirection::RightToLeft;
-        let borders: [CellStroke; 4] = std::array::from_fn(|side| t.options.border_for(side).clone());
+        let borders: [CellStroke; 4] =
+            std::array::from_fn(|side| t.options.border_for(side).clone());
         // Local edits outrank previously imported edges, including explicit zero/None.
-        let priority = if stroke.is_some() { next_cell_stroke_priority(t) } else { 0 };
+        let priority = if stroke.is_some() {
+            next_cell_stroke_priority(t)
+        } else {
+            0
+        };
         let rg = g.range;
         for r in rg.r0..=rg.r1 {
             for c in rg.c0..=rg.c1 {
                 if owners[r * nc + c] != (r, c) {
                     continue;
                 }
-                let Some(cell) = t.cell_mut(r, c) else { continue };
+                let Some(cell) = t.cell_mut(r, c) else {
+                    continue;
+                };
                 if let Some(f) = &fill {
                     cell.fill = f.clone();
                 }
@@ -682,19 +982,49 @@ fn set_cell(s: &mut Session, p: &Value) -> Result<Value> {
                     let edges = str_param(sv, "edges").unwrap_or("all");
                     let at_bottom = r.saturating_add(cell.row_span.max(1) as usize);
                     let at_right = c.saturating_add(cell.col_span.max(1) as usize);
-                    let perimeter = [r == 0, if rtl { at_right == nc } else { c == 0 }, at_bottom == nr, if rtl { c == 0 } else { at_right == nc }];
+                    let perimeter = [
+                        r == 0,
+                        if rtl { at_right == nc } else { c == 0 },
+                        at_bottom == nr,
+                        if rtl { c == 0 } else { at_right == nc },
+                    ];
                     for (i, on) in [
                         ("top", r == rg.r0),
-                        ("left", if rtl { at_right.saturating_sub(1) == rg.c1 } else { c == rg.c0 }),
+                        (
+                            "left",
+                            if rtl {
+                                at_right.saturating_sub(1) == rg.c1
+                            } else {
+                                c == rg.c0
+                            },
+                        ),
                         ("bottom", at_bottom.saturating_sub(1) == rg.r1),
-                        ("right", if rtl { c == rg.c0 } else { at_right.saturating_sub(1) == rg.c1 }),
+                        (
+                            "right",
+                            if rtl {
+                                c == rg.c0
+                            } else {
+                                at_right.saturating_sub(1) == rg.c1
+                            },
+                        ),
                     ]
                     .iter()
                     .enumerate()
-                    .map(|(i, (name, outer))| (i, edges == "all" || edges == *name || (edges == "outer" && *outer) || (edges == "inner" && !*outer)))
-                    {
+                    .map(|(i, (name, outer))| {
+                        (
+                            i,
+                            edges == "all"
+                                || edges == *name
+                                || (edges == "outer" && *outer)
+                                || (edges == "inner" && !*outer),
+                        )
+                    }) {
                         if on {
-                            let base = if perimeter[i] && !cell.border_overrides[i] { &borders[i] } else { &cell.strokes[i] };
+                            let base = if perimeter[i] && !cell.border_overrides[i] {
+                                &borders[i]
+                            } else {
+                                &cell.strokes[i]
+                            };
                             cell.strokes[i] = parse_stroke(sv, base.clone());
                             cell.stroke_defined[i] = true;
                             cell.stroke_priorities[i] = priority;
@@ -725,12 +1055,26 @@ fn set_cell(s: &mut Session, p: &Value) -> Result<Value> {
                 && let Some(col) = rg.c0.checked_sub(1)
             {
                 for r in rg.r0..=rg.r1 {
-                    mirror_cell_edge(t, &owners, (r, rg.c0), if rtl { 3 } else { 1 }, (r, col), if rtl { 1 } else { 3 });
+                    mirror_cell_edge(
+                        t,
+                        &owners,
+                        (r, rg.c0),
+                        if rtl { 3 } else { 1 },
+                        (r, col),
+                        if rtl { 1 } else { 3 },
+                    );
                 }
             }
             if selected(if rtl { "left" } else { "right" }) && rg.c1.saturating_add(1) < nc {
                 for r in rg.r0..=rg.r1 {
-                    mirror_cell_edge(t, &owners, (r, rg.c1), if rtl { 1 } else { 3 }, (r, rg.c1 + 1), if rtl { 3 } else { 1 });
+                    mirror_cell_edge(
+                        t,
+                        &owners,
+                        (r, rg.c1),
+                        if rtl { 1 } else { 3 },
+                        (r, rg.c1 + 1),
+                        if rtl { 3 } else { 1 },
+                    );
                 }
             }
         }
@@ -741,11 +1085,22 @@ fn set_cell(s: &mut Session, p: &Value) -> Result<Value> {
 /// Only saturation needs rebasing. Preserve every distinct priority's order and keep
 /// zero/negative priorities untouched; the work is bounded by the table's edges.
 fn next_cell_stroke_priority(t: &mut Table) -> i32 {
-    let highest = t.cells.iter().flat_map(|cell| cell.stroke_priorities).max().unwrap_or(0).max(0);
+    let highest = t
+        .cells
+        .iter()
+        .flat_map(|cell| cell.stroke_priorities)
+        .max()
+        .unwrap_or(0)
+        .max(0);
     if highest < i32::MAX {
         return highest + 1;
     }
-    let values: std::collections::BTreeSet<_> = t.cells.iter().flat_map(|cell| cell.stroke_priorities).filter(|p| *p > 0).collect();
+    let values: std::collections::BTreeSet<_> = t
+        .cells
+        .iter()
+        .flat_map(|cell| cell.stroke_priorities)
+        .filter(|p| *p > 0)
+        .collect();
     let mut ranks = std::collections::BTreeMap::new();
     let mut highest = 0i32;
     for value in values {
@@ -762,8 +1117,19 @@ fn next_cell_stroke_priority(t: &mut Table) -> i32 {
     highest.saturating_add(1)
 }
 
-fn mirror_cell_edge(t: &mut Table, owners: &[(usize, usize)], from: (usize, usize), edge: usize, to: (usize, usize), opposite: usize) {
-    let owner = |pos: (usize, usize)| owners.get(pos.0.checked_mul(t.ncols())?.checked_add(pos.1)?).copied();
+fn mirror_cell_edge(
+    t: &mut Table,
+    owners: &[(usize, usize)],
+    from: (usize, usize),
+    edge: usize,
+    to: (usize, usize),
+    opposite: usize,
+) {
+    let owner = |pos: (usize, usize)| {
+        owners
+            .get(pos.0.checked_mul(t.ncols())?.checked_add(pos.1)?)
+            .copied()
+    };
     if owner(from) != Some(from) || owner(to) != Some(to) {
         return;
     }
@@ -774,10 +1140,17 @@ fn mirror_cell_edge(t: &mut Table, owners: &[(usize, usize)], from: (usize, usiz
     if t.cell(from.0, from.1).is_some_and(merged) || t.cell(to.0, to.1).is_some_and(merged) {
         return;
     }
-    let source = t
-        .cell(from.0, from.1)
-        .map(|cell| (cell.strokes[edge].clone(), cell.stroke_defined[edge], cell.stroke_priorities[edge], cell.border_overrides[edge]));
-    if let (Some((stroke, defined, priority, border_override)), Some(neighbor)) = (source, t.cell_mut(to.0, to.1)) {
+    let source = t.cell(from.0, from.1).map(|cell| {
+        (
+            cell.strokes[edge].clone(),
+            cell.stroke_defined[edge],
+            cell.stroke_priorities[edge],
+            cell.border_overrides[edge],
+        )
+    });
+    if let (Some((stroke, defined, priority, border_override)), Some(neighbor)) =
+        (source, t.cell_mut(to.0, to.1))
+    {
         neighbor.strokes[opposite] = stroke;
         neighbor.stroke_defined[opposite] = defined;
         neighbor.stroke_priorities[opposite] = priority;
@@ -787,7 +1160,10 @@ fn mirror_cell_edge(t: &mut Table, owners: &[(usize, usize)], from: (usize, usiz
 
 fn set_row_height(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.setRowHeight")?;
-    let h = p.get("height").and_then(Value::as_f64).map(|h| h.clamp(0.0, 10000.0));
+    let h = p
+        .get("height")
+        .and_then(Value::as_f64)
+        .map(|h| h.clamp(0.0, 10000.0));
     let mode = match str_param(p, "mode") {
         Some("exactly") => Some(RowHeightMode::Exactly),
         Some("atLeast") => Some(RowHeightMode::AtLeast),
@@ -812,7 +1188,11 @@ fn set_row_height(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_col_width(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.setColumnWidth")?;
-    let w = p.get("width").and_then(Value::as_f64).ok_or_else(|| bad("table.setColumnWidth", "missing width"))?.clamp(3.0, 10000.0);
+    let w = p
+        .get("width")
+        .and_then(Value::as_f64)
+        .ok_or_else(|| bad("table.setColumnWidth", "missing width"))?
+        .clamp(3.0, 10000.0);
     edit_table(s, &g, "table.setColumnWidth", |t| {
         for c in &mut t.columns[g.range.c0..=g.range.c1] {
             c.width = w;
@@ -827,7 +1207,11 @@ fn distribute_rows(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(ID, "parameters must be an object"));
     }
     if let Some(rows) = p.get("rows") {
-        let valid = rows.as_array().is_some_and(|a| a.len() == 2 && a.iter().all(|v| v.as_u64().is_some_and(|n| usize::try_from(n).is_ok())));
+        let valid = rows.as_array().is_some_and(|a| {
+            a.len() == 2
+                && a.iter()
+                    .all(|v| v.as_u64().is_some_and(|n| usize::try_from(n).is_ok()))
+        });
         if !valid {
             return Err(bad(ID, "rows must be two non-negative row indices"));
         }
@@ -841,7 +1225,11 @@ fn distribute_rows(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let g = target(s, p, ID)?;
     let st = s.doc()?;
-    let t = st.doc.story(g.story).and_then(|x| x.tables.get(&g.table)).ok_or_else(|| bad(ID, "no table"))?;
+    let t = st
+        .doc
+        .story(g.story)
+        .and_then(|x| x.tables.get(&g.table))
+        .ok_or_else(|| bad(ID, "no table"))?;
     if t.cells.iter().any(|c| c.row_span > 1) {
         return Err(bad(ID, "unmerge cells that span rows first"));
     }
@@ -857,7 +1245,12 @@ fn distribute_rows(s: &mut Session, p: &Value) -> Result<Value> {
             .filter(|c| c.row == row)
             .map(|c| c.rect.height())
             .reduce(f64::max)
-            .ok_or_else(|| bad(ID, "all selected rows must be laid out; enlarge or thread the text frame first"))?;
+            .ok_or_else(|| {
+                bad(
+                    ID,
+                    "all selected rows must be laid out; enlarge or thread the text frame first",
+                )
+            })?;
         if !height.is_finite() || height <= 0.0 {
             return Err(bad(ID, "invalid composed row height"));
         }
@@ -869,7 +1262,10 @@ fn distribute_rows(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(ID, "invalid total row height"));
     }
     edit_table(s, &g, ID, |t| {
-        let rows = t.rows.get_mut(g.range.r0..=g.range.r1).ok_or_else(|| bad(ID, "invalid row range"))?;
+        let rows = t
+            .rows
+            .get_mut(g.range.r0..=g.range.r1)
+            .ok_or_else(|| bad(ID, "invalid row range"))?;
         for row in rows {
             row.height = height;
             row.mode = RowHeightMode::Exactly;
@@ -894,14 +1290,32 @@ fn parse_alt(v: &Value) -> Option<AltFills> {
     }
     let d = AltFills::default();
     Some(AltFills {
-        first: v.get("first").and_then(Value::as_u64).map_or(d.first, |x| x as u32),
+        first: v
+            .get("first")
+            .and_then(Value::as_u64)
+            .map_or(d.first, |x| x as u32),
         first_color: color_param(v, "firstColor").unwrap_or(d.first_color),
-        first_tint: v.get("firstTint").and_then(Value::as_f64).map_or(d.first_tint, |x| x as f32),
-        next: v.get("next").and_then(Value::as_u64).map_or(d.next, |x| x as u32),
+        first_tint: v
+            .get("firstTint")
+            .and_then(Value::as_f64)
+            .map_or(d.first_tint, |x| x as f32),
+        next: v
+            .get("next")
+            .and_then(Value::as_u64)
+            .map_or(d.next, |x| x as u32),
         next_color: color_param(v, "nextColor").unwrap_or(d.next_color),
-        next_tint: v.get("nextTint").and_then(Value::as_f64).map_or(d.next_tint, |x| x as f32),
-        skip_first: v.get("skipFirst").and_then(Value::as_u64).map_or(0, |x| x as u32),
-        skip_last: v.get("skipLast").and_then(Value::as_u64).map_or(0, |x| x as u32),
+        next_tint: v
+            .get("nextTint")
+            .and_then(Value::as_f64)
+            .map_or(d.next_tint, |x| x as f32),
+        skip_first: v
+            .get("skipFirst")
+            .and_then(Value::as_u64)
+            .map_or(0, |x| x as u32),
+        skip_last: v
+            .get("skipLast")
+            .and_then(Value::as_u64)
+            .map_or(0, |x| x as u32),
     })
 }
 
@@ -911,7 +1325,8 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
     edit_table(s, &g, "table.options", |t| {
         let o = &mut t.options;
         if let Some(v) = p.get("direction") {
-            o.direction = serde_json::from_value(v.clone()).map_err(|e| bad("table.options", e.to_string()))?;
+            o.direction = serde_json::from_value(v.clone())
+                .map_err(|e| bad("table.options", e.to_string()))?;
         }
         if let Some(b) = p.get("border") {
             o.border = parse_stroke(b, o.border.clone());
@@ -931,8 +1346,14 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(v) = p.get("altCols") {
             o.alt_cols = parse_alt(v);
         }
-        let h = p.get("headerRows").and_then(Value::as_u64).map(|v| v as usize);
-        let f = p.get("footerRows").and_then(Value::as_u64).map(|v| v as usize);
+        let h = p
+            .get("headerRows")
+            .and_then(Value::as_u64)
+            .map(|v| v as usize);
+        let f = p
+            .get("footerRows")
+            .and_then(Value::as_u64)
+            .map(|v| v as usize);
         if h.is_some() || f.is_some() {
             let (h, f) = (h.unwrap_or(t.header_rows()), f.unwrap_or(t.footer_rows()));
             // Add rows when there aren't enough for the requested header/footer plus one body row.
@@ -953,12 +1374,23 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.select")?;
     let (nr, nc) = {
         let st = s.doc()?;
-        let t = st.doc.story(g.story).and_then(|x| x.tables.get(&g.table)).ok_or_else(|| bad("table.select", "no table"))?;
+        let t = st
+            .doc
+            .story(g.story)
+            .and_then(|x| x.tables.get(&g.table))
+            .ok_or_else(|| bad("table.select", "no table"))?;
         (t.nrows(), t.ncols())
     };
     let mut r = g.range;
     match str_param(p, "what") {
-        Some("table") => r = CellRange { r0: 0, c0: 0, r1: nr - 1, c1: nc - 1 },
+        Some("table") => {
+            r = CellRange {
+                r0: 0,
+                c0: 0,
+                r1: nr - 1,
+                c1: nc - 1,
+            }
+        }
         Some("row") => {
             r.c0 = 0;
             r.c1 = nc - 1;
@@ -972,8 +1404,22 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
     let frame = st.selection.text.and_then(|t| t.frame);
     st.selection = Selection {
-        cells: Some(TableSel { story: g.story, table: g.table, range: r }),
-        text: Some(TextSel { story: g.story, anchor: 0, focus: 0, frame, cell: Some(CellAddr { table: g.table, row: r.r0, col: r.c0 }) }),
+        cells: Some(TableSel {
+            story: g.story,
+            table: g.table,
+            range: r,
+        }),
+        text: Some(TextSel {
+            story: g.story,
+            anchor: 0,
+            focus: 0,
+            frame,
+            cell: Some(CellAddr {
+                table: g.table,
+                row: r.r0,
+                col: r.c0,
+            }),
+        }),
         ..Default::default()
     };
     st.revision += 1;
@@ -983,20 +1429,37 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
 /// Move the caret to the next/previous cell (Tab / Shift-Tab), selecting its text. Tab in the last
 /// cell adds a row.
 pub(crate) fn step_cell(s: &mut Session, forward: bool) -> Result<Value> {
-    let t = s.doc()?.selection.text.ok_or_else(|| bad("table.nextCell", "no caret"))?;
-    let c = t.cell.ok_or_else(|| bad("table.nextCell", "not in a cell"))?;
+    let t = s
+        .doc()?
+        .selection
+        .text
+        .ok_or_else(|| bad("table.nextCell", "no caret"))?;
+    let c = t
+        .cell
+        .ok_or_else(|| bad("table.nextCell", "not in a cell"))?;
     let (owners, nr, nc) = {
         let st = s.doc()?;
-        let tb = st.doc.story(t.story).and_then(|x| x.tables.get(&c.table)).ok_or_else(|| bad("table.nextCell", "no table"))?;
+        let tb = st
+            .doc
+            .story(t.story)
+            .and_then(|x| x.tables.get(&c.table))
+            .ok_or_else(|| bad("table.nextCell", "no table"))?;
         (tb.owners(), tb.nrows(), tb.ncols())
     };
     let cur = c.row * nc + c.col;
-    let next =
-        if forward { (cur + 1..nr * nc).find(|&i| owners[i] == (i / nc, i % nc)) } else { (0..cur).rev().find(|&i| owners[i] == (i / nc, i % nc)) };
+    let next = if forward {
+        (cur + 1..nr * nc).find(|&i| owners[i] == (i / nc, i % nc))
+    } else {
+        (0..cur).rev().find(|&i| owners[i] == (i / nc, i % nc))
+    };
     let (row, col) = match next {
         Some(i) => (i / nc, i % nc),
         None if forward => {
-            let g = Tgt { story: t.story, table: c.table, range: CellRange::cell(nr - 1, 0) };
+            let g = Tgt {
+                story: t.story,
+                table: c.table,
+                range: CellRange::cell(nr - 1, 0),
+            };
             edit_table(s, &g, "table.nextCell", |tb| {
                 tb.insert_rows(nr, 1);
                 ok()
@@ -1006,8 +1469,27 @@ pub(crate) fn step_cell(s: &mut Session, forward: bool) -> Result<Value> {
         None => return ok(),
     };
     let st = s.doc_mut()?;
-    let len = st.doc.text_story(t.story, Some(CellAddr { table: c.table, row, col })).map_or(0, |x| x.len());
-    st.selection = Selection::text(TextSel { anchor: 0, focus: len, cell: Some(CellAddr { table: c.table, row, col }), ..t });
+    let len = st
+        .doc
+        .text_story(
+            t.story,
+            Some(CellAddr {
+                table: c.table,
+                row,
+                col,
+            }),
+        )
+        .map_or(0, |x| x.len());
+    st.selection = Selection::text(TextSel {
+        anchor: 0,
+        focus: len,
+        cell: Some(CellAddr {
+            table: c.table,
+            row,
+            col,
+        }),
+        ..t
+    });
     st.revision += 1;
     Ok(json!({"row": row, "col": col}))
 }
@@ -1015,7 +1497,11 @@ pub(crate) fn step_cell(s: &mut Session, forward: bool) -> Result<Value> {
 fn get(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.get")?;
     let st = s.doc()?;
-    let t = st.doc.story(g.story).and_then(|x| x.tables.get(&g.table)).ok_or_else(|| bad("table.get", "no table"))?;
+    let t = st
+        .doc
+        .story(g.story)
+        .and_then(|x| x.tables.get(&g.table))
+        .ok_or_else(|| bad("table.get", "no table"))?;
     let owners = t.owners();
     let cells: Vec<Value> = (0..t.nrows())
         .flat_map(|r| (0..t.ncols()).map(move |c| (r, c)))
@@ -1067,7 +1553,10 @@ fn cell_style_fields(cs: &mut designcraft_doc::CellStyle, p: &Value, cmd: &str) 
             cs.inset_overrides = Default::default();
         }
         Some(Value::Array(a)) if a.len() == 4 => {
-            let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(0.0).max(0.0)).collect();
+            let v: Vec<f64> = a
+                .iter()
+                .map(|x| x.as_f64().unwrap_or(0.0).max(0.0))
+                .collect();
             cs.insets = Some([v[0], v[1], v[2], v[3]]);
             cs.inset_overrides = Default::default();
         }
@@ -1089,7 +1578,10 @@ fn cell_style_fields(cs: &mut designcraft_doc::CellStyle, p: &Value, cmd: &str) 
 fn cell_style_create(s: &mut Session, p: &Value) -> Result<Value> {
     let base = str_param(p, "name").unwrap_or("Cell Style 1").to_string();
     let mut cs = designcraft_doc::CellStyle::default();
-    if p.get("fromSelection").and_then(Value::as_bool).unwrap_or(false) {
+    if p.get("fromSelection")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
         let g = target(s, p, "style.cell.create")?;
         let d = &s.doc()?.doc;
         let cell = d
@@ -1106,7 +1598,10 @@ fn cell_style_create(s: &mut Session, p: &Value) -> Result<Value> {
     }
     cell_style_fields(&mut cs, p, "style.cell.create")?;
     s.edit(|d, _| {
-        let name = designcraft_doc::Styles::unique_name(|n| d.styles.cell.iter().any(|c| c.name == n), &base);
+        let name = designcraft_doc::Styles::unique_name(
+            |n| d.styles.cell.iter().any(|c| c.name == n),
+            &base,
+        );
         cs.name = name.clone();
         d.styles_mut().cell.push(cs);
         Ok(json!({"name": name}))
@@ -1114,7 +1609,9 @@ fn cell_style_create(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn cell_style_apply(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("style.cell.apply", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("style.cell.apply", "missing name"))?
+        .to_string();
     let styles = &s.doc()?.doc.styles.cell;
     if !styles.iter().any(|c| c.name == name) {
         return Err(bad("style.cell.apply", format!("no cell style `{name}`")));
@@ -1141,7 +1638,10 @@ fn cell_style_apply(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Re-apply cell styles named in `names` to every cell using them (after a style edit).
 fn reapply_cell_styles(d: &mut Document, names: &[String]) {
-    let styles: Vec<_> = names.iter().map(|name| designcraft_doc::resolve_cell_style(&d.styles.cell, name)).collect();
+    let styles: Vec<_> = names
+        .iter()
+        .map(|name| designcraft_doc::resolve_cell_style(&d.styles.cell, name))
+        .collect();
     for sid in d.stories.keys().copied().collect::<Vec<_>>() {
         let Some(st) = d.story_mut(sid) else { continue };
         for t in st.tables.values_mut() {
@@ -1161,18 +1661,26 @@ fn reapply_cell_styles(d: &mut Document, names: &[String]) {
 }
 
 /// Include descendants when editing an inherited style, with the resolver's depth limit.
-fn dependent_styles<'a>(name: &str, styles: impl Iterator<Item = (&'a str, Option<&'a str>)>) -> Vec<String> {
+fn dependent_styles<'a>(
+    name: &str,
+    styles: impl Iterator<Item = (&'a str, Option<&'a str>)>,
+) -> Vec<String> {
     let styles: Vec<_> = styles.collect();
     styles
         .iter()
         .filter(|(candidate, _)| {
             let mut current = Some(*candidate);
             for _ in 0..32 {
-                let Some(current_name) = current else { return false };
+                let Some(current_name) = current else {
+                    return false;
+                };
                 if current_name == name {
                     return true;
                 }
-                current = styles.iter().find(|(n, _)| *n == current_name).and_then(|(_, base)| *base);
+                current = styles
+                    .iter()
+                    .find(|(n, _)| *n == current_name)
+                    .and_then(|(_, base)| *base);
             }
             false
         })
@@ -1181,12 +1689,25 @@ fn dependent_styles<'a>(name: &str, styles: impl Iterator<Item = (&'a str, Optio
 }
 
 fn cell_style_edit(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("style.cell.edit", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("style.cell.edit", "missing name"))?
+        .to_string();
     let p = p.clone();
     s.edit(|d, _| {
-        let cs = d.styles_mut().cell.iter_mut().find(|c| c.name == name).ok_or_else(|| bad("style.cell.edit", format!("no cell style `{name}`")))?;
+        let cs = d
+            .styles_mut()
+            .cell
+            .iter_mut()
+            .find(|c| c.name == name)
+            .ok_or_else(|| bad("style.cell.edit", format!("no cell style `{name}`")))?;
         cell_style_fields(cs, &p, "style.cell.edit")?;
-        let names = dependent_styles(&name, d.styles.cell.iter().map(|cs| (cs.name.as_str(), cs.based_on.as_deref())));
+        let names = dependent_styles(
+            &name,
+            d.styles
+                .cell
+                .iter()
+                .map(|cs| (cs.name.as_str(), cs.based_on.as_deref())),
+        );
         reapply_cell_styles(d, &names);
         ok()
     })
@@ -1213,8 +1734,17 @@ fn table_style_fields(ts: &mut designcraft_doc::TableStyle, p: &Value) {
     }
     if let Some(a) = p.get("altRows").and_then(Value::as_object) {
         let n = |k: &str, d: u32| a.get(k).and_then(Value::as_u64).map_or(d, |v| v as u32);
-        let c = |k: &str| a.get(k).and_then(Value::as_str).unwrap_or(designcraft_color::swatch::NONE).to_string();
-        let t = |k: &str| a.get(k).and_then(Value::as_f64).map_or(1.0, |v| v.clamp(0.0, 1.0) as f32);
+        let c = |k: &str| {
+            a.get(k)
+                .and_then(Value::as_str)
+                .unwrap_or(designcraft_color::swatch::NONE)
+                .to_string()
+        };
+        let t = |k: &str| {
+            a.get(k)
+                .and_then(Value::as_f64)
+                .map_or(1.0, |v| v.clamp(0.0, 1.0) as f32)
+        };
         ts.alt_rows = Some(designcraft_doc::AltFills {
             first: n("first", 1),
             first_color: c("firstColor"),
@@ -1239,7 +1769,10 @@ fn table_style_create(s: &mut Session, p: &Value) -> Result<Value> {
     let mut ts = designcraft_doc::TableStyle::default();
     table_style_fields(&mut ts, p);
     s.edit(|d, _| {
-        let name = designcraft_doc::Styles::unique_name(|n| d.styles.table.iter().any(|c| c.name == n), &base);
+        let name = designcraft_doc::Styles::unique_name(
+            |n| d.styles.table.iter().any(|c| c.name == n),
+            &base,
+        );
         ts.name = name.clone();
         d.styles_mut().table.push(ts);
         Ok(json!({"name": name}))
@@ -1247,7 +1780,9 @@ fn table_style_create(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn table_style_apply(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("style.table.apply", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("style.table.apply", "missing name"))?
+        .to_string();
     let doc = &s.doc()?.doc;
     if !doc.styles.table.iter().any(|c| c.name == name) {
         return Err(bad("style.table.apply", format!("no table style `{name}`")));
@@ -1262,14 +1797,29 @@ fn table_style_apply(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn table_style_edit(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("style.table.edit", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("style.table.edit", "missing name"))?
+        .to_string();
     let p = p.clone();
     s.edit(|d, _| {
-        let ts =
-            d.styles_mut().table.iter_mut().find(|c| c.name == name).ok_or_else(|| bad("style.table.edit", format!("no table style `{name}`")))?;
+        let ts = d
+            .styles_mut()
+            .table
+            .iter_mut()
+            .find(|c| c.name == name)
+            .ok_or_else(|| bad("style.table.edit", format!("no table style `{name}`")))?;
         table_style_fields(ts, &p);
-        let names = dependent_styles(&name, d.styles.table.iter().map(|ts| (ts.name.as_str(), ts.based_on.as_deref())));
-        let styles: Vec<_> = names.iter().map(|name| d.styles.resolve_table_style(name)).collect();
+        let names = dependent_styles(
+            &name,
+            d.styles
+                .table
+                .iter()
+                .map(|ts| (ts.name.as_str(), ts.based_on.as_deref())),
+        );
+        let styles: Vec<_> = names
+            .iter()
+            .map(|name| d.styles.resolve_table_style(name))
+            .collect();
         let cells = d.styles.cell.clone();
         for sid in d.stories.keys().copied().collect::<Vec<_>>() {
             let Some(st) = d.story_mut(sid) else { continue };
@@ -1294,39 +1844,86 @@ mod style_tests {
     fn cell_and_table_styles_apply_and_follow_edits() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""}),
+            )
+            .unwrap();
         let sid = r["story"].as_u64().unwrap();
-        s.execute("text.select", &json!({"story": sid, "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 3, "cols": 2, "headerRows": 1})).unwrap();
-        s.execute("style.paragraph.create", &json!({"name": "Cell Head"})).unwrap();
-        s.execute("style.cell.create", &json!({"name": "Head", "fill": "Black", "paragraphStyle": "Cell Head", "insets": 6})).unwrap();
-        s.execute("style.cell.create", &json!({"name": "Body", "fill": "[Paper]"})).unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": sid, "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "table.insert",
+            &json!({"rows": 3, "cols": 2, "headerRows": 1}),
+        )
+        .unwrap();
+        s.execute("style.paragraph.create", &json!({"name": "Cell Head"}))
+            .unwrap();
+        s.execute(
+            "style.cell.create",
+            &json!({"name": "Head", "fill": "Black", "paragraphStyle": "Cell Head", "insets": 6}),
+        )
+        .unwrap();
+        s.execute(
+            "style.cell.create",
+            &json!({"name": "Body", "fill": "[Paper]"}),
+        )
+        .unwrap();
         s.execute("style.table.create", &json!({"name": "Data", "header": "Head", "body": "Body", "border": {"weight": 2, "color": "Black"}}))
             .unwrap();
-        s.execute("style.table.apply", &json!({"name": "Data"})).unwrap();
+        s.execute("style.table.apply", &json!({"name": "Data"}))
+            .unwrap();
         let t = |s: &Session| -> designcraft_doc::Table {
             let d = &s.doc().unwrap().doc;
-            (**d.story(designcraft_doc::StoryId(sid)).unwrap().tables.values().next().unwrap()).clone()
+            (**d.story(designcraft_doc::StoryId(sid))
+                .unwrap()
+                .tables
+                .values()
+                .next()
+                .unwrap())
+            .clone()
         };
         let tb = t(&s);
         assert_eq!(tb.style, "Data");
         assert_eq!(tb.options.border.weight, 2.0);
         let head = tb.cell(0, 0).unwrap();
-        assert_eq!((head.fill.as_str(), head.style.as_str(), head.insets), ("Black", "Head", [6.0; 4]));
+        assert_eq!(
+            (head.fill.as_str(), head.style.as_str(), head.insets),
+            ("Black", "Head", [6.0; 4])
+        );
         assert_eq!(head.text.paras[0].style, "Cell Head");
         assert_eq!(tb.cell(1, 1).unwrap().style, "Body");
         // Editing the cell style updates its cells.
-        s.execute("style.cell.edit", &json!({"name": "Head", "fill": "C=100 M=0 Y=0 K=0"})).unwrap();
+        s.execute(
+            "style.cell.edit",
+            &json!({"name": "Head", "fill": "C=100 M=0 Y=0 K=0"}),
+        )
+        .unwrap();
         assert_eq!(t(&s).cell(0, 1).unwrap().fill, "C=100 M=0 Y=0 K=0");
         // Editing the table style re-applies it.
-        s.execute("style.table.edit", &json!({"name": "Data", "border": {"weight": 4}})).unwrap();
+        s.execute(
+            "style.table.edit",
+            &json!({"name": "Data", "border": {"weight": 4}}),
+        )
+        .unwrap();
         assert_eq!(t(&s).options.border.weight, 4.0);
-        assert!(s.execute("style.cell.apply", &json!({"name": "Nope"})).is_err());
+        assert!(
+            s.execute("style.cell.apply", &json!({"name": "Nope"}))
+                .is_err()
+        );
     }
 }
 
 /// The table cell under spread point `pt` in text frame `frame`: (story, table, row, col).
-fn cell_at(s: &Session, frame: designcraft_doc::ItemId, pt: designcraft_geom::Point) -> Option<(StoryId, u64, usize, usize)> {
+fn cell_at(
+    s: &Session,
+    frame: designcraft_doc::ItemId,
+    pt: designcraft_geom::Point,
+) -> Option<(StoryId, u64, usize, usize)> {
     let st = s.active()?;
     let loc = st.doc.find(frame)?;
     let it = st.doc.item_at(&loc)?;
@@ -1342,8 +1939,14 @@ fn drop_cells(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "table.dropCells";
     let frame = super::id_param(p, "frame").ok_or_else(|| bad(ID, "`frame` required"))?;
     let pt = |k: &str| -> Result<designcraft_geom::Point> {
-        let a = p.get(k).and_then(Value::as_array).ok_or_else(|| bad(ID, format!("`{k}` required")))?;
-        Ok(designcraft_geom::Point::new(a.first().and_then(Value::as_f64).unwrap_or(0.0), a.get(1).and_then(Value::as_f64).unwrap_or(0.0)))
+        let a = p
+            .get(k)
+            .and_then(Value::as_array)
+            .ok_or_else(|| bad(ID, format!("`{k}` required")))?;
+        Ok(designcraft_geom::Point::new(
+            a.first().and_then(Value::as_f64).unwrap_or(0.0),
+            a.get(1).and_then(Value::as_f64).unwrap_or(0.0),
+        ))
     };
     let (from, to) = (pt("from")?, pt("to")?);
     let sel = s.doc()?.selection.cells;
@@ -1356,21 +1959,39 @@ fn drop_cells(s: &mut Session, p: &Value) -> Result<Value> {
         && ts.range.contains(fr, fc)
     {
         let (nr, nc) = {
-            let t = s.doc()?.doc.story(sid).and_then(|st| st.tables.get(&tid)).ok_or_else(|| bad(ID, "no table"))?;
+            let t = s
+                .doc()?
+                .doc
+                .story(sid)
+                .and_then(|st| st.tables.get(&tid))
+                .ok_or_else(|| bad(ID, "no table"))?;
             (t.nrows(), t.ncols())
         };
         let r = ts.range;
         let rows = r.c0 == 0 && r.c1 + 1 == nc;
         let cols = r.r0 == 0 && r.r1 + 1 == nr;
         if rows || cols {
-            let (lo, hi, target) = if rows { (r.r0, r.r1, tr) } else { (r.c0, r.c1, tc) };
+            let (lo, hi, target) = if rows {
+                (r.r0, r.r1, tr)
+            } else {
+                (r.c0, r.c1, tc)
+            };
             if target >= lo && target <= hi {
                 return Ok(json!({"moved": 0}));
             }
             let n = hi - lo + 1;
             let r2 = s.edit(|d, selm| {
-                let t = d.story_mut(sid).and_then(|st| st.table_mut(tid)).ok_or_else(|| bad(ID, "no table"))?;
-                let mv = |t: &mut designcraft_doc::Table, a: usize, b: usize| if rows { t.move_row(a, b) } else { t.move_col(a, b) };
+                let t = d
+                    .story_mut(sid)
+                    .and_then(|st| st.table_mut(tid))
+                    .ok_or_else(|| bad(ID, "no table"))?;
+                let mv = |t: &mut designcraft_doc::Table, a: usize, b: usize| {
+                    if rows {
+                        t.move_row(a, b)
+                    } else {
+                        t.move_col(a, b)
+                    }
+                };
                 let new_lo = if target > hi {
                     for _ in 0..n {
                         mv(t, lo, target).map_err(|e| bad(ID, e))?;
@@ -1382,8 +2003,11 @@ fn drop_cells(s: &mut Session, p: &Value) -> Result<Value> {
                     }
                     target
                 };
-                let range =
-                    if rows { CellRange::new(new_lo, r.c0, new_lo + n - 1, r.c1) } else { CellRange::new(r.r0, new_lo, r.r1, new_lo + n - 1) };
+                let range = if rows {
+                    CellRange::new(new_lo, r.c0, new_lo + n - 1, r.c1)
+                } else {
+                    CellRange::new(r.r0, new_lo, r.r1, new_lo + n - 1)
+                };
                 selm.cells = Some(TableSel { range, ..ts });
                 Ok(json!({"moved": n, "to": new_lo}))
             })?;
@@ -1391,39 +2015,73 @@ fn drop_cells(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     // Not a row/column drag: select text from the press to the release.
-    s.execute("text.placeCaret", &json!({"frame": frame.0, "point": [from.x, from.y]}))?;
-    s.execute("text.extendTo", &json!({"frame": frame.0, "point": [to.x, to.y]}))
+    s.execute(
+        "text.placeCaret",
+        &json!({"frame": frame.0, "point": [from.x, from.y]}),
+    )?;
+    s.execute(
+        "text.extendTo",
+        &json!({"frame": frame.0, "point": [to.x, to.y]}),
+    )
 }
 
 fn place_graphic(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "table.placeGraphic";
     let g = target(s, p, ID)?;
     let (bytes, name, link) = super::file::read_source(p)?;
-    let (pw, ph) = designcraft_render::image_size(&bytes).ok_or_else(|| bad(ID, "unsupported or corrupt image"))?;
+    let (pw, ph) = designcraft_render::image_size(&bytes)
+        .ok_or_else(|| bad(ID, "unsupported or corrupt image"))?;
     let fill = p.get("fit").and_then(Value::as_str) == Some("fill");
     s.edit(|d, sel| {
         let fresh = designcraft_doc::AssetId(d.alloc());
         let mime = designcraft_render::image_mime(&bytes).to_string();
-        let aid =
-            d.add_asset(designcraft_doc::Asset { page: 0, id: fresh, name, mime, link, data: std::sync::Arc::new(bytes), pixels: Some((pw, ph)) });
+        let aid = d.add_asset(designcraft_doc::Asset {
+            page: 0,
+            id: fresh,
+            name,
+            mime,
+            link,
+            data: std::sync::Arc::new(bytes),
+            pixels: Some((pw, ph)),
+        });
         let st = d.story_mut(g.story).ok_or_else(|| bad(ID, "no story"))?;
         let t = st.table_mut(g.table).ok_or_else(|| bad(ID, "no table"))?;
         let (r, c) = t.owner(g.range.r0, g.range.c0);
         let cell = t.cell(r, c).ok_or_else(|| bad(ID, "no cell"))?;
         let (rs, cs) = (cell.row_span.max(1) as usize, cell.col_span.max(1) as usize);
-        let w: f64 = t.columns[c..(c + cs).min(t.ncols())].iter().map(|x| x.width).sum();
-        let h: f64 = t.rows[r..(r + rs).min(t.nrows())].iter().map(|x| x.height).sum();
+        let w: f64 = t.columns[c..(c + cs).min(t.ncols())]
+            .iter()
+            .map(|x| x.width)
+            .sum();
+        let h: f64 = t.rows[r..(r + rs).min(t.nrows())]
+            .iter()
+            .map(|x| x.height)
+            .sum();
         let ins = cell.insets;
-        let (bw, bh) = ((w - ins[1] - ins[3]).max(1.0), (h - ins[0] - ins[2]).max(1.0));
+        let (bw, bh) = (
+            (w - ins[1] - ins[3]).max(1.0),
+            (h - ins[0] - ins[2]).max(1.0),
+        );
         let (nw, nh) = (pw as f64, ph as f64);
-        let k = if fill { (bw / nw).max(bh / nh) } else { (bw / nw).min(bh / nh) };
-        let xf = designcraft_geom::Affine::translate(((bw - nw * k) / 2.0, (bh - nh * k) / 2.0)) * designcraft_geom::Affine::scale(k);
-        let cell = t.cell_mut(r, c).ok_or_else(|| bad(ID, format!("no cell {r},{c}")))?;
+        let k = if fill {
+            (bw / nw).max(bh / nh)
+        } else {
+            (bw / nw).min(bh / nh)
+        };
+        let xf = designcraft_geom::Affine::translate(((bw - nw * k) / 2.0, (bh - nh * k) / 2.0))
+            * designcraft_geom::Affine::scale(k);
+        let cell = t
+            .cell_mut(r, c)
+            .ok_or_else(|| bad(ID, format!("no cell {r},{c}")))?;
         cell.graphic = Some(designcraft_doc::Graphic {
             asset: aid,
             size: (nw, nh),
             xf,
-            auto_fit: if fill { designcraft_doc::Fitting::FillProportionally } else { designcraft_doc::Fitting::FitProportionally },
+            auto_fit: if fill {
+                designcraft_doc::Fitting::FillProportionally
+            } else {
+                designcraft_doc::Fitting::FitProportionally
+            },
             fit_align: 4,
             crop: [0.0; 4],
         });
@@ -1435,18 +2093,35 @@ fn place_graphic(s: &mut Session, p: &Value) -> Result<Value> {
 fn move_rc(s: &mut Session, p: &Value, rows: bool) -> Result<Value> {
     const ID: &str = "table.move";
     let g = target(s, p, ID)?;
-    let from = p.get("from").and_then(Value::as_u64).map_or(if rows { g.range.r0 } else { g.range.c0 }, |v| v as usize);
-    let to = p.get("to").and_then(Value::as_u64).ok_or_else(|| bad(ID, "`to` required"))? as usize;
+    let from = p
+        .get("from")
+        .and_then(Value::as_u64)
+        .map_or(if rows { g.range.r0 } else { g.range.c0 }, |v| v as usize);
+    let to = p
+        .get("to")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(ID, "`to` required"))? as usize;
     edit_table(s, &g, ID, |t| {
-        if rows { t.move_row(from, to) } else { t.move_col(from, to) }.map_err(|e| bad(ID, e))?;
+        if rows {
+            t.move_row(from, to)
+        } else {
+            t.move_col(from, to)
+        }
+        .map_err(|e| bad(ID, e))?;
         Ok(json!({"from": from, "to": to}))
     })
 }
 
 fn sort_rows(s: &mut Session, p: &Value) -> Result<Value> {
     let g = target(s, p, "table.sortRows")?;
-    let col = p.get("column").and_then(Value::as_u64).map_or(g.range.c0, |c| c as usize);
-    let desc = p.get("descending").and_then(Value::as_bool).unwrap_or(false);
+    let col = p
+        .get("column")
+        .and_then(Value::as_u64)
+        .map_or(g.range.c0, |c| c as usize);
+    let desc = p
+        .get("descending")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     edit_table(s, &g, "table.sortRows", |t| {
         let (nr, nc) = (t.nrows(), t.ncols());
         if col >= nc {
@@ -1457,11 +2132,18 @@ fn sort_rows(s: &mut Session, p: &Value) -> Result<Value> {
         }
         let (h, f) = (t.header_rows(), t.footer_rows());
         let body: Vec<usize> = (h..nr - f).collect();
-        let key = |r: usize| t.cell(r, col).map(|c| c.text.text.trim().to_string()).unwrap_or_default();
+        let key = |r: usize| {
+            t.cell(r, col)
+                .map(|c| c.text.text.trim().to_string())
+                .unwrap_or_default()
+        };
         let mut order = body.clone();
         order.sort_by(|a, b| {
             let (ka, kb) = (key(*a), key(*b));
-            let o = match (ka.replace(',', "").parse::<f64>(), kb.replace(',', "").parse::<f64>()) {
+            let o = match (
+                ka.replace(',', "").parse::<f64>(),
+                kb.replace(',', "").parse::<f64>(),
+            ) {
                 (Ok(x), Ok(y)) => x.total_cmp(&y),
                 _ => ka.to_lowercase().cmp(&kb.to_lowercase()),
             };
@@ -1489,38 +2171,83 @@ mod sort_tests {
     fn distribution_session() -> Session {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 500, 700], "content": "text", "text": ""})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 3, "cols": 2, "headerRows": 1})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 500, 700], "content": "text", "text": ""}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "table.insert",
+            &json!({"rows": 3, "cols": 2, "headerRows": 1}),
+        )
+        .unwrap();
         for (row, height) in [(0, 25), (1, 40), (2, 80), (3, 30)] {
-            s.execute("table.setRowHeight", &json!({"row": row, "height": height, "mode": "exactly"})).unwrap();
-            s.execute("table.setCell", &json!({"row": row, "col": 0, "text": format!("row {row}")})).unwrap();
+            s.execute(
+                "table.setRowHeight",
+                &json!({"row": row, "height": height, "mode": "exactly"}),
+            )
+            .unwrap();
+            s.execute(
+                "table.setCell",
+                &json!({"row": row, "col": 0, "text": format!("row {row}")}),
+            )
+            .unwrap();
         }
         s
     }
 
     fn table(s: &Session) -> designcraft_doc::Table {
-        (**s.doc().unwrap().doc.stories.values().flat_map(|st| st.tables.values()).next().unwrap()).clone()
+        (**s.doc()
+            .unwrap()
+            .doc
+            .stories
+            .values()
+            .flat_map(|st| st.tables.values())
+            .next()
+            .unwrap())
+        .clone()
     }
 
     #[test]
     fn distribute_selected_rows_preserves_height_content_and_undo() {
         let mut s = distribution_session();
-        s.execute("table.select", &json!({"rows": [1, 2], "what": "row"})).unwrap();
+        s.execute("table.select", &json!({"rows": [1, 2], "what": "row"}))
+            .unwrap();
         let before = table(&s);
         let selection = s.doc().unwrap().selection.cells;
         let result = s.execute("table.distributeRows", &json!({})).unwrap();
         assert_eq!(result, json!({"rows": 2, "height": 60.0}));
         let after = table(&s);
-        assert_eq!(after.rows.iter().map(|r| r.height).collect::<Vec<_>>(), [25.0, 60.0, 60.0, 30.0]);
+        assert_eq!(
+            after.rows.iter().map(|r| r.height).collect::<Vec<_>>(),
+            [25.0, 60.0, 60.0, 30.0]
+        );
         assert_eq!(after.cells, before.cells);
         assert_eq!(after.rows[0].kind, before.rows[0].kind);
         assert_eq!(s.doc().unwrap().selection.cells, selection);
         let st = s.doc().unwrap();
-        let sid = st.doc.stories.values().find(|st| !st.tables.is_empty()).unwrap().id;
+        let sid = st
+            .doc
+            .stories
+            .values()
+            .find(|st| !st.tables.is_empty())
+            .unwrap()
+            .id;
         let cs = s.cache.get(&st.doc, sid, None);
-        let heights: Vec<_> =
-            cs.frames.iter().flat_map(|f| &f.tables).flat_map(|f| &f.cells).filter(|c| c.col == 0).map(|c| c.rect.height()).collect();
+        let heights: Vec<_> = cs
+            .frames
+            .iter()
+            .flat_map(|f| &f.tables)
+            .flat_map(|f| &f.cells)
+            .filter(|c| c.col == 0)
+            .map(|c| c.rect.height())
+            .collect();
         assert_eq!(heights, [25.0, 60.0, 60.0, 30.0]);
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(table(&s), before);
@@ -1531,10 +2258,23 @@ mod sort_tests {
     #[test]
     fn distribution_uses_content_grown_heights_and_explicit_table() {
         let mut s = distribution_session();
-        s.execute("table.setRowHeight", &json!({"rows": [1, 2], "height": 3, "mode": "atLeast"})).unwrap();
-        s.execute("table.setCell", &json!({"row": 2, "col": 0, "text": "one\ntwo\nthree"})).unwrap();
+        s.execute(
+            "table.setRowHeight",
+            &json!({"rows": [1, 2], "height": 3, "mode": "atLeast"}),
+        )
+        .unwrap();
+        s.execute(
+            "table.setCell",
+            &json!({"row": 2, "col": 0, "text": "one\ntwo\nthree"}),
+        )
+        .unwrap();
         let st = s.doc().unwrap();
-        let story = st.doc.stories.values().find(|st| !st.tables.is_empty()).unwrap();
+        let story = st
+            .doc
+            .stories
+            .values()
+            .find(|st| !st.tables.is_empty())
+            .unwrap();
         let (sid, tid) = (story.id, *story.tables.keys().next().unwrap());
         let cs = s.cache.get(&st.doc, sid, None);
         let total: f64 = cs
@@ -1545,19 +2285,30 @@ mod sort_tests {
             .filter(|c| c.col == 0 && (1..=2).contains(&c.row))
             .map(|c| c.rect.height())
             .sum();
-        let result = s.execute("table.distributeRows", &json!({"story": sid.0, "table": tid, "rows": [1, 2]})).unwrap();
+        let result = s
+            .execute(
+                "table.distributeRows",
+                &json!({"story": sid.0, "table": tid, "rows": [1, 2]}),
+            )
+            .unwrap();
         assert!((result["height"].as_f64().unwrap() * 2.0 - total).abs() < 1e-6);
         assert!(table(&s).rows[1].height > 3.0);
-        assert_eq!(table(&s).rows[1].mode, designcraft_doc::RowHeightMode::Exactly);
+        assert_eq!(
+            table(&s).rows[1].mode,
+            designcraft_doc::RowHeightMode::Exactly
+        );
     }
 
     #[test]
     fn distribution_keeps_column_spans_and_caret() {
         let mut s = distribution_session();
-        s.execute("table.merge", &json!({"rows": [1, 1], "cols": [0, 1]})).unwrap();
+        s.execute("table.merge", &json!({"rows": [1, 1], "cols": [0, 1]}))
+            .unwrap();
         let before = table(&s);
         let caret = s.doc().unwrap().selection.text;
-        let result = s.execute("table.distributeRows", &json!({"rows": [2, 1]})).unwrap();
+        let result = s
+            .execute("table.distributeRows", &json!({"rows": [2, 1]}))
+            .unwrap();
         assert_eq!(result["height"], 60.0);
         assert_eq!(table(&s).cell(1, 0).unwrap().col_span, 2);
         assert_eq!(table(&s).cells, before.cells);
@@ -1567,20 +2318,42 @@ mod sort_tests {
     #[test]
     fn distribution_rejects_merges_and_missing_rows_without_changes() {
         let mut s = distribution_session();
-        s.execute("table.merge", &json!({"rows": [1, 2], "cols": [0, 0]})).unwrap();
+        s.execute("table.merge", &json!({"rows": [1, 2], "cols": [0, 0]}))
+            .unwrap();
         let before = table(&s);
-        assert!(s.execute("table.distributeRows", &json!({"rows": [1, 2]})).is_err());
+        assert!(
+            s.execute("table.distributeRows", &json!({"rows": [1, 2]}))
+                .is_err()
+        );
         assert_eq!(table(&s), before);
         s.execute("edit.undo", &json!({})).unwrap();
-        s.execute("table.setRowHeight", &json!({"rows": [0, 3], "height": 10000, "mode": "exactly"})).unwrap();
+        s.execute(
+            "table.setRowHeight",
+            &json!({"rows": [0, 3], "height": 10000, "mode": "exactly"}),
+        )
+        .unwrap();
         let before = table(&s);
-        assert!(s.execute("table.distributeRows", &json!({"rows": [0, 3]})).is_err());
+        assert!(
+            s.execute("table.distributeRows", &json!({"rows": [0, 3]}))
+                .is_err()
+        );
         assert_eq!(table(&s), before);
-        assert!(s.execute("table.distributeRows", &json!({"rows": [0, 99]})).is_err());
-        for params in
-            [json!({"rows": "all"}), json!({"rows": [0]}), json!({"rows": [-1, 2]}), json!({"row": 1.5}), json!({"table": "bad"}), json!([])]
-        {
-            assert!(s.execute("table.distributeRows", &params).is_err(), "{params}");
+        assert!(
+            s.execute("table.distributeRows", &json!({"rows": [0, 99]}))
+                .is_err()
+        );
+        for params in [
+            json!({"rows": "all"}),
+            json!({"rows": [0]}),
+            json!({"rows": [-1, 2]}),
+            json!({"row": 1.5}),
+            json!({"table": "bad"}),
+            json!([]),
+        ] {
+            assert!(
+                s.execute("table.distributeRows", &params).is_err(),
+                "{params}"
+            );
             assert_eq!(table(&s), before);
         }
     }
@@ -1589,25 +2362,72 @@ mod sort_tests {
     fn sort_body_rows_by_a_column() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 3, "cols": 2, "headerRows": 1})).unwrap();
-        let cells = [("Name", "Qty"), ("pear", "10"), ("Apple", "9"), ("fig", "100")];
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute(
+            "table.insert",
+            &json!({"rows": 3, "cols": 2, "headerRows": 1}),
+        )
+        .unwrap();
+        let cells = [
+            ("Name", "Qty"),
+            ("pear", "10"),
+            ("Apple", "9"),
+            ("fig", "100"),
+        ];
         for (r, (a, b)) in cells.iter().enumerate() {
-            s.execute("table.setCell", &json!({"rows": [r, r], "cols": [0, 0], "text": a})).unwrap();
-            s.execute("table.setCell", &json!({"rows": [r, r], "cols": [1, 1], "text": b})).unwrap();
+            s.execute(
+                "table.setCell",
+                &json!({"rows": [r, r], "cols": [0, 0], "text": a}),
+            )
+            .unwrap();
+            s.execute(
+                "table.setCell",
+                &json!({"rows": [r, r], "cols": [1, 1], "text": b}),
+            )
+            .unwrap();
         }
         let col = |s: &Session, c: usize| -> Vec<String> {
             let d = &s.doc().unwrap().doc;
-            let t = d.stories.values().flat_map(|st| st.tables.values()).next().unwrap();
-            (0..t.nrows()).map(|r| t.cell(r, c).unwrap().text.text.clone()).collect()
+            let t = d
+                .stories
+                .values()
+                .flat_map(|st| st.tables.values())
+                .next()
+                .unwrap();
+            (0..t.nrows())
+                .map(|r| t.cell(r, c).unwrap().text.text.clone())
+                .collect()
         };
         s.execute("table.sortRows", &json!({"column": 0})).unwrap();
-        assert_eq!(col(&s, 0), ["Name", "Apple", "fig", "pear"], "header stays; case-insensitive");
-        s.execute("table.sortRows", &json!({"column": 1, "descending": true})).unwrap();
+        assert_eq!(
+            col(&s, 0),
+            ["Name", "Apple", "fig", "pear"],
+            "header stays; case-insensitive"
+        );
+        s.execute("table.sortRows", &json!({"column": 1, "descending": true}))
+            .unwrap();
         assert_eq!(col(&s, 1), ["Qty", "100", "10", "9"], "numbers by value");
-        s.execute("table.splitVertically", &json!({"rows": [1, 1], "cols": [0, 0]})).unwrap();
-        let r = s.execute("table.splitHorizontally", &json!({"rows": [0, 0], "cols": [1, 1]})).unwrap();
+        s.execute(
+            "table.splitVertically",
+            &json!({"rows": [1, 1], "cols": [0, 0]}),
+        )
+        .unwrap();
+        let r = s
+            .execute(
+                "table.splitHorizontally",
+                &json!({"rows": [0, 0], "cols": [1, 1]}),
+            )
+            .unwrap();
         assert_eq!((r["rows"].as_u64(), r["cols"].as_u64()), (Some(5), Some(3)));
     }
 
@@ -1615,70 +2435,152 @@ mod sort_tests {
     fn graphic_cells_draw_their_image() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 2, "cols": 2})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("table.insert", &json!({"rows": 2, "cols": 2}))
+            .unwrap();
         s.execute("table.rowHeight", &json!({"height": 100})).ok();
         // A red image into the first cell.
         let px: Vec<u8> = (0..40 * 40).flat_map(|_| [255, 0, 0, 255]).collect();
-        let png = designcraft_render::Rendered { width: 40, height: 40, pixels: px }.to_png();
-        s.execute("table.setCell", &json!({"rows": [0, 0], "cols": [0, 0], "text": ""})).ok();
+        let png = designcraft_render::Rendered {
+            width: 40,
+            height: 40,
+            pixels: px,
+        }
+        .to_png();
+        s.execute(
+            "table.setCell",
+            &json!({"rows": [0, 0], "cols": [0, 0], "text": ""}),
+        )
+        .ok();
         let g = s.execute("table.placeGraphic", &json!({"base64": super::super::file::base64_encode(&png), "name": "r.png", "fit": "fill"})).unwrap();
         assert_eq!((g["row"].as_u64(), g["col"].as_u64()), (Some(0), Some(0)));
         let d = s.doc().unwrap().doc.clone();
         let st = d.stories.values().find(|st| !st.tables.is_empty()).unwrap();
         let t = st.tables.values().next().unwrap();
         let cs = s.cache.get(&d, st.id, None);
-        let cell = cs.frames[0].tables[0].cells.iter().find(|c| c.row == 0 && c.col == 0).unwrap().clone();
+        let cell = cs.frames[0].tables[0]
+            .cells
+            .iter()
+            .find(|c| c.row == 0 && c.col == 0)
+            .unwrap()
+            .clone();
         let fx = d.item(cs.frames[0].frame).unwrap().xf;
         let centre = fx * cell.clip.center();
         let mut rr = designcraft_render::Renderer::new();
         rr.threads = 0;
-        let img = rr.render_page(&d, &s.cache, 0, 1.0, false, &Default::default()).unwrap();
+        let img = rr
+            .render_page(&d, &s.cache, 0, 1.0, false, &Default::default())
+            .unwrap();
         let p = img.pixel(centre.x as u32, centre.y as u32);
         assert!(p[0] > 200 && p[1] < 60, "red in the graphic cell: {p:?}");
         assert!(t.cell(0, 0).unwrap().graphic.is_some());
         s.execute("table.textCell", &json!({})).unwrap();
         let d = s.doc().unwrap().doc.clone();
-        assert!(d.stories.values().flat_map(|st| st.tables.values()).all(|t| t.cell(0, 0).unwrap().graphic.is_none()));
+        assert!(
+            d.stories
+                .values()
+                .flat_map(|st| st.tables.values())
+                .all(|t| t.cell(0, 0).unwrap().graphic.is_none())
+        );
     }
 
     #[test]
     fn move_rows_and_columns() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 3, "cols": 2})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 500, 400], "content": "text", "text": ""}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("table.insert", &json!({"rows": 3, "cols": 2}))
+            .unwrap();
         for (r, c, t) in [(0, 0, "a"), (1, 0, "b"), (2, 0, "c"), (0, 1, "x")] {
-            s.execute("table.setCell", &json!({"rows": [r, r], "cols": [c, c], "text": t})).unwrap();
+            s.execute(
+                "table.setCell",
+                &json!({"rows": [r, r], "cols": [c, c], "text": t}),
+            )
+            .unwrap();
         }
         let cell = |s: &Session, r: usize, c: usize| {
             let d = &s.doc().unwrap().doc;
-            let t = d.stories.values().flat_map(|st| st.tables.values()).next().unwrap();
+            let t = d
+                .stories
+                .values()
+                .flat_map(|st| st.tables.values())
+                .next()
+                .unwrap();
             t.cell(r, c).unwrap().text.text.clone()
         };
         // Dragging a selected row onto the last row moves it there.
         let d = s.doc().unwrap().doc.clone();
-        let (sid, tid) = d.stories.values().find_map(|st| st.tables.keys().next().map(|k| (st.id, *k))).unwrap();
+        let (sid, tid) = d
+            .stories
+            .values()
+            .find_map(|st| st.tables.keys().next().map(|k| (st.id, *k)))
+            .unwrap();
         let fid = d.stories[&sid].frames[0];
         let cs = s.cache.get(&d, sid, None);
         let cells = &cs.frames[0].tables[0].cells;
         let centre = |r: usize| {
-            let c = cells.iter().find(|c| c.row == r && c.col == 0).unwrap().rect.center();
+            let c = cells
+                .iter()
+                .find(|c| c.row == r && c.col == 0)
+                .unwrap()
+                .rect
+                .center();
             d.text_xf(d.item(fid).unwrap()) * c
         };
         let (from, to) = (centre(0), centre(2));
-        s.execute("table.select", &json!({"story": sid.0, "table": tid, "rows": [0, 0], "what": "row"})).unwrap();
-        let r2 = s.execute("table.dropCells", &json!({"frame": fid.0, "from": [from.x, from.y], "to": [to.x, to.y]})).unwrap();
+        s.execute(
+            "table.select",
+            &json!({"story": sid.0, "table": tid, "rows": [0, 0], "what": "row"}),
+        )
+        .unwrap();
+        let r2 = s
+            .execute(
+                "table.dropCells",
+                &json!({"frame": fid.0, "from": [from.x, from.y], "to": [to.x, to.y]}),
+            )
+            .unwrap();
         assert_eq!(r2["moved"], 1);
-        assert_eq!([cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)], ["b", "c", "a"]);
+        assert_eq!(
+            [cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)],
+            ["b", "c", "a"]
+        );
         s.execute("edit.undo", &json!({})).unwrap();
-        assert_eq!([cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)], ["a", "b", "c"]);
-        s.execute("table.moveRow", &json!({"from": 0, "to": 2})).unwrap();
-        assert_eq!([cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)], ["b", "c", "a"]);
-        s.execute("table.moveColumn", &json!({"from": 1, "to": 0})).unwrap();
-        assert_eq!((cell(&s, 2, 0), cell(&s, 2, 1)), ("x".to_string(), "a".to_string()));
+        assert_eq!(
+            [cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)],
+            ["a", "b", "c"]
+        );
+        s.execute("table.moveRow", &json!({"from": 0, "to": 2}))
+            .unwrap();
+        assert_eq!(
+            [cell(&s, 0, 0), cell(&s, 1, 0), cell(&s, 2, 0)],
+            ["b", "c", "a"]
+        );
+        s.execute("table.moveColumn", &json!({"from": 1, "to": 0}))
+            .unwrap();
+        assert_eq!(
+            (cell(&s, 2, 0), cell(&s, 2, 1)),
+            ("x".to_string(), "a".to_string())
+        );
     }
 }
 
@@ -1689,38 +2591,87 @@ mod arabic_tests {
     fn arabic_table_direction_and_physical_left_insertion_support_undo() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let r = s.execute("frame.create", &json!({"rect": [0, 0, 400, 300], "content": "text", "text": ""})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": 0})).unwrap();
-        s.execute("table.insert", &json!({"rows": 1, "cols": 2})).unwrap();
-        s.execute("table.setCell", &json!({"rows": [0, 0], "cols": [0, 0], "text": "Right"})).unwrap();
-        s.execute("table.options", &json!({"direction": "rightToLeft"})).unwrap();
-        s.execute("table.select", &json!({"rows": [0, 0], "cols": [0, 0]})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [0, 0, 400, 300], "content": "text", "text": ""}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("table.insert", &json!({"rows": 1, "cols": 2}))
+            .unwrap();
+        s.execute(
+            "table.setCell",
+            &json!({"rows": [0, 0], "cols": [0, 0], "text": "Right"}),
+        )
+        .unwrap();
+        s.execute("table.options", &json!({"direction": "rightToLeft"}))
+            .unwrap();
+        s.execute("table.select", &json!({"rows": [0, 0], "cols": [0, 0]}))
+            .unwrap();
         s.execute("table.insertColumnLeft", &json!({})).unwrap();
-        let t = s.doc().unwrap().doc.stories.values().flat_map(|st| st.tables.values()).next().unwrap();
+        let t = s
+            .doc()
+            .unwrap()
+            .doc
+            .stories
+            .values()
+            .flat_map(|st| st.tables.values())
+            .next()
+            .unwrap();
         assert_eq!(t.ncols(), 3);
         assert_eq!(t.cell(0, 0).unwrap().text.text, "Right");
         assert!(t.cell(0, 1).unwrap().text.text.is_empty());
         s.execute("edit.undo", &json!({})).unwrap();
-        let t = s.doc().unwrap().doc.stories.values().flat_map(|st| st.tables.values()).next().unwrap();
+        let t = s
+            .doc()
+            .unwrap()
+            .doc
+            .stories
+            .values()
+            .flat_map(|st| st.tables.values())
+            .next()
+            .unwrap();
         assert_eq!(t.ncols(), 2);
-        assert_eq!(t.options.direction, designcraft_doc::TextDirection::RightToLeft);
+        assert_eq!(
+            t.options.direction,
+            designcraft_doc::TextDirection::RightToLeft
+        );
     }
 
     /// A text frame whose paragraphs have a paragraph style with `direction`, with the story's
     /// text selected. Returns the session and the story id.
     fn styled_frame(direction: &str, text: &str) -> (Session, u64) {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"preset": "A4", "pages": 1})).unwrap();
-        s.execute("style.paragraph.create", &json!({"name": "Dir", "para": {"direction": direction}})).unwrap();
+        s.execute("file.new", &json!({"preset": "A4", "pages": 1}))
+            .unwrap();
+        s.execute(
+            "style.paragraph.create",
+            &json!({"name": "Dir", "para": {"direction": direction}}),
+        )
+        .unwrap();
         let r = s.execute("frame.create", &json!({"rect": [40, 330, 555, 420], "content": "text", "text": text, "caret": true})).unwrap();
         s.execute("edit.selectAll", &json!({})).unwrap();
-        s.execute("style.paragraph.apply", &json!({"name": "Dir"})).unwrap();
+        s.execute("style.paragraph.apply", &json!({"name": "Dir"}))
+            .unwrap();
         s.execute("edit.selectAll", &json!({})).unwrap();
         (s, r["story"].as_u64().unwrap())
     }
 
     fn only_table(s: &Session) -> std::sync::Arc<designcraft_doc::Table> {
-        s.doc().unwrap().doc.stories.values().flat_map(|st| st.tables.values()).next().unwrap().clone()
+        s.doc()
+            .unwrap()
+            .doc
+            .stories
+            .values()
+            .flat_map(|st| st.tables.values())
+            .next()
+            .unwrap()
+            .clone()
     }
 
     /// Text converted to a table in a right-to-left paragraph laid its columns out left to right
@@ -1729,22 +2680,35 @@ mod arabic_tests {
     fn tables_take_the_direction_of_their_paragraph() {
         use designcraft_doc::TextDirection::{LeftToRight, RightToLeft};
         let (mut s, sid) = styled_frame("rightToLeft", "١\t٢\t٣\nأ\tب\tج");
-        s.execute("table.convertFromText", &json!({"columnSeparator": "tab"})).unwrap();
+        s.execute("table.convertFromText", &json!({"columnSeparator": "tab"}))
+            .unwrap();
         assert_eq!(only_table(&s).options.direction, RightToLeft);
         let st = s.doc().unwrap();
         let cs = s.cache.get(&st.doc, designcraft_doc::StoryId(sid), None);
         let placed = &cs.frames[0].tables[0];
-        let (first, last) = (placed.cell(0, 0).unwrap().rect, placed.cell(0, 2).unwrap().rect);
-        assert!(first.x0 > last.x0, "cell ١ is the rightmost: {first:?} {last:?}");
+        let (first, last) = (
+            placed.cell(0, 0).unwrap().rect,
+            placed.cell(0, 2).unwrap().rect,
+        );
+        assert!(
+            first.x0 > last.x0,
+            "cell ١ is the rightmost: {first:?} {last:?}"
+        );
 
         let (mut s, _) = styled_frame("leftToRight", "1\t2\t3\na\tb\tc");
-        s.execute("table.convertFromText", &json!({"columnSeparator": "tab"})).unwrap();
+        s.execute("table.convertFromText", &json!({"columnSeparator": "tab"}))
+            .unwrap();
         assert_eq!(only_table(&s).options.direction, LeftToRight);
 
         for (direction, expected) in [("rightToLeft", RightToLeft), ("leftToRight", LeftToRight)] {
             let (mut s, _) = styled_frame(direction, "x");
-            s.execute("table.insert", &json!({"rows": 1, "cols": 2})).unwrap();
-            assert_eq!(only_table(&s).options.direction, expected, "table.insert in a {direction} paragraph");
+            s.execute("table.insert", &json!({"rows": 1, "cols": 2}))
+                .unwrap();
+            assert_eq!(
+                only_table(&s).options.direction,
+                expected,
+                "table.insert in a {direction} paragraph"
+            );
         }
     }
 }

@@ -9,7 +9,14 @@
 //! Import merges: a comment whose name (`/NM`) already exists on its page replaces it; field
 //! values go through the form's own checks (formats, validation) and recalculate.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
@@ -148,13 +155,21 @@ fn xml_nesting_depth(text: &str) -> usize {
 fn check_form_xml_depth(text: &str) -> Result<(), DataError> {
     let depth = xml_nesting_depth(text);
     if depth > MAX_XML_DEPTH {
-        return Err(DataError::Malformed(format!("the file nests XML elements {depth} deep, past the {MAX_XML_DEPTH} the reader accepts")));
+        return Err(DataError::Malformed(format!(
+            "the file nests XML elements {depth} deep, past the {MAX_XML_DEPTH} the reader accepts"
+        )));
     }
     Ok(())
 }
 
 fn parse_form_xml(text: &str) -> Result<roxmltree::Document<'_>, roxmltree::Error> {
-    roxmltree::Document::parse_with_options(text, roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES })
+    roxmltree::Document::parse_with_options(
+        text,
+        roxmltree::ParsingOptions {
+            allow_dtd: false,
+            nodes_limit: MAX_NODES,
+        },
+    )
 }
 
 const SUBTYPES: [(&str, &str); 17] = [
@@ -215,7 +230,11 @@ fn hex(c: &[f64]) -> Option<String> {
     let rgb = match c.len() {
         1 => [c[0]; 3],
         3 => [c[0], c[1], c[2]],
-        4 => [(1.0 - c[0]) * (1.0 - c[3]), (1.0 - c[1]) * (1.0 - c[3]), (1.0 - c[2]) * (1.0 - c[3])],
+        4 => [
+            (1.0 - c[0]) * (1.0 - c[3]),
+            (1.0 - c[1]) * (1.0 - c[3]),
+            (1.0 - c[2]) * (1.0 - c[3]),
+        ],
         _ => return None,
     };
     Some(format!(
@@ -231,12 +250,21 @@ fn parse_hex(s: &str) -> Option<[f64; 3]> {
     if h.len() != 6 {
         return None;
     }
-    let p = |i: usize| h.get(i..i + 2).and_then(|s| u8::from_str_radix(s, 16).ok()).map(|v| f64::from(v) / 255.0);
+    let p = |i: usize| {
+        h.get(i..i + 2)
+            .and_then(|s| u8::from_str_radix(s, 16).ok())
+            .map(|v| f64::from(v) / 255.0)
+    };
     Some([p(0)?, p(2)?, p(4)?])
 }
 
 fn nums_of(doc: &Document, o: Option<&Object>) -> Vec<f64> {
-    o.map(|o| doc.resolve(o)).and_then(|a| a.as_array().map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())).unwrap_or_default()
+    o.map(|o| doc.resolve(o))
+        .and_then(|a| {
+            a.as_array()
+                .map(|a| a.iter().filter_map(|x| doc.resolve(x).as_f64()).collect())
+        })
+        .unwrap_or_default()
 }
 
 fn text_of(doc: &Document, d: &Dict, k: &[u8]) -> Option<String> {
@@ -248,7 +276,10 @@ fn text_of(doc: &Document, d: &Dict, k: &[u8]) -> Option<String> {
 }
 
 fn csv(list: &str) -> Vec<f64> {
-    list.split([',', ';', ' ']).filter(|t| !t.is_empty()).filter_map(|t| t.trim().parse().ok()).collect()
+    list.split([',', ';', ' '])
+        .filter(|t| !t.is_empty())
+        .filter_map(|t| t.trim().parse().ok())
+        .collect()
 }
 
 fn arr(v: &[f64]) -> Object {
@@ -263,7 +294,13 @@ fn xfdf_annots(doc: &Document, out: &mut String) {
     // NM of every annotation, for inreplyto.
     let mut names: HashMap<ObjRef, String> = HashMap::new();
     for p in &pages {
-        for a in p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
+        for a in p
+            .dict
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default()
+        {
             if let Some(r) = a.as_ref()
                 && let Some(nm) = doc.get(r).as_dict().and_then(|d| text_of(doc, d, b"NM"))
             {
@@ -272,10 +309,22 @@ fn xfdf_annots(doc: &Document, out: &mut String) {
         }
     }
     for (pi, p) in pages.iter().enumerate() {
-        for a in p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
-            let Some(d) = doc.resolve(&a).as_dict().cloned() else { continue };
-            let Some(sub) = d.name(b"Subtype") else { continue };
-            let Some((_, tag)) = SUBTYPES.iter().find(|(s, _)| s.as_bytes() == sub) else { continue };
+        for a in p
+            .dict
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default()
+        {
+            let Some(d) = doc.resolve(&a).as_dict().cloned() else {
+                continue;
+            };
+            let Some(sub) = d.name(b"Subtype") else {
+                continue;
+            };
+            let Some((_, tag)) = SUBTYPES.iter().find(|(s, _)| s.as_bytes() == sub) else {
+                continue;
+            };
             let mut attrs = format!(" page=\"{pi}\"");
             let rect = nums_of(doc, d.get(b"Rect"));
             if rect.len() == 4 {
@@ -303,8 +352,15 @@ fn xfdf_annots(doc: &Document, out: &mut String) {
                     let _ = write!(attrs, " {attr}=\"{}\"", esc(&v));
                 }
             }
-            let flags = d.get(b"F").and_then(|f| doc.resolve(f).as_int()).unwrap_or(0);
-            let fl: Vec<&str> = FLAGS.iter().filter(|(b, _)| flags & b != 0).map(|(_, s)| *s).collect();
+            let flags = d
+                .get(b"F")
+                .and_then(|f| doc.resolve(f).as_int())
+                .unwrap_or(0);
+            let fl: Vec<&str> = FLAGS
+                .iter()
+                .filter(|(b, _)| flags & b != 0)
+                .map(|(_, s)| *s)
+                .collect();
             if !fl.is_empty() {
                 let _ = write!(attrs, " flags=\"{}\"", fl.join(","));
             }
@@ -317,39 +373,86 @@ fn xfdf_annots(doc: &Document, out: &mut String) {
             if let Some(o) = d.get(b"CA").and_then(|o| doc.resolve(o).as_f64()) {
                 let _ = write!(attrs, " opacity=\"{}\"", n(o));
             }
-            if let Some(w) = d.get(b"BS").and_then(|b| doc.resolve(b).as_dict().and_then(|b| b.get(b"W").and_then(Object::as_f64))) {
+            if let Some(w) = d.get(b"BS").and_then(|b| {
+                doc.resolve(b)
+                    .as_dict()
+                    .and_then(|b| b.get(b"W").and_then(Object::as_f64))
+            }) {
                 let _ = write!(attrs, " width=\"{}\"", n(w));
             }
             let quads = nums_of(doc, d.get(b"QuadPoints"));
             if !quads.is_empty() {
-                let _ = write!(attrs, " coords=\"{}\"", quads.iter().map(|v| n(*v)).collect::<Vec<_>>().join(","));
+                let _ = write!(
+                    attrs,
+                    " coords=\"{}\"",
+                    quads.iter().map(|v| n(*v)).collect::<Vec<_>>().join(",")
+                );
             }
             let l = nums_of(doc, d.get(b"L"));
             if l.len() == 4 {
-                let _ = write!(attrs, " start=\"{},{}\" end=\"{},{}\"", n(l[0]), n(l[1]), n(l[2]), n(l[3]));
+                let _ = write!(
+                    attrs,
+                    " start=\"{},{}\" end=\"{},{}\"",
+                    n(l[0]),
+                    n(l[1]),
+                    n(l[2]),
+                    n(l[3])
+                );
             }
-            if let Some(le) = d.get(b"LE").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned())
+            if let Some(le) = d
+                .get(b"LE")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_array().cloned())
                 && le.len() == 2
             {
-                let name = |o: &Object| o.as_name().map(|x| String::from_utf8_lossy(x).into_owned()).unwrap_or_else(|| "None".into());
-                let _ = write!(attrs, " head=\"{}\" tail=\"{}\"", name(&le[0]), name(&le[1]));
+                let name = |o: &Object| {
+                    o.as_name()
+                        .map(|x| String::from_utf8_lossy(x).into_owned())
+                        .unwrap_or_else(|| "None".into())
+                };
+                let _ = write!(
+                    attrs,
+                    " head=\"{}\" tail=\"{}\"",
+                    name(&le[0]),
+                    name(&le[1])
+                );
             }
             // A callout: its leader path, text-box inset, intent and (single-name) line ending.
             let cl = nums_of(doc, d.get(b"CL"));
             if cl.len() == 4 || cl.len() == 6 {
-                let _ = write!(attrs, " callout=\"{}\"", cl.iter().map(|v| n(*v)).collect::<Vec<_>>().join(","));
+                let _ = write!(
+                    attrs,
+                    " callout=\"{}\"",
+                    cl.iter().map(|v| n(*v)).collect::<Vec<_>>().join(",")
+                );
                 let rd = nums_of(doc, d.get(b"RD"));
                 if rd.len() == 4 {
-                    let _ = write!(attrs, " fringe=\"{}\"", rd.iter().map(|v| n(*v)).collect::<Vec<_>>().join(","));
+                    let _ = write!(
+                        attrs,
+                        " fringe=\"{}\"",
+                        rd.iter().map(|v| n(*v)).collect::<Vec<_>>().join(",")
+                    );
                 }
-                if let Some(it) = d.get(b"IT").map(|o| doc.resolve(o)).and_then(|o| o.as_name().map(|x| String::from_utf8_lossy(x).into_owned())) {
+                if let Some(it) = d
+                    .get(b"IT")
+                    .map(|o| doc.resolve(o))
+                    .and_then(|o| o.as_name().map(|x| String::from_utf8_lossy(x).into_owned()))
+                {
                     let _ = write!(attrs, " intent=\"{}\"", esc(&it));
                 }
-                if let Some(le) = d.get(b"LE").map(|o| doc.resolve(o)).and_then(|o| o.as_name().map(|x| String::from_utf8_lossy(x).into_owned())) {
+                if let Some(le) = d
+                    .get(b"LE")
+                    .map(|o| doc.resolve(o))
+                    .and_then(|o| o.as_name().map(|x| String::from_utf8_lossy(x).into_owned()))
+                {
                     let _ = write!(attrs, " head=\"{}\"", esc(&le));
                 }
             }
-            if let Some(irt) = d.get(b"IRT").and_then(Object::as_ref).and_then(|r| names.get(&r)) {
+            if let Some(irt) = d
+                .get(b"IRT")
+                .and_then(Object::as_ref)
+                .and_then(|r| names.get(&r))
+            {
                 let _ = write!(attrs, " inreplyto=\"{}\"", esc(irt));
             }
             let _ = write!(out, "<{tag}{attrs}>");
@@ -359,23 +462,41 @@ fn xfdf_annots(doc: &Document, out: &mut String) {
             if let Some(da) = text_of(doc, &d, b"DA") {
                 let _ = write!(out, "<defaultappearance>{}</defaultappearance>", esc(&da));
             }
-            let ink = d.get(b"InkList").map(|o| doc.resolve(o)).and_then(|o| o.as_array().cloned()).unwrap_or_default();
+            let ink = d
+                .get(b"InkList")
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_array().cloned())
+                .unwrap_or_default();
             if !ink.is_empty() {
                 out.push_str("<inklist>");
                 for g in ink {
                     let v = nums_of(doc, Some(&g));
-                    let pts: Vec<String> = v.as_chunks::<2>().0.iter().map(|p| format!("{},{}", n(p[0]), n(p[1]))).collect();
+                    let pts: Vec<String> = v
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|p| format!("{},{}", n(p[0]), n(p[1])))
+                        .collect();
                     let _ = write!(out, "<gesture>{}</gesture>", pts.join(";"));
                 }
                 out.push_str("</inklist>");
             }
             // Polygon and polyline points (XFDF `<vertices>`: `x,y;x,y;…`).
             let vertices = nums_of(doc, d.get(b"Vertices"));
-            let pts: Vec<String> = vertices.as_chunks::<2>().0.iter().map(|p| format!("{},{}", n(p[0]), n(p[1]))).collect();
+            let pts: Vec<String> = vertices
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|p| format!("{},{}", n(p[0]), n(p[1])))
+                .collect();
             if !pts.is_empty() {
                 let _ = write!(out, "<vertices>{}</vertices>", pts.join(";"));
             }
-            if let Some(pd) = d.get(b"Popup").map(|p| doc.resolve(p)).and_then(|p| p.as_dict().cloned()) {
+            if let Some(pd) = d
+                .get(b"Popup")
+                .map(|p| doc.resolve(p))
+                .and_then(|p| p.as_dict().cloned())
+            {
                 let r = nums_of(doc, pd.get(b"Rect"));
                 if r.len() == 4 {
                     let open = matches!(pd.get(b"Open"), Some(Object::Bool(true)));
@@ -440,7 +561,9 @@ fn xfdf_fields(doc: &Document, out: &mut String) {
 
 /// XFDF with the document's comments and/or field values.
 pub fn export_xfdf(doc: &Document, comments: bool, fields: bool, file: &str) -> String {
-    let mut out = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xml:space=\"preserve\">\n");
+    let mut out = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xfdf xmlns=\"http://ns.adobe.com/xfdf/\" xml:space=\"preserve\">\n",
+    );
     if comments {
         out.push_str("<annots>\n");
         xfdf_annots(doc, &mut out);
@@ -481,12 +604,25 @@ pub fn export_fdf(doc: &Document, comments: bool, fields: bool, file: &str) -> V
             match f.kind {
                 FieldKind::CheckBox | FieldKind::Radio => {
                     let v = f.value.first().cloned().unwrap_or_else(|| "Off".into());
-                    pdfcraft_cos::serialize(&Object::Name(pdfcraft_forms::name_bytes(&v)), &mut body);
+                    pdfcraft_cos::serialize(
+                        &Object::Name(pdfcraft_forms::name_bytes(&v)),
+                        &mut body,
+                    );
                 }
                 FieldKind::List if f.value.len() > 1 => {
-                    pdfcraft_cos::serialize(&Object::Array(f.value.iter().map(|v| Object::String(PdfString::text(v))).collect()), &mut body);
+                    pdfcraft_cos::serialize(
+                        &Object::Array(
+                            f.value
+                                .iter()
+                                .map(|v| Object::String(PdfString::text(v)))
+                                .collect(),
+                        ),
+                        &mut body,
+                    );
                 }
-                _ => body.extend(pdf_string(f.value.first().map(String::as_str).unwrap_or(""))),
+                _ => body.extend(pdf_string(
+                    f.value.first().map(String::as_str).unwrap_or(""),
+                )),
             }
             body.extend_from_slice(b" >> ");
         }
@@ -496,24 +632,53 @@ pub fn export_fdf(doc: &Document, comments: bool, fields: bool, file: &str) -> V
         // Every exported comment with its source reference, numbered in export order.
         let mut picked: Vec<(Option<ObjRef>, Dict, usize)> = Vec::new();
         for (pi, p) in pdfcraft_model::pages(doc).iter().enumerate() {
-            for a in p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
-                let Some(d) = doc.resolve(&a).as_dict().cloned() else { continue };
-                if d.name(b"Subtype").is_some_and(|sub| SUBTYPES.iter().any(|(s, _)| s.as_bytes() == sub)) {
+            for a in p
+                .dict
+                .get(b"Annots")
+                .map(|a| doc.resolve(a))
+                .and_then(|a| a.as_array().cloned())
+                .unwrap_or_default()
+            {
+                let Some(d) = doc.resolve(&a).as_dict().cloned() else {
+                    continue;
+                };
+                if d.name(b"Subtype")
+                    .is_some_and(|sub| SUBTYPES.iter().any(|(s, _)| s.as_bytes() == sub))
+                {
                     picked.push((a.as_ref(), d, pi));
                 }
             }
         }
-        let numbers: HashMap<ObjRef, u32> =
-            picked.iter().enumerate().filter_map(|(i, (r, _, _))| Some(((*r)?, u32::try_from(i).ok()?.checked_add(2)?))).collect();
+        let numbers: HashMap<ObjRef, u32> = picked
+            .iter()
+            .enumerate()
+            .filter_map(|(i, (r, _, _))| Some(((*r)?, u32::try_from(i).ok()?.checked_add(2)?)))
+            .collect();
         for (_, mut d, pi) in picked {
             // A reply points at its parent's object in this FDF; a parent that isn't exported
             // leaves the reply unthreaded.
-            let irt = d.get(b"IRT").and_then(Object::as_ref).and_then(|r| numbers.get(&r)).copied();
+            let irt = d
+                .get(b"IRT")
+                .and_then(Object::as_ref)
+                .and_then(|r| numbers.get(&r))
+                .copied();
             // Only direct values travel: references into this file would dangle.
-            for k in [&b"P"[..], b"AP", b"Popup", b"IRT", b"Parent", b"FS", b"Sound"] {
+            for k in [
+                &b"P"[..],
+                b"AP",
+                b"Popup",
+                b"IRT",
+                b"Parent",
+                b"FS",
+                b"Sound",
+            ] {
                 d.remove(k);
             }
-            let keys: Vec<Vec<u8>> = d.iter().filter(|(_, v)| matches!(v, Object::Ref(_))).map(|(k, _)| k.clone()).collect();
+            let keys: Vec<Vec<u8>> = d
+                .iter()
+                .filter(|(_, v)| matches!(v, Object::Ref(_)))
+                .map(|(k, _)| k.clone())
+                .collect();
             for k in keys {
                 let Some(o) = d.get(&k) else { continue };
                 let v = (*doc.resolve(o)).clone();
@@ -555,13 +720,29 @@ pub fn export_fdf(doc: &Document, comments: bool, fields: bool, file: &str) -> V
     for o in offsets {
         let _ = writeln!(out, "{o:010} 00000 n ");
     }
-    let _ = write!(out, "trailer\n<< /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+    let _ = write!(
+        out,
+        "trailer\n<< /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
+    );
     out
 }
 /// The XML element name for a field name (letters, digits, `_`, `-`, `.`).
 fn xml_name(name: &str) -> String {
-    let mut s: String = name.chars().map(|c| if c.is_alphanumeric() || matches!(c, '_' | '-' | '.') { c } else { '_' }).collect();
-    if !s.chars().next().is_some_and(|c| c.is_alphabetic() || c == '_') {
+    let mut s: String = name
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || matches!(c, '_' | '-' | '.') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if !s
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_alphabetic() || c == '_')
+    {
         s.insert(0, '_');
     }
     s
@@ -582,17 +763,29 @@ pub fn export_data(doc: &Document, format: Format) -> String {
         .collect();
     match format {
         Format::Xml | Format::Xdp => {
-            let mut out = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<fields xmlns:xfdf=\"http://ns.adobe.com/xfdf-transition/\">\n");
+            let mut out = String::from(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<fields xmlns:xfdf=\"http://ns.adobe.com/xfdf-transition/\">\n",
+            );
             for (k, v) in &fields {
                 let tag = xml_name(k);
-                let orig = if tag == *k { String::new() } else { format!(" xfdf:original=\"{}\"", esc(k)) };
+                let orig = if tag == *k {
+                    String::new()
+                } else {
+                    format!(" xfdf:original=\"{}\"", esc(k))
+                };
                 let _ = writeln!(out, "<{tag}{orig}>{}</{tag}>", esc(v));
             }
             out.push_str("</fields>\n");
             out
         }
         Format::Csv => {
-            let q = |s: &str| if s.contains([',', '"', '\n']) { format!("\"{}\"", s.replace('"', "\"\"")) } else { s.to_string() };
+            let q = |s: &str| {
+                if s.contains([',', '"', '\n']) {
+                    format!("\"{}\"", s.replace('"', "\"\""))
+                } else {
+                    s.to_string()
+                }
+            };
             format!(
                 "{}\n{}\n",
                 fields.iter().map(|f| q(&f.0)).collect::<Vec<_>>().join(","),
@@ -603,8 +796,16 @@ pub fn export_data(doc: &Document, format: Format) -> String {
             let clean = |s: &str| s.replace(['\t', '\n', '\r'], " ");
             format!(
                 "{}\n{}\n",
-                fields.iter().map(|f| clean(&f.0)).collect::<Vec<_>>().join("\t"),
-                fields.iter().map(|f| clean(&f.1)).collect::<Vec<_>>().join("\t")
+                fields
+                    .iter()
+                    .map(|f| clean(&f.0))
+                    .collect::<Vec<_>>()
+                    .join("\t"),
+                fields
+                    .iter()
+                    .map(|f| clean(&f.1))
+                    .collect::<Vec<_>>()
+                    .join("\t")
             )
         }
     }
@@ -616,31 +817,54 @@ pub fn export_data(doc: &Document, format: Format) -> String {
 fn apply_values(doc: &mut Document, values: &[(String, Vec<String>)], report: &mut Report) {
     let all = pdfcraft_forms::fields(doc);
     for (name, vals) in values {
-        let Some(f) = all.iter().find(|f| &f.name == name) else { continue };
+        let Some(f) = all.iter().find(|f| &f.name == name) else {
+            continue;
+        };
         let first = vals.first().cloned().unwrap_or_default();
         let v = match f.kind {
             FieldKind::Text => FieldValue::Text(first),
             FieldKind::CheckBox => FieldValue::Check(!first.is_empty() && first != "Off"),
-            FieldKind::Radio => FieldValue::Radio((!first.is_empty() && first != "Off").then_some(first)),
+            FieldKind::Radio => {
+                FieldValue::Radio((!first.is_empty() && first != "Off").then_some(first))
+            }
             // XML, CSV and text hold a multi-select list's values in one cell, joined by ", "
             // (as export_data writes them); split it unless the whole cell is one option.
-            FieldKind::List if f.has(pdfcraft_forms::flags::MULTI_SELECT) && vals.len() == 1 && !f.options.iter().any(|(e, _)| *e == first) => {
-                FieldValue::Choice(first.split(", ").filter(|v| !v.is_empty()).map(str::to_string).collect())
+            FieldKind::List
+                if f.has(pdfcraft_forms::flags::MULTI_SELECT)
+                    && vals.len() == 1
+                    && !f.options.iter().any(|(e, _)| *e == first) =>
+            {
+                FieldValue::Choice(
+                    first
+                        .split(", ")
+                        .filter(|v| !v.is_empty())
+                        .map(str::to_string)
+                        .collect(),
+                )
             }
-            FieldKind::Combo | FieldKind::List => FieldValue::Choice(vals.iter().filter(|v| !v.is_empty()).cloned().collect()),
+            FieldKind::Combo | FieldKind::List => {
+                FieldValue::Choice(vals.iter().filter(|v| !v.is_empty()).cloned().collect())
+            }
             FieldKind::PushButton | FieldKind::Signature => continue,
         };
         // Read-only fields still take imported data, as in Acrobat.
         let ro = f.read_only();
         if ro {
-            let _ = doc.update_dict(f.obj, |d| d.set(b"Ff".to_vec(), Object::Int((f.flags & !pdfcraft_forms::flags::READ_ONLY) as i64)));
+            let _ = doc.update_dict(f.obj, |d| {
+                d.set(
+                    b"Ff".to_vec(),
+                    Object::Int((f.flags & !pdfcraft_forms::flags::READ_ONLY) as i64),
+                )
+            });
         }
         match pdfcraft_forms::set_value(doc, name, &v) {
             Ok(()) => report.fields += 1,
             Err(_) => report.rejected.push(name.clone()),
         }
         if ro {
-            let _ = doc.update_dict(f.obj, |d| d.set(b"Ff".to_vec(), Object::Int(f.flags as i64)));
+            let _ = doc.update_dict(f.obj, |d| {
+                d.set(b"Ff".to_vec(), Object::Int(f.flags as i64))
+            });
         }
     }
 }
@@ -670,7 +894,14 @@ fn annot_from_xml(node: roxmltree::Node, subtype: &str, page_ref: ObjRef) -> Opt
         }
     }
     if let Some(v) = node.attribute("replyType") {
-        d.set(b"RT".to_vec(), Object::name(if v.eq_ignore_ascii_case("group") { "Group" } else { "R" }));
+        d.set(
+            b"RT".to_vec(),
+            Object::name(if v.eq_ignore_ascii_case("group") {
+                "Group"
+            } else {
+                "R"
+            }),
+        );
     }
     if let Some(v) = node.attribute("icon") {
         d.set(b"Name".to_vec(), Object::name(v));
@@ -679,7 +910,12 @@ fn annot_from_xml(node: roxmltree::Node, subtype: &str, page_ref: ObjRef) -> Opt
         .attribute("flags")
         .unwrap_or("print")
         .split(',')
-        .filter_map(|f| FLAGS.iter().find(|(_, s)| s.eq_ignore_ascii_case(f.trim())).map(|x| x.0))
+        .filter_map(|f| {
+            FLAGS
+                .iter()
+                .find(|(_, s)| s.eq_ignore_ascii_case(f.trim()))
+                .map(|x| x.0)
+        })
         .fold(0, |bits, flag| bits | flag);
     d.set(b"F".to_vec(), Object::Int(flags));
     if let Some(c) = node.attribute("color").and_then(parse_hex) {
@@ -688,7 +924,10 @@ fn annot_from_xml(node: roxmltree::Node, subtype: &str, page_ref: ObjRef) -> Opt
     if let Some(c) = node.attribute("interior-color").and_then(parse_hex) {
         d.set(b"IC".to_vec(), arr(&c));
     }
-    if let Some(o) = node.attribute("opacity").and_then(|o| o.parse::<f64>().ok()) {
+    if let Some(o) = node
+        .attribute("opacity")
+        .and_then(|o| o.parse::<f64>().ok())
+    {
         d.set(b"CA".to_vec(), Object::Real(o.clamp(0.0, 1.0)));
     }
     if let Some(w) = node.attribute("width").and_then(|w| w.parse::<f64>().ok()) {
@@ -709,15 +948,25 @@ fn annot_from_xml(node: roxmltree::Node, subtype: &str, page_ref: ObjRef) -> Opt
     if node.attribute("head").is_some() || node.attribute("tail").is_some() {
         d.set(
             b"LE".to_vec(),
-            Object::Array(vec![Object::name(node.attribute("head").unwrap_or("None")), Object::name(node.attribute("tail").unwrap_or("None"))]),
+            Object::Array(vec![
+                Object::name(node.attribute("head").unwrap_or("None")),
+                Object::name(node.attribute("tail").unwrap_or("None")),
+            ]),
         );
     }
-    if let Some(cl) = node.attribute("callout").map(csv).filter(|c| c.len() == 4 || c.len() == 6) {
+    if let Some(cl) = node
+        .attribute("callout")
+        .map(csv)
+        .filter(|c| c.len() == 4 || c.len() == 6)
+    {
         d.set(b"CL".to_vec(), arr(&cl));
         if let Some(rd) = node.attribute("fringe").map(csv).filter(|r| r.len() == 4) {
             d.set(b"RD".to_vec(), arr(&rd));
         }
-        d.set(b"IT".to_vec(), Object::name(node.attribute("intent").unwrap_or("FreeTextCallout")));
+        d.set(
+            b"IT".to_vec(),
+            Object::name(node.attribute("intent").unwrap_or("FreeTextCallout")),
+        );
         // A callout's /LE is one name, not the head/tail pair of a line.
         match node.attribute("head") {
             Some(h) => d.set(b"LE".to_vec(), Object::name(h)),
@@ -729,16 +978,35 @@ fn annot_from_xml(node: roxmltree::Node, subtype: &str, page_ref: ObjRef) -> Opt
     for child in node.children().filter(|c| c.is_element()) {
         match child.tag_name().name() {
             "contents" => {
-                d.set(b"Contents".to_vec(), PdfString::text(&child.text().unwrap_or("").replace("\r\n", "\r").replace('\n', "\r")));
+                d.set(
+                    b"Contents".to_vec(),
+                    PdfString::text(
+                        &child
+                            .text()
+                            .unwrap_or("")
+                            .replace("\r\n", "\r")
+                            .replace('\n', "\r"),
+                    ),
+                );
             }
             "defaultappearance" => {
-                d.set(b"DA".to_vec(), PdfString::literal(child.text().unwrap_or("").as_bytes().to_vec()));
+                d.set(
+                    b"DA".to_vec(),
+                    PdfString::literal(child.text().unwrap_or("").as_bytes().to_vec()),
+                );
             }
             "inklist" => {
                 let list: Vec<Object> = child
                     .children()
                     .filter(|g| g.has_tag_name("gesture"))
-                    .map(|g| arr(&g.text().unwrap_or("").split(';').flat_map(|p| csv(p).into_iter()).collect::<Vec<_>>()))
+                    .map(|g| {
+                        arr(&g
+                            .text()
+                            .unwrap_or("")
+                            .split(';')
+                            .flat_map(|p| csv(p).into_iter())
+                            .collect::<Vec<_>>())
+                    })
                     .collect();
                 d.set(b"InkList".to_vec(), Object::Array(list));
             }
@@ -779,7 +1047,9 @@ fn place(doc: &mut Document, page_ref: ObjRef, mut d: Dict) -> Result<ObjRef, Da
             d.set(b"F".to_vec(), Object::Int(f & !REDACT_UNSEEN));
         }
     }
-    let nm = d.get(b"NM").and_then(|n| n.as_string().map(|s| s.to_text()));
+    let nm = d
+        .get(b"NM")
+        .and_then(|n| n.as_string().map(|s| s.to_text()));
     let annots: Vec<Object> = doc
         .get(page_ref)
         .as_dict()
@@ -794,7 +1064,11 @@ fn place(doc: &mut Document, page_ref: ObjRef, mut d: Dict) -> Result<ObjRef, Da
     let mut clash = false;
     for a in annots {
         let existing = a.as_ref().and_then(|r| doc.get(r).as_dict().cloned());
-        let same = nm.is_some() && existing.as_ref().and_then(|x| x.get(b"NM").and_then(|n| doc.resolve(n).as_string().map(|s| s.to_text()))) == nm;
+        let same = nm.is_some()
+            && existing.as_ref().and_then(|x| {
+                x.get(b"NM")
+                    .and_then(|n| doc.resolve(n).as_string().map(|s| s.to_text()))
+            }) == nm;
         if same && existing.as_ref().is_some_and(import_protected) {
             clash = true;
             kept.push(a);
@@ -809,8 +1083,15 @@ fn place(doc: &mut Document, page_ref: ObjRef, mut d: Dict) -> Result<ObjRef, Da
     }
     // The replaced note's pop-up goes with it; otherwise it stays on the page pointing at a note that is no longer there.
     kept.retain(|a| {
-        let Some(x) = a.as_ref().map(|r| doc.get(r)).and_then(|o| o.as_dict().cloned()) else { return true };
-        x.name(b"Subtype") != Some(b"Popup".as_slice()) || x.reference(b"Parent").is_none_or(|p| !removed.contains(&p))
+        let Some(x) = a
+            .as_ref()
+            .map(|r| doc.get(r))
+            .and_then(|o| o.as_dict().cloned())
+        else {
+            return true;
+        };
+        x.name(b"Subtype") != Some(b"Popup".as_slice())
+            || x.reference(b"Parent").is_none_or(|p| !removed.contains(&p))
     });
     // Keep the replaced comment's identity: replies and review statuses not included in a
     // partial import still point at it through /IRT. Allocating a new object would detach
@@ -844,9 +1125,19 @@ fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, DataError> {
     if let Some(annots) = root.children().find(|c| c.has_tag_name("annots")) {
         for node in annots.children().filter(|c| c.is_element()) {
             let tag = node.tag_name().name().to_ascii_lowercase();
-            let Some((subtype, _)) = SUBTYPES.iter().find(|(_, t)| *t == tag) else { continue };
-            let Some(page) = node.attribute("page").and_then(|p| p.parse::<usize>().ok()).and_then(|p| pages.get(p).copied()) else { continue };
-            let Some(d) = annot_from_xml(node, subtype, page) else { continue };
+            let Some((subtype, _)) = SUBTYPES.iter().find(|(_, t)| *t == tag) else {
+                continue;
+            };
+            let Some(page) = node
+                .attribute("page")
+                .and_then(|p| p.parse::<usize>().ok())
+                .and_then(|p| pages.get(p).copied())
+            else {
+                continue;
+            };
+            let Some(d) = annot_from_xml(node, subtype, page) else {
+                continue;
+            };
             let r = place(doc, page, d)?;
             // A later same-name record replaces this comment, including its reply relation.
             later.remove(&r);
@@ -865,7 +1156,10 @@ fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, DataError> {
                 p.set(b"Subtype".to_vec(), Object::name("Popup"));
                 p.set(b"Rect".to_vec(), arr(&rect));
                 p.set(b"Parent".to_vec(), Object::Ref(r));
-                p.set(b"Open".to_vec(), Object::Bool(pop.attribute("open") == Some("yes")));
+                p.set(
+                    b"Open".to_vec(),
+                    Object::Bool(pop.attribute("open") == Some("yes")),
+                );
                 let pr = doc.add(Object::Dict(p));
                 doc.update_dict(r, |d| d.set(b"Popup".to_vec(), Object::Ref(pr)))?;
                 doc.update_dict(page, |pd| {
@@ -878,7 +1172,11 @@ fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, DataError> {
         }
     }
     for (r, irt) in later {
-        if let Some(parent) = by_name.get(&irt).copied().or_else(|| find_by_name(doc, &irt)) {
+        if let Some(parent) = by_name
+            .get(&irt)
+            .copied()
+            .or_else(|| find_by_name(doc, &irt))
+        {
             doc.update_dict(r, |d| d.set(b"IRT".to_vec(), Object::Ref(parent)))?;
         }
     }
@@ -893,9 +1191,20 @@ fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, DataError> {
 
 fn find_by_name(doc: &Document, nm: &str) -> Option<ObjRef> {
     for p in pdfcraft_model::pages(doc) {
-        for a in p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
+        for a in p
+            .dict
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default()
+        {
             if let Some(r) = a.as_ref()
-                && doc.get(r).as_dict().and_then(|d| text_of(doc, d, b"NM")).as_deref() == Some(nm)
+                && doc
+                    .get(r)
+                    .as_dict()
+                    .and_then(|d| text_of(doc, d, b"NM"))
+                    .as_deref()
+                    == Some(nm)
             {
                 return Some(r);
             }
@@ -912,20 +1221,41 @@ fn deep(src: &Document, o: &Object, depth: usize) -> Object {
     match o {
         Object::Ref(r) => deep(src, &src.get(*r), depth + 1),
         Object::Array(a) => Object::Array(a.iter().map(|x| deep(src, x, depth + 1)).collect()),
-        Object::Dict(d) => Object::Dict(d.iter().map(|(k, v)| (k.clone(), deep(src, v, depth + 1))).collect()),
+        Object::Dict(d) => Object::Dict(
+            d.iter()
+                .map(|(k, v)| (k.clone(), deep(src, v, depth + 1)))
+                .collect(),
+        ),
         Object::Stream(_) => Object::Null,
         other => other.clone(),
     }
 }
 
-fn walk_xfdf(node: roxmltree::Node, prefix: &str, out: &mut Vec<(String, Vec<String>)>, depth: usize) -> Result<(), DataError> {
+fn walk_xfdf(
+    node: roxmltree::Node,
+    prefix: &str,
+    out: &mut Vec<(String, Vec<String>)>,
+    depth: usize,
+) -> Result<(), DataError> {
     if depth > MAX_DEPTH {
-        return Err(DataError::Malformed(format!("XFDF fields nest more than {MAX_DEPTH} deep")));
+        return Err(DataError::Malformed(format!(
+            "XFDF fields nest more than {MAX_DEPTH} deep"
+        )));
     }
     for f in node.children().filter(|c| c.has_tag_name("field")) {
-        let Some(name) = f.attribute("name") else { continue };
-        let full = if prefix.is_empty() { name.to_string() } else { format!("{prefix}.{name}") };
-        let vals: Vec<String> = f.children().filter(|c| c.has_tag_name("value")).map(|v| v.text().unwrap_or("").to_string()).collect();
+        let Some(name) = f.attribute("name") else {
+            continue;
+        };
+        let full = if prefix.is_empty() {
+            name.to_string()
+        } else {
+            format!("{prefix}.{name}")
+        };
+        let vals: Vec<String> = f
+            .children()
+            .filter(|c| c.has_tag_name("value"))
+            .map(|v| v.text().unwrap_or("").to_string())
+            .collect();
         if !vals.is_empty() {
             out.push((full.clone(), vals));
         }
@@ -934,31 +1264,57 @@ fn walk_xfdf(node: roxmltree::Node, prefix: &str, out: &mut Vec<(String, Vec<Str
     Ok(())
 }
 
-fn walk_fdf(fdf: &Document, list: &[Object], prefix: &str, out: &mut Vec<(String, Vec<String>)>, depth: usize) {
+fn walk_fdf(
+    fdf: &Document,
+    list: &[Object],
+    prefix: &str,
+    out: &mut Vec<(String, Vec<String>)>,
+    depth: usize,
+) {
     if depth > 32 {
         return;
     }
     for f in list {
-        let Some(d) = fdf.resolve(f).as_dict().cloned() else { continue };
-        let Some(t) = d.get(b"T").and_then(|t| fdf.resolve(t).as_string().map(|s| s.to_text())) else { continue };
-        let full = if prefix.is_empty() { t } else { format!("{prefix}.{t}") };
+        let Some(d) = fdf.resolve(f).as_dict().cloned() else {
+            continue;
+        };
+        let Some(t) = d
+            .get(b"T")
+            .and_then(|t| fdf.resolve(t).as_string().map(|s| s.to_text()))
+        else {
+            continue;
+        };
+        let full = if prefix.is_empty() {
+            t
+        } else {
+            format!("{prefix}.{t}")
+        };
         if let Some(v) = d.get(b"V").map(|v| fdf.resolve(v)) {
             let vals: Vec<String> = match &*v {
                 Object::String(s) => vec![s.to_text()],
                 Object::Name(n) => vec![pdfcraft_forms::name_text(n)],
-                Object::Array(a) => a.iter().filter_map(|x| fdf.resolve(x).as_string().map(|s| s.to_text())).collect(),
+                Object::Array(a) => a
+                    .iter()
+                    .filter_map(|x| fdf.resolve(x).as_string().map(|s| s.to_text()))
+                    .collect(),
                 _ => Vec::new(),
             };
             out.push((full.clone(), vals));
         }
-        if let Some(kids) = d.get(b"Kids").map(|k| fdf.resolve(k)).and_then(|k| k.as_array().cloned()) {
+        if let Some(kids) = d
+            .get(b"Kids")
+            .map(|k| fdf.resolve(k))
+            .and_then(|k| k.as_array().cloned())
+        {
             walk_fdf(fdf, &kids, &full, out, depth + 1);
         }
     }
 }
 
 fn fdf_body(fdf: &Document) -> Result<Dict, DataError> {
-    let root = fdf.root().ok_or_else(|| DataError::Malformed("no /Root".into()))?;
+    let root = fdf
+        .root()
+        .ok_or_else(|| DataError::Malformed("no /Root".into()))?;
     fdf.get(root)
         .as_dict()
         .and_then(|d| d.get(b"FDF").cloned())
@@ -970,22 +1326,33 @@ fn fdf_body(fdf: &Document) -> Result<Dict, DataError> {
 /// The field values in a form data file (FDF or XFDF) or a filled-in PDF form, in file order.
 pub fn data_values(bytes: &[u8]) -> Result<Vec<(String, Vec<String>)>, DataError> {
     if bytes.starts_with(b"%FDF") {
-        let fdf = Document::open(std::sync::Arc::new(bytes.to_vec())).map_err(|e| DataError::Malformed(e.to_string()))?;
+        let fdf = Document::open(std::sync::Arc::new(bytes.to_vec()))
+            .map_err(|e| DataError::Malformed(e.to_string()))?;
         let body = fdf_body(&fdf)?;
         let mut values = Vec::new();
-        if let Some(list) = body.get(b"Fields").map(|f| fdf.resolve(f)).and_then(|f| f.as_array().cloned()) {
+        if let Some(list) = body
+            .get(b"Fields")
+            .map(|f| fdf.resolve(f))
+            .and_then(|f| f.as_array().cloned())
+        {
             walk_fdf(&fdf, &list, "", &mut values, 0);
         }
         return Ok(values);
     }
     if bytes.starts_with(b"%PDF") || bytes.windows(5).take(1024).any(|w| w == b"%PDF-") {
-        let doc = Document::open(std::sync::Arc::new(bytes.to_vec())).map_err(|e| DataError::Malformed(e.to_string()))?;
+        let doc = Document::open(std::sync::Arc::new(bytes.to_vec()))
+            .map_err(|e| DataError::Malformed(e.to_string()))?;
         return Ok(pdfcraft_forms::fields(&doc)
             .into_iter()
             .filter(|f| !matches!(f.kind, FieldKind::PushButton | FieldKind::Signature))
             .map(|f| {
-                let v =
-                    if matches!(f.kind, FieldKind::CheckBox | FieldKind::Radio) && f.value.is_empty() { vec!["Off".to_string()] } else { f.value };
+                let v = if matches!(f.kind, FieldKind::CheckBox | FieldKind::Radio)
+                    && f.value.is_empty()
+                {
+                    vec!["Off".to_string()]
+                } else {
+                    f.value
+                };
                 (f.name, v)
             })
             .collect());
@@ -1016,11 +1383,24 @@ pub fn merge_csv(files: &[Vec<(String, Vec<String>)>]) -> String {
             }
         }
     }
-    let q = |s: &str| if s.contains([',', '"', '\n', '\r']) { format!("\"{}\"", s.replace('"', "\"\"")) } else { s.to_string() };
+    let q = |s: &str| {
+        if s.contains([',', '"', '\n', '\r']) {
+            format!("\"{}\"", s.replace('"', "\"\""))
+        } else {
+            s.to_string()
+        }
+    };
     let mut out = columns.iter().map(|c| q(c)).collect::<Vec<_>>().join(",");
     out.push('\n');
     for f in files {
-        let row: Vec<String> = columns.iter().map(|c| f.iter().find(|(k, _)| k == c).map_or(String::new(), |(_, v)| q(&v.join(", ")))).collect();
+        let row: Vec<String> = columns
+            .iter()
+            .map(|c| {
+                f.iter()
+                    .find(|(k, _)| k == c)
+                    .map_or(String::new(), |(_, v)| q(&v.join(", ")))
+            })
+            .collect();
         out.push_str(&row.join(","));
         out.push('\n');
     }
@@ -1028,28 +1408,50 @@ pub fn merge_csv(files: &[Vec<(String, Vec<String>)>]) -> String {
 }
 
 fn import_fdf(doc: &mut Document, bytes: &[u8]) -> Result<Report, DataError> {
-    let fdf = Document::open(std::sync::Arc::new(bytes.to_vec())).map_err(|e| DataError::Malformed(e.to_string()))?;
+    let fdf = Document::open(std::sync::Arc::new(bytes.to_vec()))
+        .map_err(|e| DataError::Malformed(e.to_string()))?;
     let body = fdf_body(&fdf)?;
     let mut report = Report::default();
     // Fields (with /Kids for hierarchical names).
     let mut values = Vec::new();
-    if let Some(list) = body.get(b"Fields").map(|f| fdf.resolve(f)).and_then(|f| f.as_array().cloned()) {
+    if let Some(list) = body
+        .get(b"Fields")
+        .map(|f| fdf.resolve(f))
+        .and_then(|f| f.as_array().cloned())
+    {
         walk_fdf(&fdf, &list, "", &mut values, 0);
     }
     // Comments: parents first, then replies (whose /IRT needs the parent's new reference).
     let pages: Vec<ObjRef> = pdfcraft_model::pages(doc).iter().map(|p| p.obj).collect();
     let mut placed: HashMap<ObjRef, ObjRef> = HashMap::new();
     let mut later: HashMap<ObjRef, (Option<ObjRef>, Option<String>)> = HashMap::new();
-    for a in body.get(b"Annots").map(|a| fdf.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
-        let Some(mut src) = fdf.resolve(&a).as_dict().cloned() else { continue };
+    for a in body
+        .get(b"Annots")
+        .map(|a| fdf.resolve(a))
+        .and_then(|a| a.as_array().cloned())
+        .unwrap_or_default()
+    {
+        let Some(mut src) = fdf.resolve(&a).as_dict().cloned() else {
+            continue;
+        };
         // The parent is another comment: link it below rather than copying it in.
         let irt = src.get(b"IRT").cloned();
         src.remove(b"IRT");
-        let Object::Dict(mut d) = deep(&fdf, &Object::Dict(src), 0) else { continue };
-        let Some(page) = d.get(b"Page").and_then(Object::as_int).and_then(|p| usize::try_from(p).ok()).and_then(|p| pages.get(p).copied()) else {
+        let Object::Dict(mut d) = deep(&fdf, &Object::Dict(src), 0) else {
             continue;
         };
-        if !d.name(b"Subtype").is_some_and(|s| SUBTYPES.iter().any(|(x, _)| x.as_bytes() == s)) {
+        let Some(page) = d
+            .get(b"Page")
+            .and_then(Object::as_int)
+            .and_then(|p| usize::try_from(p).ok())
+            .and_then(|p| pages.get(p).copied())
+        else {
+            continue;
+        };
+        if !d
+            .name(b"Subtype")
+            .is_some_and(|s| SUBTYPES.iter().any(|(x, _)| x.as_bytes() == s))
+        {
             continue;
         }
         d.remove(b"Page");
@@ -1060,14 +1462,19 @@ fn import_fdf(doc: &mut Document, bytes: &[u8]) -> Result<Report, DataError> {
             placed.insert(fr, r);
         }
         if let Some(irt) = irt {
-            let parent_name = fdf.resolve(&irt).as_dict().and_then(|p| text_of(&fdf, p, b"NM"));
+            let parent_name = fdf
+                .resolve(&irt)
+                .as_dict()
+                .and_then(|p| text_of(&fdf, p, b"NM"));
             later.insert(r, (irt.as_ref(), parent_name));
         }
         report.comments += 1;
     }
     for (r, (parent_obj, parent_name)) in later {
         // The parent imported from this file, else one already in the document with its name.
-        let parent = parent_obj.and_then(|p| placed.get(&p).copied()).or_else(|| parent_name.and_then(|nm| find_by_name(doc, &nm)));
+        let parent = parent_obj
+            .and_then(|p| placed.get(&p).copied())
+            .or_else(|| parent_name.and_then(|nm| find_by_name(doc, &nm)));
         if let Some(parent) = parent.filter(|p| *p != r) {
             doc.update_dict(r, |d| d.set(b"IRT".to_vec(), Object::Ref(parent)))?;
         }
@@ -1087,8 +1494,11 @@ fn import_table(doc: &mut Document, text: &str) -> Result<Report, DataError> {
             .children()
             .filter(|c| c.is_element())
             .map(|c| {
-                let name =
-                    c.attributes().find(|a| a.name() == "original").map(|a| a.value().to_string()).unwrap_or_else(|| c.tag_name().name().to_string());
+                let name = c
+                    .attributes()
+                    .find(|a| a.name() == "original")
+                    .map(|a| a.value().to_string())
+                    .unwrap_or_else(|| c.tag_name().name().to_string());
                 (name, vec![c.text().unwrap_or("").to_string()])
             })
             .collect()
@@ -1125,12 +1535,25 @@ fn import_table(doc: &mut Document, text: &str) -> Result<Report, DataError> {
         records.push((record, has_quotes));
         // Blank lines (such as the one a trailing line break leaves) are not records, but a
         // quoted empty value is a record that clears a field.
-        let mut records =
-            records.into_iter().filter(|(r, has_quotes)| *has_quotes || !matches!(r.as_slice(), [only] if only.is_empty())).map(|(r, _)| r);
-        let (Some(head), Some(row)) = (records.next(), records.next()) else { return Err(DataError::UnknownFormat) };
+        let mut records = records
+            .into_iter()
+            .filter(|(r, has_quotes)| {
+                *has_quotes || !matches!(r.as_slice(), [only] if only.is_empty())
+            })
+            .map(|(r, _)| r);
+        let (Some(head), Some(row)) = (records.next(), records.next()) else {
+            return Err(DataError::UnknownFormat);
+        };
         // Text exported from a one-field form has no tab to show for it (#1321). CSV quotes a
         // value with a comma, so one name over several unquoted cells is that text, not CSV.
-        if head.len() == 1 && row.len() > 1 { tab_delimited(t)? } else { head.into_iter().zip(row).map(|(k, v)| (k, vec![v])).collect() }
+        if head.len() == 1 && row.len() > 1 {
+            tab_delimited(t)?
+        } else {
+            head.into_iter()
+                .zip(row)
+                .map(|(k, v)| (k, vec![v]))
+                .collect()
+        }
     };
     apply_values(doc, &values, &mut report);
     Ok(report)
@@ -1139,8 +1562,15 @@ fn import_table(doc: &mut Document, text: &str) -> Result<Report, DataError> {
 /// Tab-delimited text: a row of names, a row of values.
 fn tab_delimited(t: &str) -> Result<Vec<(String, Vec<String>)>, DataError> {
     let mut lines = t.lines();
-    let (Some(head), Some(row)) = (lines.next(), lines.next()) else { return Err(DataError::UnknownFormat) };
-    Ok(head.split('\t').map(str::to_string).zip(row.split('\t')).map(|(k, v)| (k, vec![v.to_string()])).collect())
+    let (Some(head), Some(row)) = (lines.next(), lines.next()) else {
+        return Err(DataError::UnknownFormat);
+    };
+    Ok(head
+        .split('\t')
+        .map(str::to_string)
+        .zip(row.split('\t'))
+        .map(|(k, v)| (k, vec![v.to_string()]))
+        .collect())
 }
 
 /// Import comments and/or field values from XFDF, FDF, XML, CSV or tab-delimited text

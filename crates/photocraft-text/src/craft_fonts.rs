@@ -56,8 +56,16 @@ pub fn japanese_families() -> Vec<&'static str> {
 /// place (the CJK script order around them is unchanged). For serif runs.
 pub fn mincho_first(fallback: &[String]) -> Vec<String> {
     let craft = japanese_families();
-    let slots: Vec<usize> = fallback.iter().enumerate().filter(|(_, f)| craft.contains(&f.as_str())).map(|(i, _)| i).collect();
-    let mut group: Vec<String> = slots.iter().filter_map(|&i| fallback.get(i).cloned()).collect();
+    let slots: Vec<usize> = fallback
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| craft.contains(&f.as_str()))
+        .map(|(i, _)| i)
+        .collect();
+    let mut group: Vec<String> = slots
+        .iter()
+        .filter_map(|&i| fallback.get(i).cloned())
+        .collect();
     group.sort_by_key(|f| !f.contains("Mincho"));
     let mut out = fallback.to_vec();
     for (slot, fam) in slots.into_iter().zip(group) {
@@ -112,12 +120,19 @@ mod tests {
             eprintln!("skipping: built without craft-fonts (or with only one Japanese family)");
             return;
         }
-        let fallback: Vec<String> =
-            ["Noto Sans"].iter().map(|s| s.to_string()).chain(fams.iter().map(|s| s.to_string())).chain(["Hiragino Sans".to_string()]).collect();
+        let fallback: Vec<String> = ["Noto Sans"]
+            .iter()
+            .map(|s| s.to_string())
+            .chain(fams.iter().map(|s| s.to_string()))
+            .chain(["Hiragino Sans".to_string()])
+            .collect();
         let serif = mincho_first(&fallback);
         assert_eq!(serif.first().map(String::as_str), Some("Noto Sans"));
         assert_eq!(serif.last().map(String::as_str), Some("Hiragino Sans"));
-        assert!(serif.get(1).is_some_and(|f| f.contains("Mincho")), "{serif:?}");
+        assert!(
+            serif.get(1).is_some_and(|f| f.contains("Mincho")),
+            "{serif:?}"
+        );
         assert_eq!(serif.len(), fallback.len());
     }
 
@@ -129,10 +144,24 @@ mod tests {
 
     #[test]
     fn serif_names() {
-        for s in ["Shippori Mincho", "Times New Roman", "Noto Serif JP", "Georgia", "Songti SC", "Adobe Garamond Pro"] {
+        for s in [
+            "Shippori Mincho",
+            "Times New Roman",
+            "Noto Serif JP",
+            "Georgia",
+            "Songti SC",
+            "Adobe Garamond Pro",
+        ] {
             assert!(is_serif_family(s), "{s}");
         }
-        for s in ["Inter", "Noto Sans Serif", "BIZ UDPGothic", "Helvetica", "", "Noto Sans CJK JP"] {
+        for s in [
+            "Inter",
+            "Noto Sans Serif",
+            "BIZ UDPGothic",
+            "Helvetica",
+            "",
+            "Noto Sans CJK JP",
+        ] {
             assert!(!is_serif_family(s), "{s}");
         }
     }

@@ -59,7 +59,10 @@ impl Default for SteamOptions {
 
 impl SteamOptions {
     pub fn with_app_id(app_id: u32) -> Self {
-        Self { app_id, dev: app_id == DEV_APP_ID || std::env::var_os("BUN_ENGINE_STEAM_DEV").is_some() }
+        Self {
+            app_id,
+            dev: app_id == DEV_APP_ID || std::env::var_os("BUN_ENGINE_STEAM_DEV").is_some(),
+        }
     }
 }
 
@@ -87,11 +90,18 @@ pub struct Steam {
 
 /// `steam_appid.txt` next to the running binary (development only).
 pub fn dev_app_id_file() -> Option<PathBuf> {
-    Some(std::env::current_exe().ok()?.parent()?.join("steam_appid.txt"))
+    Some(
+        std::env::current_exe()
+            .ok()?
+            .parent()?
+            .join("steam_appid.txt"),
+    )
 }
 
 fn write_dev_app_id(app_id: u32) -> Result<(), String> {
-    let Some(path) = dev_app_id_file() else { return Ok(()) };
+    let Some(path) = dev_app_id_file() else {
+        return Ok(());
+    };
     let wanted = app_id.to_string();
     if std::fs::read_to_string(&path).is_ok_and(|v| v.trim() == wanted) {
         return Ok(());
@@ -105,14 +115,25 @@ fn redistributable() -> Result<(), String> {
     if !cfg!(all(windows, target_env = "msvc")) {
         return Ok(());
     }
-    let dll = if cfg!(target_pointer_width = "64") { "steam_api64.dll" } else { "steam_api.dll" };
-    let exe_dir = std::env::current_exe().ok().and_then(|e| e.parent().map(PathBuf::from));
+    let dll = if cfg!(target_pointer_width = "64") {
+        "steam_api64.dll"
+    } else {
+        "steam_api.dll"
+    };
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(PathBuf::from));
     let path = std::env::var_os("PATH").unwrap_or_default();
-    let found = exe_dir.into_iter().chain(std::env::split_paths(&path)).any(|dir| dir.join(dll).is_file());
+    let found = exe_dir
+        .into_iter()
+        .chain(std::env::split_paths(&path))
+        .any(|dir| dir.join(dll).is_file());
     if found {
         Ok(())
     } else {
-        Err(format!("{dll} (Steamworks redistributable) is missing next to the binary; copy it from the steamworks-sys build output"))
+        Err(format!(
+            "{dll} (Steamworks redistributable) is missing next to the binary; copy it from the steamworks-sys build output"
+        ))
     }
 }
 
@@ -132,7 +153,10 @@ impl Steam {
         if options.dev {
             write_dev_app_id(options.app_id)?;
         } else if steamworks::restart_app_if_necessary(AppId(options.app_id)) {
-            return Err(format!("relaunching through Steam for AppID {}", options.app_id));
+            return Err(format!(
+                "relaunching through Steam for AppID {}",
+                options.app_id
+            ));
         }
         let client = Client::init_app(options.app_id).map_err(|e| format!("SteamAPI_Init: {e}"))?;
         // Valve's Vulkan overlay layer is implicit and gated by this variable; Steam sets it for
@@ -146,10 +170,12 @@ impl Steam {
         let mut callbacks = Vec::new();
         {
             let (active, changed) = (overlay_active.clone(), overlay_changed.clone());
-            callbacks.push(client.register_callback(move |event: GameOverlayActivated| {
-                active.store(event.active, Ordering::SeqCst);
-                changed.store(true, Ordering::SeqCst);
-            }));
+            callbacks.push(
+                client.register_callback(move |event: GameOverlayActivated| {
+                    active.store(event.active, Ordering::SeqCst);
+                    changed.store(true, Ordering::SeqCst);
+                }),
+            );
         }
         {
             let requested = screenshot_requested.clone();
@@ -191,7 +217,9 @@ impl Steam {
 
     /// The overlay state when it changed since the last call.
     pub fn take_overlay_change(&self) -> Option<bool> {
-        self.overlay_changed.swap(false, Ordering::SeqCst).then(|| self.overlay_active())
+        self.overlay_changed
+            .swap(false, Ordering::SeqCst)
+            .then(|| self.overlay_active())
     }
 
     /// Opens the overlay on `dialog` (`Friends`, `Community`, `Players`, `Settings`,
@@ -207,7 +235,9 @@ impl Steam {
     /// Steam Deck (or `SteamDeck=1`) and Big Picture: the controller-first layout applies.
     pub fn controller_first(&self) -> bool {
         let utils = self.client.utils();
-        utils.is_steam_running_on_steam_deck() || utils.is_steam_in_big_picture_mode() || gamescope()
+        utils.is_steam_running_on_steam_deck()
+            || utils.is_steam_in_big_picture_mode()
+            || gamescope()
     }
 
     /// Publishes Rich Presence: `system`, `game`, `status` (the "view game info" line) and, for
@@ -215,8 +245,16 @@ impl Steam {
     pub fn set_presence(&self, presence: &Presence) -> bool {
         let friends = self.client.friends();
         let status = match &presence.state {
-            Some(state) => format!("{} on {} ({state})", presence.game, presence.system.to_uppercase()),
-            None => format!("Playing {} on {}", presence.game, presence.system.to_uppercase()),
+            Some(state) => format!(
+                "{} on {} ({state})",
+                presence.game,
+                presence.system.to_uppercase()
+            ),
+            None => format!(
+                "Playing {} on {}",
+                presence.game,
+                presence.system.to_uppercase()
+            ),
         };
         let mut ok = friends.set_rich_presence("system", Some(&presence.system));
         ok &= friends.set_rich_presence("game", Some(&presence.game));
@@ -233,7 +271,10 @@ impl Steam {
 
     /// A Rich Presence value of the signed-in user, as Steam reports it back.
     pub fn presence_value(&self, key: &str) -> Option<String> {
-        self.client.friends().get_friend(self.client.user().steam_id()).rich_presence(key)
+        self.client
+            .friends()
+            .get_friend(self.client.user().steam_id())
+            .rich_presence(key)
     }
 
     /// The engine writes screenshots itself (from the machine picture) instead of Steam
@@ -252,11 +293,20 @@ impl Steam {
 
     /// Completed screenshots (`ScreenshotReady`): local handles or errors.
     pub fn take_screenshots_ready(&self) -> Vec<Result<u32, String>> {
-        self.screenshots.lock().map(|mut list| std::mem::take(&mut *list)).unwrap_or_default()
+        self.screenshots
+            .lock()
+            .map(|mut list| std::mem::take(&mut *list))
+            .unwrap_or_default()
     }
 
     /// Writes an RGB8 picture to the Steam screenshot library and tags its location.
-    pub fn write_screenshot(&self, width: u32, height: u32, rgb: &mut [u8], location: &str) -> Option<u32> {
+    pub fn write_screenshot(
+        &self,
+        width: u32,
+        height: u32,
+        rgb: &mut [u8],
+        location: &str,
+    ) -> Option<u32> {
         // SAFETY: the interface accessor is valid after init; `rgb` holds width*height*3 bytes.
         unsafe {
             let screenshots = sys::SteamAPI_SteamScreenshots_v003();
@@ -284,7 +334,8 @@ impl Steam {
         let storage = self.client.remote_storage();
         let (total, available) = cloud::quota();
         // SAFETY: plain query on the initialized client.
-        let logged_on = unsafe { sys::SteamAPI_ISteamUser_BLoggedOn(sys::SteamAPI_SteamUser_v023()) };
+        let logged_on =
+            unsafe { sys::SteamAPI_ISteamUser_BLoggedOn(sys::SteamAPI_SteamUser_v023()) };
         serde_json::json!({
             "appId": self.app_id,
             "steamId": self.steam_id().to_string(),
@@ -319,11 +370,16 @@ pub(crate) fn sdk_string(ptr: *const std::os::raw::c_char) -> String {
         return String::new();
     }
     // SAFETY: the SDK returns NUL-terminated strings that live until the next call.
-    unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned()
+    unsafe { CStr::from_ptr(ptr) }
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// Lower-case hexadecimal SHA-256 of `bytes`.
 pub fn sha256_hex(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
-    Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }

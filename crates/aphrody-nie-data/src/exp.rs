@@ -49,7 +49,10 @@ impl CharaExpTable {
     /// XP nécessaire pour un niveau précis. `None` si absent. Source : `getExpForLevel`.
     #[must_use]
     pub fn exp_for_level(&self, level: i64) -> Option<i64> {
-        self.exp_table.iter().find(|e| e.level == level).map(|e| e.need_exp)
+        self.exp_table
+            .iter()
+            .find(|e| e.level == level)
+            .map(|e| e.need_exp)
     }
 
     /// XP cumulée pour atteindre `target_level` depuis le niveau 1 (somme des `needExp` des
@@ -69,13 +72,19 @@ impl CharaExpTable {
     /// Multiplicateur XP pour un `growthRank` (0-8). Défaut 1 si absent. Source : `getRarityRate`.
     #[must_use]
     pub fn rarity_rate(&self, growth_rank: i64) -> i64 {
-        self.rarity_rates.iter().find(|r| r.rarity == growth_rank).map_or(1, |r| r.rate)
+        self.rarity_rates
+            .iter()
+            .find(|r| r.rarity == growth_rank)
+            .map_or(1, |r| r.rate)
     }
 
     /// Index niveau→needExp (commodité).
     #[must_use]
     pub fn by_level(&self) -> BTreeMap<i64, i64> {
-        self.exp_table.iter().map(|e| (e.level, e.need_exp)).collect()
+        self.exp_table
+            .iter()
+            .map(|e| (e.level, e.need_exp))
+            .collect()
     }
 }
 

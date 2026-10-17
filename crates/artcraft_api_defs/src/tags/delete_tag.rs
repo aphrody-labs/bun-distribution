@@ -7,14 +7,14 @@ use tokens::tokens::tags::TagToken;
 
 #[derive(Deserialize, ToSchema)]
 pub struct DeleteTagPathInfo {
-  pub tag_token: TagToken,
+    pub tag_token: TagToken,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct DeleteTagSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// How many media-file links were hard-deleted along with the tag.
-  /// (The tag record itself is soft-deleted.)
-  pub removed_link_count: u64,
+    /// How many media-file links were hard-deleted along with the tag.
+    /// (The tag record itself is soft-deleted.)
+    pub removed_link_count: u64,
 }

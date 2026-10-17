@@ -21,8 +21,23 @@ const MAX_ENTRIES: usize = 2000;
 const MAX_KEY_LEN: usize = 48;
 
 /// Named (non-character) keys, in their canonical spelling.
-const NAMED: &[&str] =
-    &["Left", "Right", "Up", "Down", "Home", "End", "PageUp", "PageDown", "Enter", "Tab", "Backspace", "Delete", "Escape", "Space", "Insert"];
+const NAMED: &[&str] = &[
+    "Left",
+    "Right",
+    "Up",
+    "Down",
+    "Home",
+    "End",
+    "PageUp",
+    "PageDown",
+    "Enter",
+    "Tab",
+    "Backspace",
+    "Delete",
+    "Escape",
+    "Space",
+    "Insert",
+];
 
 /// Custom keyboard shortcuts. `assigned` maps a key to the command it runs; `removed` holds
 /// built-in keys that were taken away (removed, or reassigned to another command).
@@ -59,7 +74,12 @@ pub fn normalize(key: &str) -> Option<String> {
     }
     let name = canonical_name(name)?;
     let mut out = String::new();
-    for (on, m) in [(cmd, "Mod+"), (ctrl, "Ctrl+"), (alt, "Alt+"), (shift, "Shift+")] {
+    for (on, m) in [
+        (cmd, "Mod+"),
+        (ctrl, "Ctrl+"),
+        (alt, "Alt+"),
+        (shift, "Shift+"),
+    ] {
         if on {
             out.push_str(m);
         }
@@ -88,7 +108,9 @@ fn builtin_keys(spec: &CommandSpec) -> impl Iterator<Item = String> + '_ {
 
 /// The command a key runs without customization (the first command listing it).
 fn builtin<'a>(reg: &'a Registry, key: &str) -> Option<&'a CommandSpec> {
-    reg.all().iter().find(|s| !s.shortcut.is_empty() && builtin_keys(s).any(|k| k == key))
+    reg.all()
+        .iter()
+        .find(|s| !s.shortcut.is_empty() && builtin_keys(s).any(|k| k == key))
 }
 
 impl KeyMap {
@@ -97,13 +119,21 @@ impl KeyMap {
         let mut map = KeyMap::default();
         if let Some(a) = v.get("assigned").and_then(Value::as_object) {
             for (k, id) in a.iter().take(MAX_ENTRIES) {
-                if let (Some(k), Some(id)) = (normalize(k), id.as_str().filter(|id| !id.is_empty() && id.len() <= 128)) {
+                if let (Some(k), Some(id)) = (
+                    normalize(k),
+                    id.as_str().filter(|id| !id.is_empty() && id.len() <= 128),
+                ) {
                     map.assigned.insert(k, id.to_string());
                 }
             }
         }
         if let Some(r) = v.get("removed").and_then(Value::as_array) {
-            map.removed.extend(r.iter().take(MAX_ENTRIES).filter_map(Value::as_str).filter_map(normalize));
+            map.removed.extend(
+                r.iter()
+                    .take(MAX_ENTRIES)
+                    .filter_map(Value::as_str)
+                    .filter_map(normalize),
+            );
         }
         map
     }
@@ -137,7 +167,9 @@ impl KeyMap {
         if let Some(spec) = reg.get(id) {
             for k in builtin_keys(spec) {
                 // Uncustomized (the usual case, every frame for tooltips): no registry scan.
-                if !keys.contains(&k) && (self.is_empty() || self.resolve(reg, &k).is_some_and(|s| s.id == id)) {
+                if !keys.contains(&k)
+                    && (self.is_empty() || self.resolve(reg, &k).is_some_and(|s| s.id == id))
+                {
                     keys.push(k);
                 }
             }
@@ -151,12 +183,21 @@ impl KeyMap {
     }
 
     /// Assign `key` to command `id`; the key leaves whatever command had it. Returns that command.
-    pub fn assign(&mut self, reg: &Registry, id: &str, key: &str) -> Result<Option<String>, String> {
+    pub fn assign(
+        &mut self,
+        reg: &Registry,
+        id: &str,
+        key: &str,
+    ) -> Result<Option<String>, String> {
         if reg.get(id).is_none() {
             return Err(format!("unknown command `{id}`"));
         }
-        let key = normalize(key).ok_or_else(|| format!("`{key}` isn't a key (e.g. Mod+Shift+K, Alt+F7, F2)"))?;
-        let previous = self.resolve(reg, &key).map(|s| s.id.to_string()).filter(|p| p != id);
+        let key = normalize(key)
+            .ok_or_else(|| format!("`{key}` isn't a key (e.g. Mod+Shift+K, Alt+F7, F2)"))?;
+        let previous = self
+            .resolve(reg, &key)
+            .map(|s| s.id.to_string())
+            .filter(|p| p != id);
         match builtin(reg, &key) {
             // Back to its own built-in key: no custom entry needed.
             Some(b) if b.id == id => {
@@ -210,12 +251,23 @@ mod tests {
 
     #[test]
     fn keys_normalize_to_one_spelling() {
-        assert_eq!(normalize("mod+shift+alt+v").as_deref(), Some("Mod+Alt+Shift+V"));
+        assert_eq!(
+            normalize("mod+shift+alt+v").as_deref(),
+            Some("Mod+Alt+Shift+V")
+        );
         assert_eq!(normalize("Mod+=").as_deref(), Some("Mod+="));
         assert_eq!(normalize("Mod++").as_deref(), Some("Mod++"));
         assert_eq!(normalize("f12").as_deref(), Some("F12"));
         assert_eq!(normalize("Ctrl+pagedown").as_deref(), Some("Ctrl+PageDown"));
-        for junk in ["", "Mod+", "Hyper+K", "F99", "Mod+Shift+NotAKey", "Mod+\u{7}", &"x".repeat(100)] {
+        for junk in [
+            "",
+            "Mod+",
+            "Hyper+K",
+            "F99",
+            "Mod+Shift+NotAKey",
+            "Mod+\u{7}",
+            &"x".repeat(100),
+        ] {
             assert_eq!(normalize(junk), None, "{junk:?}");
         }
     }
@@ -228,8 +280,14 @@ mod tests {
         let mut m = KeyMap::default();
         assert_eq!(m.resolve(&reg, "Mod+B").map(|s| s.id), Some("format.bold"));
         // Mod+B to Italic: Bold loses it.
-        assert_eq!(m.assign(&reg, "format.italic", "mod+b").unwrap().as_deref(), Some("format.bold"));
-        assert_eq!(m.resolve(&reg, "Mod+B").map(|s| s.id), Some("format.italic"));
+        assert_eq!(
+            m.assign(&reg, "format.italic", "mod+b").unwrap().as_deref(),
+            Some("format.bold")
+        );
+        assert_eq!(
+            m.resolve(&reg, "Mod+B").map(|s| s.id),
+            Some("format.italic")
+        );
         assert!(m.keys_for(&reg, "format.bold").is_empty());
         assert_eq!(m.keys_for(&reg, "format.italic"), ["Mod+I", "Mod+B"]);
         // Removing it from Italic leaves Mod+B doing nothing (Bold doesn't get it back).
@@ -238,21 +296,45 @@ mod tests {
         // Removing a built-in key disables it; a new key works.
         assert!(m.remove(&reg, "format.underline", "Mod+U").unwrap());
         assert!(m.resolve(&reg, "Mod+U").is_none());
-        assert_eq!(m.assign(&reg, "format.underline", "Mod+Alt+Shift+U").unwrap(), None);
-        assert_eq!(m.resolve(&reg, "Mod+Shift+Alt+U").map(|s| s.id), Some("format.underline"));
+        assert_eq!(
+            m.assign(&reg, "format.underline", "Mod+Alt+Shift+U")
+                .unwrap(),
+            None
+        );
+        assert_eq!(
+            m.resolve(&reg, "Mod+Shift+Alt+U").map(|s| s.id),
+            Some("format.underline")
+        );
         assert!(m.assign(&reg, "no.such.command", "Mod+Q").is_err());
         assert!(m.assign(&reg, "format.bold", "Hyper+Q").is_err());
         m.reset();
         assert_eq!(m.resolve(&reg, "Mod+B").map(|s| s.id), Some("format.bold"));
-        assert_eq!(m.resolve(&reg, "Mod+U").map(|s| s.id), Some("format.underline"));
+        assert_eq!(
+            m.resolve(&reg, "Mod+U").map(|s| s.id),
+            Some("format.underline")
+        );
 
         // The command does the same for agents, without opening the dialog.
         let mut s = crate::Session::new(wordcraft_doc::Document::new());
-        let r = s.run("tools.customizeKeyboard", &json!({"assign": {"command": "format.italic", "key": "Mod+B"}, "key": "Mod+B"})).unwrap();
-        assert_eq!((r["replaced"].as_str(), r["assignedTo"].as_str()), (Some("format.bold"), Some("format.italic")));
-        assert!(s.ui_requests.is_empty(), "programmatic calls never open dialogs");
+        let r = s
+            .run(
+                "tools.customizeKeyboard",
+                &json!({"assign": {"command": "format.italic", "key": "Mod+B"}, "key": "Mod+B"}),
+            )
+            .unwrap();
+        assert_eq!(
+            (r["replaced"].as_str(), r["assignedTo"].as_str()),
+            (Some("format.bold"), Some("format.italic"))
+        );
+        assert!(
+            s.ui_requests.is_empty(),
+            "programmatic calls never open dialogs"
+        );
         s.run("tools.customizeKeyboard", &json!({})).unwrap();
-        assert_eq!(s.ui_requests.last(), Some(&json!({"open": "customizeKeyboard"})));
+        assert_eq!(
+            s.ui_requests.last(),
+            Some(&json!({"open": "customizeKeyboard"}))
+        );
     }
 
     #[test]
@@ -266,9 +348,17 @@ mod tests {
         let mut j: KeyMap = serde_json::from_value(junk).unwrap();
         j.retain_known(&reg);
         assert_eq!(j.assigned.len(), 1, "{j:?}");
-        assert_eq!(j.resolve(&reg, "Mod+Alt+K").map(|s| s.id), Some("format.bold"));
+        assert_eq!(
+            j.resolve(&reg, "Mod+Alt+K").map(|s| s.id),
+            Some("format.bold")
+        );
         assert_eq!(j.removed.iter().collect::<Vec<_>>(), ["Mod+U"]);
-        for v in [json!(null), json!(5), json!("x"), json!({"assigned": [1], "removed": {"a": 1}})] {
+        for v in [
+            json!(null),
+            json!(5),
+            json!("x"),
+            json!({"assigned": [1], "removed": {"a": 1}}),
+        ] {
             assert!(serde_json::from_value::<KeyMap>(v).unwrap().is_empty());
         }
     }

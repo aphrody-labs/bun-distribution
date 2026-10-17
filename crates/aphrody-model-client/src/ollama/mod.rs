@@ -96,11 +96,17 @@ pub fn ollama_host_to_url(host: &str) -> String {
     } else {
         let has_port = if let Some(stripped) = authority.strip_prefix('[') {
             // Bracketed IPv6: a port follows the closing bracket.
-            stripped.split_once(']').is_some_and(|(_, tail)| tail.starts_with(':'))
+            stripped
+                .split_once(']')
+                .is_some_and(|(_, tail)| tail.starts_with(':'))
         } else {
             authority.contains(':')
         };
-        if has_port { authority.to_string() } else { format!("{authority}:{default_port}") }
+        if has_port {
+            authority.to_string()
+        } else {
+            format!("{authority}:{default_port}")
+        }
     };
     // `0.0.0.0` / `[::]` are valid to bind but not to connect to (they fail on
     // Windows); Ollama's `ConnectableHost` maps them to loopback.
@@ -121,11 +127,24 @@ pub fn ollama_host_to_url(host: &str) -> String {
 #[must_use]
 pub fn canonical_model_name(name: &str) -> String {
     let lowered = name.trim().to_ascii_lowercase();
-    let without_scheme = lowered.split_once("://").map_or(lowered.as_str(), |(_, rest)| rest);
-    let without_host = without_scheme.strip_prefix("registry.ollama.ai/").unwrap_or(without_scheme);
-    let without_namespace = without_host.strip_prefix("library/").unwrap_or(without_host);
-    let has_tag = without_namespace.rsplit('/').next().is_some_and(|segment| segment.contains(':'));
-    if has_tag { without_namespace.to_string() } else { format!("{without_namespace}:latest") }
+    let without_scheme = lowered
+        .split_once("://")
+        .map_or(lowered.as_str(), |(_, rest)| rest);
+    let without_host = without_scheme
+        .strip_prefix("registry.ollama.ai/")
+        .unwrap_or(without_scheme);
+    let without_namespace = without_host
+        .strip_prefix("library/")
+        .unwrap_or(without_host);
+    let has_tag = without_namespace
+        .rsplit('/')
+        .next()
+        .is_some_and(|segment| segment.contains(':'));
+    if has_tag {
+        without_namespace.to_string()
+    } else {
+        format!("{without_namespace}:latest")
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +167,10 @@ impl OllamaApi {
     /// kept.
     #[must_use]
     pub fn new(runtime: ProviderRuntime) -> Self {
-        Self { http: reqwest::Client::new(), runtime: rooted(&runtime) }
+        Self {
+            http: reqwest::Client::new(),
+            runtime: rooted(&runtime),
+        }
     }
 
     /// A keyless handle for the server at `base_url`.
@@ -367,7 +389,9 @@ impl OllamaApi {
         if succeeded {
             Ok(())
         } else {
-            Err(ModelError::Stream("ollama pull ended before reporting success".to_string()))
+            Err(ModelError::Stream(
+                "ollama pull ended before reporting success".to_string(),
+            ))
         }
     }
 
@@ -443,7 +467,10 @@ where
     ndjson_values(bytes).map(|item| {
         let value = item?;
         if let Some(message) = error_line(&value) {
-            return Err(ModelError::Api { status: 502, message: message.to_string() });
+            return Err(ModelError::Api {
+                status: 502,
+                message: message.to_string(),
+            });
         }
         T::deserialize(&value).map_err(ModelError::Decode)
     })
@@ -583,8 +610,10 @@ impl ModelClient for OllamaClient {
             "application/x-ndjson",
         )
         .await?;
-        let bytes =
-            with_idle_timeout(response.bytes_stream(), self.api.runtime.stream_idle_timeout);
+        let bytes = with_idle_timeout(
+            response.bytes_stream(),
+            self.api.runtime.stream_idle_timeout,
+        );
         Ok(Box::pin(chat_ndjson_stream(bytes)))
     }
 
@@ -593,7 +622,10 @@ impl ModelClient for OllamaClient {
     }
 
     fn capabilities(&self) -> ModelCapabilities {
-        self.probed.get().cloned().unwrap_or_else(|| self.api.runtime.capabilities.clone())
+        self.probed
+            .get()
+            .cloned()
+            .unwrap_or_else(|| self.api.runtime.capabilities.clone())
     }
 }
 
@@ -648,7 +680,9 @@ mod tests {
     }
 
     async fn serve(router: Router) -> String {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let address = listener.local_addr().expect("addr");
         tokio::spawn(async move {
             let _ = axum::serve(listener, router).await;
@@ -695,10 +729,19 @@ mod tests {
     #[test]
     fn model_names_compare_the_way_ollama_displays_them() {
         assert_eq!(canonical_model_name("llama3.2"), "llama3.2:latest");
-        assert_eq!(canonical_model_name("library/llama3.2:latest"), "llama3.2:latest");
-        assert_eq!(canonical_model_name("registry.ollama.ai/library/gpt-oss:20b"), "gpt-oss:20b");
+        assert_eq!(
+            canonical_model_name("library/llama3.2:latest"),
+            "llama3.2:latest"
+        );
+        assert_eq!(
+            canonical_model_name("registry.ollama.ai/library/gpt-oss:20b"),
+            "gpt-oss:20b"
+        );
         assert_eq!(canonical_model_name("Me/Tuned"), "me/tuned:latest");
-        assert_eq!(canonical_model_name("hf.co/user/repo:Q4_K_M"), "hf.co/user/repo:q4_k_m");
+        assert_eq!(
+            canonical_model_name("hf.co/user/repo:Q4_K_M"),
+            "hf.co/user/repo:q4_k_m"
+        );
     }
 
     #[tokio::test]
@@ -738,7 +781,10 @@ mod tests {
             .await;
 
         assert_eq!(events[0], ModelStreamEvent::Created);
-        assert_eq!(events[1], ModelStreamEvent::ReasoningDelta("hmm".to_string()));
+        assert_eq!(
+            events[1],
+            ModelStreamEvent::ReasoningDelta("hmm".to_string())
+        );
         assert!(matches!(events[2], ModelStreamEvent::ReasoningItem { .. }));
         assert_eq!(events[3], ModelStreamEvent::TextDelta("Hello".to_string()));
         assert!(matches!(
@@ -752,7 +798,10 @@ mod tests {
         assert_eq!(request["think"], true);
         assert_eq!(request["keep_alive"], "10m");
         assert_eq!(request["options"]["num_ctx"], 8192);
-        assert_eq!(request["messages"][0], json!({"role": "user", "content": "hi"}));
+        assert_eq!(
+            request["messages"][0],
+            json!({"role": "user", "content": "hi"})
+        );
     }
 
     #[tokio::test]
@@ -867,8 +916,10 @@ mod tests {
         assert_eq!(show.context_length(), Some(8192));
         assert!(show.model_capabilities().tools);
 
-        let embeddings =
-            api.embed(&OllamaEmbedRequest::new("all-minilm", ["a", "b"])).await.expect("embed");
+        let embeddings = api
+            .embed(&OllamaEmbedRequest::new("all-minilm", ["a", "b"]))
+            .await
+            .expect("embed");
         assert_eq!(embeddings.embeddings.len(), 2);
 
         api.delete("llama3.2").await.expect("delete");
@@ -876,9 +927,15 @@ mod tests {
         let seen = seen.lock().expect("lock");
         assert_eq!(
             seen[0],
-            ("/api/show".to_string(), json!({"model": "llama3.2", "verbose": false}))
+            (
+                "/api/show".to_string(),
+                json!({"model": "llama3.2", "verbose": false})
+            )
         );
-        assert_eq!(seen[1], ("/api/delete".to_string(), json!({"model": "llama3.2"})));
+        assert_eq!(
+            seen[1],
+            ("/api/delete".to_string(), json!({"model": "llama3.2"}))
+        );
     }
 
     #[tokio::test]
@@ -906,7 +963,14 @@ mod tests {
         // A configured `num_ctx` is what the model is loaded with, so it caps
         // the reported window.
         let capped = OllamaClient::local(base, "qwen3:8b").with_num_ctx(8192);
-        assert_eq!(capped.probe_capabilities().await.expect("probe").context_window, Some(8192));
+        assert_eq!(
+            capped
+                .probe_capabilities()
+                .await
+                .expect("probe")
+                .context_window,
+            Some(8192)
+        );
     }
 
     #[tokio::test]
@@ -949,7 +1013,10 @@ mod tests {
         assert_eq!(steps[1].1, Some(0.25));
         assert_eq!(steps[2].1, Some(1.0));
         assert_eq!(steps.last().expect("last").0, "success");
-        assert_eq!(seen.lock().expect("lock")[0].1, json!({"model": "llama3.2", "stream": true}));
+        assert_eq!(
+            seen.lock().expect("lock")[0].1,
+            json!({"model": "llama3.2", "stream": true})
+        );
     }
 
     #[tokio::test]
@@ -1044,7 +1111,9 @@ mod tests {
         let base = serve(router).await;
         let client = OllamaClient::local(base, "m");
         assert!(client.embed(&[]).await.expect("empty").is_empty());
-        let error = EmbedClient::embed(&client, &["a", "b"]).await.expect_err("mismatch");
+        let error = EmbedClient::embed(&client, &["a", "b"])
+            .await
+            .expect_err("mismatch");
         assert!(matches!(error, ModelError::Stream(_)), "{error}");
     }
 }

@@ -16,7 +16,10 @@ use figcraft_engine::live::{Event, Status};
 use web_time::Instant;
 
 use crate::inbox::Inbox;
-use crate::join::{GuestConfig, Next, Outcome, Resuming, Seen, Taken, after, closed, hello, resolved, take, unresolved};
+use crate::join::{
+    GuestConfig, Next, Outcome, Resuming, Seen, Taken, after, closed, hello, resolved, take,
+    unresolved,
+};
 use crate::throttle::{PRESENCE_INTERVAL, Throttle, earliest};
 
 /// A WebSocket the driver opens, writes and closes; what it receives comes back through the
@@ -42,7 +45,14 @@ struct Conn {
 
 impl Conn {
     fn new(now: Instant) -> Self {
-        Self { started: now, opened: false, welcomed: false, seen: Seen::default(), last_sent: now, last_heard: now }
+        Self {
+            started: now,
+            opened: false,
+            welcomed: false,
+            seen: Seen::default(),
+            last_sent: now,
+            last_heard: now,
+        }
     }
 }
 
@@ -103,7 +113,11 @@ impl<S: Socket> Driver<S> {
         c.opened = true;
         c.last_heard = now;
         let hello = match &self.cfg.code {
-            Some(code) => ClientMsg::Resolve(Resolve { protocol: PROTOCOL, client_version: message::client_version(), code: code.clone() }),
+            Some(code) => ClientMsg::Resolve(Resolve {
+                protocol: PROTOCOL,
+                client_version: message::client_version(),
+                code: code.clone(),
+            }),
             None => hello(&self.cfg, &self.resume),
         };
         if !self.write(&hello, now) {
@@ -128,7 +142,9 @@ impl<S: Socket> Driver<S> {
             }
             // Single-threaded: the connection counts as welcomed below, before the engine polls.
             Ok(m) => take(m, &self.cfg, &self.inbox, &mut c.seen, &self.resume, &|| {}),
-            Err(e) => Taken::End(Outcome::Refused(format!("the host sent a message this version can't read ({e})"))),
+            Err(e) => Taken::End(Outcome::Refused(format!(
+                "the host sent a message this version can't read ({e})"
+            ))),
         };
         match taken {
             Taken::Continue => {}
@@ -154,9 +170,14 @@ impl<S: Socket> Driver<S> {
 
     /// The connection closed (`code` and `reason` from the close frame; 1006 when it just broke).
     pub(crate) fn closed(&mut self, code: u16, reason: &str, now: Instant) {
-        let Some(opened) = self.conn.as_ref().map(|c| c.opened) else { return };
+        let Some(opened) = self.conn.as_ref().map(|c| c.opened) else {
+            return;
+        };
         let outcome = match closed(code, reason) {
-            Outcome::Retry(_) if !opened => Outcome::Retry(format!("no answer from {}", self.cfg.invite.server.display())),
+            Outcome::Retry(_) if !opened => Outcome::Retry(format!(
+                "no answer from {}",
+                self.cfg.invite.server.display()
+            )),
             Outcome::Retry(_) if code == 1006 => Outcome::Retry("the connection dropped".into()),
             o => o,
         };
@@ -201,7 +222,15 @@ impl<S: Socket> Driver<S> {
         let l = &self.cfg.limits;
         let conn = self.conn.as_ref().map(|c| {
             if c.opened {
-                [Some(c.last_sent + l.keepalive), Some(c.last_heard + l.idle_timeout), if c.welcomed { self.throttle.due() } else { None }]
+                [
+                    Some(c.last_sent + l.keepalive),
+                    Some(c.last_heard + l.idle_timeout),
+                    if c.welcomed {
+                        self.throttle.due()
+                    } else {
+                        None
+                    },
+                ]
             } else {
                 [Some(c.started + self.cfg.connect_timeout), None, None]
             }
@@ -220,10 +249,17 @@ impl<S: Socket> Driver<S> {
         }
         let l = self.cfg.limits;
         let Some(c) = self.conn.as_ref() else { return };
-        let (opened, started, last_heard, last_sent) = (c.opened, c.started, c.last_heard, c.last_sent);
+        let (opened, started, last_heard, last_sent) =
+            (c.opened, c.started, c.last_heard, c.last_sent);
         if !opened {
             if now >= started + self.cfg.connect_timeout {
-                self.end(Outcome::Retry(format!("no answer from {}", self.cfg.invite.server.display())), now);
+                self.end(
+                    Outcome::Retry(format!(
+                        "no answer from {}",
+                        self.cfg.invite.server.display()
+                    )),
+                    now,
+                );
             }
             return;
         }
@@ -251,12 +287,22 @@ impl<S: Socket> Driver<S> {
     /// The connection ended: close it, then stop or plan the reconnect.
     fn end(&mut self, outcome: Outcome, now: Instant) {
         // Still asking about the join code: whatever went wrong is final.
-        let outcome = if self.cfg.code.is_some() { unresolved(&self.cfg, outcome) } else { outcome };
+        let outcome = if self.cfg.code.is_some() {
+            unresolved(&self.cfg, outcome)
+        } else {
+            outcome
+        };
         if self.conn.take().is_some() {
             self.sock.close();
         }
         self.throttle = Throttle::new(PRESENCE_INTERVAL);
-        match after(outcome, &self.cfg, self.was_live, &mut self.attempt, &self.inbox) {
+        match after(
+            outcome,
+            &self.cfg,
+            self.was_live,
+            &mut self.attempt,
+            &self.inbox,
+        ) {
             Next::Stop(e) => {
                 if let Some(e) = e {
                     self.inbox.push(e);

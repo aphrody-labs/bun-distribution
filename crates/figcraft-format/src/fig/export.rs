@@ -22,13 +22,15 @@ use figcraft_doc::color::{BlendMode, Color, GradientKind, ImageScaleMode, Paint,
 use figcraft_doc::geom::kurbo::PathEl;
 use figcraft_doc::geom::{Affine, BezPath};
 use figcraft_doc::proto::{
-    Action, Direction, Easing, GAMEPAD_BUTTONS, Interaction, KeyMods, Overflow, OverlayPosition, ScrollPosition, Transition, Trigger,
+    Action, Direction, Easing, GAMEPAD_BUTTONS, Interaction, KeyMods, Overflow, OverlayPosition,
+    ScrollPosition, Transition, Trigger,
 };
 use figcraft_doc::{
-    AutoLayout, BoolOp, ContentAlign, CrossAlign, Document, EffectKind, ExportSize, GridAlign, GridKind, HConstraint, LayoutMode, LetterSpacing,
-    LineHeight, ListStyle, MainAlign, MaskType, Node, NodeId, NodeKind, NoiseMode, PropDef, Sizing, StrokeAlign, StrokeCap, StrokeJoin, StyleKind,
-    TextAlignH, TextAlignV, TextAutoResize, TextCase, TextData, TextDecoration, TextStyle, VConstraint, VariableType, VariableValue, VectorNetwork,
-    WindingRule,
+    AutoLayout, BoolOp, ContentAlign, CrossAlign, Document, EffectKind, ExportSize, GridAlign,
+    GridKind, HConstraint, LayoutMode, LetterSpacing, LineHeight, ListStyle, MainAlign, MaskType,
+    Node, NodeId, NodeKind, NoiseMode, PropDef, Sizing, StrokeAlign, StrokeCap, StrokeJoin,
+    StyleKind, TextAlignH, TextAlignV, TextAutoResize, TextCase, TextData, TextDecoration,
+    TextStyle, VConstraint, VariableType, VariableValue, VectorNetwork, WindingRule,
 };
 use serde_json::Value;
 
@@ -175,19 +177,34 @@ message Message MessageType type=1, uint sessionID=2, NodeChange[] nodeChanges=4
 
 /// Write `doc` as a `.fig` file, with `thumbnail` (a PNG) when given. Returns the bytes and the
 /// warnings about what was left out or approximated.
-pub fn export(doc: &Document, thumbnail: Option<&[u8]>) -> Result<(Vec<u8>, Vec<String>), FormatError> {
+pub fn export(
+    doc: &Document,
+    thumbnail: Option<&[u8]>,
+) -> Result<(Vec<u8>, Vec<String>), FormatError> {
     let mut x = Exporter::new(doc);
     let message = x.message();
     let fail = |e: super::kiwi::KiwiError| FormatError::Io(format!(".fig export: {e}"));
     let schema = Schema::parse(SCHEMA).map_err(fail)?;
-    let root = schema.find("Message").ok_or_else(|| FormatError::Io(".fig export: the schema has no Message".into()))?;
+    let root = schema
+        .find("Message")
+        .ok_or_else(|| FormatError::Io(".fig export: the schema has no Message".into()))?;
     let body = encode::message(&schema, root, &message).map_err(fail)?;
     let canvas = canvas(&encode::schema(&schema), &body)?;
-    let background = doc.pages.first().and_then(|p| doc.node(*p)).and_then(|p| match &p.kind {
-        NodeKind::Page { background, .. } => Some(*background),
-        _ => None,
-    });
-    let bytes = archive(&doc.name, background.unwrap_or(Color::WHITE), &canvas, &x.files, thumbnail)?;
+    let background = doc
+        .pages
+        .first()
+        .and_then(|p| doc.node(*p))
+        .and_then(|p| match &p.kind {
+            NodeKind::Page { background, .. } => Some(*background),
+            _ => None,
+        });
+    let bytes = archive(
+        &doc.name,
+        background.unwrap_or(Color::WHITE),
+        &canvas,
+        &x.files,
+        thumbnail,
+    )?;
     Ok((bytes, x.warnings))
 }
 
@@ -224,18 +241,26 @@ fn archive(
     let mut buf = std::io::Cursor::new(Vec::new());
     {
         let mut z = zip::ZipWriter::new(&mut buf);
-        let stored = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        let stored = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
         crate::put(&mut z, "canvas.fig", stored, canvas)?;
         if let Some(t) = thumbnail {
             crate::put(&mut z, "thumbnail.png", stored, t)?;
         }
         let mut client = serde_json::json!({"background_color": {"r": background.r, "g": background.g, "b": background.b, "a": background.a}});
         // A PNG says its size right after its signature and header chunk name.
-        let be = |at: usize| thumbnail.and_then(|t| t.get(at..at + 4)).and_then(|b| b.try_into().ok()).map(u32::from_be_bytes);
+        let be = |at: usize| {
+            thumbnail
+                .and_then(|t| t.get(at..at + 4))
+                .and_then(|b| b.try_into().ok())
+                .map(u32::from_be_bytes)
+        };
         if let (Some(w), Some(h)) = (be(16), be(20)) {
             client["thumbnail_size"] = serde_json::json!({"width": w, "height": h});
         }
-        let meta = serde_json::to_vec(&serde_json::json!({"client_meta": client, "file_name": name})).map_err(crate::io_err)?;
+        let meta =
+            serde_json::to_vec(&serde_json::json!({"client_meta": client, "file_name": name}))
+                .map_err(crate::io_err)?;
         crate::put(&mut z, "meta.json", crate::json_options(), &meta)?;
         let mut total = canvas.len() as u64;
         for (hash, bytes) in images {
@@ -260,7 +285,11 @@ fn arr(v: Vec<Kv<'static>>) -> Kv<'static> {
 }
 /// A float the format can hold: finite (non-finite values become 0) and within range.
 fn fl(x: f64) -> Kv<'static> {
-    Kv::Float(if x.is_finite() { x.clamp(-MAX_FLOAT, MAX_FLOAT) as f32 } else { 0.0 })
+    Kv::Float(if x.is_finite() {
+        x.clamp(-MAX_FLOAT, MAX_FLOAT) as f32
+    } else {
+        0.0
+    })
 }
 fn u(x: u32) -> Kv<'static> {
     Kv::Uint(u64::from(x))
@@ -284,11 +313,23 @@ fn xy(x: f64, y: f64) -> Kv<'static> {
     o(vec![("x", fl(x)), ("y", fl(y))])
 }
 fn color(c: Color) -> Kv<'static> {
-    o(vec![("r", fl(c.r.into())), ("g", fl(c.g.into())), ("b", fl(c.b.into())), ("a", fl(c.a.into()))])
+    o(vec![
+        ("r", fl(c.r.into())),
+        ("g", fl(c.g.into())),
+        ("b", fl(c.b.into())),
+        ("a", fl(c.a.into())),
+    ])
 }
 fn matrix(m: Affine) -> Kv<'static> {
     let [a, b, c, d, e, f] = m.as_coeffs();
-    o(vec![("m00", fl(a)), ("m01", fl(c)), ("m02", fl(e)), ("m10", fl(b)), ("m11", fl(d)), ("m12", fl(f))])
+    o(vec![
+        ("m00", fl(a)),
+        ("m01", fl(c)),
+        ("m02", fl(e)),
+        ("m10", fl(b)),
+        ("m11", fl(d)),
+        ("m12", fl(f)),
+    ])
 }
 /// What the document and its pages say besides their names: left out, a reader takes them as
 /// hidden and fully transparent, and draws nothing below them.
@@ -304,7 +345,11 @@ fn root_fields() -> Fields {
 }
 /// A finite coordinate (vector network blobs store raw floats).
 fn finite(x: f64) -> f64 {
-    if x.is_finite() { x.clamp(-MAX_FLOAT, MAX_FLOAT) } else { 0.0 }
+    if x.is_finite() {
+        x.clamp(-MAX_FLOAT, MAX_FLOAT)
+    } else {
+        0.0
+    }
 }
 
 /// A position string that sorts as child `i` does among its siblings (fixed width, printable).
@@ -341,7 +386,10 @@ fn blend_name(m: BlendMode) -> &'static str {
         "COLOR",
         "LUMINOSITY",
     ];
-    NAMES.into_iter().find(|n| crate::rest::props::blend_mode(n) == Some(m)).unwrap_or("NORMAL")
+    NAMES
+        .into_iter()
+        .find(|n| crate::rest::props::blend_mode(n) == Some(m))
+        .unwrap_or("NORMAL")
 }
 
 fn cap_name(c: StrokeCap) -> &'static str {
@@ -478,8 +526,17 @@ impl<'d> Exporter<'d> {
     fn message(&mut self) -> Kv<'static> {
         let doc = self.doc;
         self.assign();
-        let profile = if doc.color_profile == figcraft_doc::color::ColorProfile::DisplayP3 { "DISPLAY_P3" } else { "SRGB" };
-        let mut root: Fields = vec![("guid", guid(0, 0)), ("phase", e("CREATED")), ("type", e("DOCUMENT")), ("name", s(&doc.name))];
+        let profile = if doc.color_profile == figcraft_doc::color::ColorProfile::DisplayP3 {
+            "DISPLAY_P3"
+        } else {
+            "SRGB"
+        };
+        let mut root: Fields = vec![
+            ("guid", guid(0, 0)),
+            ("phase", e("CREATED")),
+            ("type", e("DOCUMENT")),
+            ("name", s(&doc.name)),
+        ];
         root.extend(root_fields());
         root.push(("documentColorProfile", e(profile)));
         self.nodes.push(o(root));
@@ -490,13 +547,22 @@ impl<'d> Exporter<'d> {
         if !doc.comments.is_empty() {
             self.warn("comments were left out");
         }
-        let mut blobs: Vec<(u32, Vec<u8>)> = std::mem::take(&mut self.blobs).into_iter().map(|(bytes, i)| (i, bytes)).collect();
+        let mut blobs: Vec<(u32, Vec<u8>)> = std::mem::take(&mut self.blobs)
+            .into_iter()
+            .map(|(bytes, i)| (i, bytes))
+            .collect();
         blobs.sort_by_key(|x| x.0);
         o(vec![
             ("type", e("NODE_CHANGES")),
             ("sessionID", u(0)),
             ("nodeChanges", arr(std::mem::take(&mut self.nodes))),
-            ("blobs", arr(blobs.into_iter().map(|(_, bytes)| o(vec![("bytes", Kv::Bytes(bytes))])).collect())),
+            (
+                "blobs",
+                arr(blobs
+                    .into_iter()
+                    .map(|(_, bytes)| o(vec![("bytes", Kv::Bytes(bytes))]))
+                    .collect()),
+            ),
         ])
     }
 
@@ -537,12 +603,32 @@ impl<'d> Exporter<'d> {
                 }
                 _ => {}
             }
-            for a in n.interactions.iter().flat_map(|it| figcraft_doc::proto::walk(&it.actions)) {
-                if let Action::OpenOverlay { dest, position, close_on_outside, background, .. } = a {
-                    let o = Overlay { position: *position, close_on_outside: *close_on_outside, background: *background };
+            for a in n
+                .interactions
+                .iter()
+                .flat_map(|it| figcraft_doc::proto::walk(&it.actions))
+            {
+                if let Action::OpenOverlay {
+                    dest,
+                    position,
+                    close_on_outside,
+                    background,
+                    ..
+                } = a
+                {
+                    let o = Overlay {
+                        position: *position,
+                        close_on_outside: *close_on_outside,
+                        background: *background,
+                    };
                     match self.overlays.get(dest) {
-                        Some(old) if (old.position, old.close_on_outside, old.background) != (o.position, o.close_on_outside, o.background) => {
-                            self.warn("overlays opened with different settings keep the first one's");
+                        Some(old)
+                            if (old.position, old.close_on_outside, old.background)
+                                != (o.position, o.close_on_outside, o.background) =>
+                        {
+                            self.warn(
+                                "overlays opened with different settings keep the first one's",
+                            );
                         }
                         Some(_) => {}
                         None => {
@@ -559,7 +645,9 @@ impl<'d> Exporter<'d> {
             next
         };
         for st in &doc.styles {
-            self.style_ids.entry(st.id.as_str()).or_insert_with(&mut node);
+            self.style_ids
+                .entry(st.id.as_str())
+                .or_insert_with(&mut node);
         }
         for c in &doc.variables.collections {
             self.set_ids.entry(c.id.as_str()).or_insert_with(&mut node);
@@ -590,11 +678,23 @@ impl<'d> Exporter<'d> {
         let mut f: Fields = vec![
             ("guid", guid(LAYERS, page)),
             ("phase", e("CREATED")),
-            ("parentIndex", o(vec![("guid", guid(0, 0)), ("position", s(&position(pages)))])),
+            (
+                "parentIndex",
+                o(vec![
+                    ("guid", guid(0, 0)),
+                    ("position", s(&position(pages))),
+                ]),
+            ),
             ("type", e("CANVAS")),
             ("name", s("Internal Only Canvas")),
         ];
-        f.extend(root_fields().into_iter().map(|(k, v)| if k == "visible" { (k, b(false)) } else { (k, v) }));
+        f.extend(root_fields().into_iter().map(|(k, v)| {
+            if k == "visible" {
+                (k, b(false))
+            } else {
+                (k, v)
+            }
+        }));
         f.push(("internalOnly", b(true)));
         self.nodes.push(o(f));
         let mut index = 0usize;
@@ -603,14 +703,22 @@ impl<'d> Exporter<'d> {
             vec![
                 ("guid", guid(LAYERS, local)),
                 ("phase", e("CREATED")),
-                ("parentIndex", o(vec![("guid", guid(LAYERS, page)), ("position", s(&position(index)))])),
+                (
+                    "parentIndex",
+                    o(vec![
+                        ("guid", guid(LAYERS, page)),
+                        ("position", s(&position(index))),
+                    ]),
+                ),
                 ("type", e(ty)),
                 ("name", s(name)),
                 ("sortPosition", s(&position(index))),
             ]
         };
         for st in &doc.styles {
-            let Some(&local) = self.style_ids.get(st.id.as_str()) else { continue };
+            let Some(&local) = self.style_ids.get(st.id.as_str()) else {
+                continue;
+            };
             // A sample layer that shows the style: a square for paints and effects, a frame for
             // grids, two letters for text.
             let (ty, kind) = match &st.kind {
@@ -639,7 +747,10 @@ impl<'d> Exporter<'d> {
             } else {
                 let mut sample = Node::new(NodeId(0), NodeKind::Rectangle, "", 0.0, 0.0);
                 if let StyleKind::Text { style } = &st.kind {
-                    sample.kind = NodeKind::Text(TextData { style: style.as_text_style(), ..TextData::new("Ag") });
+                    sample.kind = NodeKind::Text(TextData {
+                        style: style.as_text_style(),
+                        ..TextData::new("Ag")
+                    });
                 }
                 sample.bound.clone_from(&st.bound);
                 self.bound(&sample)
@@ -649,30 +760,52 @@ impl<'d> Exporter<'d> {
                 f.push(("variableConsumptionMap", o(vec![("entries", arr(entries))])));
             }
             match &st.kind {
-                StyleKind::Paint { paints } => f.push(("fillPaints", self.paints(paints, true, &none))),
+                StyleKind::Paint { paints } => {
+                    f.push(("fillPaints", self.paints(paints, true, &none)))
+                }
                 StyleKind::Effect { effects } => {
-                    let list = effects.iter().enumerate().map(|(i, x)| self.effect(x, i, &none)).collect();
+                    let list = effects
+                        .iter()
+                        .enumerate()
+                        .map(|(i, x)| self.effect(x, i, &none))
+                        .collect();
                     f.extend([("fillPaints", arr(Vec::new())), ("effects", arr(list))]);
                 }
                 StyleKind::Grid { grids } => {
-                    let list = grids.iter().enumerate().map(|(i, g)| layout_grid(g, i, &none)).collect();
+                    let list = grids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, g)| layout_grid(g, i, &none))
+                        .collect();
                     f.extend([("fillPaints", arr(Vec::new())), ("layoutGrids", arr(list))]);
                 }
                 StyleKind::Text { style } => {
-                    let td = TextData { style: style.as_text_style(), ..TextData::new("Ag") };
+                    let td = TextData {
+                        style: style.as_text_style(),
+                        ..TextData::new("Ag")
+                    };
                     let fills = [Paint::solid(Color::BLACK)];
-                    f.push(("fillPaints", self.paints(style.fills.as_deref().unwrap_or(&fills), true, &none)));
+                    f.push((
+                        "fillPaints",
+                        self.paints(style.fills.as_deref().unwrap_or(&fills), true, &none),
+                    ));
                     self.text(&td, &fills, &mut f);
                 }
             }
             self.nodes.push(o(f));
         }
         for c in &doc.variables.collections {
-            let Some(&local) = self.set_ids.get(c.id.as_str()) else { continue };
+            let Some(&local) = self.set_ids.get(c.id.as_str()) else {
+                continue;
+            };
             let mut f = head(local, "VARIABLE_SET", &c.name);
             let modes = c.modes.iter().enumerate().filter_map(|(i, m)| {
                 let id = self.mode_ids.get(&(c.id.as_str(), m.id.as_str()))?;
-                Some(o(vec![("id", guid(AUX, *id)), ("name", s(&m.name)), ("sortPosition", s(&position(i)))]))
+                Some(o(vec![
+                    ("id", guid(AUX, *id)),
+                    ("name", s(&m.name)),
+                    ("sortPosition", s(&position(i))),
+                ]))
             });
             f.push(("variableSetModes", arr(modes.collect())));
             self.nodes.push(o(f));
@@ -681,15 +814,30 @@ impl<'d> Exporter<'d> {
             }
         }
         for v in &doc.variables.variables {
-            let ids = (self.var_ids.get(v.id.as_str()), self.set_ids.get(v.collection.as_str()));
-            let (Some(&local), Some(&set), Some(c)) = (ids.0, ids.1, doc.variables.collections.iter().find(|c| c.id == v.collection)) else {
+            let ids = (
+                self.var_ids.get(v.id.as_str()),
+                self.set_ids.get(v.collection.as_str()),
+            );
+            let (Some(&local), Some(&set), Some(c)) = (
+                ids.0,
+                ids.1,
+                doc.variables
+                    .collections
+                    .iter()
+                    .find(|c| c.id == v.collection),
+            ) else {
                 self.warn("variables whose collection isn't in the document were left out");
                 continue;
             };
             let resolved = resolved_type(v.kind);
             let mut values = Vec::new();
             for m in &c.modes {
-                let (Some(mode), Some(val)) = (self.mode_ids.get(&(c.id.as_str(), m.id.as_str())), v.values.get(&m.id)) else { continue };
+                let (Some(mode), Some(val)) = (
+                    self.mode_ids.get(&(c.id.as_str(), m.id.as_str())),
+                    v.values.get(&m.id),
+                ) else {
+                    continue;
+                };
                 let (ty, value) = match val {
                     VariableValue::Color(x) => ("COLOR", ("colorValue", color(*x))),
                     VariableValue::Number(x) => ("FLOAT", ("floatValue", fl(*x))),
@@ -704,8 +852,15 @@ impl<'d> Exporter<'d> {
                         }
                     },
                 };
-                let data = o(vec![("value", o(vec![value])), ("dataType", e(ty)), ("resolvedDataType", e(resolved))]);
-                values.push(o(vec![("modeID", guid(AUX, *mode)), ("variableData", data)]));
+                let data = o(vec![
+                    ("value", o(vec![value])),
+                    ("dataType", e(ty)),
+                    ("resolvedDataType", e(resolved)),
+                ]);
+                values.push(o(vec![
+                    ("modeID", guid(AUX, *mode)),
+                    ("variableData", data),
+                ]));
             }
             let mut f = head(local, "VARIABLE", &v.name);
             f.extend([
@@ -717,14 +872,20 @@ impl<'d> Exporter<'d> {
                 f.push(("description", s(&v.description)));
             }
             if let Some(scopes) = &v.scopes {
-                let known: Vec<Kv> = scopes.iter().filter_map(|sc| scope_name(sc)).map(e).collect();
+                let known: Vec<Kv> = scopes
+                    .iter()
+                    .filter_map(|sc| scope_name(sc))
+                    .map(e)
+                    .collect();
                 if known.len() < scopes.len() {
                     self.warn("variable scopes the format has no name for were left out");
                 }
                 f.push(("variableScopes", arr(known)));
             }
             if v.hidden_from_publishing || !v.code_syntax.is_empty() || v.extends.is_some() {
-                self.warn("variables' publishing, code syntax and inheritance settings were left out");
+                self.warn(
+                    "variables' publishing, code syntax and inheritance settings were left out",
+                );
             }
             self.nodes.push(o(f));
         }
@@ -732,13 +893,22 @@ impl<'d> Exporter<'d> {
 
     /// A reference to variable `var` (its id or name) as variable data.
     fn alias(&mut self, var: &str) -> Option<Kv<'static>> {
-        let found = self.doc.variables.get(var).and_then(|v| Some((v.kind, *self.var_ids.get(v.id.as_str())?)));
+        let found = self
+            .doc
+            .variables
+            .get(var)
+            .and_then(|v| Some((v.kind, *self.var_ids.get(v.id.as_str())?)));
         let Some((kind, local)) = found else {
-            self.warn("bindings to variables that aren't in the document were written as their values");
+            self.warn(
+                "bindings to variables that aren't in the document were written as their values",
+            );
             return None;
         };
         Some(o(vec![
-            ("value", o(vec![("alias", o(vec![("guid", guid(LAYERS, local))]))])),
+            (
+                "value",
+                o(vec![("alias", o(vec![("guid", guid(LAYERS, local))]))]),
+            ),
             ("dataType", e("ALIAS")),
             ("resolvedDataType", e(resolved_type(kind))),
         ]))
@@ -751,7 +921,11 @@ impl<'d> Exporter<'d> {
         let mut out = Bound::default();
         for (key, var) in &n.bound {
             let parts: Vec<&str> = key.split('/').collect();
-            let index = |i: &str| i.parse::<usize>().ok().filter(|_| i.bytes().all(|c| c.is_ascii_digit()));
+            let index = |i: &str| {
+                i.parse::<usize>()
+                    .ok()
+                    .filter(|_| i.bytes().all(|c| c.is_ascii_digit()))
+            };
             let fields: &[&'static str] = match (parts.as_slice(), key.as_str()) {
                 (_, "fill" | "fills" | "fills/0" | "stroke") => {
                     if let Some(a) = self.alias(var) {
@@ -773,14 +947,26 @@ impl<'d> Exporter<'d> {
                 }
                 ([list @ ("effects" | "layoutGrids"), i, field], _) => {
                     let names: &[&'static str] = if *list == "effects" {
-                        &["color", "radius", "spread", "offsetX", "offsetY", "startRadius"]
+                        &[
+                            "color",
+                            "radius",
+                            "spread",
+                            "offsetX",
+                            "offsetY",
+                            "startRadius",
+                        ]
                     } else {
                         &["size", "count", "gutter", "offset"]
                     };
                     match (index(i), names.iter().find(|f| *f == field)) {
                         (Some(i), Some(name)) => {
                             if let Some(a) = self.alias(var) {
-                                if *list == "effects" { &mut out.effects } else { &mut out.grids }.insert((i, *name), a);
+                                if *list == "effects" {
+                                    &mut out.effects
+                                } else {
+                                    &mut out.grids
+                                }
+                                .insert((i, *name), a);
                             }
                         }
                         _ => self.warn(BAKED),
@@ -797,7 +983,12 @@ impl<'d> Exporter<'d> {
                 (_, "paddingBottom") => &["STACK_PADDING_BOTTOM"],
                 (_, "paddingHorizontal") => &["STACK_PADDING_LEFT", "STACK_PADDING_RIGHT"],
                 (_, "paddingVertical") => &["STACK_PADDING_TOP", "STACK_PADDING_BOTTOM"],
-                (_, "padding") => &["STACK_PADDING_LEFT", "STACK_PADDING_TOP", "STACK_PADDING_RIGHT", "STACK_PADDING_BOTTOM"],
+                (_, "padding") => &[
+                    "STACK_PADDING_LEFT",
+                    "STACK_PADDING_TOP",
+                    "STACK_PADDING_RIGHT",
+                    "STACK_PADDING_BOTTOM",
+                ],
                 (_, "cornerRadius") => &[
                     "CORNER_RADIUS",
                     "RECTANGLE_TOP_LEFT_CORNER_RADIUS",
@@ -836,7 +1027,10 @@ impl<'d> Exporter<'d> {
             // Each entry names the bound property and the number of the layer field that holds it.
             for field in fields {
                 if let Some(a) = self.alias(var) {
-                    let mut entry: Fields = node_field(field).into_iter().map(|id| ("nodeField", u(id))).collect();
+                    let mut entry: Fields = node_field(field)
+                        .into_iter()
+                        .map(|id| ("nodeField", u(id)))
+                        .collect();
                     entry.extend([("variableData", a), ("variableField", e(field))]);
                     out.entries.push(o(entry));
                 }
@@ -846,9 +1040,18 @@ impl<'d> Exporter<'d> {
     }
 
     /// Write layer `id` (child `index` of the layer with GUID `parent_guid`) and its subtree.
-    fn emit(&mut self, id: NodeId, parent_guid: Kv<'static>, index: usize, parent: Option<&Node>, depth: usize) {
+    fn emit(
+        &mut self,
+        id: NodeId,
+        parent_guid: Kv<'static>,
+        index: usize,
+        parent: Option<&Node>,
+        depth: usize,
+    ) {
         let doc = self.doc;
-        let (Some(&local), Some(n)) = (self.ids.get(&id), doc.node(id)) else { return };
+        let (Some(&local), Some(n)) = (self.ids.get(&id), doc.node(id)) else {
+            return;
+        };
         if depth > MAX_DEPTH {
             self.warn("layers nested deeper than 256 levels were left out");
             return;
@@ -856,12 +1059,28 @@ impl<'d> Exporter<'d> {
         let mut f: Fields = vec![
             ("guid", guid(LAYERS, local)),
             ("phase", e("CREATED")),
-            ("parentIndex", o(vec![("guid", parent_guid), ("position", s(&position(index)))])),
+            (
+                "parentIndex",
+                o(vec![
+                    ("guid", parent_guid),
+                    ("position", s(&position(index))),
+                ]),
+            ),
         ];
-        let children = if let NodeKind::Page { background, guides, prototype, .. } = &n.kind {
+        let children = if let NodeKind::Page {
+            background,
+            guides,
+            prototype,
+            ..
+        } = &n.kind
+        {
             f.extend([("type", e("CANVAS")), ("name", s(&n.name))]);
             f.extend(root_fields());
-            f.extend([("backgroundColor", color(*background)), ("backgroundOpacity", fl(background.a.into())), ("backgroundEnabled", b(true))]);
+            f.extend([
+                ("backgroundColor", color(*background)),
+                ("backgroundOpacity", fl(background.a.into())),
+                ("backgroundEnabled", b(true)),
+            ]);
             if !guides.is_empty() {
                 self.warn("ruler guides were left out");
             }
@@ -892,21 +1111,36 @@ impl<'d> Exporter<'d> {
             // (which the import puts back).
             self.warn("strokes wider on one side of their path were written as filled outlines (the stroke itself is kept for FigCraft)");
             let children = self.layer(&outline, parent, f, nested);
-            f.push(("pluginData", arr(vec![o(vec![("pluginID", s(STASH.0)), ("value", s(&original)), ("key", s(STASH.1))])])));
+            f.push((
+                "pluginData",
+                arr(vec![o(vec![
+                    ("pluginID", s(STASH.0)),
+                    ("value", s(&original)),
+                    ("key", s(STASH.1)),
+                ])]),
+            ));
             return children;
         }
         let main = match &n.kind {
             NodeKind::Instance { component, .. } => {
-                let found = self.ids.contains_key(component) && doc.node(*component).is_some_and(|c| matches!(c.kind, NodeKind::Component { .. }));
+                let found = self.ids.contains_key(component)
+                    && doc
+                        .node(*component)
+                        .is_some_and(|c| matches!(c.kind, NodeKind::Component { .. }));
                 if !found && !nested {
-                    self.warn("instances of components that aren't in the file were written as frames");
+                    self.warn(
+                        "instances of components that aren't in the file were written as frames",
+                    );
                 }
                 found.then_some(*component)
             }
             _ => None,
         };
         let ty = match &n.kind {
-            NodeKind::Page { .. } | NodeKind::Frame | NodeKind::Group | NodeKind::ComponentSet { .. } => "FRAME",
+            NodeKind::Page { .. }
+            | NodeKind::Frame
+            | NodeKind::Group
+            | NodeKind::ComponentSet { .. } => "FRAME",
             NodeKind::Instance { .. } if main.is_none() => "FRAME",
             NodeKind::Section { .. } => "SECTION",
             NodeKind::Rectangle => "ROUNDED_RECTANGLE",
@@ -928,12 +1162,25 @@ impl<'d> Exporter<'d> {
         self.common(n, parent, f);
         match &n.kind {
             NodeKind::Group => f.push(("resizeToFit", b(true))),
-            NodeKind::Section { contents_hidden } => f.push(("sectionContentsHidden", b(*contents_hidden))),
-            NodeKind::Ellipse { start, sweep, inner } => {
-                f.push(("arcData", o(vec![("startingAngle", fl(*start)), ("endingAngle", fl(start + sweep)), ("innerRadius", fl(*inner))])))
+            NodeKind::Section { contents_hidden } => {
+                f.push(("sectionContentsHidden", b(*contents_hidden)))
             }
+            NodeKind::Ellipse {
+                start,
+                sweep,
+                inner,
+            } => f.push((
+                "arcData",
+                o(vec![
+                    ("startingAngle", fl(*start)),
+                    ("endingAngle", fl(start + sweep)),
+                    ("innerRadius", fl(*inner)),
+                ]),
+            )),
             NodeKind::Polygon { count } => f.push(("count", u(*count))),
-            NodeKind::Star { count, inner_ratio } => f.extend([("count", u(*count)), ("starInnerScale", fl(*inner_ratio))]),
+            NodeKind::Star { count, inner_ratio } => {
+                f.extend([("count", u(*count)), ("starInnerScale", fl(*inner_ratio))])
+            }
             NodeKind::Vector { network } => self.vector(n, network, f),
             NodeKind::Text(td) => self.text(td, &n.fills, f),
             NodeKind::BooleanOp { op } => {
@@ -944,12 +1191,19 @@ impl<'d> Exporter<'d> {
                     BoolOp::Exclude => "XOR",
                 };
                 f.push(("booleanOperation", e(name)));
-                if n.children.iter().filter_map(|c| doc.node(*c)).any(|c| c.bool_op.is_some()) {
+                if n.children
+                    .iter()
+                    .filter_map(|c| doc.node(*c))
+                    .any(|c| c.bool_op.is_some())
+                {
                     self.warn("boolean groups whose layers combine in different ways use the group's operation");
                 }
             }
             NodeKind::Component { description, props } if !nested => {
-                let defs: Vec<Kv> = props.iter().filter_map(|(name, d)| self.prop_def(name, d)).collect();
+                let defs: Vec<Kv> = props
+                    .iter()
+                    .filter_map(|(name, d)| self.prop_def(name, d))
+                    .collect();
                 if !defs.is_empty() {
                     f.push(("componentPropDefs", arr(defs)));
                 }
@@ -973,8 +1227,13 @@ impl<'d> Exporter<'d> {
             }
             _ => {}
         }
-        let boxy = n.kind.is_frame_like() || matches!(n.kind, NodeKind::Rectangle | NodeKind::Section { .. });
-        if (boxy || matches!(n.kind, NodeKind::Ellipse { .. } | NodeKind::Polygon { .. } | NodeKind::Star { .. }))
+        let boxy = n.kind.is_frame_like()
+            || matches!(n.kind, NodeKind::Rectangle | NodeKind::Section { .. });
+        if (boxy
+            || matches!(
+                n.kind,
+                NodeKind::Ellipse { .. } | NodeKind::Polygon { .. } | NodeKind::Star { .. }
+            ))
             && let Some(p) = figcraft_doc::geometry::shape_path(n)
         {
             self.geometry("fillGeometry", &p, WindingRule::NonZero, f);
@@ -1005,14 +1264,24 @@ impl<'d> Exporter<'d> {
         // Text whose own style sets fills paints with them (the layer's fills only show through
         // runs); a variable bound to the layer's fill colours the layer's.
         let fills = match &n.kind {
-            NodeKind::Text(TextData { style: TextStyle { fills: Some(own), .. }, .. }) => self.paints(own, true, &Bound::default()),
+            NodeKind::Text(TextData {
+                style: TextStyle {
+                    fills: Some(own), ..
+                },
+                ..
+            }) => self.paints(own, true, &Bound::default()),
             _ => self.paints(&n.fills, true, &bound),
         };
         let strokes = self.paints(&n.strokes, false, &bound);
         f.extend([("fillPaints", fills), ("strokePaints", strokes)]);
         self.stroke(n, f);
         if !n.effects.is_empty() {
-            let effects = n.effects.iter().enumerate().map(|(i, x)| self.effect(x, i, &bound)).collect();
+            let effects = n
+                .effects
+                .iter()
+                .enumerate()
+                .map(|(i, x)| self.effect(x, i, &bound))
+                .collect();
             f.push(("effects", arr(effects)));
         }
         if n.kind.has_corner_radius() {
@@ -1055,18 +1324,36 @@ impl<'d> Exporter<'d> {
                 self.auto_layout(n, l, f);
             }
             if !n.grids.is_empty() {
-                f.push(("layoutGrids", arr(n.grids.iter().enumerate().map(|(i, g)| layout_grid(g, i, &bound)).collect())));
+                f.push((
+                    "layoutGrids",
+                    arr(n
+                        .grids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, g)| layout_grid(g, i, &bound))
+                        .collect()),
+                ));
             }
         }
         self.child_layout(n, parent, f);
         if !n.exports.is_empty() {
-            if n.exports.iter().any(|x| x.format == figcraft_doc::ExportFormat::Webp) {
+            if n.exports
+                .iter()
+                .any(|x| x.format == figcraft_doc::ExportFormat::Webp)
+            {
                 self.warn("WebP export settings were written as PNG");
             }
-            f.push(("exportSettings", arr(n.exports.iter().map(export_setting).collect())));
+            f.push((
+                "exportSettings",
+                arr(n.exports.iter().map(export_setting).collect()),
+            ));
         }
         self.prototype(n, f);
-        let refs: Vec<Kv> = n.prop_refs.iter().filter_map(|(field, prop)| self.prop_ref(field, prop)).collect();
+        let refs: Vec<Kv> = n
+            .prop_refs
+            .iter()
+            .filter_map(|(field, prop)| self.prop_ref(field, prop))
+            .collect();
         if !refs.is_empty() {
             f.push(("parameterConsumptionMap", o(vec![("entries", arr(refs))])));
         }
@@ -1087,18 +1374,27 @@ impl<'d> Exporter<'d> {
         }
         if let NodeKind::Text(td) = &n.kind
             && n.styles.text.is_none()
-            && std::iter::once(&td.style).chain(td.runs.iter().map(|r| &r.style)).any(|st| st.style_id.is_some())
+            && std::iter::once(&td.style)
+                .chain(td.runs.iter().map(|r| &r.style))
+                .any(|st| st.style_id.is_some())
         {
             self.warn("text styles applied to part of a text were written as their values");
         }
         if !bound.entries.is_empty() {
-            f.push(("variableConsumptionMap", o(vec![("entries", arr(bound.entries))])));
+            f.push((
+                "variableConsumptionMap",
+                o(vec![("entries", arr(bound.entries))]),
+            ));
         }
         self.modes(n, f);
         if !n.guides.is_empty() {
             self.warn("ruler guides were left out");
         }
-        if !n.annotations.is_empty() || !n.dev_resources.is_empty() || !n.code_links.is_empty() || !n.dev_status.is_none() {
+        if !n.annotations.is_empty()
+            || !n.dev_resources.is_empty()
+            || !n.code_links.is_empty()
+            || !n.dev_status.is_none()
+        {
             self.warn("Dev Mode annotations, statuses, resources and code links were left out");
         }
         if !n.plugin_data.is_empty() {
@@ -1110,11 +1406,19 @@ impl<'d> Exporter<'d> {
     fn modes(&mut self, n: &Node, f: &mut Fields) {
         let mut entries = Vec::new();
         for (coll, mode) in &n.var_modes {
-            match (self.set_ids.get(coll.as_str()), self.mode_ids.get(&(coll.as_str(), mode.as_str()))) {
+            match (
+                self.set_ids.get(coll.as_str()),
+                self.mode_ids.get(&(coll.as_str(), mode.as_str())),
+            ) {
                 (Some(set), Some(mode)) => {
-                    entries.push(o(vec![("variableSetID", o(vec![("guid", guid(LAYERS, *set))])), ("variableModeID", guid(AUX, *mode))]));
+                    entries.push(o(vec![
+                        ("variableSetID", o(vec![("guid", guid(LAYERS, *set))])),
+                        ("variableModeID", guid(AUX, *mode)),
+                    ]));
                 }
-                _ => self.warn("variable modes of collections that aren't in the document were left out"),
+                _ => self.warn(
+                    "variable modes of collections that aren't in the document were left out",
+                ),
             }
         }
         if !entries.is_empty() {
@@ -1124,11 +1428,18 @@ impl<'d> Exporter<'d> {
 
     /// A paint list: a layer's fills (`fills`) or strokes with the variables `bound` to them.
     fn paints(&mut self, list: &[Paint], fills: bool, bound: &Bound) -> Kv<'static> {
-        arr(list.iter().enumerate().filter_map(|(i, p)| self.paint(p, (fills, i), bound)).collect())
+        arr(list
+            .iter()
+            .enumerate()
+            .filter_map(|(i, p)| self.paint(p, (fills, i), bound))
+            .collect())
     }
 
     fn paint(&mut self, p: &Paint, at: (bool, usize), bound: &Bound) -> Option<Kv<'static>> {
-        let mut f: Fields = vec![("visible", b(p.visible)), ("blendMode", e(blend_name(p.blend)))];
+        let mut f: Fields = vec![
+            ("visible", b(p.visible)),
+            ("blendMode", e(blend_name(p.blend))),
+        ];
         let mut opacity = f64::from(p.opacity);
         match &p.kind {
             PaintKind::Solid { color: c } => {
@@ -1147,8 +1458,11 @@ impl<'d> Exporter<'d> {
                 // (0, ½) → start, (1, ½) → end, (0, 1) → width for linear gradients, and the centre
                 // (½, ½) and the points half a box away from it for the others.
                 let (from, to, width) = (g.from, g.to, g.width);
-                let (ax, ay) =
-                    if g.kind == GradientKind::Linear { (to.0 - from.0, to.1 - from.1) } else { (2.0 * (to.0 - from.0), 2.0 * (to.1 - from.1)) };
+                let (ax, ay) = if g.kind == GradientKind::Linear {
+                    (to.0 - from.0, to.1 - from.1)
+                } else {
+                    (2.0 * (to.0 - from.0), 2.0 * (to.1 - from.1))
+                };
                 let (cx, cy) = (2.0 * (width.0 - from.0), 2.0 * (width.1 - from.1));
                 let (ex, ey) = if g.kind == GradientKind::Linear {
                     (from.0 - 0.5 * cx, from.1 - 0.5 * cy)
@@ -1156,19 +1470,44 @@ impl<'d> Exporter<'d> {
                     (from.0 - 0.5 * (ax + cx), from.1 - 0.5 * (ay + cy))
                 };
                 let handles = Affine::new([ax, ay, cx, cy, ex, ey]);
-                let t = if handles.determinant().abs() > 1e-12 && handles.as_coeffs().iter().all(|x| x.is_finite()) {
+                let t = if handles.determinant().abs() > 1e-12
+                    && handles.as_coeffs().iter().all(|x| x.is_finite())
+                {
                     handles.inverse()
                 } else {
                     self.warn("gradients with handles on one line were written with the default direction");
                     Affine::IDENTITY
                 };
-                let stops = g.stops.iter().map(|st| o(vec![("color", color(st.color)), ("position", fl(st.position.into()))])).collect();
-                f.extend([("type", e(ty)), ("stops", arr(stops)), ("transform", matrix(t))]);
+                let stops = g
+                    .stops
+                    .iter()
+                    .map(|st| {
+                        o(vec![
+                            ("color", color(st.color)),
+                            ("position", fl(st.position.into())),
+                        ])
+                    })
+                    .collect();
+                f.extend([
+                    ("type", e(ty)),
+                    ("stops", arr(stops)),
+                    ("transform", matrix(t)),
+                ]);
                 // Stops bound to variables: every stop again, the bound ones with their variable.
-                if bound.stops.range((at.0, at.1, 0)..=(at.0, at.1, usize::MAX)).next().is_some() {
+                if bound
+                    .stops
+                    .range((at.0, at.1, 0)..=(at.0, at.1, usize::MAX))
+                    .next()
+                    .is_some()
+                {
                     let vars = g.stops.iter().enumerate().map(|(j, st)| {
                         let mut sf: Fields = vec![("color", color(st.color))];
-                        sf.extend(bound.stops.get(&(at.0, at.1, j)).map(|a| ("colorVar", a.clone())));
+                        sf.extend(
+                            bound
+                                .stops
+                                .get(&(at.0, at.1, j))
+                                .map(|a| ("colorVar", a.clone())),
+                        );
                         sf.push(("position", fl(st.position.into())));
                         o(sf)
                     });
@@ -1233,7 +1572,12 @@ impl<'d> Exporter<'d> {
             }
         };
         let hex = hex.unwrap_or_default();
-        (0..hex.len() / 2).filter_map(|i| hex.get(2 * i..2 * i + 2).and_then(|d| u8::from_str_radix(d, 16).ok())).collect()
+        (0..hex.len() / 2)
+            .filter_map(|i| {
+                hex.get(2 * i..2 * i + 2)
+                    .and_then(|d| u8::from_str_radix(d, 16).ok())
+            })
+            .collect()
     }
 
     fn stroke(&mut self, n: &Node, f: &mut Fields) {
@@ -1251,7 +1595,10 @@ impl<'d> Exporter<'d> {
             ("miterLimit", fl(sp.miter_limit)),
         ]);
         if !sp.dashes.is_empty() {
-            f.push(("dashPattern", arr(sp.dashes.iter().map(|d| fl(*d)).collect())));
+            f.push((
+                "dashPattern",
+                arr(sp.dashes.iter().map(|d| fl(*d)).collect()),
+            ));
         }
         if let Some([t, r, bo, l]) = sp.sides {
             f.extend([
@@ -1265,13 +1612,25 @@ impl<'d> Exporter<'d> {
         // A variable width: how far the stroke reaches on each side of the path at positions along
         // its length, as a share of the stroke weight (half of it each for the full weight). The
         // two sides are the same: a reader draws nothing for a point with unequal sides.
-        if let Some(p) = sp.profile().filter(|_| sp.weight.is_finite() && sp.weight > 0.0) {
-            let point = |q: &figcraft_doc::WidthPoint| o(vec![("position", fl(q.t)), ("ascent", fl(q.scale / 2.0)), ("descent", fl(q.scale / 2.0))]);
+        if let Some(p) = sp
+            .profile()
+            .filter(|_| sp.weight.is_finite() && sp.weight > 0.0)
+        {
+            let point = |q: &figcraft_doc::WidthPoint| {
+                o(vec![
+                    ("position", fl(q.t)),
+                    ("ascent", fl(q.scale / 2.0)),
+                    ("descent", fl(q.scale / 2.0)),
+                ])
+            };
             let p = p.sanitized();
             if one_sided(&p) {
                 self.warn("strokes wider on one side of their path were written with that width on both sides");
             }
-            f.push(("variableWidthPoints", arr(p.points.iter().map(point).collect())));
+            f.push((
+                "variableWidthPoints",
+                arr(p.points.iter().map(point).collect()),
+            ));
         }
         if sp.brush.is_some() {
             self.warn("brush strokes were written as plain strokes");
@@ -1296,7 +1655,10 @@ impl<'d> Exporter<'d> {
             ("offsetY", "yVar"),
             ("startRadius", "startRadiusVar"),
         ];
-        f.extend(vars.into_iter().filter_map(|(ours, key)| Some((key, bound.effects.get(&(index, ours))?.clone()))));
+        f.extend(
+            vars.into_iter()
+                .filter_map(|(ours, key)| Some((key, bound.effects.get(&(index, ours))?.clone()))),
+        );
         let blur = |f: &mut Fields, ty: &'static str, bl: &figcraft_doc::Blur| {
             f.extend([("type", e(ty)), ("radius", fl(bl.radius))]);
             if bl.blur_type == figcraft_doc::BlurType::Progressive {
@@ -1311,7 +1673,11 @@ impl<'d> Exporter<'d> {
         let grain = |size: f64, size_y: Option<f64>| xy(size, size_y.unwrap_or(size));
         match &x.kind {
             EffectKind::DropShadow(sh) | EffectKind::InnerShadow(sh) => {
-                let ty = if matches!(x.kind, EffectKind::DropShadow(_)) { "DROP_SHADOW" } else { "INNER_SHADOW" };
+                let ty = if matches!(x.kind, EffectKind::DropShadow(_)) {
+                    "DROP_SHADOW"
+                } else {
+                    "INNER_SHADOW"
+                };
                 f.extend([
                     ("type", e(ty)),
                     ("color", color(sh.color)),
@@ -1381,8 +1747,15 @@ impl<'d> Exporter<'d> {
         };
         // The main axis is the width for horizontal and grid layouts.
         let (main_hug, cross_hug) = {
-            let (h, v) = (n.child_layout.sizing_h == Sizing::Hug, n.child_layout.sizing_v == Sizing::Hug);
-            if l.mode == LayoutMode::Vertical { (v, h) } else { (h, v) }
+            let (h, v) = (
+                n.child_layout.sizing_h == Sizing::Hug,
+                n.child_layout.sizing_v == Sizing::Hug,
+            );
+            if l.mode == LayoutMode::Vertical {
+                (v, h)
+            } else {
+                (h, v)
+            }
         };
         let size = |hug: bool| e(if hug { "RESIZE_TO_FIT" } else { "FIXED" });
         f.extend([
@@ -1403,19 +1776,38 @@ impl<'d> Exporter<'d> {
             // Instance layers share their main layer's track ids, so unchanged tracks and the cells
             // their layers sit in still match.
             let key = self.main_layer(n.id);
-            let (want_c, want_r) = (l.grid_columns.min(1000) as usize, l.grid_rows.min(1000) as usize);
+            let (want_c, want_r) = (
+                l.grid_columns.min(1000) as usize,
+                l.grid_rows.min(1000) as usize,
+            );
             let (cols, rows) = match self.tracks.get(&key) {
                 Some((c, r)) if (c.len(), r.len()) == (want_c, want_r) => (c.clone(), r.clone()),
-                _ => ((0..want_c).map(|_| self.next_aux()).collect(), (0..want_r).map(|_| self.next_aux()).collect()),
+                _ => (
+                    (0..want_c).map(|_| self.next_aux()).collect(),
+                    (0..want_r).map(|_| self.next_aux()).collect(),
+                ),
             };
             let map = |ids: &[u32]| {
                 o(vec![(
                     "entries",
-                    arr(ids.iter().enumerate().map(|(i, t)| o(vec![("id", guid(AUX, *t)), ("position", s(&position(i)))])).collect()),
+                    arr(ids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, t)| o(vec![("id", guid(AUX, *t)), ("position", s(&position(i)))]))
+                        .collect()),
                 )])
             };
-            f.extend([("gridColumnGap", fl(l.gap)), ("gridRowGap", fl(l.cross_gap)), ("gridColumns", map(&cols)), ("gridRows", map(&rows))]);
-            if l.column_tracks.iter().chain(&l.row_tracks).any(|t| t.sizing != Sizing::Fill) {
+            f.extend([
+                ("gridColumnGap", fl(l.gap)),
+                ("gridRowGap", fl(l.cross_gap)),
+                ("gridColumns", map(&cols)),
+                ("gridRows", map(&rows)),
+            ]);
+            if l.column_tracks
+                .iter()
+                .chain(&l.row_tracks)
+                .any(|t| t.sizing != Sizing::Fill)
+            {
                 self.warn("grid tracks of fixed or content size were written as equal tracks");
             }
             self.tracks.insert(key, (cols, rows));
@@ -1424,7 +1816,10 @@ impl<'d> Exporter<'d> {
             f.extend([
                 ("stackSpacing", fl(l.gap)),
                 ("stackCounterSpacing", fl(l.cross_gap)),
-                ("stackCounterAlignContent", e(if spread { "SPACE_BETWEEN" } else { "AUTO" })),
+                (
+                    "stackCounterAlignContent",
+                    e(if spread { "SPACE_BETWEEN" } else { "AUTO" }),
+                ),
             ]);
         }
     }
@@ -1432,9 +1827,15 @@ impl<'d> Exporter<'d> {
     /// How a layer sizes and sits in its auto layout parent.
     fn child_layout(&mut self, n: &Node, parent: Option<&Node>, f: &mut Fields) {
         let cl = &n.child_layout;
-        let Some(pl) = parent.and_then(|p| p.layout.as_ref()) else { return };
+        let Some(pl) = parent.and_then(|p| p.layout.as_ref()) else {
+            return;
+        };
         let (fill_h, fill_v) = (cl.sizing_h == Sizing::Fill, cl.sizing_v == Sizing::Fill);
-        let (grow, stretch) = if pl.mode == LayoutMode::Vertical { (fill_v, fill_h) } else { (fill_h, fill_v) };
+        let (grow, stretch) = if pl.mode == LayoutMode::Vertical {
+            (fill_v, fill_h)
+        } else {
+            (fill_h, fill_v)
+        };
         if grow {
             f.push(("stackChildPrimaryGrow", fl(1.0)));
         }
@@ -1444,15 +1845,23 @@ impl<'d> Exporter<'d> {
         if cl.absolute {
             f.push(("stackPositioning", e("ABSOLUTE")));
         }
-        for (key, w, h) in [("minSize", cl.min_w, cl.min_h), ("maxSize", cl.max_w, cl.max_h)] {
+        for (key, w, h) in [
+            ("minSize", cl.min_w, cl.min_h),
+            ("maxSize", cl.max_w, cl.max_h),
+        ] {
             if w.is_some() || h.is_some() {
-                f.push((key, o(vec![("value", xy(w.unwrap_or(0.0), h.unwrap_or(0.0)))])));
+                f.push((
+                    key,
+                    o(vec![("value", xy(w.unwrap_or(0.0), h.unwrap_or(0.0)))]),
+                ));
             }
         }
         if pl.mode == LayoutMode::Grid
             && let Some((cols, rows)) = parent.and_then(|p| self.tracks.get(&self.main_layer(p.id)))
         {
-            let anchor = |ids: &[u32], i: Option<u32>| i.and_then(|i| ids.get(i as usize)).map(|t| guid(AUX, *t));
+            let anchor = |ids: &[u32], i: Option<u32>| {
+                i.and_then(|i| ids.get(i as usize)).map(|t| guid(AUX, *t))
+            };
             let (c, r) = (anchor(cols, cl.grid_column), anchor(rows, cl.grid_row));
             f.extend(c.map(|g| ("gridColumnAnchor", g)));
             f.extend(r.map(|g| ("gridRowAnchor", g)));
@@ -1551,15 +1960,24 @@ impl<'d> Exporter<'d> {
                 .map(|(st, id)| {
                     let mut ef: Fields = vec![("styleID", u(id))];
                     style_fields(st, &mut ef);
-                    if let Some(p) = st.fills.as_deref().or(td.style.fills.as_ref().map(|_| fills)) {
+                    if let Some(p) = st
+                        .fills
+                        .as_deref()
+                        .or(td.style.fills.as_ref().map(|_| fills))
+                    {
                         ef.push(("fillPaints", self.paints(p, true, &Bound::default())));
                     }
                     o(ef)
                 })
                 .collect();
-            data.extend([("characterStyleIDs", arr(ids)), ("styleOverrideTable", arr(entries))]);
+            data.extend([
+                ("characterStyleIDs", arr(ids)),
+                ("styleOverrideTable", arr(entries)),
+            ]);
         }
-        let lists: Vec<ListStyle> = (0..td.paragraph_count()).map(|p| td.para_list(p).list).collect();
+        let lists: Vec<ListStyle> = (0..td.paragraph_count())
+            .map(|p| td.para_list(p).list)
+            .collect();
         // One entry per paragraph, each with every field a reader expects.
         let line = |(i, l): (usize, &ListStyle)| {
             let ty = match l {
@@ -1584,13 +2002,21 @@ impl<'d> Exporter<'d> {
             self.warn("nested list levels were written as the first level");
         }
         let styles = std::iter::once(&td.style).chain(td.runs.iter().map(|r| &r.style));
-        if styles.clone().any(|st| st.decoration_look.is_some() || !st.variations.is_empty()) {
+        if styles
+            .clone()
+            .any(|st| st.decoration_look.is_some() || !st.variations.is_empty())
+        {
             self.warn("text decoration looks and variable font settings were left out");
         }
         if td.path.is_some() {
             self.warn("text on a path was written as plain text");
         }
-        if td.list_spacing != 0.0 || td.hanging_punctuation || td.hanging_list || td.leading_trim != Default::default() || !td.features.is_empty() {
+        if td.list_spacing != 0.0
+            || td.hanging_punctuation
+            || td.hanging_list
+            || td.leading_trim != Default::default()
+            || !td.features.is_empty()
+        {
             self.warn("list spacing, hanging punctuation, leading trim and OpenType features were left out");
         }
     }
@@ -1598,7 +2024,12 @@ impl<'d> Exporter<'d> {
     /// The editable network (with per-point corner radii, handle mirroring and end caps) and,
     /// when it has filled areas, their outline.
     fn vector(&mut self, n: &Node, net: &VectorNetwork, f: &mut Fields) {
-        let entries: usize = net.regions.iter().flat_map(|r| &r.loops).map(Vec::len).sum();
+        let entries: usize = net
+            .regions
+            .iter()
+            .flat_map(|r| &r.loops)
+            .map(Vec::len)
+            .sum();
         if net.vertices.len() + net.segments.len() + entries > MAX_NETWORK {
             self.warn("vector networks too large for the format were written as outlines");
         } else {
@@ -1612,9 +2043,12 @@ impl<'d> Exporter<'d> {
                     }
                 }
             }
-            let ends: Vec<usize> = (0..degree.len()).filter(|i| degree.get(*i) == Some(&1)).collect();
+            let ends: Vec<usize> = (0..degree.len())
+                .filter(|i| degree.get(*i) == Some(&1))
+                .collect();
             let (first, last) = (ends.first().copied(), ends.last().copied());
-            let caps_differ = n.stroke.cap_start != n.stroke.cap_end || net.vertices.iter().any(|v| v.cap.is_some());
+            let caps_differ = n.stroke.cap_start != n.stroke.cap_end
+                || net.vertices.iter().any(|v| v.cap.is_some());
             let mut styles: Vec<Fields> = Vec::new();
             let mut style_of = |fields: Fields| -> u32 {
                 if fields.is_empty() {
@@ -1658,20 +2092,37 @@ impl<'d> Exporter<'d> {
                     if let Some(j) = v.join {
                         st.push(("strokeJoin", e(join_name(j))));
                     }
-                    network::Vertex { style: style_of(st), x: finite(v.x), y: finite(v.y) }
+                    network::Vertex {
+                        style: style_of(st),
+                        x: finite(v.x),
+                        y: finite(v.y),
+                    }
                 })
                 .collect();
             let segments = net
                 .segments
                 .iter()
-                .map(|sg| network::Segment { a: sg.a, ta: (finite(sg.ta.0), finite(sg.ta.1)), b: sg.b, tb: (finite(sg.tb.0), finite(sg.tb.1)) })
+                .map(|sg| network::Segment {
+                    a: sg.a,
+                    ta: (finite(sg.ta.0), finite(sg.ta.1)),
+                    b: sg.b,
+                    tb: (finite(sg.tb.0), finite(sg.tb.1)),
+                })
                 .collect();
             let regions = net
                 .regions
                 .iter()
-                .map(|r| network::Region { style: 0, non_zero: r.winding == WindingRule::NonZero, loops: r.loops.clone() })
+                .map(|r| network::Region {
+                    style: 0,
+                    non_zero: r.winding == WindingRule::NonZero,
+                    loops: r.loops.clone(),
+                })
                 .collect();
-            let blob = network::encode(&network::Network { vertices, segments, regions });
+            let blob = network::encode(&network::Network {
+                vertices,
+                segments,
+                regions,
+            });
             let table = styles.into_iter().zip(1u32..).map(|(mut st, id)| {
                 st.insert(0, ("styleID", u(id)));
                 o(st)
@@ -1680,7 +2131,11 @@ impl<'d> Exporter<'d> {
             if let Some(i) = self.blob(blob) {
                 f.push((
                     "vectorData",
-                    o(vec![("vectorNetworkBlob", u(i)), ("normalizedSize", xy(n.width, n.height)), ("styleOverrideTable", arr(table))]),
+                    o(vec![
+                        ("vectorNetworkBlob", u(i)),
+                        ("normalizedSize", xy(n.width, n.height)),
+                        ("styleOverrideTable", arr(table)),
+                    ]),
                 ));
             }
         }
@@ -1699,8 +2154,19 @@ impl<'d> Exporter<'d> {
             return;
         }
         if let Some(i) = self.blob(path_blob(p)) {
-            let rule = if winding == WindingRule::EvenOdd { "ODD" } else { "NONZERO" };
-            f.push((key, arr(vec![o(vec![("windingRule", e(rule)), ("commandsBlob", u(i)), ("styleID", u(0))])])));
+            let rule = if winding == WindingRule::EvenOdd {
+                "ODD"
+            } else {
+                "NONZERO"
+            };
+            f.push((
+                key,
+                arr(vec![o(vec![
+                    ("windingRule", e(rule)),
+                    ("commandsBlob", u(i)),
+                    ("styleID", u(0)),
+                ])]),
+            ));
         }
     }
 
@@ -1710,7 +2176,11 @@ impl<'d> Exporter<'d> {
     fn stroke_geometry(&mut self, n: &Node, boxy: bool, f: &mut Fields) {
         let sp = &n.stroke;
         let (w, h, weight) = (n.width, n.height, sp.weight);
-        let plain = n.strokes.iter().any(|p| p.visible) && sp.dashes.is_empty() && sp.sides.is_none() && sp.profile().is_none() && sp.brush.is_none();
+        let plain = n.strokes.iter().any(|p| p.visible)
+            && sp.dashes.is_empty()
+            && sp.sides.is_none()
+            && sp.profile().is_none()
+            && sp.brush.is_none();
         if !plain || !(weight.is_finite() && weight > 0.0 && w.is_finite() && h.is_finite()) {
             return;
         }
@@ -1730,14 +2200,21 @@ impl<'d> Exporter<'d> {
                 let mut p = if whole {
                     figcraft_doc::geom::ellipse(gw, gh, 0.0, std::f64::consts::TAU, 0.0)
                 } else {
-                    let radii = n.corners.radii.map(|r| if r > 0.0 { (r + d).max(0.0) } else { 0.0 });
+                    let radii = n
+                        .corners
+                        .radii
+                        .map(|r| if r > 0.0 { (r + d).max(0.0) } else { 0.0 });
                     figcraft_doc::geom::rounded_rect(gw, gh, radii, n.corners.smoothing)
                 };
                 p.apply_affine(Affine::translate((-d, -d)));
                 Some(p)
             };
             let Some(mut ring) = grown(out) else { return };
-            ring.extend(grown(-inset).iter().flat_map(|p| p.elements().iter().copied()));
+            ring.extend(
+                grown(-inset)
+                    .iter()
+                    .flat_map(|p| p.elements().iter().copied()),
+            );
             self.geometry("strokeGeometry", &ring, WindingRule::EvenOdd, f);
         } else if sp.align == StrokeAlign::Center {
             let path = match &n.kind {
@@ -1745,7 +2222,9 @@ impl<'d> Exporter<'d> {
                 NodeKind::Text(_) => None,
                 _ => figcraft_doc::geometry::shape_path(n),
             };
-            let Some(path) = path.filter(|p| !p.elements().is_empty()) else { return };
+            let Some(path) = path.filter(|p| !p.elements().is_empty()) else {
+                return;
+            };
             use figcraft_doc::geom::kurbo::{Cap, Join, Stroke, StrokeOpts, stroke};
             let cap = match sp.cap_start {
                 StrokeCap::Round => Cap::Round,
@@ -1757,9 +2236,21 @@ impl<'d> Exporter<'d> {
                 StrokeJoin::Bevel => Join::Bevel,
                 StrokeJoin::Round => Join::Round,
             };
-            let limit = if sp.miter_limit.is_finite() { sp.miter_limit.max(1.0) } else { 4.0 };
-            let style = Stroke::new(weight).with_caps(cap).with_join(join).with_miter_limit(limit);
-            self.geometry("strokeGeometry", &stroke(path, &style, &StrokeOpts::default(), 0.05), WindingRule::NonZero, f);
+            let limit = if sp.miter_limit.is_finite() {
+                sp.miter_limit.max(1.0)
+            } else {
+                4.0
+            };
+            let style = Stroke::new(weight)
+                .with_caps(cap)
+                .with_join(join)
+                .with_miter_limit(limit);
+            self.geometry(
+                "strokeGeometry",
+                &stroke(path, &style, &StrokeOpts::default(), 0.05),
+                WindingRule::NonZero,
+                f,
+            );
         }
     }
 
@@ -1784,7 +2275,9 @@ impl<'d> Exporter<'d> {
         let id = *self.defs.get(&(name.to_string(), ty))?;
         let value = match d {
             PropDef::Boolean { default } => o(vec![("boolValue", b(*default))]),
-            PropDef::Text { default } => o(vec![("textValue", o(vec![("characters", s(default))]))]),
+            PropDef::Text { default } => {
+                o(vec![("textValue", o(vec![("characters", s(default))]))])
+            }
             PropDef::InstanceSwap { default, preferred } => {
                 if !preferred.is_empty() {
                     self.warn("preferred values of instance swap properties were left out");
@@ -1793,7 +2286,12 @@ impl<'d> Exporter<'d> {
             }
             PropDef::Variant { .. } | PropDef::Slot { .. } => return None,
         };
-        Some(o(vec![("id", guid(AUX, id)), ("name", s(name)), ("initialValue", value), ("type", e(ty))]))
+        Some(o(vec![
+            ("id", guid(AUX, id)),
+            ("name", s(name)),
+            ("initialValue", value),
+            ("type", e(ty)),
+        ]))
     }
 
     /// Which property controls a layer's `field`.
@@ -1809,29 +2307,63 @@ impl<'d> Exporter<'d> {
         };
         let id = *self.defs.get(&(prop.to_string(), ty))?;
         let data = o(vec![
-            ("value", o(vec![("propRefValue", o(vec![("defId", guid(AUX, id))]))])),
+            (
+                "value",
+                o(vec![("propRefValue", o(vec![("defId", guid(AUX, id))]))]),
+            ),
             ("dataType", e("PROP_REF")),
             ("resolvedDataType", e(resolved)),
         ]);
-        Some(o(vec![("variableData", data), ("variableField", e(var_field))]))
+        Some(o(vec![
+            ("variableData", data),
+            ("variableField", e(var_field)),
+        ]))
     }
 
     /// An instance: its main, the fields it and its layers override, the size, place and outline
     /// its layers get from that (derived data), its property values. `f`: its own fields so far.
-    fn instance(&mut self, n: &Node, main: NodeId, props: &BTreeMap<String, Value>, f: &mut Fields) {
-        const OWN: [&str; 7] = ["guid", "phase", "parentIndex", "type", "transform", "fillGeometry", "strokeGeometry"];
+    fn instance(
+        &mut self,
+        n: &Node,
+        main: NodeId,
+        props: &BTreeMap<String, Value>,
+        f: &mut Fields,
+    ) {
+        const OWN: [&str; 7] = [
+            "guid",
+            "phase",
+            "parentIndex",
+            "type",
+            "transform",
+            "fillGeometry",
+            "strokeGeometry",
+        ];
         let doc = self.doc;
-        let (Some(m), Some(symbol)) = (doc.node(main), self.guid_of(main)) else { return };
+        let (Some(m), Some(symbol)) = (doc.node(main), self.guid_of(main)) else {
+            return;
+        };
         // What the instance itself changes from its main (its size, its paints, …) is an override
         // addressed by the main's id: a reader takes everything else from the main. Where it sits
         // is its own.
         let mut root_theirs = Vec::new();
-        self.layer(m, m.parent.and_then(|p| doc.node(p)), &mut root_theirs, true);
+        self.layer(
+            m,
+            m.parent.and_then(|p| doc.node(p)),
+            &mut root_theirs,
+            true,
+        );
         root_theirs.retain(|(k, _)| !OWN.contains(k));
         // An instance is named after its component (the set, for a variant) until renamed.
-        let set = m.parent.and_then(|p| doc.node(p)).filter(|p| matches!(p.kind, NodeKind::ComponentSet { .. }));
+        let set = m
+            .parent
+            .and_then(|p| doc.node(p))
+            .filter(|p| matches!(p.kind, NodeKind::ComponentSet { .. }));
         let named = set.is_none_or(|s| s.name != n.name);
-        let root_mine: Fields = f.iter().filter(|(k, _)| !OWN.contains(k) && (named || *k != "name")).cloned().collect();
+        let root_mine: Fields = f
+            .iter()
+            .filter(|(k, _)| !OWN.contains(k) && (named || *k != "name"))
+            .cloned()
+            .collect();
         // Each layer below: its id path, the fields that differ from the main's layer, that layer's
         // fields, and the component a nested instance was swapped for.
         struct Row {
@@ -1842,7 +2374,8 @@ impl<'d> Exporter<'d> {
             swap: Option<Kv<'static>>,
         }
         let mut rows: Vec<Row> = Vec::new();
-        let mut stack: Vec<(NodeId, NodeId)> = n.children.iter().rev().map(|c| (*c, n.id)).collect();
+        let mut stack: Vec<(NodeId, NodeId)> =
+            n.children.iter().rev().map(|c| (*c, n.id)).collect();
         let mut seen = 0usize;
         while let Some((id, parent)) = stack.pop() {
             let Some(d) = doc.node(id) else { continue };
@@ -1852,9 +2385,12 @@ impl<'d> Exporter<'d> {
             }
             stack.extend(d.children.iter().rev().map(|c| (*c, id)));
             let path = self.layer_path(d, n.id, main, 0);
-            let guids: Option<Vec<Kv>> = path.and_then(|p| p.iter().map(|x| self.guid_of(*x)).collect());
+            let guids: Option<Vec<Kv>> =
+                path.and_then(|p| p.iter().map(|x| self.guid_of(*x)).collect());
             let (Some(guids), Some(src)) = (guids, d.source.and_then(|src| doc.node(src))) else {
-                self.warn("instance layers that don't come from their main component were left out");
+                self.warn(
+                    "instance layers that don't come from their main component were left out",
+                );
                 continue;
             };
             let (mut mine, mut theirs) = (Vec::new(), Vec::new());
@@ -1862,44 +2398,82 @@ impl<'d> Exporter<'d> {
             self.layer(src, src.parent.and_then(|p| doc.node(p)), &mut theirs, true);
             // A nested instance swapped for another component.
             let swap = match (&d.kind, &src.kind) {
-                (NodeKind::Instance { component, .. }, NodeKind::Instance { component: was, .. }) if component == was => None,
+                (
+                    NodeKind::Instance { component, .. },
+                    NodeKind::Instance { component: was, .. },
+                ) if component == was => None,
                 (NodeKind::Instance { component, .. }, _) => self.guid_of(*component),
                 _ => None,
             };
             let nested = matches!(d.kind, NodeKind::Instance { .. });
-            rows.push(Row { path: o(vec![("guids", arr(guids))]), changed: changed(mine, &theirs), theirs, nested, swap });
+            rows.push(Row {
+                path: o(vec![("guids", arr(guids))]),
+                changed: changed(mine, &theirs),
+                theirs,
+                nested,
+                swap,
+            });
         }
         // An instance scaled as a whole (the Scale tool) is `factor` times its main in every length:
         // sizes, places and stroke weights, its own and its layers'. A resized one keeps its weights.
-        let field = |fields: &Fields, key: &str| fields.iter().find(|(k, _)| *k == key).map(|(_, v)| v.clone());
-        let factor = Some(n.width / m.width).filter(|k| k.is_finite() && *k > 0.0 && (k - 1.0).abs() > 1e-6).filter(|k| {
-            let grown = |mine: &Fields, theirs: &Fields| {
-                let weight = field(theirs, "strokeWeight").and_then(|w| w.f64()).unwrap_or(0.0);
-                (weight == 0.0 || field(mine, "strokeWeight").is_some_and(|w| scaled(&w, &fl(weight), *k, 0.0)))
-                    && field(mine, "size").zip(field(theirs, "size")).is_some_and(|(a, b)| scaled(&a, &b, *k, 1.0))
-                    && field(mine, "transform").zip(field(theirs, "transform")).is_none_or(|(a, b)| scaled(&a, &b, *k, 1.0))
-            };
-            (n.height / m.height - k).abs() <= 1e-6 * k.max(1.0)
-                && grown(&changed(root_mine.clone(), &root_theirs), &root_theirs)
-                && rows.iter().all(|r| grown(&r.changed, &r.theirs))
-        });
+        let field = |fields: &Fields, key: &str| {
+            fields
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, v)| v.clone())
+        };
+        let factor = Some(n.width / m.width)
+            .filter(|k| k.is_finite() && *k > 0.0 && (k - 1.0).abs() > 1e-6)
+            .filter(|k| {
+                let grown = |mine: &Fields, theirs: &Fields| {
+                    let weight = field(theirs, "strokeWeight")
+                        .and_then(|w| w.f64())
+                        .unwrap_or(0.0);
+                    (weight == 0.0
+                        || field(mine, "strokeWeight")
+                            .is_some_and(|w| scaled(&w, &fl(weight), *k, 0.0)))
+                        && field(mine, "size")
+                            .zip(field(theirs, "size"))
+                            .is_some_and(|(a, b)| scaled(&a, &b, *k, 1.0))
+                        && field(mine, "transform")
+                            .zip(field(theirs, "transform"))
+                            .is_none_or(|(a, b)| scaled(&a, &b, *k, 1.0))
+                };
+                (n.height / m.height - k).abs() <= 1e-6 * k.max(1.0)
+                    && grown(&changed(root_mine.clone(), &root_theirs), &root_theirs)
+                    && rows.iter().all(|r| grown(&r.changed, &r.theirs))
+            });
         // What follows from the overrides goes with the derived data: a layer's size, place and
         // outline (a vector's network is the main's, drawn at the layer's size), the colours its
         // variables give here, and what the scale factor makes of the main's values.
         let follows = |k: &str, v: &Kv<'static>, theirs: &Fields| {
-            ["size", "transform", "fillGeometry", "strokeGeometry", "vectorData"].contains(&k)
+            [
+                "size",
+                "transform",
+                "fillGeometry",
+                "strokeGeometry",
+                "vectorData",
+            ]
+            .contains(&k)
                 || resolved_alike(k, v, theirs)
                 || factor.is_some_and(|x| field(theirs, k).is_some_and(|t| scaled(v, &t, x, 0.0)))
         };
         let mut overrides = Vec::new();
         let mut derived = Vec::new();
         let mut of: Fields = vec![("guidPath", o(vec![("guids", arr(vec![symbol.clone()]))]))];
-        of.extend(changed(root_mine, &root_theirs).into_iter().filter(|(k, v)| *k == "size" || !follows(k, v, &root_theirs)));
+        of.extend(
+            changed(root_mine, &root_theirs)
+                .into_iter()
+                .filter(|(k, v)| *k == "size" || !follows(k, v, &root_theirs)),
+        );
         if of.len() > 1 {
             overrides.push(o(of));
         }
         for r in rows {
-            let (mut of, mut df): (Fields, Fields) = (vec![("guidPath", r.path.clone())], vec![("guidPath", r.path)]);
+            let (mut of, mut df): (Fields, Fields) = (
+                vec![("guidPath", r.path.clone())],
+                vec![("guidPath", r.path)],
+            );
             for (k, v) in r.changed {
                 let follows = follows(k, &v, &r.theirs);
                 // A nested instance's size is its own to set.
@@ -1916,7 +2490,14 @@ impl<'d> Exporter<'d> {
                 overrides.push(o(of));
             }
         }
-        f.push(("symbolData", o(vec![("symbolID", symbol), ("symbolOverrides", arr(overrides)), ("uniformScaleFactor", fl(factor.unwrap_or(1.0)))])));
+        f.push((
+            "symbolData",
+            o(vec![
+                ("symbolID", symbol),
+                ("symbolOverrides", arr(overrides)),
+                ("uniformScaleFactor", fl(factor.unwrap_or(1.0))),
+            ]),
+        ));
         if !derived.is_empty() {
             f.push(("derivedSymbolData", arr(derived)));
         }
@@ -1924,8 +2505,16 @@ impl<'d> Exporter<'d> {
         for (name, v) in props {
             let (ty, value) = match v {
                 Value::Bool(x) => ("BOOL", Some(o(vec![("boolValue", b(*x))]))),
-                Value::String(t) => ("TEXT", Some(o(vec![("textValue", o(vec![("characters", s(t))]))]))),
-                Value::Number(c) => ("INSTANCE_SWAP", c.as_u64().and_then(|c| self.guid_of(NodeId(c))).map(|g| o(vec![("guidValue", g)]))),
+                Value::String(t) => (
+                    "TEXT",
+                    Some(o(vec![("textValue", o(vec![("characters", s(t))]))])),
+                ),
+                Value::Number(c) => (
+                    "INSTANCE_SWAP",
+                    c.as_u64()
+                        .and_then(|c| self.guid_of(NodeId(c)))
+                        .map(|g| o(vec![("guidValue", g)])),
+                ),
                 _ => continue,
             };
             // Variant values have no definition of their own: the main they show says them.
@@ -1936,7 +2525,11 @@ impl<'d> Exporter<'d> {
         if !assignments.is_empty() {
             f.push(("componentPropAssignments", arr(assignments)));
         }
-        if n.children.iter().filter_map(|c| doc.node(*c)).any(|c| c.source.is_none()) {
+        if n.children
+            .iter()
+            .filter_map(|c| doc.node(*c))
+            .any(|c| c.source.is_none())
+        {
             self.warn("instance layers that don't come from their main component were left out");
         }
     }
@@ -1962,7 +2555,13 @@ impl<'d> Exporter<'d> {
     /// The id path of layer `d` of instance `inst` (of `main`): that of the main's layer it mirrors,
     /// or, inside a nested instance swapped for another component, the path of that instance and
     /// then the one inside its new main.
-    fn layer_path(&self, d: &Node, inst: NodeId, main: NodeId, depth: usize) -> Option<Vec<NodeId>> {
+    fn layer_path(
+        &self,
+        d: &Node,
+        inst: NodeId,
+        main: NodeId,
+        depth: usize,
+    ) -> Option<Vec<NodeId>> {
         let src = d.source?;
         if let Some(p) = self.path_in(src, main, 0) {
             return Some(p);
@@ -1971,10 +2570,15 @@ impl<'d> Exporter<'d> {
             return None;
         }
         let doc = self.doc;
-        let nested = doc.ancestors(d.id).into_iter().take_while(|a| *a != inst).filter_map(|a| doc.node(a)).find_map(|a| match &a.kind {
-            NodeKind::Instance { component, .. } => Some((a, *component)),
-            _ => None,
-        });
+        let nested = doc
+            .ancestors(d.id)
+            .into_iter()
+            .take_while(|a| *a != inst)
+            .filter_map(|a| doc.node(a))
+            .find_map(|a| match &a.kind {
+                NodeKind::Instance { component, .. } => Some((a, *component)),
+                _ => None,
+            });
         let (outer, component) = nested?;
         let mut p = self.layer_path(outer, inst, main, depth + 1)?;
         p.extend(self.path_in(src, component, 0)?);
@@ -1994,10 +2598,13 @@ impl<'d> Exporter<'d> {
             return None;
         }
         // The outermost nested instance between the component and the layer.
-        match below.iter().rev().find_map(|a| match doc.node(*a).map(|n| &n.kind) {
-            Some(NodeKind::Instance { component, .. }) => Some((*a, *component)),
-            _ => None,
-        }) {
+        match below
+            .iter()
+            .rev()
+            .find_map(|a| match doc.node(*a).map(|n| &n.kind) {
+                Some(NodeKind::Instance { component, .. }) => Some((*a, *component)),
+                _ => None,
+            }) {
             None => Some(vec![s]),
             Some((inst, main)) => {
                 let mut p = vec![inst];
@@ -2009,7 +2616,11 @@ impl<'d> Exporter<'d> {
 
     /// Interactions, scrolling, flow starts and the overlay settings this layer is opened with.
     fn prototype(&mut self, n: &Node, f: &mut Fields) {
-        let list: Vec<Kv> = n.interactions.iter().filter_map(|it| self.interaction(it)).collect();
+        let list: Vec<Kv> = n
+            .interactions
+            .iter()
+            .filter_map(|it| self.interaction(it))
+            .collect();
         if !list.is_empty() {
             f.push(("prototypeInteractions", arr(list)));
         }
@@ -2027,18 +2638,43 @@ impl<'d> Exporter<'d> {
         };
         f.extend(behavior.map(|x| ("scrollBehavior", e(x))));
         if let Some((i, name)) = self.starts.get(&n.id) {
-            f.push(("prototypeStartingPoint", o(vec![("name", s(name)), ("position", s(&position(*i)))])));
+            f.push((
+                "prototypeStartingPoint",
+                o(vec![("name", s(name)), ("position", s(&position(*i)))]),
+            ));
         }
         if let Some(ov) = self.overlays.get(&n.id) {
-            const POSITIONS: [&str; 8] = ["CENTER", "TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT", "MANUAL"];
-            let pos = POSITIONS.into_iter().find(|p| crate::rest::proto::overlay_position(p) == Some(ov.position)).unwrap_or("CENTER");
+            const POSITIONS: [&str; 8] = [
+                "CENTER",
+                "TOP_LEFT",
+                "TOP_CENTER",
+                "TOP_RIGHT",
+                "BOTTOM_LEFT",
+                "BOTTOM_CENTER",
+                "BOTTOM_RIGHT",
+                "MANUAL",
+            ];
+            let pos = POSITIONS
+                .into_iter()
+                .find(|p| crate::rest::proto::overlay_position(p) == Some(ov.position))
+                .unwrap_or("CENTER");
             let bg = match ov.background {
-                Some(c) => o(vec![("backgroundType", e("SOLID_COLOR")), ("backgroundColor", color(c))]),
+                Some(c) => o(vec![
+                    ("backgroundType", e("SOLID_COLOR")),
+                    ("backgroundColor", color(c)),
+                ]),
                 None => o(vec![("backgroundType", e("NONE"))]),
             };
             f.extend([
                 ("overlayPositionType", e(pos)),
-                ("overlayBackgroundInteraction", e(if ov.close_on_outside { "CLOSE_ON_CLICK_OUTSIDE" } else { "NONE" })),
+                (
+                    "overlayBackgroundInteraction",
+                    e(if ov.close_on_outside {
+                        "CLOSE_ON_CLICK_OUTSIDE"
+                    } else {
+                        "NONE"
+                    }),
+                ),
                 ("overlayBackgroundAppearance", bg),
             ]);
         }
@@ -2064,8 +2700,18 @@ impl<'d> Exporter<'d> {
                     self.warn("key triggers on keys the format has no code for were left out");
                     return None;
                 };
-                let device = e(if pad { "UNKNOWN_CONTROLLER" } else { "KEYBOARD" });
-                event.push(("keyTrigger", o(vec![("keyCodes", arr(codes.into_iter().map(int).collect())), ("triggerDevice", device)])));
+                let device = e(if pad {
+                    "UNKNOWN_CONTROLLER"
+                } else {
+                    "KEYBOARD"
+                });
+                event.push((
+                    "keyTrigger",
+                    o(vec![
+                        ("keyCodes", arr(codes.into_iter().map(int).collect())),
+                        ("triggerDevice", device),
+                    ]),
+                ));
                 "ON_KEY_DOWN"
             }
         };
@@ -2074,7 +2720,11 @@ impl<'d> Exporter<'d> {
             event.push(("transitionTimeout", fl(it.delay_secs())));
         }
         event.insert(0, ("interactionType", e(ty)));
-        let actions: Vec<Kv> = it.actions.iter().filter_map(|a| self.action(a, it)).collect();
+        let actions: Vec<Kv> = it
+            .actions
+            .iter()
+            .filter_map(|a| self.action(a, it))
+            .collect();
         (!actions.is_empty()).then(|| o(vec![("event", o(event)), ("actions", arr(actions))]))
     }
 
@@ -2084,23 +2734,40 @@ impl<'d> Exporter<'d> {
                 x.warn("prototype actions whose destination isn't written were left out");
                 return None;
             };
-            let mut f: Fields = vec![("transitionNodeID", g), ("connectionType", e("INTERNAL_NODE")), ("navigationType", e(nav))];
+            let mut f: Fields = vec![
+                ("transitionNodeID", g),
+                ("connectionType", e("INTERNAL_NODE")),
+                ("navigationType", e(nav)),
+            ];
             x.transition(it, &mut f);
             Some(o(f))
         };
         let plain = |ty: &'static str| Some(o(vec![("connectionType", e(ty))]));
         match a {
-            Action::Navigate { dest, preserve_scroll } => {
+            Action::Navigate {
+                dest,
+                preserve_scroll,
+            } => {
                 let mut act = node(self, dest, "NAVIGATE")?;
                 if let Kv::Object(f) = &mut act {
                     f.push(("transitionPreserveScroll", b(*preserve_scroll)));
                 }
                 Some(act)
             }
-            Action::OpenOverlay { dest, position, offset, .. } => {
+            Action::OpenOverlay {
+                dest,
+                position,
+                offset,
+                ..
+            } => {
                 let mut act = node(self, dest, "OVERLAY")?;
-                if let (Kv::Object(f), OverlayPosition::Manual, Some([x, y])) = (&mut act, position, offset) {
-                    f.push(("overlayRelativePosition", o(vec![("x", fl(*x)), ("y", fl(*y))])));
+                if let (Kv::Object(f), OverlayPosition::Manual, Some([x, y])) =
+                    (&mut act, position, offset)
+                {
+                    f.push((
+                        "overlayRelativePosition",
+                        o(vec![("x", fl(*x)), ("y", fl(*y))]),
+                    ));
                 }
                 Some(act)
             }
@@ -2114,8 +2781,13 @@ impl<'d> Exporter<'d> {
             }
             Action::Back => plain("BACK"),
             Action::CloseOverlay => plain("CLOSE"),
-            Action::OpenUrl { url } => Some(o(vec![("connectionType", e("URL")), ("connectionURL", s(url))])),
-            Action::SetVariable { .. } | Action::SetVariableMode { .. } | Action::Conditional { .. } => {
+            Action::OpenUrl { url } => Some(o(vec![
+                ("connectionType", e("URL")),
+                ("connectionURL", s(url)),
+            ])),
+            Action::SetVariable { .. }
+            | Action::SetVariableMode { .. }
+            | Action::Conditional { .. } => {
                 self.warn("variable and conditional prototype actions were left out");
                 None
             }
@@ -2124,30 +2796,64 @@ impl<'d> Exporter<'d> {
 
     /// An interaction's transition on one of its actions.
     fn transition(&mut self, it: &Interaction, f: &mut Fields) {
-        let side_from = |d: Direction, l: &'static str, r: &'static str, t: &'static str, bo: &'static str| match d {
-            // The direction names where the incoming screen moves: it comes from the other side.
-            Direction::Right => l,
-            Direction::Left => r,
-            Direction::Bottom => t,
-            Direction::Top => bo,
-        };
-        let side_to = |d: Direction, l: &'static str, r: &'static str, t: &'static str, bo: &'static str| match d {
-            Direction::Left => l,
-            Direction::Right => r,
-            Direction::Top => t,
-            Direction::Bottom => bo,
-        };
+        let side_from =
+            |d: Direction, l: &'static str, r: &'static str, t: &'static str, bo: &'static str| {
+                match d {
+                    // The direction names where the incoming screen moves: it comes from the other side.
+                    Direction::Right => l,
+                    Direction::Left => r,
+                    Direction::Bottom => t,
+                    Direction::Top => bo,
+                }
+            };
+        let side_to =
+            |d: Direction, l: &'static str, r: &'static str, t: &'static str, bo: &'static str| {
+                match d {
+                    Direction::Left => l,
+                    Direction::Right => r,
+                    Direction::Top => t,
+                    Direction::Bottom => bo,
+                }
+            };
         let ty = match it.transition {
             Transition::Instant => "INSTANT_TRANSITION",
             Transition::Dissolve => "DISSOLVE",
             Transition::SmartAnimate => "SMART_ANIMATE",
-            Transition::SlideIn { direction } => side_from(direction, "SLIDE_FROM_LEFT", "SLIDE_FROM_RIGHT", "SLIDE_FROM_TOP", "SLIDE_FROM_BOTTOM"),
-            Transition::Push { direction } => side_from(direction, "PUSH_FROM_LEFT", "PUSH_FROM_RIGHT", "PUSH_FROM_TOP", "PUSH_FROM_BOTTOM"),
-            Transition::MoveIn { direction } => side_from(direction, "MOVE_FROM_LEFT", "MOVE_FROM_RIGHT", "MOVE_FROM_TOP", "MOVE_FROM_BOTTOM"),
-            Transition::SlideOut { direction } => {
-                side_to(direction, "SLIDE_OUT_TO_LEFT", "SLIDE_OUT_TO_RIGHT", "SLIDE_OUT_TO_TOP", "SLIDE_OUT_TO_BOTTOM")
-            }
-            Transition::MoveOut { direction } => side_to(direction, "MOVE_OUT_TO_LEFT", "MOVE_OUT_TO_RIGHT", "MOVE_OUT_TO_TOP", "MOVE_OUT_TO_BOTTOM"),
+            Transition::SlideIn { direction } => side_from(
+                direction,
+                "SLIDE_FROM_LEFT",
+                "SLIDE_FROM_RIGHT",
+                "SLIDE_FROM_TOP",
+                "SLIDE_FROM_BOTTOM",
+            ),
+            Transition::Push { direction } => side_from(
+                direction,
+                "PUSH_FROM_LEFT",
+                "PUSH_FROM_RIGHT",
+                "PUSH_FROM_TOP",
+                "PUSH_FROM_BOTTOM",
+            ),
+            Transition::MoveIn { direction } => side_from(
+                direction,
+                "MOVE_FROM_LEFT",
+                "MOVE_FROM_RIGHT",
+                "MOVE_FROM_TOP",
+                "MOVE_FROM_BOTTOM",
+            ),
+            Transition::SlideOut { direction } => side_to(
+                direction,
+                "SLIDE_OUT_TO_LEFT",
+                "SLIDE_OUT_TO_RIGHT",
+                "SLIDE_OUT_TO_TOP",
+                "SLIDE_OUT_TO_BOTTOM",
+            ),
+            Transition::MoveOut { direction } => side_to(
+                direction,
+                "MOVE_OUT_TO_LEFT",
+                "MOVE_OUT_TO_RIGHT",
+                "MOVE_OUT_TO_TOP",
+                "MOVE_OUT_TO_BOTTOM",
+            ),
         };
         let easing = match it.easing {
             Easing::Linear => "LINEAR",
@@ -2164,7 +2870,11 @@ impl<'d> Exporter<'d> {
                 "OUT_CUBIC"
             }
         };
-        f.extend([("transitionType", e(ty)), ("transitionDuration", fl(f64::from(it.duration_ms) / 1000.0)), ("easingType", e(easing))]);
+        f.extend([
+            ("transitionType", e(ty)),
+            ("transitionDuration", fl(f64::from(it.duration_ms) / 1000.0)),
+            ("easingType", e(easing)),
+        ]);
         if let Easing::CustomBezier { x1, y1, x2, y2 } = it.easing {
             f.push(("easingFunction", arr(vec![fl(x1), fl(y1), fl(x2), fl(y2)])));
         }
@@ -2188,7 +2898,12 @@ fn outlined(n: &Node) -> Option<(Node, String)> {
     let sp = &n.stroke;
     let shape = matches!(
         n.kind,
-        NodeKind::Line | NodeKind::Vector { .. } | NodeKind::Ellipse { .. } | NodeKind::Polygon { .. } | NodeKind::Star { .. } | NodeKind::Rectangle
+        NodeKind::Line
+            | NodeKind::Vector { .. }
+            | NodeKind::Ellipse { .. }
+            | NodeKind::Polygon { .. }
+            | NodeKind::Star { .. }
+            | NodeKind::Rectangle
     );
     let shown = |paints: &[Paint]| paints.iter().any(|p| p.visible);
     if !shape
@@ -2205,7 +2920,8 @@ fn outlined(n: &Node) -> Option<(Node, String)> {
         NodeKind::Vector { network } => Some(network),
         _ => None,
     };
-    let area = figcraft_pathops::stroke_outline_of(&path, sp, figcraft_doc::geometry::is_closed(n), net);
+    let area =
+        figcraft_pathops::stroke_outline_of(&path, sp, figcraft_doc::geometry::is_closed(n), net);
     if area.elements().is_empty() || area.elements().len() > MAX_NETWORK / 4 {
         return None;
     }
@@ -2223,7 +2939,13 @@ fn outlined(n: &Node) -> Option<(Node, String)> {
     v.stroke = Default::default();
     v.styles.fill = v.styles.stroke.take();
     // Bindings name the stroke's paints, which are the fills now: the values stay.
-    v.bound.retain(|k, _| !(k == "stroke" || k == "fill" || k.starts_with("strokes/") || k.starts_with("fills/") || k.starts_with("stroke")));
+    v.bound.retain(|k, _| {
+        !(k == "stroke"
+            || k == "fill"
+            || k.starts_with("strokes/")
+            || k.starts_with("fills/")
+            || k.starts_with("stroke"))
+    });
     Some((v, original))
 }
 
@@ -2261,8 +2983,17 @@ fn node_field(field: &str) -> Option<u32> {
         _ => return None,
     };
     // The numbers are the schema's.
-    let layer = SCHEMA.lines().find(|l| l.starts_with("message NodeChange "))?;
-    layer.split(", ").find_map(|f| f.rsplit_once(' ')?.1.strip_prefix(name)?.strip_prefix('=')?.parse().ok())
+    let layer = SCHEMA
+        .lines()
+        .find(|l| l.starts_with("message NodeChange "))?;
+    layer.split(", ").find_map(|f| {
+        f.rsplit_once(' ')?
+            .1
+            .strip_prefix(name)?
+            .strip_prefix('=')?
+            .parse()
+            .ok()
+    })
 }
 
 /// Whether `a` is `b` with its lengths scaled by `k`: every number is `k` times the other's (within
@@ -2273,8 +3004,15 @@ fn scaled(a: &Kv<'static>, b: &Kv<'static>, k: f64, slack: f64) -> bool {
             let (x, y) = (f64::from(*x), f64::from(*y));
             x == y || (x - y * k).abs() <= slack + 1e-3 * x.abs().max(1.0)
         }
-        (Kv::Array(x), Kv::Array(y)) => x.len() == y.len() && x.iter().zip(y).all(|(p, q)| scaled(p, q, k, slack)),
-        (Kv::Object(x), Kv::Object(y)) => x.len() == y.len() && x.iter().zip(y).all(|((kp, p), (kq, q))| kp == kq && scaled(p, q, k, slack)),
+        (Kv::Array(x), Kv::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| scaled(p, q, k, slack))
+        }
+        (Kv::Object(x), Kv::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .zip(y)
+                    .all(|((kp, p), (kq, q))| kp == kq && scaled(p, q, k, slack))
+        }
         _ => a == b,
     }
 }
@@ -2282,8 +3020,15 @@ fn scaled(a: &Kv<'static>, b: &Kv<'static>, k: f64, slack: f64) -> bool {
 /// The fields of `mine` that differ from `theirs` (a layer and the main's layer it mirrors), and
 /// the ones only `theirs` has at their empty values.
 fn changed(mine: Fields, theirs: &Fields) -> Fields {
-    let cleared: Fields = theirs.iter().filter(|(k, _)| !mine.iter().any(|(mk, _)| mk == k)).filter_map(|(k, _)| Some((*k, unset(k)?))).collect();
-    let mut out: Fields = mine.into_iter().filter(|(k, v)| !theirs.iter().any(|(tk, tv)| tk == k && tv == v)).collect();
+    let cleared: Fields = theirs
+        .iter()
+        .filter(|(k, _)| !mine.iter().any(|(mk, _)| mk == k))
+        .filter_map(|(k, _)| Some((*k, unset(k)?)))
+        .collect();
+    let mut out: Fields = mine
+        .into_iter()
+        .filter(|(k, v)| !theirs.iter().any(|(tk, tv)| tk == k && tv == v))
+        .collect();
     out.extend(cleared);
     out
 }
@@ -2293,12 +3038,17 @@ fn changed(mine: Fields, theirs: &Fields) -> Fields {
 fn resolved_alike(key: &str, v: &Kv<'static>, theirs: &Fields) -> bool {
     fn unresolved(v: &Kv<'static>) -> Vec<Kv<'static>> {
         let bare = |p: &Kv<'static>| match p {
-            Kv::Object(f) if f.iter().any(|(k, _)| *k == "colorVar") => o(f.iter().filter(|(k, _)| *k != "color").cloned().collect()),
+            Kv::Object(f) if f.iter().any(|(k, _)| *k == "colorVar") => {
+                o(f.iter().filter(|(k, _)| *k != "color").cloned().collect())
+            }
             other => other.clone(),
         };
         v.list().iter().map(bare).collect()
     }
-    matches!(key, "fillPaints" | "strokePaints") && theirs.iter().any(|(k, t)| *k == key && unresolved(t) == unresolved(v))
+    matches!(key, "fillPaints" | "strokePaints")
+        && theirs
+            .iter()
+            .any(|(k, t)| *k == key && unresolved(t) == unresolved(v))
 }
 
 /// The format's name of a variable type.
@@ -2344,14 +3094,20 @@ fn scope_name(scope: &str) -> Option<&'static str> {
 /// The empty value of a field only written when set (an override clears it with this).
 fn unset(key: &str) -> Option<Kv<'static>> {
     Some(match key {
-        "styleIdForFill" | "styleIdForStrokeFill" | "styleIdForEffect" | "styleIdForGrid" | "styleIdForText" => {
-            o(vec![("guid", guid(u32::MAX, u32::MAX))])
-        }
+        "styleIdForFill"
+        | "styleIdForStrokeFill"
+        | "styleIdForEffect"
+        | "styleIdForGrid"
+        | "styleIdForText" => o(vec![("guid", guid(u32::MAX, u32::MAX))]),
         "variableConsumptionMap" | "variableModeBySetMap" => o(vec![("entries", arr(Vec::new()))]),
         "mask" | "rectangleCornerRadiiIndependent" | "borderStrokeWeightsIndependent" => b(false),
-        "effects" | "dashPattern" | "layoutGrids" | "exportSettings" | "prototypeInteractions" | "fillGeometry" | "variableWidthPoints" => {
-            arr(Vec::new())
-        }
+        "effects"
+        | "dashPattern"
+        | "layoutGrids"
+        | "exportSettings"
+        | "prototypeInteractions"
+        | "fillGeometry"
+        | "variableWidthPoints" => arr(Vec::new()),
         "cornerSmoothing" | "stackChildPrimaryGrow" => fl(0.0),
         "stackMode" => e("NONE"),
         "stackChildAlignSelf" | "stackPositioning" => e("AUTO"),
@@ -2378,12 +3134,26 @@ fn prop_type(d: &PropDef) -> Option<&'static str> {
 
 /// The key codes of a key trigger (modifiers first), and whether it's a controller button.
 fn key_codes(key: &str) -> Option<(Vec<i64>, bool)> {
-    if let Some(i) = GAMEPAD_BUTTONS.iter().position(|g| g.eq_ignore_ascii_case(key.trim())) {
+    if let Some(i) = GAMEPAD_BUTTONS
+        .iter()
+        .position(|g| g.eq_ignore_ascii_case(key.trim()))
+    {
         return Some((vec![i as i64], true));
     }
     let (mods, k): (KeyMods, &str) = KeyMods::split(key);
-    let code = (0..=255).find(|c| crate::rest::proto::key_name(f64::from(*c)).is_some_and(|n| n.eq_ignore_ascii_case(k)))?;
-    let mut codes: Vec<i64> = [(mods.shift, 16), (mods.ctrl, 17), (mods.alt, 18), (mods.cmd, 91)].into_iter().filter(|m| m.0).map(|m| m.1).collect();
+    let code = (0..=255).find(|c| {
+        crate::rest::proto::key_name(f64::from(*c)).is_some_and(|n| n.eq_ignore_ascii_case(k))
+    })?;
+    let mut codes: Vec<i64> = [
+        (mods.shift, 16),
+        (mods.ctrl, 17),
+        (mods.alt, 18),
+        (mods.cmd, 91),
+    ]
+    .into_iter()
+    .filter(|m| m.0)
+    .map(|m| m.1)
+    .collect();
     codes.push(i64::from(code));
     Some((codes, false))
 }
@@ -2414,7 +3184,14 @@ fn style_fields(st: &TextStyle, f: &mut Fields) {
         TextDecoration::Strikethrough => "STRIKETHROUGH",
     };
     f.extend([
-        ("fontName", o(vec![("family", s(&st.font_family)), ("style", s(&super::style_name(&st.font_style))), ("postscript", s(""))])),
+        (
+            "fontName",
+            o(vec![
+                ("family", s(&st.font_family)),
+                ("style", s(&super::style_name(&st.font_style))),
+                ("postscript", s("")),
+            ]),
+        ),
         ("fontSize", fl(st.font_size)),
         ("lineHeight", line_height),
         ("letterSpacing", letter_spacing),
@@ -2450,8 +3227,16 @@ fn layout_grid(g: &figcraft_doc::LayoutGrid, index: usize, bound: &Bound) -> Kv<
         ("color", color(g.color)),
         ("pattern", e(pattern)),
     ];
-    let vars = [("count", "numSectionsVar"), ("offset", "offsetVar"), ("size", "sectionSizeVar"), ("gutter", "gutterSizeVar")];
-    f.extend(vars.into_iter().filter_map(|(ours, key)| Some((key, bound.grids.get(&(index, ours))?.clone()))));
+    let vars = [
+        ("count", "numSectionsVar"),
+        ("offset", "offsetVar"),
+        ("size", "sectionSizeVar"),
+        ("gutter", "gutterSizeVar"),
+    ];
+    f.extend(
+        vars.into_iter()
+            .filter_map(|(ours, key)| Some((key, bound.grids.get(&(index, ours))?.clone()))),
+    );
     o(f)
 }
 
@@ -2468,5 +3253,9 @@ fn export_setting(x: &figcraft_doc::ExportSetting) -> Kv<'static> {
         ExportSize::Width { value } => ("CONTENT_WIDTH", value),
         ExportSize::Height { value } => ("CONTENT_HEIGHT", value),
     };
-    o(vec![("suffix", s(&x.suffix)), ("imageType", e(format)), ("constraint", o(vec![("type", e(ty)), ("value", fl(value))]))])
+    o(vec![
+        ("suffix", s(&x.suffix)),
+        ("imageType", e(format)),
+        ("constraint", o(vec![("type", e(ty)), ("value", fl(value))])),
+    ])
 }

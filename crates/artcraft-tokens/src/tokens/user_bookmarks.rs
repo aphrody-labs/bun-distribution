@@ -13,4 +13,9 @@ use crate::prefixes::TokenPrefix;
 pub struct UserBookmarkToken(pub String);
 
 impl_string_token!(UserBookmarkToken);
-impl_crockford_generator!(UserBookmarkToken, 32usize, TokenPrefix::UserBookmark, CrockfordLower);
+impl_crockford_generator!(
+    UserBookmarkToken,
+    32usize,
+    TokenPrefix::UserBookmark,
+    CrockfordLower
+);

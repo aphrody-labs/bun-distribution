@@ -35,7 +35,11 @@ pub(crate) fn call_lifted(spec: &FnSpec, args: &[Arg], ctx: &mut dyn Ctx) -> Val
                     && let Some(slot) = cell_args.get_mut(i)
                 {
                     let v = arr.get_broadcast(r, c);
-                    slot.value = if let Value::Array(inner) = &v { inner.data.first().cloned().unwrap_or(Value::Empty) } else { v };
+                    slot.value = if let Value::Array(inner) = &v {
+                        inner.data.first().cloned().unwrap_or(Value::Empty)
+                    } else {
+                        v
+                    };
                 }
             }
             let out = (spec.imp)(&cell_args, ctx);
@@ -48,7 +52,9 @@ pub(crate) fn call_lifted(spec: &FnSpec, args: &[Arg], ctx: &mut dyn Ctx) -> Val
     if rows == 1 && cols == 1 {
         return data.pop().unwrap_or(Value::Empty);
     }
-    Array::new(rows, cols, data).map(Value::from).unwrap_or(Value::Error(CellError::Calc))
+    Array::new(rows, cols, data)
+        .map(Value::from)
+        .unwrap_or(Value::Error(CellError::Calc))
 }
 
 #[cfg(test)]
@@ -64,21 +70,47 @@ mod tests {
     }
 
     fn spec() -> FnSpec {
-        f!("ADD2", 2, 2, MathTrig, &[true, true], "ADD2(a, b)", "Adds two numbers.", add)
+        f!(
+            "ADD2",
+            2,
+            2,
+            MathTrig,
+            &[true, true],
+            "ADD2(a, b)",
+            "Adds two numbers.",
+            add
+        )
     }
 
     #[test]
     fn broadcasts_row_and_column() {
         let s = spec();
-        let out = crate::call(&s, &[av(row(&[1.0, 2.0, 3.0])), av(col(&[10.0, 20.0]))], &mut TestCtx::default());
-        assert_eq!(rows_of(&out), vec![vec![nv(11.0), nv(12.0), nv(13.0)], vec![nv(21.0), nv(22.0), nv(23.0)]]);
+        let out = crate::call(
+            &s,
+            &[av(row(&[1.0, 2.0, 3.0])), av(col(&[10.0, 20.0]))],
+            &mut TestCtx::default(),
+        );
+        assert_eq!(
+            rows_of(&out),
+            vec![
+                vec![nv(11.0), nv(12.0), nv(13.0)],
+                vec![nv(21.0), nv(22.0), nv(23.0)]
+            ]
+        );
     }
 
     #[test]
     fn mismatched_sizes_pad_with_na() {
         let s = spec();
-        let out = crate::call(&s, &[av(row(&[1.0, 2.0, 3.0])), av(row(&[1.0, 1.0]))], &mut TestCtx::default());
-        assert_eq!(rows_of(&out), vec![vec![nv(2.0), nv(3.0), Value::Error(CellError::NA)]]);
+        let out = crate::call(
+            &s,
+            &[av(row(&[1.0, 2.0, 3.0])), av(row(&[1.0, 1.0]))],
+            &mut TestCtx::default(),
+        );
+        assert_eq!(
+            rows_of(&out),
+            vec![vec![nv(2.0), nv(3.0), Value::Error(CellError::NA)]]
+        );
     }
 
     #[test]
@@ -86,10 +118,16 @@ mod tests {
         let s = spec();
         let out = crate::call(&s, &[rf(col(&[4.0])), n(1.0)], &mut TestCtx::default());
         assert_eq!(out, nv(5.0));
-        is_err(crate::call(&s, &[n(1.0)], &mut TestCtx::default()), CellError::Value);
+        is_err(
+            crate::call(&s, &[n(1.0)], &mut TestCtx::default()),
+            CellError::Value,
+        );
         let huge = crate::call(
             &s,
-            &[av(gridcraft_core::Array::filled(1, 100_000, nv(1.0)).into()), av(gridcraft_core::Array::filled(100_000, 1, nv(1.0)).into())],
+            &[
+                av(gridcraft_core::Array::filled(1, 100_000, nv(1.0)).into()),
+                av(gridcraft_core::Array::filled(100_000, 1, nv(1.0)).into()),
+            ],
             &mut TestCtx::default(),
         );
         is_err(huge, CellError::Num);

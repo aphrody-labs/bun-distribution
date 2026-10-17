@@ -48,7 +48,12 @@ pub fn print_summary(container: &LivesContainer) {
         container.entries.len(),
         container.blobs.len(),
     );
-    for (i, (entry, blob)) in container.entries.iter().zip(container.blobs.iter()).enumerate() {
+    for (i, (entry, blob)) in container
+        .entries
+        .iter()
+        .zip(container.blobs.iter())
+        .enumerate()
+    {
         println!(
             "  blob[{i}] name={} size={} crc32=0x{:08X} subtype={:?} field8=0x{:08X}",
             entry.filename, entry.size, entry.crc32, blob.header.subtype, blob.header.field8,
@@ -59,8 +64,11 @@ pub fn print_summary(container: &LivesContainer) {
 /// Imprime les N premiers octets du corps d'un blob en hexadécimal.
 pub fn hexdump_blob_body(blob: &crate::Blob, limit: usize) {
     let n = limit.min(blob.body.len());
-    let hex: String =
-        blob.body[..n].iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" ");
+    let hex: String = blob.body[..n]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     println!("body[0..{n}]: {hex}");
     if n < blob.body.len() {
         println!("  ... ({} octets restants)", blob.body.len() - n);

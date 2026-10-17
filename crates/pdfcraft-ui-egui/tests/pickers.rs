@@ -13,12 +13,18 @@ use pdfcraft_ui_egui::PdfCraftApp;
 fn fixture(n: usize) -> Vec<u8> {
     let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 2 * i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")));
+    objs.push(format!(
+        "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+        kids.join(" ")
+    ));
     objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
     for i in 0..n {
         objs.push(format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >> >>", 5 + 2 * i));
         let body = format!("BT /F1 24 Tf 20 150 Td (Page {}) Tj ET", i + 1);
-        objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+        objs.push(format!(
+            "<< /Length {} >>\nstream\n{body}\nendstream",
+            body.len()
+        ));
     }
     let mut out = b"%PDF-1.7\n".to_vec();
     let mut offsets = Vec::new();
@@ -31,7 +37,13 @@ fn fixture(n: usize) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -43,14 +55,17 @@ fn pages(app: &PdfCraftApp, view: usize) -> usize {
 /// A shell with `docs` open, each the given number of pages.
 fn harness(docs: &[usize]) -> Harness<'static, PdfCraftApp> {
     let docs = docs.to_vec();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        for (i, n) in docs.iter().enumerate() {
-            app.open_bytes(&format!("doc{i}.pdf"), None, fixture(*n)).unwrap();
-        }
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            for (i, n) in docs.iter().enumerate() {
+                app.open_bytes(&format!("doc{i}.pdf"), None, fixture(*n))
+                    .unwrap();
+            }
+            app
+        });
     h.run_steps(2);
     h
 }
@@ -65,16 +80,24 @@ fn file_open_returns_at_once_and_opens_the_pick_on_the_next_frame() {
     let mut h = harness(&[]);
     h.state_mut().pick_override = Some(vec![file.to_string_lossy().into_owned()]);
     assert!(h.state_mut().execute("file.open"));
-    assert!(h.state().views.is_empty(), "the command must not wait for the picker");
+    assert!(
+        h.state().views.is_empty(),
+        "the command must not wait for the picker"
+    );
     h.run_steps(2);
-    assert_eq!(h.state().views.len(), 1, "the picked file opens on a later frame");
+    assert_eq!(
+        h.state().views.len(),
+        1,
+        "the picked file opens on a later frame"
+    );
     assert_eq!(pages(h.state(), 0), 2);
     let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
 fn insert_from_file_uses_the_pick_on_the_next_frame() {
-    let dir = std::env::temp_dir().join(format!("printcraft-pickers-insert-{}", std::process::id()));
+    let dir =
+        std::env::temp_dir().join(format!("printcraft-pickers-insert-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("more.pdf");
     std::fs::write(&file, fixture(2)).unwrap();
@@ -82,7 +105,11 @@ fn insert_from_file_uses_the_pick_on_the_next_frame() {
     let mut h = harness(&[3]);
     h.state_mut().pick_override = Some(vec![file.to_string_lossy().into_owned()]);
     assert!(h.state_mut().execute("page.insert"));
-    assert_eq!(pages(h.state(), 0), 3, "nothing is inserted until the pick arrives");
+    assert_eq!(
+        pages(h.state(), 0),
+        3,
+        "nothing is inserted until the pick arrives"
+    );
     h.run_steps(2);
     assert_eq!(pages(h.state(), 0), 5);
     let _ = std::fs::remove_dir_all(&dir);
@@ -90,7 +117,8 @@ fn insert_from_file_uses_the_pick_on_the_next_frame() {
 
 #[test]
 fn a_pick_for_a_document_that_is_no_longer_active_is_dropped() {
-    let dir = std::env::temp_dir().join(format!("printcraft-pickers-switch-{}", std::process::id()));
+    let dir =
+        std::env::temp_dir().join(format!("printcraft-pickers-switch-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("more.pdf");
     std::fs::write(&file, fixture(2)).unwrap();
@@ -102,10 +130,26 @@ fn a_pick_for_a_document_that_is_no_longer_active_is_dropped() {
     // The user switches tabs before the pick arrives.
     h.state_mut().active = Some(1);
     h.run_steps(2);
-    assert_eq!(pages(h.state(), 0), 3, "the document the pick was for is unchanged");
-    assert_eq!(pages(h.state(), 1), 4, "the newly active document is unchanged");
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-    assert!(toast.contains("document changed"), "the user is told why nothing happened: {toast:?}");
+    assert_eq!(
+        pages(h.state(), 0),
+        3,
+        "the document the pick was for is unchanged"
+    );
+    assert_eq!(
+        pages(h.state(), 1),
+        4,
+        "the newly active document is unchanged"
+    );
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
+    assert!(
+        toast.contains("document changed"),
+        "the user is told why nothing happened: {toast:?}"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -126,7 +170,10 @@ fn dirty(app: &PdfCraftApp, view: usize) -> bool {
 }
 
 fn rotate_first_page(app: &mut PdfCraftApp) {
-    app.apply_edit(pdfcraft_engine::Edit::RotatePages { pages: vec![0], degrees: 90 });
+    app.apply_edit(pdfcraft_engine::Edit::RotatePages {
+        pages: vec![0],
+        degrees: 90,
+    });
 }
 
 #[test]
@@ -138,9 +185,14 @@ fn save_as_writes_on_a_later_frame_including_edits_made_meanwhile() {
     assert!(h.state_mut().execute("file.save_as"));
     assert!(!out.exists(), "the command must not wait for the picker");
     // The user keeps working while the panel is open.
-    h.state_mut().apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
+    h.state_mut()
+        .apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
     h.run_steps(2);
-    assert_eq!(page_count(std::fs::read(&out).unwrap()), 2, "the edit made while choosing is saved too");
+    assert_eq!(
+        page_count(std::fs::read(&out).unwrap()),
+        2,
+        "the edit made while choosing is saved too"
+    );
     assert!(!dirty(h.state(), 0));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -152,11 +204,18 @@ fn save_on_close_closes_the_tab_only_once_the_file_is_written() {
     let mut h = harness(&[2]);
     rotate_first_page(h.state_mut());
     h.state_mut().request_close_tab(0);
-    assert!(h.state().close_request.is_some(), "a dirty document asks first");
+    assert!(
+        h.state().close_request.is_some(),
+        "a dirty document asks first"
+    );
     h.state_mut().pick_override = Some(vec![out.to_string_lossy().into_owned()]);
     let ctx = h.ctx.clone();
     h.state_mut().resolve_close(&ctx, Some(true));
-    assert_eq!(h.state().views.len(), 1, "the tab stays open until the save is written");
+    assert_eq!(
+        h.state().views.len(),
+        1,
+        "the tab stays open until the save is written"
+    );
     h.run_steps(2);
     assert!(out.exists());
     assert!(h.state().views.is_empty(), "then it closes");
@@ -194,7 +253,10 @@ fn close_all_saves_each_untitled_document_in_turn() {
     }
     assert!(h.state().views.is_empty());
     assert_eq!(page_count(std::fs::read(dir.join("first.pdf")).unwrap()), 2);
-    assert_eq!(page_count(std::fs::read(dir.join("second.pdf")).unwrap()), 3);
+    assert_eq!(
+        page_count(std::fs::read(dir.join("second.pdf")).unwrap()),
+        3
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -206,10 +268,18 @@ fn extract_and_delete_deletes_the_pages_only_after_their_files_are_written() {
     h.state_mut().extract_draft.delete = true;
     h.state_mut().pick_override = Some(vec![dir.to_string_lossy().into_owned()]);
     h.state_mut().extract_selection();
-    assert_eq!(pages(h.state(), 0), 3, "nothing is deleted while the folder picker is open");
+    assert_eq!(
+        pages(h.state(), 0),
+        3,
+        "nothing is deleted while the folder picker is open"
+    );
     h.run_steps(2);
     assert!(dir.join("doc0 (page 1).pdf").exists());
-    assert_eq!(pages(h.state(), 0), 2, "the extracted page is deleted once written");
+    assert_eq!(
+        pages(h.state(), 0),
+        2,
+        "the extracted page is deleted once written"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -221,7 +291,11 @@ fn extract_pages_saves_under_the_file_name_typed_in_the_dialog() {
     let mut h = harness(&[3]);
     assert!(h.state_mut().execute("page.extract"));
     h.run_steps(2);
-    assert_eq!(h.state().extract_draft.name, "doc0", "the dialog starts with the document's name");
+    assert_eq!(
+        h.state().extract_draft.name,
+        "doc0",
+        "the dialog starts with the document's name"
+    );
     // Several pages as separate files: each is "<name> (page N).pdf".
     h.state_mut().views[0].select_pages(&[0, 2]);
     h.state_mut().extract_draft.name = "Invoices.pdf".into();
@@ -229,7 +303,9 @@ fn extract_pages_saves_under_the_file_name_typed_in_the_dialog() {
     h.state_mut().pick_override = Some(vec![dir.to_string_lossy().into_owned()]);
     h.state_mut().extract_selection();
     h.run_steps(2);
-    assert!(dir.join("Invoices (page 1).pdf").exists() && dir.join("Invoices (page 3).pdf").exists());
+    assert!(
+        dir.join("Invoices (page 1).pdf").exists() && dir.join("Invoices (page 3).pdf").exists()
+    );
     // One renamed page as a separate file is saved under exactly that name; characters a file
     // name can't hold become "_".
     h.state_mut().views[0].select_pages(&[1]);
@@ -237,14 +313,22 @@ fn extract_pages_saves_under_the_file_name_typed_in_the_dialog() {
     h.state_mut().extract_selection();
     h.run_steps(2);
     assert!(dir.join("March_ 2026_receipt.pdf").exists());
-    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 3, "nothing written outside those names");
+    assert_eq!(
+        std::fs::read_dir(&dir).unwrap().count(),
+        3,
+        "nothing written outside those names"
+    );
     // Into a new tab: the tab, and so Save As, has the typed name.
     h.state_mut().extract_draft.separate = false;
     h.state_mut().extract_draft.name = "Chapter 2".into();
     h.state_mut().extract_selection();
     h.run_steps(2);
     let s = h.state();
-    let tab = s.active.and_then(|i| s.views.get(i)).and_then(|v| s.session.get(v.id)).map(|d| d.name.clone());
+    let tab = s
+        .active
+        .and_then(|i| s.views.get(i))
+        .and_then(|v| s.session.get(v.id))
+        .map(|d| d.name.clone());
     assert_eq!(tab.as_deref(), Some("Chapter 2.pdf"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -264,12 +348,19 @@ fn extract_pages_keeps_the_usual_names_when_the_file_name_is_unchanged() {
     h.state_mut().views[0].select_pages(&[1]);
     h.state_mut().extract_selection();
     h.run_steps(2);
-    assert!(dir.join("doc0 (page 2).pdf").exists(), "a name with nothing usable falls back to the document's");
+    assert!(
+        dir.join("doc0 (page 2).pdf").exists(),
+        "a name with nothing usable falls back to the document's"
+    );
     h.state_mut().extract_draft.separate = false;
     h.state_mut().extract_selection();
     h.run_steps(2);
     let s = h.state();
-    let tab = s.active.and_then(|i| s.views.get(i)).and_then(|v| s.session.get(v.id)).map(|d| d.name.clone());
+    let tab = s
+        .active
+        .and_then(|i| s.views.get(i))
+        .and_then(|v| s.session.get(v.id))
+        .map(|d| d.name.clone());
     assert_eq!(tab.as_deref(), Some("doc0 (extract).pdf"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -296,9 +387,20 @@ fn an_image_pick_for_a_document_that_is_no_longer_active_changes_nothing() {
     h.state_mut().add_image_dialog();
     h.state_mut().active = Some(1);
     h.run_steps(2);
-    assert!(!dirty(h.state(), 0) && !dirty(h.state(), 1), "neither document changed");
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-    assert!(toast.contains("document changed"), "the user is told why nothing happened: {toast:?}");
+    assert!(
+        !dirty(h.state(), 0) && !dirty(h.state(), 1),
+        "neither document changed"
+    );
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
+    assert!(
+        toast.contains("document changed"),
+        "the user is told why nothing happened: {toast:?}"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -325,11 +427,20 @@ fn extracted_pages_are_not_deleted_if_the_document_was_edited_while_choosing_the
     h.state_mut().extract_selection();
     // While the folder picker is open the user deletes page 1 themselves: the page that would
     // now be deleted is the original page 2, which was never written out.
-    h.state_mut().apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
+    h.state_mut()
+        .apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
     h.run_steps(2);
-    assert!(dir.join("doc0 (page 1).pdf").exists(), "the extracted file is still written");
+    assert!(
+        dir.join("doc0 (page 1).pdf").exists(),
+        "the extracted file is still written"
+    );
     assert_eq!(pages(h.state(), 0), 2, "nothing more is deleted");
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
     assert!(toast.contains("not deleted"), "the user is told: {toast:?}");
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -355,8 +466,15 @@ fn a_close_prompt_still_means_its_own_document_after_a_pending_save_closes_anoth
     // Don't Save: the prompt was about the second document, which is now the first tab.
     h.state_mut().resolve_close(&ctx, Some(false));
     let open: Vec<_> = h.state().views.iter().map(|v| v.id).collect();
-    assert_eq!(open, vec![c], "the second document closed, not the third: {b:?} vs {c:?}");
-    assert!(dirty(h.state(), 0), "the third document keeps its unsaved changes");
+    assert_eq!(
+        open,
+        vec![c],
+        "the second document closed, not the third: {b:?} vs {c:?}"
+    );
+    assert!(
+        dirty(h.state(), 0),
+        "the third document keeps its unsaved changes"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -370,11 +488,20 @@ fn an_image_pick_is_dropped_if_the_document_was_edited_meanwhile() {
     // Replace image 0 on page 2...
     h.state_mut().replace_image_dialog(1, 0);
     // ...but page 1 is deleted while choosing: "page 2" is now a different page.
-    h.state_mut().apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
+    h.state_mut()
+        .apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
     h.run_steps(2);
     assert_eq!(pages(h.state(), 0), 1);
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-    assert!(toast.contains("document changed"), "the pick is dropped and the user told why: {toast:?}");
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
+    assert!(
+        toast.contains("document changed"),
+        "the pick is dropped and the user told why: {toast:?}"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -397,7 +524,11 @@ fn a_watermark_file_from_browse_lands_only_in_the_dialog_that_asked() {
         h.run_steps(2);
         let got = h.state().marks_draft.file.as_ref().map(|f| f.0.clone());
         if keep_open {
-            assert_eq!(got.as_deref(), Some("mark.pdf"), "the open dialog gets the file");
+            assert_eq!(
+                got.as_deref(),
+                Some("mark.pdf"),
+                "the open dialog gets the file"
+            );
         } else {
             assert_eq!(got, None, "a closed dialog's pick is dropped");
         }
@@ -407,8 +538,14 @@ fn a_watermark_file_from_browse_lands_only_in_the_dialog_that_asked() {
 
 /// Browsers read picked files asynchronously and queue them on `requests` (#167): the request
 /// is made when the picker opens, so it is bound to the document active then.
-fn browser_insert(h: &Harness<'static, PdfCraftApp>, pages: usize) -> pdfcraft_ui_egui::FileRequest {
-    h.state().file_request(pdfcraft_ui_egui::FilePurpose::InsertPages, vec![("b.pdf".into(), fixture(pages))])
+fn browser_insert(
+    h: &Harness<'static, PdfCraftApp>,
+    pages: usize,
+) -> pdfcraft_ui_egui::FileRequest {
+    h.state().file_request(
+        pdfcraft_ui_egui::FilePurpose::InsertPages,
+        vec![("b.pdf".into(), fixture(pages))],
+    )
 }
 
 #[test]
@@ -433,15 +570,24 @@ fn a_browser_insert_that_arrives_after_switching_documents_changes_neither() {
     h.run_steps(2);
     assert_eq!(pages(h.state(), 0), 3, "A is unchanged");
     assert_eq!(pages(h.state(), 1), 1, "C is unchanged");
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-    assert!(toast.contains("document changed"), "the user is told why nothing happened: {toast:?}");
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
+    assert!(
+        toast.contains("document changed"),
+        "the user is told why nothing happened: {toast:?}"
+    );
 }
 
 #[test]
 fn a_browser_insert_into_a_document_edited_meanwhile_is_refused() {
     let mut h = harness(&[3]);
     let request = browser_insert(&h, 1);
-    h.state_mut().apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
+    h.state_mut()
+        .apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![0] });
     h.state_mut().requests.lock().unwrap().push(request);
     h.run_steps(2);
     assert_eq!(pages(h.state(), 0), 2, "only the user's own edit applied");
@@ -452,9 +598,15 @@ fn replace_pages_applies_only_to_the_document_its_dialog_was_opened_on() {
     for switch in [false, true] {
         let mut h = harness(&[3, 3]);
         h.state_mut().active = Some(0);
-        h.state_mut().use_files(pdfcraft_ui_egui::FilePurpose::ReplacePages, vec![("r.pdf".into(), fixture(1))]);
+        h.state_mut().use_files(
+            pdfcraft_ui_egui::FilePurpose::ReplacePages,
+            vec![("r.pdf".into(), fixture(1))],
+        );
         h.run_steps(2);
-        assert_eq!(h.state().dialog, Some(pdfcraft_ui_egui::Dialog::ReplacePages));
+        assert_eq!(
+            h.state().dialog,
+            Some(pdfcraft_ui_egui::Dialog::ReplacePages)
+        );
         if switch {
             // A file opened meanwhile (a browser read finishing) becomes the active document.
             h.state_mut().active = Some(1);
@@ -463,11 +615,25 @@ fn replace_pages_applies_only_to_the_document_its_dialog_was_opened_on() {
         h.get_by_label("OK").click();
         h.run_steps(2);
         if switch {
-            assert!(!dirty(h.state(), 0) && !dirty(h.state(), 1), "neither document is changed");
-            let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-            assert!(toast.contains("document changed"), "the user is told why: {toast:?}");
+            assert!(
+                !dirty(h.state(), 0) && !dirty(h.state(), 1),
+                "neither document is changed"
+            );
+            let toast = h
+                .state()
+                .toast
+                .as_ref()
+                .map(|(m, _)| m.clone())
+                .unwrap_or_default();
+            assert!(
+                toast.contains("document changed"),
+                "the user is told why: {toast:?}"
+            );
         } else {
-            assert!(dirty(h.state(), 0) && !dirty(h.state(), 1), "the first document's page is replaced");
+            assert!(
+                dirty(h.state(), 0) && !dirty(h.state(), 1),
+                "the first document's page is replaced"
+            );
         }
     }
 }
@@ -478,16 +644,34 @@ fn replace_pages_applies_only_to_the_document_its_dialog_was_opened_on() {
 fn a_failed_startup_url_is_reported_in_the_app() {
     let mut h = harness(&[]);
     let failed = h.state().failed_inbox.clone();
-    failed.lock().unwrap().push(("missing.pdf".into(), "HTTP 404".into()));
+    failed
+        .lock()
+        .unwrap()
+        .push(("missing.pdf".into(), "HTTP 404".into()));
     h.run_steps(2);
-    let toast = h.state().toast.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-    assert!(toast.contains("missing.pdf") && toast.contains("HTTP 404"), "{toast:?}");
+    let toast = h
+        .state()
+        .toast
+        .as_ref()
+        .map(|(m, _)| m.clone())
+        .unwrap_or_default();
+    assert!(
+        toast.contains("missing.pdf") && toast.contains("HTTP 404"),
+        "{toast:?}"
+    );
     assert!(h.state().views.is_empty(), "no document was opened");
-    assert!(failed.lock().unwrap().is_empty(), "each failure is reported once");
+    assert!(
+        failed.lock().unwrap().is_empty(),
+        "each failure is reported once"
+    );
 }
 
 fn deliver_startup(h: &Harness<'static, PdfCraftApp>, name: &str, bytes: Vec<u8>) {
-    h.state().startup_inbox.lock().unwrap().push((name.into(), bytes));
+    h.state()
+        .startup_inbox
+        .lock()
+        .unwrap()
+        .push((name.into(), bytes));
 }
 
 #[test]
@@ -510,14 +694,22 @@ fn a_late_startup_url_preserves_the_current_edit_workspace_and_save_target() {
     // A downloaded PDF can ask to show a different panel and magnification. Its own view
     // should honour those settings without taking the user's workspace away.
     let mut s = Session::new();
-    let id = s.open("late.pdf", None, std::sync::Arc::new(fixture(1)), None).unwrap();
-    let initial = InitialView { navigation: Navigation::Bookmarks, magnification: Magnification::Percent(175.0), ..Default::default() };
-    s.apply(id, Edit::SetInitialView(Box::new(initial))).unwrap();
+    let id = s
+        .open("late.pdf", None, std::sync::Arc::new(fixture(1)), None)
+        .unwrap();
+    let initial = InitialView {
+        navigation: Navigation::Bookmarks,
+        magnification: Magnification::Percent(175.0),
+        ..Default::default()
+    };
+    s.apply(id, Edit::SetInitialView(Box::new(initial)))
+        .unwrap();
     let late = s.save_bytes(id).unwrap().as_ref().clone();
 
     let mut h = harness(&[3]);
     let active = h.state().active_ids().unwrap().1;
-    h.state_mut().apply_edit(Edit::DeletePages { pages: vec![1] });
+    h.state_mut()
+        .apply_edit(Edit::DeletePages { pages: vec![1] });
     h.state_mut().mode = Mode::Edit;
     h.state_mut().right = Some(RightPanel::Pages);
     h.state_mut().left = LeftPanel::AllTools;
@@ -526,14 +718,22 @@ fn a_late_startup_url_preserves_the_current_edit_workspace_and_save_target() {
     deliver_startup(&h, "late.pdf", late);
     h.run_steps(2);
 
-    assert_eq!(h.state().active_ids().unwrap().1, active, "Save still targets the user's document");
+    assert_eq!(
+        h.state().active_ids().unwrap().1,
+        active,
+        "Save still targets the user's document"
+    );
     assert_eq!(h.state().mode, Mode::Edit);
     assert_eq!(h.state().right, Some(RightPanel::Pages));
     assert_eq!(h.state().left, LeftPanel::AllTools);
     assert!(!h.state().left_open);
     assert_eq!(h.state().quick_tool, QuickTool::Hand);
     assert!(dirty(h.state(), 0));
-    assert_eq!(h.state().views.len(), 2, "the startup file remains available in its own tab");
+    assert_eq!(
+        h.state().views.len(),
+        2,
+        "the startup file remains available in its own tab"
+    );
     assert_eq!(h.state().views[1].zoom, 1.75);
 
     let dir = scratch("startup-save");
@@ -541,13 +741,27 @@ fn a_late_startup_url_preserves_the_current_edit_workspace_and_save_target() {
     h.state_mut().save_override = Some(path.to_string_lossy().into_owned());
     assert!(h.state_mut().execute("file.save"));
     h.run_steps(2);
-    let saved = PageRenderer::new(std::sync::Arc::new(std::fs::read(&path).unwrap()), Default::default());
-    assert_eq!(saved.page_count(), 2, "the saved file contains the local deletion");
-    assert!(!dirty(h.state(), 0), "the local document was saved, not the startup document");
+    let saved = PageRenderer::new(
+        std::sync::Arc::new(std::fs::read(&path).unwrap()),
+        Default::default(),
+    );
+    assert_eq!(
+        saved.page_count(),
+        2,
+        "the saved file contains the local deletion"
+    );
+    assert!(
+        !dirty(h.state(), 0),
+        "the local document was saved, not the startup document"
+    );
 
     h.get_by_label("late.pdf").click();
     h.run_steps(2);
-    assert_eq!(h.state().active, Some(1), "the user can choose the downloaded tab");
+    assert_eq!(
+        h.state().active,
+        Some(1),
+        "the user can choose the downloaded tab"
+    );
     h.get_by_label("saved.pdf").click();
     h.run_steps(2);
     assert_eq!(pages(h.state(), 0), 2, "the edit survives switching back");
@@ -567,7 +781,11 @@ fn a_late_startup_url_preserves_home_even_after_all_other_tabs_are_closed() {
         assert_eq!(h.state().active, None);
         deliver_startup(&h, "late.pdf", fixture(1));
         h.run_steps(2);
-        assert_eq!(h.state().active, None, "Home stays selected (closed tabs: {close})");
+        assert_eq!(
+            h.state().active,
+            None,
+            "Home stays selected (closed tabs: {close})"
+        );
         h.get_by_label_contains("Welcome to PdfCraft");
         h.get_by_label("late.pdf").click();
         h.run_steps(2);
@@ -578,10 +796,18 @@ fn a_late_startup_url_preserves_home_even_after_all_other_tabs_are_closed() {
 #[test]
 fn deliberate_browser_file_opens_still_activate_the_new_tab() {
     let mut h = harness(&[3]);
-    h.state().inbox.lock().unwrap().push(("picked.pdf".into(), fixture(2)));
+    h.state()
+        .inbox
+        .lock()
+        .unwrap()
+        .push(("picked.pdf".into(), fixture(2)));
     deliver_startup(&h, "late.pdf", fixture(1));
     h.run_steps(2);
-    assert_eq!(h.state().active, Some(1), "a deliberate Open wins even on the same frame");
+    assert_eq!(
+        h.state().active,
+        Some(1),
+        "a deliberate Open wins even on the same frame"
+    );
     assert_eq!(pages(h.state(), 1), 2);
     assert_eq!(h.state().views.len(), 3);
 }
@@ -593,8 +819,16 @@ fn opening_a_file_picker_supersedes_the_startup_url_even_if_the_picker_is_cancel
     h.state_mut().execute("file.open");
     deliver_startup(&h, "late.pdf", fixture(1));
     h.run_steps(2);
-    assert_eq!(h.state().active, None, "the startup file doesn't replace the user's newer Open action");
-    assert_eq!(h.state().views.len(), 1, "it is still available as a background tab");
+    assert_eq!(
+        h.state().active,
+        None,
+        "the startup file doesn't replace the user's newer Open action"
+    );
+    assert_eq!(
+        h.state().views.len(),
+        1,
+        "it is still available as a background tab"
+    );
 }
 
 #[test]
@@ -612,8 +846,17 @@ fn a_broken_late_startup_file_reports_its_error_without_changing_the_active_docu
 fn encrypted_fixture() -> Vec<u8> {
     use pdfcraft_engine::{Edit, Protection, Session};
     let mut s = Session::new();
-    let id = s.open("encrypted.pdf", None, std::sync::Arc::new(fixture(1)), None).unwrap();
-    s.apply(id, Edit::Protect(Protection { open_password: Some("test-password".into()), ..Default::default() })).unwrap();
+    let id = s
+        .open("encrypted.pdf", None, std::sync::Arc::new(fixture(1)), None)
+        .unwrap();
+    s.apply(
+        id,
+        Edit::Protect(Protection {
+            open_password: Some("test-password".into()),
+            ..Default::default()
+        }),
+    )
+    .unwrap();
     s.save_bytes(id).unwrap().as_ref().clone()
 }
 
@@ -621,13 +864,23 @@ fn encrypted_fixture() -> Vec<u8> {
 fn a_startup_url_does_not_replace_another_documents_password_prompt() {
     for cancel in [false, true] {
         let mut h = harness(&[]);
-        h.state_mut().open_bytes("local-encrypted.pdf", None, encrypted_fixture()).unwrap();
+        h.state_mut()
+            .open_bytes("local-encrypted.pdf", None, encrypted_fixture())
+            .unwrap();
         deliver_startup(&h, "late.pdf", fixture(2));
         h.run_steps(2);
-        assert_eq!(h.state().password_prompt.as_ref().unwrap().name, "local-encrypted.pdf");
+        assert_eq!(
+            h.state().password_prompt.as_ref().unwrap().name,
+            "local-encrypted.pdf"
+        );
         assert!(h.state().views.is_empty());
-        assert_eq!(h.state().startup_inbox.lock().unwrap().len(), 1, "startup bytes wait for the prompt");
-        h.state_mut().submit_password((!cancel).then(|| "test-password".into()));
+        assert_eq!(
+            h.state().startup_inbox.lock().unwrap().len(),
+            1,
+            "startup bytes wait for the prompt"
+        );
+        h.state_mut()
+            .submit_password((!cancel).then(|| "test-password".into()));
         h.run_steps(2);
         assert!(h.state().password_prompt.is_none());
         assert!(h.state().startup_inbox.lock().unwrap().is_empty());
@@ -642,7 +895,10 @@ fn unlocking_a_late_startup_url_keeps_it_in_the_background() {
     deliver_startup(&h, "late-encrypted.pdf", encrypted_fixture());
     h.run_steps(2);
     assert_eq!(h.state().active, Some(0));
-    assert_eq!(h.state().password_prompt.as_ref().unwrap().name, "late-encrypted.pdf");
+    assert_eq!(
+        h.state().password_prompt.as_ref().unwrap().name,
+        "late-encrypted.pdf"
+    );
     h.state_mut().submit_password(Some("wrong-password".into()));
     h.run_steps(2);
     assert!(h.state().password_prompt.as_ref().unwrap().error.is_some());
@@ -675,7 +931,10 @@ fn a_late_startup_url_waits_for_an_existing_dialog_to_close() {
     h.state_mut().dialog = Some(pdfcraft_ui_egui::Dialog::Preferences);
     deliver_startup(&h, "late.pdf", fixture(1));
     h.run_steps(2);
-    assert_eq!(h.state().dialog, Some(pdfcraft_ui_egui::Dialog::Preferences));
+    assert_eq!(
+        h.state().dialog,
+        Some(pdfcraft_ui_egui::Dialog::Preferences)
+    );
     assert_eq!(h.state().views.len(), 1);
     assert_eq!(h.state().startup_inbox.lock().unwrap().len(), 1);
     h.state_mut().dialog = None;
@@ -697,13 +956,22 @@ fn a_late_startup_text_file_is_still_converted_without_stealing_focus() {
 
 #[test]
 fn a_background_startup_forms_script_notice_waits_until_its_tab_is_selected() {
-    let template = pdfcraft_xfa::fixtures::scripted_template()
-        .replace("if (qty.rawValue === null) qty.rawValue = 2;", r#"xfa.host.messageBox("Late form opened");"#);
+    let template = pdfcraft_xfa::fixtures::scripted_template().replace(
+        "if (qty.rawValue === null) qty.rawValue = 2;",
+        r#"xfa.host.messageBox("Late form opened");"#,
+    );
     let mut h = harness(&[3]);
-    deliver_startup(&h, "late-form.pdf", pdfcraft_xfa::fixtures::shell(&template));
+    deliver_startup(
+        &h,
+        "late-form.pdf",
+        pdfcraft_xfa::fixtures::shell(&template),
+    );
     h.run_steps(2);
     assert_eq!(h.state().active, Some(0));
-    assert!(h.state().toast.is_none(), "the background form must not interrupt the current document");
+    assert!(
+        h.state().toast.is_none(),
+        "the background form must not interrupt the current document"
+    );
     h.get_by_label("late-form.pdf").click();
     h.run_steps(2);
     assert_eq!(h.state().toast.as_ref().unwrap().0, "Late form opened");
@@ -715,7 +983,10 @@ fn a_background_startup_forms_script_notice_waits_until_its_tab_is_selected() {
 /// Embedded bytes and the PDF's original /UF name stay independent of the Save suggestion.
 fn attachment_fixture() -> Vec<u8> {
     let name = "invoice\u{202e}fdp.exe";
-    let uf = std::iter::once(0xfeffu16).chain(name.encode_utf16()).map(|c| format!("{c:04X}")).collect::<String>();
+    let uf = std::iter::once(0xfeffu16)
+        .chain(name.encode_utf16())
+        .map(|c| format!("{c:04X}"))
+        .collect::<String>();
     let objs = [
         "<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles << /Names [(notes.txt) 5 0 R] >> >> >>".to_string(),
         "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
@@ -734,7 +1005,9 @@ fn attachment_fixture() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes());
+    out.extend_from_slice(
+        format!("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes(),
+    );
     out
 }
 
@@ -745,7 +1018,11 @@ impl AttachmentDir {
         use std::sync::atomic::{AtomicU64, Ordering};
         static NEXT: AtomicU64 = AtomicU64::new(0);
         for _ in 0..128 {
-            let path = std::env::temp_dir().join(format!("pdfcraft-attachment-save-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+            let path = std::env::temp_dir().join(format!(
+                "pdfcraft-attachment-save-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
             match std::fs::create_dir(&path) {
                 Ok(()) => return Self(path),
                 Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -768,11 +1045,22 @@ fn attachment_save_preserves_bytes_metadata_and_selected_destination() {
     let chosen = dir.0.join("user chosen 資料.bin");
     let original = attachment_fixture();
     let mut h = harness(&[]);
-    h.state_mut().open_bytes("attachment.pdf", None, original.clone()).unwrap();
+    h.state_mut()
+        .open_bytes("attachment.pdf", None, original.clone())
+        .unwrap();
     h.run_steps(2);
     let id = h.state().views[0].id;
     let raw_name = "invoice\u{202e}fdp.exe";
-    let index = h.state().session.get(id).unwrap().info.attachments.iter().position(|a| a.name == raw_name).unwrap();
+    let index = h
+        .state()
+        .session
+        .get(id)
+        .unwrap()
+        .info
+        .attachments
+        .iter()
+        .position(|a| a.name == raw_name)
+        .unwrap();
     h.state_mut().pick_override = Some(vec![chosen.to_string_lossy().into_owned()]);
     h.state_mut().attachment_action(id, index, false);
     h.run_steps(2);

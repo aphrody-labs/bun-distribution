@@ -77,9 +77,17 @@ pub enum ColorLabel {
 }
 
 impl ColorLabel {
-    pub const ALL: [ColorLabel; 5] = [ColorLabel::Red, ColorLabel::Yellow, ColorLabel::Green, ColorLabel::Blue, ColorLabel::Purple];
+    pub const ALL: [ColorLabel; 5] = [
+        ColorLabel::Red,
+        ColorLabel::Yellow,
+        ColorLabel::Green,
+        ColorLabel::Blue,
+        ColorLabel::Purple,
+    ];
     pub fn parse(s: &str) -> Option<ColorLabel> {
-        ColorLabel::ALL.into_iter().find(|c| format!("{c:?}").eq_ignore_ascii_case(s))
+        ColorLabel::ALL
+            .into_iter()
+            .find(|c| format!("{c:?}").eq_ignore_ascii_case(s))
     }
 }
 
@@ -107,10 +115,19 @@ pub enum CopyrightStatus {
 }
 
 impl CopyrightStatus {
-    pub const ALL: [CopyrightStatus; 3] = [CopyrightStatus::Unknown, CopyrightStatus::Copyrighted, CopyrightStatus::PublicDomain];
+    pub const ALL: [CopyrightStatus; 3] = [
+        CopyrightStatus::Unknown,
+        CopyrightStatus::Copyrighted,
+        CopyrightStatus::PublicDomain,
+    ];
     /// `unknown` / `copyrighted` / `publicDomain` (also `public domain`, `public-domain`).
     pub fn parse(s: &str) -> Option<CopyrightStatus> {
-        match s.trim().to_ascii_lowercase().replace([' ', '-', '_'], "").as_str() {
+        match s
+            .trim()
+            .to_ascii_lowercase()
+            .replace([' ', '-', '_'], "")
+            .as_str()
+        {
             "unknown" | "" => Some(CopyrightStatus::Unknown),
             "copyrighted" => Some(CopyrightStatus::Copyrighted),
             "publicdomain" => Some(CopyrightStatus::PublicDomain),
@@ -318,7 +335,11 @@ pub struct Analysis {
 /// file's white balance is edited relative to its as-shot look or in Kelvin depends on the camera:
 /// [`relative_wb_camera`].
 pub fn relative_wb_format(format: &str) -> bool {
-    ["ARW", "NEF", "NRW", "RW2", "RWL", "RAW", "RAF", "CR3", "CR2", "PEF", "SRW", "ORF"].iter().any(|f| format.eq_ignore_ascii_case(f))
+    [
+        "ARW", "NEF", "NRW", "RW2", "RWL", "RAW", "RAF", "CR3", "CR2", "PEF", "SRW", "ORF",
+    ]
+    .iter()
+    .any(|f| format.eq_ignore_ascii_case(f))
 }
 
 /// Whether a raw of `format` shot on `camera` (Exif make and model, as [`Meta::camera`] keeps them) is developed
@@ -329,7 +350,9 @@ pub fn relative_wb_format(format: &str) -> bool {
 /// whatever the file's fit gives (issue #730). A camera in `lightcraft_raw::kelvin_presets` does the same through
 /// its own presets. The engine's render path (`files.rs`) decides the same way from the file; both must agree.
 pub fn relative_wb_camera(format: &str, camera: &str) -> bool {
-    relative_wb_format(format) && lightcraft_raw::spectral::find_camera(camera).is_none() && !lightcraft_raw::kelvin_presets::covers_camera(camera)
+    relative_wb_format(format)
+        && lightcraft_raw::spectral::find_camera(camera).is_none()
+        && !lightcraft_raw::kelvin_presets::covers_camera(camera)
 }
 
 impl Photo {
@@ -339,7 +362,15 @@ impl Photo {
         Some(self.history_cursor.map_or(last, |c| c.min(last)))
     }
 
-    pub fn new(id: PhotoId, source: Source, file_name: &str, format: &str, width: u32, height: u32, imported: &str) -> Photo {
+    pub fn new(
+        id: PhotoId,
+        source: Source,
+        file_name: &str,
+        format: &str,
+        width: u32,
+        height: u32,
+        imported: &str,
+    ) -> Photo {
         Photo {
             id,
             source,
@@ -396,7 +427,10 @@ impl Photo {
     /// in the photo's own rendering process.
     pub fn import_defaults(&self) -> DevelopSettings {
         match &self.import_look {
-            Some(l) => DevelopSettings { process: self.develop.process, ..(**l).clone() },
+            Some(l) => DevelopSettings {
+                process: self.develop.process,
+                ..(**l).clone()
+            },
             None => self.camera_defaults(),
         }
     }
@@ -407,7 +441,11 @@ impl Photo {
     /// still as imported?) don't change when a newer process exists. A new photo has the latest.
     pub fn camera_defaults(&self) -> DevelopSettings {
         let relative = self.relative_wb();
-        let wb = if relative { Some((6500.0, 0.0)) } else { self.as_shot_wb };
+        let wb = if relative {
+            Some((6500.0, 0.0))
+        } else {
+            self.as_shot_wb
+        };
         let mut d = match wb {
             Some((t, tint)) => DevelopSettings::for_raw(t, tint),
             None => DevelopSettings::default(),
@@ -424,17 +462,30 @@ impl Photo {
     /// The file name's extension without the dot, as written (`CR2` for `IMG_0042.CR2`); empty
     /// when the name has none (`README`, a dot file such as `.hidden`).
     pub fn extension(&self) -> &str {
-        self.file_name.rsplit_once('.').filter(|(stem, _)| !stem.is_empty()).map_or("", |(_, ext)| ext)
+        self.file_name
+            .rsplit_once('.')
+            .filter(|(stem, _)| !stem.is_empty())
+            .map_or("", |(_, ext)| ext)
     }
     /// Width and height in pixels as the photo is shown: turned by its orientation and cut by its
     /// crop. Straightening and Constrain Crop shrink the crop without changing its shape, so the
     /// aspect is exact and the edges can read a little larger than an export.
     pub fn shown_size(&self) -> (f64, f64) {
         let (w, h) = (self.width as f64, self.height as f64);
-        let (w, h) = if self.develop.orientation.swaps_axes() { (h, w) } else { (w, h) };
+        let (w, h) = if self.develop.orientation.swaps_axes() {
+            (h, w)
+        } else {
+            (w, h)
+        };
         let r = self.develop.crop.geometry.rect;
         // a crop read from a file or an agent is hostile: no NaN, nothing outside the frame
-        let part = |len: f64| if len.is_finite() { len.clamp(0.0, 1.0) } else { 1.0 };
+        let part = |len: f64| {
+            if len.is_finite() {
+                len.clamp(0.0, 1.0)
+            } else {
+                1.0
+            }
+        };
         (w * part(r.width()), h * part(r.height()))
     }
     /// Cropped or straightened.
@@ -444,7 +495,13 @@ impl Photo {
     /// How many keywords the photo has: a hierarchical keyword (`travel|italy|rome`) is one, and
     /// the same keyword in different case or with stray spaces counts once; blank ones don't count.
     pub fn keyword_count(&self) -> usize {
-        let mut seen: Vec<String> = self.meta.keywords.iter().map(|k| k.trim().to_lowercase()).filter(|k| !k.is_empty()).collect();
+        let mut seen: Vec<String> = self
+            .meta
+            .keywords
+            .iter()
+            .map(|k| k.trim().to_lowercase())
+            .filter(|k| !k.is_empty())
+            .collect();
         seen.sort_unstable();
         seen.dedup();
         seen.len()
@@ -453,8 +510,15 @@ impl Photo {
     /// differ only in case are one person, as first seen). Pets and unnamed faces are not people.
     pub fn people(&self) -> Vec<&str> {
         let mut out: Vec<&str> = Vec::new();
-        for r in self.meta.regions.iter().filter(|r| r.kind == lightcraft_meta::RegionKind::Face) {
-            let Some(name) = r.name.as_deref().map(str::trim).filter(|n| !n.is_empty()) else { continue };
+        for r in self
+            .meta
+            .regions
+            .iter()
+            .filter(|r| r.kind == lightcraft_meta::RegionKind::Face)
+        {
+            let Some(name) = r.name.as_deref().map(str::trim).filter(|n| !n.is_empty()) else {
+                continue;
+            };
             if !out.iter().any(|o| o.to_lowercase() == name.to_lowercase()) {
                 out.push(name);
             }
@@ -510,7 +574,17 @@ pub struct Album {
 impl Album {
     /// A regular (manual) album.
     pub fn new(id: AlbumId, name: impl Into<String>) -> Album {
-        Album { id, name: name.into(), parent: None, folder: false, photos: Vec::new(), cover: None, smart: None, quick: false, order: None }
+        Album {
+            id,
+            name: name.into(),
+            parent: None,
+            folder: false,
+            photos: Vec::new(),
+            cover: None,
+            smart: None,
+            quick: false,
+            order: None,
+        }
     }
     pub fn is_smart(&self) -> bool {
         self.smart.is_some()
@@ -524,7 +598,15 @@ mod edited_tests {
 
     #[test]
     fn raw_with_import_settings_is_not_edited() {
-        let mut p = Photo::new(PhotoId(1), Source::Demo { scene: 0 }, "a.arw", "ARW", 10, 10, "2026-10-01T00:00:00");
+        let mut p = Photo::new(
+            PhotoId(1),
+            Source::Demo { scene: 0 },
+            "a.arw",
+            "ARW",
+            10,
+            10,
+            "2026-10-01T00:00:00",
+        );
         p.as_shot_wb = Some((5200.0, 4.0));
         p.develop = Arc::new(p.import_defaults());
         assert!(!p.is_edited(), "import look counts as unedited");
@@ -542,18 +624,39 @@ mod edited_tests {
         // a photo on another process than the latest (a V1 photo once a later process is the
         // latest, or a photo saved by a newer LightCraft)
         let other = ProcessVersion(ProcessVersion::LATEST.0 + 1);
-        let mut p = Photo::new(PhotoId(1), Source::Demo { scene: 0 }, "a.dng", "DNG", 10, 10, "2026-10-01T00:00:00");
+        let mut p = Photo::new(
+            PhotoId(1),
+            Source::Demo { scene: 0 },
+            "a.dng",
+            "DNG",
+            10,
+            10,
+            "2026-10-01T00:00:00",
+        );
         p.kind = MediaKind::Raw;
         p.as_shot_wb = Some((5200.0, 4.0));
-        assert_eq!(p.camera_defaults().process, ProcessVersion::LATEST, "a new photo gets the latest");
-        p.develop = Arc::new(DevelopSettings { process: other, ..p.import_defaults() });
-        assert_eq!((p.camera_defaults().process, p.import_defaults().process), (other, other));
+        assert_eq!(
+            p.camera_defaults().process,
+            ProcessVersion::LATEST,
+            "a new photo gets the latest"
+        );
+        p.develop = Arc::new(DevelopSettings {
+            process: other,
+            ..p.import_defaults()
+        });
+        assert_eq!(
+            (p.camera_defaults().process, p.import_defaults().process),
+            (other, other)
+        );
         assert!(!p.is_edited(), "still as imported");
         // with a default preset's look as well
         let mut look = DevelopSettings::for_raw(5200.0, 4.0);
         look.light.exposure = 0.3;
         p.import_look = Some(Arc::new(look.clone()));
-        p.develop = Arc::new(DevelopSettings { process: other, ..look });
+        p.develop = Arc::new(DevelopSettings {
+            process: other,
+            ..look
+        });
         assert_eq!(p.import_defaults().process, other);
         assert!(!p.is_edited());
         let mut d = (*p.develop).clone();
@@ -579,17 +682,44 @@ mod edited_tests {
             ("a.orf", "ORF", true),
             ("a.dng", "DNG", false),
         ] {
-            let mut p = Photo::new(PhotoId(1), Source::Demo { scene: 0 }, name, format, 10, 10, "2026-10-01T00:00:00");
+            let mut p = Photo::new(
+                PhotoId(1),
+                Source::Demo { scene: 0 },
+                name,
+                format,
+                10,
+                10,
+                "2026-10-01T00:00:00",
+            );
             p.kind = MediaKind::Raw;
             p.meta.camera = "Pentax K-1".into();
             p.as_shot_wb = Some((5200.0, 4.0));
             assert_eq!(p.relative_wb(), relative, "{format}");
             assert_eq!(p.fitted_look(), relative, "{format}");
             let wb = p.camera_defaults().wb;
-            assert_eq!((wb.temp, wb.tint), if relative { (6500.0, 0.0) } else { (5200.0, 4.0) }, "{format}");
-            assert_eq!(wb.scale, if relative { WbScale::Legacy } else { WbScale::Kelvin }, "{format}");
+            assert_eq!(
+                (wb.temp, wb.tint),
+                if relative {
+                    (6500.0, 0.0)
+                } else {
+                    (5200.0, 4.0)
+                },
+                "{format}"
+            );
+            assert_eq!(
+                wb.scale,
+                if relative {
+                    WbScale::Legacy
+                } else {
+                    WbScale::Kelvin
+                },
+                "{format}"
+            );
             p.develop = Arc::new(DevelopSettings::for_raw(5200.0, 4.0));
-            assert!(!p.is_edited(), "{format}: old As Shot values are not an edit");
+            assert!(
+                !p.is_edited(),
+                "{format}: old As Shot values are not an edit"
+            );
             let mut custom = (*p.develop).clone();
             custom.wb.mode = WbMode::Custom;
             p.develop = Arc::new(custom);
@@ -618,19 +748,54 @@ mod edited_tests {
             ("", "ARW", true),
             ("SONY ILCE-7M3", "DNG", false),
         ] {
-            let mut p = Photo::new(PhotoId(1), Source::Demo { scene: 0 }, "a.raw", format, 10, 10, "2026-10-01T00:00:00");
+            let mut p = Photo::new(
+                PhotoId(1),
+                Source::Demo { scene: 0 },
+                "a.raw",
+                format,
+                10,
+                10,
+                "2026-10-01T00:00:00",
+            );
             p.kind = MediaKind::Raw;
             p.meta.camera = camera.into();
             p.as_shot_wb = Some((4986.0, -2.0));
             assert_eq!(p.relative_wb(), relative, "{camera} {format}");
-            assert_eq!(relative_wb_camera(format, camera), relative, "{camera} {format}");
-            assert_eq!(p.fitted_look(), format == "ARW" || format == "NEF" || format == "CR2" || format == "RAF", "{camera} {format}");
+            assert_eq!(
+                relative_wb_camera(format, camera),
+                relative,
+                "{camera} {format}"
+            );
+            assert_eq!(
+                p.fitted_look(),
+                format == "ARW" || format == "NEF" || format == "CR2" || format == "RAF",
+                "{camera} {format}"
+            );
             let wb = p.camera_defaults().wb;
-            assert_eq!((wb.temp, wb.tint), if relative { (6500.0, 0.0) } else { (4986.0, -2.0) }, "{camera} {format}");
-            assert_eq!(wb.scale, if relative { WbScale::Legacy } else { WbScale::Kelvin }, "{camera} {format}");
+            assert_eq!(
+                (wb.temp, wb.tint),
+                if relative {
+                    (6500.0, 0.0)
+                } else {
+                    (4986.0, -2.0)
+                },
+                "{camera} {format}"
+            );
+            assert_eq!(
+                wb.scale,
+                if relative {
+                    WbScale::Legacy
+                } else {
+                    WbScale::Kelvin
+                },
+                "{camera} {format}"
+            );
             // a photo from an older catalog: stored As Shot on the relative scale, still not an edit
             p.develop = Arc::new(DevelopSettings::for_raw(6500.0, 0.0));
-            assert!(!p.is_edited(), "{camera} {format}: old As Shot values are not an edit");
+            assert!(
+                !p.is_edited(),
+                "{camera} {format}: old As Shot values are not an edit"
+            );
             // its as-shot white not yet read through the matrices (6500 / 0 from the old import): defaults still As Shot
             p.as_shot_wb = Some((6500.0, 0.0));
             assert_eq!(p.camera_defaults().wb.mode, WbMode::AsShot);

@@ -41,7 +41,12 @@ pub type Mat4 = [[f32; 4]; 4];
 /// L'identité.
 #[must_use]
 pub const fn identite() -> Mat4 {
-    [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
 }
 
 /// Une animation à échantillonner : un clip d'un [`Motion`], à une frame donnée.
@@ -105,21 +110,24 @@ pub fn matrices_monde(os: &[SkeletonBone], anim: Option<Echantillon<'_>>) -> Opt
     for (i, bone) in os.iter().enumerate() {
         let local_trs: LocalTrs = match (anim, cible_de(bone)) {
             (Some(e), Some(cible)) => {
-                match e.motion.sample_local_trs(e.data, e.clip, cible, e.frame, bone.local) {
+                match e
+                    .motion
+                    .sample_local_trs(e.data, e.clip, cible, e.frame, bone.local)
+                {
                     Some(trs) => {
                         animes += 1;
                         trs
-                    },
+                    }
                     None => {
                         repos += 1;
                         bone.local
-                    },
+                    }
                 }
-            },
+            }
             _ => {
                 repos += 1;
                 bone.local
-            },
+            }
         };
         let local = g4sk::local_matrix(&local_trs);
         let m = match bone.parent {
@@ -129,7 +137,11 @@ pub fn matrices_monde(os: &[SkeletonBone], anim: Option<Echantillon<'_>>) -> Opt
         monde.push(m);
     }
 
-    Some(Poses { monde, os_animes: animes, os_au_repos: repos })
+    Some(Poses {
+        monde,
+        os_animes: animes,
+        os_au_repos: repos,
+    })
 }
 
 /// Matrices de **skinning** : `monde × inverse-bind`, par os.
@@ -180,9 +192,17 @@ pub fn deformer(prim: &MeshPrimitive, skin: &PrimitiveSkin, skinning: &[Mat4]) -
         .map(|(v, p)| {
             let p = [p.x, p.y, p.z];
             let Some(acc) = melanger(skin, v, skinning, p, transformer) else {
-                return Vec3 { x: p[0], y: p[1], z: p[2] };
+                return Vec3 {
+                    x: p[0],
+                    y: p[1],
+                    z: p[2],
+                };
             };
-            Vec3 { x: acc[0], y: acc[1], z: acc[2] }
+            Vec3 {
+                x: acc[0],
+                y: acc[1],
+                z: acc[2],
+            }
         })
         .collect()
 }
@@ -207,9 +227,17 @@ pub fn deformer_normales(
             let acc = melanger(skin, v, skinning, n, transformer_direction).unwrap_or(n);
             let len = (acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]).sqrt();
             if len <= f32::EPSILON {
-                return Vec3 { x: n[0], y: n[1], z: n[2] };
+                return Vec3 {
+                    x: n[0],
+                    y: n[1],
+                    z: n[2],
+                };
             }
-            Vec3 { x: acc[0] / len, y: acc[1] / len, z: acc[2] / len }
+            Vec3 {
+                x: acc[0] / len,
+                y: acc[1] / len,
+                z: acc[2] / len,
+            }
         })
         .collect()
 }
@@ -251,7 +279,11 @@ pub fn somme_des_poids(skin: &PrimitiveSkin, v: usize) -> f32 {
 /// Nombre maximal d'influences réellement non nulles, sur toute la primitive.
 #[must_use]
 pub fn influences_max(skin: &PrimitiveSkin) -> usize {
-    skin.weights.iter().map(|w| w.iter().filter(|x| **x != 0.0).count()).max().unwrap_or(0)
+    skin.weights
+        .iter()
+        .map(|w| w.iter().filter(|x| **x != 0.0).count())
+        .max()
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -287,7 +319,14 @@ mod tests {
             material_index: 0,
             material_name: alloc::string::String::new(),
             texture_uri: alloc::string::String::new(),
-            positions: positions.iter().map(|p| Vec3 { x: p[0], y: p[1], z: p[2] }).collect(),
+            positions: positions
+                .iter()
+                .map(|p| Vec3 {
+                    x: p[0],
+                    y: p[1],
+                    z: p[2],
+                })
+                .collect(),
             normals: Vec::new(),
             uv0: Vec::new(),
             colors: Vec::new(),
@@ -311,7 +350,10 @@ mod tests {
     #[test]
     fn au_repos_la_deformation_est_l_identite() {
         // Un os translaté : sa matrice monde est T(2,3,4), son inverse-bind T(-2,-3,-4).
-        let t = LocalTrs { translation: [2.0, 3.0, 4.0], ..repos() };
+        let t = LocalTrs {
+            translation: [2.0, 3.0, 4.0],
+            ..repos()
+        };
         let inv = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
@@ -342,12 +384,20 @@ mod tests {
     fn un_os_unique_deforme_rigidement() {
         // Rotation de 90° autour de Y : quaternion (0, sin45, 0, cos45).
         let s = core::f32::consts::FRAC_1_SQRT_2;
-        let tourne = LocalTrs { quat: [0.0, s, 0.0, s], ..repos() };
+        let tourne = LocalTrs {
+            quat: [0.0, s, 0.0, s],
+            ..repos()
+        };
         let squelette = [os("root", None, tourne, identite())];
         let poses = matrices_monde(&squelette, None).expect("pose");
         let skinning = matrices_skinning(&squelette, &poses.monde);
 
-        let points = [[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0], [1.0, 1.0, 1.0]];
+        let points = [
+            [1.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 3.0],
+            [1.0, 1.0, 1.0],
+        ];
         let prim = primitive(&points);
         let skin = skin_un_os(points.len(), 0);
         let sortie = deformer(&prim, &skin, &skinning);
@@ -379,9 +429,24 @@ mod tests {
     #[test]
     fn la_hierarchie_compose_les_parents() {
         let s = core::f32::consts::FRAC_1_SQRT_2;
-        let parent = os("root", None, LocalTrs { quat: [0.0, s, 0.0, s], ..repos() }, identite());
-        let enfant =
-            os("child", Some(0), LocalTrs { translation: [2.0, 0.0, 0.0], ..repos() }, identite());
+        let parent = os(
+            "root",
+            None,
+            LocalTrs {
+                quat: [0.0, s, 0.0, s],
+                ..repos()
+            },
+            identite(),
+        );
+        let enfant = os(
+            "child",
+            Some(0),
+            LocalTrs {
+                translation: [2.0, 0.0, 0.0],
+                ..repos()
+            },
+            identite(),
+        );
         let squelette = [parent, enfant];
         let poses = matrices_monde(&squelette, None).expect("pose");
         // La colonne 3 de la matrice monde de l'enfant est sa position : R(90°/Y)·(2,0,0) = (0,0,-2).
@@ -401,7 +466,10 @@ mod tests {
         let prim = primitive(&[[4.0, 5.0, 6.0]]);
 
         // Tous les poids à zéro.
-        let vide = PrimitiveSkin { joints: vec![[0; 8]], weights: vec![[0.0; 8]] };
+        let vide = PrimitiveSkin {
+            joints: vec![[0; 8]],
+            weights: vec![[0.0; 8]],
+        };
         let sortie = deformer(&prim, &vide, &skinning);
         assert_eq!((sortie[0].x, sortie[0].y, sortie[0].z), (4.0, 5.0, 6.0));
 
@@ -424,6 +492,10 @@ mod tests {
         };
         assert!((somme_des_poids(&skin, 0) - 1.0).abs() < 1e-6);
         assert_eq!(influences_max(&skin), 3);
-        assert_eq!(somme_des_poids(&skin, 7), 0.0, "un sommet absent ne doit pas paniquer");
+        assert_eq!(
+            somme_des_poids(&skin, 7),
+            0.0,
+            "un sommet absent ne doit pas paniquer"
+        );
     }
 }

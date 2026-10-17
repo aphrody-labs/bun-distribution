@@ -19,8 +19,17 @@ const FEEDBACK: [u8; 3] = [0x4f, 0x9d, 0xff];
 pub fn grid_of(n: &Node) -> Option<Cow<'_, GradientMesh>> {
     match &n.kind {
         NodeKind::Mesh(m) => Some(Cow::Borrowed(m)),
-        NodeKind::Envelope { kind, editing: false, .. } => match &**kind {
-            EnvelopeKind::Mesh { rows, cols, points, handles } => envelope_grid(*rows, *cols, points, handles).map(Cow::Owned),
+        NodeKind::Envelope {
+            kind,
+            editing: false,
+            ..
+        } => match &**kind {
+            EnvelopeKind::Mesh {
+                rows,
+                cols,
+                points,
+                handles,
+            } => envelope_grid(*rows, *cols, points, handles).map(Cow::Owned),
             _ => None,
         },
         _ => None,
@@ -52,14 +61,25 @@ impl MeshEdit {
             && ids.contains(&id)
             && let Some(grid) = cx.doc.node(id).and_then(grid_of)
             && let Some(q) = grid.points.get(index)
-            && let Some(h) = (0..4).find(|h| q.handles[*h].hypot() > 1e-6 && (q.p + q.handles[*h]).distance(p) <= tol)
+            && let Some(h) = (0..4)
+                .find(|h| q.handles[*h].hypot() > 1e-6 && (q.p + q.handles[*h]).distance(p) <= tol)
         {
-            return Some(MeshGrab { id, index, handle: Some(h) });
+            return Some(MeshGrab {
+                id,
+                index,
+                handle: Some(h),
+            });
         }
-        ids.iter().filter(|id| cx.doc.is_editable(**id)).find_map(|id| {
-            let index = grid_of(cx.doc.node(*id)?)?.point_near(p, tol)?;
-            Some(MeshGrab { id: *id, index, handle: None })
-        })
+        ids.iter()
+            .filter(|id| cx.doc.is_editable(**id))
+            .find_map(|id| {
+                let index = grid_of(cx.doc.node(*id)?)?.point_near(p, tol)?;
+                Some(MeshGrab {
+                    id: *id,
+                    index,
+                    handle: None,
+                })
+            })
     }
 
     /// Start dragging `grab` (its point takes the focus).
@@ -76,7 +96,10 @@ impl MeshEdit {
         if let Some(h) = g.handle {
             params["handle"] = json!(h);
         }
-        Some(vec![Action::Preview("object.mesh.movePoint".into(), params)])
+        Some(vec![Action::Preview(
+            "object.mesh.movePoint".into(),
+            params,
+        )])
     }
 
     /// End a drag (`None` when nothing was being dragged).
@@ -101,13 +124,32 @@ impl MeshEdit {
 
     /// The focused point's handles (lines and ends).
     pub fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        let Some((id, index)) = self.focus else { return vec![] };
-        let Some(grid) = cx.doc.node(id).and_then(grid_of) else { return vec![] };
-        let Some(q) = grid.points.get(index) else { return vec![] };
-        let mut out = vec![Overlay::Anchor { p: q.p, color: FEEDBACK, filled: true, size: 5.0 }];
+        let Some((id, index)) = self.focus else {
+            return vec![];
+        };
+        let Some(grid) = cx.doc.node(id).and_then(grid_of) else {
+            return vec![];
+        };
+        let Some(q) = grid.points.get(index) else {
+            return vec![];
+        };
+        let mut out = vec![Overlay::Anchor {
+            p: q.p,
+            color: FEEDBACK,
+            filled: true,
+            size: 5.0,
+        }];
         for h in q.handles.iter().filter(|h| h.hypot() > 1e-6) {
-            out.push(Overlay::Line { a: q.p, b: q.p + *h, color: FEEDBACK, dashed: false });
-            out.push(Overlay::Handle { p: q.p + *h, color: FEEDBACK });
+            out.push(Overlay::Line {
+                a: q.p,
+                b: q.p + *h,
+                color: FEEDBACK,
+                dashed: false,
+            });
+            out.push(Overlay::Handle {
+                p: q.p + *h,
+                color: FEEDBACK,
+            });
         }
         out
     }
@@ -130,7 +172,12 @@ mod tests {
         let rect = d.node(a).cloned().unwrap();
         d.remove(a).unwrap();
         let id = d.alloc_id();
-        let kind = EnvelopeKind::Mesh { rows: 1, cols: 1, points: grid_points(Rect::new(100.0, 100.0, 200.0, 200.0), 1, 1), handles: vec![] };
+        let kind = EnvelopeKind::Mesh {
+            rows: 1,
+            cols: 1,
+            points: grid_points(Rect::new(100.0, 100.0, 200.0, 200.0), 1, 1),
+            handles: vec![],
+        };
         let env = NodeKind::Envelope {
             content: vec![Arc::new(rect)],
             kind: Box::new(kind),
@@ -150,22 +197,44 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = crate::meshblend::create("mesh").unwrap();
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 100.0)), vec![Action::Begin("Move Mesh Point".into())]);
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 100.0)),
+            vec![Action::Begin("Move Mesh Point".into())]
+        );
         assert_eq!(
             t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 210.0, 90.0)),
-            vec![Action::Preview("object.mesh.movePoint".into(), json!({"id": e.0, "index": 1, "x": 210.0, "y": 90.0}))]
+            vec![Action::Preview(
+                "object.mesh.movePoint".into(),
+                json!({"id": e.0, "index": 1, "x": 210.0, "y": 90.0})
+            )]
         );
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Up, 210.0, 90.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Up, 210.0, 90.0)),
+            vec![Action::Commit]
+        );
         // The clicked point shows its handles (the smooth mesh's) and they can be dragged.
-        assert!(t.overlays(&c).iter().any(|o| matches!(o, Overlay::Handle { .. })));
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 133.33333)), vec![Action::Begin("Move Mesh Point".into())]);
+        assert!(
+            t.overlays(&c)
+                .iter()
+                .any(|o| matches!(o, Overlay::Handle { .. }))
+        );
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 200.0, 133.33333)),
+            vec![Action::Begin("Move Mesh Point".into())]
+        );
         let drag = t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 220.0, 140.0));
-        assert!(matches!(&drag[..], [Action::Preview(id, p)] if id == "object.mesh.movePoint" && p["handle"] == json!(2)), "{drag:?}");
+        assert!(
+            matches!(&drag[..], [Action::Preview(id, p)] if id == "object.mesh.movePoint" && p["handle"] == json!(2)),
+            "{drag:?}"
+        );
         t.pointer(&c, &PointerEvent::new(PointerKind::Up, 220.0, 140.0));
         // Inside the envelope: a new row and column.
         assert_eq!(
             t.pointer(&c, &PointerEvent::new(PointerKind::Down, 150.0, 160.0)),
-            vec![Action::Exec("object.mesh.addLine".into(), json!({"id": e.0, "x": 150.0, "y": 160.0}))]
+            vec![Action::Exec(
+                "object.mesh.addLine".into(),
+                json!({"id": e.0, "x": 150.0, "y": 160.0})
+            )]
         );
     }
 
@@ -177,15 +246,27 @@ mod tests {
         let mut t = crate::direct::DirectSelectionTool::new(false);
         // Not selected: its points aren't handles to grab.
         let c = cx(&d, &s, &p);
-        assert_ne!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 100.0, 200.0)), vec![Action::Begin("Move Mesh Point".into())]);
+        assert_ne!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 100.0, 200.0)),
+            vec![Action::Begin("Move Mesh Point".into())]
+        );
         t.pointer(&c, &PointerEvent::new(PointerKind::Up, 100.0, 200.0));
         s.set([e]);
         let c = cx(&d, &s, &p);
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Down, 100.0, 200.0)), vec![Action::Begin("Move Mesh Point".into())]);
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Down, 100.0, 200.0)),
+            vec![Action::Begin("Move Mesh Point".into())]
+        );
         assert_eq!(
             t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 90.0, 210.0)),
-            vec![Action::Preview("object.mesh.movePoint".into(), json!({"id": e.0, "index": 2, "x": 90.0, "y": 210.0}))]
+            vec![Action::Preview(
+                "object.mesh.movePoint".into(),
+                json!({"id": e.0, "index": 2, "x": 90.0, "y": 210.0})
+            )]
         );
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Up, 90.0, 210.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Up, 90.0, 210.0)),
+            vec![Action::Commit]
+        );
     }
 }

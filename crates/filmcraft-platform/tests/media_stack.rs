@@ -67,13 +67,20 @@ fn webm_and_mkv_match_software() {
     ];
     filmcraft_platform::register();
     for (name, args) in cases {
-        let Some(path) = fixture(&ff, name, &args) else { continue };
+        let Some(path) = fixture(&ff, name, &args) else {
+            continue;
+        };
         let bytes: std::sync::Arc<[u8]> = std::fs::read(&path).unwrap().into();
         let frames = |hw: bool| {
             filmcraft_codecs::hw::set_hardware_decoding(hw);
             let src = filmcraft_codecs::open_bytes(name, bytes.clone()).unwrap();
             let rate = src.info().frame_rate();
-            (0..40).map(|i| src.video_frame(FrameRequest::full(rate.tick_of(i))).unwrap()).collect::<Vec<_>>()
+            (0..40)
+                .map(|i| {
+                    src.video_frame(FrameRequest::full(rate.tick_of(i)))
+                        .unwrap()
+                })
+                .collect::<Vec<_>>()
         };
         let off = frames(false);
         let before = filmcraft_codecs::hw::hw_stats();
@@ -86,12 +93,24 @@ fn webm_and_mkv_match_software() {
         }
         assert!(after.frames > before.frames, "{name}: hardware frames");
         for (i, (a, b)) in auto.iter().zip(&off).enumerate() {
-            assert_eq!((a.width, a.height, a.color, a.par), (b.width, b.height, b.color, b.par), "{name} frame {i}");
+            assert_eq!(
+                (a.width, a.height, a.color, a.par),
+                (b.width, b.height, b.color, b.par),
+                "{name} frame {i}"
+            );
             let (x, y) = (a.as_ref().clone(), b.as_ref().clone());
             assert_same(
                 &format!("{name} frame {i}"),
-                &[filmcraft_codecs::DecodedFrame { pts: 0, frame: x, draft: false }],
-                &[filmcraft_codecs::DecodedFrame { pts: 0, frame: y, draft: false }],
+                &[filmcraft_codecs::DecodedFrame {
+                    pts: 0,
+                    frame: x,
+                    draft: false,
+                }],
+                &[filmcraft_codecs::DecodedFrame {
+                    pts: 0,
+                    frame: y,
+                    draft: false,
+                }],
             );
         }
     }

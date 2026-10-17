@@ -3,85 +3,175 @@
 use super::*;
 use crate::cmd;
 use serde_json::json;
-use soundcraft_model::{AutoParam, AutomationMode, INSERT_SLOTS, Insert, SEND_SLOTS, SendSlot, Session, TrackId};
+use soundcraft_model::{
+    AutoParam, AutomationMode, INSERT_SLOTS, Insert, SEND_SLOTS, SendSlot, Session, TrackId,
+};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("mix.volume", "Set Volume", [], None, "{tracks?, db: -144..12 | delta_db}", has_selection, volume),
-        cmd!("mix.pan", "Set Pan", [], None, "{tracks?, pan: -1..1, index?: 0|1}", has_selection, pan),
-        cmd!("mix.mute", "Mute", [], Some("Shift+M"), "{tracks?, value?: bool}", has_selection, |e, p| toggle(
-            e,
-            p,
+        cmd!(
+            "mix.volume",
+            "Set Volume",
+            [],
+            None,
+            "{tracks?, db: -144..12 | delta_db}",
+            has_selection,
+            volume
+        ),
+        cmd!(
+            "mix.pan",
+            "Set Pan",
+            [],
+            None,
+            "{tracks?, pan: -1..1, index?: 0|1}",
+            has_selection,
+            pan
+        ),
+        cmd!(
             "mix.mute",
-            |s, t, v| set_grouped(s, t, "mute", |tr| tr.mixer.mute = v),
-            |tr| tr.mixer.mute
-        )),
-        cmd!("mix.solo", "Solo", [], Some("Shift+S"), "{tracks?, value?: bool, exclusive?: bool}", has_selection, solo),
-        cmd!("mix.solo_safe", "Solo Safe", [], None, "{tracks?, value?: bool}", has_selection, |e, p| toggle(
-            e,
-            p,
+            "Mute",
+            [],
+            Some("Shift+M"),
+            "{tracks?, value?: bool}",
+            has_selection,
+            |e, p| toggle(
+                e,
+                p,
+                "mix.mute",
+                |s, t, v| set_grouped(s, t, "mute", |tr| tr.mixer.mute = v),
+                |tr| tr.mixer.mute
+            )
+        ),
+        cmd!(
+            "mix.solo",
+            "Solo",
+            [],
+            Some("Shift+S"),
+            "{tracks?, value?: bool, exclusive?: bool}",
+            has_selection,
+            solo
+        ),
+        cmd!(
             "mix.solo_safe",
-            |s, t, v| {
-                if let Some(tr) = s.track_mut(t) {
-                    tr.mixer.solo_safe = v
+            "Solo Safe",
+            [],
+            None,
+            "{tracks?, value?: bool}",
+            has_selection,
+            |e, p| toggle(
+                e,
+                p,
+                "mix.solo_safe",
+                |s, t, v| {
+                    if let Some(tr) = s.track_mut(t) {
+                        tr.mixer.solo_safe = v
+                    }
+                },
+                |tr| tr.mixer.solo_safe
+            )
+        ),
+        cmd!(
+            "mix.clear_solos",
+            "Clear All Solos",
+            [],
+            None,
+            "{}",
+            always,
+            |e, _| {
+                for t in &mut e.session_mut().tracks {
+                    t.mixer.solo = false
                 }
-            },
-            |tr| tr.mixer.solo_safe
-        )),
-        cmd!("mix.clear_solos", "Clear All Solos", [], None, "{}", always, |e, _| {
-            for t in &mut e.session_mut().tracks {
-                t.mixer.solo = false
+                Ok(json!({}))
             }
-            Ok(json!({}))
-        }),
-        cmd!("mix.clear_mutes", "Clear All Mutes", [], None, "{}", always, |e, _| {
-            for t in &mut e.session_mut().tracks {
-                t.mixer.mute = false
+        ),
+        cmd!(
+            "mix.clear_mutes",
+            "Clear All Mutes",
+            [],
+            None,
+            "{}",
+            always,
+            |e, _| {
+                for t in &mut e.session_mut().tracks {
+                    t.mixer.mute = false
+                }
+                Ok(json!({}))
             }
-            Ok(json!({}))
-        }),
-        cmd!("mix.record_arm", "Record Enable", [], Some("Shift+R"), "{tracks?, value?: bool}", has_selection, |e, p| toggle(
-            e,
-            p,
+        ),
+        cmd!(
             "mix.record_arm",
-            |s, t, v| set_grouped(s, t, "record", |tr| if tr.kind.has_playlist() {
-                tr.mixer.record_arm = v
-            }),
-            |tr| tr.mixer.record_arm
-        )),
-        cmd!("mix.input_monitor", "Input Monitoring", [], Some("Shift+I"), "{tracks?, value?: bool}", has_selection, |e, p| toggle(
-            e,
-            p,
+            "Record Enable",
+            [],
+            Some("Shift+R"),
+            "{tracks?, value?: bool}",
+            has_selection,
+            |e, p| toggle(
+                e,
+                p,
+                "mix.record_arm",
+                |s, t, v| set_grouped(s, t, "record", |tr| if tr.kind.has_playlist() {
+                    tr.mixer.record_arm = v
+                }),
+                |tr| tr.mixer.record_arm
+            )
+        ),
+        cmd!(
             "mix.input_monitor",
-            |s, t, v| {
-                if let Some(tr) = s.track_mut(t) {
-                    tr.mixer.input_monitor = v
-                }
-            },
-            |tr| tr.mixer.input_monitor
-        )),
-        cmd!("mix.phase_invert", "Phase Invert", [], None, "{tracks?, value?: bool}", has_selection, |e, p| toggle(
-            e,
-            p,
+            "Input Monitoring",
+            [],
+            Some("Shift+I"),
+            "{tracks?, value?: bool}",
+            has_selection,
+            |e, p| toggle(
+                e,
+                p,
+                "mix.input_monitor",
+                |s, t, v| {
+                    if let Some(tr) = s.track_mut(t) {
+                        tr.mixer.input_monitor = v
+                    }
+                },
+                |tr| tr.mixer.input_monitor
+            )
+        ),
+        cmd!(
             "mix.phase_invert",
-            |s, t, v| {
-                if let Some(tr) = s.track_mut(t) {
-                    tr.mixer.phase_invert = v
+            "Phase Invert",
+            [],
+            None,
+            "{tracks?, value?: bool}",
+            has_selection,
+            |e, p| toggle(
+                e,
+                p,
+                "mix.phase_invert",
+                |s, t, v| {
+                    if let Some(tr) = s.track_mut(t) {
+                        tr.mixer.phase_invert = v
+                    }
+                },
+                |tr| tr.mixer.phase_invert
+            )
+        ),
+        cmd!(
+            "mix.trim",
+            "Input Trim",
+            [],
+            None,
+            "{tracks?, db}",
+            has_selection,
+            |e, p| {
+                let tracks = tracks_required(e, "mix.trim", p)?;
+                let db = f32_or(p, "db", 0.0).clamp(-144.0, 24.0);
+                let s = e.session_mut();
+                for t in tracks {
+                    if let Some(tr) = s.track_mut(t) {
+                        tr.mixer.trim_db = db
+                    }
                 }
-            },
-            |tr| tr.mixer.phase_invert
-        )),
-        cmd!("mix.trim", "Input Trim", [], None, "{tracks?, db}", has_selection, |e, p| {
-            let tracks = tracks_required(e, "mix.trim", p)?;
-            let db = f32_or(p, "db", 0.0).clamp(-144.0, 24.0);
-            let s = e.session_mut();
-            for t in tracks {
-                if let Some(tr) = s.track_mut(t) {
-                    tr.mixer.trim_db = db
-                }
+                Ok(json!({"db": db}))
             }
-            Ok(json!({"db": db}))
-        }),
+        ),
         cmd!(
             "mix.automation_mode",
             "Automation Mode",
@@ -91,10 +181,42 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             automation_mode
         ),
-        cmd!("mix.insert", "Insert Plugin", [], None, "{track?, slot?: 0..9 | a..j, plugin: id, params?: {id: value}}", has_selection, insert),
-        cmd!("mix.insert_remove", "Remove Insert", [], None, "{track?, slot}", has_selection, insert_remove),
-        cmd!("mix.insert_bypass", "Bypass Insert", [], None, "{track?, slot, value?: bool}", has_selection, insert_bypass),
-        cmd!("mix.insert_param", "Set Plugin Parameter", [], None, "{track?, slot, param, value}", has_selection, insert_param),
+        cmd!(
+            "mix.insert",
+            "Insert Plugin",
+            [],
+            None,
+            "{track?, slot?: 0..9 | a..j, plugin: id, params?: {id: value}}",
+            has_selection,
+            insert
+        ),
+        cmd!(
+            "mix.insert_remove",
+            "Remove Insert",
+            [],
+            None,
+            "{track?, slot}",
+            has_selection,
+            insert_remove
+        ),
+        cmd!(
+            "mix.insert_bypass",
+            "Bypass Insert",
+            [],
+            None,
+            "{track?, slot, value?: bool}",
+            has_selection,
+            insert_bypass
+        ),
+        cmd!(
+            "mix.insert_param",
+            "Set Plugin Parameter",
+            [],
+            None,
+            "{track?, slot, param, value}",
+            has_selection,
+            insert_param
+        ),
         cmd!(
             "mix.insert_params",
             "Set Plugin Parameters",
@@ -104,7 +226,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             insert_params
         ),
-        cmd!("mix.insert_move", "Move Insert", [], None, "{track?, from, to}", has_selection, insert_move),
+        cmd!(
+            "mix.insert_move",
+            "Move Insert",
+            [],
+            None,
+            "{track?, from, to}",
+            has_selection,
+            insert_move
+        ),
         cmd!(
             "mix.send",
             "Assign Send",
@@ -114,22 +244,51 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             send
         ),
-        cmd!("mix.send_remove", "Remove Send", [], None, "{track?, slot}", has_selection, |e, p| {
-            let (t, slot) = track_slot(e, p, "mix.send_remove", SEND_SLOTS)?;
-            if let Some(tr) = e.session_mut().track_mut(t)
-                && let Some(s) = tr.mixer.sends.get_mut(slot)
-            {
-                *s = None
+        cmd!(
+            "mix.send_remove",
+            "Remove Send",
+            [],
+            None,
+            "{track?, slot}",
+            has_selection,
+            |e, p| {
+                let (t, slot) = track_slot(e, p, "mix.send_remove", SEND_SLOTS)?;
+                if let Some(tr) = e.session_mut().track_mut(t)
+                    && let Some(s) = tr.mixer.sends.get_mut(slot)
+                {
+                    *s = None
+                }
+                Ok(json!({}))
             }
-            Ok(json!({}))
-        }),
-        cmd!("mix.send_level", "Send Level", [], None, "{track?, slot, db?, pan?, mute?, pre_fader?}", has_selection, send_level),
-        cmd!("mix.new_bus", "New Bus", [], None, "{name, format?: stereo}", always, |e, p| {
-            let name = str_param(p, "name").filter(|n| !n.trim().is_empty()).ok_or_else(|| bad("mix.new_bus", "`name` required"))?.to_string();
-            let fmt = str_param(p, "format").and_then(soundcraft_model::ChannelFormat::from_id).unwrap_or(soundcraft_model::ChannelFormat::Stereo);
-            let id = e.session_mut().add_bus(&name, fmt);
-            Ok(json!({"bus": id}))
-        }),
+        ),
+        cmd!(
+            "mix.send_level",
+            "Send Level",
+            [],
+            None,
+            "{track?, slot, db?, pan?, mute?, pre_fader?}",
+            has_selection,
+            send_level
+        ),
+        cmd!(
+            "mix.new_bus",
+            "New Bus",
+            [],
+            None,
+            "{name, format?: stereo}",
+            always,
+            |e, p| {
+                let name = str_param(p, "name")
+                    .filter(|n| !n.trim().is_empty())
+                    .ok_or_else(|| bad("mix.new_bus", "`name` required"))?
+                    .to_string();
+                let fmt = str_param(p, "format")
+                    .and_then(soundcraft_model::ChannelFormat::from_id)
+                    .unwrap_or(soundcraft_model::ChannelFormat::Stereo);
+                let id = e.session_mut().add_bus(&name, fmt);
+                Ok(json!({"bus": id}))
+            }
+        ),
         cmd!(
             "automation.set_point",
             "Add Automation Breakpoint",
@@ -139,18 +298,60 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             set_point
         ),
-        cmd!("automation.write_range", "Write Automation", [], None, "{track?, param, start?, end?, value}", has_selection, write_range),
-        cmd!("automation.clear", "Clear Automation", [], None, "{track?, param?, start?, end?}", has_selection, clear_lane),
-        cmd!("automation.thin", "Thin", ["Edit", "Automation"], Some("Cmd+Alt+T"), "{tracks?, tolerance?: 0.1}", has_selection, |e, p| thin(
-            e, p, false
-        )),
-        cmd!("automation.thin_all", "Thin All", ["Edit", "Automation"], None, "{tolerance?: 0.1}", has_tracks, |e, p| thin(e, p, true)),
-        cmd!("automation.write_to_current", "Write to Current", ["Edit", "Automation"], Some("Cmd+/"), "{tracks?}", has_range, |e, p| write_current(
-            e, p, false
-        )),
-        cmd!("automation.write_to_all", "Write to All Enabled", ["Edit", "Automation"], Some("Cmd+Alt+/"), "{tracks?}", has_range, |e, p| {
-            write_current(e, p, true)
-        }),
+        cmd!(
+            "automation.write_range",
+            "Write Automation",
+            [],
+            None,
+            "{track?, param, start?, end?, value}",
+            has_selection,
+            write_range
+        ),
+        cmd!(
+            "automation.clear",
+            "Clear Automation",
+            [],
+            None,
+            "{track?, param?, start?, end?}",
+            has_selection,
+            clear_lane
+        ),
+        cmd!(
+            "automation.thin",
+            "Thin",
+            ["Edit", "Automation"],
+            Some("Cmd+Alt+T"),
+            "{tracks?, tolerance?: 0.1}",
+            has_selection,
+            |e, p| thin(e, p, false)
+        ),
+        cmd!(
+            "automation.thin_all",
+            "Thin All",
+            ["Edit", "Automation"],
+            None,
+            "{tolerance?: 0.1}",
+            has_tracks,
+            |e, p| thin(e, p, true)
+        ),
+        cmd!(
+            "automation.write_to_current",
+            "Write to Current",
+            ["Edit", "Automation"],
+            Some("Cmd+/"),
+            "{tracks?}",
+            has_range,
+            |e, p| write_current(e, p, false)
+        ),
+        cmd!(
+            "automation.write_to_all",
+            "Write to All Enabled",
+            ["Edit", "Automation"],
+            Some("Cmd+Alt+/"),
+            "{tracks?}",
+            has_range,
+            |e, p| { write_current(e, p, true) }
+        ),
         cmd!(
             "automation.volume_to_clip_gain",
             "Convert Volume Automation to Clip Gain",
@@ -200,10 +401,19 @@ fn set_grouped(s: &mut Session, t: TrackId, attr: &str, f: impl Fn(&mut soundcra
     }
 }
 
-fn toggle(e: &mut Engine, p: &Value, cmd: &str, set: fn(&mut Session, TrackId, bool), get: fn(&soundcraft_model::Track) -> bool) -> Result<Value> {
+fn toggle(
+    e: &mut Engine,
+    p: &Value,
+    cmd: &str,
+    set: fn(&mut Session, TrackId, bool),
+    get: fn(&soundcraft_model::Track) -> bool,
+) -> Result<Value> {
     let tracks = tracks_required(e, cmd, p)?;
     let s = e.session_mut();
-    let v = p.get("value").and_then(Value::as_bool).unwrap_or_else(|| !tracks.iter().all(|t| s.track(*t).is_some_and(get)));
+    let v = p
+        .get("value")
+        .and_then(Value::as_bool)
+        .unwrap_or_else(|| !tracks.iter().all(|t| s.track(*t).is_some_and(get)));
     for t in &tracks {
         set(s, *t, v);
     }
@@ -225,9 +435,19 @@ fn volume(e: &mut Engine, p: &Value) -> Result<Value> {
             (None, Some(d)) => cur + d as f32,
             _ => cur,
         };
-        let new = if new.is_finite() { new.clamp(-144.0, 12.0) } else { cur };
+        let new = if new.is_finite() {
+            new.clamp(-144.0, 12.0)
+        } else {
+            cur
+        };
         let d = new - cur;
-        set_grouped(s, *t, "volume", |tr| tr.mixer.volume_db = if tr.id == *t { new } else { (tr.mixer.volume_db + d).clamp(-144.0, 12.0) });
+        set_grouped(s, *t, "volume", |tr| {
+            tr.mixer.volume_db = if tr.id == *t {
+                new
+            } else {
+                (tr.mixer.volume_db + d).clamp(-144.0, 12.0)
+            }
+        });
     }
     Ok(json!({"tracks": tracks.len()}))
 }
@@ -251,7 +471,11 @@ fn solo(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "mix.solo", p)?;
     let exclusive = bool_or(p, "exclusive", e.session().edit.solo_mode.contains("xor"));
     let s = e.session_mut();
-    let v = p.get("value").and_then(Value::as_bool).unwrap_or_else(|| !tracks.iter().all(|t| s.track(*t).is_some_and(|tr| tr.mixer.solo)));
+    let v = p.get("value").and_then(Value::as_bool).unwrap_or_else(|| {
+        !tracks
+            .iter()
+            .all(|t| s.track(*t).is_some_and(|tr| tr.mixer.solo))
+    });
     if exclusive && v {
         for tr in &mut s.tracks {
             tr.mixer.solo = false;
@@ -265,7 +489,9 @@ fn solo(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn automation_mode(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "mix.automation_mode", p)?;
-    let m = str_param(p, "mode").and_then(AutomationMode::from_id).ok_or_else(|| bad("mix.automation_mode", "unknown mode"))?;
+    let m = str_param(p, "mode")
+        .and_then(AutomationMode::from_id)
+        .ok_or_else(|| bad("mix.automation_mode", "unknown mode"))?;
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
@@ -282,26 +508,51 @@ fn slot_of(p: &Value, key: &str, max: usize) -> Option<usize> {
     } else {
         let s = v.as_str()?.trim().to_ascii_lowercase();
         let c = s.chars().next()?;
-        if s.len() == 1 && c.is_ascii_lowercase() { (c as u8 - b'a') as usize } else { s.parse().ok()? }
+        if s.len() == 1 && c.is_ascii_lowercase() {
+            (c as u8 - b'a') as usize
+        } else {
+            s.parse().ok()?
+        }
     };
     (i < max).then_some(i)
 }
 
 fn track_slot(e: &Engine, p: &Value, cmd: &str, max: usize) -> Result<(TrackId, usize)> {
-    let t = tracks_required(e, cmd, p)?.first().copied().ok_or_else(|| bad(cmd, "no track"))?;
-    let slot = slot_of(p, "slot", max).ok_or_else(|| bad(cmd, format!("`slot` must be 0..{} or a..{}", max - 1, (b'a' + max as u8 - 1) as char)))?;
+    let t = tracks_required(e, cmd, p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "no track"))?;
+    let slot = slot_of(p, "slot", max).ok_or_else(|| {
+        bad(
+            cmd,
+            format!(
+                "`slot` must be 0..{} or a..{}",
+                max - 1,
+                (b'a' + max as u8 - 1) as char
+            ),
+        )
+    })?;
     Ok((t, slot))
 }
 
 fn insert(e: &mut Engine, p: &Value) -> Result<Value> {
-    let plugin = str_param(p, "plugin").ok_or_else(|| bad("mix.insert", "`plugin` required"))?.to_string();
-    let info = super::clap::plugin_info(&plugin).ok_or_else(|| bad("mix.insert", format!("unknown plugin `{plugin}`")))?;
-    let t = tracks_required(e, "mix.insert", p)?.first().copied().ok_or_else(|| bad("mix.insert", "no track"))?;
+    let plugin = str_param(p, "plugin")
+        .ok_or_else(|| bad("mix.insert", "`plugin` required"))?
+        .to_string();
+    let info = super::clap::plugin_info(&plugin)
+        .ok_or_else(|| bad("mix.insert", format!("unknown plugin `{plugin}`")))?;
+    let t = tracks_required(e, "mix.insert", p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad("mix.insert", "no track"))?;
     let explicit = slot_of(p, "slot", INSERT_SLOTS);
     let s = e.session_mut();
-    let tr = s.track_mut(t).ok_or_else(|| bad("mix.insert", "no track"))?;
-    let slot =
-        explicit.or_else(|| tr.mixer.inserts.iter().position(Option::is_none)).ok_or_else(|| bad("mix.insert", "all insert slots are in use"))?;
+    let tr = s
+        .track_mut(t)
+        .ok_or_else(|| bad("mix.insert", "no track"))?;
+    let slot = explicit
+        .or_else(|| tr.mixer.inserts.iter().position(Option::is_none))
+        .ok_or_else(|| bad("mix.insert", "all insert slots are in use"))?;
     let mut ins = Insert::new(info.id);
     for pi in info.params {
         ins.params.insert(pi.id.to_string(), pi.default);
@@ -309,9 +560,14 @@ fn insert(e: &mut Engine, p: &Value) -> Result<Value> {
     if let Some(obj) = p.get("params").and_then(Value::as_object) {
         for (k, v) in obj {
             let Some(pi) = info.params.iter().find(|x| x.id == k) else {
-                return Err(bad("mix.insert", format!("`{plugin}` has no parameter `{k}`")));
+                return Err(bad(
+                    "mix.insert",
+                    format!("`{plugin}` has no parameter `{k}`"),
+                ));
             };
-            let val = v.as_f64().map_or(pi.default, |f| (f as f32).clamp(pi.min, pi.max));
+            let val = v
+                .as_f64()
+                .map_or(pi.default, |f| (f as f32).clamp(pi.min, pi.max));
             ins.params.insert(k.clone(), val);
         }
     }
@@ -346,15 +602,28 @@ fn insert_bypass(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn insert_param(e: &mut Engine, p: &Value) -> Result<Value> {
     let (t, slot) = track_slot(e, p, "mix.insert_param", INSERT_SLOTS)?;
-    let param = str_param(p, "param").ok_or_else(|| bad("mix.insert_param", "`param` required"))?.to_string();
-    let value =
-        p.get("value").and_then(Value::as_f64).filter(|v| v.is_finite()).ok_or_else(|| bad("mix.insert_param", "`value` must be a number"))? as f32;
+    let param = str_param(p, "param")
+        .ok_or_else(|| bad("mix.insert_param", "`param` required"))?
+        .to_string();
+    let value = p
+        .get("value")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .ok_or_else(|| bad("mix.insert_param", "`value` must be a number"))? as f32;
     let s = e.session_mut();
-    let ins =
-        s.track_mut(t).and_then(|tr| tr.mixer.inserts.get_mut(slot)).and_then(Option::as_mut).ok_or_else(|| bad("mix.insert_param", "empty slot"))?;
-    let info = super::clap::plugin_info(&ins.plugin).ok_or_else(|| bad("mix.insert_param", "unknown plugin"))?;
-    let pi =
-        info.params.iter().find(|x| x.id == param).ok_or_else(|| bad("mix.insert_param", format!("`{}` has no parameter `{param}`", info.id)))?;
+    let ins = s
+        .track_mut(t)
+        .and_then(|tr| tr.mixer.inserts.get_mut(slot))
+        .and_then(Option::as_mut)
+        .ok_or_else(|| bad("mix.insert_param", "empty slot"))?;
+    let info = super::clap::plugin_info(&ins.plugin)
+        .ok_or_else(|| bad("mix.insert_param", "unknown plugin"))?;
+    let pi = info.params.iter().find(|x| x.id == param).ok_or_else(|| {
+        bad(
+            "mix.insert_param",
+            format!("`{}` has no parameter `{param}`", info.id),
+        )
+    })?;
     let v = value.clamp(pi.min, pi.max);
     ins.params.insert(param, v);
     Ok(json!({"value": v}))
@@ -363,7 +632,11 @@ fn insert_param(e: &mut Engine, p: &Value) -> Result<Value> {
 /// Apply many parameters at once (preset recall); unknown ids are ignored, values clamped.
 fn insert_params(e: &mut Engine, p: &Value) -> Result<Value> {
     let (t, slot) = track_slot(e, p, "mix.insert_params", INSERT_SLOTS)?;
-    let obj = p.get("params").and_then(Value::as_object).cloned().ok_or_else(|| bad("mix.insert_params", "`params` must be an object"))?;
+    let obj = p
+        .get("params")
+        .and_then(Value::as_object)
+        .cloned()
+        .ok_or_else(|| bad("mix.insert_params", "`params` must be an object"))?;
     let preset = str_param(p, "preset").map(str::to_string);
     let s = e.session_mut();
     let ins = s
@@ -371,10 +644,16 @@ fn insert_params(e: &mut Engine, p: &Value) -> Result<Value> {
         .and_then(|tr| tr.mixer.inserts.get_mut(slot))
         .and_then(Option::as_mut)
         .ok_or_else(|| bad("mix.insert_params", "empty slot"))?;
-    let info = super::clap::plugin_info(&ins.plugin).ok_or_else(|| bad("mix.insert_params", "unknown plugin"))?;
+    let info = super::clap::plugin_info(&ins.plugin)
+        .ok_or_else(|| bad("mix.insert_params", "unknown plugin"))?;
     let mut n = 0;
     for (k, v) in obj {
-        let (Some(pi), Some(f)) = (info.params.iter().find(|x| x.id == k), v.as_f64().filter(|f| f.is_finite())) else { continue };
+        let (Some(pi), Some(f)) = (
+            info.params.iter().find(|x| x.id == k),
+            v.as_f64().filter(|f| f.is_finite()),
+        ) else {
+            continue;
+        };
         ins.params.insert(k, (f as f32).clamp(pi.min, pi.max));
         n += 1;
     }
@@ -385,8 +664,12 @@ fn insert_params(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn insert_move(e: &mut Engine, p: &Value) -> Result<Value> {
-    let t = tracks_required(e, "mix.insert_move", p)?.first().copied().ok_or_else(|| bad("mix.insert_move", "no track"))?;
-    let from = slot_of(p, "from", INSERT_SLOTS).ok_or_else(|| bad("mix.insert_move", "`from` slot"))?;
+    let t = tracks_required(e, "mix.insert_move", p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad("mix.insert_move", "no track"))?;
+    let from =
+        slot_of(p, "from", INSERT_SLOTS).ok_or_else(|| bad("mix.insert_move", "`from` slot"))?;
     let to = slot_of(p, "to", INSERT_SLOTS).ok_or_else(|| bad("mix.insert_move", "`to` slot"))?;
     if let Some(tr) = e.session_mut().track_mut(t) {
         tr.mixer.inserts.swap(from, to);
@@ -395,16 +678,26 @@ fn insert_move(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn send(e: &mut Engine, p: &Value) -> Result<Value> {
-    let bus = str_param(p, "bus").ok_or_else(|| bad("mix.send", "`bus` required"))?.to_string();
-    let t = tracks_required(e, "mix.send", p)?.first().copied().ok_or_else(|| bad("mix.send", "no track"))?;
+    let bus = str_param(p, "bus")
+        .ok_or_else(|| bad("mix.send", "`bus` required"))?
+        .to_string();
+    let t = tracks_required(e, "mix.send", p)?
+        .first()
+        .copied()
+        .ok_or_else(|| bad("mix.send", "no track"))?;
     let explicit = slot_of(p, "slot", SEND_SLOTS);
     let s = e.session_mut();
     let bid = s.add_bus(&bus, soundcraft_model::ChannelFormat::Stereo);
     let tr = s.track_mut(t).ok_or_else(|| bad("mix.send", "no track"))?;
-    let slot = explicit.or_else(|| tr.mixer.sends.iter().position(Option::is_none)).ok_or_else(|| bad("mix.send", "all send slots are in use"))?;
+    let slot = explicit
+        .or_else(|| tr.mixer.sends.iter().position(Option::is_none))
+        .ok_or_else(|| bad("mix.send", "all send slots are in use"))?;
     // Re-targeting an existing send keeps its level, pan, mute and pre/post setting.
     let mut sl = match tr.mixer.sends.get(slot).cloned().flatten() {
-        Some(old) => SendSlot { target: soundcraft_model::Route::Bus(bid), ..old },
+        Some(old) => SendSlot {
+            target: soundcraft_model::Route::Bus(bid),
+            ..old
+        },
         None => SendSlot::new(soundcraft_model::Route::Bus(bid)),
     };
     sl.level_db = f32_or(p, "level_db", sl.level_db).clamp(-144.0, 12.0);
@@ -439,14 +732,22 @@ fn send_level(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn lane_param(p: &Value, cmd: &str) -> Result<AutoParam> {
-    str_param(p, "param").map_or(Ok(AutoParam::Volume), |s| AutoParam::parse(s).ok_or_else(|| bad(cmd, format!("unknown automation param `{s}`"))))
+    str_param(p, "param").map_or(Ok(AutoParam::Volume), |s| {
+        AutoParam::parse(s).ok_or_else(|| bad(cmd, format!("unknown automation param `{s}`")))
+    })
 }
 
 fn set_point(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "automation.set_point", p)?;
     let param = lane_param(p, "automation.set_point")?;
-    let at = position_param(e, "automation.set_point", p, "at")?.unwrap_or(e.session().edit.selection.start).max(0);
-    let v = p.get("value").and_then(Value::as_f64).filter(|v| v.is_finite()).ok_or_else(|| bad("automation.set_point", "`value` required"))? as f32;
+    let at = position_param(e, "automation.set_point", p, "at")?
+        .unwrap_or(e.session().edit.selection.start)
+        .max(0);
+    let v = p
+        .get("value")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .ok_or_else(|| bad("automation.set_point", "`value` required"))? as f32;
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
@@ -460,7 +761,11 @@ fn write_range(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "automation.write_range", p)?;
     let param = lane_param(p, "automation.write_range")?;
     let r = range_param(e, "automation.write_range", p)?;
-    let v = p.get("value").and_then(Value::as_f64).filter(|v| v.is_finite()).ok_or_else(|| bad("automation.write_range", "`value` required"))? as f32;
+    let v = p
+        .get("value")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+        .ok_or_else(|| bad("automation.write_range", "`value` required"))? as f32;
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
@@ -477,12 +782,31 @@ pub(crate) fn current_value(tr: &soundcraft_model::Track, param: &AutoParam) -> 
         AutoParam::Volume => tr.mixer.volume_db,
         AutoParam::Pan(i) => tr.mixer.pan.get(usize::from(*i)).copied().unwrap_or(0.0),
         AutoParam::Mute => f32::from(u8::from(tr.mixer.mute)),
-        AutoParam::SendLevel(i) => tr.mixer.sends.get(usize::from(*i)).and_then(Option::as_ref).map_or(-144.0, |s| s.level_db),
-        AutoParam::SendPan(i) => tr.mixer.sends.get(usize::from(*i)).and_then(Option::as_ref).map_or(0.0, |s| s.pan),
-        AutoParam::SendMute(i) => tr.mixer.sends.get(usize::from(*i)).and_then(Option::as_ref).map_or(0.0, |s| f32::from(u8::from(s.mute))),
-        AutoParam::Plugin { slot, param } => {
-            tr.mixer.inserts.get(usize::from(*slot)).and_then(Option::as_ref).and_then(|i| i.params.get(param).copied()).unwrap_or(0.0)
-        }
+        AutoParam::SendLevel(i) => tr
+            .mixer
+            .sends
+            .get(usize::from(*i))
+            .and_then(Option::as_ref)
+            .map_or(-144.0, |s| s.level_db),
+        AutoParam::SendPan(i) => tr
+            .mixer
+            .sends
+            .get(usize::from(*i))
+            .and_then(Option::as_ref)
+            .map_or(0.0, |s| s.pan),
+        AutoParam::SendMute(i) => tr
+            .mixer
+            .sends
+            .get(usize::from(*i))
+            .and_then(Option::as_ref)
+            .map_or(0.0, |s| f32::from(u8::from(s.mute))),
+        AutoParam::Plugin { slot, param } => tr
+            .mixer
+            .inserts
+            .get(usize::from(*slot))
+            .and_then(Option::as_ref)
+            .and_then(|i| i.params.get(param).copied())
+            .unwrap_or(0.0),
     }
 }
 
@@ -490,7 +814,11 @@ fn clear_lane(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "automation.clear", p)?;
     let param = str_param(p, "param").and_then(AutoParam::parse);
     let r = range_param(e, "automation.clear", p)?;
-    let (a, b) = if r.is_empty() { (i64::MIN, i64::MAX) } else { (r.start, r.end) };
+    let (a, b) = if r.is_empty() {
+        (i64::MIN, i64::MAX)
+    } else {
+        (r.start, r.end)
+    };
     let s = e.session_mut();
     let mut n = 0;
     for t in &tracks {
@@ -506,7 +834,11 @@ fn clear_lane(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn thin(e: &mut Engine, p: &Value, all: bool) -> Result<Value> {
-    let tracks = if all { e.session().tracks.iter().map(|t| t.id).collect() } else { tracks_required(e, "automation.thin", p)? };
+    let tracks = if all {
+        e.session().tracks.iter().map(|t| t.id).collect()
+    } else {
+        tracks_required(e, "automation.thin", p)?
+    };
     let tol = f32_or(p, "tolerance", 0.1).clamp(0.0, 100.0);
     let s = e.session_mut();
     let mut n = 0;
@@ -565,7 +897,13 @@ fn vol_to_clip_gain(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     for t in &tracks {
         let Some(tr) = s.track_mut(*t) else { continue };
-        let Some(lane) = tr.lane(&AutoParam::Volume).cloned().filter(|l| !l.points.is_empty()) else { continue };
+        let Some(lane) = tr
+            .lane(&AutoParam::Volume)
+            .cloned()
+            .filter(|l| !l.points.is_empty())
+        else {
+            continue;
+        };
         let base = tr.mixer.volume_db;
         let delta = |at: i64| lane.value_at(at, base) - base;
         if let Some(pl) = tr.playlist_mut() {
@@ -579,8 +917,12 @@ fn vol_to_clip_gain(e: &mut Engine, p: &Value) -> Result<Value> {
                 let rel0 = rel(sel0);
                 let rel1 = rel(sel1);
                 // Later writes win, so the selection anchors replace any point they land on.
-                let mut pts: Vec<(i64, f32)> =
-                    c.gain_env.iter().copied().filter(|&(at, _)| at < rel0.saturating_sub(1) || (sel1 < c.end() && at > rel1)).collect();
+                let mut pts: Vec<(i64, f32)> = c
+                    .gain_env
+                    .iter()
+                    .copied()
+                    .filter(|&(at, _)| at < rel0.saturating_sub(1) || (sel1 < c.end() && at > rel1))
+                    .collect();
                 if rel0 > 0 {
                     pts.push((rel0 - 1, env_db(&c.gain_env, rel0 - 1)));
                 }
@@ -591,7 +933,10 @@ fn vol_to_clip_gain(e: &mut Engine, p: &Value) -> Result<Value> {
                 }
                 // The clip's own gain points inside the selection keep their shape, offset by the lane.
                 for &(at, _) in c.gain_env.iter().filter(|&&(at, _)| at > rel0 && at < rel1) {
-                    pts.push((at, env_db(&c.gain_env, at) + delta(c.start.saturating_add(at))));
+                    pts.push((
+                        at,
+                        env_db(&c.gain_env, at) + delta(c.start.saturating_add(at)),
+                    ));
                 }
                 if sel1 - 1 > sel0 {
                     let at = rel(sel1 - 1);
@@ -613,8 +958,15 @@ fn vol_to_clip_gain(e: &mut Engine, p: &Value) -> Result<Value> {
         }
         // Clearing the lane is only safe when no audio plays outside the selection; otherwise the
         // held edge values outside would fall back to the fader level.
-        let clips_inside = tr.clips().iter().all(|c| c.start >= r.start && c.end() <= r.end);
-        let covers_all = clips_inside && lane.points.iter().all(|pt| pt.at >= r.start && pt.at < r.end);
+        let clips_inside = tr
+            .clips()
+            .iter()
+            .all(|c| c.start >= r.start && c.end() <= r.end);
+        let covers_all = clips_inside
+            && lane
+                .points
+                .iter()
+                .all(|pt| pt.at >= r.start && pt.at < r.end);
         let lane_m = tr.lane_mut(&AutoParam::Volume);
         if covers_all {
             lane_m.clear_range(r.start, r.end);
@@ -673,7 +1025,10 @@ fn copy_to_send(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
-            let pts = tr.lane(&AutoParam::Volume).map(|l| l.points.clone()).unwrap_or_default();
+            let pts = tr
+                .lane(&AutoParam::Volume)
+                .map(|l| l.points.clone())
+                .unwrap_or_default();
             let v = tr.mixer.volume_db;
             let lane = tr.lane_mut(&AutoParam::SendLevel(slot));
             if pts.is_empty() {
@@ -704,13 +1059,27 @@ mod tests {
         let mut s = Session::default();
         let n = 8192;
         let tone: Vec<f32> = (0..n).map(|i| (i as f32 * 0.07).sin() * 0.25).collect();
-        s.pool.insert(SourceId(910), Arc::new(SourceAudio::new(AudioBuffer { sample_rate: 48_000, channels: vec![tone] })));
+        s.pool.insert(
+            SourceId(910),
+            Arc::new(SourceAudio::new(AudioBuffer {
+                sample_rate: 48_000,
+                channels: vec![tone],
+            })),
+        );
         let t = s.add_track(TrackKind::Audio, ChannelFormat::Mono, Some("Tone"));
         let id = s.new_clip_id();
-        s.track_mut(t).unwrap().playlist_mut().unwrap().clips.push(Clip::audio(id, "tone", SourceId(910), 0, 0, n));
+        s.track_mut(t)
+            .unwrap()
+            .playlist_mut()
+            .unwrap()
+            .clips
+            .push(Clip::audio(id, "tone", SourceId(910), 0, 0, n));
         s.track_mut(t).unwrap().mixer.volume_db = -3.0;
         for &(at, value) in points {
-            s.track_mut(t).unwrap().lane_mut(&AutoParam::Volume).set_point(at, value);
+            s.track_mut(t)
+                .unwrap()
+                .lane_mut(&AutoParam::Volume)
+                .set_point(at, value);
         }
         s.edit.selected_tracks = vec![t];
         s.edit.selection = Range::new(2048, 6144);
@@ -718,24 +1087,40 @@ mod tests {
     }
 
     fn rendered(s: &Session) -> Vec<f32> {
-        soundcraft_mix::render_range(s, Range::new(0, 8192), 1024).into_iter().next().unwrap_or_default()
+        soundcraft_mix::render_range(s, Range::new(0, 8192), 1024)
+            .into_iter()
+            .next()
+            .unwrap_or_default()
     }
 
     fn convert(e: &mut Engine, t: TrackId, start: i64, end: i64) {
         e.session_mut().edit.selection = Range::new(start, end);
-        e.execute("automation.volume_to_clip_gain", &json!({"track": t.0, "start": start, "end": end})).unwrap();
+        e.execute(
+            "automation.volume_to_clip_gain",
+            &json!({"track": t.0, "start": start, "end": end}),
+        )
+        .unwrap();
     }
 
     #[test]
     fn partial_volume_to_clip_gain_keeps_each_region() {
-        let points = [(0, -6.0), (2048, -6.0), (4096, -6.0), (6144, -6.0), (8192, -6.0)];
+        let points = [
+            (0, -6.0),
+            (2048, -6.0),
+            (4096, -6.0),
+            (6144, -6.0),
+            (8192, -6.0),
+        ];
         let (mut e, t) = tone_session(&points);
         let before = rendered(e.session());
         convert(&mut e, t, 2048, 6144);
         let after = rendered(e.session());
         for (start, end) in [(0, 2048), (2048, 6144), (6144, 8192)] {
             let delta = rms_db(&before[start..end], &after[start..end]);
-            assert!(delta.abs() < 0.02, "constant {start}..{end} changed by {delta} dB");
+            assert!(
+                delta.abs() < 0.02,
+                "constant {start}..{end} changed by {delta} dB"
+            );
         }
         let tr = e.session().track(t).unwrap();
         assert!((tr.mixer.volume_db + 3.0).abs() < 1e-5);
@@ -748,20 +1133,46 @@ mod tests {
         let before = rendered(e.session());
         convert(&mut e, t, 2048, 6144);
         let after = rendered(e.session());
-        let diff = before.iter().zip(&after).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+        let diff = before
+            .iter()
+            .zip(&after)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max);
         assert!(diff < 1e-5, "no lane changed a sample by {diff}");
 
         let (mut e, t) = tone_session(&points);
         let before = rendered(e.session());
         convert(&mut e, t, 0, 8193);
         let after = rendered(e.session());
-        let diff = before.iter().zip(&after).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+        let diff = before
+            .iter()
+            .zip(&after)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max);
         assert!(diff < 1e-4, "full selection changed a sample by {diff}");
-        assert!(e.session().track(t).unwrap().lane(&AutoParam::Volume).is_none_or(|l| l.points.is_empty()));
+        assert!(
+            e.session()
+                .track(t)
+                .unwrap()
+                .lane(&AutoParam::Volume)
+                .is_none_or(|l| l.points.is_empty())
+        );
 
         for points in [
-            [(0, -12.0), (2048, -9.0), (4096, -6.0), (6144, -3.0), (8192, 0.0)],
-            [(0, -12.0), (2048, -6.0), (4096, -12.0), (6144, -6.0), (8192, -12.0)],
+            [
+                (0, -12.0),
+                (2048, -9.0),
+                (4096, -6.0),
+                (6144, -3.0),
+                (8192, 0.0),
+            ],
+            [
+                (0, -12.0),
+                (2048, -6.0),
+                (4096, -12.0),
+                (6144, -6.0),
+                (8192, -12.0),
+            ],
         ] {
             let (mut e, t) = tone_session(&points);
             let before = rendered(e.session());
@@ -769,10 +1180,16 @@ mod tests {
             let after = rendered(e.session());
             for (start, end) in [(0, 2048), (6144, 8192)] {
                 let delta = rms_db(&before[start..end], &after[start..end]);
-                assert!(delta.abs() < 0.02, "outside {start}..{end} changed by {delta} dB for {points:?}");
+                assert!(
+                    delta.abs() < 0.02,
+                    "outside {start}..{end} changed by {delta} dB for {points:?}"
+                );
             }
             let delta = rms_db(&before[2048..6144], &after[2048..6144]);
-            assert!(delta.abs() < 0.15, "inside changed by {delta} dB for {points:?}");
+            assert!(
+                delta.abs() < 0.15,
+                "inside changed by {delta} dB for {points:?}"
+            );
         }
     }
 
@@ -792,7 +1209,8 @@ mod tests {
     fn clip_gain_points_inside_the_selection_are_kept() {
         let (mut e, t) = tone_session(&[(0, -6.0), (8192, -6.0)]);
         let clip = e.session().track(t).unwrap().clips()[0].id;
-        e.session_mut().find_clip_mut(clip).unwrap().gain_env = vec![(3000, 0.0), (4000, -20.0), (5000, 0.0)];
+        e.session_mut().find_clip_mut(clip).unwrap().gain_env =
+            vec![(3000, 0.0), (4000, -20.0), (5000, 0.0)];
         let before = rendered(e.session());
         convert(&mut e, t, 2048, 6144);
         let after = rendered(e.session());
@@ -805,13 +1223,38 @@ mod tests {
     #[test]
     fn retargeting_a_send_keeps_its_settings() {
         let mut e = Engine::default();
-        e.execute("track.new", &json!({"count": 1, "name": "Gtr", "format": "mono"})).unwrap();
-        e.execute("mix.send", &json!({"track": "Gtr", "slot": 0, "bus": "Verb", "level_db": -9.0, "pre_fader": true})).unwrap();
-        e.execute("mix.send_level", &json!({"track": "Gtr", "slot": 0, "pan": 0.5, "mute": true})).unwrap();
-        e.execute("mix.send", &json!({"track": "Gtr", "slot": 0, "bus": "Delay"})).unwrap();
+        e.execute(
+            "track.new",
+            &json!({"count": 1, "name": "Gtr", "format": "mono"}),
+        )
+        .unwrap();
+        e.execute(
+            "mix.send",
+            &json!({"track": "Gtr", "slot": 0, "bus": "Verb", "level_db": -9.0, "pre_fader": true}),
+        )
+        .unwrap();
+        e.execute(
+            "mix.send_level",
+            &json!({"track": "Gtr", "slot": 0, "pan": 0.5, "mute": true}),
+        )
+        .unwrap();
+        e.execute(
+            "mix.send",
+            &json!({"track": "Gtr", "slot": 0, "bus": "Delay"}),
+        )
+        .unwrap();
         let sl = e.session().tracks[0].mixer.sends[0].clone().unwrap();
-        let delay = e.session().busses.iter().find(|b| b.name == "Delay").unwrap().id;
+        let delay = e
+            .session()
+            .busses
+            .iter()
+            .find(|b| b.name == "Delay")
+            .unwrap()
+            .id;
         assert_eq!(sl.target, soundcraft_model::Route::Bus(delay));
-        assert_eq!((sl.level_db, sl.pan, sl.mute, sl.pre_fader), (-9.0, 0.5, true, true));
+        assert_eq!(
+            (sl.level_db, sl.pan, sl.mute, sl.pre_fader),
+            (-9.0, 0.5, true, true)
+        );
     }
 }

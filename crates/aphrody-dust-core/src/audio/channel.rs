@@ -355,13 +355,13 @@ impl Channel {
                     channel.cur_src_off = (channel.loop_start as u32) << 2;
                 }
                 16.min(channel.total_size - channel.cur_src_off)
-            },
+            }
             RepeatMode::OneShot => {
                 if channel.cur_src_off >= channel.total_size {
                     return;
                 }
                 16.min(channel.total_size - channel.cur_src_off)
-            },
+            }
         };
         let mut addr = channel.src_addr + channel.cur_src_off;
         channel.cur_src_off += read_bytes;
@@ -379,13 +379,20 @@ impl Channel {
 
     fn read_fifo<T: MemValue, E: cpu::Engine>(emu: &mut Emu<E>, i: Index) -> T {
         let channel = &mut emu.audio.channels[i.get() as usize];
-        let result =
-            channel.fifo.read_le(channel.fifo_read_pos.get() as usize & !(mem::size_of::<T>() - 1));
+        let result = channel
+            .fifo
+            .read_le(channel.fifo_read_pos.get() as usize & !(mem::size_of::<T>() - 1));
         channel.fifo_read_pos = FifoReadPos::new(
             (channel.fifo_read_pos.get() + mem::size_of::<T>() as u8)
                 & (0x1F & !(mem::size_of::<T>() - 1) as u8),
         );
-        if channel.fifo_write_pos.get().wrapping_sub(channel.fifo_read_pos.get()) & 0x1F <= 0x10 {
+        if channel
+            .fifo_write_pos
+            .get()
+            .wrapping_sub(channel.fifo_read_pos.get())
+            & 0x1F
+            <= 0x10
+        {
             Self::refill_fifo(emu, i);
         }
         result
@@ -411,7 +418,7 @@ impl Channel {
                 #[cfg(feature = "log")]
                 slog::debug!(self.logger, "Using untested repeat mode 0 (manual)");
                 RepeatMode::Manual
-            },
+            }
             2 => RepeatMode::OneShot,
             // Arisotura documented in the GBATEK addendum that repeat mode 3 behaves the same as 1
             _ => RepeatMode::LoopInfinite,
@@ -429,7 +436,7 @@ impl Channel {
                     #[cfg(feature = "log")]
                     slog::warn!(self.logger, "Using unsupported format 3 (PSG)");
                     Format::Silence
-                },
+                }
             },
         };
 
@@ -451,10 +458,10 @@ impl Channel {
         }
         if channel.cur_sample_index as u32 >= channel.total_samples {
             match channel.repeat_mode {
-                RepeatMode::Manual => {},
+                RepeatMode::Manual => {}
                 RepeatMode::LoopInfinite => {
                     channel.cur_sample_index = channel.loop_start_sample_index as i32;
-                },
+                }
                 RepeatMode::OneShot => {
                     channel.control.set_running(false);
                     if channel.control.hold() {
@@ -463,7 +470,7 @@ impl Channel {
                         channel.push_sample(0);
                     }
                     return;
-                },
+                }
             }
         }
         let sample = Self::read_fifo::<i8, _>(emu, i);
@@ -483,10 +490,10 @@ impl Channel {
         }
         if channel.cur_sample_index as u32 >= channel.total_samples {
             match channel.repeat_mode {
-                RepeatMode::Manual => {},
+                RepeatMode::Manual => {}
                 RepeatMode::LoopInfinite => {
                     channel.cur_sample_index = channel.loop_start_sample_index as i32;
-                },
+                }
                 RepeatMode::OneShot => {
                     channel.control.set_running(false);
                     if channel.control.hold() {
@@ -495,7 +502,7 @@ impl Channel {
                         channel.push_sample(0);
                     }
                     return;
-                },
+                }
             }
         }
         let sample = Self::read_fifo::<i16, _>(emu, i);
@@ -525,7 +532,7 @@ impl Channel {
         }
         if channel.cur_sample_index as u32 >= channel.total_samples {
             match channel.repeat_mode {
-                RepeatMode::Manual => {},
+                RepeatMode::Manual => {}
                 RepeatMode::LoopInfinite => {
                     channel.cur_sample_index = channel.loop_start_sample_index as i32;
                     channel.adpcm_value = channel.loop_start_adpcm_value;
@@ -536,7 +543,7 @@ impl Channel {
                     emu.audio.channels[i.get() as usize].adpcm_byte =
                         Self::read_fifo::<u8, _>(emu, i);
                     return;
-                },
+                }
                 RepeatMode::OneShot => {
                     channel.control.set_running(false);
                     if channel.control.hold() {
@@ -545,7 +552,7 @@ impl Channel {
                         channel.push_sample(0);
                     }
                     return;
-                },
+                }
             }
         }
         let sample = if channel.cur_sample_index & 1 == 0 {
@@ -634,7 +641,7 @@ impl Channel {
                 let c = self.hist[2] - self.hist[0];
                 let d = self.hist[1];
                 (((a * mu + b) * mu + c) * mu + d).clamp(-1.0, 1.0)
-            },
+            }
         };
         interp_result * (1 << self.volume_shift) as InterpSample * self.volume as InterpSample
     }
@@ -700,7 +707,8 @@ impl Channel {
                 {
                     let channel = &mut emu.audio.channels[i.get() as usize];
                     channel.last_sample_time = Some(arm7::Timestamp(
-                        time.0.wrapping_sub(((timer_counter - timer_reload) << 1) as RawTimestamp),
+                        time.0
+                            .wrapping_sub(((timer_counter - timer_reload) << 1) as RawTimestamp),
                     ));
                 }
             }
@@ -711,7 +719,8 @@ impl Channel {
                 if timer_counter >> 16 != 0 {
                     timer_counter = (timer_counter - (1 << 16)) % ((1 << 16) - timer_reload);
                     channel.last_sample_time = Some(arm7::Timestamp(
-                        time.0.wrapping_sub(((timer_counter - timer_reload) << 1) as RawTimestamp),
+                        time.0
+                            .wrapping_sub(((timer_counter - timer_reload) << 1) as RawTimestamp),
                     ));
                     timer_counter += timer_reload;
                 }

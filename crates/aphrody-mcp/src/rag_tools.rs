@@ -54,7 +54,9 @@ fn open_store() -> Result<Arc<RagStore>, String> {
             path.display()
         ));
     }
-    RagStore::open(&path).map(Arc::new).map_err(|error| format!("{}: {error}", path.display()))
+    RagStore::open(&path)
+        .map(Arc::new)
+        .map_err(|error| format!("{}: {error}", path.display()))
 }
 
 /// Resolve and construct the query embedder, honouring
@@ -83,12 +85,16 @@ async fn embedder_from_env() -> Result<Option<Arc<dyn aphrody_rag::Embedder>>, S
             {
                 return Err("aphrody-rag built without feature `native`".to_string());
             }
-        },
+        }
         EmbedBackend::Ort => embedder_ort(resolved.model).await?,
         EmbedBackend::LlamaServer => {
             let endpoint = resolved.endpoint.unwrap_or_default();
-            Arc::new(LlamaServerEmbedder::new(endpoint, resolved.model, resolved.dimension))
-        },
+            Arc::new(LlamaServerEmbedder::new(
+                endpoint,
+                resolved.model,
+                resolved.dimension,
+            ))
+        }
         EmbedBackend::OpenaiCompat => {
             let endpoint = resolved.endpoint.unwrap_or_default();
             Arc::new(OpenAiCompatEmbedder::new(
@@ -97,7 +103,7 @@ async fn embedder_from_env() -> Result<Option<Arc<dyn aphrody_rag::Embedder>>, S
                 resolved.dimension,
                 resolved.api_key,
             ))
-        },
+        }
     };
     Ok(Some(embedder))
 }
@@ -162,7 +168,10 @@ async fn run(req: &RagSearchRequest) -> Result<aphrody_rag::SearchResult, String
         path_prefix: req.path_prefix.clone(),
         ..SearchOptions::default()
     };
-    searcher.search(&req.query, &opts).await.map_err(|error| error.to_string())
+    searcher
+        .search(&req.query, &opts)
+        .await
+        .map_err(|error| error.to_string())
 }
 
 /// Ranked hits as JSON.
@@ -192,12 +201,19 @@ pub(crate) async fn context(req: RagSearchRequest) -> String {
             chunk.path,
             chunk.start_line,
             chunk.end_line,
-            chunk.heading.as_deref().map(|h| format!(" — {h}")).unwrap_or_default(),
+            chunk
+                .heading
+                .as_deref()
+                .map(|h| format!(" — {h}"))
+                .unwrap_or_default(),
             chunk.content.trim()
         ));
     }
     if let Some(reason) = result.fallback_reason {
-        out.push_str(&format!("(mode served: {:?}; {reason})\n", result.mode_served));
+        out.push_str(&format!(
+            "(mode served: {:?}; {reason})\n",
+            result.mode_served
+        ));
     }
     out
 }
@@ -214,8 +230,12 @@ mod tests {
         let absent = dir.path().join("absent.db");
         // SAFETY: the only test in this binary touching this variable.
         unsafe { std::env::set_var("APHRODY_RAG_DB", &absent) };
-        let out =
-            search(RagSearchRequest { query: "goku".into(), limit: None, path_prefix: None }).await;
+        let out = search(RagSearchRequest {
+            query: "goku".into(),
+            limit: None,
+            path_prefix: None,
+        })
+        .await;
         assert!(out.contains("RAG index not found"), "{out}");
         assert!(!absent.exists(), "a missing index must not be created");
 

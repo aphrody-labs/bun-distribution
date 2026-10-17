@@ -20,12 +20,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut b = Keyframe::new(Tick::from_seconds_f64(1.0), Value::Scalar(to));
         a.out_interp = Interp::Bezier;
         b.in_interp = Interp::Bezier;
-        a.out_ease = vec![Ease { speed: out_speed, influence: out_inf }];
-        b.in_ease = vec![Ease { speed: in_speed, influence: in_inf }];
+        a.out_ease = vec![Ease {
+            speed: out_speed,
+            influence: out_inf,
+        }];
+        b.in_ease = vec![Ease {
+            speed: in_speed,
+            influence: in_inf,
+        }];
         let keys = [a, b];
         let values: Vec<f64> = times
             .iter()
-            .map(|t| evaluate(&keys, Tick::from_seconds_f64(*t), false).map(|v| v.as_f64()).ok_or("missing keyframe evaluation"))
+            .map(|t| {
+                evaluate(&keys, Tick::from_seconds_f64(*t), false)
+                    .map(|v| v.as_f64())
+                    .ok_or("missing keyframe evaluation")
+            })
             .collect::<Result<_, _>>()?;
         cases.push(json!({"name":name,"from":from,"to":to,"outSpeed":out_speed,"outInfluence":out_inf * 100.0,"inSpeed":in_speed,"inInfluence":in_inf * 100.0,"times":times,"values":values}));
     }

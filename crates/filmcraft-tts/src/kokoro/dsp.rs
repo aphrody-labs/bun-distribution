@@ -136,12 +136,18 @@ mod tests {
 
     #[test]
     fn istft_inverts_stft() {
-        let x: Vec<f32> = (0..600).map(|i| ((i as f32) * 0.07).sin() * 0.5 + ((i as f32) * 0.31).cos() * 0.2).collect();
+        let x: Vec<f32> = (0..600)
+            .map(|i| ((i as f32) * 0.07).sin() * 0.5 + ((i as f32) * 0.31).cos() * 0.2)
+            .collect();
         let (m, p) = stft(&x);
         assert_eq!(m.len(), BINS * (600 / HOP + 1));
         let y = istft(&m, &p);
         assert_eq!(y.len(), 600);
-        let err = x.iter().zip(&y).map(|(a, b)| (a - b).abs()).fold(0f32, f32::max);
+        let err = x
+            .iter()
+            .zip(&y)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0f32, f32::max);
         assert!(err < 1e-4, "max error {err}");
     }
 
@@ -153,11 +159,17 @@ mod tests {
         assert!((0..20000).all(|i| xs[i] == b.normal()));
         let mean = xs.iter().sum::<f64>() / xs.len() as f64;
         let var = xs.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / xs.len() as f64;
-        assert!(mean.abs() < 0.03 && (var - 1.0).abs() < 0.05, "{mean} {var}");
+        assert!(
+            mean.abs() < 0.03 && (var - 1.0).abs() < 0.05,
+            "{mean} {var}"
+        );
     }
 
     #[test]
     fn reflect_pads_like_numpy() {
-        assert_eq!((-3..8).map(|i| reflect(i, 5)).collect::<Vec<_>>(), vec![3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1]);
+        assert_eq!(
+            (-3..8).map(|i| reflect(i, 5)).collect::<Vec<_>>(),
+            vec![3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1]
+        );
     }
 }

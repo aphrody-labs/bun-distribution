@@ -69,7 +69,12 @@ fn prefs(s: &mut Session, p: &Value) -> Result<Value> {
         s.xmp.naming = match n {
             "stem" => SidecarNaming::Stem,
             "full" => SidecarNaming::Full,
-            other => return Err(bad("library.xmpPreferences", format!("unknown naming `{other}` (stem|full)"))),
+            other => {
+                return Err(bad(
+                    "library.xmpPreferences",
+                    format!("unknown naming `{other}` (stem|full)"),
+                ));
+            }
         };
     }
     if p.as_object().is_some_and(|o| !o.is_empty()) {
@@ -107,9 +112,17 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             prefs
         ),
-        cmd!("library.toggleAutoWriteXmp", "Automatically Write Changes into XMP", ["File"], None, "{} → {autoWrite}", always, |s, _| {
-            let on = !s.xmp.auto_write;
-            prefs(s, &json!({"autoWrite": on}))
-        }),
+        cmd!(
+            "library.toggleAutoWriteXmp",
+            "Automatically Write Changes into XMP",
+            ["File"],
+            None,
+            "{} → {autoWrite}",
+            always,
+            |s, _| {
+                let on = !s.xmp.auto_write;
+                prefs(s, &json!({"autoWrite": on}))
+            }
+        ),
     ]
 }

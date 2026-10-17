@@ -34,22 +34,35 @@ impl ExprError {
     /// The error bar's text: `Error at line 1 in property 'Opacity' of layer 1 ('Solid') in comp 'Main'. …`
     pub fn describe(&self, comp_name: &str) -> String {
         let prop = self.name.rsplit('/').next().unwrap_or(&self.name);
-        format!("{} — property '{}' of layer {} ('{}') in comp '{}'", self.message, prop, self.layer_index, self.layer_name, comp_name)
+        format!(
+            "{} — property '{}' of layer {} ('{}') in comp '{}'",
+            self.message, prop, self.layer_index, self.layer_name, comp_name
+        )
     }
 }
 
 /// Every failing expression of comp `cid` at comp time `t`: evaluation errors of enabled
 /// expressions and the syntax errors that disabled others.
 pub fn errors(s: &Session, cid: ItemId, t: Tick) -> Vec<ExprError> {
-    let Some(comp) = s.project.comp(cid) else { return vec![] };
-    let ctx = EvalCtx { footage: Some(s.footage.as_ref()), expr: s.expr.as_deref(), ..EvalCtx::new(&s.project, cid, comp, t) };
+    let Some(comp) = s.project.comp(cid) else {
+        return vec![];
+    };
+    let ctx = EvalCtx {
+        footage: Some(s.footage.as_ref()),
+        expr: s.expr.as_deref(),
+        ..EvalCtx::new(&s.project, cid, comp, t)
+    };
     errors_in(&ctx, s.expr_check, || true).unwrap_or_default()
 }
 
 /// Evaluate diagnostics against an immutable snapshot. Background callers can cancel between
 /// properties; cancelled scans return no partial result. Includes hidden/non-solo layers and
 /// syntax errors on disabled expressions, just like the explicit `expr.errors` query.
-pub fn errors_in(ctx: &EvalCtx, check: Option<fn(&str) -> std::result::Result<(), String>>, mut keep_going: impl FnMut() -> bool) -> Option<Vec<ExprError>> {
+pub fn errors_in(
+    ctx: &EvalCtx,
+    check: Option<fn(&str) -> std::result::Result<(), String>>,
+    mut keep_going: impl FnMut() -> bool,
+) -> Option<Vec<ExprError>> {
     let mut out = vec![];
     for (i, l) in ctx.comp.layers.iter().enumerate() {
         if !keep_going() {
@@ -81,7 +94,14 @@ pub fn errors_in(ctx: &EvalCtx, check: Option<fn(&str) -> std::result::Result<()
     keep_going().then_some(out)
 }
 
-fn error_of(cid: ItemId, i: usize, l: &Layer, p: &Property, message: String, disabled: bool) -> ExprError {
+fn error_of(
+    cid: ItemId,
+    i: usize,
+    l: &Layer,
+    p: &Property,
+    message: String,
+    disabled: bool,
+) -> ExprError {
     ExprError {
         comp: cid.0,
         layer: l.id.0,
@@ -89,7 +109,10 @@ fn error_of(cid: ItemId, i: usize, l: &Layer, p: &Property, message: String, dis
         layer_name: l.name.clone(),
         prop: p.uid,
         path: super::match_path_of(&l.props, p.uid).unwrap_or_default(),
-        name: l.props.name_path_of(p.uid).unwrap_or_else(|| p.name.clone()),
+        name: l
+            .props
+            .name_path_of(p.uid)
+            .unwrap_or_else(|| p.name.clone()),
         message,
         disabled,
     }
@@ -97,11 +120,19 @@ fn error_of(cid: ItemId, i: usize, l: &Layer, p: &Property, message: String, dis
 
 fn errors_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid));
-    let name = s.project.item(cid).map(|i| i.name.clone()).ok_or(EngineError::NoComp)?;
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time_of(cid));
+    let name = s
+        .project
+        .item(cid)
+        .map(|i| i.name.clone())
+        .ok_or(EngineError::NoComp)?;
     let list = errors(s, cid, t);
     let text: Vec<String> = list.iter().map(|e| e.describe(&name)).collect();
-    Ok(json!({"comp": cid.0, "time": t.seconds(), "count": list.len(), "errors": list, "text": text}))
+    Ok(
+        json!({"comp": cid.0, "time": t.seconds(), "count": list.len(), "errors": list, "text": text}),
+    )
 }
 
 /// The Expression Language menu: (category, [(label, inserted text)]). Submenus are nested
@@ -119,7 +150,10 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
                 ("thisProject", "thisProject"),
                 ("time", "time"),
                 ("colorDepth", "colorDepth"),
-                ("posterizeTime(framesPerSecond)", "posterizeTime(framesPerSecond)"),
+                (
+                    "posterizeTime(framesPerSecond)",
+                    "posterizeTime(framesPerSecond)",
+                ),
                 ("value", "value"),
             ],
         ),
@@ -130,7 +164,10 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
                 ("sub(vec1, vec2)", "sub(vec1, vec2)"),
                 ("mul(vec, amount)", "mul(vec, amount)"),
                 ("div(vec, amount)", "div(vec, amount)"),
-                ("clamp(value, limit1, limit2)", "clamp(value, limit1, limit2)"),
+                (
+                    "clamp(value, limit1, limit2)",
+                    "clamp(value, limit1, limit2)",
+                ),
                 ("dot(vec1, vec2)", "dot(vec1, vec2)"),
                 ("cross(vec1, vec2)", "cross(vec1, vec2)"),
                 ("normalize(vec)", "normalize(vec)"),
@@ -142,13 +179,22 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
         (
             "Random Numbers",
             vec![
-                ("seedRandom(offset, timeless=false)", "seedRandom(offset, timeless=false)"),
+                (
+                    "seedRandom(offset, timeless=false)",
+                    "seedRandom(offset, timeless=false)",
+                ),
                 ("random()", "random()"),
                 ("random(maxValOrArray)", "random(maxValOrArray)"),
-                ("random(minValOrArray, maxValOrArray)", "random(minValOrArray, maxValOrArray)"),
+                (
+                    "random(minValOrArray, maxValOrArray)",
+                    "random(minValOrArray, maxValOrArray)",
+                ),
                 ("gaussRandom()", "gaussRandom()"),
                 ("gaussRandom(maxValOrArray)", "gaussRandom(maxValOrArray)"),
-                ("gaussRandom(minValOrArray, maxValOrArray)", "gaussRandom(minValOrArray, maxValOrArray)"),
+                (
+                    "gaussRandom(minValOrArray, maxValOrArray)",
+                    "gaussRandom(minValOrArray, maxValOrArray)",
+                ),
                 ("noise(valOrArray)", "noise(valOrArray)"),
             ],
         ),
@@ -156,13 +202,25 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
             "Interpolation",
             vec![
                 ("linear(t, value1, value2)", "linear(t, value1, value2)"),
-                ("linear(t, tMin, tMax, value1, value2)", "linear(t, tMin, tMax, value1, value2)"),
+                (
+                    "linear(t, tMin, tMax, value1, value2)",
+                    "linear(t, tMin, tMax, value1, value2)",
+                ),
                 ("ease(t, value1, value2)", "ease(t, value1, value2)"),
-                ("ease(t, tMin, tMax, value1, value2)", "ease(t, tMin, tMax, value1, value2)"),
+                (
+                    "ease(t, tMin, tMax, value1, value2)",
+                    "ease(t, tMin, tMax, value1, value2)",
+                ),
                 ("easeIn(t, value1, value2)", "easeIn(t, value1, value2)"),
-                ("easeIn(t, tMin, tMax, value1, value2)", "easeIn(t, tMin, tMax, value1, value2)"),
+                (
+                    "easeIn(t, tMin, tMax, value1, value2)",
+                    "easeIn(t, tMin, tMax, value1, value2)",
+                ),
                 ("easeOut(t, value1, value2)", "easeOut(t, value1, value2)"),
-                ("easeOut(t, tMin, tMax, value1, value2)", "easeOut(t, tMin, tMax, value1, value2)"),
+                (
+                    "easeOut(t, tMin, tMax, value1, value2)",
+                    "easeOut(t, tMin, tMax, value1, value2)",
+                ),
             ],
         ),
         (
@@ -173,7 +231,13 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
                 ("hexToRgb(hexString)", "hexToRgb(hexString)"),
             ],
         ),
-        ("Other Math", vec![("degreesToRadians(degrees)", "degreesToRadians(degrees)"), ("radiansToDegrees(radians)", "radiansToDegrees(radians)")]),
+        (
+            "Other Math",
+            vec![
+                ("degreesToRadians(degrees)", "degreesToRadians(degrees)"),
+                ("radiansToDegrees(radians)", "radiansToDegrees(radians)"),
+            ],
+        ),
         (
             "JavaScript Math",
             vec![
@@ -277,8 +341,14 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
         (
             "Layer > Other",
             vec![
-                ("sourceRectAtTime(t = time, includeExtents = false)", "sourceRectAtTime(t = time, includeExtents = false)"),
-                ("sampleImage(point, radius = [.5, .5], postEffect = true, t = time)", "sampleImage(point, radius = [.5, .5], postEffect = true, t = time)"),
+                (
+                    "sourceRectAtTime(t = time, includeExtents = false)",
+                    "sourceRectAtTime(t = time, includeExtents = false)",
+                ),
+                (
+                    "sampleImage(point, radius = [.5, .5], postEffect = true, t = time)",
+                    "sampleImage(point, radius = [.5, .5], postEffect = true, t = time)",
+                ),
             ],
         ),
         (
@@ -290,13 +360,34 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
                 ("velocityAtTime(t)", "velocityAtTime(t)"),
                 ("speed", "speed"),
                 ("speedAtTime(t)", "speedAtTime(t)"),
-                ("wiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)", "wiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)"),
-                ("temporalWiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)", "temporalWiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)"),
-                ("smooth(width = .2, samples = 5, t = time)", "smooth(width = .2, samples = 5, t = time)"),
-                ("loopIn(type = \"cycle\", numKeyframes = 0)", "loopIn(type = \"cycle\", numKeyframes = 0)"),
-                ("loopOut(type = \"cycle\", numKeyframes = 0)", "loopOut(type = \"cycle\", numKeyframes = 0)"),
-                ("loopInDuration(type = \"cycle\", duration = 0)", "loopInDuration(type = \"cycle\", duration = 0)"),
-                ("loopOutDuration(type = \"cycle\", duration = 0)", "loopOutDuration(type = \"cycle\", duration = 0)"),
+                (
+                    "wiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)",
+                    "wiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)",
+                ),
+                (
+                    "temporalWiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)",
+                    "temporalWiggle(freq, amp, octaves = 1, amp_mult = .5, t = time)",
+                ),
+                (
+                    "smooth(width = .2, samples = 5, t = time)",
+                    "smooth(width = .2, samples = 5, t = time)",
+                ),
+                (
+                    "loopIn(type = \"cycle\", numKeyframes = 0)",
+                    "loopIn(type = \"cycle\", numKeyframes = 0)",
+                ),
+                (
+                    "loopOut(type = \"cycle\", numKeyframes = 0)",
+                    "loopOut(type = \"cycle\", numKeyframes = 0)",
+                ),
+                (
+                    "loopInDuration(type = \"cycle\", duration = 0)",
+                    "loopInDuration(type = \"cycle\", duration = 0)",
+                ),
+                (
+                    "loopOutDuration(type = \"cycle\", duration = 0)",
+                    "loopOutDuration(type = \"cycle\", duration = 0)",
+                ),
                 ("key(index)", "key(index)"),
                 ("key(markerName)", "key(markerName)"),
                 ("nearestKey(t)", "nearestKey(t)"),
@@ -322,15 +413,28 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
             "Text > Style",
             vec![
                 ("text.sourceText.style", "text.sourceText.style"),
-                ("getStyleAt(charIndex, t = time)", "getStyleAt(charIndex, t = time)"),
+                (
+                    "getStyleAt(charIndex, t = time)",
+                    "getStyleAt(charIndex, t = time)",
+                ),
                 ("createStyle()", "createStyle()"),
                 ("setFontSize(value)", "setFontSize(value)"),
                 ("setFillColor(value)", "setFillColor(value)"),
                 ("setText(value)", "setText(value)"),
             ],
         ),
-        ("Text > Expression Selector", vec![("textIndex", "textIndex"), ("textTotal", "textTotal"), ("selectorValue", "selectorValue")]),
-        ("Key", vec![("value", "value"), ("time", "time"), ("index", "index")]),
+        (
+            "Text > Expression Selector",
+            vec![
+                ("textIndex", "textIndex"),
+                ("textTotal", "textTotal"),
+                ("selectorValue", "selectorValue"),
+            ],
+        ),
+        (
+            "Key",
+            vec![("value", "value"), ("time", "time"), ("index", "index")],
+        ),
         (
             "Marker Key",
             vec![
@@ -352,7 +456,10 @@ pub fn language_menu() -> Vec<(&'static str, Vec<(&'static str, &'static str)>)>
                     "timeToFrames(t = time + thisComp.displayStartTime, fps = 1.0 / thisComp.frameDuration, isDuration = false)",
                     "timeToFrames(t = time + thisComp.displayStartTime, fps = 1.0 / thisComp.frameDuration, isDuration = false)",
                 ),
-                ("framesToTime(frames, fps = 1.0 / thisComp.frameDuration)", "framesToTime(frames, fps = 1.0 / thisComp.frameDuration)"),
+                (
+                    "framesToTime(frames, fps = 1.0 / thisComp.frameDuration)",
+                    "framesToTime(frames, fps = 1.0 / thisComp.frameDuration)",
+                ),
                 (
                     "timeToTimecode(t = time + thisComp.displayStartTime, timecodeBase = 30, isDuration = false)",
                     "timeToTimecode(t = time + thisComp.displayStartTime, timecodeBase = 30, isDuration = false)",
@@ -381,7 +488,17 @@ fn menu_cmd(_s: &mut Session, _p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        query!("expr.errors", "Expression errors (the error bar)", "{comp?, time? (s)}", errors_cmd),
-        query!("expr.languageMenu", "Expression Language menu", "{}", menu_cmd),
+        query!(
+            "expr.errors",
+            "Expression errors (the error bar)",
+            "{comp?, time? (s)}",
+            errors_cmd
+        ),
+        query!(
+            "expr.languageMenu",
+            "Expression Language menu",
+            "{}",
+            menu_cmd
+        ),
     ]
 }

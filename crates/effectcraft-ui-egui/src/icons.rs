@@ -140,31 +140,53 @@ impl Pen16<'_> {
     }
     fn line(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|(x, y)| self.p(*x, *y)).collect();
-        self.painter.add(PathShape::line(v, PathStroke::new(self.width * self.s(), self.color)));
+        self.painter.add(PathShape::line(
+            v,
+            PathStroke::new(self.width * self.s(), self.color),
+        ));
     }
     fn closed(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|(x, y)| self.p(*x, *y)).collect();
-        self.painter.add(PathShape::closed_line(v, PathStroke::new(self.width * self.s(), self.color)));
+        self.painter.add(PathShape::closed_line(
+            v,
+            PathStroke::new(self.width * self.s(), self.color),
+        ));
     }
     /// Fill a **convex** outline: the tessellator fans a concave one into slivers across its
     /// notches, so a concave glyph is drawn as overlapping convex pieces (see [`SELECTION_ARROW`]).
     fn fill(&self, pts: &[(f32, f32)]) {
         let v: Vec<Pos2> = pts.iter().map(|(x, y)| self.p(*x, *y)).collect();
-        self.painter.add(PathShape::convex_polygon(v, self.color, Stroke::NONE));
+        self.painter
+            .add(PathShape::convex_polygon(v, self.color, Stroke::NONE));
     }
     fn circle(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_stroke(self.p(x, y), r * self.s(), Stroke::new(self.width * self.s(), self.color));
+        self.painter.circle_stroke(
+            self.p(x, y),
+            r * self.s(),
+            Stroke::new(self.width * self.s(), self.color),
+        );
     }
     fn dot(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_filled(self.p(x, y), r * self.s(), self.color);
+        self.painter
+            .circle_filled(self.p(x, y), r * self.s(), self.color);
     }
     fn rect(&self, x0: f32, y0: f32, x1: f32, y1: f32) {
         let r = Rect::from_min_max(self.p(x0, y0), self.p(x1, y1));
-        self.painter.rect_stroke(r, 1.0 * self.s(), Stroke::new(self.width * self.s(), self.color), egui::StrokeKind::Middle);
+        self.painter.rect_stroke(
+            r,
+            1.0 * self.s(),
+            Stroke::new(self.width * self.s(), self.color),
+            egui::StrokeKind::Middle,
+        );
     }
     fn rrect(&self, x0: f32, y0: f32, x1: f32, y1: f32, rad: f32) {
         let r = Rect::from_min_max(self.p(x0, y0), self.p(x1, y1));
-        self.painter.rect_stroke(r, rad * self.s(), Stroke::new(self.width * self.s(), self.color), egui::StrokeKind::Middle);
+        self.painter.rect_stroke(
+            r,
+            rad * self.s(),
+            Stroke::new(self.width * self.s(), self.color),
+            egui::StrokeKind::Middle,
+        );
     }
     fn rect_fill(&self, x0: f32, y0: f32, x1: f32, y1: f32) {
         let r = Rect::from_min_max(self.p(x0, y0), self.p(x1, y1));
@@ -182,8 +204,20 @@ impl Pen16<'_> {
     }
     /// An upright pushpin centred on `cx`: a cap, a body flaring to its base and a needle.
     fn pushpin(&self, cx: f32) {
-        self.fill(&[(cx - 3.0, 1.5), (cx + 3.0, 1.5), (cx + 2.0, 3.0), (cx - 2.0, 3.0)]);
-        self.closed(&[(cx - 2.0, 3.0), (cx + 2.0, 3.0), (cx + 2.4, 7.0), (cx + 4.0, 8.8), (cx - 4.0, 8.8), (cx - 2.4, 7.0)]);
+        self.fill(&[
+            (cx - 3.0, 1.5),
+            (cx + 3.0, 1.5),
+            (cx + 2.0, 3.0),
+            (cx - 2.0, 3.0),
+        ]);
+        self.closed(&[
+            (cx - 2.0, 3.0),
+            (cx + 2.0, 3.0),
+            (cx + 2.4, 7.0),
+            (cx + 4.0, 8.8),
+            (cx - 4.0, 8.8),
+            (cx - 2.4, 7.0),
+        ]);
         self.line(&[(cx, 8.8), (cx, 14.8)]);
     }
     fn ellipse(&self, cx: f32, cy: f32, rx: f32, ry: f32) {
@@ -217,22 +251,45 @@ type Pieces = &'static [&'static [(f32, f32)]];
 const SELECTION_ARROW: Pieces = &[
     &[(4.5, 2.0), (4.5, 13.0), (7.2, 10.5), (10.1, 7.39)],
     &[(7.5, 9.0), (8.9, 9.9), (12.5, 9.7), (10.1, 7.39)],
-    &[(7.8, 8.6), (7.2, 10.5), (9.2, 14.6), (10.8, 13.9), (8.9, 9.9)],
+    &[
+        (7.8, 8.6),
+        (7.2, 10.5),
+        (9.2, 14.6),
+        (10.8, 13.9),
+        (8.9, 9.9),
+    ],
 ];
 /// A loudspeaker: the magnet box, running a little into the cone.
-const SPEAKER: Pieces = &[&[(2.0, 6.0), (5.5, 6.0), (5.5, 10.0), (2.0, 10.0)], &[(5.0, 6.0), (9.0, 2.5), (9.0, 13.5), (5.0, 10.0)]];
+const SPEAKER: Pieces = &[
+    &[(2.0, 6.0), (5.5, 6.0), (5.5, 10.0), (2.0, 10.0)],
+    &[(5.0, 6.0), (9.0, 2.5), (9.0, 13.5), (5.0, 10.0)],
+];
 /// A four-pointed star: an upright and a level diamond, whose edges cross at the inner corners.
-const SPARKLE: Pieces = &[&[(8.0, 1.5), (9.784, 8.0), (8.0, 14.5), (6.216, 8.0)], &[(1.5, 8.0), (8.0, 6.216), (14.5, 8.0), (8.0, 9.784)]];
+const SPARKLE: Pieces = &[
+    &[(8.0, 1.5), (9.784, 8.0), (8.0, 14.5), (6.216, 8.0)],
+    &[(1.5, 8.0), (8.0, 6.216), (14.5, 8.0), (8.0, 9.784)],
+];
 #[cfg(test)]
 const CONCAVE: [Pieces; 3] = [SELECTION_ARROW, SPEAKER, SPARKLE];
 
 /// Paint `icon` centred in `rect`.
 pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
-    let pen = Pen16 { painter, rect, color, width: 1.25 };
+    let pen = Pen16 {
+        painter,
+        rect,
+        color,
+        width: 1.25,
+    };
     use Icon::*;
     match icon {
         Home => {
-            pen.closed(&[(2.5, 7.5), (8.0, 2.5), (13.5, 7.5), (13.5, 13.5), (2.5, 13.5)]);
+            pen.closed(&[
+                (2.5, 7.5),
+                (8.0, 2.5),
+                (13.5, 7.5),
+                (13.5, 13.5),
+                (2.5, 13.5),
+            ]);
             pen.rect(6.5, 9.5, 9.5, 13.5);
         }
         Selection => SELECTION_ARROW.iter().for_each(|p| pen.fill(p)),
@@ -241,7 +298,15 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(7.3, 8.0), (7.3, 2.6)]);
             pen.line(&[(9.6, 8.0), (9.6, 3.2)]);
             pen.line(&[(11.8, 8.8), (11.8, 5.0)]);
-            pen.line(&[(5.0, 9.0), (3.2, 7.4), (2.4, 8.4), (5.6, 13.4), (11.0, 14.0), (12.4, 11.0), (11.8, 8.8)]);
+            pen.line(&[
+                (5.0, 9.0),
+                (3.2, 7.4),
+                (2.4, 8.4),
+                (5.6, 13.4),
+                (11.0, 14.0),
+                (12.4, 11.0),
+                (11.8, 8.8),
+            ]);
         }
         Zoom => {
             pen.circle(6.8, 6.8, 4.3);
@@ -375,7 +440,17 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.rect_fill(11.8, 11.6, 15.2, 15.0);
         }
         Eye => {
-            pen.line(&[(1.5, 8.0), (4.0, 5.0), (8.0, 3.8), (12.0, 5.0), (14.5, 8.0), (12.0, 11.0), (8.0, 12.2), (4.0, 11.0), (1.5, 8.0)]);
+            pen.line(&[
+                (1.5, 8.0),
+                (4.0, 5.0),
+                (8.0, 3.8),
+                (12.0, 5.0),
+                (14.5, 8.0),
+                (12.0, 11.0),
+                (8.0, 12.2),
+                (4.0, 11.0),
+                (1.5, 8.0),
+            ]);
             pen.dot(8.0, 8.0, 2.2);
         }
         Speaker => {
@@ -402,7 +477,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.circle(8.0, 8.0, 2.8);
             for i in 0..8 {
                 let a = std::f32::consts::TAU * i as f32 / 8.0;
-                pen.line(&[(8.0 + 4.3 * a.cos(), 8.0 + 4.3 * a.sin()), (8.0 + 6.3 * a.cos(), 8.0 + 6.3 * a.sin())]);
+                pen.line(&[
+                    (8.0 + 4.3 * a.cos(), 8.0 + 4.3 * a.sin()),
+                    (8.0 + 6.3 * a.cos(), 8.0 + 6.3 * a.sin()),
+                ]);
             }
         }
         Quality => pen.line(&[(4.0, 2.5), (12.0, 13.5)]),
@@ -423,19 +501,48 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         }
         Adjustment => {
             pen.circle(8.0, 8.0, 5.5);
-            pen.fill(&[(8.0, 2.5), (8.0, 13.5), (5.2, 12.7), (3.2, 10.6), (2.5, 8.0), (3.2, 5.4), (5.2, 3.3)]);
+            pen.fill(&[
+                (8.0, 2.5),
+                (8.0, 13.5),
+                (5.2, 12.7),
+                (3.2, 10.6),
+                (2.5, 8.0),
+                (3.2, 5.4),
+                (5.2, 3.3),
+            ]);
         }
         Cube => {
-            pen.closed(&[(8.0, 2.0), (13.5, 5.0), (13.5, 11.0), (8.0, 14.0), (2.5, 11.0), (2.5, 5.0)]);
+            pen.closed(&[
+                (8.0, 2.0),
+                (13.5, 5.0),
+                (13.5, 11.0),
+                (8.0, 14.0),
+                (2.5, 11.0),
+                (2.5, 5.0),
+            ]);
             pen.line(&[(2.5, 5.0), (8.0, 8.0), (13.5, 5.0)]);
             pen.line(&[(8.0, 8.0), (8.0, 14.0)]);
         }
         Draft3D => {
-            pen.closed(&[(8.0, 2.0), (13.5, 5.0), (13.5, 11.0), (8.0, 14.0), (2.5, 11.0), (2.5, 5.0)]);
+            pen.closed(&[
+                (8.0, 2.0),
+                (13.5, 5.0),
+                (13.5, 11.0),
+                (8.0, 14.0),
+                (2.5, 11.0),
+                (2.5, 5.0),
+            ]);
             pen.line(&[(5.0, 9.0), (11.0, 9.0)]);
         }
         Graph => {
-            pen.line(&[(2.0, 13.0), (5.0, 12.0), (7.0, 8.0), (9.0, 4.5), (11.5, 3.2), (14.0, 3.0)]);
+            pen.line(&[
+                (2.0, 13.0),
+                (5.0, 12.0),
+                (7.0, 8.0),
+                (9.0, 4.5),
+                (11.5, 3.2),
+                (14.0, 3.0),
+            ]);
             pen.line(&[(2.0, 2.0), (2.0, 14.0), (14.0, 14.0)]);
         }
         Stopwatch => {
@@ -456,10 +563,23 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(6.0, 4.5), (12.25, 4.5), (12.25, 9.5)]);
         }
         MarkerBin => {
-            pen.fill(&[(5.0, 2.0), (11.0, 2.0), (11.0, 7.5), (8.0, 10.5), (5.0, 7.5)]);
+            pen.fill(&[
+                (5.0, 2.0),
+                (11.0, 2.0),
+                (11.0, 7.5),
+                (8.0, 10.5),
+                (5.0, 7.5),
+            ]);
             pen.line(&[(2.0, 9.0), (2.0, 14.0), (14.0, 14.0), (14.0, 9.0)]);
         }
-        Folder => pen.closed(&[(1.5, 4.0), (6.0, 4.0), (7.5, 5.5), (14.5, 5.5), (14.5, 13.0), (1.5, 13.0)]),
+        Folder => pen.closed(&[
+            (1.5, 4.0),
+            (6.0, 4.0),
+            (7.5, 5.5),
+            (14.5, 5.5),
+            (14.5, 13.0),
+            (1.5, 13.0),
+        ]),
         Comp => {
             pen.rect(2.0, 3.0, 14.0, 13.0);
             pen.rect_fill(4.0, 5.0, 8.0, 9.0);
@@ -476,7 +596,13 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         }
         Image => {
             pen.rect(2.0, 3.0, 14.0, 13.0);
-            pen.line(&[(2.5, 11.5), (6.0, 8.0), (9.0, 10.5), (11.0, 9.0), (13.5, 11.5)]);
+            pen.line(&[
+                (2.5, 11.5),
+                (6.0, 8.0),
+                (9.0, 10.5),
+                (11.0, 9.0),
+                (13.5, 11.5),
+            ]);
             pen.dot(10.5, 5.8, 1.1);
         }
         Audio => {
@@ -513,7 +639,14 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.line(&[(6.0, 4.0), (6.5, 2.0), (9.5, 2.0), (10.0, 4.0)]);
         }
         NewFolder => {
-            pen.closed(&[(1.5, 4.0), (6.0, 4.0), (7.5, 5.5), (14.5, 5.5), (14.5, 13.0), (1.5, 13.0)]);
+            pen.closed(&[
+                (1.5, 4.0),
+                (6.0, 4.0),
+                (7.5, 5.5),
+                (14.5, 5.5),
+                (14.5, 13.0),
+                (1.5, 13.0),
+            ]);
             pen.line(&[(8.0, 7.5), (8.0, 11.5)]);
             pen.line(&[(6.0, 9.5), (10.0, 9.5)]);
         }
@@ -526,7 +659,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.circle(8.0, 8.0, 2.2);
             for i in 0..8 {
                 let a = std::f32::consts::TAU * i as f32 / 8.0;
-                pen.line(&[(8.0 + 4.0 * a.cos(), 8.0 + 4.0 * a.sin()), (8.0 + 6.0 * a.cos(), 8.0 + 6.0 * a.sin())]);
+                pen.line(&[
+                    (8.0 + 4.0 * a.cos(), 8.0 + 4.0 * a.sin()),
+                    (8.0 + 6.0 * a.cos(), 8.0 + 6.0 * a.sin()),
+                ]);
             }
             pen.circle(8.0, 8.0, 4.2);
         }
@@ -566,11 +702,30 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.fill(&[(1.8, 5.5), (5.2, 5.5), (3.2, 8.5)]);
         }
         Snapshot => {
-            pen.closed(&[(2.0, 5.0), (5.0, 5.0), (6.0, 3.5), (10.0, 3.5), (11.0, 5.0), (14.0, 5.0), (14.0, 12.5), (2.0, 12.5)]);
+            pen.closed(&[
+                (2.0, 5.0),
+                (5.0, 5.0),
+                (6.0, 3.5),
+                (10.0, 3.5),
+                (11.0, 5.0),
+                (14.0, 5.0),
+                (14.0, 12.5),
+                (2.0, 12.5),
+            ]);
             pen.circle(8.0, 8.7, 2.3);
         }
         ShowSnapshot => {
-            pen.line(&[(1.5, 8.0), (4.0, 5.0), (8.0, 3.8), (12.0, 5.0), (14.5, 8.0), (12.0, 11.0), (8.0, 12.2), (4.0, 11.0), (1.5, 8.0)]);
+            pen.line(&[
+                (1.5, 8.0),
+                (4.0, 5.0),
+                (8.0, 3.8),
+                (12.0, 5.0),
+                (14.5, 8.0),
+                (12.0, 11.0),
+                (8.0, 12.2),
+                (4.0, 11.0),
+                (1.5, 8.0),
+            ]);
             pen.rect(6.0, 6.5, 10.0, 9.5);
         }
         Grid => {
@@ -595,7 +750,12 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
         }
         ExtendedViewer => {
             pen.rect(5.0, 5.0, 11.0, 11.0);
-            for (x, y, dx, dy) in [(2.0, 2.0, 1.0, 1.0), (14.0, 2.0, -1.0, 1.0), (2.0, 14.0, 1.0, -1.0), (14.0, 14.0, -1.0, -1.0)] {
+            for (x, y, dx, dy) in [
+                (2.0, 2.0, 1.0, 1.0),
+                (14.0, 2.0, -1.0, 1.0),
+                (2.0, 14.0, 1.0, -1.0),
+                (14.0, 14.0, -1.0, -1.0),
+            ] {
                 pen.line(&[(x + dx * 3.0, y), (x, y), (x, y + dy * 3.0)]);
             }
         }
@@ -637,7 +797,15 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             pen.fill(&[(8.0, 2.5), (13.5, 8.0), (8.0, 13.5)]);
         }
         Chat => {
-            pen.closed(&[(2.0, 3.0), (14.0, 3.0), (14.0, 11.0), (7.0, 11.0), (4.0, 14.0), (4.5, 11.0), (2.0, 11.0)]);
+            pen.closed(&[
+                (2.0, 3.0),
+                (14.0, 3.0),
+                (14.0, 11.0),
+                (7.0, 11.0),
+                (4.0, 14.0),
+                (4.5, 11.0),
+                (2.0, 11.0),
+            ]);
             pen.dot(5.3, 7.0, 0.95);
             pen.dot(8.0, 7.0, 0.95);
             pen.dot(10.7, 7.0, 0.95);
@@ -667,7 +835,10 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
             for i in 0..8 {
                 let a = std::f32::consts::FRAC_PI_4 * i as f32;
                 let (c, s) = (a.cos(), a.sin());
-                pen.line(&[(8.0 + 4.6 * c, 8.0 + 4.6 * s), (8.0 + 6.4 * c, 8.0 + 6.4 * s)]);
+                pen.line(&[
+                    (8.0 + 4.6 * c, 8.0 + 4.6 * s),
+                    (8.0 + 6.4 * c, 8.0 + 6.4 * s),
+                ]);
             }
         }
         Moon => {
@@ -723,7 +894,9 @@ fn keyframe_shapes(
     use effectcraft_engine::keyframe::KeyHalf as H;
     let r = size / 2.0;
     let mut out = Vec::with_capacity(2);
-    let mut half = |pts: Vec<Pos2>| out.push(PathShape::convex_polygon(pts, fill, Stroke::new(0.5, fill)).into());
+    let mut half = |pts: Vec<Pos2>| {
+        out.push(PathShape::convex_polygon(pts, fill, Stroke::new(0.5, fill)).into())
+    };
     let c = center;
     for (side, h) in [(-1.0f32, left), (1.0, right)] {
         match h {
@@ -733,14 +906,34 @@ fn keyframe_shapes(
                 vec![c + vec2(0.0, -r), c + vec2(r, 0.0), c + vec2(0.0, r), c]
             }),
             H::Hold => half(if side < 0.0 {
-                vec![c + vec2(-r * 0.8, -r * 0.8), c + vec2(0.0, -r * 0.8), c + vec2(0.0, r * 0.8), c + vec2(-r * 0.8, r * 0.8)]
+                vec![
+                    c + vec2(-r * 0.8, -r * 0.8),
+                    c + vec2(0.0, -r * 0.8),
+                    c + vec2(0.0, r * 0.8),
+                    c + vec2(-r * 0.8, r * 0.8),
+                ]
             } else {
-                vec![c + vec2(0.0, -r * 0.8), c + vec2(r * 0.8, -r * 0.8), c + vec2(r * 0.8, r * 0.8), c + vec2(0.0, r * 0.8)]
+                vec![
+                    c + vec2(0.0, -r * 0.8),
+                    c + vec2(r * 0.8, -r * 0.8),
+                    c + vec2(r * 0.8, r * 0.8),
+                    c + vec2(0.0, r * 0.8),
+                ]
             }),
             H::Bezier => half(if side < 0.0 {
-                vec![c + vec2(-r * 0.75, -r), c + vec2(0.0, -r * 0.35), c + vec2(0.0, r * 0.35), c + vec2(-r * 0.75, r)]
+                vec![
+                    c + vec2(-r * 0.75, -r),
+                    c + vec2(0.0, -r * 0.35),
+                    c + vec2(0.0, r * 0.35),
+                    c + vec2(-r * 0.75, r),
+                ]
             } else {
-                vec![c + vec2(0.0, -r * 0.35), c + vec2(r * 0.75, -r), c + vec2(r * 0.75, r), c + vec2(0.0, r * 0.35)]
+                vec![
+                    c + vec2(0.0, -r * 0.35),
+                    c + vec2(r * 0.75, -r),
+                    c + vec2(r * 0.75, r),
+                    c + vec2(0.0, r * 0.35),
+                ]
             }),
             H::Auto => {
                 let n = 10;
@@ -773,7 +966,10 @@ mod tests {
                     (b.0 - a.0) * (c.1 - b.1) - (b.1 - a.1) * (c.0 - b.0)
                 })
                 .collect();
-            assert!(turns.iter().all(|t| *t < 0.0) || turns.iter().all(|t| *t > 0.0), "{piece:?} is not convex: {turns:?}");
+            assert!(
+                turns.iter().all(|t| *t < 0.0) || turns.iter().all(|t| *t > 0.0),
+                "{piece:?} is not convex: {turns:?}"
+            );
         }
     }
 
@@ -782,13 +978,23 @@ mod tests {
     #[test]
     fn keyframes_are_drawn_without_a_dark_outline() {
         let fill = egui::Color32::from_gray(0xc0);
-        for (l, r) in [(H::Linear, H::Linear), (H::Bezier, H::Hold), (H::Auto, H::Linear)] {
+        for (l, r) in [
+            (H::Linear, H::Linear),
+            (H::Bezier, H::Hold),
+            (H::Auto, H::Linear),
+        ] {
             let shapes = super::keyframe_shapes(egui::pos2(10.0, 10.0), 11.0, l, r, fill);
             assert_eq!(shapes.len(), 2);
             for s in shapes {
-                let egui::Shape::Path(p) = s else { panic!("a path: {s:?}") };
+                let egui::Shape::Path(p) = s else {
+                    panic!("a path: {s:?}")
+                };
                 assert_eq!(p.fill, fill);
-                assert!(p.stroke.width <= 0.5 && p.stroke.color == egui::epaint::ColorMode::Solid(fill), "{:?}", p.stroke);
+                assert!(
+                    p.stroke.width <= 0.5 && p.stroke.color == egui::epaint::ColorMode::Solid(fill),
+                    "{:?}",
+                    p.stroke
+                );
             }
         }
     }

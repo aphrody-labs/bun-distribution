@@ -24,40 +24,78 @@ impl Default for Limits {
         // documents Photoshop users open (a 20000² RGBA 16-bit image is 3.2 GB). On 32-bit
         // targets (wasm32 has a 4 GiB address space shared with the document, history and
         // the decoder's own buffers) 1 GiB is the most one buffer can safely ask for.
-        let max_alloc = if cfg!(target_pointer_width = "64") { 8 << 30 } else { 1 << 30 };
-        Limits { max_width: 1 << 18, max_height: 1 << 18, max_pixels: 1 << 30, max_alloc }
+        let max_alloc = if cfg!(target_pointer_width = "64") {
+            8 << 30
+        } else {
+            1 << 30
+        };
+        Limits {
+            max_width: 1 << 18,
+            max_height: 1 << 18,
+            max_pixels: 1 << 30,
+            max_alloc,
+        }
     }
 }
 
 impl Limits {
     /// Effectively unlimited (still bounded by `usize` overflow checks).
     pub fn none() -> Self {
-        Limits { max_width: u32::MAX, max_height: u32::MAX, max_pixels: u64::MAX, max_alloc: u64::MAX }
+        Limits {
+            max_width: u32::MAX,
+            max_height: u32::MAX,
+            max_pixels: u64::MAX,
+            max_alloc: u64::MAX,
+        }
     }
 
     /// Validate declared dimensions for an output buffer of the given layout
     /// and sample type.
-    pub fn check(&self, width: u32, height: u32, layout: ChannelLayout, sample: SampleType) -> Result<(), CodecError> {
+    pub fn check(
+        &self,
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        sample: SampleType,
+    ) -> Result<(), CodecError> {
         self.check_bytes(width, height, (layout.channels() * sample.bytes()) as u64)
     }
 
-    pub(crate) fn check_bytes(&self, width: u32, height: u32, bytes_per_pixel: u64) -> Result<(), CodecError> {
+    pub(crate) fn check_bytes(
+        &self,
+        width: u32,
+        height: u32,
+        bytes_per_pixel: u64,
+    ) -> Result<(), CodecError> {
         if width == 0 || height == 0 {
-            return Err(CodecError::InvalidImage(format!("zero-sized image {width}x{height}")));
+            return Err(CodecError::InvalidImage(format!(
+                "zero-sized image {width}x{height}"
+            )));
         }
         if width > self.max_width || height > self.max_height {
-            return Err(CodecError::LimitExceeded(format!("dimensions {width}x{height} exceed max {}x{}", self.max_width, self.max_height)));
+            return Err(CodecError::LimitExceeded(format!(
+                "dimensions {width}x{height} exceed max {}x{}",
+                self.max_width, self.max_height
+            )));
         }
         let pixels = width as u64 * height as u64;
         if pixels > self.max_pixels {
-            return Err(CodecError::LimitExceeded(format!("{pixels} pixels exceed max {}", self.max_pixels)));
+            return Err(CodecError::LimitExceeded(format!(
+                "{pixels} pixels exceed max {}",
+                self.max_pixels
+            )));
         }
         let bytes = pixels.saturating_mul(bytes_per_pixel);
         if bytes > self.max_alloc {
-            return Err(CodecError::LimitExceeded(format!("{bytes} bytes exceed max_alloc {}", self.max_alloc)));
+            return Err(CodecError::LimitExceeded(format!(
+                "{bytes} bytes exceed max_alloc {}",
+                self.max_alloc
+            )));
         }
         if usize::try_from(bytes).is_err() {
-            return Err(CodecError::LimitExceeded(format!("{bytes} bytes do not fit in memory")));
+            return Err(CodecError::LimitExceeded(format!(
+                "{bytes} bytes do not fit in memory"
+            )));
         }
         Ok(())
     }
@@ -67,10 +105,18 @@ impl Limits {
     /// never beats `max_ratio`:1. Called before the output buffer is allocated, so a
     /// header-only hostile file cannot make the decoder reserve gigabytes. A fixed 1 MiB of
     /// slack keeps tiny images and headers with large metadata unaffected.
-    pub(crate) fn check_plausible(declared_bytes: u64, file_len: usize, max_ratio: u64) -> Result<(), CodecError> {
-        let capacity = (file_len as u64).saturating_mul(max_ratio).saturating_add(1 << 20);
+    pub(crate) fn check_plausible(
+        declared_bytes: u64,
+        file_len: usize,
+        max_ratio: u64,
+    ) -> Result<(), CodecError> {
+        let capacity = (file_len as u64)
+            .saturating_mul(max_ratio)
+            .saturating_add(1 << 20);
         if declared_bytes > capacity {
-            return Err(CodecError::LimitExceeded(format!("a {file_len} byte file cannot hold {declared_bytes} bytes of image data")));
+            return Err(CodecError::LimitExceeded(format!(
+                "a {file_len} byte file cannot hold {declared_bytes} bytes of image data"
+            )));
         }
         Ok(())
     }
@@ -205,7 +251,9 @@ impl Default for EncodeOptions {
 /// stop).
 pub(crate) fn alloc_zeroed<T: Copy + Default>(len: usize) -> Result<Vec<T>, CodecError> {
     let mut v = Vec::new();
-    v.try_reserve_exact(len).map_err(|_| CodecError::LimitExceeded(format!("cannot allocate {len} elements for the image")))?;
+    v.try_reserve_exact(len).map_err(|_| {
+        CodecError::LimitExceeded(format!("cannot allocate {len} elements for the image"))
+    })?;
     v.resize(len, T::default());
     Ok(v)
 }

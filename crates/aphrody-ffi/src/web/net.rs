@@ -33,7 +33,9 @@ fn owned(ptr: *const c_char, what: &str) -> Result<String, String> {
     if ptr.is_null() {
         return Err(format!("null {what} pointer"));
     }
-    unsafe { borrow_str(ptr) }.map(str::to_string).ok_or_else(|| format!("invalid UTF-8 in {what}"))
+    unsafe { borrow_str(ptr) }
+        .map(str::to_string)
+        .ok_or_else(|| format!("invalid UTF-8 in {what}"))
 }
 
 fn optional(ptr: *const c_char) -> Option<String> {
@@ -91,7 +93,7 @@ async fn gemini_ask_body(cookie_path: String, prompt: String, model: Option<Stri
         Ok(client) => client,
         Err(error) => {
             return error_json_string(format!("Failed to execute Gemini request: {error}"));
-        },
+        }
     };
     let header = gemini_model_header(model);
     match client.ask(&prompt, header.as_deref()).await {
@@ -115,7 +117,11 @@ fn gemini_args(
     prompt_ptr: *const c_char,
     model_ptr: *const c_char,
 ) -> Result<(String, String, Option<String>), String> {
-    Ok((owned(cookie_path_ptr, "cookie_path")?, owned(prompt_ptr, "prompt")?, optional(model_ptr)))
+    Ok((
+        owned(cookie_path_ptr, "cookie_path")?,
+        owned(prompt_ptr, "prompt")?,
+        optional(model_ptr),
+    ))
 }
 
 /// Submit a prompt through the Gemini web client and return JSON (blocking).
@@ -130,11 +136,13 @@ pub unsafe extern "C" fn web_internal_gemini_web_ask(
     prompt_ptr: *const c_char,
     model_ptr: *const c_char,
 ) -> *mut c_char {
-    guard(std::ptr::null_mut(), || match gemini_args(cookie_path_ptr, prompt_ptr, model_ptr) {
-        Ok((cookie_path, prompt, model)) => {
-            block_on_json(gemini_ask_body(cookie_path, prompt, model))
-        },
-        Err(e) => error_json(e),
+    guard(std::ptr::null_mut(), || {
+        match gemini_args(cookie_path_ptr, prompt_ptr, model_ptr) {
+            Ok((cookie_path, prompt, model)) => {
+                block_on_json(gemini_ask_body(cookie_path, prompt, model))
+            }
+            Err(e) => error_json(e),
+        }
     })
 }
 
@@ -149,11 +157,13 @@ pub unsafe extern "C" fn web_internal_gemini_web_ask_submit(
     model_ptr: *const c_char,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match gemini_args(cookie_path_ptr, prompt_ptr, model_ptr) {
-        Ok((cookie_path, prompt, model)) => {
-            jobs::submit(timeout_ms, gemini_ask_body(cookie_path, prompt, model))
-        },
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match gemini_args(cookie_path_ptr, prompt_ptr, model_ptr) {
+            Ok((cookie_path, prompt, model)) => {
+                jobs::submit(timeout_ms, gemini_ask_body(cookie_path, prompt, model))
+            }
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -210,7 +220,10 @@ async fn x_community_by_rest_id_body(client: XClient, community_id: String) -> S
 }
 
 async fn x_community_tweets_body(client: XClient, community_id: String, count: u32) -> String {
-    match client.community_timeline(&community_id, page_size(count), None, 1).await {
+    match client
+        .community_timeline(&community_id, page_size(count), None, 1)
+        .await
+    {
         Ok(page) => to_json_string(&page),
         Err(e) => error_json_string(format!("community_tweets failed: {e}")),
     }
@@ -221,7 +234,10 @@ async fn x_community_info_and_tweets_body(
     community_id: String,
     count: u32,
 ) -> String {
-    match client.community_info_and_timeline(&community_id, page_size(count), 1).await {
+    match client
+        .community_info_and_timeline(&community_id, page_size(count), 1)
+        .await
+    {
         Ok((info, page)) => to_json_string(&serde_json::json!({ "info": info, "tweets": page })),
         Err(e) => error_json_string(format!("community_info_and_tweets failed: {e}")),
     }
@@ -240,9 +256,11 @@ pub unsafe extern "C" fn web_internal_x_user_by_screen_name(
     ct0_ptr: *const c_char,
     handle_ptr: *const c_char,
 ) -> *mut c_char {
-    guard(std::ptr::null_mut(), || match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
-        Ok((client, handle)) => block_on_json(x_user_by_screen_name_body(client, handle)),
-        Err(e) => error_json(e),
+    guard(std::ptr::null_mut(), || {
+        match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
+            Ok((client, handle)) => block_on_json(x_user_by_screen_name_body(client, handle)),
+            Err(e) => error_json(e),
+        }
     })
 }
 
@@ -257,11 +275,13 @@ pub unsafe extern "C" fn web_internal_x_user_by_screen_name_submit(
     handle_ptr: *const c_char,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
-        Ok((client, handle)) => {
-            jobs::submit(timeout_ms, x_user_by_screen_name_body(client, handle))
-        },
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
+            Ok((client, handle)) => {
+                jobs::submit(timeout_ms, x_user_by_screen_name_body(client, handle))
+            }
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -276,9 +296,11 @@ pub unsafe extern "C" fn web_internal_x_user_tweets(
     handle_ptr: *const c_char,
     count: u32,
 ) -> *mut c_char {
-    guard(std::ptr::null_mut(), || match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
-        Ok((client, handle)) => block_on_json(x_user_tweets_body(client, handle, count)),
-        Err(e) => error_json(e),
+    guard(std::ptr::null_mut(), || {
+        match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
+            Ok((client, handle)) => block_on_json(x_user_tweets_body(client, handle, count)),
+            Err(e) => error_json(e),
+        }
     })
 }
 
@@ -294,9 +316,13 @@ pub unsafe extern "C" fn web_internal_x_user_tweets_submit(
     count: u32,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
-        Ok((client, handle)) => jobs::submit(timeout_ms, x_user_tweets_body(client, handle, count)),
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match x_args(auth_token_ptr, ct0_ptr, handle_ptr, "handle") {
+            Ok((client, handle)) => {
+                jobs::submit(timeout_ms, x_user_tweets_body(client, handle, count))
+            }
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -329,9 +355,11 @@ pub unsafe extern "C" fn web_internal_x_community_by_rest_id_submit(
     community_id_ptr: *const c_char,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
-        Ok((client, id)) => jobs::submit(timeout_ms, x_community_by_rest_id_body(client, id)),
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
+            Ok((client, id)) => jobs::submit(timeout_ms, x_community_by_rest_id_body(client, id)),
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -366,9 +394,13 @@ pub unsafe extern "C" fn web_internal_x_community_tweets_submit(
     count: u32,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
-        Ok((client, id)) => jobs::submit(timeout_ms, x_community_tweets_body(client, id, count)),
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
+            Ok((client, id)) => {
+                jobs::submit(timeout_ms, x_community_tweets_body(client, id, count))
+            }
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -404,11 +436,14 @@ pub unsafe extern "C" fn web_internal_x_community_info_and_tweets_submit(
     count: u32,
     timeout_ms: u32,
 ) -> u64 {
-    guard(0, || match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
-        Ok((client, id)) => {
-            jobs::submit(timeout_ms, x_community_info_and_tweets_body(client, id, count))
-        },
-        Err(e) => jobs::resolved(error_json_string(e)),
+    guard(0, || {
+        match x_args(auth_token_ptr, ct0_ptr, community_id_ptr, "community_id") {
+            Ok((client, id)) => jobs::submit(
+                timeout_ms,
+                x_community_info_and_tweets_body(client, id, count),
+            ),
+            Err(e) => jobs::resolved(error_json_string(e)),
+        }
     })
 }
 
@@ -447,8 +482,14 @@ mod tests {
 
     #[test]
     fn gemini_model_mapping_preserves_custom_header() {
-        assert_eq!(gemini_model_header(Some("flash".into())), Some(GeminiModel::Flash.header()));
-        assert_eq!(gemini_model_header(Some("custom".into())), Some("custom".into()));
+        assert_eq!(
+            gemini_model_header(Some("flash".into())),
+            Some(GeminiModel::Flash.header())
+        );
+        assert_eq!(
+            gemini_model_header(Some("custom".into())),
+            Some("custom".into())
+        );
         assert_eq!(gemini_model_header(None), None);
     }
 
@@ -462,6 +503,10 @@ mod tests {
             None,
         ));
         let json: serde_json::Value = serde_json::from_str(&response).unwrap();
-        assert!(json["error"].as_str().is_some_and(|error| error.contains("Gemini")));
+        assert!(
+            json["error"]
+                .as_str()
+                .is_some_and(|error| error.contains("Gemini"))
+        );
     }
 }

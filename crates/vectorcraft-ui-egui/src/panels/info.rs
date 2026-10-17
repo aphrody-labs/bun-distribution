@@ -12,7 +12,11 @@ use crate::widgets::{self, menu_item};
 /// Colour values in the colour's own model, like Illustrator's Info panel.
 pub fn color_values(c: &Color) -> Vec<(&'static str, String)> {
     match *c {
-        Color::Rgb { r, g, b } => vec![("R", format!("{:.0}", r * 255.0)), ("G", format!("{:.0}", g * 255.0)), ("B", format!("{:.0}", b * 255.0))],
+        Color::Rgb { r, g, b } => vec![
+            ("R", format!("{:.0}", r * 255.0)),
+            ("G", format!("{:.0}", g * 255.0)),
+            ("B", format!("{:.0}", b * 255.0)),
+        ],
         Color::Cmyk { c, m, y, k } => {
             vec![
                 ("C", format!("{:.0}%", c * 100.0)),
@@ -22,7 +26,11 @@ pub fn color_values(c: &Color) -> Vec<(&'static str, String)> {
             ]
         }
         Color::Gray { k } => vec![("K", format!("{:.0}%", k * 100.0))],
-        Color::Lab { l, a, b } => vec![("L", format!("{l:.0}")), ("a", format!("{a:.0}")), ("b", format!("{b:.0}"))],
+        Color::Lab { l, a, b } => vec![
+            ("L", format!("{l:.0}")),
+            ("a", format!("{a:.0}")),
+            ("b", format!("{b:.0}")),
+        ],
     }
 }
 
@@ -34,7 +42,11 @@ fn paint_block(ui: &mut Ui, p: &Paint) {
         match p {
             Paint::Solid { color, .. } => {
                 for (k, v) in color_values(color) {
-                    ui.label(egui::RichText::new(format!("{k}: {v}")).monospace().color(t.text));
+                    ui.label(
+                        egui::RichText::new(format!("{k}: {v}"))
+                            .monospace()
+                            .color(t.text),
+                    );
                 }
             }
             other => {
@@ -48,14 +60,19 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let units = app.session.general_unit();
     let p = app.hover_doc.unwrap_or_default();
-    let bounds = app.session.active().and_then(|st| st.doc.bounds_of(&st.selection.objects, false));
+    let bounds = app
+        .session
+        .active()
+        .and_then(|st| st.doc.bounds_of(&st.selection.objects, false));
     let mono = |ui: &mut Ui, s: String| {
         ui.label(egui::RichText::new(s).monospace().color(t.text));
     };
     ui.columns(2, |cols| {
         mono(&mut cols[0], format!("X: {}", units.format(p.x)));
         mono(&mut cols[0], format!("Y: {}", units.format(p.y)));
-        let (w, h) = bounds.map(|b| (units.format(b.width()), units.format(b.height()))).unwrap_or_default();
+        let (w, h) = bounds
+            .map(|b| (units.format(b.width()), units.format(b.height())))
+            .unwrap_or_default();
         mono(&mut cols[1], format!("W: {w}"));
         mono(&mut cols[1], format!("H: {h}"));
     });
@@ -84,7 +101,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             ui,
             crate::i18n::fmt(
                 tl!("Size: {size}  Tracking: {tracking}"),
-                &[("size", &app.session.type_unit().format(st.size)), ("tracking", &format!("{:.0}", st.tracking))],
+                &[
+                    ("size", &app.session.type_unit().format(st.size)),
+                    ("tracking", &format!("{:.0}", st.tracking)),
+                ],
             ),
         );
     }
@@ -92,7 +112,16 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 pub fn menu(_app: &mut VectorcraftApp, ui: &mut Ui) {
     let hidden: bool = pstate(ui.ctx(), "info-hide-options");
-    if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
+    if menu_item(
+        ui,
+        if hidden {
+            tl!("Show Options")
+        } else {
+            tl!("Hide Options")
+        },
+        true,
+        false,
+    ) {
         set_pstate(ui.ctx(), "info-hide-options", !hidden);
     }
 }

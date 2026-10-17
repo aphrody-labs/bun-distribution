@@ -78,7 +78,7 @@ pub fn encode_cpk_list(entries: &[CfgEntry], crypto: CpkListCrypto) -> Vec<u8> {
             // XOR involutif : la même passe qu'au déchiffrement rechiffre.
             cpk::decrypt_block(&mut buf, 0, cpk::VIOLA_FIXED_KEY);
             buf
-        },
+        }
         CpkListCrypto::Clair => clair,
     }
 }
@@ -142,8 +142,10 @@ pub fn pack_mod(
     let brut = std::fs::read(cpk_list).map_err(|e| format!("{} : {e}", cpk_list.display()))?;
     let (mut cfg, crypto) = decode_cpk_list(&brut)?;
 
-    let racine =
-        cfg.entries.first_mut().ok_or_else(|| "cpk_list.cfg.bin sans entrée racine".to_string())?;
+    let racine = cfg
+        .entries
+        .first_mut()
+        .ok_or_else(|| "cpk_list.cfg.bin sans entrée racine".to_string())?;
     if racine.children.is_empty() {
         return Err("cpk_list.cfg.bin sans aucune entrée de fichier".to_string());
     }
@@ -175,8 +177,14 @@ pub fn pack_mod(
         .ok_or_else(|| "cpk_list.cfg.bin sans entrée à cloner".to_string())?;
 
     let fichiers = enumerer(mod_dir)?;
-    let mut rapport =
-        PackReport { mis_a_jour: 0, ajoutes: 0, copies: 0, total: 0, crypto, loose_avant };
+    let mut rapport = PackReport {
+        mis_a_jour: 0,
+        ajoutes: 0,
+        copies: 0,
+        total: 0,
+        crypto,
+        loose_avant,
+    };
 
     for (absolu, rel) in &fichiers {
         // Un `cpk_list.cfg.bin` traîné dans le dossier de mod se décrirait lui-même.
@@ -262,19 +270,25 @@ pub fn pack_mod(
         match r {
             Ok(_) => {
                 copies.fetch_add(1, Ordering::Relaxed);
-            },
+            }
             Err(e) => {
                 if let Ok(mut v) = echecs.lock() {
                     v.push(format!("{rel} : {e}"));
                 }
-            },
+            }
         }
     });
-    let echecs = echecs.into_inner().map_err(|_| "verrou d'échecs empoisonné".to_string())?;
+    let echecs = echecs
+        .into_inner()
+        .map_err(|_| "verrou d'échecs empoisonné".to_string())?;
     if !echecs.is_empty() {
         // Un pack partiellement recopié produirait un `cpk_list` annonçant des fichiers absents,
         // donc un jeu qui cherche ce qui n'existe pas : mieux vaut échouer franchement.
-        return Err(format!("{} fichier(s) non copié(s) : {}", echecs.len(), echecs.join(" ; ")));
+        return Err(format!(
+            "{} fichier(s) non copié(s) : {}",
+            echecs.len(),
+            echecs.join(" ; ")
+        ));
     }
     rapport.copies = copies.into_inner();
 
@@ -298,7 +312,10 @@ mod tests {
     #[test]
     fn l_emplacement_du_cpk_list_depend_de_la_plateforme() {
         assert_eq!(Platform::Pc.cpk_list_rel(), "data/cpk_list.cfg.bin");
-        assert_eq!(Platform::Switch.cpk_list_rel(), "romfs/data/cpk_list.cfg.bin");
+        assert_eq!(
+            Platform::Switch.cpk_list_rel(),
+            "romfs/data/cpk_list.cfg.bin"
+        );
     }
 
     #[test]

@@ -107,7 +107,11 @@ fn u16_at(data: &[u8], offset: usize) -> usize {
 }
 
 fn u32_at(data: &[u8], offset: usize) -> u32 {
-    u32::from_le_bytes(data[offset..offset + 4].try_into().expect("validated table"))
+    u32::from_le_bytes(
+        data[offset..offset + 4]
+            .try_into()
+            .expect("validated table"),
+    )
 }
 
 fn table_fits(start: usize, count: usize, stride: usize, end: usize) -> bool {
@@ -140,7 +144,9 @@ fn bindings(
         if u16_at(data, row) >= state_hashes.len()
             || u16_at(data, row + 2) >= category.resource_count
         {
-            return Err(malformed("G4RA row references an invalid state or resource"));
+            return Err(malformed(
+                "G4RA row references an invalid state or resource",
+            ));
         }
     }
     let mut result = Vec::new();
@@ -152,11 +158,19 @@ fn bindings(
         if target >= category.target_count
             || !table_fits(pool.start + pool_start * 2, count, 2, pool.end)
         {
-            return Err(malformed("G4RA group references an invalid target or index range"));
+            return Err(malformed(
+                "G4RA group references an invalid target or index range",
+            ));
         }
         // Bound expansion by the physical index pool, even if groups overlap.
-        if result.len().checked_add(count).is_none_or(|n| n > data.len() / 2) {
-            return Err(malformed("G4RA binding expansion exceeds the supported profile"));
+        if result
+            .len()
+            .checked_add(count)
+            .is_none_or(|n| n > data.len() / 2)
+        {
+            return Err(malformed(
+                "G4RA binding expansion exceeds the supported profile",
+            ));
         }
         for offset in 0..count {
             let row_index = u16_at(data, pool.start + (pool_start + offset) * 2);
@@ -189,7 +203,9 @@ pub fn parse(data: &[u8]) -> Result<ReferenceAnimation, FormatError> {
         || header_size < MIN_HEADER
         || header_size != usize::from(header.align) * 4
     {
-        return Err(malformed("G4RA header is truncated or has unsupported alignment"));
+        return Err(malformed(
+            "G4RA header is truncated or has unsupported alignment",
+        ));
     }
     let end = header_size
         .checked_add(header.data_size as usize)
@@ -199,7 +215,10 @@ pub fn parse(data: &[u8]) -> Result<ReferenceAnimation, FormatError> {
         return Err(malformed("G4RA invalid declared size"));
     }
     let data = &data[..end];
-    if [0x4c, 0x4e, 0x50].iter().any(|&field| u16_at(data, field) != 0) {
+    if [0x4c, 0x4e, 0x50]
+        .iter()
+        .any(|&field| u16_at(data, field) != 0)
+    {
         return Err(malformed("G4RA third-category bindings are not supported"));
     }
     let sections: [usize; 10] =
@@ -208,7 +227,9 @@ pub fn parse(data: &[u8]) -> Result<ReferenceAnimation, FormatError> {
         || sections[9] > end
         || sections.windows(2).any(|pair| pair[0] > pair[1])
     {
-        return Err(malformed("G4RA section offsets are outside the ordered-table profile"));
+        return Err(malformed(
+            "G4RA section offsets are outside the ordered-table profile",
+        ));
     }
     let state_count = usize::from(data[0x22]);
     let bone_count = u16_at(data, 0x26);
@@ -221,20 +242,38 @@ pub fn parse(data: &[u8]) -> Result<ReferenceAnimation, FormatError> {
     let material_groups = u16_at(data, 0x34);
     let tables = [
         (sections[0], u16_at(data, 0x24), 0x20, sections[1]),
-        (sections[1], skeletal_groups + material_groups, 0x20, sections[2]),
-        (sections[2], skeletal_rows + material_rows, 0x30, sections[3]),
+        (
+            sections[1],
+            skeletal_groups + material_groups,
+            0x20,
+            sections[2],
+        ),
+        (
+            sections[2],
+            skeletal_rows + material_rows,
+            0x30,
+            sections[3],
+        ),
         (sections[4], usize::from(data[0x21]), 4, sections[5]),
         (sections[5], state_count, 4, sections[6]),
         (sections[6], bone_count, 4, sections[7]),
         (sections[7], material_count, 4, sections[8]),
-        (sections[8], skeletal_resources + material_resources, 4, sections[9]),
+        (
+            sections[8],
+            skeletal_resources + material_resources,
+            4,
+            sections[9],
+        ),
     ];
-    if tables.iter().any(|&(start, count, stride, limit)| !table_fits(start, count, stride, limit))
+    if tables
+        .iter()
+        .any(|&(start, count, stride, limit)| !table_fits(start, count, stride, limit))
     {
         return Err(malformed("G4RA table count exceeds its section"));
     }
-    let state_hashes: Vec<_> =
-        (0..state_count).map(|i| u32_at(data, sections[5] + i * 4)).collect();
+    let state_hashes: Vec<_> = (0..state_count)
+        .map(|i| u32_at(data, sections[5] + i * 4))
+        .collect();
     let pool = sections[3]..sections[4];
     let skeletal_bindings = bindings(
         data,
@@ -266,7 +305,11 @@ pub fn parse(data: &[u8]) -> Result<ReferenceAnimation, FormatError> {
         &state_hashes,
         pool,
     )?;
-    Ok(ReferenceAnimation { state_hashes, skeletal_bindings, material_bindings })
+    Ok(ReferenceAnimation {
+        state_hashes,
+        skeletal_bindings,
+        material_bindings,
+    })
 }
 
 #[cfg(test)]
@@ -293,9 +336,11 @@ mod tests {
         for field in (0x24..=0x34).step_by(2) {
             put16(&mut data, field, 1);
         }
-        for (i, offset) in [0x60, 0x80, 0xc0, 0x120, 0x124, 0x128, 0x12c, 0x130, 0x134, 0x13c]
-            .into_iter()
-            .enumerate()
+        for (i, offset) in [
+            0x60, 0x80, 0xc0, 0x120, 0x124, 0x128, 0x12c, 0x130, 0x134, 0x13c,
+        ]
+        .into_iter()
+        .enumerate()
         {
             put16(&mut data, 0x38 + i * 2, (offset - 0x60) / 4);
         }
@@ -319,7 +364,11 @@ mod tests {
         assert_eq!(parsed.material_bindings.len(), 1);
         let skeletal = &parsed.skeletal_bindings[0];
         assert_eq!(
-            (skeletal.target_hash, skeletal.state_hash, skeletal.clip_hash),
+            (
+                skeletal.target_hash,
+                skeletal.state_hash,
+                skeletal.clip_hash
+            ),
             (0x2222, 0x1111, 0x4444)
         );
         assert_eq!(skeletal.raw_words[2], 0x7fc0_1234);
@@ -335,7 +384,13 @@ mod tests {
         let mut binding = parse(&fixture()).unwrap().skeletal_bindings.remove(0);
         binding.raw_words[1] = 2 << 16; // Two clip-frame delay.
         binding.raw_words[2] = 2.0_f32.to_bits();
-        for (ticks, expected) in [(0.0, 5.0), (4.0, 5.0), (9.0, 10.0), (14.0, 15.0), (16.0, 15.0)] {
+        for (ticks, expected) in [
+            (0.0, 5.0),
+            (4.0, 5.0),
+            (9.0, 10.0),
+            (14.0, 15.0),
+            (16.0, 15.0),
+        ] {
             assert_eq!(binding.sample_frame(ticks, 5, 15, 30), Some(expected));
         }
         binding.raw_words[8] = 1 << 24;
@@ -399,7 +454,13 @@ mod tests {
 
     #[test]
     fn rejects_bad_sections_counts_and_unsupported_category() {
-        for (offset, value) in [(10, 0), (0x38, u16::MAX), (0x3a, 0), (0x2e, u16::MAX), (0x4c, 1)] {
+        for (offset, value) in [
+            (10, 0),
+            (0x38, u16::MAX),
+            (0x3a, 0),
+            (0x2e, u16::MAX),
+            (0x4c, 1),
+        ] {
             let mut data = fixture();
             put16(&mut data, offset, value);
             assert!(parse(&data).is_err(), "accepted invalid field {offset:x}");
@@ -411,12 +472,20 @@ mod tests {
 
     #[test]
     fn rejects_invalid_group_pool_and_row_references() {
-        for (offset, value) in
-            [(0x80, 1), (0x82, u16::MAX), (0x84, 3), (0x120, 1), (0xc0, 1), (0xc2, 1)]
-        {
+        for (offset, value) in [
+            (0x80, 1),
+            (0x82, u16::MAX),
+            (0x84, 3),
+            (0x120, 1),
+            (0xc0, 1),
+            (0xc2, 1),
+        ] {
             let mut data = fixture();
             put16(&mut data, offset, value);
-            assert!(parse(&data).is_err(), "accepted invalid reference {offset:x}");
+            assert!(
+                parse(&data).is_err(),
+                "accepted invalid reference {offset:x}"
+            );
         }
     }
 }

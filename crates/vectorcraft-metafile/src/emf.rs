@@ -70,7 +70,12 @@ const MAX_COORD: f64 = 1e9;
 
 /// Does `bytes` start with an EMF header?
 pub(crate) fn is_emf(bytes: &[u8]) -> bool {
-    let u32_at = |at: usize| bytes.get(at..at + 4).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes);
+    let u32_at = |at: usize| {
+        bytes
+            .get(at..at + 4)
+            .and_then(|b| b.try_into().ok())
+            .map(u32::from_le_bytes)
+    };
     u32_at(0) == Some(HEADER) && u32_at(40) == Some(SIGNATURE)
 }
 
@@ -94,7 +99,12 @@ type Bounds = [i32; 4];
 fn union(a: Option<Bounds>, b: Bounds) -> Bounds {
     match a {
         None => b,
-        Some(a) => [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])],
+        Some(a) => [
+            a[0].min(b[0]),
+            a[1].min(b[1]),
+            a[2].max(b[2]),
+            a[3].max(b[3]),
+        ],
     }
 }
 
@@ -116,7 +126,12 @@ struct Writer {
 /// Write `ops` as an EMF of `region` (document space), described as `title`.
 pub(crate) fn write(ops: &[Op], region: Rect, title: &str) -> Vec<u8> {
     let k = UNITS_PER_PT;
-    let frame = [0, 0, (region.width() * k).round() as i32, (region.height() * k).round() as i32];
+    let frame = [
+        0,
+        0,
+        (region.width() * k).round() as i32,
+        (region.height() * k).round() as i32,
+    ];
     let mut w = Writer {
         out: Out::default(),
         records: 0,
@@ -157,8 +172,12 @@ impl Writer {
     }
 
     fn header(&mut self, title: &str) {
-        let desc: Vec<u16> =
-            "VectorCraft".encode_utf16().chain([0]).chain(title.chars().take(200).collect::<String>().encode_utf16()).chain([0, 0]).collect();
+        let desc: Vec<u16> = "VectorCraft"
+            .encode_utf16()
+            .chain([0])
+            .chain(title.chars().take(200).collect::<String>().encode_utf16())
+            .chain([0, 0])
+            .collect();
         let f = self.frame;
         // The reference device: 100 pixels a millimetre, as large as the frame.
         let mm = [(f[2] / 100).max(1) + 1, (f[3] / 100).max(1) + 1];
@@ -196,9 +215,18 @@ impl Writer {
 
     /// Patch the header's bounds, size and record count.
     fn finish(mut self) -> Vec<u8> {
-        let b = self.bounds.map(|b| [b[0].max(self.frame[0]), b[1].max(self.frame[1]), b[2].min(self.frame[2]), b[3].min(self.frame[3])]);
+        let b = self.bounds.map(|b| {
+            [
+                b[0].max(self.frame[0]),
+                b[1].max(self.frame[1]),
+                b[2].min(self.frame[2]),
+                b[3].min(self.frame[3]),
+            ]
+        });
         // An empty picture has bounds (0, 0, -1, -1).
-        let b = b.filter(|b| b[0] <= b[2] && b[1] <= b[3]).unwrap_or([0, 0, -1, -1]);
+        let b = b
+            .filter(|b| b[0] <= b[2] && b[1] <= b[3])
+            .unwrap_or([0, 0, -1, -1]);
         for (i, v) in b.iter().enumerate() {
             self.out.set_i32(8 + 4 * i, *v);
         }
@@ -210,7 +238,13 @@ impl Writer {
 
     fn dev(&self, p: Point) -> [i32; 2] {
         let q = self.to_dev * p;
-        let c = |v: f64| if v.is_finite() { v.round().clamp(-MAX_COORD, MAX_COORD) as i32 } else { 0 };
+        let c = |v: f64| {
+            if v.is_finite() {
+                v.round().clamp(-MAX_COORD, MAX_COORD) as i32
+            } else {
+                0
+            }
+        };
         [c(q.x), c(q.y)]
     }
 
@@ -320,13 +354,21 @@ impl Writer {
             if v.len() % 2 == 1 {
                 v.extend_from_within(..);
             }
-            v.iter().map(|x| (x * k).round().clamp(0.0, f64::from(u32::MAX)) as u32).collect()
+            v.iter()
+                .map(|x| (x * k).round().clamp(0.0, f64::from(u32::MAX)) as u32)
+                .collect()
         });
         let native = match (&entries, &p.dash) {
-            (Some(e), Some(d)) => d.offset.abs() < 1e-9 && e.len() <= MAX_STYLE && e.iter().all(|x| *x >= 1),
+            (Some(e), Some(d)) => {
+                d.offset.abs() < 1e-9 && e.len() <= MAX_STYLE && e.iter().all(|x| *x >= 1)
+            }
             _ => true,
         };
-        let entries = if native { entries.unwrap_or_default() } else { vec![] };
+        let entries = if native {
+            entries.unwrap_or_default()
+        } else {
+            vec![]
+        };
         let cap = match p.cap {
             LineCap::Butt => PS_ENDCAP_FLAT,
             LineCap::Round => 0,
@@ -338,7 +380,12 @@ impl Writer {
             LineJoin::Bevel => PS_JOIN_BEVEL,
         };
         let style = PS_GEOMETRIC | cap | join | if entries.is_empty() { 0 } else { PS_USERSTYLE };
-        let key = PenKey { style, width: (p.width * k).round().clamp(1.0, 1e9) as u32, color: colorref(p.rgb), entries };
+        let key = PenKey {
+            style,
+            width: (p.width * k).round().clamp(1.0, 1e9) as u32,
+            color: colorref(p.rgb),
+            entries,
+        };
         if p.join == LineJoin::Miter {
             let m = p.miter.round().clamp(1.0, 1000.0) as u32;
             if self.miter != Some(m) {
@@ -374,7 +421,11 @@ impl Writer {
 
     /// `bp` as a path bracket → its device bounds (`None`: nothing to draw).
     fn path(&mut self, bp: &BezPath) -> Option<Bounds> {
-        if !bp.elements().iter().any(|e| !matches!(e, PathEl::MoveTo(_) | PathEl::ClosePath)) {
+        if !bp
+            .elements()
+            .iter()
+            .any(|e| !matches!(e, PathEl::MoveTo(_) | PathEl::ClosePath))
+        {
             return None;
         }
         self.record(BEGINPATH, |_| {});
@@ -400,7 +451,14 @@ impl Writer {
                     continue;
                 }
                 PathEl::LineTo(p) => (vec![p], false),
-                PathEl::QuadTo(c, p) => (vec![last + (c - last) * (2.0 / 3.0), p + (c - p) * (2.0 / 3.0), p], true),
+                PathEl::QuadTo(c, p) => (
+                    vec![
+                        last + (c - last) * (2.0 / 3.0),
+                        p + (c - p) * (2.0 / 3.0),
+                        p,
+                    ],
+                    true,
+                ),
                 PathEl::CurveTo(a, b, p) => (vec![a, b, p], true),
             };
             if is_curve != curves {
@@ -425,7 +483,10 @@ impl Writer {
             return;
         }
         let pts = std::mem::take(run);
-        let b = pts.iter().fold(None, |acc, p| Some(union(acc, [p[0], p[1], p[0], p[1]]))).unwrap_or([0, 0, -1, -1]);
+        let b = pts
+            .iter()
+            .fold(None, |acc, p| Some(union(acc, [p[0], p[1], p[0], p[1]])))
+            .unwrap_or([0, 0, -1, -1]);
         self.record(if curves { POLYBEZIERTO } else { POLYLINETO }, |o| {
             b.iter().for_each(|v| o.i32(*v));
             o.u32(pts.len() as u32);
@@ -447,11 +508,22 @@ impl Writer {
             return;
         }
         let (w, h) = (f64::from(img.width), f64::from(img.height));
-        let corners = [Point::ZERO, Point::new(w, 0.0), Point::new(0.0, h), Point::new(w, h)].map(|p| self.dev(xf * p));
-        let b = corners.iter().fold(None, |acc, p| Some(union(acc, [p[0], p[1], p[0], p[1]]))).unwrap_or([0, 0, -1, -1]);
+        let corners = [
+            Point::ZERO,
+            Point::new(w, 0.0),
+            Point::new(0.0, h),
+            Point::new(w, h),
+        ]
+        .map(|p| self.dev(xf * p));
+        let b = corners
+            .iter()
+            .fold(None, |acc, p| Some(union(acc, [p[0], p[1], p[0], p[1]])))
+            .unwrap_or([0, 0, -1, -1]);
         self.grow(b);
         let [a, bb, c, d, e, f] = m.as_coeffs();
-        self.record(SETWORLDTRANSFORM, |o| [a, bb, c, d, e, f].iter().for_each(|v| o.f32(*v as f32)));
+        self.record(SETWORLDTRANSFORM, |o| {
+            [a, bb, c, d, e, f].iter().for_each(|v| o.f32(*v as f32))
+        });
         let (iw, ih) = (img.width as i32, img.height as i32);
         if img.opaque() && opacity >= 0.998 {
             let (bmi, bits) = dib::rgb24(img, 1.0);
@@ -481,7 +553,9 @@ impl Writer {
                 o.i32(0);
                 o.i32(0);
                 // The source's own transform: identity.
-                [1.0f32, 0.0, 0.0, 1.0, 0.0, 0.0].iter().for_each(|v| o.f32(*v));
+                [1.0f32, 0.0, 0.0, 1.0, 0.0, 0.0]
+                    .iter()
+                    .for_each(|v| o.f32(*v));
                 o.u32(0);
                 o.u32(0);
                 o.u32(108);
@@ -496,7 +570,9 @@ impl Writer {
         }
         // MWT_IDENTITY: back to drawing in device units.
         self.record(MODIFYWORLDTRANSFORM, |o| {
-            [1.0f32, 0.0, 0.0, 1.0, 0.0, 0.0].iter().for_each(|v| o.f32(*v));
+            [1.0f32, 0.0, 0.0, 1.0, 0.0, 0.0]
+                .iter()
+                .for_each(|v| o.f32(*v));
             o.u32(1);
         });
     }

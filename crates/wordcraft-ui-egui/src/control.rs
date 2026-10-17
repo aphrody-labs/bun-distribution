@@ -25,9 +25,19 @@ pub struct ControlRequest {
 }
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Value) -> (Self, std::sync::mpsc::Receiver<Value>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Value,
+    ) -> (Self, std::sync::mpsc::Receiver<Value>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -96,11 +106,27 @@ fn mods(p: &Value) -> egui::Modifiers {
     }
 }
 
-fn click_events(app: &mut WordApp, pos: egui::Pos2, button: egui::PointerButton, count: u64, m: egui::Modifiers) {
+fn click_events(
+    app: &mut WordApp,
+    pos: egui::Pos2,
+    button: egui::PointerButton,
+    count: u64,
+    m: egui::Modifiers,
+) {
     app.synthetic.push(egui::Event::PointerMoved(pos));
     for _ in 0..count.clamp(1, 3) {
-        app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: true, modifiers: m });
-        app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: false, modifiers: m });
+        app.synthetic.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: true,
+            modifiers: m,
+        });
+        app.synthetic.push(egui::Event::PointerButton {
+            pos,
+            button,
+            pressed: false,
+            modifiers: m,
+        });
     }
 }
 
@@ -110,8 +136,14 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
     let f = |k: &str| p.get(k).and_then(Value::as_f64).map(|v| v as f32);
     match req.method.as_str() {
         "engine.execute" | "command" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
-            let params = p.get("params").cloned().filter(|v| !v.is_null()).unwrap_or(json!({}));
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
+            let params = p
+                .get("params")
+                .cloned()
+                .filter(|v| !v.is_null())
+                .unwrap_or(json!({}));
             match app.execute(id, params) {
                 Ok(v) => ok(v),
                 Err(e) => err(e),
@@ -126,9 +158,12 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             let search = s("search").unwrap_or("").to_ascii_lowercase();
             if !search.is_empty() {
                 commands.retain(|command| {
-                    ["id", "label", "location", "params"]
-                        .iter()
-                        .any(|field| command.get(field).and_then(Value::as_str).is_some_and(|text| text.to_ascii_lowercase().contains(&search)))
+                    ["id", "label", "location", "params"].iter().any(|field| {
+                        command
+                            .get(field)
+                            .and_then(Value::as_str)
+                            .is_some_and(|text| text.to_ascii_lowercase().contains(&search))
+                    })
                 });
             }
             ok(Value::Array(commands))
@@ -140,7 +175,9 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
         "ui.inspect" => ok(inspect(app, ctx)),
         "ui.parity" => ok(wordcraft_engine::catalog::parity(&app.session.registry)),
         "ui.click" => {
-            let (Some(x), Some(y)) = (f("x"), f("y")) else { return err("missing x/y") };
+            let (Some(x), Some(y)) = (f("x"), f("y")) else {
+                return err("missing x/y");
+            };
             let button = match s("button") {
                 Some("right") => egui::PointerButton::Secondary,
                 _ => egui::PointerButton::Primary,
@@ -151,19 +188,28 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
         }
         "ui.clickText" => {
             let page = p.get("page").and_then(Value::as_u64).unwrap_or(0) as usize;
-            let (Some(x), Some(y)) = (f("x"), f("y")) else { return err("missing x/y") };
-            let Some(pos) = crate::canvas::page_to_screen(app, page, x, y) else { return err("page not on screen") };
+            let (Some(x), Some(y)) = (f("x"), f("y")) else {
+                return err("missing x/y");
+            };
+            let Some(pos) = crate::canvas::page_to_screen(app, page, x, y) else {
+                return err("page not on screen");
+            };
             let count = p.get("count").and_then(Value::as_u64).unwrap_or(1);
             click_events(app, pos, egui::PointerButton::Primary, count, mods(p));
             ok(json!({"screen": [pos.x, pos.y]}))
         }
         "ui.move" => {
-            let (Some(x), Some(y)) = (f("x"), f("y")) else { return err("missing x/y") };
-            app.synthetic.push(egui::Event::PointerMoved(egui::pos2(x, y)));
+            let (Some(x), Some(y)) = (f("x"), f("y")) else {
+                return err("missing x/y");
+            };
+            app.synthetic
+                .push(egui::Event::PointerMoved(egui::pos2(x, y)));
             ok(json!({"queued": true}))
         }
         "ui.press" | "ui.release" => {
-            let (Some(x), Some(y)) = (f("x"), f("y")) else { return err("missing x/y") };
+            let (Some(x), Some(y)) = (f("x"), f("y")) else {
+                return err("missing x/y");
+            };
             let pos = egui::pos2(x, y);
             app.synthetic.push(egui::Event::PointerMoved(pos));
             app.synthetic.push(egui::Event::PointerButton {
@@ -175,10 +221,18 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             ok(json!({"queued": true}))
         }
         "ui.drag" => {
-            let (Some(x), Some(y), Some(tx), Some(ty)) = (f("x"), f("y"), f("toX"), f("toY")) else { return err("missing x/y/toX/toY") };
+            let (Some(x), Some(y), Some(tx), Some(ty)) = (f("x"), f("y"), f("toX"), f("toY"))
+            else {
+                return err("missing x/y/toX/toY");
+            };
             let m = mods(p);
-            let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 100);
-            app.synthetic.push(egui::Event::PointerMoved(egui::pos2(x, y)));
+            let steps = p
+                .get("steps")
+                .and_then(Value::as_u64)
+                .unwrap_or(8)
+                .clamp(1, 100);
+            app.synthetic
+                .push(egui::Event::PointerMoved(egui::pos2(x, y)));
             app.synthetic.push(egui::Event::PointerButton {
                 pos: egui::pos2(x, y),
                 button: egui::PointerButton::Primary,
@@ -187,7 +241,10 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             });
             for i in 1..=steps {
                 let k = i as f32 / steps as f32;
-                app.synthetic.push(egui::Event::PointerMoved(egui::pos2(x + (tx - x) * k, y + (ty - y) * k)));
+                app.synthetic.push(egui::Event::PointerMoved(egui::pos2(
+                    x + (tx - x) * k,
+                    y + (ty - y) * k,
+                )));
             }
             app.synthetic.push(egui::Event::PointerButton {
                 pos: egui::pos2(tx, ty),
@@ -198,23 +255,44 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             ok(json!({"queued": true}))
         }
         "ui.key" => {
-            let Some(k) = s("key").and_then(key_from) else { return err("unknown key") };
+            let Some(k) = s("key").and_then(key_from) else {
+                return err("unknown key");
+            };
             let m = mods(p);
-            app.synthetic.push(egui::Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers: m });
-            app.synthetic.push(egui::Event::Key { key: k, physical_key: None, pressed: false, repeat: false, modifiers: m });
+            app.synthetic.push(egui::Event::Key {
+                key: k,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: m,
+            });
+            app.synthetic.push(egui::Event::Key {
+                key: k,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: m,
+            });
             ok(json!({"queued": true}))
         }
         "ui.text" => {
-            let Some(t) = s("text") else { return err("missing text") };
+            let Some(t) = s("text") else {
+                return err("missing text");
+            };
             app.synthetic.push(egui::Event::Text(t.to_string()));
             ok(json!({"queued": true}))
         }
-        "ui.screenshot" => Outcome::Screenshot { path: s("path").map(str::to_string) },
+        "ui.screenshot" => Outcome::Screenshot {
+            path: s("path").map(str::to_string),
+        },
         "ui.render" => {
             let page = p.get("page").and_then(Value::as_u64).unwrap_or(1);
             let scale = f("scale").unwrap_or(2.0);
             match s("path") {
-                Some(path) => match app.session.run("file.exportPng", &json!({"path": path, "page": page, "scale": scale})) {
+                Some(path) => match app.session.run(
+                    "file.exportPng",
+                    &json!({"path": path, "page": page, "scale": scale}),
+                ) {
                     Ok(v) => ok(v),
                     Err(e) => err(e),
                 },
@@ -227,7 +305,9 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
             }
         }
         "ui.resize" => {
-            let (Some(w), Some(h)) = (f("width"), f("height")) else { return err("missing width/height") };
+            let (Some(w), Some(h)) = (f("width"), f("height")) else {
+                return err("missing width/height");
+            };
             ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, h)));
             ok(json!({}))
         }
@@ -253,12 +333,24 @@ pub fn handle(app: &mut WordApp, ctx: &egui::Context, req: &ControlRequest) -> O
 /// A page rendered by the engine, as base64 PNG in the reply (the same shape as the headless
 /// MCP server's `ui.render`).
 fn render_png(app: &WordApp, page: u64, scale: f32) -> Result<Value, String> {
-    let page = usize::try_from(page.max(1)).unwrap_or(usize::MAX).saturating_sub(1);
+    let page = usize::try_from(page.max(1))
+        .unwrap_or(usize::MAX)
+        .saturating_sub(1);
     let l = app.session.export_layout();
-    let pg = l.pages.get(page).ok_or_else(|| format!("no page {}", page + 1))?;
-    let img = wordcraft_render::render_page(&app.session.doc, pg, scale.clamp(0.1, 8.0), &Default::default());
+    let pg = l
+        .pages
+        .get(page)
+        .ok_or_else(|| format!("no page {}", page + 1))?;
+    let img = wordcraft_render::render_page(
+        &app.session.doc,
+        pg,
+        scale.clamp(0.1, 8.0),
+        &Default::default(),
+    );
     let png = img.to_png();
-    Ok(json!({"png": wordcraft_engine::cmd::insert::base64_encode(&png), "width": img.width, "height": img.height, "pages": l.pages.len()}))
+    Ok(
+        json!({"png": wordcraft_engine::cmd::insert::base64_encode(&png), "width": img.width, "height": img.height, "pages": l.pages.len()}),
+    )
 }
 
 /// The window screenshot: written to `path` when one was given, else base64 PNG in the reply
@@ -266,7 +358,11 @@ fn render_png(app: &WordApp, page: u64, scale: f32) -> Result<Value, String> {
 pub fn save_screenshot(image: &egui::ColorImage, path: Option<&str>) -> Value {
     let [w, h] = image.size;
     let bytes: Vec<u8> = image.pixels.iter().flat_map(|c| c.to_array()).collect();
-    let rendered = wordcraft_render::Rendered { width: w as u32, height: h as u32, pixels: bytes };
+    let rendered = wordcraft_render::Rendered {
+        width: w as u32,
+        height: h as u32,
+        pixels: bytes,
+    };
     let png = rendered.to_png();
     let Some(path) = path else {
         return json!({"ok": true, "result": {"png": wordcraft_engine::cmd::insert::base64_encode(&png), "width": w, "height": h}});

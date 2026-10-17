@@ -42,11 +42,19 @@ fn file() -> Value {
 }
 
 fn named(s: &Session, name: &str) -> Node {
-    s.doc().unwrap().nodes().find(|n| n.name == name).cloned().unwrap_or_else(|| panic!("no {name}"))
+    s.doc()
+        .unwrap()
+        .nodes()
+        .find(|n| n.name == name)
+        .cloned()
+        .unwrap_or_else(|| panic!("no {name}"))
 }
 
 fn fill_hex(n: &Node) -> Option<String> {
-    n.fills.first().and_then(|p| p.solid_color()).map(|c| c.to_hex())
+    n.fills
+        .first()
+        .and_then(|p| p.solid_color())
+        .map(|c| c.to_hex())
 }
 
 fn temp_dir(tag: &str) -> std::path::PathBuf {
@@ -64,14 +72,28 @@ fn open_reads_variables_from_param_or_next_to_the_file() {
 
     // Passed as an object.
     let mut s = Session::new();
-    s.execute("file.open", &json!({"path": path, "variables": variables()})).unwrap();
+    s.execute(
+        "file.open",
+        &json!({"path": path, "variables": variables()}),
+    )
+    .unwrap();
     let button = named(&s, "Button");
     assert_eq!(button.bound.get("fill").map(String::as_str), Some(BRAND));
     let details = named(&s, "Details").id;
-    assert_eq!(button.interactions[0].actions, [Action::Navigate { dest: details, preserve_scroll: false }]);
+    assert_eq!(
+        button.interactions[0].actions,
+        [Action::Navigate {
+            dest: details,
+            preserve_scroll: false
+        }]
+    );
     assert_eq!(button.interactions[0].trigger, Trigger::OnClick);
     // The binding is live: switching the mode recolours the button.
-    s.execute("variable.setMode", &json!({"collection": "Theme", "mode": "Dark"})).unwrap();
+    s.execute(
+        "variable.setMode",
+        &json!({"collection": "Theme", "mode": "Dark"}),
+    )
+    .unwrap();
     assert_eq!(fill_hex(&named(&s, "Button")).as_deref(), Some("0000FF"));
 
     // Found next to the file.
@@ -80,34 +102,70 @@ fn open_reads_variables_from_param_or_next_to_the_file() {
     let mut s = Session::new();
     let r = s.execute("file.open", &json!({"path": path})).unwrap();
     assert_eq!(s.doc().unwrap().variables.variables.len(), 1, "{r}");
-    assert!(r["warnings"].as_array().is_some_and(|w| w.iter().all(|w| !w.as_str().unwrap_or("").contains("variable"))), "{r}");
+    assert!(
+        r["warnings"].as_array().is_some_and(|w| w
+            .iter()
+            .all(|w| !w.as_str().unwrap_or("").contains("variable"))),
+        "{r}"
+    );
 
     // As a path or JSON text; anything else is refused.
     let mut s = Session::new();
-    s.execute("file.import", &json!({"path": path, "variables": vars_path.to_string_lossy()})).unwrap();
+    s.execute(
+        "file.import",
+        &json!({"path": path, "variables": vars_path.to_string_lossy()}),
+    )
+    .unwrap();
     assert_eq!(s.doc().unwrap().variables.collections.len(), 1);
     let mut s = Session::new();
-    s.execute("file.import", &json!({"path": path, "variables": variables().to_string()})).unwrap();
+    s.execute(
+        "file.import",
+        &json!({"path": path, "variables": variables().to_string()}),
+    )
+    .unwrap();
     assert_eq!(s.doc().unwrap().variables.variables.len(), 1);
-    assert!(Session::new().execute("file.open", &json!({"path": path, "variables": {"x": 1}})).is_err());
-    assert!(Session::new().execute("file.open", &json!({"path": path, "variables": 5})).is_err());
+    assert!(
+        Session::new()
+            .execute("file.open", &json!({"path": path, "variables": {"x": 1}}))
+            .is_err()
+    );
+    assert!(
+        Session::new()
+            .execute("file.open", &json!({"path": path, "variables": 5}))
+            .is_err()
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
 fn import_appends_flows_interactions_and_variables() {
     let mut s = Session::new();
-    let data = base64::engine::general_purpose::STANDARD.encode(serde_json::to_vec(&file()).unwrap());
-    s.execute("file.import", &json!({"data": data, "name": "proto.json", "variables": variables()})).unwrap();
+    let data =
+        base64::engine::general_purpose::STANDARD.encode(serde_json::to_vec(&file()).unwrap());
+    s.execute(
+        "file.import",
+        &json!({"data": data, "name": "proto.json", "variables": variables()}),
+    )
+    .unwrap();
     // Twice: ids stay unique, variables aren't duplicated.
-    s.execute("file.import", &json!({"data": data, "name": "proto.json", "variables": variables()})).unwrap();
+    s.execute(
+        "file.import",
+        &json!({"data": data, "name": "proto.json", "variables": variables()}),
+    )
+    .unwrap();
     let doc = s.doc().unwrap();
     assert_eq!(doc.variables.variables.len(), 1);
     assert_eq!(doc.pages.len(), 3);
     for page in &doc.pages[1..] {
-        let NodeKind::Page { flows, .. } = &doc.node(*page).unwrap().kind else { panic!() };
+        let NodeKind::Page { flows, .. } = &doc.node(*page).unwrap().kind else {
+            panic!()
+        };
         assert_eq!(flows.len(), 1);
-        assert_eq!(doc.page_of(flows[0].start), Some(*page), "flows point into their own page");
+        assert_eq!(
+            doc.page_of(flows[0].start),
+            Some(*page),
+            "flows point into their own page"
+        );
         let home = doc.node(flows[0].start).unwrap();
         let button = doc.node(home.children[0]).unwrap();
         let dest = button.interactions[0].actions[0].dest().unwrap();
@@ -120,8 +178,16 @@ fn import_appends_flows_interactions_and_variables() {
 // ---- export settings ----
 
 fn rect(s: &mut Session, name: &str, w: f64, h: f64) -> NodeId {
-    let id = id_of(&s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": w, "height": h})).unwrap()["id"]).unwrap();
-    s.execute("node.set", &json!({"ids": [id], "props": {"name": name}})).unwrap();
+    let id = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": w, "height": h}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    s.execute("node.set", &json!({"ids": [id], "props": {"name": name}}))
+        .unwrap();
     id
 }
 
@@ -144,16 +210,35 @@ fn export_rows_add_step_up_and_update() {
     let rows = exports(&s, r);
     let sizes: Vec<String> = rows.iter().map(|e| e.size.label()).collect();
     assert_eq!(sizes, ["1x", "2x", "3x"]);
-    assert_eq!(rows.iter().map(|e| e.suffix.as_str()).collect::<Vec<_>>(), ["", "@2x", "@3x"]);
+    assert_eq!(
+        rows.iter().map(|e| e.suffix.as_str()).collect::<Vec<_>>(),
+        ["", "@2x", "@3x"]
+    );
 
-    s.execute("export.update", &json!({"ids": [r], "index": 1, "size": "512w", "format": "webp", "suffix": "-wide"})).unwrap();
-    s.execute("export.update", &json!({"ids": [r], "index": 2, "size": {"by": "height", "value": 64}, "format": "pdf"})).unwrap();
+    s.execute(
+        "export.update",
+        &json!({"ids": [r], "index": 1, "size": "512w", "format": "webp", "suffix": "-wide"}),
+    )
+    .unwrap();
+    s.execute(
+        "export.update",
+        &json!({"ids": [r], "index": 2, "size": {"by": "height", "value": 64}, "format": "pdf"}),
+    )
+    .unwrap();
     let rows = exports(&s, r);
     assert_eq!(
         rows[1],
-        ExportSetting { size: ExportSize::Width { value: 512.0 }, suffix: "-wide".into(), format: ExportFormat::Webp, ..Default::default() }
+        ExportSetting {
+            size: ExportSize::Width { value: 512.0 },
+            suffix: "-wide".into(),
+            format: ExportFormat::Webp,
+            ..Default::default()
+        }
     );
-    assert_eq!((rows[2].size, rows[2].format), (ExportSize::Height { value: 64.0 }, ExportFormat::Pdf));
+    assert_eq!(
+        (rows[2].size, rows[2].format),
+        (ExportSize::Height { value: 64.0 }, ExportFormat::Pdf)
+    );
     for bad in [
         json!({"size": "0x"}),
         json!({"size": "abc"}),
@@ -168,9 +253,19 @@ fn export_rows_add_step_up_and_update() {
     }
     assert_eq!(exports(&s, r), rows, "refused edits change nothing");
     // A given setting is used as is (sizes as text too).
-    s.execute("export.add", &json!({"ids": [r], "setting": {"size": "0.5x", "format": "jpg"}})).unwrap();
+    s.execute(
+        "export.add",
+        &json!({"ids": [r], "setting": {"size": "0.5x", "format": "jpg"}}),
+    )
+    .unwrap();
     assert_eq!(exports(&s, r)[3].size, ExportSize::Scale { value: 0.5 });
-    assert!(s.execute("export.add", &json!({"ids": [r], "setting": {"size": "huge"}})).is_err());
+    assert!(
+        s.execute(
+            "export.add",
+            &json!({"ids": [r], "setting": {"size": "huge"}})
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -181,15 +276,33 @@ fn export_layers_uses_each_layers_settings() {
     let c = rect(&mut s, "Plain", 10.0, 10.0);
     s.execute("export.add", &json!({"ids": [a]})).unwrap();
     s.execute("export.add", &json!({"ids": [a]})).unwrap();
-    s.execute("export.add", &json!({"ids": [a], "setting": {"size": "512w", "format": "png"}})).unwrap();
-    s.execute("export.add", &json!({"ids": [b], "setting": {"format": "svg"}})).unwrap();
+    s.execute(
+        "export.add",
+        &json!({"ids": [a], "setting": {"size": "512w", "format": "png"}}),
+    )
+    .unwrap();
+    s.execute(
+        "export.add",
+        &json!({"ids": [b], "setting": {"format": "svg"}}),
+    )
+    .unwrap();
 
-    let r = s.execute("file.exportLayers", &json!({"ids": [a, b, c]})).unwrap();
+    let r = s
+        .execute("file.exportLayers", &json!({"ids": [a, b, c]}))
+        .unwrap();
     let files = r["files"].as_array().unwrap();
     let names: Vec<&str> = files.iter().map(|f| f["name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["Icon.png", "Icon@2x.png", "Icon 2.png", "Logo/Dark.svg"], "unique names; a slash makes a folder");
+    assert_eq!(
+        names,
+        ["Icon.png", "Icon@2x.png", "Icon 2.png", "Logo/Dark.svg"],
+        "unique names; a slash makes a folder"
+    );
     assert_eq!(r["skipped"], 1);
-    let data = |i: usize| base64::engine::general_purpose::STANDARD.decode(files[i]["data"].as_str().unwrap()).unwrap();
+    let data = |i: usize| {
+        base64::engine::general_purpose::STANDARD
+            .decode(files[i]["data"].as_str().unwrap())
+            .unwrap()
+    };
     assert_eq!(png_width(&data(0)), 32);
     assert_eq!(png_width(&data(1)), 64);
     assert_eq!(png_width(&data(2)), 512, "512w scales to that width");
@@ -198,17 +311,34 @@ fn export_layers_uses_each_layers_settings() {
     // Without ids or a selection: every layer on the page with settings; into a folder.
     s.set_selection(Vec::new());
     let dir = temp_dir("exportlayers");
-    let r = s.execute("file.exportLayers", &json!({"dir": dir.to_string_lossy()})).unwrap();
+    let r = s
+        .execute("file.exportLayers", &json!({"dir": dir.to_string_lossy()}))
+        .unwrap();
     assert_eq!(r["files"].as_array().map(Vec::len), Some(4));
     assert!(dir.join("Icon@2x.png").is_file() && dir.join("Logo").join("Dark.svg").is_file());
     let _ = std::fs::remove_dir_all(&dir);
 
     // Nothing to export.
-    assert!(s.execute("file.exportLayers", &json!({"ids": [c]})).is_err());
+    assert!(
+        s.execute("file.exportLayers", &json!({"ids": [c]}))
+            .is_err()
+    );
     // `file.export` takes the same sizes.
-    let r = s.execute("file.export", &json!({"ids": [a], "size": "128w"})).unwrap();
-    assert_eq!(png_width(&base64::engine::general_purpose::STANDARD.decode(r["data"].as_str().unwrap()).unwrap()), 128);
-    assert!(s.execute("file.export", &json!({"ids": [a], "size": "-2x"})).is_err());
+    let r = s
+        .execute("file.export", &json!({"ids": [a], "size": "128w"}))
+        .unwrap();
+    assert_eq!(
+        png_width(
+            &base64::engine::general_purpose::STANDARD
+                .decode(r["data"].as_str().unwrap())
+                .unwrap()
+        ),
+        128
+    );
+    assert!(
+        s.execute("file.export", &json!({"ids": [a], "size": "-2x"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -223,12 +353,31 @@ fn export_sizes_parse_and_label() {
         assert_eq!(ExportSize::parse(text), Some(want), "{text}");
         assert_eq!(ExportSize::parse(&want.label()), Some(want));
     }
-    for bad in ["", "x", "0x", "-1x", "NaNx", "infx", "65x", "20000w", "2q", "2xx"] {
+    for bad in [
+        "", "x", "0x", "-1x", "NaNx", "infx", "65x", "20000w", "2q", "2xx",
+    ] {
         assert_eq!(ExportSize::parse(bad), None, "{bad}");
     }
-    let e = |size, suffix: &str, format| ExportSetting { size, suffix: suffix.into(), format, ..Default::default() };
-    assert_eq!(e(ExportSize::Scale { value: 2.0 }, "", ExportFormat::Png).file_suffix(), "@2x");
-    assert_eq!(e(ExportSize::Scale { value: 2.0 }, "", ExportFormat::Svg).file_suffix(), "");
-    assert_eq!(e(ExportSize::Scale { value: 2.0 }, "-big", ExportFormat::Png).file_suffix(), "-big");
-    assert_eq!(e(ExportSize::Width { value: 64.0 }, "", ExportFormat::Png).file_suffix(), "");
+    let e = |size, suffix: &str, format| ExportSetting {
+        size,
+        suffix: suffix.into(),
+        format,
+        ..Default::default()
+    };
+    assert_eq!(
+        e(ExportSize::Scale { value: 2.0 }, "", ExportFormat::Png).file_suffix(),
+        "@2x"
+    );
+    assert_eq!(
+        e(ExportSize::Scale { value: 2.0 }, "", ExportFormat::Svg).file_suffix(),
+        ""
+    );
+    assert_eq!(
+        e(ExportSize::Scale { value: 2.0 }, "-big", ExportFormat::Png).file_suffix(),
+        "-big"
+    );
+    assert_eq!(
+        e(ExportSize::Width { value: 64.0 }, "", ExportFormat::Png).file_suffix(),
+        ""
+    );
 }

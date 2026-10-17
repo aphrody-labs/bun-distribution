@@ -40,7 +40,13 @@ pub const MARK_WIDTH: f32 = 0.25;
 
 /// sRGB → CMYK (all `0..=1`), the naive way: `K = 1 − max(R, G, B)`, `C = (1 − R − K) / (1 − K)`.
 pub fn cmyk_of(r: f32, g: f32, b: f32) -> [f32; 4] {
-    let unit = |v: f32| if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 };
+    let unit = |v: f32| {
+        if v.is_finite() {
+            v.clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
+    };
     let (r, g, b) = (unit(r), unit(g), unit(b));
     let k = 1.0 - r.max(g).max(b);
     if k >= 1.0 - 1e-6 {
@@ -85,7 +91,8 @@ impl Ink {
     /// A `w × h` image from straight (not premultiplied) RGBA pixels, in this colour model.
     pub(crate) fn bitmap(self, rgba: Vec<u8>, w: u32, h: u32) -> Image {
         if self == Ink::Cmyk
-            && let Some(img) = CmykImage::new(&rgba, w, h).and_then(|c| Image::from_custom(c, true).ok())
+            && let Some(img) =
+                CmykImage::new(&rgba, w, h).and_then(|c| Image::from_custom(c, true).ok())
         {
             return img;
         }
@@ -118,7 +125,12 @@ impl CmykImage {
         let mut hs = std::collections::hash_map::DefaultHasher::new();
         rgba.hash(&mut hs);
         let opaque = alpha.iter().all(|a| *a == 255);
-        Some(CmykImage { color: Arc::new(color), alpha: (!opaque).then(|| Arc::new(alpha)), size: (w, h), key: hs.finish() })
+        Some(CmykImage {
+            color: Arc::new(color),
+            alpha: (!opaque).then(|| Arc::new(alpha)),
+            size: (w, h),
+            key: hs.finish(),
+        })
     }
 }
 
@@ -168,7 +180,11 @@ impl Sheet {
     pub(crate) fn new(w: f64, h: f64, p: &PrintSettings) -> Self {
         let bleed = p.bleed();
         let marks = p.marks();
-        let margin = if marks { bleed + 2.0 * MARK_GAP + MARK_LENGTH } else { bleed };
+        let margin = if marks {
+            bleed + 2.0 * MARK_GAP + MARK_LENGTH
+        } else {
+            bleed
+        };
         Sheet {
             width: w + 2.0 * margin,
             height: h + 2.0 * margin,
@@ -196,7 +212,10 @@ impl Sheet {
         for (x, sx) in [(r.x0, -1.0), (r.x1, 1.0)] {
             for (y, sy) in [(r.y0, -1.0), (r.y1, 1.0)] {
                 // Out from the trim's corner, along the line of `r`'s edge.
-                let (tx, ty) = (if sx < 0.0 { t.x0 } else { t.x1 }, if sy < 0.0 { t.y0 } else { t.y1 });
+                let (tx, ty) = (
+                    if sx < 0.0 { t.x0 } else { t.x1 },
+                    if sy < 0.0 { t.y0 } else { t.y1 },
+                );
                 line((tx + sx * near, y), (tx + sx * far, y));
                 line((x, ty + sy * near), (x, ty + sy * far));
             }
@@ -228,7 +247,9 @@ impl Sheet {
 
     /// Clip what follows to the bleed (pop it after).
     pub(crate) fn push_bleed_clip(&self, s: &mut Surface) -> bool {
-        let Some(p) = to_path(&self.bleed_box().to_path(0.1)) else { return false };
+        let Some(p) = to_path(&self.bleed_box().to_path(0.1)) else {
+            return false;
+        };
         s.push_clip_path(&p, &FillRule::NonZero);
         true
     }

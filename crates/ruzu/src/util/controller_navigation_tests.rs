@@ -17,13 +17,19 @@ fn interface_refresh_retries_after_reentrant_input_pump() {
     let deadline = pad.refresh_at;
 
     let pumping = input.borrow_mut();
-    pad.refresh(&navigation.player_1_controller, &navigation.handheld_controller);
+    pad.refresh(
+        &navigation.player_1_controller,
+        &navigation.handheld_controller,
+    );
     assert_eq!(pad.refresh_at, deadline);
     assert_eq!(pad.identity, "previous-device");
     assert!(Arc::ptr_eq(&pad.state, &previous_state));
     drop(pumping);
 
-    pad.refresh(&navigation.player_1_controller, &navigation.handheld_controller);
+    pad.refresh(
+        &navigation.player_1_controller,
+        &navigation.handheld_controller,
+    );
     assert!(pad.refresh_at > deadline);
     assert!(pad.identity.is_empty());
     assert!(!Arc::ptr_eq(&pad.state, &previous_state));
@@ -74,7 +80,13 @@ fn vertical_repeat_delay_release_direction_change_and_no_backlog() {
     assert_eq!(repeat.poll(None, later), None);
     assert_eq!(repeat.poll(down, later), None);
     assert_eq!(repeat.poll(down, later + Duration::from_millis(400)), down);
-    for key in [NavigationKey::Enter, NavigationKey::Escape, NavigationKey::Menu, NavigationKey::Left, NavigationKey::Right] {
+    for key in [
+        NavigationKey::Enter,
+        NavigationKey::Escape,
+        NavigationKey::Menu,
+        NavigationKey::Left,
+        NavigationKey::Right,
+    ] {
         assert_eq!(repeat.poll(Some(key), later), None);
         assert_eq!(repeat.poll(Some(key), later + Duration::from_secs(5)), None);
     }
@@ -84,15 +96,24 @@ fn vertical_repeat_delay_release_direction_change_and_no_backlog() {
 fn vertical_repeat_uses_dpad_and_rotated_stick_not_sideways_confirmation() {
     let mut state = NavigationState::default();
     state.button_values[native_button::Values::DDown as usize].value = true;
-    assert_eq!(vertical_direction(&state, NpadStyleIndex::Fullkey), Some(NavigationKey::Down));
+    assert_eq!(
+        vertical_direction(&state, NpadStyleIndex::Fullkey),
+        Some(NavigationKey::Down)
+    );
     assert_eq!(vertical_direction(&state, NpadStyleIndex::JoyconLeft), None);
     state.stick_values[native_analog::Values::LStick as usize].up = true;
     assert_eq!(vertical_direction(&state, NpadStyleIndex::Fullkey), None);
     state.button_values[native_button::Values::DDown as usize].value = false;
-    assert_eq!(vertical_direction(&state, NpadStyleIndex::Fullkey), Some(NavigationKey::Up));
+    assert_eq!(
+        vertical_direction(&state, NpadStyleIndex::Fullkey),
+        Some(NavigationKey::Up)
+    );
     state.stick_values[native_analog::Values::LStick as usize].up = false;
     state.stick_values[native_analog::Values::LStick as usize].left = true;
-    assert_eq!(vertical_direction(&state, NpadStyleIndex::JoyconLeft), Some(NavigationKey::Down));
+    assert_eq!(
+        vertical_direction(&state, NpadStyleIndex::JoyconLeft),
+        Some(NavigationKey::Down)
+    );
 }
 
 #[test]

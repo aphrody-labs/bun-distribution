@@ -58,7 +58,11 @@ pub(crate) struct Multi(Vec<(usize, i32)>);
 
 impl Multi {
     fn get(&self, i: usize) -> i32 {
-        self.0.binary_search_by_key(&i, |e| e.0).ok().and_then(|k| self.0.get(k)).map_or(0, |e| e.1)
+        self.0
+            .binary_search_by_key(&i, |e| e.0)
+            .ok()
+            .and_then(|k| self.0.get(k))
+            .map_or(0, |e| e.1)
     }
     /// The non-zero windings, by input.
     pub(crate) fn iter(&self) -> impl DoubleEndedIterator<Item = (usize, i32)> + '_ {
@@ -125,7 +129,9 @@ pub(crate) fn fill_bezpath(p: &PathData) -> BezPath {
 }
 
 /// Sweep tolerance for a set of paths (same scaling rule as linesweeper's own `binary_op`).
-pub(crate) fn eps_for<'a>(paths: impl IntoIterator<Item = &'a BezPath>) -> Result<f64, PathOpsError> {
+pub(crate) fn eps_for<'a>(
+    paths: impl IntoIterator<Item = &'a BezPath>,
+) -> Result<f64, PathOpsError> {
     let mut m: f64 = 0.0;
     for p in paths {
         for el in p.elements() {
@@ -164,7 +170,11 @@ fn el_points(el: &kurbo::PathEl) -> impl Iterator<Item = Point> {
 /// the order of the sweep's own tolerance.
 pub(crate) fn snap_horizontals(paths: &mut [&mut BezPath], eps: f64) {
     use kurbo::PathEl::*;
-    let mut ys: Vec<f64> = paths.iter().flat_map(|p| p.elements().iter().filter_map(kurbo::PathEl::end_point)).map(|p| p.y).collect();
+    let mut ys: Vec<f64> = paths
+        .iter()
+        .flat_map(|p| p.elements().iter().filter_map(kurbo::PathEl::end_point))
+        .map(|p| p.y)
+        .collect();
     ys.sort_by(f64::total_cmp);
     ys.dedup();
     let mut start = f64::NEG_INFINITY;
@@ -249,10 +259,16 @@ pub(crate) struct Tidy {
 impl Tidy {
     /// Merge any smooth joint.
     pub(crate) fn free(precision: f64) -> Self {
-        Self { precision, ..Default::default() }
+        Self {
+            precision,
+            ..Default::default()
+        }
     }
     /// Keep every on-curve point of `paths`.
-    pub(crate) fn keeping<'a>(precision: f64, paths: impl IntoIterator<Item = &'a BezPath>) -> Self {
+    pub(crate) fn keeping<'a>(
+        precision: f64,
+        paths: impl IntoIterator<Item = &'a BezPath>,
+    ) -> Self {
         let mut keep = Vec::new();
         let mut curves = Vec::new();
         for p in paths {
@@ -269,27 +285,45 @@ impl Tidy {
         let mut by_x: Vec<usize> = (0..curves.len()).collect();
         by_x.sort_by(|&i, &j| curves[i].0.x0.total_cmp(&curves[j].0.x0));
         let max_width = curves.iter().map(|(r, _)| r.width()).fold(0.0, f64::max);
-        Self { precision, keep, curves, by_x, max_width }
+        Self {
+            precision,
+            keep,
+            curves,
+            by_x,
+            max_width,
+        }
     }
     fn is_kept(&self, p: Point) -> bool {
         let tol = 1e-6 * (1.0 + p.x.abs().max(p.y.abs()));
         let lo = self.keep.partition_point(|q| q.x < p.x - tol);
-        self.keep[lo..].iter().take_while(|q| q.x <= p.x + tol).any(|q| (q.y - p.y).abs() <= tol)
+        self.keep[lo..]
+            .iter()
+            .take_while(|q| q.x <= p.x + tol)
+            .any(|q| (q.y - p.y).abs() <= tol)
     }
 }
 
 impl Arrangement {
     pub(crate) fn new(mut paths: Vec<(BezPath, FillRule)>) -> Result<Self, PathOpsError> {
         let eps = eps_for(paths.iter().map(|p| &p.0))?;
-        snap_horizontals(&mut paths.iter_mut().map(|p| &mut p.0).collect::<Vec<_>>(), eps);
+        snap_horizontals(
+            &mut paths.iter_mut().map(|p| &mut p.0).collect::<Vec<_>>(),
+            eps,
+        );
         // The sweep can panic on rare near-degenerate input; that must never take the app down,
         // so it becomes an error (callers fall back to leaving the art unchanged).
         let sweep = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             Topology::<Multi>::from_paths(paths.iter().enumerate().map(|(i, (p, _))| (p, i)), eps)
         }));
-        let top = sweep.map_err(|_| PathOpsError::Degenerate)?.map_err(|_| PathOpsError::OpenPath)?;
+        let top = sweep
+            .map_err(|_| PathOpsError::Degenerate)?
+            .map_err(|_| PathOpsError::OpenPath)?;
         let tidy = Tidy::keeping(DEFAULT_PRECISION, paths.iter().map(|p| &p.0));
-        Ok(Self { top, rules: paths.iter().map(|p| p.1).collect(), tidy })
+        Ok(Self {
+            top,
+            rules: paths.iter().map(|p| p.1).collect(),
+            tidy,
+        })
     }
 
     pub(crate) fn mask(&self, w: &Multi) -> Vec<bool> {
@@ -304,8 +338,13 @@ impl Arrangement {
     }
 
     /// The inputs that cover a face of winding `w` (`mask(w)`'s true indices), back to front.
-    pub(crate) fn covered<'a>(&'a self, w: &'a Multi) -> impl DoubleEndedIterator<Item = usize> + 'a {
-        w.iter().filter(|&(i, k)| self.rules.get(i).is_some_and(|&r| inside(r, k))).map(|(i, _)| i)
+    pub(crate) fn covered<'a>(
+        &'a self,
+        w: &'a Multi,
+    ) -> impl DoubleEndedIterator<Item = usize> + 'a {
+        w.iter()
+            .filter(|&(i, k)| self.rules.get(i).is_some_and(|&r| inside(r, k)))
+            .map(|(i, _)| i)
     }
 
     /// [`Arrangement::contours`] with the test on the windings themselves (see [`Self::covered`]).
@@ -322,7 +361,10 @@ impl Arrangement {
         let mut set = BTreeSet::new();
         for s in self.top.segment_indices() {
             let h = s.first_half();
-            for w in [self.top.winding_clockwise(h), self.top.winding_counter_clockwise(h)] {
+            for w in [
+                self.top.winding_clockwise(h),
+                self.top.winding_counter_clockwise(h),
+            ] {
                 let m = self.mask(w);
                 if m.iter().any(|&b| b) {
                     set.insert(m);
@@ -334,21 +376,33 @@ impl Arrangement {
 
     /// Vertices where three or more edges meet (true intersections / touch points).
     pub(crate) fn junctions(&self) -> Vec<Point> {
-        let mut count: std::collections::HashMap<(u64, u64), (usize, Point)> = std::collections::HashMap::new();
+        let mut count: std::collections::HashMap<(u64, u64), (usize, Point)> =
+            std::collections::HashMap::new();
         for s in self.top.segment_indices() {
             for h in [s.first_half(), s.second_half()] {
                 let p = self.top.point(h).to_kurbo();
-                count.entry((p.x.to_bits(), p.y.to_bits())).or_insert((0, p)).0 += 1;
+                count
+                    .entry((p.x.to_bits(), p.y.to_bits()))
+                    .or_insert((0, p))
+                    .0 += 1;
             }
         }
-        let mut v: Vec<Point> = count.into_values().filter(|(c, _)| *c >= 3).map(|(_, p)| p).collect();
+        let mut v: Vec<Point> = count
+            .into_values()
+            .filter(|(c, _)| *c >= 3)
+            .map(|(_, p)| p)
+            .collect();
         v.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
         v
     }
 }
 
 /// Convert selected contours into a tidy compound path.
-pub(crate) fn contours_to_path(c: &Contours, idx: impl IntoIterator<Item = ContourIdx>, tidy: &Tidy) -> PathData {
+pub(crate) fn contours_to_path(
+    c: &Contours,
+    idx: impl IntoIterator<Item = ContourIdx>,
+    tidy: &Tidy,
+) -> PathData {
     let mut subpaths = Vec::new();
     for i in idx {
         let path = tidy.repair(&c[i].path);
@@ -384,7 +438,10 @@ pub(crate) struct Seg {
 
 impl Seg {
     pub(crate) fn line(a: Point, b: Point) -> Self {
-        Self { c: CubicBez::new(a, a, b, b), line: true }
+        Self {
+            c: CubicBez::new(a, a, b, b),
+            line: true,
+        }
     }
 }
 
@@ -393,9 +450,15 @@ pub(crate) fn to_seg(s: PathSeg) -> Seg {
         PathSeg::Line(l) => Seg::line(l.p0, l.p1),
         PathSeg::Quad(q) => {
             let c = q.raise();
-            Seg { c, line: is_straight(&c, 1e-9) }
+            Seg {
+                c,
+                line: is_straight(&c, 1e-9),
+            }
         }
-        PathSeg::Cubic(c) => Seg { c, line: is_straight(&c, 1e-9 * (1.0 + c.p0.distance(c.p3))) },
+        PathSeg::Cubic(c) => Seg {
+            c,
+            line: is_straight(&c, 1e-9 * (1.0 + c.p0.distance(c.p3))),
+        },
     }
 }
 
@@ -439,12 +502,17 @@ pub(crate) fn segs_to_subpath(segs: &[Seg], closed: bool) -> Option<SubPath> {
 /// Merge segments that were split from one curve (or collinear lines) back together, dropping
 /// degenerate pieces. `closed` segments form a loop.
 pub(crate) fn tidy_segments(segs: Vec<Seg>, closed: bool, tidy: &Tidy) -> Vec<Seg> {
-    let scale = segs.iter().map(|s| s.c.p0.distance(s.c.p3)).fold(0.0, f64::max);
+    let scale = segs
+        .iter()
+        .map(|s| s.c.p0.distance(s.c.p3))
+        .fold(0.0, f64::max);
     let tiny = (scale * 1e-9).max(1e-9);
     let mut segs: Vec<Seg> = segs
         .into_iter()
         .filter(|s| {
-            let r = kurbo::Rect::from_points(s.c.p0, s.c.p3).union_pt(s.c.p1).union_pt(s.c.p2);
+            let r = kurbo::Rect::from_points(s.c.p0, s.c.p3)
+                .union_pt(s.c.p1)
+                .union_pt(s.c.p2);
             r.width() + r.height() > tiny
         })
         .collect();
@@ -497,7 +565,9 @@ fn try_merge(run: &[Seg], tidy: &Tidy) -> Option<Seg> {
         if len < 1e-12 {
             return None;
         }
-        let ok = run.iter().all(|s| ((s.c.p3 - first.p0).cross(chord) / len).abs() <= precision * 0.5);
+        let ok = run
+            .iter()
+            .all(|s| ((s.c.p3 - first.p0).cross(chord) / len).abs() <= precision * 0.5);
         return ok.then(|| Seg::line(first.p0, last.p3));
     }
     if let Some(c) = exact_merge(run, tidy) {
@@ -530,7 +600,9 @@ fn exact_merge(run: &[Seg], tidy: &Tidy) -> Option<CubicBez> {
         if na.distance_sq.sqrt() > tol || nb.distance_sq.sqrt() > tol {
             continue;
         }
-        let on_curve = run.iter().all(|s| c.nearest(s.c.eval(0.5), 1e-12).distance_sq.sqrt() <= tol * 10.0);
+        let on_curve = run
+            .iter()
+            .all(|s| c.nearest(s.c.eval(0.5), 1e-12).distance_sq.sqrt() <= tol * 10.0);
         if !on_curve || (na.t - nb.t).abs() < 1e-12 {
             continue;
         }
@@ -551,7 +623,11 @@ impl Tidy {
         let x = a.x.min(b.x);
         let hi = self.by_x.partition_point(|&i| self.curves[i].0.x0 <= x);
         let lo = self.by_x[..hi].partition_point(|&i| self.curves[i].0.x0 < x - self.max_width);
-        self.by_x[lo..hi].iter().map(|&i| &self.curves[i]).filter(move |(r, _)| r.contains(a) && r.contains(b)).map(|(_, c)| c)
+        self.by_x[lo..hi]
+            .iter()
+            .map(|&i| &self.curves[i])
+            .filter(move |(r, _)| r.contains(a) && r.contains(b))
+            .map(|(_, c)| c)
     }
 
     /// `bp` with each curve piece that strays from the one input curve through both its ends
@@ -582,10 +658,15 @@ impl Tidy {
                     let mut follows = false;
                     for c in self.curves_around(a, b) {
                         let (na, nb) = (c.nearest(a, 1e-12), c.nearest(b, 1e-12));
-                        if na.distance_sq.sqrt() > tol || nb.distance_sq.sqrt() > tol || (na.t - nb.t).abs() < 1e-12 {
+                        if na.distance_sq.sqrt() > tol
+                            || nb.distance_sq.sqrt() > tol
+                            || (na.t - nb.t).abs() < 1e-12
+                        {
                             continue;
                         }
-                        if [0.25, 0.5, 0.75].iter().all(|&t| c.nearest(raw.eval(t), 1e-12).distance_sq.sqrt() <= tol * 10.0) {
+                        if [0.25, 0.5, 0.75].iter().all(|&t| {
+                            c.nearest(raw.eval(t), 1e-12).distance_sq.sqrt() <= tol * 10.0
+                        }) {
                             follows = true;
                             break;
                         }
@@ -597,9 +678,13 @@ impl Tidy {
                         };
                         subs.push(CubicBez::new(a, sub.p1, sub.p2, b));
                     }
-                    let same = |p: &CubicBez, q: &CubicBez| p.p1.distance(q.p1) <= tol * 10.0 && p.p2.distance(q.p2) <= tol * 10.0;
+                    let same = |p: &CubicBez, q: &CubicBez| {
+                        p.p1.distance(q.p1) <= tol * 10.0 && p.p2.distance(q.p2) <= tol * 10.0
+                    };
                     match subs.split_first() {
-                        Some((sub, rest)) if !follows && rest.iter().all(|q| same(sub, q)) => out.curve_to(sub.p1, sub.p2, b),
+                        Some((sub, rest)) if !follows && rest.iter().all(|q| same(sub, q)) => {
+                            out.curve_to(sub.p1, sub.p2, b)
+                        }
                         _ => out.push(el),
                     }
                     cur = b;
@@ -633,7 +718,10 @@ pub fn normalize(path: &PathData, rule: FillRule) -> PathData {
 pub fn try_normalize(path: &PathData, rule: FillRule) -> Result<PathData, PathOpsError> {
     let bp = fill_bezpath(path);
     let c = normalize_bez(&bp, rule)?;
-    Ok(all_contours_to_path(&c, &Tidy::keeping(DEFAULT_PRECISION, [&bp])))
+    Ok(all_contours_to_path(
+        &c,
+        &Tidy::keeping(DEFAULT_PRECISION, [&bp]),
+    ))
 }
 
 pub(crate) fn normalize_bez(bp: &BezPath, rule: FillRule) -> Result<Contours, PathOpsError> {
@@ -645,15 +733,31 @@ pub(crate) fn normalize_bez(bp: &BezPath, rule: FillRule) -> Result<Contours, Pa
 }
 
 /// Boolean operation between two filled paths. Returns an empty path on invalid (non-finite) input.
-pub fn boolean(a: &PathData, a_rule: FillRule, b: &PathData, b_rule: FillRule, op: BoolOp) -> PathData {
+pub fn boolean(
+    a: &PathData,
+    a_rule: FillRule,
+    b: &PathData,
+    b_rule: FillRule,
+    op: BoolOp,
+) -> PathData {
     try_boolean(a, a_rule, b, b_rule, op, DEFAULT_PRECISION).unwrap_or_default()
 }
 
 /// Boolean operation with an explicit refit `precision`; errors on non-finite input.
-pub fn try_boolean(a: &PathData, a_rule: FillRule, b: &PathData, b_rule: FillRule, op: BoolOp, precision: f64) -> Result<PathData, PathOpsError> {
+pub fn try_boolean(
+    a: &PathData,
+    a_rule: FillRule,
+    b: &PathData,
+    b_rule: FillRule,
+    op: BoolOp,
+    precision: f64,
+) -> Result<PathData, PathOpsError> {
     let arr = Arrangement::new(vec![(fill_bezpath(a), a_rule), (fill_bezpath(b), b_rule)])?;
     let c = arr.contours(|m| op.apply(m[0], m[1]));
-    let tidy = Tidy { precision, ..arr.tidy };
+    let tidy = Tidy {
+        precision,
+        ..arr.tidy
+    };
     Ok(all_contours_to_path(&c, &tidy))
 }
 
@@ -676,7 +780,9 @@ pub fn unite_all(paths: &[(&PathData, FillRule)]) -> PathData {
         if bp.elements().is_empty() {
             continue;
         }
-        let Ok(c) = normalize_bez(&bp, *r) else { continue };
+        let Ok(c) = normalize_bez(&bp, *r) else {
+            continue;
+        };
         for ct in c.contours() {
             all.extend(ct.path.iter());
         }
@@ -684,7 +790,14 @@ pub fn unite_all(paths: &[(&PathData, FillRule)]) -> PathData {
     if all.elements().is_empty() {
         return PathData::default();
     }
-    let tidy = Tidy::keeping(DEFAULT_PRECISION, paths.iter().map(|(p, _)| fill_bezpath(p)).collect::<Vec<_>>().iter());
+    let tidy = Tidy::keeping(
+        DEFAULT_PRECISION,
+        paths
+            .iter()
+            .map(|(p, _)| fill_bezpath(p))
+            .collect::<Vec<_>>()
+            .iter(),
+    );
     match normalize_bez(&all, FillRule::NonZero) {
         Ok(c) => all_contours_to_path(&c, &tidy),
         Err(_) => PathData::default(),
@@ -717,16 +830,28 @@ mod tests {
         // Issue #1028: linesweeper 0.5 handed back a contour running out along an input curve and
         // back by a piece that doesn't follow it, which refit into a visible lens.
         let c = arc();
-        let tidy =
-            Tidy::keeping(DEFAULT_PRECISION, [&BezPath::from_vec(vec![kurbo::PathEl::MoveTo(c.p0), kurbo::PathEl::CurveTo(c.p1, c.p2, c.p3)])]);
+        let tidy = Tidy::keeping(
+            DEFAULT_PRECISION,
+            [&BezPath::from_vec(vec![
+                kurbo::PathEl::MoveTo(c.p0),
+                kurbo::PathEl::CurveTo(c.p1, c.p2, c.p3),
+            ])],
+        );
         let out = c.subsegment(0.2..0.6);
         let mut contour = BezPath::new();
         contour.move_to(out.p0);
         contour.curve_to(out.p1, out.p2, out.p3);
         // back to the start, bulging off the curve and overshooting the end like the reported piece
-        contour.curve_to(out.p0 + (out.p0 - out.p3) * 0.15 + kurbo::Vec2::new(4.0, -3.0), out.p1 + kurbo::Vec2::new(3.0, -2.0), out.p0);
+        contour.curve_to(
+            out.p0 + (out.p0 - out.p3) * 0.15 + kurbo::Vec2::new(4.0, -3.0),
+            out.p1 + kurbo::Vec2::new(3.0, -2.0),
+            out.p0,
+        );
         contour.close_path();
-        assert!(!is_sliver(&contour, tidy.precision), "the stray piece makes a lens");
+        assert!(
+            !is_sliver(&contour, tidy.precision),
+            "the stray piece makes a lens"
+        );
         let fixed = tidy.repair(&contour);
         assert!(is_sliver(&fixed, tidy.precision), "{}", fixed.to_svg());
         // a piece on its curve is left exactly as it is
@@ -744,7 +869,12 @@ mod tests {
         // onto the other.
         let lower = CubicBez::new((0.0, 0.0), (30.0, 20.0), (70.0, 20.0), (100.0, 0.0));
         let upper = CubicBez::new((0.0, 0.0), (30.0, -20.0), (70.0, -20.0), (100.0, 0.0));
-        let input = |c: CubicBez| BezPath::from_vec(vec![kurbo::PathEl::MoveTo(c.p0), kurbo::PathEl::CurveTo(c.p1, c.p2, c.p3)]);
+        let input = |c: CubicBez| {
+            BezPath::from_vec(vec![
+                kurbo::PathEl::MoveTo(c.p0),
+                kurbo::PathEl::CurveTo(c.p1, c.p2, c.p3),
+            ])
+        };
         let tidy = Tidy::keeping(DEFAULT_PRECISION, [&input(lower), &input(upper)]);
         let mut lens = BezPath::new();
         lens.move_to(lower.p0);

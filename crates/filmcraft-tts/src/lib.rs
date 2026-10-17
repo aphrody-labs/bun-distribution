@@ -62,17 +62,24 @@ pub struct Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Params { semitones: 0.0, pace: 1.0 }
+        Params {
+            semitones: 0.0,
+            pace: 1.0,
+        }
     }
 }
 
 impl Params {
     pub fn check(&self) -> Result<(), TtsError> {
         if !(MIN_PACE..=MAX_PACE).contains(&self.pace) {
-            return Err(TtsError::Invalid(format!("pace must be between {MIN_PACE} and {MAX_PACE}")));
+            return Err(TtsError::Invalid(format!(
+                "pace must be between {MIN_PACE} and {MAX_PACE}"
+            )));
         }
         if !(-MAX_SEMITONES..=MAX_SEMITONES).contains(&self.semitones) {
-            return Err(TtsError::Invalid(format!("pitch must be within ±{MAX_SEMITONES} semitones")));
+            return Err(TtsError::Invalid(format!(
+                "pitch must be within ±{MAX_SEMITONES} semitones"
+            )));
         }
         Ok(())
     }
@@ -129,7 +136,14 @@ pub const LANGUAGES: &[(&str, &str)] = &[("en-US", "English (United States)")];
 /// package is downloaded into `models_dir`).
 pub fn voices_in(models_dir: Option<&std::path::Path>) -> Vec<VoiceInfo> {
     let installed = models_dir.is_some_and(catalog::installed) && cfg!(feature = "kokoro");
-    formant::VOICES.iter().map(|v| v.info).chain(catalog::VOICES.iter().map(|v| VoiceInfo { installed, ..v.info })).collect()
+    formant::VOICES
+        .iter()
+        .map(|v| v.info)
+        .chain(catalog::VOICES.iter().map(|v| VoiceInfo {
+            installed,
+            ..v.info
+        }))
+        .collect()
 }
 
 /// The built-in voices (always available).
@@ -147,7 +161,10 @@ pub fn voice(id: &str) -> Result<Box<dyn Voice>, TtsError> {
 }
 
 /// The voice `id`: built in, or (feature `kokoro`) a neural voice from the package in `models_dir`.
-pub fn voice_in(id: &str, models_dir: Option<&std::path::Path>) -> Result<Box<dyn Voice>, TtsError> {
+pub fn voice_in(
+    id: &str,
+    models_dir: Option<&std::path::Path>,
+) -> Result<Box<dyn Voice>, TtsError> {
     if catalog::find(id).is_some() {
         #[cfg(feature = "kokoro")]
         {
@@ -165,7 +182,10 @@ pub fn voice_in(id: &str, models_dir: Option<&std::path::Path>) -> Result<Box<dy
 
 /// The voice used when none is chosen.
 pub fn default_voice_id() -> &'static str {
-    formant::VOICES.first().map(|v| v.info.id).unwrap_or("basic-female")
+    formant::VOICES
+        .first()
+        .map(|v| v.info.id)
+        .unwrap_or("basic-female")
 }
 
 /// The sentence "Hear this voice" plays.
@@ -176,7 +196,9 @@ pub fn check_text(text: &str) -> Result<(), TtsError> {
     if text.len() > MAX_TEXT_BYTES {
         return Err(TtsError::TextTooLong);
     }
-    let says_something = script::parse(text).iter().any(|s| matches!(s, script::Segment::Speech(t) if t.chars().any(char::is_alphanumeric)));
+    let says_something = script::parse(text)
+        .iter()
+        .any(|s| matches!(s, script::Segment::Speech(t) if t.chars().any(char::is_alphanumeric)));
     if !says_something {
         return Err(TtsError::Empty);
     }
@@ -192,10 +214,17 @@ mod tests {
         let v = voices();
         assert!(v.len() >= 2);
         for (i, a) in v.iter().enumerate() {
-            assert!(v.iter().skip(i + 1).all(|b| b.id != a.id), "duplicate {}", a.id);
+            assert!(
+                v.iter().skip(i + 1).all(|b| b.id != a.id),
+                "duplicate {}",
+                a.id
+            );
             assert_eq!(voice(a.id).unwrap().info().id, a.id);
         }
-        assert_eq!(voice("nope").err(), Some(TtsError::UnknownVoice("nope".into())));
+        assert_eq!(
+            voice("nope").err(),
+            Some(TtsError::UnknownVoice("nope".into()))
+        );
         assert!(voice(default_voice_id()).is_ok());
     }
 
@@ -203,10 +232,22 @@ mod tests {
     fn params_are_checked() {
         assert!(Params::default().check().is_ok());
         for p in [
-            Params { pace: f64::NAN, ..Default::default() },
-            Params { pace: 0.1, ..Default::default() },
-            Params { semitones: 40.0, ..Default::default() },
-            Params { semitones: f64::INFINITY, ..Default::default() },
+            Params {
+                pace: f64::NAN,
+                ..Default::default()
+            },
+            Params {
+                pace: 0.1,
+                ..Default::default()
+            },
+            Params {
+                semitones: 40.0,
+                ..Default::default()
+            },
+            Params {
+                semitones: f64::INFINITY,
+                ..Default::default()
+            },
         ] {
             assert!(p.check().is_err(), "{p:?}");
         }
@@ -216,7 +257,10 @@ mod tests {
     fn empty_scripts_are_refused() {
         assert_eq!(check_text(""), Err(TtsError::Empty));
         assert_eq!(check_text("  [pause 1s] ... "), Err(TtsError::Empty));
-        assert_eq!(check_text(&"a".repeat(MAX_TEXT_BYTES + 1)), Err(TtsError::TextTooLong));
+        assert_eq!(
+            check_text(&"a".repeat(MAX_TEXT_BYTES + 1)),
+            Err(TtsError::TextTooLong)
+        );
         assert!(check_text("Hi").is_ok());
     }
 }

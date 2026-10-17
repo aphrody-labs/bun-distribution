@@ -87,7 +87,7 @@ pub fn reencode_with_payloads(
                     height: i16::try_from(t.height).unwrap_or(0),
                     dds: payload,
                 });
-            },
+            }
         }
     }
 
@@ -191,7 +191,10 @@ pub fn recolour(src: &[u8], filtre: &Recolor, cible: Option<&str>) -> Result<Rec
     if let Some(nom) = cible
         && !atlas.textures.iter().any(|t| t.name == nom)
     {
-        return Err(format!("pas de texture « {nom} » ; disponibles : {}", noms(&atlas.textures)));
+        return Err(format!(
+            "pas de texture « {nom} » ; disponibles : {}",
+            noms(&atlas.textures)
+        ));
     }
 
     let mut charges = Vec::with_capacity(atlas.textures.len());
@@ -227,13 +230,22 @@ pub fn recolour(src: &[u8], filtre: &Recolor, cible: Option<&str>) -> Result<Rec
     }
 
     let octets = reencode_with_payloads(src, &atlas, &charges)?;
-    Ok(Recoloration { octets, recolorees, hors_cible, illisibles })
+    Ok(Recoloration {
+        octets,
+        recolorees,
+        hors_cible,
+        illisibles,
+    })
 }
 
 /// Noms des textures principales, pour les messages d'erreur.
 #[must_use]
 pub fn noms(textures: &[G4txTexture]) -> String {
-    textures.iter().map(|t| t.name.as_str()).collect::<Vec<_>>().join(", ")
+    textures
+        .iter()
+        .map(|t| t.name.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 #[cfg(test)]
@@ -254,7 +266,11 @@ mod tests {
         let mut rgba = Vec::with_capacity((w * h * 4) as usize);
         for i in 0..w * h {
             let rouge = i % 2 == 0;
-            rgba.extend_from_slice(if rouge { &[255, 0, 0, 255] } else { &[0, 0, 255, 128] });
+            rgba.extend_from_slice(if rouge {
+                &[255, 0, 0, 255]
+            } else {
+                &[0, 0, 255, 128]
+            });
         }
         (w, h, rgba)
     }
@@ -275,14 +291,20 @@ mod tests {
         );
         // Le vrai chemin, lui, retrouve les dimensions.
         let atlas = crate::g4tx::parse(&octets).expect("G4TX lisible");
-        assert_eq!((atlas.textures[0].width, atlas.textures[0].height), (w as i32, h as i32));
+        assert_eq!(
+            (atlas.textures[0].width, atlas.textures[0].height),
+            (w as i32, h as i32)
+        );
     }
 
     #[test]
     fn la_recoloration_fait_l_aller_retour_et_garde_l_alpha() {
         let (w, h, rgba) = damier();
         let octets = conteneur("essai", w, h, &rgba);
-        let filtre = Recolor { hue_shift: 120.0, ..Recolor::identity() };
+        let filtre = Recolor {
+            hue_shift: 120.0,
+            ..Recolor::identity()
+        };
         let r = recolour(&octets, &filtre, None).expect("recoloration");
         assert_eq!(r.recolorees, alloc::vec![("essai".to_string(), w, h)]);
         assert!(r.hors_cible.is_empty());
@@ -326,7 +348,10 @@ mod tests {
     fn une_cible_inconnue_liste_les_textures_disponibles() {
         let (w, h, rgba) = damier();
         let octets = conteneur("essai", w, h, &rgba);
-        let filtre = Recolor { hue_shift: 30.0, ..Recolor::identity() };
+        let filtre = Recolor {
+            hue_shift: 30.0,
+            ..Recolor::identity()
+        };
         let e = recolour(&octets, &filtre, Some("absente")).expect_err("refus attendu");
         assert!(e.contains("essai"), "{e}");
     }

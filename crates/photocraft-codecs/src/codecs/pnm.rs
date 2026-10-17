@@ -27,7 +27,10 @@ impl<'a> Reader<'a> {
         while self.pos < self.b.len() {
             let c = self.b[self.pos];
             if c == b'#' {
-                while self.pos < self.b.len() && self.b[self.pos] != b'\n' && self.b[self.pos] != b'\r' {
+                while self.pos < self.b.len()
+                    && self.b[self.pos] != b'\n'
+                    && self.b[self.pos] != b'\r'
+                {
                     self.pos += 1;
                 }
             } else if c.is_ascii_whitespace() {
@@ -41,7 +44,10 @@ impl<'a> Reader<'a> {
     fn token(&mut self) -> Result<&'a [u8], CodecError> {
         self.skip_ws_and_comments();
         let start = self.pos;
-        while self.pos < self.b.len() && !self.b[self.pos].is_ascii_whitespace() && self.b[self.pos] != b'#' {
+        while self.pos < self.b.len()
+            && !self.b[self.pos].is_ascii_whitespace()
+            && self.b[self.pos] != b'#'
+        {
             self.pos += 1;
         }
         if start == self.pos {
@@ -52,7 +58,10 @@ impl<'a> Reader<'a> {
 
     fn uint(&mut self) -> Result<u32, CodecError> {
         let t = self.token()?;
-        std::str::from_utf8(t).ok().and_then(|s| s.parse::<u32>().ok()).ok_or_else(|| err("invalid integer in header"))
+        std::str::from_utf8(t)
+            .ok()
+            .and_then(|s| s.parse::<u32>().ok())
+            .ok_or_else(|| err("invalid integer in header"))
     }
 
     /// Consume the single whitespace byte that separates header and raster.
@@ -93,10 +102,18 @@ impl Samples {
     /// alone could overstate it).
     fn with_capacity(maxval: u32, cap: usize) -> Result<Self, CodecError> {
         let sample = sample_for_maxval(maxval)?;
-        let len = cap.checked_mul(sample.bytes()).ok_or_else(|| CodecError::LimitExceeded(format!("{cap} samples do not fit in memory")))?;
+        let len = cap.checked_mul(sample.bytes()).ok_or_else(|| {
+            CodecError::LimitExceeded(format!("{cap} samples do not fit in memory"))
+        })?;
         let mut bytes = Vec::new();
-        bytes.try_reserve_exact(len).map_err(|_| CodecError::LimitExceeded(format!("cannot allocate {len} bytes for the image")))?;
-        Ok(Samples { maxval, sample, bytes })
+        bytes.try_reserve_exact(len).map_err(|_| {
+            CodecError::LimitExceeded(format!("cannot allocate {len} bytes for the image"))
+        })?;
+        Ok(Samples {
+            maxval,
+            sample,
+            bytes,
+        })
     }
 
     /// Append one raw value in `[0, maxval]`, rescaled to the full range of the output sample.
@@ -109,7 +126,9 @@ impl Samples {
             (SampleType::U8, 255) => self.bytes.push(v as u8),
             (SampleType::U8, m) => self.bytes.push(((v * 255 + m / 2) / m) as u8),
             (_, 65535) => self.bytes.extend_from_slice(&(v as u16).to_ne_bytes()),
-            (_, m) => self.bytes.extend_from_slice(&(((v as u64 * 65535 + m as u64 / 2) / m as u64) as u16).to_ne_bytes()),
+            (_, m) => self.bytes.extend_from_slice(
+                &(((v as u64 * 65535 + m as u64 / 2) / m as u64) as u16).to_ne_bytes(),
+            ),
         }
         Ok(())
     }
@@ -125,7 +144,9 @@ fn sample_count(w: u32, h: u32, channels: usize) -> Result<usize, CodecError> {
     (w as usize)
         .checked_mul(h as usize)
         .and_then(|p| p.checked_mul(channels))
-        .ok_or_else(|| CodecError::LimitExceeded(format!("{w}x{h}x{channels} samples do not fit in memory")))
+        .ok_or_else(|| {
+            CodecError::LimitExceeded(format!("{w}x{h}x{channels} samples do not fit in memory"))
+        })
 }
 
 fn read_binary(data: &[u8], n: usize, maxval: u32) -> Result<Samples, CodecError> {
@@ -164,7 +185,10 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
                 r.single_ws()?;
                 let row = (w as usize).div_ceil(8);
                 let data = r.rest();
-                if row.checked_mul(h as usize).is_none_or(|len| data.len() < len) {
+                if row
+                    .checked_mul(h as usize)
+                    .is_none_or(|len| data.len() < len)
+                {
                     return Err(err("truncated raster"));
                 }
                 px = Vec::with_capacity(n);
@@ -192,7 +216,11 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
         }
         b'2' | b'3' | b'5' | b'6' => {
             let (w, h, maxval) = (r.uint()?, r.uint()?, r.uint()?);
-            let layout = if matches!(kind, b'2' | b'5') { ChannelLayout::Gray } else { ChannelLayout::Rgb };
+            let layout = if matches!(kind, b'2' | b'5') {
+                ChannelLayout::Gray
+            } else {
+                ChannelLayout::Rgb
+            };
             limits.check(w, h, layout, sample_for_maxval(maxval)?)?;
             let n = sample_count(w, h, layout.channels())?;
             let samples = if matches!(kind, b'5' | b'6') {
@@ -211,7 +239,11 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
         }
         b'7' => decode_pam(&mut r, limits),
         b'F' | b'f' => {
-            let layout = if kind == b'F' { ChannelLayout::Rgb } else { ChannelLayout::Gray };
+            let layout = if kind == b'F' {
+                ChannelLayout::Rgb
+            } else {
+                ChannelLayout::Gray
+            };
             let (w, h) = (r.uint()?, r.uint()?);
             let scale: f32 = std::str::from_utf8(r.token()?)
                 .ok()
@@ -223,7 +255,10 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
             let nc = layout.channels();
             let row = w as usize * nc;
             let data = r.rest();
-            if sample_count(w, h, nc)?.checked_mul(4).is_none_or(|len| data.len() < len) {
+            if sample_count(w, h, nc)?
+                .checked_mul(4)
+                .is_none_or(|len| data.len() < len)
+            {
                 return Err(err("truncated raster"));
             }
             let le = scale < 0.0;
@@ -237,8 +272,17 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
                 let Some(dst) = out.get_mut(dst_start..dst_start + row_bytes) else {
                     return Err(err("truncated raster"));
                 };
-                for (d, s) in dst.as_chunks_mut::<4>().0.iter_mut().zip(src.as_chunks::<4>().0) {
-                    let v = if le { f32::from_le_bytes(*s) } else { f32::from_be_bytes(*s) };
+                for (d, s) in dst
+                    .as_chunks_mut::<4>()
+                    .0
+                    .iter_mut()
+                    .zip(src.as_chunks::<4>().0)
+                {
+                    let v = if le {
+                        f32::from_le_bytes(*s)
+                    } else {
+                        f32::from_be_bytes(*s)
+                    };
                     *d = v.to_ne_bytes();
                 }
             }
@@ -282,7 +326,10 @@ fn decode_pam(r: &mut Reader<'_>, limits: &Limits) -> Result<Image, CodecError> 
         ("CMYK", 4) => ChannelLayout::Cmyk,
         ("CMYK_ALPHA", 5) => ChannelLayout::CmykA,
         (t, d) => {
-            return Err(CodecError::unsupported(F, format!("PAM tuple type {t:?} with depth {d}")));
+            return Err(CodecError::unsupported(
+                F,
+                format!("PAM tuple type {t:?} with depth {d}"),
+            ));
         }
     };
     limits.check(w, h, layout, sample_for_maxval(maxval)?)?;
@@ -290,7 +337,11 @@ fn decode_pam(r: &mut Reader<'_>, limits: &Limits) -> Result<Image, CodecError> 
     read_binary(r.rest(), n, maxval)?.into_image(w, h, layout)
 }
 
-pub(crate) fn encode(src: &Image, plan: Plan, _opts: &EncodeOptions) -> Result<Vec<u8>, CodecError> {
+pub(crate) fn encode(
+    src: &Image,
+    plan: Plan,
+    _opts: &EncodeOptions,
+) -> Result<Vec<u8>, CodecError> {
     let img = src.converted(plan.layout, plan.sample);
     let (w, h) = img.dimensions();
     let layout = img.layout();
@@ -314,8 +365,12 @@ pub(crate) fn encode(src: &Image, plan: Plan, _opts: &EncodeOptions) -> Result<V
         sample @ (SampleType::U8 | SampleType::U16) => {
             let maxval = if sample == SampleType::U8 { 255 } else { 65535 };
             match layout {
-                ChannelLayout::Gray => out.extend_from_slice(format!("P5\n{w} {h}\n{maxval}\n").as_bytes()),
-                ChannelLayout::Rgb => out.extend_from_slice(format!("P6\n{w} {h}\n{maxval}\n").as_bytes()),
+                ChannelLayout::Gray => {
+                    out.extend_from_slice(format!("P5\n{w} {h}\n{maxval}\n").as_bytes())
+                }
+                ChannelLayout::Rgb => {
+                    out.extend_from_slice(format!("P6\n{w} {h}\n{maxval}\n").as_bytes())
+                }
                 l => {
                     let t = match l {
                         ChannelLayout::GrayA => "GRAYSCALE_ALPHA",

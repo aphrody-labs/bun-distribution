@@ -28,12 +28,20 @@ impl<'a> Tiff<'a> {
     }
     pub fn u16_at(&self, pos: usize) -> Option<u16> {
         let b = self.data.get(pos..pos.checked_add(2)?)?;
-        Some(if self.le { u16::from_le_bytes([b[0], b[1]]) } else { u16::from_be_bytes([b[0], b[1]]) })
+        Some(if self.le {
+            u16::from_le_bytes([b[0], b[1]])
+        } else {
+            u16::from_be_bytes([b[0], b[1]])
+        })
     }
     pub fn u32_at(&self, pos: usize) -> Option<u32> {
         let b = self.data.get(pos..pos.checked_add(4)?)?;
         let a = [b[0], b[1], b[2], b[3]];
-        Some(if self.le { u32::from_le_bytes(a) } else { u32::from_be_bytes(a) })
+        Some(if self.le {
+            u32::from_le_bytes(a)
+        } else {
+            u32::from_be_bytes(a)
+        })
     }
     pub fn first_ifd(&self) -> Option<usize> {
         let magic = self.u16_at(2)?;
@@ -51,7 +59,12 @@ impl<'a> Tiff<'a> {
         let mut v = Vec::with_capacity(n);
         for i in 0..n {
             let e = pos + 2 + i * 12;
-            v.push(Entry { tag: self.u16_at(e)?, typ: self.u16_at(e + 2)?, count: self.u32_at(e + 4)?, value_pos: e + 8 });
+            v.push(Entry {
+                tag: self.u16_at(e)?,
+                typ: self.u16_at(e + 2)?,
+                count: self.u32_at(e + 4)?,
+                value_pos: e + 8,
+            });
         }
         let next = self.u32_at(pos + 2 + n * 12).unwrap_or(0) as usize;
         Some((v, next))
@@ -75,7 +88,11 @@ impl<'a> Tiff<'a> {
             _ => return None,
         };
         let len = size.checked_mul(e.count as usize)?;
-        let start = if len <= 4 { e.value_pos } else { self.u32_at(e.value_pos)? as usize };
+        let start = if len <= 4 {
+            e.value_pos
+        } else {
+            self.u32_at(e.value_pos)? as usize
+        };
         self.data.get(start..start.checked_add(len)?)
     }
 }
@@ -94,7 +111,9 @@ pub(crate) fn summarize(blob: &[u8]) -> ExifSummary {
     let mut s = ExifSummary::default();
     let Some(t) = Tiff::new(blob) else { return s };
     let Some(ifd0) = t.first_ifd() else { return s };
-    let Some((entries, next)) = t.ifd(ifd0) else { return s };
+    let Some((entries, next)) = t.ifd(ifd0) else {
+        return s;
+    };
     let mut exif_ifd = None;
     for e in &entries {
         match e.tag {
@@ -111,7 +130,10 @@ pub(crate) fn summarize(blob: &[u8]) -> ExifSummary {
         let len = e1.iter().find(|e| e.tag == 0x0202).and_then(|e| t.uint(e));
         if let (Some(o), Some(l)) = (off, len) {
             let (o, l) = (o as usize, l as usize);
-            if l > 4 && o.checked_add(l).is_some_and(|end| end <= blob.len()) && blob[o..o + 2] == [0xFF, 0xD8] {
+            if l > 4
+                && o.checked_add(l).is_some_and(|end| end <= blob.len())
+                && blob[o..o + 2] == [0xFF, 0xD8]
+            {
                 s.thumbnail = Some((o, l));
             }
         }
@@ -124,7 +146,9 @@ pub(crate) fn summarize(blob: &[u8]) -> ExifSummary {
         if cs == Some(0xFFFF)
             && let Some((ie, _)) = interop.and_then(|p| t.ifd(p as usize))
         {
-            s.adobe_rgb_hint = ie.iter().any(|e| e.tag == 1 && t.bytes(e).is_some_and(|b| b.starts_with(b"R03")));
+            s.adobe_rgb_hint = ie
+                .iter()
+                .any(|e| e.tag == 1 && t.bytes(e).is_some_and(|b| b.starts_with(b"R03")));
         }
     }
     s

@@ -23,7 +23,10 @@ pub fn ingest_rtti_classes(db: &mut Db, binary_id: i64, path: &Path) -> Result<u
     let raw =
         std::fs::read_to_string(path).with_context(|| format!("lecture de {}", path.display()))?;
 
-    let tx = db.conn_mut().transaction().context("ouverture de transaction rtti_classes")?;
+    let tx = db
+        .conn_mut()
+        .transaction()
+        .context("ouverture de transaction rtti_classes")?;
 
     let mut count = 0usize;
 
@@ -44,8 +47,16 @@ pub fn ingest_rtti_classes(db: &mut Db, binary_id: i64, path: &Path) -> Result<u
 
         // Ancre de vérité : vaddr=0 car l'adresse réelle n'est pas connue ici.
         // La boucle RE la mettra à jour ultérieurement.
-        ingest::anchor(&tx, binary_id, 0, &full_ns, "rtti", "nie-rtti-classes.txt", 1.0)
-            .with_context(|| format!("anchor({full_ns})"))?;
+        ingest::anchor(
+            &tx,
+            binary_id,
+            0,
+            &full_ns,
+            "rtti",
+            "nie-rtti-classes.txt",
+            1.0,
+        )
+        .with_context(|| format!("anchor({full_ns})"))?;
 
         count += 1;
         debug!("rtti: {full_ns}");
@@ -58,10 +69,18 @@ pub fn ingest_rtti_classes(db: &mut Db, binary_id: i64, path: &Path) -> Result<u
 /// Analyse une ligne `ClassName [namespace]`.
 /// Renvoie `(&str classe, &str namespace)` ou une erreur si le format est invalide.
 fn parse_rtti_line(line: &str) -> Result<(&str, &str)> {
-    let bracket_start = line.rfind('[').with_context(|| "crochet ouvrant '[' absent")?;
-    let bracket_end = line.rfind(']').with_context(|| "crochet fermant ']' absent")?;
+    let bracket_start = line
+        .rfind('[')
+        .with_context(|| "crochet ouvrant '[' absent")?;
+    let bracket_end = line
+        .rfind(']')
+        .with_context(|| "crochet fermant ']' absent")?;
 
-    anyhow::ensure!(bracket_end > bracket_start, "ordre des crochets invalide dans {:?}", line);
+    anyhow::ensure!(
+        bracket_end > bracket_start,
+        "ordre des crochets invalide dans {:?}",
+        line
+    );
 
     let namespace = &line[bracket_start + 1..bracket_end];
     let class_name = line[..bracket_start].trim();
@@ -126,7 +145,9 @@ mod tests {
         std::fs::write(tmp.path(), sample).unwrap();
 
         let mut db = aphrody_nie_index::Db::open_in_memory().unwrap();
-        let bin = db.upsert_binary("nie.exe", "abc", "x86_64", 64, 0, 0, None, None).unwrap();
+        let bin = db
+            .upsert_binary("nie.exe", "abc", "x86_64", 64, 0, 0, None, None)
+            .unwrap();
 
         let count = ingest_rtti_classes(&mut db, bin, tmp.path()).unwrap();
         assert_eq!(count, 6);
@@ -134,7 +155,11 @@ mod tests {
         // Vérifier que les classes sont bien dans la table rtti_class.
         let db_count: i64 = db
             .conn()
-            .query_row("SELECT COUNT(*) FROM rtti_class WHERE binary_id = ?1", [bin], |r| r.get(0))
+            .query_row(
+                "SELECT COUNT(*) FROM rtti_class WHERE binary_id = ?1",
+                [bin],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(db_count, 6);
 

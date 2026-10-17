@@ -9,7 +9,7 @@ use crate::tags::common::TagDetails;
 
 #[derive(Deserialize, ToSchema)]
 pub struct AddMediaFileTagsPathInfo {
-  pub media_file_token: MediaFileToken,
+    pub media_file_token: MediaFileToken,
 }
 
 /// Exactly one of `maybe_tags` / `maybe_tags_list` must be set (400 if
@@ -18,18 +18,18 @@ pub struct AddMediaFileTagsPathInfo {
 /// otherwise).
 #[derive(Deserialize, ToSchema)]
 pub struct AddMediaFileTagsRequest {
-  /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
-  pub maybe_tags: Option<String>,
+    /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
+    pub maybe_tags: Option<String>,
 
-  /// Tags as a list. Entries are still trimmed.
-  pub maybe_tags_list: Option<Vec<String>>,
+    /// Tags as a list. Entries are still trimmed.
+    pub maybe_tags_list: Option<Vec<String>>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct AddMediaFileTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// The tags from this request after upsert, with canonical tokens and
-  /// fresh use counts. Tags already on the file are absorbed (no error).
-  pub tags: Vec<TagDetails>,
+    /// The tags from this request after upsert, with canonical tokens and
+    /// fresh use counts. Tags already on the file are absorbed (no error).
+    pub tags: Vec<TagDetails>,
 }

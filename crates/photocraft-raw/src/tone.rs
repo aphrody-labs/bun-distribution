@@ -59,7 +59,13 @@ pub struct Tone {
 
 impl Tone {
     /// Every slider at 0.
-    pub const NEUTRAL: Tone = Tone { shadows: 0.0, highlights: 0.0, clarity: 0.0, texture: 0.0, dehaze: 0.0 };
+    pub const NEUTRAL: Tone = Tone {
+        shadows: 0.0,
+        highlights: 0.0,
+        clarity: 0.0,
+        texture: 0.0,
+        dehaze: 0.0,
+    };
 
     pub fn is_neutral(&self) -> bool {
         self.gain_neutral() && self.dehaze == 0.0
@@ -90,29 +96,37 @@ const STEP: f32 = 0.25;
 // extended linearly beyond the measured range, never steeper than 0.8 stop per stop so tones
 // keep their order).
 const SHADOWS_UP: [f32; 73] = [
-    2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142,
-    2.142, 2.142, 2.142, 2.142, 2.138, 2.117, 2.074, 2.010, 1.918, 1.797, 1.668, 1.546, 1.429, 1.315, 1.204, 1.093, 0.979, 0.860, 0.734, 0.604, 0.482, 0.378,
-    0.288, 0.211, 0.157, 0.127, 0.104, 0.078, 0.056, 0.046, 0.044, 0.044, 0.044, 0.044, 0.044, 0.041, 0.030, 0.014, 0.003, 0.000, 0.000, 0.000, 0.000, 0.000,
-    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142,
+    2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142, 2.142,
+    2.138, 2.117, 2.074, 2.010, 1.918, 1.797, 1.668, 1.546, 1.429, 1.315, 1.204, 1.093, 0.979,
+    0.860, 0.734, 0.604, 0.482, 0.378, 0.288, 0.211, 0.157, 0.127, 0.104, 0.078, 0.056, 0.046,
+    0.044, 0.044, 0.044, 0.044, 0.044, 0.041, 0.030, 0.014, 0.003, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
 ];
 const SHADOWS_DOWN: [f32; 73] = [
-    -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365,
-    -2.365, -2.365, -2.365, -2.365, -2.346, -2.270, -2.155, -2.078, -2.054, -2.031, -1.973, -1.872, -1.739, -1.604, -1.483, -1.372, -1.266, -1.161, -1.053,
-    -0.940, -0.821, -0.696, -0.570, -0.455, -0.356, -0.270, -0.197, -0.146, -0.117, -0.098, -0.076, -0.057, -0.048, -0.046, -0.046, -0.046, -0.046, -0.046,
-    -0.043, -0.032, -0.014, -0.003, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365,
+    -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.365, -2.346,
+    -2.270, -2.155, -2.078, -2.054, -2.031, -1.973, -1.872, -1.739, -1.604, -1.483, -1.372, -1.266,
+    -1.161, -1.053, -0.940, -0.821, -0.696, -0.570, -0.455, -0.356, -0.270, -0.197, -0.146, -0.117,
+    -0.098, -0.076, -0.057, -0.048, -0.046, -0.046, -0.046, -0.046, -0.046, -0.043, -0.032, -0.014,
+    -0.003, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
 ];
 const HIGHLIGHTS_UP: [f32; 73] = [
-    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
-    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.001, 0.002, 0.003, 0.004, 0.008, 0.017, 0.030, 0.043, 0.055, 0.070, 0.085, 0.097, 0.106,
-    0.114, 0.120, 0.127, 0.142, 0.167, 0.199, 0.239, 0.301, 0.381, 0.470, 0.569, 0.677, 0.796, 0.925, 1.056, 1.176, 1.268, 1.319, 1.339, 1.347, 1.351, 1.357,
-    1.364, 1.372, 1.380, 1.388, 1.396, 1.404, 1.412,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.001, 0.002, 0.003, 0.004, 0.008, 0.017, 0.030, 0.043,
+    0.055, 0.070, 0.085, 0.097, 0.106, 0.114, 0.120, 0.127, 0.142, 0.167, 0.199, 0.239, 0.301,
+    0.381, 0.470, 0.569, 0.677, 0.796, 0.925, 1.056, 1.176, 1.268, 1.319, 1.339, 1.347, 1.351,
+    1.357, 1.364, 1.372, 1.380, 1.388, 1.396, 1.404, 1.412,
 ];
 #[allow(clippy::approx_constant)] // measured values, one of them happens to be close to e
 const HIGHLIGHTS_DOWN: [f32; 73] = [
-    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
-    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, -0.004, -0.020, -0.046, -0.068, -0.086, -0.104, -0.116, -0.118, -0.118, -0.118, -0.118, -0.118,
-    -0.119, -0.120, -0.123, -0.127, -0.131, -0.144, -0.169, -0.204, -0.245, -0.301, -0.375, -0.452, -0.537, -0.639, -0.753, -0.872, -0.997, -1.132, -1.294,
-    -1.475, -1.637, -1.751, -1.836, -1.936, -2.059, -2.191, -2.323, -2.454, -2.586, -2.718, -2.850,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+    0.000, 0.000, 0.000, 0.000, -0.004, -0.020, -0.046, -0.068, -0.086, -0.104, -0.116, -0.118,
+    -0.118, -0.118, -0.118, -0.118, -0.119, -0.120, -0.123, -0.127, -0.131, -0.144, -0.169, -0.204,
+    -0.245, -0.301, -0.375, -0.452, -0.537, -0.639, -0.753, -0.872, -0.997, -1.132, -1.294, -1.475,
+    -1.637, -1.751, -1.836, -1.936, -2.059, -2.191, -2.323, -2.454, -2.586, -2.718, -2.850,
 ];
 
 /// Clarity: the work-copy radii of the bases between its bands, and their guided-filter ε.
@@ -133,7 +147,11 @@ const HAZE_UP: f32 = 0.8;
 const HAZE_DOWN: f32 = 0.22;
 /// Linear ProPhoto → linear Display P3 (both D50): the dark channel was measured in Photoshop's
 /// Display P3 output.
-const PRO_TO_P3: [[f32; 3]; 3] = [[1.632638, -0.379816, -0.252821], [-0.153846, 1.166859, -0.013013], [0.010511, -0.062886, 1.052375]];
+const PRO_TO_P3: [[f32; 3]; 3] = [
+    [1.632638, -0.379816, -0.252821],
+    [-0.153846, 1.166859, -0.013013],
+    [0.010511, -0.062886, 1.052375],
+];
 
 /// A change of log₂ luminance computed on a reduced copy, carried to full size along the image's
 /// own edges (guided upsampling): a local linear model `change = a · log₂ Y + b` per reduced pixel.
@@ -149,8 +167,13 @@ struct Upsampled {
 impl Upsampled {
     /// The change at full-size pixel (`x`, `y`) of a `w × h` image, of linear luminance `lum`.
     fn change(&self, w: usize, h: usize, x: usize, y: usize, lum: f32) -> f32 {
-        let l = if lum > 0.0 { lum.log2().max(self.floor) } else { self.floor };
-        bilinear(&self.a, self.sw, self.sh, w, h, x, y) * l + bilinear(&self.b, self.sw, self.sh, w, h, x, y)
+        let l = if lum > 0.0 {
+            lum.log2().max(self.floor)
+        } else {
+            self.floor
+        };
+        bilinear(&self.a, self.sw, self.sh, w, h, x, y) * l
+            + bilinear(&self.b, self.sw, self.sh, w, h, x, y)
     }
 }
 
@@ -168,7 +191,12 @@ fn bilinear(v: &[f32], sw: usize, sh: usize, w: usize, h: usize, x: usize, y: us
 
 /// Box means of `f` over `k × k` cells, `k` the smallest factor that brings the long side to
 /// `side` or less: (`sw`, `sh`, the means).
-fn reduce<const N: usize>(w: usize, h: usize, side: usize, f: impl Fn(usize) -> [f32; N] + Sync) -> (usize, usize, Vec<[f32; N]>) {
+fn reduce<const N: usize>(
+    w: usize,
+    h: usize,
+    side: usize,
+    f: impl Fn(usize) -> [f32; N] + Sync,
+) -> (usize, usize, Vec<[f32; N]>) {
     let k = w.max(h).div_ceil(side).max(1);
     let (sw, sh) = (w.div_ceil(k), h.div_ceil(k));
     let rows = par::map(sh, |sy| {
@@ -208,14 +236,24 @@ impl ToneMap {
     /// `lum(i)`: linear luminance of full-size pixel `i` (row-major, `w × h`). `black_point`: the
     /// camera profile's black-point factor (see [`crate::Sensor::black_point`]). `None` when
     /// nothing changes. Dehaze is not part of it (see [`Haze`]).
-    pub(crate) fn new(w: usize, h: usize, lum: impl Fn(usize) -> f32 + Sync, tone: Tone, black_point: f32) -> Option<Self> {
+    pub(crate) fn new(
+        w: usize,
+        h: usize,
+        lum: impl Fn(usize) -> f32 + Sync,
+        tone: Tone,
+        black_point: f32,
+    ) -> Option<Self> {
         if w == 0 || h == 0 || (tone.gain_neutral() && black_point <= 0.0) {
             return None;
         }
         let (sw, sh, y) = reduce(w, h, WORK_SIDE, |i| [lum(i)]);
         let y: Vec<f32> = y.into_iter().map(|[v]| v).collect();
         let p01 = quantile(&y, 0.001).max(2f32.powi(-20));
-        let black = if black_point > 0.0 { black_point * p01 } else { 0.0 };
+        let black = if black_point > 0.0 {
+            black_point * p01
+        } else {
+            0.0
+        };
         let work = (!tone.work_neutral()).then(|| {
             let l: Vec<f32> = y.iter().map(|v| v.max(p01).log2()).collect();
             let n = l.len() as f64;
@@ -223,7 +261,8 @@ impl ToneMap {
             let scale = sw.max(sh) as f32 / WORK_SIDE as f32;
             let mut change = vec![0.0f32; l.len()];
             if tone.shadows != 0.0 || tone.highlights != 0.0 {
-                let pm = ((l.iter().map(|v| f64::from(v.exp2()).powf(1.5)).sum::<f64>() / n).log2() / 1.5) as f32;
+                let pm = ((l.iter().map(|v| f64::from(v.exp2()).powf(1.5)).sum::<f64>() / n).log2()
+                    / 1.5) as f32;
                 let r = ((BASE_RADIUS * scale).round() as usize).max(1);
                 let base = guided(&l, &l, sw, sh, r, BASE_EPS);
                 for (c, b) in change.iter_mut().zip(&base) {
@@ -237,10 +276,22 @@ impl ToneMap {
             // change follow strong edges only: inside texture it stays smooth, so fine detail keeps
             // its contrast as in Camera Raw (with ε 0.01 shadow detail lost a fifth of it; with ε 4 the change bled ~16 px over 3-stop edges).
             let (a, b) = linear_fit(&l, &change, sw, sh, 2, UPSAMPLE_EPS);
-            Upsampled { sw, sh, a, b, floor: p01.log2() }
+            Upsampled {
+                sw,
+                sh,
+                a,
+                b,
+                floor: p01.log2(),
+            }
         });
         let texture = (tone.texture != 0.0).then(|| texture(w, h, &lum, tone.texture));
-        Some(ToneMap { w, h, work, texture, black })
+        Some(ToneMap {
+            w,
+            h,
+            work,
+            texture,
+            black,
+        })
     }
 
     /// The gain at full-size pixel (`x`, `y`) of linear luminance `lum`.
@@ -248,20 +299,33 @@ impl ToneMap {
         if self.work.is_none() && self.texture.is_none() {
             return 1.0;
         }
-        let c = [&self.work, &self.texture].iter().filter_map(|u| u.as_ref()).map(|u| u.change(self.w, self.h, x, y, lum)).sum::<f32>();
+        let c = [&self.work, &self.texture]
+            .iter()
+            .filter_map(|u| u.as_ref())
+            .map(|u| u.change(self.w, self.h, x, y, lum))
+            .sum::<f32>();
         c.clamp(-6.0, 6.0).exp2()
     }
 
     /// Black-point subtraction of one linear value.
     #[inline]
     pub(crate) fn unblack(&self, v: f32) -> f32 {
-        if self.black > 0.0 { ((v - self.black) / (1.0 - self.black)).max(0.0) } else { v }
+        if self.black > 0.0 {
+            ((v - self.black) / (1.0 - self.black)).max(0.0)
+        } else {
+            v
+        }
     }
 }
 
 /// The black point of an image of luminance `lum` for the profile's factor (0: none): `factor`
 /// times the 0.1th percentile of the work copy's linear luminance.
-pub(crate) fn black_level(w: usize, h: usize, lum: impl Fn(usize) -> f32 + Sync, factor: f32) -> f32 {
+pub(crate) fn black_level(
+    w: usize,
+    h: usize,
+    lum: impl Fn(usize) -> f32 + Sync,
+    factor: f32,
+) -> f32 {
     if w == 0 || h == 0 || factor <= 0.0 {
         return 0.0;
     }
@@ -289,14 +353,34 @@ fn clarity(change: &mut [f32], l: &[f32], sw: usize, sh: usize, geo: f32, scale:
     let (k, t) = direction(s, &tables::CLARITY_UP, &tables::CLARITY_DOWN);
     let mut prev = l.to_vec();
     for (band, r) in CLARITY_RADII.iter().enumerate() {
-        let base = guided(l, l, sw, sh, ((r * scale).round() as usize).max(1), CLARITY_EPS);
+        let base = guided(
+            l,
+            l,
+            sw,
+            sh,
+            ((r * scale).round() as usize).max(1),
+            CLARITY_EPS,
+        );
         for ((c, p), b) in change.iter_mut().zip(&prev).zip(&base) {
-            *c += k * (p - b) * even(&t.bands[band], tables::CLARITY_TONE_LO, tables::CLARITY_TONE_STEP, b - geo);
+            *c += k
+                * (p - b)
+                * even(
+                    &t.bands[band],
+                    tables::CLARITY_TONE_LO,
+                    tables::CLARITY_TONE_STEP,
+                    b - geo,
+                );
         }
         prev = base;
     }
     for (c, b) in change.iter_mut().zip(&prev) {
-        *c += k * (even(&t.base, tables::CLARITY_BASE_LO, tables::CLARITY_BASE_STEP, b - geo) + t.offset);
+        *c += k
+            * (even(
+                &t.base,
+                tables::CLARITY_BASE_LO,
+                tables::CLARITY_BASE_STEP,
+                b - geo,
+            ) + t.offset);
     }
 }
 
@@ -320,7 +404,13 @@ fn texture(w: usize, h: usize, lum: &(impl Fn(usize) -> f32 + Sync), s: f32) -> 
         prev = base;
     }
     let (a, b) = linear_fit(&l, &change, sw, sh, 2, TEXTURE_UPSAMPLE_EPS);
-    Upsampled { sw, sh, a, b, floor: p01.log2() }
+    Upsampled {
+        sw,
+        sh,
+        a,
+        b,
+        floor: p01.log2(),
+    }
 }
 
 /// Texture's band response on the knots [`tables::TEXTURE_KNOTS`], read linearly, flat beyond.
@@ -338,16 +428,32 @@ fn gauss(v: &[f32], w: usize, h: usize, sigma: f32) -> Vec<f32> {
         return v.to_vec();
     }
     let r = (3.0 * sigma).ceil() as isize;
-    let mut k: Vec<f32> = (-r..=r).map(|x| (-(x * x) as f32 / (2.0 * sigma * sigma)).exp()).collect();
+    let mut k: Vec<f32> = (-r..=r)
+        .map(|x| (-(x * x) as f32 / (2.0 * sigma * sigma)).exp())
+        .collect();
     let sum: f32 = k.iter().sum();
     k.iter_mut().for_each(|v| *v /= sum);
     let rows = par::map(h, |y| {
         let src = &v[y * w..(y + 1) * w];
-        (0..w as isize).map(|x| k.iter().enumerate().map(|(j, kv)| kv * src[mirror(x + j as isize - r, w)]).sum::<f32>()).collect::<Vec<f32>>()
+        (0..w as isize)
+            .map(|x| {
+                k.iter()
+                    .enumerate()
+                    .map(|(j, kv)| kv * src[mirror(x + j as isize - r, w)])
+                    .sum::<f32>()
+            })
+            .collect::<Vec<f32>>()
     });
     let tmp = rows.concat();
     let cols = par::map(w, |x| {
-        (0..h as isize).map(|y| k.iter().enumerate().map(|(j, kv)| kv * tmp[mirror(y + j as isize - r, h) * w + x]).sum::<f32>()).collect::<Vec<f32>>()
+        (0..h as isize)
+            .map(|y| {
+                k.iter()
+                    .enumerate()
+                    .map(|(j, kv)| kv * tmp[mirror(y + j as isize - r, h) * w + x])
+                    .sum::<f32>()
+            })
+            .collect::<Vec<f32>>()
     });
     let mut out = vec![0.0f32; w * h];
     for (x, col) in cols.iter().enumerate() {
@@ -362,11 +468,24 @@ fn gauss(v: &[f32], w: usize, h: usize, sigma: f32) -> Vec<f32> {
 fn min_filter(v: &[f32], w: usize, h: usize, r: usize) -> Vec<f32> {
     let rows = par::map(h, |y| {
         let src = &v[y * w..(y + 1) * w];
-        (0..w).map(|x| src[x.saturating_sub(r)..=(x + r).min(w - 1)].iter().fold(f32::MAX, |a, b| a.min(*b))).collect::<Vec<f32>>()
+        (0..w)
+            .map(|x| {
+                src[x.saturating_sub(r)..=(x + r).min(w - 1)]
+                    .iter()
+                    .fold(f32::MAX, |a, b| a.min(*b))
+            })
+            .collect::<Vec<f32>>()
     });
     let tmp = rows.concat();
-    let cols =
-        par::map(w, |x| (0..h).map(|y| (y.saturating_sub(r)..=(y + r).min(h - 1)).map(|yy| tmp[yy * w + x]).fold(f32::MAX, f32::min)).collect::<Vec<f32>>());
+    let cols = par::map(w, |x| {
+        (0..h)
+            .map(|y| {
+                (y.saturating_sub(r)..=(y + r).min(h - 1))
+                    .map(|yy| tmp[yy * w + x])
+                    .fold(f32::MAX, f32::min)
+            })
+            .collect::<Vec<f32>>()
+    });
     let mut out = vec![0.0f32; w * h];
     for (x, col) in cols.iter().enumerate() {
         for (y, v) in col.iter().enumerate() {
@@ -392,13 +511,20 @@ pub(crate) struct Haze {
 
 impl Haze {
     /// `px(i)`: linear ProPhoto RGB of full-size pixel `i`. `None` at 0.
-    pub(crate) fn new(w: usize, h: usize, px: impl Fn(usize) -> [f32; 3] + Sync, amount: f32) -> Option<Self> {
+    pub(crate) fn new(
+        w: usize,
+        h: usize,
+        px: impl Fn(usize) -> [f32; 3] + Sync,
+        amount: f32,
+    ) -> Option<Self> {
         let amount = amount.clamp(-100.0, 100.0) / 100.0;
         if w == 0 || h == 0 || amount == 0.0 {
             return None;
         }
         let (sw, sh, small) = reduce(w, h, WORK_SIDE, px);
-        let p3 = |v: &[f32; 3]| PRO_TO_P3.map(|row| (row[0] * v[0] + row[1] * v[1] + row[2] * v[2]).max(0.0));
+        let p3 = |v: &[f32; 3]| {
+            PRO_TO_P3.map(|row| (row[0] * v[0] + row[1] * v[1] + row[2] * v[2]).max(0.0))
+        };
         let small_p3: Vec<[f32; 3]> = small.iter().map(p3).collect();
         // Airlight: mean colour of the 0.1 % of pixels with the brightest dark channel.
         let dc: Vec<f32> = small_p3.iter().map(|c| c[0].min(c[1]).min(c[2])).collect();
@@ -413,20 +539,55 @@ impl Haze {
         }
         let air = air.map(|v| v.max(1e-6));
         if amount < 0.0 {
-            return Some(Haze { w, h, sw, sh, t: Vec::new(), air, veil: HAZE_DOWN * -amount });
+            return Some(Haze {
+                w,
+                h,
+                sw,
+                sh,
+                t: Vec::new(),
+                air,
+                veil: HAZE_DOWN * -amount,
+            });
         }
         let air_p3 = p3(&air).map(|v| v.max(1e-6));
         let scale = sw.max(sh) as f32 / WORK_SIDE as f32;
-        let dark0: Vec<f32> = small_p3.iter().map(|c| (0..3).map(|k| c[k] / air_p3[k]).fold(f32::MAX, f32::min)).collect();
-        let dark = min_filter(&dark0, sw, sh, ((HAZE_RADIUS * scale).round() as usize).max(1));
-        let y = crate::color::rgb_to_xyz(crate::color::ROMM, crate::color::D50_XY)[1].map(|v| v as f32);
+        let dark0: Vec<f32> = small_p3
+            .iter()
+            .map(|c| (0..3).map(|k| c[k] / air_p3[k]).fold(f32::MAX, f32::min))
+            .collect();
+        let dark = min_filter(
+            &dark0,
+            sw,
+            sh,
+            ((HAZE_RADIUS * scale).round() as usize).max(1),
+        );
+        let y =
+            crate::color::rgb_to_xyz(crate::color::ROMM, crate::color::D50_XY)[1].map(|v| v as f32);
         let lum = |c: &[f32; 3]| y[0] * c[0] + y[1] * c[1] + y[2] * c[2];
         let air_y = lum(&air).max(1e-6);
         let guide: Vec<f32> = small.iter().map(|c| lum(c) / air_y).collect();
-        let smooth = guided(&guide, &dark, sw, sh, ((HAZE_SMOOTH * scale).round() as usize).max(1), HAZE_EPS);
+        let smooth = guided(
+            &guide,
+            &dark,
+            sw,
+            sh,
+            ((HAZE_SMOOTH * scale).round() as usize).max(1),
+            HAZE_EPS,
+        );
         let wgt = HAZE_UP * amount;
-        let t = smooth.iter().map(|d| (1.0 - wgt * d).max(HAZE_T0)).collect();
-        Some(Haze { w, h, sw, sh, t, air, veil: 0.0 })
+        let t = smooth
+            .iter()
+            .map(|d| (1.0 - wgt * d).max(HAZE_T0))
+            .collect();
+        Some(Haze {
+            w,
+            h,
+            sw,
+            sh,
+            t,
+            air,
+            veil: 0.0,
+        })
     }
 
     /// Dehaze at full-size pixel (`x`, `y`) of linear ProPhoto `v`.
@@ -523,11 +684,25 @@ fn box_mean(v: &[f32], w: usize, h: usize, r: usize) -> Vec<f32> {
 
 /// Local linear fit `p ≈ a · i + b` over boxes of radius `r` (regularized by `eps`), with `a`
 /// and `b` box-averaged (K. He, J. Sun, X. Tang, *Guided Image Filtering*, 2010).
-fn linear_fit(i: &[f32], p: &[f32], w: usize, h: usize, r: usize, eps: f32) -> (Vec<f32>, Vec<f32>) {
+fn linear_fit(
+    i: &[f32],
+    p: &[f32],
+    w: usize,
+    h: usize,
+    r: usize,
+    eps: f32,
+) -> (Vec<f32>, Vec<f32>) {
     let ip: Vec<f32> = i.iter().zip(p).map(|(a, b)| a * b).collect();
     let ii: Vec<f32> = i.iter().map(|a| a * a).collect();
-    let (mi, mp, mip, mii) = (box_mean(i, w, h, r), box_mean(p, w, h, r), box_mean(&ip, w, h, r), box_mean(&ii, w, h, r));
-    let a: Vec<f32> = (0..w * h).map(|k| (mip[k] - mi[k] * mp[k]) / ((mii[k] - mi[k] * mi[k]).max(0.0) + eps)).collect();
+    let (mi, mp, mip, mii) = (
+        box_mean(i, w, h, r),
+        box_mean(p, w, h, r),
+        box_mean(&ip, w, h, r),
+        box_mean(&ii, w, h, r),
+    );
+    let a: Vec<f32> = (0..w * h)
+        .map(|k| (mip[k] - mi[k] * mp[k]) / ((mii[k] - mi[k] * mi[k]).max(0.0) + eps))
+        .collect();
     let b: Vec<f32> = (0..w * h).map(|k| mp[k] - a[k] * mi[k]).collect();
     (box_mean(&a, w, h, r), box_mean(&b, w, h, r))
 }
@@ -535,7 +710,11 @@ fn linear_fit(i: &[f32], p: &[f32], w: usize, h: usize, r: usize, eps: f32) -> (
 /// Guided filter of `p` with guide `i`.
 fn guided(i: &[f32], p: &[f32], w: usize, h: usize, r: usize, eps: f32) -> Vec<f32> {
     let (a, b) = linear_fit(i, p, w, h, r, eps);
-    a.iter().zip(&b).zip(i).map(|((a, b), i)| a * i + b).collect()
+    a.iter()
+        .zip(&b)
+        .zip(i)
+        .map(|((a, b), i)| a * i + b)
+        .collect()
 }
 
 /// The raw-stage sliders ([`Tone`]) on an image [`develop`](crate::develop) already made (gamma-1.8 ProPhoto
@@ -547,17 +726,30 @@ pub fn retone(px: &mut [[f32; 4]], w: usize, h: usize, curve: &[[f32; 2]], tone:
     if tone.is_neutral() || w == 0 || h == 0 || px.len() < w * h {
         return;
     }
-    let forward = |v: f32| crate::develop::tone(curve, v.clamp(0.0, 1.0)).clamp(0.0, 1.0).powf(1.0 / 1.8);
+    let forward = |v: f32| {
+        crate::develop::tone(curve, v.clamp(0.0, 1.0))
+            .clamp(0.0, 1.0)
+            .powf(1.0 / 1.8)
+    };
     // The inverse from a table over s = √v (the encoding is steep near 0).
     const N: usize = 4096;
-    let table: Vec<f32> = (0..=N).map(|i| forward((i as f32 / N as f32).powi(2))).collect();
+    let table: Vec<f32> = (0..=N)
+        .map(|i| forward((i as f32 / N as f32).powi(2)))
+        .collect();
     let inverse = |e: f32| {
         let i = table.partition_point(|t| *t < e).clamp(1, N);
         let (a, b) = (table[i - 1], table[i]);
-        let f = if b > a { ((e - a) / (b - a)).clamp(0.0, 1.0) } else { 0.0 };
+        let f = if b > a {
+            ((e - a) / (b - a)).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         ((i - 1) as f32 + f) / N as f32
     };
-    let mut lin: Vec<[f32; 3]> = px.iter().map(|p| [0, 1, 2].map(|k| inverse(p[k]).powi(2))).collect();
+    let mut lin: Vec<[f32; 3]> = px
+        .iter()
+        .map(|p| [0, 1, 2].map(|k| inverse(p[k]).powi(2)))
+        .collect();
     if let Some(haze) = Haze::new(w, h, |i| lin[i], tone.dehaze) {
         for (i, l) in lin.iter_mut().enumerate() {
             *l = haze.apply(i % w, i / w, *l);
@@ -578,16 +770,26 @@ pub fn retone(px: &mut [[f32; 4]], w: usize, h: usize, curve: &[[f32; 2]], tone:
 mod tests {
     use super::*;
 
-    const SHADOWS: Tone = Tone { shadows: 100.0, ..Tone::NEUTRAL };
-    const HIGHLIGHTS: Tone = Tone { highlights: -100.0, ..Tone::NEUTRAL };
+    const SHADOWS: Tone = Tone {
+        shadows: 100.0,
+        ..Tone::NEUTRAL
+    };
+    const HIGHLIGHTS: Tone = Tone {
+        highlights: -100.0,
+        ..Tone::NEUTRAL
+    };
 
     /// Three vertical bands of linear luminance 2⁻⁷ | 2⁻⁴ | 2⁻¹, times `scale`.
     fn bands(w: usize, h: usize, scale: f32) -> Vec<f32> {
-        (0..w * h).map(|i| scale * [2f32.powi(-7), 2f32.powi(-4), 0.5][(i % w) * 3 / w]).collect()
+        (0..w * h)
+            .map(|i| scale * [2f32.powi(-7), 2f32.powi(-4), 0.5][(i % w) * 3 / w])
+            .collect()
     }
 
     fn gains(y: &[f32], w: usize, h: usize, tone: Tone) -> Vec<f32> {
-        let Some(m) = ToneMap::new(w, h, |i| y[i], tone, 0.0) else { return vec![1.0; w * h] };
+        let Some(m) = ToneMap::new(w, h, |i| y[i], tone, 0.0) else {
+            return vec![1.0; w * h];
+        };
         (0..w * h).map(|i| m.gain(i % w, i / w, y[i])).collect()
     }
 
@@ -616,9 +818,25 @@ mod tests {
     #[test]
     fn exposure_changes_nothing() {
         let (w, h) = (300, 120);
-        for tone in [SHADOWS, HIGHLIGHTS, Tone { shadows: -60.0, highlights: 40.0, clarity: 50.0, texture: -40.0, ..Tone::NEUTRAL }] {
-            let (a, b) = (gains(&bands(w, h, 1.0), w, h, tone), gains(&bands(w, h, 0.25), w, h, tone));
-            assert!(a.iter().zip(&b).all(|(a, b)| (a - b).abs() < 1e-3 * a), "{tone:?}");
+        for tone in [
+            SHADOWS,
+            HIGHLIGHTS,
+            Tone {
+                shadows: -60.0,
+                highlights: 40.0,
+                clarity: 50.0,
+                texture: -40.0,
+                ..Tone::NEUTRAL
+            },
+        ] {
+            let (a, b) = (
+                gains(&bands(w, h, 1.0), w, h, tone),
+                gains(&bands(w, h, 0.25), w, h, tone),
+            );
+            assert!(
+                a.iter().zip(&b).all(|(a, b)| (a - b).abs() < 1e-3 * a),
+                "{tone:?}"
+            );
         }
     }
 
@@ -627,14 +845,27 @@ mod tests {
         // Next to an edge the change stays between the two areas' changes (no over- or undershoot)
         // and close to the change inside the area.
         let (w, h) = (600, 120);
-        let g: Vec<f32> = gains(&bands(w, h, 1.0), w, h, SHADOWS).iter().map(|g| g.log2()).collect();
+        let g: Vec<f32> = gains(&bands(w, h, 1.0), w, h, SHADOWS)
+            .iter()
+            .map(|g| g.log2())
+            .collect();
         let row = &g[60 * w..61 * w];
         let (dark, mid) = (row[w / 6], row[w / 2]);
         for (x, v) in row.iter().enumerate().take(w / 2).skip(w / 6) {
-            assert!(*v <= dark + 1e-3 && *v >= mid - 1e-3, "{x}: {v} outside {mid}…{dark}");
+            assert!(
+                *v <= dark + 1e-3 && *v >= mid - 1e-3,
+                "{x}: {v} outside {mid}…{dark}"
+            );
         }
         // Within 0.3 stop: near strong edges the change matches Photoshop as well as elsewhere.
-        assert!(dark - row[w / 3 - 2] < 0.3 && row[w / 3 + 2] - mid < 0.3, "{} {} | {} {}", dark, row[w / 3 - 2], row[w / 3 + 2], mid);
+        assert!(
+            dark - row[w / 3 - 2] < 0.3 && row[w / 3 + 2] - mid < 0.3,
+            "{} {} | {} {}",
+            dark,
+            row[w / 3 - 2],
+            row[w / 3 + 2],
+            mid
+        );
     }
 
     #[test]
@@ -644,7 +875,10 @@ mod tests {
             [w / 6, w / 2, 5 * w / 6].map(|x| g[(h / 2) * w + x].log2())
         };
         let (a, b) = (probe(4928, 1640), probe(1232, 410));
-        assert!(a.iter().zip(&b).all(|(a, b)| (a - b).abs() < 0.02), "{a:?} vs {b:?}");
+        assert!(
+            a.iter().zip(&b).all(|(a, b)| (a - b).abs() < 0.02),
+            "{a:?} vs {b:?}"
+        );
     }
 
     #[test]
@@ -659,13 +893,17 @@ mod tests {
 
     /// log₂ luminance of a `w × h` image: `base` plus a vertical sine of `amp` stops and period `period` px.
     fn stripes(w: usize, h: usize, base: f32, amp: f32, period: f32) -> Vec<f32> {
-        (0..w * h).map(|i| (base + amp * ((i % w) as f32 * std::f32::consts::TAU / period).sin()).exp2()).collect()
+        (0..w * h)
+            .map(|i| (base + amp * ((i % w) as f32 * std::f32::consts::TAU / period).sin()).exp2())
+            .collect()
     }
 
     /// Peak-to-peak log₂ luminance over the middle row's central half, after the gains.
     fn swing(y: &[f32], g: &[f32], w: usize, h: usize) -> f32 {
         let row = (h / 2) * w;
-        let v: Vec<f32> = (w / 4..3 * w / 4).map(|x| (y[row + x] * g[row + x]).log2()).collect();
+        let v: Vec<f32> = (w / 4..3 * w / 4)
+            .map(|x| (y[row + x] * g[row + x]).log2())
+            .collect();
         v.iter().cloned().fold(f32::MIN, f32::max) - v.iter().cloned().fold(f32::MAX, f32::min)
     }
 
@@ -674,11 +912,40 @@ mod tests {
         let (w, h) = (1232, 200);
         let y = stripes(w, h, -2.5, 0.25, 40.0);
         let before = swing(&y, &vec![1.0; w * h], w, h);
-        let up = swing(&y, &gains(&y, w, h, Tone { clarity: 100.0, ..Tone::NEUTRAL }), w, h);
-        let down = swing(&y, &gains(&y, w, h, Tone { clarity: -100.0, ..Tone::NEUTRAL }), w, h);
+        let up = swing(
+            &y,
+            &gains(
+                &y,
+                w,
+                h,
+                Tone {
+                    clarity: 100.0,
+                    ..Tone::NEUTRAL
+                },
+            ),
+            w,
+            h,
+        );
+        let down = swing(
+            &y,
+            &gains(
+                &y,
+                w,
+                h,
+                Tone {
+                    clarity: -100.0,
+                    ..Tone::NEUTRAL
+                },
+            ),
+            w,
+            h,
+        );
         // Measured: +100 roughly doubles midtone detail, −100 flattens it by more than a third.
         assert!(up > 1.5 * before && up < 3.5 * before, "{before} → {up}");
-        assert!(down < 0.8 * before && down > 0.1 * before, "{before} → {down}");
+        assert!(
+            down < 0.8 * before && down > 0.1 * before,
+            "{before} → {down}"
+        );
     }
 
     #[test]
@@ -686,27 +953,73 @@ mod tests {
         let (w, h) = (2464, 160);
         let fine = stripes(w, h, -2.5, 0.1, 6.0);
         let coarse = stripes(w, h, -2.5, 0.1, 600.0);
-        let gain = |y: &[f32]| swing(y, &gains(y, w, h, Tone { texture: 100.0, ..Tone::NEUTRAL }), w, h) / swing(y, &vec![1.0; w * h], w, h);
+        let gain = |y: &[f32]| {
+            swing(
+                y,
+                &gains(
+                    y,
+                    w,
+                    h,
+                    Tone {
+                        texture: 100.0,
+                        ..Tone::NEUTRAL
+                    },
+                ),
+                w,
+                h,
+            ) / swing(y, &vec![1.0; w * h], w, h)
+        };
         let (f, c) = (gain(&fine), gain(&coarse));
         assert!(f > 1.15, "fine detail ×{f}");
         assert!(c < 1.05 && f > c + 0.1, "coarse ×{c}, fine ×{f}");
         let flat = vec![0.2f32; 400 * 300];
-        assert!(gains(&flat, 400, 300, Tone { texture: 100.0, ..Tone::NEUTRAL }).iter().all(|g| (g - 1.0).abs() < 1e-4));
+        assert!(
+            gains(
+                &flat,
+                400,
+                300,
+                Tone {
+                    texture: 100.0,
+                    ..Tone::NEUTRAL
+                }
+            )
+            .iter()
+            .all(|g| (g - 1.0).abs() < 1e-4)
+        );
     }
 
     #[test]
     fn dehaze_lowers_the_haze_and_minus_adds_a_veil() {
         // A pale, hazy sky (top) over a darker, colourful ground.
         let (w, h) = (400, 300);
-        let px: Vec<[f32; 3]> = (0..w * h).map(|i| if i / w < h / 2 { [0.55, 0.6, 0.7] } else { [0.12, 0.08, 0.03] }).collect();
+        let px: Vec<[f32; 3]> = (0..w * h)
+            .map(|i| {
+                if i / w < h / 2 {
+                    [0.55, 0.6, 0.7]
+                } else {
+                    [0.12, 0.08, 0.03]
+                }
+            })
+            .collect();
         let up = Haze::new(w, h, |i| px[i], 100.0).unwrap();
-        let (sky, ground) = (up.apply(200, 40, px[40 * w + 200]), up.apply(200, 260, px[260 * w + 200]));
+        let (sky, ground) = (
+            up.apply(200, 40, px[40 * w + 200]),
+            up.apply(200, 260, px[260 * w + 200]),
+        );
         // The airlight itself stays; what is darker than it moves away from it.
-        assert!(sky.iter().zip(&px[40 * w + 200]).all(|(a, b)| (a - b).abs() < 0.02), "{sky:?}");
+        assert!(
+            sky.iter()
+                .zip(&px[40 * w + 200])
+                .all(|(a, b)| (a - b).abs() < 0.02),
+            "{sky:?}"
+        );
         assert!(ground[2] < 0.03 && ground[0] <= 0.12, "{ground:?}");
         let down = Haze::new(w, h, |i| px[i], -100.0).unwrap();
         let veiled = down.apply(200, 260, px[260 * w + 200]);
-        assert!((0..3).all(|c| veiled[c] > px[260 * w + 200][c]), "{veiled:?}");
+        assert!(
+            (0..3).all(|c| veiled[c] > px[260 * w + 200][c]),
+            "{veiled:?}"
+        );
         assert!(Haze::new(w, h, |i| px[i], 0.0).is_none());
     }
 
@@ -724,7 +1037,12 @@ mod tests {
         retone(&mut out, w, h, &curve, SHADOWS);
         let g = gains(&y, w, h, SHADOWS);
         for i in [60 * w + 50, 60 * w + 150, 60 * w + 250] {
-            assert!((out[i][0] - enc(y[i] * g[i])).abs() < 0.003, "{i}: {} vs {}", out[i][0], enc(y[i] * g[i]));
+            assert!(
+                (out[i][0] - enc(y[i] * g[i])).abs() < 0.003,
+                "{i}: {} vs {}",
+                out[i][0],
+                enc(y[i] * g[i])
+            );
         }
     }
 }

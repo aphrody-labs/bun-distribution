@@ -2,8 +2,8 @@
 
 use crate::error::sora_client_error::SoraClientError;
 use crate::error::sora_error::SoraError;
-use base64::prelude::BASE64_URL_SAFE_NO_PAD;
 use base64::Engine;
+use base64::prelude::BASE64_URL_SAFE_NO_PAD;
 use chrono::{DateTime, Utc};
 use errors::AnyhowResult;
 use log::warn;
@@ -13,117 +13,128 @@ const SEPARATOR: &str = ".";
 
 #[derive(Clone, Debug)]
 pub struct SoraJwtClaims {
-  pub created: DateTime<Utc>,
-  pub expiration: DateTime<Utc>,
-  pub user_id: String,
-  pub email: String,
-  pub email_verified: bool,
+    pub created: DateTime<Utc>,
+    pub expiration: DateTime<Utc>,
+    pub user_id: String,
+    pub email: String,
+    pub email_verified: bool,
 }
 
 pub fn lightweight_sora_jwt_parse(token: &str) -> Result<SoraJwtClaims, SoraError> {
-  let [_header_str, claims_str, _signature_str] = split_components(token)?;
+    let [_header_str, claims_str, _signature_str] = split_components(token)?;
 
-  let claims = decode_base64(claims_str)
-      .map_err(|err| as_jwt_error(format!("failure to parse claims base64: {:?}", err)))?;
-  
-  let claims : serde_json::Map<String, Value> = serde_json::from_str(&claims)
-      .map_err(|err| as_jwt_error(
-        format!("failure to parse claims json: {:?}", err)))?;
+    let claims = decode_base64(claims_str)
+        .map_err(|err| as_jwt_error(format!("failure to parse claims base64: {:?}", err)))?;
 
-  let iat = claims.get("iat")
-      .map(|val| val.as_number())
-      .flatten()
-      .ok_or_else(|| jwt_error("no iat claim"))?;
+    let claims: serde_json::Map<String, Value> = serde_json::from_str(&claims)
+        .map_err(|err| as_jwt_error(format!("failure to parse claims json: {:?}", err)))?;
 
-  let iat = iat.as_i64()
-      .ok_or_else(|| jwt_error("iat is not a number"))?;
+    let iat = claims
+        .get("iat")
+        .map(|val| val.as_number())
+        .flatten()
+        .ok_or_else(|| jwt_error("no iat claim"))?;
 
-  let iat = DateTime::from_timestamp(iat, 0)
-      .ok_or_else(|| jwt_error("iat is not a valid timestamp"))?;
+    let iat = iat
+        .as_i64()
+        .ok_or_else(|| jwt_error("iat is not a number"))?;
 
-  let exp = claims.get("exp")
-      .map(|val| val.as_number())
-      .flatten()
-      .ok_or_else(|| jwt_error("no exp claim"))?;
+    let iat = DateTime::from_timestamp(iat, 0)
+        .ok_or_else(|| jwt_error("iat is not a valid timestamp"))?;
 
-  let exp = exp.as_i64()
-      .ok_or_else(|| jwt_error("exp is not a number"))?;
+    let exp = claims
+        .get("exp")
+        .map(|val| val.as_number())
+        .flatten()
+        .ok_or_else(|| jwt_error("no exp claim"))?;
 
-  let exp = DateTime::from_timestamp(exp, 0)
-      .ok_or_else(|| jwt_error("iat is not a valid timestamp"))?;
+    let exp = exp
+        .as_i64()
+        .ok_or_else(|| jwt_error("exp is not a number"))?;
 
-  let user_id = claims.get("https://api.openai.com/auth")
-      .map(|val| val.get("user_id"))
-      .flatten()
-      .map(|val| val.as_str())
-      .flatten()
-      .ok_or_else(|| jwt_error("no user_id claim"))?;
+    let exp = DateTime::from_timestamp(exp, 0)
+        .ok_or_else(|| jwt_error("iat is not a valid timestamp"))?;
 
-  let profile = claims.get("https://api.openai.com/profile")
-      .ok_or_else(|| jwt_error("no user_id claim"))?;
+    let user_id = claims
+        .get("https://api.openai.com/auth")
+        .map(|val| val.get("user_id"))
+        .flatten()
+        .map(|val| val.as_str())
+        .flatten()
+        .ok_or_else(|| jwt_error("no user_id claim"))?;
 
-  let email = profile.get("email")
-      .map(|val| val.as_str())
-      .flatten()
-      .ok_or_else(|| jwt_error("no email claim"))?;
+    let profile = claims
+        .get("https://api.openai.com/profile")
+        .ok_or_else(|| jwt_error("no user_id claim"))?;
 
-  let email_verified = profile.get("email_verified")
-      .map(|val| val.as_bool())
-      .flatten()
-      .unwrap_or_else(|| {
-        warn!("no email_verified claim");
-        false
-      });
+    let email = profile
+        .get("email")
+        .map(|val| val.as_str())
+        .flatten()
+        .ok_or_else(|| jwt_error("no email claim"))?;
 
-  Ok(SoraJwtClaims {
-    created: iat,
-    expiration: exp,
-    user_id: user_id.to_string(),
-    email: email.to_string(),
-    email_verified,
-  })
+    let email_verified = profile
+        .get("email_verified")
+        .map(|val| val.as_bool())
+        .flatten()
+        .unwrap_or_else(|| {
+            warn!("no email_verified claim");
+            false
+        });
+
+    Ok(SoraJwtClaims {
+        created: iat,
+        expiration: exp,
+        user_id: user_id.to_string(),
+        email: email.to_string(),
+        email_verified,
+    })
 }
 
 fn split_components(token: &str) -> Result<[&str; 3], SoraError> {
-  let mut components = token.split(SEPARATOR);
-  let header = components.next()
-      .ok_or_else(|| jwt_error("no header component"))?;
-  
-  let claims = components.next()
-      .ok_or_else(|| jwt_error("no claims component"))?;
-  
-  let signature = components.next()
-      .ok_or_else(|| jwt_error("no signature component"))?;
+    let mut components = token.split(SEPARATOR);
+    let header = components
+        .next()
+        .ok_or_else(|| jwt_error("no header component"))?;
 
-  if components.next().is_some() {
-    return Err(jwt_error("too many components"));
-  }
+    let claims = components
+        .next()
+        .ok_or_else(|| jwt_error("no claims component"))?;
 
-  Ok([header, claims, signature])
+    let signature = components
+        .next()
+        .ok_or_else(|| jwt_error("no signature component"))?;
+
+    if components.next().is_some() {
+        return Err(jwt_error("too many components"));
+    }
+
+    Ok([header, claims, signature])
 }
 
 fn decode_base64(raw: &str) -> AnyhowResult<String> {
-  let json_bytes = BASE64_URL_SAFE_NO_PAD.decode(raw)?;
-  let json_str = String::from_utf8(json_bytes.clone())?;
-  Ok(json_str)
+    let json_bytes = BASE64_URL_SAFE_NO_PAD.decode(raw)?;
+    let json_str = String::from_utf8(json_bytes.clone())?;
+    Ok(json_str)
 }
 
 fn jwt_error(reason: &str) -> SoraError {
-  SoraError::Client(SoraClientError::LocalJwtClaimsParseError(reason.to_string()))
+    SoraError::Client(SoraClientError::LocalJwtClaimsParseError(
+        reason.to_string(),
+    ))
 }
 
 fn as_jwt_error(reason: String) -> SoraError {
-  SoraError::Client(SoraClientError::LocalJwtClaimsParseError(reason))
+    SoraError::Client(SoraClientError::LocalJwtClaimsParseError(reason))
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::utils_internal::lightweight_sora_jwt_parse::lightweight_sora_jwt_parse;
+    use crate::utils_internal::lightweight_sora_jwt_parse::lightweight_sora_jwt_parse;
 
-  #[test]
-  fn test_sora_jwt_bearer_token() {
-    let token =
-        "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5MzQ0ZTY1LWJiYzktNDRkMS1hOWQwLWY5NTdiMDc5YmQwZSIsInR5cCI6Ik\
+    #[test]
+    fn test_sora_jwt_bearer_token() {
+        let token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5MzQ0ZTY1LWJiYzktNDRkMS1hOWQwLWY5NTdiMDc5YmQwZSIsInR5cCI6Ik\
         pXVCJ9.eyJhdWQiOlsiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS92MSJdLCJjbGllbnRfaWQiOiJhcHBfTTFuUTN0UjV2\
         VzdYOWpMMnBFNmdIOGRLNCIsImV4cCI6MTc0NTgwMDQ3MiwiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS9hdXRoIjp7InV\
         zZXJfaWQiOiJ1c2VyLTZOeEpmbEFIb0VCREp6Wmw5aVhocWJERyJ9LCJodHRwczovL2FwaS5vcGVuYWkuY29tL3Byb2\
@@ -141,17 +152,17 @@ mod tests {
         _Xx_z4UaEOr5wqT_BK1A1HO4HRjvFX2soF-qm4GCSWAbmFZs7DVEClrotxRx2romifRVb8XRia2M6YTmDyIT0YphFgG\
         nnrDIZNKO23uDYT60LVMVYpCCY2RiwxCR9bn7AeGbmi7cpL9aYZ5uJRM";
 
-    // jwt payload :
-    //  - "https://api.openai.com/auth".user_id = "user-6NxJflAHoEBDJzZl9iXhqbDG"
-    //  - "https://api.openai.com/profile".email = "vocodes2020@gmail.com"
-    //  - "https://api.openai.com/profile".email_verified = true
-    //  - "iat": 1744936471, - issued at claim (5 days ago)
-    //  - "nbf": 1744936471, - not before, don't use before date
-    //  - "exp": 1745800472, - in 5 days, expiry
+        // jwt payload :
+        //  - "https://api.openai.com/auth".user_id = "user-6NxJflAHoEBDJzZl9iXhqbDG"
+        //  - "https://api.openai.com/profile".email = "vocodes2020@gmail.com"
+        //  - "https://api.openai.com/profile".email_verified = true
+        //  - "iat": 1744936471, - issued at claim (5 days ago)
+        //  - "nbf": 1744936471, - not before, don't use before date
+        //  - "exp": 1745800472, - in 5 days, expiry
 
-    let result = lightweight_sora_jwt_parse(token).expect("claim should parse");
+        let result = lightweight_sora_jwt_parse(token).expect("claim should parse");
 
-    assert_eq!(result.email, "vocodes2020@gmail.com");
-    assert_eq!(result.email_verified, true);
-  }
+        assert_eq!(result.email, "vocodes2020@gmail.com");
+        assert_eq!(result.email_verified, true);
+    }
 }

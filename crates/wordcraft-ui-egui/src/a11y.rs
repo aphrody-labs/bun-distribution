@@ -51,7 +51,11 @@ struct Key {
 
 impl Key {
     fn same(&self, o: &Key) -> bool {
-        Arc::ptr_eq(&self.layout, &o.layout) && self.doc == o.doc && self.pages == o.pages && self.rects == o.rects && self.sel == o.sel
+        Arc::ptr_eq(&self.layout, &o.layout)
+            && self.doc == o.doc
+            && self.pages == o.pages
+            && self.rects == o.rects
+            && self.sel == o.sel
     }
 }
 
@@ -67,23 +71,52 @@ pub struct Tree {
 /// The pages to describe: those meeting `view`, and one either side.
 pub fn page_window(rects: &[Rect], view: Rect) -> Option<(usize, usize)> {
     let first = rects.iter().position(|r| r.intersects(view))?;
-    let last = rects.iter().rposition(|r| r.intersects(view)).unwrap_or(first);
+    let last = rects
+        .iter()
+        .rposition(|r| r.intersects(view))
+        .unwrap_or(first);
     Some((first.saturating_sub(1), (last + 2).min(rects.len())))
 }
 
 /// Describe the document under the canvas widget `doc_id` to AccessKit for this frame.
 /// `rects` are the pages' screen rectangles, `view` the visible part of the canvas.
-pub fn expose(app: &mut crate::WordApp, ctx: &egui::Context, doc_id: Id, layout: &Arc<DocLayout>, rects: &[Rect], view: Rect) {
-    if ctx.accesskit_node_builder(doc_id, |n| n.set_role(Role::Document)).is_none() {
+pub fn expose(
+    app: &mut crate::WordApp,
+    ctx: &egui::Context,
+    doc_id: Id,
+    layout: &Arc<DocLayout>,
+    rects: &[Rect],
+    view: Rect,
+) {
+    if ctx
+        .accesskit_node_builder(doc_id, |n| n.set_role(Role::Document))
+        .is_none()
+    {
         // No screen reader: describe nothing, keep nothing.
         app.canvas.a11y = A11yCache::default();
         return;
     }
     let pages = page_window(rects, view).unwrap_or((0, 0));
-    let sel = (app.session.sel.anchor.clone(), app.session.sel.focus.clone());
-    let key = Key { layout: layout.clone(), doc: doc_id, pages, rects: rects.get(pages.0..pages.1).unwrap_or_default().to_vec(), sel };
+    let sel = (
+        app.session.sel.anchor.clone(),
+        app.session.sel.focus.clone(),
+    );
+    let key = Key {
+        layout: layout.clone(),
+        doc: doc_id,
+        pages,
+        rects: rects.get(pages.0..pages.1).unwrap_or_default().to_vec(),
+        sel,
+    };
     if !app.canvas.a11y.key.as_ref().is_some_and(|k| k.same(&key)) {
-        app.canvas.a11y.tree = build(&app.session.doc, layout, doc_id, rects, pages, (&key.sel.0, &key.sel.1));
+        app.canvas.a11y.tree = build(
+            &app.session.doc,
+            layout,
+            doc_id,
+            rects,
+            pages,
+            (&key.sel.0, &key.sel.1),
+        );
         app.canvas.a11y.key = Some(key);
     }
     let title = app.title_stem();
@@ -94,7 +127,12 @@ pub fn expose(app: &mut crate::WordApp, ctx: &egui::Context, doc_id: Id, layout:
     }
     // egui hangs every new node off the window; ours belong under the document.
     ctx.accesskit_node_builder(egui::accesskit_root_id(), |root| {
-        let keep: Vec<NodeId> = root.children().iter().filter(|c| !ours.contains(c)).copied().collect();
+        let keep: Vec<NodeId> = root
+            .children()
+            .iter()
+            .filter(|c| !ours.contains(c))
+            .copied()
+            .collect();
         root.set_children(keep);
     });
     ctx.accesskit_node_builder(doc_id, |n| {
@@ -110,18 +148,50 @@ pub fn expose(app: &mut crate::WordApp, ctx: &egui::Context, doc_id: Id, layout:
 }
 
 /// Build the description of pages `pages.0..pages.1`.
-pub fn build(doc: &Document, layout: &DocLayout, doc_id: Id, rects: &[Rect], pages: (usize, usize), sel: (&Pos, &Pos)) -> Tree {
-    let mut b = Builder { doc, doc_id, tree: Tree::default(), index: HashMap::new(), lists: HashMap::new(), offsets: HashMap::new() };
+pub fn build(
+    doc: &Document,
+    layout: &DocLayout,
+    doc_id: Id,
+    rects: &[Rect],
+    pages: (usize, usize),
+    sel: (&Pos, &Pos),
+) -> Tree {
+    let mut b = Builder {
+        doc,
+        doc_id,
+        tree: Tree::default(),
+        index: HashMap::new(),
+        lists: HashMap::new(),
+        offsets: HashMap::new(),
+    };
     for pi in pages.0..pages.1 {
-        let (Some(page), Some(pr)) = (layout.pages.get(pi), rects.get(pi)) else { continue };
+        let (Some(page), Some(pr)) = (layout.pages.get(pi), rects.get(pi)) else {
+            continue;
+        };
         let scale = crate::canvas::page_screen_scale(*pr, page, 1.0);
         let to_screen = |r: wordcraft_geom::Rect| {
-            Rect::from_min_size(egui::pos2(pr.min.x + r.x * scale, pr.min.y + r.y * scale), egui::vec2(r.w * scale, r.h * scale))
+            Rect::from_min_size(
+                egui::pos2(pr.min.x + r.x * scale, pr.min.y + r.y * scale),
+                egui::vec2(r.w * scale, r.h * scale),
+            )
         };
         // Where floating pictures sit (their anchor character takes no room on its line).
         let mut pictures: HashMap<(&[u32], usize), Rect> = HashMap::new();
         for it in &page.items {
-            if let Placed::Image { rect, story: StoryRef::Body, path, off, .. } | Placed::Graphic { rect, story: StoryRef::Body, path, off, .. } = it
+            if let Placed::Image {
+                rect,
+                story: StoryRef::Body,
+                path,
+                off,
+                ..
+            }
+            | Placed::Graphic {
+                rect,
+                story: StoryRef::Body,
+                path,
+                off,
+                ..
+            } = it
             {
                 pictures.insert((path.0.as_slice(), *off), to_screen(*rect));
             }
@@ -130,15 +200,42 @@ pub fn build(doc: &Document, layout: &DocLayout, doc_id: Id, rects: &[Rect], pag
             if b.full() {
                 break;
             }
-            let Placed::Lines { story: StoryRef::Body, path, para, l0, l1, x, y, turn } = it else { continue };
-            let place = LinePlace { x: *x, y: *y, turn: *turn, scale, origin: pr.min };
+            let Placed::Lines {
+                story: StoryRef::Body,
+                path,
+                para,
+                l0,
+                l1,
+                x,
+                y,
+                turn,
+            } = it
+            else {
+                continue;
+            };
+            let place = LinePlace {
+                x: *x,
+                y: *y,
+                turn: *turn,
+                scale,
+                origin: pr.min,
+            };
             b.paragraph(path, para, *l0..*l1, &place, &pictures);
         }
     }
-    let at = |p: &Pos| if p.story == StoryRef::Body { b.position(&p.path, p.off) } else { None };
+    let at = |p: &Pos| {
+        if p.story == StoryRef::Body {
+            b.position(&p.path, p.off)
+        } else {
+            None
+        }
+    };
     b.tree.selection = match (at(sel.0), at(sel.1)) {
         (Some(anchor), Some(focus)) => Some(TextSelection { anchor, focus }),
-        (None, Some(focus)) => Some(TextSelection { anchor: focus, focus }),
+        (None, Some(focus)) => Some(TextSelection {
+            anchor: focus,
+            focus,
+        }),
         _ => None,
     };
     b.tree
@@ -157,7 +254,10 @@ impl LinePlace {
     fn rect(&self, r: wordcraft_geom::Rect) -> Rect {
         let p = wordcraft_layout::turn_rect(self.turn, self.x, self.y, r);
         let s = self.scale;
-        Rect::from_min_size(egui::pos2(self.origin.x + p.x * s, self.origin.y + p.y * s), egui::vec2(p.w * s, p.h * s))
+        Rect::from_min_size(
+            egui::pos2(self.origin.x + p.x * s, self.origin.y + p.y * s),
+            egui::vec2(p.w * s, p.h * s),
+        )
     }
 }
 
@@ -221,11 +321,19 @@ impl Builder<'_> {
         let n = path.len();
         let (tpath, rpath, cpath) = (path.get(..n - 3)?, path.get(..n - 2)?, path.get(..n - 1)?);
         let (row, col) = (*path.get(n - 3)? as usize, *path.get(n - 2)? as usize);
-        let (tid, rid, cid) = (self.doc_id.with(("table", tpath)), self.doc_id.with(("row", rpath)), self.doc_id.with(("cell", cpath)));
+        let (tid, rid, cid) = (
+            self.doc_id.with(("table", tpath)),
+            self.doc_id.with(("row", rpath)),
+            self.doc_id.with(("cell", cpath)),
+        );
         if !self.index.contains_key(&tid) {
             let parent = self.container(tpath)?;
             let mut t = Node::new(Role::Table);
-            if let Some(tb) = self.doc.block(StoryRef::Body, &Path(tpath.to_vec())).and_then(|b| b.as_table()) {
+            if let Some(tb) = self
+                .doc
+                .block(StoryRef::Body, &Path(tpath.to_vec()))
+                .and_then(|b| b.as_table())
+            {
                 t.set_row_count(tb.rows.len());
                 t.set_column_count(tb.grid.len());
             }
@@ -255,7 +363,10 @@ impl Builder<'_> {
         let parent = (container != self.doc_id).then_some(container);
         let block = path.last();
         let heading = para.rp.outline_level.filter(|l| *l < 9);
-        let list = para.rp.numbering.filter(|n| n.num != 0 && para.label.is_some());
+        let list = para
+            .rp
+            .numbering
+            .filter(|n| n.num != 0 && para.label.is_some());
         let node = match (heading, list) {
             (Some(l), _) => {
                 let mut n = Node::new(Role::Heading);
@@ -292,7 +403,19 @@ impl Builder<'_> {
         if let Some(label) = para.label.as_ref().filter(|l| !l.text.trim().is_empty()) {
             let mut m = Node::new(Role::ListMarker);
             // Symbol-font bullets are private-use characters: say them as bullets.
-            m.set_value(label.text.chars().map(|c| if ('\u{E000}'..='\u{F8FF}').contains(&c) { '•' } else { c }).collect::<String>());
+            m.set_value(
+                label
+                    .text
+                    .chars()
+                    .map(|c| {
+                        if ('\u{E000}'..='\u{F8FF}').contains(&c) {
+                            '•'
+                        } else {
+                            c
+                        }
+                    })
+                    .collect::<String>(),
+            );
             self.add(id.with("marker"), Some(id), m);
         }
         Some(id)
@@ -308,39 +431,72 @@ impl Builder<'_> {
         at: &LinePlace,
         pictures: &HashMap<(&[u32], usize), Rect>,
     ) {
-        let Some(pid) = self.para_node(path, para) else { return };
-        let Some(dp) = self.doc.para(StoryRef::Body, path) else { return };
+        let Some(pid) = self.para_node(path, para) else {
+            return;
+        };
+        let Some(dp) = self.doc.para(StoryRef::Body, path) else {
+            return;
+        };
         let links = links(dp);
         let first_top = para.lines.get(lines.start).map_or(0.0, |l| l.top);
         for li in lines {
-            let Some(line) = para.lines.get(li) else { break };
+            let Some(line) = para.lines.get(li) else {
+                break;
+            };
             if self.full() || self.index.contains_key(&pid.with(("run", li, 0usize))) {
                 // A repeated table header row shows the same lines again.
                 continue;
             }
-            let mut lb = LineBuild { pid, li, seg: 0, prev: None, top: line.top - first_top, run: Run::default(), map: Vec::new() };
+            let mut lb = LineBuild {
+                pid,
+                li,
+                seg: 0,
+                prev: None,
+                top: line.top - first_top,
+                run: Run::default(),
+                map: Vec::new(),
+            };
             for k in line.c0..line.c1 {
-                let Some(cl) = para.clusters.get(k) else { break };
+                let Some(cl) = para.clusters.get(k) else {
+                    break;
+                };
                 lb.map.push((cl.start, lb.seg, lb.run.lens.len()));
-                let shown = para.shown.binary_search_by_key(&k, |s| s.0).ok().and_then(|i| para.shown.get(i)).map(|s| s.1.as_str());
+                let shown = para
+                    .shown
+                    .binary_search_by_key(&k, |s| s.0)
+                    .ok()
+                    .and_then(|i| para.shown.get(i))
+                    .map(|s| s.1.as_str());
                 let text = match (cl.kind, shown) {
                     (_, Some(s)) => s,
-                    (ClKind::Text | ClKind::Space, None) => dp.text.get(cl.start..cl.end).unwrap_or(""),
+                    (ClKind::Text | ClKind::Space, None) => {
+                        dp.text.get(cl.start..cl.end).unwrap_or("")
+                    }
                     (ClKind::Tab, None) => "\t",
                     (ClKind::LineBreak, None) => "\n",
                     (ClKind::Object(_), None) => {
                         let picture = match dp.object_at(cl.start) {
-                            Some(InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. }) => Some(alt.clone()),
+                            Some(
+                                InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. },
+                            ) => Some(alt.clone()),
                             _ => None,
                         };
                         if let Some(alt) = picture {
                             if !lb.run.lens.is_empty() {
                                 self.flush(&mut lb, line, at);
                             }
-                            let rect = pictures.get(&(path.0.as_slice(), cl.start)).copied().or_else(|| {
-                                let (x0, x1) = (line.cl_left(k)?, line.cl_right(k)?);
-                                Some(at.rect(wordcraft_geom::Rect::new(x0.min(x1), lb.top, (x1 - x0).abs(), line.height)))
-                            });
+                            let rect = pictures
+                                .get(&(path.0.as_slice(), cl.start))
+                                .copied()
+                                .or_else(|| {
+                                    let (x0, x1) = (line.cl_left(k)?, line.cl_right(k)?);
+                                    Some(at.rect(wordcraft_geom::Rect::new(
+                                        x0.min(x1),
+                                        lb.top,
+                                        (x1 - x0).abs(),
+                                        line.height,
+                                    )))
+                                });
                             let mut n = Node::new(Role::Image);
                             if !alt.trim().is_empty() {
                                 n.set_label(alt);
@@ -357,15 +513,22 @@ impl Builder<'_> {
                 if text.is_empty() {
                     continue;
                 }
-                let link = links.iter().find(|(r, _)| r.contains(&cl.start)).map(|(_, u)| u.clone());
-                if (link != lb.run.link || lb.run.lens.len() >= MAX_RUN) && !lb.run.lens.is_empty() {
+                let link = links
+                    .iter()
+                    .find(|(r, _)| r.contains(&cl.start))
+                    .map(|(_, u)| u.clone());
+                if (link != lb.run.link || lb.run.lens.len() >= MAX_RUN) && !lb.run.lens.is_empty()
+                {
                     self.flush(&mut lb, line, at);
                     if let Some(m) = lb.map.last_mut() {
                         *m = (cl.start, lb.seg, 0);
                     }
                 }
                 lb.run.link = link;
-                let (x0, x1) = (line.cl_left(k).unwrap_or(0.0), line.cl_right(k).unwrap_or(0.0));
+                let (x0, x1) = (
+                    line.cl_left(k).unwrap_or(0.0),
+                    line.cl_right(k).unwrap_or(0.0),
+                );
                 push_char(&mut lb.run, text, x0.min(x1), (x1 - x0).abs());
             }
             if line.end == LineEnd::Para {
@@ -388,7 +551,11 @@ impl Builder<'_> {
             let end = lb.prev;
             let entries = self.offsets.entry(path.0.clone()).or_default();
             for (off, seg, idx) in lb.map {
-                let (seg, idx) = if seg >= lb.seg { end.unwrap_or((seg, idx)) } else { (seg, idx) };
+                let (seg, idx) = if seg >= lb.seg {
+                    end.unwrap_or((seg, idx))
+                } else {
+                    (seg, idx)
+                };
                 entries.push((off, pid.with(("run", li, seg)), idx));
             }
         }
@@ -403,14 +570,36 @@ impl Builder<'_> {
         let id = lb.pid.with(("run", lb.li, lb.seg));
         let mut n = Node::new(Role::TextRun);
         let x0 = run.xs.iter().map(|c| c.0).fold(f32::INFINITY, f32::min);
-        let x1 = run.xs.iter().map(|c| c.0 + c.1).fold(f32::NEG_INFINITY, f32::max);
-        let (x0, x1) = if x0.is_finite() && x1.is_finite() { (x0, x1) } else { (line.left, line.left) };
-        let r = at.rect(wordcraft_geom::Rect::new(x0, lb.top, (x1 - x0).max(0.0), line.height));
+        let x1 = run
+            .xs
+            .iter()
+            .map(|c| c.0 + c.1)
+            .fold(f32::NEG_INFINITY, f32::max);
+        let (x0, x1) = if x0.is_finite() && x1.is_finite() {
+            (x0, x1)
+        } else {
+            (line.left, line.left)
+        };
+        let r = at.rect(wordcraft_geom::Rect::new(
+            x0,
+            lb.top,
+            (x1 - x0).max(0.0),
+            line.height,
+        ));
         n.set_bounds(bounds(r));
         let rtl = line.rtl || !line.vis.is_empty();
-        n.set_text_direction(if line.rtl { accesskit::TextDirection::RightToLeft } else { accesskit::TextDirection::LeftToRight });
+        n.set_text_direction(if line.rtl {
+            accesskit::TextDirection::RightToLeft
+        } else {
+            accesskit::TextDirection::LeftToRight
+        });
         if at.turn == TextDirection::Horizontal && !rtl {
-            n.set_character_positions(run.xs.iter().map(|c| (c.0 - x0) * at.scale).collect::<Vec<f32>>());
+            n.set_character_positions(
+                run.xs
+                    .iter()
+                    .map(|c| (c.0 - x0) * at.scale)
+                    .collect::<Vec<f32>>(),
+            );
             n.set_character_widths(run.xs.iter().map(|c| c.1 * at.scale).collect::<Vec<f32>>());
         }
         n.set_word_starts(word_starts(&run.text, &run.lens));
@@ -445,7 +634,10 @@ impl Builder<'_> {
         let entries = self.offsets.get(&path.0)?;
         let i = entries.partition_point(|e| e.0 < off);
         let (_, run, idx) = entries.get(i).or(entries.last())?;
-        self.index.contains_key(run).then(|| TextPosition { node: run.accesskit_id(), character_index: *idx })
+        self.index.contains_key(run).then(|| TextPosition {
+            node: run.accesskit_id(),
+            character_index: *idx,
+        })
     }
 }
 
@@ -466,14 +658,24 @@ struct LineBuild {
 
 fn push_char(run: &mut Run, text: &str, x: f32, w: f32) {
     // One character per cluster; a cluster longer than AccessKit's byte count keeps its first char.
-    let text = if text.len() > usize::from(u8::MAX) { text.get(..text.chars().next().map_or(0, char::len_utf8)).unwrap_or("") } else { text };
-    let Ok(len) = u8::try_from(text.len()) else { return };
+    let text = if text.len() > usize::from(u8::MAX) {
+        text.get(..text.chars().next().map_or(0, char::len_utf8))
+            .unwrap_or("")
+    } else {
+        text
+    };
+    let Ok(len) = u8::try_from(text.len()) else {
+        return;
+    };
     if len == 0 {
         return;
     }
     run.text.push_str(text);
     run.lens.push(len);
-    let (x, w) = (if x.is_finite() { x } else { 0.0 }, if w.is_finite() { w } else { 0.0 });
+    let (x, w) = (
+        if x.is_finite() { x } else { 0.0 },
+        if w.is_finite() { w } else { 0.0 },
+    );
     run.xs.push((x, w));
 }
 
@@ -482,7 +684,10 @@ fn word_starts(text: &str, lens: &[u8]) -> Vec<u8> {
     let mut out = Vec::new();
     let (mut at, mut after_gap) = (0usize, true);
     for (i, len) in lens.iter().enumerate() {
-        let word = text.get(at..).and_then(|s| s.chars().next()).is_some_and(|c| c.is_alphanumeric() || c == '_');
+        let word = text
+            .get(at..)
+            .and_then(|s| s.chars().next())
+            .is_some_and(|c| c.is_alphanumeric() || c == '_');
         if word && after_gap && i > 0 {
             out.push(u8::try_from(i).unwrap_or(u8::MAX));
         }
@@ -510,7 +715,12 @@ fn links(p: &wordcraft_doc::Paragraph) -> Vec<(std::ops::Range<usize>, String)> 
 }
 
 fn bounds(r: Rect) -> accesskit::Rect {
-    accesskit::Rect { x0: r.min.x.into(), y0: r.min.y.into(), x1: r.max.x.into(), y1: r.max.y.into() }
+    accesskit::Rect {
+        x0: r.min.x.into(),
+        y0: r.min.y.into(),
+        x1: r.max.x.into(),
+        y1: r.max.y.into(),
+    }
 }
 
 #[cfg(test)]
@@ -523,14 +733,20 @@ mod tests {
     /// text runs and the caret at its paragraph and character.
     #[test]
     fn the_canvas_describes_the_document_to_screen_readers() {
-        let mut app = crate::WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Default::default());
+        let mut app = crate::WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Default::default(),
+        );
         for (cmd, p) in [
             ("text.insert", json!({"text": "Title here"})),
             ("para.style", json!({"style": "Heading1"})),
             ("text.newParagraph", json!({})),
             ("para.style", json!({"style": "Normal"})),
             ("text.insert", json!({"text": "Read this "})),
-            ("insert.link", json!({"url": "https://example.com", "text": "link"})),
+            (
+                "insert.link",
+                json!({"url": "https://example.com", "text": "link"}),
+            ),
             ("text.newParagraph", json!({})),
             ("text.insert", json!({"text": "First item"})),
             ("para.bullets", json!({})),
@@ -552,7 +768,10 @@ mod tests {
         let mut update = None;
         for i in 0..4 {
             let input = egui::RawInput {
-                screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0))),
+                screen_rect: Some(Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1440.0, 900.0),
+                )),
                 time: Some(i as f64 * 0.1),
                 ..Default::default()
             };
@@ -575,7 +794,10 @@ mod tests {
         }
         assert!(parents.values().all(|n| *n == 1), "a node with two parents");
 
-        let (doc_id, doc) = nodes.iter().find(|(_, n)| n.role() == Role::Document).expect("a document node");
+        let (doc_id, doc) = nodes
+            .iter()
+            .find(|(_, n)| n.role() == Role::Document)
+            .expect("a document node");
         // Text of a node's runs, depth first.
         fn text(nodes: &HashMap<NodeId, &Node>, id: NodeId, out: &mut String) {
             let Some(n) = nodes.get(&id) else { return };
@@ -587,7 +809,12 @@ mod tests {
             }
         }
         let mut all = Vec::new();
-        fn walk(nodes: &HashMap<NodeId, &Node>, id: NodeId, depth: usize, out: &mut Vec<(NodeId, Role, usize)>) {
+        fn walk(
+            nodes: &HashMap<NodeId, &Node>,
+            id: NodeId,
+            depth: usize,
+            out: &mut Vec<(NodeId, Role, usize)>,
+        ) {
             let Some(n) = nodes.get(&id) else { return };
             out.push((id, n.role(), depth));
             for c in n.children() {
@@ -595,7 +822,12 @@ mod tests {
             }
         }
         walk(&nodes, *doc_id, 0, &mut all);
-        let of = |role: Role| all.iter().filter(|(_, r, _)| *r == role).map(|(id, _, _)| *id).collect::<Vec<_>>();
+        let of = |role: Role| {
+            all.iter()
+                .filter(|(_, r, _)| *r == role)
+                .map(|(id, _, _)| *id)
+                .collect::<Vec<_>>()
+        };
         let texts = |role: Role| {
             of(role)
                 .into_iter()
@@ -611,7 +843,11 @@ mod tests {
         assert_eq!(headings.len(), 1);
         assert_eq!(nodes[&headings[0]].level(), Some(1));
         assert_eq!(texts(Role::Heading), ["Title here\n"]);
-        assert!(texts(Role::Paragraph).contains(&"Read this link\n".to_string()), "{:?}", texts(Role::Paragraph));
+        assert!(
+            texts(Role::Paragraph).contains(&"Read this link\n".to_string()),
+            "{:?}",
+            texts(Role::Paragraph)
+        );
         assert_eq!(texts(Role::Link), ["link"]);
         assert_eq!(nodes[&of(Role::Link)[0]].url(), Some("https://example.com"));
         assert_eq!(of(Role::List).len(), 1, "one list");
@@ -627,7 +863,14 @@ mod tests {
         for id in of(Role::TextRun) {
             let n = nodes[&id];
             let v = n.value().unwrap_or("");
-            assert_eq!(n.character_lengths().iter().map(|l| usize::from(*l)).sum::<usize>(), v.len(), "{v:?}");
+            assert_eq!(
+                n.character_lengths()
+                    .iter()
+                    .map(|l| usize::from(*l))
+                    .sum::<usize>(),
+                v.len(),
+                "{v:?}"
+            );
             if let Some(p) = n.character_positions() {
                 assert_eq!(p.len(), n.character_lengths().len());
             }
@@ -647,13 +890,21 @@ mod tests {
     #[test]
     fn junk_geometry_is_harmless() {
         let doc = wordcraft_doc::Document::from_text(&"word ".repeat(4000));
-        let layout = wordcraft_layout::layout(&doc, &mut wordcraft_layout::LayoutCache::new(), &Default::default());
+        let layout = wordcraft_layout::layout(
+            &doc,
+            &mut wordcraft_layout::LayoutCache::new(),
+            &Default::default(),
+        );
         let n = layout.pages.len();
-        let rects = vec![Rect::from_min_size(egui::pos2(f32::NAN, 0.0), egui::vec2(f32::INFINITY, 1.0)); n];
+        let rects =
+            vec![Rect::from_min_size(egui::pos2(f32::NAN, 0.0), egui::vec2(f32::INFINITY, 1.0)); n];
         let p = Pos::body(0, 1_000_000);
         let t = build(&doc, &layout, Id::new("doc"), &rects, (0, n + 5), (&p, &p));
         assert!(!t.nodes.is_empty() && t.nodes.len() <= MAX_NODES);
-        assert!(t.selection.is_some(), "an offset past the end lands at the end");
+        assert!(
+            t.selection.is_some(),
+            "an offset past the end lands at the end"
+        );
         assert!(page_window(&rects, Rect::NOTHING).is_none());
     }
 }

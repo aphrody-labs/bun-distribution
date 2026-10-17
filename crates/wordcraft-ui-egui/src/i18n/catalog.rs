@@ -55,7 +55,9 @@ pub fn placeholders(text: &str) -> Vec<&str> {
     let mut names = Vec::new();
     let mut rest = text;
     while let Some((_, after_open)) = rest.split_once('{') {
-        let Some((name, after_close)) = after_open.split_once('}') else { break };
+        let Some((name, after_close)) = after_open.split_once('}') else {
+            break;
+        };
         names.push(name);
         rest = after_close;
     }
@@ -65,9 +67,15 @@ pub fn placeholders(text: &str) -> Vec<&str> {
 
 /// Check one entry against its English source.
 fn validate(entry: &Entry) -> Result<(), String> {
-    let Entry { context, source, translation } = entry;
+    let Entry {
+        context,
+        source,
+        translation,
+    } = entry;
     if !context.is_empty() && !CONTEXTS.contains(&context.as_str()) {
-        return Err(format!("unknown context {context:?}; use one of {CONTEXTS:?} or leave the first column empty"));
+        return Err(format!(
+            "unknown context {context:?}; use one of {CONTEXTS:?} or leave the first column empty"
+        ));
     }
     if placeholders(source) != placeholders(translation) {
         return Err("placeholders differ from the English source".into());
@@ -80,10 +88,19 @@ fn validate(entry: &Entry) -> Result<(), String> {
 
 fn parse_line(line: &str) -> Result<Entry, String> {
     let mut columns = line.split('\t');
-    let (Some(context), Some(source), Some(translation), None) = (columns.next(), columns.next(), columns.next(), columns.next()) else {
+    let (Some(context), Some(source), Some(translation), None) = (
+        columns.next(),
+        columns.next(),
+        columns.next(),
+        columns.next(),
+    ) else {
         return Err("expected `context<TAB>source<TAB>translation`".into());
     };
-    let entry = Entry { context: unescape(context)?, source: unescape(source)?, translation: unescape(translation)? };
+    let entry = Entry {
+        context: unescape(context)?,
+        source: unescape(source)?,
+        translation: unescape(translation)?,
+    };
     if entry.source.is_empty() || entry.translation.is_empty() {
         return Err("source and translation must be nonempty".into());
     }
@@ -104,7 +121,10 @@ pub fn parse_entries(text: &str) -> (Vec<Entry>, Vec<String>) {
         let line_no = index.saturating_add(1);
         match parse_line(line) {
             Ok(entry) if !seen.insert((entry.context.clone(), entry.source.clone())) => {
-                errors.push(format!("line {line_no}: duplicate key {:?} / {:?}", entry.context, entry.source));
+                errors.push(format!(
+                    "line {line_no}: duplicate key {:?} / {:?}",
+                    entry.context, entry.source
+                ));
             }
             Ok(entry) => entries.push(entry),
             Err(error) => errors.push(format!("line {line_no}: {error}")),
@@ -122,7 +142,9 @@ impl Catalog {
             if e.context.is_empty() {
                 catalog.plain.insert(e.source, e.translation);
             } else {
-                catalog.contextual.insert((e.context, e.source), e.translation);
+                catalog
+                    .contextual
+                    .insert((e.context, e.source), e.translation);
             }
         }
         (catalog, errors)
@@ -134,6 +156,9 @@ impl Catalog {
 
     /// The entry for `s` in `context`, else the plain one.
     pub fn in_context(&self, context: &str, s: &str) -> Option<&str> {
-        self.contextual.get(&(context.to_string(), s.to_string())).map(String::as_str).or_else(|| self.plain(s))
+        self.contextual
+            .get(&(context.to_string(), s.to_string()))
+            .map(String::as_str)
+            .or_else(|| self.plain(s))
     }
 }

@@ -7,7 +7,11 @@ use super::{DialogSpec, run_and_close};
 use crate::VectorcraftApp;
 use crate::state::Dialog;
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Artboard Options").into(), confirm, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Artboard Options").into(),
+    confirm,
+    ..DialogSpec::FORM
+};
 
 /// The dialog kind of Artboard Options.
 pub const KIND: &str = "artboardOptions";
@@ -16,7 +20,10 @@ pub const KIND: &str = "artboardOptions";
 /// window's.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     let index = if app.session.tool_id() == "artboard" {
-        app.session.tool_options()["active"].as_u64().and_then(|i| usize::try_from(i).ok()).unwrap_or(0)
+        app.session.tool_options()["active"]
+            .as_u64()
+            .and_then(|i| usize::try_from(i).ok())
+            .unwrap_or(0)
     } else {
         app.view().map_or(0, |v| v.artboard)
     };

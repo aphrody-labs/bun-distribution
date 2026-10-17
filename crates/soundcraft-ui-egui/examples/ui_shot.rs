@@ -23,7 +23,10 @@ fn system_theme(value: &str) -> Option<Option<egui::Theme>> {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let out = args.first().cloned().unwrap_or_else(|| "soundcraft.png".into());
+    let out = args
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "soundcraft.png".into());
     let script = args.get(1).filter(|a| !a.starts_with("--")).cloned();
     let blank = args.iter().any(|a| a == "--blank");
     let appearance = if let Some(i) = args.iter().position(|a| a == "--system-theme") {
@@ -42,11 +45,19 @@ fn main() {
         .and_then(|s| s.split_once('x'))
         .and_then(|(a, b)| Some((a.parse::<f32>().ok()?, b.parse::<f32>().ok()?)))
         .unwrap_or((1600.0, 1000.0));
-    let engine = if blank { soundcraft_engine::Engine::default() } else { soundcraft_engine::demo::demo_engine() };
+    let engine = if blank {
+        soundcraft_engine::Engine::default()
+    } else {
+        soundcraft_engine::demo::demo_engine()
+    };
     let (tx, rx) = mpsc::channel::<ControlRequest>();
     let app = SoundApp::new(engine, None, Services::default()).with_control(rx);
-    let mut harness =
-        egui_kittest::Harness::builder().with_size(egui::vec2(w, h)).with_pixels_per_point(2.0).with_max_steps(1_000_000).wgpu().build_ui_state(
+    let mut harness = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(w, h))
+        .with_pixels_per_point(2.0)
+        .with_max_steps(1_000_000)
+        .wgpu()
+        .build_ui_state(
             |ui, app: &mut SoundApp| {
                 if !READY.load(Ordering::Relaxed) {
                     return;
@@ -78,7 +89,11 @@ fn main() {
     };
     if let Some(script) = script {
         let text = std::fs::read_to_string(&script).unwrap_or_default();
-        for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+        for line in text
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        {
             let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
                 eprintln!("bad line: {line}");
                 continue;
@@ -105,7 +120,11 @@ fn main() {
                 }
                 continue;
             }
-            let method = v.get("method").and_then(|m| m.as_str()).unwrap_or("").to_string();
+            let method = v
+                .get("method")
+                .and_then(|m| m.as_str())
+                .unwrap_or("")
+                .to_string();
             let params = v.get("params").cloned().unwrap_or(serde_json::json!({}));
             let (req, reply) = ControlRequest::new(method, params);
             let _ = tx.send(req);

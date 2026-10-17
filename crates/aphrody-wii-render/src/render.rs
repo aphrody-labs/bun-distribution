@@ -166,7 +166,8 @@ impl GxRenderer {
             for src_v in &self.scratch_vertices[src_base..src_end] {
                 let src_bytes = bytemuck::bytes_of(src_v);
 
-                view.slice(cursor..cursor + 68).copy_from_slice(&src_bytes[..68]);
+                view.slice(cursor..cursor + 68)
+                    .copy_from_slice(&src_bytes[..68]);
                 if texcoord_bytes > 0 {
                     view.slice(cursor + 68..cursor + 68 + texcoord_bytes)
                         .copy_from_slice(&src_bytes[68..68 + texcoord_bytes]);
@@ -292,7 +293,11 @@ impl GxRenderer {
                 gamma,
                 filter_mode: 0,
             };
-            queue.write_buffer(&self.xfb_copy_uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
+            queue.write_buffer(
+                &self.xfb_copy_uniform_buffer,
+                0,
+                bytemuck::bytes_of(&uniforms),
+            );
 
             {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -330,7 +335,11 @@ impl GxRenderer {
                 wgpu::TexelCopyTextureInfo {
                     texture: &self.efb_texture,
                     mip_level: 0,
-                    origin: wgpu::Origin3d { x: scaled_src_x, y: scaled_src_y, z: 0 },
+                    origin: wgpu::Origin3d {
+                        x: scaled_src_x,
+                        y: scaled_src_y,
+                        z: 0,
+                    },
                     aspect: wgpu::TextureAspect::default(),
                 },
                 wgpu::TexelCopyTextureInfo {
@@ -339,7 +348,11 @@ impl GxRenderer {
                     origin: wgpu::Origin3d::ZERO,
                     aspect: wgpu::TextureAspect::default(),
                 },
-                wgpu::Extent3d { width: scaled_w, height: scaled_h, depth_or_array_layers: 1 },
+                wgpu::Extent3d {
+                    width: scaled_w,
+                    height: scaled_h,
+                    depth_or_array_layers: 1,
+                },
             );
         }
         encoder.pop_debug_group();
@@ -383,7 +396,9 @@ impl GxRenderer {
     ) {
         if let EfbCopySource::Color { intensity } = source {
             debug_assert!(
-                self.efb_pack_pipelines.for_color(copy_format, intensity).is_some(),
+                self.efb_pack_pipelines
+                    .for_color(copy_format, intensity)
+                    .is_some(),
                 "cache_efb_copy called with depth-only copy format {copy_format:?}",
             );
         }
@@ -452,7 +467,9 @@ impl GxRenderer {
             });
             let (pipeline, bind_group) = match source {
                 EfbCopySource::Color { intensity } => (
-                    self.efb_pack_pipelines.for_color(copy_format, intensity).unwrap(),
+                    self.efb_pack_pipelines
+                        .for_color(copy_format, intensity)
+                        .unwrap(),
                     &self.xfb_copy_bind_group,
                 ),
                 EfbCopySource::Depth => (
@@ -496,35 +513,47 @@ impl GxRenderer {
             self.return_to_pool(entry.texture, entry.view);
         }
         self.bind_group_cache.retain(|key, _| {
-            !key.tex_keys.iter().any(|k| k.map(|t| t.ram_addr) == Some(dest_addr))
+            !key.tex_keys
+                .iter()
+                .any(|k| k.map(|t| t.ram_addr) == Some(dest_addr))
         });
 
-        self.efb_copy_pool.get_mut(&(width, height)).and_then(Vec::pop).unwrap_or_else(|| {
-            let label = format!(
-                "efb_copy addr={dest_addr:#010x} size={width}x{height} fmt={copy_format:?}"
-            );
-            let texture = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some(&label),
-                size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::COPY_DST
-                    | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            });
-            let view = texture.create_view(&Default::default());
-            (texture, view)
-        })
+        self.efb_copy_pool
+            .get_mut(&(width, height))
+            .and_then(Vec::pop)
+            .unwrap_or_else(|| {
+                let label = format!(
+                    "efb_copy addr={dest_addr:#010x} size={width}x{height} fmt={copy_format:?}"
+                );
+                let texture = device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some(&label),
+                    size: wgpu::Extent3d {
+                        width,
+                        height,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING
+                        | wgpu::TextureUsages::RENDER_ATTACHMENT
+                        | wgpu::TextureUsages::COPY_DST
+                        | wgpu::TextureUsages::COPY_SRC,
+                    view_formats: &[],
+                });
+                let view = texture.create_view(&Default::default());
+                (texture, view)
+            })
     }
 
     pub(crate) fn return_to_pool(&mut self, tex: wgpu::Texture, view: wgpu::TextureView) {
         const PER_BUCKET_CAP: usize = 8;
         let size = tex.size();
-        let bucket = self.efb_copy_pool.entry((size.width, size.height)).or_default();
+        let bucket = self
+            .efb_copy_pool
+            .entry((size.width, size.height))
+            .or_default();
         if bucket.len() < PER_BUCKET_CAP {
             bucket.push((tex, view));
         }
@@ -544,7 +573,10 @@ impl GxRenderer {
         ));
 
         let size = tex.size();
-        let bucket = self.texture_pool.entry((size.width, size.height)).or_default();
+        let bucket = self
+            .texture_pool
+            .entry((size.width, size.height))
+            .or_default();
         if bucket.len() < PER_BUCKET_CAP {
             bucket.push(tex);
         }
@@ -565,7 +597,11 @@ impl GxRenderer {
         let texture_label = format!("{label_prefix} size={width}x{height}");
         self.xfb_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some(&texture_label),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -618,7 +654,9 @@ impl GxRenderer {
             let offset_x = self.scaled(part.offset_x);
             let offset_y = self.scaled(part.offset_y);
             let width = src_size.width.min(xfb_size.width.saturating_sub(offset_x));
-            let height = src_size.height.min(xfb_size.height.saturating_sub(offset_y));
+            let height = src_size
+                .height
+                .min(xfb_size.height.saturating_sub(offset_y));
             if width == 0 || height == 0 {
                 tracing::warn!(
                     id = part.id,
@@ -644,10 +682,18 @@ impl GxRenderer {
                 wgpu::TexelCopyTextureInfo {
                     texture: &self.xfb_texture,
                     mip_level: 0,
-                    origin: wgpu::Origin3d { x: offset_x, y: offset_y, z: 0 },
+                    origin: wgpu::Origin3d {
+                        x: offset_x,
+                        y: offset_y,
+                        z: 0,
+                    },
                     aspect: wgpu::TextureAspect::default(),
                 },
-                wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+                wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
             );
         }
 
@@ -692,7 +738,11 @@ impl GxRenderer {
                 bytes_per_row: Some(width * 4),
                 rows_per_image: Some(height),
             },
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
 
         let _ = self.submit_pending(queue);
@@ -832,7 +882,14 @@ impl GxRenderer {
         encoder.push_debug_group(&group_label);
 
         let (src_texture, src_origin) = if self.efb_scale == 1 && !mipmap {
-            (&self.efb_texture, wgpu::Origin3d { x: src_x, y: src_y, z: 0 })
+            (
+                &self.efb_texture,
+                wgpu::Origin3d {
+                    x: src_x,
+                    y: src_y,
+                    z: 0,
+                },
+            )
         } else {
             let (readback_tex, readback_view) = self.efb_color_readback_target.as_ref().unwrap();
 
@@ -925,7 +982,9 @@ impl GxRenderer {
             height,
             mipmap,
             copy_format_enum,
-            EfbCopySource::Color { intensity: is_intensity },
+            EfbCopySource::Color {
+                intensity: is_intensity,
+            },
         );
     }
 
@@ -1049,7 +1108,11 @@ impl GxRenderer {
                     rows_per_image: Some(encode_h),
                 },
             },
-            wgpu::Extent3d { width: encode_w, height: encode_h, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width: encode_w,
+                height: encode_h,
+                depth_or_array_layers: 1,
+            },
         );
         encoder.pop_debug_group();
         self.pending_command_buffers.push(encoder.finish());
@@ -1075,17 +1138,21 @@ impl GxRenderer {
             self.encode_depth_readback(device, queue, [x, y, 1, 1], [1, 1]);
         let submission_index = self.submit_pending(queue);
         let (done_tx, done_rx) = std::sync::mpsc::channel();
-        staging.slice(..bytes_per_row).map_async(wgpu::MapMode::Read, move |result| {
-            let _ = done_tx.send(result);
-        });
+        staging
+            .slice(..bytes_per_row)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                let _ = done_tx.send(result);
+            });
         let poll_result = device.poll(wgpu::PollType::Wait {
             submission_index,
             timeout: Some(std::time::Duration::from_secs(5)),
         });
         let map_result = done_rx.try_recv();
         let depth = if poll_result.is_ok() && matches!(map_result, Ok(Ok(()))) {
-            let mapped =
-                staging.slice(..bytes_per_row).get_mapped_range().expect("mapped readback range");
+            let mapped = staging
+                .slice(..bytes_per_row)
+                .get_mapped_range()
+                .expect("mapped readback range");
 
             ((mapped[0] as u32) << 16) | ((mapped[1] as u32) << 8) | mapped[2] as u32
         } else {
@@ -1106,8 +1173,10 @@ impl GxRenderer {
         format: wgpu::TextureFormat,
         label: &str,
     ) {
-        let (target_w, target_h) =
-            slot.as_ref().map(|(t, _)| (t.size().width, t.size().height)).unwrap_or((0, 0));
+        let (target_w, target_h) = slot
+            .as_ref()
+            .map(|(t, _)| (t.size().width, t.size().height))
+            .unwrap_or((0, 0));
         if slot.is_some() && width <= target_w && height <= target_h {
             return;
         }
@@ -1137,9 +1206,10 @@ impl GxRenderer {
     ) -> (wgpu::Buffer, u64) {
         let capacity = staging_size.next_power_of_two().max(4096);
         if let Some(bucket) = self.efb_readback_staging_pool.get_mut(&capacity)
-            && let Some(buf) = bucket.pop() {
-                return (buf, capacity);
-            }
+            && let Some(buf) = bucket.pop()
+        {
+            return (buf, capacity);
+        }
 
         let buf = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("efb_readback_staging"),
@@ -1200,7 +1270,10 @@ impl GxRenderer {
         let submission_index = self.submit_pending(queue);
 
         for pending in &self.pending_writebacks {
-            pending.staging.slice(..pending.staging_size).map_async(wgpu::MapMode::Read, |_| {});
+            pending
+                .staging
+                .slice(..pending.staging_size)
+                .map_async(wgpu::MapMode::Read, |_| {});
         }
 
         if let Err(err) = device.poll(wgpu::PollType::Wait {
@@ -1275,5 +1348,9 @@ impl GxRenderer {
 }
 
 pub(crate) fn grow_capacity(current: u64, needed: u64) -> u64 {
-    if needed <= current { current } else { needed.next_power_of_two().max(needed).max(current) }
+    if needed <= current {
+        current
+    } else {
+        needed.next_power_of_two().max(needed).max(current)
+    }
 }

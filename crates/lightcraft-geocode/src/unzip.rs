@@ -12,7 +12,12 @@ fn u16_at(b: &[u8], i: usize) -> Option<u16> {
 
 fn u32_at(b: &[u8], i: usize) -> Option<u32> {
     let s = b.get(i..i.checked_add(4)?)?;
-    Some(u32::from_le_bytes([*s.first()?, *s.get(1)?, *s.get(2)?, *s.get(3)?]))
+    Some(u32::from_le_bytes([
+        *s.first()?,
+        *s.get(1)?,
+        *s.get(2)?,
+        *s.get(3)?,
+    ]))
 }
 
 fn bad(what: &str) -> GeocodeError {
@@ -28,7 +33,11 @@ pub fn extract(zip: &[u8], name: &str, max: usize) -> Result<Vec<u8>, GeocodeErr
         .find(|&i| zip.get(i..i.saturating_add(4)) == Some(b"PK\x05\x06"))
         .ok_or_else(|| bad("no directory"))?;
     let field16 = |at: usize, what: &str| u16_at(zip, at).map(usize::from).ok_or_else(|| bad(what));
-    let field32 = |at: usize, what: &str| u32_at(zip, at).and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad(what));
+    let field32 = |at: usize, what: &str| {
+        u32_at(zip, at)
+            .and_then(|v| usize::try_from(v).ok())
+            .ok_or_else(|| bad(what))
+    };
     let count = field16(eocd.saturating_add(10), "directory")?;
     let mut p = field32(eocd.saturating_add(16), "directory")?;
     for _ in 0..count {
@@ -43,29 +52,46 @@ pub fn extract(zip: &[u8], name: &str, max: usize) -> Result<Vec<u8>, GeocodeErr
         let clen = field16(p.saturating_add(32), "entry")?;
         let local = field32(p.saturating_add(42), "entry")?;
         let name_at = p.saturating_add(46);
-        let entry = zip.get(name_at..name_at.saturating_add(nlen)).ok_or_else(|| bad("entry name"))?;
-        p = name_at.saturating_add(nlen).saturating_add(xlen).saturating_add(clen);
+        let entry = zip
+            .get(name_at..name_at.saturating_add(nlen))
+            .ok_or_else(|| bad("entry name"))?;
+        p = name_at
+            .saturating_add(nlen)
+            .saturating_add(xlen)
+            .saturating_add(clen);
         if !String::from_utf8_lossy(entry).ends_with(name) {
             continue;
         }
         if usize_ > max {
-            return Err(GeocodeError::Invalid(format!("{name} is larger than {max} bytes")));
+            return Err(GeocodeError::Invalid(format!(
+                "{name} is larger than {max} bytes"
+            )));
         }
         if zip.get(local..local.saturating_add(4)) != Some(b"PK\x03\x04") {
             return Err(bad("local header"));
         }
         let lnlen = field16(local.saturating_add(26), "local header")?;
         let lxlen = field16(local.saturating_add(28), "local header")?;
-        let start = local.saturating_add(30).saturating_add(lnlen).saturating_add(lxlen);
-        let data = zip.get(start..start.saturating_add(csize)).ok_or_else(|| bad("truncated"))?;
+        let start = local
+            .saturating_add(30)
+            .saturating_add(lnlen)
+            .saturating_add(lxlen);
+        let data = zip
+            .get(start..start.saturating_add(csize))
+            .ok_or_else(|| bad("truncated"))?;
         return match method {
             0 if data.len() <= max => Ok(data.to_vec()),
-            0 => Err(GeocodeError::Invalid(format!("{name} is larger than {max} bytes"))),
-            8 => miniz_oxide::inflate::decompress_to_vec_with_limit(data, max).map_err(|e| bad(&format!("deflate: {e:?}"))),
+            0 => Err(GeocodeError::Invalid(format!(
+                "{name} is larger than {max} bytes"
+            ))),
+            8 => miniz_oxide::inflate::decompress_to_vec_with_limit(data, max)
+                .map_err(|e| bad(&format!("deflate: {e:?}"))),
             m => Err(bad(&format!("compression method {m}"))),
         };
     }
-    Err(GeocodeError::Invalid(format!("{name} is not in the archive")))
+    Err(GeocodeError::Invalid(format!(
+        "{name} is not in the archive"
+    )))
 }
 
 /// A one-file deflated ZIP (test fixtures: the engine's download test serves one).

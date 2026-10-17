@@ -5,7 +5,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 fn main() {
-    let game = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let game = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let data = PathBuf::from(&game).join("data");
     let mut vfs = Vfs::new();
     vfs.init(&data).expect("vfs init");

@@ -39,7 +39,13 @@ pub(crate) struct BrushCache {
 
 impl Default for BrushCache {
     fn default() -> Self {
-        Self { src: None, key: 0, checked: (0, 0), lib: HashMap::new(), entries: FrameCache::new(lru::BRUSH_BUDGET, 512) }
+        Self {
+            src: None,
+            key: 0,
+            checked: (0, 0),
+            lib: HashMap::new(),
+            entries: FrameCache::new(lru::BRUSH_BUDGET, 512),
+        }
     }
 }
 
@@ -57,10 +63,15 @@ impl BrushCache {
         self.src = Some(cur.cloned());
         self.key = cur.map_or(0, |v| {
             let mut h = DefaultHasher::new();
-            vectorcraft_brush::serde_json::to_string(v).unwrap_or_default().hash(&mut h);
+            vectorcraft_brush::serde_json::to_string(v)
+                .unwrap_or_default()
+                .hash(&mut h);
             h.finish()
         });
-        self.lib = vectorcraft_brush::library(doc).into_iter().map(|b| (b.name.clone(), Arc::new(b))).collect();
+        self.lib = vectorcraft_brush::library(doc)
+            .into_iter()
+            .map(|b| (b.name.clone(), Arc::new(b)))
+            .collect();
     }
 
     /// [`Self::key`] for the brush library `doc` holds (checked once a frame, `stamp`).
@@ -76,7 +87,18 @@ pub(crate) fn cull_bounds(n: &Node) -> Option<Rect> {
     if !vectorcraft_brush::has_brush(n) {
         return Some(b);
     }
-    let w = n.appearance.items.iter().filter_map(|i| if let AppearanceItem::Stroke(s) = i { Some(s.width) } else { None }).fold(1.0, f64::max);
+    let w = n
+        .appearance
+        .items
+        .iter()
+        .filter_map(|i| {
+            if let AppearanceItem::Stroke(s) = i {
+                Some(s.width)
+            } else {
+                None
+            }
+        })
+        .fold(1.0, f64::max);
     let pad = 16.0 * w + 8.0;
     Some(b.inflate(pad, pad))
 }
@@ -86,19 +108,49 @@ pub use vectorcraft_brush::instance_art;
 impl Renderer {
     /// Paint stroke `st` of `n` (outline `bp`) with its brush. Returns false when the brush is
     /// unknown (the caller then draws a plain stroke).
-    pub(crate) fn draw_brush(&mut self, ctx: &mut RenderContext, f: &Frame, n: &Node, bp: &BezPath, st: &StrokeLayer) -> bool {
-        let Some(name) = st.brush.as_deref() else { return false };
+    pub(crate) fn draw_brush(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        n: &Node,
+        bp: &BezPath,
+        st: &StrokeLayer,
+    ) -> bool {
+        let Some(name) = st.brush.as_deref() else {
+            return false;
+        };
         self.brushes.library(f.doc, self.stamp);
-        let Some(brush) = self.brushes.lib.get(name).cloned() else { return false };
-        let idx = n.appearance.items.iter().position(|i| matches!(i, AppearanceItem::Stroke(s) if std::ptr::eq(s, st))).unwrap_or(usize::MAX);
+        let Some(brush) = self.brushes.lib.get(name).cloned() else {
+            return false;
+        };
+        let idx = n
+            .appearance
+            .items
+            .iter()
+            .position(|i| matches!(i, AppearanceItem::Stroke(s) if std::ptr::eq(s, st)))
+            .unwrap_or(usize::MAX);
         let key = (n.id.0, idx);
         let stamp = self.stamp;
         let pieces = match self.brushes.entries.get(&key, stamp) {
-            Some(e) if Arc::ptr_eq(&e.brush, &brush) && e.stroke == *st && e.path == *bp => e.pieces.clone(),
+            Some(e) if Arc::ptr_eq(&e.brush, &brush) && e.stroke == *st && e.path == *bp => {
+                e.pieces.clone()
+            }
             _ => {
                 let pieces = Arc::new(vectorcraft_brush::stroke_pieces(&brush, bp, st));
-                let bytes = size_of::<Entry>() + lru::path_bytes(bp) + pieces.iter().map(lru::node_bytes).sum::<usize>();
-                self.brushes.entries.insert(key, Entry { path: bp.clone(), stroke: st.clone(), brush, pieces: pieces.clone() }, bytes, stamp);
+                let bytes = size_of::<Entry>()
+                    + lru::path_bytes(bp)
+                    + pieces.iter().map(lru::node_bytes).sum::<usize>();
+                self.brushes.entries.insert(
+                    key,
+                    Entry {
+                        path: bp.clone(),
+                        stroke: st.clone(),
+                        brush,
+                        pieces: pieces.clone(),
+                    },
+                    bytes,
+                    stamp,
+                );
                 pieces
             }
         };
@@ -108,7 +160,16 @@ impl Renderer {
             }
         };
         if st.opacity < 1.0 || st.blend != vectorcraft_color::BlendMode::Normal {
-            self.group(ctx, f, crate::group::Composite { blend: st.blend, opacity: st.opacity, ..Default::default() }, &mut draw);
+            self.group(
+                ctx,
+                f,
+                crate::group::Composite {
+                    blend: st.blend,
+                    opacity: st.opacity,
+                    ..Default::default()
+                },
+                &mut draw,
+            );
         } else {
             draw(self, ctx, f);
         }
@@ -129,14 +190,27 @@ mod tests {
         let id = d.alloc_id();
         let mut ap = Appearance::basic(Paint::None, Paint::solid(Color::BLACK), width);
         ap.stroke_mut().unwrap().brush = brush.map(str::to_string);
-        let n = Node::path(id, shapes::line((20.0, 50.0).into(), (180.0, 50.0).into()), ap);
+        let n = Node::path(
+            id,
+            shapes::line((20.0, 50.0).into(), (180.0, 50.0).into()),
+            ap,
+        );
         let l = d.layers[0].id;
         d.insert(Some(l), 0, n).unwrap();
         d
     }
 
     fn render(r: &mut Renderer, d: &Document) -> Rendered {
-        r.render(d, 200, 100, Affine::IDENTITY, &RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() })
+        r.render(
+            d,
+            200,
+            100,
+            Affine::IDENTITY,
+            &RenderOptions {
+                background: Some([255, 255, 255, 255]),
+                ..Default::default()
+            },
+        )
     }
 
     fn dark(p: [u8; 4]) -> bool {
@@ -150,7 +224,11 @@ mod tests {
         assert!(!dark(plain.pixel(100, 53)));
         let d = doc_with_line(Some("10 pt. Oval"), 1.0);
         let img = render(&mut r, &d);
-        assert!(dark(img.pixel(100, 50)) && dark(img.pixel(100, 52)), "brush art is painted: {:?}", img.pixel(100, 52));
+        assert!(
+            dark(img.pixel(100, 50)) && dark(img.pixel(100, 52)),
+            "brush art is painted: {:?}",
+            img.pixel(100, 52)
+        );
         assert!(!dark(img.pixel(100, 60)));
         // Second frame hits the cache and paints the same.
         let again = render(&mut r, &d);
@@ -189,10 +267,20 @@ mod tests {
             shapes::rectangle(Rect::new(-10.0, -10.0, 10.0, 10.0)),
             Appearance::basic(Paint::solid(Color::BLACK), Paint::None, 0.0),
         );
-        d.symbols.push(vectorcraft_doc::Symbol { name: "S".into(), art: std::sync::Arc::new(art) });
+        d.symbols.push(vectorcraft_doc::Symbol {
+            name: "S".into(),
+            art: std::sync::Arc::new(art),
+        });
         let id = d.alloc_id();
-        let mut inst = Node::new(id, vectorcraft_doc::NodeKind::SymbolInstance { symbol: "S".into(), xf: Affine::translate((50.0, 50.0)) });
-        inst.appearance.set_fill(Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
+        let mut inst = Node::new(
+            id,
+            vectorcraft_doc::NodeKind::SymbolInstance {
+                symbol: "S".into(),
+                xf: Affine::translate((50.0, 50.0)),
+            },
+        );
+        inst.appearance
+            .set_fill(Paint::solid(Color::rgb(1.0, 0.0, 0.0)));
         let l = d.layers[0].id;
         d.insert(Some(l), 0, inst).unwrap();
         let img = Renderer::new().render(&d, 100, 100, Affine::IDENTITY, &RenderOptions::default());

@@ -16,13 +16,15 @@ use super::*;
 use crate::{Services, SlideApp};
 
 fn harness(app: SlideApp) -> Harness<'static, SlideApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_ui_state(
-        |ui, app: &mut SlideApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_ui_state(
+            |ui, app: &mut SlideApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            app,
+        );
     // The app keeps asking for frames, so step instead of run().
     h.run_steps(3);
     h
@@ -66,13 +68,15 @@ fn click_on_page(h: &Harness<'_, SlideApp>, label: &str) {
         .query_all_by_role_and_label(Role::Button, label)
         .find(|n| !in_nav(n.rect()))
         .or_else(|| h.query_all_by_label(label).find(|n| !in_nav(n.rect())));
-    node.unwrap_or_else(|| panic!("no “{label}” button on the page")).click();
+    node.unwrap_or_else(|| panic!("no “{label}” button on the page"))
+        .click();
 }
 
 /// Clicks the side menu's entry called `label`.
 fn click_nav(h: &Harness<'_, SlideApp>, label: &str) {
     let node = h.query_all_by_label(label).find(|n| in_nav(n.rect()));
-    node.unwrap_or_else(|| panic!("no “{label}” in the side menu")).click();
+    node.unwrap_or_else(|| panic!("no “{label}” in the side menu"))
+        .click();
 }
 
 fn page(h: &Harness<'_, SlideApp>) -> Option<Page> {
@@ -88,10 +92,21 @@ fn page_ids_round_trip_and_unknown_ids_are_refused() {
     assert_eq!(Page::parse("share"), None);
     assert_eq!(Page::parse(""), None);
     let (top, bottom) = entries(false);
-    assert_eq!(top, vec![Nav::Page(Page::Home), Nav::Page(Page::New), Nav::Page(Page::Open)], "the start screen has no presentation pages");
+    assert_eq!(
+        top,
+        vec![
+            Nav::Page(Page::Home),
+            Nav::Page(Page::New),
+            Nav::Page(Page::Open)
+        ],
+        "the start screen has no presentation pages"
+    );
     assert_eq!(bottom, vec![Nav::Page(Page::Account), Nav::Options]);
     assert_eq!(entries(true).0.len(), 9);
-    assert_eq!(split_path("/home/me/Talk.pptx"), ("Talk.pptx".into(), "/home/me".into()));
+    assert_eq!(
+        split_path("/home/me/Talk.pptx"),
+        ("Talk.pptx".into(), "/home/me".into())
+    );
     assert_eq!(format_bytes(512), "512 bytes");
     assert_eq!(format_bytes(33_485), "32.7 KB");
 }
@@ -100,12 +115,18 @@ fn page_ids_round_trip_and_unknown_ids_are_refused() {
 #[test]
 fn the_file_tab_opens_the_backstage_and_esc_or_back_returns() {
     let mut h = harness(new_app());
-    assert!(h.query_by_label("Blank Presentation").is_none(), "the slide shows first");
+    assert!(
+        h.query_by_label("Blank Presentation").is_none(),
+        "the slide shows first"
+    );
     h.get_by_label("File").click();
     h.run_steps(3);
     assert_eq!(page(&h), Some(Page::Home));
     assert!(h.state().backstage_open());
-    assert!(h.query_by_label("Blank Presentation").is_some(), "Home offers new presentations");
+    assert!(
+        h.query_by_label("Blank Presentation").is_some(),
+        "Home offers new presentations"
+    );
     assert!(h.query_by_label("File").is_none(), "the ribbon is hidden");
     h.key_press(Key::Escape);
     h.run_steps(3);
@@ -117,7 +138,11 @@ fn the_file_tab_opens_the_backstage_and_esc_or_back_returns() {
     h.get_by_label("Back").click();
     h.run_steps(3);
     assert!(!h.state().backstage_open(), "so does the back arrow");
-    assert_eq!(h.state().session.documents().len(), 1, "nothing was created or closed");
+    assert_eq!(
+        h.state().session.documents().len(),
+        1,
+        "nothing was created or closed"
+    );
 }
 
 /// Alt+F opens it with the keyboard in the side menu; arrows walk it (pages show as they get the
@@ -150,14 +175,20 @@ fn alt_f_arrows_enter_and_esc_drive_the_side_menu() {
     h.key_press(Key::Escape);
     h.run_steps(3);
     assert!(!h.state().backstage_open());
-    assert!(!h.state().session.active().unwrap().is_dirty(), "the keys never reached the slide");
+    assert!(
+        !h.state().session.active().unwrap().is_dirty(),
+        "the keys never reached the slide"
+    );
 }
 
 /// Every page draws its own content.
 #[test]
 fn every_page_renders() {
     let mut h = harness(new_app());
-    let last_theme = deckcraft_model::theme::builtin_themes().last().map(|t| t.name.clone()).unwrap();
+    let last_theme = deckcraft_model::theme::builtin_themes()
+        .last()
+        .map(|t| t.name.clone())
+        .unwrap();
     let checks: [(Page, &str); 8] = [
         (Page::Home, "Recent"),
         (Page::New, &last_theme),
@@ -169,34 +200,55 @@ fn every_page_renders() {
         (Page::Account, "About DeckCraft"),
     ];
     for (p, marker) in checks {
-        h.state_mut().run("app.backstage", json!({"page": p.id()})).unwrap();
+        h.state_mut()
+            .run("app.backstage", json!({"page": p.id()}))
+            .unwrap();
         h.run_steps(3);
         assert_eq!(page(&h), Some(p));
-        assert!(h.query_all_by_label_contains(marker).next().is_some(), "{} shows “{marker}”", p.label());
+        assert!(
+            h.query_all_by_label_contains(marker).next().is_some(),
+            "{} shows “{marker}”",
+            p.label()
+        );
         let selected = h.query_all_by_label(p.label()).any(|n| in_nav(n.rect()));
         assert!(selected, "{} is in the side menu", p.label());
     }
-    assert!(h.state_mut().run("app.backstage", json!({"page": "share"})).is_err(), "Share (cloud) isn't offered");
+    assert!(
+        h.state_mut()
+            .run("app.backstage", json!({"page": "share"}))
+            .is_err(),
+        "Share (cloud) isn't offered"
+    );
 }
 
 /// New and Home create presentations, which leaves the File tab.
 #[test]
 fn new_creates_a_presentation() {
     let mut h = harness(new_app());
-    h.state_mut().run("app.backstage", json!({"page": "new"})).unwrap();
+    h.state_mut()
+        .run("app.backstage", json!({"page": "new"}))
+        .unwrap();
     h.run_steps(3);
     h.get_by_label("Blank Presentation").click();
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 2);
     assert!(h.state().backstage.is_none(), "the new presentation shows");
 
-    let theme = deckcraft_model::theme::builtin_themes().into_iter().nth(1).unwrap();
+    let theme = deckcraft_model::theme::builtin_themes()
+        .into_iter()
+        .nth(1)
+        .unwrap();
     h.state_mut().run("app.backstage", json!({})).unwrap();
     h.run_steps(3);
     h.get_by_label(&theme.name).click();
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 3);
-    assert_eq!(h.state().session.active().unwrap().doc.masters[0].theme.name, theme.name);
+    assert_eq!(
+        h.state().session.active().unwrap().doc.masters[0]
+            .theme
+            .name,
+        theme.name
+    );
     assert!(h.state().backstage.is_none());
 }
 
@@ -204,23 +256,40 @@ fn new_creates_a_presentation() {
 #[test]
 fn open_lists_recent_files_and_opens_one() {
     let dir = temp_dir("open");
-    let path = dir.join("Quarterly review.pptx").to_string_lossy().to_string();
+    let path = dir
+        .join("Quarterly review.pptx")
+        .to_string_lossy()
+        .to_string();
     let mut s = Session::with_new();
     s.execute("file.saveAs", &json!({"path": path})).unwrap();
     let mut app = SlideApp::new(Session::with_new(), Services::default());
-    app.ui.recent = vec![path.clone(), dir.join("Other.pptx").to_string_lossy().to_string()];
+    app.ui.recent = vec![
+        path.clone(),
+        dir.join("Other.pptx").to_string_lossy().to_string(),
+    ];
     let mut h = harness(app);
-    h.state_mut().run("app.backstage", json!({"page": "open"})).unwrap();
+    h.state_mut()
+        .run("app.backstage", json!({"page": "open"}))
+        .unwrap();
     h.run_steps(3);
     assert!(h.query_by_label("Other.pptx").is_some());
     h.state_mut().backstage.as_mut().unwrap().query = "quarter".into();
     h.run_steps(2);
-    assert!(h.query_by_label("Other.pptx").is_none(), "the search box filters by name");
+    assert!(
+        h.query_by_label("Other.pptx").is_none(),
+        "the search box filters by name"
+    );
     h.get_by_label("Quarterly review.pptx").click();
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 2);
-    assert_eq!(h.state().session.active().unwrap().path.as_deref(), Some(path.as_str()));
-    assert!(h.state().backstage.is_none(), "the opened presentation shows");
+    assert_eq!(
+        h.state().session.active().unwrap().path.as_deref(),
+        Some(path.as_str())
+    );
+    assert!(
+        h.state().backstage.is_none(),
+        "the opened presentation shows"
+    );
     assert_eq!(h.state().ui.recent.first(), Some(&path));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -242,13 +311,24 @@ fn save_as_and_export_run_the_file_commands() {
     assert_eq!(page(&h), Some(Page::SaveAs));
     click_on_page(&h, "Save");
     h.run_steps(3);
-    let pptx = dir.join(format!("{title}.pptx")).to_string_lossy().to_string();
-    assert!(std::path::Path::new(&pptx).is_file(), "saved as PowerPoint by default");
-    assert_eq!(h.state().session.active().unwrap().path.as_deref(), Some(pptx.as_str()));
+    let pptx = dir
+        .join(format!("{title}.pptx"))
+        .to_string_lossy()
+        .to_string();
+    assert!(
+        std::path::Path::new(&pptx).is_file(),
+        "saved as PowerPoint by default"
+    );
+    assert_eq!(
+        h.state().session.active().unwrap().path.as_deref(),
+        Some(pptx.as_str())
+    );
     assert!(h.state().backstage.is_none(), "a save returns to the slide");
 
     // Export › Create PDF Document.
-    h.state_mut().run("app.backstage", json!({"page": "export"})).unwrap();
+    h.state_mut()
+        .run("app.backstage", json!({"page": "export"}))
+        .unwrap();
     h.run_steps(3);
     click_on_page(&h, "Create PDF");
     h.run_steps(3);
@@ -263,8 +343,19 @@ fn save_as_and_export_run_the_file_commands() {
     click_on_page(&h, "Save As");
     h.run_steps(3);
     assert!(dir.join(format!("{title}.txt")).is_file());
-    assert_eq!(h.state().session.active().unwrap().path.as_deref(), Some(pptx.as_str()), "exports are copies");
-    assert_eq!(*asked.borrow(), vec![format!("{title}.pptx"), format!("{title}.pdf"), format!("{title}.txt")]);
+    assert_eq!(
+        h.state().session.active().unwrap().path.as_deref(),
+        Some(pptx.as_str()),
+        "exports are copies"
+    );
+    assert_eq!(
+        *asked.borrow(),
+        vec![
+            format!("{title}.pptx"),
+            format!("{title}.pdf"),
+            format!("{title}.txt")
+        ]
+    );
 
     // Save with a file saves in place and goes back.
     h.state_mut().run("slide.new", json!({})).unwrap();
@@ -274,7 +365,11 @@ fn save_as_and_export_run_the_file_commands() {
     h.run_steps(3);
     assert!(!h.state().session.active().unwrap().is_dirty());
     assert!(h.state().backstage.is_none());
-    assert_eq!(asked.borrow().len(), 3, "no Save dialog for a presentation with a file");
+    assert_eq!(
+        asked.borrow().len(),
+        3,
+        "no Save dialog for a presentation with a file"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -288,7 +383,10 @@ fn close_closes_and_asks_about_unsaved_changes() {
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 0);
     assert_eq!(page(&h), Some(Page::Home), "the start screen shows");
-    assert!(h.query_by_label("Back").is_none() && h.query_by_label("Close").is_none(), "nothing to go back to or close");
+    assert!(
+        h.query_by_label("Back").is_none() && h.query_by_label("Close").is_none(),
+        "nothing to go back to or close"
+    );
 
     // Unsaved: Cancel keeps it, Don't Save closes it.
     h.get_by_label("Blank Presentation").click();
@@ -298,11 +396,17 @@ fn close_closes_and_asks_about_unsaved_changes() {
     h.run_steps(3);
     click_nav(&h, "Close");
     h.run_steps(3);
-    assert_eq!(h.state().dialog.as_ref().map(|d| d.id.as_str()), Some("close"));
+    assert_eq!(
+        h.state().dialog.as_ref().map(|d| d.id.as_str()),
+        Some("close")
+    );
     h.get_by_label("Cancel").click();
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 1);
-    assert!(h.state().backstage_open(), "Cancel leaves the File tab as it was");
+    assert!(
+        h.state().backstage_open(),
+        "Cancel leaves the File tab as it was"
+    );
     click_nav(&h, "Close");
     h.run_steps(3);
     h.get_by_label("Don't Save").click();
@@ -319,26 +423,46 @@ fn ctrl_w_asks_before_closing_unsaved_changes() {
     h.key_press_modifiers(Modifiers::COMMAND, Key::W);
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 1);
-    assert_eq!(h.state().dialog.as_ref().map(|d| d.id.as_str()), Some("close"));
+    assert_eq!(
+        h.state().dialog.as_ref().map(|d| d.id.as_str()),
+        Some("close")
+    );
 }
 
 /// Info shows the presentation's counts and properties, and edits them through file.properties.
 #[test]
 fn info_shows_and_edits_the_properties() {
     let mut app = new_app();
-    app.run("file.properties", json!({"title": "Quarterly", "keywords": "sales"})).unwrap();
+    app.run(
+        "file.properties",
+        json!({"title": "Quarterly", "keywords": "sales"}),
+    )
+    .unwrap();
     app.run("slide.new", json!({})).unwrap();
     app.run("slide.hide", json!({})).unwrap();
     let mut h = harness(app);
-    h.state_mut().run("app.backstage", json!({"page": "info"})).unwrap();
+    h.state_mut()
+        .run("app.backstage", json!({"page": "info"}))
+        .unwrap();
     h.run_steps(3);
-    assert_eq!(h.get_by_role_and_label(Role::TextInput, "Title").value().as_deref(), Some("Quarterly"));
-    assert_eq!(h.get_by_role_and_label(Role::TextInput, "Tags").value().as_deref(), Some("sales"));
+    assert_eq!(
+        h.get_by_role_and_label(Role::TextInput, "Title")
+            .value()
+            .as_deref(),
+        Some("Quarterly")
+    );
+    assert_eq!(
+        h.get_by_role_and_label(Role::TextInput, "Tags")
+            .value()
+            .as_deref(),
+        Some("sales")
+    );
     assert!(h.query_all_by_label("Not saved yet").next().is_some());
     let author = h.get_by_role_and_label(Role::TextInput, "Author");
     author.click();
     h.run_steps(2);
-    h.get_by_role_and_label(Role::TextInput, "Author").type_text("Ada");
+    h.get_by_role_and_label(Role::TextInput, "Author")
+        .type_text("Ada");
     h.run_steps(2);
     h.key_press(Key::Enter);
     h.run_steps(3);
@@ -361,7 +485,12 @@ fn the_start_screen_is_file_home() {
     h.key_press(Key::ArrowDown);
     h.run_steps(2);
     assert_eq!(page(&h), Some(Page::New));
-    assert!(h.state_mut().run("app.backstage", json!({"page": "print"})).is_err(), "nothing to print");
+    assert!(
+        h.state_mut()
+            .run("app.backstage", json!({"page": "print"}))
+            .is_err(),
+        "nothing to print"
+    );
     h.get_by_label("Blank Presentation").click();
     h.run_steps(3);
     assert_eq!(h.state().session.documents().len(), 1);
@@ -383,7 +512,10 @@ fn print_previews_pages_and_prints_a_pdf() {
     h.key_press_modifiers(Modifiers::COMMAND, Key::P);
     h.run_steps(3);
     assert_eq!(page(&h), Some(Page::Print), "Ctrl+P opens File › Print");
-    assert!(h.query_by_label("1 of 3").is_some(), "hidden slides are left out");
+    assert!(
+        h.query_by_label("1 of 3").is_some(),
+        "hidden slides are left out"
+    );
     h.state_mut().backstage.as_mut().unwrap().print_layout = "h4";
     h.run_steps(2);
     assert!(h.query_by_label("1 of 1").is_some(), "four slides a page");
@@ -400,14 +532,20 @@ fn print_previews_pages_and_prints_a_pdf() {
         bs.print_range = "9".into();
     }
     h.run_steps(2);
-    assert!(h.query_by_label_contains("outside them").is_some(), "a bad range says why");
+    assert!(
+        h.query_by_label_contains("outside them").is_some(),
+        "a bad range says why"
+    );
     h.state_mut().backstage.as_mut().unwrap().print_range = "1-2".into();
     h.run_steps(2);
     click_on_page(&h, "Print");
     h.run_steps(2);
     let url = h.state().pending_urls.first().cloned().unwrap_or_default();
     // The URL was handed to egui at the end of the frame; check what it pointed at.
-    let printed = std::env::temp_dir().join(format!("{} (print).pdf", h.state().session.active().unwrap().title()));
+    let printed = std::env::temp_dir().join(format!(
+        "{} (print).pdf",
+        h.state().session.active().unwrap().title()
+    ));
     assert!(printed.is_file(), "the PDF to print was written: {url}");
     assert!(std::fs::read(&printed).unwrap().starts_with(b"%PDF"));
     let _ = std::fs::remove_file(printed);
@@ -427,7 +565,11 @@ fn print_slides_follow_the_settings() {
     bs.print_hidden = true;
     assert_eq!(print_slides(&doc, &bs, 0).unwrap().len(), 5);
     bs.print_scope = PrintScope::Current;
-    assert_eq!(print_slides(&doc, &bs, 2).unwrap(), vec![2], "the current slide prints even when hidden");
+    assert_eq!(
+        print_slides(&doc, &bs, 2).unwrap(),
+        vec![2],
+        "the current slide prints even when hidden"
+    );
     bs.print_scope = PrintScope::Custom;
     bs.print_range = "2-4".into();
     bs.print_hidden = false;

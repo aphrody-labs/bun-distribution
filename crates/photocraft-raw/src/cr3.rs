@@ -6,17 +6,25 @@
 use crate::preview::{Preview, candidate};
 use crate::tiff::{Tiff, tag};
 
-const META_UUID: &[u8] = &[0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b, 0x6a, 0x48];
-const PREVIEW_UUID: &[u8] = &[0xea, 0xf4, 0x2b, 0x5e, 0x1c, 0x98, 0x4b, 0x88, 0xb9, 0xfb, 0xb7, 0xdc, 0x40, 0x6e, 0x4d, 0x16];
+const META_UUID: &[u8] = &[
+    0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b, 0x6a, 0x48,
+];
+const PREVIEW_UUID: &[u8] = &[
+    0xea, 0xf4, 0x2b, 0x5e, 0x1c, 0x98, 0x4b, 0x88, 0xb9, 0xfb, 0xb7, 0xdc, 0x40, 0x6e, 0x4d, 0x16,
+];
 const MAX_BOXES: usize = 8192;
 const MAX_DEPTH: usize = 12;
 
 fn u32_at(b: &[u8], p: usize) -> Option<u32> {
-    Some(u32::from_be_bytes(b.get(p..p.checked_add(4)?)?.try_into().ok()?))
+    Some(u32::from_be_bytes(
+        b.get(p..p.checked_add(4)?)?.try_into().ok()?,
+    ))
 }
 
 fn u64_at(b: &[u8], p: usize) -> Option<u64> {
-    Some(u64::from_be_bytes(b.get(p..p.checked_add(8)?)?.try_into().ok()?))
+    Some(u64::from_be_bytes(
+        b.get(p..p.checked_add(8)?)?.try_into().ok()?,
+    ))
 }
 
 struct BoxRef<'a> {
@@ -99,12 +107,20 @@ fn track_boxes<'a>(b: &'a [u8], depth: usize, budget: &mut usize, t: &mut Track<
         b"co64" => t.offsets = Some((item.body, true)),
         b"stco" => t.offsets = Some((item.body, false)),
         // One entry, starting at chunk 1, one sample per chunk, description 1.
-        b"stsc" => t.mapping = item.body.len() == 20 && (0..5).all(|i| u32_at(item.body, i * 4) == Some(if i == 0 { 0 } else { 1 })),
+        b"stsc" => {
+            t.mapping = item.body.len() == 20
+                && (0..5).all(|i| u32_at(item.body, i * 4) == Some(if i == 0 { 0 } else { 1 }))
+        }
         _ => {}
     });
 }
 
-fn track_preview<'a>(raw: &'a [u8], track: &'a [u8], budget: &mut usize, media: &[(usize, usize)]) -> Option<Preview<'a>> {
+fn track_preview<'a>(
+    raw: &'a [u8],
+    track: &'a [u8],
+    budget: &mut usize,
+    media: &[(usize, usize)],
+) -> Option<Preview<'a>> {
     let mut t = Track::default();
     track_boxes(track, 0, budget, &mut t);
     if !t.jpeg || !t.mapping {
@@ -114,15 +130,30 @@ fn track_preview<'a>(raw: &'a [u8], track: &'a [u8], budget: &mut usize, media: 
     let (offsets, wide) = t.offsets?;
     // Burst sequences are deliberately not paired by ordinal index: their
     // sample-to-chunk mapping and picture selection need a separate implementation.
-    if u32_at(sizes, 0) != Some(0) || u32_at(sizes, 8) != Some(1) || u32_at(offsets, 0) != Some(0) || u32_at(offsets, 4) != Some(1) {
+    if u32_at(sizes, 0) != Some(0)
+        || u32_at(sizes, 8) != Some(1)
+        || u32_at(offsets, 0) != Some(0)
+        || u32_at(offsets, 4) != Some(1)
+    {
         return None;
     }
     let fixed = u32_at(sizes, 4)?;
-    let len = if fixed == 0 { u32_at(sizes, 12)? } else { fixed };
-    let off = if wide { u64_at(offsets, 8)? } else { u64::from(u32_at(offsets, 8)?) };
+    let len = if fixed == 0 {
+        u32_at(sizes, 12)?
+    } else {
+        fixed
+    };
+    let off = if wide {
+        u64_at(offsets, 8)?
+    } else {
+        u64::from(u32_at(offsets, 8)?)
+    };
     let off = usize::try_from(off).ok()?;
     let end = off.checked_add(len as usize)?;
-    if !media.iter().any(|(start, stop)| off >= *start && end <= *stop) {
+    if !media
+        .iter()
+        .any(|(start, stop)| off >= *start && end <= *stop)
+    {
         return None;
     }
     candidate(raw, off, len as usize)
@@ -143,7 +174,9 @@ fn walk<'a>(raw: &'a [u8], b: &'a [u8], depth: usize, budget: &mut usize, found:
         b"moov" => walk(raw, item.body, depth + 1, budget, found),
         b"trak" => {
             if found.previews.len() < 128 {
-                found.previews.extend(track_preview(raw, item.body, budget, &found.media));
+                found
+                    .previews
+                    .extend(track_preview(raw, item.body, budget, &found.media));
             }
         }
         b"uuid" => {
@@ -168,7 +201,9 @@ fn walk<'a>(raw: &'a [u8], b: &'a [u8], depth: usize, budget: &mut usize, found:
         b"CMT1" => {
             if let Some(tiff) = Tiff::new(item.body)
                 && let Some(ifd) = tiff.ifd_at(tiff.first_ifd, 0)
-                && let Some(o) = tiff.tag_uint(&ifd, tag::ORIENTATION).filter(|o| (1..=8).contains(o))
+                && let Some(o) = tiff
+                    .tag_uint(&ifd, tag::ORIENTATION)
+                    .filter(|o| (1..=8).contains(o))
             {
                 found.orientation = Some(o as u16);
             }

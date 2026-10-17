@@ -15,7 +15,11 @@ impl Homography {
 
     /// From the images of (1,0,0), (0,1,0) and (0,0,1).
     pub fn from_cols(c1: [f64; 3], c2: [f64; 3], c3: [f64; 3]) -> Self {
-        Self([[c1[0], c2[0], c3[0]], [c1[1], c2[1], c3[1]], [c1[2], c2[2], c3[2]]])
+        Self([
+            [c1[0], c2[0], c3[0]],
+            [c1[1], c2[1], c3[1]],
+            [c1[2], c2[2], c3[2]],
+        ])
     }
 
     /// The affine map `a` as a homography.
@@ -37,7 +41,9 @@ impl Homography {
     /// The nine row-major numbers.
     pub fn to_array(&self) -> [f64; 9] {
         let m = &self.0;
-        [m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]]
+        [
+            m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2],
+        ]
     }
 
     /// Map a point; `None` when it lands on or beyond the horizon (w ≤ 0).
@@ -54,7 +60,8 @@ impl Homography {
 
     pub fn det(&self) -> f64 {
         let m = &self.0;
-        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
     }
 
@@ -65,7 +72,9 @@ impl Homography {
         if d.abs() < 1e-15 || !d.is_finite() {
             return None;
         }
-        let c = |r0: usize, c0: usize, r1: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
+        let c = |r0: usize, c0: usize, r1: usize, c1: usize| {
+            m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0]
+        };
         let adj = [
             [c(1, 1, 2, 2), -c(0, 1, 2, 2), c(0, 1, 1, 2)],
             [-c(1, 0, 2, 2), c(0, 0, 2, 2), -c(0, 0, 1, 2)],
@@ -99,7 +108,11 @@ impl Homography {
         if a.determinant().abs() < 1e-15 {
             return None;
         }
-        Some(Self::from_affine(a).then_after(self).then_after(&Self::from_affine(a.inverse())))
+        Some(
+            Self::from_affine(a)
+                .then_after(self)
+                .then_after(&Self::from_affine(a.inverse())),
+        )
     }
 
     /// The affine map that matches `self` to first order at `p` (its derivative there), `None`
@@ -117,7 +130,12 @@ impl Homography {
     /// The bounding box of the image of `r` (lines stay lines: its corners bound it), `None` when
     /// part of it crosses the horizon.
     pub fn map_rect_bbox(&self, r: Rect) -> Option<Rect> {
-        let pts = [Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)];
+        let pts = [
+            Point::new(r.x0, r.y0),
+            Point::new(r.x1, r.y0),
+            Point::new(r.x1, r.y1),
+            Point::new(r.x0, r.y1),
+        ];
         let mut out: Option<Rect> = None;
         for p in pts {
             let q = self.apply(p)?;
@@ -178,7 +196,12 @@ mod tests {
     #[test]
     fn rect_bbox_is_the_corners_box() {
         let b = h().map_rect_bbox(Rect::new(0.0, 0.0, 10.0, 20.0)).unwrap();
-        for p in [Point::new(0.0, 0.0), Point::new(10.0, 20.0), Point::new(10.0, 0.0), Point::new(5.0, 10.0)] {
+        for p in [
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 20.0),
+            Point::new(10.0, 0.0),
+            Point::new(5.0, 10.0),
+        ] {
             let q = h().apply(p).unwrap();
             assert!(b.inflate(1e-9, 1e-9).contains(q));
         }

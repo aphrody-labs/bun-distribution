@@ -47,7 +47,9 @@ impl OpenResult {
     /// `FileNotFound` for `path`.
     #[must_use]
     pub fn not_found(path: &Path) -> Self {
-        Self::FileNotFound { path: path.to_string_lossy().into_owned() }
+        Self::FileNotFound {
+            path: path.to_string_lossy().into_owned(),
+        }
     }
 }
 
@@ -64,7 +66,9 @@ pub trait FileOpener: Send + Sync {
     /// # Errors
     /// When a platform query fails.
     fn get_apps_for_files(&self, paths: &[PathBuf]) -> Result<Vec<OpenWithApp>, String> {
-        let Some((first, rest)) = paths.split_first() else { return Ok(Vec::new()) };
+        let Some((first, rest)) = paths.split_first() else {
+            return Ok(Vec::new());
+        };
         let mut per_file = vec![self.get_apps_for_file(first)?];
         for path in rest {
             per_file.push(self.get_apps_for_file(path)?);
@@ -93,7 +97,10 @@ pub trait FileOpener: Send + Sync {
         paths: &[PathBuf],
         app_id: &str,
     ) -> Result<Vec<OpenResult>, String> {
-        paths.iter().map(|path| self.open_with_app(path, app_id)).collect()
+        paths
+            .iter()
+            .map(|path| self.open_with_app(path, app_id))
+            .collect()
     }
 }
 
@@ -101,7 +108,9 @@ pub trait FileOpener: Send + Sync {
 #[must_use]
 pub fn intersect_apps(per_file: Vec<Vec<OpenWithApp>>) -> Vec<OpenWithApp> {
     let mut lists = per_file.into_iter();
-    let Some(first) = lists.next() else { return Vec::new() };
+    let Some(first) = lists.next() else {
+        return Vec::new();
+    };
     let mut common: HashMap<String, OpenWithApp> =
         first.into_iter().map(|app| (app.id.clone(), app)).collect();
     for list in lists {
@@ -209,7 +218,10 @@ pub async fn open_paths_with_app(
     app_id: String,
     service: State<'_, FileOpeningService>,
 ) -> Result<Vec<OpenResult>, String> {
-    blocking(&service, move |opener| opener.open_files_with_app(&paths, &app_id)).await
+    blocking(&service, move |opener| {
+        opener.open_files_with_app(&paths, &app_id)
+    })
+    .await
 }
 
 #[cfg(test)]
@@ -219,7 +231,11 @@ mod tests {
     use super::*;
 
     fn app(id: &str, name: &str) -> OpenWithApp {
-        OpenWithApp { id: id.into(), name: name.into(), icon: None }
+        OpenWithApp {
+            id: id.into(),
+            name: name.into(),
+            icon: None,
+        }
     }
 
     #[test]
@@ -247,6 +263,9 @@ mod tests {
             serde_json::to_value(OpenResult::not_found(Path::new("f"))).unwrap(),
             json!({"status": "file_not_found", "path": "f"})
         );
-        assert_eq!(serde_json::to_value(app("a", "A")).unwrap(), json!({"id": "a", "name": "A"}));
+        assert_eq!(
+            serde_json::to_value(app("a", "A")).unwrap(),
+            json!({"id": "a", "name": "A"})
+        );
     }
 }

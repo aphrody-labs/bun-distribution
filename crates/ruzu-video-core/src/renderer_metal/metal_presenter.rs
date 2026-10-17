@@ -28,7 +28,9 @@ impl MetalPresenter {
         layers: &[Layer],
     ) -> Result<(), MetalPresenterError> {
         scheduler.flush()?;
-        let drawable_timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Drawable);
+        let drawable_timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Drawable,
+        );
         let drawable = self
             .layer
             .as_ref()

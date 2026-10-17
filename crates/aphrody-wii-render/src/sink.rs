@@ -47,7 +47,7 @@ impl TargetAspect {
                 } else {
                     TargetAspect::Ratio(4.0 / 3.0)
                 }
-            },
+            }
             "4:3" => TargetAspect::Ratio(4.0 / 3.0),
             "16:9" => TargetAspect::Ratio(16.0 / 9.0),
             "stretch" => TargetAspect::Stretch,
@@ -130,9 +130,15 @@ impl RenderWorker {
             match command {
                 WorkerCommand::Actions(batch) => self.exec_batch(batch),
                 WorkerCommand::DrainEfbCopies(request) => self.drain_efb_copies(request),
-                WorkerCommand::PeekEfbDepth { x, y, mut batch, done_tx } => {
-                    let worker_scratch =
-                        self.gx.replace_vertex_scratch(std::mem::take(&mut batch.vertices));
+                WorkerCommand::PeekEfbDepth {
+                    x,
+                    y,
+                    mut batch,
+                    done_tx,
+                } => {
+                    let worker_scratch = self
+                        .gx
+                        .replace_vertex_scratch(std::mem::take(&mut batch.vertices));
                     for action in batch.actions.drain(..) {
                         self.exec_action(action);
                     }
@@ -141,7 +147,7 @@ impl RenderWorker {
                     batch.vertices = self.gx.replace_vertex_scratch(worker_scratch);
 
                     let _ = done_tx.send((batch, depth));
-                },
+                }
                 WorkerCommand::Shutdown => break,
             }
         }
@@ -181,16 +187,18 @@ impl RenderWorker {
                 if let Some(cb) = self.frame_ready_cb.get() {
                     cb(Instant::now());
                 }
-            },
+            }
             GxAction::Draw(boxed) => {
                 let _ = self.recycled_draw_data_tx.send(boxed);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
     fn exec_batch_returning_vertices(&mut self, batch: &mut ActionBatch) {
-        let worker_scratch = self.gx.replace_vertex_scratch(std::mem::take(&mut batch.vertices));
+        let worker_scratch = self
+            .gx
+            .replace_vertex_scratch(std::mem::take(&mut batch.vertices));
         for action in batch.actions.drain(..) {
             self.exec_action(action);
         }
@@ -239,24 +247,38 @@ impl RenderWorker {
                 std::slice::from_raw_parts_mut(request.mem1_addr as *mut u8, request.mem1_len);
             let mem2 =
                 std::slice::from_raw_parts_mut(request.mem2_addr as *mut u8, request.mem2_len);
-            gecko::mmio::RamViewMut { mem1, mem2, memory_page_generations: &[] }
+            gecko::mmio::RamViewMut {
+                mem1,
+                mem2,
+                memory_page_generations: &[],
+            }
         };
         #[cfg(feature = "gx-stats")]
         let writeback_count = self.gx.pending_writebacks.len() as u64;
         #[cfg(feature = "gx-stats")]
         let writeback_started = std::time::Instant::now();
-        self.gx.drain_pending_writebacks(&self.device, &self.queue, &mut ram);
+        self.gx
+            .drain_pending_writebacks(&self.device, &self.queue, &mut ram);
 
         #[cfg(feature = "gx-stats")]
         {
-            self.gx.stats.efb_drain_requests.fetch_add(1, Ordering::Relaxed);
+            self.gx
+                .stats
+                .efb_drain_requests
+                .fetch_add(1, Ordering::Relaxed);
             if writeback_count != 0 {
-                self.gx.stats.efb_drain_nonempty.fetch_add(1, Ordering::Relaxed);
-                self.gx.stats.efb_writebacks.fetch_add(writeback_count, Ordering::Relaxed);
                 self.gx
                     .stats
-                    .efb_writeback_cpu_ns
-                    .fetch_add(writeback_started.elapsed().as_nanos() as u64, Ordering::Relaxed);
+                    .efb_drain_nonempty
+                    .fetch_add(1, Ordering::Relaxed);
+                self.gx
+                    .stats
+                    .efb_writebacks
+                    .fetch_add(writeback_count, Ordering::Relaxed);
+                self.gx.stats.efb_writeback_cpu_ns.fetch_add(
+                    writeback_started.elapsed().as_nanos() as u64,
+                    Ordering::Relaxed,
+                );
             }
             self.gx
                 .stats
@@ -295,11 +317,15 @@ impl ThreadedSink {
         let batch = self.take_batch(true);
         #[cfg(feature = "gx-stats")]
         let send_started = std::time::Instant::now();
-        self.work_tx.send(WorkerCommand::Actions(batch)).expect("render worker thread stopped");
+        self.work_tx
+            .send(WorkerCommand::Actions(batch))
+            .expect("render worker thread stopped");
         #[cfg(feature = "gx-stats")]
         {
             self.stats.batches_sent.fetch_add(1, Ordering::Relaxed);
-            self.stats.channel_high_water.fetch_max(self.work_tx.len() as u64, Ordering::Relaxed);
+            self.stats
+                .channel_high_water
+                .fetch_max(self.work_tx.len() as u64, Ordering::Relaxed);
             self.stats
                 .queue_wait_ns
                 .fetch_add(send_started.elapsed().as_nanos() as u64, Ordering::Relaxed);
@@ -312,8 +338,15 @@ impl ThreadedSink {
 impl RenderSink for ThreadedSink {
     fn peek_efb_depth(&mut self, x: u32, y: u32) -> u32 {
         let (done_tx, done_rx) = crossbeam_channel::bounded(0);
-        let command = WorkerCommand::PeekEfbDepth { x, y, batch: self.take_batch(false), done_tx };
-        self.work_tx.send(command).expect("render worker thread stopped");
+        let command = WorkerCommand::PeekEfbDepth {
+            x,
+            y,
+            batch: self.take_batch(false),
+            done_tx,
+        };
+        self.work_tx
+            .send(command)
+            .expect("render worker thread stopped");
         let (batch, depth) = done_rx.recv().expect("render worker thread stopped");
         self.pending_actions = batch.actions;
         self.scratch = batch.vertices;
@@ -335,7 +368,7 @@ impl RenderSink for ThreadedSink {
                 }
 
                 GxAction::Draw(draw)
-            },
+            }
             action => action,
         };
 
@@ -368,7 +401,8 @@ impl RenderSink for ThreadedSink {
                 let rows = encoded_row_count(height, format);
                 let len = rows.saturating_sub(1) * *stride as usize + row_bytes;
                 let end = dest_addr.saturating_add(len as u32);
-                self.pending_efb_textures.retain(|copy| copy.end <= *dest_addr || end <= copy.addr);
+                self.pending_efb_textures
+                    .retain(|copy| copy.end <= *dest_addr || end <= copy.addr);
                 if width > 0 && height > 0 && *stride as usize == row_bytes {
                     self.pending_efb_textures.push(PendingEfbTexture {
                         addr: *dest_addr,
@@ -401,7 +435,9 @@ impl RenderSink for ThreadedSink {
         }
 
         #[cfg(feature = "gx-stats")]
-        self.stats.actions_sent.fetch_add(segments.len() as u64, Ordering::Relaxed);
+        self.stats
+            .actions_sent
+            .fetch_add(segments.len() as u64, Ordering::Relaxed);
 
         self.reclaim_batch();
 
@@ -456,7 +492,9 @@ impl RenderSink for ThreadedSink {
         #[cfg(feature = "gx-stats")]
         {
             self.stats.batches_sent.fetch_add(1, Ordering::Relaxed);
-            self.stats.channel_high_water.fetch_max(self.work_tx.len() as u64, Ordering::Relaxed);
+            self.stats
+                .channel_high_water
+                .fetch_max(self.work_tx.len() as u64, Ordering::Relaxed);
             self.stats
                 .efb_drain_wait_ns
                 .fetch_add(drain_started.elapsed().as_nanos() as u64, Ordering::Relaxed);
@@ -484,7 +522,9 @@ impl RenderSink for ThreadedSink {
     fn render_stats(&self) -> gecko::host::RenderStats {
         #[cfg(feature = "gx-stats")]
         {
-            return self.stats.snapshot(self.work_tx.len(), self.work_tx.capacity().unwrap_or(0));
+            return self
+                .stats
+                .snapshot(self.work_tx.len(), self.work_tx.capacity().unwrap_or(0));
         }
 
         #[cfg(not(feature = "gx-stats"))]
@@ -526,7 +566,12 @@ impl InlineSink {
         queue: wgpu::Queue,
         surface_format: wgpu::TextureFormat,
     ) -> (Arc<Mutex<GxRenderer>>, Self) {
-        let gx = Arc::new(Mutex::new(GxRenderer::new(&device, &queue, surface_format, 1)));
+        let gx = Arc::new(Mutex::new(GxRenderer::new(
+            &device,
+            &queue,
+            surface_format,
+            1,
+        )));
         let sink = InlineSink {
             gx: gx.clone(),
             device,
@@ -549,12 +594,15 @@ impl RenderSink for InlineSink {
     }
 
     fn exec(&mut self, action: GxAction) {
-        self.gx.lock().unwrap().process_action_with_external_scratch(
-            &self.device,
-            &self.queue,
-            &action,
-            &mut self.scratch,
-        );
+        self.gx
+            .lock()
+            .unwrap()
+            .process_action_with_external_scratch(
+                &self.device,
+                &self.queue,
+                &action,
+                &mut self.scratch,
+            );
 
         if let GxAction::Draw(boxed) = action {
             self.recycled_draw_data.push(boxed);
@@ -566,7 +614,10 @@ impl RenderSink for InlineSink {
     }
 
     fn flush_efb_copies(&mut self, ram: &mut gecko::mmio::RamViewMut<'_>) {
-        self.gx.lock().unwrap().drain_pending_writebacks(&self.device, &self.queue, ram);
+        self.gx
+            .lock()
+            .unwrap()
+            .drain_pending_writebacks(&self.device, &self.queue, ram);
     }
 
     fn reset_efb(&mut self) {
@@ -621,7 +672,9 @@ impl Renderer {
         let stats = gx.stats.clone();
 
         // Initial shared output: the XFB texture (black until first PresentXfb).
-        let shared = Arc::new(Shared { output: Mutex::new(gx.xfb_texture.clone()) });
+        let shared = Arc::new(Shared {
+            output: Mutex::new(gx.xfb_texture.clone()),
+        });
 
         // Build the blit pipeline.
         let blit_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -795,9 +848,11 @@ impl Renderer {
     /// XFB to `self.target_aspect`. Called by the windowing thread on each
     /// redraw.
     pub fn blit(&self, queue: &wgpu::Queue, target: &wgpu::TextureView, target_size: (u32, u32)) {
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("xfb_blit_encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("xfb_blit_encoder"),
+            });
         self.blit_into_encoder(
             &mut encoder,
             target,
@@ -841,7 +896,10 @@ impl Renderer {
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: target,
                     resolve_target: None,
-                    ops: wgpu::Operations { load, store: wgpu::StoreOp::Store },
+                    ops: wgpu::Operations {
+                        load,
+                        store: wgpu::StoreOp::Store,
+                    },
                     depth_slice: None,
                 })],
                 depth_stencil_attachment: None,
@@ -877,7 +935,7 @@ pub fn snap_size_to_aspect(requested: (u32, u32), target_aspect: TargetAspect) -
                 let new_h = ((w as f32) / ar).round() as u32;
                 (w, new_h.max(1))
             }
-        },
+        }
     }
 }
 
@@ -903,6 +961,6 @@ pub(crate) fn viewport_for_aspect(
                 let vh = w / ar;
                 (0.0, (h - vh) * 0.5, w, vh)
             }
-        },
+        }
     }
 }

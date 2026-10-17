@@ -53,7 +53,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
 
     let mut fichiers: Vec<String> = vfs
@@ -102,5 +102,8 @@ fn main() {
             }
         }
     }
-    println!("\n{touches} liste(s) portant un champ « {motif} » sur {} fichiers", fichiers.len());
+    println!(
+        "\n{touches} liste(s) portant un champ « {motif} » sur {} fichiers",
+        fichiers.len()
+    );
 }

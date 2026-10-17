@@ -9,7 +9,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use effectcraft_geom::{Mat3, vec2};
-use effectcraft_project::tracking::{LowConfidence, TrackChannel, TrackKind, TrackerOptions, TrackerSettings};
+use effectcraft_project::tracking::{
+    LowConfidence, TrackChannel, TrackKind, TrackerOptions, TrackerSettings,
+};
 use effectcraft_project::{Comp, ItemId, Keyframe, Layer, LayerId, Project, PropGroup, Uid, Value};
 use effectcraft_raster::Image;
 use effectcraft_render::{EvalCtx, ExprHost, FootageSource, LayerCache, Renderer};
@@ -95,26 +97,50 @@ pub fn point_values(tp: &PropGroup, lt: Tick) -> PointValues {
 /// Attach points of a frame from the feature centres, given the start frame's centres and attach
 /// points: two-point transforms rotate and scale the offsets with the track, Parallel Corner Pin
 /// maps them through the 3-point affine, Perspective Corner Pin through the 4-point homography.
-pub fn attach_points(kind: TrackKind, rot_scale: bool, ref_c: &[[f64; 2]], ref_a: &[[f64; 2]], cur: &[[f64; 2]]) -> Vec<[f64; 2]> {
-    let translate = || cur.iter().zip(ref_c.iter().zip(ref_a)).map(|(c, (r, a))| [c[0] + a[0] - r[0], c[1] + a[1] - r[1]]).collect::<Vec<_>>();
+pub fn attach_points(
+    kind: TrackKind,
+    rot_scale: bool,
+    ref_c: &[[f64; 2]],
+    ref_a: &[[f64; 2]],
+    cur: &[[f64; 2]],
+) -> Vec<[f64; 2]> {
+    let translate = || {
+        cur.iter()
+            .zip(ref_c.iter().zip(ref_a))
+            .map(|(c, (r, a))| [c[0] + a[0] - r[0], c[1] + a[1] - r[1]])
+            .collect::<Vec<_>>()
+    };
     let through = |h: Option<trk::Homography>| match h {
         Some(h) => ref_a.iter().map(|a| h.apply(*a)).collect(),
         None => translate(),
     };
     match kind {
         TrackKind::Perspective if cur.len() >= 4 => {
-            let h = trk::Homography::from_points([ref_c[0], ref_c[1], ref_c[2], ref_c[3]], [cur[0], cur[1], cur[2], cur[3]]);
+            let h = trk::Homography::from_points(
+                [ref_c[0], ref_c[1], ref_c[2], ref_c[3]],
+                [cur[0], cur[1], cur[2], cur[3]],
+            );
             through(h)
         }
-        TrackKind::Affine if cur.len() >= 3 => through(trk::Homography::affine_from_points([ref_c[0], ref_c[1], ref_c[2]], [cur[0], cur[1], cur[2]])),
+        TrackKind::Affine if cur.len() >= 3 => through(trk::Homography::affine_from_points(
+            [ref_c[0], ref_c[1], ref_c[2]],
+            [cur[0], cur[1], cur[2]],
+        )),
         _ if rot_scale && cur.len() >= 2 => {
-            let Some(s) = trk::Homography::similarity_from_points([ref_c[0], ref_c[1]], [cur[0], cur[1]]) else { return translate() };
+            let Some(s) =
+                trk::Homography::similarity_from_points([ref_c[0], ref_c[1]], [cur[0], cur[1]])
+            else {
+                return translate();
+            };
             let m = s.0;
             cur.iter()
                 .zip(ref_c.iter().zip(ref_a))
                 .map(|(c, (r, a))| {
                     let d = [a[0] - r[0], a[1] - r[1]];
-                    [c[0] + m[0][0] * d[0] + m[0][1] * d[1], c[1] + m[1][0] * d[0] + m[1][1] * d[1]]
+                    [
+                        c[0] + m[0][0] * d[0] + m[0][1] * d[1],
+                        c[1] + m[1][0] * d[0] + m[1][1] * d[1],
+                    ]
                 })
                 .collect()
         }
@@ -207,9 +233,17 @@ pub(crate) fn source_frame(
     t: Tick,
     expr: Option<&dyn ExprHost>,
 ) -> Option<(Arc<Image>, [f64; 2])> {
-    let ctx = EvalCtx { project, comp_id: cid, comp, time: t, expr, footage: None };
+    let ctx = EvalCtx {
+        project,
+        comp_id: cid,
+        comp,
+        time: t,
+        expr,
+        footage: None,
+    };
     if let effectcraft_project::LayerSource::Footage { item } = &layer.source
-        && let Some(effectcraft_project::ItemKind::Footage(f)) = project.item(*item).map(|i| &i.kind)
+        && let Some(effectcraft_project::ItemKind::Footage(f)) =
+            project.item(*item).map(|i| &i.kind)
         && f.has_video
         && let Some(img) = r.footage.frame(*item, f, ctx.source_time(layer))
         && img.width == f.width
@@ -238,24 +272,61 @@ pub(crate) async fn run_work(w: Work, shared: &TrackShared) {
         s.error = Some(msg.to_string());
         s.finished = true;
     };
-    let Some(comp) = w.project.comp(w.comp) else { return fail("composition missing") };
-    let Some(layer) = comp.layer(w.layer) else { return fail("layer missing") };
-    let mut r = Renderer::new(&w.project, w.footage.as_ref(), crate::offload::analysis_opts(accel));
+    let Some(comp) = w.project.comp(w.comp) else {
+        return fail("composition missing");
+    };
+    let Some(layer) = comp.layer(w.layer) else {
+        return fail("layer missing");
+    };
+    let mut r = Renderer::new(
+        &w.project,
+        w.footage.as_ref(),
+        crate::offload::analysis_opts(accel),
+    );
     r.expr = w.expr.as_deref();
     r.cache = Some(&w.cache);
     let r = &r;
     let wr = &w;
-    let frame_at =
-        |t: Tick| crate::offload::in_passes(accel, move |a| source_frame(&r.with_accel(a), &wr.project, wr.comp, comp, layer, t, wr.expr.as_deref()));
+    let frame_at = |t: Tick| {
+        crate::offload::in_passes(accel, move |a| {
+            source_frame(
+                &r.with_accel(a),
+                &wr.project,
+                wr.comp,
+                comp,
+                layer,
+                t,
+                wr.expr.as_deref(),
+            )
+        })
+    };
     {
         let mut s = lock(&shared.state);
         s.total = w.times.len().saturating_sub(1) as u64;
     }
-    let Some(first) = frame_at(w.times[0]).await else { return fail("the layer has no pixels to track") };
+    let Some(first) = frame_at(w.times[0]).await else {
+        return fail("the layer has no pixels to track");
+    };
     let specs: Vec<trk::PointSpec> = w.points.iter().map(|p| p.spec).collect();
-    let mut tracker = trk::Tracker::new(track_options(&w.settings.options), &specs, &trk::Frame { img: &first.0, offset: first.1 });
+    let mut tracker = trk::Tracker::new(
+        track_options(&w.settings.options),
+        &specs,
+        &trk::Frame {
+            img: &first.0,
+            offset: first.1,
+        },
+    );
     let ref_c: Vec<[f64; 2]> = specs.iter().map(|s| s.center).collect();
-    let ref_a: Vec<[f64; 2]> = w.points.iter().map(|p| [p.spec.center[0] + p.attach_offset[0], p.spec.center[1] + p.attach_offset[1]]).collect();
+    let ref_a: Vec<[f64; 2]> = w
+        .points
+        .iter()
+        .map(|p| {
+            [
+                p.spec.center[0] + p.attach_offset[0],
+                p.spec.center[1] + p.attach_offset[1],
+            ]
+        })
+        .collect();
     let rot_scale = w.settings.rotation || w.settings.scale;
     // The start frame keeps its regions and gets keys too.
     lock(&shared.frames).push(FrameResult {
@@ -265,10 +336,26 @@ pub(crate) async fn run_work(w: Work, shared: &TrackShared) {
             .points
             .iter()
             .zip(&ref_a)
-            .map(|(p, a)| (p.uid, trk::PointResult { center: p.spec.center, confidence: 100.0, rotation: 0.0, scale: 1.0, status: trk::Status::Tracked }, *a))
+            .map(|(p, a)| {
+                (
+                    p.uid,
+                    trk::PointResult {
+                        center: p.spec.center,
+                        confidence: 100.0,
+                        rotation: 0.0,
+                        scale: 1.0,
+                        status: trk::Status::Tracked,
+                    },
+                    *a,
+                )
+            })
             .collect(),
     });
-    let mut next = if w.times.len() > 1 { frame_at(w.times[1]).await } else { None };
+    let mut next = if w.times.len() > 1 {
+        frame_at(w.times[1]).await
+    } else {
+        None
+    };
     for k in 1..w.times.len() {
         if shared.cancel.load(Ordering::Relaxed) {
             lock(&shared.state).cancelled = true;
@@ -281,8 +368,19 @@ pub(crate) async fn run_work(w: Work, shared: &TrackShared) {
         // Track this frame while the next one renders.
         let (res, nf) = crate::offload::join_fetch(
             accel.is_some(),
-            || tracker.step(&trk::Frame { img: &cur.0, offset: cur.1 }),
-            || async { if k + 1 < w.times.len() { frame_at(w.times[k + 1]).await } else { None } },
+            || {
+                tracker.step(&trk::Frame {
+                    img: &cur.0,
+                    offset: cur.1,
+                })
+            },
+            || async {
+                if k + 1 < w.times.len() {
+                    frame_at(w.times[k + 1]).await
+                } else {
+                    None
+                }
+            },
         )
         .await;
         next = nf;
@@ -295,12 +393,22 @@ pub(crate) async fn run_work(w: Work, shared: &TrackShared) {
         lock(&shared.frames).push(FrameResult {
             comp_time: w.times[k],
             layer_time: layer.layer_time(w.times[k]),
-            points: w.points.iter().zip(res).zip(attach).map(|((p, r), a)| (p.uid, r, a)).collect(),
+            points: w
+                .points
+                .iter()
+                .zip(res)
+                .zip(attach)
+                .map(|((p, r), a)| (p.uid, r, a))
+                .collect(),
         });
         let mut s = lock(&shared.state);
         s.done = k as u64;
         s.elapsed = t0.elapsed().as_secs_f64();
-        s.fps = if s.elapsed > 0.0 { k as f64 / s.elapsed } else { 0.0 };
+        s.fps = if s.elapsed > 0.0 {
+            k as f64 / s.elapsed
+        } else {
+            0.0
+        };
         s.time = w.times[k].seconds();
         crate::offload::report(s.done, s.total);
     }
@@ -318,11 +426,17 @@ pub(crate) fn key(g: &mut PropGroup, m: &str, t: Tick, v: Value) {
 
 /// Write analysed frames into the tracker's points.
 fn write_frames(p: &mut Project, job: &TrackJob, frames: &[FrameResult]) {
-    let Some(comp) = p.comp_mut(job.comp) else { return };
-    let Some(layer) = comp.layer_mut(job.layer) else { return };
+    let Some(comp) = p.comp_mut(job.comp) else {
+        return;
+    };
+    let Some(layer) = comp.layer_mut(job.layer) else {
+        return;
+    };
     for f in frames {
         for (uid, r, a) in &f.points {
-            let Some(tp) = layer.props.find_group_mut(*uid) else { continue };
+            let Some(tp) = layer.props.find_group_mut(*uid) else {
+                continue;
+            };
             key(tp, "featureCenter", f.layer_time, Value::Vec2(r.center));
             key(tp, "confidence", f.layer_time, Value::Scalar(r.confidence));
             key(tp, "attachPoint", f.layer_time, Value::Vec2(*a));
@@ -333,12 +447,16 @@ fn write_frames(p: &mut Project, job: &TrackJob, frames: &[FrameResult]) {
 impl Session {
     /// Whether a track analysis is running.
     pub fn is_tracking(&self) -> bool {
-        self.track_job.as_ref().is_some_and(|j| !j.is_finished()) || self.offloaded(crate::offload::JobKind::Track).is_some()
+        self.track_job.as_ref().is_some_and(|j| !j.is_finished())
+            || self.offloaded(crate::offload::JobKind::Track).is_some()
     }
 
     /// Live progress of the running (or just finished) analysis.
     pub fn track_progress(&self) -> Option<TrackProgress> {
-        self.track_job.as_ref().map(|j| j.progress()).or_else(|| self.offloaded(crate::offload::JobKind::Track).map(|j| j.progress.track()))
+        self.track_job.as_ref().map(|j| j.progress()).or_else(|| {
+            self.offloaded(crate::offload::JobKind::Track)
+                .map(|j| j.progress.track())
+        })
     }
 
     /// Cancel the running analysis (results so far are kept).
@@ -357,18 +475,40 @@ impl Session {
 
     /// Start analysing. `wait`: block until done (wasm32 always does). One undo step covers the
     /// whole analysis.
-    pub(crate) fn start_track(&mut self, work: Work, tracker: Uid, direction: Direction, wait: bool) -> Result<(), String> {
+    pub(crate) fn start_track(
+        &mut self,
+        work: Work,
+        tracker: Uid,
+        direction: Direction,
+        wait: bool,
+    ) -> Result<(), String> {
         if self.is_tracking() {
             return Err("a track analysis is already running".into());
         }
         self.poll_track();
         if !wait && self.offloads() {
-            let Work { comp, layer, settings, points, times, .. } = work;
-            return self.offload_analysis(crate::offload::WorkerJob::Track { comp, layer, tracker, direction, settings, points, times });
+            let Work {
+                comp,
+                layer,
+                settings,
+                points,
+                times,
+                ..
+            } = work;
+            return self.offload_analysis(crate::offload::WorkerJob::Track {
+                comp,
+                layer,
+                tracker,
+                direction,
+                settings,
+                points,
+                times,
+            });
         }
         let wait = wait || cfg!(target_arch = "wasm32");
         let levels = self.prefs.general.undo_levels as usize;
-        self.history.record("Analyze Track", self.project.clone(), levels);
+        self.history
+            .record("Analyze Track", self.project.clone(), levels);
         let shared = Arc::new(TrackShared::default());
         let (comp, layer) = (work.comp, work.layer);
         let thread = if wait {
@@ -386,7 +526,14 @@ impl Session {
                     .map_err(|e| e.to_string())?,
             )
         };
-        self.track_job = Some(TrackJob { shared, thread, comp, layer, tracker, direction });
+        self.track_job = Some(TrackJob {
+            shared,
+            thread,
+            comp,
+            layer,
+            tracker,
+            direction,
+        });
         self.poll_track();
         Ok(())
     }
@@ -394,7 +541,9 @@ impl Session {
     /// Write new results into the project and move the CTI to the last analysed frame; drop the
     /// job once it finished. Frontends call this every frame while tracking.
     pub fn poll_track(&mut self) -> bool {
-        let Some(job) = &self.track_job else { return false };
+        let Some(job) = &self.track_job else {
+            return false;
+        };
         let frames = std::mem::take(&mut *lock(&job.shared.frames));
         let finished = job.is_finished();
         let changed = !frames.is_empty();
@@ -415,10 +564,16 @@ impl Session {
             let msg = match (&st.error, st.cancelled, st.low_confidence_stop) {
                 (Some(e), _, _) => format!("Tracking stopped: {e}"),
                 (None, true, _) => format!("Tracking stopped after {} frame(s)", st.done),
-                (None, false, true) => format!("Tracking stopped: confidence below threshold after {} frame(s)", st.done),
+                (None, false, true) => format!(
+                    "Tracking stopped: confidence below threshold after {} frame(s)",
+                    st.done
+                ),
                 _ => format!("Tracked {} frame(s) in {:.1} s", st.done, st.elapsed),
             };
-            self.events.push(Event::Toast { message: msg, error: st.error.is_some() });
+            self.events.push(Event::Toast {
+                message: msg,
+                error: st.error.is_some(),
+            });
         }
         changed || finished
     }
@@ -469,12 +624,35 @@ fn comp_to_parent(ctx: &EvalCtx, layer: &Layer) -> Mat3 {
 /// Per analysed time: (source layer time, attach points in source layer space).
 pub fn attach_track(tracker: &PropGroup) -> Vec<(Tick, Vec<[f64; 2]>)> {
     let pts: Vec<&PropGroup> = tracker.track_points().collect();
-    let Some(first) = pts.first().and_then(|g| g.get("attachPoint")) else { return vec![] };
-    first.keys.iter().map(|k| (k.time, pts.iter().map(|g| g.get("attachPoint").map(|p| p.value_at(k.time).as_vec2()).unwrap_or([0.0; 2])).collect())).collect()
+    let Some(first) = pts.first().and_then(|g| g.get("attachPoint")) else {
+        return vec![];
+    };
+    first
+        .keys
+        .iter()
+        .map(|k| {
+            (
+                k.time,
+                pts.iter()
+                    .map(|g| {
+                        g.get("attachPoint")
+                            .map(|p| p.value_at(k.time).as_vec2())
+                            .unwrap_or([0.0; 2])
+                    })
+                    .collect(),
+            )
+        })
+        .collect()
 }
 
 /// Apply a tracker (Tracker panel ▸ Apply). Returns the number of keyframed frames.
-pub fn apply(p: &mut Project, cid: ItemId, src: LayerId, tracker: Uid, dims: Dims) -> Result<usize, String> {
+pub fn apply(
+    p: &mut Project,
+    cid: ItemId,
+    src: LayerId,
+    tracker: Uid,
+    dims: Dims,
+) -> Result<usize, String> {
     let comp = p.comp(cid).ok_or("no composition")?.clone();
     let source = comp.layer(src).ok_or("no source layer")?.clone();
     let (tg, settings) = source.tracker(tracker).ok_or("no such tracker")?;
@@ -486,13 +664,22 @@ pub fn apply(p: &mut Project, cid: ItemId, src: LayerId, tracker: Uid, dims: Dim
     let target_id = match settings.kind {
         TrackKind::Stabilize => src,
         TrackKind::Raw => return Err("a Raw track has nothing to apply".into()),
-        _ => settings.target.ok_or("set a Motion Target first (Edit Target…)")?,
+        _ => settings
+            .target
+            .ok_or("set a Motion Target first (Edit Target…)")?,
     };
-    let target = comp.layer(target_id).ok_or("the motion target layer is gone")?.clone();
+    let target = comp
+        .layer(target_id)
+        .ok_or("the motion target layer is gone")?
+        .clone();
     let ctx0 = EvalCtx::new(p, cid, &comp, Tick::ZERO);
     let t_first = source.comp_time(track[0].0);
     let rot_scale = settings.point_count() >= 2 && track[0].1.len() >= 2;
-    let (ang0, len0) = if rot_scale { effectcraft_track::angle_and_length(track[0].1[0], track[0].1[1]) } else { (0.0, 1.0) };
+    let (ang0, len0) = if rot_scale {
+        effectcraft_track::angle_and_length(track[0].1[0], track[0].1[1])
+    } else {
+        (0.0, 1.0)
+    };
     // (target layer time, values) to write.
     let mut pos_keys = vec![];
     let mut anchor_keys = vec![];
@@ -513,7 +700,11 @@ pub fn apply(p: &mut Project, cid: ItemId, src: LayerId, tracker: Uid, dims: Dim
         let ct = source.comp_time(*lt);
         let ctx = ctx0.at(ct);
         let tt = target.layer_time(ct);
-        let (ang, len) = if rot_scale { effectcraft_track::angle_and_length(pts[0], pts[1]) } else { (ang0, len0) };
+        let (ang, len) = if rot_scale {
+            effectcraft_track::angle_and_length(pts[0], pts[1])
+        } else {
+            (ang0, len0)
+        };
         let dang = effectcraft_track::unwrap_degrees(prev_ang, ang - ang0);
         prev_ang = dang;
         let ratio = if len0 > 1e-9 { len / len0 } else { 1.0 };
@@ -549,13 +740,22 @@ pub fn apply(p: &mut Project, cid: ItemId, src: LayerId, tracker: Uid, dims: Dim
             TrackKind::Affine | TrackKind::Perspective => {
                 let (ms, _) = ctx.layer_to_comp(&source);
                 // Corner Pin's corners are effect points: in the target's effect space.
-                let inv = ctx.effect_to_comp(&target).inverse().ok_or("the target layer's transform is not invertible")?;
+                let inv = ctx
+                    .effect_to_comp(&target)
+                    .inverse()
+                    .ok_or("the target layer's transform is not invertible")?;
                 let n = pts.len();
                 if n < 3 {
                     return Err("corner pin tracks need 3 or 4 track points".into());
                 }
-                let lr =
-                    if settings.kind == TrackKind::Affine || n < 4 { [pts[1][0] + pts[2][0] - pts[0][0], pts[1][1] + pts[2][1] - pts[0][1]] } else { pts[3] };
+                let lr = if settings.kind == TrackKind::Affine || n < 4 {
+                    [
+                        pts[1][0] + pts[2][0] - pts[0][0],
+                        pts[1][1] + pts[2][1] - pts[0][1],
+                    ]
+                } else {
+                    pts[3]
+                };
                 // Track Points 1–4: upper left, upper right, lower left, lower right.
                 let map = |q: [f64; 2]| apply_m(&inv, apply_m(&ms, q));
                 corner_keys.push((tt, [map(pts[0]), map(pts[1]), map(pts[2]), map(lr)]));
@@ -566,13 +766,29 @@ pub fn apply(p: &mut Project, cid: ItemId, src: LayerId, tracker: Uid, dims: Dim
     let n = track.len();
     let size = effectcraft_render::effect_bounds(p, &comp, &target).0;
     let mut ids_next = p.next_id;
-    let layer = p.comp_mut(cid).and_then(|c| c.layer_mut(target_id)).ok_or("no target layer")?;
+    let layer = p
+        .comp_mut(cid)
+        .and_then(|c| c.layer_mut(target_id))
+        .ok_or("no target layer")?;
     if !corner_keys.is_empty() {
-        let spec = effectcraft_effects::find("ec.distort.cornerpin").ok_or("Corner Pin is not available")?;
-        let fx = layer.props.sub_mut("effects").ok_or("the target layer can't have effects")?;
+        let spec = effectcraft_effects::find("ec.distort.cornerpin")
+            .ok_or("Corner Pin is not available")?;
+        let fx = layer
+            .props
+            .sub_mut("effects")
+            .ok_or("the target layer can't have effects")?;
         let same = fx.groups().filter(|g| g.match_id == spec.id).count();
-        let name = if same == 0 { spec.name.to_string() } else { format!("{} {}", spec.name, same + 1) };
-        let mut g = effectcraft_effects::instantiate(spec, &mut effectcraft_project::build::Ids(&mut ids_next), &name, size);
+        let name = if same == 0 {
+            spec.name.to_string()
+        } else {
+            format!("{} {}", spec.name, same + 1)
+        };
+        let mut g = effectcraft_effects::instantiate(
+            spec,
+            &mut effectcraft_project::build::Ids(&mut ids_next),
+            &name,
+            size,
+        );
         for (t, c) in &corner_keys {
             for (m, v) in ["ul", "ur", "ll", "lr"].iter().zip(c) {
                 key(&mut g, m, *t, Value::Vec2(*v));
@@ -614,7 +830,10 @@ mod tests {
         // Rotated 90° and doubled.
         let cur = [[100.0, 100.0], [100.0, 120.0]];
         let a = attach_points(TrackKind::Transform, true, &rc, &ra, &cur);
-        assert!((a[0][0] - 90.0).abs() < 1e-9 && (a[0][1] - 100.0).abs() < 1e-9, "{a:?}");
+        assert!(
+            (a[0][0] - 90.0).abs() < 1e-9 && (a[0][1] - 100.0).abs() < 1e-9,
+            "{a:?}"
+        );
         let a = attach_points(TrackKind::Transform, false, &rc, &ra, &cur);
         assert_eq!(a[0], [100.0, 105.0]);
         let h = trk::Homography([[1.1, 0.1, 5.0], [0.05, 0.9, -3.0], [0.001, 0.0005, 1.0]]);

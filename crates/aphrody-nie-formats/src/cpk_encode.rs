@@ -72,12 +72,12 @@ fn push_value_be(
         (UtfValue::F64(x), ColumnType::F64) => out.extend_from_slice(&x.to_bits().to_be_bytes()),
         (UtfValue::String(s), ColumnType::String) => {
             out.extend_from_slice(&intern_string(s, string_pool, string_offsets).to_be_bytes())
-        },
+        }
         (v, t) => {
             return Err(format!(
                 "encode_utf : valeur {v:?} incompatible avec le type de colonne {t:?}"
             ));
-        },
+        }
     }
     Ok(())
 }
@@ -130,7 +130,13 @@ pub fn encode_utf(
     let mut rows_bytes = Vec::new();
     for row in rows {
         for (v, col) in row.iter().zip(columns) {
-            push_value_be(&mut rows_bytes, v, col.col_type, &mut string_offsets, &mut string_pool)?;
+            push_value_be(
+                &mut rows_bytes,
+                v,
+                col.col_type,
+                &mut string_offsets,
+                &mut string_pool,
+            )?;
         }
     }
 
@@ -195,11 +201,26 @@ pub fn encode_cpk(entries: &[CpkWriteEntry]) -> Result<Vec<u8>, String> {
 
     // ── Table TOC (une ligne par fichier) ──────────────────────────────────────────────
     let toc_columns = [
-        UtfColumnSpec { name: "DirName".to_string(), col_type: ColumnType::String },
-        UtfColumnSpec { name: "FileName".to_string(), col_type: ColumnType::String },
-        UtfColumnSpec { name: "FileSize".to_string(), col_type: ColumnType::U64 },
-        UtfColumnSpec { name: "ExtractSize".to_string(), col_type: ColumnType::U64 },
-        UtfColumnSpec { name: "FileOffset".to_string(), col_type: ColumnType::U64 },
+        UtfColumnSpec {
+            name: "DirName".to_string(),
+            col_type: ColumnType::String,
+        },
+        UtfColumnSpec {
+            name: "FileName".to_string(),
+            col_type: ColumnType::String,
+        },
+        UtfColumnSpec {
+            name: "FileSize".to_string(),
+            col_type: ColumnType::U64,
+        },
+        UtfColumnSpec {
+            name: "ExtractSize".to_string(),
+            col_type: ColumnType::U64,
+        },
+        UtfColumnSpec {
+            name: "FileOffset".to_string(),
+            col_type: ColumnType::U64,
+        },
     ];
     let mut toc_rows = Vec::with_capacity(entries.len());
     let mut file_off: u64 = 0;
@@ -221,15 +242,24 @@ pub fn encode_cpk(entries: &[CpkWriteEntry]) -> Result<Vec<u8>, String> {
     // ── Table d'en-tête (1 ligne : TocOffset/ContentOffset — les 2 seuls champs lus par
     //    `CpkReader::new`, cf. doc de module, jamais d'autres colonnes réelles devinées) ──────
     let header_columns = [
-        UtfColumnSpec { name: "ContentOffset".to_string(), col_type: ColumnType::U64 },
-        UtfColumnSpec { name: "TocOffset".to_string(), col_type: ColumnType::U64 },
+        UtfColumnSpec {
+            name: "ContentOffset".to_string(),
+            col_type: ColumnType::U64,
+        },
+        UtfColumnSpec {
+            name: "TocOffset".to_string(),
+            col_type: ColumnType::U64,
+        },
     ];
 
     // Layout : conteneur d'en-tête (taille CONNUE d'avance : 1 ligne, colonnes fixes) → contenu
     // → TOC. `ContentOffset` DOIT être ≤ `TocOffset` (sinon `CpkReader::new` retombe sur
     // `content_offset = toc_offset`, cf. sa doc) — header→contenu→TOC le garantit trivialement.
-    let header_utf_probe =
-        encode_utf("CpkHeader", &header_columns, &[vec![UtfValue::U64(0), UtfValue::U64(0)]])?;
+    let header_utf_probe = encode_utf(
+        "CpkHeader",
+        &header_columns,
+        &[vec![UtfValue::U64(0), UtfValue::U64(0)]],
+    )?;
     let header_container_len = 16 + header_utf_probe.len();
     let content_offset = header_container_len as u64;
     let toc_offset = content_offset + content.len() as u64;
@@ -237,7 +267,10 @@ pub fn encode_cpk(entries: &[CpkWriteEntry]) -> Result<Vec<u8>, String> {
     let header_utf = encode_utf(
         "CpkHeader",
         &header_columns,
-        &[vec![UtfValue::U64(content_offset), UtfValue::U64(toc_offset)]],
+        &[vec![
+            UtfValue::U64(content_offset),
+            UtfValue::U64(toc_offset),
+        ]],
     )?;
     debug_assert_eq!(
         header_utf.len(),

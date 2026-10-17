@@ -41,7 +41,10 @@ const TABCOLSEP: f32 = 6.0;
 pub fn export(doc: &Document) -> String {
     let flow = model::from_doc(doc);
     let mut w = Writer::default();
-    let title_at = flow.blocks.iter().position(|b| matches!(b, FBlock::Para(p) if p.kind == Kind::Title && !p.is_empty()));
+    let title_at = flow
+        .blocks
+        .iter()
+        .position(|b| matches!(b, FBlock::Para(p) if p.kind == Kind::Title && !p.is_empty()));
     let mut title = String::new();
     if let Some(FBlock::Para(p)) = title_at.and_then(|i| flow.blocks.get(i)) {
         title = w.inlines(&p.inlines);
@@ -69,8 +72,17 @@ pub fn export(doc: &Document) -> String {
         o.push_str("\\usepackage{amssymb}\n");
     }
     o.push_str("\\usepackage{hyperref}\n");
-    let pdf = [("pdftitle", &meta.title), ("pdfauthor", &meta.author), ("pdfsubject", &meta.subject), ("pdfkeywords", &meta.keywords)];
-    let set: Vec<String> = pdf.iter().filter(|(_, v)| !v.trim().is_empty()).map(|(k, v)| format!("{k}={{{}}}", escape_text(v.trim()))).collect();
+    let pdf = [
+        ("pdftitle", &meta.title),
+        ("pdfauthor", &meta.author),
+        ("pdfsubject", &meta.subject),
+        ("pdfkeywords", &meta.keywords),
+    ];
+    let set: Vec<String> = pdf
+        .iter()
+        .filter(|(_, v)| !v.trim().is_empty())
+        .map(|(k, v)| format!("{k}={{{}}}", escape_text(v.trim())))
+        .collect();
     if !set.is_empty() {
         o.push_str(&format!("\\hypersetup{{{}}}\n", set.join(", ")));
     }
@@ -104,23 +116,37 @@ struct Writer {
     depth: usize,
 }
 
-const SECTIONS: [&str; 6] = ["section", "subsection", "subsubsection", "paragraph", "subparagraph", "subparagraph"];
+const SECTIONS: [&str; 6] = [
+    "section",
+    "subsection",
+    "subsubsection",
+    "paragraph",
+    "subparagraph",
+    "subparagraph",
+];
 
 impl Writer {
     fn blocks(&mut self, blocks: &[FBlock]) {
         let mut lists: Vec<bool> = Vec::new();
         let mut i = 0;
         while let Some(b) = blocks.get(i) {
-            let list = if let FBlock::Para(p) = b { p.list } else { None };
+            let list = if let FBlock::Para(p) = b {
+                p.list
+            } else {
+                None
+            };
             match list {
                 Some(li) => {
                     let depth = (li.level.min(3) + 1) as usize;
-                    while lists.len() > depth || (lists.len() == depth && lists.last() != Some(&li.ordered)) {
+                    while lists.len() > depth
+                        || (lists.len() == depth && lists.last() != Some(&li.ordered))
+                    {
                         self.close_list(&mut lists);
                     }
                     while lists.len() < depth {
                         let env = if li.ordered { "enumerate" } else { "itemize" };
-                        self.out.push_str(&format!("{}\\begin{{{env}}}\n", "  ".repeat(lists.len())));
+                        self.out
+                            .push_str(&format!("{}\\begin{{{env}}}\n", "  ".repeat(lists.len())));
                         lists.push(li.ordered);
                     }
                 }
@@ -134,7 +160,11 @@ impl Writer {
                 FBlock::Para(p) if p.list.is_some() => {
                     let text = self.inlines(&p.inlines);
                     self.page_break(p);
-                    self.out.push_str(&format!("{}\\item {}\n", "  ".repeat(lists.len()), text.trim()));
+                    self.out.push_str(&format!(
+                        "{}\\item {}\n",
+                        "  ".repeat(lists.len()),
+                        text.trim()
+                    ));
                 }
                 FBlock::Para(p) if p.kind == Kind::Code => {
                     let mut j = i;
@@ -162,9 +192,16 @@ impl Writer {
                         j += 1;
                     }
                     self.page_break(p);
-                    let body: Vec<&str> = paras.iter().map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+                    let body: Vec<&str> = paras
+                        .iter()
+                        .map(|s| s.trim())
+                        .filter(|s| !s.is_empty())
+                        .collect();
                     let sep = if self.in_cell { "\\par\n" } else { "\n\n" };
-                    self.out.push_str(&format!("\\begin{{quote}}\n{}\n\\end{{quote}}\n\n", body.join(sep)));
+                    self.out.push_str(&format!(
+                        "\\begin{{quote}}\n{}\n\\end{{quote}}\n\n",
+                        body.join(sep)
+                    ));
                     i = j.max(i + 1);
                     continue;
                 }
@@ -184,7 +221,8 @@ impl Writer {
     fn close_list(&mut self, lists: &mut Vec<bool>) {
         if let Some(ordered) = lists.pop() {
             let env = if ordered { "enumerate" } else { "itemize" };
-            self.out.push_str(&format!("{}\\end{{{env}}}\n", "  ".repeat(lists.len())));
+            self.out
+                .push_str(&format!("{}\\end{{{env}}}\n", "  ".repeat(lists.len())));
             if lists.is_empty() && !self.in_cell {
                 self.out.push('\n');
             }
@@ -200,7 +238,8 @@ impl Writer {
     fn para(&mut self, p: &Para, top_title: bool) {
         self.page_break(p);
         if p.kind == Kind::Rule {
-            self.out.push_str("\\noindent\\rule{\\linewidth}{0.4pt}\n\n");
+            self.out
+                .push_str("\\noindent\\rule{\\linewidth}{0.4pt}\n\n");
             return;
         }
         if top_title {
@@ -215,16 +254,25 @@ impl Writer {
         let end = if self.in_cell { "\\par\n" } else { "\n\n" };
         match p.kind {
             Kind::Heading(n) if !self.in_cell => {
-                let cmd = SECTIONS.get(usize::from(n.clamp(1, 6)) - 1).copied().unwrap_or("section");
+                let cmd = SECTIONS
+                    .get(usize::from(n.clamp(1, 6)) - 1)
+                    .copied()
+                    .unwrap_or("section");
                 // `\\` (a line break) isn't allowed in a heading.
                 let text = text.replace("\\\\\n", " ");
                 self.out.push_str(&format!("\\{cmd}*{{{text}}}\n\n"));
             }
-            Kind::Title => self.out.push_str(&format!("\\begin{{center}}\n{{\\LARGE {text}\\par}}\n\\end{{center}}\n\n")),
+            Kind::Title => self.out.push_str(&format!(
+                "\\begin{{center}}\n{{\\LARGE {text}\\par}}\n\\end{{center}}\n\n"
+            )),
             Kind::Heading(_) => self.out.push_str(&format!("\\textbf{{{text}}}{end}")),
             _ => match p.align {
-                Some(Align::Center) => self.out.push_str(&format!("\\begin{{center}}\n{text}\n\\end{{center}}\n\n")),
-                Some(Align::Right) => self.out.push_str(&format!("\\begin{{flushright}}\n{text}\n\\end{{flushright}}\n\n")),
+                Some(Align::Center) => self
+                    .out
+                    .push_str(&format!("\\begin{{center}}\n{text}\n\\end{{center}}\n\n")),
+                Some(Align::Right) => self.out.push_str(&format!(
+                    "\\begin{{flushright}}\n{text}\n\\end{{flushright}}\n\n"
+                )),
                 _ => {
                     self.out.push_str(text);
                     self.out.push_str(end);
@@ -236,7 +284,10 @@ impl Writer {
     fn code(&mut self, lines: &[String]) {
         if self.in_cell {
             // `verbatim` can't go in a table cell: typewriter lines instead.
-            let v: Vec<String> = lines.iter().map(|l| format!("\\texttt{{{}}}", escape_text(&l.replace(' ', "\u{A0}")))).collect();
+            let v: Vec<String> = lines
+                .iter()
+                .map(|l| format!("\\texttt{{{}}}", escape_text(&l.replace(' ', "\u{A0}"))))
+                .collect();
             self.out.push_str(&v.join("\\\\\n"));
             self.out.push_str("\\par\n");
             return;
@@ -244,7 +295,11 @@ impl Writer {
         self.out.push_str("\\begin{verbatim}\n");
         for l in lines {
             // The environment ends at the first `\end{verbatim}`, so keep it from appearing.
-            let l: String = l.replace("\\end{verbatim}", "\\end {verbatim}").chars().filter(|c| *c == '\t' || !c.is_control()).collect();
+            let l: String = l
+                .replace("\\end{verbatim}", "\\end {verbatim}")
+                .chars()
+                .filter(|c| *c == '\t' || !c.is_control())
+                .collect();
             self.out.push_str(&l);
             self.out.push('\n');
         }
@@ -261,10 +316,16 @@ impl Writer {
                     o.push_str(&s);
                 }
                 Inline::Image(img) => {
-                    let alt = if img.alt.trim().is_empty() { "Picture".to_string() } else { format!("Picture: {}", img.alt.trim()) };
+                    let alt = if img.alt.trim().is_empty() {
+                        "Picture".to_string()
+                    } else {
+                        format!("Picture: {}", img.alt.trim())
+                    };
                     o.push_str(&format!("\\textit{{[{}]}}", escape_text(&alt)));
                 }
-                Inline::Anchor(name) => o.push_str(&format!("\\hypertarget{{{}}}{{}}", escape_url(name))),
+                Inline::Anchor(name) => {
+                    o.push_str(&format!("\\hypertarget{{{}}}{{}}", escape_url(name)))
+                }
                 Inline::Figure(_) => {}
                 Inline::Equation { linear, display } => {
                     self.uses.math = true;
@@ -281,7 +342,11 @@ impl Writer {
     }
 
     fn span(&mut self, text: &str, f: &Fmt) -> String {
-        let mut s = if f.code { escape_text(&text.replace(' ', "\u{A0}")) } else { escape_text(text) };
+        let mut s = if f.code {
+            escape_text(&text.replace(' ', "\u{A0}"))
+        } else {
+            escape_text(text)
+        };
         if s.is_empty() {
             return s;
         }
@@ -312,8 +377,15 @@ impl Writer {
             self.uses.color = true;
             s = format!("\\textcolor[HTML]{{{}}}{{{s}}}", hex(c));
         }
-        if let Some(size) = f.size.filter(|v| v.is_finite() && *v >= 1.0 && *v <= 1638.0) {
-            s = format!("{{\\fontsize{{{}}}{{{}}}\\selectfont {s}}}", num(size), num(size * 1.2));
+        if let Some(size) = f
+            .size
+            .filter(|v| v.is_finite() && *v >= 1.0 && *v <= 1638.0)
+        {
+            s = format!(
+                "{{\\fontsize{{{}}}{{{}}}\\selectfont {s}}}",
+                num(size),
+                num(size * 1.2)
+            );
         }
         if let Some(l) = f.link.as_deref().filter(|l| !l.is_empty()) {
             s = match l.strip_prefix('#') {
@@ -326,14 +398,19 @@ impl Writer {
 
     fn table(&mut self, t: &FTable) {
         let cols = t.cols().clamp(1, wordcraft_doc::table::MAX_COLS);
-        let widths: Vec<f32> = if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 1.0) {
-            let total: f32 = t.widths.iter().sum();
-            // Scale a table wider than the page to fit.
-            let k = if total > LINE_WIDTH { LINE_WIDTH / total } else { 1.0 };
-            t.widths.iter().map(|w| w * k).collect()
-        } else {
-            vec![LINE_WIDTH / cols as f32; cols]
-        };
+        let widths: Vec<f32> =
+            if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 1.0) {
+                let total: f32 = t.widths.iter().sum();
+                // Scale a table wider than the page to fit.
+                let k = if total > LINE_WIDTH {
+                    LINE_WIDTH / total
+                } else {
+                    1.0
+                };
+                t.widths.iter().map(|w| w * k).collect()
+            } else {
+                vec![LINE_WIDTH / cols as f32; cols]
+            };
         let col = |w: f32| format!("p{{{}pt}}", num((w - 2.0 * TABCOLSEP).max(12.0)));
         let spec: String = widths.iter().map(|w| format!("{}|", col(*w))).collect();
         let mut o = format!("\\noindent\\begin{{tabular}}{{|{spec}}}\n\\hline\n");
@@ -342,8 +419,15 @@ impl Writer {
             let mut g = 0usize;
             for c in row {
                 let span = (c.colspan.clamp(1, 63) as usize).min(cols.saturating_sub(g).max(1));
-                let w: f32 = widths.get(g..(g + span).min(widths.len())).map(|s| s.iter().sum()).unwrap_or(72.0);
-                let mut body = if c.covered { String::new() } else { self.cell(c) };
+                let w: f32 = widths
+                    .get(g..(g + span).min(widths.len()))
+                    .map(|s| s.iter().sum())
+                    .unwrap_or(72.0);
+                let mut body = if c.covered {
+                    String::new()
+                } else {
+                    self.cell(c)
+                };
                 if c.rowspan > 1 && !c.covered {
                     self.uses.multirow = true;
                     body = format!("\\multirow{{{}}}{{=}}{{{body}}}", c.rowspan.min(1000));
@@ -367,11 +451,16 @@ impl Writer {
         }
         o.push_str("\\end{tabular}\n");
         self.out.push_str(&o);
-        self.out.push_str(if self.in_cell { "\\par\n" } else { "\n" });
+        self.out
+            .push_str(if self.in_cell { "\\par\n" } else { "\n" });
     }
 
     fn cell(&mut self, c: &Cell) -> String {
-        let mut sub = Writer { in_cell: true, depth: self.depth + 1, ..Default::default() };
+        let mut sub = Writer {
+            in_cell: true,
+            depth: self.depth + 1,
+            ..Default::default()
+        };
         if self.depth < model::MAX_DEPTH {
             sub.blocks(&c.blocks);
         } else {
@@ -381,8 +470,16 @@ impl Writer {
         self.uses.color |= sub.uses.color;
         self.uses.multirow |= sub.uses.multirow;
         self.uses.math |= sub.uses.math;
-        let s = sub.out.trim().trim_end_matches("\\par").trim_end().to_string();
-        s.lines().filter(|l| !l.trim().is_empty()).collect::<Vec<_>>().join("\n")
+        let s = sub
+            .out
+            .trim()
+            .trim_end_matches("\\par")
+            .trim_end()
+            .to_string();
+        s.lines()
+            .filter(|l| !l.trim().is_empty())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -393,7 +490,11 @@ fn hex(c: Rgb) -> String {
 /// A length without needless decimals.
 fn num(v: f32) -> String {
     let r = (v * 100.0).round() / 100.0;
-    if r.fract() == 0.0 { format!("{r:.0}") } else { format!("{r}") }
+    if r.fract() == 0.0 {
+        format!("{r:.0}")
+    } else {
+        format!("{r}")
+    }
 }
 
 /// Text with LaTeX's special characters escaped.
@@ -423,7 +524,11 @@ pub fn escape_text(s: &str) -> String {
             '\t' => o.push_str("\\quad{}"),
             '\n' | '\u{000B}' => {
                 // A line break; LaTeX refuses one with nothing before it on the line.
-                o.push_str(if line_has_text { "\\\\\n" } else { "\\mbox{}\\\\\n" });
+                o.push_str(if line_has_text {
+                    "\\\\\n"
+                } else {
+                    "\\mbox{}\\\\\n"
+                });
                 line_has_text = false;
                 prev = c;
                 continue;
@@ -608,8 +713,9 @@ const MATH_ALIASES: &[(&str, char)] = &[
 
 /// Operator names written upright in both formats.
 const MATH_FUNCTIONS: &[&str] = &[
-    "sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "coth", "log", "ln", "lg", "exp", "lim",
-    "liminf", "limsup", "min", "max", "sup", "inf", "det", "dim", "gcd", "deg", "arg", "ker", "Pr", "hom",
+    "sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh",
+    "coth", "log", "ln", "lg", "exp", "lim", "liminf", "limsup", "min", "max", "sup", "inf", "det",
+    "dim", "gcd", "deg", "arg", "ker", "Pr", "hom",
 ];
 
 /// Control words an exported equation may carry besides the symbols and functions above (font
@@ -644,7 +750,16 @@ fn known_math_command(name: &str) -> bool {
 }
 
 fn math_symbol(name: &str) -> Option<char> {
-    MATH_SYMBOLS.iter().find(|(_, n)| *n == name).map(|(c, _)| *c).or_else(|| MATH_ALIASES.iter().find(|(n, _)| *n == name).map(|(_, c)| *c))
+    MATH_SYMBOLS
+        .iter()
+        .find(|(_, n)| *n == name)
+        .map(|(c, _)| *c)
+        .or_else(|| {
+            MATH_ALIASES
+                .iter()
+                .find(|(n, _)| *n == name)
+                .map(|(_, c)| *c)
+        })
 }
 
 /// For every `l` in `chars`, the index of the `r` that closes it, found in one stack pass.
@@ -669,7 +784,14 @@ fn closers(chars: &[char], l: char, r: char) -> Vec<Option<usize>> {
 /// The balanced group opening at `open` (see [`closers`]): its content and the index after it.
 fn balanced(chars: &[char], closers: &[Option<usize>], open: usize) -> Option<(String, usize)> {
     let close = (*closers.get(open)?)?;
-    Some((chars.get(open + 1..close).unwrap_or_default().iter().collect(), close + 1))
+    Some((
+        chars
+            .get(open + 1..close)
+            .unwrap_or_default()
+            .iter()
+            .collect(),
+        close + 1,
+    ))
 }
 
 /// A linear-format equation as LaTeX math.
@@ -682,7 +804,13 @@ fn linear_to_latex_at(linear: &str, depth: usize) -> String {
     let parens = closers(&chars, '(', ')');
     let mut o = String::new();
     let mut i = 0;
-    let sub = |s: &str| if depth < MAX_NEST { linear_to_latex_at(s, depth + 1) } else { escape_math_text(s) };
+    let sub = |s: &str| {
+        if depth < MAX_NEST {
+            linear_to_latex_at(s, depth + 1)
+        } else {
+            escape_math_text(s)
+        }
+    };
     while let Some(&c) = chars.get(i) {
         // (a)/(b) → \frac{a}{b}
         // (The `/` is looked for before the group is copied out: copying every group of a deeply
@@ -717,7 +845,9 @@ fn linear_to_latex_at(linear: &str, depth: usize) -> String {
                 match balanced(&chars, &parens, i + 1) {
                     Some((inner, end)) => {
                         match inner.split_once('&') {
-                            Some((n, x)) => o.push_str(&format!("\\sqrt[{}]{{{}}}", sub(n), sub(x))),
+                            Some((n, x)) => {
+                                o.push_str(&format!("\\sqrt[{}]{{{}}}", sub(n), sub(x)))
+                            }
                             None => o.push_str(&format!("\\sqrt{{{}}}", sub(&inner))),
                         }
                         i = end;
@@ -731,7 +861,11 @@ fn linear_to_latex_at(linear: &str, depth: usize) -> String {
             }
             '\\' => {
                 // Linear format control words (`\alpha`) are LaTeX's too.
-                let name: String = chars.iter().skip(i + 1).take_while(|c| c.is_ascii_alphabetic()).collect();
+                let name: String = chars
+                    .iter()
+                    .skip(i + 1)
+                    .take_while(|c| c.is_ascii_alphabetic())
+                    .collect();
                 if name.is_empty() {
                     o.push_str("\\backslash ");
                     i += 1;
@@ -777,7 +911,10 @@ fn linear_to_latex_at(linear: &str, depth: usize) -> String {
 
 fn escape_math_text(s: &str) -> String {
     let mut o = String::new();
-    for c in s.chars().filter(|c| !matches!(c, '{' | '}' | '\\' | '$' | '%' | '#' | '&') && !c.is_control()) {
+    for c in s
+        .chars()
+        .filter(|c| !matches!(c, '{' | '}' | '\\' | '$' | '%' | '#' | '&') && !c.is_control())
+    {
         // Never `^^` (see `linear_to_latex_at`).
         if c == '^' && o.ends_with('^') {
             continue;
@@ -812,7 +949,11 @@ fn math_tokens(src: &str) -> Vec<MTok> {
     while let Some(&c) = chars.get(i) {
         match c {
             '\\' => {
-                let name: String = chars.iter().skip(i + 1).take_while(|c| c.is_ascii_alphabetic()).collect();
+                let name: String = chars
+                    .iter()
+                    .skip(i + 1)
+                    .take_while(|c| c.is_ascii_alphabetic())
+                    .collect();
                 if name.is_empty() {
                     if let Some(&n) = chars.get(i + 1) {
                         out.push(MTok::Cmd(n.to_string()));
@@ -895,7 +1036,11 @@ fn math_opt(t: &[MTok], pos: &mut usize, depth: usize) -> Option<String> {
 /// Parenthesise a fraction part or script unless it is a single symbol.
 fn wrap_part(s: &str) -> String {
     let s = s.trim();
-    if s.chars().count() == 1 || (!s.is_empty() && s.chars().all(|c| c.is_ascii_digit())) { s.to_string() } else { format!("({s})") }
+    if s.chars().count() == 1 || (!s.is_empty() && s.chars().all(|c| c.is_ascii_digit())) {
+        s.to_string()
+    } else {
+        format!("({s})")
+    }
 }
 
 fn math_seq(t: &[MTok], pos: &mut usize, depth: usize, in_opt: bool) -> String {
@@ -919,7 +1064,11 @@ fn math_seq(t: &[MTok], pos: &mut usize, depth: usize, in_opt: bool) -> String {
             MTok::Char('^') | MTok::Char('_') => {
                 let c = if *tok == MTok::Char('^') { '^' } else { '_' };
                 *pos += 1;
-                let a = if depth < MAX_NEST { math_arg(t, pos, depth) } else { String::new() };
+                let a = if depth < MAX_NEST {
+                    math_arg(t, pos, depth)
+                } else {
+                    String::new()
+                };
                 o.push(c);
                 o.push_str(&wrap_part(&a));
                 continue;
@@ -952,20 +1101,27 @@ fn math_seq(t: &[MTok], pos: &mut usize, depth: usize, in_opt: bool) -> String {
                             None => o.push_str(&format!("√({a})")),
                         }
                     }
-                    "left" | "right" | "big" | "Big" | "bigg" | "Bigg" | "bigl" | "bigr" | "Bigl" | "Bigr" | "middle" => {
+                    "left" | "right" | "big" | "Big" | "bigg" | "Bigg" | "bigl" | "bigr"
+                    | "Bigl" | "Bigr" | "middle" => {
                         // Keep the delimiter, drop the sizing; `\left.` is no delimiter.
                         if t.get(*pos) == Some(&MTok::Char('.')) {
                             *pos += 1;
                         }
                     }
-                    "text" | "textrm" | "textit" | "textbf" | "mathrm" | "mathit" | "mathbf" | "mathsf" | "mathtt" | "mathcal" | "mathbb"
-                    | "mathfrak" | "boldsymbol" | "operatorname" | "mbox" | "hbox" | "displaystyle" | "textstyle" | "scriptstyle" => {
-                        if t.get(*pos) == Some(&MTok::Open) || !matches!(name, "displaystyle" | "textstyle" | "scriptstyle") {
+                    "text" | "textrm" | "textit" | "textbf" | "mathrm" | "mathit" | "mathbf"
+                    | "mathsf" | "mathtt" | "mathcal" | "mathbb" | "mathfrak" | "boldsymbol"
+                    | "operatorname" | "mbox" | "hbox" | "displaystyle" | "textstyle"
+                    | "scriptstyle" => {
+                        if t.get(*pos) == Some(&MTok::Open)
+                            || !matches!(name, "displaystyle" | "textstyle" | "scriptstyle")
+                        {
                             let a = math_arg(t, pos, depth);
                             o.push_str(&a);
                         }
                     }
-                    "overline" | "bar" => o.push_str(&format!("{}¯", wrap_part(&math_arg(t, pos, depth)))),
+                    "overline" | "bar" => {
+                        o.push_str(&format!("{}¯", wrap_part(&math_arg(t, pos, depth))))
+                    }
                     "hat" | "widehat" => o.push_str(&format!("{}̂", math_arg(t, pos, depth))),
                     "tilde" | "widetilde" => o.push_str(&format!("{}̃", math_arg(t, pos, depth))),
                     "vec" => o.push_str(&format!("{}⃗", math_arg(t, pos, depth))),
@@ -978,7 +1134,9 @@ fn math_seq(t: &[MTok], pos: &mut usize, depth: usize, in_opt: bool) -> String {
                             let _ = math_opt(t, pos, depth);
                         }
                     }
-                    "," | ";" | ":" | "quad" | "qquad" | " " | "enspace" | "thinspace" => o.push(' '),
+                    "," | ";" | ":" | "quad" | "qquad" | " " | "enspace" | "thinspace" => {
+                        o.push(' ')
+                    }
                     "!" | "limits" | "nolimits" | "nonumber" | "notag" => {}
                     "\\" | "cr" => o.push(' '),
                     "{" | "}" | "%" | "#" | "&" | "$" | "_" => o.push_str(name),
@@ -1012,7 +1170,9 @@ fn math_seq(t: &[MTok], pos: &mut usize, depth: usize, in_opt: bool) -> String {
 
 /// Import a LaTeX source file.
 pub fn import(bytes: &[u8]) -> Document {
-    let mut d = model::to_doc(&parse(&crate::txt::decode(bytes.get(..MAX_SOURCE).unwrap_or(bytes))));
+    let mut d = model::to_doc(&parse(&crate::txt::decode(
+        bytes.get(..MAX_SOURCE).unwrap_or(bytes),
+    )));
     d.ensure_nonempty();
     d
 }
@@ -1041,7 +1201,15 @@ enum Tok {
     End(String),
 }
 
-const VERBATIM_ENVS: &[&str] = &["verbatim", "verbatim*", "Verbatim", "lstlisting", "minted", "alltt", "comment"];
+const VERBATIM_ENVS: &[&str] = &[
+    "verbatim",
+    "verbatim*",
+    "Verbatim",
+    "lstlisting",
+    "minted",
+    "alltt",
+    "comment",
+];
 const MATH_ENVS: &[&str] = &[
     "equation",
     "equation*",
@@ -1142,7 +1310,9 @@ impl Lexer<'_> {
                 '\\' => {
                     self.bump();
                     let r = self.rest();
-                    let n = r.find(|c: char| !c.is_ascii_alphabetic()).unwrap_or(r.len());
+                    let n = r
+                        .find(|c: char| !c.is_ascii_alphabetic())
+                        .unwrap_or(r.len());
                     if n == 0 {
                         let Some(sym) = self.bump() else { break };
                         match sym {
@@ -1254,7 +1424,10 @@ impl Lexer<'_> {
                 }
                 _ => {
                     let r = self.rest();
-                    let n = r.find(['\\', '%', '{', '}', '&', '~', '$', '\n', '\r', ' ', '\t']).unwrap_or(r.len()).max(c.len_utf8());
+                    let n = r
+                        .find(['\\', '%', '{', '}', '&', '~', '$', '\n', '\r', ' ', '\t'])
+                        .unwrap_or(r.len())
+                        .max(c.len_utf8());
                     let t = r.get(..n).unwrap_or("").to_string();
                     self.i += n;
                     self.text(&t);
@@ -1266,12 +1439,23 @@ impl Lexer<'_> {
 }
 
 fn tokenize(src: &str) -> Vec<Tok> {
-    Lexer { s: src, i: 0, out: Vec::new() }.run()
+    Lexer {
+        s: src,
+        i: 0,
+        out: Vec::new(),
+    }
+    .run()
 }
 
 /// TeX's text ligatures: dashes and quotes.
 fn ligatures(s: &str) -> String {
-    s.replace("---", "—").replace("--", "–").replace("``", "“").replace("''", "”").replace('`', "‘").replace("<<", "«").replace(">>", "»")
+    s.replace("---", "—")
+        .replace("--", "–")
+        .replace("``", "“")
+        .replace("''", "”")
+        .replace('`', "‘")
+        .replace("<<", "«")
+        .replace(">>", "»")
 }
 
 /// Character for a symbol command, if it is one.
@@ -1288,8 +1472,9 @@ fn text_symbol(name: &str) -> Option<&'static str> {
         "," | ";" | ":" | "enspace" | "thinspace" => " ",
         "quad" => "\u{2003}",
         "qquad" => "\u{2003}\u{2003}",
-        "-" | "/" | "@" | "!" | "noindent" | "indent" | "relax" | "protect" | "selectfont" | "nobreak" | "sloppy" | "fussy" | "centering"
-        | "raggedright" | "raggedleft" | "normalfont" | "item" => "",
+        "-" | "/" | "@" | "!" | "noindent" | "indent" | "relax" | "protect" | "selectfont"
+        | "nobreak" | "sloppy" | "fussy" | "centering" | "raggedright" | "raggedleft"
+        | "normalfont" | "item" => "",
         "textbackslash" | "backslash" => "\\",
         "textasciitilde" => "~",
         "textasciicircum" => "^",
@@ -1632,7 +1817,11 @@ fn parse_color(model: Option<&str>, spec: &str) -> Option<Rgb> {
     match model.map(str::trim) {
         Some("HTML") => crate::model::parse_color(&format!("#{spec}")),
         Some("RGB") => {
-            let v: Vec<u8> = spec.split(',').filter_map(|x| x.trim().parse::<f32>().ok()).map(|x| x.clamp(0.0, 255.0) as u8).collect();
+            let v: Vec<u8> = spec
+                .split(',')
+                .filter_map(|x| x.trim().parse::<f32>().ok())
+                .map(|x| x.clamp(0.0, 255.0) as u8)
+                .collect();
             match v.as_slice() {
                 [r, g, b] => Some(Rgb(*r, *g, *b)),
                 _ => None,
@@ -1664,7 +1853,9 @@ fn parse_color(model: Option<&str>, spec: &str) -> Option<Rgb> {
 /// A TeX length in points (`3cm`, `0.4\linewidth`), if it is one.
 fn length_pt(s: &str) -> Option<f32> {
     let s = s.trim();
-    let split = s.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-')).unwrap_or(s.len());
+    let split = s
+        .find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-'))
+        .unwrap_or(s.len());
     let (n, unit) = s.split_at(split);
     let n: f32 = if n.is_empty() { 1.0 } else { n.parse().ok()? };
     let k = match unit.trim() {
@@ -1686,7 +1877,14 @@ fn length_pt(s: &str) -> Option<f32> {
 /// Column widths of a `tabular` column spec, when every column has one (`p{3cm}`).
 fn spec_widths(spec: &str) -> (usize, Vec<f32>) {
     let (cols, widths) = spec_widths_at(spec, 0);
-    (cols.min(wordcraft_doc::table::MAX_COLS), if widths.len() == cols { widths } else { Vec::new() })
+    (
+        cols.min(wordcraft_doc::table::MAX_COLS),
+        if widths.len() == cols {
+            widths
+        } else {
+            Vec::new()
+        },
+    )
 }
 
 /// [`spec_widths`] at nesting `depth` of `*{n}{…}` repeats. The column count saturates and the
@@ -1758,7 +1956,14 @@ fn spec_widths_at(spec: &str, depth: usize) -> (usize, Vec<f32>) {
         }
         i += 1;
     }
-    (cols, if all && widths.len() == cols { widths } else { Vec::new() })
+    (
+        cols,
+        if all && widths.len() == cols {
+            widths
+        } else {
+            Vec::new()
+        },
+    )
 }
 
 /// Paragraph-level context from the enclosing environments.
@@ -1821,7 +2026,14 @@ impl<'a> Parser<'a> {
     /// [`MAX_ANCHOR_RUN`] in a row further ones are left out (thousands of labels with no text
     /// between them made reading a file take time quadratic in its size).
     fn anchor(&mut self, name: String) {
-        let run = self.para.inlines.iter().rev().take(MAX_ANCHOR_RUN).take_while(|i| matches!(i, Inline::Anchor(_))).count();
+        let run = self
+            .para
+            .inlines
+            .iter()
+            .rev()
+            .take(MAX_ANCHOR_RUN)
+            .take_while(|i| matches!(i, Inline::Anchor(_)))
+            .count();
         if run < MAX_ANCHOR_RUN {
             self.para.inlines.push(Inline::Anchor(name));
         }
@@ -1829,12 +2041,22 @@ impl<'a> Parser<'a> {
 
     fn text(&mut self, s: &str) {
         // Spaces collapse, and none start a paragraph (as in TeX).
-        let after_space = match self.para.inlines.iter().rev().find(|i| !matches!(i, Inline::Anchor(_))) {
+        let after_space = match self
+            .para
+            .inlines
+            .iter()
+            .rev()
+            .find(|i| !matches!(i, Inline::Anchor(_)))
+        {
             Some(Inline::Text(t, _)) => t.is_empty() || t.ends_with([' ', '\n']),
             Some(_) => false,
             None => true,
         };
-        let s = if after_space { s.trim_start_matches(' ') } else { s };
+        let s = if after_space {
+            s.trim_start_matches(' ')
+        } else {
+            s
+        };
         if s.is_empty() {
             return;
         }
@@ -1846,7 +2068,12 @@ impl<'a> Parser<'a> {
     fn flush(&mut self) {
         let mut p = std::mem::take(&mut self.para);
         p.trim();
-        if p.is_empty() && !p.inlines.iter().any(|i| matches!(i, Inline::Image(_) | Inline::Equation { .. })) {
+        if p.is_empty()
+            && !p
+                .inlines
+                .iter()
+                .any(|i| matches!(i, Inline::Image(_) | Inline::Equation { .. }))
+        {
             // Keep a list item's position even when empty.
             if p.list.is_none() {
                 return;
@@ -1893,7 +2120,11 @@ impl<'a> Parser<'a> {
         while let Some(tok) = self.t.get(self.pos) {
             match tok {
                 Tok::Text(s) => {
-                    let s = if first { s.get(1..).unwrap_or("") } else { s.as_str() };
+                    let s = if first {
+                        s.get(1..).unwrap_or("")
+                    } else {
+                        s.as_str()
+                    };
                     first = false;
                     if let Some(end) = s.find(']') {
                         out.push_str(s.get(..end).unwrap_or(""));
@@ -1979,7 +2210,16 @@ impl<'a> Parser<'a> {
             sub.run(None);
         }
         let (blocks, _) = sub.finish();
-        let text: Vec<String> = blocks.iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p.text()) } else { None }).collect();
+        let text: Vec<String> = blocks
+            .iter()
+            .filter_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p.text())
+                } else {
+                    None
+                }
+            })
+            .collect();
         squash(&text.join(" "))
     }
 
@@ -2006,7 +2246,17 @@ impl<'a> Parser<'a> {
 
     /// Skip every `[…]` and `{…}` argument that follows (and, for definitions, the macro name).
     fn drop_args(&mut self, name: &str) {
-        if matches!(name, "newcommand" | "renewcommand" | "providecommand" | "newcommand*" | "renewcommand*" | "providecommand*" | "def" | "let") {
+        if matches!(
+            name,
+            "newcommand"
+                | "renewcommand"
+                | "providecommand"
+                | "newcommand*"
+                | "renewcommand*"
+                | "providecommand*"
+                | "def"
+                | "let"
+        ) {
             self.skip_spaces();
             if matches!(self.t.get(self.pos), Some(Tok::Cmd(_))) {
                 self.pos += 1;
@@ -2065,7 +2315,9 @@ impl<'a> Parser<'a> {
     fn run(&mut self, env: Option<&str>) {
         loop {
             self.flush_pending();
-            let Some(tok) = self.t.get(self.pos) else { break };
+            let Some(tok) = self.t.get(self.pos) else {
+                break;
+            };
             self.pos += 1;
             match tok {
                 Tok::Text(s) => {
@@ -2094,10 +2346,16 @@ impl<'a> Parser<'a> {
                     }
                     if *display {
                         self.flush();
-                        self.para.inlines.push(Inline::Equation { linear, display: true });
+                        self.para.inlines.push(Inline::Equation {
+                            linear,
+                            display: true,
+                        });
                         self.flush();
                     } else {
-                        self.para.inlines.push(Inline::Equation { linear, display: false });
+                        self.para.inlines.push(Inline::Equation {
+                            linear,
+                            display: false,
+                        });
                     }
                 }
                 Tok::Verbatim(v) => {
@@ -2197,7 +2455,10 @@ impl<'a> Parser<'a> {
                     self.blocks.push(FBlock::Para(p));
                 }
                 if !self.meta.author.is_empty() {
-                    let mut p = Para { align: Some(Align::Center), ..Default::default() };
+                    let mut p = Para {
+                        align: Some(Align::Center),
+                        ..Default::default()
+                    };
                     p.push_text(&self.meta.author, &Fmt::default());
                     self.blocks.push(FBlock::Para(p));
                 }
@@ -2230,8 +2491,9 @@ impl<'a> Parser<'a> {
             "texttt" | "code" | "path" => self.with_arg(|f| f.code = true),
             "textsuperscript" => self.with_arg(|f| f.sup = true),
             "textsubscript" => self.with_arg(|f| f.sub = true),
-            "textmd" | "textup" | "textrm" | "textsf" | "textsc" | "textnormal" | "mbox" | "makebox" | "fbox" | "framebox" | "hbox" | "text"
-            | "textls" | "foreignlanguage" | "enquote" | "MakeUppercase" | "MakeLowercase" | "uppercase" | "lowercase" => {
+            "textmd" | "textup" | "textrm" | "textsf" | "textsc" | "textnormal" | "mbox"
+            | "makebox" | "fbox" | "framebox" | "hbox" | "text" | "textls" | "foreignlanguage"
+            | "enquote" | "MakeUppercase" | "MakeLowercase" | "uppercase" | "lowercase" => {
                 if name == "foreignlanguage" {
                     let _ = self.arg_raw();
                 }
@@ -2251,7 +2513,10 @@ impl<'a> Parser<'a> {
                         f.italic = false;
                     }
                     if name == "textnormal" {
-                        *f = Fmt { link: f.link.clone(), ..Default::default() };
+                        *f = Fmt {
+                            link: f.link.clone(),
+                            ..Default::default()
+                        };
                     }
                 });
                 if quote {
@@ -2267,11 +2532,17 @@ impl<'a> Parser<'a> {
             "fontsize" => {
                 let s = self.arg_source();
                 let _ = self.arg_raw();
-                self.fmt_mut().size = length_pt(&s).or_else(|| s.trim().parse().ok()).filter(|v: &f32| *v >= 1.0 && *v <= 1638.0);
+                self.fmt_mut().size = length_pt(&s)
+                    .or_else(|| s.trim().parse().ok())
+                    .filter(|v: &f32| *v >= 1.0 && *v <= 1638.0);
             }
             "textcolor" | "color" | "colorbox" | "highlight" | "hl" | "cellcolor" => {
                 let model = self.opt_arg();
-                let spec = if matches!(name, "hl" | "highlight") { "yellow".to_string() } else { self.arg_raw() };
+                let spec = if matches!(name, "hl" | "highlight") {
+                    "yellow".to_string()
+                } else {
+                    self.arg_raw()
+                };
                 let c = parse_color(model.as_deref(), &spec);
                 match name {
                     "color" => self.fmt_mut().color = c,
@@ -2315,7 +2586,11 @@ impl<'a> Parser<'a> {
                 let _ = self.opt_arg();
                 let _ = self.opt_arg();
                 let keys = self.arg_raw();
-                let keys: Vec<&str> = keys.split(',').map(str::trim).filter(|k| !k.is_empty()).collect();
+                let keys: Vec<&str> = keys
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|k| !k.is_empty())
+                    .collect();
                 self.text(&format!("[{}]", keys.join(", ")));
             }
             "footnote" | "footnotetext" | "marginpar" => {
@@ -2329,7 +2604,8 @@ impl<'a> Parser<'a> {
                 let file = self.arg_raw();
                 let mut f = self.fmt();
                 f.italic = true;
-                self.para.push_text(&format!("[Picture: {}]", file.trim()), &f);
+                self.para
+                    .push_text(&format!("[Picture: {}]", file.trim()), &f);
             }
             "caption" | "caption*" => {
                 let _ = self.opt_arg();
@@ -2387,14 +2663,16 @@ impl<'a> Parser<'a> {
             "document" => {
                 self.run(Some(name));
             }
-            "itemize" | "enumerate" | "description" | "list" | "compactitem" | "compactenum" | "inparaenum" => {
+            "itemize" | "enumerate" | "description" | "list" | "compactitem" | "compactenum"
+            | "inparaenum" => {
                 let _ = self.opt_arg();
                 if name == "list" {
                     let _ = self.arg_raw();
                     let _ = self.arg_raw();
                 }
                 self.flush();
-                self.lists.push(matches!(name, "enumerate" | "compactenum" | "inparaenum"));
+                self.lists
+                    .push(matches!(name, "enumerate" | "compactenum" | "inparaenum"));
                 self.run(Some(name));
                 self.flush();
                 self.lists.pop();
@@ -2402,8 +2680,17 @@ impl<'a> Parser<'a> {
             "quote" | "quotation" | "verse" | "abstract" => {
                 self.flush();
                 if name == "abstract" {
-                    let mut p = Para { align: Some(Align::Center), ..Default::default() };
-                    p.push_text("Abstract", &Fmt { bold: true, ..Default::default() });
+                    let mut p = Para {
+                        align: Some(Align::Center),
+                        ..Default::default()
+                    };
+                    p.push_text(
+                        "Abstract",
+                        &Fmt {
+                            bold: true,
+                            ..Default::default()
+                        },
+                    );
                     self.blocks.push(FBlock::Para(p));
                 }
                 let saved = self.ctx;
@@ -2425,7 +2712,8 @@ impl<'a> Parser<'a> {
                 self.flush();
                 self.ctx = saved;
             }
-            "tabular" | "tabular*" | "tabularx" | "tabulary" | "longtable" | "longtable*" | "array" | "tblr" | "longtblr" => {
+            "tabular" | "tabular*" | "tabularx" | "tabulary" | "longtable" | "longtable*"
+            | "array" | "tblr" | "longtblr" => {
                 let _ = self.opt_arg();
                 if matches!(name, "tabular*" | "tabularx" | "tabulary") {
                     let _ = self.arg_raw();
@@ -2448,8 +2736,9 @@ impl<'a> Parser<'a> {
                 self.run(Some(name));
                 self.flush();
             }
-            "minipage" | "figure" | "figure*" | "table" | "table*" | "wrapfigure" | "subfigure" | "titlepage" | "multicols" | "multicols*"
-            | "small" | "footnotesize" | "large" | "theorem" | "lemma" | "proof" | "definition" | "example" | "remark" | "corollary"
+            "minipage" | "figure" | "figure*" | "table" | "table*" | "wrapfigure" | "subfigure"
+            | "titlepage" | "multicols" | "multicols*" | "small" | "footnotesize" | "large"
+            | "theorem" | "lemma" | "proof" | "definition" | "example" | "remark" | "corollary"
             | "proposition" => {
                 // Floats and boxes: their content, in order.
                 let _ = self.opt_arg();
@@ -2461,10 +2750,32 @@ impl<'a> Parser<'a> {
                     let _ = self.arg_raw();
                 }
                 self.flush();
-                if matches!(name, "theorem" | "lemma" | "proof" | "definition" | "example" | "remark" | "corollary" | "proposition") {
-                    let mut label: String = name.chars().take(1).flat_map(char::to_uppercase).chain(name.chars().skip(1)).collect();
+                if matches!(
+                    name,
+                    "theorem"
+                        | "lemma"
+                        | "proof"
+                        | "definition"
+                        | "example"
+                        | "remark"
+                        | "corollary"
+                        | "proposition"
+                ) {
+                    let mut label: String = name
+                        .chars()
+                        .take(1)
+                        .flat_map(char::to_uppercase)
+                        .chain(name.chars().skip(1))
+                        .collect();
                     label.push_str(". ");
-                    self.para.push_text(&label, &Fmt { bold: name != "proof", italic: name == "proof", ..Default::default() });
+                    self.para.push_text(
+                        &label,
+                        &Fmt {
+                            bold: name != "proof",
+                            italic: name == "proof",
+                            ..Default::default()
+                        },
+                    );
                 }
                 let (saved_fmt, saved_ctx) = (self.fmt.clone(), self.ctx);
                 if let Some(s) = size_of(name) {
@@ -2605,7 +2916,11 @@ fn table(toks: &[Tok], spec: &str, depth: usize) -> FTable {
     if !row.is_empty() {
         rows.push(row);
     }
-    let mut out = FTable { rows: Vec::new(), widths: Vec::new(), borderless: false };
+    let mut out = FTable {
+        rows: Vec::new(),
+        widths: Vec::new(),
+        borderless: false,
+    };
     // Rows still covered by a `\multirow` above, per grid column.
     let mut covering: Vec<u32> = Vec::new();
     for r in rows {
@@ -2621,7 +2936,12 @@ fn table(toks: &[Tok], spec: &str, depth: usize) -> FTable {
                 match sub.t.get(sub.pos) {
                     Some(Tok::Cmd(c)) if c == "multicolumn" => {
                         sub.pos += 1;
-                        cell.colspan = sub.arg_raw().trim().parse::<u32>().unwrap_or(1).clamp(1, 63);
+                        cell.colspan = sub
+                            .arg_raw()
+                            .trim()
+                            .parse::<u32>()
+                            .unwrap_or(1)
+                            .clamp(1, 63);
                         let _ = sub.arg_raw();
                         content = sub.arg_tokens();
                         sub = Parser::new(content, depth + 1);
@@ -2629,7 +2949,12 @@ fn table(toks: &[Tok], spec: &str, depth: usize) -> FTable {
                     Some(Tok::Cmd(c)) if c == "multirow" || c == "multirow*" => {
                         sub.pos += 1;
                         let _ = sub.opt_arg();
-                        cell.rowspan = sub.arg_raw().trim().parse::<i64>().map(|n| n.unsigned_abs().clamp(1, 1000) as u32).unwrap_or(1);
+                        cell.rowspan = sub
+                            .arg_raw()
+                            .trim()
+                            .parse::<i64>()
+                            .map(|n| n.unsigned_abs().clamp(1, 1000) as u32)
+                            .unwrap_or(1);
                         let _ = sub.opt_arg();
                         let _ = sub.arg_raw();
                         let _ = sub.opt_arg();
@@ -2689,7 +3014,18 @@ fn table(toks: &[Tok], spec: &str, depth: usize) -> FTable {
 fn trim_cell(toks: &[Tok]) -> &[Tok] {
     let skip = |t: &Tok| match t {
         Tok::Cmd(c) => {
-            matches!(c.as_str(), "hline" | "toprule" | "midrule" | "bottomrule" | "endhead" | "endfirsthead" | "endfoot" | "endlastfoot" | "noalign")
+            matches!(
+                c.as_str(),
+                "hline"
+                    | "toprule"
+                    | "midrule"
+                    | "bottomrule"
+                    | "endhead"
+                    | "endfirsthead"
+                    | "endfoot"
+                    | "endlastfoot"
+                    | "noalign"
+            )
         }
         Tok::Text(s) => s.trim().is_empty(),
         _ => false,
@@ -2698,11 +3034,15 @@ fn trim_cell(toks: &[Tok]) -> &[Tok] {
     while let Some(t) = toks.get(a) {
         if skip(t) {
             a += 1;
-        } else if matches!(t, Tok::Cmd(c) if c == "cline" || c == "cmidrule" || c == "addlinespace") {
+        } else if matches!(t, Tok::Cmd(c) if c == "cline" || c == "cmidrule" || c == "addlinespace")
+        {
             // `\cline{2-3}`, `\cmidrule(lr){1-2}`: the command and its argument.
             a += 1;
             while let Some(Tok::Text(s)) = toks.get(a) {
-                if s.trim().is_empty() || s.trim_start().starts_with('(') || s.trim_start().starts_with('[') {
+                if s.trim().is_empty()
+                    || s.trim_start().starts_with('(')
+                    || s.trim_start().starts_with('[')
+                {
                     a += 1;
                 } else {
                     break;
@@ -2731,10 +3071,15 @@ fn trim_cell(toks: &[Tok]) -> &[Tok] {
 pub fn parse(src: &str) -> Flow {
     let toks = tokenize(src);
     // The preamble only contributes metadata; without `\begin{document}` it is all body.
-    let body_at = toks.iter().position(|t| matches!(t, Tok::Begin(n) if n == "document"));
+    let body_at = toks
+        .iter()
+        .position(|t| matches!(t, Tok::Begin(n) if n == "document"));
     let mut meta = model::Meta::default();
     let (body, preamble): (&[Tok], &[Tok]) = match body_at {
-        Some(i) => (toks.get(i + 1..).unwrap_or_default(), toks.get(..i).unwrap_or_default()),
+        Some(i) => (
+            toks.get(i + 1..).unwrap_or_default(),
+            toks.get(..i).unwrap_or_default(),
+        ),
         None => (&toks[..], &[]),
     };
     let mut pre = Parser::new(preamble, 0);
@@ -2751,7 +3096,10 @@ pub fn parse(src: &str) -> Flow {
     let mut p = Parser::new(body, 0);
     p.meta = meta;
     // `\part` and `\chapter` put `\section` one level down each.
-    let uses = |names: [&str; 2]| body.iter().any(|t| matches!(t, Tok::Cmd(c) if names.contains(&c.as_str())));
+    let uses = |names: [&str; 2]| {
+        body.iter()
+            .any(|t| matches!(t, Tok::Cmd(c) if names.contains(&c.as_str())))
+    };
     p.top = u8::from(uses(["part", "part*"])) + u8::from(uses(["chapter", "chapter*"]));
     p.run(Some("document"));
     let (blocks, meta) = p.finish();
@@ -2768,7 +3116,17 @@ mod tests {
     use crate::model::FBlock;
 
     fn paras(src: &str) -> Vec<Para> {
-        parse(src).blocks.into_iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p) } else { None }).collect()
+        parse(src)
+            .blocks
+            .into_iter()
+            .filter_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn texts(src: &str) -> Vec<String> {
@@ -2789,7 +3147,11 @@ mod tests {
     fn spec_widths_repeats_are_bounded() {
         assert_eq!(spec_widths("*{3}{p{1cm}}").0, 3);
         assert_eq!(spec_widths("*{2}{*{2}{l}}").0, 4);
-        let deep = format!("{}l{}", "*{1}{".repeat(MAX_NEST + 5), "}".repeat(MAX_NEST + 5));
+        let deep = format!(
+            "{}l{}",
+            "*{1}{".repeat(MAX_NEST + 5),
+            "}".repeat(MAX_NEST + 5)
+        );
         let (cols, widths) = spec_widths(&deep);
         assert!(cols <= wordcraft_doc::table::MAX_COLS && widths.is_empty());
         let wide = format!("{}p{{1cm}}{}", "*{64}{".repeat(30), "}".repeat(30));
@@ -2869,15 +3231,30 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
     fn alignment_declarations_end_with_their_group() {
         // #440: `{\centering …\par}` centres only inside the group; the outer alignment returns.
         let align = |body: &str| -> Vec<(String, Option<Align>)> {
-            paras(&format!("\\documentclass{{article}}\\begin{{document}}{body}\\end{{document}}")).iter().map(|p| (p.text(), p.align)).collect()
+            paras(&format!(
+                "\\documentclass{{article}}\\begin{{document}}{body}\\end{{document}}"
+            ))
+            .iter()
+            .map(|p| (p.text(), p.align))
+            .collect()
         };
         let a = |t: &str, al: Option<Align>| (t.to_string(), al);
-        assert_eq!(align(r"{\centering Center\par}After\par"), vec![a("Center", Some(Align::Center)), a("After", None)]);
+        assert_eq!(
+            align(r"{\centering Center\par}After\par"),
+            vec![a("Center", Some(Align::Center)), a("After", None)]
+        );
         assert_eq!(
             align(r"\raggedleft Outer\par{\centering Inner\par}Restored\par"),
-            vec![a("Outer", Some(Align::Right)), a("Inner", Some(Align::Center)), a("Restored", Some(Align::Right))]
+            vec![
+                a("Outer", Some(Align::Right)),
+                a("Inner", Some(Align::Center)),
+                a("Restored", Some(Align::Right))
+            ]
         );
-        assert_eq!(align(r"\centering One\par Two\par"), vec![a("One", Some(Align::Center)), a("Two", Some(Align::Center))]);
+        assert_eq!(
+            align(r"\centering One\par Two\par"),
+            vec![a("One", Some(Align::Center)), a("Two", Some(Align::Center))]
+        );
     }
 
     #[test]
@@ -2886,40 +3263,112 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
         assert_eq!(flow.meta.title, "On Sample Documents");
         assert_eq!(flow.meta.author, "Ada Lovelace Charles Babbage");
         let ps = paras(ARTICLE);
-        let find = |t: &str| ps.iter().find(|p| p.text().trim() == t).unwrap_or_else(|| panic!("no {t:?} in {:?}", texts(ARTICLE)));
+        let find = |t: &str| {
+            ps.iter()
+                .find(|p| p.text().trim() == t)
+                .unwrap_or_else(|| panic!("no {t:?} in {:?}", texts(ARTICLE)))
+        };
         assert_eq!(find("On Sample Documents").kind, Kind::Title);
         assert_eq!(find("Introduction").kind, Kind::Heading(1));
         assert_eq!(find("Lists").kind, Kind::Heading(2));
-        assert_eq!(find("First").list, Some(ListInfo { ordered: false, level: 0 }));
-        assert_eq!(find("Nested one").list, Some(ListInfo { ordered: true, level: 1 }));
-        assert!(ps.iter().any(|p| p.text().trim() == "b) Nested two" && p.list.is_some()), "{:?}", texts(ARTICLE));
+        assert_eq!(
+            find("First").list,
+            Some(ListInfo {
+                ordered: false,
+                level: 0
+            })
+        );
+        assert_eq!(
+            find("Nested one").list,
+            Some(ListInfo {
+                ordered: true,
+                level: 1
+            })
+        );
+        assert!(
+            ps.iter()
+                .any(|p| p.text().trim() == "b) Nested two" && p.list.is_some()),
+            "{:?}",
+            texts(ARTICLE)
+        );
         assert_eq!(find("Quoted text.").kind, Kind::Quote);
         assert_eq!(find("Centered.").align, Some(Align::Center));
         assert_eq!(find("fn main() {").kind, Kind::Code);
-        assert_eq!(find("println!(\"{}\", 1 % 2);").kind, Kind::Code, "verbatim keeps % and indentation");
-        assert!(ps.iter().any(|p| p.text() == "    println!(\"{}\", 1 % 2);"));
+        assert_eq!(
+            find("println!(\"{}\", 1 % 2);").kind,
+            Kind::Code,
+            "verbatim keeps % and indentation"
+        );
+        assert!(
+            ps.iter()
+                .any(|p| p.text() == "    println!(\"{}\", 1 % 2);")
+        );
         assert_eq!(find("A table.").align, Some(Align::Center));
         let body = ps.iter().find(|p| p.text().starts_with("This is")).unwrap();
-        let has = |t: &str, f: &dyn Fn(&Fmt) -> bool| body.inlines.iter().any(|i| matches!(i, Inline::Text(x, fm) if x == t && f(fm)));
+        let has = |t: &str, f: &dyn Fn(&Fmt) -> bool| {
+            body.inlines
+                .iter()
+                .any(|i| matches!(i, Inline::Text(x, fm) if x == t && f(fm)))
+        };
         assert!(has("bold", &|f| f.bold));
         assert!(has("italic", &|f| f.italic));
         assert!(has("underlined", &|f| f.underline));
         assert!(has("code", &|f| f.code));
-        assert!(body.text().contains("“like this” and dashes – or — with 50% and $5 & more\u{A0}text."), "{}", body.text());
-        let second = ps.iter().find(|p| p.text().starts_with("A second")).unwrap();
-        assert!(second.text().contains("footnote (The note.) and a link."), "{}", second.text());
+        assert!(
+            body.text()
+                .contains("“like this” and dashes – or — with 50% and $5 & more\u{A0}text."),
+            "{}",
+            body.text()
+        );
+        let second = ps
+            .iter()
+            .find(|p| p.text().starts_with("A second"))
+            .unwrap();
+        assert!(
+            second.text().contains("footnote (The note.) and a link."),
+            "{}",
+            second.text()
+        );
         assert!(second.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "link" && f.link.as_deref() == Some("https://example.com"))));
         assert!(!second.text().contains("comment"));
         let accents = ps.iter().find(|p| p.text().starts_with("Café")).unwrap();
         assert!(accents.page_break, "\\newpage");
-        assert!(accents.text().starts_with("Café naïve ça šé and grouped bold after."), "{}", accents.text());
-        assert!(accents.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "grouped bold" && f.bold)));
-        assert!(accents.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t.starts_with(" after.") && !f.bold)), "{:?}", accents.inlines);
+        assert!(
+            accents
+                .text()
+                .starts_with("Café naïve ça šé and grouped bold after."),
+            "{}",
+            accents.text()
+        );
+        assert!(
+            accents
+                .inlines
+                .iter()
+                .any(|i| matches!(i, Inline::Text(t, f) if t == "grouped bold" && f.bold))
+        );
+        assert!(
+            accents
+                .inlines
+                .iter()
+                .any(|i| matches!(i, Inline::Text(t, f) if t.starts_with(" after.") && !f.bold)),
+            "{:?}",
+            accents.inlines
+        );
         assert!(accents.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t.contains("red text") && f.color == Some(Rgb(255, 0, 0)))));
-        assert!(accents.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "green" && f.color == Some(Rgb(0, 255, 0)))));
+        assert!(accents.inlines.iter().any(
+            |i| matches!(i, Inline::Text(t, f) if t == "green" && f.color == Some(Rgb(0, 255, 0)))
+        ));
         // Preamble definitions and layout commands leave no text.
         let all = texts(ARTICLE).join("\n");
-        for gone in ["mathbb", "utf8", "11pt", "today", "sec:intro}", "amsmath", "maths"] {
+        for gone in [
+            "mathbb",
+            "utf8",
+            "11pt",
+            "today",
+            "sec:intro}",
+            "amsmath",
+            "maths",
+        ] {
             assert!(!all.contains(gone), "{gone:?} leaked: {all}");
         }
     }
@@ -2927,23 +3376,49 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
     #[test]
     fn tables_and_math() {
         let flow = parse(ARTICLE);
-        let t = flow.blocks.iter().find_map(|b| if let FBlock::Table(t) = b { Some(t) } else { None }).expect("table");
+        let t = flow
+            .blocks
+            .iter()
+            .find_map(|b| {
+                if let FBlock::Table(t) = b {
+                    Some(t)
+                } else {
+                    None
+                }
+            })
+            .expect("table");
         assert_eq!(t.rows.len(), 3, "{t:?}");
-        assert_eq!(t.rows[0].iter().map(Cell::text).collect::<Vec<_>>(), ["Name", "Value"]);
+        assert_eq!(
+            t.rows[0].iter().map(Cell::text).collect::<Vec<_>>(),
+            ["Name", "Value"]
+        );
         assert_eq!(t.rows[1].len(), 1);
         assert_eq!(t.rows[1][0].colspan, 2);
         assert_eq!(t.rows[1][0].text(), "Wide");
         assert!(t.widths.is_empty(), "the l column has no width");
         let eq = |p: &Para| {
-            p.inlines.iter().find_map(|i| if let Inline::Equation { linear, display } = i { Some((linear.clone(), *display)) } else { None })
+            p.inlines.iter().find_map(|i| {
+                if let Inline::Equation { linear, display } = i {
+                    Some((linear.clone(), *display))
+                } else {
+                    None
+                }
+            })
         };
         let ps = paras(ARTICLE);
         let energy = ps.iter().find(|p| p.text().starts_with("Energy")).unwrap();
         assert_eq!(eq(energy), Some(("E = mc^2".to_string(), false)));
-        let displays: Vec<_> = ps.iter().filter_map(eq).filter(|(_, d)| *d).map(|(l, _)| l).collect();
+        let displays: Vec<_> = ps
+            .iter()
+            .filter_map(eq)
+            .filter(|(_, d)| *d)
+            .map(|(l, _)| l)
+            .collect();
         assert_eq!(displays, ["(a+b)/2 ≤ √(α)", "∑_(i=1)^n i = (n(n+1))/2"]);
         let cell = &t.rows[2][1];
-        let FBlock::Para(p) = &cell.blocks[0] else { panic!() };
+        let FBlock::Para(p) = &cell.blocks[0] else {
+            panic!()
+        };
         assert_eq!(eq(p), Some(("x^2".to_string(), false)));
     }
 
@@ -2954,7 +3429,9 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
  & b \\
 \end{tabular}";
         let flow = parse(src);
-        let FBlock::Table(t) = &flow.blocks[0] else { panic!("{:?}", flow.blocks) };
+        let FBlock::Table(t) = &flow.blocks[0] else {
+            panic!("{:?}", flow.blocks)
+        };
         assert_eq!(t.rows.len(), 2);
         assert_eq!(t.rows[0][0].rowspan, 2);
         assert!(t.rows[1][0].covered);
@@ -2965,14 +3442,23 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
 
     #[test]
     fn fragments_without_a_document_environment() {
-        assert_eq!(texts("Just \\textbf{text}.\n\nTwo."), ["Just text.", "Two."]);
+        assert_eq!(
+            texts("Just \\textbf{text}.\n\nTwo."),
+            ["Just text.", "Two."]
+        );
         assert_eq!(texts(""), Vec::<String>::new());
-        assert_eq!(texts("\\unknown{kept} \\unknownopt[dropped]{kept too}"), ["kept kept too"]);
+        assert_eq!(
+            texts("\\unknown{kept} \\unknownopt[dropped]{kept too}"),
+            ["kept kept too"]
+        );
         assert_eq!(texts("a\\\\b\\newline c"), ["a\nb\nc"]);
         assert_eq!(texts("\\verb|\\x{}| y"), ["\\x{} y"]);
         assert_eq!(texts("\\chapter{C}\\section{S}").len(), 2);
         let ps = paras("\\chapter{C}\\section{S}");
-        assert_eq!((ps[0].kind, ps[1].kind), (Kind::Heading(1), Kind::Heading(2)));
+        assert_eq!(
+            (ps[0].kind, ps[1].kind),
+            (Kind::Heading(1), Kind::Heading(2))
+        );
     }
 
     #[test]
@@ -2991,7 +3477,10 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
             assert_eq!(latex_to_linear(tex), linear, "{tex}");
         }
         for (linear, tex) in [
-            ("x=(-b±√(b^2-4ac))/(2a)", r"x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}"),
+            (
+                "x=(-b±√(b^2-4ac))/(2a)",
+                r"x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}",
+            ),
             ("α ≤ β", r"\alpha \leq \beta"),
             ("αβ", r"\alpha\beta"),
             ("πr", r"\pi r"),
@@ -3010,15 +3499,24 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
         let n = p.len();
         p.insert_object(
             n,
-            wordcraft_doc::para::InlineObject::Equation { linear: "π r^2".into(), display: false, math: Default::default() },
+            wordcraft_doc::para::InlineObject::Equation {
+                linear: "π r^2".into(),
+                display: false,
+                math: Default::default(),
+            },
             &Default::default(),
         )
         .unwrap();
         d.body = vec![wordcraft_doc::para_block(p)];
         let tex = export(&d);
-        assert!(tex.contains("$\\pi r^2$") && tex.contains("\\usepackage{amsmath}"), "{tex}");
+        assert!(
+            tex.contains("$\\pi r^2$") && tex.contains("\\usepackage{amsmath}"),
+            "{tex}"
+        );
         let back = import(tex.as_bytes());
-        let wordcraft_doc::Block::Para(bp) = &*back.body[0] else { panic!() };
+        let wordcraft_doc::Block::Para(bp) = &*back.body[0] else {
+            panic!()
+        };
         assert!(
             bp.objects.iter().any(|o| matches!(o, wordcraft_doc::para::InlineObject::Equation { linear, .. } if linear == "π r^2")),
             "{:?}",
@@ -3035,12 +3533,20 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
         let d = Document::from_text(text);
         let tex = export(&d);
         let back = import(tex.as_bytes());
-        assert_eq!(back.plain_text(Default::default()).trim(), text.replace('\t', "\u{2003}"), "{tex}");
+        assert_eq!(
+            back.plain_text(Default::default()).trim(),
+            text.replace('\t', "\u{2003}"),
+            "{tex}"
+        );
     }
 
     #[test]
     fn exported_tables_size_their_columns() {
-        let mut t = FTable { rows: Vec::new(), widths: vec![100.0, 200.0], borderless: false };
+        let mut t = FTable {
+            rows: Vec::new(),
+            widths: vec![100.0, 200.0],
+            borderless: false,
+        };
         let cell = |s: &str| Cell {
             blocks: vec![FBlock::Para({
                 let mut p = Para::default();
@@ -3050,13 +3556,26 @@ Caf\'e na\"ive \c{c}a \v{s}\'{e} and {\bfseries grouped bold} after.
             ..Default::default()
         };
         t.rows.push(vec![cell("a"), cell("b")]);
-        t.rows.push(vec![Cell { colspan: 2, ..cell("wide") }]);
+        t.rows.push(vec![Cell {
+            colspan: 2,
+            ..cell("wide")
+        }]);
         let mut w = Writer::default();
         w.table(&t);
-        assert!(w.out.contains("\\begin{tabular}{|p{88pt}|p{188pt}|}"), "{}", w.out);
-        assert!(w.out.contains("\\multicolumn{2}{|p{288pt}|}{wide}"), "{}", w.out);
+        assert!(
+            w.out.contains("\\begin{tabular}{|p{88pt}|p{188pt}|}"),
+            "{}",
+            w.out
+        );
+        assert!(
+            w.out.contains("\\multicolumn{2}{|p{288pt}|}{wide}"),
+            "{}",
+            w.out
+        );
         let back = parse(&w.out);
-        let FBlock::Table(bt) = &back.blocks[0] else { panic!() };
+        let FBlock::Table(bt) = &back.blocks[0] else {
+            panic!()
+        };
         assert_eq!(bt.widths, vec![100.0, 200.0]);
         assert_eq!(bt.rows[1][0].colspan, 2);
     }

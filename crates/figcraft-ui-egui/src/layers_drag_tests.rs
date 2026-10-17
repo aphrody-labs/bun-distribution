@@ -17,7 +17,11 @@ pub(crate) struct Ui {
 
 impl Ui {
     pub(crate) fn new(s: Session) -> Self {
-        let mut u = Self { ctx: egui::Context::default(), app: FigApp::new(s, Box::new(NoServices)), time: 0.0 };
+        let mut u = Self {
+            ctx: egui::Context::default(),
+            app: FigApp::new(s, Box::new(NoServices)),
+            time: 0.0,
+        };
         for _ in 0..3 {
             u.frame(vec![]);
         }
@@ -34,11 +38,19 @@ impl Ui {
     }
 
     /// [`Self::frame_output`] with `modifiers` held.
-    pub(crate) fn frame_with(&mut self, mut events: Vec<Event>, modifiers: egui::Modifiers) -> egui::FullOutput {
+    pub(crate) fn frame_with(
+        &mut self,
+        mut events: Vec<Event>,
+        modifiers: egui::Modifiers,
+    ) -> egui::FullOutput {
         self.time += 1.0 / 60.0;
         events.insert(0, Event::ModifiersChanged(modifiers));
-        let input =
-            RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))), time: Some(self.time), events, ..Default::default() };
+        let input = RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1440.0, 900.0))),
+            time: Some(self.time),
+            events,
+            ..Default::default()
+        };
         let app = &mut self.app;
         let mut out = self.ctx.run_ui(input, |ui| app.ui(ui));
         out.textures_delta.clear();
@@ -66,7 +78,12 @@ impl Ui {
     pub(crate) fn button(&mut self, p: Pos2, pressed: bool) {
         self.frame(vec![
             Event::PointerMoved(p),
-            Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() },
+            Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: Default::default(),
+            },
         ]);
     }
 
@@ -74,7 +91,9 @@ impl Ui {
     pub(crate) fn drag_to(&mut self, from: Pos2, to: Pos2) {
         self.button(from, true);
         for k in 1..=10 {
-            self.frame(vec![Event::PointerMoved(from + (to - from) * (k as f32 / 10.0))]);
+            self.frame(vec![Event::PointerMoved(
+                from + (to - from) * (k as f32 / 10.0),
+            )]);
         }
     }
 }
@@ -86,9 +105,19 @@ fn id(v: serde_json::Value) -> NodeId {
 /// A frame with one child (collapsed in the panel) and a rectangle beside it.
 fn setup() -> (Ui, NodeId, NodeId, NodeId) {
     let mut s = Session::new();
-    let frame = id(s.execute("node.create", &json!({"type": "frame", "x": 0, "y": 0, "width": 100, "height": 100})).unwrap());
+    let frame = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 0, "y": 0, "width": 100, "height": 100}),
+        )
+        .unwrap());
     let child = id(s.execute("node.create", &json!({"type": "ellipse", "parent": frame, "x": 10, "y": 10, "width": 10, "height": 10})).unwrap());
-    let rect = id(s.execute("node.create", &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10})).unwrap());
+    let rect = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
     s.execute("select.none", &json!({})).unwrap();
     let mut u = Ui::new(s);
     u.app.ui.expanded.clear();
@@ -109,7 +138,11 @@ fn holding_over_a_collapsed_frame_opens_it_and_dropping_moves_the_layer_in() {
     assert!(u.app.ui.expanded.contains(&frame), "spring-loaded open");
     u.button(f, false);
     let doc = u.app.session.doc().unwrap();
-    assert_eq!(doc.node(rect).unwrap().parent, Some(frame), "dropped into the frame");
+    assert_eq!(
+        doc.node(rect).unwrap().parent,
+        Some(frame),
+        "dropped into the frame"
+    );
     assert!(doc.node(frame).unwrap().children.contains(&child));
 }
 
@@ -122,14 +155,27 @@ fn a_layer_cant_drop_into_its_own_child_and_escape_cancels() {
     let parent_before = u.app.session.doc().unwrap().node(frame).unwrap().parent;
     u.drag_to(f, c);
     u.button(c, false);
-    assert_eq!(u.app.session.doc().unwrap().node(frame).unwrap().parent, parent_before, "not moved into itself");
+    assert_eq!(
+        u.app.session.doc().unwrap().node(frame).unwrap().parent,
+        parent_before,
+        "not moved into itself"
+    );
     assert!(u.app.ui.last_error.is_none(), "{:?}", u.app.ui.last_error);
     // Escape during a drag: releasing over a target then does nothing.
     let (r, f) = (u.row_at(rect), u.row_at(frame));
     u.drag_to(r, f);
-    u.frame(vec![Event::Key { key: egui::Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() }]);
+    u.frame(vec![Event::Key {
+        key: egui::Key::Escape,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Default::default(),
+    }]);
     u.button(f, false);
-    assert_ne!(u.app.session.doc().unwrap().node(rect).unwrap().parent, Some(frame));
+    assert_ne!(
+        u.app.session.doc().unwrap().node(rect).unwrap().parent,
+        Some(frame)
+    );
 }
 
 #[test]
@@ -137,7 +183,10 @@ fn dropping_layers_on_another_page_moves_them_there() {
     let (mut u, _frame, _child, rect) = setup();
     let p1 = u.app.session.page().unwrap();
     let p2 = id(u.app.session.execute("page.add", &json!({})).unwrap());
-    u.app.session.execute("page.select", &json!({"id": p1})).unwrap();
+    u.app
+        .session
+        .execute("page.select", &json!({"id": p1}))
+        .unwrap();
     u.frame(vec![]);
     // Find Page 2's row in the Pages list: the click that switches to it.
     let mut at = None;
@@ -148,7 +197,10 @@ fn dropping_layers_on_another_page_moves_them_there() {
         if u.app.session.page().unwrap() == p2 {
             // Rows are 32 high: aim at the middle, past the hit tolerance at its edge.
             at = Some(p + vec2(0.0, 12.0));
-            u.app.session.execute("page.select", &json!({"id": p1})).unwrap();
+            u.app
+                .session
+                .execute("page.select", &json!({"id": p1}))
+                .unwrap();
             u.frame(vec![]);
             break;
         }
@@ -158,5 +210,9 @@ fn dropping_layers_on_another_page_moves_them_there() {
     u.drag_to(r, page_row);
     u.button(page_row, false);
     let doc = u.app.session.doc().unwrap();
-    assert_eq!(doc.ancestors(rect).last().copied(), Some(p2), "moved to page 2");
+    assert_eq!(
+        doc.ancestors(rect).last().copied(),
+        Some(p2),
+        "moved to page 2"
+    );
 }

@@ -14,7 +14,7 @@ use bevy_ecs::{
     world::DeferredWorld,
 };
 use bevy_image::Image;
-use bevy_math::{ops, FloatPow, Vec3};
+use bevy_math::{FloatPow, Vec3, ops};
 use bevy_platform::collections::HashSet;
 use bevy_reflect::TypePath;
 use bevy_transform::components::GlobalTransform;

@@ -21,7 +21,9 @@ use effectcraft_engine::storage::StorageHost;
 use effectcraft_gpu::Gpu;
 use effectcraft_ui_egui::EffectcraftApp;
 use effectcraft_ui_egui::control::{self, ControlRequest, Outcome};
-use effectcraft_ui_egui::frames::{FrameImage, FrameKey, Frames, RemoteDone, RemoteFrame, RemoteFrames, RemoteJob, RenderSource};
+use effectcraft_ui_egui::frames::{
+    FrameImage, FrameKey, Frames, RemoteDone, RemoteFrame, RemoteFrames, RemoteJob, RenderSource,
+};
 use egui_kittest::Harness;
 use serde_json::{Value, json};
 
@@ -41,7 +43,12 @@ impl GpuWorker {
     fn new(s: &Session, gpu: Gpu, disk: Arc<Mutex<HashMap<u128, Vec<u8>>>>) -> GpuWorker {
         let mut server = FrameServer::new(s.footage.clone(), s.expr.clone());
         server.set_accel(Some(Arc::new(gpu.clone())));
-        GpuWorker { gpu, state: Mutex::new((Mirror::default(), server, 0)), disk, rendered: Mutex::default() }
+        GpuWorker {
+            gpu,
+            state: Mutex::new((Mirror::default(), server, 0)),
+            disk,
+            rendered: Mutex::default(),
+        }
     }
 }
 
@@ -61,9 +68,19 @@ impl RemoteFrames for GpuWorker {
     fn start(&self, job: RemoteJob, done: RemoteDone) {
         // The page reads a hit from the disk cache instead of asking the worker.
         if let Some(k) = job.disk_key
-            && let Some(f) = self.disk.lock().unwrap().get(&k).and_then(|e| disk_cache::read_frame_entry(e))
+            && let Some(f) = self
+                .disk
+                .lock()
+                .unwrap()
+                .get(&k)
+                .and_then(|e| disk_cache::read_frame_entry(e))
         {
-            return done(Ok(RemoteFrame { width: f.width, height: f.height, rgba: f.rgba, ms: 0.0 }));
+            return done(Ok(RemoteFrame {
+                width: f.width,
+                height: f.height,
+                rgba: f.rgba,
+                ms: 0.0,
+            }));
         }
         let mut st = self.state.lock().unwrap();
         let (mirror, server, next) = &mut *st;
@@ -89,12 +106,30 @@ impl RemoteFrames for GpuWorker {
             out = server.resume();
         }
         match out.into_iter().next() {
-            Some((FrameReply::Frame { width, height, ms, passes, gpu, .. }, Some(rgba))) => {
+            Some((
+                FrameReply::Frame {
+                    width,
+                    height,
+                    ms,
+                    passes,
+                    gpu,
+                    ..
+                },
+                Some(rgba),
+            )) => {
                 self.rendered.lock().unwrap().push((passes, gpu));
                 if let Some(k) = job.disk_key {
-                    self.disk.lock().unwrap().insert(k, disk_cache::frame_entry(width, height, &rgba));
+                    self.disk
+                        .lock()
+                        .unwrap()
+                        .insert(k, disk_cache::frame_entry(width, height, &rgba));
                 }
-                done(Ok(RemoteFrame { width, height, rgba, ms }))
+                done(Ok(RemoteFrame {
+                    width,
+                    height,
+                    rgba,
+                    ms,
+                }))
             }
             other => done(Err(format!("{:?}", other.map(|o| o.0)))),
         }
@@ -127,15 +162,42 @@ fn gpu_worker_renders_effect_frames_and_the_disk_cache_survives_a_reload() {
         return;
     };
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Fx", "width": 160, "height": 90, "frameRate": 30, "duration": 1})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Fx", "width": 160, "height": 90, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
     let plain = s.active_comp_id().unwrap();
-    s.execute("layer.newSolid", json!({"color": "#3080ff", "width": 80, "height": 40})).unwrap();
-    s.execute("comp.new", json!({"name": "Blurred", "width": 160, "height": 90, "frameRate": 30, "duration": 1})).unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"color": "#3080ff", "width": 80, "height": 40}),
+    )
+    .unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Blurred", "width": 160, "height": 90, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
     let fx = s.active_comp_id().unwrap();
-    s.execute("layer.newSolid", json!({"color": "#ff8030", "width": 80, "height": 40})).unwrap();
-    s.execute("effect.apply", json!({"layer": "#1", "effect": "Gaussian Blur"})).unwrap();
-    s.execute("prop.set", json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 12})).unwrap();
-    let opts = RenderOpts { backend: effectcraft_engine::render::Backend::Gpu, ..Default::default() };
+    s.execute(
+        "layer.newSolid",
+        json!({"color": "#ff8030", "width": 80, "height": 40}),
+    )
+    .unwrap();
+    s.execute(
+        "effect.apply",
+        json!({"layer": "#1", "effect": "Gaussian Blur"}),
+    )
+    .unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 12}),
+    )
+    .unwrap();
+    let opts = RenderOpts {
+        backend: effectcraft_engine::render::Backend::Gpu,
+        ..Default::default()
+    };
     let t = effectcraft_engine::time::Tick::ZERO;
     let key = |comp: effectcraft_engine::project::ItemId| FrameKey {
         revision: s.revision,
@@ -151,7 +213,13 @@ fn gpu_worker_renders_effect_frames_and_the_disk_cache_survives_a_reload() {
     let mut frames = Frames::default();
     frames.set_remote(Some(worker.clone()));
     // No effects: the page's GPU compositor keeps the frame on the GPU.
-    frames.request_urgent(&source(&s, Some(page_gpu.clone())), key(plain), plain, t, opts);
+    frames.request_urgent(
+        &source(&s, Some(page_gpu.clone())),
+        key(plain),
+        plain,
+        t,
+        opts,
+    );
     frames.dispatch_remote();
     assert!(matches!(frames.get(&key(plain)), Some(FrameImage::Gpu(_))));
     assert!(worker.rendered.lock().unwrap().is_empty());
@@ -161,8 +229,25 @@ fn gpu_worker_renders_effect_frames_and_the_disk_cache_survives_a_reload() {
     let got = cpu_pixels(&frames.get(&key(fx)).expect("rendered by the worker"));
     let (passes, on_gpu) = worker.rendered.lock().unwrap()[0];
     assert!(on_gpu && passes >= 2, "passes {passes}");
-    let want = effectcraft_ui_egui::frames::to_color_image(&s.render(fx, t, RenderOpts { backend: effectcraft_engine::render::Backend::Cpu, ..opts }));
-    let worst = got.iter().zip(&want.pixels).map(|(a, b)| (0..4).map(|c| (a[c] as i32 - b[c] as i32).abs()).max().unwrap()).max().unwrap();
+    let want = effectcraft_ui_egui::frames::to_color_image(&s.render(
+        fx,
+        t,
+        RenderOpts {
+            backend: effectcraft_engine::render::Backend::Cpu,
+            ..opts
+        },
+    ));
+    let worst = got
+        .iter()
+        .zip(&want.pixels)
+        .map(|(a, b)| {
+            (0..4)
+                .map(|c| (a[c] as i32 - b[c] as i32).abs())
+                .max()
+                .unwrap()
+        })
+        .max()
+        .unwrap();
     assert!(worst <= 2, "GPU vs CPU: {worst}/255");
     assert_eq!(disk.lock().unwrap().len(), 1, "stored under its disk key");
     // "Reload": a new frame cache and worker; the frame comes from the disk cache.
@@ -176,14 +261,20 @@ fn gpu_worker_renders_effect_frames_and_the_disk_cache_survives_a_reload() {
         if !bar.is_empty() {
             break bar;
         }
-        assert!(std::time::Instant::now() < until, "disk-cache indicator did not finish hashing");
+        assert!(
+            std::time::Instant::now() < until,
+            "disk-cache indicator did not finish hashing"
+        );
         std::thread::sleep(std::time::Duration::from_millis(1));
     };
     assert_eq!(bar, vec![0], "the blue cache bar shows the stored frame");
     frames2.request_urgent(&source(&s, Some(page_gpu)), key(fx), fx, t, opts);
     frames2.dispatch_remote();
     assert_eq!(cpu_pixels(&frames2.get(&key(fx)).unwrap()), got);
-    assert!(worker2.rendered.lock().unwrap().is_empty(), "a hit is not rendered again");
+    assert!(
+        worker2.rendered.lock().unwrap().is_empty(),
+        "a hit is not rendered again"
+    );
 }
 
 #[derive(Default)]
@@ -226,7 +317,9 @@ fn settings_disk_page_shows_the_browser_storage_manager() {
     let mut s = Session::default();
     let host = Arc::new(Storage::default());
     s.storage = Some(host.clone());
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(2);
     effectcraft_ui_egui::panels::settings::open(h.state_mut(), "disk");
     h.run_steps(3);
@@ -240,14 +333,30 @@ fn settings_disk_page_shows_the_browser_storage_manager() {
     ] {
         assert!(h.state().auto.find(id).is_some(), "{id} is registered");
     }
-    let usage = h.state().auto.find("settings.storage.usage").unwrap().label.clone();
+    let usage = h
+        .state()
+        .auto
+        .find("settings.storage.usage")
+        .unwrap()
+        .label
+        .clone();
     assert!(usage.contains("52.0 MB of 2.0 GB"), "{usage}");
-    send(&mut h, "ui.click", json!({"id": "settings.storage.clear.diskCache"}));
-    send(&mut h, "ui.click", json!({"id": "settings.storage.persist"}));
+    send(
+        &mut h,
+        "ui.click",
+        json!({"id": "settings.storage.clear.diskCache"}),
+    );
+    send(
+        &mut h,
+        "ui.click",
+        json!({"id": "settings.storage.persist"}),
+    );
     assert_eq!(*host.cleared.lock().unwrap(), vec!["diskCache".to_string()]);
     assert!(*host.persist_asked.lock().unwrap());
     // Without a host (the desktop) the section is not there.
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(Session::default()));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(Session::default()));
     h.run_steps(2);
     effectcraft_ui_egui::panels::settings::open(h.state_mut(), "disk");
     h.run_steps(3);

@@ -15,8 +15,14 @@ use lightcraft_geom::Point;
 /// Add a colour-grading wheel (`hue` °, `sat` 0..100, `lum` −100..100) scaled by `k` to `w`, as a
 /// colour vector (so a profile's tint combines with the user's instead of replacing it).
 fn wheel(w: &mut Wheel, hue: f64, sat: f64, lum: f64, k: f64) {
-    let (ua, ub) = (w.sat * w.hue.to_radians().cos(), w.sat * w.hue.to_radians().sin());
-    let (pa, pb) = (sat * k * hue.to_radians().cos(), sat * k * hue.to_radians().sin());
+    let (ua, ub) = (
+        w.sat * w.hue.to_radians().cos(),
+        w.sat * w.hue.to_radians().sin(),
+    );
+    let (pa, pb) = (
+        sat * k * hue.to_radians().cos(),
+        sat * k * hue.to_radians().sin(),
+    );
     let (a, b) = (ua + pa, ub + pb);
     let s = a.hypot(b);
     if s > 1e-9 {
@@ -278,8 +284,14 @@ mod tests {
             // wheels and point-curve fades grow with the amount
             let lift = |e: &DevelopSettings| e.curve.master.first().map_or(0.0, |p| p.y);
             for (a, b) in [(&half, &full), (&full, &double)] {
-                assert!(a.grading.shadows.sat <= b.grading.shadows.sat + 1e-9, "{id}");
-                assert!(a.grading.highlights.sat <= b.grading.highlights.sat + 1e-9, "{id}");
+                assert!(
+                    a.grading.shadows.sat <= b.grading.shadows.sat + 1e-9,
+                    "{id}"
+                );
+                assert!(
+                    a.grading.highlights.sat <= b.grading.highlights.sat + 1e-9,
+                    "{id}"
+                );
                 assert!(lift(a) <= lift(b) + 1e-9, "{id}");
             }
             if lift(&full) > 0.0 {
@@ -293,12 +305,28 @@ mod tests {
     #[test]
     fn wheels_and_fades_compose_with_user_settings() {
         let mut s = DevelopSettings::default();
-        s.grading.shadows = Wheel { hue: 195.0, sat: 10.0, lum: 0.0 };
-        s.curve.master = vec![Point::new(0.0, 0.0), Point::new(0.5, 0.6), Point::new(1.0, 1.0)];
+        s.grading.shadows = Wheel {
+            hue: 195.0,
+            sat: 10.0,
+            lum: 0.0,
+        };
+        s.curve.master = vec![
+            Point::new(0.0, 0.0),
+            Point::new(0.5, 0.6),
+            Point::new(1.0, 1.0),
+        ];
         s.profile.id = "lc.cine.teal-amber".into();
         let e = effective(&s);
-        assert!((e.grading.shadows.hue - 195.0).abs() < 1e-6 && (e.grading.shadows.sat - 40.0).abs() < 1e-6, "{:?}", e.grading.shadows);
-        assert_eq!(e.curve.master, s.curve.master, "no fade in this look: the user's curve stays");
+        assert!(
+            (e.grading.shadows.hue - 195.0).abs() < 1e-6
+                && (e.grading.shadows.sat - 40.0).abs() < 1e-6,
+            "{:?}",
+            e.grading.shadows
+        );
+        assert_eq!(
+            e.curve.master, s.curve.master,
+            "no fade in this look: the user's curve stays"
+        );
         s.profile.id = "lc.muted.matte-soft".into();
         let e = effective(&s);
         assert_eq!(e.curve.master.len(), 3, "user points kept");

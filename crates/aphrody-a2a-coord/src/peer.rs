@@ -89,8 +89,10 @@ impl DomainContext {
         } else {
             None
         };
-        let Some(name) =
-            std::env::var("APHRODY_AGENT_DOMAIN").ok().filter(|name| !name.is_empty()).or(fallback)
+        let Some(name) = std::env::var("APHRODY_AGENT_DOMAIN")
+            .ok()
+            .filter(|name| !name.is_empty())
+            .or(fallback)
         else {
             return Ok(None);
         };
@@ -134,7 +136,11 @@ pub struct PeerInvoker {
 impl PeerInvoker {
     #[must_use]
     pub fn new(cwd: impl AsRef<Path>) -> Self {
-        Self { cwd: cwd.as_ref().to_path_buf(), max_turns: 40, dry_run: false }
+        Self {
+            cwd: cwd.as_ref().to_path_buf(),
+            max_turns: 40,
+            dry_run: false,
+        }
     }
 
     #[must_use]
@@ -181,7 +187,8 @@ impl PeerInvoker {
             return Ok(());
         }
         let expected = std::fs::read_to_string(marker)?.trim().to_owned();
-        let output = Command::new("git").no_window()
+        let output = Command::new("git")
+            .no_window()
             .args(["branch", "--show-current"])
             .current_dir(&self.cwd)
             .output()?;
@@ -225,8 +232,9 @@ impl PeerInvoker {
                 ));
             }
         }
-        let marker = domain
-            .map_or(String::new(), |domain| format!("[APHRODY_AGENT_DOMAIN={}]\n", domain.name));
+        let marker = domain.map_or(String::new(), |domain| {
+            format!("[APHRODY_AGENT_DOMAIN={}]\n", domain.name)
+        });
         format!(
             "{marker}{task}\n\nShared repository context; follow the current task and repository rules:\n{context}"
         )
@@ -294,7 +302,13 @@ impl PeerInvoker {
     fn invoke_claude(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("CLAUDE_BIN", "claude");
         let mut cmd = Command::new(&bin).no_window();
-        cmd.args(["-p", prompt, "--dangerously-skip-permissions", "--output-format", "text"]);
+        cmd.args([
+            "-p",
+            prompt,
+            "--dangerously-skip-permissions",
+            "--output-format",
+            "text",
+        ]);
         cmd.current_dir(&self.cwd);
         self.run(PeerId::Claude, cmd)
     }
@@ -302,7 +316,12 @@ impl PeerInvoker {
     fn invoke_codex(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("CODEX_BIN", "codex");
         let mut cmd = Command::new(&bin).no_window();
-        cmd.args(["exec", "--dangerously-bypass-approvals-and-sandbox", "--json", "-C"]);
+        cmd.args([
+            "exec",
+            "--dangerously-bypass-approvals-and-sandbox",
+            "--json",
+            "-C",
+        ]);
         cmd.arg(&self.cwd);
         cmd.arg(prompt);
         self.run(PeerId::Codex, cmd)
@@ -350,11 +369,15 @@ impl PeerInvoker {
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(error.into());
-            },
+            }
         };
         tracing::debug!(run_id = %trace.id, peer = peer.short(), "peer launched");
         let out = child.wait_with_output()?;
-        trace.finish(&self.cwd, out.status.code(), &String::from_utf8_lossy(&out.stdout))?;
+        trace.finish(
+            &self.cwd,
+            out.status.code(),
+            &String::from_utf8_lossy(&out.stdout),
+        )?;
         Ok(PeerInvokeResult {
             peer,
             exit_code: out.status.code(),
@@ -403,7 +426,13 @@ mod coordination_tests {
         let directory = tempfile::tempdir().unwrap();
         let invoker = PeerInvoker::new(directory.path()).with_dry_run(true);
         for peer in [PeerId::Claude, PeerId::Codex, PeerId::Agy] {
-            assert_eq!(invoker.invoke_prompt(peer, "shared task").unwrap().exit_code, Some(0));
+            assert_eq!(
+                invoker
+                    .invoke_prompt(peer, "shared task")
+                    .unwrap()
+                    .exit_code,
+                Some(0)
+            );
         }
     }
 }
@@ -419,7 +448,11 @@ mod domain_tests {
         std::fs::create_dir_all(repo.join(".coord/shared")).unwrap();
         std::fs::create_dir_all(&profile).unwrap();
         std::fs::write(repo.join("AGENTS.md"), "repository rules").unwrap();
-        std::fs::write(repo.join(".coord/shared/MEMORY.md"), "aphrody private memory").unwrap();
+        std::fs::write(
+            repo.join(".coord/shared/MEMORY.md"),
+            "aphrody private memory",
+        )
+        .unwrap();
         std::fs::write(profile.join("AGENTS.md"), "dbfr rules").unwrap();
         std::fs::write(profile.join("MEMORY.md"), "dbfr private memory").unwrap();
         let context =

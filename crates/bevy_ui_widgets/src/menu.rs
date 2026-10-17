@@ -44,12 +44,12 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 use bevy_input::{
-    keyboard::{KeyCode, KeyboardInput},
     ButtonState,
+    keyboard::{KeyCode, KeyboardInput},
 };
 use bevy_input_focus::{
-    tab_navigation::{NavAction, TabGroup, TabNavigation},
     FocusCause, FocusedInput, InputFocus, InputFocusSystems,
+    tab_navigation::{NavAction, TabGroup, TabNavigation},
 };
 use bevy_log::warn;
 use bevy_picking::events::{
@@ -58,7 +58,7 @@ use bevy_picking::events::{
 use bevy_reflect::Reflect;
 use bevy_ui::{InteractionDisabled, Pressed, UiSystems};
 
-use crate::{text_input::text_input_autoscroll_system, Activate, ActivateOnPress, Button};
+use crate::{Activate, ActivateOnPress, Button, text_input::text_input_autoscroll_system};
 
 /// Action type for [`MenuEvent`].
 #[derive(Clone, Copy, Debug, Reflect)]
@@ -510,7 +510,7 @@ mod tests {
     use super::*;
     use bevy_ecs::resource::Resource;
     use bevy_input::InputPlugin;
-    use bevy_input_focus::{tab_navigation::TabIndex, InputFocusPlugin};
+    use bevy_input_focus::{InputFocusPlugin, tab_navigation::TabIndex};
     use bevy_window::{PrimaryWindow, Window};
 
     /// Counts `MenuEvent`s with `CloseAll`, so tests can assert the menu asked to close.

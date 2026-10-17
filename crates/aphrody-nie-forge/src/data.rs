@@ -96,7 +96,7 @@ pub fn detecter(img: &PeImage, cover: &Cover) -> (Vec<(u32, u32)>, Bilan) {
                 b.sandwichs += 1;
                 b.code_libere += corps.len() - r;
                 (n, r)
-            },
+            }
             None => (n, corps.len()),
         };
         b.donnees += d1 - d0;

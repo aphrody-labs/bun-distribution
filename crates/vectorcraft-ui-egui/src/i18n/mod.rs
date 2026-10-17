@@ -95,22 +95,55 @@ fn plural_polish(n: u64) -> usize {
 
 /// The registry. English first: it is the fallback and the source language.
 pub static LANGUAGES: [LangInfo; 16] = [
-    LangInfo { code: "en", name: "English", source: "", plural: plural_one_other, complete_menus: false, catalog: OnceLock::new() },
+    LangInfo {
+        code: "en",
+        name: "English",
+        source: "",
+        plural: plural_one_other,
+        complete_menus: false,
+        catalog: OnceLock::new(),
+    },
     // Japanese: the whole interface (every menu string and `tl!` literal) and the status and error
     // messages, keeping the product, workspace and perspective preset names in English (`MENU_KEEP_AS_IS`).
-    LangInfo { code: "ja", name: "日本語", source: include_str!("ja.tsv"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "ja",
+        name: "日本語",
+        source: include_str!("ja.tsv"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Korean: the whole interface and the status and error messages, keeping the same names in
     // English as Japanese; a count takes no plural, so plurals have one form. Hangul is drawn with an
     // installed system font (craft-fonts has no Korean UI face yet); every `ko-*` locale resolves here.
-    LangInfo { code: "ko", name: "한국어", source: include_str!("ko.tsv"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "ko",
+        name: "한국어",
+        source: include_str!("ko.tsv"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Vietnamese: complete menus and messages, with one plural form.
     // Every `vi-*` locale resolves here.
     LangInfo {
-        code: "vi", name: "Tiếng Việt", source: include_str!("vi.tsv"), plural: plural_none, complete_menus: true, catalog: OnceLock::new()
+        code: "vi",
+        name: "Tiếng Việt",
+        source: include_str!("vi.tsv"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
     },
     // Czech: the whole interface (every menu string and `tl!` literal) and the status and error
     // messages, with one/few/other plurals, keeping the same names in English as Spanish.
-    LangInfo { code: "cs", name: "Čeština", source: include_str!("cs.tsv"), plural: plural_czech, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "cs",
+        name: "Čeština",
+        source: include_str!("cs.tsv"),
+        plural: plural_czech,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // German: the whole interface and the status and error messages, keeping the same names in
     // English as Spanish; every `de-*` locale (`de-DE`, `de-AT`, `de-CH`, `de-LU` …) resolves here.
     LangInfo {
@@ -133,7 +166,14 @@ pub static LANGUAGES: [LangInfo; 16] = [
     },
     // French: the whole interface and the status and error messages, keeping the same names in
     // English as Spanish; every `fr-*` locale (`fr-FR`, `fr-BE`, `fr-CA`, `fr-CH` …) resolves here.
-    LangInfo { code: "fr", name: "Français", source: include_str!("fr.tsv"), plural: plural_french, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "fr",
+        name: "Français",
+        source: include_str!("fr.tsv"),
+        plural: plural_french,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Italian: the whole interface and the status and error messages, keeping the same names in
     // English as Spanish; every `it-*` locale (`it-IT`, `it-CH`, `it-SM` …) resolves here.
     LangInfo {
@@ -167,11 +207,25 @@ pub static LANGUAGES: [LangInfo; 16] = [
     // Hungarian: the whole interface and the status and error messages, keeping the same names in
     // English as Spanish; a count takes the singular ("3 réteg"), so plurals have one form. Every
     // `hu-*` locale (including `hu-HU`) resolves here.
-    LangInfo { code: "hu", name: "Magyar", source: include_str!("hu.tsv"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "hu",
+        name: "Magyar",
+        source: include_str!("hu.tsv"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Polish: the whole interface and the status and error messages, with one/few/many plurals,
     // keeping the same names in English as Spanish; every `pl-*` locale (including `pl-PL`)
     // resolves here.
-    LangInfo { code: "pl", name: "Polski", source: include_str!("pl.tsv"), plural: plural_polish, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "pl",
+        name: "Polski",
+        source: include_str!("pl.tsv"),
+        plural: plural_polish,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Brazilian Portuguese: every menu label (`menu_catalogs_translate_every_menu_label`), every
     // `tl!` literal and the plural messages; left English on purpose are the `MENU_KEEP_AS_IS`
     // strings (product name, language names, workspace names, perspective grid presets).
@@ -238,7 +292,10 @@ impl Lang {
 
     /// A language by its exact code.
     pub fn from_code(code: &str) -> Option<Lang> {
-        LANGUAGES.iter().find(|l| l.code.eq_ignore_ascii_case(code)).map(Lang)
+        LANGUAGES
+            .iter()
+            .find(|l| l.code.eq_ignore_ascii_case(code))
+            .map(Lang)
     }
 
     /// Resolve the `interfaceLanguage` preference: a language code, or `auto` (and anything
@@ -269,16 +326,27 @@ impl Lang {
 /// Candidate language codes for a locale tag, most specific first: `zh_TW.UTF-8` →
 /// `zh-tw`, `zh-hant`, `zh`.
 fn candidates(tag: &str) -> Vec<String> {
-    let base = tag.split(['.', '@']).next().unwrap_or("").replace('_', "-").to_ascii_lowercase();
+    let base = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .replace('_', "-")
+        .to_ascii_lowercase();
     let parts: Vec<&str> = base.split('-').filter(|p| !p.is_empty()).collect();
-    let Some(&primary) = parts.first() else { return Vec::new() };
+    let Some(&primary) = parts.first() else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for n in (1..=parts.len()).rev() {
         out.push(parts[..n].join("-"));
     }
     if primary == "zh" && !parts.iter().any(|p| matches!(*p, "hans" | "hant")) {
         // Chinese by region when no script is given.
-        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) { "zh-hant" } else { "zh-hans" };
+        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) {
+            "zh-hant"
+        } else {
+            "zh-hans"
+        };
         out.insert(out.len() - 1, script.to_string());
     }
     out
@@ -298,7 +366,11 @@ pub fn lang_from_tag(tag: &str) -> Option<Lang> {
 /// macOS means "no particular language" rather than English: the system language list decides.
 #[cfg(not(target_arch = "wasm32"))]
 fn is_c_locale(tag: &str) -> bool {
-    let base = tag.split(['.', '@']).next().unwrap_or("").to_ascii_lowercase();
+    let base = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
     matches!(base.as_str(), "c" | "posix")
 }
 
@@ -309,9 +381,11 @@ pub fn detect_system_lang_in_background() {
     #[cfg(not(target_arch = "wasm32"))]
     {
         // A failed spawn leaves the probe to the first frame that needs it.
-        let _ = std::thread::Builder::new().name("locale-probe".into()).spawn(|| {
-            system_lang();
-        });
+        let _ = std::thread::Builder::new()
+            .name("locale-probe".into())
+            .spawn(|| {
+                system_lang();
+            });
     }
 }
 
@@ -332,7 +406,10 @@ pub fn system_lang() -> Lang {
 /// the system language (English if none is); call it before the first frame. Has no effect once
 /// the system language is known.
 pub fn set_system_locales<S: AsRef<str>>(tags: &[S]) {
-    let lang = tags.iter().find_map(|t| lang_from_tag(t.as_ref())).unwrap_or(Lang::EN);
+    let lang = tags
+        .iter()
+        .find_map(|t| lang_from_tag(t.as_ref()))
+        .unwrap_or(Lang::EN);
     // Already set means already detected (or reported): the first answer stands.
     let _ = SYSTEM.set(lang);
 }
@@ -341,8 +418,16 @@ pub fn set_system_locales<S: AsRef<str>>(tags: &[S]) {
 fn detect_system_lang() -> Lang {
     // `VECTORCRAFT_LOCALE` overrides everything (also handy for screenshots); then the POSIX
     // variables. `LANGUAGE` is a colon-separated priority list.
-    for var in ["VECTORCRAFT_LOCALE", "LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"] {
-        let Some(v) = std::env::var(var).ok().filter(|v| !v.is_empty()) else { continue };
+    for var in [
+        "VECTORCRAFT_LOCALE",
+        "LC_ALL",
+        "LC_MESSAGES",
+        "LANG",
+        "LANGUAGE",
+    ] {
+        let Some(v) = std::env::var(var).ok().filter(|v| !v.is_empty()) else {
+            continue;
+        };
         // `C` / `POSIX` (and variants like `C.UTF-8`, `POSIX.UTF-8`) mean "no particular locale":
         // don't force English, fall through to the OS preferred-languages list below.
         if v.split(':').all(is_c_locale) {
@@ -355,7 +440,9 @@ fn detect_system_lang() -> Lang {
     // Apps started from the Finder don't inherit LANG: use the macOS preferred-languages list.
     // The absolute path keeps a `defaults` earlier on PATH from running; any failure means English.
     #[cfg(target_os = "macos")]
-    if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLanguages"]).output()
+    if let Ok(out) = std::process::Command::new("/usr/bin/defaults")
+        .args(["read", "-g", "AppleLanguages"])
+        .output()
         && out.status.success()
         && let Some(l) = first_supported(&String::from_utf8_lossy(&out.stdout))
     {
@@ -373,7 +460,10 @@ fn detect_system_lang() -> Lang {
 /// The first supported language in a `defaults read` list like `(\n    "ja-JP",\n    "en-US"\n)`.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn first_supported(list: &str) -> Option<Lang> {
-    list.split(['(', ')', ',', '"', '\n']).map(str::trim).filter(|s| !s.is_empty()).find_map(lang_from_tag)
+    list.split(['(', ')', ',', '"', '\n'])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .find_map(lang_from_tag)
 }
 
 /// The Windows user locale name (`reg query` so no extra dependency; a hidden console window).
@@ -382,9 +472,16 @@ fn windows_locale() -> Option<String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     // reg.exe by its full path, so nothing named `reg` in the app's folder or on PATH runs instead.
-    let root = std::env::var_os("SystemRoot").map(std::path::PathBuf::from).unwrap_or_else(|| r"C:\Windows".into());
+    let root = std::env::var_os("SystemRoot")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| r"C:\Windows".into());
     let out = std::process::Command::new(root.join("System32").join("reg.exe"))
-        .args(["query", "HKCU\\Control Panel\\International", "/v", "LocaleName"])
+        .args([
+            "query",
+            "HKCU\\Control Panel\\International",
+            "/v",
+            "LocaleName",
+        ])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
@@ -394,7 +491,10 @@ fn windows_locale() -> Option<String> {
 /// The value in `reg query` output like `    LocaleName    REG_SZ    zh-TW`.
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
 fn registry_locale(text: &str) -> Option<String> {
-    text.lines().find(|l| l.contains("LocaleName")).and_then(|l| l.split_whitespace().last()).map(str::to_string)
+    text.lines()
+        .find(|l| l.contains("LocaleName"))
+        .and_then(|l| l.split_whitespace().last())
+        .map(str::to_string)
 }
 
 /// The browser's languages arrive through [`set_system_locales`]; without them, English.
@@ -409,13 +509,20 @@ static CURRENT: AtomicUsize = AtomicUsize::new(0);
 /// Set the UI language for drawing (the shell calls this once per frame from the preference), so
 /// widgets can translate without every call site carrying a language around.
 pub fn set_current(lang: Lang) {
-    let i = LANGUAGES.iter().position(|l| l.code == lang.code()).unwrap_or(0);
+    let i = LANGUAGES
+        .iter()
+        .position(|l| l.code == lang.code())
+        .unwrap_or(0);
     CURRENT.store(i, Ordering::Relaxed);
 }
 
 /// The language the UI is drawn in.
 pub fn current() -> Lang {
-    Lang(LANGUAGES.get(CURRENT.load(Ordering::Relaxed)).unwrap_or(&LANGUAGES[0]))
+    Lang(
+        LANGUAGES
+            .get(CURRENT.load(Ordering::Relaxed))
+            .unwrap_or(&LANGUAGES[0]),
+    )
 }
 
 /// Does `lang` have a catalog entry for this plain string? (English never does: it is the source.)
@@ -435,7 +542,9 @@ pub fn tr(lang: Lang, s: &str) -> &str {
 
 /// Like [`tr`], for an English string that needs a disambiguating `context`.
 pub fn tr_ctx<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
-    lang.catalog().contextual(context, s).unwrap_or_else(|| tr(lang, s))
+    lang.catalog()
+        .contextual(context, s)
+        .unwrap_or_else(|| tr(lang, s))
 }
 
 /// A string keyed by its command id, falling back to the translation of the English `label`.
@@ -460,7 +569,10 @@ pub fn fmt(template: &str, args: &[(&str, &str)]) -> String {
 /// A plural-aware message: `one`/`other` are the English forms (with `{n}` where the count goes).
 pub fn trn(lang: Lang, n: u64, one: &str, other: &str) -> String {
     let idx = (lang.0.plural)(n);
-    let text = lang.catalog().plural(one, other, idx).unwrap_or(if n == 1 { one } else { other });
+    let text = lang
+        .catalog()
+        .plural(one, other, idx)
+        .unwrap_or(if n == 1 { one } else { other });
     fmt(text, &[("n", &n.to_string())])
 }
 
@@ -482,9 +594,22 @@ pub fn message(lang: Lang, s: &str) -> String {
 }
 
 fn message_at(lang: Lang, s: &str, depth: usize) -> String {
-    let Some((template, caps)) = lang.catalog().message(s) else { return s.to_string() };
-    let values: Vec<(&str, String)> =
-        caps.into_iter().map(|(k, v)| (k, if depth > 1 { message_at(lang, v, depth - 1) } else { v.to_string() })).collect();
+    let Some((template, caps)) = lang.catalog().message(s) else {
+        return s.to_string();
+    };
+    let values: Vec<(&str, String)> = caps
+        .into_iter()
+        .map(|(k, v)| {
+            (
+                k,
+                if depth > 1 {
+                    message_at(lang, v, depth - 1)
+                } else {
+                    v.to_string()
+                },
+            )
+        })
+        .collect();
     let args: Vec<(&str, &str)> = values.iter().map(|(k, v)| (*k, v.as_str())).collect();
     fmt(template, &args)
 }
@@ -492,9 +617,12 @@ fn message_at(lang: Lang, s: &str, depth: usize) -> String {
 /// [`message`] in the current language, remembering the last answer: the status bar asks for the
 /// same message every frame.
 pub fn msg(s: &str) -> String {
-    static LAST: std::sync::Mutex<Option<(&'static str, String, String)>> = std::sync::Mutex::new(None);
+    static LAST: std::sync::Mutex<Option<(&'static str, String, String)>> =
+        std::sync::Mutex::new(None);
     let lang = current();
-    let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut last = LAST
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some((code, src, out)) = last.as_ref()
         && *code == lang.code()
         && src == s

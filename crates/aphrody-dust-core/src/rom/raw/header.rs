@@ -239,13 +239,21 @@ pub enum RawHeaderError {
 impl Header {
     /// Returns the version of this [`Header`].
     pub fn version(&self) -> HeaderVersion {
-        if self.dsi_flags_2.0 != 0 { HeaderVersion::DsPostDsi } else { HeaderVersion::Original }
+        if self.dsi_flags_2.0 != 0 {
+            HeaderVersion::DsPostDsi
+        } else {
+            HeaderVersion::Original
+        }
     }
 
     fn check_size(data: &'_ [u8]) -> Result<(), RawHeaderError> {
         let size = size_of::<Self>();
         if data.len() < size {
-            DataTooSmallSnafu { expected: size, actual: data.len() }.fail()
+            DataTooSmallSnafu {
+                expected: size,
+                actual: data.len(),
+            }
+            .fail()
         } else {
             Ok(())
         }
@@ -294,7 +302,10 @@ impl Header {
 
     /// Creates a [`DisplayHeader`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayHeader<'_> {
-        DisplayHeader { header: self, indent }
+        DisplayHeader {
+            header: self,
+            indent,
+        }
     }
 }
 
@@ -323,26 +334,78 @@ impl Display for DisplayHeader<'_> {
             header.rom_size_ds
         )?;
         writeln!(f, "{i}ROM version ............. : {}", header.rom_version)?;
-        write!(f, "{i}ARM9 program\n{}", header.arm9.display(self.indent + 2))?;
-        writeln!(f, "{i}ARM9 autoload callback .. : {:#x}", header.arm9_autoload_callback)?;
-        writeln!(f, "{i}ARM9 build info offset .. : {:#x}", header.arm9_build_info_offset)?;
-        write!(f, "{i}ARM7 program\n{}", header.arm7.display(self.indent + 2))?;
-        writeln!(f, "{i}ARM7 autoload callback .. : {:#x}", header.arm7_autoload_callback)?;
-        writeln!(f, "{i}ARM7 build info offset .. : {:#x}", header.arm7_build_info_offset)?;
-        write!(f, "{i}File name table\n{}", header.file_names.display(self.indent + 2))?;
-        write!(f, "{i}File allocation table\n{}", header.file_allocs.display(self.indent + 2))?;
+        write!(
+            f,
+            "{i}ARM9 program\n{}",
+            header.arm9.display(self.indent + 2)
+        )?;
+        writeln!(
+            f,
+            "{i}ARM9 autoload callback .. : {:#x}",
+            header.arm9_autoload_callback
+        )?;
+        writeln!(
+            f,
+            "{i}ARM9 build info offset .. : {:#x}",
+            header.arm9_build_info_offset
+        )?;
+        write!(
+            f,
+            "{i}ARM7 program\n{}",
+            header.arm7.display(self.indent + 2)
+        )?;
+        writeln!(
+            f,
+            "{i}ARM7 autoload callback .. : {:#x}",
+            header.arm7_autoload_callback
+        )?;
+        writeln!(
+            f,
+            "{i}ARM7 build info offset .. : {:#x}",
+            header.arm7_build_info_offset
+        )?;
+        write!(
+            f,
+            "{i}File name table\n{}",
+            header.file_names.display(self.indent + 2)
+        )?;
+        write!(
+            f,
+            "{i}File allocation table\n{}",
+            header.file_allocs.display(self.indent + 2)
+        )?;
         writeln!(f, "{i}Banner\n{i}  Offset: {:#x}", header.banner_offset)?;
-        writeln!(f, "{i}Normal cmd setting ...... : {:#x}", header.normal_cmd_setting)?;
-        writeln!(f, "{i}KEY1 cmd setting ........ : {:#x}", header.key1_cmd_setting)?;
-        writeln!(f, "{i}Seed select ............. : {:#x}", header.seed_select)?;
+        writeln!(
+            f,
+            "{i}Normal cmd setting ...... : {:#x}",
+            header.normal_cmd_setting
+        )?;
+        writeln!(
+            f,
+            "{i}KEY1 cmd setting ........ : {:#x}",
+            header.key1_cmd_setting
+        )?;
+        writeln!(
+            f,
+            "{i}Seed select ............. : {:#x}",
+            header.seed_select
+        )?;
         writeln!(f, "{i}Autostart ............... : {:#x}", header.autostart)?;
-        writeln!(f, "{i}Secure area disable ..... : {:#x}", header.secure_area_disable)?;
+        writeln!(
+            f,
+            "{i}Secure area disable ..... : {:#x}",
+            header.secure_area_disable
+        )?;
         writeln!(
             f,
             "{i}Secure area delay ....... : {} ({:#x})",
             header.secure_area_delay, header.secure_area_delay.0
         )?;
-        writeln!(f, "{i}Secure area CRC ......... : {:#x}", header.secure_area_crc)?;
+        writeln!(
+            f,
+            "{i}Secure area CRC ......... : {:#x}",
+            header.secure_area_crc
+        )?;
         writeln!(f, "{i}Logo CRC ................ : {:#x}", header.logo_crc)?;
         writeln!(f, "{i}Header CRC .............. : {:#x}", header.header_crc)?;
         write!(f, "{i}Logo .................... : ")?;
@@ -350,14 +413,42 @@ impl Display for DisplayHeader<'_> {
             Ok(logo) => writeln!(f, "\n{logo}")?,
             Err(_) => writeln!(f, "Failed to decompress")?,
         }
-        writeln!(f, "{i}DS ROM region end ....... : {:#x}", header.ds_rom_region_end)?;
-        writeln!(f, "{i}DSi ROM region end ...... : {:#x}", header.dsi_rom_region_end)?;
-        writeln!(f, "{i}ROM NAND end ............ : {:#x}", header.rom_nand_end)?;
-        writeln!(f, "{i}RW NAND end ............. : {:#x}", header.rw_nand_end)?;
-        writeln!(f, "{i}Debug ROM offset ........ : {:#x}", header.debug_rom_offset)?;
+        writeln!(
+            f,
+            "{i}DS ROM region end ....... : {:#x}",
+            header.ds_rom_region_end
+        )?;
+        writeln!(
+            f,
+            "{i}DSi ROM region end ...... : {:#x}",
+            header.dsi_rom_region_end
+        )?;
+        writeln!(
+            f,
+            "{i}ROM NAND end ............ : {:#x}",
+            header.rom_nand_end
+        )?;
+        writeln!(
+            f,
+            "{i}RW NAND end ............. : {:#x}",
+            header.rw_nand_end
+        )?;
+        writeln!(
+            f,
+            "{i}Debug ROM offset ........ : {:#x}",
+            header.debug_rom_offset
+        )?;
         writeln!(f, "{i}Debug size .............. : {:#x}", header.debug_size)?;
-        writeln!(f, "{i}Debug RAM address ....... : {:#x}", header.debug_ram_addr)?;
-        writeln!(f, "{i}Header size ............. : {:#x}", header.header_size)?;
+        writeln!(
+            f,
+            "{i}Debug RAM address ....... : {:#x}",
+            header.debug_ram_addr
+        )?;
+        writeln!(
+            f,
+            "{i}Header size ............. : {:#x}",
+            header.header_size
+        )?;
         Ok(())
     }
 }
@@ -501,7 +592,10 @@ pub struct ProgramOffset {
 impl ProgramOffset {
     /// Creates a [`DisplayProgramOffset`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayProgramOffset<'_> {
-        DisplayProgramOffset { offset: self, indent }
+        DisplayProgramOffset {
+            offset: self,
+            indent,
+        }
     }
 }
 
@@ -536,7 +630,10 @@ pub struct TableOffset {
 impl TableOffset {
     /// Creates a [`DisplayTableOffset`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayTableOffset<'_> {
-        DisplayTableOffset { offset: self, indent }
+        DisplayTableOffset {
+            offset: self,
+            indent,
+        }
     }
 }
 

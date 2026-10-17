@@ -28,9 +28,15 @@ const EPS: f64 = 1e-6;
 /// by `scale` (`Sam3ViTRotaryEmbedding`: x frequencies then y, each duplicated pairwise).
 fn rope_tables(side: usize, scale: f64, device: &Device) -> Result<(Tensor, Tensor)> {
     let spatial = HEAD_DIM / 2;
-    let inv: Vec<f64> = (0..spatial).step_by(2).map(|i| 1.0 / 10000f64.powf(i as f64 / spatial as f64)).collect();
+    let inv: Vec<f64> = (0..spatial)
+        .step_by(2)
+        .map(|i| 1.0 / 10000f64.powf(i as f64 / spatial as f64))
+        .collect();
     let n = side * side;
-    let (mut cos, mut sin) = (Vec::with_capacity(n * HEAD_DIM), Vec::with_capacity(n * HEAD_DIM));
+    let (mut cos, mut sin) = (
+        Vec::with_capacity(n * HEAD_DIM),
+        Vec::with_capacity(n * HEAD_DIM),
+    );
     for r in 0..side {
         for c in 0..side {
             let (x, y) = (c as f64 * scale, r as f64 * scale);
@@ -44,13 +50,18 @@ fn rope_tables(side: usize, scale: f64, device: &Device) -> Result<(Tensor, Tens
             }
         }
     }
-    Ok((Tensor::from_vec(cos, (n, HEAD_DIM), device)?, Tensor::from_vec(sin, (n, HEAD_DIM), device)?))
+    Ok((
+        Tensor::from_vec(cos, (n, HEAD_DIM), device)?,
+        Tensor::from_vec(sin, (n, HEAD_DIM), device)?,
+    ))
 }
 
 /// `x·cos + rotate_pairwise(x)·sin`, where rotate_pairwise maps (a, b) pairs to (−b, a).
 fn apply_rope(x: &Tensor, cos: &Tensor, sin: &Tensor) -> Result<Tensor> {
     let dims = x.dims().to_vec();
-    let last = *dims.last().ok_or_else(|| Error::Model("rope on a scalar".into()))?;
+    let last = *dims
+        .last()
+        .ok_or_else(|| Error::Model("rope on a scalar".into()))?;
     let mut paired = dims.clone();
     paired.pop();
     paired.extend([last / 2, 2]);
@@ -78,9 +89,14 @@ impl Layer {
             (Some(nh), Some(nw)) => {
                 // non-overlapping windows (72 is a multiple of 24: no padding)
                 let ws = self.window;
-                let y = y.reshape((b, nh, ws, nw, ws, c))?.permute((0, 1, 3, 2, 4, 5))?.reshape((b * nh * nw, ws, ws, c))?;
+                let y = y
+                    .reshape((b, nh, ws, nw, ws, c))?
+                    .permute((0, 1, 3, 2, 4, 5))?
+                    .reshape((b * nh * nw, ws, ws, c))?;
                 let y = self.attend(&y, rope)?;
-                y.reshape((b, nh, nw, ws, ws, c))?.permute((0, 1, 3, 2, 4, 5))?.reshape((b, h, w, c))?
+                y.reshape((b, nh, nw, ws, ws, c))?
+                    .permute((0, 1, 3, 2, 4, 5))?
+                    .reshape((b, h, w, c))?
             }
             // global attention
             _ => self.attend(&y, rope)?,
@@ -99,7 +115,11 @@ impl Layer {
 
     fn attn_rope(&self, x: &Tensor, rope: &(Tensor, Tensor)) -> Result<Tensor> {
         let (b, n, _) = x.dims3()?;
-        let split = |t: Tensor| -> Result<Tensor> { Ok(t.reshape((b, n, HEADS, HEAD_DIM))?.transpose(1, 2)?.contiguous()?) };
+        let split = |t: Tensor| -> Result<Tensor> {
+            Ok(t.reshape((b, n, HEADS, HEAD_DIM))?
+                .transpose(1, 2)?
+                .contiguous()?)
+        };
         let (q, k, v) = self.attn.qkv(x)?;
         let q = apply_rope(&split(q)?, &rope.0, &rope.1)?;
         let k = apply_rope(&split(k)?, &rope.0, &rope.1)?;
@@ -123,9 +143,21 @@ impl Vit {
     /// `vb` at `detector_model.vision_encoder.backbone`.
     pub fn new(vb: VarBuilder) -> Result<Self> {
         let device = vb.device().clone();
-        let cfg = Conv2dConfig { stride: PATCH, ..Default::default() };
-        let patch = candle_nn::conv2d_no_bias(3, HIDDEN, PATCH, cfg, vb.pp("embeddings.patch_embeddings.projection"))?;
-        let pos = vb.get((1, PRETRAIN_GRID * PRETRAIN_GRID, HIDDEN), "embeddings.position_embeddings")?;
+        let cfg = Conv2dConfig {
+            stride: PATCH,
+            ..Default::default()
+        };
+        let patch = candle_nn::conv2d_no_bias(
+            3,
+            HIDDEN,
+            PATCH,
+            cfg,
+            vb.pp("embeddings.patch_embeddings.projection"),
+        )?;
+        let pos = vb.get(
+            (1, PRETRAIN_GRID * PRETRAIN_GRID, HIDDEN),
+            "embeddings.position_embeddings",
+        )?;
         // tile (not interpolate) the 24 × 24 pretraining table over the 72 × 72 grid
         let reps = GRID.div_ceil(PRETRAIN_GRID);
         let pos = pos
@@ -159,10 +191,17 @@ impl Vit {
     pub fn forward(&self, pixels: &Tensor) -> Result<Tensor> {
         let x = self.patch.forward(pixels)?; // [1, C, 72, 72]
         let b = x.dim(0)?;
-        let x = x.flatten_from(2)?.transpose(1, 2)?.broadcast_add(&self.pos)?;
+        let x = x
+            .flatten_from(2)?
+            .transpose(1, 2)?
+            .broadcast_add(&self.pos)?;
         let mut x = self.ln_pre.forward(&x.reshape((b, GRID, GRID, HIDDEN))?)?;
         for l in &self.layers {
-            let rope = if l.window > 0 { &self.rope_window } else { &self.rope_global };
+            let rope = if l.window > 0 {
+                &self.rope_window
+            } else {
+                &self.rope_global
+            };
             x = l.forward(&x, rope)?;
         }
         Ok(x.permute((0, 3, 1, 2))?.contiguous()?)

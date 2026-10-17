@@ -50,7 +50,12 @@ fn endou() -> Value {
 }
 
 fn npc0010() -> Value {
-    node("CHARA_BASE_INFO_1", 20, &[(0, 0xA791_C2B5), (3, 0), (11, 0)], &[(1, "npc0010")])
+    node(
+        "CHARA_BASE_INFO_1",
+        20,
+        &[(0, 0xA791_C2B5), (3, 0), (11, 0)],
+        &[(1, "npc0010")],
+    )
 }
 
 #[test]
@@ -85,7 +90,12 @@ fn npc_minimal_optionals_absent() {
 #[test]
 fn gender_defaults_to_one_when_var11_absent() {
     // Noeud minimal (4 vars) : pas de var[11] → genre défaut 1 (port de `let gender = 1`).
-    let n = node("CHARA_BASE_INFO_2", 4, &[(0, 0x10), (3, 0x20)], &[(1, "c99")]);
+    let n = node(
+        "CHARA_BASE_INFO_2",
+        4,
+        &[(0, 0x10), (3, 0x20)],
+        &[(1, "c99")],
+    );
     let b = parse_base_node(&Node::new(&n)).expect("4 vars suffisent");
     assert_eq!(b.gender, 1);
     assert_eq!(b.last_name_hash, None); // var[4] absent
@@ -94,7 +104,10 @@ fn gender_defaults_to_one_when_var11_absent() {
 #[test]
 fn rejects_bad_types_and_short_nodes() {
     // < 4 variables → None.
-    assert_eq!(parse_base_node(&Node::new(&node("CHARA_BASE_INFO_3", 3, &[], &[]))), None);
+    assert_eq!(
+        parse_base_node(&Node::new(&node("CHARA_BASE_INFO_3", 3, &[], &[]))),
+        None
+    );
     // var[0] non-Int (String) → None.
     let n = node("CHARA_BASE_INFO_4", 6, &[(3, 1)], &[(0, "x"), (1, "c")]);
     assert_eq!(parse_base_node(&Node::new(&n)), None);
@@ -120,7 +133,11 @@ fn walk_matches_info_and_battle_excludes_list() {
         }]
     });
     let bases = parse_all_chara_base(&root);
-    assert_eq!(bases.len(), 3, "INFO + npc + BATTLE ; LIST_BEG et non-\\d exclus");
+    assert_eq!(
+        bases.len(),
+        3,
+        "INFO + npc + BATTLE ; LIST_BEG et non-\\d exclus"
+    );
 
     let endou = find_by_chara_id(&bases, HashId(0x99A1_C150)).expect("Endou");
     assert_eq!(endou.internal_code, "c01000010");

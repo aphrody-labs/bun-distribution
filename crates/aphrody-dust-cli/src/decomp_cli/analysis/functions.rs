@@ -38,8 +38,15 @@ impl FunctionExt for Function {
         base_address: u32,
         ual: bool,
     ) -> Result<()> {
-        let mode = if self.is_thumb() { ParseMode::Thumb } else { ParseMode::Arm };
-        let unarm_options = unarm::Options { ual, ..UNARM_OPTIONS };
+        let mode = if self.is_thumb() {
+            ParseMode::Thumb
+        } else {
+            ParseMode::Arm
+        };
+        let unarm_options = unarm::Options {
+            ual,
+            ..UNARM_OPTIONS
+        };
         let mut parser = Parser::new(
             self.code(module_code, base_address),
             mode,
@@ -68,7 +75,12 @@ impl FunctionExt for Function {
                 } else {
                     writeln!(w, "    arm_func_start {}", self.name())?;
                 }
-                writeln!(w, "{}: ; {:#010x}", self.name(), self.first_instruction_address())?;
+                writeln!(
+                    w,
+                    "{}: ; {:#010x}",
+                    self.name(),
+                    self.first_instruction_address()
+                )?;
             }
 
             let ins_size = instruction_size(parser.mode());
@@ -106,7 +118,13 @@ impl FunctionExt for Function {
 
             // write instruction
             match jump_table {
-                Some((SymJumpTable { kind: JumpTableKind::Thumb { kind, jump }, .. }, sym)) => {
+                Some((
+                    SymJumpTable {
+                        kind: JumpTableKind::Thumb { kind, jump },
+                        ..
+                    },
+                    sym,
+                )) => {
                     let ins_code =
                         u16::from_le_slice(&module_code[(address - base_address) as usize..]);
                     match kind {
@@ -116,7 +134,7 @@ impl FunctionExt for Function {
                                 w, symbols, sym, value, ".short", address, jump,
                             )?;
                             write_jump_table_case(w, jump_table, 2, address)?;
-                        },
+                        }
                         ThumbJumpTableKind::Byte => {
                             let code = ins_code as i16;
                             let [first_value, second_value] = code.to_le_bytes();
@@ -142,9 +160,9 @@ impl FunctionExt for Function {
                                 jump,
                             )?;
                             write_jump_table_case(w, jump_table, 1, address + 1)?;
-                        },
+                        }
                     }
-                },
+                }
                 _ => {
                     if parser.mode() != ParseMode::Data {
                         write!(w, "    ")?;
@@ -162,7 +180,7 @@ impl FunctionExt for Function {
                         symbols.write_ambiguous_symbols_comment(w, address, reference)?;
                     }
                     write_jump_table_case(w, jump_table, ins_size, address)?;
-                },
+                }
             }
 
             // write pool constants
@@ -226,7 +244,10 @@ impl FunctionExt for Function {
 
 fn write_jump_table_case<W: io::Write>(
     w: &mut W,
-    jump_table: Option<(SymJumpTable, &aphrody_dust_core::decomp::config::symbol::Symbol)>,
+    jump_table: Option<(
+        SymJumpTable,
+        &aphrody_dust_core::decomp::config::symbol::Symbol,
+    )>,
     ins_size: u32,
     address: u32,
 ) -> std::result::Result<(), io::Error> {
@@ -294,7 +315,10 @@ impl<W: std::io::Write> FormatIns for InsFormatter<'_, W> {
     }
 
     fn write_branch_target(&mut self, branch_target: BranchTarget) -> core::fmt::Result {
-        if let Some(symbol) = self.lookup.lookup_symbol_name(self.address, branch_target.addr) {
+        if let Some(symbol) = self
+            .lookup
+            .lookup_symbol_name(self.address, branch_target.addr)
+        {
             self.write_str(symbol)
         } else {
             branch_target.write(self)
@@ -313,7 +337,7 @@ impl<W: std::io::Write> FormatIns for InsFormatter<'_, W> {
                 .lookup_symbol_name(self.address, (self.pc as i32 + offset) as u32 & !3) =>
             {
                 self.write_str(symbol)
-            },
+            }
             _ => addr_ldr_str.write(self),
         }
     }
@@ -323,7 +347,10 @@ fn pc_relative_reference(ins: &Ins, address: u32, pc_load_offset: u32) -> Option
     match ins {
         // b/bl/blx <label>
         Ins::B { cond: _, target } | Ins::Bl { cond: _, target } => Some(target.addr),
-        Ins::Blx { cond: _, target: BlxTarget::Direct(target) } => Some(target.addr),
+        Ins::Blx {
+            cond: _,
+            target: BlxTarget::Direct(target),
+        } => Some(target.addr),
 
         // ldr/str *, [pc, #imm]
         Ins::Ldr { cond, rd, addr }
@@ -337,12 +364,22 @@ fn pc_relative_reference(ins: &Ins, address: u32, pc_load_offset: u32) -> Option
             } = addr =>
         {
             Some(address.wrapping_add(*offset as u32) + pc_load_offset)
-        },
-        Ins::Ldrd { cond, rd, rd2: _, addr }
+        }
+        Ins::Ldrd {
+            cond,
+            rd,
+            rd2: _,
+            addr,
+        }
         | Ins::Ldrh { cond, rd, addr }
         | Ins::Ldrsb { cond, rd, addr }
         | Ins::Ldrsh { cond, rd, addr }
-        | Ins::Strd { cond, rd, rd2: _, addr }
+        | Ins::Strd {
+            cond,
+            rd,
+            rd2: _,
+            addr,
+        }
         | Ins::Strh { cond, rd, addr }
             if let AddrMiscLoad::Pre {
                 rn: Reg::Pc,
@@ -351,7 +388,7 @@ fn pc_relative_reference(ins: &Ins, address: u32, pc_load_offset: u32) -> Option
             } = addr =>
         {
             Some(address.wrapping_add(*offset as u32) + pc_load_offset)
-        },
+        }
         _ => None,
     }
 }

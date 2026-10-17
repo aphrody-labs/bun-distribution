@@ -26,7 +26,11 @@ fn a_commit_failure_reports_the_completed_prefix_and_cleans_staging() {
     let error = batch
         .commit_with(|path, staged| {
             calls += 1;
-            if path == second { Err(std::io::Error::other("synthetic disk full")) } else { write_staged_chapter(path, staged) }
+            if path == second {
+                Err(std::io::Error::other("synthetic disk full"))
+            } else {
+                write_staged_chapter(path, staged)
+            }
         })
         .unwrap_err()
         .to_string();
@@ -35,11 +39,26 @@ fn a_commit_failure_reports_the_completed_prefix_and_cleans_staging() {
     assert!(error.contains(second.to_str().unwrap()), "{error}");
     let completed = error.split("completed chapter paths:").nth(1).unwrap();
     assert!(completed.contains(first.to_str().unwrap()), "{error}");
-    assert!(!completed.contains(second.to_str().unwrap()) && !completed.contains(third.to_str().unwrap()), "{error}");
-    assert_eq!(designcraft_format::load(&std::fs::read(first).unwrap()).unwrap().sections.first().unwrap().start_number, Some(9));
+    assert!(
+        !completed.contains(second.to_str().unwrap())
+            && !completed.contains(third.to_str().unwrap()),
+        "{error}"
+    );
+    assert_eq!(
+        designcraft_format::load(&std::fs::read(first).unwrap())
+            .unwrap()
+            .sections
+            .first()
+            .unwrap()
+            .start_number,
+        Some(9)
+    );
     assert_eq!(std::fs::read(second).unwrap(), old_bytes);
     assert_eq!(std::fs::read(third).unwrap(), old_bytes);
-    assert!(!staging.exists(), "temporary chapter snapshots must be removed on a partial failure");
+    assert!(
+        !staging.exists(),
+        "temporary chapter snapshots must be removed on a partial failure"
+    );
 }
 
 #[test]

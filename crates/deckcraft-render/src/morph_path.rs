@@ -26,14 +26,25 @@ pub struct PathMorph {
 /// `now / own`, or 1 when that is no usable scale (a line's zero height).
 fn ratio(now: f64, own: f64) -> f64 {
     let r = now / own;
-    if own.abs() > 1e-9 && r.is_finite() { r } else { 1.0 }
+    if own.abs() > 1e-9 && r.is_finite() {
+        r
+    } else {
+        1.0
+    }
 }
 
 /// The geometry of frame shape `s` at its current size `w` x `h`: both outlines are built at their
 /// own sizes (so the alignment does not change while the box grows), then scaled into the box.
 /// With a [`Fade`] per sub-path.
 pub(crate) fn geometry(pm: &PathMorph, s: &Shape, w: f64, h: f64) -> (Geometry, Vec<Fade>) {
-    let a = shape_geometry(&Shape { geom: pm.from.clone(), ..Shape::default() }, pm.from_box.w, pm.from_box.h);
+    let a = shape_geometry(
+        &Shape {
+            geom: pm.from.clone(),
+            ..Shape::default()
+        },
+        pm.from_box.w,
+        pm.from_box.h,
+    );
     let b = shape_geometry(s, pm.to_box.w, pm.to_box.h);
     let scale = |x: Xfrm| Vec2::new(ratio(w, x.w), ratio(h, x.h));
     GeometryMorph::new(&a, &b).at(pm.t, scale(pm.from_box), scale(pm.to_box))

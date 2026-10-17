@@ -5,7 +5,14 @@
 //! Everything here is presentation: documents, rendering and the tool catalogue live in
 //! `pdfcraft-engine`.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 /// Translate an English UI string into the current language (see [`i18n`]).
 macro_rules! tl {
@@ -96,9 +103,14 @@ mod print_ui;
 mod signature_drag;
 pub mod units;
 mod web_print;
-pub use print_ui::{Handling as PrintHandling, PrintDraft, PrinterSource, Which as PrintWhich, system_printers};
+pub use print_ui::{
+    Handling as PrintHandling, PrintDraft, PrinterSource, Which as PrintWhich, system_printers,
+};
 mod redact_ui;
-pub use redact_ui::{HiddenDraft, PagesDraft as RedactPagesDraft, RedactPrefs, SearchDraft as RedactSearchDraft, SearchMode as RedactSearchMode};
+pub use redact_ui::{
+    HiddenDraft, PagesDraft as RedactPagesDraft, RedactPrefs, SearchDraft as RedactSearchDraft,
+    SearchMode as RedactSearchMode,
+};
 pub mod i18n;
 
 /// [`PdfCraftApp::date_text`] for callers that already borrow other parts of the app.
@@ -140,7 +152,9 @@ use pdfcraft_engine::{DocId, Session};
 
 pub use canvas::{DocView, RasterMemory};
 pub use editing::{CloseRequest, SaveTarget};
-pub use files::{ExtractDraft, FilePurpose, FileRequest, RotateDraft, SplitDraft, SplitMode, SplitPlan};
+pub use files::{
+    ExtractDraft, FilePurpose, FileRequest, RotateDraft, SplitDraft, SplitMode, SplitPlan,
+};
 pub use recovery::{AUTOSAVE_SECS, RecoveryMeta, RecoveryStore};
 use theme::{ThemeKind, ThemePreference};
 
@@ -453,7 +467,13 @@ pub struct UnlockPrompt {
 
 impl UnlockPrompt {
     pub(crate) fn new(doc: &pdfcraft_engine::Document, then: Option<&'static str>) -> Self {
-        Self { doc: doc.id, name: doc.name.clone(), input: String::new(), error: None, then }
+        Self {
+            doc: doc.id,
+            name: doc.name.clone(),
+            input: String::new(),
+            error: None,
+            then,
+        }
     }
 }
 
@@ -1039,21 +1059,32 @@ impl PdfCraftApp {
             link_draft: None,
             text_style: content_ui::default_style(),
             replace_draft: None,
-            number_draft: NumberDraft { from: 1, to: 1, style: pdfcraft_engine::LabelStyle::Decimal, prefix: String::new(), start: 1 },
+            number_draft: NumberDraft {
+                from: 1,
+                to: 1,
+                style: pdfcraft_engine::LabelStyle::Decimal,
+                prefix: String::new(),
+                start: 1,
+            },
         }
     }
 
     /// Fields are being edited (Prepare a form is open or a field tool is picked), unless the
     /// form is being previewed.
     pub fn is_preparing(&self) -> bool {
-        ((self.left_open && self.left == LeftPanel::Tool("form")) || matches!(self.quick_tool, QuickTool::Field(_))) && !self.form_preview
+        ((self.left_open && self.left == LeftPanel::Tool("form"))
+            || matches!(self.quick_tool, QuickTool::Field(_)))
+            && !self.form_preview
     }
 
     /// Open a document the way it asks to be opened: navigation panel, layout, magnification,
     /// page (Document Properties ▸ Initial View).
     fn apply_initial_view(&mut self, index: usize, v: &pdfcraft_engine::InitialView) {
         use pdfcraft_engine::{InitialLayout as L, Magnification as M, Navigation as N};
-        let pages = self.session.get(self.views[index].id).map_or(0, |d| d.info.pages.len());
+        let pages = self
+            .session
+            .get(self.views[index].id)
+            .map_or(0, |d| d.info.pages.len());
         if self.active == Some(index) {
             match v.navigation {
                 N::PageOnly => {}
@@ -1068,14 +1099,20 @@ impl PdfCraftApp {
             // The view opened in Default page display already.
             L::Default => {}
             L::SinglePage => (view.layout, view.continuous) = (canvas::PageLayout::Single, false),
-            L::SinglePageContinuous => (view.layout, view.continuous) = (canvas::PageLayout::Single, true),
+            L::SinglePageContinuous => {
+                (view.layout, view.continuous) = (canvas::PageLayout::Single, true)
+            }
             L::TwoUp => (view.layout, view.continuous) = (canvas::PageLayout::TwoUp, false),
-            L::TwoUpContinuous => (view.layout, view.continuous) = (canvas::PageLayout::TwoUp, true),
+            L::TwoUpContinuous => {
+                (view.layout, view.continuous) = (canvas::PageLayout::TwoUp, true)
+            }
             L::TwoUpCoverPage => {
-                (view.layout, view.continuous, view.cover) = (canvas::PageLayout::TwoUp, false, true);
+                (view.layout, view.continuous, view.cover) =
+                    (canvas::PageLayout::TwoUp, false, true);
             }
             L::TwoUpContinuousCoverPage => {
-                (view.layout, view.continuous, view.cover) = (canvas::PageLayout::TwoUp, true, true);
+                (view.layout, view.continuous, view.cover) =
+                    (canvas::PageLayout::TwoUp, true, true);
             }
         }
         match v.magnification {
@@ -1093,12 +1130,23 @@ impl PdfCraftApp {
     }
 
     /// Open a document and make it the active tab. Encrypted files raise the password prompt.
-    pub fn open_bytes(&mut self, name: &str, path: Option<String>, bytes: Vec<u8>) -> Result<(), String> {
+    pub fn open_bytes(
+        &mut self,
+        name: &str,
+        path: Option<String>,
+        bytes: Vec<u8>,
+    ) -> Result<(), String> {
         self.startup_superseded = true;
         self.open_bytes_with_focus(name, path, bytes, true)
     }
 
-    fn open_bytes_with_focus(&mut self, name: &str, path: Option<String>, bytes: Vec<u8>, activate: bool) -> Result<(), String> {
+    fn open_bytes_with_focus(
+        &mut self,
+        name: &str,
+        path: Option<String>,
+        bytes: Vec<u8>,
+        activate: bool,
+    ) -> Result<(), String> {
         // Images and text files become new, unsaved PDFs (Create a PDF).
         let active = self.active;
         if let Some(r) = self.open_converted(name, &bytes) {
@@ -1122,12 +1170,21 @@ impl PdfCraftApp {
             );
         }
         let token = self.next_open_token.wrapping_add(1);
-        let worker = self.open_worker.as_ref().ok_or("the document-open worker is unavailable")?;
+        let worker = self
+            .open_worker
+            .as_ref()
+            .ok_or("the document-open worker is unavailable")?;
         if let Some(ctx) = &self.ctx {
             worker.set_context(ctx);
         }
-        let receiver =
-            worker.submit(token, self.session.open_context(), request.name.clone(), request.path.clone(), request.password, request.input)?;
+        let receiver = worker.submit(
+            token,
+            self.session.open_context(),
+            request.name.clone(),
+            request.path.clone(),
+            request.password,
+            request.input,
+        )?;
         self.next_open_token = token;
         self.pending_opens.push(PendingOpen {
             token,
@@ -1154,7 +1211,10 @@ impl PdfCraftApp {
                 Ok(_) => waiting.push(pending),
                 Err(std::sync::mpsc::TryRecvError::Empty) => waiting.push(pending),
                 Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    self.notify_fmt("Couldn't open {name}: the background worker stopped", &[("name", &pending.name)]);
+                    self.notify_fmt(
+                        "Couldn't open {name}: the background worker stopped",
+                        &[("name", &pending.name)],
+                    );
                 }
             }
         }
@@ -1168,24 +1228,45 @@ impl PdfCraftApp {
     fn finish_pending_open(&mut self, pending: PendingOpen, kind: open_worker::ResultKind) {
         match kind {
             open_worker::ResultKind::ReadFailed(reason) => {
-                self.notify_fmt("Couldn't read {name}: {e}", &[("name", &pending.name), ("e", &reason)]);
+                self.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &pending.name), ("e", &reason)],
+                );
             }
             open_worker::ResultKind::RemoteFailed(reason) => {
-                self.notify_fmt("Couldn't follow linked PDF: {reason}", &[("reason", &reason)]);
+                self.notify_fmt(
+                    "Couldn't follow linked PDF: {reason}",
+                    &[("reason", &reason)],
+                );
             }
             open_worker::ResultKind::RecoveryFailed(reason) => {
-                self.notify_fmt("Couldn't recover {name}: {e}", &[("name", &pending.name), ("e", &reason)]);
+                self.notify_fmt(
+                    "Couldn't recover {name}: {e}",
+                    &[("name", &pending.name), ("e", &reason)],
+                );
             }
             open_worker::ResultKind::Failed(reason) => {
-                self.notify_fmt("Couldn't open {name}: {reason}", &[("name", &pending.name), ("reason", &reason)]);
+                self.notify_fmt(
+                    "Couldn't open {name}: {reason}",
+                    &[("name", &pending.name), ("reason", &reason)],
+                );
             }
             open_worker::ResultKind::Conversion(bytes) => {
                 if let Some(Err(error)) = self.open_converted(&pending.name, &bytes) {
-                    self.notify_fmt("Couldn't open {name}: {e}", &[("name", &pending.name), ("e", &error)]);
+                    self.notify_fmt(
+                        "Couldn't open {name}: {e}",
+                        &[("name", &pending.name), ("e", &error)],
+                    );
                 }
             }
             open_worker::ResultKind::Prepared { bytes, result } => match *result {
-                Ok(prepared) => match self.finish_open(&pending.name, pending.path.clone(), bytes.len(), prepared, pending.activate) {
+                Ok(prepared) => match self.finish_open(
+                    &pending.name,
+                    pending.path.clone(),
+                    bytes.len(),
+                    prepared,
+                    pending.activate,
+                ) {
                     Ok(id) => {
                         if pending.path.is_some() {
                             self.watch.known_as(id, pending.stamp);
@@ -1200,11 +1281,17 @@ impl PdfCraftApp {
                             self.execute(command);
                         }
                     }
-                    Err(error) => self.notify_fmt("Couldn't open {name}: {e}", &[("name", &pending.name), ("e", &error)]),
+                    Err(error) => self.notify_fmt(
+                        "Couldn't open {name}: {e}",
+                        &[("name", &pending.name), ("e", &error)],
+                    ),
                 },
-                Err(error @ (pdfcraft_render::OpenError::NeedsPassword | pdfcraft_render::OpenError::WrongPassword)) => {
-                    let password_error =
-                        matches!(error, pdfcraft_render::OpenError::WrongPassword).then(|| "Incorrect password. Try again.".to_string());
+                Err(
+                    error @ (pdfcraft_render::OpenError::NeedsPassword
+                    | pdfcraft_render::OpenError::WrongPassword),
+                ) => {
+                    let password_error = matches!(error, pdfcraft_render::OpenError::WrongPassword)
+                        .then(|| "Incorrect password. Try again.".to_string());
                     self.password_prompt = Some(PasswordPrompt {
                         name: pending.name,
                         path: pending.path,
@@ -1218,7 +1305,10 @@ impl PdfCraftApp {
                         after_open: pending.after_open,
                     });
                 }
-                Err(error) => self.notify_fmt("Couldn't open {name}: {e}", &[("name", &pending.name), ("e", &error.to_string())]),
+                Err(error) => self.notify_fmt(
+                    "Couldn't open {name}: {e}",
+                    &[("name", &pending.name), ("e", &error.to_string())],
+                ),
             },
         }
     }
@@ -1232,10 +1322,14 @@ impl PdfCraftApp {
         activate: bool,
     ) -> Result<(), String> {
         use pdfcraft_render::OpenError;
-        let prepared = match self.session.prepare_open(name, path.clone(), bytes.clone(), password) {
+        let prepared = match self
+            .session
+            .prepare_open(name, path.clone(), bytes.clone(), password)
+        {
             Ok(prepared) => prepared,
             Err(e @ (OpenError::NeedsPassword | OpenError::WrongPassword)) => {
-                let error = matches!(e, OpenError::WrongPassword).then(|| "Incorrect password. Try again.".to_string());
+                let error = matches!(e, OpenError::WrongPassword)
+                    .then(|| "Incorrect password. Try again.".to_string());
                 #[cfg(not(target_arch = "wasm32"))]
                 let stamp = path.as_deref().and_then(file_watch::Stamp::at);
                 self.password_prompt = Some(PasswordPrompt {
@@ -1255,7 +1349,8 @@ impl PdfCraftApp {
             }
             Err(e) => return Err(e.to_string()),
         };
-        self.finish_open(name, path, bytes.len(), prepared, activate).map(|_| ())
+        self.finish_open(name, path, bytes.len(), prepared, activate)
+            .map(|_| ())
     }
 
     fn finish_open(
@@ -1271,13 +1366,20 @@ impl PdfCraftApp {
         // The reading-colours preference is app-wide: a newly opened document starts with it.
         // Idempotent: the engine returns `false` when the document has the setting already.
         self.session.set_reading_colors(id, self.reading_colors);
-        let doc = self.session.get(id).ok_or("the document could not be opened")?;
+        let doc = self
+            .session
+            .get(id)
+            .ok_or("the document could not be opened")?;
         let pages = doc.info.pages.len();
         // Acrobat opens straight to the Comments panel when a document has comments.
         // Read mode opens with the panes closed; the rail still opens them (#932). A right panel
         // the user closed stays closed (#1590).
         let opening_mode = self.mode_override.unwrap_or(self.default_mode);
-        if activate && self.right.is_none() && !self.right_panel_closed && opening_mode != Mode::Read {
+        if activate
+            && self.right.is_none()
+            && !self.right_panel_closed
+            && opening_mode != Mode::Read
+        {
             self.right = if !doc.info.annotations.is_empty() {
                 Some(RightPanel::Comments)
             } else if !doc.info.outline.is_empty() {
@@ -1287,7 +1389,8 @@ impl PdfCraftApp {
             };
         }
         let initial = doc.initial_view();
-        self.views.push(DocView::new(id, &doc.info, self.view_defaults));
+        self.views
+            .push(DocView::new(id, &doc.info, self.view_defaults));
         if activate {
             self.active = Some(self.views.len() - 1);
         }
@@ -1311,7 +1414,15 @@ impl PdfCraftApp {
         }
         if let Some(p) = path {
             self.recent.retain(|r| r.path != p);
-            self.recent.insert(0, RecentFile { name: name.to_string(), path: p, pages, size });
+            self.recent.insert(
+                0,
+                RecentFile {
+                    name: name.to_string(),
+                    path: p,
+                    pages,
+                    size,
+                },
+            );
             self.recent.truncate(12);
         }
         // What the form's scripts said while it opened (messages, errors) shows now, not with
@@ -1332,7 +1443,11 @@ impl PdfCraftApp {
             self.open_path(&p);
             return;
         }
-        let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
+        let name = f
+            .path()
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "dropped.pdf".into());
         match f.bytes() {
             Ok(bytes) => {
                 if self.ctx.is_some() && !self.run_inline {
@@ -1348,44 +1463,72 @@ impl PdfCraftApp {
                         then: None,
                     });
                     if let Err(error) = result {
-                        self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+                        self.notify_fmt(
+                            "Couldn't open {name}: {e}",
+                            &[("name", &name), ("e", &error)],
+                        );
                     }
                 } else if let Err(error) = self.open_bytes(&name, None, bytes) {
-                    self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+                    self.notify_fmt(
+                        "Couldn't open {name}: {e}",
+                        &[("name", &name), ("e", &error)],
+                    );
                 }
             }
-            Err(e) => self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e.to_string())]),
+            Err(e) => self.notify_fmt(
+                "Couldn't read {name}: {e}",
+                &[("name", &name), ("e", &e.to_string())],
+            ),
         }
     }
 
     /// The document whose page grid is showing and may take pages, if any.
     fn grid_target(&self) -> Option<pdfcraft_engine::DocId> {
-        let view = self.active.and_then(|i| self.views.get(i)).filter(|v| v.organize)?;
+        let view = self
+            .active
+            .and_then(|i| self.views.get(i))
+            .filter(|v| v.organize)?;
         (self.dialog.is_none() && self.session.get(view.id)?.allows_assembly()).then_some(view.id)
     }
 
     /// Files dropped while the page grid shows are inserted into it rather than opened: they
     /// are kept until [`Self::finish_grid_drop`] knows the gap. Returns the files not taken.
     #[cfg(not(target_arch = "wasm32"))]
-    fn drop_on_grid(&mut self, dropped: Vec<egui::DroppedFileHandle>, ctx: &egui::Context) -> Vec<egui::DroppedFileHandle> {
-        let Some(id) = self.grid_target().filter(|_| !dropped.is_empty()) else { return dropped };
+    fn drop_on_grid(
+        &mut self,
+        dropped: Vec<egui::DroppedFileHandle>,
+        ctx: &egui::Context,
+    ) -> Vec<egui::DroppedFileHandle> {
+        let Some(id) = self.grid_target().filter(|_| !dropped.is_empty()) else {
+            return dropped;
+        };
         let mut files = Vec::new();
         for f in &dropped {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "dropped.pdf".into());
             if f.path().is_absolute() {
                 files.push((name, Err(f.path().to_path_buf())));
                 continue;
             }
             match f.bytes() {
                 Ok(b) => files.push((name, Ok(b))),
-                Err(e) => self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e)]),
+                Err(e) => {
+                    self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e)])
+                }
             }
         }
         if !files.is_empty() {
             // Where there is no telling where the pointer is during the drag, its place arrives
             // with the first move after the drop.
             ctx.request_repaint();
-            self.grid_drop = Some(GridDrop { doc: id, files, deadline: ctx.input(|i| i.time) + 1.0 });
+            self.grid_drop = Some(GridDrop {
+                doc: id,
+                files,
+                deadline: ctx.input(|i| i.time) + 1.0,
+            });
         }
         Vec::new()
     }
@@ -1393,13 +1536,22 @@ impl PdfCraftApp {
     /// Insert files dropped on the page grid at the gap under the pointer, or at the end when
     /// the pointer hasn't shown up in time.
     fn finish_grid_drop(&mut self, ctx: &egui::Context) {
-        let Some(GridDrop { doc: id, deadline, .. }) = &self.grid_drop else { return };
+        let Some(GridDrop {
+            doc: id, deadline, ..
+        }) = &self.grid_drop
+        else {
+            return;
+        };
         let (id, deadline) = (*id, *deadline);
         if self.grid_target() != Some(id) {
             self.grid_drop = None;
-            return self.notify_tr("The document changed while you were choosing a file, so nothing was changed.");
+            return self.notify_tr(
+                "The document changed while you were choosing a file, so nothing was changed.",
+            );
         }
-        let Some(view) = self.active.and_then(|i| self.views.get_mut(i)) else { return };
+        let Some(view) = self.active.and_then(|i| self.views.get_mut(i)) else {
+            return;
+        };
         let gap = match view.grid_gap {
             Some(gap) => gap,
             None if ctx.input(|i| i.time) >= deadline => usize::MAX,
@@ -1418,7 +1570,11 @@ impl PdfCraftApp {
         let inbox = self.inbox.clone();
         let ctx = ctx.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "dropped.pdf".into());
             if let Ok(bytes) = f.bytes_async().await
                 && let Ok(mut q) = inbox.lock()
             {
@@ -1441,28 +1597,49 @@ impl PdfCraftApp {
 
     /// Save an attachment to disk, or open a PDF attachment in a new tab.
     pub fn attachment_action(&mut self, doc: DocId, index: usize, open: bool) {
-        let Some(d) = self.session.get(doc) else { return };
-        let Some(att) = d.info.attachments.get(index).cloned() else { return };
+        let Some(d) = self.session.get(doc) else {
+            return;
+        };
+        let Some(att) = d.info.attachments.get(index).cloned() else {
+            return;
+        };
         let data = pdfcraft_render::attachment_data(&d.bytes, d.password.as_deref(), &att);
         match (data, open) {
-            (Err(e), _) => self.notify_fmt("Couldn't read {name}: {e}", &[("name", &att.name), ("e", &e.to_string())]),
+            (Err(e), _) => self.notify_fmt(
+                "Couldn't read {name}: {e}",
+                &[("name", &att.name), ("e", &e.to_string())],
+            ),
             (Ok(bytes), true) => {
                 if let Err(e) = self.open_bytes(&att.name, None, bytes) {
-                    self.notify_fmt("Couldn't open {name}: {e}", &[("name", &att.name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't open {name}: {e}",
+                        &[("name", &att.name), ("e", &e.to_string())],
+                    );
                 }
             }
             (Ok(bytes), false) => {
                 #[cfg(not(target_arch = "wasm32"))]
                 self.ask_one(
-                    pickers::Ask::Save(rfd::AsyncFileDialog::new().set_file_name(crate::files::attachment_file_name(&att.name))),
+                    pickers::Ask::Save(
+                        rfd::AsyncFileDialog::new()
+                            .set_file_name(crate::files::attachment_file_name(&att.name)),
+                    ),
                     None,
-                    move |app, path| match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
-                        Ok(()) => app.notify_fmt("Saved {name}", &[("name", &path.display().to_string())]),
+                    move |app, path| match crate::editing::write_atomically(
+                        &path.to_string_lossy(),
+                        &bytes,
+                    ) {
+                        Ok(()) => {
+                            app.notify_fmt("Saved {name}", &[("name", &path.display().to_string())])
+                        }
                         Err(e) => app.notify_fmt("Couldn't save: {e}", &[("e", &e.to_string())]),
                     },
                 );
                 #[cfg(target_arch = "wasm32")]
-                self.notify_fmt("Downloading attachments on the web arrives with M3.10 ({n} bytes ready)", &[("n", &bytes.len().to_string())]);
+                self.notify_fmt(
+                    "Downloading attachments on the web arrives with M3.10 ({n} bytes ready)",
+                    &[("n", &bytes.len().to_string())],
+                );
             }
         }
     }
@@ -1497,7 +1674,9 @@ impl PdfCraftApp {
 
     /// Answer the password prompt (`None` cancels).
     pub fn submit_password(&mut self, password: Option<String>) {
-        let Some(p) = self.password_prompt.take() else { return };
+        let Some(p) = self.password_prompt.take() else {
+            return;
+        };
         let Some(pw) = password else {
             // A cancelled recovery goes back on offer; its snapshot stays in the store and must
             // not attach itself to whatever document is unlocked next (#813).
@@ -1530,16 +1709,19 @@ impl PdfCraftApp {
         let (path_for_watch, stamp_for_watch) = (p.path.clone(), p.stamp);
         let after_open = p.after_open.clone();
         match self.try_open(&p.name, p.path, p.bytes, Some(&pw), p.activate) {
-            Err(e) => self.notify_fmt("Couldn't open {name}: {e}", &[("name", &p.name), ("e", &e.to_string())]),
+            Err(e) => self.notify_fmt(
+                "Couldn't open {name}: {e}",
+                &[("name", &p.name), ("e", &e.to_string())],
+            ),
             // A recovered encrypted document is open once its prompt is gone.
             Ok(()) if self.password_prompt.is_none() => {
                 #[cfg(not(target_arch = "wasm32"))]
                 if let Some(path) = path_for_watch.as_deref()
-                    && let Some(id) = self
-                        .views
-                        .iter()
-                        .rev()
-                        .find_map(|view| self.session.get(view.id).and_then(|doc| (doc.path.as_deref() == Some(path)).then_some(view.id)))
+                    && let Some(id) = self.views.iter().rev().find_map(|view| {
+                        self.session
+                            .get(view.id)
+                            .and_then(|doc| (doc.path.as_deref() == Some(path)).then_some(view.id))
+                    })
                 {
                     self.watch.known_as(id, stamp_for_watch);
                 }
@@ -1567,13 +1749,17 @@ impl PdfCraftApp {
 
     /// Ask for the active document's permissions password, then run `then` (if any).
     pub(crate) fn request_unlock(&mut self, then: Option<&'static str>) {
-        let Some(doc) = self.active_ids().and_then(|(_, id)| self.session.get(id)) else { return };
+        let Some(doc) = self.active_ids().and_then(|(_, id)| self.session.get(id)) else {
+            return;
+        };
         self.unlock_prompt = Some(UnlockPrompt::new(doc, then));
     }
 
     /// Answer the permissions password prompt (`None` cancels).
     pub fn submit_unlock(&mut self, password: Option<String>) {
-        let Some(mut p) = self.unlock_prompt.take() else { return };
+        let Some(mut p) = self.unlock_prompt.take() else {
+            return;
+        };
         let Some(pw) = password else { return };
         match self.session.unlock(p.doc, &pw) {
             // Carry on with what asked for the password, if its document is still the one shown.
@@ -1588,14 +1774,21 @@ impl PdfCraftApp {
                 p.error = Some("Incorrect password. Try again.".to_string());
                 self.unlock_prompt = Some(p);
             }
-            Err(e) => self.notify_fmt("Couldn't unlock {name}: {e}", &[("name", &p.name), ("e", &e.to_string())]),
+            Err(e) => self.notify_fmt(
+                "Couldn't unlock {name}: {e}",
+                &[("name", &p.name), ("e", &e.to_string())],
+            ),
         }
     }
 
     /// Open a file from a recent list: focus the tab already showing it, else open it (File ▸
     /// Open Recent and the Home view's list share this).
     pub fn open_recent(&mut self, path: &str) {
-        if let Some(i) = self.views.iter().position(|v| self.session.get(v.id).and_then(|d| d.path.as_deref()) == Some(path)) {
+        if let Some(i) = self
+            .views
+            .iter()
+            .position(|v| self.session.get(v.id).and_then(|d| d.path.as_deref()) == Some(path))
+        {
             self.active = Some(i);
         } else {
             #[cfg(not(target_arch = "wasm32"))]
@@ -1604,21 +1797,38 @@ impl PdfCraftApp {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn open_remote_link(&mut self, source: DocId, file: String, destination: pdfcraft_render::RemoteDestination) {
+    pub(crate) fn open_remote_link(
+        &mut self,
+        source: DocId,
+        file: String,
+        destination: pdfcraft_render::RemoteDestination,
+    ) {
         if self.pending_remote_link.is_some() || self.pending_link.is_some() {
             return;
         }
-        let Some(source_doc) = self.session.get(source) else { return };
+        let Some(source_doc) = self.session.get(source) else {
+            return;
+        };
         let source_path = source_doc.path.clone();
-        let path = match pdfcraft_engine::resolve_remote_document_path(source_path.as_deref().map(std::path::Path::new), &file) {
+        let path = match pdfcraft_engine::resolve_remote_document_path(
+            source_path.as_deref().map(std::path::Path::new),
+            &file,
+        ) {
             Ok(path) => path,
             Err(e) => {
-                self.notify_fmt("Couldn't follow linked PDF: {reason}", &[("reason", &e.to_string())]);
+                self.notify_fmt(
+                    "Couldn't follow linked PDF: {reason}",
+                    &[("reason", &e.to_string())],
+                );
                 return;
             }
         };
         if pdfcraft_engine::remote_document_path_is_absolute(&file) {
-            self.pending_remote_link = Some(PendingRemoteLink { source, path, destination });
+            self.pending_remote_link = Some(PendingRemoteLink {
+                source,
+                path,
+                destination,
+            });
             return;
         }
         self.open_resolved_remote_link(path, destination);
@@ -1636,9 +1846,16 @@ impl PdfCraftApp {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn open_resolved_remote_link(&mut self, path: std::path::PathBuf, destination: pdfcraft_render::RemoteDestination) {
+    fn open_resolved_remote_link(
+        &mut self,
+        path: std::path::PathBuf,
+        destination: pdfcraft_render::RemoteDestination,
+    ) {
         let path = path.to_string_lossy().into_owned();
-        let name = std::path::Path::new(&path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.clone());
+        let name = std::path::Path::new(&path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| path.clone());
         let stamp = file_watch::Stamp::at(&path);
         self.startup_superseded = true;
         let result = self.schedule_open(OpenRequest {
@@ -1653,12 +1870,20 @@ impl PdfCraftApp {
             then: None,
         });
         if let Err(error) = result {
-            self.notify_fmt("Couldn't follow linked PDF: {reason}", &[("reason", &error)]);
+            self.notify_fmt(
+                "Couldn't follow linked PDF: {reason}",
+                &[("reason", &error)],
+            );
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub(crate) fn open_remote_link(&mut self, _source: DocId, _file: String, _destination: pdfcraft_render::RemoteDestination) {
+    pub(crate) fn open_remote_link(
+        &mut self,
+        _source: DocId,
+        _file: String,
+        _destination: pdfcraft_render::RemoteDestination,
+    ) {
         self.notify_tr("Local cross-PDF links require the desktop app");
     }
 
@@ -1668,16 +1893,26 @@ impl PdfCraftApp {
     }
 
     fn apply_remote_destination(&mut self, destination: pdfcraft_render::RemoteDestination) {
-        let Some(index) = self.views.len().checked_sub(1) else { return };
-        let Some(doc) = self.session.get(self.views[index].id) else { return };
+        let Some(index) = self.views.len().checked_sub(1) else {
+            return;
+        };
+        let Some(doc) = self.session.get(self.views[index].id) else {
+            return;
+        };
         let warning = match destination {
             pdfcraft_render::RemoteDestination::Default => None,
-            pdfcraft_render::RemoteDestination::Named(_) => Some("The linked PDF opened, but its named destination was not applied."),
-            pdfcraft_render::RemoteDestination::Page { page, view } if page < doc.info.pages.len() => {
+            pdfcraft_render::RemoteDestination::Named(_) => {
+                Some("The linked PDF opened, but its named destination was not applied.")
+            }
+            pdfcraft_render::RemoteDestination::Page { page, view }
+                if page < doc.info.pages.len() =>
+            {
                 self.views[index].go_to_dest(page, view, &doc.info);
                 None
             }
-            pdfcraft_render::RemoteDestination::Page { .. } => Some("The linked PDF opened, but its page destination was out of range."),
+            pdfcraft_render::RemoteDestination::Page { .. } => {
+                Some("The linked PDF opened, but its page destination was out of range.")
+            }
         };
         if let Some(warning) = warning {
             self.notify_tr(warning);
@@ -1686,7 +1921,10 @@ impl PdfCraftApp {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn open_path(&mut self, path: &str) {
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string());
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| path.to_string());
         // Taken before reading: a build that rewrites the file meanwhile still counts as a change.
         let stamp = file_watch::Stamp::at(path);
         // Before the first frame there is no interaction to keep responsive; this also preserves
@@ -1697,14 +1935,20 @@ impl PdfCraftApp {
                 Ok(bytes) => {
                     let before = self.views.len();
                     if let Err(error) = self.open_bytes(&name, Some(path.to_string()), bytes) {
-                        self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+                        self.notify_fmt(
+                            "Couldn't open {name}: {e}",
+                            &[("name", &name), ("e", &error)],
+                        );
                     } else if self.views.len() > before
                         && let Some(doc) = self.views.last().map(|view| view.id)
                     {
                         self.watch.known_as(doc, stamp);
                     }
                 }
-                Err(error) => self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &error.to_string())]),
+                Err(error) => self.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &name), ("e", &error.to_string())],
+                ),
             }
             return;
         }
@@ -1720,14 +1964,22 @@ impl PdfCraftApp {
             recovered: None,
             then: None,
         }) {
-            self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &error)]);
+            self.notify_fmt(
+                "Couldn't open {name}: {e}",
+                &[("name", &name), ("e", &error)],
+            );
         }
     }
 
     /// The File ▸ Open picker: PDFs, and images and text that become PDFs.
     #[cfg(not(target_arch = "wasm32"))]
     fn open_picker() -> rfd::AsyncFileDialog {
-        rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE)
+        rfd::AsyncFileDialog::new()
+            .add_filter("PDF", &["pdf"])
+            .add_filter(
+                tl!("Images and text (converted to PDF)"),
+                &create_ui::CONVERTIBLE,
+            )
     }
 
     pub fn open_dialog(&mut self) {
@@ -1735,7 +1987,12 @@ impl PdfCraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         self.pick(
             pickers::PickFor::Open,
-            rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).add_filter(tl!("Images and text (converted to PDF)"), &create_ui::CONVERTIBLE),
+            rfd::AsyncFileDialog::new()
+                .add_filter("PDF", &["pdf"])
+                .add_filter(
+                    tl!("Images and text (converted to PDF)"),
+                    &create_ui::CONVERTIBLE,
+                ),
             true,
         );
         // Browsers pick files asynchronously; the bytes arrive through `inbox`.
@@ -1786,7 +2043,8 @@ impl PdfCraftApp {
     }
 
     pub fn active_ids(&self) -> Option<(usize, DocId)> {
-        self.active.and_then(|i| self.views.get(i).map(|v| (i, v.id)))
+        self.active
+            .and_then(|i| self.views.get(i).map(|v| (i, v.id)))
     }
 
     /// A dialog or prompt is open over the window: the keyboard is its own, and nothing may act
@@ -1831,12 +2089,16 @@ impl PdfCraftApp {
             }
             Err(e) => {
                 use pdfcraft_engine::links::BlockedLink;
-                let template = if matches!(e, BlockedLink::MailFile | BlockedLink::MailEncodedWord) {
+                let template = if matches!(e, BlockedLink::MailFile | BlockedLink::MailEncodedWord)
+                {
                     "{who} in this document tried to open an address PdfCraft won't open: {e}."
                 } else {
                     "{who} in this document tried to open an address PdfCraft won't open: {e}. Only web (http, https) and email (mailto) links open from documents."
                 };
-                self.notify_fmt(template, &[("who", tl!(origin.noun())), ("e", &e.to_string())]);
+                self.notify_fmt(
+                    template,
+                    &[("who", tl!(origin.noun())), ("e", &e.to_string())],
+                );
             }
         }
     }
@@ -1915,13 +2177,17 @@ impl PdfCraftApp {
             let active = self.theme_preference == ThemePreference::System;
             if self.desktop_theme_enabled && active && self.desktop_theme.is_none() {
                 let ctx = ctx.clone();
-                self.desktop_theme = Some(pdfcraft_platform::desktop_theme::DesktopTheme::start(move || ctx.request_repaint()));
+                self.desktop_theme = Some(pdfcraft_platform::desktop_theme::DesktopTheme::start(
+                    move || ctx.request_repaint(),
+                ));
             }
             if let Some(desktop) = &self.desktop_theme {
                 desktop.set_active(active);
                 // The standard portal supplies Linux desktop appearance. No preference
                 // must clear an earlier answer rather than retaining stale dark chrome.
-                system = desktop.get().map(|appearance| appearance == pdfcraft_platform::desktop_theme::DesktopAppearance::Dark);
+                system = desktop.get().map(|appearance| {
+                    appearance == pdfcraft_platform::desktop_theme::DesktopAppearance::Dark
+                });
             }
         }
         let kind = self.theme_preference.resolve(system, ThemeKind::Light);
@@ -1955,12 +2221,19 @@ impl PdfCraftApp {
             .flat_map(|g| g.sections.iter().flat_map(|s| s.items.iter()))
             .find(|i| i.command == command)
             .map(|i| match i.availability {
-                pdfcraft_engine::catalog::Availability::Planned(m) => crate::i18n::fmt(tl!("ships in milestone {m}"), &[("m", m)]),
-                pdfcraft_engine::catalog::Availability::Provider => tl!("needs an AI provider (off by default)").to_string(),
+                pdfcraft_engine::catalog::Availability::Planned(m) => {
+                    crate::i18n::fmt(tl!("ships in milestone {m}"), &[("m", m)])
+                }
+                pdfcraft_engine::catalog::Availability::Provider => {
+                    tl!("needs an AI provider (off by default)").to_string()
+                }
                 pdfcraft_engine::catalog::Availability::Ready => tl!("is available").to_string(),
             })
             .unwrap_or_else(|| tl!("is not available yet").to_string());
-        self.notify_fmt("`{command}` {when}", &[("command", command), ("when", &when)]);
+        self.notify_fmt(
+            "`{command}` {when}",
+            &[("command", command), ("when", &when)],
+        );
     }
 
     /// Ask for a file to open, then run `spec` on it once it is open (or unlocked). Nothing runs
@@ -1974,7 +2247,11 @@ impl PdfCraftApp {
             let path = path.to_string_lossy().into_owned();
             let before = app.views.len();
             app.open_path(&path);
-            if let Some(prompt) = app.password_prompt.as_mut().filter(|p| p.path.as_deref() == Some(path.as_str())) {
+            if let Some(prompt) = app
+                .password_prompt
+                .as_mut()
+                .filter(|p| p.path.as_deref() == Some(path.as_str()))
+            {
                 // Encrypted: the tool runs once the password is in.
                 prompt.then = Some(command);
             } else if app.views.len() > before && app.active.is_some() {
@@ -2073,7 +2350,12 @@ impl PdfCraftApp {
 
     /// Serialize the user's persistent state (recent files, theme). Local only.
     pub fn persist(&self) -> String {
-        let trusted: Vec<String> = self.session.trusted_certificates().iter().map(pdfcraft_engine::sign::x509::to_pem).collect();
+        let trusted: Vec<String> = self
+            .session
+            .trusted_certificates()
+            .iter()
+            .map(pdfcraft_engine::sign::x509::to_pem)
+            .collect();
         serde_json::json!({
             "docking": self.docking,
             "docking_left_open": self.left_open,
@@ -2139,18 +2421,28 @@ impl PdfCraftApp {
 
     /// Restore state written by `persist`. Unknown or malformed data is ignored.
     pub fn restore(&mut self, json: &str) {
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+            return;
+        };
         if let Some(saved) = v.get("docking")
             && let Ok(workspace) = serde_json::from_value::<docking::Workspace>(saved.clone())
             && workspace.validate().is_ok()
         {
             self.docking = workspace;
-            self.left_open =
-                v.get("docking_left_open").and_then(serde_json::Value::as_bool).unwrap_or(self.docking.layout.contains(&docking::Panel::Tools));
-            self.right = v.get("docking_right").and_then(|value| serde_json::from_value(value.clone()).ok()).flatten();
+            self.left_open = v
+                .get("docking_left_open")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(self.docking.layout.contains(&docking::Panel::Tools));
+            self.right = v
+                .get("docking_right")
+                .and_then(|value| serde_json::from_value(value.clone()).ok())
+                .flatten();
         }
         self.combine_columns = combine_ui::Columns::from_json(&v["combine_columns"]);
-        if let Some(view) = v["combine_view"].as_str().and_then(combine_ui::CombineView::parse) {
+        if let Some(view) = v["combine_view"]
+            .as_str()
+            .and_then(combine_ui::CombineView::parse)
+        {
             self.combine_view = view;
         }
         if let Some(zoom) = v["combine_zoom"].as_f64() {
@@ -2159,7 +2451,10 @@ impl PdfCraftApp {
         if let Ok(r) = serde_json::from_value::<Vec<RecentFile>>(v["recent"].clone()) {
             // Only keep entries whose files still exist.
             #[cfg(not(target_arch = "wasm32"))]
-            let r: Vec<RecentFile> = r.into_iter().filter(|f| std::path::Path::new(&f.path).exists()).collect();
+            let r: Vec<RecentFile> = r
+                .into_iter()
+                .filter(|f| std::path::Path::new(&f.path).exists())
+                .collect();
             self.recent = r;
         }
         if let Some(on) = v["reopen_last_session"].as_bool() {
@@ -2176,16 +2471,23 @@ impl PdfCraftApp {
         if let Ok(preference) = serde_json::from_value::<ThemePreference>(v["theme"].clone()) {
             self.set_theme_preference(preference);
         }
-        if let Ok(speed) = serde_json::from_value::<scroll_speed::ScrollSpeed>(v["scroll_speed"].clone()) {
+        if let Ok(speed) =
+            serde_json::from_value::<scroll_speed::ScrollSpeed>(v["scroll_speed"].clone())
+        {
             self.scroll_speed = speed;
         }
-        if let Ok(effects) = serde_json::from_value::<motion::AnimationEffects>(v["animation_effects"].clone()) {
+        if let Ok(effects) =
+            serde_json::from_value::<motion::AnimationEffects>(v["animation_effects"].clone())
+        {
             self.animation_effects = effects;
         }
         if let Ok(mode) = serde_json::from_value::<Mode>(v["default_mode"].clone()) {
             self.default_mode = mode;
         }
-        if let Some((layout, continuous)) = v["default_layout"].as_str().and_then(canvas::parse_display_token) {
+        if let Some((layout, continuous)) = v["default_layout"]
+            .as_str()
+            .and_then(canvas::parse_display_token)
+        {
             (self.view_defaults.layout, self.view_defaults.continuous) = (layout, continuous);
         }
         if let Ok(units) = serde_json::from_value::<units::Unit>(v["units"].clone()) {
@@ -2200,7 +2502,10 @@ impl PdfCraftApp {
         if let Some(closed) = v["right_panel_closed"].as_bool() {
             self.right_panel_closed = closed;
         }
-        if let Some(defaults) = v["default_zoom"].as_str().and_then(|zoom| self.view_defaults.with_zoom(zoom)) {
+        if let Some(defaults) = v["default_zoom"]
+            .as_str()
+            .and_then(|zoom| self.view_defaults.with_zoom(zoom))
+        {
             self.view_defaults = defaults;
         }
         if let Some(language) = v["language"].as_str().and_then(i18n::normalize_pref) {
@@ -2209,12 +2514,17 @@ impl PdfCraftApp {
         if let Some(on) = v["flatten_fill_sign"].as_bool() {
             self.flatten_fill_sign_on_save = on;
         }
-        if let Some(size) = v["fill_text_size"].as_f64().and_then(fill_sign::valid_text_size) {
+        if let Some(size) = v["fill_text_size"]
+            .as_f64()
+            .and_then(fill_sign::valid_text_size)
+        {
             self.fill_text_size = size;
         }
         // Settings are untrusted: an unreadable value (a colour that isn't three bytes, say)
         // fails to deserialize and keeps Off.
-        if let Ok(colors) = serde_json::from_value::<pdfcraft_render::ReadingColors>(v["reading_colors"].clone()) {
+        if let Ok(colors) =
+            serde_json::from_value::<pdfcraft_render::ReadingColors>(v["reading_colors"].clone())
+        {
             self.reading_colors = colors;
         }
         // Settings are untrusted: a size out of range follows the system instead.
@@ -2228,14 +2538,23 @@ impl PdfCraftApp {
         }
         // An empty or missing name keeps the login-name default; settings are untrusted, so the
         // name is cut to a sane length.
-        if let Some(author) = v["author"].as_str().map(str::trim).filter(|a| !a.is_empty()) {
+        if let Some(author) = v["author"]
+            .as_str()
+            .map(str::trim)
+            .filter(|a| !a.is_empty())
+        {
             self.comment_prefs.author = author.chars().take(MAX_AUTHOR_CHARS).collect();
         }
         // Per-tool comment styles (#340): each field goes through its clamping setter, so a
         // malformed or hostile entry is clamped or ignored rather than trusted.
         if let Some(styles) = v["comment_styles"].as_array() {
             for e in styles {
-                let Some(tool) = e["tool"].as_str().and_then(crate::comments::CommentTool::from_command) else { continue };
+                let Some(tool) = e["tool"]
+                    .as_str()
+                    .and_then(crate::comments::CommentTool::from_command)
+                else {
+                    continue;
+                };
                 if let Some(c) = rgb_triple(&e["color"]) {
                     self.comment_prefs.set_color(tool, c);
                 }
@@ -2260,14 +2579,20 @@ impl PdfCraftApp {
             }
         }
         if let Ok(s) = serde_json::from_value::<Vec<Vec<[f32; 2]>>>(v["signature"].clone())
-            && s.iter().all(|st| st.iter().all(|p| p.iter().all(|x| x.is_finite())))
+            && s.iter()
+                .all(|st| st.iter().all(|p| p.iter().all(|x| x.is_finite())))
         {
             self.signature = Some(fill_sign::SavedSig::Drawn(s));
         }
-        if let Some(t) = v["signature_text"].as_str().filter(|t| !t.trim().is_empty()) {
+        if let Some(t) = v["signature_text"]
+            .as_str()
+            .filter(|t| !t.trim().is_empty())
+        {
             self.signature = Some(fill_sign::SavedSig::Typed(t.to_string()));
         }
-        if let Ok(s @ fill_sign::SavedSig::Image(_)) = serde_json::from_value::<fill_sign::SavedSig>(v["signature_image"].clone()) {
+        if let Ok(s @ fill_sign::SavedSig::Image(_)) =
+            serde_json::from_value::<fill_sign::SavedSig>(v["signature_image"].clone())
+        {
             self.signature = Some(s);
         }
         if let Ok(i) = serde_json::from_value::<fill_sign::SavedSig>(v["initials"].clone()) {
@@ -2284,7 +2609,11 @@ impl PdfCraftApp {
             self.session.set_javascript(on);
         }
         if let Ok(pems) = serde_json::from_value::<Vec<String>>(v["trusted"].clone()) {
-            let certs = pems.iter().filter_map(|p| pdfcraft_engine::sign::x509::load_certificates(p.as_bytes()).ok()).flatten().collect();
+            let certs = pems
+                .iter()
+                .filter_map(|p| pdfcraft_engine::sign::x509::load_certificates(p.as_bytes()).ok())
+                .flatten()
+                .collect();
             self.session.set_trusted_certificates(certs);
         }
     }
@@ -2302,7 +2631,9 @@ impl PdfCraftApp {
         match (key, view) {
             ("language", _) => {
                 let language = i18n::normalize_pref(value).ok_or_else(|| {
-                    let codes: Vec<&str> = std::iter::once(i18n::AUTO).chain(i18n::Lang::all().map(i18n::Lang::code)).collect();
+                    let codes: Vec<&str> = std::iter::once(i18n::AUTO)
+                        .chain(i18n::Lang::all().map(i18n::Lang::code))
+                        .collect();
                     format!("language must be one of {}", codes.join(", "))
                 })?;
                 self.language = language.to_string();
@@ -2317,10 +2648,12 @@ impl PdfCraftApp {
                 self.set_theme_preference(preference);
             }
             ("scroll_speed", _) => {
-                self.scroll_speed = scroll_speed::ScrollSpeed::parse(value).ok_or("scroll_speed must be slow, normal, or fast")?;
+                self.scroll_speed = scroll_speed::ScrollSpeed::parse(value)
+                    .ok_or("scroll_speed must be slow, normal, or fast")?;
             }
             ("animation_effects", _) => {
-                self.animation_effects = motion::AnimationEffects::parse(value).ok_or("animation_effects must be system, on, or off")?;
+                self.animation_effects = motion::AnimationEffects::parse(value)
+                    .ok_or("animation_effects must be system, on, or off")?;
             }
             ("panel", _) => {
                 self.right = match value {
@@ -2345,12 +2678,16 @@ impl PdfCraftApp {
                 self.mode = mode;
             }
             ("default-mode", _) => {
-                self.default_mode = Mode::parse(value).ok_or("default-mode must be all, read, edit, convert or sign")?;
+                self.default_mode = Mode::parse(value)
+                    .ok_or("default-mode must be all, read, edit, convert or sign")?;
             }
             ("date-format", _) => self.session.set_date_format(value)?,
-            ("date-language", _) => self.session.set_date_language(Some(value).filter(|v| *v != "auto"))?,
+            ("date-language", _) => self
+                .session
+                .set_date_language(Some(value).filter(|v| *v != "auto"))?,
             ("tool", _) => {
-                let g = pdfcraft_engine::catalog::group(value).ok_or_else(|| format!("unknown tool {value}"))?;
+                let g = pdfcraft_engine::catalog::group(value)
+                    .ok_or_else(|| format!("unknown tool {value}"))?;
                 self.select_tool(g.id);
             }
             ("left", _) => self.left_open = value != "closed",
@@ -2401,10 +2738,22 @@ impl PdfCraftApp {
                 self.palette_open = true;
                 self.palette_query = value.to_string();
             }
-            ("page", Some(v)) => v.go_to_page(value.parse::<usize>().map_err(|e| e.to_string())?.saturating_sub(1)),
-            ("zoom", Some(v)) => v.set_zoom(value.trim_end_matches('%').parse::<f32>().map_err(|e| e.to_string())? / 100.0),
+            ("page", Some(v)) => v.go_to_page(
+                value
+                    .parse::<usize>()
+                    .map_err(|e| e.to_string())?
+                    .saturating_sub(1),
+            ),
+            ("zoom", Some(v)) => v.set_zoom(
+                value
+                    .trim_end_matches('%')
+                    .parse::<f32>()
+                    .map_err(|e| e.to_string())?
+                    / 100.0,
+            ),
             ("layout", Some(v)) => {
-                let (layout, continuous) = canvas::parse_display_token(value).ok_or("layout must be single, continuous, two-up or two-page")?;
+                let (layout, continuous) = canvas::parse_display_token(value)
+                    .ok_or("layout must be single, continuous, two-up or two-page")?;
                 v.set_display(layout, continuous);
             }
             ("continuous", Some(v)) => match value {
@@ -2424,8 +2773,8 @@ impl PdfCraftApp {
                 v.set_cover(on);
             }
             ("default-layout", _) => {
-                let (layout, continuous) =
-                    canvas::parse_display_token(value).ok_or("default-layout must be single, continuous, two-up or two-page")?;
+                let (layout, continuous) = canvas::parse_display_token(value)
+                    .ok_or("default-layout must be single, continuous, two-up or two-page")?;
                 (self.view_defaults.layout, self.view_defaults.continuous) = (layout, continuous);
             }
             ("default-continuous", _) => {
@@ -2436,8 +2785,9 @@ impl PdfCraftApp {
                 };
             }
             ("default-zoom", _) => {
-                self.view_defaults =
-                    self.view_defaults.with_zoom(value).ok_or("default-zoom must be fit-width, fit-page or a percentage from 8 to 6400")?;
+                self.view_defaults = self.view_defaults.with_zoom(value).ok_or(
+                    "default-zoom must be fit-width, fit-page or a percentage from 8 to 6400",
+                )?;
             }
             ("tools-side", _) => self.docking.set_tools_on_right(match value {
                 "left" => false,
@@ -2447,7 +2797,10 @@ impl PdfCraftApp {
             ("organize", Some(v)) => v.organize = value != "off",
             // `--grid-zoom 150`: the size of the pages in the organize grid, in percent.
             ("grid-zoom", Some(v)) => {
-                let percent = value.trim_end_matches('%').parse::<f32>().map_err(|e| e.to_string())?;
+                let percent = value
+                    .trim_end_matches('%')
+                    .parse::<f32>()
+                    .map_err(|e| e.to_string())?;
                 if !percent.is_finite() || !canvas::GRID_ZOOM_RANGE.contains(&(percent / 100.0)) {
                     return Err("grid-zoom must be between 50 and 300".into());
                 }
@@ -2483,7 +2836,8 @@ impl PdfCraftApp {
             ("fields", Some(v)) => v.highlight_fields = value != "off",
             ("select", Some(v)) => {
                 // The same physical page ranges as the Organize Pages selection field.
-                let pages = crate::page_selection_ui::parse(value, v.page_count()).map_err(|e| e.to_string())?;
+                let pages = crate::page_selection_ui::parse(value, v.page_count())
+                    .map_err(|e| e.to_string())?;
                 v.select_pages(&pages);
             }
             ("notice", Some(v)) => v.notice_dismissed = value == "off",
@@ -2492,7 +2846,8 @@ impl PdfCraftApp {
                 self.quick_tool = match value {
                     "select" => QuickTool::Select,
                     measure if measure.starts_with("measure-") => QuickTool::Measure(
-                        measure_ui::Tool::from_name(measure.trim_start_matches("measure-")).ok_or_else(|| format!("unknown tool {measure}"))?,
+                        measure_ui::Tool::from_name(measure.trim_start_matches("measure-"))
+                            .ok_or_else(|| format!("unknown tool {measure}"))?,
                     ),
                     "hand" => QuickTool::Hand,
                     "crop" => QuickTool::Crop,
@@ -2507,26 +2862,38 @@ impl PdfCraftApp {
                     "column-select" => QuickTool::ColumnSelect,
                     "certify" => QuickTool::SignArea { certify: true },
                     custom if custom.starts_with("custom-stamp-") => {
-                        let i: usize = custom[13..].parse().map_err(|_| format!("bad stamp {custom}"))?;
+                        let i: usize = custom[13..]
+                            .parse()
+                            .map_err(|_| format!("bad stamp {custom}"))?;
                         if i >= self.custom_stamps.len() {
-                            return Err(format!("there are {} custom stamps", self.custom_stamps.len()));
+                            return Err(format!(
+                                "there are {} custom stamps",
+                                self.custom_stamps.len()
+                            ));
                         }
                         QuickTool::CustomStamp(i)
                     }
                     stamp if stamp.starts_with("stamp-") => QuickTool::Stamp(
                         pdfcraft_engine::StampKind::ALL
                             .into_iter()
-                            .find(|k| k.name().trim_start_matches("PC").eq_ignore_ascii_case(&stamp[6..]))
+                            .find(|k| {
+                                k.name()
+                                    .trim_start_matches("PC")
+                                    .eq_ignore_ascii_case(&stamp[6..])
+                            })
                             .ok_or_else(|| format!("unknown stamp {stamp}"))?,
                     ),
                     field if field.starts_with("field-") => QuickTool::Field(
-                        prepare::FieldTool::from_command(&format!("form.add.{}", &field[6..])).ok_or_else(|| format!("unknown tool {field}"))?,
+                        prepare::FieldTool::from_command(&format!("form.add.{}", &field[6..]))
+                            .ok_or_else(|| format!("unknown tool {field}"))?,
                     ),
                     fill if fill.starts_with("fill-") => QuickTool::Fill(
-                        fill_sign::FillTool::from_command(&format!("sign.fill.{}", &fill[5..])).ok_or_else(|| format!("unknown tool {fill}"))?,
+                        fill_sign::FillTool::from_command(&format!("sign.fill.{}", &fill[5..]))
+                            .ok_or_else(|| format!("unknown tool {fill}"))?,
                     ),
                     other => {
-                        let t = comments::CommentTool::from_command(&format!("comment.{other}")).ok_or_else(|| format!("unknown tool {other}"))?;
+                        let t = comments::CommentTool::from_command(&format!("comment.{other}"))
+                            .ok_or_else(|| format!("unknown tool {other}"))?;
                         self.comment_prefs.group_tool[t.group()] = t;
                         QuickTool::Comment(t)
                     }
@@ -2551,18 +2918,24 @@ impl PdfCraftApp {
             ("comment", Some(v)) => {
                 // `--comment 2:4` selects the 4th annotation of page 2 (1-based, as comment_list reports).
                 let (p, i) = value.split_once(':').ok_or("comment: PAGE:INDEX")?;
-                let (p, i): (usize, usize) =
-                    (p.trim().parse().map_err(|_| "comment: PAGE:INDEX")?, i.trim().parse().map_err(|_| "comment: PAGE:INDEX")?);
+                let (p, i): (usize, usize) = (
+                    p.trim().parse().map_err(|_| "comment: PAGE:INDEX")?,
+                    i.trim().parse().map_err(|_| "comment: PAGE:INDEX")?,
+                );
                 v.comments.selected = Some((p.saturating_sub(1), i.saturating_sub(1)));
                 v.comments.reveal = true;
             }
             // `--combine-view list`: Combine files as thumbnails (grid) or as the table (list).
             ("combine-view", _) => {
-                self.combine_view = combine_ui::CombineView::parse(value).ok_or("combine-view must be grid or list")?;
+                self.combine_view = combine_ui::CombineView::parse(value)
+                    .ok_or("combine-view must be grid or list")?;
             }
             // `--combine-zoom 150`: the size of the cards in the Combine grid, in percent.
             ("combine-zoom", _) => {
-                let percent = value.trim_end_matches('%').parse::<f32>().map_err(|e| e.to_string())?;
+                let percent = value
+                    .trim_end_matches('%')
+                    .parse::<f32>()
+                    .map_err(|e| e.to_string())?;
                 if !percent.is_finite() || !combine_grid::ZOOM_RANGE.contains(&(percent / 100.0)) {
                     return Err("combine-zoom must be between 60 and 200".into());
                 }
@@ -2622,7 +2995,10 @@ impl PdfCraftApp {
         }
         self.registry_shortcuts(ctx);
         // (Esc closes a Combine file shown large first.)
-        if self.full_screen && self.combine_tab.preview.is_none() && ctx.input(|i| i.key_pressed(Key::Escape)) {
+        if self.full_screen
+            && self.combine_tab.preview.is_none()
+            && ctx.input(|i| i.key_pressed(Key::Escape))
+        {
             self.set_full_screen(ctx, false);
         }
         if let Some(i) = self.active {
@@ -2631,7 +3007,12 @@ impl PdfCraftApp {
             if self.dialog.is_none()
                 && !self.palette_open
                 && !ctx.egui_wants_keyboard_input()
-                && ctx.input_mut(|input| input.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, Key::A)))
+                && ctx.input_mut(|input| {
+                    input.consume_shortcut(&egui::KeyboardShortcut::new(
+                        egui::Modifiers::COMMAND,
+                        Key::A,
+                    ))
+                })
             {
                 if self.is_preparing() {
                     if let Some(doc) = self.session.get(self.views[i].id) {
@@ -2643,7 +3024,10 @@ impl PdfCraftApp {
             }
             self.tool_keys(i, ctx);
             if self.quick_tool == QuickTool::EditText
-                && let Some(doc) = self.session.get(self.views[i].id).filter(|d| d.allows_modification())
+                && let Some(doc) = self
+                    .session
+                    .get(self.views[i].id)
+                    .filter(|d| d.allows_modification())
             {
                 object_ui::nudge_keys(ctx, &mut self.views[i], doc);
             }
@@ -2665,7 +3049,11 @@ impl PdfCraftApp {
     /// not. Reading aloud and accessibility tools don't ask (assistive technology may read
     /// anything, §7.6.4.2).
     pub(crate) fn may_copy(&mut self, id: DocId) -> bool {
-        if self.session.get(id).is_none_or(pdfcraft_engine::Document::allows_copying) {
+        if self
+            .session
+            .get(id)
+            .is_none_or(pdfcraft_engine::Document::allows_copying)
+        {
             return true;
         }
         self.notify(copy_refused().to_string());
@@ -2679,7 +3067,13 @@ impl PdfCraftApp {
         if !copy || ctx.egui_wants_keyboard_input() {
             return;
         }
-        let Some((id, text)) = self.views.get(i).and_then(|v| Some((v.id, v.selected_text()?))) else { return };
+        let Some((id, text)) = self
+            .views
+            .get(i)
+            .and_then(|v| Some((v.id, v.selected_text()?)))
+        else {
+            return;
+        };
         if self.may_copy(id) {
             ctx.copy_text(text);
         }
@@ -2690,8 +3084,12 @@ impl PdfCraftApp {
     /// palette has the keyboard.
     fn tool_keys(&mut self, i: usize, ctx: &egui::Context) {
         use egui::Key;
-        let free = self.dialog.is_none() && !self.palette_open && !ctx.egui_wants_keyboard_input() && self.views[i].forms.focus.is_none();
-        let (plain, space) = ctx.input(|input| (input.modifiers.is_none(), input.key_down(Key::Space)));
+        let free = self.dialog.is_none()
+            && !self.palette_open
+            && !ctx.egui_wants_keyboard_input()
+            && self.views[i].forms.focus.is_none();
+        let (plain, space) =
+            ctx.input(|input| (input.modifiers.is_none(), input.key_down(Key::Space)));
         if let Some(previous) = self.space_hand
             && !space
         {
@@ -2769,9 +3167,16 @@ impl eframe::App for PdfCraftApp {
         }
         self.sync_theme(ctx);
         let native = ctx.native_pixels_per_point().unwrap_or(1.0);
-        ui_scale::sync(ctx, ui_scale::zoom(self.ui_scale, self.system_text_scale, native), &mut self.ui_scale_applied);
+        ui_scale::sync(
+            ctx,
+            ui_scale::zoom(self.ui_scale, self.system_text_scale, native),
+            &mut self.ui_scale_applied,
+        );
         // Remember user work even if its tab is subsequently closed or Home is selected.
-        self.startup_superseded |= !self.views.is_empty() || self.combine_showing() || self.dialog.is_some() || self.password_prompt.is_some();
+        self.startup_superseded |= !self.views.is_empty()
+            || self.combine_showing()
+            || self.dialog.is_some()
+            || self.password_prompt.is_some();
         // Also done in `raw_input_hook`, before input; here for hosts that don't call the hook.
         self.scroll_speed.set_line_speed(ctx);
         // Before anything reads this frame's wheel input or draws, and with the line speed just set.
@@ -2798,10 +3203,17 @@ impl eframe::App for PdfCraftApp {
                 self.open_dropped(f, ctx);
             }
         }
-        let arrived: Vec<(String, Vec<u8>)> = self.inbox.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
+        let arrived: Vec<(String, Vec<u8>)> = self
+            .inbox
+            .lock()
+            .map(|mut q| std::mem::take(&mut *q))
+            .unwrap_or_default();
         for (name, bytes) in arrived {
             if let Err(e) = self.open_bytes(&name, None, bytes) {
-                self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                self.notify_fmt(
+                    "Couldn't open {name}: {e}",
+                    &[("name", &name), ("e", &e.to_string())],
+                );
             }
         }
         // Don't replace a pending prompt or import. A startup file may need its own password
@@ -2813,7 +3225,11 @@ impl eframe::App for PdfCraftApp {
             && self.pending_link.is_none()
             && self.pending_remote_link.is_none()
         {
-            let startup = self.startup_inbox.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
+            let startup = self
+                .startup_inbox
+                .lock()
+                .map(|mut q| std::mem::take(&mut *q))
+                .unwrap_or_default();
             for (name, bytes) in startup {
                 let activate = !self.startup_superseded;
                 if let Err(e) = self.open_bytes_with_focus(&name, None, bytes, activate) {
@@ -2821,11 +3237,19 @@ impl eframe::App for PdfCraftApp {
                 }
             }
         }
-        let failed: Vec<(String, String)> = self.failed_inbox.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
+        let failed: Vec<(String, String)> = self
+            .failed_inbox
+            .lock()
+            .map(|mut q| std::mem::take(&mut *q))
+            .unwrap_or_default();
         for (name, e) in failed {
             self.notify_fmt("Couldn't open {name}: {e}", &[("name", &name), ("e", &e)]);
         }
-        let os_events = self.os_events.as_mut().map(|poll| poll()).unwrap_or_default();
+        let os_events = self
+            .os_events
+            .as_mut()
+            .map(|poll| poll())
+            .unwrap_or_default();
         for e in os_events {
             match e {
                 #[cfg(not(target_arch = "wasm32"))]
@@ -2865,7 +3289,8 @@ impl eframe::App for PdfCraftApp {
         // opening a modal/palette, or returning to a window that lost focus.
         let blocked = self.modal_open() || self.palette_open || !ctx.input(|i| i.focused);
         for (index, view) in self.views.iter_mut().enumerate() {
-            view.objects.set_input_blocked(blocked || self.active != Some(index));
+            view.objects
+                .set_input_blocked(blocked || self.active != Some(index));
             if blocked || self.active != Some(index) {
                 view.auto_scroll.cancel();
             }
@@ -2905,8 +3330,14 @@ impl eframe::App for PdfCraftApp {
             .active
             .and_then(|i| self.session.get(self.views[i].id))
             .map(|d| d.display_name())
-            .or_else(|| self.combine_showing().then(|| tl!("Combine files").to_owned()))
-            .map_or_else(|| "PdfCraft".to_owned(), |name| format!("{name} — PdfCraft"));
+            .or_else(|| {
+                self.combine_showing()
+                    .then(|| tl!("Combine files").to_owned())
+            })
+            .map_or_else(
+                || "PdfCraft".to_owned(),
+                |name| format!("{name} — PdfCraft"),
+            );
         if title != self.window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
             self.window_title = title;
@@ -2914,14 +3345,17 @@ impl eframe::App for PdfCraftApp {
         if self.full_screen && self.active.is_some() {
             // Full screen: the page, nothing else (Esc or ⌘L to leave).
             let t = theme::Tokens::get(&ctx);
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(if t.dark() { t.pasteboard } else { egui::Color32::from_gray(32) })).show(
-                ui,
-                |ui| {
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(if t.dark() {
+                    t.pasteboard
+                } else {
+                    egui::Color32::from_gray(32)
+                }))
+                .show(ui, |ui| {
                     if let Some(i) = self.active {
                         canvas::document_area(self, i, ui);
                     }
-                },
-            );
+                });
             dialogs::show(self, &ctx);
             // Notices too: a refused field value or a failed save must be seen in full screen.
             self.show_progress(&ctx);
@@ -2950,17 +3384,19 @@ impl eframe::App for PdfCraftApp {
             }
         }
         let t = theme::Tokens::get(&ctx);
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| {
-            if self.mode == Mode::Read {
-                match self.active {
-                    None if self.combine_showing() => combine_ui::page(self, ui),
-                    None => home::show(self, ui),
-                    Some(index) => canvas::document_area(self, index, ui),
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.pasteboard))
+            .show(ui, |ui| {
+                if self.mode == Mode::Read {
+                    match self.active {
+                        None if self.combine_showing() => combine_ui::page(self, ui),
+                        None => home::show(self, ui),
+                        Some(index) => canvas::document_area(self, index, ui),
+                    }
+                } else {
+                    docking::show(self, ui);
                 }
-            } else {
-                docking::show(self, ui);
-            }
-        });
+            });
         self.process_pending_edits();
         palette::show(self, &ctx);
         dialogs::show(self, &ctx);

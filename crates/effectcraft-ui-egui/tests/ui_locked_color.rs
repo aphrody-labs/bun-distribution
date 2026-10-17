@@ -26,7 +26,11 @@ impl TestRenderer for Capture {
         }
     }
 
-    fn render(&mut self, _: &egui::Context, _: &egui::FullOutput) -> Result<image::RgbaImage, String> {
+    fn render(
+        &mut self,
+        _: &egui::Context,
+        _: &egui::FullOutput,
+    ) -> Result<image::RgbaImage, String> {
         Err("Texture inspection only".into())
     }
 }
@@ -38,7 +42,10 @@ fn invoke(h: &mut Harness<'_, EffectcraftApp>, command: &str, params: Value) {
 }
 
 fn locked_center(h: &Harness<'_, EffectcraftApp>, images: &Images) -> [u8; 4] {
-    let (_, texture) = h.ctx.data(|d| d.get_temp::<(u64, egui::TextureHandle)>(egui::Id::new("viewer-locked"))).unwrap();
+    let (_, texture) = h
+        .ctx
+        .data(|d| d.get_temp::<(u64, egui::TextureHandle)>(egui::Id::new("viewer-locked")))
+        .unwrap();
     let images = images.borrow();
     let image = images.get(&texture.id()).unwrap();
     image.pixels[(image.size[1] / 2) * image.size[0] + image.size[0] / 2].to_array()
@@ -57,24 +64,52 @@ fn expected_center(h: &mut Harness<'_, EffectcraftApp>) -> [u8; 4] {
 #[test]
 fn locked_viewer_follows_display_profile_and_simulation() {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Color", "width": 64, "height": 64, "duration": 1})).unwrap();
-    s.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080", "width": 64, "height": 64})).unwrap();
-    s.execute("file.projectSettings", json!({"workingSpace": "srgb", "outputSpace": "rec2020", "renderer": "software"})).unwrap();
-    s.execute("prefs.set", json!({"key": "previews.displayProfile", "value": "srgb"})).unwrap();
-    s.execute("view.displayColorManagement", json!({"value": true})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Color", "width": 64, "height": 64, "duration": 1}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"name": "Plate", "color": "#406080", "width": 64, "height": 64}),
+    )
+    .unwrap();
+    s.execute(
+        "file.projectSettings",
+        json!({"workingSpace": "srgb", "outputSpace": "rec2020", "renderer": "software"}),
+    )
+    .unwrap();
+    s.execute(
+        "prefs.set",
+        json!({"key": "previews.displayProfile", "value": "srgb"}),
+    )
+    .unwrap();
+    s.execute("view.displayColorManagement", json!({"value": true}))
+        .unwrap();
     let images = Images::default();
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).renderer(Capture(images.clone())).build_eframe(|_| EffectcraftApp::new(s));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .renderer(Capture(images.clone()))
+        .build_eframe(|_| EffectcraftApp::new(s));
     h.run_steps(3);
     invoke(&mut h, "view.splitLockedViewer", json!({}));
     let first = expected_center(&mut h);
     assert_eq!(locked_center(&h, &images), first);
 
-    invoke(&mut h, "prefs.set", json!({"key": "previews.displayProfile", "value": "p3"}));
+    invoke(
+        &mut h,
+        "prefs.set",
+        json!({"key": "previews.displayProfile", "value": "p3"}),
+    );
     let after_display = expected_center(&mut h);
     assert_ne!(after_display, first);
     assert_eq!(locked_center(&h, &images), after_display);
 
-    invoke(&mut h, "view.simulateOutput", json!({"profile": "rec709", "preserveRgb": true}));
+    invoke(
+        &mut h,
+        "view.simulateOutput",
+        json!({"profile": "rec709", "preserveRgb": true}),
+    );
     let after_sim = expected_center(&mut h);
     assert_ne!(after_sim, after_display);
     assert_eq!(locked_center(&h, &images), after_sim);

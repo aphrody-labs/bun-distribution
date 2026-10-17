@@ -14,11 +14,15 @@ pub struct NoopReranker {
 
 impl NoopReranker {
     pub fn new() -> Self {
-        Self { model_id: "noop".to_string() }
+        Self {
+            model_id: "noop".to_string(),
+        }
     }
 
     pub fn with_model_id(model_id: impl Into<String>) -> Self {
-        Self { model_id: model_id.into() }
+        Self {
+            model_id: model_id.into(),
+        }
     }
 }
 

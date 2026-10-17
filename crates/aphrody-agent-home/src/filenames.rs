@@ -132,7 +132,9 @@ impl BootstrapFile {
     /// Match a basename (case-insensitive) back to a [`BootstrapFile`].
     #[must_use]
     pub fn from_basename(name: &str) -> Option<Self> {
-        BootstrapFile::ALL.into_iter().find(|f| f.filename().eq_ignore_ascii_case(name))
+        BootstrapFile::ALL
+            .into_iter()
+            .find(|f| f.filename().eq_ignore_ascii_case(name))
     }
 }
 
@@ -152,8 +154,14 @@ mod tests {
 
     #[test]
     fn from_basename_is_case_insensitive() {
-        assert_eq!(BootstrapFile::from_basename("soul.md"), Some(BootstrapFile::Soul));
-        assert_eq!(BootstrapFile::from_basename("AGENTS.MD"), Some(BootstrapFile::Agents));
+        assert_eq!(
+            BootstrapFile::from_basename("soul.md"),
+            Some(BootstrapFile::Soul)
+        );
+        assert_eq!(
+            BootstrapFile::from_basename("AGENTS.MD"),
+            Some(BootstrapFile::Agents)
+        );
         assert_eq!(BootstrapFile::from_basename("nope.md"), None);
     }
 

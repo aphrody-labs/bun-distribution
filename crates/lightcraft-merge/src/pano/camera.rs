@@ -42,7 +42,12 @@ impl Camera {
     #[inline]
     pub fn project(&self, d: [f64; 3]) -> Option<(f64, f64)> {
         let p = linalg::apply3(&self.r, d);
-        (p[2] > 1e-9).then(|| (self.f * p[0] / p[2] + self.cx, self.f * p[1] / p[2] + self.cy))
+        (p[2] > 1e-9).then(|| {
+            (
+                self.f * p[0] / p[2] + self.cx,
+                self.f * p[1] / p[2] + self.cy,
+            )
+        })
     }
 }
 
@@ -61,7 +66,9 @@ pub struct PairMatch {
 /// Match every pair of images. `feats[k]` are in work coordinates scaled by `scales[k]`.
 pub fn match_pairs(feats: &[Features], scales: &[f64]) -> Vec<PairMatch> {
     let n = feats.len();
-    let pairs: Vec<(usize, usize)> = (0..n).flat_map(|i| (i + 1..n).map(move |j| (i, j))).collect();
+    let pairs: Vec<(usize, usize)> = (0..n)
+        .flat_map(|i| (i + 1..n).map(move |j| (i, j)))
+        .collect();
     let mut out: Vec<PairMatch> = pairs
         .par_iter()
         .filter_map(|&(i, j)| {
@@ -69,20 +76,53 @@ pub fn match_pairs(feats: &[Features], scales: &[f64]) -> Vec<PairMatch> {
             if m.len() < 12 {
                 return None;
             }
-            let a: Vec<Point> = m.iter().map(|(p, _)| Point::new(feats[i].points[*p].x as f64, feats[i].points[*p].y as f64)).collect();
-            let b: Vec<Point> = m.iter().map(|(_, q)| Point::new(feats[j].points[*q].x as f64, feats[j].points[*q].y as f64)).collect();
+            let a: Vec<Point> = m
+                .iter()
+                .map(|(p, _)| {
+                    Point::new(feats[i].points[*p].x as f64, feats[i].points[*p].y as f64)
+                })
+                .collect();
+            let b: Vec<Point> = m
+                .iter()
+                .map(|(_, q)| {
+                    Point::new(feats[j].points[*q].x as f64, feats[j].points[*q].y as f64)
+                })
+                .collect();
             let fit = ransac::ransac(Model::Homography, &a, &b, 3.0, 12, (i * 1000 + j) as u64)?;
             // Brown & Lowe's probabilistic verification
             if (fit.inliers.len() as f64) <= 8.0 + 0.3 * m.len() as f64 {
                 return None;
             }
             let (si, sj) = (scales[i], scales[j]);
-            let pts = fit.inliers.iter().map(|&k| (Point::new(a[k].x / si, a[k].y / si), Point::new(b[k].x / sj, b[k].y / sj))).collect();
-            let levels = fit.inliers.iter().map(|&k| feats[i].points[m[k].0].level.max(feats[j].points[m[k].1].level)).collect();
+            let pts = fit
+                .inliers
+                .iter()
+                .map(|&k| {
+                    (
+                        Point::new(a[k].x / si, a[k].y / si),
+                        Point::new(b[k].x / sj, b[k].y / sj),
+                    )
+                })
+                .collect();
+            let levels = fit
+                .inliers
+                .iter()
+                .map(|&k| {
+                    feats[i].points[m[k].0]
+                        .level
+                        .max(feats[j].points[m[k].1].level)
+                })
+                .collect();
             // conjugate to full resolution: H_full = S_j⁻¹ · H · S_i
             let s_i = Homography([si, 0.0, 0.0, 0.0, si, 0.0, 0.0, 0.0, 1.0]);
             let s_j_inv = Homography([1.0 / sj, 0.0, 0.0, 0.0, 1.0 / sj, 0.0, 0.0, 0.0, 1.0]);
-            Some(PairMatch { i, j, h: s_j_inv.mul(&fit.h).mul(&s_i), pts, levels })
+            Some(PairMatch {
+                i,
+                j,
+                h: s_j_inv.mul(&fit.h).mul(&s_i),
+                pts,
+                levels,
+            })
         })
         .collect();
     out.sort_by_key(|p| (p.i, p.j));
@@ -116,7 +156,10 @@ pub fn largest_component(n: usize, pairs: &[PairMatch]) -> Vec<usize> {
         let r = find(&mut parent, i);
         groups.entry(r).or_default().push(i);
     }
-    groups.into_values().max_by_key(|g| g.len()).unwrap_or_default()
+    groups
+        .into_values()
+        .max_by_key(|g| g.len())
+        .unwrap_or_default()
 }
 
 /// Focal length candidates (f₀, f₁) from a homography between centred image coordinates.
@@ -141,8 +184,18 @@ pub fn focals_from_homography(h: &Homography) -> (Option<f64>, Option<f64>) {
         Some(v.sqrt())
     };
     // rows of K₁⁻¹HK₀ orthogonal / equal length → f₀; columns → f₁
-    let f0 = pick(-h02 * h12, h00 * h10 + h01 * h11, h12 * h12 - h02 * h02, h00 * h00 + h01 * h01 - h10 * h10 - h11 * h11);
-    let f1 = pick(-(h00 * h01 + h10 * h11), h20 * h21, h01 * h01 + h11 * h11 - h00 * h00 - h10 * h10, h20 * h20 - h21 * h21);
+    let f0 = pick(
+        -h02 * h12,
+        h00 * h10 + h01 * h11,
+        h12 * h12 - h02 * h02,
+        h00 * h00 + h01 * h01 - h10 * h10 - h11 * h11,
+    );
+    let f1 = pick(
+        -(h00 * h01 + h10 * h11),
+        h20 * h21,
+        h01 * h01 + h11 * h11 - h00 * h00 - h10 * h10,
+        h20 * h20 - h21 * h21,
+    );
     (f0, f1)
 }
 
@@ -154,14 +207,35 @@ fn centred(h: &Homography, ci: (f64, f64), cj: (f64, f64)) -> Homography {
 
 /// Initial cameras for `ids` (a connected set): shared focal `f0`, rotations chained along a
 /// maximum spanning tree rooted at the best-connected image.
-pub fn initial_cameras(ids: &[usize], sizes: &[(usize, usize)], pairs: &[PairMatch], f0: f64) -> Vec<Option<Camera>> {
+pub fn initial_cameras(
+    ids: &[usize],
+    sizes: &[(usize, usize)],
+    pairs: &[PairMatch],
+    f0: f64,
+) -> Vec<Option<Camera>> {
     let n = sizes.len();
     let mut cams: Vec<Option<Camera>> = vec![None; n];
-    let deg = |k: usize| pairs.iter().filter(|p| p.i == k || p.j == k).map(|p| p.pts.len()).sum::<usize>();
-    let Some(&root) = ids.iter().max_by_key(|&&k| (deg(k), usize::MAX - k)) else { return cams };
+    let deg = |k: usize| {
+        pairs
+            .iter()
+            .filter(|p| p.i == k || p.j == k)
+            .map(|p| p.pts.len())
+            .sum::<usize>()
+    };
+    let Some(&root) = ids.iter().max_by_key(|&&k| (deg(k), usize::MAX - k)) else {
+        return cams;
+    };
     let c = |k: usize| (sizes[k].0 as f64 / 2.0, sizes[k].1 as f64 / 2.0);
-    cams[root] = Some(Camera { f: f0, r: linalg::I3, cx: c(root).0, cy: c(root).1 });
-    let mut edges: Vec<&PairMatch> = pairs.iter().filter(|p| ids.contains(&p.i) && ids.contains(&p.j)).collect();
+    cams[root] = Some(Camera {
+        f: f0,
+        r: linalg::I3,
+        cx: c(root).0,
+        cy: c(root).1,
+    });
+    let mut edges: Vec<&PairMatch> = pairs
+        .iter()
+        .filter(|p| ids.contains(&p.i) && ids.contains(&p.j))
+        .collect();
     edges.sort_by_key(|p| std::cmp::Reverse(p.pts.len()));
     loop {
         let mut grew = false;
@@ -182,7 +256,11 @@ pub fn initial_cameras(ids: &[usize], sizes: &[(usize, usize)], pairs: &[PairMat
             let hc = centred(&h, c(known), c(new));
             let k = [[f0, 0.0, 0.0], [0.0, f0, 0.0], [0.0, 0.0, 1.0]];
             let kinv = [[1.0 / f0, 0.0, 0.0], [0.0, 1.0 / f0, 0.0], [0.0, 0.0, 1.0]];
-            let hm = [[hc.0[0], hc.0[1], hc.0[2]], [hc.0[3], hc.0[4], hc.0[5]], [hc.0[6], hc.0[7], hc.0[8]]];
+            let hm = [
+                [hc.0[0], hc.0[1], hc.0[2]],
+                [hc.0[3], hc.0[4], hc.0[5]],
+                [hc.0[6], hc.0[7], hc.0[8]],
+            ];
             let rel = linalg::mul3(&linalg::mul3(&kinv, &hm), &k);
             let d = linalg::det3(&rel);
             if !d.is_finite() || d.abs() < 1e-12 {
@@ -191,8 +269,15 @@ pub fn initial_cameras(ids: &[usize], sizes: &[(usize, usize)], pairs: &[PairMat
             let s = d.signum() * d.abs().cbrt();
             let rel = rel.map(|r| r.map(|v| v / s));
             let rel = linalg::orthonormalize(&rel);
-            let Some(rk) = cams[known].map(|c| c.r) else { continue };
-            cams[new] = Some(Camera { f: f0, r: linalg::mul3(&rel, &rk), cx: c(new).0, cy: c(new).1 });
+            let Some(rk) = cams[known].map(|c| c.r) else {
+                continue;
+            };
+            cams[new] = Some(Camera {
+                f: f0,
+                r: linalg::mul3(&rel, &rk),
+                cx: c(new).0,
+                cy: c(new).1,
+            });
             grew = true;
         }
         if !grew {
@@ -243,7 +328,12 @@ fn perturb(c: &Camera, k: usize, eps: f64) -> Camera {
 
 /// Levenberg–Marquardt over (rotation increment, focal) of every camera except the anchor's
 /// rotation (gauge freedom). At most `max_per_pair` matches per pair are used.
-pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize, max_per_pair: usize) -> Adjusted {
+pub fn bundle_adjust(
+    cams: &[Option<Camera>],
+    pairs: &[PairMatch],
+    anchor: usize,
+    max_per_pair: usize,
+) -> Adjusted {
     let n = cams.len();
     let idx: Vec<Option<usize>> = {
         let mut k = 0;
@@ -264,12 +354,23 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
             continue;
         }
         // prefer the precisely located (fine-level) matches when there are enough of them
-        let fine: Vec<usize> = (0..p.pts.len()).filter(|&k| p.levels.get(k).is_none_or(|l| *l <= 1)).collect();
-        let use_idx: Vec<usize> = if fine.len() >= 16 { fine } else { (0..p.pts.len()).collect() };
+        let fine: Vec<usize> = (0..p.pts.len())
+            .filter(|&k| p.levels.get(k).is_none_or(|l| *l <= 1))
+            .collect();
+        let use_idx: Vec<usize> = if fine.len() >= 16 {
+            fine
+        } else {
+            (0..p.pts.len()).collect()
+        };
         let step = (use_idx.len() / max_per_pair.max(1)).max(1);
         for &k in use_idx.iter().step_by(step) {
             let (a, b) = p.pts[k];
-            obs.push(Obs { i: p.i, j: p.j, a, b });
+            obs.push(Obs {
+                i: p.i,
+                j: p.j,
+                a,
+                b,
+            });
         }
     }
     let mut cur: Vec<Option<Camera>> = cams.to_vec();
@@ -278,12 +379,18 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
         let (mut c, mut sq) = (0.0, 0.0);
         for o in &obs {
             // every observation joins two posed cameras (see `obs` above)
-            let (Some(ci), Some(cj)) = (cs[o.i].as_ref(), cs[o.j].as_ref()) else { continue };
+            let (Some(ci), Some(cj)) = (cs[o.i].as_ref(), cs[o.j].as_ref()) else {
+                continue;
+            };
             let r = residual(ci, cj, o.a, o.b);
             for v in r {
                 let a = v.abs();
                 sq += v * v;
-                c += if a <= sigma { 0.5 * v * v } else { sigma * (a - 0.5 * sigma) };
+                c += if a <= sigma {
+                    0.5 * v * v
+                } else {
+                    sigma * (a - 0.5 * sigma)
+                };
             }
         }
         (c, (sq / (obs.len().max(1) * 4) as f64).sqrt())
@@ -300,7 +407,9 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
             .fold(
                 || (vec![0.0f64; np * np], vec![0.0f64; np]),
                 |(mut jtj, mut jtr), o| {
-                    let (Some(ci), Some(cj)) = (cur[o.i].as_ref(), cur[o.j].as_ref()) else { return (jtj, jtr) };
+                    let (Some(ci), Some(cj)) = (cur[o.i].as_ref(), cur[o.j].as_ref()) else {
+                        return (jtj, jtr);
+                    };
                     let r = residual(ci, cj, o.a, o.b);
                     let mut cols: Vec<(usize, [f64; 4])> = Vec::with_capacity(8);
                     for (cam, which) in [(o.i, 0), (o.j, 1)] {
@@ -313,7 +422,11 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
                             let c = if which == 0 { ci } else { cj };
                             let eps = if k < 3 { 1e-6 } else { 1e-4 * c.f };
                             let pc = perturb(c, k, eps);
-                            let rr = if which == 0 { residual(&pc, cj, o.a, o.b) } else { residual(ci, &pc, o.a, o.b) };
+                            let rr = if which == 0 {
+                                residual(&pc, cj, o.a, o.b)
+                            } else {
+                                residual(ci, &pc, o.a, o.b)
+                            };
                             let mut d = [0.0; 4];
                             for t in 0..4 {
                                 d[t] = (rr[t] - r[t]) / eps;
@@ -359,10 +472,15 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
             };
             let mut trial = cur.clone();
             for (cam, c) in trial.iter_mut().enumerate() {
-                let (Some(c), Some(b)) = (c.as_mut(), idx[cam]) else { continue };
+                let (Some(c), Some(b)) = (c.as_mut(), idx[cam]) else {
+                    continue;
+                };
                 let b = 4 * b;
                 if cam != anchor {
-                    c.r = linalg::orthonormalize(&linalg::mul3(&linalg::rodrigues([delta[b], delta[b + 1], delta[b + 2]]), &c.r));
+                    c.r = linalg::orthonormalize(&linalg::mul3(
+                        &linalg::rodrigues([delta[b], delta[b + 1], delta[b + 2]]),
+                        &c.r,
+                    ));
                 }
                 c.f = (c.f + delta[b + 3]).max(1.0);
             }
@@ -382,7 +500,12 @@ pub fn bundle_adjust(cams: &[Option<Camera>], pairs: &[PairMatch], anchor: usize
         }
     }
     let (_, rms) = cost(&cur);
-    Adjusted { cameras: cur, rms_before, rms, iterations }
+    Adjusted {
+        cameras: cur,
+        rms_before,
+        rms,
+        iterations,
+    }
 }
 
 /// Rotate the world so that it is level: "down" (+y) is the direction most perpendicular to every
@@ -441,7 +564,9 @@ mod tests {
         let k = [[f, 0.0, 0.0], [0.0, f, 0.0], [0.0, 0.0, 1.0]];
         let kinv = [[1.0 / f, 0.0, 0.0], [0.0, 1.0 / f, 0.0], [0.0, 0.0, 1.0]];
         let h = linalg::mul3(&linalg::mul3(&k, &r), &kinv);
-        let hh = Homography([h[0][0], h[0][1], h[0][2], h[1][0], h[1][1], h[1][2], h[2][0], h[2][1], h[2][2]]);
+        let hh = Homography([
+            h[0][0], h[0][1], h[0][2], h[1][0], h[1][1], h[1][2], h[2][0], h[2][1], h[2][2],
+        ]);
         let (a, b) = focals_from_homography(&hh);
         assert!((a.unwrap() - f).abs() < 1.0, "{a:?}");
         assert!((b.unwrap() - f).abs() < 1.0, "{b:?}");

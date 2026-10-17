@@ -4,15 +4,15 @@ pub mod gltf_ext;
 use alloc::sync::Arc;
 use async_lock::RwLock;
 #[cfg(feature = "bevy_animation")]
-use bevy_animation::{prelude::*, AnimatedBy, AnimationTargetId};
+use bevy_animation::{AnimatedBy, AnimationTargetId, prelude::*};
 use bevy_asset::{
-    io::Reader, AssetLoadError, AssetLoader, AssetPath, Handle, LoadContext, ParseAssetPathError,
-    ReadAssetBytesError, RenderAssetUsages,
+    AssetLoadError, AssetLoader, AssetPath, Handle, LoadContext, ParseAssetPathError,
+    ReadAssetBytesError, RenderAssetUsages, io::Reader,
 };
 use bevy_camera::{
+    Camera, Camera3d, OrthographicProjection, PerspectiveProjection, Projection, ScalingMode,
     primitives::Aabb,
     visibility::{DynamicSkinnedMeshBounds, NoFrustumCulling, Visibility},
-    Camera, Camera3d, OrthographicProjection, PerspectiveProjection, Projection, ScalingMode,
 };
 use bevy_color::{Color, LinearRgba};
 use bevy_ecs::{
@@ -30,9 +30,9 @@ use bevy_math::{Mat4, Vec3};
 #[cfg(feature = "pbr_transmission_textures")]
 use bevy_mesh::UvChannel;
 use bevy_mesh::{
+    Indices, Mesh, Mesh3d, MeshCompressionArgs, MeshVertexAttribute, PrimitiveTopology,
     morph::{MeshMorphWeights, MorphAttributes, MorphWeights},
     skinning::{SkinnedMesh, SkinnedMeshInverseBindposes},
-    Indices, Mesh, Mesh3d, MeshCompressionArgs, MeshVertexAttribute, PrimitiveTopology,
 };
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_reflect::TypePath;
@@ -41,10 +41,10 @@ use bevy_tasks::IoTaskPool;
 use bevy_transform::components::Transform;
 use bevy_world_serialization::WorldAsset;
 use gltf::{
+    Material, Node, Semantic,
     accessor::Iter,
     image::Source,
-    mesh::{util::ReadIndices, Mode},
-    Material, Node, Semantic,
+    mesh::{Mode, util::ReadIndices},
 };
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "bevy_animation")]
@@ -55,9 +55,10 @@ use tracing::{error, info_span, warn};
 use wgpu_types::Face;
 
 use crate::{
-    convert_coordinates::ConvertCoordinates as _, vertex_attributes::convert_attribute, Gltf,
-    GltfAssetLabel, GltfExtras, GltfMaterial, GltfMaterialExtras, GltfMaterialName, GltfMeshExtras,
-    GltfMeshName, GltfNode, GltfSceneExtras, GltfSceneName, GltfSkin, GltfSkinnedMeshBoundsPolicy,
+    Gltf, GltfAssetLabel, GltfExtras, GltfMaterial, GltfMaterialExtras, GltfMaterialName,
+    GltfMeshExtras, GltfMeshName, GltfNode, GltfSceneExtras, GltfSceneName, GltfSkin,
+    GltfSkinnedMeshBoundsPolicy, convert_coordinates::ConvertCoordinates as _,
+    vertex_attributes::convert_attribute,
 };
 
 #[cfg(feature = "bevy_animation")]
@@ -305,7 +306,7 @@ impl GltfLoader {
         #[cfg(feature = "bevy_animation")]
         let (animations, named_animations, animation_roots) = if settings.load_animations {
             use bevy_animation::{
-                animated_field, animation_curves::*, gltf_curves::*, VariableCurve,
+                VariableCurve, animated_field, animation_curves::*, gltf_curves::*,
             };
             use bevy_curve::{ConstantCurve, Interval, UnevenSampleAutoCurve};
             use bevy_math::{Quat, Vec4};
@@ -569,9 +570,9 @@ impl GltfLoader {
                         );
                     } else {
                         warn!(
-                        "Animation ignored for node {}: part of its hierarchy is missing a name",
-                        node.index()
-                    );
+                            "Animation ignored for node {}: part of its hierarchy is missing a name",
+                            node.index()
+                        );
                     }
                 }
 
@@ -765,12 +766,14 @@ impl GltfLoader {
                             if !gltf_mesh_on_skinned_nodes {
                                 warn!(
                                     "Ignoring attribute {:?} for skinned mesh {} used on non skinned nodes (NODE_SKINNED_MESH_WITHOUT_SKIN)",
-                                    semantic,
-                                    primitive_label
+                                    semantic, primitive_label
                                 );
                                 continue;
                             } else if gltf_mesh_on_non_skinned_nodes {
-                                error!("Skinned mesh {} used on both skinned and non skin nodes, this is likely to cause an error (NODE_SKINNED_MESH_WITHOUT_SKIN)", primitive_label);
+                                error!(
+                                    "Skinned mesh {} used on both skinned and non skin nodes, this is likely to cause an error (NODE_SKINNED_MESH_WITHOUT_SKIN)",
+                                    primitive_label
+                                );
                             }
                         }
                         match convert_attribute(
@@ -832,7 +835,11 @@ impl GltfLoader {
                     mesh.compute_flat_normals();
                     let vertex_count_after = mesh.count_vertices();
                     if vertex_count_before != vertex_count_after {
-                        tracing::debug!("Missing vertex normals in indexed geometry, computing them as flat. Vertex count increased from {} to {}", vertex_count_before, vertex_count_after);
+                        tracing::debug!(
+                            "Missing vertex normals in indexed geometry, computing them as flat. Vertex count increased from {} to {}",
+                            vertex_count_before,
+                            vertex_count_after
+                        );
                     } else {
                         tracing::debug!(
                             "Missing vertex normals in indexed geometry, computing them as flat."
@@ -845,7 +852,8 @@ impl GltfLoader {
                     && needs_tangents(&primitive.material())
                 {
                     tracing::debug!(
-                        "Missing vertex tangents for {}, computing them using the mikktspace algorithm. Consider using a tool such as Blender to pre-compute the tangents.", file_name
+                        "Missing vertex tangents for {}, computing them using the mikktspace algorithm. Consider using a tool such as Blender to pre-compute the tangents.",
+                        file_name
                     );
 
                     let generate_tangents_span = info_span!("generate_tangents", name = file_name);
@@ -2118,17 +2126,17 @@ mod test {
     use crate::{Gltf, GltfAssetLabel, GltfLoaderSettings, GltfMaterial, GltfNode, GltfSkin};
     use bevy_app::{App, TaskPoolPlugin};
     use bevy_asset::{
-        io::{
-            memory::{Dir, MemoryAssetReader},
-            AssetSourceBuilder, AssetSourceId,
-        },
         AssetApp, AssetLoader, AssetPlugin, AssetServer, Assets, Handle, LoadContext, LoadState,
+        io::{
+            AssetSourceBuilder, AssetSourceId,
+            memory::{Dir, MemoryAssetReader},
+        },
     };
     use bevy_ecs::{resource::Resource, world::World};
     use bevy_image::{Image, ImageLoaderSettings};
     use bevy_log::LogPlugin;
-    use bevy_mesh::skinning::SkinnedMeshInverseBindposes;
     use bevy_mesh::MeshPlugin;
+    use bevy_mesh::skinning::SkinnedMeshInverseBindposes;
     use bevy_reflect::TypePath;
     use bevy_world_serialization::WorldSerializationPlugin;
 

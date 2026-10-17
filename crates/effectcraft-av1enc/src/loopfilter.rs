@@ -20,7 +20,14 @@ pub(crate) struct LfInfo<'a> {
 
 /// Applies the loop filter with `loop_filter_level[ 0..4 ]` to `planes`. For level search
 /// (`luma_only`), only plane 0 and only every `sb_row_step`-th superblock row are filtered.
-pub(crate) fn loop_filter(planes: &mut [Plane; 3], info: &LfInfo, level: [u32; 4], bit_depth: u32, luma_only: bool, sb_row_step: usize) {
+pub(crate) fn loop_filter(
+    planes: &mut [Plane; 3],
+    info: &LfInfo,
+    level: [u32; 4],
+    bit_depth: u32,
+    luma_only: bool,
+    sb_row_step: usize,
+) {
     if level[0] == 0 && level[1] == 0 {
         return;
     }
@@ -48,14 +55,24 @@ pub(crate) fn loop_filter(planes: &mut [Plane; 3], info: &LfInfo, level: [u32; 4
     }
 }
 
-fn edge(pl: &mut Plane, info: &LfInfo, level: [u32; 4], bd: u32, plane: usize, pass: usize, row: usize, col: usize) {
+fn edge(
+    pl: &mut Plane,
+    info: &LfInfo,
+    level: [u32; 4],
+    bd: u32,
+    plane: usize,
+    pass: usize,
+    row: usize,
+    col: usize,
+) {
     let s = (plane > 0) as usize;
     let (dx, dy) = if pass == 0 { (1usize, 0usize) } else { (0, 1) };
     let x = col * 4;
     let y = row * 4;
     let row = row | s;
     let col = col | s;
-    let on_screen = !(x >= info.width || y >= info.height || (pass == 0 && x == 0) || (pass == 1 && y == 0));
+    let on_screen =
+        !(x >= info.width || y >= info.height || (pass == 0 && x == 0) || (pass == 1 && y == 0));
     if !on_screen {
         return;
     }
@@ -76,10 +93,22 @@ fn edge(pl: &mut Plane, info: &LfInfo, level: [u32; 4], bd: u32, plane: usize, p
     } else {
         yp.is_multiple_of(4 * NUM_4X4_BLOCKS_HIGH[plane_size] as usize)
     };
-    let is_tx_edge = if pass == 0 { xp.is_multiple_of(TX_WIDTH[tx_sz] as usize) } else { yp.is_multiple_of(TX_HEIGHT[tx_sz] as usize) };
+    let is_tx_edge = if pass == 0 {
+        xp.is_multiple_of(TX_WIDTH[tx_sz] as usize)
+    } else {
+        yp.is_multiple_of(TX_HEIGHT[tx_sz] as usize)
+    };
     let apply_filter = is_tx_edge && (is_block_edge || !skip || is_intra);
-    let base_size = if pass == 0 { TX_WIDTH[prev_tx_sz].min(TX_WIDTH[tx_sz]) } else { TX_HEIGHT[prev_tx_sz].min(TX_HEIGHT[tx_sz]) } as usize;
-    let filter_size = if plane == 0 { 16.min(base_size) } else { 8.min(base_size) };
+    let base_size = if pass == 0 {
+        TX_WIDTH[prev_tx_sz].min(TX_WIDTH[tx_sz])
+    } else {
+        TX_HEIGHT[prev_tx_sz].min(TX_HEIGHT[tx_sz])
+    } as usize;
+    let filter_size = if plane == 0 {
+        16.min(base_size)
+    } else {
+        8.min(base_size)
+    };
     // 7.14.4 with no deltas, segmentation or sharpness: the same strength for every block
     let lvl = level[if plane == 0 { pass } else { plane + 1 }].min(MAX_LOOP_FILTER as u32) as i32;
     if !apply_filter || lvl == 0 {
@@ -89,12 +118,36 @@ fn edge(pl: &mut Plane, info: &LfInfo, level: [u32; 4], bd: u32, plane: usize, p
     let blimit = 2 * (lvl + 2) + limit;
     let thresh = lvl >> 4;
     for k in 0..4 {
-        sample_filter(pl, xp + dy * k, yp + dx * k, plane, limit, blimit, thresh, dx as isize, dy as isize, filter_size, bd);
+        sample_filter(
+            pl,
+            xp + dy * k,
+            yp + dx * k,
+            plane,
+            limit,
+            blimit,
+            thresh,
+            dx as isize,
+            dy as isize,
+            filter_size,
+            bd,
+        );
     }
 }
 
 #[inline]
-fn sample_filter(pl: &mut Plane, x: usize, y: usize, plane: usize, limit: i32, blimit: i32, thresh: i32, dx: isize, dy: isize, filter_size: usize, bd: u32) {
+fn sample_filter(
+    pl: &mut Plane,
+    x: usize,
+    y: usize,
+    plane: usize,
+    limit: i32,
+    blimit: i32,
+    thresh: i32,
+    dx: isize,
+    dy: isize,
+    filter_size: usize,
+    bd: u32,
+) {
     let stride = pl.stride as isize;
     let step = dy * stride + dx;
     let base = y as isize * stride + x as isize;
@@ -121,7 +174,9 @@ fn sample_filter(pl: &mut Plane, x: usize, y: usize, plane: usize, limit: i32, b
     };
     let limit_bd = limit << sh;
     let blimit_bd = blimit << sh;
-    let mut mask = (p1 - p0).abs() > limit_bd || (q1 - q0).abs() > limit_bd || (p0 - q0).abs() * 2 + (p1 - q1).abs() / 2 > blimit_bd;
+    let mut mask = (p1 - p0).abs() > limit_bd
+        || (q1 - q0).abs() > limit_bd
+        || (p0 - q0).abs() * 2 + (p1 - q1).abs() / 2 > blimit_bd;
     if filter_len >= 6 {
         mask |= (p2 - p1).abs() > limit_bd || (q2 - q1).abs() > limit_bd;
     }
@@ -133,7 +188,10 @@ fn sample_filter(pl: &mut Plane, x: usize, y: usize, plane: usize, limit: i32, b
     }
     let t_bd = 1 << sh;
     let flat = if filter_size >= 8 {
-        let mut m = (p1 - p0).abs() > t_bd || (q1 - q0).abs() > t_bd || (p2 - p0).abs() > t_bd || (q2 - q0).abs() > t_bd;
+        let mut m = (p1 - p0).abs() > t_bd
+            || (q1 - q0).abs() > t_bd
+            || (p2 - p0).abs() > t_bd
+            || (q2 - q0).abs() > t_bd;
         if filter_len >= 8 {
             m |= (p3 - p0).abs() > t_bd || (q3 - q0).abs() > t_bd;
         }

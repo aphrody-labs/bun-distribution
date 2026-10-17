@@ -60,7 +60,10 @@ pub fn diff_rgba(a: &[u8], b: &[u8], width: u32, height: u32, tolerance: u8) -> 
     let (pct, mean) = if pixels == 0 {
         (0.0, 0.0)
     } else {
-        (mismatched as f64 * 100.0 / pixels as f64, sum as f64 / (pixels * 4) as f64)
+        (
+            mismatched as f64 * 100.0 / pixels as f64,
+            sum as f64 / (pixels * 4) as f64,
+        )
     };
     Ok(DiffReport {
         width,

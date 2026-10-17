@@ -5,10 +5,15 @@
 use proptest::prelude::*;
 use serde_json::{Value, json};
 use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeId, NodeKind};
-use vectorcraft_format::{SaveOptions, base64_decode, base64_encode, load, load_file, pdf_content, preview, save, save_with, sniff};
+use vectorcraft_format::{
+    SaveOptions, base64_decode, base64_encode, load, load_file, pdf_content, preview, save,
+    save_with, sniff,
+};
 use vectorcraft_geom::Affine;
 use vectorcraft_testkit::fixtures;
-use vectorcraft_testkit::invariants::{check_document, check_native_roundtrip, check_native_roundtrip_exact, doc_json, json_approx_eq};
+use vectorcraft_testkit::invariants::{
+    check_document, check_native_roundtrip, check_native_roundtrip_exact, doc_json, json_approx_eq,
+};
 use vectorcraft_testkit::strategies::arb_ops;
 
 fn rich_doc() -> Document {
@@ -159,13 +164,22 @@ fn sniff_distinguishes_formats() {
 fn rejects_newer_versions_and_other_formats() {
     let mut v: Value = serde_json::from_slice(&save(&Document::new(1.0, 1.0), false)).unwrap();
     v["version"] = json!(vectorcraft_format::VERSION + 1);
-    assert!(matches!(load(&serde_json::to_vec(&v).unwrap()), Err(vectorcraft_format::FormatError::TooNew(_))));
+    assert!(matches!(
+        load(&serde_json::to_vec(&v).unwrap()),
+        Err(vectorcraft_format::FormatError::TooNew(_))
+    ));
     v["version"] = json!(vectorcraft_format::VERSION);
     v["format"] = json!("other");
-    assert!(matches!(load(&serde_json::to_vec(&v).unwrap()), Err(vectorcraft_format::FormatError::NotVectorcraft(_))));
+    assert!(matches!(
+        load(&serde_json::to_vec(&v).unwrap()),
+        Err(vectorcraft_format::FormatError::NotVectorcraft(_))
+    ));
     v["format"] = json!("vectorcraft");
     v["images"] = json!({"x": {"mime": "image/png", "data": "not base64!"}});
-    assert!(matches!(load(&serde_json::to_vec(&v).unwrap()), Err(vectorcraft_format::FormatError::BadImage(_))));
+    assert!(matches!(
+        load(&serde_json::to_vec(&v).unwrap()),
+        Err(vectorcraft_format::FormatError::BadImage(_))
+    ));
 }
 
 #[test]
@@ -174,7 +188,10 @@ fn unknown_fields_are_preserved() {
     v["document"]["unknown"] = json!({"futureFeature": {"a": [1, 2, 3]}});
     let d = load(&serde_json::to_vec(&v).unwrap()).unwrap();
     let again: Value = serde_json::from_slice(&save(&d, false)).unwrap();
-    assert_eq!(again["document"]["unknown"]["futureFeature"]["a"], json!([1, 2, 3]));
+    assert_eq!(
+        again["document"]["unknown"]["futureFeature"]["a"],
+        json!([1, 2, 3])
+    );
 }
 
 #[test]
@@ -186,7 +203,11 @@ fn load_repairs_next_id() {
     check_document(&back).unwrap();
     let fresh = back.alloc_id();
     assert!(back.node(fresh).is_none(), "allocated id {fresh} collides");
-    let max = fixtures::all_ids(&back).into_iter().map(|NodeId(i)| i).max().unwrap();
+    let max = fixtures::all_ids(&back)
+        .into_iter()
+        .map(|NodeId(i)| i)
+        .max()
+        .unwrap();
     assert!(fresh.0 > max);
 }
 
@@ -210,10 +231,23 @@ fn bug_f64_bit_exact_roundtrip() {
 fn saved_selections_from_a_file_are_tidied() {
     let d = rich_doc();
     let mut v: Value = serde_json::from_slice(&save(&d, false)).unwrap();
-    assert!(v["document"].get("saved_selections").is_none(), "nothing written when there are none");
-    assert!(load(&serde_json::to_vec(&v).unwrap()).unwrap().saved_selections.is_empty());
+    assert!(
+        v["document"].get("saved_selections").is_none(),
+        "nothing written when there are none"
+    );
+    assert!(
+        load(&serde_json::to_vec(&v).unwrap())
+            .unwrap()
+            .saved_selections
+            .is_empty()
+    );
     let id = fixtures::all_ids(&d).into_iter().next().unwrap();
-    let missing = fixtures::all_ids(&d).into_iter().map(|NodeId(i)| i).max().unwrap() + 1;
+    let missing = fixtures::all_ids(&d)
+        .into_iter()
+        .map(|NodeId(i)| i)
+        .max()
+        .unwrap()
+        + 1;
     let mut list = vec![
         json!({"name": format!("  {}  ", "x".repeat(1000)), "objects": [id.0, missing, id.0]}),
         json!({"name": "   ", "objects": [id.0]}),
@@ -225,9 +259,20 @@ fn saved_selections_from_a_file_are_tidied() {
     let back = load(&serde_json::to_vec(&v).unwrap()).unwrap();
     let saved = &back.saved_selections;
     assert_eq!(saved.len(), vectorcraft_doc::SavedSelection::MAX);
-    assert_eq!(saved[0].name, "x".repeat(vectorcraft_doc::SavedSelection::MAX_NAME));
-    assert_eq!(saved[0].objects, vec![id], "a missing id is dropped, a repeated one kept once");
-    assert_eq!((saved[1].name.as_str(), saved[1].objects.len()), ("Dup", 0), "blank names go, the first of a name stays");
+    assert_eq!(
+        saved[0].name,
+        "x".repeat(vectorcraft_doc::SavedSelection::MAX_NAME)
+    );
+    assert_eq!(
+        saved[0].objects,
+        vec![id],
+        "a missing id is dropped, a repeated one kept once"
+    );
+    assert_eq!(
+        (saved[1].name.as_str(), saved[1].objects.len()),
+        ("Dup", 0),
+        "blank names go, the first of a name stays"
+    );
     assert_eq!(saved[2].name, "S0");
     // What loads saves and loads again unchanged.
     assert_eq!(&load(&save(&back, false)).unwrap().saved_selections, saved);

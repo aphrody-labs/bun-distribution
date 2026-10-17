@@ -61,7 +61,9 @@ mod bun_runtime {
             String::from("unknown dlopen error")
         } else {
             // SAFETY: non-null result of dlerror is a valid C string.
-            unsafe { CStr::from_ptr(error) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(error) }
+                .to_string_lossy()
+                .into_owned()
         }
     }
 
@@ -112,7 +114,9 @@ pub extern "system" fn Java_com_aphrody_android_BunRuntime_nativeRun(
         if chars.is_null() {
             return -1;
         }
-        let value = std::ffi::CStr::from_ptr(chars).to_string_lossy().into_owned();
+        let value = std::ffi::CStr::from_ptr(chars)
+            .to_string_lossy()
+            .into_owned();
         release(env, script, chars);
         value
     };

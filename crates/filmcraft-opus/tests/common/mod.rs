@@ -11,11 +11,17 @@ pub fn snr_db(reference: &[f32], test: &[f32]) -> f64 {
         s += (reference[i] as f64).powi(2);
         e += (reference[i] as f64 - test[i] as f64).powi(2);
     }
-    if e == 0.0 { 200.0 } else { 10.0 * (s.max(1e-20) / e).log10() }
+    if e == 0.0 {
+        200.0
+    } else {
+        10.0 * (s.max(1e-20) / e).log10()
+    }
 }
 
 const NBANDS: usize = 21;
-const BANDS: [usize; NBANDS + 1] = [0, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 68, 80, 96, 120, 156, 200];
+const BANDS: [usize; NBANDS + 1] = [
+    0, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 68, 80, 96, 120, 156, 200,
+];
 const WIN: usize = 480;
 const STEP: usize = 120;
 const NFREQ: usize = 240;
@@ -29,7 +35,9 @@ fn spectra(x: &[f32], channels: usize, ch: usize, rate: u32) -> Vec<[f64; NFREQ]
     let step = STEP / scale;
     let n = x.len() / channels;
     let nframes = if n >= win { (n - win) / step + 1 } else { 0 };
-    let w: Vec<f64> = (0..win).map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * (i as f64 + 0.5) / win as f64).cos()).collect();
+    let w: Vec<f64> = (0..win)
+        .map(|i| 0.5 - 0.5 * (2.0 * std::f64::consts::PI * (i as f64 + 0.5) / win as f64).cos())
+        .collect();
     let nb = NFREQ / scale;
     let mut out = Vec::with_capacity(nframes);
     let mut buf = vec![(0f64, 0f64); win];
@@ -53,9 +61,14 @@ fn fft(x: &[(f64, f64)]) -> Vec<(f64, f64)> {
     if n == 1 {
         return x.to_vec();
     }
-    let p = [2usize, 3, 5].into_iter().find(|p| n.is_multiple_of(*p)).unwrap_or(n);
+    let p = [2usize, 3, 5]
+        .into_iter()
+        .find(|p| n.is_multiple_of(*p))
+        .unwrap_or(n);
     let m = n / p;
-    let subs: Vec<Vec<(f64, f64)>> = (0..p).map(|r| fft(&x.iter().skip(r).step_by(p).copied().collect::<Vec<_>>())).collect();
+    let subs: Vec<Vec<(f64, f64)>> = (0..p)
+        .map(|r| fft(&x.iter().skip(r).step_by(p).copied().collect::<Vec<_>>()))
+        .collect();
     let mut out = vec![(0f64, 0f64); n];
     for (k, o) in out.iter_mut().enumerate() {
         let mut acc = (0f64, 0f64);
@@ -89,8 +102,12 @@ pub fn opus_quality(reference: &[f32], test: &[f32], channels: usize, rate: u32)
         let mut mask = vec![[0f64; NBANDS]; nf];
         for f in 0..nf {
             for b in 0..NBANDS {
-                let (lo, hi) = (BANDS[b] / scale, (BANDS[b + 1] / scale).max(BANDS[b] / scale + 1));
-                let e: f64 = xr[f][lo..hi.min(NFREQ / scale)].iter().sum::<f64>() / (hi - lo) as f64;
+                let (lo, hi) = (
+                    BANDS[b] / scale,
+                    (BANDS[b + 1] / scale).max(BANDS[b] / scale + 1),
+                );
+                let e: f64 =
+                    xr[f][lo..hi.min(NFREQ / scale)].iter().sum::<f64>() / (hi - lo) as f64;
                 mask[f][b] = e;
             }
         }
@@ -191,7 +208,9 @@ pub fn sweep(n: usize, amp: f32) -> Vec<f32> {
     (0..n)
         .map(|i| {
             let t = i as f64 / 48000.0;
-            ((2.0 * std::f64::consts::PI * f0 * t_total / k * ((t / t_total * k).exp() - 1.0)).sin() as f32) * amp
+            ((2.0 * std::f64::consts::PI * f0 * t_total / k * ((t / t_total * k).exp() - 1.0)).sin()
+                as f32)
+                * amp
         })
         .collect()
 }
@@ -206,7 +225,8 @@ pub fn music(n: usize, seed: u64) -> Vec<f32> {
             let chord = (t * 2.0) as usize;
             let mut s = 0.0;
             for k in 0..3 {
-                let f = notes[(chord * 3 + k * 2) % notes.len()] * (1.0 + 0.003 * (2.0 * std::f32::consts::PI * 5.0 * t).sin());
+                let f = notes[(chord * 3 + k * 2) % notes.len()]
+                    * (1.0 + 0.003 * (2.0 * std::f32::consts::PI * 5.0 * t).sin());
                 for h in 1..6 {
                     s += (2.0 * std::f32::consts::PI * f * h as f32 * t).sin() * 0.08 / h as f32;
                 }
@@ -237,7 +257,11 @@ pub fn speech(n: usize, seed: u64) -> Vec<f32> {
         };
         let syll = (2.0 * std::f32::consts::PI * 3.0 * t).sin().max(0.0);
         let voiced = if (t * 1.3).fract() < 0.8 { syll } else { 0.0 };
-        let fric = if (t * 1.3).fract() > 0.85 { 0.05 * r.next() } else { 0.0 };
+        let fric = if (t * 1.3).fract() > 0.85 {
+            0.05 * r.next()
+        } else {
+            0.0
+        };
         let mut s = 0f32;
         for (j, &(f, bw)) in formants.iter().enumerate() {
             let rr = (-std::f32::consts::PI * bw / fs).exp();

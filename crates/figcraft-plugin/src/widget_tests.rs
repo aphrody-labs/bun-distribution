@@ -30,16 +30,29 @@ fn descriptions_are_checked_and_normalised() {
                      {"type": "rectangle", "target": "inc", "width": 24, "height": 24, "radius": 4, "fill": "0d99ff80"}]}}),
     )
     .unwrap();
-    assert_eq!(w.root.fill.as_deref(), Some("#FFFFFF"), "colours come out as #RRGGBB(AA)");
+    assert_eq!(
+        w.root.fill.as_deref(),
+        Some("#FFFFFF"),
+        "colours come out as #RRGGBB(AA)"
+    );
     assert_eq!(w.root.children[1].fill.as_deref(), Some("#0D99FF80"));
     assert_eq!(w.root.children[0].kind, WidgetKind::Text);
     assert_eq!(w.state, Some(json!({"n": 2}).as_object().unwrap().clone()));
-    assert!(parse(json!({"root": {"type": "frame"}})).unwrap().state.is_none(), "no state: keep the old one");
+    assert!(
+        parse(json!({"root": {"type": "frame"}}))
+            .unwrap()
+            .state
+            .is_none(),
+        "no state: keep the old one"
+    );
 }
 
 #[test]
 fn junk_descriptions_are_refused() {
-    let deep = (0..20).fold(json!({"type": "frame"}), |inner, _| json!({"type": "frame", "children": [inner]}));
+    let deep = (0..20).fold(
+        json!({"type": "frame"}),
+        |inner, _| json!({"type": "frame", "children": [inner]}),
+    );
     let wide = json!({"root": {"type": "frame", "children": vec![json!({"type": "rectangle"}); MAX_NODES]}});
     let image = |bytes: usize| json!({"root": {"type": "frame", "children": [{"type": "image", "data": "A".repeat(bytes / 3 * 4)}]}});
     let junk = [
@@ -70,10 +83,17 @@ fn junk_descriptions_are_refused() {
         image(MAX_IMAGE_BYTES + 3000),
     ];
     for j in junk {
-        assert!(parse(j.clone()).is_err(), "accepted {}", j.to_string().chars().take(80).collect::<String>());
+        assert!(
+            parse(j.clone()).is_err(),
+            "accepted {}",
+            j.to_string().chars().take(80).collect::<String>()
+        );
     }
     assert!(parse(image(1000)).is_ok());
-    assert!(WidgetRender::parse(&"[".repeat(100_000)).is_err(), "deep JSON fails cleanly");
+    assert!(
+        WidgetRender::parse(&"[".repeat(100_000)).is_err(),
+        "deep JSON fails cleanly"
+    );
     assert!(WidgetRender::parse(&" ".repeat(5 * 1024 * 1024)).is_err());
 }
 
@@ -99,18 +119,38 @@ fn widget_render_reports_the_description_or_why_not() {
         good.len()
     );
     let wasm = wat::parse_str(&wat).unwrap();
-    let out = Instance::new(&wasm, &Limits::default()).unwrap().call("{}", &mut Quiet).unwrap();
-    assert!(out.output.contains("root must be a frame"), "{}", out.output);
+    let out = Instance::new(&wasm, &Limits::default())
+        .unwrap()
+        .call("{}", &mut Quiet)
+        .unwrap();
+    assert!(
+        out.output.contains("root must be a frame"),
+        "{}",
+        out.output
+    );
     assert_eq!(out.widget.unwrap().root.children[0].text, "hi");
 }
 
 #[test]
 fn widgets_need_api_3() {
-    let m = |api: u32| Manifest::from_value(&json!({"id": "w", "name": "W", "main": "w.wasm", "api": api, "widget": true}));
+    let m = |api: u32| {
+        Manifest::from_value(
+            &json!({"id": "w", "name": "W", "main": "w.wasm", "api": api, "widget": true}),
+        )
+    };
     assert!(m(2).unwrap_err().contains("API 3"));
     let ok = m(3).unwrap();
-    assert!(ok.widget && ok.commands.is_empty(), "a widget-only plugin has no menu command");
-    assert!(Manifest::from_value(&json!({"id": "w", "name": "W", "main": "w.wasm", "api": 4})).is_err());
-    let v2 = Manifest::from_value(&json!({"id": "p", "name": "P", "main": "p.wasm", "api": 2})).unwrap();
-    assert!(!v2.widget && v2.commands.len() == 1, "v2 manifests are unchanged");
+    assert!(
+        ok.widget && ok.commands.is_empty(),
+        "a widget-only plugin has no menu command"
+    );
+    assert!(
+        Manifest::from_value(&json!({"id": "w", "name": "W", "main": "w.wasm", "api": 4})).is_err()
+    );
+    let v2 =
+        Manifest::from_value(&json!({"id": "p", "name": "P", "main": "p.wasm", "api": 2})).unwrap();
+    assert!(
+        !v2.widget && v2.commands.len() == 1,
+        "v2 manifests are unchanged"
+    );
 }

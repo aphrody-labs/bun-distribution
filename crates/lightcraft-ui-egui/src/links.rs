@@ -29,12 +29,19 @@ pub const FEEDBACK: &str = "https://github.com/storytold/lightcraft/issues/new";
 
 /// The URL behind a link command id.
 pub fn url_of(cmd: &str) -> Option<&'static str> {
-    LINKS.iter().find(|(id, _, _)| *id == cmd).map(|(_, _, u)| *u)
+    LINKS
+        .iter()
+        .find(|(id, _, _)| *id == cmd)
+        .map(|(_, _, u)| *u)
 }
 
 /// Open `url` in the user's browser (through the host's `open_url` service).
 pub fn open(app: &mut crate::LightcraftApp, url: &str) -> Result<serde_json::Value, String> {
-    let open = app.services.open_url.as_mut().ok_or("can't open links here")?;
+    let open = app
+        .services
+        .open_url
+        .as_mut()
+        .ok_or("can't open links here")?;
     open(url)?;
     Ok(serde_json::json!({ "url": url }))
 }

@@ -361,7 +361,8 @@ mod tests {
         let esk_bytes = EskFile::create_mock();
         let esk = EskFile::parse(&esk_bytes).expect("parse ESK");
 
-        let assembled = AssembledCharacterModel::assemble("GOK", &emd, Some(&emb), Some(&esk), None);
+        let assembled =
+            AssembledCharacterModel::assemble("GOK", &emd, Some(&emb), Some(&esk), None);
         assert_eq!(assembled.total_vertices(), 3);
         assert_eq!(assembled.total_triangles(), 1);
 

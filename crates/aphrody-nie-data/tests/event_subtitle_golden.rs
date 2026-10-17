@@ -123,8 +123,14 @@ fn real_subtitle_file_six_lignes_byte_exact() {
     let rows = parse_subtitle_file(&root);
     assert_eq!(rows.len(), 6, "Subtitle_ev01_04800 = 6 lignes timecodées");
     // Hashes byte-exact (clés de jointure vers le texte localisé).
-    let hashes: [u32; 6] =
-        [0x8BAF_B21B, 0xA082_E1D8, 0xB999_D099, 0xF6D8_465E, 0xEFC3_771F, 0xC4EE_24DC];
+    let hashes: [u32; 6] = [
+        0x8BAF_B21B,
+        0xA082_E1D8,
+        0xB999_D099,
+        0xF6D8_465E,
+        0xEFC3_771F,
+        0xC4EE_24DC,
+    ];
     for (i, h) in hashes.iter().enumerate() {
         assert_eq!(rows[i].text_hash, HashId(*h), "hash ligne {i}");
     }

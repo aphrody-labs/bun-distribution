@@ -55,13 +55,16 @@ fn embeds_text_to_384_dim_vectors() {
             // Most likely: no network on first run. Skip, do not fail.
             eprintln!("SKIP embed smoke (model load failed, likely offline): {err}");
             return;
-        },
+        }
     };
 
     assert_eq!(embedder.dimension(), 384, "MiniLM-L6-v2 is 384-dimensional");
     assert_eq!(embedder.model(), EmbeddingModelKind::AllMiniLmL6V2);
 
-    let texts = ["passage: aphrody is a cross-platform Rust CLI", "query: what is aphrody"];
+    let texts = [
+        "passage: aphrody is a cross-platform Rust CLI",
+        "query: what is aphrody",
+    ];
     let vectors = embedder.embed_texts(&texts).expect("embed should succeed");
 
     assert_eq!(vectors.len(), 2, "one vector per input");
@@ -73,7 +76,10 @@ fn embeds_text_to_384_dim_vectors() {
     }
 
     // Distinct inputs should not collapse to the identical vector.
-    assert_ne!(vectors[0], vectors[1], "different texts -> different vectors");
+    assert_ne!(
+        vectors[0], vectors[1],
+        "different texts -> different vectors"
+    );
 
     // embed_one is consistent with the batch path.
     let single = embedder.embed_one(texts[0]).expect("embed_one");
@@ -94,9 +100,10 @@ fn empty_input_yields_empty_output_without_loading() {
     let cache = tempfile::tempdir().expect("temp cache dir");
     // Loading is required to reach embed_batch, but if load fails (offline) we
     // still validate the empty-fast-path contract by skipping.
-    let Ok(mut embedder) =
-        Embedder::with_cache_dir(EmbeddingModelKind::AllMiniLmL6V2, cache.path().to_path_buf())
-    else {
+    let Ok(mut embedder) = Embedder::with_cache_dir(
+        EmbeddingModelKind::AllMiniLmL6V2,
+        cache.path().to_path_buf(),
+    ) else {
         eprintln!("SKIP empty-input check (model load failed, likely offline)");
         return;
     };

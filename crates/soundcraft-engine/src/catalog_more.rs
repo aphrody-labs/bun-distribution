@@ -12,19 +12,46 @@ pub const ALIASES_MORE: &[(&str, &str)] = &[
     ("Track > Change Track Width > 5.1", "track.change_width"),
     ("Track > Change Track Width > 6.0", "track.change_width"),
     ("Track > Change Track Width > 6.1", "track.change_width"),
-    ("Track > Change Track Width > 7.0 SDDS", "track.change_width"),
-    ("Track > Change Track Width > 7.1 SDDS", "track.change_width"),
+    (
+        "Track > Change Track Width > 7.0 SDDS",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 7.1 SDDS",
+        "track.change_width",
+    ),
     ("Track > Change Track Width > 7.0", "track.change_width"),
     ("Track > Change Track Width > 7.1", "track.change_width"),
     ("Track > Change Track Width > 7.0.2", "track.change_width"),
     ("Track > Change Track Width > 7.1.2", "track.change_width"),
-    ("Track > Change Track Width > 1st Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 2nd Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 3rd Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 4th Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 5th Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 6th Order Ambisonics", "track.change_width"),
-    ("Track > Change Track Width > 7th Order Ambisonics", "track.change_width"),
+    (
+        "Track > Change Track Width > 1st Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 2nd Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 3rd Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 4th Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 5th Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 6th Order Ambisonics",
+        "track.change_width",
+    ),
+    (
+        "Track > Change Track Width > 7th Order Ambisonics",
+        "track.change_width",
+    ),
     ("Track > Change Track Width > 5.0.2", "track.change_width"),
     ("Track > Change Track Width > 5.1.2", "track.change_width"),
     ("Track > Change Track Width > 5.0.4", "track.change_width"),
@@ -45,9 +72,15 @@ mod tests {
 
     #[test]
     fn change_width_aliases_name_real_formats() {
-        for (path, _) in ALIASES_MORE.iter().filter(|(_, id)| *id == "track.change_width") {
+        for (path, _) in ALIASES_MORE
+            .iter()
+            .filter(|(_, id)| *id == "track.change_width")
+        {
             let leaf = path.rsplit(" > ").next().unwrap_or("");
-            assert!(soundcraft_model::ChannelFormat::from_id(leaf).is_some(), "no channel format for `{leaf}`");
+            assert!(
+                soundcraft_model::ChannelFormat::from_id(leaf).is_some(),
+                "no channel format for `{leaf}`"
+            );
         }
     }
 }

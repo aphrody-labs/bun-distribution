@@ -68,7 +68,10 @@ pub fn to_color_image(img: &Image, grayscale: bool) -> ColorImage {
 }
 
 fn master_of(p: &Presentation, slide: &Slide) -> Option<Arc<Master>> {
-    p.masters.iter().find(|m| m.layout(slide.layout).is_some()).cloned()
+    p.masters
+        .iter()
+        .find(|m| m.layout(slide.layout).is_some())
+        .cloned()
 }
 
 fn same(a: &Option<Arc<Master>>, b: &Option<Arc<Master>>) -> bool {
@@ -80,7 +83,13 @@ fn same(a: &Option<Arc<Master>>, b: &Option<Arc<Master>>) -> bool {
 }
 
 fn threads() -> u16 {
-    if cfg!(target_arch = "wasm32") { 0 } else { std::thread::available_parallelism().map(|n| n.get().min(8) as u16).unwrap_or(0) }
+    if cfg!(target_arch = "wasm32") {
+        0
+    } else {
+        std::thread::available_parallelism()
+            .map(|n| n.get().min(8) as u16)
+            .unwrap_or(0)
+    }
 }
 
 impl Textures {
@@ -119,7 +128,10 @@ impl Textures {
         let want = deckcraft_render::pasteboard_region(size, scale, reach, visible);
         let key = Key {
             slide: Arc::as_ptr(&slide) as usize,
-            master: master.as_ref().map(|m| Arc::as_ptr(m) as usize).unwrap_or(0),
+            master: master
+                .as_ref()
+                .map(|m| Arc::as_ptr(m) as usize)
+                .unwrap_or(0),
             size,
             edit,
             extra: extra ^ grayscale as u64,
@@ -132,8 +144,15 @@ impl Textures {
         }
         let t0 = crate::now_ms();
         let render = |region: Region| {
-            let opts =
-                RenderOpts { scale, edit, gif_times, threads: threads(), offset: region.offset(), size: Some(region.size()), ..Default::default() };
+            let opts = RenderOpts {
+                scale,
+                edit,
+                gif_times,
+                threads: threads(),
+                offset: region.offset(),
+                size: Some(region.size()),
+                ..Default::default()
+            };
             deckcraft_render::render_slide_drawn(p, index, &opts)
         };
         let (mut img, drawn) = render(want);
@@ -142,7 +161,10 @@ impl Textures {
         // Text spilling out of its box can reach further than the boxes said. Once drawn, the
         // region it calls for is known (and is next frame's key): render again only if it shows
         // more than this render covered.
-        let key = Key { want: deckcraft_render::pasteboard_region(size, scale, estimate.union(drawn), visible), ..key };
+        let key = Key {
+            want: deckcraft_render::pasteboard_region(size, scale, estimate.union(drawn), visible),
+            ..key
+        };
         if !region.contains(&key.want) {
             region = key.want;
             img = render(region).0;
@@ -158,7 +180,14 @@ impl Textures {
             }
             None => ctx.load_texture("slide-canvas", ci, TextureOptions::LINEAR),
         };
-        self.canvas = Some(Entry { key, tex: tex.clone(), region, _slide: slide, _master: master, stamp: 0 });
+        self.canvas = Some(Entry {
+            key,
+            tex: tex.clone(),
+            region,
+            _slide: slide,
+            _master: master,
+            stamp: 0,
+        });
         Some((tex, region))
     }
 
@@ -172,13 +201,25 @@ impl Textures {
 
     /// A thumbnail texture; renders at most `budget` new thumbnails per frame (returns None when
     /// it is over budget, so the caller draws a placeholder and asks for another frame).
-    pub fn thumb(&mut self, ctx: &egui::Context, p: &Presentation, index: usize, width_px: u32, budget: &mut u32) -> Option<TextureHandle> {
+    pub fn thumb(
+        &mut self,
+        ctx: &egui::Context,
+        p: &Presentation,
+        index: usize,
+        width_px: u32,
+        budget: &mut u32,
+    ) -> Option<TextureHandle> {
         let slide = p.slides.get(index)?.clone();
         let master = master_of(p, &slide);
-        let h = (width_px as f64 * p.slide_size.height / p.slide_size.width.max(1.0)).round().max(1.0) as u32;
+        let h = (width_px as f64 * p.slide_size.height / p.slide_size.width.max(1.0))
+            .round()
+            .max(1.0) as u32;
         let key = Key {
             slide: Arc::as_ptr(&slide) as usize,
-            master: master.as_ref().map(|m| Arc::as_ptr(m) as usize).unwrap_or(0),
+            master: master
+                .as_ref()
+                .map(|m| Arc::as_ptr(m) as usize)
+                .unwrap_or(0),
             size: (width_px, h),
             edit: false,
             extra: 0,
@@ -198,11 +239,34 @@ impl Textures {
         }
         *budget -= 1;
         let scale = width_px as f64 / p.slide_size.width.max(1.0);
-        let img = deckcraft_render::render_slide(p, index, &RenderOpts { scale, size: Some((width_px, h)), threads: 0, ..Default::default() });
-        let tex = ctx.load_texture(format!("thumb-{index}"), to_color_image(&img, false), TextureOptions::LINEAR);
+        let img = deckcraft_render::render_slide(
+            p,
+            index,
+            &RenderOpts {
+                scale,
+                size: Some((width_px, h)),
+                threads: 0,
+                ..Default::default()
+            },
+        );
+        let tex = ctx.load_texture(
+            format!("thumb-{index}"),
+            to_color_image(&img, false),
+            TextureOptions::LINEAR,
+        );
         // Drop the old entry for this slide address; entries for slides that no longer exist age out.
         let region = key.want;
-        self.thumbs.insert(key.slide, Entry { key, tex: tex.clone(), region, _slide: slide, _master: master, stamp: clock });
+        self.thumbs.insert(
+            key.slide,
+            Entry {
+                key,
+                tex: tex.clone(),
+                region,
+                _slide: slide,
+                _master: master,
+                stamp: clock,
+            },
+        );
         if self.thumbs.len() > 600 {
             let mut v: Vec<(usize, u64)> = self.thumbs.iter().map(|(k, e)| (*k, e.stamp)).collect();
             v.sort_by_key(|x| x.1);

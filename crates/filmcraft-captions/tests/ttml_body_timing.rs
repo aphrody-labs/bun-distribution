@@ -7,11 +7,17 @@ use filmcraft_captions::{Format, WriteOptions, parse, write};
 fn cues(xml: &str, format: Format) -> Vec<(f64, f64, String)> {
     let doc = parse(xml.as_bytes(), format).unwrap();
     assert!(doc.warnings.is_empty(), "{:?}", doc.warnings);
-    doc.cues.iter().map(|c| (c.start.seconds(), c.end.seconds(), c.text.clone())).collect()
+    doc.cues
+        .iter()
+        .map(|c| (c.start.seconds(), c.end.seconds(), c.text.clone()))
+        .collect()
 }
 
 fn both(xml: &str, want: &[(f64, f64, &str)]) {
-    let want: Vec<(f64, f64, String)> = want.iter().map(|(s, e, t)| (*s, *e, t.to_string())).collect();
+    let want: Vec<(f64, f64, String)> = want
+        .iter()
+        .map(|(s, e, t)| (*s, *e, t.to_string()))
+        .collect();
     for format in [Format::Ttml, Format::Dfxp] {
         assert_eq!(cues(xml, format), want, "{format:?}: {xml}");
     }
@@ -19,17 +25,26 @@ fn both(xml: &str, want: &[(f64, f64, &str)]) {
 
 #[test]
 fn body_begin_is_inherited() {
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body begin="5s"><div><p begin="1s" end="2s">x</p></div></body></tt>"#, &[(6.0, 7.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body begin="5s"><div><p begin="1s" end="2s">x</p></div></body></tt>"#,
+        &[(6.0, 7.0, "x")],
+    );
 }
 
 #[test]
 fn div_begin_is_inherited() {
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div begin="5s"><p begin="1s" end="2s">x</p></div></body></tt>"#, &[(6.0, 7.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div begin="5s"><p begin="1s" end="2s">x</p></div></body></tt>"#,
+        &[(6.0, 7.0, "x")],
+    );
 }
 
 #[test]
 fn untimed_containers_leave_times_unchanged() {
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="2s">x</p></div></body></tt>"#, &[(1.0, 2.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="2s">x</p></div></body></tt>"#,
+        &[(1.0, 2.0, "x")],
+    );
 }
 
 #[test]
@@ -42,7 +57,10 @@ fn nested_begins_add_up() {
 
 #[test]
 fn body_begin_offsets_timed_spans() {
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body begin="5s"><div><p><span begin="1s" end="2s">x</span></p></div></body></tt>"#, &[(6.0, 7.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body begin="5s"><div><p><span begin="1s" end="2s">x</span></p></div></body></tt>"#,
+        &[(6.0, 7.0, "x")],
+    );
 }
 
 #[test]
@@ -52,7 +70,10 @@ fn container_ends_clip_descendants() {
         r#"<tt xmlns="http://www.w3.org/ns/ttml"><body begin="1s"><div begin="10s" end="12s"><p begin="1s" end="5s">cut</p><p begin="3s" end="4s">gone</p></div></body></tt>"#,
         &[(12.0, 13.0, "cut")],
     );
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body dur="3s"><div><p begin="1s" end="5s">x</p></div></body></tt>"#, &[(1.0, 3.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body dur="3s"><div><p begin="1s" end="5s">x</p></div></body></tt>"#,
+        &[(1.0, 3.0, "x")],
+    );
 }
 
 #[test]
@@ -65,7 +86,10 @@ fn paragraphs_without_an_end_last_until_their_container_ends() {
 
 #[test]
 fn end_and_dur_take_the_earlier() {
-    both(r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="5s" dur="2s">x</p></div></body></tt>"#, &[(1.0, 3.0, "x")]);
+    both(
+        r#"<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1s" end="5s" dur="2s">x</p></div></body></tt>"#,
+        &[(1.0, 3.0, "x")],
+    );
 }
 
 #[test]
@@ -74,7 +98,11 @@ fn seq_containers_warn() {
     for format in [Format::Ttml, Format::Dfxp] {
         let doc = parse(xml.as_bytes(), format).unwrap();
         assert_eq!(doc.cues.len(), 1);
-        assert!(doc.warnings.iter().any(|w| w.contains("seq")), "{:?}", doc.warnings);
+        assert!(
+            doc.warnings.iter().any(|w| w.contains("seq")),
+            "{:?}",
+            doc.warnings
+        );
     }
 }
 
@@ -85,8 +113,17 @@ fn inherited_times_survive_export() {
     for format in [Format::Ttml, Format::Dfxp] {
         let doc = parse(xml.as_bytes(), format).unwrap();
         let back = parse(&write(&doc, format, WriteOptions::default()), format).unwrap();
-        let times = |d: &filmcraft_captions::Document| d.cues.iter().map(|c| (c.start, c.end, c.text.clone())).collect::<Vec<_>>();
+        let times = |d: &filmcraft_captions::Document| {
+            d.cues
+                .iter()
+                .map(|c| (c.start, c.end, c.text.clone()))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(times(&back), times(&doc), "{format:?}");
-        assert_eq!((back.cues[0].start.seconds(), back.cues[0].end.seconds()), (7.0, 9.0), "{format:?}");
+        assert_eq!(
+            (back.cues[0].start.seconds(), back.cues[0].end.seconds()),
+            (7.0, 9.0),
+            "{format:?}"
+        );
     }
 }

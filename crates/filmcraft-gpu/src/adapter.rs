@@ -54,7 +54,13 @@ impl Candidate {
             pci_bus_id: info.device_pci_bus_id,
             driver: info.driver,
             driver_info: info.driver_info,
-            features: adapter.features().bits().0.iter().map(|word| word.count_ones()).sum(),
+            features: adapter
+                .features()
+                .bits()
+                .0
+                .iter()
+                .map(|word| word.count_ones())
+                .sum(),
             usable: surface.is_none_or(|s| adapter.is_surface_supported(s)),
         }
     }
@@ -70,7 +76,14 @@ impl fmt::Display for Candidate {
             DeviceType::Other => "unknown type",
         };
         let driver = format!("{} {}", self.driver, self.driver_info);
-        write!(f, "\"{}\" ({:?}, {kind}, driver {}, {} features", self.name, self.backend, driver.trim(), self.features)?;
+        write!(
+            f,
+            "\"{}\" ({:?}, {kind}, driver {}, {} features",
+            self.name,
+            self.backend,
+            driver.trim(),
+            self.features
+        )?;
         if !self.pci_bus_id.is_empty() {
             write!(f, ", bus {}", self.pci_bus_id)?;
         }
@@ -87,8 +100,15 @@ impl fmt::Display for Candidate {
 /// the same: two of them cannot be told apart.
 fn same_gpu_and_driver(a: &Candidate, b: &Candidate) -> bool {
     let identified = a.vendor != 0 || a.device != 0;
-    let same_bus = a.pci_bus_id.is_empty() || b.pci_bus_id.is_empty() || a.pci_bus_id == b.pci_bus_id;
-    identified && a.backend == b.backend && a.device_type == b.device_type && a.vendor == b.vendor && a.device == b.device && a.driver == b.driver && same_bus
+    let same_bus =
+        a.pci_bus_id.is_empty() || b.pci_bus_id.is_empty() || a.pci_bus_id == b.pci_bus_id;
+    identified
+        && a.backend == b.backend
+        && a.device_type == b.device_type
+        && a.vendor == b.vendor
+        && a.device == b.device
+        && a.driver == b.driver
+        && same_bus
 }
 
 /// wgpu's device type order for `power` (wgpu-core's `Instance::request_adapter`): lower first.
@@ -114,7 +134,9 @@ fn type_order(device_type: DeviceType, power: PowerPreference) -> u8 {
 /// device type for `power`. `None` without a usable adapter.
 fn wgpu_choice(candidates: &[Candidate], power: PowerPreference) -> Option<usize> {
     let usable = candidates.iter().enumerate().filter(|(_, c)| c.usable);
-    usable.min_by_key(|(index, c)| (type_order(c.device_type, power), *index)).map(|(index, _)| index)
+    usable
+        .min_by_key(|(index, c)| (type_order(c.device_type, power), *index))
+        .map(|(index, _)| index)
 }
 
 /// The index of the adapter to draw with: [`wgpu_choice`], or the entry exposing the most
@@ -125,23 +147,52 @@ pub fn choose(candidates: &[Candidate], power: PowerPreference) -> Option<usize>
     let Some(preferred) = candidates.get(first) else {
         return Some(first);
     };
-    let versions = candidates.iter().enumerate().filter(|(_, c)| c.usable && same_gpu_and_driver(preferred, c));
-    versions.max_by_key(|(index, c)| (c.features, Reverse(*index))).map(|(index, _)| index).or(Some(first))
+    let versions = candidates
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| c.usable && same_gpu_and_driver(preferred, c));
+    versions
+        .max_by_key(|(index, c)| (c.features, Reverse(*index)))
+        .map(|(index, _)| index)
+        .or(Some(first))
 }
 
 /// [`choose`] over enumerated adapters, as egui-wgpu's `native_adapter_selector` for the window
 /// (`surface`). The adapters and the choice go to the log.
-pub fn pick(adapters: &[Adapter], surface: Option<&Surface<'_>>, power: PowerPreference) -> Result<Adapter, String> {
+pub fn pick(
+    adapters: &[Adapter],
+    surface: Option<&Surface<'_>>,
+    power: PowerPreference,
+) -> Result<Adapter, String> {
     let candidates: Vec<Candidate> = adapters.iter().map(|a| Candidate::of(a, surface)).collect();
     for candidate in &candidates {
         log::info!("graphics adapter available: {candidate}");
     }
-    let listed = || candidates.iter().map(ToString::to_string).collect::<Vec<_>>().join(", ");
-    let index = choose(&candidates, power).ok_or_else(|| format!("no usable graphics adapter among {}: {}", candidates.len(), listed()))?;
-    let (Some(chosen), Some(adapter)) = (candidates.get(index), adapters.get(index)) else {
-        return Err(format!("graphics adapter {index} of {} is missing", adapters.len()));
+    let listed = || {
+        candidates
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
     };
-    let others = candidates.iter().enumerate().filter(|(i, c)| *i != index && c.usable && same_gpu_and_driver(chosen, c)).count();
+    let index = choose(&candidates, power).ok_or_else(|| {
+        format!(
+            "no usable graphics adapter among {}: {}",
+            candidates.len(),
+            listed()
+        )
+    })?;
+    let (Some(chosen), Some(adapter)) = (candidates.get(index), adapters.get(index)) else {
+        return Err(format!(
+            "graphics adapter {index} of {} is missing",
+            adapters.len()
+        ));
+    };
+    let others = candidates
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| *i != index && c.usable && same_gpu_and_driver(chosen, c))
+        .count();
     if others > 0 {
         log::warn!(
             "{:?} lists \"{}\" {} times: several versions of its driver are installed, and a window drawn through a stale one can crash. Using the one with the most features; installing one driver package for every GPU removes the others.",
@@ -166,7 +217,10 @@ mod tests {
     const RADEON_IGPU: u32 = 0x1638;
     const POWERS: [PowerPreference; 3] = [PowerPreference::None, LowPower, HighPerformance];
 
-    #[expect(clippy::too_many_arguments, reason = "one line per adapter in the listings below")]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one line per adapter in the listings below"
+    )]
     fn gpu(
         name: &str,
         backend: Backend,
@@ -199,12 +253,72 @@ mod tests {
     fn g513qy() -> Vec<Candidate> {
         let amd = "AMD proprietary driver";
         vec![
-            gpu("AMD Radeon RX 6800M", Vulkan, DiscreteGpu, AMD, RX_6800M, "", amd, "26.9.2", 60),
-            gpu("AMD Radeon RX 6800M", Vulkan, DiscreteGpu, AMD, RX_6800M, "", amd, "26.9.2 (AMD proprietary shader compiler)", 68),
-            gpu("AMD Radeon(TM) Graphics", Vulkan, IntegratedGpu, AMD, RADEON_IGPU, "", amd, "21.30.02.13", 56),
-            gpu("AMD Radeon RX 6800M", Dx12, DiscreteGpu, AMD, RX_6800M, "0000:03:00.0", "32.0.21045.11001", "", 36),
-            gpu("AMD Radeon(TM) Graphics", Dx12, IntegratedGpu, AMD, RADEON_IGPU, "0000:08:00.0", "30.0.13002.13003", "", 36),
-            gpu("Microsoft Basic Render Driver", Dx12, Cpu, 0x1414, 0x8c, "", "10.0.26100.9549", "", 36),
+            gpu(
+                "AMD Radeon RX 6800M",
+                Vulkan,
+                DiscreteGpu,
+                AMD,
+                RX_6800M,
+                "",
+                amd,
+                "26.9.2",
+                60,
+            ),
+            gpu(
+                "AMD Radeon RX 6800M",
+                Vulkan,
+                DiscreteGpu,
+                AMD,
+                RX_6800M,
+                "",
+                amd,
+                "26.9.2 (AMD proprietary shader compiler)",
+                68,
+            ),
+            gpu(
+                "AMD Radeon(TM) Graphics",
+                Vulkan,
+                IntegratedGpu,
+                AMD,
+                RADEON_IGPU,
+                "",
+                amd,
+                "21.30.02.13",
+                56,
+            ),
+            gpu(
+                "AMD Radeon RX 6800M",
+                Dx12,
+                DiscreteGpu,
+                AMD,
+                RX_6800M,
+                "0000:03:00.0",
+                "32.0.21045.11001",
+                "",
+                36,
+            ),
+            gpu(
+                "AMD Radeon(TM) Graphics",
+                Dx12,
+                IntegratedGpu,
+                AMD,
+                RADEON_IGPU,
+                "0000:08:00.0",
+                "30.0.13002.13003",
+                "",
+                36,
+            ),
+            gpu(
+                "Microsoft Basic Render Driver",
+                Dx12,
+                Cpu,
+                0x1414,
+                0x8c,
+                "",
+                "10.0.26100.9549",
+                "",
+                36,
+            ),
         ]
     }
 
@@ -213,7 +327,11 @@ mod tests {
         let adapters = g513qy();
         // the window asks for high performance; `WGPU_POWER_PREF=none` for no preference
         for power in [HighPerformance, PowerPreference::None] {
-            assert_eq!(wgpu_choice(&adapters, power), Some(0), "wgpu takes the stale entry, which crashed");
+            assert_eq!(
+                wgpu_choice(&adapters, power),
+                Some(0),
+                "wgpu takes the stale entry, which crashed"
+            );
             assert_eq!(choose(&adapters, power), Some(1));
         }
         // whichever version the loader lists first
@@ -228,7 +346,20 @@ mod tests {
         assert_eq!(choose(&equal, HighPerformance), Some(0));
         // three versions: the one exposing the most
         let mut three = adapters.clone();
-        three.insert(1, gpu("AMD Radeon RX 6800M", Vulkan, DiscreteGpu, AMD, RX_6800M, "", "AMD proprietary driver", "24.1.1", 64));
+        three.insert(
+            1,
+            gpu(
+                "AMD Radeon RX 6800M",
+                Vulkan,
+                DiscreteGpu,
+                AMD,
+                RX_6800M,
+                "",
+                "AMD proprietary driver",
+                "24.1.1",
+                64,
+            ),
+        );
         assert_eq!(choose(&three, HighPerformance), Some(2));
     }
 
@@ -242,16 +373,62 @@ mod tests {
         for power in [HighPerformance, PowerPreference::None] {
             assert_eq!(choose(&dx12_first, power), Some(0));
         }
-        assert_eq!(choose(&dx12_first, LowPower), wgpu_choice(&dx12_first, LowPower));
+        assert_eq!(
+            choose(&dx12_first, LowPower),
+            wgpu_choice(&dx12_first, LowPower)
+        );
     }
 
     #[test]
     fn without_two_versions_of_one_driver_the_choice_is_wgpus() {
-        let nvidia = |backend, bus, driver, features| gpu("NVIDIA GeForce RTX 4070", backend, DiscreteGpu, 0x10de, 0x2786, bus, driver, "", features);
-        let intel = |backend, bus, driver, features| gpu("Intel(R) UHD Graphics 770", backend, IntegratedGpu, 0x8086, 0x4680, bus, driver, "", features);
-        let radeon = |bus, driver, features| gpu("AMD Radeon RX 7900 XT", Vulkan, DiscreteGpu, AMD, 0x744c, bus, driver, "", features);
+        let nvidia = |backend, bus, driver, features| {
+            gpu(
+                "NVIDIA GeForce RTX 4070",
+                backend,
+                DiscreteGpu,
+                0x10de,
+                0x2786,
+                bus,
+                driver,
+                "",
+                features,
+            )
+        };
+        let intel = |backend, bus, driver, features| {
+            gpu(
+                "Intel(R) UHD Graphics 770",
+                backend,
+                IntegratedGpu,
+                0x8086,
+                0x4680,
+                bus,
+                driver,
+                "",
+                features,
+            )
+        };
+        let radeon = |bus, driver, features| {
+            gpu(
+                "AMD Radeon RX 7900 XT",
+                Vulkan,
+                DiscreteGpu,
+                AMD,
+                0x744c,
+                bus,
+                driver,
+                "",
+                features,
+            )
+        };
         let gl = |name: &str, features| gpu(name, Gl, Other, 0, 0, "", "", "", features);
-        let without = |skip: usize| g513qy().into_iter().enumerate().filter(|(i, _)| *i != skip).map(|(_, c)| c).collect::<Vec<_>>();
+        let without = |skip: usize| {
+            g513qy()
+                .into_iter()
+                .enumerate()
+                .filter(|(i, _)| *i != skip)
+                .map(|(_, c)| c)
+                .collect::<Vec<_>>()
+        };
         let listings: Vec<Vec<Candidate>> = vec![
             vec![],
             vec![nvidia(Vulkan, "0000:01:00.0", "NVIDIA", 70)],
@@ -261,24 +438,57 @@ mod tests {
                 nvidia(Vulkan, "0000:01:00.0", "NVIDIA", 70),
                 nvidia(Dx12, "0000:01:00.0", "32.0.15.6094", 36),
                 intel(Dx12, "0000:00:02.0", "31.0.101.5186", 36),
-                gpu("Microsoft Basic Render Driver", Dx12, Cpu, 0x1414, 0x8c, "", "10.0.26100.1", "", 36),
+                gpu(
+                    "Microsoft Basic Render Driver",
+                    Dx12,
+                    Cpu,
+                    0x1414,
+                    0x8c,
+                    "",
+                    "10.0.26100.1",
+                    "",
+                    36,
+                ),
             ],
             // one GPU through two different drivers, the second exposing more: Linux with AMDVLK and RADV
-            vec![radeon("0000:03:00.0", "AMD open-source driver", 58), radeon("0000:03:00.0", "radv", 71)],
+            vec![
+                radeon("0000:03:00.0", "AMD open-source driver", 58),
+                radeon("0000:03:00.0", "radv", 71),
+            ],
             // a vendor's driver and Dozen (Vulkan on DirectX 12)
-            vec![nvidia(Vulkan, "", "Dozen", 75), nvidia(Vulkan, "0000:01:00.0", "NVIDIA", 70)],
+            vec![
+                nvidia(Vulkan, "", "Dozen", 75),
+                nvidia(Vulkan, "0000:01:00.0", "NVIDIA", 70),
+            ],
             // two cards of one model, on their own buses
-            vec![radeon("0000:03:00.0", "AMD proprietary driver", 60), radeon("0000:04:00.0", "AMD proprietary driver", 68)],
+            vec![
+                radeon("0000:03:00.0", "AMD proprietary driver", 60),
+                radeon("0000:04:00.0", "AMD proprietary driver", 68),
+            ],
             // OpenGL reports no ids: two adapters cannot be told apart
             vec![gl("ANGLE", 20), gl("ANGLE", 30)],
-            vec![gpu("llvmpipe (LLVM 19.1.0, 256 bits)", Vulkan, Cpu, 0x10005, 0, "", "llvmpipe", "", 50)],
+            vec![gpu(
+                "llvmpipe (LLVM 19.1.0, 256 bits)",
+                Vulkan,
+                Cpu,
+                0x10005,
+                0,
+                "",
+                "llvmpipe",
+                "",
+                50,
+            )],
             // the laptop above with either version of the driver alone
             without(0),
             without(1),
         ];
         for adapters in &listings {
             for power in POWERS {
-                assert_eq!(choose(adapters, power), wgpu_choice(adapters, power), "{power:?} over {adapters:#?}");
+                assert_eq!(
+                    choose(adapters, power),
+                    wgpu_choice(adapters, power),
+                    "{power:?} over {adapters:#?}"
+                );
             }
         }
         assert_eq!(choose(&[], HighPerformance), None);
@@ -290,20 +500,48 @@ mod tests {
         let newer = g513qy().swap_remove(1);
         assert!(same_gpu_and_driver(&stale, &newer) && same_gpu_and_driver(&stale, &stale));
         // a bus id only one version reports does not tell them apart; two different ones do
-        let on_bus = |bus: &str| Candidate { pci_bus_id: bus.into(), ..newer.clone() };
+        let on_bus = |bus: &str| Candidate {
+            pci_bus_id: bus.into(),
+            ..newer.clone()
+        };
         assert!(same_gpu_and_driver(&stale, &on_bus("0000:03:00.0")));
-        assert!(same_gpu_and_driver(&on_bus("0000:03:00.0"), &on_bus("0000:03:00.0")));
-        assert!(!same_gpu_and_driver(&on_bus("0000:03:00.0"), &on_bus("0000:04:00.0")));
+        assert!(same_gpu_and_driver(
+            &on_bus("0000:03:00.0"),
+            &on_bus("0000:03:00.0")
+        ));
+        assert!(!same_gpu_and_driver(
+            &on_bus("0000:03:00.0"),
+            &on_bus("0000:04:00.0")
+        ));
         for other in [
-            Candidate { backend: Dx12, ..newer.clone() },
-            Candidate { device_type: IntegratedGpu, ..newer.clone() },
-            Candidate { vendor: 0x10de, ..newer.clone() },
-            Candidate { device: RADEON_IGPU, ..newer.clone() },
-            Candidate { driver: "radv".into(), ..newer.clone() },
+            Candidate {
+                backend: Dx12,
+                ..newer.clone()
+            },
+            Candidate {
+                device_type: IntegratedGpu,
+                ..newer.clone()
+            },
+            Candidate {
+                vendor: 0x10de,
+                ..newer.clone()
+            },
+            Candidate {
+                device: RADEON_IGPU,
+                ..newer.clone()
+            },
+            Candidate {
+                driver: "radv".into(),
+                ..newer.clone()
+            },
         ] {
             assert!(!same_gpu_and_driver(&stale, &other), "{other}");
         }
-        let unidentified = Candidate { vendor: 0, device: 0, ..newer };
+        let unidentified = Candidate {
+            vendor: 0,
+            device: 0,
+            ..newer
+        };
         assert!(!same_gpu_and_driver(&unidentified, &unidentified));
     }
 
@@ -320,7 +558,10 @@ mod tests {
         assert_eq!(choose(&unusable(&|i, _| i == 1), HighPerformance), Some(0));
         assert_eq!(choose(&unusable(&|i, _| i == 0), HighPerformance), Some(1));
         // Vulkan cannot at all: DirectX 12
-        assert_eq!(choose(&unusable(&|_, c| c.backend == Vulkan), HighPerformance), Some(3));
+        assert_eq!(
+            choose(&unusable(&|_, c| c.backend == Vulkan), HighPerformance),
+            Some(3)
+        );
         assert_eq!(choose(&unusable(&|_, _| true), HighPerformance), None);
     }
 
@@ -328,8 +569,20 @@ mod tests {
     fn candidates_describe_themselves_for_the_log() {
         let adapters = g513qy();
         let text = adapters.get(1).map(ToString::to_string).unwrap_or_default();
-        assert_eq!(text, "\"AMD Radeon RX 6800M\" (Vulkan, discrete GPU, driver AMD proprietary driver 26.9.2 (AMD proprietary shader compiler), 68 features)");
-        let offscreen = adapters.get(4).map(|c| Candidate { usable: false, ..c.clone() }.to_string()).unwrap_or_default();
+        assert_eq!(
+            text,
+            "\"AMD Radeon RX 6800M\" (Vulkan, discrete GPU, driver AMD proprietary driver 26.9.2 (AMD proprietary shader compiler), 68 features)"
+        );
+        let offscreen = adapters
+            .get(4)
+            .map(|c| {
+                Candidate {
+                    usable: false,
+                    ..c.clone()
+                }
+                .to_string()
+            })
+            .unwrap_or_default();
         assert_eq!(
             offscreen,
             "\"AMD Radeon(TM) Graphics\" (Dx12, integrated GPU, driver 30.0.13002.13003, 36 features, bus 0000:08:00.0, cannot draw to the window)"
@@ -346,17 +599,35 @@ mod tests {
         }
         // no OpenGL: the app leaves it out on Windows, where creating it can crash a driver
         let backends = wgpu::Backends::PRIMARY;
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor { backends, ..wgpu::InstanceDescriptor::new_without_display_handle() });
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends,
+            ..wgpu::InstanceDescriptor::new_without_display_handle()
+        });
         let adapters = pollster::block_on(instance.enumerate_adapters(backends));
         let candidates: Vec<Candidate> = adapters.iter().map(|a| Candidate::of(a, None)).collect();
         for power in POWERS {
-            let options = wgpu::RequestAdapterOptions { power_preference: power, ..Default::default() };
-            let wgpu_own = pollster::block_on(instance.request_adapter(&options)).ok().map(|a| Candidate::of(&a, None));
-            assert_eq!(wgpu_choice(&candidates, power).and_then(|i| candidates.get(i)), wgpu_own.as_ref(), "{power:?} over {candidates:#?}");
-            let picked = pick(&adapters, None, power).ok().map(|a| Candidate::of(&a, None));
+            let options = wgpu::RequestAdapterOptions {
+                power_preference: power,
+                ..Default::default()
+            };
+            let wgpu_own = pollster::block_on(instance.request_adapter(&options))
+                .ok()
+                .map(|a| Candidate::of(&a, None));
+            assert_eq!(
+                wgpu_choice(&candidates, power).and_then(|i| candidates.get(i)),
+                wgpu_own.as_ref(),
+                "{power:?} over {candidates:#?}"
+            );
+            let picked = pick(&adapters, None, power)
+                .ok()
+                .map(|a| Candidate::of(&a, None));
             match (&wgpu_own, &picked) {
                 (Some(wgpu_own), Some(picked)) if wgpu_own != picked => {
-                    assert!(same_gpu_and_driver(wgpu_own, picked) && picked.features > wgpu_own.features, "{power:?}: {picked} instead of {wgpu_own}");
+                    assert!(
+                        same_gpu_and_driver(wgpu_own, picked)
+                            && picked.features > wgpu_own.features,
+                        "{power:?}: {picked} instead of {wgpu_own}"
+                    );
                 }
                 _ => assert_eq!(picked, wgpu_own, "{power:?}"),
             }

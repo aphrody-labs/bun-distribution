@@ -44,7 +44,10 @@ pub struct ShellExecConfig {
 
 impl Default for ShellExecConfig {
     fn default() -> Self {
-        Self { default_timeout: DEFAULT_TIMEOUT, max_output_bytes: DEFAULT_MAX_OUTPUT_BYTES }
+        Self {
+            default_timeout: DEFAULT_TIMEOUT,
+            max_output_bytes: DEFAULT_MAX_OUTPUT_BYTES,
+        }
     }
 }
 
@@ -108,7 +111,11 @@ impl ShellExecTool {
     /// Create a shell tool with explicit [`ShellExecConfig`] bounds.
     #[must_use]
     pub fn with_config(config: ShellExecConfig) -> Self {
-        Self { definition: build_definition(), config, sink: None }
+        Self {
+            definition: build_definition(),
+            config,
+            sink: None,
+        }
     }
 
     /// Attach a streaming [`OutputSink`] (builder style). Every output chunk is
@@ -158,11 +165,15 @@ fn build_definition() -> ToolDefinition {
     let mut output_properties = BTreeMap::new();
     output_properties.insert(
         "exit_code".to_string(),
-        JsonSchema::integer(Some("Process exit code (-1 if terminated by signal).".to_string())),
+        JsonSchema::integer(Some(
+            "Process exit code (-1 if terminated by signal).".to_string(),
+        )),
     );
     output_properties.insert(
         "output".to_string(),
-        JsonSchema::string(Some("Combined stdout and stderr, possibly truncated.".to_string())),
+        JsonSchema::string(Some(
+            "Combined stdout and stderr, possibly truncated.".to_string(),
+        )),
     );
     let output_schema = JsonSchema::object(
         output_properties,
@@ -183,7 +194,11 @@ fn build_definition() -> ToolDefinition {
 /// Outcome of running a child process to completion or timeout.
 enum RunOutcome {
     /// The process exited; `code` is its exit status (`-1` if killed by signal).
-    Exited { code: i32, output: String, truncated: bool },
+    Exited {
+        code: i32,
+        output: String,
+        truncated: bool,
+    },
     /// The process exceeded its timeout and was killed.
     TimedOut,
 }
@@ -195,12 +210,16 @@ impl ToolExecutor for ShellExecTool {
     }
 
     async fn handle(&self, arguments: serde_json::Value) -> Result<ToolOutput, ToolError> {
-        let args: ShellArgs = serde_json::from_value(arguments).map_err(|err| {
-            ToolError::InvalidArguments { tool: "shell".to_string(), message: err.to_string() }
-        })?;
+        let args: ShellArgs =
+            serde_json::from_value(arguments).map_err(|err| ToolError::InvalidArguments {
+                tool: "shell".to_string(),
+                message: err.to_string(),
+            })?;
 
         let Some((program, rest)) = args.command.split_first() else {
-            return Ok(ToolOutput::error("shell: `command` must be a non-empty argv vector"));
+            return Ok(ToolOutput::error(
+                "shell: `command` must be a non-empty argv vector",
+            ));
         };
 
         // Command-safety backstop. Opt-in via APHRODY_GUARD (a no-op by default,
@@ -215,7 +234,9 @@ impl ToolExecutor for ShellExecTool {
             return Ok(refusal);
         }
 
-        let timeout = args.timeout_ms.map_or(self.config.default_timeout, Duration::from_millis);
+        let timeout = args
+            .timeout_ms
+            .map_or(self.config.default_timeout, Duration::from_millis);
 
         let mut command = Command::new(program).no_window();
         command.args(rest);
@@ -232,9 +253,17 @@ impl ToolExecutor for ShellExecTool {
         #[cfg(unix)]
         command.process_group(0);
 
-        let outcome = run_child(command, timeout, self.config.max_output_bytes, self.sink.as_ref())
-            .await
-            .map_err(|message| ToolError::Execution { tool: "shell".to_string(), message })?;
+        let outcome = run_child(
+            command,
+            timeout,
+            self.config.max_output_bytes,
+            self.sink.as_ref(),
+        )
+        .await
+        .map_err(|message| ToolError::Execution {
+            tool: "shell".to_string(),
+            message,
+        })?;
 
         match outcome {
             RunOutcome::TimedOut => Ok(ToolOutput::error(format!(
@@ -242,7 +271,11 @@ impl ToolExecutor for ShellExecTool {
                 program,
                 timeout.as_millis()
             ))),
-            RunOutcome::Exited { code, output, truncated } => {
+            RunOutcome::Exited {
+                code,
+                output,
+                truncated,
+            } => {
                 let body = if truncated {
                     format!(
                         "exit_code: {code}\n--- output (truncated to {} bytes) ---\n{output}",
@@ -254,7 +287,7 @@ impl ToolExecutor for ShellExecTool {
                 // A non-zero exit is reported to the model but is not a tool
                 // *error*: the command ran and produced a result.
                 Ok(ToolOutput::ok(body))
-            },
+            }
         }
     }
 
@@ -283,10 +316,18 @@ async fn run_child(
     max_output_bytes: usize,
     sink: Option<&OutputSink>,
 ) -> Result<RunOutcome, String> {
-    let mut child = command.spawn().map_err(|err| format!("failed to spawn process: {err}"))?;
+    let mut child = command
+        .spawn()
+        .map_err(|err| format!("failed to spawn process: {err}"))?;
 
-    let mut stdout = child.stdout.take().ok_or_else(|| "failed to capture stdout".to_string())?;
-    let mut stderr = child.stderr.take().ok_or_else(|| "failed to capture stderr".to_string())?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "failed to capture stdout".to_string())?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "failed to capture stderr".to_string())?;
 
     let mut buffer = String::new();
     let mut truncated = false;
@@ -333,7 +374,11 @@ async fn run_child(
     }?;
 
     let code = status.code().unwrap_or(-1);
-    Ok(RunOutcome::Exited { code, output: buffer, truncated })
+    Ok(RunOutcome::Exited {
+        code,
+        output: buffer,
+        truncated,
+    })
 }
 
 /// Terminate a timed-out command together with everything it spawned.

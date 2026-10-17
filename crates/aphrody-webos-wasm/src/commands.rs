@@ -41,10 +41,17 @@ struct Strings(SharedOpfsVfs);
 impl ShellCommand for Strings {
     fn run(&self, shell: &mut LocalShell, args: &[String], _: &[u8]) -> Result<Vec<u8>, String> {
         let bytes = read_arg(&mut self.0.clone(), shell, args)?;
-        let min = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(STRINGS_MIN);
+        let min = args
+            .get(1)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(STRINGS_MIN);
         let mut out = String::new();
         for s in aphrody_re::extract_strings(&bytes, min, STRINGS_LIMIT) {
-            out.push_str(&serde_json::to_value(&s).map_err(|e| e.to_string())?.to_string());
+            out.push_str(
+                &serde_json::to_value(&s)
+                    .map_err(|e| e.to_string())?
+                    .to_string(),
+            );
             out.push('\n');
         }
         Ok(out.into_bytes())
@@ -68,7 +75,12 @@ impl ShellCommand for Search {
         if args.is_empty() {
             return Err("usage: search WORDS...".into());
         }
-        let hits = rag::search(&mut self.0.clone(), rpc::HOME, &args.join(" "), SEARCH_LIMIT);
+        let hits = rag::search(
+            &mut self.0.clone(),
+            rpc::HOME,
+            &args.join(" "),
+            SEARCH_LIMIT,
+        );
         let mut out = String::new();
         for hit in hits["results"].as_array().into_iter().flatten() {
             out.push_str(&format!(

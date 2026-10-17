@@ -6,7 +6,10 @@ pub struct DspStack<const N: usize> {
 
 impl<const N: usize> Default for DspStack<N> {
     fn default() -> Self {
-        Self { data: [0; N], ptr: 0 }
+        Self {
+            data: [0; N],
+            ptr: 0,
+        }
     }
 }
 

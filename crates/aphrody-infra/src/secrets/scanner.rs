@@ -43,7 +43,11 @@ impl SecretScanner {
                 "GitHub Personal Access Token",
                 Regex::new(r"\b(?:ghp|gho|ghu|ghs|ghr|github_pat)_[A-Za-z0-9_]{36,255}\b").unwrap(),
             ),
-            ("AWS_ACCESS_KEY", "AWS Access Key ID", Regex::new(r"\bAKIA[0-9A-Z]{16}\b").unwrap()),
+            (
+                "AWS_ACCESS_KEY",
+                "AWS Access Key ID",
+                Regex::new(r"\bAKIA[0-9A-Z]{16}\b").unwrap(),
+            ),
             (
                 "DISCORD_BOT_TOKEN",
                 "Discord Bot Token pattern",
@@ -149,7 +153,11 @@ impl SecretScanner {
                     }
 
                     let snippet = if matched_str.len() > 10 {
-                        format!("{}...{}", &matched_str[..4], &matched_str[matched_str.len() - 4..])
+                        format!(
+                            "{}...{}",
+                            &matched_str[..4],
+                            &matched_str[matched_str.len() - 4..]
+                        )
                     } else {
                         "***REDACTED***".to_string()
                     };

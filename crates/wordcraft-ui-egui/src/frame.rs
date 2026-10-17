@@ -23,7 +23,9 @@ const SNAP_DEG: f32 = 15.0;
 
 /// Screen point `p` turned `deg` degrees clockwise about `c`.
 fn turn(p: Pos2, c: Pos2, deg: f32) -> Pos2 {
-    let (s, k) = wordcraft_geom::normalize_degrees(deg).to_radians().sin_cos();
+    let (s, k) = wordcraft_geom::normalize_degrees(deg)
+        .to_radians()
+        .sin_cos();
     let (u, v) = (p.x - c.x, p.y - c.y);
     pos2(c.x + u * k - v * s, c.y + u * s + v * k)
 }
@@ -59,7 +61,10 @@ impl Handle {
     }
     fn at(self, f: egui::Rect) -> Pos2 {
         let k = |v: i8| (f32::from(v) + 1.0) / 2.0;
-        pos2(f.min.x + f.width() * k(self.x), f.min.y + f.height() * k(self.y))
+        pos2(
+            f.min.x + f.width() * k(self.x),
+            f.min.y + f.height() * k(self.y),
+        )
     }
     /// Where it is on frame `f` turned `deg`.
     fn at_turned(self, f: egui::Rect, deg: f32) -> Pos2 {
@@ -98,30 +103,55 @@ impl Grab {
 
 /// A page rect (points) on screen, given the page's screen rect and the scale.
 pub fn to_screen(page: egui::Rect, scale: f32, r: Rect) -> egui::Rect {
-    egui::Rect::from_min_size(pos2(page.min.x + r.x * scale, page.min.y + r.y * scale), vec2(r.w * scale, r.h * scale))
+    egui::Rect::from_min_size(
+        pos2(page.min.x + r.x * scale, page.min.y + r.y * scale),
+        vec2(r.w * scale, r.h * scale),
+    )
 }
 
 /// The handles a frame shows: corners always, edge middles when there's room.
 fn handles(f: egui::Rect) -> impl Iterator<Item = Handle> {
-    let (wide, tall) = (f.width() >= EDGE_HANDLES_FROM, f.height() >= EDGE_HANDLES_FROM);
-    Handle::ALL.into_iter().filter(move |h| (h.x != 0 || wide) && (h.y != 0 || tall))
+    let (wide, tall) = (
+        f.width() >= EDGE_HANDLES_FROM,
+        f.height() >= EDGE_HANDLES_FROM,
+    );
+    Handle::ALL
+        .into_iter()
+        .filter(move |h| (h.x != 0 || wide) && (h.y != 0 || tall))
 }
 
 /// The handle of frame `f` turned `deg` under screen point `p`.
 pub fn handle_at(f: egui::Rect, deg: f32, p: Pos2) -> Option<Handle> {
     let d = |h: &Handle| h.at_turned(f, deg).distance(p);
-    handles(f).filter(|h| d(h) <= GRAB_R).min_by(|a, b| d(a).total_cmp(&d(b)))
+    handles(f)
+        .filter(|h| d(h) <= GRAB_R)
+        .min_by(|a, b| d(a).total_cmp(&d(b)))
 }
 
 /// The corners of frame `f` turned `deg`, clockwise from the top left, closed.
 fn outline(f: egui::Rect, deg: f32) -> [Pos2; 5] {
     let c = f.center();
-    [f.left_top(), f.right_top(), f.right_bottom(), f.left_bottom(), f.left_top()].map(|p| turn(p, c, deg))
+    [
+        f.left_top(),
+        f.right_top(),
+        f.right_bottom(),
+        f.left_bottom(),
+        f.left_top(),
+    ]
+    .map(|p| turn(p, c, deg))
 }
 
 /// Draw a frame turned `deg`: its outline (dashed while what's inside is being edited) and,
 /// unless it's being dragged, its handles — `rotate` adds the rotation handle above it.
-pub fn paint(painter: &Painter, t: &Tokens, f: egui::Rect, deg: f32, dashed: bool, with_handles: bool, rotate: bool) {
+pub fn paint(
+    painter: &Painter,
+    t: &Tokens,
+    f: egui::Rect,
+    deg: f32,
+    dashed: bool,
+    with_handles: bool,
+    rotate: bool,
+) {
     let stroke = Stroke::new(1.25, t.accent);
     let c = outline(f, deg);
     if dashed {
@@ -140,7 +170,14 @@ pub fn paint(painter: &Painter, t: &Tokens, f: egui::Rect, deg: f32, dashed: boo
         painter.circle(r, HANDLE_R + 1.0, t.handle, Stroke::new(1.25, t.accent));
         // A circling arrow: three quarters of a ring and its head.
         let (rr, k) = (HANDLE_R * 0.55, std::f32::consts::PI / 12.0);
-        let ring: Vec<Pos2> = (0..=10).map(|i| r + vec2((k * (i as f32 * 1.8 - 6.0)).cos(), (k * (i as f32 * 1.8 - 6.0)).sin()) * rr).collect();
+        let ring: Vec<Pos2> = (0..=10)
+            .map(|i| {
+                r + vec2(
+                    (k * (i as f32 * 1.8 - 6.0)).cos(),
+                    (k * (i as f32 * 1.8 - 6.0)).sin(),
+                ) * rr
+            })
+            .collect();
         if let Some(end) = ring.last().copied() {
             painter.add(egui::Shape::line(ring, Stroke::new(1.0, t.accent)));
             painter.circle_filled(end, 1.3, t.accent);
@@ -156,14 +193,24 @@ pub fn paint(painter: &Painter, t: &Tokens, f: egui::Rect, deg: f32, dashed: boo
 /// Where a frame turned `deg` is being dragged to: its outline, faintly filled.
 pub fn paint_outline(painter: &Painter, t: &Tokens, f: egui::Rect, deg: f32) {
     let c = outline(f, deg);
-    painter.add(egui::Shape::convex_polygon(c[..4].to_vec(), t.accent.gamma_multiply(0.08), Stroke::new(1.25, t.accent)));
+    painter.add(egui::Shape::convex_polygon(
+        c[..4].to_vec(),
+        t.accent.gamma_multiply(0.08),
+        Stroke::new(1.25, t.accent),
+    ));
 }
 
 /// A frame being turned to `deg`: its outline and the angle beside the rotation handle.
 pub fn paint_turning(painter: &Painter, t: &Tokens, f: egui::Rect, deg: f32) {
     paint_outline(painter, t, f, deg);
     let label = format!("{:.0}°", wordcraft_geom::normalize_degrees(deg.round()));
-    painter.text(rotate_handle(f, deg) + vec2(HANDLE_R + 6.0, 0.0), egui::Align2::LEFT_CENTER, label, egui::FontId::proportional(11.0), t.accent);
+    painter.text(
+        rotate_handle(f, deg) + vec2(HANDLE_R + 6.0, 0.0),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(11.0),
+        t.accent,
+    );
 }
 
 /// A drag of a frame in progress.
@@ -187,7 +234,16 @@ pub struct Drag {
 impl Drag {
     /// A drag of the frame at `start` on `page`, turned `deg`, grabbed at screen point `press`.
     pub fn new(grab: Grab, page: usize, start: Rect, deg: f32, press: Pos2) -> Drag {
-        Drag { grab, page, start, press, to_page: page, rect: start, moved: false, deg: wordcraft_geom::normalize_degrees(deg) }
+        Drag {
+            grab,
+            page,
+            start,
+            press,
+            to_page: page,
+            rect: start,
+            moved: false,
+            deg: wordcraft_geom::normalize_degrees(deg),
+        }
     }
 
     /// Follow the pointer with the rotation handle: the frame turns to face it, by whole degrees
@@ -196,7 +252,9 @@ impl Drag {
         if !self.moved && pointer.distance(self.press) < DRAG_START {
             return;
         }
-        let Some(page) = pages.get(self.page) else { return };
+        let Some(page) = pages.get(self.page) else {
+            return;
+        };
         self.moved = true;
         let c = to_screen(*page, scale, self.start).center();
         let (dx, dy) = (pointer.x - c.x, pointer.y - c.y);
@@ -211,7 +269,14 @@ impl Drag {
 
     /// Follow the pointer. A move keeps the grabbed point under it, across pages too; a resize
     /// moves the grabbed edges, keeping `min` size and, with `keep_aspect`, the proportions.
-    pub fn update(&mut self, pointer: Pos2, pages: &[egui::Rect], scale: f32, min: f32, keep_aspect: bool) {
+    pub fn update(
+        &mut self,
+        pointer: Pos2,
+        pages: &[egui::Rect],
+        scale: f32,
+        min: f32,
+        keep_aspect: bool,
+    ) {
         if !self.moved && pointer.distance(self.press) < DRAG_START {
             return;
         }
@@ -219,8 +284,14 @@ impl Drag {
         let scale = scale.max(0.01);
         match self.grab {
             Grab::Move => {
-                let Some(origin) = pages.get(self.page) else { return };
-                let Some((page, r)) = crate::canvas::nearest_page(pages, pointer).and_then(|i| Some((i, pages.get(i)?))) else { return };
+                let Some(origin) = pages.get(self.page) else {
+                    return;
+                };
+                let Some((page, r)) = crate::canvas::nearest_page(pages, pointer)
+                    .and_then(|i| Some((i, pages.get(i)?)))
+                else {
+                    return;
+                };
                 let (x, y) = ((pointer.x - r.min.x) / scale, (pointer.y - r.min.y) / scale);
                 // The grabbed point within the frame, points.
                 let gx = (self.press.x - origin.min.x) / scale - self.start.x;
@@ -240,7 +311,15 @@ impl Drag {
 
 /// [`resized`] for a frame turned `deg`: the drag is taken along the frame's own axes, and the
 /// handle opposite the grabbed one stays where it is on the page.
-pub fn resized_turned(r: Rect, deg: f32, h: Handle, dx: f32, dy: f32, min: f32, keep_aspect: bool) -> Rect {
+pub fn resized_turned(
+    r: Rect,
+    deg: f32,
+    h: Handle,
+    dx: f32,
+    dy: f32,
+    min: f32,
+    keep_aspect: bool,
+) -> Rect {
     if wordcraft_geom::normalize_degrees(deg) == 0.0 {
         return resized(r, h, dx, dy, min, keep_aspect);
     }
@@ -272,7 +351,11 @@ pub fn resized(r: Rect, h: Handle, dx: f32, dy: f32, min: f32, keep_aspect: bool
     if keep_aspect && h.is_corner() && r.w > 0.0 && r.h > 0.0 {
         // Follow whichever side changed more.
         let (kx, ky) = ((x1 - x0) / r.w, (y1 - y0) / r.h);
-        let k = if (kx - 1.0).abs() >= (ky - 1.0).abs() { kx } else { ky };
+        let k = if (kx - 1.0).abs() >= (ky - 1.0).abs() {
+            kx
+        } else {
+            ky
+        };
         let k = k.max(min / r.w).max(min / r.h);
         let (w, hh) = (r.w * k, r.h * k);
         if h.x < 0 {
@@ -293,13 +376,27 @@ pub fn resized(r: Rect, h: Handle, dx: f32, dy: f32, min: f32, keep_aspect: bool
 mod tests {
     use super::*;
 
-    const R: Rect = Rect { x: 100.0, y: 50.0, w: 200.0, h: 100.0 };
+    const R: Rect = Rect {
+        x: 100.0,
+        y: 50.0,
+        w: 200.0,
+        h: 100.0,
+    };
 
     #[test]
     fn resize_moves_only_the_grabbed_edges() {
-        assert_eq!(resized(R, Handle { x: 1, y: 0 }, 30.0, 99.0, 4.0, false), Rect::new(100.0, 50.0, 230.0, 100.0));
-        assert_eq!(resized(R, Handle { x: -1, y: -1 }, 20.0, 10.0, 4.0, false), Rect::new(120.0, 60.0, 180.0, 90.0));
-        assert_eq!(resized(R, Handle { x: 0, y: 1 }, 50.0, -40.0, 4.0, false), Rect::new(100.0, 50.0, 200.0, 60.0));
+        assert_eq!(
+            resized(R, Handle { x: 1, y: 0 }, 30.0, 99.0, 4.0, false),
+            Rect::new(100.0, 50.0, 230.0, 100.0)
+        );
+        assert_eq!(
+            resized(R, Handle { x: -1, y: -1 }, 20.0, 10.0, 4.0, false),
+            Rect::new(120.0, 60.0, 180.0, 90.0)
+        );
+        assert_eq!(
+            resized(R, Handle { x: 0, y: 1 }, 50.0, -40.0, 4.0, false),
+            Rect::new(100.0, 50.0, 200.0, 60.0)
+        );
     }
 
     #[test]
@@ -307,7 +404,10 @@ mod tests {
         let r = resized(R, Handle { x: -1, y: 0 }, 500.0, 0.0, 18.0, false);
         assert_eq!((r.right(), r.w), (R.right(), 18.0));
         let r = resized(R, Handle { x: 1, y: 1 }, -1000.0, -1000.0, 18.0, true);
-        assert!(r.w >= 18.0 && r.h >= 18.0 && (r.w / r.h - 2.0).abs() < 1e-3, "{r:?}");
+        assert!(
+            r.w >= 18.0 && r.h >= 18.0 && (r.w / r.h - 2.0).abs() < 1e-3,
+            "{r:?}"
+        );
         assert_eq!((r.x, r.y), (R.x, R.y));
     }
 
@@ -325,24 +425,41 @@ mod tests {
         // Too short for side handles; wide enough for top/bottom middles.
         let shown: Vec<Handle> = handles(f).collect();
         assert_eq!(shown.len(), 6);
-        assert_eq!(handle_at(f, 0.0, pos2(101.0, 21.0)), Some(Handle { x: 1, y: 1 }));
-        assert_eq!(handle_at(f, 0.0, pos2(50.0, -2.0)), Some(Handle { x: 0, y: -1 }));
+        assert_eq!(
+            handle_at(f, 0.0, pos2(101.0, 21.0)),
+            Some(Handle { x: 1, y: 1 })
+        );
+        assert_eq!(
+            handle_at(f, 0.0, pos2(50.0, -2.0)),
+            Some(Handle { x: 0, y: -1 })
+        );
         assert_eq!(handle_at(f, 0.0, pos2(50.0, 10.0)), None);
         // Turned 90° clockwise, the top-left corner is at the top right.
-        assert_eq!(handle_at(f, 90.0, pos2(60.0, -40.0)), Some(Handle { x: -1, y: -1 }));
-        assert!(rotate_handle_at(f, 0.0, pos2(50.0, -22.0)) && !rotate_handle_at(f, 90.0, pos2(50.0, -22.0)));
+        assert_eq!(
+            handle_at(f, 90.0, pos2(60.0, -40.0)),
+            Some(Handle { x: -1, y: -1 })
+        );
+        assert!(
+            rotate_handle_at(f, 0.0, pos2(50.0, -22.0))
+                && !rotate_handle_at(f, 90.0, pos2(50.0, -22.0))
+        );
     }
 
     #[test]
     fn moving_keeps_the_grab_point_under_the_pointer() {
-        let pages =
-            [egui::Rect::from_min_size(pos2(10.0, 10.0), vec2(612.0, 792.0)), egui::Rect::from_min_size(pos2(10.0, 812.0), vec2(612.0, 792.0))];
+        let pages = [
+            egui::Rect::from_min_size(pos2(10.0, 10.0), vec2(612.0, 792.0)),
+            egui::Rect::from_min_size(pos2(10.0, 812.0), vec2(612.0, 792.0)),
+        ];
         let mut d = Drag::new(Grab::Move, 0, R, 0.0, pos2(10.0 + 150.0, 10.0 + 60.0));
         d.update(pos2(161.0, 71.0), &pages, 1.0, 4.0, false);
         assert!(!d.moved, "under the drag threshold");
         d.update(pos2(210.0, 110.0), &pages, 1.0, 4.0, false);
         assert!(d.moved);
-        assert_eq!((d.to_page, d.rect), (0, Rect::new(150.0, 90.0, 200.0, 100.0)));
+        assert_eq!(
+            (d.to_page, d.rect),
+            (0, Rect::new(150.0, 90.0, 200.0, 100.0))
+        );
         // Onto the next page.
         d.update(pos2(160.0, 812.0 + 60.0), &pages, 1.0, 4.0, false);
         assert_eq!((d.to_page, d.rect), (1, R));
@@ -350,7 +467,10 @@ mod tests {
 
     #[test]
     fn the_rotation_handle_turns_the_frame_and_shift_snaps() {
-        let pages = [egui::Rect::from_min_size(pos2(0.0, 0.0), vec2(612.0, 792.0))];
+        let pages = [egui::Rect::from_min_size(
+            pos2(0.0, 0.0),
+            vec2(612.0, 792.0),
+        )];
         // R's centre is (200, 100); its rotation handle is above it.
         let mut d = Drag::new(Grab::Rotate, 0, R, 0.0, pos2(200.0, 28.0));
         d.turn_to(pos2(300.0, 100.0), &pages, 1.0, false);
@@ -368,8 +488,17 @@ mod tests {
         // Turned 90°: dragging the right handle (now at the bottom) down widens the frame, and
         // its left edge (now at the top) stays put on the page.
         let r = resized_turned(R, 90.0, Handle { x: 1, y: 0 }, 0.0, 40.0, 4.0, false);
-        assert!((r.w - 240.0).abs() < 1e-3 && (r.h - 100.0).abs() < 1e-3, "{r:?}");
-        let top = |r: Rect| turn(pos2(r.x, r.y + r.h / 2.0), pos2(r.x + r.w / 2.0, r.y + r.h / 2.0), 90.0);
+        assert!(
+            (r.w - 240.0).abs() < 1e-3 && (r.h - 100.0).abs() < 1e-3,
+            "{r:?}"
+        );
+        let top = |r: Rect| {
+            turn(
+                pos2(r.x, r.y + r.h / 2.0),
+                pos2(r.x + r.w / 2.0, r.y + r.h / 2.0),
+                90.0,
+            )
+        };
         assert!(top(r).distance(top(R)) < 1e-3, "{:?} {:?}", top(r), top(R));
     }
 }

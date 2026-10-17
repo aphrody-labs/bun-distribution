@@ -119,10 +119,16 @@ fn read(ifd: &Ifd, tag: u16, half_diagonal: f64) -> Option<Table> {
         return None;
     }
     let knots = v[1..1 + n].to_vec();
-    if knots[0] < 0.0 || knots.windows(2).any(|w| w[1] <= w[0]) || !(0.5..=2.0).contains(&knots[n - 1]) {
+    if knots[0] < 0.0
+        || knots.windows(2).any(|w| w[1] <= w[0])
+        || !(0.5..=2.0).contains(&knots[n - 1])
+    {
         return None;
     }
-    Some(Table { knots, values: v[1 + n..].to_vec() })
+    Some(Table {
+        knots,
+        values: v[1 + n..].to_vec(),
+    })
 }
 
 impl Table {
@@ -156,7 +162,8 @@ struct Geometry<'a> {
 
 impl Geometry<'_> {
     fn bracket(&self, source: f64) -> f64 {
-        self.table.map_or(1.0, |t| 1.0 + t.at(source * t.last(), Some(0.0)) / 100.0)
+        self.table
+            .map_or(1.0, |t| 1.0 + t.at(source * t.last(), Some(0.0)) / 100.0)
     }
     fn source(&self, r: f64) -> f64 {
         let mut s = self.zoom * r;
@@ -170,9 +177,15 @@ impl Geometry<'_> {
 /// The frame-filling zoom: the largest radial scale for which every border point of the `w × h` output samples
 /// inside the source (the bracket is largest at the nearest border radius or beyond).
 fn zoom(table: &Table, nearest: f64) -> Option<f64> {
-    let mut g = Geometry { table: Some(table), zoom: 1.0 };
+    let mut g = Geometry {
+        table: Some(table),
+        zoom: 1.0,
+    };
     for _ in 0..8 {
-        let m = (0..=512).map(|i| nearest + (1.0 - nearest) * i as f64 / 512.0).map(|r| g.bracket(g.source(r))).fold(f64::MIN, f64::max);
+        let m = (0..=512)
+            .map(|i| nearest + (1.0 - nearest) * i as f64 / 512.0)
+            .map(|r| g.bracket(g.source(r)))
+            .fold(f64::MIN, f64::max);
         if !(0.5..2.0).contains(&m) {
             return None;
         }
@@ -183,8 +196,14 @@ fn zoom(table: &Table, nearest: f64) -> Option<f64> {
 
 /// Fit `target(r) ≈ Σ c_i basis_i(r)` on `r ∈ [0, 1]` minimising the largest deviation (iteratively reweighted least
 /// squares), returning the coefficients and that deviation.
-fn minimax<const N: usize>(basis: impl Fn(f64) -> [f64; N], target: impl Fn(f64) -> f64) -> Option<([f64; N], f64)> {
-    let rows: Vec<([f64; N], f64)> = (0..=SAMPLES).map(|j| j as f64 / SAMPLES as f64).map(|r| (basis(r), target(r))).collect();
+fn minimax<const N: usize>(
+    basis: impl Fn(f64) -> [f64; N],
+    target: impl Fn(f64) -> f64,
+) -> Option<([f64; N], f64)> {
+    let rows: Vec<([f64; N], f64)> = (0..=SAMPLES)
+        .map(|j| j as f64 / SAMPLES as f64)
+        .map(|r| (basis(r), target(r)))
+        .collect();
     let mut weight = vec![1.0; rows.len()];
     let mut best: Option<([f64; N], f64)> = None;
     for _ in 0..FIT_ROUNDS {
@@ -199,7 +218,10 @@ fn minimax<const N: usize>(basis: impl Fn(f64) -> [f64; N], target: impl Fn(f64)
             }
         }
         let c = solve(matrix, rhs)?;
-        let errors: Vec<f64> = rows.iter().map(|(terms, y)| (terms.iter().zip(c).map(|(a, b)| a * b).sum::<f64>() - y).abs()).collect();
+        let errors: Vec<f64> = rows
+            .iter()
+            .map(|(terms, y)| (terms.iter().zip(c).map(|(a, b)| a * b).sum::<f64>() - y).abs())
+            .collect();
         let worst = errors.iter().copied().fold(0.0, f64::max);
         if best.as_ref().is_none_or(|b| worst < b.1) {
             best = Some((c, worst));
@@ -269,11 +291,17 @@ fn warp(ifd: &Ifd, w: usize, h: usize) -> Option<Opcode> {
     }
     let (cw, ch) = (w as f64 - 1.0, h as f64 - 1.0);
     let nearest = cw.min(ch) / cw.hypot(ch);
-    let g = Geometry { table: Some(&table), zoom: zoom(&table, nearest)? };
+    let g = Geometry {
+        table: Some(&table),
+        zoom: zoom(&table, nearest)?,
+    };
     let k = polynomial(|r| g.source(r))?;
     // The recorded image is the active area and the tables are centred on it: DNG normalises by the farthest
     // corner, which is the half diagonal used here.
-    Some(Opcode::WarpRectilinear { planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]], center: [0.5, 0.5] })
+    Some(Opcode::WarpRectilinear {
+        planes: vec![[k[0], k[1], k[2], k[3], 0.0, 0.0]],
+        center: [0.5, 0.5],
+    })
 }
 
 /// Radial illumination gain `100 / V` as DNG `FixVignetteRadial` (`1 + k0 r² + … + k4 r¹⁰`).
@@ -293,10 +321,22 @@ fn vignette(ifd: &Ifd, w: usize, h: usize) -> Option<Opcode> {
     };
     let (k, error) = minimax(basis, |r| gain(r) - 1.0)?;
     // the relative error at the worst point (gain is at least 1 / 1.3 here)
-    if error > MAX_GAIN_ERROR || (0..=SAMPLES).any(|j| 1.0 + basis(j as f64 / SAMPLES as f64).iter().zip(k).map(|(a, b)| a * b).sum::<f64>() < 0.5) {
+    if error > MAX_GAIN_ERROR
+        || (0..=SAMPLES).any(|j| {
+            1.0 + basis(j as f64 / SAMPLES as f64)
+                .iter()
+                .zip(k)
+                .map(|(a, b)| a * b)
+                .sum::<f64>()
+                < 0.5
+        })
+    {
         return None;
     }
-    Some(Opcode::FixVignetteRadial { k, center: [0.5, 0.5] })
+    Some(Opcode::FixVignetteRadial {
+        k,
+        center: [0.5, 0.5],
+    })
 }
 
 /// The lens corrections of a RAF whose camera `model` was validated (anything else, and any table that is not in
@@ -305,7 +345,10 @@ pub(super) fn corrections(model: &str, raw: &Ifd, active: Rect) -> Vec<Opcode> {
     if !VALIDATED.contains(&model.trim()) || active.width < 2 || active.height < 2 {
         return Vec::new();
     }
-    warp(raw, active.width, active.height).into_iter().chain(vignette(raw, active.width, active.height)).collect()
+    warp(raw, active.width, active.height)
+        .into_iter()
+        .chain(vignette(raw, active.width, active.height))
+        .collect()
 }
 
 #[cfg(test)]
@@ -313,16 +356,53 @@ mod tests {
     use super::*;
     use lightcraft_tiff::{Entry, Value};
 
-    pub(crate) const KNOTS9: [f64; 9] = [0.3535211268, 0.5, 0.6126760563, 0.7070422535, 0.7908450704, 0.8661971831, 0.9352112676, 1.0, 1.06056338];
+    pub(crate) const KNOTS9: [f64; 9] = [
+        0.3535211268,
+        0.5,
+        0.6126760563,
+        0.7070422535,
+        0.7908450704,
+        0.8661971831,
+        0.9352112676,
+        1.0,
+        1.06056338,
+    ];
     /// X-T4 with the XF16-55 at 16 mm (3913): the tables as ExifTool prints them.
-    pub(crate) const XT4_DIST: [f64; 9] =
-        [-1.172515869, -2.354660034, -3.458114624, -4.434677124, -5.274719238, -5.918792725, -6.328369141, -6.426345825, -6.426345825];
-    pub(crate) const XT4_VIG: [f64; 9] =
-        [98.46142578, 96.87792969, 94.90234375, 90.98144531, 84.73291016, 78.43701172, 72.96044922, 67.45703125, 67.45703125];
-    pub(crate) const XT4_AREA: Rect = Rect { x: 0, y: 0, width: 6240, height: 4160 };
+    pub(crate) const XT4_DIST: [f64; 9] = [
+        -1.172515869,
+        -2.354660034,
+        -3.458114624,
+        -4.434677124,
+        -5.274719238,
+        -5.918792725,
+        -6.328369141,
+        -6.426345825,
+        -6.426345825,
+    ];
+    pub(crate) const XT4_VIG: [f64; 9] = [
+        98.46142578,
+        96.87792969,
+        94.90234375,
+        90.98144531,
+        84.73291016,
+        78.43701172,
+        72.96044922,
+        67.45703125,
+        67.45703125,
+    ];
+    pub(crate) const XT4_AREA: Rect = Rect {
+        x: 0,
+        y: 0,
+        width: 6240,
+        height: 4160,
+    };
 
     pub(crate) fn rationals(v: &[f64]) -> Value {
-        Value::SRational(v.iter().map(|x| ((x * 1.0e6).round() as i32, 1_000_000)).collect())
+        Value::SRational(
+            v.iter()
+                .map(|x| ((x * 1.0e6).round() as i32, 1_000_000))
+                .collect(),
+        )
     }
     pub(crate) fn table(scale: f64, knots: &[f64], values: &[f64]) -> Value {
         let mut v = vec![scale];
@@ -334,14 +414,29 @@ mod tests {
         let scale = 3749.0 / 9.0;
         Ifd {
             entries: vec![
-                Entry { tag: DISTORTION, value: table(scale, &KNOTS9, &XT4_DIST), offset: 0 },
-                Entry { tag: VIGNETTING, value: table(scale, &KNOTS9, &XT4_VIG), offset: 0 },
+                Entry {
+                    tag: DISTORTION,
+                    value: table(scale, &KNOTS9, &XT4_DIST),
+                    offset: 0,
+                },
+                Entry {
+                    tag: VIGNETTING,
+                    value: table(scale, &KNOTS9, &XT4_VIG),
+                    offset: 0,
+                },
             ],
             ..Default::default()
         }
     }
     fn only(tag: u16, value: Value) -> Ifd {
-        Ifd { entries: vec![Entry { tag, value, offset: 0 }], ..Default::default() }
+        Ifd {
+            entries: vec![Entry {
+                tag,
+                value,
+                offset: 0,
+            }],
+            ..Default::default()
+        }
     }
     fn evaluate(k: &[f64; 6], r: f64) -> f64 {
         r * (k[0] + r * r * (k[1] + r * r * (k[2] + r * r * k[3])))
@@ -350,9 +445,19 @@ mod tests {
     #[test]
     fn x_t4_tables_become_a_warp_and_a_vignette_gain() {
         let ops = corrections("X-T4", &xt4(), XT4_AREA);
-        let [Opcode::WarpRectilinear { planes, center }, Opcode::FixVignetteRadial { k, center: vc }] = ops.as_slice() else { panic!("{ops:?}") };
+        let [
+            Opcode::WarpRectilinear { planes, center },
+            Opcode::FixVignetteRadial { k, center: vc },
+        ] = ops.as_slice()
+        else {
+            panic!("{ops:?}")
+        };
         assert_eq!((*center, *vc), ([0.5, 0.5], [0.5, 0.5]));
-        assert_eq!(planes.len(), 1, "no colour planes: lateral CA is not applied");
+        assert_eq!(
+            planes.len(),
+            1,
+            "no colour planes: lateral CA is not applied"
+        );
         // barrel distortion: zoomed to fill the frame (measured against the camera JPEG: 1.030..1.033), the
         // corner samples inside the raw (-6.4 % bracket)
         let green = &planes[0];
@@ -361,9 +466,21 @@ mod tests {
         assert!((corner - 0.9668).abs() < 0.002, "{corner}");
         // vignette: 67.457 % at the corner, 100 % on the axis
         let gain = |r: f64| 1.0 + (0..5).map(|i| k[i] * r.powi(2 * i as i32 + 2)).sum::<f64>();
-        assert!((gain(1.0) - 100.0 / 67.45703125).abs() < 0.01, "{}", gain(1.0));
+        assert!(
+            (gain(1.0) - 100.0 / 67.45703125).abs() < 0.01,
+            "{}",
+            gain(1.0)
+        );
         assert!((gain(0.0) - 1.0).abs() < 1e-12);
-        assert!((gain(0.5) - 100.0 / (96.87792969 + (94.90234375 - 96.87792969) * (0.5 * 1.06056338 - 0.5) / (0.6126760563 - 0.5))).abs() < 0.01);
+        assert!(
+            (gain(0.5)
+                - 100.0
+                    / (96.87792969
+                        + (94.90234375 - 96.87792969) * (0.5 * 1.06056338 - 0.5)
+                            / (0.6126760563 - 0.5)))
+                .abs()
+                < 0.01
+        );
     }
 
     #[test]
@@ -373,20 +490,44 @@ mod tests {
         // model: source = s · r · (1 + k1 r² + k2 r⁴ + k3 r⁶), r in half diagonals.
         let measured = [1.0299688, -0.1024252, 0.0195257, 0.0183398];
         let ops = corrections("X-T4", &xt4(), XT4_AREA);
-        let Opcode::WarpRectilinear { planes, .. } = &ops[0] else { panic!() };
+        let Opcode::WarpRectilinear { planes, .. } = &ops[0] else {
+            panic!()
+        };
         for i in 2..=20 {
             let r = i as f64 / 20.0;
             let r2 = r * r;
-            let reference = measured[0] * r * (1.0 + measured[1] * r2 + measured[2] * r2 * r2 + measured[3] * r2 * r2 * r2);
-            assert!((evaluate(&planes[0], r) - reference).abs() < 0.004, "{r}: {} vs {reference}", evaluate(&planes[0], r));
+            let reference = measured[0]
+                * r
+                * (1.0 + measured[1] * r2 + measured[2] * r2 * r2 + measured[3] * r2 * r2 * r2);
+            assert!(
+                (evaluate(&planes[0], r) - reference).abs() < 0.004,
+                "{r}: {} vs {reference}",
+                evaluate(&planes[0], r)
+            );
         }
     }
 
     #[test]
     fn only_validated_models_are_corrected() {
-        for model in ["", "X-T4 ", "X-T6", "X-Pro3", "FinePix S1", "FinePix F550EXR", "X10", "XF1", "XQ1", "GFX 100S", "x-t4"] {
+        for model in [
+            "",
+            "X-T4 ",
+            "X-T6",
+            "X-Pro3",
+            "FinePix S1",
+            "FinePix F550EXR",
+            "X10",
+            "XF1",
+            "XQ1",
+            "GFX 100S",
+            "x-t4",
+        ] {
             let n = corrections(model, &xt4(), XT4_AREA).len();
-            assert_eq!(n, usize::from(VALIDATED.contains(&model.trim())) * 2, "{model:?}");
+            assert_eq!(
+                n,
+                usize::from(VALIDATED.contains(&model.trim())) * 2,
+                "{model:?}"
+            );
         }
         assert!(corrections("X-T4", &xt4(), Rect::new(0, 0, 1, 1)).is_empty());
     }
@@ -409,8 +550,16 @@ mod tests {
         // flat tables (nothing to correct) produce nothing
         let flat_tables = Ifd {
             entries: vec![
-                Entry { tag: DISTORTION, value: table(scale, &KNOTS9, &[0.0; 9]), offset: 0 },
-                Entry { tag: VIGNETTING, value: table(scale, &KNOTS9, &[100.0; 9]), offset: 0 },
+                Entry {
+                    tag: DISTORTION,
+                    value: table(scale, &KNOTS9, &[0.0; 9]),
+                    offset: 0,
+                },
+                Entry {
+                    tag: VIGNETTING,
+                    value: table(scale, &KNOTS9, &[100.0; 9]),
+                    offset: 0,
+                },
             ],
             ..Default::default()
         };
@@ -420,19 +569,26 @@ mod tests {
         let mut ifd = xt4();
         ifd.entries[0].value = table(1.0, &KNOTS9, &XT4_DIST);
         let ops = bad(ifd);
-        assert!(matches!(ops.as_slice(), [Opcode::FixVignetteRadial { .. }]), "{ops:?}");
+        assert!(
+            matches!(ops.as_slice(), [Opcode::FixVignetteRadial { .. }]),
+            "{ops:?}"
+        );
     }
 
     #[test]
     fn old_layout_with_eleven_knots_and_pincushion_zoom() {
         // X-T2-style: 0 … 1 in tenths, 11 knots, scale = half diagonal / 11; a 3:2 6000 × 4000 frame.
         let knots: Vec<f64> = (0..=10).map(|i| i as f64 / 10.0).collect();
-        let dist = [0.0, 0.02, 0.05, 0.1, 0.17, 0.27, 0.39, 0.54, 0.69, 0.84, 0.98];
+        let dist = [
+            0.0, 0.02, 0.05, 0.1, 0.17, 0.27, 0.39, 0.54, 0.69, 0.84, 0.98,
+        ];
         let scale = 3605.0 / 11.0;
         let ifd = only(DISTORTION, table(scale, &knots, &dist));
         let area = Rect::new(0, 0, 6000, 4000);
         let ops = corrections("X-T2", &ifd, area);
-        let [Opcode::WarpRectilinear { planes, .. }] = ops.as_slice() else { panic!("{ops:?}") };
+        let [Opcode::WarpRectilinear { planes, .. }] = ops.as_slice() else {
+            panic!("{ops:?}")
+        };
         assert_eq!(planes.len(), 1);
         // pincushion bracket > 1 everywhere: the zoom shrinks the sampled radius; the corner samples exactly its edge
         assert!(planes[0][0] < 1.0 && planes[0][0] > 0.98);
@@ -444,9 +600,17 @@ mod tests {
     #[test]
     fn a_vignette_table_works_without_a_distortion_table() {
         let scale = 3749.0 / 9.0;
-        let v = corrections("X-T4", &only(VIGNETTING, table(scale, &KNOTS9, &XT4_VIG)), XT4_AREA);
+        let v = corrections(
+            "X-T4",
+            &only(VIGNETTING, table(scale, &KNOTS9, &XT4_VIG)),
+            XT4_AREA,
+        );
         assert!(matches!(v.as_slice(), [Opcode::FixVignetteRadial { .. }]));
-        let d = corrections("X-T4", &only(DISTORTION, table(scale, &KNOTS9, &XT4_DIST)), XT4_AREA);
+        let d = corrections(
+            "X-T4",
+            &only(DISTORTION, table(scale, &KNOTS9, &XT4_DIST)),
+            XT4_AREA,
+        );
         assert!(matches!(d.as_slice(), [Opcode::WarpRectilinear { .. }]));
     }
 }

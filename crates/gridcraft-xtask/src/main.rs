@@ -2,7 +2,14 @@
 //!
 //! Pure Rust (std + serde_json, plus the engine for `parity`). External tools (`cargo`, `git`)
 //! are invoked through `std::process::Command`.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
 mod assets;
@@ -77,14 +84,26 @@ pub fn cargo() -> Command {
 
 fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     eprintln!("$ {what}");
-    let status = cmd.status().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
-    if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
+    let status = cmd
+        .status()
+        .map_err(|e| format!("{what}: failed to spawn: {e}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("{what}: exited with {status}"))
+    }
 }
 
 pub fn metadata() -> Result<serde_json::Value, String> {
-    let out = cargo().args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| format!("cargo metadata: {e}"))?;
+    let out = cargo()
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .output()
+        .map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
-        return Err(format!("cargo metadata failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "cargo metadata failed:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
     serde_json::from_slice(&out.stdout).map_err(|e| format!("cargo metadata: bad JSON: {e}"))
 }
@@ -107,7 +126,12 @@ fn cmd_layers() -> Result<(), String> {
                 format!("{}{k}", layers::short_name(&d.name))
             })
             .collect();
-        println!("{:<28} {:<10} {}", c.name, layers::describe(layers::classify(&c.name)), ws.join(", "));
+        println!(
+            "{:<28} {:<10} {}",
+            c.name,
+            layers::describe(layers::classify(&c.name)),
+            ws.join(", ")
+        );
     }
     let violations = layers::check(&crates);
     println!();
@@ -147,8 +171,18 @@ fn cmd_wasm() -> Result<(), String> {
     for p in &set {
         c.args(["-p", p]);
     }
-    let r = run(c, &format!("cargo check --target wasm32-unknown-unknown -p {}", set.join(" -p ")));
-    println!("\nwasm32-unknown-unknown check ({}): {}", set.join(", "), if r.is_ok() { "ok" } else { "FAIL" });
+    let r = run(
+        c,
+        &format!(
+            "cargo check --target wasm32-unknown-unknown -p {}",
+            set.join(" -p ")
+        ),
+    );
+    println!(
+        "\nwasm32-unknown-unknown check ({}): {}",
+        set.join(", "),
+        if r.is_ok() { "ok" } else { "FAIL" }
+    );
     if r.is_err() {
         println!("(if the target is missing: rustup target add wasm32-unknown-unknown)");
     }
@@ -170,7 +204,14 @@ fn cmd_ci() -> Result<(), String> {
             "clippy",
             Box::new(|| {
                 let mut c = cargo();
-                c.args(["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]);
+                c.args([
+                    "clippy",
+                    "--workspace",
+                    "--all-targets",
+                    "--",
+                    "-D",
+                    "warnings",
+                ]);
                 run(c, "cargo clippy --workspace --all-targets -- -D warnings")
             }),
         ),
@@ -191,7 +232,9 @@ fn cmd_ci() -> Result<(), String> {
                 if root().join("docs/parity-checklist.md").exists() {
                     parity::run(&root(), &["--check"])
                 } else {
-                    println!("parity: docs/parity-checklist.md not generated yet; skipped (run `cargo xtask parity`)");
+                    println!(
+                        "parity: docs/parity-checklist.md not generated yet; skipped (run `cargo xtask parity`)"
+                    );
                     Ok(())
                 }
             }),
@@ -214,6 +257,10 @@ fn cmd_ci() -> Result<(), String> {
         }
         done.push(*name);
     }
-    println!("\nCI summary: all {} steps passed ({})", done.len(), done.join(", "));
+    println!(
+        "\nCI summary: all {} steps passed ({})",
+        done.len(),
+        done.join(", ")
+    );
     Ok(())
 }

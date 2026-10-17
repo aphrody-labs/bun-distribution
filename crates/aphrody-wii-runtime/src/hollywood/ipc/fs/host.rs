@@ -26,17 +26,21 @@ impl HostBackedFile {
         match mode {
             0 | 1 => {
                 opts.read(true);
-            },
+            }
             2 => {
                 opts.write(true);
-            },
+            }
             _ => {
                 opts.read(true).write(true);
-            },
+            }
         };
 
         match opts.open(&host_path) {
-            Ok(file) => Some(Self { path: host_path, file, mode }),
+            Ok(file) => Some(Self {
+                path: host_path,
+                file,
+                mode,
+            }),
             Err(err) => {
                 tracing::warn!(
                     path = format!("{}", host_path.display()),
@@ -44,7 +48,7 @@ impl HostBackedFile {
                     "HostBackedFile: open failed"
                 );
                 None
-            },
+            }
         }
     }
 
@@ -67,9 +71,11 @@ impl IosDevice for HostBackedFile {
             Err(err) => {
                 tracing::warn!(path = format!("{}", self.path.display()), %err, "HostBackedFile: read failed");
                 return IPC_EINVAL;
-            },
+            }
         };
-        ctx.mmio.phys_slice_mut(out_ptr, n).copy_from_slice(&buf[..n]);
+        ctx.mmio
+            .phys_slice_mut(out_ptr, n)
+            .copy_from_slice(&buf[..n]);
         n as i32
     }
 
@@ -80,7 +86,7 @@ impl IosDevice for HostBackedFile {
             Err(err) => {
                 tracing::warn!(path = format!("{}", self.path.display()), %err, "HostBackedFile: write failed");
                 IPC_EINVAL
-            },
+            }
         }
     }
 
@@ -92,7 +98,7 @@ impl IosDevice for HostBackedFile {
             _ => {
                 tracing::warn!(whence, "HostBackedFile: invalid whence");
                 return IPC_EINVAL;
-            },
+            }
         };
 
         match self.file.seek(target) {
@@ -100,7 +106,7 @@ impl IosDevice for HostBackedFile {
             Err(err) => {
                 tracing::warn!(path = format!("{}", self.path.display()), %err, "HostBackedFile: seek failed");
                 IPC_EINVAL
-            },
+            }
         }
     }
 
@@ -120,7 +126,7 @@ impl IosDevice for HostBackedFile {
                 ctx.mmio.phys_write_u32(out_ptr, size);
                 ctx.mmio.phys_write_u32(out_ptr + 4, pos);
                 0
-            },
+            }
             _ => {
                 tracing::warn!(
                     device = &ctx.device_path,
@@ -129,7 +135,7 @@ impl IosDevice for HostBackedFile {
                     "HostBackedFile: unhandled ioctl"
                 );
                 IPC_EINVAL
-            },
+            }
         }
     }
 

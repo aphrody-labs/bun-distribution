@@ -31,15 +31,29 @@ pub struct ExportDraft {
 
 impl Default for ExportDraft {
     fn default() -> Self {
-        Self { dpi: 150.0, range: PageRange::default(), format: ImageFormat::Png, min_side: 0 }
+        Self {
+            dpi: 150.0,
+            range: PageRange::default(),
+            format: ImageFormat::Png,
+            min_side: 0,
+        }
     }
 }
 
 /// Progress of a background export: (done, total, final message once finished).
 pub type ExportStatus = Arc<Mutex<Option<(usize, usize, Option<String>)>>>;
 
-pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: ExportKind) -> (bool, bool) {
-    let count = app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|d| d.info.pages.len()).unwrap_or(0);
+pub(crate) fn body(
+    ui: &mut egui::Ui,
+    app: &mut PdfCraftApp,
+    t: &Tokens,
+    kind: ExportKind,
+) -> (bool, bool) {
+    let count = app
+        .active_ids()
+        .and_then(|(_, id)| app.session.get(id))
+        .map(|d| d.info.pages.len())
+        .unwrap_or(0);
     let d = &mut app.export_draft;
     ui.label(
         egui::RichText::new(match kind {
@@ -54,10 +68,20 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: E
         ui.horizontal(|ui| {
             ui.label(tl!("Resolution"));
             egui::ComboBox::from_id_salt("export-dpi")
-                .selected_text(crate::i18n::fmt(tl!("{dpi} pixels/inch"), &[("dpi", &d.dpi.to_string())]))
+                .selected_text(crate::i18n::fmt(
+                    tl!("{dpi} pixels/inch"),
+                    &[("dpi", &d.dpi.to_string())],
+                ))
                 .show_ui(ui, |ui| {
                     for dpi in [72.0, 96.0, 150.0, 300.0, 600.0] {
-                        ui.selectable_value(&mut d.dpi, dpi, crate::i18n::fmt(tl!("{dpi} pixels/inch"), &[("dpi", &dpi.to_string())]));
+                        ui.selectable_value(
+                            &mut d.dpi,
+                            dpi,
+                            crate::i18n::fmt(
+                                tl!("{dpi} pixels/inch"),
+                                &[("dpi", &dpi.to_string())],
+                            ),
+                        );
                     }
                 });
         });
@@ -67,14 +91,20 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: E
                 ImageFormat::Jpeg { quality } => quality,
                 _ => 85,
             };
-            egui::ComboBox::from_id_salt("export-format").selected_text(d.format.label()).show_ui(ui, |ui| {
-                for f in [ImageFormat::Png, ImageFormat::Jpeg { quality }, ImageFormat::Tiff] {
-                    let on = std::mem::discriminant(&d.format) == std::mem::discriminant(&f);
-                    if ui.selectable_label(on, f.label()).clicked() {
-                        d.format = f;
+            egui::ComboBox::from_id_salt("export-format")
+                .selected_text(d.format.label())
+                .show_ui(ui, |ui| {
+                    for f in [
+                        ImageFormat::Png,
+                        ImageFormat::Jpeg { quality },
+                        ImageFormat::Tiff,
+                    ] {
+                        let on = std::mem::discriminant(&d.format) == std::mem::discriminant(&f);
+                        if ui.selectable_label(on, f.label()).clicked() {
+                            d.format = f;
+                        }
                     }
-                }
-            });
+                });
             if let ImageFormat::Jpeg { .. } = d.format {
                 ui.label(tl!("Quality"));
                 if ui.add(egui::Slider::new(&mut quality, 10..=100)).changed() {
@@ -83,21 +113,35 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: E
             }
         });
         ui.label(
-            egui::RichText::new(crate::i18n::fmt(tl!("One {f} file per page, named after the document."), &[("f", d.format.label())]))
-                .small()
-                .color(t.text_faint),
+            egui::RichText::new(crate::i18n::fmt(
+                tl!("One {f} file per page, named after the document."),
+                &[("f", d.format.label())],
+            ))
+            .small()
+            .color(t.text_faint),
         );
     } else if kind == ExportKind::AllImages {
         ui.horizontal(|ui| {
             ui.label(tl!("Exclude images smaller than"));
             let label = move |n: u32| {
-                if n == 0 { tl!("No limit").to_string() } else { crate::i18n::trn(crate::i18n::current(), u64::from(n), "{n} pixel", "{n} pixels") }
-            };
-            egui::ComboBox::from_id_salt("export-min").selected_text(label(d.min_side)).show_ui(ui, |ui| {
-                for n in [0, 16, 32, 64, 128, 256] {
-                    ui.selectable_value(&mut d.min_side, n, label(n));
+                if n == 0 {
+                    tl!("No limit").to_string()
+                } else {
+                    crate::i18n::trn(
+                        crate::i18n::current(),
+                        u64::from(n),
+                        "{n} pixel",
+                        "{n} pixels",
+                    )
                 }
-            });
+            };
+            egui::ComboBox::from_id_salt("export-min")
+                .selected_text(label(d.min_side))
+                .show_ui(ui, |ui| {
+                    for n in [0, 16, 32, 64, 128, 256] {
+                        ui.selectable_value(&mut d.min_side, n, label(n));
+                    }
+                });
         });
         ui.label(
             egui::RichText::new(tl!("Each image once, named after the document and page. JPEG images are saved unchanged; others as PNG."))
@@ -105,7 +149,13 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: E
                 .color(t.text_faint),
         );
     } else {
-        ui.label(egui::RichText::new(tl!("Plain text in reading order; pages are separated by form feeds.")).small().color(t.text_faint));
+        ui.label(
+            egui::RichText::new(tl!(
+                "Plain text in reading order; pages are separated by form feeds."
+            ))
+            .small()
+            .color(t.text_faint),
+        );
     }
     ui.add_space(6.0);
     ui.label(egui::RichText::new(tl!("Pages")).font(theme::semibold(12.5)));
@@ -114,7 +164,11 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, kind: E
     let (mut apply, mut cancel) = (false, false);
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
         let ok = !d.range.pages(count).is_empty();
-        if ui.add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("Export"), true)).inner.clicked() {
+        if ui
+            .add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("Export"), true))
+            .inner
+            .clicked()
+        {
             apply = true;
         }
         if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
@@ -150,10 +204,15 @@ fn run(
         set(0, None);
         let out = match pdfcraft_engine::export::extract_images(&src, &pages, min_side) {
             Ok(o) => o,
-            Err(e) => return crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", &e.to_string())]),
+            Err(e) => {
+                return crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", &e.to_string())]);
+            }
         };
         for (k, img) in out.images.iter().enumerate() {
-            if let Err(e) = sink(&pdfcraft_engine::export::image_file_name(&stem, img, k + 1), img.data.clone()) {
+            if let Err(e) = sink(
+                &pdfcraft_engine::export::image_file_name(&stem, img, k + 1),
+                img.data.clone(),
+            ) {
                 return crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", &e.to_string())]);
             }
         }
@@ -166,7 +225,10 @@ fn run(
         if !out.skipped.is_empty() {
             msg.push_str(&crate::i18n::fmt(
                 tl!(" ({s} not exported: {first})"),
-                &[("s", &out.skipped.len().to_string()), ("first", &out.skipped[0].2)],
+                &[
+                    ("s", &out.skipped.len().to_string()),
+                    ("first", &out.skipped[0].2),
+                ],
             ));
         }
         return msg;
@@ -178,7 +240,12 @@ fn run(
         ExportKind::Image => {
             for (k, p) in pages.iter().enumerate() {
                 set(k, None);
-                let result = ex.image(*p, dpi, format).and_then(|img| sink(&format!("{stem}_page_{}.{}", p + 1, format.extension()), img));
+                let result = ex.image(*p, dpi, format).and_then(|img| {
+                    sink(
+                        &format!("{stem}_page_{}.{}", p + 1, format.extension()),
+                        img,
+                    )
+                });
                 if let Err(e) = result {
                     return crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", &e.to_string())]);
                 }
@@ -190,23 +257,36 @@ fn run(
             };
             // Pages too large for the renderer at the chosen resolution are drawn at the most it
             // allows: say so, rather than leave a smaller image unexplained.
-            let lowered: Vec<f64> = pages.iter().map(|p| ex.dpi_used(*p, dpi)).filter(|used| *used < dpi.clamp(18.0, 1200.0) - 0.5).collect();
+            let lowered: Vec<f64> = pages
+                .iter()
+                .map(|p| ex.dpi_used(*p, dpi))
+                .filter(|used| *used < dpi.clamp(18.0, 1200.0) - 0.5)
+                .collect();
             if let Some(lowest) = lowered.iter().copied().reduce(f64::min) {
                 msg.push_str(&crate::i18n::fmt(
                     tl!(" ({n} at {dpi} dpi, the largest size they can be drawn at)"),
-                    &[("n", &lowered.len().to_string()), ("dpi", &format!("{}", lowest.floor()))],
+                    &[
+                        ("n", &lowered.len().to_string()),
+                        ("dpi", &format!("{}", lowest.floor())),
+                    ],
                 ));
             }
             msg
         }
         ExportKind::Text => {
             set(0, None);
-            match ex.text_of(&pages).and_then(|text| sink(&format!("{stem}.txt"), text.into_bytes())) {
+            match ex
+                .text_of(&pages)
+                .and_then(|text| sink(&format!("{stem}.txt"), text.into_bytes()))
+            {
                 Ok(()) => {
                     if total == 1 {
                         crate::i18n::fmt(tl!("Exported the text of 1 page"), &[])
                     } else {
-                        crate::i18n::fmt(tl!("Exported the text of {n} pages"), &[("n", &total.to_string())])
+                        crate::i18n::fmt(
+                            tl!("Exported the text of {n} pages"),
+                            &[("n", &total.to_string())],
+                        )
                     }
                 }
                 Err(e) => crate::i18n::fmt(tl!("Export stopped: {e}"), &[("e", &e.to_string())]),
@@ -222,13 +302,21 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((_, id)) = self.active_ids() else { return };
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
         if !self.may_copy(id) {
             return;
         }
-        let Some(doc) = self.session.get(id) else { return };
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
         let src = doc.export_source();
-        let stem = doc.name.trim_end_matches(".pdf").trim_end_matches(".PDF").to_string();
+        let stem = doc
+            .name
+            .trim_end_matches(".pdf")
+            .trim_end_matches(".PDF")
+            .to_string();
         let pages = self.export_draft.range.pages(src.pages);
         let dpi = self.export_draft.dpi;
         let format = self.export_draft.format;
@@ -242,27 +330,41 @@ impl PdfCraftApp {
                 let lang = crate::i18n::current();
                 let work = move || {
                     let sink = |name: &str, bytes: Vec<u8>| {
-                        crate::editing::write_atomically(&dir.join(name).to_string_lossy(), &bytes).map_err(|e| format!("{name}: {e}"))
+                        crate::editing::write_atomically(&dir.join(name).to_string_lossy(), &bytes)
+                            .map_err(|e| format!("{name}: {e}"))
                     };
-                    let msg = run(src, kind, dpi, format, min_side, pages, stem, sink, &st, lang);
+                    let msg = run(
+                        src, kind, dpi, format, min_side, pages, stem, sink, &st, lang,
+                    );
                     if let Ok(mut s) = st.lock() {
                         let (done, total) = s.as_ref().map_or((0, 0), |(d, t, _)| (*d, *t));
-                        let done_msg = crate::i18n::fmt(tl!("{msg} to {dir}"), &[("msg", &msg), ("dir", &shown)]);
+                        let done_msg = crate::i18n::fmt(
+                            tl!("{msg} to {dir}"),
+                            &[("msg", &msg), ("dir", &shown)],
+                        );
                         *s = Some((done.max(total), total, Some(done_msg)));
                     }
                 };
                 if inline {
                     work(); // tests and automation: synchronous
                 } else {
-                    std::thread::Builder::new().name("pdfcraft-export".into()).spawn(work).ok();
+                    std::thread::Builder::new()
+                        .name("pdfcraft-export".into())
+                        .spawn(work)
+                        .ok();
                 }
                 app.export_status = Some(status);
             };
             match self.export_dir_override.clone() {
                 Some(d) => start(self, d.into(), true),
                 None => {
-                    let dialog = rfd::AsyncFileDialog::new().set_title(tl!("Choose a folder for the exported files").to_string());
-                    self.ask_one(crate::pickers::Ask::Folder(dialog), None, move |app, dir| start(app, dir, false));
+                    let dialog = rfd::AsyncFileDialog::new()
+                        .set_title(tl!("Choose a folder for the exported files").to_string());
+                    self.ask_one(
+                        crate::pickers::Ask::Folder(dialog),
+                        None,
+                        move |app, dir| start(app, dir, false),
+                    );
                 }
             }
         }
@@ -289,7 +391,9 @@ impl PdfCraftApp {
 
     /// Show export progress, and the result once it is done.
     pub(crate) fn poll_export(&mut self) {
-        let Some(st) = self.export_status.clone() else { return };
+        let Some(st) = self.export_status.clone() else {
+            return;
+        };
         let snapshot = st.lock().ok().and_then(|s| s.clone());
         match snapshot {
             Some((_, _, Some(msg))) => {
@@ -297,7 +401,10 @@ impl PdfCraftApp {
                 self.notify(msg);
             }
             Some((done, total, None)) if total > 1 => {
-                let m = crate::i18n::fmt(tl!("Exporting… {d} of {t}"), &[("d", &done.to_string()), ("t", &total.to_string())]);
+                let m = crate::i18n::fmt(
+                    tl!("Exporting… {d} of {t}"),
+                    &[("d", &done.to_string()), ("t", &total.to_string())],
+                );
                 self.notify(m);
             }
             _ => {}

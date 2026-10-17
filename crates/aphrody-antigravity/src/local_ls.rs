@@ -61,7 +61,13 @@ use crate::error::SdkError;
 
 /// Generated tonic client + prost message types for
 /// `exa.language_server_pb` (compiled by `build.rs` into `OUT_DIR`).
-#[allow(clippy::all, clippy::pedantic, clippy::nursery, missing_docs, rustdoc::all)]
+#[allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    missing_docs,
+    rustdoc::all
+)]
 pub mod proto {
     tonic::include_proto!("exa.language_server_pb");
 }
@@ -205,7 +211,10 @@ impl LanguageServer {
                     return Ok(candidate);
                 }
             }
-            warn!(?path, "ANTIGRAVITY_HARNESS_PATH set but no valid binary found");
+            warn!(
+                ?path,
+                "ANTIGRAVITY_HARNESS_PATH set but no valid binary found"
+            );
         }
 
         // 2. Check legacy CODEIUM_LANGUAGE_SERVER_BIN
@@ -217,7 +226,11 @@ impl LanguageServer {
             warn!(?path, "CODEIUM_LANGUAGE_SERVER_BIN set but not a file");
         }
 
-        let exe_name = if cfg!(windows) { "language_server.exe" } else { "language_server" };
+        let exe_name = if cfg!(windows) {
+            "language_server.exe"
+        } else {
+            "language_server"
+        };
 
         if let Ok(current) = std::env::current_exe()
             && let Some(dir) = current.parent()
@@ -239,7 +252,8 @@ impl LanguageServer {
     /// Returns [`SdkError::Spawn`] when the binary cannot be executed.
     pub async fn stamp() -> Result<String, SdkError> {
         let bin = Self::resolve_binary()?;
-        let output = Command::new(&bin).no_window()
+        let output = Command::new(&bin)
+            .no_window()
             .arg("--stamp")
             .output()
             .await
@@ -284,7 +298,10 @@ impl LanguageServer {
         if config.headless {
             cmd.arg("--headless");
         }
-        cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null()).kill_on_drop(true);
+        cmd.stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .stdin(Stdio::null())
+            .kill_on_drop(true);
 
         debug!(?bin, "spawning language_server");
         let mut child = cmd.spawn().map_err(|e| SdkError::Spawn(e.to_string()))?;
@@ -302,7 +319,12 @@ impl LanguageServer {
 
         let channel = build_pinned_channel(port).await?;
 
-        Ok(Self { child, port, csrf, channel })
+        Ok(Self {
+            child,
+            port,
+            csrf,
+            channel,
+        })
     }
 
     /// The TCP port the language server bound to.
@@ -330,7 +352,9 @@ impl LanguageServer {
     ) -> LanguageServerServiceClient<
         tonic::service::interceptor::InterceptedService<Channel, CsrfInterceptor>,
     > {
-        let interceptor = CsrfInterceptor { csrf: self.csrf.clone() };
+        let interceptor = CsrfInterceptor {
+            csrf: self.csrf.clone(),
+        };
         LanguageServerServiceClient::with_interceptor(self.channel.clone(), interceptor)
     }
 
@@ -385,7 +409,10 @@ impl LanguageServer {
     ///
     /// Returns [`SdkError::Spawn`] when the kill syscall fails.
     pub async fn shutdown(mut self) -> Result<(), SdkError> {
-        self.child.kill().await.map_err(|e| SdkError::Spawn(e.to_string()))
+        self.child
+            .kill()
+            .await
+            .map_err(|e| SdkError::Spawn(e.to_string()))
     }
 }
 
@@ -404,7 +431,7 @@ impl tonic::service::Interceptor for CsrfInterceptor {
             Ok(value) => {
                 request.metadata_mut().insert(CSRF_HEADER, value);
                 Ok(request)
-            },
+            }
             Err(_) => Err(tonic::Status::internal("invalid CSRF token for metadata")),
         }
     }
@@ -417,7 +444,11 @@ async fn read_port(stdout: tokio::process::ChildStdout) -> Result<u16, SdkError>
         .expect("static regex is valid");
 
     let mut lines = BufReader::new(stdout).lines();
-    while let Some(line) = lines.next_line().await.map_err(|e| SdkError::Spawn(e.to_string()))? {
+    while let Some(line) = lines
+        .next_line()
+        .await
+        .map_err(|e| SdkError::Spawn(e.to_string()))?
+    {
         debug!(target: "antigravity_sdk::local_ls", "ls: {line}");
         if let Some(caps) = re.captures(&line)
             && let Some(m) = caps.get(1)
@@ -454,7 +485,10 @@ async fn build_pinned_channel(port: u16) -> Result<Channel, SdkError> {
     let uri = format!("https://127.0.0.1:{port}");
     let endpoint = Endpoint::from_shared(uri).map_err(|e| SdkError::Transport(e.to_string()))?;
 
-    endpoint.connect_with_connector(https).await.map_err(|e| SdkError::Transport(e.to_string()))
+    endpoint
+        .connect_with_connector(https)
+        .await
+        .map_err(|e| SdkError::Transport(e.to_string()))
 }
 
 /// rustls server-certificate verifier that pins the end-entity certificate's
@@ -502,9 +536,9 @@ impl ServerCertVerifier for SpkiPinVerifier {
         if digest.as_slice() == self.pinned.as_slice() {
             Ok(ServerCertVerified::assertion())
         } else {
-            Err(RustlsError::InvalidCertificate(rustls::CertificateError::Other(
-                rustls::OtherError(Arc::new(SpkiPinMismatch)),
-            )))
+            Err(RustlsError::InvalidCertificate(
+                rustls::CertificateError::Other(rustls::OtherError(Arc::new(SpkiPinMismatch))),
+            ))
         }
     }
 
@@ -514,7 +548,12 @@ impl ServerCertVerifier for SpkiPinVerifier {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, RustlsError> {
-        verify_tls12_signature(message, cert, dss, &self.provider.signature_verification_algorithms)
+        verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &self.provider.signature_verification_algorithms,
+        )
     }
 
     fn verify_tls13_signature(
@@ -523,11 +562,18 @@ impl ServerCertVerifier for SpkiPinVerifier {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, RustlsError> {
-        verify_tls13_signature(message, cert, dss, &self.provider.signature_verification_algorithms)
+        verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &self.provider.signature_verification_algorithms,
+        )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        self.provider.signature_verification_algorithms.supported_schemes()
+        self.provider
+            .signature_verification_algorithms
+            .supported_schemes()
     }
 }
 
@@ -578,11 +624,14 @@ mod tests {
     #[test]
     fn port_regex_extracts_https_port() {
         let re = regex::Regex::new(r"(?i)listening on \w+ port at (\d+) for HTTPS?").unwrap();
-        let caps = re.captures("Listening on local port at 51234 for HTTPS").expect("matches");
+        let caps = re
+            .captures("Listening on local port at 51234 for HTTPS")
+            .expect("matches");
         assert_eq!(&caps[1], "51234");
 
-        let caps2 =
-            re.captures("listening on TCP port at 8080 for HTTP").expect("matches plain HTTP too");
+        let caps2 = re
+            .captures("listening on TCP port at 8080 for HTTP")
+            .expect("matches plain HTTP too");
         assert_eq!(&caps2[1], "8080");
     }
 }

@@ -91,7 +91,12 @@ fn one() -> f32 {
 
 impl PointerEvent {
     pub fn new(kind: PointerKind, x: f64, y: f64) -> Self {
-        Self { kind, pos: Point::new(x, y), mods: Mods::default(), pressure: 1.0 }
+        Self {
+            kind,
+            pos: Point::new(x, y),
+            mods: Mods::default(),
+            pressure: 1.0,
+        }
     }
     pub fn with_mods(mut self, m: Mods) -> Self {
         self.mods = m;
@@ -99,12 +104,18 @@ impl PointerEvent {
     }
     /// The pen `pressure` of a pointer event given as JSON (control channel, MCP): 0..1, default 1.
     pub fn json_pressure(e: &Value) -> f32 {
-        e.get("pressure").and_then(Value::as_f64).filter(|f| f.is_finite()).map_or(1.0, |f| f.clamp(0.0, 1.0) as f32)
+        e.get("pressure")
+            .and_then(Value::as_f64)
+            .filter(|f| f.is_finite())
+            .map_or(1.0, |f| f.clamp(0.0, 1.0) as f32)
     }
     /// How long the pointer then holds still, in seconds, from a JSON pointer event's `holdMs`
     /// (0..60000; default 0): the time [`Tool::tick`] gets.
     pub fn json_hold(e: &Value) -> f64 {
-        e.get("holdMs").and_then(Value::as_f64).filter(|f| f.is_finite()).map_or(0.0, |ms| ms.clamp(0.0, 60_000.0) / 1000.0)
+        e.get("holdMs")
+            .and_then(Value::as_f64)
+            .filter(|f| f.is_finite())
+            .map_or(0.0, |ms| ms.clamp(0.0, 60_000.0) / 1000.0)
     }
 }
 
@@ -210,7 +221,8 @@ impl ScreenFrame {
     pub fn to_screen(&self, p: Point) -> Option<(f64, f64)> {
         let (r, d, v) = (self.right, self.down, p - self.origin);
         let det = r.x * d.y - d.x * r.y;
-        (det.is_finite() && det.abs() > 1e-12).then(|| ((v.x * d.y - d.x * v.y) / det, (r.x * v.y - v.x * r.y) / det))
+        (det.is_finite() && det.abs() > 1e-12)
+            .then(|| ((v.x * d.y - d.x * v.y) / det, (r.x * v.y - v.x * r.y) / det))
     }
 }
 
@@ -394,23 +406,51 @@ pub enum Overlay {
     /// Marquee / rubber band rectangle.
     Marquee(Rect),
     /// A path preview (e.g. pen rubber band) in a colour (RGB).
-    Path { path: BezPath, color: [u8; 3], width: f32, dashed: bool },
+    Path {
+        path: BezPath,
+        color: [u8; 3],
+        width: f32,
+        dashed: bool,
+    },
     /// A line segment (smart guide, handle line).
-    Line { a: Point, b: Point, color: [u8; 3], dashed: bool },
+    Line {
+        a: Point,
+        b: Point,
+        color: [u8; 3],
+        dashed: bool,
+    },
     /// An anchor square: filled = selected.
-    Anchor { p: Point, color: [u8; 3], filled: bool, size: f32 },
+    Anchor {
+        p: Point,
+        color: [u8; 3],
+        filled: bool,
+        size: f32,
+    },
     /// A Curvature tool point, drawn as a circle; filled = the last touched point.
-    CurvePoint { p: Point, color: [u8; 3], filled: bool, size: f32 },
+    CurvePoint {
+        p: Point,
+        color: [u8; 3],
+        filled: bool,
+        size: f32,
+    },
     /// A handle end circle.
     Handle { p: Point, color: [u8; 3] },
     /// Smart-guide style label (e.g. "anchor", "W: 100 pt").
-    Label { p: Point, text: String, color: [u8; 3] },
+    Label {
+        p: Point,
+        text: String,
+        color: [u8; 3],
+    },
     /// Measurement pill near the cursor (grey box with white text).
     Measure { p: Point, text: String },
     /// Translucent filled quad (text selection highlight), RGBA.
     Highlight { quad: [Point; 4], color: [u8; 4] },
     /// A colour chip of fixed screen size (a gradient stop), RGBA; ringed when selected.
-    Swatch { p: Point, color: [u8; 4], selected: bool },
+    Swatch {
+        p: Point,
+        color: [u8; 4],
+        selected: bool,
+    },
     /// A hairline in a translucent colour (perspective gridlines), RGBA.
     GridLine { a: Point, b: Point, color: [u8; 4] },
 }
@@ -561,7 +601,12 @@ pub trait Tool: Send {
     /// marked text (or the selection); an empty `text` ends the composition. `active_chars` is the
     /// clause being converted, in characters of `text`. The committed result arrives through
     /// [`Tool::text_input`].
-    fn ime_preedit(&mut self, _cx: &ToolContext, _text: &str, _active_chars: Option<std::ops::Range<usize>>) -> Vec<Action> {
+    fn ime_preedit(
+        &mut self,
+        _cx: &ToolContext,
+        _text: &str,
+        _active_chars: Option<std::ops::Range<usize>>,
+    ) -> Vec<Action> {
         vec![]
     }
     /// Is uncommitted IME text being shown? Keys, shortcuts and Undo wait while it is.
@@ -601,8 +646,11 @@ pub fn create(id: &str) -> Box<dyn Tool> {
         "directSelection" => Box::new(direct::DirectSelectionTool::new(false)),
         "groupSelection" => Box::new(direct::DirectSelectionTool::new(true)),
         "pen" => Box::new(pen::PenTool::default()),
-        "type" | "areaType" | "typeOnPath" | "verticalType" | "verticalAreaType" | "verticalTypeOnPath" => Box::new(text::TypeTool::new(id)),
-        "rectangle" | "roundedRectangle" | "ellipse" | "polygon" | "star" | "lineSegment" => Box::new(shape::ShapeTool::new(id)),
+        "type" | "areaType" | "typeOnPath" | "verticalType" | "verticalAreaType"
+        | "verticalTypeOnPath" => Box::new(text::TypeTool::new(id)),
+        "rectangle" | "roundedRectangle" | "ellipse" | "polygon" | "star" | "lineSegment" => {
+            Box::new(shape::ShapeTool::new(id))
+        }
         // Not in the toolbar: `file.place.queue` loads it.
         "place" => Box::new(place::PlaceTool::default()),
         other => symbolism::create(other)
@@ -616,7 +664,11 @@ pub fn create(id: &str) -> Box<dyn Tool> {
             .or_else(|| printtiling::create(other))
             .or_else(|| cropimage::create(other))
             .or_else(|| cut::create(other))
-            .unwrap_or_else(|| Box::new(NoopTool(tool_info(other).map(|t| t.id).unwrap_or("selection")))),
+            .unwrap_or_else(|| {
+                Box::new(NoopTool(
+                    tool_info(other).map(|t| t.id).unwrap_or("selection"),
+                ))
+            }),
     }
 }
 
@@ -646,7 +698,16 @@ pub(crate) mod testutil {
         let mut d = Document::new(500.0, 500.0);
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(id, shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                id,
+                shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         (d, id)
     }
 
@@ -655,9 +716,20 @@ pub(crate) mod testutil {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let mut t = vectorcraft_doc::TextObject::point(Point::new(300.0, 300.0), "Some words", Default::default());
-        t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 40.0)) };
-        d.insert(Some(l), 1, Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
+        let mut t = vectorcraft_doc::TextObject::point(
+            Point::new(300.0, 300.0),
+            "Some words",
+            Default::default(),
+        );
+        t.kind = vectorcraft_doc::TextKind::Area {
+            frame: shapes::rectangle(Rect::new(0.0, 0.0, 120.0, 40.0)),
+        };
+        d.insert(
+            Some(l),
+            1,
+            Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t))),
+        )
+        .unwrap();
         (d, id)
     }
 
@@ -666,13 +738,24 @@ pub(crate) mod testutil {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let mut t = vectorcraft_doc::TextObject::point(Point::ZERO, "Path type", Default::default());
-        let path = vectorcraft_geom::PathData::from_bezpath(&vectorcraft_geom::BezPath::from_vec(vec![
-            vectorcraft_geom::PathEl::MoveTo(Point::new(100.0, 300.0)),
-            vectorcraft_geom::PathEl::LineTo(Point::new(400.0, 300.0)),
-        ]));
-        t.kind = vectorcraft_doc::TextKind::OnPath { path, start: 0.2, end: None };
-        d.insert(Some(l), 1, Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t)))).unwrap();
+        let mut t =
+            vectorcraft_doc::TextObject::point(Point::ZERO, "Path type", Default::default());
+        let path =
+            vectorcraft_geom::PathData::from_bezpath(&vectorcraft_geom::BezPath::from_vec(vec![
+                vectorcraft_geom::PathEl::MoveTo(Point::new(100.0, 300.0)),
+                vectorcraft_geom::PathEl::LineTo(Point::new(400.0, 300.0)),
+            ]));
+        t.kind = vectorcraft_doc::TextKind::OnPath {
+            path,
+            start: 0.2,
+            end: None,
+        };
+        d.insert(
+            Some(l),
+            1,
+            Node::new(id, vectorcraft_doc::NodeKind::Text(Box::new(t))),
+        )
+        .unwrap();
         (d, id)
     }
 

@@ -13,8 +13,13 @@ use crate::canvas::{ToolEvent, tool_event};
 use crate::state::Tool;
 
 fn app(tool: Tool) -> PhotocraftApp {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.session.execute("file.new", json!({"width": 200, "height": 200})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.session
+        .execute("file.new", json!({"width": 200, "height": 200}))
+        .unwrap();
     app.sync_views();
     app.ui.tool = tool;
     app
@@ -28,7 +33,8 @@ fn with_path(app: &mut PhotocraftApp) {
         [120, 120],
         [40, 120],
     ]}]});
-    app.run("path.set", json!({"name": "work", "path": path})).unwrap();
+    app.run("path.set", json!({"name": "work", "path": path}))
+        .unwrap();
 }
 
 fn work(app: &PhotocraftApp) -> Path {
@@ -44,10 +50,34 @@ fn steps(app: &PhotocraftApp) -> usize {
 }
 
 fn drag(app: &mut PhotocraftApp, from: [f64; 2], to: [f64; 2], mods: Modifiers) {
-    tool_event(app, ToolEvent::Down { x: from[0], y: from[1], pressure: 1.0 }, mods);
+    tool_event(
+        app,
+        ToolEvent::Down {
+            x: from[0],
+            y: from[1],
+            pressure: 1.0,
+        },
+        mods,
+    );
     let mid = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
-    tool_event(app, ToolEvent::Move { x: mid[0], y: mid[1], pressure: 1.0 }, mods);
-    tool_event(app, ToolEvent::Move { x: to[0], y: to[1], pressure: 1.0 }, mods);
+    tool_event(
+        app,
+        ToolEvent::Move {
+            x: mid[0],
+            y: mid[1],
+            pressure: 1.0,
+        },
+        mods,
+    );
+    tool_event(
+        app,
+        ToolEvent::Move {
+            x: to[0],
+            y: to[1],
+            pressure: 1.0,
+        },
+        mods,
+    );
     tool_event(app, ToolEvent::Up { x: to[0], y: to[1] }, mods);
 }
 
@@ -62,9 +92,19 @@ fn dragging_an_anchor_moves_it_in_one_undoable_step() {
     let (before, n) = (work(&app), steps(&app));
     drag(&mut app, [40.5, 120.5], [50.5, 130.5], Modifiers::NONE);
     assert_eq!(anchor(&app, 3), Point::new(50.0, 130.0));
-    assert_eq!(anchor(&app, 0), Point::new(40.0, 40.0), "only the dragged anchor moved");
+    assert_eq!(
+        anchor(&app, 0),
+        Point::new(40.0, 40.0),
+        "only the dragged anchor moved"
+    );
     assert_eq!(steps(&app), n + 1, "one history step for the whole drag");
-    assert_eq!((app.ui.direct_selection.target, app.ui.direct_selection.anchors.clone()), (Some(PathRef::Work), vec![[0, 3]]));
+    assert_eq!(
+        (
+            app.ui.direct_selection.target,
+            app.ui.direct_selection.anchors.clone()
+        ),
+        (Some(PathRef::Work), vec![[0, 3]])
+    );
     assert!(app.session.undo());
     assert_eq!(work(&app), before);
 }
@@ -73,14 +113,43 @@ fn dragging_an_anchor_moves_it_in_one_undoable_step() {
 fn the_preview_is_what_the_drag_commits() {
     let mut app = app(Tool::DirectSelection);
     with_path(&mut app);
-    tool_event(&mut app, ToolEvent::Down { x: 80.0, y: 120.0, pressure: 1.0 }, Modifiers::NONE);
-    tool_event(&mut app, ToolEvent::Move { x: 80.0, y: 150.0, pressure: 1.0 }, Modifiers::NONE);
-    let Some(Drag::Edit { preview: Some(shown), .. }) = app.ui.direct_selection.drag.clone() else { panic!("a segment drag with a preview") };
+    tool_event(
+        &mut app,
+        ToolEvent::Down {
+            x: 80.0,
+            y: 120.0,
+            pressure: 1.0,
+        },
+        Modifiers::NONE,
+    );
+    tool_event(
+        &mut app,
+        ToolEvent::Move {
+            x: 80.0,
+            y: 150.0,
+            pressure: 1.0,
+        },
+        Modifiers::NONE,
+    );
+    let Some(Drag::Edit {
+        preview: Some(shown),
+        ..
+    }) = app.ui.direct_selection.drag.clone()
+    else {
+        panic!("a segment drag with a preview")
+    };
     assert_ne!(shown, work(&app), "the document changes only on release");
-    tool_event(&mut app, ToolEvent::Up { x: 80.0, y: 150.0 }, Modifiers::NONE);
+    tool_event(
+        &mut app,
+        ToolEvent::Up { x: 80.0, y: 150.0 },
+        Modifiers::NONE,
+    );
     assert_eq!(work(&app), shown);
     // The straight bottom segment moved with both its anchors.
-    assert_eq!((anchor(&app, 2), anchor(&app, 3)), (Point::new(120.0, 150.0), Point::new(40.0, 150.0)));
+    assert_eq!(
+        (anchor(&app, 2), anchor(&app, 3)),
+        (Point::new(120.0, 150.0), Point::new(40.0, 150.0))
+    );
 }
 
 #[test]
@@ -88,14 +157,25 @@ fn a_smooth_points_handles_turn_together_and_alt_breaks_them() {
     let mut app = app(Tool::DirectSelection);
     with_path(&mut app);
     click(&mut app, [120.0, 40.0], Modifiers::NONE);
-    assert_eq!(app.ui.direct_selection.anchors, vec![[0, 1]], "a click selects the anchor and shows its handles");
+    assert_eq!(
+        app.ui.direct_selection.anchors,
+        vec![[0, 1]],
+        "a click selects the anchor and shows its handles"
+    );
     drag(&mut app, [140.0, 40.0], [120.0, 60.0], Modifiers::NONE);
     let k = work(&app).subpaths[0].knots[1];
     assert_eq!(k.out_ctrl, Point::new(120.0, 60.0));
-    assert!((k.in_ctrl.x - 120.0).abs() < 1e-9 && (k.in_ctrl.y - 20.0).abs() < 1e-9, "the opposite handle turned with it: {:?}", k.in_ctrl);
+    assert!(
+        (k.in_ctrl.x - 120.0).abs() < 1e-9 && (k.in_ctrl.y - 20.0).abs() < 1e-9,
+        "the opposite handle turned with it: {:?}",
+        k.in_ctrl
+    );
     drag(&mut app, [120.0, 20.0], [100.0, 20.0], Modifiers::ALT);
     let k = work(&app).subpaths[0].knots[1];
-    assert_eq!((k.in_ctrl, k.out_ctrl, k.smooth), (Point::new(100.0, 20.0), Point::new(120.0, 60.0), false));
+    assert_eq!(
+        (k.in_ctrl, k.out_ctrl, k.smooth),
+        (Point::new(100.0, 20.0), Point::new(120.0, 60.0), false)
+    );
 }
 
 #[test]
@@ -105,16 +185,34 @@ fn marquee_shift_and_empty_clicks_select_like_photoshop() {
     drag(&mut app, [100.0, 100.0], [180.0, 180.0], Modifiers::NONE);
     assert_eq!(app.ui.direct_selection.anchors, vec![[0, 2]]);
     click(&mut app, [40.0, 120.0], Modifiers::SHIFT);
-    assert_eq!(app.ui.direct_selection.anchors, vec![[0, 2], [0, 3]], "⇧-click adds");
+    assert_eq!(
+        app.ui.direct_selection.anchors,
+        vec![[0, 2], [0, 3]],
+        "⇧-click adds"
+    );
     // Dragging one selected anchor moves them all.
     drag(&mut app, [40.0, 120.0], [40.0, 110.0], Modifiers::NONE);
-    assert_eq!((anchor(&app, 2), anchor(&app, 3)), (Point::new(120.0, 110.0), Point::new(40.0, 110.0)));
+    assert_eq!(
+        (anchor(&app, 2), anchor(&app, 3)),
+        (Point::new(120.0, 110.0), Point::new(40.0, 110.0))
+    );
     click(&mut app, [40.0, 110.0], Modifiers::SHIFT);
-    assert_eq!(app.ui.direct_selection.anchors, vec![[0, 2]], "⇧-click on a selected anchor deselects it");
+    assert_eq!(
+        app.ui.direct_selection.anchors,
+        vec![[0, 2]],
+        "⇧-click on a selected anchor deselects it"
+    );
     click(&mut app, [80.0, 80.0], Modifiers::NONE);
-    assert!(app.ui.direct_selection.anchors.is_empty(), "a click on empty canvas deselects");
+    assert!(
+        app.ui.direct_selection.anchors.is_empty(),
+        "a click on empty canvas deselects"
+    );
     click(&mut app, [80.0, 40.0], Modifiers::ALT);
-    assert_eq!(app.ui.direct_selection.anchors.len(), 4, "⌥-click selects the whole subpath");
+    assert_eq!(
+        app.ui.direct_selection.anchors.len(),
+        4,
+        "⌥-click selects the whole subpath"
+    );
 }
 
 #[test]
@@ -129,7 +227,10 @@ fn pen_with_command_edits_paths_and_ends_the_one_being_drawn() {
     assert!(app.ui.pen.is_none());
     assert_eq!(app.ui.tool, Tool::Pen, "the Pen stays the tool");
     let wp = work(&app);
-    assert_eq!((wp.subpaths[0].closed, wp.subpaths[0].knots[1].anchor), (false, Point::new(90.0, 70.0)));
+    assert_eq!(
+        (wp.subpaths[0].closed, wp.subpaths[0].knots[1].anchor),
+        (false, Point::new(90.0, 70.0))
+    );
     // Without ⌘ the Pen draws again.
     click(&mut app, [150.0, 150.0], Modifiers::NONE);
     assert_eq!(app.ui.pen.as_ref().map(|p| p.knots.len()), Some(1));
@@ -140,10 +241,18 @@ fn pen_with_alt_converts_points() {
     let mut app = app(Tool::Pen);
     with_path(&mut app);
     click(&mut app, [120.0, 40.0], Modifiers::ALT);
-    assert_eq!(work(&app).subpaths[0].knots[1], photocraft_doc::Knot::corner(120.0, 40.0), "⌥-click makes a corner");
+    assert_eq!(
+        work(&app).subpaths[0].knots[1],
+        photocraft_doc::Knot::corner(120.0, 40.0),
+        "⌥-click makes a corner"
+    );
     drag(&mut app, [40.0, 120.0], [40.0, 140.0], Modifiers::ALT);
     let k = work(&app).subpaths[0].knots[3];
-    assert_eq!((k.in_ctrl, k.out_ctrl, k.smooth), (Point::new(40.0, 100.0), Point::new(40.0, 140.0), true), "⌥-drag pulls out smooth handles");
+    assert_eq!(
+        (k.in_ctrl, k.out_ctrl, k.smooth),
+        (Point::new(40.0, 100.0), Point::new(40.0, 140.0), true),
+        "⌥-drag pulls out smooth handles"
+    );
     assert!(app.ui.pen.is_none(), "no pen path was started");
     // ⌥ off the path is a plain Pen click.
     click(&mut app, [170.0, 170.0], Modifiers::ALT);
@@ -153,13 +262,26 @@ fn pen_with_alt_converts_points() {
 #[test]
 fn shape_layer_paths_are_edited_too() {
     let mut app = app(Tool::DirectSelection);
-    let id = app.run("shape.create", json!({"kind": "rect", "rect": [20, 20, 60, 60], "fill": "#3070c0"})).unwrap()["layer"].as_u64().unwrap();
+    let id = app
+        .run(
+            "shape.create",
+            json!({"kind": "rect", "rect": [20, 20, 60, 60], "fill": "#3070c0"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     drag(&mut app, [80.0, 80.0], [100.0, 90.0], Modifiers::NONE);
     assert_eq!(app.ui.direct_selection.target, Some(PathRef::Layer(id)));
     let info = app.run("shape.info", json!({"layer": id})).unwrap();
-    assert_eq!(info["path"]["subpaths"][0]["knots"][2]["anchor"], json!([100.0, 90.0]));
+    assert_eq!(
+        info["path"]["subpaths"][0]["knots"][2]["anchor"],
+        json!([100.0, 90.0])
+    );
     let b: [i64; 4] = serde_json::from_value(info["bounds"].clone()).unwrap();
-    assert!(b[0] + b[2] >= 100 && b[1] + b[3] >= 90, "the shape re-rendered: {b:?}");
+    assert!(
+        b[0] + b[2] >= 100 && b[1] + b[3] >= 90,
+        "the shape re-rendered: {b:?}"
+    );
 }
 
 #[test]
@@ -168,18 +290,33 @@ fn the_convert_point_tool_converts_points_without_a_modifier() {
     with_path(&mut app);
     let n = steps(&app);
     click(&mut app, [120.0, 40.0], Modifiers::NONE);
-    assert_eq!(work(&app).subpaths[0].knots[1], photocraft_doc::Knot::corner(120.0, 40.0), "a click makes a corner");
+    assert_eq!(
+        work(&app).subpaths[0].knots[1],
+        photocraft_doc::Knot::corner(120.0, 40.0),
+        "a click makes a corner"
+    );
     assert_eq!(steps(&app), n + 1);
-    assert_eq!(app.ui.direct_selection.anchors, vec![[0, 1]], "the converted anchor is selected");
+    assert_eq!(
+        app.ui.direct_selection.anchors,
+        vec![[0, 1]],
+        "the converted anchor is selected"
+    );
     drag(&mut app, [40.0, 120.0], [40.0, 140.0], Modifiers::NONE);
     let k = work(&app).subpaths[0].knots[3];
-    assert_eq!((k.in_ctrl, k.out_ctrl, k.smooth), (Point::new(40.0, 100.0), Point::new(40.0, 140.0), true), "a drag pulls out smooth handles");
+    assert_eq!(
+        (k.in_ctrl, k.out_ctrl, k.smooth),
+        (Point::new(40.0, 100.0), Point::new(40.0, 140.0), true),
+        "a drag pulls out smooth handles"
+    );
     assert_eq!(steps(&app), n + 2, "one history step per press");
     assert_eq!(app.ui.direct_selection.anchors, vec![[0, 3]]);
     assert!(app.ui.pen.is_none(), "the tool never starts a pen path");
     assert_eq!(app.ui.tool, Tool::ConvertPoint);
     assert!(app.session.undo() && app.session.undo());
-    assert!(work(&app).subpaths[0].knots[1].smooth, "undo restores the smooth point");
+    assert!(
+        work(&app).subpaths[0].knots[1].smooth,
+        "undo restores the smooth point"
+    );
 }
 
 #[test]
@@ -191,15 +328,26 @@ fn the_convert_point_tool_moves_a_handle_alone_and_ignores_empty_canvas_and_segm
     app.ui.tool = Tool::ConvertPoint;
     drag(&mut app, [140.0, 40.0], [140.0, 70.0], Modifiers::NONE);
     let k = work(&app).subpaths[0].knots[1];
-    assert_eq!((k.out_ctrl, k.in_ctrl, k.smooth), (Point::new(140.0, 70.0), Point::new(100.0, 40.0), false), "the handle moved without its twin");
+    assert_eq!(
+        (k.out_ctrl, k.in_ctrl, k.smooth),
+        (Point::new(140.0, 70.0), Point::new(100.0, 40.0), false),
+        "the handle moved without its twin"
+    );
     // Nothing happens on empty canvas or on a segment, and the tool keeps the event.
     let (before, n) = (work(&app), steps(&app));
     click(&mut app, [80.0, 80.0], Modifiers::NONE);
     drag(&mut app, [120.0, 80.0], [120.0, 100.0], Modifiers::NONE);
     assert!(app.ui.direct_selection.drag.is_none(), "no marquee");
-    assert_eq!(app.ui.direct_selection.anchors, vec![[0, 1]], "the selection stays");
+    assert_eq!(
+        app.ui.direct_selection.anchors,
+        vec![[0, 1]],
+        "the selection stays"
+    );
     assert_eq!((work(&app), steps(&app)), (before, n));
-    assert!(app.ui.pen.is_none() && app.drag.is_none(), "the press was not handed to another tool");
+    assert!(
+        app.ui.pen.is_none() && app.drag.is_none(),
+        "the press was not handed to another tool"
+    );
 }
 
 #[test]
@@ -207,20 +355,34 @@ fn the_convert_point_tool_with_command_is_direct_selection() {
     let mut app = app(Tool::ConvertPoint);
     with_path(&mut app);
     drag(&mut app, [40.5, 120.5], [50.5, 130.5], Modifiers::COMMAND);
-    assert_eq!(anchor(&app, 3), Point::new(50.0, 130.0), "⌘-drag moves the anchor");
-    assert!(work(&app).subpaths[0].knots[3].in_ctrl == work(&app).subpaths[0].knots[3].anchor, "and does not pull out handles");
+    assert_eq!(
+        anchor(&app, 3),
+        Point::new(50.0, 130.0),
+        "⌘-drag moves the anchor"
+    );
+    assert!(
+        work(&app).subpaths[0].knots[3].in_ctrl == work(&app).subpaths[0].knots[3].anchor,
+        "and does not pull out handles"
+    );
     // A handle drag with ⌘ turns the smooth pair together, like Direct Selection.
     click(&mut app, [120.0, 40.0], Modifiers::COMMAND);
     assert_eq!(app.ui.direct_selection.anchors, vec![[0, 1]]);
     drag(&mut app, [140.0, 40.0], [120.0, 60.0], Modifiers::COMMAND);
     let k = work(&app).subpaths[0].knots[1];
-    assert!((k.in_ctrl.x - 120.0).abs() < 1e-9 && (k.in_ctrl.y - 20.0).abs() < 1e-9, "the twin handle turned with it: {:?}", k.in_ctrl);
+    assert!(
+        (k.in_ctrl.x - 120.0).abs() < 1e-9 && (k.in_ctrl.y - 20.0).abs() < 1e-9,
+        "the twin handle turned with it: {:?}",
+        k.in_ctrl
+    );
 }
 
 #[test]
 fn the_convert_point_tool_shows_the_path_overlay() {
     let mut app = app(Tool::ConvertPoint);
-    assert!(super::shows(&app, Modifiers::NONE), "anchors are drawn before any press");
+    assert!(
+        super::shows(&app, Modifiers::NONE),
+        "anchors are drawn before any press"
+    );
     app.ui.tool = Tool::Pen;
     assert!(!super::shows(&app, Modifiers::NONE));
     assert!(super::shows(&app, Modifiers::COMMAND));

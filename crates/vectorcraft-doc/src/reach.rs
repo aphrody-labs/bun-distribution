@@ -8,7 +8,9 @@ use vectorcraft_geom::kurbo::{ParamCurveArclen, ParamCurveNearest};
 use vectorcraft_geom::{BezPath, FillRule, ParamCurve, PathSeg, Point, Rect, Shape, Vec2};
 
 use crate::appearance::HEAD_REACH;
-use crate::{Appearance, ArrowAlign, Dash, LineCap, LineJoin, StrokeAlign, StrokeLayer, WidthProfile};
+use crate::{
+    Appearance, ArrowAlign, Dash, LineCap, LineJoin, StrokeAlign, StrokeLayer, WidthProfile,
+};
 
 /// Arc-length accuracy for placing a point along a profile (document points).
 const ARCLEN_ACCURACY: f64 = 1e-3;
@@ -27,14 +29,21 @@ fn drawn(els: &[vectorcraft_geom::PathEl]) -> Vec<PathSeg> {
 /// The open subpath ends of `segs`: (point, unit direction out of the path) at its start and end.
 fn ends(segs: &[PathSeg]) -> Option<[(Point, Vec2); 2]> {
     let (first, last) = (segs.first()?, segs.last()?);
-    Some([(first.start(), -tangent(first, 0.0)), (last.end(), tangent(last, 1.0))])
+    Some([
+        (first.start(), -tangent(first, 0.0)),
+        (last.end(), tangent(last, 1.0)),
+    ])
 }
 
 /// The joints between consecutive segments (and, `closed`, where the subpath closes): the point
 /// and the unit tangents in and out.
 fn joints(segs: &[PathSeg], closed: bool) -> impl Iterator<Item = (Point, Vec2, Vec2)> + '_ {
     let n = segs.len();
-    let pairs = if closed && n > 1 { n } else { n.saturating_sub(1) };
+    let pairs = if closed && n > 1 {
+        n
+    } else {
+        n.saturating_sub(1)
+    };
     (0..pairs).map(move |i| {
         let (a, b) = (&segs[i], &segs[(i + 1) % n]);
         (a.end(), tangent(a, 1.0), tangent(b, 0.0))
@@ -57,7 +66,11 @@ fn miter(at: Point, t_in: Vec2, t_out: Vec2, side: f64, limit: f64) -> Option<[P
         let n = Vec2::new(-t.y, t.x);
         if n.dot(out) >= 0.0 { n } else { -n }
     };
-    Some([at + outer(t_in) * side, at + out * (side / half), at + outer(t_out) * side])
+    Some([
+        at + outer(t_in) * side,
+        at + out * (side / half),
+        at + outer(t_out) * side,
+    ])
 }
 
 /// The heads' ends of `bp`: the start of its first subpath and the end of its last, when open (as
@@ -67,7 +80,10 @@ fn head_ends(st: &StrokeLayer, bp: &BezPath) -> Vec<(Point, Vec2, bool)> {
         return vec![];
     }
     let subs = subpaths(bp);
-    let open_ends = |sub: Option<&(std::ops::Range<usize>, bool)>| sub.filter(|s| !s.1).and_then(|s| ends(&drawn(&bp.elements()[s.0.clone()])));
+    let open_ends = |sub: Option<&(std::ops::Range<usize>, bool)>| {
+        sub.filter(|s| !s.1)
+            .and_then(|s| ends(&drawn(&bp.elements()[s.0.clone()])))
+    };
     let mut out = vec![];
     if st.start_arrow.is_some()
         && let Some([(at, dir), _]) = open_ends(subs.first())
@@ -86,7 +102,13 @@ fn head_ends(st: &StrokeLayer, bp: &BezPath) -> Vec<(Point, Vec2, bool)> {
 /// at `t`): the profile at that fraction of the subpath's length, or wider where an end of the
 /// segment is a corner. The stroke draws the sides there straight to the corner's join and inner
 /// meeting point, which can lie outside the exact width all along the segment.
-fn profile_at(profile: &WidthProfile, segs: &[PathSeg], closed: bool, i: usize, t: f64) -> (f64, f64) {
+fn profile_at(
+    profile: &WidthProfile,
+    segs: &[PathSeg],
+    closed: bool,
+    i: usize,
+    t: f64,
+) -> (f64, f64) {
     let n = segs.len();
     let lens: Vec<f64> = segs.iter().map(|s| s.arclen(ARCLEN_ACCURACY)).collect();
     let total: f64 = lens.iter().sum::<f64>().max(1e-12);
@@ -137,10 +159,15 @@ impl StrokeLayer {
         let mut out = bounds;
         let mut side_max: f64 = 0.0;
         // Dashes put a cap on every dash: projecting ones reach a corner's diagonal anywhere.
-        let capped_dashes = self.cap == LineCap::Square && self.dash.as_ref().is_some_and(Dash::is_dashed);
+        let capped_dashes =
+            self.cap == LineCap::Square && self.dash.as_ref().is_some_and(Dash::is_dashed);
         for (r, closed) in subpaths(bp) {
             let side = self.side_reach(closed);
-            side_max = side_max.max(if capped_dashes { side * std::f64::consts::SQRT_2 } else { side });
+            side_max = side_max.max(if capped_dashes {
+                side * std::f64::consts::SQRT_2
+            } else {
+                side
+            });
             if side <= 0.0 {
                 continue;
             }
@@ -155,7 +182,9 @@ impl StrokeLayer {
             if self.cap == LineCap::Square && !closed {
                 for (at, dir) in ends(&segs).into_iter().flatten() {
                     let n = Vec2::new(-dir.y, dir.x) * side;
-                    out = out.union_pt(at + dir * side + n).union_pt(at + dir * side - n);
+                    out = out
+                        .union_pt(at + dir * side + n)
+                        .union_pt(at + dir * side - n);
                 }
             }
         }
@@ -171,15 +200,23 @@ impl StrokeLayer {
     /// path); a width profile counts at its width where `p` is nearest.
     pub fn hits(&self, bp: &BezPath, rule: FillRule, p: Point, tol: f64) -> bool {
         let reach = self.reach() + tol;
-        if self.width.is_nan() || self.width <= 0.0 || !bp.bounding_box().inflate(reach, reach).contains(p) {
+        if self.width.is_nan()
+            || self.width <= 0.0
+            || !bp.bounding_box().inflate(reach, reach).contains(p)
+        {
             return false;
         }
-        if head_ends(self, bp).into_iter().any(|(at, out, end)| self.head_contains(at, out, end, p, tol)) {
+        if head_ends(self, bp)
+            .into_iter()
+            .any(|(at, out, end)| self.head_contains(at, out, end, p, tol))
+        {
             return true;
         }
         let els = bp.elements();
         // Aligned strokes paint on one side of the path only.
-        let on_side = |region: Option<bool>, d: f64| region.is_none_or(|inside| d <= tol || fill_contains(bp, rule, p) == inside);
+        let on_side = |region: Option<bool>, d: f64| {
+            region.is_none_or(|inside| d <= tol || fill_contains(bp, rule, p) == inside)
+        };
         // Every dash gets the caps, as wide as the stroke where the dash ends: round ones reach as
         // far as the widest point, projecting ones a corner's diagonal.
         let dash_caps = match self.cap {
@@ -193,7 +230,11 @@ impl StrokeLayer {
             let (half, region) = self.body(closed);
             let full = half * self.profile_max() * dash_caps.unwrap_or(1.0);
             // The nearest point on this subpath.
-            let near = segs.iter().enumerate().map(|(i, s)| (i, s.nearest(p, 1e-9))).min_by(|a, b| a.1.distance_sq.total_cmp(&b.1.distance_sq));
+            let near = segs
+                .iter()
+                .enumerate()
+                .map(|(i, s)| (i, s.nearest(p, 1e-9)))
+                .min_by(|a, b| a.1.distance_sq.total_cmp(&b.1.distance_sq));
             if let Some((i, nr)) = near
                 && nr.distance_sq.sqrt() <= full + tol
             {
@@ -227,7 +268,8 @@ impl StrokeLayer {
             }
             if self.join == LineJoin::Miter
                 && joints(&segs, closed).any(|(at, t_in, t_out)| {
-                    miter(at, t_in, t_out, full, self.miter_limit).is_some_and(|[a, tip, b]| in_convex(&[at, a, tip, b], p, tol))
+                    miter(at, t_in, t_out, full, self.miter_limit)
+                        .is_some_and(|[a, tip, b]| in_convex(&[at, a, tip, b], p, tol))
                 })
                 && on_side(region, f64::INFINITY)
             {
@@ -237,7 +279,11 @@ impl StrokeLayer {
                 && !closed
                 && ends(&segs).into_iter().flatten().any(|(at, dir)| {
                     let n = Vec2::new(-dir.y, dir.x) * full;
-                    in_convex(&[at + n, at + n + dir * full, at - n + dir * full, at - n], p, tol)
+                    in_convex(
+                        &[at + n, at + n + dir * full, at - n + dir * full, at - n],
+                        p,
+                        tol,
+                    )
                 })
             {
                 return true;
@@ -258,7 +304,9 @@ impl StrokeLayer {
             ArrowAlign::Tip => v.hypot() <= HEAD_REACH * hw + tol,
             ArrowAlign::Extend => {
                 let along = v.dot(out);
-                v.cross(out).abs() <= 2.0 * hw + tol && along <= 4.0 * hw + self.width / 2.0 + tol && along >= -HEAD_REACH * hw - tol
+                v.cross(out).abs() <= 2.0 * hw + tol
+                    && along <= 4.0 * hw + self.width / 2.0 + tol
+                    && along >= -HEAD_REACH * hw - tol
             }
         }
     }
@@ -276,7 +324,8 @@ impl Appearance {
                 let o = s.side_reach(false);
                 return acc.union(bounds.inflate(o, o));
             }
-            let bp: &BezPath = shape.get_or_insert_with(|| path.take().map(|f| f()).unwrap_or_default());
+            let bp: &BezPath =
+                shape.get_or_insert_with(|| path.take().map(|f| f()).unwrap_or_default());
             acc.union(s.bounds_on(bp, bounds))
         })
     }
@@ -332,9 +381,15 @@ mod tests {
             })
         };
         let (small, big) = (at(100.0).bounds_on(&l, b), at(300.0).bounds_on(&l, b));
-        assert!(big.x1 > small.x1 + 15.0 && big.y1 > small.y1 + 7.0, "{small:?} → {big:?}");
+        assert!(
+            big.x1 > small.x1 + 15.0 && big.y1 > small.y1 + 7.0,
+            "{small:?} → {big:?}"
+        );
         // A 300% head on a 2 pt stroke is 24 pt long and wide: its tip, past the end, is inside.
-        assert!(big.x1 >= 100.0 + 24.0 && big.y1 >= 12.0 && big.x0 == -1.0, "{big:?}");
+        assert!(
+            big.x1 >= 100.0 + 24.0 && big.y1 >= 12.0 && big.x0 == -1.0,
+            "{big:?}"
+        );
         // The start has no head.
         assert_eq!(at(300.0).head_reach(false), 0.0);
     }
@@ -344,7 +399,11 @@ mod tests {
         let sq = square();
         let b = sq.bounding_box();
         let st = stroke(4.0, |_| {});
-        assert_eq!(st.bounds_on(&sq, b), b.inflate(2.0, 2.0), "right-angle miters stay in the box");
+        assert_eq!(
+            st.bounds_on(&sq, b),
+            b.inflate(2.0, 2.0),
+            "right-angle miters stay in the box"
+        );
         // A sharp spike: a thin triangle's apex miters far out unless the limit bevels it.
         let tri = triangle();
         let tb = tri.bounding_box();
@@ -357,8 +416,14 @@ mod tests {
         let l = line();
         let cap = stroke(4.0, |s| s.cap = LineCap::Square).bounds_on(&l, l.bounding_box());
         assert_eq!((cap.x0, cap.x1, cap.y1), (-2.0, 102.0, 2.0));
-        assert_eq!(stroke(4.0, |s| s.align = StrokeAlign::Inside).bounds_on(&sq, b), b);
-        assert_eq!(stroke(4.0, |s| s.align = StrokeAlign::Outside).bounds_on(&sq, b), b.inflate(4.0, 4.0));
+        assert_eq!(
+            stroke(4.0, |s| s.align = StrokeAlign::Inside).bounds_on(&sq, b),
+            b
+        );
+        assert_eq!(
+            stroke(4.0, |s| s.align = StrokeAlign::Outside).bounds_on(&sq, b),
+            b.inflate(4.0, 4.0)
+        );
     }
 
     #[test]
@@ -366,9 +431,18 @@ mod tests {
         let sq = square();
         let w = 10.0;
         let st = stroke(w, |s| s.align = StrokeAlign::Outside);
-        assert!(st.hits(&sq, FillRule::NonZero, Point::new(-0.8 * w, 50.0), 0.5), "0.8·w outside");
-        assert!(!st.hits(&sq, FillRule::NonZero, Point::new(0.8 * w, 50.0), 0.5), "nothing painted inside");
-        assert!(st.hits(&sq, FillRule::NonZero, Point::new(0.3, 50.0), 0.5), "on the path");
+        assert!(
+            st.hits(&sq, FillRule::NonZero, Point::new(-0.8 * w, 50.0), 0.5),
+            "0.8·w outside"
+        );
+        assert!(
+            !st.hits(&sq, FillRule::NonZero, Point::new(0.8 * w, 50.0), 0.5),
+            "nothing painted inside"
+        );
+        assert!(
+            st.hits(&sq, FillRule::NonZero, Point::new(0.3, 50.0), 0.5),
+            "on the path"
+        );
         let inside = stroke(w, |s| s.align = StrokeAlign::Inside);
         assert!(inside.hits(&sq, FillRule::NonZero, Point::new(0.8 * w, 50.0), 0.5));
         assert!(!inside.hits(&sq, FillRule::NonZero, Point::new(-0.8 * w, 50.0), 0.5));
@@ -382,10 +456,20 @@ mod tests {
     fn clicks_follow_the_width_profile() {
         let l = line();
         let lens = stroke(10.0, |s| s.profile = Some(WidthProfile::lens()));
-        assert!(lens.hits(&l, FillRule::NonZero, Point::new(50.0, 4.8), 0.1), "the lens's widest point");
-        assert!(!lens.hits(&l, FillRule::NonZero, Point::new(5.0, 4.8), 0.1), "its thin end");
+        assert!(
+            lens.hits(&l, FillRule::NonZero, Point::new(50.0, 4.8), 0.1),
+            "the lens's widest point"
+        );
+        assert!(
+            !lens.hits(&l, FillRule::NonZero, Point::new(5.0, 4.8), 0.1),
+            "its thin end"
+        );
         // A profile wider than the weight on one side.
-        let wide = stroke(10.0, |s| s.profile = Some(WidthProfile { points: vec![(0.0, 3.0, 1.0), (1.0, 3.0, 1.0)] }));
+        let wide = stroke(10.0, |s| {
+            s.profile = Some(WidthProfile {
+                points: vec![(0.0, 3.0, 1.0), (1.0, 3.0, 1.0)],
+            })
+        });
         // Left of travel (+x, y down) is −y.
         assert!(wide.hits(&l, FillRule::NonZero, Point::new(50.0, -14.0), 0.1));
         assert!(!wide.hits(&l, FillRule::NonZero, Point::new(50.0, 14.0), 0.1));
@@ -404,13 +488,25 @@ mod tests {
         assert!(!head.hits(&l, FillRule::NonZero, Point::new(50.0, 6.0), 0.1));
         let mut tip = head.clone();
         tip.arrow_align = ArrowAlign::Tip;
-        assert!(tip.hits(&l, FillRule::NonZero, Point::new(90.0, 6.0), 0.1) && !tip.hits(&l, FillRule::NonZero, Point::new(130.0, 0.0), 0.1));
+        assert!(
+            tip.hits(&l, FillRule::NonZero, Point::new(90.0, 6.0), 0.1)
+                && !tip.hits(&l, FillRule::NonZero, Point::new(130.0, 0.0), 0.1)
+        );
         let cap = stroke(10.0, |s| s.cap = LineCap::Square);
-        assert!(cap.hits(&l, FillRule::NonZero, Point::new(104.0, 4.5), 0.1), "the cap's corner");
-        assert!(!stroke(10.0, |_| {}).hits(&l, FillRule::NonZero, Point::new(104.0, 4.5), 0.1), "a butt end");
+        assert!(
+            cap.hits(&l, FillRule::NonZero, Point::new(104.0, 4.5), 0.1),
+            "the cap's corner"
+        );
+        assert!(
+            !stroke(10.0, |_| {}).hits(&l, FillRule::NonZero, Point::new(104.0, 4.5), 0.1),
+            "a butt end"
+        );
         let tri = triangle();
         let spike = stroke(4.0, |_| {});
-        assert!(spike.hits(&tri, FillRule::NonZero, Point::new(106.0, 20.0), 0.1), "in the miter spike");
+        assert!(
+            spike.hits(&tri, FillRule::NonZero, Point::new(106.0, 20.0), 0.1),
+            "in the miter spike"
+        );
         assert!(!spike.hits(&tri, FillRule::NonZero, Point::new(106.0, 23.0), 0.1));
     }
 
@@ -420,12 +516,23 @@ mod tests {
         let (l, id) = (d.layers[0].id, d.alloc_id());
         let mut ap = Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 10.0);
         ap.stroke_mut().unwrap().align = StrokeAlign::Outside;
-        let sq = PathData::from_bezpath(&shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)).to_bezpath());
+        let sq = PathData::from_bezpath(
+            &shapes::rectangle(Rect::new(100.0, 100.0, 200.0, 200.0)).to_bezpath(),
+        );
         d.insert(Some(l), 0, Node::path(id, sq, ap)).unwrap();
-        let opt = hit::HitOptions { tol: 1.0, ..Default::default() };
+        let opt = hit::HitOptions {
+            tol: 1.0,
+            ..Default::default()
+        };
         let h = hit::hit_test(&d, Point::new(92.0, 150.0), opt).expect("0.8·w outside the path");
         assert_eq!((h.leaf, h.kind), (id, hit::HitKind::Stroke));
-        assert!(hit::hit_test(&d, Point::new(108.0, 150.0), opt).is_none(), "an unfilled interior");
-        assert_eq!(d.node(id).unwrap().visual_bounds(), Some(Rect::new(90.0, 90.0, 210.0, 210.0)));
+        assert!(
+            hit::hit_test(&d, Point::new(108.0, 150.0), opt).is_none(),
+            "an unfilled interior"
+        );
+        assert_eq!(
+            d.node(id).unwrap().visual_bounds(),
+            Some(Rect::new(90.0, 90.0, 210.0, 210.0))
+        );
     }
 }

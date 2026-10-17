@@ -5,7 +5,10 @@
 //! navigation) and pins on a presented frame. Every change goes through a `comment.*` command.
 
 use egui::text::{CCursor, CCursorRange, LayoutJob, TextFormat};
-use egui::{Align2, Color32, CornerRadius, Id, Key, Modifiers, Pos2, Rect, Sense, Stroke, StrokeKind, Ui, Vec2, pos2, vec2};
+use egui::{
+    Align2, Color32, CornerRadius, Id, Key, Modifiers, Pos2, Rect, Sense, Stroke, StrokeKind, Ui,
+    Vec2, pos2, vec2,
+};
 use figcraft_doc::{Comment, Message, NodeId, mention_ranges};
 use figcraft_engine::ToolId;
 use figcraft_engine::cmd::comment::{self as cc, Filter, Query, Sort};
@@ -27,7 +30,12 @@ pub const REACTIONS: [&str; 8] = ["👍", "❤", "😂", "🎉", "👀", "🙏",
 /// Names the @mention picker lists at most.
 const MENTION_ROWS: usize = 6;
 /// A speech bubble: round on three corners, pointed at its spot.
-const BUBBLE: CornerRadius = CornerRadius { nw: 14, ne: 14, se: 14, sw: 0 };
+const BUBBLE: CornerRadius = CornerRadius {
+    nw: 14,
+    ne: 14,
+    se: 14,
+    sw: 0,
+};
 
 /// Comment UI state.
 pub struct CommentUi {
@@ -134,14 +142,21 @@ struct PinDrag {
 /// `@` to the cursor. None when the cursor isn't in one (a mention starts the text or follows a
 /// non-alphanumeric character, stays on one line and doesn't end in a space).
 pub fn mention_query(text: &str, cursor: usize) -> Option<(usize, usize)> {
-    let end = text.char_indices().nth(cursor).map_or(text.len(), |(b, _)| b);
+    let end = text
+        .char_indices()
+        .nth(cursor)
+        .map_or(text.len(), |(b, _)| b);
     let before = text.get(..end)?;
     let at = before.rfind('@')?;
     let q = before.get(at + 1..)?;
     if q.contains('\n') || q.chars().count() > 40 || q.ends_with(char::is_whitespace) {
         return None;
     }
-    let starts = before.get(..at)?.chars().next_back().is_none_or(|c| !c.is_alphanumeric());
+    let starts = before
+        .get(..at)?
+        .chars()
+        .next_back()
+        .is_none_or(|c| !c.is_alphanumeric());
     starts.then_some((at, end))
 }
 
@@ -176,7 +191,9 @@ pub fn insert_mention(text: &mut String, range: (usize, usize), name: &str) -> u
 pub fn cluster(points: &[Pos2], r: f32) -> Vec<Vec<usize>> {
     let mut groups: Vec<(Vec<usize>, Vec2)> = Vec::new();
     for (i, p) in points.iter().enumerate() {
-        let near = groups.iter_mut().find(|(g, sum)| (*sum / g.len() as f32).to_pos2().distance(*p) < r);
+        let near = groups
+            .iter_mut()
+            .find(|(g, sum)| (*sum / g.len() as f32).to_pos2().distance(*p) < r);
         match near {
             Some((g, sum)) => {
                 g.push(i);
@@ -191,8 +208,16 @@ pub fn cluster(points: &[Pos2], r: f32) -> Vec<Vec<usize>> {
 /// A message's text with its @mentions of `people` picked out, wrapped at `width`.
 pub fn rich_text(text: &str, people: &[&str], color: Color32, width: f32) -> LayoutJob {
     let mut job = LayoutJob::default();
-    let plain = TextFormat { font_id: regular(12.0), color, ..Default::default() };
-    let mention = TextFormat { font_id: semibold(12.0), color: ACCENT, ..Default::default() };
+    let plain = TextFormat {
+        font_id: regular(12.0),
+        color,
+        ..Default::default()
+    };
+    let mention = TextFormat {
+        font_id: semibold(12.0),
+        color: ACCENT,
+        ..Default::default()
+    };
     let mut at = 0;
     for r in mention_ranges(text, people) {
         job.append(text.get(at..r.start).unwrap_or(""), 0.0, plain.clone());
@@ -233,20 +258,37 @@ struct Pin {
 
 impl Pin {
     fn of(c: &Comment, me: &str, at: Pos2) -> Self {
-        Pin { id: c.id, author: c.first.author.clone(), resolved: c.resolved, unread: c.is_unread(me), mine: c.first.author == me, at }
+        Pin {
+            id: c.id,
+            author: c.first.author.clone(),
+            resolved: c.resolved,
+            unread: c.is_unread(me),
+            mine: c.first.author == me,
+            at,
+        }
     }
 }
 
 /// The current page's pins (those the panel's filter keeps, and the open thread's) in drawing
 /// order: oldest first, the open one on top; a dragged pin sits under the pointer.
 fn pins(app: &FigApp) -> Vec<Pin> {
-    let Ok(ds) = app.session.ds() else { return Vec::new() };
+    let Ok(ds) = app.session.ds() else {
+        return Vec::new();
+    };
     let me = me(app);
     let cu = &app.ui.comments;
-    let q = Query { page: Some(ds.page), filter: cu.filter, ..Query::default() };
+    let q = Query {
+        page: Some(ds.page),
+        filter: cu.filter,
+        ..Query::default()
+    };
     let mut list = cc::query(&ds.doc, &q, &me);
     list.reverse();
-    if let Some(c) = cu.open.and_then(|o| ds.doc.comment(o)).filter(|c| c.page == ds.page && !list.iter().any(|x| x.id == c.id)) {
+    if let Some(c) = cu
+        .open
+        .and_then(|o| ds.doc.comment(o))
+        .filter(|c| c.page == ds.page && !list.iter().any(|x| x.id == c.id))
+    {
         list.push(c);
     }
     list.sort_by_key(|c| cu.open == Some(c.id));
@@ -285,7 +327,10 @@ fn spots(app: &FigApp) -> Vec<Spot> {
             [one] => out.push(Spot::One((*one).clone())),
             many => {
                 let sum = many.iter().fold(Vec2::ZERO, |s, p| s + p.at.to_vec2());
-                out.push(Spot::Many(many.iter().map(|p| p.id).collect(), (sum / many.len().max(1) as f32).to_pos2()));
+                out.push(Spot::Many(
+                    many.iter().map(|p| p.id).collect(),
+                    (sum / many.len().max(1) as f32).to_pos2(),
+                ));
             }
         }
     }
@@ -300,12 +345,17 @@ fn pin_rect(at: Pos2) -> Rect {
 /// A cluster's bubble: wide enough for its count.
 fn cluster_rect(at: Pos2, n: usize) -> Rect {
     let digits = n.to_string().len() as f32;
-    Rect::from_min_max(pos2(at.x, at.y - PIN), pos2(at.x + PIN + 7.0 * (digits - 1.0), at.y))
+    Rect::from_min_max(
+        pos2(at.x, at.y - PIN),
+        pos2(at.x + PIN + 7.0 * (digits - 1.0), at.y),
+    )
 }
 
 /// A stable colour per author.
 pub fn author_color(name: &str) -> Color32 {
-    let h = name.bytes().fold(5381u32, |h, b| h.wrapping_mul(33) ^ u32::from(b));
+    let h = name
+        .bytes()
+        .fold(5381u32, |h, b| h.wrapping_mul(33) ^ u32::from(b));
     crate::live::people(h as usize)
 }
 
@@ -321,7 +371,9 @@ fn age(t: u64) -> Option<u64> {
 
 /// "now", "5m", "3h", "2d", or a week count.
 pub fn ago(created: u64) -> String {
-    let Some(d) = age(created) else { return String::new() };
+    let Some(d) = age(created) else {
+        return String::new();
+    };
     match d {
         0..60 => tr("now").into(),
         60..3600 => trf("{n}m", &[("n", &(d / 60))]),
@@ -333,7 +385,9 @@ pub fn ago(created: u64) -> String {
 
 /// "Just now", "5 minutes ago", "Yesterday", "3 weeks ago"…
 pub fn ago_long(t: u64) -> String {
-    let Some(d) = age(t) else { return String::new() };
+    let Some(d) = age(t) else {
+        return String::new();
+    };
     let n = |div: u64| usize::try_from(d / div).unwrap_or(usize::MAX);
     match d {
         0..60 => tr("Just now").into(),
@@ -350,19 +404,43 @@ pub fn ago_long(t: u64) -> String {
 /// One pin: the author's avatar in a bubble (accent when `hot`), a dot when unread, a check when
 /// resolved.
 fn paint_pin(painter: &egui::Painter, r: Rect, p: &Pin, hot: bool) {
-    painter.rect_filled(r.translate(vec2(0.0, 1.0)), BUBBLE, Color32::from_black_alpha(40));
+    painter.rect_filled(
+        r.translate(vec2(0.0, 1.0)),
+        BUBBLE,
+        Color32::from_black_alpha(40),
+    );
     painter.rect_filled(r, BUBBLE, if hot { ACCENT } else { Color32::WHITE });
-    painter.rect_stroke(r, BUBBLE, Stroke::new(1.0, Color32::from_black_alpha(30)), StrokeKind::Inside);
-    let fill = if p.resolved { Color32::from_gray(150) } else { author_color(&p.author) };
+    painter.rect_stroke(
+        r,
+        BUBBLE,
+        Stroke::new(1.0, Color32::from_black_alpha(30)),
+        StrokeKind::Inside,
+    );
+    let fill = if p.resolved {
+        Color32::from_gray(150)
+    } else {
+        author_color(&p.author)
+    };
     painter.circle_filled(r.center(), 11.0, fill);
-    painter.text(r.center(), Align2::CENTER_CENTER, figcraft_engine::live::initials(&p.author), semibold(9.0), Color32::WHITE);
+    painter.text(
+        r.center(),
+        Align2::CENTER_CENTER,
+        figcraft_engine::live::initials(&p.author),
+        semibold(9.0),
+        Color32::WHITE,
+    );
     if p.unread {
         let c = r.right_top() + vec2(-2.0, 2.0);
         painter.circle_filled(c, 4.5, Color32::WHITE);
         painter.circle_filled(c, 3.5, ACCENT);
     }
     if p.resolved {
-        icons::paint(painter, Rect::from_center_size(r.right_bottom() + vec2(-3.0, -3.0), vec2(10.0, 10.0)), Icon::Check, ACCENT);
+        icons::paint(
+            painter,
+            Rect::from_center_size(r.right_bottom() + vec2(-3.0, -3.0), vec2(10.0, 10.0)),
+            Icon::Check,
+            ACCENT,
+        );
     }
 }
 
@@ -373,12 +451,22 @@ fn paint_cluster(painter: &egui::Painter, at: Pos2, n: usize, hot: bool) {
     let edge = Stroke::new(1.0, Color32::from_black_alpha(30));
     painter.rect_filled(back, BUBBLE, Color32::WHITE);
     painter.rect_stroke(back, BUBBLE, edge, StrokeKind::Inside);
-    painter.rect_filled(r.translate(vec2(0.0, 1.0)), BUBBLE, Color32::from_black_alpha(40));
+    painter.rect_filled(
+        r.translate(vec2(0.0, 1.0)),
+        BUBBLE,
+        Color32::from_black_alpha(40),
+    );
     painter.rect_filled(r, BUBBLE, if hot { ACCENT } else { Color32::WHITE });
     painter.rect_stroke(r, BUBBLE, edge, StrokeKind::Inside);
     let inner = r.shrink(3.0);
     painter.rect_filled(inner, CornerRadius::same(11), Color32::from_gray(44));
-    painter.text(inner.center(), Align2::CENTER_CENTER, n.to_string(), semibold(11.0), Color32::WHITE);
+    painter.text(
+        inner.center(),
+        Align2::CENTER_CENTER,
+        n.to_string(),
+        semibold(11.0),
+        Color32::WHITE,
+    );
 }
 
 /// Draw the pins, clusters and the draft pin.
@@ -394,7 +482,9 @@ pub fn draw(app: &FigApp, painter: &egui::Painter) {
                 let r = pin_rect(p.at);
                 paint_pin(painter, r, &p, app.ui.comments.open == Some(p.id) || hot(r));
             }
-            Spot::Many(ids, at) => paint_cluster(painter, at, ids.len(), hot(cluster_rect(at, ids.len()))),
+            Spot::Many(ids, at) => {
+                paint_cluster(painter, at, ids.len(), hot(cluster_rect(at, ids.len())))
+            }
         }
     }
     if let Some((x, y, _)) = &app.ui.comments.draft {
@@ -443,7 +533,14 @@ pub fn input(app: &mut FigApp, ctx: &egui::Context, pos: Pos2) -> bool {
             Spot::One(p) if pin_rect(p.at).contains(pos) => {
                 ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
                 if pressed {
-                    app.ui.comments.drag = Some(PinDrag { id: p.id, from: pos, grab: pos - p.at, at: p.at, mine: p.mine, moved: false });
+                    app.ui.comments.drag = Some(PinDrag {
+                        id: p.id,
+                        from: pos,
+                        grab: pos - p.at,
+                        at: p.at,
+                        mine: p.mine,
+                        moved: false,
+                    });
                 }
                 return true;
             }
@@ -481,7 +578,8 @@ fn reply_id(thread: u64) -> Id {
 
 fn set_cursor(ctx: &egui::Context, id: Id, at: usize) {
     let mut st = egui::TextEdit::load_state(ctx, id).unwrap_or_default();
-    st.cursor.set_char_range(Some(CCursorRange::one(CCursor::new(at))));
+    st.cursor
+        .set_char_range(Some(CCursorRange::one(CCursor::new(at))));
     egui::TextEdit::store_state(ctx, id, st);
 }
 
@@ -494,7 +592,15 @@ pub fn focus_reply(ctx: &egui::Context, thread: u64, at: usize) {
 /// A text field with a send button: Enter posts (Shift+Enter starts a new line); typing `@` offers
 /// the names in `people` (arrows choose, Enter or Tab or a click inserts, Escape dismisses).
 /// Returns true when the text is posted.
-fn composer(ui: &mut Ui, id: Id, text: &mut String, hint: &str, people: &[String], me: &str, pick: &mut MentionPick) -> bool {
+fn composer(
+    ui: &mut Ui,
+    id: Id,
+    text: &mut String,
+    hint: &str,
+    people: &[String],
+    me: &str,
+    pick: &mut MentionPick,
+) -> bool {
     let t = Tokens::get(ui.ctx());
     let ctx = ui.ctx().clone();
     let mut submit = false;
@@ -510,17 +616,23 @@ fn composer(ui: &mut Ui, id: Id, text: &mut String, hint: &str, people: &[String
             }
             if ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
                 pick.dismissed = Some((id, pick.range.0));
-            } else if ui.input_mut(|i| (!i.modifiers.shift && i.consume_key(Modifiers::NONE, Key::Enter)) || i.consume_key(Modifiers::NONE, Key::Tab))
-                && let Some(name) = pick.names.get(pick.sel).cloned()
+            } else if ui.input_mut(|i| {
+                (!i.modifiers.shift && i.consume_key(Modifiers::NONE, Key::Enter))
+                    || i.consume_key(Modifiers::NONE, Key::Tab)
+            }) && let Some(name) = pick.names.get(pick.sel).cloned()
             {
                 let at = insert_mention(text, pick.range, &name);
                 set_cursor(&ctx, id, at);
             }
-        } else if ui.input_mut(|i| !i.modifiers.shift && i.consume_key(Modifiers::NONE, Key::Enter)) {
+        } else if ui.input_mut(|i| !i.modifiers.shift && i.consume_key(Modifiers::NONE, Key::Enter))
+        {
             submit = true;
         }
     }
-    let frame = egui::Frame::NONE.fill(t.field).corner_radius(CornerRadius::same(6)).inner_margin(egui::Margin::symmetric(8, 6));
+    let frame = egui::Frame::NONE
+        .fill(t.field)
+        .corner_radius(CornerRadius::same(6))
+        .inner_margin(egui::Margin::symmetric(8, 6));
     let mut cursor = None;
     frame.show(ui, |ui| {
         ui.horizontal(|ui| {
@@ -541,12 +653,26 @@ fn composer(ui: &mut Ui, id: Id, text: &mut String, hint: &str, people: &[String
             }
             let (br, bresp) = ui.allocate_exact_size(vec2(24.0, 24.0), Sense::click());
             let ready = !text.trim().is_empty();
-            ui.painter().circle_filled(br.center(), 12.0, if ready { ACCENT } else { t.hover });
+            ui.painter()
+                .circle_filled(br.center(), 12.0, if ready { ACCENT } else { t.hover });
             let c = br.center();
-            let col = if ready { Color32::WHITE } else { t.icon_secondary };
-            ui.painter().line_segment([c + vec2(0.0, 5.0), c + vec2(0.0, -5.0)], Stroke::new(1.6, col));
-            ui.painter().line_segment([c + vec2(-4.0, -1.0), c + vec2(0.0, -5.0)], Stroke::new(1.6, col));
-            ui.painter().line_segment([c + vec2(4.0, -1.0), c + vec2(0.0, -5.0)], Stroke::new(1.6, col));
+            let col = if ready {
+                Color32::WHITE
+            } else {
+                t.icon_secondary
+            };
+            ui.painter().line_segment(
+                [c + vec2(0.0, 5.0), c + vec2(0.0, -5.0)],
+                Stroke::new(1.6, col),
+            );
+            ui.painter().line_segment(
+                [c + vec2(-4.0, -1.0), c + vec2(0.0, -5.0)],
+                Stroke::new(1.6, col),
+            );
+            ui.painter().line_segment(
+                [c + vec2(4.0, -1.0), c + vec2(0.0, -5.0)],
+                Stroke::new(1.6, col),
+            );
             if bresp.on_hover_text(tr("Post")).clicked() {
                 submit = true;
             }
@@ -554,8 +680,12 @@ fn composer(ui: &mut Ui, id: Id, text: &mut String, hint: &str, people: &[String
     });
     // The @mention picker for what's typed now (kept while nothing has the focus: a click on a
     // name takes it from the field for a moment).
-    let found = cursor.and_then(|c| mention_query(text, c)).filter(|r| pick.dismissed != Some((id, r.0)));
-    let names = found.map(|r| mention_matches(people, text.get(r.0 + 1..r.1).unwrap_or(""), me)).unwrap_or_default();
+    let found = cursor
+        .and_then(|c| mention_query(text, c))
+        .filter(|r| pick.dismissed != Some((id, r.0)));
+    let names = found
+        .map(|r| mention_matches(people, text.get(r.0 + 1..r.1).unwrap_or(""), me))
+        .unwrap_or_default();
     let elsewhere = cursor.is_none() && crate::a11y::field_focused(ui.ctx());
     match found {
         Some(r) if !names.is_empty() => {
@@ -577,12 +707,27 @@ fn composer(ui: &mut Ui, id: Id, text: &mut String, hint: &str, people: &[String
         ui.add_space(4.0);
         let mut chosen = None;
         for (k, name) in pick.names.iter().enumerate() {
-            let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 26.0), Sense::click());
+            let (r, resp) =
+                ui.allocate_exact_size(vec2(ui.available_width(), 26.0), Sense::click());
             if k == pick.sel || resp.hovered() {
-                ui.painter().rect_filled(r, CornerRadius::same(5), if k == pick.sel { t.selected_row } else { t.hover });
+                ui.painter().rect_filled(
+                    r,
+                    CornerRadius::same(5),
+                    if k == pick.sel {
+                        t.selected_row
+                    } else {
+                        t.hover
+                    },
+                );
             }
             avatar(ui.painter(), pos2(r.min.x + 14.0, r.center().y), 9.0, name);
-            ui.painter().text(pos2(r.min.x + 30.0, r.center().y), Align2::LEFT_CENTER, name, regular(12.0), t.text);
+            ui.painter().text(
+                pos2(r.min.x + 30.0, r.center().y),
+                Align2::LEFT_CENTER,
+                name,
+                regular(12.0),
+                t.text,
+            );
             if resp.clicked() {
                 chosen = Some(name.clone());
             }
@@ -658,9 +803,21 @@ fn message(
             let (r, _) = ui.allocate_exact_size(vec2(24.0, 24.0), Sense::hover());
             avatar(ui.painter(), r.center(), 12.0, &m.author);
             ui.add_space(4.0);
-            ui.label(egui::RichText::new(&m.author).font(semibold(12.0)).color(t.text));
-            let when = if m.edited > 0 { trf("{when} · edited", &[("when", &ago(m.created))]) } else { ago(m.created) };
-            ui.label(egui::RichText::new(when).font(regular(11.0)).color(t.text_tertiary));
+            ui.label(
+                egui::RichText::new(&m.author)
+                    .font(semibold(12.0))
+                    .color(t.text),
+            );
+            let when = if m.edited > 0 {
+                trf("{when} · edited", &[("when", &ago(m.created))])
+            } else {
+                ago(m.created)
+            };
+            ui.label(
+                egui::RichText::new(when)
+                    .font(regular(11.0))
+                    .color(t.text_tertiary),
+            );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if m.author == cx.me {
                     let menu = Id::new(("comment_msg_more_menu", id, i));
@@ -676,7 +833,15 @@ fn message(
                             *act = Some(Act::Edit(i, m.text.clone()));
                             ui.close();
                         }
-                        if crate::right::menu_item(ui, if i == 0 { tr("Delete thread") } else { tr("Delete") }, "") {
+                        if crate::right::menu_item(
+                            ui,
+                            if i == 0 {
+                                tr("Delete thread")
+                            } else {
+                                tr("Delete")
+                            },
+                            "",
+                        ) {
                             *act = Some(Act::Run("comment.delete", message_params(id, i)));
                             ui.close();
                         }
@@ -694,11 +859,22 @@ fn message(
                     ui.horizontal(|ui| {
                         for e in REACTIONS {
                             let on = m.reacted(e, cx.me);
-                            let (r, resp) = ui.allocate_exact_size(vec2(28.0, 28.0), Sense::click());
+                            let (r, resp) =
+                                ui.allocate_exact_size(vec2(28.0, 28.0), Sense::click());
                             if on || resp.hovered() {
-                                ui.painter().rect_filled(r, CornerRadius::same(6), if on { t.selected_row } else { t.hover });
+                                ui.painter().rect_filled(
+                                    r,
+                                    CornerRadius::same(6),
+                                    if on { t.selected_row } else { t.hover },
+                                );
                             }
-                            ui.painter().text(r.center(), Align2::CENTER_CENTER, e, regular(16.0), t.text);
+                            ui.painter().text(
+                                r.center(),
+                                Align2::CENTER_CENTER,
+                                e,
+                                regular(16.0),
+                                t.text,
+                            );
                             if resp.clicked() {
                                 let mut p = message_params(id, i);
                                 p["emoji"] = json!(e);
@@ -715,12 +891,24 @@ fn message(
                 ui.horizontal(|ui| {
                     ui.add_space(indent);
                     ui.vertical(|ui| {
-                        if composer(ui, Id::new(("comment_edit", id, i)), text, tr("Edit comment"), cx.people, cx.me, pick) {
+                        if composer(
+                            ui,
+                            Id::new(("comment_edit", id, i)),
+                            text,
+                            tr("Edit comment"),
+                            cx.people,
+                            cx.me,
+                            pick,
+                        ) {
                             let mut p = message_params(id, i);
                             p["text"] = json!(text.trim());
                             *act = Some(Act::Run("comment.edit", p));
                         }
-                        ui.label(egui::RichText::new(tr("Enter to save · Esc to cancel")).font(regular(10.5)).color(t.text_tertiary));
+                        ui.label(
+                            egui::RichText::new(tr("Enter to save · Esc to cancel"))
+                                .font(regular(10.5))
+                                .color(t.text_tertiary),
+                        );
                     });
                 });
             }
@@ -729,7 +917,10 @@ fn message(
                     ui.add_space(indent);
                     let mut names: Vec<&str> = cx.people.iter().map(String::as_str).collect();
                     names.push(cx.me);
-                    ui.add(egui::Label::new(rich_text(&m.text, &names, t.text, ui.available_width())).wrap());
+                    ui.add(
+                        egui::Label::new(rich_text(&m.text, &names, t.text, ui.available_width()))
+                            .wrap(),
+                    );
                 });
             }
         }
@@ -745,15 +936,26 @@ fn message(
                     job.append(
                         &r.emoji,
                         0.0,
-                        TextFormat { font_id: regular(14.0), color: t.text, valign: egui::Align::Center, ..Default::default() },
+                        TextFormat {
+                            font_id: regular(14.0),
+                            color: t.text,
+                            valign: egui::Align::Center,
+                            ..Default::default()
+                        },
                     );
                     job.append(
                         &r.users.len().to_string(),
                         4.0,
-                        TextFormat { font_id: regular(11.5), color: t.text, valign: egui::Align::Center, ..Default::default() },
+                        TextFormat {
+                            font_id: regular(11.5),
+                            color: t.text,
+                            valign: egui::Align::Center,
+                            ..Default::default()
+                        },
                     );
                     let galley = ui.painter().layout_job(job);
-                    let (rect, resp) = ui.allocate_exact_size(galley.size() + vec2(14.0, 6.0), Sense::click());
+                    let (rect, resp) =
+                        ui.allocate_exact_size(galley.size() + vec2(14.0, 6.0), Sense::click());
                     let cr = CornerRadius::same((rect.height() / 2.0) as u8);
                     ui.painter().rect_filled(
                         rect,
@@ -767,9 +969,15 @@ fn message(
                         },
                     );
                     if on {
-                        ui.painter().rect_stroke(rect, cr, Stroke::new(1.0, ACCENT), StrokeKind::Inside);
+                        ui.painter().rect_stroke(
+                            rect,
+                            cr,
+                            Stroke::new(1.0, ACCENT),
+                            StrokeKind::Inside,
+                        );
                     }
-                    ui.painter().galley(rect.center() - galley.size() / 2.0, galley, t.text);
+                    ui.painter()
+                        .galley(rect.center() - galley.size() / 2.0, galley, t.text);
                     if resp.on_hover_text(r.users.join(", ")).clicked() {
                         let mut p = message_params(id, i);
                         p["emoji"] = json!(r.emoji);
@@ -789,7 +997,10 @@ fn popover_pos(anchor: Pos2, bounds: Rect) -> Pos2 {
     if p.x + POPOVER_W > bounds.max.x - 8.0 {
         p.x = anchor.x - POPOVER_W - 8.0;
     }
-    p.y = p.y.clamp(bounds.min.y + 8.0, (bounds.max.y - 200.0).max(bounds.min.y + 8.0));
+    p.y = p.y.clamp(
+        bounds.min.y + 8.0,
+        (bounds.max.y - 200.0).max(bounds.min.y + 8.0),
+    );
     p
 }
 
@@ -798,7 +1009,12 @@ fn popover_frame(t: &Tokens) -> egui::Frame {
         .fill(t.panel)
         .stroke(Stroke::new(1.0, t.border))
         .corner_radius(CornerRadius::same(12))
-        .shadow(egui::epaint::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(40) })
+        .shadow(egui::epaint::Shadow {
+            offset: [0, 4],
+            blur: 16,
+            spread: 0,
+            color: Color32::from_black_alpha(40),
+        })
         .inner_margin(egui::Margin::same(12))
 }
 
@@ -806,7 +1022,10 @@ fn popover_frame(t: &Tokens) -> egui::Frame {
 /// it first). True when they closed.
 fn escape(app: &mut FigApp, ctx: &egui::Context) -> bool {
     let cu = &mut app.ui.comments;
-    if (cu.open.is_none() && cu.draft.is_none()) || cu.mention.active() || !ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
+    if (cu.open.is_none() && cu.draft.is_none())
+        || cu.mention.active()
+        || !ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape))
+    {
         return false;
     }
     if cu.editing.take().is_some() {
@@ -824,22 +1043,37 @@ pub fn popovers(app: &mut FigApp, ctx: &egui::Context) {
     let canvas = app.canvas.rect;
     if let Some((x, y, mut text)) = app.ui.comments.draft.clone() {
         let t = Tokens::get(ctx);
-        let people = app.session.doc().map(|d| d.comment_people()).unwrap_or_default();
+        let people = app
+            .session
+            .doc()
+            .map(|d| d.comment_people())
+            .unwrap_or_default();
         let me = me(app);
         let mut pick = std::mem::take(&mut app.ui.comments.mention);
         let mut post = false;
-        egui::Area::new(Id::new("comment_draft")).order(egui::Order::Foreground).fixed_pos(popover_pos(app.to_screen(x, y), canvas)).show(
-            ctx,
-            |ui| {
+        egui::Area::new(Id::new("comment_draft"))
+            .order(egui::Order::Foreground)
+            .fixed_pos(popover_pos(app.to_screen(x, y), canvas))
+            .show(ctx, |ui| {
                 popover_frame(&t).show(ui, |ui| {
                     ui.set_width(POPOVER_W - 24.0);
-                    post = composer(ui, Id::new("comment_draft_text"), &mut text, tr("Add a comment"), &people, &me, &mut pick);
+                    post = composer(
+                        ui,
+                        Id::new("comment_draft_text"),
+                        &mut text,
+                        tr("Add a comment"),
+                        &people,
+                        &me,
+                        &mut pick,
+                    );
                 });
-            },
-        );
+            });
         app.ui.comments.mention = pick;
         if post {
-            let r = app.run("comment.add", json!({"x": x, "y": y, "text": text.trim(), "anchor": true}));
+            let r = app.run(
+                "comment.add",
+                json!({"x": x, "y": y, "text": text.trim(), "anchor": true}),
+            );
             app.ui.comments.draft = None;
             if let Some(id) = r.and_then(|v| v.get("id").and_then(Value::as_u64)) {
                 app.ui.comments.show(id);
@@ -849,7 +1083,9 @@ pub fn popovers(app: &mut FigApp, ctx: &egui::Context) {
         }
         return;
     }
-    let Some(open) = app.ui.comments.open else { return };
+    let Some(open) = app.ui.comments.open else {
+        return;
+    };
     let Some(pin) = pins(app).into_iter().find(|p| p.id == open) else {
         app.ui.comments.close();
         return;
@@ -873,56 +1109,105 @@ pub fn thread(app: &mut FigApp, ctx: &egui::Context, id: u64, anchor: Pos2, boun
         app.run("comment.markRead", json!({"id": id}));
     }
     let mut reply = std::mem::take(&mut app.ui.comments.reply);
-    let mut editing = app.ui.comments.editing.take().filter(|e| e.0 == id && c.message(e.1).is_some());
+    let mut editing = app
+        .ui
+        .comments
+        .editing
+        .take()
+        .filter(|e| e.0 == id && c.message(e.1).is_some());
     let mut pick = std::mem::take(&mut app.ui.comments.mention);
     let mut act: Option<Act> = None;
-    let cx = ThreadCtx { c: &c, me: &me, people: &people };
-    egui::Area::new(Id::new("comment_thread")).order(egui::Order::Foreground).fixed_pos(popover_pos(anchor, bounds)).show(ctx, |ui| {
-        popover_frame(&t).show(ui, |ui| {
-            ui.set_width(POPOVER_W - 24.0);
-            // Header: resolve, more, close.
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(tr("Comment")).font(semibold(12.0)).color(t.text));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if icons::button(ui, Icon::Close, 24.0, false, tr("Close")).clicked() {
-                        act = Some(Act::Close);
-                    }
-                    let more = icons::button(ui, Icon::Dots, 24.0, false, tr("More"));
-                    crate::right::menu_popup(&more).show(|ui| {
-                        if crate::right::menu_item(ui, tr("Mark as unread"), "") {
-                            act = Some(Act::MarkUnread);
-                            ui.close();
+    let cx = ThreadCtx {
+        c: &c,
+        me: &me,
+        people: &people,
+    };
+    egui::Area::new(Id::new("comment_thread"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(popover_pos(anchor, bounds))
+        .show(ctx, |ui| {
+            popover_frame(&t).show(ui, |ui| {
+                ui.set_width(POPOVER_W - 24.0);
+                // Header: resolve, more, close.
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(tr("Comment"))
+                            .font(semibold(12.0))
+                            .color(t.text),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if icons::button(ui, Icon::Close, 24.0, false, tr("Close")).clicked() {
+                            act = Some(Act::Close);
                         }
-                        if crate::right::menu_item(ui, tr("Copy link"), "") {
-                            act = Some(Act::CopyLink);
-                            ui.close();
-                        }
-                        if crate::right::menu_item(ui, if c.resolved { tr("Mark as unresolved") } else { tr("Mark as resolved") }, "") {
-                            act = Some(Act::Run("comment.resolve", json!({"id": id, "resolved": !c.resolved})));
-                            ui.close();
-                        }
-                        if c.first.author == me && crate::right::menu_item(ui, tr("Delete thread"), "") {
-                            act = Some(Act::Run("comment.delete", json!({"id": id})));
-                            ui.close();
+                        let more = icons::button(ui, Icon::Dots, 24.0, false, tr("More"));
+                        crate::right::menu_popup(&more).show(|ui| {
+                            if crate::right::menu_item(ui, tr("Mark as unread"), "") {
+                                act = Some(Act::MarkUnread);
+                                ui.close();
+                            }
+                            if crate::right::menu_item(ui, tr("Copy link"), "") {
+                                act = Some(Act::CopyLink);
+                                ui.close();
+                            }
+                            if crate::right::menu_item(
+                                ui,
+                                if c.resolved {
+                                    tr("Mark as unresolved")
+                                } else {
+                                    tr("Mark as resolved")
+                                },
+                                "",
+                            ) {
+                                act = Some(Act::Run(
+                                    "comment.resolve",
+                                    json!({"id": id, "resolved": !c.resolved}),
+                                ));
+                                ui.close();
+                            }
+                            if c.first.author == me
+                                && crate::right::menu_item(ui, tr("Delete thread"), "")
+                            {
+                                act = Some(Act::Run("comment.delete", json!({"id": id})));
+                                ui.close();
+                            }
+                        });
+                        let tip = if c.resolved {
+                            tr("Unresolve")
+                        } else {
+                            tr("Resolve")
+                        };
+                        if icons::button(ui, Icon::Check, 24.0, c.resolved, tip).clicked() {
+                            act = Some(Act::Run(
+                                "comment.resolve",
+                                json!({"id": id, "resolved": !c.resolved}),
+                            ));
                         }
                     });
-                    let tip = if c.resolved { tr("Unresolve") } else { tr("Resolve") };
-                    if icons::button(ui, Icon::Check, 24.0, c.resolved, tip).clicked() {
-                        act = Some(Act::Run("comment.resolve", json!({"id": id, "resolved": !c.resolved})));
-                    }
                 });
-            });
-            ui.add_space(8.0);
-            egui::ScrollArea::vertical().max_height(320.0).show(ui, |ui| {
-                for (i, m) in c.messages().enumerate() {
-                    message(ui, &cx, i, m, &mut editing, &mut pick, &mut act);
+                ui.add_space(8.0);
+                egui::ScrollArea::vertical()
+                    .max_height(320.0)
+                    .show(ui, |ui| {
+                        for (i, m) in c.messages().enumerate() {
+                            message(ui, &cx, i, m, &mut editing, &mut pick, &mut act);
+                        }
+                    });
+                if composer(
+                    ui,
+                    reply_id(id),
+                    &mut reply,
+                    tr("Reply"),
+                    &people,
+                    &me,
+                    &mut pick,
+                ) {
+                    act = Some(Act::Run(
+                        "comment.reply",
+                        json!({"id": id, "text": reply.trim()}),
+                    ));
                 }
             });
-            if composer(ui, reply_id(id), &mut reply, tr("Reply"), &people, &me, &mut pick) {
-                act = Some(Act::Run("comment.reply", json!({"id": id, "text": reply.trim()})));
-            }
         });
-    });
     app.ui.comments.reply = reply;
     app.ui.comments.editing = editing;
     app.ui.comments.mention = pick;
@@ -933,14 +1218,20 @@ pub fn thread(app: &mut FigApp, ctx: &egui::Context, id: u64, anchor: Pos2, boun
             app.ui.comments.mention = MentionPick::default();
         }
         Some(Act::CopyLink) => {
-            if let Some(link) = app.run("comment.link", json!({"id": id})).and_then(|v| v.get("link").and_then(Value::as_str).map(str::to_string)) {
+            if let Some(link) = app
+                .run("comment.link", json!({"id": id}))
+                .and_then(|v| v.get("link").and_then(Value::as_str).map(str::to_string))
+            {
                 app.services.clipboard_set_text(&link);
                 app.toast(tr("Link copied"));
             }
         }
         // It closes: an open thread reads itself again.
         Some(Act::MarkUnread) => {
-            if app.run("comment.markRead", json!({"id": id, "read": false})).is_some() {
+            if app
+                .run("comment.markRead", json!({"id": id, "read": false}))
+                .is_some()
+            {
                 app.ui.comments.close();
             }
         }
@@ -989,10 +1280,17 @@ pub fn step(app: &mut FigApp, ctx: &egui::Context, dir: i32) -> Option<Value> {
 /// being typed (an empty reply field doesn't count).
 pub fn keys(app: &mut FigApp, ctx: &egui::Context) {
     let cu = &app.ui.comments;
-    if app.session.tool.tool != ToolId::Comment || cu.draft.is_some() || cu.editing.is_some() || cu.mention.active() {
+    if app.session.tool.tool != ToolId::Comment
+        || cu.draft.is_some()
+        || cu.editing.is_some()
+        || cu.mention.active()
+    {
         return;
     }
-    let free = match ctx.memory(|m| m.focused()).filter(|_| crate::a11y::field_focused(ctx)) {
+    let free = match ctx
+        .memory(|m| m.focused())
+        .filter(|_| crate::a11y::field_focused(ctx))
+    {
         None => true,
         Some(f) => cu.open.is_some_and(|o| f == reply_id(o)) && cu.reply.is_empty(),
     };
@@ -1016,16 +1314,30 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         ui.add_space(16.0);
-        ui.label(egui::RichText::new(tr("Comments")).font(semibold(12.0)).color(t.text));
+        ui.label(
+            egui::RichText::new(tr("Comments"))
+                .font(semibold(12.0))
+                .color(t.text),
+        );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.add_space(8.0);
-            let menu = icons::button(ui, Icon::Adjust, 24.0, app.ui.comments.filter != Filter::Open, tr("Filter and sort"));
+            let menu = icons::button(
+                ui,
+                Icon::Adjust,
+                24.0,
+                app.ui.comments.filter != Filter::Open,
+                tr("Filter and sort"),
+            );
             crate::right::menu_popup(&menu).width(200.0).show(|ui| {
                 for f in Filter::ALL {
                     if crate::right::menu_check(
                         ui,
                         app.ui.comments.filter == f,
-                        if f == Filter::Open { tr("Open|comments") } else { tr(f.label()) },
+                        if f == Filter::Open {
+                            tr("Open|comments")
+                        } else {
+                            tr(f.label())
+                        },
                         "",
                     ) {
                         app.ui.comments.filter = f;
@@ -1051,7 +1363,13 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         ui.add_space(16.0);
         let w = ui.available_width() - 16.0;
-        if let Some(s) = crate::widgets::text_field(ui, Id::new("comment_search"), &app.ui.comments.search, w, tr("Search comments")) {
+        if let Some(s) = crate::widgets::text_field(
+            ui,
+            Id::new("comment_search"),
+            &app.ui.comments.search,
+            w,
+            tr("Search comments"),
+        ) {
             app.ui.comments.search = s;
         }
     });
@@ -1060,28 +1378,62 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.add_space(16.0);
-            ui.label(egui::RichText::new(tr(app.ui.comments.filter.label())).font(regular(11.0)).color(t.text_secondary));
+            ui.label(
+                egui::RichText::new(tr(app.ui.comments.filter.label()))
+                    .font(regular(11.0))
+                    .color(t.text_secondary),
+            );
             ui.add_space(4.0);
-            if ui.add(egui::Label::new(egui::RichText::new(tr("Show open")).font(regular(11.0)).color(ACCENT)).sense(Sense::click())).clicked() {
+            if ui
+                .add(
+                    egui::Label::new(
+                        egui::RichText::new(tr("Show open"))
+                            .font(regular(11.0))
+                            .color(ACCENT),
+                    )
+                    .sense(Sense::click()),
+                )
+                .clicked()
+            {
                 app.ui.comments.filter = Filter::Open;
             }
         });
     }
     ui.add_space(8.0);
     let search = app.ui.comments.search.clone();
-    let q = Query { page: None, frame: None, filter: app.ui.comments.filter, sort: app.ui.comments.sort, text: &search };
+    let q = Query {
+        page: None,
+        frame: None,
+        filter: app.ui.comments.filter,
+        sort: app.ui.comments.sort,
+        text: &search,
+    };
     let list = cc::query(&doc, &q, &me);
     if list.is_empty() {
         let (title, sub) = if doc.comments.iter().any(|c| doc.pages.contains(&c.page)) {
-            (tr("No matching comments"), tr("Try another search or filter."))
+            (
+                tr("No matching comments"),
+                tr("Try another search or filter."),
+            )
         } else {
-            (tr("No comments yet"), tr("Click anywhere on the canvas to leave one."))
+            (
+                tr("No comments yet"),
+                tr("Click anywhere on the canvas to leave one."),
+            )
         };
         ui.add_space(24.0);
         ui.vertical_centered(|ui| {
-            ui.label(egui::RichText::new(title).font(semibold(12.0)).color(t.text_secondary));
+            ui.label(
+                egui::RichText::new(title)
+                    .font(semibold(12.0))
+                    .color(t.text_secondary),
+            );
             ui.add_space(4.0);
-            ui.label(egui::RichText::new(sub).font(regular(11.0)).color(t.text_tertiary));
+            ui.label(
+                egui::RichText::new(sub)
+                    .font(regular(11.0))
+                    .color(t.text_tertiary),
+            );
         });
         return;
     }
@@ -1096,16 +1448,23 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
             ui.horizontal(|ui| {
                 ui.add_space(16.0);
                 let name = doc.node(c.page).map(|n| n.name.clone()).unwrap_or_default();
-                ui.label(egui::RichText::new(name).font(semibold(11.0)).color(t.text_secondary));
+                ui.label(
+                    egui::RichText::new(name)
+                        .font(semibold(11.0))
+                        .color(t.text_secondary),
+                );
             });
             ui.add_space(2.0);
         }
         let w = ui.available_width();
-        let body = ui.painter().layout(c.first.text.clone(), regular(12.0), t.text, w - 64.0);
+        let body = ui
+            .painter()
+            .layout(c.first.text.clone(), regular(12.0), t.text, w - 64.0);
         let lines = body.rows.len().clamp(1, 3) as f32;
         let (r, resp) = ui.allocate_exact_size(vec2(w, 52.0 + 16.0 * lines), Sense::click());
         if app.ui.comments.open == Some(c.id) {
-            ui.painter().rect_filled(r, CornerRadius::ZERO, t.selected_row);
+            ui.painter()
+                .rect_filled(r, CornerRadius::ZERO, t.selected_row);
             if scroll {
                 resp.scroll_to_me(Some(egui::Align::Center));
             }
@@ -1114,14 +1473,41 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
         }
         let unread = c.is_unread(&me);
         if unread {
-            ui.painter().circle_filled(pos2(r.min.x + 8.0, r.min.y + 22.0), 3.5, ACCENT);
+            ui.painter()
+                .circle_filled(pos2(r.min.x + 8.0, r.min.y + 22.0), 3.5, ACCENT);
         }
-        avatar(ui.painter(), pos2(r.min.x + 28.0, r.min.y + 22.0), 12.0, &c.first.author);
-        let name_font = if unread { semibold(12.0) } else { regular(12.0) };
-        ui.painter().text(pos2(r.min.x + 48.0, r.min.y + 22.0), Align2::LEFT_CENTER, &c.first.author, name_font, t.text);
-        ui.painter().text(pos2(r.max.x - 16.0, r.min.y + 22.0), Align2::RIGHT_CENTER, ago(c.last_activity()), regular(11.0), t.text_tertiary);
-        let clip = Rect::from_min_size(pos2(r.min.x + 48.0, r.min.y + 38.0), vec2(w - 64.0, 16.0 * lines));
-        ui.painter().with_clip_rect(clip).galley(clip.min, body, t.text);
+        avatar(
+            ui.painter(),
+            pos2(r.min.x + 28.0, r.min.y + 22.0),
+            12.0,
+            &c.first.author,
+        );
+        let name_font = if unread {
+            semibold(12.0)
+        } else {
+            regular(12.0)
+        };
+        ui.painter().text(
+            pos2(r.min.x + 48.0, r.min.y + 22.0),
+            Align2::LEFT_CENTER,
+            &c.first.author,
+            name_font,
+            t.text,
+        );
+        ui.painter().text(
+            pos2(r.max.x - 16.0, r.min.y + 22.0),
+            Align2::RIGHT_CENTER,
+            ago(c.last_activity()),
+            regular(11.0),
+            t.text_tertiary,
+        );
+        let clip = Rect::from_min_size(
+            pos2(r.min.x + 48.0, r.min.y + 38.0),
+            vec2(w - 64.0, 16.0 * lines),
+        );
+        ui.painter()
+            .with_clip_rect(clip)
+            .galley(clip.min, body, t.text);
         // The thread's frame and page, replies, state.
         let mut meta = Vec::new();
         if let Some(f) = cc::frame_of(&doc, c).and_then(|f| doc.node(f)) {
@@ -1137,11 +1523,21 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
             meta.push(tr("Resolved").into());
         }
         if !meta.is_empty() {
-            let galley = ui.painter().layout_no_wrap(meta.join(" · "), regular(11.0), t.text_secondary);
+            let galley =
+                ui.painter()
+                    .layout_no_wrap(meta.join(" · "), regular(11.0), t.text_secondary);
             let at = pos2(r.min.x + 48.0, r.max.y - 12.0 - galley.size().y / 2.0);
-            ui.painter().with_clip_rect(Rect::from_min_max(pos2(at.x, r.min.y), pos2(r.max.x - 16.0, r.max.y))).galley(at, galley, t.text_secondary);
+            ui.painter()
+                .with_clip_rect(Rect::from_min_max(
+                    pos2(at.x, r.min.y),
+                    pos2(r.max.x - 16.0, r.max.y),
+                ))
+                .galley(at, galley, t.text_secondary);
         }
-        ui.painter().line_segment([pos2(r.min.x + 16.0, r.max.y), pos2(r.max.x, r.max.y)], Stroke::new(1.0, t.border));
+        ui.painter().line_segment(
+            [pos2(r.min.x + 16.0, r.max.y), pos2(r.max.x, r.max.y)],
+            Stroke::new(1.0, t.border),
+        );
         if resp.clicked() {
             go = Some(c.id);
         }
@@ -1156,39 +1552,70 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
 
 /// Pins on the presented `frame` (placed by the player's `place`, inside `clip`) while the
 /// presenter shows comments, and the open thread's popover (read and reply).
-pub fn presenter(app: &mut FigApp, ctx: &egui::Context, frame: NodeId, place: crate::present::Place, clip: Rect) {
+pub fn presenter(
+    app: &mut FigApp,
+    ctx: &egui::Context,
+    frame: NodeId,
+    place: crate::present::Place,
+    clip: Rect,
+) {
     if escape(app, ctx) {
         return;
     }
     let Ok(ds) = app.session.ds() else { return };
     let doc = ds.doc.clone();
-    let Some(fb) = doc.world_bounds(frame) else { return };
+    let Some(fb) = doc.world_bounds(frame) else {
+        return;
+    };
     let me = me(app);
     let open = app.ui.comments.open;
     // The frame as designed maps onto the frame as presented.
-    let to_screen = |(x, y): (f64, f64)| place.pt(place.page_min.0 + x - fb.x0, place.page_min.1 + y - fb.y0);
-    let q = Query { frame: Some(frame), filter: app.ui.comments.filter, ..Query::default() };
+    let to_screen =
+        |(x, y): (f64, f64)| place.pt(place.page_min.0 + x - fb.x0, place.page_min.1 + y - fb.y0);
+    let q = Query {
+        frame: Some(frame),
+        filter: app.ui.comments.filter,
+        ..Query::default()
+    };
     let mut list = cc::query(&doc, &q, &me);
     list.reverse();
-    if let Some(c) = open.and_then(|o| doc.comment(o)).filter(|c| cc::frame_of(&doc, c) == Some(frame) && !list.iter().any(|x| x.id == c.id)) {
+    if let Some(c) = open
+        .and_then(|o| doc.comment(o))
+        .filter(|c| cc::frame_of(&doc, c) == Some(frame) && !list.iter().any(|x| x.id == c.id))
+    {
         list.push(c);
     }
-    let pins: Vec<Pin> = list.iter().map(|c| Pin::of(c, &me, to_screen(c.position(&doc)))).filter(|p| clip.contains(p.at)).collect();
+    let pins: Vec<Pin> = list
+        .iter()
+        .map(|c| Pin::of(c, &me, to_screen(c.position(&doc))))
+        .filter(|p| clip.contains(p.at))
+        .collect();
     let mut clicked = None;
     for p in &pins {
         let r = pin_rect(p.at);
-        egui::Area::new(Id::new(("present_comment_pin", p.id))).order(egui::Order::Foreground).fixed_pos(r.min).show(ctx, |ui| {
-            let (rr, resp) = ui.allocate_exact_size(r.size(), Sense::click());
-            paint_pin(ui.painter(), rr, p, open == Some(p.id) || resp.hovered());
-            if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
-                clicked = Some(p.id);
-            }
-        });
+        egui::Area::new(Id::new(("present_comment_pin", p.id)))
+            .order(egui::Order::Foreground)
+            .fixed_pos(r.min)
+            .show(ctx, |ui| {
+                let (rr, resp) = ui.allocate_exact_size(r.size(), Sense::click());
+                paint_pin(ui.painter(), rr, p, open == Some(p.id) || resp.hovered());
+                if resp
+                    .on_hover_cursor(egui::CursorIcon::PointingHand)
+                    .clicked()
+                {
+                    clicked = Some(p.id);
+                }
+            });
     }
     if let Some(id) = clicked {
         toggle(app, id);
     }
-    match app.ui.comments.open.and_then(|o| pins.iter().find(|p| p.id == o)) {
+    match app
+        .ui
+        .comments
+        .open
+        .and_then(|o| pins.iter().find(|p| p.id == o))
+    {
         Some(p) => thread(app, ctx, p.id, p.at, ctx.content_rect()),
         // A thread on another frame (or none) closes.
         None => app.ui.comments.close(),

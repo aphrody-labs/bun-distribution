@@ -60,7 +60,9 @@ pub struct Kinsoku {
 impl Kinsoku {
     /// Explicitly supplied character sets take precedence over the fallback table.
     pub fn allows(&self, a: char, b: char) -> bool {
-        !(self.no_end.contains(a) || self.no_start.contains(b) || (a == b && self.inseparable.contains(a)))
+        !(self.no_end.contains(a)
+            || self.no_start.contains(b)
+            || (a == b && self.inseparable.contains(a)))
     }
 }
 
@@ -104,7 +106,9 @@ impl Kinsoku {
     /// Clean-room Unicode rules for the named CJK sets. Explicit document tables
     /// are imported separately and always take precedence over these defaults.
     pub fn named(name: &str) -> Option<Self> {
-        let name = name.trim_start_matches("KinsokuTable/").trim_start_matches("$ID/");
+        let name = name
+            .trim_start_matches("KinsokuTable/")
+            .trim_start_matches("$ID/");
         let hard = match name {
             "HardKinsoku" | "kHardKinsokuName" => true,
             "SoftKinsoku"

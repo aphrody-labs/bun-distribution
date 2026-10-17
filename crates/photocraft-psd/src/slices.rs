@@ -100,7 +100,9 @@ fn d_text(d: &Descriptor, key: &str) -> String {
 
 fn d_enum(d: &Descriptor, key: &str) -> Option<String> {
     match d.get(key)? {
-        Value::Enumerated { value, .. } => Some(String::from_utf8_lossy(value.as_bytes()).into_owned()),
+        Value::Enumerated { value, .. } => {
+            Some(String::from_utf8_lossy(value.as_bytes()).into_owned())
+        }
         _ => None,
     }
 }
@@ -110,7 +112,9 @@ fn d_bool(d: &Descriptor, key: &str) -> bool {
 }
 
 fn d_bounds(d: &Descriptor, key: &str) -> Option<[i32; 4]> {
-    let Value::Descriptor(b) = d.get(key)? else { return None };
+    let Value::Descriptor(b) = d.get(key)? else {
+        return None;
+    };
     let g = |k: &str| d_int(b, k).unwrap_or(0) as i32;
     // top, left, bottom, right
     Some([g("Top "), g("Left"), g("Btom"), g("Rght")])
@@ -137,7 +141,11 @@ fn slice_from_descriptor(d: &Descriptor) -> SliceRecord {
     let color = match (d_enum(d, "bgColorType").as_deref(), d.get("bgColor")) {
         (Some("Clr "), Some(Value::Descriptor(c))) => {
             let g = |k: &str| d_int(c, k).unwrap_or(0).clamp(0, 255) as u8;
-            let a = if c.get("alpha").is_some() { g("alpha") } else { 255 };
+            let a = if c.get("alpha").is_some() {
+                g("alpha")
+            } else {
+                255
+            };
             [a, g("Rd  "), g("Grn "), g("Bl  ")]
         }
         _ => [0; 4],
@@ -180,7 +188,10 @@ fn bounds_descriptor(tlbr: [i32; 4]) -> Value {
 }
 
 fn enumerated(ty: &str, v: &str) -> Value {
-    Value::Enumerated { type_id: Id::new(ty), value: Id::new(v) }
+    Value::Enumerated {
+        type_id: Id::new(ty),
+        value: Id::new(v),
+    }
 }
 
 impl SlicesResource {
@@ -203,9 +214,16 @@ impl SlicesResource {
                         .collect(),
                     _ => Vec::new(),
                 };
-                Ok(SlicesResource { version, bounds: d_bounds(d, "bounds").unwrap_or_default(), group_name: d_text(d, "baseName"), slices })
+                Ok(SlicesResource {
+                    version,
+                    bounds: d_bounds(d, "bounds").unwrap_or_default(),
+                    group_name: d_text(d, "baseName"),
+                    slices,
+                })
             }
-            v => Err(PsdError::invalid(format!("unsupported slices resource version {v}"))),
+            v => Err(PsdError::invalid(format!(
+                "unsupported slices resource version {v}"
+            ))),
         }
     }
 
@@ -267,7 +285,12 @@ impl SlicesResource {
                 }
             }
         }
-        Ok(SlicesResource { version: 6, bounds, group_name, slices })
+        Ok(SlicesResource {
+            version: 6,
+            bounds,
+            group_name,
+            slices,
+        })
     }
 
     /// Serializes as version 6. A trailing descriptor with the outsets is added when any slice
@@ -317,7 +340,8 @@ impl SlicesResource {
                     )
                 })
                 .collect();
-            VersionedDescriptor::new(Descriptor::new("null").with("slices", Value::List(list))).write(&mut out);
+            VersionedDescriptor::new(Descriptor::new("null").with("slices", Value::List(list)))
+                .write(&mut out);
         }
         out
     }
@@ -347,7 +371,10 @@ impl SlicesResource {
                 }
                 d.with("Nm  ", Value::Text(UnicodeString::new(&s.name)))
                     .with("Type", enumerated("ESliceType", kind))
-                    .with("bounds", bounds_descriptor([s.rect[1], s.rect[0], s.rect[3], s.rect[2]]))
+                    .with(
+                        "bounds",
+                        bounds_descriptor([s.rect[1], s.rect[0], s.rect[3], s.rect[2]]),
+                    )
                     .with("url", Value::Text(UnicodeString::new(&s.url)))
                     .with("null", Value::Text(UnicodeString::new(&s.target)))
                     .with("Msge", Value::Text(UnicodeString::new(&s.message)))
@@ -367,7 +394,10 @@ impl SlicesResource {
         let d = Descriptor::new("null")
             .with("bounds", bounds_descriptor(self.bounds))
             .with("slices", Value::List(list))
-            .with("baseName", Value::Text(UnicodeString::new(&self.group_name)));
+            .with(
+                "baseName",
+                Value::Text(UnicodeString::new(&self.group_name)),
+            );
         let mut out = Vec::new();
         out.put_u32(7);
         VersionedDescriptor::new(d).write(&mut out);
@@ -385,7 +415,13 @@ mod tests {
             bounds: [0, 0, 80, 100],
             group_name: "site".into(),
             slices: vec![
-                SliceRecord { id: 0, origin: 0, kind: 1, rect: [0, 0, 100, 10], ..Default::default() },
+                SliceRecord {
+                    id: 0,
+                    origin: 0,
+                    kind: 1,
+                    rect: [0, 0, 100, 10],
+                    ..Default::default()
+                },
                 SliceRecord {
                     id: 1,
                     group_id: 0,
@@ -404,7 +440,15 @@ mod tests {
                     color: [255, 10, 20, 30],
                     ..Default::default()
                 },
-                SliceRecord { id: 2, origin: 1, layer_id: Some(7), kind: 0, rect: [5, 40, 25, 70], outsets: [1, 2, 3, 4], ..Default::default() },
+                SliceRecord {
+                    id: 2,
+                    origin: 1,
+                    layer_id: Some(7),
+                    kind: 0,
+                    rect: [5, 40, 25, 70],
+                    outsets: [1, 2, 3, 4],
+                    ..Default::default()
+                },
             ],
         }
     }
@@ -440,7 +484,10 @@ mod tests {
         let bytes = sample().to_bytes();
         // Cuts inside the records; a damaged trailing descriptor is ignored on purpose.
         for cut in [0, 3, 10, 30, 120] {
-            assert!(SlicesResource::from_bytes(&bytes[..cut]).is_err(), "cut at {cut}");
+            assert!(
+                SlicesResource::from_bytes(&bytes[..cut]).is_err(),
+                "cut at {cut}"
+            );
         }
         let mut huge = 6u32.to_be_bytes().to_vec();
         huge.extend([0u8; 16]);

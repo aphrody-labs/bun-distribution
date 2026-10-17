@@ -30,7 +30,11 @@ struct Entry {
 }
 
 impl Cache {
-    fn texture(&mut self, ctx: &egui::Context, picture: &Arc<CellPicture>) -> Option<TextureHandle> {
+    fn texture(
+        &mut self,
+        ctx: &egui::Context,
+        picture: &Arc<CellPicture>,
+    ) -> Option<TextureHandle> {
         let frame = ctx.cumulative_frame_nr();
         let key = Arc::as_ptr(picture) as usize;
         if let Some(entry) = self.entries.get_mut(&key) {
@@ -50,8 +54,15 @@ impl Cache {
         // again while painting a larger visible set on the next frame.
         let source = dimensions(picture);
         let estimate = source.map_or(0, |(_, (w, h))| w as usize * h as usize * 4);
-        while self.entries.len() >= MAX_CACHE_ITEMS || self.bytes.saturating_add(estimate) > MAX_CACHE_BYTES {
-            let oldest = self.entries.iter().filter(|(_, e)| e.used.saturating_add(1) < frame).min_by_key(|(_, e)| e.used).map(|(key, _)| *key);
+        while self.entries.len() >= MAX_CACHE_ITEMS
+            || self.bytes.saturating_add(estimate) > MAX_CACHE_BYTES
+        {
+            let oldest = self
+                .entries
+                .iter()
+                .filter(|(_, e)| e.used.saturating_add(1) < frame)
+                .min_by_key(|(_, e)| e.used)
+                .map(|(key, _)| *key);
             let Some(oldest) = oldest else {
                 // Keep visible images stable under pressure; show the placeholder for
                 // excess content instead of re-decoding it each frame.
@@ -63,9 +74,18 @@ impl Cache {
         }
         let decoded = source.and_then(|(format, _)| decode_format(picture, format));
         let bytes = decoded.as_ref().map_or(0, |image| image.pixels.len() * 4);
-        let texture = decoded.map(|image| ctx.load_texture("cell picture", image, egui::TextureOptions::LINEAR));
+        let texture = decoded
+            .map(|image| ctx.load_texture("cell picture", image, egui::TextureOptions::LINEAR));
         self.bytes += bytes;
-        self.entries.insert(key, Entry { source: Arc::downgrade(picture), texture: texture.clone(), bytes, used: frame });
+        self.entries.insert(
+            key,
+            Entry {
+                source: Arc::downgrade(picture),
+                texture: texture.clone(),
+                bytes,
+                used: frame,
+            },
+        );
         texture
     }
 }
@@ -78,7 +98,9 @@ fn dimensions(picture: &CellPicture) -> Option<(image::ImageFormat, (u32, u32))>
     if !matches!(format, image::ImageFormat::Png | image::ImageFormat::Jpeg) {
         return None;
     }
-    let dimensions = image::ImageReader::with_format(Cursor::new(&picture.data), format).into_dimensions().ok()?;
+    let dimensions = image::ImageReader::with_format(Cursor::new(&picture.data), format)
+        .into_dimensions()
+        .ok()?;
     if dimensions.0 == 0
         || dimensions.1 == 0
         || dimensions.0 > 8192
@@ -104,7 +126,10 @@ fn decode_format(picture: &CellPicture, format: image::ImageFormat) -> Option<eg
     limits.max_alloc = Some(64 * 1024 * 1024);
     reader.limits(limits);
     let rgba = reader.decode().ok()?.into_rgba8();
-    Some(egui::ColorImage::from_rgba_unmultiplied([rgba.width() as usize, rgba.height() as usize], rgba.as_raw()))
+    Some(egui::ColorImage::from_rgba_unmultiplied(
+        [rgba.width() as usize, rgba.height() as usize],
+        rgba.as_raw(),
+    ))
 }
 
 fn fitted_rect(cell: Rect, size: [usize; 2]) -> Option<Rect> {
@@ -122,15 +147,31 @@ pub(crate) fn paint(painter: &Painter, cell: Rect, picture: &Arc<CellPicture>) {
     }
     // Context-local handles must never leak between offscreen, native or browser
     // egui contexts, even when a workbook shares its Arc payload with another view.
-    let cache = painter.ctx().data_mut(|data| data.get_temp_mut_or_default::<Arc<Mutex<Cache>>>(egui::Id::new("gridcraft.cell_pictures")).clone());
-    let texture = cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner).texture(painter.ctx(), picture);
+    let cache = painter.ctx().data_mut(|data| {
+        data.get_temp_mut_or_default::<Arc<Mutex<Cache>>>(egui::Id::new("gridcraft.cell_pictures"))
+            .clone()
+    });
+    let texture = cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .texture(painter.ctx(), picture);
     let painter = painter.with_clip_rect(cell.intersect(painter.clip_rect()));
     if let Some(texture) = texture {
         if let Some(rect) = fitted_rect(cell, texture.size()) {
-            painter.image(texture.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+            painter.image(
+                texture.id(),
+                rect,
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
         }
     } else {
-        crate::icons::paint(&painter, cell.shrink(2.0), crate::icons::Icon::Picture, Color32::from_gray(130));
+        crate::icons::paint(
+            &painter,
+            cell.shrink(2.0),
+            crate::icons::Icon::Picture,
+            Color32::from_gray(130),
+        );
     }
 }
 
@@ -142,14 +183,24 @@ mod tests {
         let image = image::RgbaImage::from_pixel(4, 2, image::Rgba(color));
         let mut bytes = Cursor::new(Vec::new());
         image.write_to(&mut bytes, image::ImageFormat::Png)?;
-        Ok(Arc::new(CellPicture { data: bytes.into_inner(), mime: "image/png".into(), alt: "Test picture".into() }))
+        Ok(Arc::new(CellPicture {
+            data: bytes.into_inner(),
+            mime: "image/png".into(),
+            alt: "Test picture".into(),
+        }))
     }
 
     #[test]
     fn aspect_fit_and_bounded_content_cache() -> Result<(), Box<dyn std::error::Error>> {
         let cell = Rect::from_min_size(pos2(10.0, 20.0), vec2(100.0, 100.0));
-        assert_eq!(fitted_rect(cell, [200, 100]), Some(Rect::from_min_size(pos2(10.0, 45.0), vec2(100.0, 50.0))));
-        assert_eq!(fitted_rect(cell, [100, 200]), Some(Rect::from_min_size(pos2(35.0, 20.0), vec2(50.0, 100.0))));
+        assert_eq!(
+            fitted_rect(cell, [200, 100]),
+            Some(Rect::from_min_size(pos2(10.0, 45.0), vec2(100.0, 50.0)))
+        );
+        assert_eq!(
+            fitted_rect(cell, [100, 200]),
+            Some(Rect::from_min_size(pos2(35.0, 20.0), vec2(50.0, 100.0)))
+        );
         assert!(fitted_rect(Rect::NOTHING, [200, 100]).is_none());
         let ctx = egui::Context::default();
         let mut cache = Cache::default();
@@ -157,14 +208,32 @@ mod tests {
         let blue = picture([0, 0, 255, 255])?;
         // Distinct content with identical dimensions must receive distinct handles.
         let red_id = cache.texture(&ctx, &red).ok_or("missing red texture")?.id();
-        assert_eq!(cache.texture(&ctx, &red).ok_or("missing red texture")?.id(), red_id);
-        assert_ne!(cache.texture(&ctx, &blue).ok_or("missing blue texture")?.id(), red_id);
-        let payloads: Vec<_> = (0..133).map(|_| picture([0, 0, 255, 255])).collect::<Result<_, _>>()?;
+        assert_eq!(
+            cache.texture(&ctx, &red).ok_or("missing red texture")?.id(),
+            red_id
+        );
+        assert_ne!(
+            cache
+                .texture(&ctx, &blue)
+                .ok_or("missing blue texture")?
+                .id(),
+            red_id
+        );
+        let payloads: Vec<_> = (0..133)
+            .map(|_| picture([0, 0, 255, 255]))
+            .collect::<Result<_, _>>()?;
         for payload in &payloads {
             cache.texture(&ctx, payload);
         }
-        let ids: Vec<_> =
-            payloads.iter().map(|p| cache.texture(&ctx, p).ok_or("missing visible texture").map(|t| t.id())).collect::<Result<_, _>>()?;
+        let ids: Vec<_> = payloads
+            .iter()
+            .map(|p| {
+                cache
+                    .texture(&ctx, p)
+                    .ok_or("missing visible texture")
+                    .map(|t| t.id())
+            })
+            .collect::<Result<_, _>>()?;
         for _ in 0..3 {
             let mut output = ctx.run_ui(Default::default(), |_| {
                 for (payload, id) in payloads.iter().zip(&ids) {
@@ -176,8 +245,18 @@ mod tests {
         }
         assert!(cache.entries.len() <= MAX_CACHE_ITEMS);
         assert!(cache.bytes <= MAX_CACHE_BYTES);
-        assert!(decode(&CellPicture { data: vec![], mime: "image/png".into(), alt: String::new() }).is_none());
-        assert_eq!(decode(&red).ok_or("decode failed")?.pixels.first(), Some(&Color32::RED));
+        assert!(
+            decode(&CellPicture {
+                data: vec![],
+                mime: "image/png".into(),
+                alt: String::new()
+            })
+            .is_none()
+        );
+        assert_eq!(
+            decode(&red).ok_or("decode failed")?.pixels.first(),
+            Some(&Color32::RED)
+        );
         Ok(())
     }
 }

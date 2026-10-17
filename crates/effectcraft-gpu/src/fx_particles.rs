@@ -26,7 +26,14 @@ use crate::effects::GBuf;
 use crate::fx_sim::{Items, piece_pass, sprite_layer, sprites};
 
 /// Compute entry points in `fx_particles.wgsl`.
-pub(crate) const KERNELS: &[&str] = &["fxp_raster", "fxp_under", "fxp_curl_pot", "fxp_curl_vel", "fxp_curl_view", "fxp_curl_flow"];
+pub(crate) const KERNELS: &[&str] = &[
+    "fxp_raster",
+    "fxp_under",
+    "fxp_curl_pot",
+    "fxp_curl_vel",
+    "fxp_curl_view",
+    "fxp_curl_flow",
+];
 
 /// Effect ids implemented here.
 pub(crate) const IDS: &[&str] = &[
@@ -41,18 +48,28 @@ pub(crate) const IDS: &[&str] = &[
 
 /// Run effect `id` (one of [`IDS`]); `None` = this parameter combination runs on the CPU.
 pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let geo = Buf { img: Image::new(0, 0), offset: b.offset, scale: b.scale };
+    let geo = Buf {
+        img: Image::new(0, 0),
+        offset: b.offset,
+        scale: b.scale,
+    };
     match id {
-        "ec.sim.ccparticleworld" | "ec.sim.ccparticlesystems2" => match effectcraft_effects::sprite_plan(id, ctx, &geo) {
-            Some(plan) => sprites(e, b, &plan),
-            None => Some(b),
-        },
+        "ec.sim.ccparticleworld" | "ec.sim.ccparticlesystems2" => {
+            match effectcraft_effects::sprite_plan(id, ctx, &geo) {
+                Some(plan) => sprites(e, b, &plan),
+                None => Some(b),
+            }
+        }
         "ec.sim.particleplayground" => playground(e, ctx, b, &geo),
         "ec.noise.curlnoise" => curl_noise(e, ctx, b),
         _ => {
             // The plan reads the layer's pixels.
             let img = e.download(&b.img)?;
-            let cpu = Buf { img, offset: b.offset, scale: b.scale };
+            let cpu = Buf {
+                img,
+                offset: b.offset,
+                scale: b.scale,
+            };
             match effectcraft_effects::pixel_plan(id, ctx, &cpu) {
                 Some(PixelPlan::Sprites(plan)) => sprites(e, b, &plan),
                 Some(PixelPlan::Pieces(plan)) => piece_pass(e, b, &plan),
@@ -84,7 +101,17 @@ pub(crate) struct Chunked {
 impl Chunked {
     /// `stride` = floats per item, its four bounds included.
     pub(crate) fn new(kind: u32, mode: u32, stride: usize, w: u32, h: u32) -> Chunked {
-        Chunked { kind, mode, stride, w, h, items: Items::new(stride, w, h), base: None, ok: true, p: Params::default() }
+        Chunked {
+            kind,
+            mode,
+            stride,
+            w,
+            h,
+            items: Items::new(stride, w, h),
+            base: None,
+            ok: true,
+            p: Params::default(),
+        }
     }
 
     /// Start from `base` instead of a transparent frame.
@@ -137,7 +164,14 @@ impl Chunked {
 /// Bounds of a disc drawn over `[floor(x − r − 1), ceil(x + r + 1))` (sim2::foam_disc), as
 /// inclusive float bounds for [`Items`].
 fn disc_bounds(x: f64, y: f64, r: f64) -> Option<[f32; 4]> {
-    (r > 0.0).then(|| [(x - r - 1.0) as f32, (y - r - 1.0) as f32, ((x + r + 1.0).ceil() - 1.0) as f32, ((y + r + 1.0).ceil() - 1.0) as f32])
+    (r > 0.0).then(|| {
+        [
+            (x - r - 1.0) as f32,
+            (y - r - 1.0) as f32,
+            ((x + r + 1.0).ceil() - 1.0) as f32,
+            ((y + r + 1.0).ceil() - 1.0) as f32,
+        ]
+    })
 }
 
 // ---------------------------------------------------------------- Foam's extras
@@ -147,7 +181,11 @@ fn disc_bounds(x: f64, y: f64, r: f64) -> Option<[f32; 4]> {
 pub(crate) fn foam(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (w, h) = (b.img.width, b.img.height);
     // The plan fits other layers to the buffer: it needs the buffer's size (not its pixels).
-    let geo = Buf { img: Image::new(w, h), offset: b.offset, scale: b.scale };
+    let geo = Buf {
+        img: Image::new(w, h),
+        offset: b.offset,
+        scale: b.scale,
+    };
     let plan = effectcraft_effects::foam_full_plan(ctx, &geo);
     let mut fx = sprite_layer(e, &b.img, &plan.sprites)?;
     if let Some((tex, discs)) = &plan.user {
@@ -155,8 +193,23 @@ pub(crate) fn foam(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         let mut ch = Chunked::new(2, 2, 16, w, h).over(fx);
         for d in discs {
             let (s, c) = d.rot.sin_cos();
-            let rec = [2.0, d.x as f32, d.y as f32, d.r, s, c, d.fade, tex.size[0] as f32, tex.size[1] as f32, tex.buf.scale as f32];
-            let rec = [&rec[..], &[tex.buf.offset[0] as f32, tex.buf.offset[1] as f32]].concat();
+            let rec = [
+                2.0,
+                d.x as f32,
+                d.y as f32,
+                d.r,
+                s,
+                c,
+                d.fade,
+                tex.size[0] as f32,
+                tex.size[1] as f32,
+                tex.buf.scale as f32,
+            ];
+            let rec = [
+                &rec[..],
+                &[tex.buf.offset[0] as f32, tex.buf.offset[1] as f32],
+            ]
+            .concat();
             ch.push(e, &t, disc_bounds(d.x, d.y, d.r as f64), &rec);
         }
         fx = ch.finish(e, &t)?;
@@ -165,7 +218,16 @@ pub(crate) fn foam(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         let t = e.g.upload_image(&env.img)?;
         let mut ch = Chunked::new(3, 2, 12, w, h).over(fx);
         for d in &env.discs {
-            let rec = [3.0, d.x as f32, d.y as f32, d.r, env.conv as f32, env.strength, w as f32, h as f32];
+            let rec = [
+                3.0,
+                d.x as f32,
+                d.y as f32,
+                d.r,
+                env.conv as f32,
+                env.strength,
+                w as f32,
+                h as f32,
+            ];
             ch.push(e, &t, disc_bounds(d.x, d.y, d.r as f64), &rec);
         }
         fx = ch.finish(e, &t)?;
@@ -187,8 +249,20 @@ fn playground(e: &mut Enc, ctx: &EffectCtx, b: GBuf, geo: &Buf) -> Option<GBuf> 
     let mut fx = sprite_layer(e, &b.img, &plan.sprites)?;
     if !plan.blits.is_empty() {
         // The Layer Map frames, packed into one atlas on a grid of equal cells.
-        let cw = plan.frames.iter().map(|f| f.buf.img.width).max().unwrap_or(1).max(1);
-        let chh = plan.frames.iter().map(|f| f.buf.img.height).max().unwrap_or(1).max(1);
+        let cw = plan
+            .frames
+            .iter()
+            .map(|f| f.buf.img.width)
+            .max()
+            .unwrap_or(1)
+            .max(1);
+        let chh = plan
+            .frames
+            .iter()
+            .map(|f| f.buf.img.height)
+            .max()
+            .unwrap_or(1)
+            .max(1);
         let max = e.g.max_dim;
         let cols = (max / cw).max(1).min(plan.frames.len() as u32);
         let rows = (plan.frames.len() as u32).div_ceil(cols);
@@ -215,9 +289,17 @@ fn playground(e: &mut Enc, ctx: &EffectCtx, b: GBuf, geo: &Buf) -> Option<GBuf> 
                 continue;
             }
             // sim3::blit_layer's pixel range.
-            let (fw, fh) = (lp.size[0] * q.scale[0].abs() * b.scale, lp.size[1] * q.scale[1].abs() * b.scale);
+            let (fw, fh) = (
+                lp.size[0] * q.scale[0].abs() * b.scale,
+                lp.size[1] * q.scale[1].abs() * b.scale,
+            );
             let r = (fw * fw + fh * fh).sqrt() * 0.5 + 1.0;
-            let bb = [(q.x - r) as f32, (q.y - r) as f32, ((q.x + r).ceil() - 1.0) as f32, ((q.y + r).ceil() - 1.0) as f32];
+            let bb = [
+                (q.x - r) as f32,
+                (q.y - r) as f32,
+                ((q.x + r).ceil() - 1.0) as f32,
+                ((q.y + r).ceil() - 1.0) as f32,
+            ];
             let (sa, ca) = q.angle.to_radians().sin_cos();
             let (ax, ay) = at[q.frame];
             let rec = [
@@ -261,7 +343,10 @@ fn curl_noise(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let scale = (pr.f("scale").max(1.0) * b.scale) as f32;
     let rot = pr.f("rotation").to_radians() as f32;
     let off = pr.v2("offset");
-    let (ox, oy) = ((off[0] * b.scale + b.offset[0]) as f32, (off[1] * b.scale + b.offset[1]) as f32);
+    let (ox, oy) = (
+        (off[0] * b.scale + b.offset[0]) as f32,
+        (off[1] * b.scale + b.offset[1]) as f32,
+    );
     let evo = (pr.f("evolution") / 360.0) as f32;
     let seed = pr.f("randomSeed") as i64 as u32 ^ 0x51_7cc1;
     let steps = pr.f("steps").clamp(1.0, 16.0) as usize;
@@ -269,7 +354,12 @@ fn curl_noise(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let mut p = Params::default();
     p.u[0] = [seed, steps as u32, (pr.e("edgeBehavior") == 1) as u32, 0];
     p.f[0] = [ox, oy, scale, pr.f("complexity") as f32];
-    p.f[1] = [rot.cos(), rot.sin(), evo * 4.0, amount as f32 / steps as f32];
+    p.f[1] = [
+        rot.cos(),
+        rot.sin(),
+        evo * 4.0,
+        amount as f32 / steps as f32,
+    ];
     let pot = e.scratch(w, h);
     e.pixels("fxp_curl_pot", &p, &b.img, None, &pot, None);
     let vel = e.scratch(w, h);

@@ -22,10 +22,28 @@ fn scene(radius: Option<f64>, feather: bool) -> Document {
     back.opacity = 0.5;
     d.insert(Some(l), 0, back).unwrap();
     if let Some(radius) = radius {
-        let style = CharStyle { size: 36.0, ..CharStyle::default() };
-        let mut t = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(30.0, 60.0), "Hello", style))));
-        let id = if feather { "stylize.feather" } else { "blur.gaussian" };
-        t.appearance.effects.push(Effect { id: id.into(), params: json!({"radius": radius}), visible: true });
+        let style = CharStyle {
+            size: 36.0,
+            ..CharStyle::default()
+        };
+        let mut t = Node::new(
+            d.alloc_id(),
+            NodeKind::Text(Box::new(TextObject::point(
+                Point::new(30.0, 60.0),
+                "Hello",
+                style,
+            ))),
+        );
+        let id = if feather {
+            "stylize.feather"
+        } else {
+            "blur.gaussian"
+        };
+        t.appearance.effects.push(Effect {
+            id: id.into(),
+            params: json!({"radius": radius}),
+            visible: true,
+        });
         d.insert(Some(l), 1, t).unwrap();
     }
     d
@@ -36,13 +54,28 @@ fn grouped(mut d: Document) -> Document {
     let l = d.layers[0].id;
     let id = d.alloc_id();
     let members = d.children_mut(Some(l)).map(std::mem::take).unwrap();
-    d.insert(Some(l), 0, Node::new(id, NodeKind::Group { children: members, clip: false })).unwrap();
+    d.insert(
+        Some(l),
+        0,
+        Node::new(
+            id,
+            NodeKind::Group {
+                children: members,
+                clip: false,
+            },
+        ),
+    )
+    .unwrap();
     d
 }
 
 /// The canvas's options: art on nothing, no artboards.
 fn screen() -> RenderOptions {
-    RenderOptions { background: None, artboards: false, ..Default::default() }
+    RenderOptions {
+        background: None,
+        artboards: false,
+        ..Default::default()
+    }
 }
 
 fn render(d: &Document, threads: u16, view: Affine, (w, h): (u32, u32)) -> Rendered {
@@ -57,9 +90,17 @@ fn ink_centre(radius: f64, threads: u16, view: Affine, size: (u32, u32)) -> Poin
     let with = render(&scene(Some(radius), false), threads, view, size);
     let without = render(&scene(None, false), threads, view, size);
     let (mut sx, mut sy, mut sw) = (0.0, 0.0, 0.0);
-    for (i, (p, q)) in with.pixels.chunks(4).zip(without.pixels.chunks(4)).enumerate() {
+    for (i, (p, q)) in with
+        .pixels
+        .chunks(4)
+        .zip(without.pixels.chunks(4))
+        .enumerate()
+    {
         let d: f64 = (0..4).map(|c| f64::from(p[c].abs_diff(q[c]))).sum();
-        let (x, y) = ((i % size.0 as usize) as f64 + 0.5, (i / size.0 as usize) as f64 + 0.5);
+        let (x, y) = (
+            (i % size.0 as usize) as f64 + 0.5,
+            (i / size.0 as usize) as f64 + 0.5,
+        );
         sx += d * x;
         sy += d * y;
         sw += d;
@@ -73,11 +114,19 @@ fn blurred_type_stays_in_place_at_every_zoom_and_pan() {
     for (radius, threads) in [(3.0, 0), (3.0, 4), (12.0, 0), (12.0, 4)] {
         let base = ink_centre(radius, threads, Affine::IDENTITY, (200, 100));
         // The whole document in view, at other zooms and moved by parts of a pixel.
-        for (zoom, pan) in
-            [(1.0, (13.3, 7.6)), (2.0, (41.7, 20.2)), (3.3, (15.25, 9.5)), (0.5, (10.4, 5.1)), (6.0, (30.6, 25.3)), (1.37, (0.5, 0.25))]
-        {
+        for (zoom, pan) in [
+            (1.0, (13.3, 7.6)),
+            (2.0, (41.7, 20.2)),
+            (3.3, (15.25, 9.5)),
+            (0.5, (10.4, 5.1)),
+            (6.0, (30.6, 25.3)),
+            (1.37, (0.5, 0.25)),
+        ] {
             let view = Affine::translate(pan) * Affine::scale(zoom);
-            let size = ((200.0 * zoom + 2.0 * pan.0).ceil() as u32, (100.0 * zoom + 2.0 * pan.1).ceil() as u32);
+            let size = (
+                (200.0 * zoom + 2.0 * pan.0).ceil() as u32,
+                (100.0 * zoom + 2.0 * pan.1).ceil() as u32,
+            );
             let at = ink_centre(radius, threads, view, size);
             assert!(
                 (at.x - base.x).abs() < 1.0 && (at.y - base.y).abs() < 1.0,
@@ -97,7 +146,14 @@ fn scrolling_moves_blurred_type_without_changing_it() {
         let d = if group { grouped(d) } else { d };
         for threads in [0, 4] {
             for (zoom, (w, h)) in [(1.0, (240, 140)), (4.0, (500, 300)), (8.0, (400, 300))] {
-                let at = |dx: f64, dy: f64| render(&d, threads, Affine::translate((-dx, -dy)) * Affine::scale(zoom), (w, h));
+                let at = |dx: f64, dy: f64| {
+                    render(
+                        &d,
+                        threads,
+                        Affine::translate((-dx, -dy)) * Affine::scale(zoom),
+                        (w, h),
+                    )
+                };
                 let a = at(20.0, 10.0);
                 for (sx, sy) in [(1u32, 0u32), (3, 2), (37, 23), (101, 57)] {
                     let b = at(20.0 + f64::from(sx), 10.0 + f64::from(sy));
@@ -128,14 +184,24 @@ fn blurred_type_doesnt_wobble_as_the_view_moves_by_parts_of_a_pixel() {
     for threads in [0, 4] {
         for zoom in [1.0, 4.0] {
             let at = |p: f64| {
-                ink_centre(30.0, threads, Affine::translate((400.0 - 75.0 * zoom + p, 330.0 - 48.0 * zoom + p)) * Affine::scale(zoom), (800, 660))
+                ink_centre(
+                    30.0,
+                    threads,
+                    Affine::translate((400.0 - 75.0 * zoom + p, 330.0 - 48.0 * zoom + p))
+                        * Affine::scale(zoom),
+                    (800, 660),
+                )
             };
             let base = at(0.0);
             for k in 1..10 {
                 let c = at(f64::from(k) * 0.1);
                 // How far it moved on the screen, besides the view's own move.
                 let (dx, dy) = ((c.x - base.x) * zoom, (c.y - base.y) * zoom);
-                assert!(dx.abs() < 0.1 && dy.abs() < 0.1, "threads {threads}, zoom {zoom}, moved by {}: off by ({dx}, {dy}) px", f64::from(k) * 0.1);
+                assert!(
+                    dx.abs() < 0.1 && dy.abs() < 0.1,
+                    "threads {threads}, zoom {zoom}, moved by {}: off by ({dx}, {dy}) px",
+                    f64::from(k) * 0.1
+                );
             }
         }
     }

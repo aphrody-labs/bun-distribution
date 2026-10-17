@@ -346,7 +346,10 @@ mod tests {
         let secure_psid = &auth.jar().cookies["__Secure-1PSID"];
         assert!(secure_psid.http_only, "is_httponly must map onto http_only");
         assert!(secure_psid.secure, "is_secure must map onto secure");
-        assert_eq!(secure_psid.domain, ".google.com", "host_key must map onto domain");
+        assert_eq!(
+            secure_psid.domain, ".google.com",
+            "host_key must map onto domain"
+        );
     }
 
     #[test]
@@ -356,7 +359,10 @@ mod tests {
             {"name":"SAPISID","value":"a"},
             {"name":"__Secure-1PSID","value":"b"}
         ]"#;
-        assert_eq!(Auth::from_any_json(array).unwrap().jar().get("SAPISID"), Some("a"));
+        assert_eq!(
+            Auth::from_any_json(array).unwrap().jar().get("SAPISID"),
+            Some("a")
+        );
 
         // Leading-whitespace object -> google-session envelope path.
         let object = r#"
@@ -364,7 +370,13 @@ mod tests {
                 {"host_key":".google.com","name":"SAPISID","value":"c"},
                 {"host_key":".google.com","name":"__Secure-1PSID","value":"d"}
             ]}"#;
-        assert_eq!(Auth::from_any_json(object).unwrap().jar().get("__Secure-1PSID"), Some("d"));
+        assert_eq!(
+            Auth::from_any_json(object)
+                .unwrap()
+                .jar()
+                .get("__Secure-1PSID"),
+            Some("d")
+        );
     }
 
     #[test]
@@ -407,7 +419,9 @@ mod tests {
             crate::client::GeminiWebClient::default_cookie_path(),
             Some(path.clone().into())
         );
-        let auth = Auth::from_cookie_file(path).await.expect("valid local Google session");
+        let auth = Auth::from_cookie_file(path)
+            .await
+            .expect("valid local Google session");
         assert!(auth.jar().get("__Secure-1PSID").is_some());
     }
 }

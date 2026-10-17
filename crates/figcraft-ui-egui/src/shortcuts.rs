@@ -26,12 +26,24 @@ pub fn platform() -> Platform {
 }
 
 fn note_platform(ctx: &Context) {
-    PLATFORM.store(if ctx.os() == egui::os::OperatingSystem::Mac { 1 } else { 2 }, Ordering::Relaxed);
+    PLATFORM.store(
+        if ctx.os() == egui::os::OperatingSystem::Mac {
+            1
+        } else {
+            2
+        },
+        Ordering::Relaxed,
+    );
 }
 
 /// The keymap's view of egui's modifiers (Ctrl off macOS sets egui's `command` too).
 pub fn mods(m: Modifiers) -> keymap::Mods {
-    keymap::Mods { shift: m.shift, alt: m.alt, cmd: m.command || m.mac_cmd, ctrl: m.ctrl }
+    keymap::Mods {
+        shift: m.shift,
+        alt: m.alt,
+        cmd: m.command || m.mac_cmd,
+        ctrl: m.ctrl,
+    }
 }
 
 /// Symbols a US keyboard types without Shift.
@@ -53,7 +65,12 @@ const UNSHIFTED_SYMBOLS: [Key; 11] = [
 /// keyboard: a symbol another layout types with Shift (`/` is Shift+7 on a German keyboard, where
 /// the key's position differs from the symbol) counts without the Shift. Characters egui has no key
 /// for (`ü`, `ж`) already arrive as the key at that position.
-pub fn lookup(context: keymap::Context, key: Key, physical: Option<Key>, m: Modifiers) -> Option<&'static keymap::Binding> {
+pub fn lookup(
+    context: keymap::Context,
+    key: Key,
+    physical: Option<Key>,
+    m: Modifiers,
+) -> Option<&'static keymap::Binding> {
     let mut held = mods(m);
     if held.shift && physical.is_some_and(|p| p != key) && UNSHIFTED_SYMBOLS.contains(&key) {
         held.shift = false;
@@ -82,12 +99,18 @@ fn cached_tip(label: &'static str, key: Option<&'static str>) -> &'static str {
     static CACHE: Mutex<Vec<Entry>> = Mutex::new(Vec::new());
     let Some(key) = key else { return label };
     let p = platform();
-    let Ok(mut cache) = CACHE.lock() else { return label };
-    if let Some(e) = cache.iter().find(|e| e.0 == p && e.1 == label && e.2 == key) {
+    let Ok(mut cache) = CACHE.lock() else {
+        return label;
+    };
+    if let Some(e) = cache
+        .iter()
+        .find(|e| e.0 == p && e.1 == label && e.2 == key)
+    {
         return e.3;
     }
     // A bounded set: one entry per tooltip in the code.
-    let text: &'static str = Box::leak(format!("{label}  {}", keymap::display(key, p)).into_boxed_str());
+    let text: &'static str =
+        Box::leak(format!("{label}  {}", keymap::display(key, p)).into_boxed_str());
     cache.push((p, label, key, text));
     text
 }
@@ -104,7 +127,11 @@ pub fn handle(app: &mut FigApp, ctx: &Context, typing: bool) {
     if events.is_empty() {
         return;
     }
-    let editing = app.session.ds().map(|d| d.text_edit.is_some()).unwrap_or(false);
+    let editing = app
+        .session
+        .ds()
+        .map(|d| d.text_edit.is_some())
+        .unwrap_or(false);
     if editing {
         text_keys(app, ctx, &events);
         return;
@@ -121,9 +148,13 @@ pub fn handle(app: &mut FigApp, ctx: &Context, typing: bool) {
             Event::Copy => crate::menus::invoke(app, "edit.copy"),
             Event::Cut => crate::menus::invoke(app, "edit.cut"),
             Event::Paste(text) => crate::menus::paste(app, Some(text)),
-            Event::Key { key, physical_key, pressed: true, modifiers, repeat }
-                if key_event(app, *key, *physical_key, *modifiers, *repeat, now, ctx) =>
-            {
+            Event::Key {
+                key,
+                physical_key,
+                pressed: true,
+                modifiers,
+                repeat,
+            } if key_event(app, *key, *physical_key, *modifiers, *repeat, now, ctx) => {
                 // handled
             }
             _ => {}
@@ -153,12 +184,24 @@ pub fn run_binding(app: &mut FigApp, id: &str) {
     }
 }
 
-fn key_event(app: &mut FigApp, key: Key, physical: Option<Key>, m: Modifiers, repeat: bool, now: f64, ctx: &Context) -> bool {
+fn key_event(
+    app: &mut FigApp,
+    key: Key,
+    physical: Option<Key>,
+    m: Modifiers,
+    repeat: bool,
+    now: f64,
+    ctx: &Context,
+) -> bool {
     if key_box(app, key, m) {
         return true;
     }
     // A gradient open in the colour picker: Delete removes its selected stop.
-    if matches!(key, Key::Backspace | Key::Delete) && m.is_none() && app.ui.picker.is_some() && crate::handles::remove_selected_stop(app, ctx) {
+    if matches!(key, Key::Backspace | Key::Delete)
+        && m.is_none()
+        && app.ui.picker.is_some()
+        && crate::handles::remove_selected_stop(app, ctx)
+    {
         return true;
     }
     // Vector edit mode and the shape builder have their own keys (tools, nudging points, delete,
@@ -176,7 +219,12 @@ fn key_event(app: &mut FigApp, key: Key, physical: Option<Key>, m: Modifiers, re
         if matches!(b.id, "edit.copy" | "edit.cut" | "edit.paste") {
             return true;
         }
-        if !repeat || matches!(b.id, "edit.undo" | "edit.redo" | "view.zoomIn" | "view.zoomOut") {
+        if !repeat
+            || matches!(
+                b.id,
+                "edit.undo" | "edit.redo" | "view.zoomIn" | "view.zoomOut"
+            )
+        {
             run_binding(app, b.id);
         }
         return true;
@@ -198,9 +246,15 @@ fn key_event(app: &mut FigApp, key: Key, physical: Option<Key>, m: Modifiers, re
             app.run("view.pan", json!({"dx": dx, "dy": dy, "big": m.shift}));
         } else if m.command {
             // Cmd/Ctrl+arrows resize: right/down grow, left/up shrink.
-            app.run("transform.nudgeSize", json!({"dw": dx, "dh": dy, "big": m.shift}));
+            app.run(
+                "transform.nudgeSize",
+                json!({"dw": dx, "dh": dy, "big": m.shift}),
+            );
         } else {
-            app.run("transform.nudge", json!({"dx": dx, "dy": dy, "big": m.shift}));
+            app.run(
+                "transform.nudge",
+                json!({"dx": dx, "dy": dy, "big": m.shift}),
+            );
         }
         return true;
     }
@@ -220,9 +274,12 @@ fn key_event(app: &mut FigApp, key: Key, physical: Option<Key>, m: Modifiers, re
 /// with Cmd/Ctrl: five times as far), by 10 screen pixels; Enter selects what it covers like a
 /// marquee (Shift toggles, Cmd/Ctrl takes nested layers), Escape drops it.
 fn key_box(app: &mut FigApp, key: Key, m: Modifiers) -> bool {
-    let Some(mut b) = app.ui.key_box else { return false };
+    let Some(mut b) = app.ui.key_box else {
+        return false;
+    };
     let size = m.shift || m.command;
-    let step = if m.shift && m.command { 50.0 } else { 10.0 } / app.session.ds().map_or(1.0, |d| d.view.zoom.max(1e-6));
+    let step = if m.shift && m.command { 50.0 } else { 10.0 }
+        / app.session.ds().map_or(1.0, |d| d.view.zoom.max(1e-6));
     let (dx, dy) = match key {
         Key::ArrowLeft => (-step, 0.0),
         Key::ArrowRight => (step, 0.0),
@@ -260,12 +317,21 @@ impl FigApp {
     pub(crate) fn start_key_box(&mut self) {
         let Ok(ds) = self.session.ds() else { return };
         let zoom = ds.view.zoom.max(1e-6);
-        let around = ds.selection.iter().filter_map(|i| ds.doc.world_bounds(*i)).reduce(|a, b| a.union(b));
+        let around = ds
+            .selection
+            .iter()
+            .filter_map(|i| ds.doc.world_bounds(*i))
+            .reduce(|a, b| a.union(b));
         let r = match around {
             Some(r) => r.inflate(8.0 / zoom, 8.0 / zoom),
             None => {
                 let c = self.to_page(self.canvas.rect.center());
-                figcraft_geom::Rect::new(c.x - 100.0 / zoom, c.y - 75.0 / zoom, c.x + 100.0 / zoom, c.y + 75.0 / zoom)
+                figcraft_geom::Rect::new(
+                    c.x - 100.0 / zoom,
+                    c.y - 75.0 / zoom,
+                    c.x + 100.0 / zoom,
+                    c.y + 75.0 / zoom,
+                )
             }
         };
         self.ui.key_box = Some([r.x0, r.y0, r.x1, r.y1]);
@@ -292,7 +358,12 @@ pub fn opacity_digit(app: &mut FigApp, key: Key, now: f64) -> bool {
     if !app.session.prefs.number_keys_opacity || app.session.selection().is_empty() {
         return false;
     }
-    let first = app.ui.opacity_digit.take().filter(|(_, t)| now - t <= OPACITY_CHAIN_SECS).map(|(d, _)| d);
+    let first = app
+        .ui
+        .opacity_digit
+        .take()
+        .filter(|(_, t)| now - t <= OPACITY_CHAIN_SECS)
+        .map(|(d, _)| d);
     let digits = match first {
         Some(f) => format!("{f}{d}"),
         None => {
@@ -308,7 +379,11 @@ pub fn opacity_digit(app: &mut FigApp, key: Key, now: f64) -> bool {
 fn enter_text(app: &mut FigApp) -> bool {
     let sel = app.session.selection();
     if sel.len() > 1 {
-        let ids = app.session.doc().ok().and_then(|d| figcraft_engine::vectoredit::enter_targets(d, &sel));
+        let ids = app
+            .session
+            .doc()
+            .ok()
+            .and_then(|d| figcraft_engine::vectoredit::enter_targets(d, &sel));
         return ids.is_some_and(|ids| {
             app.run("vector.edit.begin", json!({"ids": ids}));
             true
@@ -317,8 +392,15 @@ fn enter_text(app: &mut FigApp) -> bool {
     if sel.len() != 1 {
         return false;
     }
-    let Some(id) = sel.first().copied() else { return false };
-    let kind = app.session.doc().ok().and_then(|d| d.node(id)).map(|n| (matches!(n.kind, figcraft_doc::NodeKind::Text(_)), n.kind.is_shape()));
+    let Some(id) = sel.first().copied() else {
+        return false;
+    };
+    let kind = app.session.doc().ok().and_then(|d| d.node(id)).map(|n| {
+        (
+            matches!(n.kind, figcraft_doc::NodeKind::Text(_)),
+            n.kind.is_shape(),
+        )
+    });
     match kind {
         Some((true, _)) => {
             let _ = figcraft_engine::textedit::begin(&mut app.session, id, None, false);
@@ -347,7 +429,10 @@ fn text_keys(app: &mut FigApp, ctx: &Context, events: &[Event]) {
                 }
             }
             // The composition shows inline at the caret; the document gets it on Commit.
-            Event::Ime(egui::ImeEvent::Preedit { text, active_range_chars }) => {
+            Event::Ime(egui::ImeEvent::Preedit {
+                text,
+                active_range_chars,
+            }) => {
                 let cursor = active_range_chars.as_ref().map(|r| r.start);
                 if let Err(e) = figcraft_engine::textedit::preedit(&mut app.session, text, cursor) {
                     app.toast(e.to_string());
@@ -360,14 +445,28 @@ fn text_keys(app: &mut FigApp, ctx: &Context, events: &[Event]) {
                 }
             }
             Event::Copy | Event::Cut => {
-                if let Some(text) = figcraft_engine::textedit::selected_text(&app.session).filter(|t| !t.is_empty()) {
+                if let Some(text) =
+                    figcraft_engine::textedit::selected_text(&app.session).filter(|t| !t.is_empty())
+                {
                     app.services.clipboard_set_text(&text);
                     if matches!(ev, Event::Cut) {
-                        let _ = figcraft_engine::textedit::key(&mut app.session, "Delete", false, false, false);
+                        let _ = figcraft_engine::textedit::key(
+                            &mut app.session,
+                            "Delete",
+                            false,
+                            false,
+                            false,
+                        );
                     }
                 }
             }
-            Event::Key { key, physical_key, pressed: true, modifiers: m, .. } => {
+            Event::Key {
+                key,
+                physical_key,
+                pressed: true,
+                modifiers: m,
+                ..
+            } => {
                 if (m.command || m.alt || m.ctrl) && text_shortcut(app, *key, *physical_key, *m) {
                     skip_text = true;
                     continue;
@@ -397,7 +496,9 @@ fn text_keys(app: &mut FigApp, ctx: &Context, events: &[Event]) {
                     continue;
                 }
                 let (word, line) = keymap::text_motion(platform(), name, mods(*m));
-                if let Err(e) = figcraft_engine::textedit::key(&mut app.session, name, m.shift, word, line) {
+                if let Err(e) =
+                    figcraft_engine::textedit::key(&mut app.session, name, m.shift, word, line)
+                {
                     app.toast(e.to_string());
                 }
             }
@@ -405,13 +506,20 @@ fn text_keys(app: &mut FigApp, ctx: &Context, events: &[Event]) {
         }
     }
     // Triple-click on the edited text selects its line (double-click is handled by the engine).
-    if ctx.input(|i| i.pointer.button_triple_clicked(egui::PointerButton::Primary))
-        && let Some(pos) = ctx.input(|i| i.pointer.interact_pos())
+    if ctx.input(|i| {
+        i.pointer
+            .button_triple_clicked(egui::PointerButton::Primary)
+    }) && let Some(pos) = ctx.input(|i| i.pointer.interact_pos())
         && app.canvas.rect.contains(pos)
         && let Some(te) = app.session.ds().ok().and_then(|d| d.text_edit.clone())
     {
         let p = app.to_page(pos);
-        let inside = app.session.doc().ok().and_then(|d| d.world_bounds(te.id)).is_some_and(|b| b.contains(p));
+        let inside = app
+            .session
+            .doc()
+            .ok()
+            .and_then(|d| d.world_bounds(te.id))
+            .is_some_and(|b| b.contains(p));
         if inside && let Ok(idx) = app.session.text_index_at(te.id, p) {
             app.run("text.edit.selectLine", json!({"index": idx}));
         }
@@ -434,14 +542,24 @@ fn text_shortcut(app: &mut FigApp, key: Key, physical: Option<Key>, m: Modifiers
 /// Tell the platform where the caret is (inside the composition while composing) so IME
 /// candidate windows open next to it.
 fn ime_output(app: &FigApp, ctx: &Context) {
-    let Some(te) = app.session.ds().ok().and_then(|d| d.text_edit.clone()) else { return };
+    let Some(te) = app.session.ds().ok().and_then(|d| d.text_edit.clone()) else {
+        return;
+    };
     let preedit = app.preedit_view();
-    let Some(doc) = preedit.map(|p| &*p.doc).or_else(|| app.session.doc().ok()) else { return };
+    let Some(doc) = preedit.map(|p| &*p.doc).or_else(|| app.session.doc().ok()) else {
+        return;
+    };
     let Some(node) = doc.node(te.id) else { return };
-    let Some((layout, dy)) = figcraft_text::layout_node(node) else { return };
+    let Some((layout, dy)) = figcraft_text::layout_node(node) else {
+        return;
+    };
     let w = doc.world_transform(te.id);
     let (cx, li) = layout.caret(preedit.map(|p| p.cursor).unwrap_or(te.caret));
-    let (top, h) = layout.lines.get(li).map(|l| (l.top, l.height)).unwrap_or((0.0, 14.0));
+    let (top, h) = layout
+        .lines
+        .get(li)
+        .map(|l| (l.top, l.height))
+        .unwrap_or((0.0, 14.0));
     let p0 = w * figcraft_geom::Point::new(cx, top + dy);
     let p1 = w * figcraft_geom::Point::new(cx, top + h + dy);
     let (a, b) = (app.to_screen(p0.x, p0.y), app.to_screen(p1.x, p1.y));

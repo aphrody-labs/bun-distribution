@@ -106,7 +106,8 @@ pub use effect::open as open_effect_dialog;
 pub use export_as::open as open_export_as;
 pub use export_for_screens::open as open_export_for_screens;
 pub(crate) use export_for_screens::{
-    KIND as EXPORT_FOR_SCREENS, formats as screen_formats, open_assets as open_export_for_screens_assets, saved_rows as screen_saved_rows,
+    KIND as EXPORT_FOR_SCREENS, formats as screen_formats,
+    open_assets as open_export_for_screens_assets, saved_rows as screen_saved_rows,
 };
 pub(crate) use new_document::preset_name;
 pub use new_document::{open as open_new_document, preset_card};
@@ -170,8 +171,15 @@ impl DialogSpec {
     };
 
     /// A dialog that draws its own window and confirms through its module.
-    const fn window(show: fn(&mut VectorcraftApp, &egui::Context), confirm: fn(&mut VectorcraftApp, &Dialog) -> DialogResult) -> Self {
-        Self { window: Some(show), confirm, ..Self::FORM }
+    const fn window(
+        show: fn(&mut VectorcraftApp, &egui::Context),
+        confirm: fn(&mut VectorcraftApp, &Dialog) -> DialogResult,
+    ) -> Self {
+        Self {
+            window: Some(show),
+            confirm,
+            ..Self::FORM
+        }
     }
 }
 
@@ -344,9 +352,15 @@ pub fn cancel(app: &mut VectorcraftApp) {
 /// Apply the open dialog (OK).
 pub fn confirm(app: &mut VectorcraftApp) -> DialogResult {
     missing_fonts::requeue_replaced(app);
-    let Some(d) = app.ui.dialog.clone() else { return Err("no dialog open".into()) };
+    let Some(d) = app.ui.dialog.clone() else {
+        return Err("no dialog open".into());
+    };
     // A file dialog it shows off the UI thread confirms the dialog as it is again.
-    let r = crate::picks::as_entry(app, || crate::picks::Entry::Confirm(Box::new(d.clone())), |app| (spec(&d.kind).confirm)(app, &d));
+    let r = crate::picks::as_entry(
+        app,
+        || crate::picks::Entry::Confirm(Box::new(d.clone())),
+        |app| (spec(&d.kind).confirm)(app, &d),
+    );
     settle(app);
     r
 }
@@ -367,7 +381,10 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     settle(app);
     // The kind of dialog shown last frame: a different one (or none) means this one just opened, and
     // its first field is to take the keyboard focus (`focus_id`, until a field takes it).
-    let (shown_id, focus_id) = (egui::Id::new("dialog-shown"), egui::Id::new("dialog-focus-pending"));
+    let (shown_id, focus_id) = (
+        egui::Id::new("dialog-shown"),
+        egui::Id::new("dialog-focus-pending"),
+    );
     let Some(mut d) = app.ui.dialog.clone() else {
         revolve_gizmo::clear(ctx);
         app.ui.dialog_file = None;
@@ -406,12 +423,17 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
     if revolves {
         revolve_gizmo::show(app, ctx, &mut d);
     }
-    let initial = if revolves { egui::vec2((ctx.content_rect().width() / 2.0 - 226.0).max(0.0), -40.0) } else { egui::vec2(0.0, -40.0) };
+    let initial = if revolves {
+        egui::vec2((ctx.content_rect().width() / 2.0 - 226.0).max(0.0), -40.0)
+    } else {
+        egui::vec2(0.0, -40.0)
+    };
     let id = egui::Id::new(("dialog", d.kind.as_str()));
     let id = if revolves { id.with("revolve") } else { id };
     modal::show_at(ctx, &heading, id, initial, MARGIN, |ui| {
         // Never wider than the window (a large UI scale in a small window): the text wraps.
-        let room = (ctx.content_rect().width() - 2.0 * (f32::from(MARGIN) + EDGE_GAP)).max(EDGE_GAP);
+        let room =
+            (ctx.content_rect().width() - 2.0 * (f32::from(MARGIN) + EDGE_GAP)).max(EDGE_GAP);
         ui.set_min_width(spec.min_width.min(room));
         ui.set_max_width(spec.max_width.map_or(room, |w| w.min(room)));
         modal::heading(ui, &heading);
@@ -423,7 +445,11 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
         }
         cancel = (spec.body)(app, ui, &mut d);
         // Taken (the flag is gone): done. Still there (the window's measuring frame): next frame.
-        if focus_first && ui.data_mut(|m| m.remove_temp::<bool>(widgets::dialog_focus_flag())).is_none() {
+        if focus_first
+            && ui
+                .data_mut(|m| m.remove_temp::<bool>(widgets::dialog_focus_flag()))
+                .is_none()
+        {
             ui.data_mut(|m| m.remove::<bool>(focus_id));
         }
         ui.add_space(16.0);
@@ -431,21 +457,27 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
         // right-to-left layout would otherwise take all the room left in the window, so the
         // window could never shrink to its content.
         let row = egui::vec2(ui.min_rect().width(), ui.spacing().interact_size.y);
-        ui.allocate_ui_with_layout(row, egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if let Some(label) = spec.ok.map(|ok| spec.ok_label.map_or(ok, |f| f(app)))
-                && widgets::primary_button(ui, label).clicked()
-            {
-                ok = true;
-            }
-            ui.add_space(8.0);
-            if widgets::secondary_button(ui, if spec.ok.is_some() { "Cancel" } else { "Close" }).clicked() {
-                cancel = true;
-            }
-            if let Some(label) = spec.discard {
-                ui.add_space(28.0);
-                discard = widgets::secondary_button(ui, label).clicked();
-            }
-        });
+        ui.allocate_ui_with_layout(
+            row,
+            egui::Layout::right_to_left(egui::Align::Center),
+            |ui| {
+                if let Some(label) = spec.ok.map(|ok| spec.ok_label.map_or(ok, |f| f(app)))
+                    && widgets::primary_button(ui, label).clicked()
+                {
+                    ok = true;
+                }
+                ui.add_space(8.0);
+                if widgets::secondary_button(ui, if spec.ok.is_some() { "Cancel" } else { "Close" })
+                    .clicked()
+                {
+                    cancel = true;
+                }
+                if let Some(label) = spec.discard {
+                    ui.add_space(28.0);
+                    discard = widgets::secondary_button(ui, label).clicked();
+                }
+            },
+        );
     });
     if spec.ok.is_some() && ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
         ok = true;
@@ -464,8 +496,16 @@ pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
 
 /// What a dropdown shows for `names`, a list mixing built-in labels (`builtin(index)`: translated
 /// into `lang`) with names the user saved or a file or the system supplied (shown as they are).
-pub(crate) fn shown_names<'a>(lang: crate::i18n::Lang, names: &[&'a str], builtin: impl Fn(usize) -> bool) -> Vec<&'a str> {
-    names.iter().enumerate().map(|(k, n)| crate::i18n::label_or_name(lang, n, builtin(k))).collect()
+pub(crate) fn shown_names<'a>(
+    lang: crate::i18n::Lang,
+    names: &[&'a str],
+    builtin: impl Fn(usize) -> bool,
+) -> Vec<&'a str> {
+    names
+        .iter()
+        .enumerate()
+        .map(|(k, n)| crate::i18n::label_or_name(lang, n, builtin(k)))
+        .collect()
 }
 
 /// [`widgets::dropdown_names`] over such a mixed list ([`shown_names`] in the UI language), showing
@@ -480,7 +520,11 @@ pub(crate) fn mixed_dropdown(
     builtin: impl Fn(usize) -> bool,
 ) -> Option<usize> {
     let shown = shown_names(crate::i18n::current(), names, builtin);
-    let current = names.iter().position(|n| *n == current).and_then(|i| shown.get(i).copied()).unwrap_or(current);
+    let current = names
+        .iter()
+        .position(|n| *n == current)
+        .and_then(|i| shown.get(i).copied())
+        .unwrap_or(current);
     widgets::dropdown_names(ui, id, current, &shown, width)
 }
 

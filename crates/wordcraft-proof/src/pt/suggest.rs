@@ -24,16 +24,19 @@ use crate::affix::{AffixDict, Casing, capitalize, casing};
 
 /// Short words often run into the next one (`não é`, `da água`, `para isso`).
 const LEADING_WORDS: &[&str] = &[
-    "a", "o", "e", "é", "de", "do", "da", "dos", "das", "em", "no", "na", "nos", "nas", "por", "para", "com", "sem", "sob", "sobre", "ao", "aos",
-    "à", "às", "que", "se", "não", "como", "mas", "mais", "já", "até", "entre", "contra", "perante", "desde", "após", "ante", "durante", "mediante",
-    "segundo", "conforme", "salvo", "fora", "onde", "quando", "bem", "mal", "pois", "logo", "portanto", "porém", "todavia", "contudo", "assim",
-    "tão", "tanto", "tudo", "nada", "algo", "cada", "outro", "mesmo", "próprio", "ainda", "tampouco", "quase", "talvez", "nunca", "sempre",
+    "a", "o", "e", "é", "de", "do", "da", "dos", "das", "em", "no", "na", "nos", "nas", "por",
+    "para", "com", "sem", "sob", "sobre", "ao", "aos", "à", "às", "que", "se", "não", "como",
+    "mas", "mais", "já", "até", "entre", "contra", "perante", "desde", "após", "ante", "durante",
+    "mediante", "segundo", "conforme", "salvo", "fora", "onde", "quando", "bem", "mal", "pois",
+    "logo", "portanto", "porém", "todavia", "contudo", "assim", "tão", "tanto", "tudo", "nada",
+    "algo", "cada", "outro", "mesmo", "próprio", "ainda", "tampouco", "quase", "talvez", "nunca",
+    "sempre",
 ];
 /// Short words often run into the one before (`amo-te`, `deu-lhe`; in writing without the
 /// hyphen: `amote`, `deulhe`).
 const TRAILING_WORDS: &[&str] = &[
-    "me", "te", "se", "lhe", "nos", "vos", "lhes", "o", "a", "os", "as", "ele", "ela", "eles", "elas", "isso", "isto", "aquilo", "mim", "ti", "si",
-    "eu", "tu", "que", "de", "em", "é",
+    "me", "te", "se", "lhe", "nos", "vos", "lhes", "o", "a", "os", "as", "ele", "ela", "eles",
+    "elas", "isso", "isto", "aquilo", "mim", "ti", "si", "eu", "tu", "que", "de", "em", "é",
 ];
 const MAX_LETTERS: usize = 40;
 const MAX_MAP_CHANGES: usize = 4;
@@ -105,7 +108,11 @@ impl Collector<'_> {
 
 /// The MAP group of each letter (its other members are its likely confusions).
 fn alternatives(c: char, map: &[Vec<char>]) -> Vec<char> {
-    map.iter().filter(|g| g.contains(&c)).flat_map(|g| g.iter().copied()).filter(|&x| x != c).collect()
+    map.iter()
+        .filter(|g| g.contains(&c))
+        .flat_map(|g| g.iter().copied())
+        .filter(|&x| x != c)
+        .collect()
 }
 
 /// The cost of changing letter `from` to its MAP relative `to`. Adding a missing accent is the
@@ -121,7 +128,15 @@ fn map_cost(from: char, to: char) -> u32 {
 }
 
 /// Every way of changing up to [`MAX_MAP_CHANGES`] letters to a MAP relative, with its cost.
-fn map_variants(chars: &[char], alts: &[Vec<char>], i: usize, changes: usize, cost: u32, buf: &mut Vec<char>, out: &mut Vec<(String, u32)>) {
+fn map_variants(
+    chars: &[char],
+    alts: &[Vec<char>],
+    i: usize,
+    changes: usize,
+    cost: u32,
+    buf: &mut Vec<char>,
+    out: &mut Vec<(String, u32)>,
+) {
     if out.len() >= MAX_MAP_VARIANTS {
         return;
     }
@@ -137,7 +152,15 @@ fn map_variants(chars: &[char], alts: &[Vec<char>], i: usize, changes: usize, co
     if changes < MAX_MAP_CHANGES {
         for &a in alts.get(i).map(Vec::as_slice).unwrap_or_default() {
             buf.push(a);
-            map_variants(chars, alts, i + 1, changes + 1, cost + map_cost(c, a), buf, out);
+            map_variants(
+                chars,
+                alts,
+                i + 1,
+                changes + 1,
+                cost + map_cost(c, a),
+                buf,
+                out,
+            );
             buf.pop();
         }
     }
@@ -146,12 +169,20 @@ fn map_variants(chars: &[char], alts: &[Vec<char>], i: usize, changes: usize, co
 /// A letter's MAP representative (the first of its group), lower case: `ã` → `a`, `ç` → `c`.
 fn fold(c: char, map: &[Vec<char>]) -> char {
     let l = c.to_lowercase().next().unwrap_or(c);
-    map.iter().find(|g| g.contains(&l)).and_then(|g| g.first().copied()).unwrap_or(l)
+    map.iter()
+        .find(|g| g.contains(&l))
+        .and_then(|g| g.first().copied())
+        .unwrap_or(l)
 }
 
 /// Optimal string alignment distance where a MAP slip (`a`/`á`, `c`/`ç`) costs 1 and any other
 /// edit 2; `limit + 1` once it is certainly above `limit`.
-fn weighted_distance(a: &[char], b: &[char], related: &dyn Fn(char, char) -> bool, limit: u32) -> u32 {
+fn weighted_distance(
+    a: &[char],
+    b: &[char],
+    related: &dyn Fn(char, char) -> bool,
+    limit: u32,
+) -> u32 {
     let m = b.len();
     let over = limit + 1;
     let mut prev2 = vec![0u32; m + 1];
@@ -171,7 +202,9 @@ fn weighted_distance(a: &[char], b: &[char], related: &dyn Fn(char, char) -> boo
                 2
             };
             let at = |v: &[u32], k: usize| v.get(k).copied().unwrap_or(u32::MAX / 4);
-            let mut v = (at(&prev, j + 1) + 2).min(at(&cur, j) + 2).min(at(&prev, j) + sub);
+            let mut v = (at(&prev, j + 1) + 2)
+                .min(at(&cur, j) + 2)
+                .min(at(&prev, j) + sub);
             if i > 0 && j > 0 && a.get(i - 1) == Some(&bj) && b.get(j - 1) == Some(&ai) {
                 v = v.min(at(&prev2, j - 1) + 2);
             }
@@ -204,7 +237,13 @@ pub fn suggest_in(d: &AffixDict, word: &str, max: usize) -> Vec<String> {
     let case = casing(word);
     let input = word.to_lowercase();
     let chars: Vec<char> = input.chars().collect();
-    let mut col = Collector { d, input: input.clone(), tested: HashSet::new(), found: HashMap::new(), seq: 0 };
+    let mut col = Collector {
+        d,
+        input: input.clone(),
+        tested: HashSet::new(),
+        found: HashMap::new(),
+        seq: 0,
+    };
     // 1. Letter case.
     if d.contains(&input) && word != input {
         col.keep(input.clone(), COST_CASE);
@@ -215,7 +254,15 @@ pub fn suggest_in(d: &AffixDict, word: &str, max: usize) -> Vec<String> {
     let map = d.map();
     let alts: Vec<Vec<char>> = chars.iter().map(|&c| alternatives(c, map)).collect();
     let mut variants = Vec::new();
-    map_variants(&chars, &alts, 0, 0, 0, &mut Vec::with_capacity(n), &mut variants);
+    map_variants(
+        &chars,
+        &alts,
+        0,
+        0,
+        0,
+        &mut Vec::with_capacity(n),
+        &mut variants,
+    );
     variants.sort_by_key(|v| v.1);
     for (v, cost) in &variants {
         col.offer(v, *cost);
@@ -234,9 +281,13 @@ pub fn suggest_in(d: &AffixDict, word: &str, max: usize) -> Vec<String> {
     // 4. A missing space: cheap after a short leading word or before a short trailing one,
     //    dearer between two longer words, never leaving a stray short half.
     for (i, _) in input.char_indices().skip(1) {
-        let (Some(a), Some(b)) = (input.get(..i), input.get(i..)) else { continue };
+        let (Some(a), Some(b)) = (input.get(..i), input.get(i..)) else {
+            continue;
+        };
         let long = |p: &str| p.chars().count() >= 3;
-        let cost = if (LEADING_WORDS.contains(&a) && long(b)) || (long(a) && TRAILING_WORDS.contains(&b)) {
+        let cost = if (LEADING_WORDS.contains(&a) && long(b))
+            || (long(a) && TRAILING_WORDS.contains(&b))
+        {
             COST_SPLIT
         } else if long(a) && long(b) {
             COST_SPLIT_RARE
@@ -288,7 +339,13 @@ pub fn suggest_in(d: &AffixDict, word: &str, max: usize) -> Vec<String> {
     let mut found: Vec<(String, (u32, usize))> = col.found.into_iter().collect();
     // Among equal costs, the change nearest the word's start is the likelier intent
     // (`saúde` before `saudê`: both add an accent, but at the first difference).
-    let diff_at = |text: &str| chars.iter().zip(text.chars()).position(|(a, b)| *a != b).unwrap_or(n);
+    let diff_at = |text: &str| {
+        chars
+            .iter()
+            .zip(text.chars())
+            .position(|(a, b)| *a != b)
+            .unwrap_or(n)
+    };
     found.sort_by_key(|(text, (cost, seq))| (*cost, diff_at(text), *seq));
     let mut out: Vec<String> = Vec::new();
     for (text, _) in found {
@@ -314,8 +371,13 @@ fn scan(col: &mut Collector, chars: &[char]) {
     let map = d.map();
     let Some(&first) = chars.first() else { return };
     let folded: Vec<char> = chars.iter().map(|&c| fold(c, map)).collect();
-    let pairs: HashSet<(char, char)> = std::iter::once(' ').chain(folded.iter().copied()).zip(folded.iter().copied()).collect();
-    let mut firsts: Vec<char> = std::iter::once(first).chain(alternatives(first, map)).collect();
+    let pairs: HashSet<(char, char)> = std::iter::once(' ')
+        .chain(folded.iter().copied())
+        .zip(folded.iter().copied())
+        .collect();
+    let mut firsts: Vec<char> = std::iter::once(first)
+        .chain(alternatives(first, map))
+        .collect();
     let upper: Vec<char> = firsts.iter().flat_map(|c| c.to_uppercase()).collect();
     firsts.extend(upper);
     firsts.sort_unstable();
@@ -326,7 +388,11 @@ fn scan(col: &mut Collector, chars: &[char]) {
         let prefix = f.to_string();
         for stem in d.stems_with_prefix(&prefix) {
             let sf: Vec<char> = stem.chars().map(|c| fold(c, map)).collect();
-            let shared = std::iter::once(' ').chain(sf.iter().copied()).zip(sf.iter().copied()).filter(|p| pairs.contains(p)).count();
+            let shared = std::iter::once(' ')
+                .chain(sf.iter().copied())
+                .zip(sf.iter().copied())
+                .filter(|p| pairs.contains(p))
+                .count();
             if shared < 2 {
                 continue;
             }
@@ -393,7 +459,10 @@ mod tests {
     #[test]
     fn the_likeliest_fix_comes_first() {
         crate::pt::test_dict::install();
-        assert_eq!(suggest("coraçao", 3).first().map(String::as_str), Some("coração"));
+        assert_eq!(
+            suggest("coraçao", 3).first().map(String::as_str),
+            Some("coração")
+        );
         assert_eq!(
             suggest("saude", 3).first().map(String::as_str),
             Some("saúde"),
@@ -419,8 +488,15 @@ mod tests {
         let map = vec![vec!['a', 'á', 'à', 'â', 'ã'], vec!['c', 'ç']];
         let related = |a: char, b: char| fold(a, &map) == fold(b, &map);
         let c = |s: &str| s.chars().collect::<Vec<_>>();
-        assert_eq!(weighted_distance(&c("coraçao"), &c("coração"), &related, 9), 1);
-        assert_eq!(weighted_distance(&c("coracao"), &c("coração"), &related, 9), 2, "ç and ã are two accent slips");
+        assert_eq!(
+            weighted_distance(&c("coraçao"), &c("coração"), &related, 9),
+            1
+        );
+        assert_eq!(
+            weighted_distance(&c("coracao"), &c("coração"), &related, 9),
+            2,
+            "ç and ã are two accent slips"
+        );
         assert_eq!(weighted_distance(&c("coro"), &c("coro"), &related, 9), 0);
         assert_eq!(weighted_distance(&c("bem"), &c("bom"), &related, 9), 2);
         assert_eq!(weighted_distance(&c("bem"), &c("bemte"), &related, 9), 4);

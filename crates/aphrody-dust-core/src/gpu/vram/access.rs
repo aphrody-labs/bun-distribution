@@ -381,7 +381,7 @@ impl Vram {
                         self.b_bg.write_le_aligned_unchecked(mirror_addr, value);
                         clear_writeback!(self.writeback.b_bg.get_mut(), mirror_addr, T);
                     }
-                },
+                }
                 4 => {
                     for mirror_addr in [addr ^ 0x4000, addr ^ 0x1_0000, addr ^ 0x1_4000] {
                         unsafe {
@@ -389,7 +389,7 @@ impl Vram {
                             clear_writeback!(self.writeback.b_bg.get_mut(), mirror_addr, T);
                         }
                     }
-                },
+                }
                 _ => self.handle_b_bg_mirroring(addr, mapped, value),
             }
         }

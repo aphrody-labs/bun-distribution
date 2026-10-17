@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct ModelCategoryToken(pub String);
 
 impl_string_token!(ModelCategoryToken);
-impl_crockford_generator!(ModelCategoryToken, 15usize, LegacyTokenPrefix::ModelCategory, CrockfordLower);
+impl_crockford_generator!(
+    ModelCategoryToken,
+    15usize,
+    LegacyTokenPrefix::ModelCategory,
+    CrockfordLower
+);

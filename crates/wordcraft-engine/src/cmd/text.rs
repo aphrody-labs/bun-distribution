@@ -10,32 +10,114 @@ use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        CommandSpec::new("text.insert", "Type Text", "Editing", insert).params(r#"{"text": string}"#),
-        CommandSpec::new("text.newParagraph", "New Paragraph", "Editing", new_paragraph).key("Enter"),
-        CommandSpec::new("text.lineBreak", "Line Break", "Editing", |s, _| ins_char(s, '\n')).key("Shift+Enter"),
-        CommandSpec::new("text.pageBreak", "Page Break", "Insert › Pages", |s, _| ins_char(s, PAGE_BREAK)).key("Mod+Enter"),
-        CommandSpec::new("text.columnBreak", "Column Break", "Layout › Breaks", |s, _| ins_char(s, COLUMN_BREAK)).key("Mod+Shift+Enter"),
+        CommandSpec::new("text.insert", "Type Text", "Editing", insert)
+            .params(r#"{"text": string}"#),
+        CommandSpec::new(
+            "text.newParagraph",
+            "New Paragraph",
+            "Editing",
+            new_paragraph,
+        )
+        .key("Enter"),
+        CommandSpec::new("text.lineBreak", "Line Break", "Editing", |s, _| {
+            ins_char(s, '\n')
+        })
+        .key("Shift+Enter"),
+        CommandSpec::new(
+            "text.pageBreak",
+            "Page Break",
+            "Insert › Pages",
+            |s, _| ins_char(s, PAGE_BREAK),
+        )
+        .key("Mod+Enter"),
+        CommandSpec::new(
+            "text.columnBreak",
+            "Column Break",
+            "Layout › Breaks",
+            |s, _| ins_char(s, COLUMN_BREAK),
+        )
+        .key("Mod+Shift+Enter"),
         CommandSpec::new("text.tab", "Tab", "Editing", tab).key("Tab"),
         CommandSpec::new("text.backTab", "Shift+Tab", "Editing", back_tab).key("Shift+Tab"),
         CommandSpec::new("text.backspace", "Backspace", "Editing", backspace).key("Backspace"),
         CommandSpec::new("text.delete", "Delete", "Editing", delete).key("Delete"),
-        CommandSpec::new("text.deleteWordBack", "Delete Previous Word", "Editing", delete_word_back).key("Mod+Backspace / Alt+Backspace"),
-        CommandSpec::new("text.deleteWordForward", "Delete Next Word", "Editing", delete_word_fwd).key("Mod+Delete / Alt+Delete"),
-        CommandSpec::new("text.nbsp", "Nonbreaking Space", "Insert › Symbols", |s, _| ins_char(s, NBSP)).key("Mod+Shift+Space"),
-        CommandSpec::new("text.nbHyphen", "Nonbreaking Hyphen", "Insert › Symbols", |s, _| ins_char(s, NB_HYPHEN)).key("Mod+Shift+-"),
-        CommandSpec::new("text.optionalHyphen", "Optional Hyphen", "Insert › Symbols", |s, _| ins_char(s, SOFT_HYPHEN)).key("Mod+-"),
+        CommandSpec::new(
+            "text.deleteWordBack",
+            "Delete Previous Word",
+            "Editing",
+            delete_word_back,
+        )
+        .key("Mod+Backspace / Alt+Backspace"),
+        CommandSpec::new(
+            "text.deleteWordForward",
+            "Delete Next Word",
+            "Editing",
+            delete_word_fwd,
+        )
+        .key("Mod+Delete / Alt+Delete"),
+        CommandSpec::new(
+            "text.nbsp",
+            "Nonbreaking Space",
+            "Insert › Symbols",
+            |s, _| ins_char(s, NBSP),
+        )
+        .key("Mod+Shift+Space"),
+        CommandSpec::new(
+            "text.nbHyphen",
+            "Nonbreaking Hyphen",
+            "Insert › Symbols",
+            |s, _| ins_char(s, NB_HYPHEN),
+        )
+        .key("Mod+Shift+-"),
+        CommandSpec::new(
+            "text.optionalHyphen",
+            "Optional Hyphen",
+            "Insert › Symbols",
+            |s, _| ins_char(s, SOFT_HYPHEN),
+        )
+        .key("Mod+-"),
         // Alt+X on Windows and Linux; macOS has no default (Option+X types a character there).
-        CommandSpec::new("text.toggleUnicode", "Toggle Unicode Character", "Editing", toggle_unicode).key(if cfg!(target_os = "macos") {
+        CommandSpec::new(
+            "text.toggleUnicode",
+            "Toggle Unicode Character",
+            "Editing",
+            toggle_unicode,
+        )
+        .key(if cfg!(target_os = "macos") {
             ""
         } else {
             "Alt+X"
         }),
-        CommandSpec::new("text.emDash", "Em Dash", "Insert › Symbols", |s, _| ins_char(s, '—')).key("Mod+Alt+-"),
+        CommandSpec::new("text.emDash", "Em Dash", "Insert › Symbols", |s, _| {
+            ins_char(s, '—')
+        })
+        .key("Mod+Alt+-"),
         // On macOS Option+G / R / 2 / ; type these directly, so Word for Mac has no Cmd shortcut.
-        CommandSpec::new("text.copyright", "Copyright Sign", "Insert › Symbols", |s, _| ins_char(s, '©')).key(non_mac("Mod+Alt+C")),
-        CommandSpec::new("text.registered", "Registered Sign", "Insert › Symbols", |s, _| ins_char(s, '®')).key(non_mac("Mod+Alt+R")),
-        CommandSpec::new("text.trademark", "Trademark Sign", "Insert › Symbols", |s, _| ins_char(s, '™')).key(non_mac("Mod+Alt+T")),
-        CommandSpec::new("text.ellipsis", "Ellipsis", "Insert › Symbols", |s, _| ins_char(s, '…')).key(non_mac("Mod+Alt+.")),
+        CommandSpec::new(
+            "text.copyright",
+            "Copyright Sign",
+            "Insert › Symbols",
+            |s, _| ins_char(s, '©'),
+        )
+        .key(non_mac("Mod+Alt+C")),
+        CommandSpec::new(
+            "text.registered",
+            "Registered Sign",
+            "Insert › Symbols",
+            |s, _| ins_char(s, '®'),
+        )
+        .key(non_mac("Mod+Alt+R")),
+        CommandSpec::new(
+            "text.trademark",
+            "Trademark Sign",
+            "Insert › Symbols",
+            |s, _| ins_char(s, '™'),
+        )
+        .key(non_mac("Mod+Alt+T")),
+        CommandSpec::new("text.ellipsis", "Ellipsis", "Insert › Symbols", |s, _| {
+            ins_char(s, '…')
+        })
+        .key(non_mac("Mod+Alt+.")),
     ]
 }
 
@@ -76,12 +158,25 @@ fn typing_options(s: &mut Session, text: &str) {
         return;
     }
     let f = s.sel.focus.clone();
-    let Some(rest) = s.doc.para_at(&f).and_then(|p| p.text.get(f.off..)) else { return };
+    let Some(rest) = s.doc.para_at(&f).and_then(|p| p.text.get(f.off..)) else {
+        return;
+    };
     let n = text.chars().count();
-    let len: usize = rest.chars().take(n).take_while(|c| *c != OBJ).map(char::len_utf8).sum();
+    let len: usize = rest
+        .chars()
+        .take(n)
+        .take_while(|c| *c != OBJ)
+        .map(char::len_utf8)
+        .sum();
     if len > 0 {
         // The caret (focus) stays where typing happens; the characters after it are selected.
-        s.sel = Selection { anchor: Pos { off: f.off + len, ..f.clone() }, focus: f };
+        s.sel = Selection {
+            anchor: Pos {
+                off: f.off + len,
+                ..f.clone()
+            },
+            focus: f,
+        };
     }
 }
 
@@ -91,7 +186,8 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
     typing_options(s, text);
     let t = if raw { None } else { autoformat(s, text) };
     type_text(s, t.as_deref().unwrap_or(text))?;
-    let trigger = text.chars().count() == 1 && text.chars().all(|c| c == ' ' || ",.;:!?".contains(c));
+    let trigger =
+        text.chars().count() == 1 && text.chars().all(|c| c == ' ' || ",.;:!?".contains(c));
     if raw || !trigger {
         return sel_result(s);
     }
@@ -122,7 +218,9 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
 /// "* " / "- " / "> " → bullets, "1. " / "a) " → numbering, typed at the start of a paragraph.
 fn list_autoformat(s: &mut Session) -> Result<bool, CmdError> {
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return Ok(false) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return Ok(false);
+    };
     if para.props.numbering.is_some_and(|n| n.num != 0) || f.off != para.len() {
         return Ok(false);
     }
@@ -143,12 +241,20 @@ fn list_autoformat(s: &mut Session) -> Result<bool, CmdError> {
         _ => return Ok(false),
     };
     let ac = &s.prefs.autocorrect;
-    if !(if kind.is_bullet() { ac.bullets } else { ac.numbering }) {
+    if !(if kind.is_bullet() {
+        ac.bullets
+    } else {
+        ac.numbering
+    }) {
         return Ok(false);
     }
     // Bullets join an existing bullet list; typing "1. " always starts numbering again at 1,
     // as in Word.
-    let found = if kind.is_bullet() { s.doc.numbering.find_kind(kind) } else { None };
+    let found = if kind.is_bullet() {
+        s.doc.numbering.find_kind(kind)
+    } else {
+        None
+    };
     let num = found.unwrap_or_else(|| s.doc.numbering.add_list(kind));
     let para = s.doc.para_mut(f.story, &f.path)?;
     let len = para.len();
@@ -162,18 +268,28 @@ fn list_autoformat(s: &mut Session) -> Result<bool, CmdError> {
 /// "word -- word" → en dash, "word--word" → em dash (on the space after).
 fn dash_autoformat(s: &mut Session) -> Result<(), CmdError> {
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return Ok(()) };
-    let Some(before) = para.text.get(..f.off) else { return Ok(()) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return Ok(());
+    };
+    let Some(before) = para.text.get(..f.off) else {
+        return Ok(());
+    };
     if before.ends_with(' ')
         && let Some(i) = before.trim_end().rfind(" -- ")
-        && before.trim_end().get(i + 4..).is_some_and(|w| !w.is_empty() && !w.contains(' '))
+        && before
+            .trim_end()
+            .get(i + 4..)
+            .is_some_and(|w| !w.is_empty() && !w.contains(' '))
     {
         // "word -- word" → "word – word" once the next word is typed.
         let p = s.doc.para_mut(f.story, &f.path)?;
         let props = p.props_at(i + 1).clone();
         p.delete(i + 1, i + 3)?;
         p.insert_text(i + 1, "\u{2013}", &props)?;
-        s.sel = Selection::caret(Pos { off: f.off + 1, ..f });
+        s.sel = Selection::caret(Pos {
+            off: f.off + 1,
+            ..f
+        });
     } else if before.ends_with(' ')
         && let Some(i) = before.trim_end().rfind(" - ")
         && !before.trim_end()[i + 3..].contains(' ')
@@ -182,7 +298,10 @@ fn dash_autoformat(s: &mut Session) -> Result<(), CmdError> {
         let props = p.props_at(i + 1).clone();
         p.delete(i + 1, i + 2)?;
         p.insert_text(i + 1, "\u{2013}", &props)?;
-        s.sel = Selection::caret(Pos { off: f.off + 2, ..f });
+        s.sel = Selection::caret(Pos {
+            off: f.off + 2,
+            ..f
+        });
     } else if before.ends_with(' ')
         && let Some(i) = before.trim_end().rfind("--")
         && i > 0
@@ -192,7 +311,10 @@ fn dash_autoformat(s: &mut Session) -> Result<(), CmdError> {
         let props = p.props_at(i).clone();
         p.delete(i, i + 2)?;
         p.insert_text(i, "\u{2014}", &props)?;
-        s.sel = Selection::caret(Pos { off: f.off + 1, ..f });
+        s.sel = Selection::caret(Pos {
+            off: f.off + 1,
+            ..f
+        });
     }
     Ok(())
 }
@@ -228,7 +350,12 @@ fn border_line(s: &Session, at: &Pos) -> Option<Border> {
         '#' => (BorderStyle::Triple, 0.75),
         _ => return None,
     };
-    Some(Border { style, width, color: None, space: 1.0 })
+    Some(Border {
+        style,
+        width,
+        color: None,
+        space: 1.0,
+    })
 }
 
 /// AutoFormat tables: a body paragraph that is exactly "+---+-----+" (plus signs around runs
@@ -248,7 +375,10 @@ fn table_line(s: &Session, at: &Pos) -> Option<Vec<usize>> {
     let inner = text.strip_prefix('+')?.strip_suffix('+')?;
     let mut cols = Vec::new();
     for run in inner.split('+') {
-        if run.is_empty() || !run.bytes().all(|b| b == b'-') || cols.len() >= wordcraft_doc::table::MAX_COLS {
+        if run.is_empty()
+            || !run.bytes().all(|b| b == b'-')
+            || cols.len() >= wordcraft_doc::table::MAX_COLS
+        {
             return None;
         }
         cols.push(run.len());
@@ -266,11 +396,18 @@ fn apply_border_line(s: &mut Session, at: &Pos, line: Border) -> Result<(), CmdE
         p.touch();
     };
     let i = at.path.last();
-    let prev = if i > 0 { Some(at.path.with_last(i - 1)) } else { None };
+    let prev = if i > 0 {
+        Some(at.path.with_last(i - 1))
+    } else {
+        None
+    };
     let cur = s.doc.para_mut(at.story, &at.path)?;
     let len = cur.len();
     cur.delete(0, len)?;
-    let start = Pos { off: 0, ..at.clone() };
+    let start = Pos {
+        off: 0,
+        ..at.clone()
+    };
     match prev.filter(|q| matches!(s.doc.block(at.story, q), Some(Block::Para(_)))) {
         Some(q) => {
             // The characters' paragraph becomes the one typing continues in.
@@ -295,7 +432,13 @@ fn apply_border_line(s: &mut Session, at: &Pos, line: Border) -> Result<(), CmdE
 fn apply_table_line(s: &mut Session, at: &Pos, cols: &[usize]) -> Result<(), CmdError> {
     let total = cols.iter().sum::<usize>().max(1) as f32;
     let block = at.path.0.first().copied().unwrap_or(0) as usize;
-    let width = s.doc.sections().get(s.doc.section_index_of(block)).map(|(_, sp)| sp.text_width()).unwrap_or(468.0).max(36.0);
+    let width = s
+        .doc
+        .sections()
+        .get(s.doc.section_index_of(block))
+        .map(|(_, sp)| sp.text_width())
+        .unwrap_or(468.0)
+        .max(36.0);
     let mut t = Table::new(1, cols.len(), width);
     for (i, d) in cols.iter().enumerate() {
         let w = (width * *d as f32 / total).max(6.0);
@@ -312,7 +455,11 @@ fn apply_table_line(s: &mut Session, at: &Pos, cols: &[usize]) -> Result<(), Cmd
     s.doc.insert_block(at.story, &at.path, Block::Table(t))?;
     let mut first = at.path.0.clone();
     first.extend([0, 0, 0]);
-    s.sel = Selection::caret(Pos { story: at.story, path: Path(first), off: 0 });
+    s.sel = Selection::caret(Pos {
+        story: at.story,
+        path: Path(first),
+        off: 0,
+    });
     Ok(())
 }
 
@@ -322,39 +469,68 @@ fn apply_table_line(s: &mut Session, at: &Pos, cols: &[usize]) -> Result<(), Cmd
 fn toggle_unicode(s: &mut Session, _: &Value) -> CmdResult {
     let (a, b) = s.sel.ordered();
     if a.story != b.story || a.path != b.path {
-        return Err(CmdError::Failed("select a character code in one paragraph".into()));
+        return Err(CmdError::Failed(
+            "select a character code in one paragraph".into(),
+        ));
     }
-    let Some(para) = s.doc.para_at(&b) else { return Err(CmdError::Failed("no paragraph at the caret".into())) };
+    let Some(para) = s.doc.para_at(&b) else {
+        return Err(CmdError::Failed("no paragraph at the caret".into()));
+    };
     let bad = || CmdError::Failed("the caret isn't on a character boundary".into());
     let (start, replacement) = if a != b {
         let sel = para.text.get(a.off..b.off).ok_or_else(bad)?;
-        let code = sel.strip_prefix("U+").or_else(|| sel.strip_prefix("u+")).unwrap_or(sel);
+        let code = sel
+            .strip_prefix("U+")
+            .or_else(|| sel.strip_prefix("u+"))
+            .unwrap_or(sel);
         if let Some(c) = hex_char(code) {
             (a.off, c.to_string())
         } else {
             let mut it = sel.chars();
             match (it.next(), it.next()) {
                 (Some(c), None) if codeable(c) => (a.off, code_of(c)),
-                _ => return Err(CmdError::Failed("select a character code (like 00E9) or one character".into())),
+                _ => {
+                    return Err(CmdError::Failed(
+                        "select a character code (like 00E9) or one character".into(),
+                    ));
+                }
             }
         }
     } else {
         let before = para.text.get(..b.off).ok_or_else(bad)?;
         // The hex digits right before the caret (at most six, nearest first); the longest that
         // names a character wins.
-        let digits: Vec<usize> = before.char_indices().rev().take_while(|(_, c)| c.is_ascii_hexdigit()).take(6).map(|(i, _)| i).collect();
+        let digits: Vec<usize> = before
+            .char_indices()
+            .rev()
+            .take_while(|(_, c)| c.is_ascii_hexdigit())
+            .take(6)
+            .map(|(i, _)| i)
+            .collect();
         let found = digits.iter().rev().find_map(|at| {
             let c = hex_char(before.get(*at..)?)?;
-            let prefixed = before.get(..*at).is_some_and(|x| x.ends_with("U+") || x.ends_with("u+"));
+            let prefixed = before
+                .get(..*at)
+                .is_some_and(|x| x.ends_with("U+") || x.ends_with("u+"));
             Some((if prefixed { at - 2 } else { *at }, c.to_string()))
         });
         match (found, before.chars().next_back()) {
             (Some(f), _) => f,
             (None, Some(c)) if codeable(c) => (b.off - c.len_utf8(), code_of(c)),
-            _ => return Err(CmdError::Failed("no character or code before the caret".into())),
+            _ => {
+                return Err(CmdError::Failed(
+                    "no character or code before the caret".into(),
+                ));
+            }
         }
     };
-    s.sel = Selection { anchor: Pos { off: start, ..b.clone() }, focus: b };
+    s.sel = Selection {
+        anchor: Pos {
+            off: start,
+            ..b.clone()
+        },
+        focus: b,
+    };
     // The replacement keeps the replaced text's formatting.
     s.pending = None;
     type_text(s, &replacement)?;
@@ -366,7 +542,10 @@ fn hex_char(code: &str) -> Option<char> {
     if code.is_empty() || code.len() > 6 || !code.chars().all(|c| c.is_ascii_hexdigit()) {
         return None;
     }
-    u32::from_str_radix(code, 16).ok().and_then(char::from_u32).filter(|c| codeable(*c))
+    u32::from_str_radix(code, 16)
+        .ok()
+        .and_then(char::from_u32)
+        .filter(|c| codeable(*c))
 }
 
 /// Characters Alt+X converts (not control characters, breaks or object placeholders).
@@ -392,7 +571,9 @@ fn new_paragraph(s: &mut Session, _: &Value) -> CmdResult {
     }
     super::controls::prepare_edit(s)?;
     let mut at = delete_selection(s)?;
-    let auto = border_line(s, &at).map(EnterAutoFormat::Border).or_else(|| table_line(s, &at).map(EnterAutoFormat::Table));
+    let auto = border_line(s, &at)
+        .map(EnterAutoFormat::Border)
+        .or_else(|| table_line(s, &at).map(EnterAutoFormat::Table));
     if let Some(auto) = auto {
         // Word: Undo right after reverts only the AutoFormat, so the typed characters come back
         // and the Enter stays. Record that plain Enter as its own undo step.
@@ -424,23 +605,44 @@ fn new_paragraph(s: &mut Session, _: &Value) -> CmdResult {
 fn tab(s: &mut Session, _: &Value) -> CmdResult {
     if let Some((tpath, r, c)) = s.sel.focus.path.cell() {
         let story = s.sel.focus.story;
-        let Some(t) = s.doc.table(story, &tpath) else { return ins_char(s, '\t') };
+        let Some(t) = s.doc.table(story, &tpath) else {
+            return ins_char(s, '\t');
+        };
         let row_len = t.rows.get(r).map(|x| x.cells.len()).unwrap_or(0);
-        let (nr, nc) = if c + 1 < row_len { (r, c + 1) } else { (r + 1, 0) };
+        let (nr, nc) = if c + 1 < row_len {
+            (r, c + 1)
+        } else {
+            (r + 1, 0)
+        };
         if nr >= t.rows.len() {
             let t = s.doc.table_mut(story, &tpath)?;
             t.insert_row(nr, r);
         }
         let mut path = tpath.0.clone();
         path.extend([nr as u32, nc as u32, 0]);
-        let start = Pos { story, path: wordcraft_doc::Path(path), off: 0 };
+        let start = Pos {
+            story,
+            path: wordcraft_doc::Path(path),
+            off: 0,
+        };
         // Select the cell's content like Word.
-        let end_path = s.doc.para_paths(story).into_iter().rfind(|q| q.0.starts_with(&start.path.0[..start.path.0.len() - 1]));
+        let end_path = s
+            .doc
+            .para_paths(story)
+            .into_iter()
+            .rfind(|q| q.0.starts_with(&start.path.0[..start.path.0.len() - 1]));
         let end = end_path.map(|q| {
             let off = s.doc.para(story, &q).map(|x| x.len()).unwrap_or(0);
-            Pos { story, path: q, off }
+            Pos {
+                story,
+                path: q,
+                off,
+            }
         });
-        s.sel = Selection { anchor: start.clone(), focus: end.unwrap_or(start) };
+        s.sel = Selection {
+            anchor: start.clone(),
+            focus: end.unwrap_or(start),
+        };
         return sel_result(s);
     }
     let f = s.sel.focus.clone();
@@ -450,7 +652,10 @@ fn tab(s: &mut Session, _: &Value) -> CmdResult {
         && n.num != 0
     {
         let para = s.doc.para_mut(f.story, &f.path)?;
-        para.props.numbering = Some(NumRef { num: n.num, level: (n.level + 1).min(8) });
+        para.props.numbering = Some(NumRef {
+            num: n.num,
+            level: (n.level + 1).min(8),
+        });
         para.touch();
         return sel_result(s);
     }
@@ -467,19 +672,38 @@ fn back_tab(s: &mut Session, _: &Value) -> CmdResult {
         let (nr, nc) = if c > 0 {
             (r, c - 1)
         } else if r > 0 {
-            (r - 1, s.doc.table(story, &tpath).and_then(|t| t.rows.get(r - 1)).map(|x| x.cells.len().saturating_sub(1)).unwrap_or(0))
+            (
+                r - 1,
+                s.doc
+                    .table(story, &tpath)
+                    .and_then(|t| t.rows.get(r - 1))
+                    .map(|x| x.cells.len().saturating_sub(1))
+                    .unwrap_or(0),
+            )
         } else {
             return sel_result(s);
         };
         let mut path = tpath.0.clone();
         path.extend([nr as u32, nc as u32, 0]);
-        s.sel = Selection::caret(Pos { story, path: wordcraft_doc::Path(path), off: 0 });
+        s.sel = Selection::caret(Pos {
+            story,
+            path: wordcraft_doc::Path(path),
+            off: 0,
+        });
         return sel_result(s);
     }
     let f = s.sel.focus.clone();
-    if let Some(n) = s.doc.para_at(&f).and_then(|x| x.props.numbering).filter(|n| n.num != 0) {
+    if let Some(n) = s
+        .doc
+        .para_at(&f)
+        .and_then(|x| x.props.numbering)
+        .filter(|n| n.num != 0)
+    {
         let para = s.doc.para_mut(f.story, &f.path)?;
-        para.props.numbering = Some(NumRef { num: n.num, level: n.level.saturating_sub(1) });
+        para.props.numbering = Some(NumRef {
+            num: n.num,
+            level: n.level.saturating_sub(1),
+        });
         para.touch();
         return sel_result(s);
     }
@@ -500,10 +724,18 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
         return sel_result(s);
     }
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return sel_result(s);
+    };
     if f.off > 0 {
-        let a = Pos { off: para.backspace_from(f.off), ..f.clone() };
-        s.sel = Selection { anchor: a, focus: f };
+        let a = Pos {
+            off: para.backspace_from(f.off),
+            ..f.clone()
+        };
+        s.sel = Selection {
+            anchor: a,
+            focus: f,
+        };
         delete_selection(s)?;
         return sel_result(s);
     }
@@ -511,13 +743,18 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
     if para.props.numbering.is_some_and(|n| n.num != 0) {
         // First Backspace removes the number but keeps the item's indent (Word): the text stays
         // where it was, so the indent becomes the paragraph's own (`num: 0` alone drops it).
-        let text_at = para.props.numbering.and_then(|n| s.doc.numbering.level(n.num, n.level)).map(|l| l.indent);
+        let text_at = para
+            .props
+            .numbering
+            .and_then(|n| s.doc.numbering.level(n.num, n.level))
+            .map(|l| l.indent);
         let p = s.doc.para_mut(f.story, &f.path)?;
         if p.props.style.as_deref() == Some("ListParagraph") {
             if p.props.indent_left.is_none() && p.props.indent_left_chars.is_none_or(|c| c == 0.0) {
                 p.props.indent_left = text_at;
             }
-            if p.props.indent_first.is_none() && p.props.indent_first_chars.is_none_or(|c| c == 0.0) {
+            if p.props.indent_first.is_none() && p.props.indent_first_chars.is_none_or(|c| c == 0.0)
+            {
                 p.props.indent_first = Some(0.0);
             }
         }
@@ -530,7 +767,9 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
         super::leave_list(s.doc.para_mut(f.story, &f.path)?);
         return sel_result(s);
     }
-    if para.props.indent_first.is_some_and(|x| x > 0.0) || para.props.indent_first_chars.is_some_and(|x| x > 0.0) {
+    if para.props.indent_first.is_some_and(|x| x > 0.0)
+        || para.props.indent_first_chars.is_some_and(|x| x > 0.0)
+    {
         let p = s.doc.para_mut(f.story, &f.path)?;
         p.props.indent_first = Some(0.0);
         p.props.cancel_char_indents(false, false, true);
@@ -544,12 +783,19 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
     let prev_path = f.path.with_last(i - 1);
     match s.doc.block(f.story, &prev_path) {
         Some(Block::Para(prev)) => {
-            let a = Pos { story: f.story, path: prev_path, off: prev.len() };
+            let a = Pos {
+                story: f.story,
+                path: prev_path,
+                off: prev.len(),
+            };
             // An empty paragraph before a non-empty one takes the latter's formatting (Word).
             if s.doc.settings.track_changes {
                 // Tracked: the paragraph mark above is marked deleted (or removed, when this
                 // author inserted it) and the caret moves before it, as in Word.
-                s.sel = Selection { anchor: a, focus: f };
+                s.sel = Selection {
+                    anchor: a,
+                    focus: f,
+                };
                 delete_selection(s)?;
                 return sel_result(s);
             }
@@ -558,13 +804,25 @@ fn backspace_inner(s: &mut Session, _: &Value) -> CmdResult {
         }
         Some(Block::Table(_)) => {
             // Move into the table's last cell.
-            let last = s.doc.para_paths(f.story).into_iter().rfind(|q| q.0.first() == prev_path.0.first() && q.0.len() > 1);
+            let last = s
+                .doc
+                .para_paths(f.story)
+                .into_iter()
+                .rfind(|q| q.0.first() == prev_path.0.first() && q.0.len() > 1);
             if let Some(q) = last {
                 let off = s.doc.para(f.story, &q).map(|x| x.len()).unwrap_or(0);
-                if s.doc.para_at(&f).is_some_and(|x| x.is_empty()) && s.doc.container(f.story, &f.path).is_some_and(|c| c.len() > i + 1) {
+                if s.doc.para_at(&f).is_some_and(|x| x.is_empty())
+                    && s.doc
+                        .container(f.story, &f.path)
+                        .is_some_and(|c| c.len() > i + 1)
+                {
                     s.doc.remove_block(f.story, &f.path)?;
                 }
-                s.sel = Selection::caret(Pos { story: f.story, path: q, off });
+                s.sel = Selection::caret(Pos {
+                    story: f.story,
+                    path: q,
+                    off,
+                });
             }
         }
         None => {}
@@ -586,24 +844,41 @@ fn delete_inner(s: &mut Session, _: &Value) -> CmdResult {
         return sel_result(s);
     }
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return sel_result(s);
+    };
     if f.off < para.len() {
-        let b = Pos { off: para.next_boundary(f.off), ..f.clone() };
-        s.sel = Selection { anchor: f, focus: b };
+        let b = Pos {
+            off: para.next_boundary(f.off),
+            ..f.clone()
+        };
+        s.sel = Selection {
+            anchor: f,
+            focus: b,
+        };
         delete_selection(s)?;
         return sel_result(s);
     }
     // At the end: join with the next paragraph in the same container.
     let next = f.path.with_last(f.path.last() + 1);
     if let Some(Block::Para(_)) = s.doc.block(f.story, &next) {
-        let b = Pos { story: f.story, path: next, off: 0 };
+        let b = Pos {
+            story: f.story,
+            path: next,
+            off: 0,
+        };
         if s.doc.settings.track_changes {
             // Tracked: the paragraph mark is marked deleted (or removed, when this author
             // inserted it). A mark left in place as a deletion is stepped over, as in Word.
             let blocks = s.doc.container(f.story, &f.path).map(|c| c.len());
-            s.sel = Selection { anchor: f.clone(), focus: b.clone() };
+            s.sel = Selection {
+                anchor: f.clone(),
+                focus: b.clone(),
+            };
             delete_selection(s)?;
-            if s.doc.container(f.story, &f.path).map(|c| c.len()) == blocks && s.doc.para_at(&f).is_some_and(|p| p.mark.del.is_some()) {
+            if s.doc.container(f.story, &f.path).map(|c| c.len()) == blocks
+                && s.doc.para_at(&f).is_some_and(|p| p.mark.del.is_some())
+            {
                 s.sel = Selection::caret(b);
             }
             return sel_result(s);
@@ -619,7 +894,11 @@ fn delete_inner(s: &mut Session, _: &Value) -> CmdResult {
                 *l -= 1;
             }
             path.extend([0, 0, 0]);
-            s.sel = Selection::caret(Pos { story: f.story, path: wordcraft_doc::Path(path), off: 0 });
+            s.sel = Selection::caret(Pos {
+                story: f.story,
+                path: wordcraft_doc::Path(path),
+                off: 0,
+            });
         }
     }
     sel_result(s)
@@ -630,12 +909,20 @@ fn delete_word_back(s: &mut Session, v: &Value) -> CmdResult {
         return backspace(s, v);
     }
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return sel_result(s);
+    };
     if f.off == 0 {
         return backspace(s, v);
     }
-    let a = Pos { off: para.word_start(f.off), ..f.clone() };
-    s.sel = Selection { anchor: a, focus: f };
+    let a = Pos {
+        off: para.word_start(f.off),
+        ..f.clone()
+    };
+    s.sel = Selection {
+        anchor: a,
+        focus: f,
+    };
     delete_selection(s)?;
     super::controls::restore_placeholder(s)?;
     sel_result(s)
@@ -646,12 +933,20 @@ fn delete_word_fwd(s: &mut Session, v: &Value) -> CmdResult {
         return delete(s, v);
     }
     let f = s.sel.focus.clone();
-    let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
+    let Some(para) = s.doc.para_at(&f) else {
+        return sel_result(s);
+    };
     if f.off >= para.len() {
         return delete(s, v);
     }
-    let b = Pos { off: para.word_end(f.off), ..f.clone() };
-    s.sel = Selection { anchor: f, focus: b };
+    let b = Pos {
+        off: para.word_end(f.off),
+        ..f.clone()
+    };
+    s.sel = Selection {
+        anchor: f,
+        focus: b,
+    };
     delete_selection(s)?;
     super::controls::restore_placeholder(s)?;
     sel_result(s)

@@ -64,7 +64,12 @@ pub struct M3Theme {
 }
 
 impl M3Theme {
-    pub fn new(mode: ThemeMode, seed: u32, variant: Variant, contrast: f64) -> Result<Self, String> {
+    pub fn new(
+        mode: ThemeMode,
+        seed: u32,
+        variant: Variant,
+        contrast: f64,
+    ) -> Result<Self, String> {
         let theme = Theme::from_seed(mode, seed, variant, contrast)?;
         Ok(Self {
             theme,
@@ -132,7 +137,10 @@ impl M3Theme {
     /// Adopt a scheme resolved elsewhere (platform theme files: `bun-os-theme/1` `color` map of
     /// kebab-case roles to `#rrggbb`). Returns false, keeping the current scheme, when a role is
     /// missing or invalid.
-    pub fn set_hex_roles<'a>(&mut self, roles: impl IntoIterator<Item = (&'a str, &'a str)>) -> bool {
+    pub fn set_hex_roles<'a>(
+        &mut self,
+        roles: impl IntoIterator<Item = (&'a str, &'a str)>,
+    ) -> bool {
         match ColorScheme::from_hex_roles(roles) {
             Ok(colors) => {
                 self.transition_to(colors);
@@ -161,7 +169,8 @@ impl M3Theme {
         }
         let seconds = f32::from(m3_tokens::motion::DURATION_MEDIUM2.ms) / 1000.0;
         self.t = (self.t + dt / seconds).min(1.0);
-        let eased = easing_curve(m3_tokens::motion::EASING_EMPHASIZED).map_or(self.t, |c| c.eval(self.t));
+        let eased =
+            easing_curve(m3_tokens::motion::EASING_EMPHASIZED).map_or(self.t, |c| c.eval(self.t));
         self.theme.colors = self.from.mix(self.to, eased);
         true
     }
@@ -338,7 +347,10 @@ fn paint_content(
     nested: &Query<(), Nested>,
     content: &mut Query<&mut TextColor, With<M3OnColor>>,
 ) {
-    let mut stack: Vec<Entity> = children.get(root).map(|c| c.iter().collect()).unwrap_or_default();
+    let mut stack: Vec<Entity> = children
+        .get(root)
+        .map(|c| c.iter().collect())
+        .unwrap_or_default();
     while let Some(child) = stack.pop() {
         if nested.contains(child) {
             continue;
@@ -384,7 +396,9 @@ fn apply_widgets(
         if !(all || state.is_changed()) {
             continue;
         }
-        let style = widget.0.style_with(theme.theme, state.selected, state.interaction);
+        let style = widget
+            .0
+            .style_with(theme.theme, state.selected, state.interaction);
         bg.set_if_neq(BackgroundColor(to_bevy(style.background)));
         border.set_if_neq(BorderColor::all(to_bevy(style.border)));
         if all || state.is_added() {
@@ -408,14 +422,26 @@ fn apply_widgets(
             );
             outline.set_if_neq(next);
         }
-        paint_content(entity, to_bevy(style.foreground), &children, &nested, &mut content);
+        paint_content(
+            entity,
+            to_bevy(style.foreground),
+            &children,
+            &nested,
+            &mut content,
+        );
     }
 }
 
 fn apply_surfaces(
     theme: Res<M3Theme>,
     mut surfaces: Query<
-        (Entity, Ref<M3Surface>, &mut BackgroundColor, &mut BorderColor, &mut Node),
+        (
+            Entity,
+            Ref<M3Surface>,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Node,
+        ),
         Without<M3Widget>,
     >,
     children: Query<&Children>,
@@ -430,8 +456,19 @@ fn apply_surfaces(
         let style = surface.0.style(theme.theme, M3Interaction::Rest);
         bg.set_if_neq(BackgroundColor(to_bevy(style.background)));
         border.set_if_neq(BorderColor::all(to_bevy(style.border)));
-        shape_node(&mut node, f32::from(style.corner_radius) * theme.scale, 0.0, false);
-        paint_content(entity, to_bevy(style.foreground), &children, &nested, &mut content);
+        shape_node(
+            &mut node,
+            f32::from(style.corner_radius) * theme.scale,
+            0.0,
+            false,
+        );
+        paint_content(
+            entity,
+            to_bevy(style.foreground),
+            &children,
+            &nested,
+            &mut content,
+        );
     }
 }
 
@@ -439,7 +476,13 @@ fn apply_surfaces(
 fn apply_switches(
     theme: Res<M3Theme>,
     mut tracks: Query<
-        (Ref<M3State>, &Children, &mut BackgroundColor, &mut BorderColor, &mut Node),
+        (
+            Ref<M3State>,
+            &Children,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Node,
+        ),
         (With<M3Switch>, Without<M3Widget>),
     >,
     mut handles: Query<
@@ -462,18 +505,36 @@ fn apply_switches(
         );
         let c = |role| theme.theme.colors.get(role);
         let fade = |color: M3Color, layer: m3_tokens::state::StateLayer| {
-            if disabled { color.with_opacity(layer.opacity) } else { color }
+            if disabled {
+                color.with_opacity(layer.opacity)
+            } else {
+                color
+            }
         };
-        let track = if on { c(Role::Primary) } else { c(Role::SurfaceContainerHighest) };
-        let outline = if on { M3Color::TRANSPARENT } else { c(Role::Outline) };
+        let track = if on {
+            c(Role::Primary)
+        } else {
+            c(Role::SurfaceContainerHighest)
+        };
+        let outline = if on {
+            M3Color::TRANSPARENT
+        } else {
+            c(Role::Outline)
+        };
         let handle = match (on, active) {
             (true, false) => c(Role::OnPrimary),
             (true, true) => c(Role::PrimaryContainer),
             (false, false) => c(Role::Outline),
             (false, true) => c(Role::OnSurfaceVariant),
         };
-        bg.set_if_neq(BackgroundColor(to_bevy(fade(track, m3_tokens::state::DISABLED_CONTAINER))));
-        border.set_if_neq(BorderColor::all(to_bevy(fade(outline, m3_tokens::state::DISABLED_CONTAINER))));
+        bg.set_if_neq(BackgroundColor(to_bevy(fade(
+            track,
+            m3_tokens::state::DISABLED_CONTAINER,
+        ))));
+        border.set_if_neq(BorderColor::all(to_bevy(fade(
+            outline,
+            m3_tokens::state::DISABLED_CONTAINER,
+        ))));
         let outline_width = if on { 0.0 } else { t::TRACK_OUTLINE_WIDTH };
         let size = if pressed {
             t::PRESSED_HANDLE_WIDTH
@@ -488,14 +549,21 @@ fn apply_switches(
         node.border = UiRect::all(px(theme.dp(outline_width)));
         node.padding = UiRect::horizontal(px(theme.dp(inset)));
         node.align_items = AlignItems::Center;
-        node.justify_content = if on { JustifyContent::FlexEnd } else { JustifyContent::FlexStart };
+        node.justify_content = if on {
+            JustifyContent::FlexEnd
+        } else {
+            JustifyContent::FlexStart
+        };
         node.border_radius = BorderRadius::all(px(theme.radius(ShapeRole::Full)));
         for child in children.iter() {
             if let Ok((mut handle_node, mut handle_bg)) = handles.get_mut(child) {
                 handle_node.width = px(theme.dp(size));
                 handle_node.height = px(theme.dp(size));
                 handle_node.border_radius = BorderRadius::all(px(theme.radius(ShapeRole::Full)));
-                handle_bg.set_if_neq(BackgroundColor(to_bevy(fade(handle, m3_tokens::state::DISABLED_CONTENT))));
+                handle_bg.set_if_neq(BackgroundColor(to_bevy(fade(
+                    handle,
+                    m3_tokens::state::DISABLED_CONTENT,
+                ))));
             }
         }
     }
@@ -527,7 +595,12 @@ fn apply_paints(
             Option<&mut BackgroundColor>,
             Option<&mut BorderColor>,
         ),
-        (Without<M3Widget>, Without<M3Surface>, Without<M3Switch>, Without<M3OnColor>),
+        (
+            Without<M3Widget>,
+            Without<M3Surface>,
+            Without<M3Switch>,
+            Without<M3OnColor>,
+        ),
     >,
 ) {
     let all = theme.is_changed();
@@ -555,7 +628,11 @@ fn apply_paints(
     }
 }
 
-fn apply_type(theme: Res<M3Theme>, mut last: Local<f32>, mut texts: Query<(Ref<M3Type>, &mut TextFont)>) {
+fn apply_type(
+    theme: Res<M3Theme>,
+    mut last: Local<f32>,
+    mut texts: Query<(Ref<M3Type>, &mut TextFont)>,
+) {
     let rescaled = (*last - theme.scale).abs() > f32::EPSILON;
     *last = theme.scale;
     for (role, mut font) in &mut texts {
@@ -673,7 +750,11 @@ impl<'a> Kit<'a> {
         let access = a11y(accesskit::Role::Button, &label);
         let text = self.label(label, TypeRole::LabelLarge);
         let glyph = icon.map(|name| self.icon(name, t::ICON_SIZE));
-        let outline = if kind == Kind::OutlinedButton { t::OUTLINED_OUTLINE_WIDTH } else { 0.0 };
+        let outline = if kind == Kind::OutlinedButton {
+            t::OUTLINED_OUTLINE_WIDTH
+        } else {
+            0.0
+        };
         (
             M3Widget(kind),
             Node {
@@ -704,7 +785,11 @@ impl<'a> Kit<'a> {
     /// standard, `FilledButton`, `TonalButton`, `OutlinedButton`). `label` names the action.
     pub fn icon_button(&self, kind: Kind, icon: &str, label: &str) -> impl Bundle {
         use comp::icon_button_small as t;
-        let outline = if kind == Kind::OutlinedButton { t::OUTLINED_OUTLINE_WIDTH } else { 0.0 };
+        let outline = if kind == Kind::OutlinedButton {
+            t::OUTLINED_OUTLINE_WIDTH
+        } else {
+            0.0
+        };
         (
             M3Widget(kind),
             Node {
@@ -745,7 +830,11 @@ impl<'a> Kit<'a> {
         let text = self.label(label, TypeRole::LabelLarge);
         let glyph = icon.map(|name| self.icon(name, t::WITH_ICON_ICON_SIZE));
         let gap = self.theme.dp(comp::button_small::ICON_LABEL_SPACE);
-        let outline = if kind == Kind::SuggestionChip { comp::suggestion_chip::FLAT_OUTLINE_WIDTH } else { 0.0 };
+        let outline = if kind == Kind::SuggestionChip {
+            comp::suggestion_chip::FLAT_OUTLINE_WIDTH
+        } else {
+            0.0
+        };
         (
             M3Widget(kind),
             Node {
@@ -770,7 +859,11 @@ impl<'a> Kit<'a> {
     /// children are the host's. Interactive cards use [`M3Widget`] through [`Kit::card_button`].
     pub fn surface(&self, kind: Kind) -> impl Bundle {
         let gap = self.theme.dp(f32::from(self.theme.theme.density.gap()));
-        let border = if kind == Kind::OutlinedCard { comp::outlined_card::OUTLINE_WIDTH } else { 0.0 };
+        let border = if kind == Kind::OutlinedCard {
+            comp::outlined_card::OUTLINE_WIDTH
+        } else {
+            0.0
+        };
         (
             M3Surface(kind),
             Node {
@@ -785,7 +878,11 @@ impl<'a> Kit<'a> {
 
     /// A focusable card (game tiles, gallery items) with M3 state layers.
     pub fn card_button(&self, kind: Kind, label: &str) -> impl Bundle {
-        let border = if kind == Kind::OutlinedCard { comp::outlined_card::OUTLINE_WIDTH } else { 0.0 };
+        let border = if kind == Kind::OutlinedCard {
+            comp::outlined_card::OUTLINE_WIDTH
+        } else {
+            0.0
+        };
         (
             M3Widget(kind),
             Node {
@@ -811,9 +908,11 @@ impl<'a> Kit<'a> {
         let access = a11y(accesskit::Role::ListItem, &headline);
         let gap = self.theme.dp(f32::from(self.theme.theme.density.gap()));
         let head = self.label(headline, TypeRole::BodyLarge);
-        let support = supporting.map(|s| self.text(s, TypeRole::BodyMedium, Role::OnSurfaceVariant));
+        let support =
+            supporting.map(|s| self.text(s, TypeRole::BodyMedium, Role::OnSurfaceVariant));
         let tail = trailing.map(|s| self.text(s, TypeRole::LabelSmall, Role::OnSurfaceVariant));
-        let glyph = leading_icon.map(|name| self.icon(name, comp::menu::LIST_ITEM_LEADING_ICON_SIZE));
+        let glyph =
+            leading_icon.map(|name| self.icon(name, comp::menu::LIST_ITEM_LEADING_ICON_SIZE));
         (
             M3Widget(Kind::ListItem),
             Node {
@@ -907,7 +1006,9 @@ impl<'a> Kit<'a> {
         let access = a11y(accesskit::Role::Tab, &label);
         let text = self.label(label, TypeRole::TitleSmall);
         let glyph = icon.map(|name| self.icon(name, t::WITH_ICON_ICON_SIZE));
-        let gap = self.theme.dp(comp::nav_bar_item_vertical::ACTIVE_INDICATOR_ICON_LABEL_SPACE);
+        let gap = self
+            .theme
+            .dp(comp::nav_bar_item_vertical::ACTIVE_INDICATOR_ICON_LABEL_SPACE);
         (
             M3Widget(Kind::Tabs),
             Node {

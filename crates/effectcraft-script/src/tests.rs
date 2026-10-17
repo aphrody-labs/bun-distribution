@@ -11,24 +11,41 @@ use serde_json::{Value, json};
 use crate::{Outcome, run_code};
 
 fn session() -> Session {
-    let mut s = Session { expr: Some(Arc::new(effectcraft_expr::Expressions)), expr_check: Some(effectcraft_expr::check_syntax), ..Default::default() };
+    let mut s = Session {
+        expr: Some(Arc::new(effectcraft_expr::Expressions)),
+        expr_check: Some(effectcraft_expr::check_syntax),
+        ..Default::default()
+    };
     crate::install(&mut s);
     s
 }
 
 fn ok(s: &mut Session, code: &str) -> Outcome {
     let o = run_code(s, code, "test.jsx");
-    assert!(o.error.is_none(), "script failed: {:?}\noutput: {:?}", o.error, o.output);
+    assert!(
+        o.error.is_none(),
+        "script failed: {:?}\noutput: {:?}",
+        o.error,
+        o.output
+    );
     o
 }
 
 fn comp_named<'a>(s: &'a Session, name: &str) -> (ItemId, &'a Comp) {
-    let it = s.project.items.values().find(|i| i.name == name && i.as_comp().is_some()).unwrap_or_else(|| panic!("no comp {name}"));
+    let it = s
+        .project
+        .items
+        .values()
+        .find(|i| i.name == name && i.as_comp().is_some())
+        .unwrap_or_else(|| panic!("no comp {name}"));
     (it.id, it.as_comp().unwrap())
 }
 
 fn layer<'a>(c: &'a Comp, name: &str) -> &'a Layer {
-    c.layers.iter().find(|l| l.name == name).unwrap_or_else(|| panic!("no layer {name}"))
+    c.layers
+        .iter()
+        .find(|l| l.name == name)
+        .unwrap_or_else(|| panic!("no layer {name}"))
 }
 
 #[test]
@@ -70,13 +87,29 @@ fn builds_a_comp_end_to_end() {
     let p = title.props.prop("transform/position").unwrap();
     assert_eq!(p.keys.len(), 2);
     assert_eq!(p.keys[1].value, KV::Vec3([540.0, 180.0, 0.0]));
-    assert_eq!(title.props.prop("transform/opacity").unwrap().expr.as_ref().unwrap().text, "50 + 25");
+    assert_eq!(
+        title
+            .props
+            .prop("transform/opacity")
+            .unwrap()
+            .expr
+            .as_ref()
+            .unwrap()
+            .text,
+        "50 + 25"
+    );
     assert_eq!(title.parent, Some(layer(c, "Null 1").id));
     let bg = layer(c, "BG");
-    assert_eq!(bg.blend_mode, effectcraft_engine::color::BlendMode::Multiply);
+    assert_eq!(
+        bg.blend_mode,
+        effectcraft_engine::color::BlendMode::Multiply
+    );
     let fx = bg.props.group("effects/#1").unwrap();
     assert_eq!(fx.match_id, "ec.blur.gaussian");
-    assert_eq!(bg.props.prop("effects/#1/blurriness").unwrap().value, KV::Scalar(12.0));
+    assert_eq!(
+        bg.props.prop("effects/#1/blurriness").unwrap().value,
+        KV::Scalar(12.0)
+    );
     assert_eq!(s.project.render_queue.len(), 1);
     assert_eq!(s.project.render_queue[0].comp, cid);
     // One undo step for the whole group.
@@ -102,10 +135,16 @@ fn fill_parameters_use_documented_match_names() {
 #[test]
 fn undo_steps_without_a_group() {
     let mut s = session();
-    ok(&mut s, r#"var c = app.project.items.addComp("A", 100, 100, 1, 1, 24); c.layers.addNull(); c.layers.addNull();"#);
+    ok(
+        &mut s,
+        r#"var c = app.project.items.addComp("A", 100, 100, 1, 1, 24); c.layers.addNull(); c.layers.addNull();"#,
+    );
     assert_eq!(s.history.undo.len(), 3);
     // An unbalanced group is closed when the script ends.
-    ok(&mut s, r#"app.beginUndoGroup("Two"); var c = app.project.item(1); c.layers.addNull(); c.layers.addNull();"#);
+    ok(
+        &mut s,
+        r#"app.beginUndoGroup("Two"); var c = app.project.item(1); c.layers.addNull(); c.layers.addNull();"#,
+    );
     assert_eq!(s.history.undo.len(), 4);
     assert_eq!(s.history.undo[3].0, "Two");
     // Nested groups fold into the outermost one.
@@ -130,13 +169,21 @@ fn errors_report_line_and_column() {
     let o = run_code(&mut s, "var a = 1;\n\nvar = ;\n", "syntax.jsx");
     let e = o.error.expect("syntax error");
     assert_eq!(e.line, Some(3), "{e:?}");
-    let o = run_code(&mut s, "writeLn('before');\nthrow new Error('custom failure');\n", "throw.jsx");
+    let o = run_code(
+        &mut s,
+        "writeLn('before');\nthrow new Error('custom failure');\n",
+        "throw.jsx",
+    );
     let e = o.error.expect("thrown");
     assert_eq!(e.message, "custom failure");
     assert_eq!(e.line, Some(2), "{e:?}");
     assert_eq!(o.output, vec!["before"]);
     // Errors from the object model point at the user's line.
-    let o = run_code(&mut s, "var c = app.project.items.addComp('C', 10, 10, 1, 1, 24);\n\nc.layer(5);\n", "range.jsx");
+    let o = run_code(
+        &mut s,
+        "var c = app.project.items.addComp('C', 10, 10, 1, 1, 24);\n\nc.layer(5);\n",
+        "range.jsx",
+    );
     let e = o.error.expect("range error");
     assert!(e.message.contains("out of range"), "{e:?}");
     assert_eq!(e.line, Some(3), "{e:?}");
@@ -200,9 +247,25 @@ fn match_names_and_lookups() {
         ])
     );
     let (_, c) = comp_named(&s, "M");
-    let sh = c.layers.iter().find(|l| l.props.sub("contents").is_some()).unwrap();
-    assert_eq!(sh.props.prop("contents/#1/contents/rect/size").unwrap().value, KV::Vec2([50.0, 60.0]));
-    assert_eq!(sh.props.prop("contents/#1/contents/fill/color").unwrap().value, KV::Color([1.0, 0.0, 0.0, 1.0]));
+    let sh = c
+        .layers
+        .iter()
+        .find(|l| l.props.sub("contents").is_some())
+        .unwrap();
+    assert_eq!(
+        sh.props
+            .prop("contents/#1/contents/rect/size")
+            .unwrap()
+            .value,
+        KV::Vec2([50.0, 60.0])
+    );
+    assert_eq!(
+        sh.props
+            .prop("contents/#1/contents/fill/color")
+            .unwrap()
+            .value,
+        KV::Color([1.0, 0.0, 0.0, 1.0])
+    );
 }
 
 #[test]
@@ -278,9 +341,14 @@ fn text_documents() {
         [d2.text, d2.fontSize, d2.fillColor, d2.justification == ParagraphJustification.CENTER_JUSTIFY, d2.strokeWidth, t instanceof TextLayer, t.name]
         "#,
     );
-    assert_eq!(o.result, json!(["Changed", 40, [1, 0, 0], true, 3, true, "abc"]));
+    assert_eq!(
+        o.result,
+        json!(["Changed", 40, [1, 0, 0], true, 3, true, "abc"])
+    );
     let (_, c) = comp_named(&s, "T");
-    let KV::Text(d) = &c.layers[0].props.prop("text/sourceText").unwrap().value else { panic!() };
+    let KV::Text(d) = &c.layers[0].props.prop("text/sourceText").unwrap().value else {
+        panic!()
+    };
     assert_eq!(d.text, "Changed");
     assert_eq!(d.style_at(0).size, 40.0);
 }
@@ -317,15 +385,22 @@ fn layers_items_and_markers() {
          main.layers.byName("Pre") !== null, f.numItems]
         "#,
     );
-    assert_eq!(o.result, json!(["Comps", "Inner", 2, false, true, true, true, true, true, true, 1, "hello", 0.5, "Pre", true, 3, 7, true, 1]));
+    assert_eq!(
+        o.result,
+        json!([
+            "Comps", "Inner", 2, false, true, true, true, true, true, true, 1, "hello", 0.5, "Pre",
+            true, 3, 7, true, 1
+        ])
+    );
     let (_, c) = comp_named(&s, "Outer");
     assert_eq!(c.markers.len(), 1);
-    assert!(
-        c.layers
-            .iter()
-            .any(|l| l.name == "Key"
-                && matches!(l.source, effectcraft_engine::project::LayerSource::Light { kind: effectcraft_engine::project::LightKind::Spot }))
-    );
+    assert!(c.layers.iter().any(|l| l.name == "Key"
+        && matches!(
+            l.source,
+            effectcraft_engine::project::LayerSource::Light {
+                kind: effectcraft_engine::project::LightKind::Spot
+            }
+        )));
 }
 
 #[test]
@@ -339,25 +414,61 @@ fn security_gate_for_files() {
     s.path = Some(proj.join("p.ecproj").to_string_lossy().to_string());
     let q = |p: &std::path::Path| serde_json::to_string(&p.to_string_lossy()).unwrap();
     // Reading inside the project folder works.
-    let o = ok(&mut s, &format!("var f = new File({}); f.open('r'); var t = f.read(); f.close(); t", q(&proj.join("data.txt"))));
+    let o = ok(
+        &mut s,
+        &format!(
+            "var f = new File({}); f.open('r'); var t = f.read(); f.close(); t",
+            q(&proj.join("data.txt"))
+        ),
+    );
     assert_eq!(o.result, json!("inside"));
     // Outside it (also via `..`) is refused.
     for path in [dir.join("secret.txt"), proj.join("../secret.txt")] {
-        let o = run_code(&mut s, &format!("var f = new File({}); f.open('r');", q(&path)), "gate.jsx");
+        let o = run_code(
+            &mut s,
+            &format!("var f = new File({}); f.open('r');", q(&path)),
+            "gate.jsx",
+        );
         let e = o.error.expect("blocked");
         assert!(e.message.contains("Allow Scripts to Write Files"), "{e:?}");
     }
     // Writing is refused anywhere, the network too.
-    let o = run_code(&mut s, &format!("var f = new File({}); f.open('w'); f.write('x'); f.close();", q(&proj.join("out.txt"))), "gate.jsx");
+    let o = run_code(
+        &mut s,
+        &format!(
+            "var f = new File({}); f.open('w'); f.write('x'); f.close();",
+            q(&proj.join("out.txt"))
+        ),
+        "gate.jsx",
+    );
     assert!(o.error.is_some());
     assert!(!proj.join("out.txt").exists());
     assert!(run_code(&mut s, "new Socket()", "net.jsx").error.is_some());
-    assert!(run_code(&mut s, "system.callSystem('ls')", "sys.jsx").error.is_some());
+    assert!(
+        run_code(&mut s, "system.callSystem('ls')", "sys.jsx")
+            .error
+            .is_some()
+    );
     // With the preference on, scripts can write and read anywhere.
     s.prefs.scripting.allow_scripts_write_files = true;
-    ok(&mut s, &format!("var f = new File({}); f.open('w'); f.writeln('written'); f.close();", q(&dir.join("w.txt"))));
-    assert_eq!(std::fs::read_to_string(dir.join("w.txt")).unwrap(), "written\n");
-    let o = ok(&mut s, &format!("var f = new File({}); f.open('r'); f.readln()", q(&dir.join("secret.txt"))));
+    ok(
+        &mut s,
+        &format!(
+            "var f = new File({}); f.open('w'); f.writeln('written'); f.close();",
+            q(&dir.join("w.txt"))
+        ),
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("w.txt")).unwrap(),
+        "written\n"
+    );
+    let o = ok(
+        &mut s,
+        &format!(
+            "var f = new File({}); f.open('r'); f.readln()",
+            q(&dir.join("secret.txt"))
+        ),
+    );
     assert_eq!(o.result, json!("outside"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -376,29 +487,61 @@ fn scripts_cant_change_what_scripts_may_do() {
     for code in attempts {
         let o = run_code(&mut s, code, "grant.jsx");
         let e = o.error.unwrap_or_else(|| panic!("`{code}` was allowed"));
-        assert!(e.message.contains("Scripts can't change what scripts are allowed to do"), "{code}: {e:?}");
+        assert!(
+            e.message
+                .contains("Scripts can't change what scripts are allowed to do"),
+            "{code}: {e:?}"
+        );
         let sc = &s.prefs.scripting;
-        assert!(!sc.allow_scripts_write_files && sc.warn_executing_files && !sc.enable_js_debugger, "{code}");
+        assert!(
+            !sc.allow_scripts_write_files && sc.warn_executing_files && !sc.enable_js_debugger,
+            "{code}"
+        );
     }
     assert!(run_code(&mut s, "new Socket()", "net.jsx").error.is_some());
     // Other settings, and the expression editor's, are still the script's to change.
-    ok(&mut s, "app.run('prefs.set', {values: {'general.undoLevels': 40, 'scripting.editorFontSize': 16}})");
-    assert_eq!((s.prefs.general.undo_levels, s.prefs.scripting.editor_font_size), (40, 16));
+    ok(
+        &mut s,
+        "app.run('prefs.set', {values: {'general.undoLevels': 40, 'scripting.editorFontSize': 16}})",
+    );
+    assert_eq!(
+        (
+            s.prefs.general.undo_levels,
+            s.prefs.scripting.editor_font_size
+        ),
+        (40, 16)
+    );
     // The user grants access; a script's Reset Settings doesn't take it back or change it.
-    s.execute("prefs.set", json!({"key": "scripting.allowScriptsWriteFiles", "value": true})).unwrap();
+    s.execute(
+        "prefs.set",
+        json!({"key": "scripting.allowScriptsWriteFiles", "value": true}),
+    )
+    .unwrap();
     ok(&mut s, "app.run('prefs.reset', {})");
     assert!(s.prefs.scripting.allow_scripts_write_files);
-    assert_eq!(s.prefs.general.undo_levels, effectcraft_engine::prefs::Prefs::default().general.undo_levels);
+    assert_eq!(
+        s.prefs.general.undo_levels,
+        effectcraft_engine::prefs::Prefs::default()
+            .general
+            .undo_levels
+    );
     // A command script file is a script too.
     let dir = std::env::temp_dir().join(format!("ec-script-grant-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let f = dir.join("grant.json");
     std::fs::write(&f, r#"[{"command": "prefs.set", "params": {"key": "scripting.allowScriptsWriteFiles", "value": false}}]"#).unwrap();
-    let e = s.execute("file.runScript", json!({"path": f.to_string_lossy()})).unwrap_err().to_string();
+    let e = s
+        .execute("file.runScript", json!({"path": f.to_string_lossy()}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("Scripts can't change"), "{e}");
     assert!(s.prefs.scripting.allow_scripts_write_files);
     // The user (UI, CLI, control channel) can take it back.
-    s.execute("prefs.set", json!({"key": "scripting.allowScriptsWriteFiles", "value": false})).unwrap();
+    s.execute(
+        "prefs.set",
+        json!({"key": "scripting.allowScriptsWriteFiles", "value": false}),
+    )
+    .unwrap();
     assert!(!s.prefs.scripting.allow_scripts_write_files);
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -407,41 +550,81 @@ fn scripts_cant_change_what_scripts_may_do() {
 fn engine_entry_points() {
     let mut s = session();
     // script.run reports errors in the result, not as a command failure.
-    let r = s.execute("script.run", json!({"code": "writeLn('hi'); 1 + 2"})).unwrap();
+    let r = s
+        .execute("script.run", json!({"code": "writeLn('hi'); 1 + 2"}))
+        .unwrap();
     assert_eq!(r["ok"], json!(true));
     assert_eq!(r["result"], json!(3));
     assert_eq!(r["output"], json!("hi"));
-    let r = s.execute("script.run", json!({"code": "\nnope()"})).unwrap();
+    let r = s
+        .execute("script.run", json!({"code": "\nnope()"}))
+        .unwrap();
     assert_eq!(r["ok"], json!(false));
     assert_eq!(r["error"]["line"], json!(2));
     // Scripts can't run scripts.
-    let r = s.execute("script.run", json!({"code": "app.run('script.run', {code: '1'})"})).unwrap();
-    assert!(r["error"]["message"].as_str().unwrap().contains("scripts can't run scripts"), "{r}");
+    let r = s
+        .execute(
+            "script.run",
+            json!({"code": "app.run('script.run', {code: '1'})"}),
+        )
+        .unwrap();
+    assert!(
+        r["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("scripts can't run scripts"),
+        "{r}"
+    );
     // Compiled .jsxbin scripts (by name or by their header) are unsupported, not a SyntaxError
     // at 1:1 (#176).
-    for p in [json!({"code": "@JSXBIN@ES@2.0@MyBbyBn0AB", "name": "compiled.bin"}), json!({"code": "1", "name": "/x/compiled.JSXBIN"})] {
+    for p in [
+        json!({"code": "@JSXBIN@ES@2.0@MyBbyBn0AB", "name": "compiled.bin"}),
+        json!({"code": "1", "name": "/x/compiled.JSXBIN"}),
+    ] {
         let e = s.execute("script.run", p.clone()).unwrap_err().to_string();
-        assert!(e.contains(".jsxbin scripts are not supported: run the .jsx source"), "{p}: {e}");
+        assert!(
+            e.contains(".jsxbin scripts are not supported: run the .jsx source"),
+            "{p}: {e}"
+        );
     }
     // File ▸ Scripts ▸ Run Script File… runs .jsx as JavaScript.
     let dir = std::env::temp_dir().join(format!("ec-script-file-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let f = dir.join("make.jsx");
-    std::fs::write(&f, "app.project.items.addComp('From File', 320, 240, 1, 2, 24);").unwrap();
-    s.execute("file.runScript", json!({"path": f.to_string_lossy()})).unwrap();
+    std::fs::write(
+        &f,
+        "app.project.items.addComp('From File', 320, 240, 1, 2, 24);",
+    )
+    .unwrap();
+    s.execute("file.runScript", json!({"path": f.to_string_lossy()}))
+        .unwrap();
     assert!(s.project.items.values().any(|i| i.name == "From File"));
     std::fs::write(&f, "\n\nbroken(;").unwrap();
-    let e = s.execute("file.runScript", json!({"path": f.to_string_lossy()})).unwrap_err().to_string();
+    let e = s
+        .execute("file.runScript", json!({"path": f.to_string_lossy()}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("make.jsx (line 3)"), "{e}");
     // JSON command scripts still work.
     let j = dir.join("steps.json");
-    std::fs::write(&j, r#"[{"command": "comp.new", "params": {"name": "From Steps"}}]"#).unwrap();
-    s.execute("file.runScript", json!({"path": j.to_string_lossy()})).unwrap();
+    std::fs::write(
+        &j,
+        r#"[{"command": "comp.new", "params": {"name": "From Steps"}}]"#,
+    )
+    .unwrap();
+    s.execute("file.runScript", json!({"path": j.to_string_lossy()}))
+        .unwrap();
     assert!(s.project.items.values().any(|i| i.name == "From Steps"));
     // Menu commands by name.
-    let o = ok(&mut s, "app.findMenuCommandId('New Project') > 0 && app.findMenuCommandId('No Such Thing') === 0");
+    let o = ok(
+        &mut s,
+        "app.findMenuCommandId('New Project') > 0 && app.findMenuCommandId('No Such Thing') === 0",
+    );
     assert_eq!(o.result, json!(true));
-    let o = ok(&mut s, "app.executeCommand(app.findMenuCommandId('New Project')); app.project.numItems");
+    let o = ok(
+        &mut s,
+        "app.executeCommand(app.findMenuCommandId('New Project')); app.project.numItems",
+    );
     assert_eq!(o.result, json!(0));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -449,7 +632,11 @@ fn engine_entry_points() {
 #[test]
 fn console_keeps_variables() {
     let mut s = session();
-    let req = |code: &'static str| effectcraft_engine::ScriptRequest { code, name: "console", console: true };
+    let req = |code: &'static str| effectcraft_engine::ScriptRequest {
+        code,
+        name: "console",
+        console: true,
+    };
     let r = crate::run(&mut s, &req("var counter = 41;"));
     assert!(r.error.is_none(), "{r:?}");
     let r = crate::run(&mut s, &req("counter + 1"));
@@ -519,7 +706,10 @@ fn layer_switches_timing_and_comp_settings() {
     assert_eq!(v[14], json!(1));
     assert_eq!(v[15], json!("Bin"));
     // Removing the copy through the object model.
-    let o = ok(&mut s, "var n = app.project.numItems; app.project.item(1).remove(); n - app.project.numItems");
+    let o = ok(
+        &mut s,
+        "var n = app.project.numItems; app.project.item(1).remove(); n - app.project.numItems",
+    );
     assert_eq!(o.result, json!(1));
 }
 
@@ -542,10 +732,15 @@ fn motion_graphics_template_hooks_add_mirrors_and_controllers() {
         r
         "#,
     );
-    assert_eq!(o.result, json!([true, true, true, 2, "Fade", "Fade", "Fade Again"]));
+    assert_eq!(
+        o.result,
+        json!([true, true, true, 2, "Fade", "Fade", "Fade Again"])
+    );
     let (_, c) = comp_named(&s, "Card");
     let eg = c.essential.as_ref().unwrap();
-    assert!(matches!(eg.controls[1].kind, effectcraft_engine::project::essential::EgKind::Mirror { of } if of == eg.controls[0].id));
+    assert!(
+        matches!(eg.controls[1].kind, effectcraft_engine::project::essential::EgKind::Mirror { of } if of == eg.controls[0].id)
+    );
 }
 
 #[test]
@@ -597,7 +792,18 @@ fn text_document_baseline_flags_reflect_pending_edits_and_applied_value() {
         [pendingSuper, appliedSuper, pendingSub, appliedSub, cleared, appliedClear, repeatClear];
         "#,
     );
-    assert_eq!(o.result, json!([[true, false], ["super", true, false], [false, true], [false, true], [false, false], [false, false], [false, false]]));
+    assert_eq!(
+        o.result,
+        json!([
+            [true, false],
+            ["super", true, false],
+            [false, true],
+            [false, true],
+            [false, false],
+            [false, false],
+            [false, false]
+        ])
+    );
 }
 
 #[test]
@@ -622,7 +828,10 @@ fn setting_item_selected_false_preserves_other_project_items() {
           + "|" + JSON.stringify(states);
         "#,
     );
-    assert_eq!(o.result, json!("Keep,Target|[[true,true],[false,true],[false,true],[true,true]]"));
+    assert_eq!(
+        o.result,
+        json!("Keep,Target|[[true,true],[false,true],[false,true],[true,true]]")
+    );
 }
 
 #[test]
@@ -640,7 +849,11 @@ fn add_solid_keeps_the_requested_pixel_aspect() {
         "#,
     );
     assert_eq!(o.result, json!([1, 1, 2, 1, 16, 16]));
-    let bad = run_code(&mut s, r#"app.project.items.addComp("Q", 8, 8, 1, 1, 10).layers.addSolid([1, 1, 1], "Bad", 8, 8, 0)"#, "bad.jsx");
+    let bad = run_code(
+        &mut s,
+        r#"app.project.items.addComp("Q", 8, 8, 1, 1, 10).layers.addSolid([1, 1, 1], "Bad", 8, 8, 0)"#,
+        "bad.jsx",
+    );
     assert!(bad.error.is_some_and(|e| e.message.contains("pixelAspect")));
 }
 
@@ -670,7 +883,14 @@ fn property_selected_false_preserves_other_property_and_key_selections() {
         [states, rotation.selectedKeys.length, c.selectedProperties.length];
         "#,
     );
-    assert_eq!(out.result, json!([[[true, true], [false, true], [false, true], [true, true]], 2, 2]));
+    assert_eq!(
+        out.result,
+        json!([
+            [[true, true], [false, true], [false, true], [true, true]],
+            2,
+            2
+        ])
+    );
 }
 
 #[test]
@@ -695,7 +915,10 @@ fn group_selected_false_deselects_masks_and_effects() {
         states;
         "#,
     );
-    assert_eq!(out.result, json!([[true, true], [false, true], [false, false]]));
+    assert_eq!(
+        out.result,
+        json!([[true, true], [false, true], [false, false]])
+    );
 }
 
 /// Probes every file as a 64x32 still (the media layer's single-file probe).
@@ -703,7 +926,15 @@ struct Stills;
 impl effectcraft_engine::Importer for Stills {
     fn probe(&self, path: &str) -> Result<effectcraft_engine::project::Footage, String> {
         use effectcraft_engine::project::{Footage, FootageKind};
-        Ok(Footage { path: path.into(), kind: FootageKind::Still, width: 64, height: 32, has_video: true, codec: "PNG".into(), ..Default::default() })
+        Ok(Footage {
+            path: path.into(),
+            kind: FootageKind::Still,
+            width: 64,
+            height: 32,
+            has_video: true,
+            codec: "PNG".into(),
+            ..Default::default()
+        })
     }
 }
 
@@ -716,17 +947,35 @@ fn import_options_sequence_picks_one_still_or_the_run() {
     for n in ["shot_0001.png", "shot_0002.png", "shot_0003.png"] {
         std::fs::write(dir.join(n), b"").unwrap();
     }
-    let pick = dir.join("shot_0002.png").to_string_lossy().replace('\\', "/");
+    let pick = dir
+        .join("shot_0002.png")
+        .to_string_lossy()
+        .replace('\\', "/");
     let mut s = session();
     s.importer = Some(Arc::new(Stills));
     let kind_of = |s: &Session, name: &str| {
-        let it = s.project.items.values().find(|i| i.name == name).unwrap_or_else(|| panic!("no item {name}"));
-        let ItemKind::Footage(f) = &it.kind else { panic!("footage") };
+        let it = s
+            .project
+            .items
+            .values()
+            .find(|i| i.name == name)
+            .unwrap_or_else(|| panic!("no item {name}"));
+        let ItemKind::Footage(f) = &it.kind else {
+            panic!("footage")
+        };
         f.kind
     };
-    ok(&mut s, &format!("var io = new ImportOptions(new File('{pick}')); app.project.importFile(io);"));
+    ok(
+        &mut s,
+        &format!("var io = new ImportOptions(new File('{pick}')); app.project.importFile(io);"),
+    );
     assert_eq!(kind_of(&s, "shot_0002.png"), FootageKind::Still);
-    ok(&mut s, &format!("var io = new ImportOptions(new File('{pick}')); io.sequence = true; app.project.importFile(io);"));
+    ok(
+        &mut s,
+        &format!(
+            "var io = new ImportOptions(new File('{pick}')); io.sequence = true; app.project.importFile(io);"
+        ),
+    );
     assert_eq!(kind_of(&s, "shot_[0001-0003].png"), FootageKind::Sequence);
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -763,19 +1012,37 @@ fn binary_file_io_preserves_all_byte_values() {
     );
     assert_eq!(std::fs::read(&dst).unwrap(), original);
 
-    let copy = ok(&mut s, &format!("new File({}).copy({})", q(&src), q(&copied)));
+    let copy = ok(
+        &mut s,
+        &format!("new File({}).copy({})", q(&src), q(&copied)),
+    );
     assert_eq!(copy.result, json!(true));
     assert_eq!(std::fs::read(&copied).unwrap(), original);
 
-    ok(&mut s, &format!("var f = new File({}); f.encoding = 'BINARY'; f.open('a'); f.write(String.fromCharCode(0xfe)); f.close();", q(&dst)));
-    assert_eq!(std::fs::read(&dst).unwrap(), [original.as_slice(), &[0xfe]].concat());
+    ok(
+        &mut s,
+        &format!(
+            "var f = new File({}); f.encoding = 'BINARY'; f.open('a'); f.write(String.fromCharCode(0xfe)); f.close();",
+            q(&dst)
+        ),
+    );
+    assert_eq!(
+        std::fs::read(&dst).unwrap(),
+        [original.as_slice(), &[0xfe]].concat()
+    );
 
     let invalid = run_code(
         &mut s,
-        &format!("var f = new File({}); f.encoding = 'BINARY'; f.open('w'); f.write(String.fromCharCode(0x100)); f.close();", q(&dst)),
+        &format!(
+            "var f = new File({}); f.encoding = 'BINARY'; f.open('w'); f.write(String.fromCharCode(0x100)); f.close();",
+            q(&dst)
+        ),
         "invalid-binary.jsx",
     );
-    assert!(invalid.error.is_some(), "code points above 255 must not be truncated");
+    assert!(
+        invalid.error.is_some(),
+        "code points above 255 must not be truncated"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -786,21 +1053,36 @@ fn script_undo_uses_stable_after_effects_command_id() {
     assert_eq!(lookup.result, json!(16));
     // ID 16 used to index an unrelated command as the registry grew. It must
     // undo the preceding layer creation rather than dispatching by position.
-    let r = ok(&mut s, "var c = app.project.items.addComp('Undo ID', 100, 100, 1, 1, 24); c.layers.addNull(); app.executeCommand(16); c.numLayers");
+    let r = ok(
+        &mut s,
+        "var c = app.project.items.addComp('Undo ID', 100, 100, 1, 1, 24); c.layers.addNull(); app.executeCommand(16); c.numLayers",
+    );
     assert_eq!(r.result, json!(0));
     assert_eq!(s.project.comp(ItemId(1)).unwrap().layers.len(), 0);
     // Lookup of other command names still uses the existing registry.
-    assert!(ok(&mut s, "app.findMenuCommandId('New Project')").result.as_u64().unwrap_or(0) > 0);
+    assert!(
+        ok(&mut s, "app.findMenuCommandId('New Project')")
+            .result
+            .as_u64()
+            .unwrap_or(0)
+            > 0
+    );
 }
 
 #[test]
 fn long_script_undo_group_counts_as_one_level() {
     let mut s = session();
     s.prefs.general.undo_levels = 3;
-    ok(&mut s, "var c = app.project.items.addComp('Long Undo', 100, 100, 1, 1, 24); c.layers.addNull();");
+    ok(
+        &mut s,
+        "var c = app.project.items.addComp('Long Undo', 100, 100, 1, 1, 24); c.layers.addNull();",
+    );
     assert_eq!(s.history.undo.len(), 2);
     // More edits than the history cap must still be one undoable group.
-    ok(&mut s, "var c = app.project.item(1); app.beginUndoGroup('Forty layers'); for (var i = 0; i < 40; i++) c.layers.addNull(); app.endUndoGroup();");
+    ok(
+        &mut s,
+        "var c = app.project.item(1); app.beginUndoGroup('Forty layers'); for (var i = 0; i < 40; i++) c.layers.addNull(); app.endUndoGroup();",
+    );
     assert_eq!(s.project.comp(ItemId(1)).unwrap().layers.len(), 41);
     assert_eq!(s.history.undo.len(), 3);
     assert_eq!(s.history.undo[2].0, "Forty layers");
@@ -822,9 +1104,16 @@ fn script_remove_keys_batches_a_range_as_one_edit() {
     assert_eq!(o.result, json!([2, 0, 4]));
     // The entire deletion is one undo step; keys outside the range survive.
     s.undo();
-    let restored = ok(&mut s, "app.project.item(1).layer(1).transform.rotation.numKeys");
+    let restored = ok(
+        &mut s,
+        "app.project.item(1).layer(1).transform.rotation.numKeys",
+    );
     assert_eq!(restored.result, json!(5));
-    let invalid = run_code(&mut s, "app.project.item(1).layer(1).transform.rotation.removeKeys(0, 2)", "remove-keys-range.jsx");
+    let invalid = run_code(
+        &mut s,
+        "app.project.item(1).layer(1).transform.rotation.removeKeys(0, 2)",
+        "remove-keys-range.jsx",
+    );
     assert!(invalid.error.is_some());
 }
 
@@ -891,7 +1180,10 @@ fn extendscript_substr_keeps_start_and_length_semantics() {
           "abcdef".substr(2, NaN)
         ]"#,
     );
-    assert_eq!(o.result, json!(["ab", "cde", "ef", "ab", "", "", "cd", "def", "", "ab", ""]));
+    assert_eq!(
+        o.result,
+        json!(["ab", "cde", "ef", "ab", "", "", "cd", "def", "", "ab", ""])
+    );
 }
 
 #[test]
@@ -903,8 +1195,16 @@ fn import_options_preserve_layered_psd_compositions() {
     std::fs::create_dir_all(&dir).unwrap();
     let source = dir.join("layers.psd");
     let mut doc = WDoc::new(12, 12);
-    doc.layers.push(WLayer::solid("Background", Rect::new(0, 0, 12, 12), [1.0, 1.0, 1.0, 1.0]));
-    doc.layers.push(WLayer::solid("Accent", Rect::new(2, 2, 4, 4), [0.0, 0.4, 1.0, 1.0]));
+    doc.layers.push(WLayer::solid(
+        "Background",
+        Rect::new(0, 0, 12, 12),
+        [1.0, 1.0, 1.0, 1.0],
+    ));
+    doc.layers.push(WLayer::solid(
+        "Accent",
+        Rect::new(2, 2, 4, 4),
+        [0.0, 0.4, 1.0, 1.0],
+    ));
     std::fs::write(&source, write(&doc)).unwrap();
     let file = serde_json::to_string(&source.to_string_lossy()).unwrap();
     let mut s = session();
@@ -918,7 +1218,10 @@ fn import_options_preserve_layered_psd_compositions() {
     assert_eq!(o.result, json!([true, "Composition"]));
     let imported = s.project.comps().next().unwrap().1;
     assert_eq!(imported.layers.len(), 2);
-    let bad = ok(&mut s, &format!("new ImportOptions(new File({file})).canImportAs(ImportAsType.PROJECT)"));
+    let bad = ok(
+        &mut s,
+        &format!("new ImportOptions(new File({file})).canImportAs(ImportAsType.PROJECT)"),
+    );
     assert_eq!(bad.result, json!(false));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -1008,5 +1311,8 @@ fn scripted_text_range_selector_resolves_and_is_the_only_selector() {
         [sels.numProperties, sel.matchName, sel.property("start").value, end, sel.property("ADBE Text Percent Offset").matchName]
         "#,
     );
-    assert_eq!(o.result, json!([1, "ADBE Text Selector", 50, 100, "ADBE Text Percent Offset"]));
+    assert_eq!(
+        o.result,
+        json!([1, "ADBE Text Selector", 50, 100, "ADBE Text Percent Offset"])
+    );
 }

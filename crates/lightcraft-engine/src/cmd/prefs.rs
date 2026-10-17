@@ -26,7 +26,10 @@ fn preset_ref(s: &Session, v: &Value) -> Result<Option<String>> {
         Value::String(x) if x.is_empty() || x == "default" => Ok(None),
         Value::String(x) if s.presets.iter().any(|p| p.id == *x) => Ok(Some(x.clone())),
         Value::String(x) => Err(bad(ID, format!("unknown preset `{x}` (see preset.list)"))),
-        other => Err(bad(ID, format!("preset must be a preset id or \"default\", not {other}"))),
+        other => Err(bad(
+            ID,
+            format!("preset must be a preset id or \"default\", not {other}"),
+        )),
     }
 }
 
@@ -52,8 +55,15 @@ fn prefs(s: &mut Session, p: &Value) -> Result<Value> {
         match i.get("metadataPreset") {
             Some(Value::String(n)) if n.is_empty() || n == "none" => d.metadata_preset = None,
             Some(Value::String(n)) => {
-                if !s.metadata_presets.iter().any(|m| m.name.eq_ignore_ascii_case(n)) {
-                    return Err(bad(ID, format!("unknown metadata preset `{n}` (see metadata.presets)")));
+                if !s
+                    .metadata_presets
+                    .iter()
+                    .any(|m| m.name.eq_ignore_ascii_case(n))
+                {
+                    return Err(bad(
+                        ID,
+                        format!("unknown metadata preset `{n}` (see metadata.presets)"),
+                    ));
                 }
                 d.metadata_preset = Some(n.clone());
             }
@@ -63,7 +73,12 @@ fn prefs(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(a) = i.get("cameras").and_then(Value::as_array) {
             d.cameras.clear();
             for c in a {
-                let camera = c.get("camera").and_then(Value::as_str).unwrap_or_default().trim().to_string();
+                let camera = c
+                    .get("camera")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string();
                 if camera.is_empty() {
                     return Err(bad(ID, "each camera default needs `camera` (make + model)"));
                 }
@@ -75,12 +90,18 @@ fn prefs(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // set or clear one camera's default: {camera: {camera: "Make Model", preset: id|null}}
     if let Some(c) = p.get("camera") {
-        let camera = c.get("camera").and_then(Value::as_str).unwrap_or_default().trim().to_string();
+        let camera = c
+            .get("camera")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         if camera.is_empty() {
             return Err(bad(ID, "`camera.camera` (make + model) is required"));
         }
         let preset = preset_ref(s, c.get("preset").unwrap_or(&Value::Null))?;
-        d.cameras.retain(|x| !x.camera.eq_ignore_ascii_case(&camera));
+        d.cameras
+            .retain(|x| !x.camera.eq_ignore_ascii_case(&camera));
         if c.get("remove").and_then(Value::as_bool) != Some(true) {
             d.cameras.push(CameraDefault { camera, preset });
         }
@@ -88,12 +109,19 @@ fn prefs(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.import_defaults = d;
     if let Some(v) = p.get("forgetLocalDays") {
-        let days = v.as_u64().ok_or_else(|| bad(ID, "forgetLocalDays must be a whole number of days (0 = never)"))?;
+        let days = v.as_u64().ok_or_else(|| {
+            bad(
+                ID,
+                "forgetLocalDays must be a whole number of days (0 = never)",
+            )
+        })?;
         s.forget_local_days = days.min(36_500) as u32;
         changed = true;
     }
     if let Some(mb) = p.get("cacheMb") {
-        let mb = mb.as_u64().ok_or_else(|| bad(ID, "cacheMb must be a number of megabytes"))?;
+        let mb = mb
+            .as_u64()
+            .ok_or_else(|| bad(ID, "cacheMb must be a number of megabytes"))?;
         s.set_cache_mb(mb.clamp(0, 1 << 20) as u32)?;
     } else if changed {
         s.save_prefs()?;

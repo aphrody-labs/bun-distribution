@@ -11,8 +11,10 @@ use std::process::ExitCode;
 use serde_json::json;
 
 fn main() -> ExitCode {
-    let items: Vec<serde_json::Value> =
-        filmcraft_ui_egui::menus::default_menu_items().into_iter().map(|it| json!({"id": it.id, "label": it.label, "path": it.path})).collect();
+    let items: Vec<serde_json::Value> = filmcraft_ui_egui::menus::default_menu_items()
+        .into_iter()
+        .map(|it| json!({"id": it.id, "label": it.label, "path": it.path}))
+        .collect();
     match serde_json::to_string_pretty(&items) {
         Ok(text) => {
             println!("{text}");

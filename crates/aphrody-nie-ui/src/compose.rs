@@ -78,11 +78,17 @@ pub struct PanelStyle {
 
 /// Un panneau sur `--jeu-fond-profond` — la profondeur médiane des trois que le CSS propose
 /// (`--jeu-fond-nuit` le plus sombre, `--jeu-fond-moyen` le plus clair).
-pub const PANEL_DEEP: PanelStyle =
-    PanelStyle { background: DEEP_BACKGROUND, shadow: PANEL_SHADOW, radius: RADIUS };
+pub const PANEL_DEEP: PanelStyle = PanelStyle {
+    background: DEEP_BACKGROUND,
+    shadow: PANEL_SHADOW,
+    radius: RADIUS,
+};
 /// Un panneau sur `--jeu-fond-nuit`, le plus sombre des trois profondeurs.
-pub const PANEL_NIGHT: PanelStyle =
-    PanelStyle { background: NIGHT_BACKGROUND, shadow: PANEL_SHADOW, radius: RADIUS };
+pub const PANEL_NIGHT: PanelStyle = PanelStyle {
+    background: NIGHT_BACKGROUND,
+    shadow: PANEL_SHADOW,
+    radius: RADIUS,
+};
 
 /// La plaque centrale du menu — le CSS ne la commente qu'une fois (« la plaque centrale ») et ne
 /// décrit qu'un seul exemplaire, borné d'un liseré doré plutôt que d'une bordure ordinaire.
@@ -97,8 +103,11 @@ pub struct PlateStyle {
 }
 
 /// L'unique plaque décrite par le CSS actuel — `--jeu-plaque-bleu` + `--jeu-lisere-or`.
-pub const PLATE: PlateStyle =
-    PlateStyle { background: BLUE_PLATE, trim: GOLD_TRIM, radius: RADIUS };
+pub const PLATE: PlateStyle = PlateStyle {
+    background: BLUE_PLATE,
+    trim: GOLD_TRIM,
+    radius: RADIUS,
+};
 
 #[cfg(test)]
 mod tests {

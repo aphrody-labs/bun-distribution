@@ -505,13 +505,18 @@ fn emit_page_entry_attribute_check(
         asm.and_(page, mem_conf.page_table_pointer_mask as i32)
             .unwrap();
     } else {
-        asm.mov(tmp, mem_conf.page_table_pointer_mask as i64).unwrap();
+        asm.mov(tmp, mem_conf.page_table_pointer_mask as i64)
+            .unwrap();
         asm.and_(page, tmp).unwrap();
     }
     if let Some(sign_extension) = mem_conf.page_table_sign_extension {
         // Eden's A32 specialization interprets this as the sign-bit index;
         // its A64 specialization still takes a shift count.
-        let shift = if is_a32 { 63 - sign_extension } else { sign_extension };
+        let shift = if is_a32 {
+            63 - sign_extension
+        } else {
+            sign_extension
+        };
         asm.shl(page, shift).unwrap();
         asm.sar(page, shift).unwrap();
     }
@@ -542,11 +547,21 @@ pub fn emit_vaddr_lookup_a32(
     ra.asm.mov(tmp, vaddr).unwrap();
     ra.asm.shr(tmp, PAGE_BITS as u8).unwrap();
     if mem_conf.page_table_log2_stride > 3 {
-        ra.asm.shl(tmp, mem_conf.page_table_log2_stride as u8).unwrap();
-        ra.asm.mov(page, qword_ptr(RegExp::from(rxbyak::R14) + tmp)).unwrap();
+        ra.asm
+            .shl(tmp, mem_conf.page_table_log2_stride as u8)
+            .unwrap();
+        ra.asm
+            .mov(page, qword_ptr(RegExp::from(rxbyak::R14) + tmp))
+            .unwrap();
     } else {
-        ra.asm.mov(page, qword_ptr(RegExp::from(rxbyak::R14)
-            + tmp * (1u8 << mem_conf.page_table_log2_stride))).unwrap();
+        ra.asm
+            .mov(
+                page,
+                qword_ptr(
+                    RegExp::from(rxbyak::R14) + tmp * (1u8 << mem_conf.page_table_log2_stride),
+                ),
+            )
+            .unwrap();
     }
 
     emit_page_entry_attribute_check(ra.asm, mem_conf, abort, page, tmp, true);
@@ -613,15 +628,13 @@ mod tests {
             ..MemoryEmitConfig::default()
         };
         let expected: Vec<u8> = [
-            &[0x48, 0x0F, 0xBA, 0xE0, 0x00][..], // bt rax, 0
+            &[0x48, 0x0F, 0xBA, 0xE0, 0x00][..],   // bt rax, 0
             &[0x0F, 0x82, 0x1B, 0x00, 0x00, 0x00], // jc near abort (+27)
-            &[
-                0x48, 0xB9, 0x00, 0xF0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00,
-            ], // mov rcx, 0x00FFFFFFFFFFF000
-            &[0x48, 0x21, 0xC8],       // and rax, rcx
-            &[0x48, 0xC1, 0xE0, 0x39], // shl rax, 57
-            &[0x48, 0xC1, 0xF8, 0x39], // sar rax, 57
-            &[0x0F, 0x84, 0x00, 0x00, 0x00, 0x00], // je near abort (+0)
+            &[0x48, 0xB9, 0x00, 0xF0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00], // mov rcx, 0x00FFFFFFFFFFF000
+            &[0x48, 0x21, 0xC8],                                           // and rax, rcx
+            &[0x48, 0xC1, 0xE0, 0x39],                                     // shl rax, 57
+            &[0x48, 0xC1, 0xF8, 0x39],                                     // sar rax, 57
+            &[0x0F, 0x84, 0x00, 0x00, 0x00, 0x00],                         // je near abort (+0)
         ]
         .concat();
         assert_eq!(page_entry_check_bytes(&mem_conf), expected);

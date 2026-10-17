@@ -72,8 +72,16 @@ pub fn japanese_document_fonts() -> Vec<&'static CraftFont> {
 /// Empty when built without craft-fonts.
 pub fn document_fonts() -> Vec<&'static CraftFont> {
     let mut v = japanese_document_fonts();
-    v.extend(CRAFT_FONTS.iter().filter(|f| f.is_arabic() && !f.is_japanese()));
-    v.extend(CRAFT_FONTS.iter().filter(|f| f.is_thai() && !f.is_japanese() && !f.is_arabic()));
+    v.extend(
+        CRAFT_FONTS
+            .iter()
+            .filter(|f| f.is_arabic() && !f.is_japanese()),
+    );
+    v.extend(
+        CRAFT_FONTS
+            .iter()
+            .filter(|f| f.is_thai() && !f.is_japanese() && !f.is_arabic()),
+    );
     v
 }
 
@@ -92,7 +100,9 @@ mod tests {
     #[test]
     fn web_fonts_follow_the_list() {
         if CRAFT_FONTS.is_empty() {
-            eprintln!("skipping: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout)");
+            eprintln!(
+                "skipping: built without craft-fonts (set CRAFT_FONTS_DIR to a craft-fonts checkout)"
+            );
             return;
         }
         // The listed faces this craft-fonts checkout has (an older one lacks some; build.rs leaves
@@ -100,20 +110,53 @@ mod tests {
         let listed: Vec<_> = crate::web_fonts_build::parse_list(include_str!("../web-fonts.txt"))
             .unwrap()
             .into_iter()
-            .filter(|l| CRAFT_FONTS.iter().any(|f| f.family == l.family && f.style == l.style))
+            .filter(|l| {
+                CRAFT_FONTS
+                    .iter()
+                    .any(|f| f.family == l.family && f.style == l.style)
+            })
             .collect();
         assert_eq!(WEB_FONTS.len(), listed.len());
         for (l, w) in listed.iter().zip(WEB_FONTS) {
-            assert_eq!((l.family, l.style, l.startup), (w.family, w.style, w.startup));
-            let (dir, name) = w.url.strip_prefix("fonts/").and_then(|r| r.split_once('/')).unwrap();
-            assert!(dir.len() == 16 && dir.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)), "{}", w.url);
-            assert!(name.ends_with(".ttf") || name.ends_with(".otf"), "{}", w.url);
-            assert!(w.integrity.starts_with("sha256-") && w.integrity.len() == "sha256-".len() + 44, "{}", w.integrity);
+            assert_eq!(
+                (l.family, l.style, l.startup),
+                (w.family, w.style, w.startup)
+            );
+            let (dir, name) = w
+                .url
+                .strip_prefix("fonts/")
+                .and_then(|r| r.split_once('/'))
+                .unwrap();
+            assert!(
+                dir.len() == 16
+                    && dir
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
+                "{}",
+                w.url
+            );
+            assert!(
+                name.ends_with(".ttf") || name.ends_with(".otf"),
+                "{}",
+                w.url
+            );
+            assert!(
+                w.integrity.starts_with("sha256-") && w.integrity.len() == "sha256-".len() + 44,
+                "{}",
+                w.integrity
+            );
         }
         // The fallbacks the first frame may need: Noto Sans Arabic and Noto Sans Thai, where the
         // checkout has them.
-        let startup: Vec<_> = WEB_FONTS.iter().filter(|w| w.startup).map(|w| w.family).collect();
-        let expected: Vec<_> = ["Noto Sans Arabic", "Noto Sans Thai"].into_iter().filter(|n| CRAFT_FONTS.iter().any(|f| f.family == *n)).collect();
+        let startup: Vec<_> = WEB_FONTS
+            .iter()
+            .filter(|w| w.startup)
+            .map(|w| w.family)
+            .collect();
+        let expected: Vec<_> = ["Noto Sans Arabic", "Noto Sans Thai"]
+            .into_iter()
+            .filter(|n| CRAFT_FONTS.iter().any(|f| f.family == *n))
+            .collect();
         assert_eq!(startup, expected);
     }
 }

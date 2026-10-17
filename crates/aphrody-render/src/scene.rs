@@ -77,7 +77,12 @@ impl Corners {
     /// All four corners sharing the same radius.
     #[must_use]
     pub const fn uniform(radius: f32) -> Self {
-        Self { tl: radius, tr: radius, br: radius, bl: radius }
+        Self {
+            tl: radius,
+            tr: radius,
+            br: radius,
+            bl: radius,
+        }
     }
 
     /// No rounding.
@@ -123,22 +128,40 @@ pub struct Rgba8 {
 
 impl Rgba8 {
     /// Fully opaque black.
-    pub const BLACK: Self = Self { r: 0, g: 0, b: 0, a: 255 };
+    pub const BLACK: Self = Self {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255,
+    };
     /// Fully transparent.
-    pub const TRANSPARENT: Self = Self { r: 0, g: 0, b: 0, a: 0 };
+    pub const TRANSPARENT: Self = Self {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 0,
+    };
 
     /// Build a colour from a packed `0xAARRGGBB` value, as returned by
     /// [`DynamicScheme::argb`].
     #[must_use]
     pub const fn from_argb(argb: u32) -> Self {
-        Self { a: (argb >> 24) as u8, r: (argb >> 16) as u8, g: (argb >> 8) as u8, b: argb as u8 }
+        Self {
+            a: (argb >> 24) as u8,
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        }
     }
 
     /// Multiply the alpha channel by `factor` (clamped to `[0, 1]`).
     #[must_use]
     pub fn with_alpha_factor(self, factor: f32) -> Self {
         let factor = factor.clamp(0.0, 1.0);
-        Self { a: (f32::from(self.a) * factor).round() as u8, ..self }
+        Self {
+            a: (f32::from(self.a) * factor).round() as u8,
+            ..self
+        }
     }
 }
 
@@ -400,7 +423,12 @@ impl Scene {
     /// Build the [`DynamicScheme`] this scene resolves colours against.
     #[must_use]
     pub fn scheme(&self) -> DynamicScheme {
-        DynamicScheme::from_argb(self.seed_argb, self.variant, self.is_dark, self.contrast_level)
+        DynamicScheme::from_argb(
+            self.seed_argb,
+            self.variant,
+            self.is_dark,
+            self.contrast_level,
+        )
     }
 }
 
@@ -418,7 +446,15 @@ mod tests {
     #[test]
     fn rgba8_round_trips_argb() {
         let rgba = Rgba8::from_argb(0xFF67_50A4);
-        assert_eq!(rgba, Rgba8 { r: 0x67, g: 0x50, b: 0xA4, a: 0xFF });
+        assert_eq!(
+            rgba,
+            Rgba8 {
+                r: 0x67,
+                g: 0x50,
+                b: 0xA4,
+                a: 0xFF
+            }
+        );
     }
 
     #[test]

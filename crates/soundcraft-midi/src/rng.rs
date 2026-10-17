@@ -6,7 +6,11 @@ pub struct XorShift(u64);
 impl XorShift {
     /// Creates a generator. A zero seed is replaced by a fixed non-zero constant.
     pub fn new(seed: u64) -> Self {
-        Self(if seed == 0 { 0x9E37_79B9_7F4A_7C15 } else { seed })
+        Self(if seed == 0 {
+            0x9E37_79B9_7F4A_7C15
+        } else {
+            seed
+        })
     }
 
     /// Next raw 64-bit value.

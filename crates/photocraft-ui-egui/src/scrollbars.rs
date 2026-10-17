@@ -34,10 +34,19 @@ pub struct Span {
 impl Span {
     /// The axis of a view: `size` screen points at `zoom` around `center`.
     pub fn of(len: f32, center: f32, size: f32, zoom: f32) -> Option<Span> {
-        let zoom = if zoom.is_finite() && zoom > 0.0 { zoom } else { return None };
+        let zoom = if zoom.is_finite() && zoom > 0.0 {
+            zoom
+        } else {
+            return None;
+        };
         let half = size / zoom / 2.0;
-        let s = Span { len, v0: center - half, v1: center + half };
-        (s.len.is_finite() && s.len > 0.0 && s.v0.is_finite() && s.v1.is_finite() && s.v1 > s.v0).then_some(s)
+        let s = Span {
+            len,
+            v0: center - half,
+            v1: center + half,
+        };
+        (s.len.is_finite() && s.len > 0.0 && s.v0.is_finite() && s.v1.is_finite() && s.v1 > s.v0)
+            .then_some(s)
     }
 
     /// The scrollable extent: the image and the visible span. With `overscroll`, an image shorter
@@ -58,7 +67,11 @@ impl Span {
         let len = (visible / total * track).clamp(MIN_THUMB.min(track), track.max(0.0));
         let travel = (track - len).max(0.0);
         let room = total - visible;
-        let at = if room > 1e-6 { ((self.v0 - e.0) / room).clamp(0.0, 1.0) * travel } else { 0.0 };
+        let at = if room > 1e-6 {
+            ((self.v0 - e.0) / room).clamp(0.0, 1.0) * travel
+        } else {
+            0.0
+        };
         (at, len)
     }
 
@@ -67,7 +80,11 @@ impl Span {
         let (_, len) = self.thumb(e, track);
         let travel = track - len;
         let room = (e.1 - e.0) - (self.v1 - self.v0);
-        if travel > 1e-3 && room > 0.0 { room / travel } else { 0.0 }
+        if travel > 1e-3 && room > 0.0 {
+            room / travel
+        } else {
+            0.0
+        }
     }
 }
 
@@ -75,7 +92,13 @@ impl Span {
 /// than the view can't leave its edges, and one smaller than the view stays inside it, where
 /// zooming put it (zooming out around the pointer doesn't re-centre it; Fit on Screen does).
 pub fn clamp_axis(center: f32, len: f32, size: f32, zoom: f32) -> f32 {
-    if !(zoom.is_finite() && zoom > 0.0 && len.is_finite() && len > 0.0 && size.is_finite() && size > 0.0) {
+    if !(zoom.is_finite()
+        && zoom > 0.0
+        && len.is_finite()
+        && len > 0.0
+        && size.is_finite()
+        && size > 0.0)
+    {
         return center;
     }
     if !center.is_finite() {
@@ -100,30 +123,63 @@ pub fn clamp_view_with_aspect(view: &mut View, size: egui::Vec2, ppp: f32, aspec
     if w == 0 || h == 0 {
         return false;
     }
-    let zoom = view.zoom / if ppp.is_finite() && ppp > 0.0 { ppp } else { 1.0 };
-    let aspect = if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 };
+    let zoom = view.zoom
+        / if ppp.is_finite() && ppp > 0.0 {
+            ppp
+        } else {
+            1.0
+        };
+    let aspect = if aspect.is_finite() && aspect > 0.0 {
+        aspect
+    } else {
+        1.0
+    };
     let c = if view.rotation.abs() < 1e-8 {
-        [clamp_axis(view.center[0], w as f32, size.x / aspect, zoom), clamp_axis(view.center[1], h as f32, size.y, zoom)]
+        [
+            clamp_axis(view.center[0], w as f32, size.x / aspect, zoom),
+            clamp_axis(view.center[1], h as f32, size.y, zoom),
+        ]
     } else {
         if !zoom.is_finite() || zoom <= 0.0 || !size.is_finite() || size.x <= 0.0 || size.y <= 0.0 {
             return false;
         }
         let center = [
-            if view.center[0].is_finite() { view.center[0] } else { w as f32 / 2.0 },
-            if view.center[1].is_finite() { view.center[1] } else { h as f32 / 2.0 },
+            if view.center[0].is_finite() {
+                view.center[0]
+            } else {
+                w as f32 / 2.0
+            },
+            if view.center[1].is_finite() {
+                view.center[1]
+            } else {
+                h as f32 / 2.0
+            },
         ];
-        let xf = crate::canvas::ViewXform { rect: egui::Rect::from_min_size(Pos2::ZERO, size), zoom, center, flip: false, rotation: view.rotation, aspect };
+        let xf = crate::canvas::ViewXform {
+            rect: egui::Rect::from_min_size(Pos2::ZERO, size),
+            zoom,
+            center,
+            flip: false,
+            rotation: view.rotation,
+            aspect,
+        };
         let image = xf.image_bounds(view.doc_size);
         if !image.is_finite() {
             return false;
         }
         let offset = xf.rect.center() - image.min;
-        let delta = vec2(clamp_axis(offset.x, image.width(), size.x, 1.0), clamp_axis(offset.y, image.height(), size.y, 1.0)) - offset;
+        let delta = vec2(
+            clamp_axis(offset.x, image.width(), size.x, 1.0),
+            clamp_axis(offset.y, image.height(), size.y, 1.0),
+        ) - offset;
         let d = xf.unmap_vec(delta) / zoom;
         [center[0] + d.x, center[1] + d.y]
     };
     // Ignore sub-pixel float noise so the clamp never keeps requesting frames.
-    let moved = !view.center[0].is_finite() || !view.center[1].is_finite() || (c[0] - view.center[0]).abs() > 1e-3 || (c[1] - view.center[1]).abs() > 1e-3;
+    let moved = !view.center[0].is_finite()
+        || !view.center[1].is_finite()
+        || (c[0] - view.center[0]).abs() > 1e-3
+        || (c[1] - view.center[1]).abs() > 1e-3;
     if moved {
         view.center = c;
     }
@@ -141,10 +197,20 @@ struct Drag {
 
 /// The two bars' rectangles inside `rect` (bottom, right), given which are shown.
 pub fn bar_rects(rect: Rect, horizontal: bool, vertical: bool) -> (Option<Rect>, Option<Rect>) {
-    let right = if vertical { rect.right() - THICKNESS } else { rect.right() };
-    let bottom = if horizontal { rect.bottom() - THICKNESS } else { rect.bottom() };
-    let h = horizontal.then(|| Rect::from_min_max(pos2(rect.left(), bottom), pos2(right, rect.bottom())));
-    let v = vertical.then(|| Rect::from_min_max(pos2(right, rect.top()), pos2(rect.right(), bottom)));
+    let right = if vertical {
+        rect.right() - THICKNESS
+    } else {
+        rect.right()
+    };
+    let bottom = if horizontal {
+        rect.bottom() - THICKNESS
+    } else {
+        rect.bottom()
+    };
+    let h = horizontal
+        .then(|| Rect::from_min_max(pos2(rect.left(), bottom), pos2(right, rect.bottom())));
+    let v =
+        vertical.then(|| Rect::from_min_max(pos2(right, rect.top()), pos2(rect.right(), bottom)));
     (h, v)
 }
 
@@ -153,15 +219,32 @@ pub fn bar_rects(rect: Rect, horizontal: bool, vertical: bool) -> (Option<Rect>,
 /// `aspect` is the displayed pixel aspect ratio (a document pixel is that many points wider per
 /// point of height); `overscroll` is Preferences › Tools › Overscroll.
 /// Returns true when the pointer is over a bar (the canvas then leaves the pointer alone).
-pub fn show(ui: &Ui, rect: Rect, view: &mut View, flip: bool, aspect: f32, overscroll: bool, key: Id) -> bool {
+pub fn show(
+    ui: &Ui,
+    rect: Rect,
+    view: &mut View,
+    flip: bool,
+    aspect: f32,
+    overscroll: bool,
+    key: Id,
+) -> bool {
     let [w, h] = view.doc_size;
     // `Span` works in egui points; `View::zoom` is device pixels per document pixel.
     let ppp = ui.ctx().pixels_per_point();
-    let zoom = view.zoom / if ppp.is_finite() && ppp > 0.0 { ppp } else { 1.0 };
+    let zoom = view.zoom
+        / if ppp.is_finite() && ppp > 0.0 {
+            ppp
+        } else {
+            1.0
+        };
     // Horizontal axis in "screen order": with the view flipped, run the image backwards.
     let hx = |c: f32| if flip { w as f32 - c } else { c };
     let with_extent = |s: Span| (s, s.extent(overscroll));
-    let aspect = if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 };
+    let aspect = if aspect.is_finite() && aspect > 0.0 {
+        aspect
+    } else {
+        1.0
+    };
     let ex = Span::of(w as f32, hx(view.center[0]), rect.width() / aspect, zoom).map(with_extent);
     let ey = Span::of(h as f32, view.center[1], rect.height(), zoom).map(with_extent);
     if ex.is_none() && ey.is_none() {
@@ -173,14 +256,26 @@ pub fn show(ui: &Ui, rect: Rect, view: &mut View, flip: bool, aspect: f32, overs
     let mut over = false;
     if let (Some(r), Some(_)) = (hr, vr) {
         // The corner square where the bars meet.
-        painter.rect_filled(Rect::from_min_max(pos2(r.right(), r.top()), rect.max), 0.0, t.chrome);
+        painter.rect_filled(
+            Rect::from_min_max(pos2(r.right(), r.top()), rect.max),
+            0.0,
+            t.chrome,
+        );
     }
     for (axis, bar, span) in [(0usize, hr, ex), (1usize, vr, ey)] {
-        let (Some(bar), Some((s, e))) = (bar, span) else { continue };
+        let (Some(bar), Some((s, e))) = (bar, span) else {
+            continue;
+        };
         let id = key.with(("scrollbar", axis));
         let resp = ui.interact(bar, id, Sense::click_and_drag());
         over |= resp.hovered() || resp.dragged();
-        let along = |p: Pos2| if axis == 0 { p.x - bar.left() } else { p.y - bar.top() };
+        let along = |p: Pos2| {
+            if axis == 0 {
+                p.x - bar.left()
+            } else {
+                p.y - bar.top()
+            }
+        };
         let track = if axis == 0 { bar.width() } else { bar.height() };
         let dragging = ui.ctx().data(|d| d.get_temp::<Drag>(id));
         // A drag keeps the extent it began with.
@@ -199,11 +294,22 @@ pub fn show(ui: &Ui, rect: Rect, view: &mut View, flip: bool, aspect: f32, overs
         let center = (s.v0 + s.v1) / 2.0;
         // The drag starts where the button went down, not where it passed egui's drag threshold.
         if resp.drag_started()
-            && let Some(p) = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos())
+            && let Some(p) = ui
+                .input(|i| i.pointer.press_origin())
+                .or(resp.interact_pointer_pos())
         {
             let a = along(p);
             if a >= t0 && a <= t0 + tl {
-                ui.ctx().data_mut(|d| d.insert_temp(id, Drag { extent: e, center, origin: a }));
+                ui.ctx().data_mut(|d| {
+                    d.insert_temp(
+                        id,
+                        Drag {
+                            extent: e,
+                            center,
+                            origin: a,
+                        },
+                    )
+                });
             }
         }
         if let Some(d) = ui.ctx().data(|m| m.get_temp::<Drag>(id)) {
@@ -231,7 +337,11 @@ pub fn show(ui: &Ui, rect: Rect, view: &mut View, flip: bool, aspect: f32, overs
         }
         // Track and thumb.
         painter.rect_filled(bar, 0.0, t.chrome);
-        let edge = if axis == 0 { [bar.left_top(), bar.right_top()] } else { [bar.left_top(), bar.left_bottom()] };
+        let edge = if axis == 0 {
+            [bar.left_top(), bar.right_top()]
+        } else {
+            [bar.left_top(), bar.left_bottom()]
+        };
         painter.line_segment(edge, egui::Stroke::new(1.0, t.separator));
         let thumb = if axis == 0 {
             Rect::from_min_size(pos2(bar.left() + t0, bar.top()), vec2(tl, bar.height()))
@@ -239,9 +349,16 @@ pub fn show(ui: &Ui, rect: Rect, view: &mut View, flip: bool, aspect: f32, overs
             Rect::from_min_size(pos2(bar.left(), bar.top() + t0), vec2(bar.width(), tl))
         }
         .shrink(3.0);
-        let hot = resp.dragged() || resp.hover_pos().is_some_and(|p| thumb.expand(3.0).contains(p));
+        let hot = resp.dragged()
+            || resp
+                .hover_pos()
+                .is_some_and(|p| thumb.expand(3.0).contains(p));
         let fill = if hot { t.text_dim } else { thumb_color(&t) };
-        painter.rect_filled(thumb, CornerRadius::same((thumb.width().min(thumb.height()) / 2.0) as u8), fill);
+        painter.rect_filled(
+            thumb,
+            CornerRadius::same((thumb.width().min(thumb.height()) / 2.0) as u8),
+            fill,
+        );
         if resp.hovered() || resp.dragged() {
             ui.ctx().set_cursor_icon(egui::CursorIcon::Default);
         }
@@ -265,8 +382,14 @@ mod tests {
         let e = s.extent(true);
         assert_eq!(e, (-250.0, 1250.0));
         let (at, len) = s.thumb(e, 300.0);
-        assert!((len - 250.0).abs() < 1e-3 && (at - 25.0).abs() < 1e-3, "a centred thumb with room: {at} {len}");
-        assert!((s.doc_per_point(e, 300.0) - 5.0).abs() < 1e-3, "50 points of travel cover 250 px");
+        assert!(
+            (len - 250.0).abs() < 1e-3 && (at - 25.0).abs() < 1e-3,
+            "a centred thumb with room: {at} {len}"
+        );
+        assert!(
+            (s.doc_per_point(e, 300.0) - 5.0).abs() < 1e-3,
+            "50 points of travel cover 250 px"
+        );
         // Overscroll off: nothing to scroll, the thumb fills the track.
         let e = s.extent(false);
         assert_eq!(e, (-125.0, 1125.0));
@@ -278,7 +401,10 @@ mod tests {
             let e = s.extent(overscroll);
             assert_eq!(e, (0.0, 1000.0));
             let (at, len) = s.thumb(e, 400.0);
-            assert!((len - 200.0).abs() < 1e-3 && (at - 100.0).abs() < 1e-3, "{at} {len}");
+            assert!(
+                (len - 200.0).abs() < 1e-3 && (at - 100.0).abs() < 1e-3,
+                "{at} {len}"
+            );
         }
     }
 
@@ -312,13 +438,35 @@ mod tests {
         // Smaller than the view (2500 doc px of view for 1000 of image): it stays where it is
         // while it is inside the view, and is pushed back in at the edges.
         assert_eq!(clamp_axis(-90.0, 1000.0, 500.0, 0.2), -90.0);
-        assert_eq!(clamp_axis(-400.0, 1000.0, 500.0, 0.2), -250.0, "the image's right edge on the view's");
-        assert_eq!(clamp_axis(1400.0, 1000.0, 500.0, 0.2), 1250.0, "its left edge on the view's");
-        assert_eq!(clamp_axis(500.0, 1000.0, 1000.0, 1.0), 500.0, "exactly the view's size: centred");
-        let mut v = View { zoom: 1.0, center: [-500.0, 20.0], fit_pending: false, fill_pending: false, doc_size: [1000, 800], rotation: 0.0 };
+        assert_eq!(
+            clamp_axis(-400.0, 1000.0, 500.0, 0.2),
+            -250.0,
+            "the image's right edge on the view's"
+        );
+        assert_eq!(
+            clamp_axis(1400.0, 1000.0, 500.0, 0.2),
+            1250.0,
+            "its left edge on the view's"
+        );
+        assert_eq!(
+            clamp_axis(500.0, 1000.0, 1000.0, 1.0),
+            500.0,
+            "exactly the view's size: centred"
+        );
+        let mut v = View {
+            zoom: 1.0,
+            center: [-500.0, 20.0],
+            fit_pending: false,
+            fill_pending: false,
+            doc_size: [1000, 800],
+            rotation: 0.0,
+        };
         assert!(clamp_view(&mut v, vec2(500.0, 400.0), 1.0));
         assert_eq!(v.center, [250.0, 200.0]);
-        assert!(!clamp_view(&mut v, vec2(500.0, 400.0), 1.0), "stable: no repaint loop");
+        assert!(
+            !clamp_view(&mut v, vec2(500.0, 400.0), 1.0),
+            "stable: no repaint loop"
+        );
     }
 
     #[test]
@@ -334,7 +482,14 @@ mod tests {
         let (at, len) = s.thumb((0.0, 1000.0), 0.0);
         assert!(at.is_finite() && len.is_finite());
         assert_eq!(s.doc_per_point((0.0, 1000.0), 0.0), 0.0);
-        let mut v = View { zoom: 1.0, center: [0.0, 0.0], fit_pending: false, fill_pending: false, doc_size: [0, 0], rotation: 0.0 };
+        let mut v = View {
+            zoom: 1.0,
+            center: [0.0, 0.0],
+            fit_pending: false,
+            fill_pending: false,
+            doc_size: [0, 0],
+            rotation: 0.0,
+        };
         assert!(!clamp_view(&mut v, vec2(500.0, 400.0), 1.0));
     }
 
@@ -347,20 +502,34 @@ mod tests {
         use crate::PhotocraftApp;
 
         fn harness(overscroll: bool) -> Harness<'static, PhotocraftApp> {
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-            app.run("file.new", json!({"width": 2000, "height": 1500})).unwrap();
-            app.run("prefs.set", json!({"path": "tools.overscroll", "value": overscroll})).unwrap();
-            app.sync_views();
-            let mut h = Harness::builder().with_size(vec2(1000.0, 700.0)).build_ui_state(
-                |ui, app: &mut PhotocraftApp| {
-                    let ctx = ui.ctx().clone();
-                    if !ctx.fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                        return;
-                    }
-                    egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
-                },
-                app,
+            let mut app = PhotocraftApp::new(
+                photocraft_engine::Session::new(),
+                crate::Services::default(),
             );
+            app.run("file.new", json!({"width": 2000, "height": 1500}))
+                .unwrap();
+            app.run(
+                "prefs.set",
+                json!({"path": "tools.overscroll", "value": overscroll}),
+            )
+            .unwrap();
+            app.sync_views();
+            let mut h = Harness::builder()
+                .with_size(vec2(1000.0, 700.0))
+                .build_ui_state(
+                    |ui, app: &mut PhotocraftApp| {
+                        let ctx = ui.ctx().clone();
+                        if !ctx.fonts(|f| {
+                            f.families()
+                                .contains(&egui::FontFamily::Name("medium".into()))
+                        }) {
+                            return;
+                        }
+                        egui::CentralPanel::default()
+                            .show(ui, |ui| crate::canvas::document_area(app, ui));
+                    },
+                    app,
+                );
             PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::default());
             h.run_steps(4);
             h
@@ -391,22 +560,44 @@ mod tests {
         fn drag(h: &mut Harness<'static, PhotocraftApp>, p: Pos2, by: f32) {
             h.event(egui::Event::PointerMoved(p));
             h.run_steps(1);
-            h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+            h.event(egui::Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::NONE,
+            });
             h.run_steps(1);
             for k in 1..=10 {
-                h.event(egui::Event::PointerMoved(p + vec2(by * k as f32 / 10.0, 0.0)));
+                h.event(egui::Event::PointerMoved(
+                    p + vec2(by * k as f32 / 10.0, 0.0),
+                ));
                 h.run_steps(1);
             }
-            h.event(egui::Event::PointerButton { pos: p + vec2(by, 0.0), button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+            h.event(egui::Event::PointerButton {
+                pos: p + vec2(by, 0.0),
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::NONE,
+            });
             h.run_steps(2);
         }
 
         fn click(h: &mut Harness<'static, PhotocraftApp>, p: Pos2) {
             h.event(egui::Event::PointerMoved(p));
             h.run_steps(1);
-            h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+            h.event(egui::Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::NONE,
+            });
             h.run_steps(1);
-            h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+            h.event(egui::Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::NONE,
+            });
             h.run_steps(2);
         }
 
@@ -421,12 +612,21 @@ mod tests {
                 let c1 = view(&h).center;
                 if overscroll {
                     // Fit on screen, the bar still moves the image (#620).
-                    assert!(len < r.width() - 2.0 * THICKNESS, "the thumb leaves room: {len}");
+                    assert!(
+                        len < r.width() - 2.0 * THICKNESS,
+                        "the thumb leaves room: {len}"
+                    );
                     assert!(c1[0] < c0[0] - 10.0, "{c0:?} -> {c1:?}");
                 } else {
-                    assert!((len - (r.width() - THICKNESS)).abs() < 1.0, "the thumb fills the track: {len}");
+                    assert!(
+                        (len - (r.width() - THICKNESS)).abs() < 1.0,
+                        "the thumb fills the track: {len}"
+                    );
                     // Within float error: the fit zoom is not a round number for every canvas height.
-                    assert!((c1[0] - c0[0]).abs() < 0.01 && (c1[1] - c0[1]).abs() < 0.01, "Overscroll off keeps a fitting image centred: {c0:?} -> {c1:?}");
+                    assert!(
+                        (c1[0] - c0[0]).abs() < 0.01 && (c1[1] - c0[1]).abs() < 0.01,
+                        "Overscroll off keeps a fitting image centred: {c0:?} -> {c1:?}"
+                    );
                 }
             }
         }
@@ -442,7 +642,11 @@ mod tests {
                 // The drag over where the bar was reaches the Hand: the image follows the pointer.
                 let c0 = view(&h).center;
                 drag(&mut h, p, -40.0);
-                assert!(view(&h).center[0] > c0[0], "{mode}: {c0:?} -> {:?}", view(&h).center);
+                assert!(
+                    view(&h).center[0] > c0[0],
+                    "{mode}: {c0:?} -> {:?}",
+                    view(&h).center
+                );
             }
         }
 
@@ -458,9 +662,19 @@ mod tests {
             // 100 points of thumb travel scroll about 2 px per point (1000 px of room, ~500 of travel).
             assert!(c1[0] - c0[0] > 150.0, "{c0:?} -> {c1:?}");
             assert_eq!(c1[1], c0[1]);
-            assert!(!h.state().session.journal.iter().any(|(id, _)| id == "paint.stroke"), "the bar never reaches the tool");
+            assert!(
+                !h.state()
+                    .session
+                    .journal
+                    .iter()
+                    .any(|(id, _)| id == "paint.stroke"),
+                "the bar never reaches the tool"
+            );
             let (t, _) = h_thumb(&h);
-            assert!((t.x - (p.x + 100.0)).abs() < 3.0, "the thumb followed the pointer: {t:?} vs {p:?}");
+            assert!(
+                (t.x - (p.x + 100.0)).abs() < 3.0,
+                "the thumb followed the pointer: {t:?} vs {p:?}"
+            );
         }
 
         #[test]
@@ -472,12 +686,19 @@ mod tests {
             let x0 = view(&h).center[0];
             click(&mut h, pos2(r.right() - 30.0, p.y));
             let x1 = view(&h).center[0];
-            assert!((x1 - x0 - r.width()).abs() < 1.0, "paged right by the visible width: {x0} -> {x1}");
+            assert!(
+                (x1 - x0 - r.width()).abs() < 1.0,
+                "paged right by the visible width: {x0} -> {x1}"
+            );
             // Paging stops at the end of the image.
             click(&mut h, pos2(r.right() - 30.0, p.y));
             click(&mut h, pos2(r.right() - 30.0, p.y));
             let end = 2000.0 - r.width() / 2.0;
-            assert!((view(&h).center[0] - end).abs() < 1.0, "{}", view(&h).center[0]);
+            assert!(
+                (view(&h).center[0] - end).abs() < 1.0,
+                "{}",
+                view(&h).center[0]
+            );
             click(&mut h, pos2(r.left() + 5.0, p.y));
             assert!((view(&h).center[0] - (end - r.width())).abs() < 1.0);
         }
@@ -502,8 +723,17 @@ mod tests {
                     let (hw, hh) = (r.width() / 0.1 / 2.0, r.height() / 0.1 / 2.0);
                     let c = view(&h).center;
                     assert_eq!(c[0], -50.0, "inside the view: left alone");
-                    assert!((c[1] - hh).abs() < 1e-2, "pushed back in: the image's top on the view's: {c:?}");
-                    assert!(c[0] - hw <= 0.0 && c[0] + hw >= 2000.0 && c[1] - hh <= 0.0 && c[1] + hh >= 1500.0, "{c:?}");
+                    assert!(
+                        (c[1] - hh).abs() < 1e-2,
+                        "pushed back in: the image's top on the view's: {c:?}"
+                    );
+                    assert!(
+                        c[0] - hw <= 0.0
+                            && c[0] + hw >= 2000.0
+                            && c[1] - hh <= 0.0
+                            && c[1] + hh >= 1500.0,
+                        "{c:?}"
+                    );
                 }
             }
         }

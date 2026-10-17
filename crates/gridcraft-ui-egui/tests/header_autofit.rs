@@ -18,16 +18,25 @@ fn harness(selection: &str) -> egui_kittest::Harness<'static, SheetApp> {
             ]}),
         )
         .unwrap();
-    session.execute("home.columnWidth", json!({"cols": "A:D", "width": 100})).unwrap();
-    session.execute("home.rowHeight", json!({"rows": "1:4", "height": 60})).unwrap();
-    session.execute("selection.set", json!({"range": selection})).unwrap();
-    let mut h = egui_kittest::Harness::builder().with_step_dt(1.0 / 60.0).with_size(vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    session
+        .execute("home.columnWidth", json!({"cols": "A:D", "width": 100}))
+        .unwrap();
+    session
+        .execute("home.rowHeight", json!({"rows": "1:4", "height": 60}))
+        .unwrap();
+    session
+        .execute("selection.set", json!({"range": selection}))
+        .unwrap();
+    let mut h = egui_kittest::Harness::builder()
+        .with_step_dt(1.0 / 60.0)
+        .with_size(vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     h.state_mut().session.active_mut().unwrap().undo.clear();
     h.state_mut().session.journal.clear();
@@ -39,7 +48,10 @@ fn edge(h: &egui_kittest::Harness<'_, SheetApp>, rows: bool, index: u32) -> (Pos
     let sheet = app.session.active().unwrap().wb.active().unwrap();
     let geo = Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll);
     let pos = if rows {
-        pos2(geo.rect.left() + geo.header_w / 2.0, geo.y(sheet, index + 1))
+        pos2(
+            geo.rect.left() + geo.header_w / 2.0,
+            geo.y(sheet, index + 1),
+        )
     } else {
         pos2(geo.x(sheet, index + 1), geo.rect.top() + geo.header_h / 2.0)
     };
@@ -47,15 +59,29 @@ fn edge(h: &egui_kittest::Harness<'_, SheetApp>, rows: bool, index: u32) -> (Pos
 }
 
 fn button(h: &mut egui_kittest::Harness<'_, SheetApp>, pos: Pos2, pressed: bool) {
-    h.input_mut()
-        .events
-        .extend([Event::PointerMoved(pos), Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }]);
+    h.input_mut().events.extend([
+        Event::PointerMoved(pos),
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        },
+    ]);
     h.step();
 }
 
 fn sizes(h: &egui_kittest::Harness<'_, SheetApp>, rows: bool) -> Vec<f32> {
     let sheet = h.state().session.active().unwrap().wb.active().unwrap();
-    (0..4).map(|index| if rows { sheet.row_height(index) } else { sheet.col_width(index) }).collect()
+    (0..4)
+        .map(|index| {
+            if rows {
+                sheet.row_height(index)
+            } else {
+                sheet.col_width(index)
+            }
+        })
+        .collect()
 }
 
 #[test]
@@ -80,15 +106,43 @@ fn header_double_click_autofits_selected_areas_or_only_the_clicked_line() {
         button(&mut h, pos, false);
         h.run_steps(2);
 
-        for (index, ((old, new), changed)) in before.iter().zip(sizes(&h, rows)).zip(changed).enumerate() {
-            assert_eq!(*old != new, changed, "selection {selection}, clicked {clicked}, line {index}: {old} → {new}");
+        for (index, ((old, new), changed)) in
+            before.iter().zip(sizes(&h, rows)).zip(changed).enumerate()
+        {
+            assert_eq!(
+                *old != new,
+                changed,
+                "selection {selection}, clicked {clicked}, line {index}: {old} → {new}"
+            );
         }
-        assert_eq!(h.state().session.active().unwrap().selection, selection_before);
-        let command = if rows { "home.autofitRowHeight" } else { "home.autofitColumnWidth" };
-        assert_eq!(h.state().session.journal.iter().filter(|(id, _)| id == command).count(), 1);
+        assert_eq!(
+            h.state().session.active().unwrap().selection,
+            selection_before
+        );
+        let command = if rows {
+            "home.autofitRowHeight"
+        } else {
+            "home.autofitColumnWidth"
+        };
+        assert_eq!(
+            h.state()
+                .session
+                .journal
+                .iter()
+                .filter(|(id, _)| id == command)
+                .count(),
+            1
+        );
         assert_eq!(h.state().session.active().unwrap().undo.len(), 1);
-        h.state_mut().session.execute("edit.undo", json!({})).unwrap();
-        assert_eq!(sizes(&h, rows), before, "AutoFit should undo as a single operation");
+        h.state_mut()
+            .session
+            .execute("edit.undo", json!({}))
+            .unwrap();
+        assert_eq!(
+            sizes(&h, rows),
+            before,
+            "AutoFit should undo as a single operation"
+        );
     }
 }
 
@@ -98,11 +152,19 @@ fn dragging_a_header_boundary_still_resizes_normally() {
         let mut h = harness(if rows { "2:2" } else { "B:B" });
         let before = sizes(&h, rows);
         let (start, zoom) = edge(&h, rows, 1);
-        let delta = if rows { vec2(0.0, 30.0) } else { vec2(30.0, 0.0) };
+        let delta = if rows {
+            vec2(0.0, 30.0)
+        } else {
+            vec2(30.0, 0.0)
+        };
         button(&mut h, start, true);
-        h.input_mut().events.push(Event::PointerMoved(start + delta / 2.0));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(start + delta / 2.0));
         h.step();
-        h.input_mut().events.push(Event::PointerMoved(start + delta));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(start + delta));
         h.step();
         button(&mut h, start + delta, false);
         h.run_steps(2);
@@ -111,7 +173,13 @@ fn dragging_a_header_boundary_still_resizes_normally() {
         for index in [0, 2, 3] {
             assert_eq!(before[index], after[index]);
         }
-        assert!(!h.state().session.journal.iter().any(|(id, _)| id.starts_with("home.autofit")));
+        assert!(
+            !h.state()
+                .session
+                .journal
+                .iter()
+                .any(|(id, _)| id.starts_with("home.autofit"))
+        );
     }
 }
 
@@ -133,11 +201,19 @@ fn dragging_a_boundary_inside_a_multi_area_selection_resizes_every_selected_line
         let mut h = harness(selection);
         let before = sizes(&h, rows);
         let (start, zoom) = edge(&h, rows, dragged);
-        let delta = if rows { vec2(0.0, 30.0) } else { vec2(30.0, 0.0) };
+        let delta = if rows {
+            vec2(0.0, 30.0)
+        } else {
+            vec2(30.0, 0.0)
+        };
         button(&mut h, start, true);
-        h.input_mut().events.push(Event::PointerMoved(start + delta / 2.0));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(start + delta / 2.0));
         h.step();
-        h.input_mut().events.push(Event::PointerMoved(start + delta));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(start + delta));
         h.step();
         button(&mut h, start + delta, false);
         h.run_steps(2);
@@ -145,11 +221,25 @@ fn dragging_a_boundary_inside_a_multi_area_selection_resizes_every_selected_line
         let expected = (before[dragged as usize] + 30.0 / zoom).round();
         for (index, changed) in changed.iter().enumerate() {
             let want = if *changed { expected } else { before[index] };
-            assert_eq!(after[index], want, "selection {selection}, dragged {dragged}, line {index}");
+            assert_eq!(
+                after[index], want,
+                "selection {selection}, dragged {dragged}, line {index}"
+            );
         }
-        assert_eq!(h.state().session.active().unwrap().undo.len(), 1, "selection {selection}: one undo step");
-        h.state_mut().session.execute("edit.undo", json!({})).unwrap();
-        assert_eq!(sizes(&h, rows), before, "selection {selection}: undo restores every line");
+        assert_eq!(
+            h.state().session.active().unwrap().undo.len(),
+            1,
+            "selection {selection}: one undo step"
+        );
+        h.state_mut()
+            .session
+            .execute("edit.undo", json!({}))
+            .unwrap();
+        assert_eq!(
+            sizes(&h, rows),
+            before,
+            "selection {selection}: undo restores every line"
+        );
     }
 }
 
@@ -158,10 +248,25 @@ fn table_filter_autofit_works_through_command_and_header_double_click() {
     for zoom in [50, 100, 200] {
         for double_click in [false, true] {
             let mut h = harness("A:A");
-            h.state_mut().session.execute("range.setValues", json!({"range":"A1", "values":[["Quarterly Revenue"], ["1"], ["2"]]})).unwrap();
-            h.state_mut().session.execute("insert.table", json!({"range":"A1:A3", "header":true})).unwrap();
-            h.state_mut().session.execute("home.rowHeight", json!({"rows":"1:1", "height":20})).unwrap();
-            h.state_mut().session.execute("view.zoom", json!({"percent":zoom})).unwrap();
+            h.state_mut()
+                .session
+                .execute(
+                    "range.setValues",
+                    json!({"range":"A1", "values":[["Quarterly Revenue"], ["1"], ["2"]]}),
+                )
+                .unwrap();
+            h.state_mut()
+                .session
+                .execute("insert.table", json!({"range":"A1:A3", "header":true}))
+                .unwrap();
+            h.state_mut()
+                .session
+                .execute("home.rowHeight", json!({"rows":"1:1", "height":20}))
+                .unwrap();
+            h.state_mut()
+                .session
+                .execute("view.zoom", json!({"percent":zoom}))
+                .unwrap();
             h.run_steps(3);
             h.state_mut().session.active_mut().unwrap().undo.clear();
             h.state_mut().session.journal.clear();
@@ -173,7 +278,9 @@ fn table_filter_autofit_works_through_command_and_header_double_click() {
                 button(&mut h, pos, true);
                 button(&mut h, pos, false);
             } else {
-                h.state_mut().run("home.autofitColumnWidth", json!({"cols":"A:A"})).unwrap();
+                h.state_mut()
+                    .run("home.autofitColumnWidth", json!({"cols":"A:A"}))
+                    .unwrap();
             }
             h.run_steps(2);
             let app = h.state();
@@ -182,11 +289,27 @@ fn table_filter_autofit_works_through_command_and_header_double_click() {
             let cell = gridcraft_engine::core::CellRef::new(0, 0);
             let rect = geo.cell_rect(sheet, cell);
             let button = gridcraft_ui_egui::grid::filter_button_rect(&geo, sheet, cell);
-            let style = app.session.active().unwrap().wb.styles.get(sheet.style_id(cell));
-            let text_width = gridcraft_engine::cmd::format::approx_text_width("Quarterly Revenue", style.font.size, style.font.bold) * geo.z;
-            assert!(rect.left() + text_width + 2.5 * geo.z < button.left(), "heading overlaps filter: zoom={zoom}, double_click={double_click}");
+            let style = app
+                .session
+                .active()
+                .unwrap()
+                .wb
+                .styles
+                .get(sheet.style_id(cell));
+            let text_width = gridcraft_engine::cmd::format::approx_text_width(
+                "Quarterly Revenue",
+                style.font.size,
+                style.font.bold,
+            ) * geo.z;
+            assert!(
+                rect.left() + text_width + 2.5 * geo.z < button.left(),
+                "heading overlaps filter: zoom={zoom}, double_click={double_click}"
+            );
             assert_eq!(app.session.active().unwrap().undo.len(), 1);
-            h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+            h.state_mut()
+                .session
+                .execute("edit.undo", json!({}))
+                .unwrap();
             assert_eq!(sizes(&h, false)[0], 100.0);
         }
     }

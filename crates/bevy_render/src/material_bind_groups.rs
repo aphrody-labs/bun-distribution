@@ -12,9 +12,9 @@ use bevy_ecs::{
     schedule::IntoScheduleConfigs as _,
     system::{Commands, Res, ResMut, SystemParamItem},
 };
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
-use bevy_utils::{default, TypeIdHashMap};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
+use bevy_utils::{TypeIdHashMap, default};
 use bytemuck::{Pod, Zeroable};
 use core::hash::Hash;
 use core::{cmp::Ordering, iter, mem, ops::Range};
@@ -22,6 +22,7 @@ use std::any::TypeId;
 use tracing::{error, trace};
 
 use crate::{
+    GpuResourceAppExt as _, Render, RenderApp, RenderStartup, RenderSystems,
     erased_render_asset::PrepareAssetError,
     render_asset::RenderAssets,
     render_resource::{
@@ -29,7 +30,6 @@ use crate::{
         OwnedBindingResource, PipelineCache, UnpreparedBindingResource, UnpreparedBindingResources,
     },
     storage::ShaderBuffer,
-    GpuResourceAppExt as _, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use crate::{
     render_resource::{
@@ -1302,8 +1302,10 @@ impl MaterialBindlessSlab {
                         .insert(binding_resource_id, buffer.clone());
                     allocated_resource_slots.insert(bindless_index, slot);
 
-                    debug_assert!(pre_existing_slot
-                        .is_none_or(|pre_existing_slot| *pre_existing_slot == slot));
+                    debug_assert!(
+                        pre_existing_slot
+                            .is_none_or(|pre_existing_slot| *pre_existing_slot == slot)
+                    );
                     pre_existing_slot.is_none()
                 }
 
@@ -1315,8 +1317,10 @@ impl MaterialBindlessSlab {
                         .insert(binding_resource_id, shader_buffer.clone());
                     allocated_resource_slots.insert(bindless_index, slot);
 
-                    debug_assert!(pre_existing_slot
-                        .is_none_or(|pre_existing_slot| *pre_existing_slot == slot));
+                    debug_assert!(
+                        pre_existing_slot
+                            .is_none_or(|pre_existing_slot| *pre_existing_slot == slot)
+                    );
                     pre_existing_slot.is_none()
                 }
 
@@ -1347,8 +1351,10 @@ impl MaterialBindlessSlab {
                         .insert(binding_resource_id, texture_view.clone());
                     allocated_resource_slots.insert(bindless_index, slot);
 
-                    debug_assert!(pre_existing_slot
-                        .is_none_or(|pre_existing_slot| *pre_existing_slot == slot));
+                    debug_assert!(
+                        pre_existing_slot
+                            .is_none_or(|pre_existing_slot| *pre_existing_slot == slot)
+                    );
                     pre_existing_slot.is_none()
                 }
 
@@ -1361,8 +1367,10 @@ impl MaterialBindlessSlab {
                         .insert(binding_resource_id, sampler.clone());
                     allocated_resource_slots.insert(bindless_index, slot);
 
-                    debug_assert!(pre_existing_slot
-                        .is_none_or(|pre_existing_slot| *pre_existing_slot == slot));
+                    debug_assert!(
+                        pre_existing_slot
+                            .is_none_or(|pre_existing_slot| *pre_existing_slot == slot)
+                    );
                     pre_existing_slot.is_none()
                 }
             };

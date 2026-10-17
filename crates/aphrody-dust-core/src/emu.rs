@@ -133,7 +133,9 @@ impl<E: cpu::Engine> Emu<E> {
         E::Arm7Data::post_load(self);
         E::Arm9Data::post_load(self);
         self.swram.recalc(&mut self.arm7, &mut self.arm9);
-        self.gpu.vram.restore_mappings(&mut self.arm7, &mut self.arm9);
+        self.gpu
+            .vram
+            .restore_mappings(&mut self.arm7, &mut self.arm9);
         arm9::cp15::Cp15::post_load(self);
         #[cfg(feature = "xq-audio")]
         Audio::update_next_scaled_sample_index(self);
@@ -283,7 +285,11 @@ impl Builder {
         let mut emu = Emu {
             global_engine_data,
             main_mem: OwnedBytesCellPtr::new_zeroed(),
-            main_mem_mask: MainMemMask::new(if self.is_debugger { 0x7F_FFFF } else { 0x3F_FFFF }),
+            main_mem_mask: MainMemMask::new(if self.is_debugger {
+                0x7F_FFFF
+            } else {
+                0x3F_FFFF
+            }),
             swram: Swram::new(),
             global_ex_mem_control: GlobalExMemControl(0x6000),
             ipc: Ipc::new(),
@@ -340,7 +346,8 @@ impl Builder {
         E::Arm7Data::setup(&mut emu);
         E::Arm9Data::setup(&mut emu);
         if self.direct_boot {
-            emu.setup_direct_boot().map_err(|()| BuildError::MissingRom)?;
+            emu.setup_direct_boot()
+                .map_err(|()| BuildError::MissingRom)?;
         }
         Ok(emu)
     }
@@ -428,7 +435,10 @@ impl<E: cpu::Engine> Emu<E> {
         // Firmware user settings bad (0 == OK)
         write_main_mem!(0x7F_F864, 0);
         // Firmware user settings FLASH address
-        write_main_mem!(0x7F_F868, (self.spi.firmware.contents().read_le::<u16>(0x20) as u32) << 3);
+        write_main_mem!(
+            0x7F_F868,
+            (self.spi.firmware.contents().read_le::<u16>(0x20) as u32) << 3
+        );
         // Firmware part 5 (data/graphics) CRC16
         write_main_mem!(0x7F_F874, self.spi.firmware.contents().read_le::<u16>(0x26));
         // Firmware part 3/4 (arm7/9 GUI/Wi-Fi code) CRC16, zero at cart boot time
@@ -493,7 +503,8 @@ impl<E: cpu::Engine> Emu<E> {
         Cp15::write_dtcm_control(self, arm9::cp15::TcmControl(0x0300_000A));
         Cp15::write_itcm_control(self, arm9::cp15::TcmControl(0x20));
         Cp15::write_control(self, arm9::cp15::Control(0x0005_2078));
-        self.swram.write_control(swram::Control(3), &mut self.arm7, &mut self.arm9);
+        self.swram
+            .write_control(swram::Control(3), &mut self.arm7, &mut self.arm9);
         self.gpu.write_power_control(gpu::PowerControl(0x820F));
 
         // –––––––––––––––    Program boot code    –––––––––––––––
@@ -571,7 +582,9 @@ impl<E: cpu::Engine> Emu<E> {
 
     #[inline]
     pub fn request_shutdown(&mut self) {
-        self.spi.power.request_shutdown(&mut self.arm7.schedule, &mut self.schedule);
+        self.spi
+            .power
+            .request_shutdown(&mut self.arm7.schedule, &mut self.schedule);
     }
 }
 

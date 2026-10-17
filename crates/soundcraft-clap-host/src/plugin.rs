@@ -42,8 +42,20 @@ pub struct ClapPlugin {
 
 impl ClapPlugin {
     pub(crate) fn new(inst: Instance, info: &'static PluginInfo) -> ClapPlugin {
-        let ids: Vec<u32> = info.params.iter().map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX)).collect();
-        let values = info.params.iter().zip(&ids).map(|(p, id)| inst.param_value(*id).map_or(p.default, |v| p.clamp(v as f32))).collect();
+        let ids: Vec<u32> = info
+            .params
+            .iter()
+            .map(|p| p.id.parse::<u32>().unwrap_or(u32::MAX))
+            .collect();
+        let values = info
+            .params
+            .iter()
+            .zip(&ids)
+            .map(|(p, id)| {
+                inst.param_value(*id)
+                    .map_or(p.default, |v| p.clamp(v as f32))
+            })
+            .collect();
         ClapPlugin {
             inst,
             info,
@@ -80,13 +92,20 @@ impl ClapPlugin {
         if self.queue.len() >= self.queue.capacity() {
             return;
         }
-        let pos = self.queue.iter().rposition(|q| q.time() <= e.time()).map_or(0, |i| i + 1);
+        let pos = self
+            .queue
+            .iter()
+            .rposition(|q| q.time() <= e.time())
+            .map_or(0, |i| i + 1);
         self.queue.insert(pos, e);
     }
 }
 
 fn pick_main(ports: &[crate::ffi::PortInfo]) -> Option<usize> {
-    ports.iter().position(|p| p.main && p.channels > 0).or_else(|| ports.iter().position(|p| p.channels > 0))
+    ports
+        .iter()
+        .position(|p| p.main && p.channels > 0)
+        .or_else(|| ports.iter().position(|p| p.channels > 0))
 }
 
 fn note_mode(p: Option<NotePort>) -> NoteMode {
@@ -103,7 +122,11 @@ impl Plugin for ClapPlugin {
     }
 
     fn prepare(&mut self, sample_rate: f32, max_block: usize, channels: usize) {
-        let sr = if sample_rate.is_finite() && sample_rate > 0.0 { f64::from(sample_rate) } else { 48_000.0 };
+        let sr = if sample_rate.is_finite() && sample_rate > 0.0 {
+            f64::from(sample_rate)
+        } else {
+            48_000.0
+        };
         let mb = max_block.clamp(1, MAX_BLOCK);
         self.channels = channels.clamp(1, MAX_CHANNELS);
         self.inst.deactivate();
@@ -117,10 +140,16 @@ impl Plugin for ClapPlugin {
         self.notes = note_mode(self.inst.note_port());
         self.max_block = mb;
         self.inst.state().restart.store(false, Ordering::Relaxed);
-        match self.inst.activate(sr, 1, u32::try_from(mb).unwrap_or(u32::MAX)) {
+        match self
+            .inst
+            .activate(sr, 1, u32::try_from(mb).unwrap_or(u32::MAX))
+        {
             Ok(()) => {
                 self.latency = self.inst.latency() as usize;
-                self.inst.state().latency_changed.store(false, Ordering::Relaxed);
+                self.inst
+                    .state()
+                    .latency_changed
+                    .store(false, Ordering::Relaxed);
             }
             Err(e) => {
                 log::warn!("{}: {e}", self.info.id);
@@ -136,17 +165,29 @@ impl Plugin for ClapPlugin {
     }
 
     fn set_param(&mut self, id: &str, value: f32) -> bool {
-        let Some(i) = self.info.params.iter().position(|p| p.id == id) else { return false };
-        let (Some(pi), Some(&cid)) = (self.info.params.get(i), self.ids.get(i)) else { return false };
+        let Some(i) = self.info.params.iter().position(|p| p.id == id) else {
+            return false;
+        };
+        let (Some(pi), Some(&cid)) = (self.info.params.get(i), self.ids.get(i)) else {
+            return false;
+        };
         let v = pi.clamp(value);
         if let Some(slot) = self.values.get_mut(i) {
             *slot = v;
         }
         // Coalesce with a pending change of the same parameter.
-        if let Some(Event::Param { value, .. }) = self.queue.iter_mut().find(|e| matches!(e, Event::Param { id, .. } if *id == cid)) {
+        if let Some(Event::Param { value, .. }) = self
+            .queue
+            .iter_mut()
+            .find(|e| matches!(e, Event::Param { id, .. } if *id == cid))
+        {
             *value = f64::from(v);
         } else {
-            self.push(Event::Param { time: 0, id: cid, value: f64::from(v) });
+            self.push(Event::Param {
+                time: 0,
+                id: cid,
+                value: f64::from(v),
+            });
         }
         true
     }
@@ -179,29 +220,51 @@ impl Plugin for ClapPlugin {
             if let Some(p) = self.in_main {
                 for c in 0..self.inputs.channels(p) {
                     let src = io.get(c.min(ch - 1)).and_then(|s| s.get(start..start + n));
-                    if let (Some(src), Some(dst)) = (src, self.inputs.channel_mut(p, c).and_then(|d| d.get_mut(..n))) {
+                    if let (Some(src), Some(dst)) = (
+                        src,
+                        self.inputs.channel_mut(p, c).and_then(|d| d.get_mut(..n)),
+                    ) {
                         dst.copy_from_slice(src);
                     }
                 }
             }
-            let k = self.queue.iter().position(|e| e.time() >= end).unwrap_or(self.queue.len());
+            let k = self
+                .queue
+                .iter()
+                .position(|e| e.time() >= end)
+                .unwrap_or(self.queue.len());
             let offset = u32::try_from(start).unwrap_or(u32::MAX);
             let events = self.queue.get(..k).unwrap_or(&[]);
-            let r = self.inst.process(n, self.steady, &mut self.inputs, &mut self.outputs, events, offset);
+            let r = self.inst.process(
+                n,
+                self.steady,
+                &mut self.inputs,
+                &mut self.outputs,
+                events,
+                offset,
+            );
             self.queue.drain(..k);
             self.steady = self.steady.saturating_add(i64::try_from(n).unwrap_or(0));
             match (r, self.out_main) {
                 (Ok(_), Some(p)) => {
                     let oc = self.outputs.channels(p);
                     for (c, dst) in io.iter_mut().take(ch).enumerate() {
-                        let Some(dst) = dst.get_mut(start..start + n) else { continue };
+                        let Some(dst) = dst.get_mut(start..start + n) else {
+                            continue;
+                        };
                         if ch == 1 && oc >= 2 {
-                            if let (Some(l), Some(r)) = (self.outputs.channel(p, 0), self.outputs.channel(p, 1)) {
+                            if let (Some(l), Some(r)) =
+                                (self.outputs.channel(p, 0), self.outputs.channel(p, 1))
+                            {
                                 for ((d, a), b) in dst.iter_mut().zip(l).zip(r) {
                                     *d = 0.5 * (a + b);
                                 }
                             }
-                        } else if let Some(src) = self.outputs.channel(p, c.min(oc.saturating_sub(1))).and_then(|s| s.get(..n)) {
+                        } else if let Some(src) = self
+                            .outputs
+                            .channel(p, c.min(oc.saturating_sub(1)))
+                            .and_then(|s| s.get(..n))
+                        {
                             dst.copy_from_slice(src);
                         }
                     }
@@ -224,8 +287,15 @@ impl Plugin for ClapPlugin {
         let time = u32::try_from(offset).unwrap_or(u32::MAX);
         let vel = velocity.min(127);
         match self.notes {
-            NoteMode::Clap => self.push(Event::NoteOn { time, key: note, velocity: f64::from(vel) / 127.0 }),
-            NoteMode::Midi => self.push(Event::Midi { time, data: [0x90, note, vel] }),
+            NoteMode::Clap => self.push(Event::NoteOn {
+                time,
+                key: note,
+                velocity: f64::from(vel) / 127.0,
+            }),
+            NoteMode::Midi => self.push(Event::Midi {
+                time,
+                data: [0x90, note, vel],
+            }),
             NoteMode::None => return,
         }
         if let Some(h) = self.held.get_mut(note as usize) {
@@ -240,7 +310,10 @@ impl Plugin for ClapPlugin {
         let time = u32::try_from(offset).unwrap_or(u32::MAX);
         match self.notes {
             NoteMode::Clap => self.push(Event::NoteOff { time, key: note }),
-            NoteMode::Midi => self.push(Event::Midi { time, data: [0x80, note, 0] }),
+            NoteMode::Midi => self.push(Event::Midi {
+                time,
+                data: [0x80, note, 0],
+            }),
             NoteMode::None => return,
         }
         if let Some(h) = self.held.get_mut(note as usize) {
@@ -269,7 +342,10 @@ impl Plugin for ClapPlugin {
     }
 
     fn open_editor(&mut self) -> Result<(), String> {
-        let link = self.inst.gui().ok_or_else(|| "this plugin has no editor".to_string())?;
+        let link = self
+            .inst
+            .gui()
+            .ok_or_else(|| "this plugin has no editor".to_string())?;
         link.open(self.info.name)
     }
 
@@ -281,7 +357,11 @@ impl Plugin for ClapPlugin {
 
     fn editor(&mut self) -> Option<Box<dyn PluginEditor>> {
         let link = self.inst.gui()?;
-        Some(Box::new(ClapEditor { link, info: self.info, ids: self.ids.clone() }))
+        Some(Box::new(ClapEditor {
+            link,
+            info: self.info,
+            ids: self.ids.clone(),
+        }))
     }
 }
 
@@ -312,8 +392,12 @@ impl PluginEditor for ClapEditor {
         let _ = self.link.host().dirty.swap(false, Ordering::Relaxed);
         let mut out: Vec<(String, f32)> = Vec::new();
         for (cid, v) in raw {
-            let Some(i) = self.ids.iter().position(|&x| x == cid) else { continue };
-            let Some(p) = self.info.params.get(i) else { continue };
+            let Some(i) = self.ids.iter().position(|&x| x == cid) else {
+                continue;
+            };
+            let Some(p) = self.info.params.get(i) else {
+                continue;
+            };
             let v = p.clamp(v as f32);
             // Keep only the latest value per parameter.
             match out.iter_mut().find(|(id, _)| id == p.id) {

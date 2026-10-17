@@ -18,7 +18,11 @@ pub enum ScrollSpeed {
 }
 
 /// egui's own `line_scroll_speed`, which its wheel zoom rate is tuned against.
-const EGUI_LINE_POINTS: f32 = if cfg!(target_arch = "wasm32") { 8.0 } else { 40.0 };
+const EGUI_LINE_POINTS: f32 = if cfg!(target_arch = "wasm32") {
+    8.0
+} else {
+    40.0
+};
 
 /// Points one wheel line scrolls at Normal speed.
 const NORMAL_LINE_POINTS: f32 = if cfg!(target_arch = "wasm32") {
@@ -59,7 +63,12 @@ impl ScrollSpeed {
         let points = self.line_points();
         let zoom_scale = EGUI_LINE_POINTS / points;
         for event in &mut raw.events {
-            if let egui::Event::MouseWheel { unit: egui::MouseWheelUnit::Line, delta, modifiers, .. } = event
+            if let egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta,
+                modifiers,
+                ..
+            } = event
                 && modifiers.command
             {
                 *delta *= zoom_scale;
@@ -76,7 +85,9 @@ impl ScrollSpeed {
     }
 
     pub fn parse(value: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|s| s.label().eq_ignore_ascii_case(value))
+        Self::ALL
+            .into_iter()
+            .find(|s| s.label().eq_ignore_ascii_case(value))
     }
 }
 
@@ -85,8 +96,16 @@ mod tests {
     use super::*;
 
     fn wheel(unit: egui::MouseWheelUnit, dy: f32, command: bool) -> egui::Event {
-        let modifiers = egui::Modifiers { command, ..egui::Modifiers::NONE };
-        egui::Event::MouseWheel { unit, delta: egui::vec2(0.0, dy), phase: egui::TouchPhase::Move, modifiers }
+        let modifiers = egui::Modifiers {
+            command,
+            ..egui::Modifiers::NONE
+        };
+        egui::Event::MouseWheel {
+            unit,
+            delta: egui::vec2(0.0, dy),
+            phase: egui::TouchPhase::Move,
+            modifiers,
+        }
     }
 
     #[test]
@@ -102,18 +121,36 @@ mod tests {
                 ..Default::default()
             };
             speed.apply(&ctx, &mut raw);
-            assert_eq!(ctx.options(|o| o.input_options.line_scroll_speed), speed.line_points());
-            let dy: Vec<f32> =
-                raw.events.iter().filter_map(|e| if let egui::Event::MouseWheel { delta, .. } = e { Some(delta.y) } else { None }).collect();
+            assert_eq!(
+                ctx.options(|o| o.input_options.line_scroll_speed),
+                speed.line_points()
+            );
+            let dy: Vec<f32> = raw
+                .events
+                .iter()
+                .filter_map(|e| {
+                    if let egui::Event::MouseWheel { delta, .. } = e {
+                        Some(delta.y)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
             // ⌘/Ctrl lines scaled back so egui's zoom sees EGUI_LINE_POINTS per line; plain lines
             // and point deltas untouched.
-            assert!((dy[0] * speed.line_points() - EGUI_LINE_POINTS).abs() < 1e-3, "{speed:?}: {dy:?}");
+            assert!(
+                (dy[0] * speed.line_points() - EGUI_LINE_POINTS).abs() < 1e-3,
+                "{speed:?}: {dy:?}"
+            );
             assert_eq!((dy[1], dy[2]), (1.0, 30.0));
         }
         assert_eq!(ScrollSpeed::parse("FAST"), Some(ScrollSpeed::Fast));
         assert_eq!(ScrollSpeed::parse("warp"), None);
         // The labels are translated in their own context: they qualify "speed".
         let ru = crate::i18n::Lang::from_code("ru").expect("Russian ships");
-        assert_eq!(crate::i18n::tr_ctx(ru, "scroll speed", ScrollSpeed::Slow.label()), "Низкая");
+        assert_eq!(
+            crate::i18n::tr_ctx(ru, "scroll speed", ScrollSpeed::Slow.label()),
+            "Низкая"
+        );
     }
 }

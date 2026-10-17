@@ -5,7 +5,9 @@
 //! depend on them.
 
 use crate::cdf::Cdfs;
-use crate::decide::{FrameGeom, Leaf, Node, intra_uv_tx_type, scan_for, tx_in_set, tx_set, tx_size_for};
+use crate::decide::{
+    FrameGeom, Leaf, Node, intra_uv_tx_type, scan_for, tx_in_set, tx_set, tx_size_for,
+};
 use crate::loopfilter::LfInfo;
 use crate::symbol::SymbolWriter;
 use crate::tables::*;
@@ -167,10 +169,16 @@ impl<'a> TileWriter<'a> {
         let has_cols = c + half < mi_cols;
         let split = matches!(node, Node::Split(_));
         let bsl = MI_WIDTH_LOG2[bsize] as usize;
-        let above = avail_u && (MI_WIDTH_LOG2[self.mi.mi_size[self.mi.idx(r - 1, c)] as usize] as usize) < bsl;
-        let left = avail_l && (MI_HEIGHT_LOG2[self.mi.mi_size[self.mi.idx(r, c - 1)] as usize] as usize) < bsl;
+        let above = avail_u
+            && (MI_WIDTH_LOG2[self.mi.mi_size[self.mi.idx(r - 1, c)] as usize] as usize) < bsl;
+        let left = avail_l
+            && (MI_HEIGHT_LOG2[self.mi.mi_size[self.mi.idx(r, c - 1)] as usize] as usize) < bsl;
         let ctx = left as usize * 2 + above as usize;
-        let partition = if split { PARTITION_SPLIT } else { PARTITION_NONE };
+        let partition = if split {
+            PARTITION_SPLIT
+        } else {
+            PARTITION_NONE
+        };
         if has_rows && has_cols {
             let cdf: &mut [u16] = match bsl {
                 1 => &mut self.cdf.partition_w8[ctx],
@@ -189,10 +197,20 @@ impl<'a> TileWriter<'a> {
             let pr = |k: usize| pcdf[k] as i32 - if k == 0 { 0 } else { pcdf[k - 1] as i32 };
             let psum = if has_cols {
                 // split_or_horz
-                pr(PARTITION_VERT) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_VERT_A) + pr(PARTITION_VERT_B) + pr(PARTITION_VERT_4)
+                pr(PARTITION_VERT)
+                    + pr(PARTITION_SPLIT)
+                    + pr(PARTITION_HORZ_A)
+                    + pr(PARTITION_VERT_A)
+                    + pr(PARTITION_VERT_B)
+                    + pr(PARTITION_VERT_4)
             } else {
                 // split_or_vert
-                pr(PARTITION_HORZ) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_HORZ_B) + pr(PARTITION_VERT_A) + pr(PARTITION_HORZ_4)
+                pr(PARTITION_HORZ)
+                    + pr(PARTITION_SPLIT)
+                    + pr(PARTITION_HORZ_A)
+                    + pr(PARTITION_HORZ_B)
+                    + pr(PARTITION_VERT_A)
+                    + pr(PARTITION_HORZ_4)
             };
             let cdf = [((1i32 << 15) - psum) as u16, 1 << 15, 0];
             self.sw.symbol_fixed(1, &cdf);
@@ -235,8 +253,16 @@ impl<'a> TileWriter<'a> {
         let mut y_mode = b.y_mode;
         if self.intra_only {
             self.sw.symbol(b.skip as usize, &mut self.cdf.skip[ctx]);
-            let above = if self.avail_u { self.mi.y_mode[self.mi.idx(r - 1, c)] as usize } else { DC_PRED };
-            let left = if self.avail_l { self.mi.y_mode[self.mi.idx(r, c - 1)] as usize } else { DC_PRED };
+            let above = if self.avail_u {
+                self.mi.y_mode[self.mi.idx(r - 1, c)] as usize
+            } else {
+                DC_PRED
+            };
+            let left = if self.avail_l {
+                self.mi.y_mode[self.mi.idx(r, c - 1)] as usize
+            } else {
+                DC_PRED
+            };
             let actx = INTRA_MODE_CONTEXT[above] as usize;
             let lctx = INTRA_MODE_CONTEXT[left] as usize;
             self.sw.symbol(b.y_mode, &mut self.kf_y_mode[actx][lctx]);
@@ -244,18 +270,35 @@ impl<'a> TileWriter<'a> {
         } else {
             self.sw.symbol(b.skip as usize, &mut self.cdf.skip[ctx]);
             // is_inter
-            let left = if self.avail_l { self.mi.ref_frame[self.mi.idx(r, c - 1)] } else { [INTRA_FRAME as i8, -1] };
-            let above = if self.avail_u { self.mi.ref_frame[self.mi.idx(r - 1, c)] } else { [INTRA_FRAME as i8, -1] };
+            let left = if self.avail_l {
+                self.mi.ref_frame[self.mi.idx(r, c - 1)]
+            } else {
+                [INTRA_FRAME as i8, -1]
+            };
+            let above = if self.avail_u {
+                self.mi.ref_frame[self.mi.idx(r - 1, c)]
+            } else {
+                [INTRA_FRAME as i8, -1]
+            };
             let left_intra = left[0] <= INTRA_FRAME as i8;
             let above_intra = above[0] <= INTRA_FRAME as i8;
             let ctx = if self.avail_u && self.avail_l {
-                if left_intra && above_intra { 3 } else { (left_intra || above_intra) as usize }
+                if left_intra && above_intra {
+                    3
+                } else {
+                    (left_intra || above_intra) as usize
+                }
             } else if self.avail_u || self.avail_l {
-                2 * (if self.avail_u { above_intra } else { left_intra }) as usize
+                2 * (if self.avail_u {
+                    above_intra
+                } else {
+                    left_intra
+                }) as usize
             } else {
                 0
             };
-            self.sw.symbol(b.is_inter as usize, &mut self.cdf.is_inter[ctx]);
+            self.sw
+                .symbol(b.is_inter as usize, &mut self.cdf.is_inter[ctx]);
             if b.is_inter {
                 y_mode = self.inter_block_mode_info(b, left, above);
             } else {
@@ -270,7 +313,11 @@ impl<'a> TileWriter<'a> {
             for x in 0..cols {
                 let i = self.mi.idx(r + y, c + x);
                 self.mi.y_mode[i] = y_mode as u8;
-                self.mi.ref_frame[i] = if b.is_inter { [LAST_FRAME as i8, -1] } else { [INTRA_FRAME as i8, -1] };
+                self.mi.ref_frame[i] = if b.is_inter {
+                    [LAST_FRAME as i8, -1]
+                } else {
+                    [INTRA_FRAME as i8, -1]
+                };
                 self.mi.written[i] = true;
                 if b.is_inter {
                     self.mi.mv[i] = b.mv;
@@ -295,7 +342,14 @@ impl<'a> TileWriter<'a> {
             assert!(log2 <= 5, "64x64 blocks are coded as skip blocks");
             for plane in 0..3 {
                 let s = (plane > 0) as u32;
-                self.coeffs(plane, (c * 4) >> s, (r * 4) >> s, tx_size_for(log2 - s), b, &b.coefs[plane]);
+                self.coeffs(
+                    plane,
+                    (c * 4) >> s,
+                    (r * 4) >> s,
+                    tx_size_for(log2 - s),
+                    b,
+                    &b.coefs[plane],
+                );
             }
         }
         for y in 0..rows {
@@ -314,23 +368,33 @@ impl<'a> TileWriter<'a> {
             let tx = tx_size_for(log2 - s as u32) as u8;
             let (r0, c0, m) = (r >> s, c >> s, n4 >> s);
             for y in r0..r0 + m {
-                self.lf_tx[plane][y * stride + c0..y * stride + c0 + m].iter_mut().for_each(|v| *v = tx);
+                self.lf_tx[plane][y * stride + c0..y * stride + c0 + m]
+                    .iter_mut()
+                    .for_each(|v| *v = tx);
             }
         }
     }
 
     fn intra_angle_and_uv(&mut self, b: &Leaf) {
         if self.bsize >= BLOCK_8X8 && is_directional(b.y_mode) {
-            self.sw.symbol(MAX_ANGLE_DELTA, &mut self.cdf.angle_delta[b.y_mode - V_PRED]);
+            self.sw.symbol(
+                MAX_ANGLE_DELTA,
+                &mut self.cdf.angle_delta[b.y_mode - V_PRED],
+            );
         }
         let bs = block_size_px(self.bsize);
         if bs <= 32 {
-            self.sw.symbol(b.uv_mode, &mut self.cdf.uv_mode_cfl_allowed[b.y_mode]);
+            self.sw
+                .symbol(b.uv_mode, &mut self.cdf.uv_mode_cfl_allowed[b.y_mode]);
         } else {
-            self.sw.symbol(b.uv_mode, &mut self.cdf.uv_mode_cfl_not_allowed[b.y_mode]);
+            self.sw
+                .symbol(b.uv_mode, &mut self.cdf.uv_mode_cfl_not_allowed[b.y_mode]);
         }
         if self.bsize >= BLOCK_8X8 && is_directional(b.uv_mode) {
-            self.sw.symbol(MAX_ANGLE_DELTA, &mut self.cdf.angle_delta[b.uv_mode - V_PRED]);
+            self.sw.symbol(
+                MAX_ANGLE_DELTA,
+                &mut self.cdf.angle_delta[b.uv_mode - V_PRED],
+            );
         }
     }
 
@@ -352,14 +416,24 @@ impl<'a> TileWriter<'a> {
             std::cmp::Ordering::Equal => 1,
             std::cmp::Ordering::Greater => 2,
         };
-        let (last, last2, last3, gold) = (count(LAST_FRAME as i8), count(LAST2_FRAME as i8), count(LAST3_FRAME as i8), count(GOLDEN_FRAME as i8));
-        let (bwd, alt2, alt) = (count(BWDREF_FRAME as i8), count(ALTREF2_FRAME as i8), count(ALTREF_FRAME as i8));
+        let (last, last2, last3, gold) = (
+            count(LAST_FRAME as i8),
+            count(LAST2_FRAME as i8),
+            count(LAST3_FRAME as i8),
+            count(GOLDEN_FRAME as i8),
+        );
+        let (bwd, alt2, alt) = (
+            count(BWDREF_FRAME as i8),
+            count(ALTREF2_FRAME as i8),
+            count(ALTREF_FRAME as i8),
+        );
         let ctx_p1 = cmp(last + last2 + last3 + gold, bwd + alt2 + alt);
         let ctx_comp_ref = cmp(last + last2, last3 + gold);
         let ctx_comp_ref_p1 = cmp(last, last2);
         self.sw.symbol(0, &mut self.cdf.single_ref[ctx_p1][0]);
         self.sw.symbol(0, &mut self.cdf.single_ref[ctx_comp_ref][2]);
-        self.sw.symbol(0, &mut self.cdf.single_ref[ctx_comp_ref_p1][3]);
+        self.sw
+            .symbol(0, &mut self.cdf.single_ref[ctx_comp_ref_p1][3]);
         self.find_mv_stack();
         let mv = b.mv;
         let s = &self.mvs;
@@ -373,11 +447,14 @@ impl<'a> TileWriter<'a> {
             NEWMV
         };
         let (nctx, zctx, rctx) = (s.new_mv_context, s.zero_mv_context, s.ref_mv_context);
-        self.sw.symbol((mode != NEWMV) as usize, &mut self.cdf.new_mv[nctx]);
+        self.sw
+            .symbol((mode != NEWMV) as usize, &mut self.cdf.new_mv[nctx]);
         if mode != NEWMV {
-            self.sw.symbol((mode != GLOBALMV) as usize, &mut self.cdf.zero_mv[zctx]);
+            self.sw
+                .symbol((mode != GLOBALMV) as usize, &mut self.cdf.zero_mv[zctx]);
             if mode != GLOBALMV {
-                self.sw.symbol((mode == NEARMV) as usize, &mut self.cdf.ref_mv[rctx]);
+                self.sw
+                    .symbol((mode == NEARMV) as usize, &mut self.cdf.ref_mv[rctx]);
             }
         }
         // DRL: ref_mv_idx 0 for NEWMV, 1 for NEARMV
@@ -410,20 +487,24 @@ impl<'a> TileWriter<'a> {
 
     fn write_mv_component(&mut self, comp: usize, v: i32) {
         debug_assert!(v % 2 == 0, "quarter-sample precision");
-        self.sw.symbol((v < 0) as usize, &mut self.cdf.mv_sign[comp]);
+        self.sw
+            .symbol((v < 0) as usize, &mut self.cdf.mv_sign[comp]);
         let m = v.unsigned_abs() - 1; // odd: the implied hp bit is 1
         let fr = ((m >> 1) & 3) as usize;
         let int = m >> 3;
         if int < CLASS0_SIZE as u32 {
             self.sw.symbol(MV_CLASS_0, &mut self.cdf.mv_class[comp]);
-            self.sw.symbol(int as usize, &mut self.cdf.mv_class0_bit[comp]);
-            self.sw.symbol(fr, &mut self.cdf.mv_class0_fr[comp][int as usize]);
+            self.sw
+                .symbol(int as usize, &mut self.cdf.mv_class0_bit[comp]);
+            self.sw
+                .symbol(fr, &mut self.cdf.mv_class0_fr[comp][int as usize]);
         } else {
             let class = 31 - int.leading_zeros();
             let d = int - (1 << class);
             self.sw.symbol(class as usize, &mut self.cdf.mv_class[comp]);
             for i in 0..class as usize {
-                self.sw.symbol(((d >> i) & 1) as usize, &mut self.cdf.mv_bit[comp][i]);
+                self.sw
+                    .symbol(((d >> i) & 1) as usize, &mut self.cdf.mv_bit[comp][i]);
             }
             self.sw.symbol(fr, &mut self.cdf.mv_fr[comp]);
         }
@@ -431,7 +512,15 @@ impl<'a> TileWriter<'a> {
 
     // ---- coefficients ----------------------------------------------------------------------
 
-    fn coeffs(&mut self, plane: usize, start_x: usize, start_y: usize, tx_sz: usize, b: &Leaf, levels: &[i32]) {
+    fn coeffs(
+        &mut self,
+        plane: usize,
+        start_x: usize,
+        start_y: usize,
+        tx_sz: usize,
+        b: &Leaf,
+        levels: &[i32],
+    ) {
         let x4 = start_x >> 2;
         let y4 = start_y >> 2;
         let w4 = TX_WIDTH[tx_sz] as usize >> 2;
@@ -446,7 +535,8 @@ impl<'a> TileWriter<'a> {
             }
         }
         let ctx = self.all_zero_ctx(plane, tx_sz, x4, y4, w4, h4);
-        self.sw.symbol((eob == 0) as usize, &mut self.cdf.txb_skip[tx_sz_ctx][ctx]);
+        self.sw
+            .symbol((eob == 0) as usize, &mut self.cdf.txb_skip[tx_sz_ctx][ctx]);
         let mut cul_level = 0u32;
         let mut dc_category = 0u8;
         if eob == 0 {
@@ -462,11 +552,18 @@ impl<'a> TileWriter<'a> {
                     let sqr = TX_SIZE_SQR[tx_sz] as usize;
                     if b.is_inter {
                         // The decision only picks types of this set (DCT_DCT otherwise).
-                        let s = TX_TYPE_INTER_INV_SET3.iter().position(|&v| v as usize == t).unwrap_or_default();
+                        let s = TX_TYPE_INTER_INV_SET3
+                            .iter()
+                            .position(|&v| v as usize == t)
+                            .unwrap_or_default();
                         self.sw.symbol(s, &mut self.cdf.inter_tx_type_set3[sqr]);
                     } else {
-                        let s = TX_TYPE_INTRA_INV_SET2.iter().position(|&v| v as usize == t).unwrap_or_default();
-                        self.sw.symbol(s, &mut self.cdf.intra_tx_type_set2[sqr][b.y_mode]);
+                        let s = TX_TYPE_INTRA_INV_SET2
+                            .iter()
+                            .position(|&v| v as usize == t)
+                            .unwrap_or_default();
+                        self.sw
+                            .symbol(s, &mut self.cdf.intra_tx_type_set2[sqr][b.y_mode]);
                     }
                 } else {
                     assert_eq!(t, DCT_DCT);
@@ -474,9 +571,18 @@ impl<'a> TileWriter<'a> {
                 self.set_tx_types(x4, y4, tx_sz, t);
             }
             let plane_tx_type = self.compute_tx_type(plane, tx_sz, x4, y4, b);
-            debug_assert!(plane_tx_type == DCT_DCT || matches!(plane_tx_type, ADST_DCT | DCT_ADST | ADST_ADST));
-            let eob_multisize = (TX_WIDTH_LOG2[tx_sz] as usize).min(5) + (TX_HEIGHT_LOG2[tx_sz] as usize).min(5) - 4;
-            let eob_pt = if eob < 2 { eob } else { (32 - ((eob - 1) as u32).leading_zeros()) as usize + 1 };
+            debug_assert!(
+                plane_tx_type == DCT_DCT
+                    || matches!(plane_tx_type, ADST_DCT | DCT_ADST | ADST_ADST)
+            );
+            let eob_multisize = (TX_WIDTH_LOG2[tx_sz] as usize).min(5)
+                + (TX_HEIGHT_LOG2[tx_sz] as usize).min(5)
+                - 4;
+            let eob_pt = if eob < 2 {
+                eob
+            } else {
+                (32 - ((eob - 1) as u32).leading_zeros()) as usize + 1
+            };
             let ectx = 0; // TX_CLASS_2D
             let s = eob_pt - 1;
             match eob_multisize {
@@ -491,7 +597,10 @@ impl<'a> TileWriter<'a> {
             if eob_pt >= 3 {
                 let eob_shift = eob_pt - 3;
                 let offset = eob - ((1 << (eob_pt - 2)) + 1);
-                self.sw.symbol((offset >> eob_shift) & 1, &mut self.cdf.eob_extra[tx_sz_ctx][ptype][eob_pt - 3]);
+                self.sw.symbol(
+                    (offset >> eob_shift) & 1,
+                    &mut self.cdf.eob_extra[tx_sz_ctx][ptype][eob_pt - 3],
+                );
                 for i in 1..eob_pt - 2 {
                     let sh = eob_pt - 2 - 1 - i;
                     self.sw.bool((offset >> sh) & 1 == 1);
@@ -507,17 +616,26 @@ impl<'a> TileWriter<'a> {
                 let a = levels[pos].unsigned_abs().min(15) as i32;
                 if c == eob - 1 {
                     let ctx = coeff_base_eob_ctx(c, bwl, height);
-                    self.sw.symbol((a.min(3) - 1) as usize, &mut self.cdf.coeff_base_eob[tx_sz_ctx][ptype][ctx]);
+                    self.sw.symbol(
+                        (a.min(3) - 1) as usize,
+                        &mut self.cdf.coeff_base_eob[tx_sz_ctx][ptype][ctx],
+                    );
                 } else {
                     let ctx = coeff_base_ctx(&quant, tx_sz, bwl, width, height, pos);
-                    self.sw.symbol(a.min(3) as usize, &mut self.cdf.coeff_base[tx_sz_ctx][ptype][ctx]);
+                    self.sw.symbol(
+                        a.min(3) as usize,
+                        &mut self.cdf.coeff_base[tx_sz_ctx][ptype][ctx],
+                    );
                 }
                 if a > NUM_BASE_LEVELS as i32 {
                     let ctx = coeff_br_ctx(&quant, bwl, height, pos);
                     let mut rem = a - 3;
                     for _ in 0..(COEFF_BASE_RANGE / (BR_CDF_SIZE - 1)) {
                         let br = rem.min(3);
-                        self.sw.symbol(br as usize, &mut self.cdf.coeff_br[tx_sz_ctx.min(TX_32X32)][ptype][ctx]);
+                        self.sw.symbol(
+                            br as usize,
+                            &mut self.cdf.coeff_br[tx_sz_ctx.min(TX_32X32)][ptype][ctx],
+                        );
                         rem -= br;
                         if br < 3 {
                             break;
@@ -532,7 +650,8 @@ impl<'a> TileWriter<'a> {
                 if v != 0 {
                     if c == 0 {
                         let ctx = self.dc_sign_ctx(plane, x4, y4, w4, h4);
-                        self.sw.symbol((v < 0) as usize, &mut self.cdf.dc_sign[ptype][ctx]);
+                        self.sw
+                            .symbol((v < 0) as usize, &mut self.cdf.dc_sign[ptype][ctx]);
                     } else {
                         self.sw.bool(v < 0);
                     }
@@ -599,7 +718,15 @@ impl<'a> TileWriter<'a> {
         intra_uv_tx_type(b.uv_mode, tx_sz)
     }
 
-    fn all_zero_ctx(&self, plane: usize, tx_sz: usize, x4: usize, y4: usize, w4: usize, h4: usize) -> usize {
+    fn all_zero_ctx(
+        &self,
+        plane: usize,
+        tx_sz: usize,
+        x4: usize,
+        y4: usize,
+        w4: usize,
+        h4: usize,
+    ) -> usize {
         let s = (plane > 0) as usize;
         let max_x4 = self.g.mi_cols >> s;
         let max_y4 = self.g.mi_rows >> s;
@@ -824,7 +951,9 @@ impl<'a> TileWriter<'a> {
     fn scan_point(&mut self, delta_row: isize, delta_col: isize) {
         let mv_row = self.r as isize + delta_row;
         let mv_col = self.c as isize + delta_col;
-        if self.inside(mv_row, mv_col) && self.mi.written[self.mi.idx(mv_row as usize, mv_col as usize)] {
+        if self.inside(mv_row, mv_col)
+            && self.mi.written[self.mi.idx(mv_row as usize, mv_col as usize)]
+        {
             self.add_ref_mv_candidate(mv_row as usize, mv_col as usize, 4);
         }
     }
@@ -887,7 +1016,11 @@ impl<'a> TileWriter<'a> {
         for pass in 0..2 {
             let mut idx = 0;
             while idx < num4x4 && self.mvs.num_mv_found < 2 {
-                let (mv_row, mv_col) = if pass == 0 { (mi_row - 1, mi_col + idx) } else { (mi_row + idx, mi_col - 1) };
+                let (mv_row, mv_col) = if pass == 0 {
+                    (mi_row - 1, mi_col + idx)
+                } else {
+                    (mi_row + idx, mi_col - 1)
+                };
                 if !self.inside(mv_row, mv_col) {
                     break;
                 }
@@ -906,7 +1039,11 @@ impl<'a> TileWriter<'a> {
                     }
                 }
                 let sz = self.mi.mi_size[k] as usize;
-                idx += if pass == 0 { NUM_4X4_BLOCKS_WIDE[sz] } else { NUM_4X4_BLOCKS_HIGH[sz] } as isize;
+                idx += if pass == 0 {
+                    NUM_4X4_BLOCKS_WIDE[sz]
+                } else {
+                    NUM_4X4_BLOCKS_HIGH[sz]
+                } as isize;
             }
         }
         for idx in self.mvs.num_mv_found..2 {
@@ -980,7 +1117,14 @@ fn coeff_base_eob_ctx(c: usize, bwl: usize, height: usize) -> usize {
 }
 
 /// Context of coeff_base for TX_CLASS_2D (8.3.2).
-fn coeff_base_ctx(quant: &[i32], tx_sz: usize, bwl: usize, width: usize, height: usize, pos: usize) -> usize {
+fn coeff_base_ctx(
+    quant: &[i32],
+    tx_sz: usize,
+    bwl: usize,
+    width: usize,
+    height: usize,
+    pos: usize,
+) -> usize {
     let row = pos >> bwl;
     let col = pos - (row << bwl);
     let mut mag = 0i32;
@@ -1008,7 +1152,8 @@ fn coeff_br_ctx(quant: &[i32], bwl: usize, txh: usize, pos: usize) -> usize {
         let ref_row = row + off[0] as usize;
         let ref_col = col + off[1] as usize;
         if ref_row < txh && ref_col < txw {
-            mag += quant[ref_row * txw + ref_col].min((COEFF_BASE_RANGE + NUM_BASE_LEVELS + 1) as i32);
+            mag +=
+                quant[ref_row * txw + ref_col].min((COEFF_BASE_RANGE + NUM_BASE_LEVELS + 1) as i32);
         }
     }
     let mag = ((mag + 1) >> 1).min(6) as usize;

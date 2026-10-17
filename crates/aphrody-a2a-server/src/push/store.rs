@@ -39,7 +39,9 @@ pub struct InMemoryPushConfigStore {
 
 impl InMemoryPushConfigStore {
     pub fn new() -> Self {
-        InMemoryPushConfigStore { configs: RwLock::new(HashMap::new()) }
+        InMemoryPushConfigStore {
+            configs: RwLock::new(HashMap::new()),
+        }
     }
 }
 
@@ -59,7 +61,9 @@ impl PushConfigStore for InMemoryPushConfigStore {
             return Err(A2AError::invalid_params("push config URL cannot be empty"));
         }
         if config.task_id.is_empty() {
-            return Err(A2AError::invalid_params("push config task_id cannot be empty"));
+            return Err(A2AError::invalid_params(
+                "push config task_id cannot be empty",
+            ));
         }
 
         if config.id.is_none() {
@@ -127,7 +131,10 @@ mod tests {
     #[tokio::test]
     async fn test_save_and_get() {
         let store = InMemoryPushConfigStore::new();
-        let config = store.save(make_config("t1", "https://example.com/hook")).await.unwrap();
+        let config = store
+            .save(make_config("t1", "https://example.com/hook"))
+            .await
+            .unwrap();
         assert!(config.id.is_some());
 
         let got = store.get("t1", config.id.as_ref().unwrap()).await.unwrap();
@@ -144,7 +151,9 @@ mod tests {
     #[tokio::test]
     async fn test_save_empty_task_id() {
         let store = InMemoryPushConfigStore::new();
-        let result = store.save(make_config("", "https://example.com/hook")).await;
+        let result = store
+            .save(make_config("", "https://example.com/hook"))
+            .await;
         assert!(result.is_err());
     }
 
@@ -167,9 +176,18 @@ mod tests {
     #[tokio::test]
     async fn test_list() {
         let store = InMemoryPushConfigStore::new();
-        store.save(make_config("t1", "https://a.com")).await.unwrap();
-        store.save(make_config("t1", "https://b.com")).await.unwrap();
-        store.save(make_config("t2", "https://c.com")).await.unwrap();
+        store
+            .save(make_config("t1", "https://a.com"))
+            .await
+            .unwrap();
+        store
+            .save(make_config("t1", "https://b.com"))
+            .await
+            .unwrap();
+        store
+            .save(make_config("t2", "https://c.com"))
+            .await
+            .unwrap();
 
         let configs = store.list("t1").await.unwrap();
         assert_eq!(configs.len(), 2);
@@ -184,7 +202,10 @@ mod tests {
     #[tokio::test]
     async fn test_delete() {
         let store = InMemoryPushConfigStore::new();
-        let config = store.save(make_config("t1", "https://a.com")).await.unwrap();
+        let config = store
+            .save(make_config("t1", "https://a.com"))
+            .await
+            .unwrap();
         let config_id = config.id.unwrap();
 
         store.delete("t1", &config_id).await.unwrap();
@@ -195,8 +216,14 @@ mod tests {
     #[tokio::test]
     async fn test_delete_all() {
         let store = InMemoryPushConfigStore::new();
-        store.save(make_config("t1", "https://a.com")).await.unwrap();
-        store.save(make_config("t1", "https://b.com")).await.unwrap();
+        store
+            .save(make_config("t1", "https://a.com"))
+            .await
+            .unwrap();
+        store
+            .save(make_config("t1", "https://b.com"))
+            .await
+            .unwrap();
 
         store.delete_all("t1").await.unwrap();
         let configs = store.list("t1").await.unwrap();

@@ -23,7 +23,14 @@ pub(crate) struct SymbolDecoder<'a> {
 impl<'a> SymbolDecoder<'a> {
     /// `init_symbol( sz )` over `data` (the tile's bytes).
     pub fn new(data: &'a [u8], disable_update: bool) -> Self {
-        let mut d = SymbolDecoder { data, next: 0, win: 0, k: 0, range: 1 << 15, disable_update };
+        let mut d = SymbolDecoder {
+            data,
+            next: 0,
+            win: 0,
+            k: 0,
+            range: 1 << 15,
+            disable_update,
+        };
         // SymbolValue = ((1 << 15) - 1) ^ (first 15 bits): 15 inverted bits.
         let mut filled = 0;
         while filled < 15 + 32 {
@@ -126,13 +133,18 @@ impl<'a> SymbolDecoder<'a> {
 #[inline(always)]
 pub(crate) fn update_cdf(cdf: &mut [u16], n: usize, symbol: usize) {
     let count = cdf[n];
-    let rate = 3 + (count > 15) as u32 + (count > 31) as u32 + (31 - (n as u32).leading_zeros()).min(2);
+    let rate =
+        3 + (count > 15) as u32 + (count > 31) as u32 + (31 - (n as u32).leading_zeros()).min(2);
     // Entries below `symbol` move towards 0, the others towards 1 << 15 (the specification's
     // comparison with tmp, resolved per entry: c >= 0 and c <= 1 << 15), without branching on
     // the decoded symbol.
     for (i, e) in cdf[..n - 1].iter_mut().enumerate() {
         let c = *e as u32;
-        *e = if i < symbol { c - (c >> rate) } else { c + (((1 << 15) - c) >> rate) } as u16;
+        *e = if i < symbol {
+            c - (c >> rate)
+        } else {
+            c + (((1 << 15) - c) >> rate)
+        } as u16;
     }
     cdf[n] += (count < 32) as u16;
 }

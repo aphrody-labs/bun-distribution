@@ -726,7 +726,9 @@ mod tests {
         let capture_backtrace = std::env::var_os("RUST_BACKTRACE");
 
         if capture_backtrace.is_none() || capture_backtrace.clone().is_some_and(|s| s == "0") {
-            panic!("This test only works if rust backtraces are enabled. Value set was {capture_backtrace:?}. Please set RUST_BACKTRACE to any value other than 0 and run again.")
+            panic!(
+                "This test only works if rust backtraces are enabled. Value set was {capture_backtrace:?}. Please set RUST_BACKTRACE to any value other than 0 and run again."
+            )
         }
 
         let error = i_fail().err().unwrap();
@@ -788,7 +790,10 @@ mod tests {
         // on linux there is a second call_once
         let mut skip = false;
         if let Some(line) = lines.peek()
-            && line.get(6..) == Some("<fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once")
+            && line.get(6..)
+                == Some(
+                    "<fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once",
+                )
         {
             skip = true;
         }
@@ -886,29 +891,35 @@ mod tests {
 
         let negative = validate(-1).unwrap_err();
         assert_eq!(negative.severity(), crate::error::Severity::Warning);
-        assert!(negative
-            .to_string()
-            .starts_with("value must be positive: -1"));
+        assert!(
+            negative
+                .to_string()
+                .starts_with("value must be positive: -1")
+        );
     }
 
     #[test]
     fn context() {
         let empty = None::<i32>;
         let as_result = empty.context("Didn't have anything!");
-        assert!(as_result
-            .unwrap_err()
-            .to_string()
-            .starts_with("Didn't have anything!\n"));
+        assert!(
+            as_result
+                .unwrap_err()
+                .to_string()
+                .starts_with("Didn't have anything!\n")
+        );
 
         let err: Result<i32, BevyError> =
             Err(BevyError::new(crate::error::Severity::Debug, "Oh no!"));
         let mut with_context = err.context("Failed");
 
-        assert!(with_context
-            .as_ref()
-            .unwrap_err()
-            .to_string()
-            .starts_with("Failed: Oh no!\n"));
+        assert!(
+            with_context
+                .as_ref()
+                .unwrap_err()
+                .to_string()
+                .starts_with("Failed: Oh no!\n")
+        );
 
         with_context = with_context.context("Something went wrong");
         assert!(with_context.unwrap_err().to_string().starts_with(

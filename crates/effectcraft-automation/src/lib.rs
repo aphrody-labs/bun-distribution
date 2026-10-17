@@ -13,7 +13,14 @@
 //! Layering: depends on `effectcraft-engine` only (never egui); the CLI injects a fully wired
 //! session (`effectcraft_host::session()`).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod autosave;
 pub mod backend;
@@ -53,10 +60,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub fn encode_png(w: u32, h: u32, rgba: Vec<u8>, max_side: u32) -> Result<Vec<u8>> {
     use image::ImageEncoder;
     use image::codecs::png::{CompressionType, FilterType, PngEncoder};
-    let mut img = image::RgbaImage::from_raw(w, h, rgba).ok_or_else(|| Error::Other("bad image buffer".into()))?;
+    let mut img = image::RgbaImage::from_raw(w, h, rgba)
+        .ok_or_else(|| Error::Other("bad image buffer".into()))?;
     if max_side > 0 && w.max(h) > max_side {
         let s = max_side as f64 / w.max(h) as f64;
-        let (nw, nh) = (((w as f64 * s).round() as u32).max(1), ((h as f64 * s).round() as u32).max(1));
+        let (nw, nh) = (
+            ((w as f64 * s).round() as u32).max(1),
+            ((h as f64 * s).round() as u32).max(1),
+        );
         img = image::imageops::resize(&img, nw, nh, image::imageops::FilterType::Triangle);
     }
     let (w, h) = img.dimensions();
@@ -64,7 +75,12 @@ pub fn encode_png(w: u32, h: u32, rgba: Vec<u8>, max_side: u32) -> Result<Vec<u8
     let enc = PngEncoder::new_with_quality(&mut out, CompressionType::Fast, FilterType::Adaptive);
     let raw = img.into_raw();
     let r = if raw.as_chunks::<4>().0.iter().all(|p| p[3] == 255) {
-        let rgb: Vec<u8> = raw.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
+        let rgb: Vec<u8> = raw
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect();
         enc.write_image(&rgb, w, h, image::ExtendedColorType::Rgb8)
     } else {
         enc.write_image(&raw, w, h, image::ExtendedColorType::Rgba8)
@@ -75,7 +91,9 @@ pub fn encode_png(w: u32, h: u32, rgba: Vec<u8>, max_side: u32) -> Result<Vec<u8
 
 /// Decode any PNG and re-encode it compressed and capped to `max_side`. Returns (png, w, h).
 pub fn recompress_png(bytes: &[u8], max_side: u32) -> Result<(Vec<u8>, u32, u32)> {
-    let img = image::load_from_memory(bytes).map_err(|e| Error::Other(format!("png: {e}")))?.to_rgba8();
+    let img = image::load_from_memory(bytes)
+        .map_err(|e| Error::Other(format!("png: {e}")))?
+        .to_rgba8();
     let (w, h) = img.dimensions();
     let png = encode_png(w, h, img.into_raw(), max_side)?;
     let (w, h) = png_size(&png).unwrap_or((w, h));

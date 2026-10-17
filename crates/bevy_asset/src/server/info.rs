@@ -1,8 +1,8 @@
 use crate::{
-    meta::{AssetHash, MetaTransform},
     Asset, AssetHandleProvider, AssetIndex, AssetLoadError, AssetPath, DependencyLoadState,
     ErasedAssetIndex, ErasedLoadedAsset, Handle, InternalAssetEvent, LoadState,
     RecursiveDependencyLoadState, StrongHandle, UntypedHandle,
+    meta::{AssetHash, MetaTransform},
 };
 use alloc::{
     borrow::ToOwned,
@@ -11,11 +11,11 @@ use alloc::{
     vec::Vec,
 };
 use bevy_ecs::world::World;
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use bevy_tasks::Task;
 use bevy_utils::{TypeIdHashMap, TypeIdHashMapEntry};
 use core::{
-    any::{type_name, TypeId},
+    any::{TypeId, type_name},
     task::Waker,
 };
 use crossbeam_channel::Sender;
@@ -862,12 +862,16 @@ pub(crate) fn unwrap_with_context<T>(
         Err(GetOrCreateHandleInternalError::HandleMissingButTypeIdNotSpecified) => None,
         Err(GetOrCreateHandleInternalError::MissingHandleProviderError(_)) => match type_name {
             Some(type_name) => {
-                panic!("Cannot allocate an Asset Handle of type '{type_name}' because the asset type has not been initialized. \
-                    Make sure you have called `app.init_asset::<{type_name}>()`");
+                panic!(
+                    "Cannot allocate an Asset Handle of type '{type_name}' because the asset type has not been initialized. \
+                    Make sure you have called `app.init_asset::<{type_name}>()`"
+                );
             }
             None => {
-                panic!("Cannot allocate an AssetHandle of type '{type_id:?}' because the asset type has not been initialized. \
-                    Make sure you have called `app.init_asset::<(actual asset type)>()`")
+                panic!(
+                    "Cannot allocate an AssetHandle of type '{type_id:?}' because the asset type has not been initialized. \
+                    Make sure you have called `app.init_asset::<(actual asset type)>()`"
+                )
             }
         },
     }

@@ -4,12 +4,15 @@
 //! y down. It is converted to PDF user space (crop box, `/Rotate`) here.
 
 use pdfcraft_engine::{
-    Edit, LineEnding, Markup, NOTE_SIZE, NewAnnotation, NoteIcon, ReviewState, Rgb, Shape, StampGroup, StampKind, Style, SummarySort,
+    Edit, LineEnding, Markup, NOTE_SIZE, NewAnnotation, NoteIcon, ReviewState, Rgb, Shape,
+    StampGroup, StampKind, Style, SummarySort,
 };
 use pdfcraft_render::{Annotation, PageInfo};
 use serde_json::{Value, json};
 
-use crate::{Args, Automation, Content, DEFAULT_DPI, MAX_DPI, Result, ToolError, encode_png, failed};
+use crate::{
+    Args, Automation, Content, DEFAULT_DPI, MAX_DPI, Result, ToolError, encode_png, failed,
+};
 
 /// Author used when a tool call names none.
 pub(crate) const DEFAULT_AUTHOR: &str = "PdfCraft";
@@ -30,24 +33,41 @@ pub(crate) fn parse_color(s: &str) -> Result<Rgb> {
     };
     let hex = named.unwrap_or(s).trim_start_matches('#');
     if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(ToolError::InvalidArgs(format!("{s:?} is not a colour (use #RRGGBB or a name)")));
+        return Err(ToolError::InvalidArgs(format!(
+            "{s:?} is not a colour (use #RRGGBB or a name)"
+        )));
     }
-    let c = |i: usize| u8::from_str_radix(&hex[i..i + 2], 16).map(|v| v as f64 / 255.0).unwrap_or(0.0);
+    let c = |i: usize| {
+        u8::from_str_radix(&hex[i..i + 2], 16)
+            .map(|v| v as f64 / 255.0)
+            .unwrap_or(0.0)
+    };
     Ok([c(0), c(2), c(4)])
 }
 
-const ENDING_NAMES: &str = "None, Square, Circle, Diamond, OpenArrow, ClosedArrow, Butt, ROpenArrow, RClosedArrow, Slash";
+const ENDING_NAMES: &str =
+    "None, Square, Circle, Diamond, OpenArrow, ClosedArrow, Butt, ROpenArrow, RClosedArrow, Slash";
 
 fn line_endings(a: &Args) -> Result<Option<Vec<LineEnding>>> {
-    let Some(v) = a.get("endings") else { return Ok(None) };
-    let arr = v.as_array().ok_or_else(|| ToolError::InvalidArgs("endings must be an array of line-ending names".into()))?;
+    let Some(v) = a.get("endings") else {
+        return Ok(None);
+    };
+    let arr = v.as_array().ok_or_else(|| {
+        ToolError::InvalidArgs("endings must be an array of line-ending names".into())
+    })?;
     if arr.is_empty() || arr.len() > 2 {
-        return Err(ToolError::InvalidArgs("endings takes one name for a callout, or two for a line or polyline".into()));
+        return Err(ToolError::InvalidArgs(
+            "endings takes one name for a callout, or two for a line or polyline".into(),
+        ));
     }
     arr.iter()
         .map(|item| {
-            let name = item.as_str().ok_or_else(|| ToolError::InvalidArgs("endings must be line-ending names".into()))?;
-            LineEnding::parse(name).ok_or_else(|| ToolError::InvalidArgs(format!("unknown line ending {name:?} ({ENDING_NAMES})")))
+            let name = item.as_str().ok_or_else(|| {
+                ToolError::InvalidArgs("endings must be line-ending names".into())
+            })?;
+            LineEnding::parse(name).ok_or_else(|| {
+                ToolError::InvalidArgs(format!("unknown line ending {name:?} ({ENDING_NAMES})"))
+            })
         })
         .collect::<Result<Vec<_>>>()
         .map(Some)
@@ -58,8 +78,13 @@ fn ending_pair(kind: &str, endings: Option<&[LineEnding]>) -> Result<[LineEnding
     match endings {
         None if kind == "arrow" => Ok([LineEnding::None, LineEnding::OpenArrow]),
         None => Ok([LineEnding::None, LineEnding::None]),
-        Some(v) if v.len() == 2 => Ok([v.first().copied().unwrap_or(LineEnding::None), v.get(1).copied().unwrap_or(LineEnding::None)]),
-        Some(_) => Err(ToolError::InvalidArgs("a line or polyline needs two endings, the start and the end".into())),
+        Some(v) if v.len() == 2 => Ok([
+            v.first().copied().unwrap_or(LineEnding::None),
+            v.get(1).copied().unwrap_or(LineEnding::None),
+        ]),
+        Some(_) => Err(ToolError::InvalidArgs(
+            "a line or polyline needs two endings, the start and the end".into(),
+        )),
     }
 }
 
@@ -75,7 +100,12 @@ fn to_user(p: &PageInfo, x: f64, y: f64) -> [f64; 2] {
 
 fn rect_to_user(p: &PageInfo, r: [f64; 4]) -> [f64; 4] {
     let (a, b) = (to_user(p, r[0], r[1]), to_user(p, r[2], r[3]));
-    [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])]
+    [
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[0].max(b[0]),
+        a[1].max(b[1]),
+    ]
 }
 
 /// The engine's `at` for a note or attachment icon whose top-left corner *as displayed* is the
@@ -93,20 +123,32 @@ fn icon_anchor(p: &PageInfo, x: f64, y: f64) -> [f64; 2] {
 pub(crate) fn rect_to_view(p: &PageInfo, r: [f32; 4]) -> [f32; 4] {
     let (a, b) = (p.user_to_view(r[0], r[1]), p.user_to_view(r[2], r[3]));
     let round = |v: f32| (v * 100.0).round() / 100.0;
-    [round(a[0].min(b[0])), round(a[1].min(b[1])), round(a[0].max(b[0])), round(a[1].max(b[1]))]
+    [
+        round(a[0].min(b[0])),
+        round(a[1].min(b[1])),
+        round(a[0].max(b[0])),
+        round(a[1].max(b[1])),
+    ]
 }
 
 impl Args<'_> {
     pub(crate) fn nums<const N: usize>(&self, key: &str) -> Result<Option<[f64; N]>> {
-        let Some(v) = self.get(key) else { return Ok(None) };
+        let Some(v) = self.get(key) else {
+            return Ok(None);
+        };
         let wrong = || Self::wrong(key, &format!("an array of {N} numbers"));
         let arr = v.as_array().ok_or_else(wrong)?;
-        let nums: Vec<f64> = arr.iter().map(|x| x.as_f64().filter(|f| f.is_finite())).collect::<Option<_>>().ok_or_else(wrong)?;
+        let nums: Vec<f64> = arr
+            .iter()
+            .map(|x| x.as_f64().filter(|f| f.is_finite()))
+            .collect::<Option<_>>()
+            .ok_or_else(wrong)?;
         <[f64; N]>::try_from(nums).map(Some).map_err(|_| wrong())
     }
 
     fn need<const N: usize>(&self, key: &str, why: &str) -> Result<[f64; N]> {
-        self.nums(key)?.ok_or_else(|| ToolError::InvalidArgs(format!("{why} needs `{key}`")))
+        self.nums(key)?
+            .ok_or_else(|| ToolError::InvalidArgs(format!("{why} needs `{key}`")))
     }
 
     fn color(&self, key: &str) -> Result<Option<Rgb>> {
@@ -120,26 +162,56 @@ impl Automation {
         let (page, index) = self.comment_target(a)?;
         let dpi = a.opt_num("dpi")?.unwrap_or(DEFAULT_DPI);
         if !(1.0..=MAX_DPI).contains(&dpi) {
-            return Err(ToolError::InvalidArgs(format!("dpi must be between 1 and {MAX_DPI}")));
+            return Err(ToolError::InvalidArgs(format!(
+                "dpi must be between 1 and {MAX_DPI}"
+            )));
         }
         let doc = self.doc(a)?;
-        let preview = doc.image_signature_preview(page, index).map_err(failed)?.ok_or_else(|| failed("choose an image signature or initials"))?;
-        let annotation = doc.info.annotations.iter().find(|c| c.page == page && c.index == index).ok_or_else(|| failed("no such comment"))?;
-        let info = doc.info.pages.get(page).ok_or_else(|| failed("no such page"))?;
+        let preview = doc
+            .image_signature_preview(page, index)
+            .map_err(failed)?
+            .ok_or_else(|| failed("choose an image signature or initials"))?;
+        let annotation = doc
+            .info
+            .annotations
+            .iter()
+            .find(|c| c.page == page && c.index == index)
+            .ok_or_else(|| failed("no such comment"))?;
+        let info = doc
+            .info
+            .pages
+            .get(page)
+            .ok_or_else(|| failed("no such page"))?;
         let [w, h] = preview.image.size();
         let layer = a.opt_str("layer")?.unwrap_or("background");
         let image = match layer {
-            "image" => Content::Png { data: preview.image.bytes().as_ref().clone(), width: w as u32, height: h as u32 },
+            "image" => Content::Png {
+                data: preview.image.bytes().as_ref().clone(),
+                width: w as u32,
+                height: h as u32,
+            },
             "background" => {
-                let out = preview.render_background((dpi / 72.0) as f32).map_err(failed)?;
-                Content::Png { data: encode_png(out.width, out.height, &out.rgba)?, width: out.width, height: out.height }
+                let out = preview
+                    .render_background((dpi / 72.0) as f32)
+                    .map_err(failed)?;
+                Content::Png {
+                    data: encode_png(out.width, out.height, &out.rgba)?,
+                    width: out.width,
+                    height: out.height,
+                }
             }
-            _ => return Err(ToolError::InvalidArgs("layer must be background or image".into())),
+            _ => {
+                return Err(ToolError::InvalidArgs(
+                    "layer must be background or image".into(),
+                ));
+            }
         };
         Ok(vec![
-            Content::Json(json!({ "page": page + 1, "index": index + 1, "rect": rect_to_view(info, annotation.rect), "rotation": info.rotation,
+            Content::Json(
+                json!({ "page": page + 1, "index": index + 1, "rect": rect_to_view(info, annotation.rect), "rotation": info.rotation,
                 "image_rotation": (i64::from(info.rotation) - preview.turn).rem_euclid(360),
-                "layer": layer, "opacity": preview.opacity, "dpi": dpi })),
+                "layer": layer, "opacity": preview.opacity, "dpi": dpi }),
+            ),
             image,
         ])
     }
@@ -147,23 +219,37 @@ impl Automation {
     /// Comments of a document, optionally only of one 0-based page.
     fn comments(&self, a: &Args) -> Result<Vec<Annotation>> {
         let doc = self.doc(a)?;
-        Ok(doc.info.annotations.iter().filter(|x| x.subtype != "Popup").cloned().collect())
+        Ok(doc
+            .info
+            .annotations
+            .iter()
+            .filter(|x| x.subtype != "Popup")
+            .cloned()
+            .collect())
     }
 
     /// The (0-based page, index) a comment tool call refers to: `id`, or `page` + `index`.
     fn comment_target(&self, a: &Args) -> Result<(usize, usize)> {
         let all = self.comments(a)?;
         if let Some(id) = a.opt_str("id")? {
-            let c =
-                all.iter().find(|c| c.name.as_deref() == Some(id)).ok_or_else(|| failed(format!("no comment with id {id:?} (see comment_list)")))?;
+            let c = all
+                .iter()
+                .find(|c| c.name.as_deref() == Some(id))
+                .ok_or_else(|| failed(format!("no comment with id {id:?} (see comment_list)")))?;
             return Ok((c.page, c.index));
         }
         let (Some(page), Some(index)) = (a.opt_int("page")?, a.opt_int("index")?) else {
-            return Err(ToolError::InvalidArgs("pass the comment's id, or page and index".into()));
+            return Err(ToolError::InvalidArgs(
+                "pass the comment's id, or page and index".into(),
+            ));
         };
         let (page, index) = ((page.max(1) - 1) as usize, (index.max(1) - 1) as usize);
         if !all.iter().any(|c| c.page == page && c.index == index) {
-            return Err(failed(format!("there is no comment {} on page {} (see comment_list)", index + 1, page + 1)));
+            return Err(failed(format!(
+                "there is no comment {} on page {} (see comment_list)",
+                index + 1,
+                page + 1
+            )));
         }
         Ok((page, index))
     }
@@ -200,19 +286,39 @@ impl Automation {
                         if nm == root {
                             return true;
                         }
-                        parent = all.iter().find(|x| x.name.as_deref() == Some(nm)).and_then(|x| x.in_reply_to.as_deref());
+                        parent = all
+                            .iter()
+                            .find(|x| x.name.as_deref() == Some(nm))
+                            .and_then(|x| x.in_reply_to.as_deref());
                     }
                     false
                 };
                 let thread: Vec<&Annotation> = match c.name.as_deref() {
-                    Some(nm) => all.iter().filter(|r| r.in_reply_to.is_some() && descends_from(r, nm)).collect(),
+                    Some(nm) => all
+                        .iter()
+                        .filter(|r| r.in_reply_to.is_some() && descends_from(r, nm))
+                        .collect(),
                     None => Vec::new(),
                 };
-                let status = thread.iter().rev().filter(|r| !r.is_mark()).find_map(|r| r.state.clone());
+                let status = thread
+                    .iter()
+                    .rev()
+                    .filter(|r| !r.is_mark())
+                    .find_map(|r| r.state.clone());
                 v["status"] = json!(status);
-                v["marked"] = json!(thread.iter().rev().find(|r| r.is_mark()).is_some_and(|r| r.state.as_deref() == Some("Marked")));
+                v["marked"] = json!(
+                    thread
+                        .iter()
+                        .rev()
+                        .find(|r| r.is_mark())
+                        .is_some_and(|r| r.state.as_deref() == Some("Marked"))
+                );
                 v["locked"] = json!(c.locked);
-                v["replies"] = thread.iter().filter(|r| r.state.is_none()).map(|r| view(r)).collect();
+                v["replies"] = thread
+                    .iter()
+                    .filter(|r| r.state.is_none())
+                    .map(|r| view(r))
+                    .collect();
                 v
             })
             .collect();
@@ -225,7 +331,9 @@ impl Automation {
         let kind = a.str("type")?;
         let endings = line_endings(a)?;
         if endings.is_some() && !matches!(kind, "line" | "arrow" | "polyline" | "callout") {
-            return Err(ToolError::InvalidArgs("endings apply to a line, arrow, polyline or callout".into()));
+            return Err(ToolError::InvalidArgs(
+                "endings apply to a line, arrow, polyline or callout".into(),
+            ));
         }
         let markup = match kind {
             "highlight" => Some(Markup::Highlight),
@@ -241,20 +349,33 @@ impl Automation {
                     let text = self.page_texts(id, &[page])?.remove(0);
                     let mut hits = text.find(needle);
                     if hits.is_empty() {
-                        return Err(failed(format!("{needle:?} was not found on page {}", page + 1)));
+                        return Err(failed(format!(
+                            "{needle:?} was not found on page {}",
+                            page + 1
+                        )));
                     }
                     if !a.opt_bool("all")?.unwrap_or(false) {
                         hits.truncate(1);
                     }
-                    hits.into_iter().flat_map(|r| text.line_rects(r)).map(|r| info.view_rect_to_quad(r)).collect()
+                    hits.into_iter()
+                        .flat_map(|r| text.line_rects(r))
+                        .map(|r| info.view_rect_to_quad(r))
+                        .collect()
                 }
                 (None, Some(q)) => {
-                    let wrong = || ToolError::InvalidArgs("quads must be arrays of 8 numbers".into());
+                    let wrong =
+                        || ToolError::InvalidArgs("quads must be arrays of 8 numbers".into());
                     let quads = q.as_array().ok_or_else(wrong)?;
                     quads
                         .iter()
                         .map(|q| {
-                            let v: Vec<f64> = q.as_array().ok_or_else(wrong)?.iter().map(|x| x.as_f64()).collect::<Option<_>>().ok_or_else(wrong)?;
+                            let v: Vec<f64> = q
+                                .as_array()
+                                .ok_or_else(wrong)?
+                                .iter()
+                                .map(|x| x.as_f64())
+                                .collect::<Option<_>>()
+                                .ok_or_else(wrong)?;
                             let v: [f64; 8] = v.try_into().map_err(|_| wrong())?;
                             let mut out = [0.0; 8];
                             for i in 0..4 {
@@ -265,47 +386,88 @@ impl Automation {
                         })
                         .collect::<Result<Vec<_>>>()?
                 }
-                (None, None) => return Err(ToolError::InvalidArgs(format!("{kind} needs `find` (text to mark) or `quads`"))),
+                (None, None) => {
+                    return Err(ToolError::InvalidArgs(format!(
+                        "{kind} needs `find` (text to mark) or `quads`"
+                    )));
+                }
             };
-            Shape::TextMarkup { kind: markup, quads }
+            Shape::TextMarkup {
+                kind: markup,
+                quads,
+            }
         } else {
             match kind {
                 "note" => {
                     let [x, y] = a.need::<2>("at", "a note")?;
                     let icon = match a.opt_str("icon")? {
-                        Some(n) => NoteIcon::from_name(n).ok_or_else(|| ToolError::InvalidArgs(format!("unknown icon {n:?}")))?,
+                        Some(n) => NoteIcon::from_name(n)
+                            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown icon {n:?}")))?,
                         None => NoteIcon::Comment,
                     };
-                    Shape::Note { at: icon_anchor(&info, x, y), icon }
+                    Shape::Note {
+                        at: icon_anchor(&info, x, y),
+                        icon,
+                    }
                 }
                 "stamp" => {
-                    let want = a.opt_str("stamp")?.unwrap_or("approved").to_ascii_lowercase().replace([' ', '-', '_'], "");
+                    let want = a
+                        .opt_str("stamp")?
+                        .unwrap_or("approved")
+                        .to_ascii_lowercase()
+                        .replace([' ', '-', '_'], "");
                     let dynamic = a.opt_bool("dynamic")?.unwrap_or(false);
                     let stamp = StampKind::ALL
                         .into_iter()
-                        .find(|k| k.label().to_ascii_lowercase().replace(' ', "") == want && ((k.group() == StampGroup::Dynamic) == dynamic))
-                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown stamp {want:?} (see the tool description)")))?;
+                        .find(|k| {
+                            k.label().to_ascii_lowercase().replace(' ', "") == want
+                                && ((k.group() == StampGroup::Dynamic) == dynamic)
+                        })
+                        .ok_or_else(|| {
+                            ToolError::InvalidArgs(format!(
+                                "unknown stamp {want:?} (see the tool description)"
+                            ))
+                        })?;
                     let (w, h) = stamp.size();
                     let [x, y] = a.need::<2>("at", "a stamp (its centre)")?;
-                    let rect = rect_to_user(&info, [x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0]);
+                    let rect =
+                        rect_to_user(&info, [x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0]);
                     let author = a.opt_str("author")?.unwrap_or(DEFAULT_AUTHOR).to_string();
                     let by = dynamic.then(|| self.session.stamp_by_line(&author));
                     Shape::Stamp { rect, stamp, by }
                 }
-                "rectangle" => Shape::Rectangle { rect: rect_to_user(&info, a.need::<4>("rect", "a rectangle")?) },
-                "oval" => Shape::Oval { rect: rect_to_user(&info, a.need::<4>("rect", "an oval")?) },
+                "rectangle" => Shape::Rectangle {
+                    rect: rect_to_user(&info, a.need::<4>("rect", "a rectangle")?),
+                },
+                "oval" => Shape::Oval {
+                    rect: rect_to_user(&info, a.need::<4>("rect", "an oval")?),
+                },
                 "textbox" => {
                     let font_size = a.opt_num("font_size")?.unwrap_or(12.0);
-                    Shape::TextBox { rect: rect_to_user(&info, a.need::<4>("rect", "a text box")?), font_size }
+                    Shape::TextBox {
+                        rect: rect_to_user(&info, a.need::<4>("rect", "a text box")?),
+                        font_size,
+                    }
                 }
                 "line" | "arrow" => {
                     let (f, t) = (a.need::<2>("from", "a line")?, a.need::<2>("to", "a line")?);
                     let [start, end] = ending_pair(kind, endings.as_deref())?;
-                    Shape::Line { from: to_user(&info, f[0], f[1]), to: to_user(&info, t[0], t[1]), start, end }
+                    Shape::Line {
+                        from: to_user(&info, f[0], f[1]),
+                        to: to_user(&info, t[0], t[1]),
+                        start,
+                        end,
+                    }
                 }
                 "ink" => {
-                    let wrong = || ToolError::InvalidArgs("strokes must be an array of arrays of [x, y] points".into());
-                    let strokes = a.get("strokes").ok_or_else(|| ToolError::InvalidArgs("ink needs `strokes`".into()))?;
+                    let wrong = || {
+                        ToolError::InvalidArgs(
+                            "strokes must be an array of arrays of [x, y] points".into(),
+                        )
+                    };
+                    let strokes = a
+                        .get("strokes")
+                        .ok_or_else(|| ToolError::InvalidArgs("ink needs `strokes`".into()))?;
                     let strokes = strokes
                         .as_array()
                         .ok_or_else(wrong)?
@@ -314,9 +476,15 @@ impl Automation {
                             s.as_array()
                                 .ok_or_else(wrong)?
                                 .iter()
-                                .map(|p| match p.as_array().map(|p| p.iter().map(|v| v.as_f64()).collect::<Vec<_>>()).as_deref() {
-                                    Some([Some(x), Some(y)]) => Ok(to_user(&info, *x, *y)),
-                                    _ => Err(wrong()),
+                                .map(|p| {
+                                    match p
+                                        .as_array()
+                                        .map(|p| p.iter().map(|v| v.as_f64()).collect::<Vec<_>>())
+                                        .as_deref()
+                                    {
+                                        Some([Some(x), Some(y)]) => Ok(to_user(&info, *x, *y)),
+                                        _ => Err(wrong()),
+                                    }
                                 })
                                 .collect::<Result<Vec<_>>>()
                         })
@@ -324,25 +492,46 @@ impl Automation {
                     Shape::Ink { strokes }
                 }
                 "polygon" | "cloud" | "polyline" => {
-                    let wrong = || ToolError::InvalidArgs(format!("{kind} needs `points`: an array of [x, y] points"));
-                    let pts = a.get("points").and_then(|p| p.as_array()).ok_or_else(wrong)?;
+                    let wrong = || {
+                        ToolError::InvalidArgs(format!(
+                            "{kind} needs `points`: an array of [x, y] points"
+                        ))
+                    };
+                    let pts = a
+                        .get("points")
+                        .and_then(|p| p.as_array())
+                        .ok_or_else(wrong)?;
                     let vertices = pts
                         .iter()
-                        .map(|p| match p.as_array().map(|p| p.iter().map(|v| v.as_f64()).collect::<Vec<_>>()).as_deref() {
-                            Some([Some(x), Some(y)]) => Ok(to_user(&info, *x, *y)),
-                            _ => Err(wrong()),
+                        .map(|p| {
+                            match p
+                                .as_array()
+                                .map(|p| p.iter().map(|v| v.as_f64()).collect::<Vec<_>>())
+                                .as_deref()
+                            {
+                                Some([Some(x), Some(y)]) => Ok(to_user(&info, *x, *y)),
+                                _ => Err(wrong()),
+                            }
                         })
                         .collect::<Result<Vec<_>>>()?;
                     match kind {
                         "polyline" => {
                             let [start, end] = ending_pair(kind, endings.as_deref())?;
-                            Shape::PolyLine { vertices, start, end }
+                            Shape::PolyLine {
+                                vertices,
+                                start,
+                                end,
+                            }
                         }
-                        _ => Shape::Polygon { vertices, cloud: kind == "cloud" },
+                        _ => Shape::Polygon {
+                            vertices,
+                            cloud: kind == "cloud",
+                        },
                     }
                 }
                 "callout" => {
-                    let rect = rect_to_user(&info, a.need::<4>("rect", "a callout (its text box)")?);
+                    let rect =
+                        rect_to_user(&info, a.need::<4>("rect", "a callout (its text box)")?);
                     let t = a.need::<2>("to", "a callout (the point it points at)")?;
                     let point = to_user(&info, t[0], t[1]);
                     let knee = match a.nums::<2>("knee")? {
@@ -368,27 +557,50 @@ impl Automation {
                         ending: match endings.as_deref() {
                             None => LineEnding::OpenArrow,
                             Some([ending]) => *ending,
-                            Some(_) => return Err(ToolError::InvalidArgs("a callout needs one ending".into())),
+                            Some(_) => {
+                                return Err(ToolError::InvalidArgs(
+                                    "a callout needs one ending".into(),
+                                ));
+                            }
                         },
                     }
                 }
                 "attachment" => {
                     let [x, y] = a.need::<2>("at", "an attachment (its icon's top-left)")?;
                     let path = self.resolve(a.str("path")?, false)?;
-                    let data = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-                    let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let data = std::fs::read(&path)
+                        .map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                    let file = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     let icon = match a.opt_str("icon")? {
-                        Some(n) => pdfcraft_engine::AttachIcon::from_name(n)
-                            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown icon {n:?} (PushPin, Paperclip, Graph, Tag)")))?,
+                        Some(n) => pdfcraft_engine::AttachIcon::from_name(n).ok_or_else(|| {
+                            ToolError::InvalidArgs(format!(
+                                "unknown icon {n:?} (PushPin, Paperclip, Graph, Tag)"
+                            ))
+                        })?,
                         None => pdfcraft_engine::AttachIcon::PushPin,
                     };
-                    Shape::Attachment { at: icon_anchor(&info, x, y), icon, file, data }
+                    Shape::Attachment {
+                        at: icon_anchor(&info, x, y),
+                        icon,
+                        file,
+                        data,
+                    }
                 }
                 "caret" => {
-                    let [x, y] = a.need::<2>("at", "a caret (the insertion point on the baseline)")?;
-                    Shape::Caret { rect: rect_to_user(&info, [x - 4.0, y, x + 4.0, y + 8.0]) }
+                    let [x, y] =
+                        a.need::<2>("at", "a caret (the insertion point on the baseline)")?;
+                    Shape::Caret {
+                        rect: rect_to_user(&info, [x - 4.0, y, x + 4.0, y + 8.0]),
+                    }
                 }
-                other => return Err(ToolError::InvalidArgs(format!("unknown comment type {other:?}"))),
+                other => {
+                    return Err(ToolError::InvalidArgs(format!(
+                        "unknown comment type {other:?}"
+                    )));
+                }
             }
         };
         let mut style = Style::default_for(&shape);
@@ -407,14 +619,28 @@ impl Automation {
         // Replace Text: the struck-out text and a grouped caret holding `contents`.
         if kind == "replace" {
             let Shape::TextMarkup { quads, .. } = shape else {
-                return Err(ToolError::InvalidArgs("replace marks text: give it text to replace".into()));
+                return Err(ToolError::InvalidArgs(
+                    "replace marks text: give it text to replace".into(),
+                ));
             };
             if contents.trim().is_empty() {
-                return Err(ToolError::InvalidArgs("replace needs `contents`: the replacement text".into()));
+                return Err(ToolError::InvalidArgs(
+                    "replace needs `contents`: the replacement text".into(),
+                ));
             }
             let strike = style;
             let caret = Style::default_for(&Shape::Caret { rect: [0.0; 4] });
-            let mut out = self.apply(a, Edit::ReplaceText { page, quads, text: contents, author, strike, caret })?;
+            let mut out = self.apply(
+                a,
+                Edit::ReplaceText {
+                    page,
+                    quads,
+                    text: contents,
+                    author,
+                    strike,
+                    caret,
+                },
+            )?;
             out["comment"] = json!({ "page": page + 1, "type": "replace" });
             return Ok(out);
         }
@@ -422,9 +648,29 @@ impl Automation {
             Shape::TextMarkup { quads, .. } => Some(quads.len()),
             _ => None,
         };
-        let before: Vec<Option<String>> = self.doc(a)?.info.annotations.iter().map(|c| c.name.clone()).collect();
-        let mut out = self.apply(a, Edit::AddAnnotation(NewAnnotation { page, shape, style, contents, author }))?;
-        let added = self.doc(a)?.info.annotations.iter().find(|c| c.page == page && c.subtype != "Popup" && !before.contains(&c.name));
+        let before: Vec<Option<String>> = self
+            .doc(a)?
+            .info
+            .annotations
+            .iter()
+            .map(|c| c.name.clone())
+            .collect();
+        let mut out = self.apply(
+            a,
+            Edit::AddAnnotation(NewAnnotation {
+                page,
+                shape,
+                style,
+                contents,
+                author,
+            }),
+        )?;
+        let added = self
+            .doc(a)?
+            .info
+            .annotations
+            .iter()
+            .find(|c| c.page == page && c.subtype != "Popup" && !before.contains(&c.name));
         out["comment"] = json!({ "id": added.and_then(|c| c.name.clone()), "page": page + 1, "index": added.map(|c| c.index + 1) });
         if let Some(n) = marked {
             out["comment"]["lines"] = json!(n);
@@ -437,19 +683,31 @@ impl Automation {
     pub(crate) fn fill_sign_date_format(&mut self, a: &Args) -> Result<Value> {
         use pdfcraft_engine::dates;
         let format = a.opt_str("format")?;
-        let language = a.opt_str("language")?.map(|l| Some(l).filter(|l| !l.trim().eq_ignore_ascii_case("auto")));
+        let language = a
+            .opt_str("language")?
+            .map(|l| Some(l).filter(|l| !l.trim().eq_ignore_ascii_case("auto")));
         // Check the format before changing anything, so a bad one leaves both settings alone.
         if let Some(f) = format {
             dates::check_date_format(f).map_err(ToolError::InvalidArgs)?;
         }
         if let Some(l) = language {
-            self.session.set_date_language(l).map_err(ToolError::InvalidArgs)?;
+            self.session
+                .set_date_language(l)
+                .map_err(ToolError::InvalidArgs)?;
         }
         if let Some(f) = format {
-            self.session.set_date_format(f).map_err(ToolError::InvalidArgs)?;
+            self.session
+                .set_date_format(f)
+                .map_err(ToolError::InvalidArgs)?;
         }
-        let today = self.session.today_text(None, None).map_err(ToolError::Failed)?;
-        let languages: Vec<Value> = dates::DATE_LANGUAGES.iter().map(|l| json!({ "code": l.code, "name": l.name })).collect();
+        let today = self
+            .session
+            .today_text(None, None)
+            .map_err(ToolError::Failed)?;
+        let languages: Vec<Value> = dates::DATE_LANGUAGES
+            .iter()
+            .map(|l| json!({ "code": l.code, "name": l.name }))
+            .collect();
         Ok(json!({
             "format": self.session.date_format(),
             "language": self.session.date_language().unwrap_or("auto"),
@@ -472,14 +730,20 @@ impl Automation {
         let scan = a.opt_bool("scan")?.unwrap_or(false);
         let sensitivity = a.opt_int("sensitivity")?;
         if (scan || sensitivity.is_some()) && a.opt_str("path")?.is_none() {
-            return Err(ToolError::InvalidArgs("scan and sensitivity need path, a photo of a signature on paper".into()));
+            return Err(ToolError::InvalidArgs(
+                "scan and sensitivity need path, a photo of a signature on paper".into(),
+            ));
         }
         if sensitivity.is_some() && !scan {
-            return Err(ToolError::InvalidArgs("sensitivity is only for scan: true".into()));
+            return Err(ToolError::InvalidArgs(
+                "sensitivity is only for scan: true".into(),
+            ));
         }
         let requested_size = a.opt_num("font_size")?;
         if requested_size.is_some() && !matches!(kind, "text" | "date") {
-            return Err(ToolError::InvalidArgs("font_size is only for type text or date".into()));
+            return Err(ToolError::InvalidArgs(
+                "font_size is only for type text or date".into(),
+            ));
         }
         let size = requested_size.unwrap_or(10.0);
         if !(4.0..=300.0).contains(&size) {
@@ -487,31 +751,47 @@ impl Automation {
         }
         if let Some(path) = a.opt_str("path")? {
             if !matches!(kind, "signature" | "initials") || a.opt_str("text")?.is_some() {
-                return Err(ToolError::InvalidArgs("path is only for an image signature or initials; pass either path or text".into()));
+                return Err(ToolError::InvalidArgs(
+                    "path is only for an image signature or initials; pass either path or text"
+                        .into(),
+                ));
             }
             let path = self.resolve(path, false)?;
-            let file = std::fs::File::open(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
+            let file = std::fs::File::open(&path)
+                .map_err(|e| failed(format!("{}: {e}", path.display())))?;
             let image = if scan {
                 let sensitivity = match sensitivity {
                     None => pdfcraft_engine::signature_scan::DEFAULT_SENSITIVITY,
-                    Some(s) => u8::try_from(s)
-                        .ok()
-                        .filter(|s| *s <= 100)
-                        .ok_or_else(|| ToolError::InvalidArgs(format!("sensitivity must be 0–100, got {s}")))?,
+                    Some(s) => u8::try_from(s).ok().filter(|s| *s <= 100).ok_or_else(|| {
+                        ToolError::InvalidArgs(format!("sensitivity must be 0–100, got {s}"))
+                    })?,
                 };
-                let mut photo = pdfcraft_engine::SignaturePhoto::read(file).map_err(|e| ToolError::InvalidArgs(e.to_string()))?;
+                let mut photo = pdfcraft_engine::SignaturePhoto::read(file)
+                    .map_err(|e| ToolError::InvalidArgs(e.to_string()))?;
                 let frame = photo.auto_frame();
-                photo.scan(frame, sensitivity, pdfcraft_engine::signature_scan::SCAN_MAX_SIDE).map_err(|e| ToolError::InvalidArgs(e.to_string()))?
+                photo
+                    .scan(
+                        frame,
+                        sensitivity,
+                        pdfcraft_engine::signature_scan::SCAN_MAX_SIDE,
+                    )
+                    .map_err(|e| ToolError::InvalidArgs(e.to_string()))?
             } else {
-                pdfcraft_engine::SignatureImage::read(file).map_err(|e| ToolError::InvalidArgs(e.to_string()))?
+                pdfcraft_engine::SignatureImage::read(file)
+                    .map_err(|e| ToolError::InvalidArgs(e.to_string()))?
             };
-            let edit = image.edit(page, &info, at, kind == "initials", &author).ok_or_else(|| ToolError::InvalidArgs("at must be finite".into()))?;
+            let edit = image
+                .edit(page, &info, at, kind == "initials", &author)
+                .ok_or_else(|| ToolError::InvalidArgs("at must be finite".into()))?;
             return self.apply(a, edit);
         }
         let text_at = |t: &str| {
             let w = (pdfcraft_engine::annot_text::text_width(t, size) + 8.0).clamp(20.0, 600.0);
             let h = size * 1.2 + 6.0;
-            Shape::Typewriter { rect: [at[0], at[1] - h, at[0] + w, at[1]], font_size: size }
+            Shape::Typewriter {
+                rect: [at[0], at[1] - h, at[0] + w, at[1]],
+                font_size: size,
+            }
         };
         let (shape, contents) = match kind {
             "text" => {
@@ -520,10 +800,16 @@ impl Automation {
             }
             "date" => {
                 let lang = a.opt_str("language")?;
-                if let Some(l) = lang.filter(|l| pdfcraft_engine::dates::date_language(l).is_none()) {
-                    return Err(ToolError::InvalidArgs(format!("unknown date language {l:?} (see fill_sign_date_format)")));
+                if let Some(l) = lang.filter(|l| pdfcraft_engine::dates::date_language(l).is_none())
+                {
+                    return Err(ToolError::InvalidArgs(format!(
+                        "unknown date language {l:?} (see fill_sign_date_format)"
+                    )));
                 }
-                let t = self.session.today_text_for_pdf(a.opt_str("format")?, lang).map_err(ToolError::InvalidArgs)?;
+                let t = self
+                    .session
+                    .today_text_for_pdf(a.opt_str("format")?, lang)
+                    .map_err(ToolError::InvalidArgs)?;
                 (text_at(&t), t)
             }
             // A typed signature or initials in the script font, left edge at `at`, upright as displayed.
@@ -538,8 +824,9 @@ impl Automation {
                     )));
                 }
                 let h = if kind == "initials" { 24.0 } else { 32.0 };
-                let shape = pdfcraft_engine::typed_signature_shape(at, t, h, i64::from(info.rotation))
-                    .ok_or_else(|| ToolError::InvalidArgs("text has nothing to draw".into()))?;
+                let shape =
+                    pdfcraft_engine::typed_signature_shape(at, t, h, i64::from(info.rotation))
+                        .ok_or_else(|| ToolError::InvalidArgs("text has nothing to draw".into()))?;
                 (shape, String::new())
             }
             kind => {
@@ -550,39 +837,95 @@ impl Automation {
                     "line" => FillMark::Line,
                     other => return Err(ToolError::InvalidArgs(format!("unknown type {other:?}"))),
                 };
-                let (w, h) = if mark == FillMark::Line { (36.0, 4.0) } else { (12.0, 12.0) };
-                (Shape::Mark { rect: [at[0] - w / 2.0, at[1] - h / 2.0, at[0] + w / 2.0, at[1] + h / 2.0], mark }, String::new())
+                let (w, h) = if mark == FillMark::Line {
+                    (36.0, 4.0)
+                } else {
+                    (12.0, 12.0)
+                };
+                (
+                    Shape::Mark {
+                        rect: [
+                            at[0] - w / 2.0,
+                            at[1] - h / 2.0,
+                            at[0] + w / 2.0,
+                            at[1] + h / 2.0,
+                        ],
+                        mark,
+                    },
+                    String::new(),
+                )
             }
         };
         let style = Style::default_for(&shape);
-        self.apply(a, Edit::AddAnnotation(NewAnnotation { page, shape, style, contents, author }))
+        self.apply(
+            a,
+            Edit::AddAnnotation(NewAnnotation {
+                page,
+                shape,
+                style,
+                contents,
+                author,
+            }),
+        )
     }
 
     pub(crate) fn comment_reply(&mut self, a: &Args) -> Result<Value> {
         let (page, index) = self.comment_target(a)?;
         let author = a.opt_str("author")?.unwrap_or(DEFAULT_AUTHOR).to_string();
-        self.apply(a, Edit::ReplyToAnnotation { page, index, text: a.str("text")?.to_string(), author })
+        self.apply(
+            a,
+            Edit::ReplyToAnnotation {
+                page,
+                index,
+                text: a.str("text")?.to_string(),
+                author,
+            },
+        )
     }
 
     pub(crate) fn comment_set_status(&mut self, a: &Args) -> Result<Value> {
         let (page, index) = self.comment_target(a)?;
         let status = a.str("status")?;
-        let state = ReviewState::from_name(status).ok_or_else(|| ToolError::InvalidArgs(format!("unknown status {status:?}")))?;
+        let state = ReviewState::from_name(status)
+            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown status {status:?}")))?;
         let author = a.opt_str("author")?.unwrap_or(DEFAULT_AUTHOR).to_string();
-        self.apply(a, Edit::SetAnnotationStatus { page, index, state, author })
+        self.apply(
+            a,
+            Edit::SetAnnotationStatus {
+                page,
+                index,
+                state,
+                author,
+            },
+        )
     }
 
     pub(crate) fn comment_mark(&mut self, a: &Args) -> Result<Value> {
         let (page, index) = self.comment_target(a)?;
         let marked = a.opt_bool("marked")?.unwrap_or(true);
         let author = a.opt_str("author")?.unwrap_or(DEFAULT_AUTHOR).to_string();
-        self.apply(a, Edit::MarkAnnotation { page, index, marked, author })
+        self.apply(
+            a,
+            Edit::MarkAnnotation {
+                page,
+                index,
+                marked,
+                author,
+            },
+        )
     }
 
     pub(crate) fn comment_lock(&mut self, a: &Args) -> Result<Value> {
         let (page, index) = self.comment_target(a)?;
         let locked = a.opt_bool("locked")?.unwrap_or(true);
-        self.apply(a, Edit::LockAnnotation { page, index, locked })
+        self.apply(
+            a,
+            Edit::LockAnnotation {
+                page,
+                index,
+                locked,
+            },
+        )
     }
 
     pub(crate) fn comments_hide(&mut self, a: &Args) -> Result<Value> {
@@ -594,9 +937,16 @@ impl Automation {
 
     pub(crate) fn comments_summarize(&mut self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
-        let (id, stem) = (doc.id, std::path::Path::new(&doc.name).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+        let (id, stem) = (
+            doc.id,
+            std::path::Path::new(&doc.name)
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+        );
         let sort = match a.opt_str("sort")? {
-            Some(s) => SummarySort::parse(s).ok_or_else(|| ToolError::InvalidArgs(format!("unknown sort {s:?}")))?,
+            Some(s) => SummarySort::parse(s)
+                .ok_or_else(|| ToolError::InvalidArgs(format!("unknown sort {s:?}")))?,
             None => SummarySort::Page,
         };
         let bytes = self.session.summarize_comments(id, sort).map_err(failed)?;
@@ -608,27 +958,64 @@ impl Automation {
         let info = self.doc(a)?.info.pages[page].clone();
         let mut edits = Vec::new();
         if let Some(text) = a.opt_str("contents")? {
-            edits.push(Edit::SetAnnotationContents { page, index, text: text.to_string() });
+            edits.push(Edit::SetAnnotationContents {
+                page,
+                index,
+                text: text.to_string(),
+            });
         }
-        let (color, opacity, width) = (a.color("color")?, a.opt_num("opacity")?, a.opt_num("width")?);
+        let (color, opacity, width) = (
+            a.color("color")?,
+            a.opt_num("opacity")?,
+            a.opt_num("width")?,
+        );
         if color.is_some() || opacity.is_some() || width.is_some() {
-            edits.push(Edit::StyleAnnotation { page, index, color, opacity, width, endings: None });
+            edits.push(Edit::StyleAnnotation {
+                page,
+                index,
+                color,
+                opacity,
+                width,
+                endings: None,
+            });
         }
         if let Some(f) = a.opt_str("fill")? {
-            let fill = if f.eq_ignore_ascii_case("none") { None } else { Some(parse_color(f)?) };
+            let fill = if f.eq_ignore_ascii_case("none") {
+                None
+            } else {
+                Some(parse_color(f)?)
+            };
             edits.push(Edit::FillAnnotation { page, index, fill });
         }
         if let Some(r) = a.nums::<4>("rect")? {
-            edits.push(Edit::ResizeAnnotation { page, index, rect: rect_to_user(&info, r) });
+            edits.push(Edit::ResizeAnnotation {
+                page,
+                index,
+                rect: rect_to_user(&info, r),
+            });
         }
         if let Some([dx, dy]) = a.nums::<2>("move")? {
             let (o, d) = (to_user(&info, 0.0, 0.0), to_user(&info, dx, dy));
-            edits.push(Edit::MoveAnnotation { page, index, dx: d[0] - o[0], dy: d[1] - o[1] });
+            edits.push(Edit::MoveAnnotation {
+                page,
+                index,
+                dx: d[0] - o[0],
+                dy: d[1] - o[1],
+            });
         }
         if edits.is_empty() {
-            return Err(ToolError::InvalidArgs("nothing to change: pass contents, color, opacity, width, rect or move".into()));
+            return Err(ToolError::InvalidArgs(
+                "nothing to change: pass contents, color, opacity, width, rect or move".into(),
+            ));
         }
-        let edit = if edits.len() == 1 { edits.remove(0) } else { Edit::Batch { label: "Edit comment".into(), edits } };
+        let edit = if edits.len() == 1 {
+            edits.remove(0)
+        } else {
+            Edit::Batch {
+                label: "Edit comment".into(),
+                edits,
+            }
+        };
         self.apply(a, edit)
     }
 
@@ -646,8 +1033,14 @@ impl Automation {
         let info = self.doc(a)?.info.pages[page].clone();
         let path = self.resolve(a.str("path")?, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-        let file = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let name = a.opt_str("name")?.map(str::to_owned).unwrap_or_else(|| file.rsplit_once('.').map_or(file.clone(), |(s, _)| s.to_owned()));
+        let file = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let name = a.opt_str("name")?.map(str::to_owned).unwrap_or_else(|| {
+            file.rsplit_once('.')
+                .map_or(file.clone(), |(s, _)| s.to_owned())
+        });
         let [x, y] = a.need::<2>("at", "a stamp (its centre)")?;
         let [ux, uy] = to_user(&info, x, y);
         let edit = Edit::AddCustomStamp {

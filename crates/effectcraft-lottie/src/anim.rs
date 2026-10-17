@@ -57,7 +57,11 @@ fn secs(t: effectcraft_time::Tick) -> f64 {
 }
 
 fn r6(v: f64) -> f64 {
-    if v.is_finite() { (v * 1e6).round() / 1e6 } else { 0.0 }
+    if v.is_finite() {
+        (v * 1e6).round() / 1e6
+    } else {
+        0.0
+    }
 }
 
 /// A key value as Lottie's `s` (numbers wrapped in an array, objects in a one-element array).
@@ -74,13 +78,28 @@ fn is_spatial(p: &Property) -> bool {
 
 /// Export a property as a Lottie animatable property (`{a, k}` plus `x` for expressions).
 /// `label` names the property in warnings.
-pub(crate) fn export_prop(ex: &mut Ex, p: &Property, conv: &dyn Fn(&Value) -> Json, label: &str) -> Json {
-    let mut out = if p.keys.is_empty() { json!({"a": 0, "k": conv(&p.value)}) } else { json!({"a": 1, "k": export_keys(ex, p, conv)}) };
-    if let Some(e) = p.expr.as_ref().filter(|e| e.enabled && !e.text.trim().is_empty()) {
+pub(crate) fn export_prop(
+    ex: &mut Ex,
+    p: &Property,
+    conv: &dyn Fn(&Value) -> Json,
+    label: &str,
+) -> Json {
+    let mut out = if p.keys.is_empty() {
+        json!({"a": 0, "k": conv(&p.value)})
+    } else {
+        json!({"a": 1, "k": export_keys(ex, p, conv)})
+    };
+    if let Some(e) = p
+        .expr
+        .as_ref()
+        .filter(|e| e.enabled && !e.text.trim().is_empty())
+    {
         if ex.include_expressions {
             out["x"] = json!(e.text);
         } else {
-            ex.warn(format!("{label}: expression not exported (enable includeExpressions to export it as `x`)"));
+            ex.warn(format!(
+                "{label}: expression not exported (enable includeExpressions to export it as `x`)"
+            ));
         }
     }
     out
@@ -110,7 +129,11 @@ fn export_keys(ex: &Ex, p: &Property, conv: &dyn Fn(&Value) -> Json) -> Vec<Json
         if spatial {
             let (_, to) = kf::spatial_tangents(keys, i);
             let (ti, _) = kf::spatial_tangents(keys, i + 1);
-            let n = if matches!(k.value, Value::Vec2(_)) { 2 } else { conv(&k.value).as_array().map(Vec::len).unwrap_or(3).min(3) };
+            let n = if matches!(k.value, Value::Vec2(_)) {
+                2
+            } else {
+                conv(&k.value).as_array().map(Vec::len).unwrap_or(3).min(3)
+            };
             o["to"] = json!(to[..n].iter().map(|v| r6(*v)).collect::<Vec<_>>());
             o["ti"] = json!(ti[..n].iter().map(|v| r6(*v)).collect::<Vec<_>>());
         }
@@ -120,7 +143,11 @@ fn export_keys(ex: &Ex, p: &Property, conv: &dyn Fn(&Value) -> Json) -> Vec<Json
 }
 
 /// Normalised ease of segment `i → i+1`: (o.x, o.y, i.x, i.y) per dimension.
-fn segment_ease(keys: &[Keyframe], i: usize, spatial: bool) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) {
+fn segment_ease(
+    keys: &[Keyframe],
+    i: usize,
+    spatial: bool,
+) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) {
     let (a, b) = (&keys[i], &keys[i + 1]);
     let dur = (secs(b.time) - secs(a.time)).max(1e-12);
     let ca = a.value.components();
@@ -131,23 +158,45 @@ fn segment_ease(keys: &[Keyframe], i: usize, spatial: bool) -> (Vec<f64>, Vec<f6
     for d in 0..dims {
         let (dv, eo, ei) = if spatial {
             let len = kf::spatial_segment_length(keys, i);
-            (len, kf::side_ease(keys, i, 0, true, true), kf::side_ease(keys, i + 1, 0, true, false))
+            (
+                len,
+                kf::side_ease(keys, i, 0, true, true),
+                kf::side_ease(keys, i + 1, 0, true, false),
+            )
         } else if numeric {
-            (cb[d] - ca[d], kf::side_ease(keys, i, d, false, true), kf::side_ease(keys, i + 1, d, false, false))
+            (
+                cb[d] - ca[d],
+                kf::side_ease(keys, i, d, false, true),
+                kf::side_ease(keys, i + 1, d, false, false),
+            )
         } else {
             // Paths, gradients: overall progress 0 → 1.
             let side = |k: &Keyframe, out: bool| {
                 let interp = if out { k.out_interp } else { k.in_interp };
                 let list = if out { &k.out_ease } else { &k.in_ease };
-                if interp == Interp::Bezier { list.first().copied().unwrap_or_default() } else { Ease { speed: 1.0 / dur, influence: 1.0 / 3.0 } }
+                if interp == Interp::Bezier {
+                    list.first().copied().unwrap_or_default()
+                } else {
+                    Ease {
+                        speed: 1.0 / dur,
+                        influence: 1.0 / 3.0,
+                    }
+                }
             };
             (1.0, Some(side(a, true)), Some(side(b, false)))
         };
-        let lin = Ease { speed: dv / dur, influence: 1.0 / 3.0 };
+        let lin = Ease {
+            speed: dv / dur,
+            influence: 1.0 / 3.0,
+        };
         let (eo, ei) = (eo.unwrap_or(lin), ei.unwrap_or(lin));
         // Crossing time handles must retain the independently specified influences.
         let (i0, i1) = (eo.influence.clamp(0.0, 1.0), ei.influence.clamp(0.0, 1.0));
-        let (y0, y1) = if dv.abs() > 1e-12 { (eo.speed * i0 * dur / dv, 1.0 - ei.speed * i1 * dur / dv) } else { (0.0, 1.0) };
+        let (y0, y1) = if dv.abs() > 1e-12 {
+            (eo.speed * i0 * dur / dv, 1.0 - ei.speed * i1 * dur / dv)
+        } else {
+            (0.0, 1.0)
+        };
         ox.push(r6(i0));
         oy.push(r6(y0));
         ix.push(r6(1.0 - i1));
@@ -163,7 +212,10 @@ pub(crate) fn is_animated(j: &Json) -> bool {
     if j.get("a").and_then(Json::as_i64) == Some(1) {
         return true;
     }
-    j.get("k").and_then(Json::as_array).and_then(|a| a.first()).is_some_and(|f| f.get("t").is_some())
+    j.get("k")
+        .and_then(Json::as_array)
+        .and_then(|a| a.first())
+        .is_some_and(|f| f.get("t").is_some())
 }
 
 /// Component `d` of an ease tangent field (`x` / `y` may be a number or an array).
@@ -177,22 +229,38 @@ fn comp(j: &Json, field: &str, d: usize) -> Option<f64> {
 
 fn vec3_of(j: Option<&Json>) -> [f64; 3] {
     let a = j.and_then(Json::as_array);
-    let g = |i: usize| a.and_then(|a| a.get(i)).and_then(Json::as_f64).unwrap_or(0.0);
+    let g = |i: usize| {
+        a.and_then(|a| a.get(i))
+            .and_then(Json::as_f64)
+            .unwrap_or(0.0)
+    };
     [g(0), g(1), g(2)]
 }
 
 /// Import a Lottie animatable property into `p` (value, keys, expression). `conv` turns a Lottie
 /// value (as found in `k` or a key's `s`, possibly wrapped in a one-element array) into a value of
 /// the property's type.
-pub(crate) fn import_prop(im: &Im, j: &Json, p: &mut Property, conv: &dyn Fn(&Json) -> Option<Value>) {
+pub(crate) fn import_prop(
+    im: &Im,
+    j: &Json,
+    p: &mut Property,
+    conv: &dyn Fn(&Json) -> Option<Value>,
+) {
     if !j.is_object() {
         if let Some(v) = conv(j) {
             p.value = v;
         }
         return;
     }
-    if let Some(x) = j.get("x").and_then(Json::as_str).filter(|x| !x.trim().is_empty()) {
-        p.expr = Some(Expression { text: x.to_string(), enabled: true });
+    if let Some(x) = j
+        .get("x")
+        .and_then(Json::as_str)
+        .filter(|x| !x.trim().is_empty())
+    {
+        p.expr = Some(Expression {
+            text: x.to_string(),
+            enabled: true,
+        });
     }
     let Some(k) = j.get("k") else { return };
     if !is_animated(j) {
@@ -273,8 +341,14 @@ pub(crate) fn import_prop(im: &Im, j: &Json, p: &mut Property, conv: &dyn Fn(&Js
             };
             let inf_o = ox.max(0.001);
             let inf_i = (1.0 - ix).max(0.001);
-            outs.push(Ease { speed: oy * dv / (inf_o * dur), influence: inf_o });
-            ins.push(Ease { speed: (1.0 - iy) * dv / (inf_i * dur), influence: inf_i });
+            outs.push(Ease {
+                speed: oy * dv / (inf_o * dur),
+                influence: inf_o,
+            });
+            ins.push(Ease {
+                speed: (1.0 - iy) * dv / (inf_i * dur),
+                influence: inf_i,
+            });
         }
         if linear {
             keys[i].out_interp = Interp::Linear;
@@ -306,13 +380,20 @@ pub(crate) fn arr(v: &Value) -> Json {
 /// Vec2 (first two components of any vector).
 pub(crate) fn arr2(v: &Value) -> Json {
     let c = v.components();
-    json!([r6(*c.first().unwrap_or(&0.0)), r6(*c.get(1).unwrap_or(&0.0))])
+    json!([
+        r6(*c.first().unwrap_or(&0.0)),
+        r6(*c.get(1).unwrap_or(&0.0))
+    ])
 }
 
 /// Vec3 (padded with `z`).
 pub(crate) fn arr3(v: &Value) -> Json {
     let c = v.components();
-    json!([r6(*c.first().unwrap_or(&0.0)), r6(*c.get(1).unwrap_or(&0.0)), r6(*c.get(2).unwrap_or(&0.0))])
+    json!([
+        r6(*c.first().unwrap_or(&0.0)),
+        r6(*c.get(1).unwrap_or(&0.0)),
+        r6(*c.get(2).unwrap_or(&0.0))
+    ])
 }
 
 /// Numbers of a Lottie value (`5`, `[5]`, `[1, 2, 3]`).
@@ -344,12 +425,21 @@ pub(crate) fn to_vec2(j: &Json) -> Option<Value> {
 /// Vec3 with a default third component.
 pub(crate) fn to_vec3(j: &Json, z: f64) -> Option<Value> {
     let v = nums(j)?;
-    Some(Value::Vec3([*v.first()?, *v.get(1).unwrap_or(&0.0), *v.get(2).unwrap_or(&z)]))
+    Some(Value::Vec3([
+        *v.first()?,
+        *v.get(1).unwrap_or(&0.0),
+        *v.get(2).unwrap_or(&z),
+    ]))
 }
 
 pub(crate) fn to_color(j: &Json) -> Option<Value> {
     let v = nums(j)?;
-    let mut c = [*v.first()?, *v.get(1).unwrap_or(&0.0), *v.get(2).unwrap_or(&0.0), *v.get(3).unwrap_or(&1.0)];
+    let mut c = [
+        *v.first()?,
+        *v.get(1).unwrap_or(&0.0),
+        *v.get(2).unwrap_or(&0.0),
+        *v.get(3).unwrap_or(&1.0),
+    ];
     // Some files use 0–255.
     if c[..3].iter().any(|x| *x > 1.0) {
         for x in &mut c[..3] {

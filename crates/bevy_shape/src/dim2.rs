@@ -5,15 +5,15 @@ use thiserror::Error;
 
 use crate::{Inset, Measured2d, Primitive2d, Ray2d, WindingOrder};
 use bevy_math::{
-    ops::{self, FloatPow},
     Dir2, InvalidDirectionError, Isometry2d, Rot2, Vec2,
+    ops::{self, FloatPow},
 };
 
 #[cfg(feature = "alloc")]
 use super::polygon::is_polygon_simple;
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 

@@ -138,7 +138,11 @@ pub fn build(app: &EffectcraftApp) -> NativeMenu {
                     // Recent projects / footage / presets, undo history, shortcut slots, viewers,
                     // saved workspaces.
                     let saved = app.saved_workspace_names();
-                    let (entries, empty) = effectcraft_engine::menus::dynamic(&app.session, name, &crate::menus::dyn_ctx(&app.ui.workspace, &saved));
+                    let (entries, empty) = effectcraft_engine::menus::dynamic(
+                        &app.session,
+                        name,
+                        &crate::menus::dyn_ctx(&app.ui.workspace, &saved),
+                    );
                     if entries.is_empty()
                         && let Some(e) = empty
                     {
@@ -169,8 +173,15 @@ pub fn build(app: &EffectcraftApp) -> NativeMenu {
                 MenuNode::Submenu { label, children } => {
                     let mut kids = vec![];
                     rec(app, children, &id, &mut kids);
-                    let shown = effectcraft_engine::menus::submenu_label(&app.session, label, &crate::menus::dyn_ctx(&app.ui.workspace, &[]));
-                    out.push(NativeNode::Submenu { label: crate::i18n::submenu(app, label, shown), children: kids });
+                    let shown = effectcraft_engine::menus::submenu_label(
+                        &app.session,
+                        label,
+                        &crate::menus::dyn_ctx(&app.ui.workspace, &[]),
+                    );
+                    out.push(NativeNode::Submenu {
+                        label: crate::i18n::submenu(app, label, shown),
+                        children: kids,
+                    });
                 }
                 MenuNode::Item(e) => {
                     let role = match e.command.as_str() {
@@ -207,7 +218,11 @@ pub fn build(app: &EffectcraftApp) -> NativeMenu {
                             out.push(NativeNode::Separator);
                             services_added = true;
                         }
-                        out.push(NativeNode::Predefined { role, label: crate::i18n::label(app, &e.command, &e.label).into(), command: e.command.clone() });
+                        out.push(NativeNode::Predefined {
+                            role,
+                            label: crate::i18n::label(app, &e.command, &e.label).into(),
+                            command: e.command.clone(),
+                        });
                         continue;
                     }
                     let shortcut = crate::menus::entry_shortcut(app, e);
@@ -261,7 +276,9 @@ pub fn accelerator(shortcut: &str) -> Option<String> {
             .to_string(),
         );
     }
-    let function_key = key.len() >= 2 && key.starts_with('F') && key[1..].parse::<u8>().is_ok_and(|n| (1..=24).contains(&n));
+    let function_key = key.len() >= 2
+        && key.starts_with('F')
+        && key[1..].parse::<u8>().is_ok_and(|n| (1..=24).contains(&n));
     if !primary && !function_key {
         return None;
     }
@@ -269,7 +286,8 @@ pub fn accelerator(shortcut: &str) -> Option<String> {
         "Num*" => "NumpadMultiply".to_string(),
         "+" => "Equal".to_string(),
         k if k.starts_with("Num") && k.len() == 4 => format!("Numpad{}", &k[3..]),
-        "Escape" | "Space" | "Enter" | "Tab" | "Home" | "End" | "PageUp" | "PageDown" | "Delete" | "Backspace" => key.to_string(),
+        "Escape" | "Space" | "Enter" | "Tab" | "Home" | "End" | "PageUp" | "PageDown"
+        | "Delete" | "Backspace" => key.to_string(),
         "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" => key.to_string(),
         k if k.chars().count() == 1 => {
             let c = k.chars().next()?;
@@ -311,14 +329,36 @@ pub fn state_key(app: &EffectcraftApp) -> u64 {
     (&s.prefs.recent_footage, &s.prefs.recent_presets).hash(&mut h);
     s.history.undo.iter().for_each(|(l, _)| l.hash(&mut h));
     s.state.open_comps.hash(&mut h);
-    s.active_comp_id().and_then(|c| s.state.views3d.get(&c)).map(|v| format!("{:?}", v.current)).hash(&mut h);
+    s.active_comp_id()
+        .and_then(|c| s.state.views3d.get(&c))
+        .map(|v| format!("{:?}", v.current))
+        .hash(&mut h);
     s.shortcuts().keys.len().hash(&mut h);
     s.keymaps.active.hash(&mut h);
     let v = &app.ui.viewer;
-    (v.rulers, v.guides, v.snap_guides, v.lock_guides, v.grid, v.snap_grid, v.show_layer_controls, v.pasteboard).hash(&mut h);
-    (app.ui.cache_when_idle, app.session.prefs.preview.active().include_audio, &app.ui.workspace, app.dialog.is_some()).hash(&mut h);
+    (
+        v.rulers,
+        v.guides,
+        v.snap_guides,
+        v.lock_guides,
+        v.grid,
+        v.snap_grid,
+        v.show_layer_controls,
+        v.pasteboard,
+    )
+        .hash(&mut h);
+    (
+        app.ui.cache_when_idle,
+        app.session.prefs.preview.active().include_audio,
+        &app.ui.workspace,
+        app.dialog.is_some(),
+    )
+        .hash(&mut h);
     // Window menu check marks: the panels on screen.
-    crate::dock::PanelKind::ALL.iter().filter(|p| crate::menus::panel_shown(app, **p)).for_each(|p| p.hash(&mut h));
+    crate::dock::PanelKind::ALL
+        .iter()
+        .filter(|p| crate::menus::panel_shown(app, **p))
+        .for_each(|p| p.hash(&mut h));
     h.finish()
 }
 
@@ -330,7 +370,10 @@ fn text_field_event(command: &str, clipboard: Option<String>) -> Option<Vec<egui
         physical_key: None,
         pressed: true,
         repeat: false,
-        modifiers: egui::Modifiers { shift, ..egui::Modifiers::COMMAND },
+        modifiers: egui::Modifiers {
+            shift,
+            ..egui::Modifiers::COMMAND
+        },
     };
     Some(match command {
         "edit.copy" => vec![egui::Event::Copy],
@@ -345,22 +388,43 @@ fn text_field_event(command: &str, clipboard: Option<String>) -> Option<Vec<egui
 
 /// Run a native menu item (by id) the way the in-window menu bar does. While a text field has
 /// the keyboard, Edit ▸ Cut/Copy/Paste/Select All/Undo/Redo edit the text instead.
-pub fn activate(app: &mut EffectcraftApp, ctx: &egui::Context, menu: &NativeMenu, id: &str) -> Result<Value, String> {
-    let item = menu.find(id).ok_or_else(|| format!("no native menu item `{id}`"))?;
+pub fn activate(
+    app: &mut EffectcraftApp,
+    ctx: &egui::Context,
+    menu: &NativeMenu,
+    id: &str,
+) -> Result<Value, String> {
+    let item = menu
+        .find(id)
+        .ok_or_else(|| format!("no native menu item `{id}`"))?;
     let (command, params) = (item.command.clone(), item.params.clone());
     // The menu bar takes Cmd+D and Cmd+R before the window sees them: while a confirmation that
     // answers to the key is open, hand it back. Choosing the item with the mouse (no Cmd held)
     // still runs it.
     if let Some(key) = crate::panels::dialogs::command_key(app)
-        && item.accelerator.as_deref().is_some_and(|a| ["Cmd+", "Ctrl+"].iter().any(|m| a.strip_prefix(m) == Some(key.name())))
+        && item.accelerator.as_deref().is_some_and(|a| {
+            ["Cmd+", "Ctrl+"]
+                .iter()
+                .any(|m| a.strip_prefix(m) == Some(key.name()))
+        })
         && ctx.input(|i| i.modifiers.command)
     {
-        app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND });
+        app.synthetic.push(egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        });
         ctx.request_repaint();
         return Ok(Value::Null);
     }
     if ctx.egui_wants_keyboard_input() {
-        let clip = if command == "edit.paste" { app.hooks.clipboard_text.as_ref().and_then(|f| f()) } else { None };
+        let clip = if command == "edit.paste" {
+            app.hooks.clipboard_text.as_ref().and_then(|f| f())
+        } else {
+            None
+        };
         if let Some(events) = text_field_event(&command, clip) {
             app.synthetic.extend(events);
             ctx.request_repaint();
@@ -394,10 +458,18 @@ mod tests {
             for x in n {
                 match x {
                     // Dynamic entries (recent files, History, viewers…) are not tree entries.
-                    NativeNode::Item(i) if !i.id.rsplit('.').next().is_some_and(|l| l.starts_with('d') || l == "none") => {
+                    NativeNode::Item(i)
+                        if !i
+                            .id
+                            .rsplit('.')
+                            .next()
+                            .is_some_and(|l| l.starts_with('d') || l == "none") =>
+                    {
                         out.push((i.command.clone(), i.params.to_string()))
                     }
-                    NativeNode::Predefined { command, .. } if !command.is_empty() => out.push((command.clone(), "null".into())),
+                    NativeNode::Predefined { command, .. } if !command.is_empty() => {
+                        out.push((command.clone(), "null".into()))
+                    }
                     NativeNode::Submenu { children, .. } => commands(children, out),
                     _ => {}
                 }
@@ -405,8 +477,14 @@ mod tests {
         }
         let mut got = vec![];
         commands(&spec.menus, &mut got);
-        let want: Vec<(String, String)> = effectcraft_engine::menus::entries().into_iter().map(|(_, e)| (e.command.clone(), e.params.to_string())).collect();
-        assert_eq!(got, want, "native menu must mirror the engine tree entry for entry");
+        let want: Vec<(String, String)> = effectcraft_engine::menus::entries()
+            .into_iter()
+            .map(|(_, e)| (e.command.clone(), e.params.to_string()))
+            .collect();
+        assert_eq!(
+            got, want,
+            "native menu must mirror the engine tree entry for entry"
+        );
         // Top-level menus in order.
         let tops: Vec<&str> = spec
             .menus
@@ -418,7 +496,8 @@ mod tests {
             .collect();
         assert_eq!(tops, effectcraft_engine::menus::top_level());
         // Ids are unique.
-        let ids: std::collections::BTreeSet<&str> = spec.items().iter().map(|i| i.id.as_str()).collect();
+        let ids: std::collections::BTreeSet<&str> =
+            spec.items().iter().map(|i| i.id.as_str()).collect();
         assert_eq!(ids.len(), spec.items().len());
         // The spec serializes (agents can read it).
         let v = serde_json::to_value(&spec).unwrap();
@@ -430,11 +509,36 @@ mod tests {
     fn saved_workspaces_are_in_the_native_workspace_menu() {
         let mut app = app();
         let ctx = egui::Context::default();
-        crate::menus::invoke(&mut app, &ctx, "window.saveWorkspaceAs", json!({"name": "My Layout"})).unwrap();
-        let entry = |app: &EffectcraftApp| build(app).items().into_iter().find(|i| i.label == "My Layout").cloned();
+        crate::menus::invoke(
+            &mut app,
+            &ctx,
+            "window.saveWorkspaceAs",
+            json!({"name": "My Layout"}),
+        )
+        .unwrap();
+        let entry = |app: &EffectcraftApp| {
+            build(app)
+                .items()
+                .into_iter()
+                .find(|i| i.label == "My Layout")
+                .cloned()
+        };
         let it = entry(&app).expect("the saved workspace is listed");
-        assert_eq!((it.command.as_str(), &it.params, it.checked), ("window.workspace", &json!({"name": "My Layout"}), Some(true)));
-        crate::menus::invoke(&mut app, &ctx, "window.workspace", json!({"name": "Default"})).unwrap();
+        assert_eq!(
+            (it.command.as_str(), &it.params, it.checked),
+            (
+                "window.workspace",
+                &json!({"name": "My Layout"}),
+                Some(true)
+            )
+        );
+        crate::menus::invoke(
+            &mut app,
+            &ctx,
+            "window.workspace",
+            json!({"name": "Default"}),
+        )
+        .unwrap();
         assert_eq!(entry(&app).and_then(|i| i.checked), Some(false));
     }
 
@@ -444,7 +548,12 @@ mod tests {
             return;
         }
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        app.session.execute("prefs.set", json!({"key": "general.language", "value": "uk"})).unwrap();
+        app.session
+            .execute(
+                "prefs.set",
+                json!({"key": "general.language", "value": "uk"}),
+            )
+            .unwrap();
         fn labels(nodes: &[NativeNode], out: &mut Vec<String>) {
             for node in nodes {
                 match node {
@@ -456,7 +565,15 @@ mod tests {
         }
         let mut translated = vec![];
         labels(&build(&app).menus, &mut translated);
-        assert_eq!(translated, ["Служби", "Приховати EffectCraft", "Приховати решту", "Показати все"]);
+        assert_eq!(
+            translated,
+            [
+                "Служби",
+                "Приховати EffectCraft",
+                "Приховати решту",
+                "Показати все"
+            ]
+        );
     }
 
     #[test]
@@ -465,7 +582,12 @@ mod tests {
             return;
         }
         let mut app = EffectcraftApp::new(effectcraft_engine::Session::default());
-        app.session.execute("prefs.set", json!({"key": "general.language", "value": "cs"})).unwrap();
+        app.session
+            .execute(
+                "prefs.set",
+                json!({"key": "general.language", "value": "cs"}),
+            )
+            .unwrap();
         fn labels(nodes: &[NativeNode], out: &mut Vec<String>) {
             for node in nodes {
                 match node {
@@ -477,7 +599,15 @@ mod tests {
         }
         let mut translated = vec![];
         labels(&build(&app).menus, &mut translated);
-        assert_eq!(translated, ["Služby", "Skrýt EffectCraft", "Skrýt ostatní", "Zobrazit vše"]);
+        assert_eq!(
+            translated,
+            [
+                "Služby",
+                "Skrýt EffectCraft",
+                "Skrýt ostatní",
+                "Zobrazit vše"
+            ]
+        );
     }
 
     #[test]
@@ -495,9 +625,16 @@ mod tests {
         }
         rec(&spec.menus, &mut roles);
         if cfg!(target_os = "macos") {
-            assert_eq!(roles, vec![Role::Services, Role::Hide, Role::HideOthers, Role::ShowAll]);
+            assert_eq!(
+                roles,
+                vec![Role::Services, Role::Hide, Role::HideOthers, Role::ShowAll]
+            );
             // Quit and About dispatch our commands (clean shutdown, our About dialog).
-            assert!(spec.items().iter().any(|i| i.command == "app.quit" && i.accelerator.as_deref() == Some("Cmd+Q")));
+            assert!(
+                spec.items()
+                    .iter()
+                    .any(|i| i.command == "app.quit" && i.accelerator.as_deref() == Some("Cmd+Q"))
+            );
             assert!(spec.items().iter().any(|i| i.command == "app.about"));
         } else {
             assert!(roles.is_empty());
@@ -508,9 +645,17 @@ mod tests {
     fn a_confirmation_gets_its_command_key_back_from_the_menu_bar() {
         let mut app = app();
         let spec = build(&app);
-        let dup = spec.items().into_iter().find(|i| i.command == "edit.duplicate").map(|i| i.id.clone()).unwrap();
+        let dup = spec
+            .items()
+            .into_iter()
+            .find(|i| i.command == "edit.duplicate")
+            .map(|i| i.id.clone())
+            .unwrap();
         let ctx = egui::Context::default();
-        app.dialog_state.delete_items.command = Some((json!({"items": []}), json!({"items": 1, "layers": 1, "comps": 1})));
+        app.dialog_state.delete_items.command = Some((
+            json!({"items": []}),
+            json!({"items": 1, "layers": 1, "comps": 1}),
+        ));
         app.dialog = Some(crate::Dialog::DeleteItems);
         // Chosen with the mouse, Duplicate still runs.
         ctx.run_ui(Default::default(), |ui| {
@@ -521,13 +666,21 @@ mod tests {
         assert!(app.synthetic.is_empty());
         // Cmd+D goes to the prompt instead.
         let mut raw = egui::RawInput::default();
-        raw.events.push(egui::Event::ModifiersChanged(egui::Modifiers::COMMAND));
+        raw.events
+            .push(egui::Event::ModifiersChanged(egui::Modifiers::COMMAND));
         ctx.run_ui(raw, |ui| {
             let _ = activate(&mut app, ui.ctx(), &spec, &dup);
         })
         .textures_delta
         .clear();
-        assert!(matches!(app.synthetic.as_slice(), [egui::Event::Key { key: egui::Key::D, pressed: true, .. }]));
+        assert!(matches!(
+            app.synthetic.as_slice(),
+            [egui::Event::Key {
+                key: egui::Key::D,
+                pressed: true,
+                ..
+            }]
+        ));
     }
 
     #[test]
@@ -550,7 +703,11 @@ mod tests {
             if let Some(sc) = &i.shortcut {
                 let primary = sc.contains("Cmd") || sc.contains("Ctrl");
                 if primary {
-                    assert!(i.accelerator.is_some(), "{} ({sc}) has no accelerator", i.label);
+                    assert!(
+                        i.accelerator.is_some(),
+                        "{} ({sc}) has no accelerator",
+                        i.label
+                    );
                 }
             }
         }
@@ -562,7 +719,11 @@ mod tests {
         use crate::dock::PanelKind;
         let mut app = app();
         let checked = |app: &EffectcraftApp, panel: &str| {
-            build(app).items().into_iter().find(|i| i.command == "window.panel" && i.params["panel"] == panel).and_then(|i| i.checked)
+            build(app)
+                .items()
+                .into_iter()
+                .find(|i| i.command == "window.panel" && i.params["panel"] == panel)
+                .and_then(|i| i.checked)
         };
         assert_eq!(checked(&app, "timeline"), Some(true));
         assert_eq!(checked(&app, "tools"), Some(true));
@@ -571,11 +732,20 @@ mod tests {
         app.show_panel(PanelKind::RenderQueue);
         assert_ne!(state_key(&app), k0);
         // A tab behind another one, a closed panel and panels under a maximized one are not shown.
-        assert_eq!((checked(&app, "renderQueue"), checked(&app, "timeline")), (Some(true), Some(false)));
+        assert_eq!(
+            (checked(&app, "renderQueue"), checked(&app, "timeline")),
+            (Some(true), Some(false))
+        );
         app.ui.dock.close(PanelKind::RenderQueue);
-        assert_eq!((checked(&app, "renderQueue"), checked(&app, "timeline")), (Some(false), Some(true)));
+        assert_eq!(
+            (checked(&app, "renderQueue"), checked(&app, "timeline")),
+            (Some(false), Some(true))
+        );
         app.ui.maximized = Some(PanelKind::Timeline);
-        assert_eq!((checked(&app, "timeline"), checked(&app, "project")), (Some(true), Some(false)));
+        assert_eq!(
+            (checked(&app, "timeline"), checked(&app, "project")),
+            (Some(true), Some(false))
+        );
     }
 
     #[test]
@@ -583,24 +753,49 @@ mod tests {
         let mut app = app();
         let k0 = state_key(&app);
         let spec0 = build(&app);
-        let undo = |s: &NativeMenu| s.items().into_iter().find(|i| i.command == "edit.undo").map(|i| (i.label.clone(), i.enabled)).unwrap();
+        let undo = |s: &NativeMenu| {
+            s.items()
+                .into_iter()
+                .find(|i| i.command == "edit.undo")
+                .map(|i| (i.label.clone(), i.enabled))
+                .unwrap()
+        };
         // Select a layer and toggle Lock: the key changes, the Lock entry gets a check mark.
         let first = app.session.active_comp().unwrap().layers[0].id.0;
-        app.session.execute("layer.select", json!({"layers": [first]})).unwrap();
-        app.session.execute("layer.setSwitch", json!({"switch": "lock"})).unwrap();
+        app.session
+            .execute("layer.select", json!({"layers": [first]}))
+            .unwrap();
+        app.session
+            .execute("layer.setSwitch", json!({"switch": "lock"}))
+            .unwrap();
         assert_ne!(state_key(&app), k0);
         let spec1 = build(&app);
         // The new undo step joins Edit ▸ History (a dynamic submenu); nothing else is rebuilt.
-        let history = |s: &NativeMenu| s.items().into_iter().filter(|i| i.command == "edit.history").count();
+        let history = |s: &NativeMenu| {
+            s.items()
+                .into_iter()
+                .filter(|i| i.command == "edit.history")
+                .count()
+        };
         assert_eq!(history(&spec1), history(&spec0) + 1);
-        let lock = spec1.items().into_iter().find(|i| i.command == "layer.setSwitch" && i.params["switch"] == "lock").unwrap().checked;
+        let lock = spec1
+            .items()
+            .into_iter()
+            .find(|i| i.command == "layer.setSwitch" && i.params["switch"] == "lock")
+            .unwrap()
+            .checked;
         assert_eq!(lock, Some(true));
         assert_ne!(undo(&spec0), undo(&spec1));
         // A recent project changes the structure (Open Recent grows).
         app.session.prefs.push_recent("/tmp/Recent Test.ecproj");
         let spec2 = build(&app);
         assert_ne!(spec1.structure(), spec2.structure());
-        assert!(spec2.items().iter().any(|i| i.command == "file.openRecent" && i.label == "Recent Test.ecproj"));
+        assert!(
+            spec2
+                .items()
+                .iter()
+                .any(|i| i.command == "file.openRecent" && i.label == "Recent Test.ecproj")
+        );
     }
 
     #[test]
@@ -608,7 +803,13 @@ mod tests {
         let mut app = app();
         let ctx = egui::Context::default();
         let spec = build(&app);
-        let id = spec.items().into_iter().find(|i| i.command == "layer.newNull").unwrap().id.clone();
+        let id = spec
+            .items()
+            .into_iter()
+            .find(|i| i.command == "layer.newNull")
+            .unwrap()
+            .id
+            .clone();
         let n = app.session.active_comp().unwrap().layers.len();
         activate(&mut app, &ctx, &spec, &id).unwrap();
         assert_eq!(app.session.active_comp().unwrap().layers.len(), n + 1);

@@ -87,7 +87,9 @@ pub fn level_from(mut l: Level, i: usize, v: &Value) -> Level {
     }
     match v.get("style") {
         Some(Value::Null) => l.style = None,
-        Some(Value::String(s)) => l.style = Some(s.chars().take(253).collect()).filter(|s: &String| !s.is_empty()),
+        Some(Value::String(s)) => {
+            l.style = Some(s.chars().take(253).collect()).filter(|s: &String| !s.is_empty())
+        }
         _ => {}
     }
     if let Some(a) = p::str(v, "align") {
@@ -116,7 +118,10 @@ pub fn level_from(mut l: Level, i: usize, v: &Value) -> Level {
     }
     match v.get("font") {
         Some(Value::Null) => l.chr.font = None,
-        Some(Value::String(s)) => l.chr.font = Some(s.chars().take(64).collect()).filter(|s: &String| !s.trim().is_empty()),
+        Some(Value::String(s)) => {
+            l.chr.font =
+                Some(s.chars().take(64).collect()).filter(|s: &String| !s.trim().is_empty())
+        }
         _ => {}
     }
     if let Some(b) = p::bool(v, "bold") {
@@ -139,29 +144,51 @@ pub fn level_from(mut l: Level, i: usize, v: &Value) -> Level {
 /// The caret's list, if it is in one.
 pub fn caret_list(s: &Session) -> Option<u32> {
     let para = s.doc.para_at(&s.sel.focus)?;
-    para.props.numbering.or_else(|| s.doc.styles.resolve_para(&para.props).numbering).filter(|n| n.num != 0).map(|n| n.num)
+    para.props
+        .numbering
+        .or_else(|| s.doc.styles.resolve_para(&para.props).numbering)
+        .filter(|n| n.num != 0)
+        .map(|n| n.num)
 }
 
 /// The nine levels list `num` shows (its own level definitions over its abstract list's).
 pub fn levels_of(s: &Session, num: u32) -> Option<Vec<Level>> {
     s.doc.numbering.num(num)?;
-    Some((0..LEVELS).map(|i| s.doc.numbering.level(num, i as u8).cloned().unwrap_or_else(|| default_level(i))).collect())
+    Some(
+        (0..LEVELS)
+            .map(|i| {
+                s.doc
+                    .numbering
+                    .level(num, i as u8)
+                    .cloned()
+                    .unwrap_or_else(|| default_level(i))
+            })
+            .collect(),
+    )
 }
 
 /// Level `i` of a new multilevel list: 1. a. i.
 fn default_level(i: usize) -> Level {
-    levels_for(ListKind::Numbered).into_iter().nth(i).unwrap_or_default()
+    levels_for(ListKind::Numbered)
+        .into_iter()
+        .nth(i)
+        .unwrap_or_default()
 }
 
 fn get(s: &mut Session, v: &Value) -> CmdResult {
-    let num =
-        p::u64(v, "num").map(|n| n.min(u32::MAX as u64) as u32).or_else(|| caret_list(s)).ok_or_else(|| CmdError::Failed("not in a list".into()))?;
+    let num = p::u64(v, "num")
+        .map(|n| n.min(u32::MAX as u64) as u32)
+        .or_else(|| caret_list(s))
+        .ok_or_else(|| CmdError::Failed("not in a list".into()))?;
     let levels = levels_of(s, num).ok_or_else(|| CmdError::Params("no such list".into()))?;
     Ok(json!({"num": num, "levels": levels.iter().map(level_json).collect::<Vec<_>>()}))
 }
 
 fn define(s: &mut Session, v: &Value) -> CmdResult {
-    let given = v.get("levels").and_then(Value::as_array).ok_or_else(|| CmdError::Params("`levels` (array) is required".into()))?;
+    let given = v
+        .get("levels")
+        .and_then(Value::as_array)
+        .ok_or_else(|| CmdError::Params("`levels` (array) is required".into()))?;
     let target = p::u64(v, "num").map(|n| n.min(u32::MAX as u64) as u32);
     let base = match target {
         Some(n) => levels_of(s, n).ok_or_else(|| CmdError::Params("no such list".into()))?,
@@ -175,11 +202,18 @@ fn define(s: &mut Session, v: &Value) -> CmdResult {
             _ => l,
         })
         .collect();
-    let name = p::str(v, "name").map(|n| n.chars().take(64).collect::<String>()).filter(|n| !n.trim().is_empty());
+    let name = p::str(v, "name")
+        .map(|n| n.chars().take(64).collect::<String>())
+        .filter(|n| !n.trim().is_empty());
     let num = match target {
         Some(n) => {
             // Change the list in place: every list sharing its definition follows.
-            let aid = s.doc.numbering.num(n).map(|x| x.abstract_id).ok_or_else(|| CmdError::Params("no such list".into()))?;
+            let aid = s
+                .doc
+                .numbering
+                .num(n)
+                .map(|x| x.abstract_id)
+                .ok_or_else(|| CmdError::Params("no such list".into()))?;
             if let Some(a) = s.doc.numbering.abstracts.iter_mut().find(|a| a.id == aid) {
                 a.levels = levels.clone();
                 if name.is_some() {
@@ -189,24 +223,65 @@ fn define(s: &mut Session, v: &Value) -> CmdResult {
             if let Some(x) = s.doc.numbering.nums.iter_mut().find(|x| x.id == n) {
                 x.level_overrides.clear();
             }
-            let sharing: Vec<u32> = s.doc.numbering.nums.iter().filter(|x| x.abstract_id == aid).map(|x| x.id).collect();
+            let sharing: Vec<u32> = s
+                .doc
+                .numbering
+                .nums
+                .iter()
+                .filter(|x| x.abstract_id == aid)
+                .map(|x| x.id)
+                .collect();
             touch_lists(s, &sharing)?;
             n
         }
         None => {
-            let aid = s.doc.numbering.abstracts.iter().map(|a| a.id.saturating_add(1)).max().unwrap_or(0);
-            s.doc.numbering.abstracts.push(AbstractNum { id: aid, name, levels: levels.clone() });
-            let nid = s.doc.numbering.nums.iter().map(|n| n.id.saturating_add(1)).max().unwrap_or(1).max(1);
-            s.doc.numbering.nums.push(Num { id: nid, abstract_id: aid, ..Default::default() });
+            let aid = s
+                .doc
+                .numbering
+                .abstracts
+                .iter()
+                .map(|a| a.id.saturating_add(1))
+                .max()
+                .unwrap_or(0);
+            s.doc.numbering.abstracts.push(AbstractNum {
+                id: aid,
+                name,
+                levels: levels.clone(),
+            });
+            let nid = s
+                .doc
+                .numbering
+                .nums
+                .iter()
+                .map(|n| n.id.saturating_add(1))
+                .max()
+                .unwrap_or(1)
+                .max(1);
+            s.doc.numbering.nums.push(Num {
+                id: nid,
+                abstract_id: aid,
+                ..Default::default()
+            });
             nid
         }
     };
     // Levels linked to a paragraph style number every paragraph in that style.
     let mut linked = Vec::new();
     for (i, l) in levels.iter().enumerate() {
-        let Some(id) = l.style.as_deref().map(|st| s.doc.styles.find(st).map(|x| x.id.clone()).unwrap_or_else(|| st.to_string())) else { continue };
+        let Some(id) = l.style.as_deref().map(|st| {
+            s.doc
+                .styles
+                .find(st)
+                .map(|x| x.id.clone())
+                .unwrap_or_else(|| st.to_string())
+        }) else {
+            continue;
+        };
         if let Some(st) = s.doc.styles.get_mut(&id) {
-            st.para.numbering = Some(NumRef { num, level: i as u8 });
+            st.para.numbering = Some(NumRef {
+                num,
+                level: i as u8,
+            });
             linked.push(id);
         }
     }
@@ -216,7 +291,11 @@ fn define(s: &mut Session, v: &Value) -> CmdResult {
     if p::bool(v, "apply").unwrap_or(true) {
         super::para::fmt(s, &|pp| {
             // Paragraphs already in a list keep their level.
-            let level = pp.numbering.filter(|n| n.num != 0).map(|n| n.level).unwrap_or(0);
+            let level = pp
+                .numbering
+                .filter(|n| n.num != 0)
+                .map(|n| n.level)
+                .unwrap_or(0);
             pp.numbering = Some(NumRef { num, level });
             pp.indent_left = None;
             pp.indent_first = None;
@@ -234,17 +313,26 @@ fn define(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Lay out again every paragraph in one of `nums`.
 fn touch_lists(s: &mut Session, nums: &[u32]) -> Result<(), CmdError> {
-    touch_where(s, &|p| p.props.numbering.is_some_and(|n| nums.contains(&n.num)))
+    touch_where(s, &|p| {
+        p.props.numbering.is_some_and(|n| nums.contains(&n.num))
+    })
 }
 
 /// Lay out again every paragraph in one of `styles`.
 fn touch_styles(s: &mut Session, styles: &[String]) -> Result<(), CmdError> {
-    touch_where(s, &|p| p.props.style.as_ref().is_some_and(|st| styles.contains(st)))
+    touch_where(s, &|p| {
+        p.props.style.as_ref().is_some_and(|st| styles.contains(st))
+    })
 }
 
 /// Lay out again every paragraph, in every story, that `f` picks.
-fn touch_where(s: &mut Session, f: &dyn Fn(&wordcraft_doc::Paragraph) -> bool) -> Result<(), CmdError> {
-    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body).chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k))).collect();
+fn touch_where(
+    s: &mut Session,
+    f: &dyn Fn(&wordcraft_doc::Paragraph) -> bool,
+) -> Result<(), CmdError> {
+    let stories: Vec<StoryRef> = std::iter::once(StoryRef::Body)
+        .chain(s.doc.parts.keys().map(|k| StoryRef::Part(*k)))
+        .collect();
     for story in stories {
         for path in s.doc.para_paths(story) {
             if s.doc.para(story, &path).is_some_and(f) {
@@ -268,7 +356,13 @@ mod tests {
         l.pages
             .iter()
             .flat_map(|p| &p.items)
-            .filter_map(|i| if let Placed::Lines { para, l0: 0, .. } = i { para.label.as_ref().map(|lb| lb.text.clone()) } else { None })
+            .filter_map(|i| {
+                if let Placed::Lines { para, l0: 0, .. } = i {
+                    para.label.as_ref().map(|lb| lb.text.clone())
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
@@ -289,12 +383,17 @@ mod tests {
             {"format": "decimal", "text": "%1.%2.", "alignedAt": 18, "indentAt": 45, "follow": "space", "restartAfter": 1},
             {"format": "lowerLetter", "text": "%3)", "start": 1, "align": "right", "alignedAt": 54, "indentAt": 72, "follow": "nothing", "restartAfter": 0, "style": "Heading3"},
         ]);
-        let r = s.run("list.define", &json!({"levels": levels, "name": "Spec"})).unwrap();
+        let r = s
+            .run("list.define", &json!({"levels": levels, "name": "Spec"}))
+            .unwrap();
         let num = r["num"].as_u64().unwrap() as u32;
         // Second and third paragraphs one and two levels down.
         let paths = s.doc.para_paths(wordcraft_doc::StoryRef::Body);
         for (k, lvl) in [(1usize, 1u8), (2, 2)] {
-            let p = s.doc.para_mut(wordcraft_doc::StoryRef::Body, &paths[k]).unwrap();
+            let p = s
+                .doc
+                .para_mut(wordcraft_doc::StoryRef::Body, &paths[k])
+                .unwrap();
             p.props.numbering = Some(wordcraft_doc::props::NumRef { num, level: lvl });
             p.touch();
         }
@@ -306,11 +405,35 @@ mod tests {
         assert_eq!(labels(&mut b), ["1.", "1.1.", "a)"]);
         let got = b.run("list.get", &json!({"num": num})).unwrap();
         let want = s.run("list.get", &json!({"num": num})).unwrap();
-        assert_eq!(got["levels"], want["levels"], "every level setting round-trips");
+        assert_eq!(
+            got["levels"], want["levels"],
+            "every level setting round-trips"
+        );
         let l = &got["levels"];
-        assert_eq!((l[0]["tabAt"].as_f64(), l[0]["font"].as_str(), l[0]["bold"].as_bool()), (Some(24.0), Some("Arial"), Some(true)));
-        assert_eq!((l[1]["follow"].as_str(), l[1]["alignedAt"].as_f64(), l[1]["indentAt"].as_f64()), (Some("space"), Some(18.0), Some(45.0)));
-        assert_eq!((l[2]["restartAfter"].as_u64(), l[2]["align"].as_str(), l[2]["style"].as_str()), (Some(0), Some("right"), Some("Heading3")));
+        assert_eq!(
+            (
+                l[0]["tabAt"].as_f64(),
+                l[0]["font"].as_str(),
+                l[0]["bold"].as_bool()
+            ),
+            (Some(24.0), Some("Arial"), Some(true))
+        );
+        assert_eq!(
+            (
+                l[1]["follow"].as_str(),
+                l[1]["alignedAt"].as_f64(),
+                l[1]["indentAt"].as_f64()
+            ),
+            (Some("space"), Some(18.0), Some(45.0))
+        );
+        assert_eq!(
+            (
+                l[2]["restartAfter"].as_u64(),
+                l[2]["align"].as_str(),
+                l[2]["style"].as_str()
+            ),
+            (Some(0), Some("right"), Some("Heading3"))
+        );
         assert_eq!(l[2]["follow"], "nothing");
         // Programmatic calls without levels are an error, not a dialog.
         assert!(s.run("list.define", &json!({})).is_err());

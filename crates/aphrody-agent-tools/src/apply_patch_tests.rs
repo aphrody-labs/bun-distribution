@@ -70,7 +70,11 @@ async fn malformed_patch_is_error_output() {
         .await
         .expect("handle returns Ok with error output");
     assert!(out.is_error);
-    assert!(out.content.contains("parse error"), "content: {}", out.content);
+    assert!(
+        out.content.contains("parse error"),
+        "content: {}",
+        out.content
+    );
 }
 
 #[tokio::test]
@@ -93,7 +97,11 @@ async fn apply_failure_is_error_output() {
         .await
         .expect("handle");
     assert!(out.is_error);
-    assert!(out.content.contains("apply_patch:"), "content: {}", out.content);
+    assert!(
+        out.content.contains("apply_patch:"),
+        "content: {}",
+        out.content
+    );
 }
 
 #[tokio::test]

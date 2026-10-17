@@ -7,9 +7,9 @@ use bevy_platform::collections::HashTable;
 use bevy_reflect_derive::impl_type_path;
 
 use crate::{
-    generics::impl_generic_info_methods, ty::impl_type_methods, ApplyError, Generics, MaybeTyped,
-    PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut, ReflectOwned, ReflectRef,
-    Type, TypeInfo, TypePath,
+    ApplyError, Generics, MaybeTyped, PartialReflect, Reflect, ReflectCloneError, ReflectKind,
+    ReflectMut, ReflectOwned, ReflectRef, Type, TypeInfo, TypePath,
+    generics::impl_generic_info_methods, ty::impl_type_methods,
 };
 use alloc::{boxed::Box, vec::Vec};
 

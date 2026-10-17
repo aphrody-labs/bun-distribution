@@ -31,7 +31,9 @@ pub enum ShowAction {
 /// opened on a click.
 pub fn safe_url(url: &str) -> bool {
     let u = url.trim();
-    let Some((scheme, rest)) = u.split_once(':') else { return false };
+    let Some((scheme, rest)) = u.split_once(':') else {
+        return false;
+    };
     match scheme.to_ascii_lowercase().as_str() {
         "http" | "https" => rest.starts_with("//") && rest.len() > 2,
         "mailto" => !rest.is_empty(),
@@ -69,8 +71,17 @@ pub struct ShowState {
 /// hidden slides.
 pub fn show_order(pres: &Presentation) -> Vec<usize> {
     let n = pres.slides.len();
-    let base: Vec<usize> = match pres.show.custom_show.as_ref().and_then(|name| pres.custom_shows.iter().find(|c| &c.name == name)) {
-        Some(cs) => cs.slides.iter().filter_map(|id| pres.slides.iter().position(|s| s.id == *id)).collect(),
+    let base: Vec<usize> = match pres
+        .show
+        .custom_show
+        .as_ref()
+        .and_then(|name| pres.custom_shows.iter().find(|c| &c.name == name))
+    {
+        Some(cs) => cs
+            .slides
+            .iter()
+            .filter_map(|id| pres.slides.iter().position(|s| s.id == *id))
+            .collect(),
         None => match pres.show.range {
             Some((a, b)) => {
                 let a = (a.max(1) as usize).saturating_sub(1);
@@ -80,7 +91,9 @@ pub fn show_order(pres: &Presentation) -> Vec<usize> {
             None => (0..n).collect(),
         },
     };
-    base.into_iter().filter(|i| pres.slides.get(*i).is_some_and(|s| !s.hidden)).collect()
+    base.into_iter()
+        .filter(|i| pres.slides.get(*i).is_some_and(|s| !s.hidden))
+        .collect()
 }
 
 fn looping(pres: &Presentation) -> bool {
@@ -92,7 +105,10 @@ impl ShowState {
     pub fn new(pres: &Presentation) -> ShowState {
         match show_order(pres).first() {
             Some(&i) => ShowState::start_at(pres, i),
-            None => ShowState { ended: true, ..Default::default() },
+            None => ShowState {
+                ended: true,
+                ..Default::default()
+            },
         }
     }
 
@@ -117,7 +133,11 @@ impl ShowState {
 
     /// Main steps of slide `i` (0 with Show without animation).
     pub fn steps(pres: &Presentation, i: usize) -> usize {
-        if pres.show.without_animation { 0 } else { ShowState::timeline(pres, i).steps() }
+        if pres.show.without_animation {
+            0
+        } else {
+            ShowState::timeline(pres, i).steps()
+        }
     }
 
     fn enter(&mut self, pres: &Presentation, i: usize) {
@@ -215,7 +235,10 @@ impl ShowState {
         }
         let target = match self.prev_index(pres) {
             Some(i) => Some(i),
-            None if looping(pres) => show_order(pres).last().copied().filter(|&i| i != self.slide),
+            None if looping(pres) => show_order(pres)
+                .last()
+                .copied()
+                .filter(|&i| i != self.slide),
             None => None,
         };
         match target {
@@ -240,9 +263,20 @@ impl ShowState {
 
     /// Follow a clicked hyperlink or shape action. `last_viewed` is the slide shown before the
     /// current one (Last Slide Viewed). Moves to slide targets; everything else is for the UI.
-    pub fn follow(&mut self, pres: &Presentation, action: &Action, last_viewed: Option<usize>) -> LinkJump {
+    pub fn follow(
+        &mut self,
+        pres: &Presentation,
+        action: &Action,
+        last_viewed: Option<usize>,
+    ) -> LinkJump {
         let target = match action {
-            Action::Url { url } => return if safe_url(url) { LinkJump::Open(url.trim().to_string()) } else { LinkJump::None },
+            Action::Url { url } => {
+                return if safe_url(url) {
+                    LinkJump::Open(url.trim().to_string())
+                } else {
+                    LinkJump::None
+                };
+            }
             Action::EndShow => return LinkJump::Exit,
             Action::Slide { slide } => pres.slides.iter().position(|s| s.id == *slide),
             Action::NextSlide => self.next_index(pres),
@@ -265,7 +299,11 @@ impl ShowState {
         if !pres.show.use_timings || self.ended {
             return None;
         }
-        pres.slides.get(self.slide).and_then(|s| s.transition.as_ref()).and_then(|t| t.advance_after_ms).map(|ms| ms as f64 / 1000.0)
+        pres.slides
+            .get(self.slide)
+            .and_then(|s| s.transition.as_ref())
+            .and_then(|t| t.advance_after_ms)
+            .map(|ms| ms as f64 / 1000.0)
     }
 
     /// Should the show advance now, `elapsed` seconds after the slide appeared? Waits for the

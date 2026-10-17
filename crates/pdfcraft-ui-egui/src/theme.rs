@@ -4,7 +4,10 @@
 use std::sync::Arc;
 
 use egui::epaint::text::{FontTweak, HintingTarget, SmoothHinting};
-use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Response, Stroke, Vec2, Visuals};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Response, Stroke,
+    Vec2, Visuals,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ThemeKind {
@@ -122,7 +125,8 @@ impl Tokens {
     }
 
     pub fn get(ctx: &egui::Context) -> Self {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::new("pdfcraft-theme"))).unwrap_or_else(|| Self::for_kind(ThemeKind::Light))
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::new("pdfcraft-theme")))
+            .unwrap_or_else(|| Self::for_kind(ThemeKind::Light))
     }
 
     pub fn dark(&self) -> bool {
@@ -143,15 +147,30 @@ impl Press {
         let hot = resp.hovered() || resp.is_pointer_button_down_on();
         let ease = egui::emath::easing::quadratic_out;
         // With animation effects off the wash and the press are simply there.
-        let (hover, down) = if crate::motion::animated(ui.ctx()) { (0.12, 0.06) } else { (0.0, 0.0) };
+        let (hover, down) = if crate::motion::animated(ui.ctx()) {
+            (0.12, 0.06)
+        } else {
+            (0.0, 0.0)
+        };
         Self {
-            hover: ui.ctx().animate_bool_with_time_and_easing(resp.id.with("chrome-hover"), hot, hover, ease),
-            down: ui.ctx().animate_bool_with_time_and_easing(resp.id.with("chrome-down"), resp.is_pointer_button_down_on(), down, ease),
+            hover: ui.ctx().animate_bool_with_time_and_easing(
+                resp.id.with("chrome-hover"),
+                hot,
+                hover,
+                ease,
+            ),
+            down: ui.ctx().animate_bool_with_time_and_easing(
+                resp.id.with("chrome-down"),
+                resp.is_pointer_button_down_on(),
+                down,
+                ease,
+            ),
         }
     }
 
     pub fn fill(self, rest: Color32, hover: Color32, pressed: Color32) -> Color32 {
-        rest.lerp_to_gamma(hover, self.hover).lerp_to_gamma(pressed, self.down)
+        rest.lerp_to_gamma(hover, self.hover)
+            .lerp_to_gamma(pressed, self.down)
     }
 
     /// One pixel down at a full press.
@@ -162,7 +181,11 @@ impl Press {
     /// The colour [`Self::wash`] paints.
     pub fn wash_color(self, t: &Tokens, selected: bool) -> Color32 {
         if selected {
-            self.fill(t.accent_soft, t.accent_soft.lerp_to_gamma(t.accent, 0.16), t.selected)
+            self.fill(
+                t.accent_soft,
+                t.accent_soft.lerp_to_gamma(t.accent, 0.16),
+                t.selected,
+            )
         } else {
             self.fill(Color32::TRANSPARENT, t.hover, t.pressed)
         }
@@ -244,8 +267,14 @@ pub fn installed_font_definitions(cjk: CjkPreference) -> FontDefinitions {
         use crate::system_fonts::{Need, fallback};
         // Before the general installed face, which stays the last fallback outside Chinese.
         for (name, data) in [
-            (SYSTEM_DEVANAGARI_FALLBACK, crate::system_fonts::devanagari_fallback()),
-            (SYSTEM_TELUGU_FALLBACK, crate::system_fonts::telugu_fallback()),
+            (
+                SYSTEM_DEVANAGARI_FALLBACK,
+                crate::system_fonts::devanagari_fallback(),
+            ),
+            (
+                SYSTEM_TELUGU_FALLBACK,
+                crate::system_fonts::telugu_fallback(),
+            ),
         ] {
             let Some(data) = data else { continue };
             fonts.font_data.insert(name.to_owned(), data);
@@ -261,7 +290,10 @@ pub fn installed_font_definitions(cjk: CjkPreference) -> FontDefinitions {
         };
         if let Some(data) = fallback(need) {
             fonts.font_data.insert(SYSTEM_FALLBACK.to_owned(), data);
-            let japanese: Vec<String> = pdfcraft_fonts::ui_japanese_fonts().iter().map(|f| f.name()).collect();
+            let japanese: Vec<String> = pdfcraft_fonts::ui_japanese_fonts()
+                .iter()
+                .map(|f| f.name())
+                .collect();
             for stack in fonts.families.values_mut() {
                 let at = match need {
                     Need::Other => None,
@@ -297,18 +329,28 @@ enum FontPolicyPlatform {
 }
 
 fn current_font_policy_platform() -> FontPolicyPlatform {
-    if cfg!(target_os = "windows") { FontPolicyPlatform::Windows } else { FontPolicyPlatform::Other }
+    if cfg!(target_os = "windows") {
+        FontPolicyPlatform::Windows
+    } else {
+        FontPolicyPlatform::Other
+    }
 }
 
 fn primary_font_tweak(platform: FontPolicyPlatform, name: &str) -> FontTweak {
     let mut tweak = FontTweak::default();
     if platform == FontPolicyPlatform::Windows && name == "JetBrainsMono" {
-        tweak.hinting_target = HintingTarget::Smooth(SmoothHinting { symmetric_rendering: false, ..SmoothHinting::default() });
+        tweak.hinting_target = HintingTarget::Smooth(SmoothHinting {
+            symmetric_rendering: false,
+            ..SmoothHinting::default()
+        });
     }
     tweak
 }
 
-fn font_definitions_for_platform(prefer_hans: bool, platform: FontPolicyPlatform) -> FontDefinitions {
+fn font_definitions_for_platform(
+    prefer_hans: bool,
+    platform: FontPolicyPlatform,
+) -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
     let add = |fonts: &mut FontDefinitions, name: &str, bytes: &'static [u8]| {
         let data = FontData::from_static(bytes);
@@ -321,11 +363,31 @@ fn font_definitions_for_platform(prefer_hans: bool, platform: FontPolicyPlatform
     };
     // Shared with typed signatures' fallback glyphs, so the font is embedded once.
     add(&mut fonts, "Inter", pdfcraft_fonts::INTER_REGULAR);
-    add(&mut fonts, "Inter-Medium", include_bytes!("../../../assets/pdfcraft/fonts/Inter-Medium.ttf"));
-    add(&mut fonts, "Inter-SemiBold", include_bytes!("../../../assets/pdfcraft/fonts/Inter-SemiBold.ttf"));
-    add(&mut fonts, "JetBrainsMono", include_bytes!("../../../assets/pdfcraft/fonts/JetBrainsMono-Regular.ttf"));
-    fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "Inter".to_owned());
-    fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "JetBrainsMono".to_owned());
+    add(
+        &mut fonts,
+        "Inter-Medium",
+        include_bytes!("../../../assets/pdfcraft/fonts/Inter-Medium.ttf"),
+    );
+    add(
+        &mut fonts,
+        "Inter-SemiBold",
+        include_bytes!("../../../assets/pdfcraft/fonts/Inter-SemiBold.ttf"),
+    );
+    add(
+        &mut fonts,
+        "JetBrainsMono",
+        include_bytes!("../../../assets/pdfcraft/fonts/JetBrainsMono-Regular.ttf"),
+    );
+    fonts
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "Inter".to_owned());
+    fonts
+        .families
+        .entry(FontFamily::Monospace)
+        .or_default()
+        .insert(0, "JetBrainsMono".to_owned());
     // The same static bytes pdfcraft-fonts uses for Japanese/Chinese text in PDFs: one copy, not two.
     for face in pdfcraft_fonts::ui_cjk_fonts(prefer_hans) {
         let name = face.name();
@@ -383,7 +445,11 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ctx.set_theme(egui::ThemePreference::System);
     let t = Tokens::for_kind(kind);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new("pdfcraft-theme"), t));
-    let mut v = if t.dark() { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark() {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.panel;
     v.window_fill = t.card;
     v.window_stroke = Stroke::new(1.0, t.border);
@@ -395,9 +461,25 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.override_text_color = Some(t.text);
     v.window_corner_radius = CornerRadius::same(10);
     v.menu_corner_radius = CornerRadius::same(8);
-    v.window_shadow = egui::Shadow { offset: [0, 8], blur: 28, spread: 0, color: Color32::from_black_alpha(if t.dark() { 110 } else { 38 }) };
-    v.popup_shadow = egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }) };
-    for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
+    v.window_shadow = egui::Shadow {
+        offset: [0, 8],
+        blur: 28,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark() { 110 } else { 38 }),
+    };
+    v.popup_shadow = egui::Shadow {
+        offset: [0, 4],
+        blur: 16,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }),
+    };
+    for w in [
+        &mut v.widgets.noninteractive,
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+    ] {
         w.corner_radius = CornerRadius::same(t.radius);
         w.fg_stroke.color = t.text;
     }
@@ -420,7 +502,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     // make little difference.
     v.text_options.subpixel_binning = false;
     if !t.dark() {
-        v.text_options.color_transfer_function = egui::epaint::FontColorTransferFunction::Gamma(0.75);
+        v.text_options.color_transfer_function =
+            egui::epaint::FontColorTransferFunction::Gamma(0.75);
     }
     ctx.set_visuals(v);
     ctx.global_style_mut(|s| {
@@ -434,7 +517,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
         s.text_styles.insert(egui::TextStyle::Body, regular(13.0));
         s.text_styles.insert(egui::TextStyle::Button, regular(13.0));
         s.text_styles.insert(egui::TextStyle::Small, regular(11.0));
-        s.text_styles.insert(egui::TextStyle::Heading, semibold(17.0));
+        s.text_styles
+            .insert(egui::TextStyle::Heading, semibold(17.0));
         s.interaction.tooltip_delay = 0.35;
     });
     let style = ctx.global_style();
@@ -447,7 +531,12 @@ mod tests {
     use super::*;
     use egui::epaint::text::{Fonts, TextOptions};
 
-    const HINTING_CORPUS: [&str; 4] = ["Il1MWmw", "Hamburgefonts", "0123456789 .,;:!?()[]{}+-=/\\", "Café Ångström déjà-vu Ωμέγα Ελληνικά Журнал"];
+    const HINTING_CORPUS: [&str; 4] = [
+        "Il1MWmw",
+        "Hamburgefonts",
+        "0123456789 .,;:!?()[]{}+-=/\\",
+        "Café Ångström déjà-vu Ωμέγα Ελληνικά Журнал",
+    ];
     const HINTING_SIZES: [f32; 6] = [10.0, 11.0, 12.0, 13.0, 14.0, 16.0];
     const HINTING_PPPS: [f32; 4] = [1.0, 1.25, 1.5, 2.0];
 
@@ -463,7 +552,9 @@ mod tests {
     fn raster_edge_and_ink(fonts: &mut Fonts, id: FontId, text: &str, ppp: f32) -> (u64, u64) {
         let galley = {
             let mut view = fonts.with_pixels_per_point(ppp);
-            view.layout_no_wrap(text.to_owned(), id, Color32::BLACK).as_ref().clone()
+            view.layout_no_wrap(text.to_owned(), id, Color32::BLACK)
+                .as_ref()
+                .clone()
         };
         let image = fonts.image();
         let mut edge = 0u64;
@@ -490,7 +581,8 @@ mod tests {
         let mut ink = 0;
         for size in HINTING_SIZES {
             for text in HINTING_CORPUS {
-                let (glyph_edge, glyph_ink) = raster_edge_and_ink(fonts, FontId::monospace(size), text, ppp);
+                let (glyph_edge, glyph_ink) =
+                    raster_edge_and_ink(fonts, FontId::monospace(size), text, ppp);
                 edge += glyph_edge;
                 ink += glyph_ink;
             }
@@ -533,9 +625,17 @@ mod tests {
         signature
     }
 
-    fn galley(fonts: &mut Fonts, family: FontFamily, size: f32, ppp: f32, text: &str) -> egui::Galley {
+    fn galley(
+        fonts: &mut Fonts,
+        family: FontFamily,
+        size: f32,
+        ppp: f32,
+        text: &str,
+    ) -> egui::Galley {
         let mut view = fonts.with_pixels_per_point(ppp);
-        view.layout_no_wrap(text.to_owned(), FontId::new(size, family), Color32::BLACK).as_ref().clone()
+        view.layout_no_wrap(text.to_owned(), FontId::new(size, family), Color32::BLACK)
+            .as_ref()
+            .clone()
     }
 
     fn hinting_test_fonts(platform: FontPolicyPlatform) -> Fonts {
@@ -555,7 +655,10 @@ mod tests {
         let windows = font_definitions_for_platform(false, FontPolicyPlatform::Windows);
 
         assert_eq!(baseline.families, windows.families);
-        assert_eq!(baseline.font_data.keys().collect::<Vec<_>>(), windows.font_data.keys().collect::<Vec<_>>());
+        assert_eq!(
+            baseline.font_data.keys().collect::<Vec<_>>(),
+            windows.font_data.keys().collect::<Vec<_>>()
+        );
         for (family, name) in primary_families() {
             let baseline_data = &baseline.font_data[name];
             let windows_data = &windows.font_data[name];
@@ -564,7 +667,10 @@ mod tests {
                 assert_eq!(
                     windows_data.tweak,
                     FontTweak {
-                        hinting_target: HintingTarget::Smooth(SmoothHinting { symmetric_rendering: false, ..SmoothHinting::default() }),
+                        hinting_target: HintingTarget::Smooth(SmoothHinting {
+                            symmetric_rendering: false,
+                            ..SmoothHinting::default()
+                        }),
                         ..FontTweak::default()
                     },
                     "Windows {name}"
@@ -572,11 +678,20 @@ mod tests {
             } else {
                 assert_eq!(windows_data.tweak, baseline_data.tweak, "Windows {name}");
             }
-            assert_eq!(primary_font_tweak(FontPolicyPlatform::Other, name), baseline_data.tweak, "non-Windows policy for {family:?}");
+            assert_eq!(
+                primary_font_tweak(FontPolicyPlatform::Other, name),
+                baseline_data.tweak,
+                "non-Windows policy for {family:?}"
+            );
         }
         for (name, data) in &baseline.font_data {
-            if !["Inter", "Inter-Medium", "Inter-SemiBold", "JetBrainsMono"].contains(&name.as_str()) {
-                assert_eq!(windows.font_data[name].tweak, data.tweak, "Windows fallback {name}");
+            if !["Inter", "Inter-Medium", "Inter-SemiBold", "JetBrainsMono"]
+                .contains(&name.as_str())
+            {
+                assert_eq!(
+                    windows.font_data[name].tweak, data.tweak,
+                    "Windows fallback {name}"
+                );
             }
         }
         assert_eq!(
@@ -601,11 +716,23 @@ mod tests {
             let sharpness_change = windows_sharpness / baseline_sharpness - 1.0;
             let weight_change = windows_ink as f64 / baseline_ink as f64 - 1.0;
             if ppp < 2.0 {
-                assert!(sharpness_change > 0.002, "{ppp} ppp sharpness change: {sharpness_change:.2}%", sharpness_change = sharpness_change * 100.0);
+                assert!(
+                    sharpness_change > 0.002,
+                    "{ppp} ppp sharpness change: {sharpness_change:.2}%",
+                    sharpness_change = sharpness_change * 100.0
+                );
             } else {
-                assert!(sharpness_change >= -0.01, "{ppp} ppp sharpness change: {sharpness_change:.2}%", sharpness_change = sharpness_change * 100.0);
+                assert!(
+                    sharpness_change >= -0.01,
+                    "{ppp} ppp sharpness change: {sharpness_change:.2}%",
+                    sharpness_change = sharpness_change * 100.0
+                );
             }
-            assert!(weight_change.abs() < 0.05, "{ppp} ppp ink change: {weight_change:.2}%", weight_change = weight_change * 100.0);
+            assert!(
+                weight_change.abs() < 0.05,
+                "{ppp} ppp ink change: {weight_change:.2}%",
+                weight_change = weight_change * 100.0
+            );
         }
 
         for ppp in HINTING_PPPS {
@@ -618,8 +745,20 @@ mod tests {
                             "{family:?} {text:?}"
                         );
                         assert_eq!(
-                            layout_signature(&galley(&mut baseline, family.clone(), size, ppp, text)),
-                            layout_signature(&galley(&mut windows, family.clone(), size, ppp, text)),
+                            layout_signature(&galley(
+                                &mut baseline,
+                                family.clone(),
+                                size,
+                                ppp,
+                                text
+                            )),
+                            layout_signature(&galley(
+                                &mut windows,
+                                family.clone(),
+                                size,
+                                ppp,
+                                text
+                            )),
                             "{family:?}, {size} pt, {ppp} ppp, {text:?}"
                         );
                     }
@@ -631,18 +770,36 @@ mod tests {
     /// "Use system setting" draws what the operating system says, dark or light.
     #[test]
     fn following_the_system_draws_what_the_system_says() {
-        assert_eq!(ThemePreference::System.resolve(Some(true), ThemeKind::Light), ThemeKind::Dark);
-        assert_eq!(ThemePreference::System.resolve(Some(false), ThemeKind::Dark), ThemeKind::Light);
+        assert_eq!(
+            ThemePreference::System.resolve(Some(true), ThemeKind::Light),
+            ThemeKind::Dark
+        );
+        assert_eq!(
+            ThemePreference::System.resolve(Some(false), ThemeKind::Dark),
+            ThemeKind::Light
+        );
     }
 
     /// An operating system that says nothing leaves the last choice standing, and an explicit
     /// Light or Dark is never overridden by what the system says.
     #[test]
     fn an_answerless_system_leaves_the_choice_and_an_explicit_one_stands() {
-        assert_eq!(ThemePreference::System.resolve(None, ThemeKind::Light), ThemeKind::Light);
-        assert_eq!(ThemePreference::System.resolve(None, ThemeKind::Dark), ThemeKind::Dark);
-        assert_eq!(ThemePreference::Light.resolve(Some(true), ThemeKind::Dark), ThemeKind::Light);
-        assert_eq!(ThemePreference::Dark.resolve(Some(false), ThemeKind::Light), ThemeKind::Dark);
+        assert_eq!(
+            ThemePreference::System.resolve(None, ThemeKind::Light),
+            ThemeKind::Light
+        );
+        assert_eq!(
+            ThemePreference::System.resolve(None, ThemeKind::Dark),
+            ThemeKind::Dark
+        );
+        assert_eq!(
+            ThemePreference::Light.resolve(Some(true), ThemeKind::Dark),
+            ThemeKind::Light
+        );
+        assert_eq!(
+            ThemePreference::Dark.resolve(Some(false), ThemeKind::Light),
+            ThemeKind::Dark
+        );
     }
 
     /// WCAG 2 contrast ratio between two opaque colours.
@@ -650,7 +807,11 @@ mod tests {
         let lum = |c: Color32| {
             let lin = |v: u8| {
                 let s = v as f32 / 255.0;
-                if s <= 0.04045 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+                if s <= 0.04045 {
+                    s / 12.92
+                } else {
+                    ((s + 0.055) / 1.055).powf(2.4)
+                }
             };
             0.2126 * lin(c.r()) + 0.7152 * lin(c.g()) + 0.0722 * lin(c.b())
         };
@@ -663,10 +824,16 @@ mod tests {
         let rest = Color32::from_rgb(0xFF, 0xFF, 0xFF);
         let hover = Color32::from_rgb(0xF0, 0xF0, 0xF3);
         let pressed = Color32::from_rgb(0xE4, 0xE4, 0xE9);
-        let idle = Press { hover: 0.0, down: 0.0 };
+        let idle = Press {
+            hover: 0.0,
+            down: 0.0,
+        };
         assert_eq!(idle.fill(rest, hover, pressed), rest);
         assert_eq!(idle.offset(), Vec2::ZERO);
-        let held = Press { hover: 1.0, down: 1.0 };
+        let held = Press {
+            hover: 1.0,
+            down: 1.0,
+        };
         assert_eq!(held.fill(rest, hover, pressed), pressed);
         assert_eq!(held.offset(), Vec2::new(0.0, 1.0));
     }
@@ -676,10 +843,17 @@ mod tests {
         // #76: the faintest text (hints, zoom level, captions) was 3.3:1 in the light theme.
         for kind in [ThemeKind::Light, ThemeKind::Dark] {
             let t = Tokens::for_kind(kind);
-            for (name, fg) in [("text", t.text), ("text_muted", t.text_muted), ("text_faint", t.text_faint)] {
+            for (name, fg) in [
+                ("text", t.text),
+                ("text_muted", t.text_muted),
+                ("text_faint", t.text_faint),
+            ] {
                 for bg in [t.chrome, t.panel, t.card, t.pasteboard] {
                     let r = contrast(fg, bg);
-                    assert!(r >= 4.5, "{kind:?} {name} on {bg:?}: {r:.2}:1, WCAG AA needs 4.5:1");
+                    assert!(
+                        r >= 4.5,
+                        "{kind:?} {name} on {bg:?}: {r:.2}:1, WCAG AA needs 4.5:1"
+                    );
                 }
             }
         }

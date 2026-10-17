@@ -5,8 +5,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    BleedSettings, Compatibility, CompressionSettings, Downsample, ImageCodec, ImageCompression, JpegQuality, MonoCodec, MonoCompression,
-    PdfSettings, Standard,
+    BleedSettings, Compatibility, CompressionSettings, Downsample, ImageCodec, ImageCompression,
+    JpegQuality, MonoCodec, MonoCompression, PdfSettings, Standard,
 };
 
 /// The built-in preset every PDF export starts from.
@@ -27,14 +27,30 @@ pub struct PdfPreset {
 /// Colour and greyscale images resampled (bicubic) to `ppi` above `above` ppi, compressed with
 /// `codec`.
 fn images(ppi: f64, above: f64, codec: ImageCodec, quality: JpegQuality) -> ImageCompression {
-    ImageCompression { downsample: Downsample::Bicubic, ppi, above_ppi: above, compression: codec, quality }
+    ImageCompression {
+        downsample: Downsample::Bicubic,
+        ppi,
+        above_ppi: above,
+        compression: codec,
+        quality,
+    }
 }
 
 /// Compression with the same settings for colour and greyscale images, and CCITT Group 4
 /// monochrome images resampled to `mono_ppi` above 1.5 × that.
 fn compression(img: ImageCompression, mono_ppi: f64) -> CompressionSettings {
-    let mono = MonoCompression { downsample: Downsample::Bicubic, ppi: mono_ppi, above_ppi: mono_ppi * 1.5, compression: MonoCodec::CcittG4 };
-    CompressionSettings { color: img.clone(), gray: img, mono, compress_text: true }
+    let mono = MonoCompression {
+        downsample: Downsample::Bicubic,
+        ppi: mono_ppi,
+        above_ppi: mono_ppi * 1.5,
+        compression: MonoCodec::CcittG4,
+    };
+    CompressionSettings {
+        color: img.clone(),
+        gray: img,
+        mono,
+        compress_text: true,
+    }
 }
 
 /// Settings for print: PDF 1.6, images kept at 300 ppi, the document's bleed when `bleed`.
@@ -42,26 +58,44 @@ fn print(codec: ImageCodec, bleed: bool) -> PdfSettings {
     PdfSettings {
         compatibility: Compatibility::Pdf16,
         compression: compression(images(300.0, 450.0, codec, JpegQuality::Maximum), 1200.0),
-        bleed: BleedSettings { use_document: bleed, ..Default::default() },
+        bleed: BleedSettings {
+            use_document: bleed,
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
 
 /// A PDF/X preset: print settings for `standard` at PDF version `compatibility`.
 fn pdf_x(standard: Standard, compatibility: Compatibility) -> PdfSettings {
-    PdfSettings { standard, compatibility, ..print(ImageCodec::Auto, true) }
+    PdfSettings {
+        standard,
+        compatibility,
+        ..print(ImageCodec::Auto, true)
+    }
 }
 
 /// Every built-in preset, the app default first.
 pub fn builtin_presets() -> Vec<PdfPreset> {
-    let preset = |name: &str, description: &str, settings| PdfPreset { name: name.into(), description: description.into(), settings };
+    let preset = |name: &str, description: &str, settings| PdfPreset {
+        name: name.into(),
+        description: description.into(),
+        settings,
+    };
     vec![
         preset(
             DEFAULT_PRESET,
             "Keeps the document editable: VectorCraft reopens the PDF with nothing lost. For files you'll edit again.",
-            PdfSettings { preserve_editing: true, ..Default::default() },
+            PdfSettings {
+                preserve_editing: true,
+                ..Default::default()
+            },
         ),
-        preset("High Quality Print", "For desktop printers and proofs: images stay at print resolution.", print(ImageCodec::Auto, false)),
+        preset(
+            "High Quality Print",
+            "For desktop printers and proofs: images stay at print resolution.",
+            print(ImageCodec::Auto, false),
+        ),
         preset(
             "Press Quality",
             "For commercial printing: high-resolution images compressed losslessly, the document's bleed.",
@@ -73,7 +107,10 @@ pub fn builtin_presets() -> Vec<PdfPreset> {
             PdfSettings {
                 compatibility: Compatibility::Pdf16,
                 fast_web_view: true,
-                compression: compression(images(100.0, 150.0, ImageCodec::Jpeg, JpegQuality::Medium), 300.0),
+                compression: compression(
+                    images(100.0, 150.0, ImageCodec::Jpeg, JpegQuality::Medium),
+                    300.0,
+                ),
                 ..Default::default()
             },
         ),
@@ -98,6 +135,12 @@ pub fn builtin_presets() -> Vec<PdfPreset> {
 /// The built-in preset `name` names (any case; `default` is the app default).
 pub fn builtin_preset(name: &str) -> Option<PdfPreset> {
     let name = name.trim();
-    let name = if name.eq_ignore_ascii_case("default") { DEFAULT_PRESET } else { name };
-    builtin_presets().into_iter().find(|p| p.name.eq_ignore_ascii_case(name))
+    let name = if name.eq_ignore_ascii_case("default") {
+        DEFAULT_PRESET
+    } else {
+        name
+    };
+    builtin_presets()
+        .into_iter()
+        .find(|p| p.name.eq_ignore_ascii_case(name))
 }

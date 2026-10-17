@@ -48,13 +48,26 @@ fn cross(a: (Point, Point), b: (Point, Point)) -> bool {
 #[test]
 fn every_outline_is_drawn_inside_its_box_without_self_intersections() {
     let (o, d) = (Point::ORIGIN, Point::new(2.0, 2.0));
-    assert!(cross((o, d), (Point::new(0.0, 2.0), Point::new(2.0, 0.0))) && !cross((o, d), (d, Point::new(4.0, 0.0))), "the check itself");
+    assert!(
+        cross((o, d), (Point::new(0.0, 2.0), Point::new(2.0, 0.0)))
+            && !cross((o, d), (d, Point::new(4.0, 0.0))),
+        "the check itself"
+    );
     for kind in Arrowhead::ALL {
         let h = head(kind);
         assert!(h.outline.area().abs() > 4.0, "{kind:?} is drawn");
         let b = h.outline.bounding_box();
-        assert!(b.x0 >= 91.0 - 1e-6 && b.x1 <= 100.0 + 1e-6 && b.y0 >= -4.0 - 1e-6 && b.y1 <= 4.0 + 1e-6, "{kind:?} leaves its box: {b:?}");
-        let edges: Vec<(Point, Point)> = contours(&h.outline).iter().flat_map(|c| (0..c.len()).map(|i| (c[i], c[(i + 1) % c.len()]))).collect();
+        assert!(
+            b.x0 >= 91.0 - 1e-6
+                && b.x1 <= 100.0 + 1e-6
+                && b.y0 >= -4.0 - 1e-6
+                && b.y1 <= 4.0 + 1e-6,
+            "{kind:?} leaves its box: {b:?}"
+        );
+        let edges: Vec<(Point, Point)> = contours(&h.outline)
+            .iter()
+            .flat_map(|c| (0..c.len()).map(|i| (c[i], c[(i + 1) % c.len()])))
+            .collect();
         assert!(edges.len() >= 3, "{kind:?}");
         for (i, a) in edges.iter().enumerate() {
             for b in &edges[i + 1..] {
@@ -70,7 +83,12 @@ fn the_stroke_ends_inside_every_head() {
         let h = head(kind);
         // Just in front of where the line stops, on its centre line.
         let end = h.tip - h.dir * (h.inset - 0.1);
-        assert_ne!(h.outline.winding(end), 0, "{kind:?}: the line ends outside the head (inset {})", h.inset);
+        assert_ne!(
+            h.outline.winding(end),
+            0,
+            "{kind:?}: the line ends outside the head (inset {})",
+            h.inset
+        );
     }
 }
 

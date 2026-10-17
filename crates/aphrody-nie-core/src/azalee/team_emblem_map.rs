@@ -91,7 +91,9 @@ pub const TEAM_EMBLEM_MAP: &[(&str, &str)] = &[
 /// Finds an emblem code by the exact canonical team hash string.
 #[must_use]
 pub fn team_emblem(team_id: &str) -> Option<&'static str> {
-    TEAM_EMBLEM_MAP.iter().find_map(|(id, emblem)| (*id == team_id).then_some(*emblem))
+    TEAM_EMBLEM_MAP
+        .iter()
+        .find_map(|(id, emblem)| (*id == team_id).then_some(*emblem))
 }
 
 #[cfg(test)]
@@ -102,7 +104,9 @@ mod tests {
     fn contains_the_generated_non_empty_mapping() {
         assert_eq!(TEAM_EMBLEM_MAP.len(), 84);
         assert!(
-            TEAM_EMBLEM_MAP.iter().all(|(team, emblem)| !team.is_empty() && !emblem.is_empty())
+            TEAM_EMBLEM_MAP
+                .iter()
+                .all(|(team, emblem)| !team.is_empty() && !emblem.is_empty())
         );
         assert_eq!(team_emblem("0x02806CB5"), Some("em040010"));
         assert_eq!(team_emblem("0x02806cb5"), None);

@@ -6,7 +6,19 @@ use crate::*;
 
 fn photo(c: &mut Catalog) -> Op {
     let id = c.alloc_photo_id();
-    Op::AddPhoto { photo: Box::new(Photo::new(id, Source::File { path: format!("/p/{}.jpg", id.0) }, "p.jpg", "JPEG", 4, 3, "2026-01-01")) }
+    Op::AddPhoto {
+        photo: Box::new(Photo::new(
+            id,
+            Source::File {
+                path: format!("/p/{}.jpg", id.0),
+            },
+            "p.jpg",
+            "JPEG",
+            4,
+            3,
+            "2026-01-01",
+        )),
+    }
 }
 
 /// A catalog with two photos and the log line for a third op on top of it.
@@ -32,7 +44,14 @@ fn snapshot_version(m: &MemStore) -> u64 {
 fn v1_library_loads_and_is_upgraded() {
     let (base, log, full) = legacy_parts();
     let m = MemStore::new();
-    m.set(SNAPSHOT, format!("{{\"format\":\"lightcraft-catalog\",\"version\":1,\"seq\":2,\"catalog\":{}}}\n", base.to_snapshot()).into_bytes());
+    m.set(
+        SNAPSHOT,
+        format!(
+            "{{\"format\":\"lightcraft-catalog\",\"version\":1,\"seq\":2,\"catalog\":{}}}\n",
+            base.to_snapshot()
+        )
+        .into_bytes(),
+    );
     m.set(LOG, log.into_bytes());
     let (mut j, c, r) = Journal::open(Box::new(m.clone())).unwrap();
     assert_eq!(c.to_snapshot(), full.to_snapshot());
@@ -41,7 +60,11 @@ fn v1_library_loads_and_is_upgraded() {
     assert_eq!(snapshot_version(&m), u64::from(VERSION));
     assert!(m.get(LOG).unwrap().is_empty());
     assert_eq!(j.seq(), 3);
-    j.append(&[Op::SetLabelName { label: ColorLabel::ALL[0], name: Some("x".into()) }]).unwrap();
+    j.append(&[Op::SetLabelName {
+        label: ColorLabel::ALL[0],
+        name: Some("x".into()),
+    }])
+    .unwrap();
     drop(j);
     let (_, _, r) = Journal::open(Box::new(m)).unwrap();
     assert_eq!((r.replayed, r.upgraded_from), (1, None));
@@ -52,7 +75,14 @@ fn v1_library_loads_and_is_upgraded() {
 fn v2_library_loads_and_is_upgraded() {
     let (base, log, full) = legacy_parts();
     let m = MemStore::new();
-    m.set(SNAPSHOT, format!("{{\"format\":\"lightcraft-catalog\",\"version\":2,\"seq\":2,\"catalog\":{}}}\n", base.to_snapshot()).into_bytes());
+    m.set(
+        SNAPSHOT,
+        format!(
+            "{{\"format\":\"lightcraft-catalog\",\"version\":2,\"seq\":2,\"catalog\":{}}}\n",
+            base.to_snapshot()
+        )
+        .into_bytes(),
+    );
     m.set(LOG, log.into_bytes());
     let (_, c, r) = Journal::open(Box::new(m.clone())).unwrap();
     assert_eq!(c.to_snapshot(), full.to_snapshot());
@@ -66,7 +96,14 @@ fn v2_library_loads_and_is_upgraded() {
 fn v3_library_loads_and_is_upgraded() {
     let (base, log, full) = legacy_parts();
     let m = MemStore::new();
-    m.set(SNAPSHOT, format!("{{\"format\":\"lightcraft-catalog\",\"version\":3,\"seq\":2,\"catalog\":{}}}\n", base.to_snapshot()).into_bytes());
+    m.set(
+        SNAPSHOT,
+        format!(
+            "{{\"format\":\"lightcraft-catalog\",\"version\":3,\"seq\":2,\"catalog\":{}}}\n",
+            base.to_snapshot()
+        )
+        .into_bytes(),
+    );
     m.set(LOG, log.into_bytes());
     let (_, c, r) = Journal::open(Box::new(m.clone())).unwrap();
     assert_eq!(c.to_snapshot(), full.to_snapshot());
@@ -103,8 +140,15 @@ fn assert_refused_untouched(m: &MemStore) {
     let e = Journal::open(Box::new(m.clone())).err().expect("refused");
     assert!(matches!(e, CatalogError::Newer(_)), "{e:?}");
     let msg = e.to_string();
-    assert!(msg.contains("newer version of LightCraft") && msg.contains("left unchanged"), "{msg}");
-    assert_eq!(*m.files.lock().unwrap(), before, "nothing modified, nothing renamed");
+    assert!(
+        msg.contains("newer version of LightCraft") && msg.contains("left unchanged"),
+        "{msg}"
+    );
+    assert_eq!(
+        *m.files.lock().unwrap(),
+        before,
+        "nothing modified, nothing renamed"
+    );
 }
 
 #[test]
@@ -113,7 +157,12 @@ fn newer_snapshot_is_refused_untouched() {
     let m = MemStore::new();
     m.set(
         SNAPSHOT,
-        format!("{{\"format\":\"lightcraft-catalog\",\"version\":{},\"seq\":2,\"catalog\":{}}}\n", VERSION + 1, base.to_snapshot()).into_bytes(),
+        format!(
+            "{{\"format\":\"lightcraft-catalog\",\"version\":{},\"seq\":2,\"catalog\":{}}}\n",
+            VERSION + 1,
+            base.to_snapshot()
+        )
+        .into_bytes(),
     );
     m.set(LOG, log.into_bytes());
     assert_refused_untouched(&m);
@@ -135,12 +184,22 @@ fn unknown_op_in_the_log_is_refused_untouched() {
     let (base, log, _) = legacy_parts();
     let future = |seq: u64| {
         let body = r#"{"op":"fromTheFuture","id":1,"what":"something new"}"#;
-        format!("{{\"seq\":{seq},\"crc\":{},\"op\":{body}}}\n", crc32fast::hash(body.as_bytes()))
+        format!(
+            "{{\"seq\":{seq},\"crc\":{},\"op\":{body}}}\n",
+            crc32fast::hash(body.as_bytes())
+        )
     };
-    let snap = format!("{{\"format\":\"lightcraft-catalog\",\"version\":{VERSION},\"seq\":2,\"catalog\":{}}}\n", base.to_snapshot());
+    let snap = format!(
+        "{{\"format\":\"lightcraft-catalog\",\"version\":{VERSION},\"seq\":2,\"catalog\":{}}}\n",
+        base.to_snapshot()
+    );
     let id = base.photos().next().unwrap().id;
     let after = format!("{}\n", encode_record(5, &Op::SetRating { id, rating: 1 }));
-    for log in [format!("{log}{}", future(4)), format!("{log}{}{after}", future(4)), format!("{}{log}", future(3))] {
+    for log in [
+        format!("{log}{}", future(4)),
+        format!("{log}{}{after}", future(4)),
+        format!("{}{log}", future(3)),
+    ] {
         let m = MemStore::new();
         m.set(SNAPSHOT, snap.clone().into_bytes());
         m.set(LOG, log.into_bytes());
@@ -150,7 +209,14 @@ fn unknown_op_in_the_log_is_refused_untouched() {
     let body = r#"{"op":"setRating","id":1,"rating":"five stars"}"#;
     let m = MemStore::new();
     m.set(SNAPSHOT, snap.into_bytes());
-    m.set(LOG, format!("{log}{{\"seq\":4,\"crc\":{},\"op\":{body}}}\n", crc32fast::hash(body.as_bytes())).into_bytes());
+    m.set(
+        LOG,
+        format!(
+            "{log}{{\"seq\":4,\"crc\":{},\"op\":{body}}}\n",
+            crc32fast::hash(body.as_bytes())
+        )
+        .into_bytes(),
+    );
     assert_refused_untouched(&m);
 }
 
@@ -164,7 +230,10 @@ fn bad_crc_is_still_a_torn_tail() {
         format!("{{\"format\":\"lightcraft-catalog\",\"version\":{VERSION},\"seq\":2,\"catalog\":{}}}\n", base.to_snapshot()).into_bytes(),
     );
     let body = r#"{"op":"fromTheFuture"}"#;
-    m.set(LOG, format!("{log}{{\"seq\":4,\"crc\":1,\"op\":{body}}}\n").into_bytes());
+    m.set(
+        LOG,
+        format!("{log}{{\"seq\":4,\"crc\":1,\"op\":{body}}}\n").into_bytes(),
+    );
     let (_, _, r) = Journal::open(Box::new(m)).unwrap();
     assert!(r.torn_bytes > 0 && r.damaged.is_none(), "{r:?}");
 }
@@ -214,6 +283,12 @@ fn op_variants_are_versioned() {
             Op::SetHistoryCursor { .. } => 8,
         }
     }
-    let newest = since(&Op::SetHistoryCursor { id: PhotoId(1), cursor: None });
-    assert_eq!(newest, VERSION, "the newest op's version must be the current format version");
+    let newest = since(&Op::SetHistoryCursor {
+        id: PhotoId(1),
+        cursor: None,
+    });
+    assert_eq!(
+        newest, VERSION,
+        "the newest op's version must be the current format version"
+    );
 }

@@ -85,10 +85,12 @@ pub fn inventory_install(root: &Path) -> Result<InstallInventory> {
 
             let size_bytes = entry.metadata()?.len();
             total_bytes =
-                total_bytes.checked_add(size_bytes).ok_or_else(|| ReError::ParseError {
-                    context: "install_inventory",
-                    details: "total file size overflow".into(),
-                })?;
+                total_bytes
+                    .checked_add(size_bytes)
+                    .ok_or_else(|| ReError::ParseError {
+                        context: "install_inventory",
+                        details: "total file size overflow".into(),
+                    })?;
             let ext = path
                 .extension()
                 .map(|value| value.to_string_lossy().to_ascii_lowercase())
@@ -115,15 +117,22 @@ pub fn inventory_install(root: &Path) -> Result<InstallInventory> {
             steam_app_id: 454650,
             root: root.to_string_lossy().into_owned(),
         },
-        scan: InventoryStats { file_count: files.len(), total_bytes, total_gib },
+        scan: InventoryStats {
+            file_count: files.len(),
+            total_bytes,
+            total_gib,
+        },
         files,
     })
 }
 
 fn relative_path(root: &Path, path: &Path) -> Result<String> {
-    path.strip_prefix(root).map(|relative| relative.to_string_lossy().replace('\\', "/")).map_err(
-        |error| ReError::ParseError { context: "install_inventory", details: error.to_string() },
-    )
+    path.strip_prefix(root)
+        .map(|relative| relative.to_string_lossy().replace('\\', "/"))
+        .map_err(|error| ReError::ParseError {
+            context: "install_inventory",
+            details: error.to_string(),
+        })
 }
 
 fn sha256_file(path: &Path) -> Result<String> {

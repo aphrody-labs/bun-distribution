@@ -90,7 +90,12 @@ impl<'a> FileSystem<'a> {
     /// Creates a new [`FileSystem`]. The number of overlays are used to determine the first file ID, since overlays are also
     /// located in the FAT but not the FNT.
     pub fn new(num_overlays: usize) -> Self {
-        let root = Dir { id: ROOT_DIR_ID, name: "/".to_string(), parent_id: 0, children: vec![] };
+        let root = Dir {
+            id: ROOT_DIR_ID,
+            name: "/".to_string(),
+            parent_id: 0,
+            children: vec![],
+        };
         Self {
             num_overlays,
             files: vec![],
@@ -153,7 +158,11 @@ impl<'a> FileSystem<'a> {
 
     /// Returns the name of a directory or file.
     pub fn name(&self, id: u16) -> &str {
-        if Self::is_dir(id) { &self.dir(id).name } else { &self.file(id).name }
+        if Self::is_dir(id) {
+            &self.dir(id).name
+        } else {
+            &self.file(id).name
+        }
     }
 
     /// Returns a directory.
@@ -188,7 +197,12 @@ impl<'a> FileSystem<'a> {
 
             if Self::is_dir(id) {
                 max_dir_id = max_dir_id.max(id);
-                let mut dir = Dir { id, name, parent_id: parent.id, children: vec![] };
+                let mut dir = Dir {
+                    id,
+                    name,
+                    parent_id: parent.id,
+                    children: vec![],
+                };
                 let (max_child_dir_id, max_child_file_id) =
                     Self::parse_subtable(fnt, fat, rom, &mut dir, dirs, files);
                 max_dir_id = max_dir_id.max(max_child_dir_id);
@@ -221,8 +235,12 @@ impl<'a> FileSystem<'a> {
     pub fn parse(fnt: &Fnt, fat: &[FileAlloc], rom: &'a raw::Rom) -> Result<Self, FileParseError> {
         let num_overlays = rom.num_arm9_overlays()? + rom.num_arm7_overlays()?;
 
-        let mut root =
-            Dir { id: ROOT_DIR_ID, name: "/".to_string(), parent_id: 0, children: vec![] };
+        let mut root = Dir {
+            id: ROOT_DIR_ID,
+            name: "/".to_string(),
+            parent_id: 0,
+            children: vec![],
+        };
         let mut dirs = vec![None; fnt.subtables.len()];
         let mut files = vec![None; fat.len()];
         let (max_file_id, max_dir_id) =
@@ -238,7 +256,14 @@ impl<'a> FileSystem<'a> {
         let dirs = dirs
             .into_iter()
             .enumerate()
-            .map(|(id, d)| d.ok_or(MissingDirIdSnafu { id: id as u16 + ROOT_DIR_ID }.build()))
+            .map(|(id, d)| {
+                d.ok_or(
+                    MissingDirIdSnafu {
+                        id: id as u16 + ROOT_DIR_ID,
+                    }
+                    .build(),
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(FileSystem {
@@ -251,8 +276,15 @@ impl<'a> FileSystem<'a> {
     }
 
     fn find_first_file_id(&self, parent: &Dir) -> u16 {
-        let child = *parent.children.first().expect("No first file ID found, directory is empty");
-        if Self::is_file(child) { child } else { self.find_first_file_id(self.dir(child)) }
+        let child = *parent
+            .children
+            .first()
+            .expect("No first file ID found, directory is empty");
+        if Self::is_file(child) {
+            child
+        } else {
+            self.find_first_file_id(self.dir(child))
+        }
     }
 
     fn build_subtable(&self, parent: &Dir) -> Result<FntSubtable<'a>, FileBuildError> {
@@ -312,7 +344,9 @@ impl<'a> FileSystem<'a> {
     pub fn build_fnt(&self) -> Result<Fnt<'_>, FileBuildError> {
         let mut subtables = vec![];
         self.build_fnt_recursive(&mut subtables, ROOT_DIR_ID)?;
-        Ok(Fnt { subtables: subtables.into_boxed_slice() })
+        Ok(Fnt {
+            subtables: subtables.into_boxed_slice(),
+        })
     }
 
     fn compare_for_fnt(a: &str, a_dir: bool, b: &str, b_dir: bool) -> Ordering {
@@ -339,7 +373,12 @@ impl<'a> FileSystem<'a> {
     fn sort_for_fnt_in(&mut self, parent_id: u16) {
         let mut parent = self.dir(parent_id).clone();
         parent.children.sort_by(|a, b| {
-            Self::compare_for_fnt(self.name(*a), Self::is_dir(*a), self.name(*b), Self::is_dir(*b))
+            Self::compare_for_fnt(
+                self.name(*a),
+                Self::is_dir(*a),
+                self.name(*b),
+                Self::is_dir(*b),
+            )
         });
 
         for child in &mut parent.children {
@@ -363,7 +402,9 @@ impl<'a> FileSystem<'a> {
 
     fn sort_for_rom_in(&mut self, parent_id: u16) {
         let mut parent = self.dir(parent_id).clone();
-        parent.children.sort_by(|a, b| Self::compare_for_rom(self.name(*a), self.name(*b)));
+        parent
+            .children
+            .sort_by(|a, b| Self::compare_for_rom(self.name(*a), self.name(*b)));
 
         for child in &mut parent.children {
             if Self::is_dir(*child) {
@@ -381,11 +422,19 @@ impl<'a> FileSystem<'a> {
 
     fn find_path_in(&self, path: &str, parent_id: u16) -> Option<u16> {
         let parent = &self.dir(parent_id);
-        let (child_name, next) =
-            path.split_once('/').map_or((path, None), |(c, n)| (c, Some(n)));
-        let child = parent.children.iter().find(|id| self.name(**id) == child_name)?;
+        let (child_name, next) = path
+            .split_once('/')
+            .map_or((path, None), |(c, n)| (c, Some(n)));
+        let child = parent
+            .children
+            .iter()
+            .find(|id| self.name(**id) == child_name)?;
         if let Some(next) = next {
-            if Self::is_dir(*child) { self.find_path_in(next, *child) } else { None }
+            if Self::is_dir(*child) {
+                self.find_path_in(next, *child)
+            } else {
+                None
+            }
         } else {
             Some(*child)
         }
@@ -397,7 +446,12 @@ impl<'a> FileSystem<'a> {
 
     fn make_child_dir(&mut self, name: String, parent_id: u16) -> &Dir {
         let id = self.next_dir_id;
-        self.dirs.push(Dir { id, name, parent_id, children: vec![] });
+        self.dirs.push(Dir {
+            id,
+            name,
+            parent_id,
+            children: vec![],
+        });
         let parent = self.dir_mut(parent_id);
         parent.children.push(id);
         self.next_dir_id += 1;
@@ -406,7 +460,12 @@ impl<'a> FileSystem<'a> {
 
     fn make_child_file(&mut self, name: String, parent_id: u16, contents: Vec<u8>) -> &File<'a> {
         let id = self.next_file_id;
-        self.files.push(File { id, name, original_offset: 0, contents: contents.into() });
+        self.files.push(File {
+            id,
+            name,
+            original_offset: 0,
+            contents: contents.into(),
+        });
         let parent = self.dir_mut(parent_id);
         parent.children.push(id);
         self.next_file_id += 1;
@@ -458,7 +517,9 @@ impl<'a> FileSystem<'a> {
             let subdir = if path.trim() == "" {
                 self.dir(ROOT_DIR_ID)
             } else {
-                let Some(child) = self.find_path(path) else { continue };
+                let Some(child) = self.find_path(path) else {
+                    continue;
+                };
                 if visited.contains(&child) {
                     continue;
                 }
@@ -481,7 +542,11 @@ impl<'a> FileSystem<'a> {
         let mut max_id = 0;
         let parent = self.dir(parent_id);
         for child in &parent.children {
-            let id = if Self::is_dir(*child) { self.max_file_id_in(*child) } else { *child };
+            let id = if Self::is_dir(*child) {
+                self.max_file_id_in(*child)
+            } else {
+                *child
+            };
             if id > max_id {
                 max_id = id;
             }
@@ -496,7 +561,11 @@ impl<'a> FileSystem<'a> {
 
     /// Creates a [`DisplayFileSystem`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayFileSystem<'_> {
-        DisplayFileSystem { files: self, parent_id: ROOT_DIR_ID, indent }
+        DisplayFileSystem {
+            files: self,
+            parent_id: ROOT_DIR_ID,
+            indent,
+        }
     }
 
     fn traverse_and_compute_path_order(
@@ -581,7 +650,12 @@ impl<'a> FileSystem<'a> {
                 paths.drain(children_start..children_end);
                 paths.insert(
                     children_start,
-                    PathOrder { id: parent_id, parent_id: parent.parent_id, path_name, offset },
+                    PathOrder {
+                        id: parent_id,
+                        parent_id: parent.parent_id,
+                        path_name,
+                        offset,
+                    },
                 );
             } else {
                 children_start = children_end;
@@ -652,7 +726,15 @@ impl Display for DisplayFileSystem<'_> {
             if FileSystem::is_dir(*child) {
                 write!(f, "{i}0x{:04x}: {: <32}", *child, files.name(*child))?;
                 writeln!(f)?;
-                write!(f, "{}", Self { files, parent_id: *child, indent: self.indent + 2 })?;
+                write!(
+                    f,
+                    "{}",
+                    Self {
+                        files,
+                        parent_id: *child,
+                        indent: self.indent + 2
+                    }
+                )?;
             } else {
                 let file = files.file(*child);
                 let size = BlobSize(file.contents.len()).to_string();

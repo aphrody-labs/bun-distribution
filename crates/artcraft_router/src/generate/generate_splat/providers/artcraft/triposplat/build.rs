@@ -7,8 +7,12 @@ use crate::generate::generate_splat::providers::artcraft::triposplat::request::A
 use crate::generate::generate_splat::splat_generation_draft_or_request::SplatGenerationDraftOrRequest;
 use crate::generate::generate_splat::splat_generation_request::SplatGenerationRequest;
 
-pub fn build_artcraft_triposplat(builder: GenerateSplatRequestBuilder) -> Result<SplatGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_splat_request(builder, CommonSplatModelEnum::TripoSplat)?;
-  let state = ArtcraftTripoSplatRequestState { request };
-  Ok(SplatGenerationDraftOrRequest::Request(SplatGenerationRequest::ArtcraftTripoSplat(state)))
+pub fn build_artcraft_triposplat(
+    builder: GenerateSplatRequestBuilder,
+) -> Result<SplatGenerationDraftOrRequest, ArtcraftRouterError> {
+    let request = build_artcraft_omni_splat_request(builder, CommonSplatModelEnum::TripoSplat)?;
+    let state = ArtcraftTripoSplatRequestState { request };
+    Ok(SplatGenerationDraftOrRequest::Request(
+        SplatGenerationRequest::ArtcraftTripoSplat(state),
+    ))
 }

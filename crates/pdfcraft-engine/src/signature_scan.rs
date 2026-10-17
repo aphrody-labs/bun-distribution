@@ -79,7 +79,9 @@ pub enum ScanError {
     Format,
     #[error("Choose a photo smaller than 4 MiB and 32 megapixels (at most 8192 pixels per side).")]
     Size,
-    #[error("No signature was found in the frame. Move the frame over the signature or raise the ink sensitivity.")]
+    #[error(
+        "No signature was found in the frame. Move the frame over the signature or raise the ink sensitivity."
+    )]
     NoInk,
     #[error("Couldn't read the photo: {0}")]
     Read(#[from] std::io::Error),
@@ -103,18 +105,29 @@ impl PhotoRect {
     pub fn clamped(self, width: u32, height: u32) -> Self {
         let w = self.width.clamp(1, width.max(1));
         let h = self.height.clamp(1, height.max(1));
-        Self { x: self.x.min(width.saturating_sub(w)), y: self.y.min(height.saturating_sub(h)), width: w, height: h }
+        Self {
+            x: self.x.min(width.saturating_sub(w)),
+            y: self.y.min(height.saturating_sub(h)),
+            width: w,
+            height: h,
+        }
     }
 
     /// The same area after the photo (`width`×`height` before turning) is turned a quarter.
     pub fn turned(self, turn: Turn, width: u32, height: u32) -> Self {
         match turn {
-            Turn::Clockwise => {
-                Self { x: height.saturating_sub(self.y.saturating_add(self.height)), y: self.x, width: self.height, height: self.width }
-            }
-            Turn::CounterClockwise => {
-                Self { x: self.y, y: width.saturating_sub(self.x.saturating_add(self.width)), width: self.height, height: self.width }
-            }
+            Turn::Clockwise => Self {
+                x: height.saturating_sub(self.y.saturating_add(self.height)),
+                y: self.x,
+                width: self.height,
+                height: self.width,
+            },
+            Turn::CounterClockwise => Self {
+                x: self.y,
+                y: width.saturating_sub(self.x.saturating_add(self.width)),
+                width: self.height,
+                height: self.width,
+            },
         }
     }
 }
@@ -136,7 +149,9 @@ impl SignaturePhoto {
     /// Read at most the file limit plus one byte, even if the file grows while being read.
     pub fn read(reader: impl Read) -> Result<Self, ScanError> {
         let mut bytes = Vec::new();
-        reader.take(MAX_PHOTO_BYTES as u64 + 1).read_to_end(&mut bytes)?;
+        reader
+            .take(MAX_PHOTO_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
         Self::from_bytes(&bytes)
     }
 
@@ -151,7 +166,9 @@ impl SignaturePhoto {
             SignatureImageError::Format => ScanError::Format,
             e => ScanError::Signature(e),
         })?;
-        Ok(Self { rgb: Arc::new(image.into_rgb8()) })
+        Ok(Self {
+            rgb: Arc::new(image.into_rgb8()),
+        })
     }
 
     /// Width and height in pixels.
@@ -170,7 +187,13 @@ impl SignaturePhoto {
         let scale = (f64::from(max_side.max(1)) / f64::from(w.max(h).max(1))).min(1.0);
         let nw = ((f64::from(w) * scale).round() as u32).max(1);
         let nh = ((f64::from(h) * scale).round() as u32).max(1);
-        DynamicImage::ImageRgb8(image::imageops::resize(&*self.rgb, nw, nh, image::imageops::FilterType::Triangle)).into_rgba8()
+        DynamicImage::ImageRgb8(image::imageops::resize(
+            &*self.rgb,
+            nw,
+            nh,
+            image::imageops::FilterType::Triangle,
+        ))
+        .into_rgba8()
     }
 
     /// Turn the photo a quarter, returning `rect` moved along with it.
@@ -186,12 +209,29 @@ impl SignaturePhoto {
     /// Find the signature, or `None` when the photo shows no clear ink.
     pub fn detect(&self) -> Option<PhotoRect> {
         let [w, h] = self.size();
-        let small = scaled(&self.rgb, PhotoRect { x: 0, y: 0, width: w, height: h }, DETECTION_MAX_SIDE);
+        let small = scaled(
+            &self.rgb,
+            PhotoRect {
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+            },
+            DETECTION_MAX_SIDE,
+        );
         let (sw, sh) = (small.width(), small.height());
         let region = detect_region(&luminance(&small), sw as usize, sh as usize)?;
         let ratio = f64::from(w) / f64::from(sw.max(1));
         let scale = |v: usize| ((v as f64) * ratio).round().clamp(0.0, f64::from(u32::MAX)) as u32;
-        Some(PhotoRect { x: scale(region.x), y: scale(region.y), width: scale(region.width), height: scale(region.height) }.clamped(w, h))
+        Some(
+            PhotoRect {
+                x: scale(region.x),
+                y: scale(region.y),
+                width: scale(region.width),
+                height: scale(region.height),
+            }
+            .clamped(w, h),
+        )
     }
 
     /// Frame the signature for the user: turn a sideways signature upright, then return its
@@ -206,12 +246,23 @@ impl SignaturePhoto {
             return rect;
         }
         let [w, h] = self.size();
-        PhotoRect { x: w / 7, y: h * 7 / 20, width: w * 5 / 7, height: h * 3 / 10 }.clamped(w, h)
+        PhotoRect {
+            x: w / 7,
+            y: h * 7 / 20,
+            width: w * 5 / 7,
+            height: h * 3 / 10,
+        }
+        .clamped(w, h)
     }
 
     /// Clean the framed area into a transparent signature. `max_side` bounds the processed area:
     /// [`SCAN_MAX_SIDE`] for the result, [`PREVIEW_MAX_SIDE`] for a quick preview.
-    pub fn scan(&self, rect: PhotoRect, sensitivity: u8, max_side: u32) -> Result<SignatureImage, ScanError> {
+    pub fn scan(
+        &self,
+        rect: PhotoRect,
+        sensitivity: u8,
+        max_side: u32,
+    ) -> Result<SignatureImage, ScanError> {
         let [w, h] = self.size();
         let rect = rect.clamped(w, h);
         let area = scaled(&self.rgb, rect, max_side.clamp(16, WORKING_MAX_SIDE));
@@ -220,7 +271,16 @@ impl SignaturePhoto {
         // a tight frame are not taken for paper.
         let scale = aw as f32 / rect.width.max(1) as f32;
         let radius = (w.max(h) as f32 * BACKGROUND_RADIUS_RATIO * scale).round() as usize;
-        let ink = extract_ink(&luminance(&area), aw, ah, Options { sensitivity, despeckle: true, background_radius: Some(radius) });
+        let ink = extract_ink(
+            &luminance(&area),
+            aw,
+            ah,
+            Options {
+                sensitivity,
+                despeckle: true,
+                background_radius: Some(radius),
+            },
+        );
         let bounds = ink.bounds.ok_or(ScanError::NoInk)?;
         let png = render(&area, &ink.alpha, bounds)?;
         Ok(SignatureImage::from_bytes(&png)?)
@@ -243,7 +303,13 @@ fn scaled(rgb: &RgbImage, rect: PhotoRect, max_side: u32) -> RgbImage {
 
 /// Perceived luminance (ITU BT.601).
 fn luminance(rgb: &RgbImage) -> Vec<u8> {
-    rgb.pixels().map(|p| (0.299 * f32::from(p[0]) + 0.587 * f32::from(p[1]) + 0.114 * f32::from(p[2])).round().clamp(0.0, 255.0) as u8).collect()
+    rgb.pixels()
+        .map(|p| {
+            (0.299 * f32::from(p[0]) + 0.587 * f32::from(p[1]) + 0.114 * f32::from(p[2]))
+                .round()
+                .clamp(0.0, 255.0) as u8
+        })
+        .collect()
 }
 
 /// A rectangle in the pixels of a processed buffer.
@@ -306,13 +372,19 @@ fn box_blur(values: &mut [f32], width: usize, height: usize, radius: usize) {
     let mut tmp = vec![0.0_f32; width];
     for y in 0..height {
         let start = y * width;
-        let Some(src) = values.get(start..start + width) else { return };
+        let Some(src) = values.get(start..start + width) else {
+            return;
+        };
         row.copy_from_slice(src);
-        blur(&|x| row.get(x).copied().unwrap_or(0.0), width, &mut |x, v| {
-            if let Some(slot) = tmp.get_mut(x) {
-                *slot = v;
-            }
-        });
+        blur(
+            &|x| row.get(x).copied().unwrap_or(0.0),
+            width,
+            &mut |x, v| {
+                if let Some(slot) = tmp.get_mut(x) {
+                    *slot = v;
+                }
+            },
+        );
         if let Some(dst) = values.get_mut(start..start + width) {
             dst.copy_from_slice(&tmp);
         }
@@ -323,11 +395,15 @@ fn box_blur(values: &mut [f32], width: usize, height: usize, radius: usize) {
         for (y, slot) in column.iter_mut().enumerate() {
             *slot = values.get(y * width + x).copied().unwrap_or(0.0);
         }
-        blur(&|y| column.get(y).copied().unwrap_or(0.0), height, &mut |y, v| {
-            if let Some(slot) = tmp.get_mut(y) {
-                *slot = v;
-            }
-        });
+        blur(
+            &|y| column.get(y).copied().unwrap_or(0.0),
+            height,
+            &mut |y, v| {
+                if let Some(slot) = tmp.get_mut(y) {
+                    *slot = v;
+                }
+            },
+        );
         for (y, v) in tmp.iter().enumerate() {
             if let Some(slot) = values.get_mut(y * width + x) {
                 *slot = *v;
@@ -346,7 +422,11 @@ fn sliding_extremum(src: &[u8], dst: &mut [u8], radius: usize, max: bool) {
     let pick = |a: u8, b: u8| if max { a.max(b) } else { a.min(b) };
     let size = 2 * radius + 1;
     let total = len + 2 * radius;
-    let at = |i: usize| src.get(i.saturating_sub(radius).min(len - 1)).copied().unwrap_or(0);
+    let at = |i: usize| {
+        src.get(i.saturating_sub(radius).min(len - 1))
+            .copied()
+            .unwrap_or(0)
+    };
     let mut g = vec![0_u8; total];
     let mut h = vec![0_u8; total];
     let mut prev = 0;
@@ -358,7 +438,11 @@ fn sliding_extremum(src: &[u8], dst: &mut [u8], radius: usize, max: bool) {
     let mut next = 0;
     for (i, slot) in h.iter_mut().enumerate().rev() {
         let v = at(i);
-        next = if i == total - 1 || (i + 1) % size == 0 { v } else { pick(next, v) };
+        next = if i == total - 1 || (i + 1) % size == 0 {
+            v
+        } else {
+            pick(next, v)
+        };
         *slot = next;
     }
     for (i, out) in dst.iter_mut().take(len).enumerate() {
@@ -371,7 +455,10 @@ fn sliding_extremum(src: &[u8], dst: &mut [u8], radius: usize, max: bool) {
 /// Separable square maximum (`max`) or minimum filter.
 fn square_filter(src: &[u8], width: usize, height: usize, radius: usize, max: bool) -> Vec<u8> {
     let mut rows = vec![0_u8; src.len()];
-    for (s, d) in src.chunks_exact(width.max(1)).zip(rows.chunks_exact_mut(width.max(1))) {
+    for (s, d) in src
+        .chunks_exact(width.max(1))
+        .zip(rows.chunks_exact_mut(width.max(1)))
+    {
         sliding_extremum(s, d, radius, max);
     }
     let mut out = vec![0_u8; src.len()];
@@ -398,12 +485,26 @@ fn estimate_background(gray: &[u8], width: usize, height: usize, radius: usize) 
     // halo around every stroke doesn't count as ink. Only clipping keeps shadow edges sharp.
     let mut blurred: Vec<f32> = gray.iter().map(|&v| f32::from(v)).collect();
     box_blur(&mut blurred, width, height, (r / 6).max(1));
-    let clipped: Vec<u8> = gray.iter().zip(&blurred).map(|(&g, &b)| f32::from(g).min(b).round().clamp(0.0, 255.0) as u8).collect();
-    let closed = square_filter(&square_filter(&clipped, width, height, r, true), width, height, r, false);
+    let clipped: Vec<u8> = gray
+        .iter()
+        .zip(&blurred)
+        .map(|(&g, &b)| f32::from(g).min(b).round().clamp(0.0, 255.0) as u8)
+        .collect();
+    let closed = square_filter(
+        &square_filter(&clipped, width, height, r, true),
+        width,
+        height,
+        r,
+        false,
+    );
     let mut smooth: Vec<f32> = closed.iter().map(|&v| f32::from(v)).collect();
     box_blur(&mut smooth, width, height, (r / 4).max(1));
     // The blur must never make the paper darker than the photo itself.
-    smooth.iter().zip(gray).map(|(&s, &g)| s.max(f32::from(g)).round().clamp(1.0, 255.0) as u8).collect()
+    smooth
+        .iter()
+        .zip(gray)
+        .map(|(&s, &g)| s.max(f32::from(g)).round().clamp(1.0, 255.0) as u8)
+        .collect()
 }
 
 /// Label 8-connected blobs of non-zero `mask` pixels; returns the labels (0 = none) and count.
@@ -412,7 +513,9 @@ fn label_components(mask: &[bool], width: usize, height: usize) -> (Vec<u32>, us
     let mut stack: Vec<usize> = Vec::new();
     let mut count = 0_usize;
     for start in 0..mask.len() {
-        if !mask.get(start).copied().unwrap_or(false) || labels.get(start).copied().unwrap_or(1) != 0 {
+        if !mask.get(start).copied().unwrap_or(false)
+            || labels.get(start).copied().unwrap_or(1) != 0
+        {
             continue;
         }
         count += 1;
@@ -444,14 +547,28 @@ fn label_components(mask: &[bool], width: usize, height: usize) -> (Vec<u32>, us
 fn extract_ink(gray: &[u8], width: usize, height: usize, options: Options) -> Ink {
     let n = width * height;
     if n == 0 || gray.len() != n {
-        return Ink { alpha: vec![0; gray.len()], bounds: None };
+        return Ink {
+            alpha: vec![0; gray.len()],
+            bounds: None,
+        };
     }
-    let radius =
-        options.background_radius.unwrap_or_else(|| (width.max(height) as f32 * BACKGROUND_RADIUS_RATIO).round() as usize).max(MIN_BACKGROUND_RADIUS);
+    let radius = options
+        .background_radius
+        .unwrap_or_else(|| (width.max(height) as f32 * BACKGROUND_RADIUS_RATIO).round() as usize)
+        .max(MIN_BACKGROUND_RADIUS);
     let background = estimate_background(gray, width, height, radius);
 
-    let mut darkness: Vec<f32> =
-        gray.iter().zip(&background).map(|(&g, &bg)| if g >= bg { 0.0 } else { 255.0 * f32::from(bg - g) / f32::from(bg.max(1)) }).collect();
+    let mut darkness: Vec<f32> = gray
+        .iter()
+        .zip(&background)
+        .map(|(&g, &bg)| {
+            if g >= bg {
+                0.0
+            } else {
+                255.0 * f32::from(bg - g) / f32::from(bg.max(1))
+            }
+        })
+        .collect();
     let smoothing = width.max(height) / SMOOTHING_SCALE;
     box_blur(&mut darkness, width, height, smoothing);
 
@@ -479,7 +596,11 @@ fn extract_ink(gray: &[u8], width: usize, height: usize, options: Options) -> In
             *c += 1;
         }
     }
-    let min_strong = if options.despeckle { MIN_SPECKLE_AREA.max((n as f64 * SPECKLE_AREA_RATIO).round() as usize) } else { 1 };
+    let min_strong = if options.despeckle {
+        MIN_SPECKLE_AREA.max((n as f64 * SPECKLE_AREA_RATIO).round() as usize)
+    } else {
+        1
+    };
 
     let mut alpha = vec![0_u8; n];
     let (mut min_x, mut min_y, mut max_x, mut max_y) = (usize::MAX, usize::MAX, 0, 0);
@@ -498,7 +619,12 @@ fn extract_ink(gray: &[u8], width: usize, height: usize, options: Options) -> In
             max_y = max_y.max(y);
         }
     }
-    let bounds = (min_x <= max_x && min_y <= max_y).then(|| Region { x: min_x, y: min_y, width: max_x - min_x + 1, height: max_y - min_y + 1 });
+    let bounds = (min_x <= max_x && min_y <= max_y).then(|| Region {
+        x: min_x,
+        y: min_y,
+        width: max_x - min_x + 1,
+        height: max_y - min_y + 1,
+    });
     Ink { alpha, bounds }
 }
 
@@ -506,11 +632,27 @@ fn extract_ink(gray: &[u8], width: usize, height: usize, options: Options) -> In
 /// blobs touching the photo border (paper edges, table, fingers) are ignored, and the blob with
 /// the most ink is framed together with the other words on its line.
 fn detect_region(gray: &[u8], width: usize, height: usize) -> Option<Region> {
-    let ink = extract_ink(gray, width, height, Options { sensitivity: DETECTION_SENSITIVITY, despeckle: true, background_radius: None });
+    let ink = extract_ink(
+        gray,
+        width,
+        height,
+        Options {
+            sensitivity: DETECTION_SENSITIVITY,
+            despeckle: true,
+            background_radius: None,
+        },
+    );
     ink.bounds?;
-    let solid: Vec<u8> = ink.alpha.iter().map(|&a| if a >= 128 { 255 } else { 0 }).collect();
+    let solid: Vec<u8> = ink
+        .alpha
+        .iter()
+        .map(|&a| if a >= 128 { 255 } else { 0 })
+        .collect();
     let radius = ((width.max(height) as f64) * 0.03).round().max(2.0) as usize;
-    let merged: Vec<bool> = square_filter(&solid, width, height, radius, true).iter().map(|&v| v != 0).collect();
+    let merged: Vec<bool> = square_filter(&solid, width, height, radius, true)
+        .iter()
+        .map(|&v| v != 0)
+        .collect();
     let (labels, count) = label_components(&merged, width, height);
 
     #[derive(Clone, Copy)]
@@ -522,9 +664,21 @@ fn detect_region(gray: &[u8], width: usize, height: usize) -> Option<Region> {
         max_y: usize,
         border: bool,
     }
-    let mut blobs = vec![Blob { ink: 0, min_x: usize::MAX, min_y: usize::MAX, max_x: 0, max_y: 0, border: false }; count + 1];
+    let mut blobs = vec![
+        Blob {
+            ink: 0,
+            min_x: usize::MAX,
+            min_y: usize::MAX,
+            max_x: 0,
+            max_y: 0,
+            border: false
+        };
+        count + 1
+    ];
     for (i, (&label, &s)) in labels.iter().zip(&solid).enumerate() {
-        let Some(blob) = blobs.get_mut(label as usize).filter(|_| label != 0) else { continue };
+        let Some(blob) = blobs.get_mut(label as usize).filter(|_| label != 0) else {
+            continue;
+        };
         let (x, y) = (i % width, i / width);
         if x == 0 || y == 0 || x + 1 == width || y + 1 == height {
             blob.border = true;
@@ -544,15 +698,24 @@ fn detect_region(gray: &[u8], width: usize, height: usize) -> Option<Region> {
     let (top, bottom) = (best.min_y.saturating_sub(span), best.max_y + span);
     let min_ink = best.ink as f64 * DETECTION_MIN_INK_RATIO;
     let mut frame = best;
-    for b in candidates().filter(|b| b.ink as f64 >= min_ink && b.max_y >= top && b.min_y <= bottom) {
+    for b in candidates().filter(|b| b.ink as f64 >= min_ink && b.max_y >= top && b.min_y <= bottom)
+    {
         frame.min_x = frame.min_x.min(b.min_x);
         frame.min_y = frame.min_y.min(b.min_y);
         frame.max_x = frame.max_x.max(b.max_x);
         frame.max_y = frame.max_y.max(b.max_y);
     }
     let pad = radius;
-    let (x, y) = (frame.min_x.saturating_sub(pad), frame.min_y.saturating_sub(pad));
-    Some(Region { x, y, width: (frame.max_x + 1 + pad).min(width) - x, height: (frame.max_y + 1 + pad).min(height) - y })
+    let (x, y) = (
+        frame.min_x.saturating_sub(pad),
+        frame.min_y.saturating_sub(pad),
+    );
+    Some(Region {
+        x,
+        y,
+        width: (frame.max_x + 1 + pad).min(width) - x,
+        height: (frame.max_y + 1 + pad).min(height) - y,
+    })
 }
 
 /// The trimmed ink in its average colour with the coverage as alpha, as PNG.
@@ -578,9 +741,16 @@ fn render(area: &RgbImage, alpha: &[u8], bounds: Region) -> Result<Vec<u8>, Scan
             solid += 1;
         }
     }
-    let colour = if solid == 0 { [0, 0, 0] } else { sum.map(|s| (s / solid).min(255) as u8) };
+    let colour = if solid == 0 {
+        [0, 0, 0]
+    } else {
+        sum.map(|s| (s / solid).min(255) as u8)
+    };
 
-    let mut out = image::RgbaImage::new(u32::try_from(ow).unwrap_or(1), u32::try_from(oh).unwrap_or(1));
+    let mut out = image::RgbaImage::new(
+        u32::try_from(ow).unwrap_or(1),
+        u32::try_from(oh).unwrap_or(1),
+    );
     for (y, row) in out.rows_mut().enumerate() {
         for (x, px) in row.enumerate() {
             let a = alpha.get((y0 + y) * w + x0 + x).copied().unwrap_or(0);
@@ -589,8 +759,13 @@ fn render(area: &RgbImage, alpha: &[u8], bounds: Region) -> Result<Vec<u8>, Scan
     }
     let mut out = DynamicImage::ImageRgba8(out);
     let pixels = (ow as u64).saturating_mul(oh as u64);
-    if pixels > MAX_OUTPUT_PIXELS || ow > WORKING_MAX_SIDE as usize || oh > WORKING_MAX_SIDE as usize {
-        let scale = (MAX_OUTPUT_PIXELS as f64 / pixels as f64).sqrt().min(f64::from(WORKING_MAX_SIDE) / ow.max(oh) as f64);
+    if pixels > MAX_OUTPUT_PIXELS
+        || ow > WORKING_MAX_SIDE as usize
+        || oh > WORKING_MAX_SIDE as usize
+    {
+        let scale = (MAX_OUTPUT_PIXELS as f64 / pixels as f64)
+            .sqrt()
+            .min(f64::from(WORKING_MAX_SIDE) / ow.max(oh) as f64);
         let nw = ((ow as f64 * scale).floor() as u32).max(1);
         let nh = ((oh as f64 * scale).floor() as u32).max(1);
         out = out.resize_exact(nw, nh, image::imageops::FilterType::Triangle);
@@ -606,11 +781,19 @@ mod tests {
     use super::*;
 
     /// A gray "photo": `paper(x, y)` brightness with dark ink rectangles `[x, y, w, h]`.
-    fn photo(width: usize, height: usize, paper: impl Fn(usize, usize) -> u8, ink: &[[usize; 4]], ink_value: u8) -> Vec<u8> {
+    fn photo(
+        width: usize,
+        height: usize,
+        paper: impl Fn(usize, usize) -> u8,
+        ink: &[[usize; 4]],
+        ink_value: u8,
+    ) -> Vec<u8> {
         let mut out = vec![0; width * height];
         for y in 0..height {
             for x in 0..width {
-                let inside = ink.iter().any(|r| x >= r[0] && x < r[0] + r[2] && y >= r[1] && y < r[1] + r[3]);
+                let inside = ink
+                    .iter()
+                    .any(|r| x >= r[0] && x < r[0] + r[2] && y >= r[1] && y < r[1] + r[3]);
                 out[y * width + x] = if inside { ink_value } else { paper(x, y) };
             }
         }
@@ -639,21 +822,51 @@ mod tests {
             image.write_to(&mut out, ImageFormat::Png).unwrap();
             out.into_inner()
         };
-        assert!(matches!(SignaturePhoto::from_bytes(&vec![0; MAX_PHOTO_BYTES + 1]), Err(ScanError::Size)));
+        assert!(matches!(
+            SignaturePhoto::from_bytes(&vec![0; MAX_PHOTO_BYTES + 1]),
+            Err(ScanError::Size)
+        ));
         assert!(SignaturePhoto::read(std::io::repeat(0)).is_err());
-        assert!(matches!(SignaturePhoto::from_bytes(&png(&RgbImage::new(8193, 1))), Err(ScanError::Size)));
-        assert!(matches!(SignaturePhoto::from_bytes(b"GIF89a\x02\0\x02\0"), Err(ScanError::Format)));
-        let [w, h] = SignaturePhoto::from_bytes(&png(&RgbImage::from_pixel(8000, 4000, image::Rgb([220, 220, 215])))).unwrap().size();
-        assert!(w <= WORKING_MAX_SIDE && u64::from(w) * u64::from(h) <= MAX_OUTPUT_PIXELS, "{w} x {h}");
-        assert!((f64::from(w) / f64::from(h) - 2.0).abs() < 0.01, "the aspect ratio is kept: {w} x {h}");
+        assert!(matches!(
+            SignaturePhoto::from_bytes(&png(&RgbImage::new(8193, 1))),
+            Err(ScanError::Size)
+        ));
+        assert!(matches!(
+            SignaturePhoto::from_bytes(b"GIF89a\x02\0\x02\0"),
+            Err(ScanError::Format)
+        ));
+        let [w, h] = SignaturePhoto::from_bytes(&png(&RgbImage::from_pixel(
+            8000,
+            4000,
+            image::Rgb([220, 220, 215]),
+        )))
+        .unwrap()
+        .size();
+        assert!(
+            w <= WORKING_MAX_SIDE && u64::from(w) * u64::from(h) <= MAX_OUTPUT_PIXELS,
+            "{w} x {h}"
+        );
+        assert!(
+            (f64::from(w) / f64::from(h) - 2.0).abs() < 0.01,
+            "the aspect ratio is kept: {w} x {h}"
+        );
     }
 
     fn region(r: [usize; 4]) -> Region {
-        Region { x: r[0], y: r[1], width: r[2], height: r[3] }
+        Region {
+            x: r[0],
+            y: r[1],
+            width: r[2],
+            height: r[3],
+        }
     }
 
     fn opts() -> Options {
-        Options { sensitivity: DEFAULT_SENSITIVITY, despeckle: true, background_radius: None }
+        Options {
+            sensitivity: DEFAULT_SENSITIVITY,
+            despeckle: true,
+            background_radius: None,
+        }
     }
 
     #[test]
@@ -684,7 +897,11 @@ mod tests {
                                 want = if max { want.max(v) } else { want.min(v) };
                             }
                         }
-                        assert_eq!(fast[y * w + x], want, "radius {radius} max {max} at {x},{y}");
+                        assert_eq!(
+                            fast[y * w + x],
+                            want,
+                            "radius {radius} max {max} at {x},{y}"
+                        );
                     }
                 }
             }
@@ -693,7 +910,9 @@ mod tests {
 
     #[test]
     fn components_are_eight_connected() {
-        let mask = [true, false, false, false, false, true, false, true, false, false, false, false];
+        let mask = [
+            true, false, false, false, false, true, false, true, false, false, false, false,
+        ];
         let (labels, count) = label_components(&mask, 4, 3);
         assert_eq!(count, 2);
         assert_eq!(labels[0], labels[5]);
@@ -737,7 +956,13 @@ mod tests {
     fn a_table_at_the_edge_of_the_frame_is_not_ink() {
         let (w, h) = (300, 120);
         let stroke = [60, 60, 200, 4];
-        let gray = photo(w, h, |x, y| if x < 12 || y < 10 { 70 } else { 225 }, &[stroke], 30);
+        let gray = photo(
+            w,
+            h,
+            |x, y| if x < 12 || y < 10 { 70 } else { 225 },
+            &[stroke],
+            30,
+        );
         let ink = extract_ink(&gray, w, h, opts());
         assert_eq!(ink.alpha[5 * w + 150], 0);
         assert_eq!(ink.alpha[60 * w + 5], 0);
@@ -753,7 +978,15 @@ mod tests {
         let middle = 99 * w + 300;
         // Sized on the tight frame alone, the window is narrower than the stroke.
         assert_eq!(extract_ink(&gray, w, h, opts()).alpha[middle], 0);
-        let ink = extract_ink(&gray, w, h, Options { background_radius: Some((4.0 * w as f32 * BACKGROUND_RADIUS_RATIO) as usize), ..opts() });
+        let ink = extract_ink(
+            &gray,
+            w,
+            h,
+            Options {
+                background_radius: Some((4.0 * w as f32 * BACKGROUND_RADIUS_RATIO) as usize),
+                ..opts()
+            },
+        );
         assert_eq!(ink.bounds, Some(region(stroke)));
         assert!((90..108).all(|y| ink.alpha[y * w + 300] == 255));
     }
@@ -777,7 +1010,19 @@ mod tests {
     fn dust_is_removed_unless_despeckling_is_off() {
         let (w, h) = (200, 100);
         let gray = photo(w, h, |_, _| 230, &[[20, 40, 150, 5], [190, 5, 1, 1]], 20);
-        assert!(extract_ink(&gray, w, h, Options { despeckle: false, ..opts() }).alpha[5 * w + 190] > 0);
+        assert!(
+            extract_ink(
+                &gray,
+                w,
+                h,
+                Options {
+                    despeckle: false,
+                    ..opts()
+                }
+            )
+            .alpha[5 * w + 190]
+                > 0
+        );
         let ink = extract_ink(&gray, w, h, opts());
         assert_eq!(ink.alpha[5 * w + 190], 0);
         assert_eq!(ink.bounds, Some(region([20, 40, 150, 5])));
@@ -787,8 +1032,32 @@ mod tests {
     fn faint_strokes_need_a_higher_sensitivity() {
         let (w, h) = (120, 60);
         let gray = photo(w, h, |_, _| 220, &[[10, 25, 100, 4]], 165);
-        assert!(extract_ink(&gray, w, h, Options { sensitivity: 0, ..opts() }).bounds.is_none());
-        assert!(extract_ink(&gray, w, h, Options { sensitivity: 100, ..opts() }).bounds.is_some());
+        assert!(
+            extract_ink(
+                &gray,
+                w,
+                h,
+                Options {
+                    sensitivity: 0,
+                    ..opts()
+                }
+            )
+            .bounds
+            .is_none()
+        );
+        assert!(
+            extract_ink(
+                &gray,
+                w,
+                h,
+                Options {
+                    sensitivity: 100,
+                    ..opts()
+                }
+            )
+            .bounds
+            .is_some()
+        );
     }
 
     #[test]
@@ -801,7 +1070,13 @@ mod tests {
     #[test]
     fn detection_frames_all_words_and_ignores_dust_and_the_table_edge() {
         let (w, h) = (400, 200);
-        let gray = photo(w, h, |_, y| if y >= 185 { 30 } else { 225 }, &[[40, 95, 90, 5], [230, 92, 30, 5], [300, 20, 1, 1]], 30);
+        let gray = photo(
+            w,
+            h,
+            |_, y| if y >= 185 { 30 } else { 225 },
+            &[[40, 95, 90, 5], [230, 92, 30, 5], [300, 20, 1, 1]],
+            30,
+        );
         let r = detect_region(&gray, w, h).unwrap();
         assert!(r.x <= 40 && r.x + r.width >= 260, "{r:?}");
         assert!(r.y > 20 && r.y + r.height < 185, "{r:?}");
@@ -810,7 +1085,13 @@ mod tests {
     #[test]
     fn detection_frames_the_signature_not_the_sheet_on_a_dark_table() {
         let (w, h) = (400, 300);
-        let sheet = |x: usize, y: usize| if (60..340).contains(&x) && (50..250).contains(&y) { 220 } else { 60 };
+        let sheet = |x: usize, y: usize| {
+            if (60..340).contains(&x) && (50..250).contains(&y) {
+                220
+            } else {
+                60
+            }
+        };
         let gray = photo(w, h, sheet, &[[120, 150, 140, 4], [150, 135, 4, 20]], 30);
         let r = detect_region(&gray, w, h).unwrap();
         assert!(r.x > 80 && r.x + r.width < 320, "{r:?}");
@@ -819,12 +1100,49 @@ mod tests {
 
     #[test]
     fn rects_turn_with_the_photo_and_back() {
-        let rect = PhotoRect { x: 10, y: 20, width: 30, height: 40 };
+        let rect = PhotoRect {
+            x: 10,
+            y: 20,
+            width: 30,
+            height: 40,
+        };
         let turned = rect.turned(Turn::Clockwise, 100, 80);
-        assert_eq!(turned, PhotoRect { x: 20, y: 10, width: 40, height: 30 });
+        assert_eq!(
+            turned,
+            PhotoRect {
+                x: 20,
+                y: 10,
+                width: 40,
+                height: 30
+            }
+        );
         assert_eq!(turned.turned(Turn::CounterClockwise, 80, 100), rect);
-        assert_eq!(PhotoRect { x: 500, y: 0, width: 0, height: 900 }.clamped(100, 50), PhotoRect { x: 99, y: 0, width: 1, height: 50 });
-        assert_eq!(PhotoRect { x: 0, y: 0, width: u32::MAX, height: 1 }.turned(Turn::CounterClockwise, 10, 10).y, 0);
+        assert_eq!(
+            PhotoRect {
+                x: 500,
+                y: 0,
+                width: 0,
+                height: 900
+            }
+            .clamped(100, 50),
+            PhotoRect {
+                x: 99,
+                y: 0,
+                width: 1,
+                height: 50
+            }
+        );
+        assert_eq!(
+            PhotoRect {
+                x: 0,
+                y: 0,
+                width: u32::MAX,
+                height: 1
+            }
+            .turned(Turn::CounterClockwise, 10, 10)
+            .y,
+            0
+        );
     }
 
     #[test]
@@ -832,29 +1150,54 @@ mod tests {
         let (w, h) = (600, 400);
         let mut image = rgb(&photo(w, h, |x, _| (230 - 60 * x / w) as u8, &[], 0), w, h);
         for (x, y, p) in image.enumerate_pixels_mut() {
-            if (150..450).contains(&x) && (200..206).contains(&y) || (200..206).contains(&x) && (170..206).contains(&y) {
+            if (150..450).contains(&x) && (200..206).contains(&y)
+                || (200..206).contains(&x) && (170..206).contains(&y)
+            {
                 *p = image::Rgb([30, 50, 140]);
             }
         }
         let mut photo = SignaturePhoto::from_bytes(&jpeg(&image)).unwrap();
         let rect = photo.auto_frame();
-        assert!(rect.x <= 150 && rect.x + rect.width >= 450 && rect.y <= 170 && rect.y + rect.height >= 206, "{rect:?}");
-        let signature = photo.scan(rect, DEFAULT_SENSITIVITY, SCAN_MAX_SIDE).unwrap();
+        assert!(
+            rect.x <= 150
+                && rect.x + rect.width >= 450
+                && rect.y <= 170
+                && rect.y + rect.height >= 206,
+            "{rect:?}"
+        );
+        let signature = photo
+            .scan(rect, DEFAULT_SENSITIVITY, SCAN_MAX_SIDE)
+            .unwrap();
         let [sw, sh] = signature.size();
-        assert!((300..340).contains(&sw) && (36..60).contains(&sh), "{sw}x{sh}");
+        assert!(
+            (300..340).contains(&sw) && (36..60).contains(&sh),
+            "{sw}x{sh}"
+        );
         let pixels = signature.rgba().as_chunks::<4>().0;
         assert_eq!(pixels[0][3], 0, "the margin is transparent");
         let solid: Vec<_> = pixels.iter().filter(|p| p[3] == 255).collect();
         assert!(!solid.is_empty());
-        assert!(solid.iter().all(|p| p[2] > p[0] + 40), "blue ink stays blue: {:?}", solid[0]);
-        let quick = photo.scan(rect, DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE).unwrap();
+        assert!(
+            solid.iter().all(|p| p[2] > p[0] + 40),
+            "blue ink stays blue: {:?}",
+            solid[0]
+        );
+        let quick = photo
+            .scan(rect, DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE)
+            .unwrap();
         assert!(quick.size()[0] <= sw);
     }
 
     #[test]
     fn a_sideways_signature_is_turned_upright() {
         let (w, h) = (400, 600);
-        let gray = photo(w, h, |_, _| 225, &[[200, 120, 5, 300], [185, 300, 25, 4]], 30);
+        let gray = photo(
+            w,
+            h,
+            |_, _| 225,
+            &[[200, 120, 5, 300], [185, 300, 25, 4]],
+            30,
+        );
         let mut photo = SignaturePhoto::from_bytes(&jpeg(&rgb(&gray, w, h))).unwrap();
         let rect = photo.auto_frame();
         assert_eq!(photo.size(), [600, 400]);
@@ -863,22 +1206,64 @@ mod tests {
 
     #[test]
     fn an_empty_frame_reports_that_no_signature_was_found() {
-        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(200, 100, image::Rgb([220, 220, 220])))).unwrap();
+        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(
+            200,
+            100,
+            image::Rgb([220, 220, 220]),
+        )))
+        .unwrap();
         let mut copy = photo.clone();
-        assert_eq!(copy.auto_frame(), PhotoRect { x: 28, y: 35, width: 142, height: 30 });
-        assert!(matches!(photo.scan(PhotoRect { x: 0, y: 0, width: 200, height: 100 }, 50, SCAN_MAX_SIDE), Err(ScanError::NoInk)));
+        assert_eq!(
+            copy.auto_frame(),
+            PhotoRect {
+                x: 28,
+                y: 35,
+                width: 142,
+                height: 30
+            }
+        );
+        assert!(matches!(
+            photo.scan(
+                PhotoRect {
+                    x: 0,
+                    y: 0,
+                    width: 200,
+                    height: 100
+                },
+                50,
+                SCAN_MAX_SIDE
+            ),
+            Err(ScanError::NoInk)
+        ));
     }
 
     #[test]
     fn large_photos_are_downscaled_and_invalid_ones_rejected() {
-        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(5000, 100, image::Rgb([200, 200, 200])))).unwrap();
+        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(
+            5000,
+            100,
+            image::Rgb([200, 200, 200]),
+        )))
+        .unwrap();
         let [w, h] = photo.size();
-        assert!((4000..=WORKING_MAX_SIDE).contains(&w) && (81..=82).contains(&h), "{w} x {h}");
+        assert!(
+            (4000..=WORKING_MAX_SIDE).contains(&w) && (81..=82).contains(&h),
+            "{w} x {h}"
+        );
         assert!(photo.thumbnail(512).width() <= 512);
-        assert!(matches!(SignaturePhoto::from_bytes(b"not a photo"), Err(ScanError::Format)));
-        assert!(matches!(SignaturePhoto::from_bytes(b"GIF89a\x02\0\x02\0"), Err(ScanError::Format)));
+        assert!(matches!(
+            SignaturePhoto::from_bytes(b"not a photo"),
+            Err(ScanError::Format)
+        ));
+        assert!(matches!(
+            SignaturePhoto::from_bytes(b"GIF89a\x02\0\x02\0"),
+            Err(ScanError::Format)
+        ));
         assert!(SignaturePhoto::from_bytes(b"\xff\xd8\xff\xe0truncated").is_err());
-        assert!(matches!(SignaturePhoto::from_bytes(&vec![0; MAX_PHOTO_BYTES + 1]), Err(ScanError::Size)));
+        assert!(matches!(
+            SignaturePhoto::from_bytes(&vec![0; MAX_PHOTO_BYTES + 1]),
+            Err(ScanError::Size)
+        ));
         assert!(SignaturePhoto::read(std::io::repeat(0)).is_err());
         // A header claiming a huge image is rejected before decoding.
         let mut png = Vec::new();
@@ -898,7 +1283,21 @@ mod tests {
         let mut empty: Vec<f32> = Vec::new();
         box_blur(&mut empty, 0, 0, 3);
         assert!(square_filter(&[], 0, 0, 2, true).is_empty());
-        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(3, 2, image::Rgb([10, 10, 10])))).unwrap();
-        let _ = photo.scan(PhotoRect { x: 9, y: 9, width: 0, height: 0 }, 255, 0);
+        let photo = SignaturePhoto::from_bytes(&jpeg(&RgbImage::from_pixel(
+            3,
+            2,
+            image::Rgb([10, 10, 10]),
+        )))
+        .unwrap();
+        let _ = photo.scan(
+            PhotoRect {
+                x: 9,
+                y: 9,
+                width: 0,
+                height: 0,
+            },
+            255,
+            0,
+        );
     }
 }

@@ -88,7 +88,9 @@ impl DiskCache {
     }
 
     pub fn put(&self, key: Hash128, img: &Rgba8) {
-        let Some(bytes) = encode_jpeg(img) else { return };
+        let Some(bytes) = encode_jpeg(img) else {
+            return;
+        };
         let p = self.path(key);
         let Some(parent) = p.parent() else { return };
         if std::fs::create_dir_all(parent).is_err() {
@@ -99,13 +101,17 @@ impl DiskCache {
         let mut total = self.total.lock().unwrap_or_else(|e| e.into_inner());
         let used = total.get_or_insert_with(|| self.scan().iter().map(|f| f.1).sum());
         let old_len = std::fs::metadata(&p).map_or(0, |m| m.len());
-        let tmp = p.with_extension(format!("tmp{:?}", std::thread::current().id()).replace(['(', ')'], ""));
+        let tmp = p.with_extension(
+            format!("tmp{:?}", std::thread::current().id()).replace(['(', ')'], ""),
+        );
         if std::fs::write(&tmp, &bytes).is_err() || std::fs::rename(&tmp, &p).is_err() {
             let _ = std::fs::remove_file(&tmp);
             return;
         }
         self.writes.fetch_add(1, Ordering::Relaxed);
-        *used = used.saturating_sub(old_len).saturating_add(bytes.len() as u64);
+        *used = used
+            .saturating_sub(old_len)
+            .saturating_add(bytes.len() as u64);
         let over = *used > self.budget();
         drop(total);
         if over {
@@ -117,14 +123,20 @@ impl DiskCache {
     /// (path, size, modified).
     fn scan(&self) -> Vec<(PathBuf, u64, std::time::SystemTime)> {
         let mut out = Vec::new();
-        let Ok(rd) = std::fs::read_dir(&self.dir) else { return out };
+        let Ok(rd) = std::fs::read_dir(&self.dir) else {
+            return out;
+        };
         for sub in rd.flatten() {
             let sub_name = sub.file_name();
-            let Some(sub_name) = sub_name.to_str() else { continue };
+            let Some(sub_name) = sub_name.to_str() else {
+                continue;
+            };
             if !is_shard_name(sub_name) {
                 continue;
             }
-            let Ok(files) = std::fs::read_dir(sub.path()) else { continue };
+            let Ok(files) = std::fs::read_dir(sub.path()) else {
+                continue;
+            };
             for f in files.flatten() {
                 let name = f.file_name();
                 let Some(name) = name.to_str() else { continue };
@@ -135,7 +147,11 @@ impl DiskCache {
                 if let Ok(m) = f.metadata()
                     && m.is_file()
                 {
-                    out.push((f.path(), m.len(), m.modified().unwrap_or(std::time::UNIX_EPOCH)));
+                    out.push((
+                        f.path(),
+                        m.len(),
+                        m.modified().unwrap_or(std::time::UNIX_EPOCH),
+                    ));
                 }
             }
         }
@@ -174,7 +190,8 @@ impl DiskCache {
 }
 
 fn is_lower_hex(s: &str) -> bool {
-    s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.bytes()
+        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
 /// A shard directory name: two lowercase hex digits.
@@ -189,16 +206,25 @@ pub fn is_cache_file(shard: &str, name: &str) -> bool {
     if !is_shard_name(shard) {
         return false;
     }
-    let Some((stem, ext)) = name.split_once('.') else { return false };
+    let Some((stem, ext)) = name.split_once('.') else {
+        return false;
+    };
     if stem.len() != 32 || !is_lower_hex(stem) || !stem.starts_with(shard) {
         return false;
     }
-    ext == "jpg" || ext.strip_prefix("tmp").is_some_and(|t| !t.is_empty() && t.bytes().all(|b| b.is_ascii_alphanumeric()))
+    ext == "jpg"
+        || ext
+            .strip_prefix("tmp")
+            .is_some_and(|t| !t.is_empty() && t.bytes().all(|b| b.is_ascii_alphanumeric()))
 }
 
 /// Encode a thumbnail as the cache stores it (JPEG, RGB, 4:2:0).
 pub fn encode_jpeg(img: &Rgba8) -> Option<Vec<u8>> {
-    if img.width == 0 || img.height == 0 || img.width > u16::MAX as usize || img.height > u16::MAX as usize {
+    if img.width == 0
+        || img.height == 0
+        || img.width > u16::MAX as usize
+        || img.height > u16::MAX as usize
+    {
         return None;
     }
     let mut rgb = Vec::with_capacity(img.width * img.height * 3);
@@ -208,7 +234,13 @@ pub fn encode_jpeg(img: &Rgba8) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     let mut enc = jpeg_encoder::Encoder::new(&mut out, QUALITY);
     enc.set_sampling_factor(jpeg_encoder::SamplingFactor::R_4_2_0);
-    enc.encode(&rgb, img.width as u16, img.height as u16, jpeg_encoder::ColorType::Rgb).ok()?;
+    enc.encode(
+        &rgb,
+        img.width as u16,
+        img.height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    )
+    .ok()?;
     Some(out)
 }
 
@@ -225,6 +257,16 @@ pub fn decode_jpeg(bytes: &[u8]) -> Option<Rgba8> {
     if px.len() < w * h * 3 {
         return None;
     }
-    let data = px.as_chunks::<3>().0.iter().take(w * h).map(|c| [c[0], c[1], c[2], 255]).collect();
-    Some(Rgba8 { width: w, height: h, data })
+    let data = px
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .take(w * h)
+        .map(|c| [c[0], c[1], c[2], 255])
+        .collect();
+    Some(Rgba8 {
+        width: w,
+        height: h,
+        data,
+    })
 }

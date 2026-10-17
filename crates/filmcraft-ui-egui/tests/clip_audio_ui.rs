@@ -28,11 +28,15 @@ struct Pair {
 impl Driver {
     fn demo(panels: &[&str]) -> (Self, Pair) {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let shots = std::env::var_os("FILMCRAFT_UI_SHOTS").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 1100.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 1100.0))
+            .with_max_steps(10_000);
         if shots.is_some() {
             b = b.wgpu().with_pixels_per_point(1.0);
         }
@@ -41,8 +45,17 @@ impl Driver {
         d.frames(4);
         let seq = d.exec("sequence.inspect", json!({}));
         let v = &seq["video"][0]["items"][0];
-        let a = seq["audio"][0]["items"].as_array().unwrap().iter().find(|a| a["link"] == v["link"]).expect("linked audio").clone();
-        let pair = Pair { video: v["clip"].as_u64().unwrap(), audio: a["clip"].as_u64().unwrap() };
+        let a = seq["audio"][0]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|a| a["link"] == v["link"])
+            .expect("linked audio")
+            .clone();
+        let pair = Pair {
+            video: v["clip"].as_u64().unwrap(),
+            audio: a["clip"].as_u64().unwrap(),
+        };
         for panel in panels {
             d.ok("ui.panel.show", json!({"panel": panel}));
         }
@@ -75,13 +88,21 @@ impl Driver {
         r["result"].clone()
     }
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
     fn find(&mut self, id: &str) -> Option<[f64; 4]> {
         self.frames(2);
         let v = self.ok("ui.elements", json!({"prefix": id}));
         let e = v.as_array().unwrap().iter().find(|e| e["id"] == id)?;
-        let r: Vec<f64> = e["rect"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect();
+        let r: Vec<f64> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect();
         Some([r[0], r[1], r[2], r[3]])
     }
     fn rect(&mut self, id: &str) -> [f64; 4] {
@@ -93,20 +114,36 @@ impl Driver {
         self.frames(3);
     }
     fn item(&self, clip: u64) -> TrackItem {
-        self.harness.state().session.active_sequence().unwrap().find_item(ClipId(clip)).unwrap().1.clone()
+        self.harness
+            .state()
+            .session
+            .active_sequence()
+            .unwrap()
+            .find_item(ClipId(clip))
+            .unwrap()
+            .1
+            .clone()
     }
     /// The clip's Volume level: its value and its keyframes (media time, dB).
     fn level(&self, clip: u64) -> (f64, Vec<(i64, f64)>) {
         let it = self.item(clip);
         let p = it.effect("volume").unwrap().param("level").unwrap().clone();
-        (p.value.as_f64().unwrap(), p.keyframes.iter().map(|k| (k.time.0, k.value.as_f64().unwrap())).collect())
+        (
+            p.value.as_f64().unwrap(),
+            p.keyframes
+                .iter()
+                .map(|k| (k.time.0, k.value.as_f64().unwrap()))
+                .collect(),
+        )
     }
     fn drag(&mut self, from: (f64, f64), by: (f64, f64)) {
         self.ok("ui.drag", json!({"from": {"x": from.0, "y": from.1}, "to": {"x": from.0 + by.0, "y": from.1 + by.1}, "steps": 6}));
         self.frames(3);
     }
     fn shot(&mut self, name: &str) {
-        let Some(dir) = self.shots.clone() else { return };
+        let Some(dir) = self.shots.clone() else {
+            return;
+        };
         self.frames(10);
         let img = self.harness.render().expect("wgpu render");
         std::fs::create_dir_all(&dir).unwrap();
@@ -124,7 +161,10 @@ fn effect_controls_show_the_audio_of_a_video_clip() {
     d.exec("timeline.select", json!({"clips": [pair.video]}));
     let motion = d.rect("effectControls.effect.motion");
     let volume = d.rect("effectControls.effect.volume");
-    assert!(volume[1] > motion[1], "Audio comes after Video: {volume:?} {motion:?}");
+    assert!(
+        volume[1] > motion[1],
+        "Audio comes after Video: {volume:?} {motion:?}"
+    );
     d.rect("effectControls.effect.channel_volume");
     d.rect("effectControls.effect.panner");
 
@@ -133,7 +173,14 @@ fn effect_controls_show_the_audio_of_a_video_clip() {
         d.click(&format!("effectControls.effect.{fx}.twirl"));
     }
     d.click("effectControls.volume.level.stopwatch");
-    assert!(d.item(pair.audio).effect("volume").unwrap().param("level").unwrap().is_animated());
+    assert!(
+        d.item(pair.audio)
+            .effect("volume")
+            .unwrap()
+            .param("level")
+            .unwrap()
+            .is_animated()
+    );
     assert!(d.item(pair.video).effect("volume").is_none());
 
     // only the video selected: no audio
@@ -149,9 +196,22 @@ fn effect_controls_show_the_audio_of_a_video_clip() {
 fn effect_controls_show_audio_fx_on_a_linked_pair() {
     let (mut d, pair) = Driver::demo(&["EffectControls"]);
     d.exec("timeline.select", json!({"clips": [pair.video]}));
-    d.exec("effects.apply", json!({"clips": [pair.video], "effect": "parametric_eq"}));
-    assert_eq!(d.item(pair.audio).effects.last().map(|e| e.effect.as_str()), Some("parametric_eq"));
-    for fx in ["motion", "opacity", "time_remap", "volume", "channel_volume", "panner"] {
+    d.exec(
+        "effects.apply",
+        json!({"clips": [pair.video], "effect": "parametric_eq"}),
+    );
+    assert_eq!(
+        d.item(pair.audio).effects.last().map(|e| e.effect.as_str()),
+        Some("parametric_eq")
+    );
+    for fx in [
+        "motion",
+        "opacity",
+        "time_remap",
+        "volume",
+        "channel_volume",
+        "panner",
+    ] {
         d.click(&format!("effectControls.effect.{fx}"));
     }
     d.rect("effectControls.effect.parametric_eq");
@@ -166,7 +226,16 @@ fn properties_show_the_audio_of_a_video_clip() {
     let level = d.rect("properties.volume.level.addKeyframe");
     assert!(level[1] > scale[1]);
     d.click("properties.volume.level.addKeyframe");
-    assert_eq!(d.item(pair.audio).effect("volume").unwrap().param("level").unwrap().keyframes.len(), 1);
+    assert_eq!(
+        d.item(pair.audio)
+            .effect("volume")
+            .unwrap()
+            .param("level")
+            .unwrap()
+            .keyframes
+            .len(),
+        1
+    );
 
     d.exec("sequence.linkedSelection", json!({"on": false}));
     d.exec("timeline.select", json!({"clips": [pair.audio]}));
@@ -187,7 +256,10 @@ fn dragging_the_volume_line_changes_the_level() {
     assert!(keys.is_empty());
     assert_eq!(d.item(pair.audio).start, start, "the clip did not move");
     let moved = d.rect(&format!("timeline.clip.{}.volume", pair.audio));
-    assert!(moved[1] < line[1] - 8.0, "the line went up with the pointer: {line:?} → {moved:?}");
+    assert!(
+        moved[1] < line[1] - 8.0,
+        "the line went up with the pointer: {line:?} → {moved:?}"
+    );
     d.shot("volume-line-dragged");
     d.exec("edit.undo", json!({}));
     assert_eq!(d.level(pair.audio).0, before, "the drag was one undo step");
@@ -199,10 +271,20 @@ fn dragging_the_volume_line_changes_the_level() {
 fn clicks_on_the_volume_line_still_reach_the_clip() {
     let (mut d, pair) = Driver::demo(&[]);
     let (x, y) = centre(d.rect(&format!("timeline.clip.{}.volume", pair.audio)));
-    assert_eq!(d.ok("ui.timeline.hit", json!({"x": x, "y": y}))["kind"], "volume");
+    assert_eq!(
+        d.ok("ui.timeline.hit", json!({"x": x, "y": y}))["kind"],
+        "volume"
+    );
     d.ok("ui.click", json!({"x": x, "y": y}));
     d.frames(3);
-    assert!(d.harness.state().session.state.selection.contains(&ClipId(pair.audio)));
+    assert!(
+        d.harness
+            .state()
+            .session
+            .state
+            .selection
+            .contains(&ClipId(pair.audio))
+    );
     d.ok("ui.click", json!({"x": x, "y": y, "button": "right"}));
     d.frames(3);
     d.rect("timeline.clipMenu.clip.link");
@@ -228,8 +310,14 @@ fn volume_keyframes_on_the_timeline() {
     // the line between them takes both down
     d.drag((clip[0] + clip[2] * 0.5, y), (0.0, 10.0));
     let (_, low) = d.level(pair.audio);
-    assert_eq!(low.iter().map(|k| k.0).collect::<Vec<_>>(), keys.iter().map(|k| k.0).collect::<Vec<_>>());
-    assert!(low[0].1 < keys[0].1 - 1.0 && (low[0].1 - low[1].1).abs() < 1e-9, "{keys:?} → {low:?}");
+    assert_eq!(
+        low.iter().map(|k| k.0).collect::<Vec<_>>(),
+        keys.iter().map(|k| k.0).collect::<Vec<_>>()
+    );
+    assert!(
+        low[0].1 < keys[0].1 - 1.0 && (low[0].1 - low[1].1).abs() < 1e-9,
+        "{keys:?} → {low:?}"
+    );
     d.exec("edit.undo", json!({}));
     assert_eq!(d.level(pair.audio).1, keys);
 
@@ -238,13 +326,23 @@ fn volume_keyframes_on_the_timeline() {
     d.drag(centre(k), (40.0, -10.0));
     let (_, moved) = d.level(pair.audio);
     assert_eq!(moved[0], keys[0]);
-    assert!(moved[1].0 > keys[1].0 && moved[1].1 > keys[1].1, "{keys:?} → {moved:?}");
+    assert!(
+        moved[1].0 > keys[1].0 && moved[1].1 > keys[1].1,
+        "{keys:?} → {moved:?}"
+    );
     d.shot("volume-keyframes");
     d.exec("edit.undo", json!({}));
-    assert_eq!(d.level(pair.audio).1, keys, "the keyframe drag was one undo step");
+    assert_eq!(
+        d.level(pair.audio).1,
+        keys,
+        "the keyframe drag was one undo step"
+    );
 
     // right-click ▸ Delete
-    d.ok("ui.click", json!({"id": format!("{id}.kf.0"), "button": "right"}));
+    d.ok(
+        "ui.click",
+        json!({"id": format!("{id}.kf.0"), "button": "right"}),
+    );
     d.frames(3);
     d.click(&format!("{id}.kf.0.delete"));
     assert_eq!(d.level(pair.audio).1, keys[1..]);

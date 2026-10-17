@@ -35,13 +35,35 @@ mod tests {
 
     #[test]
     fn text_chunks_round_trip_and_stay_valid() {
-        let png = vectorcraft_render::Rendered { width: 2, height: 1, pixels: vec![255; 8] }.to_png().unwrap();
-        let out = with_text(png.clone(), &[("Title", "Café".into()), ("Author", "Łukasz".into()), ("bad\u{1}", "x".into())]);
-        assert_eq!(text(&out), [("Title".to_string(), "Café".to_string()), ("Author".into(), "Łukasz".into())]);
+        let png = vectorcraft_render::Rendered {
+            width: 2,
+            height: 1,
+            pixels: vec![255; 8],
+        }
+        .to_png()
+        .unwrap();
+        let out = with_text(
+            png.clone(),
+            &[
+                ("Title", "Café".into()),
+                ("Author", "Łukasz".into()),
+                ("bad\u{1}", "x".into()),
+            ],
+        );
+        assert_eq!(
+            text(&out),
+            [
+                ("Title".to_string(), "Café".to_string()),
+                ("Author".into(), "Łukasz".into())
+            ]
+        );
         // Still a PNG every decoder reads (the CRCs check out).
         let img = image::load_from_memory(&out).unwrap();
         assert_eq!((img.width(), img.height()), (2, 1));
-        assert_eq!(with_text(b"not a png".to_vec(), &[("Title", "x".into())]), b"not a png");
+        assert_eq!(
+            with_text(b"not a png".to_vec(), &[("Title", "x".into())]),
+            b"not a png"
+        );
         assert_eq!(with_text(png.clone(), &[]), png);
     }
 }

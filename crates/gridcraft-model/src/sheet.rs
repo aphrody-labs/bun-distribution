@@ -54,7 +54,11 @@ pub struct Sheet {
     pub name: String,
     pub cells: CellStore,
     /// Static pictures are sparse rich content. Ordinary cells carry no picture pointer.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty", with = "picture_map")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        with = "picture_map"
+    )]
     pub cell_pictures: BTreeMap<CellRef, Arc<CellPicture>>,
     /// Values spilled by dynamic-array formulas (maintained by calc), keyed by cell.
     #[serde(skip)]
@@ -120,7 +124,11 @@ pub const DEFAULT_ROW_HEIGHT: f32 = 20.0;
 /// Column width (points) → characters of the default font's digit width (7 px), without the
 /// cell padding: the value the Column Width dialog shows.
 pub fn points_to_chars(px: f64) -> f64 {
-    if px <= 12.0 { (px / 12.0 * 100.0).round() / 100.0 } else { ((px - 5.0) / 7.0 * 100.0 + 0.5).trunc() / 100.0 }
+    if px <= 12.0 {
+        (px / 12.0 * 100.0).round() / 100.0
+    } else {
+        ((px - 5.0) / 7.0 * 100.0 + 0.5).trunc() / 100.0
+    }
 }
 
 impl Sheet {
@@ -190,11 +198,21 @@ impl Sheet {
         if let Some(s) = self.rows.get(&c.row).and_then(|r| r.style) {
             return s;
         }
-        self.cols.get(&c.col).and_then(|r| r.style).unwrap_or_default()
+        self.cols
+            .get(&c.col)
+            .and_then(|r| r.style)
+            .unwrap_or_default()
     }
     pub fn set_value(&mut self, c: CellRef, v: Value) {
         let style = self.style_id(c);
-        self.set_cell(c, Cell { value: v, formula: None, style });
+        self.set_cell(
+            c,
+            Cell {
+                value: v,
+                formula: None,
+                style,
+            },
+        );
     }
     /// Replaces content, removing any picture at this address. Style-only edits use set_style.
     pub fn set_cell(&mut self, c: CellRef, cell: Cell) {
@@ -213,11 +231,22 @@ impl Sheet {
     /// Pictures retain a scalar fallback for calculation and unsupported consumers.
     pub fn set_picture(&mut self, c: CellRef, picture: Arc<CellPicture>) {
         let style = self.style_id(c);
-        self.cells.set(c, Cell { value: Value::Error(gridcraft_core::CellError::Value), formula: None, style });
+        self.cells.set(
+            c,
+            Cell {
+                value: Value::Error(gridcraft_core::CellError::Value),
+                formula: None,
+                style,
+            },
+        );
         self.cell_pictures.insert(c, picture);
     }
     pub fn input_text(&self, c: CellRef) -> String {
-        if self.cell_pictures.contains_key(&c) { String::new() } else { self.cell(c).map(Cell::input_text).unwrap_or_default() }
+        if self.cell_pictures.contains_key(&c) {
+            String::new()
+        } else {
+            self.cell(c).map(Cell::input_text).unwrap_or_default()
+        }
     }
     pub fn set_style(&mut self, c: CellRef, style: StyleId) {
         let mut cell = self.cells.get(c).cloned().unwrap_or_default();
@@ -229,8 +258,12 @@ impl Sheet {
 
     /// Whether this cell has a table or ordinary AutoFilter dropdown.
     pub fn has_filter_button(&self, c: CellRef) -> bool {
-        self.autofilter.as_ref().is_some_and(|af| af.range.start.row == c.row && af.range.contains(c))
-            || self.tables.iter().any(|t| t.filter_button && t.header_row && t.range.start.row == c.row && t.range.contains(c))
+        self.autofilter
+            .as_ref()
+            .is_some_and(|af| af.range.start.row == c.row && af.range.contains(c))
+            || self.tables.iter().any(|t| {
+                t.filter_button && t.header_row && t.range.start.row == c.row && t.range.contains(c)
+            })
     }
 
     /// Horizontal header space in unzoomed grid units (96 units per inch).
@@ -238,7 +271,11 @@ impl Sheet {
     /// 100-200% zoom, 25 pt at 50%, regardless of header row height. Below 100%
     /// the dropdown keeps its screen width. This is geometry, not font padding.
     pub fn filter_button_space(&self, c: CellRef) -> f32 {
-        if self.has_filter_button(c) { (12.5 * 96.0 / 72.0) / (self.zoom as f32 / 100.0).clamp(0.1, 1.0) } else { 0.0 }
+        if self.has_filter_button(c) {
+            (12.5 * 96.0 / 72.0) / (self.zoom as f32 / 100.0).clamp(0.1, 1.0)
+        } else {
+            0.0
+        }
     }
 
     pub fn col_width(&self, col: u32) -> f32 {
@@ -265,9 +302,15 @@ impl Sheet {
         if !self.is_row_hidden(row) {
             return false;
         }
-        let in_sheet_filter =
-            self.autofilter.as_ref().is_some_and(|af| !af.criteria.is_empty() && row > af.range.start.row && row <= af.range.end.row);
-        in_sheet_filter || self.tables.iter().any(|t| !t.filter.is_empty() && t.data_range().is_some_and(|r| row >= r.start.row && row <= r.end.row))
+        let in_sheet_filter = self.autofilter.as_ref().is_some_and(|af| {
+            !af.criteria.is_empty() && row > af.range.start.row && row <= af.range.end.row
+        });
+        in_sheet_filter
+            || self.tables.iter().any(|t| {
+                !t.filter.is_empty()
+                    && t.data_range()
+                        .is_some_and(|r| row >= r.start.row && row <= r.end.row)
+            })
     }
     pub fn is_col_hidden(&self, col: u32) -> bool {
         self.cols.get(&col).is_some_and(|r| r.hidden)
@@ -277,7 +320,11 @@ impl Sheet {
         let mut y = row as f64 * self.default_row_height as f64;
         for (r, info) in self.rows.range(..row) {
             let _ = r;
-            let h = if info.hidden { 0.0 } else { info.size.unwrap_or(self.default_row_height) };
+            let h = if info.hidden {
+                0.0
+            } else {
+                info.size.unwrap_or(self.default_row_height)
+            };
             y += h as f64 - self.default_row_height as f64;
         }
         y
@@ -285,17 +332,31 @@ impl Sheet {
     pub fn col_left(&self, col: u32) -> f64 {
         let mut x = col as f64 * self.default_col_width as f64;
         for (_, info) in self.cols.range(..col) {
-            let w = if info.hidden { 0.0 } else { info.size.unwrap_or(self.default_col_width) };
+            let w = if info.hidden {
+                0.0
+            } else {
+                info.size.unwrap_or(self.default_col_width)
+            };
             x += w as f64 - self.default_col_width as f64;
         }
         x
     }
     /// Row containing y (points from the top), clamped.
     pub fn row_at(&self, y: f64) -> u32 {
-        line_at(y, self.default_row_height as f64, &self.rows, gridcraft_core::MAX_ROWS)
+        line_at(
+            y,
+            self.default_row_height as f64,
+            &self.rows,
+            gridcraft_core::MAX_ROWS,
+        )
     }
     pub fn col_at(&self, x: f64) -> u32 {
-        line_at(x, self.default_col_width as f64, &self.cols, gridcraft_core::MAX_COLS)
+        line_at(
+            x,
+            self.default_col_width as f64,
+            &self.cols,
+            gridcraft_core::MAX_COLS,
+        )
     }
 
     /// The merged range containing `c`, if any.
@@ -335,12 +396,20 @@ impl LineIndex {
         let mut prev = 0u32;
         for (&line, info) in custom {
             pos += (line - prev) as f64 * default;
-            let size = if info.hidden { 0.0 } else { info.size.map_or(default, |s| s as f64) };
+            let size = if info.hidden {
+                0.0
+            } else {
+                info.size.map_or(default, |s| s as f64)
+            };
             lines.push((line, pos, size));
             pos += size;
             prev = line + 1;
         }
-        LineIndex { default, max, lines }
+        LineIndex {
+            default,
+            max,
+            lines,
+        }
     }
     /// Start position of `line`.
     pub fn start(&self, line: u32) -> f64 {
@@ -374,7 +443,11 @@ impl LineIndex {
         }
         let k = ((pos - base_pos) / self.default).floor();
         let r = base_line as f64 + k;
-        if r >= self.max as f64 { self.max - 1 } else { r as u32 }
+        if r >= self.max as f64 {
+            self.max - 1
+        } else {
+            r as u32
+        }
     }
 }
 
@@ -393,7 +466,11 @@ fn line_at(pos: f64, default: f64, custom: &BTreeMap<u32, LineInfo>, max: u32) -
             return (idx + k).min(max - 1);
         }
         start_pos += span;
-        let size = if info.hidden { 0.0 } else { info.size.map_or(default, |s| s as f64) };
+        let size = if info.hidden {
+            0.0
+        } else {
+            info.size.map_or(default, |s| s as f64)
+        };
         if pos < start_pos + size {
             return line.min(max - 1);
         }
@@ -416,7 +493,14 @@ mod tests {
     fn line_index_matches_linear() {
         let mut s = Sheet::new("S");
         for r in (0..5000).step_by(3) {
-            s.rows.insert(r, LineInfo { size: Some(10.0 + (r % 7) as f32), hidden: r % 11 == 0, ..Default::default() });
+            s.rows.insert(
+                r,
+                LineInfo {
+                    size: Some(10.0 + (r % 7) as f32),
+                    hidden: r % 11 == 0,
+                    ..Default::default()
+                },
+            );
         }
         let idx = LineIndex::new(&s.rows, s.default_row_height, gridcraft_core::MAX_ROWS);
         for r in [0u32, 1, 2, 3, 4, 100, 999, 4998, 5000, 6000] {
@@ -431,8 +515,20 @@ mod tests {
     fn geometry() {
         let mut s = Sheet::new("S");
         assert_eq!(s.row_top(3), 60.0);
-        s.rows.insert(1, LineInfo { size: Some(40.0), ..Default::default() });
-        s.rows.insert(2, LineInfo { hidden: true, ..Default::default() });
+        s.rows.insert(
+            1,
+            LineInfo {
+                size: Some(40.0),
+                ..Default::default()
+            },
+        );
+        s.rows.insert(
+            2,
+            LineInfo {
+                hidden: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(s.row_top(1), 20.0);
         assert_eq!(s.row_top(2), 60.0);
         assert_eq!(s.row_top(3), 60.0);
@@ -452,10 +548,19 @@ mod tests {
 mod picture_map {
     use super::*;
     use serde::{Deserializer, Serializer};
-    pub fn serialize<S: Serializer>(map: &BTreeMap<CellRef, Arc<CellPicture>>, serializer: S) -> Result<S::Ok, S::Error> {
+    pub fn serialize<S: Serializer>(
+        map: &BTreeMap<CellRef, Arc<CellPicture>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
         map.iter().collect::<Vec<_>>().serialize(serializer)
     }
-    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<BTreeMap<CellRef, Arc<CellPicture>>, D::Error> {
-        Ok(Vec::<(CellRef, Arc<CellPicture>)>::deserialize(deserializer)?.into_iter().collect())
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<BTreeMap<CellRef, Arc<CellPicture>>, D::Error> {
+        Ok(
+            Vec::<(CellRef, Arc<CellPicture>)>::deserialize(deserializer)?
+                .into_iter()
+                .collect(),
+        )
     }
 }

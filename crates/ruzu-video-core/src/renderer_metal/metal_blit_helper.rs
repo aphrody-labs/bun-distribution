@@ -17,12 +17,12 @@ use objc2_foundation::NSString;
 use objc2_metal::{
     MTLBlitCommandEncoder, MTLBlitOption, MTLColorWriteMask, MTLCompareFunction, MTLCompileOptions,
     MTLComputeCommandEncoder, MTLComputePipelineState, MTLCullMode, MTLDepthStencilDescriptor,
-    MTLDepthStencilState, MTLDevice as _, MTLFunction, MTLLanguageVersion, MTLLibrary, MTLOrigin,
-    MTLLoadAction, MTLPixelFormat, MTLPrimitiveType, MTLRenderCommandEncoder, MTLRenderPassDescriptor,
-    MTLRenderPipelineDescriptor, MTLRenderPipelineState, MTLSamplerAddressMode,
-    MTLSamplerBorderColor, MTLSamplerDescriptor, MTLSamplerMinMagFilter, MTLSamplerMipFilter,
-    MTLSamplerState, MTLScissorRect, MTLSize, MTLStencilDescriptor, MTLStencilOperation,
-    MTLTexture, MTLViewport,
+    MTLDepthStencilState, MTLDevice as _, MTLFunction, MTLLanguageVersion, MTLLibrary,
+    MTLLoadAction, MTLOrigin, MTLPixelFormat, MTLPrimitiveType, MTLRenderCommandEncoder,
+    MTLRenderPassDescriptor, MTLRenderPipelineDescriptor, MTLRenderPipelineState,
+    MTLSamplerAddressMode, MTLSamplerBorderColor, MTLSamplerDescriptor, MTLSamplerMinMagFilter,
+    MTLSamplerMipFilter, MTLSamplerState, MTLScissorRect, MTLSize, MTLStencilDescriptor,
+    MTLStencilOperation, MTLTexture, MTLViewport,
 };
 use thiserror::Error;
 
@@ -833,41 +833,68 @@ fragment ClearUintDepthOut{index} clear_uint_depth_{index}(constant ClearParamet
         num_samples: u32,
     ) -> Result<(), MetalBlitError> {
         let signature = framebuffer.signature();
-        if !matches!(num_samples, 2 | 4 | 8 | 16) || source.samples() != num_samples
+        if !matches!(num_samples, 2 | 4 | 8 | 16)
+            || source.samples() != num_samples
             || signature.samples != 1
             || get_format_type(source.base().format) != SurfaceType::ColorTexture
             || crate::surface::is_pixel_format_integer(source.base().format)
             || signature.depth_format != MTLPixelFormat::Invalid
             || signature.stencil_format != MTLPixelFormat::Invalid
         {
-            return Err(MetalBlitError::InvalidBlit("MSAA expansion requires float color and matching native samples"));
+            return Err(MetalBlitError::InvalidBlit(
+                "MSAA expansion requires float color and matching native samples",
+            ));
         }
-        let texture = source.handle(TextureType::Color2D)
+        let texture = source
+            .handle(TextureType::Color2D)
             .ok_or(MetalBlitError::InvalidBlit("missing MSAA source view"))?;
         if signature.color_formats[0] != texture.pixelFormat()
-            || signature.color_formats[1..].iter().any(|format| *format != MTLPixelFormat::Invalid)
+            || signature.color_formats[1..]
+                .iter()
+                .any(|format| *format != MTLPixelFormat::Invalid)
         {
-            return Err(MetalBlitError::InvalidBlit("MSAA expansion requires one matching color attachment"));
+            return Err(MetalBlitError::InvalidBlit(
+                "MSAA expansion requires one matching color attachment",
+            ));
         }
         let (x, y) = crate::texture_cache::samples_helper::samples_log2(num_samples as i32);
         let scale = [1 << x, 1 << y];
         let area = framebuffer.render_area();
-        let size = |region: MetalBlitRegion| (i64::from(region.end.0) - i64::from(region.start.0),
-            i64::from(region.end.1) - i64::from(region.start.1));
-        if dst.start.0 < 0 || dst.start.1 < 0 || src.start.0 < 0 || src.start.1 < 0
-            || size(dst).0 <= 0 || size(dst).1 <= 0 || size(dst) != size(src)
-            || i64::from(dst.end.0) > i64::from(area.0) || i64::from(dst.end.1) > i64::from(area.1)
+        let size = |region: MetalBlitRegion| {
+            (
+                i64::from(region.end.0) - i64::from(region.start.0),
+                i64::from(region.end.1) - i64::from(region.start.1),
+            )
+        };
+        if dst.start.0 < 0
+            || dst.start.1 < 0
+            || src.start.0 < 0
+            || src.start.1 < 0
+            || size(dst).0 <= 0
+            || size(dst).1 <= 0
+            || size(dst) != size(src)
+            || i64::from(dst.end.0) > i64::from(area.0)
+            || i64::from(dst.end.1) > i64::from(area.1)
             || i64::from(src.end.0) > texture.width() as i64 * i64::from(scale[0])
             || i64::from(src.end.1) > texture.height() as i64 * i64::from(scale[1])
         {
             return Err(MetalBlitError::InvalidBlit("MSAA expansion region"));
         }
-        self.record_image_blit(scheduler, framebuffer, source, dst, src, Filter::Point,
-            Operation::SrcCopy, BlitAspect::Color, Some(MsaaCopyParameters {
+        self.record_image_blit(
+            scheduler,
+            framebuffer,
+            source,
+            dst,
+            src,
+            Filter::Point,
+            Operation::SrcCopy,
+            BlitAspect::Color,
+            Some(MsaaCopyParameters {
                 dst_offset: [dst.start.0, dst.start.1],
                 src_offset: [src.start.0, src.start.1],
                 scale,
-            }))
+            }),
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1041,7 +1068,9 @@ fragment ClearUintDepthOut{index} clear_uint_depth_{index}(constant ClearParamet
             encoder.setFragmentSamplerState_atIndex(Some(sampler), 0);
             if let Some(parameters) = &expansion {
                 encoder.setFragmentBytes_length_atIndex(
-                    NonNull::from(parameters).cast(), std::mem::size_of_val(parameters), 1,
+                    NonNull::from(parameters).cast(),
+                    std::mem::size_of_val(parameters),
+                    1,
                 );
             }
             encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::TriangleStrip, 0, 4);
@@ -1102,10 +1131,16 @@ fragment ClearUintDepthOut{index} clear_uint_depth_{index}(constant ClearParamet
             encoder.setFragmentSamplerState_atIndex(Some(sampler), 0);
             if let Some((arguments, offset)) = indirect {
                 encoder.drawPrimitives_indirectBuffer_indirectBufferOffset(
-                    MTLPrimitiveType::TriangleStrip, arguments.handle(), offset,
+                    MTLPrimitiveType::TriangleStrip,
+                    arguments.handle(),
+                    offset,
                 );
             } else {
-                encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::TriangleStrip, 0, 4);
+                encoder.drawPrimitives_vertexStart_vertexCount(
+                    MTLPrimitiveType::TriangleStrip,
+                    0,
+                    4,
+                );
             }
         })?;
         scheduler.end_render_pass();
@@ -1169,12 +1204,17 @@ fragment ClearUintDepthOut{index} clear_uint_depth_{index}(constant ClearParamet
             // Helpers may now follow a guest draw in the same native encoder.
             MetalQueryCache::configure_draw(encoder, None);
             encoder.setViewport(MTLViewport {
-                originX: 0.0, originY: 0.0,
+                originX: 0.0,
+                originY: 0.0,
                 width: parameters.render_area.0 as f64,
-                height: parameters.render_area.1 as f64, znear: 0.0, zfar: 1.0,
+                height: parameters.render_area.1 as f64,
+                znear: 0.0,
+                zfar: 1.0,
             });
             encoder.setScissorRect(MTLScissorRect {
-                x: 0, y: 0, width: parameters.render_area.0 as usize,
+                x: 0,
+                y: 0,
+                width: parameters.render_area.0 as usize,
                 height: parameters.render_area.1 as usize,
             });
             encoder.setCullMode(MTLCullMode::None);
@@ -1196,10 +1236,16 @@ fragment ClearUintDepthOut{index} clear_uint_depth_{index}(constant ClearParamet
             );
             if let Some((arguments, offset)) = indirect {
                 encoder.drawPrimitives_indirectBuffer_indirectBufferOffset(
-                    MTLPrimitiveType::TriangleStrip, arguments.handle(), offset,
+                    MTLPrimitiveType::TriangleStrip,
+                    arguments.handle(),
+                    offset,
                 );
             } else {
-                encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::TriangleStrip, 0, 4);
+                encoder.drawPrimitives_vertexStart_vertexCount(
+                    MTLPrimitiveType::TriangleStrip,
+                    0,
+                    4,
+                );
             }
         })?;
         Ok(())
@@ -1213,8 +1259,14 @@ fn validate_indirect_quad(
     render_pass: &MTLRenderPassDescriptor,
     indirect: Option<(&MetalBuffer, usize)>,
 ) -> Result<(), MetalBlitError> {
-    let Some((arguments, offset)) = indirect else { return Ok(()); };
-    if offset % 4 != 0 || offset.checked_add(16).is_none_or(|end| end > arguments.length()) {
+    let Some((arguments, offset)) = indirect else {
+        return Ok(());
+    };
+    if offset % 4 != 0
+        || offset
+            .checked_add(16)
+            .is_none_or(|end| end > arguments.length())
+    {
         return Err(MetalBlitError::InvalidBlit("indirect quad argument range"));
     }
     let colors = render_pass.colorAttachments();
@@ -1228,7 +1280,9 @@ fn validate_indirect_quad(
         || (depth.texture().is_some() && depth.loadAction() == MTLLoadAction::Clear)
         || (stencil.texture().is_some() && stencil.loadAction() == MTLLoadAction::Clear)
     {
-        return Err(MetalBlitError::InvalidBlit("conditional quad cannot use a load-action clear"));
+        return Err(MetalBlitError::InvalidBlit(
+            "conditional quad cannot use a load-action clear",
+        ));
     }
     Ok(())
 }
@@ -1378,32 +1432,68 @@ mod tests {
     ) -> super::super::metal_staging_buffer_pool::StagingBufferRef {
         use super::super::metal_compute_pass::ConditionalArgumentLayout;
         let source = MetalBuffer::new(device, 16).unwrap();
-        source.write(0, bytemuck::cast_slice(&[4u32, 1, 0, 0])).unwrap();
+        source
+            .write(0, bytemuck::cast_slice(&[4u32, 1, 0, 0]))
+            .unwrap();
         let predicate = MetalBuffer::new_private(device, 8).unwrap();
         let upload = MetalBuffer::new(device, 4).unwrap();
         upload.write(0, &value.to_ne_bytes()).unwrap();
         upload.encode_copy(scheduler, &predicate, 0, 4, 4).unwrap();
-        pass.resolve(scheduler, pool, &predicate, 4, inverted, &source, 0, 16, 1,
-            ConditionalArgumentLayout::Draw).unwrap()
+        pass.resolve(
+            scheduler,
+            pool,
+            &predicate,
+            4,
+            inverted,
+            &source,
+            0,
+            16,
+            1,
+            ConditionalArgumentLayout::Draw,
+        )
+        .unwrap()
     }
 
     #[test]
     fn conditional_clear_preserves_disabled_attachments_masks_and_subresources() {
-        use super::super::{metal_compute_pass::ConditionalRenderingArgumentsPass,
-            metal_staging_buffer_pool::MetalStagingBufferPool};
+        use super::super::{
+            metal_compute_pass::ConditionalRenderingArgumentsPass,
+            metal_staging_buffer_pool::MetalStagingBufferPool,
+        };
         let device = MetalDevice::new().unwrap();
         let mut helper = MetalBlitHelper::new(&device).unwrap();
         let packer = MetalDepthStencilCopy::new(&device).unwrap();
         let args_pass = ConditionalRenderingArgumentsPass::new(&device).unwrap();
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut scheduler = MetalScheduler::new(&device);
-        let full = MetalBlitRegion { start: (0, 0), end: (4, 4) };
-        for format in [PixelFormat::A8B8G8R8Unorm, PixelFormat::A8B8G8R8Sint,
-            PixelFormat::A8B8G8R8Uint, PixelFormat::D32Float, PixelFormat::D32FloatS8Uint, PixelFormat::S8Uint] {
+        let full = MetalBlitRegion {
+            start: (0, 0),
+            end: (4, 4),
+        };
+        for format in [
+            PixelFormat::A8B8G8R8Unorm,
+            PixelFormat::A8B8G8R8Sint,
+            PixelFormat::A8B8G8R8Uint,
+            PixelFormat::D32Float,
+            PixelFormat::D32FloatS8Uint,
+            PixelFormat::S8Uint,
+        ] {
             for (samples, level, layer) in [(1, 0, 0), (1, 1, 1), (4, 0, 1)] {
-                for region in [full, MetalBlitRegion { start: (1, 1), end: (3, 3) }] {
-                    for (value, inverted, enabled) in [(0u32, false, false), (1, false, true), (0, true, true), (1, true, false)] {
-                        let destination = target_subresource(&device, format, samples, level, layer);
+                for region in [
+                    full,
+                    MetalBlitRegion {
+                        start: (1, 1),
+                        end: (3, 3),
+                    },
+                ] {
+                    for (value, inverted, enabled) in [
+                        (0u32, false, false),
+                        (1, false, true),
+                        (0, true, true),
+                        (1, true, false),
+                    ] {
+                        let destination =
+                            target_subresource(&device, format, samples, level, layer);
                         let fb = &destination.framebuffer;
                         let color_type = match format {
                             PixelFormat::A8B8G8R8Sint => MetalClearColorType::Sint,
@@ -1412,67 +1502,219 @@ mod tests {
                         };
                         let color = (fb.num_color_buffers() != 0).then_some(0);
                         let initial = MetalClearParameters {
-                            region: full, render_area: (4, 4), color: [0.25, 0.5, 0.75, 1.0],
-                            signed_color: [-9, 10, -11, 12], unsigned_color: [9, 10, 11, 12],
-                            depth: 0.875, stencil: 0x12,
+                            region: full,
+                            render_area: (4, 4),
+                            color: [0.25, 0.5, 0.75, 1.0],
+                            signed_color: [-9, 10, -11, 12],
+                            unsigned_color: [9, 10, 11, 12],
+                            depth: 0.875,
+                            stencil: 0x12,
                         };
-                        helper.clear_attachments(&mut scheduler, &fb.render_pass_descriptor(), fb.render_pass_key(0), fb.signature(),
-                            color, color_type, 0xf, fb.has_depth(), fb.has_stencil(), 0xff, initial, None).unwrap();
-                        let args = conditional_quad(&device, &mut scheduler, &mut pool, &args_pass, value, inverted);
-                        scheduler.begin_or_reuse_render_pass(&fb.render_pass_descriptor(), fb.render_pass_key(0)).unwrap();
-                        let encoder_before = scheduler.with_render_encoder(|encoder| {
-                            encoder.setCullMode(MTLCullMode::Front);
-                            encoder.setViewport(MTLViewport { originX: 0.0, originY: 0.0,
-                                width: 1.0, height: 1.0, znear: 0.75, zfar: 1.0 });
-                            encoder.setScissorRect(MTLScissorRect { x: 0, y: 0, width: 1, height: 1 });
-                            encoder.setDepthBias_slopeScale_clamp(2.0, 2.0, 2.0);
-                            encoder as *const _ as usize
-                        }).unwrap();
-                        helper.clear_attachments(&mut scheduler, &fb.render_pass_descriptor(), fb.render_pass_key(0), fb.signature(),
-                            color, color_type, 0x5, fb.has_depth(), fb.has_stencil(), 0x0f,
-                            MetalClearParameters { region, color: [1.0, 0.0, 0.0, 0.0],
-                                signed_color: [-19, 20, -21, 22], unsigned_color: [19, 20, 21, 22],
-                                depth: 0.375, stencil: 0x9b, ..initial },
-                            Some((&args.buffer, args.offset))).unwrap();
-                        assert_eq!(encoder_before, scheduler.with_render_encoder(|e| e as *const _ as usize).unwrap());
-                        scheduler.begin_or_reuse_render_pass(&fb.render_pass_descriptor(), fb.render_pass_key(0)).unwrap();
-                        assert_eq!(encoder_before, scheduler.with_render_encoder(|e| e as *const _ as usize).unwrap());
+                        helper
+                            .clear_attachments(
+                                &mut scheduler,
+                                &fb.render_pass_descriptor(),
+                                fb.render_pass_key(0),
+                                fb.signature(),
+                                color,
+                                color_type,
+                                0xf,
+                                fb.has_depth(),
+                                fb.has_stencil(),
+                                0xff,
+                                initial,
+                                None,
+                            )
+                            .unwrap();
+                        let args = conditional_quad(
+                            &device,
+                            &mut scheduler,
+                            &mut pool,
+                            &args_pass,
+                            value,
+                            inverted,
+                        );
+                        scheduler
+                            .begin_or_reuse_render_pass(
+                                &fb.render_pass_descriptor(),
+                                fb.render_pass_key(0),
+                            )
+                            .unwrap();
+                        let encoder_before = scheduler
+                            .with_render_encoder(|encoder| {
+                                encoder.setCullMode(MTLCullMode::Front);
+                                encoder.setViewport(MTLViewport {
+                                    originX: 0.0,
+                                    originY: 0.0,
+                                    width: 1.0,
+                                    height: 1.0,
+                                    znear: 0.75,
+                                    zfar: 1.0,
+                                });
+                                encoder.setScissorRect(MTLScissorRect {
+                                    x: 0,
+                                    y: 0,
+                                    width: 1,
+                                    height: 1,
+                                });
+                                encoder.setDepthBias_slopeScale_clamp(2.0, 2.0, 2.0);
+                                encoder as *const _ as usize
+                            })
+                            .unwrap();
+                        helper
+                            .clear_attachments(
+                                &mut scheduler,
+                                &fb.render_pass_descriptor(),
+                                fb.render_pass_key(0),
+                                fb.signature(),
+                                color,
+                                color_type,
+                                0x5,
+                                fb.has_depth(),
+                                fb.has_stencil(),
+                                0x0f,
+                                MetalClearParameters {
+                                    region,
+                                    color: [1.0, 0.0, 0.0, 0.0],
+                                    signed_color: [-19, 20, -21, 22],
+                                    unsigned_color: [19, 20, 21, 22],
+                                    depth: 0.375,
+                                    stencil: 0x9b,
+                                    ..initial
+                                },
+                                Some((&args.buffer, args.offset)),
+                            )
+                            .unwrap();
+                        assert_eq!(
+                            encoder_before,
+                            scheduler
+                                .with_render_encoder(|e| e as *const _ as usize)
+                                .unwrap()
+                        );
+                        scheduler
+                            .begin_or_reuse_render_pass(
+                                &fb.render_pass_descriptor(),
+                                fb.render_pass_key(0),
+                            )
+                            .unwrap();
+                        assert_eq!(
+                            encoder_before,
+                            scheduler
+                                .with_render_encoder(|e| e as *const _ as usize)
+                                .unwrap()
+                        );
                         let resolved = (samples > 1).then(|| target(&device, format, 1));
                         if let Some(resolved) = &resolved {
                             if color.is_some() {
-                                helper.blit_color_msaa(&mut scheduler, &resolved.framebuffer, &destination.view, full, full).unwrap();
+                                helper
+                                    .blit_color_msaa(
+                                        &mut scheduler,
+                                        &resolved.framebuffer,
+                                        &destination.view,
+                                        full,
+                                        full,
+                                    )
+                                    .unwrap();
                             } else {
-                                helper.resolve_depth_stencil(&mut scheduler, &resolved.framebuffer, &destination.view, full, full).unwrap();
+                                helper
+                                    .resolve_depth_stencil(
+                                        &mut scheduler,
+                                        &resolved.framebuffer,
+                                        &destination.view,
+                                        full,
+                                        full,
+                                    )
+                                    .unwrap();
                             }
                         }
-                        let (result, read_level, read_layer) = resolved.as_ref().map_or((&destination, level, layer), |target| (target, 0, 0));
-                        let bpp = if format == PixelFormat::D32FloatS8Uint { 8 } else if format == PixelFormat::S8Uint { 1 } else { 4 };
+                        let (result, read_level, read_layer) = resolved
+                            .as_ref()
+                            .map_or((&destination, level, layer), |target| (target, 0, 0));
+                        let bpp = if format == PixelFormat::D32FloatS8Uint {
+                            8
+                        } else if format == PixelFormat::S8Uint {
+                            1
+                        } else {
+                            4
+                        };
                         let download = MetalBuffer::new(&device, 16 * bpp).unwrap();
                         let copy = BufferImageCopy {
-                            buffer_size: download.length(), image_extent: Extent3D { width: 4, height: 4, depth: 1 },
-                            image_subresource: SubresourceLayers { base_level: read_level, base_layer: read_layer, num_layers: 1 },
+                            buffer_size: download.length(),
+                            image_extent: Extent3D {
+                                width: 4,
+                                height: 4,
+                                depth: 1,
+                            },
+                            image_subresource: SubresourceLayers {
+                                base_level: read_level,
+                                base_layer: read_layer,
+                                num_layers: 1,
+                            },
                             ..Default::default()
                         };
                         if format == PixelFormat::D32FloatS8Uint {
-                            result.image.transfer_depth32_stencil8_memory(&mut scheduler, &packer, &download, 0, &[copy], false).unwrap();
+                            result
+                                .image
+                                .transfer_depth32_stencil8_memory(
+                                    &mut scheduler,
+                                    &packer,
+                                    &download,
+                                    0,
+                                    &[copy],
+                                    false,
+                                )
+                                .unwrap();
                         } else {
-                            result.image.download_memory(&mut scheduler, &download, 0, &[copy]).unwrap();
+                            result
+                                .image
+                                .download_memory(&mut scheduler, &download, 0, &[copy])
+                                .unwrap();
                         }
                         scheduler.finish_all().unwrap();
                         let mut bytes = vec![0; download.length()];
                         download.read(0, &mut bytes).unwrap();
                         for y in 0..4 {
                             for x in 0..4 {
-                                let changed = enabled && x >= region.start.0 && x < region.end.0 && y >= region.start.1 && y < region.end.1;
+                                let changed = enabled
+                                    && x >= region.start.0
+                                    && x < region.end.0
+                                    && y >= region.start.1
+                                    && y < region.end.1;
                                 let offset = (y * 4 + x) as usize * bpp;
                                 let pixel = &bytes[offset..offset + bpp];
                                 match format {
-                                    PixelFormat::A8B8G8R8Unorm => assert_eq!(pixel, if changed { &[255, 128, 0, 255] } else { &[64, 128, 191, 255] }),
-                                    PixelFormat::A8B8G8R8Sint => assert_eq!(pixel, if changed { &[237, 10, 235, 12] } else { &[247, 10, 245, 12] }),
-                                    PixelFormat::A8B8G8R8Uint => assert_eq!(pixel, if changed { &[19, 10, 21, 12] } else { &[9, 10, 11, 12] }),
-                                    PixelFormat::S8Uint => assert_eq!(pixel, &[if changed { 0x1b } else { 0x12 }]),
+                                    PixelFormat::A8B8G8R8Unorm => assert_eq!(
+                                        pixel,
+                                        if changed {
+                                            &[255, 128, 0, 255]
+                                        } else {
+                                            &[64, 128, 191, 255]
+                                        }
+                                    ),
+                                    PixelFormat::A8B8G8R8Sint => assert_eq!(
+                                        pixel,
+                                        if changed {
+                                            &[237, 10, 235, 12]
+                                        } else {
+                                            &[247, 10, 245, 12]
+                                        }
+                                    ),
+                                    PixelFormat::A8B8G8R8Uint => assert_eq!(
+                                        pixel,
+                                        if changed {
+                                            &[19, 10, 21, 12]
+                                        } else {
+                                            &[9, 10, 11, 12]
+                                        }
+                                    ),
+                                    PixelFormat::S8Uint => {
+                                        assert_eq!(pixel, &[if changed { 0x1b } else { 0x12 }])
+                                    }
                                     _ => {
-                                        assert_eq!(f32::from_ne_bytes(pixel[..4].try_into().unwrap()), if changed { 0.375 } else { 0.875 });
+                                        assert_eq!(
+                                            f32::from_ne_bytes(pixel[..4].try_into().unwrap()),
+                                            if changed { 0.375 } else { 0.875 }
+                                        );
                                         if format == PixelFormat::D32FloatS8Uint {
                                             assert_eq!(pixel[4], if changed { 0x1b } else { 0x12 });
                                         }
@@ -1488,9 +1730,11 @@ mod tests {
 
     #[test]
     fn conditional_draw_texture_preserves_pixels_and_visibility_queries() {
+        use super::super::{
+            metal_compute_pass::ConditionalRenderingArgumentsPass,
+            metal_staging_buffer_pool::MetalStagingBufferPool,
+        };
         use objc2_metal::MTLBuffer as _;
-        use super::super::{metal_compute_pass::ConditionalRenderingArgumentsPass,
-            metal_staging_buffer_pool::MetalStagingBufferPool};
         let device = MetalDevice::new().unwrap();
         let mut helper = MetalBlitHelper::new(&device).unwrap();
         let args_pass = ConditionalRenderingArgumentsPass::new(&device).unwrap();
@@ -1499,55 +1743,124 @@ mod tests {
         let mut queries = MetalQueryCache::new(&device).unwrap();
         let sampler = helper.nearest_sampler.clone();
         let source = target_subresource(&device, PixelFormat::A8B8G8R8Unorm, 1, 1, 1);
-        let pixels = (0..16).flat_map(|i| [(i % 4 * 64) as u8, (i / 4 * 64) as u8, 0, 255]).collect::<Vec<_>>();
+        let pixels = (0..16)
+            .flat_map(|i| [(i % 4 * 64) as u8, (i / 4 * 64) as u8, 0, 255])
+            .collect::<Vec<_>>();
         let upload = MetalBuffer::new(&device, 64).unwrap();
         upload.write(0, &pixels).unwrap();
         let copy = BufferImageCopy {
-            buffer_size: 64, image_extent: Extent3D { width: 4, height: 4, depth: 1 },
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 1 },
+            buffer_size: 64,
+            image_extent: Extent3D {
+                width: 4,
+                height: 4,
+                depth: 1,
+            },
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 1,
+            },
             ..Default::default()
         };
-        source.image.upload_memory(&mut scheduler, &upload, 0, &[copy]).unwrap();
-        for condition in [None, Some((0u32, false)), Some((1, false)), Some((0, true)), Some((1, true))] {
+        source
+            .image
+            .upload_memory(&mut scheduler, &upload, 0, &[copy])
+            .unwrap();
+        for condition in [
+            None,
+            Some((0u32, false)),
+            Some((1, false)),
+            Some((0, true)),
+            Some((1, true)),
+        ] {
             queries.reset_counter(crate::query_cache::types::QueryType::ZPassPixelCount64 as u32);
             let destination = target_subresource(&device, PixelFormat::A8B8G8R8Unorm, 1, 1, 1);
             clear(&mut scheduler, &destination, 0.0, 0);
-            let args = condition.map(|(value, inverted)| conditional_quad(
-                &device, &mut scheduler, &mut pool, &args_pass, value, inverted));
+            let args = condition.map(|(value, inverted)| {
+                conditional_quad(
+                    &device,
+                    &mut scheduler,
+                    &mut pool,
+                    &args_pass,
+                    value,
+                    inverted,
+                )
+            });
             let query = queries.prepare_draw(&mut scheduler, true).unwrap();
             let render_pass = destination.framebuffer.render_pass_descriptor();
             queries.attach_render_pass(&render_pass);
-            helper.blit_color_with_sampler(&mut scheduler, &render_pass,
-                destination.framebuffer.signature(), (4, 4), source.view.handle(TextureType::Color2D).unwrap(), &sampler,
-                MetalBlitRegion { start: (1, 1), end: (3, 3) },
-                MetalBlitRegion { start: (3, 3), end: (1, 1) }, (4, 4), query,
-                args.as_ref().map(|args| (args.buffer.as_ref(), args.offset))).unwrap();
-            assert!(matches!(scheduler.with_render_encoder(|_| ()),
-                Err(MetalSchedulerError::NoActiveRenderEncoder)), "DrawTexture must close its custom pass like Eden");
+            helper
+                .blit_color_with_sampler(
+                    &mut scheduler,
+                    &render_pass,
+                    destination.framebuffer.signature(),
+                    (4, 4),
+                    source.view.handle(TextureType::Color2D).unwrap(),
+                    &sampler,
+                    MetalBlitRegion {
+                        start: (1, 1),
+                        end: (3, 3),
+                    },
+                    MetalBlitRegion {
+                        start: (3, 3),
+                        end: (1, 1),
+                    },
+                    (4, 4),
+                    query,
+                    args.as_ref()
+                        .map(|args| (args.buffer.as_ref(), args.offset)),
+                )
+                .unwrap();
+            assert!(
+                matches!(
+                    scheduler.with_render_encoder(|_| ()),
+                    Err(MetalSchedulerError::NoActiveRenderEncoder)
+                ),
+                "DrawTexture must close its custom pass like Eden"
+            );
             let resolved_query = queries.resolve_visibility_counter(&mut scheduler).unwrap();
             let download = MetalBuffer::new(&device, 64).unwrap();
-            destination.image.download_memory(&mut scheduler, &download, 0, &[copy]).unwrap();
+            destination
+                .image
+                .download_memory(&mut scheduler, &download, 0, &[copy])
+                .unwrap();
             scheduler.finish_all().unwrap();
             let enabled = condition.is_none_or(|(value, inverted)| (value != 0) != inverted);
             let visibility_buffer = render_pass.visibilityResultBuffer().unwrap();
             // SAFETY: the query owns this shared 8-byte slot and finish_all above
             // completed the only render pass that writes it.
             let visible = unsafe {
-                visibility_buffer.contents().as_ptr().cast::<u8>()
-                    .add(query.unwrap().offset()).cast::<u64>().read_unaligned()
+                visibility_buffer
+                    .contents()
+                    .as_ptr()
+                    .cast::<u8>()
+                    .add(query.unwrap().offset())
+                    .cast::<u64>()
+                    .read_unaligned()
             };
-            assert_eq!(visible, if enabled { 4 } else { 0 }, "disabled DrawTexture must not contribute visible samples");
+            assert_eq!(
+                visible,
+                if enabled { 4 } else { 0 },
+                "disabled DrawTexture must not contribute visible samples"
+            );
             let mut resolved_bytes = [0; 8];
             resolved_query.read(0, &mut resolved_bytes).unwrap();
-            assert_eq!(u64::from_ne_bytes(resolved_bytes), visible, "GPU-resolved report must match Metal's actual samples");
+            assert_eq!(
+                u64::from_ne_bytes(resolved_bytes),
+                visible,
+                "GPU-resolved report must match Metal's actual samples"
+            );
             let mut bytes = [0; 64];
             download.read(0, &mut bytes).unwrap();
             for y in 0..4 {
                 for x in 0..4 {
                     let changed = enabled && (1..3).contains(&x) && (1..3).contains(&y);
                     let offset = (y * 4 + x) * 4;
-                    let expected = if changed { [((3 - x) * 64) as u8, ((3 - y) * 64) as u8, 0, 255] }
-                        else { [64, 128, 191, 255] };
+                    let expected = if changed {
+                        [((3 - x) * 64) as u8, ((3 - y) * 64) as u8, 0, 255]
+                    } else {
+                        [64, 128, 191, 255]
+                    };
                     assert_eq!(&bytes[offset..offset + 4], &expected);
                 }
             }
@@ -1558,7 +1871,11 @@ mod tests {
     fn conditional_quad_rejects_bad_ranges_and_unconditional_load_clears() {
         let device = MetalDevice::new().unwrap();
         let arguments = MetalBuffer::new(&device, 20).unwrap();
-        for format in [PixelFormat::A8B8G8R8Unorm, PixelFormat::D32Float, PixelFormat::S8Uint] {
+        for format in [
+            PixelFormat::A8B8G8R8Unorm,
+            PixelFormat::D32Float,
+            PixelFormat::S8Uint,
+        ] {
             let target = target(&device, format, 1);
             let pass = target.framebuffer.render_pass_descriptor();
             assert!(validate_indirect_quad(&pass, Some((&arguments, 4))).is_ok());
@@ -1566,7 +1883,8 @@ mod tests {
                 assert!(validate_indirect_quad(&pass, Some((&arguments, offset))).is_err());
             }
             if format == PixelFormat::A8B8G8R8Unorm {
-                unsafe { pass.colorAttachments().objectAtIndexedSubscript(0) }.setLoadAction(MTLLoadAction::Clear);
+                unsafe { pass.colorAttachments().objectAtIndexedSubscript(0) }
+                    .setLoadAction(MTLLoadAction::Clear);
             } else if format == PixelFormat::D32Float {
                 pass.depthAttachment().setLoadAction(MTLLoadAction::Clear);
             } else {
@@ -1942,50 +2260,111 @@ mod tests {
         let mut helper = MetalBlitHelper::new(&device).unwrap();
         let source = target_subresource(&device, PixelFormat::A8B8G8R8Unorm, 4, 0, 1);
         let destination = target_subresource(&device, PixelFormat::A8B8G8R8Unorm, 1, 1, 1);
-        let library = device.device().newLibraryWithSource_options_error(&NSString::from_str(r#"
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(
+                &NSString::from_str(
+                    r#"
 #include <metal_stdlib>
 using namespace metal;
 fragment float4 samples(float4 position [[position]], uint sample [[sample_id]]) {
     return float4(float(sample), floor(position.x), floor(position.y), 3.0f) / 3.0f;
 }
-"#), None).unwrap();
-        let fragment = library.newFunctionWithName(&NSString::from_str("samples")).unwrap();
+"#,
+                ),
+                None,
+            )
+            .unwrap();
+        let fragment = library
+            .newFunctionWithName(&NSString::from_str("samples"))
+            .unwrap();
         let descriptor = MTLRenderPipelineDescriptor::new();
         descriptor.setVertexFunction(Some(&helper.vertex));
         descriptor.setFragmentFunction(Some(&fragment));
         descriptor.setRasterSampleCount(4);
         unsafe { descriptor.colorAttachments().objectAtIndexedSubscript(0) }
             .setPixelFormat(source.framebuffer.signature().color_formats[0]);
-        let pipeline = device.device().newRenderPipelineStateWithDescriptor_error(&descriptor).unwrap();
+        let pipeline = device
+            .device()
+            .newRenderPipelineStateWithDescriptor_error(&descriptor)
+            .unwrap();
         let parameters = BlitParameters {
-            dst: [0.0, 0.0, 4.0, 4.0], src: [0.0, 0.0, 1.0, 1.0],
-            target_size: [4.0, 4.0], _padding: [0.0; 2],
+            dst: [0.0, 0.0, 4.0, 4.0],
+            src: [0.0, 0.0, 1.0, 1.0],
+            target_size: [4.0, 4.0],
+            _padding: [0.0; 2],
         };
-        scheduler.begin_render_pass(&source.framebuffer.render_pass_descriptor()).unwrap();
-        scheduler.with_render_encoder(|encoder| unsafe {
-            encoder.setRenderPipelineState(&pipeline);
-            encoder.setCullMode(MTLCullMode::None);
-            encoder.setViewport(MTLViewport { originX: 0.0, originY: 0.0, width: 4.0, height: 4.0, znear: 0.0, zfar: 1.0 });
-            encoder.setVertexBytes_length_atIndex(NonNull::from(&parameters).cast(), std::mem::size_of_val(&parameters), 0);
-            encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::TriangleStrip, 0, 4);
-        }).unwrap();
+        scheduler
+            .begin_render_pass(&source.framebuffer.render_pass_descriptor())
+            .unwrap();
+        scheduler
+            .with_render_encoder(|encoder| unsafe {
+                encoder.setRenderPipelineState(&pipeline);
+                encoder.setCullMode(MTLCullMode::None);
+                encoder.setViewport(MTLViewport {
+                    originX: 0.0,
+                    originY: 0.0,
+                    width: 4.0,
+                    height: 4.0,
+                    znear: 0.0,
+                    zfar: 1.0,
+                });
+                encoder.setVertexBytes_length_atIndex(
+                    NonNull::from(&parameters).cast(),
+                    std::mem::size_of_val(&parameters),
+                    0,
+                );
+                encoder.drawPrimitives_vertexStart_vertexCount(
+                    MTLPrimitiveType::TriangleStrip,
+                    0,
+                    4,
+                );
+            })
+            .unwrap();
         scheduler.end_render_pass();
         let upload = MetalBuffer::new(&device, 64).unwrap();
         upload.write(0, &[0xcd; 64]).unwrap();
         let copy = crate::texture_cache::types::BufferImageCopy {
             buffer_size: 64,
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 1 },
-            image_extent: Extent3D { width: 4, height: 4, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 4,
+                height: 4,
+                depth: 1,
+            },
             ..Default::default()
         };
-        destination.image.upload_memory(&mut scheduler, &upload, 0, &[copy]).unwrap();
+        destination
+            .image
+            .upload_memory(&mut scheduler, &upload, 0, &[copy])
+            .unwrap();
         let tick = scheduler.current_tick();
-        helper.copy_msaa_to_single_sample_color(&mut scheduler, &destination.framebuffer, &source.view,
-            MetalBlitRegion { start: (1, 1), end: (4, 4) },
-            MetalBlitRegion { start: (3, 1), end: (6, 4) }, 4).unwrap();
+        helper
+            .copy_msaa_to_single_sample_color(
+                &mut scheduler,
+                &destination.framebuffer,
+                &source.view,
+                MetalBlitRegion {
+                    start: (1, 1),
+                    end: (4, 4),
+                },
+                MetalBlitRegion {
+                    start: (3, 1),
+                    end: (6, 4),
+                },
+                4,
+            )
+            .unwrap();
         assert_eq!(scheduler.current_tick(), tick);
         let download = MetalBuffer::new(&device, 64).unwrap();
-        destination.image.download_memory(&mut scheduler, &download, 0, &[copy]).unwrap();
+        destination
+            .image
+            .download_memory(&mut scheduler, &download, 0, &[copy])
+            .unwrap();
         scheduler.finish_all().unwrap();
         let mut actual = [0; 64];
         download.read(0, &mut actual).unwrap();
@@ -1996,16 +2375,44 @@ fragment float4 samples(float4 position [[position]], uint sample [[sample_id]])
                 let sample = sx % 2 + 2 * (y % 2);
                 let offset = (y * 4 + x) * 4;
                 expected[offset..offset + 4].copy_from_slice(&[
-                    (sample * 85) as u8, ((sx / 2) * 85) as u8, ((y / 2) * 85) as u8, 255,
+                    (sample * 85) as u8,
+                    ((sx / 2) * 85) as u8,
+                    ((y / 2) * 85) as u8,
+                    255,
                 ]);
             }
         }
-        assert_eq!(actual, expected, "samples must not be averaged or replaced by sample zero");
-        let full = MetalBlitRegion { start: (0, 0), end: (4, 4) };
-        assert!(helper.copy_msaa_to_single_sample_color(&mut scheduler, &destination.framebuffer,
-            &source.view, full, full, 8).is_err());
-        assert!(helper.copy_msaa_to_single_sample_color(&mut scheduler, &destination.framebuffer,
-            &source.view, full, MetalBlitRegion { start: (6, 0), end: (10, 4) }, 4).is_err());
+        assert_eq!(
+            actual, expected,
+            "samples must not be averaged or replaced by sample zero"
+        );
+        let full = MetalBlitRegion {
+            start: (0, 0),
+            end: (4, 4),
+        };
+        assert!(helper
+            .copy_msaa_to_single_sample_color(
+                &mut scheduler,
+                &destination.framebuffer,
+                &source.view,
+                full,
+                full,
+                8
+            )
+            .is_err());
+        assert!(helper
+            .copy_msaa_to_single_sample_color(
+                &mut scheduler,
+                &destination.framebuffer,
+                &source.view,
+                full,
+                MetalBlitRegion {
+                    start: (6, 0),
+                    end: (10, 4)
+                },
+                4
+            )
+            .is_err());
         assert!(!scheduler.has_active_work());
     }
 

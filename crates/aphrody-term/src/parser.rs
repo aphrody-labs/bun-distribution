@@ -74,7 +74,8 @@ impl VtParser {
                     let next_tab = (grid.cursor.col + 8) & !7;
                     grid.cursor.col = next_tab.min(grid.cols() - 1);
                 }
-                0x08 => { // Backspace
+                0x08 => {
+                    // Backspace
                     grid.cursor.col = grid.cursor.col.saturating_sub(1);
                 }
                 0x07 => { // Bell (noop)
@@ -153,16 +154,20 @@ impl VtParser {
         }
 
         match bytes[1] {
-            b'[' => { // CSI (Control Sequence Introducer)
+            b'[' => {
+                // CSI (Control Sequence Introducer)
                 self.parse_csi(grid, &bytes[2..])
             }
-            b']' => { // OSC (Operating System Command)
+            b']' => {
+                // OSC (Operating System Command)
                 self.parse_osc(&bytes[2..])
             }
-            b'=' | b'>' => { // Keypad modes
+            b'=' | b'>' => {
+                // Keypad modes
                 &bytes[2..]
             }
-            b'M' => { // Reverse Index (scroll down)
+            b'M' => {
+                // Reverse Index (scroll down)
                 if grid.cursor.row == 0 {
                     // Reverse scroll
                 } else {
@@ -170,7 +175,8 @@ impl VtParser {
                 }
                 &bytes[2..]
             }
-            b'c' => { // Reset to initial state (RIS)
+            b'c' => {
+                // Reset to initial state (RIS)
                 grid.clear_screen();
                 grid.cursor.col = 0;
                 grid.cursor.row = 0;
@@ -201,13 +207,19 @@ impl VtParser {
             match b {
                 b'0'..=b'9' => {
                     let digit = (b - b'0') as u32;
-                    curr_num = Some(curr_num.unwrap_or(0).saturating_mul(10).saturating_add(digit));
+                    curr_num = Some(
+                        curr_num
+                            .unwrap_or(0)
+                            .saturating_mul(10)
+                            .saturating_add(digit),
+                    );
                 }
                 b';' => {
                     params.push(curr_num.unwrap_or(0));
                     curr_num = None;
                 }
-                0x40..=0x7E => { // Final character
+                0x40..=0x7E => {
+                    // Final character
                     if let Some(num) = curr_num {
                         params.push(num);
                     }
@@ -222,59 +234,76 @@ impl VtParser {
     }
 
     /// Executes a parsed CSI command.
-    fn execute_csi(&mut self, grid: &mut TerminalGrid, private: bool, params: &[u32], final_char: u8) {
+    fn execute_csi(
+        &mut self,
+        grid: &mut TerminalGrid,
+        private: bool,
+        params: &[u32],
+        final_char: u8,
+    ) {
         match final_char {
-            b'm' => { // SGR (Select Graphic Rendition)
+            b'm' => {
+                // SGR (Select Graphic Rendition)
                 self.handle_sgr(params);
             }
-            b'H' | b'f' => { // Cursor Position (1-indexed)
+            b'H' | b'f' => {
+                // Cursor Position (1-indexed)
                 let r = params.first().copied().unwrap_or(1).max(1) - 1;
                 let c = params.get(1).copied().unwrap_or(1).max(1) - 1;
                 grid.cursor.row = (r as usize).min(grid.rows() - 1);
                 grid.cursor.col = (c as usize).min(grid.cols() - 1);
             }
-            b'A' => { // Cursor Up
+            b'A' => {
+                // Cursor Up
                 let n = params.first().copied().unwrap_or(1).max(1) as usize;
                 grid.cursor.row = grid.cursor.row.saturating_sub(n);
             }
-            b'B' => { // Cursor Down
+            b'B' => {
+                // Cursor Down
                 let n = params.first().copied().unwrap_or(1).max(1) as usize;
                 grid.cursor.row = (grid.cursor.row + n).min(grid.rows() - 1);
             }
-            b'C' => { // Cursor Forward
+            b'C' => {
+                // Cursor Forward
                 let n = params.first().copied().unwrap_or(1).max(1) as usize;
                 grid.cursor.col = (grid.cursor.col + n).min(grid.cols() - 1);
             }
-            b'D' => { // Cursor Backward
+            b'D' => {
+                // Cursor Backward
                 let n = params.first().copied().unwrap_or(1).max(1) as usize;
                 grid.cursor.col = grid.cursor.col.saturating_sub(n);
             }
-            b'J' => { // Erase in Display
+            b'J' => {
+                // Erase in Display
                 let mode = params.first().copied().unwrap_or(0);
                 match mode {
                     2 | 3 => grid.clear_screen(),
                     _ => {}
                 }
             }
-            b'K' => { // Erase in Line
+            b'K' => {
+                // Erase in Line
                 let mode = params.first().copied().unwrap_or(0);
                 let row = grid.cursor.row;
                 match mode {
-                    0 => { // Clear from cursor to end of line
+                    0 => {
+                        // Clear from cursor to end of line
                         for c in grid.cursor.col..grid.cols() {
                             if let Some(cell) = grid.cell_mut(c, row) {
                                 *cell = PackedCell::default();
                             }
                         }
                     }
-                    1 => { // Clear from start of line to cursor
+                    1 => {
+                        // Clear from start of line to cursor
                         for c in 0..=grid.cursor.col.min(grid.cols() - 1) {
                             if let Some(cell) = grid.cell_mut(c, row) {
                                 *cell = PackedCell::default();
                             }
                         }
                     }
-                    2 => { // Clear entire line
+                    2 => {
+                        // Clear entire line
                         for c in 0..grid.cols() {
                             if let Some(cell) = grid.cell_mut(c, row) {
                                 *cell = PackedCell::default();
@@ -284,7 +313,8 @@ impl VtParser {
                     _ => {}
                 }
             }
-            b'n' => { // Device Status Report (DSR)
+            b'n' => {
+                // Device Status Report (DSR)
                 if params.first() == Some(&6) {
                     // Cursor Position Report (CPR): \x1b[{row};{col}R
                     let r = grid.cursor.row + 1;
@@ -296,7 +326,8 @@ impl VtParser {
                 let enabled = final_char == b'h';
                 match params.first() {
                     Some(25) => grid.cursor.visible = enabled, // Show/Hide cursor
-                    Some(1049) => { // Alternate screen buffer
+                    Some(1049) => {
+                        // Alternate screen buffer
                         grid.clear_screen();
                     }
                     _ => {}
@@ -338,25 +369,63 @@ impl VtParser {
                 27 => self.flags.remove(CellFlags::INVERSE),
                 29 => self.flags.remove(CellFlags::STRIKETHROUGH),
                 // Standard Foreground (30..=37)
-                30..=37 => self.fg = PackedCell::pack_rgb(ansi_rgb(params[i] - 30).0, ansi_rgb(params[i] - 30).1, ansi_rgb(params[i] - 30).2, 255),
-                38 => { // Extended Foreground (256 or TrueColor RGB)
-                    if i + 2 < params.len() && params[i + 1] == 5 { // 256 color
-                        self.fg = PackedCell::pack_rgb(ansi_256_rgb(params[i + 2]).0, ansi_256_rgb(params[i + 2]).1, ansi_256_rgb(params[i + 2]).2, 255);
+                30..=37 => {
+                    self.fg = PackedCell::pack_rgb(
+                        ansi_rgb(params[i] - 30).0,
+                        ansi_rgb(params[i] - 30).1,
+                        ansi_rgb(params[i] - 30).2,
+                        255,
+                    )
+                }
+                38 => {
+                    // Extended Foreground (256 or TrueColor RGB)
+                    if i + 2 < params.len() && params[i + 1] == 5 {
+                        // 256 color
+                        self.fg = PackedCell::pack_rgb(
+                            ansi_256_rgb(params[i + 2]).0,
+                            ansi_256_rgb(params[i + 2]).1,
+                            ansi_256_rgb(params[i + 2]).2,
+                            255,
+                        );
                         i += 2;
-                    } else if i + 4 < params.len() && params[i + 1] == 2 { // Truecolor: 38;2;R;G;B
-                        self.fg = PackedCell::pack_rgb(params[i + 2] as u8, params[i + 3] as u8, params[i + 4] as u8, 255);
+                    } else if i + 4 < params.len() && params[i + 1] == 2 {
+                        // Truecolor: 38;2;R;G;B
+                        self.fg = PackedCell::pack_rgb(
+                            params[i + 2] as u8,
+                            params[i + 3] as u8,
+                            params[i + 4] as u8,
+                            255,
+                        );
                         i += 4;
                     }
                 }
                 39 => self.fg = 0xFFFFFFFF,
                 // Standard Background (40..=47)
-                40..=47 => self.bg = PackedCell::pack_rgb(ansi_rgb(params[i] - 40).0, ansi_rgb(params[i] - 40).1, ansi_rgb(params[i] - 40).2, 255),
-                48 => { // Extended Background
+                40..=47 => {
+                    self.bg = PackedCell::pack_rgb(
+                        ansi_rgb(params[i] - 40).0,
+                        ansi_rgb(params[i] - 40).1,
+                        ansi_rgb(params[i] - 40).2,
+                        255,
+                    )
+                }
+                48 => {
+                    // Extended Background
                     if i + 2 < params.len() && params[i + 1] == 5 {
-                        self.bg = PackedCell::pack_rgb(ansi_256_rgb(params[i + 2]).0, ansi_256_rgb(params[i + 2]).1, ansi_256_rgb(params[i + 2]).2, 255);
+                        self.bg = PackedCell::pack_rgb(
+                            ansi_256_rgb(params[i + 2]).0,
+                            ansi_256_rgb(params[i + 2]).1,
+                            ansi_256_rgb(params[i + 2]).2,
+                            255,
+                        );
                         i += 2;
                     } else if i + 4 < params.len() && params[i + 1] == 2 {
-                        self.bg = PackedCell::pack_rgb(params[i + 2] as u8, params[i + 3] as u8, params[i + 4] as u8, 255);
+                        self.bg = PackedCell::pack_rgb(
+                            params[i + 2] as u8,
+                            params[i + 3] as u8,
+                            params[i + 4] as u8,
+                            255,
+                        );
                         i += 4;
                     }
                 }
@@ -402,7 +471,11 @@ fn ansi_256_rgb(val: u32) -> (u8, u8, u8) {
         ansi_rgb(val)
     } else if val < 16 {
         let (r, g, b) = ansi_rgb(val - 8);
-        (r.saturating_add(50), g.saturating_add(50), b.saturating_add(50))
+        (
+            r.saturating_add(50),
+            g.saturating_add(50),
+            b.saturating_add(50),
+        )
     } else if val < 232 {
         let val = val - 16;
         let r = ((val / 36) % 6) * 51;

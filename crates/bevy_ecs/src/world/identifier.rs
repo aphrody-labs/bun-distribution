@@ -2,7 +2,7 @@ use crate::{
     change_detection::Tick,
     storage::SparseSetIndex,
     system::{SystemAccess, SystemMeta, SystemParam, SystemParamValidationError},
-    world::{unsafe_world_cell::UnsafeWorldCell, FromWorld, World},
+    world::{FromWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 use bevy_platform::sync::atomic::{AtomicUsize, Ordering};
 

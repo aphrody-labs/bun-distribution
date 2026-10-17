@@ -22,16 +22,24 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let snapshots = std::env::var_os("FILMCRAFT_UI_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if snapshots.is_some() {
             b = b.wgpu();
         }
         let harness = b.build_eframe(move |_cc| app);
-        let mut d = Driver { harness, tx, snapshots };
+        let mut d = Driver {
+            harness,
+            tx,
+            snapshots,
+        };
         d.frames(4);
         d
     }
@@ -61,11 +69,17 @@ impl Driver {
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     fn snapshot(&mut self, name: &str) {
-        let Some(dir) = self.snapshots.clone() else { return };
+        let Some(dir) = self.snapshots.clone() else {
+            return;
+        };
         self.frames(2);
         match self.harness.render() {
             Ok(img) => {
@@ -88,16 +102,28 @@ fn community_links_everywhere() {
     let menu = d.ok("ui.menu.list", json!({}));
     let text = menu.to_string();
     for (id, label, _) in links::ALL {
-        assert!(text.contains(id) && text.contains(label), "Help menu lists {id}");
+        assert!(
+            text.contains(id) && text.contains(label),
+            "Help menu lists {id}"
+        );
     }
     // Header: the Discord button is always there.
     assert_eq!(d.ids("header.discord"), vec!["header.discord".to_string()]);
     d.snapshot("header");
     // About dialog: Discord first, then website, app page, GitHub, issues.
-    d.ok("engine.execute", json!({"command": "app.about", "params": {}}));
+    d.ok(
+        "engine.execute",
+        json!({"command": "app.about", "params": {}}),
+    );
     d.frames(3);
     let about = d.ids("about.");
-    for id in ["about.discord", "about.website", "about.appPage", "about.github", "about.reportIssue"] {
+    for id in [
+        "about.discord",
+        "about.website",
+        "about.appPage",
+        "about.github",
+        "about.reportIssue",
+    ] {
         assert!(about.iter().any(|a| a == id), "{id} in {about:?}");
     }
     d.snapshot("about");
@@ -105,10 +131,18 @@ fn community_links_everywhere() {
     d.frames(3);
     assert!(d.ids("about.").is_empty(), "Escape closes About");
     // Home screen (Import mode): community links.
-    d.ok("engine.execute", json!({"command": "mode.import", "params": {}}));
+    d.ok(
+        "engine.execute",
+        json!({"command": "mode.import", "params": {}}),
+    );
     d.frames(3);
     let home = d.ids("import.link.");
-    for id in ["import.link.discord", "import.link.website", "import.link.appPage", "import.link.github"] {
+    for id in [
+        "import.link.discord",
+        "import.link.website",
+        "import.link.appPage",
+        "import.link.github",
+    ] {
         assert!(home.iter().any(|a| a == id), "{id} in {home:?}");
     }
     d.snapshot("home");

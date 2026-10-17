@@ -43,7 +43,11 @@ impl GeminiWebClient {
             return Some(PathBuf::from(path));
         }
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
-        Some(PathBuf::from(home).join(".aphrody").join("google-cookies.json"))
+        Some(
+            PathBuf::from(home)
+                .join(".aphrody")
+                .join("google-cookies.json"),
+        )
     }
 
     /// Build a client from a cookie-jar file, bootstrapping session tokens.
@@ -83,7 +87,10 @@ impl GeminiWebClient {
     pub async fn from_auth(auth: Auth, language: &str) -> Result<Self> {
         let tokens = fetch_session_tokens(&auth, Some(language)).await?;
         let transport = HttpTransport::new(auth, tokens)?;
-        Ok(Self { transport, language: language.to_string() })
+        Ok(Self {
+            transport,
+            language: language.to_string(),
+        })
     }
 
     /// Re-scrape the session tokens (call after a [`GeminiError::Auth`] on a
@@ -120,8 +127,14 @@ impl GeminiWebClient {
         let payload = build_send_payload(prompt, &self.language, meta, attachments);
         // Follow-up turns are threaded via the inner metadata; the optional
         // source-path mirrors the web UI for parity.
-        let source_path = meta.conversation_id.as_ref().map(|cid| format!("/app/{cid}"));
-        let raw = self.transport.stream_generate(&payload, source_path.as_deref(), model).await?;
+        let source_path = meta
+            .conversation_id
+            .as_ref()
+            .map(|cid| format!("/app/{cid}"));
+        let raw = self
+            .transport
+            .stream_generate(&payload, source_path.as_deref(), model)
+            .await?;
         parse_stream_response(&raw)
     }
 
@@ -131,7 +144,8 @@ impl GeminiWebClient {
     ///
     /// See [`Self::send`].
     pub async fn ask(&self, prompt: &str, model: Option<&str>) -> Result<ChatReply> {
-        self.send(prompt, model, &ConversationMetadata::default(), None).await
+        self.send(prompt, model, &ConversationMetadata::default(), None)
+            .await
     }
 
     /// Upload a local file to Google's Scotty storage, returning an `UploadedAttachment` that can
@@ -142,7 +156,10 @@ impl GeminiWebClient {
     /// Propagates network and protocol errors.
     pub async fn upload_file(&self, file_name: &str, data: &[u8]) -> Result<UploadedAttachment> {
         let url = self.transport.upload_file(file_name, data).await?;
-        Ok(UploadedAttachment { url, name: file_name.to_string() })
+        Ok(UploadedAttachment {
+            url,
+            name: file_name.to_string(),
+        })
     }
 
     /// Read a server config flag (`ESY5D`), e.g. `bard_activity_enabled`.
@@ -154,7 +171,10 @@ impl GeminiWebClient {
     /// envelope shape.
     pub async fn get_config_flag(&self, flag: &str) -> Result<bool> {
         let payload = json!([[[flag]]]);
-        let inner = self.transport.rpc_raw(GET_CONFIG_FLAG, &payload, Some("/app"), None).await?;
+        let inner = self
+            .transport
+            .rpc_raw(GET_CONFIG_FLAG, &payload, Some("/app"), None)
+            .await?;
         // Observed live: [[null,null,null,null,true]] -> the trailing bool.
         let value = inner
             .get(0)

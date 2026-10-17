@@ -58,7 +58,10 @@ impl Filtre {
             .filter(|s| !s.is_empty())
             .map(|brut| {
                 let (negatif, corps) = brut.strip_prefix('!').map_or((false, brut), |r| (true, r));
-                Motif { negatif, elements: compiler(corps) }
+                Motif {
+                    negatif,
+                    elements: compiler(corps),
+                }
             })
             .collect();
         Filtre { motifs }
@@ -82,7 +85,11 @@ impl Filtre {
         }
         let normalise = chemin.replace('\\', "/").to_lowercase();
 
-        if self.motifs.iter().any(|m| m.negatif && correspond(&m.elements, &normalise)) {
+        if self
+            .motifs
+            .iter()
+            .any(|m| m.negatif && correspond(&m.elements, &normalise))
+        {
             return false;
         }
         let mut a_inclusion = false;
@@ -115,7 +122,7 @@ fn compiler(motif: &str) -> Vec<Element> {
                 } else {
                     elements.push(Element::Etoile);
                 }
-            },
+            }
             _ => litteral.extend(c.to_lowercase()),
         }
     }
@@ -132,16 +139,16 @@ fn compiler(motif: &str) -> Vec<Element> {
 fn correspond(elements: &[Element], texte: &str) -> bool {
     match elements.split_first() {
         None => texte.is_empty(),
-        Some((Element::Litteral(l), reste)) => {
-            texte.strip_prefix(l.as_str()).is_some_and(|suite| correspond(reste, suite))
-        },
+        Some((Element::Litteral(l), reste)) => texte
+            .strip_prefix(l.as_str())
+            .is_some_and(|suite| correspond(reste, suite)),
         Some((Element::Point, reste)) => {
             let mut it = texte.chars();
             match it.next() {
                 Some(c) if c != '/' => correspond(reste, it.as_str()),
                 _ => false,
             }
-        },
+        }
         Some((joker @ (Element::Etoile | Element::EtoileDouble), reste)) => {
             let traverse = *joker == Element::EtoileDouble;
             // Essai le plus court d'abord : le suffixe vide, puis un caractère de plus à chaque
@@ -155,7 +162,7 @@ fn correspond(elements: &[Element], texte: &str) -> bool {
                 }
             }
             correspond(reste, "")
-        },
+        }
     }
 }
 
@@ -167,7 +174,10 @@ mod tests {
     fn une_etoile_ne_traverse_pas_les_barres() {
         let f = Filtre::parse("data/*/x.bin");
         assert!(f.accepte("data/chr/x.bin"));
-        assert!(!f.accepte("data/chr/sub/x.bin"), "`*` ne doit pas franchir un /");
+        assert!(
+            !f.accepte("data/chr/sub/x.bin"),
+            "`*` ne doit pas franchir un /"
+        );
     }
 
     #[test]
@@ -190,7 +200,10 @@ mod tests {
     fn l_exclusion_prime_sur_l_inclusion() {
         let f = Filtre::parse("data/**,!data/**/movie/**");
         assert!(f.accepte("data/common/x.bin"));
-        assert!(!f.accepte("data/common/movie/intro.usm"), "l'exclusion doit gagner");
+        assert!(
+            !f.accepte("data/common/movie/intro.usm"),
+            "l'exclusion doit gagner"
+        );
     }
 
     #[test]

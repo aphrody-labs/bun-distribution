@@ -63,7 +63,10 @@ pub fn select_subject(sampler: &dyn Sampler, canvas: Rect) -> Option<Region> {
         return None;
     }
     let (fg, bg) = grabcut::grabcut(&img, &mut trimap, 6)?;
-    let low: Vec<bool> = trimap.iter().map(|v| *v == PR_FG || *v == grabcut::FG).collect();
+    let low: Vec<bool> = trimap
+        .iter()
+        .map(|v| *v == PR_FG || *v == grabcut::FG)
+        .collect();
     let low = super::clean_mask(&low, w, h, 0.2, 0.05);
     if !low.iter().any(|v| *v) {
         return None;
@@ -98,8 +101,16 @@ pub fn saliency(img: &super::RgbImage) -> Vec<f32> {
             }
         }
     }
-    let mean: Vec<[f32; 3]> = mean.iter().zip(&cnt).map(|(m, c)| m.map(|v| (v / c.max(1.0)) as f32)).collect();
-    let pos: Vec<[f32; 2]> = pos.iter().zip(&cnt).map(|(p, c)| p.map(|v| (v / c.max(1.0)) as f32)).collect();
+    let mean: Vec<[f32; 3]> = mean
+        .iter()
+        .zip(&cnt)
+        .map(|(m, c)| m.map(|v| (v / c.max(1.0)) as f32))
+        .collect();
+    let pos: Vec<[f32; 2]> = pos
+        .iter()
+        .zip(&cnt)
+        .map(|(p, c)| p.map(|v| (v / c.max(1.0)) as f32))
+        .collect();
     let dapp = |a: usize, b: usize| super::d2(mean[a], mean[b]).sqrt();
     // Adjacency.
     let mut adj: Vec<Vec<usize>> = vec![Vec::new(); n];
@@ -150,7 +161,14 @@ pub fn saliency(img: &super::RgbImage) -> Vec<f32> {
     let mx = wctr.iter().copied().fold(0.0f32, f32::max).max(1e-6);
     let wfg: Vec<f32> = wctr.iter().map(|v| v / mx).collect();
     // Saliency optimisation: min Σ wbg s² + Σ wfg (s−1)² + Σ_{i~j} w_ij (s_i − s_j)² (Gauss–Seidel).
-    let wij: Vec<Vec<f32>> = (0..n).map(|p| adj[p].iter().map(|&q| (-dapp(p, q).powi(2) / (2.0 * SIGMA_CLR * SIGMA_CLR)).exp() + 0.1).collect()).collect();
+    let wij: Vec<Vec<f32>> = (0..n)
+        .map(|p| {
+            adj[p]
+                .iter()
+                .map(|&q| (-dapp(p, q).powi(2) / (2.0 * SIGMA_CLR * SIGMA_CLR)).exp() + 0.1)
+                .collect()
+        })
+        .collect();
     let mut s = wfg.clone();
     for _ in 0..200 {
         for p in 0..n {
@@ -170,15 +188,30 @@ pub fn saliency(img: &super::RgbImage) -> Vec<f32> {
         }
     }
     let mean_all = mean_all.map(|v| (v / lab.len() as f64) as f32);
-    let blurred = super::RgbImage { w, h, px: lab.clone() };
+    let blurred = super::RgbImage {
+        w,
+        h,
+        px: lab.clone(),
+    };
     let blurred = blur_lab(&blurred);
-    let ft: Vec<f32> = blurred.px.iter().map(|c| super::d2(*c, mean_all).sqrt()).collect();
+    let ft: Vec<f32> = blurred
+        .px
+        .iter()
+        .map(|c| super::d2(*c, mean_all).sqrt())
+        .collect();
     let ftmax = ft.iter().copied().fold(0.0f32, f32::max).max(1e-6);
     let smin = s.iter().copied().fold(f32::MAX, f32::min);
     let smax = s.iter().copied().fold(f32::MIN, f32::max);
     let srange = (smax - smin).max(1e-6);
-    let mut out: Vec<f32> = sp.labels.iter().zip(&ft).map(|(l, f)| 0.75 * (s[*l as usize] - smin) / srange + 0.25 * f / ftmax).collect();
-    let (lo, hi) = out.iter().fold((f32::MAX, f32::MIN), |(a, b), v| (a.min(*v), b.max(*v)));
+    let mut out: Vec<f32> = sp
+        .labels
+        .iter()
+        .zip(&ft)
+        .map(|(l, f)| 0.75 * (s[*l as usize] - smin) / srange + 0.25 * f / ftmax)
+        .collect();
+    let (lo, hi) = out
+        .iter()
+        .fold((f32::MAX, f32::MIN), |(a, b), v| (a.min(*v), b.max(*v)));
     let r = (hi - lo).max(1e-6);
     for v in &mut out {
         *v = (*v - lo) / r;
@@ -193,13 +226,21 @@ fn blur_lab(img: &super::RgbImage) -> super::RgbImage {
         let mut tmp = cur.clone();
         for y in 0..h {
             for x in 0..w {
-                let (l, c, r) = (cur.at(x.saturating_sub(1), y), cur.at(x, y), cur.at((x + 1).min(w - 1), y));
+                let (l, c, r) = (
+                    cur.at(x.saturating_sub(1), y),
+                    cur.at(x, y),
+                    cur.at((x + 1).min(w - 1), y),
+                );
                 tmp.px[y * w + x] = [0, 1, 2].map(|k| (l[k] + 2.0 * c[k] + r[k]) / 4.0);
             }
         }
         for y in 0..h {
             for x in 0..w {
-                let (u, c, d) = (tmp.at(x, y.saturating_sub(1)), tmp.at(x, y), tmp.at(x, (y + 1).min(h - 1)));
+                let (u, c, d) = (
+                    tmp.at(x, y.saturating_sub(1)),
+                    tmp.at(x, y),
+                    tmp.at(x, (y + 1).min(h - 1)),
+                );
                 cur.px[y * w + x] = [0, 1, 2].map(|k| (u[k] + 2.0 * c[k] + d[k]) / 4.0);
             }
         }
@@ -247,7 +288,11 @@ pub fn otsu(v: &[f32]) -> f32 {
         hist[(x.clamp(0.0, 1.0) * 255.0).round() as usize] += 1;
     }
     let total = v.len() as f64;
-    let sum: f64 = hist.iter().enumerate().map(|(i, c)| i as f64 * *c as f64).sum();
+    let sum: f64 = hist
+        .iter()
+        .enumerate()
+        .map(|(i, c)| i as f64 * *c as f64)
+        .sum();
     let (mut wb, mut sb, mut best, mut bt) = (0.0f64, 0.0f64, -1.0f64, 0usize);
     for (t, c) in hist.iter().enumerate() {
         wb += *c as f64;

@@ -28,7 +28,11 @@ fn dot(a: V3, b: V3) -> f64 {
 }
 #[inline]
 fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 type M3 = [[f64; 3]; 3];
@@ -45,7 +49,11 @@ fn mvec(m: &M3, v: V3) -> V3 {
     [dot(m[0], v), dot(m[1], v), dot(m[2], v)]
 }
 fn transpose(m: M3) -> M3 {
-    [[m[0][0], m[1][0], m[2][0]], [m[0][1], m[1][1], m[2][1]], [m[0][2], m[1][2], m[2][2]]]
+    [
+        [m[0][0], m[1][0], m[2][0]],
+        [m[0][1], m[1][1], m[2][1]],
+        [m[0][2], m[1][2], m[2][2]],
+    ]
 }
 /// Rotation from tilt (about X), pan (about Y) and roll (about Z), degrees: R = Ry · Rx · Rz.
 fn rotation(tilt: f64, pan: f64, roll: f64) -> M3 {
@@ -83,7 +91,11 @@ fn sample_wrap(img: &Image, x: f64, y: f64) -> [f32; 4] {
 }
 fn sample_dir(img: &Image, d: V3) -> [f32; 4] {
     let (lon, lat) = lonlat(d);
-    sample_wrap(img, (lon / TAU + 0.5) * img.w as f64, (0.5 - lat / PI) * img.h as f64)
+    sample_wrap(
+        img,
+        (lon / TAU + 0.5) * img.w as f64,
+        (0.5 - lat / PI) * img.h as f64,
+    )
 }
 
 /// Run `f` on each view of the frame layout.
@@ -116,40 +128,50 @@ fn per_view(img: &mut Image, layout: u32, f: impl Fn(&mut Image)) {
 /// row is `sigma / cos(latitude)` (capped at a quarter turn).
 fn blur_rows_wrap(img: &mut Image, sigma: f32) {
     let (w, h) = (img.w, img.h);
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        let lat = (0.5 - (y as f64 + 0.5) / h as f64) * PI;
-        let s = (sigma as f64 / lat.cos().max(1e-3)).min(w as f64 / 4.0) as f32;
-        if s <= 0.3 {
-            return;
-        }
-        let r = ((((12.0 * s * s / 3.0 + 1.0).sqrt() - 1.0) / 2.0).round().max(1.0) as isize).min((w as isize - 1) / 2).max(0);
-        if r == 0 {
-            return;
-        }
-        let wi = w as isize;
-        let mut tmp = row.to_vec();
-        for _ in 0..3 {
-            let inv = 1.0 / (2 * r + 1) as f32;
-            // sliding window sum with wrap-around
-            let mut acc = [0f32; 4];
-            for j in -r..=r {
-                let i = j.rem_euclid(wi) as usize;
-                for k in 0..4 {
-                    acc[k] += row[i * 4 + k];
-                }
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let lat = (0.5 - (y as f64 + 0.5) / h as f64) * PI;
+            let s = (sigma as f64 / lat.cos().max(1e-3)).min(w as f64 / 4.0) as f32;
+            if s <= 0.3 {
+                return;
             }
-            for x in 0..wi {
-                for k in 0..4 {
-                    tmp[x as usize * 4 + k] = acc[k] * inv;
-                }
-                let (out_i, in_i) = ((x - r).rem_euclid(wi) as usize, (x + r + 1).rem_euclid(wi) as usize);
-                for k in 0..4 {
-                    acc[k] += row[in_i * 4 + k] - row[out_i * 4 + k];
-                }
+            let r = ((((12.0 * s * s / 3.0 + 1.0).sqrt() - 1.0) / 2.0)
+                .round()
+                .max(1.0) as isize)
+                .min((w as isize - 1) / 2)
+                .max(0);
+            if r == 0 {
+                return;
             }
-            row.copy_from_slice(&tmp);
-        }
-    });
+            let wi = w as isize;
+            let mut tmp = row.to_vec();
+            for _ in 0..3 {
+                let inv = 1.0 / (2 * r + 1) as f32;
+                // sliding window sum with wrap-around
+                let mut acc = [0f32; 4];
+                for j in -r..=r {
+                    let i = j.rem_euclid(wi) as usize;
+                    for k in 0..4 {
+                        acc[k] += row[i * 4 + k];
+                    }
+                }
+                for x in 0..wi {
+                    for k in 0..4 {
+                        tmp[x as usize * 4 + k] = acc[k] * inv;
+                    }
+                    let (out_i, in_i) = (
+                        (x - r).rem_euclid(wi) as usize,
+                        (x + r + 1).rem_euclid(wi) as usize,
+                    );
+                    for k in 0..4 {
+                        acc[k] += row[in_i * 4 + k] - row[out_i * 4 + k];
+                    }
+                }
+                row.copy_from_slice(&tmp);
+            }
+        });
 }
 
 fn vr_blur_image(img: &mut Image, sigma: f32) {
@@ -176,11 +198,13 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             per_view(img, layout, |v| {
                 let mut b = v.clone();
                 vr_blur_image(&mut b, s);
-                v.px.par_chunks_mut(4).zip(b.px.par_chunks(4)).for_each(|(p, q)| {
-                    for k in 0..3 {
-                        p[k] = (p[k] + (p[k] - q[k]) * amt).max(0.0);
-                    }
-                });
+                v.px.par_chunks_mut(4)
+                    .zip(b.px.par_chunks(4))
+                    .for_each(|(p, q)| {
+                        for k in 0..3 {
+                            p[k] = (p[k] + (p[k] - q[k]) * amt).max(0.0);
+                        }
+                    });
             });
         }
         "vr_denoise" => {
@@ -195,18 +219,20 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             per_view(img, layout, |v| {
                 let mut b = v.clone();
                 vr_blur_image(&mut b, s);
-                v.px.par_chunks_mut(4).zip(b.px.par_chunks(4)).for_each(|(p, q)| {
-                    let d = (0..3).map(|k| (p[k] - q[k]).abs()).fold(0.0, f32::max);
-                    let k = (-(d * d) / (thr * thr)).exp();
-                    let o: Vec<f32> = (0..4).map(|c| p[c] + (q[c] - p[c]) * k).collect();
-                    if show {
-                        for c in 0..3 {
-                            p[c] = ((p[c] - o[c]) * 4.0 + 0.18).max(0.0) * p[3];
+                v.px.par_chunks_mut(4)
+                    .zip(b.px.par_chunks(4))
+                    .for_each(|(p, q)| {
+                        let d = (0..3).map(|k| (p[k] - q[k]).abs()).fold(0.0, f32::max);
+                        let k = (-(d * d) / (thr * thr)).exp();
+                        let o: Vec<f32> = (0..4).map(|c| p[c] + (q[c] - p[c]) * k).collect();
+                        if show {
+                            for c in 0..3 {
+                                p[c] = ((p[c] - o[c]) * 4.0 + 0.18).max(0.0) * p[3];
+                            }
+                        } else {
+                            p.copy_from_slice(&o);
                         }
-                    } else {
-                        p.copy_from_slice(&o);
-                    }
-                });
+                    });
             });
         }
         "vr_glow" => {
@@ -218,14 +244,16 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             per_view(img, layout, |v| {
                 let mut hi = highlights(v, th, 0.1);
                 vr_blur_image(&mut hi, r);
-                v.px.par_chunks_mut(4).zip(hi.px.par_chunks(4)).for_each(|(p, q)| {
-                    let l = luma([q[0], q[1], q[2]]);
-                    let mut g = [0, 1, 2].map(|k| (l + (q[k] - l) * sat).max(0.0));
-                    if let Some(t) = tint {
-                        g = t.map(|c| c * l);
-                    }
-                    add_light(p, g.map(|c| c * br));
-                });
+                v.px.par_chunks_mut(4)
+                    .zip(hi.px.par_chunks(4))
+                    .for_each(|(p, q)| {
+                        let l = luma([q[0], q[1], q[2]]);
+                        let mut g = [0, 1, 2].map(|k| (l + (q[k] - l) * sat).max(0.0));
+                        if let Some(t) = tint {
+                            g = t.map(|c| c * l);
+                        }
+                        add_light(p, g.map(|c| c * br));
+                    });
             });
         }
         "vr_chromatic_aberrations" => {
@@ -233,7 +261,10 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             if ab.iter().all(|a| a.abs() < 1e-4) {
                 return;
             }
-            let center = dir((fv(e, "center_x", cx) as f64).to_radians(), (fv(e, "center_y", cx) as f64).to_radians());
+            let center = dir(
+                (fv(e, "center_x", cx) as f64).to_radians(),
+                (fv(e, "center_y", cx) as f64).to_radians(),
+            );
             let p = 0.5 + fv(e, "falloff", cx) as f64 / 50.0;
             let inverse = bv(e, "inverse");
             per_view(img, layout, |v| {
@@ -259,7 +290,8 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                                 let (s, co) = (-ang).sin_cos();
                                 let kd = cross(k, d);
                                 let kdot = dot(k, d);
-                                let r = [0, 1, 2].map(|i| d[i] * co + kd[i] * s + k[i] * kdot * (1.0 - co));
+                                let r = [0, 1, 2]
+                                    .map(|i| d[i] * co + kd[i] * s + k[i] * kdot * (1.0 - co));
                                 *v = sample_dir(&src, r)[c];
                             }
                         }
@@ -272,7 +304,10 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 .map(|i| {
                     let lon = fv(e, ["p1_lon", "p2_lon", "p3_lon"][i - 1], cx) as f64;
                     let lat = fv(e, ["p1_lat", "p2_lat", "p3_lat"][i - 1], cx) as f64;
-                    (dir(lon.to_radians(), lat.to_radians()), lin(cv(e, ["c1", "c2", "c3"][i - 1], cx)))
+                    (
+                        dir(lon.to_radians(), lat.to_radians()),
+                        lin(cv(e, ["c1", "c2", "c3"][i - 1], cx)),
+                    )
                 })
                 .collect();
             let expo = 1.0 + fv(e, "blend", cx) as f64 / 25.0;
@@ -323,7 +358,11 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                     let b = (y as f32 / band) as i64;
                     let r = hash01(b, tick, 0, seed);
                     let active = r < amp;
-                    let shift = if active { (hash01(b, tick, 1, seed) - 0.5) * w as f32 * 0.3 * amp } else { 0.0 };
+                    let shift = if active {
+                        (hash01(b, tick, 1, seed) - 0.5) * w as f32 * 0.3 * amp
+                    } else {
+                        0.0
+                    };
                     let cs = colour * amp * 12.0;
                     for x in 0..w {
                         let (fx, fy) = (x as f64 + 0.5 + shift as f64, y as f64 + 0.5);
@@ -359,7 +398,13 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                     for x in 0..w {
                         let (lon, lat) = px_to_lonlat(x as f64 + 0.5, y as f64 + 0.5, w, h);
                         let d = dir(lon, lat);
-                        let mut n = fbm(d[0] as f32 * f + evo * 0.31, d[1] as f32 * f + evo * 0.17, d[2] as f32 * f + evo * 0.11, cplx, 3);
+                        let mut n = fbm(
+                            d[0] as f32 * f + evo * 0.31,
+                            d[1] as f32 * f + evo * 0.17,
+                            d[2] as f32 * f + evo * 0.11,
+                            cplx,
+                            3,
+                        );
                         n = match kind {
                             1 => n.abs().sqrt(),
                             2 => n.abs(),
@@ -380,8 +425,14 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             });
         }
         "vr_plane_to_sphere" => {
-            let fov = (fv(e, "scale", cx) as f64).to_radians().clamp(1e-3, PI * 0.999);
-            let r = transpose(rotation(fv(e, "tilt", cx) as f64, fv(e, "pan", cx) as f64, fv(e, "roll", cx) as f64));
+            let fov = (fv(e, "scale", cx) as f64)
+                .to_radians()
+                .clamp(1e-3, PI * 0.999);
+            let r = transpose(rotation(
+                fv(e, "tilt", cx) as f64,
+                fv(e, "pan", cx) as f64,
+                fv(e, "roll", cx) as f64,
+            ));
             let feather = fv(e, "feather", cx) / 100.0;
             per_view(img, layout, |v| {
                 let src = v.clone();
@@ -396,7 +447,10 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                         if d[2] > 1e-6 {
                             let (u, vv) = (d[0] / d[2] / tx, -d[1] / d[2] / ty);
                             if u.abs() <= 1.0 && vv.abs() <= 1.0 {
-                                o = src.sample_bilinear_clamped(((u + 1.0) / 2.0 * w as f64) as f32, ((vv + 1.0) / 2.0 * h as f64) as f32);
+                                o = src.sample_bilinear_clamped(
+                                    ((u + 1.0) / 2.0 * w as f64) as f32,
+                                    ((vv + 1.0) / 2.0 * h as f64) as f32,
+                                );
                                 if feather > 0.0 {
                                     let edge = (1.0 - u.abs().max(vv.abs())) as f32;
                                     let k = smoothstep(0.0, feather, edge);
@@ -410,10 +464,19 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             });
         }
         "vr_projection" | "vr_rotate_sphere" => {
-            let r = rotation(fv(e, "tilt", cx) as f64, fv(e, "pan", cx) as f64, fv(e, "roll", cx) as f64);
-            let fov = if e.effect == "vr_projection" { fv(e, "fov", cx) as f64 } else { 360.0 };
+            let r = rotation(
+                fv(e, "tilt", cx) as f64,
+                fv(e, "pan", cx) as f64,
+                fv(e, "roll", cx) as f64,
+            );
+            let fov = if e.effect == "vr_projection" {
+                fv(e, "fov", cx) as f64
+            } else {
+                360.0
+            };
             let stretch = e.effect == "vr_projection" && bv(e, "stretch");
-            let ident = (0..3).all(|i| (0..3).all(|j| (r[i][j] - if i == j { 1.0 } else { 0.0 }).abs() < 1e-12));
+            let ident = (0..3)
+                .all(|i| (0..3).all(|j| (r[i][j] - if i == j { 1.0 } else { 0.0 }).abs() < 1e-12));
             if ident && (fov - 360.0).abs() < 1e-9 {
                 return;
             }
@@ -421,7 +484,10 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             per_view(img, layout, |v| {
                 let src = v.clone();
                 let (w, h) = (v.w, v.h);
-                let (kx, ky) = (fov / 360.0, if stretch { (fov / 180.0).min(1.0) } else { 1.0 });
+                let (kx, ky) = (
+                    fov / 360.0,
+                    if stretch { (fov / 180.0).min(1.0) } else { 1.0 },
+                );
                 v.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
                     for x in 0..w {
                         let (lon, lat) = px_to_lonlat(x as f64 + 0.5, y as f64 + 0.5, w, h);

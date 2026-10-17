@@ -42,24 +42,60 @@ fn draft_id() -> egui::Id {
 }
 
 /// The microphone button of an audio track header. Returns the requested action.
-pub fn header_button(app: &mut FilmcraftApp, ui: &mut egui::Ui, track: TrackId, r: Rect, visible: Rect, label: &str, t: &Tokens) -> Option<Action> {
-    let recording_here = app.session.voiceover.rec.as_ref().is_some_and(|x| x.track == track);
-    let resp = ui.interact(r.intersect(visible), egui::Id::new(("vo", track.0)), Sense::click());
+pub fn header_button(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    track: TrackId,
+    r: Rect,
+    visible: Rect,
+    label: &str,
+    t: &Tokens,
+) -> Option<Action> {
+    let recording_here = app
+        .session
+        .voiceover
+        .rec
+        .as_ref()
+        .is_some_and(|x| x.track == track);
+    let resp = ui.interact(
+        r.intersect(visible),
+        egui::Id::new(("vo", track.0)),
+        Sense::click(),
+    );
     if resp.hovered() {
         ui.painter().rect_filled(r, 2.0, t.hover);
     }
     let col = if recording_here { RED } else { t.text_dim };
-    icons::paint(&ui.painter().with_clip_rect(visible), r.shrink(1.0), Icon::Mic, col);
+    icons::paint(
+        &ui.painter().with_clip_rect(visible),
+        r.shrink(1.0),
+        Icon::Mic,
+        col,
+    );
     let id = format!("timeline.track.{label}.voiceover");
-    app.auto.add(&id, r, if recording_here { "Stop Voice-over Recording" } else { "Voice-over Record" });
+    app.auto.add(
+        &id,
+        r,
+        if recording_here {
+            "Stop Voice-over Recording"
+        } else {
+            "Voice-over Record"
+        },
+    );
     let mut act = None;
     if resp.clicked() {
         act = Some(Action::Toggle(track));
     }
-    let resp = resp.on_hover_text(tl!("Voice-over record (right-click: Voice-Over Record Settings…)"));
+    let resp = resp.on_hover_text(tl!(
+        "Voice-over record (right-click: Voice-Over Record Settings…)"
+    ));
     resp.context_menu(|ui| {
         let b = ui.button(tl!("Voice-Over Record Settings…"));
-        app.auto.add(&format!("{id}.settings"), b.rect, "Voice-Over Record Settings…");
+        app.auto.add(
+            &format!("{id}.settings"),
+            b.rect,
+            "Voice-Over Record Settings…",
+        );
         if b.clicked() {
             act = Some(Action::Settings);
             ui.close();
@@ -97,7 +133,10 @@ pub fn toggle(app: &mut FilmcraftApp, track: Option<u64>) -> Result<Value, Strin
         Some(t) => json!({"track": t}),
         None => json!({}),
     };
-    let r = app.session.execute("audio.voiceover.start", p).map_err(|e| e.to_string())?;
+    let r = app
+        .session
+        .execute("audio.voiceover.start", p)
+        .map_err(|e| e.to_string())?;
     let from = Tick(r["captureStart"].as_i64().unwrap_or(0));
     app.session.set_playhead(from);
     app.play(1.0);
@@ -107,7 +146,10 @@ pub fn toggle(app: &mut FilmcraftApp, track: Option<u64>) -> Result<Value, Strin
 
 fn stop(app: &mut FilmcraftApp) -> Result<Value, String> {
     let t = app.session.playhead();
-    let r = app.session.execute("audio.voiceover.stop", json!({"time": t.0})).map_err(|e| e.to_string())?;
+    let r = app
+        .session
+        .execute("audio.voiceover.stop", json!({"time": t.0}))
+        .map_err(|e| e.to_string())?;
     app.ui.status = match r["path"].as_str() {
         Some(p) => tlf!("Voice-over recorded: {p}", p),
         None => tl!("Voice-over recording stopped (nothing recorded)").into(),
@@ -119,7 +161,10 @@ fn stop(app: &mut FilmcraftApp) -> Result<Value, String> {
 pub fn on_play(app: &mut FilmcraftApp) {
     if app.session.voiceover.recording() {
         let t = app.session.playhead();
-        if let Err(e) = app.session.execute("audio.voiceover.sync", json!({"time": t.0})) {
+        if let Err(e) = app
+            .session
+            .execute("audio.voiceover.sync", json!({"time": t.0}))
+        {
             app.ui.status = e.to_string();
         }
     }
@@ -138,7 +183,10 @@ pub fn on_stop(app: &mut FilmcraftApp) {
 pub fn cues(s: &filmcraft_engine::Session, sr: u32) -> (Vec<i64>, Vec<f32>) {
     match &s.voiceover.rec {
         Some(rec) if s.prefs.voice_over.countdown_sound_cues => {
-            let at = filmcraft_engine::voiceover::cue_times(rec.capture_start, rec.record_start).into_iter().map(|t| t.to_units_floor(sr as i64)).collect();
+            let at = filmcraft_engine::voiceover::cue_times(rec.capture_start, rec.record_start)
+                .into_iter()
+                .map(|t| t.to_units_floor(sr as i64))
+                .collect();
             (at, filmcraft_engine::voiceover::cue_tone(sr))
         }
         _ => (Vec::new(), Vec::new()),
@@ -162,7 +210,12 @@ pub fn mix_cues(buf: &mut [f32], ch: usize, cursor: i64, cues: &(Vec<i64>, Vec<f
 }
 
 /// UI commands `voiceover.recordToggle {track?}` and `voiceover.settingsDialog`.
-pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, p: &Value) -> Option<Result<Value, String>> {
+pub fn route(
+    app: &mut FilmcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    p: &Value,
+) -> Option<Result<Value, String>> {
     match id {
         "voiceover.recordToggle" => {
             let track = match p.get("track") {
@@ -186,10 +239,20 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, p: &Value) -
 }
 
 fn open_settings(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let v = app.session.execute("audio.voiceover.settings", json!({})).unwrap_or_default();
+    let v = app
+        .session
+        .execute("audio.voiceover.settings", json!({}))
+        .unwrap_or_default();
     let d = Draft {
         prefs: app.session.prefs.voice_over.clone(),
-        devices: v["devices"].as_array().map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()).unwrap_or_default(),
+        devices: v["devices"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default(),
         channels: v["channels"].as_u64().unwrap_or(0) as u16,
     };
     ctx.data_mut(|m| m.insert_temp(draft_id(), Some(d)));
@@ -198,7 +261,9 @@ fn open_settings(app: &mut FilmcraftApp, ctx: &egui::Context) {
 /// Every frame: the settings dialog, the countdown overlay, and the punch-out + post-roll stop.
 pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
     settings_dialog(app, ctx);
-    let Some(rec) = app.session.voiceover.rec.clone() else { return };
+    let Some(rec) = app.session.voiceover.rec.clone() else {
+        return;
+    };
     if !app.playback.playing {
         return;
     }
@@ -219,20 +284,39 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
     } else {
         tl!("● Recording").into()
     };
-    let r = Rect::from_center_size(pos2(screen.center().x, screen.min.y + 90.0), vec2(220.0, 64.0));
-    egui::Area::new(egui::Id::new("voiceover-countdown")).order(egui::Order::Foreground).fixed_pos(r.min).interactable(false).show(ctx, |ui| {
-        let p = ui.painter();
-        p.rect_filled(r, 8.0, Color32::from_black_alpha(180));
-        p.rect_stroke(r, 8.0, Stroke::new(2.0, RED), egui::StrokeKind::Inside);
-        p.text(r.center(), Align2::CENTER_CENTER, &text, Tokens::semibold(if text.len() <= 2 { 36.0 } else { 20.0 }), Color32::WHITE);
-    });
+    let r = Rect::from_center_size(
+        pos2(screen.center().x, screen.min.y + 90.0),
+        vec2(220.0, 64.0),
+    );
+    egui::Area::new(egui::Id::new("voiceover-countdown"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(r.min)
+        .interactable(false)
+        .show(ctx, |ui| {
+            let p = ui.painter();
+            p.rect_filled(r, 8.0, Color32::from_black_alpha(180));
+            p.rect_stroke(r, 8.0, Stroke::new(2.0, RED), egui::StrokeKind::Inside);
+            p.text(
+                r.center(),
+                Align2::CENTER_CENTER,
+                &text,
+                Tokens::semibold(if text.len() <= 2 { 36.0 } else { 20.0 }),
+                Color32::WHITE,
+            );
+        });
     app.auto.add("voiceover.countdown.overlay", r, &text);
     ctx.request_repaint();
 }
 
 fn settings_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(Some(mut d)) = ctx.data(|m| m.get_temp::<Option<Draft>>(draft_id())) else { return };
-    crate::widgets::revert_drag_on_escape(ctx, egui::Id::new("voiceover-settings-before-drag"), &mut d);
+    let Some(Some(mut d)) = ctx.data(|m| m.get_temp::<Option<Draft>>(draft_id())) else {
+        return;
+    };
+    crate::widgets::revert_drag_on_escape(
+        ctx,
+        egui::Id::new("voiceover-settings-before-drag"),
+        &mut d,
+    );
     let mut elems: Vec<(String, Rect, String)> = Vec::new();
     let mut close = false;
     let mut apply = false;
@@ -328,7 +412,10 @@ fn settings_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
         app.auto.add(&id, r, &l);
     }
     if discard {
-        match app.session.execute("audio.voiceover.stop", json!({"discard":true})) {
+        match app
+            .session
+            .execute("audio.voiceover.stop", json!({"discard":true}))
+        {
             Ok(_) => {
                 if app.playback.playing {
                     app.stop();

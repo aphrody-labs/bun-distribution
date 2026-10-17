@@ -9,7 +9,9 @@
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
 use vectorcraft_doc::slices::valid_rect;
-use vectorcraft_doc::{Appearance, CellAlign, CellVAlign, Document, Node, NodeKind, Slice, SliceKind, SliceOptions};
+use vectorcraft_doc::{
+    Appearance, CellAlign, CellVAlign, Document, Node, NodeKind, Slice, SliceKind, SliceOptions,
+};
 use vectorcraft_geom::{Rect, shapes};
 
 use super::*;
@@ -128,7 +130,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             list
         ),
-        cmd!("select.object.slices", "Slices", ["Select", "Object"], None, "{} select every user and object slice → {count}", has_doc, select_all),
+        cmd!(
+            "select.object.slices",
+            "Slices",
+            ["Select", "Object"],
+            None,
+            "{} select every user and object slice → {count}",
+            has_doc,
+            select_all
+        ),
         cmd!(
             "object.slice.create",
             "Create Slice",
@@ -210,7 +220,10 @@ fn selected(s: &Session) -> Result<Vec<NodeId>> {
 }
 
 pub(crate) fn selected_slices(d: &Document, sel: &vectorcraft_doc::Selection) -> Vec<NodeId> {
-    let objects = sel.objects.iter().filter(|id| d.node(**id).is_some_and(|n| n.extras().slice.is_some()));
+    let objects = sel
+        .objects
+        .iter()
+        .filter(|id| d.node(**id).is_some_and(|n| n.extras().slice.is_some()));
     dedup(sel.slices.iter().chain(objects).copied().collect())
 }
 
@@ -222,12 +235,20 @@ fn dedup(mut ids: Vec<NodeId>) -> Vec<NodeId> {
 
 fn slices_targeted(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if selected_slices(&st.doc, &st.selection).is_empty() { Err("no slice selected".into()) } else { Ok(()) }
+    if selected_slices(&st.doc, &st.selection).is_empty() {
+        Err("no slice selected".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn doc_has_slices(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.doc.slices.is_empty() && object_slice_ids(&st.doc).is_empty() { Err("the document has no slices".into()) } else { Ok(()) }
+    if st.doc.slices.is_empty() && object_slice_ids(&st.doc).is_empty() {
+        Err("the document has no slices".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Every object with slice options, hidden ones included.
@@ -243,7 +264,10 @@ fn object_slice_ids(d: &Document) -> Vec<NodeId> {
 
 /// A rectangle a slice can have: a size, and coordinates on the canvas.
 pub(crate) fn slice_rect_ok(r: Rect) -> bool {
-    valid_rect(r) && [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.abs() <= crate::MAX_COORD)
+    valid_rect(r)
+        && [r.x0, r.y0, r.x1, r.y1]
+            .iter()
+            .all(|v| v.abs() <= crate::MAX_COORD)
 }
 
 /// A new user slice over `rect` with `options`.
@@ -284,7 +308,13 @@ fn make(s: &mut Session, p: &Value) -> Result<Value> {
         None => super::edit::selected_roots(s)?,
     };
     let d = &s.doc()?.doc;
-    let made: Vec<NodeId> = ids.into_iter().filter(|id| d.node(*id).is_some_and(|n| !n.is_layer() && n.extras().slice.is_none())).collect();
+    let made: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| {
+            d.node(*id)
+                .is_some_and(|n| !n.is_layer() && n.extras().slice.is_none())
+        })
+        .collect();
     if made.is_empty() {
         return Ok(json!({ "ids": [] }));
     }
@@ -309,9 +339,19 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
                 // A user slice becomes an unpainted rectangle.
                 Some(r) => {
                     d.slices.retain(|s| s.id != *id);
-                    let parent = parent.ok_or_else(|| EngineError::Other("Release: no layer to put the rectangle in".into()))?;
+                    let parent = parent.ok_or_else(|| {
+                        EngineError::Other("Release: no layer to put the rectangle in".into())
+                    })?;
                     let rid = d.alloc_id();
-                    d.insert(Some(parent), usize::MAX, Node::path(rid, shapes::rectangle(r), Appearance::basic(Paint::None, Paint::None, 1.0)))?;
+                    d.insert(
+                        Some(parent),
+                        usize::MAX,
+                        Node::path(
+                            rid,
+                            shapes::rectangle(r),
+                            Appearance::basic(Paint::None, Paint::None, 1.0),
+                        ),
+                    )?;
                     out.push(rid);
                 }
                 None => {
@@ -328,31 +368,58 @@ fn release(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn from_guides(s: &mut Session, _: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
-    let region = d.slice_clip().ok_or_else(|| EngineError::Other("Create from Guides: the document has no artboard".into()))?;
+    let region = d.slice_clip().ok_or_else(|| {
+        EngineError::Other("Create from Guides: the document has no artboard".into())
+    })?;
     let cuts = |vertical: bool, lo: f64, hi: f64| -> Vec<f64> {
-        let mut v: Vec<f64> = d.guides.iter().filter(|g| g.vertical == vertical && g.pos > lo && g.pos < hi).map(|g| g.pos).collect();
+        let mut v: Vec<f64> = d
+            .guides
+            .iter()
+            .filter(|g| g.vertical == vertical && g.pos > lo && g.pos < hi)
+            .map(|g| g.pos)
+            .collect();
         v.extend([lo, hi]);
         v.sort_by(f64::total_cmp);
         v.dedup();
         v
     };
-    let (xs, ys) = (cuts(true, region.x0, region.x1), cuts(false, region.y0, region.y1));
-    let rects: Vec<Rect> =
-        ys.windows(2).flat_map(|y| xs.windows(2).map(move |x| Rect::new(x[0], y[0], x[1], y[1]))).filter(|r| valid_rect(*r)).collect();
+    let (xs, ys) = (
+        cuts(true, region.x0, region.x1),
+        cuts(false, region.y0, region.y1),
+    );
+    let rects: Vec<Rect> = ys
+        .windows(2)
+        .flat_map(|y| {
+            xs.windows(2)
+                .map(move |x| Rect::new(x[0], y[0], x[1], y[1]))
+        })
+        .filter(|r| valid_rect(*r))
+        .collect();
     if rects.len() > MAX_PIECES {
-        return Err(EngineError::Other(format!("Create from Guides: the guides make more than {MAX_PIECES} slices")));
+        return Err(EngineError::Other(format!(
+            "Create from Guides: the guides make more than {MAX_PIECES} slices"
+        )));
     }
     let ids = s.edit("Create Slices from Guides", |d, _| {
         d.slices.clear();
-        Ok(rects.iter().map(|r| add_slice(d, *r, SliceOptions::default())).collect::<Vec<_>>())
+        Ok(rects
+            .iter()
+            .map(|r| add_slice(d, *r, SliceOptions::default()))
+            .collect::<Vec<_>>())
     })?;
     Ok(json!({ "ids": ids_json(&ids) }))
 }
 
 fn from_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = targets(s, p)?;
-    let r = s.doc()?.doc.bounds_of(&ids, true).filter(|r| slice_rect_ok(*r));
-    let r = r.ok_or_else(|| EngineError::Other("Create from Selection: the selection has no area".into()))?;
+    let r = s
+        .doc()?
+        .doc
+        .bounds_of(&ids, true)
+        .filter(|r| slice_rect_ok(*r));
+    let r = r.ok_or_else(|| {
+        EngineError::Other("Create from Selection: the selection has no area".into())
+    })?;
     let id = s.edit("Create Slice from Selection", |d, sel| {
         let id = add_slice(d, r, SliceOptions::default());
         sel.set_slices([id]);
@@ -367,10 +434,15 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = s.edit("Duplicate Slice", |d, sel| {
         let mut out = vec![];
         for id in &targets {
-            let (Some(r), Some(o)) = (d.slice_bounds(*id), d.slice_options(*id).cloned()) else { continue };
+            let (Some(r), Some(o)) = (d.slice_bounds(*id), d.slice_options(*id).cloned()) else {
+                continue;
+            };
             let r = r + vectorcraft_geom::Vec2::new(dx, dy);
             if !slice_rect_ok(r) {
-                return Err(bad("object.slice.duplicate", "the copy would leave the canvas"));
+                return Err(bad(
+                    "object.slice.duplicate",
+                    "the copy would leave the canvas",
+                ));
             }
             out.push(add_slice(d, r, o));
         }
@@ -383,12 +455,24 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 fn combine(s: &mut Session, _: &Value) -> Result<Value> {
     let targets = selected(s)?;
     if targets.len() < 2 {
-        return Err(bad("object.slice.combine", "select two or more slices to combine"));
+        return Err(bad(
+            "object.slice.combine",
+            "select two or more slices to combine",
+        ));
     }
     let id = s.edit("Combine Slices", |d, sel| {
-        let r = targets.iter().filter_map(|id| d.slice_bounds(*id)).reduce(|a, b| a.union(b));
-        let r = r.ok_or_else(|| EngineError::Other("Combine Slices: the slices have no bounds".into()))?;
-        let o = targets.first().and_then(|id| d.slice_options(*id)).cloned().unwrap_or_default();
+        let r = targets
+            .iter()
+            .filter_map(|id| d.slice_bounds(*id))
+            .reduce(|a, b| a.union(b));
+        let r = r.ok_or_else(|| {
+            EngineError::Other("Combine Slices: the slices have no bounds".into())
+        })?;
+        let o = targets
+            .first()
+            .and_then(|id| d.slice_options(*id))
+            .cloned()
+            .unwrap_or_default();
         for id in &targets {
             remove_slice(d, *id);
         }
@@ -401,11 +485,20 @@ fn combine(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// The cuts that split `lo..hi` into `count` equal parts or parts `size` long (the last one
 /// shorter), whichever `count`/`size` gives; `None` for neither.
-fn splits(lo: f64, hi: f64, count: Option<u64>, size: Option<f64>) -> std::result::Result<Vec<f64>, String> {
+fn splits(
+    lo: f64,
+    hi: f64,
+    count: Option<u64>,
+    size: Option<f64>,
+) -> std::result::Result<Vec<f64>, String> {
     let len = hi - lo;
     let n = match (count, size) {
         (Some(n), _) => n,
-        (None, Some(sz)) if sz.is_finite() && sz > 0.0 => (len / sz - 1e-9).ceil().max(1.0).min(MAX_PIECES as f64 + 1.0) as u64,
+        (None, Some(sz)) if sz.is_finite() && sz > 0.0 => (len / sz - 1e-9)
+            .ceil()
+            .max(1.0)
+            .min(MAX_PIECES as f64 + 1.0)
+            as u64,
         (None, Some(_)) => return Err("a slice size must be a positive number of points".into()),
         (None, None) => 1,
     };
@@ -416,31 +509,68 @@ fn splits(lo: f64, hi: f64, count: Option<u64>, size: Option<f64>) -> std::resul
         (None, Some(sz)) => sz,
         _ => len / n as f64,
     };
-    Ok((0..=n).map(|i| if i == n { hi } else { lo + step * i as f64 }).collect())
+    Ok((0..=n)
+        .map(|i| if i == n { hi } else { lo + step * i as f64 })
+        .collect())
 }
 
 fn divide(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.slice.divide";
     let targets = selected(s)?;
-    let count = |k: &str| p.get(k).map(|v| v.as_u64().ok_or_else(|| bad(C, format!("`{k}` must be a whole number")))).transpose();
-    let size = |k: &str| p.get(k).map(|v| v.as_f64().ok_or_else(|| bad(C, format!("`{k}` must be a number of points")))).transpose();
-    let (rows, row_h, cols, col_w) = (count("rows")?, size("rowHeight")?, count("columns")?, size("columnWidth")?);
+    let count = |k: &str| {
+        p.get(k)
+            .map(|v| {
+                v.as_u64()
+                    .ok_or_else(|| bad(C, format!("`{k}` must be a whole number")))
+            })
+            .transpose()
+    };
+    let size = |k: &str| {
+        p.get(k)
+            .map(|v| {
+                v.as_f64()
+                    .ok_or_else(|| bad(C, format!("`{k}` must be a number of points")))
+            })
+            .transpose()
+    };
+    let (rows, row_h, cols, col_w) = (
+        count("rows")?,
+        size("rowHeight")?,
+        count("columns")?,
+        size("columnWidth")?,
+    );
     if rows.is_none() && row_h.is_none() && cols.is_none() && col_w.is_none() {
         return Err(bad(C, "give rows, rowHeight, columns or columnWidth"));
     }
     let ids = s.edit("Divide Slices", |d, sel| {
         let mut out = vec![];
         for id in &targets {
-            let (Some(r), Some(o)) = (d.slice_bounds(*id), d.slice_options(*id).cloned()) else { continue };
+            let (Some(r), Some(o)) = (d.slice_bounds(*id), d.slice_options(*id).cloned()) else {
+                continue;
+            };
             let ys = splits(r.y0, r.y1, rows, row_h).map_err(|e| bad(C, e))?;
             let xs = splits(r.x0, r.x1, cols, col_w).map_err(|e| bad(C, e))?;
             if (ys.len() - 1) * (xs.len() - 1) + out.len() > MAX_PIECES {
                 return Err(bad(C, format!("that makes more than {MAX_PIECES} slices")));
             }
             remove_slice(d, *id);
-            for (i, rect) in ys.windows(2).flat_map(|y| xs.windows(2).map(move |x| Rect::new(x[0], y[0], x[1], y[1]))).enumerate() {
+            for (i, rect) in ys
+                .windows(2)
+                .flat_map(|y| {
+                    xs.windows(2)
+                        .map(move |x| Rect::new(x[0], y[0], x[1], y[1]))
+                })
+                .enumerate()
+            {
                 // The pieces keep the options; only the first keeps the name.
-                let o = if i == 0 { o.clone() } else { SliceOptions { name: String::new(), ..o.clone() } };
+                let o = if i == 0 {
+                    o.clone()
+                } else {
+                    SliceOptions {
+                        name: String::new(),
+                        ..o.clone()
+                    }
+                };
                 out.push(add_slice(d, rect, o));
             }
         }
@@ -479,16 +609,37 @@ impl Edits {
     fn parse(p: &Value) -> Result<Self> {
         const C: &str = "object.slice.options";
         let text = |k: &str| -> Result<Option<String>> {
-            p.get(k).map(|v| v.as_str().map(str::to_string).ok_or_else(|| bad(C, format!("`{k}` must be a string")))).transpose()
+            p.get(k)
+                .map(|v| {
+                    v.as_str()
+                        .map(str::to_string)
+                        .ok_or_else(|| bad(C, format!("`{k}` must be a string")))
+                })
+                .transpose()
         };
         let named = |k: &str| text(k).map(|v| v.map(|s| s.trim().to_string()));
         let mut e = Edits {
-            kind: named("kind")?.map(|k| SliceKind::parse(&k).ok_or_else(|| bad(C, "`kind` must be image, noImage or htmlText"))).transpose()?,
+            kind: named("kind")?
+                .map(|k| {
+                    SliceKind::parse(&k)
+                        .ok_or_else(|| bad(C, "`kind` must be image, noImage or htmlText"))
+                })
+                .transpose()?,
             h_align: named("hAlign")?
-                .map(|k| CellAlign::parse(&k).ok_or_else(|| bad(C, "`hAlign` must be default, left, center or right")))
+                .map(|k| {
+                    CellAlign::parse(&k)
+                        .ok_or_else(|| bad(C, "`hAlign` must be default, left, center or right"))
+                })
                 .transpose()?,
             v_align: named("vAlign")?
-                .map(|k| CellVAlign::parse(&k).ok_or_else(|| bad(C, "`vAlign` must be default, top, middle, baseline or bottom")))
+                .map(|k| {
+                    CellVAlign::parse(&k).ok_or_else(|| {
+                        bad(
+                            C,
+                            "`vAlign` must be default, top, middle, baseline or bottom",
+                        )
+                    })
+                })
                 .transpose()?,
             ..Default::default()
         };
@@ -503,7 +654,11 @@ impl Edits {
             .transpose()?;
         for k in Self::TEXT {
             // Names, links and frames are trimmed; the cell text and alt text keep their spaces.
-            let v = if matches!(k, "text" | "alt" | "message") { text(k)? } else { named(k)? };
+            let v = if matches!(k, "text" | "alt" | "message") {
+                text(k)?
+            } else {
+                named(k)?
+            };
             if let Some(v) = v {
                 e.text.push((k, v));
             }
@@ -512,7 +667,11 @@ impl Edits {
     }
 
     fn is_empty(&self) -> bool {
-        self.kind.is_none() && self.text.is_empty() && self.background.is_none() && self.h_align.is_none() && self.v_align.is_none()
+        self.kind.is_none()
+            && self.text.is_empty()
+            && self.background.is_none()
+            && self.h_align.is_none()
+            && self.v_align.is_none()
     }
 
     fn apply(&self, o: &mut SliceOptions) {
@@ -544,7 +703,9 @@ impl Edits {
 
 /// Can slice `id` be HTML Text: an object slice of a type object?
 fn html_text_allowed(d: &Document, id: NodeId) -> bool {
-    d.slice(id).is_none() && d.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Text(_)))
+    d.slice(id).is_none()
+        && d.node(id)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Text(_)))
 }
 
 fn options(s: &mut Session, p: &Value) -> Result<Value> {
@@ -552,14 +713,19 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
     let edits = Edits::parse(p)?;
     let html_ok = |d: &Document| targets.iter().all(|id| html_text_allowed(d, *id));
     if edits.kind == Some(SliceKind::HtmlText) && !html_ok(&s.doc()?.doc) {
-        return Err(bad("object.slice.options", "HTML Text applies to object slices of type only"));
+        return Err(bad(
+            "object.slice.options",
+            "HTML Text applies to object slices of type only",
+        ));
     }
     if !edits.is_empty() {
         s.edit("Slice Options", |d, _| {
             for id in &targets {
                 let o = match d.slice_mut(*id) {
                     Some(sl) => Some(&mut sl.options),
-                    None => d.node_mut(*id).and_then(|n| n.extras_if_any().and_then(|e| e.slice.as_deref_mut())),
+                    None => d
+                        .node_mut(*id)
+                        .and_then(|n| n.extras_if_any().and_then(|e| e.slice.as_deref_mut())),
                 };
                 if let Some(o) = o {
                     edits.apply(o);
@@ -569,14 +735,21 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
         })?;
     }
     let d = &s.doc()?.doc;
-    let o = targets.first().and_then(|id| d.slice_options(*id)).cloned().unwrap_or_default();
+    let o = targets
+        .first()
+        .and_then(|id| d.slice_options(*id))
+        .cloned()
+        .unwrap_or_default();
     let mut v = options_json(&o);
     v["htmlText"] = json!(html_ok(d));
     Ok(v)
 }
 
 fn clip_to_artboard(s: &mut Session, p: &Value) -> Result<Value> {
-    let on = p.get("on").and_then(Value::as_bool).unwrap_or(!s.doc()?.doc.slices_clip_to_artboard);
+    let on = p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.doc()?.doc.slices_clip_to_artboard);
     if on != s.doc()?.doc.slices_clip_to_artboard {
         s.edit("Clip to Artboard", |d, _| {
             d.slices_clip_to_artboard = on;
@@ -587,13 +760,19 @@ fn clip_to_artboard(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn hide(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = p.get("hidden").and_then(Value::as_bool).unwrap_or(!s.menu.slices_hidden);
+    let v = p
+        .get("hidden")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.menu.slices_hidden);
     s.menu.slices_hidden = v;
     Ok(json!({ "hidden": v }))
 }
 
 fn lock(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = p.get("locked").and_then(Value::as_bool).unwrap_or(!s.menu.slices_locked);
+    let v = p
+        .get("locked")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.menu.slices_locked);
     s.menu.slices_locked = v;
     Ok(json!({ "locked": v }))
 }
@@ -613,7 +792,9 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
             })
         })
         .collect();
-    Ok(json!({ "slices": slices, "clipToArtboard": d.slices_clip_to_artboard, "hidden": s.menu.slices_hidden, "locked": s.menu.slices_locked }))
+    Ok(
+        json!({ "slices": slices, "clipToArtboard": d.slices_clip_to_artboard, "hidden": s.menu.slices_hidden, "locked": s.menu.slices_locked }),
+    )
 }
 
 fn select_all(s: &mut Session, _: &Value) -> Result<Value> {
@@ -628,8 +809,21 @@ fn select_all(s: &mut Session, _: &Value) -> Result<Value> {
 /// `{x, y, width, height}` as a rectangle a slice can have.
 fn rect_param(p: &Value, cmd: &str) -> Result<Rect> {
     let (x, y) = (f64_req(p, "x", cmd)?, f64_req(p, "y", cmd)?);
-    let r = Rect::new(x, y, x + f64_req(p, "width", cmd)?, y + f64_req(p, "height", cmd)?).abs();
-    if slice_rect_ok(r) { Ok(r) } else { Err(bad(cmd, "the rectangle needs a size and must lie on the canvas")) }
+    let r = Rect::new(
+        x,
+        y,
+        x + f64_req(p, "width", cmd)?,
+        y + f64_req(p, "height", cmd)?,
+    )
+    .abs();
+    if slice_rect_ok(r) {
+        Ok(r)
+    } else {
+        Err(bad(
+            cmd,
+            "the rectangle needs a size and must lie on the canvas",
+        ))
+    }
 }
 
 fn create(s: &mut Session, p: &Value) -> Result<Value> {
@@ -648,7 +842,14 @@ fn set_rect(s: &mut Session, p: &Value) -> Result<Value> {
     let r = rect_param(p, C)?;
     let d = &s.doc()?.doc;
     if d.slice(id).is_none() {
-        return Err(bad(C, if d.is_slice(id) { format!("{id} is an object slice: it follows its object") } else { format!("{id} is not a slice") }));
+        return Err(bad(
+            C,
+            if d.is_slice(id) {
+                format!("{id} is an object slice: it follows its object")
+            } else {
+                format!("{id} is not a slice")
+            },
+        ));
     }
     s.edit("Resize Slice", |d, _| {
         if let Some(sl) = d.slice_mut(id) {
@@ -673,7 +874,10 @@ fn move_slices(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(_) => return Err(bad(C, "the slice would leave the canvas")),
                 None => {
                     if let Some(n) = d.node_mut(*id) {
-                        n.transform(vectorcraft_geom::Affine::translate(v), vectorcraft_doc::Scaling::default());
+                        n.transform(
+                            vectorcraft_geom::Affine::translate(v),
+                            vectorcraft_doc::Scaling::default(),
+                        );
                     }
                 }
             }
@@ -698,7 +902,11 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids = slice_targets(s, &json!({ "slices": p.get("slices").cloned().unwrap_or(json!([])) }), "object.slice.select")?;
+    let ids = slice_targets(
+        s,
+        &json!({ "slices": p.get("slices").cloned().unwrap_or(json!([])) }),
+        "object.slice.select",
+    )?;
     let toggle = bool_or(p, "toggle", false);
     s.select(|_, sel| {
         let mut now = if toggle { sel.slices.clone() } else { vec![] };

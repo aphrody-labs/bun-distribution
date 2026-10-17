@@ -259,7 +259,10 @@ fn classify_word<'a>(word: &'a str, expect_spr: bool) -> AsmToken<'a> {
 
 fn parse_register(word: &str, prefix: &str, max: u8) -> Option<u8> {
     let rest = word.strip_prefix(prefix)?;
-    let n: u8 = rest.parse().ok().filter(|_| rest.bytes().all(|b| b.is_ascii_digit()))?;
+    let n: u8 = rest
+        .parse()
+        .ok()
+        .filter(|_| rest.bytes().all(|b| b.is_ascii_digit()))?;
     (n <= max).then_some(n)
 }
 

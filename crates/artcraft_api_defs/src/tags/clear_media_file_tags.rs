@@ -7,14 +7,14 @@ use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Deserialize, ToSchema)]
 pub struct ClearMediaFileTagsPathInfo {
-  pub media_file_token: MediaFileToken,
+    pub media_file_token: MediaFileToken,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct ClearMediaFileTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// How many tag links were removed from the media file. (Orphaned
-  /// tags are not deleted.)
-  pub removed_count: u64,
+    /// How many tag links were removed from the media file. (Orphaned
+    /// tags are not deleted.)
+    pub removed_count: u64,
 }

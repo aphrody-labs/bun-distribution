@@ -9,11 +9,19 @@ use pdfcraft_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
 
 fn one_page() -> Document {
     let mut doc = Document::new_empty();
-    let pages = doc.get(doc.root().unwrap()).as_dict().unwrap().reference(b"Pages").unwrap();
+    let pages = doc
+        .get(doc.root().unwrap())
+        .as_dict()
+        .unwrap()
+        .reference(b"Pages")
+        .unwrap();
     let mut p = Dict::new();
     p.set(b"Type".to_vec(), Object::name("Page"));
     p.set(b"Parent".to_vec(), Object::Ref(pages));
-    p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 600.into(), 800.into()]));
+    p.set(
+        b"MediaBox".to_vec(),
+        Object::Array(vec![0.into(), 0.into(), 600.into(), 800.into()]),
+    );
     let r = doc.add(p);
     doc.update_dict(pages, |d| {
         d.set(b"Kids".to_vec(), Object::Array(vec![Object::Ref(r)]));
@@ -27,7 +35,14 @@ fn one_page() -> Document {
 fn ink_span(doc: &Document) -> (u32, u32) {
     let bytes = write_incremental(doc, &SaveOptions::default()).unwrap();
     let mut r = PageRenderer::new(Arc::new(bytes), RenderConfig::default());
-    let p = r.render(RenderRequest { page: 0, kind: RequestKind::Pixels, tile: None, scale: 2.0, tag: 0, preview: false });
+    let p = r.render(RenderRequest {
+        page: 0,
+        kind: RequestKind::Pixels,
+        tile: None,
+        scale: 2.0,
+        tag: 0,
+        preview: false,
+    });
     assert!(p.error.is_none(), "{:?}", p.error);
     let (mut x0, mut y0, mut x1, mut y1) = (u32::MAX, u32::MAX, 0, 0);
     let mut ink = false;
@@ -47,12 +62,38 @@ fn ink_span(doc: &Document) -> (u32, u32) {
 #[test]
 fn a_rotated_field_draws_along_the_vertical_edge() {
     let mut doc = one_page();
-    add_field(&mut doc, 0, [10.0, 40.0, 90.0, 60.0], &NewField::Text { multiline: false }, Some("wide")).unwrap();
+    add_field(
+        &mut doc,
+        0,
+        [10.0, 40.0, 90.0, 60.0],
+        &NewField::Text { multiline: false },
+        Some("wide"),
+    )
+    .unwrap();
     set_value(&mut doc, "wide", &FieldValue::Text("MMMMMM".into())).unwrap();
-    set_props(&mut doc, "wide", &FieldProps { font_size: Some(12.0), ..FieldProps::default() }).unwrap();
+    set_props(
+        &mut doc,
+        "wide",
+        &FieldProps {
+            font_size: Some(12.0),
+            ..FieldProps::default()
+        },
+    )
+    .unwrap();
     let (wide, tall) = ink_span(&doc);
-    assert!(wide > tall, "upright text is a horizontal run: {wide}x{tall}");
-    set_props(&mut doc, "wide", &FieldProps { rotation: Some((0, 90)), ..FieldProps::default() }).unwrap();
+    assert!(
+        wide > tall,
+        "upright text is a horizontal run: {wide}x{tall}"
+    );
+    set_props(
+        &mut doc,
+        "wide",
+        &FieldProps {
+            rotation: Some((0, 90)),
+            ..FieldProps::default()
+        },
+    )
+    .unwrap();
     let (wide, tall) = ink_span(&doc);
     assert!(tall > wide, "rotated text is a vertical run: {wide}x{tall}");
 }

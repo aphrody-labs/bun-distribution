@@ -16,7 +16,10 @@ use aphrody_nie_camera::property::{FlatProperty, PropertySet};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "nie-cam", about = "Caméra IEVR : carte RE, G4CM, configs, live")]
+#[command(
+    name = "nie-cam",
+    about = "Caméra IEVR : carte RE, G4CM, configs, live"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -154,7 +157,10 @@ fn parse_v3(s: &str) -> Result<[f32; 3]> {
     }
     let mut v = [0.0f32; 3];
     for (i, p) in parts.iter().enumerate() {
-        v[i] = p.trim().parse().with_context(|| format!("« {p} » n'est pas un nombre"))?;
+        v[i] = p
+            .trim()
+            .parse()
+            .with_context(|| format!("« {p} » n'est pas un nombre"))?;
     }
     Ok(v)
 }
@@ -167,13 +173,29 @@ fn parse_addr(s: &str) -> Result<u64> {
 fn cmd_map(exe: Option<PathBuf>) -> Result<()> {
     println!("== dispatchers funcLua* (build cartographié) ==");
     for d in map::DISPATCHERS {
-        let star = if d.name == map::CAMERA_DISPATCHER.name { " <= caméra" } else { "" };
-        println!("  {:<26} table 0x{:X}  {:>5} commandes{star}", d.name, d.table_va, d.count);
+        let star = if d.name == map::CAMERA_DISPATCHER.name {
+            " <= caméra"
+        } else {
+            ""
+        };
+        println!(
+            "  {:<26} table 0x{:X}  {:>5} commandes{star}",
+            d.name, d.table_va, d.count
+        );
     }
     println!("\n== points d'entrée caméra ==");
-    println!("  chaîne du dispatcher   0x{:X}", map::CAMERA_DISPATCHER_NAME_VA);
-    println!("  lua_CFunction          0x{:X}", map::CAMERA_DISPATCHER_ENTRY_VA);
-    println!("  variante interne       0x{:X}", map::CAMERA_DISPATCHER_ALT_VA);
+    println!(
+        "  chaîne du dispatcher   0x{:X}",
+        map::CAMERA_DISPATCHER_NAME_VA
+    );
+    println!(
+        "  lua_CFunction          0x{:X}",
+        map::CAMERA_DISPATCHER_ENTRY_VA
+    );
+    println!(
+        "  variante interne       0x{:X}",
+        map::CAMERA_DISPATCHER_ALT_VA
+    );
     println!("  routine de dispatch    0x{:X}", map::DISPATCH_ROUTINE_VA);
     println!(
         "  réservoir funcLua      0x{:X} ({} entrées)",
@@ -199,7 +221,12 @@ fn cmd_map(exe: Option<PathBuf>) -> Result<()> {
             d
         };
         let ported = if k.is_ported() { "porté" } else { "-" };
-        println!("  {:width$}{:<34} {ported}", "", k.cpp_name(), width = depth * 2);
+        println!(
+            "  {:width$}{:<34} {ported}",
+            "",
+            k.cpp_name(),
+            width = depth * 2
+        );
     }
 
     println!("\n== caméras nommées de la scène ==");
@@ -234,8 +261,11 @@ fn cmd_map(exe: Option<PathBuf>) -> Result<()> {
 fn cmd_extract(out: &Path, game_dir: Option<PathBuf>, anims: bool) -> Result<()> {
     let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
     // `Vfs::init` attend le dossier `data/`, pas la racine du jeu.
-    let dir = game_dir.unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir).join("data");
-    vfs.init(&dir).map_err(|e| anyhow::anyhow!("ouverture du VFS ({}) : {e}", dir.display()))?;
+    let dir = game_dir
+        .unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir)
+        .join("data");
+    vfs.init(&dir)
+        .map_err(|e| anyhow::anyhow!("ouverture du VFS ({}) : {e}", dir.display()))?;
     std::fs::create_dir_all(out)?;
 
     let mut ok = 0usize;
@@ -247,7 +277,7 @@ fn cmd_extract(out: &Path, game_dir: Option<PathBuf>, anims: bool) -> Result<()>
                 let name = Path::new(a.path).file_name().unwrap_or_default();
                 std::fs::write(out.join(name), &bytes)?;
                 ok += 1;
-            },
+            }
             Err(_) => missing.push(a.path),
         }
     }
@@ -275,7 +305,10 @@ fn cmd_extract(out: &Path, game_dir: Option<PathBuf>, anims: bool) -> Result<()>
                 n += 1;
             }
         }
-        println!("{n} animation(s) .g4cm extraite(s) vers {}", anim_dir.display());
+        println!(
+            "{n} animation(s) .g4cm extraite(s) vers {}",
+            anim_dir.display()
+        );
     }
     Ok(())
 }
@@ -295,11 +328,18 @@ fn cmd_decode(file: &Path, verbose: bool) -> Result<()> {
     if let Some((a, b)) = anim.frame_range() {
         println!("  frames {a} → {b}");
     }
-    println!("  échantillons décodés (flux f32) : {:.0} %", anim.decoded_ratio() * 100.0);
+    println!(
+        "  échantillons décodés (flux f32) : {:.0} %",
+        anim.decoded_ratio() * 100.0
+    );
     for (i, o) in anim.objects.iter().enumerate() {
         let clip = anim.clips.get(i);
         let range = clip.map_or(String::new(), |c| format!(" clip {}→{}", c.start, c.end));
-        println!("  objet {i} « {} » — {} canaux{range}", anim.name_of(i), o.channel_count);
+        println!(
+            "  objet {i} « {} » — {} canaux{range}",
+            anim.name_of(i),
+            o.channel_count
+        );
         for c in anim.channels_of(i) {
             let enc = match &c.track {
                 Track::F32(_) => "f32",
@@ -317,7 +357,7 @@ fn cmd_decode(file: &Path, verbose: bool) -> Result<()> {
                     let lo = v.iter().copied().fold(f32::INFINITY, f32::min);
                     let hi = v.iter().copied().fold(f32::NEG_INFINITY, f32::max);
                     format!("[{lo:.3} .. {hi:.3}]")
-                },
+                }
                 _ => "(non décodé)".to_string(),
             };
             println!(
@@ -389,18 +429,24 @@ fn cmd_verify(dir: &Path) -> Result<()> {
                     .iter()
                     .zip(bytes.iter())
                     .position(|(a, b)| a != b)
-                    .map_or_else(|| "taille seule".to_string(), |i| format!("1ᵉʳ écart à 0x{i:X}"));
+                    .map_or_else(
+                        || "taille seule".to_string(),
+                        |i| format!("1ᵉʳ écart à 0x{i:X}"),
+                    );
                 failed.push((
                     p.clone(),
                     format!("{first} (produit {} vs {} octets)", re.len(), bytes.len()),
                 ));
-            },
+            }
             Err(e) => failed.push((p.clone(), e.to_string())),
         }
     }
     println!("{exact}/{total} fichier(s) en round-trip byte-exact");
     for (p, why) in failed.iter().take(20) {
-        println!("  ÉCHEC {} : {why}", p.file_name().unwrap_or_default().to_string_lossy());
+        println!(
+            "  ÉCHEC {} : {why}",
+            p.file_name().unwrap_or_default().to_string_lossy()
+        );
     }
     if failed.len() > 20 {
         println!("  … et {} autre(s)", failed.len() - 20);
@@ -412,15 +458,42 @@ fn cmd_config(file: &Path, preset: Option<String>) -> Result<()> {
     let bytes = std::fs::read(file).with_context(|| format!("lecture de {}", file.display()))?;
 
     if let Ok(cfg) = SoccerCameraConfig::parse(&bytes) {
-        println!("soccer_camera_config — {} lignes au total", cfg.total_rows());
-        println!("  m_soccerCameraInfoDataList        {:>4}", cfg.camera_data.len());
-        println!("  m_soccerCameraInfoList            {:>4}", cfg.cameras.len());
-        println!("  m_scGoalnetCameraInfoList         {:>4}", cfg.goalnet.len());
-        println!("  m_scAerialCameraInfoList          {:>4}", cfg.aerial.len());
-        println!("  m_scAerialCameraMapInfoList       {:>4}", cfg.aerial_map.len());
-        println!("  m_soccerDirCameraInfoList         {:>4}", cfg.dir_cameras.len());
-        println!("  m_soccerFixPosCameraInfoDataList  {:>4}", cfg.fix_pos_data.len());
-        println!("  m_cinematicCameraInfoDataList     {:>4}", cfg.cinematic_data.len());
+        println!(
+            "soccer_camera_config — {} lignes au total",
+            cfg.total_rows()
+        );
+        println!(
+            "  m_soccerCameraInfoDataList        {:>4}",
+            cfg.camera_data.len()
+        );
+        println!(
+            "  m_soccerCameraInfoList            {:>4}",
+            cfg.cameras.len()
+        );
+        println!(
+            "  m_scGoalnetCameraInfoList         {:>4}",
+            cfg.goalnet.len()
+        );
+        println!(
+            "  m_scAerialCameraInfoList          {:>4}",
+            cfg.aerial.len()
+        );
+        println!(
+            "  m_scAerialCameraMapInfoList       {:>4}",
+            cfg.aerial_map.len()
+        );
+        println!(
+            "  m_soccerDirCameraInfoList         {:>4}",
+            cfg.dir_cameras.len()
+        );
+        println!(
+            "  m_soccerFixPosCameraInfoDataList  {:>4}",
+            cfg.fix_pos_data.len()
+        );
+        println!(
+            "  m_cinematicCameraInfoDataList     {:>4}",
+            cfg.cinematic_data.len()
+        );
         if let Some(d) = cfg.camera_data.first() {
             println!(
                 "\n  exemple (donnée 0) : length {} [{}..{}] rotX {} rotY {} fov {} \
@@ -446,11 +519,19 @@ fn cmd_config(file: &Path, preset: Option<String>) -> Result<()> {
     }
 
     if let Ok(set) = PropertySet::parse(&bytes) {
-        println!("camera_ctrl_property_info — {} preset(s)", set.presets.len());
+        println!(
+            "camera_ctrl_property_info — {} preset(s)",
+            set.presets.len()
+        );
         for name in set.names() {
             let p = &set.presets[name];
             let parent = p.parent.as_deref().unwrap_or("-");
-            println!("  {:<34} parent {:<24} {} param(s) propres", name, parent, p.params.len());
+            println!(
+                "  {:<34} parent {:<24} {} param(s) propres",
+                name,
+                parent,
+                p.params.len()
+            );
         }
         if let Some(want) = preset {
             let resolved = set.resolve(&want);
@@ -479,8 +560,16 @@ fn cmd_live(op: LiveOp) -> Result<()> {
             let pid = live::find_game(&process)
                 .with_context(|| format!("process « {process} » introuvable"))?;
             println!("process {process} : pid {pid}");
-            let cands = live::scan(pid, CameraLayout::default(), PlausibleRange::default(), limit);
-            println!("{} candidat(s) (heuristique — à confirmer par un 2ᵉ scan) :", cands.len());
+            let cands = live::scan(
+                pid,
+                CameraLayout::default(),
+                PlausibleRange::default(),
+                limit,
+            );
+            println!(
+                "{} candidat(s) (heuristique — à confirmer par un 2ᵉ scan) :",
+                cands.len()
+            );
             for c in cands.iter().take(limit) {
                 println!(
                     "  0x{:X}  pos {:?} ref {:?} fov {:.1}",
@@ -494,7 +583,7 @@ fn cmd_live(op: LiveOp) -> Result<()> {
                 );
             }
             Ok(())
-        },
+        }
         LiveOp::Get { addr, process } => {
             let pid = live::find_game(&process)
                 .with_context(|| format!("process « {process} » introuvable"))?;
@@ -509,8 +598,15 @@ fn cmd_live(op: LiveOp) -> Result<()> {
                 st.length()
             );
             Ok(())
-        },
-        LiveOp::Set { addr, process, pos, target, fov, roll } => {
+        }
+        LiveOp::Set {
+            addr,
+            process,
+            pos,
+            target,
+            fov,
+            roll,
+        } => {
             let pid = live::find_game(&process)
                 .with_context(|| format!("process « {process} » introuvable"))?;
             let cam = LiveCamera::at(pid, parse_addr(&addr)?, CameraLayout::default());
@@ -529,9 +625,12 @@ fn cmd_live(op: LiveOp) -> Result<()> {
             }
             cam.write_state(&st, PlausibleRange::default())
                 .map_err(|e| anyhow::anyhow!("écriture refusée ou impossible : {e}"))?;
-            println!("écrit : pos {:?} ref {:?} fov {:.2}", st.pos, st.ref_pos, st.fov_deg);
+            println!(
+                "écrit : pos {:?} ref {:?} fov {:.2}",
+                st.pos, st.ref_pos, st.fov_deg
+            );
             Ok(())
-        },
+        }
     }
 }
 
@@ -555,7 +654,10 @@ fn preset_context(path: &str) -> &'static str {
     }
 }
 
-#[expect(clippy::too_many_lines, reason = "orchestration linéaire des six passes d'indexation")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "orchestration linéaire des six passes d'indexation"
+)]
 fn cmd_index(
     db_path: &Path,
     game_dir: Option<PathBuf>,
@@ -643,7 +745,10 @@ fn cmd_index(
         {
             let st = db::index_property(conn, asset_id, preset_context(a.path), &set)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
-            println!("  {} : {} presets, {} paramètres", a.path, st.presets, st.preset_params);
+            println!(
+                "  {} : {} presets, {} paramètres",
+                a.path, st.presets, st.preset_params
+            );
             total = total.merged(st);
         }
     }
@@ -661,8 +766,14 @@ fn cmd_index(
         }
         let anim_src = {
             let conn = database.conn();
-            db::upsert_source(conn, "anim", &format!("g4cm @ {}", root.display()), None, None)
-                .map_err(|e| anyhow::anyhow!("{e}"))?
+            db::upsert_source(
+                conn,
+                "anim",
+                &format!("g4cm @ {}", root.display()),
+                None,
+                None,
+            )
+            .map_err(|e| anyhow::anyhow!("{e}"))?
         };
 
         let tx = database
@@ -682,7 +793,7 @@ fn cmd_index(
                     if failed <= 5 {
                         println!("  ÉCHEC {p} : {e}");
                     }
-                },
+                }
             }
             if (i + 1) % 250 == 0 {
                 println!("  … {} / {} animations", i + 1, paths.len());
@@ -724,7 +835,10 @@ fn print_stats(conn: &aphrody_nie_index::rusqlite::Connection) -> Result<()> {
         },
     )?;
     println!("\n== index caméra ==");
-    println!("  animations        {:>8}  (round-trip exact : {})", row.0, row.1);
+    println!(
+        "  animations        {:>8}  (round-trip exact : {})",
+        row.0, row.1
+    );
     println!("  canaux            {:>8}  (décodés : {})", row.2, row.3);
     println!("  échantillons      {:>8}  (décodés : {})", row.4, row.5);
     println!("  contrôleurs       {:>8}  (portés : {})", row.6, row.7);
@@ -760,19 +874,32 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.cmd {
         Cmd::Map { exe } => cmd_map(exe),
-        Cmd::Extract { out, game_dir, anims } => cmd_extract(&out, game_dir, anims),
+        Cmd::Extract {
+            out,
+            game_dir,
+            anims,
+        } => cmd_extract(&out, game_dir, anims),
         Cmd::Decode { file, verbose } => cmd_decode(&file, verbose),
-        Cmd::Encode { file, out, scale_pos } => cmd_encode(&file, out, scale_pos),
+        Cmd::Encode {
+            file,
+            out,
+            scale_pos,
+        } => cmd_encode(&file, out, scale_pos),
         Cmd::Verify { dir } => cmd_verify(&dir),
         Cmd::Config { file, preset } => cmd_config(&file, preset),
         Cmd::Live { op } => cmd_live(op),
-        Cmd::Index { db, game_dir, exe, no_anims, samples, limit } => {
-            cmd_index(&db, game_dir, exe, no_anims, samples, limit)
-        },
+        Cmd::Index {
+            db,
+            game_dir,
+            exe,
+            no_anims,
+            samples,
+            limit,
+        } => cmd_index(&db, game_dir, exe, no_anims, samples, limit),
         Cmd::Stats { db } => {
             let database =
                 db::open(&db).with_context(|| format!("ouverture de la base {}", db.display()))?;
             print_stats(database.conn())
-        },
+        }
     }
 }

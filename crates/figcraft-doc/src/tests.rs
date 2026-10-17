@@ -17,8 +17,12 @@ fn new_document_has_one_page() {
 fn create_and_world_transform() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "Frame 1", 100.0, 50.0, 400.0, 300.0).unwrap();
-    let r = d.create(f, NodeKind::Rectangle, "Rect", 10.0, 20.0, 50.0, 40.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "Frame 1", 100.0, 50.0, 400.0, 300.0)
+        .unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "Rect", 10.0, 20.0, 50.0, 40.0)
+        .unwrap();
     let b = d.world_bounds(r).unwrap();
     assert_eq!((b.x0, b.y0, b.x1, b.y1), (110.0, 70.0, 160.0, 110.0));
     assert!(d.validate().is_empty());
@@ -29,17 +33,28 @@ fn create_and_world_transform() {
 fn reparent_keeps_world_position_and_rejects_cycles() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 100.0, 100.0, 400.0, 300.0).unwrap();
-    let r = d.create(p, NodeKind::Rectangle, "R", 150.0, 150.0, 10.0, 10.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 100.0, 100.0, 400.0, 300.0)
+        .unwrap();
+    let r = d
+        .create(p, NodeKind::Rectangle, "R", 150.0, 150.0, 10.0, 10.0)
+        .unwrap();
     d.reparent(r, f, None).unwrap();
     assert_eq!(d.node(r).unwrap().parent, Some(f));
     let b = d.world_bounds(r).unwrap();
     assert_eq!((b.x0, b.y0), (150.0, 150.0));
     assert!(matches!(d.reparent(f, f, None), Err(DocError::Cycle(..))));
-    let g = d.create(f, NodeKind::Group, "G", 0.0, 0.0, 1.0, 1.0).unwrap();
+    let g = d
+        .create(f, NodeKind::Group, "G", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
     assert!(matches!(d.reparent(f, g, None), Err(DocError::Cycle(..))));
-    let r2 = d.create(p, NodeKind::Rectangle, "R2", 0.0, 0.0, 1.0, 1.0).unwrap();
-    assert!(matches!(d.reparent(f, r2, None), Err(DocError::NotContainer(..))));
+    let r2 = d
+        .create(p, NodeKind::Rectangle, "R2", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
+    assert!(matches!(
+        d.reparent(f, r2, None),
+        Err(DocError::NotContainer(..))
+    ));
     assert!(d.validate().is_empty());
 }
 
@@ -47,9 +62,15 @@ fn reparent_keeps_world_position_and_rejects_cycles() {
 fn reorder_within_parent() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let a = d.create(p, NodeKind::Rectangle, "A", 0.0, 0.0, 1.0, 1.0).unwrap();
-    let b = d.create(p, NodeKind::Rectangle, "B", 0.0, 0.0, 1.0, 1.0).unwrap();
-    let c = d.create(p, NodeKind::Rectangle, "C", 0.0, 0.0, 1.0, 1.0).unwrap();
+    let a = d
+        .create(p, NodeKind::Rectangle, "A", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
+    let b = d
+        .create(p, NodeKind::Rectangle, "B", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
+    let c = d
+        .create(p, NodeKind::Rectangle, "C", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
     d.reparent(a, p, Some(3)).unwrap();
     assert_eq!(d.node(p).unwrap().children, vec![b, c, a]);
     d.reorder(a, 0).unwrap();
@@ -60,8 +81,12 @@ fn reorder_within_parent() {
 fn remove_subtree_and_last_page_guard() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0).unwrap();
-    let r = d.create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 1.0, 1.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
     d.remove(f).unwrap();
     assert!(!d.contains(r));
     assert!(d.remove(p).is_err());
@@ -74,9 +99,14 @@ fn remove_subtree_and_last_page_guard() {
 fn group_fits_children() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let g = d.create(p, NodeKind::Group, "Group 1", 0.0, 0.0, 0.0, 0.0).unwrap();
-    d.create(g, NodeKind::Rectangle, "A", 10.0, 10.0, 20.0, 20.0).unwrap();
-    let b = d.create(g, NodeKind::Rectangle, "B", 50.0, 40.0, 10.0, 10.0).unwrap();
+    let g = d
+        .create(p, NodeKind::Group, "Group 1", 0.0, 0.0, 0.0, 0.0)
+        .unwrap();
+    d.create(g, NodeKind::Rectangle, "A", 10.0, 10.0, 20.0, 20.0)
+        .unwrap();
+    let b = d
+        .create(g, NodeKind::Rectangle, "B", 50.0, 40.0, 10.0, 10.0)
+        .unwrap();
     d.fit_to_children(g).unwrap();
     let gb = d.world_bounds(g).unwrap();
     assert_eq!((gb.x0, gb.y0, gb.x1, gb.y1), (10.0, 10.0, 60.0, 50.0));
@@ -88,12 +118,21 @@ fn group_fits_children() {
 fn duplicate_remaps_ids_and_interactions() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0).unwrap();
-    let a = d.create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 10.0, 10.0).unwrap();
-    let b = d.create(f, NodeKind::Rectangle, "B", 20.0, 0.0, 10.0, 10.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
+    let a = d
+        .create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    let b = d
+        .create(f, NodeKind::Rectangle, "B", 20.0, 0.0, 10.0, 10.0)
+        .unwrap();
     d.get_mut(a).unwrap().interactions.push(proto::Interaction {
         trigger: proto::Trigger::OnClick,
-        actions: vec![proto::Action::Navigate { dest: b, preserve_scroll: false }],
+        actions: vec![proto::Action::Navigate {
+            dest: b,
+            preserve_scroll: false,
+        }],
         transition: proto::Transition::Instant,
         duration_ms: 300,
         easing: proto::Easing::EaseOut,
@@ -104,7 +143,9 @@ fn duplicate_remaps_ids_and_interactions() {
     assert_eq!(kids.len(), 2);
     assert!(!kids.contains(&a));
     let a2 = d.node(kids[0]).unwrap();
-    let proto::Action::Navigate { dest, .. } = a2.interactions[0].actions[0] else { panic!() };
+    let proto::Action::Navigate { dest, .. } = a2.interactions[0].actions[0] else {
+        panic!()
+    };
     assert_eq!(dest, kids[1]);
     assert!(d.validate().is_empty());
 }
@@ -113,13 +154,24 @@ fn duplicate_remaps_ids_and_interactions() {
 fn hit_test_respects_z_and_clip() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0).unwrap();
-    let a = d.create(f, NodeKind::Rectangle, "A", 10.0, 10.0, 50.0, 50.0).unwrap();
-    let b = d.create(f, NodeKind::Rectangle, "B", 30.0, 30.0, 50.0, 50.0).unwrap();
-    let outside = d.create(f, NodeKind::Rectangle, "Out", 90.0, 90.0, 50.0, 50.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
+    let a = d
+        .create(f, NodeKind::Rectangle, "A", 10.0, 10.0, 50.0, 50.0)
+        .unwrap();
+    let b = d
+        .create(f, NodeKind::Rectangle, "B", 30.0, 30.0, 50.0, 50.0)
+        .unwrap();
+    let outside = d
+        .create(f, NodeKind::Rectangle, "Out", 90.0, 90.0, 50.0, 50.0)
+        .unwrap();
     assert_eq!(d.hit_test(p, Point::new(40.0, 40.0), 0.0, None), Some(b));
     assert_eq!(d.hit_test(p, Point::new(15.0, 15.0), 0.0, None), Some(a));
-    assert_eq!(d.hit_test(p, Point::new(95.0, 95.0), 0.0, None), Some(outside));
+    assert_eq!(
+        d.hit_test(p, Point::new(95.0, 95.0), 0.0, None),
+        Some(outside)
+    );
     // Clipped part of `outside` isn't hit.
     assert_eq!(d.hit_test(p, Point::new(120.0, 120.0), 0.0, None), None);
     assert_eq!(d.hit_test(p, Point::new(5.0, 95.0), 0.0, None), Some(f));
@@ -129,9 +181,15 @@ fn hit_test_respects_z_and_clip() {
 fn click_target_rules() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 200.0, 200.0).unwrap();
-    let g = d.create(f, NodeKind::Group, "G", 0.0, 0.0, 0.0, 0.0).unwrap();
-    let r = d.create(g, NodeKind::Rectangle, "R", 10.0, 10.0, 20.0, 20.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 200.0, 200.0)
+        .unwrap();
+    let g = d
+        .create(f, NodeKind::Group, "G", 0.0, 0.0, 0.0, 0.0)
+        .unwrap();
+    let r = d
+        .create(g, NodeKind::Rectangle, "R", 10.0, 10.0, 20.0, 20.0)
+        .unwrap();
     d.fit_to_children(g).unwrap();
     let leaf = d.hit_test(p, Point::new(15.0, 15.0), 0.0, None).unwrap();
     assert_eq!(leaf, r);
@@ -142,8 +200,12 @@ fn click_target_rules() {
     // Deep select.
     assert_eq!(geometry::select_target(&d, leaf, &[], true), r);
     // Top-level group selects as a whole.
-    let g2 = d.create(p, NodeKind::Group, "G2", 0.0, 0.0, 0.0, 0.0).unwrap();
-    let r2 = d.create(g2, NodeKind::Rectangle, "R2", 300.0, 0.0, 20.0, 20.0).unwrap();
+    let g2 = d
+        .create(p, NodeKind::Group, "G2", 0.0, 0.0, 0.0, 0.0)
+        .unwrap();
+    let r2 = d
+        .create(g2, NodeKind::Rectangle, "R2", 300.0, 0.0, 20.0, 20.0)
+        .unwrap();
     d.fit_to_children(g2).unwrap();
     assert_eq!(geometry::select_target(&d, r2, &[], false), g2);
 }
@@ -178,10 +240,24 @@ fn text_case() {
 
 #[test]
 fn vector_network_paths() {
-    let net = VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(10.0, 10.0)], true);
+    let net = VectorNetwork::from_points(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(10.0, 10.0),
+        ],
+        true,
+    );
     use figcraft_geom::Shape;
     assert!((net.fill_path().area().abs() - 50.0).abs() < 1e-9);
-    let open = VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(10.0, 10.0)], false);
+    let open = VectorNetwork::from_points(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(10.0, 10.0),
+        ],
+        false,
+    );
     assert!(open.fill_path().elements().is_empty());
     assert_eq!(open.stroke_path().segments().count(), 2);
     // Round-trip a bezier path.
@@ -191,7 +267,10 @@ fn vector_network_paths() {
     let mut bad = VectorNetwork {
         vertices: vec![Vertex::new(0.0, 0.0)],
         segments: vec![Segment::line(0, 5)],
-        regions: vec![Region { loops: vec![vec![0, 9]], winding: WindingRule::EvenOdd }],
+        regions: vec![Region {
+            loops: vec![vec![0, 9]],
+            winding: WindingRule::EvenOdd,
+        }],
     };
     bad.sanitize();
     assert!(bad.segments.is_empty());
@@ -204,7 +283,16 @@ fn variables_resolve_modes_and_aliases() {
     v.collections.push(Collection {
         id: "c1".into(),
         name: "Theme".into(),
-        modes: vec![Mode { id: "light".into(), name: "Light".into() }, Mode { id: "dark".into(), name: "Dark".into() }],
+        modes: vec![
+            Mode {
+                id: "light".into(),
+                name: "Light".into(),
+            },
+            Mode {
+                id: "dark".into(),
+                name: "Dark".into(),
+            },
+        ],
         extends: None,
     });
     let mut vals = std::collections::BTreeMap::new();
@@ -239,9 +327,15 @@ fn variables_resolve_modes_and_aliases() {
         code_syntax: Default::default(),
     });
     let mut modes = std::collections::BTreeMap::new();
-    assert_eq!(v.resolve("surface", &modes), Some(VariableValue::Color(Color::WHITE)));
+    assert_eq!(
+        v.resolve("surface", &modes),
+        Some(VariableValue::Color(Color::WHITE))
+    );
     modes.insert("c1".to_string(), "dark".to_string());
-    assert_eq!(v.resolve("bg", &modes), Some(VariableValue::Color(Color::BLACK)));
+    assert_eq!(
+        v.resolve("bg", &modes),
+        Some(VariableValue::Color(Color::BLACK))
+    );
     // Cycle.
     let mut cyc = std::collections::BTreeMap::new();
     cyc.insert("light".to_string(), VariableValue::Alias("loop".into()));
@@ -265,16 +359,42 @@ fn variables_resolve_modes_and_aliases() {
 fn serde_roundtrip_and_repair() {
     let mut d = Document::new("x");
     let p = page(&d);
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
     d.get_mut(f).unwrap().layout = Some(AutoLayout::default());
-    d.create(f, NodeKind::Text(TextData::new("Hi")), "Hi", 0.0, 0.0, 10.0, 10.0).unwrap();
-    d.create(f, NodeKind::Star { count: 5, inner_ratio: 0.4 }, "S", 0.0, 0.0, 10.0, 10.0).unwrap();
+    d.create(
+        f,
+        NodeKind::Text(TextData::new("Hi")),
+        "Hi",
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+    )
+    .unwrap();
+    d.create(
+        f,
+        NodeKind::Star {
+            count: 5,
+            inner_ratio: 0.4,
+        },
+        "S",
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+    )
+    .unwrap();
     let j = serde_json::to_string(&d).unwrap();
     let back: Document = serde_json::from_str(&j).unwrap();
     assert_eq!(back, d);
     // Corrupt: dangling child, orphan.
     let mut v: serde_json::Value = serde_json::from_str(&j).unwrap();
-    v["nodes"][f.to_string()]["children"].as_array_mut().unwrap().push(serde_json::json!(999));
+    v["nodes"][f.to_string()]["children"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!(999));
     let mut bad: Document = serde_json::from_value(v).unwrap();
     assert!(!bad.validate().is_empty());
     bad.repair();
@@ -284,14 +404,25 @@ fn serde_roundtrip_and_repair() {
 #[test]
 fn auto_layout_loads_files_without_grid_tracks() {
     // Saved before grid tracks, cells and spans existed.
-    let al: AutoLayout = serde_json::from_str(r#"{"mode":"grid","gap":4,"grid_columns":3,"grid_rows":2}"#).unwrap();
-    assert_eq!((al.grid_columns, al.column_tracks.len(), al.row_tracks.len()), (3, 0, 0));
-    let cl: ChildLayout = serde_json::from_str(r#"{"sizing_h":"fill","absolute":true,"min_w":10}"#).unwrap();
-    assert_eq!((cl.grid_column, cl.grid_row, cl.column_span(), cl.row_span()), (None, None, 1, 1));
+    let al: AutoLayout =
+        serde_json::from_str(r#"{"mode":"grid","gap":4,"grid_columns":3,"grid_rows":2}"#).unwrap();
+    assert_eq!(
+        (al.grid_columns, al.column_tracks.len(), al.row_tracks.len()),
+        (3, 0, 0)
+    );
+    let cl: ChildLayout =
+        serde_json::from_str(r#"{"sizing_h":"fill","absolute":true,"min_w":10}"#).unwrap();
+    assert_eq!(
+        (cl.grid_column, cl.grid_row, cl.column_span(), cl.row_span()),
+        (None, None, 1, 1)
+    );
     // Tracks round-trip; a track missing its value reads as the default kind's value.
     let t: GridTrack = serde_json::from_str(r#"{"sizing":"fixed","value":120}"#).unwrap();
     assert_eq!(t, GridTrack::fixed(120.0));
-    assert_eq!(serde_json::from_str::<GridTrack>("{}").unwrap(), GridTrack::fill(1.0));
+    assert_eq!(
+        serde_json::from_str::<GridTrack>("{}").unwrap(),
+        GridTrack::fill(1.0)
+    );
 }
 
 #[test]
@@ -305,8 +436,10 @@ fn node_id_parse() {
 fn next_name_increments() {
     let mut d = Document::new("x");
     let p = page(&d);
-    d.create(p, NodeKind::Frame, "Frame 1", 0.0, 0.0, 1.0, 1.0).unwrap();
-    d.create(p, NodeKind::Frame, "Frame 7", 0.0, 0.0, 1.0, 1.0).unwrap();
+    d.create(p, NodeKind::Frame, "Frame 1", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
+    d.create(p, NodeKind::Frame, "Frame 7", 0.0, 0.0, 1.0, 1.0)
+        .unwrap();
     assert_eq!(d.next_name("Frame"), "Frame 8");
     assert_eq!(d.next_name("Ellipse"), "Ellipse 1");
 }
@@ -315,35 +448,92 @@ fn next_name_increments() {
 fn custom_easings() {
     use crate::proto::Easing;
     // cubic-bezier(0.25, 0.1, 0.25, 1) is CSS `ease`: 0.8024 at half time.
-    let ease = Easing::CustomBezier { x1: 0.25, y1: 0.1, x2: 0.25, y2: 1.0 };
+    let ease = Easing::CustomBezier {
+        x1: 0.25,
+        y1: 0.1,
+        x2: 0.25,
+        y2: 1.0,
+    };
     assert!((ease.eval(0.5) - 0.8024).abs() < 1e-3, "{}", ease.eval(0.5));
-    let linear = Easing::CustomBezier { x1: 0.0, y1: 0.0, x2: 1.0, y2: 1.0 };
+    let linear = Easing::CustomBezier {
+        x1: 0.0,
+        y1: 0.0,
+        x2: 1.0,
+        y2: 1.0,
+    };
     for t in [0.0, 0.1, 0.37, 0.9, 1.0] {
         assert!((linear.eval(t) - t).abs() < 1e-6);
     }
     // Springs start at 0, end at 1; an under-damped one overshoots.
-    let bouncy = Easing::CustomSpring { mass: 1.0, stiffness: 300.0, damping: 6.0 };
+    let bouncy = Easing::CustomSpring {
+        mass: 1.0,
+        stiffness: 300.0,
+        damping: 6.0,
+    };
     assert!(bouncy.eval(0.0).abs() < 1e-9);
     assert_eq!(bouncy.eval(1.0), 1.0);
-    assert!((0..100).map(|i| bouncy.eval(f64::from(i) / 100.0)).any(|v| v > 1.01), "overshoots");
-    let stiff = Easing::CustomSpring { mass: 1.0, stiffness: 100.0, damping: 40.0 };
-    assert!((0..100).map(|i| stiff.eval(f64::from(i) / 100.0)).all(|v| (-1e-9..=1.0 + 1e-9).contains(&v)), "over-damped never overshoots");
+    assert!(
+        (0..100)
+            .map(|i| bouncy.eval(f64::from(i) / 100.0))
+            .any(|v| v > 1.01),
+        "overshoots"
+    );
+    let stiff = Easing::CustomSpring {
+        mass: 1.0,
+        stiffness: 100.0,
+        damping: 40.0,
+    };
+    assert!(
+        (0..100)
+            .map(|i| stiff.eval(f64::from(i) / 100.0))
+            .all(|v| (-1e-9..=1.0 + 1e-9).contains(&v)),
+        "over-damped never overshoots"
+    );
     assert!(Easing::CUSTOM_SPRING.is_spring());
     // Junk values stay finite.
     for e in [
-        Easing::CustomBezier { x1: f64::NAN, y1: f64::INFINITY, x2: -5.0, y2: 1e300 },
-        Easing::CustomSpring { mass: 0.0, stiffness: -1.0, damping: f64::NAN },
-        Easing::CustomSpring { mass: 1e300, stiffness: 1e-300, damping: 0.0 },
+        Easing::CustomBezier {
+            x1: f64::NAN,
+            y1: f64::INFINITY,
+            x2: -5.0,
+            y2: 1e300,
+        },
+        Easing::CustomSpring {
+            mass: 0.0,
+            stiffness: -1.0,
+            damping: f64::NAN,
+        },
+        Easing::CustomSpring {
+            mass: 1e300,
+            stiffness: 1e-300,
+            damping: 0.0,
+        },
     ] {
         for i in 0..=20 {
             assert!(e.eval(f64::from(i) / 20.0).is_finite());
         }
     }
     // Serde: presets stay strings, custom curves are objects.
-    assert_eq!(serde_json::to_value(Easing::Gentle).unwrap(), serde_json::json!("gentle"));
+    assert_eq!(
+        serde_json::to_value(Easing::Gentle).unwrap(),
+        serde_json::json!("gentle")
+    );
     let v = serde_json::to_value(Easing::CUSTOM_BEZIER).unwrap();
     assert_eq!(v["customBezier"]["x1"], serde_json::json!(0.42));
-    let back: Easing = serde_json::from_value(serde_json::json!({"customSpring": {"mass": 2, "stiffness": 50, "damping": 5}})).unwrap();
-    assert_eq!(back, Easing::CustomSpring { mass: 2.0, stiffness: 50.0, damping: 5.0 });
-    assert_eq!(serde_json::from_value::<Easing>(serde_json::json!("easeInOut")).unwrap(), Easing::EaseInOut);
+    let back: Easing = serde_json::from_value(
+        serde_json::json!({"customSpring": {"mass": 2, "stiffness": 50, "damping": 5}}),
+    )
+    .unwrap();
+    assert_eq!(
+        back,
+        Easing::CustomSpring {
+            mass: 2.0,
+            stiffness: 50.0,
+            damping: 5.0
+        }
+    );
+    assert_eq!(
+        serde_json::from_value::<Easing>(serde_json::json!("easeInOut")).unwrap(),
+        Easing::EaseInOut
+    );
 }

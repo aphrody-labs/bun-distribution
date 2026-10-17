@@ -63,7 +63,10 @@ impl TokenStore {
     /// non persistant (comportement identique au C# `SteamTokenStore.Load(null)`).
     pub fn load(path: Option<&Path>) -> Self {
         let Some(p) = path else {
-            return Self { path: None, inner: Mutex::new(HashMap::new()) };
+            return Self {
+                path: None,
+                inner: Mutex::new(HashMap::new()),
+            };
         };
 
         let map = std::fs::read_to_string(p)
@@ -71,7 +74,10 @@ impl TokenStore {
             .and_then(|text| {
                 serde_json::from_str::<HashMap<String, AccountTokens>>(&text)
                     .map_err(|e| {
-                        warn!("token-store {}: JSON invalide ({e}), réinitialisation", p.display());
+                        warn!(
+                            "token-store {}: JSON invalide ({e}), réinitialisation",
+                            p.display()
+                        );
                         e
                     })
                     .ok()
@@ -79,17 +85,27 @@ impl TokenStore {
             .unwrap_or_default();
 
         // Normalise les clés en minuscules.
-        let normalized: HashMap<String, AccountTokens> =
-            map.into_iter().map(|(k, v)| (k.to_ascii_lowercase(), v)).collect();
+        let normalized: HashMap<String, AccountTokens> = map
+            .into_iter()
+            .map(|(k, v)| (k.to_ascii_lowercase(), v))
+            .collect();
 
-        Self { path: Some(p.to_owned()), inner: Mutex::new(normalized) }
+        Self {
+            path: Some(p.to_owned()),
+            inner: Mutex::new(normalized),
+        }
     }
 
     /// Retourne les jetons pour `account`. Ne renvoie jamais d'erreur :
     /// si le compte est inconnu, renvoie des `AccountTokens` par défaut (tous `None`).
     pub fn get(&self, account: &str) -> AccountTokens {
         let key = account.to_ascii_lowercase();
-        self.inner.lock().expect("token-store lock poisoned").get(&key).cloned().unwrap_or_default()
+        self.inner
+            .lock()
+            .expect("token-store lock poisoned")
+            .get(&key)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Met à jour (ou crée) les jetons du compte, puis persiste best-effort.
@@ -105,10 +121,18 @@ impl TokenStore {
         let mut guard = self.inner.lock().expect("token-store lock poisoned");
         let entry = guard.entry(key).or_default();
         if let Some(t) = refresh_token {
-            entry.refresh_token = if t.is_empty() { None } else { Some(t.to_owned()) };
+            entry.refresh_token = if t.is_empty() {
+                None
+            } else {
+                Some(t.to_owned())
+            };
         }
         if let Some(g) = guard_data {
-            entry.guard_data = if g.is_empty() { None } else { Some(g.to_owned()) };
+            entry.guard_data = if g.is_empty() {
+                None
+            } else {
+                Some(g.to_owned())
+            };
         }
         self.save_locked(&guard);
     }
@@ -132,8 +156,11 @@ impl TokenStore {
 
                 // Refresh tokens are bearer credentials: restrict both new and existing
                 // stores before truncating or writing any secret material.
-                let mut file =
-                    OpenOptions::new().create(true).write(true).mode(0o600).open(path)?;
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .mode(0o600)
+                    .open(path)?;
                 file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
                 file.set_len(0)?;
                 file.write_all(json.as_bytes())?;

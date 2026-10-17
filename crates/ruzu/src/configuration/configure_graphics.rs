@@ -134,8 +134,12 @@ pub(super) fn page_with_screenshot_info(
         let aspect = aspect.downgrade();
         let resolution = resolution.downgrade();
         Rc::new(move || {
-            if crate::i18n::is_retranslating() { return; }
-            let (Some(aspect), Some(resolution)) = (aspect.upgrade(), resolution.upgrade()) else { return };
+            if crate::i18n::is_retranslating() {
+                return;
+            }
+            let (Some(aspect), Some(resolution)) = (aspect.upgrade(), resolution.upgrade()) else {
+                return;
+            };
             update_screenshot_info(
                 tr::value_at(tr::ASPECT_RATIO, aspect.selected()),
                 tr::value_at(tr::RESOLUTION_SETUP, resolution.selected()),
@@ -337,7 +341,10 @@ pub(super) fn page_with_screenshot_info(
 }
 
 /// `ConfigureGraphics::GetCurrentGraphicsBackend`'s broken-installation guard.
-fn get_current_graphics_backend(backend: RendererBackend, has_broken_vulkan: bool) -> RendererBackend {
+fn get_current_graphics_backend(
+    backend: RendererBackend,
+    has_broken_vulkan: bool,
+) -> RendererBackend {
     if backend == RendererBackend::Vulkan && has_broken_vulkan {
         if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
             RendererBackend::Null
@@ -537,7 +544,10 @@ mod tests {
         let values = common::settings::Values::default();
         for flag in [
             values.renderer_backend.setting.runtime_modifiable,
-            values.use_asynchronous_gpu_emulation.setting.runtime_modifiable,
+            values
+                .use_asynchronous_gpu_emulation
+                .setting
+                .runtime_modifiable,
             values.resolution_setup.setting.runtime_modifiable,
         ] {
             assert!(!flag);

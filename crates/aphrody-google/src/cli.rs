@@ -7,7 +7,10 @@ use clap::{Parser, Subcommand};
 use serde::Serialize;
 
 #[derive(Debug, Parser)]
-#[command(name = "aphrody-google", about = "Unified Aphrody Google/Gemini runtime")]
+#[command(
+    name = "aphrody-google",
+    about = "Unified Aphrody Google/Gemini runtime"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -68,7 +71,14 @@ fn report(runtime: &GoogleRuntime) -> StatusReport {
         location: runtime.location.clone(),
         home: runtime.home.clone(),
         auth: runtime.auth.clone(),
-        capabilities: ["vertex", "gemini-oauth", "gemini-web", "google-web", "mcp", "bxc"],
+        capabilities: [
+            "vertex",
+            "gemini-oauth",
+            "gemini-web",
+            "google-web",
+            "mcp",
+            "bxc",
+        ],
     }
 }
 
@@ -83,18 +93,23 @@ fn resolved_home(runtime: &GoogleRuntime) -> Option<PathBuf> {
 }
 
 async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
-    rustls::crypto::ring::default_provider().install_default().ok();
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .ok();
     let runtime = GoogleRuntime::from_env();
     match cli.command.unwrap_or(Command::Status) {
         Command::Status => {
-            println!("{}", serde_json::to_string_pretty(&report(&runtime)).expect("serializable"))
-        },
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&report(&runtime)).expect("serializable")
+            )
+        }
         Command::Env => {
             println!("export GOOGLE_CLOUD_PROJECT={}", runtime.project.id());
             println!("export GOOGLE_CLOUD_LOCATION={}", runtime.location);
             println!("export APHRODY_HOME={}", runtime.home);
             println!("export APHRODY_GCP_AUTH={}", runtime.auth);
-        },
+        }
         Command::Doctor => {
             if runtime.location.is_empty() {
                 return Err("Google location is empty".into());
@@ -110,19 +125,19 @@ async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
             println!("project={}", runtime.project.id());
             println!("home={}", home.display());
             println!("capabilities=vertex,gemini-oauth,gemini-web,google-web,mcp,bxc");
-        },
+        }
         Command::Login => {
             let token = crate::antigravity::login().await?;
             crate::antigravity::persist(&token)?;
             println!("APHRODY_GOOGLE_LOGIN=PASS");
-        },
+        }
         Command::AuthStatus => match crate::antigravity::token_from_credential_manager() {
             Ok(_) => println!("APHRODY_GOOGLE_AUTH=AVAILABLE"),
             Err(error) => {
                 println!("APHRODY_GOOGLE_AUTH=UNAVAILABLE");
                 eprintln!("{error}");
                 return Ok(1);
-            },
+            }
         },
         Command::Whoami => {
             let client = crate::authenticated_client()?;
@@ -135,7 +150,7 @@ async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
                     "picture": user.get("picture"),
                 }))?
             );
-        },
+        }
         Command::Models => {
             let client = crate::authenticated_client()?;
             let models = client
@@ -144,7 +159,7 @@ async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
                 )
                 .await?;
             println!("{}", serde_json::to_string_pretty(&models)?);
-        },
+        }
         Command::Generate { model, prompt } => {
             let client = crate::authenticated_client()?;
             let request = crate::antigravity::GenerateContentRequest::from_prompt(prompt);
@@ -152,14 +167,16 @@ async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
                 .generate_content_vertex(&model, runtime.project.id(), &runtime.location, &request)
                 .await?;
             println!("{}", serde_json::to_string_pretty(&response)?);
-        },
+        }
         Command::GenerateStream { model } => {
             use futures::StreamExt as _;
             use std::io::Read as _;
 
             let mut prompt = String::new();
             std::io::stdin().read_to_string(&mut prompt)?;
-            rustls::crypto::ring::default_provider().install_default().ok();
+            rustls::crypto::ring::default_provider()
+                .install_default()
+                .ok();
             let client = crate::authenticated_client()?;
             let request = crate::antigravity::GenerateContentRequest::from_prompt(prompt);
             let project = client
@@ -182,7 +199,7 @@ async fn run(cli: Cli) -> Result<i32, Box<dyn std::error::Error>> {
                     std::io::stdout().flush()?;
                 }
             }
-        },
+        }
     }
     Ok(0)
 }
@@ -197,20 +214,23 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-google: runtime: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run(cli)) {
         Ok(code) => code,
         Err(error) => {
             eprintln!("Error: {error}");
             1
-        },
+        }
     }
 }

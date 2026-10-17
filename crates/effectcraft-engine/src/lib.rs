@@ -8,7 +8,14 @@
 //! The project is an `Arc<Project>` edited copy-on-write; undo keeps whole-project snapshots
 //! (compositions are `Arc`s, so untouched comps are shared).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod autosave;
 pub mod camera_track;
@@ -106,14 +113,21 @@ pub trait Services: Send + Sync {
     /// on disk (Settings ▸ Import ▸ Reload Footage Changed on Disk); `None` when it can't be read.
     fn stamp(&self, path: &str) -> Option<(u64, u128)> {
         let meta = std::fs::metadata(path).ok()?;
-        let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?;
+        let modified = meta
+            .modified()
+            .ok()?
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?;
         Some((meta.len(), modified.as_nanos()))
     }
     /// Keep a file the app made for itself (footage extracted from a template): like
     /// [`Services::write_file`], creating its folder, but never offered as a download (web: it
     /// goes to browser storage only).
     fn store_file(&self, path: &str, data: &[u8]) -> std::io::Result<()> {
-        if let Some(d) = std::path::Path::new(path).parent().filter(|d| !d.as_os_str().is_empty()) {
+        if let Some(d) = std::path::Path::new(path)
+            .parent()
+            .filter(|d| !d.as_os_str().is_empty())
+        {
             let _ = std::fs::create_dir_all(d);
         }
         self.write_file(path, data)
@@ -121,9 +135,14 @@ pub trait Services: Send + Sync {
     /// The files in folder `dir` (full paths; no folders, no hidden files), for image-sequence
     /// detection on import. Empty when it can't be read.
     fn list_dir(&self, dir: &str) -> Vec<String> {
-        let Ok(rd) = std::fs::read_dir(if dir.is_empty() { "." } else { dir }) else { return vec![] };
+        let Ok(rd) = std::fs::read_dir(if dir.is_empty() { "." } else { dir }) else {
+            return vec![];
+        };
         rd.filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_ok_and(|t| t.is_file()) && !e.file_name().to_string_lossy().starts_with('.'))
+            .filter(|e| {
+                e.file_type().is_ok_and(|t| t.is_file())
+                    && !e.file_name().to_string_lossy().starts_with('.')
+            })
             .map(|e| e.path().to_string_lossy().to_string())
             .collect()
     }
@@ -325,7 +344,10 @@ fn one_view() -> u8 {
 #[derive(Clone, Debug, PartialEq)]
 pub enum LinkClip {
     /// Expressions that link back to the source properties: (match path, expression text).
-    Links { relative: bool, links: Vec<(String, String)> },
+    Links {
+        relative: bool,
+        links: Vec<(String, String)>,
+    },
     /// Expressions only: (match path, expression).
     Expressions(Vec<(String, effectcraft_project::Expression)>),
 }
@@ -529,7 +551,11 @@ impl Default for Session {
             revision: 0,
             saved_revision: 0,
             path: None,
-            state: EditorState { snapping: true, view_layout: 1, ..Default::default() },
+            state: EditorState {
+                snapping: true,
+                view_layout: 1,
+                ..Default::default()
+            },
             services: Arc::new(FsServices),
             footage: Arc::new(NoFootage),
             expr: None,
@@ -648,7 +674,12 @@ impl Session {
     }
 
     /// Apply an undoable edit. `merge`: consecutive edits with the same key fold into one step.
-    pub fn edit<T>(&mut self, label: &str, merge: Option<&str>, f: impl FnOnce(&mut Project, &mut EditorState) -> Result<T>) -> Result<T> {
+    pub fn edit<T>(
+        &mut self,
+        label: &str,
+        merge: Option<&str>,
+        f: impl FnOnce(&mut Project, &mut EditorState) -> Result<T>,
+    ) -> Result<T> {
         let before = self.project.clone();
         let mut p = (*self.project).clone();
         let mut st = self.state.clone();
@@ -702,19 +733,35 @@ impl Session {
             self.saved_revision = self.revision;
         }
         if self.disk_cache.is_some() {
-            self.layer_cache.set_disk_salt(effectcraft_render::disk_cache::footage_salt(&self.project));
+            self.layer_cache
+                .set_disk_salt(effectcraft_render::disk_cache::footage_salt(&self.project));
         }
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
     }
 
     /// Set a comp's Resolution. As in After Effects it is saved with the project (which becomes
     /// modified) but is no undo step, and it changes no pixels: the comp's cached frames stay
     /// valid ([`effectcraft_project::Comp::same_pixels`]).
-    pub fn set_resolution(&mut self, comp: ItemId, r: effectcraft_project::Resolution) -> Result<()> {
-        if self.project.comp(comp).ok_or(EngineError::NoComp)?.resolution == r {
+    pub fn set_resolution(
+        &mut self,
+        comp: ItemId,
+        r: effectcraft_project::Resolution,
+    ) -> Result<()> {
+        if self
+            .project
+            .comp(comp)
+            .ok_or(EngineError::NoComp)?
+            .resolution
+            == r
+        {
             return Ok(());
         }
-        Arc::make_mut(&mut self.project).comp_mut(comp).ok_or(EngineError::NoComp)?.resolution = r;
+        Arc::make_mut(&mut self.project)
+            .comp_mut(comp)
+            .ok_or(EngineError::NoComp)?
+            .resolution = r;
         self.bump();
         Ok(())
     }
@@ -722,8 +769,15 @@ impl Session {
     /// Keep what lives outside the undo history (each comp's Resolution) as it is in `from`, the
     /// project before undo, redo or a history jump restored another state.
     pub(crate) fn keep_view_settings(&mut self, from: &Project) {
-        let keep: Vec<(ItemId, effectcraft_project::Resolution)> =
-            self.project.comps().filter_map(|(id, c)| from.comp(*id).map(|f| (*id, f.resolution)).filter(|(_, r)| *r != c.resolution)).collect();
+        let keep: Vec<(ItemId, effectcraft_project::Resolution)> = self
+            .project
+            .comps()
+            .filter_map(|(id, c)| {
+                from.comp(*id)
+                    .map(|f| (*id, f.resolution))
+                    .filter(|(_, r)| *r != c.resolution)
+            })
+            .collect();
         if keep.is_empty() {
             return;
         }
@@ -736,7 +790,9 @@ impl Session {
     }
 
     pub fn undo(&mut self) -> bool {
-        let Some((label, p)) = self.history.undo.pop() else { return false };
+        let Some((label, p)) = self.history.undo.pop() else {
+            return false;
+        };
         let cur = std::mem::replace(&mut self.project, p);
         self.keep_view_settings(&cur);
         self.history.redo.push((label, cur));
@@ -747,7 +803,9 @@ impl Session {
     }
 
     pub fn redo(&mut self) -> bool {
-        let Some((label, p)) = self.history.redo.pop() else { return false };
+        let Some((label, p)) = self.history.redo.pop() else {
+            return false;
+        };
         let cur = std::mem::replace(&mut self.project, p);
         self.keep_view_settings(&cur);
         self.history.undo.push((label, cur));
@@ -769,14 +827,22 @@ impl Session {
             self.state.selected_layers.retain(|l| ids.contains(l));
             self.state.selected_props.retain(|(l, _)| ids.contains(l));
             self.state.selected_keys.retain(|k| ids.contains(&k.layer));
-            self.state.selected_vertices.retain(|v| ids.contains(&v.layer));
+            self.state
+                .selected_vertices
+                .retain(|v| ids.contains(&v.layer));
         }
         if let Some((l, t)) = self.state.current_track
-            && self.active_comp().and_then(|c| c.layer(l)).and_then(|l| l.tracker(t)).is_none()
+            && self
+                .active_comp()
+                .and_then(|c| c.layer(l))
+                .and_then(|l| l.tracker(t))
+                .is_none()
         {
             self.state.current_track = None;
         }
-        self.state.project_selection.retain(|i| p.item(*i).is_some());
+        self.state
+            .project_selection
+            .retain(|i| p.item(*i).is_some());
         commands::text_edit::sanitize(self);
     }
 
@@ -805,7 +871,9 @@ impl Session {
         self.project.comp_arc(self.state.active_comp?)
     }
     pub fn active_comp_id(&self) -> Option<ItemId> {
-        self.state.active_comp.filter(|c| self.project.comp(*c).is_some())
+        self.state
+            .active_comp
+            .filter(|c| self.project.comp(*c).is_some())
     }
 
     /// Current time of a comp.
@@ -815,14 +883,19 @@ impl Session {
 
     /// Current time of the active comp.
     pub fn time(&self) -> Tick {
-        self.state.active_comp.and_then(|c| self.state.times.get(&c).copied()).unwrap_or(Tick::ZERO)
+        self.state
+            .active_comp
+            .and_then(|c| self.state.times.get(&c).copied())
+            .unwrap_or(Tick::ZERO)
     }
 
     pub fn set_time(&mut self, t: Tick) {
         if let Some(c) = self.state.active_comp {
             let comp = self.project.comp(c);
             let t = match comp {
-                Some(comp) => comp.frame_rate.snap_nearest(t.clamp(Tick::ZERO, comp.duration - comp.frame_duration())),
+                Some(comp) => comp
+                    .frame_rate
+                    .snap_nearest(t.clamp(Tick::ZERO, comp.duration - comp.frame_duration())),
                 None => t,
             };
             self.state.times.insert(c, t);
@@ -843,7 +916,9 @@ impl Session {
             if cid != comp {
                 found.push((cid, ct));
             }
-            let Some(c) = self.project.comp(cid) else { continue };
+            let Some(c) = self.project.comp(cid) else {
+                continue;
+            };
             // Down: the comps this one nests.
             for l in &c.layers {
                 if let effectcraft_project::LayerSource::Comp { item } = &l.source
@@ -864,7 +939,10 @@ impl Session {
         }
         for (cid, ct) in found {
             if let Some(c) = self.project.comp(cid) {
-                let ct = c.frame_rate.snap_nearest(ct.clamp(Tick::ZERO, (c.duration - c.frame_duration()).max(Tick::ZERO)));
+                let ct = c.frame_rate.snap_nearest(ct.clamp(
+                    Tick::ZERO,
+                    (c.duration - c.frame_duration()).max(Tick::ZERO),
+                ));
                 self.state.times.insert(cid, ct);
             }
         }
@@ -891,7 +969,10 @@ impl Session {
 
     /// The open compositions, as a project file records them ([`effectcraft_project::SavedView`]).
     pub fn saved_view(&self) -> effectcraft_project::SavedView {
-        effectcraft_project::SavedView { active_comp: self.state.active_comp, open_comps: self.state.open_comps.clone() }
+        effectcraft_project::SavedView {
+            active_comp: self.state.active_comp,
+            open_comps: self.state.open_comps.clone(),
+        }
     }
 
     /// Reopen the compositions a project file was saved with (#748). Ids that no longer name a
@@ -899,18 +980,32 @@ impl Session {
     /// opened (its first), as files from before the view was saved do.
     pub fn restore_view(&mut self, view: &effectcraft_project::SavedView) {
         let mut open: Vec<ItemId> = Vec::new();
-        for id in view.open_comps.iter().copied().filter(|id| self.project.comp(*id).is_some()) {
+        for id in view
+            .open_comps
+            .iter()
+            .copied()
+            .filter(|id| self.project.comp(*id).is_some())
+        {
             if !open.contains(&id) {
                 open.push(id);
             }
         }
-        let Some(active) = view.active_comp.filter(|id| self.project.comp(*id).is_some()).or_else(|| open.first().copied()) else { return };
+        let Some(active) = view
+            .active_comp
+            .filter(|id| self.project.comp(*id).is_some())
+            .or_else(|| open.first().copied())
+        else {
+            return;
+        };
         self.state.open_comps = open;
         self.open_comp(active);
     }
 
     pub fn toast(&mut self, msg: impl Into<String>) {
-        self.events.push(Event::Toast { message: msg.into(), error: false });
+        self.events.push(Event::Toast {
+            message: msg.into(),
+            error: false,
+        });
     }
 
     pub fn drain_events(&mut self) -> Vec<Event> {
@@ -923,12 +1018,19 @@ impl Session {
         if !c.has_3d() {
             return None;
         }
-        self.state.views3d.get(&comp)?.override_camera(c.width as f64, c.height as f64)
+        self.state
+            .views3d
+            .get(&comp)?
+            .override_camera(c.width as f64, c.height as f64)
     }
 
     /// Render a comp frame with the session's footage + expression hosts.
     pub fn render(&self, comp: ItemId, t: Tick, opts: RenderOpts) -> Image {
-        let opts = RenderOpts { nested_switches: self.prefs.general.switches_affect_nested_comps, draft_shadows: self.prefs.three_d.realtime_shadows, ..opts };
+        let opts = RenderOpts {
+            nested_switches: self.prefs.general.switches_affect_nested_comps,
+            draft_shadows: self.prefs.three_d.realtime_shadows,
+            ..opts
+        };
         let mut r = Renderer::new(&self.project, self.footage.as_ref(), opts);
         r.expr = self.expr.as_deref();
         r.cache = Some(&self.layer_cache);
@@ -947,11 +1049,28 @@ impl Session {
 
     /// Render a comp frame (comp time `t`) as opaque 8-bit RGBA over the comp background, scaled
     /// so the longest side is at most `max_side` pixels (0 = full size). Returns (width, height, rgba).
-    pub fn render_rgba8(&self, comp: ItemId, t: Tick, max_side: u32) -> Result<(u32, u32, Vec<u8>)> {
+    pub fn render_rgba8(
+        &self,
+        comp: ItemId,
+        t: Tick,
+        max_side: u32,
+    ) -> Result<(u32, u32, Vec<u8>)> {
         let c = self.project.comp(comp).ok_or(EngineError::NoComp)?;
         let long = c.width.max(c.height).max(1) as f64;
-        let scale = if max_side == 0 { 1.0 } else { (max_side as f64 / long).min(1.0) };
-        let img = self.render(comp, t, RenderOpts { scale, backend: effectcraft_render::Backend::Auto, ..Default::default() });
+        let scale = if max_side == 0 {
+            1.0
+        } else {
+            (max_side as f64 / long).min(1.0)
+        };
+        let img = self.render(
+            comp,
+            t,
+            RenderOpts {
+                scale,
+                backend: effectcraft_render::Backend::Auto,
+                ..Default::default()
+            },
+        );
         Ok((img.width, img.height, img.to_rgba8_over(c.background)))
     }
 
@@ -963,9 +1082,17 @@ impl Session {
         let footage = self.footage.clone();
         match &it.kind {
             effectcraft_project::ItemKind::Comp(c) => {
-                let (project, expr, cache) = (self.project.clone(), self.expr.clone(), self.layer_cache.clone());
+                let (project, expr, cache) = (
+                    self.project.clone(),
+                    self.expr.clone(),
+                    self.layer_cache.clone(),
+                );
                 let long = c.width.max(c.height).max(1) as f64;
-                let scale = if max_side == 0 { 1.0 } else { (max_side as f64 / long).min(1.0) };
+                let scale = if max_side == 0 {
+                    1.0
+                } else {
+                    (max_side as f64 / long).min(1.0)
+                };
                 let opts = RenderOpts {
                     scale,
                     nested_switches: self.prefs.general.switches_affect_nested_comps,
@@ -986,7 +1113,9 @@ impl Session {
                 Some(Box::new(move || {
                     let img = footage.frame(item, &f, Tick(0))?;
                     // Point-sample down to at most `max_side` on the long side.
-                    let step = (img.width.max(img.height) as f32 / max_side.max(1) as f32).ceil().max(1.0) as u32;
+                    let step = (img.width.max(img.height) as f32 / max_side.max(1) as f32)
+                        .ceil()
+                        .max(1.0) as u32;
                     let (w, h) = (img.width.div_ceil(step), img.height.div_ceil(step));
                     let full = img.to_rgba8();
                     let mut px = Vec::with_capacity((w * h * 4) as usize);
@@ -1005,14 +1134,32 @@ impl Session {
 
     /// [`Session::render_rgba8`], or with `transparent` the frame's own straight alpha (what a
     /// render with RGB + Alpha channels writes) instead of compositing over the background.
-    pub fn render_rgba8_alpha(&self, comp: ItemId, t: Tick, max_side: u32, transparent: bool) -> Result<(u32, u32, Vec<u8>)> {
+    pub fn render_rgba8_alpha(
+        &self,
+        comp: ItemId,
+        t: Tick,
+        max_side: u32,
+        transparent: bool,
+    ) -> Result<(u32, u32, Vec<u8>)> {
         if !transparent {
             return self.render_rgba8(comp, t, max_side);
         }
         let c = self.project.comp(comp).ok_or(EngineError::NoComp)?;
         let long = c.width.max(c.height).max(1) as f64;
-        let scale = if max_side == 0 { 1.0 } else { (max_side as f64 / long).min(1.0) };
-        let img = self.render(comp, t, RenderOpts { scale, backend: effectcraft_render::Backend::Auto, ..Default::default() });
+        let scale = if max_side == 0 {
+            1.0
+        } else {
+            (max_side as f64 / long).min(1.0)
+        };
+        let img = self.render(
+            comp,
+            t,
+            RenderOpts {
+                scale,
+                backend: effectcraft_render::Backend::Auto,
+                ..Default::default()
+            },
+        );
         Ok((img.width, img.height, img.to_rgba8()))
     }
 
@@ -1044,7 +1191,11 @@ impl Session {
         upgrade_effects(&mut p);
         self.project = Arc::new(p);
         self.history = History::default();
-        self.state = EditorState { snapping: true, view_layout: 1, ..Default::default() };
+        self.state = EditorState {
+            snapping: true,
+            view_layout: 1,
+            ..Default::default()
+        };
         self.path = path;
         self.bump();
         self.mark_saved();
@@ -1071,23 +1222,45 @@ pub fn upgrade_effects(p: &mut Project) {
     }
     let mut next = p.next_id;
     for (cid, it) in p.items.iter_mut() {
-        let effectcraft_project::ItemKind::Comp(c) = &mut it.kind else { continue };
+        let effectcraft_project::ItemKind::Comp(c) = &mut it.kind else {
+            continue;
+        };
         for l in &mut std::sync::Arc::make_mut(c).layers {
-            let (size, origin) = bounds.get(&(*cid, l.id)).copied().unwrap_or(([100.0, 100.0], [0.0; 2]));
+            let (size, origin) = bounds
+                .get(&(*cid, l.id))
+                .copied()
+                .unwrap_or(([100.0, 100.0], [0.0; 2]));
             // Effect space starts at the bounds' top-left: positions move by minus that corner.
             // Adjustment layers run their effects on the comp below as it is: nothing moves.
             let shift = |o: [f64; 2]| [-o[0], -o[1]];
-            let d = if l.switches.adjustment { [0.0; 2] } else { shift(origin) };
+            let d = if l.switches.adjustment {
+                [0.0; 2]
+            } else {
+                shift(origin)
+            };
             let clone_d = |src: Option<u64>| match src {
-                Some(id) => bounds.get(&(*cid, effectcraft_project::LayerId(id))).map_or([0.0; 2], |b| shift(b.1)),
+                Some(id) => bounds
+                    .get(&(*cid, effectcraft_project::LayerId(id)))
+                    .map_or([0.0; 2], |b| shift(b.1)),
                 None => d,
             };
-            let Some(fx) = l.props.sub_mut("effects") else { continue };
+            let Some(fx) = l.props.sub_mut("effects") else {
+                continue;
+            };
             for n in &mut fx.children {
-                let effectcraft_project::Node::Group(g) = n else { continue };
-                let effectcraft_project::GroupKind::Effect { effect } = &g.kind else { continue };
+                let effectcraft_project::Node::Group(g) = n else {
+                    continue;
+                };
+                let effectcraft_project::GroupKind::Effect { effect } = &g.kind else {
+                    continue;
+                };
                 if let Some(spec) = effectcraft_effects::find(effect) {
-                    effectcraft_effects::migrate::upgrade_instance(spec, g, &mut effectcraft_project::build::Ids(&mut next), size);
+                    effectcraft_effects::migrate::upgrade_instance(
+                        spec,
+                        g,
+                        &mut effectcraft_project::build::Ids(&mut next),
+                        size,
+                    );
                     if to_effect_space {
                         effectcraft_effects::migrate::to_effect_space(spec, g, size, d, &clone_d);
                     }
@@ -1196,7 +1369,10 @@ pub fn animation_presets() -> Vec<(String, String, String)> {
 }
 
 pub fn text_families() -> Vec<String> {
-    effectcraft_text::families().into_iter().map(|(f, _)| f).collect()
+    effectcraft_text::families()
+        .into_iter()
+        .map(|(f, _)| f)
+        .collect()
 }
 
 /// The styles a family offers (its own faces, in weight order), for the style menus. A family
@@ -1207,7 +1383,12 @@ pub fn font_styles(family: &str) -> Vec<String> {
         .find(|(f, _)| f.eq_ignore_ascii_case(family))
         .map(|(_, st)| st)
         .filter(|st| !st.is_empty())
-        .unwrap_or_else(|| ["Regular", "Medium", "SemiBold", "Bold", "Italic"].iter().map(|s| s.to_string()).collect())
+        .unwrap_or_else(|| {
+            ["Regular", "Medium", "SemiBold", "Bold", "Italic"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect()
+        })
 }
 
 /// The OpenType feature tags (GSUB / GPOS) of the face a family + style resolves to.
@@ -1232,7 +1413,11 @@ pub struct FontRow {
 /// the font menu's preview (Settings ▸ Type ▸ Show Font Preview).
 pub fn font_preview(family: &str, size: f64) -> Vec<Vec<[f32; 2]>> {
     use kurbo::PathEl;
-    let st = effectcraft_keyframe::text_doc::CharStyle { font: family.to_string(), size, ..Default::default() };
+    let st = effectcraft_keyframe::text_doc::CharStyle {
+        font: family.to_string(),
+        size,
+        ..Default::default()
+    };
     let mut out = vec![];
     let mut x = 0.0;
     for ch in "Sample".chars() {
@@ -1270,7 +1455,11 @@ pub fn font_preview(family: &str, size: f64) -> Vec<Vec<[f32; 2]>> {
 /// for the menu's Variable Fonts filter.
 pub fn font_menu(prefs: &prefs::Prefs) -> Vec<FontRow> {
     let all = text_families();
-    let native = if prefs.type_.font_names_in_english { Default::default() } else { effectcraft_text::fonts::native_families() };
+    let native = if prefs.type_.font_names_in_english {
+        Default::default()
+    } else {
+        effectcraft_text::fonts::native_families()
+    };
     let variable = effectcraft_text::fonts::variable_families();
     let row = |f: &String, recent: bool| FontRow {
         family: f.clone(),
@@ -1278,9 +1467,19 @@ pub fn font_menu(prefs: &prefs::Prefs) -> Vec<FontRow> {
         recent,
         variable: variable.contains(f),
     };
-    let mut out: Vec<FontRow> = prefs.recent_fonts_shown().iter().filter(|f| all.contains(f)).map(|f| row(f, true)).collect();
+    let mut out: Vec<FontRow> = prefs
+        .recent_fonts_shown()
+        .iter()
+        .filter(|f| all.contains(f))
+        .map(|f| row(f, true))
+        .collect();
     if !out.is_empty() {
-        out.push(FontRow { family: String::new(), display: "-".into(), recent: false, variable: false });
+        out.push(FontRow {
+            family: String::new(),
+            display: "-".into(),
+            recent: false,
+            variable: false,
+        });
     }
     out.extend(all.iter().map(|f| row(f, false)));
     out

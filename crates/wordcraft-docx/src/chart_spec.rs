@@ -16,7 +16,8 @@ const NS_C: &str = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 const NS_A: &str = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const NS_R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 /// Content type of a chart part.
-pub(crate) const CHART_CT: &str = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
+pub(crate) const CHART_CT: &str =
+    "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 /// `a:graphicData` URI of a chart.
 pub(crate) const CHART_URI: &str = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 /// Axis ids (any pair of distinct numbers will do; Word keeps them).
@@ -27,7 +28,10 @@ const VAL_AX: &str = "500000002";
 /// ([`ChartSpec::sanitize`]); a value that isn't finite is written as a gap either way.
 pub fn chart_xml(spec: &ChartSpec) -> String {
     let mut w = W::new();
-    w.open("c:chartSpace", &[("xmlns:c", NS_C), ("xmlns:a", NS_A), ("xmlns:r", NS_R)]);
+    w.open(
+        "c:chartSpace",
+        &[("xmlns:c", NS_C), ("xmlns:a", NS_A), ("xmlns:r", NS_R)],
+    );
     w.empty("c:roundedCorners", &[("val", "0")]);
     w.open("c:chart", &[]);
     if let Some(t) = &spec.title {
@@ -46,7 +50,10 @@ pub fn chart_xml(spec: &ChartSpec) -> String {
         w.empty("c:overlay", &[("val", "0")]);
         w.close("c:title");
     }
-    w.empty("c:autoTitleDeleted", &[("val", if spec.title.is_some() { "0" } else { "1" })]);
+    w.empty(
+        "c:autoTitleDeleted",
+        &[("val", if spec.title.is_some() { "0" } else { "1" })],
+    );
     w.open("c:plotArea", &[]);
     w.empty("c:layout", &[]);
     plot(&mut w, spec);
@@ -92,7 +99,9 @@ pub fn chart_items(spec: &ChartSpec, theme: &[Rgb], w: f32, h: f32) -> Vec<Graph
 fn plot(w: &mut W, spec: &ChartSpec) {
     let k = spec.kind;
     let el = match k {
-        ChartType::Column | ChartType::ColumnStacked | ChartType::Bar | ChartType::BarStacked => "c:barChart",
+        ChartType::Column | ChartType::ColumnStacked | ChartType::Bar | ChartType::BarStacked => {
+            "c:barChart"
+        }
         ChartType::Line => "c:lineChart",
         ChartType::Area => "c:areaChart",
         ChartType::Pie => "c:pieChart",
@@ -104,14 +113,23 @@ fn plot(w: &mut W, spec: &ChartSpec) {
     w.open(el, &[]);
     match k {
         ChartType::Column | ChartType::ColumnStacked | ChartType::Bar | ChartType::BarStacked => {
-            w.empty("c:barDir", &[("val", if horizontal { "bar" } else { "col" })]);
-            w.empty("c:grouping", &[("val", if stacked { "stacked" } else { "clustered" })]);
+            w.empty(
+                "c:barDir",
+                &[("val", if horizontal { "bar" } else { "col" })],
+            );
+            w.empty(
+                "c:grouping",
+                &[("val", if stacked { "stacked" } else { "clustered" })],
+            );
         }
         ChartType::Line | ChartType::Area => w.empty("c:grouping", &[("val", "standard")]),
         ChartType::Scatter => w.empty("c:scatterStyle", &[("val", "lineMarker")]),
         ChartType::Pie | ChartType::Doughnut => {}
     }
-    w.empty("c:varyColors", &[("val", if k.is_round() { "1" } else { "0" })]);
+    w.empty(
+        "c:varyColors",
+        &[("val", if k.is_round() { "1" } else { "0" })],
+    );
     // Pie and doughnut charts show the first series; the others are kept for other types.
     for (i, s) in spec.series.iter().enumerate() {
         series(w, spec, i, s);
@@ -158,7 +176,14 @@ fn plot(w: &mut W, spec: &ChartSpec) {
         }
         _ => {
             category_axis(w, if horizontal { "l" } else { "b" });
-            value_axis(w, VAL_AX, CAT_AX, if horizontal { "b" } else { "l" }, true, "between");
+            value_axis(
+                w,
+                VAL_AX,
+                CAT_AX,
+                if horizontal { "b" } else { "l" },
+                true,
+                "between",
+            );
         }
     }
 }
@@ -198,7 +223,13 @@ fn series(w: &mut W, spec: &ChartSpec, i: usize, s: &ChartSeries) {
         let xs: Option<Vec<Option<f64>>> = spec
             .categories
             .iter()
-            .map(|c| if c.is_empty() { Some(None) } else { c.parse::<f64>().ok().filter(|v| v.is_finite()).map(Some) })
+            .map(|c| {
+                if c.is_empty() {
+                    Some(None)
+                } else {
+                    c.parse::<f64>().ok().filter(|v| v.is_finite()).map(Some)
+                }
+            })
             .collect();
         w.open("c:xVal", &[]);
         match xs {
@@ -250,7 +281,11 @@ fn num_lit(w: &mut W, values: &[Option<f64>]) {
 
 /// A value as the shortest text that reads back as the same number.
 fn num(v: f64) -> String {
-    if v == 0.0 { "0".to_string() } else { format!("{v}") }
+    if v == 0.0 {
+        "0".to_string()
+    } else {
+        format!("{v}")
+    }
 }
 
 fn category_axis(w: &mut W, pos: &str) {
@@ -308,9 +343,17 @@ pub(crate) fn spec_of(space: &El) -> Option<ChartSpec> {
     let plot = chart.child("c:plotArea")?;
     let ty = plot.els().find(|e| e.name.ends_with("Chart"))?;
     let val = |e: &El, n: &str| e.child(n).and_then(|c| c.attr("val")).map(str::to_string);
-    let bar = |stacked_kind, clustered_kind| if val(ty, "c:grouping").as_deref() == Some("stacked") { stacked_kind } else { clustered_kind };
+    let bar = |stacked_kind, clustered_kind| {
+        if val(ty, "c:grouping").as_deref() == Some("stacked") {
+            stacked_kind
+        } else {
+            clustered_kind
+        }
+    };
     let kind = match ty.name.as_str() {
-        "c:barChart" if val(ty, "c:barDir").as_deref() == Some("bar") => bar(ChartType::BarStacked, ChartType::Bar),
+        "c:barChart" if val(ty, "c:barDir").as_deref() == Some("bar") => {
+            bar(ChartType::BarStacked, ChartType::Bar)
+        }
         "c:barChart" => bar(ChartType::ColumnStacked, ChartType::Column),
         "c:lineChart" => ChartType::Line,
         "c:areaChart" => ChartType::Area,
@@ -320,9 +363,17 @@ pub(crate) fn spec_of(space: &El) -> Option<ChartSpec> {
         _ => return None,
     };
     let scatter = kind == ChartType::Scatter;
-    let sers: Vec<&El> = ty.children("c:ser").take(wordcraft_doc::chart::MAX_SERIES + 1).collect();
+    let sers: Vec<&El> = ty
+        .children("c:ser")
+        .take(wordcraft_doc::chart::MAX_SERIES + 1)
+        .collect();
     // More than the model holds can't be the same chart: don't build it to find out.
-    let count = |s: &&El| s.find("c:ptCount").and_then(|c| c.attr("val")).and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+    let count = |s: &&El| {
+        s.find("c:ptCount")
+            .and_then(|c| c.attr("val"))
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(0)
+    };
     let longest = sers.iter().map(count).max().unwrap_or(0);
     if sers.len() > wordcraft_doc::chart::MAX_SERIES
         || longest > wordcraft_doc::chart::MAX_POINTS
@@ -330,11 +381,19 @@ pub(crate) fn spec_of(space: &El) -> Option<ChartSpec> {
     {
         return None;
     }
-    let categories = sers.first().and_then(|s| s.child(if scatter { "c:xVal" } else { "c:cat" })).map(literal).unwrap_or_default();
+    let categories = sers
+        .first()
+        .and_then(|s| s.child(if scatter { "c:xVal" } else { "c:cat" }))
+        .map(literal)
+        .unwrap_or_default();
     let series = sers
         .iter()
         .map(|s| ChartSeries {
-            name: s.child("c:tx").and_then(|t| t.child("c:v")).map(|v| v.text()).unwrap_or_default(),
+            name: s
+                .child("c:tx")
+                .and_then(|t| t.child("c:v"))
+                .map(|v| v.text())
+                .unwrap_or_default(),
             values: s
                 .child(if scatter { "c:yVal" } else { "c:val" })
                 .map(literal)
@@ -344,15 +403,32 @@ pub(crate) fn spec_of(space: &El) -> Option<ChartSpec> {
                 .collect(),
         })
         .collect();
-    let title = chart.child("c:title").and_then(|t| t.find("a:t")).map(|t| t.text());
-    let legend = chart.child("c:legend").map(|l| match val(l, "c:legendPos").as_deref() {
-        Some("l") => LegendPos::Left,
-        Some("t") => LegendPos::Top,
-        Some("b") => LegendPos::Bottom,
-        _ => LegendPos::Right,
-    });
-    let data_labels = ty.child("c:dLbls").and_then(|d| d.child("c:showVal")).and_then(|v| v.attr("val")) == Some("1");
-    let spec = ChartSpec { kind, categories, series, title, legend, data_labels }.sanitized();
+    let title = chart
+        .child("c:title")
+        .and_then(|t| t.find("a:t"))
+        .map(|t| t.text());
+    let legend = chart
+        .child("c:legend")
+        .map(|l| match val(l, "c:legendPos").as_deref() {
+            Some("l") => LegendPos::Left,
+            Some("t") => LegendPos::Top,
+            Some("b") => LegendPos::Bottom,
+            _ => LegendPos::Right,
+        });
+    let data_labels = ty
+        .child("c:dLbls")
+        .and_then(|d| d.child("c:showVal"))
+        .and_then(|v| v.attr("val"))
+        == Some("1");
+    let spec = ChartSpec {
+        kind,
+        categories,
+        series,
+        title,
+        legend,
+        data_labels,
+    }
+    .sanitized();
     // Editable only when nothing would be lost: writing the model again gives the same part.
     let again = xml::parse(chart_xml(&spec).as_bytes()).ok()?;
     same(space, &again, 0).then_some(spec)
@@ -360,7 +436,12 @@ pub(crate) fn spec_of(space: &El) -> Option<ChartSpec> {
 
 /// The points of a `c:strLit` / `c:numLit` (or a cache) as texts by index, `ptCount` long.
 fn literal(e: &El) -> Vec<String> {
-    let Some(lit) = e.els().find(|c| matches!(c.name.as_str(), "c:strLit" | "c:numLit")) else { return Vec::new() };
+    let Some(lit) = e
+        .els()
+        .find(|c| matches!(c.name.as_str(), "c:strLit" | "c:numLit"))
+    else {
+        return Vec::new();
+    };
     let n = lit
         .child("c:ptCount")
         .and_then(|c| c.attr("val"))
@@ -369,7 +450,11 @@ fn literal(e: &El) -> Vec<String> {
         .min(wordcraft_doc::chart::MAX_POINTS + 1);
     let mut out = vec![String::new(); n];
     for p in lit.children("c:pt") {
-        if let Some(slot) = p.attr("idx").and_then(|i| i.parse::<usize>().ok()).and_then(|i| out.get_mut(i)) {
+        if let Some(slot) = p
+            .attr("idx")
+            .and_then(|i| i.parse::<usize>().ok())
+            .and_then(|i| out.get_mut(i))
+        {
             *slot = p.child("c:v").map(|v| v.text()).unwrap_or_default();
         }
     }
@@ -382,7 +467,11 @@ fn same(a: &El, b: &El, depth: usize) -> bool {
     if depth > MAX_DEPTH || a.name != b.name || a.attrs.len() != b.attrs.len() {
         return false;
     }
-    if !a.attrs.iter().all(|(k, v)| b.attr(k) == Some(v.as_str()) && b.attrs.iter().any(|(bk, _)| bk == k)) {
+    if !a
+        .attrs
+        .iter()
+        .all(|(k, v)| b.attr(k) == Some(v.as_str()) && b.attrs.iter().any(|(bk, _)| bk == k))
+    {
         return false;
     }
     let text = |e: &El| -> String {
@@ -432,16 +521,25 @@ mod tests {
             spec.categories[2] = String::new();
             let spec = spec.sanitized();
             assert_eq!(spec_of(&parse(&spec)).as_ref(), Some(&spec), "{kind:?}");
-            assert!(!chart_items(&spec, &THEME_COLORS, 300.0, 200.0).is_empty(), "{kind:?} draws");
+            assert!(
+                !chart_items(&spec, &THEME_COLORS, 300.0, 200.0).is_empty(),
+                "{kind:?} draws"
+            );
         }
-        let plain = ChartSpec { legend: None, ..ChartSpec::sample(ChartType::Line) };
+        let plain = ChartSpec {
+            legend: None,
+            ..ChartSpec::sample(ChartType::Line)
+        };
         assert_eq!(spec_of(&parse(&plain)), Some(plain));
     }
 
     #[test]
     fn a_chart_with_more_than_the_model_stays_read_only() {
         let spec = ChartSpec::sample(ChartType::Column);
-        let x = chart_xml(&spec).replace("<c:roundedCorners val=\"0\"/>", "<c:roundedCorners val=\"0\"/><c:style val=\"2\"/>");
+        let x = chart_xml(&spec).replace(
+            "<c:roundedCorners val=\"0\"/>",
+            "<c:roundedCorners val=\"0\"/><c:style val=\"2\"/>",
+        );
         assert_eq!(spec_of(&xml::parse(x.as_bytes()).unwrap()), None);
         let x = chart_xml(&spec).replace("<c:v>3.2</c:v>", "<c:v>3.20</c:v>");
         assert_eq!(spec_of(&xml::parse(x.as_bytes()).unwrap()), None);
@@ -455,15 +553,50 @@ mod tests {
         let space = parse(&spec);
         assert_eq!(names(&space), ["c:roundedCorners", "c:chart", "c:spPr"]);
         let chart = space.child("c:chart").unwrap();
-        assert_eq!(names(chart), ["c:title", "c:autoTitleDeleted", "c:plotArea", "c:legend", "c:plotVisOnly", "c:dispBlanksAs"]);
+        assert_eq!(
+            names(chart),
+            [
+                "c:title",
+                "c:autoTitleDeleted",
+                "c:plotArea",
+                "c:legend",
+                "c:plotVisOnly",
+                "c:dispBlanksAs"
+            ]
+        );
         let plot = chart.child("c:plotArea").unwrap();
-        assert_eq!(names(plot), ["c:layout", "c:barChart", "c:catAx", "c:valAx"]);
+        assert_eq!(
+            names(plot),
+            ["c:layout", "c:barChart", "c:catAx", "c:valAx"]
+        );
         let bar = plot.child("c:barChart").unwrap();
         assert_eq!(
             names(bar),
-            ["c:barDir", "c:grouping", "c:varyColors", "c:ser", "c:ser", "c:ser", "c:dLbls", "c:gapWidth", "c:overlap", "c:axId", "c:axId"]
+            [
+                "c:barDir",
+                "c:grouping",
+                "c:varyColors",
+                "c:ser",
+                "c:ser",
+                "c:ser",
+                "c:dLbls",
+                "c:gapWidth",
+                "c:overlap",
+                "c:axId",
+                "c:axId"
+            ]
         );
-        assert_eq!(names(bar.child("c:ser").unwrap()), ["c:idx", "c:order", "c:tx", "c:invertIfNegative", "c:cat", "c:val"]);
+        assert_eq!(
+            names(bar.child("c:ser").unwrap()),
+            [
+                "c:idx",
+                "c:order",
+                "c:tx",
+                "c:invertIfNegative",
+                "c:cat",
+                "c:val"
+            ]
+        );
         let val_ax = plot.child("c:valAx").unwrap();
         assert_eq!(
             names(val_ax),
@@ -482,16 +615,57 @@ mod tests {
                 "c:crossBetween"
             ]
         );
-        let line = parse(&ChartSpec { data_labels: true, ..ChartSpec::sample(ChartType::Line) });
-        let lc = line.child("c:chart").unwrap().child("c:plotArea").unwrap().child("c:lineChart").unwrap();
-        assert_eq!(names(lc), ["c:grouping", "c:varyColors", "c:ser", "c:ser", "c:ser", "c:dLbls", "c:marker", "c:axId", "c:axId"]);
-        assert_eq!(names(lc.child("c:ser").unwrap()), ["c:idx", "c:order", "c:tx", "c:marker", "c:cat", "c:val", "c:smooth"]);
+        let line = parse(&ChartSpec {
+            data_labels: true,
+            ..ChartSpec::sample(ChartType::Line)
+        });
+        let lc = line
+            .child("c:chart")
+            .unwrap()
+            .child("c:plotArea")
+            .unwrap()
+            .child("c:lineChart")
+            .unwrap();
+        assert_eq!(
+            names(lc),
+            [
+                "c:grouping",
+                "c:varyColors",
+                "c:ser",
+                "c:ser",
+                "c:ser",
+                "c:dLbls",
+                "c:marker",
+                "c:axId",
+                "c:axId"
+            ]
+        );
+        assert_eq!(
+            names(lc.child("c:ser").unwrap()),
+            [
+                "c:idx", "c:order", "c:tx", "c:marker", "c:cat", "c:val", "c:smooth"
+            ]
+        );
         let sc = parse(&ChartSpec::sample(ChartType::Scatter));
-        let sc = sc.child("c:chart").unwrap().child("c:plotArea").unwrap().child("c:scatterChart").unwrap();
-        assert_eq!(names(sc.child("c:ser").unwrap()), ["c:idx", "c:order", "c:tx", "c:spPr", "c:xVal", "c:yVal", "c:smooth"]);
+        let sc = sc
+            .child("c:chart")
+            .unwrap()
+            .child("c:plotArea")
+            .unwrap()
+            .child("c:scatterChart")
+            .unwrap();
+        assert_eq!(
+            names(sc.child("c:ser").unwrap()),
+            [
+                "c:idx", "c:order", "c:tx", "c:spPr", "c:xVal", "c:yVal", "c:smooth"
+            ]
+        );
         let dn = parse(&ChartSpec::sample(ChartType::Doughnut));
         let dn = dn.child("c:chart").unwrap().child("c:plotArea").unwrap();
         assert_eq!(names(dn), ["c:layout", "c:doughnutChart"]);
-        assert_eq!(names(dn.child("c:doughnutChart").unwrap()), ["c:varyColors", "c:ser", "c:firstSliceAng", "c:holeSize"]);
+        assert_eq!(
+            names(dn.child("c:doughnutChart").unwrap()),
+            ["c:varyColors", "c:ser", "c:firstSliceAng", "c:holeSize"]
+        );
     }
 }

@@ -78,7 +78,10 @@ pub fn parse_and_ingest(db: &mut Db, binary_id: i64, bytes: &[u8]) -> Result<Rtt
     let mut stats = RttiStats::default();
 
     // Trouve .rdata (lecture seule, données initialisées = RTTI vit là).
-    let rdata = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(".rdata")));
+    let rdata = pe
+        .sections
+        .iter()
+        .find(|s| s.name().is_ok_and(|n| n.starts_with(".rdata")));
     let Some(rdata_sec) = rdata else {
         warn!("section .rdata non trouvée dans le PE");
         return Ok(stats);
@@ -114,19 +117,25 @@ pub fn parse_and_ingest(db: &mut Db, binary_id: i64, bytes: &[u8]) -> Result<Rtt
 
     // Lit un u32 LE depuis `bytes` à l'offset `off`.
     let read_u32 = |off: usize| -> Option<u32> {
-        bytes.get(off..off + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+        bytes
+            .get(off..off + 4)
+            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
     };
 
     // Lit un u64 LE depuis `bytes` à l'offset `off`.
     let read_u64 = |off: usize| -> Option<u64> {
-        bytes.get(off..off + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+        bytes
+            .get(off..off + 8)
+            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
     };
 
     // Lit une chaîne C depuis `bytes` à l'offset `off` (jusqu'au premier 0).
     let read_cstr = |off: usize| -> Option<String> {
         let slice = bytes.get(off..)?;
         let end = slice.iter().position(|&b| b == 0)?;
-        std::str::from_utf8(&slice[..end]).ok().map(|s| s.to_owned())
+        std::str::from_utf8(&slice[..end])
+            .ok()
+            .map(|s| s.to_owned())
     };
 
     // Balayage de .rdata par alignement u32 (les COL sont alignés sur 4 octets).
@@ -237,8 +246,16 @@ pub fn parse_and_ingest(db: &mut Db, binary_id: i64, bytes: &[u8]) -> Result<Rtt
         std::collections::HashMap::with_capacity(classes.len());
 
     for cls in &classes {
-        let ns = if cls.namespace.is_empty() { None } else { Some(cls.namespace.as_str()) };
-        let mangled = if cls.mangled.is_empty() { None } else { Some(cls.mangled.as_str()) };
+        let ns = if cls.namespace.is_empty() {
+            None
+        } else {
+            Some(cls.namespace.as_str())
+        };
+        let mangled = if cls.mangled.is_empty() {
+            None
+        } else {
+            Some(cls.mangled.as_str())
+        };
 
         match ingest::rtti_class(&tx, binary_id, &cls.class_name, ns, mangled) {
             Ok(id) => {
@@ -256,10 +273,10 @@ pub fn parse_and_ingest(db: &mut Db, binary_id: i64, bytes: &[u8]) -> Result<Rtt
                         ],
                     );
                 }
-            },
+            }
             Err(e) => {
                 debug!("rtti_class ingest err pour '{}': {e}", cls.class_name);
-            },
+            }
         }
     }
 
@@ -299,8 +316,8 @@ pub fn parse_and_ingest(db: &mut Db, binary_id: i64, bytes: &[u8]) -> Result<Rtt
                         aphrody_nie_index::rusqlite::params![class_id, base_id],
                     );
                     stats.bases_ingested += 1;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
@@ -328,7 +345,10 @@ struct ClassRecord {
 /// Pour une classe dans l'espace de noms global c'est `.?AVFoo@@`.
 fn demangle_msvc_rtti(raw: &str) -> (String, String) {
     // Enlève le préfixe `.?AV` ou `.?AU`.
-    let inner = raw.strip_prefix(".?AV").or_else(|| raw.strip_prefix(".?AU")).unwrap_or(raw);
+    let inner = raw
+        .strip_prefix(".?AV")
+        .or_else(|| raw.strip_prefix(".?AU"))
+        .unwrap_or(raw);
 
     // Enlève le suffixe `@@` final.
     let inner = inner.strip_suffix("@@").unwrap_or(inner);
@@ -343,7 +363,12 @@ fn demangle_msvc_rtti(raw: &str) -> (String, String) {
     // Le namespace est la concaténation des parties suivantes, en ordre inverse
     // (les namespaces MSVC vont de l'intérieur vers l'extérieur).
     let namespace = if parts.len() > 1 {
-        parts[1..].iter().rev().cloned().collect::<Vec<_>>().join("::")
+        parts[1..]
+            .iter()
+            .rev()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("::")
     } else {
         String::new()
     };

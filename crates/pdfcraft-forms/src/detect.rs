@@ -62,7 +62,8 @@ impl DetectionPath {
         if self.points.iter().flatten().any(|v| !v.is_finite()) {
             return None;
         }
-        let near = |a: [f64; 2], b: [f64; 2]| (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6;
+        let near =
+            |a: [f64; 2], b: [f64; 2]| (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6;
         let mut points = self.points.as_slice();
         let repeated_end = points.len() > 1 && near(points[0], *points.last()?);
         if repeated_end {
@@ -87,15 +88,23 @@ impl DetectionPath {
         Some([
             points.iter().map(|p| p[0]).fold(f64::INFINITY, f64::min),
             points.iter().map(|p| p[1]).fold(f64::INFINITY, f64::min),
-            points.iter().map(|p| p[0]).fold(f64::NEG_INFINITY, f64::max),
-            points.iter().map(|p| p[1]).fold(f64::NEG_INFINITY, f64::max),
+            points
+                .iter()
+                .map(|p| p[0])
+                .fold(f64::NEG_INFINITY, f64::max),
+            points
+                .iter()
+                .map(|p| p[1])
+                .fold(f64::NEG_INFINITY, f64::max),
         ])
     }
 }
 
 pub fn page_shapes(doc: &Document, page: usize) -> Shapes {
     let mut out = Shapes::default();
-    let Some(p) = pdfcraft_model::pages(doc).into_iter().nth(page) else { return out };
+    let Some(p) = pdfcraft_model::pages(doc).into_iter().nth(page) else {
+        return out;
+    };
     let list: Vec<Object> = match p.dict.get(b"Contents").map(|c| doc.resolve(c)) {
         Some(c) => match &*c {
             Object::Array(a) => a.clone(),
@@ -129,7 +138,12 @@ pub fn page_shapes(doc: &Document, page: usize) -> Shapes {
             b"re" => {
                 path.finish(&mut subpaths);
                 if let Some([x, y, w, h]) = op.nums::<4>() {
-                    path_boxes.push(ctm.bbox([x.min(x + w), y.min(y + h), x.max(x + w), y.max(y + h)]));
+                    path_boxes.push(ctm.bbox([
+                        x.min(x + w),
+                        y.min(y + h),
+                        x.max(x + w),
+                        y.max(y + h),
+                    ]));
                     let (x, y) = ctm.apply(x, y);
                     cur = Some([x, y]);
                     path.complex = true;
@@ -165,14 +179,19 @@ pub fn page_shapes(doc: &Document, page: usize) -> Shapes {
                         }
                     }
                     if (a[1] - b[1]).abs() < 0.5 && (a[0] - b[0]).abs() > 1.0 {
-                        path.rules.push([a[0].min(b[0]), a[1], a[0].max(b[0]), a[1]]);
+                        path.rules
+                            .push([a[0].min(b[0]), a[1], a[0].max(b[0]), a[1]]);
                     }
                     cur = Some(b);
                 }
             }
             b"c" | b"v" | b"y" => {
                 path.complex = true;
-                let end = if op.op.as_slice() == b"c" { op.nums::<6>().map(|v| [v[4], v[5]]) } else { op.nums::<4>().map(|v| [v[2], v[3]]) };
+                let end = if op.op.as_slice() == b"c" {
+                    op.nums::<6>().map(|v| [v[4], v[5]])
+                } else {
+                    op.nums::<4>().map(|v| [v[2], v[3]])
+                };
                 if let Some([x, y]) = end {
                     let (x, y) = ctm.apply(x, y);
                     cur = Some([x, y]);
@@ -199,7 +218,8 @@ pub fn page_shapes(doc: &Document, page: usize) -> Shapes {
                 for r in path_boxes.drain(..) {
                     // A very flat filled rectangle is a rule.
                     if r[3] - r[1] < 1.5 && r[2] - r[0] > 1.0 {
-                        out.rules.push([r[0], (r[1] + r[3]) / 2.0, r[2], (r[1] + r[3]) / 2.0]);
+                        out.rules
+                            .push([r[0], (r[1] + r[3]) / 2.0, r[2], (r[1] + r[3]) / 2.0]);
                     } else {
                         out.boxes.push(r);
                     }
@@ -225,7 +245,16 @@ fn mid(r: [f64; 4]) -> f64 {
 
 /// A label's words made into a field name: letters, digits and spaces, no trailing colon.
 fn clean(label: &str) -> String {
-    let s: String = label.chars().map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '/' { c } else { ' ' }).collect();
+    let s: String = label
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == ' ' || c == '-' || c == '/' {
+                c
+            } else {
+                ' '
+            }
+        })
+        .collect();
     let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
     s.chars().take(40).collect::<String>().trim().to_string()
 }
@@ -236,9 +265,15 @@ fn label_for(words: &[Word], rect: [f64; 4], right_of: bool) -> String {
     let h = (rect[3] - rect[1]).max(8.0);
     let same_line = |w: &Word| (mid(w.rect) - mid(rect)).abs() < h.max(10.0) * 0.7;
     let mut left: Vec<&Word> = if right_of {
-        words.iter().filter(|w| same_line(w) && w.rect[0] >= rect[2] - 1.0 && w.rect[0] - rect[2] < 200.0).collect()
+        words
+            .iter()
+            .filter(|w| same_line(w) && w.rect[0] >= rect[2] - 1.0 && w.rect[0] - rect[2] < 200.0)
+            .collect()
     } else {
-        words.iter().filter(|w| same_line(w) && w.rect[2] <= rect[0] + 1.0 && rect[0] - w.rect[2] < 250.0).collect()
+        words
+            .iter()
+            .filter(|w| same_line(w) && w.rect[2] <= rect[0] + 1.0 && rect[0] - w.rect[2] < 250.0)
+            .collect()
     };
     left.sort_by(|a, b| a.rect[0].total_cmp(&b.rect[0]));
     if right_of {
@@ -274,31 +309,72 @@ fn label_for(words: &[Word], rect: [f64; 4], right_of: bool) -> String {
     // Above: the nearest line of words over the field's left part.
     let above: Vec<&Word> = words
         .iter()
-        .filter(|w| w.rect[1] >= rect[3] - 1.0 && w.rect[1] - rect[3] < 24.0 && w.rect[0] < rect[2] && w.rect[2] > rect[0] - 4.0)
+        .filter(|w| {
+            w.rect[1] >= rect[3] - 1.0
+                && w.rect[1] - rect[3] < 24.0
+                && w.rect[0] < rect[2]
+                && w.rect[2] > rect[0] - 4.0
+        })
         .collect();
-    let Some(line) = above.iter().map(|w| mid(w.rect)).min_by(|a, b| a.total_cmp(b)) else { return String::new() };
-    let mut on: Vec<&&Word> = above.iter().filter(|w| (mid(w.rect) - line).abs() < 3.0).collect();
+    let Some(line) = above
+        .iter()
+        .map(|w| mid(w.rect))
+        .min_by(|a, b| a.total_cmp(b))
+    else {
+        return String::new();
+    };
+    let mut on: Vec<&&Word> = above
+        .iter()
+        .filter(|w| (mid(w.rect) - line).abs() < 3.0)
+        .collect();
     on.sort_by(|a, b| a.rect[0].total_cmp(&b.rect[0]));
-    clean(&on.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" "))
+    clean(
+        &on.iter()
+            .map(|w| w.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
+    )
 }
 
 /// Propose fields for a page. `existing` are the page's widget rectangles (no candidate
 /// overlaps them); names are unique against `taken`.
-pub fn detect(words: &[Word], shapes: &Shapes, existing: &[[f64; 4]], taken: &[String]) -> Vec<Candidate> {
+pub fn detect(
+    words: &[Word],
+    shapes: &Shapes,
+    existing: &[[f64; 4]],
+    taken: &[String],
+) -> Vec<Candidate> {
     let mut out: Vec<Candidate> = Vec::new();
-    let overlaps = |a: [f64; 4], b: [f64; 4]| a[0] < b[2] - 1.0 && b[0] < a[2] - 1.0 && a[1] < b[3] - 1.0 && b[1] < a[3] - 1.0;
+    let overlaps = |a: [f64; 4], b: [f64; 4]| {
+        a[0] < b[2] - 1.0 && b[0] < a[2] - 1.0 && a[1] < b[3] - 1.0 && b[1] < a[3] - 1.0
+    };
     let push = |kind: Kind, rect: [f64; 4], label: String, out: &mut Vec<Candidate>| {
-        if existing.iter().chain(out.iter().map(|c| &c.rect)).any(|e| overlaps(*e, rect)) {
+        if existing
+            .iter()
+            .chain(out.iter().map(|c| &c.rect))
+            .any(|e| overlaps(*e, rect))
+        {
             return;
         }
-        out.push(Candidate { kind, rect, name: label });
+        out.push(Candidate {
+            kind,
+            rect,
+            name: label,
+        });
     };
     // Text that isn't underscores (labels), and underscore runs (blanks).
-    let (blanks, labels): (Vec<&Word>, Vec<&Word>) = words.iter().partition(|w| w.text.len() >= 3 && w.text.chars().all(|c| c == '_'));
+    let (blanks, labels): (Vec<&Word>, Vec<&Word>) = words
+        .iter()
+        .partition(|w| w.text.len() >= 3 && w.text.chars().all(|c| c == '_'));
     let labels: Vec<Word> = labels.into_iter().cloned().collect();
     for b in blanks {
         let h = (b.rect[3] - b.rect[1]).max(10.0);
-        let rect = [b.rect[0], b.rect[1], b.rect[2], b.rect[1] + (h * 1.4).clamp(12.0, 22.0)];
+        let rect = [
+            b.rect[0],
+            b.rect[1],
+            b.rect[2],
+            b.rect[1] + (h * 1.4).clamp(12.0, 22.0),
+        ];
         let l = label_for(&labels, rect, false);
         push(Kind::Text, rect, l, &mut out);
     }
@@ -360,7 +436,11 @@ pub fn detect(words: &[Word], shapes: &Shapes, existing: &[[f64; 4]], taken: &[S
         } else {
             c.name.clone()
         };
-        let mut name = if c.name.is_empty() { format!("{base}1") } else { base.clone() };
+        let mut name = if c.name.is_empty() {
+            format!("{base}1")
+        } else {
+            base.clone()
+        };
         let mut n = 1;
         while used.contains(&name) {
             n += 1;

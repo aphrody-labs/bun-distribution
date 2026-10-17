@@ -2,7 +2,14 @@
 //!
 //! Colours keep the model the user picked them in (RGB, CMYK, Gray, HSB is a UI view of RGB), so
 //! documents don't drift when converting back and forth. Rendering asks for [`Color::to_rgba`].
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod ase;
@@ -34,14 +41,26 @@ impl Default for Color {
 }
 
 impl Color {
-    pub const BLACK: Color = Color::Rgb { r: 0.0, g: 0.0, b: 0.0 };
-    pub const WHITE: Color = Color::Rgb { r: 1.0, g: 1.0, b: 1.0 };
+    pub const BLACK: Color = Color::Rgb {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+    };
+    pub const WHITE: Color = Color::Rgb {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+    };
 
     pub fn rgb(r: f32, g: f32, b: f32) -> Self {
         Color::Rgb { r, g, b }
     }
     pub fn rgb8(r: u8, g: u8, b: u8) -> Self {
-        Color::Rgb { r: r as f32 / 255.0, g: g as f32 / 255.0, b: b as f32 / 255.0 }
+        Color::Rgb {
+            r: r as f32 / 255.0,
+            g: g as f32 / 255.0,
+            b: b as f32 / 255.0,
+        }
     }
     pub fn cmyk(c: f32, m: f32, y: f32, k: f32) -> Self {
         Color::Cmyk { c, m, y, k }
@@ -56,7 +75,9 @@ impl Color {
     pub fn to_rgb(&self) -> [f32; 3] {
         match *self {
             Color::Rgb { r, g, b } if cms::rgb_is_srgb() => [r, g, b],
-            Color::Cmyk { c, m, y, k } if cms::cmyk_is_device() => cms::naive_cmyk_to_rgb([c, m, y, k]),
+            Color::Cmyk { c, m, y, k } if cms::cmyk_is_device() => {
+                cms::naive_cmyk_to_rgb([c, m, y, k])
+            }
             // InDesign's Gray is ink percentage: 0 = white, 1 = black.
             Color::Gray { k } => [1.0 - k; 3],
             _ => cms::active().display_rgb(self),
@@ -99,7 +120,12 @@ impl Color {
                 if k >= 1.0 {
                     return [0.0, 0.0, 0.0, 1.0];
                 }
-                [(1.0 - r - k) / (1.0 - k), (1.0 - g - k) / (1.0 - k), (1.0 - b - k) / (1.0 - k), k]
+                [
+                    (1.0 - r - k) / (1.0 - k),
+                    (1.0 - g - k) / (1.0 - k),
+                    (1.0 - b - k) / (1.0 - k),
+                    k,
+                ]
             }
         }
     }
@@ -134,7 +160,11 @@ impl Color {
             _ => (c, 0.0, x),
         };
         let m = v - c;
-        Color::Rgb { r: r + m, g: g + m, b: b + m }
+        Color::Rgb {
+            r: r + m,
+            g: g + m,
+            b: b + m,
+        }
     }
     /// `#rrggbb` (display RGB).
     pub fn to_hex(&self) -> String {
@@ -173,7 +203,11 @@ impl Color {
     pub fn lerp(&self, other: &Color, t: f32) -> Color {
         let a = self.to_rgb();
         let b = other.to_rgb();
-        Color::rgb(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t)
+        Color::rgb(
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+        )
     }
     pub fn model_name(&self) -> &'static str {
         match self {
@@ -212,7 +246,10 @@ fn is_identity(a: &kurbo::Affine) -> bool {
 
 impl Paint {
     pub fn solid(c: Color) -> Self {
-        Paint::Solid { color: c, swatch: None }
+        Paint::Solid {
+            color: c,
+            swatch: None,
+        }
     }
     pub fn is_none(&self) -> bool {
         matches!(self, Paint::None)
@@ -226,7 +263,10 @@ impl Paint {
     pub fn label(&self) -> String {
         match self {
             Paint::None => "None".into(),
-            Paint::Solid { color, swatch: Some(n) } => format!("{n} ({})", color.to_hex()),
+            Paint::Solid {
+                color,
+                swatch: Some(n),
+            } => format!("{n} ({})", color.to_hex()),
             Paint::Solid { color, .. } => color.to_hex(),
             Paint::Gradient(g) => format!("{} gradient", g.gradient.kind.label()),
             Paint::Pattern { pattern, .. } => format!("pattern {pattern}"),
@@ -248,7 +288,9 @@ mod tests {
 
     #[test]
     fn hsb_roundtrip() {
-        for hex in ["#ff0000", "#00ff00", "#0000ff", "#336699", "#ffffff", "#000000", "#c0ffee"] {
+        for hex in [
+            "#ff0000", "#00ff00", "#0000ff", "#336699", "#ffffff", "#000000", "#c0ffee",
+        ] {
             let c = Color::from_hex(hex).unwrap();
             let [h, s, v] = c.to_hsb();
             assert_eq!(Color::from_hsb(h, s, v).to_hex(), hex, "{hex}");
@@ -257,8 +299,14 @@ mod tests {
 
     #[test]
     fn cmyk_conversions() {
-        assert_eq!(Color::cmyk(0.0, 0.0, 0.0, 1.0).to_rgb_uncalibrated(), [0.0, 0.0, 0.0]);
-        assert_eq!(Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb_uncalibrated(), [0.0, 1.0, 1.0]);
+        assert_eq!(
+            Color::cmyk(0.0, 0.0, 0.0, 1.0).to_rgb_uncalibrated(),
+            [0.0, 0.0, 0.0]
+        );
+        assert_eq!(
+            Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb_uncalibrated(),
+            [0.0, 1.0, 1.0]
+        );
         // Managed display: paper is white, 100% cyan is a press cyan (not #00ffff).
         assert_eq!(Color::cmyk(0.0, 0.0, 0.0, 0.0).to_hex(), "#ffffff");
         let [r, g, b] = Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb();

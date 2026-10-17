@@ -4,10 +4,10 @@ use utoipa::ToSchema;
 
 #[derive(Deserialize, ToSchema)]
 pub struct DeleteReferralCodePathInfo {
-  pub token: UserReferralCodeToken,
+    pub token: UserReferralCodeToken,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct DeleteReferralCodeResponse {
-  pub success: bool,
+    pub success: bool,
 }

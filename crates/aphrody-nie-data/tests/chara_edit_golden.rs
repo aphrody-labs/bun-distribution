@@ -75,13 +75,19 @@ fn fixture_parts_avatar() {
     // Type de visage + plage.
     assert_eq!(c.face_info.len(), 1);
     assert_eq!(c.face_info[0].face_type, "face_mdl_type_01");
-    assert_eq!((c.face_info[0].data_offset, c.face_info[0].data_count), (0, 7));
+    assert_eq!(
+        (c.face_info[0].data_offset, c.face_info[0].data_count),
+        (0, 7)
+    );
     // Corps.
     assert_eq!(c.body_data.len(), 1);
     assert_eq!(c.body_data[0].resource[7], "accessory001_07"); // big diffère du male
     assert_eq!(c.body_info.len(), 1);
     assert_eq!(c.body_info[0].parts_type, 14);
-    assert_eq!((c.body_info[0].data_offset, c.body_info[0].data_count), (0, 24));
+    assert_eq!(
+        (c.body_info[0].data_offset, c.body_info[0].data_count),
+        (0, 24)
+    );
 }
 
 #[test]
@@ -218,17 +224,26 @@ fn fixture_catalogue_complet() {
     assert_eq!(c.preset_files[0].id_string, "mdl_edit_avatar01");
     assert_eq!(c.parts[1].resource_name_str2, "presetColor_Hair_02_05");
     assert_eq!(c.params[0].param_min, -0.02);
-    assert_eq!(c.params[0].apply, [true, true, false, false, false, false, false, false]);
+    assert_eq!(
+        c.params[0].apply,
+        [true, true, false, false, false, false, false, false]
+    );
     assert_eq!(c.preset_info[0].apply, [true; 8]);
 
     // Résolution par plage.
     assert_eq!(c.parts_of(13).len(), 1);
     assert_eq!(c.parts_of(13)[0].resource_name_str1, "face_01");
-    assert!(c.parts_of(99).is_empty(), "catégorie inconnue → vide, pas de panique");
+    assert!(
+        c.parts_of(99).is_empty(),
+        "catégorie inconnue → vide, pas de panique"
+    );
     assert_eq!(c.params_of(2).len(), 1);
     assert_eq!(c.colors_of(22).len(), 1);
     assert_eq!(c.recipe_of(HashId::parse("0xE26B7178").unwrap()).len(), 1);
-    assert_eq!(c.body_types_of_fashion(HashId::parse("0xE24565A8").unwrap()), &[0]);
+    assert_eq!(
+        c.body_types_of_fashion(HashId::parse("0xE24565A8").unwrap()),
+        &[0]
+    );
     assert!(c.part(HashId::parse("0xEDD840B4").unwrap()).is_some());
 }
 
@@ -266,7 +281,11 @@ fn golden_catalogue_reel() {
     // Un `recipeType` par catégorie, 0..85 sans trou : c'est l'ordre d'encodage du code.
     let mut types: Vec<i64> = c.recipes.iter().map(|r| r.recipe_type).collect();
     types.sort_unstable();
-    assert_eq!(types, (0..86).collect::<Vec<_>>(), "types de recette contigus");
+    assert_eq!(
+        types,
+        (0..86).collect::<Vec<_>>(),
+        "types de recette contigus"
+    );
 
     // Les cinq familles `Info`/`Data` partitionnent exactement leur data list — aucun trou,
     // aucun recouvrement : c'est ce qui autorise la résolution par simple découpage.
@@ -278,30 +297,48 @@ fn golden_catalogue_reel() {
             assert_eq!(o, attendu, "trou ou recouvrement dans {quoi}");
             attendu += n;
         }
-        assert_eq!(attendu as usize, total, "{quoi} : la partition ne couvre pas la data list");
+        assert_eq!(
+            attendu as usize, total,
+            "{quoi} : la partition ne couvre pas la data list"
+        );
     };
     partition(
-        c.parts_info.iter().map(|i| (i.data_offset, i.data_count)).collect(),
+        c.parts_info
+            .iter()
+            .map(|i| (i.data_offset, i.data_count))
+            .collect(),
         c.parts.len(),
         "parts",
     );
     partition(
-        c.params_info.iter().map(|i| (i.data_offset, i.data_count)).collect(),
+        c.params_info
+            .iter()
+            .map(|i| (i.data_offset, i.data_count))
+            .collect(),
         c.params.len(),
         "params",
     );
     partition(
-        c.preset_info.iter().map(|i| (i.data_offset, i.data_count)).collect(),
+        c.preset_info
+            .iter()
+            .map(|i| (i.data_offset, i.data_count))
+            .collect(),
         c.preset_data.len(),
         "recettes",
     );
     partition(
-        c.colors_info.iter().map(|i| (i.data_offset, i.data_count)).collect(),
+        c.colors_info
+            .iter()
+            .map(|i| (i.data_offset, i.data_count))
+            .collect(),
         c.colors.len(),
         "couleurs",
     );
     partition(
-        c.fashion_body_info.iter().map(|i| (i.data_offset, i.data_count)).collect(),
+        c.fashion_body_info
+            .iter()
+            .map(|i| (i.data_offset, i.data_count))
+            .collect(),
         c.fashion_body.len(),
         "morphologies de tenue",
     );
@@ -329,7 +366,10 @@ fn golden_catalogue_reel() {
         );
         verifies += 1;
     }
-    assert!(verifies >= 380, "trop peu de noms en clair vérifiés : {verifies}");
+    assert!(
+        verifies >= 380,
+        "trop peu de noms en clair vérifiés : {verifies}"
+    );
 
     // Un preset-recette porte le hash du nom de la part correspondante : `preset_01_normal`
     // est à la fois une part sélectionnable (catégorie 1) et une recette de 72 lignes.
@@ -337,7 +377,10 @@ fn golden_catalogue_reel() {
         "preset_01_normal",
     )));
     assert_eq!(c.recipe_of(id).len(), 72, "la recette de preset_01_normal");
-    assert!(c.parts.iter().any(|p| p.resource_name1 == id), "part homonyme absente");
+    assert!(
+        c.parts.iter().any(|p| p.resource_name1 == id),
+        "part homonyme absente"
+    );
 
     // Les catégories connues, telles que les noms de ressources les nomment (cf. le VFS,
     // `data/common/chr/_face/20_EDIT/`) : 13 = contour de visage, 6 = œil, 11 = sourcil.

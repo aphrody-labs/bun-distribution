@@ -51,7 +51,10 @@ struct Shared {
 
 impl std::fmt::Debug for JobCtx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("JobCtx").field("progress", &self.fraction()).field("cancelled", &self.cancelled()).finish()
+        f.debug_struct("JobCtx")
+            .field("progress", &self.fraction())
+            .field("cancelled", &self.cancelled())
+            .finish()
     }
 }
 
@@ -64,10 +67,16 @@ impl JobCtx {
     /// Progress never goes backwards: a lower value than already reported is ignored.
     pub fn progress(&self, fraction: f32, message: &str) {
         if fraction.is_finite() {
-            self.shared.progress.fetch_max(fraction.clamp(0.0, 1.0).to_bits(), Ordering::Relaxed);
+            self.shared
+                .progress
+                .fetch_max(fraction.clamp(0.0, 1.0).to_bits(), Ordering::Relaxed);
         }
         if !message.is_empty() {
-            let mut m = self.shared.message.lock().unwrap_or_else(PoisonError::into_inner);
+            let mut m = self
+                .shared
+                .message
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
             if *m != message {
                 message.clone_into(&mut m);
             }
@@ -86,7 +95,11 @@ impl JobCtx {
 
     /// `Err(Cancelled)` once cancelled, for `?` between stages.
     pub fn check(&self) -> Result<()> {
-        if self.cancelled() { Err(EngineError::Cancelled) } else { Ok(()) }
+        if self.cancelled() {
+            Err(EngineError::Cancelled)
+        } else {
+            Ok(())
+        }
     }
 
     /// Progress reported so far (`0.0..=1.0`).
@@ -96,7 +109,11 @@ impl JobCtx {
 
     /// The latest status message.
     pub fn message(&self) -> String {
-        self.shared.message.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.shared
+            .message
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// Run `f` with an algorithm-level [`Interrupt`] whose progress maps onto `lo..hi` of this
@@ -161,7 +178,11 @@ fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
-        START.get_or_init(std::time::Instant::now).elapsed().as_secs_f64() * 1000.0
+        START
+            .get_or_init(std::time::Instant::now)
+            .elapsed()
+            .as_secs_f64()
+            * 1000.0
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -238,7 +259,9 @@ impl Drop for Jobs {
 
 impl std::fmt::Debug for Jobs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Jobs").field("running", &self.running.len()).finish()
+        f.debug_struct("Jobs")
+            .field("running", &self.running.len())
+            .finish()
     }
 }
 
@@ -253,20 +276,39 @@ pub enum Started {
 
 /// Commands that never edit the active document, allowed while a job runs on it.
 fn independent_of_document(id: &str) -> bool {
-    const PREFIXES: &[&str] = &["jobs.", "tools.", "view.", "window.", "help.", "brush.presets.", "gradient.presets."];
-    const IDS: &[&str] = &["file.new", "file.close", "file.closeAll", "edit.preferences", "edit.colorSettings", "edit.keyboardShortcuts", "edit.menus"];
+    const PREFIXES: &[&str] = &[
+        "jobs.",
+        "tools.",
+        "view.",
+        "window.",
+        "help.",
+        "brush.presets.",
+        "gradient.presets.",
+    ];
+    const IDS: &[&str] = &[
+        "file.new",
+        "file.close",
+        "file.closeAll",
+        "edit.preferences",
+        "edit.colorSettings",
+        "edit.keyboardShortcuts",
+        "edit.menus",
+    ];
     PREFIXES.iter().any(|p| id.starts_with(p)) || IDS.contains(&id)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn read_path(path: &str) -> Result<Vec<u8>> {
     // Bounded reads, and a clear error for a file larger than memory (#375).
-    photocraft_format::read_file(std::path::Path::new(path)).map_err(|e| EngineError::Other(format!("{path}: {e}")))
+    photocraft_format::read_file(std::path::Path::new(path))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
 
 #[cfg(target_arch = "wasm32")]
 fn read_path(path: &str) -> Result<Vec<u8>> {
-    Err(EngineError::Other(format!("cannot open paths on the web: {path}")))
+    Err(EngineError::Other(format!(
+        "cannot open paths on the web: {path}"
+    )))
 }
 
 /// Run a job-capable command's heavy part. `work` runs on a worker thread when the command was
@@ -289,7 +331,9 @@ pub fn run<T: Send + 'static>(
         return apply(s, t);
     }
     if s.jobs.pending.is_some() {
-        return Err(EngineError::Other(format!("`{label}` started a second background job in one command")));
+        return Err(EngineError::Other(format!(
+            "`{label}` started a second background job in one command"
+        )));
     }
     let (doc, snapshot) = match (lock_document, s.active()) {
         (true, Some(st)) => (Some(st.doc.id), Some(Arc::downgrade(&st.doc))),
@@ -299,7 +343,9 @@ pub fn run<T: Send + 'static>(
     let ctx = JobCtx::new();
     let (tx, rx) = std::sync::mpsc::channel::<Result<Payload>>();
     let erased: Apply = Box::new(move |s, any| {
-        let t = any.downcast::<T>().map_err(|_| EngineError::Other("internal error: job result type mismatch".into()))?;
+        let t = any
+            .downcast::<T>()
+            .map_err(|_| EngineError::Other("internal error: job result type mismatch".into()))?;
         apply(s, *t)
     });
     s.jobs.next += 1;
@@ -316,7 +362,11 @@ pub fn run<T: Send + 'static>(
             // The receiver is gone when the job was cancelled: nothing to report.
             let _ = tx.send(r);
         });
-        Some(spawned.map_err(|e| EngineError::Other(format!("could not start a background job: {e}")))?)
+        Some(
+            spawned.map_err(|e| {
+                EngineError::Other(format!("could not start a background job: {e}"))
+            })?,
+        )
     };
     #[cfg(target_arch = "wasm32")]
     {
@@ -417,7 +467,8 @@ impl Session {
         let label = format!("Opening {name}");
         let name_w = name.to_string();
         let name_a = name.to_string();
-        let max_svg_group_depth = self.prefs().file_handling.rasterize_svg_groups_deeper_than as usize;
+        let max_svg_group_depth =
+            self.prefs().file_handling.rasterize_svg_groups_deeper_than as usize;
         self.start_job(
             OPEN_JOB,
             json!({"name": name}),
@@ -497,7 +548,12 @@ impl Session {
                 Some(Err(std::sync::mpsc::TryRecvError::Disconnected)) => {
                     let job = self.jobs.running.remove(i);
                     let label = job.label.clone();
-                    self.finish_job(job, Err(EngineError::Other(format!("`{label}` stopped unexpectedly; the document is unchanged"))));
+                    self.finish_job(
+                        job,
+                        Err(EngineError::Other(format!(
+                            "`{label}` stopped unexpectedly; the document is unchanged"
+                        ))),
+                    );
                 }
                 None => break,
             }
@@ -512,13 +568,20 @@ impl Session {
     pub fn wait_job(&mut self, id: JobId) -> Result<Value> {
         if let Some(i) = self.jobs.running.iter().position(|r| r.id == id) {
             let job = self.jobs.running.remove(i);
-            let r = job.rx.recv().unwrap_or_else(|_| Err(EngineError::Other(format!("`{}` stopped unexpectedly", job.label))));
+            let r = job.rx.recv().unwrap_or_else(|_| {
+                Err(EngineError::Other(format!(
+                    "`{}` stopped unexpectedly",
+                    job.label
+                )))
+            });
             self.finish_job(job, r);
         }
         match self.jobs.recent.iter().rev().find(|j| j.id == id) {
             Some(j) if j.state == "done" => Ok(j.result.clone().unwrap_or(Value::Null)),
             Some(j) if j.state == "cancelled" => Err(EngineError::Cancelled),
-            Some(j) => Err(EngineError::Other(j.error.clone().unwrap_or_else(|| "the job failed".into()))),
+            Some(j) => Err(EngineError::Other(
+                j.error.clone().unwrap_or_else(|| "the job failed".into()),
+            )),
             None => Err(EngineError::Other(format!("no job {}", id.0))),
         }
     }
@@ -526,10 +589,15 @@ impl Session {
     /// Cancel job `id`: it stops at its next check, its result is discarded and the document
     /// stays unchanged. The document is unlocked at once. False if no such job is running.
     pub fn cancel_job(&mut self, id: JobId) -> bool {
-        let Some(i) = self.jobs.running.iter().position(|r| r.id == id) else { return false };
+        let Some(i) = self.jobs.running.iter().position(|r| r.id == id) else {
+            return false;
+        };
         // A print worker can already have handed the job to the OS. Discarding its result
         // would falsely report cancellation; removal belongs to the system print queue.
-        if matches!(self.jobs.running[i].command.as_str(), "file.print" | "file.printOneCopy") {
+        if matches!(
+            self.jobs.running[i].command.as_str(),
+            "file.print" | "file.printOneCopy"
+        ) {
             return false;
         }
         let job = self.jobs.running.remove(i);
@@ -557,7 +625,11 @@ impl Session {
 
     /// Running job `id`.
     pub fn job(&self, id: JobId) -> Option<JobInfo> {
-        self.jobs.running.iter().find(|r| r.id == id).map(Running::info)
+        self.jobs
+            .running
+            .iter()
+            .find(|r| r.id == id)
+            .map(Running::info)
     }
 
     /// Running jobs.
@@ -567,12 +639,19 @@ impl Session {
 
     /// Running jobs followed by the last few that ended (newest last), for `jobs.list`.
     pub fn jobs_with_recent(&self) -> Vec<JobInfo> {
-        self.jobs().into_iter().chain(self.jobs.recent.iter().cloned()).collect()
+        self.jobs()
+            .into_iter()
+            .chain(self.jobs.recent.iter().cloned())
+            .collect()
     }
 
     /// The running job that locks document `doc`, if any.
     pub fn job_on(&self, doc: DocId) -> Option<JobInfo> {
-        self.jobs.running.iter().find(|r| r.doc == Some(doc)).map(Running::info)
+        self.jobs
+            .running
+            .iter()
+            .find(|r| r.doc == Some(doc))
+            .map(Running::info)
     }
 
     /// The running job that locks the active document, if any.
@@ -595,24 +674,42 @@ impl Session {
             return None;
         }
         let job = self.active_job()?;
-        Some(format!("“{}” is still running on this document; wait for it to finish or cancel it (Esc)", job.label))
+        Some(format!(
+            "“{}” is still running on this document; wait for it to finish or cancel it (Esc)",
+            job.label
+        ))
     }
 
     /// Cancel the jobs editing document `doc` (it is closing).
     pub(crate) fn cancel_jobs_on(&mut self, doc: DocId) {
-        let ids: Vec<JobId> = self.jobs.running.iter().filter(|r| r.doc == Some(doc)).map(|r| r.id).collect();
+        let ids: Vec<JobId> = self
+            .jobs
+            .running
+            .iter()
+            .filter(|r| r.doc == Some(doc))
+            .map(|r| r.id)
+            .collect();
         for id in ids {
             self.cancel_job(id);
         }
     }
 
     /// Run the command `id`: inline, or (with `background`) as a job when it is one.
-    pub(crate) fn dispatch(&mut self, id: &str, params: Value, background: bool) -> Result<Started> {
-        let spec = crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
+    pub(crate) fn dispatch(
+        &mut self,
+        id: &str,
+        params: Value,
+        background: bool,
+    ) -> Result<Started> {
+        let spec =
+            crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
         // Params are named fields: anything but an object (or null, meaning none) is a caller
         // mistake, not "use every default".
         if !(params.is_object() || params.is_null()) {
-            return Err(EngineError::BadParams { cmd: id.to_string(), msg: "params must be a JSON object".into() });
+            return Err(EngineError::BadParams {
+                cmd: id.to_string(),
+                msg: "params must be a JSON object".into(),
+            });
         }
         // Untrusted sessions gate every command, including the ones a command runs on its own
         // behalf (`file.automate.conditionalModeChange` runs `image.mode.*`), before any side
@@ -639,8 +736,15 @@ impl Session {
             return Ok(Started::Done(v));
         }
         // Pixel commands follow the Channels panel target unless the caller names one.
-        let run_params = crate::channel_cmds::inject_target(self, id, crate::commands::inject_kind(id, params.clone()));
-        if let Err(why) = self.explicit_layer_enabled(spec, &params).unwrap_or_else(|| self.precondition(spec, &run_params)) {
+        let run_params = crate::channel_cmds::inject_target(
+            self,
+            id,
+            crate::commands::inject_kind(id, params.clone()),
+        );
+        if let Err(why) = self
+            .explicit_layer_enabled(spec, &params)
+            .unwrap_or_else(|| self.precondition(spec, &run_params))
+        {
             return Err(EngineError::Disabled(id.to_string(), why));
         }
         if let Some(why) = self.job_conflict(id, spec.journal) {
@@ -650,7 +754,10 @@ impl Session {
         if let Some(why) = crate::hidden_target::refusal(self, id, &params) {
             return Err(EngineError::Other(why.into()));
         }
-        self.coalesce_request = params.get("coalesce").and_then(Value::as_str).map(str::to_string);
+        self.coalesce_request = params
+            .get("coalesce")
+            .and_then(Value::as_str)
+            .map(str::to_string);
         self.color_restrict = crate::channel_cmds::color_restriction(self, id, &run_params);
         self.jobs.spawn = background;
         // Commands this one runs on its own behalf journal after this mark (#3067).
@@ -658,12 +765,22 @@ impl Session {
         // A replayable command is recorded as one step, so recording pauses while it runs: an
         // action it plays (a script step) must not flush the steps it ran so far into the action
         // being recorded, nor move the recording mark past the entries it is about to replace.
-        let recording = if spec.journal && crate::actions_cmds::replayable(id) { self.actions.recording.take() } else { None };
+        let recording = if spec.journal && crate::actions_cmds::replayable(id) {
+            self.actions.recording.take()
+        } else {
+            None
+        };
         // Last-resort guard (AGENTS.md, Never crash): a command that panics anyway fails with an
         // error instead of taking the app down. `edit` only commits a document after its closure
         // returns, so the documents are unchanged.
-        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (spec.run)(self, &run_params)))
-            .unwrap_or_else(|_| Err(EngineError::Other(format!("`{id}` failed with an internal error (logged); the document is unchanged"))));
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            (spec.run)(self, &run_params)
+        }))
+        .unwrap_or_else(|_| {
+            Err(EngineError::Other(format!(
+                "`{id}` failed with an internal error (logged); the document is unchanged"
+            )))
+        });
         if self.actions.recording.is_none() {
             self.actions.recording = recording;
         }
@@ -699,7 +816,13 @@ impl Session {
     /// dropped, so a recorded action replays the command once, not its steps as well (#3067).
     /// Edit › Transform › Again (and Again on a Copy) is not replayable and keeps the concrete
     /// steps it ran instead.
-    fn after_command(&mut self, id: &str, params: Value, journal: bool, nested_from: Option<usize>) {
+    fn after_command(
+        &mut self,
+        id: &str,
+        params: Value,
+        journal: bool,
+        nested_from: Option<usize>,
+    ) {
         // A layer-mask view ends when another layer becomes active (#196).
         if let Some(st) = self.active_mut() {
             crate::mask_view_cmds::fix(st);
@@ -734,16 +857,42 @@ impl Session {
         self.end_job(&job, outcome);
     }
 
-    fn apply_job(&mut self, job: &Running, apply: Option<Apply>, payload: Payload) -> Result<Value> {
-        let Running { label, doc, snapshot, coalesce, color_restrict, command, params, journal, .. } = job;
+    fn apply_job(
+        &mut self,
+        job: &Running,
+        apply: Option<Apply>,
+        payload: Payload,
+    ) -> Result<Value> {
+        let Running {
+            label,
+            doc,
+            snapshot,
+            coalesce,
+            color_restrict,
+            command,
+            params,
+            journal,
+            ..
+        } = job;
         let prev_active = self.active;
         let target = match doc {
             Some(d) => {
-                let i =
-                    self.documents().iter().position(|st| st.doc.id == *d).ok_or_else(|| EngineError::Other(format!("`{label}`: the document was closed")))?;
-                let unchanged = snapshot.as_ref().is_some_and(|w| self.documents().get(i).is_some_and(|st| Weak::ptr_eq(w, &Arc::downgrade(&st.doc))));
+                let i = self
+                    .documents()
+                    .iter()
+                    .position(|st| st.doc.id == *d)
+                    .ok_or_else(|| {
+                        EngineError::Other(format!("`{label}`: the document was closed"))
+                    })?;
+                let unchanged = snapshot.as_ref().is_some_and(|w| {
+                    self.documents()
+                        .get(i)
+                        .is_some_and(|st| Weak::ptr_eq(w, &Arc::downgrade(&st.doc)))
+                });
                 if !unchanged {
-                    return Err(EngineError::Other(format!("`{label}`: the document changed while it ran; the result was discarded")));
+                    return Err(EngineError::Other(format!(
+                        "`{label}`: the document changed while it ran; the result was discarded"
+                    )));
                 }
                 self.active = Some(i);
                 Some(i)
@@ -755,7 +904,11 @@ impl Session {
         // Apply-time hooks can dispatch commands too. Keep the same single-step recording
         // contract as synchronous dispatch without truncating work done while the worker ran.
         let nested_from = self.journal.len();
-        let recording = if *journal && crate::actions_cmds::replayable(command) { self.actions.recording.take() } else { None };
+        let recording = if *journal && crate::actions_cmds::replayable(command) {
+            self.actions.recording.take()
+        } else {
+            None
+        };
         let r = match apply {
             Some(f) => std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(self, payload)))
                 .unwrap_or_else(|_| Err(EngineError::Other(format!("`{label}` failed with an internal error (logged); the document is unchanged")))),
@@ -798,7 +951,13 @@ impl Session {
             let extra = self.jobs.recent.len() - RECENT;
             self.jobs.recent.drain(..extra);
         }
-        self.jobs.events.push(JobEvent { id: job.id, command: job.command.clone(), label: job.label.clone(), document: job.doc, outcome });
+        self.jobs.events.push(JobEvent {
+            id: job.id,
+            command: job.command.clone(),
+            label: job.label.clone(),
+            document: job.doc,
+            outcome,
+        });
     }
 }
 
@@ -830,11 +989,16 @@ pub fn specs() -> Vec<crate::commands::CommandSpec> {
                     Ok(json!({"cancelled": n.saturating_sub(s.jobs.running.len())}))
                 }
                 Some(v) => {
-                    let id = v.as_u64().ok_or_else(|| EngineError::BadParams { cmd: "jobs.cancel".into(), msg: "`job` must be a job id".into() })?;
+                    let id = v.as_u64().ok_or_else(|| EngineError::BadParams {
+                        cmd: "jobs.cancel".into(),
+                        msg: "`job` must be a job id".into(),
+                    })?;
                     if s.cancel_job(JobId(id)) {
                         Ok(json!({"cancelled": 1}))
                     } else if s.job(JobId(id)).is_some() {
-                        Err(EngineError::Other("printing cannot be cancelled here; use the system print queue".into()))
+                        Err(EngineError::Other(
+                            "printing cannot be cancelled here; use the system print queue".into(),
+                        ))
                     } else {
                         Err(EngineError::Other(format!("no running job {id}")))
                     }

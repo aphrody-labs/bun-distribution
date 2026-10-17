@@ -58,20 +58,43 @@ mod tests {
             p(r#"{"type":"mouse_move","x":1.5,"y":2}"#),
             ClientMsg::MouseMove { x: 1.5, y: 2.0 }
         );
-        assert_eq!(p(r#"{"type":"mouse_down"}"#), ClientMsg::MouseDown { button: "left".into() });
+        assert_eq!(
+            p(r#"{"type":"mouse_down"}"#),
+            ClientMsg::MouseDown {
+                button: "left".into()
+            }
+        );
         assert_eq!(
             p(r#"{"type":"mouse_up","button":"right"}"#),
-            ClientMsg::MouseUp { button: "right".into() }
+            ClientMsg::MouseUp {
+                button: "right".into()
+            }
         );
-        assert_eq!(p(r#"{"type":"wheel","dy":-120}"#), ClientMsg::Wheel { dx: 0.0, dy: -120.0 });
+        assert_eq!(
+            p(r#"{"type":"wheel","dy":-120}"#),
+            ClientMsg::Wheel {
+                dx: 0.0,
+                dy: -120.0
+            }
+        );
         assert_eq!(
             p(r#"{"type":"key","code":"KeyA","down":true}"#),
-            ClientMsg::Key { code: "KeyA".into(), down: true }
+            ClientMsg::Key {
+                code: "KeyA".into(),
+                down: true
+            }
         );
-        assert_eq!(p(r#"{"type":"text","text":"abc"}"#), ClientMsg::Text { text: "abc".into() });
+        assert_eq!(
+            p(r#"{"type":"text","text":"abc"}"#),
+            ClientMsg::Text { text: "abc".into() }
+        );
         assert_eq!(
             p(r#"{"type":"config","fps":30,"scale":2}"#),
-            ClientMsg::Config { fps: Some(30), quality: None, scale: Some(2) }
+            ClientMsg::Config {
+                fps: Some(30),
+                quality: None,
+                scale: Some(2)
+            }
         );
     }
 

@@ -23,12 +23,23 @@ pub struct Licence {
 
 impl Default for Licence {
     fn default() -> Self {
-        Self { name: String::new(), commercial: Commercial::Unknown, url: None, notice: String::new() }
+        Self {
+            name: String::new(),
+            commercial: Commercial::Unknown,
+            url: None,
+            notice: String::new(),
+        }
     }
 }
 
 pub fn valid_id(id: &str) -> bool {
     let mut bytes = id.bytes();
-    let first_ok = bytes.next().is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
-    first_ok && id.len() <= 64 && bytes.all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'.' | b'_' | b'-'))
+    let first_ok = bytes
+        .next()
+        .is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
+    first_ok
+        && id.len() <= 64
+        && bytes.all(|b| {
+            b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'.' | b'_' | b'-')
+        })
 }

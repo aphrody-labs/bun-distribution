@@ -57,20 +57,43 @@ thread_local! {
 }
 
 /// Queue a task for `host`; its id.
-pub(crate) fn schedule(host: u32, name: &str, epoch: u64, code: String, delay_ms: f64, repeat: bool, now: Instant) -> Result<u32, String> {
-    crate::runtime::check_nesting(&code).map_err(|e| format!("app.scheduleTask: {}", e.trim_start_matches("Error: ")))?;
-    let ms = if delay_ms.is_finite() { delay_ms.clamp(0.0, MAX_DELAY_MS) } else { 0.0 } as u64;
+pub(crate) fn schedule(
+    host: u32,
+    name: &str,
+    epoch: u64,
+    code: String,
+    delay_ms: f64,
+    repeat: bool,
+    now: Instant,
+) -> Result<u32, String> {
+    crate::runtime::check_nesting(&code)
+        .map_err(|e| format!("app.scheduleTask: {}", e.trim_start_matches("Error: ")))?;
+    let ms = if delay_ms.is_finite() {
+        delay_ms.clamp(0.0, MAX_DELAY_MS)
+    } else {
+        0.0
+    } as u64;
     let interval = Duration::from_millis(if repeat { ms.max(MIN_REPEAT_MS) } else { ms });
-    let due = now.checked_add(interval).ok_or("app.scheduleTask: the delay is too long")?;
+    let due = now
+        .checked_add(interval)
+        .ok_or("app.scheduleTask: the delay is too long")?;
     TASKS.with(|t| {
         let mut t = t.borrow_mut();
         let h = t.entry(host).or_default();
         if h.list.len() >= MAX_TASKS {
-            return Err(format!("app.scheduleTask: a script can have at most {MAX_TASKS} scheduled tasks"));
+            return Err(format!(
+                "app.scheduleTask: a script can have at most {MAX_TASKS} scheduled tasks"
+            ));
         }
         h.next_id = h.next_id.wrapping_add(1).max(1);
         let id = h.next_id;
-        h.list.push(Task { id, code, interval, due, repeat });
+        h.list.push(Task {
+            id,
+            code,
+            interval,
+            due,
+            repeat,
+        });
         h.name = name.to_string();
         h.epoch = epoch;
         Ok(id)
@@ -90,8 +113,12 @@ pub(crate) fn cancel(host: u32, id: u32) {
 pub(crate) fn take_one_shots(host: u32) -> Vec<String> {
     TASKS.with(|t| {
         let mut t = t.borrow_mut();
-        let Some(h) = t.get_mut(&host) else { return vec![] };
-        let (once, keep) = std::mem::take(&mut h.list).into_iter().partition(|task| !task.repeat);
+        let Some(h) = t.get_mut(&host) else {
+            return vec![];
+        };
+        let (once, keep) = std::mem::take(&mut h.list)
+            .into_iter()
+            .partition(|task| !task.repeat);
         h.list = keep;
         once.into_iter().map(|task: Task| task.code).collect()
     })
@@ -102,7 +129,9 @@ pub(crate) fn take_one_shots(host: u32) -> Vec<String> {
 fn take_due(host: u32, now: Instant) -> Vec<(u32, String, bool)> {
     TASKS.with(|t| {
         let mut t = t.borrow_mut();
-        let Some(h) = t.get_mut(&host) else { return vec![] };
+        let Some(h) = t.get_mut(&host) else {
+            return vec![];
+        };
         let mut due = vec![];
         h.list.retain_mut(|task| {
             if task.due > now {
@@ -128,7 +157,11 @@ pub(crate) fn has(host: u32) -> bool {
 
 /// When `host`'s next task is due.
 pub(crate) fn next_due(host: u32) -> Option<Instant> {
-    TASKS.with(|t| t.borrow().get(&host).and_then(|h| h.list.iter().map(|task| task.due).min()))
+    TASKS.with(|t| {
+        t.borrow()
+            .get(&host)
+            .and_then(|h| h.list.iter().map(|task| task.due).min())
+    })
 }
 
 /// Forget `host`'s tasks.
@@ -138,7 +171,13 @@ pub(crate) fn drop_host(host: u32) {
 
 /// The hosts on this thread with tasks: (host, script name, epoch).
 pub(crate) fn hosts() -> Vec<(u32, String, u64)> {
-    TASKS.with(|t| t.borrow().iter().filter(|(_, h)| !h.list.is_empty()).map(|(id, h)| (*id, h.name.clone(), h.epoch)).collect())
+    TASKS.with(|t| {
+        t.borrow()
+            .iter()
+            .filter(|(_, h)| !h.list.is_empty())
+            .map(|(id, h)| (*id, h.name.clone(), h.epoch))
+            .collect()
+    })
 }
 
 pub(crate) fn set_epoch(host: u32, epoch: u64) {
@@ -162,7 +201,8 @@ pub(crate) fn run_due(ctx: &mut Context, host: u32, now: Instant) -> (usize, Opt
             }
             let line = e.line.map(|l| format!(" (line {l})")).unwrap_or_default();
             let _ = crate::runtime::with_active(|a| {
-                a.output.push(format!("Error in scheduled task {id}{line}: {}", e.message));
+                a.output
+                    .push(format!("Error in scheduled task {id}{line}: {}", e.message));
                 Ok(())
             });
             first.get_or_insert(e);
@@ -204,14 +244,21 @@ pub fn run_tasks(session: &mut Session) -> J {
 pub(crate) fn run_tasks_at(session: &mut Session, now: Instant) -> J {
     let mut report = Report::default();
     // Not from inside a script (`script.runTasks` through `app.executeCommand`).
-    let running = crate::runtime::ACTIVE.with(|a| a.try_borrow().map(|g| g.is_some()).unwrap_or(true));
+    let running =
+        crate::runtime::ACTIVE.with(|a| a.try_borrow().map(|g| g.is_some()).unwrap_or(true));
     if !running {
         #[cfg(not(target_arch = "wasm32"))]
         crate::ui::tick_threaded(session, now, &mut report);
         crate::ui::tick_inline(session, now, &mut report);
         crate::ui::prune_task_hosts(session);
     }
-    let errors: Vec<J> = report.errors.iter().map(|e| json!({"message": e.message, "line": e.line, "column": e.column, "file": e.file})).collect();
-    let next = report.next.map(|n| n.saturating_duration_since(now).as_millis() as u64);
+    let errors: Vec<J> = report
+        .errors
+        .iter()
+        .map(|e| json!({"message": e.message, "line": e.line, "column": e.column, "file": e.file}))
+        .collect();
+    let next = report
+        .next
+        .map(|n| n.saturating_duration_since(now).as_millis() as u64);
     json!({"ran": report.ran, "output": report.output, "errors": errors, "next": next})
 }

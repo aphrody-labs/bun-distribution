@@ -39,7 +39,11 @@ fn read_json(path: &Path) -> Result<Value, RuntimeError> {
 }
 
 fn manifest(root: &Path) -> Result<Option<Value>, RuntimeError> {
-    for relative in [".codex-plugin/plugin.json", ".claude-plugin/plugin.json", "plugin.json"] {
+    for relative in [
+        ".codex-plugin/plugin.json",
+        ".claude-plugin/plugin.json",
+        "plugin.json",
+    ] {
         let path = root.join(relative);
         if path.is_file() {
             return read_json(&path).map(Some);
@@ -82,7 +86,11 @@ fn mcp_servers(
         .and_then(|value| value.get("mcpServers"))
         .and_then(Value::as_str)
         .map(|relative| root.join(relative))
-        .or_else(|| root.join(".mcp.json").is_file().then(|| root.join(".mcp.json")));
+        .or_else(|| {
+            root.join(".mcp.json")
+                .is_file()
+                .then(|| root.join(".mcp.json"))
+        });
     let Some(path) = configured else {
         return Ok(BTreeMap::new());
     };
@@ -95,12 +103,18 @@ fn mcp_servers(
 fn plugin_source(raw: &str, cwd: &Path) -> Result<PluginSource, RuntimeError> {
     let root = resolve_path(raw, cwd)?;
     if !root.is_dir() {
-        return Err(config_error(format!("plugin root does not exist: {}", root.display())));
+        return Err(config_error(format!(
+            "plugin root does not exist: {}",
+            root.display()
+        )));
     }
     let manifest = manifest(&root)?;
-    let fallback = root.file_name().and_then(|name| name.to_str()).ok_or_else(|| {
-        config_error(format!("plugin root has no valid name: {}", root.display()))
-    })?;
+    let fallback = root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            config_error(format!("plugin root has no valid name: {}", root.display()))
+        })?;
     let id = manifest
         .as_ref()
         .and_then(|value| value.get("name"))
@@ -114,7 +128,11 @@ fn plugin_source(raw: &str, cwd: &Path) -> Result<PluginSource, RuntimeError> {
         .unwrap_or("skills");
     let skills_root = root.join(skills);
     let mcp_servers = mcp_servers(&root, manifest.as_ref())?;
-    Ok(PluginSource { id, skills_root, mcp_servers })
+    Ok(PluginSource {
+        id,
+        skills_root,
+        mcp_servers,
+    })
 }
 
 /// Resolve only explicitly selected skills, plugin roots, and MCP servers.
@@ -156,11 +174,16 @@ pub fn resolve_tool_profile(
     for name in &config.skills.whitelist {
         let exposed = skill_identifier(name)?;
         if !exposed_names.insert(exposed.clone()) {
-            return Err(config_error(format!("duplicate exposed skill id `{exposed}`")));
+            return Err(config_error(format!(
+                "duplicate exposed skill id `{exposed}`"
+            )));
         }
         let direct = profile_root.join("skills").join(name).join("SKILL.md");
-        let mut matches =
-            direct.is_file().then_some((None, direct)).into_iter().collect::<Vec<_>>();
+        let mut matches = direct
+            .is_file()
+            .then_some((None, direct))
+            .into_iter()
+            .collect::<Vec<_>>();
         for plugin in &plugin_sources {
             let path = plugin.skills_root.join(name).join("SKILL.md");
             if path.is_file() {
@@ -173,12 +196,12 @@ pub fn resolve_tool_profile(
                     "whitelisted skill `{name}` was not found under {} or configured plugins",
                     profile_root.join("skills").display()
                 )));
-            },
+            }
             [(..), _, ..] => {
                 return Err(config_error(format!(
                     "whitelisted skill `{name}` is ambiguous across profile/plugin roots"
                 )));
-            },
+            }
             [(None, path)] => direct_skills.push(SkillSpec::new(exposed, path)),
             [(Some(plugin), path)] => plugin_skills
                 .entry((*plugin).to_owned())
@@ -241,7 +264,9 @@ mod tests {
         config.active_profile = Some("shenron".into());
         config.skills.whitelist = vec!["rag.canon".into(), "dbfr-databooks".into()];
         config.plugins.paths = vec![plugin.display().to_string()];
-        let spec = resolve_tool_profile(&config, &profile, temp.path()).unwrap().unwrap();
+        let spec = resolve_tool_profile(&config, &profile, temp.path())
+            .unwrap()
+            .unwrap();
         assert_eq!(spec.skills[0].name, "rag_canon");
         assert_eq!(spec.plugins[0].id, "dragon-ball");
         assert_eq!(spec.plugins[0].skills[0].name, "dbfr-databooks");

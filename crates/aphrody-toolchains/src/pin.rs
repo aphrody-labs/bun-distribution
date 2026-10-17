@@ -28,12 +28,17 @@ impl Pin {
         if req.eq_ignore_ascii_case("latest") {
             return true;
         }
-        let Some(have) = components(installed) else { return false };
+        let Some(have) = components(installed) else {
+            return false;
+        };
         if let Some(min) = req.strip_prefix(">=") {
             return components(min).is_some_and(|want| {
                 let n = want.len().max(have.len());
-                let pad =
-                    |v: &[u64]| (0..n).map(|i| v.get(i).copied().unwrap_or(0)).collect::<Vec<_>>();
+                let pad = |v: &[u64]| {
+                    (0..n)
+                        .map(|i| v.get(i).copied().unwrap_or(0))
+                        .collect::<Vec<_>>()
+                };
                 pad(&have) >= pad(&want)
             });
         }
@@ -42,7 +47,11 @@ impl Pin {
         // prefix matching would silently accept aphrody.3 for aphrody.4.
         if exact.contains('-') {
             fn identity(v: &str) -> &str {
-                v.trim().trim_start_matches('v').split(['+', ' ']).next().unwrap_or(v)
+                v.trim()
+                    .trim_start_matches('v')
+                    .split(['+', ' '])
+                    .next()
+                    .unwrap_or(v)
             }
             return identity(exact) == identity(installed);
         }
@@ -54,7 +63,10 @@ impl Pin {
 fn components(version: &str) -> Option<Vec<u64>> {
     let core = version.trim().trim_start_matches('v');
     let core = core.split(['-', '+', ' ']).next()?;
-    core.split('.').map(|c| c.parse().ok()).collect::<Option<Vec<_>>>().filter(|v| !v.is_empty())
+    core.split('.')
+        .map(|c| c.parse().ok())
+        .collect::<Option<Vec<_>>>()
+        .filter(|v| !v.is_empty())
 }
 
 /// Walk from `start` to the filesystem root; the nearest directory that pins
@@ -85,26 +97,39 @@ fn read(path: &Path) -> Result<Option<String>, ResolveError> {
     match fs::read_to_string(path) {
         Ok(text) => Ok(Some(text)),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(ResolveError::PinFile { path: path.to_path_buf(), message: e.to_string() }),
+        Err(e) => Err(ResolveError::PinFile {
+            path: path.to_path_buf(),
+            message: e.to_string(),
+        }),
     }
 }
 
 fn pin(version: &str, source: PathBuf) -> Option<Pin> {
     let version = version.trim().trim_matches('"').trim();
-    (!version.is_empty()).then(|| Pin { version: version.to_owned(), source })
+    (!version.is_empty()).then(|| Pin {
+        version: version.to_owned(),
+        source,
+    })
 }
 
 fn plain_file(path: PathBuf) -> Result<Option<Pin>, ResolveError> {
     Ok(read(&path)?.and_then(|text| {
-        let line = text.lines().map(str::trim).find(|l| !l.is_empty() && !l.starts_with('#'))?;
+        let line = text
+            .lines()
+            .map(str::trim)
+            .find(|l| !l.is_empty() && !l.starts_with('#'))?;
         pin(line, path)
     }))
 }
 
 fn toml_file(path: PathBuf) -> Result<Option<(toml::Value, PathBuf)>, ResolveError> {
-    let Some(text) = read(&path)? else { return Ok(None) };
-    let value = toml::from_str::<toml::Value>(&text)
-        .map_err(|e| ResolveError::PinFile { path: path.clone(), message: e.to_string() })?;
+    let Some(text) = read(&path)? else {
+        return Ok(None);
+    };
+    let value = toml::from_str::<toml::Value>(&text).map_err(|e| ResolveError::PinFile {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
     Ok(Some((value, path)))
 }
 
@@ -119,9 +144,14 @@ fn nu_version_file(dir: &Path) -> Result<Option<Pin>, ResolveError> {
 /// `package.json#packageManager = "bun@1.4.2"` (a `+sha…` suffix is ignored).
 fn package_json(dir: &Path) -> Result<Option<Pin>, ResolveError> {
     let path = dir.join("package.json");
-    let Some(text) = read(&path)? else { return Ok(None) };
-    let value: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| ResolveError::PinFile { path: path.clone(), message: e.to_string() })?;
+    let Some(text) = read(&path)? else {
+        return Ok(None);
+    };
+    let value: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| ResolveError::PinFile {
+            path: path.clone(),
+            message: e.to_string(),
+        })?;
     Ok(value
         .get("packageManager")
         .and_then(serde_json::Value::as_str)
@@ -132,20 +162,25 @@ fn package_json(dir: &Path) -> Result<Option<Pin>, ResolveError> {
 /// `uv.toml#required-version`.
 fn uv_toml(dir: &Path) -> Result<Option<Pin>, ResolveError> {
     Ok(toml_file(dir.join("uv.toml"))?.and_then(|(value, path)| {
-        value.get("required-version").and_then(toml::Value::as_str).and_then(|v| pin(v, path))
+        value
+            .get("required-version")
+            .and_then(toml::Value::as_str)
+            .and_then(|v| pin(v, path))
     }))
 }
 
 /// `pyproject.toml#tool.uv.required-version`.
 fn pyproject(dir: &Path) -> Result<Option<Pin>, ResolveError> {
-    Ok(toml_file(dir.join("pyproject.toml"))?.and_then(|(value, path)| {
-        value
-            .get("tool")
-            .and_then(|t| t.get("uv"))
-            .and_then(|u| u.get("required-version"))
-            .and_then(toml::Value::as_str)
-            .and_then(|v| pin(v, path))
-    }))
+    Ok(
+        toml_file(dir.join("pyproject.toml"))?.and_then(|(value, path)| {
+            value
+                .get("tool")
+                .and_then(|t| t.get("uv"))
+                .and_then(|u| u.get("required-version"))
+                .and_then(toml::Value::as_str)
+                .and_then(|v| pin(v, path))
+        }),
+    )
 }
 
 fn mise(dir: &Path, keys: &[&str]) -> Result<Option<Pin>, ResolveError> {
@@ -156,7 +191,12 @@ fn mise(dir: &Path, keys: &[&str]) -> Result<Option<Pin>, ResolveError> {
             // `bun = "1.4.2"`, `bun = ["1.4.2"]` or `bun = { version = "1.4.2" }`.
             let version = entry
                 .as_str()
-                .or_else(|| entry.as_array().and_then(|a| a.first()).and_then(toml::Value::as_str))
+                .or_else(|| {
+                    entry
+                        .as_array()
+                        .and_then(|a| a.first())
+                        .and_then(toml::Value::as_str)
+                })
                 .or_else(|| entry.get("version").and_then(toml::Value::as_str))?;
             pin(version, path.clone())
         })
@@ -181,8 +221,11 @@ mod tests {
     use std::path::PathBuf;
 
     fn matches(requirement: &str, installed: &str) -> bool {
-        Pin { version: requirement.into(), source: PathBuf::from("package.json") }
-            .matches(installed)
+        Pin {
+            version: requirement.into(),
+            source: PathBuf::from("package.json"),
+        }
+        .matches(installed)
     }
 
     #[test]

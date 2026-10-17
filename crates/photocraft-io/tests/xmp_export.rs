@@ -15,7 +15,10 @@ const XMP: &str = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF>\
 fn doc_with_xmp() -> Document {
     let mut d = Document::new("x", Size::new(8, 6), ColorMode::Rgb, SampleType::U8);
     let mut s = Surface::new(d.pixel_format());
-    s.fill_rect(photocraft_geom::Rect::new(0, 0, 8, 6), &[0.5, 0.4, 0.3, 1.0]);
+    s.fill_rect(
+        photocraft_geom::Rect::new(0, 0, 8, 6),
+        &[0.5, 0.4, 0.3, 1.0],
+    );
     d.layers.push(Layer::new("flat", LayerContent::Raster(s)));
     d.metadata.xmp = Some(XMP.to_string());
     d
@@ -28,29 +31,50 @@ fn leaks_xmp(bytes: &[u8]) -> bool {
 
 #[test]
 fn metadata_none_embeds_no_xmp() {
-    let opts = ExportOptions { xmp: XmpEmbed::None, ..ExportOptions::default() };
+    let opts = ExportOptions {
+        xmp: XmpEmbed::None,
+        ..ExportOptions::default()
+    };
     for ext in ["png", "jpg", "webp", "tif"] {
         let r = export(&doc_with_xmp(), &format!("out.{ext}"), &opts).expect(ext);
-        assert!(!leaks_xmp(&r.bytes), "{ext}: the document XMP leaked into the export");
+        assert!(
+            !leaks_xmp(&r.bytes),
+            "{ext}: the document XMP leaked into the export"
+        );
     }
 }
 
 #[test]
 fn all_embeds_the_whole_packet_and_is_the_default() {
     assert_eq!(ExportOptions::default().xmp, XmpEmbed::All);
-    let opts = ExportOptions { xmp: XmpEmbed::All, ..ExportOptions::default() };
+    let opts = ExportOptions {
+        xmp: XmpEmbed::All,
+        ..ExportOptions::default()
+    };
     for ext in ["png", "jpg", "webp"] {
         let r = export(&doc_with_xmp(), &format!("out.{ext}"), &opts).expect(ext);
-        assert!(leaks_xmp(&r.bytes), "{ext}: XmpEmbed::All must embed the packet");
+        assert!(
+            leaks_xmp(&r.bytes),
+            "{ext}: XmpEmbed::All must embed the packet"
+        );
     }
 }
 
 #[test]
 fn layered_saves_keep_the_xmp_whatever_the_option() {
-    for opts in [ExportOptions::default(), ExportOptions { xmp: XmpEmbed::None, ..ExportOptions::default() }] {
+    for opts in [
+        ExportOptions::default(),
+        ExportOptions {
+            xmp: XmpEmbed::None,
+            ..ExportOptions::default()
+        },
+    ] {
         let psd = export(&doc_with_xmp(), "out.psd", &opts).expect("psd");
         assert!(leaks_xmp(&psd.bytes), "PSD always keeps the document XMP");
         let pcraft = export(&doc_with_xmp(), "out.pcraft", &opts).expect("pcraft");
-        assert!(leaks_xmp(&pcraft.bytes), ".pcraft always keeps the document XMP");
+        assert!(
+            leaks_xmp(&pcraft.bytes),
+            ".pcraft always keeps the document XMP"
+        );
     }
 }

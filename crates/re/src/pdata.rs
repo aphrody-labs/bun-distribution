@@ -108,8 +108,12 @@ fn scan_roots(bytes: &[u8], sample_limit: usize) -> Result<PdataInspection> {
         .ok_or(PdataError::Missing)?;
     let raw_offset = pdata.pointer_to_raw_data as usize;
     let raw_size = pdata.virtual_size.min(pdata.size_of_raw_data) as usize;
-    let raw_end = raw_offset.checked_add(raw_size).ok_or(PdataError::Overflow)?;
-    let table = bytes.get(raw_offset..raw_end).ok_or(PdataError::OutOfBounds)?;
+    let raw_end = raw_offset
+        .checked_add(raw_size)
+        .ok_or(PdataError::Overflow)?;
+    let table = bytes
+        .get(raw_offset..raw_end)
+        .ok_or(PdataError::OutOfBounds)?;
     let mut sampled_roots = Vec::with_capacity(sample_limit.min(table.len() / 12));
     let mut root_entries = 0usize;
     let mut chained_fragments = 0usize;
@@ -324,7 +328,12 @@ mod tests {
         assert_eq!(report.sampled_roots.len(), MAX_INSPECTED_ROOTS);
         assert!(report.sample_truncated);
         assert_eq!(report.sampled_roots[0].start, 0x1_4003_0000);
-        assert_eq!(parse_roots(&bytes).expect("parse complete synthetic PE").len(), root_count);
+        assert_eq!(
+            parse_roots(&bytes)
+                .expect("parse complete synthetic PE")
+                .len(),
+            root_count
+        );
     }
 
     #[test]
@@ -354,7 +363,16 @@ mod tests {
     /// Vérifie le test d'inclusion (adresse → fonction racine contenante).
     #[test]
     fn inclusion_dans_la_fonction_racine() {
-        let roots = [RootFn { start: 0x1000, end: 0x1100 }, RootFn { start: 0x2000, end: 0x2400 }];
+        let roots = [
+            RootFn {
+                start: 0x1000,
+                end: 0x1100,
+            },
+            RootFn {
+                start: 0x2000,
+                end: 0x2400,
+            },
+        ];
         let starts: Vec<u64> = roots.iter().map(|r| r.start).collect();
         // Début exact → la fonction elle-même.
         assert_eq!(root_containing(&starts, &roots, 0x1000), Some(0x1000));
@@ -372,9 +390,18 @@ mod tests {
     #[test]
     fn roots_tries_et_dedupliques() {
         let mut v = [
-            RootFn { start: 0x2000, end: 0x2100 },
-            RootFn { start: 0x1000, end: 0x1100 },
-            RootFn { start: 0x2000, end: 0x2100 },
+            RootFn {
+                start: 0x2000,
+                end: 0x2100,
+            },
+            RootFn {
+                start: 0x1000,
+                end: 0x1100,
+            },
+            RootFn {
+                start: 0x2000,
+                end: 0x2100,
+            },
         ]
         .to_vec();
         v.sort_unstable_by_key(|r| r.start);

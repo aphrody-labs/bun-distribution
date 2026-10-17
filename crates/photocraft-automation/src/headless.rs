@@ -15,7 +15,11 @@ use crate::{AuthorizedWorkspace, AutomationError, files};
 fn untrusted(filesystem: Filesystem) -> Headless {
     let mut session = Session::new();
     session.authorize = Some(authorize_engine_step);
-    Headless { session, writers: HashMap::new(), filesystem }
+    Headless {
+        session,
+        writers: HashMap::new(),
+        filesystem,
+    }
 }
 
 enum Filesystem {
@@ -48,7 +52,11 @@ impl Headless {
     /// not a remote automation client, supplies these host paths. Nested
     /// `actions.play` steps are not re-checked: this caller is already trusted.
     pub fn trusted_local() -> Self {
-        Self { session: Session::new(), writers: HashMap::new(), filesystem: Filesystem::TrustedLocal }
+        Self {
+            session: Session::new(),
+            writers: HashMap::new(),
+            filesystem: Filesystem::TrustedLocal,
+        }
     }
 
     /// Create an automation session with capability-scoped file access.
@@ -67,20 +75,34 @@ impl Headless {
     fn doc_index(&self, index: Option<usize>) -> Result<usize, AutomationError> {
         match index {
             Some(i) if i < self.session.documents().len() => Ok(i),
-            Some(i) => Err(AutomationError::BadRequest(format!("no document at index {i}"))),
-            None => self.session.active_index().ok_or_else(|| AutomationError::BadRequest("no document open".into())),
+            Some(i) => Err(AutomationError::BadRequest(format!(
+                "no document at index {i}"
+            ))),
+            None => self
+                .session
+                .active_index()
+                .ok_or_else(|| AutomationError::BadRequest("no document open".into())),
         }
     }
 
     /// Open a file and make it the active document.
     pub fn open(&mut self, path: &Path) -> Result<Value, AutomationError> {
-        let requested = path.to_str().ok_or_else(|| AutomationError::BadRequest("automation paths must be valid UTF-8".into()))?;
+        let requested = path.to_str().ok_or_else(|| {
+            AutomationError::BadRequest("automation paths must be valid UTF-8".into())
+        })?;
         let mut o = match &self.filesystem {
-            Filesystem::Denied => return Err(AutomationError::BadRequest("automation filesystem access is not granted: read authority is absent".into())),
+            Filesystem::Denied => {
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: read authority is absent".into(),
+                ));
+            }
             Filesystem::TrustedLocal => files::open(path)?,
             Filesystem::Workspace(workspace) => {
                 let bytes = workspace.read(requested)?;
-                let name = path.file_name().and_then(|name| name.to_str()).unwrap_or(requested);
+                let name = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or(requested);
                 files::open_bytes(name, &bytes)?
             }
         };
@@ -91,13 +113,17 @@ impl Headless {
             }
             None => Some(requested.to_string()),
         };
-        let index = self.session.add_document(o.document, path.filter(|_| !o.source_read_only));
+        let index = self
+            .session
+            .add_document(o.document, path.filter(|_| !o.source_read_only));
         if let Some(st) = self.session.active_mut() {
             st.source_read_only = o.source_read_only;
         }
         let d = &self.session.documents()[index];
         let mut warnings = o.warnings;
-        warnings.extend(photocraft_engine::type_extra_cmds::missing_font_warnings(&d.doc));
+        warnings.extend(photocraft_engine::type_extra_cmds::missing_font_warnings(
+            &d.doc,
+        ));
         Ok(json!({
             "index": index,
             "name": d.doc.name,
@@ -112,10 +138,17 @@ impl Headless {
     /// of `file.placeEmbedded`, which reads an ambient path and is therefore refused in
     /// automation (#2810). `path` resolves beneath the read root the way `open` resolves one,
     /// and `params` carries the command's own options (`scale`, `fit`, `center`).
-    pub fn place(&mut self, index: Option<usize>, path: &str, params: &Value) -> Result<Value, AutomationError> {
+    pub fn place(
+        &mut self,
+        index: Option<usize>,
+        path: &str,
+        params: &Value,
+    ) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
         if self.session.active_index() != Some(i) && !self.session.set_active(i) {
-            return Err(AutomationError::BadRequest(format!("no document at index {i}")));
+            return Err(AutomationError::BadRequest(format!(
+                "no document at index {i}"
+            )));
         }
         let mut opts = params.as_object().cloned().unwrap_or_default();
         opts.insert("path".into(), json!(path));
@@ -126,14 +159,25 @@ impl Headless {
         let bytes = match &self.filesystem {
             Filesystem::Workspace(workspace) => workspace.read(path)?,
             _ => {
-                return Err(AutomationError::BadRequest("automation filesystem access is not granted: read authority is absent".into()));
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: read authority is absent".into(),
+                ));
             }
         };
-        let name = Path::new(path).file_name().and_then(|name| name.to_str()).unwrap_or(path);
+        let name = Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(path);
         self.sync_jobs();
         // The bytes are already in memory and the path resolved beneath the root capability, so
         // placing them needs no filesystem check of its own (`place_bytes` is the command body).
-        Ok(file_cmds::place_bytes(&mut self.session, name, bytes, None, &Value::Object(opts))?)
+        Ok(file_cmds::place_bytes(
+            &mut self.session,
+            name,
+            bytes,
+            None,
+            &Value::Object(opts),
+        )?)
     }
 
     /// Export each exported layer of a document as its own file beneath the write root: the
@@ -142,10 +186,17 @@ impl Headless {
     /// both paths write the same files. The write capability refuses to overwrite a file that
     /// already exists, where the ambient command would, and it creates the directory before the
     /// export runs, so a refused export can leave an empty directory behind — never a file.
-    pub fn export_layers(&mut self, index: Option<usize>, dir: &str, params: &Value) -> Result<Value, AutomationError> {
+    pub fn export_layers(
+        &mut self,
+        index: Option<usize>,
+        dir: &str,
+        params: &Value,
+    ) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
         if self.session.active_index() != Some(i) && !self.session.set_active(i) {
-            return Err(AutomationError::BadRequest(format!("no document at index {i}")));
+            return Err(AutomationError::BadRequest(format!(
+                "no document at index {i}"
+            )));
         }
         if matches!(&self.filesystem, Filesystem::TrustedLocal) {
             let mut opts = params.as_object().cloned().unwrap_or_default();
@@ -155,11 +206,17 @@ impl Headless {
         self.sync_jobs();
         let workspace = match &self.filesystem {
             Filesystem::Workspace(workspace) => workspace,
-            _ => return Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into())),
+            _ => {
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: write authority is absent".into(),
+                ));
+            }
         };
         let mut outputs = workspace.export_sequence(dir)?;
         let written = file_cmds::export_layers_with(&self.session, params, |name, bytes| {
-            outputs.write(name, bytes).map_err(|e| photocraft_engine::EngineError::Other(e.to_string()))
+            outputs
+                .write(name, bytes)
+                .map_err(|e| photocraft_engine::EngineError::Other(e.to_string()))
         });
         exported(dir, written, &mut outputs)
     }
@@ -168,10 +225,17 @@ impl Headless {
     /// capability-scoped `file.export.dataSetsAsFiles` (#3216). As in the command, the whole
     /// batch is planned first and colliding names are refused before any file is written; the
     /// directory itself is created before that, so a refused batch can leave it empty behind.
-    pub fn export_data_sets(&mut self, index: Option<usize>, dir: &str, params: &Value) -> Result<Value, AutomationError> {
+    pub fn export_data_sets(
+        &mut self,
+        index: Option<usize>,
+        dir: &str,
+        params: &Value,
+    ) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
         if self.session.active_index() != Some(i) && !self.session.set_active(i) {
-            return Err(AutomationError::BadRequest(format!("no document at index {i}")));
+            return Err(AutomationError::BadRequest(format!(
+                "no document at index {i}"
+            )));
         }
         if matches!(&self.filesystem, Filesystem::TrustedLocal) {
             let mut opts = params.as_object().cloned().unwrap_or_default();
@@ -181,12 +245,19 @@ impl Headless {
         self.sync_jobs();
         let workspace = match &self.filesystem {
             Filesystem::Workspace(workspace) => workspace,
-            _ => return Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into())),
+            _ => {
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: write authority is absent".into(),
+                ));
+            }
         };
         let mut outputs = workspace.export_sequence(dir)?;
-        let written = photocraft_engine::export_data_sets_with(&self.session, params, |name, bytes| {
-            outputs.write(name, bytes).map_err(|e| photocraft_engine::EngineError::Other(e.to_string()))
-        });
+        let written =
+            photocraft_engine::export_data_sets_with(&self.session, params, |name, bytes| {
+                outputs
+                    .write(name, bytes)
+                    .map_err(|e| photocraft_engine::EngineError::Other(e.to_string()))
+            });
         exported(dir, written, &mut outputs)
     }
 
@@ -194,10 +265,17 @@ impl Headless {
     /// `file.import.variableDataSets`, which takes an ambient `path` and is therefore refused
     /// in automation (#3216). The file is read beneath the root the way `open` reads one and
     /// handed to the command's own parser over the text it already has.
-    pub fn import_data_sets(&mut self, index: Option<usize>, path: &str, params: &Value) -> Result<Value, AutomationError> {
+    pub fn import_data_sets(
+        &mut self,
+        index: Option<usize>,
+        path: &str,
+        params: &Value,
+    ) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
         if self.session.active_index() != Some(i) && !self.session.set_active(i) {
-            return Err(AutomationError::BadRequest(format!("no document at index {i}")));
+            return Err(AutomationError::BadRequest(format!(
+                "no document at index {i}"
+            )));
         }
         if matches!(&self.filesystem, Filesystem::TrustedLocal) {
             let mut opts = params.as_object().cloned().unwrap_or_default();
@@ -207,17 +285,35 @@ impl Headless {
         let text = match &self.filesystem {
             Filesystem::Workspace(workspace) => {
                 let bytes = workspace.read(path)?;
-                String::from_utf8(bytes).map_err(|e| AutomationError::BadRequest(format!("automation read `{path}` is not valid UTF-8: {e}")))?
+                String::from_utf8(bytes).map_err(|e| {
+                    AutomationError::BadRequest(format!(
+                        "automation read `{path}` is not valid UTF-8: {e}"
+                    ))
+                })?
             }
-            _ => return Err(AutomationError::BadRequest("automation filesystem access is not granted: read authority is absent".into())),
+            _ => {
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: read authority is absent".into(),
+                ));
+            }
         };
         self.sync_jobs();
-        Ok(photocraft_engine::import_data_sets_text(&mut self.session, &text, params)?)
+        Ok(photocraft_engine::import_data_sets_text(
+            &mut self.session,
+            &text,
+            params,
+        )?)
     }
 
     /// Save (`.pcraft` or any export format by extension). With no path,
     /// saves to the document's own path.
-    pub fn save(&mut self, index: Option<usize>, path: Option<&Path>, format: Option<&str>, opts: &ExportOptions) -> Result<Value, AutomationError> {
+    pub fn save(
+        &mut self,
+        index: Option<usize>,
+        path: Option<&Path>,
+        format: Option<&str>,
+        opts: &ExportOptions,
+    ) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
         let (stored_path, doc) = {
             let state = &self.session.documents()[i];
@@ -229,10 +325,16 @@ impl Headless {
             // back, in its own format; a flattened or converted copy never replaces it (#416).
             (None, Some(p)) => {
                 let own = file_cmds::extension(p);
-                let written = format.map(|f| f.trim_start_matches('.').to_ascii_lowercase()).or_else(|| own.clone());
+                let written = format
+                    .map(|f| f.trim_start_matches('.').to_ascii_lowercase())
+                    .or_else(|| own.clone());
                 if !file_cmds::holds_at(&doc, p) || written != own {
                     let lost = file_cmds::losses_at(&doc, p);
-                    let why = if lost.is_empty() { String::new() } else { format!(" (it can't keep: {})", lost.join("; ")) };
+                    let why = if lost.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" (it can't keep: {})", lost.join("; "))
+                    };
                     return Err(AutomationError::BadRequest(format!(
                         "pass `path`: without one, only a PSD, PSB, .pcraft or OpenRaster file that holds the whole document is written back, in its own format, so `{p}` was left unchanged{why}"
                     )));
@@ -240,12 +342,20 @@ impl Headless {
                 PathBuf::from(p)
             }
             (None, None) => {
-                return Err(AutomationError::BadRequest("document has no path; pass `path`".into()));
+                return Err(AutomationError::BadRequest(
+                    "document has no path; pass `path`".into(),
+                ));
             }
         };
-        let target_text = target.to_str().ok_or_else(|| AutomationError::BadRequest("automation paths must be valid UTF-8".into()))?;
+        let target_text = target.to_str().ok_or_else(|| {
+            AutomationError::BadRequest("automation paths must be valid UTF-8".into())
+        })?;
         let mut warnings = match &self.filesystem {
-            Filesystem::Denied => return Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into())),
+            Filesystem::Denied => {
+                return Err(AutomationError::BadRequest(
+                    "automation filesystem access is not granted: write authority is absent".into(),
+                ));
+            }
             Filesystem::TrustedLocal => {
                 let writer = self.writers.entry(doc.id.0).or_default();
                 files::save(&doc, &target, format, opts, Some(writer))?
@@ -256,14 +366,21 @@ impl Headless {
                 warnings
             }
         };
-        warnings.extend(photocraft_engine::type_extra_cmds::missing_font_warnings(&doc));
+        warnings.extend(photocraft_engine::type_extra_cmds::missing_font_warnings(
+            &doc,
+        ));
         // A layered document save (PSD, PSB, OpenRaster or .pcraft) that holds the whole document is a
         // full write, not a flattened copy: record the current revision as saved so the session
         // stops reporting `dirty`, and make the file the document's path. A flat export (PNG,
         // JPEG, …), or an OpenRaster file that drops part of it, is a copy and leaves both alone
         // (#1547, #3806).
-        let ext =
-            format.map(|f| f.trim_start_matches('.').to_ascii_lowercase()).or_else(|| target.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()));
+        let ext = format
+            .map(|f| f.trim_start_matches('.').to_ascii_lowercase())
+            .or_else(|| {
+                target
+                    .extension()
+                    .map(|e| e.to_string_lossy().to_ascii_lowercase())
+            });
         if ext.as_deref().is_some_and(|e| file_cmds::holds(&doc, e)) {
             // Saving by index must not retarget the next automation command.
             let previously_active = self.session.active_index();
@@ -280,20 +397,31 @@ impl Headless {
 
     /// Write rendered bytes through the configured write authority.
     pub fn write_render(&self, path: &Path, bytes: &[u8]) -> Result<(), AutomationError> {
-        let requested = path.to_str().ok_or_else(|| AutomationError::BadRequest("automation paths must be valid UTF-8".into()))?;
+        let requested = path.to_str().ok_or_else(|| {
+            AutomationError::BadRequest("automation paths must be valid UTF-8".into())
+        })?;
         match &self.filesystem {
-            Filesystem::Denied => Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into())),
-            Filesystem::TrustedLocal => photocraft_format::atomic_write(path, bytes).map_err(|error| AutomationError::Io(error.to_string())),
+            Filesystem::Denied => Err(AutomationError::BadRequest(
+                "automation filesystem access is not granted: write authority is absent".into(),
+            )),
+            Filesystem::TrustedLocal => photocraft_format::atomic_write(path, bytes)
+                .map_err(|error| AutomationError::Io(error.to_string())),
             Filesystem::Workspace(workspace) => workspace.write(requested, bytes),
         }
     }
 
     pub fn inspect(&self, index: Option<usize>) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
-        Ok(photocraft_engine::inspect::document(&self.session.documents()[i]))
+        Ok(photocraft_engine::inspect::document(
+            &self.session.documents()[i],
+        ))
     }
 
-    pub fn render_png(&self, index: Option<usize>, max_side: u32) -> Result<Vec<u8>, AutomationError> {
+    pub fn render_png(
+        &self,
+        index: Option<usize>,
+        max_side: u32,
+    ) -> Result<Vec<u8>, AutomationError> {
         let i = self.doc_index(index)?;
         let doc = &self.session.documents()[i].doc;
         if !matches!(&self.filesystem, Filesystem::TrustedLocal) {
@@ -311,7 +439,13 @@ impl Headless {
     }
 
     pub fn select(&mut self, index: usize) -> Result<Value, AutomationError> {
-        if self.session.set_active(index) { Ok(self.session_list()) } else { Err(AutomationError::BadRequest(format!("no document at index {index}"))) }
+        if self.session.set_active(index) {
+            Ok(self.session_list())
+        } else {
+            Err(AutomationError::BadRequest(format!(
+                "no document at index {index}"
+            )))
+        }
     }
 
     pub fn close(&mut self, index: Option<usize>) -> Result<Value, AutomationError> {
@@ -323,7 +457,18 @@ impl Headless {
     }
 
     pub fn command_list(&self) -> Value {
-        Value::Array(command_specs().iter().map(|c| photocraft_engine::commands::list_entry(&self.session, c, self.session.disabled_reason(c.id))).collect())
+        Value::Array(
+            command_specs()
+                .iter()
+                .map(|c| {
+                    photocraft_engine::commands::list_entry(
+                        &self.session,
+                        c,
+                        self.session.disabled_reason(c.id),
+                    )
+                })
+                .collect(),
+        )
     }
 
     pub fn command_run(&mut self, id: &str, params: Value) -> Result<Value, AutomationError> {
@@ -333,7 +478,12 @@ impl Headless {
     /// Run a command; with `wait` false, a job-capable command (filters, Content-Aware Fill,
     /// Photomerge, …) runs in the background and this returns `{"job": id}` at once (poll with
     /// `jobs.list`, stop with `jobs.cancel`). Other commands finish before returning either way.
-    pub fn command_start(&mut self, id: &str, params: Value, wait: bool) -> Result<Value, AutomationError> {
+    pub fn command_start(
+        &mut self,
+        id: &str,
+        params: Value,
+        wait: bool,
+    ) -> Result<Value, AutomationError> {
         let params = if params.is_null() { json!({}) } else { params };
         if !matches!(&self.filesystem, Filesystem::TrustedLocal) {
             if id == "file.export.renderVideo" {
@@ -356,17 +506,30 @@ impl Headless {
 impl Headless {
     /// A direct automation Render Video uses only the launch-time write capability. Nested
     /// engine actions still reject this filesystem command until they can carry capabilities.
-    pub(crate) fn render_video(&mut self, params: Value, progress: impl FnMut(usize, usize) -> bool) -> Result<Value, AutomationError> {
+    pub(crate) fn render_video(
+        &mut self,
+        params: Value,
+        progress: impl FnMut(usize, usize) -> bool,
+    ) -> Result<Value, AutomationError> {
         self.sync_jobs();
         let Filesystem::Workspace(workspace) = &self.filesystem else {
-            return Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into()));
+            return Err(AutomationError::BadRequest(
+                "automation filesystem access is not granted: write authority is absent".into(),
+            ));
         };
-        let dir = params.get("dir").and_then(Value::as_str).ok_or_else(|| AutomationError::BadRequest("renderVideo needs `dir`".into()))?;
+        let dir = params
+            .get("dir")
+            .and_then(Value::as_str)
+            .ok_or_else(|| AutomationError::BadRequest("renderVideo needs `dir`".into()))?;
         let mut outputs = workspace.export_sequence(dir)?;
         let result = photocraft_engine::render_video_with(
             &self.session,
             &params,
-            |name, bytes| outputs.write(name, bytes).map_err(|e| photocraft_engine::EngineError::Other(e.to_string())),
+            |name, bytes| {
+                outputs
+                    .write(name, bytes)
+                    .map_err(|e| photocraft_engine::EngineError::Other(e.to_string()))
+            },
             progress,
         );
         match result {
@@ -384,7 +547,11 @@ impl Headless {
 
 /// Common tail of the two capability-scoped exports: the sequence keeps what it wrote, or drops
 /// every file it created, so a half-finished export never looks like a finished one.
-fn exported(dir: &str, written: photocraft_engine::Result<Vec<String>>, outputs: &mut ExportSequence) -> Result<Value, AutomationError> {
+fn exported(
+    dir: &str,
+    written: photocraft_engine::Result<Vec<String>>,
+    outputs: &mut ExportSequence,
+) -> Result<Value, AutomationError> {
     match written {
         Ok(names) => {
             outputs.commit();

@@ -39,7 +39,9 @@ impl Block {
         let rest = self.tag.strip_prefix("section_header_level_")?;
         // DocTags levels are 1-based and shallow; anything unparseable is not
         // a heading rather than a level-0 one.
-        rest.parse::<usize>().ok().filter(|level| (1..=6).contains(level))
+        rest.parse::<usize>()
+            .ok()
+            .filter(|level| (1..=6).contains(level))
     }
 
     /// Whether the block is a page ornament rather than content.
@@ -87,8 +89,11 @@ impl Block {
 /// variety or not enough length to qualify.
 #[must_use]
 pub fn looks_like_filler(text: &str) -> bool {
-    let alphanumeric: Vec<char> =
-        text.chars().filter(|c| c.is_alphanumeric()).flat_map(char::to_lowercase).collect();
+    let alphanumeric: Vec<char> = text
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect();
     if alphanumeric.len() < 5 {
         return false;
     }
@@ -134,13 +139,20 @@ impl Document {
         if cleaned.is_empty() {
             return Self { blocks: Vec::new() };
         }
-        Self { blocks: vec![Block { tag: "text".to_owned(), text: cleaned }] }
+        Self {
+            blocks: vec![Block {
+                tag: "text".to_owned(),
+                text: cleaned,
+            }],
+        }
     }
 
     /// Parse only the `DocTags` blocks, without the plain-text fallback.
     #[must_use]
     pub fn parse_doctags(raw: &str) -> Self {
-        Self { blocks: parse_blocks(raw) }
+        Self {
+            blocks: parse_blocks(raw),
+        }
     }
 
     /// Whether the page carries any readable text.
@@ -150,7 +162,9 @@ impl Document {
     /// recorded as textless.
     #[must_use]
     pub fn has_text(&self) -> bool {
-        self.blocks.iter().any(|block| !block.is_furniture() && !block.is_empty_content())
+        self.blocks
+            .iter()
+            .any(|block| !block.is_furniture() && !block.is_empty_content())
     }
 
     /// Render the content blocks as light markdown.
@@ -176,21 +190,21 @@ impl Document {
                     out.push(' ');
                     out.push_str(text);
                     out.push_str("\n\n");
-                },
+                }
                 "list_item" => {
                     out.push_str("- ");
                     out.push_str(text);
                     out.push('\n');
-                },
+                }
                 "caption" => {
                     out.push('*');
                     out.push_str(text);
                     out.push_str("*\n\n");
-                },
+                }
                 _ => {
                     out.push_str(text);
                     out.push_str("\n\n");
-                },
+                }
             }
         }
         let trimmed = out.trim_end().to_owned();
@@ -208,7 +222,9 @@ fn parse_blocks(raw: &str) -> Vec<Block> {
 
     while let Some(open_start) = cursor.find('<') {
         let after_open = &cursor[open_start + 1..];
-        let Some(open_end) = after_open.find('>') else { break };
+        let Some(open_end) = after_open.find('>') else {
+            break;
+        };
         let tag = &after_open[..open_end];
         let body_start = open_start + 1 + open_end + 1;
 
@@ -226,7 +242,10 @@ fn parse_blocks(raw: &str) -> Vec<Block> {
             None => (body, ""),
         };
 
-        blocks.push(Block { tag: tag.to_owned(), text: strip_markers(payload) });
+        blocks.push(Block {
+            tag: tag.to_owned(),
+            text: strip_markers(payload),
+        });
         if next.is_empty() {
             break;
         }
@@ -292,7 +311,10 @@ pub fn html_to_text(raw: &str) -> String {
 /// there the model is transcribing the page rather than its watermark.
 #[must_use]
 pub fn strip_watermarks(text: &str) -> String {
-    let kept: Vec<&str> = text.lines().filter(|line| !is_bare_url(line.trim())).collect();
+    let kept: Vec<&str> = text
+        .lines()
+        .filter(|line| !is_bare_url(line.trim()))
+        .collect();
     kept.join("\n").trim().to_owned()
 }
 
@@ -308,13 +330,16 @@ fn is_bare_url(line: &str) -> bool {
 
     // A bare domain: at least one dot, a known-shaped TLD, and nothing that
     // would make it a sentence or a file name.
-    let Some((host, tld)) = token.rsplit_once('.') else { return false };
+    let Some((host, tld)) = token.rsplit_once('.') else {
+        return false;
+    };
     if host.is_empty() || !(2..=24).contains(&tld.len()) {
         return false;
     }
     let tld_is_alpha = tld.chars().all(|c| c.is_ascii_alphabetic());
-    let host_is_hostname =
-        host.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_');
+    let host_is_hostname = host
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_');
     // `1-0001.jpg` and `12.5` must not qualify; `capsulecommentary.com` must.
     tld_is_alpha && host_is_hostname && host.chars().any(|c| c.is_ascii_alphabetic())
 }
@@ -375,7 +400,13 @@ pub fn truncate_loop(text: &str) -> (String, bool) {
 #[must_use]
 pub fn strip_control_tokens(raw: &str) -> String {
     let mut out = raw.to_owned();
-    for token in ["<|endofassistant|>", "<|im_end|>", "<|end|>", "<|eot_id|>", "</s>"] {
+    for token in [
+        "<|endofassistant|>",
+        "<|im_end|>",
+        "<|end|>",
+        "<|eot_id|>",
+        "</s>",
+    ] {
         out = out.replace(token, " ");
     }
     out.trim().to_owned()
@@ -435,7 +466,10 @@ mod tests {
     #[test]
     fn markdown_uses_the_heading_level_from_the_tag() {
         let markdown = Document::parse(PAGE_WITH_TEXT).to_markdown().unwrap();
-        assert!(markdown.starts_with("# APHRODY LOCAL INFERENCE"), "{markdown}");
+        assert!(
+            markdown.starts_with("# APHRODY LOCAL INFERENCE"),
+            "{markdown}"
+        );
         assert!(markdown.contains("Invoice 2026-08-21"));
         assert!(markdown.contains("Total: 1337.42 EUR"));
     }
@@ -459,7 +493,10 @@ mod tests {
     #[test]
     fn punctuation_only_blocks_carry_no_text() {
         for text in ["...", "— ‥ !!", "   ", "|||"] {
-            let block = Block { tag: "text".into(), text: text.into() };
+            let block = Block {
+                tag: "text".into(),
+                text: text.into(),
+            };
             assert!(block.is_empty_content(), "{text:?}");
         }
     }
@@ -582,7 +619,11 @@ mod tests {
     #[test]
     fn a_dangling_angle_bracket_is_treated_as_literal_text() {
         let doc = Document::parse("<text><loc_1>5 < 10 always</text>");
-        assert!(doc.blocks[0].text.contains("10 always"), "{:?}", doc.blocks[0].text);
+        assert!(
+            doc.blocks[0].text.contains("10 always"),
+            "{:?}",
+            doc.blocks[0].text
+        );
     }
 
     #[test]
@@ -613,7 +654,10 @@ mod tests {
                    ふるさ ふるさ";
         let (kept, looped) = truncate_loop(raw);
         assert!(looped);
-        assert!(kept.starts_with("1 カプセル ナンバー No.9 バイク"), "{kept}");
+        assert!(
+            kept.starts_with("1 カプセル ナンバー No.9 バイク"),
+            "{kept}"
+        );
         // One instance of the motif may survive; dozens may not.
         assert!(kept.matches("ふるさ").count() <= 1, "{kept}");
     }
@@ -723,6 +767,9 @@ mod tests {
         let doc = Document::parse("<text><loc_1>うんこたれじゃないーっ!!!!</text>");
         assert_eq!(doc.blocks[0].text, "うんこたれじゃないーっ!!!!");
         assert!(doc.has_text());
-        assert_eq!(doc.to_markdown().as_deref(), Some("うんこたれじゃないーっ!!!!"));
+        assert_eq!(
+            doc.to_markdown().as_deref(),
+            Some("うんこたれじゃないーっ!!!!")
+        );
     }
 }

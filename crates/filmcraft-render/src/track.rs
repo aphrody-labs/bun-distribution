@@ -47,7 +47,12 @@ impl Gray {
     }
     /// Luma of 8-bit RGBA (Rec. 709 weights on the encoded values).
     pub fn from_rgba8(w: usize, h: usize, rgba: &[u8]) -> Self {
-        let px = rgba.as_chunks::<4>().0.iter().map(|p| (0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32) / 255.0).collect();
+        let px = rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| (0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32) / 255.0)
+            .collect();
         Self { w, h, px }
     }
     #[inline]
@@ -77,7 +82,9 @@ impl Gray {
         let mut tmp = vec![0.0f32; w * h];
         tmp.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
             for (x, o) in row.iter_mut().enumerate() {
-                *o = (0..5).map(|i| k[i] * self.at(x as i32 + i as i32 - 2, y as i32)).sum();
+                *o = (0..5)
+                    .map(|i| k[i] * self.at(x as i32 + i as i32 - 2, y as i32))
+                    .sum();
             }
         });
         let t = Gray { w, h, px: tmp };
@@ -85,7 +92,9 @@ impl Gray {
         let mut px = vec![0.0f32; nw * nh];
         px.par_chunks_mut(nw).enumerate().for_each(|(y, row)| {
             for (x, o) in row.iter_mut().enumerate() {
-                *o = (0..5).map(|i| k[i] * t.at(2 * x as i32, 2 * y as i32 + i as i32 - 2)).sum();
+                *o = (0..5)
+                    .map(|i| k[i] * t.at(2 * x as i32, 2 * y as i32 + i as i32 - 2))
+                    .sum();
             }
         });
         Gray { w: nw, h: nh, px }
@@ -93,7 +102,9 @@ impl Gray {
     fn pyramid(&self) -> Vec<Gray> {
         let mut v = vec![self.clone()];
         while v.len() < LEVELS && v.last().is_some_and(|g| g.w >= 32 && g.h >= 32) {
-            let Some(n) = v.last().map(Gray::down) else { break };
+            let Some(n) = v.last().map(Gray::down) else {
+                break;
+            };
             v.push(n);
         }
         v
@@ -101,7 +112,10 @@ impl Gray {
     /// Central-difference gradient.
     #[inline]
     fn grad(&self, x: i32, y: i32) -> (f32, f32) {
-        ((self.at(x + 1, y) - self.at(x - 1, y)) * 0.5, (self.at(x, y + 1) - self.at(x, y - 1)) * 0.5)
+        (
+            (self.at(x + 1, y) - self.at(x - 1, y)) * 0.5,
+            (self.at(x, y + 1) - self.at(x, y - 1)) * 0.5,
+        )
     }
 }
 
@@ -124,7 +138,11 @@ fn dist_to_poly(poly: &[Vec2], p: Vec2) -> f64 {
             let (a, b) = (poly[i], poly[(i + 1) % n]);
             let d = b - a;
             let l2 = d.x * d.x + d.y * d.y;
-            let t = if l2 > 0.0 { (((p - a).x * d.x + (p - a).y * d.y) / l2).clamp(0.0, 1.0) } else { 0.0 };
+            let t = if l2 > 0.0 {
+                (((p - a).x * d.x + (p - a).y * d.y) / l2).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             (p - (a + d * t)).length()
         })
         .fold(f64::INFINITY, f64::min)
@@ -135,8 +153,16 @@ pub fn features(g: &Gray, region: &[Vec2], max: usize, min_dist: f32) -> Vec<[f3
     if region.len() < 3 {
         return Vec::new();
     }
-    let lo = region.iter().fold(Vec2::new(f64::INFINITY, f64::INFINITY), |a, p| Vec2::new(a.x.min(p.x), a.y.min(p.y)));
-    let hi = region.iter().fold(Vec2::new(f64::NEG_INFINITY, f64::NEG_INFINITY), |a, p| Vec2::new(a.x.max(p.x), a.y.max(p.y)));
+    let lo = region
+        .iter()
+        .fold(Vec2::new(f64::INFINITY, f64::INFINITY), |a, p| {
+            Vec2::new(a.x.min(p.x), a.y.min(p.y))
+        });
+    let hi = region
+        .iter()
+        .fold(Vec2::new(f64::NEG_INFINITY, f64::NEG_INFINITY), |a, p| {
+            Vec2::new(a.x.max(p.x), a.y.max(p.y))
+        });
     let margin = WIN + 2;
     let x0 = (lo.x.floor() as i32).max(margin);
     let y0 = (lo.y.floor() as i32).max(margin);
@@ -185,7 +211,9 @@ pub fn features(g: &Gray, region: &[Vec2], max: usize, min_dist: f32) -> Vec<[f3
             let mut is_max = true;
             'n: for dy in -1i32..=1 {
                 for dx in -1i32..=1 {
-                    if (dx != 0 || dy != 0) && resp[(yy as i32 + dy) as usize * bw + (xx as i32 + dx) as usize] > v {
+                    if (dx != 0 || dy != 0)
+                        && resp[(yy as i32 + dy) as usize * bw + (xx as i32 + dx) as usize] > v
+                    {
                         is_max = false;
                         break 'n;
                     }
@@ -201,7 +229,10 @@ pub fn features(g: &Gray, region: &[Vec2], max: usize, min_dist: f32) -> Vec<[f3
     let md2 = min_dist * min_dist;
     for (_, x, y) in cand {
         let p = [x as f32, y as f32];
-        if out.iter().all(|q| (q[0] - p[0]).powi(2) + (q[1] - p[1]).powi(2) >= md2) {
+        if out
+            .iter()
+            .all(|q| (q[0] - p[0]).powi(2) + (q[1] - p[1]).powi(2) >= md2)
+        {
             out.push(p);
             if out.len() >= max {
                 break;
@@ -269,7 +300,8 @@ fn lk(pa: &[Gray], pb: &[Gray], p: [f32; 2]) -> Option<[f32; 2]> {
     }
     let q = [p[0] + d[0], p[1] + d[1]];
     let (w, h) = (pa[0].w as f32, pa[0].h as f32);
-    (q[0].is_finite() && q[1].is_finite() && q[0] >= 0.0 && q[1] >= 0.0 && q[0] < w && q[1] < h).then_some(q)
+    (q[0].is_finite() && q[1].is_finite() && q[0] >= 0.0 && q[1] >= 0.0 && q[0] < w && q[1] < h)
+        .then_some(q)
 }
 
 /// Least-squares fit of `method` mapping `src` → `dst`.
@@ -306,9 +338,20 @@ pub fn fit_ls(method: TrackMethod, src: &[Vec2], dst: &[Vec2]) -> Option<Affine>
         a /= l;
         b /= l;
     }
-    let lin = Affine { a, b, c: -b, d: a, e: 0.0, f: 0.0 };
+    let lin = Affine {
+        a,
+        b,
+        c: -b,
+        d: a,
+        e: 0.0,
+        f: 0.0,
+    };
     let t = cd - lin.apply(cs);
-    Some(Affine { e: t.x, f: t.y, ..lin })
+    Some(Affine {
+        e: t.x,
+        f: t.y,
+        ..lin
+    })
 }
 
 /// Deterministic xorshift for RANSAC sampling.
@@ -328,11 +371,19 @@ impl Rng {
 /// RANSAC + least-squares refit. Returns (transform, inlier count).
 pub fn fit_robust(method: TrackMethod, src: &[Vec2], dst: &[Vec2]) -> Option<(Affine, usize)> {
     let n = src.len();
-    let k = if method == TrackMethod::Position { 1 } else { 2 };
+    let k = if method == TrackMethod::Position {
+        1
+    } else {
+        2
+    };
     if n < k {
         return None;
     }
-    let inliers_of = |m: &Affine| -> Vec<usize> { (0..n).filter(|&i| (m.apply(src[i]) - dst[i]).length() < RANSAC_THRESHOLD).collect() };
+    let inliers_of = |m: &Affine| -> Vec<usize> {
+        (0..n)
+            .filter(|&i| (m.apply(src[i]) - dst[i]).length() < RANSAC_THRESHOLD)
+            .collect()
+    };
     let mut rng = Rng(0x9E37_79B9_7F4A_7C15 ^ n as u64);
     let mut best: Vec<usize> = Vec::new();
     for _ in 0..RANSAC_ITERS {
@@ -351,7 +402,9 @@ pub fn fit_robust(method: TrackMethod, src: &[Vec2], dst: &[Vec2]) -> Option<(Af
             idx.push(j);
         }
         let (s, d): (Vec<Vec2>, Vec<Vec2>) = idx.iter().map(|&q| (src[q], dst[q])).unzip();
-        let Some(m) = fit_ls(method, &s, &d) else { continue };
+        let Some(m) = fit_ls(method, &s, &d) else {
+            continue;
+        };
         let inl = inliers_of(&m);
         if inl.len() > best.len() {
             best = inl;
@@ -394,7 +447,9 @@ pub struct Prepared {
 
 impl Prepared {
     pub fn new(g: Gray) -> Self {
-        Self { levels: g.pyramid() }
+        Self {
+            levels: g.pyramid(),
+        }
     }
     pub fn base(&self) -> &Gray {
         &self.levels[0]
@@ -402,7 +457,12 @@ impl Prepared {
 }
 
 /// Track the picture inside `region` (polygon in frame pixels) from `a` to `b`.
-pub fn track_step(a: &Prepared, b: &Prepared, region: &[Vec2], method: TrackMethod) -> Option<Step> {
+pub fn track_step(
+    a: &Prepared,
+    b: &Prepared,
+    region: &[Vec2],
+    method: TrackMethod,
+) -> Option<Step> {
     let feats = features(a.base(), region, MAX_FEATURES, 5.0);
     if feats.len() < 3 {
         return None;
@@ -413,7 +473,12 @@ pub fn track_step(a: &Prepared, b: &Prepared, region: &[Vec2], method: TrackMeth
             let q = lk(&a.levels, &b.levels, p)?;
             let back = lk(&b.levels, &a.levels, q)?;
             let fb = ((back[0] - p[0]).powi(2) + (back[1] - p[1]).powi(2)).sqrt();
-            (fb < FB_MAX).then(|| (Vec2::new(p[0] as f64, p[1] as f64), Vec2::new(q[0] as f64, q[1] as f64)))
+            (fb < FB_MAX).then(|| {
+                (
+                    Vec2::new(p[0] as f64, p[1] as f64),
+                    Vec2::new(q[0] as f64, q[1] as f64),
+                )
+            })
         })
         .collect();
     let (src, dst): (Vec<Vec2>, Vec<Vec2>) = pairs.into_iter().unzip();
@@ -421,7 +486,12 @@ pub fn track_step(a: &Prepared, b: &Prepared, region: &[Vec2], method: TrackMeth
     if inliers < 3 {
         return None;
     }
-    Some(Step { transform, features: feats.len(), tracked: src.len(), inliers })
+    Some(Step {
+        transform,
+        features: feats.len(),
+        tracked: src.len(),
+        inliers,
+    })
 }
 
 #[cfg(test)]
@@ -430,7 +500,9 @@ mod tests {
 
     /// A deterministic texture: smooth blobs + fine detail.
     fn texture(u: f64, v: f64) -> f32 {
-        let s = (u * 0.21).sin() * (v * 0.17).cos() + 0.5 * ((u + v) * 0.43).sin() + 0.35 * ((u * 0.9 - v * 0.6).sin() * (v * 0.75).cos());
+        let s = (u * 0.21).sin() * (v * 0.17).cos()
+            + 0.5 * ((u + v) * 0.43).sin()
+            + 0.35 * ((u * 0.9 - v * 0.6).sin() * (v * 0.75).cos());
         let h = {
             let (iu, iv) = ((u / 6.0).floor() as i64, (v / 6.0).floor() as i64);
             let mut x = (iu.wrapping_mul(73_856_093) ^ iv.wrapping_mul(19_349_663)) as u64;
@@ -453,7 +525,11 @@ mod tests {
                 for (ox, oy) in [(0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)] {
                     let p = Vec2::new((i % w) as f64 + ox - 0.5, (i / w) as f64 + oy - 0.5);
                     let o = inv.apply(p);
-                    acc += if o.length() < 70.0 { texture(o.x + 200.0, o.y + 300.0) } else { 0.25 + 0.1 * texture(p.x * 0.5 + 900.0, p.y * 0.5) };
+                    acc += if o.length() < 70.0 {
+                        texture(o.x + 200.0, o.y + 300.0)
+                    } else {
+                        0.25 + 0.1 * texture(p.x * 0.5 + 900.0, p.y * 0.5)
+                    };
                 }
                 acc / 4.0
             })
@@ -462,11 +538,23 @@ mod tests {
     }
 
     fn pose(t: f64, rot_per: f64, scale_per: f64) -> Affine {
-        Affine::motion(Vec2::new(150.0 + 3.2 * t, 120.0 - 1.7 * t), Vec2::new(1.0 + scale_per * t, 1.0 + scale_per * t), rot_per * t, Vec2::ZERO)
+        Affine::motion(
+            Vec2::new(150.0 + 3.2 * t, 120.0 - 1.7 * t),
+            Vec2::new(1.0 + scale_per * t, 1.0 + scale_per * t),
+            rot_per * t,
+            Vec2::ZERO,
+        )
     }
 
     fn circle(c: Vec2, r: f64) -> Vec<Vec2> {
-        (0..48).map(|i| c + Vec2::new((i as f64 / 48.0 * std::f64::consts::TAU).cos() * r, (i as f64 / 48.0 * std::f64::consts::TAU).sin() * r)).collect()
+        (0..48)
+            .map(|i| {
+                c + Vec2::new(
+                    (i as f64 / 48.0 * std::f64::consts::TAU).cos() * r,
+                    (i as f64 / 48.0 * std::f64::consts::TAU).sin() * r,
+                )
+            })
+            .collect()
     }
 
     fn run(method: TrackMethod, rot: f64, scale: f64, frames: usize) -> f64 {
@@ -474,8 +562,15 @@ mod tests {
         let mut region = circle(Vec2::new(150.0, 120.0), 50.0);
         let mut prev = Prepared::new(frame(w, h, &pose(0.0, rot, scale)));
         let mut worst = 0.0f64;
-        let probe = [Vec2::new(30.0, 0.0), Vec2::new(-20.0, 25.0), Vec2::new(0.0, -40.0)];
-        let mut tracked: Vec<Vec2> = probe.iter().map(|o| pose(0.0, rot, scale).apply(*o)).collect();
+        let probe = [
+            Vec2::new(30.0, 0.0),
+            Vec2::new(-20.0, 25.0),
+            Vec2::new(0.0, -40.0),
+        ];
+        let mut tracked: Vec<Vec2> = probe
+            .iter()
+            .map(|o| pose(0.0, rot, scale).apply(*o))
+            .collect();
         for k in 1..=frames {
             let next = Prepared::new(frame(w, h, &pose(k as f64, rot, scale)));
             let st = track_step(&prev, &next, &region, method).expect("tracked");
@@ -516,7 +611,11 @@ mod tests {
         for i in 0..40 {
             let p = Vec2::new((i * 37 % 100) as f64, (i * 61 % 90) as f64);
             src.push(p);
-            dst.push(if i % 4 == 0 { p + Vec2::new(20.0, -13.0) } else { truth.apply(p) });
+            dst.push(if i % 4 == 0 {
+                p + Vec2::new(20.0, -13.0)
+            } else {
+                truth.apply(p)
+            });
         }
         let (m, inl) = fit_robust(TrackMethod::PositionScaleRotation, &src, &dst).unwrap();
         assert_eq!(inl, 30);

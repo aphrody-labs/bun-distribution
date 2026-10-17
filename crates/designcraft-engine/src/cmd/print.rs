@@ -35,7 +35,10 @@ fn print(s: &mut Session, p: &Value) -> Result<Value> {
     #[cfg(target_arch = "wasm32")]
     {
         super::export::options(p, s.doc()?.doc.page_count())?;
-        Err(bad("file.print", "printing isn't available on the web: export a PDF and print it"))
+        Err(bad(
+            "file.print",
+            "printing isn't available on the web: export a PDF and print it",
+        ))
     }
     #[cfg(not(target_arch = "wasm32"))]
     print_with(s, p, craft_print::submit)
@@ -49,7 +52,11 @@ fn print_with(
 ) -> Result<Value> {
     let d = &s.doc()?.doc;
     let opts = super::export::options(p, d.page_count())?;
-    let copies = p.get("copies").and_then(Value::as_u64).unwrap_or(1).clamp(1, 999) as u32;
+    let copies = p
+        .get("copies")
+        .and_then(Value::as_u64)
+        .unwrap_or(1)
+        .clamp(1, 999) as u32;
     let job = craft_print::Job {
         printer: str_param(p, "printer").map(str::to_string),
         copies,
@@ -58,8 +65,10 @@ fn print_with(
         ..craft_print::Job::default()
     };
     let dry = p.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
-    let pdf = designcraft_pdf::export_pdf(d, &s.cache, &opts).map_err(|e| EngineError::Other(e.to_string()))?;
-    let command = craft_print::command_preview(&job).map_err(|e| bad("file.print", e.to_string()))?;
+    let pdf = designcraft_pdf::export_pdf(d, &s.cache, &opts)
+        .map_err(|e| EngineError::Other(e.to_string()))?;
+    let command =
+        craft_print::command_preview(&job).map_err(|e| bad("file.print", e.to_string()))?;
     let pages = opts.pages.as_ref().map_or(d.page_count(), |v| v.len());
     let out = json!({"printer": job.printer, "copies": copies, "pages": pages, "command": command, "bytes": pdf.len()});
     if !dry {
@@ -76,9 +85,19 @@ mod tests {
     fn print_builds_the_spool_command() {
         let mut s = Session::new();
         s.execute("file.new", &json!({"pages": 4})).unwrap();
-        let r = s.execute("file.print", &json!({"printer": "Office", "copies": 2, "pages": "2-3", "dryRun": true})).unwrap();
+        let r = s
+            .execute(
+                "file.print",
+                &json!({"printer": "Office", "copies": 2, "pages": "2-3", "dryRun": true}),
+            )
+            .unwrap();
         assert_eq!(r["pages"], 2);
-        let command: Vec<&str> = r["command"].as_array().unwrap().iter().filter_map(Value::as_str).collect();
+        let command: Vec<&str> = r["command"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
         if craft_print::backend() == Some(craft_print::Backend::Cups) {
             assert_eq!(&command[..5], ["lp", "-d", "Office", "-n", "2"]);
             assert!(command.contains(&"print-scaling=auto-fit"));
@@ -87,7 +106,10 @@ mod tests {
             assert_eq!(command[0], "powershell");
         }
         assert!(r["bytes"].as_u64().unwrap() > 500);
-        assert!(s.execute("file.print", &json!({"pages": "9", "dryRun": true})).is_err());
+        assert!(
+            s.execute("file.print", &json!({"pages": "9", "dryRun": true}))
+                .is_err()
+        );
         assert!(s.execute("file.printers", &json!({})).unwrap()["printers"].is_array());
     }
 
@@ -114,9 +136,20 @@ mod tests {
         })
         .unwrap();
         assert_eq!(r["pages"], 2);
-        let refusal = print_with(&mut s, &params, |_, _| Err(craft_print::Error::Spool("printer offline".into()))).unwrap_err();
+        let refusal = print_with(&mut s, &params, |_, _| {
+            Err(craft_print::Error::Spool("printer offline".into()))
+        })
+        .unwrap_err();
         assert!(refusal.to_string().contains("printer offline"));
-        print_with(&mut s, &json!({"dryRun": true}), |_, _| panic!("dry runs must not spool")).unwrap();
-        assert!(print_with(&mut s, &json!({"pages": "9"}), |_, _| panic!("invalid ranges must not spool")).is_err());
+        print_with(&mut s, &json!({"dryRun": true}), |_, _| {
+            panic!("dry runs must not spool")
+        })
+        .unwrap();
+        assert!(
+            print_with(&mut s, &json!({"pages": "9"}), |_, _| panic!(
+                "invalid ranges must not spool"
+            ))
+            .is_err()
+        );
     }
 }

@@ -26,7 +26,11 @@ pub struct EditHistory<T> {
 
 impl<T: Clone + PartialEq> EditHistory<T> {
     pub fn new(now: &T) -> Self {
-        Self { undo: Vec::new(), redo: Vec::new(), settled: now.clone() }
+        Self {
+            undo: Vec::new(),
+            redo: Vec::new(),
+            settled: now.clone(),
+        }
     }
 
     /// Records a change since the latest step as a new step, unless `busy` (a drag in progress).
@@ -37,7 +41,8 @@ impl<T: Clone + PartialEq> EditHistory<T> {
         if self.undo.len() >= LIMIT {
             self.undo.remove(0);
         }
-        self.undo.push(std::mem::replace(&mut self.settled, now.clone()));
+        self.undo
+            .push(std::mem::replace(&mut self.settled, now.clone()));
         self.redo.clear();
     }
 
@@ -77,7 +82,11 @@ fn take_step(ctx: &egui::Context) -> Option<Step> {
 /// A parameter dialog's settings: its fields without the private `__` keys (preview toggle,
 /// command, label…).
 fn settings(fields: &Map<String, Value>) -> Map<String, Value> {
-    fields.iter().filter(|(k, _)| !k.starts_with("__")).map(|(k, v)| (k.clone(), v.clone())).collect()
+    fields
+        .iter()
+        .filter(|(k, _)| !k.starts_with("__"))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
 }
 
 /// The parameter dialogs' histories, by dialog id.
@@ -87,10 +96,14 @@ pub type DialogEdits = HashMap<u64, EditHistory<Map<String, Value>>>;
 pub fn track_dialogs(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let busy = ctx.input(|i| i.pointer.any_down());
     let dialogs = &app.ui.dialogs;
-    app.dialog_edits.retain(|id, _| dialogs.iter().any(|d| d.id == *id));
+    app.dialog_edits
+        .retain(|id, _| dialogs.iter().any(|d| d.id == *id));
     for d in dialogs.iter().filter(|d| d.kind == DialogKind::Command) {
         let now = settings(&d.fields);
-        app.dialog_edits.entry(d.id).or_insert_with(|| EditHistory::new(&now)).settle(&now, busy);
+        app.dialog_edits
+            .entry(d.id)
+            .or_insert_with(|| EditHistory::new(&now))
+            .settle(&now, busy);
     }
 }
 
@@ -107,7 +120,11 @@ pub fn keys(app: &mut PhotocraftApp, ctx: &egui::Context) {
         let id = top.id;
         let mut now = settings(&top.fields);
         if let Some(step) = take_step(ctx)
-            && app.dialog_edits.entry(id).or_insert_with(|| EditHistory::new(&now)).step(&mut now, step)
+            && app
+                .dialog_edits
+                .entry(id)
+                .or_insert_with(|| EditHistory::new(&now))
+                .step(&mut now, step)
             && let Some(d) = app.ui.dialog_mut(id)
         {
             d.fields.retain(|k, _| k.starts_with("__"));
@@ -135,9 +152,19 @@ pub(crate) mod tests {
     use super::*;
 
     /// One frame of the shell's key handling with ⌘Z (plus `modifiers`) pressed.
-    pub(crate) fn press_z(app: &mut PhotocraftApp, ctx: &egui::Context, modifiers: egui::Modifiers) {
+    pub(crate) fn press_z(
+        app: &mut PhotocraftApp,
+        ctx: &egui::Context,
+        modifiers: egui::Modifiers,
+    ) {
         let raw = egui::RawInput {
-            events: vec![egui::Event::Key { key: egui::Key::Z, physical_key: None, pressed: true, repeat: false, modifiers }],
+            events: vec![egui::Event::Key {
+                key: egui::Key::Z,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers,
+            }],
             ..Default::default()
         };
         let mut out = ctx.run_ui(raw, |ui| crate::shortcuts::handle(app, ui.ctx()));
@@ -146,7 +173,8 @@ pub(crate) mod tests {
 
     fn app() -> PhotocraftApp {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 120, "height": 80})).unwrap();
+        app.run("file.new", json!({"width": 120, "height": 80}))
+            .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         app.run("edit.fill", json!({"color": "#808080"})).unwrap();
         app
@@ -173,7 +201,10 @@ pub(crate) mod tests {
         assert!(h.step(&mut now, Step::Redo));
         assert_eq!(now, 5);
         now = 9;
-        assert!(!h.step(&mut now, Step::Redo), "a new edit drops what was undone");
+        assert!(
+            !h.step(&mut now, Step::Redo),
+            "a new edit drops what was undone"
+        );
         assert!(h.step(&mut now, Step::Undo));
         assert_eq!(now, 5, "an unsettled edit is undone first");
     }
@@ -183,26 +214,63 @@ pub(crate) mod tests {
         let ctx = egui::Context::default();
         let mut app = app();
         let steps = past(&app);
-        let id = crate::dialogs::open_command_dialog(&mut app, "filter.lensCorrection", "Lens Correction");
+        let id = crate::dialogs::open_command_dialog(
+            &mut app,
+            "filter.lensCorrection",
+            "Lens Correction",
+        );
         track_dialogs(&mut app, &ctx);
-        let field = |app: &PhotocraftApp, k: &str| app.ui.dialogs.iter().find(|d| d.id == id).unwrap().fields.get(k).cloned();
+        let field = |app: &PhotocraftApp, k: &str| {
+            app.ui
+                .dialogs
+                .iter()
+                .find(|d| d.id == id)
+                .unwrap()
+                .fields
+                .get(k)
+                .cloned()
+        };
         let vertical = field(&app, "vertical");
-        let private: Vec<String> = app.ui.dialog_mut(id).unwrap().fields.keys().filter(|k| k.starts_with("__")).cloned().collect();
+        let private: Vec<String> = app
+            .ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .keys()
+            .filter(|k| k.starts_with("__"))
+            .cloned()
+            .collect();
         assert!(!private.is_empty());
-        app.ui.dialog_mut(id).unwrap().fields.insert("vertical".into(), json!(-50.0));
+        app.ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .insert("vertical".into(), json!(-50.0));
         track_dialogs(&mut app, &ctx);
-        app.ui.dialog_mut(id).unwrap().fields.insert("horizontal".into(), json!(30.0));
+        app.ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .insert("horizontal".into(), json!(30.0));
         track_dialogs(&mut app, &ctx);
         press_z(&mut app, &ctx, egui::Modifiers::COMMAND);
         assert_ne!(field(&app, "horizontal"), Some(json!(30.0)));
-        assert_eq!(field(&app, "vertical"), Some(json!(-50.0)), "one step at a time");
+        assert_eq!(
+            field(&app, "vertical"),
+            Some(json!(-50.0)),
+            "one step at a time"
+        );
         press_z(&mut app, &ctx, egui::Modifiers::COMMAND);
         assert_eq!(field(&app, "vertical"), vertical);
         assert_eq!(past(&app), steps, "the document beneath is untouched");
         for k in &private {
             assert!(field(&app, k).is_some(), "{k} survives");
         }
-        press_z(&mut app, &ctx, egui::Modifiers::COMMAND | egui::Modifiers::SHIFT);
+        press_z(
+            &mut app,
+            &ctx,
+            egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+        );
         assert_eq!(field(&app, "vertical"), Some(json!(-50.0)));
     }
 
@@ -211,10 +279,22 @@ pub(crate) mod tests {
         let ctx = egui::Context::default();
         let mut app = app();
         let steps = past(&app);
-        crate::distort_ui::menu(&mut app, &ctx, "filter.filterGallery", &json!({})).unwrap().unwrap();
+        crate::distort_ui::menu(&mut app, &ctx, "filter.filterGallery", &json!({}))
+            .unwrap()
+            .unwrap();
         let before = app.distort.gallery.as_ref().unwrap().effects.clone();
-        crate::distort_ui::menu(&mut app, &ctx, "filter.filterGallery", &json!({"ui": {"add": true}})).unwrap().unwrap();
-        assert_eq!(app.distort.gallery.as_ref().unwrap().effects.len(), before.len() + 1);
+        crate::distort_ui::menu(
+            &mut app,
+            &ctx,
+            "filter.filterGallery",
+            &json!({"ui": {"add": true}}),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            app.distort.gallery.as_ref().unwrap().effects.len(),
+            before.len() + 1
+        );
         press_z(&mut app, &ctx, egui::Modifiers::COMMAND);
         let d = app.distort.gallery.as_ref().unwrap();
         assert_eq!(d.effects, before);
@@ -227,15 +307,31 @@ pub(crate) mod tests {
         let ctx = egui::Context::default();
         let mut app = app();
         let steps = past(&app);
-        crate::distort_ui::menu(&mut app, &ctx, "filter.vanishingPoint", &json!({})).unwrap().unwrap();
+        crate::distort_ui::menu(&mut app, &ctx, "filter.vanishingPoint", &json!({}))
+            .unwrap()
+            .unwrap();
         let plane = json!([{"corners": [[30, 20], [90, 20], [110, 70], [10, 70]]}]);
-        crate::distort_ui::menu(&mut app, &ctx, "filter.vanishingPoint", &json!({"ui": {"planes": plane}})).unwrap().unwrap();
+        crate::distort_ui::menu(
+            &mut app,
+            &ctx,
+            "filter.vanishingPoint",
+            &json!({"ui": {"planes": plane}}),
+        )
+        .unwrap()
+        .unwrap();
         press_z(&mut app, &ctx, egui::Modifiers::COMMAND);
         let s = app.distort.vanishing.as_ref().unwrap();
         assert!(s.planes.is_empty());
-        assert_eq!(s.selected, None, "no selection left on a plane that is gone");
+        assert_eq!(
+            s.selected, None,
+            "no selection left on a plane that is gone"
+        );
         assert_eq!(past(&app), steps);
-        press_z(&mut app, &ctx, egui::Modifiers::COMMAND | egui::Modifiers::SHIFT);
+        press_z(
+            &mut app,
+            &ctx,
+            egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+        );
         assert_eq!(app.distort.vanishing.as_ref().unwrap().planes.len(), 1);
     }
 }

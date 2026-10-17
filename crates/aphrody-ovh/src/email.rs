@@ -42,21 +42,38 @@ pub struct EmailManager<'a> {
 
 impl<'a> EmailManager<'a> {
     pub fn new(client: &'a OvhClient) -> Self {
-        Self { client, dns: DnsManager::new(client) }
+        Self {
+            client,
+            dns: DnsManager::new(client),
+        }
     }
 
     pub async fn get_domain(&self, domain: &str) -> Result<EmailDomainInfo> {
         let raw: serde_json::Value = self.client.get(&format!("/email/domain/{domain}")).await?;
         Ok(EmailDomainInfo {
-            domain: raw.get("domain").and_then(|v| v.as_str()).unwrap_or(domain).to_string(),
-            status: raw.get("status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
-            offer: raw.get("offer").and_then(|v| v.as_str()).unwrap_or("mxplan").to_string(),
+            domain: raw
+                .get("domain")
+                .and_then(|v| v.as_str())
+                .unwrap_or(domain)
+                .to_string(),
+            status: raw
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string(),
+            offer: raw
+                .get("offer")
+                .and_then(|v| v.as_str())
+                .unwrap_or("mxplan")
+                .to_string(),
         })
     }
 
     pub async fn list_redirections(&self, domain: &str) -> Result<Vec<EmailRedirection>> {
-        let ids: Vec<String> =
-            self.client.get(&format!("/email/domain/{domain}/redirection")).await?;
+        let ids: Vec<String> = self
+            .client
+            .get(&format!("/email/domain/{domain}/redirection"))
+            .await?;
         let mut list = Vec::new();
         for id in ids {
             if let Ok(red) = self
@@ -88,7 +105,10 @@ impl<'a> EmailManager<'a> {
                     && r.target.contains("v=spf1")
             })
             .map(|r| r.target.clone());
-        let spf_valid = spf_record.as_ref().map(|s| s.contains("mx.ovh.com")).unwrap_or(false);
+        let spf_valid = spf_record
+            .as_ref()
+            .map(|s| s.contains("mx.ovh.com"))
+            .unwrap_or(false);
 
         let dmarc_record = records
             .iter()
@@ -98,8 +118,10 @@ impl<'a> EmailManager<'a> {
             .map(|r| r.target.clone());
         let dmarc_valid = dmarc_record.is_some();
 
-        let dkim_selectors =
-            records.iter().filter(|r| r.sub_domain.contains("._domainkey")).count();
+        let dkim_selectors = records
+            .iter()
+            .filter(|r| r.sub_domain.contains("._domainkey"))
+            .count();
         let dkim_valid = dkim_selectors >= 2;
 
         let mut recommendations = Vec::new();

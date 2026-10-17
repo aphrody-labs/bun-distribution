@@ -30,7 +30,8 @@ use crate::gates::root;
 pub const PDFJS_COMMIT: &str = "5d923c9600b1da6772cca2e167356b13b8a9aa9e";
 
 /// sha256 over the manifest of `test/pdfs` at [`PDFJS_COMMIT`]. See the module docs.
-pub const PDFJS_MANIFEST_SHA256: &str = "692bfde052a16b191314da14e770178436b7c412f29d3d6cc0d9824b1e6be494";
+pub const PDFJS_MANIFEST_SHA256: &str =
+    "692bfde052a16b191314da14e770178436b7c412f29d3d6cc0d9824b1e6be494";
 
 /// How many files the manifest covered when the pin was recorded. A sanity check that a partial
 /// or empty checkout can't pass as a match.
@@ -63,7 +64,11 @@ fn files_under(dir: &Path) -> anyhow::Result<Vec<(String, PathBuf)>> {
             if meta.is_dir() {
                 stack.push(path);
             } else if meta.is_file() {
-                let rel = path.strip_prefix(dir).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+                let rel = path
+                    .strip_prefix(dir)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .replace('\\', "/");
                 out.push((rel, path));
             }
         }
@@ -105,10 +110,14 @@ pub fn state() -> anyhow::Result<State> {
     }
     let (digest, files) = manifest(&dir)?;
     if files != PDFJS_FILES {
-        return Ok(State::Mismatch { detail: format!("{files} files on disk, the pin records {PDFJS_FILES}") });
+        return Ok(State::Mismatch {
+            detail: format!("{files} files on disk, the pin records {PDFJS_FILES}"),
+        });
     }
     if digest != PDFJS_MANIFEST_SHA256 {
-        return Ok(State::Mismatch { detail: format!("manifest sha256 is {digest}, the pin records {PDFJS_MANIFEST_SHA256}") });
+        return Ok(State::Mismatch {
+            detail: format!("manifest sha256 is {digest}, the pin records {PDFJS_MANIFEST_SHA256}"),
+        });
     }
     Ok(State::Verified { files })
 }
@@ -141,10 +150,27 @@ fn capture(cmd: &mut Command, what: &str) -> anyhow::Result<String> {
 /// Linux. The pin has to mean the same thing everywhere.
 fn init(dir: &Path) -> anyhow::Result<()> {
     run(git(dir).args(["init", "-q"]), "git init")?;
-    run(git(dir).args(["config", "core.autocrlf", "false"]), "git config core.autocrlf")?;
-    run(git(dir).args(["config", "core.eol", "lf"]), "git config core.eol")?;
-    run(git(dir).args(["remote", "add", "origin", "https://github.com/mozilla/pdf.js.git"]), "git remote add")?;
-    run(git(dir).args(["sparse-checkout", "set", "test/pdfs"]), "git sparse-checkout set")?;
+    run(
+        git(dir).args(["config", "core.autocrlf", "false"]),
+        "git config core.autocrlf",
+    )?;
+    run(
+        git(dir).args(["config", "core.eol", "lf"]),
+        "git config core.eol",
+    )?;
+    run(
+        git(dir).args([
+            "remote",
+            "add",
+            "origin",
+            "https://github.com/mozilla/pdf.js.git",
+        ]),
+        "git remote add",
+    )?;
+    run(
+        git(dir).args(["sparse-checkout", "set", "test/pdfs"]),
+        "git sparse-checkout set",
+    )?;
     Ok(())
 }
 
@@ -157,8 +183,22 @@ fn fetch(commit: &str) -> anyhow::Result<()> {
     }
     // Asking for one commit by id: GitHub serves these, and it keeps the fetch to the tree we
     // pinned rather than whatever HEAD happens to be.
-    run(git(&dir).args(["fetch", "-q", "--depth", "1", "--filter=blob:none", "origin", commit]), "git fetch")?;
-    run(git(&dir).args(["checkout", "-q", "--force", commit]), "git checkout")?;
+    run(
+        git(&dir).args([
+            "fetch",
+            "-q",
+            "--depth",
+            "1",
+            "--filter=blob:none",
+            "origin",
+            commit,
+        ]),
+        "git fetch",
+    )?;
+    run(
+        git(&dir).args(["checkout", "-q", "--force", commit]),
+        "git checkout",
+    )?;
     Ok(())
 }
 
@@ -170,7 +210,10 @@ fn write_stamp(commit: &str, digest: &str, files: usize) -> anyhow::Result<()> {
         "manifest_sha256": digest,
         "files": files,
     });
-    std::fs::write(checkout().join(STAMP), serde_json::to_string_pretty(&stamp)? + "\n")?;
+    std::fs::write(
+        checkout().join(STAMP),
+        serde_json::to_string_pretty(&stamp)? + "\n",
+    )?;
     Ok(())
 }
 
@@ -186,8 +229,22 @@ pub fn run_cmd(args: &[String]) -> anyhow::Result<()> {
         if !dir.join(".git").is_dir() {
             init(&dir)?;
         }
-        run(git(&dir).args(["fetch", "-q", "--depth", "1", "--filter=blob:none", "origin", "HEAD"]), "git fetch HEAD")?;
-        run(git(&dir).args(["checkout", "-q", "--force", "FETCH_HEAD"]), "git checkout FETCH_HEAD")?;
+        run(
+            git(&dir).args([
+                "fetch",
+                "-q",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "origin",
+                "HEAD",
+            ]),
+            "git fetch HEAD",
+        )?;
+        run(
+            git(&dir).args(["checkout", "-q", "--force", "FETCH_HEAD"]),
+            "git checkout FETCH_HEAD",
+        )?;
         let commit = capture(git(&dir).args(["rev-parse", "HEAD"]), "git rev-parse")?;
         let (digest, files) = manifest(&pdfs())?;
         write_stamp(&commit, &digest, files)?;
@@ -223,7 +280,10 @@ pub fn run_cmd(args: &[String]) -> anyhow::Result<()> {
 
     fetch(PDFJS_COMMIT)?;
 
-    let head = capture(git(&checkout()).args(["rev-parse", "HEAD"]), "git rev-parse")?;
+    let head = capture(
+        git(&checkout()).args(["rev-parse", "HEAD"]),
+        "git rev-parse",
+    )?;
     if head != PDFJS_COMMIT {
         bail!("checked out {head}, expected {PDFJS_COMMIT}");
     }
@@ -251,7 +311,10 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("pdfcraft-corpus-test-{}-{name}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "pdfcraft-corpus-test-{}-{name}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).expect("temp dir");
         d
@@ -286,7 +349,10 @@ mod tests {
         let before = manifest(&d).expect("manifest");
         std::fs::write(d.join("a.pdf"), b"onX").expect("write");
         let after = manifest(&d).expect("manifest");
-        assert_ne!(before.0, after.0, "a changed byte must change the manifest digest");
+        assert_ne!(
+            before.0, after.0,
+            "a changed byte must change the manifest digest"
+        );
         assert_eq!(before.1, after.1, "the file count is unchanged");
         let _ = std::fs::remove_dir_all(&d);
     }
@@ -298,7 +364,10 @@ mod tests {
         let before = manifest(&d).expect("manifest");
         std::fs::rename(d.join("a.pdf"), d.join("b.pdf")).expect("rename");
         let after = manifest(&d).expect("manifest");
-        assert_ne!(before.0, after.0, "the path is part of the manifest, not just the bytes");
+        assert_ne!(
+            before.0, after.0,
+            "the path is part of the manifest, not just the bytes"
+        );
         let _ = std::fs::remove_dir_all(&d);
     }
 
@@ -317,7 +386,11 @@ mod tests {
         let d = tmp("empty");
         let (digest, files) = manifest(&d).expect("manifest");
         assert_eq!(files, 0);
-        assert_eq!(digest, sha256_hex(b""), "an empty manifest is the digest of no text");
+        assert_eq!(
+            digest,
+            sha256_hex(b""),
+            "an empty manifest is the digest of no text"
+        );
         let _ = std::fs::remove_dir_all(&d);
     }
 
@@ -325,6 +398,9 @@ mod tests {
     fn a_missing_directory_is_absent_not_a_failure() {
         let d = tmp("missing");
         let _ = std::fs::remove_dir_all(&d);
-        assert!(manifest(&d).is_err(), "manifest of a missing directory is an error the caller reports");
+        assert!(
+            manifest(&d).is_err(),
+            "manifest of a missing directory is an error the caller reports"
+        );
     }
 }

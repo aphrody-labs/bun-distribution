@@ -51,12 +51,31 @@ pub(crate) fn chart_items(space: &El, theme: &[Rgb], w: f32, h: f32) -> Vec<Grap
     if !(w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0) {
         return out;
     }
-    let Some(chart) = Chart::parse(space, theme) else { return out };
+    let Some(chart) = Chart::parse(space, theme) else {
+        return out;
+    };
     backdrop(&mut out, space, theme, w, h);
-    let mut area = Rect { x: PAD, y: PAD, w: (w - 2.0 * PAD).max(1.0), h: (h - 2.0 * PAD).max(1.0) };
+    let mut area = Rect {
+        x: PAD,
+        y: PAD,
+        w: (w - 2.0 * PAD).max(1.0),
+        h: (h - 2.0 * PAD).max(1.0),
+    };
     if let Some(t) = &chart.title {
         let lh = TITLE_SIZE * LINE;
-        text(&mut out, Rect { x: area.x, y: area.y, w: area.w, h: lh }, t, TITLE_SIZE, TextAlign::Center, true);
+        text(
+            &mut out,
+            Rect {
+                x: area.x,
+                y: area.y,
+                w: area.w,
+                h: lh,
+            },
+            t,
+            TITLE_SIZE,
+            TextAlign::Center,
+            true,
+        );
         area.y += lh + PAD;
         area.h = (area.h - lh - PAD).max(1.0);
     }
@@ -64,7 +83,12 @@ pub(crate) fn chart_items(space: &El, theme: &[Rgb], w: f32, h: f32) -> Vec<Grap
         // Word lists bar series in the order they are drawn: reversed for clustered horizontal bars
         // and for stacked columns with a vertical legend.
         let vertical = matches!(pos, Pos::Left | Pos::Right);
-        let reverse = chart.kind == Kind::Bar && if chart.horizontal { !chart.stacked() } else { chart.stacked() && vertical };
+        let reverse = chart.kind == Kind::Bar
+            && if chart.horizontal {
+                !chart.stacked()
+            } else {
+                chart.stacked() && vertical
+            };
         let mut entries = chart.legend_entries();
         if reverse {
             entries.reverse();
@@ -198,24 +222,39 @@ impl Chart {
         let ty = plot.els().find(|e| Kind::of(&e.name).is_some())?;
         let kind = Kind::of(&ty.name)?;
         let scatter = kind == Kind::Scatter;
-        let date1904 = space.child("c:date1904").is_some_and(|d| d.attr("val").is_none_or(truthy));
+        let date1904 = space
+            .child("c:date1904")
+            .is_some_and(|d| d.attr("val").is_none_or(truthy));
         let mut series = read_series(ty, scatter, theme);
         if series.is_empty() {
             return None;
         }
-        let cats = ty.children("c:ser").find_map(|s| s.child("c:cat")).map(|c| labels(Some(c), MAX_POINTS, date1904)).unwrap_or_default();
+        let cats = ty
+            .children("c:ser")
+            .find_map(|s| s.child("c:cat"))
+            .map(|c| labels(Some(c), MAX_POINTS, date1904))
+            .unwrap_or_default();
         let n = if matches!(kind, Kind::Pie | Kind::Doughnut) {
             series.first().map_or(0, |s| s.values.len()).max(cats.len())
         } else {
-            series.iter().map(|s| s.values.len()).max().unwrap_or(0).max(cats.len())
+            series
+                .iter()
+                .map(|s| s.values.len())
+                .max()
+                .unwrap_or(0)
+                .max(cats.len())
         };
         // Every series is padded to `n` points, so keep only as many as the cell budget holds.
         if let Some(keep) = MAX_CELLS.checked_div(n) {
             series.truncate(keep.max(1));
         }
         let grouping = match ty.child("c:grouping").and_then(|g| g.attr("val")) {
-            Some("stacked") if matches!(kind, Kind::Bar | Kind::Area | Kind::Line) => Grouping::Stacked,
-            Some("percentStacked") if matches!(kind, Kind::Bar | Kind::Area | Kind::Line) => Grouping::Percent,
+            Some("stacked") if matches!(kind, Kind::Bar | Kind::Area | Kind::Line) => {
+                Grouping::Stacked
+            }
+            Some("percentStacked") if matches!(kind, Kind::Bar | Kind::Area | Kind::Line) => {
+                Grouping::Percent
+            }
             _ => Grouping::Clustered,
         };
         let mut cats = cats;
@@ -236,18 +275,26 @@ impl Chart {
         let val_fmt = if grouping == Grouping::Percent {
             "0%".to_string()
         } else {
-            val.fmt.clone().or_else(|| series.iter().find_map(|s| s.fmt.clone())).unwrap_or_else(|| "General".to_string())
+            val.fmt
+                .clone()
+                .or_else(|| series.iter().find_map(|s| s.fmt.clone()))
+                .unwrap_or_else(|| "General".to_string())
         };
         let num = |n: &str| ty.child(n).and_then(|g| g.attr("val")).and_then(int);
         Some(Chart {
             kind,
-            horizontal: kind == Kind::Bar && ty.child("c:barDir").and_then(|d| d.attr("val")) == Some("bar"),
+            horizontal: kind == Kind::Bar
+                && ty.child("c:barDir").and_then(|d| d.attr("val")) == Some("bar"),
             grouping,
             gap: num("c:gapWidth").unwrap_or(150).clamp(0, 500) as f32 / 100.0,
             overlap: num("c:overlap").unwrap_or(0).clamp(-100, 100) as f32 / 100.0,
             hole: num("c:holeSize").unwrap_or(50).clamp(10, 90) as f32 / 100.0,
             first_angle: num("c:firstSliceAng").unwrap_or(0).clamp(0, 360) as f64,
-            vary: matches!(kind, Kind::Pie | Kind::Doughnut) && ty.child("c:varyColors").and_then(|v| v.attr("val")).is_none_or(truthy),
+            vary: matches!(kind, Kind::Pie | Kind::Doughnut)
+                && ty
+                    .child("c:varyColors")
+                    .and_then(|v| v.attr("val"))
+                    .is_none_or(truthy),
             n,
             cats,
             title: title_of(chart, &series),
@@ -259,7 +306,10 @@ impl Chart {
             text_size: text_size(space),
             val_fmt,
             date1904,
-            plot_border: plot.child("c:spPr").and_then(|p| p.child("a:ln")).and_then(|l| fill_colour(l, theme)),
+            plot_border: plot
+                .child("c:spPr")
+                .and_then(|p| p.child("a:ln"))
+                .and_then(|l| fill_colour(l, theme)),
         })
     }
 
@@ -272,7 +322,10 @@ impl Chart {
     }
 
     fn series_colour(&self, j: usize) -> Rgb {
-        self.series.get(j).and_then(|s| s.color).unwrap_or_else(|| self.accent(j))
+        self.series
+            .get(j)
+            .and_then(|s| s.color)
+            .unwrap_or_else(|| self.accent(j))
     }
 
     /// Colour of point `i` of series `j`: its `c:dPt` override, else the varied accent (pie) or
@@ -281,7 +334,11 @@ impl Chart {
         if let Some(Some(c)) = self.series.get(j).and_then(|s| s.points.get(i)) {
             return *c;
         }
-        if self.vary { self.accent(i) } else { self.series_colour(j) }
+        if self.vary {
+            self.accent(i)
+        } else {
+            self.series_colour(j)
+        }
     }
 
     fn legend_entries(&self) -> Vec<(String, Rgb)> {
@@ -290,13 +347,31 @@ impl Chart {
                 .cats
                 .iter()
                 .enumerate()
-                .map(|(i, c)| (if c.is_empty() { (i + 1).to_string() } else { c.clone() }, self.point_colour(0, i)))
+                .map(|(i, c)| {
+                    (
+                        if c.is_empty() {
+                            (i + 1).to_string()
+                        } else {
+                            c.clone()
+                        },
+                        self.point_colour(0, i),
+                    )
+                })
                 .collect();
         }
         self.series
             .iter()
             .enumerate()
-            .map(|(j, s)| (if s.name.is_empty() { format!("Series {}", j + 1) } else { s.name.clone() }, self.series_colour(j)))
+            .map(|(j, s)| {
+                (
+                    if s.name.is_empty() {
+                        format!("Series {}", j + 1)
+                    } else {
+                        s.name.clone()
+                    },
+                    self.series_colour(j),
+                )
+            })
             .collect()
     }
 }
@@ -316,7 +391,10 @@ fn read_series(ty: &El, scatter: bool, theme: &[Rgb]) -> Vec<Series> {
 /// Values as their share of each category's total (100% stacked charts).
 fn to_percent(series: &mut [Series], n: usize) {
     for i in 0..n {
-        let total: f64 = series.iter().map(|s| s.values.get(i).copied().flatten().map_or(0.0, f64::abs)).sum();
+        let total: f64 = series
+            .iter()
+            .map(|s| s.values.get(i).copied().flatten().map_or(0.0, f64::abs))
+            .sum();
         for s in series.iter_mut() {
             if let Some(Some(v)) = s.values.get_mut(i) {
                 *v = if total > 0.0 { *v / total } else { 0.0 };
@@ -328,41 +406,76 @@ fn to_percent(series: &mut [Series], n: usize) {
 /// The category axis (scatter: the horizontal value axis) and the value axis of a plot area.
 fn chart_axes(plot: &El, scatter: bool) -> (Axis, Axis) {
     let vals_ax: Vec<&El> = plot.children("c:valAx").collect();
-    let horiz_pos = |a: &&El| matches!(a.child("c:axPos").and_then(|p| p.attr("val")), Some("b" | "t"));
+    let horiz_pos = |a: &&El| {
+        matches!(
+            a.child("c:axPos").and_then(|p| p.attr("val")),
+            Some("b" | "t")
+        )
+    };
     let (val_el, x_el) = if scatter {
-        let x = vals_ax.iter().copied().find(horiz_pos).or_else(|| vals_ax.first().copied());
-        let y = vals_ax.iter().copied().find(|a| !horiz_pos(a)).or_else(|| vals_ax.iter().copied().find(|a| Some(*a) != x));
+        let x = vals_ax
+            .iter()
+            .copied()
+            .find(horiz_pos)
+            .or_else(|| vals_ax.first().copied());
+        let y = vals_ax
+            .iter()
+            .copied()
+            .find(|a| !horiz_pos(a))
+            .or_else(|| vals_ax.iter().copied().find(|a| Some(*a) != x));
         (y, x)
     } else {
         (vals_ax.first().copied(), None)
     };
-    let cat_el = plot.els().find(|e| matches!(e.name.as_str(), "c:catAx" | "c:dateAx"));
+    let cat_el = plot
+        .els()
+        .find(|e| matches!(e.name.as_str(), "c:catAx" | "c:dateAx"));
     (axis(if scatter { x_el } else { cat_el }), axis(val_el))
 }
 
 /// The chart's title. An empty `c:title` shows the series name (Word's automatic title of a
 /// one-series chart) unless the automatic title is deleted.
 fn title_of(chart: &El, series: &[Series]) -> Option<String> {
-    let auto_deleted = chart.child("c:autoTitleDeleted").and_then(|a| a.attr("val")).is_some_and(truthy);
-    let auto = if !auto_deleted && series.len() == 1 { series.first().map(|s| s.name.clone()).filter(|s| !s.is_empty()) } else { None };
+    let auto_deleted = chart
+        .child("c:autoTitleDeleted")
+        .and_then(|a| a.attr("val"))
+        .is_some_and(truthy);
+    let auto = if !auto_deleted && series.len() == 1 {
+        series
+            .first()
+            .map(|s| s.name.clone())
+            .filter(|s| !s.is_empty())
+    } else {
+        None
+    };
     chart.child("c:title").and_then(|t| title_text(t).or(auto))
 }
 
 /// Whether a `c:dLbls` shows the values (`None` when there's none, or it doesn't say).
 fn show_values(d: Option<&El>) -> Option<bool> {
     let d = d?;
-    if d.child("c:delete").and_then(|e| e.attr("val")).is_some_and(truthy) {
+    if d.child("c:delete")
+        .and_then(|e| e.attr("val"))
+        .is_some_and(truthy)
+    {
         return Some(false);
     }
-    d.child("c:showVal").map(|v| v.attr("val").is_none_or(truthy))
+    d.child("c:showVal")
+        .map(|v| v.attr("val").is_none_or(truthy))
 }
 
 fn legend_pos(chart: &El) -> Option<Pos> {
-    chart.child("c:legend").map(|l| match l.child("c:legendPos").and_then(|p| p.attr("val")).unwrap_or("r") {
-        "l" => Pos::Left,
-        "t" | "tr" => Pos::Top,
-        "b" => Pos::Bottom,
-        _ => Pos::Right,
+    chart.child("c:legend").map(|l| {
+        match l
+            .child("c:legendPos")
+            .and_then(|p| p.attr("val"))
+            .unwrap_or("r")
+        {
+            "l" => Pos::Left,
+            "t" | "tr" => Pos::Top,
+            "b" => Pos::Bottom,
+            _ => Pos::Right,
+        }
     })
 }
 
@@ -378,28 +491,61 @@ fn text_size(space: &El) -> f32 {
 
 impl Series {
     fn parse(ser: &El, scatter: bool, theme: &[Rgb], cap: usize) -> Series {
-        let name = ser.child("c:tx").and_then(|t| t.find("c:v")).map(|v| label(v.text().trim())).unwrap_or_default();
+        let name = ser
+            .child("c:tx")
+            .and_then(|t| t.find("c:v"))
+            .map(|v| label(v.text().trim()))
+            .unwrap_or_default();
         let sp = ser.child("c:spPr");
         let ln = sp.and_then(|p| p.child("a:ln"));
-        let marker = ser.child("c:marker").and_then(|m| m.child("c:spPr")).and_then(|p| fill_colour(p, theme));
-        let color = sp.and_then(|p| fill_colour(p, theme)).or_else(|| ln.and_then(|l| fill_colour(l, theme))).or(marker);
-        let line_w = ln.and_then(|l| l.attr("w")).and_then(|v| measure(v, 12_700.0)).map_or(LINE_W, |w| w.clamp(0.0, 20.0));
+        let marker = ser
+            .child("c:marker")
+            .and_then(|m| m.child("c:spPr"))
+            .and_then(|p| fill_colour(p, theme));
+        let color = sp
+            .and_then(|p| fill_colour(p, theme))
+            .or_else(|| ln.and_then(|l| fill_colour(l, theme)))
+            .or(marker);
+        let line_w = ln
+            .and_then(|l| l.attr("w"))
+            .and_then(|v| measure(v, 12_700.0))
+            .map_or(LINE_W, |w| w.clamp(0.0, 20.0));
         let line = ln.is_none_or(|l| l.child("a:noFill").is_none());
         let (values, fmt) = numbers(ser.child(if scatter { "c:yVal" } else { "c:val" }), cap);
-        let (mut xs, x_fmt) = if scatter { numbers(ser.child("c:xVal"), cap) } else { (Vec::new(), None) };
+        let (mut xs, x_fmt) = if scatter {
+            numbers(ser.child("c:xVal"), cap)
+        } else {
+            (Vec::new(), None)
+        };
         if scatter && xs.is_empty() {
             xs = (1..=values.len()).map(|i| Some(i as f64)).collect();
         }
         let mut points = vec![None; values.len()];
         for dpt in ser.children("c:dPt") {
-            let i = dpt.child("c:idx").and_then(|e| e.attr("val")).and_then(int).and_then(|i| usize::try_from(i).ok());
+            let i = dpt
+                .child("c:idx")
+                .and_then(|e| e.attr("val"))
+                .and_then(int)
+                .and_then(|i| usize::try_from(i).ok());
             let c = dpt.child("c:spPr").and_then(|p| fill_colour(p, theme));
             if let Some(slot) = i.and_then(|i| points.get_mut(i)) {
                 *slot = c;
             }
         }
         let labels = show_values(ser.child("c:dLbls"));
-        Series { name, color, line_w, line, values, xs, points, fmt, x_fmt, labels, raw: Vec::new() }
+        Series {
+            name,
+            color,
+            line_w,
+            line,
+            values,
+            xs,
+            points,
+            fmt,
+            x_fmt,
+            labels,
+            raw: Vec::new(),
+        }
     }
 }
 
@@ -407,16 +553,26 @@ impl Series {
 /// format code (dates included); text and `General` numbers as they are stored.
 fn labels(el: Option<&El>, cap: usize, date1904: bool) -> Vec<String> {
     let Some(el) = el else { return Vec::new() };
-    let Some(cache) = el.find("c:strCache").or_else(|| el.find("c:numCache")).or_else(|| el.find("c:strLit")).or_else(|| el.find("c:numLit")) else {
+    let Some(cache) = el
+        .find("c:strCache")
+        .or_else(|| el.find("c:numCache"))
+        .or_else(|| el.find("c:strLit"))
+        .or_else(|| el.find("c:numLit"))
+    else {
         return Vec::new();
     };
-    let code = cache.child("c:formatCode").map(|f| f.text()).filter(|f| !f.is_empty() && !f.eq_ignore_ascii_case("General"));
+    let code = cache
+        .child("c:formatCode")
+        .map(|f| f.text())
+        .filter(|f| !f.is_empty() && !f.eq_ignore_ascii_case("General"));
     pts(cache, cap)
         .into_iter()
         .map(|p| {
             let text = p.unwrap_or_default();
             match (code.as_deref(), text.trim().parse::<f64>()) {
-                (Some(code), Ok(v)) if v.is_finite() => label(&category_text(v, code, 1.0, date1904)),
+                (Some(code), Ok(v)) if v.is_finite() => {
+                    label(&category_text(v, code, 1.0, date1904))
+                }
                 _ => label(&text),
             }
         })
@@ -437,17 +593,37 @@ fn numbers(el: Option<&El>, cap: usize) -> (Vec<Option<f64>>, Option<String>) {
     let Some(cache) = el.and_then(|e| e.find("c:numCache").or_else(|| e.find("c:numLit"))) else {
         return (Vec::new(), None);
     };
-    let fmt = cache.child("c:formatCode").map(|f| f.text()).filter(|f| !f.is_empty());
-    let vals = pts(cache, cap).into_iter().map(|p| p.and_then(|t| t.trim().parse::<f64>().ok()).filter(|v| v.is_finite())).collect();
+    let fmt = cache
+        .child("c:formatCode")
+        .map(|f| f.text())
+        .filter(|f| !f.is_empty());
+    let vals = pts(cache, cap)
+        .into_iter()
+        .map(|p| {
+            p.and_then(|t| t.trim().parse::<f64>().ok())
+                .filter(|v| v.is_finite())
+        })
+        .collect();
     (vals, fmt)
 }
 
 /// The `c:pt` texts of a cache by index. Indexes and counts from the file are capped.
 fn pts(cache: &El, cap: usize) -> Vec<Option<String>> {
-    let declared = cache.child("c:ptCount").and_then(|c| c.attr("val")).and_then(int).unwrap_or(0).clamp(0, cap as i64) as usize;
+    let declared = cache
+        .child("c:ptCount")
+        .and_then(|c| c.attr("val"))
+        .and_then(int)
+        .unwrap_or(0)
+        .clamp(0, cap as i64) as usize;
     let mut out: Vec<Option<String>> = vec![None; declared];
     for p in cache.children("c:pt") {
-        let Some(i) = p.attr("idx").and_then(int).and_then(|i| usize::try_from(i).ok()) else { continue };
+        let Some(i) = p
+            .attr("idx")
+            .and_then(int)
+            .and_then(|i| usize::try_from(i).ok())
+        else {
+            continue;
+        };
         if i >= cap {
             continue;
         }
@@ -462,18 +638,39 @@ fn pts(cache: &El, cap: usize) -> Vec<Option<String>> {
 }
 
 fn axis(a: Option<&El>) -> Axis {
-    let Some(a) = a else { return Axis { deleted: true, ..Default::default() } };
+    let Some(a) = a else {
+        return Axis {
+            deleted: true,
+            ..Default::default()
+        };
+    };
     let scaling = a.child("c:scaling");
-    let num =
-        |n: &str| scaling.and_then(|s| s.child(n)).and_then(|e| e.attr("val")).and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite());
+    let num = |n: &str| {
+        scaling
+            .and_then(|s| s.child(n))
+            .and_then(|e| e.attr("val"))
+            .and_then(|v| v.trim().parse::<f64>().ok())
+            .filter(|v| v.is_finite())
+    };
     Axis {
-        deleted: a.child("c:delete").and_then(|d| d.attr("val")).is_some_and(truthy),
+        deleted: a
+            .child("c:delete")
+            .and_then(|d| d.attr("val"))
+            .is_some_and(truthy),
         grid: a.child("c:majorGridlines").is_some(),
-        line: a.child("c:spPr").and_then(|p| p.child("a:ln")).and_then(|l| l.child("a:noFill")).is_none(),
+        line: a
+            .child("c:spPr")
+            .and_then(|p| p.child("a:ln"))
+            .and_then(|l| l.child("a:noFill"))
+            .is_none(),
         mid: a.child("c:crossBetween").and_then(|c| c.attr("val")) == Some("midCat"),
         min: num("c:min"),
         max: num("c:max"),
-        fmt: a.child("c:numFmt").filter(|f| f.attr("sourceLinked") != Some("1")).and_then(|f| f.attr("formatCode")).map(str::to_string),
+        fmt: a
+            .child("c:numFmt")
+            .filter(|f| f.attr("sourceLinked") != Some("1"))
+            .and_then(|f| f.attr("formatCode"))
+            .map(str::to_string),
     }
 }
 
@@ -520,9 +717,19 @@ fn backdrop(out: &mut Vec<GraphicItem>, space: &El, theme: &[Rgb], w: f32, h: f3
     };
     let ln = sp.and_then(|p| p.child("a:ln"));
     let stroke = ln.and_then(|l| fill_colour(l, theme));
-    let stroke_width = ln.and_then(|l| l.attr("w")).and_then(|v| measure(v, 12_700.0)).unwrap_or(0.75).clamp(0.0, 20.0);
+    let stroke_width = ln
+        .and_then(|l| l.attr("w"))
+        .and_then(|v| measure(v, 12_700.0))
+        .unwrap_or(0.75)
+        .clamp(0.0, 20.0);
     if fill.is_some() || stroke.is_some() {
-        out.push(GraphicItem::Shape { rect: [0.0, 0.0, w, h], kind: ShapeKind::Rectangle, fill, stroke, stroke_width });
+        out.push(GraphicItem::Shape {
+            rect: [0.0, 0.0, w, h],
+            kind: ShapeKind::Rectangle,
+            fill,
+            stroke,
+            stroke_width,
+        });
     }
 }
 
@@ -537,7 +744,10 @@ struct Scale {
 impl Scale {
     fn ticks(&self) -> Vec<f64> {
         let n = (((self.hi - self.lo) / self.step + 1e-9).floor().max(0.0) as usize).min(MAX_TICKS);
-        (0..=n).map(|k| self.lo + k as f64 * self.step).filter(|t| *t <= self.hi + 1e-9).collect()
+        (0..=n)
+            .map(|k| self.lo + k as f64 * self.step)
+            .filter(|t| *t <= self.hi + 1e-9)
+            .collect()
     }
 }
 
@@ -546,24 +756,64 @@ impl Scale {
 /// out to a step of 1, 2, 2.5, 5 or 10 times a power of ten (about seven steps). `min`/`max`
 /// from the file replace the ends.
 fn nice_scale(dlo: f64, dhi: f64, zero: bool, min: Option<f64>, max: Option<f64>) -> Scale {
-    let (dlo, dhi) = if dhi > dlo { (dlo, dhi) } else { (dlo, dlo + 1.0) };
+    let (dlo, dhi) = if dhi > dlo {
+        (dlo, dhi)
+    } else {
+        (dlo, dlo + 1.0)
+    };
     let span = dhi - dlo;
     // With zero, the ends reach it: all-negative data still starts its bars at zero.
-    let (ends_lo, ends_hi) = if zero { (dlo.min(0.0), dhi.max(0.0)) } else { (dlo, dhi) };
-    let lo = min.unwrap_or(if ends_lo < 0.0 { ends_lo - 0.05 * span } else { ends_lo });
-    let hi = max.unwrap_or(if ends_hi > 0.0 { ends_hi + 0.05 * span } else { ends_hi });
+    let (ends_lo, ends_hi) = if zero {
+        (dlo.min(0.0), dhi.max(0.0))
+    } else {
+        (dlo, dhi)
+    };
+    let lo = min.unwrap_or(if ends_lo < 0.0 {
+        ends_lo - 0.05 * span
+    } else {
+        ends_lo
+    });
+    let hi = max.unwrap_or(if ends_hi > 0.0 {
+        ends_hi + 0.05 * span
+    } else {
+        ends_hi
+    });
     if !(hi > lo && hi.is_finite() && lo.is_finite()) {
-        return Scale { lo: 0.0, hi: 1.0, step: 0.2 };
+        return Scale {
+            lo: 0.0,
+            hi: 1.0,
+            step: 0.2,
+        };
     }
     let raw = (hi - lo) / 7.5;
     let mag = 10f64.powf(raw.log10().floor());
-    let step = [1.0, 2.0, 2.5, 5.0, 10.0].iter().map(|m| m * mag).find(|s| *s >= raw).unwrap_or(10.0 * mag);
-    let lo_r = if min.is_some() { lo } else { ((lo / step) + 1e-9).floor() * step };
-    let hi_r = if max.is_some() { hi } else { ((hi / step) - 1e-9).ceil() * step };
+    let step = [1.0, 2.0, 2.5, 5.0, 10.0]
+        .iter()
+        .map(|m| m * mag)
+        .find(|s| *s >= raw)
+        .unwrap_or(10.0 * mag);
+    let lo_r = if min.is_some() {
+        lo
+    } else {
+        ((lo / step) + 1e-9).floor() * step
+    };
+    let hi_r = if max.is_some() {
+        hi
+    } else {
+        ((hi / step) - 1e-9).ceil() * step
+    };
     if !(step.is_finite() && step > 0.0 && lo_r.is_finite() && hi_r.is_finite() && hi_r > lo_r) {
-        return Scale { lo: 0.0, hi: 1.0, step: 0.2 };
+        return Scale {
+            lo: 0.0,
+            hi: 1.0,
+            step: 0.2,
+        };
     }
-    Scale { lo: lo_r, hi: hi_r, step }
+    Scale {
+        lo: lo_r,
+        hi: hi_r,
+        step,
+    }
 }
 
 /// A piece of a format section: literal text, a number character (`#`, `0`, `,`, `.`), or the
@@ -621,7 +871,9 @@ fn format_toks(section: &str) -> Vec<Tok> {
             '*' => {
                 chars.next();
             }
-            'E' | 'e' if matches!(chars.peek(), Some('+' | '-')) => toks.push(Tok::Exp(chars.next() == Some('+'))),
+            'E' | 'e' if matches!(chars.peek(), Some('+' | '-')) => {
+                toks.push(Tok::Exp(chars.next() == Some('+')))
+            }
             '#' | '0' | ',' | '.' => toks.push(Tok::Num(c)),
             c => toks.push(Tok::Lit(c.to_string())),
         }
@@ -631,7 +883,9 @@ fn format_toks(section: &str) -> Vec<Tok> {
 
 /// The symbol of a `$€-407` bracket content (`[$€-407]`), if it is one.
 fn currency(inner: &str) -> Option<&str> {
-    inner.strip_prefix('$').map(|rest| rest.split('-').next().unwrap_or(""))
+    inner
+        .strip_prefix('$')
+        .map(|rest| rest.split('-').next().unwrap_or(""))
 }
 
 /// Tick text for `v` in a number format code (`#,##0`, `0.0`, `0%`, `0.00E+00`, and literal text
@@ -659,15 +913,27 @@ fn format_section(v: f64, section: &str, step: f64) -> String {
             })
             .collect()
     };
-    let (Some(s), Some(e)) = (toks.iter().position(is_num), toks.iter().rposition(is_num)) else { return general(v, step) };
+    let (Some(s), Some(e)) = (toks.iter().position(is_num), toks.iter().rposition(is_num)) else {
+        return general(v, step);
+    };
     let body = toks.get(s..=e).unwrap_or(&[]);
-    let (pre, suf) = (lit(toks.get(..s).unwrap_or(&[])), lit(toks.get(e + 1..).unwrap_or(&[])));
-    let digits = |r: &[Tok]| -> String { r.iter().filter_map(|t| if let Tok::Num(c) = t { Some(*c) } else { None }).collect() };
+    let (pre, suf) = (
+        lit(toks.get(..s).unwrap_or(&[])),
+        lit(toks.get(e + 1..).unwrap_or(&[])),
+    );
+    let digits = |r: &[Tok]| -> String {
+        r.iter()
+            .filter_map(|t| if let Tok::Num(c) = t { Some(*c) } else { None })
+            .collect()
+    };
     if let Some(k) = body.iter().position(|t| matches!(t, Tok::Exp(_))) {
         let plus = matches!(body.get(k), Some(Tok::Exp(true)));
         let mantissa = digits(body.get(..k).unwrap_or(&[]));
         let exp_digits = digits(body.get(k + 1..).unwrap_or(&[])).len();
-        return format!("{pre}{}{suf}", scientific(v, decimals(&mantissa), exp_digits, plus));
+        return format!(
+            "{pre}{}{suf}",
+            scientific(v, decimals(&mantissa), exp_digits, plus)
+        );
     }
     let body = digits(body);
     let pct = pre.contains('%') || suf.contains('%');
@@ -684,13 +950,21 @@ fn format_section(v: f64, section: &str, step: f64) -> String {
         }
         grouped.push(ch);
     }
-    let sign = if v < 0.0 && digits.chars().any(|c| c != '0' && c != '.') { "-" } else { "" };
+    let sign = if v < 0.0 && digits.chars().any(|c| c != '0' && c != '.') {
+        "-"
+    } else {
+        ""
+    };
     format!("{sign}{pre}{grouped}{fp}{suf}")
 }
 
 /// Decimal places of a number body (`#,##0.00` has 2).
 fn decimals(body: &str) -> usize {
-    body.split_once('.').map_or(0, |(_, d)| d.chars().filter(|c| matches!(c, '0' | '#')).count()).min(12)
+    body.split_once('.')
+        .map_or(0, |(_, d)| {
+            d.chars().filter(|c| matches!(c, '0' | '#')).count()
+        })
+        .min(12)
 }
 
 /// `v` with no number format (`General`): as many decimals as the tick step needs.
@@ -700,7 +974,11 @@ fn general(v: f64, step: f64) -> String {
         d += 1;
     }
     let s = format!("{:.*}", d as usize, v);
-    if s.trim_start_matches(['-', '0', '.']).is_empty() { s.trim_start_matches('-').to_string() } else { s }
+    if s.trim_start_matches(['-', '0', '.']).is_empty() {
+        s.trim_start_matches('-').to_string()
+    } else {
+        s
+    }
 }
 
 /// `v` in scientific notation: `decimals` mantissa decimals, at least `exp_digits` exponent
@@ -708,7 +986,11 @@ fn general(v: f64, step: f64) -> String {
 fn scientific(v: f64, decimals: usize, exp_digits: usize, plus: bool) -> String {
     let s = format!("{:.*e}", decimals, v.abs());
     let (mantissa, exp) = s.split_once('e').unwrap_or((s.as_str(), "0"));
-    let exp: i32 = if v == 0.0 { 0 } else { exp.parse().unwrap_or(0) };
+    let exp: i32 = if v == 0.0 {
+        0
+    } else {
+        exp.parse().unwrap_or(0)
+    };
     let sign = if exp < 0 {
         "-"
     } else if plus {
@@ -717,7 +999,11 @@ fn scientific(v: f64, decimals: usize, exp_digits: usize, plus: bool) -> String 
         ""
     };
     let minus = if v < 0.0 { "-" } else { "" };
-    format!("{minus}{mantissa}E{sign}{:0w$}", exp.unsigned_abs(), w = exp_digits.clamp(1, 4))
+    format!(
+        "{minus}{mantissa}E{sign}{:0w$}",
+        exp.unsigned_abs(),
+        w = exp_digits.clamp(1, 4)
+    )
 }
 
 /// A moment as Excel shows a serial day number.
@@ -751,7 +1037,13 @@ fn excel_stamp(serial: f64, date1904: bool) -> Option<Stamp> {
         _ => civil(day),
     };
     // Excel's weekdays count serial 1 as a Sunday.
-    Some(Stamp { y, m, d, weekday: (day - 1).rem_euclid(7) as u32, secs })
+    Some(Stamp {
+        y,
+        m,
+        d,
+        weekday: (day - 1).rem_euclid(7) as u32,
+        secs,
+    })
 }
 
 /// Calendar date (year, month, day) of day `n` counted from 30 December 1899 (Howard Hinnant's
@@ -768,8 +1060,29 @@ fn civil(n: i64) -> (i64, u32, u32) {
     (yoe + era * 400 + i64::from(m <= 2), m, d)
 }
 
-const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const WEEKDAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+const WEEKDAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 /// Whether a format code (outside its quoted and bracketed parts) has date or time fields.
 fn is_date_code(code: &str) -> bool {
@@ -816,12 +1129,22 @@ fn date_toks(code: &str) -> Vec<DTok> {
         i += 1;
         match c {
             '"' => {
-                let lit: String = section.get(i..).unwrap_or(&[]).iter().take_while(|q| **q != '"').collect();
+                let lit: String = section
+                    .get(i..)
+                    .unwrap_or(&[])
+                    .iter()
+                    .take_while(|q| **q != '"')
+                    .collect();
                 i += lit.chars().count() + 1;
                 toks.push(DTok::Lit(lit));
             }
             '[' => {
-                let inner: String = section.get(i..).unwrap_or(&[]).iter().take_while(|q| **q != ']').collect();
+                let inner: String = section
+                    .get(i..)
+                    .unwrap_or(&[])
+                    .iter()
+                    .take_while(|q| **q != ']')
+                    .collect();
                 i += inner.chars().count() + 1;
                 toks.extend(currency(&inner).map(|s| DTok::Lit(s.to_string())));
             }
@@ -859,12 +1182,21 @@ fn date_toks(code: &str) -> Vec<DTok> {
 
 /// Whether `chars` from `at` on start with `pat`, ignoring ASCII case.
 fn starts_ci(chars: &[char], at: usize, pat: &str) -> bool {
-    pat.chars().enumerate().all(|(k, p)| chars.get(at + k).is_some_and(|c| c.eq_ignore_ascii_case(&p)))
+    pat.chars().enumerate().all(|(k, p)| {
+        chars
+            .get(at + k)
+            .is_some_and(|c| c.eq_ignore_ascii_case(&p))
+    })
 }
 
 /// Turns the `m`/`mm` fields that mean minutes (after an hour, or before seconds) into `n`.
 fn mark_minutes(toks: &mut [DTok]) {
-    let fields: Vec<usize> = toks.iter().enumerate().filter(|(_, t)| matches!(t, DTok::Field(..))).map(|(k, _)| k).collect();
+    let fields: Vec<usize> = toks
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| matches!(t, DTok::Field(..)))
+        .map(|(k, _)| k)
+        .collect();
     let kind = |k: Option<&usize>, toks: &[DTok]| match k.and_then(|k| toks.get(*k)) {
         Some(DTok::Field(c, _)) => Some(*c),
         _ => None,
@@ -906,9 +1238,18 @@ fn date_text(t: Stamp, code: &str) -> String {
 
 /// One date or time field (`c` as in [`DTok::Field`], `n` letters long).
 fn field_text(t: Stamp, c: char, n: usize, twelve: bool) -> String {
-    let month = MONTHS.get((t.m as usize).clamp(1, 12) - 1).copied().unwrap_or("");
+    let month = MONTHS
+        .get((t.m as usize).clamp(1, 12) - 1)
+        .copied()
+        .unwrap_or("");
     let weekday = WEEKDAYS.get(t.weekday as usize).copied().unwrap_or("");
-    let pad = |v: u32| if n >= 2 { format!("{v:02}") } else { v.to_string() };
+    let pad = |v: u32| {
+        if n >= 2 {
+            format!("{v:02}")
+        } else {
+            v.to_string()
+        }
+    };
     let hour = t.secs / 3600;
     match c {
         'y' if n <= 2 => format!("{:02}", t.y.rem_euclid(100)),
@@ -920,7 +1261,11 @@ fn field_text(t: Stamp, c: char, n: usize, twelve: bool) -> String {
         'm' if n == 3 => month.get(..3).unwrap_or(month).to_string(),
         'm' if n == 4 => month.to_string(),
         'm' => month.get(..1).unwrap_or(month).to_string(),
-        'h' if twelve => pad(if hour.is_multiple_of(12) { 12 } else { hour % 12 }),
+        'h' if twelve => pad(if hour.is_multiple_of(12) {
+            12
+        } else {
+            hour % 12
+        }),
         'h' => pad(hour),
         'n' => pad(t.secs / 60 % 60),
         _ => pad(t.secs % 60),
@@ -968,29 +1313,65 @@ fn widest(items: &[String], size: f32) -> f32 {
 }
 
 fn text(out: &mut Vec<GraphicItem>, rect: Rect, s: &str, size: f32, align: TextAlign, bold: bool) {
-    out.push(GraphicItem::Text { rect: rect.arr(), text: s.to_string(), size, color: TEXT, bold, align, font: None });
+    out.push(GraphicItem::Text {
+        rect: rect.arr(),
+        text: s.to_string(),
+        size,
+        color: TEXT,
+        bold,
+        align,
+        font: None,
+    });
 }
 
 /// Text centred on `cx` with its top at `y`.
 fn text_at(out: &mut Vec<GraphicItem>, cx: f32, y: f32, s: &str, size: f32) {
     let w = text_w(s, size) + 4.0;
-    text(out, Rect { x: cx - w / 2.0, y, w, h: size * LINE }, s, size, TextAlign::Center, false);
+    text(
+        out,
+        Rect {
+            x: cx - w / 2.0,
+            y,
+            w,
+            h: size * LINE,
+        },
+        s,
+        size,
+        TextAlign::Center,
+        false,
+    );
 }
 
 fn fill(out: &mut Vec<GraphicItem>, segs: Vec<PathSeg>, color: Rgb) {
     if !segs.is_empty() {
-        out.push(GraphicItem::Path { segs, fill: Some(color), stroke: None, stroke_width: 0.0 });
+        out.push(GraphicItem::Path {
+            segs,
+            fill: Some(color),
+            stroke: None,
+            stroke_width: 0.0,
+        });
     }
 }
 
 fn stroke(out: &mut Vec<GraphicItem>, segs: Vec<PathSeg>, color: Rgb, width: f32) {
     if !segs.is_empty() {
-        out.push(GraphicItem::Path { segs, fill: None, stroke: Some(color), stroke_width: width });
+        out.push(GraphicItem::Path {
+            segs,
+            fill: None,
+            stroke: Some(color),
+            stroke_width: width,
+        });
     }
 }
 
 fn swatch(out: &mut Vec<GraphicItem>, x: f32, y: f32, color: Rgb) {
-    out.push(GraphicItem::Shape { rect: [x, y, SWATCH, SWATCH], kind: ShapeKind::Rectangle, fill: Some(color), stroke: None, stroke_width: 0.0 });
+    out.push(GraphicItem::Shape {
+        rect: [x, y, SWATCH, SWATCH],
+        kind: ShapeKind::Rectangle,
+        fill: Some(color),
+        stroke: None,
+        stroke_width: 0.0,
+    });
 }
 
 fn seg(x0: f32, y0: f32, x1: f32, y1: f32) -> Vec<PathSeg> {
@@ -998,7 +1379,13 @@ fn seg(x0: f32, y0: f32, x1: f32, y1: f32) -> Vec<PathSeg> {
 }
 
 fn rect_segs(x0: f32, y0: f32, x1: f32, y1: f32) -> Vec<PathSeg> {
-    vec![PathSeg::Move(x0, y0), PathSeg::Line(x1, y0), PathSeg::Line(x1, y1), PathSeg::Line(x0, y1), PathSeg::Close]
+    vec![
+        PathSeg::Move(x0, y0),
+        PathSeg::Line(x1, y0),
+        PathSeg::Line(x1, y1),
+        PathSeg::Line(x0, y1),
+        PathSeg::Close,
+    ]
 }
 
 /// Polyline pieces: a gap (`None`) starts a new sub-path.
@@ -1008,7 +1395,11 @@ fn runs(pts: impl Iterator<Item = Option<(f32, f32)>>) -> Vec<PathSeg> {
     for p in pts {
         match p {
             Some((x, y)) => {
-                segs.push(if open { PathSeg::Line(x, y) } else { PathSeg::Move(x, y) });
+                segs.push(if open {
+                    PathSeg::Line(x, y)
+                } else {
+                    PathSeg::Move(x, y)
+                });
                 open = true;
             }
             None => open = false,
@@ -1022,7 +1413,11 @@ fn wrap(s: &str, width: f32, size: f32) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     let mut cur = String::new();
     for word in s.split_whitespace() {
-        let joined = if cur.is_empty() { word.to_string() } else { format!("{cur} {word}") };
+        let joined = if cur.is_empty() {
+            word.to_string()
+        } else {
+            format!("{cur} {word}")
+        };
         if cur.is_empty() || text_w(&joined, size) <= width {
             cur = joined;
         } else {
@@ -1045,12 +1440,21 @@ const SWATCH: f32 = 7.0;
 const SEP: f32 = 10.0;
 
 /// Legend in the given side of `area`; returns the area left for the plot.
-fn legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], pos: Pos, area: Rect, fs: f32) -> Rect {
+fn legend(
+    out: &mut Vec<GraphicItem>,
+    entries: &[(String, Rgb)],
+    pos: Pos,
+    area: Rect,
+    fs: f32,
+) -> Rect {
     if entries.is_empty() {
         return area;
     }
     // Entry texts are cut to a share of the chart, so a long name can't push the legend out.
-    let entries: Vec<(String, Rgb)> = entries.iter().map(|(s, c)| (clip_text(s, area.w * LEGEND_SHARE, fs), *c)).collect();
+    let entries: Vec<(String, Rgb)> = entries
+        .iter()
+        .map(|(s, c)| (clip_text(s, area.w * LEGEND_SHARE, fs), *c))
+        .collect();
     match pos {
         Pos::Right | Pos::Left => side_legend(out, &entries, pos == Pos::Left, area, fs),
         Pos::Top | Pos::Bottom => row_legend(out, &entries, pos == Pos::Top, area, fs),
@@ -1059,13 +1463,24 @@ fn legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], pos: Pos, area:
 
 /// A legend in a column at the left or right of `area`, keeping only the entries that fit above
 /// its bottom; returns the area left for the plot.
-fn side_legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], left: bool, area: Rect, fs: f32) -> Rect {
+fn side_legend(
+    out: &mut Vec<GraphicItem>,
+    entries: &[(String, Rgb)],
+    left: bool,
+    area: Rect,
+    fs: f32,
+) -> Rect {
     let lh = fs * LINE;
-    let entries = entries.get(..((area.h / lh).floor().max(0.0) as usize).min(entries.len())).unwrap_or(&[]);
+    let entries = entries
+        .get(..((area.h / lh).floor().max(0.0) as usize).min(entries.len()))
+        .unwrap_or(&[]);
     if entries.is_empty() {
         return area;
     }
-    let tw = entries.iter().map(|(s, _)| text_w(s, fs)).fold(0.0, f32::max);
+    let tw = entries
+        .iter()
+        .map(|(s, _)| text_w(s, fs))
+        .fold(0.0, f32::max);
     let block_w = SWATCH + GAP + tw;
     let block_h = lh * entries.len() as f32;
     let x = if left { area.x } else { area.right() - block_w };
@@ -1073,7 +1488,19 @@ fn side_legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], left: bool
     for (k, (s, c)) in entries.iter().enumerate() {
         let y = y0 + lh * k as f32;
         swatch(out, x, y + (lh - SWATCH) / 2.0, *c);
-        text(out, Rect { x: x + SWATCH + GAP, y, w: tw + 2.0, h: lh }, s, fs, TextAlign::Left, false);
+        text(
+            out,
+            Rect {
+                x: x + SWATCH + GAP,
+                y,
+                w: tw + 2.0,
+                h: lh,
+            },
+            s,
+            fs,
+            TextAlign::Left,
+            false,
+        );
     }
     let used = block_w + PAD;
     let mut area = area;
@@ -1086,18 +1513,41 @@ fn side_legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], left: bool
 
 /// A legend in centred rows the width of `area` above or below it (at most
 /// [`MAX_LEGEND_ROWS`], and half its height); returns the area left for the plot.
-fn row_legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], top: bool, area: Rect, fs: f32) -> Rect {
+fn row_legend(
+    out: &mut Vec<GraphicItem>,
+    entries: &[(String, Rgb)],
+    top: bool,
+    area: Rect,
+    fs: f32,
+) -> Rect {
     let lh = fs * LINE;
     let max_rows = MAX_LEGEND_ROWS.min((area.h / 2.0 / lh).floor().max(1.0) as usize);
     let rows = legend_rows(entries, area.w, fs, max_rows);
-    let y0 = if top { area.y } else { area.bottom() - lh * rows.len() as f32 };
+    let y0 = if top {
+        area.y
+    } else {
+        area.bottom() - lh * rows.len() as f32
+    };
     for (r, row) in rows.iter().enumerate() {
-        let total = row.iter().map(|(_, _, w)| SWATCH + GAP + w).sum::<f32>() + SEP * row.len().saturating_sub(1) as f32;
+        let total = row.iter().map(|(_, _, w)| SWATCH + GAP + w).sum::<f32>()
+            + SEP * row.len().saturating_sub(1) as f32;
         let mut x = area.x + ((area.w - total) / 2.0).max(0.0);
         let y = y0 + lh * r as f32;
         for (s, c, w) in row {
             swatch(out, x, y + (lh - SWATCH) / 2.0, *c);
-            text(out, Rect { x: x + SWATCH + GAP, y, w: w + 2.0, h: lh }, s, fs, TextAlign::Left, false);
+            text(
+                out,
+                Rect {
+                    x: x + SWATCH + GAP,
+                    y,
+                    w: w + 2.0,
+                    h: lh,
+                },
+                s,
+                fs,
+                TextAlign::Left,
+                false,
+            );
             x += SWATCH + GAP + w + SEP;
         }
     }
@@ -1112,7 +1562,12 @@ fn row_legend(out: &mut Vec<GraphicItem>, entries: &[(String, Rgb)], top: bool, 
 
 /// Legend entries (text, colour, text width) packed into at most `max_rows` rows of `width`
 /// points; the entries past the last row are left out.
-fn legend_rows(entries: &[(String, Rgb)], width: f32, fs: f32, max_rows: usize) -> Vec<Vec<(String, Rgb, f32)>> {
+fn legend_rows(
+    entries: &[(String, Rgb)],
+    width: f32,
+    fs: f32,
+    max_rows: usize,
+) -> Vec<Vec<(String, Rgb, f32)>> {
     let mut rows: Vec<Vec<(String, Rgb, f32)>> = Vec::new();
     let mut row_w = 0.0;
     for (s, c) in entries {
@@ -1155,13 +1610,21 @@ impl Frame {
     /// bottom).
     fn band_start(&self, i: usize) -> f32 {
         let k = i as f32;
-        if self.horiz { self.plot.bottom() - (k + 1.0) * self.band() } else { self.plot.x + k * self.band() }
+        if self.horiz {
+            self.plot.bottom() - (k + 1.0) * self.band()
+        } else {
+            self.plot.x + k * self.band()
+        }
     }
 
     /// A value's position along the value direction: y for columns, x for bars.
     fn val(&self, v: f64) -> f32 {
         let t = ((v - self.vs.lo) / (self.vs.hi - self.vs.lo)).clamp(0.0, 1.0) as f32;
-        if self.horiz { self.plot.x + t * self.plot.w } else { self.plot.bottom() - t * self.plot.h }
+        if self.horiz {
+            self.plot.x + t * self.plot.w
+        } else {
+            self.plot.bottom() - t * self.plot.h
+        }
     }
 
     /// x of category `i` for line and area points.
@@ -1169,13 +1632,19 @@ impl Frame {
         if !self.mid {
             return self.plot.x + (i as f32 + 0.5) * self.band();
         }
-        if self.n <= 1 { self.plot.x + self.plot.w / 2.0 } else { self.plot.x + self.plot.w * i as f32 / (self.n - 1) as f32 }
+        if self.n <= 1 {
+            self.plot.x + self.plot.w / 2.0
+        } else {
+            self.plot.x + self.plot.w * i as f32 / (self.n - 1) as f32
+        }
     }
 
     /// x of a scatter point.
     fn scat_x(&self, x: f64) -> f32 {
         match self.xs {
-            Some(s) => self.plot.x + ((x - s.lo) / (s.hi - s.lo)).clamp(0.0, 1.0) as f32 * self.plot.w,
+            Some(s) => {
+                self.plot.x + ((x - s.lo) / (s.hi - s.lo)).clamp(0.0, 1.0) as f32 * self.plot.w
+            }
             None => self.plot.x,
         }
     }
@@ -1192,19 +1661,44 @@ struct Axes {
 impl Axes {
     fn of(c: &Chart) -> Axes {
         let (dlo, dhi) = extent(c);
-        let (vmin, vmax) = if c.grouping == Grouping::Percent { (Some(0.0), Some(1.0)) } else { (c.val.min, c.val.max) };
+        let (vmin, vmax) = if c.grouping == Grouping::Percent {
+            (Some(0.0), Some(1.0))
+        } else {
+            (c.val.min, c.val.max)
+        };
         // Lines and scatters don't need zero for a narrow range (1000..1050 stays on its own scale).
         let zero = !matches!(c.kind, Kind::Line | Kind::Scatter) || !narrow(dlo, dhi);
         let vs = nice_scale(dlo, dhi, zero, vmin, vmax);
-        let vticks = vs.ticks().into_iter().map(|t| (t, format_value(t, &c.val_fmt, vs.step))).collect();
+        let vticks = vs
+            .ticks()
+            .into_iter()
+            .map(|t| (t, format_value(t, &c.val_fmt, vs.step)))
+            .collect();
         let xs = (c.kind == Kind::Scatter).then(|| {
             let (xl, xh) = x_extent(c);
             nice_scale(xl, xh, false, c.cat.min, c.cat.max)
         });
         // Scatter x values show in the axis's own format, else their cache's (dates included).
-        let xfmt = c.cat.fmt.clone().or_else(|| c.series.iter().find_map(|s| s.x_fmt.clone())).unwrap_or_else(|| "General".to_string());
-        let xticks = xs.map(|s| s.ticks().into_iter().map(|t| (t, category_text(t, &xfmt, s.step, c.date1904))).collect()).unwrap_or_default();
-        Axes { vs, vticks, xs, xticks }
+        let xfmt = c
+            .cat
+            .fmt
+            .clone()
+            .or_else(|| c.series.iter().find_map(|s| s.x_fmt.clone()))
+            .unwrap_or_else(|| "General".to_string());
+        let xticks = xs
+            .map(|s| {
+                s.ticks()
+                    .into_iter()
+                    .map(|t| (t, category_text(t, &xfmt, s.step, c.date1904)))
+                    .collect()
+            })
+            .unwrap_or_default();
+        Axes {
+            vs,
+            vticks,
+            xs,
+            xticks,
+        }
     }
 }
 
@@ -1227,9 +1721,17 @@ fn axis_margins(c: &Chart, ax: &Axes, area: Rect) -> Margins {
     let scatter = c.kind == Kind::Scatter;
     let (cat_on, val_on) = (!c.cat.deleted, !c.val.deleted);
     let left = if c.horizontal {
-        if cat_on { widest(&c.cats, fs).min(area.w * 0.4) + GAP } else { 0.0 }
+        if cat_on {
+            widest(&c.cats, fs).min(area.w * 0.4) + GAP
+        } else {
+            0.0
+        }
     } else if val_on {
-        ax.vticks.iter().map(|(_, s)| text_w(s, fs)).fold(0.0, f32::max) + GAP
+        ax.vticks
+            .iter()
+            .map(|(_, s)| text_w(s, fs))
+            .fold(0.0, f32::max)
+            + GAP
     } else {
         0.0
     };
@@ -1240,18 +1742,36 @@ fn axis_margins(c: &Chart, ax: &Axes, area: Rect) -> Margins {
     } else {
         Vec::new()
     };
-    let widest_line = wrapped.iter().flatten().map(|s| text_w(s, fs)).fold(0.0, f32::max);
+    let widest_line = wrapped
+        .iter()
+        .flatten()
+        .map(|s| text_w(s, fs))
+        .fold(0.0, f32::max);
     let skip = ((widest_line / band_w).ceil() as usize).max(1);
     let label_lines = wrapped.iter().map(Vec::len).max().unwrap_or(1) as f32;
     let bottom = if cat_on && !c.horizontal {
-        if scatter { lh + GAP } else { label_lines * lh + GAP }
+        if scatter {
+            lh + GAP
+        } else {
+            label_lines * lh + GAP
+        }
     } else if c.horizontal && val_on {
         lh + GAP
     } else {
         0.0
     };
-    let top = if !c.horizontal && val_on { lh / 2.0 } else { 0.0 };
-    Margins { left, top, bottom, wrapped, skip }
+    let top = if !c.horizontal && val_on {
+        lh / 2.0
+    } else {
+        0.0
+    };
+    Margins {
+        left,
+        top,
+        bottom,
+        wrapped,
+        skip,
+    }
 }
 
 /// A bar, column, line, area or scatter chart in `area`: gridlines, series, axes, then labels.
@@ -1261,11 +1781,23 @@ fn cartesian(out: &mut Vec<GraphicItem>, c: &Chart, area: Rect) {
     }
     let ax = Axes::of(c);
     let m = axis_margins(c, &ax, area);
-    let plot = Rect { x: area.x + m.left, y: area.y + m.top, w: area.w - m.left, h: area.h - m.top - m.bottom };
+    let plot = Rect {
+        x: area.x + m.left,
+        y: area.y + m.top,
+        w: area.w - m.left,
+        h: area.h - m.top - m.bottom,
+    };
     if plot.w < 1.0 || plot.h < 1.0 {
         return;
     }
-    let g = Frame { plot, horiz: c.horizontal, n: c.n, vs: ax.vs, xs: ax.xs, mid: c.val.mid };
+    let g = Frame {
+        plot,
+        horiz: c.horizontal,
+        n: c.n,
+        vs: ax.vs,
+        xs: ax.xs,
+        mid: c.val.mid,
+    };
     if c.val.grid {
         draw_grid(out, &g, &ax.vticks);
     }
@@ -1292,7 +1824,11 @@ fn draw_grid(out: &mut Vec<GraphicItem>, g: &Frame, ticks: &[(f64, String)]) {
     let plot = g.plot;
     for (t, _) in ticks {
         let p = g.val(*t);
-        let segs = if g.horiz { seg(p, plot.y, p, plot.bottom()) } else { seg(plot.x, p, plot.right(), p) };
+        let segs = if g.horiz {
+            seg(p, plot.y, p, plot.bottom())
+        } else {
+            seg(plot.x, p, plot.right(), p)
+        };
         stroke(out, segs, GRID, 0.75);
     }
 }
@@ -1301,35 +1837,73 @@ fn draw_grid(out: &mut Vec<GraphicItem>, g: &Frame, ticks: &[(f64, String)]) {
 fn draw_axes(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame) {
     let plot = g.plot;
     if !c.cat.deleted && c.cat.line {
-        let segs = if g.horiz { seg(plot.x, plot.y, plot.x, plot.bottom()) } else { seg(plot.x, plot.bottom(), plot.right(), plot.bottom()) };
+        let segs = if g.horiz {
+            seg(plot.x, plot.y, plot.x, plot.bottom())
+        } else {
+            seg(plot.x, plot.bottom(), plot.right(), plot.bottom())
+        };
         stroke(out, segs, AXIS, 0.75);
     }
     if let Some(color) = c.plot_border {
-        stroke(out, rect_segs(plot.x, plot.y, plot.right(), plot.bottom()), color, 0.75);
+        stroke(
+            out,
+            rect_segs(plot.x, plot.y, plot.right(), plot.bottom()),
+            color,
+            0.75,
+        );
     }
     if !c.val.deleted && c.val.line {
-        let segs = if g.horiz { seg(plot.x, plot.bottom(), plot.right(), plot.bottom()) } else { seg(plot.x, plot.y, plot.x, plot.bottom()) };
+        let segs = if g.horiz {
+            seg(plot.x, plot.bottom(), plot.right(), plot.bottom())
+        } else {
+            seg(plot.x, plot.y, plot.x, plot.bottom())
+        };
         stroke(out, segs, AXIS, 0.75);
     }
 }
 
 /// Value tick labels: under the plot for bars, else right-aligned in `margin` (the area's left
 /// margin).
-fn draw_value_labels(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, ticks: &[(f64, String)], margin: Rect) {
+fn draw_value_labels(
+    out: &mut Vec<GraphicItem>,
+    c: &Chart,
+    g: &Frame,
+    ticks: &[(f64, String)],
+    margin: Rect,
+) {
     let (fs, lh) = (c.text_size, c.text_size * LINE);
     for (t, s) in ticks {
         let p = g.val(*t);
         if g.horiz {
             text_at(out, p, g.plot.bottom() + GAP / 2.0, s, fs);
         } else {
-            text(out, Rect { x: margin.x, y: p - lh / 2.0, w: margin.w - GAP, h: lh }, s, fs, TextAlign::Right, false);
+            text(
+                out,
+                Rect {
+                    x: margin.x,
+                    y: p - lh / 2.0,
+                    w: margin.w - GAP,
+                    h: lh,
+                },
+                s,
+                fs,
+                TextAlign::Right,
+                false,
+            );
         }
     }
 }
 
 /// Category labels: scatter x ticks under the plot, bar labels in the left margin, column
 /// labels under their bands (every `m.skip`-th).
-fn draw_category_labels(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, xticks: &[(f64, String)], m: &Margins, area: Rect) {
+fn draw_category_labels(
+    out: &mut Vec<GraphicItem>,
+    c: &Chart,
+    g: &Frame,
+    xticks: &[(f64, String)],
+    m: &Margins,
+    area: Rect,
+) {
     let (fs, lh) = (c.text_size, c.text_size * LINE);
     let plot = g.plot;
     if c.kind == Kind::Scatter {
@@ -1340,15 +1914,44 @@ fn draw_category_labels(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, xticks
         for (i, lines) in m.wrapped.iter().enumerate() {
             let top = g.band_start(i) + g.band() / 2.0 - lines.len() as f32 * lh / 2.0;
             for (k, s) in lines.iter().enumerate() {
-                text(out, Rect { x: area.x, y: top + k as f32 * lh, w: m.left - GAP, h: lh }, s, fs, TextAlign::Right, false);
+                text(
+                    out,
+                    Rect {
+                        x: area.x,
+                        y: top + k as f32 * lh,
+                        w: m.left - GAP,
+                        h: lh,
+                    },
+                    s,
+                    fs,
+                    TextAlign::Right,
+                    false,
+                );
             }
         }
     } else {
         let band = g.band();
-        for (i, lines) in m.wrapped.iter().enumerate().filter(|(i, _)| i % m.skip == 0) {
+        for (i, lines) in m
+            .wrapped
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| i % m.skip == 0)
+        {
             for (k, s) in lines.iter().enumerate() {
                 let y = plot.bottom() + GAP / 2.0 + k as f32 * lh;
-                text(out, Rect { x: g.cat_x(i) - band / 2.0, y, w: band, h: lh }, s, fs, TextAlign::Center, false);
+                text(
+                    out,
+                    Rect {
+                        x: g.cat_x(i) - band / 2.0,
+                        y,
+                        w: band,
+                        h: lh,
+                    },
+                    s,
+                    fs,
+                    TextAlign::Center,
+                    false,
+                );
             }
         }
     }
@@ -1383,19 +1986,35 @@ fn extent(c: &Chart) -> (f64, f64) {
             pts.push(q);
         }
     } else {
-        pts.extend(c.series.iter().flat_map(|s| s.values.iter().flatten().copied()));
+        pts.extend(
+            c.series
+                .iter()
+                .flat_map(|s| s.values.iter().flatten().copied()),
+        );
     }
     let lo = pts.iter().copied().fold(f64::INFINITY, f64::min);
     let hi = pts.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    if lo.is_finite() && hi.is_finite() { (lo, hi) } else { (0.0, 0.0) }
+    if lo.is_finite() && hi.is_finite() {
+        (lo, hi)
+    } else {
+        (0.0, 0.0)
+    }
 }
 
 /// Range of scatter x values (index + 1 where missing).
 fn x_extent(c: &Chart) -> (f64, f64) {
-    let xs: Vec<f64> = c.series.iter().flat_map(|s| s.xs.iter().flatten().copied()).collect();
+    let xs: Vec<f64> = c
+        .series
+        .iter()
+        .flat_map(|s| s.xs.iter().flatten().copied())
+        .collect();
     let lo = xs.iter().copied().fold(f64::INFINITY, f64::min);
     let hi = xs.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    if lo.is_finite() && hi.is_finite() { (lo, hi) } else { (0.0, 1.0) }
+    if lo.is_finite() && hi.is_finite() {
+        (lo, hi)
+    } else {
+        (0.0, 1.0)
+    }
 }
 
 fn bars(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<DataLabel>) {
@@ -1410,9 +2029,15 @@ fn bars(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<DataL
     let mut neg = vec![0.0f64; g.n];
     for (j, s) in c.series.iter().enumerate().filter(|(_, s)| has_values(s)) {
         let slot = if stacked { 0 } else { j };
-        let slot = (if g.horiz { slots.saturating_sub(1 + slot) } else { slot }) as f32;
+        let slot = (if g.horiz {
+            slots.saturating_sub(1 + slot)
+        } else {
+            slot
+        }) as f32;
         for i in 0..g.n {
-            let Some(v) = s.values.get(i).copied().flatten() else { continue };
+            let Some(v) = s.values.get(i).copied().flatten() else {
+                continue;
+            };
             let (v0, v1) = if !stacked {
                 (0.0, v)
             } else if v >= 0.0 {
@@ -1429,7 +2054,11 @@ fn bars(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<DataL
             let a = g.band_start(i) + (band - group) / 2.0 + slot * thick * (1.0 - ov);
             let (p0, p1) = (g.val(v0), g.val(v1));
             let (p0, p1) = (p0.min(p1), p0.max(p1));
-            let segs = if g.horiz { rect_segs(p0, a, p1, a + thick) } else { rect_segs(a, p0, a + thick, p1) };
+            let segs = if g.horiz {
+                rect_segs(p0, a, p1, a + thick)
+            } else {
+                rect_segs(a, p0, a + thick, p1)
+            };
             fill(out, segs, c.point_colour(j, i));
             if let Some(text) = label_of(s, i) {
                 let mid = a + thick / 2.0;
@@ -1440,7 +2069,12 @@ fn bars(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<DataL
                     (true, false) => (if v >= 0.0 { p1 } else { p0 }, mid),
                     (false, false) => (mid, if v >= 0.0 { p0 } else { p1 }),
                 };
-                labels.push(DataLabel { x, y, text, inside: stacked });
+                labels.push(DataLabel {
+                    x,
+                    y,
+                    text,
+                    inside: stacked,
+                });
             }
         }
     }
@@ -1470,7 +2104,12 @@ fn lines(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<Data
             .collect();
         for (i, p) in pts.iter().enumerate() {
             if let (Some((x, y)), Some(text)) = (p, label_of(s, i)) {
-                labels.push(DataLabel { x: *x, y: *y, text, inside: false });
+                labels.push(DataLabel {
+                    x: *x,
+                    y: *y,
+                    text,
+                    inside: false,
+                });
             }
         }
         stroke(out, runs(pts.into_iter()), c.series_colour(j), s.line_w);
@@ -1485,7 +2124,11 @@ fn areas(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<Data
         let mut segs = Vec::with_capacity(2 * g.n + 1);
         for (i, t) in top.iter().enumerate() {
             let (x, y) = (g.cat_x(i), g.val(*t));
-            segs.push(if i == 0 { PathSeg::Move(x, y) } else { PathSeg::Line(x, y) });
+            segs.push(if i == 0 {
+                PathSeg::Move(x, y)
+            } else {
+                PathSeg::Line(x, y)
+            });
         }
         for (i, b) in base.iter().enumerate().rev() {
             segs.push(PathSeg::Line(g.cat_x(i), g.val(*b)));
@@ -1494,7 +2137,12 @@ fn areas(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut Vec<Data
         fill(out, segs, c.series_colour(j));
         for (i, (t, b)) in top.iter().zip(&base).enumerate() {
             if let Some(text) = label_of(s, i) {
-                labels.push(DataLabel { x: g.cat_x(i), y: g.val((t + b) / 2.0), text, inside: true });
+                labels.push(DataLabel {
+                    x: g.cat_x(i),
+                    y: g.val((t + b) / 2.0),
+                    text,
+                    inside: true,
+                });
             }
         }
         if c.stacked() {
@@ -1517,7 +2165,12 @@ fn draw_scatter(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut V
                 .collect();
         for (i, p) in pts.iter().enumerate() {
             if let (Some((x, y)), Some(text)) = (p, label_of(s, i)) {
-                labels.push(DataLabel { x: *x, y: *y - MARKER / 2.0, text, inside: false });
+                labels.push(DataLabel {
+                    x: *x,
+                    y: *y - MARKER / 2.0,
+                    text,
+                    inside: false,
+                });
             }
         }
         if s.line {
@@ -1526,7 +2179,13 @@ fn draw_scatter(out: &mut Vec<GraphicItem>, c: &Chart, g: &Frame, labels: &mut V
         }
         for (x, y) in pts.iter().flatten() {
             let rect = [x - MARKER / 2.0, y - MARKER / 2.0, MARKER, MARKER];
-            out.push(GraphicItem::Shape { rect, kind: ShapeKind::Ellipse, fill: Some(c.series_colour(j)), stroke: None, stroke_width: 0.0 });
+            out.push(GraphicItem::Shape {
+                rect,
+                kind: ShapeKind::Ellipse,
+                fill: Some(c.series_colour(j)),
+                stroke: None,
+                stroke_width: 0.0,
+            });
         }
     }
 }
@@ -1539,8 +2198,15 @@ fn pie(out: &mut Vec<GraphicItem>, c: &Chart, area: Rect) {
     if !(total > 0.0 && total.is_finite() && r >= 1.0) {
         return;
     }
-    let (cx, cy) = ((area.x + area.w / 2.0) as f64, (area.y + area.h / 2.0) as f64);
-    let inner = if c.kind == Kind::Doughnut { r * c.hole as f64 } else { 0.0 };
+    let (cx, cy) = (
+        (area.x + area.w / 2.0) as f64,
+        (area.y + area.h / 2.0) as f64,
+    );
+    let inner = if c.kind == Kind::Doughnut {
+        r * c.hole as f64
+    } else {
+        0.0
+    };
     let mut a = c.first_angle.to_radians();
     let mut labels = Vec::new();
     for (i, v) in vals.iter().enumerate() {
@@ -1563,9 +2229,18 @@ fn pie(out: &mut Vec<GraphicItem>, c: &Chart, area: Rect) {
         fill(out, segs, c.point_colour(0, i));
         if let Some(text) = label_of(s, i) {
             // Halfway across the ring (pie: two thirds out from the centre).
-            let at = if inner > 0.0 { (r + inner) / 2.0 } else { r * 0.65 };
+            let at = if inner > 0.0 {
+                (r + inner) / 2.0
+            } else {
+                r * 0.65
+            };
             let (x, y) = polar(cx, cy, at, (a + b) / 2.0);
-            labels.push(DataLabel { x: x as f32, y: y as f32, text, inside: true });
+            labels.push(DataLabel {
+                x: x as f32,
+                y: y as f32,
+                text,
+                inside: true,
+            });
         }
         a = b;
     }
@@ -1579,7 +2254,10 @@ fn label_of(s: &Series, i: usize) -> Option<String> {
         return None;
     }
     let v = s.raw.get(i).copied().flatten()?;
-    let fmt = s.fmt.as_deref().filter(|f| !f.eq_ignore_ascii_case("General"));
+    let fmt = s
+        .fmt
+        .as_deref()
+        .filter(|f| !f.eq_ignore_ascii_case("General"));
     Some(match fmt {
         Some(f) => format_value(v, f, 1.0),
         None => general_value(v),
@@ -1593,7 +2271,11 @@ fn general_value(v: f64) -> String {
     }
     let s = format!("{v:.6}");
     let s = s.trim_end_matches('0').trim_end_matches('.');
-    if s == "-0" { "0".to_string() } else { s.to_string() }
+    if s == "-0" {
+        "0".to_string()
+    } else {
+        s.to_string()
+    }
 }
 
 /// Data labels over the drawn chart. Beside labels sit above their point, or right of it for
@@ -1603,14 +2285,46 @@ fn draw_data_labels(out: &mut Vec<GraphicItem>, labels: &[DataLabel], fs: f32, b
     for l in labels {
         let w = text_w(&l.text, fs) + 4.0;
         let (rect, align) = if l.inside {
-            (Rect { x: l.x - w / 2.0, y: l.y - lh / 2.0, w, h: lh }, TextAlign::Center)
+            (
+                Rect {
+                    x: l.x - w / 2.0,
+                    y: l.y - lh / 2.0,
+                    w,
+                    h: lh,
+                },
+                TextAlign::Center,
+            )
         } else if beside_right {
-            (Rect { x: l.x + GAP / 2.0, y: l.y - lh / 2.0, w, h: lh }, TextAlign::Left)
+            (
+                Rect {
+                    x: l.x + GAP / 2.0,
+                    y: l.y - lh / 2.0,
+                    w,
+                    h: lh,
+                },
+                TextAlign::Left,
+            )
         } else {
-            (Rect { x: l.x - w / 2.0, y: l.y - lh, w, h: lh }, TextAlign::Center)
+            (
+                Rect {
+                    x: l.x - w / 2.0,
+                    y: l.y - lh,
+                    w,
+                    h: lh,
+                },
+                TextAlign::Center,
+            )
         };
         let color = if l.inside { Rgb::WHITE } else { TEXT };
-        out.push(GraphicItem::Text { rect: rect.arr(), text: l.text.clone(), size: fs, color, bold: false, align, font: None });
+        out.push(GraphicItem::Text {
+            rect: rect.arr(),
+            text: l.text.clone(),
+            size: fs,
+            color,
+            bold: false,
+            align,
+            font: None,
+        });
     }
 }
 
@@ -1640,7 +2354,14 @@ fn arc(segs: &mut Vec<PathSeg>, (cx, cy, r): (f64, f64, f64), a: f64, b: f64) {
         let p1 = polar(cx, cy, r, t1);
         let c1 = (p0.0 + k * r * t0.cos(), p0.1 + k * r * t0.sin());
         let c2 = (p1.0 - k * r * t1.cos(), p1.1 - k * r * t1.sin());
-        segs.push(PathSeg::Cubic(c1.0 as f32, c1.1 as f32, c2.0 as f32, c2.1 as f32, p1.0 as f32, p1.1 as f32));
+        segs.push(PathSeg::Cubic(
+            c1.0 as f32,
+            c1.1 as f32,
+            c2.0 as f32,
+            c2.1 as f32,
+            p1.0 as f32,
+            p1.1 as f32,
+        ));
     }
 }
 
@@ -1649,11 +2370,12 @@ mod tests {
     use super::*;
     use wordcraft_doc::THEME_COLORS;
 
-    const NS: &str =
-        r#"xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main""#;
+    const NS: &str = r#"xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main""#;
 
     fn space(plot: &str) -> El {
-        let x = format!(r#"<c:chartSpace {NS}><c:chart><c:plotArea>{plot}</c:plotArea></c:chart></c:chartSpace>"#);
+        let x = format!(
+            r#"<c:chartSpace {NS}><c:chart><c:plotArea>{plot}</c:plotArea></c:chart></c:chartSpace>"#
+        );
         crate::xml::parse(x.as_bytes()).unwrap()
     }
 
@@ -1662,9 +2384,19 @@ mod tests {
     }
 
     fn ser(i: usize, name: &str, color: Option<&str>, cats: &[&str], vals: &[&str]) -> String {
-        let fill = color.map_or(String::new(), |c| format!(r#"<c:spPr><a:solidFill><a:srgbClr val="{c}"/></a:solidFill></c:spPr>"#));
-        let cat_pts: String = cats.iter().enumerate().map(|(k, c)| format!(r#"<c:pt idx="{k}"><c:v>{c}</c:v></c:pt>"#)).collect();
-        let val_pts: String = vals.iter().enumerate().map(|(k, v)| format!(r#"<c:pt idx="{k}"><c:v>{v}</c:v></c:pt>"#)).collect();
+        let fill = color.map_or(String::new(), |c| {
+            format!(r#"<c:spPr><a:solidFill><a:srgbClr val="{c}"/></a:solidFill></c:spPr>"#)
+        });
+        let cat_pts: String = cats
+            .iter()
+            .enumerate()
+            .map(|(k, c)| format!(r#"<c:pt idx="{k}"><c:v>{c}</c:v></c:pt>"#))
+            .collect();
+        let val_pts: String = vals
+            .iter()
+            .enumerate()
+            .map(|(k, v)| format!(r#"<c:pt idx="{k}"><c:v>{v}</c:v></c:pt>"#))
+            .collect();
         format!(
             r#"<c:ser><c:idx val="{i}"/><c:order val="{i}"/><c:tx><c:strRef><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>{name}</c:v></c:pt></c:strCache></c:strRef></c:tx>{fill}<c:cat><c:strRef><c:strCache><c:ptCount val="{nc}"/>{cat_pts}</c:strCache></c:strRef></c:cat><c:val><c:numRef><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="{nv}"/>{val_pts}</c:numCache></c:numRef></c:val></c:ser>"#,
             nc = cats.len(),
@@ -1676,7 +2408,11 @@ mod tests {
         items
             .iter()
             .filter_map(|it| match it {
-                GraphicItem::Path { segs, fill: Some(c), .. } => {
+                GraphicItem::Path {
+                    segs,
+                    fill: Some(c),
+                    ..
+                } => {
                     let ys: Vec<f32> = segs
                         .iter()
                         .filter_map(|s| match s {
@@ -1697,8 +2433,20 @@ mod tests {
     fn clustered_columns_draw_one_bar_per_point() {
         let plot = format!(
             r#"<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/>{}{}<c:axId val="1"/><c:axId val="2"/></c:barChart><c:catAx><c:axId val="1"/></c:catAx><c:valAx><c:axId val="2"/><c:majorGridlines/></c:valAx>"#,
-            ser(0, "North", Some("FF0000"), &["Q1", "Q2", "Q3"], &["4", "8", "2"]),
-            ser(1, "South", Some("00FF00"), &["Q1", "Q2", "Q3"], &["2", "6", "4"]),
+            ser(
+                0,
+                "North",
+                Some("FF0000"),
+                &["Q1", "Q2", "Q3"],
+                &["4", "8", "2"]
+            ),
+            ser(
+                1,
+                "South",
+                Some("00FF00"),
+                &["Q1", "Q2", "Q3"],
+                &["2", "6", "4"]
+            ),
         );
         let items = chart_items(&space(&plot), &theme(), 300.0, 200.0);
         let bars = filled(&items);
@@ -1711,13 +2459,26 @@ mod tests {
         assert!((heights[4] / heights[1] - 0.75).abs() < 1e-3, "{heights:?}");
         assert_eq!(bars[0].0, Rgb(0xFF, 0, 0));
         assert_eq!(bars[3].0, Rgb(0, 0xFF, 0));
-        assert!(items.iter().any(|it| matches!(it, GraphicItem::Text { text, .. } if text == "Q2")));
+        assert!(
+            items
+                .iter()
+                .any(|it| matches!(it, GraphicItem::Text { text, .. } if text == "Q2"))
+        );
     }
 
     #[test]
     fn data_labels_show_the_values() {
         let texts = |items: &[GraphicItem]| -> Vec<String> {
-            items.iter().filter_map(|it| if let GraphicItem::Text { text, .. } = it { Some(text.clone()) } else { None }).collect()
+            items
+                .iter()
+                .filter_map(|it| {
+                    if let GraphicItem::Text { text, .. } = it {
+                        Some(text.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         };
         let labels = r#"<c:dLbls><c:showLegendKey val="0"/><c:showVal val="1"/></c:dLbls>"#;
         let plot = format!(
@@ -1725,19 +2486,36 @@ mod tests {
             ser(0, "North", None, &["Q1", "Q2"], &["4.25", "17"]),
         );
         let shown = texts(&chart_items(&space(&plot), &theme(), 300.0, 200.0));
-        assert!(shown.contains(&"4.25".to_string()) && shown.contains(&"17".to_string()), "{shown:?}");
-        let pie = format!(r#"<c:pieChart><c:varyColors val="1"/>{}{labels}</c:pieChart>"#, ser(0, "S", None, &["A", "B"], &["1", "3"]));
+        assert!(
+            shown.contains(&"4.25".to_string()) && shown.contains(&"17".to_string()),
+            "{shown:?}"
+        );
+        let pie = format!(
+            r#"<c:pieChart><c:varyColors val="1"/>{}{labels}</c:pieChart>"#,
+            ser(0, "S", None, &["A", "B"], &["1", "3"])
+        );
         let shown = texts(&chart_items(&space(&pie), &theme(), 200.0, 150.0));
         assert!(shown.contains(&"3".to_string()), "{shown:?}");
         // Without `c:dLbls`, no values are written next to the points.
         let plain = plot.replace(labels, "");
-        assert!(!texts(&chart_items(&space(&plain), &theme(), 300.0, 200.0)).contains(&"4.25".to_string()));
+        assert!(
+            !texts(&chart_items(&space(&plain), &theme(), 300.0, 200.0))
+                .contains(&"4.25".to_string())
+        );
     }
 
     #[test]
     fn pie_draws_one_slice_per_point() {
-        let plot =
-            format!(r#"<c:pieChart><c:varyColors val="1"/>{}</c:pieChart>"#, ser(0, "Share", None, &["A", "B", "C", "D"], &["50", "25", "15", "10"]));
+        let plot = format!(
+            r#"<c:pieChart><c:varyColors val="1"/>{}</c:pieChart>"#,
+            ser(
+                0,
+                "Share",
+                None,
+                &["A", "B", "C", "D"],
+                &["50", "25", "15", "10"]
+            )
+        );
         let items = chart_items(&space(&plot), &theme(), 200.0, 150.0);
         let slices = filled(&items);
         assert_eq!(slices.len(), 4);
@@ -1751,16 +2529,39 @@ mod tests {
             ser(0, "S", None, &["A", "B"], &["1", "3"])
         );
         let items = chart_items(&space(&plot), &theme(), 200.0, 150.0);
-        assert_eq!(items.iter().filter(|it| matches!(it, GraphicItem::Path { fill: Some(_), .. })).count(), 2);
+        assert_eq!(
+            items
+                .iter()
+                .filter(|it| matches!(it, GraphicItem::Path { fill: Some(_), .. }))
+                .count(),
+            2
+        );
     }
 
     #[test]
     fn nice_scale_rounds_to_round_steps() {
-        assert_eq!(nice_scale(0.0, 22.3, true, None, None), Scale { lo: 0.0, hi: 25.0, step: 5.0 });
-        assert_eq!(nice_scale(0.0, 100.0, true, None, None), Scale { lo: 0.0, hi: 120.0, step: 20.0 });
+        assert_eq!(
+            nice_scale(0.0, 22.3, true, None, None),
+            Scale {
+                lo: 0.0,
+                hi: 25.0,
+                step: 5.0
+            }
+        );
+        assert_eq!(
+            nice_scale(0.0, 100.0, true, None, None),
+            Scale {
+                lo: 0.0,
+                hi: 120.0,
+                step: 20.0
+            }
+        );
         assert_eq!(nice_scale(0.0, 22.3, true, Some(0.0), Some(30.0)).hi, 30.0);
         let flat = nice_scale(0.0, 0.0, true, None, None);
-        assert!(flat.lo == 0.0 && (flat.hi - 1.2).abs() < 1e-9 && flat.step == 0.2, "{flat:?}");
+        assert!(
+            flat.lo == 0.0 && (flat.hi - 1.2).abs() < 1e-9 && flat.step == 0.2,
+            "{flat:?}"
+        );
     }
 
     #[test]
@@ -1784,7 +2585,13 @@ mod tests {
         ];
         for body in &bodies {
             let s = space(body);
-            for (w, h) in [(0.0, 10.0), (f32::NAN, 10.0), (-1.0, 1.0), (1e30, 1e30), (50.0, 40.0)] {
+            for (w, h) in [
+                (0.0, 10.0),
+                (f32::NAN, 10.0),
+                (-1.0, 1.0),
+                (1e30, 1e30),
+                (50.0, 40.0),
+            ] {
                 let _ = chart_items(&s, &theme(), w, h);
             }
         }
@@ -1812,9 +2619,23 @@ mod tests {
         let sers: String = (0..256)
             .map(|i| format!(r#"<c:ser><c:idx val="{i}"/><c:val><c:numRef><c:numCache><c:ptCount val="10000"/><c:pt idx="0"><c:v>1</c:v></c:pt></c:numCache></c:numRef></c:val></c:ser>"#))
             .collect();
-        let plot = format!(r#"<c:lineChart><c:grouping val="standard"/>{sers}<c:axId val="1"/></c:lineChart>"#);
+        let plot = format!(
+            r#"<c:lineChart><c:grouping val="standard"/>{sers}<c:axId val="1"/></c:lineChart>"#
+        );
         let items = chart_items(&space(&plot), &theme(), 300.0, 200.0);
-        let strokes = items.iter().filter(|it| matches!(it, GraphicItem::Path { fill: None, stroke: Some(_), .. })).count();
+        let strokes = items
+            .iter()
+            .filter(|it| {
+                matches!(
+                    it,
+                    GraphicItem::Path {
+                        fill: None,
+                        stroke: Some(_),
+                        ..
+                    }
+                )
+            })
+            .count();
         assert_eq!(strokes, MAX_CELLS / 10_000);
     }
 
@@ -1833,7 +2654,14 @@ mod tests {
     #[test]
     fn value_scale_starts_bars_at_zero_for_negative_data() {
         // All-negative data pads below only: the axis ends at zero, as positive data's starts there.
-        assert_eq!(nice_scale(-10.0, -2.0, true, None, None), Scale { lo: -12.0, hi: 0.0, step: 2.0 });
+        assert_eq!(
+            nice_scale(-10.0, -2.0, true, None, None),
+            Scale {
+                lo: -12.0,
+                hi: 0.0,
+                step: 2.0
+            }
+        );
         assert_eq!(nice_scale(-1050.0, -1000.0, false, None, None).hi, -1000.0);
     }
 
@@ -1856,12 +2684,20 @@ mod tests {
         let labels: Vec<(&str, f32)> = items
             .iter()
             .filter_map(|it| match it {
-                GraphicItem::Text { rect, text, align: TextAlign::Right, .. } => Some((text.as_str(), rect[2])),
+                GraphicItem::Text {
+                    rect,
+                    text,
+                    align: TextAlign::Right,
+                    ..
+                } => Some((text.as_str(), rect[2])),
                 _ => None,
             })
             .collect();
         assert!(labels.iter().all(|(_, w)| *w <= 0.4 * 300.0), "{labels:?}");
-        assert!(labels.iter().filter(|(t, _)| long.contains(t)).count() > 1, "wrapped: {labels:?}");
+        assert!(
+            labels.iter().filter(|(t, _)| long.contains(t)).count() > 1,
+            "wrapped: {labels:?}"
+        );
     }
 
     #[test]
@@ -1878,15 +2714,27 @@ mod tests {
         // Where the last point of the line drawn in `colour` is.
         let end_y = |items: &[GraphicItem], colour: Rgb| {
             items.iter().find_map(|it| match it {
-                GraphicItem::Path { segs, stroke: Some(c), .. } if *c == colour => match segs.last() {
+                GraphicItem::Path {
+                    segs,
+                    stroke: Some(c),
+                    ..
+                } if *c == colour => match segs.last() {
                     Some(PathSeg::Line(_, y)) => Some(*y),
                     _ => None,
                 },
                 _ => None,
             })
         };
-        let top = end_y(&chart_items(&space(&stacked), &theme(), 300.0, 200.0), Rgb(0, 0xFF, 0)).expect("stacked line");
-        let total = end_y(&chart_items(&space(&single), &theme(), 300.0, 200.0), Rgb(0, 0, 0xFF)).expect("single line");
+        let top = end_y(
+            &chart_items(&space(&stacked), &theme(), 300.0, 200.0),
+            Rgb(0, 0xFF, 0),
+        )
+        .expect("stacked line");
+        let total = end_y(
+            &chart_items(&space(&single), &theme(), 300.0, 200.0),
+            Rgb(0, 0, 0xFF),
+        )
+        .expect("single line");
         assert!((top - total).abs() < 1e-3, "stacked {top} vs {total}");
     }
 
@@ -1911,7 +2759,10 @@ mod tests {
 
     #[test]
     fn number_formats_keep_literal_text_and_currency() {
-        assert_eq!(format_value(1234.5, "#,##0.00 [$€-407]", 0.25), "1,234.50 €");
+        assert_eq!(
+            format_value(1234.5, "#,##0.00 [$€-407]", 0.25),
+            "1,234.50 €"
+        );
         assert_eq!(format_value(5.0, "[Red]0", 1.0), "5");
         assert_eq!(format_value(3.0, "\"Items: \"0", 1.0), "Items: 3");
         assert_eq!(format_value(3.0, "0\" units\"", 1.0), "3 units");
@@ -1919,29 +2770,55 @@ mod tests {
 
     #[test]
     fn side_legend_keeps_only_the_entries_that_fit() {
-        let sers: String = (0..10).map(|i| ser(i, &format!("S{i}"), Some("FF0000"), &["Q1"], &["1"])).collect();
+        let sers: String = (0..10)
+            .map(|i| ser(i, &format!("S{i}"), Some("FF0000"), &["Q1"], &["1"]))
+            .collect();
         let plot = format!(
             r#"<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/>{sers}<c:axId val="1"/><c:axId val="2"/></c:barChart><c:catAx><c:axId val="1"/></c:catAx><c:valAx><c:axId val="2"/></c:valAx>"#
         );
         let items = with_legend(&plot, "r", 300.0, 60.0);
-        let swatches = items.iter().filter(|it| matches!(it, GraphicItem::Shape { rect, .. } if rect[2] == 7.0)).count();
+        let swatches = items
+            .iter()
+            .filter(|it| matches!(it, GraphicItem::Shape { rect, .. } if rect[2] == 7.0))
+            .count();
         assert!(swatches > 0 && swatches < 10, "{swatches} swatches");
-        let bottom =
-            items.iter().filter_map(|it| if let GraphicItem::Text { rect, .. } = it { Some(rect[1] + rect[3]) } else { None }).fold(0.0, f32::max);
-        assert!(bottom <= 60.0, "legend text passes the chart's bottom: {bottom}");
+        let bottom = items
+            .iter()
+            .filter_map(|it| {
+                if let GraphicItem::Text { rect, .. } = it {
+                    Some(rect[1] + rect[3])
+                } else {
+                    None
+                }
+            })
+            .fold(0.0, f32::max);
+        assert!(
+            bottom <= 60.0,
+            "legend text passes the chart's bottom: {bottom}"
+        );
     }
 
     /// The swatches of a legend: their (x, y).
     fn swatches(items: &[GraphicItem]) -> Vec<(f32, f32)> {
         items
             .iter()
-            .filter_map(|it| if let GraphicItem::Shape { rect, .. } = it { (rect[2] == SWATCH).then_some((rect[0], rect[1])) } else { None })
+            .filter_map(|it| {
+                if let GraphicItem::Shape { rect, .. } = it {
+                    (rect[2] == SWATCH).then_some((rect[0], rect[1]))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     /// A column chart of one category with a series per name.
     fn columns(names: &[&str]) -> String {
-        let sers: String = names.iter().enumerate().map(|(i, n)| ser(i, n, Some("FF0000"), &["Q1"], &["1"])).collect();
+        let sers: String = names
+            .iter()
+            .enumerate()
+            .map(|(i, n)| ser(i, n, Some("FF0000"), &["Q1"], &["1"]))
+            .collect();
         format!(
             r#"<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/>{sers}<c:axId val="1"/><c:axId val="2"/></c:barChart><c:catAx><c:axId val="1"/></c:catAx><c:valAx><c:axId val="2"/></c:valAx>"#
         )
@@ -1954,41 +2831,73 @@ mod tests {
         let items = with_legend(&columns(&names), "b", 200.0, 200.0);
         let sw = swatches(&items);
         let rows: std::collections::BTreeSet<i32> = sw.iter().map(|(_, y)| *y as i32).collect();
-        assert!(rows.len() > 1 && rows.len() <= MAX_LEGEND_ROWS, "rows {rows:?}");
+        assert!(
+            rows.len() > 1 && rows.len() <= MAX_LEGEND_ROWS,
+            "rows {rows:?}"
+        );
         assert!(sw.iter().all(|(x, _)| *x >= 0.0 && *x <= 200.0), "{sw:?}");
         for it in &items {
             if let GraphicItem::Text { rect, text, .. } = it {
-                assert!(rect[0] >= 0.0 && rect[0] + text_w(text, FONT) <= 200.0 + 1e-3, "{text:?} at {rect:?}");
+                assert!(
+                    rect[0] >= 0.0 && rect[0] + text_w(text, FONT) <= 200.0 + 1e-3,
+                    "{text:?} at {rect:?}"
+                );
             }
         }
     }
 
     #[test]
     fn long_legend_names_are_cut_to_a_share_of_the_chart() {
-        let long = "A very long series name that would push the legend past the left edge of the chart";
+        let long =
+            "A very long series name that would push the legend past the left edge of the chart";
         let items = with_legend(&columns(&[long, "Short"]), "r", 200.0, 150.0);
-        assert!(swatches(&items).iter().all(|(x, _)| *x >= 0.0), "{:?}", swatches(&items));
+        assert!(
+            swatches(&items).iter().all(|(x, _)| *x >= 0.0),
+            "{:?}",
+            swatches(&items)
+        );
         let cut = items.iter().find_map(|it| match it {
-            GraphicItem::Text { text, rect, .. } if text.ends_with('…') => Some((text.clone(), rect[2])),
+            GraphicItem::Text { text, rect, .. } if text.ends_with('…') => {
+                Some((text.clone(), rect[2]))
+            }
             _ => None,
         });
         let (text, w) = cut.expect("the long name is cut");
-        assert!(text_w(&text, FONT) <= 200.0 * LEGEND_SHARE && w <= 200.0 * LEGEND_SHARE + 2.0, "{text:?} {w}");
+        assert!(
+            text_w(&text, FONT) <= 200.0 * LEGEND_SHARE && w <= 200.0 * LEGEND_SHARE + 2.0,
+            "{text:?} {w}"
+        );
     }
 
     #[test]
     fn scatter_dates_show_as_dates() {
-        let pts = |vals: &[&str]| -> String { vals.iter().enumerate().map(|(k, v)| format!(r#"<c:pt idx="{k}"><c:v>{v}</c:v></c:pt>"#)).collect() };
+        let pts = |vals: &[&str]| -> String {
+            vals.iter()
+                .enumerate()
+                .map(|(k, v)| format!(r#"<c:pt idx="{k}"><c:v>{v}</c:v></c:pt>"#))
+                .collect()
+        };
         let plot = format!(
             r#"<c:scatterChart><c:ser><c:idx val="0"/><c:xVal><c:numRef><c:numCache><c:formatCode>m/d/yyyy</c:formatCode><c:ptCount val="3"/>{}</c:numCache></c:numRef></c:xVal><c:yVal><c:numRef><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="3"/>{}</c:numCache></c:numRef></c:yVal></c:ser><c:axId val="1"/><c:axId val="2"/></c:scatterChart><c:valAx><c:axId val="1"/><c:axPos val="b"/></c:valAx><c:valAx><c:axId val="2"/><c:axPos val="l"/></c:valAx>"#,
             pts(&["45292", "45323", "45352"]),
             pts(&["1", "2", "3"])
         );
         let items = chart_items(&space(&plot), &theme(), 300.0, 200.0);
-        let texts: Vec<&str> =
-            items.iter().filter_map(|it| if let GraphicItem::Text { text, .. } = it { Some(text.as_str()) } else { None }).collect();
+        let texts: Vec<&str> = items
+            .iter()
+            .filter_map(|it| {
+                if let GraphicItem::Text { text, .. } = it {
+                    Some(text.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert!(texts.iter().any(|t| t.ends_with("/2024")), "{texts:?}");
-        assert!(!texts.iter().any(|t| t.starts_with("45")), "serials shown: {texts:?}");
+        assert!(
+            !texts.iter().any(|t| t.starts_with("45")),
+            "serials shown: {texts:?}"
+        );
     }
 
     #[test]
@@ -1998,7 +2907,8 @@ mod tests {
         let x = format!(
             r#"<c:chartSpace {NS}><c:date1904 val="1"/><c:chart><c:plotArea><c:lineChart><c:ser><c:cat><c:numRef><c:numCache><c:formatCode>yyyy-mm-dd</c:formatCode><c:ptCount val="1"/><c:pt idx="0"><c:v>366</c:v></c:pt></c:numCache></c:numRef></c:cat><c:val><c:numLit><c:ptCount val="1"/><c:pt idx="0"><c:v>1</c:v></c:pt></c:numLit></c:val></c:ser></c:lineChart><c:catAx/><c:valAx/></c:plotArea></c:chart></c:chartSpace>"#
         );
-        let chart = Chart::parse(&crate::xml::parse(x.as_bytes()).unwrap(), &theme()).expect("chart");
+        let chart =
+            Chart::parse(&crate::xml::parse(x.as_bytes()).unwrap(), &theme()).expect("chart");
         assert_eq!(chart.cats, ["1905-01-01"]);
     }
 

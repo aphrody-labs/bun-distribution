@@ -6,14 +6,19 @@ use std::sync::Arc;
 
 use filmcraft_media::generators::GeneratorSource;
 use filmcraft_media::{DemoScene, Generator, MediaSource};
-use filmcraft_project::{ItemId, ItemKind, Label, MediaClip, MediaRef, Project, SequenceSettings, TrackKind};
+use filmcraft_project::{
+    ItemId, ItemKind, Label, MediaClip, MediaRef, Project, SequenceSettings, TrackKind,
+};
 use filmcraft_time::{FrameRate, Tick, TimeRange};
 use serde_json::json;
 
 use crate::Session;
 
 pub fn tmp_dir(name: &str) -> PathBuf {
-    let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
     let d = std::env::temp_dir().join(format!("filmcraft-{name}-{}-{nanos}", std::process::id()));
     std::fs::create_dir_all(&d).unwrap();
     d
@@ -39,18 +44,42 @@ pub fn make_movie(path: &Path, scene: DemoScene, w: u32, h: u32, frames: i64) {
         identity: None,
     };
     let item = p.add_item("scene", Label::Iris, ItemKind::Media(clip), None);
-    let seq = p.new_sequence("s", SequenceSettings { width: w, height: h, frame_rate: rate, ..Default::default() }, 1, 1, None);
+    let seq = p.new_sequence(
+        "s",
+        SequenceSettings {
+            width: w,
+            height: h,
+            frame_rate: rate,
+            ..Default::default()
+        },
+        1,
+        1,
+        None,
+    );
     let r = TimeRange::new(Tick::ZERO, dur);
-    let mut v = p.make_track_item(item, TrackKind::Video, Tick::ZERO, r, rate).unwrap();
+    let mut v = p
+        .make_track_item(item, TrackKind::Video, Tick::ZERO, r, rate)
+        .unwrap();
     for e in &mut v.effects {
         filmcraft_project::resolve_auto_points(e, (w, h), (w, h));
     }
-    let a = p.make_track_item(item, TrackKind::Audio, Tick::ZERO, r, rate).unwrap();
+    let a = p
+        .make_track_item(item, TrackKind::Audio, Tick::ZERO, r, rate)
+        .unwrap();
     let q = p.sequence_mut(seq).unwrap();
     q.video_tracks[0].items.push(v);
     q.audio_tracks[0].items.push(a);
-    let fmt = if path.extension().is_some_and(|e| e == "mp4") { filmcraft_export::Format::H264 } else { filmcraft_export::Format::ProRes };
-    let settings = filmcraft_export::ExportSettings { format: fmt, path: path.to_string_lossy().into_owned(), bitrate_kbps: 4000, ..Default::default() };
+    let fmt = if path.extension().is_some_and(|e| e == "mp4") {
+        filmcraft_export::Format::H264
+    } else {
+        filmcraft_export::Format::ProRes
+    };
+    let settings = filmcraft_export::ExportSettings {
+        format: fmt,
+        path: path.to_string_lossy().into_owned(),
+        bitrate_kbps: 4000,
+        ..Default::default()
+    };
     let shared: filmcraft_media::SharedSource = Arc::new(src);
     let provider = move |id: ItemId| (id == item).then(|| shared.clone());
     filmcraft_export::export(&Arc::new(p), seq, &settings, &provider, &Default::default()).unwrap();
@@ -60,24 +89,54 @@ pub fn make_movie(path: &Path, scene: DemoScene, w: u32, h: u32, frames: i64) {
 /// in turn on V1/A1. Returns (session, item ids, sequence id).
 pub fn session_with(files: &[&Path]) -> (Session, Vec<ItemId>, ItemId) {
     let mut s = Session::default();
-    let paths: Vec<String> = files.iter().map(|p| p.to_string_lossy().into_owned()).collect();
+    let paths: Vec<String> = files
+        .iter()
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect();
     let r = s.execute("file.import", json!({"paths": paths})).unwrap();
-    let items: Vec<ItemId> = r["items"].as_array().unwrap().iter().map(|v| ItemId(v.as_u64().unwrap())).collect();
+    let items: Vec<ItemId> = r["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| ItemId(v.as_u64().unwrap()))
+        .collect();
     assert_eq!(items.len(), files.len(), "{r}");
-    let info = s.project.item(items[0]).unwrap().as_media().unwrap().info.clone();
+    let info = s
+        .project
+        .item(items[0])
+        .unwrap()
+        .as_media()
+        .unwrap()
+        .info
+        .clone();
     let v = info.video.clone().unwrap();
     let rate = v.frame_rate;
     let mut p = (*s.project).clone();
-    let seq = p.new_sequence("Seq", SequenceSettings { width: v.width, height: v.height, frame_rate: rate, ..Default::default() }, 1, 1, None);
+    let seq = p.new_sequence(
+        "Seq",
+        SequenceSettings {
+            width: v.width,
+            height: v.height,
+            frame_rate: rate,
+            ..Default::default()
+        },
+        1,
+        1,
+        None,
+    );
     let mut at = Tick::ZERO;
     for &it in &items {
         let d = p.item(it).unwrap().duration();
         let range = TimeRange::new(Tick::ZERO, d);
-        let mut vi = p.make_track_item(it, TrackKind::Video, at, range, rate).unwrap();
+        let mut vi = p
+            .make_track_item(it, TrackKind::Video, at, range, rate)
+            .unwrap();
         for e in &mut vi.effects {
             filmcraft_project::resolve_auto_points(e, (v.width, v.height), (v.width, v.height));
         }
-        let ai = p.make_track_item(it, TrackKind::Audio, at, range, rate).unwrap();
+        let ai = p
+            .make_track_item(it, TrackKind::Audio, at, range, rate)
+            .unwrap();
         let q = p.sequence_mut(seq).unwrap();
         q.video_tracks[0].items.push(vi);
         q.audio_tracks[0].items.push(ai);
@@ -108,5 +167,9 @@ pub fn psnr(a: &[u8], b: &[u8]) -> f64 {
             n += 1.0;
         }
     }
-    if se == 0.0 { f64::INFINITY } else { 10.0 * (255.0f64 * 255.0 / (se / n)).log10() }
+    if se == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (255.0f64 * 255.0 / (se / n)).log10()
+    }
 }

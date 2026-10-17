@@ -112,7 +112,11 @@ const WHOLE: i64 = i64::MAX;
 
 /// File name of the preview of frames `off..off + len` of a segment of `frames` frames.
 fn part_name(hash: &str, off: i64, len: i64, frames: i64) -> String {
-    if off == 0 && len >= frames { video_name(hash) } else { format!("{hash}-{off}-{len}.mov") }
+    if off == 0 && len >= frames {
+        video_name(hash)
+    } else {
+        format!("{hash}-{off}-{len}.mov")
+    }
 }
 
 /// `(hash, off, len)` of a video preview file name (`<hash>.mov` or `<hash>-<off>-<len>.mov`).
@@ -155,13 +159,22 @@ fn gaps(cov: &[(i64, i64)], a: i64, b: i64) -> Vec<(i64, i64)> {
 /// First frame whose start is at or after `t`.
 fn frame_ceil(rate: FrameRate, t: Tick) -> i64 {
     let f = rate.frame_at(t);
-    if rate.tick_of(f) < t { f.saturating_add(1) } else { f }
+    if rate.tick_of(f) < t {
+        f.saturating_add(1)
+    } else {
+        f
+    }
 }
 
 /// Frames of In/Out (`range`) inside `seg`, counted from the segment start (empty when apart).
 fn rel_range(seg: &Segment, rate: FrameRate, range: &TimeRange) -> (i64, i64) {
-    let a = rate.frame_at(range.start).saturating_sub(seg.first_frame).clamp(0, seg.frames.max(0));
-    let b = frame_ceil(rate, range.end()).saturating_sub(seg.first_frame).clamp(0, seg.frames.max(0));
+    let a = rate
+        .frame_at(range.start)
+        .saturating_sub(seg.first_frame)
+        .clamp(0, seg.frames.max(0));
+    let b = frame_ceil(rate, range.end())
+        .saturating_sub(seg.first_frame)
+        .clamp(0, seg.frames.max(0));
     (a, b.max(a))
 }
 fn audio_name(hash: &str) -> String {
@@ -187,7 +200,10 @@ impl PreviewStore {
 
     /// The folder unsaved projects' previews go into (None = the system temp dir).
     pub fn temp_root(&self) -> Option<PathBuf> {
-        self.temp_root.read().unwrap_or_else(|e| e.into_inner()).clone()
+        self.temp_root
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     pub fn set_temp_root(&self, root: Option<PathBuf>) {
@@ -206,7 +222,9 @@ impl PreviewStore {
         {
             for e in rd.flatten() {
                 let name = e.file_name().to_string_lossy().to_string();
-                if parse_video_name(&name).is_some() || name.strip_suffix(".wav").is_some_and(is_hash) {
+                if parse_video_name(&name).is_some()
+                    || name.strip_suffix(".wav").is_some_and(is_hash)
+                {
                     files.insert(name);
                 }
             }
@@ -214,7 +232,10 @@ impl PreviewStore {
         *self.dir.write().unwrap_or_else(|e| e.into_inner()) = dir;
         *self.files.write().unwrap_or_else(|e| e.into_inner()) = files;
         self.reindex();
-        self.sources.lock().unwrap_or_else(|e| e.into_inner()).clear();
+        self.sources
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
         self.audio.lock().unwrap_or_else(|e| e.into_inner()).clear();
         self.bump();
     }
@@ -226,7 +247,8 @@ impl PreviewStore {
             return;
         }
         if let Some(old) = &old
-            && (old.starts_with(crate::temp_dir()) || self.temp_root().is_some_and(|r| old.starts_with(r)))
+            && (old.starts_with(crate::temp_dir())
+                || self.temp_root().is_some_and(|r| old.starts_with(r)))
         {
             let _ = std::fs::create_dir_all(&dir);
             for name in self.files.read().unwrap_or_else(|e| e.into_inner()).iter() {
@@ -244,7 +266,11 @@ impl PreviewStore {
         let mut video: HashMap<String, Vec<Part>> = HashMap::new();
         for name in self.files.read().unwrap_or_else(|e| e.into_inner()).iter() {
             if let Some((hash, off, len)) = parse_video_name(name) {
-                video.entry(hash.to_string()).or_default().push(Part { off, len, name: name.clone() });
+                video.entry(hash.to_string()).or_default().push(Part {
+                    off,
+                    len,
+                    name: name.clone(),
+                });
             }
         }
         *self.video.write().unwrap_or_else(|e| e.into_inner()) = video;
@@ -253,9 +279,15 @@ impl PreviewStore {
     /// The rendered frames of `seg`, counted from its start: sorted, merged, within the segment.
     pub fn coverage(&self, seg: &Segment) -> Vec<(i64, i64)> {
         let video = self.video.read().unwrap_or_else(|e| e.into_inner());
-        let Some(parts) = video.get(&seg.hash) else { return Vec::new() };
+        let Some(parts) = video.get(&seg.hash) else {
+            return Vec::new();
+        };
         let n = seg.frames.max(0);
-        let mut iv: Vec<(i64, i64)> = parts.iter().map(|p| (p.off.clamp(0, n), p.off.saturating_add(p.len).clamp(0, n))).filter(|(a, b)| a < b).collect();
+        let mut iv: Vec<(i64, i64)> = parts
+            .iter()
+            .map(|p| (p.off.clamp(0, n), p.off.saturating_add(p.len).clamp(0, n)))
+            .filter(|(a, b)| a < b)
+            .collect();
         iv.sort_unstable();
         let mut out: Vec<(i64, i64)> = Vec::new();
         for (a, b) in iv {
@@ -278,13 +310,22 @@ impl PreviewStore {
             return Vec::new();
         }
         let video = self.video.read().unwrap_or_else(|e| e.into_inner());
-        let Some(parts) = video.get(&seg.hash) else { return Vec::new() };
-        parts.iter().filter(|p| p.off < b && a < p.off.saturating_add(p.len)).map(|p| p.name.clone()).collect()
+        let Some(parts) = video.get(&seg.hash) else {
+            return Vec::new();
+        };
+        parts
+            .iter()
+            .filter(|p| p.off < b && a < p.off.saturating_add(p.len))
+            .map(|p| p.name.clone())
+            .collect()
     }
 
     /// Whether the audio preview of audio segment `hash` exists.
     pub fn has_audio(&self, hash: &str) -> bool {
-        self.files.read().unwrap_or_else(|e| e.into_inner()).contains(&audio_name(hash))
+        self.files
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains(&audio_name(hash))
     }
 
     /// Number of preview files (video and audio).
@@ -298,14 +339,20 @@ impl PreviewStore {
 
     /// Register a finished video preview file (`<hash>.mov` or `<hash>-<off>-<len>.mov`).
     fn add_video(&self, name: &str) {
-        self.files.write().unwrap_or_else(|e| e.into_inner()).insert(name.to_string());
+        self.files
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(name.to_string());
         self.reindex();
         self.bump();
     }
 
     /// Register a finished audio preview file.
     pub fn add_audio(&self, hash: &str) {
-        self.files.write().unwrap_or_else(|e| e.into_inner()).insert(audio_name(hash));
+        self.files
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(audio_name(hash));
         self.bump();
     }
 
@@ -318,7 +365,9 @@ impl PreviewStore {
                 Some(h) => files
                     .iter()
                     .filter(|n| {
-                        let owner = parse_video_name(n).map(|(hash, _, _)| hash).or_else(|| n.strip_suffix(".wav"));
+                        let owner = parse_video_name(n)
+                            .map(|(hash, _, _)| hash)
+                            .or_else(|| n.strip_suffix(".wav"));
                         owner.is_some_and(|o| h.iter().any(|h| h == o))
                     })
                     .cloned()
@@ -334,10 +383,20 @@ impl PreviewStore {
         let Some(dir) = self.dir() else { return 0 };
         let victims: Vec<String> = {
             let files = self.files.read().unwrap_or_else(|e| e.into_inner());
-            names.iter().filter(|n| files.contains(*n)).cloned().collect()
+            names
+                .iter()
+                .filter(|n| files.contains(*n))
+                .cloned()
+                .collect()
         };
-        self.sources.lock().unwrap_or_else(|e| e.into_inner()).retain(|(n, _)| !victims.contains(n));
-        self.audio.lock().unwrap_or_else(|e| e.into_inner()).retain(|(h, _)| !victims.contains(&audio_name(h)));
+        self.sources
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|(n, _)| !victims.contains(n));
+        self.audio
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|(h, _)| !victims.contains(&audio_name(h)));
         let mut files = self.files.write().unwrap_or_else(|e| e.into_inner());
         for n in &victims {
             let _ = std::fs::remove_file(dir.join(n));
@@ -352,7 +411,10 @@ impl PreviewStore {
     /// Audio segments of `seq` in this project snapshot (memoized per snapshot).
     pub fn audio_segments(&self, project: &Arc<Project>, seq: ItemId) -> Arc<Vec<AudioSegment>> {
         let mut memo = self.audio_memo.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, _, s)) = memo.iter().find(|(p, q, _)| Arc::ptr_eq(p, project) && *q == seq) {
+        if let Some((_, _, s)) = memo
+            .iter()
+            .find(|(p, q, _)| Arc::ptr_eq(p, project) && *q == seq)
+        {
             return s.clone();
         }
         let segs = Arc::new(filmcraft_render::preview::audio_segments(project, seq));
@@ -385,8 +447,23 @@ impl PreviewStore {
 
     /// Sequence audio for playback and meters, as stereo (a 5.1 Mix folded with the BS.775
     /// downmix): rendered audio previews where they are valid, the live mix everywhere else.
-    pub fn mix(&self, project: &Arc<Project>, seq: ItemId, start: i64, frames: usize, sources: &dyn filmcraft_render::SourceProvider) -> AudioBuffer {
-        self.mix_layout(project, seq, start, frames, sources, Layout::Stereo, Mixdown::FrontRear)
+    pub fn mix(
+        &self,
+        project: &Arc<Project>,
+        seq: ItemId,
+        start: i64,
+        frames: usize,
+        sources: &dyn filmcraft_render::SourceProvider,
+    ) -> AudioBuffer {
+        self.mix_layout(
+            project,
+            seq,
+            start,
+            frames,
+            sources,
+            Layout::Stereo,
+            Mixdown::FrontRear,
+        )
     }
 
     /// [`PreviewStore::mix`] in `layout`: a 5.1 Mix is folded to stereo with `mixdown` (Preferences ▸
@@ -404,14 +481,25 @@ impl PreviewStore {
         layout: Layout,
         mixdown: Mixdown,
     ) -> AudioBuffer {
-        let Some(q) = project.sequence(seq) else { return AudioBuffer::silence(48_000, layout.channels(), frames) };
+        let Some(q) = project.sequence(seq) else {
+            return AudioBuffer::silence(48_000, layout.channels(), frames);
+        };
         let live = Some(&*self.live);
-        let has_audio = self.files.read().unwrap_or_else(|e| e.into_inner()).iter().any(|n| n.ends_with(".wav"));
+        let has_audio = self
+            .files
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .any(|n| n.ends_with(".wav"));
         let surround = q.settings.audio_master == filmcraft_project::AudioChannels::Surround51;
         let previews_ok = layout == Layout::Stereo && (!surround || mixdown == Mixdown::FrontRear);
         // held mixer controls are heard live (rendered previews don't know them)
         if !has_audio || self.live.is_active() || !previews_ok {
-            return to_layout(filmcraft_render::mixer::mix_graph(project, q, start, frames, sources, live), layout, mixdown);
+            return to_layout(
+                filmcraft_render::mixer::mix_graph(project, q, start, frames, sources, live),
+                layout,
+                mixdown,
+            );
         }
         let segs = self.audio_segments(project, seq);
         let mut out = AudioBuffer::silence(q.settings.sample_rate, 2, frames);
@@ -419,8 +507,13 @@ impl PreviewStore {
         let mut pos = start;
         while pos < end {
             let i = segs.partition_point(|g| g.first_sample <= pos);
-            let seg = i.checked_sub(1).map(|i| &segs[i]).filter(|g| pos < g.first_sample + g.samples);
-            let preview = seg.filter(|g| self.has_audio(&g.hash)).and_then(|g| self.load_audio(&g.hash).map(|a| (g, a)));
+            let seg = i
+                .checked_sub(1)
+                .map(|i| &segs[i])
+                .filter(|g| pos < g.first_sample + g.samples);
+            let preview = seg
+                .filter(|g| self.has_audio(&g.hash))
+                .and_then(|g| self.load_audio(&g.hash).map(|a| (g, a)));
             let next = match seg {
                 Some(g) => (g.first_sample + g.samples).min(end),
                 None => segs.get(i).map(|g| g.first_sample).unwrap_or(end).min(end),
@@ -436,9 +529,14 @@ impl PreviewStore {
                     }
                 }
                 _ => {
-                    let b = to_layout(filmcraft_render::mixer::mix_graph(project, q, pos, n, sources, live), Layout::Stereo, mixdown);
+                    let b = to_layout(
+                        filmcraft_render::mixer::mix_graph(project, q, pos, n, sources, live),
+                        Layout::Stereo,
+                        mixdown,
+                    );
                     for c in 0..2 {
-                        out.channels[c][off..off + n].copy_from_slice(&b.channels[c.min(b.channels.len() - 1)][..n]);
+                        out.channels[c][off..off + n]
+                            .copy_from_slice(&b.channels[c.min(b.channels.len() - 1)][..n]);
                     }
                 }
             }
@@ -454,7 +552,10 @@ impl PreviewStore {
     /// Segments of `seq` in this project snapshot (memoized per snapshot).
     pub fn segments(&self, project: &Arc<Project>, seq: ItemId) -> Arc<Vec<Segment>> {
         let mut memo = self.memo.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, _, s)) = memo.iter().find(|(p, q, _)| Arc::ptr_eq(p, project) && *q == seq) {
+        if let Some((_, _, s)) = memo
+            .iter()
+            .find(|(p, q, _)| Arc::ptr_eq(p, project) && *q == seq)
+        {
             return s.clone();
         }
         let segs = Arc::new(video_segments(project, seq));
@@ -467,13 +568,19 @@ impl PreviewStore {
 
     /// Green when previews cover the whole segment, else its colour without a preview.
     pub fn state_of(&self, seg: &Segment) -> BarState {
-        if self.is_rendered(seg) { BarState::Green } else { need_state(seg) }
+        if self.is_rendered(seg) {
+            BarState::Green
+        } else {
+            need_state(seg)
+        }
     }
 
     /// The render bar: per segment, green over its rendered frames and its own colour elsewhere;
     /// adjacent spans of the same colour merged.
     pub fn bar(&self, project: &Arc<Project>, seq: ItemId) -> Vec<BarSpan> {
-        let Some(rate) = project.sequence(seq).map(|q| q.settings.frame_rate) else { return Vec::new() };
+        let Some(rate) = project.sequence(seq).map(|q| q.settings.frame_rate) else {
+            return Vec::new();
+        };
         let mut out: Vec<BarSpan> = Vec::new();
         for s in self.segments(project, seq).iter() {
             let need = need_state(s);
@@ -506,8 +613,20 @@ impl PreviewStore {
     }
 
     /// The preview frame for sequence frame `frame`, if its segment has been rendered.
-    pub fn frame(&self, pool: &MediaPool, project: &Arc<Project>, seq: ItemId, frame: i64, scale: f32) -> Option<Arc<VideoFrame>> {
-        if self.files.read().unwrap_or_else(|e| e.into_inner()).is_empty() {
+    pub fn frame(
+        &self,
+        pool: &MediaPool,
+        project: &Arc<Project>,
+        seq: ItemId,
+        frame: i64,
+        scale: f32,
+    ) -> Option<Arc<VideoFrame>> {
+        if self
+            .files
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
+        {
             return None;
         }
         let segs = self.segments(project, seq);
@@ -515,12 +634,19 @@ impl PreviewStore {
         let rel = frame.checked_sub(seg.first_frame)?;
         let (name, off) = {
             let video = self.video.read().unwrap_or_else(|e| e.into_inner());
-            let p = video.get(&seg.hash)?.iter().find(|p| p.off <= rel && rel < p.off.saturating_add(p.len))?;
+            let p = video
+                .get(&seg.hash)?
+                .iter()
+                .find(|p| p.off <= rel && rel < p.off.saturating_add(p.len))?;
             (p.name.clone(), p.off)
         };
         let src = self.open(pool, &name)?;
         let rate = project.sequence(seq)?.settings.frame_rate;
-        src.video_frame(FrameRequest { time: rate.tick_of(rel - off), scale }).ok()
+        src.video_frame(FrameRequest {
+            time: rate.tick_of(rel - off),
+            scale,
+        })
+        .ok()
     }
 
     /// The opened preview file `name` (`<hash>.mov` or a part).
@@ -567,15 +693,24 @@ fn default_temp_dir() -> Option<PathBuf> {
 
 /// A fresh per-process folder for an unsaved project's previews under `root`.
 fn untitled_dir(root: &Path) -> PathBuf {
-    let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
     root.join(format!("untitled-{}-{nanos:x}", std::process::id()))
 }
 
 /// The preview folder of a project saved at `project_path`.
 pub fn dir_for_project(project_path: &str) -> PathBuf {
     let p = Path::new(project_path);
-    let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Untitled".into());
-    p.parent().unwrap_or(Path::new(".")).join("FilmCraft Previews").join(stem)
+    let stem = p
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Untitled".into());
+    p.parent()
+        .unwrap_or(Path::new("."))
+        .join("FilmCraft Previews")
+        .join(stem)
 }
 
 // ---------------------------------------------------------------- commands
@@ -603,9 +738,16 @@ struct Todo {
 /// gets a partial preview), and every mode renders only frames that have no preview yet.
 pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
     let (seq, range) = in_out(s)?;
-    let rate = s.project.sequence(seq).ok_or(EngineError::NoSequence)?.settings.frame_rate;
+    let rate = s
+        .project
+        .sequence(seq)
+        .ok_or(EngineError::NoSequence)?
+        .settings
+        .frame_rate;
     let store = s.previews.clone();
-    let dir = store.dir().ok_or_else(|| EngineError::Other("render previews are not available here (no preview folder)".into()))?;
+    let dir = store.dir().ok_or_else(|| {
+        EngineError::Other("render previews are not available here (no preview folder)".into())
+    })?;
     let segs = store.segments(&s.project, seq);
     let selection: HashSet<_> = s.state.selection.iter().copied().collect();
     let mut todo: Vec<Todo> = Vec::new();
@@ -613,30 +755,45 @@ pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
         let (a, b) = match mode {
             RenderMode::EffectsInToOut if g.need == Need::None => continue,
             RenderMode::EffectsInToOut | RenderMode::InToOut => rel_range(g, rate, &range),
-            RenderMode::Selection if g.clips.iter().any(|c| selection.contains(c)) => (0, g.frames.max(0)),
+            RenderMode::Selection if g.clips.iter().any(|c| selection.contains(c)) => {
+                (0, g.frames.max(0))
+            }
             RenderMode::Selection => continue,
         };
         for (off, end) in gaps(&store.coverage(g), a, b) {
-            todo.push(Todo { seg: g.clone(), off, len: end - off });
+            todo.push(Todo {
+                seg: g.clone(),
+                off,
+                len: end - off,
+            });
         }
     }
     if todo.is_empty() {
         s.toast("Nothing to render: previews are up to date");
         return Ok(json!({"job": null, "segments": 0}));
     }
-    std::fs::create_dir_all(&dir).map_err(|e| EngineError::Other(format!("preview folder {}: {e}", dir.display())))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| EngineError::Other(format!("preview folder {}: {e}", dir.display())))?;
     let frames: i64 = todo.iter().map(|t| t.len).fold(0, i64::saturating_add);
     let id = s.jobs.len() as u64 + 1;
     let job = crate::Job {
         id,
-        label: format!("Rendering {} preview segment{}", todo.len(), if todo.len() == 1 { "" } else { "s" }),
+        label: format!(
+            "Rendering {} preview segment{}",
+            todo.len(),
+            if todo.len() == 1 { "" } else { "s" }
+        ),
         progress: Default::default(),
         result: Default::default(),
     };
-    job.progress.total.store(frames.max(1) as u64, Ordering::Relaxed);
+    job.progress
+        .total
+        .store(frames.max(1) as u64, Ordering::Relaxed);
     let project = s.project.clone();
     // Previews are cached by content and reused with proxies on or off: always full resolution.
-    let provider = s.media.full_res_provider(project.clone(), s.services.clone());
+    let provider = s
+        .media
+        .full_res_provider(project.clone(), s.services.clone());
     let (prog, res) = (job.progress.clone(), job.result.clone());
     let nseg = todo.len();
     let pool = s.media.clone();
@@ -650,14 +807,18 @@ pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
                 outcome = Err("cancelled".into());
                 break;
             }
-            *prog.status.lock().unwrap_or_else(|e| e.into_inner()) = format!("Rendering segment {} of {nseg}", k + 1);
+            *prog.status.lock().unwrap_or_else(|e| e.into_inner()) =
+                format!("Rendering segment {} of {nseg}", k + 1);
             let name = part_name(&t.seg.hash, t.off, t.len, t.seg.frames);
             let part = dir.join(format!("{name}.part"));
             let first = t.seg.first_frame.saturating_add(t.off);
             let settings = filmcraft_export::ExportSettings {
                 format: filmcraft_export::Format::ProRes,
                 path: part.to_string_lossy().to_string(),
-                range: Some(TimeRange::from_bounds(rate.tick_of(first), rate.tick_of(first.saturating_add(t.len)))),
+                range: Some(TimeRange::from_bounds(
+                    rate.tick_of(first),
+                    rate.tick_of(first.saturating_add(t.len)),
+                )),
                 scale: 1.0,
                 include_audio: false,
                 quality: 90,
@@ -701,8 +862,11 @@ pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
         if let Err(e) = &r {
             *prog.error.lock().unwrap_or_else(|x| x.into_inner()) = Some(e.clone());
         }
-        *prog.status.lock().unwrap_or_else(|e| e.into_inner()) =
-            if r.is_ok() { format!("Rendered {done_frames} frames in {secs:.1}s") } else { "Render stopped".into() };
+        *prog.status.lock().unwrap_or_else(|e| e.into_inner()) = if r.is_ok() {
+            format!("Rendered {done_frames} frames in {secs:.1}s")
+        } else {
+            "Render stopped".into()
+        };
         prog.finished.store(true, Ordering::Relaxed);
         *res.lock().unwrap_or_else(|x| x.into_inner()) = Some(r);
     };
@@ -712,7 +876,10 @@ pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
     if wait || cfg!(target_arch = "wasm32") {
         run();
     } else {
-        std::thread::Builder::new().name("filmcraft-render-previews".into()).spawn(run).map_err(|e| EngineError::Other(e.to_string()))?;
+        std::thread::Builder::new()
+            .name("filmcraft-render-previews".into())
+            .spawn(run)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
     }
     Ok(json!({"job": id, "segments": nseg, "frames": frames}))
 }
@@ -721,33 +888,56 @@ pub fn render(s: &mut Session, mode: RenderMode, p: &Value) -> Result<Value> {
 pub fn render_audio(s: &mut Session, p: &Value) -> Result<Value> {
     let (seq, range) = in_out(s)?;
     let store = s.previews.clone();
-    let dir = store.dir().ok_or_else(|| EngineError::Other("render previews are not available here (no preview folder)".into()))?;
-    let sr = s.project.sequence(seq).map(|q| q.settings.sample_rate).unwrap_or(48_000) as i64;
-    let (a, b) = (range.start.to_units_floor(sr), range.end().to_units_floor(sr));
+    let dir = store.dir().ok_or_else(|| {
+        EngineError::Other("render previews are not available here (no preview folder)".into())
+    })?;
+    let sr = s
+        .project
+        .sequence(seq)
+        .map(|q| q.settings.sample_rate)
+        .unwrap_or(48_000) as i64;
+    let (a, b) = (
+        range.start.to_units_floor(sr),
+        range.end().to_units_floor(sr),
+    );
     let todo: Vec<AudioSegment> = store
         .audio_segments(&s.project, seq)
         .iter()
-        .filter(|g| g.first_sample < b && a < g.first_sample + g.samples && !store.has_audio(&g.hash))
+        .filter(|g| {
+            g.first_sample < b && a < g.first_sample + g.samples && !store.has_audio(&g.hash)
+        })
         .cloned()
         .collect();
     if todo.is_empty() {
         s.toast("Nothing to render: audio previews are up to date");
         return Ok(json!({"job": null, "segments": 0}));
     }
-    std::fs::create_dir_all(&dir).map_err(|e| EngineError::Other(format!("preview folder {}: {e}", dir.display())))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| EngineError::Other(format!("preview folder {}: {e}", dir.display())))?;
     let total: i64 = todo.iter().map(|g| g.samples).sum();
     let id = s.jobs.len() as u64 + 1;
-    let job = crate::Job { id, label: "Rendering audio previews".into(), progress: Default::default(), result: Default::default() };
-    job.progress.total.store(total.max(1) as u64, Ordering::Relaxed);
+    let job = crate::Job {
+        id,
+        label: "Rendering audio previews".into(),
+        progress: Default::default(),
+        result: Default::default(),
+    };
+    job.progress
+        .total
+        .store(total.max(1) as u64, Ordering::Relaxed);
     let project = s.project.clone();
-    let provider = s.media.full_res_provider(project.clone(), s.services.clone());
+    let provider = s
+        .media
+        .full_res_provider(project.clone(), s.services.clone());
     let (prog, res) = (job.progress.clone(), job.result.clone());
     let nseg = todo.len();
     let run = move || {
         let t0 = web_time::Instant::now();
         let mut bytes = 0u64;
         let mut outcome: std::result::Result<(), String> = Ok(());
-        let Some(q) = project.sequence(seq) else { return };
+        let Some(q) = project.sequence(seq) else {
+            return;
+        };
         'segs: for g in &todo {
             let mut inter = Vec::with_capacity(g.samples as usize * 2);
             let mut pos = g.first_sample;
@@ -768,7 +958,8 @@ pub fn render_audio(s: &mut Session, p: &Value) -> Result<Value> {
             let data = write_wav_f32(&inter, sr as u32);
             let part = dir.join(format!("{}.wav.part", g.hash));
             let fin = dir.join(audio_name(&g.hash));
-            if let Err(e) = std::fs::write(&part, &data).and_then(|_| std::fs::rename(&part, &fin)) {
+            if let Err(e) = std::fs::write(&part, &data).and_then(|_| std::fs::rename(&part, &fin))
+            {
                 let _ = std::fs::remove_file(&part);
                 outcome = Err(e.to_string());
                 break;
@@ -788,8 +979,11 @@ pub fn render_audio(s: &mut Session, p: &Value) -> Result<Value> {
         if let Err(e) = &r {
             *prog.error.lock().unwrap_or_else(|x| x.into_inner()) = Some(e.clone());
         }
-        *prog.status.lock().unwrap_or_else(|e| e.into_inner()) =
-            if r.is_ok() { format!("Rendered audio for {nseg} segment(s) in {secs:.1}s") } else { "Render stopped".into() };
+        *prog.status.lock().unwrap_or_else(|e| e.into_inner()) = if r.is_ok() {
+            format!("Rendered audio for {nseg} segment(s) in {secs:.1}s")
+        } else {
+            "Render stopped".into()
+        };
         prog.finished.store(true, Ordering::Relaxed);
         *res.lock().unwrap_or_else(|x| x.into_inner()) = Some(r);
     };
@@ -798,7 +992,10 @@ pub fn render_audio(s: &mut Session, p: &Value) -> Result<Value> {
     if p.get("wait").and_then(Value::as_bool).unwrap_or(false) || cfg!(target_arch = "wasm32") {
         run();
     } else {
-        std::thread::Builder::new().name("filmcraft-render-audio".into()).spawn(run).map_err(|e| EngineError::Other(e.to_string()))?;
+        std::thread::Builder::new()
+            .name("filmcraft-render-audio".into())
+            .spawn(run)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
     }
     Ok(json!({"job": id, "segments": nseg, "samples": total}))
 }
@@ -845,7 +1042,13 @@ pub fn read_wav_f32(b: &[u8]) -> Option<Vec<f32>> {
             if !float_stereo {
                 return None;
             }
-            return Some(body.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect());
+            return Some(
+                body.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                    .collect(),
+            );
         }
         i += 8 + len + (len & 1);
     }
@@ -855,7 +1058,12 @@ pub fn read_wav_f32(b: &[u8]) -> Option<Vec<f32>> {
 pub fn delete(s: &mut Session, in_to_out: bool) -> Result<Value> {
     let n = if in_to_out {
         let (seq, range) = in_out(s)?;
-        let rate = s.project.sequence(seq).ok_or(EngineError::NoSequence)?.settings.frame_rate;
+        let rate = s
+            .project
+            .sequence(seq)
+            .ok_or(EngineError::NoSequence)?
+            .settings
+            .frame_rate;
         // the files holding frames between In and Out (a partial preview outside them stays)
         let names: Vec<String> = s
             .previews
@@ -870,7 +1078,10 @@ pub fn delete(s: &mut Session, in_to_out: bool) -> Result<Value> {
     } else {
         s.previews.delete(None)
     };
-    s.toast(format!("Deleted {n} render file{}", if n == 1 { "" } else { "s" }));
+    s.toast(format!(
+        "Deleted {n} render file{}",
+        if n == 1 { "" } else { "s" }
+    ));
     Ok(json!({"deleted": n}))
 }
 

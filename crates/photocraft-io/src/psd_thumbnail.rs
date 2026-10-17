@@ -25,13 +25,21 @@ pub const HEADER_LEN: usize = 28;
 pub(crate) fn resource(doc: &Document) -> Result<ImageResource, IoError> {
     let mut buf = photocraft_compose::thumbnail_buffer(doc, MAX_SIDE);
     let (w, h) = (buf.rect.width(), buf.rect.height());
-    if w == 0 || h == 0 || w > MAX_SIDE || h > MAX_SIDE || buf.px.len() != (w as usize) * (h as usize) {
-        return Err(IoError::Unsupported("the image preview could not be rendered".into()));
+    if w == 0
+        || h == 0
+        || w > MAX_SIDE
+        || h > MAX_SIDE
+        || buf.px.len() != (w as usize) * (h as usize)
+    {
+        return Err(IoError::Unsupported(
+            "the image preview could not be rendered".into(),
+        ));
     }
     let src = composite_profile(doc);
     let dst = Builtin::Srgb.profile();
     if !src.same_colors(dst) {
-        let t = Transform::new(&src, dst, Intent::RelativeColorimetric, true).map_err(|e| IoError::Unsupported(e.to_string()))?;
+        let t = Transform::new(&src, dst, Intent::RelativeColorimetric, true)
+            .map_err(|e| IoError::Unsupported(e.to_string()))?;
         t.apply(buf.px.as_flattened_mut(), 4);
     }
     let mut rgb = Vec::with_capacity(buf.px.len() * 3);
@@ -44,9 +52,17 @@ pub(crate) fn resource(doc: &Document) -> Result<ImageResource, IoError> {
         }
     }
     let img = Image::from_raw(w, h, ChannelLayout::Rgb, CSample::U8, rgb)?;
-    let opts = EncodeOptions { jpeg_quality: 80, embed_icc: false, embed_metadata: false, ..EncodeOptions::default() };
+    let opts = EncodeOptions {
+        jpeg_quality: 80,
+        embed_icc: false,
+        embed_metadata: false,
+        ..EncodeOptions::default()
+    };
     let jfif = photocraft_codecs::encode(&img, Format::Jpeg, &opts)?;
-    Ok(ImageResource::new(ids::THUMBNAIL, thumbnail_bytes(w, h, &jfif)?))
+    Ok(ImageResource::new(
+        ids::THUMBNAIL,
+        thumbnail_bytes(w, h, &jfif)?,
+    ))
 }
 
 /// A sample clamped to 0–1 (NaN as 0): 32-bit composites can hold values past white.
@@ -57,7 +73,10 @@ fn finite(v: f32) -> f32 {
 /// Header plus JFIF data of a `w`×`h` thumbnail resource.
 fn thumbnail_bytes(w: u32, h: u32, jfif: &[u8]) -> Result<Vec<u8>, IoError> {
     let too_big = || IoError::Unsupported("image preview too large".into());
-    let width_bytes = w.checked_mul(24).map(|v| v.div_ceil(32) * 4).ok_or_else(too_big)?;
+    let width_bytes = w
+        .checked_mul(24)
+        .map(|v| v.div_ceil(32) * 4)
+        .ok_or_else(too_big)?;
     let total = width_bytes.checked_mul(h).ok_or_else(too_big)?;
     let compressed = u32::try_from(jfif.len()).map_err(|_| too_big())?;
     let mut out = Vec::with_capacity(HEADER_LEN + jfif.len());
@@ -79,11 +98,16 @@ fn composite_profile(doc: &Document) -> Profile {
         ColorMode::Cmyk | ColorMode::Lab => return Builtin::Srgb.profile().clone(),
         _ => ColorSpace::Rgb,
     };
-    let own = doc.icc_profile.as_ref().and_then(|b| Profile::parse(b).ok()).filter(|p| p.color_space == space);
+    let own = doc
+        .icc_profile
+        .as_ref()
+        .and_then(|b| Profile::parse(b).ok())
+        .filter(|p| p.color_space == space);
     match space {
-        ColorSpace::Gray => {
-            own.and_then(|p| p.gray_as_rgb()).or_else(|| Builtin::SGray.profile().gray_as_rgb()).unwrap_or_else(|| Builtin::Srgb.profile().clone())
-        }
+        ColorSpace::Gray => own
+            .and_then(|p| p.gray_as_rgb())
+            .or_else(|| Builtin::SGray.profile().gray_as_rgb())
+            .unwrap_or_else(|| Builtin::Srgb.profile().clone()),
         _ => own.unwrap_or_else(|| Builtin::Srgb.profile().clone()),
     }
 }
@@ -96,7 +120,10 @@ mod tests {
     fn header_follows_the_spec() {
         let b = thumbnail_bytes(160, 90, &[0xFF, 0xD8, 0xFF, 0xD9]).unwrap();
         let u = |i: usize| u32::from_be_bytes(b[i..i + 4].try_into().unwrap());
-        assert_eq!((u(0), u(4), u(8), u(12), u(16), u(20)), (1, 160, 90, 480, 480 * 90, 4));
+        assert_eq!(
+            (u(0), u(4), u(8), u(12), u(16), u(20)),
+            (1, 160, 90, 480, 480 * 90, 4)
+        );
         assert_eq!(&b[24..28], &[0, 24, 0, 1]);
         assert_eq!(&b[28..], &[0xFF, 0xD8, 0xFF, 0xD9]);
         // Width bytes are padded to 4: 3 px × 3 bytes = 9 → 12.

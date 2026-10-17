@@ -45,7 +45,11 @@ pub(crate) fn tag(b: &[u8], pos: usize) -> Option<[u8; 4]> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PcmKind {
     /// Signed (or, for 1-byte WAV, unsigned) integers occupying `bytes` bytes each, left-justified.
-    Int { bytes: usize, big_endian: bool, unsigned: bool },
+    Int {
+        bytes: usize,
+        big_endian: bool,
+        unsigned: bool,
+    },
     /// IEEE float, 4 or 8 bytes.
     Float { bytes: usize, big_endian: bool },
 }
@@ -61,7 +65,11 @@ impl PcmKind {
 /// Decode one sample from exactly `kind.bytes()` bytes. Returns 0 for a short slice.
 fn decode_sample(s: &[u8], kind: PcmKind) -> f32 {
     match kind {
-        PcmKind::Int { bytes, big_endian, unsigned } => {
+        PcmKind::Int {
+            bytes,
+            big_endian,
+            unsigned,
+        } => {
             if bytes == 0 || bytes > 4 || s.len() < bytes {
                 return 0.0;
             }
@@ -80,12 +88,24 @@ fn decode_sample(s: &[u8], kind: PcmKind) -> f32 {
         PcmKind::Float { bytes, big_endian } => {
             let v = match bytes {
                 4 => {
-                    let Some(a) = s.get(..4).and_then(|x| <[u8; 4]>::try_from(x).ok()) else { return 0.0 };
-                    if big_endian { f32::from_be_bytes(a) } else { f32::from_le_bytes(a) }
+                    let Some(a) = s.get(..4).and_then(|x| <[u8; 4]>::try_from(x).ok()) else {
+                        return 0.0;
+                    };
+                    if big_endian {
+                        f32::from_be_bytes(a)
+                    } else {
+                        f32::from_le_bytes(a)
+                    }
                 }
                 8 => {
-                    let Some(a) = s.get(..8).and_then(|x| <[u8; 8]>::try_from(x).ok()) else { return 0.0 };
-                    (if big_endian { f64::from_be_bytes(a) } else { f64::from_le_bytes(a) }) as f32
+                    let Some(a) = s.get(..8).and_then(|x| <[u8; 8]>::try_from(x).ok()) else {
+                        return 0.0;
+                    };
+                    (if big_endian {
+                        f64::from_be_bytes(a)
+                    } else {
+                        f64::from_le_bytes(a)
+                    }) as f32
                 }
                 _ => 0.0,
             };
@@ -95,16 +115,29 @@ fn decode_sample(s: &[u8], kind: PcmKind) -> f32 {
 }
 
 /// Deinterleave `frames` frames of `channels`-channel PCM from `data` into planar `f32`.
-pub(crate) fn deinterleave(data: &[u8], kind: PcmKind, channels: usize, frames: u64) -> Result<Vec<Vec<f32>>> {
+pub(crate) fn deinterleave(
+    data: &[u8],
+    kind: PcmKind,
+    channels: usize,
+    frames: u64,
+) -> Result<Vec<Vec<f32>>> {
     let bytes = kind.bytes();
-    let block = bytes.checked_mul(channels).filter(|&b| b > 0).ok_or_else(|| AudioError::Malformed("zero-sized sample frame".into()))?;
+    let block = bytes
+        .checked_mul(channels)
+        .filter(|&b| b > 0)
+        .ok_or_else(|| AudioError::Malformed("zero-sized sample frame".into()))?;
     let available = (data.len() / block) as u64;
     let frames = frames.min(available);
-    let total = frames.checked_mul(channels as u64).ok_or_else(|| AudioError::TooLarge("sample count overflows".into()))?;
+    let total = frames
+        .checked_mul(channels as u64)
+        .ok_or_else(|| AudioError::TooLarge("sample count overflows".into()))?;
     if total > MAX_DECODE_SAMPLES {
-        return Err(AudioError::TooLarge(format!("{total} samples exceeds the {MAX_DECODE_SAMPLES}-sample decode limit")));
+        return Err(AudioError::TooLarge(format!(
+            "{total} samples exceeds the {MAX_DECODE_SAMPLES}-sample decode limit"
+        )));
     }
-    let frames = usize::try_from(frames).map_err(|_| AudioError::TooLarge("frame count exceeds address space".into()))?;
+    let frames = usize::try_from(frames)
+        .map_err(|_| AudioError::TooLarge("frame count exceeds address space".into()))?;
     let mut out: Vec<Vec<f32>> = (0..channels).map(|_| Vec::with_capacity(frames)).collect();
     for frame in data.chunks_exact(block).take(frames) {
         for (ch, s) in out.iter_mut().zip(frame.chunks_exact(bytes)) {
@@ -125,8 +158,15 @@ pub(crate) struct Quantizer {
 impl Quantizer {
     /// A quantizer for one channel; each channel gets an independent dither sequence.
     pub(crate) fn new(bits: u32, dither: bool, channel: usize) -> Self {
-        let rng = 0x9E37_79B9_7F4A_7C15u64 ^ (channel as u64).wrapping_add(1).wrapping_mul(0xD1B5_4A32_D192_ED03);
-        Self { bits: bits.clamp(2, 32), dither, rng: if rng == 0 { 1 } else { rng } }
+        let rng = 0x9E37_79B9_7F4A_7C15u64
+            ^ (channel as u64)
+                .wrapping_add(1)
+                .wrapping_mul(0xD1B5_4A32_D192_ED03);
+        Self {
+            bits: bits.clamp(2, 32),
+            dither,
+            rng: if rng == 0 { 1 } else { rng },
+        }
     }
 
     /// One quantizer per channel.

@@ -9,19 +9,19 @@ use std::ffi::c_void;
 
 use windows::Win32::System::{
     Hypervisor::{
-        WHV_PARTITION_HANDLE, WHV_REGISTER_NAME, WHV_REGISTER_VALUE,
-        WHV_RUN_VP_EXIT_CONTEXT, WHV_X64_SEGMENT_REGISTER, WHV_X64_SEGMENT_REGISTER_0,
-        WHV_X64_TABLE_REGISTER, WHvCreatePartition, WHvCreateVirtualProcessor, WHvDeletePartition,
+        WHV_PARTITION_HANDLE, WHV_REGISTER_NAME, WHV_REGISTER_VALUE, WHV_RUN_VP_EXIT_CONTEXT,
+        WHV_X64_SEGMENT_REGISTER, WHV_X64_SEGMENT_REGISTER_0, WHV_X64_TABLE_REGISTER,
+        WHvCreatePartition, WHvCreateVirtualProcessor, WHvDeletePartition,
         WHvDeleteVirtualProcessor, WHvGetVirtualProcessorRegisters, WHvMapGpaRange,
         WHvMapGpaRangeFlagExecute, WHvMapGpaRangeFlagRead, WHvMapGpaRangeFlagWrite,
         WHvPartitionPropertyCodeLocalApicEmulationMode, WHvPartitionPropertyCodeProcessorCount,
         WHvRunVirtualProcessor, WHvRunVpExitReasonX64Halt, WHvRunVpExitReasonX64IoPortAccess,
         WHvRunVpExitReasonX64MsrAccess, WHvSetPartitionProperty, WHvSetVirtualProcessorRegisters,
         WHvSetupPartition, WHvX64RegisterCr0, WHvX64RegisterCr3, WHvX64RegisterCr4,
-        WHvX64RegisterCs, WHvX64RegisterDs, WHvX64RegisterEfer, WHvX64RegisterEs,
-        WHvX64RegisterFs, WHvX64RegisterGdtr, WHvX64RegisterGs, WHvX64RegisterIdtr,
+        WHvX64RegisterCs, WHvX64RegisterDs, WHvX64RegisterEfer, WHvX64RegisterEs, WHvX64RegisterFs,
+        WHvX64RegisterGdtr, WHvX64RegisterGs, WHvX64RegisterIdtr, WHvX64RegisterLdtr,
         WHvX64RegisterRax, WHvX64RegisterRdx, WHvX64RegisterRflags, WHvX64RegisterRip,
-        WHvX64RegisterRsi, WHvX64RegisterRsp, WHvX64RegisterSs, WHvX64RegisterTr, WHvX64RegisterLdtr,
+        WHvX64RegisterRsi, WHvX64RegisterRsp, WHvX64RegisterSs, WHvX64RegisterTr,
     },
     Memory::{MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE, VirtualAlloc, VirtualFree},
 };
@@ -104,13 +104,21 @@ fn seg(selector: u16, attributes: u16) -> WHV_REGISTER_VALUE {
             Base: 0,
             Limit: 0xffff_ffff,
             Selector: selector,
-            Anonymous: WHV_X64_SEGMENT_REGISTER_0 { Attributes: attributes },
+            Anonymous: WHV_X64_SEGMENT_REGISTER_0 {
+                Attributes: attributes,
+            },
         },
     }
 }
 
 fn table(base: u64, limit: u16) -> WHV_REGISTER_VALUE {
-    WHV_REGISTER_VALUE { Table: WHV_X64_TABLE_REGISTER { Pad: [0; 3], Limit: limit, Base: base } }
+    WHV_REGISTER_VALUE {
+        Table: WHV_X64_TABLE_REGISTER {
+            Pad: [0; 3],
+            Limit: limit,
+            Base: base,
+        },
+    }
 }
 
 fn gpr(value: u64) -> WHV_REGISTER_VALUE {
@@ -131,8 +139,14 @@ impl X86 {
                 let _ = WHvDeletePartition(partition);
                 return Err("VirtualAlloc failed".into());
             }
-            let machine =
-                Self { partition, ram, size, uart: Uart::default(), halted: false, diagnostic: None };
+            let machine = Self {
+                partition,
+                ram,
+                size,
+                uart: Uart::default(),
+                halted: false,
+                diagnostic: None,
+            };
             let cpus: u32 = 1;
             WHvSetPartitionProperty(
                 partition,
@@ -170,7 +184,10 @@ impl X86 {
 
     fn ram_mut(&mut self, gpa: u64, len: usize) -> Result<&mut [u8], String> {
         if gpa as usize + len > self.size {
-            return Err(format!("guest write at {gpa:#x}+{len:#x} is outside {} MiB of RAM", self.size >> 20));
+            return Err(format!(
+                "guest write at {gpa:#x}+{len:#x} is outside {} MiB of RAM",
+                self.size >> 20
+            ));
         }
         Ok(unsafe { std::slice::from_raw_parts_mut(self.ram.cast::<u8>().add(gpa as usize), len) })
     }
@@ -198,14 +215,17 @@ impl X86 {
         m.set_regs(&[
             (WHvX64RegisterRip, gpr(ENTRY)),
             (WHvX64RegisterRflags, gpr(2)),
-            (WHvX64RegisterCs, WHV_REGISTER_VALUE {
-                Segment: WHV_X64_SEGMENT_REGISTER {
-                    Base: 0,
-                    Limit: 0xffff,
-                    Selector: 0,
-                    Anonymous: WHV_X64_SEGMENT_REGISTER_0 { Attributes: 0x9b },
+            (
+                WHvX64RegisterCs,
+                WHV_REGISTER_VALUE {
+                    Segment: WHV_X64_SEGMENT_REGISTER {
+                        Base: 0,
+                        Limit: 0xffff,
+                        Selector: 0,
+                        Anonymous: WHV_X64_SEGMENT_REGISTER_0 { Attributes: 0x9b },
+                    },
                 },
-            }),
+            ),
         ])?;
         Ok(m)
     }
@@ -219,15 +239,20 @@ impl X86 {
             return Err("not a 64-bit ELF kernel (expected an uncompressed vmlinux)".into());
         }
         let entry = u64at(24);
-        let (phoff, phentsize, phnum) = (u64at(32) as usize, u16at(54) as usize, u16at(56) as usize);
+        let (phoff, phentsize, phnum) =
+            (u64at(32) as usize, u16at(54) as usize, u16at(56) as usize);
         for i in 0..phnum {
             let ph = phoff + i * phentsize;
             let kind = u32::from_le_bytes(vmlinux[ph..ph + 4].try_into().unwrap());
             if kind != 1 {
                 continue;
             }
-            let (offset, paddr, filesz, memsz) =
-                (u64at(ph + 8) as usize, u64at(ph + 24), u64at(ph + 32) as usize, u64at(ph + 40) as usize);
+            let (offset, paddr, filesz, memsz) = (
+                u64at(ph + 8) as usize,
+                u64at(ph + 24),
+                u64at(ph + 32) as usize,
+                u64at(ph + 40) as usize,
+            );
             let dst = m.ram_mut(paddr, memsz)?;
             dst[..filesz].copy_from_slice(&vmlinux[offset..offset + filesz]);
             dst[filesz..].fill(0);
@@ -236,11 +261,14 @@ impl X86 {
         // GDT: null, null, 64-bit code (0x10), data (0x18).
         let gdt: [u64; 4] = [0, 0, 0x00af_9b00_0000_ffff, 0x00cf_9300_0000_ffff];
         for (i, e) in gdt.iter().enumerate() {
-            m.ram_mut(GDT + 8 * i as u64, 8)?.copy_from_slice(&e.to_le_bytes());
+            m.ram_mut(GDT + 8 * i as u64, 8)?
+                .copy_from_slice(&e.to_le_bytes());
         }
         // Identity map the first GiB with 2 MiB pages.
-        m.ram_mut(PML4, 8)?.copy_from_slice(&(PML4 + 0x1000 | 3).to_le_bytes());
-        m.ram_mut(PML4 + 0x1000, 8)?.copy_from_slice(&(PML4 + 0x2000 | 3).to_le_bytes());
+        m.ram_mut(PML4, 8)?
+            .copy_from_slice(&(PML4 + 0x1000 | 3).to_le_bytes());
+        m.ram_mut(PML4 + 0x1000, 8)?
+            .copy_from_slice(&(PML4 + 0x2000 | 3).to_le_bytes());
         let pd = m.ram_mut(PML4 + 0x2000, 4096)?;
         for i in 0..512_u64 {
             let e = (i << 21) | 0x83;
@@ -302,7 +330,13 @@ impl X86 {
     fn reg(&self, name: WHV_REGISTER_NAME) -> u64 {
         let mut value = WHV_REGISTER_VALUE::default();
         unsafe {
-            let _ = WHvGetVirtualProcessorRegisters(self.partition, 0, &raw const name, 1, &raw mut value);
+            let _ = WHvGetVirtualProcessorRegisters(
+                self.partition,
+                0,
+                &raw const name,
+                1,
+                &raw mut value,
+            );
             value.Reg64
         }
     }
@@ -314,7 +348,13 @@ impl X86 {
     fn set_reg(&self, name: WHV_REGISTER_NAME, value: u64) {
         let v = gpr(value);
         unsafe {
-            let _ = WHvSetVirtualProcessorRegisters(self.partition, 0, &raw const name, 1, &raw const v);
+            let _ = WHvSetVirtualProcessorRegisters(
+                self.partition,
+                0,
+                &raw const name,
+                1,
+                &raw const v,
+            );
         }
     }
 
@@ -377,7 +417,11 @@ impl Machine for X86 {
                             self.uart.write(uart_reg, io.Rax as u8);
                         }
                     } else {
-                        let v = if uart_reg < 8 { self.uart.read(uart_reg) } else { 0xff };
+                        let v = if uart_reg < 8 {
+                            self.uart.read(uart_reg)
+                        } else {
+                            0xff
+                        };
                         self.set_reg(WHvX64RegisterRax, (io.Rax & !0xff) | u64::from(v));
                     }
                     self.set_reg(WHvX64RegisterRip, rip + length);
@@ -392,7 +436,10 @@ impl Machine for X86 {
                 }
                 r => {
                     let gpa = unsafe { exit.Anonymous.MemoryAccess.Gpa };
-                    return self.stop(format!("exit reason {:#x} at rip {rip:#x} (gpa {gpa:#x})", r.0));
+                    return self.stop(format!(
+                        "exit reason {:#x} at rip {rip:#x} (gpa {gpa:#x})",
+                        r.0
+                    ));
                 }
             }
         }

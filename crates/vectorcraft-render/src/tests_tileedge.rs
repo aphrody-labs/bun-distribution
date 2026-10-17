@@ -18,17 +18,30 @@ fn editing(tt: TileType, edge: bool, bounds: bool) -> Document {
     );
     let mut def = PatternDef::new("Checks", vec![Arc::new(red.clone())]);
     def.tile = Rect::new(0.0, 0.0, 20.0, 20.0);
-    (def.tile_type, def.copies, def.show_tile_edge, def.show_swatch_bounds) = (tt, 1, edge, bounds);
+    (
+        def.tile_type,
+        def.copies,
+        def.show_tile_edge,
+        def.show_swatch_bounds,
+    ) = (tt, 1, edge, bounds);
     d.patterns.push(def);
     let layer = d.add_layer(Some("Pattern Editing Mode"));
     d.insert(Some(layer), 0, red).unwrap();
-    d.pattern_edit = Some(PatternEdit { pattern: "Checks".into(), layer, original: None });
+    d.pattern_edit = Some(PatternEdit {
+        pattern: "Checks".into(),
+        layer,
+        original: None,
+    });
     d
 }
 
 /// `d` at 1:1 with the tile's corner at the centre of pixel (50, 50), on white.
 fn render(d: &Document, tile_edge: Option<[u8; 3]>) -> Rendered {
-    let opts = RenderOptions { background: Some([255; 4]), tile_edge: tile_edge.unwrap_or(RenderOptions::default().tile_edge), ..Default::default() };
+    let opts = RenderOptions {
+        background: Some([255; 4]),
+        tile_edge: tile_edge.unwrap_or(RenderOptions::default().tile_edge),
+        ..Default::default()
+    };
     Renderer::new().render(d, 120, 120, Affine::translate((50.5, 50.5)), &opts)
 }
 
@@ -48,9 +61,14 @@ fn the_tile_edge_takes_the_tile_edge_color() {
     // The default is the first layer colour (light blue).
     let [r, g, b] = RenderOptions::default().tile_edge;
     let p = render(&editing(TileType::Grid, true, false), None).pixel(50, 65);
-    assert!(p[0].abs_diff(r) < 30 && p[1].abs_diff(g) < 30 && p[2].abs_diff(b) < 30, "{p:?}");
+    assert!(
+        p[0].abs_diff(r) < 30 && p[1].abs_diff(g) < 30 && p[2].abs_diff(b) < 30,
+        "{p:?}"
+    );
     // Hidden: nothing there.
-    assert!(is_white(render(&editing(TileType::Grid, false, false), Some([0, 200, 0])).pixel(50, 65)));
+    assert!(is_white(
+        render(&editing(TileType::Grid, false, false), Some([0, 200, 0])).pixel(50, 65)
+    ));
 }
 
 #[test]
@@ -60,9 +78,15 @@ fn swatch_bounds_outline_the_period_dashed() {
     let on = render(&editing(tt, false, true), Some([0, 200, 0]));
     let green = |p: [u8; 4]| p[1] > 150 && p[0] < 100 && p[2] < 100;
     let bottom: Vec<bool> = (51..70).map(|x| green(on.pixel(x, 90))).collect();
-    assert!(bottom.iter().any(|g| *g) && bottom.iter().any(|g| !*g), "dashed: {bottom:?}");
+    assert!(
+        bottom.iter().any(|g| *g) && bottom.iter().any(|g| !*g),
+        "dashed: {bottom:?}"
+    );
     assert!((51..90).any(|y| green(on.pixel(70, y))), "right side");
-    assert!(!(51..70).any(|x| green(on.pixel(x, 70))), "the tile edge itself stays hidden");
+    assert!(
+        !(51..70).any(|x| green(on.pixel(x, 70))),
+        "the tile edge itself stays hidden"
+    );
     // Off: no outline.
     let off = render(&editing(tt, false, false), Some([0, 200, 0]));
     assert!((51..70).all(|x| is_white(off.pixel(x, 90))));
@@ -74,13 +98,21 @@ fn swatch_bounds_outline_the_period_dashed() {
 fn guide_paths_take_the_guide_color_and_style() {
     let mut d = Document::new(200.0, 200.0);
     let (layer, id) = (d.layers[0].id, d.alloc_id());
-    let mut n = Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 60.0, 60.0)), Appearance::basic(Paint::None, Paint::None, 0.0));
+    let mut n = Node::path(
+        id,
+        shapes::rectangle(Rect::new(0.0, 0.0, 60.0, 60.0)),
+        Appearance::basic(Paint::None, Paint::None, 0.0),
+    );
     if let NodeKind::Path { guide, .. } = &mut n.kind {
         *guide = true;
     }
     d.insert(Some(layer), 0, n).unwrap();
     let draw = |guide| {
-        let opts = RenderOptions { background: Some([255; 4]), guide, ..Default::default() };
+        let opts = RenderOptions {
+            background: Some([255; 4]),
+            guide,
+            ..Default::default()
+        };
         Renderer::new().render(&d, 120, 120, Affine::translate((50.5, 50.5)), &opts)
     };
     // Along the top edge of the square (y = 50), between its corners: the pixels the red covers.
@@ -91,7 +123,14 @@ fn guide_paths_take_the_guide_color_and_style() {
     assert_eq!(inked(&line), 50);
     let dotted = draw(([200, 0, 0], true));
     let dots = inked(&dotted);
-    assert!((10..40).contains(&dots), "{dots}: {:?}", (45..70).map(|x| dotted.pixel(x, 50)[1]).collect::<Vec<_>>());
+    assert!(
+        (10..40).contains(&dots),
+        "{dots}: {:?}",
+        (45..70).map(|x| dotted.pixel(x, 50)[1]).collect::<Vec<_>>()
+    );
     let default = draw(RenderOptions::default().guide);
-    assert!((55..105).all(|x| !is_white(default.pixel(x, 50))), "a line by default");
+    assert!(
+        (55..105).all(|x| !is_white(default.pixel(x, 50))),
+        "a line by default"
+    );
 }

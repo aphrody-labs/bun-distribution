@@ -33,7 +33,11 @@ fn comptes_byte_exact() {
     let Some(root) = load() else { return };
     let cfg = parse_ai_type_config(&root);
     assert_eq!(cfg.hobies.len(), 4);
-    assert_eq!(cfg.ai_infos.len(), 5, "5 infos (les 5 nœuds REF ne sont pas des entrées)");
+    assert_eq!(
+        cfg.ai_infos.len(),
+        5,
+        "5 infos (les 5 nœuds REF ne sont pas des entrées)"
+    );
     assert_eq!(cfg.hobies[0].params, [1, 20, 0]);
     assert_eq!(cfg.hobies[3].params, [20, 10, 0]);
 }

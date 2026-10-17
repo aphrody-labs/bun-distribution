@@ -33,7 +33,9 @@ impl Canvas {
             for k in 0..3 {
                 let s = c[k] as f32;
                 let d = px[k] as f32;
-                px[k] = ((s * a + d * da * (1.0 - a)) / oa).round().clamp(0.0, 255.0) as u8;
+                px[k] = ((s * a + d * da * (1.0 - a)) / oa)
+                    .round()
+                    .clamp(0.0, 255.0) as u8;
             }
             px[3] = (oa * 255.0).round().clamp(0.0, 255.0) as u8;
         }
@@ -42,7 +44,12 @@ impl Canvas {
     /// Fills a multi-contour path with the even-odd rule.
     fn fill(&mut self, path: &Path, color: Rgba) {
         let mut edges: Vec<[f32; 4]> = Vec::new();
-        let (mut minx, mut miny, mut maxx, mut maxy) = (f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        let (mut minx, mut miny, mut maxx, mut maxy) = (
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+        );
         for c in path {
             if c.len() < 3 || !c.iter().all(|p| p[0].is_finite() && p[1].is_finite()) {
                 continue;
@@ -82,7 +89,11 @@ impl Canvas {
                 let sy = py as f32 + (s as f32 + 0.5) / SUB as f32;
                 xs.clear();
                 for e in &edges {
-                    let (ya, yb) = if e[1] < e[3] { (e[1], e[3]) } else { (e[3], e[1]) };
+                    let (ya, yb) = if e[1] < e[3] {
+                        (e[1], e[3])
+                    } else {
+                        (e[3], e[1])
+                    };
                     if sy >= ya && sy < yb {
                         xs.push(e[0] + (sy - e[1]) * (e[2] - e[0]) / (e[3] - e[1]));
                     }
@@ -172,7 +183,10 @@ fn stroke_paths(pts: &[[f32; 2]], width: f32, dash: bool, closed: bool) -> Vec<P
             let mut n = 0;
             while t < len && n < 10_000 {
                 let e = (t + on).min(len);
-                out.push(([a[0] + dx * t / len, a[1] + dy * t / len], [a[0] + dx * e / len, a[1] + dy * e / len]));
+                out.push((
+                    [a[0] + dx * t / len, a[1] + dy * t / len],
+                    [a[0] + dx * e / len, a[1] + dy * e / len],
+                ));
                 t += on + off;
                 n += 1;
             }
@@ -188,7 +202,12 @@ fn stroke_paths(pts: &[[f32; 2]], width: f32, dash: bool, closed: bool) -> Vec<P
                 return None;
             }
             let (nx, ny) = (-dy / len * hw, dx / len * hw);
-            Some(vec![vec![[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]])
+            Some(vec![vec![
+                [a[0] + nx, a[1] + ny],
+                [b[0] + nx, b[1] + ny],
+                [b[0] - nx, b[1] - ny],
+                [a[0] - nx, a[1] - ny],
+            ]])
         })
         .collect()
 }
@@ -205,21 +224,51 @@ pub fn rasterize(prims: &[Prim], w: u32, h: u32, background: Rgba) -> Vec<u8> {
     for _ in 0..w * h {
         buf.extend_from_slice(&background);
     }
-    let mut cv = Canvas { w, h, buf, acc: Vec::new() };
+    let mut cv = Canvas {
+        w,
+        h,
+        buf,
+        acc: Vec::new(),
+    };
     for p in prims {
         match p {
-            Prim::Rect { x, y, w, h, fill, stroke, radius } => {
+            Prim::Rect {
+                x,
+                y,
+                w,
+                h,
+                fill,
+                stroke,
+                radius,
+            } => {
                 if let Some(f) = fill {
                     cv.fill(&vec![rounded_rect(*x, *y, *w, *h, *radius)], *f);
                 }
                 if let Some((c, sw)) = stroke {
                     let sw = sw.clamp(0.5, 50.0);
-                    let outer = rounded_rect(x - sw / 2.0, y - sw / 2.0, w + sw, h + sw, radius + sw / 2.0);
-                    let inner = rounded_rect(x + sw / 2.0, y + sw / 2.0, (w - sw).max(0.0), (h - sw).max(0.0), (radius - sw / 2.0).max(0.0));
+                    let outer = rounded_rect(
+                        x - sw / 2.0,
+                        y - sw / 2.0,
+                        w + sw,
+                        h + sw,
+                        radius + sw / 2.0,
+                    );
+                    let inner = rounded_rect(
+                        x + sw / 2.0,
+                        y + sw / 2.0,
+                        (w - sw).max(0.0),
+                        (h - sw).max(0.0),
+                        (radius - sw / 2.0).max(0.0),
+                    );
                     cv.fill(&vec![outer, inner], *c);
                 }
             }
-            Prim::Line { pts, color, width, dash } => {
+            Prim::Line {
+                pts,
+                color,
+                width,
+                dash,
+            } => {
                 for path in stroke_paths(pts, *width, *dash, false) {
                     cv.fill(&path, *color);
                 }
@@ -232,7 +281,16 @@ pub fn rasterize(prims: &[Prim], w: u32, h: u32, background: Rgba) -> Vec<u8> {
                     }
                 }
             }
-            Prim::Wedge { cx, cy, r_outer, r_inner, a0, a1, fill, stroke } => {
+            Prim::Wedge {
+                cx,
+                cy,
+                r_outer,
+                r_inner,
+                a0,
+                a1,
+                fill,
+                stroke,
+            } => {
                 let mut c = arc(*cx, *cy, *r_outer, *a0, *a1);
                 if *r_inner > 0.0 {
                     let mut inner = arc(*cx, *cy, *r_inner, *a0, *a1);
@@ -248,13 +306,25 @@ pub fn rasterize(prims: &[Prim], w: u32, h: u32, background: Rgba) -> Vec<u8> {
                     }
                 }
             }
-            Prim::Circle { cx, cy, r, fill, stroke } => {
+            Prim::Circle {
+                cx,
+                cy,
+                r,
+                fill,
+                stroke,
+            } => {
                 if let Some(f) = fill {
                     cv.fill(&vec![circle(*cx, *cy, *r)], *f);
                 }
                 if let Some((c, sw)) = stroke {
                     let sw = sw.clamp(0.5, 50.0);
-                    cv.fill(&vec![circle(*cx, *cy, r + sw / 2.0), circle(*cx, *cy, (r - sw / 2.0).max(0.0))], *c);
+                    cv.fill(
+                        &vec![
+                            circle(*cx, *cy, r + sw / 2.0),
+                            circle(*cx, *cy, (r - sw / 2.0).max(0.0)),
+                        ],
+                        *c,
+                    );
                 }
             }
             Prim::Text { .. } => {}

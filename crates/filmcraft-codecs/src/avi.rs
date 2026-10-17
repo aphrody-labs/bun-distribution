@@ -15,7 +15,10 @@ use std::sync::{Arc, Mutex};
 use filmcraft_avi::{AviFile, BitmapInfo, StreamKind, WaveFormat};
 use filmcraft_frame::{AudioBuffer, VideoFrame};
 use filmcraft_isobmff::{PcmConfig, SampleEntry};
-use filmcraft_media::{AudioStreamInfo, FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource, VideoStreamInfo};
+use filmcraft_media::{
+    AudioStreamInfo, FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource,
+    VideoStreamInfo,
+};
 use filmcraft_time::{FrameRate, Tick};
 
 use crate::audio::{PacketDecoder, decode_pcm};
@@ -38,7 +41,10 @@ enum VCodec {
 }
 
 fn fourcc_text(f: [u8; 4]) -> String {
-    let t: String = f.iter().map(|&c| if c.is_ascii_graphic() { c as char } else { '?' }).collect();
+    let t: String = f
+        .iter()
+        .map(|&c| if c.is_ascii_graphic() { c as char } else { '?' })
+        .collect();
     t.trim_end_matches('?').to_string()
 }
 
@@ -50,13 +56,19 @@ fn video_codec(b: &BitmapInfo) -> (VCodec, String) {
     let mut f = b.compression;
     f.make_ascii_uppercase();
     match &f {
-        b"MJPG" | b"AVRN" | b"LJPG" | b"JPGL" | b"DMB1" | b"JPEG" | b"MJPA" => (VCodec::Jpeg, "Motion JPEG".into()),
+        b"MJPG" | b"AVRN" | b"LJPG" | b"JPGL" | b"DMB1" | b"JPEG" | b"MJPA" => {
+            (VCodec::Jpeg, "Motion JPEG".into())
+        }
         b"H264" | b"X264" | b"AVC1" | b"DAVC" | b"VSSH" => (VCodec::H264, "H.264".into()),
         b"HEVC" | b"H265" | b"HEV1" | b"HVC1" | b"X265" => (VCodec::Hevc, "HEVC".into()),
-        b"DIVX" | b"DX50" | b"XVID" | b"FMP4" | b"MP4V" | b"M4S2" | b"3IV2" | b"DIV3" | b"MP43" | b"MP42" => {
-            (VCodec::Unsupported("MPEG-4 Part 2 (DivX / Xvid)".into()), "MPEG-4 Part 2 (DivX / Xvid)".into())
+        b"DIVX" | b"DX50" | b"XVID" | b"FMP4" | b"MP4V" | b"M4S2" | b"3IV2" | b"DIV3" | b"MP43"
+        | b"MP42" => (
+            VCodec::Unsupported("MPEG-4 Part 2 (DivX / Xvid)".into()),
+            "MPEG-4 Part 2 (DivX / Xvid)".into(),
+        ),
+        b"DVSD" | b"DV25" | b"DV50" | b"DVHD" | b"DVSL" | b"CDVC" | b"DVCP" | b"DVPP" => {
+            (VCodec::Unsupported("DV".into()), "DV".into())
         }
-        b"DVSD" | b"DV25" | b"DV50" | b"DVHD" | b"DVSL" | b"CDVC" | b"DVCP" | b"DVPP" => (VCodec::Unsupported("DV".into()), "DV".into()),
         _ => {
             let name = fourcc_text(b.compression);
             (VCodec::Unsupported(format!("\"{name}\"")), name)
@@ -86,15 +98,43 @@ enum ACodec {
 fn audio_codec(w: &WaveFormat) -> (ACodec, String) {
     let pcm = |float: bool| {
         let bits = w.bits_per_sample;
-        let cfg = PcmConfig { bits, float, big_endian: false, signed: bits > 8, channels: u32::from(w.channels.max(1)), sample_rate: f64::from(w.sample_rate) };
-        (ACodec::Pcm(cfg), format!("PCM {bits}-bit{}", if float { " float" } else { "" }))
+        let cfg = PcmConfig {
+            bits,
+            float,
+            big_endian: false,
+            signed: bits > 8,
+            channels: u32::from(w.channels.max(1)),
+            sample_rate: f64::from(w.sample_rate),
+        };
+        (
+            ACodec::Pcm(cfg),
+            format!("PCM {bits}-bit{}", if float { " float" } else { "" }),
+        )
     };
     match w.format_tag {
         1 if matches!(w.bits_per_sample, 8 | 16 | 24 | 32) => pcm(false),
         3 if matches!(w.bits_per_sample, 32 | 64) => pcm(true),
-        0x55 => (ACodec::Framed { ts: filmcraft_mpegts::Codec::MpegAudio, layer: 3 }, "MP3".into()),
-        0x50 => (ACodec::Framed { ts: filmcraft_mpegts::Codec::MpegAudio, layer: 2 }, "MPEG Audio".into()),
-        0x2000 => (ACodec::Framed { ts: filmcraft_mpegts::Codec::Ac3, layer: 0 }, "AC-3".into()),
+        0x55 => (
+            ACodec::Framed {
+                ts: filmcraft_mpegts::Codec::MpegAudio,
+                layer: 3,
+            },
+            "MP3".into(),
+        ),
+        0x50 => (
+            ACodec::Framed {
+                ts: filmcraft_mpegts::Codec::MpegAudio,
+                layer: 2,
+            },
+            "MPEG Audio".into(),
+        ),
+        0x2000 => (
+            ACodec::Framed {
+                ts: filmcraft_mpegts::Codec::Ac3,
+                layer: 0,
+            },
+            "AC-3".into(),
+        ),
         tag => {
             let name = format!("audio format 0x{tag:04X}");
             (ACodec::Unsupported(name.clone()), name)
@@ -145,11 +185,13 @@ pub struct AviSource {
 
 /// Whether an Annex B access unit holds an H.264 IDR or HEVC IRAP picture.
 fn random_access(data: &[u8], hevc: bool) -> bool {
-    filmcraft_bitstream::annexb_nals(data).iter().any(|n| match n.first() {
-        Some(h) if hevc => (16..=23).contains(&((h >> 1) & 0x3F)),
-        Some(h) => h & 0x1F == 5,
-        None => false,
-    })
+    filmcraft_bitstream::annexb_nals(data)
+        .iter()
+        .any(|n| match n.first() {
+            Some(h) if hevc => (16..=23).contains(&((h >> 1) & 0x3F)),
+            Some(h) => h & 0x1F == 5,
+            None => false,
+        })
 }
 
 /// The packets of a framed audio stream: every frame header found in the stream of chunks, and
@@ -159,8 +201,15 @@ fn split_frames(
     bytes: &crate::Src,
     s: usize,
     ts: &filmcraft_mpegts::Codec,
-) -> (Vec<Piece>, Vec<usize>, Vec<u32>, Option<filmcraft_mpegts::FrameInfo>) {
-    let Some(st) = file.streams.get(s) else { return Default::default() };
+) -> (
+    Vec<Piece>,
+    Vec<usize>,
+    Vec<u32>,
+    Option<filmcraft_mpegts::FrameInfo>,
+) {
+    let Some(st) = file.streams.get(s) else {
+        return Default::default();
+    };
     // chunk start positions in the concatenated stream
     let mut at = Vec::with_capacity(st.chunks.len());
     let mut total = 0usize;
@@ -183,7 +232,9 @@ fn split_frames(
             win.extend(file.read_chunk(&bytes, s, next).unwrap_or_default());
             next += 1;
         }
-        let Some(here) = win.get(pos - base..) else { break };
+        let Some(here) = win.get(pos - base..) else {
+            break;
+        };
         match filmcraft_mpegts::frame_bytes(ts, here) {
             Some(n) if pos + n <= total => {
                 if info.is_none() {
@@ -194,7 +245,8 @@ fn split_frames(
                 let mut p = pos;
                 while p < pos + n {
                     let Some((c, off)) = locate(p) else { break };
-                    let len = (st.chunks.get(c).map_or(0, |ch| ch.size as usize) - off).min(pos + n - p);
+                    let len =
+                        (st.chunks.get(c).map_or(0, |ch| ch.size as usize) - off).min(pos + n - p);
                     if len == 0 {
                         break;
                     }
@@ -226,12 +278,17 @@ impl AviSource {
     pub fn open_reader(name: &str, reader: filmcraft_media::SharedReader) -> crate::Result<Self> {
         let bytes = crate::Src(reader);
         let file = filmcraft_avi::open(&bytes).map_err(|e| CodecError::Container(e.to_string()))?;
-        let vstream = file.streams.iter().position(|s| s.kind == StreamKind::Video && s.video.is_some() && !s.chunks.is_empty());
+        let vstream = file
+            .streams
+            .iter()
+            .position(|s| s.kind == StreamKind::Video && s.video.is_some() && !s.chunks.is_empty());
         let astreams: Vec<usize> = file
             .streams
             .iter()
             .enumerate()
-            .filter(|(_, s)| s.kind == StreamKind::Audio && s.audio.is_some() && !s.chunks.is_empty())
+            .filter(|(_, s)| {
+                s.kind == StreamKind::Audio && s.audio.is_some() && !s.chunks.is_empty()
+            })
             .map(|(i, _)| i)
             .take(filmcraft_media::MAX_AUDIO_STREAMS)
             .collect();
@@ -239,8 +296,14 @@ impl AviSource {
             return Err(CodecError::Unsupported("no playable streams".into()));
         }
         // video: frame slots, pictures and key frames
-        let (mut vcodec, mut vframes, mut vslots, mut rate, mut bottom_up, mut video) =
-            (VCodec::Unsupported(String::new()), Vec::new(), 0i64, FrameRate::new(25, 1), false, None);
+        let (mut vcodec, mut vframes, mut vslots, mut rate, mut bottom_up, mut video) = (
+            VCodec::Unsupported(String::new()),
+            Vec::new(),
+            0i64,
+            FrameRate::new(25, 1),
+            false,
+            None,
+        );
         if let Some(vs) = vstream.and_then(|i| file.streams.get(i)) {
             let b = vs.video.clone().unwrap_or_default();
             let (codec, label) = video_codec(&b);
@@ -252,13 +315,17 @@ impl AviSource {
                     continue;
                 }
                 let key = match &codec {
-                    VCodec::H264 | VCodec::Hevc if !vs.keyframes_known => {
-                        file.read_chunk(&bytes, vstream.unwrap_or(0), k).is_ok_and(|d| random_access(&d, codec == VCodec::Hevc))
-                    }
+                    VCodec::H264 | VCodec::Hevc if !vs.keyframes_known => file
+                        .read_chunk(&bytes, vstream.unwrap_or(0), k)
+                        .is_ok_and(|d| random_access(&d, codec == VCodec::Hevc)),
                     VCodec::H264 | VCodec::Hevc => c.key,
                     _ => true,
                 };
-                vframes.push(VFrame { pts: i64::from(vs.start) + k as i64, chunk: k, key });
+                vframes.push(VFrame {
+                    pts: i64::from(vs.start) + k as i64,
+                    chunk: k,
+                    key,
+                });
             }
             vslots = i64::from(vs.start) + vs.chunks.len() as i64;
             // AVI has no timestamps: H.264 with B-frames is stored in decode order, and the
@@ -276,7 +343,14 @@ impl AviSource {
                             file.streams
                                 .get(si)
                                 .and_then(|s| s.chunks.get(f.chunk))
-                                .and_then(|c| filmcraft_media::reader::read_range(&*bytes.0, c.offset, (c.size as usize).min(8 << 10)).ok())
+                                .and_then(|c| {
+                                    filmcraft_media::reader::read_range(
+                                        &*bytes.0,
+                                        c.offset,
+                                        (c.size as usize).min(8 << 10),
+                                    )
+                                    .ok()
+                                })
                                 .unwrap_or_default()
                         })
                         .collect()
@@ -301,15 +375,27 @@ impl AviSource {
             // MP4's 1/600) fills the slots between pictures with empty chunks, every 20th slot
             // holding a picture at 30 fps. A regular spacing makes the rate; slots stay the units.
             let shown = if vframes.len() > 1 {
-                let mut gaps: Vec<i64> = vframes.windows(2).map(|w| w[1].chunk as i64 - w[0].chunk as i64).filter(|g| *g > 0).take(1000).collect();
+                let mut gaps: Vec<i64> = vframes
+                    .windows(2)
+                    .map(|w| w[1].chunk as i64 - w[0].chunk as i64)
+                    .filter(|g| *g > 0)
+                    .take(1000)
+                    .collect();
                 gaps.sort_unstable();
                 let gap = gaps.get(gaps.len() / 2).copied().unwrap_or(1).max(1);
                 let regular = gaps.iter().filter(|g| **g == gap).count() * 10 >= gaps.len() * 9;
-                if gap > 1 && regular { FrameRate::new(i64::from(vs.rate), i64::from(vs.scale).saturating_mul(gap)) } else { rate }
+                if gap > 1 && regular {
+                    FrameRate::new(i64::from(vs.rate), i64::from(vs.scale).saturating_mul(gap))
+                } else {
+                    rate
+                }
             } else {
                 rate
             };
-            let bitrate = (secs > 0.0).then(|| (vs.chunks.iter().map(|c| u64::from(c.size)).sum::<u64>() as f64 * 8.0 / secs) as u64);
+            let bitrate = (secs > 0.0).then(|| {
+                (vs.chunks.iter().map(|c| u64::from(c.size)).sum::<u64>() as f64 * 8.0 / secs)
+                    as u64
+            });
             video = Some(VideoStreamInfo {
                 width: w,
                 height: h,
@@ -328,21 +414,29 @@ impl AviSource {
         let mut audios = Vec::new();
         let mut audio_streams = Vec::new();
         for &s in &astreams {
-            let Some(st) = file.streams.get(s) else { continue };
+            let Some(st) = file.streams.get(s) else {
+                continue;
+            };
             let w = st.audio.clone().unwrap_or_default();
             let (codec, label) = audio_codec(&w);
             let mut sample_rate = w.sample_rate.max(1);
             let mut channels = u32::from(w.channels.max(1));
             let (pieces, first, starts) = match &codec {
                 ACodec::Pcm(cfg) => {
-                    let block = usize::from(w.block_align.max(1)).max((usize::from(cfg.bits).div_ceil(8)) * channels as usize);
+                    let block = usize::from(w.block_align.max(1))
+                        .max((usize::from(cfg.bits).div_ceil(8)) * channels as usize);
                     let mut t = 0i64;
                     let mut starts = Vec::with_capacity(st.chunks.len());
                     for c in &st.chunks {
                         starts.push(t);
                         t = t.saturating_add((c.size as usize / block) as i64);
                     }
-                    let pieces: Vec<Piece> = st.chunks.iter().enumerate().map(|(k, c)| (k, 0, c.size as usize)).collect();
+                    let pieces: Vec<Piece> = st
+                        .chunks
+                        .iter()
+                        .enumerate()
+                        .map(|(k, c)| (k, 0, c.size as usize))
+                        .collect();
                     let first = (0..pieces.len()).collect();
                     (pieces, first, starts)
                 }
@@ -366,32 +460,65 @@ impl AviSource {
                 ACodec::Unsupported(_) => (Vec::new(), Vec::new(), Vec::new()),
             };
             // a stream that starts late (dwStart, in scale / rate units)
-            let delay = (i128::from(st.start) * i128::from(st.scale) * i128::from(sample_rate) / i128::from(st.rate.max(1))) as i64;
-            let starts: Vec<i64> = starts.into_iter().map(|s: i64| s.saturating_add(delay)).collect();
+            let delay = (i128::from(st.start) * i128::from(st.scale) * i128::from(sample_rate)
+                / i128::from(st.rate.max(1))) as i64;
+            let starts: Vec<i64> = starts
+                .into_iter()
+                .map(|s: i64| s.saturating_add(delay))
+                .collect();
             audio_streams.push(AudioStreamInfo {
                 sample_rate,
                 channels,
                 codec: label,
                 bits_per_sample: (w.bits_per_sample > 0).then_some(u32::from(w.bits_per_sample)),
             });
-            let state = Mutex::new(AudioState { decoder: None, packets: HashMap::new(), order: Vec::new(), last_decoded: None });
-            audios.push(AviAudio { stream: s, codec, pieces, first, starts, state });
+            let state = Mutex::new(AudioState {
+                decoder: None,
+                packets: HashMap::new(),
+                order: Vec::new(),
+                last_decoded: None,
+            });
+            audios.push(AviAudio {
+                stream: s,
+                codec,
+                pieces,
+                first,
+                starts,
+                state,
+            });
         }
         // the longer of the picture and the sound
-        let vdur = if vslots > 0 { rate.tick_of(vslots) } else { Tick::ZERO };
+        let vdur = if vslots > 0 {
+            rate.tick_of(vslots)
+        } else {
+            Tick::ZERO
+        };
         let adur = audios
             .iter()
             .zip(&audio_streams)
             .filter_map(|(a, i)| {
                 let last = a.starts.last()?;
-                let tail = a.starts.len().checked_sub(2).and_then(|k| a.starts.get(k)).map_or(0, |p| last - p);
-                Some(Tick::from_rational(last + tail, 1, i64::from(i.sample_rate)))
+                let tail = a
+                    .starts
+                    .len()
+                    .checked_sub(2)
+                    .and_then(|k| a.starts.get(k))
+                    .map_or(0, |p| last - p);
+                Some(Tick::from_rational(
+                    last + tail,
+                    1,
+                    i64::from(i.sample_rate),
+                ))
             })
             .max()
             .unwrap_or_default();
         let info = MediaInfo {
             name: name.to_string(),
-            kind: if video.is_some() { MediaKind::Movie } else { MediaKind::AudioOnly },
+            kind: if video.is_some() {
+                MediaKind::Movie
+            } else {
+                MediaKind::AudioOnly
+            },
             duration: vdur.max(adur),
             video,
             audio_streams,
@@ -401,29 +528,59 @@ impl AviSource {
         };
         let mut vorder: Vec<usize> = (0..vframes.len()).collect();
         vorder.sort_by_key(|&i| vframes.get(i).map_or(0, |f| f.pts));
-        let vorder_pts = vorder.iter().map(|&i| vframes.get(i).map_or(0, |f| f.pts)).collect();
-        Ok(Self { info, bytes, file, vstream, vcodec, vframes, vorder, vorder_pts, vslots, rate, bottom_up, video: GopCache::new(None), audios })
+        let vorder_pts = vorder
+            .iter()
+            .map(|&i| vframes.get(i).map_or(0, |f| f.pts))
+            .collect();
+        Ok(Self {
+            info,
+            bytes,
+            file,
+            vstream,
+            vcodec,
+            vframes,
+            vorder,
+            vorder_pts,
+            vslots,
+            rate,
+            bottom_up,
+            video: GopCache::new(None),
+            audios,
+        })
     }
 
     fn read(&self, stream: usize, chunk: usize) -> crate::Result<Vec<u8>> {
-        self.file.read_chunk(&self.bytes, stream, chunk).map_err(|e| CodecError::Container(e.to_string()))
+        self.file
+            .read_chunk(&self.bytes, stream, chunk)
+            .map_err(|e| CodecError::Container(e.to_string()))
     }
 
     /// The bytes of audio packet `k`.
     fn packet(&self, a: &AviAudio, k: usize) -> crate::Result<Vec<u8>> {
         let (from, to) = (
-            a.first.get(k).copied().ok_or_else(|| CodecError::Container("audio packet out of range".into()))?,
+            a.first
+                .get(k)
+                .copied()
+                .ok_or_else(|| CodecError::Container("audio packet out of range".into()))?,
             a.first.get(k + 1).copied().unwrap_or(a.pieces.len()),
         );
         let mut out = Vec::new();
         for &(c, off, len) in a.pieces.get(from..to).unwrap_or_default() {
             let chunk = self.read(a.stream, c)?;
-            out.extend_from_slice(chunk.get(off..off + len).ok_or_else(|| CodecError::Container("audio chunk shorter than its index".into()))?);
+            out.extend_from_slice(chunk.get(off..off + len).ok_or_else(|| {
+                CodecError::Container("audio chunk shorter than its index".into())
+            })?);
         }
         Ok(out)
     }
 
-    fn audio_packet(&self, a: &AviAudio, st: &mut AudioState, ainfo: &AudioStreamInfo, i: usize) -> crate::Result<Arc<Vec<Vec<f32>>>> {
+    fn audio_packet(
+        &self,
+        a: &AviAudio,
+        st: &mut AudioState,
+        ainfo: &AudioStreamInfo,
+        i: usize,
+    ) -> crate::Result<Arc<Vec<Vec<f32>>>> {
         if let Some(p) = st.packets.get(&i) {
             return Ok(p.clone());
         }
@@ -438,7 +595,10 @@ impl AviSource {
                         _ => PacketDecoder::mpeg_audio(*layer, ainfo.sample_rate)?,
                     });
                 }
-                let d = st.decoder.as_mut().ok_or_else(|| CodecError::Decode("no audio decoder".into()))?;
+                let d = st
+                    .decoder
+                    .as_mut()
+                    .ok_or_else(|| CodecError::Decode("no audio decoder".into()))?;
                 // non-sequential access: reset and prime with the packet before (the bit reservoir)
                 if st.last_decoded.is_none_or(|l| l + 1 != i) {
                     d.reset();
@@ -478,29 +638,56 @@ impl VideoSamples for AviVideo<'_> {
     }
     fn sync_before(&self, i: usize) -> usize {
         let i = i.min(self.src.vframes.len().saturating_sub(1));
-        self.src.vframes.get(..=i).and_then(|f| f.iter().rposition(|f| f.key)).unwrap_or(0)
+        self.src
+            .vframes
+            .get(..=i)
+            .and_then(|f| f.iter().rposition(|f| f.key))
+            .unwrap_or(0)
     }
     fn sample_at(&self, t: i64) -> Option<usize> {
         // the picture shown in slot `t`: the last one at or before it (empty chunks repeat it)
         if t >= self.src.vslots {
             return None;
         }
-        let k = self.src.vorder_pts.partition_point(|&p| p <= t).checked_sub(1)?;
+        let k = self
+            .src
+            .vorder_pts
+            .partition_point(|&p| p <= t)
+            .checked_sub(1)?;
         self.src.vorder.get(k).copied()
     }
     fn read(&self, i: usize) -> crate::Result<Vec<u8>> {
-        let f = self.src.vframes.get(i).ok_or_else(|| CodecError::Container("frame out of range".into()))?;
+        let f = self
+            .src
+            .vframes
+            .get(i)
+            .ok_or_else(|| CodecError::Container("frame out of range".into()))?;
         self.src.read(self.stream, f.chunk)
     }
     fn make_decoder(&self) -> crate::Result<Box<dyn VideoDecoder>> {
-        let v = self.src.info.video.as_ref().ok_or_else(|| CodecError::Unsupported("no video stream".into()))?;
-        let (w, h) = (v.width.min(u32::from(u16::MAX)) as u16, v.height.min(u32::from(u16::MAX)) as u16);
+        let v = self
+            .src
+            .info
+            .video
+            .as_ref()
+            .ok_or_else(|| CodecError::Unsupported("no video stream".into()))?;
+        let (w, h) = (
+            v.width.min(u32::from(u16::MAX)) as u16,
+            v.height.min(u32::from(u16::MAX)) as u16,
+        );
         match &self.src.vcodec {
             VCodec::Jpeg => make_video_decoder(&SampleEntry::jpeg(w, h)),
             VCodec::H264 => Ok(Box::new(crate::video::H264Decoder::annexb())),
             VCodec::Hevc => Ok(Box::new(crate::video::HevcDecoder::annexb())),
-            VCodec::Raw(f) => Ok(Box::new(RawVideoDecoder::new(*f, v.width, v.height, self.src.bottom_up)?)),
-            VCodec::Unsupported(name) => Err(CodecError::Unsupported(format!("no decoder for {name} video"))),
+            VCodec::Raw(f) => Ok(Box::new(RawVideoDecoder::new(
+                *f,
+                v.width,
+                v.height,
+                self.src.bottom_up,
+            )?)),
+            VCodec::Unsupported(name) => Err(CodecError::Unsupported(format!(
+                "no decoder for {name} video"
+            ))),
         }
     }
 }
@@ -515,16 +702,41 @@ impl MediaSource for AviSource {
         let t = req.time.max(Tick::ZERO);
         let slot = |t: Tick| self.rate.frame_at(t);
         let late = filmcraft_media::cancel::catch_up().map(|m| slot(t - m));
-        Ok(self.video.frame_late(&AviVideo { src: self, stream: s }, slot(t), late)?)
+        Ok(self.video.frame_late(
+            &AviVideo {
+                src: self,
+                stream: s,
+            },
+            slot(t),
+            late,
+        )?)
     }
 
-    fn audio(&self, start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer, MediaError> {
+    fn audio(
+        &self,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
         self.audio_stream(0, start, frames, sample_rate)
     }
 
-    fn audio_stream(&self, stream: usize, start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer, MediaError> {
-        let a = self.audios.get(stream).ok_or(MediaError::NoStream("audio"))?;
-        let ainfo = self.info.audio_streams.get(stream).ok_or(MediaError::NoStream("audio"))?;
+    fn audio_stream(
+        &self,
+        stream: usize,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
+        let a = self
+            .audios
+            .get(stream)
+            .ok_or(MediaError::NoStream("audio"))?;
+        let ainfo = self
+            .info
+            .audio_streams
+            .get(stream)
+            .ok_or(MediaError::NoStream("audio"))?;
         if let ACodec::Unsupported(name) = &a.codec {
             return Err(MediaError::Unsupported(format!("{name} audio")));
         }
@@ -541,7 +753,9 @@ impl MediaSource for AviSource {
             }
             let pk = self.audio_packet(a, &mut st, ainfo, i)?;
             for (c, dst) in src.iter_mut().enumerate() {
-                let Some(chan) = pk.get(c.min(pk.len().saturating_sub(1))) else { continue };
+                let Some(chan) = pk.get(c.min(pk.len().saturating_sub(1))) else {
+                    continue;
+                };
                 for (k, v) in chan.iter().enumerate() {
                     let pos = pk_start + k as i64 - s0;
                     if let Some(d) = usize::try_from(pos).ok().and_then(|p| dst.get_mut(p)) {
@@ -573,13 +787,25 @@ pub fn opener(name: &str, bytes: Arc<[u8]>) -> Option<Result<SharedSource, Media
     if !sniff(&bytes) {
         return None;
     }
-    Some(AviSource::open(name, bytes).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        AviSource::open(name, bytes)
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }
 
 /// [`filmcraft_media::ReaderOpener`] for AVI.
-pub fn reader_opener(name: &str, head: &[u8], reader: &filmcraft_media::SharedReader) -> Option<Result<SharedSource, MediaError>> {
+pub fn reader_opener(
+    name: &str,
+    head: &[u8],
+    reader: &filmcraft_media::SharedReader,
+) -> Option<Result<SharedSource, MediaError>> {
     if !sniff(head) {
         return None;
     }
-    Some(AviSource::open_reader(name, reader.clone()).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        AviSource::open_reader(name, reader.clone())
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }

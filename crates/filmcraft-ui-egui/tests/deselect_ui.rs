@@ -19,10 +19,15 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -49,12 +54,26 @@ impl Driver {
         panic!("no reply to {method} {params}");
     }
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
     fn rect(&mut self, id: &str) -> [f64; 4] {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == id).unwrap_or_else(|| panic!("no element {id}")).clone();
-        let r: Vec<f64> = e["rect"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .unwrap_or_else(|| panic!("no element {id}"))
+            .clone();
+        let r: Vec<f64> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect();
         [r[0], r[1], r[2], r[3]]
     }
     fn click_at(&mut self, x: f64, y: f64) {
@@ -85,12 +104,18 @@ fn empty_timeline_space_below_the_tracks_deselects_and_starts_a_marquee() {
     d.exec("timeline.select", json!({"clips": [clip]}));
     d.frames(2);
     d.click_at(below.0, below.1);
-    assert!(d.app().session.state.selection.is_empty(), "a click below the tracks deselects");
+    assert!(
+        d.app().session.state.selection.is_empty(),
+        "a click below the tracks deselects"
+    );
     // a drag from below the tracks up over the clips selects them
     let top = d.rect("timeline.track.V1.locked");
     d.ok("ui.drag", json!({"from": {"x": area[0] + 4.0, "y": below.1}, "to": {"x": area[0] + area[2] * 0.6, "y": top[1] + top[3] / 2.0}, "steps": 8}));
     d.frames(3);
-    assert!(!d.app().session.state.selection.is_empty(), "the box from below the tracks selected clips");
+    assert!(
+        !d.app().session.state.selection.is_empty(),
+        "the box from below the tracks selected clips"
+    );
 }
 
 /// A text layer being edited stops being edited when another panel is clicked (its keys went into
@@ -100,10 +125,17 @@ fn clicking_another_panel_ends_text_editing() {
     let mut d = Driver::demo();
     let seq = d.exec("sequence.inspect", json!({}));
     let at = seq["playhead"].as_i64().unwrap();
-    let clip = d.exec("graphics.newText", json!({"text": "Title", "time": at}))["clip"].as_u64().unwrap();
+    let clip = d.exec("graphics.newText", json!({"text": "Title", "time": at}))["clip"]
+        .as_u64()
+        .unwrap();
     d.ok("ui.panel.show", json!({"panel": "Properties"}));
     let edit = |d: &mut Driver| {
-        d.app().ui.gfx_edit = Some(GfxEdit { clip, layer: 0, caret: 0, anchor: 0 });
+        d.app().ui.gfx_edit = Some(GfxEdit {
+            clip,
+            layer: 0,
+            caret: 0,
+            anchor: 0,
+        });
         d.app().ui.focused = filmcraft_ui_egui::dock::PanelKind::Program;
         d.frames(3);
     };
@@ -111,10 +143,16 @@ fn clicking_another_panel_ends_text_editing() {
     assert!(d.app().ui.gfx_edit.is_some());
     let props = d.rect("panel.Properties");
     d.click_at(props[0] + props[2] / 2.0, props[1] + props[3] - 10.0);
-    assert!(d.app().ui.gfx_edit.is_some(), "a click in Properties keeps the edit");
+    assert!(
+        d.app().ui.gfx_edit.is_some(),
+        "a click in Properties keeps the edit"
+    );
     let tl = d.rect("timeline.tracks");
     d.click_at(tl[0] + tl[2] / 2.0, tl[1] + tl[3] - 6.0);
-    assert!(d.app().ui.gfx_edit.is_none(), "a click in the Timeline ends it");
+    assert!(
+        d.app().ui.gfx_edit.is_none(),
+        "a click in the Timeline ends it"
+    );
 }
 
 /// A click on the Program monitor around the picture lets go of the selected graphic layer and
@@ -125,30 +163,62 @@ fn empty_monitor_space_deselects_layers_and_masks() {
     let pic = d.rect("program.picture");
     let panel = d.rect("panel.Program");
     // the empty space beside or above the picture, a few points away from it
-    let outside = if pic[0] - panel[0] > 20.0 { (pic[0] - 8.0, pic[1] + pic[3] / 2.0) } else { (pic[0] + pic[2] / 2.0, pic[1] + pic[3] + 8.0) };
+    let outside = if pic[0] - panel[0] > 20.0 {
+        (pic[0] - 8.0, pic[1] + pic[3] / 2.0)
+    } else {
+        (pic[0] + pic[2] / 2.0, pic[1] + pic[3] + 8.0)
+    };
     let seq = d.exec("sequence.inspect", json!({}));
     let clip = seq["video"][0]["items"][0]["clip"].as_u64().unwrap();
     // a graphic layer
     let at = seq["playhead"].as_i64().unwrap();
-    let gclip = d.exec("graphics.newText", json!({"text": "Title", "time": at}))["clip"].as_u64().unwrap();
-    d.exec("graphics.selectLayer", json!({"clip": gclip, "layers": [0]}));
+    let gclip = d.exec("graphics.newText", json!({"text": "Title", "time": at}))["clip"]
+        .as_u64()
+        .unwrap();
+    d.exec(
+        "graphics.selectLayer",
+        json!({"clip": gclip, "layers": [0]}),
+    );
     d.frames(2);
     assert!(!d.app().session.state.graphic_layers.is_empty());
     d.click_at(outside.0, outside.1);
-    assert!(d.app().session.state.graphic_layers.is_empty(), "a click around the picture deselects the layer");
+    assert!(
+        d.app().session.state.graphic_layers.is_empty(),
+        "a click around the picture deselects the layer"
+    );
     // a mask: around the picture, and on the picture's empty space
     d.exec("timeline.select", json!({"clips": [clip]}));
-    d.exec("effects.apply", json!({"clips": [clip], "effect": "gaussian_blur"}));
+    d.exec(
+        "effects.apply",
+        json!({"clips": [clip], "effect": "gaussian_blur"}),
+    );
     let fx = {
         let s = &d.harness.state().session;
-        let it = s.active_sequence().unwrap().find_item(filmcraft_project::ClipId(clip)).unwrap().1;
-        it.effects.iter().position(|e| e.effect == "gaussian_blur").unwrap()
+        let it = s
+            .active_sequence()
+            .unwrap()
+            .find_item(filmcraft_project::ClipId(clip))
+            .unwrap()
+            .1;
+        it.effects
+            .iter()
+            .position(|e| e.effect == "gaussian_blur")
+            .unwrap()
     };
-    d.exec("masks.add", json!({"clip": clip, "effect": fx, "shape": "ellipse"}));
+    d.exec(
+        "masks.add",
+        json!({"clip": clip, "effect": fx, "shape": "ellipse"}),
+    );
     for (x, y) in [outside, (pic[0] + 6.0, pic[1] + 6.0)] {
-        d.exec("masks.select", json!({"clip": clip, "effect": fx, "mask": 0}));
+        d.exec(
+            "masks.select",
+            json!({"clip": clip, "effect": fx, "mask": 0}),
+        );
         d.frames(2);
         d.click_at(x, y);
-        assert!(d.app().session.state.selected_mask.is_none(), "a click at ({x}, {y}) deselects the mask");
+        assert!(
+            d.app().session.state.selected_mask.is_none(),
+            "a click at ({x}, {y}) deselects the mask"
+        );
     }
 }

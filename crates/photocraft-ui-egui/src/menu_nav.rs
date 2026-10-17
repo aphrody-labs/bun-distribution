@@ -100,16 +100,24 @@ fn open_id() -> Id {
 pub fn is_open(ctx: &egui::Context) -> bool {
     // Only while the menu bar is still drawn (Full Screen Mode hides it with a menu open).
     let pass = ctx.cumulative_pass_nr();
-    ctx.data(|d| d.get_temp::<u64>(open_id())).is_some_and(|seen| seen + 2 >= pass)
+    ctx.data(|d| d.get_temp::<u64>(open_id()))
+        .is_some_and(|seen| seen + 2 >= pass)
 }
 
 impl Nav {
     /// Last frame's state, reset when another top-level menu (or none) is open now.
     pub fn load(ctx: &egui::Context) -> Nav {
         let mut nav: Nav = ctx.data(|d| d.get_temp(nav_id())).unwrap_or_default();
-        let top = nav.tops.iter().position(|id| egui::Popup::is_id_open(ctx, *id));
+        let top = nav
+            .tops
+            .iter()
+            .position(|id| egui::Popup::is_id_open(ctx, *id));
         if top != nav.top {
-            nav = Nav { top, tops: std::mem::take(&mut nav.tops), ..Default::default() };
+            nav = Nav {
+                top,
+                tops: std::mem::take(&mut nav.tops),
+                ..Default::default()
+            };
         }
         nav
     }
@@ -146,12 +154,25 @@ impl Nav {
     /// Draw a row of `level` with `add`, highlighted like a hovered row when the keyboard (or the
     /// pointer) is on it, and register it for the keys. `add` returns the row's response. A row
     /// without a `command` opens a submenu.
-    pub fn row<R>(&mut self, ui: &mut Ui, level: usize, enabled: bool, command: Option<&str>, add: impl FnOnce(&mut Ui, &mut Nav) -> (egui::Response, R)) -> R {
+    pub fn row<R>(
+        &mut self,
+        ui: &mut Ui,
+        level: usize,
+        enabled: bool,
+        command: Option<&str>,
+        add: impl FnOnce(&mut Ui, &mut Nav) -> (egui::Response, R),
+    ) -> R {
         let i = self.rows.get(level).map_or(usize::MAX, Vec::len);
         // While a submenu is kept open for the pointer heading to it, its row stays lit and the
         // rows crossed on the way don't light up.
-        let held = self.aims.get(level).and_then(Option::as_ref).filter(|a| a.held).map(|a| a.index);
-        let lit = enabled && (held == Some(i) || held.is_none() && self.highlighted(level) == Some(i));
+        let held = self
+            .aims
+            .get(level)
+            .and_then(Option::as_ref)
+            .filter(|a| a.held)
+            .map(|a| a.index);
+        let lit =
+            enabled && (held == Some(i) || held.is_none() && self.highlighted(level) == Some(i));
         let saved = (ui.visuals().widgets.inactive, ui.visuals().widgets.hovered);
         if lit {
             ui.visuals_mut().widgets.inactive = ui.visuals().widgets.hovered;
@@ -161,12 +182,20 @@ impl Nav {
         let root = self.roots.get(level).copied().filter(|_| command.is_none());
         let open = root.and_then(|root| MenuState::from_id(ui.ctx(), root, |s| s.open_item));
         let (r, out) = add(ui, self);
-        (ui.visuals_mut().widgets.inactive, ui.visuals_mut().widgets.hovered) = saved;
+        (
+            ui.visuals_mut().widgets.inactive,
+            ui.visuals_mut().widgets.hovered,
+        ) = saved;
         if let Some(root) = root {
             self.aim(level, i, root, open, &r);
         }
         if let Some(rows) = self.rows.get_mut(level) {
-            rows.push(Row { widget: r.id, enabled, command: command.map(str::to_string), rect: r.rect });
+            rows.push(Row {
+                widget: r.id,
+                enabled,
+                command: command.map(str::to_string),
+                rect: r.rect,
+            });
             if let Some(index) = held {
                 self.set_hi(level, Some(index));
             } else {
@@ -183,8 +212,14 @@ impl Nav {
         if self.aims.len() <= level {
             self.aims.resize(level + 1, None);
         }
-        let Some(p) = r.ctx.pointer_hover_pos() else { return };
-        let was_held = self.aims.get(level).and_then(Option::as_ref).is_some_and(|a| a.row == r.id && a.held);
+        let Some(p) = r.ctx.pointer_hover_pos() else {
+            return;
+        };
+        let was_held = self
+            .aims
+            .get(level)
+            .and_then(Option::as_ref)
+            .is_some_and(|a| a.row == r.id && a.held);
         let held = self.hold(level, index, root, open, p, r);
         if was_held && !held {
             // Let go: the row under the pointer takes the highlight, moving or not.
@@ -193,11 +228,21 @@ impl Nav {
     }
 
     /// [`Self::aim`]: is this row's submenu open with the pointer off the row (held) now?
-    fn hold(&mut self, level: usize, index: usize, root: Id, open: Option<Id>, p: Pos2, r: &egui::Response) -> bool {
+    fn hold(
+        &mut self,
+        level: usize,
+        index: usize,
+        root: Id,
+        open: Option<Id>,
+        p: Pos2,
+        r: &egui::Response,
+    ) -> bool {
         let ctx = &r.ctx;
         let sub = SubMenu::id_from_widget_id(r.id);
         let target = self.views.get(level + 1).copied();
-        let Some(slot) = self.aims.get_mut(level) else { return false };
+        let Some(slot) = self.aims.get_mut(level) else {
+            return false;
+        };
         if open != Some(sub) {
             if slot.as_ref().is_some_and(|a| a.row == r.id) {
                 *slot = None;
@@ -205,10 +250,17 @@ impl Nav {
             return false;
         }
         if r.interact_rect.contains(p) {
-            *slot = Some(Aim { row: r.id, index, from: p, held: false });
+            *slot = Some(Aim {
+                row: r.id,
+                index,
+                from: p,
+                held: false,
+            });
             return false;
         }
-        let Some(aim) = slot.as_mut().filter(|a| a.row == r.id) else { return false };
+        let Some(aim) = slot.as_mut().filter(|a| a.row == r.id) else {
+            return false;
+        };
         // Off its row with the submenu still open (egui keeps it while the pointer moves straight
         // at it): the row stays lit.
         aim.held = true;
@@ -218,7 +270,12 @@ impl Nav {
         aim.held = false;
         // A click or a key closes menus as usual; so does leaving the submenu's direction, or
         // resting on another row.
-        let (acted, rest) = ctx.input(|i| (i.pointer.any_pressed() || i.pointer.any_click() || !i.keys_down.is_empty(), i.pointer.time_since_last_movement()));
+        let (acted, rest) = ctx.input(|i| {
+            (
+                i.pointer.any_pressed() || i.pointer.any_click() || !i.keys_down.is_empty(),
+                i.pointer.time_since_last_movement(),
+            )
+        });
         let Some(target) = target else { return false };
         if acted || rest >= AIM_REST || !heading(aim.from, p, target) {
             return false;
@@ -249,13 +306,24 @@ impl Nav {
     }
 
     fn enabled(&self, level: usize) -> Vec<usize> {
-        self.rows.get(level).map(|rows| rows.iter().enumerate().filter(|(_, r)| r.enabled).map(|(i, _)| i).collect()).unwrap_or_default()
+        self.rows
+            .get(level)
+            .map(|rows| {
+                rows.iter()
+                    .enumerate()
+                    .filter(|(_, r)| r.enabled)
+                    .map(|(i, _)| i)
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     /// ↑ / ↓: the next enabled row (wrapping), or the first / last one.
     fn step(&mut self, level: usize, down: bool) {
         let on = self.enabled(level);
-        let (Some(&first), Some(&last)) = (on.first(), on.last()) else { return };
+        let (Some(&first), Some(&last)) = (on.first(), on.last()) else {
+            return;
+        };
         let next = match self.highlighted(level) {
             None => {
                 if down {
@@ -279,7 +347,9 @@ impl Nav {
 
     /// Open the highlighted submenu of `level` and move the keyboard into it.
     fn open_sub(&mut self, ctx: &egui::Context, level: usize, widget: Id) {
-        let Some(&root) = self.roots.get(level) else { return };
+        let Some(&root) = self.roots.get(level) else {
+            return;
+        };
         let sub = SubMenu::id_from_widget_id(widget);
         // egui drops an open item it has never drawn: mark it shown so it survives to the next frame.
         MenuState::mark_shown(ctx, sub);
@@ -303,11 +373,16 @@ impl Nav {
     /// bar's popup ids; an activated command lands in `clicked`.
     pub fn keys(&mut self, ctx: &egui::Context, tops: &[Id], clicked: &mut Option<String>) {
         self.tops = tops.to_vec();
-        let Some(top) = self.top.filter(|_| !tops.is_empty()) else { return };
+        let Some(top) = self.top.filter(|_| !tops.is_empty()) else {
+            return;
+        };
         let level = self.level.min(self.rows.len().saturating_sub(1));
         self.level = level;
         let press = |k: Key| ctx.input_mut(|i| i.consume_key(Modifiers::NONE, k));
-        let current = self.highlighted(level).and_then(|i| self.rows.get(level)?.get(i)).cloned();
+        let current = self
+            .highlighted(level)
+            .and_then(|i| self.rows.get(level)?.get(i))
+            .cloned();
         let switch = |by: usize| {
             let n = tops.len();
             if let Some(&id) = tops.get((top + by) % n) {
@@ -322,7 +397,12 @@ impl Nav {
             self.step(level, false);
         } else if press(Key::ArrowRight) {
             match current {
-                Some(Row { widget, enabled: true, command: None, .. }) => self.open_sub(ctx, level, widget),
+                Some(Row {
+                    widget,
+                    enabled: true,
+                    command: None,
+                    ..
+                }) => self.open_sub(ctx, level, widget),
                 _ => switch(1),
             }
         } else if press(Key::ArrowLeft) {
@@ -337,11 +417,20 @@ impl Nav {
             }
         } else if press(Key::Enter) || press(Key::Space) {
             match current {
-                Some(Row { enabled: true, command: Some(c), .. }) => {
+                Some(Row {
+                    enabled: true,
+                    command: Some(c),
+                    ..
+                }) => {
                     *clicked = Some(c);
                     egui::Popup::close_all(ctx);
                 }
-                Some(Row { widget, enabled: true, command: None, .. }) => self.open_sub(ctx, level, widget),
+                Some(Row {
+                    widget,
+                    enabled: true,
+                    command: None,
+                    ..
+                }) => self.open_sub(ctx, level, widget),
                 _ => {}
             }
         } else {
@@ -370,8 +459,15 @@ fn heading(from: Pos2, p: Pos2, target: Rect) -> bool {
     if !target.is_positive() {
         return false;
     }
-    let x = if target.center().x >= from.x { target.left() } else { target.right() };
-    let (a, b) = (pos2(x, target.top() - AIM_SLACK), pos2(x, target.bottom() + AIM_SLACK));
+    let x = if target.center().x >= from.x {
+        target.left()
+    } else {
+        target.right()
+    };
+    let (a, b) = (
+        pos2(x, target.top() - AIM_SLACK),
+        pos2(x, target.bottom() + AIM_SLACK),
+    );
     let side = |u: Pos2, v: Pos2| (v.x - u.x) * (p.y - u.y) - (v.y - u.y) * (p.x - u.x);
     let (d1, d2, d3) = (side(from, a), side(a, b), side(b, from));
     let neg = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
@@ -381,7 +477,9 @@ fn heading(from: Pos2, p: Pos2, target: Rect) -> bool {
 
 /// Is the pointer over `rect` on this ui's layer (not under a submenu drawn on top)?
 fn pointer_on(ui: &Ui, rect: Rect) -> bool {
-    ui.ctx().pointer_hover_pos().is_some_and(|p| rect.contains(p) && ui.ctx().layer_id_at(p) == Some(ui.layer_id()))
+    ui.ctx()
+        .pointer_hover_pos()
+        .is_some_and(|p| rect.contains(p) && ui.ctx().layer_id_at(p) == Some(ui.layer_id()))
 }
 
 /// The height a menu level's rows may take. Every level stays below the menu bar (#319): a
@@ -389,7 +487,13 @@ fn pointer_on(ui: &Ui, rect: Rect) -> bool {
 /// and the bottom, or (opening upward, as egui does when that fits) between the bar and its row,
 /// scrolls instead of egui sliding it up over the menu bar, where it hid the menu titles.
 /// `anchor` is the submenu's row (unknown on its first frame); `frame` the popup's margins.
-pub fn level_room(screen: Rect, bar_bottom: Option<f32>, depth: usize, anchor: Option<Rect>, frame: f32) -> f32 {
+pub fn level_room(
+    screen: Rect,
+    bar_bottom: Option<f32>,
+    depth: usize,
+    anchor: Option<Rect>,
+    frame: f32,
+) -> f32 {
     level_room_in(screen, screen, bar_bottom, depth, anchor, None, frame)
 }
 
@@ -397,7 +501,15 @@ pub fn level_room(screen: Rect, bar_bottom: Option<f32>, depth: usize, anchor: O
 /// (#315: a window taller than its display runs under the taskbar). egui still places popups
 /// within the whole window, so a submenu opens upward only when downward doesn't fit the window.
 /// `rows` is the level's rows' height when known (the popup shrinks to it).
-pub fn level_room_in(screen: Rect, visible: Rect, bar_bottom: Option<f32>, depth: usize, anchor: Option<Rect>, rows: Option<f32>, frame: f32) -> f32 {
+pub fn level_room_in(
+    screen: Rect,
+    visible: Rect,
+    bar_bottom: Option<f32>,
+    depth: usize,
+    anchor: Option<Rect>,
+    rows: Option<f32>,
+    frame: f32,
+) -> f32 {
     let top = bar_bottom.unwrap_or(visible.top()).max(visible.top()) + EDGE;
     let bottom = visible.bottom().min(screen.bottom()) - EDGE;
     let below_bar = bottom - top;
@@ -409,7 +521,12 @@ pub fn level_room_in(screen: Rect, visible: Rect, bar_bottom: Option<f32>, depth
             let (down, up) = (bottom - row.top(), row.bottom() - top);
             let opens_up = |h: f32| row.top() - (frame - 2.0) / 2.0 + h + frame > screen.bottom();
             let want = rows.unwrap_or(f32::INFINITY);
-            if want > down && up > down && opens_up(want.min(up)) { up } else { down }.min(below_bar)
+            if want > down && up > down && opens_up(want.min(up)) {
+                up
+            } else {
+                down
+            }
+            .min(below_bar)
         }
         // A window running under the taskbar: egui opens a submenu downward whenever it fits the
         // window, so a top-level menu ends a scrolling submenu's height above the taskbar, leaving
@@ -417,7 +534,11 @@ pub fn level_room_in(screen: Rect, visible: Rect, bar_bottom: Option<f32>, depth
         None if visible.bottom() < screen.bottom() - 0.5 => below_bar - (4.0 * ARROW + frame),
         None => below_bar,
     } - frame;
-    if room.is_finite() { room.max(4.0 * ARROW) } else { 4.0 * ARROW }
+    if room.is_finite() {
+        room.max(4.0 * ARROW)
+    } else {
+        4.0 * ARROW
+    }
 }
 
 /// Draw one level of a menu, bounded by the window: when its rows don't fit they scroll, with
@@ -435,7 +556,15 @@ pub fn level(ui: &mut Ui, depth: usize, nav: &mut Nav, rows: impl FnOnce(&mut Ui
     let key = ui.id().with(("pc-menu-level", depth));
     // Rows' height from the last frame: does this level overflow?
     let content: Option<f32> = ctx.data(|d| d.get_temp(key));
-    let room = level_room_in(screen, visible, nav.bar_bottom, depth, anchor, content, frame);
+    let room = level_room_in(
+        screen,
+        visible,
+        nav.bar_bottom,
+        depth,
+        anchor,
+        content,
+        frame,
+    );
     let over = content.is_some_and(|h| h > room + 0.5);
     let up = over.then(|| ui.allocate_exact_size(vec2(0.0, ARROW), Sense::hover()).0);
     let height = if over { room - 2.0 * ARROW } else { room };
@@ -454,7 +583,13 @@ pub fn level(ui: &mut Ui, depth: usize, nav: &mut Nav, rows: impl FnOnce(&mut Ui
     ctx.data_mut(|d| d.insert_temp(key, out.content_size.y));
     if let Some(v) = nav.views.get_mut(level) {
         // `inner_rect` is the size asked for, before auto-shrink fits it to the rows.
-        *v = Rect::from_min_size(out.inner_rect.min, vec2(out.inner_rect.width(), out.inner_rect.height().min(out.content_size.y)));
+        *v = Rect::from_min_size(
+            out.inner_rect.min,
+            vec2(
+                out.inner_rect.width(),
+                out.inner_rect.height().min(out.content_size.y),
+            ),
+        );
     }
     if let Some(c) = nav.contents.get_mut(level) {
         *c = out.content_size.y;
@@ -464,7 +599,9 @@ pub fn level(ui: &mut Ui, depth: usize, nav: &mut Nav, rows: impl FnOnce(&mut Ui
         nav.step(level, true);
         ctx.request_repaint();
     }
-    let (Some(up), Some(down)) = (up, down) else { return };
+    let (Some(up), Some(down)) = (up, down) else {
+        return;
+    };
     let t = crate::theme::Tokens::get(&ctx);
     let x = ui.min_rect().x_range();
     let max = (out.content_size.y - out.inner_rect.height()).max(0.0);
@@ -476,14 +613,34 @@ pub fn level(ui: &mut Ui, depth: usize, nav: &mut Nav, rows: impl FnOnce(&mut Ui
         let c = strip.center();
         let (h, w) = (4.5, 6.0);
         let tri = if dir < 0.0 {
-            vec![pos2(c.x - w, c.y + h * 0.5), pos2(c.x + w, c.y + h * 0.5), pos2(c.x, c.y - h * 0.5)]
+            vec![
+                pos2(c.x - w, c.y + h * 0.5),
+                pos2(c.x + w, c.y + h * 0.5),
+                pos2(c.x, c.y - h * 0.5),
+            ]
         } else {
-            vec![pos2(c.x - w, c.y - h * 0.5), pos2(c.x + w, c.y - h * 0.5), pos2(c.x, c.y + h * 0.5)]
+            vec![
+                pos2(c.x - w, c.y - h * 0.5),
+                pos2(c.x + w, c.y - h * 0.5),
+                pos2(c.x, c.y + h * 0.5),
+            ]
         };
-        ui.painter().add(egui::Shape::convex_polygon(tri, if live { t.text } else { t.text_faint.gamma_multiply(0.5) }, egui::Stroke::NONE));
+        ui.painter().add(egui::Shape::convex_polygon(
+            tri,
+            if live {
+                t.text
+            } else {
+                t.text_faint.gamma_multiply(0.5)
+            },
+            egui::Stroke::NONE,
+        ));
         let id = key.with(dir < 0.0);
         let r = ui.interact(strip, id, Sense::hover());
-        let label = if dir < 0.0 { "Scroll menu up" } else { "Scroll menu down" };
+        let label = if dir < 0.0 {
+            "Scroll menu up"
+        } else {
+            "Scroll menu down"
+        };
         r.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, live, tl!(label)));
         if live && pointer_on(ui, strip) {
             target = (offset + dir * SPEED * dt.max(1.0 / 120.0)).clamp(0.0, max);

@@ -1,5 +1,5 @@
 use crate::{
-    generics::impl_generic_info_methods, ty::impl_type_methods, Generics, Reflect, Type, TypePath,
+    Generics, Reflect, Type, TypePath, generics::impl_generic_info_methods, ty::impl_type_methods,
 };
 
 /// A container for compile-time info related to reflection-opaque types, including primitives.

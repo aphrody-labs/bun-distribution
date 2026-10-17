@@ -38,7 +38,8 @@ impl Layer {
             texture,
             crop: [0.0, 0.0, 1.0, 1.0],
             blending: BlendMode::Opaque,
-            layer_stack_mask: ruzu_core::hle::service::nvnflinger::hwc_layer::DEFAULT_LAYER_STACK_MASK,
+            layer_stack_mask:
+                ruzu_core::hle::service::nvnflinger::hwc_layer::DEFAULT_LAYER_STACK_MASK,
         }
     }
 }

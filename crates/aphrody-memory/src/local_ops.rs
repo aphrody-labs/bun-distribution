@@ -75,7 +75,12 @@ pub async fn recall(
     require(agent_id, "agent id")?;
     let wanted = words(query);
     let records = provider
-        .search(MemoryQuery { agent_id: agent_id.to_owned(), q: None, tags, limit: None })
+        .search(MemoryQuery {
+            agent_id: agent_id.to_owned(),
+            q: None,
+            tags,
+            limit: None,
+        })
         .await?;
     if wanted.is_empty() {
         return Ok(Vec::new());
@@ -91,9 +96,11 @@ pub async fn recall(
         })
         .collect();
     scored.sort_by(|a, b| {
-        b.score
-            .total_cmp(&a.score)
-            .then(b.record.created_at_unix_ms.cmp(&a.record.created_at_unix_ms))
+        b.score.total_cmp(&a.score).then(
+            b.record
+                .created_at_unix_ms
+                .cmp(&a.record.created_at_unix_ms),
+        )
     });
     scored.truncate(limit.unwrap_or(DEFAULT_LIMIT) as usize);
     Ok(scored)
@@ -205,16 +212,36 @@ mod tests {
     #[tokio::test]
     async fn write_recall_list_delete_clear_round_trip() {
         let store = SqliteLocalProvider::open_in_memory().unwrap();
-        let goku = write(&store, "a", "Goku aime les nikuman", vec!["pref".into()], None, None)
+        let goku = write(
+            &store,
+            "a",
+            "Goku aime les nikuman",
+            vec!["pref".into()],
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        write(
+            &store,
+            "a",
+            "L'utilisateur lit le databook Daizenshuu 7",
+            vec![],
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+        write(&store, "b", "Goku est un Saiyan", vec![], None, None)
             .await
             .unwrap();
-        write(&store, "a", "L'utilisateur lit le databook Daizenshuu 7", vec![], None, None)
+        write(&store, "a", "孫悟空のファン", vec![], None, None)
             .await
             .unwrap();
-        write(&store, "b", "Goku est un Saiyan", vec![], None, None).await.unwrap();
-        write(&store, "a", "孫悟空のファン", vec![], None, None).await.unwrap();
 
-        let hits = recall(&store, "a", "Que mange Goku ?", vec![], None).await.unwrap();
+        let hits = recall(&store, "a", "Que mange Goku ?", vec![], None)
+            .await
+            .unwrap();
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].record.id, goku);
         assert!(hits[0].score > 0.0);
@@ -223,9 +250,20 @@ mod tests {
         assert_eq!(ja.len(), 1);
         assert!((ja[0].score - 1.0).abs() < f32::EPSILON);
 
-        assert!(recall(&store, "a", "  ", vec![], None).await.unwrap().is_empty());
+        assert!(
+            recall(&store, "a", "  ", vec![], None)
+                .await
+                .unwrap()
+                .is_empty()
+        );
         assert_eq!(list(&store, "a", vec![], None).await.unwrap().len(), 3);
-        assert_eq!(list(&store, "a", vec!["pref".into()], None).await.unwrap().len(), 1);
+        assert_eq!(
+            list(&store, "a", vec!["pref".into()], None)
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
 
         assert!(!delete(&store, &goku, Some("b")).await.unwrap());
         assert!(delete(&store, &goku, Some("a")).await.unwrap());
@@ -239,7 +277,9 @@ mod tests {
     #[tokio::test]
     async fn writing_an_existing_id_replaces_it() {
         let store = SqliteLocalProvider::open_in_memory().unwrap();
-        let id = write(&store, "a", "first", vec![], None, None).await.unwrap();
+        let id = write(&store, "a", "first", vec![], None, None)
+            .await
+            .unwrap();
         let same = write(
             &store,
             "a",

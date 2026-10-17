@@ -10,7 +10,9 @@ use vectorcraft_doc::{Node, NodeKind, PressureProfile};
 use vectorcraft_geom::{Affine, BezPath, PathData, PathEl, Point, Rect, SubPath};
 
 use crate::track::{Rng, Track, seed_of, tracks};
-use crate::{ArtBrush, ArtScale, Direction, PatternBrush, PatternFit, Scatter, Variation, tolerance};
+use crate::{
+    ArtBrush, ArtScale, Direction, PatternBrush, PatternFit, Scatter, Variation, tolerance,
+};
 
 /// Longest mapped segment (points in document space).
 const MAX_SEG: f64 = 1.5;
@@ -20,7 +22,13 @@ const MAX_SUB: usize = 4000;
 /// Bend every path under `n` through `f`. Paths are flattened with `flat_tol` (art space) and
 /// segments subdivided so none is longer than `max_du` along x. Stroke widths scale by
 /// `width_scale`. Text, images and symbol instances can't bend and are dropped.
-pub(crate) fn warp_node(n: &Node, f: &dyn Fn(Point) -> Point, flat_tol: f64, max_du: f64, width_scale: f64) -> Option<Node> {
+pub(crate) fn warp_node(
+    n: &Node,
+    f: &dyn Fn(Point) -> Point,
+    flat_tol: f64,
+    max_du: f64,
+    width_scale: f64,
+) -> Option<Node> {
     let mut out = n.clone();
     out.appearance.scale_strokes(width_scale);
     match &mut out.kind {
@@ -31,8 +39,14 @@ pub(crate) fn warp_node(n: &Node, f: &dyn Fn(Point) -> Point, flat_tol: f64, max
                 return None;
             }
         }
-        NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } | NodeKind::Compound { children, .. } => {
-            let kids: Vec<Arc<Node>> = children.iter().filter_map(|c| warp_node(c, f, flat_tol, max_du, width_scale)).map(Arc::new).collect();
+        NodeKind::Group { children, .. }
+        | NodeKind::Layer { children, .. }
+        | NodeKind::Compound { children, .. } => {
+            let kids: Vec<Arc<Node>> = children
+                .iter()
+                .filter_map(|c| warp_node(c, f, flat_tol, max_du, width_scale))
+                .map(Arc::new)
+                .collect();
             if kids.is_empty() {
                 return None;
             }
@@ -92,7 +106,12 @@ fn warp_path(p: &PathData, f: &dyn Fn(Point) -> Point, flat_tol: f64, max_du: f6
 }
 
 /// Art turned so it runs left → right, flipped as requested; returns it with its bounds.
-fn oriented(art: &Node, dir: Direction, flip_along: bool, flip_across: bool) -> Option<(Node, Rect)> {
+fn oriented(
+    art: &Node,
+    dir: Direction,
+    flip_along: bool,
+    flip_across: bool,
+) -> Option<(Node, Rect)> {
     let mut a = art.clone();
     let rot = match dir {
         Direction::LeftToRight => Affine::IDENTITY,
@@ -100,7 +119,10 @@ fn oriented(art: &Node, dir: Direction, flip_along: bool, flip_across: bool) -> 
         Direction::TopToBottom => Affine::rotate(-std::f64::consts::FRAC_PI_2),
         Direction::BottomToTop => Affine::rotate(std::f64::consts::FRAC_PI_2),
     };
-    let flip = Affine::scale_non_uniform(if flip_along { -1.0 } else { 1.0 }, if flip_across { -1.0 } else { 1.0 });
+    let flip = Affine::scale_non_uniform(
+        if flip_along { -1.0 } else { 1.0 },
+        if flip_across { -1.0 } else { 1.0 },
+    );
     let m = flip * rot;
     if m != Affine::IDENTITY {
         a.transform(m, false);
@@ -119,7 +141,10 @@ pub(crate) struct AlongMap {
 
 impl AlongMap {
     fn linear(width: f64, s0: f64, s1: f64) -> Self {
-        AlongMap { xs: [0.0, 0.0, width, width], ss: [s0, s0, s1, s1] }
+        AlongMap {
+            xs: [0.0, 0.0, width, width],
+            ss: [s0, s0, s1, s1],
+        }
     }
     pub fn at(&self, x: f64) -> f64 {
         let (xs, ss) = (&self.xs, &self.ss);
@@ -129,14 +154,22 @@ impl AlongMap {
         for i in 0..3 {
             if x <= xs[i + 1] {
                 let w = xs[i + 1] - xs[i];
-                return if w <= 1e-12 { ss[i + 1] } else { ss[i] + (x - xs[i]) / w * (ss[i + 1] - ss[i]) };
+                return if w <= 1e-12 {
+                    ss[i + 1]
+                } else {
+                    ss[i] + (x - xs[i]) / w * (ss[i + 1] - ss[i])
+                };
             }
         }
         ss[3] + (x - xs[3]) * self.slope(2)
     }
     fn slope(&self, i: usize) -> f64 {
         let w = self.xs[i + 1] - self.xs[i];
-        if w <= 1e-12 { 1.0 } else { (self.ss[i + 1] - self.ss[i]) / w }
+        if w <= 1e-12 {
+            1.0
+        } else {
+            (self.ss[i + 1] - self.ss[i]) / w
+        }
     }
     /// Largest along-scale (arc length per art unit) of the pieces.
     fn max_scale(&self) -> f64 {
@@ -155,7 +188,9 @@ fn bend(t: &Track, art: &Node, b: Rect, along: AlongMap, cross: f64) -> Option<N
 }
 
 pub(crate) fn art(a: &ArtBrush, bp: &BezPath, weight: f64) -> Vec<Node> {
-    let Some((art, b)) = oriented(&a.art, a.direction, a.flip_along, a.flip_across) else { return vec![] };
+    let Some((art, b)) = oriented(&a.art, a.direction, a.flip_along, a.flip_across) else {
+        return vec![];
+    };
     let cross = weight * a.width / 100.0;
     let mut out = vec![];
     for t in tracks(bp, 0.05) {
@@ -177,7 +212,13 @@ pub(crate) fn art(a: &ArtBrush, bp: &BezPath, weight: f64) -> Vec<Node> {
                 if fixed >= l || g1 - g0 < 1e-9 {
                     (AlongMap::linear(w, 0.0, l), cross)
                 } else {
-                    (AlongMap { xs: [0.0, g0, g1, w], ss: [0.0, g0 * cross, l - (w - g1) * cross, l] }, cross)
+                    (
+                        AlongMap {
+                            xs: [0.0, g0, g1, w],
+                            ss: [0.0, g0 * cross, l - (w - g1) * cross, l],
+                        },
+                        cross,
+                    )
                 }
             }
         };
@@ -200,8 +241,16 @@ fn vary(rng: &mut Rng, (a, b): (f64, f64), mode: Variation, pressure: f64) -> f6
     }
 }
 
-pub(crate) fn scatter(sc: &Scatter, bp: &BezPath, weight: f64, pressure: Option<&PressureProfile>, name: &str) -> Vec<Node> {
-    let Some(b) = sc.art.geometric_bounds() else { return vec![] };
+pub(crate) fn scatter(
+    sc: &Scatter,
+    bp: &BezPath,
+    weight: f64,
+    pressure: Option<&PressureProfile>,
+    name: &str,
+) -> Vec<Node> {
+    let Some(b) = sc.art.geometric_bounds() else {
+        return vec![];
+    };
     let (aw, ah) = (b.width().max(1e-3), b.height().max(1e-3));
     let mut rng = Rng::new(seed_of(bp, name));
     let [size_mode, spacing_mode, scatter_mode, rotation_mode] = sc.modes();
@@ -209,7 +258,11 @@ pub(crate) fn scatter(sc: &Scatter, bp: &BezPath, weight: f64, pressure: Option<
     for t in tracks(bp, 0.05) {
         let l = t.len();
         // The pen pressure at arc length `at` (half way without a recorded one).
-        let pressure_at = |at: f64| pressure.map_or(PressureProfile::MID, |p| p.at(if l > 1e-9 { at / l } else { 0.0 }));
+        let pressure_at = |at: f64| {
+            pressure.map_or(PressureProfile::MID, |p| {
+                p.at(if l > 1e-9 { at / l } else { 0.0 })
+            })
+        };
         let mut s: Option<f64> = None;
         let mut guard = 0;
         loop {
@@ -236,8 +289,15 @@ pub(crate) fn scatter(sc: &Scatter, bp: &BezPath, weight: f64, pressure: Option<
             let (p, tg) = t.frame(pos);
             let place = p + crate::track::normal(tg) * off;
             // Page rotation is counter-clockwise on screen (y-down), like the calligraphic angle.
-            let base = if sc.rotation_relative_to_path { tg.y.atan2(tg.x) } else { 0.0 };
-            let xf = Affine::translate(place.to_vec2()) * Affine::rotate(base - rot) * Affine::scale(size) * Affine::translate(-b.center().to_vec2());
+            let base = if sc.rotation_relative_to_path {
+                tg.y.atan2(tg.x)
+            } else {
+                0.0
+            };
+            let xf = Affine::translate(place.to_vec2())
+                * Affine::rotate(base - rot)
+                * Affine::scale(size)
+                * Affine::translate(-b.center().to_vec2());
             let mut n = sc.art.clone();
             n.transform(xf, true);
             out.push(n);
@@ -248,12 +308,20 @@ pub(crate) fn scatter(sc: &Scatter, bp: &BezPath, weight: f64, pressure: Option<
 
 /// A tile placed on [s0, s1] of the track (stretched along, `cross` across).
 fn tile_on(t: &Track, tile: &(Node, Rect), s0: f64, s1: f64, cross: f64) -> Option<Node> {
-    bend(t, &tile.0, tile.1, AlongMap::linear(tile.1.width(), s0, s1), cross)
+    bend(
+        t,
+        &tile.0,
+        tile.1,
+        AlongMap::linear(tile.1.width(), s0, s1),
+        cross,
+    )
 }
 
 pub(crate) fn pattern(pb: &PatternBrush, bp: &BezPath, weight: f64) -> Vec<Node> {
     let orient = |n: &Node| oriented(n, Direction::LeftToRight, pb.flip_along, pb.flip_across);
-    let Some(side) = orient(&pb.side) else { return vec![] };
+    let Some(side) = orient(&pb.side) else {
+        return vec![];
+    };
     let k = weight * pb.scale.max(1.0) / 100.0;
     let outer = pb.outer_corner.as_ref().and_then(orient);
     let inner = pb.inner_corner.as_ref().and_then(orient);
@@ -273,11 +341,19 @@ pub(crate) fn pattern(pb: &PatternBrush, bp: &BezPath, weight: f64) -> Vec<Node>
         for &(i, _) in &corners {
             let (a, b) = t.in_out(i);
             // Turning towards the left normal puts the tile's +y side on the inside.
-            let tile = if a.cross(b) > 0.0 { inner.as_ref().or(outer.as_ref()) } else { outer.as_ref().or(inner.as_ref()) };
+            let tile = if a.cross(b) > 0.0 {
+                inner.as_ref().or(outer.as_ref())
+            } else {
+                outer.as_ref().or(inner.as_ref())
+            };
             let Some((art, bb)) = tile else { continue };
             corner_half = corner_half.max(bb.width() * k / 2.0);
             let bis = a + b;
-            let bis = if bis.hypot() < 1e-9 { a } else { bis / bis.hypot() };
+            let bis = if bis.hypot() < 1e-9 {
+                a
+            } else {
+                bis / bis.hypot()
+            };
             let xf = Affine::translate(t.verts[i].to_vec2())
                 * Affine::rotate(bis.y.atan2(bis.x))
                 * Affine::scale(k)
@@ -293,13 +369,19 @@ pub(crate) fn pattern(pb: &PatternBrush, bp: &BezPath, weight: f64) -> Vec<Node>
         } else if t.closed {
             let first = bounds[0];
             bounds.push(first + l);
-            bounds.windows(2).map(|w| (w[0], w[1], true, true)).collect()
+            bounds
+                .windows(2)
+                .map(|w| (w[0], w[1], true, true))
+                .collect()
         } else {
             let mut v = vec![0.0];
             v.extend(bounds);
             v.push(l);
             let n = v.len();
-            v.windows(2).enumerate().map(|(i, w)| (w[0], w[1], i > 0, i + 2 < n)).collect()
+            v.windows(2)
+                .enumerate()
+                .map(|(i, w)| (w[0], w[1], i > 0, i + 2 < n))
+                .collect()
         };
         let nruns = runs.len();
         let corner_tiles = inner.is_some() || outer.is_some();
@@ -347,7 +429,11 @@ pub(crate) fn pattern(pb: &PatternBrush, bp: &BezPath, weight: f64) -> Vec<Node>
                 }
                 PatternFit::AddSpace => {
                     let n = ((avail + gap) / unit).floor().max(1.0) as usize;
-                    let g = if n > 1 { (avail - n as f64 * tw) / (n as f64 - 1.0) } else { 0.0 };
+                    let g = if n > 1 {
+                        (avail - n as f64 * tw) / (n as f64 - 1.0)
+                    } else {
+                        0.0
+                    };
                     let lead = if n == 1 { (avail - tw) / 2.0 } else { 0.0 };
                     for i in 0..n.min(20000) {
                         let s0 = a + lead + i as f64 * (tw + g.max(0.0));

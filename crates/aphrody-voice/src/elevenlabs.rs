@@ -55,7 +55,11 @@ impl ElevenLabsProvider {
     pub fn with_base_url(api_key: impl Into<String>, base_url: impl Into<String>) -> Self {
         let raw = base_url.into();
         let base_url = raw.trim_end_matches('/').to_owned();
-        Self { api_key: api_key.into(), base_url, client: reqwest::Client::new() }
+        Self {
+            api_key: api_key.into(),
+            base_url,
+            client: reqwest::Client::new(),
+        }
     }
 }
 
@@ -97,7 +101,11 @@ impl<'a> SynthRequest<'a> {
             use_speaker_boost: opts.use_speaker_boost,
         });
 
-        Self { text, model_id: opts.model_id.as_deref(), voice_settings }
+        Self {
+            text,
+            model_id: opts.model_id.as_deref(),
+            voice_settings,
+        }
     }
 }
 
@@ -113,7 +121,10 @@ pub fn parse_voices_payload(payload: &Value) -> Result<Vec<VoiceInfo>, VoiceErro
         None => return Ok(Vec::new()),
     };
 
-    let voices = raw_voices.iter().filter_map(normalize_voice).collect::<Vec<_>>();
+    let voices = raw_voices
+        .iter()
+        .filter_map(normalize_voice)
+        .collect::<Vec<_>>();
 
     Ok(voices)
 }
@@ -126,7 +137,10 @@ fn normalize_voice(value: &Value) -> Option<VoiceInfo> {
 
     let id = read_string(obj.get("voice_id")?)?;
 
-    let name = obj.get("name").and_then(read_string).unwrap_or_else(|| id.clone());
+    let name = obj
+        .get("name")
+        .and_then(read_string)
+        .unwrap_or_else(|| id.clone());
 
     let preview_url = obj.get("preview_url").and_then(read_string);
 
@@ -139,13 +153,23 @@ fn normalize_voice(value: &Value) -> Option<VoiceInfo> {
     // We also accept it as a direct top-level field for forward-compat.
     let language = obj.get("language").and_then(read_string);
 
-    Some(VoiceInfo { id, name, language, gender, preview_url })
+    Some(VoiceInfo {
+        id,
+        name,
+        language,
+        gender,
+        preview_url,
+    })
 }
 
 /// Return `Some(trimmed)` only when `value` is a non-empty string.
 fn read_string(value: &Value) -> Option<String> {
     let s = value.as_str()?.trim();
-    if s.is_empty() { None } else { Some(s.to_owned()) }
+    if s.is_empty() {
+        None
+    } else {
+        Some(s.to_owned())
+    }
 }
 
 // ── Helper: check HTTP status and extract error body ─────────────────────────
@@ -156,7 +180,10 @@ async fn check_status(resp: reqwest::Response) -> Result<reqwest::Response, Voic
         return Ok(resp);
     }
     let code = status.as_u16();
-    let body = resp.text().await.unwrap_or_else(|_| String::from("<unreadable body>"));
+    let body = resp
+        .text()
+        .await
+        .unwrap_or_else(|_| String::from("<unreadable body>"));
     Err(VoiceError::Api { status: code, body })
 }
 

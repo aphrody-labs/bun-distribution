@@ -1,14 +1,22 @@
 #[inline(always)]
 pub const fn read_be_subword(word: u32, sub_offset: u32, size: u32) -> u32 {
     let shift = (4 - sub_offset - size) * 8;
-    let mask = if size >= 4 { !0u32 } else { (1u32 << (size * 8)) - 1 };
+    let mask = if size >= 4 {
+        !0u32
+    } else {
+        (1u32 << (size * 8)) - 1
+    };
     (word >> shift) & mask
 }
 
 #[inline(always)]
 pub const fn write_be_subword(current: u32, sub_offset: u32, size: u32, val: u32) -> u32 {
     let shift = (4 - sub_offset - size) * 8;
-    let mask = if size >= 4 { !0u32 } else { (1u32 << (size * 8)) - 1 };
+    let mask = if size >= 4 {
+        !0u32
+    } else {
+        (1u32 << (size * 8)) - 1
+    };
     (current & !(mask << shift)) | ((val & mask) << shift)
 }
 

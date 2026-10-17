@@ -123,13 +123,21 @@ impl Unit {
         // Choose a major spacing (base × 1, 2, 5, 10…) at least ~60 px apart, or base / 2^n when zoomed in.
         let mut major = base;
         while major * zoom < 50.0 {
-            major *= if (major / base).log10().fract().abs() < 1e-9 { 2.0 } else { 2.5 };
+            major *= if (major / base).log10().fract().abs() < 1e-9 {
+                2.0
+            } else {
+                2.5
+            };
         }
         while major * zoom > 160.0 && major > base / 64.0 {
             major /= 2.0;
         }
         let px = major * zoom;
-        let sub = subs.iter().copied().find(|s| px / *s as f64 >= 6.0).unwrap_or(1);
+        let sub = subs
+            .iter()
+            .copied()
+            .find(|s| px / *s as f64 >= 6.0)
+            .unwrap_or(1);
         (major, sub)
     }
 }
@@ -146,9 +154,17 @@ pub fn parse_measure(input: &str, default: Unit) -> Result<f64, MeasureError> {
 }
 
 /// Like [`parse_measure`] but `%` is resolved against `percent_base` (points).
-pub fn parse_measure_rel(input: &str, default: Unit, percent_base: Option<f64>) -> Result<f64, MeasureError> {
+pub fn parse_measure_rel(
+    input: &str,
+    default: Unit,
+    percent_base: Option<f64>,
+) -> Result<f64, MeasureError> {
     let err = || MeasureError(input.to_string());
-    let s: String = input.chars().filter(|c| !c.is_whitespace()).collect::<String>().to_ascii_lowercase();
+    let s: String = input
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .to_ascii_lowercase();
     if s.is_empty() {
         return Err(err());
     }
@@ -174,7 +190,11 @@ pub fn parse_measure_rel(input: &str, default: Unit, percent_base: Option<f64>) 
     for (sign, term) in terms {
         total += sign * parse_product(&term, default, percent_base).ok_or_else(err)?;
     }
-    if total.is_finite() { Ok(total) } else { Err(err()) }
+    if total.is_finite() {
+        Ok(total)
+    } else {
+        Err(err())
+    }
 }
 
 /// `a*b/c`: the first factor carries the unit; later factors are plain numbers (or measurements,
@@ -184,7 +204,11 @@ fn parse_product(term: &str, default: Unit, percent_base: Option<f64>) -> Option
     let mut op = '*';
     let mut tok = String::new();
     let flush = |tok: &str, val: Option<f64>, op: char| -> Option<f64> {
-        let x = if val.is_none() { parse_single(tok, default, percent_base)? } else { parse_number_or_measure(tok, default)? };
+        let x = if val.is_none() {
+            parse_single(tok, default, percent_base)?
+        } else {
+            parse_number_or_measure(tok, default)?
+        };
         Some(match (val, op) {
             (None, _) => x,
             (Some(v), '*') => v * x,
@@ -227,13 +251,23 @@ fn parse_single(tok: &str, default: Unit, percent_base: Option<f64>) -> Option<f
             let num_ok = |s: &str| s.is_empty() || s.parse::<f64>().is_ok();
             // Exclude `pt`, `px`, `cm`.
             if num_ok(a) && num_ok(b) && !(a.is_empty() && b.is_empty()) {
-                let a = if a.is_empty() { 0.0 } else { a.parse::<f64>().ok()? };
-                let b = if b.is_empty() { 0.0 } else { b.parse::<f64>().ok()? };
+                let a = if a.is_empty() {
+                    0.0
+                } else {
+                    a.parse::<f64>().ok()?
+                };
+                let b = if b.is_empty() {
+                    0.0
+                } else {
+                    b.parse::<f64>().ok()?
+                };
                 return Some(a * unit_pt + b * sub_pt);
             }
         }
     }
-    let split = tok.find(|c: char| !(c.is_ascii_digit() || c == '.')).unwrap_or(tok.len());
+    let split = tok
+        .find(|c: char| !(c.is_ascii_digit() || c == '.'))
+        .unwrap_or(tok.len());
     let (num, suffix) = tok.split_at(split);
     let n: f64 = num.parse().ok()?;
     let unit = match suffix {
@@ -260,12 +294,20 @@ pub fn format_measure(pt: f64, unit: Unit) -> String {
 pub fn format_measure_prec(pt: f64, unit: Unit, decimals: usize) -> String {
     let trim = |v: f64| {
         let s = format!("{v:.decimals$}");
-        let s = if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s };
+        let s = if s.contains('.') {
+            s.trim_end_matches('0').trim_end_matches('.').to_string()
+        } else {
+            s
+        };
         if s == "-0" { "0".to_string() } else { s }
     };
     match unit {
         Unit::Picas | Unit::Ciceros => {
-            let (big, small) = if unit == Unit::Picas { (PT_PER_PICA, 1.0) } else { (PT_PER_CICERO, PT_PER_DIDOT) };
+            let (big, small) = if unit == Unit::Picas {
+                (PT_PER_PICA, 1.0)
+            } else {
+                (PT_PER_CICERO, PT_PER_DIDOT)
+            };
             let neg = pt < 0.0;
             let a = pt.abs();
             let mut whole = (a / big).floor();
@@ -275,7 +317,13 @@ pub fn format_measure_prec(pt: f64, unit: Unit, decimals: usize) -> String {
                 rest = 0.0;
             }
             let sep = if unit == Unit::Picas { 'p' } else { 'c' };
-            format!("{}{}{}{}", if neg { "-" } else { "" }, whole as i64, sep, trim(rest))
+            format!(
+                "{}{}{}{}",
+                if neg { "-" } else { "" },
+                whole as i64,
+                sep,
+                trim(rest)
+            )
         }
         _ => format!("{}{}", trim(unit.from_pt(pt)), unit.suffix()),
     }
@@ -301,7 +349,10 @@ mod tests {
         assert!(close(p("2.54 cm"), 72.0));
         assert!(close(p("14ag"), 72.0));
         assert!(close(p("4Q"), PT_PER_MM));
-        assert!(close(parse_measure("3", Unit::Millimeters).unwrap(), 3.0 * PT_PER_MM));
+        assert!(close(
+            parse_measure("3", Unit::Millimeters).unwrap(),
+            3.0 * PT_PER_MM
+        ));
     }
 
     #[test]
@@ -323,7 +374,10 @@ mod tests {
         assert!(close(p("1p+6pt"), 18.0));
         assert!(close(p("-6"), -6.0));
         assert!(close(p("2*3+4"), 10.0));
-        assert!(close(parse_measure_rel("50%", Unit::Points, Some(40.0)).unwrap(), 20.0));
+        assert!(close(
+            parse_measure_rel("50%", Unit::Points, Some(40.0)).unwrap(),
+            20.0
+        ));
     }
 
     #[test]

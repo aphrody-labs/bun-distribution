@@ -66,13 +66,17 @@ pub struct ActionData {
 
 impl Default for ActionData {
     fn default() -> Self {
-        Self { raw: [0u8; ACTION_DATA_SIZE] }
+        Self {
+            raw: [0u8; ACTION_DATA_SIZE],
+        }
     }
 }
 
 impl core::fmt::Debug for ActionData {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("ActionData").field("raw[0..4]", &&self.raw[..4]).finish()
+        f.debug_struct("ActionData")
+            .field("raw[0..4]", &&self.raw[..4])
+            .finish()
     }
 }
 
@@ -197,7 +201,10 @@ impl ActionTransform {
     /// à `(1.0, 1.0)` = `0x3F800000` en IEEE 754 (L171-176).
     #[must_use]
     pub fn init_transform() -> Self {
-        Self { positions: [[0.0f32, 0.0f32]; 3], scales: [[1.0f32, 1.0f32]; 6] }
+        Self {
+            positions: [[0.0f32, 0.0f32]; 3],
+            scales: [[1.0f32, 1.0f32]; 6],
+        }
     }
 
     /// Vérifie que toutes les scales sont à l'identité (1.0).
@@ -205,7 +212,9 @@ impl ActionTransform {
     pub fn is_identity(&self) -> bool {
         // Comparaison exacte par bits IEEE 754 (1.0f = 0x3F800000) — on veut
         // l'égalité stricte aux valeurs initialisées, pas une tolérance.
-        self.scales.iter().all(|&[a, b]| a.to_bits() == 0x3F80_0000 && b.to_bits() == 0x3F80_0000)
+        self.scales
+            .iter()
+            .all(|&[a, b]| a.to_bits() == 0x3F80_0000 && b.to_bits() == 0x3F80_0000)
     }
 }
 

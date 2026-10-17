@@ -1,9 +1,9 @@
 use crate::{
-    list::{List, ListInfo, ListIter},
-    utility::GenericTypeInfoCell,
     ApplyError, FromReflect, Generics, GetTypeRegistration, MaybeTyped, PartialReflect, Reflect,
     ReflectFromPtr, ReflectKind, ReflectMut, ReflectOwned, ReflectRef, TypeInfo, TypeParamInfo,
     TypePath, TypeRegistration, Typed,
+    list::{List, ListInfo, ListIter},
+    utility::GenericTypeInfoCell,
 };
 use alloc::{boxed::Box, vec::Vec};
 use bevy_reflect::ReflectCloneError;

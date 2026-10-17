@@ -33,7 +33,7 @@ fn directory_state(path: &Path) -> Result<DirectoryState, String> {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(DirectoryState::Missing);
-        },
+        }
         Err(error) => return Err(format!("Cannot inspect {}: {error}", path.display())),
     };
     let mut has_data = false;
@@ -55,7 +55,9 @@ fn directory_state(path: &Path) -> Result<DirectoryState, String> {
                     .map_err(|error| format!("Cannot inspect {}: {error}", libraries.display()))?;
                 let library_path = library.path();
                 if library_path.is_dir()
-                    && library_path.extension().is_some_and(|extension| extension == "sdlibrary")
+                    && library_path
+                        .extension()
+                        .is_some_and(|extension| extension == "sdlibrary")
                     && library_path.join("library.json").is_file()
                 {
                     return Ok(DirectoryState::Library);
@@ -63,7 +65,11 @@ fn directory_state(path: &Path) -> Result<DirectoryState, String> {
             }
         }
     }
-    Ok(if has_data { DirectoryState::Data } else { DirectoryState::Empty })
+    Ok(if has_data {
+        DirectoryState::Data
+    } else {
+        DirectoryState::Empty
+    })
 }
 
 /// Resolve a data directory without creating or moving data. When both locations hold data,
@@ -138,10 +144,16 @@ mod tests {
     fn legacy_spacedrive_directory_is_kept_when_it_is_the_only_one() {
         let home = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(home.path().join(".spacedrive")).unwrap();
-        assert_eq!(resolve_data_dir(None, Some(home.path())), Ok(home.path().join(".spacedrive")));
+        assert_eq!(
+            resolve_data_dir(None, Some(home.path())),
+            Ok(home.path().join(".spacedrive"))
+        );
         // An empty Aphrody directory must not hide the existing data.
         std::fs::create_dir_all(home.path().join(".aphrody").join("drive")).unwrap();
-        assert_eq!(resolve_data_dir(None, Some(home.path())), Ok(home.path().join(".spacedrive")));
+        assert_eq!(
+            resolve_data_dir(None, Some(home.path())),
+            Ok(home.path().join(".spacedrive"))
+        );
     }
 
     #[test]
@@ -156,7 +168,10 @@ mod tests {
         std::fs::create_dir_all(&library).unwrap();
         std::fs::write(library.join("library.json"), "{}").unwrap();
         std::fs::create_dir_all(home.path().join(".aphrody/drive")).unwrap();
-        assert_eq!(resolve_data_dir(None, Some(home.path())), Ok(home.path().join(".spacedrive")));
+        assert_eq!(
+            resolve_data_dir(None, Some(home.path())),
+            Ok(home.path().join(".spacedrive"))
+        );
     }
 
     #[test]
@@ -171,7 +186,10 @@ mod tests {
         assert!(error.contains(DATA_DIR_ENV));
         assert!(error.contains(".spacedrive"));
         assert!(error.contains(".aphrody"));
-        assert_eq!(resolve_data_dir(Some(current.clone()), Some(home.path())), Ok(current));
+        assert_eq!(
+            resolve_data_dir(Some(current.clone()), Some(home.path())),
+            Ok(current)
+        );
     }
 
     #[test]
@@ -187,7 +205,10 @@ mod tests {
     #[test]
     fn two_library_directories_are_ambiguous() {
         let home = tempfile::tempdir().unwrap();
-        for base in [home.path().join(".spacedrive"), home.path().join(".aphrody/drive")] {
+        for base in [
+            home.path().join(".spacedrive"),
+            home.path().join(".aphrody/drive"),
+        ] {
             let library = base.join("libraries/Original.sdlibrary");
             std::fs::create_dir_all(&library).unwrap();
             std::fs::write(library.join("library.json"), "{}").unwrap();

@@ -4,15 +4,34 @@ use super::*;
 use crate::build::NewDocument;
 
 fn doc() -> Document {
-    Document::new(&NewDocument { pages: 2, ..Default::default() })
+    Document::new(&NewDocument {
+        pages: 2,
+        ..Default::default()
+    })
 }
 
 #[test]
 fn threading_moves_frames_and_text() {
     let mut d = doc();
     let lid = d.default_layer();
-    let (a, sa) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 100.0, 100.0), lid, "first", ParaFormat::default()).unwrap();
-    let (b, sb) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(110.0, 10.0, 200.0, 100.0), lid, "second", ParaFormat::default()).unwrap();
+    let (a, sa) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(10.0, 10.0, 100.0, 100.0),
+            lid,
+            "first",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    let (b, sb) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(110.0, 10.0, 200.0, 100.0),
+            lid,
+            "second",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.thread(a, b).unwrap();
     d.check().unwrap();
     assert!(d.story(sb).is_none());
@@ -31,9 +50,22 @@ fn threading_moves_frames_and_text() {
 fn thread_to_empty_frame_converts_it() {
     let mut d = doc();
     let lid = d.default_layer();
-    let (a, sa) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 100.0, 100.0), lid, "x", ParaFormat::default()).unwrap();
+    let (a, sa) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(10.0, 10.0, 100.0, 100.0),
+            lid,
+            "x",
+            ParaFormat::default(),
+        )
+        .unwrap();
     let id = ItemId(d.alloc());
-    let it = Item::new(id, lid, Shape::Rectangle, designcraft_geom::shapes::rectangle(Rect::new(0.0, 200.0, 50.0, 300.0)));
+    let it = Item::new(
+        id,
+        lid,
+        Shape::Rectangle,
+        designcraft_geom::shapes::rectangle(Rect::new(0.0, 200.0, 50.0, 300.0)),
+    );
     d.insert_item(SpreadRef::Doc(0), it, None).unwrap();
     d.thread(a, id).unwrap();
     assert!(d.item(id).unwrap().is_text_frame());
@@ -48,19 +80,33 @@ fn frames_keep_their_story_direction_through_threading() {
     let lid = d.default_layer();
     let r = |x: f64| Rect::new(x, 10.0, x + 50.0, 100.0);
     let vertical = |d: &Document, f: ItemId| d.item(f).is_some_and(|i| d.frame_vertical(i));
-    let (a, sa) = d.add_text_frame(SpreadRef::Doc(0), r(0.0), lid, "縦", ParaFormat::default()).unwrap();
-    let (b, _) = d.add_text_frame(SpreadRef::Doc(0), r(60.0), lid, "", ParaFormat::default()).unwrap();
+    let (a, sa) = d
+        .add_text_frame(SpreadRef::Doc(0), r(0.0), lid, "縦", ParaFormat::default())
+        .unwrap();
+    let (b, _) = d
+        .add_text_frame(SpreadRef::Doc(0), r(60.0), lid, "", ParaFormat::default())
+        .unwrap();
     d.story_mut(sa).unwrap().vertical = true;
     // A horizontal frame threaded onto a vertical story turns vertical.
     d.thread(a, b).unwrap();
     assert!(vertical(&d, a) && vertical(&d, b));
     // Threading the vertical story's second frame after a horizontal frame: it turns horizontal,
     // and the frame left before it stays vertical.
-    let (h, _) = d.add_text_frame(SpreadRef::Doc(0), r(120.0), lid, "横", ParaFormat::default()).unwrap();
+    let (h, _) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            r(120.0),
+            lid,
+            "横",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.thread(h, b).unwrap();
     assert!(vertical(&d, a) && !vertical(&d, b) && !vertical(&d, h));
     // Breaking a vertical thread leaves the frames after the break vertical.
-    let (c, _) = d.add_text_frame(SpreadRef::Doc(0), r(180.0), lid, "", ParaFormat::default()).unwrap();
+    let (c, _) = d
+        .add_text_frame(SpreadRef::Doc(0), r(180.0), lid, "", ParaFormat::default())
+        .unwrap();
     d.thread(a, c).unwrap();
     d.unthread_after(a).unwrap();
     assert!(vertical(&d, a) && vertical(&d, c));
@@ -74,23 +120,50 @@ fn frames_keep_their_column_direction_through_threading() {
     let mut d = doc();
     let lid = d.default_layer();
     let r = |x: f64| Rect::new(x, 10.0, x + 50.0, 100.0);
-    let direction = |d: &Document, f: ItemId| d.story(d.item(f).unwrap().text_frame().unwrap().story).unwrap().direction;
-    let (a, sa) = d.add_text_frame(SpreadRef::Doc(0), r(0.0), lid, "نص", ParaFormat::default()).unwrap();
-    let (b, _) = d.add_text_frame(SpreadRef::Doc(0), r(60.0), lid, "", ParaFormat::default()).unwrap();
+    let direction = |d: &Document, f: ItemId| {
+        d.story(d.item(f).unwrap().text_frame().unwrap().story)
+            .unwrap()
+            .direction
+    };
+    let (a, sa) = d
+        .add_text_frame(SpreadRef::Doc(0), r(0.0), lid, "نص", ParaFormat::default())
+        .unwrap();
+    let (b, _) = d
+        .add_text_frame(SpreadRef::Doc(0), r(60.0), lid, "", ParaFormat::default())
+        .unwrap();
     d.story_mut(sa).unwrap().direction = RightToLeft;
     d.thread(a, b).unwrap();
-    assert_eq!((direction(&d, a), direction(&d, b)), (RightToLeft, RightToLeft));
+    assert_eq!(
+        (direction(&d, a), direction(&d, b)),
+        (RightToLeft, RightToLeft)
+    );
     // Threading the right-to-left story's second frame after a left-to-right frame: the frame
     // left before it stays right to left.
-    let (h, _) = d.add_text_frame(SpreadRef::Doc(0), r(120.0), lid, "abc", ParaFormat::default()).unwrap();
+    let (h, _) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            r(120.0),
+            lid,
+            "abc",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.thread(h, b).unwrap();
-    assert_eq!((direction(&d, a), direction(&d, b), direction(&d, h)), (RightToLeft, LeftToRight, LeftToRight));
+    assert_eq!(
+        (direction(&d, a), direction(&d, b), direction(&d, h)),
+        (RightToLeft, LeftToRight, LeftToRight)
+    );
     // Breaking a right-to-left thread leaves the frames after the break right to left.
-    let (c, _) = d.add_text_frame(SpreadRef::Doc(0), r(180.0), lid, "", ParaFormat::default()).unwrap();
+    let (c, _) = d
+        .add_text_frame(SpreadRef::Doc(0), r(180.0), lid, "", ParaFormat::default())
+        .unwrap();
     d.thread(a, c).unwrap();
     d.unthread_after(a).unwrap();
     assert_ne!(d.item(c).unwrap().text_frame().unwrap().story, sa);
-    assert_eq!((direction(&d, a), direction(&d, c)), (RightToLeft, RightToLeft));
+    assert_eq!(
+        (direction(&d, a), direction(&d, c)),
+        (RightToLeft, RightToLeft)
+    );
     d.check().unwrap();
 }
 
@@ -98,7 +171,15 @@ fn frames_keep_their_column_direction_through_threading() {
 fn removing_last_frame_deletes_story() {
     let mut d = doc();
     let lid = d.default_layer();
-    let (a, sa) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 100.0, 100.0), lid, "x", ParaFormat::default()).unwrap();
+    let (a, sa) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(10.0, 10.0, 100.0, 100.0),
+            lid,
+            "x",
+            ParaFormat::default(),
+        )
+        .unwrap();
     d.remove_item(a).unwrap();
     assert!(d.story(sa).is_none());
     d.check().unwrap();
@@ -108,16 +189,36 @@ fn removing_last_frame_deletes_story() {
 fn hit_testing_respects_layers() {
     let mut d = doc();
     let lid = d.default_layer();
-    let (a, _) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 100.0, 100.0), lid, "x", ParaFormat::default()).unwrap();
-    assert_eq!(d.hit_item(0, designcraft_geom::Point::new(50.0, 50.0), 2.0), Some(a));
-    assert_eq!(d.hit_item(0, designcraft_geom::Point::new(300.0, 300.0), 2.0), None);
+    let (a, _) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(10.0, 10.0, 100.0, 100.0),
+            lid,
+            "x",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        d.hit_item(0, designcraft_geom::Point::new(50.0, 50.0), 2.0),
+        Some(a)
+    );
+    assert_eq!(
+        d.hit_item(0, designcraft_geom::Point::new(300.0, 300.0), 2.0),
+        None
+    );
     d.layer_mut(lid).unwrap().locked = true;
-    assert_eq!(d.hit_item(0, designcraft_geom::Point::new(50.0, 50.0), 2.0), None);
+    assert_eq!(
+        d.hit_item(0, designcraft_geom::Point::new(50.0, 50.0), 2.0),
+        None
+    );
 }
 
 #[test]
 fn page_names_follow_sections() {
-    let mut d = Document::new(&NewDocument { pages: 6, ..Default::default() });
+    let mut d = Document::new(&NewDocument {
+        pages: 6,
+        ..Default::default()
+    });
     assert_eq!(d.page_name(0), "1");
     d.sections.push(Section {
         start: 2,
@@ -146,7 +247,14 @@ fn page_names_follow_sections() {
 fn document_serde_roundtrip() {
     let mut d = doc();
     let lid = d.default_layer();
-    d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 100.0, 100.0), lid, "héllo\nworld", ParaFormat::default()).unwrap();
+    d.add_text_frame(
+        SpreadRef::Doc(0),
+        Rect::new(10.0, 10.0, 100.0, 100.0),
+        lid,
+        "héllo\nworld",
+        ParaFormat::default(),
+    )
+    .unwrap();
     let s = serde_json::to_string(&d).unwrap();
     let back: Document = serde_json::from_str(&s).unwrap();
     assert_eq!(d, back);

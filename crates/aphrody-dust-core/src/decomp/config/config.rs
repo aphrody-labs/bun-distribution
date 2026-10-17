@@ -38,13 +38,20 @@ pub enum ConfigParseError {
     #[snafu(transparent)]
     File { source: FileError },
     #[snafu(display("Failed to parse dsd config file '{}': {error}\n{backtrace}", path.display()))]
-    SerdeYml { path: PathBuf, error: Box<serde_saphyr::Error>, backtrace: Backtrace },
+    SerdeYml {
+        path: PathBuf,
+        error: Box<serde_saphyr::Error>,
+        backtrace: Backtrace,
+    },
 }
 
 #[derive(Debug, Snafu)]
 pub enum LoadModuleError {
     #[snafu(display("Failed to load module config for kind {module_kind}: \n{backtrace}"))]
-    ModuleConfigNotFound { module_kind: ModuleKind, backtrace: Backtrace },
+    ModuleConfigNotFound {
+        module_kind: ModuleKind,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     RelocationsParse { source: RelocationsParseError },
     #[snafu(transparent)]
@@ -71,9 +78,11 @@ impl Config {
                 .iter()
                 .find(|autoload| autoload.kind == autoload_kind)
                 .map(|autoload| &autoload.module),
-            ModuleKind::Overlay(id) => {
-                self.overlays.iter().find(|overlay| overlay.id == id).map(|overlay| &overlay.module)
-            },
+            ModuleKind::Overlay(id) => self
+                .overlays
+                .iter()
+                .find(|overlay| overlay.id == id)
+                .map(|overlay| &overlay.module),
         }
     }
 
@@ -145,7 +154,9 @@ impl Config {
         if !self.enable_dsprot {
             // DS Protect not enabled in this project yet, revert ROM output to what it was before
             // dsd 0.12.0
-            let encrypt_options = &dsprot::DsProtEncryptOptions { encode_relocations: false };
+            let encrypt_options = &dsprot::DsProtEncryptOptions {
+                encode_relocations: false,
+            };
             rom.arm9_mut().encrypt_dsprot(encrypt_options)?;
             for overlay in rom.arm9_overlays_mut() {
                 overlay.encrypt_dsprot(encrypt_options)?;
@@ -157,8 +168,16 @@ impl Config {
 
     pub fn iter_modules(&self) -> impl Iterator<Item = (ModuleKind, &ConfigModule)> {
         std::iter::once((ModuleKind::Arm9, &self.main_module))
-            .chain(self.autoloads.iter().map(|a| (ModuleKind::Autoload(a.kind), &a.module)))
-            .chain(self.overlays.iter().map(|o| (ModuleKind::Overlay(o.id), &o.module)))
+            .chain(
+                self.autoloads
+                    .iter()
+                    .map(|a| (ModuleKind::Autoload(a.kind), &a.module)),
+            )
+            .chain(
+                self.overlays
+                    .iter()
+                    .map(|o| (ModuleKind::Overlay(o.id), &o.module)),
+            )
     }
 }
 
@@ -181,7 +200,10 @@ pub struct ConfigModule {
 #[derive(Serialize, Deserialize)]
 pub struct ConfigOverlay {
     pub id: u16,
-    #[serde(default = "default_overlay_signed", skip_serializing_if = "skip_overlay_signed")]
+    #[serde(
+        default = "default_overlay_signed",
+        skip_serializing_if = "skip_overlay_signed"
+    )]
     pub signed: bool,
     #[serde(flatten)]
     pub module: ConfigModule,

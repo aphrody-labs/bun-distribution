@@ -36,7 +36,10 @@ impl SettingEditPolicy {
         configuring_global: bool,
     ) -> Self {
         let allowed = configuring_global && (runtime_lock || setting.runtime_modifiable);
-        Self { sensitive: allowed, allow_apply: allowed }
+        Self {
+            sensitive: allowed,
+            allow_apply: allowed,
+        }
     }
 
     pub fn apply_setting<T: Clone + PartialOrd>(
@@ -82,8 +85,12 @@ mod setting_edit_tests {
     #[test]
     fn non_switchable_settings_require_global_configuration() {
         let mut setting = common::settings_common::Setting::with_options(
-            false, "synthetic", Category::UiGeneral,
-            common::settings_common::Specialization::DEFAULT, true, true,
+            false,
+            "synthetic",
+            Category::UiGeneral,
+            common::settings_common::Specialization::DEFAULT,
+            true,
+            true,
         );
         let custom = SettingEditPolicy::for_setting(&setting, true, false);
         assert!(!custom.sensitive);
@@ -211,40 +218,65 @@ pub fn labeled_row(label: &str, control: &impl IsA<gtk::Widget>) -> gtk::Box {
 /// `active` is the index of the initially selected entry.
 pub fn combo_row(label: &str, items: &[&str], active: u32) -> (gtk::Box, gtk::DropDown) {
     let dropdown = combo(items, active);
-    (labeled_row(label, &popup_safe_dropdown(&dropdown)), dropdown)
+    (
+        labeled_row(label, &popup_safe_dropdown(&dropdown)),
+        dropdown,
+    )
 }
 
 /// Gamescope cannot reliably manage GTK's native popup surfaces. Keep the
 /// original control as the settings model, but use an in-layout selector there.
 /// In particular, do not disable the model: its sensitivity is the edit policy.
 pub(crate) fn popup_safe_dropdown(dropdown: &gtk::DropDown) -> gtk::Widget {
-    if !crate::util::inline_menu::enabled() { return dropdown.clone().upcast(); }
+    if !crate::util::inline_menu::enabled() {
+        return dropdown.clone().upcast();
+    }
     let weak = dropdown.downgrade();
     let read = std::rc::Rc::new(move || {
-        let Some(dropdown) = weak.upgrade() else { return (Vec::new(), gtk::INVALID_LIST_POSITION) };
-        let labels = dropdown.model().map(|model| (0..model.n_items()).map(|i| {
-            model.item(i).and_downcast::<gtk::StringObject>()
-                .map(|s| s.string().to_string()).unwrap_or_default()
-        }).collect()).unwrap_or_default();
+        let Some(dropdown) = weak.upgrade() else {
+            return (Vec::new(), gtk::INVALID_LIST_POSITION);
+        };
+        let labels = dropdown
+            .model()
+            .map(|model| {
+                (0..model.n_items())
+                    .map(|i| {
+                        model
+                            .item(i)
+                            .and_downcast::<gtk::StringObject>()
+                            .map(|s| s.string().to_string())
+                            .unwrap_or_default()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
         (labels, dropdown.selected())
     });
     let weak = dropdown.downgrade();
     inline_selector(dropdown.upcast_ref(), read, move |index| {
-        if let Some(dropdown) = weak.upgrade() { dropdown.set_selected(index); }
+        if let Some(dropdown) = weak.upgrade() {
+            dropdown.set_selected(index);
+        }
     })
 }
 
 pub(crate) fn popup_safe_combo(combo: &gtk::ComboBoxText) -> gtk::Widget {
-    if !crate::util::inline_menu::enabled() { return combo.clone().upcast(); }
+    if !crate::util::inline_menu::enabled() {
+        return combo.clone().upcast();
+    }
     let weak = combo.downgrade();
     let read = std::rc::Rc::new(move || {
-        let Some(combo) = weak.upgrade() else { return (Vec::new(), gtk::INVALID_LIST_POSITION) };
+        let Some(combo) = weak.upgrade() else {
+            return (Vec::new(), gtk::INVALID_LIST_POSITION);
+        };
         let mut labels = Vec::new();
         if let Some(model) = combo.model() {
             if let Some(iter) = model.iter_first() {
                 loop {
                     labels.push(model.get::<String>(&iter, 0));
-                    if !model.iter_next(&iter) { break; }
+                    if !model.iter_next(&iter) {
+                        break;
+                    }
                 }
             }
         }
@@ -252,7 +284,9 @@ pub(crate) fn popup_safe_combo(combo: &gtk::ComboBoxText) -> gtk::Widget {
     });
     let weak = combo.downgrade();
     inline_selector(combo.upcast_ref(), read, move |index| {
-        if let Some(combo) = weak.upgrade() { combo.set_active(Some(index)); }
+        if let Some(combo) = weak.upgrade() {
+            combo.set_active(Some(index));
+        }
     })
 }
 
@@ -270,34 +304,53 @@ fn inline_selector(
     column.append(&button);
     // Parent sensitivity and subsequent runtime/per-game policy changes must
     // still disable the entire replacement, not merely the hidden model.
-    model.bind_property("sensitive", &column, "sensitive").sync_create().build();
+    model
+        .bind_property("sensitive", &column, "sensitive")
+        .sync_create()
+        .build();
     let refresh = {
         let read = read.clone();
         let weak = button.downgrade();
-        move || if let Some(button) = weak.upgrade() {
-            let (labels, selected) = read();
-            button.set_label(labels.get(selected as usize).map_or("", String::as_str));
+        move || {
+            if let Some(button) = weak.upgrade() {
+                let (labels, selected) = read();
+                button.set_label(labels.get(selected as usize).map_or("", String::as_str));
+            }
         }
     };
     refresh();
     model.connect_notify_local(None, move |_, _| refresh());
     let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    let scroll = gtk::ScrolledWindow::builder().hscrollbar_policy(gtk::PolicyType::Never)
-        .propagate_natural_height(true).max_content_height(280).child(&list).build();
+    let scroll = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .propagate_natural_height(true)
+        .max_content_height(280)
+        .child(&list)
+        .build();
     scroll.set_visible(false);
     column.append(&scroll);
     let select = std::rc::Rc::new(select);
     let weak_list = list.downgrade();
     let weak_scroll = scroll.downgrade();
     button.connect_clicked(move |button| {
-        let (Some(list), Some(scroll)) = (weak_list.upgrade(), weak_scroll.upgrade()) else { return };
-        if scroll.is_visible() { scroll.set_visible(false); return; }
-        while let Some(child) = list.first_child() { list.remove(&child); }
+        let (Some(list), Some(scroll)) = (weak_list.upgrade(), weak_scroll.upgrade()) else {
+            return;
+        };
+        if scroll.is_visible() {
+            scroll.set_visible(false);
+            return;
+        }
+        while let Some(child) = list.first_child() {
+            list.remove(&child);
+        }
         let (labels, selected) = read();
         let mut focus = None;
         for (index, label) in labels.iter().enumerate() {
             let choice = gtk::Button::with_label(label);
-            if index as u32 == selected { choice.add_css_class("suggested-action"); focus = Some(choice.clone()); }
+            if index as u32 == selected {
+                choice.add_css_class("suggested-action");
+                focus = Some(choice.clone());
+            }
             let select = select.clone();
             let weak_scroll = scroll.downgrade();
             let weak_button = button.downgrade();
@@ -305,7 +358,9 @@ fn inline_selector(
                 // A disabled setting must never become writable through this UI.
                 if let Some(button) = weak_button.upgrade().filter(|b| b.is_sensitive()) {
                     select(index as u32);
-                    if let Some(scroll) = weak_scroll.upgrade() { scroll.set_visible(false); }
+                    if let Some(scroll) = weak_scroll.upgrade() {
+                        scroll.set_visible(false);
+                    }
                     button.grab_focus();
                 }
             });
@@ -318,8 +373,11 @@ fn inline_selector(
         // and let the enclosing settings page scroll when it needs more room.
         scroll.set_min_content_height(list.measure(gtk::Orientation::Vertical, -1).1.min(280));
         scroll.set_visible(!labels.is_empty());
-        if let Some(choice) = focus { choice.grab_focus(); }
-        else { list.child_focus(gtk::DirectionType::TabForward); }
+        if let Some(choice) = focus {
+            choice.grab_focus();
+        } else {
+            list.child_focus(gtk::DirectionType::TabForward);
+        }
     });
     let keys = gtk::EventControllerKey::new();
     let weak_scroll = scroll.downgrade();
@@ -328,7 +386,9 @@ fn inline_selector(
         if key == gtk::gdk::Key::Escape {
             if let Some(scroll) = weak_scroll.upgrade().filter(|s| s.is_visible()) {
                 scroll.set_visible(false);
-                if let Some(button) = weak_button.upgrade() { button.grab_focus(); }
+                if let Some(button) = weak_button.upgrade() {
+                    button.grab_focus();
+                }
                 return gtk::glib::Propagation::Stop;
             }
         }
@@ -348,7 +408,10 @@ mod inline_selector_layout_tests {
         std::env::set_var("RUZU_INLINE_MENUS", "1");
         gtk::init().unwrap();
         assert!(crate::util::inline_menu::enabled());
-        let window = gtk::Window::builder().default_width(600).default_height(360).build();
+        let window = gtk::Window::builder()
+            .default_width(600)
+            .default_height(360)
+            .build();
         let (page, column) = page();
         let (frame, settings) = group("Settings");
         column.append(&frame);
@@ -356,7 +419,9 @@ mod inline_selector_layout_tests {
         let refs: Vec<&str> = labels.iter().map(String::as_str).collect();
         let (row, model) = combo_row("Selection", &refs, 0);
         settings.append(&row);
-        for _ in 0..15 { settings.append(&check_row("Another setting", false)); }
+        for _ in 0..15 {
+            settings.append(&check_row("Another setting", false));
+        }
         window.set_child(Some(&page));
         window.present();
         let settle = || {
@@ -369,22 +434,39 @@ mod inline_selector_layout_tests {
         };
         settle();
         let selector = row.last_child().unwrap();
-        let button = selector.first_child().unwrap().next_sibling()
-            .and_downcast::<gtk::Button>().unwrap();
+        let button = selector
+            .first_child()
+            .unwrap()
+            .next_sibling()
+            .and_downcast::<gtk::Button>()
+            .unwrap();
         button.emit_clicked();
         settle();
-        let list_scroll = button.next_sibling().and_downcast::<gtk::ScrolledWindow>().unwrap();
-        assert!(list_scroll.height() >= 250,
-            "expanded list collapsed to {} pixels", list_scroll.height());
+        let list_scroll = button
+            .next_sibling()
+            .and_downcast::<gtk::ScrolledWindow>()
+            .unwrap();
+        assert!(
+            list_scroll.height() >= 250,
+            "expanded list collapsed to {} pixels",
+            list_scroll.height()
+        );
         assert!(list_scroll.height() <= 280);
         let adjustment = list_scroll.vadjustment();
         assert!(adjustment.upper() > adjustment.page_size());
         adjustment.set_value(adjustment.upper() - adjustment.page_size());
         settle();
-        let list = list_scroll.child().and_downcast::<gtk::Viewport>().unwrap().child().unwrap();
+        let list = list_scroll
+            .child()
+            .and_downcast::<gtk::Viewport>()
+            .unwrap()
+            .child()
+            .unwrap();
         let last = list.last_child().and_downcast::<gtk::Button>().unwrap();
         let bounds = last.compute_bounds(&list_scroll).unwrap();
-        assert!(bounds.y() >= -1.0 && bounds.y() + bounds.height() <= list_scroll.height() as f32 + 1.0);
+        assert!(
+            bounds.y() >= -1.0 && bounds.y() + bounds.height() <= list_scroll.height() as f32 + 1.0
+        );
         last.emit_clicked();
         assert_eq!(model.selected(), 39);
         assert!(!list_scroll.is_visible());
@@ -466,7 +548,17 @@ mod hex_edit_tests {
         for text in ["", "0", "00000000", "FFFFFFFF", "abcdef01"] {
             assert!(hex_edit_text_is_valid(text), "{text:?}");
         }
-        for text in ["100000000", "0x12", "-1", "+1", " 12", "12 ", "G", "é", "１２"] {
+        for text in [
+            "100000000",
+            "0x12",
+            "-1",
+            "+1",
+            " 12",
+            "12 ",
+            "G",
+            "é",
+            "１２",
+        ] {
             assert!(!hex_edit_text_is_valid(text), "{text:?}");
         }
     }

@@ -82,7 +82,12 @@ impl CloudflareAdapter {
             ));
         }
 
-        Ok(Self { account_id, gateway_id, api_token, client: Some(Client::new()) })
+        Ok(Self {
+            account_id,
+            gateway_id,
+            api_token,
+            client: Some(Client::new()),
+        })
     }
 
     /// Constructs an adapter by reading credentials from environment variables.
@@ -93,7 +98,9 @@ impl CloudflareAdapter {
     /// - `CLOUDFLARE_AI_GATEWAY_GATEWAY_ID` — AI Gateway ID.
     pub fn from_env() -> Result<Self, GatewayError> {
         let api_token = env::var(ENV_API_TOKEN).map_err(|_| {
-            GatewayError::Config(format!("CloudflareAdapter: env var {ENV_API_TOKEN} not set"))
+            GatewayError::Config(format!(
+                "CloudflareAdapter: env var {ENV_API_TOKEN} not set"
+            ))
         })?;
         let account_id = env::var("CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID").map_err(|_| {
             GatewayError::Config(
@@ -127,12 +134,23 @@ impl CloudflareAdapter {
 #[async_trait::async_trait]
 impl GatewayAdapter for CloudflareAdapter {
     async fn chat(&self, req: ChatRequest) -> Result<ChatResponse, GatewayError> {
-        openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_token, req).await
+        openai_compat::chat(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_token,
+            req,
+        )
+        .await
     }
 
     async fn chat_stream(&self, req: ChatRequest) -> Result<ChunkStream, GatewayError> {
-        openai_compat::chat_stream(&self.http_client(), self.endpoint_url()?, &self.api_token, req)
-            .await
+        openai_compat::chat_stream(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_token,
+            req,
+        )
+        .await
     }
 }
 

@@ -13,4 +13,9 @@ use crate::prefixes::TokenPrefix;
 pub struct UserSubscriptionToken(pub String);
 
 impl_string_token!(UserSubscriptionToken);
-impl_crockford_generator!(UserSubscriptionToken, 32usize, TokenPrefix::UserSubscription, CrockfordLower);
+impl_crockford_generator!(
+    UserSubscriptionToken,
+    32usize,
+    TokenPrefix::UserSubscription,
+    CrockfordLower
+);

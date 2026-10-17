@@ -3,14 +3,20 @@
 use serde_json::{Value, json};
 use wordcraft_doc::collate::{SortKey, sort_key};
 use wordcraft_doc::locale_number::{format_number, parse_number};
-use wordcraft_doc::props::{Align, Border, BorderStyle, Borders, HeightRule, Rgb, TextDirection, VAlign};
+use wordcraft_doc::props::{
+    Align, Border, BorderStyle, Borders, HeightRule, Rgb, TextDirection, VAlign,
+};
 use wordcraft_doc::{Block, Document, Paragraph, Path, Pos, StoryRef, Table, para_block};
 
 use super::sel_result;
 use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
 
 fn in_table(s: &Session) -> Option<&'static str> {
-    if s.sel.focus.path.cell().is_some() { None } else { Some("the cursor isn't in a table") }
+    if s.sel.focus.path.cell().is_some() {
+        None
+    } else {
+        Some("the cursor isn't in a table")
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -210,9 +216,21 @@ fn autofit(s: &mut Session, v: &Value) -> CmdResult {
     match mode {
         "fixed" => with_table(s, |t| t.props.fixed = true),
         "contents" => {
-            let t = s.doc.table(story, &tp).ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
-            let avail = (tw - t.props.indent.filter(|i| i.is_finite()).unwrap_or(0.0).max(0.0)).max(72.0);
-            let widths = wordcraft_layout::autofit_widths(&wordcraft_layout::measure_table_columns(&s.doc, t), avail);
+            let t = s
+                .doc
+                .table(story, &tp)
+                .ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
+            let avail = (tw
+                - t.props
+                    .indent
+                    .filter(|i| i.is_finite())
+                    .unwrap_or(0.0)
+                    .max(0.0))
+            .max(72.0);
+            let widths = wordcraft_layout::autofit_widths(
+                &wordcraft_layout::measure_table_columns(&s.doc, t),
+                avail,
+            );
             with_table(s, |t| {
                 t.props.fixed = false;
                 t.props.width = None;
@@ -239,7 +257,11 @@ pub(crate) fn sync_cell_widths(t: &mut Table) {
         let mut g = 0usize;
         for c in &mut row.cells {
             let span = c.span();
-            let w: f32 = grid.get(g..g.saturating_add(span).min(grid.len())).unwrap_or(&[]).iter().sum();
+            let w: f32 = grid
+                .get(g..g.saturating_add(span).min(grid.len()))
+                .unwrap_or(&[])
+                .iter()
+                .sum();
             if w > 0.0 {
                 c.props.width = Some(w);
             }
@@ -279,14 +301,31 @@ fn properties(s: &mut Session, v: &Value) -> CmdResult {
         "valign",
     ];
     if !keys.iter().any(|k| v.get(*k).is_some()) {
-        let t = s.doc.table(s.sel.focus.story, &tp).cloned().unwrap_or_default();
+        let t = s
+            .doc
+            .table(s.sel.focus.story, &tp)
+            .cloned()
+            .unwrap_or_default();
         let mut out = serde_json::to_value(&t.props).unwrap_or(Value::Null);
         let row = t.rows.get(r);
         let cl = row.and_then(|x| x.cells.get(c));
         if let Some(o) = out.as_object_mut() {
-            o.insert("row".into(), row.map(|x| serde_json::to_value(&x.props).unwrap_or(Value::Null)).unwrap_or(Value::Null));
-            o.insert("columnWidth".into(), t.grid.get(t.grid_col(r, c)).map_or(Value::Null, |w| json!(w)));
-            o.insert("cell".into(), cl.map(|x| serde_json::to_value(&x.props).unwrap_or(Value::Null)).unwrap_or(Value::Null));
+            o.insert(
+                "row".into(),
+                row.map(|x| serde_json::to_value(&x.props).unwrap_or(Value::Null))
+                    .unwrap_or(Value::Null),
+            );
+            o.insert(
+                "columnWidth".into(),
+                t.grid
+                    .get(t.grid_col(r, c))
+                    .map_or(Value::Null, |w| json!(w)),
+            );
+            o.insert(
+                "cell".into(),
+                cl.map(|x| serde_json::to_value(&x.props).unwrap_or(Value::Null))
+                    .unwrap_or(Value::Null),
+            );
         }
         return Ok(out);
     }
@@ -308,13 +347,21 @@ fn properties(s: &mut Session, v: &Value) -> CmdResult {
         Some("top") => Some(VAlign::Top),
         Some("center") => Some(VAlign::Center),
         Some("bottom") => Some(VAlign::Bottom),
-        Some(x) => return Err(CmdError::Params(format!("unknown vertical alignment `{x}`"))),
+        Some(x) => {
+            return Err(CmdError::Params(format!(
+                "unknown vertical alignment `{x}`"
+            )));
+        }
     };
     // `null` clears a preferred size (automatic); a number sets it.
     let size = |k: &str, lo: f32, hi: f32| -> Option<Option<f32>> {
         match v.get(k)? {
             Value::Null => Some(None),
-            x => x.as_f64().map(|f| f as f32).filter(|f| f.is_finite()).map(|f| Some(f.clamp(lo, hi))),
+            x => x
+                .as_f64()
+                .map(|f| f as f32)
+                .filter(|f| f.is_finite())
+                .map(|f| Some(f.clamp(lo, hi))),
         }
     };
     let width = size("width", 6.0, 1584.0);
@@ -349,7 +396,11 @@ fn properties(s: &mut Session, v: &Value) -> CmdResult {
         if let Some(row) = t.rows.get_mut(r) {
             if let Some(h) = row_height {
                 row.props.height = h;
-                row.props.height_rule = if h.is_some() { rule.unwrap_or(HeightRule::AtLeast) } else { HeightRule::Auto };
+                row.props.height_rule = if h.is_some() {
+                    rule.unwrap_or(HeightRule::AtLeast)
+                } else {
+                    HeightRule::Auto
+                };
             } else if let Some(rule) = rule
                 && row.props.height.is_some()
             {
@@ -374,7 +425,11 @@ fn properties(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn cell(s: &Session) -> Result<(Path, usize, usize), CmdError> {
-    s.sel.focus.path.cell().ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))
+    s.sel
+        .focus
+        .path
+        .cell()
+        .ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))
 }
 
 fn with_table(s: &mut Session, f: impl Fn(&mut Table)) -> CmdResult {
@@ -389,13 +444,19 @@ fn with_table(s: &mut Session, f: impl Fn(&mut Table)) -> CmdResult {
 fn selected_cells(s: &Session) -> Vec<(usize, usize)> {
     // Whole cells selected (a column, say): just those, by grid column, so merged cells count.
     if let Some(range) = s.cell_range()
-        && s.sel.focus.path.cell().is_some_and(|(tp, _, _)| tp == range.table)
+        && s.sel
+            .focus
+            .path
+            .cell()
+            .is_some_and(|(tp, _, _)| tp == range.table)
         && let Some(t) = s.doc.table(range.story, &range.table)
     {
         return range.cells(t);
     }
     let (a, b) = s.sel.ordered();
-    let (Some((ta, ra, ca)), Some((tb, rb, cb))) = (a.path.cell(), b.path.cell()) else { return Vec::new() };
+    let (Some((ta, ra, ca)), Some((tb, rb, cb))) = (a.path.cell(), b.path.cell()) else {
+        return Vec::new();
+    };
     if ta != tb {
         return vec![(rb, cb)];
     }
@@ -433,8 +494,16 @@ pub(crate) fn text_direction(s: &mut Session, v: &Value) -> CmdResult {
         Some("up" | "btLr") => TextDirection::Up,
         Some(x) => return Err(CmdError::Params(format!("unknown text direction `{x}`"))),
         None => {
-            let t = s.doc.table(s.sel.focus.story, &tp).ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
-            t.rows.get(r).and_then(|row| row.cells.get(c)).map(|cl| cl.props.text_direction).unwrap_or_default().next()
+            let t = s
+                .doc
+                .table(s.sel.focus.story, &tp)
+                .ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
+            t.rows
+                .get(r)
+                .and_then(|row| row.cells.get(c))
+                .map(|cl| cl.props.text_direction)
+                .unwrap_or_default()
+                .next()
         }
     };
     with_cells(s, |cl| cl.props.text_direction = dir)
@@ -443,7 +512,12 @@ pub(crate) fn text_direction(s: &mut Session, v: &Value) -> CmdResult {
 /// Bump the revision of every paragraph in a table (table style changes alter their layout).
 pub(crate) fn touch_cells(s: &mut Session, tp: &Path) -> Result<(), CmdError> {
     let story = s.sel.focus.story;
-    let paths: Vec<Path> = s.doc.para_paths(story).into_iter().filter(|p| p.0.len() > tp.0.len() && p.0.starts_with(&tp.0)).collect();
+    let paths: Vec<Path> = s
+        .doc
+        .para_paths(story)
+        .into_iter()
+        .filter(|p| p.0.len() > tp.0.len() && p.0.starts_with(&tp.0))
+        .collect();
     for p in paths {
         s.doc.para_mut(story, &p)?.touch();
     }
@@ -453,14 +527,27 @@ pub(crate) fn touch_cells(s: &mut Session, tp: &Path) -> Result<(), CmdError> {
 fn fix_caret(s: &mut Session, tp: &Path, r: usize, c: usize) -> CmdResult {
     let story = s.sel.focus.story;
     let Some(t) = s.doc.table(story, tp) else {
-        s.sel = Selection::caret(s.doc.clamp(&Pos { story, path: tp.clone(), off: 0 }));
+        s.sel = Selection::caret(s.doc.clamp(&Pos {
+            story,
+            path: tp.clone(),
+            off: 0,
+        }));
         return sel_result(s);
     };
     let r = r.min(t.rows.len().saturating_sub(1));
-    let c = c.min(t.rows.get(r).map(|x| x.cells.len().saturating_sub(1)).unwrap_or(0));
+    let c = c.min(
+        t.rows
+            .get(r)
+            .map(|x| x.cells.len().saturating_sub(1))
+            .unwrap_or(0),
+    );
     let mut path = tp.0.clone();
     path.extend([r as u32, c as u32, 0]);
-    s.sel = Selection::caret(Pos { story, path: Path(path), off: 0 });
+    s.sel = Selection::caret(Pos {
+        story,
+        path: Path(path),
+        off: 0,
+    });
     sel_result(s)
 }
 
@@ -468,7 +555,12 @@ fn fix_caret(s: &mut Session, tp: &Path, r: usize, c: usize) -> CmdResult {
 pub(super) fn row(s: &mut Session, below: bool) -> CmdResult {
     let (tp, r, c) = cell(s)?;
     let cells = selected_cells(s);
-    let n = cells.iter().map(|x| x.0).collect::<std::collections::BTreeSet<_>>().len().max(1);
+    let n = cells
+        .iter()
+        .map(|x| x.0)
+        .collect::<std::collections::BTreeSet<_>>()
+        .len()
+        .max(1);
     let t = s.doc.table_mut(s.sel.focus.story, &tp)?;
     for _ in 0..n {
         t.insert_row(if below { r + 1 } else { r }, r);
@@ -481,11 +573,20 @@ pub(super) fn col(s: &mut Session, right: bool) -> CmdResult {
     let (tp, r, c) = cell(s)?;
     let t = s.doc.table_mut(s.sel.focus.story, &tp)?;
     let g = t.grid_col(r, c);
-    let span = t.rows.get(r).and_then(|x| x.cells.get(c)).map(|x| x.span()).unwrap_or(1);
+    let span = t
+        .rows
+        .get(r)
+        .and_then(|x| x.cells.get(c))
+        .map(|x| x.span())
+        .unwrap_or(1);
     t.insert_col(if right { g + span } else { g });
     // Keep the table within its width: shrink all columns proportionally.
     let total: f32 = t.grid.iter().sum();
-    let before: f32 = total - t.grid.get(if right { g + span } else { g }).copied().unwrap_or(0.0);
+    let before: f32 = total
+        - t.grid
+            .get(if right { g + span } else { g })
+            .copied()
+            .unwrap_or(0.0);
     if before > 0.0 {
         let k = before / total;
         t.grid.iter_mut().for_each(|w| *w *= k);
@@ -495,7 +596,8 @@ pub(super) fn col(s: &mut Session, right: bool) -> CmdResult {
 
 fn del_row(s: &mut Session, _: &Value) -> CmdResult {
     let (tp, r, _) = cell(s)?;
-    let rows: std::collections::BTreeSet<usize> = selected_cells(s).into_iter().map(|x| x.0).collect();
+    let rows: std::collections::BTreeSet<usize> =
+        selected_cells(s).into_iter().map(|x| x.0).collect();
     let story = s.sel.focus.story;
     let t = s.doc.table_mut(story, &tp)?;
     if rows.len() >= t.rows.len() {
@@ -519,7 +621,11 @@ fn del_col(s: &mut Session, _: &Value) -> CmdResult {
     let mut cols = std::collections::BTreeSet::new();
     for (rr, cc) in cells {
         let g = t.grid_col(rr, cc);
-        let span = t.rows.get(rr).and_then(|x| x.cells.get(cc)).map_or(1, wordcraft_doc::Cell::span);
+        let span = t
+            .rows
+            .get(rr)
+            .and_then(|x| x.cells.get(cc))
+            .map_or(1, wordcraft_doc::Cell::span);
         cols.extend(g..g.saturating_add(span).min(t.grid.len()));
     }
     if cols.is_empty() {
@@ -542,7 +648,11 @@ fn del_table(s: &mut Session, _: &Value) -> CmdResult {
     let (tp, _, _) = cell(s)?;
     let story = s.sel.focus.story;
     s.doc.remove_block(story, &tp)?;
-    s.sel = Selection::caret(s.doc.clamp(&Pos { story, path: tp, off: 0 }));
+    s.sel = Selection::caret(s.doc.clamp(&Pos {
+        story,
+        path: tp,
+        off: 0,
+    }));
     sel_result(s)
 }
 
@@ -553,12 +663,21 @@ fn merge(s: &mut Session, _: &Value) -> CmdResult {
         return Err(CmdError::Failed("select two or more cells to merge".into()));
     }
     let story = s.sel.focus.story;
-    let (r0, r1) = (cells.iter().map(|x| x.0).min().unwrap_or(0), cells.iter().map(|x| x.0).max().unwrap_or(0));
+    let (r0, r1) = (
+        cells.iter().map(|x| x.0).min().unwrap_or(0),
+        cells.iter().map(|x| x.0).max().unwrap_or(0),
+    );
     let t = s.doc.table_mut(story, &tp)?;
     let c0 = cells.iter().map(|x| x.1).min().unwrap_or(0);
     let c1 = cells.iter().map(|x| x.1).max().unwrap_or(0);
     let g0 = t.grid_col(r0, c0);
-    let g1 = t.grid_col(r0, c1) + t.rows.get(r0).and_then(|r| r.cells.get(c1)).map(|c| c.span()).unwrap_or(1) - 1;
+    let g1 = t.grid_col(r0, c1)
+        + t.rows
+            .get(r0)
+            .and_then(|r| r.cells.get(c1))
+            .map(|c| c.span())
+            .unwrap_or(1)
+        - 1;
     t.merge(r0, r1, g0, g1);
     fix_caret(s, &tp, r0, c0)
 }
@@ -573,12 +692,29 @@ fn split_table(s: &mut Session, _: &Value) -> CmdResult {
     let tail_rows = t.rows.split_off(r);
     // Content controls closing after the table now close after its second part.
     let close = std::mem::take(&mut t.controls.close);
-    let controls = wordcraft_doc::ControlWrap { open: Vec::new(), close };
-    let tail = Table { props: t.props.clone(), grid: t.grid.clone(), rows: tail_rows, controls };
+    let controls = wordcraft_doc::ControlWrap {
+        open: Vec::new(),
+        close,
+    };
+    let tail = Table {
+        props: t.props.clone(),
+        grid: t.grid.clone(),
+        rows: tail_rows,
+        controls,
+    };
     let after = tp.with_last(tp.last() + 1);
-    s.doc.insert_block(story, &after, Block::Para(Paragraph::new()))?;
-    s.doc.insert_block(story, &after.with_last(after.last() + 1), Block::Table(tail))?;
-    s.sel = Selection::caret(Pos { story, path: after, off: 0 });
+    s.doc
+        .insert_block(story, &after, Block::Para(Paragraph::new()))?;
+    s.doc.insert_block(
+        story,
+        &after.with_last(after.last() + 1),
+        Block::Table(tail),
+    )?;
+    s.sel = Selection::caret(Pos {
+        story,
+        path: after,
+        off: 0,
+    });
     sel_result(s)
 }
 
@@ -586,8 +722,18 @@ fn borders(s: &mut Session, v: &Value) -> CmdResult {
     let kind = p::str(v, "kind").unwrap_or("all");
     let w = p::f32(v, "width").unwrap_or(0.5).clamp(0.25, 6.0);
     let color = p::str(v, "color").and_then(Rgb::parse);
-    let b = Border { style: BorderStyle::Single, width: w, color, space: 0.0 };
-    let none = Border { style: BorderStyle::None, width: 0.0, color: None, space: 0.0 };
+    let b = Border {
+        style: BorderStyle::Single,
+        width: w,
+        color,
+        space: 0.0,
+    };
+    let none = Border {
+        style: BorderStyle::None,
+        width: 0.0,
+        color: None,
+        space: 0.0,
+    };
     with_table(s, |t| {
         let mut cur = t.props.borders.unwrap_or_default();
         match kind {
@@ -627,12 +773,20 @@ fn borders(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn cell_text(c: &wordcraft_doc::Cell) -> String {
-    c.blocks.iter().filter_map(|b| b.as_para().map(|p| p.plain_text())).collect::<Vec<_>>().join("\n")
+    c.blocks
+        .iter()
+        .filter_map(|b| b.as_para().map(|p| p.plain_text()))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// The language of a cell's text: that of its first paragraph with text.
 fn cell_lang(doc: &wordcraft_doc::Document, c: &wordcraft_doc::Cell) -> Option<String> {
-    c.blocks.iter().filter_map(|b| b.as_para()).find(|p| !p.plain_text().trim().is_empty()).and_then(|p| super::para_lang(doc, p))
+    c.blocks
+        .iter()
+        .filter_map(|b| b.as_para())
+        .find(|p| !p.plain_text().trim().is_empty())
+        .and_then(|p| super::para_lang(doc, p))
 }
 
 /// Sort the table's rows by a column. Numbers are read in each cell's language (`1,5` is one and
@@ -642,17 +796,33 @@ fn sort_table(s: &mut Session, v: &Value) -> CmdResult {
     let desc = p::bool(v, "descending").unwrap_or(false);
     let header = p::bool(v, "header");
     let (tp, _, _) = cell(s)?;
-    let t = s.doc.table(s.sel.focus.story, &tp).ok_or_else(|| CmdError::Failed("no table".into()))?;
-    let skip = usize::from(header.unwrap_or(t.rows.first().is_some_and(|r| r.props.header))).min(t.rows.len());
+    let t = s
+        .doc
+        .table(s.sel.focus.story, &tp)
+        .ok_or_else(|| CmdError::Failed("no table".into()))?;
+    let skip = usize::from(header.unwrap_or(t.rows.first().is_some_and(|r| r.props.header)))
+        .min(t.rows.len());
     let column = || t.rows.iter().skip(skip).map(|r| r.cells.get(col));
-    let lang = column().flatten().find_map(|c| cell_lang(&s.doc, c)).or_else(|| super::default_lang(s));
+    let lang = column()
+        .flatten()
+        .find_map(|c| cell_lang(&s.doc, c))
+        .or_else(|| super::default_lang(s));
     // A total order (numbers, then text), so sorting never sees inconsistent comparisons.
     let keys: Vec<(Option<f64>, SortKey)> = column()
         .map(|c| {
             let text = c.map(cell_text).unwrap_or_default();
-            let num_lang = c.and_then(|c| cell_lang(&s.doc, c)).or_else(|| lang.clone());
+            let num_lang = c
+                .and_then(|c| cell_lang(&s.doc, c))
+                .or_else(|| lang.clone());
             let num = parse_number(text.trim(), num_lang.as_deref()).filter(|x| x.is_finite());
-            (num, if num.is_some() { SortKey::default() } else { sort_key(text.trim(), lang.as_deref()) })
+            (
+                num,
+                if num.is_some() {
+                    SortKey::default()
+                } else {
+                    sort_key(text.trim(), lang.as_deref())
+                },
+            )
         })
         .collect();
     with_table(s, move |t| {
@@ -682,36 +852,68 @@ fn to_text(s: &mut Session, v: &Value) -> CmdResult {
         _ => "\t",
     };
     let story = s.sel.focus.story;
-    let t = s.doc.table(story, &tp).cloned().ok_or_else(|| CmdError::Failed("no table".into()))?;
+    let t = s
+        .doc
+        .table(story, &tp)
+        .cloned()
+        .ok_or_else(|| CmdError::Failed("no table".into()))?;
     s.doc.remove_block(story, &tp)?;
     let mut i = tp.last();
     for row in &t.rows {
         let text: Vec<String> = row.cells.iter().map(cell_text).collect();
         for line in text.join(sep).split('\n') {
-            s.doc.insert_block(story, &tp.with_last(i), Block::Para(Paragraph::with_text(line, Default::default())))?;
+            s.doc.insert_block(
+                story,
+                &tp.with_last(i),
+                Block::Para(Paragraph::with_text(line, Default::default())),
+            )?;
             i += 1;
         }
     }
-    s.sel = Selection::caret(Pos { story, path: tp, off: 0 });
+    s.sel = Selection::caret(Pos {
+        story,
+        path: tp,
+        off: 0,
+    });
     sel_result(s)
 }
 
 /// `=SUM(ABOVE)`, `=SUM(LEFT)`, `=AVERAGE(ABOVE)`, `=COUNT(...)`, `=MAX`, `=MIN`, `=PRODUCT`.
 fn formula(s: &mut Session, v: &Value) -> CmdResult {
     let (tp, r, c) = cell(s)?;
-    let f = p::str(v, "formula").unwrap_or("=SUM(ABOVE)").to_ascii_uppercase();
-    let t = s.doc.table(s.sel.focus.story, &tp).cloned().ok_or_else(|| CmdError::Failed("no table".into()))?;
+    let f = p::str(v, "formula")
+        .unwrap_or("=SUM(ABOVE)")
+        .to_ascii_uppercase();
+    let t = s
+        .doc
+        .table(s.sel.focus.story, &tp)
+        .cloned()
+        .ok_or_else(|| CmdError::Failed("no table".into()))?;
     let story = s.sel.focus.story;
     // Each cell's number is read in that cell's language (`3,50` in Polish is three and a half).
     let sources: Vec<&wordcraft_doc::Cell> = if f.contains("LEFT") {
-        t.rows.get(r).map(|row| row.cells.iter().take(c).collect()).unwrap_or_default()
+        t.rows
+            .get(r)
+            .map(|row| row.cells.iter().take(c).collect())
+            .unwrap_or_default()
     } else {
-        t.rows.iter().take(r).filter_map(|row| row.cells.get(c)).collect()
+        t.rows
+            .iter()
+            .take(r)
+            .filter_map(|row| row.cells.get(c))
+            .collect()
     };
     let default_lang = super::default_lang(s);
     let nums: Vec<f64> = sources
         .iter()
-        .filter_map(|x| parse_number(cell_text(x).trim(), cell_lang(&s.doc, x).or_else(|| default_lang.clone()).as_deref()))
+        .filter_map(|x| {
+            parse_number(
+                cell_text(x).trim(),
+                cell_lang(&s.doc, x)
+                    .or_else(|| default_lang.clone())
+                    .as_deref(),
+            )
+        })
         .filter(|x| x.is_finite())
         .collect();
     // The result is written in the language of the formula's cell, else of the numbers it adds.
@@ -723,7 +925,11 @@ fn formula(s: &mut Session, v: &Value) -> CmdResult {
         .or_else(|| sources.iter().find_map(|x| cell_lang(&s.doc, x)))
         .or(default_lang);
     let val = if f.starts_with("=AVERAGE") {
-        if nums.is_empty() { 0.0 } else { nums.iter().sum::<f64>() / nums.len() as f64 }
+        if nums.is_empty() {
+            0.0
+        } else {
+            nums.iter().sum::<f64>() / nums.len() as f64
+        }
     } else if f.starts_with("=COUNT") {
         nums.len() as f64
     } else if f.starts_with("=MAX") {
@@ -740,7 +946,12 @@ fn formula(s: &mut Session, v: &Value) -> CmdResult {
     let at = s.sel.focus.clone();
     let end = s.doc.insert_object(
         &at,
-        wordcraft_doc::InlineObject::Field { instr: f.clone(), result: text.clone(), locked: false, code: false },
+        wordcraft_doc::InlineObject::Field {
+            instr: f.clone(),
+            result: text.clone(),
+            locked: false,
+            code: false,
+        },
         &props,
     )?;
     s.sel = Selection::caret(end);
@@ -749,7 +960,9 @@ fn formula(s: &mut Session, v: &Value) -> CmdResult {
 
 fn select_cells(s: &mut Session, tp: &Path, which: Option<(usize, Option<usize>)>) -> CmdResult {
     let story = s.sel.focus.story;
-    let Some(t) = s.doc.table(story, tp) else { return sel_result(s) };
+    let Some(t) = s.doc.table(story, tp) else {
+        return sel_result(s);
+    };
     let (last_row, last_col) = (t.rows.len().saturating_sub(1), t.cols().saturating_sub(1));
     let (rows, cols) = match which {
         None => ((0, last_row), (0, last_col)),
@@ -762,7 +975,11 @@ fn select_cells(s: &mut Session, tp: &Path, which: Option<(usize, Option<usize>)
 /// The grid columns cell `c` of row `r` covers (first, last).
 pub(super) fn grid_cols(t: &Table, r: usize, c: usize) -> (usize, usize) {
     let g = t.grid_col(r, c);
-    let span = t.rows.get(r).and_then(|row| row.cells.get(c)).map_or(1, wordcraft_doc::Cell::span);
+    let span = t
+        .rows
+        .get(r)
+        .and_then(|row| row.cells.get(c))
+        .map_or(1, wordcraft_doc::Cell::span);
     (g, g + span - 1)
 }
 
@@ -770,7 +987,10 @@ pub(super) fn grid_cols(t: &Table, r: usize, c: usize) -> (usize, usize) {
 fn select_column(s: &mut Session, _: &Value) -> CmdResult {
     let (tp, r, c) = cell(s)?;
     let story = s.sel.focus.story;
-    let t = s.doc.table(story, &tp).ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
+    let t = s
+        .doc
+        .table(story, &tp)
+        .ok_or_else(|| CmdError::Disabled("the cursor isn't in a table".into()))?;
     let (mut g0, mut g1) = grid_cols(t, r, c);
     for (r, c) in selected_cells(s) {
         let (a, b) = grid_cols(t, r, c);
@@ -785,18 +1005,43 @@ fn select_column(s: &mut Session, _: &Value) -> CmdResult {
 /// to the last cell's end; a block of the cells' paragraphs (`CellRange`) says which cells they
 /// are, so the app shades them and, when they aren't one run of the text (part of a column),
 /// edits and formatting leave the cells between the corners alone.
-pub(crate) fn select_range(s: &mut Session, story: StoryRef, tp: &Path, rows: (usize, usize), cols: (usize, usize)) -> CmdResult {
-    let t = s.doc.table(story, tp).ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
+pub(crate) fn select_range(
+    s: &mut Session,
+    story: StoryRef,
+    tp: &Path,
+    rows: (usize, usize),
+    cols: (usize, usize),
+) -> CmdResult {
+    let t = s
+        .doc
+        .table(story, tp)
+        .ok_or_else(|| CmdError::Failed("there's no table there".into()))?;
     let (last_row, last_col) = (t.rows.len().saturating_sub(1), t.cols().saturating_sub(1));
-    let rows = (rows.0.min(rows.1).min(last_row), rows.0.max(rows.1).min(last_row));
-    let cols = (cols.0.min(cols.1).min(last_col), cols.0.max(cols.1).min(last_col));
+    let rows = (
+        rows.0.min(rows.1).min(last_row),
+        rows.0.max(rows.1).min(last_row),
+    );
+    let cols = (
+        cols.0.min(cols.1).min(last_col),
+        cols.0.max(cols.1).min(last_col),
+    );
     let stream = rows.0 == rows.1 || (cols.0 == 0 && cols.1 == last_col);
-    let range = crate::CellRange { story, table: tp.clone(), rows, cols, stream };
+    let range = crate::CellRange {
+        story,
+        table: tp.clone(),
+        rows,
+        cols,
+        stream,
+    };
     let picked: std::collections::BTreeSet<(usize, usize)> = range.cells(t).into_iter().collect();
     // Every paragraph of the picked cells (nested tables' too), in document order.
     let depth = tp.0.len();
     let in_picked = |q: &Path| match (q.0.get(depth), q.0.get(depth + 1)) {
-        (Some(r), Some(c)) => q.0.len() > depth + 2 && q.0.starts_with(&tp.0) && picked.contains(&(*r as usize, *c as usize)),
+        (Some(r), Some(c)) => {
+            q.0.len() > depth + 2
+                && q.0.starts_with(&tp.0)
+                && picked.contains(&(*r as usize, *c as usize))
+        }
         _ => false,
     };
     let segments: Vec<(Pos, Pos)> = s
@@ -806,18 +1051,45 @@ pub(crate) fn select_range(s: &mut Session, story: StoryRef, tp: &Path, rows: (u
         .filter(|q| in_picked(q))
         .map(|q| {
             let len = s.doc.para(story, &q).map_or(0, Paragraph::len);
-            (Pos { story, path: q.clone(), off: 0 }, Pos { story, path: q, off: len })
+            (
+                Pos {
+                    story,
+                    path: q.clone(),
+                    off: 0,
+                },
+                Pos {
+                    story,
+                    path: q,
+                    off: len,
+                },
+            )
         })
         .collect();
     let (Some(first), Some(last)) = (segments.first(), segments.last()) else {
-        return Err(CmdError::Failed("there are no cells to select there".into()));
+        return Err(CmdError::Failed(
+            "there are no cells to select there".into(),
+        ));
     };
     // The end corner is in the last cell's own last paragraph (not a nested table's), so it
     // names the cell.
-    let focus = segments.iter().rev().find(|(_, b)| b.path.0.len() == depth + 3).map_or(&last.1, |(_, b)| b).clone();
-    let sel = Selection { anchor: first.0.clone(), focus };
+    let focus = segments
+        .iter()
+        .rev()
+        .find(|(_, b)| b.path.0.len() == depth + 3)
+        .map_or(&last.1, |(_, b)| b)
+        .clone();
+    let sel = Selection {
+        anchor: first.0.clone(),
+        focus,
+    };
     s.sel = sel.clone();
-    s.column = Some(crate::ColumnBlock { sel, anchor_x: 0.0, focus_x: 0.0, segments, cells: Some(range) });
+    s.column = Some(crate::ColumnBlock {
+        sel,
+        anchor_x: 0.0,
+        focus_x: 0.0,
+        segments,
+        cells: Some(range),
+    });
     s.column_mode = false;
     s.widened = None;
     s.goal_x = None;
@@ -831,13 +1103,23 @@ pub(crate) fn select_range(s: &mut Session, story: StoryRef, tp: &Path, rows: (u
 /// edge facing the other end. Where the selection really runs is kept (`Session::sel_ends`), so
 /// extending it again goes on from there.
 pub(crate) fn extend_selection(s: &mut Session, to: Pos) {
-    let ends = Selection { anchor: s.sel.anchor.clone(), focus: to };
+    let ends = Selection {
+        anchor: s.sel.anchor.clone(),
+        focus: to,
+    };
     // Shift+Up and Shift+Down keep their goal column.
     let goal_x = s.goal_x;
     s.sel = ends.clone();
     s.column = None;
     widen(s, &ends);
-    s.widened = if s.sel == ends { None } else { Some(crate::session::Widened { sel: s.sel.clone(), ends }) };
+    s.widened = if s.sel == ends {
+        None
+    } else {
+        Some(crate::session::Widened {
+            sel: s.sel.clone(),
+            ends,
+        })
+    };
     s.goal_x = goal_x;
 }
 
@@ -892,7 +1174,9 @@ fn widen(s: &mut Session, ends: &Selection) {
 /// (the table's path, row, cell).
 fn cell_at(p: &[u32], i: usize) -> Option<(Path, usize, usize)> {
     match (p.get(..=i), p.get(i + 1), p.get(i + 2)) {
-        (Some(t), Some(r), Some(c)) if p.len() > i + 3 => Some((Path(t.to_vec()), *r as usize, *c as usize)),
+        (Some(t), Some(r), Some(c)) if p.len() > i + 3 => {
+            Some((Path(t.to_vec()), *r as usize, *c as usize))
+        }
         _ => None,
     }
 }
@@ -901,28 +1185,59 @@ fn cell_at(p: &[u32], i: usize) -> Option<(Path, usize, usize)> {
 fn row_ends(doc: &Document, story: StoryRef, tp: &Path, r: usize) -> Option<(Pos, Pos)> {
     let mut row = tp.0.clone();
     row.push(u32::try_from(r).ok()?);
-    let mut paths = doc.para_paths(story).into_iter().filter(|q| q.0.starts_with(&row));
+    let mut paths = doc
+        .para_paths(story)
+        .into_iter()
+        .filter(|q| q.0.starts_with(&row));
     let first = paths.next()?;
     let last = paths.next_back().unwrap_or_else(|| first.clone());
     let len = doc.para(story, &last).map_or(0, Paragraph::len);
-    Some((Pos { story, path: first, off: 0 }, Pos { story, path: last, off: len }))
+    Some((
+        Pos {
+            story,
+            path: first,
+            off: 0,
+        },
+        Pos {
+            story,
+            path: last,
+            off: len,
+        },
+    ))
 }
 
 fn from_text(s: &mut Session, v: &Value) -> CmdResult {
-    let sep = if p::str(v, "separator") == Some("comma") { ',' } else { '\t' };
+    let sep = if p::str(v, "separator") == Some("comma") {
+        ','
+    } else {
+        '\t'
+    };
     let (a, b) = s.sel.ordered();
     if a.path.parent() != b.path.parent() || a.story != b.story {
         return Err(CmdError::Failed("select paragraphs to convert".into()));
     }
-    let lines: Vec<String> =
-        (a.path.last()..=b.path.last()).filter_map(|i| s.doc.para(a.story, &a.path.with_last(i)).map(|p| p.plain_text())).collect();
-    let cols = lines.iter().map(|l| l.split(sep).count()).max().unwrap_or(1).clamp(1, 63);
+    let lines: Vec<String> = (a.path.last()..=b.path.last())
+        .filter_map(|i| {
+            s.doc
+                .para(a.story, &a.path.with_last(i))
+                .map(|p| p.plain_text())
+        })
+        .collect();
+    let cols = lines
+        .iter()
+        .map(|l| l.split(sep).count())
+        .max()
+        .unwrap_or(1)
+        .clamp(1, 63);
     let width = super::page::sect(s).text_width();
     let mut t = Table::new(lines.len().max(1), cols, width);
     for (r, l) in lines.iter().enumerate() {
         for (c, txt) in l.split(sep).enumerate() {
             if let Some(cl) = t.rows.get_mut(r).and_then(|row| row.cells.get_mut(c)) {
-                cl.blocks = vec![para_block(Paragraph::with_text(txt.trim(), Default::default()))];
+                cl.blocks = vec![para_block(Paragraph::with_text(
+                    txt.trim(),
+                    Default::default(),
+                ))];
             }
         }
     }
@@ -932,7 +1247,11 @@ fn from_text(s: &mut Session, v: &Value) -> CmdResult {
     s.doc.insert_block(a.story, &a.path, Block::Table(t))?;
     let mut first = a.path.0.clone();
     first.extend([0, 0, 0]);
-    s.sel = Selection::caret(Pos { story: a.story, path: Path(first), off: 0 });
+    s.sel = Selection::caret(Pos {
+        story: a.story,
+        path: Path(first),
+        off: 0,
+    });
     sel_result(s)
 }
 
@@ -942,8 +1261,9 @@ fn quick_table(s: &mut Session, v: &Value) -> CmdResult {
         "calendar" => {
             let mut rows = vec![vec!["M", "T", "W", "T", "F", "S", "S"]];
             let days = [
-                "", "", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22",
-                "23", "24", "25", "26", "27", "28", "29", "30", "31", "", "", "",
+                "", "", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                "29", "30", "31", "", "", "",
             ];
             for ch in days.chunks(7) {
                 rows.push(ch.to_vec());
@@ -969,7 +1289,14 @@ fn quick_table(s: &mut Session, v: &Value) -> CmdResult {
     let cols = data.iter().map(Vec::len).max().unwrap_or(1);
     let width = super::page::sect(s).text_width();
     let mut t = Table::new(data.len(), cols, width);
-    t.props.style = Some(if kind == "calendar" { "GridTable1Light" } else { "GridTable4AccentBlue" }.into());
+    t.props.style = Some(
+        if kind == "calendar" {
+            "GridTable1Light"
+        } else {
+            "GridTable4AccentBlue"
+        }
+        .into(),
+    );
     for (r, row) in data.iter().enumerate() {
         for (c, txt) in row.iter().enumerate() {
             if let Some(cl) = t.rows.get_mut(r).and_then(|x| x.cells.get_mut(c)) {
@@ -986,7 +1313,11 @@ fn quick_table(s: &mut Session, v: &Value) -> CmdResult {
     s.doc.insert_block(story, &new.path, Block::Table(t))?;
     let mut first = new.path.0.clone();
     first.extend([0, 0, 0]);
-    s.sel = Selection::caret(Pos { story, path: Path(first), off: 0 });
+    s.sel = Selection::caret(Pos {
+        story,
+        path: Path(first),
+        off: 0,
+    });
     let _ = StoryRef::Body;
     sel_result(s)
 }

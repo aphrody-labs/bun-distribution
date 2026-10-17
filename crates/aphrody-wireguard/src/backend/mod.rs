@@ -35,7 +35,11 @@ impl Backend {
     /// The preferred backend of this platform.
     #[must_use]
     pub fn native() -> Self {
-        if cfg!(any(target_os = "linux", windows)) { Self::Kernel } else { Self::Userspace }
+        if cfg!(any(target_os = "linux", windows)) {
+            Self::Kernel
+        } else {
+            Self::Userspace
+        }
     }
 
     /// Whether the interface outlives the process that created it.
@@ -96,12 +100,20 @@ impl Tunnel {
             inner.dns(cfg)?;
         }
         hooks(&cfg.interface.post_up, name)?;
-        Ok(Self { name: name.to_owned(), backend, inner })
+        Ok(Self {
+            name: name.to_owned(),
+            backend,
+            inner,
+        })
     }
 
     /// Attach to an interface that already exists.
     pub fn open(name: &str, backend: Backend) -> Result<Self> {
-        Ok(Self { name: name.to_owned(), backend, inner: platform::Handle::open(name, backend)? })
+        Ok(Self {
+            name: name.to_owned(),
+            backend,
+            inner: platform::Handle::open(name, backend)?,
+        })
     }
 
     #[must_use]
@@ -174,12 +186,20 @@ fn hooks(cmds: &[String], name: &str) -> Result<()> {
     for c in cmds {
         let line = c.replace("%i", name);
         #[cfg(windows)]
-        let status = std::process::Command::new("cmd").no_window().args(["/C", &line]).status();
+        let status = std::process::Command::new("cmd")
+            .no_window()
+            .args(["/C", &line])
+            .status();
         #[cfg(not(windows))]
-        let status = std::process::Command::new("sh").no_window().args(["-c", &line]).status();
+        let status = std::process::Command::new("sh")
+            .no_window()
+            .args(["-c", &line])
+            .status();
         let status = status.map_err(|e| crate::Error::Backend(format!("hook `{line}`: {e}")))?;
         if !status.success() {
-            return Err(crate::Error::Backend(format!("hook `{line}` a échoué ({status})")));
+            return Err(crate::Error::Backend(format!(
+                "hook `{line}` a échoué ({status})"
+            )));
         }
     }
     Ok(())

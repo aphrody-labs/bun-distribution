@@ -65,14 +65,23 @@ pub fn compare(reference: &[u8], got: &[u8], max_ranges: usize) -> DiffReport {
         }
         bytes_differing += i - start;
         if ranges.len() < max_ranges {
-            ranges.push(DiffRange { off: start, len: i - start });
+            ranges.push(DiffRange {
+                off: start,
+                len: i - start,
+            });
         } else {
             truncated = true;
         }
     }
     // La partie excédentaire d'un tampon plus long compte comme divergente.
     bytes_differing += reference.len().abs_diff(got.len());
-    DiffReport { len_ref: reference.len(), len_got: got.len(), bytes_differing, ranges, truncated }
+    DiffReport {
+        len_ref: reference.len(),
+        len_got: got.len(),
+        bytes_differing,
+        ranges,
+        truncated,
+    }
 }
 
 /// Compare deux tampons en ignorant les octets marqués dans `mask`.
@@ -118,7 +127,10 @@ mod tests {
     fn condense_les_plages() {
         let r = compare(&[1, 2, 3, 4, 5], &[1, 9, 9, 4, 8], 8);
         assert_eq!(r.bytes_differing, 3);
-        assert_eq!(r.ranges, vec![DiffRange { off: 1, len: 2 }, DiffRange { off: 4, len: 1 }]);
+        assert_eq!(
+            r.ranges,
+            vec![DiffRange { off: 1, len: 2 }, DiffRange { off: 4, len: 1 }]
+        );
     }
 
     #[test]

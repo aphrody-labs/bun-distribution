@@ -25,7 +25,9 @@ pub trait SectionExt {
 
 impl SectionExt for Section {
     fn relocatable_code(&self, module: &Module) -> Result<Option<Vec<u8>>> {
-        let Some(code) = self.code_from_module(module)? else { return Ok(None) };
+        let Some(code) = self.code_from_module(module)? else {
+            return Ok(None);
+        };
         let mut code = code.to_vec();
 
         for relocation in self.relocations(module) {
@@ -41,29 +43,29 @@ impl SectionExt for Section {
                 RelocationKind::ArmCall => {
                     // R_ARM_PC24
                     &[0xfe, 0xff, 0xff, 0xeb] // bl #0
-                },
+                }
                 RelocationKind::ArmCallThumb => {
                     // R_ARM_XPC25
                     &[0xfe, 0xff, 0xff, 0xeb] // bl #0
-                },
+                }
                 RelocationKind::ThumbCall => {
                     // R_ARM_THM_PC22
                     &[0xff, 0xf7, 0xfe, 0xff] // bl #0
-                },
+                }
                 RelocationKind::ThumbCallArm => {
                     // R_ARM_THM_XPC22
                     &[0xff, 0xf7, 0xfe, 0xff] // bl #0
-                },
+                }
                 RelocationKind::ArmBranch => {
                     // R_ARM_PC24
                     &[0xfe, 0xff, 0xff, 0xea] // b #0
-                },
+                }
                 RelocationKind::Load
                 | RelocationKind::OverlayId
                 | RelocationKind::LinkTimeConst(_) => {
                     // R_ARM_ABS32
                     &[0x00, 0x00, 0x00, 0x00]
-                },
+                }
             };
             code[offset..offset + 4].copy_from_slice(ins);
         }
@@ -72,12 +74,18 @@ impl SectionExt for Section {
     }
 
     fn relocations<'a>(&'a self, module: &'a Module) -> impl Iterator<Item = &'a Relocation> {
-        module.relocations().iter_range(self.address_range()).map(|(_, r)| r)
+        module
+            .relocations()
+            .iter_range(self.address_range())
+            .map(|(_, r)| r)
     }
 
     /// Name of this section for creating section boundary symbols, e.g. `ARM9_BSS_START`
     fn boundary_name(&self) -> String {
-        self.name().strip_prefix('.').unwrap_or(self.name()).to_uppercase()
+        self.name()
+            .strip_prefix('.')
+            .unwrap_or(self.name())
+            .to_uppercase()
     }
 
     fn range_from_object(

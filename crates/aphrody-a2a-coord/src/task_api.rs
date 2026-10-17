@@ -34,20 +34,37 @@ struct ListQuery {
 /// `root` is the Aphrody coordination directory. Records are stored beneath
 /// `agents/<namespace>/`, keeping product agents isolated from one another.
 pub fn task_api_router(root: PathBuf, token: Option<String>) -> Router {
-    let state = ApiState { root, token, write_lock: Arc::new(Mutex::new(())) };
+    let state = ApiState {
+        root,
+        token,
+        write_lock: Arc::new(Mutex::new(())),
+    };
     Router::new()
-        .route("/coord/{namespace}/tasks", get(list_tasks).post(create_task))
+        .route(
+            "/coord/{namespace}/tasks",
+            get(list_tasks).post(create_task),
+        )
         .route(
             "/coord/{namespace}/tasks/{task_id}",
-            get(get_task).put(put_task).patch(patch_task).delete(delete_task),
+            get(get_task)
+                .put(put_task)
+                .patch(patch_task)
+                .delete(delete_task),
         )
-        .route("/coord/{namespace}/envelopes", get(list_envelopes).post(append_envelope))
+        .route(
+            "/coord/{namespace}/envelopes",
+            get(list_envelopes).post(append_envelope),
+        )
         .with_state(state)
 }
 
 fn authorized(headers: &HeaderMap, state: &ApiState) -> bool {
-    let Some(expected) = state.token.as_deref() else { return true };
-    let Some(value) = headers.get(axum::http::header::AUTHORIZATION).and_then(|v| v.to_str().ok())
+    let Some(expected) = state.token.as_deref() else {
+        return true;
+    };
+    let Some(value) = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
     else {
         return false;
     };
@@ -75,7 +92,9 @@ fn auth_error() -> ApiResponse {
 fn valid_segment(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
-        && value.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+        && value
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
 }
 
 fn agent_dir(state: &ApiState, namespace: &str) -> Result<PathBuf, StatusCode> {
@@ -89,7 +108,9 @@ fn task_path(state: &ApiState, namespace: &str, task_id: &str) -> Result<PathBuf
     if !valid_segment(task_id) {
         return Err(StatusCode::BAD_REQUEST);
     }
-    Ok(agent_dir(state, namespace)?.join("tasks").join(format!("{task_id}.json")))
+    Ok(agent_dir(state, namespace)?
+        .join("tasks")
+        .join(format!("{task_id}.json")))
 }
 
 fn response(status: StatusCode, value: Value) -> ApiResponse {
@@ -98,9 +119,9 @@ fn response(status: StatusCode, value: Value) -> ApiResponse {
 
 async fn read_task(path: PathBuf) -> Result<Option<Value>, StatusCode> {
     match tokio::fs::read(&path).await {
-        Ok(bytes) => {
-            serde_json::from_slice(&bytes).map(Some).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
-        },
+        Ok(bytes) => serde_json::from_slice(&bytes)
+            .map(Some)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
@@ -108,11 +129,17 @@ async fn read_task(path: PathBuf) -> Result<Option<Value>, StatusCode> {
 
 async fn write_task(path: PathBuf, value: &Value) -> Result<(), StatusCode> {
     let parent = path.parent().ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
-    tokio::fs::create_dir_all(parent).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    tokio::fs::create_dir_all(parent)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let temp = path.with_extension("json.tmp");
     let bytes = serde_json::to_vec(value).map_err(|_| StatusCode::BAD_REQUEST)?;
-    tokio::fs::write(&temp, bytes).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    tokio::fs::rename(temp, path).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    tokio::fs::write(&temp, bytes)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    tokio::fs::rename(temp, path)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }
 
 async fn list_tasks(
@@ -131,13 +158,13 @@ async fn list_tasks(
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(Json(json!({"tasks":[],"total":0})));
-        },
+        }
         Err(_) => {
             return Err(response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 json!({"error":"task listing failed"}),
             ));
-        },
+        }
     };
     let mut tasks = Vec::new();
     while let Ok(Some(entry)) = entries.next_entry().await {
@@ -155,7 +182,9 @@ async fn list_tasks(
         }
     }
     tasks.sort_by(|a, b| {
-        b.get("createdAt").and_then(Value::as_str).cmp(&a.get("createdAt").and_then(Value::as_str))
+        b.get("createdAt")
+            .and_then(Value::as_str)
+            .cmp(&a.get("createdAt").and_then(Value::as_str))
     });
     let total = tasks.len();
     tasks.truncate(query.limit.unwrap_or(1000).clamp(1, 5000));
@@ -172,7 +201,10 @@ async fn create_task(
         return Err(auth_error());
     }
     let Some(id) = task.get("id").and_then(Value::as_str) else {
-        return Err(response(StatusCode::BAD_REQUEST, json!({"error":"task id required"})));
+        return Err(response(
+            StatusCode::BAD_REQUEST,
+            json!({"error":"task id required"}),
+        ));
     };
     let path = task_path(&state, &namespace, id)
         .map_err(|status| response(status, json!({"error":"invalid namespace or task id"})))?;
@@ -182,7 +214,10 @@ async fn create_task(
         .map_err(|status| response(status, json!({"error":"task read failed"})))?
         .is_some()
     {
-        return Err(response(StatusCode::CONFLICT, json!({"error":"task already exists"})));
+        return Err(response(
+            StatusCode::CONFLICT,
+            json!({"error":"task already exists"}),
+        ));
     }
     write_task(path, &task)
         .await
@@ -205,7 +240,10 @@ async fn get_task(
         .map_err(|status| response(status, json!({"error":"task read failed"})))?
     {
         Some(task) => Ok(response(StatusCode::OK, task)),
-        None => Err(response(StatusCode::NOT_FOUND, json!({"error":"task not found"}))),
+        None => Err(response(
+            StatusCode::NOT_FOUND,
+            json!({"error":"task not found"}),
+        )),
     }
 }
 
@@ -245,7 +283,10 @@ async fn save_task(
         .await
         .map_err(|status| response(status, json!({"error":"task read failed"})))?
     else {
-        return Err(response(StatusCode::NOT_FOUND, json!({"error":"task not found"})));
+        return Err(response(
+            StatusCode::NOT_FOUND,
+            json!({"error":"task not found"}),
+        ));
     };
     if merge {
         let (Some(current), Some(patch)) = (current.as_object(), task.as_object_mut()) else {
@@ -261,7 +302,10 @@ async fn save_task(
         task = Value::Object(merged);
     }
     let Some(object) = task.as_object_mut() else {
-        return Err(response(StatusCode::BAD_REQUEST, json!({"error":"task must be an object"})));
+        return Err(response(
+            StatusCode::BAD_REQUEST,
+            json!({"error":"task must be an object"}),
+        ));
     };
     object.insert("id".into(), Value::String(task_id));
     write_task(path, &task)
@@ -281,10 +325,14 @@ async fn delete_task(
     let path = task_path(&state, &namespace, &task_id)
         .map_err(|status| response(status, json!({"error":"invalid namespace or task id"})))?;
     match tokio::fs::remove_file(path).await {
-        Ok(()) => Ok(response(StatusCode::OK, json!({"deleted":true,"id":task_id}))),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            Err(response(StatusCode::NOT_FOUND, json!({"error":"task not found"})))
-        },
+        Ok(()) => Ok(response(
+            StatusCode::OK,
+            json!({"deleted":true,"id":task_id}),
+        )),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Err(response(
+            StatusCode::NOT_FOUND,
+            json!({"error":"task not found"}),
+        )),
         Err(_) => Err(response(
             StatusCode::INTERNAL_SERVER_ERROR,
             json!({"error":"task deletion failed"}),
@@ -308,13 +356,13 @@ async fn list_envelopes(
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(Json(json!({"envelopes":[],"total":0})));
-        },
+        }
         Err(_) => {
             return Err(response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 json!({"error":"mailbox listing failed"}),
             ));
-        },
+        }
     };
     let mut envelopes = Vec::new();
     while let Ok(Some(entry)) = entries.next_entry().await {
@@ -330,7 +378,9 @@ async fn list_envelopes(
         }
     }
     envelopes.sort_by(|a, b| {
-        b.get("ts").and_then(Value::as_str).cmp(&a.get("ts").and_then(Value::as_str))
+        b.get("ts")
+            .and_then(Value::as_str)
+            .cmp(&a.get("ts").and_then(Value::as_str))
     });
     let total = envelopes.len();
     envelopes.truncate(query.limit.unwrap_or(100).clamp(1, 5000));
@@ -351,27 +401,49 @@ async fn append_envelope(
         .join("mailbox");
     let source = envelope.from.split('@').next().unwrap_or("unknown");
     if !valid_segment(source) {
-        return Err(response(StatusCode::BAD_REQUEST, json!({"error":"invalid envelope source"})));
+        return Err(response(
+            StatusCode::BAD_REQUEST,
+            json!({"error":"invalid envelope source"}),
+        ));
     }
     let _guard = state.write_lock.lock().await;
     tokio::fs::create_dir_all(&dir).await.map_err(|_| {
-        response(StatusCode::INTERNAL_SERVER_ERROR, json!({"error":"mailbox write failed"}))
+        response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!({"error":"mailbox write failed"}),
+        )
     })?;
     let path = dir.join(format!("inbox-from-{source}.jsonl"));
-    let mut file =
-        tokio::fs::OpenOptions::new().create(true).append(true).open(path).await.map_err(|_| {
-            response(StatusCode::INTERNAL_SERVER_ERROR, json!({"error":"mailbox write failed"}))
+    let mut file = tokio::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .await
+        .map_err(|_| {
+            response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                json!({"error":"mailbox write failed"}),
+            )
         })?;
     use tokio::io::AsyncWriteExt;
     let line = serde_json::to_vec(&envelope)
         .map_err(|_| response(StatusCode::BAD_REQUEST, json!({"error":"invalid envelope"})))?;
     file.write_all(&line).await.map_err(|_| {
-        response(StatusCode::INTERNAL_SERVER_ERROR, json!({"error":"mailbox write failed"}))
+        response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!({"error":"mailbox write failed"}),
+        )
     })?;
     file.write_all(b"\n").await.map_err(|_| {
-        response(StatusCode::INTERNAL_SERVER_ERROR, json!({"error":"mailbox write failed"}))
+        response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!({"error":"mailbox write failed"}),
+        )
     })?;
-    Ok(response(StatusCode::CREATED, json!({"ok":true,"id":envelope.id})))
+    Ok(response(
+        StatusCode::CREATED,
+        json!({"ok":true,"id":envelope.id}),
+    ))
 }
 
 #[cfg(test)]
@@ -424,28 +496,53 @@ mod tests {
             (StatusCode::OK, doc.clone())
         );
         assert_eq!(
-            request(&app, "POST", tasks, Some(doc), Some("test-token")).await.0,
+            request(&app, "POST", tasks, Some(doc), Some("test-token"))
+                .await
+                .0,
             StatusCode::CONFLICT
         );
         assert_eq!(
             request(&app, "GET", "/coord/dbfr/tasks", None, Some("test-token")).await,
             (StatusCode::OK, json!({"tasks":[],"total":0}))
         );
-        let updated =
-            request(&app, "PATCH", task, Some(json!({"status":"done"})), Some("test-token")).await;
+        let updated = request(
+            &app,
+            "PATCH",
+            task,
+            Some(json!({"status":"done"})),
+            Some("test-token"),
+        )
+        .await;
         assert_eq!(
             updated,
-            (StatusCode::OK, json!({"id":"task-1","target":"codex","status":"done"}))
+            (
+                StatusCode::OK,
+                json!({"id":"task-1","target":"codex","status":"done"})
+            )
         );
         assert_eq!(
-            request(&app, "GET", "/coord/aphrody/tasks?target=claude", None, Some("test-token"))
-                .await,
+            request(
+                &app,
+                "GET",
+                "/coord/aphrody/tasks?target=claude",
+                None,
+                Some("test-token")
+            )
+            .await,
             (StatusCode::OK, json!({"tasks":[],"total":0}))
         );
-        let listed =
-            request(&app, "GET", "/coord/aphrody/tasks?target=codex", None, Some("test-token"))
-                .await;
-        assert_eq!(listed, (StatusCode::OK, json!({"tasks":[updated.1],"total":1})));
+        let listed = request(
+            &app,
+            "GET",
+            "/coord/aphrody/tasks?target=codex",
+            None,
+            Some("test-token"),
+        )
+        .await;
+        assert_eq!(
+            listed,
+            (StatusCode::OK, json!({"tasks":[updated.1],"total":1}))
+        );
         assert_eq!(
             request(&app, "DELETE", task, None, Some("test-token")).await,
             (StatusCode::OK, json!({"deleted":true,"id":"task-1"}))
@@ -479,7 +576,10 @@ mod tests {
         );
         assert_eq!(
             request(&app, "GET", "/coord/invalid.namespace/tasks", None, None).await,
-            (StatusCode::BAD_REQUEST, json!({"error":"invalid namespace"}))
+            (
+                StatusCode::BAD_REQUEST,
+                json!({"error":"invalid namespace"})
+            )
         );
     }
 }

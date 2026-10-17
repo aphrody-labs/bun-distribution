@@ -29,7 +29,11 @@ pub struct Reach {
 
 impl Reach {
     /// Every colour.
-    pub const ALL: Reach = Reach { fill: true, stroke: true, images: true };
+    pub const ALL: Reach = Reach {
+        fill: true,
+        stroke: true,
+        images: true,
+    };
 }
 
 /// Recolour `n` and everything inside it through `v`: the paints of its fills and strokes and of
@@ -88,7 +92,10 @@ pub fn recolor_node(n: &mut Node, reach: Reach, v: &mut dyn ColorVisitor) -> usi
 /// Apply `f` to the solid colour or gradient stops of a paint, with their swatch link and tint
 /// ([`Paint::map_links`]); a gradient that changes is no longer its gradient swatch's. Returns
 /// whether anything changed.
-pub fn map_links(p: &mut Paint, f: &dyn Fn(&mut Color, &mut Option<String>, &mut f32) -> bool) -> bool {
+pub fn map_links(
+    p: &mut Paint,
+    f: &dyn Fn(&mut Color, &mut Option<String>, &mut f32) -> bool,
+) -> bool {
     let changed = p.map_links(&mut |c, l, t| f(c, l, t));
     if changed && let Paint::Gradient(g) = p {
         g.swatch = None;

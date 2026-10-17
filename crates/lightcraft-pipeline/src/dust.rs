@@ -28,11 +28,16 @@ pub fn detect(img: &Rgba8, sensitivity: f32) -> Vec<DustSpot> {
     });
     let around = gaussian(&l, (0.012 * long).max(2.0));
     // texture: local mean of the fine detail (what isn't explained by the surroundings)
-    let detail = Plane::from_fn(w, h, |x, y| (l.data[y * w + x] - around.data[y * w + x]).abs());
+    let detail = Plane::from_fn(w, h, |x, y| {
+        (l.data[y * w + x] - around.data[y * w + x]).abs()
+    });
     let texture = gaussian(&detail, (0.02 * long).max(3.0));
     let min_dark = 0.03 - 0.022 * (sensitivity / 100.0).clamp(0.0, 1.0);
-    let dark: Vec<f32> = (0..w * h).map(|i| (around.data[i] - l.data[i]).max(0.0)).collect();
-    let candidate = |i: usize| dark[i] > min_dark && dark[i] > 3.0 * texture.data[i] && l.data[i] > 0.08;
+    let dark: Vec<f32> = (0..w * h)
+        .map(|i| (around.data[i] - l.data[i]).max(0.0))
+        .collect();
+    let candidate =
+        |i: usize| dark[i] > min_dark && dark[i] > 3.0 * texture.data[i] && l.data[i] > 0.08;
     // blobs of candidate pixels (4-connected)
     let mut seen = vec![false; w * h];
     let mut out = Vec::new();
@@ -88,7 +93,11 @@ mod tests {
     #[test]
     fn finds_spots_on_smooth_areas() {
         let (w, h) = (600usize, 400usize);
-        let spots = [(120.0f32, 90.0f32, 4.0f32), (400.0, 200.0, 6.0), (500.0, 330.0, 3.0)];
+        let spots = [
+            (120.0f32, 90.0f32, 4.0f32),
+            (400.0, 200.0, 6.0),
+            (500.0, 330.0, 3.0),
+        ];
         let data: Vec<[u8; 4]> = (0..w * h)
             .map(|i| {
                 let (x, y) = ((i % w) as f32, (i / w) as f32);
@@ -101,11 +110,21 @@ mod tests {
                 [b, b, (b as f32 * 1.1).min(255.0) as u8, 255]
             })
             .collect();
-        let found = detect(&Rgba8 { width: w, height: h, data }, 50.0);
+        let found = detect(
+            &Rgba8 {
+                width: w,
+                height: h,
+                data,
+            },
+            50.0,
+        );
         assert_eq!(found.len(), 3, "{found:?}");
         for (cx, cy, _) in spots {
             assert!(
-                found.iter().any(|s| (s.x * w as f64 - cx as f64).abs() < 3.0 && (s.y * h as f64 - cy as f64).abs() < 3.0),
+                found
+                    .iter()
+                    .any(|s| (s.x * w as f64 - cx as f64).abs() < 3.0
+                        && (s.y * h as f64 - cy as f64).abs() < 3.0),
                 "{cx},{cy}: {found:?}"
             );
         }
@@ -118,11 +137,20 @@ mod tests {
             .data
             .iter()
             .map(|c| {
-                let e = |v: f32| (lightcraft_color::transfer::linear_to_srgb(v.clamp(0.0, 1.0)) * 255.0) as u8;
+                let e = |v: f32| {
+                    (lightcraft_color::transfer::linear_to_srgb(v.clamp(0.0, 1.0)) * 255.0) as u8
+                };
                 [e(c[0]), e(c[1]), e(c[2]), 255]
             })
             .collect();
-        let found = detect(&Rgba8 { width: 600, height: 400, data }, 50.0);
+        let found = detect(
+            &Rgba8 {
+                width: 600,
+                height: 400,
+                data,
+            },
+            50.0,
+        );
         assert!(found.len() <= 3, "{} false spots", found.len());
     }
 }

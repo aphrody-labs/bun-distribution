@@ -108,13 +108,21 @@ impl Tokens {
         }
     }
     pub fn get(ctx: &egui::Context) -> Self {
-        if ctx.global_style().visuals.dark_mode { Self::dark() } else { Self::light() }
+        if ctx.global_style().visuals.dark_mode {
+            Self::dark()
+        } else {
+            Self::light()
+        }
     }
 }
 
 /// Apply tokens to egui's style.
 pub fn apply(ctx: &egui::Context, t: &Tokens) {
-    let mut v = if t.dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.chrome;
     v.window_fill = t.card;
     v.extreme_bg_color = t.field_bg;
@@ -126,7 +134,13 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     v.selection.stroke = Stroke::new(1.0, t.accent_text);
     v.hyperlink_color = t.accent;
     v.override_text_color = Some(t.text);
-    for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
+    for w in [
+        &mut v.widgets.noninteractive,
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+    ] {
         w.corner_radius = CornerRadius::same(5);
     }
     v.widgets.noninteractive.bg_stroke = Stroke::new(1.0, t.separator);
@@ -139,17 +153,31 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     v.widgets.active.weak_bg_fill = t.pressed;
     v.widgets.active.bg_fill = t.pressed;
     v.widgets.open.weak_bg_fill = t.pressed;
-    v.window_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 18, spread: 0, color: t.shadow };
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 3], blur: 12, spread: 0, color: t.shadow };
+    v.window_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 18,
+        spread: 0,
+        color: t.shadow,
+    };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 3],
+        blur: 12,
+        spread: 0,
+        color: t.shadow,
+    };
     ctx.set_visuals(v);
     ctx.global_style_mut(|s| {
         s.spacing.item_spacing = egui::vec2(6.0, 4.0);
         s.spacing.button_padding = egui::vec2(6.0, 3.0);
         s.spacing.interact_size.y = 22.0;
-        s.text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
-        s.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
-        s.text_styles.insert(egui::TextStyle::Small, egui::FontId::proportional(11.0));
-        s.text_styles.insert(egui::TextStyle::Heading, egui::FontId::proportional(18.0));
+        s.text_styles
+            .insert(egui::TextStyle::Body, egui::FontId::proportional(13.0));
+        s.text_styles
+            .insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
+        s.text_styles
+            .insert(egui::TextStyle::Small, egui::FontId::proportional(11.0));
+        s.text_styles
+            .insert(egui::TextStyle::Heading, egui::FontId::proportional(18.0));
     });
 }
 
@@ -161,7 +189,10 @@ pub fn install_fonts(ctx: &egui::Context) {
 /// [`install_fonts`], with `extra` faces from the font database after every interface font: the
 /// installed or embedded faces that draw text the interface faces lack (Hangul, Simplified
 /// Chinese, Devanagari…, #101). See [`crate::uifonts`].
-pub fn install_fonts_with(ctx: &egui::Context, extra: &[std::sync::Arc<deckcraft_fonts::FontFace>]) {
+pub fn install_fonts_with(
+    ctx: &egui::Context,
+    extra: &[std::sync::Arc<deckcraft_fonts::FontFace>],
+) {
     ctx.set_fonts(font_definitions(extra));
 }
 
@@ -170,25 +201,42 @@ pub fn font_definitions(extra: &[std::sync::Arc<deckcraft_fonts::FontFace>]) -> 
     let mut defs = FontDefinitions::default();
     let mut names = vec![];
     for (i, f) in deckcraft_fonts::CRAFT_FONTS.iter().enumerate() {
-        let wanted = (f.family == "Inter" && (f.style == "Regular" || f.style == "SemiBold" || f.style == "Bold"))
+        let wanted = (f.family == "Inter"
+            && (f.style == "Regular" || f.style == "SemiBold" || f.style == "Bold"))
             || (f.family == "BIZ UDPGothic" && f.style == "Regular")
             || (f.family == "Noto Sans Arabic");
         if !wanted {
             continue;
         }
         let name = format!("craft-{i}-{}-{}", f.family, f.style);
-        defs.font_data.insert(name.clone(), std::sync::Arc::new(FontData::from_static(f.bytes)));
+        defs.font_data.insert(
+            name.clone(),
+            std::sync::Arc::new(FontData::from_static(f.bytes)),
+        );
         names.push((f.family, f.style, name));
     }
-    let regular: Vec<String> = names.iter().filter(|(fam, st, _)| !(*fam == "Inter" && *st != "Regular")).map(|(_, _, n)| n.clone()).collect();
+    let regular: Vec<String> = names
+        .iter()
+        .filter(|(fam, st, _)| !(*fam == "Inter" && *st != "Regular"))
+        .map(|(_, _, n)| n.clone())
+        .collect();
     if let Some(list) = defs.families.get_mut(&FontFamily::Proportional) {
         for (k, n) in regular.iter().enumerate() {
             list.insert(k, n.clone());
         }
     }
     // A bold family for headings and selected tabs.
-    let mut bold: Vec<String> = names.iter().filter(|(fam, st, _)| *fam == "Inter" && *st == "SemiBold").map(|(_, _, n)| n.clone()).collect();
-    bold.extend(defs.families.get(&FontFamily::Proportional).cloned().unwrap_or_default());
+    let mut bold: Vec<String> = names
+        .iter()
+        .filter(|(fam, st, _)| *fam == "Inter" && *st == "SemiBold")
+        .map(|(_, _, n)| n.clone())
+        .collect();
+    bold.extend(
+        defs.families
+            .get(&FontFamily::Proportional)
+            .cloned()
+            .unwrap_or_default(),
+    );
     defs.families.insert(FontFamily::Name("bold".into()), bold);
     add_fallback_faces(&mut defs, extra);
     // The Japanese interface face (the first one when Inter isn't embedded) hints its en and em
@@ -205,7 +253,10 @@ pub fn font_definitions(extra: &[std::sync::Arc<deckcraft_fonts::FontFace>]) -> 
 }
 
 /// Add `faces` after every other font of each interface family (the last fallbacks).
-pub fn add_fallback_faces(defs: &mut FontDefinitions, faces: &[std::sync::Arc<deckcraft_fonts::FontFace>]) {
+pub fn add_fallback_faces(
+    defs: &mut FontDefinitions,
+    faces: &[std::sync::Arc<deckcraft_fonts::FontFace>],
+) {
     for f in faces {
         let name = format!("fallback {} {} {}", f.family, f.style, f.id());
         if defs.font_data.contains_key(&name) {
@@ -213,7 +264,8 @@ pub fn add_fallback_faces(defs: &mut FontDefinitions, faces: &[std::sync::Arc<de
         }
         let mut data = FontData::from_owned(f.data().to_vec());
         data.index = f.index();
-        defs.font_data.insert(name.clone(), std::sync::Arc::new(data));
+        defs.font_data
+            .insert(name.clone(), std::sync::Arc::new(data));
         for list in defs.families.values_mut() {
             list.push(name.clone());
         }
@@ -244,10 +296,21 @@ mod tests {
         let mut out = vec![];
         ctx.fonts_mut(|f| {
             for size in [11.0, 12.0, 13.0, 16.0] {
-                for family in [egui::FontFamily::Proportional, egui::FontFamily::Name("bold".into())] {
-                    let g = f.layout_no_wrap(text.to_string(), egui::FontId::new(size, family), egui::Color32::WHITE);
+                for family in [
+                    egui::FontFamily::Proportional,
+                    egui::FontFamily::Name("bold".into()),
+                ] {
+                    let g = f.layout_no_wrap(
+                        text.to_string(),
+                        egui::FontId::new(size, family),
+                        egui::Color32::WHITE,
+                    );
                     for gl in g.rows.iter().flat_map(|r| &r.glyphs) {
-                        out.push((gl.chr, size, gl.uv_rect.size.x > 0.0 && gl.uv_rect.size.y > 0.0));
+                        out.push((
+                            gl.chr,
+                            size,
+                            gl.uv_rect.size.x > 0.0 && gl.uv_rect.size.y > 0.0,
+                        ));
                     }
                 }
             }
@@ -261,7 +324,9 @@ mod tests {
     fn thin_punctuation_is_drawn_in_interface_text() {
         // En and em dashes (thin bars) were hinted down to nothing in the Japanese interface face,
         // so notes and the outline showed gaps where they were.
-        for (c, size, ink) in drawn("\u{2013}\u{2014}-_\u{2026}\u{2022}\u{00b7}\u{2018}\u{2019}\u{201c}\u{201d}=~") {
+        for (c, size, ink) in
+            drawn("\u{2013}\u{2014}-_\u{2026}\u{2022}\u{00b7}\u{2018}\u{2019}\u{201c}\u{201d}=~")
+        {
             assert!(ink, "{c:?} ({:04X}) draws nothing at {size} px", c as u32);
         }
     }

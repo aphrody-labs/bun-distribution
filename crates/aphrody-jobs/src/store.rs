@@ -134,7 +134,10 @@ impl JobStore {
             std::fs::create_dir_all(parent)?;
         }
         let conn = Connection::open(path)?;
-        let store = Self { conn, path: Some(path.to_path_buf()) };
+        let store = Self {
+            conn,
+            path: Some(path.to_path_buf()),
+        };
         store.migrate()?;
         Ok(store)
     }
@@ -205,10 +208,12 @@ impl JobStore {
             |row| row.get(0),
         )?;
         if !key_exists {
-            self.conn.execute_batch("ALTER TABLE jobs ADD COLUMN idempotency_key TEXT")?;
+            self.conn
+                .execute_batch("ALTER TABLE jobs ADD COLUMN idempotency_key TEXT")?;
         }
         self.conn.execute_batch("CREATE UNIQUE INDEX IF NOT EXISTS jobs_idempotency ON jobs(idempotency_key) WHERE idempotency_key IS NOT NULL")?;
-        self.conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
+        self.conn
+            .pragma_update(None, "user_version", SCHEMA_VERSION)?;
         self.conn.execute_batch("COMMIT")?;
         Ok(())
     }
@@ -238,7 +243,9 @@ impl JobStore {
         if let Some(key) = &spec.idempotency_key
             && (key.trim().is_empty() || key.len() > 256)
         {
-            return Err(JobError::InvalidSpec("idempotency key must contain 1-256 bytes".into()));
+            return Err(JobError::InvalidSpec(
+                "idempotency key must contain 1-256 bytes".into(),
+            ));
         }
         let job = Job {
             id: uuid::Uuid::new_v4().to_string(),
@@ -444,7 +451,11 @@ impl JobStore {
              WHERE id=?3 AND worker=?4 AND attempts=?5 AND state='running'",
             params![serde_json::to_string(result)?, rfc3339(Utc::now()), id, worker, attempt],
         )?;
-        if changed == 1 { self.get(id).map(Some) } else { Ok(None) }
+        if changed == 1 {
+            self.get(id).map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     /// Record a handler failure only while its claim generation is still owned.
@@ -475,7 +486,11 @@ impl JobStore {
              WHERE id=?5 AND worker=?6 AND attempts=?7 AND state='running'",
             params![if retry {"queued"} else {"failed"}, error, retry.then(||rfc3339(now + backoff)),rfc3339(now),id,worker,attempt],
         )?;
-        if changed == 1 { self.get(id).map(Some) } else { Ok(None) }
+        if changed == 1 {
+            self.get(id).map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     /// [`Self::heartbeat`] with an explicit clock.
@@ -666,7 +681,11 @@ impl JobStore {
                     AND lease_expires_at <= ?1",
             )?;
             let rows = stmt.query_map(params![rfc3339(now)], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, u32>(1)?, row.get::<_, u32>(2)?))
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, u32>(1)?,
+                    row.get::<_, u32>(2)?,
+                ))
             })?;
             rows.collect::<rusqlite::Result<Vec<_>>>()?
         };
@@ -679,7 +698,11 @@ impl JobStore {
                         SET state = 'queued', worker = NULL, lease_expires_at = NULL,
                             last_error = ?1, updated_at = ?2
                       WHERE id = ?3",
-                    params!["lease expired: the worker holding this job stopped", rfc3339(now), id],
+                    params![
+                        "lease expired: the worker holding this job stopped",
+                        rfc3339(now),
+                        id
+                    ],
                 )?;
                 report.requeued.push(id);
             } else {
@@ -708,9 +731,11 @@ impl JobStore {
     /// when the row does not decode.
     pub fn get(&self, id: &str) -> Result<Job> {
         self.conn
-            .query_row(&format!("SELECT {COLUMNS} FROM jobs WHERE id = ?1"), params![id], |row| {
-                Ok(row_to_job(row))
-            })
+            .query_row(
+                &format!("SELECT {COLUMNS} FROM jobs WHERE id = ?1"),
+                params![id],
+                |row| Ok(row_to_job(row)),
+            )
             .optional()?
             .ok_or_else(|| JobError::UnknownJob(id.to_owned()))?
     }
@@ -746,7 +771,9 @@ impl JobStore {
         let mut stmt = self.conn.prepare(&sql)?;
         let params = rusqlite::params_from_iter(binds.iter());
         let rows = stmt.query_map(params, |row| Ok(row_to_job(row)))?;
-        rows.collect::<rusqlite::Result<Vec<_>>>()?.into_iter().collect()
+        rows.collect::<rusqlite::Result<Vec<_>>>()?
+            .into_iter()
+            .collect()
     }
 
     /// Counts per state.
@@ -755,9 +782,12 @@ impl JobStore {
     ///
     /// [`JobError::Sqlite`] on read failure.
     pub fn stats(&self) -> Result<QueueStats> {
-        let mut stmt = self.conn.prepare("SELECT state, COUNT(*) FROM jobs GROUP BY state")?;
-        let rows =
-            stmt.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT state, COUNT(*) FROM jobs GROUP BY state")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
         let mut stats = QueueStats::default();
         for row in rows {
             let (label, tally) = row?;
@@ -770,7 +800,7 @@ impl JobStore {
                 Some(JobState::Cancelled) => stats.cancelled = count,
                 // An unknown state in the file is data from another version;
                 // it must not make a status report fail.
-                None => {},
+                None => {}
             }
         }
         Ok(stats)
@@ -804,14 +834,19 @@ fn rfc3339(when: DateTime<Utc>) -> String {
 }
 
 fn parse_time(raw: &str) -> Option<DateTime<Utc>> {
-    DateTime::parse_from_rfc3339(raw).ok().map(|t| t.with_timezone(&Utc))
+    DateTime::parse_from_rfc3339(raw)
+        .ok()
+        .map(|t| t.with_timezone(&Utc))
 }
 
 /// Decode one row. Returns the crate's `Result` inside rusqlite's, so a corrupt
 /// row is reported with its id instead of collapsing into a generic SQL error.
 fn row_to_job(row: &rusqlite::Row<'_>) -> Result<Job> {
     let id: String = row.get(0)?;
-    let corrupt = |reason: String| JobError::Corrupt { id: id.clone(), reason };
+    let corrupt = |reason: String| JobError::Corrupt {
+        id: id.clone(),
+        reason,
+    };
 
     let payload_raw: String = row.get(2)?;
     let payload = serde_json::from_str(&payload_raw)
@@ -848,8 +883,14 @@ fn row_to_job(row: &rusqlite::Row<'_>) -> Result<Job> {
         priority: row.get(6)?,
         created_at,
         updated_at,
-        run_after: row.get::<_, Option<String>>(9)?.as_deref().and_then(parse_time),
-        lease_expires_at: row.get::<_, Option<String>>(10)?.as_deref().and_then(parse_time),
+        run_after: row
+            .get::<_, Option<String>>(9)?
+            .as_deref()
+            .and_then(parse_time),
+        lease_expires_at: row
+            .get::<_, Option<String>>(10)?
+            .as_deref()
+            .and_then(parse_time),
         worker: row.get(11)?,
         result,
         last_error: row.get(13)?,
@@ -882,10 +923,16 @@ mod tests {
         assert_eq!(store.stats().unwrap().queued, 1);
         let mut collision = spec.clone();
         collision.payload = serde_json::json!({"args":["dragon-ball"]});
-        assert!(matches!(store.submit(&collision), Err(JobError::InvalidSpec(_))));
+        assert!(matches!(
+            store.submit(&collision),
+            Err(JobError::InvalidSpec(_))
+        ));
         collision = spec.clone();
         collision.host_affinity = HostAffinity::Hosts(vec!["wsl".into()]);
-        assert!(matches!(store.submit(&collision), Err(JobError::InvalidSpec(_))));
+        assert!(matches!(
+            store.submit(&collision),
+            Err(JobError::InvalidSpec(_))
+        ));
         let cancelled = store.cancel(&first.id).unwrap();
         assert_eq!(store.submit(&spec).unwrap(), cancelled);
         assert_eq!(store.stats().unwrap().cancelled, 1);
@@ -895,7 +942,10 @@ mod tests {
     fn concurrent_remote_retries_create_one_intent() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("jobs.db");
-        let stores = [JobStore::open(&path).unwrap(), JobStore::open(&path).unwrap()];
+        let stores = [
+            JobStore::open(&path).unwrap(),
+            JobStore::open(&path).unwrap(),
+        ];
         let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
         let handles: Vec<_> = stores
             .into_iter()
@@ -912,7 +962,10 @@ mod tests {
                 })
             })
             .collect();
-        let ids: Vec<_> = handles.into_iter().map(|handle| handle.join().unwrap()).collect();
+        let ids: Vec<_> = handles
+            .into_iter()
+            .map(|handle| handle.join().unwrap())
+            .collect();
         assert_eq!(ids[0], ids[1]);
         assert_eq!(JobStore::open(path).unwrap().stats().unwrap().queued, 1);
     }
@@ -944,12 +997,16 @@ mod tests {
         let store = JobStore::in_memory().unwrap();
         let t0 = Utc::now();
         let low_first = store.submit_at(&spec("a"), t0).unwrap();
-        let low_second = store.submit_at(&spec("b"), t0 + Duration::seconds(1)).unwrap();
-        let high =
-            store.submit_at(&spec("c").with_priority(10), t0 + Duration::seconds(2)).unwrap();
+        let low_second = store
+            .submit_at(&spec("b"), t0 + Duration::seconds(1))
+            .unwrap();
+        let high = store
+            .submit_at(&spec("c").with_priority(10), t0 + Duration::seconds(2))
+            .unwrap();
 
-        let order: Vec<String> =
-            (0..3).map(|_| store.claim("w", DEFAULT_LEASE).unwrap().unwrap().id).collect();
+        let order: Vec<String> = (0..3)
+            .map(|_| store.claim("w", DEFAULT_LEASE).unwrap().unwrap().id)
+            .collect();
         assert_eq!(order, vec![high.id, low_first.id, low_second.id]);
     }
 
@@ -957,9 +1014,16 @@ mod tests {
     fn a_job_held_back_by_run_after_is_not_claimable_yet() {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
-        store.submit_at(&spec("later").run_after(now + Duration::hours(1)), now).unwrap();
+        store
+            .submit_at(&spec("later").run_after(now + Duration::hours(1)), now)
+            .unwrap();
         assert!(store.claim_at("w", DEFAULT_LEASE, now).unwrap().is_none());
-        assert!(store.claim_at("w", DEFAULT_LEASE, now + Duration::hours(2)).unwrap().is_some());
+        assert!(
+            store
+                .claim_at("w", DEFAULT_LEASE, now + Duration::hours(2))
+                .unwrap()
+                .is_some()
+        );
     }
 
     #[test]
@@ -986,7 +1050,9 @@ mod tests {
         let store = JobStore::in_memory().unwrap();
         store.submit(&spec("x")).unwrap();
         let claimed = store.claim("w", DEFAULT_LEASE).unwrap().unwrap();
-        let done = store.succeed(&claimed.id, &serde_json::json!({ "text": "ok" })).unwrap();
+        let done = store
+            .succeed(&claimed.id, &serde_json::json!({ "text": "ok" }))
+            .unwrap();
         assert_eq!(done.state, JobState::Succeeded);
         assert_eq!(done.result, Some(serde_json::json!({ "text": "ok" })));
         assert!(done.lease_expires_at.is_none());
@@ -1020,21 +1086,36 @@ mod tests {
     fn a_backoff_holds_the_retry_back() {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
-        store.submit_at(&spec("x").with_max_attempts(2), now).unwrap();
+        store
+            .submit_at(&spec("x").with_max_attempts(2), now)
+            .unwrap();
         let claimed = store.claim_at("w", DEFAULT_LEASE, now).unwrap().unwrap();
-        store.fail_at(&claimed.id, "boom", now, Some(Duration::minutes(5))).unwrap();
+        store
+            .fail_at(&claimed.id, "boom", now, Some(Duration::minutes(5)))
+            .unwrap();
         assert!(store.claim_at("w", DEFAULT_LEASE, now).unwrap().is_none());
-        assert!(store.claim_at("w", DEFAULT_LEASE, now + Duration::minutes(6)).unwrap().is_some());
+        assert!(
+            store
+                .claim_at("w", DEFAULT_LEASE, now + Duration::minutes(6))
+                .unwrap()
+                .is_some()
+        );
     }
 
     #[test]
     fn succeeding_a_job_that_is_not_running_is_refused() {
         let store = JobStore::in_memory().unwrap();
         let job = store.submit(&spec("x")).unwrap();
-        let err = store.succeed(&job.id, &serde_json::json!(null)).unwrap_err();
+        let err = store
+            .succeed(&job.id, &serde_json::json!(null))
+            .unwrap_err();
         assert!(matches!(
             err,
-            JobError::BadTransition { state: JobState::Queued, action: "succeed", .. }
+            JobError::BadTransition {
+                state: JobState::Queued,
+                action: "succeed",
+                ..
+            }
         ));
     }
 
@@ -1042,11 +1123,21 @@ mod tests {
     fn a_crashed_worker_s_job_is_requeued_once_its_lease_expires() {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
-        store.submit_at(&spec("x").with_max_attempts(3), now).unwrap();
-        let claimed = store.claim_at("dead-worker", Duration::seconds(30), now).unwrap().unwrap();
+        store
+            .submit_at(&spec("x").with_max_attempts(3), now)
+            .unwrap();
+        let claimed = store
+            .claim_at("dead-worker", Duration::seconds(30), now)
+            .unwrap()
+            .unwrap();
 
         // Before the deadline, recovery must not touch a healthy claim.
-        assert!(store.recover_at(now + Duration::seconds(10)).unwrap().is_clean());
+        assert!(
+            store
+                .recover_at(now + Duration::seconds(10))
+                .unwrap()
+                .is_clean()
+        );
 
         let report = store.recover_at(now + Duration::seconds(31)).unwrap();
         assert_eq!(report.requeued, vec![claimed.id.clone()]);
@@ -1061,7 +1152,10 @@ mod tests {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
         store.submit_at(&spec("x"), now).unwrap();
-        let claimed = store.claim_at("dead", Duration::seconds(30), now).unwrap().unwrap();
+        let claimed = store
+            .claim_at("dead", Duration::seconds(30), now)
+            .unwrap()
+            .unwrap();
         let report = store.recover_at(now + Duration::seconds(31)).unwrap();
         assert_eq!(report.exhausted, vec![claimed.id.clone()]);
         assert_eq!(store.get(&claimed.id).unwrap().state, JobState::Failed);
@@ -1072,19 +1166,40 @@ mod tests {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
         store.submit_at(&spec("x"), now).unwrap();
-        let claimed = store.claim_at("mine", Duration::seconds(30), now).unwrap().unwrap();
+        let claimed = store
+            .claim_at("mine", Duration::seconds(30), now)
+            .unwrap()
+            .unwrap();
 
         // Twenty seconds in, the owner pushes its deadline out to now+50.
         let mid = now + Duration::seconds(20);
-        assert!(store.heartbeat_at(&claimed.id, "mine", Duration::seconds(30), mid).unwrap());
+        assert!(
+            store
+                .heartbeat_at(&claimed.id, "mine", Duration::seconds(30), mid)
+                .unwrap()
+        );
         // Another worker cannot extend a lease it does not hold.
-        assert!(!store.heartbeat_at(&claimed.id, "theirs", Duration::seconds(30), mid).unwrap());
+        assert!(
+            !store
+                .heartbeat_at(&claimed.id, "theirs", Duration::seconds(30), mid)
+                .unwrap()
+        );
 
         // The original deadline has passed, but the heartbeat moved it: the job
         // must not be reclaimed from a worker that is demonstrably alive.
-        assert!(store.recover_at(now + Duration::seconds(31)).unwrap().is_clean());
+        assert!(
+            store
+                .recover_at(now + Duration::seconds(31))
+                .unwrap()
+                .is_clean()
+        );
         // Past the extended deadline it is stale again.
-        assert!(!store.recover_at(now + Duration::seconds(51)).unwrap().is_clean());
+        assert!(
+            !store
+                .recover_at(now + Duration::seconds(51))
+                .unwrap()
+                .is_clean()
+        );
     }
 
     #[test]
@@ -1106,7 +1221,10 @@ mod tests {
         store.succeed(&claimed.id, &serde_json::json!(1)).unwrap();
         assert!(matches!(
             store.cancel(&claimed.id).unwrap_err(),
-            JobError::BadTransition { action: "cancel", .. }
+            JobError::BadTransition {
+                action: "cancel",
+                ..
+            }
         ));
     }
 
@@ -1118,11 +1236,22 @@ mod tests {
         let claimed = store.claim("w", DEFAULT_LEASE).unwrap().unwrap();
 
         assert_eq!(store.list(&ListFilter::default()).unwrap().len(), 2);
-        assert_eq!(store.list(&ListFilter::default().kind("ocr")).unwrap().len(), 1);
-        let running = store.list(&ListFilter::default().state(JobState::Running)).unwrap();
+        assert_eq!(
+            store
+                .list(&ListFilter::default().kind("ocr"))
+                .unwrap()
+                .len(),
+            1
+        );
+        let running = store
+            .list(&ListFilter::default().state(JobState::Running))
+            .unwrap();
         assert_eq!(running.len(), 1);
         assert_eq!(running[0].id, claimed.id);
-        assert_eq!(store.list(&ListFilter::default().limit(1)).unwrap().len(), 1);
+        assert_eq!(
+            store.list(&ListFilter::default().limit(1)).unwrap().len(),
+            1
+        );
     }
 
     #[test]
@@ -1147,7 +1276,9 @@ mod tests {
         store.succeed(&claimed.id, &serde_json::json!(0)).unwrap();
         store.submit(&spec("still-queued")).unwrap();
 
-        let removed = store.purge_before(Utc::now() + Duration::seconds(1)).unwrap();
+        let removed = store
+            .purge_before(Utc::now() + Duration::seconds(1))
+            .unwrap();
         assert_eq!(removed, 1);
         let left = store.list(&ListFilter::default()).unwrap();
         assert_eq!(left.len(), 1);
@@ -1181,7 +1312,12 @@ mod tests {
         let vps = store
             .submit(&spec("native").with_host_affinity(HostAffinity::Hosts(vec!["vps".to_owned()])))
             .unwrap();
-        assert!(store.claim_matching("none", Some("vps"), &[], DEFAULT_LEASE).unwrap().is_none());
+        assert!(
+            store
+                .claim_matching("none", Some("vps"), &[], DEFAULT_LEASE)
+                .unwrap()
+                .is_none()
+        );
         assert!(store.claim("unplaced", DEFAULT_LEASE).unwrap().is_some());
         assert_eq!(store.get(&unknown.id).unwrap().attempts, 1);
         let chosen = store
@@ -1192,7 +1328,12 @@ mod tests {
         assert_eq!(store.get(&pc.id).unwrap().attempts, 0);
         assert_eq!(
             store
-                .claim_matching("pc-worker", Some("windows-local"), &["native"], DEFAULT_LEASE)
+                .claim_matching(
+                    "pc-worker",
+                    Some("windows-local"),
+                    &["native"],
+                    DEFAULT_LEASE
+                )
                 .unwrap()
                 .unwrap()
                 .id,
@@ -1214,12 +1355,20 @@ mod tests {
         let legacy;
         {
             let store = JobStore::open(&path).unwrap();
-            assert_eq!(store.get(&placed.id).unwrap().host_affinity, placed.host_affinity);
-            assert!(
-                store.claim_matching("vps", Some("vps"), &["x"], DEFAULT_LEASE).unwrap().is_none()
+            assert_eq!(
+                store.get(&placed.id).unwrap().host_affinity,
+                placed.host_affinity
             );
-            legacy =
-                store.claim_matching("dbfr", Some("dbfr"), &["x"], DEFAULT_LEASE).unwrap().unwrap();
+            assert!(
+                store
+                    .claim_matching("vps", Some("vps"), &["x"], DEFAULT_LEASE)
+                    .unwrap()
+                    .is_none()
+            );
+            legacy = store
+                .claim_matching("dbfr", Some("dbfr"), &["x"], DEFAULT_LEASE)
+                .unwrap()
+                .unwrap();
             // Simulate the prior additive schema only in this disposable fixture.
             store
                 .conn
@@ -1248,11 +1397,13 @@ mod tests {
         let left_barrier = std::sync::Arc::clone(&barrier);
         let left = std::thread::spawn(move || {
             left_barrier.wait();
-            a.claim_matching("a", Some("vps"), &["x"], DEFAULT_LEASE).unwrap()
+            a.claim_matching("a", Some("vps"), &["x"], DEFAULT_LEASE)
+                .unwrap()
         });
         let right = std::thread::spawn(move || {
             barrier.wait();
-            b.claim_matching("b", Some("vps"), &["x"], DEFAULT_LEASE).unwrap()
+            b.claim_matching("b", Some("vps"), &["x"], DEFAULT_LEASE)
+                .unwrap()
         });
         assert_eq!(
             usize::from(left.join().unwrap().is_some())
@@ -1264,7 +1415,11 @@ mod tests {
     #[test]
     fn impossible_placement_and_nonpositive_leases_are_rejected_without_claiming() {
         let store = JobStore::in_memory().unwrap();
-        assert!(store.submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec![]))).is_err());
+        assert!(
+            store
+                .submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec![])))
+                .is_err()
+        );
         assert!(
             store
                 .submit(&spec("x").with_host_affinity(HostAffinity::Hosts(vec![" ".to_owned()])))
@@ -1279,15 +1434,24 @@ mod tests {
     fn a_stale_claim_cannot_heartbeat_or_finish_a_new_generation_with_the_same_worker_name() {
         let store = JobStore::in_memory().unwrap();
         let now = Utc::now();
-        let job = store.submit_at(&spec("x").with_max_attempts(3), now).unwrap();
-        let old = store.claim_at("same-name", Duration::seconds(1), now).unwrap().unwrap();
+        let job = store
+            .submit_at(&spec("x").with_max_attempts(3), now)
+            .unwrap();
+        let old = store
+            .claim_at("same-name", Duration::seconds(1), now)
+            .unwrap()
+            .unwrap();
         store.recover_at(now + Duration::seconds(2)).unwrap();
         let new = store
             .claim_at("same-name", DEFAULT_LEASE, now + Duration::seconds(2))
             .unwrap()
             .unwrap();
         assert_eq!(new.attempts, old.attempts + 1);
-        assert!(!store.heartbeat_owned(&job.id, "same-name", old.attempts, DEFAULT_LEASE).unwrap());
+        assert!(
+            !store
+                .heartbeat_owned(&job.id, "same-name", old.attempts, DEFAULT_LEASE)
+                .unwrap()
+        );
         assert!(
             store
                 .succeed_owned(
@@ -1301,7 +1465,14 @@ mod tests {
         );
         assert!(
             store
-                .fail_owned(&job.id, "same-name", old.attempts, "old error", true, Duration::zero())
+                .fail_owned(
+                    &job.id,
+                    "same-name",
+                    old.attempts,
+                    "old error",
+                    true,
+                    Duration::zero()
+                )
                 .unwrap()
                 .is_none()
         );
@@ -1327,13 +1498,16 @@ mod tests {
         let job = store.submit(&spec("x")).unwrap();
         store
             .conn
-            .execute("UPDATE jobs SET state = 'not-a-state' WHERE id = ?1", params![job.id])
+            .execute(
+                "UPDATE jobs SET state = 'not-a-state' WHERE id = ?1",
+                params![job.id],
+            )
             .unwrap();
         match store.get(&job.id).unwrap_err() {
             JobError::Corrupt { id, reason } => {
                 assert_eq!(id, job.id);
                 assert!(reason.contains("not-a-state"), "{reason}");
-            },
+            }
             other => panic!("unexpected: {other}"),
         }
     }

@@ -48,7 +48,11 @@ impl IAppletCommonFunctions {
             (20, None, "PushToAppletBoundChannel"),
             (21, None, "TryPopFromAppletBoundChannel"),
             (40, None, "GetDisplayLogicalResolution"),
-            (42, Some(Self::set_display_magnification_handler), "SetDisplayMagnification"),
+            (
+                42,
+                Some(Self::set_display_magnification_handler),
+                "SetDisplayMagnification",
+            ),
             (
                 50,
                 Some(Self::set_home_button_double_click_enabled_handler),
@@ -87,7 +91,11 @@ impl IAppletCommonFunctions {
                 "GetCurrentApplicationId",
             ),
             (310, None, "IsSystemAppletHomeMenu"),
-            (320, Some(Self::set_gpu_time_slice_boost), "SetGpuTimeSliceBoost"),
+            (
+                320,
+                Some(Self::set_gpu_time_slice_boost),
+                "SetGpuTimeSliceBoost",
+            ),
             (321, None, "SetGpuTimeSliceBoostDueToApplication"),
             (350, Some(Self::unknown350), "Unknown350"),
         ]);
@@ -110,7 +118,11 @@ impl IAppletCommonFunctions {
             (20, None, "PushToAppletBoundChannel"),
             (21, None, "TryPopFromAppletBoundChannel"),
             (40, None, "GetDisplayLogicalResolution"),
-            (42, Some(Self::set_display_magnification_handler), "SetDisplayMagnification"),
+            (
+                42,
+                Some(Self::set_display_magnification_handler),
+                "SetDisplayMagnification",
+            ),
             (
                 50,
                 Some(Self::set_home_button_double_click_enabled_handler),
@@ -149,7 +161,11 @@ impl IAppletCommonFunctions {
                 "GetCurrentApplicationId",
             ),
             (310, None, "IsSystemAppletHomeMenu"),
-            (320, Some(Self::set_gpu_time_slice_boost), "SetGpuTimeSliceBoost"),
+            (
+                320,
+                Some(Self::set_gpu_time_slice_boost),
+                "SetGpuTimeSliceBoost",
+            ),
             (321, None, "SetGpuTimeSliceBoostDueToApplication"),
             (350, Some(Self::unknown350), "Unknown350"),
         ]);
@@ -163,7 +179,10 @@ impl IAppletCommonFunctions {
 
     fn set_gpu_time_slice_boost(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
         let time_span = RequestParser::new(ctx).pop_i64();
-        log::warn!("(STUBBED) SetGpuTimeSliceBoost called, time_span={}", time_span);
+        log::warn!(
+            "(STUBBED) SetGpuTimeSliceBoost called, time_span={}",
+            time_span
+        );
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(RESULT_SUCCESS);
     }
@@ -302,7 +321,9 @@ mod tests {
         let mut system = Box::new(crate::core::System::new_for_test());
         let mut process = crate::hle::kernel::k_process::KProcess::new();
         process.program_id = 0x1234_5678_9abc_def0;
-        system.set_current_process_arc(Arc::new(crate::hle::kernel::k_process::ProcessLock::new(process)));
+        system.set_current_process_arc(Arc::new(crate::hle::kernel::k_process::ProcessLock::new(
+            process,
+        )));
         let system_ref = SystemRef::from_ref(&system);
         let mut applet = Applet::new(SystemRef::null(), Process::new(), false);
         applet.program_id = 0x4321_0000_0000_1111;
@@ -316,22 +337,37 @@ mod tests {
 
     #[test]
     fn display_magnification_preserves_signed_extents_and_applet_ownership() {
-        let applet = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), false)));
-        assert_eq!(applet.lock().unwrap().display_magnification,
-            common::math_util::Rectangle::new(0.0, 0.0, 1.0, 1.0));
+        let applet = Arc::new(Mutex::new(Applet::new(
+            SystemRef::null(),
+            Process::new(),
+            false,
+        )));
+        assert_eq!(
+            applet.lock().unwrap().display_magnification,
+            common::math_util::Rectangle::new(0.0, 0.0, 1.0, 1.0)
+        );
         let service = IAppletCommonFunctions::with_applet(SystemRef::null(), applet.clone());
         let mut ctx = HLERequestContext::new();
         ctx.cmd_buf[2..6].copy_from_slice(&[-2.0_f32, 3.0, 0.5, -4.0].map(f32::to_bits));
         service.handlers()[&42].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
-        assert_eq!(applet.lock().unwrap().display_magnification,
-            common::math_util::Rectangle::new(-2.0, 3.0, -1.5, -1.0));
+        assert_eq!(
+            applet.lock().unwrap().display_magnification,
+            common::math_util::Rectangle::new(-2.0, 3.0, -1.5, -1.0)
+        );
     }
 
     #[test]
     fn firmware_common_commands_return_upstream_payloads_in_both_constructors() {
-        let applet = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), false)));
-        for service in [IAppletCommonFunctions::new(), IAppletCommonFunctions::with_applet(SystemRef::null(), applet)] {
+        let applet = Arc::new(Mutex::new(Applet::new(
+            SystemRef::null(),
+            Process::new(),
+            false,
+        )));
+        for service in [
+            IAppletCommonFunctions::new(),
+            IAppletCommonFunctions::with_applet(SystemRef::null(), applet),
+        ] {
             let mut ctx = HLERequestContext::new();
             ctx.cmd_buf.fill(u32::MAX);
             service.handlers()[&350].handler_callback.unwrap()(&service, &mut ctx);

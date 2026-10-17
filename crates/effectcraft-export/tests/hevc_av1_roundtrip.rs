@@ -10,7 +10,8 @@ use std::process::Command;
 
 use effectcraft_color::Label;
 use effectcraft_export::render_queue::{
-    AudioOutput, CodecProfile, OpusApplication, OutputFormat, OutputModule, RateControlMode, RenderSettings, TimeSpan, WebmVideoCodec,
+    AudioOutput, CodecProfile, OpusApplication, OutputFormat, OutputModule, RateControlMode,
+    RenderSettings, TimeSpan, WebmVideoCodec,
 };
 use effectcraft_export::{Job, Progress, export};
 use effectcraft_media::MediaPool;
@@ -25,7 +26,9 @@ const BG: [f32; 3] = [0.1, 0.1, 0.4];
 const FRAMES: u64 = 12;
 
 fn out_dir(name: &str) -> PathBuf {
-    let d = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/test-out/export-hevc-av1").join(name);
+    let d = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target/test-out/export-hevc-av1")
+        .join(name);
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).expect("mkdir");
     d
@@ -35,22 +38,60 @@ fn project(audio: Option<&Path>) -> (Project, ItemId) {
     let mut p = Project::default();
     let mut comp = Comp::new(W, H, FrameRate::new(10, 1), Tick::from_seconds_f64(1.2));
     comp.background = BG;
-    let sid = p.add_item("Red", Label::Red, None, ItemKind::Solid(Solid { color: [1.0, 0.0, 0.0], width: 32, height: H, pixel_aspect: 1.0 }));
-    let mut l = build::layer(&mut p, &comp, "Red", LayerSource::Solid { item: sid }, (32, H), None);
+    let sid = p.add_item(
+        "Red",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [1.0, 0.0, 0.0],
+            width: 32,
+            height: H,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut l = build::layer(
+        &mut p,
+        &comp,
+        "Red",
+        LayerSource::Solid { item: sid },
+        (32, H),
+        None,
+    );
     l.in_point = comp.frame_rate.tick_of(5);
     comp.layers.push(l);
     if let Some(path) = audio {
         let f = effectcraft_media::probe(path).expect("probe wav");
         let fid = p.add_item("tone.wav", Label::SeaFoam, None, ItemKind::Footage(f));
-        let l = build::layer(&mut p, &comp, "tone", LayerSource::Footage { item: fid }, (0, 0), None);
+        let l = build::layer(
+            &mut p,
+            &comp,
+            "tone",
+            LayerSource::Footage { item: fid },
+            (0, 0),
+            None,
+        );
         comp.layers.push(l);
     }
-    let cid = p.add_item("Comp 1", Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "Comp 1",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     (p, cid)
 }
 
-fn run(p: &Project, cid: ItemId, footage: &dyn FootageSource, om: &OutputModule, path: &Path) -> effectcraft_export::Report {
-    let s = RenderSettings { time_span: TimeSpan::LengthOfComp, ..Default::default() };
+fn run(
+    p: &Project,
+    cid: ItemId,
+    footage: &dyn FootageSource,
+    om: &OutputModule,
+    path: &Path,
+) -> effectcraft_export::Report {
+    let s = RenderSettings {
+        time_span: TimeSpan::LengthOfComp,
+        ..Default::default()
+    };
     let path = path.to_string_lossy().to_string();
     let job = Job {
         project: p,
@@ -85,10 +126,16 @@ fn near(a: [f32; 3], b: [f32; 3], tol: f32) -> bool {
 
 fn check_frame(img: &Image, k: u64, tol: f32) {
     let corner = px(img, 2, 2);
-    assert!(near([corner[0], corner[1], corner[2]], BG, tol), "frame {k} corner {corner:?}");
+    assert!(
+        near([corner[0], corner[1], corner[2]], BG, tol),
+        "frame {k} corner {corner:?}"
+    );
     let c = px(img, img.width / 2, img.height / 2);
     let want = if k >= 5 { [1.0, 0.0, 0.0] } else { BG };
-    assert!(near([c[0], c[1], c[2]], want, tol), "frame {k} centre {c:?} want {want:?}");
+    assert!(
+        near([c[0], c[1], c[2]], want, tol),
+        "frame {k} centre {c:?} want {want:?}"
+    );
 }
 
 /// Import our file through the media layer and check every frame.
@@ -97,17 +144,27 @@ fn decode_movie(path: &Path, tol: f32) -> effectcraft_project::Footage {
     assert_eq!((f.width, f.height), (W, H));
     assert!(f.has_video);
     let n = f.frame_rate.frame_at(f.duration - Tick(1)) + 1;
-    assert_eq!(n as u64, FRAMES, "frame count from duration {:?} @ {:?}", f.duration, f.frame_rate);
+    assert_eq!(
+        n as u64, FRAMES,
+        "frame count from duration {:?} @ {:?}",
+        f.duration, f.frame_rate
+    );
     let pool = MediaPool::new();
     for k in 0..FRAMES {
-        let img = pool.frame_at(&f, f.frame_rate.tick_of(k as i64)).expect("decode");
+        let img = pool
+            .frame_at(&f, f.frame_rate.tick_of(k as i64))
+            .expect("decode");
         check_frame(&img, k, tol);
     }
     f
 }
 
 fn have(tool: &str) -> bool {
-    Command::new(tool).arg("-version").output().map(|o| o.status.success()).unwrap_or(false)
+    Command::new(tool)
+        .arg("-version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 /// `codec|w|h|pix_fmt|frames` of the video stream, or `None` without ffprobe.
@@ -117,12 +174,25 @@ fn ffprobe_video(path: &Path) -> Option<String> {
         return None;
     }
     let out = Command::new("ffprobe")
-        .args(["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=codec_name,width,height,pix_fmt,nb_read_frames"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-count_frames",
+            "-show_entries",
+            "stream=codec_name,width,height,pix_fmt,nb_read_frames",
+        ])
         .args(["-of", "compact=p=0:nk=1"])
         .arg(path)
         .output()
         .expect("ffprobe");
-    assert!(out.status.success() && out.stderr.is_empty(), "ffprobe rejected {}: {}", path.display(), String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success() && out.stderr.is_empty(),
+        "ffprobe rejected {}: {}",
+        path.display(),
+        String::from_utf8_lossy(&out.stderr)
+    );
     Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
@@ -139,11 +209,28 @@ fn ffmpeg_check(path: &Path, decoder: Option<&str>, tol: f32) {
     if let Some(d) = decoder {
         cmd.args(["-c:v", d]);
     }
-    let out = cmd.arg("-i").arg(path).args(["-pix_fmt", "rgba"]).arg(dir.join("f%03d.png")).output().expect("ffmpeg");
-    assert!(out.status.success() && out.stderr.is_empty(), "ffmpeg ({decoder:?}) failed on {}: {}", path.display(), String::from_utf8_lossy(&out.stderr));
+    let out = cmd
+        .arg("-i")
+        .arg(path)
+        .args(["-pix_fmt", "rgba"])
+        .arg(dir.join("f%03d.png"))
+        .output()
+        .expect("ffmpeg");
+    assert!(
+        out.status.success() && out.stderr.is_empty(),
+        "ffmpeg ({decoder:?}) failed on {}: {}",
+        path.display(),
+        String::from_utf8_lossy(&out.stderr)
+    );
     for k in [0, 4, 5, FRAMES - 1] {
-        let img = image::open(dir.join(format!("f{:03}.png", k + 1))).expect("ffmpeg frame").to_rgba8();
-        check_frame(&Image::from_rgba8(img.width(), img.height(), img.as_raw()), k, tol);
+        let img = image::open(dir.join(format!("f{:03}.png", k + 1)))
+            .expect("ffmpeg frame")
+            .to_rgba8();
+        check_frame(
+            &Image::from_rgba8(img.width(), img.height(), img.as_raw()),
+            k,
+            tol,
+        );
     }
 }
 
@@ -162,11 +249,25 @@ fn ffprobe_keyframes(path: &Path) -> Option<Vec<bool>> {
         return None;
     }
     let out = Command::new("ffprobe")
-        .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "packet=flags", "-of", "csv=p=0"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "packet=flags",
+            "-of",
+            "csv=p=0",
+        ])
         .arg(path)
         .output()
         .expect("ffprobe");
-    Some(String::from_utf8_lossy(&out.stdout).lines().map(|l| l.starts_with('K')).collect())
+    Some(
+        String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .map(|l| l.starts_with('K'))
+            .collect(),
+    )
 }
 
 #[test]
@@ -184,7 +285,11 @@ fn hevc_mp4_roundtrip() {
         assert_eq!(s, "hevc|64|48|yuv420p|12");
     }
     if let Some(k) = ffprobe_keyframes(&path) {
-        assert_eq!(k, (0..FRAMES).map(|i| i % 4 == 0).collect::<Vec<_>>(), "IDR every 4 frames");
+        assert_eq!(
+            k,
+            (0..FRAMES).map(|i| i % 4 == 0).collect::<Vec<_>>(),
+            "IDR every 4 frames"
+        );
     }
     ffmpeg_check(&path, None, 0.08);
 }
@@ -221,7 +326,11 @@ fn av1_mp4_roundtrip() {
         assert_eq!(s, "av1|64|48|yuv420p|12");
     }
     if let Some(k) = ffprobe_keyframes(&path) {
-        assert_eq!(k, (0..FRAMES).map(|i| i % 6 == 0).collect::<Vec<_>>(), "key frame every 6 frames");
+        assert_eq!(
+            k,
+            (0..FRAMES).map(|i| i % 6 == 0).collect::<Vec<_>>(),
+            "key frame every 6 frames"
+        );
     }
     ffmpeg_check(&path, Some("libdav1d"), 0.08);
 }
@@ -261,7 +370,10 @@ fn webm_low_bitrate_opus_modes() {
     write_tone(&wav, 2.0);
     let (p, cid) = project(Some(&wav));
     let pool = MediaPool::new();
-    for (kbps, app, name) in [(24u32, OpusApplication::Voip, "voice24.webm"), (40, OpusApplication::Audio, "audio40.webm")] {
+    for (kbps, app, name) in [
+        (24u32, OpusApplication::Voip, "voice24.webm"),
+        (40, OpusApplication::Audio, "audio40.webm"),
+    ] {
         let mut om = OutputModule::for_format(OutputFormat::WebM);
         om.audio = AudioOutput::On;
         om.opus_bitrate_kbps = kbps;
@@ -273,15 +385,25 @@ fn webm_low_bitrate_opus_modes() {
         let l = rms(s.iter().step_by(2).copied());
         assert!((l - 0.3536).abs() < 0.08, "{name}: left RMS {l}");
         if have("ffmpeg") {
-            let out =
-                Command::new("ffmpeg").args(["-v", "error", "-xerror", "-i"]).arg(&path).args(["-map", "0:a", "-f", "null", "-"]).output().expect("ffmpeg");
-            assert!(out.status.success() && out.stderr.is_empty(), "{name}: {}", String::from_utf8_lossy(&out.stderr));
+            let out = Command::new("ffmpeg")
+                .args(["-v", "error", "-xerror", "-i"])
+                .arg(&path)
+                .args(["-map", "0:a", "-f", "null", "-"])
+                .output()
+                .expect("ffmpeg");
+            assert!(
+                out.status.success() && out.stderr.is_empty(),
+                "{name}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
         }
     }
 }
 
 fn rms(v: impl Iterator<Item = f32>) -> f32 {
-    let (s, n) = v.fold((0.0f64, 0usize), |(s, n), x| (s + (x as f64) * (x as f64), n + 1));
+    let (s, n) = v.fold((0.0f64, 0usize), |(s, n), x| {
+        (s + (x as f64) * (x as f64), n + 1)
+    });
     (s / n.max(1) as f64).sqrt() as f32
 }
 
@@ -291,7 +413,8 @@ fn write_tone(path: &Path, secs: f64) {
     let n = (secs * sr as f64) as usize;
     let mut data = Vec::with_capacity(n * 4);
     for i in 0..n {
-        let s = (0.5 * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sr as f64).sin() * 32767.0).round() as i16;
+        let s = (0.5 * (2.0 * std::f64::consts::PI * 440.0 * i as f64 / sr as f64).sin() * 32767.0)
+            .round() as i16;
         data.extend_from_slice(&s.to_le_bytes());
         data.extend_from_slice(&0i16.to_le_bytes());
     }

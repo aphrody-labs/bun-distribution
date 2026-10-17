@@ -11,8 +11,8 @@ use crate::{
     change_detection::{CheckChangeTicks, Tick},
     error::BevyError,
     schedule::InternedSystemSet,
-    system::{input::SystemInput, SystemAccess, SystemIn},
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World},
+    system::{SystemAccess, SystemIn, input::SystemInput},
+    world::{DeferredWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 use alloc::{boxed::Box, vec::Vec};

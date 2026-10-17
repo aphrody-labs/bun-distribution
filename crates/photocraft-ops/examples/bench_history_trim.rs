@@ -8,9 +8,19 @@ use std::sync::Arc;
 use std::time::Instant;
 
 fn main() {
-    let layers = if std::env::args().any(|a| a == "--layered") { 150 } else { 1 };
+    let layers = if std::env::args().any(|a| a == "--layered") {
+        150
+    } else {
+        1
+    };
     for depth in [SampleType::U8, SampleType::U16, SampleType::F32] {
-        let mut current = Arc::new(Document::with_background("benchmark", Size::new(6000, 4000), ColorMode::Rgb, depth, Color::WHITE));
+        let mut current = Arc::new(Document::with_background(
+            "benchmark",
+            Size::new(6000, 4000),
+            ColorMode::Rgb,
+            depth,
+            Color::WHITE,
+        ));
         let doc = Arc::make_mut(&mut current);
         if let Some(surface) = doc.layers.first_mut().and_then(|l| l.surface_mut()) {
             // Make every photo tile unique, rather than benchmarking a shared solid fill.

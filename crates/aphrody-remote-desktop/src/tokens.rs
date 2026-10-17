@@ -98,7 +98,10 @@ pub struct Secret {
 
 impl fmt::Debug for Secret {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Secret").field("value", &"<redacted>").field("source", &self.source).finish()
+        f.debug_struct("Secret")
+            .field("value", &"<redacted>")
+            .field("source", &self.source)
+            .finish()
     }
 }
 
@@ -129,22 +132,33 @@ fn read_file(path: &Path) -> Option<String> {
 
 fn safe_target(target: &str) -> bool {
     !target.is_empty()
-        && target.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
+        && target
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
         && !target.starts_with('.')
 }
 
 fn lookup_in(dir: &Path, kind: TokenKind, target: Option<&str>) -> Option<Secret> {
-    if let Some(v) = std::env::var(kind.env()).ok().filter(|v| !v.trim().is_empty()) {
-        return Some(Secret { value: v.trim().to_owned(), source: TokenSource::Env(kind.env()) });
+    if let Some(v) = std::env::var(kind.env())
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+    {
+        return Some(Secret {
+            value: v.trim().to_owned(),
+            source: TokenSource::Env(kind.env()),
+        });
     }
     let mut candidates = Vec::new();
     if let Some(t) = target.filter(|t| safe_target(t)) {
         candidates.push(dir.join(t).join(kind.file_name()));
     }
     candidates.push(dir.join(kind.file_name()));
-    candidates
-        .into_iter()
-        .find_map(|p| read_file(&p).map(|value| Secret { value, source: TokenSource::File(p) }))
+    candidates.into_iter().find_map(|p| {
+        read_file(&p).map(|value| Secret {
+            value,
+            source: TokenSource::File(p),
+        })
+    })
 }
 
 fn resolve_in(dir: &Path, kind: TokenKind, target: Option<&str>) -> Option<Secret> {
@@ -197,7 +211,11 @@ pub fn derive_vnc_password(remote_token: &str) -> String {
     let mut h = Sha256::new();
     h.update(b"aphrody-vnc\0");
     h.update(remote_token.as_bytes());
-    h.finalize().iter().take(8).map(|b| char::from(ALPHABET[usize::from(b & 63)])).collect()
+    h.finalize()
+        .iter()
+        .take(8)
+        .map(|b| char::from(ALPHABET[usize::from(b & 63)]))
+        .collect()
 }
 
 /// Write a credential to `<aphrody home>/private[/<target>]/<file>` (owner-only on Unix).
@@ -267,7 +285,12 @@ mod tests {
         store_in(dir.path(), TokenKind::Remote, Some("omar"), "scoped").unwrap();
         let s = resolve_in(dir.path(), TokenKind::Remote, Some("omar")).unwrap();
         assert_eq!(s.expose(), "scoped");
-        assert_eq!(resolve_in(dir.path(), TokenKind::Remote, Some("dbfr")).unwrap().expose(), "global");
+        assert_eq!(
+            resolve_in(dir.path(), TokenKind::Remote, Some("dbfr"))
+                .unwrap()
+                .expose(),
+            "global"
+        );
         let vnc = resolve_in(dir.path(), TokenKind::Vnc, Some("omar")).unwrap();
         assert_eq!(vnc.expose(), derive_vnc_password("scoped"));
         assert!(matches!(vnc.source, TokenSource::Derived(_)));

@@ -12,7 +12,14 @@
 //!   agents can build layouts and look at them without a window.
 //!
 //! Entry points: [`Server::serve`] (stdio loop) and [`Server::handle_line`] (one message).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod backend;
@@ -30,7 +37,11 @@ pub const DEFAULT_PORT: u16 = 7979;
 
 /// `"7979"` → `"127.0.0.1:7979"`; `"host:port"` is kept as is.
 pub fn control_addr(s: &str) -> String {
-    if s.parse::<u16>().is_ok() { format!("127.0.0.1:{s}") } else { s.to_string() }
+    if s.parse::<u16>().is_ok() {
+        format!("127.0.0.1:{s}")
+    } else {
+        s.to_string()
+    }
 }
 
 #[cfg(test)]

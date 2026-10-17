@@ -16,8 +16,15 @@ const TIMEOUT: Duration = Duration::from_secs(30);
 type Result<T> = std::result::Result<T, String>;
 
 enum Request {
-    Read { path: String, range: Option<(u64, usize)>, reply: mpsc::Sender<Result<Vec<u8>>> },
-    List { path: String, reply: mpsc::Sender<Result<Vec<String>>> },
+    Read {
+        path: String,
+        range: Option<(u64, usize)>,
+        reply: mpsc::Sender<Result<Vec<u8>>>,
+    },
+    List {
+        path: String,
+        reply: mpsc::Sender<Result<Vec<String>>>,
+    },
 }
 
 #[cfg(test)]
@@ -47,7 +54,9 @@ mod tests {
                         break;
                     }
                     let mut stream = connection.unwrap();
-                    stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(2)))
+                        .unwrap();
                     let mut bytes = Vec::new();
                     while !bytes.ends_with(b"\r\n\r\n") {
                         let mut buffer = [0; 1024];
@@ -59,9 +68,17 @@ mod tests {
                     }
                     let request = String::from_utf8_lossy(&bytes);
                     let range = request.lines().find_map(|line| {
-                        line.to_ascii_lowercase().strip_prefix("range: bytes=").map(str::to_owned)
+                        line.to_ascii_lowercase()
+                            .strip_prefix("range: bytes=")
+                            .map(str::to_owned)
                     });
-                    let path = request.lines().next().unwrap().split_whitespace().nth(1).unwrap();
+                    let path = request
+                        .lines()
+                        .next()
+                        .unwrap()
+                        .split_whitespace()
+                        .nth(1)
+                        .unwrap();
                     let payload = if let Some(files) = &files {
                         let Some(payload) = files.get(path) else {
                             stream.write_all(b"HTTP/1.1 404 Missing\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
@@ -88,19 +105,29 @@ mod tests {
                         } else {
                             (200, String::new(), payload)
                         };
-                    let encoding = if bad_encoding { "Content-Encoding: gzip\r\n" } else { "" };
+                    let encoding = if bad_encoding {
+                        "Content-Encoding: gzip\r\n"
+                    } else {
+                        ""
+                    };
                     write!(stream, "HTTP/1.1 {status} OK\r\n{content_range}{encoding}Content-Length: {}\r\nConnection: close\r\n\r\n", body.len()).unwrap();
                     stream.write_all(body).unwrap();
                 }
             });
-            Self { source: format!("http://{address}/"), stop, thread: Some(thread) }
+            Self {
+                source: format!("http://{address}/"),
+                stop,
+                thread: Some(thread),
+            }
         }
     }
     impl Drop for Server {
         fn drop(&mut self) {
             self.stop.store(true, Ordering::Relaxed);
             let _ = std::net::TcpStream::connect(
-                self.source.trim_start_matches("http://").trim_end_matches('/'),
+                self.source
+                    .trim_start_matches("http://")
+                    .trim_end_matches('/'),
             );
             self.thread.take().unwrap().join().unwrap();
         }
@@ -194,7 +221,11 @@ mod tests {
         let mut missing = files.clone();
         missing.insert("/data/packs/".into(), Vec::new());
         let incomplete = Server::start(false, false, false, Some(missing));
-        assert!(crate::vfs::Vfs::new().init_source(&incomplete.source).is_err());
+        assert!(
+            crate::vfs::Vfs::new()
+                .init_source(&incomplete.source)
+                .is_err()
+        );
         let server = Server::start(false, false, false, Some(files));
         let mut vfs = crate::vfs::Vfs::new();
         vfs.init_source(&server.source).unwrap();
@@ -203,7 +234,10 @@ mod tests {
         assert_eq!(vfs.read("data/common/tiny.bin").unwrap(), b"abc");
         assert_eq!(vfs.read("data/common/extra.bin").unwrap(), b"extra");
         assert!(vfs.remote_stats().unwrap().1 < 4096);
-        assert!(vfs.cache_stats().octets < 4096, "metadata cached, not the 2 MiB pack");
+        assert!(
+            vfs.cache_stats().octets < 4096,
+            "metadata cached, not the 2 MiB pack"
+        );
     }
 
     #[test]
@@ -274,11 +308,11 @@ impl RemoteStorage {
                     Ok(backend) => {
                         let _ = ready.send(Ok(()));
                         backend
-                    },
+                    }
                     Err(error) => {
                         let _ = ready.send(Err(error));
                         return;
-                    },
+                    }
                 };
                 while let Ok(request) = receiver.recv() {
                     worker_calls.fetch_add(1, Ordering::Relaxed);
@@ -289,20 +323,27 @@ impl RemoteStorage {
                                 worker_bytes.fetch_add(data.len() as u64, Ordering::Relaxed);
                             }
                             let _ = reply.send(result);
-                        },
+                        }
                         Request::List { path, reply } => {
                             let _ = reply.send(backend.list(&path));
-                        },
+                        }
                     }
                 }
             })
             .map_err(|e| FormatError::Malformed(e.to_string()))?;
-        let worker = Arc::new(Worker { sender: Some(sender), thread: Some(thread) });
+        let worker = Arc::new(Worker {
+            sender: Some(sender),
+            thread: Some(thread),
+        });
         start
             .recv_timeout(TIMEOUT)
             .map_err(|_| FormatError::Corrupt("remote VFS connection timed out"))?
             .map_err(FormatError::Malformed)?;
-        Ok(Self { worker, bytes, calls })
+        Ok(Self {
+            worker,
+            bytes,
+            calls,
+        })
     }
 
     pub fn read(&self, path: &str) -> std::result::Result<Vec<u8>, FormatError> {
@@ -318,7 +359,9 @@ impl RemoteStorage {
             return Ok(Vec::new());
         }
         if length > MAX_READ || offset.checked_add(length as u64).is_none() {
-            return Err(FormatError::Corrupt("remote read exceeds 256 MiB or offset space"));
+            return Err(FormatError::Corrupt(
+                "remote read exceeds 256 MiB or offset space",
+            ));
         }
         self.read_inner(path, Some((offset, length)))
     }
@@ -333,7 +376,11 @@ impl RemoteStorage {
             .sender
             .as_ref()
             .ok_or(FormatError::Corrupt("remote VFS worker stopped"))?
-            .send(Request::Read { path: path.into(), range, reply })
+            .send(Request::Read {
+                path: path.into(),
+                range,
+                reply,
+            })
             .map_err(|_| FormatError::Corrupt("remote VFS worker stopped"))?;
         result
             .recv_timeout(TIMEOUT + Duration::from_secs(1))
@@ -347,7 +394,10 @@ impl RemoteStorage {
             .sender
             .as_ref()
             .ok_or(FormatError::Corrupt("remote VFS worker stopped"))?
-            .send(Request::List { path: path.into(), reply })
+            .send(Request::List {
+                path: path.into(),
+                reply,
+            })
             .map_err(|_| FormatError::Corrupt("remote VFS worker stopped"))?;
         result
             .recv_timeout(TIMEOUT + Duration::from_secs(1))
@@ -355,7 +405,10 @@ impl RemoteStorage {
             .map_err(FormatError::Malformed)
     }
     pub fn stats(&self) -> (u64, u64) {
-        (self.calls.load(Ordering::Relaxed), self.bytes.load(Ordering::Relaxed))
+        (
+            self.calls.load(Ordering::Relaxed),
+            self.bytes.load(Ordering::Relaxed),
+        )
     }
 }
 
@@ -464,8 +517,10 @@ impl Backend {
                     alias: alias.into(),
                     port: config.port,
                 };
-                let client_config =
-                    russh::client::Config { inactivity_timeout: None, ..Default::default() };
+                let client_config = russh::client::Config {
+                    inactivity_timeout: None,
+                    ..Default::default()
+                };
                 let mut connection = russh::client::connect(
                     Arc::new(client_config),
                     (config.hostname.as_str(), config.port),
@@ -489,8 +544,14 @@ impl Backend {
                 {
                     return Err("SSH public-key authentication rejected".to_owned());
                 }
-                let channel = connection.channel_open_session().await.map_err(|e| e.to_string())?;
-                channel.request_subsystem(true, "sftp").await.map_err(|e| e.to_string())?;
+                let channel = connection
+                    .channel_open_session()
+                    .await
+                    .map_err(|e| e.to_string())?;
+                channel
+                    .request_subsystem(true, "sftp")
+                    .await
+                    .map_err(|e| e.to_string())?;
                 let session = russh_sftp::client::SftpSession::new(channel.into_stream())
                     .await
                     .map_err(|e| e.to_string())?;
@@ -499,23 +560,34 @@ impl Backend {
             .await
             .map_err(|_| "SSH connect timeout".to_owned())?
         })?;
-        Ok(Self::Sftp { runtime, session, _connection: connection, root })
+        Ok(Self::Sftp {
+            runtime,
+            session,
+            _connection: connection,
+            root,
+        })
     }
 
     fn read(&mut self, path: &str, range: Option<(u64, usize)>) -> Result<Vec<u8>> {
         match self {
-            Self::Http { client, base, token } => {
+            Self::Http {
+                client,
+                base,
+                token,
+            } => {
                 let mut target = base.clone();
                 {
-                    let mut segments =
-                        target.path_segments_mut().map_err(|_| "invalid HTTP base")?;
+                    let mut segments = target
+                        .path_segments_mut()
+                        .map_err(|_| "invalid HTTP base")?;
                     segments.pop_if_empty();
                     for part in path.split('/') {
                         segments.push(part);
                     }
                 }
-                let mut request =
-                    client.get(target).header(reqwest::header::ACCEPT_ENCODING, "identity");
+                let mut request = client
+                    .get(target)
+                    .header(reqwest::header::ACCEPT_ENCODING, "identity");
                 if let Some(token) = token {
                     request = request.bearer_auth(token);
                 }
@@ -537,7 +609,9 @@ impl Backend {
                         .ok_or("HTTP Content-Range required")?;
                     let expected = format!("bytes {offset}-{}/", offset + size as u64 - 1);
                     if !header.strip_prefix(&expected).is_some_and(|total| {
-                        total.parse::<u64>().is_ok_and(|n| n >= offset + size as u64)
+                        total
+                            .parse::<u64>()
+                            .is_ok_and(|n| n >= offset + size as u64)
                     }) {
                         return Err("HTTP Content-Range does not match requested bytes".into());
                     }
@@ -552,7 +626,11 @@ impl Backend {
                     return Err("HTTP resource encoding must be identity".into());
                 }
                 let bound = range.map_or(
-                    if path.is_empty() || path.ends_with('/') { 4 * 1024 * 1024 } else { MAX_READ },
+                    if path.is_empty() || path.ends_with('/') {
+                        4 * 1024 * 1024
+                    } else {
+                        MAX_READ
+                    },
                     |(_, length)| length,
                 );
                 if response.content_length().is_some_and(|n| n > bound as u64) {
@@ -567,24 +645,35 @@ impl Backend {
                     return Err("HTTP response is oversized or truncated".into());
                 }
                 Ok(data)
-            },
-            Self::Sftp { runtime, session, root, .. } => runtime.block_on(async {
+            }
+            Self::Sftp {
+                runtime,
+                session,
+                root,
+                ..
+            } => runtime.block_on(async {
                 tokio::time::timeout(TIMEOUT, async {
                     let path = format!("{root}{path}");
                     let (offset, length) = if let Some(range) = range {
                         range
                     } else {
-                        let size =
-                            SftpDriver::stat(session, &path).await.map_err(|e| e.to_string())?.size;
+                        let size = SftpDriver::stat(session, &path)
+                            .await
+                            .map_err(|e| e.to_string())?
+                            .size;
                         if size > MAX_READ as u64 {
                             return Err("SFTP resource exceeds 256 MiB read budget".into());
                         }
                         (0, size as usize)
                     };
                     let mut file = session.open(path).await.map_err(|e| e.to_string())?;
-                    file.seek(std::io::SeekFrom::Start(offset)).await.map_err(|e| e.to_string())?;
+                    file.seek(std::io::SeekFrom::Start(offset))
+                        .await
+                        .map_err(|e| e.to_string())?;
                     let mut data = vec![0; length];
-                    file.read_exact(&mut data).await.map_err(|e| e.to_string())?;
+                    file.read_exact(&mut data)
+                        .await
+                        .map_err(|e| e.to_string())?;
                     file.shutdown().await.map_err(|e| e.to_string())?;
                     Ok(data)
                 })
@@ -636,8 +725,13 @@ impl Backend {
                 names.sort();
                 names.dedup();
                 Ok(names)
-            },
-            Self::Sftp { runtime, session, root, .. } => runtime.block_on(async {
+            }
+            Self::Sftp {
+                runtime,
+                session,
+                root,
+                ..
+            } => runtime.block_on(async {
                 tokio::time::timeout(
                     TIMEOUT,
                     SftpDriver::read_dir(session, &format!("{root}{path}")),
@@ -647,7 +741,13 @@ impl Backend {
                 .map(|items| {
                     items
                         .into_iter()
-                        .map(|i| if i.is_dir { format!("{}/", i.name) } else { i.name })
+                        .map(|i| {
+                            if i.is_dir {
+                                format!("{}/", i.name)
+                            } else {
+                                i.name
+                            }
+                        })
                         .collect()
                 })
                 .map_err(|e| e.to_string())

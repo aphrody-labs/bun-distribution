@@ -60,7 +60,11 @@ impl Default for TtsDraft {
         TtsDraft {
             text: String::new(),
             language: "en-US".into(),
-            voice: if natural_installed() { "kokoro-heart".into() } else { filmcraft_tts::default_voice_id().into() },
+            voice: if natural_installed() {
+                "kokoro-heart".into()
+            } else {
+                filmcraft_tts::default_voice_id().into()
+            },
             pitch: VocalPitch::Default,
             pace: 1.0,
             advanced_open: true,
@@ -80,21 +84,31 @@ impl TtsDraft {
 
 /// The natural voice package is downloaded.
 fn natural_installed() -> bool {
-    filmcraft_engine::transcript::models_dir().as_deref().is_some_and(filmcraft_tts::catalog::installed)
+    filmcraft_engine::transcript::models_dir()
+        .as_deref()
+        .is_some_and(filmcraft_tts::catalog::installed)
 }
 
 /// State of job `id`: `None` while running, else its result.
 fn job_outcome(app: &FilmcraftApp, id: u64) -> Option<Result<(), String>> {
     use std::sync::atomic::Ordering;
-    let Some(j) = app.session.jobs.iter().find(|j| j.id == id) else { return Some(Err("the job disappeared".into())) };
+    let Some(j) = app.session.jobs.iter().find(|j| j.id == id) else {
+        return Some(Err("the job disappeared".into()));
+    };
     if !j.progress.finished.load(Ordering::Relaxed) {
         return None;
     }
-    Some(match &*j.result.lock().unwrap_or_else(std::sync::PoisonError::into_inner) {
-        Some(Ok(_)) => Ok(()),
-        Some(Err(e)) => Err(e.clone()),
-        None => Err("the job stopped".into()),
-    })
+    Some(
+        match &*j
+            .result
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+        {
+            Some(Ok(_)) => Ok(()),
+            Some(Err(e)) => Err(e.clone()),
+            None => Err("the job stopped".into()),
+        },
+    )
 }
 
 /// Start an action: synthesize in the background (or reuse the cache), then run `cmd`.
@@ -107,7 +121,12 @@ fn start(app: &mut FilmcraftApp, cmd: &str, params: serde_json::Value, play: boo
     match app.session.execute("tts.render", render) {
         Ok(r) => match r["job"].as_u64() {
             Some(job) => {
-                app.ui.tts.pending = Some(Pending { cmd: cmd.to_string(), params, play, job });
+                app.ui.tts.pending = Some(Pending {
+                    cmd: cmd.to_string(),
+                    params,
+                    play,
+                    job,
+                });
                 app.ui.status = "Synthesizing narration…".into();
             }
             None => run_now(app, cmd, params, play),
@@ -125,7 +144,10 @@ fn run_now(app: &mut FilmcraftApp, cmd: &str, params: serde_json::Value, play: b
                 }
             } else {
                 app.ui.status = match cmd {
-                    "tts.create" => format!("Narration added on {}", r["track"].as_str().unwrap_or("an audio track")),
+                    "tts.create" => format!(
+                        "Narration added on {}",
+                        r["track"].as_str().unwrap_or("an audio track")
+                    ),
                     _ => "Narration updated".into(),
                 };
             }
@@ -175,7 +197,13 @@ pub fn follow_selection(app: &mut FilmcraftApp) {
     match sel {
         Some((clip, item)) if app.ui.tts.loaded_from != Some((clip.0, item)) => {
             let first_time = app.ui.tts.loaded_from.map(|(c, _)| c) != Some(clip.0);
-            if let Some(n) = app.session.project.narrations.get(&filmcraft_project::ItemId(item)).cloned() {
+            if let Some(n) = app
+                .session
+                .project
+                .narrations
+                .get(&filmcraft_project::ItemId(item))
+                .cloned()
+            {
                 let d = &mut app.ui.tts;
                 d.text = n.text;
                 d.language = n.language;
@@ -209,20 +237,34 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     painter.rect_filled(rect, 0.0, t.panel_bg);
     let models = filmcraft_engine::transcript::models_dir();
     let voices = filmcraft_tts::voices_in(models.as_deref());
-    let installed = models.as_deref().is_some_and(filmcraft_tts::catalog::installed);
+    let installed = models
+        .as_deref()
+        .is_some_and(filmcraft_tts::catalog::installed);
     let busy = app.ui.tts.pending.is_some();
     let download = app
         .ui
         .tts
         .download_job
         .and_then(|id| app.session.jobs.iter().find(|j| j.id == id))
-        .map(|j| (j.progress.fraction(), j.progress.status.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()));
+        .map(|j| {
+            (
+                j.progress.fraction(),
+                j.progress
+                    .status
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone(),
+            )
+        });
     let editing = app.ui.tts.loaded_from.map(|(c, _)| c);
     let mut actions: Vec<Action> = Vec::new();
     let auto = &mut app.auto;
     let d = &mut app.ui.tts;
 
-    let body = Rect::from_min_max(pos2(rect.min.x + PAD, rect.min.y + 8.0), pos2(rect.max.x - PAD, rect.max.y - FOOTER_H));
+    let body = Rect::from_min_max(
+        pos2(rect.min.x + PAD, rect.min.y + 8.0),
+        pos2(rect.max.x - PAD, rect.max.y - FOOTER_H),
+    );
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(body).id_salt("tts-body"));
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(&mut child, |ui| {
         ui.set_max_width(ui.available_width() - 6.0);
@@ -388,13 +430,41 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let natural = filmcraft_tts::catalog::find(&d.voice).is_some();
     let can_say = filmcraft_tts::check_text(&d.text).is_ok() && (!natural || installed) && !busy;
     let pr = Rect::from_min_size(pos2(rect.min.x + PAD, fy), vec2(half, 28.0));
-    if button(ui, &t, pr, Icon::Play, if busy { "Synthesizing…" } else { "Preview" }, false, can_say, "tts-preview").clicked() && can_say {
+    if button(
+        ui,
+        &t,
+        pr,
+        Icon::Play,
+        if busy { "Synthesizing…" } else { "Preview" },
+        false,
+        can_say,
+        "tts-preview",
+    )
+    .clicked()
+        && can_say
+    {
         actions.push(Action::Run("tts.preview", d.params(), true));
     }
     auto.add("tts.preview", pr, "Preview");
     let sr = Rect::from_min_size(pos2(pr.max.x + 10.0, fy), vec2(half, 28.0));
     let can_save = can_say && app.session.active_sequence().is_some();
-    if button(ui, &t, sr, Icon::Plus, if editing.is_some() { "Save" } else { "Add to timeline" }, true, can_save, "tts-save").clicked() && can_save {
+    if button(
+        ui,
+        &t,
+        sr,
+        Icon::Plus,
+        if editing.is_some() {
+            "Save"
+        } else {
+            "Add to timeline"
+        },
+        true,
+        can_save,
+        "tts-save",
+    )
+    .clicked()
+        && can_save
+    {
         let mut p = d.params();
         match editing {
             Some(c) => {
@@ -409,10 +479,22 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     for a in actions {
         match a {
             Action::New => {
-                let keep = (app.ui.tts.language.clone(), app.ui.tts.voice.clone(), app.ui.tts.pitch, app.ui.tts.pace);
+                let keep = (
+                    app.ui.tts.language.clone(),
+                    app.ui.tts.voice.clone(),
+                    app.ui.tts.pitch,
+                    app.ui.tts.pace,
+                );
                 app.session.state.selection.clear();
                 let dl = app.ui.tts.download_job;
-                app.ui.tts = TtsDraft { language: keep.0, voice: keep.1, pitch: keep.2, pace: keep.3, download_job: dl, ..Default::default() };
+                app.ui.tts = TtsDraft {
+                    language: keep.0,
+                    voice: keep.1,
+                    pitch: keep.2,
+                    pace: keep.3,
+                    download_job: dl,
+                    ..Default::default()
+                };
             }
             Action::Run(cmd, p, play) => start(app, cmd, p, play),
             Action::Download => {
@@ -426,7 +508,9 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
                 if let Some(id) = app.ui.tts.download_job
                     && let Some(j) = app.session.jobs.iter().find(|j| j.id == id)
                 {
-                    j.progress.cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+                    j.progress
+                        .cancel
+                        .store(true, std::sync::atomic::Ordering::Relaxed);
                 }
             }
         }
@@ -444,11 +528,27 @@ fn label(ui: &mut egui::Ui, t: &Tokens, text: &str) {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn button(ui: &mut egui::Ui, t: &Tokens, r: Rect, icon: Icon, text: &str, primary: bool, active: bool, id: &str) -> egui::Response {
+fn button(
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    r: Rect,
+    icon: Icon,
+    text: &str,
+    primary: bool,
+    active: bool,
+    id: &str,
+) -> egui::Response {
     let resp = ui.interact(r, egui::Id::new(id), Sense::click());
     let p = ui.painter();
     let (bg, fg) = match (primary, active) {
-        (true, true) => (if resp.hovered() { t.accent_hover } else { t.accent }, egui::Color32::WHITE),
+        (true, true) => (
+            if resp.hovered() {
+                t.accent_hover
+            } else {
+                t.accent
+            },
+            egui::Color32::WHITE,
+        ),
         (_, false) => (t.field_bg, t.text_faint),
         (false, true) => (if resp.hovered() { t.hover } else { t.field_bg }, t.text),
     };
@@ -459,7 +559,12 @@ fn button(ui: &mut egui::Ui, t: &Tokens, r: Rect, icon: Icon, text: &str, primar
     let g = p.layout_no_wrap(text.to_string(), Tokens::semibold(12.5), fg);
     let total = 18.0 + g.size().x;
     let x0 = r.center().x - total / 2.0;
-    icons::paint(p, Rect::from_center_size(pos2(x0 + 7.0, r.center().y), vec2(14.0, 14.0)), icon, fg);
+    icons::paint(
+        p,
+        Rect::from_center_size(pos2(x0 + 7.0, r.center().y), vec2(14.0, 14.0)),
+        icon,
+        fg,
+    );
     p.galley(pos2(x0 + 18.0, r.center().y - g.size().y / 2.0), g, fg);
     resp
 }

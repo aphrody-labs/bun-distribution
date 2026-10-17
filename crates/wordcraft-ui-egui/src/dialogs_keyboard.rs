@@ -34,8 +34,15 @@ pub struct KeyboardForm {
 impl KeyboardForm {
     pub fn read(app: &WordApp) -> KeyboardForm {
         let category = categories(app).into_iter().next().unwrap_or_default();
-        let command = commands(app, &category).first().map(|(id, _)| (*id).to_string()).unwrap_or_default();
-        KeyboardForm { category, command, ..Default::default() }
+        let command = commands(app, &category)
+            .first()
+            .map(|(id, _)| (*id).to_string())
+            .unwrap_or_default();
+        KeyboardForm {
+            category,
+            command,
+            ..Default::default()
+        }
     }
 }
 
@@ -55,7 +62,12 @@ pub(crate) fn categories(app: &WordApp) -> Vec<String> {
         }
     }
     other.sort();
-    crate::ribbon::TABS.iter().filter(|t| tabs.contains(t)).map(|t| (*t).to_string()).chain(other).collect()
+    crate::ribbon::TABS
+        .iter()
+        .filter(|t| tabs.contains(t))
+        .map(|t| (*t).to_string())
+        .chain(other)
+        .collect()
 }
 
 /// A category's commands as (id, label in the interface language), sorted by label.
@@ -68,7 +80,11 @@ pub(crate) fn commands(app: &WordApp, category: &str) -> Vec<(&'static str, Stri
         .filter(|s| category == ALL || s.location.split(" › ").next() == Some(category))
         .map(|s| (s.id, tl!(s.label).to_string()))
         .collect();
-    out.sort_by(|a, b| a.1.to_lowercase().cmp(&b.1.to_lowercase()).then(a.0.cmp(b.0)));
+    out.sort_by(|a, b| {
+        a.1.to_lowercase()
+            .cmp(&b.1.to_lowercase())
+            .then(a.0.cmp(b.0))
+    });
     out
 }
 
@@ -76,7 +92,9 @@ pub(crate) fn commands(app: &WordApp, category: &str) -> Vec<(&'static str, Stri
 /// (plain letters and Shift+letter type text).
 fn assignable(key: &str) -> bool {
     let name = key.rsplit('+').next().unwrap_or("");
-    let function = name.strip_prefix('F').is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
+    let function = name
+        .strip_prefix('F')
+        .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
     key.contains("Mod+") || key.contains("Ctrl+") || key.contains("Alt+") || function
 }
 
@@ -86,7 +104,12 @@ fn pressed_key(ui: &Ui) -> Option<String> {
     let mut out = None;
     for e in events {
         let key = match e {
-            egui::Event::Key { key, pressed: true, modifiers, .. } => crate::keys::key_name(key).map(|n| crate::keys::combo(modifiers, n, true)),
+            egui::Event::Key {
+                key,
+                pressed: true,
+                modifiers,
+                ..
+            } => crate::keys::key_name(key).map(|n| crate::keys::combo(modifiers, n, true)),
             // The shell turns these into clipboard events rather than keys.
             egui::Event::Copy => Some(crate::keys::combo(mods, "C", true)),
             egui::Event::Cut => Some(crate::keys::combo(mods, "X", true)),
@@ -101,22 +124,40 @@ fn pressed_key(ui: &Ui) -> Option<String> {
 }
 
 /// A bordered, scrolling list of (value, text) rows; returns the clicked value.
-pub(crate) fn list(ui: &mut Ui, id: &str, size: egui::Vec2, rows: &[(String, String)], selected: &str) -> Option<String> {
+pub(crate) fn list(
+    ui: &mut Ui,
+    id: &str,
+    size: egui::Vec2,
+    rows: &[(String, String)],
+    selected: &str,
+) -> Option<String> {
     let mut picked = None;
-    egui::Frame::new().stroke(ui.visuals().widgets.noninteractive.bg_stroke).inner_margin(2.0).show(ui, |ui| {
-        ui.set_width(size.x);
-        ui.set_height(size.y);
-        let row_h = ui.text_style_height(&egui::TextStyle::Body) + 4.0;
-        egui::ScrollArea::vertical().id_salt(id).auto_shrink([false, false]).show_rows(ui, row_h, rows.len(), |ui, range| {
-            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
-                for (value, text) in rows.get(range).unwrap_or_default() {
-                    if ui.add(egui::Button::selectable(value == selected, text.as_str()).min_size(vec2(0.0, row_h))).clicked() {
-                        picked = Some(value.clone());
-                    }
-                }
-            });
+    egui::Frame::new()
+        .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
+        .inner_margin(2.0)
+        .show(ui, |ui| {
+            ui.set_width(size.x);
+            ui.set_height(size.y);
+            let row_h = ui.text_style_height(&egui::TextStyle::Body) + 4.0;
+            egui::ScrollArea::vertical()
+                .id_salt(id)
+                .auto_shrink([false, false])
+                .show_rows(ui, row_h, rows.len(), |ui, range| {
+                    ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                        for (value, text) in rows.get(range).unwrap_or_default() {
+                            if ui
+                                .add(
+                                    egui::Button::selectable(value == selected, text.as_str())
+                                        .min_size(vec2(0.0, row_h)),
+                                )
+                                .clicked()
+                            {
+                                picked = Some(value.clone());
+                            }
+                        }
+                    });
+                });
         });
-    });
     picked
 }
 
@@ -141,15 +182,24 @@ pub fn customize_keyboard(app: &mut WordApp, ui: &mut Ui, f: &mut KeyboardForm) 
     let (left, right) = (170.0, 300.0);
 
     heading(ui, "Choose a command");
-    let mut cats: Vec<(String, String)> = categories(app).into_iter().map(|c| (c.clone(), tl!(&c).to_string())).collect();
+    let mut cats: Vec<(String, String)> = categories(app)
+        .into_iter()
+        .map(|c| (c.clone(), tl!(&c).to_string()))
+        .collect();
     cats.push((ALL.to_string(), tl!("All Commands").to_string()));
-    let cmds: Vec<(String, String)> = commands(app, &f.category).into_iter().map(|(id, l)| (id.to_string(), l)).collect();
+    let cmds: Vec<(String, String)> = commands(app, &f.category)
+        .into_iter()
+        .map(|(id, l)| (id.to_string(), l))
+        .collect();
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.label(tl!("Categories:"));
             if let Some(c) = list(ui, "kb_categories", vec2(left, 170.0), &cats, &f.category) {
                 f.category = c;
-                f.command = commands(app, &f.category).first().map(|(id, _)| (*id).to_string()).unwrap_or_default();
+                f.command = commands(app, &f.category)
+                    .first()
+                    .map(|(id, _)| (*id).to_string())
+                    .unwrap_or_default();
                 f.current.clear();
             }
         });
@@ -171,7 +221,8 @@ pub fn customize_keyboard(app: &mut WordApp, ui: &mut Ui, f: &mut KeyboardForm) 
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.label(tl!("Keys for this command:"));
-            let rows: Vec<(String, String)> = keys.iter().map(|k| (k.clone(), key_text(k))).collect();
+            let rows: Vec<(String, String)> =
+                keys.iter().map(|k| (k.clone(), key_text(k))).collect();
             if let Some(k) = list(ui, "kb_current", vec2(left, 70.0), &rows, &f.current) {
                 f.current = k;
             }
@@ -182,7 +233,9 @@ pub fn customize_keyboard(app: &mut WordApp, ui: &mut Ui, f: &mut KeyboardForm) 
             ui.add_space(4.0);
             if !f.pressed.is_empty() {
                 let owner = match app.session.keymap.resolve(&reg, &f.pressed) {
-                    Some(s) => crate::i18n::fmt(tl!("Now used by {command}"), &[("command", tl!(s.label))]),
+                    Some(s) => {
+                        crate::i18n::fmt(tl!("Now used by {command}"), &[("command", tl!(s.label))])
+                    }
                     None => tl!("Not used by any command").to_string(),
                 };
                 ui.label(owner);
@@ -191,12 +244,22 @@ pub fn customize_keyboard(app: &mut WordApp, ui: &mut Ui, f: &mut KeyboardForm) 
     });
     if let Some(spec) = reg.get(&f.command) {
         ui.add_space(4.0);
-        ui.label(egui::RichText::new(format!("{} · {}", crate::i18n::location(spec.location), spec.id)).small().weak());
+        ui.label(
+            egui::RichText::new(format!(
+                "{} · {}",
+                crate::i18n::location(spec.location),
+                spec.id
+            ))
+            .small()
+            .weak(),
+        );
     }
 
     ui.add_space(8.0);
     if f.confirm_reset {
-        ui.label(tl!("Remove every custom shortcut and restore the built-in keys?"));
+        ui.label(tl!(
+            "Remove every custom shortcut and restore the built-in keys?"
+        ));
         ui.horizontal(|ui| {
             if ui.button(tl!("Yes")).clicked() {
                 change(app, json!({"reset": true}));
@@ -209,18 +272,35 @@ pub fn customize_keyboard(app: &mut WordApp, ui: &mut Ui, f: &mut KeyboardForm) 
         return close;
     }
     ui.horizontal(|ui| {
-        let can_assign = !f.command.is_empty() && !f.pressed.is_empty() && !keys.contains(&f.pressed);
-        if ui.add_enabled(can_assign, egui::Button::new(tl!("Assign"))).clicked()
-            && change(app, json!({"assign": {"command": f.command, "key": f.pressed}}))
+        let can_assign =
+            !f.command.is_empty() && !f.pressed.is_empty() && !keys.contains(&f.pressed);
+        if ui
+            .add_enabled(can_assign, egui::Button::new(tl!("Assign")))
+            .clicked()
+            && change(
+                app,
+                json!({"assign": {"command": f.command, "key": f.pressed}}),
+            )
         {
             f.current = std::mem::take(&mut f.pressed);
         }
-        if ui.add_enabled(!f.current.is_empty(), egui::Button::new(tl!("Remove"))).clicked()
-            && change(app, json!({"remove": {"command": f.command, "key": f.current}}))
+        if ui
+            .add_enabled(!f.current.is_empty(), egui::Button::new(tl!("Remove")))
+            .clicked()
+            && change(
+                app,
+                json!({"remove": {"command": f.command, "key": f.current}}),
+            )
         {
             f.current.clear();
         }
-        if ui.add_enabled(!app.session.keymap.is_empty(), egui::Button::new(tl!("Reset All…"))).clicked() {
+        if ui
+            .add_enabled(
+                !app.session.keymap.is_empty(),
+                egui::Button::new(tl!("Reset All…")),
+            )
+            .clicked()
+        {
             f.confirm_reset = true;
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -246,7 +326,15 @@ fn capture(ui: &mut Ui, f: &mut KeyboardForm) -> bool {
     let mut close = false;
     if focused {
         ui.memory_mut(|m| {
-            m.set_focus_lock_filter(resp.id, egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: true })
+            m.set_focus_lock_filter(
+                resp.id,
+                egui::EventFilter {
+                    tab: true,
+                    horizontal_arrows: true,
+                    vertical_arrows: true,
+                    escape: true,
+                },
+            )
         });
         if ui.input(|i| i.key_pressed(egui::Key::Escape) && i.modifiers.is_none()) {
             close = true;
@@ -255,10 +343,24 @@ fn capture(ui: &mut Ui, f: &mut KeyboardForm) -> bool {
             f.pressed = k;
         }
     }
-    let stroke = egui::Stroke::new(if focused { 1.5 } else { 1.0 }, if focused { t.accent } else { t.input_border });
-    ui.painter().rect(rect, 2.0, t.input, stroke, egui::StrokeKind::Inside);
-    let (text, color) = if f.pressed.is_empty() { (tl!("Press a key combination").to_string(), t.text_dim) } else { (key_text(&f.pressed), t.text) };
-    ui.painter().text(rect.left_center() + vec2(6.0, 0.0), egui::Align2::LEFT_CENTER, text, egui::FontId::proportional(13.0), color);
+    let stroke = egui::Stroke::new(
+        if focused { 1.5 } else { 1.0 },
+        if focused { t.accent } else { t.input_border },
+    );
+    ui.painter()
+        .rect(rect, 2.0, t.input, stroke, egui::StrokeKind::Inside);
+    let (text, color) = if f.pressed.is_empty() {
+        (tl!("Press a key combination").to_string(), t.text_dim)
+    } else {
+        (key_text(&f.pressed), t.text)
+    };
+    ui.painter().text(
+        rect.left_center() + vec2(6.0, 0.0),
+        egui::Align2::LEFT_CENTER,
+        text,
+        egui::FontId::proportional(13.0),
+        color,
+    );
     close
 }
 
@@ -274,16 +376,31 @@ mod tests {
     /// damaged saved map doesn't lose the other preferences.
     #[test]
     fn customize_keyboard_opens_and_custom_keys_persist() {
-        let app = || WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default());
+        let app = || {
+            WordApp::new(
+                Session::new(wordcraft_doc::Document::new()),
+                Services::default(),
+            )
+        };
         let mut a = app();
         a.run("tools.customizeKeyboard", json!({})).unwrap();
         assert!(matches!(a.dialog, Some(Dialog::CustomizeKeyboard { .. })));
-        a.run("tools.customizeKeyboard", json!({"assign": {"command": "format.italic", "key": "Mod+B"}})).unwrap();
+        a.run(
+            "tools.customizeKeyboard",
+            json!({"assign": {"command": "format.italic", "key": "Mod+B"}}),
+        )
+        .unwrap();
         assert_eq!(crate::widgets::shortcut_text(&a, "format.bold"), "");
         let saved = serde_json::to_string(&a.prefs()).unwrap();
         let mut b = app();
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
-        assert_eq!(b.session.keymap.resolve(&b.session.registry, "Mod+B").map(|s| s.id), Some("format.italic"));
+        assert_eq!(
+            b.session
+                .keymap
+                .resolve(&b.session.registry, "Mod+B")
+                .map(|s| s.id),
+            Some("format.italic")
+        );
 
         let mut c = app();
         c.apply_prefs(

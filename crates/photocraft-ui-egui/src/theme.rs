@@ -18,7 +18,10 @@
 //!
 //! Widgets read [`Tokens::get`] instead of hard-coding colours, so every theme applies everywhere.
 
-use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle, Visuals};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Stroke, TextStyle,
+    Visuals,
+};
 use photocraft_engine::prefs::UiFontSize;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -111,14 +114,21 @@ impl ThemeKind {
     }
     /// Photoshop-grammar layout (tab strips, flat panels): the four Pro brightness levels.
     pub fn is_pro(self) -> bool {
-        matches!(self, ThemeKind::Pro | ThemeKind::ProMedium | ThemeKind::ProLightGray | ThemeKind::ProLight)
+        matches!(
+            self,
+            ThemeKind::Pro | ThemeKind::ProMedium | ThemeKind::ProLightGray | ThemeKind::ProLight
+        )
     }
     pub fn next(self) -> Self {
         let i = Self::ALL.iter().position(|k| *k == self).unwrap_or(0);
         Self::ALL[(i + 1) % Self::ALL.len()]
     }
     pub fn from_name(s: &str) -> Option<Self> {
-        match s.to_ascii_lowercase().replace([' ', '_', '-', '(', ')'], "").as_str() {
+        match s
+            .to_ascii_lowercase()
+            .replace([' ', '_', '-', '(', ')'], "")
+            .as_str()
+        {
             "pro" | "prodark" | "photoshop" | "dark" => Some(ThemeKind::Pro),
             "promedium" | "promediumgray" | "medium" | "mediumgray" => Some(ThemeKind::ProMedium),
             "prolightgray" | "lightgray" | "mediumlight" => Some(ThemeKind::ProLightGray),
@@ -129,7 +139,9 @@ impl ThemeKind {
             "adwaita" | "adwaitalight" | "gnome" | "gnomelight" => Some(ThemeKind::Adwaita),
             "adwaitadark" | "gnomedark" => Some(ThemeKind::AdwaitaDark),
             "solarizeddark" | "solarized" => Some(ThemeKind::SolarizedDark),
-            "breezelight" | "breeze" | "kde" | "kdelight" | "plasma" | "plasmalight" => Some(ThemeKind::BreezeLight),
+            "breezelight" | "breeze" | "kde" | "kdelight" | "plasma" | "plasmalight" => {
+                Some(ThemeKind::BreezeLight)
+            }
             "breezedark" | "kdedark" | "plasmadark" => Some(ThemeKind::BreezeDark),
             "softdark" => Some(ThemeKind::SoftDark),
             "softlight" => Some(ThemeKind::SoftLight),
@@ -199,7 +211,10 @@ pub struct Tokens {
 impl Tokens {
     /// Tool outlines need contrast on arbitrary document pixels, independently of UI theme.
     pub(crate) fn cursor_outline() -> [Color32; 2] {
-        [Color32::from_black_alpha(160), Color32::from_white_alpha(235)]
+        [
+            Color32::from_black_alpha(160),
+            Color32::from_white_alpha(235),
+        ]
     }
 
     pub fn for_kind(kind: ThemeKind) -> Self {
@@ -747,13 +762,18 @@ impl Tokens {
 
     /// Tokens for the active theme (stored in egui's context data by [`apply`]).
     pub fn get(ctx: &egui::Context) -> Tokens {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::new("photocraft-theme"))).unwrap_or_else(|| Tokens::for_kind(ThemeKind::Studio))
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::new("photocraft-theme")))
+            .unwrap_or_else(|| Tokens::for_kind(ThemeKind::Studio))
     }
 
     /// Thin RGB outlines; the filled bands use the same hues with subdued coverage.
     pub fn histogram_color(&self, mask: u8) -> Color32 {
         let v = self.histogram_level;
-        Color32::from_rgb(if mask & 1 != 0 { v } else { 0 }, if mask & 2 != 0 { v } else { 0 }, if mask & 4 != 0 { v } else { 0 })
+        Color32::from_rgb(
+            if mask & 1 != 0 { v } else { 0 },
+            if mask & 2 != 0 { v } else { 0 },
+            if mask & 4 != 0 { v } else { 0 },
+        )
     }
 
     pub fn histogram_fill(&self, mask: u8) -> Color32 {
@@ -761,7 +781,10 @@ impl Tokens {
     }
 
     /// Semantic label hues stay recognisable across themes; None keeps the normal row surface.
-    pub fn layer_label_colors(&self, label: photocraft_doc::LabelColor) -> Option<(Color32, Color32)> {
+    pub fn layer_label_colors(
+        &self,
+        label: photocraft_doc::LabelColor,
+    ) -> Option<(Color32, Color32)> {
         use photocraft_doc::LabelColor;
         let (swatch, eye) = match label {
             LabelColor::None => return None,
@@ -782,7 +805,11 @@ impl Tokens {
     }
 
     pub fn layer_label_icon(&self, label: photocraft_doc::LabelColor) -> Color32 {
-        if label == photocraft_doc::LabelColor::None { self.icon } else { Color32::from_gray(226) }
+        if label == photocraft_doc::LabelColor::None {
+            self.icon
+        } else {
+            Color32::from_gray(226)
+        }
     }
 
     /// Analysis colours are semantic hues, independent of the application accent palette.
@@ -805,7 +832,11 @@ impl Tokens {
     /// [`crate::widgets::text_field`], because `Visuals::selection` also fills selected list rows
     /// and slider trails, which must keep the theme's.
     pub fn field_selection(&self) -> Color32 {
-        if self.pro { Color32::from_gray(if self.dark() { 96 } else { 201 }) } else { self.accent_soft }
+        if self.pro {
+            Color32::from_gray(if self.dark() { 96 } else { 201 })
+        } else {
+            self.accent_soft
+        }
     }
 
     pub fn dark(&self) -> bool {
@@ -838,21 +869,51 @@ pub fn install_fonts_with(ctx: &egui::Context, cjk: crate::cjk_fonts::Sources) {
             log::error!("bundled font {name} is unavailable; using the default UI font");
             return None;
         }
-        fonts.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(bytes)));
+        fonts
+            .font_data
+            .insert(name.to_owned(), Arc::new(FontData::from_static(bytes)));
         Some(name.to_owned())
     };
-    let inter = add(&mut fonts, "Inter", photocraft_text::fonts::INTER_REGULAR.as_slice());
-    let medium = add(&mut fonts, "Inter-Medium", photocraft_text::fonts::INTER_MEDIUM.as_slice());
-    let semibold = add(&mut fonts, "Inter-SemiBold", photocraft_text::fonts::INTER_SEMIBOLD.as_slice());
-    let mono = add(&mut fonts, "JetBrainsMono", photocraft_text::fonts::JETBRAINS_MONO_REGULAR.as_slice());
+    let inter = add(
+        &mut fonts,
+        "Inter",
+        photocraft_text::fonts::INTER_REGULAR.as_slice(),
+    );
+    let medium = add(
+        &mut fonts,
+        "Inter-Medium",
+        photocraft_text::fonts::INTER_MEDIUM.as_slice(),
+    );
+    let semibold = add(
+        &mut fonts,
+        "Inter-SemiBold",
+        photocraft_text::fonts::INTER_SEMIBOLD.as_slice(),
+    );
+    let mono = add(
+        &mut fonts,
+        "JetBrainsMono",
+        photocraft_text::fonts::JETBRAINS_MONO_REGULAR.as_slice(),
+    );
     if let Some(inter) = inter {
-        fonts.families.entry(FontFamily::Proportional).or_default().insert(0, inter);
+        fonts
+            .families
+            .entry(FontFamily::Proportional)
+            .or_default()
+            .insert(0, inter);
     }
     if let Some(mono) = mono {
-        fonts.families.entry(FontFamily::Monospace).or_default().insert(0, mono);
+        fonts
+            .families
+            .entry(FontFamily::Monospace)
+            .or_default()
+            .insert(0, mono);
     }
     // Named weights fall back to the default stack for missing glyphs.
-    let fallback: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
+    let fallback: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
     for (fam, primary) in [("medium", medium), ("semibold", semibold)] {
         let mut stack: Vec<String> = primary.into_iter().collect();
         stack.extend(fallback.iter().cloned());
@@ -872,7 +933,10 @@ pub fn install_fonts_with(ctx: &egui::Context, cjk: crate::cjk_fonts::Sources) {
         })
         .is_none()
     {
-        ctx.add_plugin(UiFontSizePlugin { applied: size, defer_after_install: true });
+        ctx.add_plugin(UiFontSizePlugin {
+            applied: size,
+            defer_after_install: true,
+        });
     }
     // CJK, Thai, Arabic, Indic and other script fallback fonts (craft-fonts' Japanese ones if built in, then
     // the system's) are registered on demand (cjk_fonts.rs).
@@ -883,7 +947,11 @@ pub fn install_fonts_with(ctx: &egui::Context, cjk: crate::cjk_fonts::Sources) {
 /// the desktop app installs fonts and loads preferences in the same frame) the active fonts
 /// are egui's defaults, and rescaling a copy of those would overwrite the queued stack.
 fn ui_fonts_active(ctx: &egui::Context) -> bool {
-    ctx.fonts(|f| f.definitions().families.contains_key(&FontFamily::Name("medium".into())))
+    ctx.fonts(|f| {
+        f.definitions()
+            .families
+            .contains_key(&FontFamily::Name("medium".into()))
+    })
 }
 
 fn ui_fonts_id() -> egui::Id {
@@ -891,7 +959,8 @@ fn ui_fonts_id() -> egui::Id {
 }
 
 fn ui_font_size(ctx: &egui::Context) -> UiFontSize {
-    ctx.data(|d| d.get_temp::<UiFontSize>(ui_fonts_id())).unwrap_or_default()
+    ctx.data(|d| d.get_temp::<UiFontSize>(ui_fonts_id()))
+        .unwrap_or_default()
 }
 
 fn font_scale(size: UiFontSize) -> f32 {
@@ -950,7 +1019,9 @@ impl egui::Plugin for UiFontSizePlugin {
         let mut fonts = ctx.fonts(|f| f.definitions().clone());
         for (name, data) in &mut fonts.font_data {
             let id = ui_fonts_id().with(name);
-            let original = ctx.data(|d| d.get_temp::<f32>(id)).unwrap_or(data.tweak.scale / font_scale(self.applied));
+            let original = ctx
+                .data(|d| d.get_temp::<f32>(id))
+                .unwrap_or(data.tweak.scale / font_scale(self.applied));
             ctx.data_mut(|d| d.insert_temp(id, original));
             Arc::make_mut(data).tweak.scale = original * font_scale(size);
         }
@@ -977,7 +1048,11 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ctx.set_theme(egui::ThemePreference::System);
     let t = Tokens::for_kind(kind);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new("photocraft-theme"), t));
-    let mut v = if t.dark() { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark() {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.chrome;
     v.window_fill = t.card;
     v.window_stroke = Stroke::new(1.0, t.card_border);
@@ -990,9 +1065,23 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.error_fg_color = t.danger;
     v.window_corner_radius = CornerRadius::same(t.radius_lg as u8);
     v.menu_corner_radius = CornerRadius::same(t.radius as u8);
-    v.window_shadow = egui::Shadow { offset: [0, 10], blur: 32, spread: 0, color: t.shadow };
-    v.popup_shadow = egui::Shadow { offset: [0, 6], blur: 20, spread: 0, color: t.shadow };
-    v.selection.bg_fill = if t.bevel || t.pro { t.accent } else { t.accent_soft };
+    v.window_shadow = egui::Shadow {
+        offset: [0, 10],
+        blur: 32,
+        spread: 0,
+        color: t.shadow,
+    };
+    v.popup_shadow = egui::Shadow {
+        offset: [0, 6],
+        blur: 20,
+        spread: 0,
+        color: t.shadow,
+    };
+    v.selection.bg_fill = if t.bevel || t.pro {
+        t.accent
+    } else {
+        t.accent_soft
+    };
     v.selection.stroke = Stroke::new(1.0, t.accent_text);
     v.slider_trailing_fill = true;
     v.handle_shape = egui::style::HandleShape::Circle;
@@ -1012,7 +1101,11 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ] {
         wv.bg_fill = bg;
         wv.weak_bg_fill = bg;
-        wv.bg_stroke = if t.bevel { Stroke::new(1.0, Color32::from_gray(64)) } else { Stroke::new(1.0, stroke) };
+        wv.bg_stroke = if t.bevel {
+            Stroke::new(1.0, Color32::from_gray(64))
+        } else {
+            Stroke::new(1.0, stroke)
+        };
         wv.fg_stroke = Stroke::new(1.0, t.text);
         wv.corner_radius = r;
         wv.expansion = 0.0;
@@ -1021,8 +1114,14 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ctx.global_style_mut(|s| {
         s.text_styles = [
             (TextStyle::Small, FontId::proportional(10.5)),
-            (TextStyle::Body, FontId::proportional(if t.pro { 12.0 } else { 12.5 })),
-            (TextStyle::Button, FontId::proportional(if t.pro { 12.0 } else { 12.5 })),
+            (
+                TextStyle::Body,
+                FontId::proportional(if t.pro { 12.0 } else { 12.5 }),
+            ),
+            (
+                TextStyle::Button,
+                FontId::proportional(if t.pro { 12.0 } else { 12.5 }),
+            ),
             (TextStyle::Heading, semibold(15.0)),
             (TextStyle::Monospace, FontId::monospace(12.0)),
         ]
@@ -1040,7 +1139,11 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
         // Thin overlay scrollbars that appear on hover (Photoshop/macOS style).
         // Thin bars stay visible, including while the pointer is on them. The stock thin
         // style fades the handle to the same opacity as the track, so the thumb disappears (#4611).
-        let mut scroll = if t.bevel { egui::style::ScrollStyle::solid() } else { egui::style::ScrollStyle::thin() };
+        let mut scroll = if t.bevel {
+            egui::style::ScrollStyle::solid()
+        } else {
+            egui::style::ScrollStyle::thin()
+        };
         if scroll.floating {
             scroll.interact_handle_opacity = 1.0;
             scroll.interact_background_opacity = 0.4;
@@ -1074,13 +1177,29 @@ mod tests {
     fn text_sizes(ctx: &egui::Context) -> Vec<egui::Vec2> {
         let mut sizes = Vec::new();
         // The plugin queues changed fonts at the end of a pass; egui applies them next pass.
-        ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(Default::default(), |_| {})
+            .textures_delta
+            .clear();
         ctx.run_ui(Default::default(), |ui| {
             // Include custom painter fonts and explicit RichText sizes, not just text styles.
-            for font in [FontId::proportional(11.5), medium(12.0), semibold(15.0), mono(12.0), TextStyle::Body.resolve(ui.style())] {
-                sizes.push(ui.painter().layout_no_wrap("Interface 123".into(), font, Color32::WHITE).size());
+            for font in [
+                FontId::proportional(11.5),
+                medium(12.0),
+                semibold(15.0),
+                mono(12.0),
+                TextStyle::Body.resolve(ui.style()),
+            ] {
+                sizes.push(
+                    ui.painter()
+                        .layout_no_wrap("Interface 123".into(), font, Color32::WHITE)
+                        .size(),
+                );
             }
-            sizes.push(ui.label(egui::RichText::new("Interface 123").size(13.0)).rect.size());
+            sizes.push(
+                ui.label(egui::RichText::new("Interface 123").size(13.0))
+                    .rect
+                    .size(),
+            );
         })
         .textures_delta
         .clear();
@@ -1094,19 +1213,40 @@ mod tests {
         apply(&ctx, ThemeKind::Pro);
         let original = text_sizes(&ctx);
         let definitions = ctx.fonts(|f| f.definitions().clone());
-        for size in [UiFontSize::Tiny, UiFontSize::Small, UiFontSize::Medium, UiFontSize::Large, UiFontSize::Tiny, UiFontSize::Small] {
+        for size in [
+            UiFontSize::Tiny,
+            UiFontSize::Small,
+            UiFontSize::Medium,
+            UiFontSize::Large,
+            UiFontSize::Tiny,
+            UiFontSize::Small,
+        ] {
             set_ui_font_size(&ctx, size);
             let measured = text_sizes(&ctx);
             for (before, after) in original.iter().zip(&measured) {
                 let expected = *before * font_scale(size);
-                assert!((after.x - expected.x).abs() < 1.0, "{size:?}: width {after:?} vs {expected:?}");
+                assert!(
+                    (after.x - expected.x).abs() < 1.0,
+                    "{size:?}: width {after:?} vs {expected:?}"
+                );
                 // egui rounds ascent/descent and the final row height to pixels separately.
-                assert!((after.y - expected.y).abs() < 1.1, "{size:?}: height {after:?} vs {expected:?}");
+                assert!(
+                    (after.y - expected.y).abs() < 1.1,
+                    "{size:?}: height {after:?} vs {expected:?}"
+                );
             }
             set_ui_font_size(&ctx, size);
-            assert_eq!(text_sizes(&ctx), measured, "setting the same size twice is stable");
+            assert_eq!(
+                text_sizes(&ctx),
+                measured,
+                "setting the same size twice is stable"
+            );
         }
-        assert_eq!(ctx.fonts(|f| f.definitions().clone()), definitions, "Small restores original font tweaks exactly");
+        assert_eq!(
+            ctx.fonts(|f| f.definitions().clone()),
+            definitions,
+            "Small restores original font tweaks exactly"
+        );
         assert_eq!(ctx.zoom_factor(), 1.0);
     }
 
@@ -1117,9 +1257,14 @@ mod tests {
     #[test]
     fn saved_ui_font_size_survives_first_frame_install() {
         let ctx = egui::Context::default();
-        let medium_bound = |ctx: &egui::Context| ctx.fonts(|f| f.families().contains(&FontFamily::Name("medium".into())));
+        let medium_bound = |ctx: &egui::Context| {
+            ctx.fonts(|f| f.families().contains(&FontFamily::Name("medium".into())))
+        };
         ctx.run_ui(Default::default(), |ui| {
-            assert!(!medium_bound(ui.ctx()), "egui's defaults are active in the first frame");
+            assert!(
+                !medium_bound(ui.ctx()),
+                "egui's defaults are active in the first frame"
+            );
             install_fonts(ui.ctx());
             apply(ui.ctx(), ThemeKind::Pro);
             set_ui_font_size(ui.ctx(), UiFontSize::Medium);
@@ -1128,28 +1273,50 @@ mod tests {
         .clear();
         let mut width = 0.0;
         ctx.run_ui(Default::default(), |ui| {
-            assert!(medium_bound(ui.ctx()), "the installed stack reaches the second pass");
-            width = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+            assert!(
+                medium_bound(ui.ctx()),
+                "the installed stack reaches the second pass"
+            );
+            width = ui
+                .painter()
+                .layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE)
+                .size()
+                .x;
         })
         .textures_delta
         .clear();
         assert!(width > 0.0);
         // The saved size applies one pass later, from the installed stack.
-        ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(Default::default(), |_| {})
+            .textures_delta
+            .clear();
         let mut scaled = 0.0;
         ctx.run_ui(Default::default(), |ui| {
             assert!(medium_bound(ui.ctx()));
-            scaled = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+            scaled = ui
+                .painter()
+                .layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE)
+                .size()
+                .x;
         })
         .textures_delta
         .clear();
-        assert!((scaled - width * font_scale(UiFontSize::Medium)).abs() < 1.0, "{scaled} vs {width} × 14/12");
+        assert!(
+            (scaled - width * font_scale(UiFontSize::Medium)).abs() < 1.0,
+            "{scaled} vs {width} × 14/12"
+        );
         // Re-installing (a language change) keeps the size and the named families.
-        ctx.run_ui(Default::default(), |ui| install_fonts(ui.ctx())).textures_delta.clear();
+        ctx.run_ui(Default::default(), |ui| install_fonts(ui.ctx()))
+            .textures_delta
+            .clear();
         for _ in 0..2 {
             ctx.run_ui(Default::default(), |ui| {
                 assert!(medium_bound(ui.ctx()));
-                let w = ui.painter().layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE).size().x;
+                let w = ui
+                    .painter()
+                    .layout_no_wrap("PhotoCraft".into(), medium(13.0), Color32::WHITE)
+                    .size()
+                    .x;
                 assert!((w - scaled).abs() < 1.0, "{w} vs {scaled}");
             })
             .textures_delta
@@ -1160,30 +1327,70 @@ mod tests {
     #[test]
     fn pro_light_gray_and_light_themes() {
         // #2661: Photoshop's third and fourth brightness levels, with the Pro layout.
-        for (kind, panel, id, label) in
-            [(ThemeKind::ProLightGray, 184, "proLightGray", "Pro (Light Gray)"), (ThemeKind::ProLight, 240, "proLight", "Pro (Light)")]
-        {
+        for (kind, panel, id, label) in [
+            (
+                ThemeKind::ProLightGray,
+                184,
+                "proLightGray",
+                "Pro (Light Gray)",
+            ),
+            (ThemeKind::ProLight, 240, "proLight", "Pro (Light)"),
+        ] {
             let t = Tokens::for_kind(kind);
             assert!(t.pro && !t.dark() && !t.bevel && kind.is_pro(), "{kind:?}");
-            assert_eq!((t.kind, t.card, t.chrome), (kind, Color32::from_gray(panel), Color32::from_gray(panel)));
+            assert_eq!(
+                (t.kind, t.card, t.chrome),
+                (kind, Color32::from_gray(panel), Color32::from_gray(panel))
+            );
             assert_eq!((kind.id(), kind.label()), (id, label));
             assert_eq!(ThemeKind::from_name(id), Some(kind));
             assert_eq!(ThemeKind::from_name(label), Some(kind));
             assert!(ThemeKind::ALL.contains(&kind));
             // Text stays readable (WCAG AA for body text, 3:1 for dim and faint labels and icons).
-            for bg in [t.card, t.chrome, t.dock, t.field, t.hover, t.row_selected, t.tab_strip] {
-                assert!(contrast(t.text, bg) >= 4.5, "{kind:?} text on {bg:?}: {}", contrast(t.text, bg));
+            for bg in [
+                t.card,
+                t.chrome,
+                t.dock,
+                t.field,
+                t.hover,
+                t.row_selected,
+                t.tab_strip,
+            ] {
+                assert!(
+                    contrast(t.text, bg) >= 4.5,
+                    "{kind:?} text on {bg:?}: {}",
+                    contrast(t.text, bg)
+                );
                 assert!(contrast(t.icon, bg) >= 3.0, "{kind:?} icon on {bg:?}");
-                assert!(contrast(t.text_dim, bg) >= 3.0, "{kind:?} dim text on {bg:?}");
+                assert!(
+                    contrast(t.text_dim, bg) >= 3.0,
+                    "{kind:?} dim text on {bg:?}"
+                );
             }
             assert!(contrast(t.text_faint, t.card) >= 2.0, "{kind:?} faint text");
-            assert!(contrast(t.accent_text, t.card) >= 3.0, "{kind:?} accent text");
+            assert!(
+                contrast(t.accent_text, t.card) >= 3.0,
+                "{kind:?} accent text"
+            );
         }
         // The four Pro levels step from darkest to lightest, as in Photoshop.
-        let cards = [ThemeKind::Pro, ThemeKind::ProMedium, ThemeKind::ProLightGray, ThemeKind::ProLight].map(|k| Tokens::for_kind(k).card.r());
+        let cards = [
+            ThemeKind::Pro,
+            ThemeKind::ProMedium,
+            ThemeKind::ProLightGray,
+            ThemeKind::ProLight,
+        ]
+        .map(|k| Tokens::for_kind(k).card.r());
         assert!(cards.windows(2).all(|w| w[0] < w[1]), "{cards:?}");
-        assert!(!ThemeKind::Studio.is_pro() && !ThemeKind::StudioLight.is_pro() && !ThemeKind::Classic.is_pro());
-        assert_eq!(ThemeKind::from_name("light gray"), Some(ThemeKind::ProLightGray));
+        assert!(
+            !ThemeKind::Studio.is_pro()
+                && !ThemeKind::StudioLight.is_pro()
+                && !ThemeKind::Classic.is_pro()
+        );
+        assert_eq!(
+            ThemeKind::from_name("light gray"),
+            Some(ThemeKind::ProLightGray)
+        );
         assert_eq!(ThemeKind::from_name("lightest"), Some(ThemeKind::ProLight));
     }
 
@@ -1191,25 +1398,59 @@ mod tests {
     fn field_selection_is_grey_only_for_the_monochrome_pro_themes() {
         // #3789: a text field's selection is a subtle grey in the monochrome Pro themes, not a
         // second blue accent; coloured themes keep their accent.
-        assert_eq!(Tokens::for_kind(ThemeKind::Pro).field_selection(), Color32::from_gray(96));
-        assert_eq!(Tokens::for_kind(ThemeKind::ProLight).field_selection(), Color32::from_gray(201));
-        assert_eq!(Tokens::for_kind(ThemeKind::Studio).field_selection(), Tokens::for_kind(ThemeKind::Studio).accent_soft);
-        assert_eq!(Tokens::for_kind(ThemeKind::Classic).field_selection(), Tokens::for_kind(ThemeKind::Classic).accent_soft);
+        assert_eq!(
+            Tokens::for_kind(ThemeKind::Pro).field_selection(),
+            Color32::from_gray(96)
+        );
+        assert_eq!(
+            Tokens::for_kind(ThemeKind::ProLight).field_selection(),
+            Color32::from_gray(201)
+        );
+        assert_eq!(
+            Tokens::for_kind(ThemeKind::Studio).field_selection(),
+            Tokens::for_kind(ThemeKind::Studio).accent_soft
+        );
+        assert_eq!(
+            Tokens::for_kind(ThemeKind::Classic).field_selection(),
+            Tokens::for_kind(ThemeKind::Classic).accent_soft
+        );
     }
 
     #[test]
     fn theme_names_parse() {
         assert_eq!(ThemeKind::from_name("Classic"), Some(ThemeKind::Classic));
-        assert_eq!(ThemeKind::from_name("studio (light)"), Some(ThemeKind::StudioLight));
+        assert_eq!(
+            ThemeKind::from_name("studio (light)"),
+            Some(ThemeKind::StudioLight)
+        );
         assert_eq!(ThemeKind::from_name("dark"), Some(ThemeKind::Pro));
         assert_eq!(ThemeKind::from_name("studio"), Some(ThemeKind::Studio));
-        assert_eq!(ThemeKind::from_name("Pro (Medium Gray)"), Some(ThemeKind::ProMedium));
-        assert_eq!(ThemeKind::from_name("Solarized Dark"), Some(ThemeKind::SolarizedDark));
-        assert_eq!(ThemeKind::from_name("solarized"), Some(ThemeKind::SolarizedDark));
+        assert_eq!(
+            ThemeKind::from_name("Pro (Medium Gray)"),
+            Some(ThemeKind::ProMedium)
+        );
+        assert_eq!(
+            ThemeKind::from_name("Solarized Dark"),
+            Some(ThemeKind::SolarizedDark)
+        );
+        assert_eq!(
+            ThemeKind::from_name("solarized"),
+            Some(ThemeKind::SolarizedDark)
+        );
         let m = Tokens::for_kind(ThemeKind::ProMedium);
-        assert!(m.pro && m.dark() && m.kind == ThemeKind::ProMedium && m.card == Color32::from_rgb(83, 83, 83));
+        assert!(
+            m.pro
+                && m.dark()
+                && m.kind == ThemeKind::ProMedium
+                && m.card == Color32::from_rgb(83, 83, 83)
+        );
         let s = Tokens::for_kind(ThemeKind::SolarizedDark);
-        assert!(s.dark() && !s.bevel && s.kind == ThemeKind::SolarizedDark && s.card == Color32::from_rgb(7, 54, 66));
+        assert!(
+            s.dark()
+                && !s.bevel
+                && s.kind == ThemeKind::SolarizedDark
+                && s.card == Color32::from_rgb(7, 54, 66)
+        );
         assert_eq!(ThemeKind::from_name("neon"), None);
     }
 
@@ -1217,12 +1458,32 @@ mod tests {
     fn every_palette_keeps_complete_egui_styles_when_the_os_changes() {
         for kind in ThemeKind::ALL {
             let ctx = egui::Context::default();
-            ctx.run_ui(egui::RawInput { system_theme: Some(egui::Theme::Dark), ..Default::default() }, |ui| apply(ui.ctx(), kind)).textures_delta.clear();
+            ctx.run_ui(
+                egui::RawInput {
+                    system_theme: Some(egui::Theme::Dark),
+                    ..Default::default()
+                },
+                |ui| apply(ui.ctx(), kind),
+            )
+            .textures_delta
+            .clear();
             let expected = ctx.global_style();
             for appearance in [Some(egui::Theme::Light), Some(egui::Theme::Dark), None] {
-                ctx.run_ui(egui::RawInput { system_theme: appearance, ..Default::default() }, |_| {}).textures_delta.clear();
+                ctx.run_ui(
+                    egui::RawInput {
+                        system_theme: appearance,
+                        ..Default::default()
+                    },
+                    |_| {},
+                )
+                .textures_delta
+                .clear();
                 assert_eq!(Tokens::get(&ctx), Tokens::for_kind(kind));
-                assert_eq!(ctx.global_style(), expected, "{kind:?} changed with {appearance:?}");
+                assert_eq!(
+                    ctx.global_style(),
+                    expected,
+                    "{kind:?} changed with {appearance:?}"
+                );
                 assert_eq!(ctx.style_of(egui::Theme::Light), expected);
                 assert_eq!(ctx.style_of(egui::Theme::Dark), expected);
             }
@@ -1235,7 +1496,10 @@ mod tests {
             let ctx = egui::Context::default();
             ctx.set_theme(pinned);
             apply(&ctx, ThemeKind::ProMedium);
-            assert_eq!(ctx.options(|o| o.theme_preference), egui::ThemePreference::System);
+            assert_eq!(
+                ctx.options(|o| o.theme_preference),
+                egui::ThemePreference::System
+            );
         }
     }
 
@@ -1244,7 +1508,8 @@ mod tests {
         let t = Tokens::for_kind(ThemeKind::Studio);
         let p = Tokens::for_kind(ThemeKind::Pro);
         assert!(p.pro && !t.pro);
-        let lum = |c: Color32| 0.2126 * c.r() as f32 + 0.7152 * c.g() as f32 + 0.0722 * c.b() as f32;
+        let lum =
+            |c: Color32| 0.2126 * c.r() as f32 + 0.7152 * c.g() as f32 + 0.0722 * c.b() as f32;
         assert!(lum(t.text) - lum(t.card) > 180.0);
         assert!(lum(t.text_dim) - lum(t.card) > 90.0);
     }
@@ -1253,10 +1518,18 @@ mod tests {
     fn contrast(a: Color32, b: Color32) -> f32 {
         let lin = |v: u8| {
             let c = f32::from(v) / 255.0;
-            if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+            if c <= 0.04045 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
         };
         let lum = |c: Color32| 0.2126 * lin(c.r()) + 0.7152 * lin(c.g()) + 0.0722 * lin(c.b());
-        let (hi, lo) = if lum(a) > lum(b) { (lum(a), lum(b)) } else { (lum(b), lum(a)) };
+        let (hi, lo) = if lum(a) > lum(b) {
+            (lum(a), lum(b))
+        } else {
+            (lum(b), lum(a))
+        };
         (hi + 0.05) / (lo + 0.05)
     }
 
@@ -1271,17 +1544,32 @@ mod tests {
             assert!(!t.pro && !t.bevel, "{kind:?} uses the Studio layout");
             // AA body text (4.5:1) on every surface that carries labels.
             for surface in [t.chrome, t.dock, t.card, t.field] {
-                assert!(contrast(t.text, surface) >= 7.0, "{kind:?}: text on {surface:?}");
-                assert!(contrast(t.text_dim, surface) >= 4.5, "{kind:?}: dim text on {surface:?}");
+                assert!(
+                    contrast(t.text, surface) >= 7.0,
+                    "{kind:?}: text on {surface:?}"
+                );
+                assert!(
+                    contrast(t.text_dim, surface) >= 4.5,
+                    "{kind:?}: dim text on {surface:?}"
+                );
             }
-            assert!(contrast(t.primary_text, t.primary_bg) >= 3.0, "{kind:?}: suggested-action button label");
+            assert!(
+                contrast(t.primary_text, t.primary_bg) >= 3.0,
+                "{kind:?}: suggested-action button label"
+            );
         }
-        assert_eq!(ThemeKind::from_name("gnome dark"), Some(ThemeKind::AdwaitaDark));
+        assert_eq!(
+            ThemeKind::from_name("gnome dark"),
+            Some(ThemeKind::AdwaitaDark)
+        );
     }
 
     #[test]
     fn soft_themes_parse_and_hold_text_contrast() {
-        for (kind, alias) in [(ThemeKind::SoftDark, "soft dark"), (ThemeKind::SoftLight, "Soft_Light")] {
+        for (kind, alias) in [
+            (ThemeKind::SoftDark, "soft dark"),
+            (ThemeKind::SoftLight, "Soft_Light"),
+        ] {
             assert_eq!(ThemeKind::from_name(kind.id()), Some(kind));
             assert_eq!(ThemeKind::from_name(kind.label()), Some(kind));
             assert_eq!(ThemeKind::from_name(alias), Some(kind));
@@ -1293,24 +1581,61 @@ mod tests {
             // Soft means no extremes: surfaces stay off black and white.
             for c in [t.chrome, t.canvas, t.dock, t.card, t.field] {
                 let (hi, lo) = (c.r().max(c.g()).max(c.b()), c.r().min(c.g()).min(c.b()));
-                assert!(if t.dark() { (32..96).contains(&hi) } else { hi < 255 && lo > 200 }, "{kind:?}: {c:?}");
+                assert!(
+                    if t.dark() {
+                        (32..96).contains(&hi)
+                    } else {
+                        hi < 255 && lo > 200
+                    },
+                    "{kind:?}: {c:?}"
+                );
             }
             let tint = |under: Color32| {
                 let k = f32::from(t.accent_soft.a()) / 255.0;
-                let ch = |over: u8, under: u8| (f32::from(over) * k + f32::from(under) * (1.0 - k)).round() as u8;
-                Color32::from_rgb(ch(t.accent.r(), under.r()), ch(t.accent.g(), under.g()), ch(t.accent.b(), under.b()))
+                let ch = |over: u8, under: u8| {
+                    (f32::from(over) * k + f32::from(under) * (1.0 - k)).round() as u8
+                };
+                Color32::from_rgb(
+                    ch(t.accent.r(), under.r()),
+                    ch(t.accent.g(), under.g()),
+                    ch(t.accent.b(), under.b()),
+                )
             };
-            let surfaces = [t.chrome, t.canvas, t.dock, t.card, t.field, t.hover, t.pressed, tint(t.dock), tint(t.card)];
+            let surfaces = [
+                t.chrome,
+                t.canvas,
+                t.dock,
+                t.card,
+                t.field,
+                t.hover,
+                t.pressed,
+                tint(t.dock),
+                tint(t.card),
+            ];
             for (i, surface) in surfaces.into_iter().enumerate() {
-                for (name, colour) in [("text", t.text), ("dim", t.text_dim), ("faint", t.text_faint), ("accent text", t.accent_text)] {
-                    assert!(contrast(colour, surface) >= 4.5, "{kind:?}: {name} on {surface:?}");
+                for (name, colour) in [
+                    ("text", t.text),
+                    ("dim", t.text_dim),
+                    ("faint", t.text_faint),
+                    ("accent text", t.accent_text),
+                ] {
+                    assert!(
+                        contrast(colour, surface) >= 4.5,
+                        "{kind:?}: {name} on {surface:?}"
+                    );
                 }
                 // Status colours are marks on hovered or selected surfaces (3:1), text on resting ones.
                 let floor = if i < 5 { 4.5 } else { 3.0 };
-                assert!(contrast(t.danger, surface) >= floor && contrast(t.warning, surface) >= floor, "{kind:?}: status on {surface:?}");
+                assert!(
+                    contrast(t.danger, surface) >= floor && contrast(t.warning, surface) >= floor,
+                    "{kind:?}: status on {surface:?}"
+                );
             }
             for k in [1.0, 0.93, 0.85] {
-                assert!(contrast(t.primary_text, t.primary_bg.gamma_multiply(k)) >= 4.5, "{kind:?}: primary at {k}");
+                assert!(
+                    contrast(t.primary_text, t.primary_bg.gamma_multiply(k)) >= 4.5,
+                    "{kind:?}: primary at {k}"
+                );
             }
         }
     }
@@ -1318,8 +1643,20 @@ mod tests {
     #[test]
     fn breeze_themes_parse_and_meet_text_contrast() {
         for (kind, aliases) in [
-            (ThemeKind::BreezeLight, ["breeze", "Breeze Light", "breeze_light", "kde", "plasma"]),
-            (ThemeKind::BreezeDark, ["breeze dark", "Breeze Dark", "breeze_dark", "kde dark", "plasma-dark"]),
+            (
+                ThemeKind::BreezeLight,
+                ["breeze", "Breeze Light", "breeze_light", "kde", "plasma"],
+            ),
+            (
+                ThemeKind::BreezeDark,
+                [
+                    "breeze dark",
+                    "Breeze Dark",
+                    "breeze_dark",
+                    "kde dark",
+                    "plasma-dark",
+                ],
+            ),
         ] {
             assert_eq!(ThemeKind::from_name(kind.id()), Some(kind));
             assert_eq!(ThemeKind::from_name(kind.label()), Some(kind));
@@ -1335,45 +1672,104 @@ mod tests {
             // the canvas is the most recessed surface, then the dock and the cards, and controls
             // sit above the cards they are on; the accent is a blue.
             let lum = |c: Color32| u32::from(c.r()) + u32::from(c.g()) + u32::from(c.b());
-            assert!(lum(t.canvas) < lum(t.dock) && lum(t.dock) < lum(t.card) && lum(t.card) < lum(t.field), "{kind:?}: surface order");
-            assert!(t.accent.b() > t.accent.g() && t.accent.g() > t.accent.r(), "blue accent: {:?}", t.accent);
+            assert!(
+                lum(t.canvas) < lum(t.dock)
+                    && lum(t.dock) < lum(t.card)
+                    && lum(t.card) < lum(t.field),
+                "{kind:?}: surface order"
+            );
+            assert!(
+                t.accent.b() > t.accent.g() && t.accent.g() > t.accent.r(),
+                "blue accent: {:?}",
+                t.accent
+            );
             // Plasma's surfaces are cool blue-greys: dark ones stay below 64 per channel and light
             // ones above 205, all with a little more blue than red (our own values, close to it).
             for c in [t.chrome, t.canvas, t.dock, t.card, t.field] {
-                assert!(if t.dark() { c.r().max(c.g()).max(c.b()) < 64 } else { c.r().min(c.g()).min(c.b()) > 205 }, "{kind:?}: {c:?}");
+                assert!(
+                    if t.dark() {
+                        c.r().max(c.g()).max(c.b()) < 64
+                    } else {
+                        c.r().min(c.g()).min(c.b()) > 205
+                    },
+                    "{kind:?}: {c:?}"
+                );
                 assert!(c.b() > c.r(), "{kind:?}: blue-grey {c:?}");
             }
             // All text must read: AA (4.5:1) for every text colour on every surface it can sit on,
             // including a hovered or pressed control and a selected (accent-tinted) row.
             let tint = |under: Color32| {
                 let k = f32::from(t.accent_soft.a()) / 255.0;
-                let ch = |over: u8, under: u8| (f32::from(over) * k + f32::from(under) * (1.0 - k)).round() as u8;
-                Color32::from_rgb(ch(t.accent.r(), under.r()), ch(t.accent.g(), under.g()), ch(t.accent.b(), under.b()))
+                let ch = |over: u8, under: u8| {
+                    (f32::from(over) * k + f32::from(under) * (1.0 - k)).round() as u8
+                };
+                Color32::from_rgb(
+                    ch(t.accent.r(), under.r()),
+                    ch(t.accent.g(), under.g()),
+                    ch(t.accent.b(), under.b()),
+                )
             };
             let resting = [t.chrome, t.canvas, t.dock, t.card, t.field];
-            let active = [t.hover, t.pressed, tint(t.chrome), tint(t.dock), tint(t.card), tint(t.field)];
+            let active = [
+                t.hover,
+                t.pressed,
+                tint(t.chrome),
+                tint(t.dock),
+                tint(t.card),
+                tint(t.field),
+            ];
             for surface in resting.into_iter().chain(active) {
-                for (name, colour) in [("text", t.text), ("dim text", t.text_dim), ("faint text", t.text_faint), ("accent text", t.accent_text)] {
-                    assert!(contrast(colour, surface) >= 4.5, "{kind:?}: {name} on {surface:?}");
+                for (name, colour) in [
+                    ("text", t.text),
+                    ("dim text", t.text_dim),
+                    ("faint text", t.text_faint),
+                    ("accent text", t.accent_text),
+                ] {
+                    assert!(
+                        contrast(colour, surface) >= 4.5,
+                        "{kind:?}: {name} on {surface:?}"
+                    );
                 }
             }
             // The text must also keep a hierarchy, not collapse into one grey.
-            assert!(contrast(t.text, t.card) > contrast(t.text_dim, t.card) && contrast(t.text_dim, t.card) > contrast(t.text_faint, t.card), "{kind:?}");
+            assert!(
+                contrast(t.text, t.card) > contrast(t.text_dim, t.card)
+                    && contrast(t.text_dim, t.card) > contrast(t.text_faint, t.card),
+                "{kind:?}"
+            );
             // Danger and warning colours carry text on the resting surfaces; on hovered, pressed and
             // selected ones they are status marks, held to the 3:1 of graphical objects.
             for surface in resting {
-                assert!(contrast(t.danger, surface) >= 4.5, "{kind:?}: danger on {surface:?}");
-                assert!(contrast(t.warning, surface) >= 4.5, "{kind:?}: warning on {surface:?}");
+                assert!(
+                    contrast(t.danger, surface) >= 4.5,
+                    "{kind:?}: danger on {surface:?}"
+                );
+                assert!(
+                    contrast(t.warning, surface) >= 4.5,
+                    "{kind:?}: warning on {surface:?}"
+                );
             }
             for surface in active {
-                assert!(contrast(t.danger, surface) >= 3.0, "{kind:?}: danger on {surface:?}");
-                assert!(contrast(t.warning, surface) >= 3.0, "{kind:?}: warning on {surface:?}");
+                assert!(
+                    contrast(t.danger, surface) >= 3.0,
+                    "{kind:?}: danger on {surface:?}"
+                );
+                assert!(
+                    contrast(t.warning, surface) >= 3.0,
+                    "{kind:?}: warning on {surface:?}"
+                );
             }
             // A primary button darkens while hovered and pressed (button_impl), so check all three.
             for k in [1.0, 0.93, 0.85] {
-                assert!(contrast(t.primary_text, t.primary_bg.gamma_multiply(k)) >= 4.5, "{kind:?}: primary button label at {k}");
+                assert!(
+                    contrast(t.primary_text, t.primary_bg.gamma_multiply(k)) >= 4.5,
+                    "{kind:?}: primary button label at {k}"
+                );
             }
-            assert!(contrast(t.caption_close_text, t.caption_close) >= 4.5, "{kind:?}: close button glyph");
+            assert!(
+                contrast(t.caption_close_text, t.caption_close) >= 4.5,
+                "{kind:?}: close button glyph"
+            );
         }
     }
 }
@@ -1398,7 +1794,10 @@ pub mod live {
 
     impl LiveTokens {
         pub fn from_env() -> Self {
-            Self { path: std::env::var_os("PHOTOCRAFT_THEME_FILE").map(Into::into), ..Default::default() }
+            Self {
+                path: std::env::var_os("PHOTOCRAFT_THEME_FILE").map(Into::into),
+                ..Default::default()
+            }
         }
 
         /// Re-apply overrides if the file changed. Returns true when tokens were updated.
@@ -1411,13 +1810,17 @@ pub mod live {
             }
             self.last_check = now;
             ctx.request_repaint_after(std::time::Duration::from_millis(400));
-            let Ok(meta) = std::fs::metadata(path) else { return false };
+            let Ok(meta) = std::fs::metadata(path) else {
+                return false;
+            };
             let stamp = meta.modified().ok();
             if stamp == self.stamp {
                 return false;
             }
             self.stamp = stamp;
-            let Ok(text) = std::fs::read_to_string(path) else { return false };
+            let Ok(text) = std::fs::read_to_string(path) else {
+                return false;
+            };
             match serde_json::from_str::<serde_json::Value>(&text) {
                 Ok(v) => {
                     super::apply(ctx, kind);
@@ -1450,7 +1853,9 @@ pub mod live {
     /// Apply JSON overrides onto tokens; returns unknown keys.
     pub fn apply_overrides(t: &mut Tokens, v: &serde_json::Value) -> Vec<String> {
         let mut unknown = Vec::new();
-        let Some(obj) = v.as_object() else { return unknown };
+        let Some(obj) = v.as_object() else {
+            return unknown;
+        };
         for (k, val) in obj {
             macro_rules! c {
                 ($($f:ident),*) => {
@@ -1505,7 +1910,10 @@ pub mod live {
         #[test]
         fn overrides_apply_and_report_unknown() {
             let mut t = Tokens::for_kind(super::super::ThemeKind::Pro);
-            let unknown = apply_overrides(&mut t, &serde_json::json!({"card": "#102030", "radius": 9, "nope": 1}));
+            let unknown = apply_overrides(
+                &mut t,
+                &serde_json::json!({"card": "#102030", "radius": 9, "nope": 1}),
+            );
             assert_eq!(t.card, Color32::from_rgb(16, 32, 48));
             assert_eq!(t.radius, 9.0);
             assert_eq!(unknown, vec!["nope".to_string()]);

@@ -421,8 +421,8 @@ mod tests {
         query::{Added, Changed, NestedQuery, Or, SpawnDetails, Spawned, With, Without},
         resource::Resource,
         schedule::{
-            common_conditions::resource_exists, ApplyDeferred, IntoScheduleConfigs, Schedule,
-            SystemCondition,
+            ApplyDeferred, IntoScheduleConfigs, Schedule, SystemCondition,
+            common_conditions::resource_exists,
         },
         system::{
             Commands, In, InMut, IntoSystem, Local, NonSend, NonSendMut, ParamSet, Query, Res,

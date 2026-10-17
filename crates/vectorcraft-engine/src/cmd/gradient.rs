@@ -60,8 +60,15 @@ fn select_stop(s: &mut Session, p: &Value) -> Result<Value> {
         None => return Err(bad(C, "missing `index` (a stop index, or null to clear)")),
         Some(Value::Null) => None,
         Some(v) => {
-            let i = v.as_u64().ok_or_else(|| bad(C, "`index` must be a whole number or null"))? as usize;
-            let n = active_gradient(s).ok_or_else(|| bad(C, "the active paint is not a gradient"))?.gradient.stops.len();
+            let i = v
+                .as_u64()
+                .ok_or_else(|| bad(C, "`index` must be a whole number or null"))?
+                as usize;
+            let n = active_gradient(s)
+                .ok_or_else(|| bad(C, "the active paint is not a gradient"))?
+                .gradient
+                .stops
+                .len();
             if i >= n {
                 return Err(bad(C, format!("no stop {i} (the gradient has {n})")));
             }
@@ -85,7 +92,14 @@ pub(crate) struct StopOwner {
 
 impl StopOwner {
     pub(crate) fn of(s: &Session) -> Self {
-        Self { doc: s.active, object: s.active().and_then(|d| d.selection.objects.first().copied()), fill: s.fill_active, item: s.appearance_item() }
+        Self {
+            doc: s.active,
+            object: s
+                .active()
+                .and_then(|d| d.selection.objects.first().copied()),
+            fill: s.fill_active,
+            item: s.appearance_item(),
+        }
     }
 }
 
@@ -94,7 +108,9 @@ impl Session {
     /// is still the one behind the active proxy. Callers check it against the stop count (an undo
     /// can remove stops).
     pub fn selected_stop(&self) -> Option<usize> {
-        self.gradient_stop.filter(|(_, owner)| *owner == StopOwner::of(self)).map(|(i, _)| i)
+        self.gradient_stop
+            .filter(|(_, owner)| *owner == StopOwner::of(self))
+            .map(|(i, _)| i)
     }
 }
 
@@ -102,7 +118,8 @@ type Parsed<T> = std::result::Result<T, String>;
 
 /// Parse a kind name.
 fn parse_kind(k: &str) -> Parsed<GradientKind> {
-    GradientKind::parse(k).ok_or_else(|| format!("unknown gradient kind `{k}` (linear, radial, freeform)"))
+    GradientKind::parse(k)
+        .ok_or_else(|| format!("unknown gradient kind `{k}` (linear, radial, freeform)"))
 }
 
 /// `v` (params holding `stops`) with each stop that names a `swatch` resolved through `d`
@@ -111,17 +128,31 @@ fn parse_kind(k: &str) -> Parsed<GradientKind> {
 /// the colour it gives.
 pub(crate) fn link_stops(d: &Document, v: &Value) -> Parsed<Value> {
     let mut v = v.clone();
-    let Some(stops) = v.get_mut("stops").and_then(Value::as_array_mut) else { return Ok(v) };
+    let Some(stops) = v.get_mut("stops").and_then(Value::as_array_mut) else {
+        return Ok(v);
+    };
     for (i, st) in stops.iter_mut().enumerate() {
-        let Some(name) = st.get("swatch").and_then(Value::as_str).map(str::to_string) else { continue };
+        let Some(name) = st.get("swatch").and_then(Value::as_str).map(str::to_string) else {
+            continue;
+        };
         if d.swatch(&name).is_none() && st.get("color").is_some() {
             continue;
         }
-        let tint = st.get("tint").and_then(Value::as_f64).map(|t| (t / 100.0).clamp(0.0, 1.0) as f32);
-        let Paint::Solid { color, swatch, tint } = swatch_solid(d, &name, tint).map_err(|e| format!("stop {i}: {e}"))? else {
+        let tint = st
+            .get("tint")
+            .and_then(Value::as_f64)
+            .map(|t| (t / 100.0).clamp(0.0, 1.0) as f32);
+        let Paint::Solid {
+            color,
+            swatch,
+            tint,
+        } = swatch_solid(d, &name, tint).map_err(|e| format!("stop {i}: {e}"))?
+        else {
             continue;
         };
-        let Some(o) = st.as_object_mut() else { continue };
+        let Some(o) = st.as_object_mut() else {
+            continue;
+        };
         o.insert("color".into(), color_json(&color));
         match swatch {
             Some(n) => {
@@ -150,12 +181,26 @@ pub(crate) fn parse_stops(v: &Value) -> Parsed<Vec<GradientStop>> {
         .iter()
         .enumerate()
         .map(|(i, st)| {
-            let num = |k: &str| st.get(k).map(|v| v.as_f64().ok_or_else(|| format!("stop {i}: `{k}` must be a number"))).transpose();
+            let num = |k: &str| {
+                st.get(k)
+                    .map(|v| {
+                        v.as_f64()
+                            .ok_or_else(|| format!("stop {i}: `{k}` must be a number"))
+                    })
+                    .transpose()
+            };
             let offset = num("offset")?.ok_or_else(|| format!("stop {i} needs `offset`"))?;
-            let color = st.get("color").and_then(color_value).ok_or_else(|| format!("stop {i} needs a valid `color`"))?;
-            let opacity = num("opacity")?.map(|o| if o > 1.0 { o / 100.0 } else { o }).unwrap_or(1.0);
+            let color = st
+                .get("color")
+                .and_then(color_value)
+                .ok_or_else(|| format!("stop {i} needs a valid `color`"))?;
+            let opacity = num("opacity")?
+                .map(|o| if o > 1.0 { o / 100.0 } else { o })
+                .unwrap_or(1.0);
             let swatch = str_param(st, "swatch").map(str::to_string);
-            let tint = num("tint")?.filter(|_| swatch.is_some()).map_or(1.0, |t| (t / 100.0).clamp(0.0, 1.0) as f32);
+            let tint = num("tint")?
+                .filter(|_| swatch.is_some())
+                .map_or(1.0, |t| (t / 100.0).clamp(0.0, 1.0) as f32);
             Ok(GradientStop {
                 offset: offset.clamp(0.0, 1.0) as f32,
                 color,
@@ -176,14 +221,26 @@ pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
     if !g.is_object() {
         return Err("`gradient` must be an object".into());
     }
-    let kind = str_param(g, "kind").map(parse_kind).transpose()?.unwrap_or_default();
-    let stops = g.get("stops").map(parse_stops).transpose()?.unwrap_or_else(|| Gradient::default().stops);
+    let kind = str_param(g, "kind")
+        .map(parse_kind)
+        .transpose()?
+        .unwrap_or_default();
+    let stops = g
+        .get("stops")
+        .map(parse_stops)
+        .transpose()?
+        .unwrap_or_else(|| Gradient::default().stops);
     let mut gp = GradientPaint::new(Gradient { kind, stops });
     gp.angle = f64_or(g, "angle", 0.0);
     gp.swatch = str_param(g, "swatch").map(str::to_string);
     let geom = GeomEdit::parse(g)?;
     if let Some((start, end)) = geom.vector {
-        let mut g = GradientGeom { start, end, aspect: geom.aspect.unwrap_or(1.0), focal: None };
+        let mut g = GradientGeom {
+            start,
+            end,
+            aspect: geom.aspect.unwrap_or(1.0),
+            focal: None,
+        };
         g.set_focal(geom.focal.flatten());
         gp.angle = g.angle_deg();
         gp.geom = Some(g);
@@ -197,7 +254,11 @@ pub(crate) fn parse_gradient(g: &Value) -> Parsed<GradientPaint> {
 /// The `aspect` param (a percentage) as a ratio.
 fn aspect_param(p: &Value) -> Parsed<Option<f64>> {
     p.get("aspect")
-        .map(|v| v.as_f64().map(|a| (a / 100.0).clamp(0.005, 327.67)).ok_or_else(|| "`aspect` must be a number (%)".to_string()))
+        .map(|v| {
+            v.as_f64()
+                .map(|a| (a / 100.0).clamp(0.005, 327.67))
+                .ok_or_else(|| "`aspect` must be a number (%)".to_string())
+        })
         .transpose()
 }
 
@@ -207,7 +268,11 @@ fn aspect_param(p: &Value) -> Parsed<Option<f64>> {
 pub(crate) fn unplaced(paint: &Paint) -> Paint {
     match paint {
         Paint::Gradient(g) if g.geom.is_some() || g.freeform.is_some() => {
-            Paint::Gradient(Box::new(GradientPaint { geom: None, freeform: None, ..(**g).clone() }))
+            Paint::Gradient(Box::new(GradientPaint {
+                geom: None,
+                freeform: None,
+                ..(**g).clone()
+            }))
         }
         _ => paint.clone(),
     }
@@ -222,7 +287,9 @@ fn applies_swatch(p: &Value) -> bool {
 /// placed on the bounds so the aspect sticks, and a gradient swatch fits the object (keeping its
 /// aspect) instead of the art it was saved from.
 pub(crate) fn place_paint(paint: &Paint, p: &Value, bounds: Option<Rect>) -> Paint {
-    let Paint::Gradient(g) = paint else { return paint.clone() };
+    let Paint::Gradient(g) = paint else {
+        return paint.clone();
+    };
     let aspect = match g.geom {
         Some(geom) if applies_swatch(p) => (geom.aspect != 1.0).then(|| json!(geom.aspect * 100.0)),
         // Freeform points given with the paint stay where they were put.
@@ -238,7 +305,11 @@ pub(crate) fn place_paint(paint: &Paint, p: &Value, bounds: Option<Rect>) -> Pai
 }
 
 /// Apply the gradient edits in `p` to `paint` (pure; unit-tested).
-pub(crate) fn apply_gradient_edit(paint: &Paint, p: &Value, bounds: Option<Rect>) -> std::result::Result<Paint, String> {
+pub(crate) fn apply_gradient_edit(
+    paint: &Paint,
+    p: &Value,
+    bounds: Option<Rect>,
+) -> std::result::Result<Paint, String> {
     apply_gradient_edit_in(paint, p, bounds, &|_| true)
 }
 
@@ -338,14 +409,24 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
     let mode = match str_param(p, "strokeMode") {
         None => None,
         Some(_) if !stroke => return Err(bad(C, "`strokeMode` applies to strokes (stroke: true)")),
-        Some(m) => Some(StrokeGradientMode::parse(m).ok_or_else(|| bad(C, format!("strokeMode must be within|along|across, got {m}")))?),
+        Some(m) => Some(StrokeGradientMode::parse(m).ok_or_else(|| {
+            bad(
+                C,
+                format!("strokeMode must be within|along|across, got {m}"),
+            )
+        })?),
     };
     // Stops naming swatches take their colours from them.
     let p = &link_stops(&s.doc()?.doc, p).map_err(|e| bad(C, e))?;
     // Validate against the defaults first so bad params fail without touching the document.
-    let default_paint = if stroke { s.paint.stroke.clone() } else { s.paint.fill.clone() };
+    let default_paint = if stroke {
+        s.paint.stroke.clone()
+    } else {
+        s.paint.fill.clone()
+    };
     let new_default = apply_gradient_edit(&default_paint, p, None).map_err(|e| bad(C, e))?;
-    let freeform = str_param(p, "kind").and_then(GradientKind::parse) == Some(GradientKind::Freeform);
+    let freeform =
+        str_param(p, "kind").and_then(GradientKind::parse) == Some(GradientKind::Freeform);
     edit_items(s, &ids, item, C, "Gradient", !stroke, |n, index| {
         if index.is_none()
             && let NodeKind::Text(t) = &mut n.kind
@@ -364,7 +445,15 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
             Some(f) => f,
             None => &|_| true,
         };
-        let np = apply_gradient_edit_in(n.appearance.paint_at(index, !stroke).unwrap_or(&Paint::None), p, b, inside).map_err(|e| bad(C, e))?;
+        let np = apply_gradient_edit_in(
+            n.appearance
+                .paint_at(index, !stroke)
+                .unwrap_or(&Paint::None),
+            p,
+            b,
+            inside,
+        )
+        .map_err(|e| bad(C, e))?;
         n.appearance.set_paint_at(index, !stroke, np);
         if let Some(m) = mode
             && let Some(st) = n.appearance.stroke_at_mut(index)
@@ -382,7 +471,13 @@ fn edit_gradient(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // The last gradient is the one the first object now shows (the defaults' without objects).
     let shown = match ids.first() {
-        Some(id) => s.doc()?.doc.node(*id).map(|n| super::paint::proxy_paint(n, stroke, item.resolve(&n.appearance, !stroke, C).ok().flatten())),
+        Some(id) => s.doc()?.doc.node(*id).map(|n| {
+            super::paint::proxy_paint(
+                n,
+                stroke,
+                item.resolve(&n.appearance, !stroke, C).ok().flatten(),
+            )
+        }),
         None => Some(new_default.clone()),
     };
     if let Some(shown) = shown {
@@ -405,7 +500,11 @@ pub(crate) fn run_stroke_weight(style: &mut vectorcraft_doc::CharStyle) {
 
 /// A type run's fill or stroke paint and the box (text space) an unplaced gradient on it fits:
 /// the layout bounds `lb`, grown by half the run's stroke weight for strokes.
-pub(crate) fn run_paint_mut(r: &mut vectorcraft_doc::TextRun, stroke: bool, lb: Rect) -> (&mut Paint, Rect) {
+pub(crate) fn run_paint_mut(
+    r: &mut vectorcraft_doc::TextRun,
+    stroke: bool,
+    lb: Rect,
+) -> (&mut Paint, Rect) {
     if stroke {
         let b = stroke_paint_bounds(lb, r.style.stroke_width);
         (&mut r.style.stroke, b)
@@ -418,7 +517,11 @@ pub(crate) fn run_paint_mut(r: &mut vectorcraft_doc::TextRun, stroke: bool, lb: 
 /// geometric bounds, grown by half the weight for a stroke (`None` without that stroke).
 pub(crate) fn item_paint_bounds(n: &Node, index: Option<usize>, fill: bool) -> Option<Rect> {
     let b = n.geometric_bounds()?;
-    if fill { Some(b) } else { n.appearance.stroke_at(index).map(|st| st.paint_bounds(b)) }
+    if fill {
+        Some(b)
+    } else {
+        n.appearance.stroke_at(index).map(|st| st.paint_bounds(b))
+    }
 }
 
 /// `paint` as applied to a type run whose text space `xf` maps to the document: a vector given in
@@ -452,7 +555,11 @@ struct GeomEdit {
 
 impl GeomEdit {
     fn parse(p: &Value) -> std::result::Result<Self, String> {
-        let point = |k: &str| p.get(k).map(|_| point_param(p, k).ok_or_else(|| format!("`{k}` must be [x, y]"))).transpose();
+        let point = |k: &str| {
+            p.get(k)
+                .map(|_| point_param(p, k).ok_or_else(|| format!("`{k}` must be [x, y]")))
+                .transpose()
+        };
         let vector = match (point("start")?, point("end")?) {
             (Some(s), Some(e)) => Some((s, e)),
             (None, None) => None,
@@ -463,7 +570,11 @@ impl GeomEdit {
             Some(Value::Null) => Some(None),
             Some(_) => Some(point("focal")?),
         };
-        Ok(Self { vector, aspect: aspect_param(p)?, focal })
+        Ok(Self {
+            vector,
+            aspect: aspect_param(p)?,
+            focal,
+        })
     }
 }
 
@@ -483,10 +594,18 @@ fn vector_paint(cur: &Paint, e: &GeomEdit, to_doc: Affine, bounds: Option<Rect>)
         }
         g
     };
-    let shown = gp.geom.or_else(|| bounds.map(|b| gp.resolve(b))).map(|g| map(g, to_doc));
+    let shown = gp
+        .geom
+        .or_else(|| bounds.map(|b| gp.resolve(b)))
+        .map(|g| map(g, to_doc));
     let (start, end) = e.vector.or_else(|| shown.map(|g| (g.start, g.end)))?;
     let aspect = e.aspect.or_else(|| shown.map(|g| g.aspect)).unwrap_or(1.0);
-    let mut geom = GradientGeom { start, end, aspect, focal: None };
+    let mut geom = GradientGeom {
+        start,
+        end,
+        aspect,
+        focal: None,
+    };
     match (e.focal, shown) {
         _ if kind != GradientKind::Radial => {}
         (Some(f), _) => geom.set_focal(f),
@@ -512,7 +631,10 @@ fn set_gradient_geom(s: &mut Session, p: &Value) -> Result<Value> {
     let stroke = edits_stroke(s, p, item, !s.fill_active)?;
     let item = item.of_kind(s, !stroke);
     let targets = match item {
-        ItemTarget::Top => leaf_targets(s, &ids_param(p, "ids").map_or_else(|| selected_roots(s), Ok)?)?,
+        ItemTarget::Top => leaf_targets(
+            s,
+            &ids_param(p, "ids").map_or_else(|| selected_roots(s), Ok)?,
+        )?,
         _ => item.targets(s, p)?,
     };
     if targets.is_empty() {
@@ -535,7 +657,14 @@ fn set_gradient_geom(s: &mut Session, p: &Value) -> Result<Value> {
             return Ok(());
         }
         let b = item_paint_bounds(n, index, !stroke);
-        if let Some(np) = vector_paint(n.appearance.paint_at(index, !stroke).unwrap_or(&Paint::None), &edit, Affine::IDENTITY, b) {
+        if let Some(np) = vector_paint(
+            n.appearance
+                .paint_at(index, !stroke)
+                .unwrap_or(&Paint::None),
+            &edit,
+            Affine::IDENTITY,
+            b,
+        ) {
             n.appearance.set_paint_at(index, !stroke, np);
         }
         Ok(())

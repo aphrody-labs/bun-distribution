@@ -45,8 +45,16 @@ pub struct Mesh {
 impl Mesh {
     /// The identity mesh.
     pub fn identity(cols: usize, rows: usize, size: [f64; 2]) -> Mesh {
-        let mut m = Mesh { cols: cols.max(1), rows: rows.max(1), size, verts: vec![] };
-        m.verts = (0..=m.rows).flat_map(|j| (0..=m.cols).map(move |i| (i, j))).map(|(i, j)| m.grid(i, j)).collect();
+        let mut m = Mesh {
+            cols: cols.max(1),
+            rows: rows.max(1),
+            size,
+            verts: vec![],
+        };
+        m.verts = (0..=m.rows)
+            .flat_map(|j| (0..=m.cols).map(move |i| (i, j)))
+            .map(|(i, j)| m.grid(i, j))
+            .collect();
         m
     }
 
@@ -61,7 +69,10 @@ impl Mesh {
     }
 
     fn cell(&self) -> [f64; 2] {
-        [self.size[0] / self.cols as f64, self.size[1] / self.rows as f64]
+        [
+            self.size[0] / self.cols as f64,
+            self.size[1] / self.rows as f64,
+        ]
     }
 
     /// The undeformed position of vertex `(i, j)` (column, row).
@@ -111,7 +122,10 @@ impl Mesh {
             let h = 0.5;
             let fx = self.sample([p[0] + h, p[1]]);
             let fy = self.sample([p[0], p[1] + h]);
-            let j = [[(fx[0] - f[0]) / h, (fy[0] - f[0]) / h], [(fx[1] - f[1]) / h, (fy[1] - f[1]) / h]];
+            let j = [
+                [(fx[0] - f[0]) / h, (fy[0] - f[0]) / h],
+                [(fx[1] - f[1]) / h, (fy[1] - f[1]) / h],
+            ];
             let det = j[0][0] * j[1][1] - j[0][1] * j[1][0];
             if det.abs() < 1e-12 {
                 return None;
@@ -130,7 +144,10 @@ impl Mesh {
             for i in 0..=self.cols {
                 let g = self.grid(i, j);
                 let k = self.idx(i, j);
-                m.verts[k] = [g[0] + (self.verts[k][0] - g[0]) * t, g[1] + (self.verts[k][1] - g[1]) * t];
+                m.verts[k] = [
+                    g[0] + (self.verts[k][0] - g[0]) * t,
+                    g[1] + (self.verts[k][1] - g[1]) * t,
+                ];
             }
         }
         m
@@ -142,7 +159,8 @@ impl Mesh {
         let [w, h] = self.size;
         let c = [w / 2.0, h / 2.0];
         let tol = 1e-6;
-        let inside = |q: [f64; 2]| q[0] >= -tol && q[1] >= -tol && q[0] <= w + tol && q[1] <= h + tol;
+        let inside =
+            |q: [f64; 2]| q[0] >= -tol && q[1] >= -tol && q[0] <= w + tol && q[1] <= h + tol;
         let fits = |s: f64| {
             let (hw, hh) = (s * w / 2.0, s * h / 2.0);
             let n = 48;
@@ -201,7 +219,12 @@ pub struct MeshOpts {
 
 impl Default for MeshOpts {
     fn default() -> Self {
-        MeshOpts { cols: 12, rows: 8, alpha: 1.0, prior: 0.02 }
+        MeshOpts {
+            cols: 12,
+            rows: 8,
+            alpha: 1.0,
+            prior: 0.02,
+        }
     }
 }
 
@@ -226,11 +249,20 @@ impl Normal {
 /// Fit the content-preserving warp of one frame: `pairs` are (source position, wanted
 /// stabilised position) of its features; `base` is the frame's perspective correction (source →
 /// stabilised), the prior.
-pub fn solve_mesh(size: [f64; 2], o: &MeshOpts, pairs: &[([f64; 2], [f64; 2])], base: &Homography) -> Mesh {
+pub fn solve_mesh(
+    size: [f64; 2],
+    o: &MeshOpts,
+    pairs: &[([f64; 2], [f64; 2])],
+    base: &Homography,
+) -> Mesh {
     let mut m = Mesh::from_homography(o.cols, o.rows, size, base);
     let nv = (m.cols + 1) * (m.rows + 1);
     let n = 2 * nv;
-    let mut ne = Normal { n, a: vec![0.0; n * n], b: vec![0.0; n] };
+    let mut ne = Normal {
+        n,
+        a: vec![0.0; n * n],
+        b: vec![0.0; n],
+    };
     // Prior.
     for k in 0..nv {
         let v = m.verts[k];
@@ -240,11 +272,22 @@ pub fn solve_mesh(size: [f64; 2], o: &MeshOpts, pairs: &[([f64; 2], [f64; 2])], 
     // Data: the bilinear combination of the wanted position's cell lands on the source position.
     let mut used = 0;
     for (src, dst) in pairs {
-        if !(dst[0] >= 0.0 && dst[1] >= 0.0 && dst[0] <= size[0] && dst[1] <= size[1] && src[0].is_finite() && src[1].is_finite()) {
+        if !(dst[0] >= 0.0
+            && dst[1] >= 0.0
+            && dst[0] <= size[0]
+            && dst[1] <= size[1]
+            && src[0].is_finite()
+            && src[1].is_finite())
+        {
             continue;
         }
         let (i, j, u, v) = m.locate(*dst);
-        let ks = [m.idx(i, j), m.idx(i + 1, j), m.idx(i, j + 1), m.idx(i + 1, j + 1)];
+        let ks = [
+            m.idx(i, j),
+            m.idx(i + 1, j),
+            m.idx(i, j + 1),
+            m.idx(i + 1, j + 1),
+        ];
         let w = [(1.0 - u) * (1.0 - v), u * (1.0 - v), (1.0 - u) * v, u * v];
         for d in 0..2 {
             let coefs: Vec<(usize, f64)> = ks.iter().zip(w).map(|(k, w)| (2 * k + d, w)).collect();
@@ -270,9 +313,29 @@ pub fn solve_mesh(size: [f64; 2], o: &MeshOpts, pairs: &[([f64; 2], [f64; 2])], 
                 let v = (e[0] * -dv[1] + e[1] * dv[0]) / l2;
                 let (k1, k2, k3) = (m.idx(v1.0, v1.1), m.idx(v2.0, v2.1), m.idx(v3.0, v3.1));
                 // x: V1x − V2x − u (V3x − V2x) + v (V3y − V2y) = 0
-                ne.row(&[(2 * k1, 1.0), (2 * k2, u - 1.0), (2 * k3, -u), (2 * k3 + 1, v), (2 * k2 + 1, -v)], 0.0, a2);
+                ne.row(
+                    &[
+                        (2 * k1, 1.0),
+                        (2 * k2, u - 1.0),
+                        (2 * k3, -u),
+                        (2 * k3 + 1, v),
+                        (2 * k2 + 1, -v),
+                    ],
+                    0.0,
+                    a2,
+                );
                 // y: V1y − V2y − u (V3y − V2y) − v (V3x − V2x) = 0
-                ne.row(&[(2 * k1 + 1, 1.0), (2 * k2 + 1, u - 1.0), (2 * k3 + 1, -u), (2 * k3, -v), (2 * k2, v)], 0.0, a2);
+                ne.row(
+                    &[
+                        (2 * k1 + 1, 1.0),
+                        (2 * k2 + 1, u - 1.0),
+                        (2 * k3 + 1, -u),
+                        (2 * k3, -v),
+                        (2 * k2, v),
+                    ],
+                    0.0,
+                    a2,
+                );
             }
         }
     }
@@ -287,7 +350,9 @@ pub fn solve_mesh(size: [f64; 2], o: &MeshOpts, pairs: &[([f64; 2], [f64; 2])], 
 
 /// Gaussian weights of the frames `lo..=hi` around `t`.
 fn gauss(lo: usize, hi: usize, t: usize, sigma: f64) -> Vec<f64> {
-    let g: Vec<f64> = (lo..=hi).map(|j| (-((j as f64 - t as f64).powi(2)) / (2.0 * sigma * sigma)).exp()).collect();
+    let g: Vec<f64> = (lo..=hi)
+        .map(|j| (-((j as f64 - t as f64).powi(2)) / (2.0 * sigma * sigma)).exp())
+        .collect();
     let s: f64 = g.iter().sum();
     g.into_iter().map(|v| v / s.max(1e-300)).collect()
 }
@@ -295,7 +360,12 @@ fn gauss(lo: usize, hi: usize, t: usize, sigma: f64) -> Vec<f64> {
 /// Subspace-smoothed feature positions: for every frame `t < frames`, the (original, smoothed)
 /// positions of the trajectories seen on it. `sigma`: Gaussian smoothing in frames; `rank`: the
 /// subspace dimension (9 in the paper). Frames without enough trajectories get no pairs.
-pub fn smooth_trajectories(tracks: &[Track2D], frames: usize, sigma: f64, rank: usize) -> Vec<Vec<([f64; 2], [f64; 2])>> {
+pub fn smooth_trajectories(
+    tracks: &[Track2D],
+    frames: usize,
+    sigma: f64,
+    rank: usize,
+) -> Vec<Vec<([f64; 2], [f64; 2])>> {
     let max_r = ((3.0 * sigma).ceil() as usize).clamp(1, 30);
     (0..frames)
         .into_par_iter()
@@ -306,7 +376,10 @@ pub fn smooth_trajectories(tracks: &[Track2D], frames: usize, sigma: f64, rank: 
             let (lo, hi, complete) = loop {
                 let lo = t.saturating_sub(r);
                 let hi = (t + r).min(frames.saturating_sub(1));
-                let complete: Vec<&Track2D> = tracks.iter().filter(|tr| tr.start as usize <= lo && tr.end() as usize > hi).collect();
+                let complete: Vec<&Track2D> = tracks
+                    .iter()
+                    .filter(|tr| tr.start as usize <= lo && tr.end() as usize > hi)
+                    .collect();
                 if complete.len() >= 8 || r <= 2 {
                     break (lo, hi, complete);
                 }
@@ -338,9 +411,14 @@ pub fn smooth_trajectories(tracks: &[Track2D], frames: usize, sigma: f64, rank: 
             }
             let (_, vecs) = sym_eigen(&gram, m);
             // C[q][c] = vecs[c][m − 1 − q] (largest first).
-            let cmat: Vec<Vec<f64>> = (0..k).map(|q| (0..m).map(|c| vecs[c * m + (m - 1 - q)]).collect()).collect();
+            let cmat: Vec<Vec<f64>> = (0..k)
+                .map(|q| (0..m).map(|c| vecs[c * m + (m - 1 - q)]).collect())
+                .collect();
             let g = gauss(lo, hi, t, sigma.max(1e-6));
-            let chat: Vec<f64> = cmat.iter().map(|row| row.iter().zip(&g).map(|(a, b)| a * b).sum()).collect();
+            let chat: Vec<f64> = cmat
+                .iter()
+                .map(|row| row.iter().zip(&g).map(|(a, b)| a * b).sum())
+                .collect();
             let tc = t - lo;
             let mut out = Vec::new();
             // Complete trajectories: W = M Cᵀ.
@@ -359,15 +437,21 @@ pub fn smooth_trajectories(tracks: &[Track2D], frames: usize, sigma: f64, rank: 
             // Incomplete trajectories seen on t: coefficients by least squares over the frames
             // they cover in the window.
             let need = (k + 3).max(m / 2);
-            for tr in tracks.iter().filter(|tr| tr.at(t32).is_some() && !(tr.start as usize <= lo && tr.end() as usize > hi)) {
-                let cols: Vec<usize> = (0..m).filter(|c| tr.at((lo + c) as u32).is_some()).collect();
+            for tr in tracks.iter().filter(|tr| {
+                tr.at(t32).is_some() && !(tr.start as usize <= lo && tr.end() as usize > hi)
+            }) {
+                let cols: Vec<usize> = (0..m)
+                    .filter(|c| tr.at((lo + c) as u32).is_some())
+                    .collect();
                 if cols.len() < need {
                     continue;
                 }
                 let mut ata = vec![0.0; k * k];
                 let mut atb = [vec![0.0; k], vec![0.0; k]];
                 for &c in &cols {
-                    let Some(p) = tr.at((lo + c) as u32) else { continue };
+                    let Some(p) = tr.at((lo + c) as u32) else {
+                        continue;
+                    };
                     for a in 0..k {
                         for d in 0..2 {
                             atb[d][a] += cmat[a][c] * p[d];
@@ -415,7 +499,10 @@ mod tests {
         let q = [40.0, 30.0];
         let p = mh.forward(q).unwrap();
         let e = h.apply(q);
-        assert!((p[0] - e[0]).abs() < 1e-6 && (p[1] - e[1]).abs() < 1e-6, "{p:?} {e:?}");
+        assert!(
+            (p[0] - e[0]).abs() < 1e-6 && (p[1] - e[1]).abs() < 1e-6,
+            "{p:?} {e:?}"
+        );
         assert!(mh.homography().max_diff(&h) < 1e-6);
         assert!(mh.valid_fraction() < 1.0);
     }
@@ -428,12 +515,24 @@ mod tests {
             for x in 0..20 {
                 let p = [5.0 + x as f64 * 10.0, 5.0 + y as f64 * 10.0];
                 // Everything moves by (3, −2); a blob near the centre by (8, −2).
-                let bump = (-((p[0] - 100.0).powi(2) + (p[1] - 60.0).powi(2)) / (2.0 * 20.0f64.powi(2))).exp();
+                let bump = (-((p[0] - 100.0).powi(2) + (p[1] - 60.0).powi(2))
+                    / (2.0 * 20.0f64.powi(2)))
+                .exp();
                 pairs.push((p, [p[0] + 3.0 + 5.0 * bump, p[1] - 2.0]));
             }
         }
         let base = Homography::translation([3.0, -2.0]);
-        let m = solve_mesh(size, &MeshOpts { cols: 10, rows: 6, alpha: 0.5, prior: 0.01 }, &pairs, &base);
+        let m = solve_mesh(
+            size,
+            &MeshOpts {
+                cols: 10,
+                rows: 6,
+                alpha: 0.5,
+                prior: 0.01,
+            },
+            &pairs,
+            &base,
+        );
         let mut err_mesh = 0.0;
         let mut err_h = 0.0;
         for (s, d) in &pairs {

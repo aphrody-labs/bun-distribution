@@ -17,7 +17,10 @@ use crate::AutomationError;
 use crate::budgets::MAX_RESPONSE_BYTES;
 use crate::security::{AUTH_METHOD, IO_TIMEOUT, MAX_REQUEST_BYTES, validate_token};
 
-type Conn = (BufReader<tokio::net::tcp::OwnedReadHalf>, tokio::net::tcp::OwnedWriteHalf);
+type Conn = (
+    BufReader<tokio::net::tcp::OwnedReadHalf>,
+    tokio::net::tcp::OwnedWriteHalf,
+);
 
 /// Reconnect before sending when the cached connection has been idle this long: the app
 /// drops idle control connections after [`IO_TIMEOUT`], and reconnecting before the send
@@ -30,8 +33,7 @@ const IDLE_RECONNECT: Duration = IO_TIMEOUT.saturating_sub(Duration::from_secs(5
 /// one the caller sees.
 pub const DEFAULT_CALL_TIMEOUT: Duration = Duration::from_secs(55);
 
-const NO_REPLY_CAUSES: &str =
-    "the command may still be running, or the app was not drawing frames (display asleep, window fully occluded, or a long operation blocked the frame loop)";
+const NO_REPLY_CAUSES: &str = "the command may still be running, or the app was not drawing frames (display asleep, window fully occluded, or a long operation blocked the frame loop)";
 
 pub struct BridgeClient {
     addr: String,
@@ -50,7 +52,9 @@ impl BridgeClient {
         let token = token.into();
         let host = addr.rsplit_once(':').map(|(h, _)| h).unwrap_or(&addr);
         if !matches!(host, "127.0.0.1" | "localhost" | "[::1]" | "::1") {
-            return Err(AutomationError::BadRequest(format!("bridge address must be loopback, got `{addr}`")));
+            return Err(AutomationError::BadRequest(format!(
+                "bridge address must be loopback, got `{addr}`"
+            )));
         }
         validate_token(&token)?;
         Ok(BridgeClient {
@@ -90,15 +94,22 @@ impl BridgeClient {
         self.dispatch(method, &params, true).await
     }
 
-    async fn dispatch(&self, method: &str, params: &Value, read: bool) -> Result<Value, AutomationError> {
+    async fn dispatch(
+        &self,
+        method: &str,
+        params: &Value,
+        read: bool,
+    ) -> Result<Value, AutomationError> {
         match self.attempt(method, params).await {
             Ok(v) => Ok(v),
             // A dropped socket or an unsent request applied nothing: safe to retry once,
             // and only for a call the caller vouched is a read.
-            Err(Failure::NotSent(_)) | Err(Failure::Transport(_)) if read => match self.attempt(method, params).await {
-                Ok(v) => Ok(v),
-                Err(retry) => Err(self.failure(method, retry, read)),
-            },
+            Err(Failure::NotSent(_)) | Err(Failure::Transport(_)) if read => {
+                match self.attempt(method, params).await {
+                    Ok(v) => Ok(v),
+                    Err(retry) => Err(self.failure(method, retry, read)),
+                }
+            }
             Err(f) => Err(self.failure(method, f, read)),
         }
     }
@@ -106,11 +117,22 @@ impl BridgeClient {
     /// The message for a failed attempt, worded by what the failure proves.
     fn failure(&self, method: &str, f: Failure, read: bool) -> AutomationError {
         match f {
-            Failure::NotSent(e) => AutomationError::Bridge(format!("`{method}` failed: {e}; the request was not sent")),
-            Failure::Transport(e) => AutomationError::Bridge(format!("`{method}` failed: {e}; operation may have completed; inspect state before retrying")),
+            Failure::NotSent(e) => {
+                AutomationError::Bridge(format!("`{method}` failed: {e}; the request was not sent"))
+            }
+            Failure::Transport(e) => AutomationError::Bridge(format!(
+                "`{method}` failed: {e}; operation may have completed; inspect state before retrying"
+            )),
             Failure::TimedOut(_) => {
-                let what = if read { "a read may be retried safely" } else { "operation may have completed; inspect state before retrying" };
-                AutomationError::Bridge(format!("`{method}` timed out after {:?}; {NO_REPLY_CAUSES}; {what}", self.timeout))
+                let what = if read {
+                    "a read may be retried safely"
+                } else {
+                    "operation may have completed; inspect state before retrying"
+                };
+                AutomationError::Bridge(format!(
+                    "`{method}` timed out after {:?}; {NO_REPLY_CAUSES}; {what}",
+                    self.timeout
+                ))
             }
             Failure::Definite(e) => e,
         }
@@ -138,10 +160,18 @@ impl BridgeClient {
             let (r, w) = s.into_split();
             let mut conn = (BufReader::new(r), w);
             let auth_id = self.next_id.fetch_add(1, Ordering::Relaxed);
-            let auth = tokio::time::timeout(Duration::from_secs(5), exchange(&mut conn, auth_id, AUTH_METHOD, &json!({"token": self.token})))
-                .await
-                .map_err(|_| Failure::NotSent("control authentication timed out".into()))?
-                .map_err(|e| Failure::NotSent(e.to_string()))?;
+            let auth = tokio::time::timeout(
+                Duration::from_secs(5),
+                exchange(
+                    &mut conn,
+                    auth_id,
+                    AUTH_METHOD,
+                    &json!({"token": self.token}),
+                ),
+            )
+            .await
+            .map_err(|_| Failure::NotSent("control authentication timed out".into()))?
+            .map_err(|e| Failure::NotSent(e.to_string()))?;
             if let Err(e) = auth {
                 return Err(Failure::Definite(e));
             }
@@ -200,11 +230,20 @@ enum Failure {
 }
 
 /// Outer `Err` = transport failure with an uncertain outcome; inner = app-level result.
-async fn exchange(conn: &mut Conn, id: u64, method: &str, params: &Value) -> Result<Result<Value, AutomationError>, AutomationError> {
-    let mut line = serde_json::to_string(&json!({"id": id, "method": method, "params": params})).map_err(|e| AutomationError::Other(e.to_string()))?;
+async fn exchange(
+    conn: &mut Conn,
+    id: u64,
+    method: &str,
+    params: &Value,
+) -> Result<Result<Value, AutomationError>, AutomationError> {
+    let mut line = serde_json::to_string(&json!({"id": id, "method": method, "params": params}))
+        .map_err(|e| AutomationError::Other(e.to_string()))?;
     line.push('\n');
     if line.len() > MAX_REQUEST_BYTES {
-        return Ok(Err(AutomationError::BadRequest(format!("request is {} bytes; maximum is {MAX_REQUEST_BYTES}", line.len()))));
+        return Ok(Err(AutomationError::BadRequest(format!(
+            "request is {} bytes; maximum is {MAX_REQUEST_BYTES}",
+            line.len()
+        ))));
     }
     let io = |e: std::io::Error| AutomationError::Bridge(e.to_string());
     conn.1.write_all(line.as_bytes()).await.map_err(io)?;
@@ -214,12 +253,20 @@ async fn exchange(conn: &mut Conn, id: u64, method: &str, params: &Value) -> Res
         buf.clear();
         // Read raw bytes so truncation inside a UTF-8 character still reports the
         // budget error instead of a decoding/transport error.
-        let n = (&mut conn.0).take((MAX_RESPONSE_BYTES + 1) as u64).read_until(b'\n', &mut buf).await.map_err(io)?;
+        let n = (&mut conn.0)
+            .take((MAX_RESPONSE_BYTES + 1) as u64)
+            .read_until(b'\n', &mut buf)
+            .await
+            .map_err(io)?;
         if n > MAX_RESPONSE_BYTES {
-            return Ok(Err(AutomationError::BadRequest(format!("bridge response exceeds {MAX_RESPONSE_BYTES} bytes; operation may have completed"))));
+            return Ok(Err(AutomationError::BadRequest(format!(
+                "bridge response exceeds {MAX_RESPONSE_BYTES} bytes; operation may have completed"
+            ))));
         }
         if n == 0 {
-            return Err(AutomationError::Bridge("connection closed by the app".into()));
+            return Err(AutomationError::Bridge(
+                "connection closed by the app".into(),
+            ));
         }
         let Ok(v) = serde_json::from_slice::<Value>(&buf) else {
             continue;
@@ -230,7 +277,12 @@ async fn exchange(conn: &mut Conn, id: u64, method: &str, params: &Value) -> Res
         return Ok(if v.get("ok").and_then(Value::as_bool) == Some(true) {
             Ok(v.get("result").cloned().unwrap_or(Value::Null))
         } else {
-            Err(AutomationError::App(v.get("error").and_then(Value::as_str).unwrap_or("unknown error").to_owned()))
+            Err(AutomationError::App(
+                v.get("error")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unknown error")
+                    .to_owned(),
+            ))
         });
     }
 }

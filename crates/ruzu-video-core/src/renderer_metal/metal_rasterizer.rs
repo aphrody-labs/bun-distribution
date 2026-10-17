@@ -29,7 +29,9 @@ use crate::engines::draw_manager::{
     Maxwell3DIndirectView,
 };
 use crate::engines::kepler_compute::DispatchCall;
-use crate::engines::maxwell_3d::{CullFace, FrontFace, PrimitiveTopology, ViewportSwizzle, NUM_VIEWPORTS};
+use crate::engines::maxwell_3d::{
+    CullFace, FrontFace, PrimitiveTopology, ViewportSwizzle, NUM_VIEWPORTS,
+};
 use crate::engines::maxwell_dma::{dma, AccelerateDMAInterface};
 use crate::fence_manager::FenceBase;
 use crate::host1x::gpu_device_memory_manager::MaxwellDeviceMemoryManager;
@@ -47,18 +49,17 @@ use super::metal_blit_helper::{
 };
 use super::metal_buffer::MetalBufferError;
 use super::metal_buffer_cache::{BufferCacheRuntime, MetalCommonBufferCache};
+use super::metal_compute_pass::{
+    ConditionalArgumentLayout, ConditionalDirectArguments, ConditionalRenderingArgumentsPass,
+    MetalComputePassError,
+};
 use super::metal_compute_pipeline::{
     bind_compute_resources, configure_compute_resources, MetalComputePipelineError,
-};
-use super::metal_compute_pass::{
-    ConditionalArgumentLayout, ConditionalDirectArguments, ConditionalRenderingArgumentsPass, MetalComputePassError,
 };
 use super::metal_device::MetalDevice;
 use super::metal_fence_manager::{MetalFence, MetalFenceManager};
 use super::metal_framebuffer::{MetalFramebufferClear, MetalFramebufferError};
-use super::metal_geometry_pipeline::{
-    bind_vertex_resources, MetalGeometryPipelineError,
-};
+use super::metal_geometry_pipeline::{bind_vertex_resources, MetalGeometryPipelineError};
 use super::metal_graphics_pipeline::{
     configure_graphics_resources, MetalGraphicsPipelineError, MetalPreparedGraphics,
     MetalPreparedStage,
@@ -68,12 +69,16 @@ use super::metal_pipeline_cache::MetalPipelineError;
 use super::metal_primitive_assembler::{
     MetalPrimitiveAssembler, MetalPrimitiveAssemblyError, MetalPrimitiveAssemblyParams,
 };
-use super::metal_query_cache::{MetalQueryCache, MetalQueryCacheError, MetalQueryReport, QueryCacheRuntime};
+use super::metal_query_cache::{
+    MetalQueryCache, MetalQueryCacheError, MetalQueryReport, QueryCacheRuntime,
+};
 use super::metal_scheduler::{MetalScheduler, MetalSchedulerError};
-use super::metal_staging_buffer_pool::{MetalStagingBufferError, MetalStagingBufferPool, StagingBufferRef};
+use super::metal_staging_buffer_pool::{
+    MetalStagingBufferError, MetalStagingBufferPool, StagingBufferRef,
+};
 use super::metal_state_tracker::MetalStateTracker;
-use super::metal_texture_cache::{MetalTextureCache, MetalTextureCacheError};
 use super::metal_tessellation_pipeline::MetalTessellationPipelineError;
+use super::metal_texture_cache::{MetalTextureCache, MetalTextureCacheError};
 
 macro_rules! lock_two_reentrant_mutexes {
     ($first:expr, $second:expr, $first_guard:ident, $second_guard:ident) => {
@@ -206,10 +211,10 @@ fn metal_primitive_type(
         PrimitiveTopology::LineStrip | PrimitiveTopology::LineLoop => {
             Ok(MTLPrimitiveType::LineStrip)
         }
-        PrimitiveTopology::Triangles | PrimitiveTopology::TriangleFan
-        | PrimitiveTopology::Quads | PrimitiveTopology::QuadStrip => {
-            Ok(MTLPrimitiveType::Triangle)
-        }
+        PrimitiveTopology::Triangles
+        | PrimitiveTopology::TriangleFan
+        | PrimitiveTopology::Quads
+        | PrimitiveTopology::QuadStrip => Ok(MTLPrimitiveType::Triangle),
         PrimitiveTopology::TriangleStrip => Ok(MTLPrimitiveType::TriangleStrip),
         _ => Err(MetalRasterizerError::UnsupportedTopology(topology)),
     }
@@ -223,18 +228,28 @@ fn metal_depth_bias(
 ) -> Result<(f32, f32, f32), MetalRasterizerError> {
     let enabled = match topology {
         PrimitiveTopology::Points => rasterizer.polygon_offset_point_enable,
-        PrimitiveTopology::Lines | PrimitiveTopology::LineLoop
-        | PrimitiveTopology::LineStrip | PrimitiveTopology::LinesAdjacency
+        PrimitiveTopology::Lines
+        | PrimitiveTopology::LineLoop
+        | PrimitiveTopology::LineStrip
+        | PrimitiveTopology::LinesAdjacency
         | PrimitiveTopology::LineStripAdjacency => rasterizer.polygon_offset_line_enable,
-        PrimitiveTopology::Triangles | PrimitiveTopology::TriangleStrip
-        | PrimitiveTopology::TriangleFan | PrimitiveTopology::Quads
-        | PrimitiveTopology::QuadStrip | PrimitiveTopology::Polygon
-        | PrimitiveTopology::TrianglesAdjacency | PrimitiveTopology::TriangleStripAdjacency
+        PrimitiveTopology::Triangles
+        | PrimitiveTopology::TriangleStrip
+        | PrimitiveTopology::TriangleFan
+        | PrimitiveTopology::Quads
+        | PrimitiveTopology::QuadStrip
+        | PrimitiveTopology::Polygon
+        | PrimitiveTopology::TrianglesAdjacency
+        | PrimitiveTopology::TriangleStripAdjacency
         | PrimitiveTopology::Patches => rasterizer.polygon_offset_fill_enable,
         _ => return Err(MetalRasterizerError::UnsupportedTopology(topology)),
     };
     if enabled {
-        Ok((rasterizer.depth_bias / 2.0, rasterizer.slope_scale_depth_bias, rasterizer.depth_bias_clamp))
+        Ok((
+            rasterizer.depth_bias / 2.0,
+            rasterizer.slope_scale_depth_bias,
+            rasterizer.depth_bias_clamp,
+        ))
     } else {
         Ok((0.0, 0.0, 0.0))
     }
@@ -270,7 +285,11 @@ fn bind_stage(
                     .setFragmentTexture_atIndex(binding.texture.as_deref(), binding.index as usize);
             }
         }
-        for binding in stage.samplers.iter().filter(|_| !stage.samplers_in_argument_buffer) {
+        for binding in stage
+            .samplers
+            .iter()
+            .filter(|_| !stage.samplers_in_argument_buffer)
+        {
             if vertex {
                 encoder
                     .setVertexSamplerState_atIndex(Some(&binding.sampler), binding.index as usize);
@@ -383,9 +402,10 @@ impl GpuMemoryAccess for GpuMemoryAccessAdapter {
     }
 
     fn get_submapped_range(&self, gpu_addr: u64, size: u64) -> Vec<(u64, u64)> {
-        self.memory_manager.lock().get_submapped_range(gpu_addr, size)
+        self.memory_manager
+            .lock()
+            .get_submapped_range(gpu_addr, size)
     }
-
 }
 
 struct DeviceMemoryAccessAdapter {
@@ -478,9 +498,8 @@ impl MetalRasterizer {
         let query_cache = MetalQueryCache::new(&device)?;
         // Stable boxed services outlive all runtime calls; only the GPU thread
         // records through this owner, never the report/fence callbacks.
-        let query_cache_runtime = unsafe {
-            QueryCacheRuntime::new(&device, scheduler.as_mut(), staging_pool.as_mut())?
-        };
+        let query_cache_runtime =
+            unsafe { QueryCacheRuntime::new(&device, scheduler.as_mut(), staging_pool.as_mut())? };
         let conditional_arguments_pass = ConditionalRenderingArgumentsPass::new(&device)?;
         let state_tracker = MetalStateTracker::new();
         let fence_manager = MetalFenceManager::new(false);
@@ -658,8 +677,11 @@ impl MetalRasterizer {
         }
         // Indirect fan inputs need GPU argument expansion before input assembly.
         // Do not feed their original fan indices to a native triangle-list draw.
-        if draw.draw_state().topology == PrimitiveTopology::TriangleFan && indirect_params.is_some() {
-            return Err(MetalRasterizerError::UnsupportedTopology(PrimitiveTopology::TriangleFan));
+        if draw.draw_state().topology == PrimitiveTopology::TriangleFan && indirect_params.is_some()
+        {
+            return Err(MetalRasterizerError::UnsupportedTopology(
+                PrimitiveTopology::TriangleFan,
+            ));
         }
 
         let buffer_mutex: *const _ = &self.common_buffer_cache.mutex;
@@ -782,11 +804,16 @@ impl MetalRasterizer {
                 )
             })
             .transpose()?;
-        let tessellation_pipeline = stages.tessellation().map(|tessellation| {
-            self.pipeline_cache.get_or_create_tessellation_pipeline(
-                pipeline_key, tessellation, stages.fragment(),
-            )
-        }).transpose()?;
+        let tessellation_pipeline = stages
+            .tessellation()
+            .map(|tessellation| {
+                self.pipeline_cache.get_or_create_tessellation_pipeline(
+                    pipeline_key,
+                    tessellation,
+                    stages.fragment(),
+                )
+            })
+            .transpose()?;
         let pipeline_state = if let Some(geometry) = &geometry_pipeline {
             geometry.state.clone()
         } else if let Some(tessellation) = &tessellation_pipeline {
@@ -809,7 +836,8 @@ impl MetalRasterizer {
         // sampling snapshots must also cover that case, independently of the
         // common barrier heuristic. The snapshot helper rejects writable depth.
         let depth_snapshotted = prepared.snapshot_read_only_depth_feedback(
-            &mut self.texture_cache, depth_key.may_write_depth_stencil(),
+            &mut self.texture_cache,
+            depth_key.may_write_depth_stencil(),
         )?;
         if feedback_requested && !depth_snapshotted {
             self.scheduler.end_render_pass();
@@ -818,12 +846,31 @@ impl MetalRasterizer {
             &render_pass,
             feedback_requested,
             &depth_key,
-            [&prepared.vertex, &prepared.control, &prepared.evaluation, &prepared.geometry, &prepared.fragment]
-                .into_iter()
-                .enumerate()
-                .flat_map(|(index, stage)| stage.textures.iter().map(move |binding| (index + 1, binding)))
-                .filter_map(|(stage, binding)| binding.texture.as_deref()
-                    .map(|texture| (stage, binding.index, stages.key().unique_hashes[stage], texture))),
+            [
+                &prepared.vertex,
+                &prepared.control,
+                &prepared.evaluation,
+                &prepared.geometry,
+                &prepared.fragment,
+            ]
+            .into_iter()
+            .enumerate()
+            .flat_map(|(index, stage)| {
+                stage
+                    .textures
+                    .iter()
+                    .map(move |binding| (index + 1, binding))
+            })
+            .filter_map(|(stage, binding)| {
+                binding.texture.as_deref().map(|texture| {
+                    (
+                        stage,
+                        binding.index,
+                        stages.key().unique_hashes[stage],
+                        texture,
+                    )
+                })
+            }),
         );
         let depth_state = self
             .pipeline_cache
@@ -856,10 +903,16 @@ impl MetalRasterizer {
         let depth_stencil = draw.depth_stencil();
         let vertex_layouts = pipeline_key.vertex_input.layouts;
 
-        for stage in [&prepared.vertex, &prepared.control, &prepared.evaluation,
-            &prepared.geometry, &prepared.fragment] {
+        for stage in [
+            &prepared.vertex,
+            &prepared.control,
+            &prepared.evaluation,
+            &prepared.geometry,
+            &prepared.fragment,
+        ] {
             if stage.samplers_in_argument_buffer {
-                self.scheduler.retain_sampler_states(stage.samplers.iter().map(|s| s.sampler.clone()))?;
+                self.scheduler
+                    .retain_sampler_states(stage.samplers.iter().map(|s| s.sampler.clone()))?;
             }
         }
 
@@ -874,7 +927,12 @@ impl MetalRasterizer {
                 self.primitive_assembler = Some(MetalPrimitiveAssembler::new(&self.device)?);
             }
             let index = if draw_params.is_indexed {
-                Some(prepared.index_buffer.as_ref().ok_or(MetalPrimitiveAssemblyError::IndexRange)?)
+                Some(
+                    prepared
+                        .index_buffer
+                        .as_ref()
+                        .ok_or(MetalPrimitiveAssemblyError::IndexRange)?,
+                )
             } else {
                 None
             };
@@ -885,33 +943,42 @@ impl MetalRasterizer {
             let restart = draw.primitive_restart();
             let restart_index = restart.enabled.then_some(
                 if draw.draw_state().index_buffer.format
-                    == crate::engines::maxwell_3d::IndexFormat::UnsignedByte && restart.index == 255
+                    == crate::engines::maxwell_3d::IndexFormat::UnsignedByte
+                    && restart.index == 255
                 {
                     65535
                 } else {
                     restart.index
                 },
             );
-            let index = index.map(|index| {
-                let offset = (draw_params.first_index as usize).checked_mul(index_bytes as usize)
-                    .and_then(|first| index.offset.checked_add(first))
-                    .ok_or(MetalPrimitiveAssemblyError::IndexRange)?;
-                Ok::<_, MetalPrimitiveAssemblyError>((index.buffer.as_ref(), offset))
-            }).transpose()?;
-            Some(self.primitive_assembler.as_ref().unwrap().record_triangle_fan_draw(
-                self.scheduler.as_mut(),
-                MetalPrimitiveAssemblyParams {
-                    topology: PrimitiveTopology::TriangleFan,
-                    count: draw_params.num_vertices,
-                    base_vertex: draw_params.base_vertex,
-                    instances: draw_params.num_instances,
-                    index_bytes,
-                    restart_index,
-                },
-                index,
-                draw_params.base_instance,
-                draw.provoking_vertex_last(),
-            )?)
+            let index = index
+                .map(|index| {
+                    let offset = (draw_params.first_index as usize)
+                        .checked_mul(index_bytes as usize)
+                        .and_then(|first| index.offset.checked_add(first))
+                        .ok_or(MetalPrimitiveAssemblyError::IndexRange)?;
+                    Ok::<_, MetalPrimitiveAssemblyError>((index.buffer.as_ref(), offset))
+                })
+                .transpose()?;
+            Some(
+                self.primitive_assembler
+                    .as_ref()
+                    .unwrap()
+                    .record_triangle_fan_draw(
+                        self.scheduler.as_mut(),
+                        MetalPrimitiveAssemblyParams {
+                            topology: PrimitiveTopology::TriangleFan,
+                            count: draw_params.num_vertices,
+                            base_vertex: draw_params.base_vertex,
+                            instances: draw_params.num_instances,
+                            index_bytes,
+                            restart_index,
+                        },
+                        index,
+                        draw_params.base_instance,
+                        draw.provoking_vertex_last(),
+                    )?,
+            )
         } else {
             None
         };
@@ -948,10 +1015,11 @@ impl MetalRasterizer {
                 objc2_metal::MTLIndexType::UInt16 => 2,
                 _ => 4,
             });
-            let converted_quads = tessellation_pipeline.is_none() && matches!(
-                draw.draw_state().topology,
-                PrimitiveTopology::Quads | PrimitiveTopology::QuadStrip
-            );
+            let converted_quads = tessellation_pipeline.is_none()
+                && matches!(
+                    draw.draw_state().topology,
+                    PrimitiveTopology::Quads | PrimitiveTopology::QuadStrip
+                );
             let restart = draw.primitive_restart();
             let restart_index = (restart.enabled && !converted_quads).then_some(
                 if draw.draw_state().index_buffer.format
@@ -964,82 +1032,105 @@ impl MetalRasterizer {
                 },
             );
             let assembly_params = MetalPrimitiveAssemblyParams {
-                    // Eden forces patch-list input when TES is enabled.
-                    topology: if tessellation_pipeline.is_some() {
-                        PrimitiveTopology::Patches
-                    } else if converted_quads {
-                        PrimitiveTopology::Triangles
-                    } else {
-                        draw.draw_state().topology
-                    },
-                    count: draw_params.num_vertices,
-                    base_vertex: draw_params.base_vertex,
-                    instances: draw_params.num_instances,
-                    index_bytes,
-                    restart_index,
-                };
-            let index = index.map(|index| {
+                // Eden forces patch-list input when TES is enabled.
+                topology: if tessellation_pipeline.is_some() {
+                    PrimitiveTopology::Patches
+                } else if converted_quads {
+                    PrimitiveTopology::Triangles
+                } else {
+                    draw.draw_state().topology
+                },
+                count: draw_params.num_vertices,
+                base_vertex: draw_params.base_vertex,
+                instances: draw_params.num_instances,
+                index_bytes,
+                restart_index,
+            };
+            let index = index
+                .map(|index| {
                     let offset = (draw_params.first_index as usize)
                         .checked_mul(index_bytes as usize)
                         .and_then(|first| index.offset.checked_add(first))
                         .ok_or(MetalPrimitiveAssemblyError::IndexRange)?;
-                    Ok::<_, MetalPrimitiveAssemblyError>((
-                        index.buffer.as_ref(),
-                        offset,
-                    ))
-                }).transpose()?;
-            let bind_resources = |encoder: &objc2::runtime::ProtocolObject<dyn MTLComputeCommandEncoder>| {
-                    bind_vertex_resources(encoder, &prepared.vertex);
-                    for (source, layout) in
-                        vertex_layouts.iter().enumerate().filter(|(_, l)| l.enabled)
+                    Ok::<_, MetalPrimitiveAssemblyError>((index.buffer.as_ref(), offset))
+                })
+                .transpose()?;
+            let bind_resources = |encoder: &objc2::runtime::ProtocolObject<
+                dyn MTLComputeCommandEncoder,
+            >| {
+                bind_vertex_resources(encoder, &prepared.vertex);
+                for (source, layout) in vertex_layouts.iter().enumerate().filter(|(_, l)| l.enabled)
+                {
+                    if let Some(binding) =
+                        prepared.vertex_buffers.get(source).and_then(Option::as_ref)
                     {
-                        if let Some(binding) =
-                            prepared.vertex_buffers.get(source).and_then(Option::as_ref)
-                        {
-                            unsafe {
-                                encoder.setBuffer_offset_atIndex(
-                                    Some(binding.buffer.handle()),
-                                    binding.offset,
-                                    layout.buffer_index as usize,
-                                );
-                            }
+                        unsafe {
+                            encoder.setBuffer_offset_atIndex(
+                                Some(binding.buffer.handle()),
+                                binding.offset,
+                                layout.buffer_index as usize,
+                            );
                         }
                     }
-                };
+                }
+            };
             if let Some(tessellation) = &tessellation_pipeline {
                 let assembly = self.primitive_assembler.as_ref().unwrap().record_patches(
-                    self.scheduler.as_mut(), assembly_params,
-                    stages.key().fixed_state.patch_control_points(), index,
+                    self.scheduler.as_mut(),
+                    assembly_params,
+                    stages.key().fixed_state.patch_control_points(),
+                    index,
                     draw_params.base_instance,
                 )?;
                 let inputs = tessellation.record_inputs(
-                    self.scheduler.as_mut(), self._staging_pool.as_mut(),
+                    self.scheduler.as_mut(),
+                    self._staging_pool.as_mut(),
                     &self.conditional_arguments_pass,
-                    predicate.as_ref().map(|p| (p.buffer.as_ref(), p.offset, p.inverted)),
-                    &assembly, &vertex_sizes, bind_resources,
+                    predicate
+                        .as_ref()
+                        .map(|p| (p.buffer.as_ref(), p.offset, p.inverted)),
+                    &assembly,
+                    &vertex_sizes,
+                    bind_resources,
                     |encoder| bind_vertex_resources(encoder, &prepared.control),
                 )?;
                 (None, Some(inputs))
             } else {
                 let geometry = geometry_pipeline.as_ref().unwrap();
                 let assembly = self.primitive_assembler.as_ref().unwrap().record(
-                    self.scheduler.as_mut(), assembly_params, index,
+                    self.scheduler.as_mut(),
+                    assembly_params,
+                    index,
                 )?;
                 let (assembly, vertices) = if let Some(predicate) = &predicate {
                     geometry.record_conditional_inputs(
-                        self.scheduler.as_mut(), self._staging_pool.as_mut(),
+                        self.scheduler.as_mut(),
+                        self._staging_pool.as_mut(),
                         &self.conditional_arguments_pass,
-                        &predicate.buffer, predicate.offset, predicate.inverted,
-                        &assembly, draw_params.base_instance, &vertex_sizes, bind_resources,
+                        &predicate.buffer,
+                        predicate.offset,
+                        predicate.inverted,
+                        &assembly,
+                        draw_params.base_instance,
+                        &vertex_sizes,
+                        bind_resources,
                     )?
                 } else {
                     let vertices = geometry.vertex.record(
-                        self.scheduler.as_mut(), &assembly, draw_params.base_instance,
-                        &vertex_sizes, bind_resources,
+                        self.scheduler.as_mut(),
+                        &assembly,
+                        draw_params.base_instance,
+                        &vertex_sizes,
+                        bind_resources,
                     )?;
                     (assembly, vertices)
                 };
-                let captured = geometry.capture_output(self.scheduler.as_mut(), &assembly, &vertices, &prepared.geometry)?;
+                let captured = geometry.capture_output(
+                    self.scheduler.as_mut(),
+                    &assembly,
+                    &vertices,
+                    &prepared.geometry,
+                )?;
                 (Some((assembly, vertices, captured)), None)
             }
         } else {
@@ -1049,67 +1140,138 @@ impl MetalRasterizer {
         let conditional_draw = if geometry_inputs.is_none() && tessellation_inputs.is_none() {
             if let Some(predicate) = &predicate {
                 let direct_words = if fan_draw.is_none()
-                    && !indirect_binding.as_ref().is_some_and(|b| !b.params.is_byte_count)
+                    && !indirect_binding
+                        .as_ref()
+                        .is_some_and(|b| !b.params.is_byte_count)
                 {
                     Some(if draw_params.is_indexed {
-                        [draw_params.num_vertices, draw_params.num_instances, draw_params.first_index,
-                            draw_params.base_vertex as u32, draw_params.base_instance]
+                        [
+                            draw_params.num_vertices,
+                            draw_params.num_instances,
+                            draw_params.first_index,
+                            draw_params.base_vertex as u32,
+                            draw_params.base_instance,
+                        ]
                     } else {
-                        [draw_params.num_vertices, draw_params.num_instances,
-                            draw_params.base_vertex.max(0) as u32, draw_params.base_instance, 0]
-                    })
-                } else { None };
-                let batched = if let Some(words) = direct_words {
-                    self.conditional_direct_arguments.append(
-                        &self.conditional_arguments_pass, self.scheduler.as_mut(),
-                        self._staging_pool.as_mut(), predicate, words,
-                    )?
-                } else { None };
-                if let Some((buffer, offset)) = batched {
-                    Some(MetalConditionalDrawArguments {
-                        buffer, offset, count: 1,
-                        layout: if draw_params.is_indexed { ConditionalArgumentLayout::DrawIndexed }
-                            else { ConditionalArgumentLayout::Draw },
+                        [
+                            draw_params.num_vertices,
+                            draw_params.num_instances,
+                            draw_params.base_vertex.max(0) as u32,
+                            draw_params.base_instance,
+                            0,
+                        ]
                     })
                 } else {
-                    let (source, source_offset, stride, count, layout) = if let Some(fan) = &fan_draw {
-                        (Arc::clone(&fan.arguments), 0, 20, 1, ConditionalArgumentLayout::DrawIndexed)
-                    } else if let Some(binding) = indirect_binding.as_ref().filter(|b| !b.params.is_byte_count) {
-                        (Arc::clone(&binding.buffer), binding.offset, binding.params.stride as u32,
-                            binding.draw_count, if binding.params.is_indexed {
+                    None
+                };
+                let batched = if let Some(words) = direct_words {
+                    self.conditional_direct_arguments.append(
+                        &self.conditional_arguments_pass,
+                        self.scheduler.as_mut(),
+                        self._staging_pool.as_mut(),
+                        predicate,
+                        words,
+                    )?
+                } else {
+                    None
+                };
+                if let Some((buffer, offset)) = batched {
+                    Some(MetalConditionalDrawArguments {
+                        buffer,
+                        offset,
+                        count: 1,
+                        layout: if draw_params.is_indexed {
+                            ConditionalArgumentLayout::DrawIndexed
+                        } else {
+                            ConditionalArgumentLayout::Draw
+                        },
+                    })
+                } else {
+                    let (source, source_offset, stride, count, layout) =
+                        if let Some(fan) = &fan_draw {
+                            (
+                                Arc::clone(&fan.arguments),
+                                0,
+                                20,
+                                1,
+                                ConditionalArgumentLayout::DrawIndexed,
+                            )
+                        } else if let Some(binding) = indirect_binding
+                            .as_ref()
+                            .filter(|b| !b.params.is_byte_count)
+                        {
+                            (
+                                Arc::clone(&binding.buffer),
+                                binding.offset,
+                                binding.params.stride as u32,
+                                binding.draw_count,
+                                if binding.params.is_indexed {
+                                    ConditionalArgumentLayout::DrawIndexed
+                                } else {
+                                    ConditionalArgumentLayout::Draw
+                                },
+                            )
+                        } else {
+                            let words = direct_words.expect("direct conditional arguments");
+                            let layout = if draw_params.is_indexed {
                                 ConditionalArgumentLayout::DrawIndexed
-                            } else { ConditionalArgumentLayout::Draw })
-                    } else {
-                        let words = direct_words.expect("direct conditional arguments");
-                        let layout = if draw_params.is_indexed { ConditionalArgumentLayout::DrawIndexed }
-                            else { ConditionalArgumentLayout::Draw };
-                        let source = self._staging_pool.request_upload_buffer(
-                            self.scheduler.as_mut(), layout.byte_size(), false,
-                        )?;
-                        source.buffer.write(source.offset, &bytemuck::cast_slice(&words)[..layout.byte_size()])?;
-                        (source.buffer, source.offset, layout.byte_size() as u32, 1, layout)
-                    };
+                            } else {
+                                ConditionalArgumentLayout::Draw
+                            };
+                            let source = self._staging_pool.request_upload_buffer(
+                                self.scheduler.as_mut(),
+                                layout.byte_size(),
+                                false,
+                            )?;
+                            source.buffer.write(
+                                source.offset,
+                                &bytemuck::cast_slice(&words)[..layout.byte_size()],
+                            )?;
+                            (
+                                source.buffer,
+                                source.offset,
+                                layout.byte_size() as u32,
+                                1,
+                                layout,
+                            )
+                        };
                     let arguments = self.conditional_arguments_pass.resolve(
-                        self.scheduler.as_mut(), self._staging_pool.as_mut(),
-                        &predicate.buffer, predicate.offset, predicate.inverted,
-                        &source, source_offset, stride, count, layout,
+                        self.scheduler.as_mut(),
+                        self._staging_pool.as_mut(),
+                        &predicate.buffer,
+                        predicate.offset,
+                        predicate.inverted,
+                        &source,
+                        source_offset,
+                        stride,
+                        count,
+                        layout,
                     )?;
                     Some(MetalConditionalDrawArguments {
-                        buffer: arguments.buffer, offset: arguments.offset, layout, count,
+                        buffer: arguments.buffer,
+                        offset: arguments.offset,
+                        layout,
+                        count,
                     })
                 }
-            } else { None }
-        } else { None };
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         self.scheduler
             .begin_or_reuse_render_pass(&render_pass, render_pass_key)?;
         self.update_viewports_state(draw)?;
         self.update_scissors_state(draw, render_area)?;
-        self.scheduler.profile_graphics_draw(stages.key().unique_hashes, depth_key);
+        self.scheduler
+            .profile_graphics_draw(stages.key().unique_hashes, depth_key);
         if let Some(dump) = self.scheduler.pass_dump_mut() {
             dump.resources(stages.key().unique_hashes, &prepared, &self.texture_cache);
         }
-        self.texture_cache.mark_render_target_contents_modified(u32::MAX, depth_key.may_write_depth_stencil());
+        self.texture_cache
+            .mark_render_target_contents_modified(u32::MAX, depth_key.may_write_depth_stencil());
         self.scheduler.with_render_encoder(|encoder| {
             MetalQueryCache::configure_draw(encoder, visibility_query);
             encoder.setRenderPipelineState(&pipeline_state);
@@ -1412,7 +1574,8 @@ impl MetalRasterizer {
             (source_width, source_height)
         };
         let conditional_arguments = self.conditional_quad_arguments()?;
-        self.texture_cache.mark_render_target_contents_modified(u32::MAX, false);
+        self.texture_cache
+            .mark_render_target_contents_modified(u32::MAX, false);
         self.blit_image.blit_color_with_sampler(
             self.scheduler.as_mut(),
             &render_pass,
@@ -1424,7 +1587,9 @@ impl MetalRasterizer {
             src,
             source_size,
             visibility_query,
-            conditional_arguments.as_ref().map(|a| (a.buffer.as_ref(), a.offset)),
+            conditional_arguments
+                .as_ref()
+                .map(|a| (a.buffer.as_ref(), a.offset)),
         )?;
         Ok(())
     }
@@ -1513,7 +1678,13 @@ impl MetalRasterizer {
             return Ok(());
         }
         self.texture_cache.mark_render_target_contents_modified(
-            if color_present { 1 << color_attachment } else { 0 }, depth_present || stencil_present);
+            if color_present {
+                1 << color_attachment
+            } else {
+                0
+            },
+            depth_present || stencil_present,
+        );
         let color_format = color_present.then(|| {
             crate::surface::pixel_format_from_render_target_format(
                 render_targets.render_targets[color_attachment].format,
@@ -1524,7 +1695,8 @@ impl MetalRasterizer {
         // shader path even when every channel and the full extent are selected.
         let color_is_integer = color_format.is_some_and(crate::surface::is_pixel_format_integer);
         let conditional_arguments = self.conditional_quad_arguments()?;
-        let full_clear = conditional_arguments.is_none() && !clear_view.use_scissor()
+        let full_clear = conditional_arguments.is_none()
+            && !clear_view.use_scissor()
             && (!use_color || color_mask == 0xf)
             && !color_is_integer
             && !stencil_partial;
@@ -1646,7 +1818,9 @@ impl MetalRasterizer {
                     depth: state.depth,
                     stencil: state.stencil as u32,
                 },
-                conditional_arguments.as_ref().map(|a| (a.buffer.as_ref(), a.offset)),
+                conditional_arguments
+                    .as_ref()
+                    .map(|a| (a.buffer.as_ref(), a.offset)),
             )?;
         }
         Ok(())
@@ -1727,7 +1901,8 @@ impl MetalRasterizer {
                 return Ok(());
             };
             if prepared.samplers_in_argument_buffer {
-                self.scheduler.retain_sampler_states(prepared.samplers.iter().map(|s| s.sampler.clone()))?;
+                self.scheduler
+                    .retain_sampler_states(prepared.samplers.iter().map(|s| s.sampler.clone()))?;
             }
             self.scheduler.with_compute_encoder_for(super::metal_gpu_profiler::ComputeWork::Guest, |encoder| unsafe {
                 encoder.setComputePipelineState(&pipeline_state);
@@ -1748,16 +1923,20 @@ impl MetalRasterizer {
             depth: grid.grid_dim_z as usize,
         };
         if prepared.samplers_in_argument_buffer {
-            self.scheduler.retain_sampler_states(prepared.samplers.iter().map(|s| s.sampler.clone()))?;
+            self.scheduler
+                .retain_sampler_states(prepared.samplers.iter().map(|s| s.sampler.clone()))?;
         }
-        self.scheduler.with_compute_encoder_for(super::metal_gpu_profiler::ComputeWork::Guest, |encoder| {
-            encoder.setComputePipelineState(&pipeline_state);
-            bind_compute_resources(encoder, &prepared);
-            encoder.dispatchThreadgroups_threadsPerThreadgroup(
-                threadgroups_per_grid,
-                threads_per_threadgroup,
-            );
-        })?;
+        self.scheduler.with_compute_encoder_for(
+            super::metal_gpu_profiler::ComputeWork::Guest,
+            |encoder| {
+                encoder.setComputePipelineState(&pipeline_state);
+                bind_compute_resources(encoder, &prepared);
+                encoder.dispatchThreadgroups_threadsPerThreadgroup(
+                    threadgroups_per_grid,
+                    threads_per_threadgroup,
+                );
+            },
+        )?;
         Ok(())
     }
 
@@ -1845,25 +2024,38 @@ impl MetalRasterizer {
     }
 
     /// Native replacement for a conditional region around the helper's quad.
-    fn conditional_quad_arguments(&mut self) -> Result<Option<StagingBufferRef>, MetalRasterizerError> {
+    fn conditional_quad_arguments(
+        &mut self,
+    ) -> Result<Option<StagingBufferRef>, MetalRasterizerError> {
         self.query_cache_runtime.resume_host_conditional_rendering();
         let Some(predicate) = self.query_cache_runtime.active_conditional_rendering() else {
             return Ok(None);
         };
-        let source = self._staging_pool.request_upload_buffer(self.scheduler.as_mut(), 16, false)?;
-        source.buffer.write(source.offset, bytemuck::cast_slice(&[4u32, 1, 0, 0]))?;
+        let source =
+            self._staging_pool
+                .request_upload_buffer(self.scheduler.as_mut(), 16, false)?;
+        source
+            .buffer
+            .write(source.offset, bytemuck::cast_slice(&[4u32, 1, 0, 0]))?;
         Ok(Some(self.conditional_arguments_pass.resolve(
-            self.scheduler.as_mut(), self._staging_pool.as_mut(),
-            &predicate.buffer, predicate.offset, predicate.inverted,
-            &source.buffer, source.offset, 16, 1, ConditionalArgumentLayout::Draw,
+            self.scheduler.as_mut(),
+            self._staging_pool.as_mut(),
+            &predicate.buffer,
+            predicate.offset,
+            predicate.inverted,
+            &source.buffer,
+            source.offset,
+            16,
+            1,
+            ConditionalArgumentLayout::Draw,
         )?))
     }
 
     fn notify_query_wfi(&mut self) {
-        if let Err(error) = self.query_cache.notify_wfi(
-            &mut self.query_cache_runtime,
-            &mut self.common_buffer_cache,
-        ) {
+        if let Err(error) = self
+            .query_cache
+            .notify_wfi(&mut self.query_cache_runtime, &mut self.common_buffer_cache)
+        {
             log::error!("Metal query GPU synchronization failed: {error}");
         }
     }
@@ -1886,8 +2078,10 @@ impl RasterizerInterface for MetalRasterizer {
         };
         memory_manager.lock().flush_caching();
         match self.query_cache.accelerate_host_conditional_rendering(
-            &mut self.query_cache_runtime, self.common_buffer_cache.as_mut(),
-            &GpuMemoryAccessAdapter { memory_manager }, state,
+            &mut self.query_cache_runtime,
+            self.common_buffer_cache.as_mut(),
+            &GpuMemoryAccessAdapter { memory_manager },
+            state,
         ) {
             Ok(accelerated) => accelerated,
             Err(error) => {
@@ -1996,7 +2190,8 @@ impl RasterizerInterface for MetalRasterizer {
 
     fn signal_fence(&mut self, func: Box<dyn FnOnce() + Send>) {
         self.notify_query_wfi();
-        self.fence_manager.sync_operation(self.query_cache.commit_async_flushes());
+        self.fence_manager
+            .sync_operation(self.query_cache.commit_async_flushes());
         let (should_wait_queries, pop_queries) = self.query_cache.async_flush_callbacks();
         let this = self as *mut Self;
         self.fence_manager.signal_fence(
@@ -2019,7 +2214,8 @@ impl RasterizerInterface for MetalRasterizer {
 
     fn signal_sync_point(&mut self, value: u32) {
         self.notify_query_wfi();
-        self.fence_manager.sync_operation(self.query_cache.commit_async_flushes());
+        self.fence_manager
+            .sync_operation(self.query_cache.commit_async_flushes());
         let (should_wait_queries, pop_queries) = self.query_cache.async_flush_callbacks();
         let this = self as *mut Self;
         let syncpoints = Arc::clone(&self.syncpoints);
@@ -2044,7 +2240,8 @@ impl RasterizerInterface for MetalRasterizer {
 
     fn signal_reference(&mut self) {
         self.notify_query_wfi();
-        self.fence_manager.sync_operation(self.query_cache.commit_async_flushes());
+        self.fence_manager
+            .sync_operation(self.query_cache.commit_async_flushes());
         let (should_wait_queries, pop_queries) = self.query_cache.async_flush_callbacks();
         let this = self as *mut Self;
         self.fence_manager.signal_reference(
@@ -2095,9 +2292,9 @@ impl RasterizerInterface for MetalRasterizer {
             self.common_buffer_cache.download_memory(addr, size);
         }
         if which.contains(CacheType::QUERY_CACHE)
-            && self.query_cache.flush_region(
-                addr, size as usize, self.shader_cache.device_memory(),
-            )
+            && self
+                .query_cache
+                .flush_region(addr, size as usize, self.shader_cache.device_memory())
         {
             // Query callbacks lock the report owner; flush_region has released
             // that lock before RequestGuestHostSync drains the pending fences.
@@ -2167,7 +2364,10 @@ impl RasterizerInterface for MetalRasterizer {
 
     fn inner_invalidation(&mut self, sequences: &[(u64, usize)]) {
         // Match RasterizerInterface's setting gate despite overriding its body.
-        if *common::settings::values().skip_cpu_inner_invalidation.get_value() {
+        if *common::settings::values()
+            .skip_cpu_inner_invalidation
+            .get_value()
+        {
             return;
         }
         let texture_mutex: *const _ = &self.texture_cache.base.mutex;
@@ -2357,8 +2557,11 @@ fn patch_render_area(
     let words = [render_area.0 as f32, render_area.1 as f32, 0.0, 0.0];
     let bytes = bytemuck::cast_slice::<f32, u8>(&words);
     for (info, stage) in stages.stage_infos().iter().zip([
-        &mut prepared.vertex, &mut prepared.control, &mut prepared.evaluation,
-        &mut prepared.geometry, &mut prepared.fragment,
+        &mut prepared.vertex,
+        &mut prepared.control,
+        &mut prepared.evaluation,
+        &mut prepared.geometry,
+        &mut prepared.fragment,
     ]) {
         if info.uses_render_area {
             if let Some((_, data)) = stage.push_constants.as_mut() {
@@ -2414,7 +2617,11 @@ fn get_viewport_state(draw: &Maxwell3DDrawView<'_>, index: usize) -> MTLViewport
         originX: x as f64,
         originY: y as f64 + if height == 0.0 { 1.0 } else { height as f64 },
         width: if width == 0.0 { 1.0 } else { width as f64 },
-        height: if height == 0.0 { -1.0 } else { -(height as f64) },
+        height: if height == 0.0 {
+            -1.0
+        } else {
+            -(height as f64)
+        },
         znear: (source.translate_z - source.scale_z * reduce_z).clamp(0.0, 1.0) as f64,
         zfar: (source.translate_z + source.scale_z).clamp(0.0, 1.0) as f64,
     }
@@ -2422,10 +2629,7 @@ fn get_viewport_state(draw: &Maxwell3DDrawView<'_>, index: usize) -> MTLViewport
 
 // The scale/offset-disabled branch of Eden UpdateScissorsState, intersected
 // with the Metal attachment. Kept pure so native tests exercise this conversion.
-fn surface_clip_scissor(
-    draw: &Maxwell3DDrawView<'_>,
-    render_area: (u32, u32),
-) -> MTLScissorRect {
+fn surface_clip_scissor(draw: &Maxwell3DDrawView<'_>, render_area: (u32, u32)) -> MTLScissorRect {
     let surface = draw.surface_clip();
     let x = i64::from(surface.x);
     let y = if draw.window_origin_lower_left() {
@@ -2495,7 +2699,9 @@ impl Drop for MetalRasterizer {
 mod tests {
     use super::*;
     use crate::engines::draw_manager::{DrawState, Maxwell3DDrawRegisters};
-    use crate::engines::maxwell_3d::{DepthMode, ScissorInfo, SurfaceClipInfo, ViewportTransformInfo};
+    use crate::engines::maxwell_3d::{
+        DepthMode, ScissorInfo, SurfaceClipInfo, ViewportTransformInfo,
+    };
 
     #[test]
     fn depth_bias_uses_guest_topology_enables_and_half_units() {
@@ -2503,13 +2709,30 @@ mod tests {
         use PrimitiveTopology::*;
         let groups: &[&[PrimitiveTopology]] = &[
             &[Points],
-            &[Lines, LineLoop, LineStrip, LinesAdjacency, LineStripAdjacency],
-            &[Triangles, TriangleStrip, TriangleFan, Quads, QuadStrip, Polygon,
-              TrianglesAdjacency, TriangleStripAdjacency, Patches],
+            &[
+                Lines,
+                LineLoop,
+                LineStrip,
+                LinesAdjacency,
+                LineStripAdjacency,
+            ],
+            &[
+                Triangles,
+                TriangleStrip,
+                TriangleFan,
+                Quads,
+                QuadStrip,
+                Polygon,
+                TrianglesAdjacency,
+                TriangleStripAdjacency,
+                Patches,
+            ],
         ];
         for enabled_group in 0..3 {
             let mut state = RasterizerInfo {
-                depth_bias: -6.0, slope_scale_depth_bias: 2.0, depth_bias_clamp: -0.5,
+                depth_bias: -6.0,
+                slope_scale_depth_bias: 2.0,
+                depth_bias_clamp: -0.5,
                 polygon_offset_point_enable: enabled_group == 0,
                 polygon_offset_line_enable: enabled_group == 1,
                 polygon_offset_fill_enable: enabled_group == 2,
@@ -2517,14 +2740,23 @@ mod tests {
             };
             for (group, topologies) in groups.iter().enumerate() {
                 for &topology in *topologies {
-                    assert_eq!(metal_depth_bias(&state, topology).unwrap(),
-                        if group == enabled_group { (-3.0, 2.0, -0.5) } else { (0.0, 0.0, 0.0) });
+                    assert_eq!(
+                        metal_depth_bias(&state, topology).unwrap(),
+                        if group == enabled_group {
+                            (-3.0, 2.0, -0.5)
+                        } else {
+                            (0.0, 0.0, 0.0)
+                        }
+                    );
                 }
             }
             state.polygon_offset_point_enable = false;
             state.polygon_offset_line_enable = false;
             state.polygon_offset_fill_enable = false;
-            assert_eq!(metal_depth_bias(&state, groups[enabled_group][0]).unwrap(), (0.0, 0.0, 0.0));
+            assert_eq!(
+                metal_depth_bias(&state, groups[enabled_group][0]).unwrap(),
+                (0.0, 0.0, 0.0)
+            );
         }
         assert!(metal_depth_bias(&RasterizerInfo::default(), LegacyPoints).is_err());
     }
@@ -2546,23 +2778,47 @@ mod tests {
             registers.window_origin_lower_left = lower_left;
             registers.depth_mode = DepthMode::MinusOneToOne;
             registers.viewport_transforms[7] = ViewportTransformInfo {
-                scale_x: sx, scale_y: sy, scale_z: 0.5,
-                translate_x: 3.0, translate_y: 5.0, translate_z: 0.25,
-                swizzle, ..Default::default()
+                scale_x: sx,
+                scale_y: sy,
+                scale_z: 0.5,
+                translate_x: 3.0,
+                translate_y: 5.0,
+                translate_z: 0.25,
+                swizzle,
+                ..Default::default()
             };
             let draw = Maxwell3DDrawView::with_register_snapshot(&state, false, registers);
             let viewport = get_viewport_state(&draw, 7);
-            assert_eq!([viewport.originX, viewport.originY, viewport.width, viewport.height], expected);
+            assert_eq!(
+                [
+                    viewport.originX,
+                    viewport.originY,
+                    viewport.width,
+                    viewport.height
+                ],
+                expected
+            );
             assert_eq!([viewport.znear, viewport.zfar], [0.0, 0.75]);
         }
         let mut registers = Maxwell3DDrawRegisters::default();
         registers.viewport_transforms[0] = ViewportTransformInfo {
-            scale_x: 10.0, scale_y: 20.0, translate_x: 2.0, translate_y: 3.0,
+            scale_x: 10.0,
+            scale_y: 20.0,
+            translate_x: 2.0,
+            translate_y: 3.0,
             ..Default::default()
         };
         let draw = Maxwell3DDrawView::with_register_snapshot(&state, false, registers);
         let viewport = get_viewport_state(&draw, 0);
-        assert_eq!([viewport.originX, viewport.originY, viewport.width, viewport.height], [-8.0, 23.0, 20.0, -40.0]);
+        assert_eq!(
+            [
+                viewport.originX,
+                viewport.originY,
+                viewport.width,
+                viewport.height
+            ],
+            [-8.0, 23.0, 20.0, -40.0]
+        );
     }
 
     #[test]
@@ -2571,30 +2827,52 @@ mod tests {
         for (lower_left, expected_y, expected_height) in [(false, 8.0, -5.0), (true, 3.0, 5.0)] {
             let registers = Maxwell3DDrawRegisters {
                 window_origin_lower_left: lower_left,
-                surface_clip: SurfaceClipInfo { x: 2, y: 3, width: 0, height: 5 },
+                surface_clip: SurfaceClipInfo {
+                    x: 2,
+                    y: 3,
+                    width: 0,
+                    height: 5,
+                },
                 ..Default::default()
             };
             let draw = Maxwell3DDrawView::with_register_snapshot(&state, false, registers);
             let viewport = surface_clip_viewport(&draw);
-            assert_eq!([viewport.originX, viewport.originY, viewport.width, viewport.height], [2.0, expected_y, 1.0, expected_height]);
+            assert_eq!(
+                [
+                    viewport.originX,
+                    viewport.originY,
+                    viewport.width,
+                    viewport.height
+                ],
+                [2.0, expected_y, 1.0, expected_height]
+            );
         }
     }
 
     #[test]
     fn native_viewport_arrays_route_signed_transforms_and_matching_scissors() {
+        use super::super::metal_buffer::MetalBuffer;
         use objc2_foundation::NSString;
         use objc2_metal::{
-            MTLBlitCommandEncoder, MTLClearColor, MTLDevice, MTLLibrary, MTLLoadAction,
-            MTLOrigin, MTLPixelFormat, MTLRenderPassDescriptor, MTLRenderPipelineDescriptor,
-            MTLStoreAction, MTLTextureDescriptor, MTLTextureUsage,
+            MTLBlitCommandEncoder, MTLClearColor, MTLDevice, MTLLibrary, MTLLoadAction, MTLOrigin,
+            MTLPixelFormat, MTLRenderPassDescriptor, MTLRenderPipelineDescriptor, MTLStoreAction,
+            MTLTextureDescriptor, MTLTextureUsage,
         };
-        use super::super::metal_buffer::MetalBuffer;
 
         let device = MetalDevice::new().unwrap();
         let count = device.profile().max_viewports().min(NUM_VIEWPORTS);
-        let member = if count > 1 { "uint viewport [[viewport_array_index]];" } else { "" };
-        let store = if count > 1 { "output.viewport = id;" } else { "" };
-        let shader = NSString::from_str(&format!(r#"
+        let member = if count > 1 {
+            "uint viewport [[viewport_array_index]];"
+        } else {
+            ""
+        };
+        let store = if count > 1 {
+            "output.viewport = id;"
+        } else {
+            ""
+        };
+        let shader = NSString::from_str(&format!(
+            r#"
 #include <metal_stdlib>
 using namespace metal;
 struct Out {{ float4 position [[position]]; float size [[point_size]]; {member} }};
@@ -2603,31 +2881,52 @@ vertex Out vs(uint id [[vertex_id]]) {{
     {store} return output;
 }}
 fragment float4 fs() {{ return float4(1,0,0,1); }}
-"#));
-        let library = device.device().newLibraryWithSource_options_error(&shader, None).unwrap();
+"#
+        ));
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(&shader, None)
+            .unwrap();
         let descriptor = MTLRenderPipelineDescriptor::new();
-        let vertex = library.newFunctionWithName(&NSString::from_str("vs")).unwrap();
-        let fragment = library.newFunctionWithName(&NSString::from_str("fs")).unwrap();
+        let vertex = library
+            .newFunctionWithName(&NSString::from_str("vs"))
+            .unwrap();
+        let fragment = library
+            .newFunctionWithName(&NSString::from_str("fs"))
+            .unwrap();
         descriptor.setVertexFunction(Some(&vertex));
         descriptor.setFragmentFunction(Some(&fragment));
         unsafe { descriptor.colorAttachments().objectAtIndexedSubscript(0) }
             .setPixelFormat(MTLPixelFormat::RGBA8Unorm);
-        let pipeline = device.device().newRenderPipelineStateWithDescriptor_error(&descriptor).unwrap();
+        let pipeline = device
+            .device()
+            .newRenderPipelineStateWithDescriptor_error(&descriptor)
+            .unwrap();
         let td = MTLTextureDescriptor::new();
         td.setPixelFormat(MTLPixelFormat::RGBA8Unorm);
         td.setUsage(MTLTextureUsage::RenderTarget);
-        unsafe { td.setWidth(16); td.setHeight(16); }
+        unsafe {
+            td.setWidth(16);
+            td.setHeight(16);
+        }
         let texture = device.device().newTextureWithDescriptor(&td).unwrap();
         let pass = MTLRenderPassDescriptor::renderPassDescriptor();
         let attachment = unsafe { pass.colorAttachments().objectAtIndexedSubscript(0) };
         attachment.setTexture(Some(&texture));
         attachment.setLoadAction(MTLLoadAction::Clear);
         attachment.setStoreAction(MTLStoreAction::Store);
-        attachment.setClearColor(MTLClearColor { red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0 });
+        attachment.setClearColor(MTLClearColor {
+            red: 0.0,
+            green: 0.0,
+            blue: 0.0,
+            alpha: 0.0,
+        });
         let mut rasterizer = MetalRasterizer::new(
-            device.clone(), Arc::new(SyncpointManager::new()),
+            device.clone(),
+            Arc::new(SyncpointManager::new()),
             Arc::new(MaxwellDeviceMemoryManager::default()),
-        ).unwrap();
+        )
+        .unwrap();
         let download = MetalBuffer::new(&device, 4096).unwrap();
         let state = DrawState::default();
         let mut registers = Maxwell3DDrawRegisters::default();
@@ -2638,22 +2937,37 @@ fragment float4 fs() {{ return float4(1,0,0,1); }}
             registers.viewport_transforms[index] = ViewportTransformInfo {
                 scale_x: if index & 1 == 0 { 2.0 } else { -2.0 },
                 scale_y: if index & 2 == 0 { 2.0 } else { -2.0 },
-                translate_x: (x + 2) as f32, translate_y: (y + 2) as f32,
-                scale_z: 1.0, swizzle: 0x6420, ..Default::default()
+                translate_x: (x + 2) as f32,
+                translate_y: (y + 2) as f32,
+                scale_z: 1.0,
+                swizzle: 0x6420,
+                ..Default::default()
             };
             registers.scissors[index] = ScissorInfo {
-                enabled: true, min_x: x, max_x: if index == 5 { x } else { x + 4 },
-                min_y: y, max_y: y + 4,
+                enabled: true,
+                min_x: x,
+                max_x: if index == 5 { x } else { x + 4 },
+                min_y: y,
+                max_y: y + 4,
             };
         }
         let draw = Maxwell3DDrawView::with_register_snapshot(&state, false, registers);
         rasterizer.scheduler.begin_render_pass(&pass).unwrap();
         rasterizer.update_viewports_state(&draw).unwrap();
         rasterizer.update_scissors_state(&draw, (16, 16)).unwrap();
-        rasterizer.scheduler.with_render_encoder(|encoder| {
-            encoder.setRenderPipelineState(&pipeline);
-            unsafe { encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::Point, 0, count) };
-        }).unwrap();
+        rasterizer
+            .scheduler
+            .with_render_encoder(|encoder| {
+                encoder.setRenderPipelineState(&pipeline);
+                unsafe {
+                    encoder.drawPrimitives_vertexStart_vertexCount(
+                        MTLPrimitiveType::Point,
+                        0,
+                        count,
+                    )
+                };
+            })
+            .unwrap();
         rasterizer.scheduler.with_blit_encoder(|encoder| unsafe {
             encoder.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toBuffer_destinationOffset_destinationBytesPerRow_destinationBytesPerImage(
                 &texture, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 }, MTLSize { width: 16, height: 16, depth: 1 },
@@ -2666,12 +2980,20 @@ fragment float4 fs() {{ return float4(1,0,0,1); }}
         for y in 0..16 {
             for x in 0..16 {
                 let index = y / 4 * 4 + x / 4;
-                let expected = index < count && index != 5
+                let expected = index < count
+                    && index != 5
                     && x % 4 == if index & 1 == 0 { 1 } else { 2 }
                     && y % 4 == if index & 2 == 0 { 1 } else { 2 };
                 let offset = y * 256 + x * 4;
-                assert_eq!(&pixels[offset..offset + 4], if expected { &[255, 0, 0, 255] } else { &[0, 0, 0, 0] },
-                    "viewport={index} pixel=({x},{y})");
+                assert_eq!(
+                    &pixels[offset..offset + 4],
+                    if expected {
+                        &[255, 0, 0, 255]
+                    } else {
+                        &[0, 0, 0, 0]
+                    },
+                    "viewport={index} pixel=({x},{y})"
+                );
             }
         }
     }
@@ -2712,9 +3034,21 @@ fragment float4 fs() {{ return float4(1,0,0,1); }}
             ([9, 9, 2, 2], false, [4, 4, 0, 0]),
             ([0, 0, 0, 0], false, [0, 0, 1, 1]),
             ([0, 0, 0, 0], true, [0, 0, 1, 0]),
-        ].into_iter().map(|([x, y, width, height], lower_left, expected)| {
-            (SurfaceClipInfo { x, y, width, height }, lower_left, expected)
-        }).collect()
+        ]
+        .into_iter()
+        .map(|([x, y, width, height], lower_left, expected)| {
+            (
+                SurfaceClipInfo {
+                    x,
+                    y,
+                    width,
+                    height,
+                },
+                lower_left,
+                expected,
+            )
+        })
+        .collect()
     }
 
     #[test]
@@ -2748,16 +3082,17 @@ fragment float4 fs() {{ return float4(1,0,0,1); }}
 
     #[test]
     fn native_scissor_clips_pixels_without_dropping_vertex_side_effects() {
+        use super::super::metal_buffer::MetalBuffer;
         use objc2_foundation::NSString;
         use objc2_metal::{
-            MTLBlitCommandEncoder, MTLClearColor, MTLDevice, MTLLibrary, MTLLoadAction,
-            MTLOrigin, MTLPixelFormat, MTLRenderPassDescriptor, MTLRenderPipelineDescriptor,
-            MTLStoreAction, MTLTextureDescriptor, MTLTextureUsage,
+            MTLBlitCommandEncoder, MTLClearColor, MTLDevice, MTLLibrary, MTLLoadAction, MTLOrigin,
+            MTLPixelFormat, MTLRenderPassDescriptor, MTLRenderPipelineDescriptor, MTLStoreAction,
+            MTLTextureDescriptor, MTLTextureUsage,
         };
-        use super::super::metal_buffer::MetalBuffer;
 
         let device = MetalDevice::new().unwrap();
-        let source = NSString::from_str(r#"
+        let source = NSString::from_str(
+            r#"
 #include <metal_stdlib>
 using namespace metal;
 vertex float4 vs(uint i [[vertex_id]], device atomic_uint* count [[buffer(0)]]) {
@@ -2766,45 +3101,73 @@ vertex float4 vs(uint i [[vertex_id]], device atomic_uint* count [[buffer(0)]]) 
     return float4(p[i],0,1);
 }
 fragment float4 fs() { return float4(1,0,0,1); }
-"#);
-        let library = device.device().newLibraryWithSource_options_error(&source, None).unwrap();
+"#,
+        );
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(&source, None)
+            .unwrap();
         let descriptor = MTLRenderPipelineDescriptor::new();
-        let vertex = library.newFunctionWithName(&NSString::from_str("vs")).unwrap();
-        let fragment = library.newFunctionWithName(&NSString::from_str("fs")).unwrap();
+        let vertex = library
+            .newFunctionWithName(&NSString::from_str("vs"))
+            .unwrap();
+        let fragment = library
+            .newFunctionWithName(&NSString::from_str("fs"))
+            .unwrap();
         descriptor.setVertexFunction(Some(&vertex));
         descriptor.setFragmentFunction(Some(&fragment));
         unsafe { descriptor.colorAttachments().objectAtIndexedSubscript(0) }
             .setPixelFormat(MTLPixelFormat::RGBA8Unorm);
-        let pipeline = device.device().newRenderPipelineStateWithDescriptor_error(&descriptor).unwrap();
+        let pipeline = device
+            .device()
+            .newRenderPipelineStateWithDescriptor_error(&descriptor)
+            .unwrap();
         let td = MTLTextureDescriptor::new();
         td.setPixelFormat(MTLPixelFormat::RGBA8Unorm);
         td.setUsage(MTLTextureUsage::RenderTarget);
-        unsafe { td.setWidth(4); td.setHeight(4); }
+        unsafe {
+            td.setWidth(4);
+            td.setHeight(4);
+        }
         let texture = device.device().newTextureWithDescriptor(&td).unwrap();
         let pass = MTLRenderPassDescriptor::renderPassDescriptor();
         let attachment = unsafe { pass.colorAttachments().objectAtIndexedSubscript(0) };
         attachment.setTexture(Some(&texture));
         attachment.setLoadAction(MTLLoadAction::Clear);
         attachment.setStoreAction(MTLStoreAction::Store);
-        attachment.setClearColor(MTLClearColor { red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0 });
+        attachment.setClearColor(MTLClearColor {
+            red: 0.0,
+            green: 0.0,
+            blue: 0.0,
+            alpha: 0.0,
+        });
         let counter = MetalBuffer::new(&device, 4).unwrap();
         let download = MetalBuffer::new(&device, 1024).unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let state = DrawState::default();
-        let cases = scissor_cases().into_iter().map(|(source, lower_left, expected)| {
-            let mut registers = Maxwell3DDrawRegisters::default();
-            registers.scissors[0] = source;
-            registers.window_origin_lower_left = lower_left;
-            registers.surface_clip.height = 6;
-            registers.viewport_scale_offset_enabled = true;
-            (registers, expected)
-        }).chain(surface_clip_cases().into_iter().map(|(surface_clip, lower_left, expected)| {
-            (Maxwell3DDrawRegisters {
-                surface_clip,
-                window_origin_lower_left: lower_left,
-                ..Default::default()
-            }, expected)
-        }));
+        let cases =
+            scissor_cases()
+                .into_iter()
+                .map(|(source, lower_left, expected)| {
+                    let mut registers = Maxwell3DDrawRegisters::default();
+                    registers.scissors[0] = source;
+                    registers.window_origin_lower_left = lower_left;
+                    registers.surface_clip.height = 6;
+                    registers.viewport_scale_offset_enabled = true;
+                    (registers, expected)
+                })
+                .chain(surface_clip_cases().into_iter().map(
+                    |(surface_clip, lower_left, expected)| {
+                        (
+                            Maxwell3DDrawRegisters {
+                                surface_clip,
+                                window_origin_lower_left: lower_left,
+                                ..Default::default()
+                            },
+                            expected,
+                        )
+                    },
+                ));
         for (registers, [x, y, width, height]) in cases {
             let draw = Maxwell3DDrawView::with_register_snapshot(&state, false, registers);
             let rect = if draw.viewport_scale_offset_enabled() {
@@ -2814,14 +3177,20 @@ fragment float4 fs() { return float4(1,0,0,1); }
             };
             counter.write(0, &[0; 4]).unwrap();
             scheduler.begin_render_pass(&pass).unwrap();
-            scheduler.with_render_encoder(|encoder| {
-                encoder.setRenderPipelineState(&pipeline);
-                encoder.setScissorRect(rect);
-                unsafe {
-                    encoder.setVertexBuffer_offset_atIndex(Some(counter.handle()), 0, 0);
-                    encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::Triangle, 0, 3);
-                }
-            }).unwrap();
+            scheduler
+                .with_render_encoder(|encoder| {
+                    encoder.setRenderPipelineState(&pipeline);
+                    encoder.setScissorRect(rect);
+                    unsafe {
+                        encoder.setVertexBuffer_offset_atIndex(Some(counter.handle()), 0, 0);
+                        encoder.drawPrimitives_vertexStart_vertexCount(
+                            MTLPrimitiveType::Triangle,
+                            0,
+                            3,
+                        );
+                    }
+                })
+                .unwrap();
             scheduler.with_blit_encoder(|encoder| unsafe {
                 encoder.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toBuffer_destinationOffset_destinationBytesPerRow_destinationBytesPerImage(
                     &texture, 0, 0, MTLOrigin { x: 0, y: 0, z: 0 },
@@ -2837,14 +3206,22 @@ fragment float4 fs() { return float4(1,0,0,1); }
                     let inside = (x..x + width).contains(&px) && (y..y + height).contains(&py);
                     assert_eq!(
                         &pixels[offset..offset + 4],
-                        if inside { &[255, 0, 0, 255] } else { &[0, 0, 0, 0] },
+                        if inside {
+                            &[255, 0, 0, 255]
+                        } else {
+                            &[0, 0, 0, 0]
+                        },
                         "rect={rect:?}, pixel=({px},{py})",
                     );
                 }
             }
             let mut count = [0; 4];
             counter.read(0, &mut count).unwrap();
-            assert_eq!(u32::from_ne_bytes(count), 3, "empty scissors must not skip draws");
+            assert_eq!(
+                u32::from_ne_bytes(count),
+                3,
+                "empty scissors must not skip draws"
+            );
         }
     }
 
@@ -2863,28 +3240,37 @@ fragment float4 fs() { return float4(1,0,0,1); }
 
     #[test]
     fn live_conditional_hook_masks_quad_without_submitting_or_reading_back() {
+        use super::super::metal_buffer::MetalBuffer;
         use crate::query_cache::query_cache::{RenderConditionState, SyncValuesStruct};
         use crate::query_cache::types::ComparisonMode;
-        use super::super::metal_buffer::MetalBuffer;
 
-        let _accuracy = crate::test_support::GpuAccuracyGuard::set(
-            common::settings_enums::GpuAccuracy::High,
-        );
+        let _accuracy =
+            crate::test_support::GpuAccuracyGuard::set(common::settings_enums::GpuAccuracy::High);
         let device = MetalDevice::new().unwrap();
         let memory = Arc::new(MaxwellDeviceMemoryManager::default());
         let mut backing = vec![0u8; 0x1000];
         memory.smmu_set_physical_base_for_test(backing.as_mut_ptr() as usize);
         memory.smmu_map_with_cpu_backing(
-            0x8000, backing.as_mut_ptr(), 0x4000, backing.len(), 1, true,
+            0x8000,
+            backing.as_mut_ptr(),
+            0x4000,
+            backing.len(),
+            1,
+            true,
         );
         let mut channel_memory = MemoryManager::new_with_geometry_and_device_memory(
-            1, memory.clone(), 32, 0x1_0000_0000, 16, 12,
+            1,
+            memory.clone(),
+            32,
+            0x1_0000_0000,
+            16,
+            12,
         );
         channel_memory.map(0x10000, 0x8000, 0x1000, 0, false);
         let readback = MetalBuffer::new(&device, 16).unwrap();
-        let mut rasterizer = MetalRasterizer::new(
-            device, Arc::new(SyncpointManager::new()), memory.clone(),
-        ).unwrap();
+        let mut rasterizer =
+            MetalRasterizer::new(device, Arc::new(SyncpointManager::new()), memory.clone())
+                .unwrap();
         rasterizer.channel_memory_manager = Some(Arc::new(parking_lot::Mutex::new(channel_memory)));
         let channel = ChannelState::new(1);
         rasterizer.common_buffer_cache.create_channel(&channel);
@@ -2895,15 +3281,29 @@ fragment float4 fs() { return float4(1,0,0,1); }
             address: 0x10100,
         };
         for (value, instances) in [(0x100000004, 0), (0x100000003, 1)] {
-            rasterizer.query_cache_runtime.sync_values(
-                rasterizer.common_buffer_cache.as_mut(),
-                &[
-                    SyncValuesStruct { address: 0x8100, value: 0x100000003, size: 8 },
-                    SyncValuesStruct { address: 0x8110, value, size: 8 },
-                ], None,
-            ).unwrap();
+            rasterizer
+                .query_cache_runtime
+                .sync_values(
+                    rasterizer.common_buffer_cache.as_mut(),
+                    &[
+                        SyncValuesStruct {
+                            address: 0x8100,
+                            value: 0x100000003,
+                            size: 8,
+                        },
+                        SyncValuesStruct {
+                            address: 0x8110,
+                            value,
+                            size: 8,
+                        },
+                    ],
+                    None,
+                )
+                .unwrap();
             rasterizer.common_buffer_cache.obtain_cpu_buffer(
-                0x8100, 24, ObtainBufferSynchronize::NoSynchronize,
+                0x8100,
+                24,
+                ObtainBufferSynchronize::NoSynchronize,
                 ObtainBufferOperation::MarkAsWritten,
             );
             let tick = rasterizer.scheduler.current_tick();
@@ -2911,14 +3311,23 @@ fragment float4 fs() { return float4(1,0,0,1); }
             let arguments = rasterizer.conditional_quad_arguments().unwrap().unwrap();
             assert_eq!(rasterizer.scheduler.current_tick(), tick);
             assert_eq!(memory.read_u32(0x8100), 0, "predicate stays GPU-owned");
-            arguments.buffer.encode_copy(
-                rasterizer.scheduler.as_mut(), &readback, arguments.offset, 0, 16,
-            ).unwrap();
+            arguments
+                .buffer
+                .encode_copy(
+                    rasterizer.scheduler.as_mut(),
+                    &readback,
+                    arguments.offset,
+                    0,
+                    16,
+                )
+                .unwrap();
             rasterizer.finish().unwrap();
             let mut bytes = [0; 16];
             readback.read(0, &mut bytes).unwrap();
-            let words: Vec<u32> = bytes.chunks_exact(4)
-                .map(|word| u32::from_ne_bytes(word.try_into().unwrap())).collect();
+            let words: Vec<u32> = bytes
+                .chunks_exact(4)
+                .map(|word| u32::from_ne_bytes(word.try_into().unwrap()))
+                .collect();
             assert_eq!(words, [4, instances, 0, 0]);
         }
         state.comparison_mode = ComparisonMode::True;
@@ -2928,25 +3337,40 @@ fragment float4 fs() { return float4(1,0,0,1); }
 
     #[test]
     fn scoped_flush_region_live_rasterizer_routes_query_cache_flag() {
-        let _accuracy = crate::test_support::GpuAccuracyGuard::set(
-            common::settings_enums::GpuAccuracy::High,
-        );
+        let _accuracy =
+            crate::test_support::GpuAccuracyGuard::set(common::settings_enums::GpuAccuracy::High);
         let device = MetalDevice::new().unwrap();
         let memory = Arc::new(MaxwellDeviceMemoryManager::default());
         let mut backing = vec![0xa5u8; 0x1000];
         memory.smmu_set_physical_base_for_test(backing.as_mut_ptr() as usize);
-        memory.smmu_map_with_cpu_backing(0x8000, backing.as_mut_ptr(), 0x4000,
-            backing.len(), 1, true);
+        memory.smmu_map_with_cpu_backing(
+            0x8000,
+            backing.as_mut_ptr(),
+            0x4000,
+            backing.len(),
+            1,
+            true,
+        );
         let mut channel_memory = MemoryManager::new_with_geometry_and_device_memory(
-            1, memory.clone(), 32, 0x1_0000_0000, 16, 12,
+            1,
+            memory.clone(),
+            32,
+            0x1_0000_0000,
+            16,
+            12,
         );
         channel_memory.map(0x10000, 0x8000, 0x1000, 0, false);
-        let mut rasterizer = MetalRasterizer::new(
-            device, Arc::new(SyncpointManager::new()), memory.clone(),
-        ).unwrap();
+        let mut rasterizer =
+            MetalRasterizer::new(device, Arc::new(SyncpointManager::new()), memory.clone())
+                .unwrap();
         rasterizer.channel_memory_manager = Some(Arc::new(parking_lot::Mutex::new(channel_memory)));
-        rasterizer.query(0x10020, crate::query_cache::types::QueryType::Payload as u32,
-            QueryPropertiesFlags::empty(), 0x12345678, 0);
+        rasterizer.query(
+            0x10020,
+            crate::query_cache::types::QueryType::Payload as u32,
+            QueryPropertiesFlags::empty(),
+            0x12345678,
+            0,
+        );
         assert_eq!(memory.read_u32(0x8020), 0xa5a5a5a5);
         rasterizer.flush_region(0x8020, 4, CacheType::empty());
         assert_eq!(memory.read_u32(0x8020), 0xa5a5a5a5);
@@ -2962,10 +3386,17 @@ fragment float4 fs() { return float4(1,0,0,1); }
         let channel = ChannelState::new(1);
         rasterizer.common_buffer_cache.create_channel(&channel);
         rasterizer.common_buffer_cache.bind_to_channel(1);
-        rasterizer.query_cache.prepare_draw(rasterizer.scheduler.as_mut(), true).unwrap();
-        rasterizer.query(0x10040,
+        rasterizer
+            .query_cache
+            .prepare_draw(rasterizer.scheduler.as_mut(), true)
+            .unwrap();
+        rasterizer.query(
+            0x10040,
             crate::query_cache::types::QueryType::ZPassPixelCount64 as u32,
-            QueryPropertiesFlags::IS_A_FENCE, 0, 0);
+            QueryPropertiesFlags::IS_A_FENCE,
+            0,
+            0,
+        );
         assert_eq!(memory.read_u32(0x8040), 0xa5a5a5a5);
         rasterizer.flush_region(0x8040, 4, CacheType::QUERY_CACHE);
         assert_eq!(memory.read_u32(0x8040), 0);

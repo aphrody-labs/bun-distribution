@@ -90,7 +90,11 @@ enum Command {
         #[arg(long)]
         cwd: Option<std::path::PathBuf>,
         /// Program followed by its arguments (put `--` before arguments that start with `-`).
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true, value_name = "PROGRAM")]
+        #[arg(
+            trailing_var_arg = true,
+            allow_hyphen_values = true,
+            value_name = "PROGRAM"
+        )]
         command: Vec<std::ffi::OsString>,
     },
 }
@@ -132,9 +136,15 @@ async fn builtin_kernel(
     kernel
         .register(Arc::new(crate::compat::CompatSubsystem::new()) as Arc<dyn SystemSubsystem>)
         .await?;
-    kernel.register(Arc::new(crate::InfraSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
-    kernel.register(Arc::new(crate::CloudSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
-    kernel.register(Arc::new(crate::RuntimeSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
+    kernel
+        .register(Arc::new(crate::InfraSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .await?;
+    kernel
+        .register(Arc::new(crate::CloudSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .await?;
+    kernel
+        .register(Arc::new(crate::RuntimeSubsystem::new()) as Arc<dyn SystemSubsystem>)
+        .await?;
     if shell {
         let nu = aphrody_nu::NuShell::from_current_dir().map_err(anyhow::Error::msg)?;
         kernel
@@ -143,8 +153,12 @@ async fn builtin_kernel(
     }
     // Subsystems of higher layers (aphrody-ui, aphrody-web) run as MCP plugin processes: this
     // repository never links them (docs/REPO-LAYERING.md).
-    let mut occupied: HashSet<String> =
-        kernel.tools().await.into_iter().map(|(_, tool)| tool.name).collect();
+    let mut occupied: HashSet<String> = kernel
+        .tools()
+        .await
+        .into_iter()
+        .map(|(_, tool)| tool.name)
+        .collect();
     let mut plugins: Vec<PluginEntry> = Vec::new();
     if browser {
         // The plugin resolves the Aphrody Web provider itself; an explicit one is handed down.
@@ -192,7 +206,13 @@ async fn builtin_kernel(
     for (name, description, env, binary, args) in hosts {
         let Some(args) = args else { continue };
         if let Some(host) = crate::tool_host::ToolHostSubsystem::configured(
-            crate::tool_host::ToolHostSpec { name, description, env, binary, args: &args },
+            crate::tool_host::ToolHostSpec {
+                name,
+                description,
+                env,
+                binary,
+                args: &args,
+            },
             &occupied,
         )
         .await
@@ -254,7 +274,9 @@ async fn request(
 ) -> anyhow::Result<Value> {
     if let Ok(client) = Client::connect(endpoint).await {
         client.initialize("aphrody-kernel-cli").await?;
-        return Ok(client.request(method, params, Duration::from_secs(600)).await?);
+        return Ok(client
+            .request(method, params, Duration::from_secs(600))
+            .await?);
     }
     let kernel = builtin_kernel(true, true, None, auth_file, exec_policy).await?;
     let (client_side, server_side) = tokio::io::duplex(1 << 20);
@@ -262,7 +284,9 @@ async fn request(
     tokio::spawn(crate::transport::serve_connection(kernel, reader, writer));
     let client = Client::from_stream(Box::new(client_side));
     client.initialize("aphrody-kernel-cli").await?;
-    Ok(client.request(method, params, Duration::from_secs(600)).await?)
+    Ok(client
+        .request(method, params, Duration::from_secs(600))
+        .await?)
 }
 
 /// `elevate`: the detected path as JSON with `--probe`, otherwise the program's exit code.
@@ -276,8 +300,9 @@ fn elevate(
         print(&json!({ "elevated": aphrody_proc::is_elevated(), "path": path.label() }))?;
         return Ok(0);
     }
-    let (program, args) =
-        command.split_first().ok_or_else(|| anyhow::anyhow!("elevate: missing PROGRAM"))?;
+    let (program, args) = command
+        .split_first()
+        .ok_or_else(|| anyhow::anyhow!("elevate: missing PROGRAM"))?;
     Ok(aphrody_proc::run_elevated(program, args, cwd)?)
 }
 
@@ -294,21 +319,24 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("Error: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run(cli)) {
         Ok(code) => code,
         Err(error) => {
             eprintln!("Error: {error:?}");
             1
-        },
+        }
     }
 }
 
@@ -318,7 +346,12 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
     let auth_file = cli.auth_file.as_deref();
     let exec_policy = cli.exec_policy.as_deref();
     match cli.command {
-        Command::Serve { no_shell, no_browser, web_mcp, audit_log } => {
+        Command::Serve {
+            no_shell,
+            no_browser,
+            web_mcp,
+            audit_log,
+        } => {
             let kernel =
                 builtin_kernel(!no_shell, !no_browser, web_mcp, auth_file, exec_policy).await?;
             if let Some(path) = audit_log {
@@ -326,13 +359,13 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
             }
             eprintln!("aphrody-kernel: serving {endpoint}");
             serve_endpoint(kernel, endpoint).await?;
-        },
+        }
         Command::Tools => {
             print(&request(&endpoint, "tools/list", json!({}), auth_file, exec_policy).await?)?
-        },
+        }
         Command::Skills => {
             print(&request(&endpoint, "skills/list", json!({}), auth_file, exec_policy).await?)?
-        },
+        }
         Command::Call { tool, arguments } => {
             let result = request(
                 &endpoint,
@@ -343,10 +376,14 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
             )
             .await?;
             print(&result)?;
-            if result.get("isError").and_then(Value::as_bool).unwrap_or(false) {
+            if result
+                .get("isError")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+            {
                 exit_code = 1;
             }
-        },
+        }
         Command::RunSkill { name, params } => {
             print(
                 &request(
@@ -358,8 +395,12 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
                 )
                 .await?,
             )?;
-        },
-        Command::A2a { target, tool, arguments } => print(
+        }
+        Command::A2a {
+            target,
+            tool,
+            arguments,
+        } => print(
             &request(
                 &endpoint,
                 "a2a/message/send",
@@ -374,11 +415,15 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
             )
             .await?,
         )?,
-        Command::Elevate { probe, cwd, command } => {
+        Command::Elevate {
+            probe,
+            cwd,
+            command,
+        } => {
             exit_code =
                 tokio::task::spawn_blocking(move || elevate(probe, cwd.as_deref(), &command))
                     .await??;
-        },
+        }
     }
     Ok(exit_code)
 }
@@ -395,7 +440,10 @@ mod tests {
             parse_object(r#"{"name": "aphrody", "value": 42}"#).unwrap(),
             json!({"name": "aphrody", "value": 42})
         );
-        assert_eq!(parse_object(r#"{\"escaped\": true}"#).unwrap(), json!({"escaped": true}));
+        assert_eq!(
+            parse_object(r#"{\"escaped\": true}"#).unwrap(),
+            json!({"escaped": true})
+        );
         let arguments =
             json!({"code": "ps | where name =~ \"claude|codex\"", "path": "C:\\agents\\run"});
         assert_eq!(parse_object(&arguments.to_string()).unwrap(), arguments);
@@ -442,7 +490,13 @@ mod tests {
         ])
         .unwrap();
         assert_eq!(serve_cli.socket.as_deref(), Some("/tmp/custom.sock"));
-        if let Command::Serve { no_shell, no_browser, web_mcp, audit_log } = serve_cli.command {
+        if let Command::Serve {
+            no_shell,
+            no_browser,
+            web_mcp,
+            audit_log,
+        } = serve_cli.command
+        {
             assert!(no_shell);
             assert!(no_browser);
             assert!(web_mcp.is_none());
@@ -459,7 +513,10 @@ mod tests {
         ])
         .unwrap();
         if let Command::Serve { audit_log, .. } = audit_cli.command {
-            assert_eq!(audit_log.as_deref(), Some(std::path::Path::new(r"C:\audit\kernel.ndjson")));
+            assert_eq!(
+                audit_log.as_deref(),
+                Some(std::path::Path::new(r"C:\audit\kernel.ndjson"))
+            );
         } else {
             panic!("expected Command::Serve");
         }
@@ -474,10 +531,18 @@ mod tests {
             "-x",
         ])
         .unwrap();
-        if let Command::Elevate { probe, cwd, command } = elevate_cli.command {
+        if let Command::Elevate {
+            probe,
+            cwd,
+            command,
+        } = elevate_cli.command
+        {
             assert!(!probe);
             assert_eq!(cwd.as_deref(), Some(std::path::Path::new(r"C:\work")));
-            assert_eq!(command, ["sc.exe", "query", "-x"].map(std::ffi::OsString::from));
+            assert_eq!(
+                command,
+                ["sc.exe", "query", "-x"].map(std::ffi::OsString::from)
+            );
         } else {
             panic!("expected Command::Elevate");
         }

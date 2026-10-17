@@ -35,7 +35,11 @@ pub struct Grid {
 impl Grid {
     #[inline]
     pub fn at(&self, x: i64, y: i64) -> bool {
-        x >= 0 && y >= 0 && (x as usize) < self.w && (y as usize) < self.h && self.on[y as usize * self.w + x as usize]
+        x >= 0
+            && y >= 0
+            && (x as usize) < self.w
+            && (y as usize) < self.h
+            && self.on[y as usize * self.w + x as usize]
     }
 }
 
@@ -58,7 +62,9 @@ fn dt1(f: &[f64], out: &mut [f64]) {
     let mut k = 0usize;
     z[0] = f64::NEG_INFINITY;
     z[1] = f64::INFINITY;
-    let inter = |q: usize, p: usize| ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64);
+    let inter = |q: usize, p: usize| {
+        ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64)
+    };
     for q in 1..n {
         let mut s = inter(q, v[k]);
         while s <= z[k] {
@@ -109,11 +115,23 @@ pub fn expand(g: &Grid, e: f64) -> Grid {
     }
     if e > 0.0 {
         let d = distance_sq(g.w, g.h, &g.on);
-        Grid { w: g.w, h: g.h, on: d.iter().map(|v| *v <= e * e).collect() }
+        Grid {
+            w: g.w,
+            h: g.h,
+            on: d.iter().map(|v| *v <= e * e).collect(),
+        }
     } else {
         let off: Vec<bool> = g.on.iter().map(|b| !b).collect();
         let d = distance_sq(g.w, g.h, &off);
-        Grid { w: g.w, h: g.h, on: d.iter().zip(&g.on).map(|(v, on)| *on && *v > e * e).collect() }
+        Grid {
+            w: g.w,
+            h: g.h,
+            on: d
+                .iter()
+                .zip(&g.on)
+                .map(|(v, on)| *on && *v > e * e)
+                .collect(),
+        }
     }
 }
 
@@ -191,7 +209,11 @@ pub fn region(g: &Grid, seed: [f64; 2]) -> Option<Grid> {
             }
         }
     }
-    Some(Grid { w, h, on: outside.iter().map(|o| !o).collect() })
+    Some(Grid {
+        w,
+        h,
+        on: outside.iter().map(|o| !o).collect(),
+    })
 }
 
 /// Trace the outer boundary of a hole-free region along pixel cracks: a closed polygon through
@@ -231,7 +253,9 @@ pub fn trace(g: &Grid) -> Vec<[f64; 2]> {
             if guard > 4 * (g.w + 2) * (g.h + 2) {
                 break;
             }
-            let Some(outs) = next.get_mut(&cur) else { break };
+            let Some(outs) = next.get_mut(&cur) else {
+                break;
+            };
             if outs.is_empty() {
                 break;
             }
@@ -244,7 +268,9 @@ pub fn trace(g: &Grid) -> Vec<[f64; 2]> {
                     let d = (o.0 - cur.0, o.1 - cur.1);
                     dir.0 * d.1 - dir.1 * d.0
                 };
-                (0..outs.len()).max_by_key(|i| score(&outs[*i])).unwrap_or(0)
+                (0..outs.len())
+                    .max_by_key(|i| score(&outs[*i]))
+                    .unwrap_or(0)
             };
             let nx = outs.swap_remove(k);
             dir = (nx.0 - cur.0, nx.1 - cur.1);
@@ -289,7 +315,11 @@ pub fn signed_area(p: &[[f64; 2]]) -> f64 {
 fn seg_dist2(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
     let ab = [b[0] - a[0], b[1] - a[1]];
     let l = ab[0] * ab[0] + ab[1] * ab[1];
-    let t = if l > 0.0 { (((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / l).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if l > 0.0 {
+        (((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / l).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     dist2(p, [a[0] + ab[0] * t, a[1] + ab[1] * t])
 }
 
@@ -300,7 +330,9 @@ pub fn simplify(p: &[[f64; 2]], tol: f64) -> Vec<[f64; 2]> {
         return p.to_vec();
     }
     // Split the loop at vertex 0 and the vertex farthest from it; simplify both open chains.
-    let far = (1..n).max_by(|a, b| dist2(p[0], p[*a]).total_cmp(&dist2(p[0], p[*b]))).unwrap_or(n / 2);
+    let far = (1..n)
+        .max_by(|a, b| dist2(p[0], p[*a]).total_cmp(&dist2(p[0], p[*b])))
+        .unwrap_or(n / 2);
     let mut ext = p.to_vec();
     ext.push(p[0]);
     let mut keep = vec![false; n + 1];
@@ -352,7 +384,9 @@ pub fn inside(poly: &[[f64; 2]], p: [f64; 2]) -> bool {
     let mut j = n.wrapping_sub(1);
     for i in 0..n {
         let (a, b) = (poly[i], poly[j]);
-        if (a[1] > p[1]) != (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0] {
+        if (a[1] > p[1]) != (b[1] > p[1])
+            && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
             c = !c;
         }
         j = i;
@@ -362,7 +396,9 @@ pub fn inside(poly: &[[f64; 2]], p: [f64; 2]) -> bool {
 
 fn poly_dist2(poly: &[[f64; 2]], p: [f64; 2]) -> f64 {
     let n = poly.len();
-    (0..n).map(|i| seg_dist2(p, poly[i], poly[(i + 1) % n])).fold(f64::MAX, f64::min)
+    (0..n)
+        .map(|i| seg_dist2(p, poly[i], poly[(i + 1) % n]))
+        .fold(f64::MAX, f64::min)
 }
 
 /// Circumcircle test: is `d` strictly inside the circumcircle of CCW (`cross > 0`) triangle abc?
@@ -406,9 +442,11 @@ pub fn delaunay(pts: &[[f64; 2]]) -> Vec<[usize; 3]> {
         }
         if bad.is_empty() {
             // On a circle or exactly on an edge: find the containing triangle instead.
-            if let Some(k) =
-                tris.iter().position(|t| cross(v[t[0]], v[t[1]], p) >= 0.0 && cross(v[t[1]], v[t[2]], p) >= 0.0 && cross(v[t[2]], v[t[0]], p) >= 0.0)
-            {
+            if let Some(k) = tris.iter().position(|t| {
+                cross(v[t[0]], v[t[1]], p) >= 0.0
+                    && cross(v[t[1]], v[t[2]], p) >= 0.0
+                    && cross(v[t[2]], v[t[0]], p) >= 0.0
+            }) {
                 bad.push(k);
             } else {
                 continue;
@@ -447,7 +485,11 @@ pub fn delaunay(pts: &[[f64; 2]]) -> Vec<[usize; 3]> {
 }
 
 fn orient(v: &[[f64; 2]], t: [usize; 3]) -> [usize; 3] {
-    if cross(v[t[0]], v[t[1]], v[t[2]]) < 0.0 { [t[0], t[2], t[1]] } else { t }
+    if cross(v[t[0]], v[t[1]], v[t[2]]) < 0.0 {
+        [t[0], t[2], t[1]]
+    } else {
+        t
+    }
 }
 
 fn seg_cross(a: [f64; 2], b: [f64; 2], c: [f64; 2], d: [f64; 2]) -> bool {
@@ -455,7 +497,8 @@ fn seg_cross(a: [f64; 2], b: [f64; 2], c: [f64; 2], d: [f64; 2]) -> bool {
     let d2 = cross(a, b, d);
     let d3 = cross(c, d, a);
     let d4 = cross(c, d, b);
-    ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12))
+    ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12))
+        && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12))
 }
 
 fn key(a: usize, b: usize) -> (usize, usize) {
@@ -470,20 +513,26 @@ pub fn recover_edges(v: &[[f64; 2]], tris: &mut [[usize; 3]], constraints: &[(us
             edge_tris.entry(key(e.0, e.1)).or_default().push(k);
         }
     }
-    let fixed: std::collections::HashSet<(usize, usize)> = constraints.iter().map(|&(a, b)| key(a, b)).collect();
+    let fixed: std::collections::HashSet<(usize, usize)> =
+        constraints.iter().map(|&(a, b)| key(a, b)).collect();
     for &(a, b) in constraints {
         if edge_tris.get(&key(a, b)).is_some_and(|t| !t.is_empty()) {
             continue;
         }
-        let mut queue: VecDeque<(usize, usize)> =
-            edge_tris.iter().filter(|(e, t)| t.len() == 2 && seg_cross(v[a], v[b], v[e.0], v[e.1])).map(|(e, _)| *e).collect();
+        let mut queue: VecDeque<(usize, usize)> = edge_tris
+            .iter()
+            .filter(|(e, t)| t.len() == 2 && seg_cross(v[a], v[b], v[e.0], v[e.1]))
+            .map(|(e, _)| *e)
+            .collect();
         let mut guard = 0;
         while let Some(e) = queue.pop_front() {
             guard += 1;
             if guard > 20_000 {
                 break;
             }
-            let Some(ts) = edge_tris.get(&e).cloned() else { continue };
+            let Some(ts) = edge_tris.get(&e).cloned() else {
+                continue;
+            };
             if ts.len() != 2 || fixed.contains(&e) {
                 continue;
             }
@@ -537,7 +586,11 @@ pub struct MeshOpts {
 
 impl Default for MeshOpts {
     fn default() -> Self {
-        MeshOpts { triangles: 350.0, density: 50.0, expansion: 3.0 }
+        MeshOpts {
+            triangles: 350.0,
+            density: 50.0,
+            expansion: 3.0,
+        }
     }
 }
 
@@ -560,7 +613,8 @@ pub fn triangulate(outline: &[[f64; 2]], opts: &MeshOpts) -> Mesh {
     if poly.len() < 3 || area <= 0.0 {
         return Mesh::default();
     }
-    let target = (opts.triangles.max(2.0) * 2f64.powf((opts.density - 50.0) / 25.0)).clamp(2.0, 20_000.0);
+    let target =
+        (opts.triangles.max(2.0) * 2f64.powf((opts.density - 50.0) / 25.0)).clamp(2.0, 20_000.0);
     let l = (4.0 * area / (3f64.sqrt() * target)).sqrt().max(0.5);
     let boundary = densify(&poly, l);
     let nb = boundary.len();
@@ -582,7 +636,10 @@ pub fn triangulate(outline: &[[f64; 2]], opts: &MeshOpts) -> Mesh {
         let mut col = 0u64;
         while x < x1 {
             let id = row * 100_003 + col;
-            let p = [x + jitter(id * 2) * l * 0.08, y + jitter(id * 2 + 1) * l * 0.08];
+            let p = [
+                x + jitter(id * 2) * l * 0.08,
+                y + jitter(id * 2 + 1) * l * 0.08,
+            ];
             if inside(&poly, p) && poly_dist2(&boundary, p) >= min_d2 {
                 pts.push(p);
             }
@@ -596,7 +653,10 @@ pub fn triangulate(outline: &[[f64; 2]], opts: &MeshOpts) -> Mesh {
     let constraints: Vec<(usize, usize)> = (0..nb).map(|i| (i, (i + 1) % nb)).collect();
     recover_edges(&pts, &mut tris, &constraints);
     tris.retain(|t| {
-        let c = [(pts[t[0]][0] + pts[t[1]][0] + pts[t[2]][0]) / 3.0, (pts[t[0]][1] + pts[t[1]][1] + pts[t[2]][1]) / 3.0];
+        let c = [
+            (pts[t[0]][0] + pts[t[1]][0] + pts[t[2]][0]) / 3.0,
+            (pts[t[0]][1] + pts[t[1]][1] + pts[t[2]][1]) / 3.0,
+        ];
         cross(pts[t[0]], pts[t[1]], pts[t[2]]) > 1e-9 && inside(&poly, c)
     });
     // Compact the vertex list.
@@ -611,12 +671,24 @@ pub fn triangulate(outline: &[[f64; 2]], opts: &MeshOpts) -> Mesh {
             *i = map[*i];
         }
     }
-    Mesh { verts, tris, outline: poly }
+    Mesh {
+        verts,
+        tris,
+        outline: poly,
+    }
 }
 
 /// The outline of the alpha region under `seed` (buffer pixels → layer space via `scale` and
 /// `offset`), expanded by `expansion` layer pixels.
-pub fn outline(alpha: &[f32], w: usize, h: usize, scale: f64, offset: [f64; 2], seed: [f64; 2], expansion: f64) -> Vec<[f64; 2]> {
+pub fn outline(
+    alpha: &[f32],
+    w: usize,
+    h: usize,
+    scale: f64,
+    offset: [f64; 2],
+    seed: [f64; 2],
+    expansion: f64,
+) -> Vec<[f64; 2]> {
     // Pad so expansion can grow past the buffer edge.
     let pad = (expansion.max(0.0) * scale).ceil() as usize + 2;
     let (pw, ph) = (w + 2 * pad, h + 2 * pad);
@@ -627,9 +699,21 @@ pub fn outline(alpha: &[f32], w: usize, h: usize, scale: f64, offset: [f64; 2], 
         }
     }
     let g = expand(&Grid { w: pw, h: ph, on }, expansion * scale);
-    let sp = [seed[0] * scale + offset[0] + pad as f64, seed[1] * scale + offset[1] + pad as f64];
-    let Some(r) = region(&g, sp) else { return vec![] };
+    let sp = [
+        seed[0] * scale + offset[0] + pad as f64,
+        seed[1] * scale + offset[1] + pad as f64,
+    ];
+    let Some(r) = region(&g, sp) else {
+        return vec![];
+    };
     let c = trace(&r);
     let c = simplify(&c, 0.75);
-    c.iter().map(|p| [(p[0] - pad as f64 - offset[0]) / scale, (p[1] - pad as f64 - offset[1]) / scale]).collect()
+    c.iter()
+        .map(|p| {
+            [
+                (p[0] - pad as f64 - offset[0]) / scale,
+                (p[1] - pad as f64 - offset[1]) / scale,
+            ]
+        })
+        .collect()
 }

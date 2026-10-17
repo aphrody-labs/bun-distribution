@@ -1,19 +1,19 @@
 use crate::{
-    prepass::{DeferredPrepass, ViewPrepassTextures},
     FullscreenShader,
+    prepass::{DeferredPrepass, ViewPrepassTextures},
 };
 use bevy_app::prelude::*;
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer};
+use bevy_asset::{AssetServer, embedded_asset, load_embedded_asset};
 use bevy_ecs::prelude::*;
 use bevy_image::ToExtents;
 use bevy_render::{
+    Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     render_resource::{binding_types::texture_2d, *},
     renderer::RenderDevice,
     texture::{CachedTexture, TextureCache},
     view::ViewTarget,
-    Render, RenderApp, RenderStartup, RenderSystems,
 };
 
 use super::DEFERRED_LIGHTING_PASS_ID_DEPTH_FORMAT;

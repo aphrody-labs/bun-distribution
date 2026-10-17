@@ -16,8 +16,14 @@ pub struct FrameScore {
 /// Compare two premultiplied rendered frames. A size mismatch is reported as an error instead of
 /// silently producing a misleading score.
 pub fn compare_frames(actual: &Image, reference: &Image) -> Result<FrameScore, String> {
-    if actual.width != reference.width || actual.height != reference.height || actual.data.len() != reference.data.len() {
-        return Err(format!("frame size mismatch: {}x{} vs {}x{}", actual.width, actual.height, reference.width, reference.height));
+    if actual.width != reference.width
+        || actual.height != reference.height
+        || actual.data.len() != reference.data.len()
+    {
+        return Err(format!(
+            "frame size mismatch: {}x{} vs {}x{}",
+            actual.width, actual.height, reference.width, reference.height
+        ));
     }
     let mut sum = 0.0f64;
     let mut max = 0.0f32;
@@ -34,7 +40,11 @@ pub fn compare_frames(actual: &Image, reference: &Image) -> Result<FrameScore, S
     }
     let compared_pixels = actual.data.len();
     let samples = compared_pixels.saturating_mul(4).max(1);
-    Ok(FrameScore { compared_pixels, mean_absolute_error: sum / samples as f64, max_error: max })
+    Ok(FrameScore {
+        compared_pixels,
+        mean_absolute_error: sum / samples as f64,
+        max_error: max,
+    })
 }
 
 #[cfg(test)]
@@ -52,6 +62,9 @@ mod tests {
         assert_eq!(score.max_error, 0.5);
         assert!(compare_frames(&actual, &Image::new(1, 1)).is_err());
         actual.data[0][1] = f32::NAN;
-        assert!(compare_frames(&actual, &reference).is_err(), "NaN is an error, not a pass");
+        assert!(
+            compare_frames(&actual, &reference).is_err(),
+            "NaN is an error, not a pass"
+        );
     }
 }

@@ -5,23 +5,39 @@ use crate::collate::language;
 
 /// The decimal separator of language `lang` (a BCP 47 tag; `None` means English).
 pub fn decimal_separator(lang: Option<&str>) -> char {
-    let tag = lang.unwrap_or("").trim().to_ascii_lowercase().replace('_', "-");
+    let tag = lang
+        .unwrap_or("")
+        .trim()
+        .to_ascii_lowercase()
+        .replace('_', "-");
     // Regions that write a decimal point where the language usually writes a comma.
-    const POINT_REGIONS: &[&str] =
-        &["de-ch", "de-li", "it-ch", "es-mx", "es-us", "es-419", "es-pr", "es-do", "es-gt", "es-hn", "es-ni", "es-pa", "es-sv"];
-    if POINT_REGIONS.iter().any(|r| tag == *r || tag.starts_with(&format!("{r}-"))) {
+    const POINT_REGIONS: &[&str] = &[
+        "de-ch", "de-li", "it-ch", "es-mx", "es-us", "es-419", "es-pr", "es-do", "es-gt", "es-hn",
+        "es-ni", "es-pa", "es-sv",
+    ];
+    if POINT_REGIONS
+        .iter()
+        .any(|r| tag == *r || tag.starts_with(&format!("{r}-")))
+    {
         return '.';
     }
     const COMMA: &[&str] = &[
-        "af", "az", "be", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fi", "fo", "fr", "gl", "hr", "hu", "hy", "id", "is", "it",
-        "ka", "kk", "ky", "lb", "lt", "lv", "mk", "mn", "nb", "nl", "nn", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "tr", "uk",
-        "uz", "vi",
+        "af", "az", "be", "bg", "bs", "ca", "cs", "da", "de", "el", "es", "et", "eu", "fi", "fo",
+        "fr", "gl", "hr", "hu", "hy", "id", "is", "it", "ka", "kk", "ky", "lb", "lt", "lv", "mk",
+        "mn", "nb", "nl", "nn", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "tr",
+        "uk", "uz", "vi",
     ];
-    if COMMA.contains(&language(lang).as_str()) { ',' } else { '.' }
+    if COMMA.contains(&language(lang).as_str()) {
+        ','
+    } else {
+        '.'
+    }
 }
 
 const SPACES: &[char] = &[' ', '\u{a0}', '\u{202f}', '\u{2009}'];
-const CURRENCY: &[char] = &['$', '€', '£', '¥', '¢', '₽', '₴', '₺', '₹', '₩', '₪', '₫', '฿', '₱', '₸', '₼', '₾'];
+const CURRENCY: &[char] = &[
+    '$', '€', '£', '¥', '¢', '₽', '₴', '₺', '₹', '₩', '₪', '₫', '฿', '₱', '₸', '₼', '₾',
+];
 
 /// Strip a currency symbol or a short currency word (`zł`, `kr`, `PLN`) from either end.
 fn strip_currency(s: &str) -> &str {
@@ -53,7 +69,9 @@ fn grouped_digits(int: &str, groups: &[char]) -> Option<String> {
     let ok = (1..=3).contains(&first.len())
         && !first.starts_with('0')
         && first.chars().all(|c| c.is_ascii_digit())
-        && rest.iter().all(|g| g.len() == 3 && g.chars().all(|c| c.is_ascii_digit()));
+        && rest
+            .iter()
+            .all(|g| g.len() == 3 && g.chars().all(|c| c.is_ascii_digit()));
     ok.then(|| parts.concat())
 }
 
@@ -89,7 +107,10 @@ pub fn parse_number(s: &str, lang: Option<&str>) -> Option<f64> {
     let int_digits = match grouped_digits(int, &groups) {
         Some(d) => d,
         None if dec == ',' && frac.is_none() && int.matches('.').count() == 1 => {
-            return parse_number(&format!("{}{}", if neg { "-" } else { "" }, int.replace('.', ",")), lang);
+            return parse_number(
+                &format!("{}{}", if neg { "-" } else { "" }, int.replace('.', ",")),
+                lang,
+            );
         }
         None => return None,
     };
@@ -115,7 +136,11 @@ pub fn format_number(v: f64, lang: Option<&str>) -> String {
         return format!("{}", v as i64);
     }
     let s = format!("{v:.2}");
-    if decimal_separator(lang) == ',' { s.replace('.', ",") } else { s }
+    if decimal_separator(lang) == ',' {
+        s.replace('.', ",")
+    } else {
+        s
+    }
 }
 
 #[cfg(test)]
@@ -138,7 +163,11 @@ mod tests {
         // From review: ordinals, a leading zero, percentages and an en dash minus.
         assert_eq!(parse_number("1.", pl), Some(1.0), "a numbered column: 1.");
         assert_eq!(parse_number("10.", pl), Some(10.0));
-        assert_eq!(parse_number("0.125", pl), Some(0.125), "a leading 0 is never a group");
+        assert_eq!(
+            parse_number("0.125", pl),
+            Some(0.125),
+            "a leading 0 is never a group"
+        );
         assert_eq!(parse_number("0,125", pl), Some(0.125));
         assert_eq!(parse_number("12 %", pl), Some(12.0));
         assert_eq!(parse_number("12%", pl), Some(12.0));
@@ -167,7 +196,22 @@ mod tests {
 
     #[test]
     fn hostile_numbers_never_panic() {
-        for s in ["", "-", "+", ",", ".", "1e400", "inf", "NaN", "--1", "₽", "1 ,", " zł", "\u{2212}", "9".repeat(500).as_str()] {
+        for s in [
+            "",
+            "-",
+            "+",
+            ",",
+            ".",
+            "1e400",
+            "inf",
+            "NaN",
+            "--1",
+            "₽",
+            "1 ,",
+            " zł",
+            "\u{2212}",
+            "9".repeat(500).as_str(),
+        ] {
             for l in [None, Some("pl"), Some("en"), Some("")] {
                 let _ = parse_number(s, l);
             }

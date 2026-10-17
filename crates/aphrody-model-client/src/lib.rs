@@ -98,7 +98,12 @@ impl TokenUsage {
     /// Usage with only the three universally-reported counters set.
     #[must_use]
     pub fn new(input_tokens: u64, output_tokens: u64, total_tokens: u64) -> Self {
-        Self { input_tokens, output_tokens, total_tokens, ..Self::default() }
+        Self {
+            input_tokens,
+            output_tokens,
+            total_tokens,
+            ..Self::default()
+        }
     }
 }
 
@@ -195,7 +200,10 @@ impl ImageSource {
     /// Inline image from a media type and an already-encoded base64 payload.
     #[must_use]
     pub fn base64(mime: impl Into<String>, data: impl Into<String>) -> Self {
-        Self::Base64 { mime: mime.into(), data: data.into() }
+        Self::Base64 {
+            mime: mime.into(),
+            data: data.into(),
+        }
     }
 
     /// The `image_url` string OpenAI-compatible wires expect: a `data:` URL for
@@ -258,7 +266,11 @@ impl Part {
     /// A function call part.
     #[must_use]
     pub fn function_call(id: impl Into<String>, name: impl Into<String>, args: Value) -> Self {
-        Self::FunctionCall { id: id.into(), name: name.into(), args }
+        Self::FunctionCall {
+            id: id.into(),
+            name: name.into(),
+            args,
+        }
     }
 
     /// A function response part without images.
@@ -268,7 +280,12 @@ impl Part {
         name: impl Into<String>,
         response: Value,
     ) -> Self {
-        Self::FunctionResponse { id: id.into(), name: name.into(), response, images: Vec::new() }
+        Self::FunctionResponse {
+            id: id.into(),
+            name: name.into(),
+            response,
+            images: Vec::new(),
+        }
     }
 }
 
@@ -398,7 +415,10 @@ pub fn build_request_body(turn: &ChatTurn) -> Value {
     let mut body = serde_json::Map::new();
 
     if let Some(system) = &turn.system {
-        body.insert("systemInstruction".to_string(), json!({ "parts": [{ "text": system }] }));
+        body.insert(
+            "systemInstruction".to_string(),
+            json!({ "parts": [{ "text": system }] }),
+        );
     }
 
     let contents: Vec<Value> = turn
@@ -430,7 +450,10 @@ pub fn build_request_body(turn: &ChatTurn) -> Value {
                 })
             })
             .collect();
-        body.insert("tools".to_string(), json!([{ "function_declarations": decls }]));
+        body.insert(
+            "tools".to_string(),
+            json!([{ "function_declarations": decls }]),
+        );
     }
 
     for (key, value) in &turn.options.extra {
@@ -463,7 +486,7 @@ fn message_to_gemini_parts(message: &ChatMessage) -> Vec<Value> {
                 let signature = opaque.get(GEMINI_THOUGHT_SIGNATURE)?.as_str()?;
                 let call = opaque.get(GEMINI_SIGNATURE_FOR_CALL)?.as_str()?;
                 Some((call, signature))
-            },
+            }
             _ => None,
         })
         .collect();
@@ -475,27 +498,33 @@ fn message_to_gemini_parts(message: &ChatMessage) -> Vec<Value> {
             Part::Image(image) => parts.push(gemini_image_part(image)),
             Part::Reasoning { text, opaque } => {
                 let standalone = opaque.get(GEMINI_SIGNATURE_FOR_CALL).is_none();
-                if let (true, Some(signature)) =
-                    (standalone, opaque.get(GEMINI_THOUGHT_SIGNATURE).and_then(Value::as_str))
-                {
+                if let (true, Some(signature)) = (
+                    standalone,
+                    opaque.get(GEMINI_THOUGHT_SIGNATURE).and_then(Value::as_str),
+                ) {
                     parts.push(json!({
                         "text": text,
                         "thought": true,
                         "thoughtSignature": signature,
                     }));
                 }
-            },
+            }
             Part::FunctionCall { id, name, args } => {
                 let mut value = json!({ "functionCall": { "name": name, "args": args } });
                 if let Some((_, signature)) = call_signatures.iter().find(|(call, _)| call == id) {
                     value["thoughtSignature"] = json!(signature);
                 }
                 parts.push(value);
-            },
-            Part::FunctionResponse { name, response, images, .. } => {
+            }
+            Part::FunctionResponse {
+                name,
+                response,
+                images,
+                ..
+            } => {
                 parts.push(json!({ "functionResponse": { "name": name, "response": response } }));
                 parts.extend(images.iter().map(gemini_image_part));
-            },
+            }
         }
     }
     parts
@@ -507,7 +536,7 @@ fn gemini_image_part(image: &ImageSource) -> Value {
     match image {
         ImageSource::Base64 { mime, data } => {
             json!({ "inlineData": { "mimeType": mime, "data": data } })
-        },
+        }
         ImageSource::Url(url) => json!({ "text": format!("[image: {url}]") }),
     }
 }
@@ -527,7 +556,10 @@ fn gemini_generation_config(options: &TurnOptions) -> Option<Value> {
     }
     if let Some(schema) = &options.response_schema {
         config.insert("responseMimeType".to_string(), json!("application/json"));
-        config.insert("responseSchema".to_string(), sanitize_gemini_json_schema(schema.clone()));
+        config.insert(
+            "responseSchema".to_string(),
+            sanitize_gemini_json_schema(schema.clone()),
+        );
     }
     (!config.is_empty()).then_some(Value::Object(config))
 }
@@ -554,7 +586,7 @@ pub fn split_sse_events(buffer: &mut String) -> Vec<String> {
             _ => {
                 cursor += 1;
                 continue;
-            },
+            }
         };
         if cursor == line_start {
             let event = &buffer[event_start..previous_line_end.max(event_start)];
@@ -605,7 +637,10 @@ pub fn parse_sse_frame(json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> 
 
     // A standalone error object short-circuits.
     if let Some(err) = value.get("error").and_then(Value::as_object) {
-        let status = err.get("code").and_then(Value::as_u64).map_or(0, |c| c as u16);
+        let status = err
+            .get("code")
+            .and_then(Value::as_u64)
+            .map_or(0, |c| c as u16);
         let message = err
             .get("message")
             .and_then(Value::as_str)
@@ -616,16 +651,24 @@ pub fn parse_sse_frame(json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> 
 
     let mut events = Vec::new();
 
-    let candidate = value.get("candidates").and_then(Value::as_array).and_then(|c| c.first());
+    let candidate = value
+        .get("candidates")
+        .and_then(Value::as_array)
+        .and_then(|c| c.first());
 
     if let Some(candidate) = candidate
-        && let Some(parts) =
-            candidate.get("content").and_then(|c| c.get("parts")).and_then(Value::as_array)
+        && let Some(parts) = candidate
+            .get("content")
+            .and_then(|c| c.get("parts"))
+            .and_then(Value::as_array)
     {
         for part in parts {
             let signature = part.get(GEMINI_THOUGHT_SIGNATURE).and_then(Value::as_str);
             if let Some(text) = part.get("text").and_then(Value::as_str) {
-                let is_thought = part.get("thought").and_then(Value::as_bool).unwrap_or(false);
+                let is_thought = part
+                    .get("thought")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
                 if is_thought {
                     if !text.is_empty() {
                         events.push(ModelStreamEvent::ReasoningDelta(text.to_string()));
@@ -640,7 +683,11 @@ pub fn parse_sse_frame(json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> 
                     events.push(ModelStreamEvent::TextDelta(text.to_string()));
                 }
             } else if let Some(call) = part.get("functionCall").and_then(Value::as_object) {
-                let name = call.get("name").and_then(Value::as_str).unwrap_or_default().to_string();
+                let name = call
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string();
                 let arguments = call.get("args").cloned().unwrap_or(Value::Null);
                 let id = call
                     .get("id")
@@ -658,24 +705,51 @@ pub fn parse_sse_frame(json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> 
                         }),
                     });
                 }
-                events.push(ModelStreamEvent::ToolCall { id, name, arguments });
+                events.push(ModelStreamEvent::ToolCall {
+                    id,
+                    name,
+                    arguments,
+                });
             }
         }
     }
 
-    let finish_reason =
-        candidate.and_then(|c| c.get("finishReason")).and_then(Value::as_str).map(str::to_string);
+    let finish_reason = candidate
+        .and_then(|c| c.get("finishReason"))
+        .and_then(Value::as_str)
+        .map(str::to_string);
 
-    let usage = value.get("usageMetadata").and_then(Value::as_object).map(|u| TokenUsage {
-        input_tokens: u.get("promptTokenCount").and_then(Value::as_u64).unwrap_or(0),
-        output_tokens: u.get("candidatesTokenCount").and_then(Value::as_u64).unwrap_or(0),
-        total_tokens: u.get("totalTokenCount").and_then(Value::as_u64).unwrap_or(0),
-        cached_input_tokens: u.get("cachedContentTokenCount").and_then(Value::as_u64).unwrap_or(0),
-        reasoning_output_tokens: u.get("thoughtsTokenCount").and_then(Value::as_u64).unwrap_or(0),
-    });
+    let usage = value
+        .get("usageMetadata")
+        .and_then(Value::as_object)
+        .map(|u| TokenUsage {
+            input_tokens: u
+                .get("promptTokenCount")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+            output_tokens: u
+                .get("candidatesTokenCount")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+            total_tokens: u
+                .get("totalTokenCount")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+            cached_input_tokens: u
+                .get("cachedContentTokenCount")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+            reasoning_output_tokens: u
+                .get("thoughtsTokenCount")
+                .and_then(Value::as_u64)
+                .unwrap_or(0),
+        });
 
     if finish_reason.is_some() || usage.is_some() {
-        events.push(ModelStreamEvent::Completed { usage, finish_reason });
+        events.push(ModelStreamEvent::Completed {
+            usage,
+            finish_reason,
+        });
     }
 
     Ok(events)
@@ -757,7 +831,11 @@ impl ModelClient for GeminiClient {
             let message = resp.text().await.unwrap_or_default();
             return Err(ModelError::Api {
                 status: status.as_u16(),
-                message: if message.is_empty() { "request failed".to_string() } else { message },
+                message: if message.is_empty() {
+                    "request failed".to_string()
+                } else {
+                    message
+                },
             });
         }
 
@@ -876,7 +954,10 @@ mod tests {
         ChatTurn {
             system: Some("You are a helpful coding agent.".to_string()),
             messages: vec![
-                ChatMessage { role: Role::User, parts: vec![Part::Text("List files".to_string())] },
+                ChatMessage {
+                    role: Role::User,
+                    parts: vec![Part::Text("List files".to_string())],
+                },
                 ChatMessage {
                     role: Role::Model,
                     parts: vec![Part::function_call("call_1", "ls", json!({ "path": "." }))],
@@ -954,14 +1035,20 @@ mod tests {
         let got = build_request_body(&turn);
         assert!(got.get("systemInstruction").is_none());
         assert!(got.get("tools").is_none());
-        assert_eq!(got["contents"], json!([{ "role": "user", "parts": [{ "text": "hi" }] }]));
+        assert_eq!(
+            got["contents"],
+            json!([{ "role": "user", "parts": [{ "text": "hi" }] }])
+        );
     }
 
     /// Gemini pairs responses by name and order: call ids stay off the wire.
     #[test]
     fn gemini_body_carries_no_call_ids() {
         let body = build_request_body(&sample_turn()).to_string();
-        assert!(!body.contains("call_1"), "call id leaked into the Gemini body: {body}");
+        assert!(
+            !body.contains("call_1"),
+            "call id leaked into the Gemini body: {body}"
+        );
     }
 
     #[test]
@@ -1016,7 +1103,10 @@ mod tests {
         ],"role":"model"}}]}"#;
         let events = parse_sse_frame(frame).unwrap();
         assert_eq!(events.len(), 3);
-        assert_eq!(events[0], ModelStreamEvent::ReasoningDelta("planning".to_string()));
+        assert_eq!(
+            events[0],
+            ModelStreamEvent::ReasoningDelta("planning".to_string())
+        );
         let ModelStreamEvent::ToolCall { id, .. } = &events[2] else {
             panic!("expected ToolCall, got {:?}", events[2]);
         };
@@ -1029,7 +1119,10 @@ mod tests {
             messages: vec![ChatMessage {
                 role: Role::Model,
                 parts: vec![
-                    Part::Reasoning { text: String::new(), opaque: opaque.clone() },
+                    Part::Reasoning {
+                        text: String::new(),
+                        opaque: opaque.clone(),
+                    },
                     Part::Reasoning {
                         text: "foreign".to_string(),
                         opaque: json!({ "type": "reasoning", "encrypted_content": "x" }),
@@ -1067,7 +1160,10 @@ mod tests {
         let body = build_request_body(&turn);
         assert_eq!(body["generationConfig"]["temperature"], json!(0.5));
         assert_eq!(body["generationConfig"]["maxOutputTokens"], 256);
-        assert_eq!(body["generationConfig"]["responseMimeType"], "application/json");
+        assert_eq!(
+            body["generationConfig"]["responseMimeType"],
+            "application/json"
+        );
     }
 
     #[test]
@@ -1103,7 +1199,10 @@ mod tests {
                     response: json!({ "output": "a.rs" }),
                     images: vec![ImageSource::base64("image/png", "AAAA")],
                 },
-                Part::Reasoning { text: "t".to_string(), opaque: json!({ "k": 1 }) },
+                Part::Reasoning {
+                    text: "t".to_string(),
+                    opaque: json!({ "k": 1 }),
+                },
             ],
         };
         let wire = serde_json::to_value(&message).unwrap();
@@ -1129,7 +1228,10 @@ mod tests {
     fn parse_text_frame_yields_text_delta() {
         let frame = r#"{"candidates":[{"content":{"parts":[{"text":"Hello"}],"role":"model"}}]}"#;
         let events = parse_sse_frame(frame).unwrap();
-        assert_eq!(events, vec![ModelStreamEvent::TextDelta("Hello".to_string())]);
+        assert_eq!(
+            events,
+            vec![ModelStreamEvent::TextDelta("Hello".to_string())]
+        );
     }
 
     #[test]
@@ -1138,11 +1240,15 @@ mod tests {
         let events = parse_sse_frame(frame).unwrap();
         assert_eq!(events.len(), 1);
         match &events[0] {
-            ModelStreamEvent::ToolCall { id, name, arguments } => {
+            ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            } => {
                 assert!(id.starts_with("call_ls_"));
                 assert_eq!(name, "ls");
                 assert_eq!(*arguments, json!({ "path": "." }));
-            },
+            }
             other => panic!("expected ToolCall, got {other:?}"),
         }
     }
@@ -1174,7 +1280,7 @@ mod tests {
             ModelError::Api { status, message } => {
                 assert_eq!(status, 429);
                 assert_eq!(message, "rate limited");
-            },
+            }
             other => panic!("expected Api error, got {other:?}"),
         }
     }
@@ -1220,13 +1326,19 @@ mod tests {
                 assert!(buffer.trim().is_empty());
             }
         }
-        assert_eq!(sse_event_data("\u{feff}data: one\rdata\rdata: two"), "one\n\ntwo");
+        assert_eq!(
+            sse_event_data("\u{feff}data: one\rdata\rdata: two"),
+            "one\n\ntwo"
+        );
     }
 
     #[test]
     fn split_sse_ignores_repeated_leading_and_trailing_blank_lines() {
         let mut buffer = "\n\n\r\ndata: one\n\n\n\ndata: two\r\r\r".to_string();
-        assert_eq!(split_sse_events(&mut buffer), vec!["data: one", "data: two"]);
+        assert_eq!(
+            split_sse_events(&mut buffer),
+            vec!["data: one", "data: two"]
+        );
         assert!(buffer.is_empty());
     }
 
@@ -1270,6 +1382,9 @@ mod tests {
     #[test]
     fn build_stream_url_trims_trailing_slash() {
         let url = build_stream_url("https://proxy.local/", "m", "k");
-        assert_eq!(url, "https://proxy.local/v1beta/models/m:streamGenerateContent?alt=sse&key=k");
+        assert_eq!(
+            url,
+            "https://proxy.local/v1beta/models/m:streamGenerateContent?alt=sse&key=k"
+        );
     }
 }

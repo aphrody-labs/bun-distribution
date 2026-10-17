@@ -30,7 +30,12 @@ impl Context {
             pc: pc.wrapping_add(8 >> thumb as u8),
             branch_addr_base: None,
             thumb,
-            next_instr: Instr { addr: pc, raw: 0, opcode: String::new(), comment: String::new() },
+            next_instr: Instr {
+                addr: pc,
+                raw: 0,
+                opcode: String::new(),
+                comment: String::new(),
+            },
         }
     }
 
@@ -44,7 +49,11 @@ impl Context {
         loop {
             let raw_instr = if ARM9 {
                 let word = arm9::bus::read_32::<DebugCpuAccess, _, true>(emu, self.next_instr.addr);
-                if self.thumb { word >> ((self.next_instr.addr & 3) << 3) & 0xFFFF } else { word }
+                if self.thumb {
+                    word >> ((self.next_instr.addr & 3) << 3) & 0xFFFF
+                } else {
+                    word
+                }
             } else if self.thumb {
                 arm7::bus::read_16::<DebugCpuAccess, _>(emu, self.next_instr.addr) as u32
             } else {
@@ -78,7 +87,11 @@ impl Context {
     fn disassemble_single<E: Engine, const ARM9: bool>(mut self, emu: &mut Emu<E>) -> Instr {
         let raw_instr = if ARM9 {
             let word = arm9::bus::read_32::<DebugCpuAccess, _, true>(emu, self.next_instr.addr);
-            if self.thumb { word >> ((self.next_instr.addr & 3) << 3) & 0xFFFF } else { word }
+            if self.thumb {
+                word >> ((self.next_instr.addr & 3) << 3) & 0xFFFF
+            } else {
+                word
+            }
         } else if self.thumb {
             arm7::bus::read_16::<DebugCpuAccess, _>(emu, self.next_instr.addr) as u32
         } else {

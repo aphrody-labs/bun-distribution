@@ -70,7 +70,11 @@ struct Node {
 
 /// Fitness class 0 (tight) … 3 (very loose) of a line with adjustment ratio `r`.
 fn fitness(r: f64, ragged: bool) -> u8 {
-    let bounds = if ragged { [0.15, 0.4, 0.75] } else { [-0.5, 0.5, 1.0] };
+    let bounds = if ragged {
+        [0.15, 0.4, 0.75]
+    } else {
+        [-0.5, 0.5, 1.0]
+    };
     if r < bounds[0] {
         0
     } else if r <= bounds[1] {
@@ -116,11 +120,28 @@ pub(crate) fn compose(
         }
         b
     };
-    let mut all: Vec<Breakpoint> = cands.iter().copied().filter(|c| c.end > 0 && c.end < n).collect();
-    all.push(Breakpoint { end: n, hyphen: 0.0 });
-    let (adj_demerits, hyphen_penalty) =
-        if p.ragged { (ADJ_DEMERITS_RAGGED, HYPHEN_PENALTY_RAGGED) } else { (ADJ_DEMERITS_JUSTIFIED, HYPHEN_PENALTY) };
-    let mut nodes = vec![Node { pos: 0, line: 0, fitness: 1, demerits: 0.0, hyphenated: false, prev: None }];
+    let mut all: Vec<Breakpoint> = cands
+        .iter()
+        .copied()
+        .filter(|c| c.end > 0 && c.end < n)
+        .collect();
+    all.push(Breakpoint {
+        end: n,
+        hyphen: 0.0,
+    });
+    let (adj_demerits, hyphen_penalty) = if p.ragged {
+        (ADJ_DEMERITS_RAGGED, HYPHEN_PENALTY_RAGGED)
+    } else {
+        (ADJ_DEMERITS_JUSTIFIED, HYPHEN_PENALTY)
+    };
+    let mut nodes = vec![Node {
+        pos: 0,
+        line: 0,
+        fitness: 1,
+        demerits: 0.0,
+        hyphenated: false,
+        prev: None,
+    }];
     let mut active: Vec<usize> = vec![0];
     for bp in &all {
         let last = bp.end == n;
@@ -154,7 +175,11 @@ pub(crate) fn compose(
                         f64::INFINITY
                     }
                 } else if natural > lw {
-                    if spaces > 0.0 { (lw - natural) / (spaces * SHRINK) } else { f64::NEG_INFINITY }
+                    if spaces > 0.0 {
+                        (lw - natural) / (spaces * SHRINK)
+                    } else {
+                        f64::NEG_INFINITY
+                    }
                 } else {
                     0.0
                 }
@@ -165,17 +190,27 @@ pub(crate) fn compose(
             }
             keep.push(ai);
             let free_last = last && (p.ragged || !p.justify_last);
-            if ratio > p.tolerance && !(last && (p.ragged || (ratio.is_infinite() && p.justify_last))) {
+            if ratio > p.tolerance
+                && !(last && (p.ragged || (ratio.is_infinite() && p.justify_last)))
+            {
                 continue;
             }
-            let badness = if ratio.is_finite() { (100.0 * ratio.abs().powi(3)).min(10_000.0) } else { 10_000.0 };
+            let badness = if ratio.is_finite() {
+                (100.0 * ratio.abs().powi(3)).min(10_000.0)
+            } else {
+                10_000.0
+            };
             let penalty = if bp.hyphen > 0.0 { hyphen_penalty } else { 0.0 };
             let mut d = (LINE_PENALTY + badness).powi(2) + penalty * penalty;
             if bp.hyphen > 0.0 && a.hyphenated {
                 d += DOUBLE_HYPHEN_DEMERITS;
             }
             // A ragged last line's length says nothing about the rag: it keeps its neighbour's class.
-            let fit = if p.ragged && free_last { a.fitness } else { fitness(ratio, p.ragged) };
+            let fit = if p.ragged && free_last {
+                a.fitness
+            } else {
+                fitness(ratio, p.ragged)
+            };
             if a.prev.is_some() && fit.abs_diff(a.fitness) > 1 {
                 d += adj_demerits;
             }
@@ -189,14 +224,26 @@ pub(crate) fn compose(
         }
         active = keep;
         for (line, fitness, demerits, from) in best {
-            nodes.push(Node { pos: bp.end, line, fitness, demerits, hyphenated: bp.hyphen > 0.0, prev: Some(from) });
+            nodes.push(Node {
+                pos: bp.end,
+                line,
+                fitness,
+                demerits,
+                hyphenated: bp.hyphen > 0.0,
+                prev: Some(from),
+            });
             active.push(nodes.len() - 1);
         }
         if active.is_empty() || active.len() > MAX_ACTIVE {
             return None;
         }
     }
-    let end = nodes.iter().enumerate().filter(|(_, nd)| nd.pos == n && nd.prev.is_some()).min_by(|a, b| a.1.demerits.total_cmp(&b.1.demerits))?.0;
+    let end = nodes
+        .iter()
+        .enumerate()
+        .filter(|(_, nd)| nd.pos == n && nd.prev.is_some())
+        .min_by(|a, b| a.1.demerits.total_cmp(&b.1.demerits))?
+        .0;
     let mut out = vec![];
     let mut cur = Some(end);
     while let Some(i) = cur {

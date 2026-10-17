@@ -23,7 +23,12 @@ pub struct ResolvedVar {
 }
 
 fn plain(canonical: CanonicalEnv, value: Option<String>) -> ResolvedVar {
-    ResolvedVar { canonical: canonical.canonical, value, secret: false, note: None }
+    ResolvedVar {
+        canonical: canonical.canonical,
+        value,
+        secret: false,
+        note: None,
+    }
 }
 
 /// The binary reachable from this running process: an explicit env override,
@@ -39,12 +44,18 @@ fn resolve_binary(
         .resolve()
         .or_else(|| {
             if self_is_current_exe {
-                std::env::current_exe().ok().map(|path| path.display().to_string())
+                std::env::current_exe()
+                    .ok()
+                    .map(|path| path.display().to_string())
             } else {
                 sibling_binary(sibling_name)
             }
         })
-        .or_else(|| which::which(sibling_name).ok().map(|path| path.display().to_string()));
+        .or_else(|| {
+            which::which(sibling_name)
+                .ok()
+                .map(|path| path.display().to_string())
+        });
     plain(canonical, value)
 }
 
@@ -63,13 +74,17 @@ fn sibling_binary(name: &str) -> Option<String> {
 /// contract allows in place of a hardcoded port, CLAUDE.md §7). `None` when
 /// neither resolves: never a guessed literal.
 fn base_url_for(role: Role, canonical: CanonicalEnv) -> Option<String> {
-    canonical.resolve().or_else(|| discover_running(role).map(|state| state.base_url()))
+    canonical
+        .resolve()
+        .or_else(|| discover_running(role).map(|state| state.base_url()))
 }
 
 /// A role's model id: the canonical name or an alias, else the local
 /// catalog's default for `role`.
 fn role_model(role: LocalRole, canonical: CanonicalEnv) -> String {
-    canonical.resolve().unwrap_or_else(|| role.default_model().to_owned())
+    canonical
+        .resolve()
+        .unwrap_or_else(|| role.default_model().to_owned())
 }
 
 /// The vector width of `model`: an explicit override
@@ -109,44 +124,76 @@ pub fn resolve() -> Vec<ResolvedVar> {
             value: None,
             secret: true,
             note: Some(if ai_env::HTTP_TOKEN.resolve().is_some() {
-                format!("set via {}", ai_env::HTTP_TOKEN.resolve_source().unwrap_or_default())
+                format!(
+                    "set via {}",
+                    ai_env::HTTP_TOKEN.resolve_source().unwrap_or_default()
+                )
             } else {
                 "not configured on this machine (vps-only capability); see \
                  /etc/aphrody/shenron-compute-client.env on the vps target"
                     .to_owned()
             }),
         },
-        plain(ai_env::CHAT_BASE_URL, base_url_for(Role::Chat, ai_env::CHAT_BASE_URL)),
-        plain(ai_env::CHAT_MODEL, Some(role_model(LocalRole::Chat, ai_env::CHAT_MODEL))),
+        plain(
+            ai_env::CHAT_BASE_URL,
+            base_url_for(Role::Chat, ai_env::CHAT_BASE_URL),
+        ),
+        plain(
+            ai_env::CHAT_MODEL,
+            Some(role_model(LocalRole::Chat, ai_env::CHAT_MODEL)),
+        ),
         ResolvedVar {
             canonical: ai_env::CHAT_API_KEY.canonical,
             value: None,
             secret: true,
-            note: Some(if let Some(source) = ai_env::CHAT_API_KEY.resolve_source() {
-                format!("set via {source}")
-            } else {
-                "not configured; keep upstream credentials in the host's protected environment store"
+            note: Some(
+                if let Some(source) = ai_env::CHAT_API_KEY.resolve_source() {
+                    format!("set via {source}")
+                } else {
+                    "not configured; keep upstream credentials in the host's protected environment store"
                     .to_owned()
-            }),
+                },
+            ),
         },
-        plain(ai_env::CODE_MODEL, Some(role_model(LocalRole::Code, ai_env::CODE_MODEL))),
+        plain(
+            ai_env::CODE_MODEL,
+            Some(role_model(LocalRole::Code, ai_env::CODE_MODEL)),
+        ),
         plain(
             ai_env::REASONING_MODEL,
             Some(role_model(LocalRole::Reasoning, ai_env::REASONING_MODEL)),
         ),
-        plain(ai_env::SMALL_MODEL, Some(role_model(LocalRole::Small, ai_env::SMALL_MODEL))),
+        plain(
+            ai_env::SMALL_MODEL,
+            Some(role_model(LocalRole::Small, ai_env::SMALL_MODEL)),
+        ),
         // No `Role::Vision` exists in `aphrody-llama-server` (only Chat / Embed
         // / Rerank instances are supervised): a running chat-role instance is
         // not reliably vision-capable, so this is environment-only, never a
         // guess at what the current chat instance happens to be serving.
         plain(ai_env::VISION_BASE_URL, ai_env::VISION_BASE_URL.resolve()),
-        plain(ai_env::VISION_MODEL, Some(role_model(LocalRole::Vision, ai_env::VISION_MODEL))),
-        plain(ai_env::OCR_MODEL, Some(role_model(LocalRole::Ocr, ai_env::OCR_MODEL))),
-        plain(ai_env::STT_MODEL, Some(role_model(LocalRole::Stt, ai_env::STT_MODEL))),
-        plain(ai_env::EMBED_BASE_URL, base_url_for(Role::Embed, ai_env::EMBED_BASE_URL)),
+        plain(
+            ai_env::VISION_MODEL,
+            Some(role_model(LocalRole::Vision, ai_env::VISION_MODEL)),
+        ),
+        plain(
+            ai_env::OCR_MODEL,
+            Some(role_model(LocalRole::Ocr, ai_env::OCR_MODEL)),
+        ),
+        plain(
+            ai_env::STT_MODEL,
+            Some(role_model(LocalRole::Stt, ai_env::STT_MODEL)),
+        ),
+        plain(
+            ai_env::EMBED_BASE_URL,
+            base_url_for(Role::Embed, ai_env::EMBED_BASE_URL),
+        ),
         plain(ai_env::EMBED_MODEL, Some(embed_model.clone())),
         plain(ai_env::EMBED_DIMENSIONS, embed_dimensions(&embed_model)),
-        plain(ai_env::RERANK_BASE_URL, base_url_for(Role::Rerank, ai_env::RERANK_BASE_URL)),
+        plain(
+            ai_env::RERANK_BASE_URL,
+            base_url_for(Role::Rerank, ai_env::RERANK_BASE_URL),
+        ),
         plain(ai_env::RERANK_MODEL, Some(rerank_model)),
     ]
 }
@@ -184,7 +231,9 @@ pub fn to_env_lines(resolved: &[ResolvedVar]) -> String {
             (None, false) => out.push_str(&format!(
                 "# {}=  # {}\n",
                 var.canonical,
-                var.note.as_deref().unwrap_or("not configured on this machine")
+                var.note
+                    .as_deref()
+                    .unwrap_or("not configured on this machine")
             )),
         }
     }
@@ -201,7 +250,7 @@ pub fn to_nu_lines(resolved: &[ResolvedVar]) -> String {
                     var.canonical,
                     value.replace('"', "\\\"")
                 ));
-            },
+            }
             _ => out.push_str(&format!("# {} not set\n", var.canonical)),
         }
     }
@@ -218,7 +267,7 @@ pub fn to_pwsh_lines(resolved: &[ResolvedVar]) -> String {
                     var.canonical,
                     value.replace('"', "`\"")
                 ));
-            },
+            }
             _ => out.push_str(&format!("# {} not set\n", var.canonical)),
         }
     }
@@ -231,10 +280,15 @@ pub fn to_json(resolved: &[ResolvedVar]) -> serde_json::Value {
     for var in resolved {
         env.insert(
             var.canonical.to_owned(),
-            var.value.clone().map_or(serde_json::Value::Null, serde_json::Value::String),
+            var.value
+                .clone()
+                .map_or(serde_json::Value::Null, serde_json::Value::String),
         );
         if let Some(note) = &var.note {
-            notes.insert(var.canonical.to_owned(), serde_json::Value::String(note.clone()));
+            notes.insert(
+                var.canonical.to_owned(),
+                serde_json::Value::String(note.clone()),
+            );
         }
     }
     serde_json::json!({
@@ -270,12 +324,18 @@ pub fn publish() -> miette::Result<Published> {
     let json_path = dir.join("local-ai.json");
     let env_path = dir.join("local-ai.env");
     let json = to_json(&resolved);
-    std::fs::write(&json_path, serde_json::to_string_pretty(&json).into_diagnostic()?)
-        .into_diagnostic()?;
+    std::fs::write(
+        &json_path,
+        serde_json::to_string_pretty(&json).into_diagnostic()?,
+    )
+    .into_diagnostic()?;
     std::fs::write(&env_path, to_env_lines(&resolved)).into_diagnostic()?;
     eprintln!("wrote {}", json_path.display());
     eprintln!("wrote {}", env_path.display());
-    Ok(Published { vars: resolved, json })
+    Ok(Published {
+        vars: resolved,
+        json,
+    })
 }
 
 /// `aphrody ai env` as a JSON document (also writes the files).
@@ -305,7 +365,10 @@ mod tests {
     fn gateway_and_chat_credentials_never_carry_values() {
         let resolved = resolve();
         for credential in [ai_env::HTTP_TOKEN, ai_env::CHAT_API_KEY] {
-            let token = resolved.iter().find(|var| var.canonical == credential.canonical).unwrap();
+            let token = resolved
+                .iter()
+                .find(|var| var.canonical == credential.canonical)
+                .unwrap();
             assert!(token.secret);
             assert_eq!(token.value, None);
             assert!(token.note.is_some());
@@ -329,8 +392,14 @@ mod tests {
     fn json_rendering_never_inlines_gateway_or_chat_credential_values() {
         let resolved = resolve();
         let json = to_json(&resolved);
-        assert_eq!(json["env"][ai_env::HTTP_TOKEN.canonical], serde_json::Value::Null);
-        assert_eq!(json["env"][ai_env::CHAT_API_KEY.canonical], serde_json::Value::Null);
+        assert_eq!(
+            json["env"][ai_env::HTTP_TOKEN.canonical],
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            json["env"][ai_env::CHAT_API_KEY.canonical],
+            serde_json::Value::Null
+        );
         assert_eq!(json["schemaVersion"], 1);
     }
 
@@ -358,8 +427,10 @@ mod tests {
                 }
             }
         }
-        let actual: BTreeSet<String> =
-            resolve().into_iter().map(|var| var.canonical.to_owned()).collect();
+        let actual: BTreeSet<String> = resolve()
+            .into_iter()
+            .map(|var| var.canonical.to_owned())
+            .collect();
         assert_eq!(actual, expected);
     }
 }

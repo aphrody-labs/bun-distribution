@@ -71,7 +71,12 @@ fn main() {
     let mut equipe = String::from("Solaria-Zeus");
     let a_blanc = args.iter().any(|a| a == "--a-blanc");
     args.retain(|a| a != "--a-blanc");
-    for (drapeau, cible) in [("--dir", 0), ("--postes", 1), ("--aura", 2), ("--equipe", 3)] {
+    for (drapeau, cible) in [
+        ("--dir", 0),
+        ("--postes", 1),
+        ("--aura", 2),
+        ("--equipe", 3),
+    ] {
         if let Some(i) = args.iter().position(|a| a == drapeau) {
             let v = args.get(i + 1).cloned().unwrap_or_default();
             match cible {
@@ -85,7 +90,7 @@ fn main() {
                         .and_then(|h| u32::from_str_radix(h, 16).ok())
                         .or_else(|| t.parse().ok())
                         .unwrap_or(aura);
-                },
+                }
                 _ => equipe = v,
             }
             args.drain(i..=i + 1);
@@ -98,7 +103,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
     let textes = charger_textes(&vfs, "fr");
 
@@ -137,14 +142,22 @@ fn main() {
                 let rdbn = cfgbin::parse(&d).ok()?;
                 let listes = cfgbin::read_values(&rdbn, &d);
                 listes.iter().flat_map(|l| l.rows.iter()).find_map(|row| {
-                    let champ =
-                        |n: &str| row.fields.iter().find(|(k, _)| k == n).map(|(_, v)| v).cloned();
+                    let champ = |n: &str| {
+                        row.fields
+                            .iter()
+                            .find(|(k, _)| k == n)
+                            .map(|(_, v)| v)
+                            .cloned()
+                    };
                     let (Some(cfgbin::RdbnValue::Hash(id)), Some(cfgbin::RdbnValue::Hash(t))) =
                         (champ("belongTeamId"), champ("teamNameTextId"))
                     else {
                         return None;
                     };
-                    textes.get(&t).filter(|n| n.eq_ignore_ascii_case(&equipe)).map(|_| id)
+                    textes
+                        .get(&t)
+                        .filter(|n| n.eq_ignore_ascii_case(&equipe))
+                        .map(|_| id)
                 })
             });
         match trouve {
@@ -155,12 +168,17 @@ fn main() {
                      donne son nom exact, ou son belongTeamId (--equipe 0x33662B61)"
                 );
                 std::process::exit(1);
-            },
+            }
         }
     };
-    let membres: Vec<&aphrody_nie_data::chara_base::CharaBase> =
-        bases.iter().filter(|b| b.belong_team_id.is_some_and(|t| t.0 == team_id)).collect();
-    println!("équipe   « {equipe} » (0x{team_id:08X}) — {} membre(s)", membres.len());
+    let membres: Vec<&aphrody_nie_data::chara_base::CharaBase> = bases
+        .iter()
+        .filter(|b| b.belong_team_id.is_some_and(|t| t.0 == team_id))
+        .collect();
+    println!(
+        "équipe   « {equipe} » (0x{team_id:08X}) — {} membre(s)",
+        membres.len()
+    );
     if membres.is_empty() {
         eprintln!("aucun membre pour cet identifiant d'équipe");
         std::process::exit(1);
@@ -242,7 +260,7 @@ fn main() {
                 (Some(0), Some(0)) => {
                     pose = Some(i);
                     break;
-                },
+                }
                 (Some(_), Some(_)) => i += 2,
                 // Sortie du bloc d'entiers (chaîne ou flottant) : plus de paires à examiner.
                 _ => break,
@@ -262,7 +280,11 @@ fn main() {
             var.offset
         ));
         // Niveau d'apprentissage 1 : l'aura est acquise d'emblée.
-        modifs.push(ModifT2b { entree: e.index, variable: idx, valeur: ValT2b::Entier(1) });
+        modifs.push(ModifT2b {
+            entree: e.index,
+            variable: idx,
+            valeur: ValT2b::Entier(1),
+        });
         modifs.push(ModifT2b {
             entree: e.index,
             variable: idx + 1,
@@ -282,11 +304,18 @@ fn main() {
                  nie mod add -d {dir} {f_param}"
             );
             std::process::exit(1);
-        },
+        }
     };
 
-    println!("\n╔═ {}", f_param.trim_start_matches("data/common/gamedata/"));
-    println!("║ vanilla  {} o  sha256 {}", data_param.len(), &sha256(&data_param)[..16]);
+    println!(
+        "\n╔═ {}",
+        f_param.trim_start_matches("data/common/gamedata/")
+    );
+    println!(
+        "║ vanilla  {} o  sha256 {}",
+        data_param.len(),
+        &sha256(&data_param)[..16]
+    );
     for l in &journal {
         println!("║{l}");
     }
@@ -295,12 +324,20 @@ fn main() {
         eprintln!("║ ÉCHEC : {e}");
         std::process::exit(1);
     });
-    let diffs = data_param.iter().zip(data.iter()).filter(|(a, b)| a != b).count();
+    let diffs = data_param
+        .iter()
+        .zip(data.iter())
+        .filter(|(a, b)| a != b)
+        .count();
     println!(
         "║ patché   {} o  sha256 {}\n║ taille   {}\n║ octets   {diffs} différents du vanilla pour {} champ(s)",
         data.len(),
         &sha256(&data)[..16],
-        if verif.taille_preservee() { "PRÉSERVÉE" } else { "MODIFIÉE — anormal" },
+        if verif.taille_preservee() {
+            "PRÉSERVÉE"
+        } else {
+            "MODIFIÉE — anormal"
+        },
         modifs.len()
     );
     if diffs > modifs.len() * 4 {
@@ -317,6 +354,6 @@ fn main() {
         Err(e) => {
             eprintln!("╚═ écriture impossible : {e}");
             std::process::exit(1);
-        },
+        }
     }
 }

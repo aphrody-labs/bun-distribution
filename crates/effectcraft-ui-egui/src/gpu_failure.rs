@@ -29,11 +29,18 @@ pub struct GpuFailureBridge {
 
 impl GpuFailureBridge {
     pub fn new(ctx: &egui::Context) -> Self {
-        Self { state: Arc::default(), ctx: ctx.clone() }
+        Self {
+            state: Arc::default(),
+            ctx: ctx.clone(),
+        }
     }
 
     pub fn failure(&self) -> Option<GpuFailure> {
-        self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner).failure.clone()
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .failure
+            .clone()
     }
 
     /// Forward to a compositor's weak notifier once construction succeeds. A fault that
@@ -41,7 +48,10 @@ impl GpuFailureBridge {
     pub fn forward_to(&self, notifier: impl Fn(String) + Send + Sync + 'static) {
         let notifier: Notifier = Arc::new(notifier);
         let failure = {
-            let mut state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.notifier = Some(notifier.clone());
             state.failure.clone()
         };
@@ -54,15 +64,24 @@ impl GpuFailureBridge {
     /// notification escalates the recovery message without completing pending work twice.
     pub fn report(&self, reason: &str, presentation_lost: bool) -> bool {
         let (notification, changed) = {
-            let mut state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if let Some(failure) = &mut state.failure {
                 let changed = presentation_lost && !failure.presentation_lost;
                 failure.presentation_lost |= presentation_lost;
                 (None, changed)
             } else {
                 let reason: String = reason.chars().take(2048).collect();
-                state.failure = Some(GpuFailure { reason: reason.clone(), presentation_lost });
-                (state.notifier.clone().map(|notifier| (notifier, reason)), true)
+                state.failure = Some(GpuFailure {
+                    reason: reason.clone(),
+                    presentation_lost,
+                });
+                (
+                    state.notifier.clone().map(|notifier| (notifier, reason)),
+                    true,
+                )
             }
         };
         if let Some((notifier, reason)) = notification {
@@ -98,7 +117,10 @@ mod tests {
         let copy = observed.clone();
         let probe = Arc::downgrade(&bridge.state);
         bridge.forward_to(move |reason| {
-            assert!(probe.upgrade().unwrap().try_lock().is_ok(), "consumer runs outside bridge lock");
+            assert!(
+                probe.upgrade().unwrap().try_lock().is_ok(),
+                "consumer runs outside bridge lock"
+            );
             copy.lock().unwrap().push(reason);
         });
         assert_eq!(*observed.lock().unwrap(), ["pipeline allocation failed"]);

@@ -40,7 +40,11 @@ struct RootedFs<'a, F: PatchFileSystem> {
 impl<F: PatchFileSystem> RootedFs<'_, F> {
     /// Join `path` onto `root` unless it is already absolute.
     fn resolve(&self, path: &Path) -> PathBuf {
-        if path.is_absolute() { path.to_path_buf() } else { self.root.join(path) }
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            self.root.join(path)
+        }
     }
 }
 
@@ -101,7 +105,10 @@ impl<F: PatchFileSystem> ApplyPatchTool<F> {
     /// (used to drive the tool against in-memory or sandboxed backends).
     #[must_use]
     pub fn with_fs(fs: F) -> Self {
-        Self { definition: build_definition(), fs }
+        Self {
+            definition: build_definition(),
+            fs,
+        }
     }
 }
 
@@ -135,7 +142,10 @@ fn build_definition() -> ToolDefinition {
     let mut output_properties = BTreeMap::new();
     output_properties.insert(
         "added".to_string(),
-        JsonSchema::array(JsonSchema::string(None), Some("Created file paths.".to_string())),
+        JsonSchema::array(
+            JsonSchema::string(None),
+            Some("Created file paths.".to_string()),
+        ),
     );
     output_properties.insert(
         "modified".to_string(),
@@ -153,7 +163,11 @@ fn build_definition() -> ToolDefinition {
     );
     let output_schema = JsonSchema::object(
         output_properties,
-        Some(vec!["added".to_string(), "modified".to_string(), "deleted".to_string()]),
+        Some(vec![
+            "added".to_string(),
+            "modified".to_string(),
+            "deleted".to_string(),
+        ]),
         Some(AdditionalProperties::Boolean(true)),
     );
 
@@ -170,7 +184,11 @@ fn build_definition() -> ToolDefinition {
 /// Render an [`AppliedSummary`] as a compact human/JSON-friendly report.
 fn summarize(summary: &AppliedSummary) -> String {
     fn join(paths: &[PathBuf]) -> String {
-        paths.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ")
+        paths
+            .iter()
+            .map(|p| p.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 
     let total = summary.added.len() + summary.modified.len() + summary.deleted.len();
@@ -204,17 +222,22 @@ impl<F: PatchFileSystem + Send + Sync> ToolExecutor for ApplyPatchTool<F> {
         let parsed = match parse_patch(&args.patch) {
             Ok(parsed) => parsed,
             Err(err) => {
-                return Ok(ToolOutput::error(format!("apply_patch: parse error: {err}")));
-            },
+                return Ok(ToolOutput::error(format!(
+                    "apply_patch: parse error: {err}"
+                )));
+            }
         };
 
         // Resolve relative paths against `cwd` when one is provided, otherwise
         // apply against the inner filesystem verbatim (its own notion of cwd).
         let result = match args.cwd {
             Some(cwd) => {
-                let rooted = RootedFs { root: PathBuf::from(cwd), inner: &self.fs };
+                let rooted = RootedFs {
+                    root: PathBuf::from(cwd),
+                    inner: &self.fs,
+                };
                 apply_patch(&parsed, &rooted)
-            },
+            }
             None => apply_patch(&parsed, &self.fs),
         };
 

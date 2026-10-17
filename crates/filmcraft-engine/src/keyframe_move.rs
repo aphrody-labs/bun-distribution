@@ -26,10 +26,18 @@ struct Key {
 type Lane = (u64, usize, Option<usize>, String);
 
 fn param_mut<'a>(sequence: &'a mut Sequence, lane: &Lane) -> Result<&'a mut Param> {
-    let (_, it) = sequence.find_item_mut(ClipId(lane.0)).ok_or_else(|| bad(COMMAND, "clip does not exist"))?;
-    let effect = it.effects.get_mut(lane.1).ok_or_else(|| bad(COMMAND, "effect does not exist"))?;
+    let (_, it) = sequence
+        .find_item_mut(ClipId(lane.0))
+        .ok_or_else(|| bad(COMMAND, "clip does not exist"))?;
+    let effect = it
+        .effects
+        .get_mut(lane.1)
+        .ok_or_else(|| bad(COMMAND, "effect does not exist"))?;
     match lane.2 {
-        Some(mask) => effect.masks.get_mut(mask).and_then(|m| m.param_mut(&lane.3)),
+        Some(mask) => effect
+            .masks
+            .get_mut(mask)
+            .and_then(|m| m.param_mut(&lane.3)),
         None => effect.params.get_mut(&lane.3),
     }
     .ok_or_else(|| bad(COMMAND, "parameter does not exist"))
@@ -40,12 +48,19 @@ fn direction(it: &TrackItem) -> f64 {
 }
 
 pub(crate) fn move_many(s: &mut Session, p: &Value) -> Result<Value> {
-    let raw = p.get("keyframes").and_then(Value::as_array).ok_or_else(|| bad(COMMAND, "need keyframes"))?;
+    let raw = p
+        .get("keyframes")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(COMMAND, "need keyframes"))?;
     if raw.is_empty() || raw.len() > MAX_KEYS {
         return Err(bad(COMMAND, "keyframe count must be between 1 and 4096"));
     }
-    let requested = p.get("delta").and_then(Value::as_i64).ok_or_else(|| bad(COMMAND, "need an integer timeline delta"))?;
-    let mut keys: Vec<Key> = serde_json::from_value(Value::Array(raw.clone())).map_err(|_| bad(COMMAND, "invalid keyframe reference"))?;
+    let requested = p
+        .get("delta")
+        .and_then(Value::as_i64)
+        .ok_or_else(|| bad(COMMAND, "need an integer timeline delta"))?;
+    let mut keys: Vec<Key> = serde_json::from_value(Value::Array(raw.clone()))
+        .map_err(|_| bad(COMMAND, "invalid keyframe reference"))?;
     let mut unique = HashSet::new();
     let mut saved = Vec::with_capacity(keys.len());
     let q = s.active_sequence().ok_or(crate::EngineError::NoSequence)?;
@@ -55,14 +70,23 @@ pub(crate) fn move_many(s: &mut Session, p: &Value) -> Result<Value> {
         if key.param.len() > 256 || !unique.insert(key.clone()) {
             return Err(bad(COMMAND, "duplicate or invalid keyframe reference"));
         }
-        let (_, it) = q.find_item(ClipId(key.clip)).ok_or_else(|| bad(COMMAND, "clip does not exist"))?;
-        let effect = it.effects.get(key.effect).ok_or_else(|| bad(COMMAND, "effect does not exist"))?;
+        let (_, it) = q
+            .find_item(ClipId(key.clip))
+            .ok_or_else(|| bad(COMMAND, "clip does not exist"))?;
+        let effect = it
+            .effects
+            .get(key.effect)
+            .ok_or_else(|| bad(COMMAND, "effect does not exist"))?;
         let param = match key.mask {
             Some(mask) => effect.masks.get(mask).and_then(|m| m.param(&key.param)),
             None => effect.params.get(&key.param),
         }
         .ok_or_else(|| bad(COMMAND, "parameter does not exist"))?;
-        let k = param.keyframes.iter().find(|k| k.time == key.time).ok_or_else(|| bad(COMMAND, "keyframe does not exist"))?;
+        let k = param
+            .keyframes
+            .iter()
+            .find(|k| k.time == key.time)
+            .ok_or_else(|| bad(COMMAND, "keyframe does not exist"))?;
         let speed = direction(it);
         if !speed.is_finite() || speed == 0.0 || it.duration < frame {
             return Err(bad(COMMAND, "clip has no movable keyframe range"));
@@ -90,7 +114,10 @@ pub(crate) fn move_many(s: &mut Session, p: &Value) -> Result<Value> {
         let from = key.time;
         k.time += Tick((delta as f64 * speed).round() as i64);
         key.time = k.time;
-        lanes.entry((key.clip, key.effect, key.mask, key.param.clone())).or_default().push((from, k));
+        lanes
+            .entry((key.clip, key.effect, key.mask, key.param.clone()))
+            .or_default()
+            .push((from, k));
     }
     s.edit_sequence("Move Keyframes", |sequence, _, _| {
         for (lane, moved) in lanes {
@@ -99,7 +126,9 @@ pub(crate) fn move_many(s: &mut Session, p: &Value) -> Result<Value> {
             let to: HashSet<_> = moved.iter().map(|(_, k)| k.time).collect();
             // Remove all originals before inserting any destination: selected keys can move into
             // each other's old positions without overwriting a key still waiting to be moved.
-            param.keyframes.retain(|k| !from.contains(&k.time) && !to.contains(&k.time));
+            param
+                .keyframes
+                .retain(|k| !from.contains(&k.time) && !to.contains(&k.time));
             param.keyframes.extend(moved.into_iter().map(|(_, k)| k));
             param.keyframes.sort_by_key(|k| k.time);
         }
@@ -119,18 +148,34 @@ mod tests {
         let clip = s.active_sequence().unwrap().video_tracks[0].items[0].id;
         let mut keys = Vec::new();
         for (param, seconds) in [("scale", 0.5), ("scale", 1.0), ("rotation", 1.5)] {
-            s.execute("playhead.set", json!({"seconds":seconds})).unwrap();
-            s.execute("effects.addKeyframe", json!({"clip":clip.0,"effect":"motion","param":param})).unwrap();
+            s.execute("playhead.set", json!({"seconds":seconds}))
+                .unwrap();
+            s.execute(
+                "effects.addKeyframe",
+                json!({"clip":clip.0,"effect":"motion","param":param}),
+            )
+            .unwrap();
             let it = s.active_sequence().unwrap().find_item(clip).unwrap().1;
-            let effect = it.effects.iter().position(|e| e.effect == "motion").unwrap();
+            let effect = it
+                .effects
+                .iter()
+                .position(|e| e.effect == "motion")
+                .unwrap();
             keys.push(json!({"clip":clip.0,"effect":effect,"param":param,"time":it.source_time_at(s.playhead()).0}));
         }
         (s, keys)
     }
 
     fn values(s: &Session, key: &Value) -> Vec<Keyframe> {
-        let it = s.active_sequence().unwrap().find_item(ClipId(key["clip"].as_u64().unwrap())).unwrap().1;
-        it.effects[key["effect"].as_u64().unwrap() as usize].params[key["param"].as_str().unwrap()].keyframes.clone()
+        let it = s
+            .active_sequence()
+            .unwrap()
+            .find_item(ClipId(key["clip"].as_u64().unwrap()))
+            .unwrap()
+            .1;
+        it.effects[key["effect"].as_u64().unwrap() as usize].params[key["param"].as_str().unwrap()]
+            .keyframes
+            .clone()
     }
 
     #[test]
@@ -141,21 +186,32 @@ mod tests {
         let undo = s.history.undo.len();
         // Scale's first key moves into the second one's old position. Both must survive.
         let delta = before[1].time - before[0].time;
-        let result = s.execute(COMMAND, json!({"keyframes":keys,"delta":delta.0})).unwrap();
+        let result = s
+            .execute(COMMAND, json!({"keyframes":keys,"delta":delta.0}))
+            .unwrap();
         let after = values(&s, &keys[0]);
         assert_eq!(after.len(), 2);
         for (old, new) in before.iter().zip(&after) {
             assert_eq!(new.time, old.time + delta);
-            assert_eq!(serde_json::to_value(&new.value).unwrap(), serde_json::to_value(&old.value).unwrap());
+            assert_eq!(
+                serde_json::to_value(&new.value).unwrap(),
+                serde_json::to_value(&old.value).unwrap()
+            );
             assert_eq!(new.interp, old.interp);
             assert_eq!(new.in_influence, old.in_influence);
             assert_eq!(new.out_influence, old.out_influence);
         }
-        assert_eq!(result["keyframes"][2]["time"].as_i64().unwrap(), keys[2]["time"].as_i64().unwrap() + delta.0);
+        assert_eq!(
+            result["keyframes"][2]["time"].as_i64().unwrap(),
+            keys[2]["time"].as_i64().unwrap() + delta.0
+        );
         assert_eq!(s.history.undo.len(), undo + 1);
         let moved = serde_json::to_value(&s.project).unwrap();
         s.undo();
-        assert_eq!(serde_json::to_value(&s.project).unwrap(), serde_json::to_value(project).unwrap());
+        assert_eq!(
+            serde_json::to_value(&s.project).unwrap(),
+            serde_json::to_value(project).unwrap()
+        );
         s.redo();
         assert_eq!(serde_json::to_value(&s.project).unwrap(), moved);
     }
@@ -164,15 +220,28 @@ mod tests {
     fn bounds_clamp_the_group_without_changing_its_spacing() {
         let (mut s, keys) = fixture();
         let undo = s.history.undo.len();
-        let result = s.execute(COMMAND, json!({"keyframes":keys,"delta":i64::MAX})).unwrap();
+        let result = s
+            .execute(COMMAND, json!({"keyframes":keys,"delta":i64::MAX}))
+            .unwrap();
         let delta = result["delta"].as_i64().unwrap();
         assert!(delta > 0 && delta < i64::MAX);
         for (old, new) in keys.iter().zip(result["keyframes"].as_array().unwrap()) {
-            assert_eq!(new["time"].as_i64().unwrap() - old["time"].as_i64().unwrap(), delta);
+            assert_eq!(
+                new["time"].as_i64().unwrap() - old["time"].as_i64().unwrap(),
+                delta
+            );
         }
         assert_eq!(s.history.undo.len(), undo + 1);
-        s.execute(COMMAND, json!({"keyframes":result["keyframes"],"delta":i64::MAX})).unwrap();
-        assert_eq!(s.history.undo.len(), undo + 1, "a boundary no-op creates no edit");
+        s.execute(
+            COMMAND,
+            json!({"keyframes":result["keyframes"],"delta":i64::MAX}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.history.undo.len(),
+            undo + 1,
+            "a boundary no-op creates no edit"
+        );
     }
 
     #[test]
@@ -209,7 +278,9 @@ mod tests {
             })
             .unwrap();
             let delta = Tick::from_seconds_f64(0.1);
-            let result = s.execute(COMMAND, json!({"keyframes":keys,"delta":delta.0})).unwrap();
+            let result = s
+                .execute(COMMAND, json!({"keyframes":keys,"delta":delta.0}))
+                .unwrap();
             for (old, new) in keys.iter().zip(result["keyframes"].as_array().unwrap()) {
                 let diff = new["time"].as_i64().unwrap() - old["time"].as_i64().unwrap();
                 assert_eq!(diff, delta.0 * 2 * if reverse { -1 } else { 1 });

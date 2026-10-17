@@ -63,7 +63,10 @@ pub const MAX_SITE: u32 = 64;
 impl ShapeKind {
     /// A connector (straight, elbow or curved): a line that can be glued to shapes.
     pub fn is_connector(self) -> bool {
-        matches!(self, ShapeKind::StraightConnector | ShapeKind::ElbowConnector | ShapeKind::CurvedConnector)
+        matches!(
+            self,
+            ShapeKind::StraightConnector | ShapeKind::ElbowConnector | ShapeKind::CurvedConnector
+        )
     }
     /// A line or connector: drawn as an open path, never filled.
     pub fn is_open(self) -> bool {
@@ -79,18 +82,45 @@ pub fn sites(kind: ShapeKind, w: f32, h: f32) -> Vec<(f32, f32)> {
     match kind {
         ShapeKind::Ellipse => {
             // The four sides, and the points of the ellipse at 45° between them.
-            let (dx, dy) = (cx * std::f32::consts::FRAC_1_SQRT_2, cy * std::f32::consts::FRAC_1_SQRT_2);
-            vec![(cx, 0.0), (cx - dx, cy - dy), (0.0, cy), (cx - dx, cy + dy), (cx, h), (cx + dx, cy + dy), (w, cy), (cx + dx, cy - dy)]
+            let (dx, dy) = (
+                cx * std::f32::consts::FRAC_1_SQRT_2,
+                cy * std::f32::consts::FRAC_1_SQRT_2,
+            );
+            vec![
+                (cx, 0.0),
+                (cx - dx, cy - dy),
+                (0.0, cy),
+                (cx - dx, cy + dy),
+                (cx, h),
+                (cx + dx, cy + dy),
+                (w, cy),
+                (cx + dx, cy - dy),
+            ]
         }
-        ShapeKind::Triangle => vec![(cx, 0.0), (cx / 2.0, cy), (0.0, h), (cx, h), (w, h), (cx + cx / 2.0, cy)],
-        ShapeKind::Line | ShapeKind::StraightConnector | ShapeKind::ElbowConnector | ShapeKind::CurvedConnector => vec![(0.0, 0.0), (w, h)],
+        ShapeKind::Triangle => vec![
+            (cx, 0.0),
+            (cx / 2.0, cy),
+            (0.0, h),
+            (cx, h),
+            (w, h),
+            (cx + cx / 2.0, cy),
+        ],
+        ShapeKind::Line
+        | ShapeKind::StraightConnector
+        | ShapeKind::ElbowConnector
+        | ShapeKind::CurvedConnector => vec![(0.0, 0.0), (w, h)],
         _ => vec![(cx, 0.0), (0.0, cy), (cx, h), (w, cy)],
     }
 }
 
 /// Site `site` of a `kind` shape with frame `rect` (x, y, w, h) on the page, turned and flipped by
 /// `spin` about its centre. `None` for a site the shape doesn't have.
-pub fn site_point(kind: ShapeKind, rect: [f32; 4], spin: wordcraft_geom::Spin, site: u32) -> Option<(f32, f32)> {
+pub fn site_point(
+    kind: ShapeKind,
+    rect: [f32; 4],
+    spin: wordcraft_geom::Spin,
+    site: u32,
+) -> Option<(f32, f32)> {
     let [x, y, w, h] = rect;
     let (sx, sy) = *sites(kind, w, h).get(site as usize)?;
     let (cx, cy) = (x + w / 2.0, y + h / 2.0);
@@ -100,10 +130,18 @@ pub fn site_point(kind: ShapeKind, rect: [f32; 4], spin: wordcraft_geom::Spin, s
 
 /// The site of a `kind` shape (frame `rect`, `spin`) nearest to page point `at`: its index, point
 /// and distance.
-pub fn nearest_site(kind: ShapeKind, rect: [f32; 4], spin: wordcraft_geom::Spin, at: (f32, f32)) -> Option<(u32, (f32, f32), f32)> {
+pub fn nearest_site(
+    kind: ShapeKind,
+    rect: [f32; 4],
+    spin: wordcraft_geom::Spin,
+    at: (f32, f32),
+) -> Option<(u32, (f32, f32), f32)> {
     let n = sites(kind, rect[2], rect[3]).len() as u32;
     (0..n)
-        .filter_map(|i| site_point(kind, rect, spin, i).map(|p| (i, p, ((p.0 - at.0).powi(2) + (p.1 - at.1).powi(2)).sqrt())))
+        .filter_map(|i| {
+            site_point(kind, rect, spin, i)
+                .map(|p| (i, p, ((p.0 - at.0).powi(2) + (p.1 - at.1).powi(2)).sqrt()))
+        })
         .min_by(|a, b| a.2.total_cmp(&b.2))
 }
 
@@ -122,11 +160,25 @@ pub struct Frame {
 pub fn route(start: (f32, f32), end: (f32, f32)) -> Frame {
     let f = wordcraft_geom::finite;
     let (x0, y0, x1, y1) = (f(start.0), f(start.1), f(end.0), f(end.1));
-    Frame { x: x0.min(x1), y: y0.min(y1), w: (x1 - x0).abs(), h: (y1 - y0).abs(), flip_h: x1 < x0, flip_v: y1 < y0 }
+    Frame {
+        x: x0.min(x1),
+        y: y0.min(y1),
+        w: (x1 - x0).abs(),
+        h: (y1 - y0).abs(),
+        flip_h: x1 < x0,
+        flip_v: y1 < y0,
+    }
 }
 
 /// A connector's start and end from its frame (the inverse of [`route`]).
-pub fn ends(x: f32, y: f32, w: f32, h: f32, flip_h: bool, flip_v: bool) -> ((f32, f32), (f32, f32)) {
+pub fn ends(
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+    flip_h: bool,
+    flip_v: bool,
+) -> ((f32, f32), (f32, f32)) {
     let (xa, xb) = if flip_h { (x + w, x) } else { (x, x + w) };
     let (ya, yb) = if flip_v { (y + h, y) } else { (y, y + h) };
     ((xa, ya), (xb, yb))
@@ -140,8 +192,16 @@ pub fn connector_segs(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<PathSeg>> {
     let mx = w / 2.0;
     Some(match kind {
         ShapeKind::StraightConnector => vec![PathSeg::Move(0.0, 0.0), PathSeg::Line(w, h)],
-        ShapeKind::ElbowConnector => vec![PathSeg::Move(0.0, 0.0), PathSeg::Line(mx, 0.0), PathSeg::Line(mx, h), PathSeg::Line(w, h)],
-        ShapeKind::CurvedConnector => vec![PathSeg::Move(0.0, 0.0), PathSeg::Cubic(mx, 0.0, mx, h, w, h)],
+        ShapeKind::ElbowConnector => vec![
+            PathSeg::Move(0.0, 0.0),
+            PathSeg::Line(mx, 0.0),
+            PathSeg::Line(mx, h),
+            PathSeg::Line(w, h),
+        ],
+        ShapeKind::CurvedConnector => vec![
+            PathSeg::Move(0.0, 0.0),
+            PathSeg::Cubic(mx, 0.0, mx, h, w, h),
+        ],
         _ => return None,
     })
 }
@@ -161,7 +221,11 @@ pub fn end_direction(kind: ShapeKind, w: f32, h: f32, at_end: bool) -> (f32, f32
         _ => (w, h),
     };
     let len = (dx * dx + dy * dy).sqrt();
-    let (ux, uy) = if len > 1e-6 && len.is_finite() { (dx / len, dy / len) } else { (1.0, 0.0) };
+    let (ux, uy) = if len > 1e-6 && len.is_finite() {
+        (dx / len, dy / len)
+    } else {
+        (1.0, 0.0)
+    };
     if at_end { (ux, uy) } else { (-ux, -uy) }
 }
 
@@ -171,7 +235,14 @@ pub fn reroute_group(children: &mut [GroupChild]) -> bool {
     let shapes: Vec<(u32, ShapeKind, [f32; 4], wordcraft_geom::Spin)> = children
         .iter()
         .filter_map(|c| match &c.obj {
-            InlineObject::Shape { kind, w, h, float, extra, .. } if extra.id != 0 => Some((extra.id, *kind, [c.x, c.y, *w, *h], float.spin())),
+            InlineObject::Shape {
+                kind,
+                w,
+                h,
+                float,
+                extra,
+                ..
+            } if extra.id != 0 => Some((extra.id, *kind, [c.x, c.y, *w, *h], float.spin())),
             _ => None,
         })
         .collect();
@@ -185,14 +256,30 @@ pub fn reroute_group(children: &mut [GroupChild]) -> bool {
     };
     let mut moved = false;
     for c in children.iter_mut() {
-        let InlineObject::Shape { kind, w, h, float, extra, .. } = &mut c.obj else { continue };
+        let InlineObject::Shape {
+            kind,
+            w,
+            h,
+            float,
+            extra,
+            ..
+        } = &mut c.obj
+        else {
+            continue;
+        };
         if !kind.is_connector() || (extra.start.is_none() && extra.end.is_none()) {
             continue;
         }
         let (s0, e0) = ends(c.x, c.y, *w, *h, float.flip_h, float.flip_v);
-        let (s, e) = (find(extra.start).unwrap_or(s0), find(extra.end).unwrap_or(e0));
+        let (s, e) = (
+            find(extra.start).unwrap_or(s0),
+            find(extra.end).unwrap_or(e0),
+        );
         let f = route(s, e);
-        let same = (f.x - c.x).abs() < 0.01 && (f.y - c.y).abs() < 0.01 && (f.w - *w).abs() < 0.01 && (f.h - *h).abs() < 0.01;
+        let same = (f.x - c.x).abs() < 0.01
+            && (f.y - c.y).abs() < 0.01
+            && (f.w - *w).abs() < 0.01
+            && (f.h - *h).abs() < 0.01;
         if same && f.flip_h == float.flip_h && f.flip_v == float.flip_v && float.rot == 0.0 {
             continue;
         }
@@ -231,7 +318,11 @@ mod tests {
 
     #[test]
     fn route_and_ends_are_inverse() {
-        for (s, e) in [((0.0, 0.0), (10.0, 5.0)), ((10.0, 5.0), (0.0, 0.0)), ((3.0, 9.0), (7.0, 1.0))] {
+        for (s, e) in [
+            ((0.0, 0.0), (10.0, 5.0)),
+            ((10.0, 5.0), (0.0, 0.0)),
+            ((3.0, 9.0), (7.0, 1.0)),
+        ] {
             let f = route(s, e);
             assert_eq!(ends(f.x, f.y, f.w, f.h, f.flip_h, f.flip_v), (s, e));
         }
@@ -239,19 +330,46 @@ mod tests {
 
     #[test]
     fn group_connectors_follow_their_shapes() {
-        let a = ShapeExtra { id: 7, ..Default::default() };
-        let b = ShapeExtra { id: 9, ..Default::default() };
-        let link = ShapeExtra { start: Some(ConnEnd { id: 7, site: 3 }), end: Some(ConnEnd { id: 9, site: 2 }), ..Default::default() };
+        let a = ShapeExtra {
+            id: 7,
+            ..Default::default()
+        };
+        let b = ShapeExtra {
+            id: 9,
+            ..Default::default()
+        };
+        let link = ShapeExtra {
+            start: Some(ConnEnd { id: 7, site: 3 }),
+            end: Some(ConnEnd { id: 9, site: 2 }),
+            ..Default::default()
+        };
         let mut kids = vec![
-            GroupChild { x: 0.0, y: 0.0, obj: shape(ShapeKind::Rectangle, 20.0, 10.0, a) },
-            GroupChild { x: 100.0, y: 50.0, obj: shape(ShapeKind::Ellipse, 20.0, 10.0, b) },
-            GroupChild { x: 0.0, y: 0.0, obj: shape(ShapeKind::ElbowConnector, 1.0, 1.0, link) },
+            GroupChild {
+                x: 0.0,
+                y: 0.0,
+                obj: shape(ShapeKind::Rectangle, 20.0, 10.0, a),
+            },
+            GroupChild {
+                x: 100.0,
+                y: 50.0,
+                obj: shape(ShapeKind::Ellipse, 20.0, 10.0, b),
+            },
+            GroupChild {
+                x: 0.0,
+                y: 0.0,
+                obj: shape(ShapeKind::ElbowConnector, 1.0, 1.0, link),
+            },
         ];
         assert!(reroute_group(&mut kids));
         // From the rectangle's right side (20, 5) to the ellipse's left side (100, 55).
         let c = &kids[2];
-        let InlineObject::Shape { w, h, float, .. } = &c.obj else { panic!() };
-        assert_eq!((c.x, c.y, *w, *h, float.flip_h, float.flip_v), (20.0, 5.0, 80.0, 50.0, false, false));
+        let InlineObject::Shape { w, h, float, .. } = &c.obj else {
+            panic!()
+        };
+        assert_eq!(
+            (c.x, c.y, *w, *h, float.flip_h, float.flip_v),
+            (20.0, 5.0, 80.0, 50.0, false, false)
+        );
         assert!(!reroute_group(&mut kids), "settled");
         // A connection to a missing id or site keeps that end where it was.
         if let InlineObject::Shape { extra, .. } = &mut kids[2].obj {

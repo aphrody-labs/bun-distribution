@@ -30,7 +30,11 @@ pub struct CpuTexture {
 
 impl CpuTexture {
     pub fn linear(image: Arc<ColorImage>) -> Self {
-        CpuTexture { image, magnification: TextureFilter::Linear, minification: TextureFilter::Linear }
+        CpuTexture {
+            image,
+            magnification: TextureFilter::Linear,
+            minification: TextureFilter::Linear,
+        }
     }
 }
 
@@ -54,15 +58,27 @@ impl TextureStore {
         for id in self.deferred_free.drain(..) {
             self.map.remove(&id);
         }
-        for (id, d) in delta.set.iter().flat_map(|(id, ds)| ds.iter().map(move |d| (id, d))) {
+        for (id, d) in delta
+            .set
+            .iter()
+            .flat_map(|(id, ds)| ds.iter().map(move |d| (id, d)))
+        {
             let ImageData::Color(img) = &d.image;
             match d.pos {
                 None => {
-                    self.map
-                        .insert(*id, CpuTexture { image: img.clone(), magnification: d.options.magnification, minification: d.options.minification });
+                    self.map.insert(
+                        *id,
+                        CpuTexture {
+                            image: img.clone(),
+                            magnification: d.options.magnification,
+                            minification: d.options.minification,
+                        },
+                    );
                 }
                 Some([x0, y0]) => {
-                    let Some(t) = self.map.get_mut(id) else { continue };
+                    let Some(t) = self.map.get_mut(id) else {
+                        continue;
+                    };
                     let dst = Arc::make_mut(&mut t.image);
                     let [dw, dh] = dst.size;
                     let [w, h] = img.size;
@@ -144,8 +160,16 @@ fn image_len(size: [usize; 2]) -> Option<usize> {
 
 /// Rasterize `primitives` into a `size` (pixels) image cleared to `clear`. The result is opaque if
 /// `clear` is.
-pub fn paint(primitives: &[ClippedPrimitive], textures: &dyn TextureSource, size: [usize; 2], pixels_per_point: f32, clear: Color32) -> ColorImage {
-    let Some(len) = image_len(size).filter(|_| pixels_per_point.is_finite() && pixels_per_point > 0.0) else {
+pub fn paint(
+    primitives: &[ClippedPrimitive],
+    textures: &dyn TextureSource,
+    size: [usize; 2],
+    pixels_per_point: f32,
+    clear: Color32,
+) -> ColorImage {
+    let Some(len) =
+        image_len(size).filter(|_| pixels_per_point.is_finite() && pixels_per_point > 0.0)
+    else {
         return ColorImage::new([0, 0], Vec::new());
     };
     let [w, h] = size;
@@ -153,13 +177,21 @@ pub fn paint(primitives: &[ClippedPrimitive], textures: &dyn TextureSource, size
     let prepared: Vec<Prepared<'_>> = primitives
         .iter()
         .filter_map(|cp| {
-            let Primitive::Mesh(mesh) = &cp.primitive else { return None };
+            let Primitive::Mesh(mesh) = &cp.primitive else {
+                return None;
+            };
             if mesh.indices.is_empty() {
                 return None;
             }
             let r = cp.clip_rect;
-            let px = |v: f32, max: usize| ((v * pixels_per_point).round().max(0.0) as usize).min(max);
-            let clip = [px(r.min.x, w), px(r.min.y, h), px(r.max.x, w), px(r.max.y, h)];
+            let px =
+                |v: f32, max: usize| ((v * pixels_per_point).round().max(0.0) as usize).min(max);
+            let clip = [
+                px(r.min.x, w),
+                px(r.min.y, h),
+                px(r.max.x, w),
+                px(r.max.y, h),
+            ];
             if clip[0] >= clip[2] || clip[1] >= clip[3] {
                 return None;
             }
@@ -171,25 +203,40 @@ pub fn paint(primitives: &[ClippedPrimitive], textures: &dyn TextureSource, size
                     PVert {
                         x: v.pos.x as f64 * ppp,
                         y: v.pos.y as f64 * ppp,
-                        c: [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, a as f32 / 255.0],
+                        c: [
+                            r as f32 / 255.0,
+                            g as f32 / 255.0,
+                            b as f32 / 255.0,
+                            a as f32 / 255.0,
+                        ],
                         u: v.uv.x,
                         v: v.uv.y,
                     }
                 })
                 .collect();
-            Some(Prepared { clip, tex: textures.texture(mesh.texture_id), verts, indices: &mesh.indices })
+            Some(Prepared {
+                clip,
+                tex: textures.texture(mesh.texture_id),
+                verts,
+                indices: &mesh.indices,
+            })
         })
         .collect();
 
     let mut pixels = vec![clear; len];
-    let bands: Vec<(usize, &mut [Color32])> = pixels.chunks_mut((BAND * w).max(1)).enumerate().map(|(i, c)| (i * BAND, c)).collect();
+    let bands: Vec<(usize, &mut [Color32])> = pixels
+        .chunks_mut((BAND * w).max(1))
+        .enumerate()
+        .map(|(i, c)| (i * BAND, c))
+        .collect();
     let threads = thread_count().min(bands.len()).max(1);
     if threads <= 1 {
         for (y0, band) in bands {
             paint_band(&prepared, band, y0, w);
         }
     } else {
-        let mut groups: Vec<Vec<(usize, &mut [Color32])>> = (0..threads).map(|_| Vec::new()).collect();
+        let mut groups: Vec<Vec<(usize, &mut [Color32])>> =
+            (0..threads).map(|_| Vec::new()).collect();
         for (i, b) in bands.into_iter().enumerate() {
             groups[i % threads].push(b);
         }
@@ -215,7 +262,13 @@ pub fn paint(primitives: &[ClippedPrimitive], textures: &dyn TextureSource, size
 }
 
 fn thread_count() -> usize {
-    if cfg!(target_arch = "wasm32") { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).min(16) }
+    if cfg!(target_arch = "wasm32") {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .min(16)
+    }
 }
 
 fn paint_band(prepared: &[Prepared<'_>], band: &mut [Color32], y0: usize, w: usize) {
@@ -231,7 +284,11 @@ fn paint_band(prepared: &[Prepared<'_>], band: &mut [Color32], y0: usize, w: usi
         }
         let clip = [p.clip[0], cy0, p.clip[2], cy1];
         for tri in p.indices.as_chunks::<3>().0 {
-            let (Some(a), Some(b), Some(c)) = (p.verts.get(tri[0] as usize), p.verts.get(tri[1] as usize), p.verts.get(tri[2] as usize)) else {
+            let (Some(a), Some(b), Some(c)) = (
+                p.verts.get(tri[0] as usize),
+                p.verts.get(tri[1] as usize),
+                p.verts.get(tri[2] as usize),
+            ) else {
                 continue;
             };
             raster_triangle(band, y0, w, clip, p.tex, *a, *b, *c);
@@ -255,7 +312,12 @@ impl Edge {
         let b = q.x - p.x;
         let c = -(a * p.x + b * p.y);
         // Of two triangles sharing this edge, exactly one sees (A > 0) || (A == 0 && B > 0).
-        Edge { a, b, c, owns_ties: a > 0.0 || (a == 0.0 && b > 0.0) }
+        Edge {
+            a,
+            b,
+            c,
+            owns_ties: a > 0.0 || (a == 0.0 && b > 0.0),
+        }
     }
     #[inline]
     fn eval(&self, x: f64, y: f64) -> f64 {
@@ -313,8 +375,14 @@ fn raster_triangle(
             return t.magnification;
         }
         let [tw, th] = t.image.size;
-        let uv_area = ((v1.u - v0.u) * (v2.v - v0.v) - (v1.v - v0.v) * (v2.u - v0.u)).abs() as f64 * tw as f64 * th as f64;
-        if uv_area <= area { t.magnification } else { t.minification }
+        let uv_area = ((v1.u - v0.u) * (v2.v - v0.v) - (v1.v - v0.v) * (v2.u - v0.u)).abs() as f64
+            * tw as f64
+            * th as f64;
+        if uv_area <= area {
+            t.magnification
+        } else {
+            t.minification
+        }
     });
     let sample = |u: f32, v: f32| -> [f32; 4] {
         match (tex, filter) {
@@ -322,7 +390,11 @@ fn raster_triangle(
             _ => to_f(white),
         }
     };
-    let const_tex = if uniform_uv { Some(sample(v0.u, v0.v)) } else { None };
+    let const_tex = if uniform_uv {
+        Some(sample(v0.u, v0.v))
+    } else {
+        None
+    };
     let const_src = match (uniform_color, const_tex) {
         (true, Some(t)) => Some(mul(v0.c, t)),
         _ => None,
@@ -345,11 +417,19 @@ fn raster_triangle(
                 let src = match const_src {
                     Some(s) => s,
                     None => {
-                        let (l0, l1, l2) = ((w0 * inv) as f32, (w1 * inv) as f32, (w2 * inv) as f32);
-                        let c = if uniform_color { v0.c } else { std::array::from_fn(|i| l0 * v0.c[i] + l1 * v1.c[i] + l2 * v2.c[i]) };
+                        let (l0, l1, l2) =
+                            ((w0 * inv) as f32, (w1 * inv) as f32, (w2 * inv) as f32);
+                        let c = if uniform_color {
+                            v0.c
+                        } else {
+                            std::array::from_fn(|i| l0 * v0.c[i] + l1 * v1.c[i] + l2 * v2.c[i])
+                        };
                         let t = match const_tex {
                             Some(t) => t,
-                            None => sample(l0 * v0.u + l1 * v1.u + l2 * v2.u, l0 * v0.v + l1 * v1.v + l2 * v2.v),
+                            None => sample(
+                                l0 * v0.u + l1 * v1.u + l2 * v2.u,
+                                l0 * v0.v + l1 * v1.v + l2 * v2.v,
+                            ),
                         };
                         mul(c, t)
                     }
@@ -366,7 +446,12 @@ fn raster_triangle(
 #[inline]
 fn to_f(c: Color32) -> [f32; 4] {
     let [r, g, b, a] = c.to_array();
-    [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, a as f32 / 255.0]
+    [
+        r as f32 / 255.0,
+        g as f32 / 255.0,
+        b as f32 / 255.0,
+        a as f32 / 255.0,
+    ]
 }
 
 #[inline]
@@ -388,7 +473,9 @@ fn sample_texture(img: &ColorImage, u: f32, v: f32, filter: TextureFilter) -> [f
     if w == 0 || h == 0 {
         return [0.0; 4];
     }
-    let at = |x: i64, y: i64| to_f(img.pixels[y.clamp(0, h as i64 - 1) as usize * w + x.clamp(0, w as i64 - 1) as usize]);
+    let at = |x: i64, y: i64| {
+        to_f(img.pixels[y.clamp(0, h as i64 - 1) as usize * w + x.clamp(0, w as i64 - 1) as usize])
+    };
     match filter {
         TextureFilter::Nearest => at((u * w as f32).floor() as i64, (v * h as f32).floor() as i64),
         TextureFilter::Linear => {
@@ -416,18 +503,33 @@ mod tests {
     fn quad(rect: Rect, color: Color32) -> ClippedPrimitive {
         let mut m = Mesh::default();
         m.add_colored_rect(rect, color);
-        ClippedPrimitive { clip_rect: Rect::EVERYTHING, primitive: Primitive::Mesh(m) }
+        ClippedPrimitive {
+            clip_rect: Rect::EVERYTHING,
+            primitive: Primitive::Mesh(m),
+        }
     }
 
     fn white_tex() -> TextureStore {
         let mut s = TextureStore::default();
-        s.insert(TextureId::default(), CpuTexture::linear(Arc::new(ColorImage::new([1, 1], vec![Color32::WHITE]))));
+        s.insert(
+            TextureId::default(),
+            CpuTexture::linear(Arc::new(ColorImage::new([1, 1], vec![Color32::WHITE]))),
+        );
         s
     }
 
     #[test]
     fn opaque_rect_fills_exactly_its_pixels() {
-        let img = paint(&[quad(Rect::from_min_max(pos2(2.0, 3.0), pos2(6.0, 5.0)), Color32::RED)], &white_tex(), [10, 8], 1.0, Color32::BLACK);
+        let img = paint(
+            &[quad(
+                Rect::from_min_max(pos2(2.0, 3.0), pos2(6.0, 5.0)),
+                Color32::RED,
+            )],
+            &white_tex(),
+            [10, 8],
+            1.0,
+            Color32::BLACK,
+        );
         let n = img.pixels.iter().filter(|p| **p == Color32::RED).count();
         assert_eq!(n, 4 * 2);
         assert_eq!(img.pixels[3 * 10 + 2], Color32::RED);
@@ -438,18 +540,33 @@ mod tests {
     fn shared_diagonal_is_not_blended_twice() {
         // half-transparent quad: every covered pixel gets exactly one blend
         let c = Color32::from_rgba_premultiplied(64, 64, 64, 128);
-        let img = paint(&[quad(Rect::from_min_max(pos2(0.0, 0.0), pos2(8.0, 8.0)), c)], &white_tex(), [8, 8], 1.0, Color32::BLACK);
+        let img = paint(
+            &[quad(Rect::from_min_max(pos2(0.0, 0.0), pos2(8.0, 8.0)), c)],
+            &white_tex(),
+            [8, 8],
+            1.0,
+            Color32::BLACK,
+        );
         let first = img.pixels[0];
-        assert!(img.pixels.iter().all(|p| *p == first), "seam on the diagonal");
+        assert!(
+            img.pixels.iter().all(|p| *p == first),
+            "seam on the diagonal"
+        );
         assert_eq!(first, Color32::from_rgba_premultiplied(64, 64, 64, 255));
     }
 
     #[test]
     fn clip_rect_and_scale_apply() {
-        let mut p = quad(Rect::from_min_max(pos2(0.0, 0.0), pos2(10.0, 10.0)), Color32::GREEN);
+        let mut p = quad(
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(10.0, 10.0)),
+            Color32::GREEN,
+        );
         p.clip_rect = Rect::from_min_max(pos2(1.0, 1.0), pos2(3.0, 2.0));
         let img = paint(&[p], &white_tex(), [20, 20], 2.0, Color32::BLACK);
-        assert_eq!(img.pixels.iter().filter(|p| **p == Color32::GREEN).count(), 4 * 2);
+        assert_eq!(
+            img.pixels.iter().filter(|p| **p == Color32::GREEN).count(),
+            4 * 2
+        );
         assert_eq!(img.pixels[2 * 20 + 2], Color32::GREEN);
     }
 
@@ -458,10 +575,30 @@ mod tests {
         let mut s = TextureStore::default();
         let tex = ColorImage::new([2, 1], vec![Color32::RED, Color32::BLUE]);
         let id = TextureId::User(7);
-        s.insert(id, CpuTexture { image: Arc::new(tex), magnification: TextureFilter::Nearest, minification: TextureFilter::Nearest });
+        s.insert(
+            id,
+            CpuTexture {
+                image: Arc::new(tex),
+                magnification: TextureFilter::Nearest,
+                minification: TextureFilter::Nearest,
+            },
+        );
         let mut m = Mesh::with_texture(id);
-        m.add_rect_with_uv(Rect::from_min_max(pos2(0.0, 0.0), pos2(4.0, 2.0)), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-        let img = paint(&[ClippedPrimitive { clip_rect: Rect::EVERYTHING, primitive: Primitive::Mesh(m) }], &s, [4, 2], 1.0, Color32::BLACK);
+        m.add_rect_with_uv(
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(4.0, 2.0)),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
+        let img = paint(
+            &[ClippedPrimitive {
+                clip_rect: Rect::EVERYTHING,
+                primitive: Primitive::Mesh(m),
+            }],
+            &s,
+            [4, 2],
+            1.0,
+            Color32::BLACK,
+        );
         assert_eq!(img.pixels[0], Color32::RED);
         assert_eq!(img.pixels[3], Color32::BLUE);
         let _ = Vertex::default();
@@ -472,10 +609,23 @@ mod tests {
         let mut s = TextureStore::default();
         let id = TextureId::Managed(0);
         let mut d = TexturesDelta::default();
-        d.push(id, egui::epaint::ImageDelta::full(ColorImage::new([4, 4], vec![Color32::BLACK; 16]), egui::TextureOptions::LINEAR));
+        d.push(
+            id,
+            egui::epaint::ImageDelta::full(
+                ColorImage::new([4, 4], vec![Color32::BLACK; 16]),
+                egui::TextureOptions::LINEAR,
+            ),
+        );
         s.apply(d);
         let mut d = TexturesDelta::default();
-        d.push(id, egui::epaint::ImageDelta::partial([1, 2], ColorImage::new([2, 1], vec![Color32::WHITE; 2]), egui::TextureOptions::LINEAR));
+        d.push(
+            id,
+            egui::epaint::ImageDelta::partial(
+                [1, 2],
+                ColorImage::new([2, 1], vec![Color32::WHITE; 2]),
+                egui::TextureOptions::LINEAR,
+            ),
+        );
         s.apply(d);
         let t = s.texture(id).unwrap();
         assert_eq!(t.image.pixels[2 * 4 + 1], Color32::WHITE);
@@ -490,7 +640,12 @@ mod dimension_tests {
 
     #[test]
     fn rejected_dimensions_allocate_no_pixels() {
-        for size in [[usize::MAX, 2], [9000, 9000], [MAX_IMAGE_EDGE + 1, 1], [0, 1]] {
+        for size in [
+            [usize::MAX, 2],
+            [9000, 9000],
+            [MAX_IMAGE_EDGE + 1, 1],
+            [0, 1],
+        ] {
             let image = paint(&[], &TextureStore::default(), size, 1.0, Color32::BLACK);
             assert_eq!(image.size, [0, 0]);
             assert!(image.pixels.is_empty());

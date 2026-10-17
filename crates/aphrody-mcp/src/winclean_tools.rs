@@ -46,12 +46,12 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
                 "{name}: aphrody-winclean backend unavailable ({error}); \
                  update ../aphrody-os and rebuild aphrody"
             ))]);
-        },
+        }
     };
-    let args = request
-        .arguments
-        .as_ref()
-        .map_or_else(|| "{}".to_owned(), |map| serde_json::Value::Object(map.clone()).to_string());
+    let args = request.arguments.as_ref().map_or_else(
+        || "{}".to_owned(),
+        |map| serde_json::Value::Object(map.clone()).to_string(),
+    );
     match wc.call_raw_async(name, &args).await {
         Ok(raw) => serde_json::from_str::<CallToolResult>(&raw).unwrap_or_else(|error| {
             CallToolResult::error(vec![ContentBlock::text(format!(
@@ -73,7 +73,11 @@ mod tests {
         let click = get("computer_click").expect("computer_click");
         assert!(click.input_schema.contains_key("properties"));
         assert!(get("not_a_winclean_tool").is_none());
-        assert!(list(|n| n == "computer_click").iter().all(|t| t.name != "computer_click"));
+        assert!(
+            list(|n| n == "computer_click")
+                .iter()
+                .all(|t| t.name != "computer_click")
+        );
     }
 
     #[cfg(windows)]
@@ -87,7 +91,9 @@ mod tests {
                 .unwrap();
         let result = call(&request).await;
         assert_ne!(result.is_error, Some(true), "{result:?}");
-        let structured = result.structured_content.expect("structured WinClean result");
+        let structured = result
+            .structured_content
+            .expect("structured WinClean result");
         assert!(structured.get("BuildNumber").is_some(), "{structured}");
     }
 }

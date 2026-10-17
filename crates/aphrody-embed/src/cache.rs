@@ -61,8 +61,10 @@ pub fn model_cache_dir(override_dir: Option<PathBuf>) -> Result<PathBuf> {
         Some(d) => d,
         None => embeddings_subdir(&aphrody_state_dir()?),
     };
-    std::fs::create_dir_all(&dir)
-        .map_err(|source| EmbedError::CacheDir { path: dir.clone(), source })?;
+    std::fs::create_dir_all(&dir).map_err(|source| EmbedError::CacheDir {
+        path: dir.clone(),
+        source,
+    })?;
     Ok(dir)
 }
 

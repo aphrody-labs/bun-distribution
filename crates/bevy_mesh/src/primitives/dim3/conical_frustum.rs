@@ -1,6 +1,6 @@
 use crate::{Indices, Mesh, MeshBuilder, Meshable, PrimitiveTopology};
 use bevy_asset::RenderAssetUsages;
-use bevy_math::{ops, Vec3};
+use bevy_math::{Vec3, ops};
 use bevy_reflect::prelude::*;
 use bevy_shape::ConicalFrustum;
 

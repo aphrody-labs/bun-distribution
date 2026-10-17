@@ -13,7 +13,7 @@ use bevy_ui::{
 };
 
 use crate::{
-    stack_z_offsets, ExtractedUiItem, ExtractedUiNode, ExtractedUiNodes, NodeType, UiCameraMap,
+    ExtractedUiItem, ExtractedUiNode, ExtractedUiNodes, NodeType, UiCameraMap, stack_z_offsets,
 };
 
 pub(crate) fn calculate_text_scroll_clip(

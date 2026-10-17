@@ -63,7 +63,9 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use filmcraft_isobmff::{Brand, Mp4Writer, PcmConfig, SampleEntry, TrackConfig, WriteSample, WriterOptions};
+use filmcraft_isobmff::{
+    Brand, Mp4Writer, PcmConfig, SampleEntry, TrackConfig, WriteSample, WriterOptions,
+};
 use filmcraft_project::{ItemId, Project};
 use filmcraft_render::SourceProvider;
 use filmcraft_time::FrameRate;
@@ -74,8 +76,9 @@ use crate::mxf_out::{MxfMux, MxfSetup};
 use crate::pipeline::Pipeline;
 use crate::settings::{AudioCodec, BitrateMode};
 use crate::{
-    AudioEncoder, ColorSignal, EncodedPacket, EncoderFrame, ExportError, ExportSettings, Format, H264Pass, Out, Progress, Report, Result, Stage, VideoEncoder,
-    audio_factories, export_range, frame_span, note_stage, timed, video_factories,
+    AudioEncoder, ColorSignal, EncodedPacket, EncoderFrame, ExportError, ExportSettings, Format,
+    H264Pass, Out, Progress, Report, Result, Stage, VideoEncoder, audio_factories, export_range,
+    frame_span, note_stage, timed, video_factories,
 };
 
 /// Output frames per interleaved group: the video packets of these frames, then the audio up to
@@ -92,7 +95,9 @@ type Frame = (Vec<u8>, Vec<f32>);
 
 /// Bytes of one [`Frame`] of a `w` x `h` export (RGBA8, or three f32 per pixel for HDR).
 pub(crate) fn frame_bytes(w: u32, h: u32, hdr: bool) -> u64 {
-    u64::from(w).saturating_mul(u64::from(h)).saturating_mul(if hdr { 12 } else { 4 })
+    u64::from(w)
+        .saturating_mul(u64::from(h))
+        .saturating_mul(if hdr { 12 } else { 4 })
 }
 
 /// Frames per batch when two batches are in flight: `batch` (what a sequential export would use),
@@ -113,7 +118,12 @@ struct Ahead {
 /// Render frames `f..end` in parallel. `None` when a source was not ready for one of them (the
 /// pending flag, taken after every frame because it is per thread): the batch is incomplete and
 /// must be rendered again.
-fn render_batch(pipe: &Pipeline, f: i64, end: i64, sources: &dyn SourceProvider) -> Option<Vec<Frame>> {
+fn render_batch(
+    pipe: &Pipeline,
+    f: i64,
+    end: i64,
+    sources: &dyn SourceProvider,
+) -> Option<Vec<Frame>> {
     let pending = AtomicBool::new(false);
     let frames: Vec<Frame> = (f..end)
         .into_par_iter()
@@ -188,13 +198,26 @@ pub struct Exporter {
 pub fn stepped(format: Format) -> bool {
     matches!(
         format,
-        Format::H264 | Format::Hevc | Format::Av1 | Format::ProRes | Format::DnxHr | Format::Apv | Format::Mjpeg | Format::MxfOp1a | Format::MxfOpAtom
+        Format::H264
+            | Format::Hevc
+            | Format::Av1
+            | Format::ProRes
+            | Format::DnxHr
+            | Format::Apv
+            | Format::Mjpeg
+            | Format::MxfOp1a
+            | Format::MxfOpAtom
     )
 }
 
 /// Whether an export is HDR: an HDR working space, SDR not asked for, and a format whose encoder
 /// writes HDR (`hdr_available` says so for H.265, which has no built-in encoder).
-pub(crate) fn hdr_output(working_hdr: bool, sdr: bool, format: Format, hdr_available: impl Fn(Format) -> bool) -> bool {
+pub(crate) fn hdr_output(
+    working_hdr: bool,
+    sdr: bool,
+    format: Format,
+    hdr_available: impl Fn(Format) -> bool,
+) -> bool {
     working_hdr
         && !sdr
         && match format {
@@ -204,31 +227,61 @@ pub(crate) fn hdr_output(working_hdr: bool, sdr: bool, format: Format, hdr_avail
         }
 }
 
-fn make_venc(settings: &ExportSettings, w: u32, h: u32, rate: FrameRate) -> Result<Box<dyn VideoEncoder>> {
+fn make_venc(
+    settings: &ExportSettings,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+) -> Result<Box<dyn VideoEncoder>> {
     video_factories()
         .read()
         .unwrap_or_else(|e| e.into_inner())
         .iter()
         .find_map(|fac| fac(settings.video_format(), w, h, rate, settings))
-        .ok_or_else(|| ExportError::Unsupported(format!("{} encoder not available yet", settings.video_format().label())))?
+        .ok_or_else(|| {
+            ExportError::Unsupported(format!(
+                "{} encoder not available yet",
+                settings.video_format().label()
+            ))
+        })?
 }
 
 impl Exporter {
     /// Set up an export (encoder, output size, colour signalling); sets `progress.total`.
-    pub fn new(project: Arc<Project>, seq: ItemId, settings: &ExportSettings, progress: &Progress) -> Result<Self> {
-        timed(Stage::Setup, || Self::set_up(project, seq, settings, progress))
+    pub fn new(
+        project: Arc<Project>,
+        seq: ItemId,
+        settings: &ExportSettings,
+        progress: &Progress,
+    ) -> Result<Self> {
+        timed(Stage::Setup, || {
+            Self::set_up(project, seq, settings, progress)
+        })
     }
 
-    fn set_up(project: Arc<Project>, seq: ItemId, settings: &ExportSettings, progress: &Progress) -> Result<Self> {
+    fn set_up(
+        project: Arc<Project>,
+        seq: ItemId,
+        settings: &ExportSettings,
+        progress: &Progress,
+    ) -> Result<Self> {
         if !stepped(settings.format) {
-            return Err(ExportError::Unsupported(format!("{} is not a stepped export", settings.format.label())));
+            return Err(ExportError::Unsupported(format!(
+                "{} is not a stepped export",
+                settings.format.label()
+            )));
         }
         settings.validate()?;
         let q = project.sequence(seq).ok_or(ExportError::NoSequence)?;
         // HDR sequences export HDR (H.264 / ProRes / DNxHR / APV, and H.265 where a registered encoder
         // writes Main 10) unless SDR is asked for; elsewhere H.265 is tone-mapped 8-bit SDR
         let pipe = q.settings.color;
-        let hdr_out = hdr_output(pipe.working.is_hdr(), settings.sdr, settings.video_format(), crate::hdr_available);
+        let hdr_out = hdr_output(
+            pipe.working.is_hdr(),
+            settings.sdr,
+            settings.video_format(),
+            crate::hdr_available,
+        );
         let mut settings = settings.clone();
         settings.signal = match (hdr_out, pipe.working) {
             (true, filmcraft_color::WorkingSpace::Rec2100Pq) => ColorSignal::PQ,
@@ -236,31 +289,64 @@ impl Exporter {
             _ => ColorSignal::default(),
         };
         // bake the derived bitrate / keyframe values in for the encoder factories
-        let r = settings.resolve(q.settings.width, q.settings.height, q.settings.frame_rate, q.settings.sample_rate);
+        let r = settings.resolve(
+            q.settings.width,
+            q.settings.height,
+            q.settings.frame_rate,
+            q.settings.sample_rate,
+        );
         settings.bitrate_kbps = r.target_kbps;
         settings.max_bitrate_kbps = Some(r.max_kbps);
         settings.keyframe_distance = Some(r.keyint);
         settings.adaptive_bitrate = None;
-        let two_pass = settings.video_format() == Format::H264 && settings.bitrate_mode == BitrateMode::Vbr2Pass;
-        settings.h264_pass = if two_pass { H264Pass::First } else { H264Pass::Single };
+        let two_pass = settings.video_format() == Format::H264
+            && settings.bitrate_mode == BitrateMode::Vbr2Pass;
+        settings.h264_pass = if two_pass {
+            H264Pass::First
+        } else {
+            H264Pass::Single
+        };
         let range = export_range(&project, seq, &settings)?;
         let pipe = Arc::new(Pipeline::new(project.clone(), seq, &settings, hdr_out)?);
         let (f0, f1) = frame_span(pipe.rate, range);
         let nframes = (f1 - f0) as u64;
         if !settings.part_of_batch {
-            progress.total.store(nframes * if two_pass { 2 } else { 1 }, Ordering::Relaxed);
-            progress.set_status(format!("Exporting {} frames ({})", nframes, settings.format.label()));
+            progress
+                .total
+                .store(nframes * if two_pass { 2 } else { 1 }, Ordering::Relaxed);
+            progress.set_status(format!(
+                "Exporting {} frames ({})",
+                nframes,
+                settings.format.label()
+            ));
         }
         let venc = make_venc(&settings, pipe.w, pipe.h, pipe.rate)?;
-        let brand = if settings.format.is_mp4_with(settings.multiplexer) { Brand::Mp4 } else { Brand::Mov };
-        let audio = if settings.has_audio() { Some(AudioOut::new(project.clone(), seq, &settings, range)?) } else { None };
+        let brand = if settings.format.is_mp4_with(settings.multiplexer) {
+            Brand::Mp4
+        } else {
+            Brand::Mov
+        };
+        let audio = if settings.has_audio() {
+            Some(AudioOut::new(project.clone(), seq, &settings, range)?)
+        } else {
+            None
+        };
         let aenc: Option<Box<dyn AudioEncoder>> = match (&audio, settings.audio_codec()) {
             (Some(a), AudioCodec::Aac) => {
-                let found =
-                    audio_factories().read().unwrap_or_else(|e| e.into_inner()).iter().find_map(|f| f(settings.format, a.sr, a.channels as u32, &settings));
-                Some(found.ok_or_else(|| ExportError::Unsupported("AAC encoder not available".into()))??)
+                let found = audio_factories()
+                    .read()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .iter()
+                    .find_map(|f| f(settings.format, a.sr, a.channels as u32, &settings));
+                Some(found.ok_or_else(|| {
+                    ExportError::Unsupported("AAC encoder not available".into())
+                })??)
             }
-            (Some(a), AudioCodec::Flac) => Some(Box::new(crate::FlacAudio::new(a.sr, a.channels as u32, &settings)?)),
+            (Some(a), AudioCodec::Flac) => Some(Box::new(crate::FlacAudio::new(
+                a.sr,
+                a.channels as u32,
+                &settings,
+            )?)),
             _ => None,
         };
         let measured = !settings.effects.loudness.enabled || audio.is_none();
@@ -335,7 +421,15 @@ impl Exporter {
 
     /// Frames in the next batch: [`Self::set_batch`], lowered to the memory budget when overlapping.
     fn batch_len(&self) -> i64 {
-        if self.overlapping() { overlap_batch(self.batch, frame_bytes(self.pipe.w, self.pipe.h, self.pipe.hdr_out), self.budget) } else { self.batch }
+        if self.overlapping() {
+            overlap_batch(
+                self.batch,
+                frame_bytes(self.pipe.w, self.pipe.h, self.pipe.hdr_out),
+                self.budget,
+            )
+        } else {
+            self.batch
+        }
     }
 
     fn sample_at_frame(&self, f: i64, sr: u32) -> i64 {
@@ -349,25 +443,50 @@ impl Exporter {
                 None => Ok(()),
             };
         }
-        let (Some(at), Some(buf)) = (self.at, planar) else { return Ok(()) };
+        let (Some(at), Some(buf)) = (self.at, planar) else {
+            return Ok(());
+        };
         let n = buf.first().map_or(0, Vec::len);
         if n == 0 {
             return Ok(());
         }
-        let mux = self.mux.as_mut().ok_or_else(|| ExportError::Encode("internal: the container writer was not created".into()))?;
+        let mux = self.mux.as_mut().ok_or_else(|| {
+            ExportError::Encode("internal: the container writer was not created".into())
+        })?;
         match self.aenc.as_mut() {
             Some(a) => {
                 for au in a.encode(&buf)? {
-                    mux.write_sample(at, WriteSample { data: &au, duration: a.frame_size(), composition_offset: 0, is_sync: true })
-                        .map_err(|e| ExportError::Io(e.to_string()))?;
+                    mux.write_sample(
+                        at,
+                        WriteSample {
+                            data: &au,
+                            duration: a.frame_size(),
+                            composition_offset: 0,
+                            is_sync: true,
+                        },
+                    )
+                    .map_err(|e| ExportError::Io(e.to_string()))?;
                 }
             }
             None => {
                 // little-endian, like the track's `lpcm` / `sowt` description says
                 let mut pcm = Vec::new();
-                crate::pcm::encode(crate::pcm::PcmContainer::Wav, &crate::audio_out::interleave(&buf), self.settings.audio.sample_format(), &mut pcm);
-                mux.write_sample(at, WriteSample { data: &pcm, duration: n as u32, composition_offset: 0, is_sync: true })
-                    .map_err(|e| ExportError::Io(e.to_string()))?;
+                crate::pcm::encode(
+                    crate::pcm::PcmContainer::Wav,
+                    &crate::audio_out::interleave(&buf),
+                    self.settings.audio.sample_format(),
+                    &mut pcm,
+                );
+                mux.write_sample(
+                    at,
+                    WriteSample {
+                        data: &pcm,
+                        duration: n as u32,
+                        composition_offset: 0,
+                        is_sync: true,
+                    },
+                )
+                .map_err(|e| ExportError::Io(e.to_string()))?;
             }
         }
         Ok(())
@@ -377,10 +496,20 @@ impl Exporter {
         if let Some(m) = self.mxf.as_mut() {
             return m.write_video(packets);
         }
-        let mux = self.mux.as_mut().ok_or_else(|| ExportError::Encode("internal: the container writer was not created".into()))?;
+        let mux = self.mux.as_mut().ok_or_else(|| {
+            ExportError::Encode("internal: the container writer was not created".into())
+        })?;
         for p in packets {
-            mux.write_sample(self.vt, WriteSample { data: &p.data, duration: p.duration, composition_offset: p.composition_offset, is_sync: p.key })
-                .map_err(|e| ExportError::Io(e.to_string()))?;
+            mux.write_sample(
+                self.vt,
+                WriteSample {
+                    data: &p.data,
+                    duration: p.duration,
+                    composition_offset: p.composition_offset,
+                    is_sync: p.key,
+                },
+            )
+            .map_err(|e| ExportError::Io(e.to_string()))?;
         }
         Ok(())
     }
@@ -388,11 +517,18 @@ impl Exporter {
     /// Create the muxer and its tracks (after the first batch was encoded).
     fn open_mux(&mut self) -> Result<()> {
         if self.settings.format.is_mxf() {
-            let q = self.project.sequence(self.seq).ok_or(ExportError::NoSequence)?;
+            let q = self
+                .project
+                .sequence(self.seq)
+                .ok_or(ExportError::NoSequence)?;
             // start timecode of the first exported frame, at the output rate
             let seq_rate = q.settings.frame_rate;
             let start = self.pipe.rate.frame_at(seq_rate.tick_of(q.start_timecode)) + self.f0;
-            let name = self.project.item(self.seq).map(|i| i.name.clone()).unwrap_or_default();
+            let name = self
+                .project
+                .item(self.seq)
+                .map(|i| i.name.clone())
+                .unwrap_or_default();
             self.mxf = Some(MxfMux::new(MxfSetup {
                 settings: &self.settings,
                 name,
@@ -410,13 +546,18 @@ impl Exporter {
         let mut mux = Mp4Writer::new(file, opts).map_err(|e| ExportError::Io(e.to_string()))?;
         let mut vcfg = TrackConfig::new(self.venc.sample_entry(), self.venc.timescale());
         vcfg.media_start = self.venc.media_start();
-        self.vt = mux.add_track(vcfg).map_err(|e| ExportError::Io(e.to_string()))?;
+        self.vt = mux
+            .add_track(vcfg)
+            .map_err(|e| ExportError::Io(e.to_string()))?;
         self.at = match (&self.audio, &self.aenc) {
             (None, _) => None,
             (Some(a), Some(enc)) => {
                 let mut c = TrackConfig::new(enc.sample_entry(), a.sr);
                 c.media_start = Some(enc.priming() as i64);
-                Some(mux.add_track(c).map_err(|e| ExportError::Io(e.to_string()))?)
+                Some(
+                    mux.add_track(c)
+                        .map_err(|e| ExportError::Io(e.to_string()))?,
+                )
             }
             (Some(a), None) => {
                 let f = self.settings.audio.sample_format();
@@ -428,7 +569,10 @@ impl Exporter {
                     channels: a.channels as _,
                     sample_rate: a.sr as f64,
                 };
-                Some(mux.add_track(TrackConfig::new(SampleEntry::pcm(pcm), a.sr)).map_err(|e| ExportError::Io(e.to_string()))?)
+                Some(
+                    mux.add_track(TrackConfig::new(SampleEntry::pcm(pcm), a.sr))
+                        .map_err(|e| ExportError::Io(e.to_string()))?,
+                )
             }
         };
         self.mux = Some(mux);
@@ -446,16 +590,26 @@ impl Exporter {
             if !self.settings.part_of_batch {
                 progress.set_status("Measuring loudness");
             }
-            let a = self.audio.as_mut().ok_or_else(|| ExportError::Encode("internal: the audio pipeline was not created".into()))?;
+            let a = self.audio.as_mut().ok_or_else(|| {
+                ExportError::Encode("internal: the audio pipeline was not created".into())
+            })?;
             let settings = &self.settings;
-            timed(Stage::Loudness, || a.measure(settings, sources, &|| progress.cancel.load(Ordering::Relaxed)))?;
+            timed(Stage::Loudness, || {
+                a.measure(settings, sources, &|| {
+                    progress.cancel.load(Ordering::Relaxed)
+                })
+            })?;
             if filmcraft_media::pending::take() {
                 return Ok(Step::Pending);
             }
             *progress.loudness.lock().unwrap_or_else(|e| e.into_inner()) = a.loudness;
             self.measured = true;
             if !self.settings.part_of_batch {
-                progress.set_status(format!("Exporting {} frames ({})", self.frames(), self.settings.format.label()));
+                progress.set_status(format!(
+                    "Exporting {} frames ({})",
+                    self.frames(),
+                    self.settings.format.label()
+                ));
             }
             return Ok(Step::Progress);
         }
@@ -466,7 +620,10 @@ impl Exporter {
         if self.first_pass {
             // end of the analysis pass: encode for real with its statistics
             let _ = self.venc.flush()?;
-            let stats = self.venc.pass_stats().ok_or_else(|| ExportError::Encode("two-pass statistics missing".into()))?;
+            let stats = self
+                .venc
+                .pass_stats()
+                .ok_or_else(|| ExportError::Encode("two-pass statistics missing".into()))?;
             self.settings.h264_pass = H264Pass::Second(stats);
             self.venc = make_venc(&self.settings, self.pipe.w, self.pipe.h, self.pipe.rate)?;
             self.first_pass = false;
@@ -486,12 +643,24 @@ impl Exporter {
         self.write_video(tail)?;
         self.write_audio(mixed)?;
         if let (Some(at), Some(a)) = (self.at, self.aenc.as_mut()) {
-            let mux = self.mux.as_mut().ok_or_else(|| ExportError::Encode("internal: the container writer was not created".into()))?;
+            let mux = self.mux.as_mut().ok_or_else(|| {
+                ExportError::Encode("internal: the container writer was not created".into())
+            })?;
             for (au, duration) in a.flush_timed()? {
-                mux.write_sample(at, WriteSample { data: &au, duration, composition_offset: 0, is_sync: true }).map_err(|e| ExportError::Io(e.to_string()))?;
+                mux.write_sample(
+                    at,
+                    WriteSample {
+                        data: &au,
+                        duration,
+                        composition_offset: 0,
+                        is_sync: true,
+                    },
+                )
+                .map_err(|e| ExportError::Io(e.to_string()))?;
             }
             if let Some(entry) = a.final_sample_entry() {
-                mux.set_sample_entry(at, entry).map_err(|e| ExportError::Io(e.to_string()))?;
+                mux.set_sample_entry(at, entry)
+                    .map_err(|e| ExportError::Io(e.to_string()))?;
             }
         }
         let (bytes, extra_files) = match self.mxf.take() {
@@ -500,7 +669,9 @@ impl Exporter {
                 let w = self
                     .mux
                     .take()
-                    .ok_or_else(|| ExportError::Encode("internal: the container writer was not created".into()))?
+                    .ok_or_else(|| {
+                        ExportError::Encode("internal: the container writer was not created".into())
+                    })?
                     .finish()
                     .map_err(|e| ExportError::Io(e.to_string()))?;
                 (w.finish(&self.settings)?, Vec::new())
@@ -528,7 +699,10 @@ impl Exporter {
         let (f, frames) = match self.ahead.take() {
             Some(a) if a.first == self.next => (a.first, a.frames),
             _ => {
-                let (f, end) = (self.next, self.next.saturating_add(self.batch_len()).min(self.f1));
+                let (f, end) = (
+                    self.next,
+                    self.next.saturating_add(self.batch_len()).min(self.f1),
+                );
                 let pipe = &self.pipe;
                 match timed(Stage::Render, || render_batch(pipe, f, end, sources)) {
                     Some(frames) => (f, frames),
@@ -538,11 +712,14 @@ impl Exporter {
         };
         let end = f.saturating_add(i64::try_from(frames.len()).unwrap_or(0));
         if end <= f {
-            return Err(ExportError::Encode("internal: an empty batch was rendered".into()));
+            return Err(ExportError::Encode(
+                "internal: an empty batch was rendered".into(),
+            ));
         }
         // the batch after this one, when the pool can render it while this one is encoded
         let plan =
-            (end < self.f1 && self.overlapping() && !progress.cancel.load(Ordering::Relaxed)).then(|| (end, end.saturating_add(self.batch_len()).min(self.f1)));
+            (end < self.f1 && self.overlapping() && !progress.cancel.load(Ordering::Relaxed))
+                .then(|| (end, end.saturating_add(self.batch_len()).min(self.f1)));
         let Some((a, b)) = plan else {
             return match self.encode_batch(f, frames, sources)? {
                 Encoded::Pending => Ok(Step::Pending),
@@ -558,7 +735,9 @@ impl Exporter {
         let mut encode_done: Option<web_time::Instant> = None;
         let encoded = rayon::in_place_scope(|s| {
             s.spawn(|_| {
-                slot = Some(catch_unwind(AssertUnwindSafe(|| timed(Stage::Render, || render_batch(&pipe, a, b, sources)))));
+                slot = Some(catch_unwind(AssertUnwindSafe(|| {
+                    timed(Stage::Render, || render_batch(&pipe, a, b, sources))
+                })));
             });
             let r = self.encode_batch(f, frames, sources);
             encode_done = Some(web_time::Instant::now());
@@ -587,10 +766,17 @@ impl Exporter {
 
     /// Encode the rendered frames `f..` (the analysis pass of a two-pass export only encodes), mux
     /// them with their audio, and drop each frame as soon as it is encoded.
-    fn encode_batch(&mut self, f: i64, frames: Vec<Frame>, sources: &dyn SourceProvider) -> Result<Encoded> {
+    fn encode_batch(
+        &mut self,
+        f: i64,
+        frames: Vec<Frame>,
+        sources: &dyn SourceProvider,
+    ) -> Result<Encoded> {
         if self.first_pass {
             for (k, frame) in frames.into_iter().enumerate() {
-                timed(Stage::Encode, || self.encode(std::slice::from_ref(&frame), f + k as i64))?;
+                timed(Stage::Encode, || {
+                    self.encode(std::slice::from_ref(&frame), f + k as i64)
+                })?;
             }
             return Ok(Encoded::Done);
         }
@@ -598,7 +784,9 @@ impl Exporter {
         // the audio of every interleave group that ends in this batch, mixed before encoding so a
         // pending source stops the step before any frame of the batch is encoded (the audio position has
         // already moved though: known web issue, see the module docs)
-        let cuts: Vec<i64> = (f + 1..=end).filter(|&g| (g - self.f0) % INTERLEAVE == 0).collect();
+        let cuts: Vec<i64> = (f + 1..=end)
+            .filter(|&g| (g - self.f0) % INTERLEAVE == 0)
+            .collect();
         let mut mixed = Vec::with_capacity(cuts.len());
         if let Some(sr) = self.audio.as_ref().map(|a| a.sr) {
             let t = web_time::Instant::now();
@@ -615,7 +803,9 @@ impl Exporter {
         let mut mixed = mixed.into_iter();
         for (k, frame) in frames.into_iter().enumerate() {
             let fi = f + k as i64;
-            let packets = timed(Stage::Encode, || self.encode(std::slice::from_ref(&frame), fi))?;
+            let packets = timed(Stage::Encode, || {
+                self.encode(std::slice::from_ref(&frame), fi)
+            })?;
             self.queued.extend(packets);
             if cuts.contains(&(fi + 1)) {
                 timed(Stage::Mux, || -> Result<()> {
@@ -666,7 +856,10 @@ mod tests {
     fn the_overlap_batch_fits_the_memory_budget() {
         let budget = IN_FLIGHT_BUDGET;
         // 1080p keeps the full 16 frames, 4K SDR (33 MB a frame) 8 + 8 in flight (2 x 8 x 33 MB = 512 MiB)
-        assert_eq!(overlap_batch(16, frame_bytes(1920, 1080, false), budget), 16);
+        assert_eq!(
+            overlap_batch(16, frame_bytes(1920, 1080, false), budget),
+            16
+        );
         assert_eq!(overlap_batch(16, frame_bytes(3840, 2160, false), budget), 8);
         // 4K HDR (100 MB a frame): 256 MiB per batch is 2 frames, not 16
         let hdr4k = frame_bytes(3840, 2160, true);
@@ -687,7 +880,10 @@ mod tests {
             for fb in [MIB, 8 * MIB, 33 * MIB, 100 * MIB, 400 * MIB, 700 * MIB] {
                 let n = overlap_batch(batch, fb, budget) as u64;
                 assert!(n >= 1 && n <= batch as u64);
-                assert!(n == 1 || 2 * n * fb <= budget, "batch {batch}, frame {fb}: {n}");
+                assert!(
+                    n == 1 || 2 * n * fb <= budget,
+                    "batch {batch}, frame {fb}: {n}"
+                );
             }
         }
     }

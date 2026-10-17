@@ -36,12 +36,18 @@ fn info_exposes_visible_params_with_names() {
     let ids: Vec<&str> = info.params.iter().map(|p| p.id).collect();
     assert_eq!(ids, vec!["7", "3"], "hidden param 9 is skipped");
     let gain = info.param("7").unwrap();
-    assert_eq!((gain.name, gain.min, gain.max, gain.default), ("Gain", 0.0, 2.0, 1.0));
+    assert_eq!(
+        (gain.name, gain.min, gain.max, gain.default),
+        ("Gain", 0.0, 2.0, 1.0)
+    );
     let mode = info.param("3").unwrap();
     assert_eq!(mode.unit, Unit::Choice);
     assert_eq!(mode.choices, &["A", "B", "C"]);
     // Cached: the same leaked info every time.
-    assert!(std::ptr::eq(info, soundcraft_clap_host::plugin_info(GAIN).unwrap()));
+    assert!(std::ptr::eq(
+        info,
+        soundcraft_clap_host::plugin_info(GAIN).unwrap()
+    ));
 }
 
 #[test]
@@ -134,13 +140,24 @@ fn state_saves_and_restores_into_a_new_instance() {
     q.prepare(48_000.0, 64, 2);
     assert_eq!(q.param("7"), Some(1.0));
     assert!(q.load_state(&blob));
-    assert_eq!((q.param("7"), q.param("3")), (Some(1.5), Some(2.0)), "values re-read after the load");
+    assert_eq!(
+        (q.param("7"), q.param("3")),
+        (Some(1.5), Some(2.0)),
+        "values re-read after the load"
+    );
     let mut io = vec![vec![0.5f32; 64]; 2];
     q.process(&mut io, 64);
-    assert!(io[0].iter().all(|&x| (x - 0.75).abs() < 1e-6), "{:?}", &io[0][..4]);
+    assert!(
+        io[0].iter().all(|&x| (x - 0.75).abs() < 1e-6),
+        "{:?}",
+        &io[0][..4]
+    );
     // Hostile blobs are refused and leave the plugin as it was.
     assert!(!q.load_state(b"short"));
-    assert!(!q.load_state(&[0xff; 16]), "NaN gain rejected by the plugin");
+    assert!(
+        !q.load_state(&[0xff; 16]),
+        "NaN gain rejected by the plugin"
+    );
     assert!(!q.load_state(&[0u8; 4096]));
     assert_eq!(q.param("7"), Some(1.5));
     // Plugins without clap.state.

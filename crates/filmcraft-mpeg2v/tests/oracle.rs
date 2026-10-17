@@ -21,7 +21,20 @@ const SPECS: &[Spec] = &[
         name: "m2v_576i_tff",
         lavfi: "testsrc2=size=720x576:rate=50,tinterlace=mode=interleave_top,setfield=tff",
         frames: 16,
-        enc: &["-c:v", "mpeg2video", "-flags", "+ilme+ildct", "-alternate_scan", "1", "-bf", "2", "-g", "8", "-b:v", "6M"],
+        enc: &[
+            "-c:v",
+            "mpeg2video",
+            "-flags",
+            "+ilme+ildct",
+            "-alternate_scan",
+            "1",
+            "-bf",
+            "2",
+            "-g",
+            "8",
+            "-b:v",
+            "6M",
+        ],
         pix_fmt: "yuv420p",
     },
     // bottom field first, intra VLC table one, non-linear quantiser, 10-bit DC
@@ -91,7 +104,20 @@ const SPECS: &[Spec] = &[
         name: "m2v_hd422_longgop",
         lavfi: "testsrc2=size=1920x1080:rate=50,tinterlace=mode=interleave_top,setfield=tff",
         frames: 8,
-        enc: &["-c:v", "mpeg2video", "-pix_fmt", "yuv422p", "-flags", "+ilme+ildct", "-bf", "2", "-g", "6", "-b:v", "50M"],
+        enc: &[
+            "-c:v",
+            "mpeg2video",
+            "-pix_fmt",
+            "yuv422p",
+            "-flags",
+            "+ilme+ildct",
+            "-bf",
+            "2",
+            "-g",
+            "6",
+            "-b:v",
+            "50M",
+        ],
         pix_fmt: "yuv422p",
     },
     // low quantiser: large levels (escape codes), custom quantiser matrices
@@ -118,20 +144,46 @@ const SPECS: &[Spec] = &[
         pix_fmt: "yuv420p",
     },
     // no B pictures
-    Spec { name: "m2v_ipp", lavfi: "testsrc2=size=176x144:rate=30", frames: 20, enc: &["-c:v", "mpeg2video", "-bf", "0", "-g", "10"], pix_fmt: "yuv420p" },
+    Spec {
+        name: "m2v_ipp",
+        lavfi: "testsrc2=size=176x144:rate=30",
+        frames: 20,
+        enc: &["-c:v", "mpeg2video", "-bf", "0", "-g", "10"],
+        pix_fmt: "yuv420p",
+    },
     // MPEG-1 IBBP, and MPEG-1 at q 1 (8/16-bit escapes)
     Spec {
         name: "m1v_sif",
         lavfi: "testsrc2=size=352x240:rate=30000/1001",
         frames: 24,
-        enc: &["-c:v", "mpeg1video", "-bf", "2", "-g", "12", "-b:v", "1500k"],
+        enc: &[
+            "-c:v",
+            "mpeg1video",
+            "-bf",
+            "2",
+            "-g",
+            "12",
+            "-b:v",
+            "1500k",
+        ],
         pix_fmt: "yuv420p",
     },
     Spec {
         name: "m1v_q1",
         lavfi: "mandelbrot=size=192x144:rate=25",
         frames: 8,
-        enc: &["-c:v", "mpeg1video", "-qscale:v", "1", "-qmin", "1", "-bf", "1", "-g", "4"],
+        enc: &[
+            "-c:v",
+            "mpeg1video",
+            "-qscale:v",
+            "1",
+            "-qmin",
+            "1",
+            "-bf",
+            "1",
+            "-g",
+            "4",
+        ],
         pix_fmt: "yuv420p",
     },
 ];
@@ -147,7 +199,16 @@ pub const MAX_DIFFERING: f64 = 0.03;
 fn ffprobe_frames(file: &std::path::Path) -> Option<Vec<(String, bool, bool)>> {
     let fp = filmcraft_testkit::ffprobe()?;
     let o = std::process::Command::new(fp)
-        .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "frame=pict_type,interlaced_frame,top_field_first", "-of", "csv=p=0"])
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "frame=pict_type,interlaced_frame,top_field_first",
+            "-of",
+            "csv=p=0",
+        ])
         .arg(file)
         .output()
         .ok()?;
@@ -157,7 +218,11 @@ fn ffprobe_frames(file: &std::path::Path) -> Option<Vec<(String, bool, bool)>> {
             .filter(|l| !l.is_empty())
             .map(|l| {
                 let v: Vec<&str> = l.split(',').collect();
-                (v[0].to_string(), v.get(1) == Some(&"1"), v.get(2) == Some(&"1"))
+                (
+                    v[0].to_string(),
+                    v.get(1) == Some(&"1"),
+                    v.get(2) == Some(&"1"),
+                )
             })
             .collect(),
     )
@@ -168,23 +233,55 @@ fn check(spec: &Spec) {
     let f = make(&ff, spec).unwrap_or_else(|| panic!("could not generate {}", spec.name));
     let es = std::fs::read(&f).unwrap();
     let (pics, dec) = decode_es(&es, true);
-    assert_eq!(dec.errors(), 0, "{}: slice errors ({:?})", spec.name, dec.last_error());
+    assert_eq!(
+        dec.errors(),
+        0,
+        "{}: slice errors ({:?})",
+        spec.name,
+        dec.last_error()
+    );
     let raw = ffmpeg_frames(&ff, &f, spec.pix_fmt);
     let stats = compare(&pics, &raw);
     let mut all = Stats::default();
     for (i, s) in stats.iter().enumerate() {
         all.merge(s);
-        assert!(s.max <= TOL_MAX && s.psnr() >= MIN_PSNR, "{} frame {i} ({:?}): max {} psnr {:.2}", spec.name, pics[i].picture_type, s.max, s.psnr());
+        assert!(
+            s.max <= TOL_MAX && s.psnr() >= MIN_PSNR,
+            "{} frame {i} ({:?}): max {} psnr {:.2}",
+            spec.name,
+            pics[i].picture_type,
+            s.max,
+            s.psnr()
+        );
     }
-    assert!((all.diff as f64) / (all.n as f64) <= MAX_DIFFERING, "{}: {} of {} samples differ", spec.name, all.diff, all.n);
+    assert!(
+        (all.diff as f64) / (all.n as f64) <= MAX_DIFFERING,
+        "{}: {} of {} samples differ",
+        spec.name,
+        all.diff,
+        all.n
+    );
     // display order: picture types, interlacing and field order as ffprobe reports them
     if let Some(fr) = ffprobe_frames(&f) {
         assert_eq!(fr.len(), pics.len());
         for (i, (p, (t, il, tff))) in pics.iter().zip(&fr).enumerate() {
-            assert_eq!(format!("{:?}", p.picture_type), *t, "{} frame {i} type", spec.name);
-            assert_eq!(!p.progressive_frame, *il, "{} frame {i} interlaced", spec.name);
+            assert_eq!(
+                format!("{:?}", p.picture_type),
+                *t,
+                "{} frame {i} type",
+                spec.name
+            );
+            assert_eq!(
+                !p.progressive_frame, *il,
+                "{} frame {i} interlaced",
+                spec.name
+            );
             if *il {
-                assert_eq!(p.top_field_first, *tff, "{} frame {i} field order", spec.name);
+                assert_eq!(
+                    p.top_field_first, *tff,
+                    "{} frame {i} field order",
+                    spec.name
+                );
             }
         }
     }
@@ -200,7 +297,12 @@ fn check(spec: &Spec) {
     );
     // the single-threaded decode is identical
     let (single, _) = decode_es(&es, false);
-    assert!(single.iter().zip(&pics).all(|(a, b)| a.y == b.y && a.cb == b.cb && a.cr == b.cr));
+    assert!(
+        single
+            .iter()
+            .zip(&pics)
+            .all(|(a, b)| a.y == b.y && a.cb == b.cb && a.cr == b.cr)
+    );
 }
 
 #[test]
@@ -218,8 +320,14 @@ fn hd_1080i_matches() {
 #[test]
 #[ignore]
 fn generate_fixtures() {
-    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("mpeg2v fixtures") else { return };
+    let Some(ff) = filmcraft_testkit::ffmpeg_or_skip("mpeg2v fixtures") else {
+        return;
+    };
     for s in SPECS.iter().chain([&HD1080I]) {
-        filmcraft_testkit::fixtures::generate_and_report(&format!("mpeg2v/{}", s.name), &[path(s)], || make(&ff, s));
+        filmcraft_testkit::fixtures::generate_and_report(
+            &format!("mpeg2v/{}", s.name),
+            &[path(s)],
+            || make(&ff, s),
+        );
     }
 }

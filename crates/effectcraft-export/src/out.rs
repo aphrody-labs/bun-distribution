@@ -12,18 +12,31 @@ pub type Sink = dyn Fn(&str, Vec<u8>) + Send + Sync;
 /// One output file being written.
 pub(crate) enum Out<'a> {
     File(BufWriter<std::fs::File>),
-    Mem { path: String, cur: Cursor<Vec<u8>>, sink: &'a Sink },
+    Mem {
+        path: String,
+        cur: Cursor<Vec<u8>>,
+        sink: &'a Sink,
+    },
 }
 
 /// Create `path` (parent directories included) or an in-memory file for `sink`.
 pub(crate) fn create<'a>(sink: Option<&'a Sink>, path: &str) -> Result<Out<'a>> {
     match sink {
-        Some(sink) => Ok(Out::Mem { path: path.to_string(), cur: Cursor::new(Vec::new()), sink }),
+        Some(sink) => Ok(Out::Mem {
+            path: path.to_string(),
+            cur: Cursor::new(Vec::new()),
+            sink,
+        }),
         None => {
-            if let Some(dir) = std::path::Path::new(path).parent().filter(|d| !d.as_os_str().is_empty()) {
+            if let Some(dir) = std::path::Path::new(path)
+                .parent()
+                .filter(|d| !d.as_os_str().is_empty())
+            {
                 std::fs::create_dir_all(dir).map_err(io)?;
             }
-            Ok(Out::File(BufWriter::new(std::fs::File::create(path).map_err(io)?)))
+            Ok(Out::File(BufWriter::new(
+                std::fs::File::create(path).map_err(io)?,
+            )))
         }
     }
 }

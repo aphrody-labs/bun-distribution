@@ -236,7 +236,10 @@ impl SynchronizationWaitContext {
 
     /// Compare native object identity, as upstream compares object pointers.
     /// IDs from process/session/event namespaces need not be distinct.
-    pub fn synced_index_for(&self, signaled_object: *const SynchronizationObjectState) -> Option<usize> {
+    pub fn synced_index_for(
+        &self,
+        signaled_object: *const SynchronizationObjectState,
+    ) -> Option<usize> {
         self.object_states
             .iter()
             .position(|&state| std::ptr::eq(state, signaled_object))
@@ -791,14 +794,16 @@ pub(crate) mod tests {
     use super::*;
 
     pub(crate) fn await_kernel_registration(thread: &Arc<KThreadLock>) {
-        use super::super::{kernel, k_scheduler_lock::KScopedSchedulerLock};
+        use super::super::{k_scheduler_lock::KScopedSchedulerLock, kernel};
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
         loop {
             let linked = {
                 let _lock = KScopedSchedulerLock::new(kernel::scheduler_lock().unwrap());
                 thread.lock().unwrap().sync_wait_context.is_active()
             };
-            if linked { return; }
+            if linked {
+                return;
+            }
             assert!(std::time::Instant::now() < deadline, "waiter did not link");
             std::thread::yield_now();
         }
@@ -817,17 +822,28 @@ pub(crate) mod tests {
         first.lock().unwrap().signal();
         thread.lock().unwrap().wait_cancel();
         let mut index = -1;
-        let result = wait_on_objects(&thread, &mut index, vec![1, 2], vec![
-            WaitableObject::from_readable_event(Arc::clone(&first)),
-            WaitableObject::from_readable_event(Arc::clone(&second)),
-        ], -1);
+        let result = wait_on_objects(
+            &thread,
+            &mut index,
+            vec![1, 2],
+            vec![
+                WaitableObject::from_readable_event(Arc::clone(&first)),
+                WaitableObject::from_readable_event(Arc::clone(&second)),
+            ],
+            -1,
+        );
         assert_eq!((result, index), (crate::hle::result::RESULT_SUCCESS, 0));
         assert!(thread.lock().unwrap().is_wait_cancelled());
         first.lock().unwrap().clear();
         second.lock().unwrap().clear();
         index = -1;
-        let result = wait_on_objects(&thread, &mut index, vec![1],
-            vec![WaitableObject::from_readable_event(Arc::clone(&first))], -1);
+        let result = wait_on_objects(
+            &thread,
+            &mut index,
+            vec![1],
+            vec![WaitableObject::from_readable_event(Arc::clone(&first))],
+            -1,
+        );
         assert_eq!((result, index), (RESULT_CANCELLED, -1));
         assert!(!thread.lock().unwrap().is_wait_cancelled());
         assert!(first.lock().unwrap().sync_object.is_empty());
@@ -842,7 +858,8 @@ pub(crate) mod tests {
         let thread = kernel.get_current_emu_thread().unwrap();
         {
             let _lock = super::super::k_scheduler_lock::KScopedSchedulerLock::new(
-                super::super::kernel::scheduler_lock().unwrap());
+                super::super::kernel::scheduler_lock().unwrap(),
+            );
             let thread = thread.lock().unwrap();
             thread.request_dummy_thread_wait();
             thread.dummy_thread_end_wait();
@@ -854,7 +871,7 @@ pub(crate) mod tests {
 
     #[test]
     fn native_thread_completion_wakes_parentless_host() {
-        use super::super::{kernel, k_scheduler_lock::KScopedSchedulerLock};
+        use super::super::{k_scheduler_lock::KScopedSchedulerLock, kernel};
         use std::sync::mpsc;
         use std::time::Duration;
         let mut kernel = Box::new(kernel::KernelCore::new());
@@ -867,8 +884,13 @@ pub(crate) mod tests {
             let thread = kernel::get_current_emu_thread().unwrap();
             ready_tx.send(Arc::clone(&thread)).unwrap();
             let mut index = -1;
-            let result = wait_on_objects(&thread, &mut index, vec![42],
-                vec![WaitableObject::Thread(worker_target)], -1);
+            let result = wait_on_objects(
+                &thread,
+                &mut index,
+                vec![42],
+                vec![WaitableObject::Thread(worker_target)],
+                -1,
+            );
             done_tx.send((result, index)).unwrap();
         });
         let waiter = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
@@ -877,8 +899,10 @@ pub(crate) mod tests {
             let _lock = KScopedSchedulerLock::new(kernel::scheduler_lock().unwrap());
             target.lock().unwrap().finish_termination();
         }
-        assert_eq!(done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
-            (crate::hle::result::RESULT_SUCCESS, 0));
+        assert_eq!(
+            done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+            (crate::hle::result::RESULT_SUCCESS, 0)
+        );
         worker.join().unwrap();
         assert!(target.lock().unwrap().sync_object.is_empty());
         kernel.shutdown();
@@ -912,13 +936,21 @@ pub(crate) mod tests {
                 let thread = kernel::get_current_emu_thread().unwrap();
                 ready_tx.send(Arc::clone(&thread)).unwrap();
                 let mut index = -1;
-                let result = wait_on_objects(&thread, &mut index, vec![42],
-                    vec![WaitableObject::from_readable_event(worker_event)], deadline);
+                let result = wait_on_objects(
+                    &thread,
+                    &mut index,
+                    vec![42],
+                    vec![WaitableObject::from_readable_event(worker_event)],
+                    deadline,
+                );
                 done_tx.send((result, index)).unwrap();
             });
             let thread = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
             await_kernel_registration(&thread);
-            assert!(matches!(done_rx.recv_timeout(Duration::from_millis(40)), Err(mpsc::RecvTimeoutError::Timeout)));
+            assert!(matches!(
+                done_rx.recv_timeout(Duration::from_millis(40)),
+                Err(mpsc::RecvTimeoutError::Timeout)
+            ));
             assert!(kernel.hardware_timer().unwrap().get_tick() >= deadline);
             let expected = if stop_signal {
                 event.lock().unwrap().signal();
@@ -927,7 +959,10 @@ pub(crate) mod tests {
                 timing.sync_pause(false);
                 (RESULT_TIMED_OUT, -1)
             };
-            assert_eq!(done_rx.recv_timeout(Duration::from_secs(2)).unwrap(), expected);
+            assert_eq!(
+                done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+                expected
+            );
             worker.join().unwrap();
             assert!(event.lock().unwrap().sync_object.is_empty());
         }
@@ -948,24 +983,34 @@ pub(crate) mod tests {
         let state = object.sync_state_ptr();
         let mut nodes = vec![ThreadListNode::new()].into_boxed_slice();
         nodes[0].thread = Arc::downgrade(&thread);
-        unsafe { (*state).link_node(&mut nodes[0]); }
+        unsafe {
+            (*state).link_node(&mut nodes[0]);
+        }
         {
             let mut thread = thread.lock().unwrap();
             assert!(!thread.is_dummy_thread());
             thread.sync_wait_context = SynchronizationWaitContext {
-                nodes, object_ids: vec![42], objects: vec![object],
-                object_states: vec![state], active: true,
+                nodes,
+                object_ids: vec![42],
+                objects: vec![object],
+                object_states: vec![state],
+                active: true,
             };
             thread.set_cancellable();
             thread.begin_wait_with_queue(ThreadQueueImplForKSynchronizationObjectWait::queue());
         }
-        let event = weak_event.upgrade().expect("guest queue must retain its object");
+        let event = weak_event
+            .upgrade()
+            .expect("guest queue must retain its object");
         event.lock().unwrap().signal();
         assert!(event.lock().unwrap().sync_object.is_empty());
         assert_eq!(thread.lock().unwrap().get_synced_index(), 0);
         assert!(!thread.lock().unwrap().sync_wait_context.is_active());
         drop(event);
-        assert!(weak_event.upgrade().is_none(), "completed guest wait retained the object");
+        assert!(
+            weak_event.upgrade().is_none(),
+            "completed guest wait retained the object"
+        );
     }
 
     #[test]
@@ -989,10 +1034,16 @@ pub(crate) mod tests {
                 let mut index = -1;
                 // Distinct native objects may have equal numeric IDs. Only
                 // the port at index 1 becomes signaled, not the event at 0.
-                let result = wait_on_objects(&thread, &mut index, vec![42, 42], vec![
-                    WaitableObject::from_readable_event(event),
-                    WaitableObject::from_server_port(worker_port),
-                ], -1);
+                let result = wait_on_objects(
+                    &thread,
+                    &mut index,
+                    vec![42, 42],
+                    vec![
+                        WaitableObject::from_readable_event(event),
+                        WaitableObject::from_server_port(worker_port),
+                    ],
+                    -1,
+                );
                 done_tx.send((result, index)).unwrap();
             });
             let thread = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
@@ -1003,8 +1054,10 @@ pub(crate) mod tests {
                 KPort::enqueue_session_arc(&port, 123)
             };
             assert_eq!(result, crate::hle::result::RESULT_SUCCESS);
-            assert_eq!(done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
-                (crate::hle::result::RESULT_SUCCESS, 1));
+            assert_eq!(
+                done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+                (crate::hle::result::RESULT_SUCCESS, 1)
+            );
             worker.join().unwrap();
             assert!(port.lock().unwrap().server.sync_object.is_empty());
         }
@@ -1013,7 +1066,7 @@ pub(crate) mod tests {
 
     #[test]
     fn parentless_host_cancellation_and_hardware_deadline_unlink_nodes() {
-        use super::super::{kernel, k_scheduler_lock::KScopedSchedulerLock};
+        use super::super::{k_scheduler_lock::KScopedSchedulerLock, kernel};
         use std::sync::mpsc;
         use std::time::Duration;
 
@@ -1023,7 +1076,11 @@ pub(crate) mod tests {
         // polling. The same hardware callback is used by the runtime timer.
         let timing = Arc::new(crate::core_timing::CoreTiming::new());
         kernel.wire_hardware_timer(Arc::clone(&timing));
-        for expected in [RESULT_CANCELLED, RESULT_TIMED_OUT, RESULT_TERMINATION_REQUESTED] {
+        for expected in [
+            RESULT_CANCELLED,
+            RESULT_TIMED_OUT,
+            RESULT_TERMINATION_REQUESTED,
+        ] {
             let event = Arc::new(Mutex::new(KReadableEvent::new()));
             event.lock().unwrap().initialize(0, 0x1234);
             let worker_event = Arc::clone(&event);
@@ -1034,8 +1091,13 @@ pub(crate) mod tests {
                 let thread = kernel::get_current_emu_thread().unwrap();
                 ready_tx.send(Arc::clone(&thread)).unwrap();
                 let mut index = -1;
-                let result = wait_on_objects(&thread, &mut index, vec![0x1234],
-                    vec![WaitableObject::from_readable_event(worker_event)], deadline);
+                let result = wait_on_objects(
+                    &thread,
+                    &mut index,
+                    vec![0x1234],
+                    vec![WaitableObject::from_readable_event(worker_event)],
+                    deadline,
+                );
                 done_tx.send((result, index)).unwrap();
             });
             let thread = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
@@ -1054,7 +1116,10 @@ pub(crate) mod tests {
                 timing.add_ticks(10_000_000);
                 timing.advance();
             }
-            assert_eq!(done_rx.recv_timeout(Duration::from_secs(2)).unwrap(), (expected, -1));
+            assert_eq!(
+                done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+                (expected, -1)
+            );
             worker.join().unwrap();
             {
                 let _lock = KScopedSchedulerLock::new(kernel::scheduler_lock().unwrap());
@@ -1068,9 +1133,9 @@ pub(crate) mod tests {
 
     #[test]
     fn parentless_host_dummy_wait_uses_kernel_queue_and_wakeup() {
-        use super::super::kernel::{self, KernelCore};
         use super::super::k_scheduler_lock::KScopedSchedulerLock;
         use super::super::k_thread::ThreadState;
+        use super::super::kernel::{self, KernelCore};
         use std::sync::mpsc;
         use std::time::{Duration, Instant};
 
@@ -1090,12 +1155,22 @@ pub(crate) mod tests {
                 assert!(thread.is_dummy_thread());
                 assert!(thread.parent.is_none());
                 assert!(thread.scheduler.is_none());
-                assert!(thread.global_scheduler_context.as_ref().unwrap().upgrade().is_some());
+                assert!(thread
+                    .global_scheduler_context
+                    .as_ref()
+                    .unwrap()
+                    .upgrade()
+                    .is_some());
             }
             registered_tx.send(Arc::clone(&thread)).unwrap();
             let mut index = -1;
-            let result = wait_on_objects(&thread, &mut index, vec![0x1234],
-                vec![WaitableObject::from_readable_event(worker_event)], -1);
+            let result = wait_on_objects(
+                &thread,
+                &mut index,
+                vec![0x1234],
+                vec![WaitableObject::from_readable_event(worker_event)],
+                -1,
+            );
             done_tx.send((result, index)).unwrap();
         });
         let thread = registered_rx.recv_timeout(Duration::from_secs(2)).unwrap();
@@ -1106,14 +1181,24 @@ pub(crate) mod tests {
                 let thread = thread.lock().unwrap();
                 thread.get_state() == ThreadState::WAITING && thread.sync_wait_context.is_active()
             };
-            if sleeping { break; }
-            assert!(Instant::now() < deadline, "host never entered the kernel wait queue");
+            if sleeping {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "host never entered the kernel wait queue"
+            );
             std::thread::yield_now();
         }
-        assert!(done_rx.try_recv().is_err(), "wait returned without a signal");
+        assert!(
+            done_rx.try_recv().is_err(),
+            "wait returned without a signal"
+        );
         event.lock().unwrap().signal();
-        assert_eq!(done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
-            (crate::hle::result::RESULT_SUCCESS, 0));
+        assert_eq!(
+            done_rx.recv_timeout(Duration::from_secs(2)).unwrap(),
+            (crate::hle::result::RESULT_SUCCESS, 0)
+        );
         worker.join().unwrap();
         {
             let _lock = KScopedSchedulerLock::new(kernel::scheduler_lock().unwrap());

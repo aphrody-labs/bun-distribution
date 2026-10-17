@@ -82,10 +82,15 @@ pub(crate) fn follow(
     // The files read, by their path inside the script's folder; the script first.
     let mut files: Vec<String> = vec![script.to_string()];
     // What became of each path found, and the file read there: a file is read once.
-    let mut read: BTreeMap<String, (IncludeStatus, Option<usize>)> = BTreeMap::from([(script.to_string(), (IncludeStatus::Checked, Some(0)))]);
+    let mut read: BTreeMap<String, (IncludeStatus, Option<usize>)> =
+        BTreeMap::from([(script.to_string(), (IncludeStatus::Checked, Some(0)))]);
     // The files still to follow, in the order they were read: each file is reached first at its
     // smallest depth.
-    let mut work = VecDeque::from([Work { file: 0, includes, depth: 0 }]);
+    let mut work = VecDeque::from([Work {
+        file: 0,
+        includes,
+        depth: 0,
+    }]);
     let mut rows: Vec<Row> = vec![];
     // Which file includes which.
     let mut edges: BTreeSet<(usize, usize)> = BTreeSet::new();
@@ -94,7 +99,11 @@ pub(crate) fn follow(
     // The files to check.
     let mut checked: Vec<ReadFile> = vec![];
     while let Some(w) = work.pop_front() {
-        let folder = if w.file == 0 { String::new() } else { files.get(w.file).map_or("", |f| parent(f)).to_string() };
+        let folder = if w.file == 0 {
+            String::new()
+        } else {
+            files.get(w.file).map_or("", |f| parent(f)).to_string()
+        };
         for inc in w.includes {
             acc.steps = acc.steps.saturating_add(1);
             let mut status = IncludeStatus::NotFollowed;
@@ -106,14 +115,21 @@ pub(crate) fn follow(
                     (status, found, to) = (before, Some(path), file);
                     break;
                 }
-                if w.depth + 1 > limits.include_depth || loaded >= limits.includes || total >= limits.total_bytes || lookups >= limits.lookups {
+                if w.depth + 1 > limits.include_depth
+                    || loaded >= limits.includes
+                    || total >= limits.total_bytes
+                    || lookups >= limits.lookups
+                {
                     (status, found) = (IncludeStatus::Limit, None);
                     break;
                 }
                 lookups += 1;
                 status = IncludeStatus::Missing;
                 // One byte more than a file or the rest of the total may take shows that it is too large.
-                let max = limits.file_bytes.min(limits.total_bytes.saturating_sub(total)).saturating_add(1);
+                let max = limits
+                    .file_bytes
+                    .min(limits.total_bytes.saturating_sub(total))
+                    .saturating_add(1);
                 let b = match loader.load(&path, max) {
                     Loaded::Bytes(b) => b,
                     Loaded::Missing => continue,
@@ -143,11 +159,26 @@ pub(crate) fn follow(
                 read.insert(path.clone(), (status, Some(file)));
                 let (text, invalid) = crate::decode(&b);
                 let mut tallies = Acc::new(limits);
-                let scan = analyze::scan(&text, Some(&path), Rc::clone(&inc.paths), known, &mut tallies);
+                let scan = analyze::scan(
+                    &text,
+                    Some(&path),
+                    Rc::clone(&inc.paths),
+                    known,
+                    &mut tallies,
+                );
                 acc.steps = acc.steps.saturating_add(tallies.steps);
                 known.add(scan.known, limits.entries);
-                checked.push(ReadFile { path: path.clone(), text: text.into_owned(), invalid, paths: Rc::clone(&inc.paths) });
-                work.push_back(Work { file, includes: scan.includes, depth: w.depth + 1 });
+                checked.push(ReadFile {
+                    path: path.clone(),
+                    text: text.into_owned(),
+                    invalid,
+                    paths: Rc::clone(&inc.paths),
+                });
+                work.push_back(Work {
+                    file,
+                    includes: scan.includes,
+                    depth: w.depth + 1,
+                });
                 (found, to) = (Some(path), Some(file));
                 break;
             }
@@ -159,14 +190,29 @@ pub(crate) fn follow(
             }
             // One row more than the report keeps marks it truncated.
             if rows.len() <= limits.entries {
-                rows.push(Row { value: acc.echo(&inc.value), line: inc.line, from: w.file, status, path: found, to });
+                rows.push(Row {
+                    value: acc.echo(&inc.value),
+                    line: inc.line,
+                    from: w.file,
+                    status,
+                    path: found,
+                    to,
+                });
             }
         }
     }
     let reach = reachable(files.len(), &edges, acc);
     for r in rows {
-        let cycle = r.to.and_then(|to| reach.get(to)).and_then(|reached| reached.get(r.from)).copied().unwrap_or(false);
-        let status = if cycle { IncludeStatus::Cycle } else { r.status };
+        let cycle =
+            r.to.and_then(|to| reach.get(to))
+                .and_then(|reached| reached.get(r.from))
+                .copied()
+                .unwrap_or(false);
+        let status = if cycle {
+            IncludeStatus::Cycle
+        } else {
+            r.status
+        };
         let file = files.get(r.from).filter(|_| r.from > 0).map(String::as_str);
         acc.include(&r.value, r.line, file, status, r.path.as_deref());
     }
@@ -243,12 +289,20 @@ fn join(folder: &str, rel: &str) -> Option<String> {
 /// once: the name itself, then the name in each `#includepath` folder. Each is worked out when it
 /// is tried. Names and folders the checker doesn't follow, and names or folders that lead out of
 /// the script's folder, give none.
-fn candidates<'a>(folder: &'a str, name: &'a str, paths: &'a [String]) -> impl Iterator<Item = String> + 'a {
+fn candidates<'a>(
+    folder: &'a str,
+    name: &'a str,
+    paths: &'a [String],
+) -> impl Iterator<Item = String> + 'a {
     let name = Some(name).filter(|n| !unfollowed(n));
     let first = name.and_then(|n| join(folder, n));
-    let inside = name
-        .into_iter()
-        .flat_map(move |n| paths.iter().filter(|p| !unfollowed(p)).filter_map(move |p| walk(folder, p)).filter_map(move |p| join(&p, n)));
+    let inside = name.into_iter().flat_map(move |n| {
+        paths
+            .iter()
+            .filter(|p| !unfollowed(p))
+            .filter_map(move |p| walk(folder, p))
+            .filter_map(move |p| join(&p, n))
+    });
     let mut tried: Vec<String> = vec![];
     first.into_iter().chain(inside).filter(move |p| {
         let new = !tried.contains(p);
@@ -274,17 +328,37 @@ mod tests {
         assert_eq!(tried("lib/deep", "../c.jsxinc", &[]), ["lib/c.jsxinc"]);
         assert_eq!(tried("lib", "./x\\y.jsxinc", &[]), ["lib/x/y.jsxinc"]);
         // Then each include path, inside the folder.
-        let paths = ["shared".to_string(), "/abs".to_string(), "../out".to_string(), "shared".to_string()];
-        assert_eq!(tried("", "u.jsxinc", &paths), ["u.jsxinc", "shared/u.jsxinc"]);
+        let paths = [
+            "shared".to_string(),
+            "/abs".to_string(),
+            "../out".to_string(),
+            "shared".to_string(),
+        ];
+        assert_eq!(
+            tried("", "u.jsxinc", &paths),
+            ["u.jsxinc", "shared/u.jsxinc"]
+        );
         // An include path may lead back to the script's own folder.
-        assert_eq!(tried("lib", "shared.jsxinc", &["..".to_string()]), ["lib/shared.jsxinc", "shared.jsxinc"]);
+        assert_eq!(
+            tried("lib", "shared.jsxinc", &["..".to_string()]),
+            ["lib/shared.jsxinc", "shared.jsxinc"]
+        );
     }
 
     #[test]
     fn absolute_names_and_names_leading_out_are_not_followed() {
-        for name in
-            ["/etc/x.jsx", "\\\\server\\x.jsx", "C:/x.jsx", "~/x.jsx", "%APPDATA%/x.jsx", "$HOME/x.jsx", "../x.jsx", "a/../../x.jsx", ".", "a/.."]
-        {
+        for name in [
+            "/etc/x.jsx",
+            "\\\\server\\x.jsx",
+            "C:/x.jsx",
+            "~/x.jsx",
+            "%APPDATA%/x.jsx",
+            "$HOME/x.jsx",
+            "../x.jsx",
+            "a/../../x.jsx",
+            ".",
+            "a/..",
+        ] {
             assert!(tried("", name, &[]).is_empty(), "{name}");
         }
         assert!(tried("lib", "../../x.jsx", &[]).is_empty());

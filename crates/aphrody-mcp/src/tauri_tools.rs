@@ -13,7 +13,11 @@ const PREFIX: &str = "aphrody_";
 const TIMEOUT: Duration = Duration::from_secs(25);
 const SETUP_INSTRUCTIONS: &str = "Aphrody Tauri tools are served by aphrody-mcp (and the in-process kernel); the desktop app registers its Tauri subsystem in the per-user Aphrody kernel. Use aphrody_tauri_window_list, aphrody_tauri_driver_session and aphrody_tauri_manage_window before targeting a webview.";
 const TOOL_DEFINITIONS: &[(&str, &str, &str)] = &[
-    ("aphrody_tauri_window_list", "List local Aphrody Tauri windows.", r#"{"type":"object"}"#),
+    (
+        "aphrody_tauri_window_list",
+        "List local Aphrody Tauri windows.",
+        r#"{"type":"object"}"#,
+    ),
     (
         "aphrody_tauri_dom_snapshot",
         "Read DOM text and accessible elements in a local Aphrody Tauri window.",
@@ -111,8 +115,13 @@ fn static_tools() -> Vec<Tool> {
 
 async fn connect() -> Result<Client, String> {
     let endpoint = aphrody_kernel::transport::default_endpoint();
-    let client = Client::connect(&endpoint).await.map_err(|error| error.to_string())?;
-    client.initialize("aphrody-mcp").await.map_err(|error| error.to_string())?;
+    let client = Client::connect(&endpoint)
+        .await
+        .map_err(|error| error.to_string())?;
+    client
+        .initialize("aphrody-mcp")
+        .await
+        .map_err(|error| error.to_string())?;
     Ok(client)
 }
 
@@ -131,7 +140,11 @@ async fn catalog() -> Result<Vec<Tool>, String> {
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
-        .filter(|tool| tool.get("name").and_then(Value::as_str).is_some_and(is_kernel_tool))
+        .filter(|tool| {
+            tool.get("name")
+                .and_then(Value::as_str)
+                .is_some_and(is_kernel_tool)
+        })
         .cloned()
         .filter_map(|tool| {
             serde_json::from_value(json!({
@@ -142,7 +155,9 @@ async fn catalog() -> Result<Vec<Tool>, String> {
             .ok()
         })
         .collect();
-    *SYNC_CATALOG.write().map_err(|_| "Tauri catalog lock poisoned".to_owned())? = tools.clone();
+    *SYNC_CATALOG
+        .write()
+        .map_err(|_| "Tauri catalog lock poisoned".to_owned())? = tools.clone();
     *cache = Some(tools.clone());
     Ok(tools)
 }
@@ -154,11 +169,17 @@ fn is_kernel_tool(name: &str) -> bool {
 
 pub(crate) async fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
     match catalog().await {
-        Ok(tools) => tools.into_iter().filter(|tool| !taken(tool.name.as_ref())).collect(),
+        Ok(tools) => tools
+            .into_iter()
+            .filter(|tool| !taken(tool.name.as_ref()))
+            .collect(),
         Err(error) => {
             tracing::debug!(%error, "Tauri MCP catalog unavailable");
-            static_tools().into_iter().filter(|tool| !taken(tool.name.as_ref())).collect()
-        },
+            static_tools()
+                .into_iter()
+                .filter(|tool| !taken(tool.name.as_ref()))
+                .collect()
+        }
     }
 }
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -176,12 +197,16 @@ pub(crate) async fn owns(name: &str) -> bool {
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let Some(internal) = name.strip_prefix(PREFIX).filter(|internal| is_kernel_tool(internal))
+    let Some(internal) = name
+        .strip_prefix(PREFIX)
+        .filter(|internal| is_kernel_tool(internal))
     else {
         return error(format!("unknown Tauri tool {name}"));
     };
-    let arguments =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let arguments = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     if internal == "tauri_get_setup_instructions" {
         return CallToolResult::success(vec![ContentBlock::text(SETUP_INSTRUCTIONS)]);
     }
@@ -190,7 +215,11 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
         Err(reason) => return error(format!("{name}: Aphrody kernel unavailable ({reason})")),
     };
     let result = client
-        .request("tools/call", json!({"name": internal, "arguments": arguments}), TIMEOUT)
+        .request(
+            "tools/call",
+            json!({"name": internal, "arguments": arguments}),
+            TIMEOUT,
+        )
         .await;
     match result {
         Ok(raw) => serde_json::from_value(raw)

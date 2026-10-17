@@ -52,7 +52,12 @@ pub fn choose_level(width: u32, height: u32, fps_num: u32, fps_den: u32, kbps: O
     let sr = (ps as f64 * fps_num as f64 / fps_den.max(1) as f64).ceil() as u64;
     for &(idc, max_ps, max_sr, max_br) in &LEVELS {
         let max_dim = ((max_ps * 8) as f64).sqrt() as u64;
-        if ps <= max_ps && (width as u64) <= max_dim && (height as u64) <= max_dim && sr <= max_sr && kbps.is_none_or(|k| k as u64 <= max_br) {
+        if ps <= max_ps
+            && (width as u64) <= max_dim
+            && (height as u64) <= max_dim
+            && sr <= max_sr
+            && kbps.is_none_or(|k| k as u64 <= max_br)
+        {
             return idc;
         }
     }

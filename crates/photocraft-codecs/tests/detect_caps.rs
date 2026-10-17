@@ -20,7 +20,12 @@ fn every_enabled_format_is_symmetric_or_whitelisted() {
             continue;
         }
         let exc = ASYMMETRIC_EXCEPTIONS.iter().find(|(g, _)| *g == f);
-        let (_, reason) = exc.unwrap_or_else(|| panic!("{f:?} is enabled but not symmetric (read={}, write={})", c.read, c.write));
+        let (_, reason) = exc.unwrap_or_else(|| {
+            panic!(
+                "{f:?} is enabled but not symmetric (read={}, write={})",
+                c.read, c.write
+            )
+        });
         assert!(reason.len() > 20, "{f:?} exception needs a real reason");
     }
 }
@@ -70,7 +75,10 @@ fn default_build_formats_all_symmetric() {
 fn avif_never_readable() {
     assert!(!caps(Format::Avif).read);
     assert_eq!(caps(Format::Avif).write, cfg!(feature = "avif"));
-    assert!(matches!(decode_as(Format::Avif, b"\0\0\0\x1cftypavif"), Err(CodecError::Unsupported { .. })));
+    assert!(matches!(
+        decode_as(Format::Avif, b"\0\0\0\x1cftypavif"),
+        Err(CodecError::Unsupported { .. })
+    ));
 }
 
 #[test]
@@ -80,20 +88,51 @@ fn heif_is_detected_always_and_readable_only_with_the_feature() {
     assert_eq!(from_extension("IMG_0001.HEIC"), Some(Format::Heif));
     assert_eq!(caps(Format::Heif).read, cfg!(feature = "heif"));
     assert!(!caps(Format::Heif).write);
-    assert!(ASYMMETRIC_EXCEPTIONS.iter().any(|(f, _)| *f == Format::Heif));
+    assert!(
+        ASYMMETRIC_EXCEPTIONS
+            .iter()
+            .any(|(f, _)| *f == Format::Heif)
+    );
     // Either way a bare header is an error, never a panic.
     assert!(decode_as(Format::Heif, header).is_err());
 }
 
 #[test]
 fn detect_heif_brands() {
-    assert_eq!(detect(b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"), Some(Format::Heif));
-    assert_eq!(detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1heic"), Some(Format::Heif), "generic major brand");
-    assert_eq!(detect(b"\0\0\0\x18ftypheix\0\0\0\0mif1heix"), Some(Format::Heif), "10-bit");
-    assert_eq!(detect(b"\0\0\0\x18ftypmsf1\0\0\0\0msf1hevc"), Some(Format::Heif), "image sequence");
-    assert_eq!(detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avif"), Some(Format::Avif), "AVIF wins over the generic brand");
-    assert_eq!(detect(b"\0\0\0\x18ftypisom\0\0\0\0isommp41"), None, "mp4 is not HEIF");
-    assert_eq!(detect(b"\0\0\0\x14ftypqt  \0\0\0\0qt  "), None, "QuickTime is not HEIF");
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"),
+        Some(Format::Heif)
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1heic"),
+        Some(Format::Heif),
+        "generic major brand"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypheix\0\0\0\0mif1heix"),
+        Some(Format::Heif),
+        "10-bit"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypmsf1\0\0\0\0msf1hevc"),
+        Some(Format::Heif),
+        "image sequence"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avif"),
+        Some(Format::Avif),
+        "AVIF wins over the generic brand"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypisom\0\0\0\0isommp41"),
+        None,
+        "mp4 is not HEIF"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x14ftypqt  \0\0\0\0qt  "),
+        None,
+        "QuickTime is not HEIF"
+    );
 }
 
 #[test]
@@ -101,8 +140,16 @@ fn caps_are_internally_consistent() {
     for f in Format::ALL {
         let c = caps(f);
         assert!(!c.depths.is_empty() && !c.layouts.is_empty(), "{f:?}");
-        assert_eq!(c.alpha, c.layouts.iter().any(|l| l.has_alpha()), "{f:?} alpha flag vs layouts");
-        assert!(!f.extensions().is_empty() && !f.name().is_empty() && f.mime_type().starts_with("image/"));
+        assert_eq!(
+            c.alpha,
+            c.layouts.iter().any(|l| l.has_alpha()),
+            "{f:?} alpha flag vs layouts"
+        );
+        assert!(
+            !f.extensions().is_empty()
+                && !f.name().is_empty()
+                && f.mime_type().starts_with("image/")
+        );
     }
 }
 
@@ -167,7 +214,17 @@ fn detect_magic_ico() {
 }
 #[test]
 fn detect_magic_pnm_family() {
-    for m in [&b"P1\n"[..], b"P2 ", b"P3\t", b"P4\n", b"P5\r", b"P6\n", b"P7\n", b"PF\n", b"Pf\n"] {
+    for m in [
+        &b"P1\n"[..],
+        b"P2 ",
+        b"P3\t",
+        b"P4\n",
+        b"P5\r",
+        b"P6\n",
+        b"P7\n",
+        b"PF\n",
+        b"Pf\n",
+    ] {
         assert_eq!(detect(m), Some(Format::Pnm), "{:?}", std::str::from_utf8(m));
     }
     assert_eq!(detect(b"P8\n"), None);
@@ -179,7 +236,10 @@ fn detect_magic_qoi() {
 }
 #[test]
 fn detect_magic_exr() {
-    assert_eq!(detect(&[0x76, 0x2F, 0x31, 0x01, 2, 0, 0, 0]), Some(Format::OpenExr));
+    assert_eq!(
+        detect(&[0x76, 0x2F, 0x31, 0x01, 2, 0, 0, 0]),
+        Some(Format::OpenExr)
+    );
 }
 #[test]
 fn detect_magic_hdr() {
@@ -188,10 +248,24 @@ fn detect_magic_hdr() {
 }
 #[test]
 fn detect_magic_avif() {
-    assert_eq!(detect(b"\0\0\0\x1cftypavif\0\0\0\0avifmif1miaf"), Some(Format::Avif));
-    assert_eq!(detect(b"\0\0\0\x1cftypavis\0\0\0\0avismsf1miaf"), Some(Format::Avif));
-    assert_eq!(detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avif"), Some(Format::Avif), "compatible brand");
-    assert_eq!(detect(b"\0\0\0\x18ftypisom\0\0\0\0isommp41"), None, "mp4 is not avif");
+    assert_eq!(
+        detect(b"\0\0\0\x1cftypavif\0\0\0\0avifmif1miaf"),
+        Some(Format::Avif)
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x1cftypavis\0\0\0\0avismsf1miaf"),
+        Some(Format::Avif)
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avif"),
+        Some(Format::Avif),
+        "compatible brand"
+    );
+    assert_eq!(
+        detect(b"\0\0\0\x18ftypisom\0\0\0\0isommp41"),
+        None,
+        "mp4 is not avif"
+    );
 }
 #[test]
 fn detect_tga_heuristic() {
@@ -218,12 +292,17 @@ fn detect_negatives() {
 #[test]
 fn detect_random_bytes_rarely_matches_tga() {
     let mut rng = Rng::new(5);
-    let hits = (0..2000).filter(|_| detect(&rng.bytes(64)) == Some(Format::Tga)).count();
+    let hits = (0..2000)
+        .filter(|_| detect(&rng.bytes(64)) == Some(Format::Tga))
+        .count();
     assert!(hits < 10, "{hits} false TGA positives");
 }
 #[test]
 fn decode_unknown_is_error() {
-    assert!(matches!(decode(b"garbage garbage"), Err(CodecError::UnknownFormat)));
+    assert!(matches!(
+        decode(b"garbage garbage"),
+        Err(CodecError::UnknownFormat)
+    ));
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +335,10 @@ fn extension_specific_cases() {
 }
 #[test]
 fn extensions_unique_across_formats() {
-    let mut all: Vec<&str> = Format::ALL.iter().flat_map(|f| f.extensions().iter().copied()).collect();
+    let mut all: Vec<&str> = Format::ALL
+        .iter()
+        .flat_map(|f| f.extensions().iter().copied())
+        .collect();
     let n = all.len();
     all.sort();
     all.dedup();

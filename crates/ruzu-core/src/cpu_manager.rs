@@ -1828,12 +1828,7 @@ impl CpuManager {
                 let manager = system.get().get_cpu_manager();
                 (manager.current_core.clone(), manager.idle_count.clone())
             };
-            Self::single_core_run_guest_thread(
-                kernel,
-                &core_timing,
-                &current_core,
-                &idle_count,
-            );
+            Self::single_core_run_guest_thread(kernel, &core_timing, &current_core, &idle_count);
         } else {
             log::error!("SingleCoreRunGuestThread: no CoreTiming available");
         }

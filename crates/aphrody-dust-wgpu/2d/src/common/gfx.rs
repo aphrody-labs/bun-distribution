@@ -67,9 +67,13 @@ enum Renderer3dGfxThreadData {
 impl Drop for Renderer3dGfxThreadData {
     fn drop(&mut self) {
         if !thread::panicking()
-            && let Renderer3dGfxThreadData::Accel { last_submitted_frame, .. } = self {
-                *last_submitted_frame.1.write() = None;
-            }
+            && let Renderer3dGfxThreadData::Accel {
+                last_submitted_frame,
+                ..
+            } = self
+        {
+            *last_submitted_frame.1.write() = None;
+        }
     }
 }
 
@@ -120,7 +124,10 @@ impl FrontendChannels {
         color_output_view_rx: crossbeam_channel::Receiver<crate::wgpu::TextureView>,
         renderer_3d_rx_tx: crossbeam_channel::Sender<Renderer3dRx>,
     ) -> Self {
-        FrontendChannels { color_output_view_rx, renderer_3d_rx_tx }
+        FrontendChannels {
+            color_output_view_rx,
+            renderer_3d_rx_tx,
+        }
     }
 
     pub fn new_color_output_view(&self) -> Option<crate::wgpu::TextureView> {
@@ -215,16 +222,21 @@ impl GfxData {
     ) -> (Renderer3dRenderThreadData, Renderer3dUpdateGfxThreadData) {
         match renderer_3d_rx {
             #[cfg(not(feature = "threaded"))]
-            Renderer3dRx::LocalAccel { rx, color_output_view, new_color_output_view } => (
+            Renderer3dRx::LocalAccel {
+                rx,
+                color_output_view,
+                new_color_output_view,
+            } => (
                 Renderer3dRenderThreadData::LocalAccel(rx),
                 Renderer3dUpdateGfxThreadData::LocalAccel {
                     color_output_view,
                     new_color_output_view,
                 },
             ),
-            Renderer3dRx::Soft(rx) => {
-                (Renderer3dRenderThreadData::Soft(rx), Renderer3dUpdateGfxThreadData::Soft)
-            },
+            Renderer3dRx::Soft(rx) => (
+                Renderer3dRenderThreadData::Soft(rx),
+                Renderer3dUpdateGfxThreadData::Soft,
+            ),
             Renderer3dRx::Accel {
                 rx,
                 color_output_view,
@@ -253,15 +265,20 @@ impl GfxData {
         let (renderer_3d_render_data, renderer_3d_gfx_data) =
             Self::create_renderer_3d_update_data(renderer_3d_rx);
 
-        let (frame_data_tx, frame_data_rx) =
-            triple_buffer::init([FrameData::default(), FrameData::default(), FrameData::default()]);
+        let (frame_data_tx, frame_data_rx) = triple_buffer::init([
+            FrameData::default(),
+            FrameData::default(),
+            FrameData::default(),
+        ]);
         let (renderer_3d_data_tx, renderer_3d_data_rx) = crossbeam_channel::unbounded();
 
         let (thread_data, color_output_view) = GfxThreadData::new(
             device,
             queue,
             Arc::clone(&shared_data),
-            GfxThreadChannels { color_output_view_tx },
+            GfxThreadChannels {
+                color_output_view_tx,
+            },
             resolution_scale_shift,
             frame_data_rx,
             renderer_3d_gfx_data,
@@ -310,11 +327,11 @@ impl GfxData {
                 Renderer3dRenderThreadData::Soft(rx) => rx.start_frame(),
                 Renderer3dRenderThreadData::Accel(rx) => {
                     rx.start_frame(capture_enabled_in_frame);
-                },
+                }
                 #[cfg(not(feature = "threaded"))]
                 Renderer3dRenderThreadData::LocalAccel(rx) => {
                     rx.start_frame(capture_enabled_in_frame)
-                },
+                }
             }
         }
     }
@@ -341,7 +358,10 @@ impl GfxData {
     pub fn capture_3d_scanline(&mut self, cur_scanline: usize) -> &Scanline<u32> {
         match &mut self.renderer_3d_data {
             Renderer3dRenderThreadData::Soft(_) => unsafe {
-                self.frame_data_tx.current().output_3d.get_unchecked(cur_scanline)
+                self.frame_data_tx
+                    .current()
+                    .output_3d
+                    .get_unchecked(cur_scanline)
             },
             Renderer3dRenderThreadData::Accel(rx) => rx.read_capture_scanline(),
             #[cfg(not(feature = "threaded"))]
@@ -500,7 +520,12 @@ impl GfxThreadData {
             Renderer3dUpdateGfxThreadData::LocalAccel {
                 color_output_view,
                 new_color_output_view,
-            } => (Renderer3dGfxThreadData::LocalAccel { new_color_output_view }, color_output_view),
+            } => (
+                Renderer3dGfxThreadData::LocalAccel {
+                    new_color_output_view,
+                },
+                color_output_view,
+            ),
             Renderer3dUpdateGfxThreadData::Soft => {
                 let color_output_texture = device.create_texture(&crate::wgpu::TextureDescriptor {
                     label: Some("2D renderer 3D output"),
@@ -518,8 +543,13 @@ impl GfxThreadData {
                     view_formats: &[],
                 });
                 let color_output_view = color_output_texture.create_view(&Default::default());
-                (Renderer3dGfxThreadData::Soft { color_output_texture }, color_output_view)
-            },
+                (
+                    Renderer3dGfxThreadData::Soft {
+                        color_output_texture,
+                    },
+                    color_output_view,
+                )
+            }
             Renderer3dUpdateGfxThreadData::Accel {
                 color_output_view,
                 color_output_view_rx,
@@ -527,10 +557,13 @@ impl GfxThreadData {
             } => {
                 *last_submitted_frame.1.write() = Some(thread::current());
                 (
-                    Renderer3dGfxThreadData::Accel { color_output_view_rx, last_submitted_frame },
+                    Renderer3dGfxThreadData::Accel {
+                        color_output_view_rx,
+                        last_submitted_frame,
+                    },
                     color_output_view,
                 )
-            },
+            }
         }
     }
 
@@ -686,8 +719,10 @@ impl GfxThreadData {
 
     fn render_pending(&mut self) -> bool {
         if let Ok(frame) = self.frame_data_rx.get() {
-            let resolution_scale_shift =
-                self.shared_data.resolution_scale_shift.load(Ordering::Relaxed);
+            let resolution_scale_shift = self
+                .shared_data
+                .resolution_scale_shift
+                .load(Ordering::Relaxed);
             if resolution_scale_shift != self.resolution_scale_shift {
                 self.resolution_scale_shift = resolution_scale_shift;
                 let (output_attachments, color_output_view) =
@@ -720,16 +755,21 @@ impl GfxThreadData {
             if frame.engine_3d_enabled {
                 match &mut self.renderer_3d_data {
                     #[cfg(not(feature = "threaded"))]
-                    Renderer3dGfxThreadData::LocalAccel { new_color_output_view } => {
+                    Renderer3dGfxThreadData::LocalAccel {
+                        new_color_output_view,
+                    } => {
                         self.color_output_3d_view = new_color_output_view();
                         self.color_output_3d_bg = Self::create_output_3d_bg(
                             &self.device,
                             &self.color_output_3d_bg_layout,
                             &self.color_output_3d_view,
                         );
-                    },
-                    Renderer3dGfxThreadData::Soft { .. } => {},
-                    Renderer3dGfxThreadData::Accel { color_output_view_rx, .. } => {
+                    }
+                    Renderer3dGfxThreadData::Soft { .. } => {}
+                    Renderer3dGfxThreadData::Accel {
+                        color_output_view_rx,
+                        ..
+                    } => {
                         if let Some(color_output_view_3d) = color_output_view_rx.try_iter().last() {
                             self.color_output_3d_view = color_output_view_3d;
                             self.color_output_3d_bg = Self::create_output_3d_bg(
@@ -738,12 +778,13 @@ impl GfxThreadData {
                                 &self.color_output_3d_view,
                             );
                         }
-                    },
+                    }
                 }
             }
 
-            if let Renderer3dGfxThreadData::Soft { color_output_texture: output_texture } =
-                &self.renderer_3d_data
+            if let Renderer3dGfxThreadData::Soft {
+                color_output_texture: output_texture,
+            } = &self.renderer_3d_data
             {
                 self.queue.write_texture(
                     output_texture.as_image_copy(),
@@ -785,17 +826,19 @@ impl GfxThreadData {
                     depth_or_array_layers: 1,
                 },
             );
-            self.queue.write_buffer(&self.fb_scanline_flags_buffer, 0, unsafe {
-                slice::from_raw_parts(
-                    frame.fb_scanline_flags.as_ptr() as *const u8,
-                    SCREEN_HEIGHT * 2 * 16,
-                )
-            });
+            self.queue
+                .write_buffer(&self.fb_scanline_flags_buffer, 0, unsafe {
+                    slice::from_raw_parts(
+                        frame.fb_scanline_flags.as_ptr() as *const u8,
+                        SCREEN_HEIGHT * 2 * 16,
+                    )
+                });
 
             let mut command_encoder =
-                self.device.create_command_encoder(&crate::wgpu::CommandEncoderDescriptor {
-                    label: Some("2D renderer command encoder"),
-                });
+                self.device
+                    .create_command_encoder(&crate::wgpu::CommandEncoderDescriptor {
+                        label: Some("2D renderer command encoder"),
+                    });
 
             let mut render_pass =
                 command_encoder.begin_render_pass(&crate::wgpu::RenderPassDescriptor {

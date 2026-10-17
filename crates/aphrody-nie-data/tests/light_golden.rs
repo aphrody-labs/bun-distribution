@@ -130,7 +130,11 @@ fn fixture_param_0_id_et_valeur_int() {
     assert_eq!(cfg.params[0].param_id, PARAM_ID_0, "param_id[0]=0x0072DBE8");
     // PARAM_0.var[1]=Int("400") (JSON l.10)
     assert_eq!(cfg.params[0].values.len(), 1, "PARAM_0 a 1 valeur");
-    assert_eq!(cfg.params[0].values[0], LightVal::Int(400), "values[0]=Int(400)");
+    assert_eq!(
+        cfg.params[0].values[0],
+        LightVal::Int(400),
+        "values[0]=Int(400)"
+    );
 }
 
 #[test]
@@ -142,9 +146,15 @@ fn fixture_param_1_float() {
         HashId::from_i64(-1910140030),
         "param_id[1]=-1910140030 as u32"
     );
-    assert!(cfg.params[1].values[0].is_float(), "PARAM_1 values[0] est Float");
+    assert!(
+        cfg.params[1].values[0].is_float(),
+        "PARAM_1 values[0] est Float"
+    );
     let v = cfg.params[1].values[0].as_f64();
-    assert!((v - 0.7).abs() < 1e-5, "PARAM_1 values[0] ≈ 0.7 (réel: {v})");
+    assert!(
+        (v - 0.7).abs() < 1e-5,
+        "PARAM_1 values[0] ≈ 0.7 (réel: {v})"
+    );
 }
 
 #[test]
@@ -164,16 +174,25 @@ fn fixture_param_2_triple_float() {
 fn fixture_param_7_float_negatif() {
     let cfg = parse_light_overwrite_config(&fixture_light());
     // PARAM_7.var[1]=Float("-0,05") (JSON l.129)
-    assert!(cfg.params[3].values[0].is_float(), "PARAM_7 values[0] Float");
+    assert!(
+        cfg.params[3].values[0].is_float(),
+        "PARAM_7 values[0] Float"
+    );
     let v = cfg.params[3].values[0].as_f64();
-    assert!((v - (-0.05)).abs() < 1e-5, "PARAM_7 values[0] ≈ -0.05 (réel: {v})");
+    assert!(
+        (v - (-0.05)).abs() < 1e-5,
+        "PARAM_7 values[0] ≈ -0.05 (réel: {v})"
+    );
 }
 
 #[test]
 fn fixture_info_0_champs() {
     let cfg = parse_light_overwrite_config(&fixture_light());
     // INFO_0.var[0]=896315108 (JSON l.322), REF_PARAM_0 : offset=0, count=2
-    assert_eq!(cfg.infos[0].info_id, INFO_ID_0, "info_id[0]=896315108=0x357CF2E4");
+    assert_eq!(
+        cfg.infos[0].info_id, INFO_ID_0,
+        "info_id[0]=896315108=0x357CF2E4"
+    );
     assert_eq!(cfg.infos[0].param_offset, 0, "param_offset[0]=0");
     assert_eq!(cfg.infos[0].param_count, 2, "param_count[0]=2");
 }
@@ -197,14 +216,20 @@ fn fixture_params_of() {
     // params_of(infos[0]) → tranche [0..2] → 2 params
     let slice = cfg.params_of(&cfg.infos[0]);
     assert_eq!(slice.len(), 2, "params_of(infos[0]).len()=2");
-    assert_eq!(slice[0].param_id, PARAM_ID_0, "slice[0].param_id=PARAM_ID_0");
+    assert_eq!(
+        slice[0].param_id, PARAM_ID_0,
+        "slice[0].param_id=PARAM_ID_0"
+    );
 }
 
 #[test]
 fn fixture_find_info() {
     let cfg = parse_light_overwrite_config(&fixture_light());
     let found = cfg.find_info(INFO_ID_0);
-    assert!(found.is_some(), "find_info(INFO_ID_0) doit trouver infos[0]");
+    assert!(
+        found.is_some(),
+        "find_info(INFO_ID_0) doit trouver infos[0]"
+    );
     assert_eq!(found.unwrap().param_count, 2);
     assert!(cfg.find_info(HashId(0xDEADBEEF)).is_none(), "absent → None");
 }
@@ -234,8 +259,16 @@ fn real_file_comptes() {
     };
     let cfg = parse_light_overwrite_config(&root);
     // PARAM_LIST_BEG_0.var[0]=20 (JSON l.5), INFO_LIST_BEG_0.var[0]=3 (JSON l.311)
-    assert_eq!(cfg.params.len(), 20, "20 LIGHT_OVERWRITE_PARAM dans le fichier réel");
-    assert_eq!(cfg.infos.len(), 3, "3 LIGHT_OVERWRITE_INFO dans le fichier réel");
+    assert_eq!(
+        cfg.params.len(),
+        20,
+        "20 LIGHT_OVERWRITE_PARAM dans le fichier réel"
+    );
+    assert_eq!(
+        cfg.infos.len(),
+        3,
+        "3 LIGHT_OVERWRITE_INFO dans le fichier réel"
+    );
 }
 
 #[test]
@@ -245,8 +278,15 @@ fn real_file_param_0_id_et_valeur() {
     };
     let cfg = parse_light_overwrite_config(&root);
     // PARAM_0.var[0]=Int("7531368") (JSON l.7), var[1]=Int("400") (JSON l.10)
-    assert_eq!(cfg.params[0].param_id, PARAM_ID_0, "PARAM_0.param_id=0x0072DBE8");
-    assert_eq!(cfg.params[0].values[0], LightVal::Int(400), "PARAM_0.values[0]=Int(400)");
+    assert_eq!(
+        cfg.params[0].param_id, PARAM_ID_0,
+        "PARAM_0.param_id=0x0072DBE8"
+    );
+    assert_eq!(
+        cfg.params[0].values[0],
+        LightVal::Int(400),
+        "PARAM_0.values[0]=Int(400)"
+    );
 }
 
 #[test]
@@ -256,9 +296,15 @@ fn real_file_param_1_float() {
     };
     let cfg = parse_light_overwrite_config(&root);
     // PARAM_1.var[1]=Float("0,7") (JSON l.33)
-    assert!(cfg.params[1].values[0].is_float(), "PARAM_1.values[0] Float");
+    assert!(
+        cfg.params[1].values[0].is_float(),
+        "PARAM_1.values[0] Float"
+    );
     let v = cfg.params[1].values[0].as_f64();
-    assert!((v - 0.7).abs() < 1e-5, "PARAM_1.values[0] ≈ 0.7 (réel: {v})");
+    assert!(
+        (v - 0.7).abs() < 1e-5,
+        "PARAM_1.values[0] ≈ 0.7 (réel: {v})"
+    );
 }
 
 #[test]
@@ -290,7 +336,10 @@ fn real_file_param_7_float_negatif() {
         "PARAM_7.param_id=-2124741719 as u32"
     );
     let v = cfg.params[7].values[0].as_f64();
-    assert!((v - (-0.05)).abs() < 1e-5, "PARAM_7.values[0] ≈ -0.05 (réel: {v})");
+    assert!(
+        (v - (-0.05)).abs() < 1e-5,
+        "PARAM_7.values[0] ≈ -0.05 (réel: {v})"
+    );
 }
 
 #[test]
@@ -346,7 +395,10 @@ fn real_file_params_of_info_0() {
     // INFO_0 → params[0..9] → 9 params, le premier est PARAM_0
     let slice = cfg.params_of(&cfg.infos[0]);
     assert_eq!(slice.len(), 9, "params_of(infos[0]).len()=9");
-    assert_eq!(slice[0].param_id, PARAM_ID_0, "slice[0].param_id=PARAM_ID_0");
+    assert_eq!(
+        slice[0].param_id, PARAM_ID_0,
+        "slice[0].param_id=PARAM_ID_0"
+    );
 }
 
 #[test]
@@ -367,7 +419,10 @@ fn real_file_find_info() {
     };
     let cfg = parse_light_overwrite_config(&root);
     let found = cfg.find_info(INFO_ID_0);
-    assert!(found.is_some(), "find_info(INFO_ID_0) doit trouver infos[0]");
+    assert!(
+        found.is_some(),
+        "find_info(INFO_ID_0) doit trouver infos[0]"
+    );
     assert_eq!(found.unwrap().param_count, 9);
 }
 

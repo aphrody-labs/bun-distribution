@@ -24,20 +24,35 @@ pub fn component_of(doc: &Document, target: NodeId) -> Option<NodeId> {
 /// A copy of `doc` with a new instance of `target`'s component (an instance starts from its own
 /// property values) set to `values` (property name → value, as `instance.setProperties` takes
 /// them), and that instance's id. `doc` itself is untouched.
-pub fn build(doc: &Document, target: NodeId, values: &Map<String, Value>) -> Result<(Document, NodeId)> {
+pub fn build(
+    doc: &Document,
+    target: NodeId,
+    values: &Map<String, Value>,
+) -> Result<(Document, NodeId)> {
     let cmd = "component.playground";
-    let comp = component_of(doc, target).ok_or_else(|| bad(cmd, "select an instance, a component or a component set"))?;
+    let comp = component_of(doc, target)
+        .ok_or_else(|| bad(cmd, "select an instance, a component or a component set"))?;
     let mut s = Session::with_document(doc.clone());
     // Off to the side of everything (the copy is never shown as a page).
-    let made = s.execute("instance.create", &json!({"component": comp, "x": 1e6, "y": 1e6}))?;
-    let inst = id_of(&made["id"]).ok_or_else(|| EngineError::Other("the playground instance wasn't made".into()))?;
+    let made = s.execute(
+        "instance.create",
+        &json!({"component": comp, "x": 1e6, "y": 1e6}),
+    )?;
+    let inst = id_of(&made["id"])
+        .ok_or_else(|| EngineError::Other("the playground instance wasn't made".into()))?;
     let mut all = match &doc.node(target).map(|n| &n.kind) {
-        Some(NodeKind::Instance { props, .. }) => props.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        Some(NodeKind::Instance { props, .. }) => {
+            props.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+        }
         _ => Map::new(),
     };
     all.extend(values.clone());
     if !all.is_empty() {
-        s.execute("instance.setProperties", &json!({"ids": [inst], "properties": all})).map_err(|e| bad(cmd, e.to_string()))?;
+        s.execute(
+            "instance.setProperties",
+            &json!({"ids": [inst], "properties": all}),
+        )
+        .map_err(|e| bad(cmd, e.to_string()))?;
     }
     Ok((s.doc()?.clone(), inst))
 }
@@ -56,14 +71,18 @@ pub fn specs() -> Vec<CommandSpec> {
         false,
         |s, p| {
             let cmd = "component.playground";
-            let target = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select an instance, a component or a component set"))?;
+            let target = targets(s, p)
+                .first()
+                .copied()
+                .ok_or_else(|| bad(cmd, "select an instance, a component or a component set"))?;
             let values = match get(p, "properties") {
                 None | Some(Value::Null) => Map::new(),
                 Some(Value::Object(m)) => m.clone(),
                 Some(_) => return Err(bad(cmd, "properties: {name: value}")),
             };
             let lang = match string(p, "language") {
-                Some(l) => CodeLang::from_id(&l).ok_or_else(|| bad(cmd, "language: css|html|react|swiftui|compose"))?,
+                Some(l) => CodeLang::from_id(&l)
+                    .ok_or_else(|| bad(cmd, "language: css|html|react|swiftui|compose"))?,
                 None => CodeLang::React,
             };
             let (copy, inst) = build(s.doc()?, target, &values)?;
@@ -73,9 +92,12 @@ pub fn specs() -> Vec<CommandSpec> {
             out["code"] = json!(crate::codegen::code_for(&copy, inst, lang));
             (out["width"], out["height"]) = (json!(n.width), json!(n.height));
             if let Some(path) = string(p, "path") {
-                let scale = num(p, "scale").filter(|k| k.is_finite()).map_or(2.0, |k| k.clamp(0.01, 16.0));
+                let scale = num(p, "scale")
+                    .filter(|k| k.is_finite())
+                    .map_or(2.0, |k| k.clamp(0.01, 16.0));
                 let png = crate::cmd::file::export_bytes(&copy, &[inst], ExportFormat::Png, scale)?;
-                std::fs::write(&path, png).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+                std::fs::write(&path, png)
+                    .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
                 out["path"] = json!(path);
             }
             Ok(out)

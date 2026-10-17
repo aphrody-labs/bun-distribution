@@ -56,72 +56,95 @@ fn draw_group(g: &Group, m: Affine, opacity: f64, dst: &mut Image) {
         if only_clip {
             // A non-isolated clipping group: the backdrop where the clip excludes the children.
             let cov = clip_coverage(g, m, dst.width, dst.height);
-            dst.data.par_iter_mut().zip(tmp.data.par_iter()).zip(cov.par_iter()).for_each(|((d, t), c)| {
-                for i in 0..4 {
-                    d[i] = d[i] * (1.0 - c) + t[i] * c;
-                }
-            });
+            dst.data
+                .par_iter_mut()
+                .zip(tmp.data.par_iter())
+                .zip(cov.par_iter())
+                .for_each(|((d, t), c)| {
+                    for i in 0..4 {
+                        d[i] = d[i] * (1.0 - c) + t[i] * c;
+                    }
+                });
             return;
         }
         // Remove the backdrop's contribution (ISO 32000-1 §11.4.8): with the group's own
         // alpha αg (its children alone), C = Cn + (Cn − C0)·(α0/αg − α0).
         let mut solo = Image::new(dst.width, dst.height);
         draw_children(g, m, &mut solo, None);
-        tmp.data.par_iter_mut().zip(b.data.par_iter()).zip(solo.data.par_iter()).for_each(|((t, b0), s)| {
-            let ag = s[3];
-            if ag <= 0.0 {
-                *t = [0.0; 4];
-                return;
-            }
-            let un = |c: &[f32; 4]| if c[3] > 0.0 { [c[0] / c[3], c[1] / c[3], c[2] / c[3]] } else { [0.0; 3] };
-            let (cn, c0, a0) = (un(t), un(b0), b0[3]);
-            let k = a0 / ag - a0;
-            let mut out = [0.0; 4];
-            for i in 0..3 {
-                out[i] = (cn[i] + (cn[i] - c0[i]) * k).clamp(0.0, 1.0) * ag;
-            }
-            out[3] = ag;
-            *t = out;
-        });
+        tmp.data
+            .par_iter_mut()
+            .zip(b.data.par_iter())
+            .zip(solo.data.par_iter())
+            .for_each(|((t, b0), s)| {
+                let ag = s[3];
+                if ag <= 0.0 {
+                    *t = [0.0; 4];
+                    return;
+                }
+                let un = |c: &[f32; 4]| {
+                    if c[3] > 0.0 {
+                        [c[0] / c[3], c[1] / c[3], c[2] / c[3]]
+                    } else {
+                        [0.0; 3]
+                    }
+                };
+                let (cn, c0, a0) = (un(t), un(b0), b0[3]);
+                let k = a0 / ag - a0;
+                let mut out = [0.0; 4];
+                for i in 0..3 {
+                    out[i] = (cn[i] + (cn[i] - c0[i]) * k).clamp(0.0, 1.0) * ag;
+                }
+                out[3] = ag;
+                *t = out;
+            });
     }
     if !g.clip.is_empty() {
         let cov = clip_coverage(g, m, dst.width, dst.height);
-        tmp.data.par_iter_mut().zip(cov.par_iter()).for_each(|(p, c)| {
-            for v in p.iter_mut() {
-                *v *= c;
-            }
-        });
+        tmp.data
+            .par_iter_mut()
+            .zip(cov.par_iter())
+            .for_each(|(p, c)| {
+                for v in p.iter_mut() {
+                    *v *= c;
+                }
+            });
     }
     if let Some(sm) = &g.mask {
         let mut mk = Image::new(dst.width, dst.height);
         draw_group(&sm.content, m, 1.0, &mut mk);
         let bc = sm.backdrop.map(|v| v as f32);
         let lum = sm.luminosity;
-        tmp.data.par_iter_mut().zip(mk.data.par_iter()).for_each(|(p, q)| {
-            let k = if lum {
-                // The mask group composited over its backdrop colour, then its luminosity.
-                let c = [0, 1, 2].map(|i| q[i] + bc[i] * (1.0 - q[3]));
-                0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]
-            } else {
-                q[3]
-            };
-            let k = k.clamp(0.0, 1.0);
-            for v in p.iter_mut() {
-                *v *= k;
-            }
-        });
+        tmp.data
+            .par_iter_mut()
+            .zip(mk.data.par_iter())
+            .for_each(|(p, q)| {
+                let k = if lum {
+                    // The mask group composited over its backdrop colour, then its luminosity.
+                    let c = [0, 1, 2].map(|i| q[i] + bc[i] * (1.0 - q[3]));
+                    0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]
+                } else {
+                    q[3]
+                };
+                let k = k.clamp(0.0, 1.0);
+                for v in p.iter_mut() {
+                    *v *= k;
+                }
+            });
     }
     if g.blend == BlendMode::Normal {
         over(dst, &tmp, o as f32);
     } else {
         let mode = g.blend;
         let k = o as f32;
-        dst.data.par_iter_mut().zip(tmp.data.par_iter()).for_each(|(d, s)| {
-            let s = [s[0] * k, s[1] * k, s[2] * k, s[3] * k];
-            if s[3] > 0.0 {
-                *d = blend_pixel(mode, *d, s);
-            }
-        });
+        dst.data
+            .par_iter_mut()
+            .zip(tmp.data.par_iter())
+            .for_each(|(d, s)| {
+                let s = [s[0] * k, s[1] * k, s[2] * k, s[3] * k];
+                if s[3] > 0.0 {
+                    *d = blend_pixel(mode, *d, s);
+                }
+            });
     }
 }
 
@@ -134,7 +157,9 @@ fn clip_coverage(g: &Group, m: Affine, w: u32, h: u32) -> Vec<f32> {
             FillRule::EvenOdd => effectcraft_path::FillRule::EvenOdd,
         };
         let cov = effectcraft_path::fill_coverage(std::slice::from_ref(path), &mat3(m), w, h, rule);
-        out.par_iter_mut().zip(cov.data.par_iter()).for_each(|(o, c)| *o *= c);
+        out.par_iter_mut()
+            .zip(cov.data.par_iter())
+            .for_each(|(o, c)| *o *= c);
     }
     out
 }
@@ -199,7 +224,13 @@ fn opaque(n: &Node) -> Node {
 /// `co = cs·(1 − αb) + cb·(1 − αs) + αs·αb·B(cb, cs)` (ISO 32000-1 §11.3.6).
 pub fn blend_pixel(mode: BlendMode, dst: [f32; 4], src: [f32; 4]) -> [f32; 4] {
     let (ab, as_) = (dst[3], src[3]);
-    let un = |c: [f32; 4]| if c[3] > 0.0 { [c[0] / c[3], c[1] / c[3], c[2] / c[3]] } else { [0.0; 3] };
+    let un = |c: [f32; 4]| {
+        if c[3] > 0.0 {
+            [c[0] / c[3], c[1] / c[3], c[2] / c[3]]
+        } else {
+            [0.0; 3]
+        }
+    };
     let (cb, cs) = (un(dst), un(src));
     let b = blend_color(mode, cb, cs);
     let mut out = [0.0; 4];
@@ -251,7 +282,11 @@ fn blend_color(mode: BlendMode, cb: [f32; 3], cs: [f32; 3]) -> [f32; 3] {
             if s <= 0.5 {
                 b - (1.0 - 2.0 * s) * b * (1.0 - b)
             } else {
-                let d = if b <= 0.25 { ((16.0 * b - 12.0) * b + 4.0) * b } else { b.sqrt() };
+                let d = if b <= 0.25 {
+                    ((16.0 * b - 12.0) * b + 4.0) * b
+                } else {
+                    b.sqrt()
+                };
                 b + (2.0 * s - 1.0) * (d - b)
             }
         }),
@@ -327,7 +362,13 @@ fn draw_image(im: &crate::Image, m: Affine, opacity: f64, dst: &mut Image) {
         return;
     }
     let quad = kurbo::Rect::new(0.0, 0.0, iw as f64, ih as f64).to_path(0.01);
-    let cov = effectcraft_path::fill_coverage(std::slice::from_ref(&quad), &mat3(full), dst.width, dst.height, effectcraft_path::FillRule::NonZero);
+    let cov = effectcraft_path::fill_coverage(
+        std::slice::from_ref(&quad),
+        &mat3(full),
+        dst.width,
+        dst.height,
+        effectcraft_path::FillRule::NonZero,
+    );
     let w = dst.width as usize;
     if w == 0 {
         return;
@@ -335,7 +376,12 @@ fn draw_image(im: &crate::Image, m: Affine, opacity: f64, dst: &mut Image) {
     let px = |x: usize, y: usize| -> [f32; 4] {
         let i = (y * iw + x) * 4;
         let a = im.rgba[i + 3] as f32 / 255.0;
-        [im.rgba[i] as f32 / 255.0 * a, im.rgba[i + 1] as f32 / 255.0 * a, im.rgba[i + 2] as f32 / 255.0 * a, a]
+        [
+            im.rgba[i] as f32 / 255.0 * a,
+            im.rgba[i + 1] as f32 / 255.0 * a,
+            im.rgba[i + 2] as f32 / 255.0 * a,
+            a,
+        ]
     };
     // Pixel footprint in image pixels: box-filter heavy minification instead of aliasing.
     let c = inv.as_coeffs();
@@ -355,13 +401,17 @@ fn draw_image(im: &crate::Image, m: Affine, opacity: f64, dst: &mut Image) {
                     let sx = x as f64 + (tx as f64 + 0.5) / taps as f64;
                     let sy = y as f64 + (ty as f64 + 0.5) / taps as f64;
                     let p = inv * Point::new(sx, sy);
-                    let (u, v) = ((p.x - 0.5).clamp(0.0, iw as f64 - 1.0), (p.y - 0.5).clamp(0.0, ih as f64 - 1.0));
+                    let (u, v) = (
+                        (p.x - 0.5).clamp(0.0, iw as f64 - 1.0),
+                        (p.y - 0.5).clamp(0.0, ih as f64 - 1.0),
+                    );
                     let (x0, y0) = (u.floor() as usize, v.floor() as usize);
                     let (x1, y1) = ((x0 + 1).min(iw - 1), (y0 + 1).min(ih - 1));
                     let (a, b) = ((u - x0 as f64) as f32, (v - y0 as f64) as f32);
                     let (p00, p10, p01, p11) = (px(x0, y0), px(x1, y0), px(x0, y1), px(x1, y1));
                     for i in 0..4 {
-                        acc[i] += (p00[i] * (1.0 - a) + p10[i] * a) * (1.0 - b) + (p01[i] * (1.0 - a) + p11[i] * a) * b;
+                        acc[i] += (p00[i] * (1.0 - a) + p10[i] * a) * (1.0 - b)
+                            + (p01[i] * (1.0 - a) + p11[i] * a) * b;
                     }
                 }
             }
@@ -380,15 +430,18 @@ fn draw_image(im: &crate::Image, m: Affine, opacity: f64, dst: &mut Image) {
 
 /// `dst = src·k over dst` (premultiplied).
 fn over(dst: &mut Image, src: &Image, k: f32) {
-    dst.data.par_iter_mut().zip(src.data.par_iter()).for_each(|(d, s)| {
-        let a = s[3] * k;
-        if a > 0.0 {
-            for c in 0..3 {
-                d[c] = s[c] * k + d[c] * (1.0 - a);
+    dst.data
+        .par_iter_mut()
+        .zip(src.data.par_iter())
+        .for_each(|(d, s)| {
+            let a = s[3] * k;
+            if a > 0.0 {
+                for c in 0..3 {
+                    d[c] = s[c] * k + d[c] * (1.0 - a);
+                }
+                d[3] = a + d[3] * (1.0 - a);
             }
-            d[3] = a + d[3] * (1.0 - a);
-        }
-    });
+        });
 }
 
 fn draw_shape(s: &Shape, m: Affine, opacity: f64, dst: &mut Image) {
@@ -401,7 +454,8 @@ fn draw_shape(s: &Shape, m: Affine, opacity: f64, dst: &mut Image) {
             FillRule::NonZero => effectcraft_path::FillRule::NonZero,
             FillRule::EvenOdd => effectcraft_path::FillRule::EvenOdd,
         };
-        let cov = effectcraft_path::fill_coverage(std::slice::from_ref(&path), &mat3(m), w, h, rule);
+        let cov =
+            effectcraft_path::fill_coverage(std::slice::from_ref(&path), &mat3(m), w, h, rule);
         paint(dst, &cov, fill, (opacity * s.fill_opacity) as f32, m, bbox);
     }
     if let Some(st) = &s.stroke {
@@ -422,7 +476,8 @@ fn draw_shape(s: &Shape, m: Affine, opacity: f64, dst: &mut Image) {
             taper: None,
             wave: None,
         };
-        let cov = effectcraft_path::stroke_coverage(std::slice::from_ref(&path), &style, &mat3(m), w, h);
+        let cov =
+            effectcraft_path::stroke_coverage(std::slice::from_ref(&path), &style, &mat3(m), w, h);
         paint(dst, &cov, &st.paint, (opacity * st.opacity) as f32, m, bbox);
     }
 }
@@ -436,7 +491,11 @@ fn paint(dst: &mut Image, cov: &Mask, p: &Paint, opacity: f32, m: Affine, bbox: 
     let shader = match p {
         Paint::Color(c) => Shader::Solid([c[0] as f32, c[1] as f32, c[2] as f32, 1.0]),
         Paint::Gradient(g) => {
-            let unit = if g.bbox_units { Affine::new([bbox.width(), 0.0, 0.0, bbox.height(), bbox.x0, bbox.y0]) } else { Affine::IDENTITY };
+            let unit = if g.bbox_units {
+                Affine::new([bbox.width(), 0.0, 0.0, bbox.height(), bbox.x0, bbox.y0])
+            } else {
+                Affine::IDENTITY
+            };
             let to_grad = (m * unit * g.transform).inverse();
             if !to_grad.as_coeffs().iter().all(|v| v.is_finite()) {
                 return;
@@ -479,7 +538,11 @@ impl Shader<'_> {
                     GradientKind::Linear { x1, y1, x2, y2 } => {
                         let (dx, dy) = (x2 - x1, y2 - y1);
                         let l2 = dx * dx + dy * dy;
-                        if l2 <= 0.0 { 1.0 } else { ((p.x - x1) * dx + (p.y - y1) * dy) / l2 }
+                        if l2 <= 0.0 {
+                            1.0
+                        } else {
+                            ((p.x - x1) * dx + (p.y - y1) * dy) / l2
+                        }
                     }
                     GradientKind::Radial { cx, cy, r, fx, fy } => radial_t(p, cx, cy, r, fx, fy),
                 };
@@ -526,14 +589,20 @@ fn spread(t: f64, s: Spread) -> f64 {
 }
 
 pub(crate) fn eval_stops(stops: &[(f64, [f64; 4])], t: f64) -> [f32; 4] {
-    let Some(first) = stops.first() else { return [0.0; 4] };
+    let Some(first) = stops.first() else {
+        return [0.0; 4];
+    };
     if t <= first.0 {
         return first.1.map(|v| v as f32);
     }
     for w in stops.windows(2) {
         let (a, b) = (w[0], w[1]);
         if t <= b.0 {
-            let k = if b.0 > a.0 { (t - a.0) / (b.0 - a.0) } else { 1.0 };
+            let k = if b.0 > a.0 {
+                (t - a.0) / (b.0 - a.0)
+            } else {
+                1.0
+            };
             return [0, 1, 2, 3].map(|i| (a.1[i] + (b.1[i] - a.1[i]) * k) as f32);
         }
     }

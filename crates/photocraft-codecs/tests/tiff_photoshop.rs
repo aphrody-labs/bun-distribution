@@ -25,16 +25,32 @@ fn tags_round_trip_through_the_encoder() {
         (ChannelLayout::Gray, SampleType::F32),
         (ChannelLayout::CmykA, SampleType::U8),
     ] {
-        for compression in [TiffCompression::None, TiffCompression::Deflate, TiffCompression::Lzw, TiffCompression::PackBits] {
+        for compression in [
+            TiffCompression::None,
+            TiffCompression::Deflate,
+            TiffCompression::Lzw,
+            TiffCompression::PackBits,
+        ] {
             let img = with_tags(layout, sample);
-            let bytes = encode(&img, Format::Tiff, &EncodeOptions { tiff_compression: compression, ..Default::default() }).unwrap();
+            let bytes = encode(
+                &img,
+                Format::Tiff,
+                &EncodeOptions {
+                    tiff_compression: compression,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
             // The encoder writes the running target's byte order.
             assert_eq!(bytes.starts_with(b"II"), tiff_writes_little_endian());
             let (res, layers) = tiff_photoshop_tags(&bytes);
             assert_eq!(res, img.meta.photoshop_resources.as_deref());
             assert_eq!(layers, img.meta.photoshop_layers.as_deref());
             let back = decode(&bytes).unwrap();
-            assert_eq!(back.meta.photoshop_resources, img.meta.photoshop_resources, "{layout:?} {sample:?} {compression:?}");
+            assert_eq!(
+                back.meta.photoshop_resources, img.meta.photoshop_resources,
+                "{layout:?} {sample:?} {compression:?}"
+            );
             assert_eq!(back.meta.photoshop_layers, img.meta.photoshop_layers);
             assert_eq!(back.data(), img.data());
         }
@@ -56,9 +72,27 @@ fn absent_and_empty_tags_are_not_written() {
 /// A minimal uncompressed 2×1 gray TIFF with a 37724 tag, in either byte order, classic or
 /// BigTIFF: `payload` is stored inline when it fits the value field, at an offset otherwise.
 fn hand_made(little: bool, big: bool, payload: &[u8]) -> Vec<u8> {
-    let w16 = |v: u16| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
-    let w32 = |v: u32| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
-    let w64 = |v: u64| if little { v.to_le_bytes().to_vec() } else { v.to_be_bytes().to_vec() };
+    let w16 = |v: u16| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
+    let w32 = |v: u32| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
+    let w64 = |v: u64| {
+        if little {
+            v.to_le_bytes().to_vec()
+        } else {
+            v.to_be_bytes().to_vec()
+        }
+    };
     let mut f = Vec::new();
     f.extend_from_slice(if little { b"II" } else { b"MM" });
     let header_len = if big { 16 } else { 8 };
@@ -102,7 +136,11 @@ fn hand_made(little: bool, big: bool, payload: &[u8]) -> Vec<u8> {
             if payload.len() <= inline {
                 v.extend_from_slice(payload);
             } else {
-                v.extend(if big { w64(data_at as u64) } else { w32(data_at as u32) });
+                v.extend(if big {
+                    w64(data_at as u64)
+                } else {
+                    w32(data_at as u32)
+                });
             }
         } else if ty == 3 {
             v.extend(w16(value as u16));
@@ -112,7 +150,11 @@ fn hand_made(little: bool, big: bool, payload: &[u8]) -> Vec<u8> {
         v.resize(inline, 0);
         entries.extend(v);
     }
-    f.extend(if big { w64(tags.len() as u64) } else { w16(tags.len() as u16) });
+    f.extend(if big {
+        w64(tags.len() as u64)
+    } else {
+        w16(tags.len() as u16)
+    });
     f.extend(entries);
     f.extend(if big { w64(0) } else { w32(0) });
     assert_eq!(f.len(), data_at);
@@ -131,7 +173,12 @@ fn hand_made_files_in_every_layout() {
                 let f = hand_made(little, big, payload);
                 let (res, layers) = tiff_photoshop_tags(&f);
                 assert_eq!(res, None);
-                assert_eq!(layers, Some(payload), "little {little} big {big} len {}", payload.len());
+                assert_eq!(
+                    layers,
+                    Some(payload),
+                    "little {little} big {big} len {}",
+                    payload.len()
+                );
                 let img = decode(&f).unwrap();
                 assert_eq!(img.dimensions(), (2, 1));
                 assert_eq!(img.meta.photoshop_layers.as_deref(), Some(payload));
@@ -168,7 +215,10 @@ fn malformed_tags_read_as_absent_without_panicking() {
     assert_eq!(tiff_photoshop_tags(b"MM\0*\xff\xff\xff\xff"), (None, None));
     // A count that overflows the file.
     let mut f = hand_made(true, false, &long);
-    let at = f.windows(2).position(|w| w == 37724u16.to_le_bytes()).unwrap();
+    let at = f
+        .windows(2)
+        .position(|w| w == 37724u16.to_le_bytes())
+        .unwrap();
     f[at + 4..at + 8].copy_from_slice(&u32::MAX.to_le_bytes());
     assert_eq!(tiff_photoshop_tags(&f).1, None);
 }

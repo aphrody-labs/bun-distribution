@@ -85,7 +85,10 @@ pub fn signed_distance(m: &[u8], w: usize, h: usize) -> Vec<f32> {
     let bg: Vec<bool> = m.iter().map(|v| *v == 0).collect();
     let din = distance(&bg, w, h);
     let dout = distance(&fg, w, h);
-    m.iter().enumerate().map(|(i, v)| if *v != 0 { din[i] - 0.5 } else { 0.5 - dout[i] }).collect()
+    m.iter()
+        .enumerate()
+        .map(|(i, v)| if *v != 0 { din[i] - 0.5 } else { 0.5 - dout[i] })
+        .collect()
 }
 
 /// Mean over the (2r+1)² window (clamped at the edges: averages only the pixels inside).
@@ -141,26 +144,48 @@ pub fn gauss(src: &[f32], w: usize, h: usize, sigma: f64) -> Vec<f32> {
         return src.to_vec();
     }
     // Box radius whose three passes match the variance: 3·((2r+1)² − 1)/12 = σ².
-    let r = (((4.0 * sigma * sigma + 1.0).sqrt() - 1.0) / 2.0).round().max(1.0) as usize;
+    let r = (((4.0 * sigma * sigma + 1.0).sqrt() - 1.0) / 2.0)
+        .round()
+        .max(1.0) as usize;
     let a = box_mean(src, w, h, r);
     let b = box_mean(&a, w, h, r);
     box_mean(&b, w, h, r)
 }
 
 fn inv3(m: [[f32; 3]; 3]) -> [[f32; 3]; 3] {
-    let d = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+    let d = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
         + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
     let d = if d.abs() < 1e-20 { 1e-20 } else { d };
     [
-        [(m[1][1] * m[2][2] - m[1][2] * m[2][1]) / d, (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / d, (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / d],
-        [(m[1][2] * m[2][0] - m[1][0] * m[2][2]) / d, (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / d, (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / d],
-        [(m[1][0] * m[2][1] - m[1][1] * m[2][0]) / d, (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / d, (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / d],
+        [
+            (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / d,
+            (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / d,
+            (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / d,
+        ],
+        [
+            (m[1][2] * m[2][0] - m[1][0] * m[2][2]) / d,
+            (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / d,
+            (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / d,
+        ],
+        [
+            (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / d,
+            (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / d,
+            (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / d,
+        ],
     ]
 }
 
 /// The colour guided filter of `p` with guide `img` (RGB, w × h), window radius `r`,
 /// regularisation `eps` (He et al. 2010, section 3.5).
-pub fn guided_filter(img: &[[f32; 3]], p: &[f32], w: usize, h: usize, r: usize, eps: f32) -> Vec<f32> {
+pub fn guided_filter(
+    img: &[[f32; 3]],
+    p: &[f32],
+    w: usize,
+    h: usize,
+    r: usize,
+    eps: f32,
+) -> Vec<f32> {
     let n = w * h;
     let ch = |c: usize| -> Vec<f32> { img.iter().map(|v| v[c]).collect() };
     let (ir, ig, ib) = (ch(0), ch(1), ch(2));
@@ -172,25 +197,51 @@ pub fn guided_filter(img: &[[f32; 3]], p: &[f32], w: usize, h: usize, r: usize, 
     let (vgg, vgb, vbb) = (bm(&mul(&ig, &ig)), bm(&mul(&ig, &ib)), bm(&mul(&ib, &ib)));
     let mut a = vec![[0.0f32; 3]; n];
     let mut b = vec![0.0f32; n];
-    a.par_iter_mut().zip(b.par_iter_mut()).enumerate().for_each(|(i, (ai, bi))| {
-        let cov = [mrp[i] - mr[i] * mp[i], mgp[i] - mg[i] * mp[i], mbp[i] - mb[i] * mp[i]];
-        let s = [
-            [vrr[i] - mr[i] * mr[i] + eps, vrg[i] - mr[i] * mg[i], vrb[i] - mr[i] * mb[i]],
-            [vrg[i] - mr[i] * mg[i], vgg[i] - mg[i] * mg[i] + eps, vgb[i] - mg[i] * mb[i]],
-            [vrb[i] - mr[i] * mb[i], vgb[i] - mg[i] * mb[i], vbb[i] - mb[i] * mb[i] + eps],
-        ];
-        let inv = inv3(s);
-        let av = [
-            cov[0] * inv[0][0] + cov[1] * inv[1][0] + cov[2] * inv[2][0],
-            cov[0] * inv[0][1] + cov[1] * inv[1][1] + cov[2] * inv[2][1],
-            cov[0] * inv[0][2] + cov[1] * inv[1][2] + cov[2] * inv[2][2],
-        ];
-        *ai = av;
-        *bi = mp[i] - av[0] * mr[i] - av[1] * mg[i] - av[2] * mb[i];
-    });
-    let (a0, a1, a2): (Vec<f32>, Vec<f32>, Vec<f32>) = (a.iter().map(|v| v[0]).collect(), a.iter().map(|v| v[1]).collect(), a.iter().map(|v| v[2]).collect());
+    a.par_iter_mut()
+        .zip(b.par_iter_mut())
+        .enumerate()
+        .for_each(|(i, (ai, bi))| {
+            let cov = [
+                mrp[i] - mr[i] * mp[i],
+                mgp[i] - mg[i] * mp[i],
+                mbp[i] - mb[i] * mp[i],
+            ];
+            let s = [
+                [
+                    vrr[i] - mr[i] * mr[i] + eps,
+                    vrg[i] - mr[i] * mg[i],
+                    vrb[i] - mr[i] * mb[i],
+                ],
+                [
+                    vrg[i] - mr[i] * mg[i],
+                    vgg[i] - mg[i] * mg[i] + eps,
+                    vgb[i] - mg[i] * mb[i],
+                ],
+                [
+                    vrb[i] - mr[i] * mb[i],
+                    vgb[i] - mg[i] * mb[i],
+                    vbb[i] - mb[i] * mb[i] + eps,
+                ],
+            ];
+            let inv = inv3(s);
+            let av = [
+                cov[0] * inv[0][0] + cov[1] * inv[1][0] + cov[2] * inv[2][0],
+                cov[0] * inv[0][1] + cov[1] * inv[1][1] + cov[2] * inv[2][1],
+                cov[0] * inv[0][2] + cov[1] * inv[1][2] + cov[2] * inv[2][2],
+            ];
+            *ai = av;
+            *bi = mp[i] - av[0] * mr[i] - av[1] * mg[i] - av[2] * mb[i];
+        });
+    let (a0, a1, a2): (Vec<f32>, Vec<f32>, Vec<f32>) = (
+        a.iter().map(|v| v[0]).collect(),
+        a.iter().map(|v| v[1]).collect(),
+        a.iter().map(|v| v[2]).collect(),
+    );
     let (ma0, ma1, ma2, mbb) = (bm(&a0), bm(&a1), bm(&a2), bm(&b));
-    (0..n).into_par_iter().map(|i| ma0[i] * ir[i] + ma1[i] * ig[i] + ma2[i] * ib[i] + mbb[i]).collect()
+    (0..n)
+        .into_par_iter()
+        .map(|i| ma0[i] * ir[i] + ma1[i] * ig[i] + ma2[i] * ib[i] + mbb[i])
+        .collect()
 }
 
 /// Closed-form matting (A. Levin, D. Lischinski and Y. Weiss, "A Closed-Form Solution to Natural
@@ -200,7 +251,16 @@ pub fn guided_filter(img: &[[f32; 3]], p: &[f32], w: usize, h: usize, r: usize, 
 /// (K. He, J. Sun and X. Tang, "Fast Matting Using Large Kernel Matting Laplacian Matrices",
 /// CVPR 2010): `(L·x)ᵢ = Σ_{k∋i} (xᵢ − a_kᵀIᵢ − b_k)` with `(a_k, b_k)` the ridge-regression
 /// fit of `x` to the colours in window k.
-pub fn closed_form(img: &[[f32; 3]], init: &[f32], known: &[bool], w: usize, h: usize, r: usize, eps: f32, iters: usize) -> Vec<f32> {
+pub fn closed_form(
+    img: &[[f32; 3]],
+    init: &[f32],
+    known: &[bool],
+    w: usize,
+    h: usize,
+    r: usize,
+    eps: f32,
+    iters: usize,
+) -> Vec<f32> {
     let n = w * h;
     if n == 0 || known.iter().all(|k| *k) {
         return init.to_vec();
@@ -209,8 +269,13 @@ pub fn closed_form(img: &[[f32; 3]], init: &[f32], known: &[bool], w: usize, h: 
     let ic = [ch(0), ch(1), ch(2)];
     let bm = |v: &[f32]| box_mean(v, w, h, r);
     let mu = [bm(&ic[0]), bm(&ic[1]), bm(&ic[2])];
-    let prod = |a: usize, b: usize| -> Vec<f32> { ic[a].iter().zip(&ic[b]).map(|(x, y)| x * y).collect() };
-    let mut cov = [[vec![], vec![], vec![]], [vec![], vec![], vec![]], [vec![], vec![], vec![]]];
+    let prod =
+        |a: usize, b: usize| -> Vec<f32> { ic[a].iter().zip(&ic[b]).map(|(x, y)| x * y).collect() };
+    let mut cov = [
+        [vec![], vec![], vec![]],
+        [vec![], vec![], vec![]],
+        [vec![], vec![], vec![]],
+    ];
     for a in 0..3 {
         for b in a..3 {
             let m = bm(&prod(a, b));
@@ -243,30 +308,65 @@ pub fn closed_form(img: &[[f32; 3]], init: &[f32], known: &[bool], w: usize, h: 
     };
     let lap = |x: &[f32]| -> Vec<f32> {
         let pm = bm(x);
-        let ipm: Vec<Vec<f32>> = (0..3).map(|c| bm(&ic[c].iter().zip(x).map(|(a, b)| a * b).collect::<Vec<_>>())).collect();
+        let ipm: Vec<Vec<f32>> = (0..3)
+            .map(|c| bm(&ic[c].iter().zip(x).map(|(a, b)| a * b).collect::<Vec<_>>()))
+            .collect();
         let ab: Vec<[f32; 4]> = (0..n)
             .into_par_iter()
             .map(|i| {
-                let cv = [ipm[0][i] - mu[0][i] * pm[i], ipm[1][i] - mu[1][i] * pm[i], ipm[2][i] - mu[2][i] * pm[i]];
+                let cv = [
+                    ipm[0][i] - mu[0][i] * pm[i],
+                    ipm[1][i] - mu[1][i] * pm[i],
+                    ipm[2][i] - mu[2][i] * pm[i],
+                ];
                 let m = &inv[i];
                 let a = [
                     m[0][0] * cv[0] + m[0][1] * cv[1] + m[0][2] * cv[2],
                     m[1][0] * cv[0] + m[1][1] * cv[1] + m[1][2] * cv[2],
                     m[2][0] * cv[0] + m[2][1] * cv[1] + m[2][2] * cv[2],
                 ];
-                [a[0], a[1], a[2], pm[i] - a[0] * mu[0][i] - a[1] * mu[1][i] - a[2] * mu[2][i]]
+                [
+                    a[0],
+                    a[1],
+                    a[2],
+                    pm[i] - a[0] * mu[0][i] - a[1] * mu[1][i] - a[2] * mu[2][i],
+                ]
             })
             .collect();
-        let sa: Vec<Vec<f32>> = (0..3).map(|c| bm(&ab.iter().map(|v| v[c]).collect::<Vec<_>>())).collect();
+        let sa: Vec<Vec<f32>> = (0..3)
+            .map(|c| bm(&ab.iter().map(|v| v[c]).collect::<Vec<_>>()))
+            .collect();
         let sb = bm(&ab.iter().map(|v| v[3]).collect::<Vec<_>>());
-        (0..n).into_par_iter().map(|i| cnt[i] * (x[i] - sa[0][i] * ic[0][i] - sa[1][i] * ic[1][i] - sa[2][i] * ic[2][i] - sb[i])).collect()
+        (0..n)
+            .into_par_iter()
+            .map(|i| {
+                cnt[i]
+                    * (x[i]
+                        - sa[0][i] * ic[0][i]
+                        - sa[1][i] * ic[1][i]
+                        - sa[2][i] * ic[2][i]
+                        - sb[i])
+            })
+            .collect()
     };
     // L_UU x = −(L α_K)_U.
-    let a0: Vec<f32> = (0..n).map(|i| if known[i] { init[i] } else { 0.0 }).collect();
+    let a0: Vec<f32> = (0..n)
+        .map(|i| if known[i] { init[i] } else { 0.0 })
+        .collect();
     let la0 = lap(&a0);
-    let mut x: Vec<f32> = (0..n).map(|i| if known[i] { 0.0 } else { init[i] }).collect();
+    let mut x: Vec<f32> = (0..n)
+        .map(|i| if known[i] { 0.0 } else { init[i] })
+        .collect();
     let lx = lap(&x);
-    let mut res: Vec<f64> = (0..n).map(|i| if known[i] { 0.0 } else { (-la0[i] - lx[i]) as f64 }).collect();
+    let mut res: Vec<f64> = (0..n)
+        .map(|i| {
+            if known[i] {
+                0.0
+            } else {
+                (-la0[i] - lx[i]) as f64
+            }
+        })
+        .collect();
     let mut p = res.clone();
     let mut rs: f64 = res.iter().map(|v| v * v).sum();
     let rs0 = rs.max(1e-30);
@@ -275,7 +375,11 @@ pub fn closed_form(img: &[[f32; 3]], init: &[f32], known: &[bool], w: usize, h: 
             break;
         }
         let pf: Vec<f32> = p.iter().map(|v| *v as f32).collect();
-        let ap: Vec<f64> = lap(&pf).iter().enumerate().map(|(i, v)| if known[i] { 0.0 } else { *v as f64 }).collect();
+        let ap: Vec<f64> = lap(&pf)
+            .iter()
+            .enumerate()
+            .map(|(i, v)| if known[i] { 0.0 } else { *v as f64 })
+            .collect();
         let pap: f64 = p.iter().zip(&ap).map(|(a, b)| a * b).sum();
         if pap <= 1e-30 {
             break;
@@ -292,7 +396,15 @@ pub fn closed_form(img: &[[f32; 3]], init: &[f32], known: &[bool], w: usize, h: 
             p[i] = res[i] + beta * p[i];
         }
     }
-    (0..n).map(|i| if known[i] { init[i] } else { x[i].clamp(0.0, 1.0) }).collect()
+    (0..n)
+        .map(|i| {
+            if known[i] {
+                init[i]
+            } else {
+                x[i].clamp(0.0, 1.0)
+            }
+        })
+        .collect()
 }
 
 /// Contrast (0–100 %) around ½ on a soft alpha.
@@ -301,7 +413,8 @@ pub fn contrast(a: &mut [f32], pc: f64) {
         return;
     }
     let k = 1.0 / (1.0 - 0.99 * (pc / 100.0).clamp(0.0, 1.0)) as f32;
-    a.par_iter_mut().for_each(|v| *v = (0.5 + (*v - 0.5) * k).clamp(0.0, 1.0));
+    a.par_iter_mut()
+        .for_each(|v| *v = (0.5 + (*v - 0.5) * k).clamp(0.0, 1.0));
 }
 
 /// Shift Edge (−100–100 %) on a soft alpha: positive values grow the matte (a gamma curve on α).
@@ -310,33 +423,61 @@ pub fn shift_soft(a: &mut [f32], pc: f64) {
         return;
     }
     let g = 2f32.powf((-pc / 50.0) as f32);
-    a.par_iter_mut().for_each(|v| *v = v.clamp(0.0, 1.0).powf(g));
+    a.par_iter_mut()
+        .for_each(|v| *v = v.clamp(0.0, 1.0).powf(g));
 }
 
 /// Estimate the pure foreground colour of every pixel listed in `region` (alpha strictly
 /// between 0 and 1) and mix it in by `amount` (0–1). `radius`: neighbourhood (pixels) that pure
 /// background / foreground estimates are taken from. Returns the decontamination map (how much
 /// each pixel's colour changed, 0–1).
-pub fn decontaminate(img: &mut [[f32; 3]], alpha: &[f32], region: &[bool], w: usize, h: usize, radius: usize, amount: f32) -> Vec<f32> {
+pub fn decontaminate(
+    img: &mut [[f32; 3]],
+    alpha: &[f32],
+    region: &[bool],
+    w: usize,
+    h: usize,
+    radius: usize,
+    amount: f32,
+) -> Vec<f32> {
     let n = w * h;
     let mut map = vec![0.0f32; n];
     if !region.iter().any(|r| *r) || amount <= 0.0 {
         return map;
     }
-    let lo: Vec<f32> = alpha.iter().map(|a| if *a < 0.02 { 1.0 } else { 0.0 }).collect();
-    let hi: Vec<f32> = alpha.iter().map(|a| if *a > 0.98 { 1.0 } else { 0.0 }).collect();
+    let lo: Vec<f32> = alpha
+        .iter()
+        .map(|a| if *a < 0.02 { 1.0 } else { 0.0 })
+        .collect();
+    let hi: Vec<f32> = alpha
+        .iter()
+        .map(|a| if *a > 0.98 { 1.0 } else { 0.0 })
+        .collect();
     // Windowed means of pure background / foreground colours, widening where none is near.
     let est = |m: &[f32]| -> Vec<Option<[f32; 3]>> {
         let mut out: Vec<Option<[f32; 3]>> = vec![None; n];
         let mut r = radius.max(2);
         for _ in 0..4 {
             let cnt = box_mean(m, w, h, r);
-            let sums: Vec<Vec<f32>> = (0..3).map(|c| box_mean(&img.iter().zip(m).map(|(p, k)| p[c] * k).collect::<Vec<_>>(), w, h, r)).collect();
+            let sums: Vec<Vec<f32>> = (0..3)
+                .map(|c| {
+                    box_mean(
+                        &img.iter().zip(m).map(|(p, k)| p[c] * k).collect::<Vec<_>>(),
+                        w,
+                        h,
+                        r,
+                    )
+                })
+                .collect();
             let mut missing = false;
             for i in 0..n {
                 if region[i] && out[i].is_none() {
                     if cnt[i] > 1e-4 {
-                        out[i] = Some([sums[0][i] / cnt[i], sums[1][i] / cnt[i], sums[2][i] / cnt[i]]);
+                        out[i] = Some([
+                            sums[0][i] / cnt[i],
+                            sums[1][i] / cnt[i],
+                            sums[2][i] / cnt[i],
+                        ]);
                     } else {
                         missing = true;
                     }
@@ -441,11 +582,18 @@ mod tests {
                 for j in 0..h {
                     for i in 0..w {
                         if seed[j * w + i] {
-                            b = b.min(((x as f32 - i as f32).powi(2) + (y as f32 - j as f32).powi(2)).sqrt());
+                            b = b.min(
+                                ((x as f32 - i as f32).powi(2) + (y as f32 - j as f32).powi(2))
+                                    .sqrt(),
+                            );
                         }
                     }
                 }
-                assert!((d[y * w + x] - b).abs() < 1e-3, "{x},{y}: {} vs {b}", d[y * w + x]);
+                assert!(
+                    (d[y * w + x] - b).abs() < 1e-3,
+                    "{x},{y}: {} vs {b}",
+                    d[y * w + x]
+                );
             }
         }
     }
@@ -454,12 +602,31 @@ mod tests {
     fn guided_filter_recovers_a_linear_blend() {
         // I = αF + (1 − α)B with constant F, B: the filtered binary matte is close to α.
         let (w, h) = (64, 8);
-        let alpha: Vec<f32> = (0..w * h).map(|i| (((i % w) as f32 - 26.0) / 12.0).clamp(0.0, 1.0)).collect();
+        let alpha: Vec<f32> = (0..w * h)
+            .map(|i| (((i % w) as f32 - 26.0) / 12.0).clamp(0.0, 1.0))
+            .collect();
         let (f, b) = ([0.9f32, 0.2, 0.1], [0.1f32, 0.3, 0.8]);
-        let img: Vec<[f32; 3]> = alpha.iter().map(|a| [a * f[0] + (1.0 - a) * b[0], a * f[1] + (1.0 - a) * b[1], a * f[2] + (1.0 - a) * b[2]]).collect();
-        let p: Vec<f32> = alpha.iter().map(|a| if *a >= 0.5 { 1.0 } else { 0.0 }).collect();
+        let img: Vec<[f32; 3]> = alpha
+            .iter()
+            .map(|a| {
+                [
+                    a * f[0] + (1.0 - a) * b[0],
+                    a * f[1] + (1.0 - a) * b[1],
+                    a * f[2] + (1.0 - a) * b[2],
+                ]
+            })
+            .collect();
+        let p: Vec<f32> = alpha
+            .iter()
+            .map(|a| if *a >= 0.5 { 1.0 } else { 0.0 })
+            .collect();
         let q = guided_filter(&img, &p, w, h, 8, 1e-5);
-        let err: f32 = q.iter().zip(&alpha).map(|(a, b)| (a.clamp(0.0, 1.0) - b).abs()).sum::<f32>() / (w * h) as f32;
+        let err: f32 = q
+            .iter()
+            .zip(&alpha)
+            .map(|(a, b)| (a.clamp(0.0, 1.0) - b).abs())
+            .sum::<f32>()
+            / (w * h) as f32;
         assert!(err < 0.03, "mean error {err}");
     }
 }

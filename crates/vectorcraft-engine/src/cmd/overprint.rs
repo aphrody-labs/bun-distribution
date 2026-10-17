@@ -95,7 +95,13 @@ fn flags(n: &Node, fill: bool, index: Option<usize>) -> Vec<bool> {
         .map(|(_, it)| it.overprint())
         .collect();
     if let (None, NodeKind::Text(t)) = (index, &n.kind) {
-        v.extend(t.runs.iter().map(|r| if fill { r.style.overprint_fill } else { r.style.overprint_stroke }));
+        v.extend(t.runs.iter().map(|r| {
+            if fill {
+                r.style.overprint_fill
+            } else {
+                r.style.overprint_stroke
+            }
+        }));
     }
     v
 }
@@ -111,7 +117,13 @@ fn flags_mut(n: &mut Node, fill: bool, index: Option<usize>) -> Vec<&mut bool> {
         .map(|(_, it)| it.overprint_mut())
         .collect();
     if let (None, NodeKind::Text(t)) = (index, &mut n.kind) {
-        v.extend(t.runs.iter_mut().map(|r| if fill { &mut r.style.overprint_fill } else { &mut r.style.overprint_stroke }));
+        v.extend(t.runs.iter_mut().map(|r| {
+            if fill {
+                &mut r.style.overprint_fill
+            } else {
+                &mut r.style.overprint_stroke
+            }
+        }));
     }
     v
 }
@@ -121,13 +133,22 @@ fn kinds(p: &Value, cmd: &str, keys: [&str; 2]) -> Result<Vec<(bool, bool)>> {
     [(true, keys[0]), (false, keys[1])]
         .into_iter()
         .filter_map(|(fill, key)| {
-            p.get(key).map(|v| v.as_bool().map(|on| (fill, on)).ok_or_else(|| bad(cmd, format!("`{key}` must be true or false"))))
+            p.get(key).map(|v| {
+                v.as_bool()
+                    .map(|on| (fill, on))
+                    .ok_or_else(|| bad(cmd, format!("`{key}` must be true or false")))
+            })
         })
         .collect()
 }
 
 /// Each kind's item target and objects: (fill?, item, ids).
-fn aims(s: &Session, p: &Value, cmd: &str, kinds: impl IntoIterator<Item = bool>) -> Result<Vec<(bool, ItemTarget, Vec<NodeId>)>> {
+fn aims(
+    s: &Session,
+    p: &Value,
+    cmd: &str,
+    kinds: impl IntoIterator<Item = bool>,
+) -> Result<Vec<(bool, ItemTarget, Vec<NodeId>)>> {
     let item = item_target(s, p, cmd)?;
     kinds
         .into_iter()
@@ -140,7 +161,11 @@ fn aims(s: &Session, p: &Value, cmd: &str, kinds: impl IntoIterator<Item = bool>
 
 /// Run `f` on a copy of the document and commit it as one undo step (`label`) only when `f`
 /// reports changes; returns their count.
-pub(super) fn edit_counted(s: &mut Session, label: &str, f: impl FnOnce(&mut Document) -> Result<usize>) -> Result<usize> {
+pub(super) fn edit_counted(
+    s: &mut Session,
+    label: &str,
+    f: impl FnOnce(&mut Document) -> Result<usize>,
+) -> Result<usize> {
     let mut d = (*s.doc()?.doc).clone();
     let n = f(&mut d)?;
     if n > 0 {
@@ -157,13 +182,26 @@ pub(super) type OverprintJob = ((bool, ItemTarget, Vec<NodeId>), bool);
 
 /// The overprint edits `p` asks for under `keys` (the fill's and the stroke's), aimed as
 /// `object.setOverprint` aims.
-pub(super) fn overprint_jobs(s: &Session, p: &Value, cmd: &str, keys: [&str; 2]) -> Result<Vec<OverprintJob>> {
+pub(super) fn overprint_jobs(
+    s: &Session,
+    p: &Value,
+    cmd: &str,
+    keys: [&str; 2],
+) -> Result<Vec<OverprintJob>> {
     let kinds = kinds(p, cmd, keys)?;
-    Ok(aims(s, p, cmd, kinds.iter().map(|k| k.0))?.into_iter().zip(kinds.iter().map(|k| k.1)).collect())
+    Ok(aims(s, p, cmd, kinds.iter().map(|k| k.0))?
+        .into_iter()
+        .zip(kinds.iter().map(|k| k.1))
+        .collect())
 }
 
 /// Apply `jobs` to `d`, adding the objects changed to `changed`.
-pub(super) fn apply_overprint(d: &mut Document, jobs: &[OverprintJob], cmd: &str, changed: &mut BTreeSet<NodeId>) -> Result<()> {
+pub(super) fn apply_overprint(
+    d: &mut Document,
+    jobs: &[OverprintJob],
+    cmd: &str,
+    changed: &mut BTreeSet<NodeId>,
+) -> Result<()> {
     for ((fill, item, ids), on) in jobs {
         for id in ids {
             let Some(n) = d.node_mut(*id) else { continue };
@@ -196,12 +234,21 @@ fn set_overprint(s: &mut Session, p: &Value) -> Result<Value> {
 fn attributes(s: &Session, p: &Value) -> Result<AttributesInfo> {
     const C: &str = "attributes.info";
     let d = &s.doc()?.doc;
-    let mut info = AttributesInfo { ids: targets(s, p)?, recent_urls: s.recent_urls.clone(), ..Default::default() };
+    let mut info = AttributesInfo {
+        ids: targets(s, p)?,
+        recent_urls: s.recent_urls.clone(),
+        ..Default::default()
+    };
     super::attributes::fill_info(d, &mut info);
     for (fill, item, ids) in aims(s, p, C, [true, false])? {
-        let mut all =
-            ids.iter().filter_map(|id| d.node(*id)).filter_map(|n| Some(flags(n, fill, item.resolve(&n.appearance, fill, C).ok()?))).flatten();
-        let same = all.next().and_then(|first| all.all(|b| b == first).then_some(first));
+        let mut all = ids
+            .iter()
+            .filter_map(|id| d.node(*id))
+            .filter_map(|n| Some(flags(n, fill, item.resolve(&n.appearance, fill, C).ok()?)))
+            .flatten();
+        let same = all
+            .next()
+            .and_then(|first| all.all(|b| b == first).then_some(first));
         if fill {
             info.overprint_fill = same;
         } else {
@@ -235,7 +282,13 @@ pub(crate) fn overprint_black(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let changed = edit_counted(s, "Overprint Black", |d| {
         let spots = d.spot_names();
-        Ok(ids.iter().map(|id| d.node_mut(*id).map_or(0, |n| overprint_black_tree(n, &op, &spots))).sum())
+        Ok(ids
+            .iter()
+            .map(|id| {
+                d.node_mut(*id)
+                    .map_or(0, |n| overprint_black_tree(n, &op, &spots))
+            })
+            .sum())
     })?;
     Ok(json!({ "changed": changed }))
 }

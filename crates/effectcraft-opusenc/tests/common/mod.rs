@@ -30,10 +30,20 @@ impl Reson {
 /// formant resonators whose frequencies change per syllable, with syllable envelopes, short
 /// pauses and a little aspiration noise.
 pub fn speech(len: usize, seed: u32) -> Vec<f32> {
-    let vowels: [[f64; 3]; 5] = [[730.0, 1090.0, 2440.0], [270.0, 2290.0, 3010.0], [530.0, 1840.0, 2480.0], [570.0, 840.0, 2410.0], [300.0, 870.0, 2240.0]];
+    let vowels: [[f64; 3]; 5] = [
+        [730.0, 1090.0, 2440.0],
+        [270.0, 2290.0, 3010.0],
+        [530.0, 1840.0, 2480.0],
+        [570.0, 840.0, 2410.0],
+        [300.0, 870.0, 2240.0],
+    ];
     let syl = (0.24 * SR) as usize;
     let mut out = Vec::with_capacity(len);
-    let mut res = [Reson { y1: 0.0, y2: 0.0 }, Reson { y1: 0.0, y2: 0.0 }, Reson { y1: 0.0, y2: 0.0 }];
+    let mut res = [
+        Reson { y1: 0.0, y2: 0.0 },
+        Reson { y1: 0.0, y2: 0.0 },
+        Reson { y1: 0.0, y2: 0.0 },
+    ];
     let mut phase = 0.0f64;
     let mut s = seed;
     let mut prev_glottal = 0.0;
@@ -43,8 +53,15 @@ pub fn speech(len: usize, seed: u32) -> Vec<f32> {
         let pos = (n % syl) as f64 / syl as f64;
         // Every fourth syllable is a pause.
         let pause = k % 4 == 3;
-        let env = if pause { 0.0 } else { (std::f64::consts::PI * pos).sin().powf(0.7) };
-        let f0 = 100.0 + 50.0 * (1.0 + (2.0 * std::f64::consts::PI * 0.9 * t).sin()) + 15.0 * ((k * 7) % 5) as f64 - 30.0 * pos;
+        let env = if pause {
+            0.0
+        } else {
+            (std::f64::consts::PI * pos).sin().powf(0.7)
+        };
+        let f0 = 100.0
+            + 50.0 * (1.0 + (2.0 * std::f64::consts::PI * 0.9 * t).sin())
+            + 15.0 * ((k * 7) % 5) as f64
+            - 30.0 * pos;
         phase += f0 / SR;
         if phase >= 1.0 {
             phase -= 1.0;
@@ -81,7 +98,12 @@ pub fn speech(len: usize, seed: u32) -> Vec<f32> {
 /// Music-like test signal: three-note chords of harmonic tones (six partials each), changing
 /// every half second with soft attacks and releases.
 pub fn music(len: usize) -> Vec<f32> {
-    let chords: [[f64; 3]; 4] = [[261.63, 329.63, 392.0], [220.0, 277.18, 329.63], [174.61, 220.0, 261.63], [196.0, 246.94, 293.66]];
+    let chords: [[f64; 3]; 4] = [
+        [261.63, 329.63, 392.0],
+        [220.0, 277.18, 329.63],
+        [174.61, 220.0, 261.63],
+        [196.0, 246.94, 293.66],
+    ];
     let seg = (0.5 * SR) as usize;
     (0..len)
         .map(|n| {
@@ -92,7 +114,8 @@ pub fn music(len: usize) -> Vec<f32> {
             let mut x = 0.0;
             for (j, &f) in chords[k % 4].iter().enumerate() {
                 for h in 1..=6 {
-                    x += (2.0 * std::f64::consts::PI * f * h as f64 * t + j as f64).sin() / h as f64;
+                    x +=
+                        (2.0 * std::f64::consts::PI * f * h as f64 * t + j as f64).sin() / h as f64;
                 }
             }
             (0.12 * env * x) as f32
@@ -143,7 +166,11 @@ pub fn snr_at(orig: &[f32], dec: &[f32], shift: isize) -> f64 {
     let (mut s, mut e) = (0f64, 0f64);
     for i in FRAME..orig.len() - FRAME {
         let j = i as isize + shift;
-        let d = if j >= 0 && (j as usize) < dec.len() { dec[j as usize] as f64 } else { 0.0 };
+        let d = if j >= 0 && (j as usize) < dec.len() {
+            dec[j as usize] as f64
+        } else {
+            0.0
+        };
         s += (orig[i] as f64).powi(2);
         e += (orig[i] as f64 - d).powi(2);
     }
@@ -152,7 +179,9 @@ pub fn snr_at(orig: &[f32], dec: &[f32], shift: isize) -> f64 {
 
 /// Best SNR over residual delays of ±`range` samples: (SNR dB, delay).
 pub fn snr_search(orig: &[f32], dec: &[f32], range: isize) -> (f64, isize) {
-    (-range..=range).map(|d| (snr_at(orig, dec, d), d)).fold((f64::MIN, 0), |a, b| if b.0 > a.0 { b } else { a })
+    (-range..=range)
+        .map(|d| (snr_at(orig, dec, d), d))
+        .fold((f64::MIN, 0), |a, b| if b.0 > a.0 { b } else { a })
 }
 
 /// Segmental SNR (dB): mean over 20 ms segments holding signal (each clamped to [-10, 40]).
@@ -164,7 +193,11 @@ pub fn seg_snr(orig: &[f32], dec: &[f32], shift: isize) -> f64 {
         let (mut s, mut e) = (0f64, 0f64);
         for k in i..i + FRAME {
             let j = k as isize + shift;
-            let d = if j >= 0 && (j as usize) < dec.len() { dec[j as usize] as f64 } else { 0.0 };
+            let d = if j >= 0 && (j as usize) < dec.len() {
+                dec[j as usize] as f64
+            } else {
+                0.0
+            };
             s += (orig[k] as f64).powi(2);
             e += (orig[k] as f64 - d).powi(2);
         }
@@ -197,7 +230,10 @@ pub fn lowpass(x: &[f32], fc: f64) -> Vec<f32> {
         }
     }
     fft(&mut re, &mut im, true);
-    re[..x.len()].iter().map(|&v| (v / n as f64) as f32).collect()
+    re[..x.len()]
+        .iter()
+        .map(|&v| (v / n as f64) as f32)
+        .collect()
 }
 
 pub fn fft(re: &mut [f64], im: &mut [f64], inverse: bool) {
@@ -241,7 +277,11 @@ fn ogg_crc(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= (b as u32) << 24;
         for _ in 0..8 {
-            crc = if crc & 0x8000_0000 != 0 { (crc << 1) ^ 0x04C1_1DB7 } else { crc << 1 };
+            crc = if crc & 0x8000_0000 != 0 {
+                (crc << 1) ^ 0x04C1_1DB7
+            } else {
+                crc << 1
+            };
         }
     }
     crc
@@ -278,8 +318,18 @@ pub fn ogg_opus(enc: &OpusEncoder, packets: &[Vec<u8>], len: usize) -> Vec<u8> {
     let pre_skip = enc.pre_skip() as u64;
     for (i, p) in packets.iter().enumerate() {
         let last = i + 1 == packets.len();
-        let granule = if last { pre_skip + len as u64 } else { ((i + 1) * FRAME) as u64 };
-        ogg_page(&mut out, p, if last { 0x04 } else { 0 }, granule, i as u32 + 2);
+        let granule = if last {
+            pre_skip + len as u64
+        } else {
+            ((i + 1) * FRAME) as u64
+        };
+        ogg_page(
+            &mut out,
+            p,
+            if last { 0x04 } else { 0 },
+            granule,
+            i as u32 + 2,
+        );
     }
     out
 }

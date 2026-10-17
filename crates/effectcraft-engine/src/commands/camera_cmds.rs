@@ -7,13 +7,18 @@ use effectcraft_color::Label;
 use effectcraft_effects::camera_tracker::{self as ct, CAMERA, DELETED, SOLVE};
 use effectcraft_keyframe::{Justify, TextDoc, Value as KV};
 use effectcraft_project::build;
-use effectcraft_project::{ItemId, ItemKind, Layer, LayerId, LayerSource, LightKind, Project, Solid, Uid};
+use effectcraft_project::{
+    ItemId, ItemKind, Layer, LayerId, LayerSource, LightKind, Project, Solid, Uid,
+};
 use effectcraft_track::camtrack::linalg::{self, V3};
 use effectcraft_track::camtrack::{ShotType, SolveMethod, Target, point_color};
 use serde_json::{Value, json};
 
 use super::{CommandSpec, b_p, bad, f_p, has_comp, layer_p, str_p};
-use crate::camera_track::{CreateKind, Placed, is_tracker, placed, plane_orientation, static_params, target_for, write_camera};
+use crate::camera_track::{
+    CreateKind, Placed, is_tracker, placed, plane_orientation, static_params, target_for,
+    write_camera,
+};
 use crate::{EngineError, Result, Session, cmd, query};
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -27,11 +32,45 @@ pub fn specs() -> Vec<CommandSpec> {
             can_track,
             track_camera
         ),
-        cmd!("camera.analyze", "Analyze", [], None, "{layer?, effect?: uid|name|index, wait?: block until done}", has_comp, analyze),
-        cmd!("camera.cancel", "Cancel", [], None, "{}", is_analyzing, |s, _| Ok(json!({"stopped": s.stop_camera()}))),
-        query!("camera.solveStatus", "3D Camera Tracker Status", "{layer?, effect?}", status),
-        query!("camera.points", "3D Camera Tracker Points", "{layer?, effect?, time?: comp seconds} → visible solved points", points),
-        cmd!("camera.selectPoints", "Select Track Points", [], None, "{points: [id], add?, toggle?}", has_comp, select_points),
+        cmd!(
+            "camera.analyze",
+            "Analyze",
+            [],
+            None,
+            "{layer?, effect?: uid|name|index, wait?: block until done}",
+            has_comp,
+            analyze
+        ),
+        cmd!(
+            "camera.cancel",
+            "Cancel",
+            [],
+            None,
+            "{}",
+            is_analyzing,
+            |s, _| Ok(json!({"stopped": s.stop_camera()}))
+        ),
+        query!(
+            "camera.solveStatus",
+            "3D Camera Tracker Status",
+            "{layer?, effect?}",
+            status
+        ),
+        query!(
+            "camera.points",
+            "3D Camera Tracker Points",
+            "{layer?, effect?, time?: comp seconds} → visible solved points",
+            points
+        ),
+        cmd!(
+            "camera.selectPoints",
+            "Select Track Points",
+            [],
+            None,
+            "{points: [id], add?, toggle?}",
+            has_comp,
+            select_points
+        ),
         cmd!(
             "camera.createFromSolve",
             "Create from Camera Solve",
@@ -41,9 +80,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             create_from_solve
         ),
-        cmd!("camera.create", "Create Camera", [], None, "{layer?, effect?}", has_comp, |s, p| create_from_solve(s, &with_kind(p, "camera"))),
-        cmd!("camera.setGroundPlane", "Set Ground Plane and Origin", [], None, "{points?: [id] (default: selected), layer?, effect?}", has_comp, set_ground),
-        cmd!("camera.deletePoints", "Delete Selected Points", [], None, "{points?: [id] (default: selected), layer?, effect?, wait?}", has_comp, delete_points),
+        cmd!(
+            "camera.create",
+            "Create Camera",
+            [],
+            None,
+            "{layer?, effect?}",
+            has_comp,
+            |s, p| create_from_solve(s, &with_kind(p, "camera"))
+        ),
+        cmd!(
+            "camera.setGroundPlane",
+            "Set Ground Plane and Origin",
+            [],
+            None,
+            "{points?: [id] (default: selected), layer?, effect?}",
+            has_comp,
+            set_ground
+        ),
+        cmd!(
+            "camera.deletePoints",
+            "Delete Selected Points",
+            [],
+            None,
+            "{points?: [id] (default: selected), layer?, effect?, wait?}",
+            has_comp,
+            delete_points
+        ),
     ]
 }
 
@@ -60,14 +123,20 @@ fn can_track(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
     let c = s.active_comp().ok_or("no composition is open")?;
     match s.state.selected_layers.first().and_then(|l| c.layer(*l)) {
-        Some(l) if l.has_video() && !l.switches.adjustment && !l.is_camera() && !l.is_light() => Ok(()),
+        Some(l) if l.has_video() && !l.switches.adjustment && !l.is_camera() && !l.is_light() => {
+            Ok(())
+        }
         Some(_) => Err("Track Camera needs a footage or composition layer".into()),
         None => Err("select a layer to track".into()),
     }
 }
 
 fn is_analyzing(s: &Session) -> std::result::Result<(), String> {
-    if s.is_camera_analyzing() { Ok(()) } else { Err("no 3D Camera Tracker analysis is running".into()) }
+    if s.is_camera_analyzing() {
+        Ok(())
+    } else {
+        Err("no 3D Camera Tracker analysis is running".into())
+    }
 }
 
 /// (comp, layer, effect uid) of a 3D Camera Tracker: `layer` / `effect` (uid, name or 1-based
@@ -76,7 +145,9 @@ fn ct_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, LayerId, Uid)> {
     let cid = super::comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let candidates: Vec<LayerId> = match p.get("layer") {
-        Some(v) => vec![super::resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no layer {v}")))?],
+        Some(v) => {
+            vec![super::resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no layer {v}")))?]
+        }
         None => {
             let mut v: Vec<LayerId> = s.state.selected_props.iter().map(|(l, _)| *l).collect();
             v.extend(s.state.selected_layers.iter().copied());
@@ -85,18 +156,26 @@ fn ct_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, LayerId, Uid)> {
         }
     };
     for lid in candidates {
-        let Some(fx) = comp.layer(lid).and_then(Layer::effects) else { continue };
+        let Some(fx) = comp.layer(lid).and_then(Layer::effects) else {
+            continue;
+        };
         let g = match p.get("effect") {
             Some(Value::Number(n)) => {
                 let n = n.as_u64().unwrap_or(0);
-                fx.groups().find(|g| g.uid == n).or_else(|| fx.groups().nth((n as usize).saturating_sub(1)))
+                fx.groups()
+                    .find(|g| g.uid == n)
+                    .or_else(|| fx.groups().nth((n as usize).saturating_sub(1)))
             }
             Some(Value::String(name)) => fx.groups().find(|g| &g.name == name),
             _ => s
                 .state
                 .selected_props
                 .iter()
-                .find_map(|(l, u)| (*l == lid).then(|| fx.groups().find(|g| g.uid == *u && is_tracker(g))).flatten())
+                .find_map(|(l, u)| {
+                    (*l == lid)
+                        .then(|| fx.groups().find(|g| g.uid == *u && is_tracker(g)))
+                        .flatten()
+                })
                 .or_else(|| fx.groups().find(|g| is_tracker(g))),
         };
         if let Some(g) = g.filter(|g| is_tracker(g)) {
@@ -106,14 +185,23 @@ fn ct_p(s: &Session, p: &Value, cmd: &str) -> Result<(ItemId, LayerId, Uid)> {
             break;
         }
     }
-    Err(bad(cmd, "no 3D Camera Tracker found (apply Animation ▸ Track Camera first)"))
+    Err(bad(
+        cmd,
+        "no 3D Camera Tracker found (apply Animation ▸ Track Camera first)",
+    ))
 }
 
 fn shot_p(p: &Value) -> Result<Option<ShotType>> {
     match p.get("shotType") {
         None => Ok(None),
-        Some(Value::Number(n)) => ShotType::ALL.get(n.as_u64().unwrap_or(99) as usize).copied().map(Some).ok_or_else(|| bad("track.camera", "shotType: 0..2")),
-        Some(Value::String(v)) => ShotType::from_name(v).map(Some).ok_or_else(|| bad("track.camera", "shotType: fixed|variable|specify")),
+        Some(Value::Number(n)) => ShotType::ALL
+            .get(n.as_u64().unwrap_or(99) as usize)
+            .copied()
+            .map(Some)
+            .ok_or_else(|| bad("track.camera", "shotType: 0..2")),
+        Some(Value::String(v)) => ShotType::from_name(v)
+            .map(Some)
+            .ok_or_else(|| bad("track.camera", "shotType: fixed|variable|specify")),
         Some(_) => Err(bad("track.camera", "shotType: fixed|variable|specify")),
     }
 }
@@ -121,10 +209,14 @@ fn shot_p(p: &Value) -> Result<Option<ShotType>> {
 fn method_p(p: &Value) -> Result<Option<SolveMethod>> {
     match p.get("solveMethod") {
         None => Ok(None),
-        Some(Value::Number(n)) => {
-            SolveMethod::ALL.get(n.as_u64().unwrap_or(99) as usize).copied().map(Some).ok_or_else(|| bad("track.camera", "solveMethod: 0..3"))
-        }
-        Some(Value::String(v)) => SolveMethod::from_name(v).map(Some).ok_or_else(|| bad("track.camera", "solveMethod: auto|typical|flat|tripod")),
+        Some(Value::Number(n)) => SolveMethod::ALL
+            .get(n.as_u64().unwrap_or(99) as usize)
+            .copied()
+            .map(Some)
+            .ok_or_else(|| bad("track.camera", "solveMethod: 0..3")),
+        Some(Value::String(v)) => SolveMethod::from_name(v)
+            .map(Some)
+            .ok_or_else(|| bad("track.camera", "solveMethod: auto|typical|flat|tripod")),
         Some(_) => Err(bad("track.camera", "solveMethod: auto|typical|flat|tripod")),
     }
 }
@@ -142,15 +234,32 @@ fn track_camera(s: &mut Session, p: &Value) -> Result<Value> {
     let detailed = b_p(p, "detailed");
     let lens = b_p(p, "lensDistortion");
     let undistort = b_p(p, "undistort");
-    let existing = s.project.comp(cid).and_then(|c| c.layer(lid)).and_then(Layer::effects).and_then(|fx| fx.groups().find(|g| is_tracker(g)).map(|g| g.uid));
+    let existing = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .and_then(Layer::effects)
+        .and_then(|fx| fx.groups().find(|g| is_tracker(g)).map(|g| g.uid));
     let uid = match existing {
         Some(u) => u,
         None => {
-            let r = s.execute("effect.apply", json!({"effect": ct::ID, "layers": [lid.0], "comp": cid.0}))?;
-            r["effects"].get(0).and_then(Value::as_u64).ok_or_else(|| EngineError::Other("the effect could not be applied".into()))?
+            let r = s.execute(
+                "effect.apply",
+                json!({"effect": ct::ID, "layers": [lid.0], "comp": cid.0}),
+            )?;
+            r["effects"]
+                .get(0)
+                .and_then(Value::as_u64)
+                .ok_or_else(|| EngineError::Other("the effect could not be applied".into()))?
         }
     };
-    if shot.is_some() || method.is_some() || aov.is_some() || detailed.is_some() || lens.is_some() || undistort.is_some() {
+    if shot.is_some()
+        || method.is_some()
+        || aov.is_some()
+        || detailed.is_some()
+        || lens.is_some()
+        || undistort.is_some()
+    {
         s.edit("3D Camera Tracker Settings", None, |proj, _| {
             let g = proj
                 .comp_mut(cid)
@@ -164,7 +273,10 @@ fn track_camera(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             };
             if let Some(sh) = shot {
-                set("shotType", KV::Enum(ShotType::ALL.iter().position(|x| *x == sh).unwrap_or(0) as u32));
+                set(
+                    "shotType",
+                    KV::Enum(ShotType::ALL.iter().position(|x| *x == sh).unwrap_or(0) as u32),
+                );
             }
             if let Some(a) = aov {
                 set("horizontalAngleOfView", KV::Scalar(a));
@@ -173,7 +285,10 @@ fn track_camera(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
             if let Some(m) = method {
-                set("advanced/solveMethod", KV::Enum(SolveMethod::ALL.iter().position(|x| *x == m).unwrap_or(0) as u32));
+                set(
+                    "advanced/solveMethod",
+                    KV::Enum(SolveMethod::ALL.iter().position(|x| *x == m).unwrap_or(0) as u32),
+                );
             }
             if let Some(d) = detailed {
                 set("advanced/detailedAnalysis", KV::Bool(d));
@@ -190,7 +305,9 @@ fn track_camera(s: &mut Session, p: &Value) -> Result<Value> {
     // Select the effect so the viewer shows its track points.
     s.state.selected_props = vec![(lid, uid)];
     let wait = b_p(p, "wait").unwrap_or(false);
-    let n = s.start_camera(cid, lid, uid, wait).map_err(EngineError::Other)?;
+    let n = s
+        .start_camera(cid, lid, uid, wait)
+        .map_err(EngineError::Other)?;
     let mut out = json!({"layer": lid.0, "effect": uid, "frames": n, "running": s.is_camera_analyzing(), "progress": s.camera_progress()});
     if wait {
         out["status"] = status(s, &json!({"layer": lid.0, "effect": uid, "comp": cid.0}))?;
@@ -201,7 +318,9 @@ fn track_camera(s: &mut Session, p: &Value) -> Result<Value> {
 fn analyze(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid, uid) = ct_p(s, p, "camera.analyze")?;
     let wait = b_p(p, "wait").unwrap_or(false);
-    let n = s.start_camera(cid, lid, uid, wait).map_err(EngineError::Other)?;
+    let n = s
+        .start_camera(cid, lid, uid, wait)
+        .map_err(EngineError::Other)?;
     let mut out = json!({"layer": lid.0, "effect": uid, "frames": n, "running": s.is_camera_analyzing(), "progress": s.camera_progress()});
     if wait {
         out["status"] = status(s, &json!({"layer": lid.0, "effect": uid, "comp": cid.0}))?;
@@ -212,7 +331,9 @@ fn analyze(s: &mut Session, p: &Value) -> Result<Value> {
 fn status(s: &mut Session, p: &Value) -> Result<Value> {
     s.poll_camera(false);
     let mut out = json!({"running": s.is_camera_analyzing(), "progress": s.camera_progress(), "banner": s.camera_progress().map(|p| p.banner())});
-    let Ok((cid, lid, uid)) = ct_p(s, p, "camera.solveStatus") else { return Ok(out) };
+    let Ok((cid, lid, uid)) = ct_p(s, p, "camera.solveStatus") else {
+        return Ok(out);
+    };
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
     let g = layer.props.find_group(uid).ok_or(EngineError::NoComp)?;
@@ -256,7 +377,11 @@ fn status(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     let cam = params.get(CAMERA).map(|v| v.as_f64() as u64).unwrap_or(0);
-    out["cameraLayer"] = if cam > 0 && comp.layer(LayerId(cam)).is_some_and(Layer::is_camera) { json!(cam) } else { Value::Null };
+    out["cameraLayer"] = if cam > 0 && comp.layer(LayerId(cam)).is_some_and(Layer::is_camera) {
+        json!(cam)
+    } else {
+        Value::Null
+    };
     out["selected"] = json!(s.state.camera_points);
     Ok(out)
 }
@@ -264,8 +389,11 @@ fn status(s: &mut Session, p: &Value) -> Result<Value> {
 /// The visible solved points at the current (or given) time, with their comp positions.
 fn points(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid, uid) = ct_p(s, p, "camera.points")?;
-    let pl = placed(&s.project, cid, lid, uid).ok_or_else(|| bad("camera.points", "the camera is not solved yet"))?;
-    let t = f_p(p, "time").map(effectcraft_time::Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid));
+    let pl = placed(&s.project, cid, lid, uid)
+        .ok_or_else(|| bad("camera.points", "the camera is not solved yet"))?;
+    let t = f_p(p, "time")
+        .map(effectcraft_time::Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time_of(cid));
     let k = pl.frame_at(t);
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
@@ -285,7 +413,11 @@ fn points(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn ids_p(s: &Session, p: &Value) -> Vec<u32> {
     match p.get("points") {
-        Some(Value::Array(a)) => a.iter().filter_map(Value::as_u64).map(|v| v as u32).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_u64)
+            .map(|v| v as u32)
+            .collect(),
         Some(Value::Number(n)) => n.as_u64().map(|v| vec![v as u32]).unwrap_or_default(),
         _ => s.state.camera_points.clone(),
     }
@@ -293,7 +425,11 @@ fn ids_p(s: &Session, p: &Value) -> Vec<u32> {
 
 fn select_points(s: &mut Session, p: &Value) -> Result<Value> {
     let ids: Vec<u32> = match p.get("points") {
-        Some(Value::Array(a)) => a.iter().filter_map(Value::as_u64).map(|v| v as u32).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_u64)
+            .map(|v| v as u32)
+            .collect(),
         _ => vec![],
     };
     if b_p(p, "toggle").unwrap_or(false) {
@@ -323,22 +459,38 @@ fn target_p(s: &Session, p: &Value, pl: &Placed, k: usize, cmd: &str) -> Result<
     if let Some(t) = p.get("target") {
         let v3 = |k: &str| -> Option<V3> {
             let a = t.get(k)?.as_array()?;
-            Some([a.first()?.as_f64()?, a.get(1)?.as_f64()?, a.get(2).and_then(Value::as_f64).unwrap_or(0.0)])
+            Some([
+                a.first()?.as_f64()?,
+                a.get(1)?.as_f64()?,
+                a.get(2).and_then(Value::as_f64).unwrap_or(0.0),
+            ])
         };
-        let (c, n) = (v3("center").ok_or_else(|| bad(cmd, "target.center: [x, y, z]"))?, v3("normal").unwrap_or([0.0, -1.0, 0.0]));
+        let (c, n) = (
+            v3("center").ok_or_else(|| bad(cmd, "target.center: [x, y, z]"))?,
+            v3("normal").unwrap_or([0.0, -1.0, 0.0]),
+        );
         let size = t.get("size").and_then(Value::as_f64).unwrap_or(100.0);
         let nc = linalg::normalize(linalg::mtv(&pl.world.r, n));
-        return Ok(Target { center: pl.from_world(c), normal: nc, size: size / pl.world.s });
+        return Ok(Target {
+            center: pl.from_world(c),
+            normal: nc,
+            size: size / pl.world.s,
+        });
     }
     let ids = ids_p(s, p);
     if ids.is_empty() {
-        return Err(bad(cmd, "select track points (or give `points` / `target`)"));
+        return Err(bad(
+            cmd,
+            "select track points (or give `points` / `target`)",
+        ));
     }
     target_for(&pl.solve, &ids, k).ok_or_else(|| bad(cmd, "those points do not define a plane"))
 }
 
 fn next_name(c: &effectcraft_project::Comp, base: &str) -> String {
-    let n = (1..).find(|i| !c.layers.iter().any(|l| l.name == format!("{base} {i}"))).unwrap_or(1);
+    let n = (1..)
+        .find(|i| !c.layers.iter().any(|l| l.name == format!("{base} {i}")))
+        .unwrap_or(1);
     format!("{base} {n}")
 }
 
@@ -363,10 +515,35 @@ fn insert_above(proj: &mut Project, cid: ItemId, above: LayerId, l: Layer) -> Re
     Ok(id)
 }
 
-fn add_solid(proj: &mut Project, comp: &effectcraft_project::Comp, name: &str, size: u32, color: [f32; 3]) -> Layer {
-    let folder = proj.folder_named("Solids").unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
-    let sid = proj.add_item(name, Label::Red, Some(folder), ItemKind::Solid(Solid { color, width: size, height: size, pixel_aspect: 1.0 }));
-    build::layer(proj, comp, name, LayerSource::Solid { item: sid }, (size, size), None)
+fn add_solid(
+    proj: &mut Project,
+    comp: &effectcraft_project::Comp,
+    name: &str,
+    size: u32,
+    color: [f32; 3],
+) -> Layer {
+    let folder = proj
+        .folder_named("Solids")
+        .unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
+    let sid = proj.add_item(
+        name,
+        Label::Red,
+        Some(folder),
+        ItemKind::Solid(Solid {
+            color,
+            width: size,
+            height: size,
+            pixel_aspect: 1.0,
+        }),
+    );
+    build::layer(
+        proj,
+        comp,
+        name,
+        LayerSource::Solid { item: sid },
+        (size, size),
+        None,
+    )
 }
 
 /// Create Text / Solid / Null / Shadow Catcher (and Light) on the target, plus the 3D Tracker
@@ -374,16 +551,28 @@ fn add_solid(proj: &mut Project, comp: &effectcraft_project::Comp, name: &str, s
 fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "camera.createFromSolve";
     let (cid, lid, uid) = ct_p(s, p, cmd)?;
-    let kind = CreateKind::from_name(str_p(p, "kind").unwrap_or("null")).ok_or_else(|| bad(cmd, "kind: text|solid|null|shadowCatcher|camera"))?;
-    let pl = placed(&s.project, cid, lid, uid).ok_or_else(|| bad(cmd, "the camera is not solved yet (analysis still running or failed)"))?;
+    let kind = CreateKind::from_name(str_p(p, "kind").unwrap_or("null"))
+        .ok_or_else(|| bad(cmd, "kind: text|solid|null|shadowCatcher|camera"))?;
+    let pl = placed(&s.project, cid, lid, uid).ok_or_else(|| {
+        bad(
+            cmd,
+            "the camera is not solved yet (analysis still running or failed)",
+        )
+    })?;
     let k = pl.frame_at(s.time_of(cid));
     let multiple = b_p(p, "multiple").unwrap_or(false);
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let src = comp.layer(lid).ok_or(EngineError::NoComp)?.clone();
     let g = src.props.find_group(uid).ok_or(EngineError::NoComp)?;
     let params = static_params(g);
-    let size_pct = effectcraft_effects::warp_stab::param(&params, "targetSize").map(|v| v.as_f64()).unwrap_or(100.0) / 100.0;
-    let existing_cam = params.get(CAMERA).map(|v| v.as_f64() as u64).filter(|id| *id > 0 && comp.layer(LayerId(*id)).is_some_and(Layer::is_camera));
+    let size_pct = effectcraft_effects::warp_stab::param(&params, "targetSize")
+        .map(|v| v.as_f64())
+        .unwrap_or(100.0)
+        / 100.0;
+    let existing_cam = params
+        .get(CAMERA)
+        .map(|v| v.as_f64() as u64)
+        .filter(|id| *id > 0 && comp.layer(LayerId(*id)).is_some_and(Layer::is_camera));
     // Targets: one, or one per selected point (Create Multiple …) sharing the selection's plane.
     let targets: Vec<Target> = if kind == CreateKind::Camera {
         vec![]
@@ -391,7 +580,13 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
         let t = target_p(s, p, &pl, k, cmd)?;
         if multiple {
             let ids = ids_p(s, p);
-            ids.iter().filter_map(|i| pl.solve.point(*i)).map(|sp| Target { center: sp.pos, ..t }).collect()
+            ids.iter()
+                .filter_map(|i| pl.solve.point(*i))
+                .map(|sp| Target {
+                    center: sp.pos,
+                    ..t
+                })
+                .collect()
         } else {
             vec![t]
         }
@@ -415,18 +610,36 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
         let camera = match existing_cam {
             Some(id) if kind != CreateKind::Camera => LayerId(id),
             Some(id) => {
-                let l = proj.comp_mut(cid).and_then(|c| c.layer_mut(LayerId(id))).ok_or(EngineError::NoComp)?;
+                let l = proj
+                    .comp_mut(cid)
+                    .and_then(|c| c.layer_mut(LayerId(id)))
+                    .ok_or(EngineError::NoComp)?;
                 write_camera(l, &pl);
                 LayerId(id)
             }
             None => {
-                let mut l = build::layer(proj, &comp, "3D Tracker Camera", LayerSource::Camera, (comp.width, comp.height), None);
+                let mut l = build::layer(
+                    proj,
+                    &comp,
+                    "3D Tracker Camera",
+                    LayerSource::Camera,
+                    (comp.width, comp.height),
+                    None,
+                );
                 l.in_point = src.in_point;
                 l.out_point = src.out_point;
                 write_camera(&mut l, &pl);
                 let id = l.id;
-                proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.insert(0, l);
-                if let Some(pr) = proj.comp_mut(cid).and_then(|c| c.layer_mut(lid)).and_then(|l| l.props.find_group_mut(uid)).and_then(|g| g.prop_mut(CAMERA)) {
+                proj.comp_mut(cid)
+                    .ok_or(EngineError::NoComp)?
+                    .layers
+                    .insert(0, l);
+                if let Some(pr) = proj
+                    .comp_mut(cid)
+                    .and_then(|c| c.layer_mut(lid))
+                    .and_then(|l| l.props.find_group_mut(uid))
+                    .and_then(|g| g.prop_mut(CAMERA))
+                {
                     pr.value = KV::Scalar(id.0 as f64);
                 }
                 id
@@ -440,8 +653,20 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
             let cur = proj.comp(cid).ok_or(EngineError::NoComp)?.clone();
             match kind {
                 CreateKind::Text => {
-                    let mut l = build::layer(proj, &cur, "Text", LayerSource::Text, (comp.width, comp.height), None);
-                    let doc = TextDoc { text: "Text".into(), justify: Justify::Center, size: (size * 0.35).clamp(4.0, 2000.0), ..Default::default() };
+                    let mut l = build::layer(
+                        proj,
+                        &cur,
+                        "Text",
+                        LayerSource::Text,
+                        (comp.width, comp.height),
+                        None,
+                    );
+                    let doc = TextDoc {
+                        text: "Text".into(),
+                        justify: Justify::Center,
+                        size: (size * 0.35).clamp(4.0, 2000.0),
+                        ..Default::default()
+                    };
                     if let Some(pr) = l.props.prop_mut("text/sourceText") {
                         pr.value = KV::Text(Box::new(doc));
                     }
@@ -457,7 +682,14 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 CreateKind::Null => {
                     let name = next_name(&cur, "Track Null");
-                    let mut l = build::layer(proj, &cur, &name, LayerSource::Null, (comp.width, comp.height), None);
+                    let mut l = build::layer(
+                        proj,
+                        &cur,
+                        &name,
+                        LayerSource::Null,
+                        (comp.width, comp.height),
+                        None,
+                    );
                     place(&mut l, center, ori, &src);
                     if let Some(pr) = l.props.prop_mut("transform/scale") {
                         pr.value = KV::Vec3([size, size, size]);
@@ -466,7 +698,13 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 CreateKind::ShadowCatcher => {
                     let name = next_name(&cur, "Shadow Catcher");
-                    let mut l = add_solid(proj, &cur, &name, (size * 4.0).round().max(1.0) as u32, [1.0, 1.0, 1.0]);
+                    let mut l = add_solid(
+                        proj,
+                        &cur,
+                        &name,
+                        (size * 4.0).round().max(1.0) as u32,
+                        [1.0, 1.0, 1.0],
+                    );
                     place(&mut l, center, ori, &src);
                     if let Some(pr) = l.props.prop_mut("materialOptions/acceptsShadows") {
                         pr.value = KV::Enum(2);
@@ -478,10 +716,25 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
                     created.push(insert_above(proj, cid, lid, l)?);
                     let cur = proj.comp(cid).ok_or(EngineError::NoComp)?.clone();
                     let lname = next_name(&cur, "Light");
-                    let mut light = build::layer(proj, &cur, &lname, LayerSource::Light { kind: LightKind::Point }, (comp.width, comp.height), None);
+                    let mut light = build::layer(
+                        proj,
+                        &cur,
+                        &lname,
+                        LayerSource::Light {
+                            kind: LightKind::Point,
+                        },
+                        (comp.width, comp.height),
+                        None,
+                    );
                     light.in_point = src.in_point;
                     light.out_point = src.out_point;
-                    let lp = linalg::add(center, linalg::add(linalg::scale(normal, size * 2.0), linalg::scale(right, size)));
+                    let lp = linalg::add(
+                        center,
+                        linalg::add(
+                            linalg::scale(normal, size * 2.0),
+                            linalg::scale(right, size),
+                        ),
+                    );
                     if let Some(pr) = light.props.prop_mut("transform/position") {
                         pr.value = KV::Vec3(lp);
                     }
@@ -494,28 +747,38 @@ fn create_from_solve(s: &mut Session, p: &Value) -> Result<Value> {
                 CreateKind::Camera => {}
             }
         }
-        st.selected_layers = if created.is_empty() { vec![camera] } else { created.clone() };
+        st.selected_layers = if created.is_empty() {
+            vec![camera]
+        } else {
+            created.clone()
+        };
         st.selected_props.clear();
         Ok((camera, created))
     })?;
     let t0 = targets.first().map(
         |t| json!({"center": pl.to_world(t.center), "normal": linalg::normalize(linalg::mv(&pl.world.r, t.normal)), "size": t.size * pl.world.s * size_pct}),
     );
-    Ok(json!({"camera": camera.0, "layers": created.iter().map(|l| l.0).collect::<Vec<_>>(), "target": t0}))
+    Ok(
+        json!({"camera": camera.0, "layers": created.iter().map(|l| l.0).collect::<Vec<_>>(), "target": t0}),
+    )
 }
 
 fn set_ground(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "camera.setGroundPlane";
     let (cid, lid, uid) = ct_p(s, p, cmd)?;
-    let pl = placed(&s.project, cid, lid, uid).ok_or_else(|| bad(cmd, "the camera is not solved yet"))?;
+    let pl = placed(&s.project, cid, lid, uid)
+        .ok_or_else(|| bad(cmd, "the camera is not solved yet"))?;
     let k = pl.frame_at(s.time_of(cid));
     let ids = ids_p(s, p);
     if ids.is_empty() {
         return Err(bad(cmd, "select track points (or give `points`)"));
     }
-    let t = target_for(&pl.solve, &ids, k).ok_or_else(|| bad(cmd, "those points do not define a plane"))?;
+    let t = target_for(&pl.solve, &ids, k)
+        .ok_or_else(|| bad(cmd, "those points do not define a plane"))?;
     let mut sv = (*pl.solve).clone();
-    let mut g = sv.ground_from(&ids, k).ok_or_else(|| bad(cmd, "those points do not define a plane"))?;
+    let mut g = sv
+        .ground_from(&ids, k)
+        .ok_or_else(|| bad(cmd, "those points do not define a plane"))?;
     g.origin = t.center;
     sv.ground = Some(g);
     let json = sv.to_json();
@@ -542,14 +805,21 @@ fn delete_points(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(cmd, "select track points (or give `points`)"));
     }
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let g = comp.layer(lid).and_then(|l| l.props.find_group(uid)).ok_or(EngineError::NoComp)?;
+    let g = comp
+        .layer(lid)
+        .and_then(|l| l.props.find_group(uid))
+        .ok_or(EngineError::NoComp)?;
     let params = static_params(g);
     let mut del = ct::deleted(&params);
-    let auto = effectcraft_effects::warp_stab::param(&params, "advanced/autoDeletePoints").is_some_and(KV::as_bool);
+    let auto = effectcraft_effects::warp_stab::param(&params, "advanced/autoDeletePoints")
+        .is_some_and(KV::as_bool);
     let mut add = ids.clone();
     if auto && let Some(sv) = ct::solve(&params) {
         // Same feature tracked again at other times: solved within 1 % of its depth.
-        let cam0 = sv.first_solved().map(|k| sv.frames[k].center).unwrap_or([0.0; 3]);
+        let cam0 = sv
+            .first_solved()
+            .map(|k| sv.frames[k].center)
+            .unwrap_or([0.0; 3]);
         for id in &ids {
             let Some(pt) = sv.point(*id) else { continue };
             let r = linalg::norm(linalg::sub(pt.pos, cam0)) * 0.01;
@@ -582,7 +852,8 @@ fn delete_points(s: &mut Session, p: &Value) -> Result<Value> {
     // Re-solve now (After Effects re-solves after deleting points).
     let wait = b_p(p, "wait").unwrap_or(false);
     if !s.is_camera_analyzing() {
-        s.start_camera(cid, lid, uid, wait).map_err(EngineError::Other)?;
+        s.start_camera(cid, lid, uid, wait)
+            .map_err(EngineError::Other)?;
     }
     Ok(json!({"deleted": del, "running": s.is_camera_analyzing()}))
 }

@@ -10,13 +10,22 @@ fn every_unit_round_trips_through_its_field_text() {
         let tol = 0.0005 * u.points() + 1e-9;
         for pt in [0.0, 1.0, 12.5, 72.0, 100.0, 595.28, 1234.5678, -36.0] {
             let shown = u.format(pt);
-            let back = u.parse(&shown).unwrap_or_else(|| panic!("{u:?} can't read back `{shown}`"));
+            let back = u
+                .parse(&shown)
+                .unwrap_or_else(|| panic!("{u:?} can't read back `{shown}`"));
             assert!((back - pt).abs() <= tol, "{u:?}: {pt} → `{shown}` → {back}");
             // The bare number reads in the field's unit, and in any unit with its suffix.
             let bare = u.parse(&u.number(pt)).unwrap();
-            assert!((bare - pt).abs() <= tol, "{u:?}: bare `{}` → {bare}", u.number(pt));
+            assert!(
+                (bare - pt).abs() <= tol,
+                "{u:?}: bare `{}` → {bare}",
+                u.number(pt)
+            );
             let pts = Unit::Points.parse(&shown).unwrap();
-            assert!((pts - pt).abs() <= tol, "{u:?}: `{shown}` in a points field → {pts}");
+            assert!(
+                (pts - pt).abs() <= tol,
+                "{u:?}: `{shown}` in a points field → {pts}"
+            );
         }
     }
 }
@@ -36,7 +45,9 @@ fn typed_units_win_over_the_fields_unit() {
 
 #[test]
 fn odd_text_reads_as_nothing_without_panicking() {
-    for s in ["", "é", "é5", "°+1", "×2", "5 ×", "—3", "mm", "1/0", "--", "+"] {
+    for s in [
+        "", "é", "é5", "°+1", "×2", "5 ×", "—3", "mm", "1/0", "--", "+",
+    ] {
         assert_eq!(Unit::Millimeters.parse(s), None, "{s}");
     }
 }
@@ -63,6 +74,9 @@ fn readouts_show_two_decimals() {
     assert_eq!(Unit::Millimeters.number(1.0), "0.3528");
     // Four decimals for the large units, three for the small ones.
     assert_eq!(Unit::Inches.number(0.5616), "0.0078");
-    assert_eq!((Unit::Inches.number(595.2756), Unit::Points.number(595.2756)), ("8.2677".into(), "595.276".into()));
+    assert_eq!(
+        (Unit::Inches.number(595.2756), Unit::Points.number(595.2756)),
+        ("8.2677".into(), "595.276".into())
+    );
     assert_eq!(Unit::Points.number(-0.00001), "0");
 }

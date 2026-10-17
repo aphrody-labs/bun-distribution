@@ -16,8 +16,19 @@ const UNGROUPED: &str = "Patterns";
 /// Built-in folders for the built-in procedural patterns.
 pub fn builtin_groups() -> Vec<Group<String>> {
     let lib = crate::pattern_cmds::builtin();
-    let ids = |names: &[&str]| -> Vec<String> { names.iter().filter_map(|n| lib.iter().find(|p| p.name == *n).map(|p| p.id.clone())).collect() };
-    vec![Group::new("Geometric", ids(&["Checkerboard", "Diagonal Lines", "Dots", "Grid"])), Group::new("Textures", ids(&["Bricks", "Weave", "Paper Noise"]))]
+    let ids = |names: &[&str]| -> Vec<String> {
+        names
+            .iter()
+            .filter_map(|n| lib.iter().find(|p| p.name == *n).map(|p| p.id.clone()))
+            .collect()
+    };
+    vec![
+        Group::new(
+            "Geometric",
+            ids(&["Checkerboard", "Diagonal Lines", "Dots", "Grid"]),
+        ),
+        Group::new("Textures", ids(&["Bricks", "Weave", "Paper Noise"])),
+    ]
 }
 
 /// Bring the groups in line with the library (see the module docs).
@@ -27,7 +38,11 @@ pub fn sync(s: &mut Session) {
     for g in groups.iter_mut() {
         g.items.retain(|id| lib.contains(id));
     }
-    let loose: Vec<String> = lib.iter().filter(|id| !groups.iter().any(|g| g.items.contains(id))).cloned().collect();
+    let loose: Vec<String> = lib
+        .iter()
+        .filter(|id| !groups.iter().any(|g| g.items.contains(id)))
+        .cloned()
+        .collect();
     if !loose.is_empty() {
         let gi = group_index(groups, Some(UNGROUPED));
         groups[gi].items.extend(loose);
@@ -61,13 +76,22 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn pattern_key(s: &Session, p: &Value, cmd: &str) -> Result<photocraft_doc::Pattern> {
     let key = str_param(p, "pattern").unwrap_or("");
-    crate::pattern_cmds::resolve(s, key).ok_or_else(|| bad(cmd, format!("no pattern \"{key}\" (see pattern.presets.list)")))
+    crate::pattern_cmds::resolve(s, key).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("no pattern \"{key}\" (see pattern.presets.list)"),
+        )
+    })
 }
 
 fn active_pattern_fill(s: &Session) -> Option<photocraft_doc::LayerId> {
     let d = s.active()?;
     let id = d.active_layer?;
-    matches!(d.doc.layer(id)?.content, LayerContent::Fill(Fill::Pattern { .. })).then_some(id)
+    matches!(
+        d.doc.layer(id)?.content,
+        LayerContent::Fill(Fill::Pattern { .. })
+    )
+    .then_some(id)
 }
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
@@ -76,7 +100,9 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
     s.presets.pattern = Some(pat.id.clone());
     s.presets.rev += 1;
     let mut out = json!({"pattern": pat.id, "name": pat.display_name()});
-    if p.get("applyToLayer").and_then(Value::as_bool).unwrap_or(true)
+    if p.get("applyToLayer")
+        .and_then(Value::as_bool)
+        .unwrap_or(true)
         && let Some(id) = active_pattern_fill(s)
     {
         s.edit("Change Pattern Fill", |doc, _| {
@@ -103,7 +129,11 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let r = super::call(s, "edit.definePattern", p.clone())?;
-    let id = r.get("pattern").and_then(Value::as_str).unwrap_or_default().to_string();
+    let id = r
+        .get("pattern")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
     sync(s);
     if let Some(g) = str_param(p, "group") {
         for gr in &mut s.presets.pattern_groups {
@@ -122,12 +152,20 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     let action = req_str(p, "action", CMD)?.to_string();
     // Rename/delete act on the library pattern (by id or name).
     let r = match action.as_str() {
-        "rename" => super::call(s, "pattern.rename", json!({"pattern": req_str(p, "preset", CMD)?, "name": req_str(p, "name", CMD)?}))?,
+        "rename" => super::call(
+            s,
+            "pattern.rename",
+            json!({"pattern": req_str(p, "preset", CMD)?, "name": req_str(p, "name", CMD)?}),
+        )?,
         "delete" => {
             let keys: Vec<String> = match p.get("preset") {
                 Some(Value::Array(a)) => a
                     .iter()
-                    .map(|v| v.as_str().map(str::to_string).ok_or_else(|| bad(CMD, "`preset` must contain only pattern ids or names")))
+                    .map(|v| {
+                        v.as_str().map(str::to_string).ok_or_else(|| {
+                            bad(CMD, "`preset` must contain only pattern ids or names")
+                        })
+                    })
                     .collect::<Result<_>>()?,
                 _ => vec![req_str(p, "preset", CMD)?.to_string()],
             };
@@ -155,14 +193,21 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
         "deleteGroup" => {
             // Deleting a folder deletes its patterns, as in Photoshop.
             let g = req_str(p, "group", CMD)?;
-            let i = s.presets.pattern_groups.iter().position(|x| x.name == g).ok_or_else(|| bad(CMD, format!("no group \"{g}\"")))?;
+            let i = s
+                .presets
+                .pattern_groups
+                .iter()
+                .position(|x| x.name == g)
+                .ok_or_else(|| bad(CMD, format!("no group \"{g}\"")))?;
             let gone = s.presets.pattern_groups.remove(i);
             s.patterns.items.retain(|q| !gone.items.contains(&q.id));
             json!({"group": g, "deleted": gone.items.len()})
         }
         "move" => {
             let key = req_str(p, "preset", CMD)?;
-            let id = crate::pattern_cmds::resolve(s, key).map(|q| q.id).ok_or_else(|| bad(CMD, format!("no pattern \"{key}\"")))?;
+            let id = crate::pattern_cmds::resolve(s, key)
+                .map(|q| q.id)
+                .ok_or_else(|| bad(CMD, format!("no pattern \"{key}\"")))?;
             let mut q = p.clone();
             q["preset"] = json!(id);
             edit_groups(&mut s.presets.pattern_groups, "move", &q, CMD)?

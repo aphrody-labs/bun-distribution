@@ -18,7 +18,8 @@ fn text(value: Option<String>) -> Option<String> {
 }
 
 fn json_column(raw: Option<String>) -> Value {
-    raw.and_then(|value| serde_json::from_str(&value).ok()).unwrap_or(Value::Null)
+    raw.and_then(|value| serde_json::from_str(&value).ok())
+        .unwrap_or(Value::Null)
 }
 
 fn localized(fr: Option<String>, en: Option<String>, ja: Option<String>) -> Value {
@@ -55,19 +56,36 @@ pub fn list_quests(conn: &Connection, request: &QuestRequest) -> anyhow::Result<
     })? {
         let (id, flat_type, flat_phase, image, fr, en, ja, raw) = row?;
         let data = json_column(raw);
-        let phase = data.get("phase").and_then(Value::as_i64).or(flat_phase).unwrap_or(0);
+        let phase = data
+            .get("phase")
+            .and_then(Value::as_i64)
+            .or(flat_phase)
+            .unwrap_or(0);
         let kind = if phase >= 1000 { "side" } else { "main" };
-        if request.kind.as_deref().is_some_and(|value| value != "all" && value != kind) {
+        if request
+            .kind
+            .as_deref()
+            .is_some_and(|value| value != "all" && value != kind)
+        {
             continue;
         }
         let titles = data.get("titles").cloned().unwrap_or_else(|| {
             localized(
-                fr.clone()
-                    .or_else(|| data.get("explain_FR").and_then(Value::as_str).map(str::to_owned)),
-                en.clone()
-                    .or_else(|| data.get("explain_EN").and_then(Value::as_str).map(str::to_owned)),
-                ja.clone()
-                    .or_else(|| data.get("explain_JA").and_then(Value::as_str).map(str::to_owned)),
+                fr.clone().or_else(|| {
+                    data.get("explain_FR")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                }),
+                en.clone().or_else(|| {
+                    data.get("explain_EN")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                }),
+                ja.clone().or_else(|| {
+                    data.get("explain_JA")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                }),
             )
         });
         let title = titles
@@ -103,7 +121,10 @@ pub fn list_quests(conn: &Connection, request: &QuestRequest) -> anyhow::Result<
             "area": if kind == "side" { Value::from(phase / 10000) } else { Value::Null },
         }));
     }
-    let main = quests.iter().filter(|quest| quest["kind"] == "main").count();
+    let main = quests
+        .iter()
+        .filter(|quest| quest["kind"] == "main")
+        .count();
     let total = quests.len();
     Ok(json!({"quests": quests, "total": total, "main": main, "side": total - main}))
 }
@@ -113,7 +134,11 @@ pub fn get_quest(conn: &Connection, id: &str) -> anyhow::Result<Option<Value>> {
     Ok(all["quests"].as_array().and_then(|quests| {
         quests
             .iter()
-            .find(|quest| quest["id"].as_str().is_some_and(|value| value.eq_ignore_ascii_case(id)))
+            .find(|quest| {
+                quest["id"]
+                    .as_str()
+                    .is_some_and(|value| value.eq_ignore_ascii_case(id))
+            })
             .cloned()
     }))
 }
@@ -150,7 +175,10 @@ pub fn list_shops(conn: &Connection, request: &ShopRequest) -> anyhow::Result<Va
         let item = json!({"id": item_id.unwrap_or_default(), "name": text(item_fr).or_else(|| text(item_en)).unwrap_or_else(|| "Unknown item".into()), "slotIndex": slot.unwrap_or_default()});
         let entry = shops.entry(id).or_insert_with(|| json!({"shopId": id, "name": text(name_fr.clone()).unwrap_or_else(|| format!("Shop {id}")), "nameEn": text(name_en.clone()), "nameJa": text(name_ja.clone()), "itemCount": 0, "categories": [], "items": []}));
         entry["itemCount"] = Value::from(entry["itemCount"].as_i64().unwrap_or(0) + 1);
-        entry["items"].as_array_mut().expect("items array").push(item);
+        entry["items"]
+            .as_array_mut()
+            .expect("items array")
+            .push(item);
     }
     let mut values: Vec<Value> = shops.into_values().collect();
     values.sort_by(|a, b| {
@@ -163,9 +191,14 @@ pub fn list_shops(conn: &Connection, request: &ShopRequest) -> anyhow::Result<Va
 }
 
 pub fn get_shop(conn: &Connection, shop_id: i64) -> anyhow::Result<Option<Value>> {
-    Ok(list_shops(conn, &ShopRequest { shop_id: Some(shop_id) })?
-        .as_array()
-        .and_then(|shops| shops.first().cloned()))
+    Ok(list_shops(
+        conn,
+        &ShopRequest {
+            shop_id: Some(shop_id),
+        },
+    )?
+    .as_array()
+    .and_then(|shops| shops.first().cloned()))
 }
 
 // ─── Capsules and costumes ─────────────────────────────────────────────────
@@ -186,20 +219,31 @@ fn hex_u32(value: i64) -> String {
 pub fn list_capsules(conn: &Connection, request: &CapsuleRequest) -> anyhow::Result<Value> {
     let mut statement = conn.prepare("SELECT id, prize_data FROM inagle_capsules ORDER BY id")?;
     let mut all = Vec::new();
-    for row in statement
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)))?
-    {
+    for row in statement.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+    })? {
         let (id, raw) = row?;
         let vars: Vec<i64> = json_column(raw)
             .as_array()
             .map(|values| values.iter().filter_map(Value::as_i64).collect())
             .unwrap_or_default();
         let prize = json!({"id": id, "contentRef": vars.get(1).map_or_else(|| hex_u32(0), |v| hex_u32(*v)), "poolRef": vars.get(3).map_or_else(|| hex_u32(0), |v| hex_u32(*v)), "extraFlag": vars.get(5).copied().unwrap_or(0), "vars": vars});
-        let pool_match = request.pool.as_deref().is_none_or(|pool| prize["poolRef"] == pool);
+        let pool_match = request
+            .pool
+            .as_deref()
+            .is_none_or(|pool| prize["poolRef"] == pool);
         let q_match = request.q.as_deref().is_none_or(|q| {
             let q = q.to_lowercase();
-            prize["id"].as_str().unwrap_or("").to_lowercase().contains(&q)
-                || prize["contentRef"].as_str().unwrap_or("").to_lowercase().contains(&q)
+            prize["id"]
+                .as_str()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains(&q)
+                || prize["contentRef"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&q)
         });
         if pool_match && q_match {
             all.push(prize);
@@ -208,14 +252,21 @@ pub fn list_capsules(conn: &Connection, request: &CapsuleRequest) -> anyhow::Res
     let page = request.page.unwrap_or(1).max(1);
     let limit = request.limit.unwrap_or(48).clamp(1, 200);
     let start = ((page - 1) * limit) as usize;
-    let data = all.iter().skip(start).take(limit as usize).cloned().collect::<Vec<_>>();
+    let data = all
+        .iter()
+        .skip(start)
+        .take(limit as usize)
+        .cloned()
+        .collect::<Vec<_>>();
     Ok(json!({"data": data, "total": all.len(), "page": page, "limit": limit}))
 }
 
 pub fn get_capsule(conn: &Connection, id: &str) -> anyhow::Result<Option<Value>> {
     let mut statement = conn.prepare("SELECT id, prize_data FROM inagle_capsules WHERE id = ?1")?;
     let row = statement
-        .query_row([id], |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)))
+        .query_row([id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+        })
         .optional()?;
     row.map(|(id, raw)| {
         let vars: Vec<i64> = json_column(raw).as_array().map(|values| values.iter().filter_map(Value::as_i64).collect()).unwrap_or_default();
@@ -385,7 +436,10 @@ mod tests {
         let shops = list_shops(&fixture(), &ShopRequest::default()).unwrap();
         assert_eq!(shops[0]["shopId"], 7);
         assert_eq!(shops[0]["itemCount"], 1);
-        assert_eq!(get_shop(&fixture(), 7).unwrap().unwrap()["name"], "Boutique");
+        assert_eq!(
+            get_shop(&fixture(), 7).unwrap().unwrap()["name"],
+            "Boutique"
+        );
     }
 
     #[test]

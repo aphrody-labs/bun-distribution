@@ -41,7 +41,12 @@ pub struct FreeformPoint {
 
 impl FreeformPoint {
     pub fn new(at: Point, color: Color) -> Self {
-        Self { at, color, opacity: 1.0, spread: DEFAULT_SPREAD }
+        Self {
+            at,
+            color,
+            opacity: 1.0,
+            spread: DEFAULT_SPREAD,
+        }
     }
 }
 
@@ -57,7 +62,9 @@ pub enum FreeformMode {
 impl FreeformMode {
     /// Parse a mode name (`points`, `lines`; any case).
     pub fn parse(s: &str) -> Option<Self> {
-        [FreeformMode::Points, FreeformMode::Lines].into_iter().find(|m| m.label().eq_ignore_ascii_case(s))
+        [FreeformMode::Points, FreeformMode::Lines]
+            .into_iter()
+            .find(|m| m.label().eq_ignore_ascii_case(s))
     }
     pub fn label(self) -> &'static str {
         match self {
@@ -93,7 +100,12 @@ pub fn spread_scale(b: Rect) -> f64 {
 pub fn painted_box(bounds: Rect) -> Option<Rect> {
     let b = bounds.abs();
     let side = b.width().max(b.height());
-    (side > 1e-9 && side.is_finite()).then(|| Rect::from_center_size(b.center(), (b.width().max(side * 1e-3), b.height().max(side * 1e-3))))
+    (side > 1e-9 && side.is_finite()).then(|| {
+        Rect::from_center_size(
+            b.center(),
+            (b.width().max(side * 1e-3), b.height().max(side * 1e-3)),
+        )
+    })
 }
 
 /// Device pixels per cell of the grid a freeform gradient is sampled on.
@@ -107,7 +119,9 @@ const MAX_CELLS: f64 = 256.0;
 /// (so zooming reuses grids), 8 to 256 cells along the longer side.
 pub fn grid_size(b: Rect, device: f64) -> (u16, u16) {
     let side = b.width().max(b.height());
-    let cells = 2f64.powf((device / CELL_PX).max(1.0).log2().ceil()).clamp(MIN_CELLS, MAX_CELLS);
+    let cells = 2f64
+        .powf((device / CELL_PX).max(1.0).log2().ceil())
+        .clamp(MIN_CELLS, MAX_CELLS);
     let along = |len: f64| (cells * len / side).ceil().clamp(2.0, MAX_CELLS) as u16;
     (along(b.width()), along(b.height()))
 }
@@ -135,12 +149,27 @@ impl Freeform {
         let cell = |i: usize, n: usize| (i as f64 + 0.5) / n as f64;
         // Row by row, every other row backwards: neighbours in the list are neighbours on the art.
         let targets: Vec<Point> = (0..rows)
-            .flat_map(|j| (0..cols).map(move |k| if j % 2 == 0 { (k, j) } else { (cols - 1 - k, j) }))
+            .flat_map(|j| {
+                (0..cols).map(move |k| {
+                    if j % 2 == 0 {
+                        (k, j)
+                    } else {
+                        (cols - 1 - k, j)
+                    }
+                })
+            })
             .map(|(i, j)| Point::new(b.x0 + cell(i, cols) * w, b.y0 + cell(j, rows) * h))
             .collect();
         const GRID: usize = 24;
-        let candidates: Vec<Point> =
-            (0..GRID * GRID).map(|k| Point::new(b.x0 + cell(k % GRID, GRID) * w, b.y0 + cell(k / GRID, GRID) * h)).filter(|p| inside(*p)).collect();
+        let candidates: Vec<Point> = (0..GRID * GRID)
+            .map(|k| {
+                Point::new(
+                    b.x0 + cell(k % GRID, GRID) * w,
+                    b.y0 + cell(k / GRID, GRID) * h,
+                )
+            })
+            .filter(|p| inside(*p))
+            .collect();
         let apart = w.min(h) * 0.15;
         let mut placed: Vec<Point> = Vec::with_capacity(targets.len());
         for t in &targets {
@@ -148,11 +177,22 @@ impl Freeform {
             let at = if inside(*t) {
                 *t
             } else {
-                candidates.iter().filter(free).min_by(|a, b| a.distance_squared(*t).total_cmp(&b.distance_squared(*t))).copied().unwrap_or(*t)
+                candidates
+                    .iter()
+                    .filter(free)
+                    .min_by(|a, b| a.distance_squared(*t).total_cmp(&b.distance_squared(*t)))
+                    .copied()
+                    .unwrap_or(*t)
             };
             placed.push(at);
         }
-        let mut f = Self { points: placed.into_iter().map(|at| FreeformPoint::new(at, Color::BLACK)).collect(), ..Default::default() };
+        let mut f = Self {
+            points: placed
+                .into_iter()
+                .map(|at| FreeformPoint::new(at, Color::BLACK))
+                .collect(),
+            ..Default::default()
+        };
         f.recolor(g);
         f
     }
@@ -169,11 +209,19 @@ impl Freeform {
     /// swatch chips, exports without freeform shading and re-seeding on other art use.
     pub fn stops(&self) -> Vec<GradientStop> {
         let n = self.points.len();
-        let stop = |offset: f32, p: &FreeformPoint| GradientStop { opacity: p.opacity, ..GradientStop::new(offset, p.color) };
+        let stop = |offset: f32, p: &FreeformPoint| GradientStop {
+            opacity: p.opacity,
+            ..GradientStop::new(offset, p.color)
+        };
         match n {
             0 => Gradient::default().stops,
             1 => vec![stop(0.0, &self.points[0]), stop(1.0, &self.points[0])],
-            _ => self.points.iter().enumerate().map(|(i, p)| stop(i as f32 / (n - 1) as f32, p)).collect(),
+            _ => self
+                .points
+                .iter()
+                .enumerate()
+                .map(|(i, p)| stop(i as f32 / (n - 1) as f32, p))
+                .collect(),
         }
     }
 
@@ -191,13 +239,26 @@ impl Freeform {
 
     /// The cubic segments of line `line` (a Catmull-Rom curve through its points).
     pub fn segments(&self, line: usize) -> Vec<CubicBez> {
-        let Some(ix) = self.lines.get(line) else { return vec![] };
+        let Some(ix) = self.lines.get(line) else {
+            return vec![];
+        };
         // A line naming a missing point (a damaged file) draws nothing.
-        let Some(pts) = ix.iter().map(|i| self.points.get(*i).map(|p| p.at)).collect::<Option<Vec<Point>>>() else { return vec![] };
+        let Some(pts) = ix
+            .iter()
+            .map(|i| self.points.get(*i).map(|p| p.at))
+            .collect::<Option<Vec<Point>>>()
+        else {
+            return vec![];
+        };
         let n = pts.len();
         (0..n.saturating_sub(1))
             .map(|i| {
-                let (p0, p1, p2, p3) = (pts[i.saturating_sub(1)], pts[i], pts[i + 1], pts[(i + 2).min(n - 1)]);
+                let (p0, p1, p2, p3) = (
+                    pts[i.saturating_sub(1)],
+                    pts[i],
+                    pts[i + 1],
+                    pts[(i + 2).min(n - 1)],
+                );
                 CubicBez::new(p1, p1 + (p2 - p0) / 6.0, p2 - (p3 - p1) / 6.0, p2)
             })
             .collect()
@@ -223,7 +284,13 @@ impl Freeform {
                 let n = c.nearest(p, 1e-6);
                 let distance = n.distance_sq.sqrt();
                 if best.is_none_or(|b| distance < b.distance) {
-                    best = Some(LineHit { line, segment, t: n.t, point: c.eval(n.t), distance });
+                    best = Some(LineHit {
+                        line,
+                        segment,
+                        t: n.t,
+                        point: c.eval(n.t),
+                        distance,
+                    });
                 }
             }
         }
@@ -245,24 +312,49 @@ impl Freeform {
     /// [`Self::field`] with colours turned into the three blended values by `rgb` (CMYK
     /// documents blend ink planes, see [`crate::blend::cmyk_planes`]).
     pub fn field_with(&self, scale: f64, rgb: &dyn Fn(&Color) -> [f32; 3]) -> Field {
-        let src = |p: &FreeformPoint| Source { at: p.at, rgb: rgb(&p.color), opacity: p.opacity, radius: p.spread.clamp(0.0, 1.0) as f64 * scale };
+        let src = |p: &FreeformPoint| Source {
+            at: p.at,
+            rgb: rgb(&p.color),
+            opacity: p.opacity,
+            radius: p.spread.clamp(0.0, 1.0) as f64 * scale,
+        };
         let points: Vec<Source> = self.points.iter().map(src).collect();
         let mut pieces = vec![];
         for (l, ix) in self.lines.iter().enumerate() {
             // The line tessellated into a polyline of sources.
             let mut v: Vec<Source> = vec![];
             for (s, c) in self.segments(l).into_iter().enumerate() {
-                let (Some(a), Some(b)) = (ix.get(s).and_then(|i| points.get(*i)), ix.get(s + 1).and_then(|i| points.get(*i))) else { continue };
+                let (Some(a), Some(b)) = (
+                    ix.get(s).and_then(|i| points.get(*i)),
+                    ix.get(s + 1).and_then(|i| points.get(*i)),
+                ) else {
+                    continue;
+                };
                 for k in (if s == 0 { 0 } else { 1 })..=LINE_STEPS {
                     let t = k as f64 / LINE_STEPS as f64;
-                    v.push(Source { at: c.eval(t), ..a.lerp(b, t as f32) });
+                    v.push(Source {
+                        at: c.eval(t),
+                        ..a.lerp(b, t as f32)
+                    });
                 }
             }
             let len: f64 = v.windows(2).map(|w| w[0].at.distance(w[1].at)).sum();
             let n = v.len().saturating_sub(1).max(1) as f64;
-            pieces.extend(v.windows(2).map(|w| Piece { a: w[0], b: w[1], share: if len > 0.0 { w[0].at.distance(w[1].at) / len } else { 1.0 / n } }));
+            pieces.extend(v.windows(2).map(|w| Piece {
+                a: w[0],
+                b: w[1],
+                share: if len > 0.0 {
+                    w[0].at.distance(w[1].at) / len
+                } else {
+                    1.0 / n
+                },
+            }));
         }
-        Field { points, pieces, eps: 1e-9 * (scale.abs() + 1.0) }
+        Field {
+            points,
+            pieces,
+            eps: 1e-9 * (scale.abs() + 1.0),
+        }
     }
 
     /// Add a point; returns its index.
@@ -295,7 +387,10 @@ impl Freeform {
             return Err("a line needs at least two points".into());
         }
         if let Some(i) = points.iter().find(|i| **i >= self.points.len()) {
-            return Err(format!("no point {i} (the gradient has {})", self.points.len()));
+            return Err(format!(
+                "no point {i} (the gradient has {})",
+                self.points.len()
+            ));
         }
         if points.windows(2).any(|w| w[0] == w[1]) {
             return Err("a line can't run from a point to itself".into());
@@ -358,7 +453,11 @@ impl Source {
         let l = |a: f32, b: f32| a + (b - a) * t;
         Source {
             at: self.at.lerp(o.at, t as f64),
-            rgb: [l(self.rgb[0], o.rgb[0]), l(self.rgb[1], o.rgb[1]), l(self.rgb[2], o.rgb[2])],
+            rgb: [
+                l(self.rgb[0], o.rgb[0]),
+                l(self.rgb[1], o.rgb[1]),
+                l(self.rgb[2], o.rgb[2]),
+            ],
             opacity: l(self.opacity, o.opacity),
             radius: self.radius + (o.radius - self.radius) * t as f64,
         }
@@ -389,7 +488,11 @@ impl Piece {
     fn nearest(&self, p: Point) -> (f64, Source) {
         let v = self.b.at - self.a.at;
         let l2 = v.hypot2();
-        let t = if l2 > 0.0 { ((p - self.a.at).dot(v) / l2).clamp(0.0, 1.0) } else { 0.0 };
+        let t = if l2 > 0.0 {
+            ((p - self.a.at).dot(v) / l2).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let s = self.a.lerp(&self.b, t as f32);
         (s.at.distance(p), s)
     }
@@ -398,11 +501,19 @@ impl Piece {
 impl Field {
     /// Samples at the centres of a `cols` × `rows` grid of cells over `b`, row by row: RGB and
     /// opacity (as [`Self::sample`]).
-    pub fn grid(&self, b: Rect, cols: u16, rows: u16) -> impl Iterator<Item = ([f32; 3], f32)> + '_ {
+    pub fn grid(
+        &self,
+        b: Rect,
+        cols: u16,
+        rows: u16,
+    ) -> impl Iterator<Item = ([f32; 3], f32)> + '_ {
         let (cw, ch) = (b.width() / cols as f64, b.height() / rows as f64);
         (0..rows as usize * cols as usize).map(move |k| {
             let (i, j) = (k % cols as usize, k / cols as usize);
-            self.sample(Point::new(b.x0 + (i as f64 + 0.5) * cw, b.y0 + (j as f64 + 0.5) * ch))
+            self.sample(Point::new(
+                b.x0 + (i as f64 + 0.5) * cw,
+                b.y0 + (j as f64 + 0.5) * ch,
+            ))
         })
     }
 
@@ -454,8 +565,15 @@ mod tests {
     fn two(spread: f32) -> Freeform {
         Freeform {
             points: vec![
-                FreeformPoint { spread, ..FreeformPoint::new(Point::new(0.0, 0.0), red()) },
-                FreeformPoint { spread, opacity: 0.5, ..FreeformPoint::new(Point::new(100.0, 0.0), blue()) },
+                FreeformPoint {
+                    spread,
+                    ..FreeformPoint::new(Point::new(0.0, 0.0), red())
+                },
+                FreeformPoint {
+                    spread,
+                    opacity: 0.5,
+                    ..FreeformPoint::new(Point::new(100.0, 0.0), blue())
+                },
             ],
             ..Default::default()
         }
@@ -469,12 +587,18 @@ mod tests {
     fn the_sample_at_a_point_is_its_colour() {
         let f = two(0.0);
         let (c, o) = f.sample(Point::new(0.0, 0.0), 50.0);
-        assert!(close(c.to_rgb(), [1.0, 0.0, 0.0]) && (o - 1.0).abs() < 1e-6, "{c:?} {o}");
+        assert!(
+            close(c.to_rgb(), [1.0, 0.0, 0.0]) && (o - 1.0).abs() < 1e-6,
+            "{c:?} {o}"
+        );
         let (c, o) = f.sample(Point::new(100.0, 0.0), 50.0);
         assert!(close(c.to_rgb(), [0.0, 0.0, 1.0]) && (o - 0.5).abs() < 1e-6);
         // Half way between equal points: an even mix.
         let (c, o) = f.sample(Point::new(50.0, 0.0), 50.0);
-        assert!(close(c.to_rgb(), [0.5, 0.0, 0.5]) && (o - 0.75).abs() < 1e-6, "{c:?}");
+        assert!(
+            close(c.to_rgb(), [0.5, 0.0, 0.5]) && (o - 0.75).abs() < 1e-6,
+            "{c:?}"
+        );
     }
 
     #[test]
@@ -484,7 +608,13 @@ mod tests {
         f.points[0].spread = 0.2;
         let at = |x: f64| f.sample(Point::new(x, 0.0), 100.0).0.to_rgb()[0];
         assert!((at(15.0) - 1.0).abs() < 1e-6, "inside the disc: pure red");
-        assert!(at(30.0) < 1.0 && at(30.0) > at(50.0) && at(50.0) > at(70.0), "falls off: {} {} {}", at(30.0), at(50.0), at(70.0));
+        assert!(
+            at(30.0) < 1.0 && at(30.0) > at(50.0) && at(50.0) > at(70.0),
+            "falls off: {} {} {}",
+            at(30.0),
+            at(50.0),
+            at(70.0)
+        );
         // Without the spread the same spot is bluer.
         let plain = two(0.0).sample(Point::new(30.0, 0.0), 100.0).0.to_rgb()[0];
         assert!(at(30.0) > plain);
@@ -498,7 +628,10 @@ mod tests {
     #[test]
     fn lines_carry_colour_between_their_points() {
         let mut f = two(0.0);
-        f.points.push(FreeformPoint::new(Point::new(50.0, 100.0), Color::rgb(0.0, 1.0, 0.0)));
+        f.points.push(FreeformPoint::new(
+            Point::new(50.0, 100.0),
+            Color::rgb(0.0, 1.0, 0.0),
+        ));
         let off_line = f.sample(Point::new(50.0, 5.0), 100.0).0.to_rgb();
         f.add_line(vec![0, 1]).unwrap();
         let on_line = f.sample(Point::new(50.0, 5.0), 100.0).0.to_rgb();
@@ -506,15 +639,24 @@ mod tests {
         assert!(on_line[1] < off_line[1], "{on_line:?} vs {off_line:?}");
         let hit = f.nearest_on_lines(Point::new(50.0, 7.0)).unwrap();
         assert_eq!((hit.line, hit.segment), (0, 0));
-        assert!((hit.t - 0.5).abs() < 1e-3 && (hit.distance - 7.0).abs() < 1e-3, "{hit:?}");
+        assert!(
+            (hit.t - 0.5).abs() < 1e-3 && (hit.distance - 7.0).abs() < 1e-3,
+            "{hit:?}"
+        );
     }
 
     #[test]
     fn the_field_is_continuous_around_lines() {
         // A bent line: where the nearest spot on it jumps the colour must not.
         let mut f = two(0.0);
-        f.points.push(FreeformPoint::new(Point::new(50.0, 100.0), Color::rgb(0.0, 1.0, 0.0)));
-        f.points.push(FreeformPoint { spread: 0.1, ..FreeformPoint::new(Point::new(-50.0, 80.0), Color::WHITE) });
+        f.points.push(FreeformPoint::new(
+            Point::new(50.0, 100.0),
+            Color::rgb(0.0, 1.0, 0.0),
+        ));
+        f.points.push(FreeformPoint {
+            spread: 0.1,
+            ..FreeformPoint::new(Point::new(-50.0, 80.0), Color::WHITE)
+        });
         f.add_line(vec![0, 1, 2]).unwrap();
         let field = f.field(100.0);
         let at = |x: f64, y: f64| field.sample(Point::new(x, y)).0;
@@ -522,7 +664,9 @@ mod tests {
             for j in 0..80 {
                 let (x, y) = (-60.0 + i as f64 * 2.5, -60.0 + j as f64 * 2.5);
                 let (a, b, c) = (at(x, y), at(x + 0.5, y), at(x, y + 0.5));
-                let step = (0..3).map(|k| (a[k] - b[k]).abs().max((a[k] - c[k]).abs())).fold(0.0, f32::max);
+                let step = (0..3)
+                    .map(|k| (a[k] - b[k]).abs().max((a[k] - c[k]).abs()))
+                    .fold(0.0, f32::max);
                 assert!(step < 0.06, "jump of {step} at ({x}, {y})");
             }
         }
@@ -538,9 +682,20 @@ mod tests {
         assert!(f.points.len() >= 4, "{}", f.points.len());
         assert!(f.points.iter().all(|p| inside(p.at)), "{:?}", f.points);
         // Colours run from the gradient's start to its end.
-        assert_eq!((f.points[0].color.to_hex(), f.points.last().unwrap().color.to_hex()), ("#ffffff".into(), "#000000".into()));
+        assert_eq!(
+            (
+                f.points[0].color.to_hex(),
+                f.points.last().unwrap().color.to_hex()
+            ),
+            ("#ffffff".into(), "#000000".into())
+        );
         // A long box gets more points along its length.
-        assert!(Freeform::auto(Rect::new(0.0, 0.0, 400.0, 100.0), &g, &|_| true).points.len() > 4);
+        assert!(
+            Freeform::auto(Rect::new(0.0, 0.0, 400.0, 100.0), &g, &|_| true)
+                .points
+                .len()
+                > 4
+        );
     }
 
     #[test]
@@ -553,7 +708,13 @@ mod tests {
         let mid = f.split_line(0, 0, 0.5).unwrap();
         assert_eq!((mid, &f.lines[0]), (3, &vec![0, 3, 1, 2]));
         let p = f.points[3];
-        assert!(p.at.y.abs() < 1e-9 && p.at.x > 0.0 && p.at.x < 100.0 && (p.opacity - 0.75).abs() < 1e-6, "on the curve, half way: {p:?}");
+        assert!(
+            p.at.y.abs() < 1e-9
+                && p.at.x > 0.0
+                && p.at.x < 100.0
+                && (p.opacity - 0.75).abs() < 1e-6,
+            "on the curve, half way: {p:?}"
+        );
         assert!(f.remove_point(1));
         assert_eq!(f.lines, vec![vec![0, 2, 1]]);
         assert!(f.add_line(vec![0, 9]).is_err() && f.add_line(vec![0]).is_err());
@@ -567,7 +728,10 @@ mod tests {
     #[test]
     fn serde_defaults_and_mode() {
         let f: Freeform = serde_json::from_str(r#"{"points":[{"at":{"x":1.0,"y":2.0},"color":{"model":"rgb","r":1.0,"g":0.0,"b":0.0}}]}"#).unwrap();
-        assert_eq!((f.points[0].opacity, f.points[0].spread, f.mode), (1.0, DEFAULT_SPREAD, FreeformMode::Points));
+        assert_eq!(
+            (f.points[0].opacity, f.points[0].spread, f.mode),
+            (1.0, DEFAULT_SPREAD, FreeformMode::Points)
+        );
         let s = serde_json::to_string(&f).unwrap();
         assert!(!s.contains("\"lines\"") && !s.contains("\"mode\""), "{s}");
         assert_eq!(FreeformMode::parse("LINES"), Some(FreeformMode::Lines));

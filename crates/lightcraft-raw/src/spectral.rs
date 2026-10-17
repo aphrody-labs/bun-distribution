@@ -58,7 +58,10 @@ fn key(brand: &str, model: &str) -> String {
 
 /// First word of a make, upper case ("NIKON CORPORATION" → "NIKON").
 fn brand(make: &str) -> String {
-    make.split_whitespace().next().unwrap_or_default().to_uppercase()
+    make.split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .to_uppercase()
 }
 
 /// The table's camera for a file's Exif make and model, directly or through an alias. Without a make, the model
@@ -68,10 +71,14 @@ pub fn find(make: Option<&str>, model: &str) -> Option<&'static Camera> {
     let same = |row_make: &str, row_model: &str| {
         let row_brand = brand(row_make);
         let wanted = key(&row_brand, model);
-        make.as_ref().is_none_or(|m| *m == row_brand) && !wanted.is_empty() && key(&row_brand, row_model) == wanted
+        make.as_ref().is_none_or(|m| *m == row_brand)
+            && !wanted.is_empty()
+            && key(&row_brand, row_model) == wanted
     };
     match table::ALIASES.iter().find(|(m, alias, _)| same(m, alias)) {
-        Some((m, _, target)) => table::CAMERAS.iter().find(|c| brand(c.make) == brand(m) && c.model == *target),
+        Some((m, _, target)) => table::CAMERAS
+            .iter()
+            .find(|c| brand(c.make) == brand(m) && c.model == *target),
         None => table::CAMERAS.iter().find(|c| same(c.make, c.model)),
     }
 }
@@ -85,21 +92,30 @@ pub fn find_camera(camera: &str) -> Option<&'static Camera> {
     if words.is_empty() {
         return None;
     }
-    (1..words.len()).find_map(|i| find(Some(&words[..i].join(" ")), &words[i..].join(" "))).or_else(|| find(None, camera))
+    (1..words.len())
+        .find_map(|i| find(Some(&words[..i].join(" ")), &words[i..].join(" ")))
+        .or_else(|| find(None, camera))
 }
 
 /// The as-shot white of a file through `camera`'s matrices instead of the file's own colour tags: the DNG
 /// reading of its `AsShotNeutral` or vendor white-balance multipliers (`None` when it has neither, so the
 /// white is unknown). What the catalog shows as the As Shot temperature of a raw whose colour model is a
 /// JPEG fit: the matrices only convert between multipliers and Kelvin here.
-pub fn as_shot_white_through(camera: &Camera, color: &ColorData, wb_multipliers: Option<[f32; 3]>) -> Option<Xy> {
+pub fn as_shot_white_through(
+    camera: &Camera,
+    color: &ColorData,
+    wb_multipliers: Option<[f32; 3]>,
+) -> Option<Xy> {
     if color.as_shot_white_xy.is_none()
         && color.as_shot_neutral.is_none()
         && wb_multipliers.is_none_or(|m| m.iter().any(|v| !(*v > 0.0 && v.is_finite())))
     {
         return None;
     }
-    let mut c = ColorData { profile: Default::default(), ..color.clone() };
+    let mut c = ColorData {
+        profile: Default::default(),
+        ..color.clone()
+    };
     camera.fill(&mut c);
     Some(crate::color::as_shot_white_of(&c, wb_multipliers))
 }
@@ -128,7 +144,11 @@ mod tests {
             ("FUJIFILM", "X-T4", "X-T4"),
             ("Panasonic", "DC-GX9", "DC-GX9"),
         ] {
-            assert_eq!(find(Some(make), model).map(|c| c.model), Some(row), "{make} {model}");
+            assert_eq!(
+                find(Some(make), model).map(|c| c.model),
+                Some(row),
+                "{make} {model}"
+            );
         }
         assert_eq!(find(None, "NIKON D850").map(|c| c.model), Some("D850"));
         assert_eq!(find(None, "ILCE-7M3").map(|c| c.model), Some("ILCE-7M3"));
@@ -147,7 +167,11 @@ mod tests {
             ("SONY", "ILCE-7RM4A", "ILCE-7RM4"),
             ("FUJIFILM", "GFX100S", "GFX 100"),
         ] {
-            assert_eq!(find(Some(make), model).map(|c| c.model), Some(row), "{make} {model}");
+            assert_eq!(
+                find(Some(make), model).map(|c| c.model),
+                Some(row),
+                "{make} {model}"
+            );
         }
     }
 
@@ -169,7 +193,11 @@ mod tests {
         for c in cameras() {
             let joined = format!("{} {}", c.make, c.model);
             assert_eq!(find_camera(&joined), Some(c), "{joined}");
-            assert_eq!(find_camera(&joined), find(Some(c.make), c.model), "{joined}");
+            assert_eq!(
+                find_camera(&joined),
+                find(Some(c.make), c.model),
+                "{joined}"
+            );
         }
         for (make, alias, _) in table::ALIASES {
             let joined = format!("{make} {alias}");
@@ -192,8 +220,19 @@ mod tests {
         }
         // a model alone, as a Lightroom catalog names it
         assert_eq!(find_camera("ILCE-7M3").map(|c| c.model), Some("ILCE-7M3"));
-        assert_eq!(find_camera("  ILCE-7M3  ").map(|c| c.model), Some("ILCE-7M3"));
-        for none in ["", "   ", "SONY", "SONY ILCE-7M2", "Canon EOS 7D", "D850 SONY", "OLYMPUS IMAGING CORP. E-M5"] {
+        assert_eq!(
+            find_camera("  ILCE-7M3  ").map(|c| c.model),
+            Some("ILCE-7M3")
+        );
+        for none in [
+            "",
+            "   ",
+            "SONY",
+            "SONY ILCE-7M2",
+            "Canon EOS 7D",
+            "D850 SONY",
+            "OLYMPUS IMAGING CORP. E-M5",
+        ] {
             assert_eq!(find_camera(none), None, "{none:?}");
         }
     }
@@ -205,15 +244,27 @@ mod tests {
         // daylight-ish Sony multipliers: a white near the locus around 5000 K, not the generic model's wild tint
         let xy = as_shot_white_through(c, &color, Some([2.2, 1.0, 1.6])).unwrap();
         let (t, tint) = lightcraft_color::cct::xy_to_temp_tint(xy);
-        assert!((3500.0..7000.0).contains(&t) && tint.abs() < 30.0, "{t} {tint}");
+        assert!(
+            (3500.0..7000.0).contains(&t) && tint.abs() < 30.0,
+            "{t} {tint}"
+        );
         // the file's own tags are left alone
         assert_eq!(color, ColorData::default());
         // unknown white: no multipliers, or unusable ones
         assert_eq!(as_shot_white_through(c, &color, None), None);
-        assert_eq!(as_shot_white_through(c, &color, Some([0.0, 1.0, 1.0])), None);
-        assert_eq!(as_shot_white_through(c, &color, Some([f32::NAN, 1.0, 1.0])), None);
+        assert_eq!(
+            as_shot_white_through(c, &color, Some([0.0, 1.0, 1.0])),
+            None
+        );
+        assert_eq!(
+            as_shot_white_through(c, &color, Some([f32::NAN, 1.0, 1.0])),
+            None
+        );
         // a neutral in the tags counts as known
-        let tagged = ColorData { as_shot_neutral: Some([0.5, 1.0, 0.6]), ..Default::default() };
+        let tagged = ColorData {
+            as_shot_neutral: Some([0.5, 1.0, 0.6]),
+            ..Default::default()
+        };
         assert!(as_shot_white_through(c, &tagged, None).is_some());
     }
 
@@ -221,16 +272,30 @@ mod tests {
     fn every_row_is_a_usable_dng_profile() {
         assert_eq!(cameras().len(), 52);
         for c in cameras() {
-            assert_eq!(find(Some(c.make), c.model), Some(c), "{} {}", c.make, c.model);
+            assert_eq!(
+                find(Some(c.make), c.model),
+                Some(c),
+                "{} {}",
+                c.make,
+                c.model
+            );
             for m in c.color_matrix.iter().chain(&c.forward_matrix) {
-                assert!(m.0.iter().flatten().all(|v| v.is_finite() && v.abs() < 4.0), "{}", c.model);
+                assert!(
+                    m.0.iter().flatten().all(|v| v.is_finite() && v.abs() < 4.0),
+                    "{}",
+                    c.model
+                );
                 assert!(m.inverse().is_some(), "{}", c.model);
             }
             // a forward matrix maps white-balanced white to D50 (DNG spec, chapter 6)
             for fm in &c.forward_matrix {
                 let w = fm.apply([1.0; 3]);
                 let d50 = lightcraft_color::D50.to_xyz();
-                assert!((0..3).all(|i| (w[i] - d50[i]).abs() < 1e-4), "{} {w:?}", c.model);
+                assert!(
+                    (0..3).all(|i| (w[i] - d50[i]).abs() < 1e-4),
+                    "{} {w:?}",
+                    c.model
+                );
             }
         }
     }
@@ -241,11 +306,21 @@ mod tests {
         let mut color = ColorData::default();
         assert!(c.fill(&mut color));
         assert_eq!(color.illuminant, [17, 21]);
-        assert_eq!(color.color_matrix, [Some(c.color_matrix[0]), Some(c.color_matrix[1])]);
-        assert_eq!(color.forward_matrix, [Some(c.forward_matrix[0]), Some(c.forward_matrix[1])]);
+        assert_eq!(
+            color.color_matrix,
+            [Some(c.color_matrix[0]), Some(c.color_matrix[1])]
+        );
+        assert_eq!(
+            color.forward_matrix,
+            [Some(c.forward_matrix[0]), Some(c.forward_matrix[1])]
+        );
 
         let own = Mat3([[0.5, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.7]]);
-        let mut color = ColorData { illuminant: [21, 0], color_matrix: [Some(own), None], ..Default::default() };
+        let mut color = ColorData {
+            illuminant: [21, 0],
+            color_matrix: [Some(own), None],
+            ..Default::default()
+        };
         let before = color.clone();
         assert!(!c.fill(&mut color));
         assert_eq!(color, before);

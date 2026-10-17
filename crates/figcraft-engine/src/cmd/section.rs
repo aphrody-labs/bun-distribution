@@ -45,10 +45,16 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             focus
         ),
-        spec!("dev.unfocus", "Exit focus view", "{} → {focused: false}", false, |s, _| {
-            s.ds_mut()?.focus = None;
-            Ok(json!({"focused": false}))
-        }),
+        spec!(
+            "dev.unfocus",
+            "Exit focus view",
+            "{} → {focused: false}",
+            false,
+            |s, _| {
+                s.ds_mut()?.focus = None;
+                Ok(json!({"focused": false}))
+            }
+        ),
     ]
 }
 
@@ -56,16 +62,34 @@ fn toggle_contents(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "section.toggleContents";
     let ids = req_targets(cmd, s, p)?;
     let doc = s.doc()?;
-    let sections: Vec<NodeId> = ids.iter().copied().filter(|i| doc.node(*i).is_some_and(|n| matches!(n.kind, NodeKind::Section { .. }))).collect();
+    let sections: Vec<NodeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| {
+            doc.node(*i)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Section { .. }))
+        })
+        .collect();
     if sections.is_empty() {
         return Err(bad(cmd, "select a section"));
     }
-    let hide = boolean(p, "hidden").unwrap_or_else(|| !sections.iter().all(|i| doc.node(*i).is_some_and(|n| n.hides_contents())));
+    let hide = boolean(p, "hidden").unwrap_or_else(|| {
+        !sections
+            .iter()
+            .all(|i| doc.node(*i).is_some_and(|n| n.hides_contents()))
+    });
     // Selected layers inside a section being hidden give way to the section.
     let sel: Vec<NodeId> = s.selection();
     let mut new_sel: Vec<NodeId> = Vec::new();
     for i in sel {
-        let inside = if hide { sections.iter().copied().find(|sec| doc.is_ancestor(*sec, i)) } else { None };
+        let inside = if hide {
+            sections
+                .iter()
+                .copied()
+                .find(|sec| doc.is_ancestor(*sec, i))
+        } else {
+            None
+        };
         let keep = inside.unwrap_or(i);
         if !new_sel.contains(&keep) {
             new_sel.push(keep);
@@ -84,7 +108,12 @@ fn toggle_contents(s: &mut Session, p: &Value) -> Result<Value> {
 fn resolve_change(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "dev.resolveChange";
     let ids = req_targets(cmd, s, p)?;
-    let reason: String = string(p, "reason").unwrap_or_default().trim().chars().take(MAX_NOTE).collect();
+    let reason: String = string(p, "reason")
+        .unwrap_or_default()
+        .trim()
+        .chars()
+        .take(MAX_NOTE)
+        .collect();
     let doc = s.doc_mut()?;
     let mut out = Vec::new();
     for i in ids {
@@ -96,14 +125,20 @@ fn resolve_change(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if out.is_empty() {
-        return Err(bad(cmd, "nothing selected has changed since it was marked ready for dev"));
+        return Err(bad(
+            cmd,
+            "nothing selected has changed since it was marked ready for dev",
+        ));
     }
     Ok(json!({"ids": out}))
 }
 
 fn compare(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "dev.compare";
-    let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a frame or section or pass `id`"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad(cmd, "select a frame or section or pass `id`"))?;
     let doc = s.doc()?;
     let n = doc.node(id).ok_or_else(|| bad(cmd, "no such layer"))?;
     if !has_status(doc, id) || n.dev_status != DevStatus::ReadyForDev {
@@ -119,7 +154,10 @@ fn compare(s: &mut Session, p: &Value) -> Result<Value> {
 fn focus(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "dev.focus";
     let doc = s.doc()?.clone();
-    let ready: Vec<NodeId> = dev_items(&doc, Some(DevStatus::ReadyForDev), None).into_iter().map(|i| i.id).collect();
+    let ready: Vec<NodeId> = dev_items(&doc, Some(DevStatus::ReadyForDev), None)
+        .into_iter()
+        .map(|i| i.id)
+        .collect();
     let id = match string(p, "direction") {
         Some(d) => {
             let step: isize = match d.to_ascii_lowercase().as_str() {
@@ -131,18 +169,30 @@ fn focus(s: &mut Session, p: &Value) -> Result<Value> {
             if count == 0 {
                 return Err(bad(cmd, "nothing is ready for dev"));
             }
-            let at = s.ds()?.focused().and_then(|f| ready.iter().position(|r| *r == f));
+            let at = s
+                .ds()?
+                .focused()
+                .and_then(|f| ready.iter().position(|r| *r == f));
             let k = match at {
                 Some(i) => (i as isize + step).rem_euclid(count),
                 None if step > 0 => 0,
                 None => count - 1,
             };
-            ready.get(k as usize).copied().ok_or_else(|| bad(cmd, "nothing is ready for dev"))?
+            ready
+                .get(k as usize)
+                .copied()
+                .ok_or_else(|| bad(cmd, "nothing is ready for dev"))?
         }
-        None => targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a frame or section or pass `id`"))?,
+        None => targets(s, p)
+            .first()
+            .copied()
+            .ok_or_else(|| bad(cmd, "select a frame or section or pass `id`"))?,
     };
     if !has_status(&doc, id) {
-        return Err(bad(cmd, "focus on a frame at the top of a page or section, or a section"));
+        return Err(bad(
+            cmd,
+            "focus on a frame at the top of a page or section, or a section",
+        ));
     }
     crate::cmd::edit::select_and_page(s, vec![id])?;
     let ds = s.ds_mut()?;
@@ -158,5 +208,7 @@ fn focus(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let name = doc.node(id).map(|n| n.name.clone()).unwrap_or_default();
     let index = ready.iter().position(|r| *r == id);
-    Ok(json!({"id": id, "name": name, "page": doc.page_of(id), "index": index, "count": ready.len()}))
+    Ok(
+        json!({"id": id, "name": name, "page": doc.page_of(id), "index": index, "count": ready.len()}),
+    )
 }

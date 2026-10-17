@@ -83,8 +83,9 @@ fn bench_vfs_resolve_hit_deep(c: &mut Criterion) {
 
     c.bench_function("vfs_resolve_hit_deep", |b| {
         b.iter(|| {
-            let result =
-                vfs.resolve(black_box("/var/mirror/fonts/google/sans/v32/regular-latin.woff2"));
+            let result = vfs.resolve(black_box(
+                "/var/mirror/fonts/google/sans/v32/regular-latin.woff2",
+            ));
             black_box(result.expect("mount /var/mirror must resolve"));
         });
     });

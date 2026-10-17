@@ -11,17 +11,21 @@ fn session() -> Session {
     // Type placed by the Type tools starts empty (Fill New Type Objects With Placeholder Text off).
     let mut s = Session::new();
     s.prefs.placeholder_text = false;
-    s.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+    s.execute("file.new", &json!({"width": 800, "height": 600}))
+        .unwrap();
     s
 }
 
 fn drag(s: &mut Session, from: (f64, f64), to: (f64, f64)) {
     let v = ViewInfo::default();
-    s.pointer(&PointerEvent::new(PointerKind::Down, from.0, from.1), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Down, from.0, from.1), v)
+        .unwrap();
     if from != to {
-        s.pointer(&PointerEvent::new(PointerKind::Drag, to.0, to.1), v).unwrap();
+        s.pointer(&PointerEvent::new(PointerKind::Drag, to.0, to.1), v)
+            .unwrap();
     }
-    s.pointer(&PointerEvent::new(PointerKind::Up, to.0, to.1), v).unwrap();
+    s.pointer(&PointerEvent::new(PointerKind::Up, to.0, to.1), v)
+        .unwrap();
 }
 
 fn click(s: &mut Session, x: f64, y: f64) {
@@ -44,7 +48,13 @@ fn texts(s: &Session) -> Vec<(NodeId, bool, String)> {
 }
 
 fn undo_labels(s: &Session) -> Vec<String> {
-    s.doc().unwrap().history.undo.iter().map(|e| e.label.clone()).collect()
+    s.doc()
+        .unwrap()
+        .history
+        .undo
+        .iter()
+        .map(|e| e.label.clone())
+        .collect()
 }
 
 #[test]
@@ -82,7 +92,10 @@ fn typed_text_stays_and_typing_it_away_leaves_nothing() {
     click(&mut s, 100.0, 100.0);
     s.tool_text("Hi", v).unwrap();
     key(&mut s, ToolKey::Escape);
-    assert_eq!(texts(&s).iter().map(|t| t.2.as_str()).collect::<Vec<_>>(), ["Hi"]);
+    assert_eq!(
+        texts(&s).iter().map(|t| t.2.as_str()).collect::<Vec<_>>(),
+        ["Hi"]
+    );
     let kept = undo_labels(&s);
     assert_eq!(kept, ["Type", "Typing"]);
     // Typed, the caret moved (a step of its own), then deleted: all of it goes.
@@ -105,7 +118,11 @@ fn frames_stay_when_left_empty() {
     key(&mut s, ToolKey::Escape);
     assert!(matches!(texts(&s).as_slice(), [(_, false, t)] if t.is_empty()));
     // Area type made from a path.
-    s.execute("shape.rectangle", &json!({"x": 400, "y": 300, "width": 200, "height": 100})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 400, "y": 300, "width": 200, "height": 100}),
+    )
+    .unwrap();
     s.select_tool("areaType", v).unwrap();
     click(&mut s, 500.0, 300.0);
     s.select_tool("selection", v).unwrap();
@@ -121,7 +138,8 @@ fn a_command_that_deselects_the_text_ends_the_edit() {
     click(&mut s, 100.0, 100.0);
     // Commands on the edited text (the Character panel) keep editing it.
     let id = texts(&s)[0].0;
-    s.execute("text.setRangeStyle", &json!({"id": id.0, "size": 30})).unwrap();
+    s.execute("text.setRangeStyle", &json!({"id": id.0, "size": 30}))
+        .unwrap();
     s.execute("document.inspect", &json!({})).unwrap();
     assert!(s.tool_wants_text());
     s.execute("select.none", &json!({})).unwrap();
@@ -130,7 +148,11 @@ fn a_command_that_deselects_the_text_ends_the_edit() {
     assert!(undo_labels(&s).is_empty(), "{:?}", undo_labels(&s));
     // A command that edits something else as well: the text goes in a step of its own.
     click(&mut s, 100.0, 100.0);
-    s.execute("shape.rectangle", &json!({"x": 400, "y": 300, "width": 20, "height": 10})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 400, "y": 300, "width": 20, "height": 10}),
+    )
+    .unwrap();
     assert!(!s.tool_wants_text());
     assert!(texts(&s).is_empty());
     assert_eq!(undo_labels(&s), ["Type", "Rectangle", "Discard Empty Type"]);
@@ -142,7 +164,8 @@ fn switching_documents_discards_it_in_the_document_left() {
     let v = ViewInfo::default();
     s.select_tool("type", v).unwrap();
     click(&mut s, 100.0, 100.0);
-    s.execute("file.new", &json!({"width": 800, "height": 600})).unwrap();
+    s.execute("file.new", &json!({"width": 800, "height": 600}))
+        .unwrap();
     s.set_active(0);
     assert!(texts(&s).is_empty() && undo_labels(&s).is_empty());
 }
@@ -150,14 +173,38 @@ fn switching_documents_discards_it_in_the_document_left() {
 #[test]
 fn discard_empty_command() {
     let mut s = session();
-    let r = s.execute("text.create", &json!({"x": 10, "y": 40, "text": "Hi"})).unwrap();
-    assert_eq!(s.execute("text.discardEmpty", &json!({"id": r["id"]})).unwrap(), json!({"removed": false}));
-    let rect = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
-    assert!(s.execute("text.discardEmpty", &json!({"id": rect["id"]})).is_err(), "not text");
-    assert!(s.execute("text.discardEmpty", &json!({})).is_err(), "id required");
+    let r = s
+        .execute("text.create", &json!({"x": 10, "y": 40, "text": "Hi"}))
+        .unwrap();
+    assert_eq!(
+        s.execute("text.discardEmpty", &json!({"id": r["id"]}))
+            .unwrap(),
+        json!({"removed": false})
+    );
+    let rect = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
+    assert!(
+        s.execute("text.discardEmpty", &json!({"id": rect["id"]}))
+            .is_err(),
+        "not text"
+    );
+    assert!(
+        s.execute("text.discardEmpty", &json!({})).is_err(),
+        "id required"
+    );
     // Created by the newest step: that step goes.
-    let e = s.execute("text.create", &json!({"x": 10, "y": 80, "text": ""})).unwrap();
-    assert_eq!(s.execute("text.discardEmpty", &json!({"id": e["id"]})).unwrap(), json!({"removed": true}));
+    let e = s
+        .execute("text.create", &json!({"x": 10, "y": 80, "text": ""}))
+        .unwrap();
+    assert_eq!(
+        s.execute("text.discardEmpty", &json!({"id": e["id"]}))
+            .unwrap(),
+        json!({"removed": true})
+    );
     assert_eq!(undo_labels(&s), ["Type", "Rectangle"]);
     assert_eq!(texts(&s).len(), 1);
 }

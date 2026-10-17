@@ -96,7 +96,8 @@ pub struct ExportTag {
 impl Styles {
     /// Export tagging of a paragraph (`character` false) or character style.
     pub fn export_tag(&self, name: &str, character: bool) -> Option<&ExportTag> {
-        self.export_tags.get(&format!("{}:{name}", if character { "c" } else { "p" }))
+        self.export_tags
+            .get(&format!("{}:{name}", if character { "c" } else { "p" }))
     }
 }
 
@@ -124,10 +125,22 @@ impl Default for Styles {
                     shortcut: String::new(),
                 },
             ],
-            character: vec![CharacterStyle { name: NO_CHAR_STYLE.into(), based_on: None, chars: CharAttrs::default(), shortcut: String::new() }],
+            character: vec![CharacterStyle {
+                name: NO_CHAR_STYLE.into(),
+                based_on: None,
+                chars: CharAttrs::default(),
+                shortcut: String::new(),
+            }],
             object: vec![
-                ObjectStyle { name: NO_OBJECT_STYLE.into(), ..Default::default() },
-                ObjectStyle { name: BASIC_GRAPHICS_FRAME.into(), stroke: Some(Stroke::default()), ..Default::default() },
+                ObjectStyle {
+                    name: NO_OBJECT_STYLE.into(),
+                    ..Default::default()
+                },
+                ObjectStyle {
+                    name: BASIC_GRAPHICS_FRAME.into(),
+                    stroke: Some(Stroke::default()),
+                    ..Default::default()
+                },
                 ObjectStyle {
                     name: BASIC_TEXT_FRAME.into(),
                     fill: Some(Fill::none()),
@@ -136,8 +149,14 @@ impl Default for Styles {
                     ..Default::default()
                 },
             ],
-            cell: vec![CellStyle { name: NO_CELL_STYLE.into(), ..Default::default() }],
-            table: vec![TableStyle { name: BASIC_TABLE.into(), ..Default::default() }],
+            cell: vec![CellStyle {
+                name: NO_CELL_STYLE.into(),
+                ..Default::default()
+            }],
+            table: vec![TableStyle {
+                name: BASIC_TABLE.into(),
+                ..Default::default()
+            }],
             default_paragraph: BASIC_PARAGRAPH.into(),
             default_character: NO_CHAR_STYLE.into(),
             default_text_frame: BASIC_TEXT_FRAME.into(),
@@ -201,7 +220,12 @@ impl CellStrokeAttrs {
     }
 
     fn from_stroke(stroke: &crate::table::CellStroke) -> Self {
-        Self { weight: Some(stroke.weight), color: Some(stroke.color.clone()), tint: Some(stroke.tint), kind: Some(stroke.kind.clone()) }
+        Self {
+            weight: Some(stroke.weight),
+            color: Some(stroke.color.clone()),
+            tint: Some(stroke.tint),
+            kind: Some(stroke.kind.clone()),
+        }
     }
 }
 
@@ -491,7 +515,11 @@ impl CellStyle {
             }
             cell.text.rev += 1;
         }
-        cell.style = if self.name == NO_CELL_STYLE { String::new() } else { self.name.clone() };
+        cell.style = if self.name == NO_CELL_STYLE {
+            String::new()
+        } else {
+            self.name.clone()
+        };
     }
 }
 
@@ -533,9 +561,17 @@ impl TableStyle {
         for r in 0..nr {
             let kind = t.rows[r].kind;
             for c in 0..nc {
-                let visual_column = if t.options.direction == crate::TextDirection::RightToLeft { nc - 1 - c } else { c };
+                let visual_column = if t.options.direction == crate::TextDirection::RightToLeft {
+                    nc - 1 - c
+                } else {
+                    c
+                };
                 let same_or_region = |same, region: &Option<String>| {
-                    if same == Some(true) { self.body.clone() } else { region.clone() }
+                    if same == Some(true) {
+                        self.body.clone()
+                    } else {
+                        region.clone()
+                    }
                 };
                 let left = same_or_region(self.left_column_same_as_body, &self.left_column);
                 let column = if visual_column == 0 && left.is_some() {
@@ -546,12 +582,19 @@ impl TableStyle {
                     None
                 };
                 let row = match kind {
-                    crate::table::RowKind::Header => same_or_region(self.header_same_as_body, &self.header),
-                    crate::table::RowKind::Footer => same_or_region(self.footer_same_as_body, &self.footer),
+                    crate::table::RowKind::Header => {
+                        same_or_region(self.header_same_as_body, &self.header)
+                    }
+                    crate::table::RowKind::Footer => {
+                        same_or_region(self.footer_same_as_body, &self.footer)
+                    }
                     crate::table::RowKind::Body => None,
                 };
                 if let Some(cell) = t.cells.get_mut(r * nc + c) {
-                    for name in [self.body.as_ref(), column.as_ref(), row.as_ref()].into_iter().flatten() {
+                    for name in [self.body.as_ref(), column.as_ref(), row.as_ref()]
+                        .into_iter()
+                        .flatten()
+                    {
                         if name != NO_CELL_STYLE {
                             resolve_cell_style(cells, name).apply_to(cell);
                         }
@@ -559,7 +602,11 @@ impl TableStyle {
                 }
             }
         }
-        t.style = if self.name == BASIC_TABLE { String::new() } else { self.name.clone() };
+        t.style = if self.name == BASIC_TABLE {
+            String::new()
+        } else {
+            self.name.clone()
+        };
     }
 
     fn merge(&mut self, other: &Self) {
@@ -621,9 +668,15 @@ pub fn resolve_cell_style(cells: &[CellStyle], name: &str) -> CellStyle {
             break;
         }
         chain.push(style);
-        cur = style.based_on.as_deref().and_then(|base| cells.iter().find(|s| s.name == base));
+        cur = style
+            .based_on
+            .as_deref()
+            .and_then(|base| cells.iter().find(|s| s.name == base));
     }
-    let mut out = CellStyle { name: name.into(), ..Default::default() };
+    let mut out = CellStyle {
+        name: name.into(),
+        ..Default::default()
+    };
     for style in chain.into_iter().rev() {
         if style.fill.is_some() {
             out.fill = style.fill.clone();
@@ -663,13 +716,20 @@ impl Styles {
         let mut chain = Vec::new();
         let mut cur = self.table.iter().find(|s| s.name == name);
         while let Some(style) = cur {
-            if chain.len() >= MAX_DEPTH || chain.iter().any(|s: &&TableStyle| s.name == style.name) {
+            if chain.len() >= MAX_DEPTH || chain.iter().any(|s: &&TableStyle| s.name == style.name)
+            {
                 break;
             }
             chain.push(style);
-            cur = style.based_on.as_deref().and_then(|base| self.table.iter().find(|s| s.name == base));
+            cur = style
+                .based_on
+                .as_deref()
+                .and_then(|base| self.table.iter().find(|s| s.name == base));
         }
-        let mut out = TableStyle { name: name.into(), ..Default::default() };
+        let mut out = TableStyle {
+            name: name.into(),
+            ..Default::default()
+        };
         for style in chain.into_iter().rev() {
             out.merge(style);
         }
@@ -697,7 +757,8 @@ impl Styles {
         let mut chain = Vec::new();
         let mut cur = self.para(name);
         while let Some(s) = cur {
-            if chain.len() >= MAX_DEPTH || chain.iter().any(|c: &&ParagraphStyle| c.name == s.name) {
+            if chain.len() >= MAX_DEPTH || chain.iter().any(|c: &&ParagraphStyle| c.name == s.name)
+            {
                 break;
             }
             chain.push(s);
@@ -711,7 +772,8 @@ impl Styles {
         let mut chain = Vec::new();
         let mut cur = self.char_style(name);
         while let Some(s) = cur {
-            if chain.len() >= MAX_DEPTH || chain.iter().any(|c: &&CharacterStyle| c.name == s.name) {
+            if chain.len() >= MAX_DEPTH || chain.iter().any(|c: &&CharacterStyle| c.name == s.name)
+            {
                 break;
             }
             chain.push(s);
@@ -735,7 +797,10 @@ impl Styles {
 
     /// Paragraph-style-only resolution (no local overrides).
     pub fn resolve_para_style(&self, name: &str) -> (ParaProps, CharProps) {
-        self.resolve_para(&ParaFormat { style: name.into(), ..Default::default() })
+        self.resolve_para(&ParaFormat {
+            style: name.into(),
+            ..Default::default()
+        })
     }
 
     /// Character attributes for a run: paragraph base ← character style chain ← local overrides.
@@ -770,7 +835,10 @@ impl Styles {
         if !existing(base) {
             return base.to_string();
         }
-        (2..=usize::MAX).map(|i| format!("{base} {i}")).find(|n| !existing(n)).unwrap_or_else(|| format!("{base} copy"))
+        (2..=usize::MAX)
+            .map(|i| format!("{base} {i}"))
+            .find(|n| !existing(n))
+            .unwrap_or_else(|| format!("{base} copy"))
     }
 }
 
@@ -785,22 +853,40 @@ mod tests {
             name: "Body".into(),
             based_on: Some(BASIC_PARAGRAPH.into()),
             next_style: None,
-            para: ParaAttrs { space_after: Some(6.0), ..Default::default() },
-            chars: CharAttrs { size: Some(10.0), ..Default::default() },
+            para: ParaAttrs {
+                space_after: Some(6.0),
+                ..Default::default()
+            },
+            chars: CharAttrs {
+                size: Some(10.0),
+                ..Default::default()
+            },
             shortcut: String::new(),
         });
         st.paragraph.push(ParagraphStyle {
             name: "Body First".into(),
             based_on: Some("Body".into()),
             next_style: Some("Body".into()),
-            para: ParaAttrs { first_line_indent: Some(0.0), ..Default::default() },
-            chars: CharAttrs { size: Some(11.0), ..Default::default() },
+            para: ParaAttrs {
+                first_line_indent: Some(0.0),
+                ..Default::default()
+            },
+            chars: CharAttrs {
+                size: Some(11.0),
+                ..Default::default()
+            },
             shortcut: String::new(),
         });
         let (pp, cp) = st.resolve_para_style("Body First");
         assert_eq!(pp.space_after, 6.0);
         assert_eq!(cp.size, 11.0);
-        let f = CharFormat { style: NO_CHAR_STYLE.into(), over: CharAttrs { tracking: Some(10.0), ..Default::default() } };
+        let f = CharFormat {
+            style: NO_CHAR_STYLE.into(),
+            over: CharAttrs {
+                tracking: Some(10.0),
+                ..Default::default()
+            },
+        };
         let r = st.resolve_char(&cp, &f);
         assert_eq!((r.size, r.tracking), (11.0, 10.0));
     }
@@ -835,28 +921,54 @@ mod tests {
         let mut target = crate::table::Cell::default();
         resolved.apply_to(&mut target);
         assert_eq!(target.insets, [1.0, 2.0, 3.0, 4.0]);
-        assert!(target.strokes.iter().all(|s| s.weight == 2.0 && s.color == "Brand" && s.tint == 0.5));
+        assert!(
+            target
+                .strokes
+                .iter()
+                .all(|s| s.weight == 2.0 && s.color == "Brand" && s.tint == 0.5)
+        );
         let json = serde_json::to_value(&cell).unwrap();
         assert!(json.get("strokes").is_none());
         assert_eq!(serde_json::from_value::<CellStyle>(json).unwrap(), cell);
 
         let table: TableStyle =
             serde_json::from_str(r#"{"name":"Legacy","body":"Legacy","border":{"weight":3},"altRows":{"first":2,"firstColor":"Brand"}}"#).unwrap();
-        let styles = Styles { cell: vec![cell], table: vec![table.clone()], ..Styles::default() };
+        let styles = Styles {
+            cell: vec![cell],
+            table: vec![table.clone()],
+            ..Styles::default()
+        };
         let mut target = crate::table::Table::new(1, 1, 2, 0, 0, 100.0);
-        styles.resolve_table_style("Legacy").apply_to(&mut target, &styles.cell);
+        styles
+            .resolve_table_style("Legacy")
+            .apply_to(&mut target, &styles.cell);
         assert_eq!(target.options.border_for(3).weight, 3.0);
         assert_eq!(target.options.alt_rows.as_ref().unwrap().first, 2);
         assert_eq!(target.cell(0, 0).unwrap().strokes[0].weight, 2.0);
-        assert_eq!(serde_json::from_str::<TableStyle>(&serde_json::to_string(&table).unwrap()).unwrap(), table);
+        assert_eq!(
+            serde_json::from_str::<TableStyle>(&serde_json::to_string(&table).unwrap()).unwrap(),
+            table
+        );
     }
 
     #[test]
     fn table_region_flags_cover_footer_right_column_and_rtl() {
         let cells = [
-            CellStyle { name: "Body".into(), fill: Some("Body".into()), ..Default::default() },
-            CellStyle { name: "Footer".into(), fill: Some("Footer".into()), ..Default::default() },
-            CellStyle { name: "Right".into(), fill: Some("Right".into()), ..Default::default() },
+            CellStyle {
+                name: "Body".into(),
+                fill: Some("Body".into()),
+                ..Default::default()
+            },
+            CellStyle {
+                name: "Footer".into(),
+                fill: Some("Footer".into()),
+                ..Default::default()
+            },
+            CellStyle {
+                name: "Right".into(),
+                fill: Some("Right".into()),
+                ..Default::default()
+            },
         ];
         let mut style = TableStyle {
             body: Some("Body".into()),
@@ -866,10 +978,17 @@ mod tests {
             right_column_same_as_body: Some(false),
             ..Default::default()
         };
-        for direction in [crate::TextDirection::LeftToRight, crate::TextDirection::RightToLeft] {
+        for direction in [
+            crate::TextDirection::LeftToRight,
+            crate::TextDirection::RightToLeft,
+        ] {
             let mut table = crate::table::Table::new(1, 1, 3, 0, 1, 100.0);
             table.options.direction = direction;
-            let right = if direction == crate::TextDirection::LeftToRight { 2 } else { 0 };
+            let right = if direction == crate::TextDirection::LeftToRight {
+                2
+            } else {
+                0
+            };
             style.apply_to(&mut table, &cells);
             assert_eq!(table.cell(0, right).unwrap().fill, "Right");
             assert_eq!(table.cell(1, right).unwrap().fill, "Footer");
@@ -883,8 +1002,15 @@ mod tests {
 
     #[test]
     fn single_column_tables_use_a_configured_right_region_when_left_is_absent() {
-        let cells = [CellStyle { name: "Right".into(), fill: Some("Right".into()), ..Default::default() }];
-        let style = TableStyle { right_column: Some("Right".into()), ..Default::default() };
+        let cells = [CellStyle {
+            name: "Right".into(),
+            fill: Some("Right".into()),
+            ..Default::default()
+        }];
+        let style = TableStyle {
+            right_column: Some("Right".into()),
+            ..Default::default()
+        };
         let mut table = crate::table::Table::new(1, 1, 1, 0, 0, 100.0);
         style.apply_to(&mut table, &cells);
         assert_eq!(table.cell(0, 0).unwrap().fill, "Right");
@@ -930,11 +1056,46 @@ mod tests {
             chars,
             shortcut: String::new(),
         };
-        st.character.push(cs("Base", None, CharAttrs { font_style: Some("Bold".into()), size: Some(9.0), ..Default::default() }));
-        st.character.push(cs("Strong", Some("Base"), CharAttrs { size: Some(14.0), ..Default::default() }));
-        st.character.push(cs("Loop", Some("Loop"), CharAttrs { tracking: Some(5.0), ..Default::default() }));
-        assert_eq!(st.char_style_attrs("Strong"), CharAttrs { font_style: Some("Bold".into()), size: Some(14.0), ..Default::default() });
-        assert_eq!(st.char_style_attrs("Loop"), CharAttrs { tracking: Some(5.0), ..Default::default() });
+        st.character.push(cs(
+            "Base",
+            None,
+            CharAttrs {
+                font_style: Some("Bold".into()),
+                size: Some(9.0),
+                ..Default::default()
+            },
+        ));
+        st.character.push(cs(
+            "Strong",
+            Some("Base"),
+            CharAttrs {
+                size: Some(14.0),
+                ..Default::default()
+            },
+        ));
+        st.character.push(cs(
+            "Loop",
+            Some("Loop"),
+            CharAttrs {
+                tracking: Some(5.0),
+                ..Default::default()
+            },
+        ));
+        assert_eq!(
+            st.char_style_attrs("Strong"),
+            CharAttrs {
+                font_style: Some("Bold".into()),
+                size: Some(14.0),
+                ..Default::default()
+            }
+        );
+        assert_eq!(
+            st.char_style_attrs("Loop"),
+            CharAttrs {
+                tracking: Some(5.0),
+                ..Default::default()
+            }
+        );
         assert!(st.char_style_attrs(NO_CHAR_STYLE).is_empty());
         assert!(st.char_style_attrs("Missing").is_empty());
     }
@@ -942,7 +1103,10 @@ mod tests {
     #[test]
     fn unique_names() {
         let names = ["Body", "Body 2"];
-        assert_eq!(Styles::unique_name(|n| names.contains(&n), "Body"), "Body 3");
+        assert_eq!(
+            Styles::unique_name(|n| names.contains(&n), "Body"),
+            "Body 3"
+        );
         assert_eq!(Styles::unique_name(|n| names.contains(&n), "Head"), "Head");
     }
 }

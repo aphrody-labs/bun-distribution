@@ -29,9 +29,9 @@ pub mod sync_state;
 pub mod time;
 
 pub use crate::{
-    deny::{DenyPolicy, is_denied},
     backup::{BackupReport, verify_backup},
     db::HomeDb,
+    deny::{DenyPolicy, is_denied},
     error::{Result, StoreError},
     files::{Delta, FileClass, FileFingerprint, Stage},
     layout::{HomeLayout, HomeScope},

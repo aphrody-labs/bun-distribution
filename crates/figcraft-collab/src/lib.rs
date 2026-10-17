@@ -19,7 +19,14 @@
 //!   since the branch was made, their conflicts, and one merged into the other.
 //! - [`sim`] runs a server and several clients over in-memory links with random delays, dropped
 //!   connections and an undo checker (tests).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod change;
 pub mod client;
@@ -42,7 +49,10 @@ pub use client::{Client, HISTORY_LIMIT};
 pub use diff::{Diff, diff};
 pub use figcraft_doc::{Document, NodeId};
 pub use history::{BatchKind, Notice};
-pub use message::{Accepted, Access, CatchUp, ClientMsg, EditingText, Hello, Peer, Presence, Processed, Resume, ServerMsg, Signal};
+pub use message::{
+    Accepted, Access, CatchUp, ClientMsg, EditingText, Hello, Peer, Presence, Processed, Resume,
+    ServerMsg, Signal,
+};
 pub use replica::{Applied, Mode, Replica};
 pub use server::{Journal, Outgoing, Server, SessionState, VIEW_ONLY};
 

@@ -43,9 +43,21 @@ fn drawn(d: &FrameDrag) -> [i64; 4] {
         let side = dx.abs().max(dy.abs());
         (dx, dy) = (side.copysign(dx), side.copysign(dy));
     }
-    let (a, b) =
-        if d.centred { ([d.start[0] - dx, d.start[1] - dy], [d.start[0] + dx, d.start[1] + dy]) } else { (d.start, [d.start[0] + dx, d.start[1] + dy]) };
-    [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])].map(|v| v.round() as i64)
+    let (a, b) = if d.centred {
+        (
+            [d.start[0] - dx, d.start[1] - dy],
+            [d.start[0] + dx, d.start[1] + dy],
+        )
+    } else {
+        (d.start, [d.start[0] + dx, d.start[1] + dy])
+    };
+    [
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[0].max(b[0]),
+        a[1].max(b[1]),
+    ]
+    .map(|v| v.round() as i64)
 }
 
 /// The selected pixel layer the frame `r` takes in: one whose content it overlaps and that can
@@ -57,7 +69,10 @@ fn content_layer(app: &PhotocraftApp, r: [i64; 4]) -> Option<u64> {
         return None;
     }
     let b = l.surface()?.content_bounds();
-    let overlaps = i64::from(b.x0) < r[2] && r[0] < i64::from(b.x1) && i64::from(b.y0) < r[3] && r[1] < i64::from(b.y1);
+    let overlaps = i64::from(b.x0) < r[2]
+        && r[0] < i64::from(b.x1)
+        && i64::from(b.y0) < r[3]
+        && r[1] < i64::from(b.y1);
     (!b.is_empty() && overlaps).then_some(l.id.0)
 }
 
@@ -70,18 +85,31 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
     match ev {
         ToolEvent::Down { x, y, .. } => {
             if app.session.active().is_some() {
-                app.ui.frame_tool.drag = Some(FrameDrag { start: [x, y], cur: [x, y], square, centred });
+                app.ui.frame_tool.drag = Some(FrameDrag {
+                    start: [x, y],
+                    cur: [x, y],
+                    square,
+                    centred,
+                });
             }
         }
         ToolEvent::Move { x, y, .. } => {
             if let Some(d) = &mut app.ui.frame_tool.drag {
-                *d = FrameDrag { cur: [x, y], square, centred, ..*d };
+                *d = FrameDrag {
+                    cur: [x, y],
+                    square,
+                    centred,
+                    ..*d
+                };
             }
         }
         ToolEvent::Up { x, y } => {
-            let Some(mut d) = app.ui.frame_tool.drag.take() else { return true };
+            let Some(mut d) = app.ui.frame_tool.drag.take() else {
+                return true;
+            };
             d.cur = [x, y];
-            let screen = (d.cur[0] - d.start[0]).hypot(d.cur[1] - d.start[1]) * f64::from(app.point_zoom());
+            let screen =
+                (d.cur[0] - d.start[0]).hypot(d.cur[1] - d.start[1]) * f64::from(app.point_zoom());
             let r = drawn(&d);
             if screen < CLICK_PX || r[2] <= r[0] || r[3] <= r[1] {
                 return true;
@@ -104,15 +132,39 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
 
 /// The frame a drag in progress would leave.
 pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform) {
-    let Some(d) = app.ui.frame_tool.drag.filter(|_| app.ui.tool == Tool::Frame) else { return };
+    let Some(d) = app
+        .ui
+        .frame_tool
+        .drag
+        .filter(|_| app.ui.tool == Tool::Frame)
+    else {
+        return;
+    };
     let t = Tokens::get(painter.ctx());
     let r = drawn(&d).map(|v| v as f32);
     let stroke = Stroke::new(1.5, t.accent);
     let points: Vec<Pos2> = if app.ui.frame_tool.ellipse {
-        let (cx, cy, rx, ry) = ((r[0] + r[2]) / 2.0, (r[1] + r[3]) / 2.0, (r[2] - r[0]) / 2.0, (r[3] - r[1]) / 2.0);
-        (0..=64).map(|i| i as f32 * std::f32::consts::TAU / 64.0).map(|a| xf.to_screen(cx + rx * a.cos(), cy + ry * a.sin())).collect()
+        let (cx, cy, rx, ry) = (
+            (r[0] + r[2]) / 2.0,
+            (r[1] + r[3]) / 2.0,
+            (r[2] - r[0]) / 2.0,
+            (r[3] - r[1]) / 2.0,
+        );
+        (0..=64)
+            .map(|i| i as f32 * std::f32::consts::TAU / 64.0)
+            .map(|a| xf.to_screen(cx + rx * a.cos(), cy + ry * a.sin()))
+            .collect()
     } else {
-        [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3]), (r[0], r[1])].into_iter().map(|(x, y)| xf.to_screen(x, y)).collect()
+        [
+            (r[0], r[1]),
+            (r[2], r[1]),
+            (r[2], r[3]),
+            (r[0], r[3]),
+            (r[0], r[1]),
+        ]
+        .into_iter()
+        .map(|(x, y)| xf.to_screen(x, y))
+        .collect()
     };
     painter.add(egui::Shape::line(points, stroke));
 }
@@ -123,10 +175,26 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
         return false;
     }
     let ellipse = app.ui.frame_tool.ellipse;
-    if crate::icons::button(ui, "square", 24.0, !ellipse, tl!("Create a new rectangular frame")).clicked() {
+    if crate::icons::button(
+        ui,
+        "square",
+        24.0,
+        !ellipse,
+        tl!("Create a new rectangular frame"),
+    )
+    .clicked()
+    {
         app.ui.frame_tool.ellipse = false;
     }
-    if crate::icons::button(ui, "circle", 24.0, ellipse, tl!("Create a new elliptical frame")).clicked() {
+    if crate::icons::button(
+        ui,
+        "circle",
+        24.0,
+        ellipse,
+        tl!("Create a new elliptical frame"),
+    )
+    .clicked()
+    {
         app.ui.frame_tool.ellipse = true;
     }
     true
@@ -140,8 +208,24 @@ mod tests {
 
     fn drag(app: &mut PhotocraftApp, from: [f64; 2], to: [f64; 2]) {
         let m = egui::Modifiers::NONE;
-        tool_event(app, ToolEvent::Down { x: from[0], y: from[1], pressure: 1.0 }, m);
-        tool_event(app, ToolEvent::Move { x: to[0], y: to[1], pressure: 1.0 }, m);
+        tool_event(
+            app,
+            ToolEvent::Down {
+                x: from[0],
+                y: from[1],
+                pressure: 1.0,
+            },
+            m,
+        );
+        tool_event(
+            app,
+            ToolEvent::Move {
+                x: to[0],
+                y: to[1],
+                pressure: 1.0,
+            },
+            m,
+        );
         tool_event(app, ToolEvent::Up { x: to[0], y: to[1] }, m);
     }
 
@@ -149,13 +233,23 @@ mod tests {
     /// drawn rect; with the elliptical button the frame's corners are hidden.
     #[test]
     fn frame_tool_draws_rectangular_and_elliptical_frames() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
         app.sync_views();
         app.ui.extras.snap = false;
         let ctx = egui::Context::default();
         let raw = egui::RawInput {
-            events: vec![egui::Event::Key { key: egui::Key::K, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE }],
+            events: vec![egui::Event::Key {
+                key: egui::Key::K,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
             ..Default::default()
         };
         ctx.begin_pass(raw);
@@ -166,20 +260,39 @@ mod tests {
         let frame = |app: &PhotocraftApp| {
             let st = app.session.active().unwrap();
             let l = st.doc.layer(st.active_layer.unwrap()).unwrap();
-            assert!(matches!(l.content, LayerContent::Group(_)) && l.name.starts_with("Frame"), "the new frame is selected");
+            assert!(
+                matches!(l.content, LayerContent::Group(_)) && l.name.starts_with("Frame"),
+                "the new frame is selected"
+            );
             (l.id, l.mask.clone().unwrap())
         };
         let layers = app.session.active().unwrap().doc.layers.len();
         drag(&mut app, [20.0, 30.0], [120.0, 110.0]);
         let (_, m) = frame(&app);
-        assert_eq!((m.value(20, 30), m.value(119, 109), m.value(19, 30), m.value(120, 109)), (1.0, 1.0, 0.0, 0.0));
+        assert_eq!(
+            (
+                m.value(20, 30),
+                m.value(119, 109),
+                m.value(19, 30),
+                m.value(120, 109)
+            ),
+            (1.0, 1.0, 0.0, 0.0)
+        );
         app.run("edit.undo", json!({})).unwrap();
-        assert_eq!(app.session.active().unwrap().doc.layers.len(), layers, "one undo takes the frame back");
+        assert_eq!(
+            app.session.active().unwrap().doc.layers.len(),
+            layers,
+            "one undo takes the frame back"
+        );
 
         app.ui.frame_tool.ellipse = true;
         drag(&mut app, [20.0, 30.0], [120.0, 110.0]);
         let (id, m): (LayerId, _) = frame(&app);
-        assert_eq!((m.value(70, 70), m.value(20, 30)), (1.0, 0.0), "centre shown, corner hidden");
+        assert_eq!(
+            (m.value(70, 70), m.value(20, 30)),
+            (1.0, 0.0),
+            "centre shown, corner hidden"
+        );
         // A click draws nothing.
         drag(&mut app, [300.0, 250.0], [300.0, 250.0]);
         assert_eq!(frame(&app).0, id);

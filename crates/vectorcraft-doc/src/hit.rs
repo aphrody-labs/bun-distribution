@@ -43,7 +43,10 @@ impl Hit {
             return self.ancestry.get(i + 1).copied().unwrap_or(self.leaf);
         }
         // Skip layers and sublayers: they are not objects.
-        self.ancestry.get(self.layers.max(1)).copied().unwrap_or(self.leaf)
+        self.ancestry
+            .get(self.layers.max(1))
+            .copied()
+            .unwrap_or(self.leaf)
     }
 }
 
@@ -66,7 +69,13 @@ pub struct HitOptions {
 
 impl Default for HitOptions {
     fn default() -> Self {
-        Self { tol: 3.0, outline: false, path_only: false, type_path_only: false, scope: None }
+        Self {
+            tol: 3.0,
+            outline: false,
+            path_only: false,
+            type_path_only: false,
+            scope: None,
+        }
     }
 }
 
@@ -84,7 +93,10 @@ pub fn hit_test_visible(doc: &Document, p: Point, opt: HitOptions) -> Option<Hit
 /// The objects under `p` that [`Hit::top_object`] picks in `scope` (isolation mode), topmost
 /// first: what clicks there select, one below the other (Cmd/Ctrl-click selects behind).
 pub fn objects_at(doc: &Document, p: Point, opt: HitOptions, scope: Option<NodeId>) -> Vec<NodeId> {
-    let opt = HitOptions { scope: scope.or(opt.scope), ..opt };
+    let opt = HitOptions {
+        scope: scope.or(opt.scope),
+        ..opt
+    };
     // Normally one hit test per *object* suffices: layers and sublayers aren't selectable,
     // while a group (including a clipping group) is selected as one object. Repeatedly
     // searching the full tree for each hit made a stack of n overlapping paths O(n^2).
@@ -100,7 +112,14 @@ pub fn objects_at(doc: &Document, p: Point, opt: HitOptions, scope: Option<NodeI
         if !layer.is_layer() {
             return objects_at_repeated(doc, p, opt, scope);
         }
-        if !layer.visible || layer.locked || layer.is_template() || doc.pattern_edit.as_ref().is_some_and(|e| e.layer != layer.id) {
+        if !layer.visible
+            || layer.locked
+            || layer.is_template()
+            || doc
+                .pattern_edit
+                .as_ref()
+                .is_some_and(|e| e.layer != layer.id)
+        {
             continue;
         }
         if !objects_at_layer(layer, p, opt, &mut tops, &mut seen) {
@@ -115,12 +134,27 @@ pub fn objects_at(doc: &Document, p: Point, opt: HitOptions, scope: Option<NodeI
 /// One traversal through a layer and its sublayers. Each selectable object's subtree is
 /// inspected once (only until its first hit). `false` asks the caller to use the general
 /// algorithm for an envelope whose contents are currently being edited.
-fn objects_at_layer(layer: &Node, p: Point, opt: HitOptions, tops: &mut Vec<NodeId>, seen: &mut HashSet<NodeId>) -> bool {
-    let Some(children) = layer.children() else { return true };
+fn objects_at_layer(
+    layer: &Node,
+    p: Point,
+    opt: HitOptions,
+    tops: &mut Vec<NodeId>,
+    seen: &mut HashSet<NodeId>,
+) -> bool {
+    let Some(children) = layer.children() else {
+        return true;
+    };
     if layer.clips() && children.first().is_some_and(|clip| !clip_contains(clip, p)) {
         return true;
     }
-    let opt = if matches!(layer.kind, NodeKind::Layer { preview: false, .. }) { HitOptions { outline: true, ..opt } } else { opt };
+    let opt = if matches!(layer.kind, NodeKind::Layer { preview: false, .. }) {
+        HitOptions {
+            outline: true,
+            ..opt
+        }
+    } else {
+        opt
+    };
     for (i, c) in children.iter().enumerate().rev() {
         if !may_hit(layer, i, c, p, opt, true) || seen.contains(&c.id) {
             continue;
@@ -144,7 +178,10 @@ fn objects_at_layer(layer: &Node, p: Point, opt: HitOptions, tops: &mut Vec<Node
         let mut chain = Vec::new();
         let hit = match &c.kind {
             NodeKind::Group { .. } => hit_children(c, p, opt, &skip, &mut chain, true).is_some(),
-            NodeKind::Blend { .. } => hit_children(c, p, opt, &skip, &mut chain, true).is_some() || hit_leaf(c, p, opt).is_some(),
+            NodeKind::Blend { .. } => {
+                hit_children(c, p, opt, &skip, &mut chain, true).is_some()
+                    || hit_leaf(c, p, opt).is_some()
+            }
             _ => hit_leaf(c, p, opt).is_some(),
         };
         if hit && seen.insert(c.id) {
@@ -155,10 +192,17 @@ fn objects_at_layer(layer: &Node, p: Point, opt: HitOptions, tops: &mut Vec<Node
 }
 
 /// The general selection order also handles isolation and nested Edit Contents.
-fn objects_at_repeated(doc: &Document, p: Point, opt: HitOptions, scope: Option<NodeId>) -> Vec<NodeId> {
+fn objects_at_repeated(
+    doc: &Document,
+    p: Point,
+    opt: HitOptions,
+    scope: Option<NodeId>,
+) -> Vec<NodeId> {
     let mut tops: Vec<NodeId> = vec![];
     // Each round leaves out the objects found so far (and everything inside them).
-    while let Some(top) = hit_test_skipping(doc, p, opt, &|id| tops.contains(&id), true).map(|h| h.top_object(scope)) {
+    while let Some(top) =
+        hit_test_skipping(doc, p, opt, &|id| tops.contains(&id), true).map(|h| h.top_object(scope))
+    {
         if tops.contains(&top) {
             break;
         }
@@ -168,10 +212,25 @@ fn objects_at_repeated(doc: &Document, p: Point, opt: HitOptions, scope: Option<
 }
 
 /// [`hit_test`] passing over the nodes `skip` names (and their contents).
-fn hit_test_skipping(doc: &Document, p: Point, opt: HitOptions, skip: &dyn Fn(NodeId) -> bool, editable_only: bool) -> Option<Hit> {
+fn hit_test_skipping(
+    doc: &Document,
+    p: Point,
+    opt: HitOptions,
+    skip: &dyn Fn(NodeId) -> bool,
+    editable_only: bool,
+) -> Option<Hit> {
     let finish = |mut h: Hit| {
-        h.contents_of = h.ancestry.iter().rev().copied().find(|a| doc.node(*a).is_some_and(edits_contents));
-        h.layers = h.ancestry.iter().take_while(|a| doc.node(**a).is_some_and(Node::is_layer)).count();
+        h.contents_of = h
+            .ancestry
+            .iter()
+            .rev()
+            .copied()
+            .find(|a| doc.node(*a).is_some_and(edits_contents));
+        h.layers = h
+            .ancestry
+            .iter()
+            .take_while(|a| doc.node(**a).is_some_and(Node::is_layer))
+            .count();
         h
     };
     // Isolation mode: only what is inside the isolated container hits. The art around it is
@@ -187,7 +246,15 @@ fn hit_test_skipping(doc: &Document, p: Point, opt: HitOptions, skip: &dyn Fn(No
         // A single object isolated (a path, an image…): only it hits, among its siblings.
         chain.pop();
         let parent = chain.last().and_then(|id| doc.node(*id))?;
-        return hit_children(parent, p, opt, &|id| id != scope || skip(id), &mut chain, editable_only).map(finish);
+        return hit_children(
+            parent,
+            p,
+            opt,
+            &|id| id != scope || skip(id),
+            &mut chain,
+            editable_only,
+        )
+        .map(finish);
     }
     let mut chain = Vec::new();
     for layer in doc.layers.iter().rev() {
@@ -195,11 +262,23 @@ fn hit_test_skipping(doc: &Document, p: Point, opt: HitOptions, skip: &dyn Fn(No
             continue;
         }
         // Pattern editing mode: only the tile art is editable.
-        if editable_only && doc.pattern_edit.as_ref().is_some_and(|e| e.layer != layer.id) {
+        if editable_only
+            && doc
+                .pattern_edit
+                .as_ref()
+                .is_some_and(|e| e.layer != layer.id)
+        {
             continue;
         }
         chain.push(layer.id);
-        let opt = if matches!(layer.kind, NodeKind::Layer { preview: false, .. }) { HitOptions { outline: true, ..opt } } else { opt };
+        let opt = if matches!(layer.kind, NodeKind::Layer { preview: false, .. }) {
+            HitOptions {
+                outline: true,
+                ..opt
+            }
+        } else {
+            opt
+        };
         if let Some(h) = hit_children(layer, p, opt, skip, &mut chain, editable_only) {
             return Some(finish(h));
         }
@@ -218,16 +297,33 @@ fn edits_contents(n: &Node) -> bool {
 fn clip_contains(clip: &Node, p: Point) -> bool {
     let frame = |n: &Node| {
         let b = n.geometric_bounds()?;
-        Some(Node::path(n.id, vectorcraft_geom::shapes::rectangle(b), Default::default()))
+        Some(Node::path(
+            n.id,
+            vectorcraft_geom::shapes::rectangle(b),
+            Default::default(),
+        ))
     };
-    clip.clip_shapes(Some(&frame)).iter().any(|(bp, rule)| fill_contains(bp, *rule, p))
+    clip.clip_shapes(Some(&frame))
+        .iter()
+        .any(|(bp, rule)| fill_contains(bp, *rule, p))
 }
 
 /// Can a click at `p` hit `c`, the child `i` of `parent`, or something inside it? Not when it is
 /// hidden, when it can't be edited (`editable_only`), when it is the part of a Shaper group that
 /// isn't shown, or when `p` is outside its reach.
-fn may_hit(parent: &Node, i: usize, c: &Node, p: Point, opt: HitOptions, editable_only: bool) -> bool {
-    let source_isolated = |n: &Node| n.children().and_then(|children| children.first()).is_some_and(|source| Some(source.id) == opt.scope);
+fn may_hit(
+    parent: &Node,
+    i: usize,
+    c: &Node,
+    p: Point,
+    opt: HitOptions,
+    editable_only: bool,
+) -> bool {
+    let source_isolated = |n: &Node| {
+        n.children()
+            .and_then(|children| children.first())
+            .is_some_and(|source| Some(source.id) == opt.scope)
+    };
     if parent.extras().shaper.is_some() && (i == 0) != source_isolated(parent) {
         return false;
     }
@@ -236,7 +332,10 @@ fn may_hit(parent: &Node, i: usize, c: &Node, p: Point, opt: HitOptions, editabl
         return false;
     }
     // (An envelope's content sits where it was, not where the envelope draws it.)
-    edits_contents(c) || c.extras().shaper.is_some() && source_isolated(c) || c.reach_bounds().is_none_or(|b| b.inflate(opt.tol, opt.tol).contains(p))
+    edits_contents(c)
+        || c.extras().shaper.is_some() && source_isolated(c)
+        || c.reach_bounds()
+            .is_none_or(|b| b.inflate(opt.tol, opt.tol).contains(p))
 }
 
 fn hit_children(
@@ -262,15 +361,44 @@ fn hit_children(
         chain.push(c.id);
         let hit = match &c.kind {
             // A sublayer whose Preview is off is clicked in outline, like an outline view.
-            NodeKind::Layer { preview: false, .. } => hit_children(c, p, HitOptions { outline: true, ..opt }, skip, chain, editable_only),
-            NodeKind::Layer { .. } | NodeKind::Group { .. } => hit_children(c, p, opt, skip, chain, editable_only),
+            NodeKind::Layer { preview: false, .. } => hit_children(
+                c,
+                p,
+                HitOptions {
+                    outline: true,
+                    ..opt
+                },
+                skip,
+                chain,
+                editable_only,
+            ),
+            NodeKind::Layer { .. } | NodeKind::Group { .. } => {
+                hit_children(c, p, opt, skip, chain, editable_only)
+            }
             // Edit Contents: the envelope's content hits, undistorted.
-            NodeKind::Envelope { editing: true, .. } => hit_children(c, p, opt, skip, chain, editable_only),
+            NodeKind::Envelope { editing: true, .. } => {
+                hit_children(c, p, opt, skip, chain, editable_only)
+            }
             // A blend's key objects first (Direct and Group Selection pick them); its steps hit
             // as the blend.
-            NodeKind::Blend { .. } => hit_children(c, p, opt, skip, chain, editable_only)
-                .or_else(|| hit_leaf(c, p, opt).map(|kind| Hit { leaf: c.id, ancestry: chain.clone(), kind, contents_of: None, layers: 1 })),
-            _ => hit_leaf(c, p, opt).map(|kind| Hit { leaf: c.id, ancestry: chain.clone(), kind, contents_of: None, layers: 1 }),
+            NodeKind::Blend { .. } => {
+                hit_children(c, p, opt, skip, chain, editable_only).or_else(|| {
+                    hit_leaf(c, p, opt).map(|kind| Hit {
+                        leaf: c.id,
+                        ancestry: chain.clone(),
+                        kind,
+                        contents_of: None,
+                        layers: 1,
+                    })
+                })
+            }
+            _ => hit_leaf(c, p, opt).map(|kind| Hit {
+                leaf: c.id,
+                ancestry: chain.clone(),
+                kind,
+                contents_of: None,
+                layers: 1,
+            }),
         };
         if hit.is_some() {
             return hit;
@@ -283,7 +411,13 @@ fn hit_children(
 /// A click on the strokes of a path or compound path `n` along `bp`: what any visible stroke
 /// paints there (arrowheads, alignment, width profile, projecting caps, miter spikes), else its
 /// outline within the tolerance. Outline mode hits the outline only.
-fn hit_stroke(n: &Node, bp: &vectorcraft_geom::BezPath, rule: vectorcraft_geom::FillRule, p: Point, opt: HitOptions) -> Option<HitKind> {
+fn hit_stroke(
+    n: &Node,
+    bp: &vectorcraft_geom::BezPath,
+    rule: vectorcraft_geom::FillRule,
+    p: Point,
+    opt: HitOptions,
+) -> Option<HitKind> {
     if !opt.outline && n.appearance.stroke_hit(bp, rule, p, opt.tol) {
         return Some(HitKind::Stroke);
     }
@@ -308,11 +442,13 @@ fn hit_leaf(n: &Node, p: Point, opt: HitOptions) -> Option<HitKind> {
             if let Some(k) = hit_stroke(n, &bp, *rule, p, opt) {
                 return Some(k);
             }
-            (!opt.outline && !opt.path_only && fill_contains(&bp, *rule, p)).then_some(HitKind::Fill)
+            (!opt.outline && !opt.path_only && fill_contains(&bp, *rule, p))
+                .then_some(HitKind::Fill)
         }
         // The type path lies within the bounds: they rule out the rest before it is measured.
         NodeKind::Text(t) if opt.type_path_only => {
-            n.geometric_bounds().filter(|b| b.inflate(opt.tol, opt.tol).contains(p))?;
+            n.geometric_bounds()
+                .filter(|b| b.inflate(opt.tol, opt.tol).contains(p))?;
             on_type_path(n, t, p, opt.tol).then_some(HitKind::Outline)
         }
         NodeKind::Text(_)
@@ -320,14 +456,18 @@ fn hit_leaf(n: &Node, p: Point, opt: HitOptions) -> Option<HitKind> {
         | NodeKind::PlacedDocument(_)
         | NodeKind::SymbolInstance { .. }
         | NodeKind::Blend { .. }
-        | NodeKind::Envelope { .. } => n.geometric_bounds().filter(|b| b.inflate(opt.tol, opt.tol).contains(p)).map(|_| HitKind::Bounds),
+        | NodeKind::Envelope { .. } => n
+            .geometric_bounds()
+            .filter(|b| b.inflate(opt.tol, opt.tol).contains(p))
+            .map(|_| HitKind::Bounds),
         NodeKind::Repeat(r) => r.expand().iter().find_map(|g| hit_any(g, p, opt)),
         NodeKind::Mesh(m) => {
             let bp = m.outline().to_bezpath();
             if stroke_contains(&bp, 0.0, opt.tol, p) {
                 return Some(HitKind::Outline);
             }
-            (!opt.path_only && fill_contains(&bp, vectorcraft_geom::FillRule::NonZero, p)).then_some(HitKind::Fill)
+            (!opt.path_only && fill_contains(&bp, vectorcraft_geom::FillRule::NonZero, p))
+                .then_some(HitKind::Fill)
         }
         _ => None,
     }
@@ -342,14 +482,23 @@ fn on_type_path(n: &Node, t: &crate::TextObject, p: Point, tol: f64) -> bool {
     let h = n.projection();
     let project = |q: Point| h.as_ref().and_then(|h| h.apply(q)).unwrap_or(q);
     // A homography keeps straight lines straight: a baseline's ends are enough.
-    let near = |(a, b): (Point, Point)| vectorcraft_geom::Line::new(project(t.xf * a), project(t.xf * b)).nearest(p, 1e-9).distance_sq <= tol * tol;
+    let near = |(a, b): (Point, Point)| {
+        vectorcraft_geom::Line::new(project(t.xf * a), project(t.xf * b))
+            .nearest(p, 1e-9)
+            .distance_sq
+            <= tol * tol
+    };
     if t.baselines().any(near) {
         return true;
     }
-    let (TextKind::Area { frame: path } | TextKind::OnPath { path, .. }) = &t.kind else { return false };
+    let (TextKind::Area { frame: path } | TextKind::OnPath { path, .. }) = &t.kind else {
+        return false;
+    };
     let mut path = path.transformed(t.xf);
     if h.is_some() {
-        let piece = path.bounds().map_or(1.0, |b| (b.width().max(b.height()) / 64.0).max(0.25));
+        let piece = path
+            .bounds()
+            .map_or(1.0, |b| (b.width().max(b.height()) / 64.0).max(0.25));
         path = crate::live::map_nonlinear(&path, piece, project);
     }
     stroke_contains(&path.to_bezpath(), 0.0, tol, p)
@@ -370,14 +519,26 @@ pub fn marquee(doc: &Document, r: Rect, scope: Option<NodeId>, leaves: bool) -> 
         Some(s) => match s.children() {
             Some(c) => c.iter().collect(),
             // A single object isolated: only it.
-            None => doc.parent_of(s.id).and_then(|p| doc.node(p)).and_then(Node::children).into_iter().flatten().filter(|c| c.id == s.id).collect(),
+            None => doc
+                .parent_of(s.id)
+                .and_then(|p| doc.node(p))
+                .and_then(Node::children)
+                .into_iter()
+                .flatten()
+                .filter(|c| c.id == s.id)
+                .collect(),
         },
         // The objects of the layers, looking through sublayers (hidden, locked and template ones
         // are left out).
         None => doc
             .layers
             .iter()
-            .filter(|l| l.visible && !l.locked && !l.is_template() && doc.pattern_edit.as_ref().is_none_or(|e| e.layer == l.id))
+            .filter(|l| {
+                l.visible
+                    && !l.locked
+                    && !l.is_template()
+                    && doc.pattern_edit.as_ref().is_none_or(|e| e.layer == l.id)
+            })
             .flat_map(|l| layer_objects(l))
             .collect(),
     };
@@ -397,10 +558,14 @@ pub fn marquee(doc: &Document, r: Rect, scope: Option<NodeId>, leaves: bool) -> 
     fn touches(n: &Node, r: Rect) -> bool {
         match &n.kind {
             NodeKind::Path { path, .. } => vectorcraft_geom::hit::intersects_rect(path, r),
-            NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
+            NodeKind::Layer { children, .. }
+            | NodeKind::Group { children, .. }
+            | NodeKind::Compound { children, .. } => {
                 children.iter().any(|c| c.visible && touches(c, r))
             }
-            _ => n.geometric_bounds().is_some_and(|b| b.intersect(r).area() > 0.0 || r.contains(b.origin())),
+            _ => n
+                .geometric_bounds()
+                .is_some_and(|b| b.intersect(r).area() > 0.0 || r.contains(b.origin())),
         }
     }
     fn collect_leaves(n: &Node, r: Rect, out: &mut Vec<NodeId>) {
@@ -445,9 +610,27 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let a = d.alloc_id();
-        d.insert(Some(l), 9, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            9,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let b = d.alloc_id();
-        d.insert(Some(l), 9, Node::path(b, shapes::rectangle(Rect::new(25.0, 25.0, 75.0, 75.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            9,
+            Node::path(
+                b,
+                shapes::rectangle(Rect::new(25.0, 25.0, 75.0, 75.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let h = hit_test(&d, Point::new(30.0, 30.0), HitOptions::default()).unwrap();
         assert_eq!(h.leaf, b);
         assert_eq!(h.kind, HitKind::Fill);
@@ -455,8 +638,28 @@ mod tests {
         assert_eq!(h.leaf, a);
         assert!(hit_test(&d, Point::new(150.0, 150.0), HitOptions::default()).is_none());
         // Outline mode: interior misses.
-        assert!(hit_test(&d, Point::new(10.0, 10.0), HitOptions { outline: true, ..Default::default() }).is_none());
-        assert!(hit_test(&d, Point::new(0.5, 10.0), HitOptions { outline: true, ..Default::default() }).is_some());
+        assert!(
+            hit_test(
+                &d,
+                Point::new(10.0, 10.0),
+                HitOptions {
+                    outline: true,
+                    ..Default::default()
+                }
+            )
+            .is_none()
+        );
+        assert!(
+            hit_test(
+                &d,
+                Point::new(0.5, 10.0),
+                HitOptions {
+                    outline: true,
+                    ..Default::default()
+                }
+            )
+            .is_some()
+        );
     }
 
     #[test]
@@ -467,7 +670,11 @@ mod tests {
         d.insert(
             Some(l),
             9,
-            Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.0)),
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.0),
+            ),
         )
         .unwrap();
         assert!(hit_test(&d, Point::new(25.0, 25.0), HitOptions::default()).is_none());
@@ -481,11 +688,35 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let (back, small) = (d.alloc_id(), d.alloc_id());
-        d.insert(Some(l), 0, Node::path(back, shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)), Appearance::default_art())).unwrap();
-        d.insert(Some(l), 1, Node::path(small, shapes::rectangle(Rect::new(50.0, 50.0, 60.0, 60.0)), Appearance::default_art())).unwrap();
-        assert_eq!(marquee(&d, Rect::new(40.0, 40.0, 70.0, 70.0), None, false), vec![small]);
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                back,
+                shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
+        d.insert(
+            Some(l),
+            1,
+            Node::path(
+                small,
+                shapes::rectangle(Rect::new(50.0, 50.0, 60.0, 60.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            marquee(&d, Rect::new(40.0, 40.0, 70.0, 70.0), None, false),
+            vec![small]
+        );
         // Reaching the background's edge takes it too.
-        assert_eq!(marquee(&d, Rect::new(-5.0, 40.0, 70.0, 70.0), None, false), vec![back, small]);
+        assert_eq!(
+            marquee(&d, Rect::new(-5.0, 40.0, 70.0, 70.0), None, false),
+            vec![back, small]
+        );
     }
 
     #[test]
@@ -494,14 +725,25 @@ mod tests {
         let l = d.layers[0].id;
         let a = d.alloc_id();
         let g = d.alloc_id();
-        let p = Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art());
-        d.insert(Some(l), 0, Node::group(g, vec![Arc::new(p)])).unwrap();
+        let p = Node::path(
+            a,
+            shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+            Appearance::default_art(),
+        );
+        d.insert(Some(l), 0, Node::group(g, vec![Arc::new(p)]))
+            .unwrap();
         let h = hit_test(&d, Point::new(10.0, 10.0), HitOptions::default()).unwrap();
         assert_eq!(h.leaf, a);
         assert_eq!(h.top_object(None), g);
         assert_eq!(h.top_object(Some(g)), a);
-        assert_eq!(marquee(&d, Rect::new(-5.0, -5.0, 5.0, 5.0), None, false), vec![g]);
-        assert_eq!(marquee(&d, Rect::new(-5.0, -5.0, 5.0, 5.0), None, true), vec![a]);
+        assert_eq!(
+            marquee(&d, Rect::new(-5.0, -5.0, 5.0, 5.0), None, false),
+            vec![g]
+        );
+        assert_eq!(
+            marquee(&d, Rect::new(-5.0, -5.0, 5.0, 5.0), None, true),
+            vec![a]
+        );
         assert!(marquee(&d, Rect::new(100.0, 100.0, 105.0, 105.0), None, false).is_empty());
     }
 
@@ -512,15 +754,39 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let sub = d.alloc_id();
-        d.insert(Some(l), 0, Node::layer(sub, "Sub", crate::LayerColor::Preset(2))).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::layer(sub, "Sub", crate::LayerColor::Preset(2)),
+        )
+        .unwrap();
         let inner = d.alloc_id();
-        d.insert(Some(sub), 0, Node::layer(inner, "Inner", crate::LayerColor::Preset(3))).unwrap();
+        d.insert(
+            Some(sub),
+            0,
+            Node::layer(inner, "Inner", crate::LayerColor::Preset(3)),
+        )
+        .unwrap();
         let a = d.alloc_id();
-        d.insert(Some(inner), 0, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(inner),
+            0,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let g = d.alloc_id();
         let b = d.alloc_id();
-        let pb = Node::path(b, shapes::rectangle(Rect::new(100.0, 0.0, 150.0, 50.0)), Appearance::default_art());
-        d.insert(Some(sub), 9, Node::group(g, vec![Arc::new(pb)])).unwrap();
+        let pb = Node::path(
+            b,
+            shapes::rectangle(Rect::new(100.0, 0.0, 150.0, 50.0)),
+            Appearance::default_art(),
+        );
+        d.insert(Some(sub), 9, Node::group(g, vec![Arc::new(pb)]))
+            .unwrap();
         let h = hit_test(&d, Point::new(10.0, 10.0), HitOptions::default()).unwrap();
         assert_eq!((h.leaf, h.top_object(None), h.layers), (a, a, 3));
         let h = hit_test(&d, Point::new(110.0, 10.0), HitOptions::default()).unwrap();
@@ -528,7 +794,11 @@ mod tests {
         let all = Rect::new(-5.0, -5.0, 200.0, 200.0);
         assert_eq!(marquee(&d, all, None, false), vec![a, g]);
         assert_eq!(d.layer_containing(a), Some(inner));
-        assert_eq!(d.layer_color(a), crate::LayerColor::Preset(3).rgb(), "the sublayer's own colour");
+        assert_eq!(
+            d.layer_color(a),
+            crate::LayerColor::Preset(3).rgb(),
+            "the sublayer's own colour"
+        );
         assert_eq!(d.selectable_art(), vec![a, g]);
         for f in [
             |n: &mut Node| n.visible = false,
@@ -559,16 +829,52 @@ mod tests {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let (a, c) = (d.alloc_id(), d.alloc_id());
-        d.insert(Some(l), 0, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
-        let inner = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(100.0, 0.0, 150.0, 50.0)), Appearance::default());
-        let mut compound = Node::new(c, NodeKind::Compound { children: vec![Arc::new(inner)], rule: vectorcraft_geom::FillRule::NonZero });
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
+        let inner = Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(100.0, 0.0, 150.0, 50.0)),
+            Appearance::default(),
+        );
+        let mut compound = Node::new(
+            c,
+            NodeKind::Compound {
+                children: vec![Arc::new(inner)],
+                rule: vectorcraft_geom::FillRule::NonZero,
+            },
+        );
         compound.appearance = Appearance::default_art().into();
         d.insert(Some(l), 9, compound).unwrap();
-        let path_only = HitOptions { path_only: true, ..Default::default() };
-        for (id, inside, edge) in [(a, Point::new(25.0, 25.0), Point::new(0.5, 25.0)), (c, Point::new(125.0, 25.0), Point::new(100.5, 25.0))] {
-            assert_eq!(hit_test(&d, inside, HitOptions::default()).map(|h| h.leaf), Some(id), "the fill hits");
-            assert!(hit_test(&d, inside, path_only).is_none(), "path only: the fill of {id:?} doesn't hit");
-            assert_eq!(hit_test(&d, edge, path_only).map(|h| h.leaf), Some(id), "path only: the outline does");
+        let path_only = HitOptions {
+            path_only: true,
+            ..Default::default()
+        };
+        for (id, inside, edge) in [
+            (a, Point::new(25.0, 25.0), Point::new(0.5, 25.0)),
+            (c, Point::new(125.0, 25.0), Point::new(100.5, 25.0)),
+        ] {
+            assert_eq!(
+                hit_test(&d, inside, HitOptions::default()).map(|h| h.leaf),
+                Some(id),
+                "the fill hits"
+            );
+            assert!(
+                hit_test(&d, inside, path_only).is_none(),
+                "path only: the fill of {id:?} doesn't hit"
+            );
+            assert_eq!(
+                hit_test(&d, edge, path_only).map(|h| h.leaf),
+                Some(id),
+                "path only: the outline does"
+            );
         }
     }
 
@@ -581,34 +887,88 @@ mod tests {
         let l = d.layers[0].id;
         let mut add = |t: TextObject| {
             let id = d.alloc_id();
-            d.insert(Some(l), 9, Node::new(id, NodeKind::Text(Box::new(t)))).unwrap();
+            d.insert(Some(l), 9, Node::new(id, NodeKind::Text(Box::new(t))))
+                .unwrap();
             id
         };
         // Point type at (10, 100), 20 pt: its glyphs rise above the baseline, its layout is 60 wide.
-        let mut point = TextObject::point(Point::new(10.0, 100.0), "Hello", CharStyle { size: 20.0, ..CharStyle::default() });
+        let mut point = TextObject::point(
+            Point::new(10.0, 100.0),
+            "Hello",
+            CharStyle {
+                size: 20.0,
+                ..CharStyle::default()
+            },
+        );
         point.cached_bounds = Some(Rect::new(0.0, -16.0, 60.0, 4.0));
         let point = add(point);
         let mut area = TextObject::point(Point::new(200.0, 200.0), "Area", CharStyle::default());
-        area.kind = TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)) };
+        area.kind = TextKind::Area {
+            frame: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+        };
         let area = add(area);
         let mut on_path = TextObject::point(Point::new(10.0, 300.0), "Path", CharStyle::default());
-        on_path.kind = TextKind::OnPath { path: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 40.0)), start: 0.0, end: None };
+        on_path.kind = TextKind::OnPath {
+            path: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 40.0)),
+            start: 0.0,
+            end: None,
+        };
         let on_path = add(on_path);
-        let path_only = HitOptions { type_path_only: true, ..Default::default() };
+        let path_only = HitOptions {
+            type_path_only: true,
+            ..Default::default()
+        };
         let hit = |p: Point, opt: HitOptions| hit_test(&d, p, opt).map(|h| (h.leaf, h.kind));
         // Off: anywhere in the bounds.
-        assert_eq!(hit(Point::new(40.0, 90.0), HitOptions::default()), Some((point, HitKind::Bounds)));
-        assert_eq!(hit(Point::new(250.0, 225.0), HitOptions::default()), Some((area, HitKind::Bounds)));
-        assert_eq!(hit(Point::new(60.0, 320.0), HitOptions::default()), Some((on_path, HitKind::Bounds)));
+        assert_eq!(
+            hit(Point::new(40.0, 90.0), HitOptions::default()),
+            Some((point, HitKind::Bounds))
+        );
+        assert_eq!(
+            hit(Point::new(250.0, 225.0), HitOptions::default()),
+            Some((area, HitKind::Bounds))
+        );
+        assert_eq!(
+            hit(Point::new(60.0, 320.0), HitOptions::default()),
+            Some((on_path, HitKind::Bounds))
+        );
         // On: the glyphs and the inside of the frame or path no longer pick the type.
-        assert_eq!(hit(Point::new(40.0, 90.0), path_only), None, "point type: among its glyphs");
-        assert_eq!(hit(Point::new(250.0, 225.0), path_only), None, "area type: inside its frame");
-        assert_eq!(hit(Point::new(60.0, 320.0), path_only), None, "type on a path: inside its path");
+        assert_eq!(
+            hit(Point::new(40.0, 90.0), path_only),
+            None,
+            "point type: among its glyphs"
+        );
+        assert_eq!(
+            hit(Point::new(250.0, 225.0), path_only),
+            None,
+            "area type: inside its frame"
+        );
+        assert_eq!(
+            hit(Point::new(60.0, 320.0), path_only),
+            None,
+            "type on a path: inside its path"
+        );
         // The baseline (within the tolerance, across the layout's width), frame and path do.
-        assert_eq!(hit(Point::new(40.0, 101.5), path_only), Some((point, HitKind::Outline)), "point type: its baseline");
-        assert_eq!(hit(Point::new(75.0, 100.0), path_only), None, "point type: past the end of its layout");
-        assert_eq!(hit(Point::new(250.0, 200.5), path_only), Some((area, HitKind::Outline)), "area type: its frame");
-        assert_eq!(hit(Point::new(60.0, 339.5), path_only), Some((on_path, HitKind::Outline)), "type on a path: its path");
+        assert_eq!(
+            hit(Point::new(40.0, 101.5), path_only),
+            Some((point, HitKind::Outline)),
+            "point type: its baseline"
+        );
+        assert_eq!(
+            hit(Point::new(75.0, 100.0), path_only),
+            None,
+            "point type: past the end of its layout"
+        );
+        assert_eq!(
+            hit(Point::new(250.0, 200.5), path_only),
+            Some((area, HitKind::Outline)),
+            "area type: its frame"
+        );
+        assert_eq!(
+            hit(Point::new(60.0, 339.5), path_only),
+            Some((on_path, HitKind::Outline)),
+            "type on a path: its path"
+        );
     }
 
     /// Type Object Selection by Path Only with the layout's baselines: every line's for point type,
@@ -623,13 +983,19 @@ mod tests {
         let mut add = |t: TextObject, perspective: Option<Affine>| {
             let mut n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(t)));
             n.extras_mut().perspective = perspective.map(|a| {
-                Box::new(PerspectiveAttachment { projection: Some(Homography::from_affine(a).to_array()), ..PerspectiveAttachment::new("left", 0.0) })
+                Box::new(PerspectiveAttachment {
+                    projection: Some(Homography::from_affine(a).to_array()),
+                    ..PerspectiveAttachment::new("left", 0.0)
+                })
             });
             let id = n.id;
             d.insert(Some(l), 9, n).unwrap();
             id
         };
-        let style = CharStyle { size: 20.0, ..CharStyle::default() };
+        let style = CharStyle {
+            size: 20.0,
+            ..CharStyle::default()
+        };
         // Two lines of point type at (10, 100), 24 pt apart.
         let mut point = TextObject::point(
             Point::new(10.0, 100.0),
@@ -638,11 +1004,16 @@ world",
             style.clone(),
         );
         point.cached_bounds = Some(Rect::new(0.0, -16.0, 60.0, 28.0));
-        point.cached_baselines = vec![(Point::ZERO, Point::new(60.0, 0.0)), (Point::new(0.0, 24.0), Point::new(50.0, 24.0))];
+        point.cached_baselines = vec![
+            (Point::ZERO, Point::new(60.0, 0.0)),
+            (Point::new(0.0, 24.0), Point::new(50.0, 24.0)),
+        ];
         let point = add(point, None);
         // Area type: a line inside its frame.
         let mut area = TextObject::point(Point::new(200.0, 50.0), "Area", style.clone());
-        area.kind = TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)) };
+        area.kind = TextKind::Area {
+            frame: shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+        };
         area.cached_baselines = vec![(Point::new(0.0, 16.0), Point::new(40.0, 16.0))];
         let area = add(area, None);
         // Vertical point type at (300, 200) with no baselines cached: down its first column.
@@ -654,18 +1025,57 @@ world",
         let mut moved = TextObject::point(Point::new(10.0, 350.0), "Moved", style);
         moved.cached_bounds = Some(Rect::new(0.0, -16.0, 60.0, 4.0));
         let moved = add(moved, Some(Affine::translate((100.0, 0.0))));
-        let path_only = HitOptions { type_path_only: true, ..Default::default() };
+        let path_only = HitOptions {
+            type_path_only: true,
+            ..Default::default()
+        };
         let hit = |p: Point| hit_test(&d, p, path_only).map(|h| h.leaf);
-        assert_eq!(hit(Point::new(40.0, 100.0)), Some(point), "the first line's baseline");
-        assert_eq!(hit(Point::new(40.0, 125.0)), Some(point), "the second line's");
+        assert_eq!(
+            hit(Point::new(40.0, 100.0)),
+            Some(point),
+            "the first line's baseline"
+        );
+        assert_eq!(
+            hit(Point::new(40.0, 125.0)),
+            Some(point),
+            "the second line's"
+        );
         assert_eq!(hit(Point::new(40.0, 112.0)), None, "between the lines");
-        assert_eq!(hit(Point::new(65.0, 124.0)), None, "past the end of the shorter second line");
-        assert_eq!(hit(Point::new(220.0, 66.0)), Some(area), "area type: a line's baseline");
-        assert_eq!(hit(Point::new(220.0, 80.0)), None, "area type: inside the frame, off the baselines");
-        assert_eq!(hit(Point::new(299.0, 260.0)), Some(vertical), "vertical type: down the column");
-        assert_eq!(hit(Point::new(306.0, 260.0)), None, "vertical type: beside it");
-        assert_eq!(hit(Point::new(140.0, 351.0)), Some(moved), "in perspective: where it is drawn");
-        assert_eq!(hit(Point::new(40.0, 351.0)), None, "in perspective: not where it is laid out");
+        assert_eq!(
+            hit(Point::new(65.0, 124.0)),
+            None,
+            "past the end of the shorter second line"
+        );
+        assert_eq!(
+            hit(Point::new(220.0, 66.0)),
+            Some(area),
+            "area type: a line's baseline"
+        );
+        assert_eq!(
+            hit(Point::new(220.0, 80.0)),
+            None,
+            "area type: inside the frame, off the baselines"
+        );
+        assert_eq!(
+            hit(Point::new(299.0, 260.0)),
+            Some(vertical),
+            "vertical type: down the column"
+        );
+        assert_eq!(
+            hit(Point::new(306.0, 260.0)),
+            None,
+            "vertical type: beside it"
+        );
+        assert_eq!(
+            hit(Point::new(140.0, 351.0)),
+            Some(moved),
+            "in perspective: where it is drawn"
+        );
+        assert_eq!(
+            hit(Point::new(40.0, 351.0)),
+            None,
+            "in perspective: not where it is laid out"
+        );
     }
 
     /// `objects_at`: every object under the point, topmost first; a group counts once.
@@ -673,22 +1083,42 @@ world",
     fn objects_at_lists_the_stack() {
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
-        let rect =
-            |d: &mut Document, x: f64| Node::path(d.alloc_id(), shapes::rectangle(Rect::new(x, 0.0, x + 50.0, 50.0)), Appearance::default_art());
+        let rect = |d: &mut Document, x: f64| {
+            Node::path(
+                d.alloc_id(),
+                shapes::rectangle(Rect::new(x, 0.0, x + 50.0, 50.0)),
+                Appearance::default_art(),
+            )
+        };
         let a = rect(&mut d, 0.0);
         let (b, c) = (rect(&mut d, 10.0), rect(&mut d, 20.0));
         let (a_id, b_id, c_id, g) = (a.id, b.id, c.id, d.alloc_id());
         d.insert(Some(l), 0, a).unwrap();
-        d.insert(Some(l), 9, Node::group(g, vec![Arc::new(b), Arc::new(c)])).unwrap();
+        d.insert(Some(l), 9, Node::group(g, vec![Arc::new(b), Arc::new(c)]))
+            .unwrap();
         let far = rect(&mut d, 120.0);
         d.insert(Some(l), 9, far).unwrap();
         let at = |x: f64, scope| objects_at(&d, Point::new(x, 25.0), HitOptions::default(), scope);
         assert_eq!(at(30.0, None), vec![g, a_id]);
-        assert_eq!(at(30.0, Some(g)), [c_id, b_id], "isolated: the group's own objects");
+        assert_eq!(
+            at(30.0, Some(g)),
+            [c_id, b_id],
+            "isolated: the group's own objects"
+        );
         // Isolated, the art around the group is locked: clicks pass through it (#833).
         assert!(at(5.0, Some(g)).is_empty());
         assert!(at(130.0, Some(g)).is_empty());
-        assert!(hit_test(&d, Point::new(5.0, 25.0), HitOptions { scope: Some(g), ..HitOptions::default() }).is_none());
+        assert!(
+            hit_test(
+                &d,
+                Point::new(5.0, 25.0),
+                HitOptions {
+                    scope: Some(g),
+                    ..HitOptions::default()
+                }
+            )
+            .is_none()
+        );
         assert_eq!(at(5.0, None), vec![a_id]);
         assert!(at(90.0, None).is_empty());
     }
@@ -703,11 +1133,23 @@ world",
         let mut ids = Vec::new();
         for _ in 0..256 {
             let id = d.alloc_id();
-            d.insert(Some(layer), usize::MAX, Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
+            d.insert(
+                Some(layer),
+                usize::MAX,
+                Node::path(
+                    id,
+                    shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                    Appearance::default_art(),
+                ),
+            )
+            .unwrap();
             ids.push(id);
         }
         ids.reverse();
-        assert_eq!(objects_at(&d, Point::new(25.0, 25.0), HitOptions::default(), None), ids);
+        assert_eq!(
+            objects_at(&d, Point::new(25.0, 25.0), HitOptions::default(), None),
+            ids
+        );
     }
 
     /// Match the original skip-and-retest algorithm for normal groups, sublayers, clipping,
@@ -718,40 +1160,81 @@ world",
         let layer = d.layers[0].id;
         let add = |d: &mut Document, parent, bounds| {
             let id = d.alloc_id();
-            d.insert(Some(parent), usize::MAX, Node::path(id, shapes::rectangle(bounds), Appearance::default_art())).unwrap();
+            d.insert(
+                Some(parent),
+                usize::MAX,
+                Node::path(id, shapes::rectangle(bounds), Appearance::default_art()),
+            )
+            .unwrap();
             id
         };
         add(&mut d, layer, Rect::new(0.0, 0.0, 60.0, 60.0));
         let sub = d.alloc_id();
-        d.insert(Some(layer), usize::MAX, Node::layer(sub, "Sublayer", crate::LayerColor::Preset(2))).unwrap();
+        d.insert(
+            Some(layer),
+            usize::MAX,
+            Node::layer(sub, "Sublayer", crate::LayerColor::Preset(2)),
+        )
+        .unwrap();
         add(&mut d, sub, Rect::new(0.0, 0.0, 60.0, 60.0));
         let group = d.alloc_id();
-        d.insert(Some(layer), usize::MAX, Node::group(group, Vec::new())).unwrap();
+        d.insert(Some(layer), usize::MAX, Node::group(group, Vec::new()))
+            .unwrap();
         add(&mut d, group, Rect::new(0.0, 0.0, 60.0, 60.0));
         add(&mut d, group, Rect::new(5.0, 5.0, 60.0, 60.0));
         let clip = d.alloc_id();
-        let mask = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(5.0, 5.0, 45.0, 45.0)), Appearance::default_art());
-        let content = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(0.0, 0.0, 80.0, 80.0)), Appearance::default_art());
+        let mask = Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(5.0, 5.0, 45.0, 45.0)),
+            Appearance::default_art(),
+        );
+        let content = Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(0.0, 0.0, 80.0, 80.0)),
+            Appearance::default_art(),
+        );
         let mut clipping = Node::group(clip, vec![Arc::new(mask), Arc::new(content)]);
         clipping.set_clips(true);
         d.insert(Some(layer), usize::MAX, clipping).unwrap();
         for (point, opt) in [
             (Point::new(25.0, 25.0), HitOptions::default()),
             (Point::new(3.0, 25.0), HitOptions::default()),
-            (Point::new(25.0, 25.0), HitOptions { outline: true, ..Default::default() }),
-            (Point::new(6.0, 25.0), HitOptions { path_only: true, ..Default::default() }),
+            (
+                Point::new(25.0, 25.0),
+                HitOptions {
+                    outline: true,
+                    ..Default::default()
+                },
+            ),
+            (
+                Point::new(6.0, 25.0),
+                HitOptions {
+                    path_only: true,
+                    ..Default::default()
+                },
+            ),
             (Point::new(100.0, 100.0), HitOptions::default()),
         ] {
-            assert_eq!(objects_at(&d, point, opt, None), objects_at_repeated(&d, point, opt, None), "point={point:?}, opt={opt:?}");
+            assert_eq!(
+                objects_at(&d, point, opt, None),
+                objects_at_repeated(&d, point, opt, None),
+                "point={point:?}, opt={opt:?}"
+            );
         }
         if let NodeKind::Layer { preview, .. } = &mut d.node_mut(sub).unwrap().kind {
             *preview = false;
         }
         let p = Point::new(25.0, 25.0);
         let opt = HitOptions::default();
-        assert_eq!(objects_at(&d, p, opt, None), objects_at_repeated(&d, p, opt, None));
+        assert_eq!(
+            objects_at(&d, p, opt, None),
+            objects_at_repeated(&d, p, opt, None)
+        );
         d.node_mut(group).unwrap().locked = true;
-        assert_eq!(objects_at(&d, p, opt, None), objects_at_repeated(&d, p, opt, None));
+        assert_eq!(
+            objects_at(&d, p, opt, None),
+            objects_at_repeated(&d, p, opt, None)
+        );
     }
 
     /// Documents built at random (nested groups, sublayers, clipping groups, compound paths, blends
@@ -770,8 +1253,17 @@ world",
             for _ in 0..2 + next(4) {
                 let id = d.alloc_id();
                 let (x, y) = (f64::from(next(60)), f64::from(next(60)));
-                let rect = Rect::new(x, y, x + 10.0 + f64::from(next(50)), y + 10.0 + f64::from(next(50)));
-                let appearance = if next(4) == 0 { Appearance::default() } else { Appearance::default_art() };
+                let rect = Rect::new(
+                    x,
+                    y,
+                    x + 10.0 + f64::from(next(50)),
+                    y + 10.0 + f64::from(next(50)),
+                );
+                let appearance = if next(4) == 0 {
+                    Appearance::default()
+                } else {
+                    Appearance::default_art()
+                };
                 let mut n = match next(if depth < 3 { 8 } else { 4 }) {
                     4 | 5 => Node::group(id, Vec::new()),
                     6 => Node::layer(id, "Sublayer", crate::LayerColor::Preset(2)),
@@ -801,8 +1293,16 @@ world",
             fill(&mut d, layer, 0, &mut next);
             for _ in 0..12 {
                 let p = Point::new(f64::from(next(120)), f64::from(next(120)));
-                let opt = HitOptions { outline: next(5) == 0, path_only: next(5) == 0, ..Default::default() };
-                assert_eq!(objects_at(&d, p, opt, None), objects_at_repeated(&d, p, opt, None), "round {round}, {p:?}, {opt:?}");
+                let opt = HitOptions {
+                    outline: next(5) == 0,
+                    path_only: next(5) == 0,
+                    ..Default::default()
+                };
+                assert_eq!(
+                    objects_at(&d, p, opt, None),
+                    objects_at_repeated(&d, p, opt, None),
+                    "round {round}, {p:?}, {opt:?}"
+                );
             }
         }
     }
@@ -813,13 +1313,25 @@ world",
     fn objects_at_edit_contents_uses_general_order() {
         let mut d = Document::new(100.0, 100.0);
         let layer = d.layers[0].id;
-        let inner = |id| Arc::new(Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art()));
+        let inner = |id| {
+            Arc::new(Node::path(
+                id,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ))
+        };
         let (a, b) = (d.alloc_id(), d.alloc_id());
         let e = Node::new(
             d.alloc_id(),
             NodeKind::Envelope {
                 content: vec![inner(a), inner(b)],
-                kind: Box::new(crate::live::EnvelopeKind::Warp { style: "arc".to_string(), bend: 0.0, h: 0.0, v: 0.0, horizontal: true }),
+                kind: Box::new(crate::live::EnvelopeKind::Warp {
+                    style: "arc".to_string(),
+                    bend: 0.0,
+                    h: 0.0,
+                    v: 0.0,
+                    horizontal: true,
+                }),
                 fidelity: 100.0,
                 editing: true,
                 options: Default::default(),
@@ -829,7 +1341,10 @@ world",
         d.insert(Some(layer), usize::MAX, e).unwrap();
         let p = Point::new(25.0, 25.0);
         let opt = HitOptions::default();
-        assert_eq!(objects_at(&d, p, opt, None), objects_at_repeated(&d, p, opt, None));
+        assert_eq!(
+            objects_at(&d, p, opt, None),
+            objects_at_repeated(&d, p, opt, None)
+        );
         assert_eq!(objects_at(&d, p, opt, None), vec![b, a]);
     }
 
@@ -838,7 +1353,16 @@ world",
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let a = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         d.node_mut(a).unwrap().locked = true;
         assert!(hit_test(&d, Point::new(10.0, 10.0), HitOptions::default()).is_none());
         d.node_mut(a).unwrap().locked = false;
@@ -851,12 +1375,24 @@ world",
         let mut d = Document::new(200.0, 200.0);
         let l = d.layers[0].id;
         let a = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 50.0, 50.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let p = Point::new(10.0, 10.0);
         for lock in [a, l] {
             d.node_mut(lock).unwrap().locked = true;
             assert!(hit_test(&d, p, HitOptions::default()).is_none());
-            assert_eq!(hit_test_visible(&d, p, HitOptions::default()).unwrap().leaf, a);
+            assert_eq!(
+                hit_test_visible(&d, p, HitOptions::default()).unwrap().leaf,
+                a
+            );
             assert!(d.node(lock).unwrap().locked);
             d.node_mut(lock).unwrap().locked = false;
         }

@@ -65,7 +65,7 @@ fn main() {
                 if exemples.len() < 5 {
                     exemples.push(format!("ré-encodage divergent : {}", chemin.display()));
                 }
-            },
+            }
         }
 
         let echelles = anim.scales();
@@ -83,10 +83,10 @@ fn main() {
                     f32_total += 1;
                     match echelle {
                         Some(1.0) => f32_echelle_un += 1,
-                        Some(_) => {},
+                        Some(_) => {}
                         None => f32_hors_table += 1,
                     }
-                },
+                }
                 Quant::Unorm16 | Quant::Snorm16 => {
                     quant_total += 1;
                     let Some(e) = echelle else {
@@ -111,16 +111,16 @@ fn main() {
                                     ));
                                 }
                             }
-                        },
+                        }
                         None => sans_echelle += 1,
                     }
-                },
+                }
                 Quant::Inconnu { mode, size } => {
                     match inconnus.iter_mut().find(|(k, _)| *k == (mode, size)) {
                         Some((_, n)) => *n += 1,
                         None => inconnus.push(((mode, size), 1)),
                     }
-                },
+                }
             }
             // Un canal f32 doit porter un flux f32 : sinon le couple (mode, taille) ment.
             debug_assert!(
@@ -131,10 +131,17 @@ fn main() {
 
     inconnus.sort();
     let pct = |a: u32, b: u32| {
-        if b == 0 { 0.0 } else { f64::from(a) * 100.0 / f64::from(b) }
+        if b == 0 {
+            0.0
+        } else {
+            f64::from(a) * 100.0 / f64::from(b)
+        }
     };
 
-    println!("fichiers          {} vus, {lus} décodés, {illisibles} illisibles", fichiers.len());
+    println!(
+        "fichiers          {} vus, {lus} décodés, {illisibles} illisibles",
+        fichiers.len()
+    );
     println!("RÉ-ENCODAGE       {byte_exact}/{lus} byte-exact, {divergents} divergents");
     println!();
     println!("INVARIANT 1 — un canal f32 désigne une échelle de 1.0");
@@ -150,7 +157,10 @@ fn main() {
     );
     println!();
     println!("INVARIANT 3 — les tables de temps sont croissantes");
-    println!("  {temps_croissants}/{temps_total} ({:.2} %)", pct(temps_croissants, temps_total));
+    println!(
+        "  {temps_croissants}/{temps_total} ({:.2} %)",
+        pct(temps_croissants, temps_total)
+    );
     println!();
     println!("NON RÉSOLU — (mode, taille) sans décodeur prouvé");
     for ((mode, size), n) in &inconnus {

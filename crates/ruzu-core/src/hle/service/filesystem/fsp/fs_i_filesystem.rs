@@ -211,7 +211,11 @@ impl IFileSystem {
     }
 
     fn rename_directory(&self, old_path: &str, new_path: &str) -> ResultCode {
-        log::debug!("IFileSystem::RenameDirectory called. directory '{}' to directory '{}'", old_path, new_path);
+        log::debug!(
+            "IFileSystem::RenameDirectory called. directory '{}' to directory '{}'",
+            old_path,
+            new_path
+        );
         match self.backend.rename_directory(old_path, new_path) {
             Ok(()) => RESULT_SUCCESS,
             Err(rc) => ResultCode::new(rc.0),
@@ -726,23 +730,37 @@ mod tests {
 
     #[test]
     fn rename_directory_is_registered_and_preserves_backend_results() {
-        use crate::file_sys::vfs::vfs_vector::VectorVfsDirectory;
-        use crate::file_sys::vfs::vfs_types::VirtualDir;
-        use crate::hle::service::service::ServiceFramework;
         use super::SizeGetter;
+        use crate::file_sys::vfs::vfs_types::VirtualDir;
+        use crate::file_sys::vfs::vfs_vector::VectorVfsDirectory;
+        use crate::hle::service::service::ServiceFramework;
         use std::sync::Arc;
-        let child: VirtualDir = Arc::new(VectorVfsDirectory::new(vec![], vec![], "old".into(), None));
-        let root: VirtualDir = Arc::new(VectorVfsDirectory::new(vec![], vec![child.clone()], "root".into(), None));
-        let service = IFileSystem::new(root, SizeGetter {
-            get_free_size: Box::new(|| 0), get_total_size: Box::new(|| 0),
-        });
+        let child: VirtualDir =
+            Arc::new(VectorVfsDirectory::new(vec![], vec![], "old".into(), None));
+        let root: VirtualDir = Arc::new(VectorVfsDirectory::new(
+            vec![],
+            vec![child.clone()],
+            "root".into(),
+            None,
+        ));
+        let service = IFileSystem::new(
+            root,
+            SizeGetter {
+                get_free_size: Box::new(|| 0),
+                get_total_size: Box::new(|| 0),
+            },
+        );
         let entry = &service.handlers()[&6];
         assert_eq!(entry.name, "RenameDirectory");
         assert!(entry.handler_callback.is_some());
         assert!(service.rename_directory("/old", "/new").is_success());
         assert_eq!(child.get_name(), "new");
-        assert_eq!(service.rename_directory("/absent", "/new").get_inner_value(),
-            crate::file_sys::errors::RESULT_PATH_NOT_FOUND.0);
+        assert_eq!(
+            service
+                .rename_directory("/absent", "/new")
+                .get_inner_value(),
+            crate::file_sys::errors::RESULT_PATH_NOT_FOUND.0
+        );
         let mut ctx = HLERequestContext::new();
         entry.handler_callback.unwrap()(&service, &mut ctx);
         assert_ne!(ctx.cmd_buf[6], 0); // Missing X paths must not return success.

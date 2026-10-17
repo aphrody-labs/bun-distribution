@@ -47,7 +47,14 @@ fn render(ctx: EvalCtx, comp: ItemId, layer: &Layer, post: bool, t: f64) -> Opti
     if depth >= MAX_DEPTH {
         return None;
     }
-    let key: Key = (ctx.project as *const _ as usize, comp.0, layer.id.0, t.to_bits(), post, fingerprint(layer));
+    let key: Key = (
+        ctx.project as *const _ as usize,
+        comp.0,
+        layer.id.0,
+        t.to_bits(),
+        post,
+        fingerprint(layer),
+    );
     if let Some(hit) = CACHE.with(|c| c.borrow().get(&key).cloned()) {
         return hit;
     }
@@ -60,13 +67,28 @@ fn render(ctx: EvalCtx, comp: ItemId, layer: &Layer, post: bool, t: f64) -> Opti
     }
     let _pop = Pop;
     let footage: &dyn effectcraft_render::FootageSource = ctx.footage.unwrap_or(&NoFootage);
-    let mut r = Renderer::new(ctx.project, footage, RenderOpts { motion_blur: false, ..Default::default() });
+    let mut r = Renderer::new(
+        ctx.project,
+        footage,
+        RenderOpts {
+            motion_blur: false,
+            ..Default::default()
+        },
+    );
     r.expr = ctx.expr;
     let ectx = r.eval_ctx(comp, Tick::from_seconds_f64(t))?;
     let out = if post {
-        r.content_buf(&ectx, layer).map(|b| Sampled { img: Arc::new(b.img.clone()), offset: b.offset, scale: b.scale })
+        r.content_buf(&ectx, layer).map(|b| Sampled {
+            img: Arc::new(b.img.clone()),
+            offset: b.offset,
+            scale: b.scale,
+        })
     } else {
-        r.layer_source(&ectx, layer).map(|b| Sampled { img: Arc::new(b.img), offset: b.offset, scale: b.scale })
+        r.layer_source(&ectx, layer).map(|b| Sampled {
+            img: Arc::new(b.img),
+            offset: b.offset,
+            scale: b.scale,
+        })
     };
     CACHE.with(|c| {
         let mut c = c.borrow_mut();
@@ -80,11 +102,21 @@ fn render(ctx: EvalCtx, comp: ItemId, layer: &Layer, post: bool, t: f64) -> Opti
 
 /// The average colour (straight RGBA, 0..1) of `layer`'s pixels in the box `point ± radius`
 /// (layer pixels) at comp time `t`. Transparent outside the layer.
-pub fn sample_image(ctx: EvalCtx, comp: ItemId, layer: &Layer, point: [f64; 2], radius: [f64; 2], post: bool, t: f64) -> Option<[f32; 4]> {
+pub fn sample_image(
+    ctx: EvalCtx,
+    comp: ItemId,
+    layer: &Layer,
+    point: [f64; 2],
+    radius: [f64; 2],
+    post: bool,
+    t: f64,
+) -> Option<[f32; 4]> {
     if !layer.source.is_av() {
         return Some([0.0; 4]);
     }
-    let Some(b) = render(ctx, comp, layer, post, t) else { return Some([0.0; 4]) };
+    let Some(b) = render(ctx, comp, layer, post, t) else {
+        return Some([0.0; 4]);
+    };
     let to_px = |x: f64, y: f64| (x * b.scale + b.offset[0], y * b.scale + b.offset[1]);
     let (rx, ry) = (radius[0].abs() * b.scale, radius[1].abs() * b.scale);
     let (cx, cy) = to_px(point[0], point[1]);
@@ -95,7 +127,12 @@ pub fn sample_image(ctx: EvalCtx, comp: ItemId, layer: &Layer, point: [f64; 2], 
     } else {
         let lo = |c: f64, r: f64| (c - r - 0.5).ceil() as i64;
         let hi = |c: f64, r: f64| (c + r - 0.5).floor() as i64;
-        (lo(cx, rx), hi(cx, rx).max(lo(cx, rx)), lo(cy, ry), hi(cy, ry).max(lo(cy, ry)))
+        (
+            lo(cx, rx),
+            hi(cx, rx).max(lo(cx, rx)),
+            lo(cy, ry),
+            hi(cy, ry).max(lo(cy, ry)),
+        )
     };
     let mut acc = [0.0f64; 4];
     let mut n = 0.0;
@@ -115,5 +152,10 @@ pub fn sample_image(ctx: EvalCtx, comp: ItemId, layer: &Layer, point: [f64; 2], 
     if a <= 1e-9 {
         return Some([0.0; 4]);
     }
-    Some([(acc[0] / n / a) as f32, (acc[1] / n / a) as f32, (acc[2] / n / a) as f32, a as f32])
+    Some([
+        (acc[0] / n / a) as f32,
+        (acc[1] / n / a) as f32,
+        (acc[2] / n / a) as f32,
+        a as f32,
+    ])
 }

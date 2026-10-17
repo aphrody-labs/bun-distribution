@@ -39,7 +39,11 @@ pub fn from_position_rotation(x: f64, y: f64, degrees: f64) -> Affine {
 pub fn set_rotation_about_center(xf: Affine, w: f64, h: f64, degrees: f64) -> Affine {
     let center_local = Point::new(w / 2.0, h / 2.0);
     let center = xf * center_local;
-    let flip = if is_flipped(xf) { Affine::FLIP_Y } else { Affine::IDENTITY };
+    let flip = if is_flipped(xf) {
+        Affine::FLIP_Y
+    } else {
+        Affine::IDENTITY
+    };
     let rot = Affine::rotate(-degrees.to_radians());
     let lin = rot * flip;
     // Solve translation so that lin * center_local + t = center.
@@ -51,7 +55,10 @@ pub fn set_rotation_about_center(xf: Affine, w: f64, h: f64, degrees: f64) -> Af
 
 /// Rotate `xf` by `degrees` (Figma convention) about the point `pivot` (parent space).
 pub fn rotate_about(xf: Affine, pivot: Point, degrees: f64) -> Affine {
-    Affine::translate(pivot.to_vec2()) * Affine::rotate(-degrees.to_radians()) * Affine::translate(-pivot.to_vec2()) * xf
+    Affine::translate(pivot.to_vec2())
+        * Affine::rotate(-degrees.to_radians())
+        * Affine::translate(-pivot.to_vec2())
+        * xf
 }
 
 /// Round a value to `digits` decimals for display (avoids `-0` and float noise).

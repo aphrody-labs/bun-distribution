@@ -5,16 +5,29 @@ mod common;
 
 fn check(name: &str) {
     let f = common::fixture(name);
-    let Some((ivf, yuv)) = common::ensure(f) else { return };
+    let Some((ivf, yuv)) = common::ensure(f) else {
+        return;
+    };
     let data = std::fs::read(&ivf).unwrap();
     let reference = std::fs::read(&yuv).unwrap();
     let pictures = common::decode_all(&common::ivf_frames(&data));
     let (w, h) = (f.width as usize, f.height as usize);
     let size = w * h + 2 * w.div_ceil(2) * h.div_ceil(2);
-    assert_eq!(pictures.len(), reference.len() / size, "{name}: picture count");
+    assert_eq!(
+        pictures.len(),
+        reference.len() / size,
+        "{name}: picture count"
+    );
     for (i, p) in pictures.iter().enumerate() {
-        assert_eq!((p.width as usize, p.height as usize), (w, h), "{name}: size of picture {i}");
-        assert!(common::i420(p) == reference[i * size..(i + 1) * size], "{name}: picture {i} differs from libvpx");
+        assert_eq!(
+            (p.width as usize, p.height as usize),
+            (w, h),
+            "{name}: size of picture {i}"
+        );
+        assert!(
+            common::i420(p) == reference[i * size..(i + 1) * size],
+            "{name}: picture {i} differs from libvpx"
+        );
     }
 }
 
@@ -55,7 +68,9 @@ fixture_tests!(
 fn hidden_and_disposable_frames() {
     for name in ["altref_2pass", "temporal_layers"] {
         let f = common::fixture(name);
-        let Some((ivf, _)) = common::ensure(f) else { return };
+        let Some((ivf, _)) = common::ensure(f) else {
+            return;
+        };
         let data = std::fs::read(&ivf).unwrap();
         let frames = common::ivf_frames(&data);
         // every picture, and which frames could be left out (asked right before each is decoded)
@@ -70,12 +85,19 @@ fn hidden_and_disposable_frames() {
         }
         let stats = dec.stats();
         assert_eq!(stats.frames as usize, frames.len());
-        assert_eq!(all.len() + stats.hidden_frames as usize, frames.len(), "{name}: one picture per shown frame");
+        assert_eq!(
+            all.len() + stats.hidden_frames as usize,
+            frames.len(),
+            "{name}: one picture per shown frame"
+        );
         if name == "altref_2pass" {
             assert!(stats.hidden_frames > 0, "{name}: has hidden altref frames");
         }
         if name == "temporal_layers" {
-            assert!(disposable.iter().filter(|&&d| d).count() >= frames.len() / 3, "{name}: the enhancement layer is disposable: {disposable:?}");
+            assert!(
+                disposable.iter().filter(|&&d| d).count() >= frames.len() / 3,
+                "{name}: the enhancement layer is disposable: {disposable:?}"
+            );
         }
         let mut dec = filmcraft_vp8::Decoder::new();
         for (i, f) in frames.iter().enumerate() {
@@ -83,8 +105,15 @@ fn hidden_and_disposable_frames() {
                 continue;
             }
             if let Some(p) = dec.decode(f, i as i64).unwrap() {
-                let reference = all.iter().find(|(pts, _)| *pts == p.pts).expect("picture of a shown frame");
-                assert!(common::i420(&p) == reference.1, "{name}: picture {} changed after leaving out disposable frames", p.pts);
+                let reference = all
+                    .iter()
+                    .find(|(pts, _)| *pts == p.pts)
+                    .expect("picture of a shown frame");
+                assert!(
+                    common::i420(&p) == reference.1,
+                    "{name}: picture {} changed after leaving out disposable frames",
+                    p.pts
+                );
             }
         }
     }

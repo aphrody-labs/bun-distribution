@@ -75,7 +75,10 @@ mod tests {
 
     #[test]
     fn preserves_unknowns_and_rejects_missing_or_empty_values() {
-        assert_eq!(get_item_category_label(Some("new_category")), Some("new_category"));
+        assert_eq!(
+            get_item_category_label(Some("new_category")),
+            Some("new_category")
+        );
         assert_eq!(get_item_category_label(Some("")), None);
         assert_eq!(get_item_category_label(None), None);
     }

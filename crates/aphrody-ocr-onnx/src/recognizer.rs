@@ -46,10 +46,12 @@ impl PpOcrRecognizer {
 
         let entry = Catalog::builtin().get(entry_id)?;
         let config_file =
-            entry.file("recognizer-config").ok_or_else(|| OnnxOcrError::MissingCatalogRole {
-                entry: entry_id.to_owned(),
-                role: "recognizer-config".into(),
-            })?;
+            entry
+                .file("recognizer-config")
+                .ok_or_else(|| OnnxOcrError::MissingCatalogRole {
+                    entry: entry_id.to_owned(),
+                    role: "recognizer-config".into(),
+                })?;
         let store = ModelStore::open()?;
         let config_path = store
             .get(&config_file.reference)?
@@ -80,7 +82,10 @@ impl PpOcrRecognizer {
             .session
             .inputs()
             .first()
-            .ok_or_else(|| OnnxOcrError::MissingTensorSlot { kind: "input", count: 0 })?
+            .ok_or_else(|| OnnxOcrError::MissingTensorSlot {
+                kind: "input",
+                count: 0,
+            })?
             .name()
             .to_owned();
         let output = self
@@ -89,12 +94,17 @@ impl PpOcrRecognizer {
             .run(ort::inputs![input_name => TensorRef::from_array_view(&input)?])?;
         let output_count = output.len();
         if output_count == 0 {
-            return Err(OnnxOcrError::MissingTensorSlot { kind: "output", count: output_count });
+            return Err(OnnxOcrError::MissingTensorSlot {
+                kind: "output",
+                count: output_count,
+            });
         }
         let logits = output[0].try_extract_array::<f32>()?;
         let shape = logits.shape();
         if shape.len() != 3 || shape[0] != 1 {
-            return Err(OnnxOcrError::UnexpectedOutputShape { shape: shape.to_vec() });
+            return Err(OnnxOcrError::UnexpectedOutputShape {
+                shape: shape.to_vec(),
+            });
         }
         if shape[2] != self.decoder.class_count() {
             return Err(OnnxOcrError::ClassCountMismatch {
@@ -103,9 +113,14 @@ impl PpOcrRecognizer {
             });
         }
         let sequence = logits.index_axis(Axis(0), 0);
-        let data = sequence.as_slice().ok_or(OnnxOcrError::NonContiguousOutput)?;
+        let data = sequence
+            .as_slice()
+            .ok_or(OnnxOcrError::NonContiguousOutput)?;
         let rows = data.chunks_exact(shape[2]).collect::<Vec<_>>();
-        Ok(Recognition { decoded: self.decoder.decode(&rows), content_width })
+        Ok(Recognition {
+            decoded: self.decoder.decode(&rows),
+            content_width,
+        })
     }
 
     /// Report the execution provider that built the recognizer session.
@@ -123,7 +138,9 @@ fn preprocess(crop: &DynamicImage) -> (Array4<f32>, u32) {
         .div_ceil(u64::from(height))
         .clamp(1, u64::from(REC_WIDTH));
     let content_width = u32::try_from(scaled).expect("PP-OCR configured width fits u32");
-    let pixels = crop.resize_exact(content_width, REC_HEIGHT, FilterType::Lanczos3).to_rgb8();
+    let pixels = crop
+        .resize_exact(content_width, REC_HEIGHT, FilterType::Lanczos3)
+        .to_rgb8();
     let mut tensor = Array4::zeros((1, 3, REC_HEIGHT as usize, REC_WIDTH as usize));
     for y in 0..REC_HEIGHT {
         for x in 0..content_width {

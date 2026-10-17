@@ -26,7 +26,10 @@ fn verifier(relatif: &str, attendu: &str) {
 
 #[test]
 fn les_donnees_web_sont_a_jour() {
-    verifier("assets/aphrody/web.json", &web::web_json_embarque().expect("données web"));
+    verifier(
+        "assets/aphrody/web.json",
+        &web::web_json_embarque().expect("données web"),
+    );
 }
 
 #[test]

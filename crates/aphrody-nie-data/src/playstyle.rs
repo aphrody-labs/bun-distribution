@@ -115,7 +115,10 @@ pub fn parse_playstyle_node(node: &Node<'_>) -> Option<PlaystyleEntry> {
     if values.len() < 6 {
         return None;
     }
-    Some(PlaystyleEntry { chara_param_id: HashId::from_i64(values[0]), play_style: values[5] })
+    Some(PlaystyleEntry {
+        chara_param_id: HashId::from_i64(values[0]),
+        play_style: values[5],
+    })
 }
 
 /// Parse tous les styles de jeu d'un `chara_param_*.cfg.bin.json` désérialisé.

@@ -17,7 +17,14 @@ pub enum Trigger {
 }
 
 impl Trigger {
-    pub const ALL: [Trigger; 6] = [Trigger::MouseUp, Trigger::MouseDown, Trigger::MouseEnter, Trigger::MouseExit, Trigger::OnFocus, Trigger::OnBlur];
+    pub const ALL: [Trigger; 6] = [
+        Trigger::MouseUp,
+        Trigger::MouseDown,
+        Trigger::MouseEnter,
+        Trigger::MouseExit,
+        Trigger::OnFocus,
+        Trigger::OnBlur,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -90,7 +97,11 @@ impl FieldAction {
             FieldAction::Reset(f) => format!("Reset a form: {}", f.join(", ")),
             FieldAction::Named(n) => format!("Execute a menu item: {n}"),
             FieldAction::GoTo(p) => format!("Go to a page view: page {}", p + 1),
-            FieldAction::ShowHide { fields, hide } => format!("{} a field: {}", if *hide { "Hide" } else { "Show" }, fields.join(", ")),
+            FieldAction::ShowHide { fields, hide } => format!(
+                "{} a field: {}",
+                if *hide { "Hide" } else { "Show" },
+                fields.join(", ")
+            ),
             FieldAction::Submit(u) => format!("Submit a form: {u}"),
             FieldAction::Other(s) => s.clone(),
         }
@@ -99,7 +110,10 @@ impl FieldAction {
 
 fn texts(doc: &Document, o: &Object) -> Vec<String> {
     match &*doc.resolve(o) {
-        Object::Array(a) => a.iter().filter_map(|x| doc.resolve(x).as_string().map(|s| s.to_text())).collect(),
+        Object::Array(a) => a
+            .iter()
+            .filter_map(|x| doc.resolve(x).as_string().map(|s| s.to_text()))
+            .collect(),
         Object::String(s) => vec![s.to_text()],
         _ => Vec::new(),
     }
@@ -110,9 +124,19 @@ fn read(doc: &Document, o: &Object, pages: &[pdfcraft_cos::ObjRef]) -> Option<Fi
     let d = a.as_dict()?;
     Some(match d.name(b"S")? {
         b"JavaScript" => FieldAction::JavaScript(crate::script(doc, o).unwrap_or_default()),
-        b"URI" => FieldAction::Uri(d.get(b"URI").and_then(|u| doc.resolve(u).as_string().map(|s| s.to_text())).unwrap_or_default()),
-        b"ResetForm" => FieldAction::Reset(d.get(b"Fields").map(|f| texts(doc, f)).unwrap_or_default()),
-        b"Named" => FieldAction::Named(d.name(b"N").map(|n| String::from_utf8_lossy(n).into_owned()).unwrap_or_default()),
+        b"URI" => FieldAction::Uri(
+            d.get(b"URI")
+                .and_then(|u| doc.resolve(u).as_string().map(|s| s.to_text()))
+                .unwrap_or_default(),
+        ),
+        b"ResetForm" => {
+            FieldAction::Reset(d.get(b"Fields").map(|f| texts(doc, f)).unwrap_or_default())
+        }
+        b"Named" => FieldAction::Named(
+            d.name(b"N")
+                .map(|n| String::from_utf8_lossy(n).into_owned())
+                .unwrap_or_default(),
+        ),
         b"GoTo" => {
             let dest = d.get(b"D").map(|x| doc.resolve(x))?;
             let target = dest.as_array()?.first()?.as_ref()?;
@@ -126,9 +150,11 @@ fn read(doc: &Document, o: &Object, pages: &[pdfcraft_cos::ObjRef]) -> Option<Fi
             d.get(b"F")
                 .map(|f| doc.resolve(f))
                 .and_then(|f| {
-                    f.as_string()
-                        .map(|s| s.to_text())
-                        .or_else(|| f.as_dict().and_then(|fd| fd.get(b"F")).and_then(|x| doc.resolve(x).as_string().map(|s| s.to_text())))
+                    f.as_string().map(|s| s.to_text()).or_else(|| {
+                        f.as_dict()
+                            .and_then(|fd| fd.get(b"F"))
+                            .and_then(|x| doc.resolve(x).as_string().map(|s| s.to_text()))
+                    })
                 })
                 .unwrap_or_default(),
         ),
@@ -139,11 +165,20 @@ fn read(doc: &Document, o: &Object, pages: &[pdfcraft_cos::ObjRef]) -> Option<Fi
 /// The actions of field `name` (its first widget), by trigger, in the tab's order.
 pub fn field_actions(doc: &Document, name: &str) -> Result<Vec<(Trigger, FieldAction)>, FormError> {
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?;
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?;
     let pages = crate::page_refs(doc);
-    let Some(w) = f.widgets.first() else { return Ok(Vec::new()) };
+    let Some(w) = f.widgets.first() else {
+        return Ok(Vec::new());
+    };
     let wd = doc.get(w.obj).as_dict().cloned().unwrap_or_default();
-    let aa = wd.get(b"AA").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()).unwrap_or_default();
+    let aa = wd
+        .get(b"AA")
+        .map(|a| doc.resolve(a))
+        .and_then(|a| a.as_dict().cloned())
+        .unwrap_or_default();
     let mut out = Vec::new();
     for t in Trigger::ALL {
         let o = match t.key() {
@@ -158,10 +193,20 @@ pub fn field_actions(doc: &Document, name: &str) -> Result<Vec<(Trigger, FieldAc
     Ok(out)
 }
 
-fn write(doc: &mut Document, a: &FieldAction, pages: &[pdfcraft_cos::ObjRef]) -> Result<Option<Object>, FormError> {
+fn write(
+    doc: &mut Document,
+    a: &FieldAction,
+    pages: &[pdfcraft_cos::ObjRef],
+) -> Result<Option<Object>, FormError> {
     let mut d = Dict::new();
     d.set(b"Type".to_vec(), Object::name("Action"));
-    let list = |v: &[String]| Object::Array(v.iter().map(|s| Object::String(PdfString::text(s))).collect());
+    let list = |v: &[String]| {
+        Object::Array(
+            v.iter()
+                .map(|s| Object::String(PdfString::text(s)))
+                .collect(),
+        )
+    };
     match a {
         FieldAction::JavaScript(js) => {
             d.set(b"S".to_vec(), Object::name("JavaScript"));
@@ -182,9 +227,14 @@ fn write(doc: &mut Document, a: &FieldAction, pages: &[pdfcraft_cos::ObjRef]) ->
             d.set(b"N".to_vec(), Object::name(n));
         }
         FieldAction::GoTo(p) => {
-            let page = *pages.get(*p).ok_or_else(|| FormError::Invalid(format!("the document has no page {}", p + 1)))?;
+            let page = *pages
+                .get(*p)
+                .ok_or_else(|| FormError::Invalid(format!("the document has no page {}", p + 1)))?;
             d.set(b"S".to_vec(), Object::name("GoTo"));
-            d.set(b"D".to_vec(), Object::Array(vec![Object::Ref(page), Object::name("Fit")]));
+            d.set(
+                b"D".to_vec(),
+                Object::Array(vec![Object::Ref(page), Object::name("Fit")]),
+            );
         }
         FieldAction::ShowHide { fields, hide } => {
             d.set(b"S".to_vec(), Object::name("Hide"));
@@ -207,13 +257,25 @@ fn write(doc: &mut Document, a: &FieldAction, pages: &[pdfcraft_cos::ObjRef]) ->
 
 /// Replace field `name`'s actions (on every widget) with `actions`; triggers not listed lose
 /// theirs. `Other` actions are left as they are.
-pub fn set_field_actions(doc: &mut Document, name: &str, actions: &[(Trigger, FieldAction)]) -> Result<(), FormError> {
+pub fn set_field_actions(
+    doc: &mut Document,
+    name: &str,
+    actions: &[(Trigger, FieldAction)],
+) -> Result<(), FormError> {
     let all = fields(doc);
-    let f = all.iter().find(|f| f.name == name).ok_or_else(|| FormError::NoSuchField(name.into()))?.clone();
+    let f = all
+        .iter()
+        .find(|f| f.name == name)
+        .ok_or_else(|| FormError::NoSuchField(name.into()))?
+        .clone();
     let pages = crate::page_refs(doc);
     for w in &f.widgets {
         let wd = doc.get(w.obj).as_dict().cloned().unwrap_or_default();
-        let mut aa = wd.get(b"AA").map(|a| doc.resolve(a)).and_then(|a| a.as_dict().cloned()).unwrap_or_default();
+        let mut aa = wd
+            .get(b"AA")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_dict().cloned())
+            .unwrap_or_default();
         let mut a_entry = wd.get(b"A").cloned();
         for t in Trigger::ALL {
             let new = actions.iter().find(|(x, _)| *x == t).map(|(_, a)| a);

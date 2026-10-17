@@ -31,7 +31,12 @@ fn plates_section(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let v = proof::view();
     let on = v.separations.is_some();
-    if widgets::check(ui, tl!("Overprint Preview (separations)"), on, app.session.active().is_some()) {
+    if widgets::check(
+        ui,
+        tl!("Overprint Preview (separations)"),
+        on,
+        app.session.active().is_some(),
+    ) {
         run(app, "view.separationsPreview", json!({"on": !on}));
     }
     let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
@@ -39,7 +44,11 @@ fn plates_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         return;
     };
     let plates = proof::plates(&doc);
-    let visible = |n: &str| v.separations.as_ref().is_none_or(|s| s.iter().any(|x| x == n));
+    let visible = |n: &str| {
+        v.separations
+            .as_ref()
+            .is_none_or(|s| s.iter().any(|x| x == n))
+    };
     let alt = ui.input(|i| i.modifiers.alt);
     widgets::list_box(ui, |ui| {
         let all_on = plates.iter().all(|p| visible(&p.name));
@@ -57,7 +66,13 @@ fn plates_section(app: &mut VectorcraftApp, ui: &mut Ui) {
                 let vis = visible(&p.name);
                 let mut clicked = false;
                 ui.add_enabled_ui(on, |ui| {
-                    clicked = widgets::toggle_icon(ui, "eye", vis, 18.0, tl!("Show/hide plate (Alt-click: only this plate)"));
+                    clicked = widgets::toggle_icon(
+                        ui,
+                        "eye",
+                        vis,
+                        18.0,
+                        tl!("Show/hide plate (Alt-click: only this plate)"),
+                    );
                 });
                 if clicked && on {
                     let key = if alt { "only" } else { "toggle" };
@@ -65,9 +80,21 @@ fn plates_section(app: &mut VectorcraftApp, ui: &mut Ui) {
                 }
                 let (r, _) = ui.allocate_exact_size(vec2(14.0, 14.0), Sense::hover());
                 let q = |x: f32| (x.clamp(0.0, 1.0) * 255.0).round() as u8;
-                ui.painter().rect_filled(r, 2.0, egui::Color32::from_rgb(q(p.rgb[0]), q(p.rgb[1]), q(p.rgb[2])));
-                let label = if p.spot { crate::i18n::fmt(tl!("{name} (spot)"), &[("name", &p.name)]) } else { p.name.clone() };
-                ui.label(egui::RichText::new(label).size(12.0).color(if on { t.text } else { t.text_dim }));
+                ui.painter().rect_filled(
+                    r,
+                    2.0,
+                    egui::Color32::from_rgb(q(p.rgb[0]), q(p.rgb[1]), q(p.rgb[2])),
+                );
+                let label = if p.spot {
+                    crate::i18n::fmt(tl!("{name} (spot)"), &[("name", &p.name)])
+                } else {
+                    p.name.clone()
+                };
+                ui.label(egui::RichText::new(label).size(12.0).color(if on {
+                    t.text
+                } else {
+                    t.text_dim
+                }));
             });
         }
     });
@@ -75,11 +102,35 @@ fn plates_section(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// A dropdown of the `kind` profiles after `extra` (a built-in entry, shown in the UI language);
 /// profile names are shown as they are. Returns the chosen name.
-fn profile_dropdown(ui: &mut Ui, id: &str, current: &str, kind: ProfileKind, extra: Option<&str>) -> Option<String> {
-    let names: Vec<String> =
-        extra.map(str::to_string).into_iter().chain(cms::profiles().into_iter().filter(|p| p.kind == kind).map(|p| p.name)).collect();
-    let refs: Vec<&str> = names.iter().map(|n| super::label_or_name(n, extra == Some(n.as_str()))).collect();
-    widgets::dropdown_names(ui, id, super::label_or_name(current, extra == Some(current)), &refs, 210.0).and_then(|i| names.get(i).cloned())
+fn profile_dropdown(
+    ui: &mut Ui,
+    id: &str,
+    current: &str,
+    kind: ProfileKind,
+    extra: Option<&str>,
+) -> Option<String> {
+    let names: Vec<String> = extra
+        .map(str::to_string)
+        .into_iter()
+        .chain(
+            cms::profiles()
+                .into_iter()
+                .filter(|p| p.kind == kind)
+                .map(|p| p.name),
+        )
+        .collect();
+    let refs: Vec<&str> = names
+        .iter()
+        .map(|n| super::label_or_name(n, extra == Some(n.as_str())))
+        .collect();
+    widgets::dropdown_names(
+        ui,
+        id,
+        super::label_or_name(current, extra == Some(current)),
+        &refs,
+        210.0,
+    )
+    .and_then(|i| names.get(i).cloned())
 }
 
 fn settings_section(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -101,7 +152,11 @@ fn settings_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         ui.label(tl!("Intent:"));
         let labels: Vec<&str> = Intent::ALL.iter().map(|i| i.label()).collect();
         if let Some(i) = widgets::dropdown(ui, "cms-intent", st.intent.label(), &labels, 170.0) {
-            run(app, "edit.colorSettings", json!({"intent": Intent::ALL[i].id()}));
+            run(
+                app,
+                "edit.colorSettings",
+                json!({"intent": Intent::ALL[i].id()}),
+            );
         }
     });
     if widgets::check(ui, tl!("Use Black Point Compensation"), st.bpc, true) {
@@ -111,7 +166,10 @@ fn settings_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         if widgets::flat_button(ui, tl!("Load Profile…"), 110.0).clicked() {
             // Its file dialog, shown off the UI thread, loads the profile when it answers.
             crate::picks::button(app, |app| {
-                let pick = crate::FilePick { filters: vec![("ICC Profiles", &["icc", "icm"])], ..Default::default() };
+                let pick = crate::FilePick {
+                    filters: vec![("ICC Profiles", &["icc", "icm"])],
+                    ..Default::default()
+                };
                 if let Some(path) = crate::picks::open(app, &pick) {
                     run(app, "color.loadProfile", json!({ "path": path }));
                 }
@@ -121,8 +179,11 @@ fn settings_section(app: &mut VectorcraftApp, ui: &mut Ui) {
             match app.run("color.gamutCheck", json!({})) {
                 Ok(r) => {
                     let n = r["outOfGamut"].as_array().map_or(0, Vec::len);
-                    app.ui.status =
-                        if n == 0 { "All colours are within the CMYK gamut".into() } else { format!("{n} colour(s) are out of the CMYK gamut") };
+                    app.ui.status = if n == 0 {
+                        "All colours are within the CMYK gamut".into()
+                    } else {
+                        format!("{n} colour(s) are out of the CMYK gamut")
+                    };
                 }
                 Err(e) => app.ui.status = e,
             }
@@ -133,8 +194,18 @@ fn settings_section(app: &mut VectorcraftApp, ui: &mut Ui) {
         const WORKING: &str = "Working CMYK (don't tag)";
         ui.horizontal(|ui| {
             ui.label(tl!("Assign:"));
-            if let Some(n) = profile_dropdown(ui, "cms-assign", cmyk.as_deref().unwrap_or(WORKING), ProfileKind::Cmyk, Some(WORKING)) {
-                let v = if n == WORKING { Value::Null } else { Value::String(n) };
+            if let Some(n) = profile_dropdown(
+                ui,
+                "cms-assign",
+                cmyk.as_deref().unwrap_or(WORKING),
+                ProfileKind::Cmyk,
+                Some(WORKING),
+            ) {
+                let v = if n == WORKING {
+                    Value::Null
+                } else {
+                    Value::String(n)
+                };
                 run(app, "edit.assignProfile", json!({ "cmyk": v }));
             }
         });
@@ -146,17 +217,33 @@ fn proof_section(app: &mut VectorcraftApp, ui: &mut Ui) {
     widgets::section_header(ui, tl!("Proof Setup"));
     let cur = v.setup.target.id();
     // A target that isn't one of ours (a loaded profile) shows its name as it is.
-    let label = PROOF_TARGETS.iter().find(|(id, _)| *id == cur).map_or(cur.as_str(), |(_, l)| tl!(*l));
+    let label = PROOF_TARGETS
+        .iter()
+        .find(|(id, _)| *id == cur)
+        .map_or(cur.as_str(), |(_, l)| tl!(*l));
     let labels: Vec<&str> = PROOF_TARGETS.iter().map(|(_, l)| tl!(*l)).collect();
     if let Some(i) = widgets::dropdown_names(ui, "proof-target", label, &labels, 230.0) {
-        run(app, "view.proofSetup", json!({"target": PROOF_TARGETS[i].0}));
+        run(
+            app,
+            "view.proofSetup",
+            json!({"target": PROOF_TARGETS[i].0}),
+        );
     }
     ui.horizontal(|ui| {
         if widgets::check(ui, tl!("Proof Colors"), v.proof_colors, true) {
             run(app, "view.proofColors", json!({"on": !v.proof_colors}));
         }
-        if widgets::check(ui, tl!("Simulate Paper"), v.setup.simulate_paper, v.setup.target.is_cmyk()) {
-            run(app, "view.proofSetup", json!({"simulatePaper": !v.setup.simulate_paper}));
+        if widgets::check(
+            ui,
+            tl!("Simulate Paper"),
+            v.setup.simulate_paper,
+            v.setup.target.is_cmyk(),
+        ) {
+            run(
+                app,
+                "view.proofSetup",
+                json!({"simulatePaper": !v.setup.simulate_paper}),
+            );
         }
     });
     if widgets::check(ui, tl!("Overprint Preview"), v.overprint, true) {

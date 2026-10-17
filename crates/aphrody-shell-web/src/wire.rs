@@ -24,7 +24,10 @@ mod tests {
 
     #[test]
     fn frames_match_backend_protocol() {
-        assert_eq!(resize_frame(80, 24), r#"{"cols":80,"rows":24,"type":"resize"}"#);
+        assert_eq!(
+            resize_frame(80, 24),
+            r#"{"cols":80,"rows":24,"type":"resize"}"#
+        );
         assert_eq!(resize_frame(0, 0), r#"{"cols":1,"rows":1,"type":"resize"}"#);
         assert_eq!(data_frame(b"ls"), r#"{"bytes":[108,115],"type":"data"}"#);
     }

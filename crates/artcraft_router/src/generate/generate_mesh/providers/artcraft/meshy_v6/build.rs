@@ -7,8 +7,12 @@ use crate::generate::generate_mesh::mesh_generation_request::MeshGenerationReque
 use crate::generate::generate_mesh::providers::artcraft::build_common::build_artcraft_omni_mesh_request;
 use crate::generate::generate_mesh::providers::artcraft::meshy_v6::request::ArtcraftMeshyV6RequestState;
 
-pub fn build_artcraft_meshy_v6(builder: GenerateMeshRequestBuilder) -> Result<MeshGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_mesh_request(builder, CommonMeshModelEnum::MeshyV6)?;
-  let state = ArtcraftMeshyV6RequestState { request };
-  Ok(MeshGenerationDraftOrRequest::Request(MeshGenerationRequest::ArtcraftMeshyV6(state)))
+pub fn build_artcraft_meshy_v6(
+    builder: GenerateMeshRequestBuilder,
+) -> Result<MeshGenerationDraftOrRequest, ArtcraftRouterError> {
+    let request = build_artcraft_omni_mesh_request(builder, CommonMeshModelEnum::MeshyV6)?;
+    let state = ArtcraftMeshyV6RequestState { request };
+    Ok(MeshGenerationDraftOrRequest::Request(
+        MeshGenerationRequest::ArtcraftMeshyV6(state),
+    ))
 }

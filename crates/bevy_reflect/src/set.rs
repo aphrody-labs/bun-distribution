@@ -4,13 +4,13 @@
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt::{Debug, Formatter};
 
-use bevy_platform::collections::{hash_table::OccupiedEntry as HashTableOccupiedEntry, HashTable};
+use bevy_platform::collections::{HashTable, hash_table::OccupiedEntry as HashTableOccupiedEntry};
 use bevy_reflect_derive::impl_type_path;
 
 use crate::{
-    generics::impl_generic_info_methods, hash_error, ty::impl_type_methods, ApplyError, Generics,
-    PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut, ReflectOwned, ReflectRef,
-    Type, TypeInfo, TypePath,
+    ApplyError, Generics, PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut,
+    ReflectOwned, ReflectRef, Type, TypeInfo, TypePath, generics::impl_generic_info_methods,
+    hash_error, ty::impl_type_methods,
 };
 
 /// A trait used to power [set-like] operations via [reflection].
@@ -495,7 +495,7 @@ pub fn set_try_apply<S: Set>(a: &mut S, b: &dyn PartialReflect) -> Result<(), Ap
 
 #[cfg(test)]
 mod tests {
-    use crate::{set::Set, PartialReflect};
+    use crate::{PartialReflect, set::Set};
 
     use super::DynamicSet;
     use alloc::string::{String, ToString};

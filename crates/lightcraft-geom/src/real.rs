@@ -58,11 +58,18 @@ pub struct Interval {
 }
 
 impl Interval {
-    const UNDECIDED: Interval = Interval { lo: f64::NAN, hi: f64::NAN };
+    const UNDECIDED: Interval = Interval {
+        lo: f64::NAN,
+        hi: f64::NAN,
+    };
 
     /// `[lo, hi]` exactly (the bounds are `f64` values already); undecided unless finite with `lo <= hi`.
     pub fn new(lo: f64, hi: f64) -> Interval {
-        if lo.is_finite() && hi.is_finite() && lo <= hi { Interval { lo, hi } } else { Interval::UNDECIDED }
+        if lo.is_finite() && hi.is_finite() && lo <= hi {
+            Interval { lo, hi }
+        } else {
+            Interval::UNDECIDED
+        }
     }
 
     /// The lower bound (NaN if undecided).
@@ -119,7 +126,12 @@ impl Sub for Interval {
 impl Mul for Interval {
     type Output = Interval;
     fn mul(self, o: Interval) -> Interval {
-        Interval::hull([self.lo * o.lo, self.lo * o.hi, self.hi * o.lo, self.hi * o.hi])
+        Interval::hull([
+            self.lo * o.lo,
+            self.lo * o.hi,
+            self.hi * o.lo,
+            self.hi * o.hi,
+        ])
     }
 }
 
@@ -130,7 +142,12 @@ impl Div for Interval {
         if !(o.lo > 0.0 || o.hi < 0.0) {
             return Interval::UNDECIDED;
         }
-        Interval::hull([self.lo / o.lo, self.lo / o.hi, self.hi / o.lo, self.hi / o.hi])
+        Interval::hull([
+            self.lo / o.lo,
+            self.lo / o.hi,
+            self.hi / o.lo,
+            self.hi / o.hi,
+        ])
     }
 }
 
@@ -152,7 +169,11 @@ impl Mul<f64> for Interval {
     type Output = Interval;
     fn mul(self, k: f64) -> Interval {
         let (a, b) = (self.lo * k, self.hi * k);
-        if k >= 0.0 { Interval::outward(a, b) } else { Interval::outward(b, a) }
+        if k >= 0.0 {
+            Interval::outward(a, b)
+        } else {
+            Interval::outward(b, a)
+        }
     }
 }
 
@@ -174,7 +195,11 @@ impl Div<f64> for Interval {
 impl Real for Interval {
     /// Unchanged when no value in the interval would be clamped, else undecided.
     fn clamp_tiny(self, tiny: f64) -> Interval {
-        if self.lo >= tiny || self.hi <= -tiny { self } else { Interval::UNDECIDED }
+        if self.lo >= tiny || self.hi <= -tiny {
+            self
+        } else {
+            Interval::UNDECIDED
+        }
     }
 
     /// `sqrt` is monotonic and correctly rounded, so one ulp outward encloses the `f64` result.
@@ -248,9 +273,20 @@ mod tests {
         assert!(!Interval::new(f64::NAN, 1.0).is_decided());
         // undecided propagates through everything
         let u = Interval::UNDECIDED;
-        for r in [u + i, i - u, u * i, i / u, u + 1.0, u * 0.0, u.clamp_tiny(1e-300)] {
+        for r in [
+            u + i,
+            i - u,
+            u * i,
+            i / u,
+            u + 1.0,
+            u * 0.0,
+            u.clamp_tiny(1e-300),
+        ] {
             assert!(!r.is_decided());
-            assert!(r.lo.is_nan() && r.hi.is_nan(), "undecided bounds are NaN, which fails every comparison");
+            assert!(
+                r.lo.is_nan() && r.hi.is_nan(),
+                "undecided bounds are NaN, which fails every comparison"
+            );
         }
         // the denominator guard: unchanged only when no value is clamped
         assert!(Interval::new(1e-300, 1.0).clamp_tiny(1e-300).is_decided());

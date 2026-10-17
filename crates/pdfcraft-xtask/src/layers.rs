@@ -108,7 +108,18 @@ pub const SIDEWAYS: &[(&str, &str)] = &[
 ];
 
 /// External crates that constitute a UI toolkit / windowing dependency (prefix match with `*`).
-pub const UI_CRATES: &[&str] = &["egui", "eframe", "winit", "egui_kittest", "craft-ui", "egui_extras", "egui_dock", "egui_tiles", "rfd", "wgpu*"];
+pub const UI_CRATES: &[&str] = &[
+    "egui",
+    "eframe",
+    "winit",
+    "egui_kittest",
+    "craft-ui",
+    "egui_extras",
+    "egui_dock",
+    "egui_tiles",
+    "rfd",
+    "wgpu*",
+];
 pub const UI_MIN_LAYER: u8 = 7;
 
 pub fn short_name(pkg: &str) -> &str {
@@ -132,7 +143,9 @@ fn sideways_allowed(from: &str, to: &str) -> bool {
 }
 
 fn standalone_allowed(from: &str, to: &str) -> bool {
-    STANDALONE_DEPS.iter().any(|(f, ok)| *f == short_name(from) && ok.contains(&short_name(to)))
+    STANDALONE_DEPS
+        .iter()
+        .any(|(f, ok)| *f == short_name(from) && ok.contains(&short_name(to)))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -157,26 +170,64 @@ pub struct Crate {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Violation {
-    Unregistered { krate: String },
-    Upward { krate: String, dep: String, from: u8, to: u8, kind: DepKind },
-    StandaloneHasWorkspaceDep { krate: String, dep: String },
-    TestkitAsNormalDep { krate: String, dep: String },
-    UiBelowL7 { krate: String, dep: String, layer: u8 },
+    Unregistered {
+        krate: String,
+    },
+    Upward {
+        krate: String,
+        dep: String,
+        from: u8,
+        to: u8,
+        kind: DepKind,
+    },
+    StandaloneHasWorkspaceDep {
+        krate: String,
+        dep: String,
+    },
+    TestkitAsNormalDep {
+        krate: String,
+        dep: String,
+    },
+    UiBelowL7 {
+        krate: String,
+        dep: String,
+        layer: u8,
+    },
 }
 
 impl std::fmt::Display for Violation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Violation::Unregistered { krate } => {
-                write!(f, "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (plan/architecture.md §3)")
+                write!(
+                    f,
+                    "{krate}: unknown workspace crate; register it in xtask/src/layers.rs TABLE (plan/architecture.md §3)"
+                )
             }
-            Violation::Upward { krate, dep, from, to, kind } => {
-                write!(f, "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on lower layers (or an allowed sideways edge)")
+            Violation::Upward {
+                krate,
+                dep,
+                from,
+                to,
+                kind,
+            } => {
+                write!(
+                    f,
+                    "{krate} (L{from}) -> {dep} (L{to}) [{kind:?}]: may only depend on lower layers (or an allowed sideways edge)"
+                )
             }
-            Violation::StandaloneHasWorkspaceDep { krate, dep } => write!(f, "{krate}: standalone crate must not depend on workspace crate {dep}"),
-            Violation::TestkitAsNormalDep { krate, dep } => write!(f, "{krate}: {dep} may only be a dev-dependency"),
+            Violation::StandaloneHasWorkspaceDep { krate, dep } => write!(
+                f,
+                "{krate}: standalone crate must not depend on workspace crate {dep}"
+            ),
+            Violation::TestkitAsNormalDep { krate, dep } => {
+                write!(f, "{krate}: {dep} may only be a dev-dependency")
+            }
             Violation::UiBelowL7 { krate, dep, layer } => {
-                write!(f, "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L7+")
+                write!(
+                    f,
+                    "{krate} (L{layer}) depends on UI crate `{dep}`; UI toolkits are only allowed in L7+"
+                )
             }
         }
     }
@@ -186,7 +237,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
     let mut out = Vec::new();
     for c in crates {
         let Some(class) = classify(&c.name) else {
-            out.push(Violation::Unregistered { krate: c.name.clone() });
+            out.push(Violation::Unregistered {
+                krate: c.name.clone(),
+            });
             continue;
         };
         if class == Class::Exempt {
@@ -199,26 +252,44 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
             }
             if d.workspace {
                 if matches!(class, Class::Standalone(_)) && !standalone_allowed(&c.name, &d.name) {
-                    out.push(Violation::StandaloneHasWorkspaceDep { krate: c.name.clone(), dep: d.name.clone() });
+                    out.push(Violation::StandaloneHasWorkspaceDep {
+                        krate: c.name.clone(),
+                        dep: d.name.clone(),
+                    });
                     continue;
                 }
                 match classify(&d.name) {
                     None => {}
                     Some(Class::Testkit) if d.kind != DepKind::Dev && class != Class::Testkit => {
-                        out.push(Violation::TestkitAsNormalDep { krate: c.name.clone(), dep: d.name.clone() });
+                        out.push(Violation::TestkitAsNormalDep {
+                            krate: c.name.clone(),
+                            dep: d.name.clone(),
+                        });
                     }
                     Some(Class::Testkit) => {}
                     Some(dc) => {
                         let to = dc.layer().unwrap_or(u8::MAX);
                         let ok = to < layer || (to == layer && sideways_allowed(&c.name, &d.name));
                         if !ok {
-                            out.push(Violation::Upward { krate: c.name.clone(), dep: d.name.clone(), from: layer, to: to.min(8), kind: d.kind });
+                            out.push(Violation::Upward {
+                                krate: c.name.clone(),
+                                dep: d.name.clone(),
+                                from: layer,
+                                to: to.min(8),
+                                kind: d.kind,
+                            });
                         }
                     }
                 }
-            } else if layer < UI_MIN_LAYER && is_ui_crate(&d.name) && !(class == Class::Testkit || d.kind == DepKind::Dev && d.name == "egui_kittest")
+            } else if layer < UI_MIN_LAYER
+                && is_ui_crate(&d.name)
+                && !(class == Class::Testkit || d.kind == DepKind::Dev && d.name == "egui_kittest")
             {
-                out.push(Violation::UiBelowL7 { krate: c.name.clone(), dep: d.name.clone(), layer });
+                out.push(Violation::UiBelowL7 {
+                    krate: c.name.clone(),
+                    dep: d.name.clone(),
+                    layer,
+                });
             }
         }
     }
@@ -228,7 +299,9 @@ pub fn check(crates: &[Crate]) -> Vec<Violation> {
 }
 
 pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
-    let pkgs = meta["packages"].as_array().ok_or("metadata: no packages array")?;
+    let pkgs = meta["packages"]
+        .as_array()
+        .ok_or("metadata: no packages array")?;
     let members: Vec<&str> = pkgs.iter().filter_map(|p| p["name"].as_str()).collect();
     let mut out = Vec::new();
     for p in pkgs {
@@ -242,7 +315,11 @@ pub fn from_metadata(meta: &Value) -> Result<Vec<Crate>, String> {
                 _ => DepKind::Normal,
             };
             let workspace = members.contains(&dname.as_str());
-            deps.push(Dep { name: dname, kind, workspace });
+            deps.push(Dep {
+                name: dname,
+                kind,
+                workspace,
+            });
         }
         out.push(Crate { name, deps });
     }
@@ -266,16 +343,36 @@ mod tests {
     use super::*;
 
     fn c(name: &str, deps: &[(&str, DepKind, bool)]) -> Crate {
-        Crate { name: name.into(), deps: deps.iter().map(|(n, k, w)| Dep { name: (*n).into(), kind: *k, workspace: *w }).collect() }
+        Crate {
+            name: name.into(),
+            deps: deps
+                .iter()
+                .map(|(n, k, w)| Dep {
+                    name: (*n).into(),
+                    kind: *k,
+                    workspace: *w,
+                })
+                .collect(),
+        }
     }
 
     #[test]
     fn current_graph_shape_passes() {
         let g = [
             c("pdfcraft-geom", &[]),
-            c("pdfcraft-render", &[("hayro", Normal, false), ("lopdf", Normal, false)]),
+            c(
+                "pdfcraft-render",
+                &[("hayro", Normal, false), ("lopdf", Normal, false)],
+            ),
             c("pdfcraft-engine", &[("pdfcraft-render", Normal, true)]),
-            c("pdfcraft-ui-egui", &[("pdfcraft-engine", Normal, true), ("egui", Normal, false), ("egui_kittest", Dev, false)]),
+            c(
+                "pdfcraft-ui-egui",
+                &[
+                    ("pdfcraft-engine", Normal, true),
+                    ("egui", Normal, false),
+                    ("egui_kittest", Dev, false),
+                ],
+            ),
             c("pdfcraft", &[("pdfcraft-ui-egui", Normal, true)]),
         ];
         assert!(check(&g).is_empty(), "{:?}", check(&g));
@@ -298,18 +395,45 @@ mod tests {
 
     #[test]
     fn cos_may_use_only_its_listed_foundation() {
-        assert!(check(&[c("pdfcraft-cos", &[("pdfcraft-filters", Normal, true), ("pdfcraft-crypt", Normal, true)])]).is_empty());
+        assert!(
+            check(&[c(
+                "pdfcraft-cos",
+                &[
+                    ("pdfcraft-filters", Normal, true),
+                    ("pdfcraft-crypt", Normal, true)
+                ]
+            )])
+            .is_empty()
+        );
         let v = check(&[c("pdfcraft-cos", &[("pdfcraft-arlington", Normal, true)])]);
-        assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]));
+        assert!(matches!(
+            v[..],
+            [Violation::StandaloneHasWorkspaceDep { .. }]
+        ));
         let v = check(&[c("pdfcraft-filters", &[("pdfcraft-geom", Normal, true)])]);
-        assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]));
+        assert!(matches!(
+            v[..],
+            [Violation::StandaloneHasWorkspaceDep { .. }]
+        ));
     }
 
     #[test]
     fn ui_crates_below_l7_flagged() {
-        for dep in ["egui", "eframe", "winit", "rfd", "wgpu", "wgpu-core", "egui_dock", "craft-ui"] {
+        for dep in [
+            "egui",
+            "eframe",
+            "winit",
+            "rfd",
+            "wgpu",
+            "wgpu-core",
+            "egui_dock",
+            "craft-ui",
+        ] {
             let v = check(&[c("pdfcraft-engine", &[(dep, Normal, false)])]);
-            assert!(matches!(v[..], [Violation::UiBelowL7 { layer: 6, .. }]), "{dep}");
+            assert!(
+                matches!(v[..], [Violation::UiBelowL7 { layer: 6, .. }]),
+                "{dep}"
+            );
         }
         assert!(check(&[c("pdfcraft-platform", &[("winit", Normal, false)])]).is_empty());
         assert!(check(&[c("pdfcraft-ui-egui", &[("craft-ui", Normal, false)])]).is_empty());
@@ -327,13 +451,21 @@ mod tests {
     #[test]
     fn unregistered_crate_is_error() {
         let v = check(&[c("pdfcraft-mystery", &[])]);
-        assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "pdfcraft-mystery"));
+        assert!(
+            matches!(&v[..], [Violation::Unregistered { krate }] if krate == "pdfcraft-mystery")
+        );
     }
 
     #[test]
     fn apps_exempt() {
         for app in ["pdfcraft", "pdfcraft-cli", "pdfcraft-web", "xtask"] {
-            assert!(check(&[c(app, &[("egui", Normal, false), ("pdfcraft-ui-egui", Normal, true)])]).is_empty());
+            assert!(
+                check(&[c(
+                    app,
+                    &[("egui", Normal, false), ("pdfcraft-ui-egui", Normal, true)]
+                )])
+                .is_empty()
+            );
         }
     }
 }

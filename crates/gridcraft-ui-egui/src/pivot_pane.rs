@@ -14,11 +14,16 @@ pub fn active_pivot(app: &SheetApp) -> Option<String> {
     let d = app.session.active()?;
     let sh = d.wb.active()?;
     let a = d.selection.active;
-    sh.pivots.iter().find(|p| p.last_range.is_some_and(|r| r.contains(a)) || p.anchor == a).map(|p| p.name.clone())
+    sh.pivots
+        .iter()
+        .find(|p| p.last_range.is_some_and(|r| r.contains(a)) || p.anchor == a)
+        .map(|p| p.name.clone())
 }
 
 pub fn show(app: &mut SheetApp, ui: &mut Ui) {
-    let Some(name) = active_pivot(app) else { return };
+    let Some(name) = active_pivot(app) else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
     let lang = i18n::current(ui.ctx());
     let info = match app.session.run("pivot.fields", json!({"pivot": name})) {

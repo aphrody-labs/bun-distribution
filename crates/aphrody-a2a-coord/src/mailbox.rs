@@ -40,7 +40,8 @@ impl Mailbox {
     }
 
     pub fn inbox_path(&self, peer_short: &str) -> PathBuf {
-        self.coord_dir.join(format!("inbox-from-{peer_short}.jsonl"))
+        self.coord_dir
+            .join(format!("inbox-from-{peer_short}.jsonl"))
     }
 
     pub fn append(&self, peer_short: &str, env: &Envelope) -> Result<(), MailboxError> {
@@ -92,7 +93,10 @@ mod tests {
         let left_mailbox = Mailbox::for_profile_root(&left);
         let right_mailbox = Mailbox::for_profile_root(&right);
         assert_ne!(left_mailbox.coord_dir, right_mailbox.coord_dir);
-        assert_ne!(left_mailbox.inbox_path("peer"), right_mailbox.inbox_path("peer"));
+        assert_ne!(
+            left_mailbox.inbox_path("peer"),
+            right_mailbox.inbox_path("peer")
+        );
         assert!(left_mailbox.inbox_path("peer").starts_with(&left));
         assert!(right_mailbox.inbox_path("peer").starts_with(&right));
     }

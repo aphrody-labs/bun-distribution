@@ -26,8 +26,12 @@ use crate::{
 };
 
 /// Standard D3D/Vulkan 4x MSAA sample positions, in pixel units.
-pub const MSAA4_POSITIONS: [(f32, f32); 4] =
-    [(0.375, 0.125), (0.875, 0.375), (0.125, 0.625), (0.625, 0.875)];
+pub const MSAA4_POSITIONS: [(f32, f32); 4] = [
+    (0.375, 0.125),
+    (0.875, 0.375),
+    (0.125, 0.625),
+    (0.625, 0.875),
+];
 
 const SUBPIXEL: f32 = 256.0;
 const BAND_ROWS: u32 = 16;
@@ -69,11 +73,17 @@ pub fn shade(
     let env = reflected.lerp(irradiance, rough);
     let xv = 1.0 - ndv;
     let xv5 = xv * xv * xv * xv * xv;
-    let f_max =
-        Vec3::new((1.0 - rough).max(f0.x), (1.0 - rough).max(f0.y), (1.0 - rough).max(f0.z));
+    let f_max = Vec3::new(
+        (1.0 - rough).max(f0.x),
+        (1.0 - rough).max(f0.y),
+        (1.0 - rough).max(f0.z),
+    );
     let f_env = f0.add(f_max.sub(f0).scale(xv5));
-    let mut out =
-        irradiance.mul(base).mul(Vec3::ONE.sub(f_env)).scale(1.0 - metallic).add(env.mul(f_env));
+    let mut out = irradiance
+        .mul(base)
+        .mul(Vec3::ONE.sub(f_env))
+        .scale(1.0 - metallic)
+        .add(env.mul(f_env));
 
     let shadow_light = prepared.shadow.map(|s| s.light);
     let k = (rough + 1.0) * (rough + 1.0) / 8.0;
@@ -82,8 +92,12 @@ pub fn shade(
         let (l, mut radiance) = match *light {
             PreparedLight::Directional { to_light, radiance } => {
                 (to_light, Vec3::from_array(radiance))
-            },
-            PreparedLight::Point { position, radiance, range } => {
+            }
+            PreparedLight::Point {
+                position,
+                radiance,
+                range,
+            } => {
                 let d = position.sub(world);
                 let dist2 = d.dot(d).max(1e-8);
                 let dist = dist2.sqrt();
@@ -95,7 +109,7 @@ pub fn shade(
                     att *= f * f;
                 }
                 (d.scale(1.0 / dist), Vec3::from_array(radiance).scale(att))
-            },
+            }
         };
         if shadow_light == Some(index) {
             radiance = radiance.scale(shadow);
@@ -137,14 +151,21 @@ pub struct ShadowMap {
 pub fn shadow_visibility(setup: &ShadowSetup, map: &ShadowMap, world: Vec3, n: Vec3) -> f32 {
     let p = world.add(n.scale(setup.normal_offset));
     let c = setup.view_proj.transform_point4(p);
-    let (u, v, z) = (c[0] / c[3] * 0.5 + 0.5, 0.5 - c[1] / c[3] * 0.5, c[2] / c[3]);
+    let (u, v, z) = (
+        c[0] / c[3] * 0.5 + 0.5,
+        0.5 - c[1] / c[3] * 0.5,
+        c[2] / c[3],
+    );
     if !(0.0..=1.0).contains(&u) || !(0.0..=1.0).contains(&v) {
         return 1.0;
     }
     // Receivers beyond the casters' far plane are still behind them.
     let reference = z.min(1.0) - setup.depth_bias;
     let res = map.resolution as i32;
-    let (tx, ty) = ((u * res as f32).floor() as i32, (v * res as f32).floor() as i32);
+    let (tx, ty) = (
+        (u * res as f32).floor() as i32,
+        (v * res as f32).floor() as i32,
+    );
     let mut lit = 0_u32;
     for dy in -1..=1 {
         for dx in -1..=1 {
@@ -171,7 +192,11 @@ impl ClipVert {
         for (i, c) in clip.iter_mut().enumerate() {
             *c = self.clip[i] + (o.clip[i] - self.clip[i]) * t;
         }
-        Self { clip, world: self.world.lerp(o.world, t), normal: self.normal.lerp(o.normal, t) }
+        Self {
+            clip,
+            world: self.world.lerp(o.world, t),
+            normal: self.normal.lerp(o.normal, t),
+        }
     }
 }
 
@@ -280,7 +305,11 @@ fn instance_triangles(
         .collect();
     let (w, h) = (prepared.width as f32, prepared.height as f32);
     for idx in mesh.indices.chunks_exact(3) {
-        let tri = [verts[idx[0] as usize], verts[idx[1] as usize], verts[idx[2] as usize]];
+        let tri = [
+            verts[idx[0] as usize],
+            verts[idx[1] as usize],
+            verts[idx[2] as usize],
+        ];
         let poly = clip_polygon(tri);
         if poly.len() < 3 {
             continue;
@@ -309,7 +338,11 @@ fn instance_triangles(
                 continue;
             }
             // Orient so the edge functions are positive inside.
-            let order = if area > 0.0 { ids } else { [ids[0], ids[2], ids[1]] };
+            let order = if area > 0.0 {
+                ids
+            } else {
+                [ids[0], ids[2], ids[1]]
+            };
             let p = order.map(|i| screen[i].0);
             let min_x = p.iter().map(|q| q[0]).fold(f32::MAX, f32::min);
             let max_x = p.iter().map(|q| q[0]).fold(f32::MIN, f32::max);
@@ -423,7 +456,11 @@ pub fn render_shadow_map(prepared: &Prepared3d) -> Option<ShadowMap> {
                 if area == 0.0 {
                     continue;
                 }
-                let order = if area > 0.0 { [0, k, k + 1] } else { [0, k + 1, k] };
+                let order = if area > 0.0 {
+                    [0, k, k + 1]
+                } else {
+                    [0, k + 1, k]
+                };
                 let p = order.map(|i| screen[i].0);
                 let bbox = [
                     (p.iter().map(|q| q[0]).fold(f32::MAX, f32::min).floor() as i32).max(0),
@@ -434,7 +471,11 @@ pub fn render_shadow_map(prepared: &Prepared3d) -> Option<ShadowMap> {
                         .min(res as i32 - 1),
                 ];
                 if bbox[0] <= bbox[2] && bbox[1] <= bbox[3] {
-                    out.push(ShadowTri { p, z: order.map(|i| screen[i].1), bbox });
+                    out.push(ShadowTri {
+                        p,
+                        z: order.map(|i| screen[i].1),
+                        bbox,
+                    });
                 }
             }
         }
@@ -443,7 +484,12 @@ pub fn render_shadow_map(prepared: &Prepared3d) -> Option<ShadowMap> {
     #[cfg(feature = "parallel")]
     let tris: Vec<ShadowTri> = {
         use rayon::prelude::*;
-        jobs.par_iter().map(run).collect::<Vec<_>>().into_iter().flatten().collect()
+        jobs.par_iter()
+            .map(run)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .flatten()
+            .collect()
     };
     #[cfg(not(feature = "parallel"))]
     let tris: Vec<ShadowTri> = jobs.iter().flat_map(run).collect();
@@ -493,7 +539,10 @@ pub fn render_shadow_map(prepared: &Prepared3d) -> Option<ShadowMap> {
     }
     #[cfg(not(feature = "parallel"))]
     depth.chunks_mut(band_texels).enumerate().for_each(work);
-    Some(ShadowMap { resolution: res, depth })
+    Some(ShadowMap {
+        resolution: res,
+        depth,
+    })
 }
 
 fn to_unorm8(v: f32) -> u8 {
@@ -520,11 +569,18 @@ fn shade_pixel(
     let [a, b, c] = t.p;
     let area = edge(a, b, c);
     let pc = [x as f32 + 0.5, y as f32 + 0.5];
-    let l = [edge(b, c, pc) / area, edge(c, a, pc) / area, edge(a, b, pc) / area];
+    let l = [
+        edge(b, c, pc) / area,
+        edge(c, a, pc) / area,
+        edge(a, b, pc) / area,
+    ];
     let pw = [l[0] * t.inv_w[0], l[1] * t.inv_w[1], l[2] * t.inv_w[2]];
     let sum = pw[0] + pw[1] + pw[2];
     let bw = if sum != 0.0 { pw.map(|v| v / sum) } else { l };
-    let world = t.world[0].scale(bw[0]).add(t.world[1].scale(bw[1])).add(t.world[2].scale(bw[2]));
+    let world = t.world[0]
+        .scale(bw[0])
+        .add(t.world[1].scale(bw[1]))
+        .add(t.world[2].scale(bw[2]));
     let mut n = t.normal[0]
         .scale(bw[0])
         .add(t.normal[1].scale(bw[1]))
@@ -538,7 +594,14 @@ fn shade_pixel(
         _ => 1.0,
     };
     let rgb = shade(prepared, inst, world, n, visibility);
-    ([linear_to_srgb(rgb[0]), linear_to_srgb(rgb[1]), linear_to_srgb(rgb[2])], inst.alpha)
+    (
+        [
+            linear_to_srgb(rgb[0]),
+            linear_to_srgb(rgb[1]),
+            linear_to_srgb(rgb[2]),
+        ],
+        inst.alpha,
+    )
 }
 
 /// Coverage of triangle `t` at the samples of pixel `(x, y)`: a bit mask of
@@ -585,7 +648,11 @@ fn raster_band(
 ) {
     let width = prepared.width as usize;
     let samples = prepared.samples as usize;
-    let positions: &[(f32, f32)] = if samples == 4 { &MSAA4_POSITIONS } else { &[(0.5, 0.5)] };
+    let positions: &[(f32, f32)] = if samples == 4 {
+        &MSAA4_POSITIONS
+    } else {
+        &[(0.5, 0.5)]
+    };
     let (band_y0, band_y1) = (band.y0 as i32, (band.y0 + band.rows) as i32 - 1);
     // Opaque batches are submitted before transparent ones.
     let split = bin.partition_point(|&ti| !tris[ti as usize].transparent);
@@ -629,8 +696,12 @@ fn raster_band(
                     done[s] = ti;
                     let (src, alpha) =
                         shade_pixel(prepared, shadow, &tris[ti as usize], x as i32, y);
-                    let rgba =
-                        [to_unorm8(src[0]), to_unorm8(src[1]), to_unorm8(src[2]), to_unorm8(alpha)];
+                    let rgba = [
+                        to_unorm8(src[0]),
+                        to_unorm8(src[1]),
+                        to_unorm8(src[2]),
+                        to_unorm8(alpha),
+                    ];
                     for (k, &id) in pixel_ids.iter().enumerate().skip(s) {
                         if id == ti {
                             band.color[(base + k) * 4..(base + k) * 4 + 4].copy_from_slice(&rgba);
@@ -678,8 +749,11 @@ fn raster_band(
 /// Render an already prepared frame on the CPU.
 #[must_use]
 pub fn render_prepared(prepared: &Prepared3d) -> Canvas {
-    let (width, height, samples) =
-        (prepared.width as usize, prepared.height as usize, prepared.samples as usize);
+    let (width, height, samples) = (
+        prepared.width as usize,
+        prepared.height as usize,
+        prepared.samples as usize,
+    );
     let shadow_map = render_shadow_map(prepared);
     let shadow = prepared.shadow.as_ref().zip(shadow_map.as_ref());
     let tris = vertex_stage(prepared);
@@ -695,7 +769,9 @@ pub fn render_prepared(prepared: &Prepared3d) -> Canvas {
         }
     }
 
-    let clear = prepared.clear.map_or([0, 0, 0, 0], |c| [c.r, c.g, c.b, c.a]);
+    let clear = prepared
+        .clear
+        .map_or([0, 0, 0, 0], |c| [c.r, c.g, c.b, c.a]);
     let sample_count = width * height * samples;
     let mut color: Vec<u8> = clear.repeat(sample_count);
     let mut depth = vec![1.0_f32; sample_count];
@@ -708,7 +784,12 @@ pub fn render_prepared(prepared: &Prepared3d) -> Canvas {
             shadow,
             &tris,
             &bins[i],
-            BandTarget { y0: i as u32 * BAND_ROWS, rows, color, depth },
+            BandTarget {
+                y0: i as u32 * BAND_ROWS,
+                rows,
+                color,
+                depth,
+            },
         );
     };
     #[cfg(feature = "parallel")]
@@ -740,7 +821,11 @@ pub fn render_prepared(prepared: &Prepared3d) -> Canvas {
         }
         out
     };
-    Canvas { width: prepared.width, height: prepared.height, pixels }
+    Canvas {
+        width: prepared.width,
+        height: prepared.height,
+        pixels,
+    }
 }
 
 /// Prepare and render `scene` on the CPU.
@@ -801,13 +886,22 @@ mod tests {
             eye: [0.0, 0.0, 5.0],
             target: [0.0; 3],
             up: [0.0, 1.0, 0.0],
-            projection: Projection::Orthographic { height: 2.0, near: 0.1, far: 10.0 },
+            projection: Projection::Orthographic {
+                height: 2.0,
+                near: 0.1,
+                far: 10.0,
+            },
         };
         scene.nodes = vec![Node3d::Mesh {
             transform: Transform::IDENTITY,
             geometry: Geometry::Plane { size: [1.0, 1.0] },
             material: Material {
-                base: Paint::Fixed(Rgba8 { r: 255, g: 0, b: 0, a: 255 }),
+                base: Paint::Fixed(Rgba8 {
+                    r: 255,
+                    g: 0,
+                    b: 0,
+                    a: 255,
+                }),
                 metallic: 0.0,
                 roughness: 1.0,
                 emissive: None,
@@ -823,7 +917,12 @@ mod tests {
 
     fn px(c: &Canvas, x: u32, y: u32) -> [u8; 4] {
         let i = ((y * c.width + x) * 4) as usize;
-        [c.pixels[i], c.pixels[i + 1], c.pixels[i + 2], c.pixels[i + 3]]
+        [
+            c.pixels[i],
+            c.pixels[i + 1],
+            c.pixels[i + 2],
+            c.pixels[i + 3],
+        ]
     }
 
     #[test]
@@ -835,7 +934,11 @@ mod tests {
         assert_eq!(px(&canvas, 23, 23), [255, 0, 0, 255]);
         assert_ne!(px(&canvas, 7, 16), [255, 0, 0, 255]);
         assert_ne!(px(&canvas, 24, 16), [255, 0, 0, 255]);
-        let red = canvas.pixels.chunks_exact(4).filter(|p| *p == [255, 0, 0, 255]).count();
+        let red = canvas
+            .pixels
+            .chunks_exact(4)
+            .filter(|p| *p == [255, 0, 0, 255])
+            .count();
         assert_eq!(red, 16 * 16);
     }
 
@@ -858,10 +961,20 @@ mod tests {
     fn depth_test_keeps_the_nearest_surface() {
         let mut scene = unlit_quad(1);
         let mut near = scene.nodes[0].clone();
-        if let Node3d::Mesh { transform, material, .. } = &mut near {
+        if let Node3d::Mesh {
+            transform,
+            material,
+            ..
+        } = &mut near
+        {
             transform.translation = [0.0, 0.0, 1.0];
             transform.scale = [0.5, 0.5, 1.0];
-            material.base = Paint::Fixed(Rgba8 { r: 0, g: 0, b: 255, a: 255 });
+            material.base = Paint::Fixed(Rgba8 {
+                r: 0,
+                g: 0,
+                b: 255,
+                a: 255,
+            });
         }
         // Draw the near quad first: the far one must not overwrite it.
         scene.nodes.insert(0, near);
@@ -877,23 +990,40 @@ mod tests {
             transform.rotation_deg = [0.0, 0.0, 30.0];
         }
         let canvas = render_scene3d(&scene).expect("valid");
-        let partial = canvas.pixels.chunks_exact(4).filter(|p| p[0] > 0 && p[0] < 255).count();
+        let partial = canvas
+            .pixels
+            .chunks_exact(4)
+            .filter(|p| p[0] > 0 && p[0] < 255)
+            .count();
         assert!(partial > 0, "4x MSAA must blend edge pixels");
     }
 
     #[test]
     fn lit_sphere_is_brighter_towards_the_light() {
         let mut scene = unlit_quad(1);
-        scene.camera.projection = Projection::Perspective { fov_y_deg: 45.0, near: 0.1, far: 20.0 };
+        scene.camera.projection = Projection::Perspective {
+            fov_y_deg: 45.0,
+            near: 0.1,
+            far: 20.0,
+        };
         scene.lights = vec![Light::Directional {
             direction: [1.0, 0.0, 0.0],
-            color: Paint::Fixed(Rgba8 { r: 255, g: 255, b: 255, a: 255 }),
+            color: Paint::Fixed(Rgba8 {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 255,
+            }),
             intensity: std::f32::consts::PI,
             cast_shadow: true,
         }];
         scene.nodes = vec![Node3d::Mesh {
             transform: Transform::IDENTITY,
-            geometry: Geometry::Sphere { radius: 1.0, width_segments: 32, height_segments: 16 },
+            geometry: Geometry::Sphere {
+                radius: 1.0,
+                width_segments: 32,
+                height_segments: 16,
+            },
             material: Material {
                 base: Paint::Role(Role::Primary),
                 metallic: 0.0,
@@ -925,8 +1055,17 @@ mod tests {
     #[test]
     fn near_plane_clipping_keeps_geometry_crossing_the_camera() {
         let mut scene = unlit_quad(1);
-        scene.camera.projection = Projection::Perspective { fov_y_deg: 60.0, near: 0.5, far: 20.0 };
-        if let Node3d::Mesh { transform, material, .. } = &mut scene.nodes[0] {
+        scene.camera.projection = Projection::Perspective {
+            fov_y_deg: 60.0,
+            near: 0.5,
+            far: 20.0,
+        };
+        if let Node3d::Mesh {
+            transform,
+            material,
+            ..
+        } = &mut scene.nodes[0]
+        {
             // A floor running from behind the camera into the distance.
             transform.translation = [0.0, -1.0, 0.0];
             transform.rotation_deg = [-90.0, 0.0, 0.0];

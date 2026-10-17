@@ -59,7 +59,9 @@ impl Paths {
         let mut cur = e;
         // Each step goes to a parent entry, made before its children: at most `at.len()` steps.
         for _ in 0..=self.at.len() {
-            let Some(&(parent, i)) = self.at.get(cur as usize) else { return Some(None) };
+            let Some(&(parent, i)) = self.at.get(cur as usize) else {
+                return Some(None);
+            };
             path.push(i as usize);
             if parent == u32::MAX {
                 path.reverse();
@@ -112,7 +114,10 @@ impl IdIndex {
             for (i, n) in nodes.iter().enumerate() {
                 let e = out.at.len() as u32;
                 out.at.push((parent, i as u32));
-                out.ids.entry(n.id).and_modify(|x| *x = None).or_insert(Some(e));
+                out.ids
+                    .entry(n.id)
+                    .and_modify(|x| *x = None)
+                    .or_insert(Some(e));
                 if let Some(ch) = n.children() {
                     walk(ch, e, out);
                 }

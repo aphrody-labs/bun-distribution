@@ -107,7 +107,7 @@ pub fn parse_ability_learning_config(root: &Value) -> AbilityLearningConfig {
                         },
                     );
                 }
-            },
+            }
             // Section 2 : liens plateau→effet. Pour chaque REF_EFFECT_N, on cherche BOARD_INFO_N
             // (même index), clé = toHex(BOARD_INFO_N.var0), on empile REF_EFFECT_N.var0.
             INFO_LIST => {
@@ -130,8 +130,8 @@ pub fn parse_ability_learning_config(root: &Value) -> AbilityLearningConfig {
                     let board_id = board_node.hash(0);
                     out.boards.entry(board_id).or_default().push(child.int(0));
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 

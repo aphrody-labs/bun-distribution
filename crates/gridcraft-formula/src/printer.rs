@@ -12,15 +12,25 @@ pub fn needs_quotes(name: &str) -> bool {
         return true;
     }
     let first = name.chars().next().unwrap_or('_');
-    if first.is_ascii_digit() || name.chars().any(|c| !(c.is_alphanumeric() || c == '_' || c == '.')) {
+    if first.is_ascii_digit()
+        || name
+            .chars()
+            .any(|c| !(c.is_alphanumeric() || c == '_' || c == '.'))
+    {
         return true;
     }
     // Looks like a cell ref (`A1`, `R1C1`) or a boolean.
-    gridcraft_core::CellRef::parse(name).is_some() || name.eq_ignore_ascii_case("TRUE") || name.eq_ignore_ascii_case("FALSE")
+    gridcraft_core::CellRef::parse(name).is_some()
+        || name.eq_ignore_ascii_case("TRUE")
+        || name.eq_ignore_ascii_case("FALSE")
 }
 
 pub fn quote_sheet(name: &str) -> String {
-    if needs_quotes(name) { format!("'{}'", name.replace('\'', "''")) } else { name.to_string() }
+    if needs_quotes(name) {
+        format!("'{}'", name.replace('\'', "''"))
+    } else {
+        name.to_string()
+    }
 }
 
 fn sheet_prefix(s: &SheetSel) -> String {
@@ -29,13 +39,23 @@ fn sheet_prefix(s: &SheetSel) -> String {
         SheetSel::Named(n) => format!("{}!", quote_sheet(n)),
         SheetSel::Span(a, b) => {
             let joined = format!("{a}:{b}");
-            if needs_quotes(a) || needs_quotes(b) { format!("'{}'!", joined.replace('\'', "''")) } else { format!("{joined}!") }
+            if needs_quotes(a) || needs_quotes(b) {
+                format!("'{}'!", joined.replace('\'', "''"))
+            } else {
+                format!("{joined}!")
+            }
         }
     }
 }
 
 fn anchor_a1(a: &Anchor) -> String {
-    format!("{}{}{}{}", if a.col_abs { "$" } else { "" }, col_to_letters(a.col), if a.row_abs { "$" } else { "" }, a.row as u64 + 1)
+    format!(
+        "{}{}{}{}",
+        if a.col_abs { "$" } else { "" },
+        col_to_letters(a.col),
+        if a.row_abs { "$" } else { "" },
+        a.row as u64 + 1
+    )
 }
 
 pub fn reference_a1(r: &Reference) -> String {
@@ -47,9 +67,21 @@ fn range_a1(r: &Reference, sep: &str) -> String {
     let body = match &r.kind {
         RefKind::Cell(a) => anchor_a1(a),
         RefKind::Range(a, b) => format!("{}{sep}{}", anchor_a1(a), anchor_a1(b)),
-        RefKind::Rows(r0, a0, r1, a1) => format!("{}{}{sep}{}{}", if *a0 { "$" } else { "" }, r0 + 1, if *a1 { "$" } else { "" }, r1 + 1),
+        RefKind::Rows(r0, a0, r1, a1) => format!(
+            "{}{}{sep}{}{}",
+            if *a0 { "$" } else { "" },
+            r0 + 1,
+            if *a1 { "$" } else { "" },
+            r1 + 1
+        ),
         RefKind::Cols(c0, a0, c1, a1) => {
-            format!("{}{}{sep}{}{}", if *a0 { "$" } else { "" }, col_to_letters(*c0), if *a1 { "$" } else { "" }, col_to_letters(*c1))
+            format!(
+                "{}{}{sep}{}{}",
+                if *a0 { "$" } else { "" },
+                col_to_letters(*c0),
+                if *a1 { "$" } else { "" },
+                col_to_letters(*c1)
+            )
         }
     };
     format!("{}{}", sheet_prefix(&r.sheet), body)
@@ -60,12 +92,20 @@ fn r1c1_part(letter: char, v: u32, abs: bool, base: u32) -> String {
         format!("{letter}{}", v + 1)
     } else {
         let d = v as i64 - base as i64;
-        if d == 0 { letter.to_string() } else { format!("{letter}[{d}]") }
+        if d == 0 {
+            letter.to_string()
+        } else {
+            format!("{letter}[{d}]")
+        }
     }
 }
 
 fn anchor_r1c1(a: &Anchor, at: CellRef) -> String {
-    format!("{}{}", r1c1_part('R', a.row, a.row_abs, at.row), r1c1_part('C', a.col, a.col_abs, at.col))
+    format!(
+        "{}{}",
+        r1c1_part('R', a.row, a.row_abs, at.row),
+        r1c1_part('C', a.col, a.col_abs, at.col)
+    )
 }
 
 pub fn reference_r1c1(r: &Reference, at: CellRef) -> String {
@@ -79,12 +119,26 @@ fn range_r1c1(r: &Reference, at: CellRef, sep: &str) -> String {
         RefKind::Cell(a) => anchor_r1c1(a, at),
         RefKind::Range(a, b) => format!("{}{sep}{}", anchor_r1c1(a, at), anchor_r1c1(b, at)),
         RefKind::Rows(r0, a0, r1, a1) => {
-            let (x, y) = (r1c1_part('R', *r0, *a0, at.row), r1c1_part('R', *r1, *a1, at.row));
-            if x == y && sep == ":" { x } else { format!("{x}{sep}{y}") }
+            let (x, y) = (
+                r1c1_part('R', *r0, *a0, at.row),
+                r1c1_part('R', *r1, *a1, at.row),
+            );
+            if x == y && sep == ":" {
+                x
+            } else {
+                format!("{x}{sep}{y}")
+            }
         }
         RefKind::Cols(c0, a0, c1, a1) => {
-            let (x, y) = (r1c1_part('C', *c0, *a0, at.col), r1c1_part('C', *c1, *a1, at.col));
-            if x == y && sep == ":" { x } else { format!("{x}{sep}{y}") }
+            let (x, y) = (
+                r1c1_part('C', *c0, *a0, at.col),
+                r1c1_part('C', *c1, *a1, at.col),
+            );
+            if x == y && sep == ":" {
+                x
+            } else {
+                format!("{x}{sep}{y}")
+            }
         }
     };
     format!("{}{}", sheet_prefix(&r.sheet), body)
@@ -101,7 +155,12 @@ pub fn struct_ref_file(s: &StructRef) -> String {
 }
 
 fn write_struct_ref(s: &StructRef, at_shorthand: bool) -> String {
-    let esc = |c: &str| c.replace('\'', "''").replace('[', "'[").replace(']', "']").replace('#', "'#");
+    let esc = |c: &str| {
+        c.replace('\'', "''")
+            .replace('[', "'[")
+            .replace(']', "']")
+            .replace('#', "'#")
+    };
     let item = |i: &StructItem| match i {
         StructItem::All => "#All",
         StructItem::Data => "#Data",
@@ -111,7 +170,10 @@ fn write_struct_ref(s: &StructRef, at_shorthand: bool) -> String {
     };
     let this_row = at_shorthand && s.specifiers == [StructItem::ThisRow];
     let mut out = s.table.clone();
-    let simple_col = |c: &str| !c.chars().any(|ch| matches!(ch, ' ' | '[' | ']' | '#' | '\'' | ',' | ':'));
+    let simple_col = |c: &str| {
+        !c.chars()
+            .any(|ch| matches!(ch, ' ' | '[' | ']' | '#' | '\'' | ',' | ':'))
+    };
     match (&s.col_start, &s.col_end) {
         (None, None) if s.specifiers.is_empty() => out.push_str("[]"),
         (None, None) if this_row => out.push_str("[@]"),
@@ -134,7 +196,11 @@ fn write_struct_ref(s: &StructRef, at_shorthand: bool) -> String {
             }
         }
         _ => {
-            let mut parts: Vec<String> = s.specifiers.iter().map(|i| format!("[{}]", item(i))).collect();
+            let mut parts: Vec<String> = s
+                .specifiers
+                .iter()
+                .map(|i| format!("[{}]", item(i)))
+                .collect();
             match (&s.col_start, &s.col_end) {
                 (Some(a), Some(b)) => parts.push(format!("[{}]:[{}]", esc(a), esc(b))),
                 (Some(a), None) => parts.push(format!("[{}]", esc(a))),

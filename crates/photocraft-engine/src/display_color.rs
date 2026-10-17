@@ -26,7 +26,9 @@ use photocraft_compose::Buffer;
 use photocraft_doc::Document;
 use photocraft_raster::Rgba8Image;
 
-use crate::color_cmds::{ColorState, composite_profile, mode_space, profile_from_bytes, resolve_profile};
+use crate::color_cmds::{
+    ColorState, composite_profile, mode_space, profile_from_bytes, resolve_profile,
+};
 use crate::{EngineError, Result};
 
 /// Display intent and black point compensation of the monitor transform.
@@ -62,7 +64,11 @@ impl CanvasDisplay {
 
     /// CPU canvas: a straight-alpha composite → RGBA8 monitor values.
     pub fn to_rgba8(&self, buf: &Buffer) -> Rgba8Image {
-        let mut img = if self.encode_srgb { encode_rgba8(buf) } else { buf.to_rgba8() };
+        let mut img = if self.encode_srgb {
+            encode_rgba8(buf)
+        } else {
+            buf.to_rgba8()
+        };
         if let Some(t) = &self.transform {
             apply_u8(t, &mut img.pixels);
         }
@@ -90,15 +96,30 @@ impl CanvasDisplay {
 /// Linear → sRGB-encoded 8-bit codes, indexed by the linear value in 1/65535 steps.
 fn encode_table() -> &'static [u8] {
     static T: OnceLock<Vec<u8>> = OnceLock::new();
-    T.get_or_init(|| (0..=65535u32).map(|i| (photocraft_color::convert::linear_to_srgb(i as f32 / 65535.0) * 255.0 + 0.5) as u8).collect())
+    T.get_or_init(|| {
+        (0..=65535u32)
+            .map(|i| {
+                (photocraft_color::convert::linear_to_srgb(i as f32 / 65535.0) * 255.0 + 0.5) as u8
+            })
+            .collect()
+    })
 }
 
 fn encode_rgba8(buf: &Buffer) -> Rgba8Image {
     let t = encode_table();
     let mut img = Rgba8Image::new(buf.rect.width(), buf.rect.height());
-    let code = |v: f32| t.get((v.clamp(0.0, 1.0) * 65535.0 + 0.5) as usize).copied().unwrap_or(255);
+    let code = |v: f32| {
+        t.get((v.clamp(0.0, 1.0) * 65535.0 + 0.5) as usize)
+            .copied()
+            .unwrap_or(255)
+    };
     for (o, p) in img.pixels.as_chunks_mut::<4>().0.iter_mut().zip(&buf.px) {
-        *o = [code(p[0]), code(p[1]), code(p[2]), (p[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8];
+        *o = [
+            code(p[0]),
+            code(p[1]),
+            code(p[2]),
+            (p[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8,
+        ];
     }
     img
 }
@@ -116,7 +137,11 @@ fn apply_u8(t: &Transform, px: &mut [u8]) {
 
 /// Is `p` an RGB matrix/TRC profile with linear curves?
 fn is_linear_rgb(p: &Profile) -> bool {
-    p.color_space == ColorSpace::Rgb && p.is_matrix_shaper() && p.trc.as_ref().is_some_and(|t| t.iter().all(Curve::is_identity))
+    p.color_space == ColorSpace::Rgb
+        && p.is_matrix_shaper()
+        && p.trc
+            .as_ref()
+            .is_some_and(|t| t.iter().all(Curve::is_identity))
 }
 
 /// The same primaries with the sRGB curve (what an sRGB-encoded texture of a linear composite is in).
@@ -141,7 +166,8 @@ fn is_identity(t: &Transform, neutral_only: bool) -> bool {
     if neutral_only {
         return (0..=32).all(|i| check([i as f32 / 32.0; 3]));
     }
-    (0..N).all(|b| (0..N).all(|g| (0..N).all(|r| check([r as f32 / s, g as f32 / s, b as f32 / s]))))
+    (0..N)
+        .all(|b| (0..N).all(|g| (0..N).all(|r| check([r as f32 / s, g as f32 / s, b as f32 / s]))))
 }
 
 fn hash_of(v: impl std::hash::Hash) -> u64 {
@@ -194,7 +220,12 @@ pub fn display_at(displays: &[Display], rect: [f64; 4]) -> Option<u32> {
         let h = (rect[1] + rect[3]).min(d.frame[1] + d.frame[3]) - rect[1].max(d.frame[1]);
         if w > 0.0 && h > 0.0 { w * h } else { 0.0 }
     };
-    displays.iter().map(|d| (d.id, area(d))).filter(|(_, a)| *a > 0.0).max_by(|a, b| a.1.total_cmp(&b.1)).map(|(id, _)| id)
+    displays
+        .iter()
+        .map(|d| (d.id, area(d)))
+        .filter(|(_, a)| *a > 0.0)
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(id, _)| id)
 }
 
 /// The monitor profile the canvas is actually shown in on one display, and why
@@ -294,7 +325,9 @@ impl ColorState {
             self.monitor_detection = MonitorDetection::Failed { reason };
             None
         } else {
-            self.monitor_detection = MonitorDetection::Retained { reason: reason.clone() };
+            self.monitor_detection = MonitorDetection::Retained {
+                reason: reason.clone(),
+            };
             Some(reason)
         }
     }
@@ -314,15 +347,24 @@ impl ColorState {
 
     /// The display `id`, else the primary one (the first reported).
     fn display_or_primary(&self, id: Option<u32>) -> Option<&Display> {
-        id.and_then(|id| self.displays.iter().find(|d| d.id == id)).or(self.displays.first())
+        id.and_then(|id| self.displays.iter().find(|d| d.id == id))
+            .or(self.displays.first())
     }
 
     fn resolved_monitor(&self, display: Option<u32>) -> (Arc<Profile>, MonitorStatus) {
         let spec = self.settings.monitor_profile.as_str();
         let auto = spec.is_empty() || spec == "auto";
         let shown = self.display_or_primary(display);
-        let icc = if auto { shown.and_then(|d| d.icc.clone()) } else { None };
-        let mut cache = self.display.monitor.lock().unwrap_or_else(|e| e.into_inner());
+        let icc = if auto {
+            shown.and_then(|d| d.icc.clone())
+        } else {
+            None
+        };
+        let mut cache = self
+            .display
+            .monitor
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(e) = cache.get(&display)
             && e.spec == spec
             && e.display == shown.map(|d| d.id)
@@ -337,35 +379,60 @@ impl ColorState {
         }
         let found = if auto {
             match (shown, &icc, &self.monitor_detection) {
-                (_, Some(b), _) => profile_from_bytes(b).map_err(|e| format!("the display profile can't be read: {e}")),
+                (_, Some(b), _) => profile_from_bytes(b)
+                    .map_err(|e| format!("the display profile can't be read: {e}")),
                 (Some(d), None, _) => Err(format!("{} has no ICC profile", d.name)),
-                (None, None, MonitorDetection::Pending) => Err("the display profile hasn't been read yet".into()),
+                (None, None, MonitorDetection::Pending) => {
+                    Err("the display profile hasn't been read yet".into())
+                }
                 (None, None, MonitorDetection::Failed { reason }) => Err(reason.clone()),
                 (None, None, _) => Err("this platform doesn't report display profiles".into()),
             }
         } else {
-            resolve_profile(spec, None, Some(photocraft_color::ColorMode::Rgb)).map_err(|e| e.to_string())
+            resolve_profile(spec, None, Some(photocraft_color::ColorMode::Rgb))
+                .map_err(|e| e.to_string())
         };
         let usable = found.and_then(|p| {
             if p.color_space != ColorSpace::Rgb {
-                return Err(format!("`{}` is a {:?} profile, not RGB", p.description, p.color_space));
+                return Err(format!(
+                    "`{}` is a {:?} profile, not RGB",
+                    p.description, p.color_space
+                ));
             }
             // The canvas transforms end at this profile: one that can't be a destination would
             // otherwise leave the canvas silently unmanaged.
-            Transform::new(Builtin::Srgb.profile(), &p, DISPLAY_INTENT, DISPLAY_BPC)
-                .map_err(|e| format!("`{}` can't be used as a display profile: {e}", p.description))?;
+            Transform::new(Builtin::Srgb.profile(), &p, DISPLAY_INTENT, DISPLAY_BPC).map_err(
+                |e| {
+                    format!(
+                        "`{}` can't be used as a display profile: {e}",
+                        p.description
+                    )
+                },
+            )?;
             Ok(p)
         });
         let (p, source, reason) = match usable {
             Ok(p) => (p, if auto { "auto" } else { "manual" }, None),
-            Err(r) => (Arc::new(Builtin::Srgb.profile().clone()), "fallback", Some(r)),
+            Err(r) => (
+                Arc::new(Builtin::Srgb.profile().clone()),
+                "fallback",
+                Some(r),
+            ),
         };
         let status = MonitorStatus {
-            requested: if spec.is_empty() { "auto".into() } else { spec.to_string() },
+            requested: if spec.is_empty() {
+                "auto".into()
+            } else {
+                spec.to_string()
+            },
             source,
             display: shown.map(|d| d.name.clone()),
             profile: p.description.clone(),
-            profile_name: if auto { shown.and_then(|d| d.profile_name.clone()) } else { None },
+            profile_name: if auto {
+                shown.and_then(|d| d.profile_name.clone())
+            } else {
+                None
+            },
             fingerprint: format!("{:016x}", p.content_hash()),
             detection: self.monitor_detection.clone(),
             reason,
@@ -392,32 +459,61 @@ impl ColorState {
 
     /// How the canvas shows `doc` on `display` (cached per document profile, mode and monitor
     /// profile).
-    pub fn canvas_display_for(&self, doc: &Document, display: Option<u32>) -> Result<Arc<CanvasDisplay>> {
+    pub fn canvas_display_for(
+        &self,
+        doc: &Document,
+        display: Option<u32>,
+    ) -> Result<Arc<CanvasDisplay>> {
         let space = mode_space(doc.mode);
-        let doc_hash = doc.icc_profile.as_ref().and_then(|b| profile_from_bytes(b).ok()).filter(|p| p.color_space == space).map_or(0, |p| p.content_hash());
+        let doc_hash = doc
+            .icc_profile
+            .as_ref()
+            .and_then(|b| profile_from_bytes(b).ok())
+            .filter(|p| p.color_space == space)
+            .map_or(0, |p| p.content_hash());
         let monitor = self.monitor_for(display);
         let key = (space, doc_hash, monitor.content_hash());
-        if let Some(d) = self.display.canvas.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        if let Some(d) = self
+            .display
+            .canvas
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(&key)
+        {
             return Ok(d.clone());
         }
         let composite = composite_profile(doc);
         let encode_srgb = is_linear_rgb(&composite);
-        let source = if encode_srgb { Arc::new(srgb_curve_twin(&composite)) } else { composite };
+        let source = if encode_srgb {
+            Arc::new(srgb_curve_twin(&composite))
+        } else {
+            composite
+        };
         let transform = if source.content_hash() == monitor.content_hash() {
             None
         } else {
-            let t = Transform::new(&source, &monitor, DISPLAY_INTENT, DISPLAY_BPC).map_err(|e| EngineError::Other(format!("colour management: {e}")))?;
+            let t = Transform::new(&source, &monitor, DISPLAY_INTENT, DISPLAY_BPC)
+                .map_err(|e| EngineError::Other(format!("colour management: {e}")))?;
             (!is_identity(&t, space == ColorSpace::Gray)).then(|| Arc::new(t))
         };
         let d = Arc::new(CanvasDisplay {
             encode_srgb,
-            key: hash_of((source.content_hash(), monitor.content_hash(), encode_srgb, transform.is_some())),
+            key: hash_of((
+                source.content_hash(),
+                monitor.content_hash(),
+                encode_srgb,
+                transform.is_some(),
+            )),
             texture_key: hash_of((source.content_hash(), encode_srgb)),
             source,
             monitor,
             transform,
         });
-        let mut c = self.display.canvas.lock().unwrap_or_else(|e| e.into_inner());
+        let mut c = self
+            .display
+            .canvas
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if c.len() > 32 {
             c.clear();
         }
@@ -433,14 +529,36 @@ impl ColorState {
     /// Changes whenever the canvas display of `doc` on `display` changes: profiles, monitor,
     /// Proof Colors, Gamut Warning and 32-bit preview settings (for the UI's LUT cache).
     pub fn display_signature_for(&self, doc: &Document, display: Option<u32>) -> u64 {
-        let cm = self.canvas_display_for(doc, display).map(|d| d.key).unwrap_or(0);
+        let cm = self
+            .canvas_display_for(doc, display)
+            .map(|d| d.key)
+            .unwrap_or(0);
         // Per frame: read the proof state in place (the default state allocates a profile).
-        let proof = self.proof_ref(doc.id).filter(|pv| pv.enabled || pv.gamut_warning).map(|pv| {
-            let s = &pv.setup;
-            (pv.enabled, pv.gamut_warning, s.profile.content_hash(), s.intent, s.bpc, s.simulate_paper, s.kind, pv.gamut_threshold.to_bits())
+        let proof = self
+            .proof_ref(doc.id)
+            .filter(|pv| pv.enabled || pv.gamut_warning)
+            .map(|pv| {
+                let s = &pv.setup;
+                (
+                    pv.enabled,
+                    pv.gamut_warning,
+                    s.profile.content_hash(),
+                    s.intent,
+                    s.bpc,
+                    s.simulate_paper,
+                    s.kind,
+                    pv.gamut_threshold.to_bits(),
+                )
+            });
+        let hdr = crate::proof_sim::hdr_active(self, doc).then(|| {
+            self.hdr.get(&doc.id).map(|h| {
+                (
+                    h.highlight_compression,
+                    h.exposure.to_bits(),
+                    h.gamma.to_bits(),
+                )
+            })
         });
-        let hdr =
-            crate::proof_sim::hdr_active(self, doc).then(|| self.hdr.get(&doc.id).map(|h| (h.highlight_compression, h.exposure.to_bits(), h.gamma.to_bits())));
         hash_of((cm, proof, hdr))
     }
 }

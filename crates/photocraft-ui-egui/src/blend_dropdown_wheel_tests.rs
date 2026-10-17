@@ -12,13 +12,20 @@ use crate::PhotocraftApp;
 
 /// The app with a new document after `setup` (its last layer is the active one).
 fn harness(setup: impl FnOnce(&mut PhotocraftApp) + 'static) -> Harness<'static, PhotocraftApp> {
-    let mut h = Harness::builder().with_size(vec2(1440.0, 900.0)).with_max_steps(64).build_eframe(move |cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
-        setup(&mut app);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(vec2(1440.0, 900.0))
+        .with_max_steps(64)
+        .build_eframe(move |cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app = PhotocraftApp::new(
+                photocraft_engine::Session::new(),
+                crate::Services::default(),
+            );
+            app.run("file.new", json!({"width": 64, "height": 48}))
+                .unwrap();
+            setup(&mut app);
+            app
+        });
     h.run_steps(8);
     h
 }
@@ -40,7 +47,10 @@ fn steps(h: &Harness<'_, PhotocraftApp>) -> usize {
 
 /// The Layers panel's dropdown: the lowest one (the options bar and the title bar have some too).
 fn dropdown(h: &Harness<'_, PhotocraftApp>) -> Rect {
-    h.query_all_by_role(Role::ComboBox).map(|n| n.rect()).max_by(|a, b| a.top().total_cmp(&b.top())).unwrap()
+    h.query_all_by_role(Role::ComboBox)
+        .map(|n| n.rect())
+        .max_by(|a, b| a.top().total_cmp(&b.top()))
+        .unwrap()
 }
 
 /// `lines` wheel lines at `at` in one event: negative is down.
@@ -62,7 +72,10 @@ fn each_wheel_notch_over_the_blend_mode_dropdown_steps_one_mode_and_one_history_
     let at = dropdown(&h).center();
     let undo = steps(&h);
     assert_eq!(blend(&h), BlendMode::Normal);
-    for (n, mode) in [BlendMode::Dissolve, BlendMode::Darken, BlendMode::Multiply].into_iter().enumerate() {
+    for (n, mode) in [BlendMode::Dissolve, BlendMode::Darken, BlendMode::Multiply]
+        .into_iter()
+        .enumerate()
+    {
         wheel(&mut h, at, -1.0);
         assert_eq!(blend(&h), mode, "notch {} down", n + 1);
         assert_eq!(steps(&h), undo + n + 1, "one history step per notch");
@@ -90,18 +103,32 @@ fn the_wheel_stops_at_the_first_and_last_blend_mode() {
     let mut h = harness(|app| {
         pixel_layer(app);
         let id = app.session.active().unwrap().active_layer.unwrap().0;
-        app.run("layer.setProps", json!({"layer": id, "blend": "Luminosity"})).unwrap();
+        app.run(
+            "layer.setProps",
+            json!({"layer": id, "blend": "Luminosity"}),
+        )
+        .unwrap();
     });
     let at = dropdown(&h).center();
     let undo = steps(&h);
     wheel(&mut h, at, -1.0);
-    assert_eq!((blend(&h), steps(&h)), (BlendMode::Luminosity, undo), "down on the last mode");
+    assert_eq!(
+        (blend(&h), steps(&h)),
+        (BlendMode::Luminosity, undo),
+        "down on the last mode"
+    );
     let id = h.state().session.active().unwrap().active_layer.unwrap().0;
-    h.state_mut().run("layer.setProps", json!({"layer": id, "blend": "Normal"})).unwrap();
+    h.state_mut()
+        .run("layer.setProps", json!({"layer": id, "blend": "Normal"}))
+        .unwrap();
     h.run_steps(2);
     let undo = steps(&h);
     wheel(&mut h, at, 1.0);
-    assert_eq!((blend(&h), steps(&h)), (BlendMode::Normal, undo), "up on the first mode");
+    assert_eq!(
+        (blend(&h), steps(&h)),
+        (BlendMode::Normal, undo),
+        "up on the first mode"
+    );
 }
 
 #[test]
@@ -117,14 +144,21 @@ fn the_wheel_steps_a_group_through_its_list_with_pass_through() {
     assert_eq!(blend(&h), BlendMode::PassThrough);
     let undo = steps(&h);
     wheel(&mut h, at, 1.0);
-    assert_eq!((blend(&h), steps(&h)), (BlendMode::PassThrough, undo), "Pass Through is the first");
+    assert_eq!(
+        (blend(&h), steps(&h)),
+        (BlendMode::PassThrough, undo),
+        "Pass Through is the first"
+    );
 }
 
 #[test]
 fn the_wheel_leaves_the_greyed_background_blend_mode_alone() {
     let mut h = harness(|_| {});
     let st = h.state().session.active().unwrap();
-    assert!(crate::doc_props_ui::is_background(&st.doc, st.doc.layer(st.active_layer.unwrap()).unwrap()));
+    assert!(crate::doc_props_ui::is_background(
+        &st.doc,
+        st.doc.layer(st.active_layer.unwrap()).unwrap()
+    ));
     let at = dropdown(&h).center();
     let undo = steps(&h);
     wheel(&mut h, at, -1.0);
@@ -136,7 +170,12 @@ fn click(h: &mut Harness<'_, PhotocraftApp>, at: Pos2) {
     h.hover_at(at);
     h.run_steps(1);
     for pressed in [true, false] {
-        h.event(egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() });
+        h.event(egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        });
         h.run_steps(1);
     }
     h.run_steps(2);
@@ -156,8 +195,16 @@ fn the_wheel_over_the_open_list_steps_modes_instead_of_scrolling_it() {
     let (last, darken) = (entry(&h, "Luminosity"), entry(&h, "Darken").center());
     wheel(&mut h, darken, -1.0);
     h.run_steps(10);
-    assert_eq!((blend(&h), steps(&h)), (BlendMode::Dissolve, undo + 1), "one mode, one step");
-    assert_eq!(entry(&h, "Luminosity"), last, "the list stays open and doesn't scroll");
+    assert_eq!(
+        (blend(&h), steps(&h)),
+        (BlendMode::Dissolve, undo + 1),
+        "one mode, one step"
+    );
+    assert_eq!(
+        entry(&h, "Luminosity"),
+        last,
+        "the list stays open and doesn't scroll"
+    );
 }
 
 #[test]
@@ -203,11 +250,19 @@ fn a_wheel_step_ends_the_hover_preview_until_the_pointer_moves() {
     assert_eq!(previewed(&mut h), Some(BlendMode::Screen));
     wheel(&mut h, screen, -1.0);
     assert_eq!(blend(&h), BlendMode::Dissolve);
-    assert_eq!(previewed(&mut h), None, "the chosen mode shows, not the one under the pointer");
+    assert_eq!(
+        previewed(&mut h),
+        None,
+        "the chosen mode shows, not the one under the pointer"
+    );
     h.run_steps(10);
     assert_eq!(previewed(&mut h), None, "still, while the pointer rests");
     let multiply = entry(&h, "Multiply").center();
     h.hover_at(multiply);
     h.run_steps(3);
-    assert_eq!(previewed(&mut h), Some(BlendMode::Multiply), "a moved pointer previews again");
+    assert_eq!(
+        previewed(&mut h),
+        Some(BlendMode::Multiply),
+        "a moved pointer previews again"
+    );
 }

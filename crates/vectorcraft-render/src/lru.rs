@@ -78,7 +78,14 @@ pub(crate) struct FrameCache<K, V, S = PtrBuild> {
 impl<K: Hash + Eq + Clone, V, S: BuildHasher + Default> FrameCache<K, V, S> {
     /// A cache holding at most `budget` bytes, sweeping entries of past frames beyond `soft` entries.
     pub(crate) fn new(budget: usize, soft: usize) -> Self {
-        Self { map: HashMap::default(), bytes: 0, budget, soft, clock: 0, full: None }
+        Self {
+            map: HashMap::default(),
+            bytes: 0,
+            budget,
+            soft,
+            clock: 0,
+            full: None,
+        }
     }
 
     /// The entry for `k`, marked as used in frame `stamp`.
@@ -107,7 +114,12 @@ impl<K: Hash + Eq + Clone, V, S: BuildHasher + Default> FrameCache<K, V, S> {
             }
             // Make room down to seven eighths of the budget, so the next few don't search again.
             let target = self.budget - self.budget / 8;
-            let mut old: Vec<(u64, K)> = self.map.iter().filter(|(_, s)| s.stamp < stamp).map(|(k, s)| (s.used, k.clone())).collect();
+            let mut old: Vec<(u64, K)> = self
+                .map
+                .iter()
+                .filter(|(_, s)| s.stamp < stamp)
+                .map(|(k, s)| (s.used, k.clone()))
+                .collect();
             old.sort_unstable_by_key(|(used, _)| *used);
             for (_, key) in old {
                 if self.bytes + bytes <= target {
@@ -123,7 +135,15 @@ impl<K: Hash + Eq + Clone, V, S: BuildHasher + Default> FrameCache<K, V, S> {
             }
         }
         self.bytes += bytes;
-        self.map.insert(k, Slot { value, bytes, stamp, used: self.clock });
+        self.map.insert(
+            k,
+            Slot {
+                value,
+                bytes,
+                stamp,
+                used: self.clock,
+            },
+        );
         true
     }
 
@@ -191,7 +211,11 @@ pub(crate) fn node_bytes(n: &Node) -> usize {
     n.walk(&mut |c| {
         b += size_of::<Node>() + NODE_OVERHEAD;
         if let Some(p) = c.path_data() {
-            b += p.subpaths.iter().map(|s| size_of::<SubPath>() + s.anchors.len() * size_of::<Anchor>()).sum::<usize>();
+            b += p
+                .subpaths
+                .iter()
+                .map(|s| size_of::<SubPath>() + s.anchors.len() * size_of::<Anchor>())
+                .sum::<usize>();
         }
     });
     b
@@ -215,9 +239,19 @@ mod tests {
             assert!(c.get(&k, 2).is_some());
         }
         assert!(c.insert(10, "y", 10, 2));
-        assert!((0..5).all(|k| c.contains_key(&k)) && c.contains_key(&10), "recently used entries stay");
-        assert!(c.bytes() <= 100 && c.bytes() < 110, "bytes went down: {}", c.bytes());
-        assert!(!c.contains_key(&5), "the least recently used entry went first");
+        assert!(
+            (0..5).all(|k| c.contains_key(&k)) && c.contains_key(&10),
+            "recently used entries stay"
+        );
+        assert!(
+            c.bytes() <= 100 && c.bytes() < 110,
+            "bytes went down: {}",
+            c.bytes()
+        );
+        assert!(
+            !c.contains_key(&5),
+            "the least recently used entry went first"
+        );
     }
 
     #[test]

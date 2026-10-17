@@ -11,7 +11,11 @@ fn capsule(x: f32, y: f32, a: [f32; 2], b: [f32; 2], r: f32) -> f32 {
     let (px, py) = (x - a[0], y - a[1]);
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let len2 = dx * dx + dy * dy;
-    let t = if len2 > 0.0 { ((px * dx + py * dy) / len2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if len2 > 0.0 {
+        ((px * dx + py * dy) / len2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     (px - dx * t).hypot(py - dy * t) - r
 }
 
@@ -64,7 +68,11 @@ pub(super) fn crease(closed: bool, x: f32, y: f32) -> f32 {
     } else {
         let mut d = f32::MAX;
         // Each crease starts just below the lower of the two fingertips it separates.
-        for ((fx, a), b) in [-3.4, 0.0, 3.4].into_iter().zip(TIPS).zip(TIPS.into_iter().skip(1)) {
+        for ((fx, a), b) in [-3.4, 0.0, 3.4]
+            .into_iter()
+            .zip(TIPS)
+            .zip(TIPS.into_iter().skip(1))
+        {
             d = d.min(line([fx, a.max(b) + 1.0], [fx, 3.5]));
         }
         d

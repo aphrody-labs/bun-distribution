@@ -32,7 +32,11 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
     let root = int_after(&trailer, "/Root")?;
     let prev = int_after(&trailer, "startxref")?;
     let info = int_after(&trailer, "/Info");
-    let id = trailer.find("/ID").and_then(|i| trailer[i..].find(']').map(|j| trailer[i..i + j + 1].to_string()));
+    let id = trailer.find("/ID").and_then(|i| {
+        trailer[i..]
+            .find(']')
+            .map(|j| trailer[i..i + j + 1].to_string())
+    });
     let cat = String::from_utf8_lossy(&pdf[object(pdf, root)?]).to_string();
     let mut out = pdf.to_vec();
     if !out.ends_with(b"\n") {
@@ -66,7 +70,11 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
     );
     // The catalog with the intent.
     let close = cat.rfind(">>")?;
-    let cat_new = format!("{}/OutputIntents[{oi_id} 0 R]{}", cat[..close].trim(), &cat[close..]);
+    let cat_new = format!(
+        "{}/OutputIntents[{oi_id} 0 R]{}",
+        cat[..close].trim(),
+        &cat[close..]
+    );
     put(&mut out, root, cat_new.trim().as_bytes());
     // Document information: the PDF/X version and trapping state.
     let mut next = size + 2;
@@ -74,13 +82,31 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
         Some(i) => {
             let body = String::from_utf8_lossy(&pdf[object(pdf, i)?]).to_string();
             let close = body.rfind(">>")?;
-            put(&mut out, i, format!("{}/GTS_PDFXVersion(PDF/X-4)/Trapped/False{}", body[..close].trim(), &body[close..]).trim().as_bytes());
+            put(
+                &mut out,
+                i,
+                format!(
+                    "{}/GTS_PDFXVersion(PDF/X-4)/Trapped/False{}",
+                    body[..close].trim(),
+                    &body[close..]
+                )
+                .trim()
+                .as_bytes(),
+            );
             i
         }
         None => {
             let i = next;
             next += 1;
-            put(&mut out, i, format!("<</Title{}/GTS_PDFXVersion(PDF/X-4)/Trapped/False>>", lit(title)).as_bytes());
+            put(
+                &mut out,
+                i,
+                format!(
+                    "<</Title{}/GTS_PDFXVersion(PDF/X-4)/Trapped/False>>",
+                    lit(title)
+                )
+                .as_bytes(),
+            );
             i
         }
     };
@@ -89,9 +115,15 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
         let r = object(pdf, meta)?;
         let body = &pdf[r];
         let s0 = find(body, b"stream", 0)? + b"stream".len();
-        let s0 = s0 + body[s0..].iter().take_while(|c| **c == b'\r' || **c == b'\n').count();
+        let s0 = s0
+            + body[s0..]
+                .iter()
+                .take_while(|c| **c == b'\r' || **c == b'\n')
+                .count();
         let s1 = rfind(body, b"endstream")?;
-        let xml = String::from_utf8_lossy(&body[s0..s1]).trim_end().to_string();
+        let xml = String::from_utf8_lossy(&body[s0..s1])
+            .trim_end()
+            .to_string();
         let dict = String::from_utf8_lossy(&body[..find(body, b"stream", 0)?]).to_string();
         if dict.contains("/Filter") {
             return None;
@@ -105,7 +137,9 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
             let i = dict.find("/Length")?;
             let rest = &dict[i + 7..];
             let rest = rest.trim_start();
-            let end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
+            let end = rest
+                .find(|c: char| !c.is_ascii_digit())
+                .unwrap_or(rest.len());
             format!("{}/Length {}{}", &dict[..i], xml.len(), &rest[end..])
         };
         let mut b = dict.trim().as_bytes().to_vec();
@@ -136,17 +170,30 @@ pub fn make_pdfx4(pdf: &[u8], title: &str) -> Option<Vec<u8>> {
 /// data. Returns how many groups changed.
 /// Whether a transparency group dictionary still names DeviceRGB as its blending space.
 pub fn has_rgb_groups(pdf: &[u8]) -> bool {
-    pdf.windows(b"/CS/DeviceRGB".len()).enumerate().any(|(i, w)| {
-        w == b"/CS/DeviceRGB" && pdf.get(i.saturating_sub(64)..i).is_some_and(|before| before.windows(15).any(|b| b == b"/S/Transparency"))
-    })
+    pdf.windows(b"/CS/DeviceRGB".len())
+        .enumerate()
+        .any(|(i, w)| {
+            w == b"/CS/DeviceRGB"
+                && pdf
+                    .get(i.saturating_sub(64)..i)
+                    .is_some_and(|before| before.windows(15).any(|b| b == b"/S/Transparency"))
+        })
 }
 
 pub fn cmyk_group_spaces(pdf: &mut [u8]) -> usize {
     const FORMS: [(&[u8], &[u8]); 2] = [
-        (b"/Group<</Type/Group/S/Transparency/I true/CS/DeviceRGB>>", b"/Group<</S/Transparency/I true/CS/DeviceCMYK>>"),
-        (b"/Group<</Type/Group/S/Transparency/CS/DeviceRGB>>", b"/Group<</S/Transparency/CS/DeviceCMYK>>"),
+        (
+            b"/Group<</Type/Group/S/Transparency/I true/CS/DeviceRGB>>",
+            b"/Group<</S/Transparency/I true/CS/DeviceCMYK>>",
+        ),
+        (
+            b"/Group<</Type/Group/S/Transparency/CS/DeviceRGB>>",
+            b"/Group<</S/Transparency/CS/DeviceCMYK>>",
+        ),
     ];
-    let Some(dicts) = dictionary_ranges(pdf) else { return 0 };
+    let Some(dicts) = dictionary_ranges(pdf) else {
+        return 0;
+    };
     let mut changed = 0;
     for r in dicts {
         for (from, to) in FORMS {
@@ -270,7 +317,10 @@ fn device_rgb(pdf: &[u8]) -> Vec<String> {
             let list: Vec<String> = pages.iter().take(10).map(|p| p.to_string()).collect();
             let more = if pages.len() > 10 { ", …" } else { "" };
             let s = if pages.len() == 1 { "" } else { "s" };
-            format!("{what} on page{s} {}{more}: under a CMYK output intent RGB needs an ICC profile", list.join(", "))
+            format!(
+                "{what} on page{s} {}{more}: under a CMYK output intent RGB needs an ICC profile",
+                list.join(", ")
+            )
         })
         .collect()
 }
@@ -278,11 +328,19 @@ fn device_rgb(pdf: &[u8]) -> Vec<String> {
 /// Whether the file's PDF/X output intent has a four-channel (CMYK) destination profile.
 fn cmyk_output_intent(file: &hayro_syntax::Pdf) -> bool {
     let xref = file.xref();
-    let Some(catalog) = xref.get::<Dict<'_>>(xref.root_id()) else { return false };
-    let Some(intents) = catalog.get::<Array<'_>>(b"OutputIntents") else { return false };
+    let Some(catalog) = xref.get::<Dict<'_>>(xref.root_id()) else {
+        return false;
+    };
+    let Some(intents) = catalog.get::<Array<'_>>(b"OutputIntents") else {
+        return false;
+    };
     intents.iter::<Dict<'_>>().any(|oi| {
-        oi.get::<Name<'_>>(b"S").is_some_and(|s| s.as_ref() == b"GTS_PDFX")
-            && oi.get::<Stream<'_>>(b"DestOutputProfile").and_then(|p| p.dict().get::<i32>(b"N")) == Some(4)
+        oi.get::<Name<'_>>(b"S")
+            .is_some_and(|s| s.as_ref() == b"GTS_PDFX")
+            && oi
+                .get::<Stream<'_>>(b"DestOutputProfile")
+                .and_then(|p| p.dict().get::<i32>(b"N"))
+                == Some(4)
     })
 }
 
@@ -325,7 +383,8 @@ impl RgbScan {
 
     /// `DefaultRGB` in scope makes DeviceRGB colour-managed.
     fn managed(res: &Resources<'_>) -> bool {
-        res.get_color_space(&Name::new_unescaped(b"DefaultRGB")).is_some()
+        res.get_color_space(&Name::new_unescaped(b"DefaultRGB"))
+            .is_some()
     }
 
     /// A content stream (a page's or a form's) with its resources.
@@ -342,7 +401,10 @@ impl RgbScan {
             match operator {
                 b"rg" | b"RG" if !managed => self.add("RGB fills or strokes".into()),
                 b"cs" | b"CS" if !managed => {
-                    let rgb = name().is_some_and(|n| n.as_ref() == b"DeviceRGB" || res.get_color_space(&n).is_some_and(|cs| is_device_rgb(&cs)));
+                    let rgb = name().is_some_and(|n| {
+                        n.as_ref() == b"DeviceRGB"
+                            || res.get_color_space(&n).is_some_and(|cs| is_device_rgb(&cs))
+                    });
                     if rgb {
                         self.add("RGB fills or strokes".into());
                     }
@@ -358,7 +420,9 @@ impl RgbScan {
                     }
                 }
                 b"gs" => {
-                    let mask = name().and_then(|n| res.get_ext_g_state(&n)).and_then(|gs| gs.get::<Dict<'_>>(b"SMask"));
+                    let mask = name()
+                        .and_then(|n| res.get_ext_g_state(&n))
+                        .and_then(|gs| gs.get::<Dict<'_>>(b"SMask"));
                     if let Some(form) = mask.and_then(|m| m.get::<Stream<'_>>(b"G")) {
                         self.form(&form, res, depth);
                     }
@@ -374,10 +438,21 @@ impl RgbScan {
                 }
                 b"BI" | b"EI" if !managed => {
                     if let Some(Object::Stream(img)) = last {
-                        let cs = img.dict().get::<Object<'_>>(b"CS").or_else(|| img.dict().get::<Object<'_>>(b"ColorSpace"));
+                        let cs = img
+                            .dict()
+                            .get::<Object<'_>>(b"CS")
+                            .or_else(|| img.dict().get::<Object<'_>>(b"ColorSpace"));
                         let cs = match cs {
                             Some(Object::Name(n))
-                                if !matches!(n.as_ref(), b"DeviceRGB" | b"RGB" | b"G" | b"DeviceGray" | b"CMYK" | b"DeviceCMYK") =>
+                                if !matches!(
+                                    n.as_ref(),
+                                    b"DeviceRGB"
+                                        | b"RGB"
+                                        | b"G"
+                                        | b"DeviceGray"
+                                        | b"CMYK"
+                                        | b"DeviceCMYK"
+                                ) =>
                             {
                                 res.get_color_space(&n)
                             }
@@ -398,9 +473,19 @@ impl RgbScan {
         if managed || !self.seen.insert(id) || img.dict().get::<bool>(b"ImageMask") == Some(true) {
             return;
         }
-        if img.dict().get::<Object<'_>>(b"ColorSpace").is_some_and(|cs| is_device_rgb(&cs)) {
-            let (w, h) = (img.dict().get::<i32>(b"Width").unwrap_or(0), img.dict().get::<i32>(b"Height").unwrap_or(0));
-            self.add(format!("an RGB image (object {}, {w} × {h} px)", id.obj_number));
+        if img
+            .dict()
+            .get::<Object<'_>>(b"ColorSpace")
+            .is_some_and(|cs| is_device_rgb(&cs))
+        {
+            let (w, h) = (
+                img.dict().get::<i32>(b"Width").unwrap_or(0),
+                img.dict().get::<i32>(b"Height").unwrap_or(0),
+            );
+            self.add(format!(
+                "an RGB image (object {}, {w} × {h} px)",
+                id.obj_number
+            ));
         }
     }
 
@@ -409,7 +494,12 @@ impl RgbScan {
         if depth >= MAX_DEPTH || !self.seen.insert(form.obj_id()) {
             return;
         }
-        let res = Resources::from_parent(form.dict().get::<Dict<'_>>(b"Resources").unwrap_or_default(), parent.clone());
+        let res = Resources::from_parent(
+            form.dict()
+                .get::<Dict<'_>>(b"Resources")
+                .unwrap_or_default(),
+            parent.clone(),
+        );
         if let Some(group) = form.dict().get::<Dict<'_>>(b"Group") {
             self.group(&group, &res);
         }
@@ -419,7 +509,11 @@ impl RgbScan {
     }
 
     fn group(&mut self, group: &Dict<'_>, res: &Resources<'_>) {
-        if !Self::managed(res) && group.get::<Object<'_>>(b"CS").is_some_and(|cs| is_device_rgb(&cs)) {
+        if !Self::managed(res)
+            && group
+                .get::<Object<'_>>(b"CS")
+                .is_some_and(|cs| is_device_rgb(&cs))
+        {
             self.add("a transparency group blending in RGB".into());
         }
     }
@@ -431,7 +525,11 @@ impl RgbScan {
             Object::Stream(s) => s.dict().clone(),
             _ => return,
         };
-        if !managed && dict.get::<Object<'_>>(b"ColorSpace").is_some_and(|cs| is_device_rgb(&cs)) {
+        if !managed
+            && dict
+                .get::<Object<'_>>(b"ColorSpace")
+                .is_some_and(|cs| is_device_rgb(&cs))
+        {
             self.add("RGB gradients".into());
         }
     }
@@ -457,7 +555,9 @@ mod tests {
     use designcraft_color::{Color, Swatch};
     use designcraft_compose::Cache;
     use designcraft_doc::build::NewDocument;
-    use designcraft_doc::{Asset, AssetId, Content, Document, Fill, Fitting, Graphic, Item, ItemId, Shape, SpreadRef};
+    use designcraft_doc::{
+        Asset, AssetId, Content, Document, Fill, Fitting, Graphic, Item, ItemId, Shape, SpreadRef,
+    };
     use designcraft_geom::{Affine, Rect};
     use hayro_syntax::object::{Name, Object};
     use image::{ExtendedColorType, ImageEncoder};
@@ -468,11 +568,27 @@ mod tests {
         let asset = AssetId(d.alloc());
         let mime = designcraft_images::mime(&data).into();
         let pixels = designcraft_images::pixel_size(&data);
-        d.assets.insert(asset, Arc::new(Asset { id: asset, name: name.into(), mime, link: None, data: data.into(), pixels, page: 0 }));
+        d.assets.insert(
+            asset,
+            Arc::new(Asset {
+                id: asset,
+                name: name.into(),
+                mime,
+                link: None,
+                data: data.into(),
+                pixels,
+                page: 0,
+            }),
+        );
         let lid = d.default_layer();
         let id = ItemId(d.alloc());
         let r = Rect::new(at.0, at.1, at.0 + 100.0, at.1 + 50.0);
-        let mut it = Item::new(id, lid, Shape::Rectangle, designcraft_geom::shapes::rectangle(r));
+        let mut it = Item::new(
+            id,
+            lid,
+            Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(r),
+        );
         it.content = Content::Graphic(Graphic {
             asset,
             size,
@@ -486,7 +602,12 @@ mod tests {
 
     fn add_box(d: &mut Document, r: Rect, swatch: &str) {
         let lid = d.default_layer();
-        let mut b = Item::new(ItemId(d.alloc()), lid, Shape::Rectangle, designcraft_geom::shapes::rectangle(r));
+        let mut b = Item::new(
+            ItemId(d.alloc()),
+            lid,
+            Shape::Rectangle,
+            designcraft_geom::shapes::rectangle(r),
+        );
         b.fill = Fill::swatch(swatch);
         d.insert_item(SpreadRef::Doc(0), b, None).unwrap();
     }
@@ -498,7 +619,11 @@ mod tests {
         if let Some(p) = icc {
             enc.set_icc_profile(p).unwrap();
         }
-        let (px, ty) = if gray { (vec![128u8; 8], ExtendedColorType::L8) } else { ([255u8, 0, 0].repeat(8), ExtendedColorType::Rgb8) };
+        let (px, ty) = if gray {
+            (vec![128u8; 8], ExtendedColorType::L8)
+        } else {
+            ([255u8, 0, 0].repeat(8), ExtendedColorType::Rgb8)
+        };
         enc.write_image(&px, 4, 2, ty).unwrap();
         b
     }
@@ -544,13 +669,22 @@ mod tests {
 
     /// A one-page PDF 1.6 holding a CMYK image, as another app would hand over a placed graphic.
     fn pdf_with_cmyk_image() -> Vec<u8> {
-        pdf_with_image(krilla::image::Image::from_custom(CmykImage([0u8, 0, 0, 255].repeat(8)), false).unwrap())
+        pdf_with_image(
+            krilla::image::Image::from_custom(CmykImage([0u8, 0, 0, 255].repeat(8)), false)
+                .unwrap(),
+        )
     }
 
     /// A one-page PDF 1.6 holding `img`.
     fn pdf_with_image(img: krilla::image::Image) -> Vec<u8> {
-        let configuration = krilla::configure::ConfigurationBuilder::new().with_version(krilla::configure::PdfVersion::Pdf16).finish().unwrap();
-        let mut pdf = krilla::Document::new_with(krilla::SerializeSettings { configuration, ..Default::default() });
+        let configuration = krilla::configure::ConfigurationBuilder::new()
+            .with_version(krilla::configure::PdfVersion::Pdf16)
+            .finish()
+            .unwrap();
+        let mut pdf = krilla::Document::new_with(krilla::SerializeSettings {
+            configuration,
+            ..Default::default()
+        });
         let size = krilla::geom::Size::from_wh(100.0, 50.0).unwrap();
         let mut page = pdf.start_page_with(krilla::page::PageSettings::new(size));
         let mut s = page.surface();
@@ -561,7 +695,15 @@ mod tests {
     }
 
     fn x4(d: &Document) -> ExportReport {
-        export_pdf_with_report(d, &Cache::new(), &PdfOptions { standard: Standard::PdfX4, ..Default::default() }).unwrap()
+        export_pdf_with_report(
+            d,
+            &Cache::new(),
+            &PdfOptions {
+                standard: Standard::PdfX4,
+                ..Default::default()
+            },
+        )
+        .unwrap()
     }
 
     /// The `/ColorSpace` of every image XObject: a name, or `[` for an array (ICCBased, Indexed…).
@@ -571,7 +713,12 @@ mod tests {
             .objects()
             .into_iter()
             .filter_map(|o| o.into_stream())
-            .filter(|s| s.dict().get::<Name>(b"Subtype").is_some_and(|n| n.as_str() == "Image") && s.dict().get::<bool>(b"ImageMask").is_none())
+            .filter(|s| {
+                s.dict()
+                    .get::<Name>(b"Subtype")
+                    .is_some_and(|n| n.as_str() == "Image")
+                    && s.dict().get::<bool>(b"ImageMask").is_none()
+            })
             .filter_map(|s| match s.dict().get::<Object>(b"ColorSpace")? {
                 Object::Name(n) => Some(n.as_str().to_string()),
                 Object::Array(a) => a.iter::<Name>().next().map(|n| format!("[{}", n.as_str())),
@@ -588,12 +735,23 @@ mod tests {
     fn device_rgb_image_is_flagged() {
         let mut d = Document::new(&NewDocument::default());
         let photo = krilla::image::Image::from_png(png(false, None).into(), false).unwrap();
-        place(&mut d, "photo.pdf", pdf_with_image(photo), (100.0, 50.0), (72.0, 72.0));
+        place(
+            &mut d,
+            "photo.pdf",
+            pdf_with_image(photo),
+            (100.0, 50.0),
+            (72.0, 72.0),
+        );
         let r = x4(&d);
         assert_eq!(image_spaces(&r.bytes), ["DeviceRGB"]);
         let rgb: Vec<&String> = r.warnings.iter().filter(|w| w.contains("RGB")).collect();
         assert_eq!(rgb.len(), 1, "{:?}", r.warnings);
-        assert!(rgb[0].starts_with("PDF/X-4: an RGB image (object ") && rgb[0].contains("4 × 2 px) on page 1:"), "{}", rgb[0]);
+        assert!(
+            rgb[0].starts_with("PDF/X-4: an RGB image (object ")
+                && rgb[0].contains("4 × 2 px) on page 1:"),
+            "{}",
+            rgb[0]
+        );
         // Without a PDF/X output intent there is nothing to check RGB against.
         let plain = export_pdf_with_report(&d, &Cache::new(), &PdfOptions::default()).unwrap();
         assert!(!check_pdfx4(&plain.bytes).iter().any(|i| i.contains("RGB")));
@@ -604,23 +762,57 @@ mod tests {
     #[test]
     fn cmyk_grey_and_icc_rgb_pass() {
         let mut d = Document::new(&NewDocument::default());
-        add_box(&mut d, Rect::new(36.0, 400.0, 136.0, 500.0), "C=100 M=0 Y=0 K=0");
-        place(&mut d, "grey.png", png(true, None), (4.0, 2.0), (72.0, 72.0));
-        place(&mut d, "tagged.png", png(false, Some(rgb_icc())), (4.0, 2.0), (72.0, 172.0));
-        place(&mut d, "logo.pdf", pdf_with_cmyk_image(), (100.0, 50.0), (72.0, 272.0));
+        add_box(
+            &mut d,
+            Rect::new(36.0, 400.0, 136.0, 500.0),
+            "C=100 M=0 Y=0 K=0",
+        );
+        place(
+            &mut d,
+            "grey.png",
+            png(true, None),
+            (4.0, 2.0),
+            (72.0, 72.0),
+        );
+        place(
+            &mut d,
+            "tagged.png",
+            png(false, Some(rgb_icc())),
+            (4.0, 2.0),
+            (72.0, 172.0),
+        );
+        place(
+            &mut d,
+            "logo.pdf",
+            pdf_with_cmyk_image(),
+            (100.0, 50.0),
+            (72.0, 272.0),
+        );
         let r = x4(&d);
-        assert_eq!(image_spaces(&r.bytes), ["DeviceCMYK", "DeviceGray", "[ICCBased"]);
+        assert_eq!(
+            image_spaces(&r.bytes),
+            ["DeviceCMYK", "DeviceGray", "[ICCBased"]
+        );
         assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     }
 
     /// RGB swatches paint in DeviceRGB.
     #[test]
     fn device_rgb_fills_are_flagged() {
-        let mut d = Document::new(&NewDocument { pages: 2, ..NewDocument::default() });
-        d.swatches.push(Swatch::color("Brand Red", Color::rgb(0.9, 0.1, 0.1)));
+        let mut d = Document::new(&NewDocument {
+            pages: 2,
+            ..NewDocument::default()
+        });
+        d.swatches
+            .push(Swatch::color("Brand Red", Color::rgb(0.9, 0.1, 0.1)));
         add_box(&mut d, Rect::new(36.0, 400.0, 136.0, 500.0), "Brand Red");
         let r = x4(&d);
-        assert_eq!(r.warnings, ["PDF/X-4: RGB fills or strokes on page 1: under a CMYK output intent RGB needs an ICC profile"]);
+        assert_eq!(
+            r.warnings,
+            [
+                "PDF/X-4: RGB fills or strokes on page 1: under a CMYK output intent RGB needs an ICC profile"
+            ]
+        );
     }
 
     /// A minimal PDF with a CMYK (N 4) PDF/X output intent and one page with `entries` (its
@@ -641,11 +833,19 @@ mod tests {
             out.extend_from_slice(format!("{} 0 obj\n{o}\nendobj\n", i + 1).as_bytes());
         }
         let xref = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f\r\n", objects.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f\r\n", objects.len() + 1).as_bytes(),
+        );
         for off in offsets {
             out.extend_from_slice(format!("{off:010} 00000 n\r\n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<</Size {}/Root 1 0 R>>\nstartxref\n{xref}\n%%EOF\n", objects.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<</Size {}/Root 1 0 R>>\nstartxref\n{xref}\n%%EOF\n",
+                objects.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     }
 
@@ -656,24 +856,44 @@ mod tests {
         let content = "1 0 0 rg 0 0 10 10 re f /DeviceRGB CS 0 0 1 SC 0 0 m 10 10 l S";
         let bare = check_pdfx4(&tiny_pdf("/Resources<<>>", content));
         assert_eq!(bare.iter().filter(|i| rgb(i)).count(), 1, "{bare:?}");
-        let managed = check_pdfx4(&tiny_pdf("/Resources<</ColorSpace<</DefaultRGB[/ICCBased 6 0 R]>>>>", content));
+        let managed = check_pdfx4(&tiny_pdf(
+            "/Resources<</ColorSpace<</DefaultRGB[/ICCBased 6 0 R]>>>>",
+            content,
+        ));
         assert!(!managed.iter().any(rgb), "{managed:?}");
         // CMYK and grey need no default space.
-        let cmyk = check_pdfx4(&tiny_pdf("/Resources<<>>", "0 0 0 1 k 0 0 10 10 re f 0.5 G 0 0 m 10 10 l S"));
+        let cmyk = check_pdfx4(&tiny_pdf(
+            "/Resources<<>>",
+            "0 0 0 1 k 0 0 10 10 re f 0.5 G 0 0 m 10 10 l S",
+        ));
         assert!(!cmyk.iter().any(rgb), "{cmyk:?}");
     }
 
     /// An RGB blending space on the page group and an RGB inline image are device RGB too.
     #[test]
     fn rgb_groups_and_inline_images_are_flagged() {
-        let group = check_pdfx4(&tiny_pdf("/Resources<<>>/Group<</S/Transparency/CS/DeviceRGB>>", "0 0 0 1 k"));
+        let group = check_pdfx4(&tiny_pdf(
+            "/Resources<<>>/Group<</S/Transparency/CS/DeviceRGB>>",
+            "0 0 0 1 k",
+        ));
         assert!(
             group.iter().any(|i| i == "a transparency group blending in RGB on page 1: under a CMYK output intent RGB needs an ICC profile"),
             "{group:?}"
         );
-        let inline = check_pdfx4(&tiny_pdf("/Resources<<>>", "q BI /W 1 /H 1 /CS /RGB /BPC 8 /F /AHx ID ff0000> EI Q"));
-        assert!(inline.iter().any(|i| i.starts_with("an RGB inline image on page 1")), "{inline:?}");
-        let grey = check_pdfx4(&tiny_pdf("/Resources<<>>", "q BI /W 1 /H 1 /CS /G /BPC 8 /F /AHx ID 80> EI Q"));
+        let inline = check_pdfx4(&tiny_pdf(
+            "/Resources<<>>",
+            "q BI /W 1 /H 1 /CS /RGB /BPC 8 /F /AHx ID ff0000> EI Q",
+        ));
+        assert!(
+            inline
+                .iter()
+                .any(|i| i.starts_with("an RGB inline image on page 1")),
+            "{inline:?}"
+        );
+        let grey = check_pdfx4(&tiny_pdf(
+            "/Resources<<>>",
+            "q BI /W 1 /H 1 /CS /G /BPC 8 /F /AHx ID 80> EI Q",
+        ));
         assert!(!grey.iter().any(|i| i.contains("RGB")), "{grey:?}");
     }
 
@@ -686,14 +906,38 @@ mod tests {
             f(&mut b);
             b
         };
-        let jpeg = encode(&|b| image::codecs::jpeg::JpegEncoder::new(b).write_image(&px([0, 0, 255]), 4, 2, ExtendedColorType::Rgb8).unwrap());
-        let gif = encode(&|b| image::codecs::gif::GifEncoder::new(b).encode(&[0u8, 255, 0, 255].repeat(8), 4, 2, ExtendedColorType::Rgba8).unwrap());
-        let webp =
-            encode(&|b| image::codecs::webp::WebPEncoder::new_lossless(b).write_image(&px([255, 255, 0]), 4, 2, ExtendedColorType::Rgb8).unwrap());
-        let tiff = encode(&|b| {
-            image::codecs::tiff::TiffEncoder::new(std::io::Cursor::new(b)).write_image(&px([0, 255, 255]), 4, 2, ExtendedColorType::Rgb8).unwrap()
+        let jpeg = encode(&|b| {
+            image::codecs::jpeg::JpegEncoder::new(b)
+                .write_image(&px([0, 0, 255]), 4, 2, ExtendedColorType::Rgb8)
+                .unwrap()
         });
-        vec![("photo.png", png(false, None)), ("photo.jpg", jpeg), ("photo.gif", gif), ("photo.webp", webp), ("photo.tif", tiff)]
+        let gif = encode(&|b| {
+            image::codecs::gif::GifEncoder::new(b)
+                .encode(
+                    &[0u8, 255, 0, 255].repeat(8),
+                    4,
+                    2,
+                    ExtendedColorType::Rgba8,
+                )
+                .unwrap()
+        });
+        let webp = encode(&|b| {
+            image::codecs::webp::WebPEncoder::new_lossless(b)
+                .write_image(&px([255, 255, 0]), 4, 2, ExtendedColorType::Rgb8)
+                .unwrap()
+        });
+        let tiff = encode(&|b| {
+            image::codecs::tiff::TiffEncoder::new(std::io::Cursor::new(b))
+                .write_image(&px([0, 255, 255]), 4, 2, ExtendedColorType::Rgb8)
+                .unwrap()
+        });
+        vec![
+            ("photo.png", png(false, None)),
+            ("photo.jpg", jpeg),
+            ("photo.gif", gif),
+            ("photo.webp", webp),
+            ("photo.tif", tiff),
+        ]
     }
 
     /// The decoded `/ICCBased` profile of every image XObject that has one.
@@ -702,10 +946,21 @@ mod tests {
         pdf.objects()
             .into_iter()
             .filter_map(|o| o.into_stream())
-            .filter(|s| s.dict().get::<Name>(b"Subtype").is_some_and(|n| n.as_str() == "Image"))
-            .filter_map(|s| match s.dict().get::<hayro_syntax::object::Array>(b"ColorSpace")?.iter::<Object>().nth(1)? {
-                Object::Stream(p) => Some(p.decoded().ok()?.into_owned()),
-                _ => None,
+            .filter(|s| {
+                s.dict()
+                    .get::<Name>(b"Subtype")
+                    .is_some_and(|n| n.as_str() == "Image")
+            })
+            .filter_map(|s| {
+                match s
+                    .dict()
+                    .get::<hayro_syntax::object::Array>(b"ColorSpace")?
+                    .iter::<Object>()
+                    .nth(1)?
+                {
+                    Object::Stream(p) => Some(p.decoded().ok()?.into_owned()),
+                    _ => None,
+                }
             })
             .collect()
     }
@@ -717,16 +972,37 @@ mod tests {
     fn rgb_images_carry_srgb_in_pdfx4() {
         let mut d = Document::new(&NewDocument::default());
         for (i, (name, data)) in rgb_rasters().into_iter().enumerate() {
-            place(&mut d, name, data, (4.0, 2.0), (72.0, 72.0 + 60.0 * i as f64));
+            place(
+                &mut d,
+                name,
+                data,
+                (4.0, 2.0),
+                (72.0, 72.0 + 60.0 * i as f64),
+            );
         }
         for compress_images in [false, true] {
-            let opts = PdfOptions { standard: Standard::PdfX4, compress_images, ..Default::default() };
+            let opts = PdfOptions {
+                standard: Standard::PdfX4,
+                compress_images,
+                ..Default::default()
+            };
             let r = export_pdf_with_report(&d, &Cache::new(), &opts).unwrap();
-            assert!(r.warnings.is_empty(), "compress_images {compress_images}: {:?}", r.warnings);
-            assert_eq!(image_spaces(&r.bytes), ["[ICCBased"; 5], "compress_images {compress_images}");
+            assert!(
+                r.warnings.is_empty(),
+                "compress_images {compress_images}: {:?}",
+                r.warnings
+            );
+            assert_eq!(
+                image_spaces(&r.bytes),
+                ["[ICCBased"; 5],
+                "compress_images {compress_images}"
+            );
             let profiles = image_profiles(&r.bytes);
             assert_eq!(profiles.len(), 5);
-            assert!(profiles.iter().all(|p| p == crate::export::SRGB_ICC), "every image carries the sRGB profile");
+            assert!(
+                profiles.iter().all(|p| p == crate::export::SRGB_ICC),
+                "every image carries the sRGB profile"
+            );
         }
         let plain = export_pdf_with_report(&d, &Cache::new(), &PdfOptions::default()).unwrap();
         assert_eq!(image_spaces(&plain.bytes), ["DeviceRGB"; 5]);
@@ -736,8 +1012,20 @@ mod tests {
     #[test]
     fn own_profiles_and_grey_stay() {
         let mut d = Document::new(&NewDocument::default());
-        place(&mut d, "grey.png", png(true, None), (4.0, 2.0), (72.0, 72.0));
-        place(&mut d, "tagged.png", png(false, Some(rgb_icc())), (4.0, 2.0), (72.0, 172.0));
+        place(
+            &mut d,
+            "grey.png",
+            png(true, None),
+            (4.0, 2.0),
+            (72.0, 72.0),
+        );
+        place(
+            &mut d,
+            "tagged.png",
+            png(false, Some(rgb_icc())),
+            (4.0, 2.0),
+            (72.0, 172.0),
+        );
         let r = x4(&d);
         assert_eq!(image_spaces(&r.bytes), ["DeviceGray", "[ICCBased"]);
         assert_eq!(image_profiles(&r.bytes), [rgb_icc()]);
@@ -749,20 +1037,55 @@ mod tests {
     fn no_interpolation_in_pdfx4_or_pdfa() {
         let mut d = Document::new(&NewDocument::default());
         for (i, (name, data)) in rgb_rasters().into_iter().enumerate() {
-            place(&mut d, name, data, (4.0, 2.0), (72.0, 72.0 + 60.0 * i as f64));
+            place(
+                &mut d,
+                name,
+                data,
+                (4.0, 2.0),
+                (72.0, 72.0 + 60.0 * i as f64),
+            );
         }
-        let interpolated = |b: &[u8]| String::from_utf8_lossy(b).matches("/Interpolate true").count();
+        let interpolated = |b: &[u8]| {
+            String::from_utf8_lossy(b)
+                .matches("/Interpolate true")
+                .count()
+        };
         for compress_images in [false, true] {
             for standard in [Standard::PdfX4, Standard::PdfA2b] {
-                let opts = PdfOptions { standard, compress_images, ..Default::default() };
-                let r = export_pdf_with_report(&d, &Cache::new(), &opts).unwrap_or_else(|e| panic!("{standard:?}: {e:?}"));
-                assert_eq!(interpolated(&r.bytes), 0, "{standard:?}, compress_images {compress_images}");
+                let opts = PdfOptions {
+                    standard,
+                    compress_images,
+                    ..Default::default()
+                };
+                let r = export_pdf_with_report(&d, &Cache::new(), &opts)
+                    .unwrap_or_else(|e| panic!("{standard:?}: {e:?}"));
+                assert_eq!(
+                    interpolated(&r.bytes),
+                    0,
+                    "{standard:?}, compress_images {compress_images}"
+                );
             }
-            let plain = export_pdf_with_report(&d, &Cache::new(), &PdfOptions { compress_images, ..Default::default() }).unwrap();
+            let plain = export_pdf_with_report(
+                &d,
+                &Cache::new(),
+                &PdfOptions {
+                    compress_images,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
             // The TIFF goes through the decoded fallback, which never asked for interpolation,
             // unless it is re-encoded as JPEG.
-            assert_eq!(interpolated(&plain.bytes), if compress_images { 5 } else { 4 }, "compress_images {compress_images}");
-            assert!(check_pdfx4(&plain.bytes).iter().any(|i| i == "an image asks for interpolation"));
+            assert_eq!(
+                interpolated(&plain.bytes),
+                if compress_images { 5 } else { 4 },
+                "compress_images {compress_images}"
+            );
+            assert!(
+                check_pdfx4(&plain.bytes)
+                    .iter()
+                    .any(|i| i == "an image asks for interpolation")
+            );
         }
         let tif = cmyk_tiff();
         let mut c = Document::new(&NewDocument::default());
@@ -786,10 +1109,22 @@ mod tests {
         let r = x4(&Document::new(&NewDocument::default()));
         let pdf = hayro_syntax::Pdf::new(r.bytes.clone()).unwrap();
         let xref = pdf.xref();
-        let catalog = xref.get::<hayro_syntax::object::Dict>(xref.root_id()).unwrap();
-        let xmp = catalog.get::<hayro_syntax::object::Stream>(b"Metadata").unwrap().decoded().unwrap().into_owned();
+        let catalog = xref
+            .get::<hayro_syntax::object::Dict>(xref.root_id())
+            .unwrap();
+        let xmp = catalog
+            .get::<hayro_syntax::object::Stream>(b"Metadata")
+            .unwrap()
+            .decoded()
+            .unwrap()
+            .into_owned();
         let xmp = String::from_utf8_lossy(&xmp);
-        assert!(xmp.contains("xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\"><pdf:Trapped>False</pdf:Trapped>"), "{xmp}");
+        assert!(
+            xmp.contains(
+                "xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\"><pdf:Trapped>False</pdf:Trapped>"
+            ),
+            "{xmp}"
+        );
         assert!(String::from_utf8_lossy(&r.bytes).contains("/Trapped/False"));
         assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     }

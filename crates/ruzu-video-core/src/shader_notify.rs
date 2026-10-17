@@ -156,7 +156,8 @@ mod tests {
         assert!(std::panic::catch_unwind(|| {
             let _build = handle.build_scope();
             panic!("test compilation failure");
-        }).is_err());
+        })
+        .is_err());
         assert_eq!(notify.num_building.load(Ordering::SeqCst), 3);
         assert_eq!(notify.num_complete.load(Ordering::SeqCst), 3);
     }

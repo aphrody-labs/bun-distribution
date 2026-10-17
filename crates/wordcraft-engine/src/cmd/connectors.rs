@@ -40,16 +40,26 @@ pub fn specs() -> Vec<CommandSpec> {
 /// Commands after which glued connectors are re-routed: those that move, resize, turn, add or
 /// change drawings.
 pub fn reroutes_after(id: &str) -> bool {
-    id.starts_with("arrange.") || id.starts_with("shape.") || id.starts_with("picture.") || id == "insert.shape" || id.starts_with("draw.")
+    id.starts_with("arrange.")
+        || id.starts_with("shape.")
+        || id.starts_with("picture.")
+        || id == "insert.shape"
+        || id.starts_with("draw.")
 }
 
 /// The body's floating drawings with an id (by id) and its glued connectors.
 fn scan(s: &Session) -> (HashMap<u32, Pos>, Vec<Pos>, Vec<Pos>) {
     let (mut ids, mut conns, mut groups) = (HashMap::new(), Vec::new(), Vec::new());
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(para) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(para) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for off in para.object_offsets() {
-            let pos = Pos { story: StoryRef::Body, path: path.clone(), off };
+            let pos = Pos {
+                story: StoryRef::Body,
+                path: path.clone(),
+                off,
+            };
             match para.object_at(off) {
                 Some(InlineObject::Shape { kind, extra, float, .. }) => {
                     if extra.id != 0 {
@@ -99,15 +109,31 @@ pub fn reroute(s: &mut Session) -> bool {
             InlineObject::Shape { kind, .. } => *kind,
             _ => return None,
         };
-        (hit.page == page).then(|| site_point(kind, [hit.rect.x, hit.rect.y, hit.rect.w, hit.rect.h], hit.spin, e.site))?
+        (hit.page == page).then(|| {
+            site_point(
+                kind,
+                [hit.rect.x, hit.rect.y, hit.rect.w, hit.rect.h],
+                hit.spin,
+                e.site,
+            )
+        })?
     };
     let mut plans = Vec::new();
     for pos in conns {
-        let Some(hit) = layout.object(&pos, s.page_hint) else { continue };
-        let Some(InlineObject::Shape { extra, float, .. }) = s.doc.para_at(&pos).and_then(|p| p.object_at(pos.off)) else { continue };
+        let Some(hit) = layout.object(&pos, s.page_hint) else {
+            continue;
+        };
+        let Some(InlineObject::Shape { extra, float, .. }) =
+            s.doc.para_at(&pos).and_then(|p| p.object_at(pos.off))
+        else {
+            continue;
+        };
         let r = hit.rect;
         let (s0, e0) = ends(r.x, r.y, r.w, r.h, float.flip_h, float.flip_v);
-        let to = route(site(extra.start, hit.page).unwrap_or(s0), site(extra.end, hit.page).unwrap_or(e0));
+        let to = route(
+            site(extra.start, hit.page).unwrap_or(s0),
+            site(extra.end, hit.page).unwrap_or(e0),
+        );
         plans.push((pos, to, (r.x, r.y), (hit.origin.x, hit.origin.y)));
     }
     for (pos, to, at, origin) in plans {
@@ -119,8 +145,12 @@ pub fn reroute(s: &mut Session) -> bool {
 /// Put the floating connector at `pos` (now with its frame's top-left at page point `at`, its
 /// anchor's origin at `origin`) in frame `to`. Returns whether it changed.
 fn place(s: &mut Session, pos: &Pos, to: Frame, at: (f32, f32), origin: (f32, f32)) -> bool {
-    let Ok(para) = s.doc.para_mut(pos.story, &pos.path) else { return false };
-    let Some(InlineObject::Shape { w, h, float, .. }) = para.object_at_mut(pos.off) else { return false };
+    let Ok(para) = s.doc.para_mut(pos.story, &pos.path) else {
+        return false;
+    };
+    let Some(InlineObject::Shape { w, h, float, .. }) = para.object_at_mut(pos.off) else {
+        return false;
+    };
     let near = |a: f32, b: f32| (a - b).abs() < 0.01;
     if near(to.x, at.0)
         && near(to.y, at.1)
@@ -157,10 +187,19 @@ fn place(s: &mut Session, pos: &Pos, to: Frame, at: (f32, f32), origin: (f32, f3
 
 /// A body position from `{"path": [..], "off": n}` (or any form `parse_pos` reads).
 fn body_pos(e: &Value) -> Option<Pos> {
-    let path: Option<Vec<u32>> =
-        e.get("path").and_then(Value::as_array).map(|a| a.iter().take(64).filter_map(Value::as_u64).filter_map(|x| u32::try_from(x).ok()).collect());
+    let path: Option<Vec<u32>> = e.get("path").and_then(Value::as_array).map(|a| {
+        a.iter()
+            .take(64)
+            .filter_map(Value::as_u64)
+            .filter_map(|x| u32::try_from(x).ok())
+            .collect()
+    });
     match (path, p::u64(e, "off").and_then(|o| usize::try_from(o).ok())) {
-        (Some(path), Some(off)) if !path.is_empty() => Some(Pos { story: StoryRef::Body, path: wordcraft_doc::Path(path), off }),
+        (Some(path), Some(off)) if !path.is_empty() => Some(Pos {
+            story: StoryRef::Body,
+            path: wordcraft_doc::Path(path),
+            off,
+        }),
         _ => super::parse_pos(e).filter(|t| t.story == StoryRef::Body),
     }
 }
@@ -177,7 +216,11 @@ fn ensure_id(s: &mut Session, pos: &Pos) -> Result<u32, CmdError> {
             }
             (extra.id, fresh)
         }
-        _ => return Err(CmdError::Params("connectors glue to shapes and text boxes".into())),
+        _ => {
+            return Err(CmdError::Params(
+                "connectors glue to shapes and text boxes".into(),
+            ));
+        }
     };
     if fresh {
         para.touch();
@@ -187,17 +230,24 @@ fn ensure_id(s: &mut Session, pos: &Pos) -> Result<u32, CmdError> {
 
 /// `shape.connect`: glue, move or unglue the selected connector's ends.
 fn connect(s: &mut Session, v: &Value) -> CmdResult {
-    let (pos, obj) = super::objects::selected(s).ok_or_else(|| CmdError::Disabled("select a connector first".into()))?;
-    let InlineObject::Shape { kind, float, .. } = &obj else { return Err(CmdError::Disabled("select a connector first".into())) };
+    let (pos, obj) = super::objects::selected(s)
+        .ok_or_else(|| CmdError::Disabled("select a connector first".into()))?;
+    let InlineObject::Shape { kind, float, .. } = &obj else {
+        return Err(CmdError::Disabled("select a connector first".into()));
+    };
     if !kind.is_connector() {
         return Err(CmdError::Disabled("select a connector first".into()));
     }
     if pos.story != StoryRef::Body || float.wrap == Wrap::Inline {
-        return Err(CmdError::Disabled("only floating connectors in the body text can be glued".into()));
+        return Err(CmdError::Disabled(
+            "only floating connectors in the body text can be glued".into(),
+        ));
     }
     let (fh, fv) = (float.flip_h, float.flip_v);
     let layout = s.layout();
-    let hit = layout.object(&pos, s.page_hint).ok_or_else(|| CmdError::Failed("the connector isn't laid out".into()))?;
+    let hit = layout
+        .object(&pos, s.page_hint)
+        .ok_or_else(|| CmdError::Failed("the connector isn't laid out".into()))?;
     let r = hit.rect;
     let (mut p0, mut p1) = ends(r.x, r.y, r.w, r.h, fh, fv);
     let mut glue: [Option<Option<ConnEnd>>; 2] = [None, None];
@@ -209,14 +259,19 @@ fn connect(s: &mut Session, v: &Value) -> CmdResult {
         }
         let here = if i == 0 { p0 } else { p1 };
         let (target, site) = if e.get("path").is_some() {
-            let at = body_pos(e).ok_or_else(|| CmdError::Params(format!("`{key}`: no shape there")))?;
+            let at =
+                body_pos(e).ok_or_else(|| CmdError::Params(format!("`{key}`: no shape there")))?;
             let th = layout
                 .object(&at, hit.page)
                 .filter(|t| t.page == hit.page)
                 .ok_or_else(|| CmdError::Params(format!("`{key}`: no shape there on this page")))?;
             let tkind = match s.doc.para_at(&at).and_then(|p| p.object_at(at.off)) {
                 Some(InlineObject::Shape { kind, .. }) if !kind.is_connector() => *kind,
-                _ => return Err(CmdError::Params(format!("`{key}`: connectors glue to shapes and text boxes"))),
+                _ => {
+                    return Err(CmdError::Params(format!(
+                        "`{key}`: connectors glue to shapes and text boxes"
+                    )));
+                }
             };
             let rect = [th.rect.x, th.rect.y, th.rect.w, th.rect.h];
             let site = match p::u64(e, "site") {
@@ -224,29 +279,57 @@ fn connect(s: &mut Session, v: &Value) -> CmdResult {
                     .ok()
                     .filter(|n| site_point(tkind, rect, th.spin, *n).is_some())
                     .ok_or_else(|| CmdError::Params(format!("`{key}`: no such connection site")))?,
-                None => nearest_site(tkind, rect, th.spin, here).map(|(n, ..)| n).unwrap_or(0),
+                None => nearest_site(tkind, rect, th.spin, here)
+                    .map(|(n, ..)| n)
+                    .unwrap_or(0),
             };
             (Some(at), site)
         } else {
-            let (x, y) = (p::f32(e, "x").ok_or_else(|| CmdError::Params(format!("`{key}`: a shape or a point")))?, p::f32(e, "y").unwrap_or(here.1));
-            let page = p::u64(e, "page").map_or(hit.page, |n| usize::try_from(n).unwrap_or(usize::MAX));
+            let (x, y) = (
+                p::f32(e, "x")
+                    .ok_or_else(|| CmdError::Params(format!("`{key}`: a shape or a point")))?,
+                p::f32(e, "y").unwrap_or(here.1),
+            );
+            let page =
+                p::u64(e, "page").map_or(hit.page, |n| usize::try_from(n).unwrap_or(usize::MAX));
             if page != hit.page {
-                return Err(CmdError::Params("a connector's ends stay on its page".into()));
+                return Err(CmdError::Params(
+                    "a connector's ends stay on its page".into(),
+                ));
             }
             // The nearest site of a shape (not a connector) within reach.
             let mut best: Option<(Pos, u32, f32)> = None;
             if let Some(pg) = layout.pages.get(page) {
                 for it in &pg.items {
-                    let wordcraft_layout::Placed::Object { rect, spin, story: StoryRef::Body, path, off, .. } = it else { continue };
-                    let at = Pos { story: StoryRef::Body, path: path.clone(), off: *off };
+                    let wordcraft_layout::Placed::Object {
+                        rect,
+                        spin,
+                        story: StoryRef::Body,
+                        path,
+                        off,
+                        ..
+                    } = it
+                    else {
+                        continue;
+                    };
+                    let at = Pos {
+                        story: StoryRef::Body,
+                        path: path.clone(),
+                        off: *off,
+                    };
                     if at == pos {
                         continue;
                     }
-                    let Some(InlineObject::Shape { kind, .. }) = s.doc.para_at(&at).and_then(|p| p.object_at(at.off)) else { continue };
+                    let Some(InlineObject::Shape { kind, .. }) =
+                        s.doc.para_at(&at).and_then(|p| p.object_at(at.off))
+                    else {
+                        continue;
+                    };
                     if kind.is_connector() {
                         continue;
                     }
-                    if let Some((n, _, d)) = nearest_site(*kind, [rect.x, rect.y, rect.w, rect.h], *spin, (x, y))
+                    if let Some((n, _, d)) =
+                        nearest_site(*kind, [rect.x, rect.y, rect.w, rect.h], *spin, (x, y))
                         && d <= SNAP
                         && best.as_ref().is_none_or(|b| d < b.2)
                     {
@@ -284,9 +367,19 @@ fn connect(s: &mut Session, v: &Value) -> CmdResult {
         }
         para.touch();
     }
-    place(s, &pos, route(p0, p1), (r.x, r.y), (hit.origin.x, hit.origin.y));
+    place(
+        s,
+        &pos,
+        route(p0, p1),
+        (r.x, r.y),
+        (hit.origin.x, hit.origin.y),
+    );
     s.touch();
     reroute(s);
-    let o = s.doc.para_at(&pos).and_then(|p| p.object_at(pos.off)).cloned();
+    let o = s
+        .doc
+        .para_at(&pos)
+        .and_then(|p| p.object_at(pos.off))
+        .cloned();
     Ok(json!({"object": serde_json::to_value(o).unwrap_or(Value::Null)}))
 }

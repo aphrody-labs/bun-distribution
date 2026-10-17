@@ -14,7 +14,12 @@ use designcraft_render::{Placed, RenderOptions, Rendered, Renderer};
 const SIZE: u32 = 160;
 
 fn doc() -> Document {
-    Document::new(&NewDocument { width: 160.0, height: 160.0, facing_pages: false, ..Default::default() })
+    Document::new(&NewDocument {
+        width: 160.0,
+        height: 160.0,
+        facing_pages: false,
+        ..Default::default()
+    })
 }
 
 fn rect_item(d: &mut Document, r: Rect, swatch: &str) -> ItemId {
@@ -29,8 +34,22 @@ fn rect_item(d: &mut Document, r: Rect, swatch: &str) -> ItemId {
 fn render_with(d: &Document, threads: u16) -> Rendered {
     let mut r = Renderer::new();
     r.threads = threads;
-    let opts = RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
-    r.render(d, &Cache::new(), &[Placed { spread: SpreadRef::Doc(0), xf: Affine::translate(Vec2::ZERO) }], SIZE, SIZE, Affine::IDENTITY, &opts)
+    let opts = RenderOptions {
+        background: Some([255, 255, 255, 255]),
+        ..Default::default()
+    };
+    r.render(
+        d,
+        &Cache::new(),
+        &[Placed {
+            spread: SpreadRef::Doc(0),
+            xf: Affine::translate(Vec2::ZERO),
+        }],
+        SIZE,
+        SIZE,
+        Affine::IDENTITY,
+        &opts,
+    )
 }
 
 fn render(d: &Document) -> Rendered {
@@ -47,17 +66,29 @@ const WHITE: u32 = 765;
 fn golden(name: &str, img: &Rendered) {
     let path = format!("{}/tests/golden/{name}.png", env!("CARGO_MANIFEST_DIR"));
     let bless = std::env::var_os("DESIGNCRAFT_BLESS").is_some();
-    let Ok(bytes) = std::fs::read(&path).map_err(|_| ()).and_then(|b| if bless { Err(()) } else { Ok(b) }) else {
+    let Ok(bytes) = std::fs::read(&path)
+        .map_err(|_| ())
+        .and_then(|b| if bless { Err(()) } else { Ok(b) })
+    else {
         std::fs::create_dir_all(format!("{}/tests/golden", env!("CARGO_MANIFEST_DIR"))).unwrap();
         std::fs::write(&path, img.to_png()).unwrap();
         eprintln!("wrote golden {path}");
         return;
     };
     let want = image::load_from_memory(&bytes).unwrap().to_rgba8();
-    assert_eq!((want.width(), want.height()), (img.width, img.height), "{name}: size");
+    assert_eq!(
+        (want.width(), want.height()),
+        (img.width, img.height),
+        "{name}: size"
+    );
     let got = img.to_straight();
     let (mut bad, mut sum, mut worst) = (0usize, 0u64, 0u8);
-    for (a, b) in got.as_chunks::<4>().0.iter().zip(want.as_raw().as_chunks::<4>().0) {
+    for (a, b) in got
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(want.as_raw().as_chunks::<4>().0)
+    {
         let d = a.iter().zip(b).map(|(x, y)| x.abs_diff(*y)).max().unwrap();
         sum += d as u64;
         worst = worst.max(d);
@@ -70,13 +101,20 @@ fn golden(name: &str, img: &Rendered) {
     if bad * 200 > n || mean > 1.0 {
         let out = std::env::temp_dir().join(format!("designcraft-golden-{name}.png"));
         let _ = std::fs::write(&out, img.to_png());
-        panic!("{name}: {bad} pixels differ by > 8 (worst {worst}, mean {mean:.2}); got {}", out.display());
+        panic!(
+            "{name}: {bad} pixels differ by > 8 (worst {worst}, mean {mean:.2}); got {}",
+            out.display()
+        );
     }
 }
 
 fn shadow_doc(spread: f64) -> Document {
     let mut d = doc();
-    let id = rect_item(&mut d, Rect::new(30.0, 30.0, 100.0, 100.0), "C=100 M=0 Y=0 K=0");
+    let id = rect_item(
+        &mut d,
+        Rect::new(30.0, 30.0, 100.0, 100.0),
+        "C=100 M=0 Y=0 K=0",
+    );
     let ds = &mut d.item_mut(id).unwrap().effects.drop_shadow;
     ds.on = true;
     ds.distance = 12.0;
@@ -95,13 +133,20 @@ fn drop_shadow_is_soft_offset_and_under_the_object() {
     let c = img.pixel(60, 60);
     assert!(c[0] < 60 && c[2] > 200, "object on top: {c:?}");
     // Below-right is shadowed, above-left is not.
-    assert!(lum(img.pixel(104, 70)) < 500, "shadow below-right: {:?}", img.pixel(104, 70));
+    assert!(
+        lum(img.pixel(104, 70)) < 500,
+        "shadow below-right: {:?}",
+        img.pixel(104, 70)
+    );
     assert_eq!(lum(img.pixel(22, 22)), WHITE);
     // Soft: the shadow fades out gradually past its hard edge (100 + 8.5 offset).
     let row: Vec<u32> = (104..130).map(|x| lum(img.pixel(x, 80))).collect();
     let mid = row.iter().filter(|&&v| v > 60 && v < 700).count();
     assert!(mid >= 6, "gradual falloff: {row:?}");
-    assert!(row.windows(2).all(|w| w[1] + 2 >= w[0]), "monotonic: {row:?}");
+    assert!(
+        row.windows(2).all(|w| w[1] + 2 >= w[0]),
+        "monotonic: {row:?}"
+    );
 }
 
 #[test]
@@ -111,7 +156,10 @@ fn drop_shadow_spread_hardens_and_grows() {
     golden("drop-shadow-spread", &hard);
     // Full spread: no blur, the silhouette grows by `size` → solid well past the offset edge.
     let x = 100 + 8 + 6;
-    assert!(lum(hard.pixel(x, 80)) < lum(soft.pixel(x, 80)), "spread grows the shadow");
+    assert!(
+        lum(hard.pixel(x, 80)) < lum(soft.pixel(x, 80)),
+        "spread grows the shadow"
+    );
     assert_eq!(lum(hard.pixel(126, 80)), WHITE, "hard edge");
 }
 
@@ -119,8 +167,18 @@ fn drop_shadow_spread_hardens_and_grows() {
 fn drop_shadow_of_text_follows_the_glyphs() {
     let mut d = doc();
     let lid = d.default_layer();
-    let (fid, sid) = d.add_text_frame(SpreadRef::Doc(0), Rect::new(10.0, 10.0, 150.0, 150.0), lid, "Shadow", ParaFormat::default()).unwrap();
-    d.story_mut(sid).unwrap().format_chars(0..6, |f| f.over.size = Some(40.0));
+    let (fid, sid) = d
+        .add_text_frame(
+            SpreadRef::Doc(0),
+            Rect::new(10.0, 10.0, 150.0, 150.0),
+            lid,
+            "Shadow",
+            ParaFormat::default(),
+        )
+        .unwrap();
+    d.story_mut(sid)
+        .unwrap()
+        .format_chars(0..6, |f| f.over.size = Some(40.0));
     let ds = &mut d.item_mut(fid).unwrap().effects.drop_shadow;
     ds.on = true;
     ds.distance = 4.0;
@@ -144,7 +202,10 @@ fn outer_glow_surrounds_the_object() {
     golden("outer-glow", &img);
     for (x, y) in [(46, 80), (114, 80), (80, 46), (80, 114)] {
         let p = img.pixel(x, y);
-        assert!(p[1] < 200 && p[0] > p[1] + 40, "magenta glow at {x},{y}: {p:?}");
+        assert!(
+            p[1] < 200 && p[0] > p[1] + 40,
+            "magenta glow at {x},{y}: {p:?}"
+        );
     }
     assert_eq!(lum(img.pixel(10, 10)), WHITE);
 }
@@ -152,7 +213,11 @@ fn outer_glow_surrounds_the_object() {
 #[test]
 fn inner_shadow_darkens_inside_the_lit_edge() {
     let mut d = doc();
-    let id = rect_item(&mut d, Rect::new(30.0, 30.0, 130.0, 130.0), "C=0 M=0 Y=100 K=0");
+    let id = rect_item(
+        &mut d,
+        Rect::new(30.0, 30.0, 130.0, 130.0),
+        "C=0 M=0 Y=100 K=0",
+    );
     let s = &mut d.item_mut(id).unwrap().effects.inner_shadow;
     s.on = true;
     s.distance = 8.0;
@@ -161,7 +226,12 @@ fn inner_shadow_darkens_inside_the_lit_edge() {
     let img = render(&d);
     golden("inner-shadow", &img);
     // Light from the top-left: the shadow sits inside the top-left edges.
-    assert!(lum(img.pixel(33, 80)) + 100 < lum(img.pixel(126, 80)), "{:?} vs {:?}", img.pixel(33, 80), img.pixel(126, 80));
+    assert!(
+        lum(img.pixel(33, 80)) + 100 < lum(img.pixel(126, 80)),
+        "{:?} vs {:?}",
+        img.pixel(33, 80),
+        img.pixel(126, 80)
+    );
     assert!(lum(img.pixel(80, 33)) + 100 < lum(img.pixel(80, 126)));
     // Nothing outside the shape.
     assert_eq!(lum(img.pixel(26, 80)), WHITE);
@@ -204,8 +274,16 @@ fn shadow_of_an_object_outside_the_view_still_reaches_it() {
 fn multithreaded_effects_match_single_threaded() {
     let mut docs = vec![shadow_doc(0.0), shadow_doc(40.0)];
     let mut d = doc();
-    rect_item(&mut d, Rect::new(0.0, 0.0, 160.0, 160.0), "C=0 M=30 Y=60 K=0");
-    let id = rect_item(&mut d, Rect::new(30.0, 30.0, 130.0, 130.0), "C=100 M=0 Y=0 K=0");
+    rect_item(
+        &mut d,
+        Rect::new(0.0, 0.0, 160.0, 160.0),
+        "C=0 M=30 Y=60 K=0",
+    );
+    let id = rect_item(
+        &mut d,
+        Rect::new(30.0, 30.0, 130.0, 130.0),
+        "C=100 M=0 Y=0 K=0",
+    );
     {
         let it = d.item_mut(id).unwrap();
         it.effects.feather = 10.0;
@@ -218,7 +296,13 @@ fn multithreaded_effects_match_single_threaded() {
     for (i, d) in docs.iter().enumerate() {
         let a = render_with(d, 0);
         let b = render_with(d, 3);
-        let worst = a.pixels.iter().zip(&b.pixels).map(|(x, y)| x.abs_diff(*y)).max().unwrap();
+        let worst = a
+            .pixels
+            .iter()
+            .zip(&b.pixels)
+            .map(|(x, y)| x.abs_diff(*y))
+            .max()
+            .unwrap();
         assert!(worst <= 4, "case {i}: max channel difference {worst}");
     }
 }

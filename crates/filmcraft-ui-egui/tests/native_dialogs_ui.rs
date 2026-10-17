@@ -29,19 +29,26 @@ impl Driver {
     /// The demo project; `runner`: dialogs go to the stand-in host runner (else synchronous hooks).
     fn new(runner: bool) -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let mut app = FilmcraftApp::new(session).with_control(rx);
         let asked: Asked = Arc::default();
         if runner {
             let a = asked.clone();
-            app.hooks.run_dialog = Some(Box::new(move |dialog: FileDialog| -> Receiver<Vec<String>> {
-                let (tx, rx) = channel();
-                a.lock().unwrap().push((dialog, tx));
-                rx
-            }));
+            app.hooks.run_dialog = Some(Box::new(
+                move |dialog: FileDialog| -> Receiver<Vec<String>> {
+                    let (tx, rx) = channel();
+                    a.lock().unwrap().push((dialog, tx));
+                    rx
+                },
+            ));
         }
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx, asked };
         d.frames(4);
         d
@@ -87,7 +94,12 @@ impl Driver {
     /// The one dialog asked for so far (taken), with its answering sender.
     fn asked(&mut self) -> (FileDialog, Sender<Vec<String>>) {
         let mut a = self.asked.lock().unwrap();
-        assert_eq!(a.len(), 1, "one dialog asked for: {:?}", a.iter().map(|x| &x.0).collect::<Vec<_>>());
+        assert_eq!(
+            a.len(),
+            1,
+            "one dialog asked for: {:?}",
+            a.iter().map(|x| &x.0).collect::<Vec<_>>()
+        );
         a.pop().unwrap()
     }
 
@@ -127,10 +139,16 @@ fn the_app_keeps_running_while_the_import_dialog_is_open_and_imports_when_it_ans
     let mut d = Driver::new(true);
     let before = d.items();
     // File ▸ Import answers at once: the dialog is open, nothing is imported yet
-    assert_eq!(d.ok("ui.menu.invoke", json!({"id": "file.import"})), json!({"dialog": "open"}));
+    assert_eq!(
+        d.ok("ui.menu.invoke", json!({"id": "file.import"})),
+        json!({"dialog": "open"})
+    );
     assert!(d.app().native_dialog_open());
     let (dialog, answer) = d.asked();
-    assert!(matches!(&dialog, FileDialog::OpenFiles { exts } if exts.iter().any(|e| e == "wav")), "{dialog:?}");
+    assert!(
+        matches!(&dialog, FileDialog::OpenFiles { exts } if exts.iter().any(|e| e == "wav")),
+        "{dialog:?}"
+    );
     // the frame loop runs and requests are answered while the dialog is open
     for _ in 0..5 {
         d.ok("ui.inspect", json!({}));
@@ -138,11 +156,20 @@ fn the_app_keeps_running_while_the_import_dialog_is_open_and_imports_when_it_ans
     d.frames(20);
     assert_eq!(d.items(), before);
     // the user chooses a file: it is imported on the next frame
-    answer.send(vec![wav().to_string_lossy().into_owned()]).unwrap();
+    answer
+        .send(vec![wav().to_string_lossy().into_owned()])
+        .unwrap();
     d.frames(2);
     assert!(!d.app().native_dialog_open());
     assert_eq!(d.items(), before + 1);
-    assert!(d.app().session.project.items.values().any(|i| i.name == "tone.wav"));
+    assert!(
+        d.app()
+            .session
+            .project
+            .items
+            .values()
+            .any(|i| i.name == "tone.wav")
+    );
 }
 
 #[test]
@@ -168,7 +195,10 @@ fn cancelled_or_lost_dialogs_do_nothing_and_one_dialog_is_open_at_a_time() {
     assert!(!d.app().native_dialog_open());
     assert_eq!(d.items(), before);
     // and the next dialog opens normally
-    assert_eq!(d.ok("ui.menu.invoke", json!({"id": "file.open"})), json!({"dialog": "open"}));
+    assert_eq!(
+        d.ok("ui.menu.invoke", json!({"id": "file.open"})),
+        json!({"dialog": "open"})
+    );
     assert!(matches!(d.asked().0, FileDialog::OpenProject));
 }
 
@@ -182,9 +212,16 @@ fn a_panel_folder_arrives_in_its_open_dialog_and_nowhere_once_it_is_closed() {
     let (dialog, answer) = d.asked();
     assert!(matches!(dialog, FileDialog::Folder { .. }), "{dialog:?}");
     d.frames(10);
-    answer.send(vec!["/tmp/filmcraft-cache-test".into()]).unwrap();
+    answer
+        .send(vec!["/tmp/filmcraft-cache-test".into()])
+        .unwrap();
     d.frames(3);
-    let loc = d.app().ui.settings.as_ref().map(|s| s.values.pointer("/mediaCache/location").cloned());
+    let loc = d
+        .app()
+        .ui
+        .settings
+        .as_ref()
+        .map(|s| s.values.pointer("/mediaCache/location").cloned());
     assert_eq!(loc, Some(Some(json!("/tmp/filmcraft-cache-test"))));
     // Browse… again, then Cancel the Settings dialog before the folder comes back: nothing to write into
     d.click("settings.mediaCache.location.browse");
@@ -195,7 +232,14 @@ fn a_panel_folder_arrives_in_its_open_dialog_and_nowhere_once_it_is_closed() {
     d.frames(3);
     assert!(d.app().ui.settings.is_none());
     assert!(!d.app().native_dialog_open());
-    assert_ne!(d.app().session.prefs.to_value().pointer("/mediaCache/location"), Some(&json!("/tmp/elsewhere")));
+    assert_ne!(
+        d.app()
+            .session
+            .prefs
+            .to_value()
+            .pointer("/mediaCache/location"),
+        Some(&json!("/tmp/elsewhere"))
+    );
 }
 
 #[test]

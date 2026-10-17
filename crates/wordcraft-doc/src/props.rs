@@ -41,7 +41,11 @@ pub enum TextColor {
 impl TextColor {
     /// `auto` or `automatic` (any case), or a colour [`Rgb::parse`] reads.
     pub fn parse(s: &str) -> Option<TextColor> {
-        if s.eq_ignore_ascii_case("auto") || s.eq_ignore_ascii_case("automatic") { Some(TextColor::Auto) } else { Rgb::parse(s).map(TextColor::Rgb) }
+        if s.eq_ignore_ascii_case("auto") || s.eq_ignore_ascii_case("automatic") {
+            Some(TextColor::Auto)
+        } else {
+            Rgb::parse(s).map(TextColor::Rgb)
+        }
     }
 }
 
@@ -56,9 +60,9 @@ impl<'de> Deserialize<'de> for TextColor {
             Rgb(Rgb),
         }
         match serde_json::Value::deserialize(d)? {
-            serde_json::Value::String(s) => {
-                TextColor::parse(&s).ok_or_else(|| D::Error::invalid_value(Unexpected::Str(&s), &"`auto`, `RRGGBB` or `#RRGGBB`"))
-            }
+            serde_json::Value::String(s) => TextColor::parse(&s).ok_or_else(|| {
+                D::Error::invalid_value(Unexpected::Str(&s), &"`auto`, `RRGGBB` or `#RRGGBB`")
+            }),
             v => Ok(match serde_json::from_value(v).map_err(D::Error::custom)? {
                 Written::Auto => TextColor::Auto,
                 Written::Rgb(c) => TextColor::Rgb(c),
@@ -115,14 +119,18 @@ impl Underline {
         }
     }
     pub fn from_ooxml(s: &str) -> Underline {
-        Underline::ALL.iter().copied().find(|u| u.ooxml() == s).unwrap_or(match s {
-            "thickDash" | "dashLong" | "dashedHeavy" | "dashLongHeavy" => Underline::Dash,
-            "dottedHeavy" => Underline::Dotted,
-            "wavyHeavy" => Underline::Wave,
-            "dashDotHeavy" => Underline::DotDash,
-            "dashDotDotHeavy" => Underline::DotDotDash,
-            _ => Underline::Single,
-        })
+        Underline::ALL
+            .iter()
+            .copied()
+            .find(|u| u.ooxml() == s)
+            .unwrap_or(match s {
+                "thickDash" | "dashLong" | "dashedHeavy" | "dashLongHeavy" => Underline::Dash,
+                "dottedHeavy" => Underline::Dotted,
+                "wavyHeavy" => Underline::Wave,
+                "dashDotHeavy" => Underline::DotDash,
+                "dashDotDotHeavy" => Underline::DotDotDash,
+                _ => Underline::Single,
+            })
     }
 }
 
@@ -223,7 +231,11 @@ impl Highlight {
         }
     }
     pub fn from_ooxml(s: &str) -> Highlight {
-        Highlight::ALL.iter().copied().find(|h| h.ooxml() == s).unwrap_or(Highlight::None)
+        Highlight::ALL
+            .iter()
+            .copied()
+            .find(|h| h.ooxml() == s)
+            .unwrap_or(Highlight::None)
     }
     pub fn name(self) -> &'static str {
         match self {
@@ -426,7 +438,9 @@ impl CharProps {
             shading, border, vert_align, caps, small_caps, hidden, spacing, scale, position, kern, outline, shadow, emboss, engrave, lang, no_proof, rtl,
             cs, font_cs, font_ea, size_cs, bold_cs, italic_cs, lang_bidi, link, ins, del, fmt_change);
         if let Some(p) = &patch.text_effects {
-            self.text_effects.get_or_insert_with(Default::default).overlay(p);
+            self.text_effects
+                .get_or_insert_with(Default::default)
+                .overlay(p);
         }
     }
     pub fn overlaid(mut self, patch: &CharProps) -> CharProps {
@@ -439,11 +453,23 @@ impl CharProps {
     /// Clear direct formatting but keep what isn't "formatting" (links, revisions, character style
     /// is cleared too, as Word's Clear Formatting does).
     pub fn cleared(&self) -> CharProps {
-        CharProps { link: self.link.clone(), ins: self.ins, del: self.del, fmt_change: self.fmt_change.clone(), ..Default::default() }
+        CharProps {
+            link: self.link.clone(),
+            ins: self.ins,
+            del: self.del,
+            fmt_change: self.fmt_change.clone(),
+            ..Default::default()
+        }
     }
     /// Just the formatting: without the link, revision marks and tracked formatting change.
     pub fn formatting(&self) -> CharProps {
-        CharProps { link: None, ins: None, del: None, fmt_change: None, ..self.clone() }
+        CharProps {
+            link: None,
+            ins: None,
+            del: None,
+            fmt_change: None,
+            ..self.clone()
+        }
     }
 }
 
@@ -593,7 +619,12 @@ pub struct Border {
 
 impl Border {
     pub fn single(width: f32) -> Border {
-        Border { style: BorderStyle::Single, width, color: None, space: 0.0 }
+        Border {
+            style: BorderStyle::Single,
+            width,
+            color: None,
+            space: 0.0,
+        }
     }
     pub fn is_visible(&self) -> bool {
         self.style != BorderStyle::None && self.width > 0.0
@@ -616,13 +647,37 @@ pub struct Borders {
 
 impl Borders {
     pub fn all(b: Border) -> Borders {
-        Borders { top: Some(b), left: Some(b), bottom: Some(b), right: Some(b), between: Some(b), inside_v: Some(b) }
+        Borders {
+            top: Some(b),
+            left: Some(b),
+            bottom: Some(b),
+            right: Some(b),
+            between: Some(b),
+            inside_v: Some(b),
+        }
     }
     pub fn box_(b: Border) -> Borders {
-        Borders { top: Some(b), left: Some(b), bottom: Some(b), right: Some(b), between: None, inside_v: None }
+        Borders {
+            top: Some(b),
+            left: Some(b),
+            bottom: Some(b),
+            right: Some(b),
+            between: None,
+            inside_v: None,
+        }
     }
     pub fn any_visible(&self) -> bool {
-        [self.top, self.left, self.bottom, self.right, self.between, self.inside_v].iter().flatten().any(Border::is_visible)
+        [
+            self.top,
+            self.left,
+            self.bottom,
+            self.right,
+            self.between,
+            self.inside_v,
+        ]
+        .iter()
+        .flatten()
+        .any(Border::is_visible)
     }
     /// Apply every `Some` side of `patch` on top of `self`.
     pub fn overlay(&mut self, patch: &Borders) {
@@ -813,7 +868,11 @@ impl ParaProps {
     /// After setting indents in points: keep the indents in characters (left, right, first line)
     /// an inherited style may set from winning over them, as Word does (`w:firstLineChars="0"`).
     pub fn cancel_char_indents(&mut self, left: bool, right: bool, first: bool) {
-        for (on, chars) in [(left, &mut self.indent_left_chars), (right, &mut self.indent_right_chars), (first, &mut self.indent_first_chars)] {
+        for (on, chars) in [
+            (left, &mut self.indent_left_chars),
+            (right, &mut self.indent_right_chars),
+            (first, &mut self.indent_first_chars),
+        ] {
             if on {
                 *chars = Some(0.0);
             }
@@ -821,7 +880,11 @@ impl ParaProps {
     }
     /// Just the formatting: without the tracked changes.
     pub fn formatting(&self) -> ParaProps {
-        ParaProps { num_change: None, fmt_change: None, ..self.clone() }
+        ParaProps {
+            num_change: None,
+            fmt_change: None,
+            ..self.clone()
+        }
     }
 }
 
@@ -1005,7 +1068,13 @@ pub struct TableFloat {
 impl TableFloat {
     /// The distances from text, finite and clamped (left, top, right, bottom).
     pub fn dist_from_text(&self) -> [f32; 4] {
-        self.dist.map(|v| if v.is_finite() { v.clamp(0.0, 1584.0) } else { 0.0 })
+        self.dist.map(|v| {
+            if v.is_finite() {
+                v.clamp(0.0, 1584.0)
+            } else {
+                0.0
+            }
+        })
     }
 }
 
@@ -1022,7 +1091,14 @@ pub struct TableLook {
 
 impl Default for TableLook {
     fn default() -> Self {
-        TableLook { header_row: true, total_row: false, banded_rows: true, first_column: true, last_column: false, banded_columns: false }
+        TableLook {
+            header_row: true,
+            total_row: false,
+            banded_rows: true,
+            first_column: true,
+            last_column: false,
+            banded_columns: false,
+        }
     }
 }
 
@@ -1103,8 +1179,16 @@ mod tests {
 
     #[test]
     fn overlay_keeps_unset() {
-        let base = CharProps { bold: Some(true), size: Some(12.0), ..Default::default() };
-        let patch = CharProps { size: Some(14.0), italic: Some(true), ..Default::default() };
+        let base = CharProps {
+            bold: Some(true),
+            size: Some(12.0),
+            ..Default::default()
+        };
+        let patch = CharProps {
+            size: Some(14.0),
+            italic: Some(true),
+            ..Default::default()
+        };
         let r = base.overlaid(&patch);
         assert_eq!(r.bold, Some(true));
         assert_eq!(r.size, Some(14.0));
@@ -1115,9 +1199,17 @@ mod tests {
     fn borders_overlay_per_side() {
         let thin = Border::single(0.5);
         let thick = Border::single(2.0);
-        let nil = Border { style: BorderStyle::None, width: 0.0, color: None, space: 0.0 };
+        let nil = Border {
+            style: BorderStyle::None,
+            width: 0.0,
+            color: None,
+            space: 0.0,
+        };
         let mut b = Borders::all(thin);
-        b.overlay(&Borders { top: Some(thick), ..Default::default() });
+        b.overlay(&Borders {
+            top: Some(thick),
+            ..Default::default()
+        });
         assert_eq!(b.top, Some(thick));
         assert_eq!(b.bottom, Some(thin));
         b.overlay(&Borders::box_(nil));
@@ -1144,13 +1236,20 @@ mod tests {
             assert_eq!(TextDirection::from_ooxml(d.ooxml()), d);
             d = d.next();
         }
-        assert_eq!(d, TextDirection::Horizontal, "the button cycles through three directions");
+        assert_eq!(
+            d,
+            TextDirection::Horizontal,
+            "the button cycles through three directions"
+        );
         // Strict names, East Asian vertical layouts and junk.
         assert_eq!(TextDirection::from_ooxml("rl"), TextDirection::Down);
         assert_eq!(TextDirection::from_ooxml("lr"), TextDirection::Up);
         assert_eq!(TextDirection::from_ooxml("tbRlV"), TextDirection::Down);
         assert_eq!(TextDirection::from_ooxml("tb"), TextDirection::Horizontal);
-        assert_eq!(TextDirection::from_ooxml("lrTbV"), TextDirection::Horizontal);
+        assert_eq!(
+            TextDirection::from_ooxml("lrTbV"),
+            TextDirection::Horizontal
+        );
         assert_eq!(TextDirection::from_ooxml("é?"), TextDirection::Horizontal);
     }
 
@@ -1164,20 +1263,35 @@ mod tests {
         assert_eq!(read(r##""#1b1611""##).unwrap(), ink);
         assert_eq!(read(r#""auto""#).unwrap(), TextColor::Auto);
         assert_eq!(read(r#""Automatic""#).unwrap(), TextColor::Auto);
-        for (c, j) in [(TextColor::Auto, r#""Auto""#), (ink, r#"{"Rgb":[27,22,17]}"#)] {
+        for (c, j) in [
+            (TextColor::Auto, r#""Auto""#),
+            (ink, r#"{"Rgb":[27,22,17]}"#),
+        ] {
             assert_eq!(serde_json::to_string(&c).unwrap(), j, "written as before");
             assert_eq!(read(j).unwrap(), c);
         }
-        for bad in [r#""1B161""#, r#""zzzzzz""#, r#""""#, r#"{"Rgb":"1B1611"}"#, r#"{"Hex":[1,2,3]}"#, "7", "[27,22,17]"] {
+        for bad in [
+            r#""1B161""#,
+            r#""zzzzzz""#,
+            r#""""#,
+            r#"{"Rgb":"1B1611"}"#,
+            r#"{"Hex":[1,2,3]}"#,
+            "7",
+            "[27,22,17]",
+        ] {
             assert!(read(bad).is_err(), "{bad}");
         }
-        let p: CharProps = serde_json::from_value(serde_json::json!({"color": "#1B1611", "bold": true})).unwrap();
+        let p: CharProps =
+            serde_json::from_value(serde_json::json!({"color": "#1B1611", "bold": true})).unwrap();
         assert_eq!((p.color, p.bold), (Some(ink), Some(true)));
     }
 
     #[test]
     fn props_serde_skip_none() {
-        let p = CharProps { bold: Some(true), ..Default::default() };
+        let p = CharProps {
+            bold: Some(true),
+            ..Default::default()
+        };
         let s = serde_json::to_string(&p).unwrap();
         assert_eq!(s, r#"{"bold":true}"#);
         let back: CharProps = serde_json::from_str(&s).unwrap();

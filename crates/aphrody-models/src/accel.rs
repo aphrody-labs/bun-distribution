@@ -54,9 +54,15 @@ impl Accelerator {
     /// Parse the machine-friendly name.
     #[must_use]
     pub fn from_str_opt(raw: &str) -> Option<Self> {
-        [Self::Cpu, Self::Cuda, Self::Metal, Self::Vulkan, Self::DirectMl]
-            .into_iter()
-            .find(|a| a.as_str() == raw)
+        [
+            Self::Cpu,
+            Self::Cuda,
+            Self::Metal,
+            Self::Vulkan,
+            Self::DirectMl,
+        ]
+        .into_iter()
+        .find(|a| a.as_str() == raw)
     }
 }
 
@@ -99,7 +105,10 @@ impl HardwareProfile {
     /// The best accelerator available: the first entry, CPU as the floor.
     #[must_use]
     pub fn best(&self) -> Accelerator {
-        self.accelerators.first().copied().unwrap_or(Accelerator::Cpu)
+        self.accelerators
+            .first()
+            .copied()
+            .unwrap_or(Accelerator::Cpu)
     }
 
     /// Largest VRAM across the detected GPUs, `0` when there is none.
@@ -131,7 +140,10 @@ impl HardwareProfile {
     /// Whether an entry would actually be GPU-accelerated here.
     #[must_use]
     pub fn is_accelerated(&self, entry: &CatalogEntry) -> bool {
-        entry.accel.iter().any(|a| *a != Accelerator::Cpu && self.accelerators.contains(a))
+        entry
+            .accel
+            .iter()
+            .any(|a| *a != Accelerator::Cpu && self.accelerators.contains(a))
             && self.max_vram_bytes() >= entry.vram_min_bytes
     }
 }
@@ -169,14 +181,21 @@ pub fn rank_for(
     profile: &HardwareProfile,
     prefer: SpeedTier,
 ) -> Vec<Recommendation> {
-    let mut candidates: Vec<&CatalogEntry> =
-        catalog.by_task(task).into_iter().filter(|e| profile.can_run(e)).collect();
+    let mut candidates: Vec<&CatalogEntry> = catalog
+        .by_task(task)
+        .into_iter()
+        .filter(|e| profile.can_run(e))
+        .collect();
 
     candidates.sort_by_key(|entry| {
         let accelerated = u8::from(!profile.is_accelerated(entry));
         // Distance from the requested tier: 0 is an exact match.
         let tier_distance = (entry.speed as i8 - prefer as i8).unsigned_abs();
-        (accelerated, tier_distance, entry.total_bytes().unwrap_or(u64::MAX))
+        (
+            accelerated,
+            tier_distance,
+            entry.total_bytes().unwrap_or(u64::MAX),
+        )
     });
 
     candidates
@@ -261,7 +280,9 @@ pub fn probe() -> HardwareProfile {
 /// no `nvidia-smi` process is spawned.
 #[cfg(not(target_arch = "wasm32"))]
 fn probe_nvidia() -> Vec<GpuInfo> {
-    let Ok(nvml) = nvml_wrapper::Nvml::init() else { return Vec::new() };
+    let Ok(nvml) = nvml_wrapper::Nvml::init() else {
+        return Vec::new();
+    };
     let driver = nvml.sys_driver_version().unwrap_or_default();
     let count = nvml.device_count().unwrap_or(0);
     (0..count)
@@ -341,7 +362,10 @@ pub fn cuda_version_from_path(path: &str) -> String {
                 && candidate.chars().all(|c| c.is_ascii_digit() || c == '.')
                 && candidate.contains('.')
         })
-        .map_or_else(|| path.to_owned(), |segment| segment.trim_start_matches('v').to_owned())
+        .map_or_else(
+            || path.to_owned(),
+            |segment| segment.trim_start_matches('v').to_owned(),
+        )
 }
 
 #[cfg(test)]
@@ -418,7 +442,10 @@ mod tests {
             cuda_version_from_path("C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3"),
             "13.3"
         );
-        assert_eq!(cuda_version_from_path("/usr/local/cuda-12.4"), "/usr/local/cuda-12.4");
+        assert_eq!(
+            cuda_version_from_path("/usr/local/cuda-12.4"),
+            "/usr/local/cuda-12.4"
+        );
         assert_eq!(cuda_version_from_path("/opt/cuda/12.8"), "12.8");
     }
 
@@ -438,17 +465,30 @@ mod tests {
 
     #[test]
     fn a_mass_ocr_job_on_a_gpu_box_gets_the_fast_tier_first() {
-        let ranked = rank_for(Catalog::builtin(), ModelTask::Ocr, &cuda_box(12), SpeedTier::Fast);
+        let ranked = rank_for(
+            Catalog::builtin(),
+            ModelTask::Ocr,
+            &cuda_box(12),
+            SpeedTier::Fast,
+        );
         assert!(!ranked.is_empty());
         assert_eq!(ranked[0].id, "ppocr-v5-mobile", "{ranked:#?}");
         assert_eq!(ranked[0].accelerator, Accelerator::Cuda);
-        assert!(ranked[0].rationale.contains("RTX 4070"), "{}", ranked[0].rationale);
+        assert!(
+            ranked[0].rationale.contains("RTX 4070"),
+            "{}",
+            ranked[0].rationale
+        );
     }
 
     #[test]
     fn asking_for_quality_reorders_the_same_candidates() {
-        let ranked =
-            rank_for(Catalog::builtin(), ModelTask::Ocr, &cuda_box(12), SpeedTier::Quality);
+        let ranked = rank_for(
+            Catalog::builtin(),
+            ModelTask::Ocr,
+            &cuda_box(12),
+            SpeedTier::Quality,
+        );
         assert_eq!(ranked[0].id, "dots-ocr", "{ranked:#?}");
     }
 
@@ -465,11 +505,20 @@ mod tests {
 
     #[test]
     fn a_cpu_only_box_still_gets_a_recommendation() {
-        let ranked = rank_for(Catalog::builtin(), ModelTask::Ocr, &cpu_box(), SpeedTier::Fast);
+        let ranked = rank_for(
+            Catalog::builtin(),
+            ModelTask::Ocr,
+            &cpu_box(),
+            SpeedTier::Fast,
+        );
         assert!(!ranked.is_empty());
         assert!(ranked.iter().all(|r| r.accelerator == Accelerator::Cpu));
         assert_eq!(ranked[0].id, "ppocr-v5-mobile");
-        assert!(ranked[0].rationale.contains("8 threads"), "{}", ranked[0].rationale);
+        assert!(
+            ranked[0].rationale.contains("8 threads"),
+            "{}",
+            ranked[0].rationale
+        );
     }
 
     #[test]

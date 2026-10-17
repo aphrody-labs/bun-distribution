@@ -76,7 +76,7 @@ impl DvdInterface {
                     "Unknown DI command"
                 );
                 None
-            },
+            }
         }
     }
 }
@@ -161,12 +161,15 @@ fn process_dvd_command<const SYSTEM: SystemId>(
             buffer.copy_from_slice(&[0x69; 0x20]); // TODO: Drive Info?
             #[cfg(feature = "jit")]
             sys.mmio.queue_icbi_for_range(dst, 0x20);
-        },
+        }
         Command::ReadSectorData => {
             let src = sys.di.cmdbuf1 << 2;
             let dst = sys.di.dma_address.address();
             let len = sys.di.cmdbuf2 as usize;
-            assert!(len == sys.di.dma_length.length() as usize, "DMA length mismatch");
+            assert!(
+                len == sys.di.dma_length.length() as usize,
+                "DMA length mismatch"
+            );
 
             let buffer = sys.mmio.phys_slice_mut(dst, len);
             dvd.read_disc_into(src as usize, buffer);
@@ -179,7 +182,7 @@ fn process_dvd_command<const SYSTEM: SystemId>(
                 len = format!("{:08X}", len),
                 "ReadSectorData command"
             );
-        },
+        }
         Command::ReadDiskId => {
             let src = sys.di.cmdbuf1;
             let dst = sys.di.dma_address.address();
@@ -196,11 +199,11 @@ fn process_dvd_command<const SYSTEM: SystemId>(
                 len = format!("{:08X}", len),
                 "ReadDiskId command"
             );
-        },
+        }
         Command::AudioToggle(enable) => {
             tracing::warn!(enable, "AudioToggle stubbed");
             sys.di.immbuf = 0;
-        },
+        }
     }
 }
 
@@ -215,13 +218,21 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
 
     pub fn open_cover(&mut self) {
         tracing::debug!("DVD drive cover opened");
-        self.di.cover = self.di.cover.with_cover_interrupt(true).with_cover_status(true);
+        self.di.cover = self
+            .di
+            .cover
+            .with_cover_interrupt(true)
+            .with_cover_status(true);
         self::refresh_interrupts(self);
     }
 
     pub fn close_cover(&mut self) {
         tracing::debug!("DVD drive cover closed");
-        self.di.cover = self.di.cover.with_cover_status(false).with_cover_interrupt(false);
+        self.di.cover = self
+            .di
+            .cover
+            .with_cover_status(false)
+            .with_cover_interrupt(false);
         self::refresh_interrupts(self);
     }
 }

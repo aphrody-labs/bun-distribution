@@ -22,7 +22,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             make
         ),
-        cmd!("object.textWrap.release", "Release", ["Object", "Text Wrap"], None, "{ids?} → {ids}", has_selection, release),
+        cmd!(
+            "object.textWrap.release",
+            "Release",
+            ["Object", "Text Wrap"],
+            None,
+            "{ids?} → {ids}",
+            has_selection,
+            release
+        ),
         cmd!(
             "object.textWrap.options",
             "Text Wrap Options…",
@@ -36,7 +44,10 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn wrap_param(p: &Value, base: TextWrap) -> TextWrap {
-    TextWrap { offset: f64_or(p, "offset", base.offset).clamp(-1000.0, 1000.0), invert: bool_or(p, "invert", base.invert) }
+    TextWrap {
+        offset: f64_or(p, "offset", base.offset).clamp(-1000.0, 1000.0),
+        invert: bool_or(p, "invert", base.invert),
+    }
 }
 
 fn make(s: &mut Session, p: &Value) -> Result<Value> {
@@ -81,7 +92,9 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = checked_ids_or_selection(s, p, "object.textWrap.options")?;
     let current = {
         let d = &s.doc()?.doc;
-        ids.iter().find_map(|i| d.node(*i).and_then(|n| n.extras().wrap)).unwrap_or_default()
+        ids.iter()
+            .find_map(|i| d.node(*i).and_then(|n| n.extras().wrap))
+            .unwrap_or_default()
     };
     if p.get("offset").is_none() && p.get("invert").is_none() {
         return Ok(json!({ "offset": current.offset, "invert": current.invert }));
@@ -103,16 +116,28 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
 /// Outline of a wrap object in document coordinates: its paths, or its bounds for other art.
 fn outline(n: &Node, out: &mut PathData) {
     match &n.kind {
-        NodeKind::Path { path, guide: false, .. } => {
-            out.subpaths.extend(path.subpaths.iter().filter(|sp| sp.closed || sp.anchors.len() > 2).cloned())
-        }
-        NodeKind::Compound { children, .. } | NodeKind::Group { children, clip: false } => {
+        NodeKind::Path {
+            path, guide: false, ..
+        } => out.subpaths.extend(
+            path.subpaths
+                .iter()
+                .filter(|sp| sp.closed || sp.anchors.len() > 2)
+                .cloned(),
+        ),
+        NodeKind::Compound { children, .. }
+        | NodeKind::Group {
+            children,
+            clip: false,
+        } => {
             for c in children.iter().filter(|c| c.visible) {
                 outline(c, out);
             }
         }
         // A clip group wraps by its clipping path.
-        NodeKind::Group { children, clip: true } => {
+        NodeKind::Group {
+            children,
+            clip: true,
+        } => {
             if let Some(c) = children.first() {
                 outline(c, out);
             }
@@ -152,7 +177,8 @@ fn collect<'a>(n: &'a Node, out: &mut Vec<Item<'a>>) {
 fn any_wrap_state(n: &Node) -> bool {
     n.extras().wrap.is_some()
         || matches!(&n.kind, NodeKind::Text(t) if !t.wrap.is_empty())
-        || n.children().is_some_and(|ch| ch.iter().any(|c| any_wrap_state(c)))
+        || n.children()
+            .is_some_and(|ch| ch.iter().any(|c| any_wrap_state(c)))
 }
 
 /// Re-resolve the wrap shapes of every area text object (called after each edit).
@@ -166,7 +192,9 @@ pub(crate) fn refresh(doc: &mut Document) {
         collect(layer, &mut items);
         for (i, it) in items.iter().enumerate() {
             let Item::Text(id) = it else { continue };
-            let Some(NodeKind::Text(t)) = doc.node(*id).map(|n| &n.kind) else { continue };
+            let Some(NodeKind::Text(t)) = doc.node(*id).map(|n| &n.kind) else {
+                continue;
+            };
             let inv = t.xf.inverse();
             let shapes: Vec<WrapShape> = items[i + 1..]
                 .iter()
@@ -176,7 +204,10 @@ pub(crate) fn refresh(doc: &mut Document) {
                         outline(n, &mut pd);
                         (!pd.is_empty()).then(|| {
                             pd.transform(inv);
-                            WrapShape { path: pd, wrap: n.extras().wrap.unwrap_or_default() }
+                            WrapShape {
+                                path: pd,
+                                wrap: n.extras().wrap.unwrap_or_default(),
+                            }
                         })
                     }
                     Item::Text(_) => None,
@@ -203,43 +234,148 @@ mod tests {
     use crate::{NodeId, Session};
 
     fn lines(s: &Session, id: u64) -> Vec<(f64, f64)> {
-        let Some(NodeKind::Text(t)) = s.doc().unwrap().doc.node(NodeId(id)).map(|n| n.kind.clone()) else { panic!() };
-        vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t).lines.iter().map(|l| l.avail).collect()
+        let Some(NodeKind::Text(t)) = s
+            .doc()
+            .unwrap()
+            .doc
+            .node(NodeId(id))
+            .map(|n| n.kind.clone())
+        else {
+            panic!()
+        };
+        vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t)
+            .lines
+            .iter()
+            .map(|l| l.avail)
+            .collect()
     }
 
     /// Invalid explicit ids must not turn a requested multi-object edit into a partial one.
     #[test]
     fn text_wrap_commands_reject_malformed_target_lists_without_editing() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 300, "height": 300})).unwrap();
-        let id = s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 80, "height": 80})).unwrap()["id"].as_u64().unwrap();
-        let other = s.execute("shape.rectangle", &json!({"x": 120, "y": 10, "width": 80, "height": 80})).unwrap()["id"].as_u64().unwrap();
+        s.execute("file.new", &json!({"width": 300, "height": 300}))
+            .unwrap();
+        let id = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 10, "y": 10, "width": 80, "height": 80}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let other = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 120, "y": 10, "width": 80, "height": 80}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [id]})).unwrap();
 
         let before = s.doc().unwrap().history.undo.len();
-        for command in ["object.textWrap.make", "object.textWrap.release", "object.textWrap.options"] {
-            for ids in [json!([id, "invalid"]), json!([id, 99999]), json!({"not": "an array"})] {
-                let e = s.execute(command, &json!({"ids": ids, "offset": 12})).unwrap_err().to_string();
+        for command in [
+            "object.textWrap.make",
+            "object.textWrap.release",
+            "object.textWrap.options",
+        ] {
+            for ids in [
+                json!([id, "invalid"]),
+                json!([id, 99999]),
+                json!({"not": "an array"}),
+            ] {
+                let e = s
+                    .execute(command, &json!({"ids": ids, "offset": 12}))
+                    .unwrap_err()
+                    .to_string();
                 assert!(e.contains("id") || e.contains("array"), "{command}: {e}");
-                assert_eq!(s.doc().unwrap().history.undo.len(), before, "{command} added history on error");
-                assert!(s.doc().unwrap().doc.node(NodeId(id)).unwrap().extras().wrap.is_none());
-                assert!(s.doc().unwrap().doc.node(NodeId(other)).unwrap().extras().wrap.is_none());
+                assert_eq!(
+                    s.doc().unwrap().history.undo.len(),
+                    before,
+                    "{command} added history on error"
+                );
+                assert!(
+                    s.doc()
+                        .unwrap()
+                        .doc
+                        .node(NodeId(id))
+                        .unwrap()
+                        .extras()
+                        .wrap
+                        .is_none()
+                );
+                assert!(
+                    s.doc()
+                        .unwrap()
+                        .doc
+                        .node(NodeId(other))
+                        .unwrap()
+                        .extras()
+                        .wrap
+                        .is_none()
+                );
             }
         }
 
-        s.execute("object.textWrap.make", &json!({"ids": [id]})).unwrap();
-        assert!(s.doc().unwrap().doc.node(NodeId(id)).unwrap().extras().wrap.is_some());
-        assert!(s.doc().unwrap().doc.node(NodeId(other)).unwrap().extras().wrap.is_none());
-        s.execute("object.textWrap.options", &json!({"ids": [id], "offset": 12})).unwrap();
-        assert_eq!(s.doc().unwrap().doc.node(NodeId(id)).unwrap().extras().wrap.unwrap().offset, 12.0);
-        s.execute("object.textWrap.release", &json!({"ids": [id]})).unwrap();
-        assert!(s.doc().unwrap().doc.node(NodeId(id)).unwrap().extras().wrap.is_none());
+        s.execute("object.textWrap.make", &json!({"ids": [id]}))
+            .unwrap();
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(id))
+                .unwrap()
+                .extras()
+                .wrap
+                .is_some()
+        );
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(other))
+                .unwrap()
+                .extras()
+                .wrap
+                .is_none()
+        );
+        s.execute(
+            "object.textWrap.options",
+            &json!({"ids": [id], "offset": 12}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(id))
+                .unwrap()
+                .extras()
+                .wrap
+                .unwrap()
+                .offset,
+            12.0
+        );
+        s.execute("object.textWrap.release", &json!({"ids": [id]}))
+            .unwrap();
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(NodeId(id))
+                .unwrap()
+                .extras()
+                .wrap
+                .is_none()
+        );
     }
 
     #[test]
     fn area_type_wraps_around_objects_above_and_follows_edits() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 600, "height": 600})).unwrap();
+        s.execute("file.new", &json!({"width": 600, "height": 600}))
+            .unwrap();
         let text = "word ".repeat(200);
         let t = s.execute("text.create", &json!({"x": 0, "y": 0, "text": text, "size": 12, "area": {"width": 400, "height": 400}})).unwrap()["id"]
             .as_u64()
@@ -247,26 +383,49 @@ mod tests {
         let plain = lines(&s, t);
         assert!(plain.iter().all(|l| l.1 > 300.0));
         // A square over the left half of the frame: lines next to it start right of it (+6 pt offset).
-        let r = s.execute("shape.rectangle", &json!({"x": 0, "y": 50, "width": 200, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 50, "width": 200, "height": 100}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [r]})).unwrap();
         s.execute("object.textWrap.make", &json!({})).unwrap();
         let wrapped = lines(&s, t);
         assert!(wrapped.iter().any(|l| l.0 >= 205.0), "{wrapped:?}");
         assert!(wrapped.iter().filter(|l| l.0 < 1.0).count() >= 2);
         // Moving the wrap object away re-flows the text.
-        s.execute("object.move", &json!({"dx": 500, "dy": 0})).unwrap();
+        s.execute("object.move", &json!({"dx": 500, "dy": 0}))
+            .unwrap();
         assert!(lines(&s, t).iter().all(|l| l.0 < 1.0));
-        s.execute("object.move", &json!({"dx": -500, "dy": 0})).unwrap();
+        s.execute("object.move", &json!({"dx": -500, "dy": 0}))
+            .unwrap();
         // Options round-trip; Invert Wrap keeps text inside the object only.
-        assert_eq!(s.execute("object.textWrap.options", &json!({})).unwrap()["offset"], json!(6.0));
-        s.execute("object.textWrap.options", &json!({"invert": true, "offset": 0})).unwrap();
+        assert_eq!(
+            s.execute("object.textWrap.options", &json!({})).unwrap()["offset"],
+            json!(6.0)
+        );
+        s.execute(
+            "object.textWrap.options",
+            &json!({"invert": true, "offset": 0}),
+        )
+        .unwrap();
         let inside = lines(&s, t);
         assert!(inside.iter().all(|l| l.1 <= 200.0 + 1e-6), "{inside:?}");
         // Release: back to the plain layout.
         s.execute("object.textWrap.release", &json!({})).unwrap();
         assert_eq!(lines(&s, t), plain);
         // Objects below the text don't wrap it.
-        let below = s.execute("shape.rectangle", &json!({"x": 0, "y": 50, "width": 200, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        let below = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 50, "width": 200, "height": 100}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [below]})).unwrap();
         s.execute("object.textWrap.make", &json!({})).unwrap();
         s.execute("object.arrange.sendToBack", &json!({})).unwrap();
@@ -276,28 +435,52 @@ mod tests {
     #[test]
     fn text_flows_on_both_sides_of_a_centred_object() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 600, "height": 600})).unwrap();
+        s.execute("file.new", &json!({"width": 600, "height": 600}))
+            .unwrap();
         let t = s
             .execute("text.create", &json!({"x": 0, "y": 0, "text": "word ".repeat(300), "size": 12, "area": {"width": 400, "height": 400}}))
             .unwrap()["id"]
             .as_u64()
             .unwrap();
-        let r = s.execute("shape.ellipse", &json!({"x": 150, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap();
+        let r = s
+            .execute(
+                "shape.ellipse",
+                &json!({"x": 150, "y": 100, "width": 100, "height": 100}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("select.set", &json!({"ids": [r]})).unwrap();
         s.execute("object.textWrap.make", &json!({})).unwrap();
-        let Some(NodeKind::Text(tx)) = s.doc().unwrap().doc.node(NodeId(t)).map(|n| n.kind.clone()) else { panic!() };
+        let Some(NodeKind::Text(tx)) = s.doc().unwrap().doc.node(NodeId(t)).map(|n| n.kind.clone())
+        else {
+            panic!()
+        };
         let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &tx);
         // Beside the circle each line band holds two lines: left of it and right of it.
-        let beside: Vec<_> = lay.lines.iter().filter(|l| l.baseline > 120.0 && l.baseline < 180.0).collect();
+        let beside: Vec<_> = lay
+            .lines
+            .iter()
+            .filter(|l| l.baseline > 120.0 && l.baseline < 180.0)
+            .collect();
         assert!(
             beside.iter().any(|l| l.avail.1 < 150.0) && beside.iter().any(|l| l.avail.0 > 250.0),
             "{:?}",
             beside.iter().map(|l| l.avail).collect::<Vec<_>>()
         );
         let left = beside.iter().find(|l| l.avail.1 < 150.0).unwrap();
-        assert!(beside.iter().any(|l| l.avail.0 > 250.0 && (l.baseline - left.baseline).abs() < 1e-9), "same baseline on both sides");
+        assert!(
+            beside
+                .iter()
+                .any(|l| l.avail.0 > 250.0 && (l.baseline - left.baseline).abs() < 1e-9),
+            "same baseline on both sides"
+        );
         // Reading order: the right-hand line follows the left-hand one.
-        let li = lay.lines.iter().position(|l| std::ptr::eq(l, *left)).unwrap();
+        let li = lay
+            .lines
+            .iter()
+            .position(|l| std::ptr::eq(l, *left))
+            .unwrap();
         assert!(lay.lines[li + 1].avail.0 > 250.0);
     }
 }

@@ -96,14 +96,33 @@ impl FamilyTool {
                 let r = drag_rect(start, p, m);
                 let mut params = self.options();
                 if let Some(o) = params.as_object_mut() {
-                    o.extend([("x", r.x0), ("y", r.y0), ("width", r.width()), ("height", r.height())].map(|(k, v)| (k.to_string(), json!(v))));
+                    o.extend(
+                        [
+                            ("x", r.x0),
+                            ("y", r.y0),
+                            ("width", r.width()),
+                            ("height", r.height()),
+                        ]
+                        .map(|(k, v)| (k.to_string(), json!(v))),
+                    );
                 }
                 (format!("shape.{}", self.id), params)
             }
             _ => {
-                let d = if m.shift { square(p - start) } else { p - start };
-                let (a, b) = if m.alt { (start - d, start + d) } else { (start, start + d) };
-                ("shape.arc".into(), json!({"x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y, "closed": self.closed}))
+                let d = if m.shift {
+                    square(p - start)
+                } else {
+                    p - start
+                };
+                let (a, b) = if m.alt {
+                    (start - d, start + d)
+                } else {
+                    (start, start + d)
+                };
+                (
+                    "shape.arc".into(),
+                    json!({"x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y, "closed": self.closed}),
+                )
             }
         }
     }
@@ -130,7 +149,9 @@ impl Tool for FamilyTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some(mut s) = self.start else { return vec![] };
+                let Some(mut s) = self.start else {
+                    return vec![];
+                };
                 let pos = self.snap.drag(cx, ev.pos, self.leave(s, ev.mods).as_ref());
                 let ev = &PointerEvent { pos, ..*ev };
                 crate::shape::space_moves(&mut s, &mut self.last, ev, self.began);
@@ -149,15 +170,23 @@ impl Tool for FamilyTool {
                 out
             }
             PointerKind::Up => {
-                let Some(s) = self.start.take() else { return vec![] };
+                let Some(s) = self.start.take() else {
+                    return vec![];
+                };
                 self.snap.clear();
-                if std::mem::take(&mut self.began) { vec![Action::Commit] } else { vec![Action::Dialog(self.id.into(), json!({"x": s.x, "y": s.y}))] }
+                if std::mem::take(&mut self.began) {
+                    vec![Action::Commit]
+                } else {
+                    vec![Action::Dialog(self.id.into(), json!({"x": s.x, "y": s.y}))]
+                }
             }
             _ => vec![],
         }
     }
     fn key(&mut self, _cx: &ToolContext, key: ToolKey, _m: Mods) -> Vec<Action> {
-        let Some(s) = self.start.filter(|_| self.began) else { return vec![] };
+        let Some(s) = self.start.filter(|_| self.began) else {
+            return vec![];
+        };
         let changed = match (self.id, key) {
             ("spiral", ToolKey::Up) => {
                 self.segments = (self.segments + 1).min(1000);
@@ -202,8 +231,15 @@ impl Tool for FamilyTool {
         if let Some(s) = self.start.filter(|_| self.began && cx.measurement_labels) {
             // The size as drawn (from the centre with Alt, square with Shift).
             let r = drag_rect(s, self.last, self.mods);
-            let (w, h) = if self.id == "spiral" { ((self.last - s).x.abs(), (self.last - s).y.abs()) } else { (r.width(), r.height()) };
-            o.push(Overlay::Measure { p: self.last, text: cx.size_label(w, h) });
+            let (w, h) = if self.id == "spiral" {
+                ((self.last - s).x.abs(), (self.last - s).y.abs())
+            } else {
+                (r.width(), r.height())
+            };
+            o.push(Overlay::Measure {
+                p: self.last,
+                text: cx.size_label(w, h),
+            });
         }
         o
     }
@@ -212,7 +248,9 @@ impl Tool for FamilyTool {
     }
     fn options(&self) -> Value {
         match self.id {
-            "spiral" => json!({"decay": self.decay, "segments": self.segments, "clockwise": self.clockwise}),
+            "spiral" => {
+                json!({"decay": self.decay, "segments": self.segments, "clockwise": self.clockwise})
+            }
             "rectangularGrid" => json!({
                 "rows": self.rows, "columns": self.columns, "rowSkew": self.skew[0], "columnSkew": self.skew[1], "frame": self.frame, "fill": self.fill,
             }),
@@ -243,7 +281,9 @@ impl Tool for FamilyTool {
 /// A grid divider skew from option value `v`: a finite number within the range, else `current`.
 fn grid_skew(v: &Value, current: f64) -> f64 {
     let max = vectorcraft_geom::shapes::GRID_SKEW_MAX;
-    v.as_f64().filter(|s| s.is_finite()).map_or(current, |s| s.clamp(-max, max))
+    v.as_f64()
+        .filter(|s| s.is_finite())
+        .map_or(current, |s| s.clamp(-max, max))
 }
 
 #[cfg(test)]
@@ -273,12 +313,27 @@ mod tests {
         let a = t.key(&cx, ToolKey::Right, Mods::default());
         assert!(matches!(&a[0], Action::Preview(_, v) if v["columns"] == 6));
         // Space held moves the grid at its size; let go, it grows again from there.
-        let space = Mods { space: true, ..Mods::default() };
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 80.0, 50.0).with_mods(space));
-        assert!(matches!(&a[..], [Action::Preview(_, v)] if v["x"] == 30.0 && v["y"] == 20.0 && v["width"] == 50.0 && v["height"] == 30.0), "{a:?}");
+        let space = Mods {
+            space: true,
+            ..Mods::default()
+        };
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 80.0, 50.0).with_mods(space),
+        );
+        assert!(
+            matches!(&a[..], [Action::Preview(_, v)] if v["x"] == 30.0 && v["y"] == 20.0 && v["width"] == 50.0 && v["height"] == 30.0),
+            "{a:?}"
+        );
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 90.0, 60.0));
-        assert!(matches!(&a[..], [Action::Preview(_, v)] if v["x"] == 30.0 && v["width"] == 60.0 && v["height"] == 40.0), "{a:?}");
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 90.0, 60.0)), vec![Action::Commit]);
+        assert!(
+            matches!(&a[..], [Action::Preview(_, v)] if v["x"] == 30.0 && v["width"] == 60.0 && v["height"] == 40.0),
+            "{a:?}"
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 90.0, 60.0)),
+            vec![Action::Commit]
+        );
     }
 
     /// #1377: a drag draws with the tool's stored options, which keep to their types and range.
@@ -300,15 +355,27 @@ mod tests {
         }
         let options = json!({"concentric": 2, "radial": 5, "concentricSkew": -40.0, "radialSkew": 500.0, "compound": true, "fill": true});
         assert_eq!(t.options(), options);
-        let (command, params) = t.command(Point::new(10.0, 20.0), Point::new(40.0, 80.0), Mods::default());
+        let (command, params) = t.command(
+            Point::new(10.0, 20.0),
+            Point::new(40.0, 80.0),
+            Mods::default(),
+        );
         assert_eq!(command, "shape.polarGrid");
         let mut want = options;
-        want.as_object_mut().unwrap().extend(json!({"x": 10.0, "y": 20.0, "width": 30.0, "height": 60.0}).as_object().unwrap().clone());
+        want.as_object_mut().unwrap().extend(
+            json!({"x": 10.0, "y": 20.0, "width": 30.0, "height": 60.0})
+                .as_object()
+                .unwrap()
+                .clone(),
+        );
         assert_eq!(params, want);
         let mut t = FamilyTool::new("rectangularGrid");
         t.set_option("frame", &json!(false));
         t.set_option("rowSkew", &json!(12.5));
-        assert_eq!(t.options(), json!({"rows": 5, "columns": 5, "rowSkew": 12.5, "columnSkew": 0.0, "frame": false, "fill": false}));
+        assert_eq!(
+            t.options(),
+            json!({"rows": 5, "columns": 5, "rowSkew": 12.5, "columnSkew": 0.0, "frame": false, "fill": false})
+        );
     }
 
     #[test]
@@ -322,12 +389,25 @@ mod tests {
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0));
         assert_eq!(
             t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 10.0, 10.0)),
-            vec![Action::Dialog("spiral".into(), json!({"x": 10.0, "y": 10.0}))]
+            vec![Action::Dialog(
+                "spiral".into(),
+                json!({"x": 10.0, "y": 10.0})
+            )]
         );
         let t = FamilyTool::new("arc");
-        let (c, v) = t.command(Point::new(0.0, 0.0), Point::new(10.0, 4.0), Mods { shift: true, ..Default::default() });
+        let (c, v) = t.command(
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 4.0),
+            Mods {
+                shift: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(c, "shape.arc");
-        assert_eq!(v, json!({"x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 10.0, "closed": false}));
+        assert_eq!(
+            v,
+            json!({"x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 10.0, "closed": false})
+        );
     }
 
     /// The start and the dragged corner snap to Smart Guides (#506), Shift sliding the corner of
@@ -340,12 +420,22 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = FamilyTool::new("rectangularGrid");
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 202.0, 99.0));
-        let shift = Mods { shift: true, ..Mods::default() };
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 255.0, 147.0).with_mods(shift));
+        let shift = Mods {
+            shift: true,
+            ..Mods::default()
+        };
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 255.0, 147.0).with_mods(shift),
+        );
         assert!(
             matches!(&a[..], [Action::Begin(_), Action::Preview(_, v)] if v["x"] == 200.0 && v["y"] == 100.0 && v["width"] == 50.0 && v["height"] == 50.0),
             "{a:?}"
         );
-        assert!(t.overlays(&cx).iter().any(|o| matches!(o, Overlay::Label { text, .. } if text == "align")));
+        assert!(
+            t.overlays(&cx)
+                .iter()
+                .any(|o| matches!(o, Overlay::Label { text, .. } if text == "align"))
+        );
     }
 }

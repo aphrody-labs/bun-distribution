@@ -74,7 +74,9 @@ impl SmartArtLayout {
         if id.eq_ignore_ascii_case("list") {
             return Some(SmartArtLayout::BasicList);
         }
-        SmartArtLayout::ALL.into_iter().find(|l| l.id().eq_ignore_ascii_case(id))
+        SmartArtLayout::ALL
+            .into_iter()
+            .find(|l| l.id().eq_ignore_ascii_case(id))
     }
 
     /// The name shown for it.
@@ -108,11 +110,17 @@ impl SmartArtLayout {
     pub fn description(self) -> &'static str {
         match self {
             SmartArtLayout::BasicList => "Shows items of equal weight as blocks in rows.",
-            SmartArtLayout::Process => "Shows steps in order, left to right, with arrows between them.",
+            SmartArtLayout::Process => {
+                "Shows steps in order, left to right, with arrows between them."
+            }
             SmartArtLayout::Cycle => "Shows steps that repeat, around a circle.",
             SmartArtLayout::Hierarchy => "Shows a tree: each item below the item it belongs to.",
-            SmartArtLayout::Pyramid => "Shows parts that build on each other, largest at the bottom.",
-            SmartArtLayout::Radial => "Shows items around a central idea: the first item is the centre.",
+            SmartArtLayout::Pyramid => {
+                "Shows parts that build on each other, largest at the bottom."
+            }
+            SmartArtLayout::Radial => {
+                "Shows items around a central idea: the first item is the centre."
+            }
             SmartArtLayout::Matrix => "Shows parts of a whole as quadrants.",
             SmartArtLayout::Venn => "Shows overlapping ideas as overlapping circles.",
         }
@@ -159,7 +167,9 @@ impl SmartArtColors {
     }
 
     pub fn from_id(id: &str) -> Option<SmartArtColors> {
-        SmartArtColors::ALL.into_iter().find(|c| c.id().eq_ignore_ascii_case(id.trim()))
+        SmartArtColors::ALL
+            .into_iter()
+            .find(|c| c.id().eq_ignore_ascii_case(id.trim()))
     }
 
     /// The name shown for it.
@@ -200,7 +210,10 @@ pub struct SmartArtItem {
 
 impl SmartArtItem {
     pub fn new(text: impl Into<String>, level: u8) -> SmartArtItem {
-        SmartArtItem { text: text.into(), level }
+        SmartArtItem {
+            text: text.into(),
+            level,
+        }
     }
 }
 
@@ -232,12 +245,24 @@ impl SmartArtSpec {
                 v.extend(["Plan", "Build", "Test", "Ship"].map(|t| SmartArtItem::new(t, 1)));
                 v
             }
-            SmartArtLayout::Process | SmartArtLayout::Cycle => ["Plan", "Build", "Test", "Ship"].map(|t| SmartArtItem::new(t, 0)).to_vec(),
-            SmartArtLayout::Pyramid | SmartArtLayout::Venn => ["People", "Process", "Tools"].map(|t| SmartArtItem::new(t, 0)).to_vec(),
-            SmartArtLayout::Matrix => ["Strengths", "Weaknesses", "Chances", "Risks"].map(|t| SmartArtItem::new(t, 0)).to_vec(),
-            SmartArtLayout::BasicList => ["Ideas", "Notes", "Drafts", "Edits", "Final"].map(|t| SmartArtItem::new(t, 0)).to_vec(),
+            SmartArtLayout::Process | SmartArtLayout::Cycle => ["Plan", "Build", "Test", "Ship"]
+                .map(|t| SmartArtItem::new(t, 0))
+                .to_vec(),
+            SmartArtLayout::Pyramid | SmartArtLayout::Venn => ["People", "Process", "Tools"]
+                .map(|t| SmartArtItem::new(t, 0))
+                .to_vec(),
+            SmartArtLayout::Matrix => ["Strengths", "Weaknesses", "Chances", "Risks"]
+                .map(|t| SmartArtItem::new(t, 0))
+                .to_vec(),
+            SmartArtLayout::BasicList => ["Ideas", "Notes", "Drafts", "Edits", "Final"]
+                .map(|t| SmartArtItem::new(t, 0))
+                .to_vec(),
         };
-        SmartArtSpec { layout, items, colors: SmartArtColors::default() }
+        SmartArtSpec {
+            layout,
+            items,
+            colors: SmartArtColors::default(),
+        }
     }
 
     /// Make the graphic safe to store and draw: at most [`MAX_ITEMS`] items, text cut to
@@ -278,17 +303,33 @@ impl SmartArtSpec {
 
     /// The items that belong to item `i` (directly or deeper): the run after it at deeper levels.
     pub fn descendants(&self, i: usize) -> std::ops::Range<usize> {
-        let Some(level) = self.items.get(i).map(|it| it.level) else { return 0..0 };
+        let Some(level) = self.items.get(i).map(|it| it.level) else {
+            return 0..0;
+        };
         let start = i + 1;
-        let end = self.items.iter().skip(start).position(|it| it.level <= level).map_or(self.items.len(), |p| start + p);
+        let end = self
+            .items
+            .iter()
+            .skip(start)
+            .position(|it| it.level <= level)
+            .map_or(self.items.len(), |p| start + p);
         start..end
     }
 }
 
 /// `s` as item text: control characters as spaces, ends trimmed, at most [`MAX_TEXT`] characters.
 pub fn clean_text(s: &str) -> String {
-    let s: String = s.chars().take(MAX_TEXT * 4).map(|c| if c.is_control() { ' ' } else { c }).collect();
-    s.trim().chars().take(MAX_TEXT).collect::<String>().trim_end().to_string()
+    let s: String = s
+        .chars()
+        .take(MAX_TEXT * 4)
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect();
+    s.trim()
+        .chars()
+        .take(MAX_TEXT)
+        .collect::<String>()
+        .trim_end()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -298,7 +339,14 @@ mod tests {
     #[test]
     fn sanitize_caps_items_text_and_levels() {
         let mut s = SmartArtSpec {
-            items: (0..MAX_ITEMS + 20).map(|i| SmartArtItem::new(format!("{}\n{i}", "x".repeat(400)), if i == 0 { 5 } else { 200 })).collect(),
+            items: (0..MAX_ITEMS + 20)
+                .map(|i| {
+                    SmartArtItem::new(
+                        format!("{}\n{i}", "x".repeat(400)),
+                        if i == 0 { 5 } else { 200 },
+                    )
+                })
+                .collect(),
             ..Default::default()
         };
         s.sanitize();
@@ -313,12 +361,18 @@ mod tests {
     #[test]
     fn parents_and_descendants_follow_levels() {
         let s = SmartArtSpec::sample(SmartArtLayout::Hierarchy).sanitized();
-        assert_eq!(s.parents(), vec![None, Some(0), Some(1), Some(0), Some(3), Some(3)]);
+        assert_eq!(
+            s.parents(),
+            vec![None, Some(0), Some(1), Some(0), Some(3), Some(3)]
+        );
         assert_eq!(s.descendants(0), 1..6);
         assert_eq!(s.descendants(1), 2..3);
         assert_eq!(s.descendants(5), 6..6);
         assert_eq!(s.descendants(99), 0..0);
         assert_eq!(SmartArtLayout::from_id("VENN"), Some(SmartArtLayout::Venn));
-        assert_eq!(SmartArtColors::from_id("colorful"), Some(SmartArtColors::Colorful));
+        assert_eq!(
+            SmartArtColors::from_id("colorful"),
+            Some(SmartArtColors::Colorful)
+        );
     }
 }

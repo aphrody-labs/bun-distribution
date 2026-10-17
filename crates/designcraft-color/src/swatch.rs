@@ -63,7 +63,10 @@ impl Swatch {
     pub fn color(name: &str, c: Color) -> Self {
         Swatch {
             name: name.into(),
-            value: SwatchValue::Color { color: c, color_type: ColorType::Process },
+            value: SwatchValue::Color {
+                color: c,
+                color_type: ColorType::Process,
+            },
             locked: false,
             named: true,
             hidden: false,
@@ -73,14 +76,20 @@ impl Swatch {
         let col = Color::cmyk(c, m, y, k);
         Swatch {
             name: cmyk_name(c, m, y, k),
-            value: SwatchValue::Color { color: col, color_type: ColorType::Process },
+            value: SwatchValue::Color {
+                color: col,
+                color_type: ColorType::Process,
+            },
             locked: false,
             named: false,
             hidden: false,
         }
     }
     pub fn is_special(&self) -> bool {
-        matches!(self.value, SwatchValue::None | SwatchValue::Paper { .. } | SwatchValue::Registration) || self.name == BLACK
+        matches!(
+            self.value,
+            SwatchValue::None | SwatchValue::Paper { .. } | SwatchValue::Registration
+        ) || self.name == BLACK
     }
 }
 
@@ -106,7 +115,9 @@ fn resolve_depth(swatches: &[Swatch], name: &str, tint: f32, depth: u8) -> Optio
         SwatchValue::Paper { color } => return Some(*color),
         SwatchValue::Registration => Color::cmyk(1.0, 1.0, 1.0, 1.0),
         SwatchValue::Color { color, .. } => *color,
-        SwatchValue::Tint { base, tint: t } => return resolve_depth(swatches, base, t * tint, depth + 1),
+        SwatchValue::Tint { base, tint: t } => {
+            return resolve_depth(swatches, base, t * tint, depth + 1);
+        }
         SwatchValue::Gradient { gradient } => gradient.stops.first().map(|s| s.color)?,
     };
     Some(apply_tint(base, tint))
@@ -128,18 +139,39 @@ pub fn apply_tint(c: Color, tint: f32) -> Color {
     match c {
         Color::Cmyk { c, m, y, k } => Color::cmyk(c * t, m * t, y * t, k * t),
         Color::Gray { k } => Color::gray(k * t),
-        Color::Rgb { r, g, b } => Color::rgb(1.0 - (1.0 - r) * t, 1.0 - (1.0 - g) * t, 1.0 - (1.0 - b) * t),
+        Color::Rgb { r, g, b } => Color::rgb(
+            1.0 - (1.0 - r) * t,
+            1.0 - (1.0 - g) * t,
+            1.0 - (1.0 - b) * t,
+        ),
     }
 }
 
 /// A new document's swatches, in panel order.
 pub fn default_swatches() -> Vec<Swatch> {
-    let special = |name: &str, value: SwatchValue| Swatch { name: name.into(), value, locked: true, named: true, hidden: false };
+    let special = |name: &str, value: SwatchValue| Swatch {
+        name: name.into(),
+        value,
+        locked: true,
+        named: true,
+        hidden: false,
+    };
     let mut v = vec![
         special(NONE, SwatchValue::None),
         special(REGISTRATION, SwatchValue::Registration),
-        special(PAPER, SwatchValue::Paper { color: Color::WHITE }),
-        special(BLACK, SwatchValue::Color { color: Color::cmyk(0.0, 0.0, 0.0, 1.0), color_type: ColorType::Process }),
+        special(
+            PAPER,
+            SwatchValue::Paper {
+                color: Color::WHITE,
+            },
+        ),
+        special(
+            BLACK,
+            SwatchValue::Color {
+                color: Color::cmyk(0.0, 0.0, 0.0, 1.0),
+                color_type: ColorType::Process,
+            },
+        ),
     ];
     for (c, m, y, k) in [
         (1.0, 0.0, 0.0, 0.0),
@@ -175,23 +207,50 @@ mod tests {
         let mut s = default_swatches();
         s.push(Swatch {
             name: "Half cyan".into(),
-            value: SwatchValue::Tint { base: "C=100 M=0 Y=0 K=0".into(), tint: 0.5 },
+            value: SwatchValue::Tint {
+                base: "C=100 M=0 Y=0 K=0".into(),
+                tint: 0.5,
+            },
             locked: false,
             named: true,
             hidden: false,
         });
         assert_eq!(resolve(&s, NONE, 1.0), None);
         assert_eq!(resolve(&s, PAPER, 1.0), Some(Color::WHITE));
-        assert_eq!(resolve(&s, BLACK, 0.4), Some(Color::cmyk(0.0, 0.0, 0.0, 0.4)));
-        assert_eq!(resolve(&s, "Half cyan", 0.5), Some(Color::cmyk(0.25, 0.0, 0.0, 0.0)));
+        assert_eq!(
+            resolve(&s, BLACK, 0.4),
+            Some(Color::cmyk(0.0, 0.0, 0.0, 0.4))
+        );
+        assert_eq!(
+            resolve(&s, "Half cyan", 0.5),
+            Some(Color::cmyk(0.25, 0.0, 0.0, 0.0))
+        );
         assert_eq!(resolve(&s, "missing", 1.0), None);
     }
 
     #[test]
     fn tint_cycles_terminate() {
         let s = vec![
-            Swatch { name: "a".into(), value: SwatchValue::Tint { base: "b".into(), tint: 0.5 }, locked: false, named: true, hidden: false },
-            Swatch { name: "b".into(), value: SwatchValue::Tint { base: "a".into(), tint: 0.5 }, locked: false, named: true, hidden: false },
+            Swatch {
+                name: "a".into(),
+                value: SwatchValue::Tint {
+                    base: "b".into(),
+                    tint: 0.5,
+                },
+                locked: false,
+                named: true,
+                hidden: false,
+            },
+            Swatch {
+                name: "b".into(),
+                value: SwatchValue::Tint {
+                    base: "a".into(),
+                    tint: 0.5,
+                },
+                locked: false,
+                named: true,
+                hidden: false,
+            },
         ];
         assert_eq!(resolve(&s, "a", 1.0), None);
     }

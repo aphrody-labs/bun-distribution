@@ -84,7 +84,10 @@ pub struct VirtualDriveEngine {
 impl VirtualDriveEngine {
     /// Create a new VDFS engine initialized with default Aphrody mounts.
     pub fn new() -> Result<Self> {
-        let mut engine = Self { mounts: HashMap::new(), opendal_operators: HashMap::new() };
+        let mut engine = Self {
+            mounts: HashMap::new(),
+            opendal_operators: HashMap::new(),
+        };
 
         // Register default mounts for the current environment
         engine.mount(VirtualMount {
@@ -99,14 +102,20 @@ impl VirtualDriveEngine {
         engine.mount(VirtualMount {
             id: "vps".into(),
             name: "OVH VPS Remote".into(),
-            kind: MountKind::RemoteSftp { host: Host::Vps, remote_root: "/var/www".into() },
+            kind: MountKind::RemoteSftp {
+                host: Host::Vps,
+                remote_root: "/var/www".into(),
+            },
             read_only: false,
         })?;
 
         engine.mount(VirtualMount {
             id: "dbfr".into(),
             name: "Dragon Ball FR Remote".into(),
-            kind: MountKind::RemoteSftp { host: Host::Dbfr, remote_root: "/var/www".into() },
+            kind: MountKind::RemoteSftp {
+                host: Host::Dbfr,
+                remote_root: "/var/www".into(),
+            },
             read_only: false,
         })?;
 
@@ -119,14 +128,17 @@ impl VirtualDriveEngine {
             read_only: true,
         })?;
 
-        let artifacts_path =
-            std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join("artifacts");
+        let artifacts_path = std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join("artifacts");
         let _ = std::fs::create_dir_all(&artifacts_path);
 
         engine.mount(VirtualMount {
             id: "storage".into(),
             name: "OpenDAL Artifacts Storage".into(),
-            kind: MountKind::OpenDalFs { root: artifacts_path },
+            kind: MountKind::OpenDalFs {
+                root: artifacts_path,
+            },
             read_only: false,
         })?;
 
@@ -173,7 +185,10 @@ impl VirtualDriveEngine {
             Ok((mount_id.to_string(), rel.to_string()))
         } else {
             // Default to local mount
-            Ok(("local".to_string(), clean.trim_start_matches('/').to_string()))
+            Ok((
+                "local".to_string(),
+                clean.trim_start_matches('/').to_string(),
+            ))
         }
     }
 
@@ -187,8 +202,11 @@ impl VirtualDriveEngine {
 
         match &mount.kind {
             MountKind::LocalFs { root } => {
-                let target_dir =
-                    if rel_path.is_empty() { root.clone() } else { root.join(&rel_path) };
+                let target_dir = if rel_path.is_empty() {
+                    root.clone()
+                } else {
+                    root.join(&rel_path)
+                };
 
                 let mut nodes = Vec::new();
                 let read_dir = std::fs::read_dir(&target_dir)
@@ -210,7 +228,11 @@ impl VirtualDriveEngine {
                         meta.permissions().mode()
                     };
                     #[cfg(not(unix))]
-                    let permissions = if meta.permissions().readonly() { 0o444 } else { 0o666 };
+                    let permissions = if meta.permissions().readonly() {
+                        0o444
+                    } else {
+                        0o666
+                    };
 
                     let modified_time = meta
                         .modified()
@@ -234,7 +256,7 @@ impl VirtualDriveEngine {
 
                 nodes.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.cmp(&b.name)));
                 Ok(nodes)
-            },
+            }
             MountKind::OpenDalFs { .. } => {
                 let op = self
                     .opendal_operators
@@ -268,7 +290,7 @@ impl VirtualDriveEngine {
                 }
                 nodes.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.cmp(&b.name)));
                 Ok(nodes)
-            },
+            }
             MountKind::GitRepo { repo_path } => {
                 let git_nodes = aphrody_git::list_tree_at(repo_path, None, Some(&rel_path))?;
                 let nodes = git_nodes
@@ -286,7 +308,7 @@ impl VirtualDriveEngine {
                     })
                     .collect();
                 Ok(nodes)
-            },
+            }
             MountKind::RemoteSftp { host, remote_root } => {
                 let full_remote_path = Self::resolve_remote_path(remote_root, &rel_path);
 
@@ -316,7 +338,7 @@ impl VirtualDriveEngine {
                     })
                     .collect();
                 Ok(nodes)
-            },
+            }
         }
     }
 
@@ -339,26 +361,34 @@ impl VirtualDriveEngine {
                 let sftp = session.sftp().await?;
                 let sftp_tree = SftpDriver::tree(&sftp, &full_path, max_depth).await?;
                 Ok(convert_sftp_tree(&mount_id, remote_root, sftp_tree))
-            },
+            }
             _ => {
                 // Generic traversal for local / opendal / git mounts
                 let root_node = DriveFileNode {
                     uri: format!("vdfs://{mount_id}/{rel_path}"),
                     mount_id: mount_id.clone(),
                     relative_path: rel_path.clone(),
-                    name: if rel_path.is_empty() { mount.name.clone() } else { rel_path.clone() },
+                    name: if rel_path.is_empty() {
+                        mount.name.clone()
+                    } else {
+                        rel_path.clone()
+                    },
                     is_dir: true,
                     is_symlink: false,
                     size: 0,
                     permissions: 0o755,
                     modified_time: 0,
                 };
-                let mut tree_node = DriveTreeNode { node: root_node, children: Vec::new() };
+                let mut tree_node = DriveTreeNode {
+                    node: root_node,
+                    children: Vec::new(),
+                };
                 if max_depth > 0 {
-                    self.build_tree_recursive(&mut tree_node, max_depth - 1).await?;
+                    self.build_tree_recursive(&mut tree_node, max_depth - 1)
+                        .await?;
                 }
                 Ok(tree_node)
-            },
+            }
         }
     }
 
@@ -370,7 +400,10 @@ impl VirtualDriveEngine {
         let entries = self.list_dir(&parent.node.uri).await?;
         for entry in entries {
             let is_dir = entry.is_dir;
-            let mut child = DriveTreeNode { node: entry, children: Vec::new() };
+            let mut child = DriveTreeNode {
+                node: entry,
+                children: Vec::new(),
+            };
             if is_dir && depth_left > 0 {
                 Box::pin(self.build_tree_recursive(&mut child, depth_left - 1)).await?;
             }
@@ -392,7 +425,7 @@ impl VirtualDriveEngine {
                 let file_path = root.join(&rel_path);
                 std::fs::read(&file_path)
                     .with_context(|| format!("failed to read local file: {:?}", file_path))
-            },
+            }
             MountKind::OpenDalFs { .. } => {
                 let op = self
                     .opendal_operators
@@ -400,13 +433,13 @@ impl VirtualDriveEngine {
                     .with_context(|| format!("OpenDAL operator missing for {mount_id}"))?;
                 let bytes = op.read(&rel_path).await?;
                 Ok(bytes.to_vec())
-            },
+            }
             MountKind::RemoteSftp { host, remote_root } => {
                 let full_path = Self::resolve_remote_path(remote_root, &rel_path);
                 let session = InProcessSshSession::connect_host(*host).await?;
                 let sftp = session.sftp().await?;
                 SftpDriver::read_file(&sftp, &full_path).await
-            },
+            }
             MountKind::GitRepo { repo_path } => {
                 let repo = gix::open(repo_path)
                     .with_context(|| format!("failed to open git repository: {repo_path:?}"))?;
@@ -418,7 +451,7 @@ impl VirtualDriveEngine {
                     bail!("path is a directory in the git tree: {rel_path}");
                 }
                 Ok(entry.object()?.detach().data)
-            },
+            }
         }
     }
 
@@ -466,7 +499,7 @@ impl VirtualDriveEngine {
                         savings_percentage: 0,
                     })
                 }
-            },
+            }
             MountKind::OpenDalFs { .. } => {
                 let op = self
                     .opendal_operators
@@ -480,7 +513,7 @@ impl VirtualDriveEngine {
                     delta_size: content.len(),
                     savings_percentage: 0,
                 })
-            },
+            }
             MountKind::RemoteSftp { host, remote_root } => {
                 let full_path = Self::resolve_remote_path(remote_root, &rel_path);
                 let session = InProcessSshSession::connect_host(*host).await?;
@@ -498,10 +531,10 @@ impl VirtualDriveEngine {
                         savings_percentage: 0,
                     })
                 }
-            },
+            }
             MountKind::GitRepo { .. } => {
                 bail!("writing to GitRepo mount is not allowed directly; use Git commit workflow")
-            },
+            }
         }
     }
 
@@ -540,7 +573,7 @@ impl VirtualDriveEngine {
                     MountKind::LocalFs { root } => root.clone(),
                     _ => {
                         bail!("mount '{str_key}' is not a Git repository or local filesystem mount")
-                    },
+                    }
                 }
             } else {
                 p.to_path_buf()
@@ -586,10 +619,16 @@ fn convert_sftp_tree(mount_id: &str, remote_root: &str, node: SftpTreeNode) -> D
         modified_time: node.entry.modified_time as u64,
     };
 
-    let children =
-        node.children.into_iter().map(|c| convert_sftp_tree(mount_id, remote_root, c)).collect();
+    let children = node
+        .children
+        .into_iter()
+        .map(|c| convert_sftp_tree(mount_id, remote_root, c))
+        .collect();
 
-    DriveTreeNode { node: file_node, children }
+    DriveTreeNode {
+        node: file_node,
+        children,
+    }
 }
 
 #[cfg(test)]
@@ -616,7 +655,9 @@ mod tests {
             .mount(VirtualMount {
                 id: "test".into(),
                 name: "Test Mount".into(),
-                kind: MountKind::LocalFs { root: temp.path().to_path_buf() },
+                kind: MountKind::LocalFs {
+                    root: temp.path().to_path_buf(),
+                },
                 read_only: false,
             })
             .unwrap();
@@ -647,7 +688,11 @@ mod tests {
             .arg(temp.path())
             .output()
             .expect("run git init");
-        assert!(init.status.success(), "{}", String::from_utf8_lossy(&init.stderr));
+        assert!(
+            init.status.success(),
+            "{}",
+            String::from_utf8_lossy(&init.stderr)
+        );
         std::fs::write(temp.path().join("README.md"), "Git overview fixture\n")
             .expect("write fixture");
         let add = std::process::Command::new("git")
@@ -656,7 +701,11 @@ mod tests {
             .args(["add", "README.md"])
             .output()
             .expect("run git add");
-        assert!(add.status.success(), "{}", String::from_utf8_lossy(&add.stderr));
+        assert!(
+            add.status.success(),
+            "{}",
+            String::from_utf8_lossy(&add.stderr)
+        );
         let commit = std::process::Command::new("git")
             .arg("-C")
             .arg(temp.path())
@@ -674,14 +723,20 @@ mod tests {
             ])
             .output()
             .expect("run git commit");
-        assert!(commit.status.success(), "{}", String::from_utf8_lossy(&commit.stderr));
+        assert!(
+            commit.status.success(),
+            "{}",
+            String::from_utf8_lossy(&commit.stderr)
+        );
 
         let mut engine = VirtualDriveEngine::new().unwrap();
         engine
             .mount(VirtualMount {
                 id: "git".into(),
                 name: "Git fixture".into(),
-                kind: MountKind::GitRepo { repo_path: temp.path().to_path_buf() },
+                kind: MountKind::GitRepo {
+                    repo_path: temp.path().to_path_buf(),
+                },
                 read_only: true,
             })
             .expect("mount fixture");

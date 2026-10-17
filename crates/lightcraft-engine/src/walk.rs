@@ -22,7 +22,10 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { max_depth: MAX_DEPTH, max_entries: MAX_ENTRIES }
+        Limits {
+            max_depth: MAX_DEPTH,
+            max_entries: MAX_ENTRIES,
+        }
     }
 }
 
@@ -44,13 +47,19 @@ pub struct Walked {
 }
 
 fn hidden(p: &Path) -> bool {
-    p.file_name().is_some_and(|n| n.to_string_lossy().starts_with('.'))
+    p.file_name()
+        .is_some_and(|n| n.to_string_lossy().starts_with('.'))
 }
 
 /// The files below folder `root` that `keep` accepts. Hidden entries (names starting with `.`)
 /// are left out, the folder `skip` (e.g. the library's own) is never entered, and the walk stops
 /// at `limits` (see [`Walked::truncated`]). Unreadable folders are skipped.
-pub fn files_in(root: &Path, skip: Option<&Path>, limits: Limits, mut keep: impl FnMut(&Path) -> bool) -> Walked {
+pub fn files_in(
+    root: &Path,
+    skip: Option<&Path>,
+    limits: Limits,
+    mut keep: impl FnMut(&Path) -> bool,
+) -> Walked {
     let mut out = Walked::default();
     // canonical folders reached through a link, so a link loop is walked at most once
     let mut linked: HashSet<PathBuf> = HashSet::new();
@@ -68,14 +77,20 @@ pub fn files_in(root: &Path, skip: Option<&Path>, limits: Limits, mut keep: impl
             }
             continue;
         }
-        if skip.is_some_and(|s| path == s) || skip_canonical.as_ref().is_some_and(|s| std::fs::canonicalize(&path).is_ok_and(|p| p.starts_with(s))) {
+        if skip.is_some_and(|s| path == s)
+            || skip_canonical
+                .as_ref()
+                .is_some_and(|s| std::fs::canonicalize(&path).is_ok_and(|p| p.starts_with(s)))
+        {
             continue;
         }
         if depth >= limits.max_depth {
             out.truncated = true;
             continue;
         }
-        let Ok(rd) = std::fs::read_dir(&path) else { continue };
+        let Ok(rd) = std::fs::read_dir(&path) else {
+            continue;
+        };
         let mut children: Vec<(PathBuf, bool)> = Vec::new();
         for e in rd.flatten() {
             if out.entries >= limits.max_entries {
@@ -92,7 +107,9 @@ pub fn files_in(root: &Path, skip: Option<&Path>, limits: Limits, mut keep: impl
                 // a link (or a Windows junction): a folder is entered once, a file is a file
                 match std::fs::metadata(&p) {
                     Ok(m) if m.is_dir() => {
-                        let Ok(c) = std::fs::canonicalize(&p) else { continue };
+                        let Ok(c) = std::fs::canonicalize(&p) else {
+                            continue;
+                        };
                         if !linked.insert(c) {
                             continue;
                         }
@@ -126,14 +143,34 @@ mod tests {
     #[test]
     fn files_come_in_path_order_without_hidden_ones_or_the_skipped_folder() {
         let d = tmp("order");
-        for f in ["b/2.jpg", "a/1.jpg", "a/x/0.jpg", "c.jpg", ".hidden/h.jpg", "a/.h.jpg", "lib/l.jpg", "a/n.txt"] {
+        for f in [
+            "b/2.jpg",
+            "a/1.jpg",
+            "a/x/0.jpg",
+            "c.jpg",
+            ".hidden/h.jpg",
+            "a/.h.jpg",
+            "lib/l.jpg",
+            "a/n.txt",
+        ] {
             let p = d.join(f);
             std::fs::create_dir_all(p.parent().unwrap()).unwrap();
             std::fs::write(p, b"x").unwrap();
         }
         let lib = d.join("lib");
-        let w = files_in(&d, Some(&lib), Limits::default(), |p| p.extension().is_some_and(|e| e == "jpg"));
-        let rel: Vec<String> = w.files.iter().map(|p| p.strip_prefix(&d).unwrap().to_string_lossy().replace('\\', "/")).collect();
+        let w = files_in(&d, Some(&lib), Limits::default(), |p| {
+            p.extension().is_some_and(|e| e == "jpg")
+        });
+        let rel: Vec<String> = w
+            .files
+            .iter()
+            .map(|p| {
+                p.strip_prefix(&d)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/")
+            })
+            .collect();
         assert_eq!(rel, ["a/1.jpg", "a/x/0.jpg", "b/2.jpg", "c.jpg"]);
         assert!(!w.truncated);
         let _ = std::fs::remove_dir_all(&d);
@@ -156,11 +193,35 @@ mod tests {
             std::fs::write(wide.join(format!("{i:02}.jpg")), b"x").unwrap();
         }
         let all = |_: &Path| true;
-        let w = files_in(&d.join("deep"), None, Limits { max_depth: 5, max_entries: 1000 }, all);
+        let w = files_in(
+            &d.join("deep"),
+            None,
+            Limits {
+                max_depth: 5,
+                max_entries: 1000,
+            },
+            all,
+        );
         assert!(w.files.is_empty() && w.truncated, "{w:?}");
-        let w = files_in(&d.join("deep"), None, Limits { max_depth: 13, max_entries: 1000 }, all);
+        let w = files_in(
+            &d.join("deep"),
+            None,
+            Limits {
+                max_depth: 13,
+                max_entries: 1000,
+            },
+            all,
+        );
         assert_eq!((w.files.len(), w.truncated), (1, false), "{w:?}");
-        let w = files_in(&wide, None, Limits { max_depth: 5, max_entries: 20 }, all);
+        let w = files_in(
+            &wide,
+            None,
+            Limits {
+                max_depth: 5,
+                max_entries: 20,
+            },
+            all,
+        );
         assert_eq!((w.files.len(), w.entries, w.truncated), (20, 20, true));
         let w = files_in(&wide, None, Limits::default(), all);
         assert_eq!((w.files.len(), w.truncated), (50, false));
@@ -178,16 +239,30 @@ mod tests {
         std::fs::create_dir_all(&root).unwrap();
         std::fs::create_dir_all(library.join("Originals")).unwrap();
         std::fs::write(root.join("ordinary.jpg"), b"photo").unwrap();
-        std::fs::write(library.join("Originals").join("library-only.jpg"), b"original").unwrap();
+        std::fs::write(
+            library.join("Originals").join("library-only.jpg"),
+            b"original",
+        )
+        .unwrap();
         std::os::unix::fs::symlink(&library, root.join("library-link")).unwrap();
         std::os::unix::fs::symlink(&d, root.join("parent-link")).unwrap();
 
-        let photos = files_in(&root, Some(&library), Limits::default(), |p| p.extension().is_some_and(|e| e == "jpg"));
+        let photos = files_in(&root, Some(&library), Limits::default(), |p| {
+            p.extension().is_some_and(|e| e == "jpg")
+        });
         assert!(photos.files.contains(&root.join("ordinary.jpg")));
-        assert!(!photos.files.iter().any(|p| p.ends_with("library-only.jpg")), "{photos:?}");
+        assert!(
+            !photos.files.iter().any(|p| p.ends_with("library-only.jpg")),
+            "{photos:?}"
+        );
 
         // Scanning a subfolder already inside the excluded library is also forbidden.
-        let inside = files_in(&library.join("Originals"), Some(&library), Limits::default(), |_| true);
+        let inside = files_in(
+            &library.join("Originals"),
+            Some(&library),
+            Limits::default(),
+            |_| true,
+        );
         assert!(inside.files.is_empty(), "{inside:?}");
         let _ = std::fs::remove_dir_all(&d);
     }

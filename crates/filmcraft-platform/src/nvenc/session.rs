@@ -31,26 +31,41 @@ fn api() -> Result<&'static Api, String> {
 #[cfg(target_os = "windows")]
 fn load() -> Result<Api, String> {
     use windows::Win32::Foundation::HMODULE;
-    use windows::Win32::System::LibraryLoader::{GetProcAddress, LOAD_LIBRARY_SEARCH_SYSTEM32, LoadLibraryExW};
+    use windows::Win32::System::LibraryLoader::{
+        GetProcAddress, LOAD_LIBRARY_SEARCH_SYSTEM32, LoadLibraryExW,
+    };
     use windows::core::{PCSTR, w};
     // SAFETY: loads the driver's library from the system directory only.
     let module: HMODULE =
-        unsafe { LoadLibraryExW(w!("nvEncodeAPI64.dll"), None, LOAD_LIBRARY_SEARCH_SYSTEM32) }.map_err(|_| "no NVIDIA encoder driver".to_string())?;
+        unsafe { LoadLibraryExW(w!("nvEncodeAPI64.dll"), None, LOAD_LIBRARY_SEARCH_SYSTEM32) }
+            .map_err(|_| "no NVIDIA encoder driver".to_string())?;
     // SAFETY: both symbols are looked up with the signatures of nvEncodeAPI.h; the table is
     // zero-initialised (all-zero is valid: null pointers) with its version set, as the API asks.
     unsafe {
         let version: MaxSupportedVersionFn = std::mem::transmute(
-            GetProcAddress(module, PCSTR(c"NvEncodeAPIGetMaxSupportedVersion".as_ptr().cast())).ok_or("driver lacks NvEncodeAPIGetMaxSupportedVersion")?,
+            GetProcAddress(
+                module,
+                PCSTR(c"NvEncodeAPIGetMaxSupportedVersion".as_ptr().cast()),
+            )
+            .ok_or("driver lacks NvEncodeAPIGetMaxSupportedVersion")?,
         );
-        let create: CreateInstanceFn =
-            std::mem::transmute(GetProcAddress(module, PCSTR(c"NvEncodeAPICreateInstance".as_ptr().cast())).ok_or("driver lacks NvEncodeAPICreateInstance")?);
+        let create: CreateInstanceFn = std::mem::transmute(
+            GetProcAddress(module, PCSTR(c"NvEncodeAPICreateInstance".as_ptr().cast()))
+                .ok_or("driver lacks NvEncodeAPICreateInstance")?,
+        );
         let mut v = 0u32;
         if version(&mut v) != NV_ENC_SUCCESS {
             return Err("cannot query the NVENC version".into());
         }
         let ours = (NVENCAPI_VERSION & 0xf) << 4 | ((NVENCAPI_VERSION >> 24) & 0xf);
         if v < ours {
-            return Err(format!("the NVIDIA driver's NVENC ({}.{}) is older than {}.{}", v >> 4, v & 0xf, ours >> 4, ours & 0xf));
+            return Err(format!(
+                "the NVIDIA driver's NVENC ({}.{}) is older than {}.{}",
+                v >> 4,
+                v & 0xf,
+                ours >> 4,
+                ours & 0xf
+            ));
         }
         let mut list: NV_ENCODE_API_FUNCTION_LIST = std::mem::zeroed();
         list.version = NV_ENCODE_API_FUNCTION_LIST_VER;
@@ -66,23 +81,37 @@ fn load() -> Result<Api, String> {
     // SAFETY: runtime-load NVIDIA's driver and use the signatures from nvEncodeAPI.h.
     // The library lives alongside the immutable function table, for the process lifetime.
     unsafe {
-        let library = libloading::Library::new("libnvidia-encode.so.1").map_err(|e| format!("no NVIDIA encoder driver: {e}"))?;
-        let version: libloading::Symbol<MaxSupportedVersionFn> = library.get(b"NvEncodeAPIGetMaxSupportedVersion\0").map_err(|e| e.to_string())?;
-        let create: libloading::Symbol<CreateInstanceFn> = library.get(b"NvEncodeAPICreateInstance\0").map_err(|e| e.to_string())?;
+        let library = libloading::Library::new("libnvidia-encode.so.1")
+            .map_err(|e| format!("no NVIDIA encoder driver: {e}"))?;
+        let version: libloading::Symbol<MaxSupportedVersionFn> = library
+            .get(b"NvEncodeAPIGetMaxSupportedVersion\0")
+            .map_err(|e| e.to_string())?;
+        let create: libloading::Symbol<CreateInstanceFn> = library
+            .get(b"NvEncodeAPICreateInstance\0")
+            .map_err(|e| e.to_string())?;
         let mut v = 0;
         if version(&mut v) != NV_ENC_SUCCESS {
             return Err("cannot query the NVENC version".into());
         }
         let ours = (NVENCAPI_VERSION & 0xf) << 4 | ((NVENCAPI_VERSION >> 24) & 0xf);
         if v < ours {
-            return Err(format!("the NVIDIA driver's NVENC ({}.{}) is older than {}.{}", v >> 4, v & 0xf, ours >> 4, ours & 0xf));
+            return Err(format!(
+                "the NVIDIA driver's NVENC ({}.{}) is older than {}.{}",
+                v >> 4,
+                v & 0xf,
+                ours >> 4,
+                ours & 0xf
+            ));
         }
         let mut list: NV_ENCODE_API_FUNCTION_LIST = std::mem::zeroed();
         list.version = NV_ENCODE_API_FUNCTION_LIST_VER;
         if create(&mut list) != NV_ENC_SUCCESS {
             return Err("NvEncodeAPICreateInstance failed".into());
         }
-        Ok(Api { list, _library: library })
+        Ok(Api {
+            list,
+            _library: library,
+        })
     }
 }
 
@@ -121,7 +150,12 @@ pub struct Signal {
 
 impl Default for Signal {
     fn default() -> Self {
-        Signal { primaries: 1, transfer: 1, matrix: 1, sei: Vec::new() }
+        Signal {
+            primaries: 1,
+            transfer: 1,
+            matrix: 1,
+            sei: Vec::new(),
+        }
     }
 }
 
@@ -250,7 +284,10 @@ impl Session {
             p.deviceType = Device::KIND;
             p.device = device.as_raw();
             p.apiVersion = NVENCAPI_VERSION;
-            let open = api.list.nvEncOpenEncodeSessionEx.ok_or("the driver has no nvEncOpenEncodeSessionEx")?;
+            let open = api
+                .list
+                .nvEncOpenEncodeSessionEx
+                .ok_or("the driver has no nvEncOpenEncodeSessionEx")?;
             let mut enc: Handle = std::ptr::null_mut();
             let s = open(&mut p, &mut enc);
             if s != NV_ENC_SUCCESS || enc.is_null() {
@@ -285,7 +322,11 @@ impl Session {
     /// The encoder's limits for `codec` (an error when the GPU cannot encode it).
     pub fn caps(&self, codec: Codec) -> Result<Caps, String> {
         let get = |cap: u32| -> Result<u32, String> {
-            let f = self.api.list.nvEncGetEncodeCaps.ok_or("no nvEncGetEncodeCaps")?;
+            let f = self
+                .api
+                .list
+                .nvEncGetEncodeCaps
+                .ok_or("no nvEncGetEncodeCaps")?;
             // SAFETY: a valid session, a zeroed parameter block with its version, one int out.
             unsafe {
                 let mut p: NV_ENC_CAPS_PARAM = std::mem::zeroed();
@@ -294,7 +335,16 @@ impl Session {
                 let mut v = 0i32;
                 let s = f(self.enc, codec.guid(), &mut p, &mut v);
                 if s != NV_ENC_SUCCESS {
-                    return Err(status(if codec == Codec::Hevc { "querying the HEVC encoder" } else { "querying the encoder" }, s, self.enc, self.api));
+                    return Err(status(
+                        if codec == Codec::Hevc {
+                            "querying the HEVC encoder"
+                        } else {
+                            "querying the encoder"
+                        },
+                        s,
+                        self.enc,
+                        self.api,
+                    ));
                 }
                 Ok(v.max(0) as u32)
             }
@@ -328,22 +378,46 @@ impl Session {
         self.gop = u64::from(p.gop.max(1));
         self.submitted = 0;
         // the SEI payloads: heap blocks that outlive every picture (see the field documentation)
-        self.sei_payloads = p.signal.sei.iter().map(|m| m.payload.clone().into_boxed_slice()).collect();
+        self.sei_payloads = p
+            .signal
+            .sei
+            .iter()
+            .map(|m| m.payload.clone().into_boxed_slice())
+            .collect();
         let mut array = Vec::with_capacity(self.sei_payloads.len());
         for (m, bytes) in p.signal.sei.iter().zip(self.sei_payloads.iter_mut()) {
-            let size = u32::try_from(bytes.len()).map_err(|_| "an SEI payload longer than 4 GiB".to_string())?;
-            array.push(NV_ENC_SEI_PAYLOAD { payloadSize: size, payloadType: m.payload_type, payload: bytes.as_mut_ptr() });
+            let size = u32::try_from(bytes.len())
+                .map_err(|_| "an SEI payload longer than 4 GiB".to_string())?;
+            array.push(NV_ENC_SEI_PAYLOAD {
+                payloadSize: size,
+                payloadType: m.payload_type,
+                payload: bytes.as_mut_ptr(),
+            });
         }
         self.sei_array = array.into_boxed_slice();
-        let preset_fn = self.api.list.nvEncGetEncodePresetConfigEx.ok_or("no nvEncGetEncodePresetConfigEx")?;
-        let init_fn = self.api.list.nvEncInitializeEncoder.ok_or("no nvEncInitializeEncoder")?;
+        let preset_fn = self
+            .api
+            .list
+            .nvEncGetEncodePresetConfigEx
+            .ok_or("no nvEncGetEncodePresetConfigEx")?;
+        let init_fn = self
+            .api
+            .list
+            .nvEncInitializeEncoder
+            .ok_or("no nvEncInitializeEncoder")?;
         // SAFETY: zeroed parameter blocks with their versions; the preset call fills `preset`; the
         // configuration lives in a box that outlives `nvEncInitializeEncoder`, which copies it.
         unsafe {
             let mut preset: Box<NV_ENC_PRESET_CONFIG> = Box::new(std::mem::zeroed());
             preset.version = NV_ENC_PRESET_CONFIG_VER;
             preset.presetCfg.version = NV_ENC_CONFIG_VER;
-            let s = preset_fn(self.enc, p.codec.guid(), NV_ENC_PRESET_P5_GUID, NV_ENC_TUNING_INFO_HIGH_QUALITY, &mut *preset);
+            let s = preset_fn(
+                self.enc,
+                p.codec.guid(),
+                NV_ENC_PRESET_P5_GUID,
+                NV_ENC_TUNING_INFO_HIGH_QUALITY,
+                &mut *preset,
+            );
             if s != NV_ENC_SUCCESS {
                 return Err(status("reading the encoder preset", s, self.enc, self.api));
             }
@@ -360,9 +434,17 @@ impl Session {
             cfg.frameIntervalP = 1 + p.bframes as i32;
             let rc = &mut cfg.rcParams;
             rc.version = NV_ENC_RC_PARAMS_VER;
-            rc.rateControlMode = if p.cbr { NV_ENC_PARAMS_RC_CBR } else { NV_ENC_PARAMS_RC_VBR };
+            rc.rateControlMode = if p.cbr {
+                NV_ENC_PARAMS_RC_CBR
+            } else {
+                NV_ENC_PARAMS_RC_VBR
+            };
             rc.averageBitRate = p.bitrate.saturating_mul(1000);
-            rc.maxBitRate = if p.cbr { rc.averageBitRate } else { p.max_bitrate.max(p.bitrate).saturating_mul(1000) };
+            rc.maxBitRate = if p.cbr {
+                rc.averageBitRate
+            } else {
+                p.max_bitrate.max(p.bitrate).saturating_mul(1000)
+            };
             // a one-second buffer, the usual for streaming-style rate control
             rc.vbvBufferSize = rc.maxBitRate;
             rc.vbvInitialDelay = rc.vbvBufferSize;
@@ -372,7 +454,11 @@ impl Session {
                     h.idrPeriod = p.gop.max(1);
                     h.level = p.level.map_or(NV_ENC_LEVEL_AUTOSELECT, u32::from);
                     h.flags &= !(H264_OUTPUT_AUD | H264_REPEAT_SPSPPS);
-                    h.entropyCodingMode = if p.profile == 0 { 2 } else { NV_ENC_H264_ENTROPY_CODING_MODE_CABAC };
+                    h.entropyCodingMode = if p.profile == 0 {
+                        2
+                    } else {
+                        NV_ENC_H264_ENTROPY_CODING_MODE_CABAC
+                    };
                     h.maxNumRefFrames = 0;
                     // BT.709 limited range, like our own encoder's default signalling
                     let vui = &mut h.h264VUIParameters;
@@ -454,8 +540,14 @@ impl Session {
 
     fn add_slot(&mut self) -> Result<(), String> {
         let (create_in, create_out) = (
-            self.api.list.nvEncCreateInputBuffer.ok_or("no nvEncCreateInputBuffer")?,
-            self.api.list.nvEncCreateBitstreamBuffer.ok_or("no nvEncCreateBitstreamBuffer")?,
+            self.api
+                .list
+                .nvEncCreateInputBuffer
+                .ok_or("no nvEncCreateInputBuffer")?,
+            self.api
+                .list
+                .nvEncCreateBitstreamBuffer
+                .ok_or("no nvEncCreateBitstreamBuffer")?,
         );
         // SAFETY: zeroed parameter blocks with their versions; the driver fills in the buffer
         // handles, which `Drop` destroys.
@@ -481,7 +573,10 @@ impl Session {
                 }
                 return Err(status("creating an output buffer", s, self.enc, self.api));
             }
-            self.slots.push(Slot { input: i.inputBuffer, output: o.bitstreamBuffer });
+            self.slots.push(Slot {
+                input: i.inputBuffer,
+                output: o.bitstreamBuffer,
+            });
         }
         Ok(())
     }
@@ -493,7 +588,11 @@ impl Session {
 
     /// The parameter sets as one Annex B byte string (SPS and PPS; VPS, SPS and PPS for HEVC).
     pub fn sequence_params(&self) -> Result<Vec<u8>, String> {
-        let f = self.api.list.nvEncGetSequenceParams.ok_or("no nvEncGetSequenceParams")?;
+        let f = self
+            .api
+            .list
+            .nvEncGetSequenceParams
+            .ok_or("no nvEncGetSequenceParams")?;
         let mut buf = vec![0u8; 1024];
         let mut len = 0u32;
         // SAFETY: a zeroed parameter block with its version; `buf` and `len` outlive the call and
@@ -515,13 +614,27 @@ impl Session {
 
     /// Write a picture into slot `slot`'s input buffer through `fill` (which gets the locked
     /// buffer), then submit it with timestamp `pts`; `output_slot` receives the bitstream.
-    pub fn submit(&mut self, slot: usize, pts: u64, fill: impl FnOnce(Locked<'_>)) -> Result<Submitted, String> {
+    pub fn submit(
+        &mut self,
+        slot: usize,
+        pts: u64,
+        fill: impl FnOnce(Locked<'_>),
+    ) -> Result<Submitted, String> {
         let s = self.slots.get(slot).ok_or("no such buffer slot")?;
         let (input, output) = (s.input, s.output);
         let (lock, unlock, encode) = (
-            self.api.list.nvEncLockInputBuffer.ok_or("no nvEncLockInputBuffer")?,
-            self.api.list.nvEncUnlockInputBuffer.ok_or("no nvEncUnlockInputBuffer")?,
-            self.api.list.nvEncEncodePicture.ok_or("no nvEncEncodePicture")?,
+            self.api
+                .list
+                .nvEncLockInputBuffer
+                .ok_or("no nvEncLockInputBuffer")?,
+            self.api
+                .list
+                .nvEncUnlockInputBuffer
+                .ok_or("no nvEncUnlockInputBuffer")?,
+            self.api
+                .list
+                .nvEncEncodePicture
+                .ok_or("no nvEncEncodePicture")?,
         );
         let (w, h) = self.size;
         // SAFETY: the buffer handle is one this session created. `LockInputBuffer` returns a
@@ -540,11 +653,21 @@ impl Session {
             if (l.pitch as usize) < (w as usize).saturating_mul(self.bytes_per_sample) {
                 // the lock succeeded, so release it before giving up (its status no longer matters)
                 let _ = unlock(self.enc, input);
-                return Err(format!("the driver returned an input pitch of {} bytes for {w}-pixel rows of {}-byte samples", l.pitch, self.bytes_per_sample));
+                return Err(format!(
+                    "the driver returned an input pitch of {} bytes for {w}-pixel rows of {}-byte samples",
+                    l.pitch, self.bytes_per_sample
+                ));
             }
             let rows = (l.pitch as usize).saturating_mul(h as usize);
-            let len = if self.fmt == NV_ENC_BUFFER_FORMAT_ABGR { rows } else { rows.saturating_mul(3) / 2 };
-            fill(Locked { data: std::slice::from_raw_parts_mut(l.bufferDataPtr.cast::<u8>(), len), pitch: l.pitch as usize });
+            let len = if self.fmt == NV_ENC_BUFFER_FORMAT_ABGR {
+                rows
+            } else {
+                rows.saturating_mul(3) / 2
+            };
+            fill(Locked {
+                data: std::slice::from_raw_parts_mut(l.bufferDataPtr.cast::<u8>(), len),
+                pitch: l.pitch as usize,
+            });
             let st = unlock(self.enc, input);
             if st != NV_ENC_SUCCESS {
                 return Err(status("unlocking an input buffer", st, self.enc, self.api));
@@ -586,7 +709,11 @@ impl Session {
 
     /// Tell the encoder the stream ends: every picture it still holds becomes ready.
     pub fn end_of_stream(&mut self) -> Result<(), String> {
-        let encode = self.api.list.nvEncEncodePicture.ok_or("no nvEncEncodePicture")?;
+        let encode = self
+            .api
+            .list
+            .nvEncEncodePicture
+            .ok_or("no nvEncEncodePicture")?;
         // SAFETY: a zeroed parameter block with its version and the EOS flag (no input buffer).
         let st = unsafe {
             let mut e: NV_ENC_PIC_PARAMS = std::mem::zeroed();
@@ -603,8 +730,16 @@ impl Session {
     /// Read the finished bitstream of slot `slot` (blocks until the encoder has it).
     pub fn read(&mut self, slot: usize) -> Result<Output, String> {
         let output = self.slots.get(slot).ok_or("no such buffer slot")?.output;
-        let (lock, unlock) =
-            (self.api.list.nvEncLockBitstream.ok_or("no nvEncLockBitstream")?, self.api.list.nvEncUnlockBitstream.ok_or("no nvEncUnlockBitstream")?);
+        let (lock, unlock) = (
+            self.api
+                .list
+                .nvEncLockBitstream
+                .ok_or("no nvEncLockBitstream")?,
+            self.api
+                .list
+                .nvEncUnlockBitstream
+                .ok_or("no nvEncUnlockBitstream")?,
+        );
         // SAFETY: a zeroed parameter block with its version and a buffer of this session; after a
         // successful lock `bitstreamBufferPtr` addresses `bitstreamSizeInBytes` readable bytes until
         // `UnlockBitstream`, and they are copied before it.
@@ -617,9 +752,16 @@ impl Session {
                 return Err(status("reading a bitstream", st, self.enc, self.api));
             }
             let n = l.bitstreamSizeInBytes as usize;
-            let data =
-                if l.bitstreamBufferPtr.is_null() || n == 0 { Vec::new() } else { std::slice::from_raw_parts(l.bitstreamBufferPtr.cast::<u8>(), n).to_vec() };
-            let out = Output { data, pts: l.outputTimeStamp, pic_type: l.pictureType };
+            let data = if l.bitstreamBufferPtr.is_null() || n == 0 {
+                Vec::new()
+            } else {
+                std::slice::from_raw_parts(l.bitstreamBufferPtr.cast::<u8>(), n).to_vec()
+            };
+            let out = Output {
+                data,
+                pts: l.outputTimeStamp,
+                pic_type: l.pictureType,
+            };
             let st = unlock(self.enc, output);
             if st != NV_ENC_SUCCESS {
                 return Err(status("releasing a bitstream", st, self.enc, self.api));

@@ -65,7 +65,13 @@ const GREEN_FIRST_MODELS: [(u32, &str); 5] = [
 /// Which data rows hold red (0 = even, 1 = odd), measured over `area`; `None`
 /// when the two cues (see the module docs) disagree or there is too little
 /// unclipped signal. Samples every other row pair; red is in the even columns.
-pub(crate) fn measured_red_row(data: &[u16], width: usize, area: Rect, black: f32, white: f32) -> Option<usize> {
+pub(crate) fn measured_red_row(
+    data: &[u16],
+    width: usize,
+    area: Rect,
+    black: f32,
+    white: f32,
+) -> Option<usize> {
     // Per column parity p of the upper sample: p = 0 is the diagonal (even row, even col) /
     // (odd row, odd col), green when red rows are odd; p = 1 is the other one.
     let mut diff = [0f64; 2];
@@ -73,14 +79,22 @@ pub(crate) fn measured_red_row(data: &[u16], width: usize, area: Rect, black: f3
     let mut lower = [0f64; 2];
     let mut n = [0u64; 2];
     let (lo, hi) = (black + 1.0, black + (white - black) * 0.98);
-    let x_end = area.x.saturating_add(area.width).min(width).saturating_sub(1);
+    let x_end = area
+        .x
+        .saturating_add(area.width)
+        .min(width)
+        .saturating_sub(1);
     let y_end = area.y.saturating_add(area.height).saturating_sub(1);
     let row = |y: usize| data.get(y.checked_mul(width)?..y.checked_add(1)?.checked_mul(width)?);
     let mut y = area.y.saturating_add(area.y & 1);
     while y < y_end {
-        let (Some(r0), Some(r1)) = (row(y), y.checked_add(1).and_then(row)) else { break };
+        let (Some(r0), Some(r1)) = (row(y), y.checked_add(1).and_then(row)) else {
+            break;
+        };
         for x in area.x..x_end {
-            let (Some(&a), Some(&b)) = (r0.get(x), r1.get(x + 1)) else { break };
+            let (Some(&a), Some(&b)) = (r0.get(x), r1.get(x + 1)) else {
+                break;
+            };
             let (a, b) = (f32::from(a), f32::from(b));
             if a < lo || b < lo || a > hi || b > hi {
                 continue;
@@ -121,15 +135,23 @@ fn as_shot_wb(t: &Tiff, mn: &Ifd) -> Option<[f64; 3]> {
     let bytes = e.unit().checked_mul(e.count as usize)?;
     let word = |off: usize| {
         let at = off.checked_mul(2)?.checked_add(e.at)?;
-        (at.checked_add(2)? <= e.at.checked_add(bytes)?).then(|| t.u16_at(at)).flatten().map(f64::from)
+        (at.checked_add(2)? <= e.at.checked_add(bytes)?)
+            .then(|| t.u16_at(at))
+            .flatten()
+            .map(f64::from)
     };
     // Word offsets of WB_RGGBLevelsAsShot used by the ColorData versions.
     for off in [0x3F, 0x47, 0x19, 0x22] {
-        let (Some(r), Some(g1), Some(g2), Some(b)) = (word(off), word(off + 1), word(off + 2), word(off + 3)) else {
+        let (Some(r), Some(g1), Some(g2), Some(b)) =
+            (word(off), word(off + 1), word(off + 2), word(off + 3))
+        else {
             continue;
         };
         let g = (g1 + g2) / 2.0;
-        let plausible = (256.0..16384.0).contains(&g) && (g1 - g2).abs() <= g * 0.05 && (0.25..8.0).contains(&(r / g)) && (0.25..8.0).contains(&(b / g));
+        let plausible = (256.0..16384.0).contains(&g)
+            && (g1 - g2).abs() <= g * 0.05
+            && (0.25..8.0).contains(&(r / g))
+            && (0.25..8.0).contains(&(b / g));
         if plausible {
             return Some([r / g, 1.0, b / g]);
         }
@@ -149,7 +171,11 @@ pub(crate) fn clip_level(data: &[u16], precision: u32) -> f32 {
     if max == 0 {
         return full;
     }
-    let near = data.iter().step_by(step).filter(|&&v| u32::from(v) + u32::from(max / 256) >= u32::from(max)).count();
+    let near = data
+        .iter()
+        .step_by(step)
+        .filter(|&&v| u32::from(v) + u32::from(max / 256) >= u32::from(max))
+        .count();
     let sampled = data.len().div_ceil(step);
     if near * 2000 >= sampled {
         // At least 0.05 % of samples at the top: that is the clipping point.
@@ -183,18 +209,34 @@ pub(crate) fn masked_black(data: &[u16], width: usize, area: Rect) -> Option<[f3
 
 pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
     let ifds = t.all_ifds();
-    let ifd0 = t.ifd_at(t.first_ifd, 0).ok_or_else(|| RawError::malformed("CR2 has no IFD0"))?;
+    let ifd0 = t
+        .ifd_at(t.first_ifd, 0)
+        .ok_or_else(|| RawError::malformed("CR2 has no IFD0"))?;
     let raw_off = t.u32_at(12).unwrap_or(0) as usize;
-    let raw = t.ifd_at(raw_off, 0).ok_or_else(|| RawError::malformed("CR2 raw IFD is missing"))?;
-    let off = t.tag_uint(&raw, tag::STRIP_OFFSETS).ok_or_else(|| RawError::malformed("CR2 raw data offset missing"))? as usize;
-    let len = t.tag_uint(&raw, tag::STRIP_BYTE_COUNTS).map(|l| l as usize).unwrap_or(t.data.len().saturating_sub(off));
-    let src = t.bytes(off, len).or_else(|| t.data.get(off..)).ok_or_else(|| RawError::malformed("CR2 raw data lies outside the file"))?;
+    let raw = t
+        .ifd_at(raw_off, 0)
+        .ok_or_else(|| RawError::malformed("CR2 raw IFD is missing"))?;
+    let off = t
+        .tag_uint(&raw, tag::STRIP_OFFSETS)
+        .ok_or_else(|| RawError::malformed("CR2 raw data offset missing"))? as usize;
+    let len = t
+        .tag_uint(&raw, tag::STRIP_BYTE_COUNTS)
+        .map(|l| l as usize)
+        .unwrap_or(t.data.len().saturating_sub(off));
+    let src = t
+        .bytes(off, len)
+        .or_else(|| t.data.get(off..))
+        .ok_or_else(|| RawError::malformed("CR2 raw data lies outside the file"))?;
 
     let frame = ljpeg::frame(src).map_err(|e| match e {
-        RawError::Unsupported(m) if m.contains("subsampled") => RawError::unsupported("Canon sRAW / mRAW"),
+        RawError::Unsupported(m) if m.contains("subsampled") => {
+            RawError::unsupported("Canon sRAW / mRAW")
+        }
         e => e,
     })?;
-    let total = frame.samples().ok_or_else(|| RawError::malformed("CR2 frame too large"))?;
+    let total = frame
+        .samples()
+        .ok_or_else(|| RawError::malformed("CR2 frame too large"))?;
     let slices = t.tag_uints(&raw, tag::CR2_SLICE);
     let (width, widths) = match slices.as_slice() {
         [n, w, last] if *n < 64 && *w > 0 && *last > 0 => {
@@ -209,7 +251,9 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
         }
     };
     if width == 0 || total % width != 0 {
-        return Err(RawError::malformed("CR2 slices do not match the JPEG frame"));
+        return Err(RawError::malformed(
+            "CR2 slices do not match the JPEG frame",
+        ));
     }
     let height = total / width;
     limits.check(width as u64, height as u64, 2)?;
@@ -221,7 +265,9 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
     let mut x0 = 0usize;
     for sw in widths {
         for y in 0..height {
-            let src = samples.get(pos..pos + sw).ok_or_else(|| RawError::malformed("CR2 slice data is short"))?;
+            let src = samples
+                .get(pos..pos + sw)
+                .ok_or_else(|| RawError::malformed("CR2 slice data is short"))?;
             data[y * width + x0..y * width + x0 + sw].copy_from_slice(src);
             pos += sw;
         }
@@ -232,9 +278,18 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
     let mn = maker_note(t, &ifds);
     let full = Rect::new(0, 0, width, height);
     // SensorInfo: [1] width, [2] height, [5] left, [6] top, [7] right, [8] bottom border (inclusive).
-    let info = mn.as_ref().map(|m| t.tag_uints(m, CANON_SENSOR_INFO)).unwrap_or_default();
+    let info = mn
+        .as_ref()
+        .map(|m| t.tag_uints(m, CANON_SENSOR_INFO))
+        .unwrap_or_default();
     let active = match info.get(5..9) {
-        Some(&[l, tp, r, b]) if r > l && b > tp => Rect::new(l as usize, tp as usize, (r - l + 1) as usize, (b - tp + 1) as usize).intersect(&full),
+        Some(&[l, tp, r, b]) if r > l && b > tp => Rect::new(
+            l as usize,
+            tp as usize,
+            (r - l + 1) as usize,
+            (b - tp + 1) as usize,
+        )
+        .intersect(&full),
         _ => full,
     };
     let active = if active.is_empty() { full } else { active };
@@ -247,7 +302,13 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
         None
     };
     let black = match black {
-        Some(b) => BlackLevels { rows: 2, cols: 2, values: b.to_vec(), delta_h: Vec::new(), delta_v: Vec::new() },
+        Some(b) => BlackLevels {
+            rows: 2,
+            cols: 2,
+            values: b.to_vec(),
+            delta_h: Vec::new(),
+            delta_v: Vec::new(),
+        },
         None => {
             warnings.push("no masked sensor area; black level assumed to be 0".to_string());
             BlackLevels::uniform(0.0)
@@ -267,8 +328,18 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
             usize::from(known)
         }
     };
-    let colors = if red_row == 0 { vec![0, 1, 1, 2] } else { vec![1, 2, 0, 1] };
-    let cfa = Cfa { width: 2, height: 2, colors, origin_x: 0, origin_y: 0 };
+    let colors = if red_row == 0 {
+        vec![0, 1, 1, 2]
+    } else {
+        vec![1, 2, 0, 1]
+    };
+    let cfa = Cfa {
+        width: 2,
+        height: 2,
+        colors,
+        origin_x: 0,
+        origin_y: 0,
+    };
     let camera_wb = mn.as_ref().and_then(|m| as_shot_wb(t, m));
     // The black-level values index from the active area origin, but the masked
     // measurement used data parity: realign them to active-area parity.
@@ -329,11 +400,24 @@ mod tests {
             Rect::new(0, usize::MAX - 1, 4, 4),
         ] {
             // Flat data: inconclusive, never a guess.
-            assert_eq!(measured_red_row(&data, 64, area, 0.0, 4000.0), None, "{area:?}");
+            assert_eq!(
+                measured_red_row(&data, 64, area, 0.0, 4000.0),
+                None,
+                "{area:?}"
+            );
         }
-        assert_eq!(measured_red_row(&[], 64, Rect::new(0, 0, 64, 32), 0.0, 4000.0), None);
-        assert_eq!(measured_red_row(&data, 0, Rect::new(0, 0, 64, 32), 0.0, 4000.0), None);
-        assert_eq!(measured_red_row(&data, 64, Rect::new(0, 0, 64, 32), f32::NAN, f32::NAN), None);
+        assert_eq!(
+            measured_red_row(&[], 64, Rect::new(0, 0, 64, 32), 0.0, 4000.0),
+            None
+        );
+        assert_eq!(
+            measured_red_row(&data, 0, Rect::new(0, 0, 64, 32), 0.0, 4000.0),
+            None
+        );
+        assert_eq!(
+            measured_red_row(&data, 64, Rect::new(0, 0, 64, 32), f32::NAN, f32::NAN),
+            None
+        );
     }
 
     #[test]
@@ -345,11 +429,18 @@ mod tests {
                 .map(|i| {
                     let (x, y) = (i % w, i / w);
                     let tex = 1.0 + 0.2 * (((x / 3) ^ (y / 5)) & 1) as f32;
-                    let c = if (y & 1) == red_row { [0, 1][x & 1] } else { [1, 2][x & 1] };
+                    let c = if (y & 1) == red_row {
+                        [0, 1][x & 1]
+                    } else {
+                        [1, 2][x & 1]
+                    };
                     (100.0 + [500.0, 1000.0, 667.0][c] * tex) as u16
                 })
                 .collect();
-            assert_eq!(measured_red_row(&data, w, Rect::new(0, 0, w, h), 100.0, 4000.0), Some(red_row));
+            assert_eq!(
+                measured_red_row(&data, w, Rect::new(0, 0, w, h), 100.0, 4000.0),
+                Some(red_row)
+            );
         }
     }
 }
@@ -363,15 +454,27 @@ mod wb_debug {
     /// oracle is `color_data_wb_as_words` above; it runs in every CI.
     #[test]
     fn power_shot_color_data_holds_the_as_shot_wb() {
-        let Ok(bytes) = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../corpus/pixls/IMG_4059.CR2")) else {
+        let Ok(bytes) = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../corpus/pixls/IMG_4059.CR2"
+        )) else {
             panic!("corpus/pixls is fetched for corpus runs: cargo xtask corpus --pixls");
         };
         let s = crate::decode(&bytes, &crate::Limits::default()).expect("decode");
         let wb = s.camera_wb.expect("the PowerShot's as-shot WB is read now");
-        assert!((wb[0] - 1.696).abs() < 0.01 && wb[1] == 1.0 && (wb[2] - 1.688).abs() < 0.01, "{wb:?}");
+        assert!(
+            (wb[0] - 1.696).abs() < 0.01 && wb[1] == 1.0 && (wb[2] - 1.688).abs() < 0.01,
+            "{wb:?}"
+        );
         // The file's white balance is used, not an estimate: no grey-world note in the develop.
         let d = crate::develop_sensor(&s, &crate::DevelopOptions::default()).expect("develop");
-        assert!(!d.warnings.iter().any(|w| w.contains("estimated automatically")), "{:?}", d.warnings);
+        assert!(
+            !d.warnings
+                .iter()
+                .any(|w| w.contains("estimated automatically")),
+            "{:?}",
+            d.warnings
+        );
     }
 }
 #[cfg(test)]
@@ -398,13 +501,21 @@ mod wb_words {
         let bytes = spec.build();
         let s = crate::decode(&bytes, &crate::Limits::default()).expect("decode");
         let wb = s.camera_wb.expect("the synthetic as-shot WB is read");
-        assert!((wb[0] - 1613.0 / 951.0).abs() < 1e-9 && wb[1] == 1.0 && (wb[2] - 1605.0 / 951.0).abs() < 1e-9, "{wb:?}");
+        assert!(
+            (wb[0] - 1613.0 / 951.0).abs() < 1e-9
+                && wb[1] == 1.0
+                && (wb[2] - 1605.0 / 951.0).abs() < 1e-9,
+            "{wb:?}"
+        );
     }
 
     /// A ColorData entry too short for the offsets reads no balance instead of running past it.
     #[test]
     fn short_color_data_reads_no_wb() {
-        let spec = Cr2Spec { wb_rggb: None, ..minimal_spec() };
+        let spec = Cr2Spec {
+            wb_rggb: None,
+            ..minimal_spec()
+        };
         let bytes = spec.build();
         let s = crate::decode(&bytes, &crate::Limits::default()).expect("decode");
         assert!(s.camera_wb.is_none());

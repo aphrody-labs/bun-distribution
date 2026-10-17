@@ -24,7 +24,12 @@ fn u16_at(b: &[u8], at: usize) -> Option<u16> {
 
 fn u32_at(b: &[u8], at: usize) -> Option<u32> {
     let s = b.get(at..at.checked_add(4)?)?;
-    Some(u32::from_le_bytes([*s.first()?, *s.get(1)?, *s.get(2)?, *s.get(3)?]))
+    Some(u32::from_le_bytes([
+        *s.first()?,
+        *s.get(1)?,
+        *s.get(2)?,
+        *s.get(3)?,
+    ]))
 }
 
 /// Whether the compound file holds an encryption stream. Walks the directory through the FAT;
@@ -32,7 +37,9 @@ fn u32_at(b: &[u8], at: usize) -> Option<u32> {
 /// bytes for the UTF-16LE stream names.
 pub(crate) fn is_encrypted(bytes: &[u8]) -> bool {
     match directory_names(bytes) {
-        Some(names) => names.iter().any(|n| ENCRYPTED_STREAMS.iter().any(|e| n.eq_ignore_ascii_case(e))),
+        Some(names) => names
+            .iter()
+            .any(|n| ENCRYPTED_STREAMS.iter().any(|e| n.eq_ignore_ascii_case(e))),
         None => ENCRYPTED_STREAMS.iter().any(|e| contains_utf16(bytes, e)),
     }
 }
@@ -58,14 +65,21 @@ fn directory_names(b: &[u8]) -> Option<Vec<String>> {
         b.get(start..start.checked_add(size)?)
     };
     // The DIFAT: the FAT's sector ids, 109 in the header then chained DIFAT sectors.
-    let mut difat: Vec<u32> = (0..109).filter_map(|i| u32_at(b, 76 + i * 4)).filter(|&s| s < MAX_REG_SECT).collect();
+    let mut difat: Vec<u32> = (0..109)
+        .filter_map(|i| u32_at(b, 76 + i * 4))
+        .filter(|&s| s < MAX_REG_SECT)
+        .collect();
     let mut next = u32_at(b, 68)?;
     for _ in 0..MAX_DIFAT_SECTORS {
         if next >= MAX_REG_SECT {
             break;
         }
         let s = sector(next)?;
-        difat.extend((0..per - 1).filter_map(|i| u32_at(s, i * 4)).filter(|&x| x < MAX_REG_SECT));
+        difat.extend(
+            (0..per - 1)
+                .filter_map(|i| u32_at(s, i * 4))
+                .filter(|&x| x < MAX_REG_SECT),
+        );
         next = u32_at(s, (per - 1) * 4)?;
     }
     let fat_next = |id: u32| -> Option<u32> {
@@ -88,7 +102,9 @@ fn directory_names(b: &[u8]) -> Option<Vec<String>> {
             if !(2..=64).contains(&len) {
                 continue;
             }
-            let units: Vec<u16> = (0..(len - 2) / 2).filter_map(|i| u16_at(e, i * 2)).collect();
+            let units: Vec<u16> = (0..(len - 2) / 2)
+                .filter_map(|i| u16_at(e, i * 2))
+                .collect();
             names.push(String::from_utf16_lossy(&units));
         }
         id = fat_next(id)?;
@@ -152,7 +168,10 @@ impl<'a> Compound<'a> {
             b.get(start..start.checked_add(sector_size)?)
         };
         // DIFAT: 109 FAT sector ids in the header, then chained DIFAT sectors.
-        let mut fat_sectors: Vec<u32> = (0..109).filter_map(|i| u32_at(b, 76 + i * 4)).filter(|&s| s < MAX_REG_SECT).collect();
+        let mut fat_sectors: Vec<u32> = (0..109)
+            .filter_map(|i| u32_at(b, 76 + i * 4))
+            .filter(|&s| s < MAX_REG_SECT)
+            .collect();
         let mut next = u32_at(b, 68).ok_or_else(|| bad("truncated header"))?;
         let mut hops = 0usize;
         while next < MAX_REG_SECT {
@@ -161,7 +180,11 @@ impl<'a> Compound<'a> {
                 return Err(bad("DIFAT chain loops"));
             }
             let s = sector(next).ok_or_else(|| bad("DIFAT sector out of range"))?;
-            fat_sectors.extend((0..per - 1).filter_map(|i| u32_at(s, i * 4)).filter(|&x| x < MAX_REG_SECT));
+            fat_sectors.extend(
+                (0..per - 1)
+                    .filter_map(|i| u32_at(s, i * 4))
+                    .filter(|&x| x < MAX_REG_SECT),
+            );
             next = u32_at(s, (per - 1) * 4).ok_or_else(|| bad("truncated DIFAT sector"))?;
         }
         if fat_sectors.len() > sectors {
@@ -172,7 +195,15 @@ impl<'a> Compound<'a> {
             let s = sector(id).ok_or_else(|| bad("FAT sector out of range"))?;
             fat.extend((0..per).filter_map(|i| u32_at(s, i * 4)));
         }
-        let mut cf = Compound { bytes: b, sector_size, mini_sector_size: 64, mini_cutoff: 4096, fat, mini_fat: vec![], entries: vec![] };
+        let mut cf = Compound {
+            bytes: b,
+            sector_size,
+            mini_sector_size: 64,
+            mini_cutoff: 4096,
+            fat,
+            mini_fat: vec![],
+            entries: vec![],
+        };
         if let Some(c) = u32_at(b, 56) {
             cf.mini_cutoff = u64::from(c);
         }
@@ -181,7 +212,9 @@ impl<'a> Compound<'a> {
         let dir = cf.read_chain(dir_start, u64::MAX)?;
         for e in dir.as_chunks::<128>().0 {
             let len = usize::from(u16_at(e, 64).unwrap_or(0)).min(64);
-            let units: Vec<u16> = (0..len.saturating_sub(2) / 2).filter_map(|i| u16_at(e, i * 2)).collect();
+            let units: Vec<u16> = (0..len.saturating_sub(2) / 2)
+                .filter_map(|i| u16_at(e, i * 2))
+                .collect();
             let mut size = u32_at(e, 120).map(u64::from).unwrap_or(0);
             if major >= 4 {
                 size |= u64::from(u32_at(e, 124).unwrap_or(0)) << 32;
@@ -203,7 +236,9 @@ impl<'a> Compound<'a> {
         let mini_start = u32_at(b, 60).ok_or_else(|| bad("truncated header"))?;
         if mini_start < MAX_REG_SECT {
             let raw = cf.read_chain(mini_start, u64::MAX)?;
-            cf.mini_fat = (0..raw.len() / 4).filter_map(|i| u32_at(&raw, i * 4)).collect();
+            cf.mini_fat = (0..raw.len() / 4)
+                .filter_map(|i| u32_at(&raw, i * 4))
+                .collect();
         }
         Ok(cf)
     }
@@ -220,7 +255,9 @@ impl<'a> Compound<'a> {
         let mut cut = false;
         while id != END_OF_CHAIN && out.len() < limit {
             if cut {
-                return Err("damaged compound file: sector out of range (the file may be truncated)".into());
+                return Err(
+                    "damaged compound file: sector out of range (the file may be truncated)".into(),
+                );
             }
             if id >= MAX_REG_SECT {
                 return Err("damaged compound file: broken sector chain".into());
@@ -230,20 +267,33 @@ impl<'a> Compound<'a> {
                 Some(_) => return Err("damaged compound file: sector chain loops".into()),
                 None => return Err("damaged compound file: sector missing from the FAT".into()),
             }
-            let start = (id as usize).checked_add(1).and_then(|i| i.checked_mul(self.sector_size));
+            let start = (id as usize)
+                .checked_add(1)
+                .and_then(|i| i.checked_mul(self.sector_size));
             let s = start
-                .and_then(|s| self.bytes.get(s..s.checked_add(self.sector_size)?.min(self.bytes.len())))
+                .and_then(|s| {
+                    self.bytes
+                        .get(s..s.checked_add(self.sector_size)?.min(self.bytes.len()))
+                })
                 .ok_or("damaged compound file: sector out of range (the file may be truncated)")?;
             cut = s.len() < self.sector_size;
             out.extend_from_slice(s);
-            id = *self.fat.get(id as usize).ok_or("damaged compound file: sector missing from the FAT")?;
+            id = *self
+                .fat
+                .get(id as usize)
+                .ok_or("damaged compound file: sector missing from the FAT")?;
         }
         Ok(out)
     }
 
     /// Follows a mini FAT chain inside the mini stream container. Like `read_chain`, the
     /// container may end inside the chain's last mini sector.
-    fn read_mini_chain(&self, container: &[u8], start: u32, limit: usize) -> Result<Vec<u8>, String> {
+    fn read_mini_chain(
+        &self,
+        container: &[u8],
+        start: u32,
+        limit: usize,
+    ) -> Result<Vec<u8>, String> {
         let mut out = Vec::new();
         let mut id = start;
         let mut seen = vec![false; self.mini_fat.len()];
@@ -258,15 +308,24 @@ impl<'a> Compound<'a> {
             match seen.get_mut(id as usize) {
                 Some(v) if !*v => *v = true,
                 Some(_) => return Err("damaged compound file: mini sector chain loops".into()),
-                None => return Err("damaged compound file: mini sector missing from the mini FAT".into()),
+                None => {
+                    return Err(
+                        "damaged compound file: mini sector missing from the mini FAT".into(),
+                    );
+                }
             }
             let at = (id as usize).checked_mul(self.mini_sector_size);
             let s = at
-                .and_then(|a| container.get(a..a.checked_add(self.mini_sector_size)?.min(container.len())))
+                .and_then(|a| {
+                    container.get(a..a.checked_add(self.mini_sector_size)?.min(container.len()))
+                })
                 .ok_or("damaged compound file: mini sector out of range")?;
             cut = s.len() < self.mini_sector_size;
             out.extend_from_slice(s);
-            id = *self.mini_fat.get(id as usize).ok_or("damaged compound file: mini sector missing from the mini FAT")?;
+            id = *self
+                .mini_fat
+                .get(id as usize)
+                .ok_or("damaged compound file: mini sector missing from the mini FAT")?;
         }
         Ok(out)
     }
@@ -276,7 +335,9 @@ impl<'a> Compound<'a> {
     /// The directory entry of the stream called `name` (case-insensitive) directly under the
     /// root storage.
     fn root_entry(&self, name: &str) -> Result<Option<&DirEntry>, String> {
-        let Some(root) = self.entries.first() else { return Ok(None) };
+        let Some(root) = self.entries.first() else {
+            return Ok(None);
+        };
         // Walk the root's children (a red-black tree through left/right siblings), bounded.
         let mut stack = vec![root.child];
         let mut seen = 0usize;
@@ -288,7 +349,9 @@ impl<'a> Compound<'a> {
             if seen > self.entries.len() {
                 return Err("damaged compound file: directory tree loops".into());
             }
-            let Some(e) = self.entries.get(i as usize) else { continue };
+            let Some(e) = self.entries.get(i as usize) else {
+                continue;
+            };
             if e.kind == STREAM_OBJECT && e.name.eq_ignore_ascii_case(name) {
                 return Ok(Some(e));
             }
@@ -306,7 +369,9 @@ impl<'a> Compound<'a> {
     /// The contents of the stream called `name` (case-insensitive) directly under the root
     /// storage, or `None` when there is no such stream.
     pub(crate) fn root_stream(&self, name: &str) -> Result<Option<Vec<u8>>, String> {
-        let Some(root) = self.entries.first() else { return Ok(None) };
+        let Some(root) = self.entries.first() else {
+            return Ok(None);
+        };
         let found = self.root_entry(name)?;
         let Some(e) = found else { return Ok(None) };
         if e.size > MAX_STREAM {
@@ -356,7 +421,11 @@ pub(crate) mod tests {
         b[512..516].copy_from_slice(&0xFFFF_FFFDu32.to_le_bytes());
         b[516..520].copy_from_slice(&END_OF_CHAIN.to_le_bytes());
         // Directory (sector 1, at byte 1024).
-        for (k, name) in std::iter::once("Root Entry").chain(streams.iter().copied()).take(4).enumerate() {
+        for (k, name) in std::iter::once("Root Entry")
+            .chain(streams.iter().copied())
+            .take(4)
+            .enumerate()
+        {
             let e = 1024 + k * 128;
             let units: Vec<u16> = name.encode_utf16().take(31).collect();
             for (i, u) in units.iter().enumerate() {
@@ -371,9 +440,19 @@ pub(crate) mod tests {
     #[test]
     fn reads_directory_names() {
         let b = build(&["EncryptionInfo", "EncryptedPackage"]);
-        assert_eq!(directory_names(&b), Some(vec!["Root Entry".into(), "EncryptionInfo".into(), "EncryptedPackage".into()]));
+        assert_eq!(
+            directory_names(&b),
+            Some(vec![
+                "Root Entry".into(),
+                "EncryptionInfo".into(),
+                "EncryptedPackage".into()
+            ])
+        );
         assert!(is_encrypted(&b));
-        assert!(!is_encrypted(&build(&["Workbook", "\u{5}SummaryInformation"])));
+        assert!(!is_encrypted(&build(&[
+            "Workbook",
+            "\u{5}SummaryInformation"
+        ])));
     }
 
     #[test]
@@ -445,7 +524,14 @@ pub(crate) mod tests {
         let mut file = crate::testing::compound_file(&[("Small", &small), ("Workbook", &data)]);
         // "Small" holds mini sectors 0-1, "Workbook" 2-17; the mini stream starts at sector 3.
         file.truncate(512 * 4 + 128 + data.len());
-        assert_eq!(Compound::open(&file).unwrap().root_stream("Workbook").unwrap().unwrap(), data);
+        assert_eq!(
+            Compound::open(&file)
+                .unwrap()
+                .root_stream("Workbook")
+                .unwrap()
+                .unwrap(),
+            data
+        );
         // The cut mini sector (17) points on to sector 0 and the stream claims those bytes too.
         file[1536 + 17 * 4..1536 + 18 * 4].copy_from_slice(&0u32.to_le_bytes());
         file[1024 + 2 * 128 + 120..1024 + 2 * 128 + 124].copy_from_slice(&1064u32.to_le_bytes());

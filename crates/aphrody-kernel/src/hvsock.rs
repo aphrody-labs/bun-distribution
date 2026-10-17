@@ -25,7 +25,11 @@ pub async fn connect_guest(port: u32) -> std::io::Result<crate::transport::Clien
     }
     let owned = unsafe { OwnedFd::from_raw_fd(fd) };
     let result = unsafe {
-        libc::connect(fd, std::ptr::from_ref(&address).cast(), size_of::<libc::sockaddr_vm>() as _)
+        libc::connect(
+            fd,
+            std::ptr::from_ref(&address).cast(),
+            size_of::<libc::sockaddr_vm>() as _,
+        )
     };
     if result < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::EINPROGRESS) {
         return Err(std::io::Error::last_os_error());
@@ -33,9 +37,14 @@ pub async fn connect_guest(port: u32) -> std::io::Result<crate::transport::Clien
     // UnixStream supplies generic read/write epoll readiness; no Unix address
     // operations are used on this AF_VSOCK descriptor.
     let stream = tokio::net::UnixStream::from_std(std::os::unix::net::UnixStream::from(owned))?;
-    tokio::time::timeout(std::time::Duration::from_secs(5), stream.writable()).await.map_err(
-        |_| std::io::Error::new(std::io::ErrorKind::TimedOut, "Hyper-V host connect timed out"),
-    )??;
+    tokio::time::timeout(std::time::Duration::from_secs(5), stream.writable())
+        .await
+        .map_err(|_| {
+            std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                "Hyper-V host connect timed out",
+            )
+        })??;
     if let Some(error) = stream.take_error()? {
         return Err(error);
     }
@@ -97,7 +106,11 @@ mod host {
                 },
             };
             if unsafe {
-                bind(socket, std::ptr::from_ref(&address).cast(), size_of::<Address>() as _)
+                bind(
+                    socket,
+                    std::ptr::from_ref(&address).cast(),
+                    size_of::<Address>() as _,
+                )
             } == SOCKET_ERROR
                 || unsafe { listen(socket, 16) } == SOCKET_ERROR
             {
@@ -185,7 +198,10 @@ pub fn wsl_vm_id() -> std::io::Result<Option<(String, windows_sys::core::GUID)>>
         };
         let compact = id.replace('-', "");
         if let Ok(value) = u128::from_str_radix(&compact, 16) {
-            return Ok(Some((id.to_owned(), windows_sys::core::GUID::from_u128(value))));
+            return Ok(Some((
+                id.to_owned(),
+                windows_sys::core::GUID::from_u128(value),
+            )));
         }
     }
     Ok(None)

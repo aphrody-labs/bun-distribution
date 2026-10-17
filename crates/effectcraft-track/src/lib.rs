@@ -18,7 +18,14 @@
 //! Coordinates are *layer* pixels: the frame image's pixel `(i, j)` covers `[i, i+1) × [j, j+1)`
 //! after subtracting the frame's `offset` (see [`Frame`]).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod camtrack;
 pub mod face;
@@ -54,7 +61,12 @@ pub enum ConfidenceAction {
 }
 
 impl ConfidenceAction {
-    pub const ALL: [ConfidenceAction; 4] = [ConfidenceAction::Continue, ConfidenceAction::Stop, ConfidenceAction::Extrapolate, ConfidenceAction::Adapt];
+    pub const ALL: [ConfidenceAction; 4] = [
+        ConfidenceAction::Continue,
+        ConfidenceAction::Stop,
+        ConfidenceAction::Extrapolate,
+        ConfidenceAction::Adapt,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ConfidenceAction::Continue => "Continue Tracking",
@@ -68,7 +80,10 @@ impl ConfidenceAction {
         ConfidenceAction::ALL.into_iter().find(|a| {
             format!("{a:?}").to_ascii_lowercase() == n
                 || a.label().to_ascii_lowercase().replace(' ', "") == n
-                || a.label().to_ascii_lowercase().replace(' ', "").starts_with(&n)
+                || a.label()
+                    .to_ascii_lowercase()
+                    .replace(' ', "")
+                    .starts_with(&n)
         })
     }
 }
@@ -131,7 +146,10 @@ pub struct Frame<'a> {
 
 impl<'a> Frame<'a> {
     pub fn new(img: &'a Image) -> Frame<'a> {
-        Frame { img, offset: [0.0; 2] }
+        Frame {
+            img,
+            offset: [0.0; 2],
+        }
     }
 }
 
@@ -182,7 +200,11 @@ impl Patch {
         for gy in -r[1]..=r[1] {
             for gx in -r[0]..=r[0] {
                 let (ux, uy) = (gx as f64, gy as f64);
-                plane.sample(c[0] + a[0] * ux - a[1] * uy, c[1] + a[1] * ux + a[0] * uy, &mut v);
+                plane.sample(
+                    c[0] + a[0] * ux - a[1] * uy,
+                    c[1] + a[1] * ux + a[0] * uy,
+                    &mut v,
+                );
                 raw.extend_from_slice(&v[..ch]);
             }
         }
@@ -211,7 +233,12 @@ fn ncc(plane: &Plane, p: &Patch, c: [f64; 2], a: [f64; 2]) -> f64 {
         && (by as i64 + p.r[1] as i64 + 1) < plane.h as i64;
     if identity && inside {
         let (tx, ty) = ((fx - bx) as f32, (fy - by) as f32);
-        let (w00, w10, w01, w11) = ((1.0 - tx) * (1.0 - ty), tx * (1.0 - ty), (1.0 - tx) * ty, tx * ty);
+        let (w00, w10, w01, w11) = (
+            (1.0 - tx) * (1.0 - ty),
+            tx * (1.0 - ty),
+            (1.0 - tx) * ty,
+            tx * ty,
+        );
         let row = plane.w * ch;
         let mut k = 0;
         for gy in -p.r[1]..=p.r[1] {
@@ -221,8 +248,10 @@ fn ncc(plane: &Plane, p: &Patch, c: [f64; 2], a: [f64; 2]) -> f64 {
                 let x = (bx as i64 + gx as i64) as usize;
                 let i00 = base + x * ch;
                 for cc in 0..ch {
-                    let v =
-                        w00 * plane.data[i00 + cc] + w10 * plane.data[i00 + ch + cc] + w01 * plane.data[i00 + row + cc] + w11 * plane.data[i00 + row + ch + cc];
+                    let v = w00 * plane.data[i00 + cc]
+                        + w10 * plane.data[i00 + ch + cc]
+                        + w01 * plane.data[i00 + row + cc]
+                        + w11 * plane.data[i00 + row + ch + cc];
                     let v = v as f64;
                     s += v;
                     s2 += v * v;
@@ -237,7 +266,11 @@ fn ncc(plane: &Plane, p: &Patch, c: [f64; 2], a: [f64; 2]) -> f64 {
         for gy in -p.r[1]..=p.r[1] {
             for gx in -p.r[0]..=p.r[0] {
                 let (ux, uy) = (gx as f64, gy as f64);
-                plane.sample(c[0] + a[0] * ux - a[1] * uy, c[1] + a[1] * ux + a[0] * uy, &mut v);
+                plane.sample(
+                    c[0] + a[0] * ux - a[1] * uy,
+                    c[1] + a[1] * ux + a[0] * uy,
+                    &mut v,
+                );
                 for cc in 0..ch {
                     let x = v[cc] as f64;
                     s += x;
@@ -268,7 +301,10 @@ impl Crop {
     /// Crop image pixels `[c - ext, c + ext]` (image pixel coordinates), pre-processed.
     fn new(frame: &Frame, opts: &TrackOptions, c: [f64; 2], ext: [f64; 2], levels: usize) -> Crop {
         let sigma = opts.blur.max(0.0) / 2.0;
-        let margin = (sigma * 3.0).ceil() + 3.0 + if opts.enhance { 6.0 } else { 0.0 } + (1 << levels) as f64;
+        let margin = (sigma * 3.0).ceil()
+            + 3.0
+            + if opts.enhance { 6.0 } else { 0.0 }
+            + (1 << levels) as f64;
         let x0 = (c[0] - ext[0] - margin).floor();
         let y0 = (c[1] - ext[1] - margin).floor();
         let w = ((2.0 * (ext[0] + margin)).ceil() as usize + 2).max(4);
@@ -286,7 +322,11 @@ impl Crop {
             let d = lv.last().map(Plane::downsample).unwrap_or_default();
             lv.push(d);
         }
-        Crop { origin: [x0, y0], levels: lv, grad0 }
+        Crop {
+            origin: [x0, y0],
+            levels: lv,
+            grad0,
+        }
     }
     fn to_level(&self, p: [f64; 2], k: usize) -> [f64; 2] {
         let s = (1u32 << k) as f64;
@@ -323,7 +363,10 @@ impl PointState {
     fn level_r(&self, k: usize) -> [i32; 2] {
         let r = self.feature_r();
         let s = (1 << k) as f64;
-        [((r[0] as f64 / s).ceil() as i32).max(2), ((r[1] as f64 / s).ceil() as i32).max(2)]
+        [
+            ((r[0] as f64 / s).ceil() as i32).max(2),
+            ((r[1] as f64 / s).ceil() as i32).max(2),
+        ]
     }
     /// Search range around the predicted centre (pixels, per axis).
     fn range(&self) -> [f64; 2] {
@@ -333,17 +376,32 @@ impl PointState {
     }
     fn extent(&self) -> f64 {
         let r = self.feature_r();
-        let s = (self.shape[0] * self.shape[0] + self.shape[1] * self.shape[1]).sqrt().max(1.0);
+        let s = (self.shape[0] * self.shape[0] + self.shape[1] * self.shape[1])
+            .sqrt()
+            .max(1.0);
         ((r[0] * r[0] + r[1] * r[1]) as f64).sqrt() * s + 2.0
     }
 
     fn new(spec: PointSpec, frame: &Frame, opts: &TrackOptions) -> PointState {
-        let c = [spec.center[0] + frame.offset[0], spec.center[1] + frame.offset[1]];
-        let mut st = PointState { spec, center: c, shape: [1.0, 0.0], velocity: [0.0; 2], templates: vec![], levels: 0 };
+        let c = [
+            spec.center[0] + frame.offset[0],
+            spec.center[1] + frame.offset[1],
+        ];
+        let mut st = PointState {
+            spec,
+            center: c,
+            shape: [1.0, 0.0],
+            velocity: [0.0; 2],
+            templates: vec![],
+            levels: 0,
+        };
         let range = st.range();
         let fr = st.feature_r();
         let mut l = 0;
-        while l < 4 && range[0].min(range[1]) / (2u32 << l) as f64 >= 3.0 && (fr[0].min(fr[1]) as f64) / (2u32 << l) as f64 >= 3.0 {
+        while l < 4
+            && range[0].min(range[1]) / (2u32 << l) as f64 >= 3.0
+            && (fr[0].min(fr[1]) as f64) / (2u32 << l) as f64 >= 3.0
+        {
             l += 1;
         }
         st.levels = l;
@@ -355,13 +413,25 @@ impl PointState {
 
     /// Re-sample the templates from `crop` at the current centre and shape.
     fn resample(&mut self, crop: &Crop) {
-        self.templates = (0..=self.levels).map(|k| Patch::sample(&crop.levels[k], crop.to_level(self.center, k), self.shape, self.level_r(k))).collect();
+        self.templates = (0..=self.levels)
+            .map(|k| {
+                Patch::sample(
+                    &crop.levels[k],
+                    crop.to_level(self.center, k),
+                    self.shape,
+                    self.level_r(k),
+                )
+            })
+            .collect();
     }
 
     fn step(&mut self, frame: &Frame, opts: &TrackOptions) -> PointResult {
         let prev = self.center;
         let predicted = [prev[0] + self.velocity[0], prev[1] + self.velocity[1]];
-        let sc = [predicted[0] + self.spec.search_offset[0], predicted[1] + self.spec.search_offset[1]];
+        let sc = [
+            predicted[0] + self.spec.search_offset[0],
+            predicted[1] + self.spec.search_offset[1],
+        ];
         let range = self.range();
         let e = self.extent();
         let crop = Crop::new(frame, opts, sc, [range[0] + e, range[1] + e], self.levels);
@@ -386,10 +456,19 @@ impl PointState {
         // prediction so featureless areas don't drift.
         let cp = crop.to_level(predicted, top);
         let d2 = |c: &[f64; 2]| (c[0] - cp[0]).powi(2) + (c[1] - cp[1]).powi(2);
-        cands.sort_by(|a, b| if (a.0 - b.0).abs() < 1e-9 { d2(&a.1).total_cmp(&d2(&b.1)) } else { b.0.total_cmp(&a.0) });
+        cands.sort_by(|a, b| {
+            if (a.0 - b.0).abs() < 1e-9 {
+                d2(&a.1).total_cmp(&d2(&b.1))
+            } else {
+                b.0.total_cmp(&a.0)
+            }
+        });
         let mut seeds: Vec<[f64; 2]> = vec![];
         for (_, c) in &cands {
-            if seeds.iter().all(|q| (q[0] - c[0]).abs() > 1.5 || (q[1] - c[1]).abs() > 1.5) {
+            if seeds
+                .iter()
+                .all(|q| (q[0] - c[0]).abs() > 1.5 || (q[1] - c[1]).abs() > 1.5)
+            {
                 seeds.push(*c);
             }
             if seeds.len() == 3 {
@@ -474,7 +553,11 @@ impl PointState {
             }
         }
         // Only confident matches predict the next search position.
-        self.velocity = if low { [0.0; 2] } else { [found[0] - prev[0], found[1] - prev[1]] };
+        self.velocity = if low {
+            [0.0; 2]
+        } else {
+            [found[0] - prev[0], found[1] - prev[1]]
+        };
         self.center = found;
         self.shape = a;
         if opts.adapt_every_frame || status == Status::Adapted {
@@ -501,15 +584,28 @@ fn parabolic(plane: &Plane, p: &Patch, c: [f64; 2], a: [f64; 2]) -> [f64; 2] {
     let m = f(0.0, 0.0);
     let off = |l: f64, r: f64| {
         let d = l - 2.0 * m + r;
-        if d.abs() < 1e-12 { 0.0 } else { (0.5 * (l - r) / d).clamp(-0.5, 0.5) }
+        if d.abs() < 1e-12 {
+            0.0
+        } else {
+            (0.5 * (l - r) / d).clamp(-0.5, 0.5)
+        }
     };
-    [c[0] + off(f(-1.0, 0.0), f(1.0, 0.0)), c[1] + off(f(0.0, -1.0), f(0.0, 1.0))]
+    [
+        c[0] + off(f(-1.0, 0.0), f(1.0, 0.0)),
+        c[1] + off(f(0.0, -1.0), f(0.0, 1.0)),
+    ]
 }
 
 /// Forward-additive Lucas–Kanade (Gauss–Newton) alignment of the level-0 template with gain and
 /// bias: minimise Σ (I(c + A u) − g T(u) − b)² over the centre `c` and, with `shape`, the
 /// similarity `A`. Returns `None` when it diverges.
-fn lk_refine(crop: &Crop, p: &Patch, c0: [f64; 2], a0: [f64; 2], shape: bool) -> Option<([f64; 2], [f64; 2])> {
+fn lk_refine(
+    crop: &Crop,
+    p: &Patch,
+    c0: [f64; 2],
+    a0: [f64; 2],
+    shape: bool,
+) -> Option<([f64; 2], [f64; 2])> {
     let plane = &crop.levels[0];
     let (gxp, gyp) = &crop.grad0;
     let ch = p.ch;
@@ -524,7 +620,11 @@ fn lk_refine(crop: &Crop, p: &Patch, c0: [f64; 2], a0: [f64; 2], shape: bool) ->
         for gy in -p.r[1]..=p.r[1] {
             for gx in -p.r[0]..=p.r[0] {
                 let (ux, uy) = (gx as f64, gy as f64);
-                plane.sample(c[0] + a[0] * ux - a[1] * uy, c[1] + a[1] * ux + a[0] * uy, &mut v);
+                plane.sample(
+                    c[0] + a[0] * ux - a[1] * uy,
+                    c[1] + a[1] * ux + a[0] * uy,
+                    &mut v,
+                );
                 for cc in 0..ch {
                     let (i, t) = (v[cc] as f64, p.raw[k] as f64);
                     si += i;
@@ -561,7 +661,11 @@ fn lk_refine(crop: &Crop, p: &Patch, c0: [f64; 2], a0: [f64; 2], shape: bool) ->
                     k += 1;
                     let (ix, iy) = (vx[cc] as f64, vy[cc] as f64);
                     let r = v[cc] as f64 - g * t - b;
-                    let j: [f64; 6] = if shape { [ix, iy, ix * ux + iy * uy, -ix * uy + iy * ux, -t, -1.0] } else { [ix, iy, -t, -1.0, 0.0, 0.0] };
+                    let j: [f64; 6] = if shape {
+                        [ix, iy, ix * ux + iy * uy, -ix * uy + iy * ux, -t, -1.0]
+                    } else {
+                        [ix, iy, -t, -1.0, 0.0, 0.0]
+                    };
                     for m in 0..np {
                         rhs[m] -= j[m] * r;
                         for n in m..np {
@@ -627,14 +731,20 @@ pub struct Tracker {
 impl Tracker {
     /// Start tracking `points` as they appear on `frame` (the start frame).
     pub fn new(opts: TrackOptions, points: &[PointSpec], frame: &Frame) -> Tracker {
-        let pts = points.par_iter().map(|s| PointState::new(*s, frame, &opts)).collect();
+        let pts = points
+            .par_iter()
+            .map(|s| PointState::new(*s, frame, &opts))
+            .collect();
         Tracker { opts, points: pts }
     }
 
     /// Track every point into the next frame (in either time direction).
     pub fn step(&mut self, frame: &Frame) -> Vec<PointResult> {
         let opts = &self.opts;
-        self.points.par_iter_mut().map(|p| p.step(frame, opts)).collect()
+        self.points
+            .par_iter_mut()
+            .map(|p| p.step(frame, opts))
+            .collect()
     }
 
     pub fn len(&self) -> usize {

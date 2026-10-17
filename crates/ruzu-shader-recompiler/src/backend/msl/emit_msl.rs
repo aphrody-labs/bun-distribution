@@ -52,8 +52,12 @@ fn varying_mask_has_only_stage_inputs(stage: crate::stage::Stage, mask: &[u64; 8
                     is_generic || matches!(attribute, 24 | 25 | 28..=31 | 184 | 185 | 255)
                 }
                 crate::stage::Stage::Geometry => is_generic || matches!(attribute, 24 | 28..=31),
-                crate::stage::Stage::TessellationControl => is_generic || matches!(attribute, 24 | 28..=31),
-                crate::stage::Stage::TessellationEval => is_generic || matches!(attribute, 24 | 28..=31 | 188 | 189),
+                crate::stage::Stage::TessellationControl => {
+                    is_generic || matches!(attribute, 24 | 28..=31)
+                }
+                crate::stage::Stage::TessellationEval => {
+                    is_generic || matches!(attribute, 24 | 28..=31 | 188 | 189)
+                }
                 _ => false,
             };
             if !allowed {
@@ -111,8 +115,10 @@ fn first_unsupported_program_feature(
     if program.stage != crate::stage::Stage::Compute && program.workgroup_size != [1, 1, 1] {
         return Some("workgroup size");
     }
-    if !matches!(program.stage, crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl)
-        && (program.output_vertices != 0 || program.invocations != 1)
+    if !matches!(
+        program.stage,
+        crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl
+    ) && (program.output_vertices != 0 || program.invocations != 1)
     {
         return Some("geometry execution modes");
     }
@@ -120,10 +126,14 @@ fn first_unsupported_program_feature(
         return Some("geometry passthrough");
     }
     let supported_stage_loads = varying_mask_has_only_stage_inputs(program.stage, &info.loads.mask);
-    let supported_vertex_stores = matches!(
-        program.stage,
-        crate::stage::Stage::VertexB | crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval
-    ) && varying_mask_has_only_vertex_outputs(program.stage, &info.stores.mask);
+    let supported_vertex_stores =
+        matches!(
+            program.stage,
+            crate::stage::Stage::VertexB
+                | crate::stage::Stage::Geometry
+                | crate::stage::Stage::TessellationControl
+                | crate::stage::Stage::TessellationEval
+        ) && varying_mask_has_only_vertex_outputs(program.stage, &info.stores.mask);
     let supported_fragment_colors = program.stage == crate::stage::Stage::Fragment;
     if (!supported_stage_loads && info.loads.mask.iter().any(|word| *word != 0))
         || (!supported_vertex_stores && info.stores.mask.iter().any(|word| *word != 0))
@@ -151,15 +161,29 @@ fn first_unsupported_program_feature(
     if info.uses_rescaling_uniform && !profile.unified_descriptor_binding {
         return Some("rescaling without unified descriptor binding");
     }
-    if info.uses_patches.iter().any(|used| *used) && !matches!(program.stage, crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval) {
+    if info.uses_patches.iter().any(|used| *used)
+        && !matches!(
+            program.stage,
+            crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval
+        )
+    {
         return Some("tessellation patches");
     }
     if info.uses_global_memory && !profile.support_int64 {
         return Some("global memory without 64-bit integers");
     }
     if (info.uses_invocation_id
-        && !matches!(program.stage, crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl))
-        || (info.uses_invocation_info && !matches!(program.stage, crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl | crate::stage::Stage::TessellationEval))
+        && !matches!(
+            program.stage,
+            crate::stage::Stage::Geometry | crate::stage::Stage::TessellationControl
+        ))
+        || (info.uses_invocation_info
+            && !matches!(
+                program.stage,
+                crate::stage::Stage::Geometry
+                    | crate::stage::Stage::TessellationControl
+                    | crate::stage::Stage::TessellationEval
+            ))
         || info.requires_layer_emulation
         || info.emulated_layer != 0
     {
@@ -904,8 +928,12 @@ fn emit_inst(
         | Opcode::ImageAtomicExchange32 => {
             emit_msl_image_atomic::emit_image_atomic(context, inst_ref, inst)
         }
-        Opcode::SetAttribute => emit_msl_context_get_set::emit_set_attribute(context, inst_ref, inst),
-        Opcode::GetPatch | Opcode::SetPatch => emit_msl_context_get_set::emit_patch(context, inst_ref, inst),
+        Opcode::SetAttribute => {
+            emit_msl_context_get_set::emit_set_attribute(context, inst_ref, inst)
+        }
+        Opcode::GetPatch | Opcode::SetPatch => {
+            emit_msl_context_get_set::emit_patch(context, inst_ref, inst)
+        }
         Opcode::SetFragColor => {
             let render_target = immediate_u32(inst, 0)?;
             let component = immediate_u32(inst, 1)?;
@@ -1141,8 +1169,14 @@ pub fn emit_msl_tessellation_control_function(
     options: &MslOptions,
     bindings: &mut Bindings,
 ) -> Result<MslShaderArtifact, MslError> {
-    emit_msl_function(program, profile, runtime_info, options, bindings,
-        super::msl_function::MslFunctionKind::TessellationControlFunction)
+    emit_msl_function(
+        program,
+        profile,
+        runtime_info,
+        options,
+        bindings,
+        super::msl_function::MslFunctionKind::TessellationControlFunction,
+    )
 }
 
 /// Callable TES. Its native post-tessellation caller supplies hardware domain
@@ -1155,8 +1189,14 @@ pub fn emit_msl_tessellation_evaluation_function(
     options: &MslOptions,
     bindings: &mut Bindings,
 ) -> Result<MslShaderArtifact, MslError> {
-    emit_msl_function(program, profile, runtime_info, options, bindings,
-        super::msl_function::MslFunctionKind::TessellationEvaluationFunction)
+    emit_msl_function(
+        program,
+        profile,
+        runtime_info,
+        options,
+        bindings,
+        super::msl_function::MslFunctionKind::TessellationEvaluationFunction,
+    )
 }
 
 fn emit_msl_function(
@@ -1337,7 +1377,12 @@ mod tests {
     #[test]
     fn sampler_argument_abi_is_shared_by_entry_points_and_callable_stages() {
         use super::super::msl_function::MslParameterAttribute;
-        for stage in [Stage::VertexB, Stage::Fragment, Stage::Compute, Stage::Geometry] {
+        for stage in [
+            Stage::VertexB,
+            Stage::Fragment,
+            Stage::Compute,
+            Stage::Geometry,
+        ] {
             for count in [16, 17] {
                 let mut program = sampled_texture_program(count, true);
                 program.stage = stage;
@@ -1345,25 +1390,64 @@ mod tests {
                     program.output_vertices = 3;
                     program.invocations = 1;
                 }
-                let options = MslOptions { language_version: super::super::MslVersion::V3_0, ..Default::default() };
+                let options = MslOptions {
+                    language_version: super::super::MslVersion::V3_0,
+                    ..Default::default()
+                };
                 let profile = Profile::default();
-                let runtime = RuntimeInfo { input_topology: crate::runtime_info::InputTopology::Triangles, ..Default::default() };
+                let runtime = RuntimeInfo {
+                    input_topology: crate::runtime_info::InputTopology::Triangles,
+                    ..Default::default()
+                };
                 let mut bindings = Bindings::default();
                 let artifact = match stage {
-                    Stage::Geometry => emit_msl_geometry_function(&program, &profile, &runtime, &options, &mut bindings),
-                    Stage::VertexB => emit_msl_vertex_function(&program, &profile, &runtime, &options, &mut bindings),
-                    _ => emit_msl_with_options_and_bindings(&program, &profile, &runtime, &options, &mut bindings),
-                }.unwrap();
+                    Stage::Geometry => emit_msl_geometry_function(
+                        &program,
+                        &profile,
+                        &runtime,
+                        &options,
+                        &mut bindings,
+                    ),
+                    Stage::VertexB => emit_msl_vertex_function(
+                        &program,
+                        &profile,
+                        &runtime,
+                        &options,
+                        &mut bindings,
+                    ),
+                    _ => emit_msl_with_options_and_bindings(
+                        &program,
+                        &profile,
+                        &runtime,
+                        &options,
+                        &mut bindings,
+                    ),
+                }
+                .unwrap();
                 assert_eq!(artifact.bindings.sampler_count, count);
-                assert_eq!(artifact.bindings.sampler_argument_buffer_index.is_some(), count > 16);
+                assert_eq!(
+                    artifact.bindings.sampler_argument_buffer_index.is_some(),
+                    count > 16
+                );
                 let interface = artifact.interface.as_ref().unwrap();
-                let direct = interface.parameters.iter().filter(|p| matches!(p.attribute, MslParameterAttribute::Sampler(_))).count();
+                let direct = interface
+                    .parameters
+                    .iter()
+                    .filter(|p| matches!(p.attribute, MslParameterAttribute::Sampler(_)))
+                    .count();
                 assert_eq!(direct, usize::from(count <= 16));
                 if count > 16 {
                     let index = artifact.bindings.sampler_argument_buffer_index.unwrap();
-                    assert!(interface.parameters.iter().any(|p| p.name == "sampler_arguments" && p.attribute == MslParameterAttribute::Buffer(index)));
+                    assert!(interface
+                        .parameters
+                        .iter()
+                        .any(|p| p.name == "sampler_arguments"
+                            && p.attribute == MslParameterAttribute::Buffer(index)));
                     assert!(artifact.source.source.contains("sampler_arguments.samp0["));
-                    assert!(artifact.source.source.contains("array<sampler, 17> samp0 [[id(0)]];"));
+                    assert!(artifact
+                        .source
+                        .source
+                        .contains("array<sampler, 17> samp0 [[id(0)]];"));
                 }
             }
         }
@@ -4085,11 +4169,11 @@ mod tests {
         assert!(artifact.source.source.contains(
             "float v_0_1 = spvFAdd(as_type<float>(0x80000000u), as_type<float>(0x40000000u));"
         ));
+        assert!(artifact.source.source.contains("inline T spvFAdd"));
         assert!(artifact
             .source
             .source
-            .contains("inline T spvFAdd"));
-        assert!(artifact.source.source.contains("#pragma STDC FP_CONTRACT OFF"));
+            .contains("#pragma STDC FP_CONTRACT OFF"));
         assert_eq!(integer, 0);
     }
 

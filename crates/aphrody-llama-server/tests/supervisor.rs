@@ -22,7 +22,10 @@ const DAEMON: &str = env!("CARGO_BIN_EXE_aphrody-llama-daemon");
 fn supervisor(root: &Path) -> Supervisor {
     Supervisor::new(
         StateDirs::new(root),
-        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+        DaemonCommand {
+            program: PathBuf::from(DAEMON),
+            args: Vec::new(),
+        },
     )
 }
 
@@ -74,33 +77,63 @@ async fn spawns_then_attaches_then_stops() {
     let supervisor = supervisor(root.path());
     let plan = plan(Role::Chat, 32_768, &[]);
 
-    let first = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("spawn");
+    let first = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("spawn");
     assert!(!first.attached);
     assert!(first.state.ready);
     assert_eq!(first.state.alias, "fake-model");
     assert!(process_alive(first.state.daemon_pid) && process_alive(first.state.server_pid));
-    assert_eq!(first.base_url(), format!("http://127.0.0.1:{}/v1", first.state.port));
+    assert_eq!(
+        first.base_url(),
+        format!("http://127.0.0.1:{}/v1", first.state.port)
+    );
 
     // The build-aware command line reached the server.
     let props = first.client().props().await.expect("props");
-    let args: Vec<&str> =
-        props["args"].as_array().expect("args").iter().filter_map(|a| a.as_str()).collect();
-    for expected in
-        ["--fit", "on", "--ctx-size", "32768", "--cache-type-k", "q8_0", "--jinja", "--no-webui"]
-    {
+    let args: Vec<&str> = props["args"]
+        .as_array()
+        .expect("args")
+        .iter()
+        .filter_map(|a| a.as_str())
+        .collect();
+    for expected in [
+        "--fit",
+        "on",
+        "--ctx-size",
+        "32768",
+        "--cache-type-k",
+        "q8_0",
+        "--jinja",
+        "--no-webui",
+    ] {
         assert!(args.contains(&expected), "missing {expected} in {args:?}");
     }
-    assert_eq!(first.client().count_tokens("four words in here").await.expect("tokenize"), 4);
+    assert_eq!(
+        first
+            .client()
+            .count_tokens("four words in here")
+            .await
+            .expect("tokenize"),
+        4
+    );
 
     // Same spec: the running instance is reused, no second model load.
-    let second = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("attach");
+    let second = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("attach");
     assert!(second.attached);
     assert_eq!(second.state.server_pid, first.state.server_pid);
 
     // It holds the GPU lease for everyone to see.
     let holders = GpuLease::holders(supervisor.dirs().locks()).expect("holders");
     assert_eq!(holders.len(), 1);
-    assert_eq!((holders[0].role.as_str(), holders[0].pid), ("llama-chat", first.state.daemon_pid));
+    assert_eq!(
+        (holders[0].role.as_str(), holders[0].pid),
+        ("llama-chat", first.state.daemon_pid)
+    );
     assert_eq!(holders[0].vram_bytes, 6 << 30);
 
     assert!(supervisor.stop(Role::Chat).await.expect("stop"));
@@ -108,8 +141,15 @@ async fn spawns_then_attaches_then_stops() {
         !process_alive(first.state.daemon_pid) && !process_alive(first.state.server_pid)
     });
     assert_eq!(supervisor.status(Role::Chat), None);
-    assert!(GpuLease::holders(supervisor.dirs().locks()).expect("holders").is_empty());
-    assert!(!supervisor.stop(Role::Chat).await.expect("stop again"), "nothing left to stop");
+    assert!(
+        GpuLease::holders(supervisor.dirs().locks())
+            .expect("holders")
+            .is_empty()
+    );
+    assert!(
+        !supervisor.stop(Role::Chat).await.expect("stop again"),
+        "nothing left to stop"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -118,11 +158,19 @@ async fn a_different_spec_replaces_the_running_instance() {
     let supervisor = supervisor(root.path());
 
     let first = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 32_768, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 32_768, &[]),
+            quick(),
+        )
         .await
         .expect("first");
     let second = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 8_192, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 8_192, &[]),
+            quick(),
+        )
         .await
         .expect("second");
 
@@ -142,15 +190,28 @@ async fn roles_run_side_by_side() {
     let supervisor = supervisor(root.path());
 
     let chat = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 32_768, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 32_768, &[]),
+            quick(),
+        )
         .await
         .expect("chat");
     let embed = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Embed, 8_192, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Embed, 8_192, &[]),
+            quick(),
+        )
         .await
         .expect("embed");
     assert_ne!(chat.state.port, embed.state.port);
-    assert_eq!(GpuLease::holders(supervisor.dirs().locks()).expect("holders").len(), 2);
+    assert_eq!(
+        GpuLease::holders(supervisor.dirs().locks())
+            .expect("holders")
+            .len(),
+        2
+    );
 
     let stopped = supervisor.stop_all().await.expect("stop all");
     assert_eq!(stopped, vec![Role::Chat, Role::Embed]);
@@ -193,21 +254,32 @@ async fn a_server_that_dies_at_startup_reports_its_log() {
         SupervisorError::Launch(message) => {
             assert!(message.contains("status Some(3)"), "{message}");
             assert!(message.contains("unknown model architecture"), "{message}");
-        },
+        }
         other => panic!("expected Launch, got {other}"),
     }
     assert_eq!(supervisor.status(Role::Chat), None);
-    assert!(GpuLease::holders(supervisor.dirs().locks()).expect("holders").is_empty());
+    assert!(
+        GpuLease::holders(supervisor.dirs().locks())
+            .expect("holders")
+            .is_empty()
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn an_idle_instance_shuts_itself_down() {
     let root = tempfile::tempdir().expect("tempdir");
     let supervisor = supervisor(root.path());
-    let options = EnsureOptions { keep_alive: Some(Duration::from_secs(1)), ..quick() };
+    let options = EnsureOptions {
+        keep_alive: Some(Duration::from_secs(1)),
+        ..quick()
+    };
 
     let endpoint = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 4_096, &[]), options)
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 4_096, &[]),
+            options,
+        )
         .await
         .expect("spawn");
     wait_until("idle shutdown", Duration::from_secs(15), || {
@@ -226,24 +298,49 @@ async fn lora_adapters_are_loaded_inactive_then_scaled_and_hot_swapped() {
     let supervisor = supervisor(root.path());
     let mut plan = plan(Role::Chat, 4_096, &[]);
     plan.spec.lora = vec![
-        LoraAdapter { path: PathBuf::from("agent.gguf"), scale: 0.5 },
-        LoraAdapter { path: PathBuf::from("style.gguf"), scale: 0.0 },
+        LoraAdapter {
+            path: PathBuf::from("agent.gguf"),
+            scale: 0.5,
+        },
+        LoraAdapter {
+            path: PathBuf::from("style.gguf"),
+            scale: 0.0,
+        },
     ];
 
-    let endpoint = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("spawn");
+    let endpoint = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("spawn");
     let client = endpoint.client();
 
-    let scales: Vec<(u32, f32)> =
-        client.lora_adapters().await.expect("adapters").iter().map(|a| (a.id, a.scale)).collect();
+    let scales: Vec<(u32, f32)> = client
+        .lora_adapters()
+        .await
+        .expect("adapters")
+        .iter()
+        .map(|a| (a.id, a.scale))
+        .collect();
     assert_eq!(scales, vec![(0, 0.5), (1, 0.0)]);
 
     // Hot swap without restarting the server.
-    client.set_lora_scales(&[(1, 1.0)]).await.expect("set scales");
-    let scales: Vec<(u32, f32)> =
-        client.lora_adapters().await.expect("adapters").iter().map(|a| (a.id, a.scale)).collect();
+    client
+        .set_lora_scales(&[(1, 1.0)])
+        .await
+        .expect("set scales");
+    let scales: Vec<(u32, f32)> = client
+        .lora_adapters()
+        .await
+        .expect("adapters")
+        .iter()
+        .map(|a| (a.id, a.scale))
+        .collect();
     assert_eq!(scales, vec![(0, 0.0), (1, 1.0)]);
     assert_eq!(
-        supervisor.status(Role::Chat).expect("still running").server_pid,
+        supervisor
+            .status(Role::Chat)
+            .expect("still running")
+            .server_pid,
         endpoint.state.server_pid
     );
 
@@ -264,21 +361,29 @@ async fn inference_is_refused_while_training_holds_the_gpu() {
     .expect("training lease");
 
     let error = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 4_096, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 4_096, &[]),
+            quick(),
+        )
         .await
         .expect_err("gpu busy");
     match error {
         SupervisorError::Launch(message) => {
             assert!(message.contains("gpu busy"), "{message}");
             assert!(message.contains("train-lora"), "{message}");
-        },
+        }
         other => panic!("expected Launch, got {other}"),
     }
 
     // Once training is done, the same request goes through.
     drop(training);
     let endpoint = supervisor
-        .ensure(Path::new(FAKE_SERVER), &plan(Role::Chat, 4_096, &[]), quick())
+        .ensure(
+            Path::new(FAKE_SERVER),
+            &plan(Role::Chat, 4_096, &[]),
+            quick(),
+        )
         .await
         .expect("gpu free again");
     assert!(endpoint.state.ready);
@@ -300,11 +405,21 @@ async fn a_cpu_instance_needs_no_gpu_lease() {
 
     let mut plan = plan(Role::Embed, 512, &[]);
     plan.spec.placement = Placement::Cpu;
-    let endpoint = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("cpu");
+    let endpoint = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("cpu");
     let props = endpoint.client().props().await.expect("props");
-    let args: Vec<&str> =
-        props["args"].as_array().expect("args").iter().filter_map(|a| a.as_str()).collect();
-    assert!(args.windows(2).any(|w| w == ["--n-gpu-layers", "0"]), "{args:?}");
+    let args: Vec<&str> = props["args"]
+        .as_array()
+        .expect("args")
+        .iter()
+        .filter_map(|a| a.as_str())
+        .collect();
+    assert!(
+        args.windows(2).any(|w| w == ["--n-gpu-layers", "0"]),
+        "{args:?}"
+    );
     assert!(args.contains(&"--embeddings"), "{args:?}");
 
     supervisor.stop(Role::Embed).await.expect("stop");
@@ -316,18 +431,33 @@ async fn a_state_file_left_by_a_killed_daemon_does_not_block_a_new_launch() {
     let supervisor = supervisor(root.path());
     let plan = plan(Role::Chat, 4_096, &[]);
 
-    let first = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("first");
+    let first = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("first");
     // Kill the daemon the hard way: no cleanup runs.
     aphrody_proc::terminate_process(first.state.daemon_pid).expect("kill daemon");
-    wait_until("daemon dead", Duration::from_secs(5), || !process_alive(first.state.daemon_pid));
+    wait_until("daemon dead", Duration::from_secs(5), || {
+        !process_alive(first.state.daemon_pid)
+    });
     // Its server went with it (Job Object on Windows, parent-death signal on Linux).
     wait_until("orphan server dead", Duration::from_secs(10), || {
         !process_alive(first.state.server_pid)
     });
-    assert!(supervisor.dirs().state_file(Role::Chat).exists(), "stale state is still on disk");
-    assert_eq!(supervisor.status(Role::Chat), None, "but it is not reported as running");
+    assert!(
+        supervisor.dirs().state_file(Role::Chat).exists(),
+        "stale state is still on disk"
+    );
+    assert_eq!(
+        supervisor.status(Role::Chat),
+        None,
+        "but it is not reported as running"
+    );
 
-    let second = supervisor.ensure(Path::new(FAKE_SERVER), &plan, quick()).await.expect("relaunch");
+    let second = supervisor
+        .ensure(Path::new(FAKE_SERVER), &plan, quick())
+        .await
+        .expect("relaunch");
     assert!(!second.attached);
     assert_ne!(second.state.daemon_pid, first.state.daemon_pid);
     supervisor.stop(Role::Chat).await.expect("stop");

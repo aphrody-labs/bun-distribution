@@ -117,7 +117,9 @@ mod tests {
     fn user_defined_loader_requires_local_export_files() {
         let empty = tempfile::tempdir().unwrap();
         let onnx = empty.path().join("onnx/model.onnx");
-        let error = OrtEmbedder::load_user_defined(&onnx, empty.path()).err().unwrap();
+        let error = OrtEmbedder::load_user_defined(&onnx, empty.path())
+            .err()
+            .unwrap();
         assert!(error.to_string().contains("model.onnx"));
     }
 }

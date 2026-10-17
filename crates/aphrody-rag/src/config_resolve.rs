@@ -119,14 +119,22 @@ fn resolve_embed_model(
 ) -> String {
     ai_env::EMBED_MODEL
         .resolve_with(env)
-        .or_else(|| configured.filter(|value| !value.trim().is_empty()).map(str::to_owned))
+        .or_else(|| {
+            configured
+                .filter(|value| !value.trim().is_empty())
+                .map(str::to_owned)
+        })
         .unwrap_or_else(|| default_embed_model(backend).to_owned())
 }
 
 fn resolve_rerank_model(configured: Option<&str>, env: &EnvReader<'_>) -> String {
     ai_env::RERANK_MODEL
         .resolve_with(env)
-        .or_else(|| configured.filter(|value| !value.trim().is_empty()).map(str::to_owned))
+        .or_else(|| {
+            configured
+                .filter(|value| !value.trim().is_empty())
+                .map(str::to_owned)
+        })
         .unwrap_or_else(|| LocalRole::Rerank.default_model().to_owned())
 }
 
@@ -143,18 +151,27 @@ fn resolve_rerank_model(configured: Option<&str>, env: &EnvReader<'_>) -> String
 /// with the catalog, and [`RagError::UnknownEmbedDimension`] when neither the
 /// catalog, the override, nor `configured` supplies one.
 fn resolve_dimension(model: &str, configured: Option<usize>, env: &EnvReader<'_>) -> Result<usize> {
-    let env_dim =
-        match ai_env::EMBED_DIMENSIONS.resolve_source_with(env) {
-            Some(env_var) => {
-                let raw = ai_env::EMBED_DIMENSIONS.resolve_with(env).unwrap_or_default();
-                let value = raw.parse::<usize>().map_err(|source| {
-                    RagError::InvalidEmbedDimension { env_var, raw: raw.clone(), source }
+    let env_dim = match ai_env::EMBED_DIMENSIONS.resolve_source_with(env) {
+        Some(env_var) => {
+            let raw = ai_env::EMBED_DIMENSIONS
+                .resolve_with(env)
+                .unwrap_or_default();
+            let value = raw
+                .parse::<usize>()
+                .map_err(|source| RagError::InvalidEmbedDimension {
+                    env_var,
+                    raw: raw.clone(),
+                    source,
                 })?;
-                Some((env_var, value))
-            },
-            None => None,
-        };
-    let catalog_dim = Catalog::builtin().dimensions(model).ok().flatten().map(|dim| dim as usize);
+            Some((env_var, value))
+        }
+        None => None,
+    };
+    let catalog_dim = Catalog::builtin()
+        .dimensions(model)
+        .ok()
+        .flatten()
+        .map(|dim| dim as usize);
 
     match (env_dim, catalog_dim) {
         (Some((env_var, env_dim)), Some(catalog_dim)) if env_dim != catalog_dim => {
@@ -164,12 +181,12 @@ fn resolve_dimension(model: &str, configured: Option<usize>, env: &EnvReader<'_>
                 model: model.to_owned(),
                 catalog_dim,
             })
-        },
+        }
         (Some((_, env_dim)), _) => Ok(env_dim),
         (None, Some(catalog_dim)) => Ok(catalog_dim),
-        (None, None) => {
-            configured.ok_or_else(|| RagError::UnknownEmbedDimension { model: model.to_owned() })
-        },
+        (None, None) => configured.ok_or_else(|| RagError::UnknownEmbedDimension {
+            model: model.to_owned(),
+        }),
     }
 }
 
@@ -201,7 +218,7 @@ fn resolve_embed_with(
                 })
                 .ok_or(RagError::MissingEmbedEndpoint { backend })?;
             Some(endpoint)
-        },
+        }
     };
 
     Ok(Some(ResolvedEmbedConfig {
@@ -225,10 +242,18 @@ fn resolve_rerank_with(
     let endpoint = ai_env::RERANK_BASE_URL
         .resolve_with(env)
         .or_else(|| {
-            config.rerank_endpoint.as_deref().filter(|v| !v.trim().is_empty()).map(str::to_owned)
+            config
+                .rerank_endpoint
+                .as_deref()
+                .filter(|v| !v.trim().is_empty())
+                .map(str::to_owned)
         })
         .ok_or(RagError::MissingRerankEndpoint)?;
-    Ok(Some(ResolvedRerankConfig { model, endpoint, api_key: api_key_from(env) }))
+    Ok(Some(ResolvedRerankConfig {
+        model,
+        endpoint,
+        api_key: api_key_from(env),
+    }))
 }
 
 /// Resolve the embedder configuration from `config` and the process
@@ -267,7 +292,10 @@ pub fn rerank_available(config: &RagConfig) -> bool {
 
 fn rerank_available_with(config: &RagConfig, env: &EnvReader<'_>) -> bool {
     ai_env::RERANK_BASE_URL.resolve_with(env).is_some()
-        || config.rerank_endpoint.as_deref().is_some_and(|value| !value.trim().is_empty())
+        || config
+            .rerank_endpoint
+            .as_deref()
+            .is_some_and(|value| !value.trim().is_empty())
 }
 
 /// Resolve the reranker configuration. `enabled` mirrors the caller's

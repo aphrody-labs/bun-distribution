@@ -21,7 +21,9 @@ pub fn intensity(count: u32, reference: f32, gain: f32) -> f32 {
 /// Paint grids of equal size with colours (0..1 RGB), additively, into premultiplied RGBA8 with the
 /// highest row at the top. Empty cells are transparent.
 pub fn grids(layers: &[(&Grid, [f32; 3])], reference: f32, gain: f32) -> (usize, usize, Vec<u8>) {
-    let Some((first, _)) = layers.first() else { return (0, 0, Vec::new()) };
+    let Some((first, _)) = layers.first() else {
+        return (0, 0, Vec::new());
+    };
     let (w, h) = (first.cols, first.rows);
     let mut out = vec![0u8; w * h * 4];
     let mut acc = vec![[0f32; 3]; w * h];
@@ -65,7 +67,12 @@ pub fn waveform_reference(per_column: usize) -> f32 {
 /// `colorize`, else `col`, and spreads over its 3 × 3 neighbourhood (falling off), so isolated
 /// points stay visible when the scope is drawn smaller than its grid. Premultiplied RGBA8, row
 /// 0 = +Cr.
-pub fn vectorscope(v: &Vectorscope, col: [f32; 3], gain: f32, colorize: bool) -> (usize, usize, Vec<u8>) {
+pub fn vectorscope(
+    v: &Vectorscope,
+    col: [f32; 3],
+    gain: f32,
+    colorize: bool,
+) -> (usize, usize, Vec<u8>) {
     let n = v.size;
     let reference = (v.samples as f32 / 64.0).max(1.0);
     let mut level = vec![0f32; n * n];
@@ -80,14 +87,31 @@ pub fn vectorscope(v: &Vectorscope, col: [f32; 3], gain: f32, colorize: bool) ->
             let t = if colorize {
                 let [cb, cr] = v.point(x, y);
                 // the colour at this chroma with mid luma, desaturated towards white
-                let [r, g, b] = filmcraft_color::ycbcr_to_rgb(0.6, cb * 0.8, cr * 0.8, filmcraft_color::Matrix::Bt709);
-                [0.55 + 0.45 * r.clamp(0.0, 1.0), 0.55 + 0.45 * g.clamp(0.0, 1.0), 0.55 + 0.45 * b.clamp(0.0, 1.0)]
+                let [r, g, b] = filmcraft_color::ycbcr_to_rgb(
+                    0.6,
+                    cb * 0.8,
+                    cr * 0.8,
+                    filmcraft_color::Matrix::Bt709,
+                );
+                [
+                    0.55 + 0.45 * r.clamp(0.0, 1.0),
+                    0.55 + 0.45 * g.clamp(0.0, 1.0),
+                    0.55 + 0.45 * b.clamp(0.0, 1.0),
+                ]
             } else {
                 col
             };
-            for (dy, dx, w) in
-                [(0i64, 0i64, 1.0f32), (-1, 0, 0.6), (1, 0, 0.6), (0, -1, 0.6), (0, 1, 0.6), (-1, -1, 0.35), (-1, 1, 0.35), (1, -1, 0.35), (1, 1, 0.35)]
-            {
+            for (dy, dx, w) in [
+                (0i64, 0i64, 1.0f32),
+                (-1, 0, 0.6),
+                (1, 0, 0.6),
+                (0, -1, 0.6),
+                (0, 1, 0.6),
+                (-1, -1, 0.35),
+                (-1, 1, 0.35),
+                (1, -1, 0.35),
+                (1, 1, 0.35),
+            ] {
                 let (yy, xx) = (y as i64 + dy, x as i64 + dx);
                 if yy < 0 || xx < 0 || yy >= n as i64 || xx >= n as i64 {
                     continue;

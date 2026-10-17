@@ -4,7 +4,9 @@ use std::collections::HashMap;
 
 use crate::es::Splitter;
 use crate::pes::{self, PesHeader};
-use crate::{ByteSource, Codec, Error, File, Format, Result, Stream, StreamId, Unit, Unwrap, read_some};
+use crate::{
+    ByteSource, Codec, Error, File, Format, Result, Stream, StreamId, Unit, Unwrap, read_some,
+};
 
 /// Byte-wise table for the MSB-first CRC-32 (polynomial 0x04C11DB7): entry `i` is the CRC register
 /// after shifting the byte `i` through eight bit steps.
@@ -15,7 +17,11 @@ const CRC_TABLE: [u32; 256] = {
         let mut crc = (i as u32) << 24;
         let mut bit = 0;
         while bit < 8 {
-            crc = if crc & 0x8000_0000 != 0 { (crc << 1) ^ 0x04C1_1DB7 } else { crc << 1 };
+            crc = if crc & 0x8000_0000 != 0 {
+                (crc << 1) ^ 0x04C1_1DB7
+            } else {
+                crc << 1
+            };
             bit += 1;
         }
         t[i] = crc;
@@ -75,14 +81,26 @@ fn packet(p: &[u8]) -> std::result::Result<Packet<'_>, Bad> {
             let flags = p[5];
             discontinuity = flags & 0x80 != 0;
             if flags & 0x10 != 0 && al >= 7 {
-                let base = ((p[6] as i64) << 25) | ((p[7] as i64) << 17) | ((p[8] as i64) << 9) | ((p[9] as i64) << 1) | (p[10] as i64 >> 7);
+                let base = ((p[6] as i64) << 25)
+                    | ((p[7] as i64) << 17)
+                    | ((p[8] as i64) << 9)
+                    | ((p[9] as i64) << 1)
+                    | (p[10] as i64 >> 7);
                 let ext = (((p[10] & 1) as i64) << 8) | p[11] as i64;
                 pcr = Some(base * 300 + ext);
             }
         }
     }
     let has_payload = afc & 1 != 0;
-    Ok(Packet { pusi, pid, cc, has_payload, discontinuity, pcr, payload: if has_payload { &p[start..188] } else { &[] } })
+    Ok(Packet {
+        pusi,
+        pid,
+        cc,
+        has_payload,
+        discontinuity,
+        pcr,
+        payload: if has_payload { &p[start..188] } else { &[] },
+    })
 }
 
 /// Reassembles a PES header that may span packets; yields each packet's elementary-stream bytes.
@@ -121,7 +139,9 @@ impl PesAsm {
             let skip = (h.header_len - before).min(payload.len());
             return (Some(h), &payload[skip..]);
         }
-        if self.hdr.len() > 1024 || (self.hdr.len() >= 6 && !(self.hdr[0] == 0 && self.hdr[1] == 0 && self.hdr[2] == 1)) {
+        if self.hdr.len() > 1024
+            || (self.hdr.len() >= 6 && !(self.hdr[0] == 0 && self.hdr[1] == 0 && self.hdr[2] == 1))
+        {
             // not a PES packet after all: drop until the next unit start
             self.waiting = false;
             self.dropping = true;
@@ -143,10 +163,13 @@ impl Psi {
     fn feed(&mut self, pusi: bool, payload: &[u8]) -> Vec<Vec<u8>> {
         let mut out = Vec::new();
         if pusi {
-            let Some(&ptr) = payload.first() else { return out };
+            let Some(&ptr) = payload.first() else {
+                return out;
+            };
             let ptr = ptr as usize;
             if !self.buf.is_empty() {
-                self.buf.extend_from_slice(payload.get(1..1 + ptr).unwrap_or(&[]));
+                self.buf
+                    .extend_from_slice(payload.get(1..1 + ptr).unwrap_or(&[]));
                 self.drain(&mut out);
             }
             self.buf = payload.get(1 + ptr..).unwrap_or(&[]).to_vec();
@@ -250,7 +273,8 @@ fn language(desc: &[u8]) -> Option<String> {
 
 /// First file offset at which `packet_size`-byte packets line up (sync byte at `sync_offset`).
 fn first_sync(head: &[u8], packet_size: usize, sync_offset: usize) -> Option<usize> {
-    (0..packet_size.min(head.len())).find(|&s| (0..5).all(|k| head.get(s + sync_offset + k * packet_size) == Some(&0x47)))
+    (0..packet_size.min(head.len()))
+        .find(|&s| (0..5).all(|k| head.get(s + sync_offset + k * packet_size) == Some(&0x47)))
 }
 
 /// Find where packets line up again, searching `block` from byte `from`: the first packet start
@@ -258,7 +282,13 @@ fn first_sync(head: &[u8], packet_size: usize, sync_offset: usize) -> Option<usi
 /// when found. Returns `(i, true)` when the block ran out first: `i` is where to refill from (a
 /// candidate whose five-packet window does not fit yet, or the last place a whole packet fits).
 /// At the end of the file (`at_end`) a candidate is accepted with as many sync bytes as exist.
-fn resync(block: &[u8], from: usize, packet_size: usize, sync_offset: usize, at_end: bool) -> (usize, bool) {
+fn resync(
+    block: &[u8],
+    from: usize,
+    packet_size: usize,
+    sync_offset: usize,
+    at_end: bool,
+) -> (usize, bool) {
     let mut i = from;
     while i + packet_size <= block.len() {
         if block.get(i + sync_offset) == Some(&0x47) {
@@ -286,7 +316,11 @@ fn resync(block: &[u8], from: usize, packet_size: usize, sync_offset: usize, at_
     (i, true)
 }
 
-pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_offset: usize) -> Result<File> {
+pub(crate) fn scan<S: ByteSource + ?Sized>(
+    src: &S,
+    packet_size: usize,
+    sync_offset: usize,
+) -> Result<File> {
     let len = src.len();
     let mut head = vec![0u8; packet_size * 8];
     let n = read_some(src, 0, &mut head)?;
@@ -330,7 +364,8 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
                 }
                 Err(Bad::Sync) => {
                     lost_sync += 1;
-                    let (next, exhausted) = resync(&block[..got], p + 1, packet_size, sync_offset, at_end);
+                    let (next, exhausted) =
+                        resync(&block[..got], p + 1, packet_size, sync_offset, at_end);
                     p = next;
                     if exhausted {
                         break;
@@ -402,7 +437,8 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
                             continue;
                         }
                         let mut codec = codec_of(st, desc, hdmv);
-                        if codec == Codec::Unknown(6) && prog_desc.windows(4).any(|w| w == b"AC-3") {
+                        if codec == Codec::Unknown(6) && prog_desc.windows(4).any(|w| w == b"AC-3")
+                        {
                             codec = Codec::Ac3;
                         }
                         let stream = Stream {
@@ -415,13 +451,23 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
                             pes_packets: 0,
                             skipped_bytes: 0,
                         };
-                        es.insert(pid, EsState { stream, split: Splitter::new(&codec), asm: PesAsm::default(), cc: None });
+                        es.insert(
+                            pid,
+                            EsState {
+                                stream,
+                                split: Splitter::new(&codec),
+                                asm: PesAsm::default(),
+                                cc: None,
+                            },
+                        );
                         order.push(pid);
                     }
                 }
                 continue;
             }
-            let Some(e) = es.get_mut(&pk.pid) else { continue };
+            let Some(e) = es.get_mut(&pk.pid) else {
+                continue;
+            };
             if pk.has_payload {
                 if let Some(prev) = e.cc
                     && !pk.discontinuity
@@ -448,7 +494,9 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
         warnings.push(format!("lost packet sync {lost_sync} time(s)"));
     }
     if bad_adaptation > 0 {
-        warnings.push(format!("{bad_adaptation} packet(s) with an invalid adaptation field"));
+        warnings.push(format!(
+            "{bad_adaptation} packet(s) with an invalid adaptation field"
+        ));
     }
     if cc_errors > 0 {
         warnings.push(format!("{cc_errors} continuity counter error(s)"));
@@ -461,21 +509,44 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
     }
     let mut streams = Vec::new();
     for pid in order {
-        let Some(mut e) = es.remove(&pid) else { continue };
+        let Some(mut e) = es.remove(&pid) else {
+            continue;
+        };
         e.split.finish();
         e.stream.units = std::mem::take(&mut e.split.units);
         e.stream.skipped_bytes = e.split.skipped;
         if e.split.truncated {
-            warnings.push(format!("PID {pid}: more than {} access units, the rest are not indexed", crate::es::MAX_UNITS));
+            warnings.push(format!(
+                "PID {pid}: more than {} access units, the rest are not indexed",
+                crate::es::MAX_UNITS
+            ));
         }
         streams.push(e.stream);
     }
-    Ok(File { format: Format::Ts { packet_size, sync_offset }, streams, program, pcr_range, warnings })
+    Ok(File {
+        format: Format::Ts {
+            packet_size,
+            sync_offset,
+        },
+        streams,
+        program,
+        pcr_range,
+        warnings,
+    })
 }
 
 /// Collect unit `u` of stream `st`: from the packet at `u.pos`, the PID's elementary-stream bytes.
-pub(crate) fn read<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_offset: usize, st: &Stream, u: &Unit, out: &mut Vec<u8>) -> Result<()> {
-    let StreamId::Pid(pid) = st.id else { return Err(Error::Invalid("not a TS stream".into())) };
+pub(crate) fn read<S: ByteSource + ?Sized>(
+    src: &S,
+    packet_size: usize,
+    sync_offset: usize,
+    st: &Stream,
+    u: &Unit,
+    out: &mut Vec<u8>,
+) -> Result<()> {
+    let StreamId::Pid(pid) = st.id else {
+        return Err(Error::Invalid("not a TS stream".into()));
+    };
     let need = u.size as usize;
     let mut skip = u.offset as usize;
     let mut off = u.pos;
@@ -499,7 +570,11 @@ pub(crate) fn read<S: ByteSource + ?Sized>(src: &S, packet_size: usize, sync_off
                 continue;
             }
             // a unit starting in a PES packet's first packet: the header is skipped
-            let (_, bytes) = if first && !pk.pusi { (None, pk.payload) } else { asm.packet(pk.pusi, pk.payload) };
+            let (_, bytes) = if first && !pk.pusi {
+                (None, pk.payload)
+            } else {
+                asm.packet(pk.pusi, pk.payload)
+            };
             first = false;
             let bytes = if skip > 0 {
                 let s = skip.min(bytes.len());

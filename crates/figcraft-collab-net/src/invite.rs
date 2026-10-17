@@ -44,7 +44,11 @@ const NOT: &str = "that's not a live session invite: expected figcraft://join?ho
 impl Endpoint {
     /// A plain `ws://host/` endpoint.
     pub fn plain(host: impl Into<String>) -> Self {
-        Self { host: host.into(), path: "/".into(), secure: false }
+        Self {
+            host: host.into(),
+            path: "/".into(),
+            secure: false,
+        }
     }
 
     /// `ws://` at `/`: an invite can name it as `host=…`.
@@ -54,19 +58,31 @@ impl Endpoint {
 
     /// The WebSocket URL to connect to (no secrets in it).
     pub fn url(&self) -> String {
-        format!("{}://{}{}", if self.secure { "wss" } else { "ws" }, self.host, self.path)
+        format!(
+            "{}://{}{}",
+            if self.secure { "wss" } else { "ws" },
+            self.host,
+            self.path
+        )
     }
 
     /// How the address is shown: `host:port` for a plain endpoint, else its URL.
     pub fn display(&self) -> String {
-        if self.is_plain() { self.host.clone() } else { self.url() }
+        if self.is_plain() {
+            self.host.clone()
+        } else {
+            self.url()
+        }
     }
 
     /// The host is this machine (a loopback address or `localhost`).
     pub fn loopback(&self) -> bool {
         match self.host.parse::<std::net::SocketAddr>() {
             Ok(a) => a.ip().is_loopback(),
-            Err(_) => self.host.rsplit_once(':').is_some_and(|(name, _)| name.eq_ignore_ascii_case("localhost")),
+            Err(_) => self
+                .host
+                .rsplit_once(':')
+                .is_some_and(|(name, _)| name.eq_ignore_ascii_case("localhost")),
         }
     }
 
@@ -109,21 +125,38 @@ impl Endpoint {
 impl Invite {
     /// An invite for a plain `ws://host/` endpoint.
     pub fn new(host: impl Into<String>, file: impl Into<String>, token: impl Into<String>) -> Self {
-        Self { server: Endpoint::plain(host), file: file.into(), token: token.into() }
+        Self {
+            server: Endpoint::plain(host),
+            file: file.into(),
+            token: token.into(),
+        }
     }
 
     /// The `figcraft://join?…` link.
     pub fn link(&self) -> String {
         if self.server.is_plain() {
-            format!("figcraft://join?host={}&file={}&token={}", self.server.host, self.file, self.token)
+            format!(
+                "figcraft://join?host={}&file={}&token={}",
+                self.server.host, self.file, self.token
+            )
         } else {
-            format!("figcraft://join?server={}&file={}&token={}", self.server.url(), self.file, self.token)
+            format!(
+                "figcraft://join?server={}&file={}&token={}",
+                self.server.url(),
+                self.file,
+                self.token
+            )
         }
     }
 
     /// The same session as a WebSocket URL.
     pub fn url(&self) -> String {
-        format!("{}?file={}&token={}", self.server.url(), self.file, self.token)
+        format!(
+            "{}?file={}&token={}",
+            self.server.url(),
+            self.file,
+            self.token
+        )
     }
 
     /// What the client connects to (no secrets in it).
@@ -158,11 +191,21 @@ impl Invite {
                 return Err(NOT.into());
             }
             let query = pairs(query).map_err(|_| NOT)?;
-            let get = |k: &str| query.iter().find(|(key, _)| key == k).map(|(_, v)| v.clone());
+            let get = |k: &str| {
+                query
+                    .iter()
+                    .find(|(key, _)| key == k)
+                    .map(|(_, v)| v.clone())
+            };
             let server = match (get("server"), get("host")) {
-                (Some(url), _) => Endpoint::parse(&url).map(|(e, _)| e).map_err(|_| "the invite link's server isn't a ws:// or wss:// address")?,
+                (Some(url), _) => Endpoint::parse(&url)
+                    .map(|(e, _)| e)
+                    .map_err(|_| "the invite link's server isn't a ws:// or wss:// address")?,
                 (None, Some(host)) if valid_host(&host) => Endpoint::plain(host),
-                _ => return Err("the invite link's host isn't an address with a port (like 192.168.1.20:47900)".into()),
+                _ => return Err(
+                    "the invite link's host isn't an address with a port (like 192.168.1.20:47900)"
+                        .into(),
+                ),
             };
             (server, query)
         } else if scheme.eq_ignore_ascii_case("ws") || scheme.eq_ignore_ascii_case("wss") {
@@ -170,21 +213,47 @@ impl Invite {
         } else {
             return Err(NOT.into());
         };
-        let get = |k: &str| query.iter().find(|(key, _)| key == k).map(|(_, v)| v.clone());
+        let get = |k: &str| {
+            query
+                .iter()
+                .find(|(key, _)| key == k)
+                .map(|(_, v)| v.clone())
+        };
         if let Some(code) = get("code") {
-            let code = figcraft_collab::code::normalize(&code).ok().filter(|c| c.len() == figcraft_collab::code::ONLINE_LEN);
+            let code = figcraft_collab::code::normalize(&code)
+                .ok()
+                .filter(|c| c.len() == figcraft_collab::code::ONLINE_LEN);
             let code = code.ok_or("the link's join code isn't one")?;
-            return Ok((Invite { server, file: String::new(), token: String::new() }, Some(code)));
+            return Ok((
+                Invite {
+                    server,
+                    file: String::new(),
+                    token: String::new(),
+                },
+                Some(code),
+            ));
         }
-        let file = get("file").filter(|f| valid_id(f, 1, 64)).ok_or("the invite link has no valid file id")?;
-        let token = get("token").filter(|t| valid_id(t, 16, 128)).ok_or("the invite link has no valid token")?;
-        Ok((Invite { server, file, token }, None))
+        let file = get("file")
+            .filter(|f| valid_id(f, 1, 64))
+            .ok_or("the invite link has no valid file id")?;
+        let token = get("token")
+            .filter(|t| valid_id(t, 16, 128))
+            .ok_or("the invite link has no valid token")?;
+        Ok((
+            Invite {
+                server,
+                file,
+                token,
+            },
+            None,
+        ))
     }
 }
 
 /// Without surrounding spaces, quotes or angle brackets.
 fn clean(s: &str) -> &str {
-    s.trim().trim_matches(|c| matches!(c, '<' | '>' | '"' | '\''))
+    s.trim()
+        .trim_matches(|c| matches!(c, '<' | '>' | '"' | '\''))
 }
 
 /// A query's `key=value` pairs, decoded.
@@ -206,29 +275,44 @@ fn with_port(authority: &str, default: u16) -> String {
         Some((h, p)) => !(h.starts_with('[') && !h.ends_with(']')) && !p.contains(']'),
         None => false,
     };
-    if has_port { authority.to_string() } else { format!("{authority}:{default}") }
+    if has_port {
+        authority.to_string()
+    } else {
+        format!("{authority}:{default}")
+    }
 }
 
 /// Ids and tokens are URL-safe base64 / hex characters.
 pub(crate) fn valid_id(s: &str, min: usize, max: usize) -> bool {
-    (min..=max).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    (min..=max).contains(&s.len())
+        && s.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
 }
 
 /// `ip:port`, `[v6]:port` or `name:port` with a non-zero port.
 fn valid_host(s: &str) -> bool {
-    if s.parse::<std::net::SocketAddr>().is_ok_and(|a| a.port() != 0) {
+    if s.parse::<std::net::SocketAddr>()
+        .is_ok_and(|a| a.port() != 0)
+    {
         return true;
     }
-    let Some((name, port)) = s.rsplit_once(':') else { return false };
+    let Some((name, port)) = s.rsplit_once(':') else {
+        return false;
+    };
     port.parse::<u16>().is_ok_and(|p| p != 0)
         && (1..=253).contains(&name.len())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.')
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.')
         && !name.starts_with(['-', '.'])
 }
 
 /// A path of unreserved characters and slashes, starting with `/`.
 fn valid_path(p: &str) -> bool {
-    p.starts_with('/') && p.len() <= 256 && p.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'-' | b'_' | b'.' | b'~'))
+    p.starts_with('/')
+        && p.len() <= 256
+        && p.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'-' | b'_' | b'.' | b'~'))
 }
 
 /// `%XX` escapes decoded (UTF-8); `None` for broken escapes.

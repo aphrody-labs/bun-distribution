@@ -15,7 +15,8 @@ use crate::xml::El;
 /// Namespace of the part and of the `xfComplement` element.
 pub const NS: &str = "http://schemas.microsoft.com/office/spreadsheetml/2022/featurepropertybag";
 /// Relationship type from the workbook part.
-pub const REL: &str = "http://schemas.microsoft.com/office/2022/11/relationships/FeaturePropertyBag";
+pub const REL: &str =
+    "http://schemas.microsoft.com/office/2022/11/relationships/FeaturePropertyBag";
 /// Content type of the part.
 pub const CONTENT_TYPE: &str = "application/vnd.ms-excel.featurepropertybag+xml";
 /// Part name we write.
@@ -34,32 +35,58 @@ pub fn checkbox_part() -> String {
 
 /// The `extLst` that marks an `xf` as a checkbox (complement index 0 of [`checkbox_part`]).
 pub fn checkbox_xf_ext() -> String {
-    format!("<extLst><ext uri=\"{XF_EXT_URI}\" xmlns:xfpb=\"{NS}\"><xfpb:xfComplement i=\"0\"/></ext></extLst>")
+    format!(
+        "<extLst><ext uri=\"{XF_EXT_URI}\" xmlns:xfpb=\"{NS}\"><xfpb:xfComplement i=\"0\"/></ext></extLst>"
+    )
 }
 
 /// For each `xfComplement` index, whether it resolves to a Checkbox cell control. Unknown,
 /// malformed or out-of-range references simply resolve to `false`.
 pub fn checkbox_complements(root: &El) -> Vec<bool> {
     let bags: Vec<&El> = root.kids("bag").collect();
-    let bag = |i: Option<u32>, ty: &str| i.and_then(|i| bags.get(i as usize).copied()).filter(|b| b.attr("type") == Some(ty));
-    let key = |b: &El, k: &str| b.kids("bagId").find(|e| e.attr("k") == Some(k)).and_then(|e| e.text.trim().parse::<u32>().ok());
-    let Some(map) = bags.iter().find(|b| b.attr("type") == Some("XFComplements")) else { return Vec::new() };
-    let Some(arr) = map.kids("a").find(|a| a.attr("k") == Some("MappedFeaturePropertyBags")) else { return Vec::new() };
+    let bag = |i: Option<u32>, ty: &str| {
+        i.and_then(|i| bags.get(i as usize).copied())
+            .filter(|b| b.attr("type") == Some(ty))
+    };
+    let key = |b: &El, k: &str| {
+        b.kids("bagId")
+            .find(|e| e.attr("k") == Some(k))
+            .and_then(|e| e.text.trim().parse::<u32>().ok())
+    };
+    let Some(map) = bags
+        .iter()
+        .find(|b| b.attr("type") == Some("XFComplements"))
+    else {
+        return Vec::new();
+    };
+    let Some(arr) = map
+        .kids("a")
+        .find(|a| a.attr("k") == Some("MappedFeaturePropertyBags"))
+    else {
+        return Vec::new();
+    };
     arr.kids("bagId")
         .take(100_000)
         .map(|e| {
             let complement = bag(e.text.trim().parse::<u32>().ok(), "XFComplement");
             let controls = complement.and_then(|c| bag(key(c, "XFControls"), "XFControls"));
-            controls.and_then(|c| bag(key(c, "CellControl"), "Checkbox")).is_some()
+            controls
+                .and_then(|c| bag(key(c, "CellControl"), "Checkbox"))
+                .is_some()
         })
         .collect()
 }
 
 /// Whether an `xf` element carries an `xfComplement` that resolves to a checkbox.
 pub fn xf_is_checkbox(xf: &El, complements: &[bool]) -> bool {
-    let Some(ext) = xf.child("extLst") else { return false };
+    let Some(ext) = xf.child("extLst") else {
+        return false;
+    };
     ext.kids("ext")
-        .filter(|e| e.attr("uri").is_some_and(|u| u.eq_ignore_ascii_case(XF_EXT_URI)))
+        .filter(|e| {
+            e.attr("uri")
+                .is_some_and(|u| u.eq_ignore_ascii_case(XF_EXT_URI))
+        })
         .filter_map(|e| e.child("xfComplement"))
         .filter_map(|c| c.attr_u32("i"))
         .any(|i| complements.get(i as usize).copied().unwrap_or(false))

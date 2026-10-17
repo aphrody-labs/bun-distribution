@@ -9,23 +9,23 @@ use serde::{Deserialize, Serialize};
 /// the input image).
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Veo2ImageToVideoInput {
-  pub prompt: String,
+    pub prompt: String,
 
-  /// URL of the input image to animate (720p+, 16:9 or 9:16).
-  pub image_url: String,
+    /// URL of the input image to animate (720p+, 16:9 or 9:16).
+    pub image_url: String,
 
-  /// Duration in seconds (as a string).
-  /// Possible values: "5s", "6s", "7s", "8s". fal default: "5s".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub duration: Option<String>,
+    /// Duration in seconds (as a string).
+    /// Possible values: "5s", "6s", "7s", "8s". fal default: "5s".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Veo2ImageToVideoVideoFile {
-  pub url: String,
+    pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Veo2ImageToVideoOutput {
-  pub video: Veo2ImageToVideoVideoFile,
+    pub video: Veo2ImageToVideoVideoFile,
 }

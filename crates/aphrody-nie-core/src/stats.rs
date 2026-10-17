@@ -57,13 +57,23 @@ impl StatBlock {
     /// Retourne les stats comme tableau ordonné `[Kc, Cr, Tc, Pr, Ps, Ag, It]`.
     #[must_use]
     pub fn as_array(self) -> [u16; 7] {
-        [self.kc, self.cr, self.tc, self.pr, self.ps, self.ag, self.it]
+        [
+            self.kc, self.cr, self.tc, self.pr, self.ps, self.ag, self.it,
+        ]
     }
 
     /// Crée un `StatBlock` depuis un tableau `[Kc, Cr, Tc, Pr, Ps, Ag, It]`.
     #[must_use]
     pub fn from_array(arr: [u16; 7]) -> Self {
-        Self { kc: arr[0], cr: arr[1], tc: arr[2], pr: arr[3], ps: arr[4], ag: arr[5], it: arr[6] }
+        Self {
+            kc: arr[0],
+            cr: arr[1],
+            tc: arr[2],
+            pr: arr[3],
+            ps: arr[4],
+            ag: arr[5],
+            it: arr[6],
+        }
     }
 }
 
@@ -273,8 +283,12 @@ pub fn rarity_code_to_name(code: u8) -> String {
 /// La table est portée telle quelle pour que le désaccord soit visible et
 /// testable, pas pour être utilisée. Trancher l'affichage est un arbitrage
 /// utilisateur.
-pub const LIBELLES_POSITION_INAGLE: [(u8, &str); 4] =
-    [(1, "GK (Goalkeeper)"), (2, "DF (Defender)"), (3, "MF (Midfielder)"), (4, "FW (Forward)")];
+pub const LIBELLES_POSITION_INAGLE: [(u8, &str); 4] = [
+    (1, "GK (Goalkeeper)"),
+    (2, "DF (Defender)"),
+    (3, "MF (Midfielder)"),
+    (4, "FW (Forward)"),
+];
 
 /// Libellés de rang d'inagle, portés verbatim.
 ///
@@ -383,7 +397,11 @@ mod tests {
         let mut prev = calculate_single_stat(1, 10, 30, 50, 80);
         for lv in 2..=99 {
             let cur = calculate_single_stat(lv, 10, 30, 50, 80);
-            assert!(cur >= prev, "stat doit etre croissante: lv{lv}: {cur} < lv{}: {prev}", lv - 1);
+            assert!(
+                cur >= prev,
+                "stat doit etre croissante: lv{lv}: {cur} < lv{}: {prev}",
+                lv - 1
+            );
             prev = cur;
         }
     }

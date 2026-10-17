@@ -119,9 +119,7 @@ fn dump_impl(
     }
     let prefix = stage_to_prefix(stage);
     let program_id = common::settings::get_current_program_id();
-    let path = base_dir.join(format!(
-        "{program_id:016x}_{shader_hash:016x}_{prefix}.ash"
-    ));
+    let path = base_dir.join(format!("{program_id:016x}_{shader_hash:016x}_{prefix}.ash"));
     let initial_offset = initial_offset as usize;
     if initial_offset % INST_SIZE != 0 || initial_offset > code.len() * INST_SIZE {
         log::error!(
@@ -1414,9 +1412,14 @@ impl FileEnvironment {
     /// Loaders must consume the key, skip prebuilding this entry and let live
     /// translation capture the selected aspect; the cache file stays intact.
     pub fn has_ambiguous_depth_stencil_formats(&self) -> bool {
-        self.texture_pixel_formats.values().any(|format| matches!(format,
-            TexturePixelFormat::D24UnormS8Uint | TexturePixelFormat::S8UintD24Unorm
-                | TexturePixelFormat::D32FloatS8Uint))
+        self.texture_pixel_formats.values().any(|format| {
+            matches!(
+                format,
+                TexturePixelFormat::D24UnormS8Uint
+                    | TexturePixelFormat::S8UintD24Unorm
+                    | TexturePixelFormat::D32FloatS8Uint
+            )
+        })
     }
 
     pub fn new() -> Self {
@@ -2090,8 +2093,13 @@ fn convert_texture_pixel_format(entry: &TicEntry) -> TexturePixelFormat {
     // and D32/S8 expose it in G. The combined format loses this numeric type.
     use crate::surface::PixelFormat;
     use crate::textures::texture::SwizzleSource;
-    let any_r = [entry.x_source(), entry.y_source(), entry.z_source(), entry.w_source()]
-        .contains(&(SwizzleSource::R as u32));
+    let any_r = [
+        entry.x_source(),
+        entry.y_source(),
+        entry.z_source(),
+        entry.w_source(),
+    ]
+    .contains(&(SwizzleSource::R as u32));
     let sampled_format = match pixel_format {
         PixelFormat::S8UintD24Unorm if any_r => PixelFormat::S8Uint,
         PixelFormat::S8UintD24Unorm => PixelFormat::X8D24Unorm,
@@ -2199,18 +2207,35 @@ mod tests {
 
     #[test]
     fn sampled_depth_stencil_metadata_preserves_aspect_numeric_type() {
-        use crate::textures::texture::{ComponentType as C, SwizzleSource as S, TextureFormat as T};
+        use crate::textures::texture::{
+            ComponentType as C, SwizzleSource as S, TextureFormat as T,
+        };
         for (format, types, red, green) in [
-            (T::Z24S8, [C::Uint, C::Unorm, C::Unorm, C::Unorm],
-                TexturePixelFormat::S8Uint, TexturePixelFormat::X8D24Unorm),
-            (T::S8Z24, [C::Unorm, C::Uint, C::Uint, C::Uint],
-                TexturePixelFormat::X8D24Unorm, TexturePixelFormat::S8Uint),
-            (T::Z32X24S8, [C::Float, C::Uint, C::Unorm, C::Unorm],
-                TexturePixelFormat::D32Float, TexturePixelFormat::S8Uint),
+            (
+                T::Z24S8,
+                [C::Uint, C::Unorm, C::Unorm, C::Unorm],
+                TexturePixelFormat::S8Uint,
+                TexturePixelFormat::X8D24Unorm,
+            ),
+            (
+                T::S8Z24,
+                [C::Unorm, C::Uint, C::Uint, C::Uint],
+                TexturePixelFormat::X8D24Unorm,
+                TexturePixelFormat::S8Uint,
+            ),
+            (
+                T::Z32X24S8,
+                [C::Float, C::Uint, C::Unorm, C::Unorm],
+                TexturePixelFormat::D32Float,
+                TexturePixelFormat::S8Uint,
+            ),
         ] {
-            for (swizzle, expected) in [([S::R; 4], red), ([S::G; 4], green),
+            for (swizzle, expected) in [
+                ([S::R; 4], red),
+                ([S::G; 4], green),
                 ([S::Zero, S::OneInt, S::G, S::OneFloat], green),
-                ([S::G, S::G, S::G, S::R], red)] {
+                ([S::G, S::G, S::G, S::R], red),
+            ] {
                 let mut word = format as u32;
                 for (index, component) in types.iter().enumerate() {
                     word |= (*component as u32) << (7 + index * 3);
@@ -2218,15 +2243,27 @@ mod tests {
                 for (index, source) in swizzle.iter().enumerate() {
                     word |= (*source as u32) << (19 + index * 3);
                 }
-                let entry = TicEntry { raw: [word as u64, 0, 0, 0] };
+                let entry = TicEntry {
+                    raw: [word as u64, 0, 0, 0],
+                };
                 let result = convert_texture_pixel_format(&entry);
                 assert_eq!(result, expected, "format={format:?} swizzle={swizzle:?}");
-                assert_eq!(is_integer_pixel_format(result), expected == TexturePixelFormat::S8Uint);
-                assert_eq!(is_integer_pixel_format(result), crate::surface::is_pixel_format_integer(
-                    unsafe { std::mem::transmute::<u32, crate::surface::PixelFormat>(result as u32) }));
+                assert_eq!(
+                    is_integer_pixel_format(result),
+                    expected == TexturePixelFormat::S8Uint
+                );
+                assert_eq!(
+                    is_integer_pixel_format(result),
+                    crate::surface::is_pixel_format_integer(unsafe {
+                        std::mem::transmute::<u32, crate::surface::PixelFormat>(result as u32)
+                    })
+                );
             }
         }
-        assert_eq!(crate::surface::pixel_component_size_bits_integer(crate::surface::PixelFormat::S8Uint), 8);
+        assert_eq!(
+            crate::surface::pixel_component_size_bits_integer(crate::surface::PixelFormat::S8Uint),
+            8
+        );
     }
 
     #[test]
@@ -2249,17 +2286,26 @@ mod tests {
         }
         let before = std::fs::read(&path).unwrap();
         let decisions = RefCell::new(Vec::new());
-        load_pipelines(|| false, &path, 7,
+        load_pipelines(
+            || false,
+            &path,
+            7,
             Box::new(|file, env| {
                 assert_eq!(read_test_cache_key(file, 4), b"test");
-                decisions.borrow_mut().push(env.has_ambiguous_depth_stencil_formats());
+                decisions
+                    .borrow_mut()
+                    .push(env.has_ambiguous_depth_stencil_formats());
                 Ok(())
             }),
             Box::new(|file, envs| {
                 assert_eq!(read_test_cache_key(file, 4), b"test");
-                decisions.borrow_mut().push(envs.iter().any(FileEnvironment::has_ambiguous_depth_stencil_formats));
+                decisions.borrow_mut().push(
+                    envs.iter()
+                        .any(FileEnvironment::has_ambiguous_depth_stencil_formats),
+                );
                 Ok(())
-            }));
+            }),
+        );
         assert_eq!(*decisions.borrow(), [true, true, false, false]);
         assert_eq!(std::fs::read(&path).unwrap(), before);
         std::fs::remove_file(path).unwrap();
@@ -2284,14 +2330,17 @@ mod tests {
             Some(root) => std::path::PathBuf::from(root),
             None => {
                 let nonce = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-                let root = std::env::temp_dir().join(format!(
-                    "ruzu-shader-dump-{}-{nonce}", std::process::id()
-                ));
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
+                let root = std::env::temp_dir()
+                    .join(format!("ruzu-shader-dump-{}-{nonce}", std::process::id()));
                 fs::create_dir(&root).unwrap();
                 let status = std::process::Command::new(std::env::current_exe().unwrap())
                     .args(["--exact", std::thread::current().name().unwrap()])
-                    .env(ROOT, &root).status().unwrap();
+                    .env(ROOT, &root)
+                    .status()
+                    .unwrap();
                 fs::remove_dir_all(&root).unwrap();
                 assert!(status.success());
                 return;
@@ -2307,17 +2356,21 @@ mod tests {
             (ShaderStage::Fragment, "fs"),
             (ShaderStage::Compute, "cs"),
         ] {
-            for (words, initial_offset) in (0..=5usize)
-                .flat_map(|words| [0, 8, 0x50].map(|offset| (words, offset)))
+            for (words, initial_offset) in
+                (0..=5usize).flat_map(|words| [0, 8, 0x50].map(|offset| (words, offset)))
             {
                 let hash = 0xA0 + words as u64;
                 let mut generic = GenericEnvironment::new();
                 generic.stage = stage;
                 generic.initial_offset = initial_offset;
                 generic.code = vec![0xFFFF_FFFF_FFFF_FFFF; initial_offset as usize / 8];
-                generic.code.extend((0..words).map(|i| 0x0123_4567_89AB_CD00 + i as u64));
-                let mut expected: Vec<u8> = generic.code[initial_offset as usize / 8..].iter()
-                    .flat_map(|word| word.to_ne_bytes()).collect();
+                generic
+                    .code
+                    .extend((0..words).map(|i| 0x0123_4567_89AB_CD00 + i as u64));
+                let mut expected: Vec<u8> = generic.code[initial_offset as usize / 8..]
+                    .iter()
+                    .flat_map(|word| word.to_ne_bytes())
+                    .collect();
                 // At least one terminating instruction, then pad to a 32-byte bundle.
                 expected.resize((words / 4 + 1) * 32, 0);
                 common::settings::set_current_program_id(42);
@@ -2335,7 +2388,8 @@ mod tests {
                 common::settings::set_current_program_id(43);
                 cached.dump(0x2222, hash);
                 assert_eq!(
-                    fs::read(root.join(format!("000000000000002b_{hash:016x}_{prefix}.ash"))).unwrap(),
+                    fs::read(root.join(format!("000000000000002b_{hash:016x}_{prefix}.ash")))
+                        .unwrap(),
                     expected
                 );
             }

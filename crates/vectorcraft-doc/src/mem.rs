@@ -21,7 +21,10 @@ use vectorcraft_geom::{Affine, Anchor, PathData, SubPath};
 
 use crate::live::{BlendSpec, EnvelopeKind};
 use crate::text::{ParaStyle, TextObject, TextRun, TextStyleDef};
-use crate::{Appearance, AppearanceItem, Document, Effect, GraphicStyle, ImageObject, Node, NodeExtras, NodeKind, SavedSelection, Shared};
+use crate::{
+    Appearance, AppearanceItem, Document, Effect, GraphicStyle, ImageObject, Node, NodeExtras,
+    NodeKind, SavedSelection, Shared,
+};
 
 /// Bookkeeping and rounding a typical allocator adds to each allocation.
 const ALLOC: usize = 16;
@@ -46,7 +49,11 @@ impl Document {
             return (0, 0);
         }
         let own = size_of::<Document>() + ALLOC + ARC;
-        let mut w = Walk { docs: [self, other], seen: [None, None], bytes: [own, own] };
+        let mut w = Walk {
+            docs: [self, other],
+            seen: [None, None],
+            bytes: [own, own],
+        };
         w.list(&self.layers, &other.layers);
         for i in 0..self.symbols.len().max(other.symbols.len()) {
             match (self.symbols.get(i), other.symbols.get(i)) {
@@ -61,8 +68,12 @@ impl Document {
             match (self.patterns.get(i), other.patterns.get(i)) {
                 (Some(a), Some(b)) => w.list(&a.art, &b.art),
                 (a, b) => {
-                    a.into_iter().flat_map(|a| &a.art).for_each(|n| w.alone(0, n));
-                    b.into_iter().flat_map(|b| &b.art).for_each(|n| w.alone(1, n));
+                    a.into_iter()
+                        .flat_map(|a| &a.art)
+                        .for_each(|n| w.alone(0, n));
+                    b.into_iter()
+                        .flat_map(|b| &b.art)
+                        .for_each(|n| w.alone(1, n));
                 }
             }
         }
@@ -75,36 +86,78 @@ impl Document {
     /// The symbol and pattern lists themselves (their art is counted as nodes).
     fn lists_bytes(&self) -> usize {
         vec_bytes(&self.symbols)
-            + self.symbols.iter().map(|s| s.name.capacity()).sum::<usize>()
+            + self
+                .symbols
+                .iter()
+                .map(|s| s.name.capacity())
+                .sum::<usize>()
             + vec_bytes(&self.patterns)
-            + self.patterns.iter().map(|p| p.name.capacity()).sum::<usize>()
+            + self
+                .patterns
+                .iter()
+                .map(|p| p.name.capacity())
+                .sum::<usize>()
     }
 
     /// The document-wide lists and settings: a copy of the document copies those that aren't
     /// [`Shared`]; the shared ones count only when `newer` has its own.
     fn resources_bytes(&self, newer: &Document) -> usize {
         fn shared<T>(a: &Shared<T>, b: &Shared<T>, f: impl FnOnce(&T) -> usize) -> usize {
-            if Shared::ptr_eq(a, b) { 0 } else { ALLOC + ARC + f(a) }
+            if Shared::ptr_eq(a, b) {
+                0
+            } else {
+                ALLOC + ARC + f(a)
+            }
         }
         let mut n = 0;
-        n += vec_bytes(&self.artboards) + self.artboards.iter().map(|a| a.name.capacity()).sum::<usize>();
-        n += vec_bytes(&self.guides) + vec_bytes(&self.views) + vec_bytes(&self.slices) + vec_bytes(&self.assets);
+        n += vec_bytes(&self.artboards)
+            + self
+                .artboards
+                .iter()
+                .map(|a| a.name.capacity())
+                .sum::<usize>();
+        n += vec_bytes(&self.guides)
+            + vec_bytes(&self.views)
+            + vec_bytes(&self.slices)
+            + vec_bytes(&self.assets);
         n += vec_bytes(&self.text_threads) + self.text_threads.iter().map(vec_bytes).sum::<usize>();
-        n += self.images.iter().map(|(k, b)| 4 * size_of::<usize>() + k.capacity() + b.mime.capacity() + size_of_val(b)).sum::<usize>();
-        n += map_bytes(&self.export_settings) + map_bytes(&self.extra) + self.print_setup.as_ref().map_or(0, json_bytes);
+        n += self
+            .images
+            .iter()
+            .map(|(k, b)| {
+                4 * size_of::<usize>() + k.capacity() + b.mime.capacity() + size_of_val(b)
+            })
+            .sum::<usize>();
+        n += map_bytes(&self.export_settings)
+            + map_bytes(&self.extra)
+            + self.print_setup.as_ref().map_or(0, json_bytes);
         n += self.title.capacity();
         n += shared(&self.swatches, &newer.swatches, |s| swatches_bytes(s));
         n += shared(&self.swatch_groups, &newer.swatch_groups, |g| {
-            vec_bytes(g) + g.iter().map(|g: &SwatchGroup| g.name.capacity() + swatches_bytes(&g.swatches)).sum::<usize>()
+            vec_bytes(g)
+                + g.iter()
+                    .map(|g: &SwatchGroup| g.name.capacity() + swatches_bytes(&g.swatches))
+                    .sum::<usize>()
         });
         n += shared(&self.graphic_styles, &newer.graphic_styles, |g| {
-            vec_bytes(g) + g.iter().map(|g: &GraphicStyle| g.name.capacity() + appearance_heap(&g.appearance)).sum::<usize>()
+            vec_bytes(g)
+                + g.iter()
+                    .map(|g: &GraphicStyle| g.name.capacity() + appearance_heap(&g.appearance))
+                    .sum::<usize>()
         });
-        let styles = |s: &Vec<TextStyleDef>| vec_bytes(s) + s.iter().map(|s| s.name.capacity() + map_bytes(&s.attrs)).sum::<usize>();
+        let styles = |s: &Vec<TextStyleDef>| {
+            vec_bytes(s)
+                + s.iter()
+                    .map(|s| s.name.capacity() + map_bytes(&s.attrs))
+                    .sum::<usize>()
+        };
         n += shared(&self.char_styles, &newer.char_styles, styles);
         n += shared(&self.para_styles, &newer.para_styles, styles);
         n += shared(&self.saved_selections, &newer.saved_selections, |s| {
-            vec_bytes(s) + s.iter().map(|s: &SavedSelection| s.name.capacity() + vec_bytes(&s.objects)).sum::<usize>()
+            vec_bytes(s)
+                + s.iter()
+                    .map(|s: &SavedSelection| s.name.capacity() + vec_bytes(&s.objects))
+                    .sum::<usize>()
         });
         n += shared(&self.variables, &newer.variables, |v| {
             // Map entries: the key and value plus a share of the tree's nodes.
@@ -112,8 +165,20 @@ impl Document {
             vec_bytes(&v.variables)
                 + v.variables.iter().map(|v| v.name.capacity()).sum::<usize>()
                 + vec_bytes(&v.datasets)
-                + v.datasets.iter().map(|d| d.name.capacity() + d.values.keys().map(|k| entry + k.capacity() + 32).sum::<usize>()).sum::<usize>()
-                + v.bindings.values().map(|b| entry + 8 + b.iter().map(|s| entry + s.capacity()).sum::<usize>()).sum::<usize>()
+                + v.datasets
+                    .iter()
+                    .map(|d| {
+                        d.name.capacity()
+                            + d.values
+                                .keys()
+                                .map(|k| entry + k.capacity() + 32)
+                                .sum::<usize>()
+                    })
+                    .sum::<usize>()
+                + v.bindings
+                    .values()
+                    .map(|b| entry + 8 + b.iter().map(|s| entry + s.capacity()).sum::<usize>())
+                    .sum::<usize>()
         });
         n += shared(&self.unknown, &newer.unknown, map_bytes);
         n
@@ -140,13 +205,30 @@ impl Walk<'_> {
         // In place from the start and from the end: an insertion or deletion shifts only what is
         // between.
         let head = a.iter().zip(b).take_while(|(x, y)| same(x, y)).count();
-        let (a_rest, b_rest) = (a.get(head..).unwrap_or_default(), b.get(head..).unwrap_or_default());
-        let tail = a_rest.iter().rev().zip(b_rest.iter().rev()).take_while(|(x, y)| same(x, y)).count();
-        for (x, y) in a.iter().zip(b).take(head).chain(a_rest.iter().rev().zip(b_rest.iter().rev()).take(tail)) {
+        let (a_rest, b_rest) = (
+            a.get(head..).unwrap_or_default(),
+            b.get(head..).unwrap_or_default(),
+        );
+        let tail = a_rest
+            .iter()
+            .rev()
+            .zip(b_rest.iter().rev())
+            .take_while(|(x, y)| same(x, y))
+            .count();
+        for (x, y) in a
+            .iter()
+            .zip(b)
+            .take(head)
+            .chain(a_rest.iter().rev().zip(b_rest.iter().rev()).take(tail))
+        {
             self.pair(x, y);
         }
-        let a_mid = a_rest.get(..a_rest.len().saturating_sub(tail)).unwrap_or_default();
-        let b_mid = b_rest.get(..b_rest.len().saturating_sub(tail)).unwrap_or_default();
+        let a_mid = a_rest
+            .get(..a_rest.len().saturating_sub(tail))
+            .unwrap_or_default();
+        let b_mid = b_rest
+            .get(..b_rest.len().saturating_sub(tail))
+            .unwrap_or_default();
         for i in 0..a_mid.len().max(b_mid.len()) {
             match (a_mid.get(i), b_mid.get(i)) {
                 (Some(x), Some(y)) if same(x, y) => self.pair(x, y),
@@ -211,7 +293,10 @@ impl Walk<'_> {
         if Arc::strong_count(n) == 1 {
             return false;
         }
-        let (Some(other), Some(seen)) = (self.docs.get(1 - side.min(1)), self.seen.get_mut(side)) else { return false };
+        let (Some(other), Some(seen)) = (self.docs.get(1 - side.min(1)), self.seen.get_mut(side))
+        else {
+            return false;
+        };
         let seen = seen.get_or_insert_with(|| {
             fn add(n: &Arc<Node>, out: &mut HashSet<usize>) {
                 // A node already seen was entered already (a node shared within the document).
@@ -226,7 +311,11 @@ impl Walk<'_> {
                 }
             }
             let mut out = HashSet::new();
-            let roots = other.layers.iter().chain(other.symbols.iter().map(|s| &s.art)).chain(other.patterns.iter().flat_map(|p| &p.art));
+            let roots = other
+                .layers
+                .iter()
+                .chain(other.symbols.iter().map(|s| &s.art))
+                .chain(other.patterns.iter().flat_map(|p| &p.art));
             for n in roots {
                 add(n, &mut out);
             }
@@ -249,14 +338,26 @@ fn node_bytes(n: &Node, other: Option<&Node>) -> usize {
     }
     if let Some(e) = n.extras_box() {
         b += ALLOC + size_of::<NodeExtras>();
-        b += boxed(&e.mask) + boxed(&e.graph) + boxed(&e.shaper) + boxed(&e.attrs) + boxed(&e.slice) + boxed(&e.perspective);
-        b += e.trace.as_ref().map_or(0, |t| ALLOC + size_of::<Value>() + json_bytes(t));
+        b += boxed(&e.mask)
+            + boxed(&e.graph)
+            + boxed(&e.shaper)
+            + boxed(&e.attrs)
+            + boxed(&e.slice)
+            + boxed(&e.perspective);
+        b += e
+            .trace
+            .as_ref()
+            .map_or(0, |t| ALLOC + size_of::<Value>() + json_bytes(t));
     }
     b += match &n.kind {
         NodeKind::Path { path, live, .. } => path_bytes(path) + boxed(live),
-        NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => vec_bytes(children),
+        NodeKind::Layer { children, .. }
+        | NodeKind::Group { children, .. }
+        | NodeKind::Compound { children, .. } => vec_bytes(children),
         NodeKind::Blend { children, .. } => vec_bytes(children) + ALLOC + size_of::<BlendSpec>(),
-        NodeKind::Envelope { content, .. } => vec_bytes(content) + 2 * ALLOC + size_of::<EnvelopeKind>() + size_of::<Affine>(),
+        NodeKind::Envelope { content, .. } => {
+            vec_bytes(content) + 2 * ALLOC + size_of::<EnvelopeKind>() + size_of::<Affine>()
+        }
         NodeKind::Repeat(r) => vec_bytes(&r.source) + OTHER_KIND,
         NodeKind::Text(t) => ALLOC + text_bytes(t),
         NodeKind::Image(im) => ALLOC + size_of::<ImageObject>() + im.key.capacity(),
@@ -267,15 +368,32 @@ fn node_bytes(n: &Node, other: Option<&Node>) -> usize {
 }
 
 fn path_bytes(p: &PathData) -> usize {
-    let anchors: usize =
-        p.subpaths.iter().map(|s| if s.anchors.capacity() == 0 { 0 } else { ALLOC + s.anchors.capacity() * size_of::<Anchor>() }).sum();
-    anchors + if p.subpaths.capacity() == 0 { 0 } else { ALLOC + p.subpaths.capacity() * size_of::<SubPath>() }
+    let anchors: usize = p
+        .subpaths
+        .iter()
+        .map(|s| {
+            if s.anchors.capacity() == 0 {
+                0
+            } else {
+                ALLOC + s.anchors.capacity() * size_of::<Anchor>()
+            }
+        })
+        .sum();
+    anchors
+        + if p.subpaths.capacity() == 0 {
+            0
+        } else {
+            ALLOC + p.subpaths.capacity() * size_of::<SubPath>()
+        }
 }
 
 fn text_bytes(t: &TextObject) -> usize {
     size_of::<TextObject>()
         + vec_bytes(&t.runs)
-        + t.runs.iter().map(|r: &TextRun| r.text.capacity()).sum::<usize>()
+        + t.runs
+            .iter()
+            .map(|r: &TextRun| r.text.capacity())
+            .sum::<usize>()
         + t.paras.capacity() * size_of::<ParaStyle>()
         + vec_bytes(&t.wrap)
         + vec_bytes(&t.cached_baselines)
@@ -293,7 +411,10 @@ fn appearance_heap(a: &Appearance) -> usize {
             })
             .sum::<usize>()
         + vec_bytes(&a.effects)
-        + a.effects.iter().map(|e: &Effect| e.id.capacity() + json_bytes(&e.params)).sum::<usize>()
+        + a.effects
+            .iter()
+            .map(|e: &Effect| e.id.capacity() + json_bytes(&e.params))
+            .sum::<usize>()
 }
 
 fn paint_heap(p: &Paint) -> usize {
@@ -306,16 +427,28 @@ fn paint_heap(p: &Paint) -> usize {
 }
 
 fn swatches_bytes(s: &[Swatch]) -> usize {
-    ALLOC + std::mem::size_of_val(s) + s.iter().map(|w| w.name.capacity() + paint_heap(&w.paint)).sum::<usize>()
+    ALLOC
+        + std::mem::size_of_val(s)
+        + s.iter()
+            .map(|w| w.name.capacity() + paint_heap(&w.paint))
+            .sum::<usize>()
 }
 
 /// A vector's buffer (not what its elements own).
 fn vec_bytes<T>(v: &Vec<T>) -> usize {
-    if v.capacity() == 0 { 0 } else { ALLOC + v.capacity() * size_of::<T>() }
+    if v.capacity() == 0 {
+        0
+    } else {
+        ALLOC + v.capacity() * size_of::<T>()
+    }
 }
 
 fn map_bytes(m: &serde_json::Map<String, Value>) -> usize {
-    m.iter().map(|(k, v)| ALLOC + 4 * size_of::<usize>() + k.capacity() + size_of::<Value>() + json_bytes(v)).sum()
+    m.iter()
+        .map(|(k, v)| {
+            ALLOC + 4 * size_of::<usize>() + k.capacity() + size_of::<Value>() + json_bytes(v)
+        })
+        .sum()
 }
 
 /// The heap a JSON value owns.
@@ -339,7 +472,12 @@ mod tests {
         for i in 0..n {
             let id = d.alloc_id();
             let r = shapes::rectangle(kurbo::Rect::new(i as f64, 0.0, i as f64 + 10.0, 10.0));
-            d.insert(Some(layer), usize::MAX, Node::path(id, r, Appearance::default_art())).unwrap();
+            d.insert(
+                Some(layer),
+                usize::MAX,
+                Node::path(id, r, Appearance::default_art()),
+            )
+            .unwrap();
         }
         d
     }
@@ -349,7 +487,11 @@ mod tests {
         let d = doc_with_rects(10);
         let copy = d.clone();
         // Only the document itself and its own lists: no node, no shared resource.
-        assert!(d.retained_bytes(&copy) < 2048, "{}", d.retained_bytes(&copy));
+        assert!(
+            d.retained_bytes(&copy) < 2048,
+            "{}",
+            d.retained_bytes(&copy)
+        );
         assert_eq!(d.retained_bytes(&d), 0);
     }
 
@@ -361,7 +503,12 @@ mod tests {
         let n = 1000;
         let before = doc_with_rects(n);
         let mut after = before.clone();
-        let ids: Vec<_> = after.layers[0].children().unwrap().iter().map(|c| c.id).collect();
+        let ids: Vec<_> = after.layers[0]
+            .children()
+            .unwrap()
+            .iter()
+            .map(|c| c.id)
+            .collect();
         for id in ids {
             let node = after.node_mut(id).unwrap();
             if let NodeKind::Path { path, .. } = &mut node.kind {
@@ -371,22 +518,36 @@ mod tests {
             }
         }
         let per = before.retained_bytes(&after) / n;
-        assert!((400..1200).contains(&per), "{per} bytes per moved rectangle");
+        assert!(
+            (400..1200).contains(&per),
+            "{per} bytes per moved rectangle"
+        );
     }
 
     #[test]
     fn a_grouped_object_is_found_shared() {
         let before = doc_with_rects(100);
         let mut after = before.clone();
-        let ids: Vec<_> = after.layers[0].children().unwrap().iter().map(|c| c.id).collect();
+        let ids: Vec<_> = after.layers[0]
+            .children()
+            .unwrap()
+            .iter()
+            .map(|c| c.id)
+            .collect();
         // Put the rectangles in a group (the same Arcs, elsewhere).
         let gid = after.alloc_id();
         let layer = Arc::make_mut(&mut after.layers[0]);
         let kids = std::mem::take(layer.children_mut().unwrap());
-        layer.children_mut().unwrap().push(Arc::new(Node::group(gid, kids)));
+        layer
+            .children_mut()
+            .unwrap()
+            .push(Arc::new(Node::group(gid, kids)));
         assert_eq!(ids.len(), 100);
         let bytes = before.retained_bytes(&after);
-        assert!(bytes < 8192, "only the old layer and its child list: {bytes}");
+        assert!(
+            bytes < 8192,
+            "only the old layer and its child list: {bytes}"
+        );
     }
 
     /// One walk gives both ways, each what a walk the other way gives; an insertion and a deletion
@@ -399,10 +560,19 @@ mod tests {
         for at in [0, 50, usize::MAX] {
             let id = after.alloc_id();
             let r = shapes::rectangle(kurbo::Rect::new(0.0, 0.0, 10.0, 10.0));
-            after.insert(Some(layer), at, Node::path(id, r, Appearance::default_art())).unwrap();
+            after
+                .insert(
+                    Some(layer),
+                    at,
+                    Node::path(id, r, Appearance::default_art()),
+                )
+                .unwrap();
         }
         let (kept, added) = before.retained_bytes_each(&after);
-        assert_eq!((kept, added), (before.retained_bytes(&after), after.retained_bytes(&before)));
+        assert_eq!(
+            (kept, added),
+            (before.retained_bytes(&after), after.retained_bytes(&before))
+        );
         assert_eq!(after.retained_bytes_each(&before), (added, kept));
         // The old layer and its list are the old version's own; the new one holds three new nodes.
         assert!(kept < 4096, "{kept}");
@@ -415,6 +585,9 @@ mod tests {
         let mut after = before.clone();
         let same = before.retained_bytes(&after);
         after.swatches.push(before.swatches[1].clone());
-        assert!(before.retained_bytes(&after) > same + 1000, "the old swatch list is the old version's own");
+        assert!(
+            before.retained_bytes(&after) > same + 1000,
+            "the old swatch list is the old version's own"
+        );
     }
 }

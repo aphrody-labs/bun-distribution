@@ -4,16 +4,23 @@
 use serde_json::{Value, json};
 use vectorcraft_doc::{NodeKind, PlacementOptions};
 
-use super::tests_links::{BLUE, Folder, RED, bounds, centre_colour, image, near, open, place, png, save, session, write};
+use super::tests_links::{
+    BLUE, Folder, RED, bounds, centre_colour, image, near, open, place, png, save, session, write,
+};
 use super::*;
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
-    s.execute(id, &p).unwrap_or_else(|e| panic!("{id} {p}: {e}"))
+    s.execute(id, &p)
+        .unwrap_or_else(|e| panic!("{id} {p}: {e}"))
 }
 
 /// Place the file at `path` embedded → its id.
 fn place_embedded(s: &mut Session, path: &str) -> NodeId {
-    let r = run(s, "file.place", json!({"path": path, "at": [200, 150], "link": false}));
+    let r = run(
+        s,
+        "file.place",
+        json!({"path": path, "at": [200, 150], "link": false}),
+    );
     NodeId(r["ids"][0].as_u64().unwrap())
 }
 
@@ -21,7 +28,13 @@ fn place_embedded(s: &mut Session, path: &str) -> NodeId {
 /// placing and listing read).
 fn png_header(w: u32, h: u32) -> Vec<u8> {
     let mut out = b"\x89PNG\r\n\x1a\n".to_vec();
-    let ihdr: Vec<u8> = [&b"IHDR"[..], &w.to_be_bytes(), &h.to_be_bytes(), &[1, 0, 0, 0, 0]].concat();
+    let ihdr: Vec<u8> = [
+        &b"IHDR"[..],
+        &w.to_be_bytes(),
+        &h.to_be_bytes(),
+        &[1, 0, 0, 0, 0],
+    ]
+    .concat();
     for chunk in [&ihdr[..], b"IDAT\x78\x9c", b"IEND"] {
         out.extend((chunk.len() as u32 - 4).to_be_bytes());
         out.extend(chunk);
@@ -40,14 +53,47 @@ fn an_image_too_large_to_draw_is_reported() {
     write(&big, &png_header(200_000, 200_000));
     write(&small, &png(40, 20, BLUE));
     let mut s = session();
-    assert_eq!(run(&mut s, "file.place", json!({"path": big, "at": [200, 150], "link": false}))["warnings"], json!([NOTE]));
-    assert_eq!(run(&mut s, "file.place", json!({"path": small, "at": [20, 20], "link": false}))["warnings"], json!([]));
+    assert_eq!(
+        run(
+            &mut s,
+            "file.place",
+            json!({"path": big, "at": [200, 150], "link": false})
+        )["warnings"],
+        json!([NOTE])
+    );
+    assert_eq!(
+        run(
+            &mut s,
+            "file.place",
+            json!({"path": small, "at": [20, 20], "link": false})
+        )["warnings"],
+        json!([])
+    );
     let l = run(&mut s, "links.list", json!({}));
-    let notes: Vec<&Value> = l["links"].as_array().unwrap().iter().map(|r| &r["note"]).collect();
-    assert_eq!(notes, [&Value::Null, &json!(NOTE)], "top first: the small image has nothing to say");
+    let notes: Vec<&Value> = l["links"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| &r["note"])
+        .collect();
+    assert_eq!(
+        notes,
+        [&Value::Null, &json!(NOTE)],
+        "top first: the small image has nothing to say"
+    );
     // Opened as a document: said too. An image that decodes (16,000 px square) has no note.
-    assert_eq!(crate::cmd::fileio::load("wall.png", &png_header(200_000, 200_000)).unwrap().warnings, [NOTE]);
-    assert!(crate::cmd::fileio::load("fine.png", &png_header(16_000, 16_000)).unwrap().warnings.is_empty());
+    assert_eq!(
+        crate::cmd::fileio::load("wall.png", &png_header(200_000, 200_000))
+            .unwrap()
+            .warnings,
+        [NOTE]
+    );
+    assert!(
+        crate::cmd::fileio::load("fine.png", &png_header(16_000, 16_000))
+            .unwrap()
+            .warnings
+            .is_empty()
+    );
 }
 fn close(a: f64, b: f64) -> bool {
     (a - b).abs() < 1e-6
@@ -63,12 +109,22 @@ fn embed_keeps_the_pixels_without_the_file() {
     let id = place(&mut s, &pic);
     let placed = bounds(&s, id);
     run(&mut s, "select.set", json!({"ids": []}));
-    assert!(s.execute("links.embed", &json!({})).is_err(), "nothing selected");
+    assert!(
+        s.execute("links.embed", &json!({})).is_err(),
+        "nothing selected"
+    );
     run(&mut s, "select.set", json!({"ids": [id.0]}));
-    assert_eq!(run(&mut s, "links.embed", json!({})), json!({"embedded": [id.0], "missing": []}));
+    assert_eq!(
+        run(&mut s, "links.embed", json!({})),
+        json!({"embedded": [id.0], "missing": []})
+    );
     let im = image(&s, id);
     assert!(im.link.is_none());
-    assert_eq!(s.doc().unwrap().doc.images[&im.key].bytes.as_slice(), bytes.as_slice(), "the file's own bytes");
+    assert_eq!(
+        s.doc().unwrap().doc.images[&im.key].bytes.as_slice(),
+        bytes.as_slice(),
+        "the file's own bytes"
+    );
     assert_eq!(bounds(&s, id), placed);
     run(&mut s, "edit.undo", json!({}));
     assert!(image(&s, id).link.is_some(), "one undo step");
@@ -95,7 +151,10 @@ fn a_missing_file_showing_its_preview_stays_linked() {
     save(&mut s, &doc_path);
     std::fs::remove_file(&pic).unwrap();
     open(&mut s, &doc_path);
-    assert_eq!(run(&mut s, "links.embed", json!({"ids": [id.0]})), json!({"embedded": [], "missing": [id.0]}));
+    assert_eq!(
+        run(&mut s, "links.embed", json!({"ids": [id.0]})),
+        json!({"embedded": [], "missing": [id.0]})
+    );
     assert!(image(&s, id).link.is_some());
     assert!(s.doc().unwrap().history.undo.is_empty(), "nothing changed");
 }
@@ -112,7 +171,10 @@ fn unembed_writes_the_bytes_and_links_to_them() {
     // No path: the file's bytes come back and nothing changes.
     let r = run(&mut s, "links.unembed", json!({"id": id.0}));
     assert_eq!(r["name"], "photo.png");
-    assert_eq!(vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap(), bytes);
+    assert_eq!(
+        vectorcraft_format::base64_decode(r["dataBase64"].as_str().unwrap()).unwrap(),
+        bytes
+    );
     assert!(image(&s, id).link.is_none());
     // To a path: written there, and the image links to it.
     let out = dir.file("out/photo.png");
@@ -121,10 +183,20 @@ fn unembed_writes_the_bytes_and_links_to_them() {
     assert_eq!(r, json!({"id": id.0, "path": out}));
     assert_eq!(std::fs::read(&out).unwrap(), bytes);
     let link = image(&s, id).link.unwrap();
-    assert_eq!((link.path.as_str(), link.size), (out.as_str(), Some(bytes.len() as u64)));
+    assert_eq!(
+        (link.path.as_str(), link.size),
+        (out.as_str(), Some(bytes.len() as u64))
+    );
     assert_eq!(bounds(&s, id), placed);
-    assert_eq!(run(&mut s, "links.check", json!({}))["links"][0]["status"], "ok");
-    assert!(s.execute("links.unembed", &json!({"id": id.0, "path": out})).is_err(), "linked already");
+    assert_eq!(
+        run(&mut s, "links.check", json!({}))["links"][0]["status"],
+        "ok"
+    );
+    assert!(
+        s.execute("links.unembed", &json!({"id": id.0, "path": out}))
+            .is_err(),
+        "linked already"
+    );
     run(&mut s, "edit.undo", json!({}));
     assert!(image(&s, id).link.is_none(), "one undo step");
     // Another extension converts.
@@ -133,7 +205,14 @@ fn unembed_writes_the_bytes_and_links_to_them() {
     assert_eq!(std::fs::read(&jpg).unwrap()[..2], [0xff, 0xd8]);
     assert!(near(centre_colour(&s.doc().unwrap().doc), RED));
     run(&mut s, "edit.undo", json!({}));
-    assert!(s.execute("links.unembed", &json!({"id": id.0, "path": dir.file("photo.psd")})).is_err(), "not a format it writes");
+    assert!(
+        s.execute(
+            "links.unembed",
+            &json!({"id": id.0, "path": dir.file("photo.psd")})
+        )
+        .is_err(),
+        "not a format it writes"
+    );
 }
 
 #[test]
@@ -143,13 +222,23 @@ fn go_to_selects_the_image() {
     write(&pic, &png(600, 300, RED));
     let mut s = session();
     let id = place(&mut s, &pic);
-    run(&mut s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10}));
+    run(
+        &mut s,
+        "shape.rectangle",
+        json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+    );
     assert_ne!(s.doc().unwrap().selection.objects, vec![id]);
     let r = run(&mut s, "links.goTo", json!({"id": id.0}));
-    assert_eq!(r, json!({"id": id.0, "bounds": [-100.0, 0.0, 500.0, 300.0]}));
+    assert_eq!(
+        r,
+        json!({"id": id.0, "bounds": [-100.0, 0.0, 500.0, 300.0]})
+    );
     assert_eq!(s.doc().unwrap().selection.objects, vec![id]);
     let rect = s.doc().unwrap().doc.layers[0].children().unwrap()[1].id;
-    assert!(s.execute("links.goTo", &json!({"id": rect.0})).is_err(), "not an image");
+    assert!(
+        s.execute("links.goTo", &json!({"id": rect.0})).is_err(),
+        "not an image"
+    );
 }
 
 #[test]
@@ -165,21 +254,55 @@ fn the_list_shows_each_image_with_its_status() {
     let rows = l["links"].as_array().unwrap();
     assert_eq!(rows.len(), 2);
     // Top first.
-    assert_eq!((rows[0]["id"].as_u64(), rows[0]["status"].as_str(), rows[0]["name"].as_str()), (Some(embedded.0), Some("embedded"), Some("b.png")));
     assert_eq!(
-        (rows[1]["id"].as_u64(), rows[1]["status"].as_str(), rows[1]["path"].as_str(), rows[1]["format"].as_str()),
+        (
+            rows[0]["id"].as_u64(),
+            rows[0]["status"].as_str(),
+            rows[0]["name"].as_str()
+        ),
+        (Some(embedded.0), Some("embedded"), Some("b.png"))
+    );
+    assert_eq!(
+        (
+            rows[1]["id"].as_u64(),
+            rows[1]["status"].as_str(),
+            rows[1]["path"].as_str(),
+            rows[1]["format"].as_str()
+        ),
         (Some(linked.0), Some("ok"), Some(a.as_str()), Some("PNG"))
     );
-    assert_eq!((rows[1]["pixelWidth"].as_u64(), rows[1]["pixelHeight"].as_u64()), (Some(600), Some(300)));
+    assert_eq!(
+        (
+            rows[1]["pixelWidth"].as_u64(),
+            rows[1]["pixelHeight"].as_u64()
+        ),
+        (Some(600), Some(300))
+    );
     write(&a, &png(300, 300, BLUE));
     let l = run(&mut s, "links.list", json!({"sort": "status"}));
-    assert_eq!((l["modified"].as_u64(), l["embedded"].as_u64(), l["missing"].as_u64()), (Some(1), Some(1), Some(0)));
-    assert_eq!(l["links"][0]["status"], "modified", "modified before embedded");
+    assert_eq!(
+        (
+            l["modified"].as_u64(),
+            l["embedded"].as_u64(),
+            l["missing"].as_u64()
+        ),
+        (Some(1), Some(1), Some(0))
+    );
+    assert_eq!(
+        l["links"][0]["status"], "modified",
+        "modified before embedded"
+    );
     let l = run(&mut s, "links.list", json!({"show": "embedded"}));
     assert_eq!(l["links"].as_array().unwrap().len(), 1);
     std::fs::remove_file(&a).unwrap();
-    assert_eq!(run(&mut s, "links.list", json!({"show": "missing"}))["links"][0]["id"], linked.0);
-    assert_eq!(run(&mut s, "links.list", json!({"sort": "name"}))["links"][0]["name"], "a.png");
+    assert_eq!(
+        run(&mut s, "links.list", json!({"show": "missing"}))["links"][0]["id"],
+        linked.0
+    );
+    assert_eq!(
+        run(&mut s, "links.list", json!({"sort": "name"}))["links"][0]["name"],
+        "a.png"
+    );
     assert!(s.execute("links.list", &json!({"show": "broken"})).is_err());
     assert!(s.execute("links.list", &json!({"sort": "size"})).is_err());
 }
@@ -193,22 +316,66 @@ fn link_info_has_the_file_and_placement_details() {
     let mut s = session();
     let id = place(&mut s, &pic);
     let i = run(&mut s, "links.info", json!({"id": id.0}));
-    assert_eq!((i["status"].as_str(), i["fileName"].as_str(), i["format"].as_str()), (Some("ok"), Some("photo.png"), Some("PNG")));
-    assert_eq!(std::path::Path::new(i["location"].as_str().unwrap()), dir.0.as_path());
-    assert_eq!((i["fileSize"].as_u64(), i["pixelWidth"].as_u64(), i["colorMode"].as_str()), (Some(bytes.len() as u64), Some(600), Some("RGB")));
-    assert_eq!((i["ppi"].clone(), i["effectivePpi"].clone(), i["scale"].clone()), (json!([72.0, 72.0]), json!([72.0, 72.0]), json!([100.0, 100.0])));
+    assert_eq!(
+        (
+            i["status"].as_str(),
+            i["fileName"].as_str(),
+            i["format"].as_str()
+        ),
+        (Some("ok"), Some("photo.png"), Some("PNG"))
+    );
+    assert_eq!(
+        std::path::Path::new(i["location"].as_str().unwrap()),
+        dir.0.as_path()
+    );
+    assert_eq!(
+        (
+            i["fileSize"].as_u64(),
+            i["pixelWidth"].as_u64(),
+            i["colorMode"].as_str()
+        ),
+        (Some(bytes.len() as u64), Some(600), Some("RGB"))
+    );
+    assert_eq!(
+        (
+            i["ppi"].clone(),
+            i["effectivePpi"].clone(),
+            i["scale"].clone()
+        ),
+        (
+            json!([72.0, 72.0]),
+            json!([72.0, 72.0]),
+            json!([100.0, 100.0])
+        )
+    );
     assert!(i["modified"].as_u64().is_some());
-    assert_eq!(i["placement"], json!({"preserve": "bounds", "align": "center", "clip": false}));
+    assert_eq!(
+        i["placement"],
+        json!({"preserve": "bounds", "align": "center", "clip": false})
+    );
     run(&mut s, "select.set", json!({"ids": [id.0]}));
     run(&mut s, "object.scale", json!({"sx": 50}));
     run(&mut s, "object.rotate", json!({"angle": 30}));
     let i = run(&mut s, "links.info", json!({}));
     let num = |v: &Value, k: usize| v.get(k).and_then(Value::as_f64).unwrap();
-    assert!(close(num(&i["scale"], 0), 50.0) && close(num(&i["effectivePpi"], 0), 144.0), "{i}");
-    assert!(close(i["rotation"].as_f64().unwrap(), 30.0), "counter-clockwise: {i}");
+    assert!(
+        close(num(&i["scale"], 0), 50.0) && close(num(&i["effectivePpi"], 0), 144.0),
+        "{i}"
+    );
+    assert!(
+        close(i["rotation"].as_f64().unwrap(), 30.0),
+        "counter-clockwise: {i}"
+    );
     let embedded = place_embedded(&mut s, &pic);
     let i = run(&mut s, "links.info", json!({"id": embedded.0}));
-    assert_eq!((i["status"].as_str(), i["linked"].as_bool(), i["fileName"].as_str()), (Some("embedded"), Some(false), None));
+    assert_eq!(
+        (
+            i["status"].as_str(),
+            i["linked"].as_bool(),
+            i["fileName"].as_str()
+        ),
+        (Some("embedded"), Some(false), None)
+    );
 }
 
 /// A 600×300 pt image at the centre of the artboard, its placement options set to `options`,
@@ -223,7 +390,11 @@ fn relinked(name: &str, options: Value) -> (Session, NodeId, Folder) {
     let mut p = options;
     p["ids"] = json!([id.0]);
     run(&mut s, "links.placementOptions", p);
-    run(&mut s, "links.relink", json!({"ids": [id.0], "path": other}));
+    run(
+        &mut s,
+        "links.relink",
+        json!({"ids": [id.0], "path": other}),
+    );
     (s, id, dir)
 }
 
@@ -235,30 +406,66 @@ fn a_relinked_file_follows_the_placement_options() {
     };
     // The old bounds: -100, 0, 500, 300.
     let (s, id, _d) = relinked("pl-bounds", json!({"preserve": "bounds"}));
-    assert_eq!(b(&s, id), [-100.0, 0.0, 500.0, 300.0], "stretched into the bounds");
+    assert_eq!(
+        b(&s, id),
+        [-100.0, 0.0, 500.0, 300.0],
+        "stretched into the bounds"
+    );
     let (s, id, _d) = relinked("pl-fit", json!({"preserve": "fit"}));
-    assert_eq!(b(&s, id), [-100.0, 50.0, 500.0, 250.0], "proportional, centred");
+    assert_eq!(
+        b(&s, id),
+        [-100.0, 50.0, 500.0, 250.0],
+        "proportional, centred"
+    );
     let (s, id, _d) = relinked("pl-transforms", json!({"preserve": "transforms"}));
     assert_eq!(b(&s, id), [50.0, 100.0, 350.0, 200.0], "at the same 100%");
-    let (s, id, _d) = relinked("pl-file", json!({"preserve": "fileDimensions", "align": "topLeft"}));
+    let (s, id, _d) = relinked(
+        "pl-file",
+        json!({"preserve": "fileDimensions", "align": "topLeft"}),
+    );
     assert_eq!(b(&s, id), [-100.0, 0.0, 200.0, 100.0]);
-    let (mut s, id, d) = relinked("pl-fill", json!({"preserve": "fill", "align": "left", "clip": true}));
+    let (mut s, id, d) = relinked(
+        "pl-fill",
+        json!({"preserve": "fill", "align": "left", "clip": true}),
+    );
     assert_eq!(b(&s, id), [-100.0, 0.0, 800.0, 300.0], "covers the bounds");
     let clip_group = |s: &Session| {
         let doc = &s.doc().unwrap().doc;
         let g = doc.node(doc.parent_of(id).unwrap()).unwrap();
-        let NodeKind::Group { children, clip: true } = &g.kind else { panic!("not clipped: {g:?}") };
+        let NodeKind::Group {
+            children,
+            clip: true,
+        } = &g.kind
+        else {
+            panic!("not clipped: {g:?}")
+        };
         (g.id, children[0].geometric_bounds().unwrap())
     };
     let (group, clip) = clip_group(&s);
-    assert_eq!(clip, vectorcraft_geom::Rect::new(-100.0, 0.0, 500.0, 300.0), "clipped to the old bounds");
+    assert_eq!(
+        clip,
+        vectorcraft_geom::Rect::new(-100.0, 0.0, 500.0, 300.0),
+        "clipped to the old bounds"
+    );
     // Relinked again: the same clip group, its path following.
-    run(&mut s, "links.relink", json!({"ids": [id.0], "path": d.file("photo.png")}));
+    run(
+        &mut s,
+        "links.relink",
+        json!({"ids": [id.0], "path": d.file("photo.png")}),
+    );
     assert_eq!(clip_group(&s).0, group);
     run(&mut s, "edit.undo", json!({}));
     run(&mut s, "edit.undo", json!({}));
     assert!(
-        matches!(s.doc().unwrap().doc.node(s.doc().unwrap().doc.parent_of(id).unwrap()).unwrap().kind, NodeKind::Layer { .. }),
+        matches!(
+            s.doc()
+                .unwrap()
+                .doc
+                .node(s.doc().unwrap().doc.parent_of(id).unwrap())
+                .unwrap()
+                .kind,
+            NodeKind::Layer { .. }
+        ),
         "one undo step each"
     );
 }
@@ -271,11 +478,27 @@ fn placement_options_read_set_and_round_trip() {
     let mut s = session();
     let id = place(&mut s, &pic);
     run(&mut s, "select.set", json!({"ids": [id.0]}));
-    assert_eq!(run(&mut s, "links.placementOptions", json!({})), json!({"placement": {"preserve": "bounds", "align": "center", "clip": false}}));
-    let r = run(&mut s, "links.placementOptions", json!({"preserve": "fill", "align": "topRight", "clip": true}));
-    assert_eq!(r, json!({"ids": [id.0], "placement": {"preserve": "fill", "align": "topRight", "clip": true}}));
-    assert!(s.execute("links.placementOptions", &json!({"preserve": "stretch"})).is_err());
-    assert!(s.execute("links.placementOptions", &json!({"align": "middle"})).is_err());
+    assert_eq!(
+        run(&mut s, "links.placementOptions", json!({})),
+        json!({"placement": {"preserve": "bounds", "align": "center", "clip": false}})
+    );
+    let r = run(
+        &mut s,
+        "links.placementOptions",
+        json!({"preserve": "fill", "align": "topRight", "clip": true}),
+    );
+    assert_eq!(
+        r,
+        json!({"ids": [id.0], "placement": {"preserve": "fill", "align": "topRight", "clip": true}})
+    );
+    assert!(
+        s.execute("links.placementOptions", &json!({"preserve": "stretch"}))
+            .is_err()
+    );
+    assert!(
+        s.execute("links.placementOptions", &json!({"align": "middle"}))
+            .is_err()
+    );
     // Saved and opened again.
     let doc_path = dir.file("poster.vectorcraft");
     save(&mut s, &doc_path);
@@ -285,13 +508,25 @@ fn placement_options_read_set_and_round_trip() {
         json!({"preserve": "fill", "align": "topRight", "clip": true})
     );
     open(&mut s, &doc_path);
-    let want = PlacementOptions { preserve: vectorcraft_doc::links::Preserve::Fill, align: vectorcraft_doc::links::Align::TopRight, clip: true };
+    let want = PlacementOptions {
+        preserve: vectorcraft_doc::links::Preserve::Fill,
+        align: vectorcraft_doc::links::Align::TopRight,
+        clip: true,
+    };
     assert_eq!(image(&s, id).placement, want);
     run(&mut s, "select.all", json!({}));
-    run(&mut s, "links.placementOptions", json!({"preserve": "bounds", "align": "center", "clip": false}));
+    run(
+        &mut s,
+        "links.placementOptions",
+        json!({"preserve": "bounds", "align": "center", "clip": false}),
+    );
     save(&mut s, &doc_path);
     let saved: Value = serde_json::from_slice(&std::fs::read(&doc_path).unwrap()).unwrap();
-    assert_eq!(saved["document"]["layers"][0]["kind"]["children"][0]["kind"]["placement"], Value::Null, "the default isn't written");
+    assert_eq!(
+        saved["document"]["layers"][0]["kind"]["children"][0]["kind"]["placement"],
+        Value::Null,
+        "the default isn't written"
+    );
 }
 
 #[test]

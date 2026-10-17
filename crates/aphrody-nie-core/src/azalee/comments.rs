@@ -118,7 +118,10 @@ pub fn normalize_comment_content(value: &str) -> Result<String, CommentError> {
 
 /// Builds the article key used by comment reactions.
 pub fn comment_reaction_article_id(comment_id: &str) -> Result<String, CommentError> {
-    Ok(format!("comment:{}", normalize_comment_identifier(comment_id, "comment")?))
+    Ok(format!(
+        "comment:{}",
+        normalize_comment_identifier(comment_id, "comment")?
+    ))
 }
 
 /// Counts direct replies for each known parent.
@@ -141,11 +144,14 @@ pub fn sort_comments(
 ) -> Vec<CommentRecord> {
     let mut sorted = comments.to_vec();
     sorted.sort_by(|left, right| {
-        right.is_pinned.cmp(&left.is_pinned).then_with(|| match sort_order {
-            CommentSortOrder::Popular => right.likes.cmp(&left.likes),
-            CommentSortOrder::Oldest => left.created_at.cmp(&right.created_at),
-            CommentSortOrder::Newest => right.created_at.cmp(&left.created_at),
-        })
+        right
+            .is_pinned
+            .cmp(&left.is_pinned)
+            .then_with(|| match sort_order {
+                CommentSortOrder::Popular => right.likes.cmp(&left.likes),
+                CommentSortOrder::Oldest => left.created_at.cmp(&right.created_at),
+                CommentSortOrder::Newest => right.created_at.cmp(&left.created_at),
+            })
     });
     sorted
 }
@@ -157,7 +163,10 @@ pub fn build_comment_tree(comments: &[CommentRecord]) -> Vec<CommentTreeNode> {
     let mut nodes = Vec::with_capacity(comments.len());
     let mut indices = HashMap::with_capacity(comments.len());
     for comment in comments {
-        let node = CommentTreeNode { comment: comment.clone(), replies: Vec::new() };
+        let node = CommentTreeNode {
+            comment: comment.clone(),
+            replies: Vec::new(),
+        };
         if let Some(index) = indices.get(&comment.id).copied() {
             nodes[index] = node;
         } else {
@@ -184,7 +193,10 @@ pub fn build_comment_tree(comments: &[CommentRecord]) -> Vec<CommentTreeNode> {
         }
     }
 
-    roots.into_iter().map(|index| materialize(index, &nodes, &children)).collect()
+    roots
+        .into_iter()
+        .map(|index| materialize(index, &nodes, &children))
+        .collect()
 }
 
 fn creates_cycle(
@@ -216,7 +228,10 @@ fn materialize(
 ) -> CommentTreeNode {
     CommentTreeNode {
         comment: nodes[index].comment.clone(),
-        replies: children[index].iter().map(|child| materialize(*child, nodes, children)).collect(),
+        replies: children[index]
+            .iter()
+            .map(|child| materialize(*child, nodes, children))
+            .collect(),
     }
 }
 
@@ -249,7 +264,10 @@ mod tests {
     fn validates_content_and_reaction_identity() {
         assert_eq!(normalize_comment_content(" hello ").unwrap(), "hello");
         assert_eq!(comment_reaction_article_id(" c1 ").unwrap(), "comment:c1");
-        assert_eq!(normalize_comment_content(" \0 "), Err(CommentError::InvalidContent));
+        assert_eq!(
+            normalize_comment_content(" \0 "),
+            Err(CommentError::InvalidContent)
+        );
         assert!(matches!(
             normalize_comment_identifier("", "comment"),
             Err(CommentError::InvalidIdentifier { kind: "comment" })
@@ -267,8 +285,14 @@ mod tests {
         let reply = comment("reply", Some("old"), "2026-01-04");
         let comments = vec![old.clone(), pinned, popular, reply];
 
-        assert_eq!(sort_comments(&comments, CommentSortOrder::Popular)[0].id, "pinned");
-        assert_eq!(sort_comments(&comments, CommentSortOrder::Popular)[1].id, "popular");
+        assert_eq!(
+            sort_comments(&comments, CommentSortOrder::Popular)[0].id,
+            "pinned"
+        );
+        assert_eq!(
+            sort_comments(&comments, CommentSortOrder::Popular)[1].id,
+            "popular"
+        );
         assert_eq!(count_replies_by_parent_id(&comments)["old"], 1);
     }
 

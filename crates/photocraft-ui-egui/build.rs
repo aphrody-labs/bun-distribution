@@ -18,12 +18,22 @@ use std::fmt::Write as _;
 use serde_json::Value;
 
 fn main() {
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/libraries/photocraft/contributors");
-    let json = read(&dir.join("contributors.json"), "the About window shows no contributors", |t| serde_json::from_str::<Value>(t).map_err(|e| e.to_string()))
-        .unwrap_or(Value::Null);
-    let people =
-        read(&dir.join("people.toml"), "contributors are shown by username only", |t| t.parse::<toml::Table>().map_err(|e| e.to_string())).unwrap_or_default();
-    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("credits.rs");
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/libraries/photocraft/contributors");
+    let json = read(
+        &dir.join("contributors.json"),
+        "the About window shows no contributors",
+        |t| serde_json::from_str::<Value>(t).map_err(|e| e.to_string()),
+    )
+    .unwrap_or(Value::Null);
+    let people = read(
+        &dir.join("people.toml"),
+        "contributors are shown by username only",
+        |t| t.parse::<toml::Table>().map_err(|e| e.to_string()),
+    )
+    .unwrap_or_default();
+    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default())
+        .join("credits.rs");
     if let Err(e) = std::fs::write(&out, generate(&json, &people)) {
         println!("cargo::warning=writing {}: {e}", out.display());
     }
@@ -36,10 +46,14 @@ fn main() {
 /// uncompressed; deflated they take 0.78 MB (the web build's 24 MiB size gate).
 fn deflate_egui_fonts() {
     use std::io::Write as _;
-    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("egui_fonts");
+    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default())
+        .join("egui_fonts");
     let fonts = [
         ("Hack-Regular", epaint_default_fonts::HACK_REGULAR),
-        ("NotoEmoji-Regular", epaint_default_fonts::NOTO_EMOJI_REGULAR),
+        (
+            "NotoEmoji-Regular",
+            epaint_default_fonts::NOTO_EMOJI_REGULAR,
+        ),
         ("Ubuntu-Light", epaint_default_fonts::UBUNTU_LIGHT),
         ("emoji-icon-font", epaint_default_fonts::EMOJI_ICON),
     ];
@@ -53,7 +67,10 @@ fn deflate_egui_fonts() {
         Ok(())
     })();
     if let Err(e) = result {
-        println!("cargo::error=deflating egui's default fonts into {}: {e}", out.display());
+        println!(
+            "cargo::error=deflating egui's default fonts into {}: {e}",
+            out.display()
+        );
     }
 }
 
@@ -83,7 +100,8 @@ fn catalog_entry(line: &str) -> Option<(&str, &str)> {
 fn pack_catalogs() {
     use std::io::Write as _;
     let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/i18n");
-    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("i18n");
+    let out =
+        std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("i18n");
     println!("cargo::rerun-if-changed={}", src.display());
     let deflate = |bytes: &[u8]| -> std::io::Result<Vec<u8>> {
         let mut z = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
@@ -95,7 +113,13 @@ fn pack_catalogs() {
         let mut catalogs = Vec::new();
         for entry in std::fs::read_dir(&src)? {
             let path = entry?.path();
-            let Some(name) = path.file_name().and_then(|n| n.to_str()).filter(|n| n.ends_with(".tsv")) else { continue };
+            let Some(name) = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .filter(|n| n.ends_with(".tsv"))
+            else {
+                continue;
+            };
             println!("cargo::rerun-if-changed={}", path.display());
             catalogs.push((name.to_owned(), std::fs::read_to_string(&path)?));
         }
@@ -111,7 +135,10 @@ fn pack_catalogs() {
                 });
             }
         }
-        std::fs::write(out.join("keys.deflate"), deflate(keys.join("\n").as_bytes())?)?;
+        std::fs::write(
+            out.join("keys.deflate"),
+            deflate(keys.join("\n").as_bytes())?,
+        )?;
         for (name, text) in &catalogs {
             let mut packed = String::with_capacity(text.len());
             let mut next = 0usize;
@@ -138,18 +165,30 @@ fn pack_catalogs() {
                     }
                 }
             }
-            std::fs::write(out.join(format!("{name}.deflate")), deflate(packed.as_bytes())?)?;
+            std::fs::write(
+                out.join(format!("{name}.deflate")),
+                deflate(packed.as_bytes())?,
+            )?;
         }
         Ok(())
     })();
     if let Err(e) = result {
-        println!("cargo::error=packing the translation catalogs in {}: {e}", src.display());
+        println!(
+            "cargo::error=packing the translation catalogs in {}: {e}",
+            src.display()
+        );
     }
 }
 
-fn read<T>(path: &std::path::Path, fallback: &str, parse: impl Fn(&str) -> Result<T, String>) -> Option<T> {
+fn read<T>(
+    path: &std::path::Path,
+    fallback: &str,
+    parse: impl Fn(&str) -> Result<T, String>,
+) -> Option<T> {
     println!("cargo::rerun-if-changed={}", path.display());
-    let r = std::fs::read_to_string(path).map_err(|e| e.to_string()).and_then(|t| parse(&t));
+    let r = std::fs::read_to_string(path)
+        .map_err(|e| e.to_string())
+        .and_then(|t| parse(&t));
     if let Err(e) = &r {
         println!("cargo::warning={}: {e}; {fallback}", path.display());
     }
@@ -173,7 +212,10 @@ fn n(v: &Value, k: &str) -> u64 {
 }
 
 fn rows(json: &Value, k: &str) -> Vec<Value> {
-    json.get(k).and_then(Value::as_array).cloned().unwrap_or_default()
+    json.get(k)
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn generate(json: &Value, people: &toml::Table) -> String {
@@ -186,11 +228,24 @@ fn generate(json: &Value, people: &toml::Table) -> String {
             continue;
         }
         // Names only from a verified, self-chosen people.toml entry.
-        let entry = people.get("people").and_then(|p| p.get(login)).filter(|_| c.get("people_entry").and_then(Value::as_bool) == Some(true));
+        let entry = people
+            .get("people")
+            .and_then(|p| p.get(login))
+            .filter(|_| c.get("people_entry").and_then(Value::as_bool) == Some(true));
         let field = |k: &str| entry.and_then(|e| e.get(k)).and_then(toml::Value::as_str);
-        let synced = entry.and_then(|e| e.get("sync_github_name")).and_then(toml::Value::as_bool) == Some(true);
-        let display =
-            field("display_name").filter(|s| !s.trim().is_empty()).or_else(|| if synced { c.get("github_name").and_then(Value::as_str) } else { None });
+        let synced = entry
+            .and_then(|e| e.get("sync_github_name"))
+            .and_then(toml::Value::as_bool)
+            == Some(true);
+        let display = field("display_name")
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| {
+                if synced {
+                    c.get("github_name").and_then(Value::as_str)
+                } else {
+                    None
+                }
+            });
         let _ = writeln!(
             o,
             "    Contributor {{ login: {login:?}, display_name: {}, real_name: {}, prs: {}, commits: {}, lines_added: {}, lines_deleted: {}, binary_added: {}, binary_deleted: {}, first_commit: {}, last_commit: {} }},",

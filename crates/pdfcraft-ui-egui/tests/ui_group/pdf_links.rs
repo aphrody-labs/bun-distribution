@@ -8,13 +8,21 @@ use pdfcraft_ui_egui::{Dialog, PdfCraftApp};
 
 fn harness() -> Harness<'static, PdfCraftApp> {
     // 60 fps steps, so two clicks fall inside egui's double-click window.
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_step_dt(1.0 / 60.0).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, include_bytes!("../data/form.pdf").to_vec()).unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes(
+                "form.pdf",
+                None,
+                include_bytes!("../data/form.pdf").to_vec(),
+            )
+            .unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     h.run_steps(6);
     h
 }
@@ -109,8 +117,18 @@ fn removing_all_links_and_undo() {
 fn right_click(h: &mut Harness<'static, PdfCraftApp>, p: Pos2) {
     h.hover_at(p);
     h.run_steps(1);
-    h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Secondary, pressed: true, modifiers: Default::default() });
-    h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Secondary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Secondary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Secondary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
 }
 
@@ -128,12 +146,25 @@ fn the_link_context_menu_shows_only_for_a_right_click_on_a_link() {
     // not the link's.
     h.hover_at(on_link);
     h.run_steps(1);
-    h.event(egui::Event::PointerButton { pos: on_link, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
-    h.event(egui::Event::PointerButton { pos: on_link, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: on_link,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
+    h.event(egui::Event::PointerButton {
+        pos: on_link,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
     assert!(h.state().views[0].links.selected.is_some());
     right_click(&mut h, away);
-    assert!(h.query_by_label("Remove all links").is_none(), "a right-click away from the link got the link menu");
+    assert!(
+        h.query_by_label("Remove all links").is_none(),
+        "a right-click away from the link got the link menu"
+    );
     h.key_press(egui::Key::Escape);
     h.run_steps(3);
     // A right-click on the link gets it, with the Select tool too.
@@ -143,5 +174,12 @@ fn the_link_context_menu_shows_only_for_a_right_click_on_a_link() {
     h.get_by_label("Remove all links").click();
     h.run_steps(3);
     assert!(links(&h).is_empty());
-    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().can_undo(), Some("Remove all links"));
+    assert_eq!(
+        h.state()
+            .session
+            .get(h.state().views[0].id)
+            .unwrap()
+            .can_undo(),
+        Some("Remove all links")
+    );
 }

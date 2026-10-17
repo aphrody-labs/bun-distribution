@@ -185,7 +185,10 @@ fn sw_fixture_compte() {
 fn sw_fixture_entry_0_search_word_id() {
     let words = parse_search_word_config(&fixture_search_word());
     // SEARCH_WORD_INFO_0.var[0] = 65287569 → 0x03E43591
-    assert_eq!(words[0].search_word_id, SW_ID_0, "search_word_id[0] = 0x03E43591");
+    assert_eq!(
+        words[0].search_word_id, SW_ID_0,
+        "search_word_id[0] = 0x03E43591"
+    );
 }
 
 #[test]
@@ -210,7 +213,10 @@ fn sw_fixture_entry_0_secondary_hash() {
 fn sw_fixture_entry_1_search_word_id() {
     let words = parse_search_word_config(&fixture_search_word());
     // SEARCH_WORD_INFO_1.var[0] = -1695718357 → 0x9AED642B
-    assert_eq!(words[1].search_word_id, SW_ID_1, "search_word_id[1] = 0x9AED642B");
+    assert_eq!(
+        words[1].search_word_id, SW_ID_1,
+        "search_word_id[1] = 0x9AED642B"
+    );
 }
 
 #[test]
@@ -244,11 +250,26 @@ fn bmc_fixture_folder_item_0_champs() {
     let cfg = parse_info_bookmark_config(&fixture_info_bookmark());
     let item = &cfg.folder_items[0];
     // m_BookmarkFolderItemList[0] — JSON réel lignes 17-26
-    assert_eq!(item.search_word_id, BFI_SEARCH_WORD_ID_0, "searchWordId[0] = 0x03E43591");
-    assert_eq!(item.word_text_id, BFI_WORD_TEXT_ID_0, "wordTextId[0] = 0xD21CE615");
-    assert_eq!(item.desc_text_id, BFI_DESC_TEXT_ID_0, "descTextId[0] = 0x917DEE71");
-    assert_eq!(item.thumbnail_tex_name, BFI_THUMB_NAME_0, "thumbnailTexName[0] = 0x269EB7CF");
-    assert_eq!(item.thumbnail_tex_file_name, "bookmark_img01_s01.g4tx", "thumbnailTexFileName[0]");
+    assert_eq!(
+        item.search_word_id, BFI_SEARCH_WORD_ID_0,
+        "searchWordId[0] = 0x03E43591"
+    );
+    assert_eq!(
+        item.word_text_id, BFI_WORD_TEXT_ID_0,
+        "wordTextId[0] = 0xD21CE615"
+    );
+    assert_eq!(
+        item.desc_text_id, BFI_DESC_TEXT_ID_0,
+        "descTextId[0] = 0x917DEE71"
+    );
+    assert_eq!(
+        item.thumbnail_tex_name, BFI_THUMB_NAME_0,
+        "thumbnailTexName[0] = 0x269EB7CF"
+    );
+    assert_eq!(
+        item.thumbnail_tex_file_name, "bookmark_img01_s01.g4tx",
+        "thumbnailTexFileName[0]"
+    );
     assert!(item.is_necessary_story, "isNecessaryStory[0] = true");
     assert_eq!(item.enable_cond, "", "enableCond[0] = ''");
 }
@@ -260,8 +281,14 @@ fn bmc_fixture_bookmark_data_0_champs() {
     // m_InfoBookmarkDataList[0] — JSON réel lignes 518-529
     assert_eq!(bk.bookmark_id, BMK_ID_0, "bookmarkId[0] = 0x2E2C6020");
     assert_eq!(bk.base_no, 0, "baseNo[0] = 0");
-    assert_eq!(bk.folder_name_id, BMK_FOLDER_NAME_ID_0, "folderNameId[0] = 0x01812C2A");
-    assert_eq!(bk.thumbnail_tex_name, BMK_THUMB_NAME_0, "thumbnailTexName = 0x31E45382");
+    assert_eq!(
+        bk.folder_name_id, BMK_FOLDER_NAME_ID_0,
+        "folderNameId[0] = 0x01812C2A"
+    );
+    assert_eq!(
+        bk.thumbnail_tex_name, BMK_THUMB_NAME_0,
+        "thumbnailTexName = 0x31E45382"
+    );
     assert_eq!(
         bk.thumbnail_tex_file_name, "bookmark_img01_l01.g4tx",
         "thumbnailTexFileName = 'bookmark_img01_l01.g4tx'"
@@ -332,7 +359,10 @@ fn real_file_sw_entry_0() {
     let words = parse_search_word_config(&root);
 
     // SEARCH_WORD_INFO_0.var[0] = 65287569 → 0x03E43591
-    assert_eq!(words[0].search_word_id, SW_ID_0, "search_word_id[0] = 0x03E43591");
+    assert_eq!(
+        words[0].search_word_id, SW_ID_0,
+        "search_word_id[0] = 0x03E43591"
+    );
     // SEARCH_WORD_INFO_0.var[1] = 1
     assert_eq!(words[0].sort_order, 1, "sort_order[0] = 1");
     // SEARCH_WORD_INFO_0.var[2] = 193949743
@@ -351,7 +381,10 @@ fn real_file_sw_entry_1() {
     let words = parse_search_word_config(&root);
 
     // SEARCH_WORD_INFO_1.var[0] = -1695718357 → 0x9AED642B
-    assert_eq!(words[1].search_word_id, SW_ID_1, "search_word_id[1] = 0x9AED642B");
+    assert_eq!(
+        words[1].search_word_id, SW_ID_1,
+        "search_word_id[1] = 0x9AED642B"
+    );
     // SEARCH_WORD_INFO_1.var[1] = 2
     assert_eq!(words[1].sort_order, 2, "sort_order[1] = 2");
 }
@@ -370,7 +403,10 @@ fn real_file_sw_entry_51_sort_order_saute_52() {
         "search_word_id[51] = from_i64(-1868717832)"
     );
     // SEARCH_WORD_INFO_51.var[1] = 53 (saute la valeur 52)
-    assert_eq!(words[51].sort_order, 53, "sort_order[51] = 53 (pas de 52 dans le fichier réel)");
+    assert_eq!(
+        words[51].sort_order, 53,
+        "sort_order[51] = 53 (pas de 52 dans le fichier réel)"
+    );
 }
 
 #[test]
@@ -381,7 +417,10 @@ fn real_file_sw_last_entry() {
     let words = parse_search_word_config(&root);
 
     // SEARCH_WORD_INFO_54.var[1] = 56 (dernier sort_order)
-    assert_eq!(words[54].sort_order, 56, "sort_order[54] = 56 (dernière entrée)");
+    assert_eq!(
+        words[54].sort_order, 56,
+        "sort_order[54] = 56 (dernière entrée)"
+    );
     // SEARCH_WORD_INFO_54.var[0] = -520661897
     assert_eq!(
         words[54].search_word_id,
@@ -413,7 +452,11 @@ fn real_file_bmc_folder_items_compte() {
     };
     let cfg = parse_info_bookmark_config(&root);
     // m_BookmarkFolderItemList : 55 entrées
-    assert_eq!(cfg.folder_items.len(), 55, "m_BookmarkFolderItemList : 55 entrées");
+    assert_eq!(
+        cfg.folder_items.len(),
+        55,
+        "m_BookmarkFolderItemList : 55 entrées"
+    );
 }
 
 #[test]
@@ -425,11 +468,26 @@ fn real_file_bmc_folder_item_0() {
     let item = &cfg.folder_items[0];
 
     // m_BookmarkFolderItemList[0] — JSON réel lignes 17-26
-    assert_eq!(item.search_word_id, BFI_SEARCH_WORD_ID_0, "searchWordId[0] = 0x03E43591");
-    assert_eq!(item.word_text_id, BFI_WORD_TEXT_ID_0, "wordTextId[0] = 0xD21CE615");
-    assert_eq!(item.desc_text_id, BFI_DESC_TEXT_ID_0, "descTextId[0] = 0x917DEE71");
-    assert_eq!(item.thumbnail_tex_name, BFI_THUMB_NAME_0, "thumbnailTexName[0] = 0x269EB7CF");
-    assert_eq!(item.thumbnail_tex_file_name, "bookmark_img01_s01.g4tx", "thumbnailTexFileName[0]");
+    assert_eq!(
+        item.search_word_id, BFI_SEARCH_WORD_ID_0,
+        "searchWordId[0] = 0x03E43591"
+    );
+    assert_eq!(
+        item.word_text_id, BFI_WORD_TEXT_ID_0,
+        "wordTextId[0] = 0xD21CE615"
+    );
+    assert_eq!(
+        item.desc_text_id, BFI_DESC_TEXT_ID_0,
+        "descTextId[0] = 0x917DEE71"
+    );
+    assert_eq!(
+        item.thumbnail_tex_name, BFI_THUMB_NAME_0,
+        "thumbnailTexName[0] = 0x269EB7CF"
+    );
+    assert_eq!(
+        item.thumbnail_tex_file_name, "bookmark_img01_s01.g4tx",
+        "thumbnailTexFileName[0]"
+    );
     assert!(item.is_necessary_story, "isNecessaryStory[0] = true");
     assert_eq!(item.enable_cond, "", "enableCond[0] = ''");
 }
@@ -441,7 +499,11 @@ fn real_file_bmc_bookmarks_compte() {
     };
     let cfg = parse_info_bookmark_config(&root);
     // m_InfoBookmarkDataList : 11 entrées
-    assert_eq!(cfg.bookmarks.len(), 11, "m_InfoBookmarkDataList : 11 entrées");
+    assert_eq!(
+        cfg.bookmarks.len(),
+        11,
+        "m_InfoBookmarkDataList : 11 entrées"
+    );
 }
 
 #[test]
@@ -455,8 +517,14 @@ fn real_file_bmc_bookmark_0() {
     // m_InfoBookmarkDataList[0] — JSON réel lignes 518-529
     assert_eq!(bk.bookmark_id, BMK_ID_0, "bookmarkId[0] = 0x2E2C6020");
     assert_eq!(bk.base_no, 0, "baseNo[0] = 0");
-    assert_eq!(bk.folder_name_id, BMK_FOLDER_NAME_ID_0, "folderNameId[0] = 0x01812C2A");
-    assert_eq!(bk.thumbnail_tex_name, BMK_THUMB_NAME_0, "thumbnailTexName = 0x31E45382");
+    assert_eq!(
+        bk.folder_name_id, BMK_FOLDER_NAME_ID_0,
+        "folderNameId[0] = 0x01812C2A"
+    );
+    assert_eq!(
+        bk.thumbnail_tex_name, BMK_THUMB_NAME_0,
+        "thumbnailTexName = 0x31E45382"
+    );
     assert_eq!(
         bk.thumbnail_tex_file_name, "bookmark_img01_l01.g4tx",
         "thumbnailTexFileName = 'bookmark_img01_l01.g4tx'"
@@ -475,7 +543,11 @@ fn real_file_bmc_bookmark_last() {
 
     // m_InfoBookmarkDataList[10] — JSON réel
     assert_eq!(bk.base_no, 10, "baseNo[10] = 10");
-    assert_eq!(bk.bookmark_id, HashId(0x3737_5161), "bookmarkId[10] = 0x37375161");
+    assert_eq!(
+        bk.bookmark_id,
+        HashId(0x3737_5161),
+        "bookmarkId[10] = 0x37375161"
+    );
     // bookmarkFolderItemList = [48, 7]
     assert_eq!(bk.folder_item_offset, 48, "folder_item_offset[10] = 48");
     assert_eq!(bk.folder_item_count, 7, "folder_item_count[10] = 7");
@@ -491,5 +563,8 @@ fn real_file_bmc_folder_items_of_resolu() {
     let items = cfg.folder_items_of(bk);
     // Les 9 premiers folder_items
     assert_eq!(items.len(), 9, "folder_items_of bookmark[0] = 9 éléments");
-    assert_eq!(items[0].search_word_id, BFI_SEARCH_WORD_ID_0, "items[0] = 0x03E43591");
+    assert_eq!(
+        items[0].search_word_id, BFI_SEARCH_WORD_ID_0,
+        "items[0] = 0x03E43591"
+    );
 }

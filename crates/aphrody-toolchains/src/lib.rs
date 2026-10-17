@@ -48,7 +48,11 @@ pub enum Toolchain {
 #[derive(Debug, thiserror::Error)]
 pub enum ResolveError {
     #[error("{tool} not found (set {env} or put `{name}` on PATH)")]
-    NotFound { tool: Toolchain, env: &'static str, name: &'static str },
+    NotFound {
+        tool: Toolchain,
+        env: &'static str,
+        name: &'static str,
+    },
     #[error("{env} points to a missing file: {}", path.display())]
     BadOverride { env: &'static str, path: PathBuf },
     #[error("failed to read {}: {message}", path.display())]
@@ -121,8 +125,11 @@ impl Toolchain {
     /// Absolute path of the vendored upstream source tree, when one exists.
     #[must_use]
     pub fn source_root(self) -> Option<PathBuf> {
-        self.source_relative_path()
-            .map(|rel| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../apps/aphrody/crates/compat").join(rel))
+        self.source_relative_path().map(|rel| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../apps/aphrody/crates/compat")
+                .join(rel)
+        })
     }
 
     /// Locate the executable (override, `PATH`, standard install dir).
@@ -131,7 +138,11 @@ impl Toolchain {
     /// [`ResolveError::BadOverride`] when the override names a missing file,
     /// [`ResolveError::NotFound`] when nothing matches.
     pub fn discover(self) -> Result<Discovered, ResolveError> {
-        discover::discover(self, env::var_os(self.executable_env()), env::var_os("PATH"))
+        discover::discover(
+            self,
+            env::var_os(self.executable_env()),
+            env::var_os("PATH"),
+        )
     }
 
     /// The version pinned for `project_dir` by the nearest repository file.
@@ -163,7 +174,13 @@ impl Toolchain {
         let binary = self.discover()?;
         let pin = self.pinned_version(project_dir)?;
         let version = probe_version(self, &binary.path)?;
-        Ok(Runtime { tool: self, binary, pin, version, project_dir: project_dir.to_path_buf() })
+        Ok(Runtime {
+            tool: self,
+            binary,
+            pin,
+            version,
+            project_dir: project_dir.to_path_buf(),
+        })
     }
 
     /// Executable to run without resolution (override or bare name). Kept for
@@ -279,7 +296,9 @@ impl Runtime {
     /// `true` when there is no pin or the installed version satisfies it.
     #[must_use]
     pub fn satisfies_pin(&self) -> bool {
-        self.pin.as_ref().is_none_or(|pin| pin.matches(&self.version))
+        self.pin
+            .as_ref()
+            .is_none_or(|pin| pin.matches(&self.version))
     }
 
     /// # Errors
@@ -302,8 +321,10 @@ impl Runtime {
     /// the resolved executable so nested launches pick the same binary.
     #[must_use]
     pub fn env(&self) -> Vec<(OsString, OsString)> {
-        let mut vars =
-            vec![(OsString::from(self.tool.executable_env()), self.binary.path.clone().into())];
+        let mut vars = vec![(
+            OsString::from(self.tool.executable_env()),
+            self.binary.path.clone().into(),
+        )];
         if let Some(dir) = self.binary.path.parent() {
             let mut paths = vec![dir.to_path_buf()];
             if let Some(existing) = env::var_os("PATH") {
@@ -324,17 +345,24 @@ impl Runtime {
         S: AsRef<OsStr>,
     {
         let mut command = Command::new(&self.binary.path).no_window();
-        command.args(args).current_dir(&self.project_dir).envs(self.env());
+        command
+            .args(args)
+            .current_dir(&self.project_dir)
+            .envs(self.env());
         command
     }
 }
 
 /// Run `<path> --version` and extract the semantic version.
 fn probe_version(tool: Toolchain, path: &Path) -> Result<String, ResolveError> {
-    let output = Command::new(path).no_window()
+    let output = Command::new(path)
+        .no_window()
         .arg("--version")
         .output()
-        .map_err(|source| ResolveError::Probe { path: path.to_path_buf(), source })?;
+        .map_err(|source| ResolveError::Probe {
+            path: path.to_path_buf(),
+            source,
+        })?;
     let text = String::from_utf8_lossy(&output.stdout);
     parse_version(tool, &text).ok_or_else(|| ResolveError::UnparsedVersion {
         path: path.to_path_buf(),

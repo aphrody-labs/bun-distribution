@@ -83,11 +83,11 @@ fn block_spans(text: &str, blocks: &[aphrody_web_extract::Block]) -> Vec<(usize,
                 let start = utf16_len(&text[..byte_start]);
                 spans.push((start, start + utf16_len(needle)));
                 byte_cursor = byte_start + needle.len();
-            },
+            }
             None => {
                 let at = utf16_len(&text[..byte_cursor]);
                 spans.push((at, at));
-            },
+            }
         }
     }
     spans
@@ -113,8 +113,11 @@ fn extract_response(
     .into_iter()
     .map(|chunk| {
         let char_start = spans.get(chunk.start_block).map(|s| s.0).unwrap_or(0);
-        let char_end =
-            spans.get(chunk.end_block).map(|s| s.1).unwrap_or(char_start).max(char_start);
+        let char_end = spans
+            .get(chunk.end_block)
+            .map(|s| s.1)
+            .unwrap_or(char_start)
+            .max(char_start);
         OffsetChunk {
             heading_path: chunk.heading_path,
             text: chunk.text,
@@ -301,7 +304,9 @@ mod tests {
             assert!(!legacy_hash.is_null());
             let canonical_text = CStr::from_ptr(canonical).to_string_lossy().into_owned();
             let legacy_text = CStr::from_ptr(legacy).to_string_lossy().into_owned();
-            let canonical_hash_text = CStr::from_ptr(canonical_hash).to_string_lossy().into_owned();
+            let canonical_hash_text = CStr::from_ptr(canonical_hash)
+                .to_string_lossy()
+                .into_owned();
             let legacy_hash_text = CStr::from_ptr(legacy_hash).to_string_lossy().into_owned();
             crate::web_internal_free_string(canonical);
             crate::web_internal_free_string(legacy);
@@ -322,7 +327,10 @@ mod tests {
         let response = extract_response(
             html,
             Some("https://e.test/a"),
-            &ExtractRequestOptions { max_chunk_chars: 80, ..Default::default() },
+            &ExtractRequestOptions {
+                max_chunk_chars: 80,
+                ..Default::default()
+            },
         );
         assert!(!response.chunks.is_empty());
         let utf16: Vec<u16> = response.text.encode_utf16().collect();

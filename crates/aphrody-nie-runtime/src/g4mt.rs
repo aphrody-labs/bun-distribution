@@ -61,8 +61,13 @@ pub fn animation_clip(
         })
         .collect::<Result<Vec<_>, G4mtAdapterError>>()?;
 
-    let clip = AnimationClip { skeleton, duration_seconds: decoded.duration_seconds, tracks };
-    clip.validate().map_err(G4mtAdapterError::InvalidAnimation)?;
+    let clip = AnimationClip {
+        skeleton,
+        duration_seconds: decoded.duration_seconds,
+        tracks,
+    };
+    clip.validate()
+        .map_err(G4mtAdapterError::InvalidAnimation)?;
     Ok(clip)
 }
 
@@ -74,7 +79,8 @@ pub fn pose_frame(
     looped: bool,
 ) -> Result<PoseFrame, G4mtAdapterError> {
     let clip = animation_clip(decoded, skeleton)?;
-    clip.sample(time_seconds, looped).ok_or(G4mtAdapterError::InvalidSampleTime)
+    clip.sample(time_seconds, looped)
+        .ok_or(G4mtAdapterError::InvalidSampleTime)
 }
 
 #[cfg(test)]
@@ -111,7 +117,10 @@ mod tests {
 
         assert_eq!(frame.skeleton, SkeletonId::new(42));
         assert_eq!(frame.time_seconds, 0.25);
-        assert_eq!(frame.bone(BoneId::new(7)).unwrap().translation, Vec3::new(1.0, 2.0, 3.0));
+        assert_eq!(
+            frame.bone(BoneId::new(7)).unwrap().translation,
+            Vec3::new(1.0, 2.0, 3.0)
+        );
     }
 
     #[test]
@@ -127,7 +136,9 @@ mod tests {
 
         assert_eq!(
             animation_clip(&decoded, SkeletonId::new(1)),
-            Err(G4mtAdapterError::BoneIndexOutOfRange(usize::from(u16::MAX) + 1))
+            Err(G4mtAdapterError::BoneIndexOutOfRange(
+                usize::from(u16::MAX) + 1
+            ))
         );
     }
 
@@ -144,7 +155,9 @@ mod tests {
 
         assert_eq!(
             animation_clip(&decoded, SkeletonId::new(1)),
-            Err(G4mtAdapterError::InvalidAnimation(AnimationError::UnsortedKeyframes))
+            Err(G4mtAdapterError::InvalidAnimation(
+                AnimationError::UnsortedKeyframes
+            ))
         );
     }
 }

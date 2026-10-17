@@ -32,7 +32,9 @@ pub struct StandardUserSystemClockCore {
 
 impl StandardUserSystemClockCore {
     pub fn new() -> Self {
-        let mut ctx = crate::hle::service::kernel_helpers::ServiceContext::new("Psc:StandardUserSystemClockCore".into());
+        let mut ctx = crate::hle::service::kernel_helpers::ServiceContext::new(
+            "Psc:StandardUserSystemClockCore".into(),
+        );
         let event = ctx.create_event("Psc:StandardUserSystemClockCore:Event".into());
         Self {
             automatic_correction: false,
@@ -56,7 +58,9 @@ impl StandardUserSystemClockCore {
     }
 
     pub fn get_event(&self) -> Arc<Event> {
-        self.ctx.get_event(self.event).expect("automatic correction event must exist")
+        self.ctx
+            .get_event(self.event)
+            .expect("automatic correction event must exist")
     }
 
     /// Set automatic correction mode.

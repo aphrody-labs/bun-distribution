@@ -8,7 +8,7 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-use crate::change_detection::{MaybeLocation, MAX_CHANGE_AGE};
+use crate::change_detection::{MAX_CHANGE_AGE, MaybeLocation};
 
 /// A value that tracks when a system ran relative to other systems.
 /// This is used to power change detection.

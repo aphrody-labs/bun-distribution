@@ -27,7 +27,14 @@
 //!   scripts for at most [`MAX_TIME`]. Text nested deeper than the parser's stack allows is refused
 //!   ([`rewrite::MAX_NESTING`]); a seeded fuzzer (`tests/fuzz.rs`) keeps all of this honest.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod host;
 mod noise;
@@ -80,20 +87,47 @@ fn budget_left() -> Result<(), String> {
 pub struct Expressions;
 
 impl ExprHost for Expressions {
-    fn eval(&self, ctx: &EvalCtx, layer: &Layer, prop: &Property, value: &Value) -> Result<Value, String> {
+    fn eval(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        prop: &Property,
+        value: &Value,
+    ) -> Result<Value, String> {
         match &prop.expr {
             Some(e) => evaluate(self, ctx, layer, prop, value, &e.text),
             None => Ok(value.clone()),
         }
     }
 
-    fn eval_text_selector(&self, ctx: &EvalCtx, layer: &Layer, prop: &Property, index: usize, total: usize, selector: [f64; 3]) -> Result<[f64; 3], String> {
+    fn eval_text_selector(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        prop: &Property,
+        index: usize,
+        total: usize,
+        selector: [f64; 3],
+    ) -> Result<[f64; 3], String> {
         let Some(e) = prop.expr.as_ref().filter(|_| prop.has_expression()) else {
             let v = prop.value_at(layer.layer_time(ctx.time)).components();
-            return Ok([v.first().copied().unwrap_or(100.0), v.get(1).copied().unwrap_or(100.0), v.get(2).copied().unwrap_or(100.0)]);
+            return Ok([
+                v.first().copied().unwrap_or(100.0),
+                v.get(1).copied().unwrap_or(100.0),
+                v.get(2).copied().unwrap_or(100.0),
+            ]);
         };
         let value = prop.value_at(layer.layer_time(ctx.time));
-        let out = evaluate_out(self, ctx, layer, prop, &value, &e.text, [index as f64 + 1.0, total as f64], selector)?;
+        let out = evaluate_out(
+            self,
+            ctx,
+            layer,
+            prop,
+            &value,
+            &e.text,
+            [index as f64 + 1.0, total as f64],
+            selector,
+        )?;
         let num = |o: &runtime::Out| match o {
             runtime::Out::Num(x) => Some(*x),
             runtime::Out::Bool(b) => Some(if *b { 100.0 } else { 0.0 }),
@@ -101,14 +135,23 @@ impl ExprHost for Expressions {
         };
         let r = match &out {
             runtime::Out::Arr(items) => {
-                let g = |i: usize| items.get(i).and_then(num).or_else(|| items.first().and_then(num));
+                let g = |i: usize| {
+                    items
+                        .get(i)
+                        .and_then(num)
+                        .or_else(|| items.first().and_then(num))
+                };
                 [g(0), g(1), g(2)]
             }
             o => [num(o); 3],
         };
         match r {
-            [Some(a), Some(b), Some(c)] if a.is_finite() && b.is_finite() && c.is_finite() => Ok([a, b, c]),
-            _ => Err("Error: expression selector amount must be a number or an array of numbers".into()),
+            [Some(a), Some(b), Some(c)] if a.is_finite() && b.is_finite() && c.is_finite() => {
+                Ok([a, b, c])
+            }
+            _ => Err(
+                "Error: expression selector amount must be a number or an array of numbers".into(),
+            ),
         }
     }
 }
@@ -123,7 +166,14 @@ impl Drop for FrameGuard {
 
 /// Evaluate `text` as the expression of `prop` on `layer` at `ctx.time`, given its keyframed
 /// `value`. Other properties' expressions are evaluated through `host`.
-pub fn evaluate(host: &dyn ExprHost, ctx: &EvalCtx, layer: &Layer, prop: &Property, value: &Value, text: &str) -> Result<Value, String> {
+pub fn evaluate(
+    host: &dyn ExprHost,
+    ctx: &EvalCtx,
+    layer: &Layer,
+    prop: &Property,
+    value: &Value,
+    text: &str,
+) -> Result<Value, String> {
     let out = evaluate_out(host, ctx, layer, prop, value, text, [1.0, 1.0], [100.0; 3])?;
     runtime::to_value(&out, value)
 }
@@ -141,10 +191,19 @@ fn evaluate_out(
     text_sel: [f64; 2],
     selector: [f64; 3],
 ) -> Result<runtime::Out, String> {
-    let owner = Owner { comp: ctx.comp_id.0, layer: layer.id.0, uid: prop.uid, time: ctx.time, text: text.to_string() };
+    let owner = Owner {
+        comp: ctx.comp_id.0,
+        layer: layer.id.0,
+        uid: prop.uid,
+        time: ctx.time,
+        text: text.to_string(),
+    };
     let (depth, cycle) = FRAMES.with(|f| {
         let f = f.borrow();
-        (f.len(), f.iter().any(|fr| fr.owner.as_ref() == Some(&owner)))
+        (
+            f.len(),
+            f.iter().any(|fr| fr.owner.as_ref() == Some(&owner)),
+        )
     });
     if depth == 0 {
         budget_start();
@@ -152,16 +211,38 @@ fn evaluate_out(
     if cycle {
         // Needs its own result: fails at once (the reader falls back to the keyframed value)
         // instead of nesting to `MAX_DEPTH` once per read on the way.
-        return Err("Error: circular expression reference (the expression needs its own value)".into());
+        return Err(
+            "Error: circular expression reference (the expression needs its own value)".into(),
+        );
     }
     if depth >= MAX_DEPTH {
-        return Err("Error: expressions reference each other too deeply (circular reference?)".into());
+        return Err(
+            "Error: expressions reference each other too deeply (circular reference?)".into(),
+        );
     }
     budget_left()?;
-    let ctx = EvalCtx { project: ctx.project, comp_id: ctx.comp_id, comp: ctx.comp, time: ctx.time, expr: Some(host), footage: ctx.footage };
+    let ctx = EvalCtx {
+        project: ctx.project,
+        comp_id: ctx.comp_id,
+        comp: ctx.comp,
+        time: ctx.time,
+        expr: Some(host),
+        footage: ctx.footage,
+    };
     let comp = ctx.comp_id.0;
-    let path = layer.props.path_of(prop.uid).unwrap_or_else(|| format!("@{}", prop.uid));
-    let resolver = Resolver { ctx, own: Own { comp, layer, prop, path: path.clone() } };
+    let path = layer
+        .props
+        .path_of(prop.uid)
+        .unwrap_or_else(|| format!("@{}", prop.uid));
+    let resolver = Resolver {
+        ctx,
+        own: Own {
+            comp,
+            layer,
+            prop,
+            path: path.clone(),
+        },
+    };
     let current = value_resp(value, prop_dims(layer, prop));
     let begin = Begin {
         time: ctx.time.seconds(),
@@ -176,8 +257,22 @@ fn evaluate_out(
         selector,
     };
     // Answer the requests nearly every expression makes up front.
-    let mut frame = Frame { owner: Some(owner), ..Frame::default() };
-    for req in [Req::CompInfo { comp }, Req::LayerInfo { comp, layer: layer.id.0 }, Req::PropInfo { comp, layer: layer.id.0, path: path.clone() }] {
+    let mut frame = Frame {
+        owner: Some(owner),
+        ..Frame::default()
+    };
+    for req in [
+        Req::CompInfo { comp },
+        Req::LayerInfo {
+            comp,
+            layer: layer.id.0,
+        },
+        Req::PropInfo {
+            comp,
+            layer: layer.id.0,
+            path: path.clone(),
+        },
+    ] {
         let r = resolver.resolve(&req);
         frame.memo.insert(req, r);
     }
@@ -189,7 +284,12 @@ fn evaluate_out(
         match runtime::run(text, &begin) {
             Run::Done(r) => return r,
             Run::Pending => {
-                let misses = FRAMES.with(|f| f.borrow_mut().get_mut(depth).map(|fr| std::mem::take(&mut fr.misses)).unwrap_or_default());
+                let misses = FRAMES.with(|f| {
+                    f.borrow_mut()
+                        .get_mut(depth)
+                        .map(|fr| std::mem::take(&mut fr.misses))
+                        .unwrap_or_default()
+                });
                 for m in misses {
                     // May evaluate other expressions (nested frames above ours).
                     let r = resolver.resolve(&m);
@@ -204,10 +304,20 @@ fn evaluate_out(
 /// Evaluate `text` as if it were the expression on the property at `path` (e.g.
 /// `transform/rotation`) of `layer` in `comp`, at comp time `t` seconds. Other properties'
 /// expressions are evaluated too.
-pub fn eval_standalone(project: &Project, comp: ItemId, layer: LayerId, path: &str, text: &str, t: f64) -> Result<Value, String> {
+pub fn eval_standalone(
+    project: &Project,
+    comp: ItemId,
+    layer: LayerId,
+    path: &str,
+    text: &str,
+    t: f64,
+) -> Result<Value, String> {
     let c = project.comp(comp).ok_or("no such comp")?;
     let l = c.layer(layer).ok_or("no such layer")?;
-    let prop = l.props.prop(path).ok_or_else(|| format!("no property at {path}"))?;
+    let prop = l
+        .props
+        .prop(path)
+        .ok_or_else(|| format!("no property at {path}"))?;
     let ctx = EvalCtx::new(project, comp, c, Tick::from_seconds_f64(t));
     let value = prop.value_at(l.layer_time(ctx.time));
     evaluate(&Expressions, &ctx, l, prop, &value, text)
@@ -215,10 +325,19 @@ pub fn eval_standalone(project: &Project, comp: ItemId, layer: LayerId, path: &s
 
 /// Evaluate the expression stored on the property at `path`, reporting errors (the renderer
 /// silently falls back to the keyframed value instead).
-pub fn eval_property(project: &Project, comp: ItemId, layer: LayerId, path: &str, t: f64) -> Result<Value, String> {
+pub fn eval_property(
+    project: &Project,
+    comp: ItemId,
+    layer: LayerId,
+    path: &str,
+    t: f64,
+) -> Result<Value, String> {
     let c = project.comp(comp).ok_or("no such comp")?;
     let l = c.layer(layer).ok_or("no such layer")?;
-    let prop = l.props.prop(path).ok_or_else(|| format!("no property at {path}"))?;
+    let prop = l
+        .props
+        .prop(path)
+        .ok_or_else(|| format!("no property at {path}"))?;
     let ctx = EvalCtx::new(project, comp, c, Tick::from_seconds_f64(t));
     let value = prop.value_at(l.layer_time(ctx.time));
     match &prop.expr {

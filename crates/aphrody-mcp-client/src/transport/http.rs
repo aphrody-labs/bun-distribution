@@ -75,8 +75,9 @@ impl SseResponse {
                 if message.get("id") == Some(&JsonValue::from(expected_id)) {
                     return Ok(Some(data));
                 }
-            } else if let Some(data) =
-                line.strip_prefix("data:").or_else(|| (line == "data").then_some(""))
+            } else if let Some(data) = line
+                .strip_prefix("data:")
+                .or_else(|| (line == "data").then_some(""))
             {
                 if self.has_data {
                     self.data.push('\n');
@@ -90,7 +91,10 @@ impl SseResponse {
 }
 
 async fn response_text(response: reqwest::Response, expected_id: Option<u64>) -> Result<String> {
-    if response.content_length().is_some_and(|bytes| bytes > MAX_RESPONSE_BYTES as u64) {
+    if response
+        .content_length()
+        .is_some_and(|bytes| bytes > MAX_RESPONSE_BYTES as u64)
+    {
         return Err(McpClientError::Malformed(
             "MCP HTTP response exceeds its byte limit".to_owned(),
         ));
@@ -175,8 +179,11 @@ impl HttpTransport {
             }
         }
         if let Some(token) = bearer {
-            let mut value = HeaderValue::from_str(&format!("Bearer {token}"))
-                .map_err(|_| McpClientError::InvalidHeader { name: "Authorization".to_owned() })?;
+            let mut value = HeaderValue::from_str(&format!("Bearer {token}")).map_err(|_| {
+                McpClientError::InvalidHeader {
+                    name: "Authorization".to_owned(),
+                }
+            })?;
             value.set_sensitive(true);
             extra_headers.insert(AUTHORIZATION, value);
         }
@@ -188,7 +195,13 @@ impl HttpTransport {
         let builder = builder.redirect(reqwest::redirect::Policy::none());
         let client = builder.build().map_err(McpClientError::Http)?;
 
-        Ok(Self { client, url: url.into(), headers: extra_headers, session_id: None, next_id: 1 })
+        Ok(Self {
+            client,
+            url: url.into(),
+            headers: extra_headers,
+            session_id: None,
+            next_id: 1,
+        })
     }
 
     fn next_id(&mut self) -> u64 {
@@ -245,9 +258,14 @@ impl Transport for HttpTransport {
             let session_id = session_id
                 .map(|mut value| {
                     if value.as_bytes().is_empty()
-                        || !value.as_bytes().iter().all(|byte| (0x21..=0x7e).contains(byte))
+                        || !value
+                            .as_bytes()
+                            .iter()
+                            .all(|byte| (0x21..=0x7e).contains(byte))
                     {
-                        return Err(McpClientError::Malformed("invalid MCP session id".to_owned()));
+                        return Err(McpClientError::Malformed(
+                            "invalid MCP session id".to_owned(),
+                        ));
                     }
                     value.set_sensitive(true);
                     Ok(value)
@@ -299,7 +317,11 @@ mod tests {
             "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":7,\r\n",
             "data: \"result\":{\"name\":\"épisode\"}}\r\n\r\n"
         );
-        for input in [input.to_owned(), input.replace("\r\n", "\r"), input.replace("\r\n", "\n")] {
+        for input in [
+            input.to_owned(),
+            input.replace("\r\n", "\r"),
+            input.replace("\r\n", "\n"),
+        ] {
             let mut parser = SseResponse::default();
             let mut response = None;
             for byte in input.bytes() {
@@ -315,7 +337,9 @@ mod tests {
     #[test]
     fn malformed_sse_diagnostics_do_not_include_payloads() {
         let mut parser = SseResponse::default();
-        let error = parser.push(b"data: private-invalid-payload\n\n", 1).unwrap_err();
+        let error = parser
+            .push(b"data: private-invalid-payload\n\n", 1)
+            .unwrap_err();
         assert!(!error.to_string().contains("private-invalid-payload"));
     }
 }

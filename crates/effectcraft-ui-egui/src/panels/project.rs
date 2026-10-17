@@ -28,7 +28,8 @@ fn item_icon(it: &Item) -> Icon {
         ItemKind::Comp(_) => Icon::Comp,
         ItemKind::Solid(_) => Icon::Solid,
         ItemKind::Footage(f) => match f.kind {
-            effectcraft_engine::project::FootageKind::Still | effectcraft_engine::project::FootageKind::Sequence => Icon::Image,
+            effectcraft_engine::project::FootageKind::Still
+            | effectcraft_engine::project::FootageKind::Sequence => Icon::Image,
             effectcraft_engine::project::FootageKind::Audio => Icon::Audio,
             effectcraft_engine::project::FootageKind::Model => Icon::Cube,
             _ => Icon::Footage,
@@ -41,7 +42,13 @@ pub fn fmt_dur(secs: f64, fps: f64) -> String {
     let fpsi = fps.round().max(1.0) as i64;
     let f = (secs * fps).round() as i64;
     let s = f / fpsi;
-    format!("{}:{:02}:{:02}:{:02}", s / 3600, (s / 60) % 60, s % 60, f % fpsi)
+    format!(
+        "{}:{:02}:{:02}:{:02}",
+        s / 3600,
+        (s / 60) % 60,
+        s % 60,
+        f % fpsi
+    )
 }
 
 /// File size the way AE's Size column shows it (`512 KB`, `12.3 MB`).
@@ -89,7 +96,11 @@ pub fn sort_items(items: &mut [&Item], col: &str, desc: bool) {
         let o = match col {
             "type" => a.type_name().cmp(b.type_name()),
             "size" => file_size(a).cmp(&file_size(b)),
-            "fps" => a.frame_rate().map(|r| r.as_f64()).partial_cmp(&b.frame_rate().map(|r| r.as_f64())).unwrap_or(std::cmp::Ordering::Equal),
+            "fps" => a
+                .frame_rate()
+                .map(|r| r.as_f64())
+                .partial_cmp(&b.frame_rate().map(|r| r.as_f64()))
+                .unwrap_or(std::cmp::Ordering::Equal),
             "duration" => a.duration().cmp(&b.duration()),
             "path" => file_path(a).cmp(file_path(b)),
             "comment" => a.comment.cmp(&b.comment),
@@ -102,9 +113,16 @@ pub fn sort_items(items: &mut [&Item], col: &str, desc: bool) {
 }
 
 /// Where a drop at a row lands: into a folder row, else into the row's folder; `None` row = root.
-pub fn drop_folder(project: &effectcraft_engine::project::Project, row: Option<ItemId>) -> Option<ItemId> {
+pub fn drop_folder(
+    project: &effectcraft_engine::project::Project,
+    row: Option<ItemId>,
+) -> Option<ItemId> {
     let it = project.item(row?)?;
-    if it.is_folder() { Some(it.id) } else { it.parent }
+    if it.is_folder() {
+        Some(it.id)
+    } else {
+        it.parent
+    }
 }
 
 /// A thumbnail being rendered off the UI thread: (revision, result slot).
@@ -127,7 +145,11 @@ fn thumbnail(app: &EffectcraftApp, ctx: &egui::Context, it: &Item) -> Option<egu
         match done {
             Some(Some((w, h, px))) => {
                 let ci = egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &px);
-                let t = ctx.load_texture(format!("proj-thumb-{}", it.id.0), ci, egui::TextureOptions::LINEAR);
+                let t = ctx.load_texture(
+                    format!("proj-thumb-{}", it.id.0),
+                    ci,
+                    egui::TextureOptions::LINEAR,
+                );
                 ctx.data_mut(|d| {
                     d.insert_temp(key, (*prev, t.clone()));
                     d.remove::<PendingThumb>(pkey);
@@ -150,19 +172,27 @@ fn thumbnail(app: &EffectcraftApp, ctx: &egui::Context, it: &Item) -> Option<egu
     if have == Some(rev) {
         return tex;
     }
-    let t = app.session.state.times.get(&it.id).copied().unwrap_or_default();
+    let t = app
+        .session
+        .state
+        .times
+        .get(&it.id)
+        .copied()
+        .unwrap_or_default();
     let job = app.session.thumbnail_job(it.id, t, 192)?;
     let slot: Arc<Mutex<Option<Option<(u32, u32, Vec<u8>)>>>> = Arc::default();
     if cfg!(target_arch = "wasm32") {
         *slot.lock().ok()? = Some(job());
     } else {
         let s = slot.clone();
-        let spawned = std::thread::Builder::new().name("proj-thumb".into()).spawn(move || {
-            let r = job();
-            if let Ok(mut s) = s.lock() {
-                *s = Some(r);
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("proj-thumb".into())
+            .spawn(move || {
+                let r = job();
+                if let Ok(mut s) = s.lock() {
+                    *s = Some(r);
+                }
+            });
         if spawned.is_err() {
             return tex;
         }
@@ -188,7 +218,9 @@ pub fn begin_rename(app: &EffectcraftApp, ctx: &egui::Context) {
     if let Some(id) = app.session.state.project_selection.first()
         && let Some(it) = app.session.project.item(*id)
     {
-        ctx.data_mut(|d| d.insert_temp::<Editing>(edit_id(), (id.0, "name".into(), it.name.clone())));
+        ctx.data_mut(|d| {
+            d.insert_temp::<Editing>(edit_id(), (id.0, "name".into(), it.name.clone()))
+        });
     }
 }
 
@@ -217,7 +249,9 @@ fn focused_row_id() -> egui::Id {
 fn keys_reach_rows(app: &EffectcraftApp, ctx: &egui::Context) -> bool {
     match ctx.memory(|m| m.focused()) {
         None => app.ui.focused == crate::dock::PanelKind::Project,
-        Some(f) => ctx.data(|d| d.get_temp::<ItemId>(focused_row_id())).is_some_and(|row| row_id(row) == f),
+        Some(f) => ctx
+            .data(|d| d.get_temp::<ItemId>(focused_row_id()))
+            .is_some_and(|row| row_id(row) == f),
     }
 }
 
@@ -234,9 +268,12 @@ fn keyboard_nav(app: &mut EffectcraftApp, ctx: &egui::Context) -> Option<ItemId>
         i.events
             .iter()
             .filter_map(|e| match e {
-                egui::Event::Key { key: k @ (Key::ArrowUp | Key::ArrowDown | Key::ArrowLeft | Key::ArrowRight), pressed: true, modifiers, .. } => {
-                    Some((*k, *modifiers))
-                }
+                egui::Event::Key {
+                    key: k @ (Key::ArrowUp | Key::ArrowDown | Key::ArrowLeft | Key::ArrowRight),
+                    pressed: true,
+                    modifiers,
+                    ..
+                } => Some((*k, *modifiers)),
                 _ => None,
             })
             .collect()
@@ -257,21 +294,37 @@ fn keyboard_nav(app: &mut EffectcraftApp, ctx: &egui::Context) -> Option<ItemId>
         let rows = visible_rows(app);
         let pos = |id: ItemId| rows.iter().position(|(r, _)| *r == id);
         let sel = &app.session.state.project_selection;
-        let cursor = ctx.data(|d| d.get_temp::<ItemId>(cursor_id())).filter(|c| sel.contains(c)).or_else(|| sel.last().copied());
+        let cursor = ctx
+            .data(|d| d.get_temp::<ItemId>(cursor_id()))
+            .filter(|c| sel.contains(c))
+            .or_else(|| sel.last().copied());
         let cur = cursor.and_then(pos);
         let to = match key {
             Key::ArrowUp | Key::ArrowDown if plain || shift => {
-                let Some(last) = rows.len().checked_sub(1) else { continue };
+                let Some(last) = rows.len().checked_sub(1) else {
+                    continue;
+                };
                 let next = match (cur, key == Key::ArrowDown) {
                     (Some(c), true) => c.saturating_add(1).min(last),
                     (Some(c), false) => c.saturating_sub(1),
                     (None, true) => 0,
                     (None, false) => last,
                 };
-                let Some((to, _)) = rows.get(next).copied() else { continue };
+                let Some((to, _)) = rows.get(next).copied() else {
+                    continue;
+                };
                 if shift {
-                    let anchor = ctx.data(|d| d.get_temp::<ItemId>(anchor_id())).and_then(pos).or(cur).unwrap_or(next);
-                    app.session.state.project_selection = rows.get(anchor.min(next)..=anchor.max(next)).unwrap_or_default().iter().map(|(i, _)| *i).collect();
+                    let anchor = ctx
+                        .data(|d| d.get_temp::<ItemId>(anchor_id()))
+                        .and_then(pos)
+                        .or(cur)
+                        .unwrap_or(next);
+                    app.session.state.project_selection = rows
+                        .get(anchor.min(next)..=anchor.max(next))
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|(i, _)| *i)
+                        .collect();
                     to
                 } else {
                     app.session.state.project_selection = vec![to];
@@ -280,7 +333,10 @@ fn keyboard_nav(app: &mut EffectcraftApp, ctx: &egui::Context) -> Option<ItemId>
                 }
             }
             Key::ArrowRight | Key::ArrowLeft if plain => {
-                let Some((id, folder, parent)) = cursor.and_then(|c| app.session.project.item(c)).map(|it| (it.id, it.is_folder(), it.parent)) else {
+                let Some((id, folder, parent)) = cursor
+                    .and_then(|c| app.session.project.item(c))
+                    .map(|it| (it.id, it.is_folder(), it.parent))
+                else {
                     continue;
                 };
                 let open = app.ui.project_open_folders.contains(&id.0);
@@ -294,7 +350,9 @@ fn keyboard_nav(app: &mut EffectcraftApp, ctx: &egui::Context) -> Option<ItemId>
                     app.ui.project_open_folders.remove(&id.0);
                     continue;
                 }
-                let Some(parent) = parent.filter(|p| pos(*p).is_some()) else { continue };
+                let Some(parent) = parent.filter(|p| pos(*p).is_some()) else {
+                    continue;
+                };
                 app.session.state.project_selection = vec![parent];
                 ctx.data_mut(|d| d.insert_temp(anchor_id(), parent));
                 parent
@@ -317,7 +375,13 @@ fn keyboard_nav(app: &mut EffectcraftApp, ctx: &egui::Context) -> Option<ItemId>
 }
 
 pub(crate) fn visible_rows(app: &EffectcraftApp) -> Vec<(ItemId, usize)> {
-    fn walk(app: &EffectcraftApp, folder: Option<ItemId>, depth: usize, q: &str, out: &mut Vec<(ItemId, usize)>) {
+    fn walk(
+        app: &EffectcraftApp,
+        folder: Option<ItemId>,
+        depth: usize,
+        q: &str,
+        out: &mut Vec<(ItemId, usize)>,
+    ) {
         let mut kids = app.session.project.children(folder);
         sort_items(&mut kids, &app.ui.project_sort, app.ui.project_sort_desc);
         for it in kids {
@@ -331,7 +395,13 @@ pub(crate) fn visible_rows(app: &EffectcraftApp) -> Vec<(ItemId, usize)> {
         }
     }
     let mut rows = vec![];
-    walk(app, None, 0, &app.ui.project_search.to_lowercase(), &mut rows);
+    walk(
+        app,
+        None,
+        0,
+        &app.ui.project_search.to_lowercase(),
+        &mut rows,
+    );
     rows
 }
 
@@ -347,21 +417,47 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         p.rect_filled(thumb, 3.0, Color32::from_rgb(0x15, 0x15, 0x15));
         match &it.kind {
             ItemKind::Solid(s) => {
-                p.rect_filled(thumb.shrink(4.0), 2.0, Color32::from_rgb((s.color[0] * 255.0) as u8, (s.color[1] * 255.0) as u8, (s.color[2] * 255.0) as u8));
+                p.rect_filled(
+                    thumb.shrink(4.0),
+                    2.0,
+                    Color32::from_rgb(
+                        (s.color[0] * 255.0) as u8,
+                        (s.color[1] * 255.0) as u8,
+                        (s.color[2] * 255.0) as u8,
+                    ),
+                );
             }
             _ => match thumbnail(app, &ctx, &it) {
                 Some(tex) => {
                     let [w, h] = tex.size();
-                    p.image(tex.id(), fit(thumb, w as f32, h as f32), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                    p.image(
+                        tex.id(),
+                        fit(thumb, w as f32, h as f32),
+                        Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                        Color32::WHITE,
+                    );
                 }
-                None => icons::paint(&p, Rect::from_center_size(thumb.center(), vec2(24.0, 24.0)), item_icon(&it), t.text_dim),
+                None => icons::paint(
+                    &p,
+                    Rect::from_center_size(thumb.center(), vec2(24.0, 24.0)),
+                    item_icon(&it),
+                    t.text_dim,
+                ),
             },
         }
         app.auto.add("project.thumbnail", thumb, &it.name);
         // The details stay inside the panel (a margin on the right), cut short with "…".
         let tx = thumb.max.x + 10.0;
         let max_w = head.max.x - 10.0 - tx;
-        let r = widgets::text_fit(&p, pos2(tx, thumb.min.y + 6.0), Align2::LEFT_CENTER, &it.name, Tokens::semibold(12.0), max_w, t.text);
+        let r = widgets::text_fit(
+            &p,
+            pos2(tx, thumb.min.y + 6.0),
+            Align2::LEFT_CENTER,
+            &it.name,
+            Tokens::semibold(12.0),
+            max_w,
+            t.text,
+        );
         app.auto.add("project.details.name", r, &it.name);
         let mut lines = vec![];
         if let Some((w, h)) = it.dimensions() {
@@ -375,30 +471,62 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             lines.push(f.codec.clone());
         }
         for (i, l) in lines.iter().enumerate() {
-            let r = widgets::text_fit(&p, pos2(tx, thumb.min.y + 22.0 + 13.0 * i as f32), Align2::LEFT_CENTER, l, Tokens::ui(11.0), max_w, t.text_dim);
+            let r = widgets::text_fit(
+                &p,
+                pos2(tx, thumb.min.y + 22.0 + 13.0 * i as f32),
+                Align2::LEFT_CENTER,
+                l,
+                Tokens::ui(11.0),
+                max_w,
+                t.text_dim,
+            );
             app.auto.add(&format!("project.details.{i}"), r, l);
         }
     } else {
         let hint = "Select an item to see its details";
-        let r = widgets::text_fit(&p, head.center(), Align2::CENTER_CENTER, hint, Tokens::ui(11.0), head.width() - 20.0, t.text_faint);
+        let r = widgets::text_fit(
+            &p,
+            head.center(),
+            Align2::CENTER_CENTER,
+            hint,
+            Tokens::ui(11.0),
+            head.width() - 20.0,
+            t.text_faint,
+        );
         app.auto.add("project.details.hint", r, hint);
     }
     // Search.
-    let sr = Rect::from_min_size(pos2(rect.min.x + 8.0, head.max.y + 2.0), vec2(rect.width() - 16.0, 22.0));
+    let sr = Rect::from_min_size(
+        pos2(rect.min.x + 8.0, head.max.y + 2.0),
+        vec2(rect.width() - 16.0, 22.0),
+    );
     let mut q = app.ui.project_search.clone();
     widgets::search_field(ui, sr, &mut q, "Search project", &t);
     app.ui.project_search = q;
     app.auto.add("project.search", sr, "Search");
     // Column header: Name, Label, then the visible optional columns.
     let hdr = Rect::from_min_size(pos2(rect.min.x, sr.max.y + 6.0), vec2(rect.width(), 20.0));
-    p.line_segment([hdr.left_bottom(), hdr.right_bottom()], Stroke::new(1.0, t.separator));
+    p.line_segment(
+        [hdr.left_bottom(), hdr.right_bottom()],
+        Stroke::new(1.0, t.separator),
+    );
     let name_w = (rect.width() * 0.40).clamp(120.0, 260.0);
     let label_x = rect.min.x + name_w + 14.0;
-    let mut cols: Vec<(&'static str, &'static str, f32, f32)> = vec![("name", "Name", rect.min.x + 26.0, name_w - 26.0), ("label", "", label_x - 8.0, 18.0)];
+    let mut cols: Vec<(&'static str, &'static str, f32, f32)> = vec![
+        ("name", "Name", rect.min.x + 26.0, name_w - 26.0),
+        ("label", "", label_x - 8.0, 18.0),
+    ];
     // Optional columns wider than the panel scroll horizontally under the frozen Name and Label
     // columns (Shift+wheel / trackpad over the list, or the scroll bar under it).
     let opt_x0 = label_x + 16.0;
-    let natural_end = opt_x0 + app.ui.project_columns.iter().filter_map(|k| COLUMNS.iter().find(|c| c.0 == k)).map(|c| c.2 + 4.0).sum::<f32>();
+    let natural_end = opt_x0
+        + app
+            .ui
+            .project_columns
+            .iter()
+            .filter_map(|k| COLUMNS.iter().find(|c| c.0 == k))
+            .map(|c| c.2 + 4.0)
+            .sum::<f32>();
     let overflow = (natural_end - rect.max.x + 4.0).max(0.0);
     app.ui.project_hscroll = app.ui.project_hscroll.clamp(0.0, overflow);
     let hscroll = app.ui.project_hscroll;
@@ -413,27 +541,60 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let hp = p.with_clip_rect(hdr);
     for (key, label, x, w) in &cols {
         let hr = Rect::from_min_size(pos2(x - 4.0, hdr.min.y), vec2(*w, hdr.height()));
-        let hr = if matches!(*key, "name" | "label") { hr } else { opt_clip(hr) };
+        let hr = if matches!(*key, "name" | "label") {
+            hr
+        } else {
+            opt_clip(hr)
+        };
         if hr.width() <= 0.0 {
             continue;
         }
-        let resp = ui.interact(hr.intersect(hdr), egui::Id::new(("proj-sort", *key)), Sense::click());
-        hp.with_clip_rect(hr).text(pos2(*x, hdr.center().y), Align2::LEFT_CENTER, *label, Tokens::ui(11.0), if resp.hovered() { t.text } else { t.text_dim });
+        let resp = ui.interact(
+            hr.intersect(hdr),
+            egui::Id::new(("proj-sort", *key)),
+            Sense::click(),
+        );
+        hp.with_clip_rect(hr).text(
+            pos2(*x, hdr.center().y),
+            Align2::LEFT_CENTER,
+            *label,
+            Tokens::ui(11.0),
+            if resp.hovered() { t.text } else { t.text_dim },
+        );
         if *key == "label" {
-            icons::paint(&hp, Rect::from_center_size(pos2(label_x, hdr.center().y), vec2(10.0, 10.0)), Icon::Keyframe, t.text_dim);
+            icons::paint(
+                &hp,
+                Rect::from_center_size(pos2(label_x, hdr.center().y), vec2(10.0, 10.0)),
+                Icon::Keyframe,
+                t.text_dim,
+            );
         }
         if app.ui.project_sort == *key {
             let c = pos2(hr.max.x - 10.0, hdr.center().y);
             let d = if app.ui.project_sort_desc { 1.0 } else { -1.0 };
             hp.add(egui::Shape::convex_polygon(
-                vec![pos2(c.x - 4.0, c.y - 2.0 * d), pos2(c.x + 4.0, c.y - 2.0 * d), pos2(c.x, c.y + 2.5 * d)],
+                vec![
+                    pos2(c.x - 4.0, c.y - 2.0 * d),
+                    pos2(c.x + 4.0, c.y - 2.0 * d),
+                    pos2(c.x, c.y + 2.5 * d),
+                ],
                 t.text_dim,
                 Stroke::NONE,
             ));
         }
-        app.auto.add(&format!("project.sort.{key}"), hr, if label.is_empty() { "Label" } else { label });
+        app.auto.add(
+            &format!("project.sort.{key}"),
+            hr,
+            if label.is_empty() { "Label" } else { label },
+        );
         let column = crate::i18n::tr(if label.is_empty() { "Label" } else { label });
-        let order = (app.ui.project_sort == *key).then(|| crate::i18n::tr(if app.ui.project_sort_desc { "descending" } else { "ascending" }));
+        let order = (app.ui.project_sort == *key).then(|| {
+            crate::i18n::tr(if app.ui.project_sort_desc {
+                "descending"
+            } else {
+                "ascending"
+            })
+        });
         resp.widget_info(|| {
             let name = match order {
                 Some(o) => crate::i18n::tr_args("Sort by {}, {}", &[&column, &o]),
@@ -451,21 +612,46 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         }
         column_menu(app, &resp);
     }
-    let hresp = ui.interact(Rect::from_min_max(pos2(x, hdr.min.y), hdr.max), egui::Id::new("proj-hdr-rest"), Sense::CLICK);
+    let hresp = ui.interact(
+        Rect::from_min_max(pos2(x, hdr.min.y), hdr.max),
+        egui::Id::new("proj-hdr-rest"),
+        Sense::CLICK,
+    );
     column_menu(app, &hresp);
-    app.auto.add("project.columns", hdr, "Columns (right-click to show or hide)");
+    app.auto.add(
+        "project.columns",
+        hdr,
+        "Columns (right-click to show or hide)",
+    );
     // Rows.
     let footer_h = 28.0;
-    let list = Rect::from_min_max(pos2(rect.min.x, hdr.max.y), pos2(rect.max.x, rect.max.y - footer_h));
+    let list = Rect::from_min_max(
+        pos2(rect.min.x, hdr.max.y),
+        pos2(rect.max.x, rect.max.y - footer_h),
+    );
     let lp = p.with_clip_rect(list);
     // The list's empty area (under the rows and the scroll bar, which take their own clicks):
     // a click deselects, a drag draws a selection box, a double-click imports, as in After
     // Effects (File ▸ Import ▸ File...).
     // Not a Tab stop: the keyboard reaches the rows, and nothing else here takes a key.
-    let empty = ui.interact(list, egui::Id::new("proj-empty"), Sense::CLICK | Sense::DRAG);
-    app.auto.add("project.empty", list, "Double-click to import files; drag to select items; right-click for project actions");
+    let empty = ui.interact(
+        list,
+        egui::Id::new("proj-empty"),
+        Sense::CLICK | Sense::DRAG,
+    );
+    app.auto.add(
+        "project.empty",
+        list,
+        "Double-click to import files; drag to select items; right-click for project actions",
+    );
     if overflow > 0.0 && ui.rect_contains_pointer(list) {
-        let (dx, dy, shift) = ui.input(|i| (i.smooth_scroll_delta.x, i.smooth_scroll_delta.y, i.modifiers.shift));
+        let (dx, dy, shift) = ui.input(|i| {
+            (
+                i.smooth_scroll_delta.x,
+                i.smooth_scroll_delta.y,
+                i.modifiers.shift,
+            )
+        });
         let d = if dx.abs() > 0.0 {
             dx
         } else if shift {
@@ -491,7 +677,10 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         DragPayload::Item(i) => Some(i),
         _ => None,
     });
-    let hover_y = ctx.pointer_hover_pos().filter(|p| list.contains(*p)).map(|p| p.y);
+    let hover_y = ctx
+        .pointer_hover_pos()
+        .filter(|p| list.contains(*p))
+        .map(|p| p.y);
     let mut drop_row: Option<ItemId> = None;
     let mut actions: Vec<(String, serde_json::Value)> = vec![];
     // Vertical scrolling: only the rows in view are drawn (and registered), so a project with
@@ -522,7 +711,11 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     if let Some(row) = moved.and_then(|m| rows.iter().position(|(id, _)| *id == m)) {
         let top = row as f32 * ROW_H;
         // Not `clamp`: a panel shorter than a row would make its bounds cross. The row's top wins.
-        app.ui.project_scroll = app.ui.project_scroll.max(top + ROW_H - list.height()).min(top);
+        app.ui.project_scroll = app
+            .ui
+            .project_scroll
+            .max(top + ROW_H - list.height())
+            .min(top);
     }
     app.ui.project_scroll = app.ui.project_scroll.clamp(0.0, max_scroll);
     let scroll = app.ui.project_scroll;
@@ -530,7 +723,9 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let mut y = list.min.y - (scroll - first as f32 * ROW_H);
     let project = app.session.project.clone();
     for (i, (id, depth)) in rows.iter().enumerate().skip(first) {
-        let Some(it) = project.item(*id) else { continue };
+        let Some(it) = project.item(*id) else {
+            continue;
+        };
         let r = Rect::from_min_size(pos2(list.min.x, y), vec2(list.width(), ROW_H));
         y += ROW_H;
         if r.min.y > list.max.y {
@@ -552,8 +747,16 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         app.auto.add(&format!("project.item.{}", id.0), r, &it.name);
         // For screen readers: a tree item named by the item and its type, with its selection,
         // depth and (a folder) open state. One Tab stop per row; the panel's keys then apply.
-        let open = it.is_folder().then(|| app.ui.project_open_folders.contains(&id.0) || !app.ui.project_search.is_empty());
-        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Other, true, format!("{}, {}", it.name, crate::i18n::tr(it.type_name()))));
+        let open = it.is_folder().then(|| {
+            app.ui.project_open_folders.contains(&id.0) || !app.ui.project_search.is_empty()
+        });
+        resp.widget_info(|| {
+            egui::WidgetInfo::labeled(
+                egui::WidgetType::Other,
+                true,
+                format!("{}, {}", it.name, crate::i18n::tr(it.type_name())),
+            )
+        });
         ctx.accesskit_node_builder(resp.id, |n| {
             n.set_role(egui::accesskit::Role::TreeItem);
             n.set_selected(selected);
@@ -575,7 +778,14 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             let tw = Rect::from_center_size(pos2(x0 + 4.0, r.center().y), vec2(12.0, 12.0));
             let tresp = widgets::twirl(ui, tw, open, egui::Id::new(("pf", id.0)), &t);
             tresp.widget_info(|| {
-                let name = crate::i18n::tr_args(if open { "Close folder {}" } else { "Open folder {}" }, &[&it.name]);
+                let name = crate::i18n::tr_args(
+                    if open {
+                        "Close folder {}"
+                    } else {
+                        "Open folder {}"
+                    },
+                    &[&it.name],
+                );
                 egui::WidgetInfo::labeled(egui::WidgetType::Button, true, name)
             });
             if tresp.clicked() {
@@ -585,9 +795,15 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
                     app.ui.project_open_folders.insert(id.0);
                 }
             }
-            app.auto.add(&format!("project.item.{}.twirl", id.0), tw, &it.name);
+            app.auto
+                .add(&format!("project.item.{}.twirl", id.0), tw, &it.name);
         }
-        icons::paint(&lp, Rect::from_center_size(pos2(x0 + 18.0, r.center().y), vec2(14.0, 14.0)), item_icon(it), t.text_dim);
+        icons::paint(
+            &lp,
+            Rect::from_center_size(pos2(x0 + 18.0, r.center().y), vec2(14.0, 14.0)),
+            item_icon(it),
+            t.text_dim,
+        );
         // Proxy indicator: filled = the proxy is used, hollow = set but off. Click to switch.
         if let Some(px) = it.proxy.as_ref() {
             let pr = Rect::from_center_size(pos2(x0 + 4.0, r.center().y), vec2(9.0, 9.0));
@@ -596,14 +812,35 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             } else {
                 lp.rect_stroke(pr, 1.0, Stroke::new(1.0, t.text), egui::StrokeKind::Inside);
             }
-            let presp = ui.interact(pr.expand(2.0).intersect(list), egui::Id::new(("pproxy", id.0)), Sense::click()).on_hover_text(format!(
-                "Proxy: {} ({})",
-                px.footage.path,
-                if px.enabled { "in use" } else { "off" }
-            ));
-            app.auto.add(&format!("project.item.{}.proxy", id.0), pr, if px.enabled { "Proxy in use" } else { "Proxy off" });
+            let presp = ui
+                .interact(
+                    pr.expand(2.0).intersect(list),
+                    egui::Id::new(("pproxy", id.0)),
+                    Sense::click(),
+                )
+                .on_hover_text(format!(
+                    "Proxy: {} ({})",
+                    px.footage.path,
+                    if px.enabled { "in use" } else { "off" }
+                ));
+            app.auto.add(
+                &format!("project.item.{}.proxy", id.0),
+                pr,
+                if px.enabled {
+                    "Proxy in use"
+                } else {
+                    "Proxy off"
+                },
+            );
             presp.widget_info(|| {
-                let name = crate::i18n::tr_args(if px.enabled { "Proxy of {}: in use" } else { "Proxy of {}: off" }, &[&it.name]);
+                let name = crate::i18n::tr_args(
+                    if px.enabled {
+                        "Proxy of {}: in use"
+                    } else {
+                        "Proxy of {}: off"
+                    },
+                    &[&it.name],
+                );
                 egui::WidgetInfo::labeled(egui::WidgetType::Button, true, name)
             });
             if presp.clicked() {
@@ -616,25 +853,73 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             ItemKind::Footage(f) => app.session.footage.problem(f),
             _ => None,
         };
-        let name_clip =
-            Rect::from_min_max(pos2(x0 + 30.0, r.min.y), pos2(r.min.x + name_w + 4.0 - if problem.is_some() { 16.0 } else { 0.0 }, r.max.y)).intersect(list);
+        let name_clip = Rect::from_min_max(
+            pos2(x0 + 30.0, r.min.y),
+            pos2(
+                r.min.x + name_w + 4.0 - if problem.is_some() { 16.0 } else { 0.0 },
+                r.max.y,
+            ),
+        )
+        .intersect(list);
         if let Some(why) = &problem {
-            let m = Rect::from_center_size(pos2(r.min.x + name_w - 8.0, r.center().y), vec2(13.0, 12.0));
-            lp.add(egui::Shape::convex_polygon(vec![m.center_top(), m.right_bottom(), m.left_bottom()], t.warning, Stroke::NONE));
-            lp.text(m.center() + vec2(0.0, 1.5), Align2::CENTER_CENTER, "!", Tokens::semibold(9.0), Color32::BLACK);
-            ui.interact(m.expand(2.0).intersect(list), egui::Id::new(("pproblem", id.0)), Sense::hover()).on_hover_text(why.as_str());
-            app.auto.add(&format!("project.item.{}.problem", id.0), m, why);
+            let m = Rect::from_center_size(
+                pos2(r.min.x + name_w - 8.0, r.center().y),
+                vec2(13.0, 12.0),
+            );
+            lp.add(egui::Shape::convex_polygon(
+                vec![m.center_top(), m.right_bottom(), m.left_bottom()],
+                t.warning,
+                Stroke::NONE,
+            ));
+            lp.text(
+                m.center() + vec2(0.0, 1.5),
+                Align2::CENTER_CENTER,
+                "!",
+                Tokens::semibold(9.0),
+                Color32::BLACK,
+            );
+            ui.interact(
+                m.expand(2.0).intersect(list),
+                egui::Id::new(("pproblem", id.0)),
+                Sense::hover(),
+            )
+            .on_hover_text(why.as_str());
+            app.auto
+                .add(&format!("project.item.{}.problem", id.0), m, why);
         }
-        let name_rect = Rect::from_min_max(pos2(x0 + 28.0, r.min.y + 2.0), pos2(r.min.x + name_w + 2.0, r.max.y - 2.0));
+        let name_rect = Rect::from_min_max(
+            pos2(x0 + 28.0, r.min.y + 2.0),
+            pos2(r.min.x + name_w + 2.0, r.max.y - 2.0),
+        );
         // Inline edits (rename / comment).
-        let cell_edit = |app: &mut EffectcraftApp, ui: &mut egui::Ui, actions: &mut Vec<(String, serde_json::Value)>, field: &str, cell: Rect| -> bool {
-            let Some((eid, ef, mut buf)) = editing.clone().filter(|(e, f, _)| *e == id.0 && f == field) else { return false };
+        let cell_edit = |app: &mut EffectcraftApp,
+                         ui: &mut egui::Ui,
+                         actions: &mut Vec<(String, serde_json::Value)>,
+                         field: &str,
+                         cell: Rect|
+         -> bool {
+            let Some((eid, ef, mut buf)) =
+                editing.clone().filter(|(e, f, _)| *e == id.0 && f == field)
+            else {
+                return false;
+            };
             let mut child = ui.new_child(egui::UiBuilder::new().max_rect(cell));
             // The field keeps Tab (egui would move the keyboard to the next widget, where Enter no
             // longer renames, #881): Tab commits like Enter and gives the keyboard back to the panel.
-            let filter = egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, ..Default::default() };
-            let resp = child.add(egui::TextEdit::singleline(&mut buf).desired_width(cell.width()).font(Tokens::ui(12.0)).event_filter(filter));
-            app.auto.add(&format!("project.item.{}.{field}Edit", id.0), cell, field);
+            let filter = egui::EventFilter {
+                tab: true,
+                horizontal_arrows: true,
+                vertical_arrows: true,
+                ..Default::default()
+            };
+            let resp = child.add(
+                egui::TextEdit::singleline(&mut buf)
+                    .desired_width(cell.width())
+                    .font(Tokens::ui(12.0))
+                    .event_filter(filter),
+            );
+            app.auto
+                .add(&format!("project.item.{}.{field}Edit", id.0), cell, field);
             let tab = resp.has_focus() && ctx.input(|i| i.key_pressed(egui::Key::Tab));
             if tab {
                 resp.surrender_focus();
@@ -645,7 +930,10 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
                     let (cmd, params) = if ef == "name" {
                         ("project.rename", json!({"item": eid, "name": buf}))
                     } else {
-                        ("project.setComment", json!({"items": [eid], "comment": buf}))
+                        (
+                            "project.setComment",
+                            json!({"items": [eid], "comment": buf}),
+                        )
                     };
                     actions.push((cmd.into(), params));
                 }
@@ -659,36 +947,64 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             // The selected item's name sits in a light cell with dark text.
             if selected {
                 let g = lp.layout_no_wrap(it.name.clone(), Tokens::ui(12.0), Color32::BLACK);
-                let cell = Rect::from_min_max(pos2(x0 + 27.0, r.min.y + 1.0), pos2((x0 + 33.0 + g.size().x).min(name_clip.max.x), r.max.y - 1.0));
-                lp.with_clip_rect(name_clip.expand2(vec2(3.0, 0.0))).rect_filled(cell, 0.0, Color32::from_rgb(0xa6, 0xa6, 0xa6));
+                let cell = Rect::from_min_max(
+                    pos2(x0 + 27.0, r.min.y + 1.0),
+                    pos2((x0 + 33.0 + g.size().x).min(name_clip.max.x), r.max.y - 1.0),
+                );
+                lp.with_clip_rect(name_clip.expand2(vec2(3.0, 0.0)))
+                    .rect_filled(cell, 0.0, Color32::from_rgb(0xa6, 0xa6, 0xa6));
             }
             lp.with_clip_rect(name_clip).text(
                 pos2(x0 + 30.0, r.center().y),
                 Align2::LEFT_CENTER,
                 &it.name,
                 Tokens::ui(12.0),
-                if selected { Color32::from_gray(0x16) } else { t.text },
+                if selected {
+                    Color32::from_gray(0x16)
+                } else {
+                    t.text
+                },
             );
         }
         // Label swatch: click for the label colour menu.
         let sw = Rect::from_center_size(pos2(label_x, r.center().y), vec2(10.0, 10.0));
         lp.rect_filled(sw, 2.0, t.label(it.label));
-        let sresp = ui.interact(sw.expand(3.0).intersect(list), egui::Id::new(("plabel", id.0)), Sense::click());
-        app.auto.add(&format!("project.item.{}.label", id.0), sw, it.label.name());
+        let sresp = ui.interact(
+            sw.expand(3.0).intersect(list),
+            egui::Id::new(("plabel", id.0)),
+            Sense::click(),
+        );
+        app.auto
+            .add(&format!("project.item.{}.label", id.0), sw, it.label.name());
         sresp.widget_info(|| {
-            let name = crate::i18n::tr_args("Label of {}: {}", &[&it.name, &app.session.prefs.label_name(it.label)]);
+            let name = crate::i18n::tr_args(
+                "Label of {}: {}",
+                &[&it.name, &app.session.prefs.label_name(it.label)],
+            );
             egui::WidgetInfo::labeled(egui::WidgetType::Button, true, name)
         });
         let pop = egui::Id::new(("plabel-pop", id.0));
         if sresp.clicked() || sresp.secondary_clicked() {
             widgets::open_popup(ui, pop);
         }
-        if let Some(l) = widgets::label_popup(ui, pop, sw.left_bottom(), it.label, |l| app.session.prefs.label_name(l), &t) {
-            actions.push(("project.setLabel".into(), json!({"items": targets(app, *id, selected), "label": label_index(l)})));
+        if let Some(l) = widgets::label_popup(
+            ui,
+            pop,
+            sw.left_bottom(),
+            it.label,
+            |l| app.session.prefs.label_name(l),
+            &t,
+        ) {
+            actions.push((
+                "project.setLabel".into(),
+                json!({"items": targets(app, *id, selected), "label": label_index(l)}),
+            ));
         }
         // Optional columns.
         for (key, _, cx, w) in cols.iter().skip(2) {
-            let cell = opt_clip(Rect::from_min_size(pos2(*cx, r.min.y), vec2(*w, r.height())).intersect(list));
+            let cell = opt_clip(
+                Rect::from_min_size(pos2(*cx, r.min.y), vec2(*w, r.height())).intersect(list),
+            );
             if cell.width() <= 0.0 {
                 continue;
             }
@@ -696,21 +1012,45 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             let txt = match *key {
                 "type" => it.type_name().to_string(),
                 "size" => file_size(it).map(fmt_size).unwrap_or_default(),
-                "duration" => it.duration().map(|d| fmt_dur(d.seconds(), it.frame_rate().map(|r| r.as_f64()).unwrap_or(30.0))).unwrap_or_default(),
-                "fps" => it.frame_rate().map(|f| format!("{:.2}", f.as_f64())).unwrap_or_default(),
+                "duration" => it
+                    .duration()
+                    .map(|d| {
+                        fmt_dur(
+                            d.seconds(),
+                            it.frame_rate().map(|r| r.as_f64()).unwrap_or(30.0),
+                        )
+                    })
+                    .unwrap_or_default(),
+                "fps" => it
+                    .frame_rate()
+                    .map(|f| format!("{:.2}", f.as_f64()))
+                    .unwrap_or_default(),
                 "path" => file_path(it).to_string(),
                 "comment" => {
-                    let cr = Rect::from_min_size(pos2(*cx - 2.0, r.min.y + 2.0), vec2(*w, r.height() - 4.0));
+                    let cr = Rect::from_min_size(
+                        pos2(*cx - 2.0, r.min.y + 2.0),
+                        vec2(*w, r.height() - 4.0),
+                    );
                     if cell_edit(app, ui, &mut actions, "comment", cr) {
                         continue;
                     }
                     let cresp = ui.interact(cell, egui::Id::new(("pcomment", id.0)), Sense::CLICK);
-                    app.auto.add(&format!("project.item.{}.comment", id.0), cell, &it.comment);
+                    app.auto
+                        .add(&format!("project.item.{}.comment", id.0), cell, &it.comment);
                     cresp.widget_info(|| {
-                        egui::WidgetInfo::labeled(egui::WidgetType::Other, true, crate::i18n::tr_args("Comment of {}: {}", &[&it.name, &it.comment]))
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Other,
+                            true,
+                            crate::i18n::tr_args("Comment of {}: {}", &[&it.name, &it.comment]),
+                        )
                     });
                     if cresp.double_clicked() {
-                        ctx.data_mut(|d| d.insert_temp::<Editing>(edit_id(), (id.0, "comment".into(), it.comment.clone())));
+                        ctx.data_mut(|d| {
+                            d.insert_temp::<Editing>(
+                                edit_id(),
+                                (id.0, "comment".into(), it.comment.clone()),
+                            )
+                        });
                     } else {
                         // Other clicks select the row and open its context menu.
                         resp = resp.union(cresp);
@@ -719,31 +1059,63 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
                 }
                 _ => String::new(),
             };
-            let align = if *key == "fps" { Align2::RIGHT_CENTER } else { Align2::LEFT_CENTER };
+            let align = if *key == "fps" {
+                Align2::RIGHT_CENTER
+            } else {
+                Align2::LEFT_CENTER
+            };
             let tx = if *key == "fps" { cx + w - 6.0 } else { *cx };
-            cp.text(pos2(tx, r.center().y), align, txt, Tokens::ui(11.5), t.text_dim);
+            cp.text(
+                pos2(tx, r.center().y),
+                align,
+                txt,
+                Tokens::ui(11.5),
+                t.text_dim,
+            );
         }
         if dragging.is_some_and(|d| d != id.0) && drop_row == Some(*id) && it.is_folder() {
-            lp.rect_stroke(r.shrink(1.0), 2.0, Stroke::new(1.5, t.accent), egui::StrokeKind::Inside);
+            lp.rect_stroke(
+                r.shrink(1.0),
+                2.0,
+                Stroke::new(1.5, t.accent),
+                egui::StrokeKind::Inside,
+            );
         }
         // The row with keyboard focus (Tab, or the arrow keys after it) shows a focus ring.
         if ctx.memory(|m| m.has_focus(row_id(*id))) {
-            lp.rect_stroke(r.shrink(0.5), 0.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
+            lp.rect_stroke(
+                r.shrink(0.5),
+                0.0,
+                Stroke::new(1.0, t.accent),
+                egui::StrokeKind::Inside,
+            );
         }
         // Part of the row: not a second Tab stop.
-        let nresp = ui.interact(name_clip, egui::Id::new(("pname", id.0)), Sense::CLICK | Sense::DRAG);
-        app.auto.add(&format!("project.item.{}.name", id.0), name_clip, &it.name);
+        let nresp = ui.interact(
+            name_clip,
+            egui::Id::new(("pname", id.0)),
+            Sense::CLICK | Sense::DRAG,
+        );
+        app.auto
+            .add(&format!("project.item.{}.name", id.0), name_clip, &it.name);
         let resp = resp.union(nresp);
         if resp.clicked() {
             let m = ui.input(|i| i.modifiers);
             let anchor_key = anchor_id();
             ctx.data_mut(|d| d.insert_temp(cursor_id(), *id));
-            let anchor = ctx.data(|d| d.get_temp::<ItemId>(anchor_key)).or_else(|| app.session.state.project_selection.first().copied());
+            let anchor = ctx
+                .data(|d| d.get_temp::<ItemId>(anchor_key))
+                .or_else(|| app.session.state.project_selection.first().copied());
             if m.shift
                 && let Some(a) = anchor.and_then(|a| rows.iter().position(|(i, _)| *i == a))
             {
                 let b = rows.iter().position(|(i, _)| i == id).unwrap_or(a);
-                app.session.state.project_selection = rows.get(a.min(b)..=a.max(b)).unwrap_or_default().iter().map(|(i, _)| *i).collect();
+                app.session.state.project_selection = rows
+                    .get(a.min(b)..=a.max(b))
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|(i, _)| *i)
+                    .collect();
             } else if m.command {
                 if app.session.state.project_selection.contains(id) {
                     app.session.state.project_selection.retain(|i| i != id);
@@ -765,7 +1137,9 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
                     app.ui.project_open_folders.insert(id.0);
                 }
                 // Footage (not data) and solids open in the Footage panel.
-                ItemKind::Footage(f) if f.kind != effectcraft_engine::project::FootageKind::Data => {
+                ItemKind::Footage(f)
+                    if f.kind != effectcraft_engine::project::FootageKind::Data =>
+                {
                     actions.push(("footage.open".into(), json!({"item": id.0})))
                 }
                 ItemKind::Solid(_) => actions.push(("footage.open".into(), json!({"item": id.0}))),
@@ -783,19 +1157,29 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         let footage = matches!(it.kind, ItemKind::Footage(_));
         crate::widgets::context_menu(&resp, |ui| {
             if ui.button(crate::i18n::tr("Delete")).clicked() {
-                actions.push(("project.delete".into(), json!({"items": targets(app, *id, selected)})));
+                actions.push((
+                    "project.delete".into(),
+                    json!({"items": targets(app, *id, selected)}),
+                ));
                 ui.close();
             }
-            if matches!(it.kind, ItemKind::Comp(_)) && ui.button(crate::i18n::tr("Open Composition")).clicked() {
+            if matches!(it.kind, ItemKind::Comp(_))
+                && ui.button(crate::i18n::tr("Open Composition")).clicked()
+            {
                 actions.push(("comp.open".into(), json!({"comp": id.0})));
                 ui.close();
             }
             if ui.button(crate::i18n::tr("Rename")).clicked() {
-                ctx.data_mut(|d| d.insert_temp::<Editing>(edit_id(), (id.0, "name".into(), it.name.clone())));
+                ctx.data_mut(|d| {
+                    d.insert_temp::<Editing>(edit_id(), (id.0, "name".into(), it.name.clone()))
+                });
                 ui.close();
             }
             if it.parent.is_some() && ui.button(crate::i18n::tr("Move to Project Root")).clicked() {
-                actions.push(("project.move".into(), json!({"items": targets(app, *id, selected), "folder": null})));
+                actions.push((
+                    "project.move".into(),
+                    json!({"items": targets(app, *id, selected), "folder": null}),
+                ));
                 ui.close();
             }
             if !it.is_folder() && ui.button(crate::i18n::tr("Add to Composition")).clicked() {
@@ -804,15 +1188,29 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             }
             // File ▸ New Comp from Selection on the selection (the right-clicked row joins it
             // above): several items ask how in its dialog, as in After Effects (#360).
-            if ui.button(crate::i18n::tr("New Comp from Selection")).clicked() {
+            if ui
+                .button(crate::i18n::tr("New Comp from Selection"))
+                .clicked()
+            {
                 actions.push(("file.newCompFromSelection".into(), json!({})));
                 ui.close();
             }
             ui.separator();
             ui.menu_button(crate::i18n::tr("Label"), |ui| {
                 for l in Label::ALL {
-                    if widgets::label_entry(ui, l, &app.session.prefs.label_name(l), l == it.label, &t).clicked() {
-                        actions.push(("project.setLabel".into(), json!({"items": targets(app, *id, selected), "label": label_index(l)})));
+                    if widgets::label_entry(
+                        ui,
+                        l,
+                        &app.session.prefs.label_name(l),
+                        l == it.label,
+                        &t,
+                    )
+                    .clicked()
+                    {
+                        actions.push((
+                            "project.setLabel".into(),
+                            json!({"items": targets(app, *id, selected), "label": label_index(l)}),
+                        ));
                         ui.close();
                     }
                 }
@@ -830,12 +1228,34 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     }
     // The scroll bars, over the rows (which would take their presses otherwise).
     if overflow > 0.0 {
-        let track = Rect::from_min_max(pos2(opt_x0, list.max.y - 5.0), pos2(rect.max.x - 4.0, list.max.y - 1.0));
-        app.ui.project_hscroll = widgets::scroll_bar(ui, &mut app.auto, "project.hscroll", track, hscroll, overflow, &t);
+        let track = Rect::from_min_max(
+            pos2(opt_x0, list.max.y - 5.0),
+            pos2(rect.max.x - 4.0, list.max.y - 1.0),
+        );
+        app.ui.project_hscroll = widgets::scroll_bar(
+            ui,
+            &mut app.auto,
+            "project.hscroll",
+            track,
+            hscroll,
+            overflow,
+            &t,
+        );
     }
     if max_scroll > 0.0 {
-        let track = Rect::from_min_max(pos2(rect.max.x - 6.0, list.min.y + 1.0), pos2(rect.max.x - 2.0, list.max.y - 7.0));
-        app.ui.project_scroll = widgets::scroll_bar(ui, &mut app.auto, "project.vscroll", track, scroll, max_scroll, &t);
+        let track = Rect::from_min_max(
+            pos2(rect.max.x - 6.0, list.min.y + 1.0),
+            pos2(rect.max.x - 2.0, list.max.y - 7.0),
+        );
+        app.ui.project_scroll = widgets::scroll_bar(
+            ui,
+            &mut app.auto,
+            "project.vscroll",
+            track,
+            scroll,
+            max_scroll,
+            &t,
+        );
     }
     // Dropping a dragged item on the list: into the folder under the pointer (or the folder of
     // the item under it), or the project root below the rows.
@@ -843,18 +1263,32 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         && hover_y.is_some()
     {
         if drop_row.is_none() {
-            lp.rect_stroke(list.shrink(1.0), 0.0, Stroke::new(1.0, t.accent.gamma_multiply(0.6)), egui::StrokeKind::Inside);
+            lp.rect_stroke(
+                list.shrink(1.0),
+                0.0,
+                Stroke::new(1.0, t.accent.gamma_multiply(0.6)),
+                egui::StrokeKind::Inside,
+            );
         }
         if ctx.input(|i| i.pointer.any_released()) && drop_row != Some(ItemId(iid)) {
             let folder = drop_folder(&app.session.project, drop_row);
             let cur = app.session.project.item(ItemId(iid)).and_then(|i| i.parent);
             if folder != cur {
-                let moving: Vec<u64> = if app.session.state.project_selection.contains(&ItemId(iid)) {
-                    app.session.state.project_selection.iter().map(|i| i.0).collect()
+                let moving: Vec<u64> = if app.session.state.project_selection.contains(&ItemId(iid))
+                {
+                    app.session
+                        .state
+                        .project_selection
+                        .iter()
+                        .map(|i| i.0)
+                        .collect()
                 } else {
                     vec![iid]
                 };
-                actions.push(("project.move".into(), json!({"items": moving, "folder": folder.map(|f| f.0)})));
+                actions.push((
+                    "project.move".into(),
+                    json!({"items": moving, "folder": folder.map(|f| f.0)}),
+                ));
                 if let Some(f) = folder {
                     app.ui.project_open_folders.insert(f.0);
                 }
@@ -863,10 +1297,16 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         }
     }
     // Files dragged from the Media Browser: import.
-    if let Some(DragPayload::Files(paths)) = egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
+    if let Some(DragPayload::Files(paths)) =
+        egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
         && hover_y.is_some()
     {
-        lp.rect_stroke(list.shrink(1.0), 0.0, Stroke::new(1.0, t.accent.gamma_multiply(0.6)), egui::StrokeKind::Inside);
+        lp.rect_stroke(
+            list.shrink(1.0),
+            0.0,
+            Stroke::new(1.0, t.accent.gamma_multiply(0.6)),
+            egui::StrokeKind::Inside,
+        );
         if ctx.input(|i| i.pointer.any_released()) {
             actions.push(("mediaBrowser.import".into(), json!({"paths": paths})));
             egui::DragAndDrop::clear_payload(&ctx);
@@ -877,7 +1317,10 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         && let Some(pos) = ctx.pointer_hover_pos()
         && let Some(it) = app.session.project.item(ItemId(*iid))
     {
-        let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("dnd-ghost")));
+        let painter = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Tooltip,
+            egui::Id::new("dnd-ghost"),
+        ));
         let g = painter.layout_no_wrap(it.name.clone(), Tokens::ui(12.0), t.text);
         let r = Rect::from_min_size(pos + vec2(12.0, 8.0), g.size() + vec2(16.0, 8.0));
         painter.rect_filled(r, 4.0, Color32::from_rgba_premultiplied(40, 40, 40, 230));
@@ -885,7 +1328,10 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     }
     // Footer.
     let foot = Rect::from_min_max(pos2(rect.min.x, rect.max.y - footer_h), rect.max);
-    p.line_segment([foot.left_top(), foot.right_top()], Stroke::new(1.0, t.separator));
+    p.line_segment(
+        [foot.left_top(), foot.right_top()],
+        Stroke::new(1.0, t.separator),
+    );
     let mut x = foot.min.x + 8.0;
     for (icon, id, tip) in [
         (Icon::Gear, "interpret", "Interpret Footage"),
@@ -893,12 +1339,20 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         (Icon::NewComp, "newComp", "Create a new Composition"),
     ] {
         let r = Rect::from_min_size(pos2(x, foot.min.y + 3.0), vec2(22.0, 22.0));
-        let resp = widgets::icon_button(ui, r, icon, false, &t, egui::Id::new(("pfoot", id))).on_hover_text(tip);
+        let resp = widgets::icon_button(ui, r, icon, false, &t, egui::Id::new(("pfoot", id)))
+            .on_hover_text(tip);
         app.auto.add(&format!("project.{id}"), r, tip);
-        resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, crate::i18n::tr(tip)));
+        resp.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::WidgetType::Button, true, crate::i18n::tr(tip))
+        });
         if resp.clicked() {
-            let footage =
-                app.session.state.project_selection.first().and_then(|i| app.session.project.item(*i)).is_some_and(|i| matches!(i.kind, ItemKind::Footage(_)));
+            let footage = app
+                .session
+                .state
+                .project_selection
+                .first()
+                .and_then(|i| app.session.project.item(*i))
+                .is_some_and(|i| matches!(i.kind, ItemKind::Footage(_)));
             match id {
                 "newComp" => crate::panels::dialogs::open_new_comp(app),
                 "newFolder" => actions.push(("project.newFolder".into(), json!({}))),
@@ -909,7 +1363,8 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         // Items dropped on Create a new Composition: New Comp from Selection with them (After
         // Effects; several items ask how in its dialog).
         if id == "newComp"
-            && let Some(DragPayload::Item(iid)) = egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
+            && let Some(DragPayload::Item(iid)) =
+                egui::DragAndDrop::payload::<DragPayload>(&ctx).as_deref()
             && ui.rect_contains_pointer(r)
         {
             p.rect_stroke(r, 4.0, Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
@@ -926,9 +1381,21 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let depth = app.session.project.settings.bit_depth.label();
     let dr = Rect::from_min_size(pos2(x + 4.0, foot.min.y + 5.0), vec2(48.0, 18.0));
     let dresp = ui.interact(dr, egui::Id::new("bpc"), Sense::click());
-    p.text(dr.center(), Align2::CENTER_CENTER, depth, Tokens::ui(11.5), if dresp.hovered() { t.text } else { t.text_dim });
+    p.text(
+        dr.center(),
+        Align2::CENTER_CENTER,
+        depth,
+        Tokens::ui(11.5),
+        if dresp.hovered() { t.text } else { t.text_dim },
+    );
     app.auto.add("project.bitDepth", dr, depth);
-    dresp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, crate::i18n::tr_args("Project color depth: {}", &[&depth])));
+    dresp.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            true,
+            crate::i18n::tr_args("Project color depth: {}", &[&depth]),
+        )
+    });
     // Click cycles 8/16/32 bpc; Alt-click opens Project Settings (as in After Effects).
     if dresp.clicked() {
         if ui.input(|i| i.modifiers.alt) {
@@ -937,10 +1404,19 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             actions.push(("file.cycleBitDepth".into(), json!({})));
         }
     }
-    dresp.on_hover_text(crate::i18n::tr("Project color depth: click to cycle 8/16/32 bpc, Alt-click for Project Settings"));
+    dresp.on_hover_text(crate::i18n::tr(
+        "Project color depth: click to cycle 8/16/32 bpc, Alt-click for Project Settings",
+    ));
     let tr = Rect::from_min_size(pos2(foot.max.x - 30.0, foot.min.y + 3.0), vec2(22.0, 22.0));
-    let trash = widgets::icon_button(ui, tr, Icon::Trash, false, &t, egui::Id::new("ptrash")).on_hover_text(crate::i18n::tr("Delete selected project items"));
-    trash.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, crate::i18n::tr("Delete selected project items")));
+    let trash = widgets::icon_button(ui, tr, Icon::Trash, false, &t, egui::Id::new("ptrash"))
+        .on_hover_text(crate::i18n::tr("Delete selected project items"));
+    trash.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            true,
+            crate::i18n::tr("Delete selected project items"),
+        )
+    });
     if trash.clicked() && !app.session.state.project_selection.is_empty() {
         actions.push(("project.delete".into(), json!({})));
     }
@@ -949,11 +1425,14 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         actions.push(("file.import".into(), json!({})));
     }
     crate::widgets::context_menu(&empty, |ui| {
-        for (key, label, command) in
-            [("newComp", "New Composition…", "comp.new"), ("newFolder", "New Folder", "project.newFolder"), ("import", "Import File…", "file.import")]
-        {
+        for (key, label, command) in [
+            ("newComp", "New Composition…", "comp.new"),
+            ("newFolder", "New Folder", "project.newFolder"),
+            ("import", "Import File…", "file.import"),
+        ] {
             let response = ui.button(label);
-            app.auto.add(&format!("project.context.{key}"), response.rect, label);
+            app.auto
+                .add(&format!("project.context.{key}"), response.rect, label);
             if response.clicked() {
                 actions.push((command.into(), json!({})));
                 ui.close();
@@ -966,8 +1445,10 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
         app.session.state.project_selection.clear();
     }
     let box_id = egui::Id::new("proj-marquee");
-    if let (Some(start), Some(end)) = (ctx.input(|i| i.pointer.press_origin()), empty.interact_pointer_pos())
-        && empty.dragged()
+    if let (Some(start), Some(end)) = (
+        ctx.input(|i| i.pointer.press_origin()),
+        empty.interact_pointer_pos(),
+    ) && empty.dragged()
     {
         let b = Rect::from_two_pos(start, end).intersect(list);
         lp.rect_filled(b, 0.0, t.accent.gamma_multiply(0.12));
@@ -1004,7 +1485,16 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
 
 /// Items a row's menu acts on: the selection when the row is selected, else the row's item.
 fn targets(app: &EffectcraftApp, id: ItemId, selected: bool) -> Vec<u64> {
-    if selected { app.session.state.project_selection.iter().map(|i| i.0).collect() } else { vec![id.0] }
+    if selected {
+        app.session
+            .state
+            .project_selection
+            .iter()
+            .map(|i| i.0)
+            .collect()
+    } else {
+        vec![id.0]
+    }
 }
 
 /// `project.setLabel`'s index of a label.

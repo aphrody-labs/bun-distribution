@@ -14,7 +14,13 @@ pub(crate) enum Op {
 }
 
 pub(crate) fn rect(l: f64, t: f64, r: f64, b: f64) -> Vec<Op> {
-    vec![Op::M((l, t)), Op::L((r, t)), Op::L((r, b)), Op::L((l, b)), Op::Z]
+    vec![
+        Op::M((l, t)),
+        Op::L((r, t)),
+        Op::L((r, b)),
+        Op::L((l, b)),
+        Op::Z,
+    ]
 }
 
 /// Corner radii are half the EMF/WMF corner ellipse size, clamped so the corners never overlap.
@@ -55,7 +61,9 @@ pub(crate) enum ArcKind {
 /// ARC, CHORD and PIE: the arc runs counter-clockwise on screen from the start point to the end point.
 pub(crate) fn arc_shape(l: f64, t: f64, r: f64, b: f64, s: P, e: P, kind: ArcKind) -> Vec<Op> {
     let (cx, cy, rx, ry) = center(l, t, r, b);
-    let ang = |p: P| ((p.1 - cy) / ry.max(f64::MIN_POSITIVE)).atan2((p.0 - cx) / rx.max(f64::MIN_POSITIVE));
+    let ang = |p: P| {
+        ((p.1 - cy) / ry.max(f64::MIN_POSITIVE)).atan2((p.0 - cx) / rx.max(f64::MIN_POSITIVE))
+    };
     let (a0, a1) = (ang(s), ang(e));
     let mut d = (a0 - a1).rem_euclid(TAU);
     if d < 1e-12 {
@@ -63,7 +71,11 @@ pub(crate) fn arc_shape(l: f64, t: f64, r: f64, b: f64, s: P, e: P, kind: ArcKin
     }
     let sweep = -d;
     let start = (cx + rx * a0.cos(), cy + ry * a0.sin());
-    let mut ops = if kind == ArcKind::Pie { vec![Op::M((cx, cy)), Op::L(start)] } else { vec![Op::M(start)] };
+    let mut ops = if kind == ArcKind::Pie {
+        vec![Op::M((cx, cy)), Op::L(start)]
+    } else {
+        vec![Op::M(start)]
+    };
     ops.extend(arc(cx, cy, rx, ry, a0, sweep));
     match kind {
         ArcKind::Arc => {}
@@ -74,7 +86,12 @@ pub(crate) fn arc_shape(l: f64, t: f64, r: f64, b: f64, s: P, e: P, kind: ArcKin
 }
 
 fn center(l: f64, t: f64, r: f64, b: f64) -> (f64, f64, f64, f64) {
-    ((l + r) / 2.0, (t + b) / 2.0, (r - l).abs() / 2.0, (b - t).abs() / 2.0)
+    (
+        (l + r) / 2.0,
+        (t + b) / 2.0,
+        (r - l).abs() / 2.0,
+        (b - t).abs() / 2.0,
+    )
 }
 
 /// Cubic pieces along an ellipse from parameter `a0` over signed `sweep` radians. The current point

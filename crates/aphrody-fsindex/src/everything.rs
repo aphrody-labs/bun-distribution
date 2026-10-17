@@ -125,7 +125,11 @@ pub fn hit_from_parts(
 ) -> FileHit {
     // Everything returns Windows paths; split on both separators so the
     // helper behaves identically on every host.
-    let name = path.rsplit(['\\', '/']).find(|s| !s.is_empty()).unwrap_or(&path).to_owned();
+    let name = path
+        .rsplit(['\\', '/'])
+        .find(|s| !s.is_empty())
+        .unwrap_or(&path)
+        .to_owned();
     let extension = if is_dir {
         String::new()
     } else {
@@ -138,7 +142,11 @@ pub fn hit_from_parts(
         path,
         name,
         extension,
-        size: if is_dir { 0 } else { size.map_or(0, |s| u64::try_from(s).unwrap_or(0)) },
+        size: if is_dir {
+            0
+        } else {
+            size.map_or(0, |s| u64::try_from(s).unwrap_or(0))
+        },
         mtime_unix: filetime.map_or(0, filetime_to_unix),
         is_dir,
     }
@@ -150,7 +158,7 @@ impl From<sdk::EverythingError> for EverythingError {
             sdk::EverythingError::LibraryNotFound(tried) => Self::LibraryNotFound(tried),
             sdk::EverythingError::DllLoad { path, reason } => {
                 Self::LibraryNotFound(format!("{path} ({reason})"))
-            },
+            }
             sdk::EverythingError::MissingSymbol(name) => Self::MissingSymbol(name),
             sdk::EverythingError::Sdk { code } => Self::Sdk { code },
         }
@@ -223,7 +231,9 @@ pub fn search_with_fallback(
     let max = u32::try_from(limit).unwrap_or(u32::MAX);
     match search(&EverythingQuery::new(query, max)) {
         Ok(hits) => Ok((Backend::Everything, hits)),
-        Err(_) => index.search(query, limit).map(|hits| (Backend::FsIndex, hits)),
+        Err(_) => index
+            .search(query, limit)
+            .map(|hits| (Backend::FsIndex, hits)),
     }
 }
 
@@ -260,7 +270,10 @@ mod tests {
 
     #[test]
     fn empty_query_is_rejected_before_ffi() {
-        assert_eq!(search(&EverythingQuery::new("  ", 5)), Err(EverythingError::EmptyQuery));
+        assert_eq!(
+            search(&EverythingQuery::new("  ", 5)),
+            Err(EverythingError::EmptyQuery)
+        );
     }
 
     #[test]

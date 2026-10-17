@@ -9,23 +9,32 @@ use pdfcraft_ui_egui::updates::{Release, UpdateSource, is_newer};
 
 fn source(answer: Result<&str, &str>) -> UpdateSource {
     let answer = answer.map(str::to_string).map_err(str::to_string);
-    Arc::new(move || answer.clone().map(|v| Release { url: format!("https://github.com/storytold/pdfcraft/releases/tag/{v}"), version: v }))
+    Arc::new(move || {
+        answer.clone().map(|v| Release {
+            url: format!("https://github.com/storytold/pdfcraft/releases/tag/{v}"),
+            version: v,
+        })
+    })
 }
 
 fn harness(answer: Result<&str, &str>) -> Harness<'static, PdfCraftApp> {
-    Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.update_source = Some(source(answer));
-        app
-    })
+    Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.update_source = Some(source(answer));
+            app
+        })
 }
 
 /// Run frames until the background check has reported (or give up).
 fn settle(h: &mut Harness<'static, PdfCraftApp>) {
     for _ in 0..200 {
         h.run_steps(2);
-        if h.query_by_label_contains("Checking for a newer version").is_none() {
+        if h.query_by_label_contains("Checking for a newer version")
+            .is_none()
+        {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(5));
@@ -41,9 +50,15 @@ fn versions_compare_by_number() {
     assert!(!is_newer("v0.1.1", "0.1.1"));
     assert!(!is_newer("v0.1.0", "0.1.1"));
     assert!(!is_newer("v0.1.1-beta.2", "0.1.1"), "suffixes are ignored");
-    assert!(!is_newer("nightly", "0.1.1"), "a tag that isn't a version is never newer");
+    assert!(
+        !is_newer("nightly", "0.1.1"),
+        "a tag that isn't a version is never newer"
+    );
     assert!(!is_newer("v1.2.3.4", "0.1.1"));
-    assert!(!is_newer("v99999999999999999999.0.0", "0.1.1"), "out of range");
+    assert!(
+        !is_newer("v99999999999999999999.0.0", "0.1.1"),
+        "out of range"
+    );
 }
 
 #[test]
@@ -55,7 +70,10 @@ fn a_newer_release_is_offered_for_download() {
     h.get_by_label("Download");
     h.get_by_label("Later").click();
     h.run_steps(3);
-    assert!(h.query_by_label_contains("is available").is_none(), "Later closes the dialog");
+    assert!(
+        h.query_by_label_contains("is available").is_none(),
+        "Later closes the dialog"
+    );
 }
 
 #[test]
@@ -77,18 +95,23 @@ fn nothing_is_asked_until_the_user_checks() {
     // No check at start (the owner's decision): the source is only called from the command.
     let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let counted = calls.clone();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        // Settings from a build that had the startup option are ignored.
-        app.restore(r#"{"check_updates_at_start": true}"#);
-        let counted = counted.clone();
-        app.update_source = Some(Arc::new(move || {
-            counted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            Ok(Release { version: "v99.0.0".into(), url: "https://github.com/storytold/pdfcraft/releases/tag/v99.0.0".into() })
-        }));
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            // Settings from a build that had the startup option are ignored.
+            app.restore(r#"{"check_updates_at_start": true}"#);
+            let counted = counted.clone();
+            app.update_source = Some(Arc::new(move || {
+                counted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                Ok(Release {
+                    version: "v99.0.0".into(),
+                    url: "https://github.com/storytold/pdfcraft/releases/tag/v99.0.0".into(),
+                })
+            }));
+            app
+        });
     settle(&mut h);
     assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 0);
     assert!(h.query_by_label_contains("is available").is_none());

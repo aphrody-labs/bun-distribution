@@ -62,7 +62,10 @@ pub struct PenSettings {
 
 impl PenSettings {
     fn of(tool: InkTool) -> PenSettings {
-        PenSettings { color: tool.default_color(), width: tool.default_width() }
+        PenSettings {
+            color: tool.default_color(),
+            width: tool.default_width(),
+        }
     }
 }
 
@@ -97,17 +100,23 @@ pub const MAX_PENS: usize = 24;
 /// width clamped). Anything but an object, an unknown kind or a malformed colour is refused.
 pub fn custom_pen(v: &Value) -> Result<CustomPen, CmdError> {
     if !v.is_object() {
-        return Err(CmdError::Params("a pen is {\"kind\", \"color\", \"width\"}".into()));
+        return Err(CmdError::Params(
+            "a pen is {\"kind\", \"color\", \"width\"}".into(),
+        ));
     }
     let kind = match p::str(v, "kind") {
-        Some(k) => InkTool::parse(k).ok_or_else(|| CmdError::Params("`kind` is pen, pencil or highlighter".into()))?,
+        Some(k) => InkTool::parse(k)
+            .ok_or_else(|| CmdError::Params("`kind` is pen, pencil or highlighter".into()))?,
         None => InkTool::Pen,
     };
     let color = match p::str(v, "color") {
         Some(c) => Rgb::parse(c).ok_or_else(|| CmdError::Params("`color` is RRGGBB".into()))?,
         None => kind.default_color(),
     };
-    let width = p::f32(v, "width").filter(|w| w.is_finite()).unwrap_or(kind.default_width()).clamp(MIN_WIDTH, MAX_WIDTH);
+    let width = p::f32(v, "width")
+        .filter(|w| w.is_finite())
+        .unwrap_or(kind.default_width())
+        .clamp(MIN_WIDTH, MAX_WIDTH);
     Ok(CustomPen { kind, color, width })
 }
 
@@ -115,7 +124,14 @@ pub fn custom_pen(v: &Value) -> Result<CustomPen, CmdError> {
 /// settings file loses those pens, never the rest of the settings).
 pub fn lenient_pens<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<CustomPen>, D::Error> {
     let v = Value::deserialize(d)?;
-    Ok(v.as_array().map(|a| a.iter().filter_map(|x| custom_pen(x).ok()).take(MAX_PENS).collect()).unwrap_or_default())
+    Ok(v.as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| custom_pen(x).ok())
+                .take(MAX_PENS)
+                .collect()
+        })
+        .unwrap_or_default())
 }
 
 /// Strokes and drawings picked with the lasso on `page`. Good while the document is as it was
@@ -271,7 +287,9 @@ fn state(s: &Session) -> CmdResult {
 
 /// Pick up a pen, optionally changing its colour and thickness.
 fn pen(s: &mut Session, v: &Value, tool: InkTool) -> CmdResult {
-    let color = p::str(v, "color").map(|c| Rgb::parse(c).ok_or_else(|| CmdError::Params("`color` is RRGGBB".into()))).transpose()?;
+    let color = p::str(v, "color")
+        .map(|c| Rgb::parse(c).ok_or_else(|| CmdError::Params("`color` is RRGGBB".into())))
+        .transpose()?;
     let set = s.view.draw.settings_mut(tool);
     if let Some(c) = color {
         set.color = c;
@@ -287,12 +305,19 @@ fn pen(s: &mut Session, v: &Value, tool: InkTool) -> CmdResult {
 fn add_pen(s: &mut Session, v: &Value) -> CmdResult {
     let pen = custom_pen(v)?;
     if s.view.draw.pens.len() >= MAX_PENS {
-        return Err(CmdError::Failed(format!("the pen gallery holds at most {MAX_PENS} pens")));
+        return Err(CmdError::Failed(format!(
+            "the pen gallery holds at most {MAX_PENS} pens"
+        )));
     }
     s.view.draw.pens.push(pen);
-    *s.view.draw.settings_mut(pen.kind) = PenSettings { color: pen.color, width: pen.width };
+    *s.view.draw.settings_mut(pen.kind) = PenSettings {
+        color: pen.color,
+        width: pen.width,
+    };
     s.view.draw.mode = DrawMode::Pen(pen.kind);
-    Ok(json!({"pen": Value::from(pen), "index": s.view.draw.pens.len() - 1, "pens": s.view.draw.pens.len()}))
+    Ok(
+        json!({"pen": Value::from(pen), "index": s.view.draw.pens.len() - 1, "pens": s.view.draw.pens.len()}),
+    )
 }
 
 /// An ink stroke laid out on a page.
@@ -312,28 +337,61 @@ impl PlacedInk {
     /// Its paths in page points, turned as it is drawn.
     pub fn paths(&self) -> Vec<Vec<[f32; 2]>> {
         let r = self.rect;
-        let paths = self.freeform.placed(r.x, r.y, r.w, r.h).into_iter().map(|(pts, _)| pts);
+        let paths = self
+            .freeform
+            .placed(r.x, r.y, r.w, r.h)
+            .into_iter()
+            .map(|(pts, _)| pts);
         if self.spin.is_identity() {
             return paths.collect();
         }
         let (cx, cy) = (r.x + r.w / 2.0, r.y + r.h / 2.0);
-        paths.map(|pts| pts.into_iter().map(|[x, y]| <[f32; 2]>::from(self.spin.apply(cx, cy, x, y))).collect()).collect()
+        paths
+            .map(|pts| {
+                pts.into_iter()
+                    .map(|[x, y]| <[f32; 2]>::from(self.spin.apply(cx, cy, x, y)))
+                    .collect()
+            })
+            .collect()
     }
 }
 
 /// Ink strokes laid out on `page`, in the page's drawing order: their position, unturned frame,
 /// turn and geometry on the page.
 pub fn ink_on(s: &Session, layout: &DocLayout, page: usize) -> Vec<PlacedInk> {
-    let Some(pg) = layout.pages.get(page) else { return Vec::new() };
+    let Some(pg) = layout.pages.get(page) else {
+        return Vec::new();
+    };
     pg.items
         .iter()
         .filter_map(|it| match it {
-            Placed::Object { rect, spin, story, path, off, .. } => {
-                let pos = Pos { story: *story, path: path.clone(), off: *off };
+            Placed::Object {
+                rect,
+                spin,
+                story,
+                path,
+                off,
+                ..
+            } => {
+                let pos = Pos {
+                    story: *story,
+                    path: path.clone(),
+                    off: *off,
+                };
                 match s.doc.para_at(&pos).and_then(|p| p.object_at(*off)) {
-                    Some(InlineObject::Shape { freeform: Some(f), stroke_width, stroke, .. }) if f.is_ink() => {
-                        Some(PlacedInk { pos, rect: *rect, spin: *spin, freeform: f.clone(), color: *stroke, width: *stroke_width })
-                    }
+                    Some(InlineObject::Shape {
+                        freeform: Some(f),
+                        stroke_width,
+                        stroke,
+                        ..
+                    }) if f.is_ink() => Some(PlacedInk {
+                        pos,
+                        rect: *rect,
+                        spin: *spin,
+                        freeform: f.clone(),
+                        color: *stroke,
+                        width: *stroke_width,
+                    }),
                     _ => None,
                 }
             }
@@ -349,19 +407,31 @@ pub fn ink_at(s: &mut Session, page: usize, x: f32, y: f32) -> Option<Pos> {
     }
     let layout = s.layout();
     ink_on(s, &layout, page).into_iter().rev().find_map(|k| {
-        let reach = (if k.width.is_finite() { k.width.clamp(0.0, MAX_WIDTH) } else { 1.0 }) / 2.0 + ERASE_SLOP;
+        let reach = (if k.width.is_finite() {
+            k.width.clamp(0.0, MAX_WIDTH)
+        } else {
+            1.0
+        }) / 2.0
+            + ERASE_SLOP;
         // A turned stroke is drawn turned about its frame's centre: test the point turned back
         // into the stroke's own frame (a turn keeps distances, so the reach holds).
         let r = k.rect;
         let (u, v) = k.spin.unapply(r.x + r.w / 2.0, r.y + r.h / 2.0, x, y);
-        k.freeform.distance(r.x, r.y, r.w, r.h, u, v).filter(|d| *d <= reach).map(|_| k.pos)
+        k.freeform
+            .distance(r.x, r.y, r.w, r.h, u, v)
+            .filter(|d| *d <= reach)
+            .map(|_| k.pos)
     })
 }
 
 fn page_param(s: &mut Session, v: &Value) -> Result<(usize, Arc<DocLayout>), CmdError> {
-    let page = p::u64(v, "page").ok_or_else(|| CmdError::Params("`page` (0-based) is required".into()))?;
+    let page =
+        p::u64(v, "page").ok_or_else(|| CmdError::Params("`page` (0-based) is required".into()))?;
     let layout = s.layout();
-    let page = usize::try_from(page).ok().filter(|i| *i < layout.pages.len()).ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
+    let page = usize::try_from(page)
+        .ok()
+        .filter(|i| *i < layout.pages.len())
+        .ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
     Ok((page, layout))
 }
 
@@ -385,7 +455,8 @@ fn points_param(v: &Value, max: usize, pw: f32, ph: f32) -> Result<Vec<[f32; 2]>
 fn erase(s: &mut Session, v: &Value) -> CmdResult {
     let (page, _) = page_param(s, v)?;
     let (x, y) = (p::req_f32(v, "x")?, p::req_f32(v, "y")?);
-    let pos = ink_at(s, page, x, y).ok_or_else(|| CmdError::Failed("no ink stroke there".into()))?;
+    let pos =
+        ink_at(s, page, x, y).ok_or_else(|| CmdError::Failed("no ink stroke there".into()))?;
     delete_object(s, &pos)?;
     Ok(json!({"erased": pos_json(&pos)}))
 }
@@ -393,7 +464,13 @@ fn erase(s: &mut Session, v: &Value) -> CmdResult {
 /// Delete the object at `pos`, keeping the text selection on the same text.
 fn delete_object(s: &mut Session, pos: &Pos) -> Result<(), CmdError> {
     let len = OBJ.len_utf8();
-    s.doc.delete_range(pos, &Pos { off: pos.off + len, ..pos.clone() })?;
+    s.doc.delete_range(
+        pos,
+        &Pos {
+            off: pos.off + len,
+            ..pos.clone()
+        },
+    )?;
     for at in [&mut s.sel.anchor, &mut s.sel.focus] {
         if at.story == pos.story && at.path == pos.path && at.off > pos.off {
             at.off = at.off.saturating_sub(len).max(pos.off);
@@ -420,7 +497,8 @@ fn next_order(s: &Session) -> u32 {
 fn stroke(s: &mut Session, v: &Value) -> CmdResult {
     let (page, layout) = page_param(s, v)?;
     let tool = match p::str(v, "tool") {
-        Some(t) => InkTool::parse(t).ok_or_else(|| CmdError::Params("`tool` is pen, pencil or highlighter".into()))?,
+        Some(t) => InkTool::parse(t)
+            .ok_or_else(|| CmdError::Params("`tool` is pen, pencil or highlighter".into()))?,
         None => s.view.draw.mode.pen().unwrap_or(InkTool::Pen),
     };
     let set = s.view.draw.settings(tool);
@@ -428,13 +506,23 @@ fn stroke(s: &mut Session, v: &Value) -> CmdResult {
         Some(c) => Rgb::parse(c).ok_or_else(|| CmdError::Params("`color` is RRGGBB".into()))?,
         None => set.color,
     };
-    let width = p::f32(v, "width").filter(|w| w.is_finite()).unwrap_or(set.width).clamp(MIN_WIDTH, MAX_WIDTH);
-    let pg = layout.pages.get(page).ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
+    let width = p::f32(v, "width")
+        .filter(|w| w.is_finite())
+        .unwrap_or(set.width)
+        .clamp(MIN_WIDTH, MAX_WIDTH);
+    let pg = layout
+        .pages
+        .get(page)
+        .ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
     let (pw, ph) = (pg.w.max(1.0), pg.h.clamp(1.0, 1e5));
     let pts = points_param(v, MAX_POINTS, pw, ph)?;
-    let first = *pts.first().ok_or_else(|| CmdError::Params("`points` has no usable point".into()))?;
+    let first = *pts
+        .first()
+        .ok_or_else(|| CmdError::Params("`points` has no usable point".into()))?;
     if ink_on(s, &layout, page).len() >= MAX_INK_PER_PAGE {
-        return Err(CmdError::Failed(format!("page {page} already has {MAX_INK_PER_PAGE} ink strokes")));
+        return Err(CmdError::Failed(format!(
+            "page {page} already has {MAX_INK_PER_PAGE} ink strokes"
+        )));
     }
     // The frame: the points' bounds, grown by half the width so the stroke's ends fit.
     let pad = width / 2.0;
@@ -445,7 +533,11 @@ fn stroke(s: &mut Session, v: &Value) -> CmdResult {
     let (fx, fy) = (x0 - pad, y0 - pad);
     let (fw, fh) = ((x1 - x0 + width).max(1.0), (y1 - y0 + width).max(1.0));
     let local: Vec<[f32; 2]> = pts.iter().map(|[x, y]| [x - fx, y - fy]).collect();
-    let wrap = if tool == InkTool::Highlighter { Wrap::BehindText } else { Wrap::InFrontOfText };
+    let wrap = if tool == InkTool::Highlighter {
+        Wrap::BehindText
+    } else {
+        Wrap::InFrontOfText
+    };
     let order = next_order(s);
     let obj = InlineObject::Shape {
         kind: ShapeKind::Freeform,
@@ -454,30 +546,55 @@ fn stroke(s: &mut Session, v: &Value) -> CmdResult {
         fill: None,
         stroke: Some(color),
         stroke_width: width,
-        float: Float { wrap, ..Default::default() },
+        float: Float {
+            wrap,
+            ..Default::default()
+        },
         story: None,
-        freeform: Some(Arc::new(Freeform { order: Some(order), ..Freeform::ink(tool, fw, fh, local) })),
+        freeform: Some(Arc::new(Freeform {
+            order: Some(order),
+            ..Freeform::ink(tool, fw, fh, local)
+        })),
         effects: Default::default(),
         extra: Default::default(),
     };
     let at = place(s, &layout, obj, page, (fx, fy), first[1])?;
     // Ink to Shape: a stroke that looks like a shape becomes it (in the same undo step).
-    let shape = if s.view.draw.ink_to_shape && tool != InkTool::Highlighter { convert_at(s, &at)? } else { None };
+    let shape = if s.view.draw.ink_to_shape && tool != InkTool::Highlighter {
+        convert_at(s, &at)?
+    } else {
+        None
+    };
     Ok(json!({"pos": pos_json(&at), "page": page, "rect": [fx, fy, fw, fh], "shape": shape}))
 }
 
 /// Insert floating `obj` with its top-left at `(x, y)` on `page`, anchored to the body paragraph
 /// under `anchor_y` (positioned from its column and top), or, where no paragraph starts on the
 /// page, to the nearest line and positioned on the page. Returns where its character went.
-fn place(s: &mut Session, layout: &DocLayout, obj: InlineObject, page: usize, (x, y): (f32, f32), anchor_y: f32) -> Result<Pos, CmdError> {
-    let (at, on_page) = match super::objects::anchor_paragraph(layout, page, anchor_y, StoryRef::Body) {
-        Some(path) => (Pos { story: StoryRef::Body, path, off: 0 }, false),
-        None => (
-            super::objects::nearest_line(layout, page, anchor_y, StoryRef::Body)
-                .ok_or_else(|| CmdError::Params("no text on that page to anchor to".into()))?,
-            true,
-        ),
-    };
+fn place(
+    s: &mut Session,
+    layout: &DocLayout,
+    obj: InlineObject,
+    page: usize,
+    (x, y): (f32, f32),
+    anchor_y: f32,
+) -> Result<Pos, CmdError> {
+    let (at, on_page) =
+        match super::objects::anchor_paragraph(layout, page, anchor_y, StoryRef::Body) {
+            Some(path) => (
+                Pos {
+                    story: StoryRef::Body,
+                    path,
+                    off: 0,
+                },
+                false,
+            ),
+            None => (
+                super::objects::nearest_line(layout, page, anchor_y, StoryRef::Body)
+                    .ok_or_else(|| CmdError::Params("no text on that page to anchor to".into()))?,
+                true,
+            ),
+        };
     s.doc.insert_object(&at, obj, &CharProps::default())?;
     let len = OBJ.len_utf8();
     for p in [&mut s.sel.anchor, &mut s.sel.focus] {
@@ -489,12 +606,20 @@ fn place(s: &mut Session, layout: &DocLayout, obj: InlineObject, page: usize, (x
         (Anchor::Page, wordcraft_geom::Point::new(0.0, 0.0))
     } else {
         s.touch(); // lay out the new object to find where its paragraph puts it
-        let origin = s.layout().object(&at, page).ok_or_else(|| CmdError::Failed("the stroke isn't laid out".into()))?.origin;
+        let origin = s
+            .layout()
+            .object(&at, page)
+            .ok_or_else(|| CmdError::Failed("the stroke isn't laid out".into()))?
+            .origin;
         (Anchor::Paragraph, origin)
     };
     let para = s.doc.para_mut(at.story, &at.path)?;
     if let Some(InlineObject::Shape { float, .. }) = para.object_at_mut(at.off) {
-        float.h_rel = if on_page { Anchor::Page } else { Anchor::Column };
+        float.h_rel = if on_page {
+            Anchor::Page
+        } else {
+            Anchor::Column
+        };
         float.v_rel = rel;
         float.x = x - origin.x;
         float.y = y - origin.y;
@@ -507,12 +632,19 @@ fn place(s: &mut Session, layout: &DocLayout, obj: InlineObject, page: usize, (x
 
 /// The current lasso selection, if the document hasn't changed under it.
 pub fn lasso_selection(s: &Session) -> Option<&LassoSelection> {
-    s.view.draw.lasso.as_ref().filter(|l| l.rev == s.rev() && !l.items.is_empty())
+    s.view
+        .draw
+        .lasso
+        .as_ref()
+        .filter(|l| l.rev == s.rev() && !l.items.is_empty())
 }
 
 /// Keep `sel` selected after the mutating command running now (which bumps the revision once).
 fn keep_lasso(s: &mut Session, sel: LassoSelection) {
-    s.view.draw.lasso = Some(LassoSelection { rev: s.rev().wrapping_add(1), ..sel });
+    s.view.draw.lasso = Some(LassoSelection {
+        rev: s.rev().wrapping_add(1),
+        ..sel
+    });
 }
 
 /// Whether (`x`, `y`) is inside the closed loop `poly` (even–odd rule).
@@ -520,7 +652,9 @@ fn inside(poly: &[[f32; 2]], x: f32, y: f32) -> bool {
     let n = poly.len();
     let mut odd = false;
     for i in 0..n {
-        let (Some(a), Some(b)) = (poly.get(i), poly.get((i + n - 1) % n)) else { continue };
+        let (Some(a), Some(b)) = (poly.get(i), poly.get((i + n - 1) % n)) else {
+            continue;
+        };
         if (a[1] > y) != (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0] {
             odd = !odd;
         }
@@ -540,20 +674,41 @@ fn lasso(s: &mut Session, v: &Value) -> CmdResult {
         return state(s);
     }
     let (page, layout) = page_param(s, v)?;
-    let pg = layout.pages.get(page).ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
+    let pg = layout
+        .pages
+        .get(page)
+        .ok_or_else(|| CmdError::Params(format!("no page {page}")))?;
     let mut poly = points_param(v, MAX_POINTS, pg.w.max(1.0), pg.h.clamp(1.0, 1e5))?;
     if poly.len() > MAX_LASSO_POINTS {
         let step = poly.len().div_ceil(MAX_LASSO_POINTS);
         poly = poly.into_iter().step_by(step).collect();
     }
     if poly.len() < 3 {
-        return Err(CmdError::Params("a lasso loop needs at least three points".into()));
+        return Err(CmdError::Params(
+            "a lasso loop needs at least three points".into(),
+        ));
     }
     let mut items = Vec::new();
     for it in &pg.items {
-        let Placed::Object { rect, spin, story, path, off, .. } = it else { continue };
-        let pos = Pos { story: *story, path: path.clone(), off: *off };
-        let Some(obj) = s.doc.para_at(&pos).and_then(|p| p.object_at(*off)) else { continue };
+        let Placed::Object {
+            rect,
+            spin,
+            story,
+            path,
+            off,
+            ..
+        } = it
+        else {
+            continue;
+        };
+        let pos = Pos {
+            story: *story,
+            path: path.clone(),
+            off: *off,
+        };
+        let Some(obj) = s.doc.para_at(&pos).and_then(|p| p.object_at(*off)) else {
+            continue;
+        };
         let picked = match obj.ink() {
             Some(_) if s.view.hide_ink => false,
             Some(f) => {
@@ -566,22 +721,35 @@ fn lasso(s: &mut Session, v: &Value) -> CmdResult {
                     .map(|[x, y]| <[f32; 2]>::from(spin.apply(cx, cy, x, y)))
                     .collect();
                 let step = pts.len().div_ceil(LASSO_SAMPLES).max(1);
-                let (n, hits) = pts.iter().step_by(step).fold((0usize, 0usize), |(n, h), [x, y]| (n + 1, h + usize::from(inside(&poly, *x, *y))));
+                let (n, hits) = pts
+                    .iter()
+                    .step_by(step)
+                    .fold((0usize, 0usize), |(n, h), [x, y]| {
+                        (n + 1, h + usize::from(inside(&poly, *x, *y)))
+                    });
                 n > 0 && hits * 10 >= n * 6
             }
-            None => obj.frame().is_some() && inside(&poly, rect.x + rect.w / 2.0, rect.y + rect.h / 2.0),
+            None => {
+                obj.frame().is_some() && inside(&poly, rect.x + rect.w / 2.0, rect.y + rect.h / 2.0)
+            }
         };
         if picked && !items.contains(&pos) {
             items.push(pos);
         }
     }
     let selected: Vec<Value> = items.iter().map(pos_json).collect();
-    s.view.draw.lasso = (!items.is_empty()).then(|| LassoSelection { page, items, rev: s.rev() });
+    s.view.draw.lasso = (!items.is_empty()).then(|| LassoSelection {
+        page,
+        items,
+        rev: s.rev(),
+    });
     Ok(json!({"page": page, "count": selected.len(), "selected": selected}))
 }
 
 fn lasso_required(s: &Session) -> Result<LassoSelection, CmdError> {
-    lasso_selection(s).cloned().ok_or_else(|| CmdError::Failed("nothing is selected with the lasso".into()))
+    lasso_selection(s)
+        .cloned()
+        .ok_or_else(|| CmdError::Failed("nothing is selected with the lasso".into()))
 }
 
 /// The lasso selection's bounds on its page in `layout` (the document's current layout), for
@@ -600,7 +768,15 @@ pub fn lasso_bounds(s: &Session, layout: &DocLayout) -> Option<(usize, Rect)> {
 /// Move the lasso-selected drawings by (`dx`, `dy`) points (one undo step).
 fn lasso_move(s: &mut Session, v: &Value) -> CmdResult {
     let sel = lasso_required(s)?;
-    let d = |k: &str| p::req_f32(v, k).map(|d| if d.is_finite() { d.clamp(-MAX_MOVE, MAX_MOVE) } else { 0.0 });
+    let d = |k: &str| {
+        p::req_f32(v, k).map(|d| {
+            if d.is_finite() {
+                d.clamp(-MAX_MOVE, MAX_MOVE)
+            } else {
+                0.0
+            }
+        })
+    };
     let (dx, dy) = (d("dx")?, d("dy")?);
     let mut moved = 0;
     for pos in &sel.items {
@@ -638,7 +814,11 @@ fn lasso_delete(s: &mut Session, _: &Value) -> CmdResult {
     items.dedup();
     let mut deleted = 0;
     for pos in items.iter().rev() {
-        if s.doc.para_at(pos).and_then(|p| p.object_at(pos.off)).is_some() {
+        if s.doc
+            .para_at(pos)
+            .and_then(|p| p.object_at(pos.off))
+            .is_some()
+        {
             delete_object(s, pos)?;
             deleted += 1;
         }
@@ -653,7 +833,8 @@ fn lasso_delete(s: &mut Session, _: &Value) -> CmdResult {
 /// Give the lasso-selected strokes and shapes this outline colour (one undo step).
 fn lasso_color(s: &mut Session, v: &Value) -> CmdResult {
     let sel = lasso_required(s)?;
-    let color = Rgb::parse(p::req_str(v, "color")?).ok_or_else(|| CmdError::Params("`color` is RRGGBB".into()))?;
+    let color = Rgb::parse(p::req_str(v, "color")?)
+        .ok_or_else(|| CmdError::Params("`color` is RRGGBB".into()))?;
     let mut changed = 0;
     for pos in &sel.items {
         let para = s.doc.para_mut(pos.story, &pos.path)?;
@@ -668,7 +849,9 @@ fn lasso_color(s: &mut Session, v: &Value) -> CmdResult {
         }
     }
     if changed == 0 {
-        return Err(CmdError::Failed("nothing selected has an outline to recolour".into()));
+        return Err(CmdError::Failed(
+            "nothing selected has an outline to recolour".into(),
+        ));
     }
     keep_lasso(s, sel);
     Ok(json!({"recolored": changed, "color": color.hex()}))
@@ -686,7 +869,9 @@ fn convert_selection(s: &mut Session, _: &Value) -> CmdResult {
         }
     }
     if converted.is_empty() {
-        return Err(CmdError::Failed("none of the selected strokes looks like a shape".into()));
+        return Err(CmdError::Failed(
+            "none of the selected strokes looks like a shape".into(),
+        ));
     }
     keep_lasso(s, sel);
     Ok(json!({"count": converted.len(), "converted": converted}))
@@ -697,20 +882,46 @@ fn convert_selection(s: &mut Session, _: &Value) -> CmdResult {
 /// turned or flipped, or it doesn't look like a shape.
 fn convert_at(s: &mut Session, pos: &Pos) -> Result<Option<&'static str>, CmdError> {
     let para = s.doc.para_mut(pos.story, &pos.path)?;
-    let Some(InlineObject::Shape { kind, w, h, fill, float, freeform, .. }) = para.object_at_mut(pos.off) else { return Ok(None) };
-    let Some(f) = freeform.as_deref().filter(|f| matches!(f.ink, Some(InkTool::Pen | InkTool::Pencil)) && f.paths.len() == 1) else {
+    let Some(InlineObject::Shape {
+        kind,
+        w,
+        h,
+        fill,
+        float,
+        freeform,
+        ..
+    }) = para.object_at_mut(pos.off)
+    else {
+        return Ok(None);
+    };
+    let Some(f) = freeform
+        .as_deref()
+        .filter(|f| matches!(f.ink, Some(InkTool::Pen | InkTool::Pencil)) && f.paths.len() == 1)
+    else {
         return Ok(None);
     };
     if float.rot != 0.0 || float.flip_h || float.flip_v {
         return Ok(None);
     }
     // The stroke in its frame's own points (the frame may have been resized since).
-    let Some((pts, _)) = f.placed(0.0, 0.0, *w, *h).into_iter().next() else { return Ok(None) };
-    let Some(found) = recognise(&pts) else { return Ok(None) };
+    let Some((pts, _)) = f.placed(0.0, 0.0, *w, *h).into_iter().next() else {
+        return Ok(None);
+    };
+    let Some(found) = recognise(&pts) else {
+        return Ok(None);
+    };
     let [bx, by, bw, bh] = found.bounds();
     let (bw, bh) = (bw.max(1.0), bh.max(1.0));
     let outline = |pts: Vec<[f32; 2]>, closed: bool| {
-        Some(Arc::new(Freeform { w: bw, h: bh, paths: vec![FreePath { pts, closed }], ..Default::default() }.sanitized()))
+        Some(Arc::new(
+            Freeform {
+                w: bw,
+                h: bh,
+                paths: vec![FreePath { pts, closed }],
+                ..Default::default()
+            }
+            .sanitized(),
+        ))
     };
     let local = |c: &[[f32; 2]]| c.iter().map(|[x, y]| [x - bx, y - by]).collect::<Vec<_>>();
     let (new_kind, geometry) = match &found {
@@ -739,8 +950,9 @@ pub fn strokes_in_drawing_order(s: &mut Session) -> Vec<(usize, PlacedInk)> {
         return Vec::new();
     }
     let layout = s.layout();
-    let mut all: Vec<(usize, PlacedInk)> =
-        (0..layout.pages.len()).flat_map(|page| ink_on(s, &layout, page).into_iter().map(move |k| (page, k))).collect();
+    let mut all: Vec<(usize, PlacedInk)> = (0..layout.pages.len())
+        .flat_map(|page| ink_on(s, &layout, page).into_iter().map(move |k| (page, k)))
+        .collect();
     all.sort_by_key(|(_, k)| k.freeform.order.unwrap_or(0));
     all
 }
@@ -748,7 +960,11 @@ pub fn strokes_in_drawing_order(s: &mut Session) -> Vec<(usize, PlacedInk)> {
 /// Start or stop Ink Replay; the strokes in the order they'll be replayed.
 fn replay(s: &mut Session, v: &Value) -> CmdResult {
     let on = p::bool(v, "value").unwrap_or(!s.view.draw.replay);
-    let strokes = if on { strokes_in_drawing_order(s) } else { Vec::new() };
+    let strokes = if on {
+        strokes_in_drawing_order(s)
+    } else {
+        Vec::new()
+    };
     if on && strokes.is_empty() {
         return Err(CmdError::Failed("there is no ink to replay".into()));
     }
@@ -773,12 +989,23 @@ mod tests {
 
     fn session() -> Session {
         let mut s = Session::new(wordcraft_doc::Document::new());
-        s.run("document.setText", &json!({"text": "First paragraph of text.\nSecond paragraph of text."})).unwrap();
+        s.run(
+            "document.setText",
+            &json!({"text": "First paragraph of text.\nSecond paragraph of text."}),
+        )
+        .unwrap();
         s
     }
 
     fn ink(s: &Session) -> Vec<InlineObject> {
-        s.doc.body.iter().filter_map(|b| b.as_para()).flat_map(|p| p.objects.iter()).filter(|o| o.ink().is_some()).cloned().collect()
+        s.doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .flat_map(|p| p.objects.iter())
+            .filter(|o| o.ink().is_some())
+            .cloned()
+            .collect()
     }
 
     #[test]
@@ -788,51 +1015,137 @@ mod tests {
         let r = s
             .run("draw.stroke", &json!({"page": 0, "points": [[100, 90], [150, 120], [f64::NAN, 3], [200, 95]], "color": "C00000", "width": 2}))
             .unwrap();
-        let [x, y] = [r["rect"][0].as_f64().unwrap() as f32, r["rect"][1].as_f64().unwrap() as f32];
-        assert_eq!((x, y), (99.0, 89.0), "the points' bounds, grown by half the width");
+        let [x, y] = [
+            r["rect"][0].as_f64().unwrap() as f32,
+            r["rect"][1].as_f64().unwrap() as f32,
+        ];
+        assert_eq!(
+            (x, y),
+            (99.0, 89.0),
+            "the points' bounds, grown by half the width"
+        );
         let objs = ink(&s);
-        let [InlineObject::Shape { stroke, stroke_width, float, freeform: Some(f), .. }] = objs.as_slice() else { panic!("one stroke: {objs:?}") };
-        assert_eq!((*stroke, *stroke_width, float.wrap), (Some(wordcraft_doc::Rgb(0xC0, 0, 0)), 2.0, Wrap::InFrontOfText));
+        let [
+            InlineObject::Shape {
+                stroke,
+                stroke_width,
+                float,
+                freeform: Some(f),
+                ..
+            },
+        ] = objs.as_slice()
+        else {
+            panic!("one stroke: {objs:?}")
+        };
+        assert_eq!(
+            (*stroke, *stroke_width, float.wrap),
+            (
+                Some(wordcraft_doc::Rgb(0xC0, 0, 0)),
+                2.0,
+                Wrap::InFrontOfText
+            )
+        );
         assert_eq!(f.ink, Some(InkTool::Pen));
-        assert_eq!(f.paths[0].pts, vec![[1.0, 1.0], [51.0, 31.0], [101.0, 6.0]], "NaN dropped, shape-local");
+        assert_eq!(
+            f.paths[0].pts,
+            vec![[1.0, 1.0], [51.0, 31.0], [101.0, 6.0]],
+            "NaN dropped, shape-local"
+        );
         // Laid out where it was drawn.
-        let at = wordcraft_doc::Pos { story: StoryRef::Body, path: wordcraft_doc::Path::top(0), off: 0 };
+        let at = wordcraft_doc::Pos {
+            story: StoryRef::Body,
+            path: wordcraft_doc::Path::top(0),
+            off: 0,
+        };
         let hit = s.layout().object(&at, 0).unwrap();
-        assert!((hit.rect.x - 99.0).abs() < 0.01 && (hit.rect.y - 89.0).abs() < 0.01, "{:?}", hit.rect);
+        assert!(
+            (hit.rect.x - 99.0).abs() < 0.01 && (hit.rect.y - 89.0).abs() < 0.01,
+            "{:?}",
+            hit.rect
+        );
         s.run("edit.undo", &json!({})).unwrap();
         assert!(ink(&s).is_empty());
         assert_eq!(s.doc.plain_text(StoryRef::Body), text);
         // A highlighter goes behind the text, translucent.
-        s.run("draw.highlighter", &json!({"color": "00FF00"})).unwrap();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[80, 80]]})).unwrap();
+        s.run("draw.highlighter", &json!({"color": "00FF00"}))
+            .unwrap();
+        s.run("draw.stroke", &json!({"page": 0, "points": [[80, 80]]}))
+            .unwrap();
         let objs = ink(&s);
-        let [InlineObject::Shape { float, freeform: Some(f), stroke, .. }] = objs.as_slice() else { panic!() };
-        assert_eq!((float.wrap, f.ink, *stroke), (Wrap::BehindText, Some(InkTool::Highlighter), Some(wordcraft_doc::Rgb(0, 0xFF, 0))));
+        let [
+            InlineObject::Shape {
+                float,
+                freeform: Some(f),
+                stroke,
+                ..
+            },
+        ] = objs.as_slice()
+        else {
+            panic!()
+        };
+        assert_eq!(
+            (float.wrap, f.ink, *stroke),
+            (
+                Wrap::BehindText,
+                Some(InkTool::Highlighter),
+                Some(wordcraft_doc::Rgb(0, 0xFF, 0))
+            )
+        );
         assert!(f.alpha < 1.0);
         // Hostile input is refused, not drawn.
-        assert!(s.run("draw.stroke", &json!({"page": 99, "points": [[1, 1]]})).is_err());
-        assert!(s.run("draw.stroke", &json!({"page": 0, "points": [["x", 1], [1]]})).is_err());
-        assert!(s.run("draw.stroke", &json!({"page": 0, "points": [[1, 1]], "tool": "crayon"})).is_err());
+        assert!(
+            s.run("draw.stroke", &json!({"page": 99, "points": [[1, 1]]}))
+                .is_err()
+        );
+        assert!(
+            s.run(
+                "draw.stroke",
+                &json!({"page": 0, "points": [["x", 1], [1]]})
+            )
+            .is_err()
+        );
+        assert!(
+            s.run(
+                "draw.stroke",
+                &json!({"page": 0, "points": [[1, 1]], "tool": "crayon"})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn the_eraser_removes_the_stroke_under_the_point_and_hide_ink_hides_it() {
         let mut s = session();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2})).unwrap();
-        assert!(s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 130})).is_err(), "nothing there");
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2}),
+        )
+        .unwrap();
+        assert!(
+            s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 130}))
+                .is_err(),
+            "nothing there"
+        );
         assert_eq!(ink(&s).len(), 1);
         // Review › Hide Ink: not drawn, not erasable, still in the document.
         assert_eq!(s.run("review.hideInk", &json!({})).unwrap()["value"], true);
         assert!(s.view.hide_ink);
-        assert!(s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101})).is_err());
+        assert!(
+            s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101}))
+                .is_err()
+        );
         s.run("review.hideInk", &json!({"value": false})).unwrap();
-        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101})).unwrap();
+        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101}))
+            .unwrap();
         assert!(ink(&s).is_empty());
         // Without a point it picks up the eraser; Select puts it down.
         s.run("draw.eraser", &json!({})).unwrap();
         assert_eq!(s.view.draw.mode, super::DrawMode::Eraser);
         s.run("draw.pencil", &json!({"width": 1e9})).unwrap();
-        assert_eq!((s.view.draw.mode, s.view.draw.pencil.width), (super::DrawMode::Pen(InkTool::Pencil), super::MAX_WIDTH));
+        assert_eq!(
+            (s.view.draw.mode, s.view.draw.pencil.width),
+            (super::DrawMode::Pen(InkTool::Pencil), super::MAX_WIDTH)
+        );
         s.run("draw.select", &json!({})).unwrap();
         assert_eq!(s.view.draw.mode, super::DrawMode::Select);
     }
@@ -849,31 +1162,53 @@ mod tests {
         };
         // Its old horizontal path is blank now: nothing to erase there, and it stays.
         let mut s = rotated();
-        assert!(s.run("draw.erase", &json!({"page": 0, "x": 110, "y": 100})).is_err());
+        assert!(
+            s.run("draw.erase", &json!({"page": 0, "x": 110, "y": 100}))
+                .is_err()
+        );
         assert_eq!(ink(&s).len(), 1);
         // The visible vertical stroke (centred on x = 150) is erased.
-        s.run("draw.erase", &json!({"page": 0, "x": 150, "y": 60})).unwrap();
+        s.run("draw.erase", &json!({"page": 0, "x": 150, "y": 60}))
+            .unwrap();
         assert!(ink(&s).is_empty());
         let mut s = rotated();
-        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 140})).unwrap();
+        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 140}))
+            .unwrap();
         assert!(ink(&s).is_empty(), "the point-taking eraser too");
         // Hidden ink stays out of reach.
         let mut s = rotated();
         s.run("review.hideInk", &json!({"value": true})).unwrap();
-        assert!(s.run("draw.erase", &json!({"page": 0, "x": 150, "y": 60})).is_err());
+        assert!(
+            s.run("draw.erase", &json!({"page": 0, "x": 150, "y": 60}))
+                .is_err()
+        );
     }
 
     /// The lasso, like the eraser, finds a turned stroke where it is drawn.
     #[test]
     fn the_lasso_selects_a_rotated_stroke_where_it_is_drawn() {
         let mut s = session();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2})).unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2}),
+        )
+        .unwrap();
         s.run("select.objects", &json!({"index": 0})).unwrap();
         s.run("arrange.rotation", &json!({"degrees": 90})).unwrap();
         // A loop around its old horizontal path misses it; one around the vertical stroke takes it.
-        let r = s.run("draw.lasso", &json!({"page": 0, "points": [[90, 95], [210, 95], [210, 105], [90, 105]]})).unwrap();
+        let r = s
+            .run(
+                "draw.lasso",
+                &json!({"page": 0, "points": [[90, 95], [210, 95], [210, 105], [90, 105]]}),
+            )
+            .unwrap();
         assert_eq!(r["count"], 0);
-        let r = s.run("draw.lasso", &json!({"page": 0, "points": [[140, 40], [160, 40], [160, 160], [140, 160]]})).unwrap();
+        let r = s
+            .run(
+                "draw.lasso",
+                &json!({"page": 0, "points": [[140, 40], [160, 40], [160, 160], [140, 160]]}),
+            )
+            .unwrap();
         assert_eq!(r["count"], 1);
     }
 
@@ -882,10 +1217,15 @@ mod tests {
     #[test]
     fn erasing_through_the_eraser_command_is_undoable_and_marks_the_document_dirty() {
         let mut s = session();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2})).unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 100], [200, 100]], "width": 2}),
+        )
+        .unwrap();
         s.dirty = false;
         let steps = s.undo_depth();
-        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101})).unwrap();
+        s.run("draw.eraser", &json!({"page": 0, "x": 150, "y": 101}))
+            .unwrap();
         assert!(ink(&s).is_empty());
         assert!(s.dirty, "erasing is an unsaved change");
         assert_eq!(s.undo_depth(), steps + 1, "one undo step");
@@ -913,33 +1253,71 @@ mod tests {
     #[test]
     fn the_lasso_selects_the_ink_inside_and_moves_recolours_and_deletes_it() {
         let mut s = session();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 100], [140, 110]]})).unwrap();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[300, 300], [340, 310]]})).unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 100], [140, 110]]}),
+        )
+        .unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[300, 300], [340, 310]]}),
+        )
+        .unwrap();
         // Without points it picks up the lasso; a loop around the first stroke selects only it.
         s.run("draw.lasso", &json!({})).unwrap();
         assert_eq!(s.view.draw.mode, super::DrawMode::Lasso);
-        let r = s.run("draw.lasso", &json!({"page": 0, "points": [[80, 80], [200, 80], [200, 150], [80, 150]]})).unwrap();
+        let r = s
+            .run(
+                "draw.lasso",
+                &json!({"page": 0, "points": [[80, 80], [200, 80], [200, 150], [80, 150]]}),
+            )
+            .unwrap();
         assert_eq!(r["count"], 1);
-        let before = s.layout().object(&super::lasso_selection(&s).unwrap().items[0], 0).unwrap().rect;
+        let before = s
+            .layout()
+            .object(&super::lasso_selection(&s).unwrap().items[0], 0)
+            .unwrap()
+            .rect;
         // Moved, recoloured: each one undo step, and the selection stays.
         let steps = s.undo_depth();
-        s.run("draw.lassoMove", &json!({"dx": 20, "dy": -10})).unwrap();
-        s.run("draw.lassoColor", &json!({"color": "0070C0"})).unwrap();
+        s.run("draw.lassoMove", &json!({"dx": 20, "dy": -10}))
+            .unwrap();
+        s.run("draw.lassoColor", &json!({"color": "0070C0"}))
+            .unwrap();
         assert_eq!(s.undo_depth(), steps + 2);
         let sel = super::lasso_selection(&s).unwrap().items[0].clone();
         let after = s.layout().object(&sel, 0).unwrap().rect;
-        assert!((after.x - before.x - 20.0).abs() < 0.01 && (after.y - before.y + 10.0).abs() < 0.01, "{before:?} -> {after:?}");
+        assert!(
+            (after.x - before.x - 20.0).abs() < 0.01 && (after.y - before.y + 10.0).abs() < 0.01,
+            "{before:?} -> {after:?}"
+        );
         let objs = ink(&s);
-        let blue = objs.iter().filter(|o| matches!(o, InlineObject::Shape { stroke: Some(c), .. } if c.hex() == "0070C0")).count();
+        let blue = objs
+            .iter()
+            .filter(
+                |o| matches!(o, InlineObject::Shape { stroke: Some(c), .. } if c.hex() == "0070C0"),
+            )
+            .count();
         assert_eq!(blue, 1);
         // Deleted: only the selected stroke goes, and the selection with it.
         s.run("draw.lassoDelete", &json!({})).unwrap();
         assert_eq!(ink(&s).len(), 1);
         assert!(super::lasso_selection(&s).is_none());
-        assert!(s.run("draw.lassoMove", &json!({"dx": 1, "dy": 1})).is_err(), "nothing selected");
+        assert!(
+            s.run("draw.lassoMove", &json!({"dx": 1, "dy": 1})).is_err(),
+            "nothing selected"
+        );
         // Hostile loops are refused or select nothing; they never panic.
-        assert!(s.run("draw.lasso", &json!({"page": 0, "points": [[1, 1], [2, 2]]})).is_err());
-        let huge: Vec<[f64; 2]> = (0..20_000).map(|i| [(i % 600) as f64, (i / 40) as f64]).collect();
+        assert!(
+            s.run(
+                "draw.lasso",
+                &json!({"page": 0, "points": [[1, 1], [2, 2]]})
+            )
+            .is_err()
+        );
+        let huge: Vec<[f64; 2]> = (0..20_000)
+            .map(|i| [(i % 600) as f64, (i / 40) as f64])
+            .collect();
         let _ = s.run("draw.lasso", &json!({"page": 0, "points": huge}));
     }
 
@@ -950,44 +1328,107 @@ mod tests {
         let steps = s.undo_depth();
         let r = s.run("draw.stroke", &json!({"page": 0, "points": rect_stroke(100.0, 100.0, 120.0, 60.0), "color": "C00000", "width": 2})).unwrap();
         assert_eq!(r["shape"], "rectangle");
-        assert_eq!(s.undo_depth(), steps + 1, "drawn and converted in one undo step");
+        assert_eq!(
+            s.undo_depth(),
+            steps + 1,
+            "drawn and converted in one undo step"
+        );
         let at: wordcraft_doc::Pos = serde_json::from_value(r["pos"].clone()).unwrap();
-        let obj = s.doc.para_at(&at).and_then(|p| p.object_at(at.off)).cloned().unwrap();
-        let InlineObject::Shape { kind, w, h, stroke, stroke_width, freeform, .. } = obj else { panic!("{obj:?}") };
-        assert_eq!((kind, stroke, stroke_width, freeform.is_none()), (ShapeKind::Rectangle, Some(wordcraft_doc::Rgb(0xC0, 0, 0)), 2.0, true));
-        assert!((w - 120.0).abs() < 2.0 && (h - 60.0).abs() < 2.0, "{w} x {h}");
+        let obj = s
+            .doc
+            .para_at(&at)
+            .and_then(|p| p.object_at(at.off))
+            .cloned()
+            .unwrap();
+        let InlineObject::Shape {
+            kind,
+            w,
+            h,
+            stroke,
+            stroke_width,
+            freeform,
+            ..
+        } = obj
+        else {
+            panic!("{obj:?}")
+        };
+        assert_eq!(
+            (kind, stroke, stroke_width, freeform.is_none()),
+            (
+                ShapeKind::Rectangle,
+                Some(wordcraft_doc::Rgb(0xC0, 0, 0)),
+                2.0,
+                true
+            )
+        );
+        assert!(
+            (w - 120.0).abs() < 2.0 && (h - 60.0).abs() < 2.0,
+            "{w} x {h}"
+        );
         let rect = s.layout().object(&at, 0).unwrap().rect;
-        assert!((rect.x - 100.0).abs() < 2.0 && (rect.y - 100.0).abs() < 2.0, "where it was drawn: {rect:?}");
+        assert!(
+            (rect.x - 100.0).abs() < 2.0 && (rect.y - 100.0).abs() < 2.0,
+            "where it was drawn: {rect:?}"
+        );
         // A scribble stays ink.
         let r = s.run("draw.stroke", &json!({"page": 0, "points": [[300, 300], [320, 340], [340, 300], [360, 340], [380, 300]]})).unwrap();
         assert!(r["shape"].is_null());
         assert_eq!(ink(&s).len(), 1);
         // Off again; a drawn ellipse stays ink until the lasso selects it and Ink to Shape converts it.
         s.run("draw.inkToShape", &json!({"value": false})).unwrap();
-        let ring: Vec<[f32; 2]> =
-            (0..=48).map(|i| i as f32 / 48.0 * std::f32::consts::TAU).map(|a| [200.0 + 50.0 * a.cos(), 500.0 + 30.0 * a.sin()]).collect();
-        s.run("draw.stroke", &json!({"page": 0, "points": ring})).unwrap();
+        let ring: Vec<[f32; 2]> = (0..=48)
+            .map(|i| i as f32 / 48.0 * std::f32::consts::TAU)
+            .map(|a| [200.0 + 50.0 * a.cos(), 500.0 + 30.0 * a.sin()])
+            .collect();
+        s.run("draw.stroke", &json!({"page": 0, "points": ring}))
+            .unwrap();
         assert_eq!(ink(&s).len(), 2);
-        s.run("draw.lasso", &json!({"page": 0, "points": [[130, 450], [270, 450], [270, 550], [130, 550]]})).unwrap();
+        s.run(
+            "draw.lasso",
+            &json!({"page": 0, "points": [[130, 450], [270, 450], [270, 550], [130, 550]]}),
+        )
+        .unwrap();
         let r = s.run("draw.inkToShape", &json!({})).unwrap();
         assert_eq!(r["converted"][0]["shape"], "ellipse");
         assert_eq!(ink(&s).len(), 1);
-        assert!(!s.view.draw.ink_to_shape, "converting the selection doesn't turn the mode on");
+        assert!(
+            !s.view.draw.ink_to_shape,
+            "converting the selection doesn't turn the mode on"
+        );
     }
 
     #[test]
     fn ink_replay_plays_strokes_in_the_order_they_were_drawn() {
         let mut s = session();
         // Drawn low on the page first, then higher: document order would be the other way round.
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 400], [150, 400]]})).unwrap();
-        s.run("draw.stroke", &json!({"page": 0, "points": [[100, 90], [150, 90]]})).unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 400], [150, 400]]}),
+        )
+        .unwrap();
+        s.run(
+            "draw.stroke",
+            &json!({"page": 0, "points": [[100, 90], [150, 90]]}),
+        )
+        .unwrap();
         let r = s.run("draw.replay", &json!({})).unwrap();
         assert!(s.view.draw.replay);
-        let orders: Vec<u64> = r["strokes"].as_array().unwrap().iter().map(|k| k["order"].as_u64().unwrap()).collect();
+        let orders: Vec<u64> = r["strokes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|k| k["order"].as_u64().unwrap())
+            .collect();
         assert_eq!(orders, vec![1, 2]);
-        let ys: Vec<f32> = super::strokes_in_drawing_order(&mut s).iter().map(|(_, k)| k.rect.y).collect();
+        let ys: Vec<f32> = super::strokes_in_drawing_order(&mut s)
+            .iter()
+            .map(|(_, k)| k.rect.y)
+            .collect();
         assert!(ys[0] > ys[1], "the lower stroke was drawn first: {ys:?}");
-        assert_eq!(s.run("draw.replay", &json!({})).unwrap()["replaying"], false);
+        assert_eq!(
+            s.run("draw.replay", &json!({})).unwrap()["replaying"],
+            false
+        );
         // Nothing to replay without ink.
         assert!(session().run("draw.replay", &json!({})).is_err());
     }
@@ -995,10 +1436,27 @@ mod tests {
     #[test]
     fn add_pen_validates_and_saved_galleries_drop_junk() {
         let mut s = session();
-        let r = s.run("draw.addPen", &json!({"kind": "highlighter", "color": "00B050", "width": 1e9})).unwrap();
-        assert_eq!(r["pen"], json!({"kind": "highlighter", "color": "00B050", "width": super::MAX_WIDTH}));
-        assert_eq!(s.view.draw.mode, super::DrawMode::Pen(InkTool::Highlighter), "the new pen is picked up");
-        for bad in [json!({"kind": "crayon"}), json!({"color": "blue"}), json!(5), json!(null)] {
+        let r = s
+            .run(
+                "draw.addPen",
+                &json!({"kind": "highlighter", "color": "00B050", "width": 1e9}),
+            )
+            .unwrap();
+        assert_eq!(
+            r["pen"],
+            json!({"kind": "highlighter", "color": "00B050", "width": super::MAX_WIDTH})
+        );
+        assert_eq!(
+            s.view.draw.mode,
+            super::DrawMode::Pen(InkTool::Highlighter),
+            "the new pen is picked up"
+        );
+        for bad in [
+            json!({"kind": "crayon"}),
+            json!({"color": "blue"}),
+            json!(5),
+            json!(null),
+        ] {
             assert!(s.run("draw.addPen", &bad).is_err(), "{bad}");
         }
         for _ in 0..super::MAX_PENS + 3 {
@@ -1008,13 +1466,16 @@ mod tests {
         s.run("draw.removePen", &json!({"index": 0})).unwrap();
         assert!(s.run("draw.removePen", &json!({"index": 999})).is_err());
         // A saved gallery keeps its pens and drops the junk around them.
-        let saved =
-            json!({"pens": [{"kind": "pencil", "color": "7030A0", "width": 3}, "junk", {"kind": "crayon"}, {"width": "x"}], "inkToShape": true});
+        let saved = json!({"pens": [{"kind": "pencil", "color": "7030A0", "width": 3}, "junk", {"kind": "crayon"}, {"width": "x"}], "inkToShape": true});
         let d: super::DrawState = serde_json::from_value(saved).unwrap();
         assert_eq!(d.pens.len(), 2);
-        assert_eq!((d.pens[0].kind, d.pens[0].color.hex(), d.pens[0].width), (InkTool::Pencil, "7030A0".to_string(), 3.0));
+        assert_eq!(
+            (d.pens[0].kind, d.pens[0].color.hex(), d.pens[0].width),
+            (InkTool::Pencil, "7030A0".to_string(), 3.0)
+        );
         assert!(d.ink_to_shape);
-        let back: super::DrawState = serde_json::from_value(serde_json::to_value(&d).unwrap()).unwrap();
+        let back: super::DrawState =
+            serde_json::from_value(serde_json::to_value(&d).unwrap()).unwrap();
         assert_eq!(back.pens, d.pens);
     }
 }

@@ -24,22 +24,70 @@ pub struct Utility {
 }
 
 const UTILITIES: &[Utility] = &[
-    Utility { name: "basename", source: Source::Own },
-    Utility { name: "cat", source: Source::Own },
-    Utility { name: "cut", source: Source::Own },
-    Utility { name: "dirname", source: Source::Own },
-    Utility { name: "echo", source: Source::Own },
-    Utility { name: "false", source: Source::Own },
-    Utility { name: "head", source: Source::Own },
-    Utility { name: "printf", source: Source::Own },
-    Utility { name: "seq", source: Source::Own },
-    Utility { name: "sort", source: Source::Own },
-    Utility { name: "tail", source: Source::Own },
-    Utility { name: "tee", source: Source::Own },
-    Utility { name: "tr", source: Source::Own },
-    Utility { name: "true", source: Source::Own },
-    Utility { name: "uniq", source: Source::Own },
-    Utility { name: "wc", source: Source::Own },
+    Utility {
+        name: "basename",
+        source: Source::Own,
+    },
+    Utility {
+        name: "cat",
+        source: Source::Own,
+    },
+    Utility {
+        name: "cut",
+        source: Source::Own,
+    },
+    Utility {
+        name: "dirname",
+        source: Source::Own,
+    },
+    Utility {
+        name: "echo",
+        source: Source::Own,
+    },
+    Utility {
+        name: "false",
+        source: Source::Own,
+    },
+    Utility {
+        name: "head",
+        source: Source::Own,
+    },
+    Utility {
+        name: "printf",
+        source: Source::Own,
+    },
+    Utility {
+        name: "seq",
+        source: Source::Own,
+    },
+    Utility {
+        name: "sort",
+        source: Source::Own,
+    },
+    Utility {
+        name: "tail",
+        source: Source::Own,
+    },
+    Utility {
+        name: "tee",
+        source: Source::Own,
+    },
+    Utility {
+        name: "tr",
+        source: Source::Own,
+    },
+    Utility {
+        name: "true",
+        source: Source::Own,
+    },
+    Utility {
+        name: "uniq",
+        source: Source::Own,
+    },
+    Utility {
+        name: "wc",
+        source: Source::Own,
+    },
 ];
 
 /// The registration table is the single source for command names and provenance.
@@ -93,7 +141,9 @@ fn input(
 ) -> Result<Vec<u8>, String> {
     match file {
         None | Some("-") => Ok(stdin.to_vec()),
-        Some(file) => vfs.read(&resolve(cwd, file)?).map_err(|e| format!("{file}: {e}")),
+        Some(file) => vfs
+            .read(&resolve(cwd, file)?)
+            .map_err(|e| format!("{file}: {e}")),
     }
 }
 
@@ -109,8 +159,11 @@ fn cat(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<V
 }
 
 fn echo(args: &[String]) -> Vec<u8> {
-    let (newline, rest) =
-        if args.first().is_some_and(|a| a == "-n") { (false, &args[1..]) } else { (true, args) };
+    let (newline, rest) = if args.first().is_some_and(|a| a == "-n") {
+        (false, &args[1..])
+    } else {
+        (true, args)
+    };
     let mut out = rest.join(" ").into_bytes();
     if newline {
         out.push(b'\n');
@@ -121,7 +174,11 @@ fn echo(args: &[String]) -> Vec<u8> {
 fn basename(args: &[String]) -> Result<Vec<u8>, String> {
     let name = args.first().ok_or("basename: missing operand")?;
     let trimmed = name.trim_end_matches('/');
-    let part = if trimmed.is_empty() { "/" } else { trimmed.rsplit('/').next().unwrap_or(trimmed) };
+    let part = if trimmed.is_empty() {
+        "/"
+    } else {
+        trimmed.rsplit('/').next().unwrap_or(trimmed)
+    };
     let suffix = args.get(1).map(String::as_str).unwrap_or("");
     let part = if !suffix.is_empty() && part != suffix {
         part.strip_suffix(suffix).unwrap_or(part)
@@ -137,9 +194,10 @@ fn dirname(args: &[String]) -> Result<Vec<u8>, String> {
     if trimmed.is_empty() {
         return Ok(b"/\n".to_vec());
     }
-    let parent = trimmed
-        .rsplit_once('/')
-        .map_or(".", |(parent, _)| if parent.is_empty() { "/" } else { parent });
+    let parent = trimmed.rsplit_once('/').map_or(
+        ".",
+        |(parent, _)| if parent.is_empty() { "/" } else { parent },
+    );
     Ok(format!("{parent}\n").into_bytes())
 }
 
@@ -163,24 +221,27 @@ fn head_tail(
             "-n" | "-c" => {
                 bytes = args[at] == "-c";
                 at += 1;
-                count =
-                    args.get(at).ok_or("missing count")?.parse().map_err(|_| "invalid count")?;
-            },
+                count = args
+                    .get(at)
+                    .ok_or("missing count")?
+                    .parse()
+                    .map_err(|_| "invalid count")?;
+            }
             arg if arg.starts_with("-n") && arg.len() > 2 => {
                 count = arg[2..].parse().map_err(|_| "invalid count")?
-            },
+            }
             arg if arg.starts_with("-c") && arg.len() > 2 => {
                 bytes = true;
                 count = arg[2..].parse().map_err(|_| "invalid count")?;
-            },
+            }
             arg if arg.starts_with('-') && arg != "-" => {
                 return Err(format!("unknown option: {arg}"));
-            },
+            }
             arg => {
                 if file.replace(arg).is_some() {
                     return Err("too many files".into());
                 }
-            },
+            }
         }
         at += 1;
     }
@@ -227,8 +288,16 @@ fn wc(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<Ve
     if flags.is_empty() {
         flags.extend(['l', 'w', 'c']);
     }
-    let counts = flags.iter().map(|&flag| count(flag).to_string()).collect::<Vec<_>>().join(" ");
-    Ok(format!("{counts}{}\n", file.map_or(String::new(), |name| format!(" {name}"))).into_bytes())
+    let counts = flags
+        .iter()
+        .map(|&flag| count(flag).to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    Ok(format!(
+        "{counts}{}\n",
+        file.map_or(String::new(), |name| format!(" {name}"))
+    )
+    .into_bytes())
 }
 
 fn sort(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<Vec<u8>, String> {
@@ -241,12 +310,12 @@ fn sort(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<
             "-u" => unique = true,
             arg if arg.starts_with('-') && arg != "-" => {
                 return Err(format!("unknown option: {arg}"));
-            },
+            }
             arg => {
                 if file.replace(arg).is_some() {
                     return Err("too many files".into());
                 }
-            },
+            }
         }
     }
     let data = input(vfs, cwd, file, stdin)?;
@@ -273,12 +342,12 @@ fn uniq(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<
             "-u" => unique = true,
             arg if arg.starts_with('-') && arg != "-" => {
                 return Err(format!("unknown option: {arg}"));
-            },
+            }
             arg => {
                 if file.replace(arg).is_some() {
                     return Err("too many files".into());
                 }
-            },
+            }
         }
     }
     let data = input(vfs, cwd, file, stdin)?;
@@ -306,8 +375,12 @@ fn tee(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<V
     let files = if append { &args[1..] } else { args };
     for file in files {
         let path = resolve(cwd, file)?;
-        if append { vfs.append(&path, stdin) } else { vfs.write(&path, stdin) }
-            .map_err(|e| format!("{file}: {e}"))?;
+        if append {
+            vfs.append(&path, stdin)
+        } else {
+            vfs.write(&path, stdin)
+        }
+        .map_err(|e| format!("{file}: {e}"))?;
     }
     Ok(stdin.to_vec())
 }
@@ -331,19 +404,19 @@ fn cut(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<V
                             return Err("delimiter must be one byte".into());
                         }
                         delimiter = b[0];
-                    },
+                    }
                     "-f" => field = Some(value.parse::<usize>().map_err(|_| "invalid field")?),
                     _ => byte = Some(value.parse::<usize>().map_err(|_| "invalid byte")?),
                 }
-            },
+            }
             arg if arg.starts_with('-') && arg != "-" => {
                 return Err(format!("unknown option: {arg}"));
-            },
+            }
             arg => {
                 if file.replace(arg).is_some() {
                     return Err("too many files".into());
                 }
-            },
+            }
         }
         at += 1;
     }
@@ -356,7 +429,9 @@ fn cut(vfs: &mut dyn Vfs, cwd: &[u8], args: &[String], stdin: &[u8]) -> Result<V
     let data = input(vfs, cwd, file, stdin)?;
     let mut out = Vec::new();
     for line in lines(&data) {
-        let (body, newline) = line.strip_suffix(b"\n").map_or((line, false), |body| (body, true));
+        let (body, newline) = line
+            .strip_suffix(b"\n")
+            .map_or((line, false), |body| (body, true));
         if let Some(position) = field {
             let parts = body.split(|&b| b == delimiter).collect::<Vec<_>>();
             if parts.len() == 1 {
@@ -438,11 +513,16 @@ fn printf(args: &[String]) -> Result<Vec<u8>, String> {
                 Some('%') => out.push('%'),
                 Some('s') | Some('b') => {
                     out.push_str(values.next().map(String::as_str).unwrap_or(""))
-                },
+                }
                 Some('d') => {
                     let value = values.next().map(String::as_str).unwrap_or("0");
-                    out.push_str(&value.parse::<i64>().map_err(|_| "invalid integer")?.to_string());
-                },
+                    out.push_str(
+                        &value
+                            .parse::<i64>()
+                            .map_err(|_| "invalid integer")?
+                            .to_string(),
+                    );
+                }
                 _ => return Err("unsupported format".into()),
             },
             '\\' => match chars.next() {
@@ -494,8 +574,14 @@ mod tests {
 
     fn run_test(name: &str, args: &[&str], stdin: &[u8]) -> Vec<u8> {
         let mut fs = MemVfs::new();
-        run(name, &mut fs, b"/", &args.iter().map(|s| (*s).into()).collect::<Vec<_>>(), stdin)
-            .unwrap()
+        run(
+            name,
+            &mut fs,
+            b"/",
+            &args.iter().map(|s| (*s).into()).collect::<Vec<_>>(),
+            stdin,
+        )
+        .unwrap()
     }
 
     #[test]
@@ -517,7 +603,10 @@ mod tests {
         assert_eq!(run_test("head", &["-n", "2"], data), b"pear\napple\n");
         assert_eq!(run_test("tail", &["-n", "1"], data), b"pear\n");
         assert_eq!(run_test("wc", &["-l"], data), b"3\n");
-        assert_eq!(run_test("cut", &["-d", ":", "-f", "2"], b"a:one\nb:two\n"), b"one\ntwo\n");
+        assert_eq!(
+            run_test("cut", &["-d", ":", "-f", "2"], b"a:one\nb:two\n"),
+            b"one\ntwo\n"
+        );
         assert_eq!(run_test("tr", &["ab", "xy"], b"abba\n"), b"xyyx\n");
         assert_eq!(run_test("tr", &["a-z", "A-Z"], b"hi!\n"), b"HI!\n");
     }
@@ -527,8 +616,14 @@ mod tests {
         let mut fs = MemVfs::new();
         fs.mkdir(b"/sub").unwrap();
         let args = |values: &[&str]| values.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
-        assert_eq!(run("tee", &mut fs, b"/sub", &args(&["file"]), b"first\n").unwrap(), b"first\n");
-        assert_eq!(run("cat", &mut fs, b"/sub", &args(&["file"]), b"").unwrap(), b"first\n");
+        assert_eq!(
+            run("tee", &mut fs, b"/sub", &args(&["file"]), b"first\n").unwrap(),
+            b"first\n"
+        );
+        assert_eq!(
+            run("cat", &mut fs, b"/sub", &args(&["file"]), b"").unwrap(),
+            b"first\n"
+        );
         run("tee", &mut fs, b"/sub", &args(&["-a", "file"]), b"second\n").unwrap();
         assert_eq!(fs.read(b"/sub/file").unwrap(), b"first\nsecond\n");
     }
@@ -538,7 +633,10 @@ mod tests {
         assert_eq!(run_test("basename", &["/a/b.txt", ".txt"], b""), b"b\n");
         assert_eq!(run_test("dirname", &["/a/b.txt"], b""), b"/a\n");
         assert_eq!(run_test("dirname", &["/"], b""), b"/\n");
-        assert_eq!(run_test("printf", &["%s:%d\\n", "age", "42"], b""), b"age:42\n");
+        assert_eq!(
+            run_test("printf", &["%s:%d\\n", "age", "42"], b""),
+            b"age:42\n"
+        );
         assert_eq!(run_test("seq", &["3"], b""), b"1\n2\n3\n");
         assert_eq!(run_test("echo", &["-n", "hello"], b""), b"hello");
     }
@@ -581,7 +679,11 @@ mod tests {
                 .unwrap();
             child.stdin.take().unwrap().write_all(stdin).unwrap();
             let native = child.wait_with_output().unwrap();
-            assert!(native.status.success(), "{name}: {}", String::from_utf8_lossy(&native.stderr));
+            assert!(
+                native.status.success(),
+                "{name}: {}",
+                String::from_utf8_lossy(&native.stderr)
+            );
             assert_eq!(run_test(name, args, stdin), native.stdout, "{name}");
         }
     }

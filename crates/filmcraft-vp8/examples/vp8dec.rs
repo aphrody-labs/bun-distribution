@@ -35,6 +35,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Err(e) => eprintln!("frame at pts {pts}: {e}"),
         }
     }
-    eprintln!("{n} pictures in {:.2}s; {:?}", t.elapsed().as_secs_f64(), dec.stats());
+    eprintln!(
+        "{n} pictures in {:.2}s; {:?}",
+        t.elapsed().as_secs_f64(),
+        dec.stats()
+    );
     Ok(())
 }

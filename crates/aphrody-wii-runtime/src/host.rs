@@ -23,7 +23,10 @@ pub struct TextureKey {
 
 impl TextureKey {
     pub const fn non_paletted(ram_addr: Address) -> Self {
-        Self { ram_addr, variant: 0 }
+        Self {
+            ram_addr,
+            variant: 0,
+        }
     }
 }
 

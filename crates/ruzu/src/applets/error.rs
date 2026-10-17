@@ -6,8 +6,8 @@
 //! Error applet calls originate on the emulation thread.  Like Eden's queued
 //! Qt signals, the channel keeps all window ownership on GTK's main thread.
 
-use std::cell::RefCell;
 use gtk::prelude::Cast;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
@@ -141,8 +141,14 @@ impl ErrorAppletFrontend {
     /// ErrorDisplayDisplayError parents the overlay to GRenderWindow upstream.
     pub(crate) fn set_parent(&self, parent: &gtk::Window) {
         *self.parent.borrow_mut() = parent.clone();
-        let dialog = self.active.borrow().as_ref().map(|active| active.dialog.clone());
-        if let Some(dialog) = dialog { dialog.set_parent(parent); }
+        let dialog = self
+            .active
+            .borrow()
+            .as_ref()
+            .map(|active| active.dialog.clone());
+        if let Some(dialog) = dialog {
+            dialog.set_parent(parent);
+        }
     }
 
     pub(crate) fn start(self: &Rc<Self>) {

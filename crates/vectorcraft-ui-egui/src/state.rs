@@ -25,7 +25,13 @@ pub struct View {
 
 impl Default for View {
     fn default() -> Self {
-        Self { zoom: 1.0, center: Point::new(306.0, 396.0), fitted: false, rotation: 0.0, artboard: 0 }
+        Self {
+            zoom: 1.0,
+            center: Point::new(306.0, 396.0),
+            fitted: false,
+            rotation: 0.0,
+            artboard: 0,
+        }
     }
 }
 
@@ -33,13 +39,24 @@ impl View {
     /// The view a document opens at: the one it was saved with, else fitted on first display.
     pub fn of(st: &vectorcraft_engine::DocState) -> Self {
         match &st.view {
-            Some(v) if v.zoom.is_finite() && v.zoom > 0.0 && v.center.x.is_finite() && v.center.y.is_finite() => Self {
-                zoom: v.zoom.clamp(0.0313, 640.0),
-                center: v.center,
-                fitted: true,
-                rotation: if v.rotation.is_finite() { v.rotation } else { 0.0 },
-                artboard: 0,
-            },
+            Some(v)
+                if v.zoom.is_finite()
+                    && v.zoom > 0.0
+                    && v.center.x.is_finite()
+                    && v.center.y.is_finite() =>
+            {
+                Self {
+                    zoom: v.zoom.clamp(0.0313, 640.0),
+                    center: v.center,
+                    fitted: true,
+                    rotation: if v.rotation.is_finite() {
+                        v.rotation
+                    } else {
+                        0.0
+                    },
+                    artboard: 0,
+                }
+            }
             _ => Self::default(),
         }
     }
@@ -47,16 +64,25 @@ impl View {
 
 /// Illustrator's preset zoom stops, in percent.
 pub const ZOOM_STOPS: [f64; 26] = [
-    3.13, 4.17, 6.25, 8.33, 12.5, 16.67, 25.0, 33.33, 50.0, 66.67, 100.0, 150.0, 200.0, 300.0, 400.0, 600.0, 800.0, 1200.0, 1600.0, 2400.0, 3200.0,
-    4800.0, 6400.0, 12800.0, 25600.0, 64000.0,
+    3.13, 4.17, 6.25, 8.33, 12.5, 16.67, 25.0, 33.33, 50.0, 66.67, 100.0, 150.0, 200.0, 300.0,
+    400.0, 600.0, 800.0, 1200.0, 1600.0, 2400.0, 3200.0, 4800.0, 6400.0, 12800.0, 25600.0, 64000.0,
 ];
 
 pub fn next_zoom(z: f64, up: bool) -> f64 {
     let pct = z * 100.0;
     let stop = if up {
-        ZOOM_STOPS.iter().find(|s| **s > pct + 0.01).copied().unwrap_or(64000.0)
+        ZOOM_STOPS
+            .iter()
+            .find(|s| **s > pct + 0.01)
+            .copied()
+            .unwrap_or(64000.0)
     } else {
-        ZOOM_STOPS.iter().rev().find(|s| **s < pct - 0.01).copied().unwrap_or(3.13)
+        ZOOM_STOPS
+            .iter()
+            .rev()
+            .find(|s| **s < pct - 0.01)
+            .copied()
+            .unwrap_or(3.13)
     };
     stop / 100.0
 }
@@ -132,7 +158,11 @@ pub const ICON_PANELS: &[(&str, &str, &str)] = &[
     ("separations", "Separations Preview", "printer"),
     ("imageTrace", "Image Trace", "image"),
     ("magicWand", "Magic Wand", "wand-sparkles"),
-    (crate::panels::flattener_preview::ID, "Flattener Preview", "eye"),
+    (
+        crate::panels::flattener_preview::ID,
+        "Flattener Preview",
+        "eye",
+    ),
     ("attributes", "Attributes", "settings"),
     ("colorThemes", "Color Themes", "sun"),
     (crate::panels::links::ID, "Links", "link"),
@@ -218,7 +248,10 @@ pub struct Dialog {
 
 impl Dialog {
     pub fn new(kind: &str, fields: Value) -> Self {
-        Self { kind: kind.to_string(), fields: fields.as_object().cloned().unwrap_or_default() }
+        Self {
+            kind: kind.to_string(),
+            fields: fields.as_object().cloned().unwrap_or_default(),
+        }
     }
     pub fn f64(&self, k: &str, d: f64) -> f64 {
         match self.fields.get(k) {
@@ -327,7 +360,10 @@ pub struct UiState {
     #[serde(default)]
     pub shortcut_overrides: std::collections::BTreeMap<String, String>,
     /// Name of the shortcut set (preset or "Custom").
-    #[serde(default = "default_shortcut_set", deserialize_with = "crate::shortcut_editor::deserialize_set_name")]
+    #[serde(
+        default = "default_shortcut_set",
+        deserialize_with = "crate::shortcut_editor::deserialize_set_name"
+    )]
     pub shortcut_set: String,
     /// Current workspace (Window → Workspace).
     #[serde(default = "default_workspace")]
@@ -362,7 +398,10 @@ pub struct UiState {
     pub color_guide_limit: String,
     /// Align panel: the Align To choice, Selection or Artboard, which Object → Align and the align
     /// buttons follow ([`crate::panels::align::with_align_to`]).
-    #[serde(default, deserialize_with = "crate::panels::align::deserialize_align_to")]
+    #[serde(
+        default,
+        deserialize_with = "crate::panels::align::deserialize_align_to"
+    )]
     pub align_to: crate::panels::align::AlignTo,
     /// The SVG Options chosen last (`svg` object of the export/save commands; null: never used).
     #[serde(default)]
@@ -518,7 +557,8 @@ impl FloatingPanels {
     pub fn sanitize(groups: &mut Vec<FloatingPanels>, toolbar_pos: &mut Option<[f32; 2]>) {
         let mut seen = std::collections::BTreeSet::new();
         groups.retain_mut(|g| {
-            g.panels.retain(|id| all_panels().any(|(p, _)| p == id) && seen.insert(id.clone()));
+            g.panels
+                .retain(|id| all_panels().any(|(p, _)| p == id) && seen.insert(id.clone()));
             g.active = g.active.min(g.panels.len().saturating_sub(1));
             !g.panels.is_empty()
         });
@@ -534,7 +574,10 @@ impl FloatingPanels {
     pub fn tidy(groups: &mut Vec<FloatingPanels>) {
         let mut out: Vec<FloatingPanels> = Vec::with_capacity(groups.len());
         for mut g in groups.drain(..) {
-            match g.column.and_then(|c| out.iter().rposition(|o| o.column == Some(c))) {
+            match g
+                .column
+                .and_then(|c| out.iter().rposition(|o| o.column == Some(c)))
+            {
                 Some(i) => {
                     if let Some(first) = out.iter().find(|o| o.column == g.column) {
                         g.pos = first.pos;
@@ -545,7 +588,11 @@ impl FloatingPanels {
                 None => out.push(g),
             }
         }
-        let alone: Vec<u32> = out.iter().filter_map(|g| g.column).filter(|c| out.iter().filter(|g| g.column == Some(*c)).count() < 2).collect();
+        let alone: Vec<u32> = out
+            .iter()
+            .filter_map(|g| g.column)
+            .filter(|c| out.iter().filter(|g| g.column == Some(*c)).count() < 2)
+            .collect();
         for g in &mut out {
             if g.column.is_some_and(|c| alone.contains(&c)) {
                 g.column = None;
@@ -556,7 +603,10 @@ impl FloatingPanels {
         numbers.dedup();
         for g in &mut out {
             if let Some(d) = g.docked {
-                g.docked = numbers.iter().position(|n| *n == d).and_then(|k| u32::try_from(k + 1).ok());
+                g.docked = numbers
+                    .iter()
+                    .position(|n| *n == d)
+                    .and_then(|k| u32::try_from(k + 1).ok());
             }
         }
         *groups = out;
@@ -579,16 +629,19 @@ impl UiState {
         // One strip per group, of known tools (a hand-edited preferences file).
         let mut seen = std::collections::BTreeSet::new();
         self.floating_flyouts.retain_mut(|f| {
-            f.tools.retain(|id| vectorcraft_tools::tool_info(id).is_some());
+            f.tools
+                .retain(|id| vectorcraft_tools::tool_info(id).is_some());
             f.tools.first().is_some_and(|k| seen.insert(k.clone()))
         });
         FloatingPanels::sanitize(&mut self.floating_panels, &mut self.toolbar_pos);
         crate::edit_toolbar::sanitize(&mut self.toolbar_edits);
         self.docking = self.docking.filter(crate::panel_docking::valid);
-        self.docking_icons.retain(|id| ICON_PANELS.iter().any(|entry| entry.0 == id));
+        self.docking_icons
+            .retain(|id| ICON_PANELS.iter().any(|entry| entry.0 == id));
         // Overrides that can't fire (modifier-only chords recorded by older versions, #487) give
         // the default back.
-        self.shortcut_overrides.retain(|_, c| c.is_empty() || crate::shortcut_editor::normalize(c).is_some());
+        self.shortcut_overrides
+            .retain(|_, c| c.is_empty() || crate::shortcut_editor::normalize(c).is_some());
         self
     }
 }
@@ -622,7 +675,10 @@ impl Default for UiState {
             view: ViewFlags::default(),
             dialog: None,
             flyout: None,
-            group_tool: vectorcraft_tools::TOOL_GROUPS.iter().map(|g| g[0].id.to_string()).collect(),
+            group_tool: vectorcraft_tools::TOOL_GROUPS
+                .iter()
+                .map(|g| g[0].id.to_string())
+                .collect(),
             status: String::new(),
             palette_open: false,
             palette_query: String::new(),
@@ -691,7 +747,10 @@ mod tests {
 
     #[test]
     fn dialog_fields() {
-        let d = Dialog::new("rectangle", serde_json::json!({"width": "1in", "height": 50}));
+        let d = Dialog::new(
+            "rectangle",
+            serde_json::json!({"width": "1in", "height": 50}),
+        );
         assert_eq!(d.f64("width", 0.0), 72.0);
         assert_eq!(d.f64("height", 0.0), 50.0);
     }

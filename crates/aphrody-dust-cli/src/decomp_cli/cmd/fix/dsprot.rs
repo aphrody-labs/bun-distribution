@@ -32,7 +32,9 @@ impl FixDsprot {
         }
 
         let mut rom = config.load_rom(config_path)?;
-        let decrypt_options = DsProtDecryptOptions { decode_relocations: false };
+        let decrypt_options = DsProtDecryptOptions {
+            decode_relocations: false,
+        };
 
         let mut dsprot_module = None;
 
@@ -63,7 +65,10 @@ impl FixDsprot {
         if self.dry {
             log::info!("Dry run, not updating config.yaml.");
         } else {
-            log::info!("Enabling DS Protect decryption and updating hash for {}", dsprot_module);
+            log::info!(
+                "Enabling DS Protect decryption and updating hash for {}",
+                dsprot_module
+            );
             serde_saphyr::to_io_writer(&mut io::create_file(&self.config_path)?, &config)?;
         }
 

@@ -25,14 +25,23 @@ pub(super) fn click(s: &mut Session, x: f64, y: f64) {
 
 pub(super) fn drag(s: &mut Session, from: (f64, f64), to: (f64, f64)) {
     s.pointer(&ev(PointerKind::Down, from.0, from.1)).unwrap();
-    s.pointer(&ev(PointerKind::Move, (from.0 + to.0) / 2.0, (from.1 + to.1) / 2.0)).unwrap();
+    s.pointer(&ev(
+        PointerKind::Move,
+        (from.0 + to.0) / 2.0,
+        (from.1 + to.1) / 2.0,
+    ))
+    .unwrap();
     s.pointer(&ev(PointerKind::Move, to.0, to.1)).unwrap();
     s.pointer(&ev(PointerKind::Up, to.0, to.1)).unwrap();
 }
 
 /// A 100×100 rectangle at the origin, in edit mode.
 pub(super) fn rect(s: &mut Session) -> NodeId {
-    let r = ex(s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 100, "height": 100}));
+    let r = ex(
+        s,
+        "shape.rectangle",
+        json!({"x": 0, "y": 0, "width": 100, "height": 100}),
+    );
     let id = crate::params::id_of(&r["id"]).unwrap();
     ex(s, "vector.edit.begin", json!({"id": id}));
     id
@@ -43,7 +52,10 @@ pub(super) fn ve(s: &Session) -> VectorEdit {
 }
 
 pub(super) fn vertex_at(n: &VectorNetwork, x: f64, y: f64) -> usize {
-    n.vertices.iter().position(|v| (v.x - x).abs() < 1e-6 && (v.y - y).abs() < 1e-6).unwrap()
+    n.vertices
+        .iter()
+        .position(|v| (v.x - x).abs() < 1e-6 && (v.y - y).abs() < 1e-6)
+        .unwrap()
 }
 
 pub(super) fn pt(x: f64, y: f64) -> Point {
@@ -53,7 +65,11 @@ pub(super) fn pt(x: f64, y: f64) -> Point {
 #[test]
 fn pen_extends_branches_and_closes_paths() {
     let mut s = Session::new();
-    let r = ex(&mut s, "vector.create", json!({"points": [[0, 0], [100, 0]], "closed": false}));
+    let r = ex(
+        &mut s,
+        "vector.create",
+        json!({"points": [[0, 0], [100, 0]], "closed": false}),
+    );
     let id = crate::params::id_of(&r["id"]).unwrap();
     ex(&mut s, "vector.edit.begin", json!({"id": id}));
     ex(&mut s, "vector.edit.tool", json!({"tool": "pen"}));
@@ -93,7 +109,10 @@ fn pen_drag_makes_a_smooth_point() {
     assert_eq!(n.mirroring(v), HandleMirroring::AngleAndLength);
     let (seg, start) = n.incident(v)[0];
     let h = n.handle(seg, start).unwrap();
-    assert!(h.0.abs() < 1e-6 && (h.1 + 30.0).abs() < 1e-6, "incoming handle mirrors the drag: {h:?}");
+    assert!(
+        h.0.abs() < 1e-6 && (h.1 + 30.0).abs() < 1e-6,
+        "incoming handle mirrors the drag: {h:?}"
+    );
     assert_eq!(ve(&s).pen_out, Some((0.0, 30.0)));
     // The next segment starts with the dragged-out handle.
     click(&mut s, 250.0, 50.0);
@@ -114,11 +133,20 @@ fn bend_tool_smooths_and_sharpens_points() {
     let n = net(&s, id);
     let v = vertex_at(&n, 100.0, 0.0);
     assert_eq!(n.mirroring(v), HandleMirroring::Angle);
-    assert!(n.incident(v).iter().all(|(s, st)| n.handle(*s, *st) != Some((0.0, 0.0))));
+    assert!(
+        n.incident(v)
+            .iter()
+            .all(|(s, st)| n.handle(*s, *st) != Some((0.0, 0.0)))
+    );
     click(&mut s, 100.0, 0.0);
     let n = net(&s, id);
     let v = vertex_at(&n, 100.0, 0.0);
-    assert!(n.incident(v).iter().all(|(s, st)| n.handle(*s, *st) == Some((0.0, 0.0))), "a click sharpens it");
+    assert!(
+        n.incident(v)
+            .iter()
+            .all(|(s, st)| n.handle(*s, *st) == Some((0.0, 0.0))),
+        "a click sharpens it"
+    );
     // ⌘-drag on a segment with the Move tool bends it.
     ex(&mut s, "vector.edit.tool", json!({"tool": "move"}));
     let mut down = ev(PointerKind::Down, 0.0, 50.0);
@@ -149,11 +177,19 @@ fn paint_bucket_fills_and_unfills_areas() {
     s.undo().unwrap();
     assert!(!net(&s, id).fill_contains(pt(75.0, 25.0)));
     // A vector without fills gets one when painted.
-    ex(&mut s, "node.set", json!({"id": id, "props": {"fills": []}}));
+    ex(
+        &mut s,
+        "node.set",
+        json!({"id": id, "props": {"fills": []}}),
+    );
     let r = ex(&mut s, "vector.edit.paint", json!({"x": 75, "y": 25}));
     assert_eq!(r["filled"], json!(true));
     assert!(!s.doc().unwrap().node(id).unwrap().fills.is_empty());
-    assert!(s.execute("vector.edit.paint", &json!({"x": 500, "y": 500})).is_err(), "outside any area");
+    assert!(
+        s.execute("vector.edit.paint", &json!({"x": 500, "y": 500}))
+            .is_err(),
+        "outside any area"
+    );
 }
 
 #[test]
@@ -224,13 +260,19 @@ fn cut_tool_and_keys() {
     assert_eq!((w * net(&s, id).vertices[v].point()).y, 110.0);
     assert!(key(&mut s, "A", false, false, true).unwrap());
     assert_eq!(ve(&s).vertices.len(), 6);
-    assert!(!key(&mut s, "Z", false, false, true).unwrap(), "undo falls through to shortcuts");
+    assert!(
+        !key(&mut s, "Z", false, false, true).unwrap(),
+        "undo falls through to shortcuts"
+    );
     ex(&mut s, "vector.edit.select", json!({"vertices": [v]}));
     assert!(key(&mut s, "Backspace", false, false, false).unwrap());
     assert_eq!(net(&s, id).vertices.len(), 5);
     assert!(key(&mut s, "Enter", false, false, false).unwrap());
     assert!(s.ds().unwrap().vector_edit.is_none());
-    assert!(!key(&mut s, "V", false, false, false).unwrap(), "keys pass through outside edit mode");
+    assert!(
+        !key(&mut s, "V", false, false, false).unwrap(),
+        "keys pass through outside edit mode"
+    );
 }
 
 #[test]
@@ -240,12 +282,20 @@ fn delete_vs_delete_and_heal() {
     ex(&mut s, "vector.edit.select", json!({"vertices": [1]}));
     ex(&mut s, "vector.edit.delete", json!({}));
     let n = net(&s, id);
-    assert_eq!((n.vertices.len(), n.segments.len()), (3, 2), "the path opens");
+    assert_eq!(
+        (n.vertices.len(), n.segments.len()),
+        (3, 2),
+        "the path opens"
+    );
     s.undo().unwrap();
     ex(&mut s, "vector.edit.select", json!({"vertices": [1]}));
     ex(&mut s, "vector.deleteHeal", json!({}));
     let n = net(&s, id);
-    assert_eq!((n.vertices.len(), n.segments.len(), n.regions.len()), (3, 3, 1), "healed and closed");
+    assert_eq!(
+        (n.vertices.len(), n.segments.len(), n.regions.len()),
+        (3, 3, 1),
+        "healed and closed"
+    );
     // Deleting a selected segment keeps its points.
     s.undo().unwrap();
     ex(&mut s, "vector.edit.select", json!({"segments": [0]}));
@@ -260,11 +310,18 @@ fn mirroring_position_and_join_commands() {
     let id = rect(&mut s);
     ex(&mut s, "vector.edit.select", json!({"vertices": [1]}));
     ex(&mut s, "vector.edit.smooth", json!({}));
-    ex(&mut s, "vector.edit.mirroring", json!({"mode": "angleAndLength"}));
+    ex(
+        &mut s,
+        "vector.edit.mirroring",
+        json!({"mode": "angleAndLength"}),
+    );
     let st = ex(&mut s, "vector.edit.state", json!({}));
     assert_eq!(st["mirroring"][1], json!("angleAndLength"));
     assert_eq!(st["tool"], json!("move"));
-    assert!(s.execute("vector.edit.mirroring", &json!({"mode": "sideways"})).is_err());
+    assert!(
+        s.execute("vector.edit.mirroring", &json!({"mode": "sideways"}))
+            .is_err()
+    );
     // Position: move the selected point to x = -50 in parent coordinates.
     ex(&mut s, "vector.edit.select", json!({"vertices": [0]}));
     ex(&mut s, "vector.edit.position", json!({"x": -50}));
@@ -286,7 +343,10 @@ fn undo_back_past_the_conversion_leaves_edit_mode() {
     let id = rect(&mut s);
     assert!(s.ds().unwrap().vector_edit.is_some());
     s.undo().unwrap();
-    assert_eq!(s.doc().unwrap().node(id).unwrap().kind.type_name(), "RECTANGLE");
+    assert_eq!(
+        s.doc().unwrap().node(id).unwrap().kind.type_name(),
+        "RECTANGLE"
+    );
     assert!(s.ds().unwrap().vector_edit.is_none());
     // Choosing a drawing tool leaves edit mode too.
     let _ = rect(&mut s);
@@ -303,7 +363,10 @@ fn every_command_survives_junk_params_while_editing() {
         json!({"segment": 0, "t": 2, "x": 5, "y": 5, "dx": 1e300, "dy": 1, "a": 0, "b": 0, "vertex": 99}),
         json!({"points": [[0, 0], [1], "x", [5, 5], [0, 9]], "mode": 7, "tool": "nope", "radius": -3}),
     ];
-    for spec in crate::all_commands().iter().filter(|c| c.id.starts_with("vector.")) {
+    for spec in crate::all_commands()
+        .iter()
+        .filter(|c| c.id.starts_with("vector."))
+    {
         for j in &junk {
             let mut s = Session::new();
             let _ = rect(&mut s);
@@ -314,7 +377,13 @@ fn every_command_survives_junk_params_while_editing() {
             if let Some(ve) = s.ds().unwrap().vector_edit.clone()
                 && let Some(n) = network(s.doc().unwrap(), ve.id)
             {
-                assert!(n.segments.iter().all(|x| x.a < n.vertices.len() && x.b < n.vertices.len()), "{} broke the network", spec.id);
+                assert!(
+                    n.segments
+                        .iter()
+                        .all(|x| x.a < n.vertices.len() && x.b < n.vertices.len()),
+                    "{} broke the network",
+                    spec.id
+                );
             }
         }
     }
@@ -330,13 +399,30 @@ fn eraser_strokes_cut_paths_in_one_step() {
     // A stroke across the top edge.
     drag(&mut s, (50.0, -5.0), (50.0, 5.0));
     let n = net(&s, id);
-    assert_eq!(n.segments.len(), 5, "the top edge is split into two with a gap");
-    assert!(n.vertices.iter().all(|v| (v.point() - pt(50.0, 0.0)).hypot() >= 7.9), "nothing left under the brush");
+    assert_eq!(
+        n.segments.len(),
+        5,
+        "the top edge is split into two with a gap"
+    );
+    assert!(
+        n.vertices
+            .iter()
+            .all(|v| (v.point() - pt(50.0, 0.0)).hypot() >= 7.9),
+        "nothing left under the brush"
+    );
     s.undo().unwrap();
     assert_eq!(net(&s, id).segments.len(), 4);
-    assert_eq!(net(&s, id).vertices.len(), 4, "one undo step restores the square");
+    assert_eq!(
+        net(&s, id).vertices.len(),
+        4,
+        "one undo step restores the square"
+    );
     // The command does the same with an explicit radius.
-    let r = ex(&mut s, "vector.edit.erase", json!({"points": [[100, 50]], "radius": 5}));
+    let r = ex(
+        &mut s,
+        "vector.edit.erase",
+        json!({"points": [[100, 50]], "radius": 5}),
+    );
     assert_eq!(r["changed"], json!(true));
     assert!(key(&mut s, "E", true, false, false).unwrap());
     assert_eq!(ve(&s).tool, VTool::Eraser);

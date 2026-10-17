@@ -41,9 +41,9 @@ pub fn walk_files(root: &Path, accept: &dyn Fn(&str) -> bool) -> Result<Vec<Path
             if file_type.is_dir() {
                 pending.push(path);
             } else if file_type.is_file()
-                && path
-                    .extension()
-                    .is_some_and(|extension| accept(&extension.to_string_lossy().to_ascii_lowercase()))
+                && path.extension().is_some_and(|extension| {
+                    accept(&extension.to_string_lossy().to_ascii_lowercase())
+                })
             {
                 files.push(path);
             }
@@ -54,7 +54,10 @@ pub fn walk_files(root: &Path, accept: &dyn Fn(&str) -> bool) -> Result<Vec<Path
 }
 
 fn relative(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root).unwrap_or(path).to_string_lossy().replace('\\', "/")
+    path.strip_prefix(root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 /// Write pretty JSON (2-space indent, UTF-8), creating parent directories.
@@ -96,7 +99,10 @@ pub fn models_manifest(root: &Path) -> Result<Value> {
         record.insert("sizeBytes".into(), bytes.len().into());
         record.insert("validEmd".into(), valid.into());
         if valid {
-            record.insert("version".into(), u16::from_le_bytes([bytes[8], bytes[9]]).into());
+            record.insert(
+                "version".into(),
+                u16::from_le_bytes([bytes[8], bytes[9]]).into(),
+            );
         }
         records.push(Value::Object(record));
     }
@@ -128,7 +134,7 @@ pub fn parse_in_place(root: &Path) -> Result<Value> {
                 output.push(".json");
                 write_json(Path::new(&output), &value)?;
                 ok += 1;
-            },
+            }
             Some(Ok(Loaded::Skipped)) => skip += 1,
             Some(Err(_)) | None => error += 1,
         }
@@ -165,13 +171,14 @@ pub fn tex_in_place(root: &Path) -> Result<Value> {
                 continue;
             }
             dds_total += 1;
-            let png = decode_dds_to_rgba(data)
-                .and_then(|(width, height, rgba)| encode_rgba_to_png(&rgba, width as usize, height as usize));
+            let png = decode_dds_to_rgba(data).and_then(|(width, height, rgba)| {
+                encode_rgba_to_png(&rgba, width as usize, height as usize)
+            });
             match png {
                 Some(png) => {
                     fs::write(output.with_extension("png"), png)?;
                     png_ok += 1;
-                },
+                }
                 None => png_err += 1,
             }
         }
@@ -193,7 +200,9 @@ pub const AUDIO_EXTENSIONS: [&str; 7] = ["hca", "adx", "acb", "awb", "afs2", "cs
 /// Decode every subsong of one CRI audio file to PCM16 WAV images, in bank order.
 #[cfg(feature = "dbxv2")]
 pub fn decode_audio_subsongs(bytes: &[u8]) -> std::result::Result<Vec<Vec<u8>>, String> {
-    use aphrody_nie_formats::cri_audio::{Awb, acb_parse, adx_decode, encode_pcm16_wav, is_adx, is_hca};
+    use aphrody_nie_formats::cri_audio::{
+        Awb, acb_parse, adx_decode, encode_pcm16_wav, is_adx, is_hca,
+    };
 
     // Keyless decoder of the generic pipeline: DBXV2 ships unencrypted or statically
     // scrambled HCA; no other title's key is ever applied.
@@ -204,7 +213,11 @@ pub fn decode_audio_subsongs(bytes: &[u8]) -> std::result::Result<Vec<Vec<u8>>, 
         }
         if is_adx(data) {
             let pcm = adx_decode(data).map_err(|error| format!("ADX: {error}"))?;
-            return Ok(encode_pcm16_wav(&pcm.samples, pcm.channels, pcm.sample_rate));
+            return Ok(encode_pcm16_wav(
+                &pcm.samples,
+                pcm.channels,
+                pcm.sample_rate,
+            ));
         }
         Err("neither HCA nor ADX".into())
     }
@@ -249,7 +262,7 @@ pub fn audio_in_place(root: &Path) -> Result<Value> {
                     fs::write(directory.join(format!("{:03}.wav", index + 1)), wave)?;
                 }
                 ok += waves.len();
-            },
+            }
             Err(_) => err += 1,
         }
     }
@@ -261,11 +274,23 @@ pub fn audio_in_place(root: &Path) -> Result<Value> {
 
 /// Manifests summed by `report`: key, file name, summed fields.
 const CONVERSION_MANIFESTS: [(&str, &str, &[&str]); 5] = [
-    ("tex", "tex_manifest.json", &["embFiles", "ddsExtracted", "pngOk", "pngErr"]),
-    ("audio", "audio_manifest.json", &["audioFiles", "wavOk", "wavErr"]),
+    (
+        "tex",
+        "tex_manifest.json",
+        &["embFiles", "ddsExtracted", "pngOk", "pngErr"],
+    ),
+    (
+        "audio",
+        "audio_manifest.json",
+        &["audioFiles", "wavOk", "wavErr"],
+    ),
     ("text", "text_manifest.json", &["msgFiles", "converted"]),
     ("models", "models_manifest.json", &["emdFiles"]),
-    ("parse", "parse_manifest.json", &["total", "ok", "skip", "error"]),
+    (
+        "parse",
+        "parse_manifest.json",
+        &["total", "ok", "skip", "error"],
+    ),
 ];
 
 /// `report`: aggregate `reports/{map,reverse_report,extract_manifest}.json` and the conversion
@@ -278,7 +303,15 @@ pub fn global_report(out: &Path, generated_utc: &str) -> Result<Value> {
 
     let mut totals = Map::new();
     for (key, _, fields) in CONVERSION_MANIFESTS {
-        totals.insert(key.into(), Value::Object(fields.iter().map(|field| ((*field).into(), 0.into())).collect()));
+        totals.insert(
+            key.into(),
+            Value::Object(
+                fields
+                    .iter()
+                    .map(|field| ((*field).into(), 0.into()))
+                    .collect(),
+            ),
+        );
     }
     let mut by_dir = Map::new();
     let cpk = out.join("cpk");
@@ -293,7 +326,9 @@ pub fn global_report(out: &Path, generated_utc: &str) -> Result<Value> {
     for tree in trees {
         let mut tree_report = Map::new();
         for (key, file, fields) in CONVERSION_MANIFESTS {
-            let Some(manifest) = load_json(&tree.join(file)) else { continue };
+            let Some(manifest) = load_json(&tree.join(file)) else {
+                continue;
+            };
             let mut row = Map::new();
             for field in fields {
                 let value = manifest.get(*field).and_then(Value::as_u64).unwrap_or(0);
@@ -304,12 +339,19 @@ pub fn global_report(out: &Path, generated_utc: &str) -> Result<Value> {
             tree_report.insert(key.into(), Value::Object(row));
         }
         if !tree_report.is_empty() {
-            let name = tree.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = tree
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default();
             by_dir.insert(name, Value::Object(tree_report));
         }
     }
 
-    let mut game_summary = game.get("game").and_then(Value::as_object).cloned().unwrap_or_default();
+    let mut game_summary = game
+        .get("game")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     if let Some(scan) = game.get("scan").and_then(Value::as_object) {
         game_summary.extend(scan.clone());
     }

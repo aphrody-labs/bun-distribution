@@ -59,8 +59,24 @@ fn borders(preset: &str) -> Shortcut {
 /// the numpad's arrows and Page Down report the digit keys (Num6, Num3) as their physical keys.
 pub fn lookup(key: Key, physical: Option<Key>, m: Modifiers, mac: bool) -> Option<Shortcut> {
     use Key::*;
-    let navigation = matches!(key, ArrowLeft | ArrowRight | ArrowUp | ArrowDown | PageUp | PageDown | Home | End | Insert | Delete);
-    let k = if navigation { key } else { physical.unwrap_or(key) };
+    let navigation = matches!(
+        key,
+        ArrowLeft
+            | ArrowRight
+            | ArrowUp
+            | ArrowDown
+            | PageUp
+            | PageDown
+            | Home
+            | End
+            | Insert
+            | Delete
+    );
+    let k = if navigation {
+        key
+    } else {
+        physical.unwrap_or(key)
+    };
     // Control itself (Excel for Mac also uses Control for these), Ctrl on Windows / Cmd on Mac,
     // and Alt/Option alone.
     let ctrl = m.ctrl && !m.alt;
@@ -119,7 +135,9 @@ pub fn lookup(key: Key, physical: Option<Key>, m: Modifiers, mac: bool) -> Optio
         End if cmd && s => Shortcut::ExtendToEnd,
         Home if plain && s => Shortcut::ExtendToRowStart,
         // Ctrl+Alt / Cmd+Option combinations.
-        V if ctrl_alt || (mac && m.ctrl && m.command) => Shortcut::Dialog("pasteSpecial", json!({})),
+        V if ctrl_alt || (mac && m.ctrl && m.command) => {
+            Shortcut::Dialog("pasteSpecial", json!({}))
+        }
         Equals | Plus if ctrl_alt => Shortcut::Zoom(10),
         Minus if ctrl_alt && !mac => Shortcut::Zoom(-10),
         F9 if ctrl_alt => run("formulas.calculateNow"),
@@ -163,15 +181,33 @@ pub fn lookup(key: Key, physical: Option<Key>, m: Modifiers, mac: bool) -> Optio
 }
 
 /// Handles a key press in the grid. Returns whether it was a shortcut.
-pub(crate) fn dispatch(app: &mut SheetApp, ctx: &egui::Context, key: Key, physical: Option<Key>, m: Modifiers, geo: &Geo, sh: &Sheet) -> bool {
+pub(crate) fn dispatch(
+    app: &mut SheetApp,
+    ctx: &egui::Context,
+    key: Key,
+    physical: Option<Key>,
+    m: Modifiers,
+    geo: &Geo,
+    sh: &Sheet,
+) -> bool {
     let mac = ctx.os() == egui::os::OperatingSystem::Mac;
     // AltGr arrives as Ctrl+Alt on Windows: a key that also typed a character (AltGr+= is `~`
     // on a German layout) is text, not a shortcut.
-    if !mac && m.alt && m.ctrl && ctx.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Text(_)))) {
+    if !mac
+        && m.alt
+        && m.ctrl
+        && ctx.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Text(_))))
+    {
         return false;
     }
-    let Some(shortcut) = lookup(key, physical, m, mac) else { return false };
-    let (active, anchor) = app.session.active().map(|d| (d.selection.active, d.selection.anchor)).unwrap_or_default();
+    let Some(shortcut) = lookup(key, physical, m, mac) else {
+        return false;
+    };
+    let (active, anchor) = app
+        .session
+        .active()
+        .map(|d| (d.selection.active, d.selection.anchor))
+        .unwrap_or_default();
     match shortcut {
         Shortcut::Run(id, params) => {
             app.run_or_alert(id, params);
@@ -183,21 +219,45 @@ pub(crate) fn dispatch(app: &mut SheetApp, ctx: &egui::Context, key: Key, physic
                 .session
                 .active()
                 .map(|d| {
-                    let now = gridcraft_engine::core::date::serial_in_system(d.wb.date_system, gridcraft_engine::calc::now_serial());
-                    let (value, format) = if shortcut == Shortcut::Date { (now.floor(), "m/d/yyyy") } else { (now.fract(), "h:mm AM/PM") };
-                    gridcraft_engine::display::format(&gridcraft_engine::core::Value::Number(value), format, &d.wb).text
+                    let now = gridcraft_engine::core::date::serial_in_system(
+                        d.wb.date_system,
+                        gridcraft_engine::calc::now_serial(),
+                    );
+                    let (value, format) = if shortcut == Shortcut::Date {
+                        (now.floor(), "m/d/yyyy")
+                    } else {
+                        (now.fract(), "h:mm AM/PM")
+                    };
+                    gridcraft_engine::display::format(
+                        &gridcraft_engine::core::Value::Number(value),
+                        format,
+                        &d.wb,
+                    )
+                    .text
                 })
                 .unwrap_or_default();
             edit_with(app, text);
         }
         Shortcut::FormulaAbove | Shortcut::ValueAbove => {
-            let Some(above) = active.row.checked_sub(1).map(|r| CellRef::new(r, active.col)) else { return true };
+            let Some(above) = active
+                .row
+                .checked_sub(1)
+                .map(|r| CellRef::new(r, active.col))
+            else {
+                return true;
+            };
             let text = if shortcut == Shortcut::FormulaAbove {
-                app.session.active().map(|d| gridcraft_engine::display::edit_text(&d.wb, sh, above)).unwrap_or_default()
+                app.session
+                    .active()
+                    .map(|d| gridcraft_engine::display::edit_text(&d.wb, sh, above))
+                    .unwrap_or_default()
             } else {
                 app.session
                     .active()
-                    .and_then(|d| sh.value_ref(above).map(|v| gridcraft_engine::display::format(v, "General", &d.wb).text))
+                    .and_then(|d| {
+                        sh.value_ref(above)
+                            .map(|v| gridcraft_engine::display::format(v, "General", &d.wb).text)
+                    })
                     .unwrap_or_default()
             };
             edit_with(app, text);
@@ -211,15 +271,26 @@ pub(crate) fn dispatch(app: &mut SheetApp, ctx: &egui::Context, key: Key, physic
         Shortcut::ScreenRight | Shortcut::ScreenLeft => {
             let width = ((geo.cells.width() - geo.frozen_w) / geo.z).max(1.0);
             let cols = (width / sh.default_col_width.max(1.0)).floor().max(1.0) as i64;
-            let dc = if shortcut == Shortcut::ScreenRight { cols } else { -cols };
-            let _ = app.session.run("selection.move", json!({"dr": 0, "dc": dc, "extend": m.shift}));
+            let dc = if shortcut == Shortcut::ScreenRight {
+                cols
+            } else {
+                -cols
+            };
+            let _ = app.session.run(
+                "selection.move",
+                json!({"dr": 0, "dc": dc, "extend": m.shift}),
+            );
             app.grid.ensure_visible = true;
             app.grid.reveal_moving_end = m.shift;
         }
         Shortcut::Edit => app.begin_edit(None, false),
         Shortcut::ContextMenu => app.grid.context_menu = Some(geo.cell_rect(sh, active).center()),
         Shortcut::DropDown => {
-            if sh.validations.iter().any(|d| d.in_cell_dropdown && d.ranges.iter().any(|r| r.contains(active))) {
+            if sh
+                .validations
+                .iter()
+                .any(|d| d.in_cell_dropdown && d.ranges.iter().any(|r| r.contains(active)))
+            {
                 app.grid.list_picker = Some(active);
             } else if sh.has_filter_button(active) {
                 let at = geo.mirror_pos(crate::grid::filter_button_rect(geo, sh, active).center());
@@ -244,7 +315,10 @@ fn edit_with(app: &mut SheetApp, text: String) {
 
 /// Selects `anchor`..`to`, keeping the anchor and the active cell.
 fn extend(app: &mut SheetApp, anchor: CellRef, active: CellRef, to: CellRef) {
-    let _ = app.session.run("selection.set", json!({"range": RangeRef::new(anchor, to).a1(), "active": active.a1()}));
+    let _ = app.session.run(
+        "selection.set",
+        json!({"range": RangeRef::new(anchor, to).a1(), "active": active.a1()}),
+    );
     if let Some(d) = app.session.active_mut() {
         d.selection.anchor = anchor;
     }

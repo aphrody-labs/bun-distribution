@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct W2lTemplateUploadJobToken(pub String);
 
 impl_string_token!(W2lTemplateUploadJobToken);
-impl_crockford_generator!(W2lTemplateUploadJobToken, 32usize, LegacyTokenPrefix::W2lTemplateUploadJob, CrockfordLower);
+impl_crockford_generator!(
+    W2lTemplateUploadJobToken,
+    32usize,
+    LegacyTokenPrefix::W2lTemplateUploadJob,
+    CrockfordLower
+);

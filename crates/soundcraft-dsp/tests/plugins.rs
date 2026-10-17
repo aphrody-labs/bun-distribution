@@ -27,7 +27,9 @@ fn run(p: &mut dyn Plugin, input: &[Vec<f32>]) -> Vec<Vec<f32>> {
 }
 
 fn sine(freq: f32, amp: f32, len: usize) -> Vec<f32> {
-    (0..len).map(|i| amp * (TAU * freq * i as f32 / SR).sin()).collect()
+    (0..len)
+        .map(|i| amp * (TAU * freq * i as f32 / SR).sin())
+        .collect()
 }
 
 fn peak(x: &[f32]) -> f32 {
@@ -53,7 +55,11 @@ fn registry_ids_unique_and_creatable() {
     let mut ids = HashSet::new();
     for info in plugins() {
         assert!(ids.insert(info.id), "duplicate id {}", info.id);
-        assert!(info.short_name.chars().count() <= 8, "{} short name too long", info.id);
+        assert!(
+            info.short_name.chars().count() <= 8,
+            "{} short name too long",
+            info.id
+        );
         let p = create(info.id).unwrap_or_else(|| panic!("cannot create {}", info.id));
         assert_eq!(p.info().id, info.id);
         assert_eq!(plugin_info(info.id).unwrap().id, info.id);
@@ -68,13 +74,23 @@ fn params_well_formed() {
         let mut ids = HashSet::new();
         for p in info.params {
             assert!(ids.insert(p.id), "{}: duplicate param {}", info.id, p.id);
-            assert!(p.min <= p.default && p.default <= p.max, "{}.{} default out of range", info.id, p.id);
+            assert!(
+                p.min <= p.default && p.default <= p.max,
+                "{}.{} default out of range",
+                info.id,
+                p.id
+            );
             assert!(p.min.is_finite() && p.max.is_finite());
             if p.unit == Unit::Choice {
                 assert_eq!(p.choices.len() as f32, p.max + 1.0, "{}.{}", info.id, p.id);
             }
             let n = p.to_normalized(p.default);
-            assert!((p.from_normalized(n) - p.default).abs() <= 1e-3 * (1.0 + p.default.abs()), "{}.{}", info.id, p.id);
+            assert!(
+                (p.from_normalized(n) - p.default).abs() <= 1e-3 * (1.0 + p.default.abs()),
+                "{}.{}",
+                info.id,
+                p.id
+            );
         }
         let mut plug = create(info.id).unwrap();
         for p in info.params {
@@ -96,7 +112,12 @@ fn silence_in_silence_out() {
         let mut p = prepared(info.id);
         let out = run(p.as_mut(), &vec![vec![0.0; 48_000]; 2]);
         for c in &out {
-            assert!(peak(c) < 1e-6, "{} made noise from silence: {}", info.id, peak(c));
+            assert!(
+                peak(c) < 1e-6,
+                "{} made noise from silence: {}",
+                info.id,
+                peak(c)
+            );
         }
     }
 }
@@ -111,7 +132,11 @@ fn impulse_response_finite_and_bounded() {
         p.note_on(0, 36, 100);
         let out = run(p.as_mut(), &x);
         for c in &out {
-            assert!(c.iter().all(|v| v.is_finite()), "{} produced non-finite output", info.id);
+            assert!(
+                c.iter().all(|v| v.is_finite()),
+                "{} produced non-finite output",
+                info.id
+            );
             assert!(peak(c) < 8.0, "{} impulse peak {}", info.id, peak(c));
         }
     }
@@ -119,19 +144,36 @@ fn impulse_response_finite_and_bounded() {
 
 #[test]
 fn hostile_params_never_break_processing() {
-    let hostile = [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1e30, 1e30, 0.0, -0.0];
+    let hostile = [
+        f32::NAN,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        -1e30,
+        1e30,
+        0.0,
+        -0.0,
+    ];
     for info in plugins() {
         for &v in &hostile {
             let mut p = prepared(info.id);
             for param in info.params {
                 assert!(p.set_param(param.id, v));
                 let got = p.param(param.id).unwrap();
-                assert!(got.is_finite() && got >= param.min && got <= param.max, "{}.{} = {got}", info.id, param.id);
+                assert!(
+                    got.is_finite() && got >= param.min && got <= param.max,
+                    "{}.{} = {got}",
+                    info.id,
+                    param.id
+                );
             }
             p.note_on(3, 60, 127);
             let x = vec![sine(440.0, 0.5, 9600), sine(660.0, 0.5, 9600)];
             let out = run(p.as_mut(), &x);
-            assert!(out.iter().flatten().all(|s| s.is_finite()), "{} non-finite with param value {v}", info.id);
+            assert!(
+                out.iter().flatten().all(|s| s.is_finite()),
+                "{} non-finite with param value {v}",
+                info.id
+            );
             let _ = p.latency();
             let _ = p.tail_samples();
             assert!(p.gain_reduction_db().is_finite());
@@ -144,7 +186,13 @@ fn odd_host_calls_do_not_panic() {
     for info in plugins() {
         let mut p = create(info.id).unwrap();
         // Unprepared-ish, weird rates, block bigger than prepared, mismatched channels.
-        for (sr, block, ch) in [(0.0, 0, 0), (f32::NAN, 16, 1), (-44_100.0, 64, 2), (1e9, 64, 8), (44_100.0, 32, 2)] {
+        for (sr, block, ch) in [
+            (0.0, 0, 0),
+            (f32::NAN, 16, 1),
+            (-44_100.0, 64, 2),
+            (1e9, 64, 8),
+            (44_100.0, 32, 2),
+        ] {
             p.prepare(sr, block, ch);
             let mut io = vec![vec![0.25f32; 300]; 3];
             p.process(&mut io, 4096);
@@ -169,7 +217,10 @@ fn param_changes_are_smooth() {
     let _ = run(p.as_mut(), &x);
     p.set_param("gain", 24.0);
     let out = run(p.as_mut(), &x);
-    let max_step = out[0].windows(2).map(|w| (w[1] - w[0]).abs()).fold(0.0f32, f32::max);
+    let max_step = out[0]
+        .windows(2)
+        .map(|w| (w[1] - w[0]).abs())
+        .fold(0.0f32, f32::max);
     assert!(max_step < 0.05, "zipper step {max_step}");
     let out = run(p.as_mut(), &x);
     assert!((out[0][4095] - 0.5 * db_to_gain(24.0)).abs() < 0.01);
@@ -178,7 +229,11 @@ fn param_changes_are_smooth() {
 #[test]
 fn eq_magnitude_at_center_matches_gain() {
     let sr = SR;
-    let resp = soundcraft_dsp::eq7_response(&[("mid_freq", 1000.0), ("mid_gain", 9.0), ("mid_q", 2.0)], &[1000.0, 30.0, 15_000.0], sr);
+    let resp = soundcraft_dsp::eq7_response(
+        &[("mid_freq", 1000.0), ("mid_gain", 9.0), ("mid_q", 2.0)],
+        &[1000.0, 30.0, 15_000.0],
+        sr,
+    );
     assert!((resp[0] - 9.0).abs() < 0.05, "{resp:?}");
     assert!(resp[1].abs() < 0.2 && resp[2].abs() < 0.2, "{resp:?}");
     let r1 = soundcraft_dsp::eq1_response(&[("freq", 2500.0), ("gain", -12.0)], &[2500.0], sr);
@@ -195,8 +250,15 @@ fn eq_magnitude_at_center_matches_gain() {
     assert!((g - 9.0).abs() < 0.2, "measured {g}");
 
     // HPF attenuates lows.
-    let r = soundcraft_dsp::eq7_response(&[("hpf_on", 1.0), ("hpf_freq", 200.0), ("hpf_slope", 3.0)], &[50.0, 200.0, 2000.0], sr);
-    assert!(r[0] < -40.0 && (r[1] + 3.0).abs() < 0.2 && r[2].abs() < 0.1, "{r:?}");
+    let r = soundcraft_dsp::eq7_response(
+        &[("hpf_on", 1.0), ("hpf_freq", 200.0), ("hpf_slope", 3.0)],
+        &[50.0, 200.0, 2000.0],
+        sr,
+    );
+    assert!(
+        r[0] < -40.0 && (r[1] + 3.0).abs() < 0.2 && r[2].abs() < 0.1,
+        "{r:?}"
+    );
 }
 
 #[test]
@@ -251,7 +313,11 @@ fn maximizer_respects_ceiling_and_reports_latency() {
     p.set_param("ceiling", -1.0);
     let x = sine(220.0, 0.9, 48_000);
     let out = run(p.as_mut(), &[x.clone(), x]);
-    assert!(peak(&out[0]) <= db_to_gain(-1.0) + 1e-5, "{}", peak(&out[0]));
+    assert!(
+        peak(&out[0]) <= db_to_gain(-1.0) + 1e-5,
+        "{}",
+        peak(&out[0])
+    );
     assert!(p.latency() > 0 && p.latency() < 200);
     assert!(p.gain_reduction_db() > 5.0);
 }
@@ -278,7 +344,12 @@ fn latency_reporting_aligns_pitch_shifter() {
     let mut x = vec![0.0f32; 8000];
     x[1000] = 1.0;
     let out = run(p.as_mut(), &[x]);
-    let pos = out[0].iter().enumerate().max_by(|a, b| a.1.abs().total_cmp(&b.1.abs())).unwrap().0;
+    let pos = out[0]
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+        .unwrap()
+        .0;
     assert_eq!(pos, 1000 + lat);
 }
 
@@ -289,7 +360,12 @@ fn pitch_shifter_moves_pitch() {
     p.reset();
     let out = run(p.as_mut(), &[sine(440.0, 0.5, 48_000)]);
     let spec = soundcraft_dsp::spectrum::magnitude_db(&out[0][16_384..], 16_384);
-    let bin = spec.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).unwrap().0;
+    let bin = spec
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.total_cmp(b.1))
+        .unwrap()
+        .0;
     let hz = soundcraft_dsp::spectrum::bin_hz(bin, 16_384, SR);
     assert!((hz - 880.0).abs() < 15.0, "peak at {hz}");
 }
@@ -325,7 +401,12 @@ fn delay_repeats_at_time() {
     let mut x = vec![0.0f32; 20_000];
     x[0] = 1.0;
     let out = run(p.as_mut(), &[x]);
-    let pos = out[0].iter().enumerate().max_by(|a, b| a.1.abs().total_cmp(&b.1.abs())).unwrap().0;
+    let pos = out[0]
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+        .unwrap()
+        .0;
     assert!((pos as i64 - 4800).abs() <= 2, "echo at {pos}");
 }
 
@@ -384,7 +465,9 @@ fn synth_note_on_sounds_and_note_off_decays() {
     let out = run(p.as_mut(), &vec![vec![0.0; 96_000]; 2]);
     assert!(peak(&out[0][72_000..]) < 1e-6, "synth did not decay");
     // Polyphony: a chord is louder than one note and stays finite.
-    for n in [60, 64, 67, 71, 74, 77, 81, 84, 60, 62, 65, 69, 72, 76, 79, 83, 86, 88] {
+    for n in [
+        60, 64, 67, 71, 74, 77, 81, 84, 60, 62, 65, 69, 72, 76, 79, 83, 86, 88,
+    ] {
         p.note_on(0, n, 127);
     }
     let out = run(p.as_mut(), &vec![vec![0.0; 9600]; 2]);
@@ -411,7 +494,10 @@ fn drum_kit_notes_sound_and_end() {
         p.note_on(0, note, 120);
         let out = run(p.as_mut(), &[vec![0.0; 48_000 * 7]]);
         assert!(peak(&out[0][..4800]) > 0.01, "drum note {note} silent");
-        assert!(peak(&out[0][48_000 * 6..]) < 1e-6, "drum note {note} rings forever");
+        assert!(
+            peak(&out[0][48_000 * 6..]) < 1e-6,
+            "drum note {note} rings forever"
+        );
     }
     let mut p = prepared("drum_synth");
     p.note_on(0, 99, 120);
@@ -427,7 +513,13 @@ fn saturator_adds_harmonics_and_stays_bounded() {
     assert!(peak(&out[0]) <= 1.01);
     let spec = soundcraft_dsp::spectrum::magnitude_db(&out[0][8192..], 8192);
     let third = (3000.0 / (SR / 8192.0)) as usize;
-    assert!(spec[third - 1..=third + 1].iter().cloned().fold(f32::MIN, f32::max) > -30.0);
+    assert!(
+        spec[third - 1..=third + 1]
+            .iter()
+            .cloned()
+            .fold(f32::MIN, f32::max)
+            > -30.0
+    );
 }
 
 #[test]

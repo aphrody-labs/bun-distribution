@@ -90,7 +90,9 @@ pub fn parse_font_palette(bytes: &[u8]) -> FontPalette {
     let Some(rows) = root["lists"]
         .as_array()
         .and_then(|listes| {
-            listes.iter().find(|liste| liste["typeName"].as_str() == Some("FONT_COLOR"))
+            listes
+                .iter()
+                .find(|liste| liste["typeName"].as_str() == Some("FONT_COLOR"))
         })
         .and_then(|liste| liste["values"].as_array())
     else {
@@ -221,11 +223,16 @@ impl MenuLayout {
         }
         objects.retain(|object| {
             PlacementSource::allows_rendering(
-                object.get("placementSource").map(|source| source.as_str().unwrap_or("")),
+                object
+                    .get("placementSource")
+                    .map(|source| source.as_str().unwrap_or("")),
                 object["transform"].is_object(),
             )
         });
-        Ok(Self { objects, visibility: Visibility::default() })
+        Ok(Self {
+            objects,
+            visibility: Visibility::default(),
+        })
     }
 
     /// Choisit la politique de visibilité — cf. [`Visibility`].
@@ -321,7 +328,11 @@ impl MenuLayout {
         assets: &dyn MenuAssets,
     ) -> ComposedLayout {
         let expected = (width as usize) * (height as usize) * 4;
-        let canvas = if canvas.len() == expected { canvas } else { vec![0u8; expected] };
+        let canvas = if canvas.len() == expected {
+            canvas
+        } else {
+            vec![0u8; expected]
+        };
 
         let mut cache: BTreeMap<String, Option<g4tx::G4tx>> = BTreeMap::new();
         let mut items: Vec<DrawItem> = Vec::new();
@@ -345,7 +356,7 @@ impl MenuLayout {
                 PixelSource::RegionHash => {
                     report.regions += 1;
                     report.region_hashes += 1;
-                },
+                }
                 PixelSource::Static => report.statics += 1,
             }
             let transform = &object["transform"];
@@ -517,7 +528,7 @@ fn region_pixels(
         g4tx::NamedTarget::Region { texture, sub } => {
             let (full_w, full_h, full) = g4tx_decode::decode_texture_rgba(bytes, texture)?;
             crop_rgba(&full, full_w, full_h, (sub.x, sub.y, sub.width, sub.height))
-        },
+        }
     }
 }
 
@@ -579,7 +590,9 @@ fn static_pixels(
 ) -> Option<Pixels> {
     let logical = object["sprite"]["logicalPath"].as_str()?;
     let key = fourni(assets, logical)?;
-    let stem = basename(key).strip_suffix(".g4tx").unwrap_or_else(|| basename(key));
+    let stem = basename(key)
+        .strip_suffix(".g4tx")
+        .unwrap_or_else(|| basename(key));
     let container = parsed(cache, assets, key)?;
     let texture = g4tx::select_main_texture(container, stem)?;
     let bytes = assets.g4tx(key)?;
@@ -589,7 +602,10 @@ fn static_pixels(
     };
     // Une région nommée que le conteneur ne porte pas ne se devine pas : on rend l'atlas, ce que
     // faisait le code d'avant, plutôt qu'un rectangle inventé.
-    let Some(sub) = texture.sub_textures.iter().find(|sub| sub.name.eq_ignore_ascii_case(region))
+    let Some(sub) = texture
+        .sub_textures
+        .iter()
+        .find(|sub| sub.name.eq_ignore_ascii_case(region))
     else {
         return Some((full_w, full_h, full));
     };
@@ -644,14 +660,21 @@ pub fn colour_spans(label: &str) -> Vec<ColourSpan> {
         let name = &rest[open + 2..open + close];
         // `[Cfoo]` où `foo` n'est pas un nom de jeton — `[Choisir]` par exemple — n'est pas du
         // balisage : tous les jetons attestés sont en capitales, chiffres et soulignés.
-        if !name.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_') {
+        if !name
+            .bytes()
+            .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
+        {
             let (head, tail) = rest.split_at(open + close + 1);
             push_span(&mut spans, head, colour.clone());
             rest = tail;
             continue;
         }
         push_span(&mut spans, &rest[..open], colour.clone());
-        colour = if name.is_empty() { None } else { Some(name.to_string()) };
+        colour = if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        };
         rest = &rest[open + close + 1..];
     }
     push_span(&mut spans, rest, colour);
@@ -660,14 +683,20 @@ pub fn colour_spans(label: &str) -> Vec<ColourSpan> {
 
 fn push_span(spans: &mut Vec<ColourSpan>, text: &str, colour: Option<String>) {
     if !text.is_empty() {
-        spans.push(ColourSpan { text: text.to_string(), colour });
+        spans.push(ColourSpan {
+            text: text.to_string(),
+            colour,
+        });
     }
 }
 
 /// Le texte affichable d'un libellé, balisage de couleur retiré.
 #[must_use]
 pub fn plain_label(label: &str) -> String {
-    colour_spans(label).into_iter().map(|span| span.text).collect()
+    colour_spans(label)
+        .into_iter()
+        .map(|span| span.text)
+        .collect()
 }
 
 /// Le libellé RÉSOLU d'un objet de layout.
@@ -717,7 +746,10 @@ pub fn resolved_text_spans(text: &Value) -> Option<Vec<ColourSpan>> {
 /// la moitié de son excédent.
 fn render_label(menu_font: &MenuFont, spans: &[ColourSpan]) -> Option<Pixels> {
     let cell = u32::from(menu_font.metrics.dims.cell_height).max(1);
-    let total_chars: u32 = spans.iter().map(|span| span.text.chars().count() as u32).sum();
+    let total_chars: u32 = spans
+        .iter()
+        .map(|span| span.text.chars().count() as u32)
+        .sum();
     let box_w = (total_chars.max(1) * cell).max(cell);
     let mut buffer = vec![0u8; (box_w as usize) * (cell as usize) * 4];
     // Un segment par couleur, la plume avancant de l'avance RENDUE du precedent. Rendre le
@@ -808,7 +840,12 @@ mod tests {
         // l'objet invisible ne demande rien.
         assert_eq!(
             parsed.required_assets(),
-            ["menu/icon_rarity.g4tx", "menu/atlas/common.g4tx", "common.g4tx", "other/common.g4tx"]
+            [
+                "menu/icon_rarity.g4tx",
+                "menu/atlas/common.g4tx",
+                "common.g4tx",
+                "other/common.g4tx"
+            ]
         );
     }
 
@@ -821,7 +858,10 @@ mod tests {
         let parsed = MenuLayout::from_json(&[&json]).expect("layout lisible");
         let composed = parsed.compose(&NoAssets, 8, 4);
         assert_eq!(composed.rgba.len(), 8 * 4 * 4);
-        assert!(composed.rgba.iter().all(|byte| *byte == 0), "canevas intact");
+        assert!(
+            composed.rgba.iter().all(|byte| *byte == 0),
+            "canevas intact"
+        );
         assert_eq!(composed.report.drawn, 0);
         assert_eq!(composed.report.skipped, 1);
     }
@@ -829,7 +869,10 @@ mod tests {
     #[test]
     fn text_labels_ignore_unresolved_hashes_and_numbers() {
         assert_eq!(resolved_text_label(&serde_json::json!(12)), None);
-        assert_eq!(resolved_text_label(&serde_json::json!([{"text":"0x1a2b3c4d"}])), None);
+        assert_eq!(
+            resolved_text_label(&serde_json::json!([{"text":"0x1a2b3c4d"}])),
+            None
+        );
         assert_eq!(
             resolved_text_label(
                 &serde_json::json!([{"text":"MODE"},{"text":""},{"text":"HISTOIRE"}])
@@ -853,8 +896,15 @@ mod tests {
             ]"#,
         );
         let parsed = MenuLayout::from_json(&[&json]).expect("layout lisible");
-        assert_eq!(parsed.object_count(), 1, "seul l'objet placé passe la porte");
-        assert_eq!(parsed.required_assets(), ["menu/measured.g4tx", "measured.g4tx"]);
+        assert_eq!(
+            parsed.object_count(),
+            1,
+            "seul l'objet placé passe la porte"
+        );
+        assert_eq!(
+            parsed.required_assets(),
+            ["menu/measured.g4tx", "measured.g4tx"]
+        );
     }
 
     #[test]
@@ -865,7 +915,10 @@ mod tests {
                  "sprite":{"logicalPath":"menu/one.g4tx"}}]"#,
         );
         let declared = MenuLayout::from_json(&[&json]).expect("layout lisible");
-        assert!(declared.required_assets().is_empty(), "rien n'est déclaré visible");
+        assert!(
+            declared.required_assets().is_empty(),
+            "rien n'est déclaré visible"
+        );
         let statique = MenuLayout::from_json(&[&json])
             .expect("layout lisible")
             .with_visibility(Visibility::UnknownCounts);
@@ -879,9 +932,13 @@ mod tests {
                  "sprite":{"logicalPath":"menu/hidden.g4tx"}}]"#,
         );
         for politique in [Visibility::Declared, Visibility::UnknownCounts] {
-            let parsed =
-                MenuLayout::from_json(&[&json]).expect("layout lisible").with_visibility(politique);
-            assert!(parsed.required_assets().is_empty(), "caché sous {politique:?}");
+            let parsed = MenuLayout::from_json(&[&json])
+                .expect("layout lisible")
+                .with_visibility(politique);
+            assert!(
+                parsed.required_assets().is_empty(),
+                "caché sous {politique:?}"
+            );
         }
     }
 
@@ -902,11 +959,20 @@ mod tests {
         assert_eq!(
             colour_spans(ligne),
             vec![
-                ColourSpan { text: "Maintenez enfoncé le bouton.\n".into(), colour: None },
-                ColourSpan { text: "* Modifiable dans Options.".into(), colour: Some("G".into()) },
+                ColourSpan {
+                    text: "Maintenez enfoncé le bouton.\n".into(),
+                    colour: None
+                },
+                ColourSpan {
+                    text: "* Modifiable dans Options.".into(),
+                    colour: Some("G".into())
+                },
             ]
         );
-        assert_eq!(plain_label(ligne), "Maintenez enfoncé le bouton.\n* Modifiable dans Options.");
+        assert_eq!(
+            plain_label(ligne),
+            "Maintenez enfoncé le bouton.\n* Modifiable dans Options."
+        );
     }
 
     /// Les formes longues n'existent que dans `nie.exe` — aucune locale livrée n'en porte —
@@ -914,13 +980,26 @@ mod tests {
     #[test]
     fn long_colour_tokens_from_the_binary_are_recognised() {
         // Le nom retenu est ce qui SUIT le `C` : `[CTACTICS01]` ouvre « TACTICS01 ».
-        for nom in ["N", "L", "WG", "TACTICS01", "SEASON_TIME03", "SEASON_TIME05"] {
+        for nom in [
+            "N",
+            "L",
+            "WG",
+            "TACTICS01",
+            "SEASON_TIME03",
+            "SEASON_TIME05",
+        ] {
             let ligne = format!("[C{nom}]texte[C]suite");
             assert_eq!(
                 colour_spans(&ligne),
                 vec![
-                    ColourSpan { text: "texte".into(), colour: Some(nom.into()) },
-                    ColourSpan { text: "suite".into(), colour: None },
+                    ColourSpan {
+                        text: "texte".into(),
+                        colour: Some(nom.into())
+                    },
+                    ColourSpan {
+                        text: "suite".into(),
+                        colour: None
+                    },
                 ],
                 "jeton C{nom}"
             );
@@ -932,7 +1011,10 @@ mod tests {
     #[test]
     fn a_bracket_that_is_not_a_token_survives_unchanged() {
         assert_eq!(plain_label("[Choisir] une option"), "[Choisir] une option");
-        assert_eq!(plain_label("[$gaiji_system02] Écraser ?"), "[$gaiji_system02] Écraser ?");
+        assert_eq!(
+            plain_label("[$gaiji_system02] Écraser ?"),
+            "[$gaiji_system02] Écraser ?"
+        );
         assert_eq!(plain_label("sans balisage"), "sans balisage");
     }
 
@@ -940,7 +1022,10 @@ mod tests {
     /// mieux qu'une boîte de texte haute de rien posée au milieu de l'écran.
     #[test]
     fn a_label_made_only_of_markup_resolves_to_nothing() {
-        assert_eq!(resolved_text_label(&serde_json::json!([{"text":"[CR][C]"}])), None);
+        assert_eq!(
+            resolved_text_label(&serde_json::json!([{"text":"[CR][C]"}])),
+            None
+        );
     }
 
     /// Le jeton `[C…]` désigne une entrée de la palette de texte du jeu, par CRC-32 de son nom.
@@ -988,7 +1073,10 @@ mod tests {
         let couleur = |jeton: Option<&str>| {
             span_rgba(
                 &police,
-                &ColourSpan { text: String::from("x"), colour: jeton.map(ToString::to_string) },
+                &ColourSpan {
+                    text: String::from("x"),
+                    colour: jeton.map(ToString::to_string),
+                },
             )
         };
         assert_eq!(couleur(None), [255, 255, 255, 255], "hors balisage");
@@ -1012,8 +1100,14 @@ mod tests {
         assert_eq!(
             spans,
             vec![
-                ColourSpan { text: "7Filtre : ".into(), colour: None },
-                ColourSpan { text: "ON".into(), colour: Some("FUNCBTN01".into()) },
+                ColourSpan {
+                    text: "7Filtre : ".into(),
+                    colour: None
+                },
+                ColourSpan {
+                    text: "ON".into(),
+                    colour: Some("FUNCBTN01".into())
+                },
             ]
         );
 
@@ -1023,9 +1117,17 @@ mod tests {
             metrics: font::FontMetrics::default(),
             palette: parse_font_palette(include_bytes!("../tests/fixtures/font_color.cfg.bin")),
         };
-        assert_eq!(span_rgba(&police, &spans[0]), [255, 255, 255, 255], "hors balisage");
+        assert_eq!(
+            span_rgba(&police, &spans[0]),
+            [255, 255, 255, 255],
+            "hors balisage"
+        );
         let valeur = span_rgba(&police, &spans[1]);
-        assert_ne!(valeur, [255, 255, 255, 255], "la valeur prend la couleur du jeu");
+        assert_ne!(
+            valeur,
+            [255, 255, 255, 255],
+            "la valeur prend la couleur du jeu"
+        );
         assert_eq!(valeur[3], 255);
     }
 
@@ -1048,7 +1150,9 @@ mod tests {
         // test s'est fait tuer par l'OOM. Le montage lui-même reste couvert par
         // `vfs::tests::vfs_init_monte_le_vrai_jeu` ; ce qui est vérifié ici est le CONTENU du
         // fichier livré, et il est le même des deux côtés.
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let chemin = std::path::Path::new(&dir).join("data/common/font/font_color.cfg.bin");
         let Ok(octets) = std::fs::read(&chemin) else {
             eprintln!("skip : {} absent", chemin.display());
@@ -1057,7 +1161,17 @@ mod tests {
         let palette = parse_font_palette(&octets);
         assert_eq!(palette.len(), 70, "70 couleurs dans le fichier livré");
 
-        for nom in ["TEAMPARAM01", "PASSIVE01", "FUNCBTN01", "R", "G", "N", "Y", "UP", "DN"] {
+        for nom in [
+            "TEAMPARAM01",
+            "PASSIVE01",
+            "FUNCBTN01",
+            "R",
+            "G",
+            "N",
+            "Y",
+            "UP",
+            "DN",
+        ] {
             assert!(
                 palette.contains_key(&cfgbin::crc32(nom.as_bytes())),
                 "{nom} est porté par le corpus et doit être dans la palette"

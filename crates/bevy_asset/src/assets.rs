@@ -732,7 +732,9 @@ impl<'a, A: Asset> Iterator for AssetsMutIterator<'a, A> {
 pub enum InvalidGenerationError {
     /// The generation of this [`AssetIndex`] does not match the current generation.
     /// That means its index entry has been replaced.
-    #[error("AssetIndex {index:?} has an invalid generation. The current generation is: '{current_generation}'.")]
+    #[error(
+        "AssetIndex {index:?} has an invalid generation. The current generation is: '{current_generation}'."
+    )]
     Occupied {
         /// The index being looked up.
         index: AssetIndex,

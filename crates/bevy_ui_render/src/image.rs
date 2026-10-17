@@ -1,6 +1,6 @@
 //! Utility types and systems for rendering of image nodes.
 
-use bevy_asset::{asset_changed::AssetChanged, AsAssetId, AssetId, Handle};
+use bevy_asset::{AsAssetId, AssetId, Handle, asset_changed::AssetChanged};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     change_detection::DetectChangesMut as _,

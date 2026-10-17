@@ -13,7 +13,13 @@ use crate::{Services, VectorcraftApp};
 
 /// A folder holding `in` (the read root, with `a.svg`), `out` (the write root) and `outside`
 /// (with `b.svg`), and an app with the desktop's file services confined to `in` and `out`.
-fn confined(tag: &str) -> (VectorcraftApp, std::sync::mpsc::Sender<ControlRequest>, PathBuf) {
+fn confined(
+    tag: &str,
+) -> (
+    VectorcraftApp,
+    std::sync::mpsc::Sender<ControlRequest>,
+    PathBuf,
+) {
     let base = std::env::temp_dir().join(format!("vc-ui-roots-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
     for d in ["in", "out", "outside"] {
@@ -23,13 +29,19 @@ fn confined(tag: &str) -> (VectorcraftApp, std::sync::mpsc::Sender<ControlReques
     std::fs::write(base.join("in/a.svg"), svg).unwrap();
     std::fs::write(base.join("outside/b.svg"), svg).unwrap();
     let services = Services {
-        read: Some(Box::new(|p: &str| std::fs::read(p).map_err(|e| e.to_string()))),
-        write: Some(Box::new(|p: &str, b: &[u8]| vectorcraft_format::write_atomic(Path::new(p), b).map_err(|e| e.to_string()))),
+        read: Some(Box::new(|p: &str| {
+            std::fs::read(p).map_err(|e| e.to_string())
+        })),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            vectorcraft_format::write_atomic(Path::new(p), b).map_err(|e| e.to_string())
+        })),
         ..Default::default()
     };
     let roots = AutomationRoots::new(Some(&base.join("in")), Some(&base.join("out"))).unwrap();
     let (tx, rx) = std::sync::mpsc::channel();
-    let app = VectorcraftApp::new(Session::new(), services).with_control(rx).with_automation_roots(roots);
+    let app = VectorcraftApp::new(Session::new(), services)
+        .with_control(rx)
+        .with_automation_roots(roots);
     (app, tx, base)
 }
 
@@ -38,7 +50,12 @@ fn s(p: PathBuf) -> String {
 }
 
 /// One request through the control channel, as the app's frame drains it.
-fn request(app: &mut VectorcraftApp, tx: &std::sync::mpsc::Sender<ControlRequest>, method: &str, params: Value) -> Value {
+fn request(
+    app: &mut VectorcraftApp,
+    tx: &std::sync::mpsc::Sender<ControlRequest>,
+    method: &str,
+    params: Value,
+) -> Value {
     let (req, reply) = ControlRequest::new(method, params);
     tx.send(req).unwrap();
     app.drain_control(&egui::Context::default());
@@ -48,32 +65,93 @@ fn request(app: &mut VectorcraftApp, tx: &std::sync::mpsc::Sender<ControlRequest
 #[test]
 fn control_requests_stay_inside_the_roots() {
     let (mut app, tx, base) = confined("control");
-    let r = request(&mut app, &tx, "app.open", json!({"path": s(base.join("in/a.svg"))}));
+    let r = request(
+        &mut app,
+        &tx,
+        "app.open",
+        json!({"path": s(base.join("in/a.svg"))}),
+    );
     assert_eq!(r["ok"], true, "{r}");
-    let r = request(&mut app, &tx, "app.open", json!({"path": s(base.join("outside/b.svg"))}));
-    assert!(r["error"].as_str().unwrap().contains("outside the read root"), "{r}");
-    let r = request(&mut app, &tx, "engine.execute", json!({"command": "file.place", "params": {"path": s(base.join("outside/b.svg"))}}));
-    assert!(r["error"].as_str().unwrap().contains("outside the read root"), "{r}");
+    let r = request(
+        &mut app,
+        &tx,
+        "app.open",
+        json!({"path": s(base.join("outside/b.svg"))}),
+    );
+    assert!(
+        r["error"]
+            .as_str()
+            .unwrap()
+            .contains("outside the read root"),
+        "{r}"
+    );
+    let r = request(
+        &mut app,
+        &tx,
+        "engine.execute",
+        json!({"command": "file.place", "params": {"path": s(base.join("outside/b.svg"))}}),
+    );
+    assert!(
+        r["error"]
+            .as_str()
+            .unwrap()
+            .contains("outside the read root"),
+        "{r}"
+    );
 
-    let r = request(&mut app, &tx, "app.export", json!({"path": s(base.join("out/a.png")), "format": "png"}));
+    let r = request(
+        &mut app,
+        &tx,
+        "app.export",
+        json!({"path": s(base.join("out/a.png")), "format": "png"}),
+    );
     assert_eq!(r["ok"], true, "{r}");
     assert!(base.join("out/a.png").is_file());
     for (method, params) in [
-        ("app.export", json!({"path": s(base.join("outside/a.png")), "format": "png"})),
-        ("app.save", json!({"path": s(base.join("outside/a.vectorcraft"))})),
+        (
+            "app.export",
+            json!({"path": s(base.join("outside/a.png")), "format": "png"}),
+        ),
+        (
+            "app.save",
+            json!({"path": s(base.join("outside/a.vectorcraft"))}),
+        ),
         ("ui.render", json!({"path": s(base.join("outside/r.png"))})),
         // Refused at once, not when the frame comes.
-        ("ui.screenshot", json!({"path": s(base.join("outside/w.png"))})),
+        (
+            "ui.screenshot",
+            json!({"path": s(base.join("outside/w.png"))}),
+        ),
     ] {
         let r = request(&mut app, &tx, method, params);
-        assert!(r["error"].as_str().is_some_and(|e| e.contains("outside the write root")), "{method}: {r}");
+        assert!(
+            r["error"]
+                .as_str()
+                .is_some_and(|e| e.contains("outside the write root")),
+            "{method}: {r}"
+        );
     }
-    let r = request(&mut app, &tx, "ui.render", json!({"path": s(base.join("out/r.png")), "data": true}));
-    assert!(r["result"]["pngBase64"].is_string() && base.join("out/r.png").is_file(), "{r}");
-    assert_eq!(std::fs::read_dir(base.join("outside")).unwrap().count(), 1, "nothing written outside");
+    let r = request(
+        &mut app,
+        &tx,
+        "ui.render",
+        json!({"path": s(base.join("out/r.png")), "data": true}),
+    );
+    assert!(
+        r["result"]["pngBase64"].is_string() && base.join("out/r.png").is_file(),
+        "{r}"
+    );
+    assert_eq!(
+        std::fs::read_dir(base.join("outside")).unwrap().count(),
+        1,
+        "nothing written outside"
+    );
 
     // The person at the keyboard isn't confined.
-    assert!(app.run("file.open", json!({"path": s(base.join("outside/b.svg"))})).is_ok());
+    assert!(
+        app.run("file.open", json!({"path": s(base.join("outside/b.svg"))}))
+            .is_ok()
+    );
     let _ = std::fs::remove_dir_all(base);
 }
 

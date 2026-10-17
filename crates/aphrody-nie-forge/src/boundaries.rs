@@ -98,7 +98,10 @@ fn ancre_sure(code: &[u8], cible: usize, racines: &[usize]) -> Option<usize> {
 /// trouvé, est conservée telle quelle.
 #[must_use]
 pub fn valider(img: &PeImage, feuilles: &[(u64, u32)]) -> (Vec<(u64, u32)>, Verdict) {
-    let mut v = Verdict { soumises: feuilles.len(), ..Verdict::default() };
+    let mut v = Verdict {
+        soumises: feuilles.len(),
+        ..Verdict::default()
+    };
 
     // Bornes de fonction vérifiées : les débuts de racines `.pdata`, en offsets
     // fichier et triés, pour la recherche dichotomique de l'ancrage.
@@ -171,8 +174,16 @@ mod tests {
     #[test]
     fn le_bourrage_est_un_ancrage_sur() {
         let code = flux();
-        assert_eq!(ancre_sure(&code, 8, &[]), Some(8), "juste après le bourrage");
-        assert_eq!(ancre_sure(&code, 14, &[]), Some(8), "remonte jusqu'au bourrage");
+        assert_eq!(
+            ancre_sure(&code, 8, &[]),
+            Some(8),
+            "juste après le bourrage"
+        );
+        assert_eq!(
+            ancre_sure(&code, 14, &[]),
+            Some(8),
+            "remonte jusqu'au bourrage"
+        );
     }
 
     #[test]

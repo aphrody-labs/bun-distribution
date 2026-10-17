@@ -79,7 +79,11 @@ impl<'a> Var<'a> {
         if let Some(f) = self.num.and_then(Value::as_f64) {
             return f;
         }
-        self.value.trim().replace(',', ".").parse::<f64>().unwrap_or(0.0)
+        self.value
+            .trim()
+            .replace(',', ".")
+            .parse::<f64>()
+            .unwrap_or(0.0)
     }
 }
 
@@ -105,7 +109,10 @@ impl<'a> Node<'a> {
     /// Nombre de variables.
     #[must_use]
     pub fn var_count(&self) -> usize {
-        self.raw.get("variables").and_then(Value::as_array).map_or(0, Vec::len)
+        self.raw
+            .get("variables")
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len)
     }
 
     /// Variable à l'index `i`, ou `None`.
@@ -120,13 +127,21 @@ impl<'a> Node<'a> {
         // Forme iecode : la clé `value` est présente et porte une chaîne.
         if let Some(value) = v.get("value").and_then(Value::as_str) {
             let ty = v.get("type").and_then(Value::as_str).unwrap_or("");
-            return Some(Var { ty, value, num: None });
+            return Some(Var {
+                ty,
+                value,
+                num: None,
+            });
         }
 
         // Forme native : objet à clé unique, la clé EST le nom du type (`{"Int":13}`).
         let obj = v.as_object()?;
         let (ty, raw) = obj.iter().next().filter(|_| obj.len() == 1)?;
-        Some(Var { ty: ty.as_str(), value: raw.as_str().unwrap_or(""), num: Some(raw) })
+        Some(Var {
+            ty: ty.as_str(),
+            value: raw.as_str().unwrap_or(""),
+            num: Some(raw),
+        })
     }
 
     /// Entier signé de la variable `i` (0 si absente).
@@ -253,9 +268,9 @@ pub fn field_pair(v: &Value, key: &str) -> Option<[i64; 2]> {
 pub fn field_hash(v: &Value, key: &str) -> HashId {
     match v.get(key) {
         Some(Value::String(s)) => HashId::parse(s).unwrap_or(HashId::ZERO),
-        Some(value @ Value::Number(_)) => {
-            exact_i64(value).map(HashId::from_i64).unwrap_or(HashId::ZERO)
-        },
+        Some(value @ Value::Number(_)) => exact_i64(value)
+            .map(HashId::from_i64)
+            .unwrap_or(HashId::ZERO),
         _ => HashId::ZERO,
     }
 }

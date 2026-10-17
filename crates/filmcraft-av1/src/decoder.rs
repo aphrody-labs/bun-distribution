@@ -15,7 +15,10 @@ use std::sync::{Arc, Condvar, Mutex};
 use crate::bits::{BitReader, leb128};
 use crate::cdf::Cdfs;
 use crate::frame::FrameBuf;
-use crate::header::{FilmGrainParams, FrameHeader, HeaderState, LoopFilterDeltas, RefInfo, SegmentationFeatures, SequenceHeader, default_gm_params};
+use crate::header::{
+    FilmGrainParams, FrameHeader, HeaderState, LoopFilterDeltas, RefInfo, SegmentationFeatures,
+    SequenceHeader, default_gm_params,
+};
 use crate::par::Pool;
 use crate::spec_tables::*;
 use crate::state::{FrameShared, FrameState, TileState};
@@ -57,7 +60,10 @@ pub(crate) struct Slot<T> {
 
 impl<T: Clone> Slot<T> {
     fn new() -> Arc<Slot<T>> {
-        Arc::new(Slot { value: Mutex::new(None), cv: Condvar::new() })
+        Arc::new(Slot {
+            value: Mutex::new(None),
+            cv: Condvar::new(),
+        })
     }
 
     fn set(&self, v: Result<T>) {
@@ -127,10 +133,28 @@ impl Output {
 
     fn take(self) -> Result<Picture> {
         match self {
-            Output::Decoded(s) => s.wait().map(|p| Arc::try_unwrap(p).unwrap_or_else(|p| (*p).clone())),
-            Output::Existing { slot, seq, width, height, grain, apply_film_grain, pts } => {
+            Output::Decoded(s) => s
+                .wait()
+                .map(|p| Arc::try_unwrap(p).unwrap_or_else(|p| (*p).clone())),
+            Output::Existing {
+                slot,
+                seq,
+                width,
+                height,
+                grain,
+                apply_film_grain,
+                pts,
+            } => {
                 let rf = slot.wait()?;
-                Ok(output_picture(&seq, &rf, width, height, &grain, apply_film_grain, pts))
+                Ok(output_picture(
+                    &seq,
+                    &rf,
+                    width,
+                    height,
+                    &grain,
+                    apply_film_grain,
+                    pts,
+                ))
             }
         }
     }
@@ -168,7 +192,10 @@ impl Workers {
                 .ok()?;
             handles.push(h);
         }
-        Some(Workers { tx: Some(tx), handles })
+        Some(Workers {
+            tx: Some(tx),
+            handles,
+        })
     }
 }
 
@@ -215,7 +242,10 @@ pub struct Decoder {
 fn default_threads() -> usize {
     #[cfg(all(feature = "threads", not(target_arch = "wasm32")))]
     {
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1).min(16)
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1)
+            .min(16)
     }
     #[cfg(not(all(feature = "threads", not(target_arch = "wasm32"))))]
     {
@@ -226,7 +256,11 @@ fn default_threads() -> usize {
 /// Frames decoded concurrently with `threads` threads (each in-flight 1080p frame holds a few
 /// tens of MB of state).
 fn frame_threads(threads: usize) -> usize {
-    if threads <= 1 { 1 } else { threads.div_ceil(2).clamp(2, 8) }
+    if threads <= 1 {
+        1
+    } else {
+        threads.div_ceil(2).clamp(2, 8)
+    }
 }
 
 impl Default for Decoder {
@@ -246,9 +280,17 @@ impl Decoder {
         let threads = threads.max(1);
         let pool = Pool::new(threads);
         let stats = Arc::new(Mutex::new(DecodeStats::default()));
-        let fthreads = if pool.is_parallel() { frame_threads(threads) } else { 1 };
+        let fthreads = if pool.is_parallel() {
+            frame_threads(threads)
+        } else {
+            1
+        };
         #[cfg(all(feature = "threads", not(target_arch = "wasm32")))]
-        let workers = if fthreads > 1 { Workers::new(fthreads, &pool, &stats) } else { None };
+        let workers = if fthreads > 1 {
+            Workers::new(fthreads, &pool, &stats)
+        } else {
+            None
+        };
         Decoder {
             seq: None,
             refs: Default::default(),
@@ -403,7 +445,10 @@ impl Decoder {
             } else {
                 data.len().checked_sub(p).ok_or(Error::Truncated)?
             };
-            let end = p.checked_add(size).filter(|&e| e <= data.len()).ok_or(Error::Truncated)?;
+            let end = p
+                .checked_add(size)
+                .filter(|&e| e <= data.len())
+                .ok_or(Error::Truncated)?;
             let payload = &data[p..end];
             pos = end;
             if obu_type != OBU_SEQUENCE_HEADER_T
@@ -462,8 +507,16 @@ impl Decoder {
     }
 
     /// frame_header_obu( ): returns the output for show_existing_frame.
-    fn frame_header(&mut self, r: &mut BitReader, temporal_id: u32, spatial_id: u32) -> Result<Option<Output>> {
-        let seq = self.seq.clone().ok_or(Error::Invalid("frame before sequence header"))?;
+    fn frame_header(
+        &mut self,
+        r: &mut BitReader,
+        temporal_id: u32,
+        spatial_id: u32,
+    ) -> Result<Option<Output>> {
+        let seq = self
+            .seq
+            .clone()
+            .ok_or(Error::Invalid("frame before sequence header"))?;
         self.seen_frame_header = true;
         let mut st = HeaderState {
             seq: &seq,
@@ -481,7 +534,9 @@ impl Decoder {
         if fh.show_existing_frame {
             self.seen_frame_header = false;
             let idx = fh.frame_to_show_map_idx;
-            let slot = self.ref_frames[idx].clone().ok_or(Error::Invalid("show_existing_frame of an empty slot"))?;
+            let slot = self.ref_frames[idx]
+                .clone()
+                .ok_or(Error::Invalid("show_existing_frame of an empty slot"))?;
             let info = self.refs[idx].clone();
             let o = Output::Existing {
                 slot: slot.clone(),
@@ -515,7 +570,9 @@ impl Decoder {
                 }
             }
         }
-        if fh.primary_ref_frame != PRIMARY_REF_NONE && self.ref_frames[fh.ref_frame_idx[fh.primary_ref_frame]].is_none() {
+        if fh.primary_ref_frame != PRIMARY_REF_NONE
+            && self.ref_frames[fh.ref_frame_idx[fh.primary_ref_frame]].is_none()
+        {
             return Err(Error::Invalid("primary reference frame missing"));
         }
         let picture = fh.show_frame.then(Slot::new);
@@ -537,7 +594,10 @@ impl Decoder {
 
     /// tile_group_obu( sz ): returns the output when the frame is complete and shown.
     fn tile_group(&mut self, data: &[u8]) -> Result<Option<Output>> {
-        let mut job = self.pending.take().ok_or(Error::Invalid("tile group without a frame header"))?;
+        let mut job = self
+            .pending
+            .take()
+            .ok_or(Error::Invalid("tile group without a frame header"))?;
         let (cols, rows, cols_log2, rows_log2, tsb) = {
             let t = &job.fh.tile_info;
             (t.cols, t.rows, t.cols_log2, t.rows_log2, t.tile_size_bytes)
@@ -567,7 +627,10 @@ impl Decoder {
                 pos += tsb as usize;
                 v + 1
             };
-            let end = pos.checked_add(size).filter(|&e| e <= data.len()).ok_or(Error::Truncated)?;
+            let end = pos
+                .checked_add(size)
+                .filter(|&e| e <= data.len())
+                .ok_or(Error::Truncated)?;
             job.tiles.push((tile_num, data[pos..end].to_vec()));
             pos = end;
         }
@@ -616,7 +679,9 @@ impl Decoder {
                     self.in_flight.push_back(slot);
                     // Bound the frames in flight (memory): wait for the oldest.
                     while self.in_flight.len() > self.max_in_flight {
-                        let Some(s) = self.in_flight.pop_front() else { break };
+                        let Some(s) = self.in_flight.pop_front() else {
+                            break;
+                        };
                         let _ = s.wait();
                     }
                     self.in_flight.retain(|s| !s.is_set());
@@ -636,7 +701,10 @@ fn run_job(job: FrameJob, pool: &Pool, stats: &Mutex<DecodeStats>) {
     match decode_frame(&job, pool, &mut st) {
         Ok((rf, pic)) => {
             if let Some(ps) = &job.picture {
-                ps.set(pic.map(Arc::new).ok_or(Error::Invalid("shown frame without picture")));
+                ps.set(
+                    pic.map(Arc::new)
+                        .ok_or(Error::Invalid("shown frame without picture")),
+                );
             }
             job.slot.set(Ok(rf));
         }
@@ -654,7 +722,11 @@ fn run_job(job: FrameJob, pool: &Pool, stats: &Mutex<DecodeStats>) {
 
 /// The whole decoding process of one frame: setup, tiles, post-filters, motion vector storage
 /// and the output picture.
-fn decode_frame(job: &FrameJob, pool: &Pool, stats: &mut DecodeStats) -> Result<(Arc<RefFrame>, Option<Picture>)> {
+fn decode_frame(
+    job: &FrameJob,
+    pool: &Pool,
+    stats: &mut DecodeStats,
+) -> Result<(Arc<RefFrame>, Option<Picture>)> {
     let fh = &job.fh;
     let seq = &job.seq;
     // Wait for the reference frames this frame reads.
@@ -670,7 +742,9 @@ fn decode_frame(job: &FrameJob, pool: &Pool, stats: &mut DecodeStats) -> Result<
     let mut refs: [Option<Arc<RefFrame>>; NUM_REF_FRAMES] = Default::default();
     for i in 0..NUM_REF_FRAMES {
         if used[i] {
-            let slot = job.refs[i].as_ref().ok_or(Error::Invalid("missing reference frame"))?;
+            let slot = job.refs[i]
+                .as_ref()
+                .ok_or(Error::Invalid("missing reference frame"))?;
             refs[i] = Some(slot.wait()?);
         }
     }
@@ -695,7 +769,9 @@ fn decode_frame(job: &FrameJob, pool: &Pool, stats: &mut DecodeStats) -> Result<
     let mut cdfs = if fh.primary_ref_frame == PRIMARY_REF_NONE {
         Cdfs::new(fh.quant.base_q_idx)
     } else {
-        let rf = fs.refs[fh.ref_frame_idx[fh.primary_ref_frame]].as_ref().ok_or(Error::Invalid("primary reference frame missing"))?;
+        let rf = fs.refs[fh.ref_frame_idx[fh.primary_ref_frame]]
+            .as_ref()
+            .ok_or(Error::Invalid("primary reference frame missing"))?;
         let mut c = rf.cdfs.clone();
         c.clear_counts();
         c
@@ -729,12 +805,25 @@ fn decode_frame(job: &FrameJob, pool: &Pool, stats: &mut DecodeStats) -> Result<
         mi_cols: fs.mi.cols,
         mi_rows: fs.mi.rows,
         film_grain_present: seq.film_grain_params_present,
-        color: (seq.color.color_primaries, seq.color.transfer_characteristics, seq.color.matrix_coefficients, seq.color.color_range),
+        color: (
+            seq.color.color_primaries,
+            seq.color.transfer_characteristics,
+            seq.color.matrix_coefficients,
+            seq.color.color_range,
+        ),
         saved_ref_frames: mf_refs,
         saved_mvs: mf_mvs,
     });
     let pic = fh.show_frame.then(|| {
-        let mut p = output_picture(seq, &rf, fh.upscaled_width as usize, fh.frame_height as usize, &fh.film_grain, job.apply_film_grain, job.pts);
+        let mut p = output_picture(
+            seq,
+            &rf,
+            fh.upscaled_width as usize,
+            fh.frame_height as usize,
+            &fh.film_grain,
+            job.apply_film_grain,
+            job.pts,
+        );
         p.draft = job.draft;
         p
     });
@@ -744,12 +833,28 @@ fn decode_frame(job: &FrameJob, pool: &Pool, stats: &mut DecodeStats) -> Result<
 
 /// Decode the tiles of a frame (tile number, data), in parallel when several; returns the final
 /// CDFs of tile context_update_tile_id.
-fn decode_tiles(pool: &Pool, fs: &mut FrameState, cdfs: &Cdfs, tiles: &[(usize, Vec<u8>)]) -> Result<Option<Box<Cdfs>>> {
+fn decode_tiles(
+    pool: &Pool,
+    fs: &mut FrameState,
+    cdfs: &Cdfs,
+    tiles: &[(usize, Vec<u8>)],
+) -> Result<Option<Box<Cdfs>>> {
     let ti = fs.fh.tile_info.clone();
     let ctx_tile = ti.context_update_tile_id as usize;
-    let run = |sh: &FrameShared, t: &mut TileState, num: usize, data: &[u8]| -> Result<Option<Box<Cdfs>>> {
+    let run = |sh: &FrameShared,
+               t: &mut TileState,
+               num: usize,
+               data: &[u8]|
+     -> Result<Option<Box<Cdfs>>> {
         t.intra_frame_y_mode_cdf = DEFAULT_INTRA_FRAME_Y_MODE_CDF;
-        let mut td = TileDecoder::new(sh, t, data, Box::new(cdfs.clone()), num / ti.cols, num % ti.cols);
+        let mut td = TileDecoder::new(
+            sh,
+            t,
+            data,
+            Box::new(cdfs.clone()),
+            num / ti.cols,
+            num % ti.cols,
+        );
         td.decode_tile()?;
         Ok((num == ctx_tile).then_some(td.cdf))
     };
@@ -760,8 +865,14 @@ fn decode_tiles(pool: &Pool, fs: &mut FrameState, cdfs: &Cdfs, tiles: &[(usize, 
             .iter()
             .map(|(num, _)| {
                 let (row, col) = (num / ti.cols, num % ti.cols);
-                let (r0, r1) = (ti.mi_row_starts[row] as usize, ti.mi_row_starts[row + 1] as usize);
-                let (c0, c1) = (ti.mi_col_starts[col] as usize, ti.mi_col_starts[col + 1] as usize);
+                let (r0, r1) = (
+                    ti.mi_row_starts[row] as usize,
+                    ti.mi_row_starts[row + 1] as usize,
+                );
+                let (c0, c1) = (
+                    ti.mi_col_starts[col] as usize,
+                    ti.mi_col_starts[col + 1] as usize,
+                );
                 fs.tile_state(r0, r1.min(fs.mi.rows), c0, c1.min(fs.mi.cols))
             })
             .collect();
@@ -795,13 +906,25 @@ fn decode_tiles(pool: &Pool, fs: &mut FrameState, cdfs: &Cdfs, tiles: &[(usize, 
     res.map(|_| saved)
 }
 
-fn output_picture(seq: &SequenceHeader, rf: &RefFrame, w: usize, h: usize, grain: &FilmGrainParams, apply_film_grain: bool, pts: i64) -> Picture {
+fn output_picture(
+    seq: &SequenceHeader,
+    rf: &RefFrame,
+    w: usize,
+    h: usize,
+    grain: &FilmGrainParams,
+    apply_film_grain: bool,
+    pts: i64,
+) -> Picture {
     let ssx = rf.subsampling_x as usize;
     let ssy = rf.subsampling_y as usize;
     let num_planes = rf.buf.num_planes;
     let mut planes: [Vec<u16>; 3] = Default::default();
     for p in 0..num_planes {
-        let (pw, ph) = if p == 0 { (w, h) } else { ((w + ssx) >> ssx, (h + ssy) >> ssy) };
+        let (pw, ph) = if p == 0 {
+            (w, h)
+        } else {
+            ((w + ssx) >> ssx, (h + ssy) >> ssy)
+        };
         let src = &rf.buf.planes[p];
         let mut v = Vec::with_capacity(pw * ph);
         for y in 0..ph {
@@ -842,7 +965,11 @@ fn motion_vector_storage(fs: &FrameState) -> (Vec<i8>, Vec<[i32; 2]>) {
             let r = mi.ref_frame[i][list];
             if r > INTRA_FRAME as i8 {
                 let ref_idx = fh.ref_frame_idx[r as usize - LAST_FRAME];
-                let dist = crate::header::relative_dist(&fs.seq, fs.ref_info[ref_idx].order_hint, fh.order_hint);
+                let dist = crate::header::relative_dist(
+                    &fs.seq,
+                    fs.ref_info[ref_idx].order_hint,
+                    fh.order_hint,
+                );
                 if dist < 0 {
                     let m = mi.mv[i][list];
                     let (row, col) = (m.row as i32, m.col as i32);
@@ -880,7 +1007,10 @@ fn motion_field_estimation(fs: &mut FrameState) {
     if rd(fh.order_hints[ALTREF2_FRAME], fh.order_hint) > 0 && project(fs, ALTREF2_FRAME, 1) {
         ref_stamp -= 1;
     }
-    if rd(fh.order_hints[ALTREF_FRAME], fh.order_hint) > 0 && ref_stamp >= 0 && project(fs, ALTREF_FRAME, 1) {
+    if rd(fh.order_hints[ALTREF_FRAME], fh.order_hint) > 0
+        && ref_stamp >= 0
+        && project(fs, ALTREF_FRAME, 1)
+    {
         ref_stamp -= 1;
     }
     if ref_stamp >= 0 {
@@ -893,7 +1023,10 @@ fn get_mv_projection(mv: [i32; 2], numerator: i32, denominator: i32) -> [i32; 2]
     let num = numerator.clamp(-(MAX_FRAME_DISTANCE as i32), MAX_FRAME_DISTANCE as i32);
     let mut out = [0i32; 2];
     for i in 0..2 {
-        let scaled = crate::mvpred::round2_signed64(mv[i] as i64 * num as i64 * DIV_MULT[den as usize] as i64, 14);
+        let scaled = crate::mvpred::round2_signed64(
+            mv[i] as i64 * num as i64 * DIV_MULT[den as usize] as i64,
+            14,
+        );
         out[i] = (scaled as i32).clamp(-(1 << 14) + 1, (1 << 14) - 1);
     }
     out
@@ -901,9 +1034,17 @@ fn get_mv_projection(mv: [i32; 2], numerator: i32, denominator: i32) -> [i32; 2]
 
 fn project_pos(v8: i32, delta: i32, dst_sign: i32, max8: i32, max_off8: i32) -> Option<i32> {
     let base8 = (v8 >> 3) << 3;
-    let offset8 = if delta >= 0 { delta >> (3 + 1 + 2) } else { -((-delta) >> (3 + 1 + 2)) };
+    let offset8 = if delta >= 0 {
+        delta >> (3 + 1 + 2)
+    } else {
+        -((-delta) >> (3 + 1 + 2))
+    };
     let v = v8 + dst_sign * offset8;
-    if v < 0 || v >= max8 || v < base8 - max_off8 || v >= base8 + 8 + max_off8 { None } else { Some(v) }
+    if v < 0 || v >= max8 || v < base8 - max_off8 || v >= base8 + 8 + max_off8 {
+        None
+    } else {
+        Some(v)
+    }
 }
 
 /// Projection process (7.9.2).
@@ -914,10 +1055,16 @@ fn project(fs: &mut FrameState, src: usize, dst_sign: i32) -> bool {
     let w8 = fh.mi_cols as i32 >> 1;
     let h8 = fh.mi_rows as i32 >> 1;
     let ri = fs.ref_info[src_idx].clone();
-    if ri.mi_rows != fh.mi_rows || ri.mi_cols != fh.mi_cols || ri.frame_type == INTRA_ONLY_FRAME as u8 || ri.frame_type == KEY_FRAME as u8 {
+    if ri.mi_rows != fh.mi_rows
+        || ri.mi_cols != fh.mi_cols
+        || ri.frame_type == INTRA_ONLY_FRAME as u8
+        || ri.frame_type == KEY_FRAME as u8
+    {
         return false;
     }
-    let Some(rf) = fs.refs[src_idx].clone() else { return false };
+    let Some(rf) = fs.refs[src_idx].clone() else {
+        return false;
+    };
     let rd = |a: u32, b: u32| crate::header::relative_dist(&seq, a, b);
     let mi_cols = fh.mi_cols as usize;
     for y8 in 0..h8 {
@@ -928,7 +1075,9 @@ fn project(fs: &mut FrameState, src: usize, dst_sign: i32) -> bool {
             if src_ref > INTRA_FRAME as i8 {
                 let ref_to_cur = rd(fh.order_hints[src], fh.order_hint);
                 let ref_offset = rd(fh.order_hints[src], ri.saved_order_hints[src_ref as usize]);
-                let pos_valid = ref_to_cur.abs() <= MAX_FRAME_DISTANCE as i32 && ref_offset.abs() <= MAX_FRAME_DISTANCE as i32 && ref_offset > 0;
+                let pos_valid = ref_to_cur.abs() <= MAX_FRAME_DISTANCE as i32
+                    && ref_offset.abs() <= MAX_FRAME_DISTANCE as i32
+                    && ref_offset > 0;
                 if pos_valid {
                     let mv = rf.saved_mvs[row * mi_cols + col];
                     let proj = get_mv_projection(mv, ref_to_cur * dst_sign, ref_offset);

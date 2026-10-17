@@ -131,7 +131,12 @@ impl AppearancePrefs {
     /// (and for a value outside [`UI_SCALES`]), which keeps the operating system's scale.
     pub fn ui_scale_factor(&self) -> Option<f32> {
         // `auto` doesn't parse; every other listed value is a positive whole percentage
-        UI_SCALES.iter().any(|(k, _)| *k == self.ui_scale).then(|| self.ui_scale.parse::<f32>().ok()).flatten().map(|pct| pct / 100.0)
+        UI_SCALES
+            .iter()
+            .any(|(k, _)| *k == self.ui_scale)
+            .then(|| self.ui_scale.parse::<f32>().ok())
+            .flatten()
+            .map(|pct| pct / 100.0)
     }
 
     /// The theme to show (`darkest` | `dark` | `light`): the light or dark theme of the mode. Auto
@@ -142,7 +147,11 @@ impl AppearancePrefs {
             "auto" => system_light == Some(true),
             _ => false,
         };
-        if light { &self.light_theme } else { &self.dark_theme }
+        if light {
+            &self.light_theme
+        } else {
+            &self.dark_theme
+        }
     }
 
     /// Select `theme` (a Color Theme value) as the theme of its family and fix the mode to that
@@ -223,7 +232,11 @@ pub struct ColorPrefs {
 
 impl Default for ColorPrefs {
     fn default() -> Self {
-        Self { display_color_management: false, extended_dynamic_range: false, hdr_graphics_white: "203".into() }
+        Self {
+            display_color_management: false,
+            extended_dynamic_range: false,
+            hdr_graphics_white: "203".into(),
+        }
     }
 }
 
@@ -289,7 +302,10 @@ pub struct LabelColor {
 
 impl Default for LabelColor {
     fn default() -> Self {
-        Self { name: String::new(), color: "#808080".into() }
+        Self {
+            name: String::new(),
+            color: "#808080".into(),
+        }
     }
 }
 
@@ -336,7 +352,10 @@ pub struct LabelPrefs {
 impl Default for LabelPrefs {
     fn default() -> Self {
         Self {
-            colors: Label::ALL.iter().map(|l| (label_id(*l), default_label_color(*l))).collect(),
+            colors: Label::ALL
+                .iter()
+                .map(|l| (label_id(*l), default_label_color(*l)))
+                .collect(),
             defaults: LabelDefaults::default(),
             preset: DEFAULT_LABEL_PRESET.into(),
         }
@@ -349,7 +368,10 @@ pub fn label_id(l: Label) -> String {
 }
 
 fn default_label_color(l: Label) -> LabelColor {
-    LabelColor { name: l.name().into(), color: hex(l.rgb()) }
+    LabelColor {
+        name: l.name().into(),
+        color: hex(l.rgb()),
+    }
 }
 
 pub fn hex(c: [u8; 3]) -> String {
@@ -369,14 +391,27 @@ pub fn parse_hex(s: &str) -> Option<[u8; 3]> {
 impl LabelPrefs {
     /// The colour of label `l` (the user's, else the built-in one).
     pub fn rgb(&self, l: Label) -> [u8; 3] {
-        self.colors.get(&label_id(l)).and_then(|c| parse_hex(&c.color)).unwrap_or_else(|| l.rgb())
+        self.colors
+            .get(&label_id(l))
+            .and_then(|c| parse_hex(&c.color))
+            .unwrap_or_else(|| l.rgb())
     }
     /// The display name of label `l`.
     pub fn name(&self, l: Label) -> String {
-        self.colors.get(&label_id(l)).map(|c| c.name.trim()).filter(|n| !n.is_empty()).unwrap_or(l.name()).to_string()
+        self.colors
+            .get(&label_id(l))
+            .map(|c| c.name.trim())
+            .filter(|n| !n.is_empty())
+            .unwrap_or(l.name())
+            .to_string()
     }
     /// The label a new media item of `kind` gets.
-    pub fn for_media(&self, kind: filmcraft_media::MediaKind, has_video: bool, has_audio: bool) -> Label {
+    pub fn for_media(
+        &self,
+        kind: filmcraft_media::MediaKind,
+        has_video: bool,
+        has_audio: bool,
+    ) -> Label {
         use filmcraft_media::MediaKind as K;
         match kind {
             K::AudioOnly => self.defaults.audio,
@@ -388,13 +423,17 @@ impl LabelPrefs {
     }
     pub(crate) fn sanitize_labels(&mut self) {
         for l in Label::ALL {
-            let c = self.colors.entry(label_id(l)).or_insert_with(|| default_label_color(l));
+            let c = self
+                .colors
+                .entry(label_id(l))
+                .or_insert_with(|| default_label_color(l));
             if parse_hex(&c.color).is_none() {
                 c.color = hex(l.rgb());
             }
             c.name = c.name.chars().take(64).collect();
         }
-        self.colors.retain(|k, _| Label::ALL.iter().any(|l| label_id(*l) == *k));
+        self.colors
+            .retain(|k, _| Label::ALL.iter().any(|l| label_id(*l) == *k));
         self.preset = self.preset.chars().take(LABEL_NAME_MAX).collect();
     }
 }
@@ -476,7 +515,10 @@ const BUILTIN_LABEL_PRESETS: [(&str, [(&str, &str); 16]); 2] = [
 
 /// Whether `name` is a built-in preset's (any case): built-ins can't be deleted or replaced.
 pub fn is_builtin_label_preset(name: &str) -> bool {
-    name.eq_ignore_ascii_case(DEFAULT_LABEL_PRESET) || BUILTIN_LABEL_PRESETS.iter().any(|(n, _)| name.eq_ignore_ascii_case(n))
+    name.eq_ignore_ascii_case(DEFAULT_LABEL_PRESET)
+        || BUILTIN_LABEL_PRESETS
+            .iter()
+            .any(|(n, _)| name.eq_ignore_ascii_case(n))
 }
 
 impl LabelPreset {
@@ -489,15 +531,37 @@ impl LabelPreset {
     pub fn builtins() -> Vec<Self> {
         let more = BUILTIN_LABEL_PRESETS.iter().map(|(name, labels)| Self {
             name: (*name).into(),
-            labels: labels.iter().map(|(n, c)| PresetLabel { name: (*n).into(), color: (*c).into() }).collect(),
+            labels: labels
+                .iter()
+                .map(|(n, c)| PresetLabel {
+                    name: (*n).into(),
+                    color: (*c).into(),
+                })
+                .collect(),
         });
         std::iter::once(Self::builtin()).chain(more).collect()
     }
 
     /// `labels`' names and colours as a preset called `name`.
     pub fn from_prefs(name: &str, labels: &LabelPrefs) -> Self {
-        let entry = |l: Label| labels.colors.get(&label_id(l)).cloned().unwrap_or_else(|| default_label_color(l));
-        Self { name: name.into(), labels: Label::ALL.iter().map(|l| entry(*l)).map(|c| PresetLabel { name: c.name, color: c.color }).collect() }
+        let entry = |l: Label| {
+            labels
+                .colors
+                .get(&label_id(l))
+                .cloned()
+                .unwrap_or_else(|| default_label_color(l))
+        };
+        Self {
+            name: name.into(),
+            labels: Label::ALL
+                .iter()
+                .map(|l| entry(*l))
+                .map(|c| PresetLabel {
+                    name: c.name,
+                    color: c.color,
+                })
+                .collect(),
+        }
     }
 
     /// Whether `labels` has exactly this preset's names and colours.
@@ -508,7 +572,13 @@ impl LabelPreset {
     /// Give `labels` this preset's names and colours (the label defaults stay) and select it.
     pub fn apply(&self, labels: &mut LabelPrefs) {
         for (l, p) in Label::ALL.iter().zip(&self.labels) {
-            labels.colors.insert(label_id(*l), LabelColor { name: p.name.clone(), color: p.color.clone() });
+            labels.colors.insert(
+                label_id(*l),
+                LabelColor {
+                    name: p.name.clone(),
+                    color: p.color.clone(),
+                },
+            );
         }
         labels.preset = self.name.clone();
     }
@@ -519,20 +589,34 @@ impl LabelPreset {
         if bytes.len() as u64 > LABEL_PRESET_MAX_BYTES {
             return Err("the file is too large to be a label color preset".into());
         }
-        let mut p: Self = serde_json::from_slice(bytes).map_err(|e| format!("not a label color preset: {e}"))?;
+        let mut p: Self =
+            serde_json::from_slice(bytes).map_err(|e| format!("not a label color preset: {e}"))?;
         p.name = p.name.trim().to_string();
         if p.name.is_empty() || p.name.chars().count() > LABEL_NAME_MAX {
-            return Err(format!("the preset needs a name of 1 to {LABEL_NAME_MAX} characters"));
+            return Err(format!(
+                "the preset needs a name of 1 to {LABEL_NAME_MAX} characters"
+            ));
         }
         if p.labels.len() != Label::ALL.len() {
-            return Err(format!("a label color preset has {} labels; this file has {}", Label::ALL.len(), p.labels.len()));
+            return Err(format!(
+                "a label color preset has {} labels; this file has {}",
+                Label::ALL.len(),
+                p.labels.len()
+            ));
         }
         for (i, l) in p.labels.iter_mut().enumerate() {
             l.name = l.name.trim().to_string();
             if l.name.chars().count() > LABEL_NAME_MAX {
-                return Err(format!("label {}: the name is longer than {LABEL_NAME_MAX} characters", i + 1));
+                return Err(format!(
+                    "label {}: the name is longer than {LABEL_NAME_MAX} characters",
+                    i + 1
+                ));
             }
-            let rgb = l.color.strip_prefix('#').and(parse_hex(&l.color)).ok_or_else(|| format!("label {}: the color is not like #2f6bdf", i + 1))?;
+            let rgb = l
+                .color
+                .strip_prefix('#')
+                .and(parse_hex(&l.color))
+                .ok_or_else(|| format!("label {}: the color is not like #2f6bdf", i + 1))?;
             l.color = hex(rgb);
         }
         Ok(p)
@@ -543,7 +627,9 @@ impl LabelPreset {
         use std::io::Read as _;
         let file = std::fs::File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let mut bytes = Vec::new();
-        file.take(LABEL_PRESET_MAX_BYTES + 1).read_to_end(&mut bytes).map_err(|e| format!("{}: {e}", path.display()))?;
+        file.take(LABEL_PRESET_MAX_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| format!("{}: {e}", path.display()))?;
         Self::parse(&bytes)
     }
 
@@ -554,7 +640,16 @@ impl LabelPreset {
 
     /// Save `labels`' names and colours to `path` as a preset named after the file.
     pub fn export(path: &Path, labels: &LabelPrefs) -> std::result::Result<Self, String> {
-        let stem = path.file_stem().map(|s| s.to_string_lossy().trim().chars().take(LABEL_NAME_MAX).collect::<String>()).unwrap_or_default();
+        let stem = path
+            .file_stem()
+            .map(|s| {
+                s.to_string_lossy()
+                    .trim()
+                    .chars()
+                    .take(LABEL_NAME_MAX)
+                    .collect::<String>()
+            })
+            .unwrap_or_default();
         let p = Self::from_prefs(if stem.is_empty() { "Labels" } else { &stem }, labels);
         p.write(path)?;
         Ok(p)
@@ -564,7 +659,10 @@ impl LabelPreset {
 impl Session {
     /// The label colour presets folder (None without a data directory, e.g. tests and the web).
     pub fn label_presets_dir(&self) -> Option<PathBuf> {
-        self.prefs_path.as_deref().and_then(Path::parent).map(|d| d.join(LABEL_PRESETS_DIR))
+        self.prefs_path
+            .as_deref()
+            .and_then(Path::parent)
+            .map(|d| d.join(LABEL_PRESETS_DIR))
     }
 
     /// The built-in presets, then the presets in the folder by name with the file each is in.
@@ -578,13 +676,22 @@ impl Session {
             .flatten()
             .take(LABEL_PRESETS_MAX)
             .map(|e| e.path())
-            .filter(|p| p.extension().is_some_and(|x| x.eq_ignore_ascii_case("json")))
+            .filter(|p| {
+                p.extension()
+                    .is_some_and(|x| x.eq_ignore_ascii_case("json"))
+            })
             .filter_map(|p| LabelPreset::read(&p).ok().map(|preset| (preset, Some(p))))
             .collect();
         found.sort_by_key(|(p, _)| p.name.to_lowercase());
-        let mut out: Vec<(LabelPreset, Option<PathBuf>)> = LabelPreset::builtins().into_iter().map(|p| (p, None)).collect();
+        let mut out: Vec<(LabelPreset, Option<PathBuf>)> = LabelPreset::builtins()
+            .into_iter()
+            .map(|p| (p, None))
+            .collect();
         for f in found {
-            if !out.iter().any(|(p, _)| p.name.eq_ignore_ascii_case(&f.0.name)) {
+            if !out
+                .iter()
+                .any(|(p, _)| p.name.eq_ignore_ascii_case(&f.0.name))
+            {
                 out.push(f);
             }
         }
@@ -598,21 +705,37 @@ impl Session {
         if is_builtin_label_preset(&p.name) {
             p.name = format!("{} (imported)", p.name);
         }
-        let dir = self.label_presets_dir().ok_or("there is no presets folder in this session")?;
+        let dir = self
+            .label_presets_dir()
+            .ok_or("there is no presets folder in this session")?;
         std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         for (old, file) in self.label_presets() {
             if let Some(file) = file.filter(|_| old.name.eq_ignore_ascii_case(&p.name)) {
                 std::fs::remove_file(&file).map_err(|e| format!("{}: {e}", file.display()))?;
             }
         }
-        let safe: String = p.name.chars().map(|c| if c.is_alphanumeric() || " -_()".contains(c) { c } else { '_' }).collect();
+        let safe: String = p
+            .name
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || " -_()".contains(c) {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
         p.write(&dir.join(format!("{}.json", safe.trim())))?;
         Ok(p)
     }
 
     /// Delete a preset from the presets folder (built-in presets can't be deleted).
     pub fn delete_label_preset(&self, name: &str) -> std::result::Result<(), String> {
-        let (_, file) = self.label_presets().into_iter().find(|(p, _)| p.name == name).ok_or_else(|| format!("there is no label color preset “{name}”"))?;
+        let (_, file) = self
+            .label_presets()
+            .into_iter()
+            .find(|(p, _)| p.name == name)
+            .ok_or_else(|| format!("there is no label color preset “{name}”"))?;
         let file = file.ok_or("built-in presets can't be deleted")?;
         std::fs::remove_file(&file).map_err(|e| format!("{}: {e}", file.display()))
     }
@@ -693,7 +816,10 @@ pub struct MemoryPrefs {
 
 impl Default for MemoryPrefs {
     fn default() -> Self {
-        Self { ram_reserved_gb: 4, frame_cache_mb: 768 }
+        Self {
+            ram_reserved_gb: 4,
+            frame_cache_mb: 768,
+        }
     }
 }
 
@@ -760,7 +886,11 @@ impl Default for TimelinePrefs {
 }
 
 fn duration_in(value: f64, unit: &str, rate: FrameRate) -> Tick {
-    let d = if unit == "frames" { rate.tick_of(value.max(1.0).round() as i64) } else { rate.snap_nearest(Tick::from_seconds_f64(value.max(0.0))) };
+    let d = if unit == "frames" {
+        rate.tick_of(value.max(1.0).round() as i64)
+    } else {
+        rate.snap_nearest(Tick::from_seconds_f64(value.max(0.0)))
+    };
     d.max(rate.frame_duration())
 }
 
@@ -771,11 +901,19 @@ impl TimelinePrefs {
     }
     /// "Video Transition Default Duration".
     pub fn video_transition_duration(&self, rate: FrameRate) -> Tick {
-        duration_in(self.video_transition_duration, &self.video_transition_unit, rate)
+        duration_in(
+            self.video_transition_duration,
+            &self.video_transition_unit,
+            rate,
+        )
     }
     /// "Audio Transition Default Duration".
     pub fn audio_transition_duration(&self, rate: FrameRate) -> Tick {
-        duration_in(self.audio_transition_duration, &self.audio_transition_unit, rate)
+        duration_in(
+            self.audio_transition_duration,
+            &self.audio_transition_unit,
+            rate,
+        )
     }
 }
 
@@ -888,27 +1026,70 @@ pub struct Category {
 }
 
 const fn f(key: &'static str, label: &'static str, kind: Kind, wired: bool) -> Row {
-    Row::Field(Field { key, label, kind, indent: false, enabled_by: None, wired })
+    Row::Field(Field {
+        key,
+        label,
+        kind,
+        indent: false,
+        enabled_by: None,
+        wired,
+    })
 }
 const fn b(key: &'static str, label: &'static str, wired: bool) -> Row {
     f(key, label, Kind::Bool, wired)
 }
-const fn sub(key: &'static str, label: &'static str, kind: Kind, by: &'static str, wired: bool) -> Row {
-    Row::Field(Field { key, label, kind, indent: true, enabled_by: Some(by), wired })
+const fn sub(
+    key: &'static str,
+    label: &'static str,
+    kind: Kind,
+    by: &'static str,
+    wired: bool,
+) -> Row {
+    Row::Field(Field {
+        key,
+        label,
+        kind,
+        indent: true,
+        enabled_by: Some(by),
+        wired,
+    })
 }
 const fn int(min: f64, max: f64, unit: &'static str) -> Kind {
     Kind::Int { min, max, unit }
 }
 const fn float(min: f64, max: f64, decimals: usize, unit: &'static str) -> Kind {
-    Kind::Float { min, max, decimals, unit }
+    Kind::Float {
+        min,
+        max,
+        decimals,
+        unit,
+    }
 }
 
-const STARTUP: &[(&str, &str)] = &[("showHome", "Show Home"), ("openMostRecent", "Open Most Recent"), ("emptyProject", "Start with an Empty Project")];
-const OPENING: &[(&str, &str)] = &[("showOpenDialog", "Show Open Dialog"), ("showHome", "Show Home")];
-const BIN_OPEN: &[(&str, &str)] = &[("openInPlace", "Open in place"), ("openNewTab", "Open new tab"), ("openNewWindow", "Open in new window")];
-const PROJECT_OPEN: &[(&str, &str)] = &[("openNewTab", "Open new tab"), ("openNewWindow", "Open in new window")];
+const STARTUP: &[(&str, &str)] = &[
+    ("showHome", "Show Home"),
+    ("openMostRecent", "Open Most Recent"),
+    ("emptyProject", "Start with an Empty Project"),
+];
+const OPENING: &[(&str, &str)] = &[
+    ("showOpenDialog", "Show Open Dialog"),
+    ("showHome", "Show Home"),
+];
+const BIN_OPEN: &[(&str, &str)] = &[
+    ("openInPlace", "Open in place"),
+    ("openNewTab", "Open new tab"),
+    ("openNewWindow", "Open in new window"),
+];
+const PROJECT_OPEN: &[(&str, &str)] = &[
+    ("openNewTab", "Open new tab"),
+    ("openNewWindow", "Open in new window"),
+];
 const THEMES: &[(&str, &str)] = &[("darkest", "Darkest"), ("dark", "Dark"), ("light", "Light")];
-pub const APPEARANCE_MODES: &[(&str, &str)] = &[("auto", "Sync with system"), ("dark", "Dark"), ("light", "Light")];
+pub const APPEARANCE_MODES: &[(&str, &str)] = &[
+    ("auto", "Sync with system"),
+    ("dark", "Dark"),
+    ("light", "Light"),
+];
 pub const UI_SCALES: &[(&str, &str)] = &[
     ("auto", "Auto (system)"),
     ("75", "75%"),
@@ -922,14 +1103,47 @@ pub const UI_SCALES: &[(&str, &str)] = &[
 ];
 pub const DARK_THEMES: &[(&str, &str)] = &[("darkest", "Darkest"), ("dark", "Dark")];
 pub const LIGHT_THEMES: &[(&str, &str)] = &[("light", "Light")];
-const MIXDOWN: &[(&str, &str)] = &[("front", "Front Only"), ("frontRear", "Front + Rear"), ("frontLfe", "Front + LFE"), ("frontRearLfe", "Front + Rear + LFE")];
-const AUDITION: &[(&str, &str)] = &[("scratch", "Scratch disk location for Captured Audio"), ("nextToMedia", "Next to original media files")];
-const BUFFERS: &[(&str, &str)] = &[("64", "64"), ("128", "128"), ("256", "256"), ("512", "512"), ("1024", "1024"), ("2048", "2048"), ("4096", "4096")];
-const RATES: &[(&str, &str)] = &[("44100", "44100"), ("48000", "48000"), ("88200", "88200"), ("96000", "96000")];
-const HDR_WHITE: &[(&str, &str)] = &[("100", "100 (75% HLG, 58% PQ)"), ("203", "203 (75% HLG, 58% PQ)"), ("300", "300 (75% HLG, 58% PQ)")];
+const MIXDOWN: &[(&str, &str)] = &[
+    ("front", "Front Only"),
+    ("frontRear", "Front + Rear"),
+    ("frontLfe", "Front + LFE"),
+    ("frontRearLfe", "Front + Rear + LFE"),
+];
+const AUDITION: &[(&str, &str)] = &[
+    ("scratch", "Scratch disk location for Captured Audio"),
+    ("nextToMedia", "Next to original media files"),
+];
+const BUFFERS: &[(&str, &str)] = &[
+    ("64", "64"),
+    ("128", "128"),
+    ("256", "256"),
+    ("512", "512"),
+    ("1024", "1024"),
+    ("2048", "2048"),
+    ("4096", "4096"),
+];
+const RATES: &[(&str, &str)] = &[
+    ("44100", "44100"),
+    ("48000", "48000"),
+    ("88200", "88200"),
+    ("96000", "96000"),
+];
+const HDR_WHITE: &[(&str, &str)] = &[
+    ("100", "100 (75% HLG, 58% PQ)"),
+    ("203", "203 (75% HLG, 58% PQ)"),
+    ("300", "300 (75% HLG, 58% PQ)"),
+];
 const DIRECTION: &[(&str, &str)] = &[("ltr", "Left to right"), ("rtl", "Right to left")];
-const JOIN: &[(&str, &str)] = &[("miter", "Miter join"), ("round", "Round join"), ("bevel", "Bevel join")];
-const CAP: &[(&str, &str)] = &[("butt", "Butt cap"), ("round", "Round cap"), ("square", "Projecting cap")];
+const JOIN: &[(&str, &str)] = &[
+    ("miter", "Miter join"),
+    ("round", "Round join"),
+    ("bevel", "Bevel join"),
+];
+const CAP: &[(&str, &str)] = &[
+    ("butt", "Butt cap"),
+    ("round", "Round cap"),
+    ("square", "Projecting cap"),
+];
 const BG_FILL: &[(&str, &str)] = &[("allLines", "All lines"), ("perLine", "Per line")];
 const TIMEBASE: &[(&str, &str)] = &[
     ("23.976", "23.976 fps"),
@@ -943,12 +1157,28 @@ const TIMEBASE: &[(&str, &str)] = &[
     ("59.94", "59.94 fps Non Drop-Frame"),
     ("60", "60 fps"),
 ];
-const TIMECODE: &[(&str, &str)] = &[("useMediaSource", "Use Media Source"), ("generate", "Generate Timecode")];
-const FRAME_COUNT: &[(&str, &str)] = &[("startAt0", "Start at 0"), ("startAt1", "Start at 1"), ("timecodeConversion", "Timecode Conversion")];
-const SCALING: &[(&str, &str)] = &[("none", "None"), ("scaleToFrameSize", "Scale to frame size"), ("setToFrameSize", "Set to frame size")];
-const ANALYSIS_CACHE: &[(&str, &str)] = &[("mediaCache", "In the Media Cache"), ("project", "In the project")];
-const TRANSCRIBE_SCOPE: &[(&str, &str)] =
-    &[("sequenceClips", "Auto-transcribe only clips in sequences"), ("allImported", "Auto-transcribe all imported clips")];
+const TIMECODE: &[(&str, &str)] = &[
+    ("useMediaSource", "Use Media Source"),
+    ("generate", "Generate Timecode"),
+];
+const FRAME_COUNT: &[(&str, &str)] = &[
+    ("startAt0", "Start at 0"),
+    ("startAt1", "Start at 1"),
+    ("timecodeConversion", "Timecode Conversion"),
+];
+const SCALING: &[(&str, &str)] = &[
+    ("none", "None"),
+    ("scaleToFrameSize", "Scale to frame size"),
+    ("setToFrameSize", "Set to frame size"),
+];
+const ANALYSIS_CACHE: &[(&str, &str)] = &[
+    ("mediaCache", "In the Media Cache"),
+    ("project", "In the project"),
+];
+const TRANSCRIBE_SCOPE: &[(&str, &str)] = &[
+    ("sequenceClips", "Auto-transcribe only clips in sequences"),
+    ("allImported", "Auto-transcribe all imported clips"),
+];
 const SPEAKERS: &[(&str, &str)] = &[("on", "Label speakers"), ("off", "Don't label speakers")];
 const LANGUAGES: &[(&str, &str)] = &[
     ("en", "English"),
@@ -964,17 +1194,33 @@ const LANGUAGES: &[(&str, &str)] = &[
     ("ru", "Russian"),
     ("hi", "Hindi"),
 ];
-const MODELS: &[(&str, &str)] =
-    &[("whisper-tiny", "Whisper tiny (fastest)"), ("whisper-base", "Whisper base (balanced)"), ("whisper-small", "Whisper small (most accurate)")];
+const MODELS: &[(&str, &str)] = &[
+    ("whisper-tiny", "Whisper tiny (fastest)"),
+    ("whisper-base", "Whisper base (balanced)"),
+    ("whisper-small", "Whisper small (most accurate)"),
+];
 const CACHE_MGMT: &[(&str, &str)] = &[
     ("never", "Do not delete cache files automatically"),
     ("olderThan", "Automatically delete cache files older than"),
-    ("exceedsSize", "Automatically delete oldest cache files when cache exceeds"),
+    (
+        "exceedsSize",
+        "Automatically delete oldest cache files when cache exceeds",
+    ),
 ];
-const AUTO_SCROLL: &[(&str, &str)] = &[("noScroll", "No Scroll"), ("pageScroll", "Page Scroll"), ("smoothScroll", "Smooth Scroll")];
+const AUTO_SCROLL: &[(&str, &str)] = &[
+    ("noScroll", "No Scroll"),
+    ("pageScroll", "Page Scroll"),
+    ("smoothScroll", "Smooth Scroll"),
+];
 const MOUSE_SCROLL: &[(&str, &str)] = &[("vertical", "Vertical"), ("horizontal", "Horizontal")];
 const HW_DECODE: &[(&str, &str)] = &[("auto", "Auto"), ("off", "Off")];
-const TRACKS: &[(&str, &str)] = &[("useFile", "Use File"), ("mono", "Mono"), ("stereo", "Stereo"), ("5.1", "5.1"), ("adaptive", "Adaptive")];
+const TRACKS: &[(&str, &str)] = &[
+    ("useFile", "Use File"),
+    ("mono", "Mono"),
+    ("stereo", "Stereo"),
+    ("5.1", "5.1"),
+    ("adaptive", "Adaptive"),
+];
 pub const DURATION_UNITS: &[(&str, &str)] = &[("frames", "Frames"), ("seconds", "Seconds")];
 
 /// The Settings categories in Premiere's order (Adobe-cloud-only ones are left out; Plugins is a
@@ -1012,31 +1258,92 @@ static CATEGORIES: &[Category] = &[
                 ]),
                 true,
             ),
-            f("general.atStartup", "At Startup", Kind::Choice(STARTUP), true),
-            f("general.whenOpeningProject", "When Opening a Project", Kind::Choice(OPENING), false),
+            f(
+                "general.atStartup",
+                "At Startup",
+                Kind::Choice(STARTUP),
+                true,
+            ),
+            f(
+                "general.whenOpeningProject",
+                "When Opening a Project",
+                Kind::Choice(OPENING),
+                false,
+            ),
             Row::Group(
                 "Bins",
                 &[
-                    f("general.binsDoubleClick", "Double-click", Kind::Choice(BIN_OPEN), false),
-                    f("general.binsCmdDoubleClick", "+ Cmd", Kind::Choice(BIN_OPEN), false),
-                    f("general.binsOptDoubleClick", "+ Opt", Kind::Choice(BIN_OPEN), false),
+                    f(
+                        "general.binsDoubleClick",
+                        "Double-click",
+                        Kind::Choice(BIN_OPEN),
+                        false,
+                    ),
+                    f(
+                        "general.binsCmdDoubleClick",
+                        "+ Cmd",
+                        Kind::Choice(BIN_OPEN),
+                        false,
+                    ),
+                    f(
+                        "general.binsOptDoubleClick",
+                        "+ Opt",
+                        Kind::Choice(BIN_OPEN),
+                        false,
+                    ),
                 ],
             ),
             Row::Group(
                 "Projects",
                 &[
-                    f("general.projectsDoubleClick", "Double-click", Kind::Choice(PROJECT_OPEN), false),
-                    f("general.projectsOptDoubleClick", "+ Opt", Kind::Choice(PROJECT_OPEN), false),
+                    f(
+                        "general.projectsDoubleClick",
+                        "Double-click",
+                        Kind::Choice(PROJECT_OPEN),
+                        false,
+                    ),
+                    f(
+                        "general.projectsOptDoubleClick",
+                        "+ Opt",
+                        Kind::Choice(PROJECT_OPEN),
+                        false,
+                    ),
                 ],
             ),
             b("general.showEventIndicator", "Show Event Indicator", false),
             b("general.showToolTips", "Show Tool Tips", true),
-            sub("general.showRichToolTips", "Show Rich Tool Tips", Kind::Bool, "general.showToolTips", false),
-            b("general.showWorkspaceResetWarning", "Show Workspace Reset Warning dialog on double click", false),
-            b("general.showProjectLoadErrors", "Show Project Load Error Dialog", false),
-            b("general.showCompatibilityIssues", "Show system compatibility issues at startup", false),
-            b("general.showProjectBinInTab", "Show \"Project:\" and \"Bin:\" in Project panel tab", false),
-            b("general.showMaskTrackerPreview", "Show Mask Tracker Preview", false),
+            sub(
+                "general.showRichToolTips",
+                "Show Rich Tool Tips",
+                Kind::Bool,
+                "general.showToolTips",
+                false,
+            ),
+            b(
+                "general.showWorkspaceResetWarning",
+                "Show Workspace Reset Warning dialog on double click",
+                false,
+            ),
+            b(
+                "general.showProjectLoadErrors",
+                "Show Project Load Error Dialog",
+                false,
+            ),
+            b(
+                "general.showCompatibilityIssues",
+                "Show system compatibility issues at startup",
+                false,
+            ),
+            b(
+                "general.showProjectBinInTab",
+                "Show \"Project:\" and \"Bin:\" in Project panel tab",
+                false,
+            ),
+            b(
+                "general.showMaskTrackerPreview",
+                "Show Mask Tracker Preview",
+                false,
+            ),
         ],
     },
     Category {
@@ -1046,57 +1353,203 @@ static CATEGORIES: &[Category] = &[
             // Drawn by the dialog as the Appearance Mode selector above the light and dark theme
             // cards; the fields below keep their keys, validation and `prefs.schema` entries.
             Row::Custom("appearanceModes"),
-            f("appearance.appearanceMode", "Appearance Mode", Kind::Choice(APPEARANCE_MODES), true),
-            f("appearance.lightTheme", "Light Theme", Kind::Choice(LIGHT_THEMES), true),
-            f("appearance.darkTheme", "Dark Theme", Kind::Choice(DARK_THEMES), true),
-            f("appearance.colorTheme", "Color Theme", Kind::Choice(THEMES), true),
-            b("appearance.accessibleContrast", "Accessible color contrast", true),
-            f("appearance.highlightColor", "Highlight Color", Kind::Color, true),
-            f("appearance.uiScale", "UI Scale", Kind::Choice(UI_SCALES), true),
+            f(
+                "appearance.appearanceMode",
+                "Appearance Mode",
+                Kind::Choice(APPEARANCE_MODES),
+                true,
+            ),
+            f(
+                "appearance.lightTheme",
+                "Light Theme",
+                Kind::Choice(LIGHT_THEMES),
+                true,
+            ),
+            f(
+                "appearance.darkTheme",
+                "Dark Theme",
+                Kind::Choice(DARK_THEMES),
+                true,
+            ),
+            f(
+                "appearance.colorTheme",
+                "Color Theme",
+                Kind::Choice(THEMES),
+                true,
+            ),
+            b(
+                "appearance.accessibleContrast",
+                "Accessible color contrast",
+                true,
+            ),
+            f(
+                "appearance.highlightColor",
+                "Highlight Color",
+                Kind::Color,
+                true,
+            ),
+            f(
+                "appearance.uiScale",
+                "UI Scale",
+                Kind::Choice(UI_SCALES),
+                true,
+            ),
         ],
     },
     Category {
         id: "audio",
         title: "Audio",
         rows: &[
-            f("audio.automatchTime", "Automatch Time", float(0.0, 30.0, 3, "seconds"), true),
-            f("audio.mixdownType", "5.1 Mixdown Type", Kind::Choice(MIXDOWN), true),
-            f("audio.largeVolumeAdjustment", "Large Volume Adjustment", float(0.0, 96.0, 0, "dB"), true),
-            b("audio.sumToMonoInSource", "Sum multichannel outputs to mono in Source Monitor", false),
-            b("audio.scrubAudio", "Play audio while scrubbing in Source and Program Monitors", false),
-            b("audio.maintainPitchShuttling", "Maintain pitch while shuttling", false),
-            b("audio.muteInputDuringRecording", "Mute input during timeline recording", false),
-            b("audio.generateWaveformsOnImport", "Generate waveforms automatically during import", false),
-            b("audio.multithreadedWaveforms", "Generate waveforms and conform audio using multithreading", false),
-            b("audio.renderAudioWithVideo", "Render audio when rendering video", false),
-            b("audio.autoTagAudioTypes", "Auto-tag audio types in the timeline", false),
-            b("audio.alwaysOverrideAudioTags", "Always override audio tags", false),
+            f(
+                "audio.automatchTime",
+                "Automatch Time",
+                float(0.0, 30.0, 3, "seconds"),
+                true,
+            ),
+            f(
+                "audio.mixdownType",
+                "5.1 Mixdown Type",
+                Kind::Choice(MIXDOWN),
+                true,
+            ),
+            f(
+                "audio.largeVolumeAdjustment",
+                "Large Volume Adjustment",
+                float(0.0, 96.0, 0, "dB"),
+                true,
+            ),
+            b(
+                "audio.sumToMonoInSource",
+                "Sum multichannel outputs to mono in Source Monitor",
+                false,
+            ),
+            b(
+                "audio.scrubAudio",
+                "Play audio while scrubbing in Source and Program Monitors",
+                false,
+            ),
+            b(
+                "audio.maintainPitchShuttling",
+                "Maintain pitch while shuttling",
+                false,
+            ),
+            b(
+                "audio.muteInputDuringRecording",
+                "Mute input during timeline recording",
+                false,
+            ),
+            b(
+                "audio.generateWaveformsOnImport",
+                "Generate waveforms automatically during import",
+                false,
+            ),
+            b(
+                "audio.multithreadedWaveforms",
+                "Generate waveforms and conform audio using multithreading",
+                false,
+            ),
+            b(
+                "audio.renderAudioWithVideo",
+                "Render audio when rendering video",
+                false,
+            ),
+            b(
+                "audio.autoTagAudioTypes",
+                "Auto-tag audio types in the timeline",
+                false,
+            ),
+            b(
+                "audio.alwaysOverrideAudioTags",
+                "Always override audio tags",
+                false,
+            ),
             Row::Group(
                 "Automation Keyframe Optimization",
                 &[
-                    b("audio.linearKeyframeThinning", "Linear keyframe thinning", true),
-                    b("audio.minimumTimeIntervalThinning", "Minimum time interval thinning", true),
-                    sub("audio.minimumTimeMs", "Minimum time", int(1.0, 10_000.0, "milliseconds"), "audio.minimumTimeIntervalThinning", true),
+                    b(
+                        "audio.linearKeyframeThinning",
+                        "Linear keyframe thinning",
+                        true,
+                    ),
+                    b(
+                        "audio.minimumTimeIntervalThinning",
+                        "Minimum time interval thinning",
+                        true,
+                    ),
+                    sub(
+                        "audio.minimumTimeMs",
+                        "Minimum time",
+                        int(1.0, 10_000.0, "milliseconds"),
+                        "audio.minimumTimeIntervalThinning",
+                        true,
+                    ),
                 ],
             ),
-            Row::Group("Render Edit in Audition files to:", &[f("audio.editInAuditionLocation", "Location", Kind::Choice(AUDITION), false)]),
+            Row::Group(
+                "Render Edit in Audition files to:",
+                &[f(
+                    "audio.editInAuditionLocation",
+                    "Location",
+                    Kind::Choice(AUDITION),
+                    false,
+                )],
+            ),
         ],
     },
     Category {
         id: "audioHardware",
         title: "Audio Hardware",
         rows: &[
-            f("audioHardware.deviceClass", "Device Class", Kind::Device(DeviceList::Hosts), true),
-            f("audioHardware.defaultInput", "Default Input", Kind::Device(DeviceList::Inputs), false),
-            f("audioHardware.defaultOutput", "Default Output", Kind::Device(DeviceList::Outputs), true),
-            f("audioHardware.bufferSize", "I/O Buffer Size", Kind::Choice(BUFFERS), true),
-            f("audioHardware.sampleRate", "Sample Rate", Kind::Choice(RATES), true),
-            b("audioHardware.forceDocumentRate", "Attempt to force hardware to document sample rate", true),
+            f(
+                "audioHardware.deviceClass",
+                "Device Class",
+                Kind::Device(DeviceList::Hosts),
+                true,
+            ),
+            f(
+                "audioHardware.defaultInput",
+                "Default Input",
+                Kind::Device(DeviceList::Inputs),
+                false,
+            ),
+            f(
+                "audioHardware.defaultOutput",
+                "Default Output",
+                Kind::Device(DeviceList::Outputs),
+                true,
+            ),
+            f(
+                "audioHardware.bufferSize",
+                "I/O Buffer Size",
+                Kind::Choice(BUFFERS),
+                true,
+            ),
+            f(
+                "audioHardware.sampleRate",
+                "Sample Rate",
+                Kind::Choice(RATES),
+                true,
+            ),
+            b(
+                "audioHardware.forceDocumentRate",
+                "Attempt to force hardware to document sample rate",
+                true,
+            ),
             Row::Group(
                 "Output Mapping",
                 &[
-                    f("audioHardware.mapLeft", "Left channel to device output", int(0.0, 63.0, ""), true),
-                    f("audioHardware.mapRight", "Right channel to device output", int(0.0, 63.0, ""), true),
+                    f(
+                        "audioHardware.mapLeft",
+                        "Left channel to device output",
+                        int(0.0, 63.0, ""),
+                        true,
+                    ),
+                    f(
+                        "audioHardware.mapRight",
+                        "Right channel to device output",
+                        int(0.0, 63.0, ""),
+                        true,
+                    ),
                     Row::Custom("outputMapping"),
                 ],
             ),
@@ -1110,16 +1563,44 @@ static CATEGORIES: &[Category] = &[
                 "Local Projects",
                 &[
                     b("autoSave.enabled", "Automatically save projects", true),
-                    sub("autoSave.intervalMinutes", "Automatically Save Every", int(1.0, 1440.0, "minute(s)"), "autoSave.enabled", true),
-                    sub("autoSave.maxVersions", "Maximum Project Versions", int(1.0, 1000.0, ""), "autoSave.enabled", true),
-                    sub("autoSave.saveCurrentProject", "Auto Save also saves the current project(s)", Kind::Bool, "autoSave.enabled", true),
+                    sub(
+                        "autoSave.intervalMinutes",
+                        "Automatically Save Every",
+                        int(1.0, 1440.0, "minute(s)"),
+                        "autoSave.enabled",
+                        true,
+                    ),
+                    sub(
+                        "autoSave.maxVersions",
+                        "Maximum Project Versions",
+                        int(1.0, 1000.0, ""),
+                        "autoSave.enabled",
+                        true,
+                    ),
+                    sub(
+                        "autoSave.saveCurrentProject",
+                        "Auto Save also saves the current project(s)",
+                        Kind::Bool,
+                        "autoSave.enabled",
+                        true,
+                    ),
                 ],
             ),
             Row::Group(
                 "Crash Recovery",
                 &[
-                    b("autoSave.recoveryJournal", "Keep a recovery copy of unsaved changes", true),
-                    sub("autoSave.recoveryIntervalSeconds", "Update it at least every", int(1.0, 600.0, "second(s)"), "autoSave.recoveryJournal", true),
+                    b(
+                        "autoSave.recoveryJournal",
+                        "Keep a recovery copy of unsaved changes",
+                        true,
+                    ),
+                    sub(
+                        "autoSave.recoveryIntervalSeconds",
+                        "Update it at least every",
+                        int(1.0, 600.0, "second(s)"),
+                        "autoSave.recoveryJournal",
+                        true,
+                    ),
                     Row::Note(
                         "Changes are copied in the background a moment after each edit. If FilmCraft quits unexpectedly, they are offered the next time it starts.",
                     ),
@@ -1135,12 +1616,27 @@ static CATEGORIES: &[Category] = &[
             Row::Group(
                 "Display Color Settings",
                 &[
-                    b("color.displayColorManagement", "Display Color Management", false),
-                    b("color.extendedDynamicRange", "Extended Dynamic Range Monitoring", false),
-                    f("color.hdrGraphicsWhite", "HDR Graphics White (Nits)", Kind::Choice(HDR_WHITE), false),
+                    b(
+                        "color.displayColorManagement",
+                        "Display Color Management",
+                        false,
+                    ),
+                    b(
+                        "color.extendedDynamicRange",
+                        "Extended Dynamic Range Monitoring",
+                        false,
+                    ),
+                    f(
+                        "color.hdrGraphicsWhite",
+                        "HDR Graphics White (Nits)",
+                        Kind::Choice(HDR_WHITE),
+                        false,
+                    ),
                 ],
             ),
-            Row::Note("For color management parameters, go to the Settings tab in the Lumetri Color panel."),
+            Row::Note(
+                "For color management parameters, go to the Settings tab in the Lumetri Color panel.",
+            ),
         ],
     },
     Category {
@@ -1153,30 +1649,94 @@ static CATEGORIES: &[Category] = &[
                     b("graphics.ligatures", "Ligatures", true),
                     b("graphics.hindiDigits", "Hindi digits", false),
                     b("graphics.smartQuotes", "Smart quotes", true),
-                    f("graphics.paragraphDirection", "Default paragraph direction", Kind::Choice(DIRECTION), false),
-                    f("graphics.textLineJoin", "Stroke line join", Kind::Choice(JOIN), false),
-                    f("graphics.textMiterLimit", "Miter limit", float(1.0, 100.0, 1, ""), false),
-                    f("graphics.textLineCap", "Stroke line cap", Kind::Choice(CAP), false),
-                    f("graphics.backgroundFill", "Background fill", Kind::Choice(BG_FILL), false),
-                    f("graphics.defaultFont", "Default subtitle and text font", Kind::Font, true),
-                    f("graphics.missingFontReplacement", "Missing font replacement", Kind::Font, false),
-                    f("graphics.emojiFont", "Default Emoji font", Kind::Font, false),
+                    f(
+                        "graphics.paragraphDirection",
+                        "Default paragraph direction",
+                        Kind::Choice(DIRECTION),
+                        false,
+                    ),
+                    f(
+                        "graphics.textLineJoin",
+                        "Stroke line join",
+                        Kind::Choice(JOIN),
+                        false,
+                    ),
+                    f(
+                        "graphics.textMiterLimit",
+                        "Miter limit",
+                        float(1.0, 100.0, 1, ""),
+                        false,
+                    ),
+                    f(
+                        "graphics.textLineCap",
+                        "Stroke line cap",
+                        Kind::Choice(CAP),
+                        false,
+                    ),
+                    f(
+                        "graphics.backgroundFill",
+                        "Background fill",
+                        Kind::Choice(BG_FILL),
+                        false,
+                    ),
+                    f(
+                        "graphics.defaultFont",
+                        "Default subtitle and text font",
+                        Kind::Font,
+                        true,
+                    ),
+                    f(
+                        "graphics.missingFontReplacement",
+                        "Missing font replacement",
+                        Kind::Font,
+                        false,
+                    ),
+                    f(
+                        "graphics.emojiFont",
+                        "Default Emoji font",
+                        Kind::Font,
+                        false,
+                    ),
                 ],
             ),
             Row::Group(
                 "Shapes",
                 &[
-                    f("graphics.shapeLineJoin", "Stroke line join", Kind::Choice(JOIN), false),
-                    f("graphics.shapeMiterLimit", "Miter limit", float(1.0, 100.0, 1, ""), false),
-                    f("graphics.shapeLineCap", "Stroke line cap", Kind::Choice(CAP), false),
+                    f(
+                        "graphics.shapeLineJoin",
+                        "Stroke line join",
+                        Kind::Choice(JOIN),
+                        false,
+                    ),
+                    f(
+                        "graphics.shapeMiterLimit",
+                        "Miter limit",
+                        float(1.0, 100.0, 1, ""),
+                        false,
+                    ),
+                    f(
+                        "graphics.shapeLineCap",
+                        "Stroke line cap",
+                        Kind::Choice(CAP),
+                        false,
+                    ),
                 ],
             ),
             Row::Group(
                 "Closed Captions",
                 &[
-                    f("graphics.captionFont", "Default closed caption font", Kind::Font, false),
+                    f(
+                        "graphics.captionFont",
+                        "Default closed caption font",
+                        Kind::Font,
+                        false,
+                    ),
                     b("graphics.captionMonospaceOnly", "Monospace only", false),
-                    b("graphics.cea708Wide", "Always import embedded CEA-708 closed captions with wide aspect.", false),
+                    b(
+                        "graphics.cea708Wide",
+                        "Always import embedded CEA-708 closed captions with wide aspect.",
+                        false,
+                    ),
                 ],
             ),
         ],
@@ -1189,12 +1749,22 @@ static CATEGORIES: &[Category] = &[
             Row::Group(
                 "Label Defaults",
                 &[
-                    f("labels.defaults.movie", "Movie (audio and video)", Kind::Label, true),
+                    f(
+                        "labels.defaults.movie",
+                        "Movie (audio and video)",
+                        Kind::Label,
+                        true,
+                    ),
                     f("labels.defaults.video", "Video", Kind::Label, true),
                     f("labels.defaults.audio", "Audio", Kind::Label, true),
                     f("labels.defaults.still", "Still", Kind::Label, true),
                     f("labels.defaults.sequence", "Sequence", Kind::Label, true),
-                    f("labels.defaults.dynamicLink", "Dynamic Link", Kind::Label, false),
+                    f(
+                        "labels.defaults.dynamicLink",
+                        "Dynamic Link",
+                        Kind::Label,
+                        false,
+                    ),
                     f("labels.defaults.bin", "Bin", Kind::Label, false),
                     f("labels.defaults.captions", "Captions", Kind::Label, false),
                 ],
@@ -1206,50 +1776,160 @@ static CATEGORIES: &[Category] = &[
         id: "media",
         title: "Media",
         rows: &[
-            f("media.indeterminateTimebase", "Indeterminate Media Timebase", Kind::Choice(TIMEBASE), true),
+            f(
+                "media.indeterminateTimebase",
+                "Indeterminate Media Timebase",
+                Kind::Choice(TIMEBASE),
+                true,
+            ),
             f("media.timecode", "Timecode", Kind::Choice(TIMECODE), false),
-            f("media.frameCount", "Frame Count", Kind::Choice(FRAME_COUNT), false),
-            f("media.defaultMediaScaling", "Default Media Scaling", Kind::Choice(SCALING), true),
+            f(
+                "media.frameCount",
+                "Frame Count",
+                Kind::Choice(FRAME_COUNT),
+                false,
+            ),
+            f(
+                "media.defaultMediaScaling",
+                "Default Media Scaling",
+                Kind::Choice(SCALING),
+                true,
+            ),
             b("media.writeXmpId", "Write XMP ID to files on import", false),
-            b("media.validateContentCredentials", "Validate Content Credentials on import", false),
-            b("media.writeClipMarkersToXmp", "Write clip markers to XMP", false),
-            b("media.enableXmpLinking", "Enable clip and XMP metadata linking", false),
-            b("media.includeCaptionsOnImport", "Include captions on import", false),
+            b(
+                "media.validateContentCredentials",
+                "Validate Content Credentials on import",
+                false,
+            ),
+            b(
+                "media.writeClipMarkersToXmp",
+                "Write clip markers to XMP",
+                false,
+            ),
+            b(
+                "media.enableXmpLinking",
+                "Enable clip and XMP metadata linking",
+                false,
+            ),
+            b(
+                "media.includeCaptionsOnImport",
+                "Include captions on import",
+                false,
+            ),
             b("media.enableProxies", "Enable proxies", true),
-            b("media.allowDuplicateMedia", "Allow duplicate media during project import", false),
-            b("media.createFolderForImportedProjects", "Create folder for imported projects", false),
-            b("media.autoHideDependentClips", "Automatically Hide Dependent Clips", false),
-            b("media.importImageSequences", "Import numbered stills as image sequences", false),
+            b(
+                "media.allowDuplicateMedia",
+                "Allow duplicate media during project import",
+                false,
+            ),
+            b(
+                "media.createFolderForImportedProjects",
+                "Create folder for imported projects",
+                false,
+            ),
+            b(
+                "media.autoHideDependentClips",
+                "Automatically Hide Dependent Clips",
+                false,
+            ),
+            b(
+                "media.importImageSequences",
+                "Import numbered stills as image sequences",
+                false,
+            ),
             Row::Group(
                 "Growing Files",
                 &[
-                    b("media.refreshGrowingFiles", "Automatically refresh growing files", true),
-                    b("media.resumeGrowingPlayback", "Automatically resume playback for growing files in Source Monitor", false),
-                    sub("media.growingRefreshSeconds", "Refresh growing Files Every", int(1.0, 3600.0, "seconds"), "media.refreshGrowingFiles", true),
+                    b(
+                        "media.refreshGrowingFiles",
+                        "Automatically refresh growing files",
+                        true,
+                    ),
+                    b(
+                        "media.resumeGrowingPlayback",
+                        "Automatically resume playback for growing files in Source Monitor",
+                        false,
+                    ),
+                    sub(
+                        "media.growingRefreshSeconds",
+                        "Refresh growing Files Every",
+                        int(1.0, 3600.0, "seconds"),
+                        "media.refreshGrowingFiles",
+                        true,
+                    ),
                 ],
             ),
-            b("media.hardwareDecoding", "Enable hardware accelerated decoding (requires restart)", false),
-            b("media.proresHardwareEncoding", "Enable ProRes hardware accelerated encoding, if available", false),
+            b(
+                "media.hardwareDecoding",
+                "Enable hardware accelerated decoding (requires restart)",
+                false,
+            ),
+            b(
+                "media.proresHardwareEncoding",
+                "Enable ProRes hardware accelerated encoding, if available",
+                false,
+            ),
         ],
     },
     Category {
         id: "mediaAnalysis",
         title: "Media Analysis & Transcription",
         rows: &[
-            f("mediaAnalysis.cacheResults", "Cache analysis results for re-use", Kind::Choice(ANALYSIS_CACHE), false),
+            f(
+                "mediaAnalysis.cacheResults",
+                "Cache analysis results for re-use",
+                Kind::Choice(ANALYSIS_CACHE),
+                false,
+            ),
             Row::Note(
                 "Media analysis and transcriptions will be cached in the Media Cache folder. Reanalysis won't be required if the media is imported into another project on this computer.",
             ),
-            Row::Group("Media Analysis", &[b("mediaAnalysis.analyzeImportedMedia", "Analyze all imported media to search for visuals or audio", false)]),
+            Row::Group(
+                "Media Analysis",
+                &[b(
+                    "mediaAnalysis.analyzeImportedMedia",
+                    "Analyze all imported media to search for visuals or audio",
+                    false,
+                )],
+            ),
             Row::Group(
                 "Transcription",
                 &[
-                    b("mediaAnalysis.autoTranscribe", "Automatically transcribe clips", true),
-                    sub("mediaAnalysis.autoTranscribeScope", "Transcription preferences", Kind::Choice(TRANSCRIBE_SCOPE), "mediaAnalysis.autoTranscribe", true),
-                    f("mediaAnalysis.speakerLabeling", "Speaker Labeling", Kind::Choice(SPEAKERS), true),
-                    b("mediaAnalysis.languageAutoDetect", "Enable language auto-detection", true),
-                    f("mediaAnalysis.defaultLanguage", "Default language", Kind::Choice(LANGUAGES), true),
-                    f("mediaAnalysis.whisperModel", "Speech model", Kind::Choice(MODELS), true),
+                    b(
+                        "mediaAnalysis.autoTranscribe",
+                        "Automatically transcribe clips",
+                        true,
+                    ),
+                    sub(
+                        "mediaAnalysis.autoTranscribeScope",
+                        "Transcription preferences",
+                        Kind::Choice(TRANSCRIBE_SCOPE),
+                        "mediaAnalysis.autoTranscribe",
+                        true,
+                    ),
+                    f(
+                        "mediaAnalysis.speakerLabeling",
+                        "Speaker Labeling",
+                        Kind::Choice(SPEAKERS),
+                        true,
+                    ),
+                    b(
+                        "mediaAnalysis.languageAutoDetect",
+                        "Enable language auto-detection",
+                        true,
+                    ),
+                    f(
+                        "mediaAnalysis.defaultLanguage",
+                        "Default language",
+                        Kind::Choice(LANGUAGES),
+                        true,
+                    ),
+                    f(
+                        "mediaAnalysis.whisperModel",
+                        "Speech model",
+                        Kind::Choice(MODELS),
+                        true,
+                    ),
                 ],
             ),
         ],
@@ -1262,18 +1942,49 @@ static CATEGORIES: &[Category] = &[
                 "Media Cache Files",
                 &[
                     f("mediaCache.location", "Location", Kind::Path, true),
-                    b("mediaCache.saveNextToMedia", "Save .cfa and .pek media cache files next to original media files when possible", false),
-                    Row::Button { id: "mediaCache.clean", label: "Delete…", command: "mediaCache.clean" },
+                    b(
+                        "mediaCache.saveNextToMedia",
+                        "Save .cfa and .pek media cache files next to original media files when possible",
+                        false,
+                    ),
+                    Row::Button {
+                        id: "mediaCache.clean",
+                        label: "Delete…",
+                        command: "mediaCache.clean",
+                    },
                     Row::Custom("mediaCacheInfo"),
                 ],
             ),
-            Row::Group("Media Cache Database", &[f("mediaCache.databaseLocation", "Location", Kind::Path, false)]),
+            Row::Group(
+                "Media Cache Database",
+                &[f(
+                    "mediaCache.databaseLocation",
+                    "Location",
+                    Kind::Path,
+                    false,
+                )],
+            ),
             Row::Group(
                 "Media Cache Management",
                 &[
-                    f("mediaCache.management", "Policy", Kind::Choice(CACHE_MGMT), true),
-                    f("mediaCache.olderThanDays", "Delete files older than", int(1.0, 3650.0, "days"), true),
-                    f("mediaCache.maxSizeGb", "Delete oldest files when the cache exceeds", int(1.0, 100_000.0, "GB"), true),
+                    f(
+                        "mediaCache.management",
+                        "Policy",
+                        Kind::Choice(CACHE_MGMT),
+                        true,
+                    ),
+                    f(
+                        "mediaCache.olderThanDays",
+                        "Delete files older than",
+                        int(1.0, 3650.0, "days"),
+                        true,
+                    ),
+                    f(
+                        "mediaCache.maxSizeGb",
+                        "Delete oldest files when the cache exceeds",
+                        int(1.0, 100_000.0, "GB"),
+                        true,
+                    ),
                 ],
             ),
             Row::Note(
@@ -1286,22 +1997,64 @@ static CATEGORIES: &[Category] = &[
         title: "Memory",
         rows: &[
             Row::Custom("memoryInfo"),
-            f("memory.ramReservedGb", "RAM reserved for other applications", int(1.0, 1024.0, "GB"), false),
-            f("memory.frameCacheMb", "Frame cache for monitors and thumbnails", int(64.0, 65_536.0, "MB"), true),
+            f(
+                "memory.ramReservedGb",
+                "RAM reserved for other applications",
+                int(1.0, 1024.0, "GB"),
+                false,
+            ),
+            f(
+                "memory.frameCacheMb",
+                "Frame cache for monitors and thumbnails",
+                int(64.0, 65_536.0, "MB"),
+                true,
+            ),
         ],
     },
     Category {
         id: "playback",
         title: "Playback",
         rows: &[
-            f("playback.prerollSeconds", "Preroll", float(0.0, 60.0, 0, "seconds"), true),
-            f("playback.postrollSeconds", "Postroll", float(0.0, 60.0, 0, "seconds"), true),
-            f("playback.stepManyFrames", "Step forward/back many", int(1.0, 1000.0, "frames"), true),
-            b("playback.pauseEncoderQueue", "Pause Media Encoder queue during playback", false),
+            f(
+                "playback.prerollSeconds",
+                "Preroll",
+                float(0.0, 60.0, 0, "seconds"),
+                true,
+            ),
+            f(
+                "playback.postrollSeconds",
+                "Postroll",
+                float(0.0, 60.0, 0, "seconds"),
+                true,
+            ),
+            f(
+                "playback.stepManyFrames",
+                "Step forward/back many",
+                int(1.0, 1000.0, "frames"),
+                true,
+            ),
+            b(
+                "playback.pauseEncoderQueue",
+                "Pause Media Encoder queue during playback",
+                false,
+            ),
             b("playback.enableTransmit", "Enable Mercury Transmit", false),
-            b("playback.disableVideoInBackground", "Disable video output when in the background", false),
-            b("playback.draftDecode", "Draft decoding at reduced playback resolution (H.264: faster, some frames less filtered)", true),
-            f("playback.hardwareDecoding", "Hardware decoding", Kind::Choice(HW_DECODE), true),
+            b(
+                "playback.disableVideoInBackground",
+                "Disable video output when in the background",
+                false,
+            ),
+            b(
+                "playback.draftDecode",
+                "Draft decoding at reduced playback resolution (H.264: faster, some frames less filtered)",
+                true,
+            ),
+            f(
+                "playback.hardwareDecoding",
+                "Hardware decoding",
+                Kind::Choice(HW_DECODE),
+                true,
+            ),
             Row::Note(
                 "Hardware decoding: Auto uses the system's video decoder (VideoToolbox on macOS, Media Foundation on Windows, VA-API or NVDEC for H.264 and HEVC on Linux) for the streams it supports, and FilmCraft's own decoder for everything else or if the hardware fails. Media that is already open keeps its decoder until it is reopened.",
             ),
@@ -1311,52 +2064,184 @@ static CATEGORIES: &[Category] = &[
         id: "plugins",
         title: "Plugins",
         rows: &[
-            Row::Group("Plugins", &[b("plugins.developerMode", "Enable developer mode", false)]),
-            Row::Note("No plugins are installed. Changes will take effect the next time you start FilmCraft."),
+            Row::Group(
+                "Plugins",
+                &[b("plugins.developerMode", "Enable developer mode", false)],
+            ),
+            Row::Note(
+                "No plugins are installed. Changes will take effect the next time you start FilmCraft.",
+            ),
         ],
     },
     Category {
         id: "timeline",
         title: "Timeline",
         rows: &[
-            f("timeline.videoTransitionDuration", "Video Transition Default Duration", Kind::Duration { unit_key: "timeline.videoTransitionUnit" }, true),
-            f("timeline.audioTransitionDuration", "Audio Transition Default Duration", Kind::Duration { unit_key: "timeline.audioTransitionUnit" }, true),
-            f("timeline.stillImageDuration", "Still Image Default Duration", Kind::Duration { unit_key: "timeline.stillImageUnit" }, true),
-            f("timeline.autoScroll", "Timeline Playback Auto-Scrolling", Kind::Choice(AUTO_SCROLL), true),
-            f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
+            f(
+                "timeline.videoTransitionDuration",
+                "Video Transition Default Duration",
+                Kind::Duration {
+                    unit_key: "timeline.videoTransitionUnit",
+                },
+                true,
+            ),
+            f(
+                "timeline.audioTransitionDuration",
+                "Audio Transition Default Duration",
+                Kind::Duration {
+                    unit_key: "timeline.audioTransitionUnit",
+                },
+                true,
+            ),
+            f(
+                "timeline.stillImageDuration",
+                "Still Image Default Duration",
+                Kind::Duration {
+                    unit_key: "timeline.stillImageUnit",
+                },
+                true,
+            ),
+            f(
+                "timeline.autoScroll",
+                "Timeline Playback Auto-Scrolling",
+                Kind::Choice(AUTO_SCROLL),
+                true,
+            ),
+            f(
+                "timeline.mouseScrolling",
+                "Timeline Mouse Scrolling",
+                Kind::Choice(MOUSE_SCROLL),
+                true,
+            ),
             Row::Group(
                 "Default Audio Tracks",
                 &[
-                    f("timeline.monoMediaTracks", "Mono Media", Kind::Choice(TRACKS), false),
-                    f("timeline.stereoMediaTracks", "Stereo Media", Kind::Choice(TRACKS), false),
-                    f("timeline.surroundMediaTracks", "5.1 Media", Kind::Choice(TRACKS), false),
-                    f("timeline.multichannelMonoMediaTracks", "Multichannel Mono Media", Kind::Choice(TRACKS), false),
+                    f(
+                        "timeline.monoMediaTracks",
+                        "Mono Media",
+                        Kind::Choice(TRACKS),
+                        false,
+                    ),
+                    f(
+                        "timeline.stereoMediaTracks",
+                        "Stereo Media",
+                        Kind::Choice(TRACKS),
+                        false,
+                    ),
+                    f(
+                        "timeline.surroundMediaTracks",
+                        "5.1 Media",
+                        Kind::Choice(TRACKS),
+                        false,
+                    ),
+                    f(
+                        "timeline.multichannelMonoMediaTracks",
+                        "Multichannel Mono Media",
+                        Kind::Choice(TRACKS),
+                        false,
+                    ),
                 ],
             ),
-            b("timeline.focusTimelineOnEdit", "Set focus on the Timeline when performing Insert/Overwrite edits", false),
-            b("timeline.snapPlayhead", "Snap playhead in Timeline when Snap is enabled", true),
-            b("timeline.returnToBeginning", "At playback end, return to beginning when restarting playback", true),
-            b("timeline.outOfSyncUnlinked", "Display out of sync indicators for unlinked clips", false),
-            b("timeline.playAfterRendering", "Play after rendering previews", true),
-            b("timeline.clipMismatchWarning", "Show Clip Mismatch Warning dialog", false),
-            b("timeline.matchFrameSetsIn", "Match frame sets in point", false),
-            b("timeline.restoreOpenSequences", "Restore open sequences when opening projects", true),
-            b("timeline.addTracksAutomatically", "Add tracks automatically when editing source clips onto the Timeline", false),
-            b("timeline.dropImportToTimeline", "Place files dropped onto the Timeline directly on the Timeline", true),
+            b(
+                "timeline.focusTimelineOnEdit",
+                "Set focus on the Timeline when performing Insert/Overwrite edits",
+                false,
+            ),
+            b(
+                "timeline.snapPlayhead",
+                "Snap playhead in Timeline when Snap is enabled",
+                true,
+            ),
+            b(
+                "timeline.returnToBeginning",
+                "At playback end, return to beginning when restarting playback",
+                true,
+            ),
+            b(
+                "timeline.outOfSyncUnlinked",
+                "Display out of sync indicators for unlinked clips",
+                false,
+            ),
+            b(
+                "timeline.playAfterRendering",
+                "Play after rendering previews",
+                true,
+            ),
+            b(
+                "timeline.clipMismatchWarning",
+                "Show Clip Mismatch Warning dialog",
+                false,
+            ),
+            b(
+                "timeline.matchFrameSetsIn",
+                "Match frame sets in point",
+                false,
+            ),
+            b(
+                "timeline.restoreOpenSequences",
+                "Restore open sequences when opening projects",
+                true,
+            ),
+            b(
+                "timeline.addTracksAutomatically",
+                "Add tracks automatically when editing source clips onto the Timeline",
+                false,
+            ),
+            b(
+                "timeline.dropImportToTimeline",
+                "Place files dropped onto the Timeline directly on the Timeline",
+                true,
+            ),
         ],
     },
     Category {
         id: "trim",
         title: "Trim",
         rows: &[
-            f("trim.largeTrimOffset", "Large Trim Offset", int(1.0, 1000.0, "frames"), true),
-            f("trim.largeTrimOffsetAudio", "", int(1.0, 100_000.0, "Audio Time Units"), false),
-            b("trim.selectionToolRollRipple", "Allow Selection tool to choose Roll and Ripple trims without modifier key", true),
-            b("trim.toolChangesTrimType", "Allow current tool to change trim type of previously selected edit point", false),
-            b("trim.shiftOverlappingClips", "Shift clips that overlap trim point during ripple trimming", false),
-            sub("trim.rippleAddsEdits", "Ripple trim adds edits to keep both sides of trim in sync", Kind::Bool, "trim.shiftOverlappingClips", false),
-            b("trim.playheadDeterminesLoop", "Playhead position determines trim monitor loop playback", true),
-            b("trim.dynamicRippleUpdates", "Update timeline dynamically during ripple edits.", false),
+            f(
+                "trim.largeTrimOffset",
+                "Large Trim Offset",
+                int(1.0, 1000.0, "frames"),
+                true,
+            ),
+            f(
+                "trim.largeTrimOffsetAudio",
+                "",
+                int(1.0, 100_000.0, "Audio Time Units"),
+                false,
+            ),
+            b(
+                "trim.selectionToolRollRipple",
+                "Allow Selection tool to choose Roll and Ripple trims without modifier key",
+                true,
+            ),
+            b(
+                "trim.toolChangesTrimType",
+                "Allow current tool to change trim type of previously selected edit point",
+                false,
+            ),
+            b(
+                "trim.shiftOverlappingClips",
+                "Shift clips that overlap trim point during ripple trimming",
+                false,
+            ),
+            sub(
+                "trim.rippleAddsEdits",
+                "Ripple trim adds edits to keep both sides of trim in sync",
+                Kind::Bool,
+                "trim.shiftOverlappingClips",
+                false,
+            ),
+            b(
+                "trim.playheadDeterminesLoop",
+                "Playhead position determines trim monitor loop playback",
+                true,
+            ),
+            b(
+                "trim.dynamicRippleUpdates",
+                "Update timeline dynamically during ripple edits.",
+                false,
+            ),
         ],
     },
 ];
@@ -1390,7 +2275,12 @@ pub fn validate(key: &str, v: &Value) -> std::result::Result<(), String> {
         let mut seen = Vec::new();
         for item in items {
             let id = item.as_str().ok_or("favorite theme ids must be strings")?;
-            if !LIGHT_THEMES.iter().chain(DARK_THEMES).any(|(theme, _)| *theme == id) || seen.contains(&id) {
+            if !LIGHT_THEMES
+                .iter()
+                .chain(DARK_THEMES)
+                .any(|(theme, _)| *theme == id)
+                || seen.contains(&id)
+            {
                 return Err(format!("unknown or duplicate favorite theme `{id}`"));
             }
             seen.push(id);
@@ -1408,22 +2298,34 @@ pub fn validate(key: &str, v: &Value) -> std::result::Result<(), String> {
             let s = match v {
                 Value::String(s) => s.clone(),
                 Value::Number(n) => n.to_string(),
-                _ => return Err(format!("`{key}` must be one of {}", opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", "))),
+                _ => {
+                    return Err(format!(
+                        "`{key}` must be one of {}",
+                        opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", ")
+                    ));
+                }
             };
             if opts.iter().any(|o| o.0 == s) {
                 Ok(())
             } else {
-                Err(format!("`{key}` must be one of {}", opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", ")))
+                Err(format!(
+                    "`{key}` must be one of {}",
+                    opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", ")
+                ))
             }
         }
-        Kind::Color if v.as_str().and_then(parse_hex).is_none() => Err(format!("`{key}` must be a colour like \"#2f6bdf\"")),
+        Kind::Color if v.as_str().and_then(parse_hex).is_none() => {
+            Err(format!("`{key}` must be a colour like \"#2f6bdf\""))
+        }
         _ => Ok(()),
     }
 }
 
 /// Whether `key` is the unit (`frames` / `seconds`) of a duration field.
 pub fn is_unit_key(key: &str) -> bool {
-    fields().iter().any(|(_, f)| matches!(f.kind, Kind::Duration { unit_key } if unit_key == key))
+    fields()
+        .iter()
+        .any(|(_, f)| matches!(f.kind, Kind::Duration { unit_key } if unit_key == key))
 }
 
 /// Repair a preferences value in place against the schema: unknown choices and bad colours go back
@@ -1447,8 +2349,14 @@ pub fn sanitize(v: &mut Value, defaults: &Value) {
     }
     for (_, f) in fields() {
         let path: Vec<&str> = f.key.split('.').collect();
-        let Some(slot) = path.iter().try_fold(&mut *v, |v, k| v.get_mut(*k)) else { continue };
-        let def = path.iter().try_fold(defaults, |v, k| v.get(*k)).cloned().unwrap_or(Value::Null);
+        let Some(slot) = path.iter().try_fold(&mut *v, |v, k| v.get_mut(*k)) else {
+            continue;
+        };
+        let def = path
+            .iter()
+            .try_fold(defaults, |v, k| v.get(*k))
+            .cloned()
+            .unwrap_or(Value::Null);
         match f.kind {
             Kind::Choice(_) | Kind::Color if validate(f.key, slot).is_err() => {
                 *slot = def;
@@ -1463,8 +2371,15 @@ pub fn sanitize(v: &mut Value, defaults: &Value) {
             },
             Kind::Duration { unit_key } => {
                 let ptr = format!("/{}", unit_key.replace('.', "/"));
-                let unit = v.pointer(&ptr).or(defaults.pointer(&ptr)).and_then(Value::as_str).unwrap_or("seconds").to_string();
-                let Some(slot) = path.iter().try_fold(&mut *v, |v, k| v.get_mut(*k)) else { continue };
+                let unit = v
+                    .pointer(&ptr)
+                    .or(defaults.pointer(&ptr))
+                    .and_then(Value::as_str)
+                    .unwrap_or("seconds")
+                    .to_string();
+                let Some(slot) = path.iter().try_fold(&mut *v, |v, k| v.get_mut(*k)) else {
+                    continue;
+                };
                 let max = if unit == "frames" { 100_000.0 } else { 3600.0 };
                 let min = if unit == "frames" { 1.0 } else { 0.01 };
                 match slot.as_f64().filter(|x| x.is_finite()) {
@@ -1492,7 +2407,10 @@ pub fn migrate(v: &mut Value) {
     // Light mode, instead of switching established users to another theme or to Auto.
     if let Some(a) = m.get_mut("appearance").and_then(Value::as_object_mut)
         && !a.contains_key("appearanceMode")
-        && let Some(theme) = a.get("colorTheme").and_then(Value::as_str).map(str::to_string)
+        && let Some(theme) = a
+            .get("colorTheme")
+            .and_then(Value::as_str)
+            .map(str::to_string)
     {
         let mut p = AppearancePrefs::default();
         p.select_theme(&theme);
@@ -1582,7 +2500,12 @@ pub fn map_output(left: &[f32], right: &[f32], out: &mut [f32], ch: usize, map: 
 /// is the clip's size at its display aspect in sequence pixels
 /// ([`filmcraft_project::conformed_size`]): `scaleToFrameSize` turns on Scale to Frame Size
 /// (rasterised at frame size), `setToFrameSize` sets Motion ▸ Scale so the picture fits the frame.
-pub fn apply_media_scaling(ti: &mut filmcraft_project::TrackItem, scaling: &str, frame: (u32, u32), src: (f64, f64)) {
+pub fn apply_media_scaling(
+    ti: &mut filmcraft_project::TrackItem,
+    scaling: &str,
+    frame: (u32, u32),
+    src: (f64, f64),
+) {
     if !(src.0 >= 1e-9 && src.1 >= 1e-9 && src.0.is_finite() && src.1.is_finite()) {
         return;
     }
@@ -1591,7 +2514,12 @@ pub fn apply_media_scaling(ti: &mut filmcraft_project::TrackItem, scaling: &str,
         "setToFrameSize" => {
             let fit = (frame.0 as f64 / src.0).min(frame.1 as f64 / src.1);
             if let Some(m) = ti.effects.iter_mut().find(|e| e.effect == "motion") {
-                m.params.insert("scale".into(), filmcraft_project::Param::new(filmcraft_project::ParamValue::Float((fit * 1000.0).round() / 10.0)));
+                m.params.insert(
+                    "scale".into(),
+                    filmcraft_project::Param::new(filmcraft_project::ParamValue::Float(
+                        (fit * 1000.0).round() / 10.0,
+                    )),
+                );
             }
         }
         _ => {}
@@ -1618,13 +2546,19 @@ fn cache_files(dir: &Path) -> Vec<(PathBuf, u64, std::time::SystemTime)> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
-        let Ok(rd) = std::fs::read_dir(&d) else { continue };
+        let Ok(rd) = std::fs::read_dir(&d) else {
+            continue;
+        };
         for e in rd.flatten() {
             let Ok(md) = e.metadata() else { continue };
             if md.is_dir() {
                 stack.push(e.path());
             } else {
-                out.push((e.path(), md.len(), md.modified().unwrap_or(std::time::UNIX_EPOCH)));
+                out.push((
+                    e.path(),
+                    md.len(),
+                    md.modified().unwrap_or(std::time::UNIX_EPOCH),
+                ));
             }
         }
     }
@@ -1638,7 +2572,10 @@ pub fn cache_usage(dir: &Path) -> (u64, usize) {
 }
 
 /// Remove files under `dir`, skipping anything inside `keep`; returns (files, bytes) removed.
-fn remove_files(files: &[(PathBuf, u64, std::time::SystemTime)], keep: Option<&Path>) -> (usize, u64) {
+fn remove_files(
+    files: &[(PathBuf, u64, std::time::SystemTime)],
+    keep: Option<&Path>,
+) -> (usize, u64) {
     let mut n = (0usize, 0u64);
     for (p, len, _) in files {
         if keep.is_some_and(|k| p.starts_with(k)) {
@@ -1653,7 +2590,9 @@ fn remove_files(files: &[(PathBuf, u64, std::time::SystemTime)], keep: Option<&P
 }
 
 fn prune_empty_dirs(dir: &Path, keep: Option<&Path>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() && keep.is_none_or(|k| !k.starts_with(&p)) {
@@ -1667,12 +2606,20 @@ fn prune_empty_dirs(dir: &Path, keep: Option<&Path>) {
 
 /// Media Cache Management: apply the automatic deletion policy to `dir` at `now`, never touching
 /// `keep` (the open project's files). Returns (files, bytes) removed.
-pub fn enforce_policy(dir: &Path, prefs: &MediaCachePrefs, keep: Option<&Path>, now: std::time::SystemTime) -> (usize, u64) {
+pub fn enforce_policy(
+    dir: &Path,
+    prefs: &MediaCachePrefs,
+    keep: Option<&Path>,
+    now: std::time::SystemTime,
+) -> (usize, u64) {
     let mut files = cache_files(dir);
     let removed = match prefs.management.as_str() {
         "olderThan" => {
             let max_age = std::time::Duration::from_secs(prefs.older_than_days as u64 * 86_400);
-            let old: Vec<_> = files.into_iter().filter(|f| now.duration_since(f.2).is_ok_and(|a| a > max_age)).collect();
+            let old: Vec<_> = files
+                .into_iter()
+                .filter(|f| now.duration_since(f.2).is_ok_and(|a| a > max_age))
+                .collect();
             remove_files(&old, keep)
         }
         "exceedsSize" => {
@@ -1712,13 +2659,18 @@ impl Session {
         if cfg!(target_arch = "wasm32") {
             return None;
         }
-        media_cache_dir(&self.prefs.media_cache, self.prefs_path.as_deref().and_then(Path::parent))
+        media_cache_dir(
+            &self.prefs.media_cache,
+            self.prefs_path.as_deref().and_then(Path::parent),
+        )
     }
 
     /// Point unsaved projects' render previews into the media cache and apply the automatic
     /// deletion policy (on startup and when the Media Cache settings change).
     pub fn apply_media_cache(&mut self) {
-        let Some(dir) = self.media_cache_dir() else { return };
+        let Some(dir) = self.media_cache_dir() else {
+            return;
+        };
         let root = previews_root(&dir);
         if self.previews.temp_root() != Some(root.clone()) {
             self.previews.set_temp_root(Some(root));
@@ -1727,7 +2679,12 @@ impl Session {
             }
         }
         let keep = self.previews.dir();
-        enforce_policy(&dir, &self.prefs.media_cache, keep.as_deref(), std::time::SystemTime::now());
+        enforce_policy(
+            &dir,
+            &self.prefs.media_cache,
+            keep.as_deref(),
+            std::time::SystemTime::now(),
+        );
     }
 
     /// Note a project file as the most recent one (General ▸ At Startup ▸ Open Most Recent).
@@ -1744,23 +2701,49 @@ impl Session {
 
 // ------------------------------------------------------------------ commands
 
-fn spec(id: &'static str, label: &'static str, params: &'static str, run: fn(&mut Session, &Value) -> Result<Value>, journal: bool) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut: None, params, enabled: always, run, journal }
+fn spec(
+    id: &'static str,
+    label: &'static str,
+    params: &'static str,
+    run: fn(&mut Session, &Value) -> Result<Value>,
+    journal: bool,
+) -> CommandSpec {
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled: always,
+        run,
+        journal,
+    }
 }
 
 fn kind_json(k: Kind) -> Value {
     match k {
         Kind::Bool => json!({"type": "bool"}),
-        Kind::Int { min, max, unit } => json!({"type": "int", "min": min, "max": max, "unit": unit}),
-        Kind::Float { min, max, decimals, unit } => json!({"type": "float", "min": min, "max": max, "decimals": decimals, "unit": unit}),
-        Kind::Choice(o) => json!({"type": "choice", "choices": o.iter().map(|(v, l)| json!({"value": v, "label": l})).collect::<Vec<_>>()}),
+        Kind::Int { min, max, unit } => {
+            json!({"type": "int", "min": min, "max": max, "unit": unit})
+        }
+        Kind::Float {
+            min,
+            max,
+            decimals,
+            unit,
+        } => json!({"type": "float", "min": min, "max": max, "decimals": decimals, "unit": unit}),
+        Kind::Choice(o) => {
+            json!({"type": "choice", "choices": o.iter().map(|(v, l)| json!({"value": v, "label": l})).collect::<Vec<_>>()})
+        }
         Kind::Duration { unit_key } => json!({"type": "duration", "unitKey": unit_key}),
         Kind::Text => json!({"type": "text"}),
         Kind::Path => json!({"type": "path"}),
         Kind::Color => json!({"type": "color"}),
         Kind::Font => json!({"type": "font"}),
         Kind::Device(d) => json!({"type": "device", "list": format!("{d:?}").to_ascii_lowercase()}),
-        Kind::Label => json!({"type": "label", "choices": Label::ALL.iter().map(|l| l.name()).collect::<Vec<_>>()}),
+        Kind::Label => {
+            json!({"type": "label", "choices": Label::ALL.iter().map(|l| l.name()).collect::<Vec<_>>()})
+        }
     }
 }
 
@@ -1791,13 +2774,21 @@ fn schema(s: &mut Session, p: &Value) -> Result<Value> {
 fn cache_info(s: &mut Session, _: &Value) -> Result<Value> {
     let dir = s.media_cache_dir();
     let (bytes, files) = dir.as_deref().map(cache_usage).unwrap_or((0, 0));
-    Ok(json!({"location": dir.map(|d| d.to_string_lossy().into_owned()), "bytes": bytes, "files": files, "policy": s.prefs.media_cache.management}))
+    Ok(
+        json!({"location": dir.map(|d| d.to_string_lossy().into_owned()), "bytes": bytes, "files": files, "policy": s.prefs.media_cache.management}),
+    )
 }
 
 fn cache_clean(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = s.media_cache_dir().ok_or_else(|| EngineError::Other("there is no media cache folder in this session".into()))?;
+    let dir = s.media_cache_dir().ok_or_else(|| {
+        EngineError::Other("there is no media cache folder in this session".into())
+    })?;
     // the open project's previews stay unless `all` is set
-    let keep = if bool_p(p, "all") == Some(true) { None } else { s.previews.dir() };
+    let keep = if bool_p(p, "all") == Some(true) {
+        None
+    } else {
+        s.previews.dir()
+    };
     let (files, bytes) = clean(&dir, keep.as_deref());
     if keep.is_none() {
         s.previews.set_dir(s.previews.dir());
@@ -1806,7 +2797,11 @@ fn cache_clean(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn presets_json(s: &Session) -> Value {
-    let presets: Vec<Value> = s.label_presets().into_iter().map(|(p, file)| json!({"name": p.name, "builtin": file.is_none(), "labels": p.labels})).collect();
+    let presets: Vec<Value> = s
+        .label_presets()
+        .into_iter()
+        .map(|(p, file)| json!({"name": p.name, "builtin": file.is_none(), "labels": p.labels}))
+        .collect();
     json!({"dir": s.label_presets_dir(), "selected": s.prefs.labels.preset, "presets": presets})
 }
 
@@ -1816,30 +2811,76 @@ fn label_presets(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn import_label_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("labels.importPreset", "need `path`"))?;
-    let preset = s.import_label_preset(Path::new(path)).map_err(|e| bad("labels.importPreset", e))?;
+    let preset = s
+        .import_label_preset(Path::new(path))
+        .map_err(|e| bad("labels.importPreset", e))?;
     Ok(json!({"name": preset.name, "presets": presets_json(s)}))
 }
 
 fn export_label_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("labels.exportPreset", "need `path`"))?;
-    let preset = LabelPreset::export(Path::new(path), &s.prefs.labels).map_err(|e| bad("labels.exportPreset", e))?;
+    let preset = LabelPreset::export(Path::new(path), &s.prefs.labels)
+        .map_err(|e| bad("labels.exportPreset", e))?;
     Ok(json!({"name": preset.name, "path": path}))
 }
 
 fn delete_label_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "name").ok_or_else(|| bad("labels.deletePreset", "need `name`"))?;
-    s.delete_label_preset(name).map_err(|e| bad("labels.deletePreset", e))?;
+    s.delete_label_preset(name)
+        .map_err(|e| bad("labels.deletePreset", e))?;
     Ok(presets_json(s))
 }
 
 pub fn commands() -> Vec<CommandSpec> {
     vec![
-        spec("prefs.schema", "Settings Schema", r#"{"category":str?}"#, schema, false),
-        spec("mediaCache.info", "Media Cache Info", "{}", cache_info, false),
-        spec("mediaCache.clean", "Delete Media Cache Files", r#"{"all":bool?}"#, cache_clean, true),
-        spec("labels.presets", "Label Color Presets", "{}", label_presets, false),
-        spec("labels.importPreset", "Import Label Color Preset", r#"{"path":str}"#, import_label_preset, true),
-        spec("labels.exportPreset", "Export Label Color Preset", r#"{"path":str}"#, export_label_preset, true),
-        spec("labels.deletePreset", "Delete Label Color Preset", r#"{"name":str}"#, delete_label_preset, true),
+        spec(
+            "prefs.schema",
+            "Settings Schema",
+            r#"{"category":str?}"#,
+            schema,
+            false,
+        ),
+        spec(
+            "mediaCache.info",
+            "Media Cache Info",
+            "{}",
+            cache_info,
+            false,
+        ),
+        spec(
+            "mediaCache.clean",
+            "Delete Media Cache Files",
+            r#"{"all":bool?}"#,
+            cache_clean,
+            true,
+        ),
+        spec(
+            "labels.presets",
+            "Label Color Presets",
+            "{}",
+            label_presets,
+            false,
+        ),
+        spec(
+            "labels.importPreset",
+            "Import Label Color Preset",
+            r#"{"path":str}"#,
+            import_label_preset,
+            true,
+        ),
+        spec(
+            "labels.exportPreset",
+            "Export Label Color Preset",
+            r#"{"path":str}"#,
+            export_label_preset,
+            true,
+        ),
+        spec(
+            "labels.deletePreset",
+            "Delete Label Color Preset",
+            r#"{"name":str}"#,
+            delete_label_preset,
+            true,
+        ),
     ]
 }

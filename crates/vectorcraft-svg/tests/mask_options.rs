@@ -15,8 +15,16 @@ fn masked(clip: bool, invert: bool) -> Document {
     let mut d = Document::new(200.0, 200.0);
     let red = Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::None, 0.0);
     let white = Appearance::basic(Paint::solid(Color::WHITE), Paint::None, 0.0);
-    let mut n = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(10.0, 10.0, 90.0, 90.0)), red);
-    let art = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(10.0, 10.0, 50.0, 90.0)), white);
+    let mut n = Node::path(
+        d.alloc_id(),
+        shapes::rectangle(Rect::new(10.0, 10.0, 90.0, 90.0)),
+        red,
+    );
+    let art = Node::path(
+        d.alloc_id(),
+        shapes::rectangle(Rect::new(10.0, 10.0, 50.0, 90.0)),
+        white,
+    );
     let mut m = OpacityMask::new(art, clip);
     m.invert = invert;
     n.extras_mut().mask = Some(Box::new(m));
@@ -33,9 +41,12 @@ fn masks(d: &Document) -> Vec<OpacityMask> {
 
 #[test]
 fn an_inverted_unclipped_mask_round_trips() {
-    for (clip, invert, attr) in
-        [(false, true, Some("noclip invert")), (true, true, Some("invert")), (false, false, Some("noclip")), (true, false, None)]
-    {
+    for (clip, invert, attr) in [
+        (false, true, Some("noclip invert")),
+        (true, true, Some("invert")),
+        (false, false, Some("noclip")),
+        (true, false, None),
+    ] {
         let s = export(&masked(clip, invert), &ExportOptions::default());
         match attr {
             Some(a) => assert!(s.contains(&format!("data-vectorcraft-mask=\"{a}\"")), "{s}"),
@@ -43,16 +54,29 @@ fn an_inverted_unclipped_mask_round_trips() {
         }
         let (back, warnings) = import_with_report(&s).unwrap();
         assert!(warnings.is_empty(), "{warnings:?}");
-        let [m] = &masks(&back)[..] else { panic!("one masked object: {s}") };
+        let [m] = &masks(&back)[..] else {
+            panic!("one masked object: {s}")
+        };
         assert_eq!((m.clip, m.invert), (clip, invert), "{s}");
         // The original art: one white rectangle, no backdrop and no filter group around it.
         assert!(m.art.path_data().is_some(), "{:?}", m.art.kind);
         let b = m.art.geometric_bounds().unwrap();
-        assert!((b.x0 - 10.0).abs() < 1e-6 && (b.x1 - 50.0).abs() < 1e-6 && (b.y0 - 10.0).abs() < 1e-6 && (b.y1 - 90.0).abs() < 1e-6, "{b:?}");
+        assert!(
+            (b.x0 - 10.0).abs() < 1e-6
+                && (b.x1 - 50.0).abs() < 1e-6
+                && (b.y0 - 10.0).abs() < 1e-6
+                && (b.y1 - 90.0).abs() < 1e-6,
+            "{b:?}"
+        );
         assert_eq!(m.art.appearance.fill_paint(), Paint::solid(Color::WHITE));
         // Exporting the import again writes the same mask.
         let again = export(&back, &ExportOptions::default());
-        let mask_def = |s: &str| s.lines().skip_while(|l| !l.contains("<mask id=")).take_while(|l| !l.contains("</mask>")).count();
+        let mask_def = |s: &str| {
+            s.lines()
+                .skip_while(|l| !l.contains("<mask id="))
+                .take_while(|l| !l.contains("</mask>"))
+                .count()
+        };
         assert_eq!(mask_def(&again), mask_def(&s), "{again}\n{s}");
     }
 }
@@ -64,7 +88,9 @@ fn foreign_masks_keep_their_art() {
       <mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="white"/><rect width="50" height="100" fill="black"/></mask>
       <g mask="url(#m)"><rect width="100" height="100" fill="red"/></g></svg>"#;
     let (d, _) = import_with_report(svg).unwrap();
-    let [m] = &masks(&d)[..] else { panic!("one mask") };
+    let [m] = &masks(&d)[..] else {
+        panic!("one mask")
+    };
     assert!(m.clip && !m.invert);
     assert_eq!(m.art.children().map(|c| c.len()), Some(2));
 }
@@ -74,8 +100,16 @@ fn resvg_render(svg: &str, w: u32, h: u32) -> Image {
     let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).expect("parse");
     let mut pm = resvg::tiny_skia::Pixmap::new(w, h).unwrap();
     pm.fill(resvg::tiny_skia::Color::WHITE);
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pm.as_mut());
-    Image { width: w, height: h, rgba: pm.data().to_vec() }
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pm.as_mut(),
+    );
+    Image {
+        width: w,
+        height: h,
+        rgba: pm.data().to_vec(),
+    }
 }
 
 #[test]
@@ -92,13 +126,27 @@ fn a_mask_whose_art_is_all_hidden_hides_its_object() {
               <g mask="url(#m)"><rect width="100" height="100" fill="red"/></g></svg>"#
         );
         let (d, _) = import_with_report(&svg).unwrap();
-        let [m] = &masks(&d)[..] else { panic!("the square keeps its mask: {svg}") };
+        let [m] = &masks(&d)[..] else {
+            panic!("the square keeps its mask: {svg}")
+        };
         assert!(m.clip && !m.invert);
-        assert!(m.art.geometric_bounds().is_none(), "no visible art: {:?}", m.art.kind);
+        assert!(
+            m.art.geometric_bounds().is_none(),
+            "no visible art: {:?}",
+            m.art.kind
+        );
         let (canvas, reference) = (render_artboard(&d), resvg_render(&svg, 100, 100));
         for (x, y) in [(10, 10), (50, 50), (90, 90)] {
-            assert_eq!(reference.over_white(x, y), [255, 255, 255], "resvg ({x},{y}): {svg}");
-            assert_eq!(canvas.over_white(x, y), [255, 255, 255], "canvas ({x},{y}): {svg}");
+            assert_eq!(
+                reference.over_white(x, y),
+                [255, 255, 255],
+                "resvg ({x},{y}): {svg}"
+            );
+            assert_eq!(
+                canvas.over_white(x, y),
+                [255, 255, 255],
+                "canvas ({x},{y}): {svg}"
+            );
         }
     }
 }

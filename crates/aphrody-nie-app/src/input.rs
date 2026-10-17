@@ -240,7 +240,10 @@ pub const BINDINGS: &[(Key, &str)] = &[
 /// La commande d'une touche, ou `None` si elle n'en déclenche aucune.
 #[must_use]
 pub fn command_for(key: Key) -> Option<&'static str> {
-    BINDINGS.iter().find(|(k, _)| *k == key).map(|(_, cmd)| *cmd)
+    BINDINGS
+        .iter()
+        .find(|(k, _)| *k == key)
+        .map(|(_, cmd)| *cmd)
 }
 
 /// La commande d'un nom de touche, quelle que soit la convention de l'hôte.
@@ -286,7 +289,10 @@ mod tests {
         assert!(k.just_pressed(Key::Up), "toujours vrai sur la MÊME image");
         k.clear();
         k.press(Key::Up); // encore la répétition, image suivante
-        assert!(!k.just_pressed(Key::Up), "une touche tenue ne se réappuie pas");
+        assert!(
+            !k.just_pressed(Key::Up),
+            "une touche tenue ne se réappuie pas"
+        );
         assert!(k.pressed(Key::Up), "elle reste tenue");
     }
 
@@ -353,7 +359,11 @@ mod tests {
     fn la_table_porte_lunion_des_trois_anciennes() {
         assert_eq!(command_for(Key::Tab), Some("CMD_FCS_NEXT"), "venait du web");
         assert_eq!(command_for(Key::I), Some("CMD_INFO"), "venait du web");
-        assert_eq!(command_for(Key::NumpadEnter), Some("CMD_ENTER"), "venait du natif");
+        assert_eq!(
+            command_for(Key::NumpadEnter),
+            Some("CMD_ENTER"),
+            "venait du natif"
+        );
         // Et les deux dispositions de clavier restent servies.
         for (azerty, qwerty) in [(Key::Z, Key::W), (Key::Q, Key::A)] {
             assert_eq!(
@@ -425,7 +435,10 @@ mod tests {
             }
             web.push((touche.to_owned(), cmd.to_owned()));
         }
-        assert!(!web.is_empty(), "aucune entrée lue : le parseur de cette garde est cassé");
+        assert!(
+            !web.is_empty(),
+            "aucune entrée lue : le parseur de cette garde est cassé"
+        );
 
         for (touche, attendu) in &web {
             assert_eq!(

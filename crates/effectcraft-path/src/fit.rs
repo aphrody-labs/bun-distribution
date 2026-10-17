@@ -13,17 +13,27 @@ const MAX_REPARAM: usize = 6;
 /// Unit vector or `None` if (nearly) zero.
 pub(crate) fn unit(v: Vec2) -> Option<Vec2> {
     let l = v.hypot();
-    if l > 1e-12 && l.is_finite() { Some(v / l) } else { None }
+    if l > 1e-12 && l.is_finite() {
+        Some(v / l)
+    } else {
+        None
+    }
 }
 
 /// Direction the curve leaves `p0` (robust to retracted handles).
 pub(crate) fn start_tangent(c: &CubicBez) -> Vec2 {
-    unit(c.p1 - c.p0).or_else(|| unit(c.p2 - c.p0)).or_else(|| unit(c.p3 - c.p0)).unwrap_or(Vec2::new(1.0, 0.0))
+    unit(c.p1 - c.p0)
+        .or_else(|| unit(c.p2 - c.p0))
+        .or_else(|| unit(c.p3 - c.p0))
+        .unwrap_or(Vec2::new(1.0, 0.0))
 }
 
 /// Direction the curve arrives at `p3`, i.e. pointing *forward* along the travel direction.
 pub(crate) fn end_tangent(c: &CubicBez) -> Vec2 {
-    unit(c.p3 - c.p2).or_else(|| unit(c.p3 - c.p1)).or_else(|| unit(c.p3 - c.p0)).unwrap_or(Vec2::new(1.0, 0.0))
+    unit(c.p3 - c.p2)
+        .or_else(|| unit(c.p3 - c.p1))
+        .or_else(|| unit(c.p3 - c.p0))
+        .unwrap_or(Vec2::new(1.0, 0.0))
 }
 
 /// Best single cubic for `pts` with the given end tangents. Returns (curve, max error, index of
@@ -72,7 +82,9 @@ fn bern(t: f64) -> [f64; 4] {
 
 /// Solve the 2x2 normal equations for the handle lengths along the fixed tangents.
 fn generate(pts: &[Point], u: &[f64], t0: Vec2, t1: Vec2) -> CubicBez {
-    let (Some(&p0), Some(&p3)) = (pts.first(), pts.last()) else { return CubicBez::new(Point::ZERO, Point::ZERO, Point::ZERO, Point::ZERO) };
+    let (Some(&p0), Some(&p3)) = (pts.first(), pts.last()) else {
+        return CubicBez::new(Point::ZERO, Point::ZERO, Point::ZERO, Point::ZERO);
+    };
     let dir_in = -t1; // handle at the end points backwards
     let (mut c00, mut c01, mut c11, mut x0, mut x1) = (0.0, 0.0, 0.0, 0.0, 0.0);
     for (p, &t) in pts.iter().zip(u) {
@@ -89,7 +101,11 @@ fn generate(pts: &[Point], u: &[f64], t0: Vec2, t1: Vec2) -> CubicBez {
     let det = c00 * c11 - c01 * c01;
     let seg = p0.distance(p3);
     let eps = 1e-6 * seg;
-    let (mut al, mut ar) = if det.abs() > 1e-12 { ((x0 * c11 - x1 * c01) / det, (c00 * x1 - c01 * x0) / det) } else { (seg / 3.0, seg / 3.0) };
+    let (mut al, mut ar) = if det.abs() > 1e-12 {
+        ((x0 * c11 - x1 * c01) / det, (c00 * x1 - c01 * x0) / det)
+    } else {
+        (seg / 3.0, seg / 3.0)
+    };
     if !al.is_finite() || !ar.is_finite() || al < eps || ar < eps {
         al = seg / 3.0;
         ar = seg / 3.0;
@@ -126,7 +142,11 @@ fn newton(c: &CubicBez, p: Point, t: f64) -> f64 {
         return t;
     }
     let nt = t - num / den;
-    if nt.is_finite() { nt.clamp(0.0, 1.0) } else { t }
+    if nt.is_finite() {
+        nt.clamp(0.0, 1.0)
+    } else {
+        t
+    }
 }
 
 /// Is the cubic (within `tol`) a straight line from p0 to p3 with handles inside the chord?

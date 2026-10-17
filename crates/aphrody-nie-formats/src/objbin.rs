@@ -357,7 +357,10 @@ impl UnknownComponent {
     /// Valeurs du paramètre `key`, ou `None` s'il est absent.
     #[must_use]
     pub fn get(&self, key: &str) -> Option<&[PropValue]> {
-        self.params.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_slice())
+        self.params
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.as_slice())
     }
 
     /// Première valeur de `key` si c'est une chaîne **non vide** — le cas utile pour les
@@ -466,7 +469,9 @@ pub fn is_objb(data: &[u8]) -> bool {
 /// ```
 pub fn parse(data: &[u8]) -> Result<MenuObject, FormatError> {
     if data.len() < 16 {
-        return Err(FormatError::Corrupt("objbin : fichier trop petit (< 16 octets)"));
+        return Err(FormatError::Corrupt(
+            "objbin : fichier trop petit (< 16 octets)",
+        ));
     }
     if !is_objb(data) {
         return Err(FormatError::Corrupt("objbin : pied de page cfg.bin absent"));
@@ -480,7 +485,9 @@ pub fn parse(data: &[u8]) -> Result<MenuObject, FormatError> {
     let _str_table_count = i32::from_le_bytes(data[12..16].try_into().unwrap());
 
     if entry_count < 0 || str_table_off_i < 0 || str_table_len_i < 0 {
-        return Err(FormatError::Corrupt("objbin : en-tête avec valeur négative"));
+        return Err(FormatError::Corrupt(
+            "objbin : en-tête avec valeur négative",
+        ));
     }
     let sto = str_table_off_i as usize;
     let stl = str_table_len_i as usize;
@@ -488,11 +495,13 @@ pub fn parse(data: &[u8]) -> Result<MenuObject, FormatError> {
     if sto < 0x10 || sto > data.len() {
         return Err(FormatError::Corrupt("objbin : strTableOffset invalide"));
     }
-    let ste = sto
-        .checked_add(stl)
-        .ok_or(FormatError::Corrupt("objbin : overflow strTable offset+length"))?;
+    let ste = sto.checked_add(stl).ok_or(FormatError::Corrupt(
+        "objbin : overflow strTable offset+length",
+    ))?;
     if ste > data.len() {
-        return Err(FormatError::Corrupt("objbin : strTable dépasse la fin du fichier"));
+        return Err(FormatError::Corrupt(
+            "objbin : strTable dépasse la fin du fichier",
+        ));
     }
 
     // Table de chaînes : slice [sto .. ste]
@@ -569,8 +578,10 @@ fn parse_key_table(data: &[u8], kt_offset: usize) -> BTreeMap<u32, String> {
         if str_start >= data.len() {
             continue;
         }
-        let nul_pos =
-            data[str_start..].iter().position(|&b| b == 0).unwrap_or(data.len() - str_start);
+        let nul_pos = data[str_start..]
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(data.len() - str_start);
         let str_end = str_start + nul_pos;
         let s = String::from_utf8_lossy(&data[str_start..str_end]).into_owned();
         result.insert(crc, s);
@@ -592,7 +603,9 @@ fn parse_entries(
 
     for _ in 0..count {
         if pos + 5 > buf.len() {
-            return Err(FormatError::Corrupt("objbin : entrée dépasse le buffer des entrées"));
+            return Err(FormatError::Corrupt(
+                "objbin : entrée dépasse le buffer des entrées",
+            ));
         }
 
         let crc = u32::from_le_bytes(buf[pos..pos + 4].try_into().unwrap());
@@ -605,7 +618,9 @@ fn parse_entries(
         let mut pi = 0usize;
         for _ in 0..type_bytes {
             if pos >= buf.len() {
-                return Err(FormatError::Corrupt("objbin : type bytes dépassent le buffer"));
+                return Err(FormatError::Corrupt(
+                    "objbin : type bytes dépassent le buffer",
+                ));
             }
             let tb = buf[pos];
             pos += 1;
@@ -628,21 +643,32 @@ fn parse_entries(
 
         for j in 0..param_count {
             if pos + 4 > buf.len() {
-                return Err(FormatError::Corrupt("objbin : valeur de paramètre dépasse le buffer"));
+                return Err(FormatError::Corrupt(
+                    "objbin : valeur de paramètre dépasse le buffer",
+                ));
             }
             let raw = i32::from_le_bytes(buf[pos..pos + 4].try_into().unwrap());
             pos += 4;
 
             if param_types[j] == 0 {
                 // String : raw est l'offset dans la string table ; -1 = null/vide.
-                str_params[j] = if raw != -1 { strings.get(&raw).cloned() } else { None };
+                str_params[j] = if raw != -1 {
+                    strings.get(&raw).cloned()
+                } else {
+                    None
+                };
             } else {
                 // Int, Float ou Unknown : valeur brute.
                 int_params[j] = raw;
             }
         }
 
-        result.push(RawEntry { crc, param_types, str_params, int_params });
+        result.push(RawEntry {
+            crc,
+            param_types,
+            str_params,
+            int_params,
+        });
     }
 
     Ok(result)
@@ -692,10 +718,16 @@ fn build_object(entries: Vec<RawEntry>) -> Result<MenuObject, FormatError> {
 
     // Tout fichier .objbin valide commence par OBJ_BGN.
     if i >= entries.len() || entries[i].crc != CRC_OBJ_BGN {
-        return Err(FormatError::Corrupt("objbin : OBJ_BGN attendu en position 0"));
+        return Err(FormatError::Corrupt(
+            "objbin : OBJ_BGN attendu en position 0",
+        ));
     }
-    let obj_name =
-        entries[i].str_params.first().and_then(|s| s.as_deref()).unwrap_or("").to_string();
+    let obj_name = entries[i]
+        .str_params
+        .first()
+        .and_then(|s| s.as_deref())
+        .unwrap_or("")
+        .to_string();
     i += 1;
 
     // SETUP_BGN … SETUP_END : type moteur + chemins d'assets.
@@ -706,8 +738,12 @@ fn build_object(entries: Vec<RawEntry>) -> Result<MenuObject, FormatError> {
     let mut anime_path: Option<String> = None;
 
     if i < entries.len() && entries[i].crc == CRC_SETUP_BGN {
-        engine_type =
-            entries[i].str_params.first().and_then(|s| s.as_deref()).unwrap_or("").to_string();
+        engine_type = entries[i]
+            .str_params
+            .first()
+            .and_then(|s| s.as_deref())
+            .unwrap_or("")
+            .to_string();
         i += 1;
 
         while i < entries.len() && entries[i].crc == CRC_SETUP_PARAM {
@@ -725,7 +761,7 @@ fn build_object(entries: Vec<RawEntry>) -> Result<MenuObject, FormatError> {
                 Some("Skeleton") => skeleton_path = val,
                 Some("Anime") => anime_path = val,
                 Some("Texture") => g4tx_path = normalize_g4tx_path(val),
-                _ => {},
+                _ => {}
             }
             i += 1;
         }
@@ -740,8 +776,12 @@ fn build_object(entries: Vec<RawEntry>) -> Result<MenuObject, FormatError> {
 
     while i < entries.len() && entries[i].crc != CRC_OBJ_END {
         if entries[i].crc == CRC_PROP_INFO_BGN {
-            let comp_type =
-                entries[i].str_params.first().and_then(|s| s.as_deref()).unwrap_or("").to_string();
+            let comp_type = entries[i]
+                .str_params
+                .first()
+                .and_then(|s| s.as_deref())
+                .unwrap_or("")
+                .to_string();
             let mode_vals = extract_int_values(&entries[i]);
             let comp_mode = mode_vals.first().copied().unwrap_or(0);
             i += 1;
@@ -832,19 +872,19 @@ fn build_component(
         "MenuTextSetting" => MenuComponent::Text(build_text_component(type_name, mode, props)),
         "CMenuCreatePrimitiveComponent" => {
             MenuComponent::Primitive(build_primitive_component(type_name, props))
-        },
+        }
         "CMenuAttachLocator" => {
             MenuComponent::AttachLocator(build_attach_locator_component(type_name, props))
-        },
+        }
         "MenuCollisionSetting" => {
             MenuComponent::Collision(build_collision_component(type_name, mode, props))
-        },
+        }
         "CMenuSoundCmdProperty" => {
             MenuComponent::SoundCmd(build_sound_cmd_component(type_name, props))
-        },
+        }
         "CSetupMeshVisible" => {
             MenuComponent::MeshVisible(build_mesh_visible_component(type_name, nested))
-        },
+        }
         _ => MenuComponent::Unknown(build_unknown_component(type_name, typed)),
     }
 }
@@ -862,11 +902,16 @@ fn build_render_component(type_name: &str, props: &[(String, Vec<i32>)]) -> Rend
             "m_drawPriority" => draw_priority = vals[0],
             "m_drawType" => draw_type = vals[0],
             "m_cameraName" => camera_name_hash = vals[0] as u32,
-            _ => {},
+            _ => {}
         }
     }
 
-    RenderComponent { type_name: type_name.to_string(), draw_priority, draw_type, camera_name_hash }
+    RenderComponent {
+        type_name: type_name.to_string(),
+        draw_priority,
+        draw_type,
+        camera_name_hash,
+    }
 }
 
 fn build_animation_component(type_name: &str, props: &[(String, Vec<i32>)]) -> AnimationComponent {
@@ -903,11 +948,18 @@ fn build_text_component(type_name: &str, mode: i32, props: &[(String, Vec<i32>)]
         .iter()
         .map(|(key, vals)| {
             let hashes = vals.iter().map(|&v| v as u32).collect();
-            TextEntry { key: key.clone(), hashes }
+            TextEntry {
+                key: key.clone(),
+                hashes,
+            }
         })
         .collect();
 
-    TextComponent { type_name: type_name.to_string(), table_index: mode, entries }
+    TextComponent {
+        type_name: type_name.to_string(),
+        table_index: mode,
+        entries,
+    }
 }
 
 fn build_primitive_component(type_name: &str, props: &[(String, Vec<i32>)]) -> PrimitiveComponent {
@@ -921,18 +973,20 @@ fn build_primitive_component(type_name: &str, props: &[(String, Vec<i32>)]) -> P
                 for &v in vals {
                     number_setting_hashes.push(v as u32);
                 }
-            },
+            }
             "DispMaxValue" if vals.len() >= 2 => {
-                disp_max_values
-                    .push(DispMaxEntry { primitive_hash: vals[0] as u32, max_value: vals[1] });
-            },
+                disp_max_values.push(DispMaxEntry {
+                    primitive_hash: vals[0] as u32,
+                    max_value: vals[1],
+                });
+            }
             "DummyMeshOverWrite" if vals.len() >= 2 => {
                 dummy_mesh_overrides.push(DummyMeshOverride {
                     primitive_hash: vals[0] as u32,
                     dummy_mesh_hash: vals[1] as u32,
                 });
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -956,7 +1010,10 @@ fn build_attach_locator_component(
             }
         }
     }
-    AttachLocatorComponent { type_name: type_name.to_string(), null_layer_hashes: hashes }
+    AttachLocatorComponent {
+        type_name: type_name.to_string(),
+        null_layer_hashes: hashes,
+    }
 }
 
 fn build_collision_component(
@@ -974,7 +1031,11 @@ fn build_collision_component(
         })
         .collect();
 
-    CollisionComponent { type_name: type_name.to_string(), mode, entries }
+    CollisionComponent {
+        type_name: type_name.to_string(),
+        mode,
+        entries,
+    }
 }
 
 fn build_sound_cmd_component(type_name: &str, props: &[(String, Vec<i32>)]) -> SoundCmdComponent {
@@ -986,7 +1047,10 @@ fn build_sound_cmd_component(type_name: &str, props: &[(String, Vec<i32>)]) -> S
         })
         .collect();
 
-    SoundCmdComponent { type_name: type_name.to_string(), entries }
+    SoundCmdComponent {
+        type_name: type_name.to_string(),
+        entries,
+    }
 }
 
 fn build_mesh_visible_component(
@@ -1004,27 +1068,36 @@ fn build_mesh_visible_component(
                         if let Some(&val) = v.first() {
                             crc = val as u32;
                         }
-                    },
+                    }
                     "isVisible" => {
                         if let Some(&val) = v.first() {
                             vis = val != 0;
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
-            MeshVisibleEntry { mesh_name_crc: crc, is_visible: vis }
+            MeshVisibleEntry {
+                mesh_name_crc: crc,
+                is_visible: vis,
+            }
         })
         .collect();
 
-    MeshVisibleComponent { type_name: type_name.to_string(), params }
+    MeshVisibleComponent {
+        type_name: type_name.to_string(),
+        params,
+    }
 }
 
 fn build_unknown_component(
     type_name: &str,
     typed: &[(String, Vec<PropValue>)],
 ) -> UnknownComponent {
-    UnknownComponent { type_name: type_name.to_string(), params: typed.to_vec() }
+    UnknownComponent {
+        type_name: type_name.to_string(),
+        params: typed.to_vec(),
+    }
 }
 
 // ── Normalisation des chemins ────────────────────────────────────────────────
@@ -1034,11 +1107,13 @@ fn build_unknown_component(
 /// Le préfixe `#/` est une convention Level-5 pour les chemins résolus depuis la racine
 /// du VFS. Le serveur d'assets azalee/CDN attend le préfixe `"dx11/"`.
 fn normalize_g4tx_path(path: Option<String>) -> Option<String> {
-    path.map(
-        |p| {
-            if let Some(rest) = p.strip_prefix("#/") { alloc::format!("dx11/{rest}") } else { p }
-        },
-    )
+    path.map(|p| {
+        if let Some(rest) = p.strip_prefix("#/") {
+            alloc::format!("dx11/{rest}")
+        } else {
+            p
+        }
+    })
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -1053,7 +1128,11 @@ mod tests {
             "CMenuAnimation",
             &[(
                 "m_nameMotOpen".into(),
-                vec![0x5FEC8E4Eu32 as i32, 0xA15F1DEEu32 as i32, 0xB9EA6D99u32 as i32],
+                vec![
+                    0x5FEC8E4Eu32 as i32,
+                    0xA15F1DEEu32 as i32,
+                    0xB9EA6D99u32 as i32,
+                ],
             )],
         );
         assert_eq!(component.mot_open_hash, 0x5FEC8E4E);
@@ -1063,7 +1142,11 @@ mod tests {
         let partial =
             build_animation_component("CMenuAnimation", &[("m_nameMotOpen".into(), vec![7, 8])]);
         assert_eq!(
-            (partial.mot_open_hash, partial.mot_loop_hash, partial.mot_close_hash),
+            (
+                partial.mot_open_hash,
+                partial.mot_loop_hash,
+                partial.mot_close_hash
+            ),
             (7, 8, 0)
         );
     }
@@ -1109,7 +1192,9 @@ mod tests {
     /// indique un bug de parser à corriger.
     #[test]
     fn real_files_golden_values() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip real_files_golden_values : jeu absent ({}/data)", dir);
@@ -1131,11 +1216,15 @@ mod tests {
                         "skip real_files_golden_values : title00_09_version.objbin absent ({e})"
                     );
                     return;
-                },
+                }
             };
             let obj = parse(&raw).expect("parse title00_09_version");
 
-            assert_eq!(obj.name, "title00_09_version", "name incorrect : {:?}", obj.name);
+            assert_eq!(
+                obj.name, "title00_09_version",
+                "name incorrect : {:?}",
+                obj.name
+            );
             assert_eq!(
                 obj.engine_type, "gmdMenuObj",
                 "engine_type incorrect : {:?}",
@@ -1155,28 +1244,42 @@ mod tests {
             );
 
             let g4tx = obj.g4tx_path.as_deref().unwrap_or("");
-            assert!(g4tx.starts_with("dx11/"), "g4tx_path ne commence pas par dx11/ : {:?}", g4tx);
+            assert!(
+                g4tx.starts_with("dx11/"),
+                "g4tx_path ne commence pas par dx11/ : {:?}",
+                g4tx
+            );
             assert!(
                 g4tx.contains("title00_09.g4tx"),
                 "g4tx_path ne contient pas title00_09.g4tx : {:?}",
                 g4tx
             );
-            assert!(g4tx.contains("<LG>"), "g4tx_path ne contient pas <LG> : {:?}", g4tx);
+            assert!(
+                g4tx.contains("<LG>"),
+                "g4tx_path ne contient pas <LG> : {:?}",
+                g4tx
+            );
 
-            let render = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Render(r) = c { Some(r) } else { None });
+            let render = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Render(r) = c {
+                    Some(r)
+                } else {
+                    None
+                }
+            });
             assert!(render.is_some(), "CMenuRender absent");
             assert!(
                 render.unwrap().draw_priority != 0,
                 "draw_priority attendu non-nul pour un objet racine d'écran"
             );
 
-            let prim = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Primitive(p) = c { Some(p) } else { None });
+            let prim = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Primitive(p) = c {
+                    Some(p)
+                } else {
+                    None
+                }
+            });
             assert!(prim.is_some(), "CMenuCreatePrimitiveComponent absent");
 
             assert!(
@@ -1202,7 +1305,7 @@ mod tests {
                         "skip real_files_golden_values : win01_21_select_button.objbin absent ({e})"
                     );
                     return;
-                },
+                }
             };
             let obj = parse(&raw).expect("parse win01_21_select_button");
 
@@ -1219,17 +1322,27 @@ mod tests {
                 g4pkm
             );
 
-            let anim = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Animation(a) = c { Some(a) } else { None });
+            let anim = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Animation(a) = c {
+                    Some(a)
+                } else {
+                    None
+                }
+            });
             assert!(anim.is_some(), "CMenuAnimation absent");
-            assert_ne!(anim.unwrap().mot_open_hash, 0, "mot_open_hash doit être != 0");
+            assert_ne!(
+                anim.unwrap().mot_open_hash,
+                0,
+                "mot_open_hash doit être != 0"
+            );
 
-            let text = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Text(t) = c { Some(t) } else { None });
+            let text = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Text(t) = c {
+                    Some(t)
+                } else {
+                    None
+                }
+            });
             assert!(text.is_some(), "MenuTextSetting absent");
             let text = text.unwrap();
             assert!(
@@ -1242,10 +1355,13 @@ mod tests {
                 "clé _text_choice01_off absente"
             );
 
-            let render = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Render(r) = c { Some(r) } else { None });
+            let render = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Render(r) = c {
+                    Some(r)
+                } else {
+                    None
+                }
+            });
             assert!(render.is_some(), "CMenuRenderComponent absent");
             assert_eq!(
                 render.unwrap().draw_priority,
@@ -1281,10 +1397,13 @@ mod tests {
                 g4pkm
             );
 
-            let text = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Text(t) = c { Some(t) } else { None });
+            let text = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Text(t) = c {
+                    Some(t)
+                } else {
+                    None
+                }
+            });
             assert!(text.is_some(), "MenuTextSetting absent");
             let text = text.unwrap();
             assert!(
@@ -1293,10 +1412,13 @@ mod tests {
                 text.entries.len()
             );
 
-            let mesh = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::MeshVisible(m) = c { Some(m) } else { None });
+            let mesh = obj.components.iter().find_map(|c| {
+                if let MenuComponent::MeshVisible(m) = c {
+                    Some(m)
+                } else {
+                    None
+                }
+            });
             assert!(mesh.is_some(), "CSetupMeshVisible absent");
             assert_eq!(
                 mesh.unwrap().params.len(),
@@ -1305,10 +1427,13 @@ mod tests {
                 mesh.unwrap().params.len()
             );
 
-            let prim = obj
-                .components
-                .iter()
-                .find_map(|c| if let MenuComponent::Primitive(p) = c { Some(p) } else { None });
+            let prim = obj.components.iter().find_map(|c| {
+                if let MenuComponent::Primitive(p) = c {
+                    Some(p)
+                } else {
+                    None
+                }
+            });
             assert!(prim.is_some(), "CMenuCreatePrimitiveComponent absent");
             assert!(
                 prim.unwrap().disp_max_values.len() >= 10,
@@ -1363,12 +1488,15 @@ mod tests {
                 ]
             );
             assert!(primitive.dummy_mesh_overrides.iter().all(|binding| {
-                primitive.number_setting_hashes.contains(&binding.primitive_hash)
+                primitive
+                    .number_setting_hashes
+                    .contains(&binding.primitive_hash)
             }));
             let g4pkm = obj.g4pkm_path.as_deref().expect("SkeletonAnime path");
             let basename = g4pkm.rsplit('/').next().expect("G4PKM basename");
             assert!(
-                !vfs.iter().any(|(path, _)| path.rsplit('/').next() == Some(basename)),
+                !vfs.iter()
+                    .any(|(path, _)| path.rsplit('/').next() == Some(basename)),
                 "unexpected geometry container {basename} in the mounted VFS"
             );
         }
@@ -1429,7 +1557,7 @@ mod tests_personnage {
                 Err(e) => {
                     std::eprintln!("SKIP : VFS non initialisable : {e}");
                     None
-                },
+                }
             }
         })
         .as_ref()
@@ -1444,13 +1572,15 @@ mod tests_personnage {
         if let Some(Ok(d)) = vfs_partage().map(|vfs| vfs.read(&interne)) {
             return Some(d);
         }
-        let p = crate::vfs::resolve_game_dir().join("data/common/chr").join(rel);
+        let p = crate::vfs::resolve_game_dir()
+            .join("data/common/chr")
+            .join(rel);
         match std::fs::read(&p) {
             Ok(d) => Some(d),
             Err(_) => {
                 std::eprintln!("SKIP : {interne} absent du VFS et {} absent", p.display());
                 None
-            },
+            }
         }
     }
 
@@ -1462,8 +1592,14 @@ mod tests_personnage {
         let obj = parse(&data).expect("objbin c000101");
         assert_eq!(obj.name, "c000101");
         assert_eq!(obj.engine_type, "gmdCObject");
-        assert_eq!(obj.skeleton_path.as_deref(), Some("common/chr/c000101/c000101.g4sk"));
-        assert_eq!(obj.anime_path.as_deref(), Some("common/chr/c000000/c000000_p100.g4pk"));
+        assert_eq!(
+            obj.skeleton_path.as_deref(),
+            Some("common/chr/c000101/c000101.g4sk")
+        );
+        assert_eq!(
+            obj.anime_path.as_deref(),
+            Some("common/chr/c000000/c000000_p100.g4pk")
+        );
     }
 
     #[test]
@@ -1487,7 +1623,9 @@ mod tests_personnage {
     #[cfg(feature = "std")]
     #[test]
     fn les_parametres_de_la_banque_sortent_du_fichier() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let chemin = std::path::Path::new(&dir)
             .join("data/common/gamedata/menu/obj/team14_01_chara_bank_list.objbin");
         let Ok(octets) = std::fs::read(&chemin) else {
@@ -1507,7 +1645,9 @@ mod tests_personnage {
     #[cfg(feature = "std")]
     #[test]
     fn une_carte_ne_declare_aucune_vue_liste() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let chemin = std::path::Path::new(&dir)
             .join("data/common/gamedata/menu/obj/team00_01_p1_chara_card_blank.objbin");
         let Ok(octets) = std::fs::read(&chemin) else {

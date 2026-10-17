@@ -5,9 +5,9 @@ extern crate alloc;
 /// The image prelude.
 pub mod prelude {
     pub use crate::{
+        Image, ImageFormat, ImagePlugin, TextureAtlasBuilder, TextureError,
         dynamic_texture_atlas_builder::DynamicTextureAtlasBuilder,
         texture_atlas::{TextureAtlas, TextureAtlasLayout, TextureAtlasSources},
-        Image, ImageFormat, ImagePlugin, TextureAtlasBuilder, TextureError,
     };
 }
 

@@ -31,9 +31,21 @@ pub struct DsSpec {
 
 impl DsSpec {
     /// About 300 components (160 icons, 144 variants).
-    pub const FULL: DsSpec = DsSpec { icons: 160, sizes: 3, states: 4, types: 3, themes: 2 };
+    pub const FULL: DsSpec = DsSpec {
+        icons: 160,
+        sizes: 3,
+        states: 4,
+        types: 3,
+        themes: 2,
+    };
     /// A small one for debug-mode tests (still every property kind and nesting level).
-    pub const SMALL: DsSpec = DsSpec { icons: 6, sizes: 2, states: 2, types: 2, themes: 2 };
+    pub const SMALL: DsSpec = DsSpec {
+        icons: 6,
+        sizes: 2,
+        states: 2,
+        types: 2,
+        themes: 2,
+    };
 }
 
 /// What [`design_system`] built (ids in the document it was built in, or mapped with
@@ -89,8 +101,10 @@ const CARD_TYPES: [&str; 2] = ["Elevated", "Outlined"];
 const NAV_TYPES: [&str; 2] = ["Top", "Side"];
 const BADGE_TYPES: [&str; 4] = ["Info", "Success", "Warning", "Danger"];
 const THEMES: [&str; 2] = ["Light", "Dark"];
-const GLYPHS: [&str; 16] =
-    ["Arrow", "Check", "Close", "Plus", "Minus", "Search", "Home", "User", "Bell", "Star", "Heart", "Gear", "Mail", "Lock", "Pin", "Clock"];
+const GLYPHS: [&str; 16] = [
+    "Arrow", "Check", "Close", "Plus", "Minus", "Search", "Home", "User", "Bell", "Star", "Heart",
+    "Gear", "Mail", "Lock", "Pin", "Clock",
+];
 
 /// Theme colour variables: (name, light, dark).
 const COLORS: [(&str, u32, u32); 9] = [
@@ -115,7 +129,10 @@ fn var_id(name: &str) -> String {
 }
 
 fn component() -> NodeKind {
-    NodeKind::Component { description: String::new(), props: BTreeMap::new() }
+    NodeKind::Component {
+        description: String::new(),
+        props: BTreeMap::new(),
+    }
 }
 
 fn text(chars: &str) -> NodeKind {
@@ -141,19 +158,35 @@ fn bind(doc: &mut Document, id: NodeId, field: &str, var: &str) {
 
 fn auto_layout(doc: &mut Document, id: NodeId, mode: LayoutMode, gap: f64, pad: f64) {
     set_node(doc, id, |n| {
-        n.layout = Some(AutoLayout { mode, gap, padding: [pad; 4], cross_align: CrossAlign::Center, ..AutoLayout::default() });
+        n.layout = Some(AutoLayout {
+            mode,
+            gap,
+            padding: [pad; 4],
+            cross_align: CrossAlign::Center,
+            ..AutoLayout::default()
+        });
         n.child_layout.sizing_h = Sizing::Hug;
         n.child_layout.sizing_v = Sizing::Hug;
     });
 }
 
 /// A text layer with a text style applied.
-fn styled_text(doc: &mut Document, parent: NodeId, chars: &str, name: &str, style: &str) -> DocResult<NodeId> {
+fn styled_text(
+    doc: &mut Document,
+    parent: NodeId,
+    chars: &str,
+    name: &str,
+    style: &str,
+) -> DocResult<NodeId> {
     let id = doc.create(parent, text(chars), name, 0.0, 0.0, 60.0, 16.0)?;
-    let def = doc.styles.iter().find(|s| s.id == style).and_then(|s| match &s.kind {
-        StyleKind::Text { style } => Some(style.clone()),
-        _ => None,
-    });
+    let def = doc
+        .styles
+        .iter()
+        .find(|s| s.id == style)
+        .and_then(|s| match &s.kind {
+            StyleKind::Text { style } => Some(style.clone()),
+            _ => None,
+        });
     set_node(doc, id, |n| {
         if let (NodeKind::Text(t), Some(def)) = (&mut n.kind, def) {
             t.style = def;
@@ -167,7 +200,13 @@ fn styled_text(doc: &mut Document, parent: NodeId, chars: &str, name: &str, styl
 }
 
 /// A nested instance inside a main, renamed (a name override, as renaming it in the app records).
-fn nested(doc: &mut Document, comp: NodeId, parent: NodeId, name: &str, exposed: bool) -> DocResult<NodeId> {
+fn nested(
+    doc: &mut Document,
+    comp: NodeId,
+    parent: NodeId,
+    name: &str,
+    exposed: bool,
+) -> DocResult<NodeId> {
     let id = create_instance(doc, comp, parent, 0.0, 0.0)?;
     set_node(doc, id, |n| {
         n.name = name.to_string();
@@ -193,11 +232,24 @@ fn refs(doc: &mut Document, id: NodeId, field: &str, prop: &str) {
 
 /// Variables (a light/dark theme collection with colours and a radius) and styles.
 fn foundations(doc: &mut Document) -> (CollectionId, ModeId, ModeId) {
-    let (coll, light, dark) = ("ds:theme".to_string(), "ds:light".to_string(), "ds:dark".to_string());
+    let (coll, light, dark) = (
+        "ds:theme".to_string(),
+        "ds:light".to_string(),
+        "ds:dark".to_string(),
+    );
     doc.variables.collections.push(Collection {
         id: coll.clone(),
         name: "Theme".into(),
-        modes: vec![Mode { id: light.clone(), name: "Light".into() }, Mode { id: dark.clone(), name: "Dark".into() }],
+        modes: vec![
+            Mode {
+                id: light.clone(),
+                name: "Light".into(),
+            },
+            Mode {
+                id: dark.clone(),
+                name: "Dark".into(),
+            },
+        ],
         extends: None,
     });
     let var = |name: &str, kind: VariableType, values: [VariableValue; 2]| Variable {
@@ -205,7 +257,10 @@ fn foundations(doc: &mut Document) -> (CollectionId, ModeId, ModeId) {
         name: name.into(),
         collection: coll.clone(),
         kind,
-        values: [light.clone(), dark.clone()].into_iter().zip(values).collect(),
+        values: [light.clone(), dark.clone()]
+            .into_iter()
+            .zip(values)
+            .collect(),
         description: String::new(),
         scopes: None,
         hidden_from_publishing: false,
@@ -214,15 +269,30 @@ fn foundations(doc: &mut Document) -> (CollectionId, ModeId, ModeId) {
         code_syntax: Default::default(),
     };
     for (name, l, d) in COLORS {
-        doc.variables.variables.push(var(name, VariableType::Color, [VariableValue::Color(rgb(l)), VariableValue::Color(rgb(d))]));
+        doc.variables.variables.push(var(
+            name,
+            VariableType::Color,
+            [VariableValue::Color(rgb(l)), VariableValue::Color(rgb(d))],
+        ));
     }
-    doc.variables.variables.push(var("Radius", VariableType::Number, [VariableValue::Number(6.0), VariableValue::Number(8.0)]));
-    for (name, hex) in [("Brand/Primary", 0x0D99FFu32), ("Brand/Accent", 0x9747FF), ("Text/Primary", 0x1E1E1E), ("Text/Secondary", 0x757575)] {
+    doc.variables.variables.push(var(
+        "Radius",
+        VariableType::Number,
+        [VariableValue::Number(6.0), VariableValue::Number(8.0)],
+    ));
+    for (name, hex) in [
+        ("Brand/Primary", 0x0D99FFu32),
+        ("Brand/Accent", 0x9747FF),
+        ("Text/Primary", 0x1E1E1E),
+        ("Text/Secondary", 0x757575),
+    ] {
         doc.styles.push(Style {
             id: format!("ds:paint:{name}"),
             name: name.into(),
             description: String::new(),
-            kind: StyleKind::Paint { paints: vec![Paint::solid(rgb(hex))] },
+            kind: StyleKind::Paint {
+                paints: vec![Paint::solid(rgb(hex))],
+            },
             bound: Default::default(),
         });
     }
@@ -234,7 +304,11 @@ fn foundations(doc: &mut Document) -> (CollectionId, ModeId, ModeId) {
         ("Label/M", 13.0, "Medium"),
         ("Label/L", 15.0, "Medium"),
     ] {
-        let style = TextStyle { font_size: size, font_style: weight.into(), ..TextStyle::default() };
+        let style = TextStyle {
+            font_size: size,
+            font_style: weight.into(),
+            ..TextStyle::default()
+        };
         doc.styles.push(Style {
             id: format!("ds:text:{name}"),
             name: name.into(),
@@ -258,7 +332,15 @@ fn component_set(
     mut make: impl FnMut(&mut Document, NodeId, &BTreeMap<&str, &str>) -> DocResult<()>,
 ) -> DocResult<(NodeId, usize)> {
     let set = doc.alloc_id();
-    let mut n = Node::new(set, NodeKind::ComponentSet { description: format!("Synthetic {name} component set") }, name, 100.0, 100.0);
+    let mut n = Node::new(
+        set,
+        NodeKind::ComponentSet {
+            description: format!("Synthetic {name} component set"),
+        },
+        name,
+        100.0,
+        100.0,
+    );
     n.transform = figcraft_geom::Affine::translate((x, y));
     n.fills.clear();
     doc.insert(n, page, None)?;
@@ -276,8 +358,15 @@ fn component_set(
     let order: Vec<&str> = axes.iter().map(|(p, _)| *p).collect();
     let (mut w, mut h) = (0.0f64, 0.0f64);
     for (k, combo) in combos.iter().enumerate() {
-        let vname = order.iter().filter_map(|p| combo.get(p).map(|v| format!("{p}={v}"))).collect::<Vec<_>>().join(", ");
-        let (cx, cy) = (20.0 + (k % per_row.max(1)) as f64 * 220.0, 20.0 + (k / per_row.max(1)) as f64 * 160.0);
+        let vname = order
+            .iter()
+            .filter_map(|p| combo.get(p).map(|v| format!("{p}={v}")))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let (cx, cy) = (
+            20.0 + (k % per_row.max(1)) as f64 * 220.0,
+            20.0 + (k / per_row.max(1)) as f64 * 160.0,
+        );
         let c = doc.create(set, component(), &vname, cx, cy, 100.0, 40.0)?;
         if combo.get("Theme") == Some(&"Dark") {
             set_node(doc, c, |n| {
@@ -304,11 +393,23 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
     let mut icons = Vec::new();
     let cols = 16;
     for k in 0..spec.icons.max(2) {
-        let name = format!("Icon/{} {}", GLYPHS.get(k % GLYPHS.len()).copied().unwrap_or("Glyph"), k / GLYPHS.len() + 1);
+        let name = format!(
+            "Icon/{} {}",
+            GLYPHS.get(k % GLYPHS.len()).copied().unwrap_or("Glyph"),
+            k / GLYPHS.len() + 1
+        );
         let (x, y) = ((k % cols) as f64 * 40.0, (k / cols) as f64 * 40.0);
         let c = doc.create(page, component(), &name, x, y, 24.0, 24.0)?;
         set_node(doc, c, |n| n.fills.clear());
-        let kind = if k % 2 == 0 { NodeKind::Rectangle } else { NodeKind::Ellipse { start: 0.0, sweep: std::f64::consts::TAU, inner: 0.0 } };
+        let kind = if k % 2 == 0 {
+            NodeKind::Rectangle
+        } else {
+            NodeKind::Ellipse {
+                start: 0.0,
+                sweep: std::f64::consts::TAU,
+                inner: 0.0,
+            }
+        };
         let g = doc.create(c, kind, "Glyph", 4.0, 4.0, 16.0, 16.0)?;
         bind(doc, g, "fill", "Icon");
         icons.push(c);
@@ -322,10 +423,26 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
     // Buttons: icon + label, the icon swappable (preferred: the first icons) and optional.
     let (icon0, icon1) = (icon(0), icon(1));
     let mut button_props = BTreeMap::new();
-    button_props.insert("Label".to_string(), PropDef::Text { default: "Button".into() });
+    button_props.insert(
+        "Label".to_string(),
+        PropDef::Text {
+            default: "Button".into(),
+        },
+    );
     button_props.insert("Show icon".to_string(), PropDef::Boolean { default: true });
-    button_props.insert("Icon".to_string(), PropDef::InstanceSwap { default: icon0, preferred: preferred.clone() });
-    let axes = [("Size", sizes.clone()), ("State", take(&STATES, spec.states)), ("Type", take(&BUTTON_TYPES, spec.types)), ("Theme", themes.clone())];
+    button_props.insert(
+        "Icon".to_string(),
+        PropDef::InstanceSwap {
+            default: icon0,
+            preferred: preferred.clone(),
+        },
+    );
+    let axes = [
+        ("Size", sizes.clone()),
+        ("State", take(&STATES, spec.states)),
+        ("Type", take(&BUTTON_TYPES, spec.types)),
+        ("Theme", themes.clone()),
+    ];
     let (button, n) = component_set(doc, page, "Button", (0.0, top), &axes, 12, |doc, c, v| {
         let size = v.get("Size").copied().unwrap_or("Medium");
         let pad = match size {
@@ -357,31 +474,70 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
         };
         let label = styled_text(doc, c, "Button", "Label", style)?;
         refs(doc, label, "characters", "Label");
-        bind(doc, label, "fill", if v.get("Type") == Some(&"Primary") { "On primary" } else { "On surface" });
+        bind(
+            doc,
+            label,
+            "fill",
+            if v.get("Type") == Some(&"Primary") {
+                "On primary"
+            } else {
+                "On surface"
+            },
+        );
         set_props(doc, c, &button_props);
         Ok(())
     })?;
     count += n;
-    let button_default = doc.node(button).and_then(|s| s.children.first().copied()).unwrap_or(NodeId(0));
+    let button_default = doc
+        .node(button)
+        .and_then(|s| s.children.first().copied())
+        .unwrap_or(NodeId(0));
     // Inputs: label above a field holding a swappable leading icon and the value.
     let mut input_props = BTreeMap::new();
-    input_props.insert("Label".to_string(), PropDef::Text { default: "Label".into() });
-    input_props.insert("Placeholder".to_string(), PropDef::Text { default: "Placeholder".into() });
-    input_props.insert("Show leading icon".to_string(), PropDef::Boolean { default: true });
-    input_props.insert("Leading icon".to_string(), PropDef::InstanceSwap { default: icon1, preferred: preferred.clone() });
-    let axes =
-        [("Size", sizes.clone()), ("State", take(&INPUT_STATES, spec.states)), ("Type", take(&INPUT_TYPES, spec.types)), ("Theme", themes.clone())];
+    input_props.insert(
+        "Label".to_string(),
+        PropDef::Text {
+            default: "Label".into(),
+        },
+    );
+    input_props.insert(
+        "Placeholder".to_string(),
+        PropDef::Text {
+            default: "Placeholder".into(),
+        },
+    );
+    input_props.insert(
+        "Show leading icon".to_string(),
+        PropDef::Boolean { default: true },
+    );
+    input_props.insert(
+        "Leading icon".to_string(),
+        PropDef::InstanceSwap {
+            default: icon1,
+            preferred: preferred.clone(),
+        },
+    );
+    let axes = [
+        ("Size", sizes.clone()),
+        ("State", take(&INPUT_STATES, spec.states)),
+        ("Type", take(&INPUT_TYPES, spec.types)),
+        ("Theme", themes.clone()),
+    ];
     let y = top + (n.div_ceil(12) as f64) * 160.0 + 120.0;
     let (input, n) = component_set(doc, page, "Input", (0.0, y), &axes, 12, |doc, c, v| {
         auto_layout(doc, c, LayoutMode::Vertical, 4.0, 0.0);
         set_node(doc, c, |n| n.fills.clear());
         let label = styled_text(doc, c, "Label", "Label", "ds:text:Label/S")?;
         refs(doc, label, "characters", "Label");
-        set_node(doc, label, |n| n.styles.fill = Some("ds:paint:Text/Secondary".into()));
+        set_node(doc, label, |n| {
+            n.styles.fill = Some("ds:paint:Text/Secondary".into())
+        });
         let field = doc.create(c, NodeKind::Frame, "Field", 0.0, 0.0, 160.0, 32.0)?;
         auto_layout(doc, field, LayoutMode::Horizontal, 6.0, 8.0);
         bind(doc, field, "fill", "Surface");
-        set_node(doc, field, |n| n.strokes = vec![Paint::solid(rgb(0xD9D9D9))]);
+        set_node(doc, field, |n| {
+            n.strokes = vec![Paint::solid(rgb(0xD9D9D9))]
+        });
         let stroke = match v.get("State").copied() {
             Some("Focus") => "Primary",
             Some("Error") => "Danger",
@@ -404,8 +560,16 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
     count += n;
     // Badges: a coloured pill with a text property.
     let mut badge_props = BTreeMap::new();
-    badge_props.insert("Text".to_string(), PropDef::Text { default: "New".into() });
-    let axes = [("Type", take(&BADGE_TYPES, spec.types + 1)), ("Theme", themes.clone())];
+    badge_props.insert(
+        "Text".to_string(),
+        PropDef::Text {
+            default: "New".into(),
+        },
+    );
+    let axes = [
+        ("Type", take(&BADGE_TYPES, spec.types + 1)),
+        ("Theme", themes.clone()),
+    ];
     let y = y + (n.div_ceil(12) as f64) * 160.0 + 120.0;
     let (badge, n) = component_set(doc, page, "Badge", (0.0, y), &axes, 12, |doc, c, v| {
         auto_layout(doc, c, LayoutMode::Horizontal, 0.0, 4.0);
@@ -424,13 +588,35 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
         Ok(())
     })?;
     count += n;
-    let badge_default = doc.node(badge).and_then(|s| s.children.first().copied()).unwrap_or(NodeId(0));
+    let badge_default = doc
+        .node(badge)
+        .and_then(|s| s.children.first().copied())
+        .unwrap_or(NodeId(0));
     // Cards: title, body, a slot for actions (a badge by default) and an exposed footer button.
     let mut card_props = BTreeMap::new();
-    card_props.insert("Title".to_string(), PropDef::Text { default: "Card title".into() });
-    card_props.insert("Body".to_string(), PropDef::Text { default: "Supporting text".into() });
-    card_props.insert("Actions".to_string(), PropDef::Slot { preferred: vec![button, badge] });
-    let axes = [("Size", sizes.clone()), ("Type", CARD_TYPES.to_vec()), ("Theme", themes.clone())];
+    card_props.insert(
+        "Title".to_string(),
+        PropDef::Text {
+            default: "Card title".into(),
+        },
+    );
+    card_props.insert(
+        "Body".to_string(),
+        PropDef::Text {
+            default: "Supporting text".into(),
+        },
+    );
+    card_props.insert(
+        "Actions".to_string(),
+        PropDef::Slot {
+            preferred: vec![button, badge],
+        },
+    );
+    let axes = [
+        ("Size", sizes.clone()),
+        ("Type", CARD_TYPES.to_vec()),
+        ("Theme", themes.clone()),
+    ];
     let y = y + (n.div_ceil(12) as f64) * 160.0 + 120.0;
     let (card, n) = component_set(doc, page, "Card", (0.0, y), &axes, 6, |doc, c, v| {
         auto_layout(doc, c, LayoutMode::Vertical, 8.0, 12.0);
@@ -440,13 +626,24 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
             set_node(doc, c, |n| n.strokes = vec![Paint::solid(rgb(0xD9D9D9))]);
             bind(doc, c, "stroke", "Border");
         }
-        let title =
-            styled_text(doc, c, "Card title", "Title", if v.get("Size") == Some(&"Small") { "ds:text:Heading/M" } else { "ds:text:Heading/L" })?;
+        let title = styled_text(
+            doc,
+            c,
+            "Card title",
+            "Title",
+            if v.get("Size") == Some(&"Small") {
+                "ds:text:Heading/M"
+            } else {
+                "ds:text:Heading/L"
+            },
+        )?;
         refs(doc, title, "characters", "Title");
         bind(doc, title, "fill", "On surface");
         let body = styled_text(doc, c, "Supporting text", "Body", "ds:text:Body/M")?;
         refs(doc, body, "characters", "Body");
-        set_node(doc, body, |n| n.styles.fill = Some("ds:paint:Text/Secondary".into()));
+        set_node(doc, body, |n| {
+            n.styles.fill = Some("ds:paint:Text/Secondary".into())
+        });
         let actions = doc.create(c, NodeKind::Frame, "Actions", 0.0, 0.0, 120.0, 24.0)?;
         auto_layout(doc, actions, LayoutMode::Horizontal, 4.0, 0.0);
         set_node(doc, actions, |n| n.fills.clear());
@@ -457,20 +654,34 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
         Ok(())
     })?;
     count += n;
-    let card_small = doc.node(card).and_then(|s| s.children.first().copied()).unwrap_or(NodeId(0));
+    let card_small = doc
+        .node(card)
+        .and_then(|s| s.children.first().copied())
+        .unwrap_or(NodeId(0));
     let ghost = doc
         .node(button)
         .and_then(|s| {
-            s.children.iter().copied().find(|c| doc.node(*c).is_some_and(|n| n.name.contains("Type=Secondary") || n.name.contains("Type=Ghost")))
+            s.children.iter().copied().find(|c| {
+                doc.node(*c).is_some_and(|n| {
+                    n.name.contains("Type=Secondary") || n.name.contains("Type=Ghost")
+                })
+            })
         })
         .unwrap_or(button_default);
     // Navs: a logo icon, three item buttons and a profile card (card > button > icon: four deep).
     let mut nav_props = BTreeMap::new();
-    nav_props.insert("Show profile".to_string(), PropDef::Boolean { default: true });
+    nav_props.insert(
+        "Show profile".to_string(),
+        PropDef::Boolean { default: true },
+    );
     let axes = [("Type", NAV_TYPES.to_vec()), ("Theme", themes.clone())];
     let y = y + (n.div_ceil(6) as f64) * 160.0 + 160.0;
     let (nav, n) = component_set(doc, page, "Nav", (0.0, y), &axes, 2, |doc, c, v| {
-        let mode = if v.get("Type") == Some(&"Side") { LayoutMode::Vertical } else { LayoutMode::Horizontal };
+        let mode = if v.get("Type") == Some(&"Side") {
+            LayoutMode::Vertical
+        } else {
+            LayoutMode::Horizontal
+        };
         auto_layout(doc, c, mode, 8.0, 8.0);
         bind(doc, c, "fill", "Surface");
         nested(doc, icon(2), c, "Logo", false)?;
@@ -484,13 +695,26 @@ pub fn design_system(doc: &mut Document, page: NodeId, spec: &DsSpec) -> DocResu
     })?;
     count += n;
     doc.link_layer_text_styles();
-    Ok(DesignSystem { icons, button, input, card, nav, badge, components: count, theme, light, dark })
+    Ok(DesignSystem {
+        icons,
+        button,
+        input,
+        card,
+        nav,
+        badge,
+        components: count,
+        theme,
+        light,
+        dark,
+    })
 }
 
 /// A new document holding the design system on its first page, normalised like an opened file.
 pub fn design_system_document(spec: &DsSpec) -> DocResult<(Document, DesignSystem)> {
     let mut doc = Document::new("Design system");
-    let page = doc.first_page().ok_or(DocError::Invalid("new document has no page".into()))?;
+    let page = doc
+        .first_page()
+        .ok_or(DocError::Invalid("new document has no page".into()))?;
     set_node(&mut doc, page, |n| n.name = "Components".into());
     let ds = design_system(&mut doc, page, spec)?;
     crate::normalize(&mut doc, &Document::new(""));
@@ -501,15 +725,25 @@ pub fn design_system_document(spec: &DsSpec) -> DocResult<(Document, DesignSyste
 pub fn find_path(doc: &Document, root: NodeId, path: &[&str]) -> Option<NodeId> {
     let mut cur = root;
     for step in path {
-        cur = doc.node(cur)?.children.iter().copied().find(|c| doc.node(*c).is_some_and(|n| n.name == *step))?;
+        cur = doc
+            .node(cur)?
+            .children
+            .iter()
+            .copied()
+            .find(|c| doc.node(*c).is_some_and(|n| n.name == *step))?;
     }
     Some(cur)
 }
 
 /// The variant of set `set` named exactly `props` (in the set's property order), else its first.
 fn variant(doc: &Document, set: NodeId, props: &[(&str, &str)]) -> NodeId {
-    let wanted: BTreeMap<String, String> = props.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
-    crate::components::find_variant(doc, set, &wanted).or_else(|| doc.node(set).and_then(|s| s.children.first().copied())).unwrap_or(set)
+    let wanted: BTreeMap<String, String> = props
+        .iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+    crate::components::find_variant(doc, set, &wanted)
+        .or_else(|| doc.node(set).and_then(|s| s.children.first().copied()))
+        .unwrap_or(set)
 }
 
 /// Override `group` on layer `id` of an instance as the app records it (a value bound to a variable
@@ -526,7 +760,12 @@ fn record(doc: &mut Document, id: Option<NodeId>, group: &str, f: impl FnOnce(&m
     }
 }
 
-fn instance_props(doc: &mut Document, id: Option<NodeId>, props: &[(&str, Value)], as_override: bool) {
+fn instance_props(
+    doc: &mut Document,
+    id: Option<NodeId>,
+    props: &[(&str, Value)],
+    as_override: bool,
+) {
     if let Some(id) = id {
         set_node(doc, id, |n| {
             if let NodeKind::Instance { props: p, .. } = &mut n.kind {
@@ -560,10 +799,19 @@ fn hue(i: usize) -> Paint {
 /// Place `count` instances of the design system on new pages of `doc` ("Screens N", in frames of
 /// 25), with overrides at every nesting level. Call [`crate::normalize`] afterwards. Returns the
 /// top-level instances.
-pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> DocResult<Vec<NodeId>> {
+pub fn place_instances(
+    doc: &mut Document,
+    ds: &DesignSystem,
+    count: usize,
+) -> DocResult<Vec<NodeId>> {
     let per_frame = 25;
     let per_page = 500;
-    let icon = |k: usize| ds.icons.get(k % ds.icons.len().max(1)).copied().unwrap_or(NodeId(0));
+    let icon = |k: usize| {
+        ds.icons
+            .get(k % ds.icons.len().max(1))
+            .copied()
+            .unwrap_or(NodeId(0))
+    };
     let mut out = Vec::with_capacity(count);
     let mut page = NodeId(0);
     let mut frame = NodeId(0);
@@ -590,15 +838,36 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
             }
         }
         let slot = i % per_frame;
-        let (x, y) = (20.0 + (slot % 5) as f64 * 260.0, 20.0 + (slot / 5) as f64 * 180.0);
+        let (x, y) = (
+            20.0 + (slot % 5) as f64 * 260.0,
+            20.0 + (slot / 5) as f64 * 180.0,
+        );
         let size = SIZES.get(i % 3).copied().unwrap_or("Medium");
         let inst = match i % 10 {
             // Buttons: variant, label and icon through properties; a swapped icon with a recoloured
             // glyph (nested overrides); renamed now and then.
             0..=2 => {
-                let main = variant(doc, ds.button, &[("Size", size), ("Type", BUTTON_TYPES.get(i % 3).copied().unwrap_or("Primary"))]);
+                let main = variant(
+                    doc,
+                    ds.button,
+                    &[
+                        ("Size", size),
+                        (
+                            "Type",
+                            BUTTON_TYPES.get(i % 3).copied().unwrap_or("Primary"),
+                        ),
+                    ],
+                );
                 let inst = create_instance(doc, main, frame, x, y)?;
-                instance_props(doc, Some(inst), &[("Label", Value::from(format!("Action {i}"))), ("Show icon", Value::Bool(i % 5 != 0))], false);
+                instance_props(
+                    doc,
+                    Some(inst),
+                    &[
+                        ("Label", Value::from(format!("Action {i}"))),
+                        ("Show icon", Value::Bool(i % 5 != 0)),
+                    ],
+                    false,
+                );
                 if i % 2 == 0 {
                     instance_props(doc, Some(inst), &[("Icon", Value::from(icon(i).0))], false);
                     sync_instance(doc, inst);
@@ -617,9 +886,24 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
             }
             // Inputs: label through a property, the value typed over, the leading icon swapped.
             3 | 4 => {
-                let main = variant(doc, ds.input, &[("Size", size), ("State", INPUT_STATES.get(i % 4).copied().unwrap_or("Default"))]);
+                let main = variant(
+                    doc,
+                    ds.input,
+                    &[
+                        ("Size", size),
+                        (
+                            "State",
+                            INPUT_STATES.get(i % 4).copied().unwrap_or("Default"),
+                        ),
+                    ],
+                );
                 let inst = create_instance(doc, main, frame, x, y)?;
-                instance_props(doc, Some(inst), &[("Label", Value::from(format!("Field {i}")))], false);
+                instance_props(
+                    doc,
+                    Some(inst),
+                    &[("Label", Value::from(format!("Field {i}")))],
+                    false,
+                );
                 sync_instance(doc, inst);
                 let lead = find_path(doc, inst, &["Field", "Leading icon"]);
                 swap_nested(doc, lead, icon(i));
@@ -636,12 +920,29 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
             // Cards: title through a property; the footer button's label (nested property) and its
             // icon (swapped, recoloured: four levels down); the background recoloured.
             5 | 6 => {
-                let main = variant(doc, ds.card, &[("Size", size), ("Type", CARD_TYPES.get(i % 2).copied().unwrap_or("Elevated"))]);
+                let main = variant(
+                    doc,
+                    ds.card,
+                    &[
+                        ("Size", size),
+                        ("Type", CARD_TYPES.get(i % 2).copied().unwrap_or("Elevated")),
+                    ],
+                );
                 let inst = create_instance(doc, main, frame, x, y)?;
-                instance_props(doc, Some(inst), &[("Title", Value::from(format!("Card {i}")))], false);
+                instance_props(
+                    doc,
+                    Some(inst),
+                    &[("Title", Value::from(format!("Card {i}")))],
+                    false,
+                );
                 sync_instance(doc, inst);
                 let footer = find_path(doc, inst, &["Footer button"]);
-                instance_props(doc, footer, &[("Label", Value::from(format!("Open {i}")))], true);
+                instance_props(
+                    doc,
+                    footer,
+                    &[("Label", Value::from(format!("Open {i}")))],
+                    true,
+                );
                 let ficon = find_path(doc, inst, &["Footer button", "Icon"]);
                 swap_nested(doc, ficon, icon(i + 1));
                 sync_instance(doc, inst);
@@ -653,7 +954,11 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
             // Navs: an item switched to another type (nested property), the profile card's title
             // and footer label typed over, its footer icon recoloured.
             7 => {
-                let main = variant(doc, ds.nav, &[("Type", NAV_TYPES.get(i % 2).copied().unwrap_or("Top"))]);
+                let main = variant(
+                    doc,
+                    ds.nav,
+                    &[("Type", NAV_TYPES.get(i % 2).copied().unwrap_or("Top"))],
+                );
                 let inst = create_instance(doc, main, frame, x, y)?;
                 let item = find_path(doc, inst, &["Item 2"]);
                 instance_props(doc, item, &[("Label", Value::from("Settings"))], true);
@@ -678,9 +983,18 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
             }
             // Badges: text through a property, recoloured.
             8 => {
-                let main = variant(doc, ds.badge, &[("Type", BADGE_TYPES.get(i % 4).copied().unwrap_or("Info"))]);
+                let main = variant(
+                    doc,
+                    ds.badge,
+                    &[("Type", BADGE_TYPES.get(i % 4).copied().unwrap_or("Info"))],
+                );
                 let inst = create_instance(doc, main, frame, x, y)?;
-                instance_props(doc, Some(inst), &[("Text", Value::from(format!("{}", i % 100)))], false);
+                instance_props(
+                    doc,
+                    Some(inst),
+                    &[("Text", Value::from(format!("{}", i % 100)))],
+                    false,
+                );
                 sync_instance(doc, inst);
                 record(doc, Some(inst), "fills", |n| n.fills = vec![hue(i)]);
                 inst
@@ -699,9 +1013,14 @@ pub fn place_instances(doc: &mut Document, ds: &DesignSystem, count: usize) -> D
 }
 
 /// The design system and `count` instances of it in one document, normalised like an opened file.
-pub fn design_system_with_instances(spec: &DsSpec, count: usize) -> DocResult<(Document, DesignSystem, Vec<NodeId>)> {
+pub fn design_system_with_instances(
+    spec: &DsSpec,
+    count: usize,
+) -> DocResult<(Document, DesignSystem, Vec<NodeId>)> {
     let mut doc = Document::new("Design system in use");
-    let page = doc.first_page().ok_or(DocError::Invalid("new document has no page".into()))?;
+    let page = doc
+        .first_page()
+        .ok_or(DocError::Invalid("new document has no page".into()))?;
     set_node(&mut doc, page, |n| n.name = "Components".into());
     let ds = design_system(&mut doc, page, spec)?;
     crate::normalize(&mut doc, &Document::new(""));

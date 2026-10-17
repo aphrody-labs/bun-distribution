@@ -87,7 +87,12 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = match str_param(p, "scope").unwrap_or("selection") {
         "selection" => targets(s, p)?,
         "all" => everything(s)?,
-        other => return Err(bad(C, format!("scope must be selection or all (got {other})"))),
+        other => {
+            return Err(bad(
+                C,
+                format!("scope must be selection or all (got {other})"),
+            ));
+        }
     };
     let sheet = sheet(s, p, ids, C)?;
     if sheet.rules.is_empty() {
@@ -104,7 +109,8 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let mut images = Vec::new();
     for r in &sheet.rules {
         let Some(name) = &r.image else { continue };
-        let (d, _) = isolated(doc, &[r.id], name).ok_or_else(|| bad(C, format!("{} paints nothing to rasterize", r.selector)))?;
+        let (d, _) = isolated(doc, &[r.id], name)
+            .ok_or_else(|| bad(C, format!("{} paints nothing to rasterize", r.selector)))?;
         images.push((name, encode(&d, "png", &json!({}))?));
     }
     let n = sheet.rules.len();
@@ -114,16 +120,23 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
             let folder = std::path::Path::new(path).parent();
             let mut written = Vec::new();
             for (name, bytes) in &images {
-                let at = folder.map_or_else(|| name.to_string(), |f| f.join(name).to_string_lossy().into_owned());
+                let at = folder.map_or_else(
+                    || name.to_string(),
+                    |f| f.join(name).to_string_lossy().into_owned(),
+                );
                 write_file(&at, bytes)?;
                 written.push(at);
             }
-            Ok(json!({ "path": path, "bytes": css.len(), "rules": n, "images": written, "warnings": sheet.warnings }))
+            Ok(
+                json!({ "path": path, "bytes": css.len(), "rules": n, "images": written, "warnings": sheet.warnings }),
+            )
         }
         None => {
             let images: Vec<Value> =
                 images.iter().map(|(name, bytes)| json!({ "name": name, "dataBase64": vectorcraft_format::base64_encode(bytes) })).collect();
-            Ok(json!({ "data": css, "name": default_name(doc, "css"), "rules": n, "images": images, "warnings": sheet.warnings }))
+            Ok(
+                json!({ "data": css, "name": default_name(doc, "css"), "rules": n, "images": images, "warnings": sheet.warnings }),
+            )
         }
     }
 }

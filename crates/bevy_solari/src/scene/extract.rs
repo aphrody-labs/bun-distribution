@@ -13,7 +13,7 @@ use bevy_light::{EnvironmentMapLight, GeneratedEnvironmentMapLight};
 use bevy_math::Quat;
 use bevy_pbr::{MeshMaterial3d, PreviousGlobalTransform, StandardMaterial};
 use bevy_platform::collections::HashMap;
-use bevy_render::{sync_world::RenderEntity, Extract};
+use bevy_render::{Extract, sync_world::RenderEntity};
 use bevy_transform::components::GlobalTransform;
 use bevy_utils::once;
 use tracing::warn;

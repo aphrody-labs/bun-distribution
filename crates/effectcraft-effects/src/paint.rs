@@ -121,28 +121,182 @@ pub struct BrushTip {
 /// The Brushes panel's preset tips: original EffectCraft data (a size ladder of hard and soft
 /// round tips plus a few flat calligraphic tips).
 pub const BRUSH_PRESETS: &[BrushTip] = &[
-    BrushTip { name: "Hard Round 1 px", diameter: 1.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Hard Round 3 px", diameter: 3.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Hard Round 5 px", diameter: 5.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Hard Round 9 px", diameter: 9.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Hard Round 13 px", diameter: 13.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Hard Round 19 px", diameter: 19.0, angle: 0.0, roundness: 100.0, hardness: 100.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 5 px", diameter: 5.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 9 px", diameter: 9.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 13 px", diameter: 13.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 17 px", diameter: 17.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 21 px", diameter: 21.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 27 px", diameter: 27.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 35 px", diameter: 35.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 45 px", diameter: 45.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 65 px", diameter: 65.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 100 px", diameter: 100.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 200 px", diameter: 200.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Soft Round 300 px", diameter: 300.0, angle: 0.0, roundness: 100.0, hardness: 0.0, spacing: 25.0 },
-    BrushTip { name: "Medium Round 24 px", diameter: 24.0, angle: 0.0, roundness: 100.0, hardness: 50.0, spacing: 20.0 },
-    BrushTip { name: "Flat 20 px 45°", diameter: 20.0, angle: 45.0, roundness: 25.0, hardness: 90.0, spacing: 10.0 },
-    BrushTip { name: "Flat 40 px -30°", diameter: 40.0, angle: -30.0, roundness: 15.0, hardness: 80.0, spacing: 8.0 },
-    BrushTip { name: "Chisel 12 px", diameter: 12.0, angle: 90.0, roundness: 35.0, hardness: 100.0, spacing: 12.0 },
+    BrushTip {
+        name: "Hard Round 1 px",
+        diameter: 1.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Hard Round 3 px",
+        diameter: 3.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Hard Round 5 px",
+        diameter: 5.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Hard Round 9 px",
+        diameter: 9.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Hard Round 13 px",
+        diameter: 13.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Hard Round 19 px",
+        diameter: 19.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 100.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 5 px",
+        diameter: 5.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 9 px",
+        diameter: 9.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 13 px",
+        diameter: 13.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 17 px",
+        diameter: 17.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 21 px",
+        diameter: 21.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 27 px",
+        diameter: 27.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 35 px",
+        diameter: 35.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 45 px",
+        diameter: 45.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 65 px",
+        diameter: 65.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 100 px",
+        diameter: 100.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 200 px",
+        diameter: 200.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Soft Round 300 px",
+        diameter: 300.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 0.0,
+        spacing: 25.0,
+    },
+    BrushTip {
+        name: "Medium Round 24 px",
+        diameter: 24.0,
+        angle: 0.0,
+        roundness: 100.0,
+        hardness: 50.0,
+        spacing: 20.0,
+    },
+    BrushTip {
+        name: "Flat 20 px 45°",
+        diameter: 20.0,
+        angle: 45.0,
+        roundness: 25.0,
+        hardness: 90.0,
+        spacing: 10.0,
+    },
+    BrushTip {
+        name: "Flat 40 px -30°",
+        diameter: 40.0,
+        angle: -30.0,
+        roundness: 15.0,
+        hardness: 80.0,
+        spacing: 8.0,
+    },
+    BrushTip {
+        name: "Chisel 12 px",
+        diameter: 12.0,
+        angle: 90.0,
+        roundness: 35.0,
+        hardness: 100.0,
+        spacing: 12.0,
+    },
 ];
 
 pub fn specs() -> Vec<EffectSpec> {
@@ -150,7 +304,12 @@ pub fn specs() -> Vec<EffectSpec> {
         id: ID,
         name: "Paint",
         category: "Paint",
-        params: vec![p("on_transparent", "Paint on Transparent", Value::Bool(false), ParamUi::Checkbox)],
+        params: vec![p(
+            "on_transparent",
+            "Paint on Transparent",
+            Value::Bool(false),
+            ParamUi::Checkbox,
+        )],
         render,
         gpu: false,
         float: true,
@@ -252,67 +411,169 @@ pub fn stroke_group(ids: &mut Ids, name: &str, s: &StrokeSpec) -> PropGroup {
     let mut g = ids.group(s.kind.match_id(), name);
     g.kind = GroupKind::Indexed;
     let path = ShapePath::polygon(&s.points, false);
-    g.children.push(ids.prop("path", "Path", Value::Path(path)).with_ui(ParamUi::Path).into());
-    g.children.push(hidden(ids, "mode", Value::Enum(s.mode)).into());
-    g.children.push(hidden(ids, "in", Value::Scalar(s.in_time)).into());
-    g.children.push(hidden(ids, "out", Value::Scalar(s.out_time)).into());
-    g.children.push(hidden(ids, "duration", Value::Enum(s.duration)).into());
-    let pr: Vec<String> = s.pressure.iter().map(|p| format!("{:.3}", p.clamp(0.0, 1.0))).collect();
-    g.children.push(hidden(ids, "pressure", Value::Str(pr.join(","))).into());
+    g.children.push(
+        ids.prop("path", "Path", Value::Path(path))
+            .with_ui(ParamUi::Path)
+            .into(),
+    );
+    g.children
+        .push(hidden(ids, "mode", Value::Enum(s.mode)).into());
+    g.children
+        .push(hidden(ids, "in", Value::Scalar(s.in_time)).into());
+    g.children
+        .push(hidden(ids, "out", Value::Scalar(s.out_time)).into());
+    g.children
+        .push(hidden(ids, "duration", Value::Enum(s.duration)).into());
+    let pr: Vec<String> = s
+        .pressure
+        .iter()
+        .map(|p| format!("{:.3}", p.clamp(0.0, 1.0)))
+        .collect();
+    g.children
+        .push(hidden(ids, "pressure", Value::Str(pr.join(","))).into());
     if s.kind == StrokeKind::Eraser {
-        g.children.push(hidden(ids, "erase", Value::Enum(s.erase_mode)).into());
-        g.children.push(hidden(ids, "target", Value::Scalar(s.target.unwrap_or(0) as f64)).into());
+        g.children
+            .push(hidden(ids, "erase", Value::Enum(s.erase_mode)).into());
+        g.children
+            .push(hidden(ids, "target", Value::Scalar(s.target.unwrap_or(0) as f64)).into());
     }
 
     let mut o = ids.group("stroke_options", "Stroke Options");
-    o.children.push(ids.prop("start", "Start", Value::Scalar(0.0)).with_ui(pct()).into());
-    o.children.push(ids.prop("end", "End", Value::Scalar(100.0)).with_ui(pct()).into());
+    o.children.push(
+        ids.prop("start", "Start", Value::Scalar(0.0))
+            .with_ui(pct())
+            .into(),
+    );
+    o.children.push(
+        ids.prop("end", "End", Value::Scalar(100.0))
+            .with_ui(pct())
+            .into(),
+    );
     if s.kind == StrokeKind::Brush {
-        o.children.push(ids.prop("color", "Color", Value::Color(s.color)).with_ui(ParamUi::Color).into());
+        o.children.push(
+            ids.prop("color", "Color", Value::Color(s.color))
+                .with_ui(ParamUi::Color)
+                .into(),
+        );
     }
-    o.children.push(ids.prop("diameter", "Diameter", Value::Scalar(s.diameter)).with_ui(slider(0.0, 2500.0, 1.0, 200.0, 1)).into());
-    o.children.push(ids.prop("angle", "Angle", Value::Scalar(s.angle)).with_ui(ParamUi::Angle).into());
-    o.children.push(ids.prop("hardness", "Hardness", Value::Scalar(s.hardness)).with_ui(pct()).into());
-    o.children.push(ids.prop("roundness", "Roundness", Value::Scalar(s.roundness)).with_ui(pct()).into());
-    o.children.push(ids.prop("spacing", "Spacing", Value::Scalar(s.spacing)).with_ui(slider(1.0, 1000.0, 1.0, 200.0, 1)).into());
+    o.children.push(
+        ids.prop("diameter", "Diameter", Value::Scalar(s.diameter))
+            .with_ui(slider(0.0, 2500.0, 1.0, 200.0, 1))
+            .into(),
+    );
+    o.children.push(
+        ids.prop("angle", "Angle", Value::Scalar(s.angle))
+            .with_ui(ParamUi::Angle)
+            .into(),
+    );
+    o.children.push(
+        ids.prop("hardness", "Hardness", Value::Scalar(s.hardness))
+            .with_ui(pct())
+            .into(),
+    );
+    o.children.push(
+        ids.prop("roundness", "Roundness", Value::Scalar(s.roundness))
+            .with_ui(pct())
+            .into(),
+    );
+    o.children.push(
+        ids.prop("spacing", "Spacing", Value::Scalar(s.spacing))
+            .with_ui(slider(1.0, 1000.0, 1.0, 200.0, 1))
+            .into(),
+    );
     if s.kind != StrokeKind::Eraser {
-        let mut c = ids.prop("channels", "Channels", Value::Enum(s.channels)).with_ui(popup(&CHANNELS));
+        let mut c = ids
+            .prop("channels", "Channels", Value::Enum(s.channels))
+            .with_ui(popup(&CHANNELS));
         c.hold_only = true;
         o.children.push(c.into());
     }
-    o.children.push(ids.prop("opacity", "Opacity", Value::Scalar(s.opacity)).with_ui(pct()).into());
-    o.children.push(ids.prop("flow", "Flow", Value::Scalar(s.flow)).with_ui(pct()).into());
+    o.children.push(
+        ids.prop("opacity", "Opacity", Value::Scalar(s.opacity))
+            .with_ui(pct())
+            .into(),
+    );
+    o.children.push(
+        ids.prop("flow", "Flow", Value::Scalar(s.flow))
+            .with_ui(pct())
+            .into(),
+    );
     if s.kind == StrokeKind::Clone {
-        let mut src = ids.prop("clone_source", "Clone Source", Value::Layer(s.clone_source)).with_ui(ParamUi::Layer);
+        let mut src = ids
+            .prop("clone_source", "Clone Source", Value::Layer(s.clone_source))
+            .with_ui(ParamUi::Layer);
         src.hold_only = true;
         o.children.push(src.into());
-        o.children.push(ids.prop("clone_position", "Clone Position", Value::Vec2(s.clone_position)).with_ui(ParamUi::Point).spatial().into());
+        o.children.push(
+            ids.prop(
+                "clone_position",
+                "Clone Position",
+                Value::Vec2(s.clone_position),
+            )
+            .with_ui(ParamUi::Point)
+            .spatial()
+            .into(),
+        );
         if s.lock_time {
-            o.children.push(ids.prop("clone_time", "Clone Time", Value::Scalar(s.clone_time)).into());
+            o.children.push(
+                ids.prop("clone_time", "Clone Time", Value::Scalar(s.clone_time))
+                    .into(),
+            );
         } else {
-            o.children.push(ids.prop("clone_time_shift", "Clone Time Shift", Value::Scalar(s.clone_time_shift)).into());
+            o.children.push(
+                ids.prop(
+                    "clone_time_shift",
+                    "Clone Time Shift",
+                    Value::Scalar(s.clone_time_shift),
+                )
+                .into(),
+            );
         }
-        o.children.push(hidden(ids, "lock_time", Value::Bool(s.lock_time)).into());
+        o.children
+            .push(hidden(ids, "lock_time", Value::Bool(s.lock_time)).into());
     }
-    o.children.push(hidden(ids, "size_pressure", Value::Bool(s.size_pressure)).into());
-    o.children.push(hidden(ids, "min_size", Value::Scalar(s.min_size)).into());
-    o.children.push(hidden(ids, "opacity_pressure", Value::Bool(s.opacity_pressure)).into());
-    o.children.push(hidden(ids, "flow_pressure", Value::Bool(s.flow_pressure)).into());
+    o.children
+        .push(hidden(ids, "size_pressure", Value::Bool(s.size_pressure)).into());
+    o.children
+        .push(hidden(ids, "min_size", Value::Scalar(s.min_size)).into());
+    o.children
+        .push(hidden(ids, "opacity_pressure", Value::Bool(s.opacity_pressure)).into());
+    o.children
+        .push(hidden(ids, "flow_pressure", Value::Bool(s.flow_pressure)).into());
     g.children.push(o.into());
 
     let first = s.points.first().copied().unwrap_or([0.0; 2]);
     let mut t = ids.group("transform", &format!("Transform: {name}"));
-    t.children.push(ids.prop("anchor", "Anchor Point", Value::Vec2(first)).with_ui(ParamUi::Point).spatial().into());
-    t.children.push(ids.prop("position", "Position", Value::Vec2(first)).with_ui(ParamUi::Point).spatial().into());
-    t.children.push(ids.prop("scale", "Scale", Value::Vec2([100.0, 100.0])).with_ui(ParamUi::Percent).into());
-    t.children.push(ids.prop("rotation", "Rotation", Value::Scalar(0.0)).with_ui(ParamUi::Angle).into());
+    t.children.push(
+        ids.prop("anchor", "Anchor Point", Value::Vec2(first))
+            .with_ui(ParamUi::Point)
+            .spatial()
+            .into(),
+    );
+    t.children.push(
+        ids.prop("position", "Position", Value::Vec2(first))
+            .with_ui(ParamUi::Point)
+            .spatial()
+            .into(),
+    );
+    t.children.push(
+        ids.prop("scale", "Scale", Value::Vec2([100.0, 100.0]))
+            .with_ui(ParamUi::Percent)
+            .into(),
+    );
+    t.children.push(
+        ids.prop("rotation", "Rotation", Value::Scalar(0.0))
+            .with_ui(ParamUi::Angle)
+            .into(),
+    );
     g.children.push(t.into());
     g
 }
 
 /// The stroke groups of a Paint effect instance.
 pub fn strokes(fx: &PropGroup) -> impl Iterator<Item = &PropGroup> {
-    fx.groups().filter(|g| matches!(g.match_id.as_str(), "brush" | "clone" | "eraser"))
+    fx.groups()
+        .filter(|g| matches!(g.match_id.as_str(), "brush" | "clone" | "eraser"))
 }
 
 fn static_f(g: &PropGroup, m: &str, d: f64) -> f64 {
@@ -330,8 +591,12 @@ pub fn cache_key(fx: &PropGroup, t: f64) -> (Vec<bool>, bool) {
         if s.match_id == "clone"
             && let Some(o) = s.sub("stroke_options")
         {
-            let other = o.get("clone_source").is_some_and(|p| p.value.as_layer().is_some() || !p.keys.is_empty());
-            let shift = o.get("clone_time_shift").is_some_and(|p| p.value.as_f64() != 0.0 || !p.keys.is_empty());
+            let other = o
+                .get("clone_source")
+                .is_some_and(|p| p.value.as_layer().is_some() || !p.keys.is_empty());
+            let shift = o
+                .get("clone_time_shift")
+                .is_some_and(|p| p.value.as_f64() != 0.0 || !p.keys.is_empty());
             let lock = o.get("lock_time").is_some_and(|p| p.value.as_bool());
             reads_other |= other || shift || lock;
         }
@@ -398,19 +663,40 @@ pub fn parse(params: &Params) -> Vec<Stroke> {
             "eraser" => StrokeKind::Eraser,
             _ => continue,
         };
-        if !params.get(&format!("{pre}@enabled")).is_none_or(Value::as_bool) {
+        if !params
+            .get(&format!("{pre}@enabled"))
+            .is_none_or(Value::as_bool)
+        {
             continue;
         }
         let k = |m: &str| format!("{pre}{m}");
-        let path = params.get(&k("path")).and_then(Value::as_path).cloned().unwrap_or_default();
-        let pressure = params.s(&k("pressure")).split(',').filter_map(|x| x.trim().parse::<f64>().ok()).collect();
-        let o = params.group(&pre, "stroke_options").unwrap_or_else(|| format!("{pre}#0/"));
+        let path = params
+            .get(&k("path"))
+            .and_then(Value::as_path)
+            .cloned()
+            .unwrap_or_default();
+        let pressure = params
+            .s(&k("pressure"))
+            .split(',')
+            .filter_map(|x| x.trim().parse::<f64>().ok())
+            .collect();
+        let o = params
+            .group(&pre, "stroke_options")
+            .unwrap_or_else(|| format!("{pre}#0/"));
         let ok = |m: &str| format!("{o}{m}");
-        let tr = params.group(&pre, "transform").unwrap_or_else(|| format!("{pre}#0/"));
+        let tr = params
+            .group(&pre, "transform")
+            .unwrap_or_else(|| format!("{pre}#0/"));
         let tk = |m: &str| format!("{tr}{m}");
         let first = path.vertices.first().copied().unwrap_or([0.0; 2]);
-        let mode = MODES.get(params.get(&k("mode")).map(Value::as_enum).unwrap_or(0) as usize).copied().unwrap_or(BlendMode::Normal);
-        let sc = params.get(&tk("scale")).map(Value::as_vec2).unwrap_or([100.0, 100.0]);
+        let mode = MODES
+            .get(params.get(&k("mode")).map(Value::as_enum).unwrap_or(0) as usize)
+            .copied()
+            .unwrap_or(BlendMode::Normal);
+        let sc = params
+            .get(&tk("scale"))
+            .map(Value::as_vec2)
+            .unwrap_or([100.0, 100.0]);
         out.push(Stroke {
             kind,
             uid: fd(params, &k("@uid"), 0.0) as u64,
@@ -420,7 +706,10 @@ pub fn parse(params: &Params) -> Vec<Stroke> {
             out_time: fd(params, &k("out"), FOREVER),
             start: fd(params, &ok("start"), 0.0),
             end: fd(params, &ok("end"), 100.0),
-            color: params.get(&ok("color")).map(Value::as_color).unwrap_or([1.0; 4]),
+            color: params
+                .get(&ok("color"))
+                .map(Value::as_color)
+                .unwrap_or([1.0; 4]),
             diameter: fd(params, &ok("diameter"), 10.0),
             angle: fd(params, &ok("angle"), 0.0),
             hardness: fd(params, &ok("hardness"), 100.0),
@@ -431,17 +720,28 @@ pub fn parse(params: &Params) -> Vec<Stroke> {
             flow: fd(params, &ok("flow"), 100.0),
             size_pressure: params.get(&ok("size_pressure")).is_some_and(Value::as_bool),
             min_size: fd(params, &ok("min_size"), 1.0),
-            opacity_pressure: params.get(&ok("opacity_pressure")).is_some_and(Value::as_bool),
+            opacity_pressure: params
+                .get(&ok("opacity_pressure"))
+                .is_some_and(Value::as_bool),
             flow_pressure: params.get(&ok("flow_pressure")).is_some_and(Value::as_bool),
             erase_mode: params.get(&k("erase")).map(Value::as_enum).unwrap_or(0),
             target: fd(params, &k("target"), 0.0) as u64,
             clone_source: params.get(&ok("clone_source")).and_then(Value::as_layer),
-            clone_position: params.get(&ok("clone_position")).map(Value::as_vec2).unwrap_or(first),
+            clone_position: params
+                .get(&ok("clone_position"))
+                .map(Value::as_vec2)
+                .unwrap_or(first),
             clone_time_shift: fd(params, &ok("clone_time_shift"), 0.0),
             lock_time: params.get(&ok("lock_time")).is_some_and(Value::as_bool),
             clone_time: fd(params, &ok("clone_time"), 0.0),
-            anchor: params.get(&tk("anchor")).map(Value::as_vec2).unwrap_or(first),
-            position: params.get(&tk("position")).map(Value::as_vec2).unwrap_or(first),
+            anchor: params
+                .get(&tk("anchor"))
+                .map(Value::as_vec2)
+                .unwrap_or(first),
+            position: params
+                .get(&tk("position"))
+                .map(Value::as_vec2)
+                .unwrap_or(first),
             scale: [sc[0] / 100.0, sc[1] / 100.0],
             rotation: fd(params, &tk("rotation"), 0.0),
             path,
@@ -454,15 +754,27 @@ impl Stroke {
     /// Stroke transform: layer point of a path point.
     pub fn xf(&self, p: [f64; 2]) -> [f64; 2] {
         let (s, c) = self.rotation.to_radians().sin_cos();
-        let d = [(p[0] - self.anchor[0]) * self.scale[0], (p[1] - self.anchor[1]) * self.scale[1]];
-        [self.position[0] + d[0] * c - d[1] * s, self.position[1] + d[0] * s + d[1] * c]
+        let d = [
+            (p[0] - self.anchor[0]) * self.scale[0],
+            (p[1] - self.anchor[1]) * self.scale[1],
+        ];
+        [
+            self.position[0] + d[0] * c - d[1] * s,
+            self.position[1] + d[0] * s + d[1] * c,
+        ]
     }
 
     /// The flattened, transformed path in layer space with the pressure at each point.
     pub fn polyline(&self) -> Vec<([f64; 2], f64)> {
         let p = &self.path;
         let n = p.vertices.len();
-        let pr = |i: usize| if self.pressure.len() == n { self.pressure[i] } else { 1.0 };
+        let pr = |i: usize| {
+            if self.pressure.len() == n {
+                self.pressure[i]
+            } else {
+                1.0
+            }
+        };
         let mut out = vec![];
         if n == 0 {
             return out;
@@ -485,8 +797,14 @@ impl Stroke {
                 let u = k as f64 / 16.0;
                 let v = 1.0 - u;
                 let q = [
-                    v * v * v * a[0] + 3.0 * v * v * u * c1[0] + 3.0 * v * u * u * c2[0] + u * u * u * b[0],
-                    v * v * v * a[1] + 3.0 * v * v * u * c1[1] + 3.0 * v * u * u * c2[1] + u * u * u * b[1],
+                    v * v * v * a[0]
+                        + 3.0 * v * v * u * c1[0]
+                        + 3.0 * v * u * u * c2[0]
+                        + u * u * u * b[0],
+                    v * v * v * a[1]
+                        + 3.0 * v * v * u * c1[1]
+                        + 3.0 * v * u * u * c2[1]
+                        + u * u * u * b[1],
                 ];
                 out.push((self.xf(q), pr(i) + (pr(j) - pr(i)) * u));
             }
@@ -551,7 +869,10 @@ pub fn dabs(s: &Stroke, scale: f64, offset: [f64; 2]) -> Vec<Dab> {
         cum.push(cum.last().copied().unwrap_or(0.0) + l);
     }
     let total = *cum.last().unwrap_or(&0.0);
-    let (a, b) = ((s.start / 100.0).clamp(0.0, 1.0), (s.end / 100.0).clamp(0.0, 1.0));
+    let (a, b) = (
+        (s.start / 100.0).clamp(0.0, 1.0),
+        (s.end / 100.0).clamp(0.0, 1.0),
+    );
     if b <= a {
         return vec![];
     }
@@ -559,22 +880,36 @@ pub fn dabs(s: &Stroke, scale: f64, offset: [f64; 2]) -> Vec<Dab> {
     let (l0, l1) = (a * total, b * total);
     let (sin, cos) = s.angle.to_radians().sin_cos();
     let at = |l: f64| -> ([f64; 2], f64) {
-        let i = cum.partition_point(|c| *c <= l).clamp(1, cum.len().max(2) - 1).min(pts.len() - 1);
+        let i = cum
+            .partition_point(|c| *c <= l)
+            .clamp(1, cum.len().max(2) - 1)
+            .min(pts.len() - 1);
         if pts.len() == 1 {
             return pts[0];
         }
         let (c0, c1) = (cum[i - 1], cum[i]);
-        let u = if c1 > c0 { ((l - c0) / (c1 - c0)).clamp(0.0, 1.0) } else { 0.0 };
+        let u = if c1 > c0 {
+            ((l - c0) / (c1 - c0)).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let (p0, q0) = pts[i - 1];
         let (p1, q1) = pts[i];
-        ([p0[0] + (p1[0] - p0[0]) * u, p0[1] + (p1[1] - p0[1]) * u], q0 + (q1 - q0) * u)
+        (
+            [p0[0] + (p1[0] - p0[0]) * u, p0[1] + (p1[1] - p0[1]) * u],
+            q0 + (q1 - q0) * u,
+        )
     };
     let mut out = vec![];
     let mut l = l0;
     loop {
         let (q, pr) = at(l);
         let pr = pr.clamp(0.0, 1.0);
-        let size = if s.size_pressure { (s.min_size / 100.0 + (1.0 - s.min_size / 100.0) * pr).clamp(0.0, 1.0) } else { 1.0 };
+        let size = if s.size_pressure {
+            (s.min_size / 100.0 + (1.0 - s.min_size / 100.0) * pr).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
         let mut w = (s.flow / 100.0).clamp(0.0, 1.0);
         if s.flow_pressure {
             w *= pr;
@@ -617,18 +952,25 @@ impl Coverage {
     #[inline]
     pub fn at(&self, x: i64, y: i64) -> f32 {
         let (u, v) = (x - self.x0, y - self.y0);
-        if u < 0 || v < 0 || u >= self.w as i64 || v >= self.h as i64 { 0.0 } else { self.data[v as usize * self.w + u as usize] }
+        if u < 0 || v < 0 || u >= self.w as i64 || v >= self.h as i64 {
+            0.0
+        } else {
+            self.data[v as usize * self.w + u as usize]
+        }
     }
     /// Multiply by `1 - other` where they overlap.
     fn erase_by(&mut self, other: &Coverage) {
         let w = self.w;
         let (x0, y0) = (self.x0, self.y0);
-        self.data.par_chunks_mut(w.max(1)).enumerate().for_each(|(j, row)| {
-            for (i, c) in row.iter_mut().enumerate() {
-                let e = other.at(x0 + i as i64, y0 + j as i64);
-                *c *= 1.0 - e;
-            }
-        });
+        self.data
+            .par_chunks_mut(w.max(1))
+            .enumerate()
+            .for_each(|(j, row)| {
+                for (i, c) in row.iter_mut().enumerate() {
+                    let e = other.at(x0 + i as i64, y0 + j as i64);
+                    *c *= 1.0 - e;
+                }
+            });
     }
 }
 
@@ -693,7 +1035,12 @@ fn paint_px(dst: &mut Px, col: [f32; 3], a: f32, k: f32, mode: BlendMode, channe
                 return;
             }
             let dc = [dst[0] / da, dst[1] / da, dst[2] / da];
-            let mixed = blend_pixel(mode, [dc[0], dc[1], dc[2], 1.0], [col[0], col[1], col[2], 1.0], 0.0);
+            let mixed = blend_pixel(
+                mode,
+                [dc[0], dc[1], dc[2], 1.0],
+                [col[0], col[1], col[2], 1.0],
+                0.0,
+            );
             for i in 0..3 {
                 dst[i] = (dc[i] + (mixed[i] - dc[i]) * k) * da;
             }
@@ -717,14 +1064,21 @@ fn paint_px(dst: &mut Px, col: [f32; 3], a: f32, k: f32, mode: BlendMode, channe
 
 /// Where a clone stroke samples: its source buffer.
 fn clone_source(ctx: &EffectCtx, s: &Stroke, own: &Buf) -> Option<Buf> {
-    let t = if s.lock_time { s.clone_time } else { ctx.time + s.clone_time_shift };
+    let t = if s.lock_time {
+        s.clone_time
+    } else {
+        ctx.time + s.clone_time_shift
+    };
     let same_time = !s.lock_time && s.clone_time_shift == 0.0;
     match s.clone_source {
         None => {
             if same_time {
                 Some(own.clone())
             } else {
-                ctx.env.host.and_then(|h| h.self_at(t, 0)).or_else(|| Some(own.clone()))
+                ctx.env
+                    .host
+                    .and_then(|h| h.self_at(t, 0))
+                    .or_else(|| Some(own.clone()))
             }
         }
         Some(id) => {
@@ -741,7 +1095,10 @@ fn clone_source(ctx: &EffectCtx, s: &Stroke, own: &Buf) -> Option<Buf> {
 
 fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
     let all = parse(ctx.params);
-    let strokes: Vec<&Stroke> = all.iter().filter(|s| visible(s.in_time, s.out_time, ctx.time)).collect();
+    let strokes: Vec<&Stroke> = all
+        .iter()
+        .filter(|s| visible(s.in_time, s.out_time, ctx.time))
+        .collect();
     let on_transparent = ctx.params.b("on_transparent");
     if strokes.is_empty() && !on_transparent {
         return buf;
@@ -752,7 +1109,10 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
 /// Composite `strokes` (in order) onto `buf`.
 pub fn paint_strokes(ctx: &EffectCtx, buf: Buf, strokes: &[&Stroke], on_transparent: bool) -> Buf {
     let (w, h) = (buf.img.width, buf.img.height);
-    let mut covs: Vec<Coverage> = strokes.par_iter().map(|s| coverage(s, &dabs(s, buf.scale, buf.offset), w, h)).collect();
+    let mut covs: Vec<Coverage> = strokes
+        .par_iter()
+        .map(|s| coverage(s, &dabs(s, buf.scale, buf.offset), w, h))
+        .collect();
     // Paint Only erasers remove earlier paint; Last Stroke Only erasers remove the previous
     // (or targeted) brush / clone stroke.
     for j in 0..strokes.len() {
@@ -768,13 +1128,23 @@ pub fn paint_strokes(ctx: &EffectCtx, buf: Buf, strokes: &[&Stroke], on_transpar
                 }
             }
         } else {
-            let target = (0..j).rev().find(|i| if s.target != 0 { strokes[*i].uid == s.target } else { strokes[*i].kind != StrokeKind::Eraser });
+            let target = (0..j).rev().find(|i| {
+                if s.target != 0 {
+                    strokes[*i].uid == s.target
+                } else {
+                    strokes[*i].kind != StrokeKind::Eraser
+                }
+            });
             if let Some(i) = target {
                 covs[i].erase_by(&e);
             }
         }
     }
-    let mut out = if on_transparent { Image::new(w, h) } else { buf.img.clone() };
+    let mut out = if on_transparent {
+        Image::new(w, h)
+    } else {
+        buf.img.clone()
+    };
     for (s, cov) in strokes.iter().zip(&covs) {
         if cov.w == 0 {
             continue;
@@ -810,14 +1180,26 @@ pub fn paint_strokes(ctx: &EffectCtx, buf: Buf, strokes: &[&Stroke], on_transpar
                     }
                     for i in 0..cw {
                         let k = cov.data[j as usize * cw + i];
-                        paint_px(&mut row[(x0 + i as i64) as usize], col, 1.0, k, s.mode, s.channels);
+                        paint_px(
+                            &mut row[(x0 + i as i64) as usize],
+                            col,
+                            1.0,
+                            k,
+                            s.mode,
+                            s.channels,
+                        );
                     }
                 });
             }
             StrokeKind::Clone => {
-                let Some(src) = clone_source(ctx, s, &buf) else { continue };
+                let Some(src) = clone_source(ctx, s, &buf) else {
+                    continue;
+                };
                 let first = s.polyline().first().map(|p| p.0).unwrap_or([0.0; 2]);
-                let off = [s.clone_position[0] - first[0], s.clone_position[1] - first[1]];
+                let off = [
+                    s.clone_position[0] - first[0],
+                    s.clone_position[1] - first[1],
+                ];
                 let (bs, bo) = (buf.scale.max(1e-9), buf.offset);
                 out.rows_mut().for_each(|(y, row)| {
                     let j = y as i64 - y0;
@@ -830,13 +1212,26 @@ pub fn paint_strokes(ctx: &EffectCtx, buf: Buf, strokes: &[&Stroke], on_transpar
                             continue;
                         }
                         let x = x0 + i as i64;
-                        let q = [(x as f64 + 0.5 - bo[0]) / bs + off[0], (y as f64 + 0.5 - bo[1]) / bs + off[1]];
-                        let sp = src.img.sample_bilinear(q[0] * src.scale + src.offset[0], q[1] * src.scale + src.offset[1]);
+                        let q = [
+                            (x as f64 + 0.5 - bo[0]) / bs + off[0],
+                            (y as f64 + 0.5 - bo[1]) / bs + off[1],
+                        ];
+                        let sp = src.img.sample_bilinear(
+                            q[0] * src.scale + src.offset[0],
+                            q[1] * src.scale + src.offset[1],
+                        );
                         let a = sp[3];
                         if a <= 0.0 {
                             continue;
                         }
-                        paint_px(&mut row[x as usize], [sp[0] / a, sp[1] / a, sp[2] / a], a, k, s.mode, s.channels);
+                        paint_px(
+                            &mut row[x as usize],
+                            [sp[0] / a, sp[1] / a, sp[2] / a],
+                            a,
+                            k,
+                            s.mode,
+                            s.channels,
+                        );
                     }
                 });
             }
@@ -852,7 +1247,11 @@ pub fn is_paint(g: &PropGroup) -> bool {
 
 /// Next stroke name for a kind (`Brush 4`).
 pub fn next_name(fx: &PropGroup, kind: StrokeKind) -> String {
-    let n = fx.children.iter().filter(|c| matches!(c, Node::Group(g) if g.match_id == kind.match_id())).count();
+    let n = fx
+        .children
+        .iter()
+        .filter(|c| matches!(c, Node::Group(g) if g.match_id == kind.match_id()))
+        .count();
     format!("{} {}", kind.label(), n + 1)
 }
 

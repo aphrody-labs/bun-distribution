@@ -7,8 +7,14 @@ use lightcraft_catalog::{ColorLabel, Op};
 use super::{CommandSpec, always, bad, bool_or, cmd, f64_or, has_selection, str_param};
 use crate::Result;
 
-fn rename_args(s: &crate::Session, p: &Value, c: &str) -> Result<(Vec<lightcraft_catalog::PhotoId>, String, usize)> {
-    let template = str_param(p, "template").ok_or_else(|| bad(c, "missing `template`"))?.to_string();
+fn rename_args(
+    s: &crate::Session,
+    p: &Value,
+    c: &str,
+) -> Result<(Vec<lightcraft_catalog::PhotoId>, String, usize)> {
+    let template = str_param(p, "template")
+        .ok_or_else(|| bad(c, "missing `template`"))?
+        .to_string();
     let start = p.get("start").and_then(Value::as_u64).unwrap_or(1) as usize;
     Ok((s.targets(p), template, start))
 }
@@ -22,28 +28,49 @@ pub struct LabelSet {
 
 /// Our built-in sets.
 pub fn builtin_label_sets() -> Vec<LabelSet> {
-    let set = |name: &str, n: [&str; 5]| LabelSet { name: name.into(), names: n.map(str::to_string) };
-    vec![set("Colors", ["", "", "", "", ""]), set("Review", ["Reject", "Needs Work", "Approved", "Retouch", "Print"])]
+    let set = |name: &str, n: [&str; 5]| LabelSet {
+        name: name.into(),
+        names: n.map(str::to_string),
+    };
+    vec![
+        set("Colors", ["", "", "", "", ""]),
+        set(
+            "Review",
+            ["Reject", "Needs Work", "Approved", "Retouch", "Print"],
+        ),
+    ]
 }
 
 fn all_label_sets(s: &crate::Session) -> Vec<LabelSet> {
-    builtin_label_sets().into_iter().chain(s.label_sets.iter().cloned()).collect()
+    builtin_label_sets()
+        .into_iter()
+        .chain(s.label_sets.iter().cloned())
+        .collect()
 }
 
 /// The set whose names are the catalog's current ones.
 fn current_label_set(s: &crate::Session) -> Option<String> {
-    let cur: [String; 5] = ColorLabel::ALL.map(|l| s.catalog.custom_label_name(l).unwrap_or("").to_string());
+    let cur: [String; 5] =
+        ColorLabel::ALL.map(|l| s.catalog.custom_label_name(l).unwrap_or("").to_string());
     all_label_sets(s)
         .into_iter()
-        .find(|x| x.names.iter().zip(&cur).all(|(a, b)| a.trim() == b.trim() || (a.trim().is_empty() && b.is_empty())))
+        .find(|x| {
+            x.names
+                .iter()
+                .zip(&cur)
+                .all(|(a, b)| a.trim() == b.trim() || (a.trim().is_empty() && b.is_empty()))
+        })
         .map(|x| x.name)
 }
 
 /// Every set (built-ins first) and the one in use: `{sets: [{name, names, builtin}], current}`.
 pub fn label_sets_json(s: &crate::Session) -> Value {
     let builtin = builtin_label_sets().len();
-    let sets: Vec<Value> =
-        all_label_sets(s).iter().enumerate().map(|(i, x)| json!({"name": x.name, "names": x.names, "builtin": i < builtin})).collect();
+    let sets: Vec<Value> = all_label_sets(s)
+        .iter()
+        .enumerate()
+        .map(|(i, x)| json!({"name": x.name, "names": x.names, "builtin": i < builtin}))
+        .collect();
     json!({"sets": sets, "current": current_label_set(s)})
 }
 
@@ -53,8 +80,10 @@ fn set_names_ops(s: &crate::Session, names: &[String; 5]) -> Vec<Op> {
         .zip(names)
         .filter_map(|(l, n)| {
             let n = n.trim();
-            let name = (!n.is_empty() && !n.eq_ignore_ascii_case(&format!("{l:?}"))).then(|| n.to_string());
-            (s.catalog.custom_label_name(*l) != name.as_deref()).then_some(Op::SetLabelName { label: *l, name })
+            let name = (!n.is_empty() && !n.eq_ignore_ascii_case(&format!("{l:?}")))
+                .then(|| n.to_string());
+            (s.catalog.custom_label_name(*l) != name.as_deref())
+                .then_some(Op::SetLabelName { label: *l, name })
         })
         .collect()
 }
@@ -67,11 +96,15 @@ fn auto_tag_tracklog(s: &mut crate::Session, p: &Value) -> Result<Value> {
     const C: &str = "photo.autoTagTracklog";
     let text = match (str_param(p, "gpx"), str_param(p, "path")) {
         (Some(t), _) => t.to_string(),
-        (None, Some(path)) => std::fs::read_to_string(path).map_err(|e| bad(C, format!("can't read {path}: {e}")))?,
+        (None, Some(path)) => {
+            std::fs::read_to_string(path).map_err(|e| bad(C, format!("can't read {path}: {e}")))?
+        }
         (None, None) => return Err(bad(C, "missing `path` (a .gpx file) or `gpx` (its text)")),
     };
     let log = parse_gpx(&text).map_err(|e| bad(C, e.to_string()))?;
-    let (start, end) = log.span().ok_or_else(|| bad(C, "the track log has no timed track points"))?;
+    let (start, end) = log
+        .span()
+        .ok_or_else(|| bad(C, "the track log has no timed track points"))?;
     // minutes east of UTC; `None` = not given (zone-less capture times are then read as UTC)
     let offset: Option<i64> = match p.get("offset") {
         None | Some(Value::Null) => None,
@@ -83,9 +116,11 @@ fn auto_tag_tracklog(s: &mut crate::Session, p: &Value) -> Result<Value> {
             }
             Some((h * 60.0).round() as i64)
         }
-        Some(Value::String(o)) => {
-            Some(DateTime::parse_offset(o).ok_or_else(|| bad(C, format!("can't read offset `{o}` (e.g. +02:00 or -5)")))? as i64)
-        }
+        Some(Value::String(o)) => Some(
+            DateTime::parse_offset(o)
+                .ok_or_else(|| bad(C, format!("can't read offset `{o}` (e.g. +02:00 or -5)")))?
+                as i64,
+        ),
         Some(_) => return Err(bad(C, "offset is `+HH:MM` or a number of hours")),
     };
     let max_gap = f64_or(p, "maxGap", 600.0);
@@ -93,11 +128,14 @@ fn auto_tag_tracklog(s: &mut crate::Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "maxGap must be ≥ 0 seconds"));
     }
     let replace = bool_or(p, "replace", false);
-    let (mut no_time, mut outside, mut has_gps, mut assumed_utc, mut interpolated) = (0, 0, 0, 0, 0);
+    let (mut no_time, mut outside, mut has_gps, mut assumed_utc, mut interpolated) =
+        (0, 0, 0, 0, 0);
     let mut ops = Vec::new();
     let mut photos = Vec::new();
     for id in s.targets(p) {
-        let Some(ph) = s.catalog.photo(id) else { continue };
+        let Some(ph) = s.catalog.photo(id) else {
+            continue;
+        };
         if ph.meta.gps.is_some() && !replace {
             has_gps += 1;
             continue;
@@ -124,12 +162,18 @@ fn auto_tag_tracklog(s: &mut crate::Session, p: &Value) -> Result<Value> {
         if m == Match::Interpolated {
             interpolated += 1;
         }
-        let pos = ((g.latitude * 1e7).round() / 1e7, (g.longitude * 1e7).round() / 1e7);
+        let pos = (
+            (g.latitude * 1e7).round() / 1e7,
+            (g.longitude * 1e7).round() / 1e7,
+        );
         photos.push(json!({"id": id.0, "gps": [pos.0, pos.1], "match": if m == Match::Interpolated { "interpolated" } else { "nearest" }}));
         if ph.meta.gps != Some(pos) {
             let mut meta = ph.meta.clone();
             meta.gps = Some(pos);
-            ops.push(Op::SetMeta { id, meta: Box::new(meta) });
+            ops.push(Op::SetMeta {
+                id,
+                meta: Box::new(meta),
+            });
         }
     }
     let tagged = photos.len();
@@ -183,12 +227,21 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| {
                 use lightcraft_catalog::dates::{iso_seconds, normalize_iso, shift_iso};
                 let c = "photo.setCaptureTime";
-                let targets: Vec<_> = s.targets(p).into_iter().filter(|id| s.catalog.photo(*id).is_some()).collect();
+                let targets: Vec<_> = s
+                    .targets(p)
+                    .into_iter()
+                    .filter(|id| s.catalog.photo(*id).is_some())
+                    .collect();
                 if targets.is_empty() {
                     return Err(bad(c, "no photos"));
                 }
                 // photos without a capture time start from their import time
-                let base = |s: &crate::Session, id| s.catalog.photo(id).map(|p| p.date().to_string()).unwrap_or_default();
+                let base = |s: &crate::Session, id| {
+                    s.catalog
+                        .photo(id)
+                        .map(|p| p.date().to_string())
+                        .unwrap_or_default()
+                };
                 // seconds; a shift beyond 10,000 years is a mistake (and would overflow), not a date
                 const MAX_SHIFT: f64 = 10_000.0 * 365.25 * 86_400.0;
                 let shift = f64_or(p, "shift", 0.0) + f64_or(p, "hours", 0.0) * 3600.0;
@@ -198,11 +251,16 @@ pub fn specs() -> Vec<CommandSpec> {
                 let mut delta = shift.round() as i64;
                 let mut each: Option<String> = None;
                 if let Some(t) = str_param(p, "time") {
-                    let t = normalize_iso(t).ok_or_else(|| bad(c, format!("`{t}` is not a date (YYYY-MM-DDTHH:MM:SS)")))?;
+                    let t = normalize_iso(t).ok_or_else(|| {
+                        bad(c, format!("`{t}` is not a date (YYYY-MM-DDTHH:MM:SS)"))
+                    })?;
                     if bool_or(p, "each", false) {
                         each = Some(t);
                     } else {
-                        let anchor = s.active().filter(|a| targets.contains(a)).unwrap_or(targets[0]);
+                        let anchor = s
+                            .active()
+                            .filter(|a| targets.contains(a))
+                            .unwrap_or(targets[0]);
                         let anchor_date = base(s, anchor);
                         // An impossible calendar date cannot anchor changes to the other photos.
                         let from = normalize_iso(anchor_date.trim().get(..10).unwrap_or(""))
@@ -228,12 +286,22 @@ pub fn specs() -> Vec<CommandSpec> {
                         continue;
                     };
                     out.push(json!(new));
-                    if s.catalog.photo(*id).and_then(|p| p.captured.as_deref()) != Some(new.as_str()) {
-                        ops.push(Op::SetCaptured { id: *id, captured: Some(new) });
+                    if s.catalog.photo(*id).and_then(|p| p.captured.as_deref())
+                        != Some(new.as_str())
+                    {
+                        ops.push(Op::SetCaptured {
+                            id: *id,
+                            captured: Some(new),
+                        });
                     }
                 }
                 if out_of_range > 0 {
-                    return Err(bad(c, format!("the shift would take {out_of_range} photo(s) outside the years 0000–9999; nothing was changed")));
+                    return Err(bad(
+                        c,
+                        format!(
+                            "the shift would take {out_of_range} photo(s) outside the years 0000–9999; nothing was changed"
+                        ),
+                    ));
                 }
                 let n = ops.len();
                 if n > 0 {
@@ -265,12 +333,19 @@ pub fn specs() -> Vec<CommandSpec> {
             "{names: {red?: name|null, yellow?, green?, blue?, purple?}} — null or empty restores the colour's name",
             always,
             |s, p| {
-                let names = p.get("names").and_then(Value::as_object).ok_or_else(|| bad("label.setNames", "missing `names`"))?;
+                let names = p
+                    .get("names")
+                    .and_then(Value::as_object)
+                    .ok_or_else(|| bad("label.setNames", "missing `names`"))?;
                 let mut ops = Vec::new();
                 for (k, v) in names {
-                    let label = ColorLabel::parse(k).ok_or_else(|| bad("label.setNames", format!("unknown label `{k}`")))?;
-                    let name =
-                        v.as_str().map(str::trim).filter(|n| !n.is_empty() && !n.eq_ignore_ascii_case(&format!("{label:?}"))).map(str::to_string);
+                    let label = ColorLabel::parse(k)
+                        .ok_or_else(|| bad("label.setNames", format!("unknown label `{k}`")))?;
+                    let name = v
+                        .as_str()
+                        .map(str::trim)
+                        .filter(|n| !n.is_empty() && !n.eq_ignore_ascii_case(&format!("{label:?}")))
+                        .map(str::to_string);
                     if s.catalog.custom_label_name(label) != name.as_deref() {
                         ops.push(Op::SetLabelName { label, name });
                     }
@@ -283,19 +358,28 @@ pub fn specs() -> Vec<CommandSpec> {
             }
         ),
         cmd!(query "label.sets", "Color Label Sets", [], None, "{} → {sets: [{name, names: [red, yellow, green, blue, purple], builtin}], current: name|null}", always, |s, _| Ok(label_sets_json(s))),
-        cmd!("label.applySet", "Apply Color Label Set", [], None, "{name} — use a set's label names (undoable)", always, |s, p| {
-            let name = str_param(p, "name").ok_or_else(|| bad("label.applySet", "missing `name`"))?;
-            let set = all_label_sets(s)
-                .into_iter()
-                .find(|x| x.name.eq_ignore_ascii_case(name))
-                .ok_or_else(|| bad("label.applySet", format!("no label set `{name}`")))?;
-            let ops = set_names_ops(s, &set.names);
-            let n = ops.len();
-            if n > 0 {
-                s.commit(&format!("Label Set: {}", set.name), Op::Batch { ops })?;
+        cmd!(
+            "label.applySet",
+            "Apply Color Label Set",
+            [],
+            None,
+            "{name} — use a set's label names (undoable)",
+            always,
+            |s, p| {
+                let name =
+                    str_param(p, "name").ok_or_else(|| bad("label.applySet", "missing `name`"))?;
+                let set = all_label_sets(s)
+                    .into_iter()
+                    .find(|x| x.name.eq_ignore_ascii_case(name))
+                    .ok_or_else(|| bad("label.applySet", format!("no label set `{name}`")))?;
+                let ops = set_names_ops(s, &set.names);
+                let n = ops.len();
+                if n > 0 {
+                    s.commit(&format!("Label Set: {}", set.name), Op::Batch { ops })?;
+                }
+                Ok(json!({"changed": n}))
             }
-            Ok(json!({"changed": n}))
-        }),
+        ),
         cmd!(
             "label.saveSet",
             "Save Color Label Set",
@@ -304,13 +388,27 @@ pub fn specs() -> Vec<CommandSpec> {
             "{name} — save the current label names as a set (replaces a user set of that name)",
             always,
             |s, p| {
-                let name =
-                    str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad("label.saveSet", "missing `name`"))?.to_string();
-                if builtin_label_sets().iter().any(|b| b.name.eq_ignore_ascii_case(&name)) {
+                let name = str_param(p, "name")
+                    .map(str::trim)
+                    .filter(|n| !n.is_empty())
+                    .ok_or_else(|| bad("label.saveSet", "missing `name`"))?
+                    .to_string();
+                if builtin_label_sets()
+                    .iter()
+                    .any(|b| b.name.eq_ignore_ascii_case(&name))
+                {
                     return Err(bad("label.saveSet", format!("`{name}` is a built-in set")));
                 }
-                let set = LabelSet { name: name.clone(), names: ColorLabel::ALL.map(|l| s.catalog.custom_label_name(l).unwrap_or("").to_string()) };
-                match s.label_sets.iter_mut().find(|x| x.name.eq_ignore_ascii_case(&name)) {
+                let set = LabelSet {
+                    name: name.clone(),
+                    names: ColorLabel::ALL
+                        .map(|l| s.catalog.custom_label_name(l).unwrap_or("").to_string()),
+                };
+                match s
+                    .label_sets
+                    .iter_mut()
+                    .find(|x| x.name.eq_ignore_ascii_case(&name))
+                {
                     Some(x) => *x = set,
                     None => s.label_sets.push(set),
                 }
@@ -318,15 +416,27 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"name": name}))
             }
         ),
-        cmd!("label.deleteSet", "Delete Color Label Set", [], None, "{name} — user sets only", always, |s, p| {
-            let name = str_param(p, "name").ok_or_else(|| bad("label.deleteSet", "missing `name`"))?;
-            let before = s.label_sets.len();
-            s.label_sets.retain(|x| !x.name.eq_ignore_ascii_case(name));
-            if s.label_sets.len() == before {
-                return Err(bad("label.deleteSet", format!("no user label set `{name}`")));
+        cmd!(
+            "label.deleteSet",
+            "Delete Color Label Set",
+            [],
+            None,
+            "{name} — user sets only",
+            always,
+            |s, p| {
+                let name =
+                    str_param(p, "name").ok_or_else(|| bad("label.deleteSet", "missing `name`"))?;
+                let before = s.label_sets.len();
+                s.label_sets.retain(|x| !x.name.eq_ignore_ascii_case(name));
+                if s.label_sets.len() == before {
+                    return Err(bad(
+                        "label.deleteSet",
+                        format!("no user label set `{name}`"),
+                    ));
+                }
+                s.save_prefs()?;
+                Ok(json!({"deleted": name}))
             }
-            s.save_prefs()?;
-            Ok(json!({"deleted": name}))
-        }),
+        ),
     ]
 }

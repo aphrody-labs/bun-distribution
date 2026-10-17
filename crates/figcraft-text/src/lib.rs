@@ -4,7 +4,14 @@
 //! and, on desktop, from the system's font folders. [`layout`] turns a text node's
 //! [`TextData`](figcraft_doc::TextData) into positioned glyphs, lines and decorations; the renderer
 //! fills [`Glyph::path`]s and the editor uses [`TextLayout::caret`] / [`TextLayout::hit`].
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod breaks;
 pub mod display;
@@ -14,8 +21,9 @@ mod onpath;
 
 pub use breaks::grapheme_step;
 pub use fontdb::{
-    Axis, CRAFT_FONTS, Coords, Face, FontDb, NamedInstance, axis_label, db, face_with_char, family_names, family_styles, find_face, no_coords,
-    scan_system_fonts, scan_system_fonts_on_demand, system_fonts_scanned,
+    Axis, CRAFT_FONTS, Coords, Face, FontDb, NamedInstance, axis_label, db, face_with_char,
+    family_names, family_styles, find_face, no_coords, scan_system_fonts,
+    scan_system_fonts_on_demand, system_fonts_scanned,
 };
 pub use layout::{Decoration, Glyph, Line, TextLayout, layout};
 pub use onpath::OnPath;
@@ -52,7 +60,9 @@ static LAYOUT_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::Atom
 
 /// Forget cached layouts (after fonts were added). Bumps [`layout_generation`].
 pub fn clear_layout_cache() {
-    *layout_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner) = LayoutCache::default();
+    *layout_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = LayoutCache::default();
     LAYOUT_GENERATION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 }
 
@@ -76,17 +86,27 @@ fn fingerprint(t: &figcraft_doc::TextData, w: Option<u64>, h: Option<u64>) -> u6
 }
 
 /// Layout with a process-wide cache keyed by the text content/style and box size.
-pub fn layout_cached(t: &figcraft_doc::TextData, w: Option<f64>, h: Option<f64>) -> std::sync::Arc<TextLayout> {
+pub fn layout_cached(
+    t: &figcraft_doc::TextData,
+    w: Option<f64>,
+    h: Option<f64>,
+) -> std::sync::Arc<TextLayout> {
     let (wb, hb) = (w.map(f64::to_bits), h.map(f64::to_bits));
     let key = fingerprint(t, wb, hb);
     let hit = |c: &Cached| c.w == wb && c.h == hb && c.text == *t;
-    if let Some(l) =
-        layout_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner).buckets.get(&key).and_then(|b| b.iter().find(|c| hit(c)))
+    if let Some(l) = layout_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .buckets
+        .get(&key)
+        .and_then(|b| b.iter().find(|c| hit(c)))
     {
         return l.layout.clone();
     }
     let l = std::sync::Arc::new(layout(t, w, h));
-    let mut c = layout_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut c = layout_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if c.len >= LAYOUT_CACHE_MAX {
         *c = LayoutCache::default();
     }
@@ -101,7 +121,12 @@ pub fn layout_cached(t: &figcraft_doc::TextData, w: Option<f64>, h: Option<f64>)
     } else {
         0
     };
-    bucket.push(Cached { text: t.clone(), w: wb, h: hb, layout: l.clone() });
+    bucket.push(Cached {
+        text: t.clone(),
+        w: wb,
+        h: hb,
+        layout: l.clone(),
+    });
     c.len = c.len + 1 - dropped;
     l
 }
@@ -109,7 +134,9 @@ pub fn layout_cached(t: &figcraft_doc::TextData, w: Option<f64>, h: Option<f64>)
 /// Lay out a text node at its current box, returning the (shared, cached) layout and the vertical
 /// offset that applies its vertical alignment.
 pub fn layout_node(n: &Node) -> Option<(std::sync::Arc<TextLayout>, f64)> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     // Text on a path has no box: one line per paragraph, placed by its path.
     if t.path.is_some() {
         return Some((layout_cached(t, None, None), 0.0));
@@ -126,7 +153,9 @@ pub fn layout_node(n: &Node) -> Option<(std::sync::Arc<TextLayout>, f64)> {
 
 /// The box size a text node should have after its content or style changed, per its resize mode.
 pub fn auto_size(n: &Node) -> Option<(f64, f64)> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     if t.path.is_some() {
         return None;
     }

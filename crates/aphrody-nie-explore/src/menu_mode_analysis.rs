@@ -62,7 +62,10 @@ impl MenuPaths {
 
 #[must_use]
 pub fn stem(path: &str, suffix: &str) -> Option<String> {
-    path.rsplit('/').next()?.strip_suffix(suffix).map(str::to_owned)
+    path.rsplit('/')
+        .next()?
+        .strip_suffix(suffix)
+        .map(str::to_owned)
 }
 
 #[must_use]
@@ -187,7 +190,9 @@ pub fn collect_mode(
             focus,
         });
     }
-    facts.screens.sort_by(|left, right| left.screen.cmp(&right.screen));
+    facts
+        .screens
+        .sort_by(|left, right| left.screen.cmp(&right.screen));
 
     for layer in facts.layers.clone() {
         let Some(path) = paths.objects.get(&layer) else {
@@ -209,13 +214,16 @@ pub fn collect_mode(
             facts.g4tx.insert(path.clone());
         }
         for component in &object.components {
-            *facts.components.entry(component_type_name(component).to_owned()).or_default() += 1;
+            *facts
+                .components
+                .entry(component_type_name(component).to_owned())
+                .or_default() += 1;
             match component {
                 objbin::MenuComponent::Unknown(value) => {
                     for path in value.strings().filter(|path| path.ends_with(".g4tx")) {
                         facts.g4tx.insert(path.to_owned());
                     }
-                },
+                }
                 objbin::MenuComponent::Text(value) => {
                     for entry in &value.entries {
                         for hash in &entry.hashes {
@@ -228,8 +236,8 @@ pub fn collect_mode(
                             }
                         }
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
@@ -252,9 +260,13 @@ pub fn collect_mode(
             });
             continue;
         };
-        facts.scripts.push(analyze_mode_script(&script.path, &bytes, handlers));
+        facts
+            .scripts
+            .push(analyze_mode_script(&script.path, &bytes, handlers));
     }
-    facts.scripts.sort_by(|left, right| left.path.cmp(&right.path));
+    facts
+        .scripts
+        .sort_by(|left, right| left.path.cmp(&right.path));
     facts
 }
 
@@ -272,7 +284,7 @@ pub fn analyze_mode_script(path: &str, bytes: &[u8], handlers: &BTreeMap<u32, u6
                 commands: Vec::new(),
                 error: Some(format!("Lua 5.2 bytecode not recognized: {error}")),
             };
-        },
+        }
     };
     let mut includes = BTreeSet::new();
     let mut command_ids = BTreeSet::new();
@@ -286,7 +298,10 @@ pub fn analyze_mode_script(path: &str, bytes: &[u8], handlers: &BTreeMap<u32, u6
         commands: command_ids
             .into_iter()
             .filter_map(|cmd_id| {
-                handlers.get(&cmd_id).map(|handler| ModeCommand { cmd_id, handler: *handler })
+                handlers.get(&cmd_id).map(|handler| ModeCommand {
+                    cmd_id,
+                    handler: *handler,
+                })
             })
             .collect(),
         error: None,
@@ -307,7 +322,7 @@ fn walk_prototype(
                 {
                     includes.insert(value.to_owned());
                 }
-            },
+            }
             bytecode::Constant::Number(value)
                 if *value >= 0.0 && value.fract() == 0.0 && *value <= f64::from(u32::MAX) =>
             {
@@ -316,8 +331,8 @@ fn walk_prototype(
                 if handlers.contains_key(&id) {
                     command_ids.insert(id);
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     for child in &prototype.protos {
@@ -350,6 +365,11 @@ mod tests {
         let script = analyze_mode_script("data/x.lua.bin", b"not bytecode", &BTreeMap::new());
         assert_eq!(script.bytes, 12);
         assert_eq!(script.instructions, 0);
-        assert!(script.error.as_deref().is_some_and(|error| error.contains("Lua 5.2")));
+        assert!(
+            script
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("Lua 5.2"))
+        );
     }
 }

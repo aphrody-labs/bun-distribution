@@ -77,7 +77,15 @@ fn load_scene(db: &std::path::Path, event_id: &str) -> Result<Vec<String>> {
 fn team(name: &str, base: u16) -> TeamSetup {
     TeamSetup::new(
         name,
-        StatBlock { kc: base, cr: base, tc: base, pr: base, ps: base, ag: base, it: base },
+        StatBlock {
+            kc: base,
+            cr: base,
+            tc: base,
+            pr: base,
+            ps: base,
+            ag: base,
+            it: base,
+        },
     )
 }
 
@@ -122,7 +130,10 @@ fn assets_police(cli: &Cli) -> Result<(std::path::PathBuf, std::path::PathBuf)> 
         Some(p) => p.clone(),
         None => mat(FONT_G4TX)?,
     };
-    println!("[aphrody-nie-play] police resolue par le VFS ({montage}) : {}", cfg.display());
+    println!(
+        "[aphrody-nie-play] police resolue par le VFS ({montage}) : {}",
+        cfg.display()
+    );
     Ok((cfg, g4tx))
 }
 
@@ -140,7 +151,7 @@ fn main() -> Result<()> {
                 "[aphrody-nie-play] équipe RAIMON = 11 vrais chara_param (lv99) → stats réelles"
             );
             t
-        },
+        }
         None => team("RAIMON", 120),
     };
     // Match RÉEL via la FSM portée (aphrody-nie-core).
@@ -165,13 +176,25 @@ fn main() -> Result<()> {
         let mut f = vec![
             (aphrody_nie_app::GameState::Title, 30),
             (aphrody_nie_app::GameState::MainMenu { sel: 0 }, 20),
-            (aphrody_nie_app::GameState::Match { home: res.home_score, away: res.away_score }, 40),
+            (
+                aphrody_nie_app::GameState::Match {
+                    home: res.home_score,
+                    away: res.away_score,
+                },
+                40,
+            ),
             (aphrody_nie_app::GameState::MainMenu { sel: 1 }, 20),
         ];
         // Locuteur exact non résolu (line_label = id, pas un nom) → libellé de scène honnête.
         let speaker = format!("Mode Histoire — {}", cli.event_id);
         for line in scene {
-            f.push((aphrody_nie_app::GameState::Story { speaker: speaker.clone(), line }, 35));
+            f.push((
+                aphrody_nie_app::GameState::Story {
+                    speaker: speaker.clone(),
+                    line,
+                },
+                35,
+            ));
         }
         f.push((aphrody_nie_app::GameState::MainMenu { sel: 3 }, 20));
         f
@@ -200,14 +223,14 @@ fn main() -> Result<()> {
                     "[aphrody-nie-play]   match JOUÉ (aphrody-nie-runtime, physique) score={:?}",
                     world.score
                 );
-            },
+            }
             _ => {
                 let buf = renderer.render(state);
                 for _ in 0..*dur {
                     write_png(&buf, &cli.out.join(format!("f{frame:04}.png")))?;
                     frame += 1;
                 }
-            },
+            }
         }
     }
     println!(

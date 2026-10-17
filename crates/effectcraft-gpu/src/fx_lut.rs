@@ -105,7 +105,11 @@ fn encode(ops: &[ColorOp]) -> Option<Vec<f32>> {
                     prog.extend(r);
                 }
             }
-            ColorOp::Cdl { cdl, clamp, inverse } => {
+            ColorOp::Cdl {
+                cdl,
+                clamp,
+                inverse,
+            } => {
                 prog.push(4.0);
                 for v in cdl.slope.iter().chain(&cdl.offset).chain(&cdl.power) {
                     prog.push(*v as f32);
@@ -127,12 +131,30 @@ fn encode(ops: &[ColorOp]) -> Option<Vec<f32>> {
                 prog.push(10.0);
                 prog.extend(e);
             }
-            ColorOp::LogAffine { base, log_slope, log_offset, lin_slope, lin_offset, inverse } => {
+            ColorOp::LogAffine {
+                base,
+                log_slope,
+                log_offset,
+                lin_slope,
+                lin_offset,
+                inverse,
+            } => {
                 prog.extend([11.0, *base]);
-                prog.extend(log_slope.iter().chain(log_offset).chain(lin_slope).chain(lin_offset));
+                prog.extend(
+                    log_slope
+                        .iter()
+                        .chain(log_offset)
+                        .chain(lin_slope)
+                        .chain(lin_offset),
+                );
                 prog.extend([*inverse as u32 as f32, f64::MIN_POSITIVE.ln() as f32]);
             }
-            ColorOp::MonCurve { gamma, offset, inverse, mirror } => {
+            ColorOp::MonCurve {
+                gamma,
+                offset,
+                inverse,
+                mirror,
+            } => {
                 prog.push(12.0);
                 prog.extend(gamma.iter().chain(offset));
                 prog.extend([*inverse as u32 as f32, *mirror as u32 as f32]);
@@ -141,7 +163,12 @@ fn encode(ops: &[ColorOp]) -> Option<Vec<f32>> {
                 prog.push(13.0);
                 prog.extend(lo.iter().chain(hi));
             }
-            ColorOp::Lut { lut, shaper, interp, inverse } => {
+            ColorOp::Lut {
+                lut,
+                shaper,
+                interp,
+                inverse,
+            } => {
                 prog.extend([8.0, 0.0, *interp as f32, *inverse as u32 as f32, -1.0]);
                 let mut t = vec![];
                 push_lut(&mut t, lut);

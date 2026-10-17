@@ -12,7 +12,9 @@ use filmcraft_media::cancel::with_draft;
 /// be bit-exact with ffmpeg, and draft playback must have produced some approximate frames.
 fn check(name: &str, args: &[&str], w: usize, h: usize) {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let Some(file) = fixture(&ff, name, args) else { return };
+    let Some(file) = fixture(&ff, name, args) else {
+        return;
+    };
     let raw = ffmpeg_frames(&ff, &file, "yuv420p");
     let fsize = w * h * 3 / 2;
     let n = raw.len() / fsize;
@@ -24,26 +26,54 @@ fn check(name: &str, args: &[&str], w: usize, h: usize) {
     let rate = src.info().frame_rate();
     let g0 = filmcraft_codecs::gop_stats();
     for i in 0..n {
-        let f = src.video_frame(FrameRequest { time: rate.tick_of(i as i64), scale: 0.5 }).expect("frame");
-        assert_eq!(max_diff(&planes(&f), &reference(i)), 0, "{name}: frame {i} without draft mode");
+        let f = src
+            .video_frame(FrameRequest {
+                time: rate.tick_of(i as i64),
+                scale: 0.5,
+            })
+            .expect("frame");
+        assert_eq!(
+            max_diff(&planes(&f), &reference(i)),
+            0,
+            "{name}: frame {i} without draft mode"
+        );
     }
-    assert_eq!(filmcraft_codecs::gop_stats().draft, g0.draft, "{name}: draft decoding is off by default");
+    assert_eq!(
+        filmcraft_codecs::gop_stats().draft,
+        g0.draft,
+        "{name}: draft decoding is off by default"
+    );
 
     // Draft playback at 1/2 resolution on a fresh source: non-reference frames are drafts.
     let src = filmcraft_codecs::open_bytes(name, bytes(&file)).expect("open");
     let g1 = filmcraft_codecs::gop_stats();
     let mut approximate = 0;
     for i in 0..n {
-        let f = with_draft(true, || src.video_frame(FrameRequest { time: rate.tick_of(i as i64), scale: 0.5 })).expect("frame");
+        let f = with_draft(true, || {
+            src.video_frame(FrameRequest {
+                time: rate.tick_of(i as i64),
+                scale: 0.5,
+            })
+        })
+        .expect("frame");
         approximate += (max_diff(&planes(&f), &reference(i)) > 0) as usize;
     }
     let drafts = filmcraft_codecs::gop_stats().draft - g1.draft;
-    assert!(drafts > 0 && approximate > 0 && approximate as u64 <= drafts, "{name}: {drafts} draft frames, {approximate} differ");
+    assert!(
+        drafts > 0 && approximate > 0 && approximate as u64 <= drafts,
+        "{name}: {drafts} draft frames, {approximate} differ"
+    );
 
     // Then an export from the same source (no draft hint): every frame is exact again.
     for i in 0..n {
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).expect("frame");
-        assert_eq!(max_diff(&planes(&f), &reference(i)), 0, "{name}: export frame {i} after draft playback");
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .expect("frame");
+        assert_eq!(
+            max_diff(&planes(&f), &reference(i)),
+            0,
+            "{name}: export frame {i} after draft playback"
+        );
     }
 }
 
@@ -112,7 +142,20 @@ fn av1() {
     // SVT-AV1 hierarchical GOP: the top layer refreshes no reference slot.
     check(
         "draft_av1.mp4",
-        &["-f", "lavfi", "-i", "testsrc2=s=320x240:r=25:d=1,noise=alls=10:allf=t", "-c:v", "libsvtav1", "-preset", "8", "-crf", "35", "-pix_fmt", "yuv420p"],
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=s=320x240:r=25:d=1,noise=alls=10:allf=t",
+            "-c:v",
+            "libsvtav1",
+            "-preset",
+            "8",
+            "-crf",
+            "35",
+            "-pix_fmt",
+            "yuv420p",
+        ],
         320,
         240,
     );

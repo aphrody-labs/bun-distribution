@@ -20,7 +20,11 @@ pub fn lpc(x: &[f32], order: usize, fs_khz: usize) -> Vec<f64> {
             1.0
         }
     };
-    let xw: Vec<f64> = x.iter().enumerate().map(|(i, &v)| v as f64 * w(i)).collect();
+    let xw: Vec<f64> = x
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| v as f64 * w(i))
+        .collect();
     let mut r = vec![0f64; order + 1];
     for (k, rk) in r.iter_mut().enumerate() {
         *rk = xw[k..].iter().zip(&xw).map(|(a, b)| a * b).sum();
@@ -151,7 +155,11 @@ fn ncorr(x: &[f32], range: std::ops::Range<usize>, lag: usize) -> f64 {
         xx += a * a;
         yy += b * b;
     }
-    if xy <= 0.0 { 0.0 } else { xy / (xx * yy + 1e-9).sqrt() }
+    if xy <= 0.0 {
+        0.0
+    } else {
+        xy / (xx * yy + 1e-9).sqrt()
+    }
 }
 
 pub struct Pitch {
@@ -170,7 +178,9 @@ pub fn pitch_search(x: &[f32], start: usize, len: usize, fs_khz: usize) -> Pitch
     let sub = len / 4;
     let nl = (max_lag - min_lag + 1) as usize;
     // Whole-frame score per lag.
-    let full: Vec<f64> = (0..nl).map(|i| ncorr(x, start..start + len, min_lag as usize + i)).collect();
+    let full: Vec<f64> = (0..nl)
+        .map(|i| ncorr(x, start..start + len, min_lag as usize + i))
+        .collect();
     let mut best = 0usize;
     for i in 0..nl {
         // Slight preference for shorter lags.
@@ -206,7 +216,8 @@ pub fn pitch_search(x: &[f32], start: usize, len: usize, fs_khz: usize) -> Pitch
     let mut best = (f64::MIN, lag, 0usize);
     for l0 in (lag - 2).max(min_lag)..=(lag + 2).min(max_lag) {
         for (ci, offs) in cb.iter().enumerate() {
-            let s: f64 = (0..4).map(|k| sub_score(k, l0 + offs[k])).sum::<f64>() - 0.002 * ci as f64;
+            let s: f64 =
+                (0..4).map(|k| sub_score(k, l0 + offs[k])).sum::<f64>() - 0.002 * ci as f64;
             if s > best.0 {
                 best = (s, l0, ci);
             }
@@ -217,7 +228,12 @@ pub fn pitch_search(x: &[f32], start: usize, len: usize, fs_khz: usize) -> Pitch
     for k in 0..4 {
         lags[k] = (l0 + cb[ci][k]).clamp(min_lag, 18 * fs);
     }
-    Pitch { lag_index: l0 - min_lag, contour: ci, lags, score }
+    Pitch {
+        lag_index: l0 - min_lag,
+        contour: ci,
+        lags,
+        score,
+    }
 }
 
 /// Result of the LTP codebook search.
@@ -287,7 +303,12 @@ pub fn ltp_search(r: &[f64], start: usize, sub: usize, lags: &[i32; 4]) -> Ltp {
             best = (total, p, idx, errs);
         }
     }
-    Ltp { per_index: best.1, ltp_index: best.2, err: best.3, energy: e }
+    Ltp {
+        per_index: best.1,
+        ltp_index: best.2,
+        err: best.3,
+        energy: e,
+    }
 }
 
 #[cfg(test)]
@@ -312,10 +333,18 @@ mod tests {
                 .collect();
             let a = lpc(&x, order, fs);
             let nlsf = a2nlsf(&a).expect("roots");
-            let q15: Vec<i32> = nlsf.iter().map(|w| (w / std::f64::consts::PI * 32768.0).round() as i32).collect();
+            let q15: Vec<i32> = nlsf
+                .iter()
+                .map(|w| (w / std::f64::consts::PI * 32768.0).round() as i32)
+                .collect();
             let a_q12 = nlsf2a(&q15);
             for j in 0..order {
-                assert!((a_q12[j] as f64 / 4096.0 - a[j]).abs() < 0.02, "order {order} coef {j}: {} vs {}", a_q12[j] as f64 / 4096.0, a[j]);
+                assert!(
+                    (a_q12[j] as f64 / 4096.0 - a[j]).abs() < 0.02,
+                    "order {order} coef {j}: {} vs {}",
+                    a_q12[j] as f64 / 4096.0,
+                    a[j]
+                );
             }
         }
     }

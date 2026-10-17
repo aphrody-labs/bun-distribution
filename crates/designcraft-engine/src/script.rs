@@ -43,14 +43,23 @@ pub fn parse(text: &str) -> Result<Vec<Step>, String> {
             continue;
         }
         let step = if l.starts_with('{') {
-            serde_json::from_str::<Value>(l).map_err(|e| e.to_string()).and_then(|v| step_of(&v))
+            serde_json::from_str::<Value>(l)
+                .map_err(|e| e.to_string())
+                .and_then(|v| step_of(&v))
         } else {
             // `id {json}`, `id={json}` or `id`.
             let split = l.find([' ', '=', '\t']).unwrap_or(l.len());
             let (id, rest) = l.split_at(split);
             let rest = rest.trim_start_matches(['=', ' ', '\t']).trim();
-            let params = if rest.is_empty() { Ok(json!({})) } else { serde_json::from_str(rest).map_err(|e| e.to_string()) };
-            params.map(|params| Step { command: id.to_string(), params })
+            let params = if rest.is_empty() {
+                Ok(json!({}))
+            } else {
+                serde_json::from_str(rest).map_err(|e| e.to_string())
+            };
+            params.map(|params| Step {
+                command: id.to_string(),
+                params,
+            })
         };
         out.push(step.map_err(|e| format!("line {}: {e}", n + 1))?);
     }
@@ -58,8 +67,17 @@ pub fn parse(text: &str) -> Result<Vec<Step>, String> {
 }
 
 fn step_of(v: &Value) -> Result<Step, String> {
-    let command = v.get("command").and_then(Value::as_str).filter(|s| !s.is_empty()).ok_or("missing `command`")?.to_string();
-    let params = v.get("params").cloned().filter(|p| !p.is_null()).unwrap_or(json!({}));
+    let command = v
+        .get("command")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or("missing `command`")?
+        .to_string();
+    let params = v
+        .get("params")
+        .cloned()
+        .filter(|p| !p.is_null())
+        .unwrap_or(json!({}));
     if !params.is_object() {
         return Err("`params` must be an object".into());
     }
@@ -71,11 +89,23 @@ fn lookup(r: &str, results: &[Value]) -> Result<Value, String> {
     let mut parts = r.split('.');
     let head = parts.next().unwrap_or("");
     let idx = if head == "last" {
-        results.len().checked_sub(1).ok_or("`$last` before any step")?
+        results
+            .len()
+            .checked_sub(1)
+            .ok_or("`$last` before any step")?
     } else {
-        head.parse::<usize>().map_err(|_| format!("bad reference `${r}`"))?
+        head.parse::<usize>()
+            .map_err(|_| format!("bad reference `${r}`"))?
     };
-    let mut v = results.get(idx).ok_or_else(|| format!("`${r}`: step {idx} hasn't run (only {} have)", results.len()))?.clone();
+    let mut v = results
+        .get(idx)
+        .ok_or_else(|| {
+            format!(
+                "`${r}`: step {idx} hasn't run (only {} have)",
+                results.len()
+            )
+        })?
+        .clone();
     for p in parts {
         v = match (&v, p.parse::<usize>()) {
             (Value::Array(a), Ok(i)) => a.get(i).cloned(),
@@ -89,14 +119,21 @@ fn lookup(r: &str, results: &[Value]) -> Result<Value, String> {
 
 fn short(v: &Value) -> String {
     let s = v.to_string();
-    if s.len() > 120 { format!("{}…", &s[..s.floor_char_boundary(120)]) } else { s }
+    if s.len() > 120 {
+        format!("{}…", &s[..s.floor_char_boundary(120)])
+    } else {
+        s
+    }
 }
 
 /// Replace references in `params` with values from earlier `results`.
 pub fn resolve(params: &Value, results: &[Value]) -> Result<Value, String> {
     Ok(match params {
         Value::String(s) => {
-            if let Some(r) = s.strip_prefix('$').filter(|r| !r.is_empty() && !r.contains(['{', ' '])) {
+            if let Some(r) = s
+                .strip_prefix('$')
+                .filter(|r| !r.is_empty() && !r.contains(['{', ' ']))
+            {
                 return lookup(r, results);
             }
             if !s.contains("${") {
@@ -106,7 +143,10 @@ pub fn resolve(params: &Value, results: &[Value]) -> Result<Value, String> {
             let mut rest = s.as_str();
             while let Some(i) = rest.find("${") {
                 out.push_str(&rest[..i]);
-                let end = rest[i..].find('}').ok_or_else(|| format!("unclosed `${{` in {s:?}"))? + i;
+                let end = rest[i..]
+                    .find('}')
+                    .ok_or_else(|| format!("unclosed `${{` in {s:?}"))?
+                    + i;
                 let v = lookup(&rest[i + 2..end], results)?;
                 match v {
                     Value::String(t) => out.push_str(&t),
@@ -117,8 +157,16 @@ pub fn resolve(params: &Value, results: &[Value]) -> Result<Value, String> {
             out.push_str(rest);
             Value::String(out)
         }
-        Value::Array(a) => Value::Array(a.iter().map(|v| resolve(v, results)).collect::<Result<_, _>>()?),
-        Value::Object(o) => Value::Object(o.iter().map(|(k, v)| Ok((k.clone(), resolve(v, results)?))).collect::<Result<_, String>>()?),
+        Value::Array(a) => Value::Array(
+            a.iter()
+                .map(|v| resolve(v, results))
+                .collect::<Result<_, _>>()?,
+        ),
+        Value::Object(o) => Value::Object(
+            o.iter()
+                .map(|(k, v)| Ok((k.clone(), resolve(v, results)?)))
+                .collect::<Result<_, String>>()?,
+        ),
         v => v.clone(),
     })
 }
@@ -150,10 +198,18 @@ pub fn run(steps: &[Step], mut exec: impl FnMut(&str, Value) -> Result<Value, St
         let r = resolve(&s.params, &results).and_then(|p| exec(&s.command, p));
         match r {
             Ok(v) => results.push(v),
-            Err(e) => return Report { results, failed: Some((i, s.command.clone(), e)) },
+            Err(e) => {
+                return Report {
+                    results,
+                    failed: Some((i, s.command.clone(), e)),
+                };
+            }
         }
     }
-    Report { results, failed: None }
+    Report {
+        results,
+        failed: None,
+    }
 }
 
 impl crate::Session {
@@ -171,7 +227,8 @@ mod tests {
     fn parses_all_forms() {
         let a = parse(r#"[{"command": "file.new"}, {"command": "frame.create", "params": {"rect": [0, 0, 10, 10]}}]"#).unwrap();
         let b = parse("# comment\nfile.new\n\nframe.create {\"rect\": [0, 0, 10, 10]}\n").unwrap();
-        let c = parse("{\"command\": \"file.new\"}\nframe.create={\"rect\": [0, 0, 10, 10]}").unwrap();
+        let c =
+            parse("{\"command\": \"file.new\"}\nframe.create={\"rect\": [0, 0, 10, 10]}").unwrap();
         assert_eq!(a, b);
         assert_eq!(a, c);
         assert!(parse("frame.create {bad").unwrap_err().contains("line 1"));
@@ -185,17 +242,34 @@ mod tests {
         let windows = format!("\u{feff}{}", plain.replace('\n', "\r\n"));
         assert_eq!(parse(&windows).unwrap(), parse(plain).unwrap());
         let array = r#"[{"command": "file.new"}]"#;
-        assert_eq!(parse(&format!("\u{feff}{array}")).unwrap(), parse(array).unwrap());
+        assert_eq!(
+            parse(&format!("\u{feff}{array}")).unwrap(),
+            parse(array).unwrap()
+        );
     }
 
     #[test]
     fn resolves_references() {
-        let results = vec![json!({"id": 8, "story": 9, "ids": [4, 5]}), json!({"name": "A"})];
+        let results = vec![
+            json!({"id": 8, "story": 9, "ids": [4, 5]}),
+            json!({"name": "A"}),
+        ];
         let p = json!({"story": "$0.story", "id": "$0.ids.1", "label": "Frame ${0.id} of ${last.name}", "keep": "$", "list": ["$1.name"]});
         let r = resolve(&p, &results).unwrap();
-        assert_eq!(r, json!({"story": 9, "id": 5, "label": "Frame 8 of A", "keep": "$", "list": ["A"]}));
-        assert!(resolve(&json!({"x": "$5.id"}), &results).unwrap_err().contains("hasn't run"));
-        assert!(resolve(&json!({"x": "$0.nope"}), &results).unwrap_err().contains("no `nope`"));
+        assert_eq!(
+            r,
+            json!({"story": 9, "id": 5, "label": "Frame 8 of A", "keep": "$", "list": ["A"]})
+        );
+        assert!(
+            resolve(&json!({"x": "$5.id"}), &results)
+                .unwrap_err()
+                .contains("hasn't run")
+        );
+        assert!(
+            resolve(&json!({"x": "$0.nope"}), &results)
+                .unwrap_err()
+                .contains("no `nope`")
+        );
     }
 
     #[test]
@@ -213,9 +287,13 @@ mod tests {
         assert!(r.failed.is_none(), "{r:?}");
         assert_eq!(r.results[4]["text"], "Hello world");
         // Failure reports the step and keeps earlier results.
-        let r = s.run_script(&parse("document.inspect\nno.such.command\ndocument.inspect").unwrap());
+        let r =
+            s.run_script(&parse("document.inspect\nno.such.command\ndocument.inspect").unwrap());
         assert_eq!(r.results.len(), 1);
-        assert_eq!(r.failed.as_ref().map(|f| (f.0, f.1.as_str())), Some((1, "no.such.command")));
+        assert_eq!(
+            r.failed.as_ref().map(|f| (f.0, f.1.as_str())),
+            Some((1, "no.such.command"))
+        );
         assert_eq!(r.to_json()["failedIndex"], 1);
     }
 }

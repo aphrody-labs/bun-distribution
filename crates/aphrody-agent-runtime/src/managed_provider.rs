@@ -75,7 +75,9 @@ fn managed_binary(root: &Path) -> Option<PathBuf> {
         .map(|entry| entry.path())
         .filter(|path| {
             path.is_dir()
-                && path.file_name().is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
+                && path
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().starts_with("llama-"))
         })
         .collect();
     directories.sort_by(|left, right| right.file_name().cmp(&left.file_name()));
@@ -94,7 +96,11 @@ fn resolve_binary(config: &Config, cwd: &Path) -> Result<PathBuf, ManagedProvide
     }
     if let Some(binary) = std::env::var_os("APHRODY_LLAMA_BIN").filter(|value| !value.is_empty()) {
         let binary = cwd.join(binary);
-        if binary.file_stem().is_some_and(|name| name == "llama-server") && binary.is_file() {
+        if binary
+            .file_stem()
+            .is_some_and(|name| name == "llama-server")
+            && binary.is_file()
+        {
             return Ok(binary);
         }
         if let Some(found) = binary.parent().and_then(in_directory) {
@@ -175,7 +181,9 @@ fn validate_extra_args(arguments: &[String]) -> Result<(), ManagedProviderError>
         "-ctv",
     ];
     for argument in arguments {
-        let flag = argument.split_once('=').map_or(argument.as_str(), |(flag, _)| flag);
+        let flag = argument
+            .split_once('=')
+            .map_or(argument.as_str(), |(flag, _)| flag);
         if OWNED.contains(&flag) {
             return Err(ManagedProviderError::message(format_args!(
                 "llama.extra_args cannot override supervisor-managed option `{flag}`; use the \
@@ -251,14 +259,22 @@ pub async fn prepare_managed_provider_in(
     let spawned = managed && backend == InferenceBackend::Spawn;
     if managed
         && backend == InferenceBackend::InProcess
-        && config.llama.extra_args.as_ref().is_some_and(|args| !args.is_empty())
+        && config
+            .llama
+            .extra_args
+            .as_ref()
+            .is_some_and(|args| !args.is_empty())
     {
         tracing::warn!(
             "`llama.extra_args` apply to llama-server only; the in-process engine ignores them"
         );
     }
 
-    let binary = if spawned { Some(resolve_binary(config, cwd)?) } else { None };
+    let binary = if spawned {
+        Some(resolve_binary(config, cwd)?)
+    } else {
+        None
+    };
     let caps = if let Some(binary) = binary.clone() {
         Some(
             tokio::task::spawn_blocking(move || ServerCapabilities::probe(&binary))
@@ -269,18 +285,30 @@ pub async fn prepare_managed_provider_in(
     } else {
         None
     };
-    if let Some(model) = config.model.as_deref().and_then(|model| model.strip_prefix("file:")) {
+    if let Some(model) = config
+        .model
+        .as_deref()
+        .and_then(|model| model.strip_prefix("file:"))
+    {
         config.model = Some(format!("file:{}", expand_path(model, cwd)?.display()));
     }
     let endpoint = config.provider.info.base_url.as_deref().map(|endpoint| {
         if config.provider.id == "ollama" {
-            endpoint.trim_end_matches('/').strip_suffix("/v1").unwrap_or(endpoint).to_owned()
+            endpoint
+                .trim_end_matches('/')
+                .strip_suffix("/v1")
+                .unwrap_or(endpoint)
+                .to_owned()
         } else {
             endpoint.to_owned()
         }
     });
     let ready = aphrody_llama_server::ensure_oss_ready(OssReadyOptions {
-        provider: if managed { "llama" } else { &config.provider.id },
+        provider: if managed {
+            "llama"
+        } else {
+            &config.provider.id
+        },
         model: config.model.as_deref(),
         endpoint: endpoint.as_deref(),
         store_root,
@@ -289,10 +317,16 @@ pub async fn prepare_managed_provider_in(
     .await
     .map_err(ManagedProviderError::message)?;
     match ready {
-        OssReadyOutcome::LlamaReady { model_id, primary_path, all_paths, .. } => {
+        OssReadyOutcome::LlamaReady {
+            model_id,
+            primary_path,
+            all_paths,
+            ..
+        } => {
             if backend == InferenceBackend::InProcess {
                 let mmproj = all_paths.iter().skip(1).find(|path| {
-                    path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+                    path.file_name()
+                        .is_some_and(|name| name.to_string_lossy().contains("mmproj"))
                 });
                 return start_in_process(
                     config,
@@ -320,7 +354,8 @@ pub async fn prepare_managed_provider_in(
             let mut request = PlanRequest::new(Role::Chat, &model_id);
             request.ctx = config.llama.ctx;
             request.mmproj = all_paths.into_iter().skip(1).find(|path| {
-                path.file_name().is_some_and(|name| name.to_string_lossy().contains("mmproj"))
+                path.file_name()
+                    .is_some_and(|name| name.to_string_lossy().contains("mmproj"))
             });
             request.extra_args = config.llama.extra_args.clone().unwrap_or_default();
             if let Some(path) = adapter {
@@ -340,7 +375,9 @@ pub async fn prepare_managed_provider_in(
                 .ensure(&binary, &plan, options)
                 .await
                 .map_err(ManagedProviderError::message)?;
-            supervisor.touch(Role::Chat).map_err(ManagedProviderError::message)?;
+            supervisor
+                .touch(Role::Chat)
+                .map_err(ManagedProviderError::message)?;
             config.model = Some(model_id);
             config.provider.info.base_url = Some(endpoint.base_url());
             let request: aphrody_llama_server::daemon::DaemonRequest = serde_json::from_slice(
@@ -349,21 +386,24 @@ pub async fn prepare_managed_provider_in(
                     .map_err(ManagedProviderError::message)?,
             )
             .map_err(ManagedProviderError::message)?;
-            let heartbeat = request.keep_alive_secs.map(Duration::from_secs).map(|duration| {
-                tokio::spawn(async move {
-                    let interval = (duration / 3).max(Duration::from_millis(100));
-                    loop {
-                        tokio::time::sleep(interval).await;
-                        if let Err(error) = supervisor.touch(Role::Chat) {
-                            eprintln!(
-                                "warning: failed to refresh managed inference lease: {error}"
-                            );
+            let heartbeat = request
+                .keep_alive_secs
+                .map(Duration::from_secs)
+                .map(|duration| {
+                    tokio::spawn(async move {
+                        let interval = (duration / 3).max(Duration::from_millis(100));
+                        loop {
+                            tokio::time::sleep(interval).await;
+                            if let Err(error) = supervisor.touch(Role::Chat) {
+                                eprintln!(
+                                    "warning: failed to refresh managed inference lease: {error}"
+                                );
+                            }
                         }
-                    }
-                })
-            });
+                    })
+                });
             Ok(ProviderLease::with_heartbeat(heartbeat))
-        },
+        }
         OssReadyOutcome::OllamaReady { model, endpoint } => {
             config.model = Some(model);
             let endpoint = endpoint.trim_end_matches('/');
@@ -373,13 +413,13 @@ pub async fn prepare_managed_provider_in(
                 format!("{endpoint}/v1")
             });
             Ok(ProviderLease::default())
-        },
+        }
         OssReadyOutcome::LmStudioReady { model, endpoint }
         | OssReadyOutcome::VllmReady { model, endpoint } => {
             config.model = Some(model);
             config.provider.info.base_url = Some(endpoint);
             Ok(ProviderLease::default())
-        },
+        }
     }
 }
 
@@ -401,7 +441,12 @@ async fn start_in_process(
 
     // One loaded copy per file, projector, adapter and context size while any session still
     // holds it.
-    type Key = (PathBuf, Option<u32>, Option<PathBuf>, Option<(PathBuf, u32)>);
+    type Key = (
+        PathBuf,
+        Option<u32>,
+        Option<PathBuf>,
+        Option<(PathBuf, u32)>,
+    );
     type LoadedServers = Vec<(Key, Weak<InProcessServer>)>;
     static LOADED: OnceLock<Mutex<LoadedServers>> = OnceLock::new();
     let loaded = LOADED.get_or_init(Mutex::default);
@@ -414,7 +459,9 @@ async fn start_in_process(
     );
     let live = loaded.lock().ok().and_then(|mut list| {
         list.retain(|(_, server)| server.strong_count() > 0);
-        list.iter().find(|(entry, _)| *entry == key).and_then(|(_, server)| server.upgrade())
+        list.iter()
+            .find(|(entry, _)| *entry == key)
+            .and_then(|(_, server)| server.upgrade())
     });
     let server = if let Some(server) = live {
         server
@@ -425,14 +472,19 @@ async fn start_in_process(
             LoadOptions {
                 ctx,
                 mmproj,
-                lora: lora.into_iter().map(|(path, scale)| LoraSpec { path, scale }).collect(),
+                lora: lora
+                    .into_iter()
+                    .map(|(path, scale)| LoraSpec { path, scale })
+                    .collect(),
                 ..LoadOptions::default()
             },
         )
         .await
         .map_err(ManagedProviderError::message)?;
         let server = Arc::new(
-            InProcessServer::start(engine).await.map_err(ManagedProviderError::message)?,
+            InProcessServer::start(engine)
+                .await
+                .map_err(ManagedProviderError::message)?,
         );
         if let Ok(mut list) = loaded.lock() {
             list.push((key, Arc::downgrade(&server)));
@@ -441,7 +493,10 @@ async fn start_in_process(
     };
     config.model = Some(model_id);
     config.provider.info.base_url = Some(server.base_url());
-    Ok(ProviderLease { heartbeat: None, server: Some(server) })
+    Ok(ProviderLease {
+        heartbeat: None,
+        server: Some(server),
+    })
 }
 
 #[cfg(not(feature = "in-process"))]
@@ -452,7 +507,9 @@ async fn start_in_process(
     _mmproj: Option<PathBuf>,
     _lora: Option<(PathBuf, f32)>,
 ) -> Result<ProviderLease, ManagedProviderError> {
-    Err(ManagedProviderError::message("this build has no in-process inference engine"))
+    Err(ManagedProviderError::message(
+        "this build has no in-process inference engine",
+    ))
 }
 
 #[cfg(test)]
@@ -476,7 +533,10 @@ mod tests {
 
     #[test]
     fn duration_and_supervisor_arguments_are_validated() {
-        assert_eq!(keep_alive(Some("5m")).unwrap(), Some(Duration::from_secs(300)));
+        assert_eq!(
+            keep_alive(Some("5m")).unwrap(),
+            Some(Duration::from_secs(300))
+        );
         assert_eq!(keep_alive(Some("forever")).unwrap(), None);
         assert!(keep_alive(Some("1week")).is_err());
         assert!(validate_extra_args(&["--host=0.0.0.0".into()]).is_err());

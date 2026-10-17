@@ -21,7 +21,12 @@ fn picture() -> Vec<[u8; 4]> {
             } else if i % 3 == 0 {
                 [(s >> 24) as u8, 0, 255, 0] // exponent 0: black
             } else {
-                [(s >> 24) as u8, (s >> 16) as u8, (s >> 8) as u8, 100 + (s & 31) as u8]
+                [
+                    (s >> 24) as u8,
+                    (s >> 16) as u8,
+                    (s >> 8) as u8,
+                    100 + (s & 31) as u8,
+                ]
             }
         })
         .collect()
@@ -34,13 +39,20 @@ fn rle_line(line: &[[u8; 4]]) -> Vec<u8> {
         let ch: Vec<u8> = line.iter().map(|p| p[c]).collect();
         let mut i = 0;
         while i < n {
-            let run = ch[i..].iter().take(127).take_while(|&&b| b == ch[i]).count();
+            let run = ch[i..]
+                .iter()
+                .take(127)
+                .take_while(|&&b| b == ch[i])
+                .count();
             if run >= 3 {
                 out.extend([128 + run as u8, ch[i]]);
                 i += run;
             } else {
                 let mut j = i + 1;
-                while j < n && j - i < 128 && !(j + 2 < n && ch[j] == ch[j + 1] && ch[j] == ch[j + 2]) {
+                while j < n
+                    && j - i < 128
+                    && !(j + 2 < n && ch[j] == ch[j + 1] && ch[j] == ch[j + 2])
+                {
                     j += 1;
                 }
                 out.push((j - i) as u8);
@@ -62,16 +74,35 @@ fn check(ff: &Path, name: &str, res: &str, body: &[u8]) {
     let dir = filmcraft_testkit::fixtures::fixtures_dir("media/hdr");
     let path = dir.join(name);
     write(&path, res, body);
-    let out = std::process::Command::new(ff).args(["-v", "error", "-i"]).arg(&path).args(["-f", "rawvideo", "-pix_fmt", "gbrpf32le", "-"]).output().unwrap();
-    assert!(out.status.success(), "ffmpeg decode of {name}: {}", String::from_utf8_lossy(&out.stderr));
-    let v: Vec<f32> = out.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect();
+    let out = std::process::Command::new(ff)
+        .args(["-v", "error", "-i"])
+        .arg(&path)
+        .args(["-f", "rawvideo", "-pix_fmt", "gbrpf32le", "-"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "ffmpeg decode of {name}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let v: Vec<f32> = out
+        .stdout
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect();
     let n = W * H;
     assert_eq!(v.len(), 3 * n, "{name}: ffmpeg frame size");
 
     let src = filmcraft_media::open_bytes(name, std::fs::read(&path).unwrap().into(), &[]).unwrap();
-    let f = src.video_frame(FrameRequest::full(filmcraft_time::Tick::ZERO)).unwrap();
+    let f = src
+        .video_frame(FrameRequest::full(filmcraft_time::Tick::ZERO))
+        .unwrap();
     assert_eq!((f.width as usize, f.height as usize), (W, H));
-    let PixelData::RgbaF32(p) = &f.data else { panic!("HDR frames are float") };
+    let PixelData::RgbaF32(p) = &f.data else {
+        panic!("HDR frames are float")
+    };
     let mut worst = 0f32;
     for i in 0..n {
         // gbrp planes: 0 = G, 1 = B, 2 = R

@@ -1,12 +1,16 @@
 //! Property mapping for the REST file JSON: JSON readers, enums, paints, effects, strokes,
 //! corners, constraints, auto layout, layout grids and export settings.
 
-use figcraft_doc::color::{BlendMode, Color, ColorStop, Gradient, GradientKind, ImageFilters, ImagePaint, ImageScaleMode, Paint, PaintKind};
+use figcraft_doc::color::{
+    BlendMode, Color, ColorStop, Gradient, GradientKind, ImageFilters, ImagePaint, ImageScaleMode,
+    Paint, PaintKind,
+};
 use figcraft_doc::geom::Affine;
 use figcraft_doc::{
-    AutoLayout, Blur, BlurType, CellAlign, ChildLayout, Constraints, ContentAlign, CrossAlign, Effect, EffectKind, ExportFormat, ExportSetting,
-    ExportSize, Glass, GridAlign, GridKind, HConstraint, LayoutGrid, LayoutMode, MainAlign, Noise, NoiseMode, Shadow, Sizing, StrokeAlign, StrokeCap,
-    StrokeJoin, StrokeProps, Texture, VConstraint, WidthPoint, WidthProfile,
+    AutoLayout, Blur, BlurType, CellAlign, ChildLayout, Constraints, ContentAlign, CrossAlign,
+    Effect, EffectKind, ExportFormat, ExportSetting, ExportSize, Glass, GridAlign, GridKind,
+    HConstraint, LayoutGrid, LayoutMode, MainAlign, Noise, NoiseMode, Shadow, Sizing, StrokeAlign,
+    StrokeCap, StrokeJoin, StrokeProps, Texture, VConstraint, WidthPoint, WidthProfile,
 };
 use serde_json::Value;
 
@@ -39,7 +43,10 @@ pub(super) fn flag(v: &Value, k: &str) -> Option<bool> {
 }
 
 pub(super) fn list<'a>(v: &'a Value, k: &str) -> &'a [Value] {
-    v.get(k).and_then(Value::as_array).map(|a| a.get(..a.len().min(MAX_LIST)).unwrap_or_default()).unwrap_or_default()
+    v.get(k)
+        .and_then(Value::as_array)
+        .map(|a| a.get(..a.len().min(MAX_LIST)).unwrap_or_default())
+        .unwrap_or_default()
 }
 
 /// `{x, y}`.
@@ -117,7 +124,12 @@ fn sizing(s: &str) -> Option<Sizing> {
 /// A `fills` / `strokes` list.
 pub(super) fn paints(cx: &mut Ctx, v: &Value, k: &str) -> Option<Vec<Paint>> {
     let a = v.get(k)?.as_array()?;
-    Some(a.iter().take(MAX_LIST).filter_map(|p| paint(cx, p)).collect())
+    Some(
+        a.iter()
+            .take(MAX_LIST)
+            .filter_map(|p| paint(cx, p))
+            .collect(),
+    )
 }
 
 fn paint(cx: &mut Ctx, p: &Value) -> Option<Paint> {
@@ -127,7 +139,9 @@ fn paint(cx: &mut Ctx, p: &Value) -> Option<Paint> {
         "SOLID" => {
             let c = p.get("color").and_then(color).unwrap_or(Color::BLACK);
             opacity *= c.a;
-            PaintKind::Solid { color: c.with_alpha(1.0) }
+            PaintKind::Solid {
+                color: c.with_alpha(1.0),
+            }
         }
         "GRADIENT_LINEAR" => PaintKind::Gradient(gradient(GradientKind::Linear, p)),
         "GRADIENT_RADIAL" => PaintKind::Gradient(gradient(GradientKind::Radial, p)),
@@ -135,27 +149,46 @@ fn paint(cx: &mut Ctx, p: &Value) -> Option<Paint> {
         "GRADIENT_DIAMOND" => PaintKind::Gradient(gradient(GradientKind::Diamond, p)),
         "IMAGE" => PaintKind::Image(image(cx, p)),
         other => {
-            cx.warn(format!("{} paints are not supported and were skipped", clip_str(other)));
+            cx.warn(format!(
+                "{} paints are not supported and were skipped",
+                clip_str(other)
+            ));
             return None;
         }
     };
-    Some(Paint { kind, opacity, visible: flag(p, "visible").unwrap_or(true), blend: paint_blend(p) })
+    Some(Paint {
+        kind,
+        opacity,
+        visible: flag(p, "visible").unwrap_or(true),
+        blend: paint_blend(p),
+    })
 }
 
 /// Gradient handles are already in the node's unit box (start, end, width), like ours.
 fn gradient(kind: GradientKind, p: &Value) -> Gradient {
     let mut g = Gradient::default_for(kind, Color::BLACK);
-    let h: Vec<(f64, f64)> =
-        list(p, "gradientHandlePositions").iter().filter_map(vec2).map(|(x, y)| (x.clamp(-1e3, 1e3), y.clamp(-1e3, 1e3))).collect();
+    let h: Vec<(f64, f64)> = list(p, "gradientHandlePositions")
+        .iter()
+        .filter_map(vec2)
+        .map(|(x, y)| (x.clamp(-1e3, 1e3), y.clamp(-1e3, 1e3)))
+        .collect();
     if let [from, to, rest @ ..] = h.as_slice() {
         g.from = *from;
         g.to = *to;
         // Without the width handle: perpendicular to the main axis, same length.
-        g.width = rest.first().copied().unwrap_or((from.0 - (to.1 - from.1), from.1 + (to.0 - from.0)));
+        g.width = rest
+            .first()
+            .copied()
+            .unwrap_or((from.0 - (to.1 - from.1), from.1 + (to.0 - from.0)));
     }
     let stops: Vec<ColorStop> = list(p, "gradientStops")
         .iter()
-        .filter_map(|s| Some(ColorStop { position: num(s, "position")?.clamp(0.0, 1.0) as f32, color: s.get("color").and_then(color)? }))
+        .filter_map(|s| {
+            Some(ColorStop {
+                position: num(s, "position")?.clamp(0.0, 1.0) as f32,
+                color: s.get("color").and_then(color)?,
+            })
+        })
         .collect();
     if !stops.is_empty() {
         g.stops = stops;
@@ -181,8 +214,12 @@ fn image(cx: &mut Ctx, p: &Value) -> ImagePaint {
     ImagePaint {
         image: cx.image_key(text(p, "imageRef").unwrap_or("")),
         scale_mode,
-        scale: num(p, "scalingFactor").filter(|s| *s > 0.0).map_or(1.0, |s| s.min(1e3)),
-        rotation: (num(p, "rotation").unwrap_or(0.0).clamp(-1e6, 1e6) / 90.0).round().rem_euclid(4.0) as i32,
+        scale: num(p, "scalingFactor")
+            .filter(|s| *s > 0.0)
+            .map_or(1.0, |s| s.min(1e3)),
+        rotation: (num(p, "rotation").unwrap_or(0.0).clamp(-1e6, 1e6) / 90.0)
+            .round()
+            .rem_euclid(4.0) as i32,
         crop,
         filters: ImageFilters {
             exposure: filter("exposure"),
@@ -199,14 +236,22 @@ fn image(cx: &mut Ctx, p: &Value) -> ImagePaint {
 // ---- effects ----
 
 pub(super) fn effects(cx: &mut Ctx, v: &Value) -> Vec<Effect> {
-    list(v, "effects").iter().filter_map(|e| effect(cx, e)).collect()
+    list(v, "effects")
+        .iter()
+        .filter_map(|e| effect(cx, e))
+        .collect()
 }
 
 fn effect(cx: &mut Ctx, e: &Value) -> Option<Effect> {
     let radius = len(e, "radius").unwrap_or(0.0);
     let shadow = || Shadow {
-        color: e.get("color").and_then(color).unwrap_or(Color::new(0.0, 0.0, 0.0, 0.25)),
-        offset: e.get("offset").and_then(vec2).map_or((0.0, 0.0), |(x, y)| (x.clamp(-MAX_SIZE, MAX_SIZE), y.clamp(-MAX_SIZE, MAX_SIZE))),
+        color: e
+            .get("color")
+            .and_then(color)
+            .unwrap_or(Color::new(0.0, 0.0, 0.0, 0.25)),
+        offset: e.get("offset").and_then(vec2).map_or((0.0, 0.0), |(x, y)| {
+            (x.clamp(-MAX_SIZE, MAX_SIZE), y.clamp(-MAX_SIZE, MAX_SIZE))
+        }),
         radius,
         spread: num(e, "spread").unwrap_or(0.0).clamp(-MAX_SIZE, MAX_SIZE),
         blend: paint_blend(e),
@@ -230,7 +275,10 @@ fn effect(cx: &mut Ctx, e: &Value) -> Option<Effect> {
                 size_y,
                 density: num(e, "density").map_or(d.density, |v| v.clamp(0.0, 1.0)),
                 color: e.get("color").and_then(color).unwrap_or(d.color),
-                secondary: e.get("secondaryColor").and_then(color).unwrap_or(d.secondary),
+                secondary: e
+                    .get("secondaryColor")
+                    .and_then(color)
+                    .unwrap_or(d.secondary),
                 opacity: num(e, "opacity").map_or(d.opacity, |v| v.clamp(0.0, 1.0) as f32),
                 blend: paint_blend(e),
             })
@@ -261,18 +309,28 @@ fn effect(cx: &mut Ctx, e: &Value) -> Option<Effect> {
             )
         }
         other => {
-            cx.warn(format!("{} effects are not supported and were skipped", clip_str(other)));
+            cx.warn(format!(
+                "{} effects are not supported and were skipped",
+                clip_str(other)
+            ));
             return None;
         }
     };
-    Some(Effect { kind, visible: flag(e, "visible").unwrap_or(true) })
+    Some(Effect {
+        kind,
+        visible: flag(e, "visible").unwrap_or(true),
+    })
 }
 
 /// A layer or background blur of `radius`: progressive (`blurType` `PROGRESSIVE`) from
 /// `startRadius` at `startOffset` to `radius` at `endOffset`, else uniform.
 fn blur(e: &Value, radius: f64) -> Blur {
     let d = Blur::default();
-    let blur_type = if text(e, "blurType") == Some("PROGRESSIVE") { BlurType::Progressive } else { BlurType::Uniform };
+    let blur_type = if text(e, "blurType") == Some("PROGRESSIVE") {
+        BlurType::Progressive
+    } else {
+        BlurType::Uniform
+    };
     Blur {
         radius,
         blur_type,
@@ -338,15 +396,29 @@ pub(super) fn stroke_props(v: &Value, sp: &mut StrokeProps) {
         _ => {}
     }
     if v.get("strokeDashes").is_some() {
-        sp.dashes = list(v, "strokeDashes").iter().filter_map(Value::as_f64).filter(|d| d.is_finite()).map(|d| d.clamp(0.0, MAX_SIZE)).collect();
+        sp.dashes = list(v, "strokeDashes")
+            .iter()
+            .filter_map(Value::as_f64)
+            .filter(|d| d.is_finite())
+            .map(|d| d.clamp(0.0, MAX_SIZE))
+            .collect();
         if sp.dashes.iter().all(|d| *d <= 0.0) {
             sp.dashes.clear();
         }
     }
     // A variable width: `[t, scale, bias]` points (our extension, written by the `.fig` import).
-    let point =
-        |p: &Value| Some(WidthPoint { t: p.get(0)?.as_f64()?, scale: p.get(1)?.as_f64()?, bias: p.get(2).and_then(Value::as_f64).unwrap_or(0.0) });
-    let points: Vec<WidthPoint> = list(v, "strokeWidthProfile").iter().take(WidthProfile::MAX_POINTS).filter_map(point).collect();
+    let point = |p: &Value| {
+        Some(WidthPoint {
+            t: p.get(0)?.as_f64()?,
+            scale: p.get(1)?.as_f64()?,
+            bias: p.get(2).and_then(Value::as_f64).unwrap_or(0.0),
+        })
+    };
+    let points: Vec<WidthPoint> = list(v, "strokeWidthProfile")
+        .iter()
+        .take(WidthProfile::MAX_POINTS)
+        .filter_map(point)
+        .collect();
     if !points.is_empty() {
         sp.width_profile = Some(WidthProfile { points }.sanitized());
     }
@@ -361,8 +433,12 @@ pub(super) fn corners(v: &Value, radii: &mut [f64; 4], smoothing: &mut f64) {
     if let Some(r) = len(v, "cornerRadius") {
         *radii = [r; 4];
     }
-    let each: Vec<f64> =
-        list(v, "rectangleCornerRadii").iter().filter_map(Value::as_f64).filter(|r| r.is_finite()).map(|r| r.clamp(0.0, MAX_SIZE)).collect();
+    let each: Vec<f64> = list(v, "rectangleCornerRadii")
+        .iter()
+        .filter_map(Value::as_f64)
+        .filter(|r| r.is_finite())
+        .map(|r| r.clamp(0.0, MAX_SIZE))
+        .collect();
     if let [a, b, c, d] = each.as_slice() {
         *radii = [*a, *b, *c, *d];
     }
@@ -402,14 +478,33 @@ pub(super) fn auto_layout(v: &Value) -> Option<AutoLayout> {
         _ => return None,
     };
     let pad = |k: &str| len(v, k).unwrap_or(0.0);
-    let count = |k: &str, d: u32| num(v, k).filter(|n| *n >= 1.0).map_or(d, |n| n.min(1000.0) as u32);
+    let count = |k: &str, d: u32| {
+        num(v, k)
+            .filter(|n| *n >= 1.0)
+            .map_or(d, |n| n.min(1000.0) as u32)
+    };
     let grid = mode == LayoutMode::Grid;
     Some(AutoLayout {
         mode,
         wrap: text(v, "layoutWrap") == Some("WRAP"),
-        gap: if grid { len(v, "gridColumnGap") } else { num(v, "itemSpacing").map(|g| g.clamp(-MAX_SIZE, MAX_SIZE)) }.unwrap_or(0.0),
-        cross_gap: if grid { len(v, "gridRowGap") } else { len(v, "counterAxisSpacing") }.unwrap_or(0.0),
-        padding: [pad("paddingTop"), pad("paddingRight"), pad("paddingBottom"), pad("paddingLeft")],
+        gap: if grid {
+            len(v, "gridColumnGap")
+        } else {
+            num(v, "itemSpacing").map(|g| g.clamp(-MAX_SIZE, MAX_SIZE))
+        }
+        .unwrap_or(0.0),
+        cross_gap: if grid {
+            len(v, "gridRowGap")
+        } else {
+            len(v, "counterAxisSpacing")
+        }
+        .unwrap_or(0.0),
+        padding: [
+            pad("paddingTop"),
+            pad("paddingRight"),
+            pad("paddingBottom"),
+            pad("paddingLeft"),
+        ],
         main_align: match text(v, "primaryAxisAlignItems") {
             Some("CENTER") => MainAlign::Center,
             Some("MAX") => MainAlign::Max,
@@ -439,14 +534,22 @@ pub(super) fn auto_layout(v: &Value) -> Option<AutoLayout> {
 /// How the node sizes and sits in its parent: its own hug/fixed axes (auto layout frames), its
 /// fill/fixed axes as a child of an auto layout `parent_mode`, absolute positioning, min/max sizes
 /// and grid cells.
-pub(super) fn child_layout(v: &Value, own: Option<LayoutMode>, parent_mode: Option<LayoutMode>) -> ChildLayout {
+pub(super) fn child_layout(
+    v: &Value,
+    own: Option<LayoutMode>,
+    parent_mode: Option<LayoutMode>,
+) -> ChildLayout {
     let mut cl = ChildLayout::default();
     let horizontal_main = |m: LayoutMode| m != LayoutMode::Vertical;
     // Legacy fields first, the explicit per-axis sizing wins.
     if let Some(m) = own {
         let hug = |k: &str| text(v, k) == Some("AUTO");
         let (main, cross) = (hug("primaryAxisSizingMode"), hug("counterAxisSizingMode"));
-        let (h, w) = if horizontal_main(m) { (main, cross) } else { (cross, main) };
+        let (h, w) = if horizontal_main(m) {
+            (main, cross)
+        } else {
+            (cross, main)
+        };
         if h {
             cl.sizing_h = Sizing::Hug;
         }
@@ -457,7 +560,11 @@ pub(super) fn child_layout(v: &Value, own: Option<LayoutMode>, parent_mode: Opti
     if let Some(m) = parent_mode {
         let grow = num(v, "layoutGrow").is_some_and(|g| g > 0.0);
         let stretch = text(v, "layoutAlign") == Some("STRETCH");
-        let (fill_h, fill_v) = if horizontal_main(m) { (grow, stretch) } else { (stretch, grow) };
+        let (fill_h, fill_v) = if horizontal_main(m) {
+            (grow, stretch)
+        } else {
+            (stretch, grow)
+        };
         if fill_h {
             cl.sizing_h = Sizing::Fill;
         }
@@ -476,7 +583,11 @@ pub(super) fn child_layout(v: &Value, own: Option<LayoutMode>, parent_mode: Opti
     cl.max_w = len(v, "maxWidth");
     cl.min_h = len(v, "minHeight");
     cl.max_h = len(v, "maxHeight");
-    let index = |k: &str| num(v, k).filter(|n| *n >= 0.0).map(|n| n.min(1000.0) as u32);
+    let index = |k: &str| {
+        num(v, k)
+            .filter(|n| *n >= 0.0)
+            .map(|n| n.min(1000.0) as u32)
+    };
     cl.grid_column = index("gridColumnAnchorIndex");
     cl.grid_row = index("gridRowAnchorIndex");
     cl.grid_column_span = index("gridColumnSpan").unwrap_or(0);
@@ -513,7 +624,9 @@ pub(super) fn layout_grids(v: &Value) -> Vec<LayoutGrid> {
                 kind,
                 size: len(g, "sectionSize").unwrap_or(base.size),
                 // Auto-fit counts come through as 0, negative or huge.
-                count: num(g, "count").filter(|c| *c >= 1.0 && *c <= 1000.0).map_or(0, |c| c as u32),
+                count: num(g, "count")
+                    .filter(|c| *c >= 1.0 && *c <= 1000.0)
+                    .map_or(0, |c| c as u32),
                 gutter: len(g, "gutterSize").unwrap_or(base.gutter),
                 offset: len(g, "offset").unwrap_or(0.0),
                 align: match text(g, "alignment") {
@@ -534,15 +647,22 @@ pub(super) fn export_settings(v: &Value) -> Vec<ExportSetting> {
         .iter()
         .map(|e| {
             let c = e.get("constraint");
-            let value = c.and_then(|c| num(c, "value")).filter(|x| *x > 0.0).map_or(1.0, |x| x.min(MAX_SIZE));
+            let value = c
+                .and_then(|c| num(c, "value"))
+                .filter(|x| *x > 0.0)
+                .map_or(1.0, |x| x.min(MAX_SIZE));
             ExportSetting {
                 size: match c.and_then(|c| text(c, "type")) {
                     Some("WIDTH") => ExportSize::Width { value },
                     Some("HEIGHT") => ExportSize::Height { value },
-                    _ => ExportSize::Scale { value: value.min(64.0) },
+                    _ => ExportSize::Scale {
+                        value: value.min(64.0),
+                    },
                 },
                 suffix: clip_str(text(e, "suffix").unwrap_or("")).to_string(),
-                format: text(e, "format").and_then(ExportFormat::from_ext).unwrap_or_default(),
+                format: text(e, "format")
+                    .and_then(ExportFormat::from_ext)
+                    .unwrap_or_default(),
                 ..Default::default()
             }
         })
@@ -551,5 +671,8 @@ pub(super) fn export_settings(v: &Value) -> Vec<ExportSetting> {
 
 /// At most 200 chars of `s` (names and labels from the file stay readable in warnings).
 pub(super) fn clip_str(s: &str) -> &str {
-    s.char_indices().nth(200).and_then(|(i, _)| s.get(..i)).unwrap_or(s)
+    s.char_indices()
+        .nth(200)
+        .and_then(|(i, _)| s.get(..i))
+        .unwrap_or(s)
 }

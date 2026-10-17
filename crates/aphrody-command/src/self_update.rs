@@ -61,7 +61,8 @@ fn valid_release_id(id: &str) -> bool {
 }
 
 fn runs(bin: &Path) -> bool {
-    std::process::Command::new(bin).no_window()
+    std::process::Command::new(bin)
+        .no_window()
         .arg("--version")
         .output()
         .map(|o| o.status.success())
@@ -69,7 +70,8 @@ fn runs(bin: &Path) -> bool {
 }
 
 fn relink(bin: &Path) -> miette::Result<()> {
-    let status = std::process::Command::new(bin).no_window()
+    let status = std::process::Command::new(bin)
+        .no_window()
         .args(["self", "install-path", "--bin"])
         .arg(bin)
         .status()
@@ -83,8 +85,12 @@ fn relink(bin: &Path) -> miette::Result<()> {
 
 /// Keeps the newest `KEEP_RELEASES` installed directories (never the active or previous one).
 fn prune(active: &Path, previous: Option<&Path>) {
-    let Some(root) = active.parent().and_then(Path::parent) else { return };
-    let Ok(read) = std::fs::read_dir(root) else { return };
+    let Some(root) = active.parent().and_then(Path::parent) else {
+        return;
+    };
+    let Ok(read) = std::fs::read_dir(root) else {
+        return;
+    };
     let mut dirs: Vec<(std::time::SystemTime, PathBuf)> = read
         .filter_map(Result::ok)
         .filter(|e| e.path().is_dir())
@@ -119,7 +125,10 @@ impl TerminalCommand for UpdateCommand {
                 return Err(miette::miette!("no previous release recorded"));
             };
             if !runs(&prev) {
-                return Err(miette::miette!("previous binary {} does not run", prev.display()));
+                return Err(miette::miette!(
+                    "previous binary {} does not run",
+                    prev.display()
+                ));
             }
             relink(&prev)?;
             println!("rolled back to {prev_release}");
@@ -155,11 +164,18 @@ impl TerminalCommand for UpdateCommand {
             .await
             .into_diagnostic()
             .wrap_err("latest.json")?;
-        let id = latest["release"]["id"].as_str().unwrap_or_default().to_string();
+        let id = latest["release"]["id"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
         if !valid_release_id(&id) {
             return Err(miette::miette!("latest.json has no valid release id"));
         }
-        let installed = if state.release.is_empty() { "unknown" } else { state.release.as_str() };
+        let installed = if state.release.is_empty() {
+            "unknown"
+        } else {
+            state.release.as_str()
+        };
         if state.release == id && !self.force {
             println!("up to date: {id}");
             return Ok(());
@@ -187,14 +203,17 @@ impl TerminalCommand for UpdateCommand {
 
         let mut cmd = if windows {
             let mut c = std::process::Command::new("powershell").no_window();
-            c.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]).arg(&script_path);
+            c.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+                .arg(&script_path);
             c
         } else {
             let mut c = std::process::Command::new("sh").no_window();
             c.arg(&script_path);
             c
         };
-        let previous_bin = std::env::current_exe().ok().and_then(|p| p.canonicalize().ok());
+        let previous_bin = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.canonicalize().ok());
         let out = cmd
             .env("APHRODY_DOWNLOAD_URL", &base)
             .env("APHRODY_RELEASE", &id)
@@ -206,7 +225,9 @@ impl TerminalCommand for UpdateCommand {
         print!("{stdout}");
         if !out.status.success() {
             eprint!("{}", String::from_utf8_lossy(&out.stderr));
-            return Err(miette::miette!("installer failed; the active binary is unchanged"));
+            return Err(miette::miette!(
+                "installer failed; the active binary is unchanged"
+            ));
         }
         let new_bin = stdout.lines().find_map(|l| {
             let rest = l.strip_prefix("aphrody installed in ")?;
@@ -214,7 +235,9 @@ impl TerminalCommand for UpdateCommand {
             Some(Path::new(dir).join(if windows { "aphrody.exe" } else { "aphrody" }))
         });
         let Some(new_bin) = new_bin else {
-            return Err(miette::miette!("installer did not report the aphrody directory"));
+            return Err(miette::miette!(
+                "installer did not report the aphrody directory"
+            ));
         };
         if !runs(&new_bin) {
             let restored = match previous_bin.as_deref().filter(|p| runs(p)) {
@@ -227,7 +250,11 @@ impl TerminalCommand for UpdateCommand {
             return Err(miette::miette!(
                 "new binary {} does not start; {}",
                 new_bin.display(),
-                if restored { "rolled back" } else { "no previous binary to restore" }
+                if restored {
+                    "rolled back"
+                } else {
+                    "no previous binary to restore"
+                }
             ));
         }
         let next = State {

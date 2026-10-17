@@ -82,7 +82,9 @@ impl crate::Session {
     /// What the Media Browser browses: [`crate::Session::browser`], else the local file system
     /// where this build has one.
     pub fn media_browser(&self) -> Option<std::sync::Arc<dyn Browser>> {
-        self.browser.clone().or_else(|| available().then(|| std::sync::Arc::new(FsBrowser) as std::sync::Arc<dyn Browser>))
+        self.browser.clone().or_else(|| {
+            available().then(|| std::sync::Arc::new(FsBrowser) as std::sync::Arc<dyn Browser>)
+        })
     }
 }
 
@@ -119,7 +121,11 @@ impl VirtualTree {
     pub fn add_dir(&mut self, path: &str) {
         let mut cur = Some(path.trim_end_matches('/'));
         while let Some(p) = cur.filter(|p| !p.is_empty() && *p != "/") {
-            self.nodes.entry(p.to_string()).or_insert(VNode { import: None, size: 0, modified: None });
+            self.nodes.entry(p.to_string()).or_insert(VNode {
+                import: None,
+                size: 0,
+                modified: None,
+            });
             cur = vparent(p);
         }
     }
@@ -129,7 +135,14 @@ impl VirtualTree {
         if let Some(p) = vparent(path) {
             self.add_dir(p);
         }
-        self.nodes.insert(path.to_string(), VNode { import: Some(import.to_string()), size, modified });
+        self.nodes.insert(
+            path.to_string(),
+            VNode {
+                import: Some(import.to_string()),
+                size,
+                modified,
+            },
+        );
     }
 
     /// Remove `path` and everything under it.
@@ -139,7 +152,11 @@ impl VirtualTree {
     }
 
     pub fn is_dir(&self, path: &str) -> bool {
-        path == "/" || self.nodes.get(path.trim_end_matches('/')).is_some_and(|n| n.import.is_none())
+        path == "/"
+            || self
+                .nodes
+                .get(path.trim_end_matches('/'))
+                .is_some_and(|n| n.import.is_none())
     }
 
     /// What a file shown at `path` imports.
@@ -148,7 +165,11 @@ impl VirtualTree {
     }
 
     pub fn list(&self, dir: &str, importable_only: bool) -> Result<Vec<Entry>, String> {
-        let dir = if dir.len() > 1 { dir.trim_end_matches('/') } else { dir };
+        let dir = if dir.len() > 1 {
+            dir.trim_end_matches('/')
+        } else {
+            dir
+        };
         if !self.is_dir(dir) {
             return Err(format!("{dir}: no such folder"));
         }
@@ -173,7 +194,11 @@ impl VirtualTree {
                 })
             })
             .collect();
-        out.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+        out.sort_by(|a, b| {
+            b.is_dir
+                .cmp(&a.is_dir)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        });
         Ok(out)
     }
 }
@@ -194,14 +219,22 @@ pub struct Entry {
 }
 
 const VIDEO: &[&str] = &["mp4", "m4v", "mov", "webm", "mkv", "avi", "mxf", "gif"];
-const IMAGE: &[&str] = &["png", "jpg", "jpeg", "tif", "tiff", "exr", "bmp", "webp", "psd", "psb", "svg", "tga", "dpx", "cin", "hdr"];
-const AUDIO: &[&str] = &["wav", "aif", "aiff", "mp3", "m4a", "aac", "flac", "ogg", "opus"];
+const IMAGE: &[&str] = &[
+    "png", "jpg", "jpeg", "tif", "tiff", "exr", "bmp", "webp", "psd", "psb", "svg", "tga", "dpx",
+    "cin", "hdr",
+];
+const AUDIO: &[&str] = &[
+    "wav", "aif", "aiff", "mp3", "m4a", "aac", "flac", "ogg", "opus",
+];
 const DATA: &[&str] = &["json", "csv", "tsv", "mgjson"];
 const MODEL: &[&str] = &["gltf", "glb", "obj", "stl", "fbx"];
 
 /// Kind of file from its extension.
 pub fn kind_of(path: &str) -> Option<&'static str> {
-    let ext = std::path::Path::new(path).extension()?.to_str()?.to_ascii_lowercase();
+    let ext = std::path::Path::new(path)
+        .extension()?
+        .to_str()?
+        .to_ascii_lowercase();
     let e = ext.as_str();
     if VIDEO.contains(&e) {
         Some("video")
@@ -222,11 +255,16 @@ pub fn kind_of(path: &str) -> Option<&'static str> {
 
 /// The user's home folder (or `/`).
 pub fn home() -> String {
-    std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| "/".into())
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| "/".into())
 }
 
 fn unix(t: std::io::Result<std::time::SystemTime>) -> Option<u64> {
-    t.ok()?.duration_since(std::time::UNIX_EPOCH).ok().map(|d| d.as_secs())
+    t.ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_secs())
 }
 
 /// List a folder: folders first, then files, by name (hidden entries skipped).
@@ -248,16 +286,30 @@ pub fn list(dir: &str, importable_only: bool) -> Result<Vec<Entry>, String> {
             if importable_only && !md.is_dir() && kind.is_none() {
                 return None;
             }
-            Some(Entry { name, path, is_dir: md.is_dir(), size: if md.is_dir() { 0 } else { md.len() }, modified: unix(md.modified()), kind })
+            Some(Entry {
+                name,
+                path,
+                is_dir: md.is_dir(),
+                size: if md.is_dir() { 0 } else { md.len() },
+                modified: unix(md.modified()),
+                kind,
+            })
         })
         .collect();
-    out.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+    out.sort_by(|a, b| {
+        b.is_dir
+            .cmp(&a.is_dir)
+            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+    });
     Ok(out)
 }
 
 /// The parent folder of `dir`.
 pub fn parent(dir: &str) -> Option<String> {
-    std::path::Path::new(dir).parent().map(|p| p.to_string_lossy().to_string()).filter(|p| !p.is_empty())
+    std::path::Path::new(dir)
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .filter(|p| !p.is_empty())
 }
 
 /// Format seconds since the epoch as an ISO 8601 UTC date-time.
@@ -275,7 +327,12 @@ pub fn iso_date(secs: u64) -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", rem / 3600, rem % 3600 / 60, rem % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
 }
 
 /// File dates and size: (created, modified, size).
@@ -302,7 +359,8 @@ fn kind_name(k: FootageKind) -> &'static str {
 
 /// Metadata of footage (the fields the Metadata panel lists).
 pub fn footage_metadata(f: &Footage) -> Value {
-    let (created, modified, size) = file_dates(f.sequence.first().map(String::as_str).unwrap_or(&f.path));
+    let (created, modified, size) =
+        file_dates(f.sequence.first().map(String::as_str).unwrap_or(&f.path));
     json!({
         "path": f.path,
         "kind": kind_name(f.kind),
@@ -350,7 +408,9 @@ pub fn item_metadata(p: &Project, it: &Item) -> Value {
             "workArea": [c.work_area.0.seconds(), c.work_area.1.seconds()],
         }),
         ItemKind::Solid(s) => json!({"width": s.width, "height": s.height, "color": s.color}),
-        ItemKind::Folder => json!({"items": p.items.values().filter(|i| i.parent == Some(it.id)).count()}),
+        ItemKind::Folder => {
+            json!({"items": p.items.values().filter(|i| i.parent == Some(it.id)).count()})
+        }
     };
     if let (Value::Object(a), Value::Object(b)) = (&mut v, extra) {
         a.extend(b);
@@ -405,7 +465,10 @@ mod tests {
         assert_eq!(all[1].size, 2);
         let media = list(&d, true).unwrap();
         assert_eq!(media.len(), 3);
-        assert_eq!(parent(&dir.join("Shots").to_string_lossy()).as_deref(), Some(d.as_str()));
+        assert_eq!(
+            parent(&dir.join("Shots").to_string_lossy()).as_deref(),
+            Some(d.as_str())
+        );
         assert!(list(&dir.join("nope").to_string_lossy(), false).is_err());
         std::fs::remove_dir_all(&dir).unwrap();
     }
@@ -416,19 +479,42 @@ mod tests {
         t.add_file("/Browser Storage/clip.mov", "/clip.mov", 10, Some(5));
         t.add_file("/Folders/Shoot/B/b.png", "/Folders/Shoot/B/b.png", 3, None);
         t.add_file("/Folders/Shoot/a.wav", "/Folders/Shoot/a.wav", 4, None);
-        t.add_file("/Folders/Shoot/notes.txt", "/Folders/Shoot/notes.txt", 1, None);
+        t.add_file(
+            "/Folders/Shoot/notes.txt",
+            "/Folders/Shoot/notes.txt",
+            1,
+            None,
+        );
         t.add_dir("/Folders/Empty");
-        let names = |t: &VirtualTree, d: &str, only: bool| t.list(d, only).unwrap().into_iter().map(|e| e.name).collect::<Vec<_>>();
+        let names = |t: &VirtualTree, d: &str, only: bool| {
+            t.list(d, only)
+                .unwrap()
+                .into_iter()
+                .map(|e| e.name)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(names(&t, "/", false), ["Browser Storage", "Folders"]);
         assert_eq!(names(&t, "/Folders", false), ["Empty", "Shoot"]);
-        assert_eq!(names(&t, "/Folders/Shoot", false), ["B", "a.wav", "notes.txt"]);
+        assert_eq!(
+            names(&t, "/Folders/Shoot", false),
+            ["B", "a.wav", "notes.txt"]
+        );
         assert_eq!(names(&t, "/Folders/Shoot/", true), ["B", "a.wav"]);
         let e = &t.list("/Browser Storage", false).unwrap()[0];
-        assert_eq!((e.path.as_str(), e.size, e.modified, e.kind, e.is_dir), ("/clip.mov", 10, Some(5), Some("video"), false));
+        assert_eq!(
+            (e.path.as_str(), e.size, e.modified, e.kind, e.is_dir),
+            ("/clip.mov", 10, Some(5), Some("video"), false)
+        );
         let d = &t.list("/Folders", false).unwrap()[1];
         assert_eq!((d.path.as_str(), d.is_dir), ("/Folders/Shoot", true));
-        assert_eq!(t.import_path("/Browser Storage/clip.mov"), Some("/clip.mov"));
-        assert!(t.list("/Folders/Shoot/a.wav", false).is_err(), "a file is not a folder");
+        assert_eq!(
+            t.import_path("/Browser Storage/clip.mov"),
+            Some("/clip.mov")
+        );
+        assert!(
+            t.list("/Folders/Shoot/a.wav", false).is_err(),
+            "a file is not a folder"
+        );
         assert!(t.list("/Nope", false).is_err());
         t.remove("/Folders/Shoot");
         assert_eq!(names(&t, "/Folders", false), ["Empty"]);

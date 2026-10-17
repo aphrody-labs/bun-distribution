@@ -24,7 +24,9 @@
 
 use std::collections::HashMap;
 
-use crate::{Material, Mesh, Model, Primitive, Result, cross, normalize, obj::srgb_to_linear, perr, sub};
+use crate::{
+    Material, Mesh, Model, Primitive, Result, cross, normalize, obj::srgb_to_linear, perr, sub,
+};
 
 /// Header (80) plus facet count (4).
 const HEADER: usize = 84;
@@ -33,8 +35,13 @@ const FACET: usize = 50;
 
 /// Parse an STL file (binary or ASCII, detected from the contents).
 pub fn parse(bytes: &[u8]) -> Result<Model> {
-    let count = bytes.get(80..HEADER).and_then(|b| <[u8; 4]>::try_from(b).ok()).map(u32::from_le_bytes);
-    let needed = count.and_then(|n| (n as usize).checked_mul(FACET)).and_then(|n| n.checked_add(HEADER));
+    let count = bytes
+        .get(80..HEADER)
+        .and_then(|b| <[u8; 4]>::try_from(b).ok())
+        .map(u32::from_le_bytes);
+    let needed = count
+        .and_then(|n| (n as usize).checked_mul(FACET))
+        .and_then(|n| n.checked_add(HEADER));
     // A binary file's size is exact; many binary headers still begin with `solid`, so the size
     // decides first, then the ASCII keyword.
     if needed.is_some_and(|n| n == bytes.len()) {
@@ -46,14 +53,17 @@ pub fn parse(bytes: &[u8]) -> Result<Model> {
     if needed.is_some_and(|n| n <= bytes.len()) {
         return binary(bytes);
     }
-    Err(perr("not an STL file (truncated binary facets or no `solid` keyword)"))
+    Err(perr(
+        "not an STL file (truncated binary facets or no `solid` keyword)",
+    ))
 }
 
 fn looks_ascii(bytes: &[u8]) -> bool {
     let head = bytes.get(..bytes.len().min(512)).unwrap_or(&[]);
     let text = String::from_utf8_lossy(head);
     let t = text.trim_start();
-    t.get(..5).is_some_and(|k| k.eq_ignore_ascii_case("solid")) && (t.contains("facet") || t.contains("endsolid"))
+    t.get(..5).is_some_and(|k| k.eq_ignore_ascii_case("solid"))
+        && (t.contains("facet") || t.contains("endsolid"))
 }
 
 /// The Z-up → Y-up turn.
@@ -79,13 +89,21 @@ impl Builder {
         }
         let v = v.map(y_up);
         let n = normalize(cross(sub(v[1], v[0]), sub(v[2], v[0])))
-            .or_else(|| stored.iter().all(|c| c.is_finite()).then(|| normalize(y_up(stored))).flatten())
+            .or_else(|| {
+                stored
+                    .iter()
+                    .all(|c| c.is_finite())
+                    .then(|| normalize(y_up(stored)))
+                    .flatten()
+            })
             .unwrap_or([0.0, 1.0, 0.0]);
         let slot = *self.slots.entry(color).or_insert_with(|| {
             self.prims.push((color, Primitive::default()));
             self.prims.len() - 1
         });
-        let Some((_, p)) = self.prims.get_mut(slot) else { return };
+        let Some((_, p)) = self.prims.get_mut(slot) else {
+            return;
+        };
         for c in v {
             p.indices.push(p.positions.len() as u32);
             p.positions.push(c);
@@ -99,12 +117,18 @@ impl Builder {
             return Err(perr("STL file without facets"));
         }
         let mut materials = vec![];
-        let mut mesh = Mesh { name, primitives: vec![] };
+        let mut mesh = Mesh {
+            name,
+            primitives: vec![],
+        };
         for (color, mut p) in self.prims {
             if let Some(c) = color {
                 let lin = c.map(|x| srgb_to_linear(x as f32 / 255.0));
                 let name = format!("#{:02X}{:02X}{:02X}", c[0], c[1], c[2]);
-                materials.push(Material { name, ..Material::plain([lin[0], lin[1], lin[2], 1.0], 0.0, 0.5) });
+                materials.push(Material {
+                    name,
+                    ..Material::plain([lin[0], lin[1], lin[2], 1.0], 0.0, 0.5)
+                });
                 p.material = Some(materials.len() - 1);
             }
             mesh.primitives.push(p);
@@ -112,7 +136,10 @@ impl Builder {
         // Uncoloured facets next to coloured ones: a neutral grey of their own.
         if !materials.is_empty() {
             for p in mesh.primitives.iter_mut().filter(|p| p.material.is_none()) {
-                materials.push(Material { name: "STL".into(), ..Material::plain([0.6, 0.6, 0.6, 1.0], 0.0, 0.5) });
+                materials.push(Material {
+                    name: "STL".into(),
+                    ..Material::plain([0.6, 0.6, 0.6, 1.0], 0.0, 0.5)
+                });
                 p.material = Some(materials.len() - 1);
             }
         }
@@ -121,7 +148,9 @@ impl Builder {
 }
 
 fn f32_at(b: &[u8], at: usize) -> f32 {
-    b.get(at..at + 4).and_then(|s| <[u8; 4]>::try_from(s).ok()).map_or(f32::NAN, f32::from_le_bytes)
+    b.get(at..at + 4)
+        .and_then(|s| <[u8; 4]>::try_from(s).ok())
+        .map_or(f32::NAN, f32::from_le_bytes)
 }
 
 /// A 5-bit channel expanded to 8 bits.
@@ -138,29 +167,56 @@ fn header_color(header: &[u8]) -> Option<[u8; 3]> {
 }
 
 fn binary(bytes: &[u8]) -> Result<Model> {
-    let header = bytes.get(..80).ok_or_else(|| perr("STL header truncated"))?;
+    let header = bytes
+        .get(..80)
+        .ok_or_else(|| perr("STL header truncated"))?;
     let magics = header_color(header);
     let body = bytes.get(HEADER..).unwrap_or(&[]);
-    let count = bytes.get(80..HEADER).and_then(|b| <[u8; 4]>::try_from(b).ok()).map_or(0, u32::from_le_bytes) as usize;
+    let count = bytes
+        .get(80..HEADER)
+        .and_then(|b| <[u8; 4]>::try_from(b).ok())
+        .map_or(0, u32::from_le_bytes) as usize;
     let mut b = Builder::default();
     for f in body.as_chunks::<FACET>().0.iter().take(count) {
         let n = [f32_at(f, 0), f32_at(f, 4), f32_at(f, 8)];
-        let v = [0usize, 1, 2].map(|k| [f32_at(f, 12 + 12 * k), f32_at(f, 16 + 12 * k), f32_at(f, 20 + 12 * k)]);
-        let attr = f.get(48..50).and_then(|a| <[u8; 2]>::try_from(a).ok()).map_or(0, u16::from_le_bytes);
+        let v = [0usize, 1, 2].map(|k| {
+            [
+                f32_at(f, 12 + 12 * k),
+                f32_at(f, 16 + 12 * k),
+                f32_at(f, 20 + 12 * k),
+            ]
+        });
+        let attr = f
+            .get(48..50)
+            .and_then(|a| <[u8; 2]>::try_from(a).ok())
+            .map_or(0, u16::from_le_bytes);
         let color = match magics {
-            Some(part) => Some(if attr & 0x8000 == 0 { [five(attr), five(attr >> 5), five(attr >> 10)] } else { part }),
+            Some(part) => Some(if attr & 0x8000 == 0 {
+                [five(attr), five(attr >> 5), five(attr >> 10)]
+            } else {
+                part
+            }),
             None => (attr & 0x8000 != 0).then(|| [five(attr >> 10), five(attr >> 5), five(attr)]),
         };
         b.tri(color, n, v);
     }
     let text = String::from_utf8_lossy(header);
     let name = text.trim_matches(|c: char| c == '\0' || c.is_whitespace());
-    b.finish(name.strip_prefix("solid").unwrap_or(name).trim().to_string())
+    b.finish(
+        name.strip_prefix("solid")
+            .unwrap_or(name)
+            .trim()
+            .to_string(),
+    )
 }
 
 /// Three numbers from the rest of an ASCII line.
 fn three<'a>(it: &mut impl Iterator<Item = &'a str>) -> Option<[f32; 3]> {
-    Some([it.next()?.parse().ok()?, it.next()?.parse().ok()?, it.next()?.parse().ok()?])
+    Some([
+        it.next()?.parse().ok()?,
+        it.next()?.parse().ok()?,
+        it.next()?.parse().ok()?,
+    ])
 }
 
 fn ascii(bytes: &[u8]) -> Result<Model> {

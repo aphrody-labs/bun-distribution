@@ -16,15 +16,30 @@ use super::*;
 /// square overlapping it, a hidden green one and a sublayer "Inner" holding a grey "Corner".
 fn doc() -> Document {
     let mut b = DocBuilder::new(100.0, 60.0);
-    b.rect(Rect::new(10.0, 10.0, 40.0, 40.0), Color::rgb8(255, 0, 0), |_| {});
+    b.rect(
+        Rect::new(10.0, 10.0, 40.0, 40.0),
+        Color::rgb8(255, 0, 0),
+        |_| {},
+    );
     let top = b.layer("Top");
-    b.rect(Rect::new(30.0, 20.0, 60.0, 50.0), Color::rgb8(0, 0, 255), |n: &mut Node| {
-        n.opacity = 0.5;
-        n.blend = BlendMode::Multiply;
-    });
-    b.rect(Rect::new(70.0, 5.0, 90.0, 25.0), Color::rgb8(0, 255, 0), |n: &mut Node| n.visible = false);
+    b.rect(
+        Rect::new(30.0, 20.0, 60.0, 50.0),
+        Color::rgb8(0, 0, 255),
+        |n: &mut Node| {
+            n.opacity = 0.5;
+            n.blend = BlendMode::Multiply;
+        },
+    );
+    b.rect(
+        Rect::new(70.0, 5.0, 90.0, 25.0),
+        Color::rgb8(0, 255, 0),
+        |n: &mut Node| n.visible = false,
+    );
     let corner = b.rect_node(Rect::new(0.0, 0.0, 6.0, 6.0), Color::rgb8(128, 128, 128));
-    let corner = Node { name: Some("Corner".into()), ..corner };
+    let corner = Node {
+        name: Some("Corner".into()),
+        ..corner
+    };
     let inner = Node::layer(b.alloc(), "Inner", LayerColor::Preset(2));
     let inner = b.doc.insert(Some(top), usize::MAX, inner).unwrap();
     b.doc.insert(Some(inner), usize::MAX, corner).unwrap();
@@ -32,11 +47,19 @@ fn doc() -> Document {
 }
 
 fn opts(psd: PsdOptions) -> RasterExportOptions {
-    RasterExportOptions { psd: PsdOptions { embed_icc: false, ..psd }, ..RasterExportOptions::default() }
+    RasterExportOptions {
+        psd: PsdOptions {
+            embed_icc: false,
+            ..psd
+        },
+        ..RasterExportOptions::default()
+    }
 }
 
 fn export(doc: &Document, o: &RasterExportOptions) -> Vec<u8> {
-    Renderer::new().export_region(doc, doc.artboards[0].rect, RasterFormat::Psd, o).unwrap()
+    Renderer::new()
+        .export_region(doc, doc.artboards[0].rect, RasterFormat::Psd, o)
+        .unwrap()
 }
 
 fn u16_at(f: &[u8], at: usize) -> u16 {
@@ -79,7 +102,14 @@ fn parse(f: &[u8]) -> Parsed<'_> {
     let resources = &f[at + 4..at + 4 + u32_at(f, at)];
     at += 4 + resources.len();
     let image = at + 4 + u32_at(f, at);
-    let mut out = Parsed { channels, mode, resources, count: 0, records: vec![], image };
+    let mut out = Parsed {
+        channels,
+        mode,
+        resources,
+        count: 0,
+        records: vec![],
+        image,
+    };
     if u32_at(f, at) == 0 {
         return out;
     }
@@ -101,13 +131,28 @@ fn parse(f: &[u8]) -> Parsed<'_> {
             let len = u32_at(f, q + 8);
             let data = &f[q + 12..q + 12 + len];
             match &f[q + 4..q + 8] {
-                b"luni" => name = String::from_utf16(&(0..u32_at(data, 0)).map(|i| u16_at(data, 4 + i * 2)).collect::<Vec<_>>()).unwrap(),
+                b"luni" => {
+                    name = String::from_utf16(
+                        &(0..u32_at(data, 0))
+                            .map(|i| u16_at(data, 4 + i * 2))
+                            .collect::<Vec<_>>(),
+                    )
+                    .unwrap()
+                }
                 b"lsct" => divider = Some(u32_at(data, 0)),
                 _ => {}
             }
             q += 12 + len;
         }
-        out.records.push(Rec { name, rect, channels, blend, opacity, hidden: flags & 2 != 0, divider });
+        out.records.push(Rec {
+            name,
+            rect,
+            channels,
+            blend,
+            opacity,
+            hidden: flags & 2 != 0,
+            divider,
+        });
         p = end;
     }
     out
@@ -146,7 +191,9 @@ fn unpack(mut src: &[u8], out: &mut Vec<u8>) {
 
 /// The composite as a reader sees it.
 fn merged(f: &[u8]) -> Vec<u8> {
-    ::psd::Psd::from_bytes(f).expect("a PSD a reader takes").rgba()
+    ::psd::Psd::from_bytes(f)
+        .expect("a PSD a reader takes")
+        .rgba()
 }
 
 fn pixel(px: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
@@ -158,35 +205,83 @@ fn layers_are_the_top_level_layers_and_the_merged_image_is_the_render() {
     let doc = doc();
     let file = export(&doc, &opts(PsdOptions::default()));
     let p = parse(&file);
-    assert_eq!((p.channels, p.mode), (4, 3), "RGB with the merged image's transparency");
-    assert_eq!(p.count, -2, "two layers; negative: the merged alpha is its transparency");
+    assert_eq!(
+        (p.channels, p.mode),
+        (4, 3),
+        "RGB with the merged image's transparency"
+    );
+    assert_eq!(
+        p.count, -2,
+        "two layers; negative: the merged alpha is its transparency"
+    );
     let names: Vec<&str> = p.records.iter().map(|r| r.name.as_str()).collect();
     assert_eq!(names, ["Layer 1", "Top"], "bottom first");
     let red = &p.records[0];
-    assert_eq!(red.rect, [10, 10, 40, 40], "cropped to what the layer paints");
-    assert_eq!((red.channels, red.blend, red.opacity, red.hidden, red.divider), (4, *b"norm", 255, false, None));
-    assert_eq!(p.records[1].rect, [0, 0, 50, 60], "the blue square and the corner");
+    assert_eq!(
+        red.rect,
+        [10, 10, 40, 40],
+        "cropped to what the layer paints"
+    );
+    assert_eq!(
+        (
+            red.channels,
+            red.blend,
+            red.opacity,
+            red.hidden,
+            red.divider
+        ),
+        (4, *b"norm", 255, false, None)
+    );
+    assert_eq!(
+        p.records[1].rect,
+        [0, 0, 50, 60],
+        "the blue square and the corner"
+    );
 
     // A reader decodes it: the layers, in place, and the merged image.
     let psd = ::psd::Psd::from_bytes(&file).unwrap();
-    assert_eq!((psd.width(), psd.height(), psd.layers().len()), (100, 60, 2));
+    assert_eq!(
+        (psd.width(), psd.height(), psd.layers().len()),
+        (100, 60, 2)
+    );
     let red = psd.layer_by_name("Layer 1").unwrap().rgba();
     assert_eq!(pixel(&red, 100, 20, 20), [255, 0, 0, 255]);
-    assert_eq!(pixel(&red, 100, 50, 45)[3], 0, "the blue square isn't on Layer 1");
+    assert_eq!(
+        pixel(&red, 100, 50, 45)[3],
+        0,
+        "the blue square isn't on Layer 1"
+    );
 
     // The merged image is the flat render: colours on white where transparent, alpha apart.
-    let img = Renderer::new().render_region_with(&doc, doc.artboards[0].rect, 1.0, &opts(PsdOptions::default()).render_options(RasterFormat::Psd));
-    let want: Vec<u8> = img.to_straight().as_chunks::<4>().0.iter().flat_map(|p| [on_white(p), [p[3]; 3]].concat()[..4].to_vec()).collect();
+    let img = Renderer::new().render_region_with(
+        &doc,
+        doc.artboards[0].rect,
+        1.0,
+        &opts(PsdOptions::default()).render_options(RasterFormat::Psd),
+    );
+    let want: Vec<u8> = img
+        .to_straight()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .flat_map(|p| [on_white(p), [p[3]; 3]].concat()[..4].to_vec())
+        .collect();
     assert_eq!(merged(&file), want);
     let mixed = pixel(&want, 100, 35, 30);
-    assert!(mixed[0].abs_diff(128) <= 1 && mixed[1] == 0 && mixed[2] == 0, "red under half-opaque blue multiply: {mixed:?}");
+    assert!(
+        mixed[0].abs_diff(128) <= 1 && mixed[1] == 0 && mixed[2] == 0,
+        "red under half-opaque blue multiply: {mixed:?}"
+    );
     assert_eq!(pixel(&want, 100, 5, 50), [255, 255, 255, 0]);
 }
 
 #[test]
 fn flat_writes_the_merged_image_alone_on_white() {
     let doc = doc();
-    let o = opts(PsdOptions { layers: false, ..PsdOptions::default() });
+    let o = opts(PsdOptions {
+        layers: false,
+        ..PsdOptions::default()
+    });
     let file = export(&doc, &o);
     let p = parse(&file);
     assert_eq!((p.channels, p.mode, p.count), (3, 3, 0));
@@ -194,8 +289,17 @@ fn flat_writes_the_merged_image_alone_on_white() {
     // The resolution resource: 72 ppi in 16.16 fixed point.
     assert_eq!(&p.resources[..6], b"8BIM\x03\xed");
     assert_eq!(u32_at(p.resources, 12), 72 << 16);
-    let img = Renderer::new().render_region_with(&doc, doc.artboards[0].rect, 1.0, &o.render_options(RasterFormat::Psd));
-    assert_eq!(merged(&file), img.to_straight(), "the composite is the flat render");
+    let img = Renderer::new().render_region_with(
+        &doc,
+        doc.artboards[0].rect,
+        1.0,
+        &o.render_options(RasterFormat::Psd),
+    );
+    assert_eq!(
+        merged(&file),
+        img.to_straight(),
+        "the composite is the flat render"
+    );
     // The same flat file from a rendered image.
     assert_eq!(o.encode(&img, RasterFormat::Psd).unwrap(), file);
     let file = export(&doc, &RasterExportOptions { ppi: 150.0, ..o });
@@ -206,10 +310,17 @@ fn flat_writes_the_merged_image_alone_on_white() {
 #[test]
 fn maximum_editability_writes_groups_and_an_object_per_layer() {
     let doc = doc();
-    let o = opts(PsdOptions { max_editability: true, ..PsdOptions::default() });
+    let o = opts(PsdOptions {
+        max_editability: true,
+        ..PsdOptions::default()
+    });
     let file = export(&doc, &o);
     let p = parse(&file);
-    let rows: Vec<(&str, Option<usize>)> = p.records.iter().map(|r| (r.name.as_str(), r.divider)).collect();
+    let rows: Vec<(&str, Option<usize>)> = p
+        .records
+        .iter()
+        .map(|r| (r.name.as_str(), r.divider))
+        .collect();
     let rect = doc.layers[0].children().unwrap()[0].display_name();
     assert_eq!(
         rows,
@@ -227,15 +338,26 @@ fn maximum_editability_writes_groups_and_an_object_per_layer() {
         "groups end below their layers and open above them; the hidden square is left out"
     );
     // The object keeps its opacity and blending in its record; groups pass through.
-    assert_eq!((p.records[4].opacity, p.records[4].blend, p.records[4].rect), (128, *b"mul ", [20, 30, 50, 60]));
+    assert_eq!(
+        (p.records[4].opacity, p.records[4].blend, p.records[4].rect),
+        (128, *b"mul ", [20, 30, 50, 60])
+    );
     assert_eq!((p.records[8].blend, p.records[8].opacity), (*b"pass", 255));
     assert_eq!(p.records[6].rect, [0, 0, 6, 6]);
     let psd = ::psd::Psd::from_bytes(&file).unwrap();
     assert_eq!((psd.layers().len(), psd.groups().len()), (3, 3));
-    assert_eq!(merged(&file), merged(&export(&doc, &opts(PsdOptions::default()))), "the same merged image");
+    assert_eq!(
+        merged(&file),
+        merged(&export(&doc, &opts(PsdOptions::default()))),
+        "the same merged image"
+    );
 
     // Hidden layers: written hidden, drawn as if visible, instead of left out.
-    let o = opts(PsdOptions { max_editability: true, hidden_layers: true, ..PsdOptions::default() });
+    let o = opts(PsdOptions {
+        max_editability: true,
+        hidden_layers: true,
+        ..PsdOptions::default()
+    });
     let file = export(&doc, &o);
     let p = parse(&file);
     let hidden: Vec<&Rec> = p.records.iter().filter(|r| r.hidden).collect();
@@ -247,9 +369,24 @@ fn maximum_editability_writes_groups_and_an_object_per_layer() {
 fn hidden_top_level_layers_are_optional() {
     let mut doc = doc();
     Arc::make_mut(&mut doc.layers[1]).visible = false;
-    let names = |o: PsdOptions| parse(&export(&doc, &opts(o))).records.iter().map(|r| (r.name.clone(), r.hidden)).collect::<Vec<_>>();
-    assert_eq!(names(PsdOptions::default()), [("Layer 1".to_string(), false)]);
-    assert_eq!(names(PsdOptions { hidden_layers: true, ..PsdOptions::default() }), [("Layer 1".to_string(), false), ("Top".to_string(), true)]);
+    let names = |o: PsdOptions| {
+        parse(&export(&doc, &opts(o)))
+            .records
+            .iter()
+            .map(|r| (r.name.clone(), r.hidden))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        names(PsdOptions::default()),
+        [("Layer 1".to_string(), false)]
+    );
+    assert_eq!(
+        names(PsdOptions {
+            hidden_layers: true,
+            ..PsdOptions::default()
+        }),
+        [("Layer 1".to_string(), false), ("Top".to_string(), true)]
+    );
 
     // Nothing left to write as a layer: no transparency plane either (it would read as a channel).
     Arc::make_mut(&mut doc.layers[0]).visible = false;
@@ -262,51 +399,121 @@ fn hidden_top_level_layers_are_optional() {
 fn guides_are_not_layers() {
     let mut b = DocBuilder::new(20.0, 20.0);
     b.rect(Rect::new(0.0, 0.0, 5.0, 5.0), Color::rgb8(0, 0, 0), |_| {});
-    b.rect(Rect::new(0.0, 10.0, 20.0, 10.0), Color::rgb8(0, 0, 0), |n: &mut Node| {
-        if let vectorcraft_doc::NodeKind::Path { guide, .. } = &mut n.kind {
-            *guide = true;
-        }
+    b.rect(
+        Rect::new(0.0, 10.0, 20.0, 10.0),
+        Color::rgb8(0, 0, 0),
+        |n: &mut Node| {
+            if let vectorcraft_doc::NodeKind::Path { guide, .. } = &mut n.kind {
+                *guide = true;
+            }
+        },
+    );
+    let o = opts(PsdOptions {
+        max_editability: true,
+        ..PsdOptions::default()
     });
-    let o = opts(PsdOptions { max_editability: true, ..PsdOptions::default() });
-    assert_eq!(parse(&export(&b.build(), &o)).count, -3, "the group and the square");
+    assert_eq!(
+        parse(&export(&b.build(), &o)).count,
+        -3,
+        "the group and the square"
+    );
 }
 
 #[test]
 fn a_background_colour_is_the_bottom_layer() {
     let doc = doc();
-    let file = export(&doc, &RasterExportOptions { background: Some([0, 0, 255]), ..opts(PsdOptions::default()) });
+    let file = export(
+        &doc,
+        &RasterExportOptions {
+            background: Some([0, 0, 255]),
+            ..opts(PsdOptions::default())
+        },
+    );
     let p = parse(&file);
     assert_eq!((p.channels, p.count), (3, 3), "opaque: no merged alpha");
-    assert_eq!((p.records[0].name.as_str(), p.records[0].rect), ("Background", [0, 0, 60, 100]));
+    assert_eq!(
+        (p.records[0].name.as_str(), p.records[0].rect),
+        ("Background", [0, 0, 60, 100])
+    );
     let psd = ::psd::Psd::from_bytes(&file).unwrap();
-    assert!(psd.layer_by_name("Background").unwrap().rgba().chunks(4).all(|p| p == [0, 0, 255, 255]));
+    assert!(
+        psd.layer_by_name("Background")
+            .unwrap()
+            .rgba()
+            .chunks(4)
+            .all(|p| p == [0, 0, 255, 255])
+    );
     assert_eq!(pixel(&merged(&file), 100, 5, 50), [0, 0, 255, 255]);
 }
 
 #[test]
 fn cmyk_planes_hold_the_inks_inverted_and_gray_is_one_plane() {
     let doc = doc();
-    let cmyk = export(&doc, &opts(PsdOptions { color_model: ColorModel::Cmyk, ..PsdOptions::default() }));
+    let cmyk = export(
+        &doc,
+        &opts(PsdOptions {
+            color_model: ColorModel::Cmyk,
+            ..PsdOptions::default()
+        }),
+    );
     let p = parse(&cmyk);
-    assert_eq!((p.channels, p.mode, p.count, p.records[0].channels), (5, 4, -2, 5));
+    assert_eq!(
+        (p.channels, p.mode, p.count, p.records[0].channels),
+        (5, 4, -2, 5)
+    );
 
-    let gray = export(&doc, &opts(PsdOptions { color_model: ColorModel::Gray, layers: false, ..PsdOptions::default() }));
+    let gray = export(
+        &doc,
+        &opts(PsdOptions {
+            color_model: ColorModel::Gray,
+            layers: false,
+            ..PsdOptions::default()
+        }),
+    );
     let p = parse(&gray);
     assert_eq!((p.channels, p.mode), (1, 1));
     let px = merged(&gray);
     assert_eq!(pixel(&px, 100, 5, 50), [255, 255, 255, 255], "white paper");
-    assert!((100..160).contains(&px[(20 * 100 + 20) * 4]), "red is a middle grey");
+    assert!(
+        (100..160).contains(&px[(20 * 100 + 20) * 4]),
+        "red is a middle grey"
+    );
 
     // A CMYK black is black ink alone; no ink is 255.
     let mut b = DocBuilder::new(10.0, 10.0);
-    b.rect(Rect::new(0.0, 0.0, 5.0, 10.0), Color::cmyk(0.0, 0.0, 0.0, 1.0), |_| {});
+    b.rect(
+        Rect::new(0.0, 0.0, 5.0, 10.0),
+        Color::cmyk(0.0, 0.0, 0.0, 1.0),
+        |_| {},
+    );
     let doc = b.build();
-    let file = export(&doc, &opts(PsdOptions { color_model: ColorModel::Cmyk, layers: false, ..PsdOptions::default() }));
+    let file = export(
+        &doc,
+        &opts(PsdOptions {
+            color_model: ColorModel::Cmyk,
+            layers: false,
+            ..PsdOptions::default()
+        }),
+    );
     let planes = merged_planes(&file, 4, 10, 10);
-    assert_eq!(planes.iter().map(|p| p[0]).collect::<Vec<_>>(), [255, 255, 255, 0], "black ink");
-    assert_eq!(planes.iter().map(|p| p[9]).collect::<Vec<_>>(), [255; 4], "no ink");
+    assert_eq!(
+        planes.iter().map(|p| p[0]).collect::<Vec<_>>(),
+        [255, 255, 255, 0],
+        "black ink"
+    );
+    assert_eq!(
+        planes.iter().map(|p| p[9]).collect::<Vec<_>>(),
+        [255; 4],
+        "no ink"
+    );
     // Layered: the layer's inks are the same under its alpha.
-    let file = export(&doc, &opts(PsdOptions { color_model: ColorModel::Cmyk, ..PsdOptions::default() }));
+    let file = export(
+        &doc,
+        &opts(PsdOptions {
+            color_model: ColorModel::Cmyk,
+            ..PsdOptions::default()
+        }),
+    );
     assert_eq!(merged_planes(&file, 5, 10, 10)[3][0], 0);
 }
 
@@ -315,9 +522,17 @@ fn the_profile_and_the_size_limit() {
     let doc = doc();
     let file = export(&doc, &RasterExportOptions::default());
     let resources = parse(&file).resources;
-    let icc = resources.windows(6).position(|w| w == b"8BIM\x04\x0f").expect("the profile resource");
+    let icc = resources
+        .windows(6)
+        .position(|w| w == b"8BIM\x04\x0f")
+        .expect("the profile resource");
     assert!(u32_at(resources, icc + 8) > 100);
-    let o = RasterExportOptions { ppi: 72.0 * 301.0, ..RasterExportOptions::default() };
-    let err = Renderer::new().export_region(&doc, doc.artboards[0].rect, RasterFormat::Psd, &o).unwrap_err();
+    let o = RasterExportOptions {
+        ppi: 72.0 * 301.0,
+        ..RasterExportOptions::default()
+    };
+    let err = Renderer::new()
+        .export_region(&doc, doc.artboards[0].rect, RasterFormat::Psd, &o)
+        .unwrap_err();
     assert!(err.contains(&MAX_SIDE.to_string()), "{err}");
 }

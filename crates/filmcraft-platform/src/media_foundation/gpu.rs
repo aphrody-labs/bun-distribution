@@ -11,10 +11,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use windows::Win32::Foundation::{HMODULE, RPC_E_CHANGED_MODE};
-use windows::Win32::Graphics::Direct3D::{D3D_DRIVER_TYPE_HARDWARE, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1};
+use windows::Win32::Graphics::Direct3D::{
+    D3D_DRIVER_TYPE_HARDWARE, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1,
+};
 use windows::Win32::Graphics::Direct3D11::{
-    D3D11_CPU_ACCESS_READ, D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_MAP_READ, D3D11_MAPPED_SUBRESOURCE, D3D11_SDK_VERSION, D3D11_TEXTURE2D_DESC,
-    D3D11_USAGE_STAGING, D3D11_VIDEO_DECODER_DESC, D3D11CreateDevice, ID3D11Device, ID3D11DeviceContext, ID3D11Multithread, ID3D11Texture2D, ID3D11VideoDevice,
+    D3D11_CPU_ACCESS_READ, D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_MAP_READ,
+    D3D11_MAPPED_SUBRESOURCE, D3D11_SDK_VERSION, D3D11_TEXTURE2D_DESC, D3D11_USAGE_STAGING,
+    D3D11_VIDEO_DECODER_DESC, D3D11CreateDevice, ID3D11Device, ID3D11DeviceContext,
+    ID3D11Multithread, ID3D11Texture2D, ID3D11VideoDevice,
 };
 use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT, DXGI_FORMAT_NV12, DXGI_FORMAT_P010};
 use windows::Win32::Graphics::Dxgi::{IDXGIAdapter, IDXGIDevice};
@@ -60,7 +64,11 @@ fn init_com() -> Result<(), String> {
     let hr = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
     // A thread already in a single-threaded apartment (the UI thread) keeps it: MF decoders and
     // D3D11 are free-threaded and work from there too.
-    if hr.is_ok() || hr == RPC_E_CHANGED_MODE { Ok(()) } else { Err(format!("COM initialisation failed ({hr:?})")) }
+    if hr.is_ok() || hr == RPC_E_CHANGED_MODE {
+        Ok(())
+    } else {
+        Err(format!("COM initialisation failed ({hr:?})"))
+    }
 }
 
 /// Make sure the calling thread can use COM objects.
@@ -124,20 +132,35 @@ impl Gpu {
             )
         }
         .map_err(|e| format!("no Direct3D 11 video device: {e}"))?;
-        let (device, context) = device.zip(context).ok_or("Direct3D 11 returned no device")?;
+        let (device, context) = device
+            .zip(context)
+            .ok_or("Direct3D 11 returned no device")?;
         // Decoder MFTs on other threads use this device while we copy surfaces out of it.
-        let mt: ID3D11Multithread = device.cast().map_err(|e| format!("no ID3D11Multithread: {e}"))?;
+        let mt: ID3D11Multithread = device
+            .cast()
+            .map_err(|e| format!("no ID3D11Multithread: {e}"))?;
         // SAFETY: a plain COM call on a live interface (it returns the previous setting).
         let _ = unsafe { mt.SetMultithreadProtected(true) };
-        let video: ID3D11VideoDevice = device.cast().map_err(|e| format!("the device has no video decoding: {e}"))?;
+        let video: ID3D11VideoDevice = device
+            .cast()
+            .map_err(|e| format!("the device has no video decoding: {e}"))?;
         let manager = api.create_device_manager(&device)?;
         let name = adapter_name(&device).unwrap_or_else(|| "an unknown adapter".into());
-        Ok(Gpu { device, context, video, manager, name, lost: AtomicBool::new(false), gate: Mutex::new(()) })
+        Ok(Gpu {
+            device,
+            context,
+            video,
+            manager,
+            name,
+            lost: AtomicBool::new(false),
+            gate: Mutex::new(()),
+        })
     }
 
     fn usable(&self) -> bool {
         // SAFETY: a plain COM call on a live interface.
-        !self.lost.load(Ordering::Relaxed) && unsafe { self.device.GetDeviceRemovedReason() }.is_ok()
+        !self.lost.load(Ordering::Relaxed)
+            && unsafe { self.device.GetDeviceRemovedReason() }.is_ok()
     }
 
     /// The adapter's description (for logs).
@@ -154,7 +177,10 @@ impl Gpu {
     /// A failed call may mean the device is gone: if so, mark it so new decoders get a fresh one.
     pub fn note_failure(&self) {
         if !self.usable() {
-            log::warn!("Direct3D 11 device lost ({}); new decoders will create another", self.name);
+            log::warn!(
+                "Direct3D 11 device lost ({}); new decoders will create another",
+                self.name
+            );
             self.lost.store(true, Ordering::Relaxed);
         }
     }
@@ -164,23 +190,46 @@ impl Gpu {
         // SAFETY: plain COM calls on a live interface; each index below the count is valid.
         unsafe {
             let n = self.video.GetVideoDecoderProfileCount();
-            (0..n).filter_map(|i| self.video.GetVideoDecoderProfile(i).ok()).collect()
+            (0..n)
+                .filter_map(|i| self.video.GetVideoDecoderProfile(i).ok())
+                .collect()
         }
     }
 
     /// Whether DXVA on this device decodes `profile` into `format` at `size` (so a stream is
     /// declined up front instead of failing on its first sample).
-    pub fn supports(&self, profile: GUID, format: SurfaceFormat, size: (u32, u32)) -> Result<(), String> {
+    pub fn supports(
+        &self,
+        profile: GUID,
+        format: SurfaceFormat,
+        size: (u32, u32),
+    ) -> Result<(), String> {
         // SAFETY: plain COM calls on a live interface with a valid descriptor.
         unsafe {
-            let ok = self.video.CheckVideoDecoderFormat(&profile, format.dxgi()).map_err(|e| format!("decoder format check failed: {e}"))?;
+            let ok = self
+                .video
+                .CheckVideoDecoderFormat(&profile, format.dxgi())
+                .map_err(|e| format!("decoder format check failed: {e}"))?;
             if !ok.as_bool() {
-                return Err(format!("the GPU has no DXVA decoder for this profile in {format:?}"));
+                return Err(format!(
+                    "the GPU has no DXVA decoder for this profile in {format:?}"
+                ));
             }
-            let desc = D3D11_VIDEO_DECODER_DESC { Guid: profile, SampleWidth: size.0, SampleHeight: size.1, OutputFormat: format.dxgi() };
-            let configs = self.video.GetVideoDecoderConfigCount(&desc).map_err(|e| format!("decoder configuration query failed: {e}"))?;
+            let desc = D3D11_VIDEO_DECODER_DESC {
+                Guid: profile,
+                SampleWidth: size.0,
+                SampleHeight: size.1,
+                OutputFormat: format.dxgi(),
+            };
+            let configs = self
+                .video
+                .GetVideoDecoderConfigCount(&desc)
+                .map_err(|e| format!("decoder configuration query failed: {e}"))?;
             if configs == 0 {
-                return Err(format!("the GPU's DXVA decoder does not take {}x{} pictures", size.0, size.1));
+                return Err(format!(
+                    "the GPU's DXVA decoder does not take {}x{} pictures",
+                    size.0, size.1
+                ));
             }
         }
         Ok(())
@@ -191,7 +240,11 @@ fn adapter_name(device: &ID3D11Device) -> Option<String> {
     let dxgi: IDXGIDevice = device.cast().ok()?;
     // SAFETY: plain COM calls on live interfaces; the description is a plain struct filled by DXGI.
     let desc = unsafe { dxgi.GetAdapter().ok()?.GetDesc().ok()? };
-    let len = desc.Description.iter().position(|&c| c == 0).unwrap_or(desc.Description.len());
+    let len = desc
+        .Description
+        .iter()
+        .position(|&c| c == 0)
+        .unwrap_or(desc.Description.len());
     Some(String::from_utf16_lossy(desc.Description.get(..len)?))
 }
 
@@ -211,7 +264,13 @@ impl Readback {
     /// Copy the picture in `sample` (a decoder output sample backed by a Direct3D 11 texture) into
     /// system memory and hand it to `f` as a mapped biplanar surface. Errors when the sample is
     /// not texture-backed, which means the decoder did not use the GPU.
-    pub fn read<R>(&mut self, gpu: &Gpu, sample: &IMFSample, format: SurfaceFormat, f: impl FnOnce(&Biplanar) -> Result<R, String>) -> Result<R, String> {
+    pub fn read<R>(
+        &mut self,
+        gpu: &Gpu,
+        sample: &IMFSample,
+        format: SurfaceFormat,
+        f: impl FnOnce(&Biplanar) -> Result<R, String>,
+    ) -> Result<R, String> {
         let r = self.read_inner(gpu, sample, format, f);
         if r.is_err() {
             gpu.note_failure();
@@ -219,22 +278,42 @@ impl Readback {
         r
     }
 
-    fn read_inner<R>(&mut self, gpu: &Gpu, sample: &IMFSample, format: SurfaceFormat, f: impl FnOnce(&Biplanar) -> Result<R, String>) -> Result<R, String> {
+    fn read_inner<R>(
+        &mut self,
+        gpu: &Gpu,
+        sample: &IMFSample,
+        format: SurfaceFormat,
+        f: impl FnOnce(&Biplanar) -> Result<R, String>,
+    ) -> Result<R, String> {
         // SAFETY: plain COM calls on live interfaces; `GetResource` writes one interface pointer
         // (a new reference) into `tex`, which `Option<ID3D11Texture2D>` owns and releases.
         let (tex, index) = unsafe {
-            let buffer = sample.GetBufferByIndex(0).map_err(|e| format!("decoder output has no buffer: {e}"))?;
-            let dxgi: IMFDXGIBuffer = buffer.cast().map_err(|_| "decoder output is in system memory: the decoder is not using the GPU".to_string())?;
+            let buffer = sample
+                .GetBufferByIndex(0)
+                .map_err(|e| format!("decoder output has no buffer: {e}"))?;
+            let dxgi: IMFDXGIBuffer = buffer.cast().map_err(|_| {
+                "decoder output is in system memory: the decoder is not using the GPU".to_string()
+            })?;
             let mut tex: Option<ID3D11Texture2D> = None;
-            dxgi.GetResource(&ID3D11Texture2D::IID, &mut tex as *mut Option<ID3D11Texture2D> as *mut *mut c_void)
-                .map_err(|e| format!("decoder output is not a 2D texture: {e}"))?;
-            (tex.ok_or("decoder output has no texture")?, dxgi.GetSubresourceIndex().map_err(|e| format!("no subresource index: {e}"))?)
+            dxgi.GetResource(
+                &ID3D11Texture2D::IID,
+                &mut tex as *mut Option<ID3D11Texture2D> as *mut *mut c_void,
+            )
+            .map_err(|e| format!("decoder output is not a 2D texture: {e}"))?;
+            (
+                tex.ok_or("decoder output has no texture")?,
+                dxgi.GetSubresourceIndex()
+                    .map_err(|e| format!("no subresource index: {e}"))?,
+            )
         };
         let mut desc = D3D11_TEXTURE2D_DESC::default();
         // SAFETY: a plain COM call writing a descriptor struct.
         unsafe { tex.GetDesc(&mut desc) };
         if desc.Format != format.dxgi() {
-            return Err(format!("decoded surface has DXGI format {} instead of {format:?}", desc.Format.0));
+            return Err(format!(
+                "decoded surface has DXGI format {} instead of {format:?}",
+                desc.Format.0
+            ));
         }
         if desc.Width == 0 || desc.Height == 0 || desc.Width > 16384 || desc.Height > 16384 {
             return Err(format!("decoded surface is {}x{}", desc.Width, desc.Height));
@@ -247,29 +326,47 @@ impl Readback {
         // row for `Height` luma rows followed by `Height / 2` chroma rows (the NV12 / P010 staging
         // layout), valid until `Unmap`, which runs before this block ends.
         unsafe {
-            gpu.context.CopySubresourceRegion(staging, 0, 0, 0, 0, &tex, index, None);
-            gpu.context.Map(staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped)).map_err(|e| format!("cannot map the decoded surface: {e}"))?;
+            gpu.context
+                .CopySubresourceRegion(staging, 0, 0, 0, 0, &tex, index, None);
+            gpu.context
+                .Map(staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+                .map_err(|e| format!("cannot map the decoded surface: {e}"))?;
         }
         let result = (|| {
             let stride = mapped.RowPitch as usize;
             let rows = desc.Height as usize;
             let luma_len = stride.checked_mul(rows).ok_or("surface size overflows")?;
-            let chroma_len = stride.checked_mul(rows.div_ceil(2)).ok_or("surface size overflows")?;
+            let chroma_len = stride
+                .checked_mul(rows.div_ceil(2))
+                .ok_or("surface size overflows")?;
             if mapped.pData.is_null() || stride == 0 {
                 return Err("the decoded surface is not mapped".to_string());
             }
             // SAFETY: see the `Map` call: `luma_len + chroma_len` bytes are mapped at `pData`.
-            let all = unsafe { std::slice::from_raw_parts(mapped.pData as *const u8, luma_len + chroma_len) };
+            let all = unsafe {
+                std::slice::from_raw_parts(mapped.pData as *const u8, luma_len + chroma_len)
+            };
             let (luma, chroma) = all.split_at(luma_len);
-            f(&Biplanar { luma, chroma, stride, rows })
+            f(&Biplanar {
+                luma,
+                chroma,
+                stride,
+                rows,
+            })
         })();
         // SAFETY: the subresource was mapped above and nothing borrowed from it outlives `result`.
         unsafe { gpu.context.Unmap(staging, 0) };
         result
     }
 
-    fn staging_for(&mut self, gpu: &Gpu, src: &D3D11_TEXTURE2D_DESC) -> Result<&ID3D11Texture2D, String> {
-        let fits = self.staging.as_ref().is_some_and(|(_, d)| d.Width == src.Width && d.Height == src.Height && d.Format == src.Format);
+    fn staging_for(
+        &mut self,
+        gpu: &Gpu,
+        src: &D3D11_TEXTURE2D_DESC,
+    ) -> Result<&ID3D11Texture2D, String> {
+        let fits = self.staging.as_ref().is_some_and(|(_, d)| {
+            d.Width == src.Width && d.Height == src.Height && d.Format == src.Format
+        });
         if !fits {
             let desc = D3D11_TEXTURE2D_DESC {
                 Width: src.Width,
@@ -277,7 +374,10 @@ impl Readback {
                 MipLevels: 1,
                 ArraySize: 1,
                 Format: src.Format,
-                SampleDesc: windows::Win32::Graphics::Dxgi::Common::DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+                SampleDesc: windows::Win32::Graphics::Dxgi::Common::DXGI_SAMPLE_DESC {
+                    Count: 1,
+                    Quality: 0,
+                },
                 Usage: D3D11_USAGE_STAGING,
                 BindFlags: 0,
                 CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
@@ -285,9 +385,13 @@ impl Readback {
             };
             let mut tex: Option<ID3D11Texture2D> = None;
             // SAFETY: a valid descriptor and out-pointer; no initial data.
-            unsafe { gpu.device.CreateTexture2D(&desc, None, Some(&mut tex)) }.map_err(|e| format!("cannot create the readback texture: {e}"))?;
+            unsafe { gpu.device.CreateTexture2D(&desc, None, Some(&mut tex)) }
+                .map_err(|e| format!("cannot create the readback texture: {e}"))?;
             self.staging = Some((tex.ok_or("no readback texture")?, desc));
         }
-        self.staging.as_ref().map(|(t, _)| t).ok_or_else(|| "no readback texture".to_string())
+        self.staging
+            .as_ref()
+            .map(|(t, _)| t)
+            .ok_or_else(|| "no readback texture".to_string())
     }
 }

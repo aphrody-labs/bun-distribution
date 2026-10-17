@@ -112,10 +112,23 @@ fn block_height(bs: usize) -> usize {
 }
 
 impl<'a, 'f> TileDecoder<'a, 'f> {
-    pub fn new(fs: &'f FrameShared, t: &'f mut TileState, data: &'a [u8], cdf: Box<Cdfs>, tile_row: usize, tile_col: usize) -> Self {
+    pub fn new(
+        fs: &'f FrameShared,
+        t: &'f mut TileState,
+        data: &'a [u8],
+        cdf: Box<Cdfs>,
+        tile_row: usize,
+        tile_col: usize,
+    ) -> Self {
         let ti = &fs.fh.tile_info;
-        let (rs, re) = (ti.mi_row_starts[tile_row] as usize, ti.mi_row_starts[tile_row + 1] as usize);
-        let (cs, ce) = (ti.mi_col_starts[tile_col] as usize, ti.mi_col_starts[tile_col + 1] as usize);
+        let (rs, re) = (
+            ti.mi_row_starts[tile_row] as usize,
+            ti.mi_row_starts[tile_row + 1] as usize,
+        );
+        let (cs, ce) = (
+            ti.mi_col_starts[tile_col] as usize,
+            ti.mi_col_starts[tile_col + 1] as usize,
+        );
         let disable = fs.fh.disable_cdf_update;
         let q = fs.fh.quant.base_q_idx as i32;
         TileDecoder {
@@ -158,7 +171,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
 
     #[inline]
     fn is_inside(&self, r: isize, c: isize) -> bool {
-        c >= self.mi_col_start as isize && c < self.mi_col_end as isize && r >= self.mi_row_start as isize && r < self.mi_row_end as isize
+        c >= self.mi_col_start as isize
+            && c < self.mi_col_end as isize
+            && r >= self.mi_row_start as isize
+            && r < self.mi_row_end as isize
     }
 
     /// decode_tile( )
@@ -223,7 +239,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             let bd = &mut self.block_decoded[plane];
             for y in -1..=((sb4 >> sub_y) as isize) {
                 for x in -1..=((sb4 >> sub_x) as isize) {
-                    let v = if y < 0 && x < sb_w4 { true } else { x < 0 && y < sb_h4 };
+                    let v = if y < 0 && x < sb_w4 {
+                        true
+                    } else {
+                        x < 0 && y < sb_h4
+                    };
                     bd[(y + 1) as usize][(x + 1) as usize] = v;
                 }
             }
@@ -257,8 +277,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         } else {
             let bsl = MI_WIDTH_LOG2[bsize] as usize;
             let mi = &self.t.mi;
-            let above = avail_u && (MI_WIDTH_LOG2[mi.mi_size[mi.idx(r - 1, c)] as usize] as usize) < bsl;
-            let left = avail_l && (MI_HEIGHT_LOG2[mi.mi_size[mi.idx(r, c - 1)] as usize] as usize) < bsl;
+            let above =
+                avail_u && (MI_WIDTH_LOG2[mi.mi_size[mi.idx(r - 1, c)] as usize] as usize) < bsl;
+            let left =
+                avail_l && (MI_HEIGHT_LOG2[mi.mi_size[mi.idx(r, c - 1)] as usize] as usize) < bsl;
             let ctx = left as usize * 2 + above as usize;
             if has_rows && has_cols {
                 let cdf: &mut [u16] = match bsl {
@@ -280,13 +302,21 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 let pr = |k: usize| pcdf[k] as i32 - if k == 0 { 0 } else { pcdf[k - 1] as i32 };
                 let psum = if has_cols {
                     // split_or_horz
-                    let mut s = pr(PARTITION_VERT) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_VERT_A) + pr(PARTITION_VERT_B);
+                    let mut s = pr(PARTITION_VERT)
+                        + pr(PARTITION_SPLIT)
+                        + pr(PARTITION_HORZ_A)
+                        + pr(PARTITION_VERT_A)
+                        + pr(PARTITION_VERT_B);
                     if bsize != BLOCK_128X128 {
                         s += pr(PARTITION_VERT_4);
                     }
                     s
                 } else {
-                    let mut s = pr(PARTITION_HORZ) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_HORZ_B) + pr(PARTITION_VERT_A);
+                    let mut s = pr(PARTITION_HORZ)
+                        + pr(PARTITION_SPLIT)
+                        + pr(PARTITION_HORZ_A)
+                        + pr(PARTITION_HORZ_B)
+                        + pr(PARTITION_VERT_A);
                     if bsize != BLOCK_128X128 {
                         s += pr(PARTITION_HORZ_4);
                     }
@@ -375,12 +405,24 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         // partition k is cdf[k] - cdf[k - 1].
         let pr = |k: usize| pcdf[k] as i32 - if k == 0 { 0 } else { pcdf[k - 1] as i32 };
         let mut psum = if split_or_horz {
-            pr(PARTITION_VERT) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_VERT_A) + pr(PARTITION_VERT_B)
+            pr(PARTITION_VERT)
+                + pr(PARTITION_SPLIT)
+                + pr(PARTITION_HORZ_A)
+                + pr(PARTITION_VERT_A)
+                + pr(PARTITION_VERT_B)
         } else {
-            pr(PARTITION_HORZ) + pr(PARTITION_SPLIT) + pr(PARTITION_HORZ_A) + pr(PARTITION_HORZ_B) + pr(PARTITION_VERT_A)
+            pr(PARTITION_HORZ)
+                + pr(PARTITION_SPLIT)
+                + pr(PARTITION_HORZ_A)
+                + pr(PARTITION_HORZ_B)
+                + pr(PARTITION_VERT_A)
         };
         if bsize != BLOCK_128X128 {
-            psum += if split_or_horz { pr(PARTITION_VERT_4) } else { pr(PARTITION_HORZ_4) };
+            psum += if split_or_horz {
+                pr(PARTITION_VERT_4)
+            } else {
+                pr(PARTITION_HORZ_4)
+            };
         }
         let mut cdf = [((1i32 << 15) - psum) as u16, 1 << 15, 0];
         // no adaptation: the array is constructed for this read only
@@ -394,10 +436,20 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     fn decode_block(&mut self, r: usize, c: usize, sub_size: usize) -> Result<()> {
         let (ssx, ssy) = (self.fs.ssx, self.fs.ssy);
         let num_planes = self.fs.num_planes;
-        let mut b = Block { mi_row: r, mi_col: c, mi_size: sub_size, ..Default::default() };
+        let mut b = Block {
+            mi_row: r,
+            mi_col: c,
+            mi_size: sub_size,
+            ..Default::default()
+        };
         b.bw4 = NUM_4X4_BLOCKS_WIDE[sub_size] as usize;
         b.bh4 = NUM_4X4_BLOCKS_HIGH[sub_size] as usize;
-        b.has_chroma = if b.bh4 == 1 && ssy == 1 && (r & 1) == 0 || b.bw4 == 1 && ssx == 1 && (c & 1) == 0 { false } else { num_planes > 1 };
+        b.has_chroma =
+            if b.bh4 == 1 && ssy == 1 && (r & 1) == 0 || b.bw4 == 1 && ssx == 1 && (c & 1) == 0 {
+                false
+            } else {
+                num_planes > 1
+            };
         b.avail_u = self.is_inside(r as isize - 1, c as isize);
         b.avail_l = self.is_inside(r as isize, c as isize - 1);
         b.avail_u_chroma = b.avail_u;
@@ -432,7 +484,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             let rows = b.bh4.min(mi.rows.saturating_sub(r));
             let cols = b.bw4.min(mi.cols.saturating_sub(c));
             let set_uv = b.ref_frame[0] == INTRA_FRAME as i8 && b.has_chroma;
-            let mvs = [Mv::new(b.mv_i[0][0], b.mv_i[0][1]), Mv::new(b.mv_i[1][0], b.mv_i[1][1])];
+            let mvs = [
+                Mv::new(b.mv_i[0][0], b.mv_i[0][1]),
+                Mv::new(b.mv_i[1][0], b.mv_i[1][1]),
+            ];
             for y in 0..rows {
                 let i = mi.idx(r + y, c);
                 let span = i..i + cols;
@@ -464,7 +519,12 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let mi = &mut self.t.mi;
         let rows = b.bh4.min(mi.rows.saturating_sub(r));
         let cols = b.bw4.min(mi.cols.saturating_sub(c));
-        let dlf = [delta_lf[0] as i8, delta_lf[1] as i8, delta_lf[2] as i8, delta_lf[3] as i8];
+        let dlf = [
+            delta_lf[0] as i8,
+            delta_lf[1] as i8,
+            delta_lf[2] as i8,
+            delta_lf[3] as i8,
+        ];
         for y in 0..rows {
             let i = mi.idx(r + y, c);
             let span = i..i + cols;
@@ -519,7 +579,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         self.read_delta_lf();
         self.read_deltas = false;
         self.b.ref_frame = [INTRA_FRAME as i8, NONE];
-        self.b.use_intrabc = if self.fs.fh.allow_intrabc { self.sd.read_symbol(&mut self.cdf.intrabc) == 1 } else { false };
+        self.b.use_intrabc = if self.fs.fh.allow_intrabc {
+            self.sd.read_symbol(&mut self.cdf.intrabc) == 1
+        } else {
+            false
+        };
         if self.b.use_intrabc {
             self.b.is_inter = true;
             self.b.y_mode = DC_PRED;
@@ -536,8 +600,16 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         self.b.is_inter = false;
         let mi = &self.t.mi;
         let (r, c) = (self.b.mi_row, self.b.mi_col);
-        let above = if self.b.avail_u { mi.y_mode[mi.idx(r - 1, c)] as usize } else { DC_PRED };
-        let left = if self.b.avail_l { mi.y_mode[mi.idx(r, c - 1)] as usize } else { DC_PRED };
+        let above = if self.b.avail_u {
+            mi.y_mode[mi.idx(r - 1, c)] as usize
+        } else {
+            DC_PRED
+        };
+        let left = if self.b.avail_l {
+            mi.y_mode[mi.idx(r, c - 1)] as usize
+        } else {
+            DC_PRED
+        };
         let actx = INTRA_MODE_CONTEXT[above] as usize;
         let lctx = INTRA_MODE_CONTEXT[left] as usize;
         let mut cdf = self.t.intra_frame_y_mode_cdf[actx][lctx];
@@ -554,7 +626,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         self.b.palette_size_y = 0;
         self.b.palette_size_uv = 0;
         let ms = self.b.mi_size;
-        if ms >= BLOCK_8X8 && block_width(ms) <= 64 && block_height(ms) <= 64 && self.fs.fh.allow_screen_content_tools {
+        if ms >= BLOCK_8X8
+            && block_width(ms) <= 64
+            && block_height(ms) <= 64
+            && self.fs.fh.allow_screen_content_tools
+        {
             self.palette_mode_info();
         }
         self.filter_intra_mode_info();
@@ -569,14 +645,20 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             !self.b.lossless && block_width(ms).max(block_height(ms)) <= 32
         };
         let y = self.b.y_mode;
-        self.b.uv_mode =
-            if cfl_allowed { self.sd.read_symbol(&mut self.cdf.uv_mode_cfl_allowed[y]) } else { self.sd.read_symbol(&mut self.cdf.uv_mode_cfl_not_allowed[y]) };
+        self.b.uv_mode = if cfl_allowed {
+            self.sd.read_symbol(&mut self.cdf.uv_mode_cfl_allowed[y])
+        } else {
+            self.sd
+                .read_symbol(&mut self.cdf.uv_mode_cfl_not_allowed[y])
+        };
     }
 
     pub(crate) fn intra_angle_info_y(&mut self) {
         self.b.angle_delta_y = 0;
         if self.b.mi_size >= BLOCK_8X8 && is_directional_mode(self.b.y_mode) {
-            let v = self.sd.read_symbol(&mut self.cdf.angle_delta[self.b.y_mode - V_PRED]);
+            let v = self
+                .sd
+                .read_symbol(&mut self.cdf.angle_delta[self.b.y_mode - V_PRED]);
             self.b.angle_delta_y = v as i32 - MAX_ANGLE_DELTA as i32;
         }
     }
@@ -584,7 +666,9 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     pub(crate) fn intra_angle_info_uv(&mut self) {
         self.b.angle_delta_uv = 0;
         if self.b.mi_size >= BLOCK_8X8 && is_directional_mode(self.b.uv_mode) {
-            let v = self.sd.read_symbol(&mut self.cdf.angle_delta[self.b.uv_mode - V_PRED]);
+            let v = self
+                .sd
+                .read_symbol(&mut self.cdf.angle_delta[self.b.uv_mode - V_PRED]);
             self.b.angle_delta_uv = v as i32 - MAX_ANGLE_DELTA as i32;
         }
     }
@@ -621,9 +705,21 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     pub(crate) fn read_segment_id(&mut self) {
         let (r, c) = (self.b.mi_row, self.b.mi_col);
         let mi = &self.t.mi;
-        let prev_ul = if self.b.avail_u && self.b.avail_l { mi.segment_id[mi.idx(r - 1, c - 1)] as i32 } else { -1 };
-        let prev_u = if self.b.avail_u { mi.segment_id[mi.idx(r - 1, c)] as i32 } else { -1 };
-        let prev_l = if self.b.avail_l { mi.segment_id[mi.idx(r, c - 1)] as i32 } else { -1 };
+        let prev_ul = if self.b.avail_u && self.b.avail_l {
+            mi.segment_id[mi.idx(r - 1, c - 1)] as i32
+        } else {
+            -1
+        };
+        let prev_u = if self.b.avail_u {
+            mi.segment_id[mi.idx(r - 1, c)] as i32
+        } else {
+            -1
+        };
+        let prev_l = if self.b.avail_l {
+            mi.segment_id[mi.idx(r, c - 1)] as i32
+        } else {
+            -1
+        };
         let pred = if prev_u == -1 {
             if prev_l == -1 { 0 } else { prev_l }
         } else if prev_l == -1 || prev_ul == prev_u {
@@ -697,7 +793,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     }
 
     pub(crate) fn read_delta_qindex(&mut self) {
-        let sb_size = if self.fs.seq.use_128x128_superblock { BLOCK_128X128 } else { BLOCK_64X64 };
+        let sb_size = if self.fs.seq.use_128x128_superblock {
+            BLOCK_128X128
+        } else {
+            BLOCK_64X64
+        };
         if self.b.mi_size == sb_size && self.b.skip {
             return;
         }
@@ -711,23 +811,40 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             if abs != 0 {
                 let sign = self.sd.read_literal(1);
                 let reduced = if sign == 1 { -abs } else { abs };
-                self.current_q_index = (self.current_q_index + (reduced << self.fs.fh.delta_q_res)).clamp(1, 255);
+                self.current_q_index =
+                    (self.current_q_index + (reduced << self.fs.fh.delta_q_res)).clamp(1, 255);
             }
         }
     }
 
     pub(crate) fn read_delta_lf(&mut self) {
-        let sb_size = if self.fs.seq.use_128x128_superblock { BLOCK_128X128 } else { BLOCK_64X64 };
+        let sb_size = if self.fs.seq.use_128x128_superblock {
+            BLOCK_128X128
+        } else {
+            BLOCK_64X64
+        };
         if self.b.mi_size == sb_size && self.b.skip {
             return;
         }
         let fh = &self.fs.fh;
         if self.read_deltas && fh.delta_lf_present {
-            let count = if fh.delta_lf_multi { if self.fs.num_planes > 1 { FRAME_LF_COUNT } else { FRAME_LF_COUNT - 2 } } else { 1 };
+            let count = if fh.delta_lf_multi {
+                if self.fs.num_planes > 1 {
+                    FRAME_LF_COUNT
+                } else {
+                    FRAME_LF_COUNT - 2
+                }
+            } else {
+                1
+            };
             let multi = fh.delta_lf_multi;
             let res = fh.delta_lf_res;
             for i in 0..count {
-                let mut abs = if multi { self.sd.read_symbol(&mut self.cdf.delta_lf_multi[i]) } else { self.sd.read_symbol(&mut self.cdf.delta_lf) } as i32;
+                let mut abs = if multi {
+                    self.sd.read_symbol(&mut self.cdf.delta_lf_multi[i])
+                } else {
+                    self.sd.read_symbol(&mut self.cdf.delta_lf)
+                } as i32;
                 if abs == DELTA_LF_SMALL as i32 {
                     let n = self.sd.read_literal(3) + 1;
                     let bits = self.sd.read_literal(n) as i32;
@@ -736,7 +853,8 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 if abs != 0 {
                     let sign = self.sd.read_literal(1);
                     let reduced = if sign == 1 { -abs } else { abs };
-                    self.delta_lf[i] = (self.delta_lf[i] + (reduced << res)).clamp(-(MAX_LOOP_FILTER as i32), MAX_LOOP_FILTER as i32);
+                    self.delta_lf[i] = (self.delta_lf[i] + (reduced << res))
+                        .clamp(-(MAX_LOOP_FILTER as i32), MAX_LOOP_FILTER as i32);
                 }
             }
         }
@@ -745,7 +863,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     pub(crate) fn filter_intra_mode_info(&mut self) {
         self.b.use_filter_intra = false;
         let ms = self.b.mi_size;
-        if self.fs.seq.enable_filter_intra && self.b.y_mode == DC_PRED && self.b.palette_size_y == 0 && block_width(ms).max(block_height(ms)) <= 32 {
+        if self.fs.seq.enable_filter_intra
+            && self.b.y_mode == DC_PRED
+            && self.b.palette_size_y == 0
+            && block_width(ms).max(block_height(ms)) <= 32
+        {
             self.b.use_filter_intra = self.sd.read_symbol(&mut self.cdf.filter_intra[ms]) == 1;
             if self.b.use_filter_intra {
                 self.b.filter_intra_mode = self.sd.read_symbol(&mut self.cdf.filter_intra_mode);
@@ -769,7 +891,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             if self.b.avail_l && mi.palette_size[0][mi.idx(r, c - 1)] > 0 {
                 ctx += 1;
             }
-            if self.sd.read_symbol(&mut self.cdf.palette_y_mode[bsize_ctx][ctx]) == 1 {
+            if self
+                .sd
+                .read_symbol(&mut self.cdf.palette_y_mode[bsize_ctx][ctx])
+                == 1
+            {
                 let n = self.sd.read_symbol(&mut self.cdf.palette_y_size[bsize_ctx]) + 2;
                 self.b.palette_size_y = n;
                 let cache = self.get_palette_cache(0);
@@ -807,7 +933,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         if self.b.has_chroma && self.b.uv_mode == DC_PRED {
             let ctx = (self.b.palette_size_y > 0) as usize;
             if self.sd.read_symbol(&mut self.cdf.palette_uv_mode[ctx]) == 1 {
-                let n = self.sd.read_symbol(&mut self.cdf.palette_uv_size[bsize_ctx]) + 2;
+                let n = self
+                    .sd
+                    .read_symbol(&mut self.cdf.palette_uv_size[bsize_ctx])
+                    + 2;
                 self.b.palette_size_uv = n;
                 let cache = self.get_palette_cache(1);
                 let mut colors = [0u16; 8];
@@ -871,10 +1000,26 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     fn get_palette_cache(&self, plane: usize) -> Vec<u16> {
         let (r, c) = (self.b.mi_row, self.b.mi_col);
         let mi = &self.t.mi;
-        let above_n = if (r * 4) % 64 != 0 { mi.palette_size[plane][mi.idx(r - 1, c)] as usize } else { 0 };
-        let left_n = if self.b.avail_l { mi.palette_size[plane][mi.idx(r, c - 1)] as usize } else { 0 };
-        let above: &[u16] = if above_n > 0 { &mi.palette_colors[plane][mi.idx(r - 1, c)][..above_n] } else { &[] };
-        let left: &[u16] = if left_n > 0 { &mi.palette_colors[plane][mi.idx(r, c - 1)][..left_n] } else { &[] };
+        let above_n = if (r * 4) % 64 != 0 {
+            mi.palette_size[plane][mi.idx(r - 1, c)] as usize
+        } else {
+            0
+        };
+        let left_n = if self.b.avail_l {
+            mi.palette_size[plane][mi.idx(r, c - 1)] as usize
+        } else {
+            0
+        };
+        let above: &[u16] = if above_n > 0 {
+            &mi.palette_colors[plane][mi.idx(r - 1, c)][..above_n]
+        } else {
+            &[]
+        };
+        let left: &[u16] = if left_n > 0 {
+            &mi.palette_colors[plane][mi.idx(r, c - 1)][..left_n]
+        } else {
+            &[]
+        };
         let (mut ai, mut li) = (0, 0);
         let mut out: Vec<u16> = Vec::with_capacity(16);
         while ai < above_n && li < left_n {
@@ -923,7 +1068,8 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         if self.b.palette_size_uv > 0 {
             let n = self.b.palette_size_uv;
             let (ssx, ssy) = (self.fs.ssx, self.fs.ssy);
-            let (mut bw, mut bh, mut on_w, mut on_h) = (bw >> ssx, bh >> ssy, on_w >> ssx, on_h >> ssy);
+            let (mut bw, mut bh, mut on_w, mut on_h) =
+                (bw >> ssx, bh >> ssy, on_w >> ssx, on_h >> ssy);
             if bw < 4 {
                 bw += 2;
                 on_w += 2;
@@ -940,7 +1086,16 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
 
     /// Color index map (stride 64).
     #[allow(clippy::too_many_arguments)]
-    fn read_color_map(&mut self, map: &mut [u8], n: usize, bw: usize, bh: usize, on_w: usize, on_h: usize, plane: usize) {
+    fn read_color_map(
+        &mut self,
+        map: &mut [u8],
+        n: usize,
+        bw: usize,
+        bh: usize,
+        on_w: usize,
+        on_h: usize,
+        plane: usize,
+    ) {
         map[0] = self.sd.read_ns(n as u32) as u8;
         for i in 1..(on_h + on_w - 1) {
             let jmax = i.min(on_w - 1);
@@ -989,7 +1144,12 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let b = &self.b;
         let (bw4, bh4) = (b.bw4, b.bh4);
         let fh = &self.fs.fh;
-        if fh.tx_mode == TX_MODE_SELECT as u8 && b.mi_size > BLOCK_4X4 && b.is_inter && !b.skip && !b.lossless {
+        if fh.tx_mode == TX_MODE_SELECT as u8
+            && b.mi_size > BLOCK_4X4
+            && b.is_inter
+            && !b.skip
+            && !b.lossless
+        {
             let max_tx = MAX_TX_SIZE_RECT[b.mi_size] as usize;
             let tw4 = TX_WIDTH[max_tx] as usize / 4;
             let th4 = TX_HEIGHT[max_tx] as usize / 4;
@@ -1100,7 +1260,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             let size = 64.min(block_width(ms).max(block_height(ms)));
             let max_tx = find_tx_size(size, size);
             let sqr_up = TX_SIZE_SQR_UP[tx_sz] as usize;
-            let ctx = (sqr_up != max_tx) as usize * 3 + (TX_SIZES - 1 - max_tx) * 6 + above as usize + left as usize;
+            let ctx = (sqr_up != max_tx) as usize * 3
+                + (TX_SIZES - 1 - max_tx) * 6
+                + above as usize
+                + left as usize;
             self.sd.read_symbol(&mut self.cdf.txfm_split[ctx]) == 1
         };
         let w4 = TX_WIDTH[tx_sz] as usize / 4;
@@ -1139,7 +1302,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         if !self.b.is_inter {
             return Ok(());
         }
-        let sb_mask = if self.fs.seq.use_128x128_superblock { 31 } else { 15 };
+        let sb_mask = if self.fs.seq.use_128x128_superblock {
+            31
+        } else {
+            15
+        };
         let sub_row = self.b.mi_row & sb_mask;
         let sub_col = self.b.mi_col & sb_mask;
         let (ssx, ssy) = (self.fs.ssx, self.fs.ssy);
@@ -1171,8 +1338,16 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                     plane,
                     x: base_x,
                     y: base_y,
-                    have_left: if plane == 0 { self.b.avail_l } else { self.b.avail_l_chroma },
-                    have_above: if plane == 0 { self.b.avail_u } else { self.b.avail_u_chroma },
+                    have_left: if plane == 0 {
+                        self.b.avail_l
+                    } else {
+                        self.b.avail_l_chroma
+                    },
+                    have_above: if plane == 0 {
+                        self.b.avail_u
+                    } else {
+                        self.b.avail_u_chroma
+                    },
                     have_above_right: self.block_decoded_at(plane, sbr - 1, sbc + n4w as isize),
                     have_below_left: self.block_decoded_at(plane, sbr + n4h as isize, sbc - 1),
                     mode,
@@ -1185,7 +1360,13 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                     use_filter_intra: false,
                     filter_intra_mode: 0,
                     enable_intra_edge_filter: self.fs.seq.enable_intra_edge_filter,
-                    filter_type: if is_directional_mode(mode) && self.fs.seq.enable_intra_edge_filter { self.get_filter_type(plane) } else { false },
+                    filter_type: if is_directional_mode(mode)
+                        && self.fs.seq.enable_intra_edge_filter
+                    {
+                        self.get_filter_type(plane)
+                    } else {
+                        false
+                    },
                 };
                 predict_intra(&mut self.t.cur.planes[plane], &params);
             }
@@ -1195,7 +1376,10 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             for r in 0..(n4h << sub_y) {
                 for c in 0..(n4w << sub_x) {
                     let (rr, cc) = (cand_row + r, cand_col + c);
-                    if rr < self.t.mi.rows && cc < self.t.mi.cols && self.t.mi.ref_frame[self.t.mi.idx(rr, cc)][0] == INTRA_FRAME as i8 {
+                    if rr < self.t.mi.rows
+                        && cc < self.t.mi.cols
+                        && self.t.mi.ref_frame[self.t.mi.idx(rr, cc)][0] == INTRA_FRAME as i8
+                    {
                         some_use_intra = true;
                     }
                 }
@@ -1212,7 +1396,15 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 let mut c = 0;
                 let mut x = 0;
                 while x < n4w * 4 {
-                    self.predict_inter(plane, base_x + x, base_y + y, pred_w, pred_h, cand_row + r, cand_col + c);
+                    self.predict_inter(
+                        plane,
+                        base_x + x,
+                        base_y + y,
+                        pred_w,
+                        pred_h,
+                        cand_row + r,
+                        cand_col + c,
+                    );
                     x += pred_w;
                     c += 1;
                 }
@@ -1241,11 +1433,19 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     }
 
     fn residual(&mut self) -> Result<()> {
-        let sb_mask = if self.fs.seq.use_128x128_superblock { 31 } else { 15 };
+        let sb_mask = if self.fs.seq.use_128x128_superblock {
+            31
+        } else {
+            15
+        };
         let ms = self.b.mi_size;
         let width_chunks = (block_width(ms) >> 6).max(1);
         let height_chunks = (block_height(ms) >> 6).max(1);
-        let mi_size_chunk = if width_chunks > 1 || height_chunks > 1 { BLOCK_64X64 } else { ms };
+        let mi_size_chunk = if width_chunks > 1 || height_chunks > 1 {
+            BLOCK_64X64
+        } else {
+            ms
+        };
         let (ssx, ssy) = (self.fs.ssx, self.fs.ssy);
         for chunk_y in 0..height_chunks {
             for chunk_x in 0..width_chunks {
@@ -1253,7 +1453,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 let mi_col_chunk = self.b.mi_col + (chunk_x << 4);
                 let _ = (mi_row_chunk & sb_mask, mi_col_chunk & sb_mask);
                 for plane in 0..(1 + 2 * self.b.has_chroma as usize) {
-                    let tx_sz = if self.b.lossless { TX_4X4 } else { self.get_tx_size(plane, self.b.tx_size) };
+                    let tx_sz = if self.b.lossless {
+                        TX_4X4
+                    } else {
+                        self.get_tx_size(plane, self.b.tx_size)
+                    };
                     let step_x = TX_WIDTH[tx_sz] as usize >> 2;
                     let step_y = TX_HEIGHT[tx_sz] as usize >> 2;
                     let plane_sz = self.fs.plane_residual_size(mi_size_chunk, plane);
@@ -1272,7 +1476,14 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                         while y < num4x4_h {
                             let mut x = 0;
                             while x < num4x4_w {
-                                self.transform_block(plane, base_x_block, base_y_block, tx_sz, x + ((chunk_x << 4) >> sub_x), y + ((chunk_y << 4) >> sub_y))?;
+                                self.transform_block(
+                                    plane,
+                                    base_x_block,
+                                    base_y_block,
+                                    tx_sz,
+                                    x + ((chunk_x << 4) >> sub_x),
+                                    y + ((chunk_y << 4) >> sub_y),
+                                )?;
                                 x += step_x;
                             }
                             y += step_y;
@@ -1314,7 +1525,15 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         Ok(())
     }
 
-    fn transform_block(&mut self, plane: usize, base_x: usize, base_y: usize, tx_sz: usize, x: usize, y: usize) -> Result<()> {
+    fn transform_block(
+        &mut self,
+        plane: usize,
+        base_x: usize,
+        base_y: usize,
+        tx_sz: usize,
+        x: usize,
+        y: usize,
+    ) -> Result<()> {
         let start_x = base_x + 4 * x;
         let start_y = base_y + 4 * y;
         let (ssx, ssy) = (self.fs.ssx, self.fs.ssy);
@@ -1322,7 +1541,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let sub_y = if plane > 0 { ssy } else { 0 };
         let row = (start_y << sub_y) >> 2;
         let col = (start_x << sub_x) >> 2;
-        let sb_mask = if self.fs.seq.use_128x128_superblock { 31 } else { 15 };
+        let sb_mask = if self.fs.seq.use_128x128_superblock {
+            31
+        } else {
+            15
+        };
         let sub_block_mi_row = row & sb_mask;
         let sub_block_mi_col = col & sb_mask;
         let step_x = TX_WIDTH[tx_sz] as usize >> 2;
@@ -1333,7 +1556,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             return Ok(());
         }
         if !self.b.is_inter {
-            let palette = if plane == 0 { self.b.palette_size_y } else { self.b.palette_size_uv };
+            let palette = if plane == 0 {
+                self.b.palette_size_y
+            } else {
+                self.b.palette_size_uv
+            };
             if palette > 0 {
                 self.predict_palette(plane, start_x, start_y, x, y, tx_sz);
             } else {
@@ -1347,13 +1574,26 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 };
                 let log2w = TX_WIDTH_LOG2[tx_sz] as u32;
                 let log2h = TX_HEIGHT_LOG2[tx_sz] as u32;
-                let have_left = (if plane == 0 { self.b.avail_l } else { self.b.avail_l_chroma }) || x > 0;
-                let have_above = (if plane == 0 { self.b.avail_u } else { self.b.avail_u_chroma }) || y > 0;
+                let have_left = (if plane == 0 {
+                    self.b.avail_l
+                } else {
+                    self.b.avail_l_chroma
+                }) || x > 0;
+                let have_above = (if plane == 0 {
+                    self.b.avail_u
+                } else {
+                    self.b.avail_u_chroma
+                }) || y > 0;
                 let sbr = (sub_block_mi_row >> sub_y) as isize;
                 let sbc = (sub_block_mi_col >> sub_x) as isize;
                 let have_above_right = self.block_decoded_at(plane, sbr - 1, sbc + step_x as isize);
                 let have_below_left = self.block_decoded_at(plane, sbr + step_y as isize, sbc - 1);
-                let filter_type = if is_directional_mode(mode) && self.fs.seq.enable_intra_edge_filter { self.get_filter_type(plane) } else { false };
+                let filter_type =
+                    if is_directional_mode(mode) && self.fs.seq.enable_intra_edge_filter {
+                        self.get_filter_type(plane)
+                    } else {
+                        false
+                    };
                 let params = IntraParams {
                     plane,
                     x: start_x,
@@ -1368,7 +1608,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                     max_x: max_x as i32 - 1,
                     max_y: max_y as i32 - 1,
                     bit_depth: self.fs.bit_depth,
-                    angle_delta: if plane == 0 { self.b.angle_delta_y } else { self.b.angle_delta_uv },
+                    angle_delta: if plane == 0 {
+                        self.b.angle_delta_y
+                    } else {
+                        self.b.angle_delta_uv
+                    },
                     use_filter_intra: self.b.use_filter_intra,
                     filter_intra_mode: self.b.filter_intra_mode,
                     enable_intra_edge_filter: self.fs.seq.enable_intra_edge_filter,
@@ -1423,7 +1667,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         };
         let mut above_smooth = false;
         let mut left_smooth = false;
-        if if plane == 0 { b.avail_u } else { b.avail_u_chroma } {
+        if if plane == 0 {
+            b.avail_u
+        } else {
+            b.avail_u_chroma
+        } {
             let mut r = b.mi_row as isize - 1;
             let mut c = b.mi_col;
             if plane > 0 {
@@ -1436,7 +1684,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             }
             above_smooth = is_smooth(r as usize, c);
         }
-        if if plane == 0 { b.avail_l } else { b.avail_l_chroma } {
+        if if plane == 0 {
+            b.avail_l
+        } else {
+            b.avail_l_chroma
+        } {
             let mut r = b.mi_row;
             let mut c = b.mi_col as isize - 1;
             if plane > 0 {
@@ -1452,7 +1704,15 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         above_smooth || left_smooth
     }
 
-    fn predict_palette(&mut self, plane: usize, start_x: usize, start_y: usize, x: usize, y: usize, tx_sz: usize) {
+    fn predict_palette(
+        &mut self,
+        plane: usize,
+        start_x: usize,
+        start_y: usize,
+        x: usize,
+        y: usize,
+        tx_sz: usize,
+    ) {
         let w = TX_WIDTH[tx_sz] as usize;
         let h = TX_HEIGHT[tx_sz] as usize;
         let palette = match plane {
@@ -1460,7 +1720,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             1 => self.b.palette_colors_u,
             _ => self.b.palette_colors_v,
         };
-        let map = if plane == 0 { &self.color_map_y } else { &self.color_map_uv };
+        let map = if plane == 0 {
+            &self.color_map_y
+        } else {
+            &self.color_map_uv
+        };
         let pl = &mut self.t.cur.planes[plane];
         for i in 0..h {
             for j in 0..w {
@@ -1474,7 +1738,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let w = TX_WIDTH[tx_sz] as usize;
         let h = TX_HEIGHT[tx_sz] as usize;
         let (sub_x, sub_y) = (self.fs.ssx, self.fs.ssy);
-        let alpha = if plane == 1 { self.b.cfl_alpha_u } else { self.b.cfl_alpha_v };
+        let alpha = if plane == 1 {
+            self.b.cfl_alpha_u
+        } else {
+            self.b.cfl_alpha_v
+        };
         let bd = self.fs.bit_depth;
         let mut l = [0i32; 32 * 32];
         let mut avg: i64 = 0;
@@ -1503,7 +1771,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             for j in 0..w {
                 let dc = pl.at(start_x + j, start_y + i) as i32;
                 let scaled = round2_signed(alpha * (l[i * w + j] - avg), 6);
-                pl.set(start_x + j, start_y + i, (dc + scaled).clamp(0, (1 << bd) - 1) as u16);
+                pl.set(
+                    start_x + j,
+                    start_y + i,
+                    (dc + scaled).clamp(0, (1 << bd) - 1) as u16,
+                );
             }
         }
     }
@@ -1535,7 +1807,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     }
 
     fn is_tx_type_in_set(&self, set: usize, tx_type: usize) -> bool {
-        if self.b.is_inter { TX_TYPE_IN_SET_INTER[set][tx_type] == 1 } else { TX_TYPE_IN_SET_INTRA[set][tx_type] == 1 }
+        if self.b.is_inter {
+            TX_TYPE_IN_SET_INTER[set][tx_type] == 1
+        } else {
+            TX_TYPE_IN_SET_INTRA[set][tx_type] == 1
+        }
     }
 
     fn compute_tx_type(&self, plane: usize, tx_sz: usize, block_x: usize, block_y: usize) -> usize {
@@ -1566,22 +1842,49 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
 
     fn transform_type(&mut self, x4: usize, y4: usize, tx_sz: usize) {
         let set = self.get_tx_set(tx_sz);
-        let qidx =
-            if self.fs.fh.seg.enabled { self.fs.fh.get_qindex(true, self.b.segment_id, self.current_q_index) } else { self.fs.fh.quant.base_q_idx as i32 };
+        let qidx = if self.fs.fh.seg.enabled {
+            self.fs
+                .fh
+                .get_qindex(true, self.b.segment_id, self.current_q_index)
+        } else {
+            self.fs.fh.quant.base_q_idx as i32
+        };
         let tx_type = if set > 0 && qidx > 0 {
             let sqr = TX_SIZE_SQR[tx_sz] as usize;
             if self.b.is_inter {
                 match set {
-                    TX_SET_INTER_1 => TX_TYPE_INTER_INV_SET1[self.sd.read_symbol(&mut self.cdf.inter_tx_type_set1[sqr])] as usize,
-                    TX_SET_INTER_2 => TX_TYPE_INTER_INV_SET2[self.sd.read_symbol(&mut self.cdf.inter_tx_type_set2)] as usize,
-                    _ => TX_TYPE_INTER_INV_SET3[self.sd.read_symbol(&mut self.cdf.inter_tx_type_set3[sqr])] as usize,
+                    TX_SET_INTER_1 => {
+                        TX_TYPE_INTER_INV_SET1
+                            [self.sd.read_symbol(&mut self.cdf.inter_tx_type_set1[sqr])]
+                            as usize
+                    }
+                    TX_SET_INTER_2 => {
+                        TX_TYPE_INTER_INV_SET2
+                            [self.sd.read_symbol(&mut self.cdf.inter_tx_type_set2)]
+                            as usize
+                    }
+                    _ => {
+                        TX_TYPE_INTER_INV_SET3
+                            [self.sd.read_symbol(&mut self.cdf.inter_tx_type_set3[sqr])]
+                            as usize
+                    }
                 }
             } else {
-                let intra_dir = if self.b.use_filter_intra { FILTER_INTRA_MODE_TO_INTRA_DIR[self.b.filter_intra_mode] as usize } else { self.b.y_mode };
-                if set == TX_SET_INTRA_1 {
-                    TX_TYPE_INTRA_INV_SET1[self.sd.read_symbol(&mut self.cdf.intra_tx_type_set1[sqr][intra_dir])] as usize
+                let intra_dir = if self.b.use_filter_intra {
+                    FILTER_INTRA_MODE_TO_INTRA_DIR[self.b.filter_intra_mode] as usize
                 } else {
-                    TX_TYPE_INTRA_INV_SET2[self.sd.read_symbol(&mut self.cdf.intra_tx_type_set2[sqr][intra_dir])] as usize
+                    self.b.y_mode
+                };
+                if set == TX_SET_INTRA_1 {
+                    TX_TYPE_INTRA_INV_SET1[self
+                        .sd
+                        .read_symbol(&mut self.cdf.intra_tx_type_set1[sqr][intra_dir])]
+                        as usize
+                } else {
+                    TX_TYPE_INTRA_INV_SET2[self
+                        .sd
+                        .read_symbol(&mut self.cdf.intra_tx_type_set2[sqr][intra_dir])]
+                        as usize
                 }
             }
         } else {
@@ -1655,7 +1958,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let h4 = TX_HEIGHT[tx_sz] as usize >> 2;
         let tx_sz_ctx = (TX_SIZE_SQR[tx_sz] as usize + TX_SIZE_SQR_UP[tx_sz] as usize + 1) >> 1;
         let ptype = (plane > 0) as usize;
-        let seg_eob = if tx_sz == TX_16X64 || tx_sz == TX_64X16 { 512 } else { 1024.min(TX_WIDTH[tx_sz] as usize * TX_HEIGHT[tx_sz] as usize) };
+        let seg_eob = if tx_sz == TX_16X64 || tx_sz == TX_64X16 {
+            512
+        } else {
+            1024.min(TX_WIDTH[tx_sz] as usize * TX_HEIGHT[tx_sz] as usize)
+        };
         self.quant[..seg_eob].iter_mut().for_each(|q| *q = 0);
         let mut eob = 0usize;
         let mut cul_level = 0u32;
@@ -1672,7 +1979,9 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             }
             self.plane_tx_type = self.compute_tx_type(plane, tx_sz, x4, y4);
             let scan = self.get_scan(tx_sz);
-            let eob_multisize = (TX_WIDTH_LOG2[tx_sz] as usize).min(5) + (TX_HEIGHT_LOG2[tx_sz] as usize).min(5) - 4;
+            let eob_multisize = (TX_WIDTH_LOG2[tx_sz] as usize).min(5)
+                + (TX_HEIGHT_LOG2[tx_sz] as usize).min(5)
+                - 4;
             let tx_class = get_tx_class(self.plane_tx_type);
             let ectx = (tx_class != TX_CLASS_2D) as usize;
             let eob_pt = 1 + match eob_multisize {
@@ -1684,10 +1993,16 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 5 => self.sd.read_symbol(&mut self.cdf.eob_pt_512[ptype]),
                 _ => self.sd.read_symbol(&mut self.cdf.eob_pt_1024[ptype]),
             };
-            eob = if eob_pt < 2 { eob_pt } else { (1 << (eob_pt - 2)) + 1 };
+            eob = if eob_pt < 2 {
+                eob_pt
+            } else {
+                (1 << (eob_pt - 2)) + 1
+            };
             let eob_shift = eob_pt as i32 - 3;
             if eob_shift >= 0 {
-                let extra = self.sd.read_symbol(&mut self.cdf.eob_extra[tx_sz_ctx][ptype][eob_pt - 3]);
+                let extra = self
+                    .sd
+                    .read_symbol(&mut self.cdf.eob_extra[tx_sz_ctx][ptype][eob_pt - 3]);
                 if extra == 1 {
                     eob += 1 << eob_shift;
                 }
@@ -1708,9 +2023,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             let mut lev = std::mem::take(&mut self.levels);
             lev[..(height + TX_PAD) * stride].fill(0);
             let sig = &SIG_REF_DIFF_OFFSET[tx_class];
-            let sig_off: [usize; SIG_REF_DIFF_OFFSET_NUM] = std::array::from_fn(|i| sig[i][0] as usize * stride + sig[i][1] as usize);
+            let sig_off: [usize; SIG_REF_DIFF_OFFSET_NUM] =
+                std::array::from_fn(|i| sig[i][0] as usize * stride + sig[i][1] as usize);
             let magr = &MAG_REF_OFFSET_WITH_TX_CLASS[tx_class];
-            let mag_off: [usize; 3] = std::array::from_fn(|i| magr[i][0] as usize * stride + magr[i][1] as usize);
+            let mag_off: [usize; 3] =
+                std::array::from_fn(|i| magr[i][0] as usize * stride + magr[i][1] as usize);
             for c in (0..eob).rev() {
                 let pos = scan[c] as usize;
                 let row = pos >> bwl;
@@ -1718,23 +2035,31 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 let li = row * stride + col;
                 let mut level = if c == eob - 1 {
                     let ctx = coeff_base_eob_ctx(c, bwl, height);
-                    self.sd.read_symbol(&mut self.cdf.coeff_base_eob[tx_sz_ctx][ptype][ctx]) as i32 + 1
+                    self.sd
+                        .read_symbol(&mut self.cdf.coeff_base_eob[tx_sz_ctx][ptype][ctx])
+                        as i32
+                        + 1
                 } else {
                     let mut mag = 0u32;
                     for o in sig_off {
                         mag += (lev[li + o] as u32).min(3);
                     }
                     let ctx = coeff_base_ctx(tx_sz, tx_class, row, col, mag);
-                    self.sd.read_symbol(&mut self.cdf.coeff_base[tx_sz_ctx][ptype][ctx]) as i32
+                    self.sd
+                        .read_symbol(&mut self.cdf.coeff_base[tx_sz_ctx][ptype][ctx])
+                        as i32
                 };
                 if level > NUM_BASE_LEVELS as i32 {
                     let mut mag = 0u32;
                     for o in mag_off {
-                        mag += (lev[li + o] as u32).min((COEFF_BASE_RANGE + NUM_BASE_LEVELS + 1) as u32);
+                        mag += (lev[li + o] as u32)
+                            .min((COEFF_BASE_RANGE + NUM_BASE_LEVELS + 1) as u32);
                     }
                     let ctx = coeff_br_ctx(tx_class, row, col, pos, mag);
                     for _ in 0..(COEFF_BASE_RANGE / (BR_CDF_SIZE - 1)) {
-                        let br = self.sd.read_symbol(&mut self.cdf.coeff_br[tx_sz_ctx.min(TX_32X32)][ptype][ctx]) as i32;
+                        let br = self.sd.read_symbol(
+                            &mut self.cdf.coeff_br[tx_sz_ctx.min(TX_32X32)][ptype][ctx],
+                        ) as i32;
                         level += br;
                         if br < (BR_CDF_SIZE - 1) as i32 {
                             break;
@@ -1772,7 +2097,8 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                     for _ in (0..length - 1).rev() {
                         x = (x << 1) | self.sd.read_literal(1);
                     }
-                    self.quant[pos] = (x as i64 + COEFF_BASE_RANGE as i64 + NUM_BASE_LEVELS as i64).min(i32::MAX as i64) as i32;
+                    self.quant[pos] = (x as i64 + COEFF_BASE_RANGE as i64 + NUM_BASE_LEVELS as i64)
+                        .min(i32::MAX as i64) as i32;
                 }
                 if pos == 0 && self.quant[pos] > 0 {
                     dc_category = if sign { 1 } else { 2 };
@@ -1800,7 +2126,15 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         eob
     }
 
-    fn all_zero_ctx(&self, plane: usize, tx_sz: usize, x4: usize, y4: usize, w4: usize, h4: usize) -> usize {
+    fn all_zero_ctx(
+        &self,
+        plane: usize,
+        tx_sz: usize,
+        x4: usize,
+        y4: usize,
+        w4: usize,
+        h4: usize,
+    ) -> usize {
         let mut max_x4 = self.fs.fh.mi_cols as usize;
         let mut max_y4 = self.fs.fh.mi_rows as usize;
         if plane > 0 {
@@ -1915,8 +2249,14 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let tw = w.min(32);
         let th = h.min(32);
         let t = self.plane_tx_type;
-        let flip_ud = matches!(t, FLIPADST_DCT | FLIPADST_ADST | V_FLIPADST | FLIPADST_FLIPADST);
-        let flip_lr = matches!(t, DCT_FLIPADST | ADST_FLIPADST | H_FLIPADST | FLIPADST_FLIPADST);
+        let flip_ud = matches!(
+            t,
+            FLIPADST_DCT | FLIPADST_ADST | V_FLIPADST | FLIPADST_FLIPADST
+        );
+        let flip_lr = matches!(
+            t,
+            DCT_FLIPADST | ADST_FLIPADST | H_FLIPADST | FLIPADST_FLIPADST
+        );
         let bd = self.fs.bit_depth;
         let fh = &self.fs.fh;
         let qindex = fh.get_qindex(false, self.b.segment_id, self.current_q_index);
@@ -1928,7 +2268,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
         let bd_idx = ((bd - 8) >> 1) as usize;
         let dc_q = DC_QLOOKUP[bd_idx][(qindex + dc_delta).clamp(0, 255) as usize] as i64;
         let ac_q = AC_QLOOKUP[bd_idx][(qindex + ac_delta).clamp(0, 255) as usize] as i64;
-        let qm_level = if fh.quant.using_qmatrix { fh.seg_qm_level[plane][self.b.segment_id] } else { 15 };
+        let qm_level = if fh.quant.using_qmatrix {
+            fh.seg_qm_level[plane][self.b.segment_id]
+        } else {
+            15
+        };
         let use_qm = fh.quant.using_qmatrix && t < IDTX && qm_level < 15;
         let lim = 1i64 << (7 + bd);
         // inverse_transform_2d reads only the top-left tw x th coefficients (stride 64)
@@ -1943,7 +2287,8 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                 }
                 let q = if i == 0 && j == 0 { dc_q } else { ac_q };
                 let q2 = if use_qm {
-                    let m = QUANTIZER_MATRIX[qm_level as usize][(plane > 0) as usize][QM_OFFSET[tx_sz] as usize + i * tw + j] as i64;
+                    let m = QUANTIZER_MATRIX[qm_level as usize][(plane > 0) as usize]
+                        [QM_OFFSET[tx_sz] as usize + i * tw + j] as i64;
                     (q * m + 16) >> 5
                 } else {
                     q
@@ -1992,8 +2337,14 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             let (unit_rows, unit_cols) = (self.fs.lr_unit_rows[plane], self.fs.lr_unit_cols[plane]);
             let unit_row_start = (r * (4 >> sub_y)).div_ceil(unit_size);
             let unit_row_end = unit_rows.min(((r + h) * (4 >> sub_y)).div_ceil(unit_size));
-            let (numerator, denominator) =
-                if self.fs.fh.use_superres { ((4 >> sub_x) * self.fs.fh.superres_denom as usize, unit_size * SUPERRES_NUM) } else { (4 >> sub_x, unit_size) };
+            let (numerator, denominator) = if self.fs.fh.use_superres {
+                (
+                    (4 >> sub_x) * self.fs.fh.superres_denom as usize,
+                    unit_size * SUPERRES_NUM,
+                )
+            } else {
+                (4 >> sub_x, unit_size)
+            };
             let unit_col_start = (c * numerator).div_ceil(denominator);
             let unit_col_end = unit_cols.min(((c + w) * numerator).div_ceil(denominator));
             for unit_row in unit_row_start..unit_row_end {
@@ -2007,9 +2358,17 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
     fn read_lr_unit(&mut self, plane: usize, unit_row: usize, unit_col: usize) {
         let frt = self.fs.fh.lr.frame_restoration_type[plane];
         let rtype = if frt == RESTORE_WIENER as u8 {
-            if self.sd.read_symbol(&mut self.cdf.use_wiener) == 1 { RESTORE_WIENER as u8 } else { RESTORE_NONE as u8 }
+            if self.sd.read_symbol(&mut self.cdf.use_wiener) == 1 {
+                RESTORE_WIENER as u8
+            } else {
+                RESTORE_NONE as u8
+            }
         } else if frt == RESTORE_SGRPROJ as u8 {
-            if self.sd.read_symbol(&mut self.cdf.use_sgrproj) == 1 { RESTORE_SGRPROJ as u8 } else { RESTORE_NONE as u8 }
+            if self.sd.read_symbol(&mut self.cdf.use_sgrproj) == 1 {
+                RESTORE_SGRPROJ as u8
+            } else {
+                RESTORE_NONE as u8
+            }
         } else {
             // restoration_type symbol: 0 = NONE, 1 = WIENER, 2 = SGRPROJ
             match self.sd.read_symbol(&mut self.cdf.restoration_type) {
@@ -2033,7 +2392,12 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
                     0
                 };
                 for j in first..3 {
-                    let v = self.decode_signed_subexp_with_ref_bool(MIN[j], MAX[j] + 1, K[j], self.ref_lr_wiener[plane][pass][j]);
+                    let v = self.decode_signed_subexp_with_ref_bool(
+                        MIN[j],
+                        MAX[j] + 1,
+                        K[j],
+                        self.ref_lr_wiener[plane][pass][j],
+                    );
                     self.t.lr.lr_wiener[plane][idx][pass][j] = v as i8;
                     self.ref_lr_wiener[plane][pass][j] = v;
                 }
@@ -2046,7 +2410,12 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
             for i in 0..2 {
                 let radius = SGR_PARAMS[set][i * 2];
                 let v = if radius != 0 {
-                    self.decode_signed_subexp_with_ref_bool(MIN[i], MAX[i] + 1, SGRPROJ_PRJ_SUBEXP_K as u32, self.ref_sgr_xqd[plane][i])
+                    self.decode_signed_subexp_with_ref_bool(
+                        MIN[i],
+                        MAX[i] + 1,
+                        SGRPROJ_PRJ_SUBEXP_K as u32,
+                        self.ref_sgr_xqd[plane][i],
+                    )
                 } else if i == 1 {
                     ((1 << SGRPROJ_PRJ_BITS) - self.ref_sgr_xqd[plane][0]).clamp(MIN[i], MAX[i])
                 } else {
@@ -2065,7 +2434,11 @@ impl<'a, 'f> TileDecoder<'a, 'f> {
 
     fn decode_unsigned_subexp_with_ref_bool(&mut self, mx: i32, k: u32, r: i32) -> i32 {
         let v = self.decode_subexp_bool(mx, k);
-        if (r << 1) <= mx { inverse_recenter(r, v) } else { mx - 1 - inverse_recenter(mx - 1 - r, v) }
+        if (r << 1) <= mx {
+            inverse_recenter(r, v)
+        } else {
+            mx - 1 - inverse_recenter(mx - 1 - r, v)
+        }
     }
 
     fn decode_subexp_bool(&mut self, num_syms: i32, k: u32) -> i32 {
@@ -2150,7 +2523,11 @@ fn coeff_br_ctx(tx_class: usize, row: usize, col: usize, pos: usize, mag: u32) -
     if pos == 0 {
         mag
     } else if tx_class == 0 {
-        if row < 2 && col < 2 { mag + 7 } else { mag + 14 }
+        if row < 2 && col < 2 {
+            mag + 7
+        } else {
+            mag + 14
+        }
     } else if tx_class == 1 {
         if col == 0 { mag + 7 } else { mag + 14 }
     } else if row == 0 {
@@ -2177,7 +2554,9 @@ fn coeff_base_eob_ctx(c: usize, bwl: usize, height: usize) -> usize {
 }
 
 pub(crate) fn find_tx_size(w: usize, h: usize) -> usize {
-    (0..TX_SIZES_ALL).find(|&t| TX_WIDTH[t] as usize == w && TX_HEIGHT[t] as usize == h).unwrap_or(TX_4X4)
+    (0..TX_SIZES_ALL)
+        .find(|&t| TX_WIDTH[t] as usize == w && TX_HEIGHT[t] as usize == h)
+        .unwrap_or(TX_4X4)
 }
 
 fn ceil_log2(x: u32) -> u32 {

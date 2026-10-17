@@ -9,7 +9,9 @@
 
 use effectcraft_geom::{Mat3, Mat4};
 use effectcraft_keyframe::Value;
-use effectcraft_project::{Comp, ItemId, ItemKind, Layer, LayerId, LayerSource, Node, PropGroup, Property};
+use effectcraft_project::{
+    Comp, ItemId, ItemKind, Layer, LayerId, LayerSource, Node, PropGroup, Property,
+};
 use effectcraft_render::{EvalCtx, source_size};
 use effectcraft_time::Tick;
 
@@ -38,20 +40,42 @@ pub enum Req {
     /// `[name, index, inPoint, outPoint, startTime, width, height, parentId|null, hasVideo, is3D, source, enabled]`.
     LayerInfo { comp: u64, layer: u64 },
     /// `[path, isGroup, name, matchName, numChildren]` or null.
-    Child { comp: u64, layer: u64, group: String, key: Key },
+    Child {
+        comp: u64,
+        layer: u64,
+        group: String,
+        key: Key,
+    },
     /// `[name, uid, kind, dims, keyTimes, keyValues, hasExpression, propertyIndex, matchName]`.
     PropInfo { comp: u64, layer: u64, path: String },
     /// Value at comp time `t`; `pre` = keyframes only (no expression).
-    Value { comp: u64, layer: u64, path: String, t: Secs, pre: bool },
+    Value {
+        comp: u64,
+        layer: u64,
+        path: String,
+        t: Secs,
+        pre: bool,
+    },
     /// `[layerToComp (3×3), compToLayer, layerToWorld (4×4), worldToLayer]`, row-major.
     Xform { comp: u64, layer: u64, t: Secs },
     /// `[top, left, width, height]` in layer space.
-    SourceRect { comp: u64, layer: u64, t: Secs, extents: bool },
+    SourceRect {
+        comp: u64,
+        layer: u64,
+        t: Secs,
+        extents: bool,
+    },
     /// `[[time, duration, comment, chapter, url], …]` for a layer, or the comp when `layer` is None.
     Markers { comp: u64, layer: Option<u64> },
     /// A Source Text value as JSON `{doc, text, runs: [{len, style}], paras}` (styles as
     /// `layer.setText` keys), or null for other properties.
-    Doc { comp: u64, layer: u64, path: String, t: Secs, pre: bool },
+    Doc {
+        comp: u64,
+        layer: u64,
+        path: String,
+        t: Secs,
+        pre: bool,
+    },
     /// `footage(name)`: `[name, width, height, duration, frameDuration, pixelAspect, kind,
     /// sourceText|null, dataFormat|null]` or null.
     Footage { name: String },
@@ -60,7 +84,16 @@ pub enum Req {
     FootageData { name: String },
     /// `sampleImage`: the average straight `[r, g, b, a]` of the layer's pixels in the box
     /// `point ± radius` (layer space) at comp time `t`, after masks and effects when `post`.
-    Sample { comp: u64, layer: u64, x: Secs, y: Secs, rx: Secs, ry: Secs, post: bool, t: Secs },
+    Sample {
+        comp: u64,
+        layer: u64,
+        x: Secs,
+        y: Secs,
+        rx: Secs,
+        ry: Secs,
+        post: bool,
+        t: Secs,
+    },
     /// `thisProject`: `[bitsPerChannel, linearBlending, workingSpace]`.
     Project,
 }
@@ -131,11 +164,25 @@ pub fn footage_data_json(f: &effectcraft_project::Footage) -> Option<String> {
                 .iter()
                 .map(|r| {
                     serde_json::Value::Object(
-                        header.iter().enumerate().map(|(i, k)| (k.clone(), r.get(i).map(|c| cell_json(c)).unwrap_or(serde_json::Value::Null))).collect(),
+                        header
+                            .iter()
+                            .enumerate()
+                            .map(|(i, k)| {
+                                (
+                                    k.clone(),
+                                    r.get(i)
+                                        .map(|c| cell_json(c))
+                                        .unwrap_or(serde_json::Value::Null),
+                                )
+                            })
+                            .collect(),
                     )
                 })
                 .collect();
-            let cells: Vec<Vec<serde_json::Value>> = body.iter().map(|r| r.iter().map(|c| cell_json(c)).collect()).collect();
+            let cells: Vec<Vec<serde_json::Value>> = body
+                .iter()
+                .map(|r| r.iter().map(|c| cell_json(c)).collect())
+                .collect();
             serde_json::json!({"data": objects, "rows": cells, "header": header}).to_string()
         }
     })
@@ -144,7 +191,11 @@ pub fn footage_data_json(f: &effectcraft_project::Footage) -> Option<String> {
 /// A text document as the style API's JSON.
 pub fn doc_json(d: &effectcraft_keyframe::TextDoc) -> String {
     use effectcraft_keyframe::text_doc::{char_style_json, para_style_json};
-    let runs: Vec<serde_json::Value> = d.runs().iter().map(|r| serde_json::json!({"len": r.len, "style": char_style_json(&r.style)})).collect();
+    let runs: Vec<serde_json::Value> = d
+        .runs()
+        .iter()
+        .map(|r| serde_json::json!({"len": r.len, "style": char_style_json(&r.style)}))
+        .collect();
     let paras: Vec<serde_json::Value> = d.paras().iter().map(para_style_json).collect();
     serde_json::json!({"doc": d, "text": d.text, "runs": runs, "paras": paras}).to_string()
 }
@@ -193,7 +244,9 @@ pub fn kind_name(v: &Value) -> &'static str {
 pub fn value_resp(v: &Value, dims: usize) -> Resp {
     match v {
         Value::Scalar(x) => Resp::Num(*x),
-        Value::Vec2(_) | Value::Vec3(_) | Value::Color(_) => Resp::nums(v.components().into_iter().take(dims.max(1))),
+        Value::Vec2(_) | Value::Vec3(_) | Value::Color(_) => {
+            Resp::nums(v.components().into_iter().take(dims.max(1)))
+        }
         Value::Bool(b) => Resp::Num(if *b { 1.0 } else { 0.0 }),
         // Popups are 1-based in expressions.
         Value::Enum(i) => Resp::Num(*i as f64 + 1.0),
@@ -201,8 +254,15 @@ pub fn value_resp(v: &Value, dims: usize) -> Resp {
         Value::Str(s) => Resp::Str(s.clone()),
         Value::Layer(l) => l.map_or(Resp::Null, |l| Resp::Num(l as f64)),
         Value::Path(p) => {
-            let pts = |v: &[[f64; 2]]| Resp::List(v.iter().map(|q| Resp::nums(q.iter().copied())).collect());
-            Resp::List(vec![pts(&p.vertices), pts(&p.in_tangents), pts(&p.out_tangents), Resp::Bool(p.closed)])
+            let pts = |v: &[[f64; 2]]| {
+                Resp::List(v.iter().map(|q| Resp::nums(q.iter().copied())).collect())
+            };
+            Resp::List(vec![
+                pts(&p.vertices),
+                pts(&p.in_tangents),
+                pts(&p.out_tangents),
+                Resp::Bool(p.closed),
+            ])
         }
         Value::Gradient(_) => Resp::Null,
     }
@@ -229,7 +289,10 @@ fn mat4(m: &Mat4) -> Resp {
 }
 
 fn compact(s: &str) -> String {
-    s.chars().filter(|c| !c.is_whitespace()).flat_map(char::to_lowercase).collect()
+    s.chars()
+        .filter(|c| !c.is_whitespace())
+        .flat_map(char::to_lowercase)
+        .collect()
 }
 
 /// AE attribute names that differ from our match ids.
@@ -254,22 +317,37 @@ fn alias(key: &str) -> &str {
 
 fn find_child<'g>(g: &'g PropGroup, key: &Key) -> Option<&'g Node> {
     match key {
-        Key::Index(i) => usize::try_from(*i).ok().filter(|i| *i >= 1).and_then(|i| g.children.get(i - 1)),
+        Key::Index(i) => usize::try_from(*i)
+            .ok()
+            .filter(|i| *i >= 1)
+            .and_then(|i| g.children.get(i - 1)),
         Key::Name(name) => {
             let m = alias(name);
             let c = compact(name);
             g.children
                 .iter()
                 .find(|n| n.match_id() == m)
-                .or_else(|| g.children.iter().find(|n| n.name().eq_ignore_ascii_case(name)))
-                .or_else(|| g.children.iter().find(|n| compact(n.name()) == c || compact(n.match_id()) == c))
+                .or_else(|| {
+                    g.children
+                        .iter()
+                        .find(|n| n.name().eq_ignore_ascii_case(name))
+                })
+                .or_else(|| {
+                    g.children
+                        .iter()
+                        .find(|n| compact(n.name()) == c || compact(n.match_id()) == c)
+                })
         }
     }
 }
 
 impl<'a> Resolver<'a> {
     fn comp(&self, c: u64) -> Option<&'a Comp> {
-        if c == self.ctx.comp_id.0 { Some(self.ctx.comp) } else { self.ctx.project.comp(ItemId(c)) }
+        if c == self.ctx.comp_id.0 {
+            Some(self.ctx.comp)
+        } else {
+            self.ctx.project.comp(ItemId(c))
+        }
     }
     fn layer(&self, c: u64, l: u64) -> Option<&'a Layer> {
         if c == self.own.comp && l == self.own.layer.id.0 {
@@ -279,7 +357,14 @@ impl<'a> Resolver<'a> {
     }
     fn ctx_at(&self, c: u64, t: f64) -> Option<EvalCtx<'a>> {
         let comp = self.comp(c)?;
-        Some(EvalCtx { project: self.ctx.project, comp_id: ItemId(c), comp, time: Tick::from_seconds_f64(t), expr: self.ctx.expr, footage: self.ctx.footage })
+        Some(EvalCtx {
+            project: self.ctx.project,
+            comp_id: ItemId(c),
+            comp,
+            time: Tick::from_seconds_f64(t),
+            expr: self.ctx.expr,
+            footage: self.ctx.footage,
+        })
     }
     fn prop(&self, c: u64, l: u64, path: &str) -> Option<(&'a Layer, &'a Property)> {
         let layer = self.layer(c, l)?;
@@ -298,7 +383,10 @@ impl<'a> Resolver<'a> {
         Some(match req {
             Req::CompInfo { comp } => {
                 let c = self.comp(*comp)?;
-                let name = project.item(ItemId(*comp)).map(|i| i.name.clone()).unwrap_or_default();
+                let name = project
+                    .item(ItemId(*comp))
+                    .map(|i| i.name.clone())
+                    .unwrap_or_default();
                 Resp::List(vec![
                     Resp::Str(name),
                     Resp::Num(c.width as f64),
@@ -308,17 +396,28 @@ impl<'a> Resolver<'a> {
                     Resp::Num(c.layers.len() as f64),
                     Resp::Num(c.pixel_aspect),
                     Resp::Num(c.display_start.seconds()),
-                    Resp::nums([c.background[0] as f64, c.background[1] as f64, c.background[2] as f64, 1.0]),
+                    Resp::nums([
+                        c.background[0] as f64,
+                        c.background[1] as f64,
+                        c.background[2] as f64,
+                        1.0,
+                    ]),
                 ])
             }
             Req::CompByName { name } => {
-                let item = project.items.values().find(|i| matches!(i.kind, ItemKind::Comp(_)) && &i.name == name)?;
+                let item = project
+                    .items
+                    .values()
+                    .find(|i| matches!(i.kind, ItemKind::Comp(_)) && &i.name == name)?;
                 Resp::Num(item.id.0 as f64)
             }
             Req::LayerLookup { comp, key } => {
                 let c = self.comp(*comp)?;
                 let l = match key {
-                    Key::Index(i) => usize::try_from(*i).ok().filter(|i| *i >= 1).and_then(|i| c.layers.get(i - 1))?,
+                    Key::Index(i) => usize::try_from(*i)
+                        .ok()
+                        .filter(|i| *i >= 1)
+                        .and_then(|i| c.layers.get(i - 1))?,
                     Key::Name(n) => c.layer_by_name(n)?,
                 };
                 Resp::Num(l.id.0 as f64)
@@ -345,11 +444,24 @@ impl<'a> Resolver<'a> {
                     Resp::Bool(l.switches.video),
                 ])
             }
-            Req::Child { comp, layer, group, key } => {
+            Req::Child {
+                comp,
+                layer,
+                group,
+                key,
+            } => {
                 let l = self.layer(*comp, *layer)?;
-                let g = if group.is_empty() { &l.props } else { l.props.group(group)? };
+                let g = if group.is_empty() {
+                    &l.props
+                } else {
+                    l.props.group(group)?
+                };
                 let n = find_child(g, key)?;
-                let path = if group.is_empty() { format!("@{}", n.uid()) } else { format!("{group}/@{}", n.uid()) };
+                let path = if group.is_empty() {
+                    format!("@{}", n.uid())
+                } else {
+                    format!("{group}/@{}", n.uid())
+                };
                 let count = n.as_group().map_or(0, |g| g.children.len());
                 Resp::List(vec![
                     Resp::Str(path),
@@ -362,7 +474,11 @@ impl<'a> Resolver<'a> {
             Req::PropInfo { comp, layer, path } => {
                 let (l, p) = self.prop(*comp, *layer, path)?;
                 let dims = prop_dims(l, p);
-                let times = p.keys.iter().map(|k| Resp::Num(l.comp_time(k.time).seconds())).collect();
+                let times = p
+                    .keys
+                    .iter()
+                    .map(|k| Resp::Num(l.comp_time(k.time).seconds()))
+                    .collect();
                 let values = p.keys.iter().map(|k| value_resp(&k.value, dims)).collect();
                 let index = path.rsplit('/').next().and_then(|last| {
                     let parent = path.rsplit_once('/').map(|(g, _)| g);
@@ -370,7 +486,10 @@ impl<'a> Resolver<'a> {
                         Some(g) => l.props.group(g)?,
                         None => &l.props,
                     };
-                    g.children.iter().position(|n| format!("@{}", n.uid()) == last).map(|i| i + 1)
+                    g.children
+                        .iter()
+                        .position(|n| format!("@{}", n.uid()) == last)
+                        .map(|i| i + 1)
                 });
                 Resp::List(vec![
                     Resp::Str(p.name.clone()),
@@ -384,16 +503,36 @@ impl<'a> Resolver<'a> {
                     Resp::Str(p.match_id.clone()),
                 ])
             }
-            Req::Value { comp, layer, path, t, pre } => {
+            Req::Value {
+                comp,
+                layer,
+                path,
+                t,
+                pre,
+            } => {
                 let (l, p) = self.prop(*comp, *layer, path)?;
                 let t = f64::from_bits(*t);
-                let v = if *pre { p.value_at(l.layer_time(Tick::from_seconds_f64(t))) } else { self.ctx_at(*comp, t)?.value(l, p) };
+                let v = if *pre {
+                    p.value_at(l.layer_time(Tick::from_seconds_f64(t)))
+                } else {
+                    self.ctx_at(*comp, t)?.value(l, p)
+                };
                 value_resp(&v, prop_dims(l, p))
             }
-            Req::Doc { comp, layer, path, t, pre } => {
+            Req::Doc {
+                comp,
+                layer,
+                path,
+                t,
+                pre,
+            } => {
                 let (l, p) = self.prop(*comp, *layer, path)?;
                 let t = f64::from_bits(*t);
-                let v = if *pre { p.value_at(l.layer_time(Tick::from_seconds_f64(t))) } else { self.ctx_at(*comp, t)?.value(l, p) };
+                let v = if *pre {
+                    p.value_at(l.layer_time(Tick::from_seconds_f64(t)))
+                } else {
+                    self.ctx_at(*comp, t)?.value(l, p)
+                };
                 match v {
                     Value::Text(d) => Resp::Str(doc_json(&d)),
                     Value::Str(s) => Resp::Str(doc_json(&effectcraft_keyframe::TextDoc::plain(&s))),
@@ -405,15 +544,30 @@ impl<'a> Resolver<'a> {
                 let ctx = self.ctx_at(*comp, f64::from_bits(*t))?;
                 let (m3, _) = ctx.layer_to_comp(l);
                 let m4 = ctx.world_matrix(l);
-                Resp::List(vec![mat3(&m3), mat3(&m3.inverse().unwrap_or_default()), mat4(&m4), mat4(&m4.inverse().unwrap_or_default())])
+                Resp::List(vec![
+                    mat3(&m3),
+                    mat3(&m3.inverse().unwrap_or_default()),
+                    mat4(&m4),
+                    mat4(&m4.inverse().unwrap_or_default()),
+                ])
             }
-            Req::SourceRect { comp, layer, t, extents: _ } => {
+            Req::SourceRect {
+                comp,
+                layer,
+                t,
+                extents: _,
+            } => {
                 let l = self.layer(*comp, *layer)?;
                 let ctx = self.ctx_at(*comp, f64::from_bits(*t))?;
                 let r = match &l.source {
                     LayerSource::Text => {
-                        let paths: Vec<_> = effectcraft_render::text::glyph_paths(&ctx, l).into_iter().map(|(p, _)| p).collect();
-                        effectcraft_path::bounds(&paths).map(|b| [b.y0, b.x0, b.width(), b.height()]).unwrap_or([0.0; 4])
+                        let paths: Vec<_> = effectcraft_render::text::glyph_paths(&ctx, l)
+                            .into_iter()
+                            .map(|(p, _)| p)
+                            .collect();
+                        effectcraft_path::bounds(&paths)
+                            .map(|b| [b.y0, b.x0, b.width(), b.height()])
+                            .unwrap_or([0.0; 4])
                     }
                     LayerSource::Shape => {
                         let contents = l.props.sub("contents")?;
@@ -422,7 +576,12 @@ impl<'a> Resolver<'a> {
                             [0.0; 4]
                         } else {
                             // `render` pads its buffer by 2 px on each side.
-                            [2.0 - buf.offset[1], 2.0 - buf.offset[0], buf.img.width as f64 - 4.0, buf.img.height as f64 - 4.0]
+                            [
+                                2.0 - buf.offset[1],
+                                2.0 - buf.offset[0],
+                                buf.img.width as f64 - 4.0,
+                                buf.img.height as f64 - 4.0,
+                            ]
                         }
                     }
                     _ => {
@@ -433,8 +592,13 @@ impl<'a> Resolver<'a> {
                 Resp::nums(r)
             }
             Req::Footage { name } => {
-                let it = project.items.values().find(|i| &i.name == name && matches!(i.kind, ItemKind::Footage(_)))?;
-                let ItemKind::Footage(f) = &it.kind else { return None };
+                let it = project
+                    .items
+                    .values()
+                    .find(|i| &i.name == name && matches!(i.kind, ItemKind::Footage(_)))?;
+                let ItemKind::Footage(f) = &it.kind else {
+                    return None;
+                };
                 Resp::List(vec![
                     Resp::Str(it.name.clone()),
                     Resp::Num(f.width as f64),
@@ -448,27 +612,66 @@ impl<'a> Resolver<'a> {
                 ])
             }
             Req::FootageData { name } => {
-                let it = project.items.values().find(|i| &i.name == name && matches!(i.kind, ItemKind::Footage(_)))?;
-                let ItemKind::Footage(f) = &it.kind else { return None };
+                let it = project
+                    .items
+                    .values()
+                    .find(|i| &i.name == name && matches!(i.kind, ItemKind::Footage(_)))?;
+                let ItemKind::Footage(f) = &it.kind else {
+                    return None;
+                };
                 Resp::Str(footage_data_json(f)?)
             }
             Req::Project => Resp::List(vec![
                 Resp::Num(project.settings.bit_depth.bits() as f64),
                 Resp::Bool(project.settings.blend_linear || project.settings.linearize),
-                Resp::Str(project.settings.working_space.map(|w| format!("{w:?}")).unwrap_or_default()),
+                Resp::Str(
+                    project
+                        .settings
+                        .working_space
+                        .map(|w| format!("{w:?}"))
+                        .unwrap_or_default(),
+                ),
             ]),
-            Req::Sample { comp, layer, x, y, rx, ry, post, t } => {
+            Req::Sample {
+                comp,
+                layer,
+                x,
+                y,
+                rx,
+                ry,
+                post,
+                t,
+            } => {
                 let l = self.layer(*comp, *layer)?;
                 let f = |b: &Secs| f64::from_bits(*b);
-                Resp::nums(crate::sample::sample_image(self.ctx, ItemId(*comp), l, [f(x), f(y)], [f(rx), f(ry)], *post, f(t))?.map(|v| v as f64))
+                Resp::nums(
+                    crate::sample::sample_image(
+                        self.ctx,
+                        ItemId(*comp),
+                        l,
+                        [f(x), f(y)],
+                        [f(rx), f(ry)],
+                        *post,
+                        f(t),
+                    )?
+                    .map(|v| v as f64),
+                )
             }
             Req::Markers { comp, layer } => {
                 let marks: Vec<(f64, &effectcraft_project::Marker)> = match layer {
                     Some(l) => {
                         let l = self.layer(*comp, *l)?;
-                        l.markers.iter().map(|m| (l.comp_time(m.time).seconds(), m)).collect()
+                        l.markers
+                            .iter()
+                            .map(|m| (l.comp_time(m.time).seconds(), m))
+                            .collect()
                     }
-                    None => self.comp(*comp)?.markers.iter().map(|m| (m.time.seconds(), m)).collect(),
+                    None => self
+                        .comp(*comp)?
+                        .markers
+                        .iter()
+                        .map(|m| (m.time.seconds(), m))
+                        .collect(),
                 };
                 Resp::List(
                     marks
@@ -482,12 +685,22 @@ impl<'a> Resolver<'a> {
                                 Resp::Str(m.url.clone()),
                                 Resp::Str(m.frame_target.clone()),
                                 Resp::Bool(m.cue_point.as_ref().is_some_and(|c| !c.navigation)),
-                                Resp::Str(m.cue_point.as_ref().map(|c| c.name.clone()).unwrap_or_default()),
+                                Resp::Str(
+                                    m.cue_point
+                                        .as_ref()
+                                        .map(|c| c.name.clone())
+                                        .unwrap_or_default(),
+                                ),
                                 Resp::List(
                                     m.cue_point
                                         .iter()
                                         .flat_map(|c| c.params.iter())
-                                        .map(|(k, v)| Resp::List(vec![Resp::Str(k.clone()), Resp::Str(v.clone())]))
+                                        .map(|(k, v)| {
+                                            Resp::List(vec![
+                                                Resp::Str(k.clone()),
+                                                Resp::Str(v.clone()),
+                                            ])
+                                        })
                                         .collect(),
                                 ),
                                 Resp::Bool(m.protected),

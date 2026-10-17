@@ -41,9 +41,9 @@ use bevy_ecs::prelude::*;
 use bevy_image::TextureAtlasPlugin;
 use bevy_mesh::Mesh2d;
 use bevy_render::{
+    ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     batching::sort_binned_render_phase, render_phase::AddRenderCommand,
-    render_resource::SpecializedRenderPipelines, sync_world::SyncToRenderWorld, ExtractSchedule,
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
+    render_resource::SpecializedRenderPipelines, sync_world::SyncToRenderWorld,
 };
 use bevy_sprite::Sprite;
 

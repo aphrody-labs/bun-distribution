@@ -58,7 +58,9 @@ impl GameCube {
         emulator.mmio.ram[0x09] = dvd.header().streaming_buffer_size;
 
         // System info
-        emulator.mmio.phys_write_u32(0x28, crate::mmio::constants::RAM_SIZE as u32);
+        emulator
+            .mmio
+            .phys_write_u32(0x28, crate::mmio::constants::RAM_SIZE as u32);
         emulator.mmio.phys_write_u32(0x2C, 1); // retail console
         emulator.mmio.phys_write_u32(0xD0, ARAM_SIZE);
 

@@ -86,11 +86,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             |s, p| others(s, p, Flag::Visible, false, "layer.hideOthers")
         ),
-        cmd!("layer.showAll", "Show All Layers", ["Window", "Layers"], None, "{} show every layer and sublayer → {count}", has_doc, |s, _| all(
-            s,
-            Flag::Visible,
-            true
-        )),
+        cmd!(
+            "layer.showAll",
+            "Show All Layers",
+            ["Window", "Layers"],
+            None,
+            "{} show every layer and sublayer → {count}",
+            has_doc,
+            |s, _| all(s, Flag::Visible, true)
+        ),
         cmd!(
             "layer.outlineOthers",
             "Outline Others",
@@ -178,9 +182,17 @@ impl Flag {
 
 /// Set `flag` on each of `changes` (id, value; layers that differ) in one undo step labelled `label` → how many
 /// changed.
-fn set_flag(s: &mut Session, changes: Vec<(NodeId, bool)>, flag: Flag, label: &str) -> Result<Value> {
+fn set_flag(
+    s: &mut Session,
+    changes: Vec<(NodeId, bool)>,
+    flag: Flag,
+    label: &str,
+) -> Result<Value> {
     let d = &s.doc()?.doc;
-    let changes: Vec<(NodeId, bool)> = changes.into_iter().filter(|(id, v)| d.node(*id).is_some_and(|n| flag.get(n) != *v)).collect();
+    let changes: Vec<(NodeId, bool)> = changes
+        .into_iter()
+        .filter(|(id, v)| d.node(*id).is_some_and(|n| flag.get(n) != *v))
+        .collect();
     if !changes.is_empty() {
         s.edit(label, |d, sel| {
             for (id, v) in &changes {
@@ -206,7 +218,13 @@ fn kept_layers(s: &Session, p: &Value, command: &str) -> Result<HashSet<NodeId>>
 /// on a hidden layer's eye shows just that layer (#1158).
 fn others(s: &mut Session, p: &Value, flag: Flag, v: bool, command: &str) -> Result<Value> {
     let keep = kept_layers(s, p, command)?;
-    let changes = s.doc()?.doc.layers.iter().map(|l| (l.id, !keep.contains(&l.id) == v)).collect();
+    let changes = s
+        .doc()?
+        .doc
+        .layers
+        .iter()
+        .map(|l| (l.id, !keep.contains(&l.id) == v))
+        .collect();
     set_flag(s, changes, flag, flag.label(v))
 }
 
@@ -223,10 +241,18 @@ fn all(s: &mut Session, flag: Flag, v: bool) -> Result<Value> {
 fn template(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = rows_param(s, p, "layer.template")?;
     let d = &s.doc()?.doc;
-    let ids: Vec<NodeId> = ids.into_iter().filter(|id| d.node(*id).is_some_and(Node::is_layer)).collect();
-    let Some(first) = ids.first().and_then(|id| d.node(*id)) else { return Err(bad("layer.template", "select a layer")) };
+    let ids: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| d.node(*id).is_some_and(Node::is_layer))
+        .collect();
+    let Some(first) = ids.first().and_then(|id| d.node(*id)) else {
+        return Err(bad("layer.template", "select a layer"));
+    };
     let on = bool_or(p, "on", !first.is_template());
-    s.execute("layer.setProps", &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>(), "template": on}))?;
+    s.execute(
+        "layer.setProps",
+        &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>(), "template": on}),
+    )?;
     Ok(json!({ "on": on }))
 }
 
@@ -235,8 +261,16 @@ fn template(s: &mut Session, p: &Value) -> Result<Value> {
 /// layers.
 fn merge_into(d: &mut Document, into: NodeId, others: &[NodeId]) -> Result<()> {
     let listed: HashSet<NodeId> = others.iter().copied().collect();
-    let own: Vec<NodeId> =
-        d.node(into).and_then(|n| n.children()).map(|c| c.iter().map(|c| c.id).filter(|c| !listed.contains(c)).collect()).unwrap_or_default();
+    let own: Vec<NodeId> = d
+        .node(into)
+        .and_then(|n| n.children())
+        .map(|c| {
+            c.iter()
+                .map(|c| c.id)
+                .filter(|c| !listed.contains(c))
+                .collect()
+        })
+        .unwrap_or_default();
     let (mut moved, mut emptied) = (vec![], vec![]);
     for id in others {
         let n = d.node(*id).ok_or(EngineError::NoNode(*id))?;
@@ -248,7 +282,11 @@ fn merge_into(d: &mut Document, into: NodeId, others: &[NodeId]) -> Result<()> {
         }
     }
     // Where everything is now: the merged layer stacks its contents in this order.
-    let keys: HashMap<NodeId, Vec<usize>> = own.iter().chain(&moved).filter_map(|id| Some((*id, d.index_path(*id)?))).collect();
+    let keys: HashMap<NodeId, Vec<usize>> = own
+        .iter()
+        .chain(&moved)
+        .filter_map(|id| Some((*id, d.index_path(*id)?)))
+        .collect();
     let taken = d.remove_many(&moved)?;
     d.remove_many(&emptied)?;
     let ch = d.children_mut(Some(into))?;
@@ -267,12 +305,19 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let d = &st.doc;
     let mut seen = HashSet::new();
-    let ids: Vec<NodeId> = ids.into_iter().filter(|id| d.node(*id).is_some() && seen.insert(*id)).collect();
+    let ids: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| d.node(*id).is_some() && seen.insert(*id))
+        .collect();
     if ids.len() < 2 {
         return Err(bad(C, "highlight two or more rows to merge"));
     }
-    let into =
-        ids.iter().rev().copied().find(|id| d.node(*id).is_some_and(Node::is_layer)).ok_or_else(|| bad(C, "highlight a layer to merge into"))?;
+    let into = ids
+        .iter()
+        .rev()
+        .copied()
+        .find(|id| d.node(*id).is_some_and(Node::is_layer))
+        .ok_or_else(|| bad(C, "highlight a layer to merge into"))?;
     let around = d.ancestry(into).unwrap_or_default();
     // (Rows inside the target layer merge too: only rows inside other listed rows go with those.)
     let rest: Vec<NodeId> = ids.iter().copied().filter(|id| *id != into).collect();
@@ -300,12 +345,26 @@ fn flatten(s: &mut Session, p: &Value) -> Result<Value> {
         Some(id) => Some(checked_id(s, id, C)?),
         None => st.highlighted_rows().last().copied().or(st.current_layer()),
     };
-    let into = from.and_then(|id| d.layer_of(id)).ok_or_else(|| bad(C, "no layer"))?;
+    let into = from
+        .and_then(|id| d.layer_of(id))
+        .ok_or_else(|| bad(C, "no layer"))?;
     if !d.node(into).is_some_and(|n| n.visible) {
-        return Err(EngineError::Other("the layer to flatten into is hidden".into()));
+        return Err(EngineError::Other(
+            "the layer to flatten into is hidden".into(),
+        ));
     }
-    let others: Vec<NodeId> = d.layers.iter().filter(|l| l.id != into && l.visible && !l.is_template()).map(|l| l.id).collect();
-    let hidden: Vec<NodeId> = d.layers.iter().filter(|l| l.id != into && !l.visible && !l.is_template()).map(|l| l.id).collect();
+    let others: Vec<NodeId> = d
+        .layers
+        .iter()
+        .filter(|l| l.id != into && l.visible && !l.is_template())
+        .map(|l| l.id)
+        .collect();
+    let hidden: Vec<NodeId> = d
+        .layers
+        .iter()
+        .filter(|l| l.id != into && !l.visible && !l.is_template())
+        .map(|l| l.id)
+        .collect();
     s.edit("Flatten Artwork", |d, sel| {
         d.remove_many(&hidden)?;
         // Hidden layers are discarded with their guides.
@@ -339,47 +398,73 @@ fn release(s: &mut Session, p: &Value) -> Result<Value> {
         _ => return Err(bad(C, "release a layer or a group")),
     };
     // Its objects, bottom first (sublayers stay as they are).
-    let objects: Vec<NodeId> = n.children().into_iter().flatten().filter(|c| !c.is_layer()).map(|c| c.id).collect();
+    let objects: Vec<NodeId> = n
+        .children()
+        .into_iter()
+        .flatten()
+        .filter(|c| !c.is_layer())
+        .map(|c| c.id)
+        .collect();
     if objects.is_empty() {
         return Err(EngineError::Other("there are no objects to release".into()));
     }
-    let new = s.edit(if build { "Release to Layers (Build)" } else { "Release to Layers (Sequence)" }, |d, sel| {
-        // A group's objects go into sublayers of the layer holding it, where it was.
-        let (parent, index) = if group {
-            let layer = d.layer_containing(id).ok_or(EngineError::NoNode(id))?;
-            let (par, i, _) = d.position(id).ok_or(EngineError::NoNode(id))?;
-            if par == Some(layer) { (layer, i) } else { (layer, usize::MAX) }
+    let new = s.edit(
+        if build {
+            "Release to Layers (Build)"
         } else {
-            (id, 0)
-        };
-        let originals = d.remove_many(&objects)?;
-        if group {
-            d.remove(id)?;
-        }
-        let mut names = NewLayers::of(d);
-        let mut layers = Vec::with_capacity(originals.len());
-        let last = originals.len().saturating_sub(1);
-        for k in 0..originals.len() {
-            let mut layer = names.make(d, None);
-            let held: Vec<Arc<Node>> = if build {
-                // Copies of the objects below and itself; the top layer keeps the originals.
-                (0..=k).filter_map(|j| originals.get(j)).map(|o| if k == last { o.clone() } else { Arc::new(d.reid(o)) }).collect()
+            "Release to Layers (Sequence)"
+        },
+        |d, sel| {
+            // A group's objects go into sublayers of the layer holding it, where it was.
+            let (parent, index) = if group {
+                let layer = d.layer_containing(id).ok_or(EngineError::NoNode(id))?;
+                let (par, i, _) = d.position(id).ok_or(EngineError::NoNode(id))?;
+                if par == Some(layer) {
+                    (layer, i)
+                } else {
+                    (layer, usize::MAX)
+                }
             } else {
-                originals.get(k).cloned().into_iter().collect()
+                (id, 0)
             };
-            if let Some(ch) = layer.children_mut() {
-                ch.extend(held);
+            let originals = d.remove_many(&objects)?;
+            if group {
+                d.remove(id)?;
             }
-            names.add(&layer);
-            layers.push(Arc::new(layer));
-        }
-        let new: Vec<NodeId> = layers.iter().map(|l| l.id).collect();
-        let ch = d.children_mut(Some(parent))?;
-        let at = index.min(ch.len());
-        ch.splice(at..at, layers);
-        sel.prune(d);
-        Ok(new)
-    })?;
+            let mut names = NewLayers::of(d);
+            let mut layers = Vec::with_capacity(originals.len());
+            let last = originals.len().saturating_sub(1);
+            for k in 0..originals.len() {
+                let mut layer = names.make(d, None);
+                let held: Vec<Arc<Node>> = if build {
+                    // Copies of the objects below and itself; the top layer keeps the originals.
+                    (0..=k)
+                        .filter_map(|j| originals.get(j))
+                        .map(|o| {
+                            if k == last {
+                                o.clone()
+                            } else {
+                                Arc::new(d.reid(o))
+                            }
+                        })
+                        .collect()
+                } else {
+                    originals.get(k).cloned().into_iter().collect()
+                };
+                if let Some(ch) = layer.children_mut() {
+                    ch.extend(held);
+                }
+                names.add(&layer);
+                layers.push(Arc::new(layer));
+            }
+            let new: Vec<NodeId> = layers.iter().map(|l| l.id).collect();
+            let ch = d.children_mut(Some(parent))?;
+            let at = index.min(ch.len());
+            ch.splice(at..at, layers);
+            sel.prune(d);
+            Ok(new)
+        },
+    )?;
     s.doc_mut()?.layer_rows = new.clone();
     Ok(json!({ "ids": new.iter().map(|i| i.0).collect::<Vec<_>>() }))
 }
@@ -392,7 +477,9 @@ fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
     // Rows grouped by the layer or group holding them (None: top-level layers).
     let mut by_parent: Vec<(Option<NodeId>, Vec<usize>)> = vec![];
     for id in &ids {
-        let Some((par, i, _)) = d.position(*id) else { continue };
+        let Some((par, i, _)) = d.position(*id) else {
+            continue;
+        };
         match by_parent.iter_mut().find(|(p, _)| *p == par) {
             Some((_, v)) => v.push(i),
             None => by_parent.push((par, vec![i])),
@@ -420,7 +507,9 @@ fn reverse(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn locate(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc_mut()?;
-    let id = id_param(p, "id").or_else(|| st.selection.objects.last().copied()).ok_or_else(|| bad("layer.locate", "nothing selected"))?;
+    let id = id_param(p, "id")
+        .or_else(|| st.selection.objects.last().copied())
+        .ok_or_else(|| bad("layer.locate", "nothing selected"))?;
     let ancestry = st.doc.ancestry(id).ok_or(EngineError::NoNode(id))?;
     st.layer_rows = vec![id];
     st.revision += 1;

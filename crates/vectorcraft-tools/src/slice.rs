@@ -15,7 +15,9 @@ use vectorcraft_geom::{Point, Rect, Vec2};
 use crate::bbox::{Handle, hit_handle, move_delta, scale_for_drag};
 use crate::shape::drag_rect;
 use crate::xform::{BLUE, polygon, rect_corners};
-use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, json_ids};
+use crate::{
+    Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey, json_ids,
+};
 
 /// Create a slice tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
@@ -43,7 +45,12 @@ fn snap(cx: &ToolContext, p: Point) -> (Point, Vec<Overlay>) {
         cx.doc
             .guides
             .iter()
-            .filter(|g| g.vertical == vertical && (g.pos - v).abs() <= tol && cx.doc.guide_shown(g) && cx.doc.guide_passes(g, p, tol))
+            .filter(|g| {
+                g.vertical == vertical
+                    && (g.pos - v).abs() <= tol
+                    && cx.doc.guide_shown(g)
+                    && cx.doc.guide_passes(g, p, tol)
+            })
             .min_by(|a, b| (a.pos - v).abs().total_cmp(&(b.pos - v).abs()))
     };
     if let Some(g) = nearest(true, p.x) {
@@ -81,7 +88,9 @@ impl Tool for SliceTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some(start) = self.start else { return vec![] };
+                let Some(start) = self.start else {
+                    return vec![];
+                };
                 let (p, guides) = snap(cx, ev.pos);
                 (self.last, self.guides) = (p, guides);
                 let mut out = vec![];
@@ -101,14 +110,22 @@ impl Tool for SliceTool {
             PointerKind::Up => {
                 self.guides.clear();
                 let began = std::mem::take(&mut self.began);
-                if self.start.take().is_some() && began { vec![Action::Commit] } else { vec![] }
+                if self.start.take().is_some() && began {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![],
         }
     }
 
     fn key(&mut self, _cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
-        if key == ToolKey::Escape && self.began { self.deactivate(_cx) } else { vec![] }
+        if key == ToolKey::Escape && self.began {
+            self.deactivate(_cx)
+        } else {
+            vec![]
+        }
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
@@ -117,7 +134,10 @@ impl Tool for SliceTool {
                 let d = self.last - s;
                 let mut o = self.guides.clone();
                 if cx.measurement_labels {
-                    o.push(Overlay::Measure { p: self.last, text: cx.size_label(d.x.abs(), d.y.abs()) });
+                    o.push(Overlay::Measure {
+                        p: self.last,
+                        text: cx.size_label(d.x.abs(), d.y.abs()),
+                    });
                 }
                 o
             }
@@ -132,14 +152,27 @@ impl Tool for SliceTool {
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         self.start = None;
         self.guides.clear();
-        if std::mem::take(&mut self.began) { vec![Action::Cancel] } else { vec![] }
+        if std::mem::take(&mut self.began) {
+            vec![Action::Cancel]
+        } else {
+            vec![]
+        }
     }
 }
 
 #[derive(Clone, Debug)]
 enum Drag {
-    Move { start: Point, ids: Vec<NodeId>, began: bool },
-    Resize { id: NodeId, handle: Handle, rect: Rect, began: bool },
+    Move {
+        start: Point,
+        ids: Vec<NodeId>,
+        began: bool,
+    },
+    Resize {
+        id: NodeId,
+        handle: Handle,
+        rect: Rect,
+        began: bool,
+    },
 }
 
 impl Drag {
@@ -164,19 +197,29 @@ fn pickable(cx: &ToolContext) -> bool {
 /// The user or object slice under `p` (the smallest one where several overlap).
 fn slice_at(cx: &ToolContext, p: Point) -> Option<NodeId> {
     let lay = cx.doc.slice_layout();
-    let hit = lay.iter().filter(|a| a.source != SliceSource::Auto && a.rect.contains(p));
-    hit.min_by(|a, b| a.rect.area().total_cmp(&b.rect.area())).and_then(|a| a.id)
+    let hit = lay
+        .iter()
+        .filter(|a| a.source != SliceSource::Auto && a.rect.contains(p));
+    hit.min_by(|a, b| a.rect.area().total_cmp(&b.rect.area()))
+        .and_then(|a| a.id)
 }
 
 /// A handle of a selected user slice under `p`: (slice, handle, its rectangle).
 fn handle_at(cx: &ToolContext, p: Point) -> Option<(NodeId, Handle, Rect)> {
-    cx.selection.slices.iter().filter_map(|id| cx.doc.slice(*id)).find_map(|s| hit_handle(s.rect, p, cx.tol(5.0)).map(|h| (s.id, h, s.rect)))
+    cx.selection
+        .slices
+        .iter()
+        .filter_map(|id| cx.doc.slice(*id))
+        .find_map(|s| hit_handle(s.rect, p, cx.tol(5.0)).map(|h| (s.id, h, s.rect)))
 }
 
 impl SliceSelectionTool {
     /// Select `ids` only.
     fn select(ids: &[NodeId]) -> Action {
-        Action::Exec("object.slice.select".into(), json!({ "slices": json_ids(ids) }))
+        Action::Exec(
+            "object.slice.select".into(),
+            json!({ "slices": json_ids(ids) }),
+        )
     }
 }
 
@@ -198,18 +241,34 @@ impl Tool for SliceSelectionTool {
                     return vec![];
                 }
                 if let Some((id, handle, rect)) = handle_at(cx, p) {
-                    self.drag = Some(Drag::Resize { id, handle, rect, began: false });
+                    self.drag = Some(Drag::Resize {
+                        id,
+                        handle,
+                        rect,
+                        began: false,
+                    });
                     return vec![];
                 }
                 let selected = &cx.selection.slices;
                 match slice_at(cx, p) {
-                    Some(id) if m.shift => vec![Action::Exec("object.slice.select".into(), json!({ "slices": [id.0], "toggle": true }))],
+                    Some(id) if m.shift => vec![Action::Exec(
+                        "object.slice.select".into(),
+                        json!({ "slices": [id.0], "toggle": true }),
+                    )],
                     Some(id) if selected.contains(&id) => {
-                        self.drag = Some(Drag::Move { start: p, ids: selected.clone(), began: false });
+                        self.drag = Some(Drag::Move {
+                            start: p,
+                            ids: selected.clone(),
+                            began: false,
+                        });
                         vec![]
                     }
                     Some(id) => {
-                        self.drag = Some(Drag::Move { start: p, ids: vec![id], began: false });
+                        self.drag = Some(Drag::Move {
+                            start: p,
+                            ids: vec![id],
+                            began: false,
+                        });
                         vec![Self::select(&[id])]
                     }
                     None if !m.shift && !selected.is_empty() => vec![Self::select(&[])],
@@ -225,16 +284,36 @@ impl Tool for SliceSelectionTool {
                     out.push(Action::Begin("Move Slice".into()));
                 }
                 let d = move_delta(start, p, m.shift);
-                out.push(Action::Preview("object.slice.move".into(), json!({ "slices": json_ids(&ids), "dx": d.x, "dy": d.y })));
-                self.drag = Some(Drag::Move { start, ids, began: true });
+                out.push(Action::Preview(
+                    "object.slice.move".into(),
+                    json!({ "slices": json_ids(&ids), "dx": d.x, "dy": d.y }),
+                ));
+                self.drag = Some(Drag::Move {
+                    start,
+                    ids,
+                    began: true,
+                });
                 out
             }
-            (PointerKind::Drag, Some(Drag::Resize { id, handle, rect, began })) => {
+            (
+                PointerKind::Drag,
+                Some(Drag::Resize {
+                    id,
+                    handle,
+                    rect,
+                    began,
+                }),
+            ) => {
                 let mut out = vec![];
                 if !began {
                     out.push(Action::Begin("Resize Slice".into()));
                 }
-                self.drag = Some(Drag::Resize { id, handle, rect, began: true });
+                self.drag = Some(Drag::Resize {
+                    id,
+                    handle,
+                    rect,
+                    began: true,
+                });
                 let r = scale_for_drag(rect, handle, p, m.shift, m.alt).transform_rect_bbox(rect);
                 if has_area(r) {
                     let mut v = rect_json(r);
@@ -245,13 +324,22 @@ impl Tool for SliceSelectionTool {
             }
             (PointerKind::Up, Some(d)) => {
                 self.drag = None;
-                if d.began() { vec![Action::Commit] } else { vec![] }
+                if d.began() {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             (PointerKind::DoubleClick, _) => {
                 self.drag = None;
                 match slice_at(cx, p).filter(|_| pickable(cx)) {
-                    Some(id) if cx.selection.slices == [id] => vec![Action::Dialog("sliceOptions".into(), json!({}))],
-                    Some(id) => vec![Self::select(&[id]), Action::Dialog("sliceOptions".into(), json!({}))],
+                    Some(id) if cx.selection.slices == [id] => {
+                        vec![Action::Dialog("sliceOptions".into(), json!({}))]
+                    }
+                    Some(id) => vec![
+                        Self::select(&[id]),
+                        Action::Dialog("sliceOptions".into(), json!({})),
+                    ],
                     None => vec![],
                 }
             }
@@ -260,12 +348,16 @@ impl Tool for SliceSelectionTool {
     }
 
     fn claims_key(&self, cx: &ToolContext, key: ToolKey) -> bool {
-        matches!(key, ToolKey::Delete | ToolKey::Backspace) && !cx.selection.slices.is_empty() && pickable(cx)
+        matches!(key, ToolKey::Delete | ToolKey::Backspace)
+            && !cx.selection.slices.is_empty()
+            && pickable(cx)
     }
 
     fn key(&mut self, cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
         match key {
-            ToolKey::Delete | ToolKey::Backspace if self.drag.is_none() && self.claims_key(cx, key) => {
+            ToolKey::Delete | ToolKey::Backspace
+                if self.drag.is_none() && self.claims_key(cx, key) =>
+            {
                 vec![Action::Exec("object.slice.delete".into(), json!({}))]
             }
             ToolKey::Escape => self.deactivate(cx),
@@ -276,15 +368,29 @@ impl Tool for SliceSelectionTool {
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         let mut o = vec![];
         for id in &cx.selection.slices {
-            let Some(r) = cx.doc.slice_bounds(*id) else { continue };
-            o.push(Overlay::Path { path: polygon(&rect_corners(r), true), color: BLUE, width: 1.0, dashed: false });
+            let Some(r) = cx.doc.slice_bounds(*id) else {
+                continue;
+            };
+            o.push(Overlay::Path {
+                path: polygon(&rect_corners(r), true),
+                color: BLUE,
+                width: 1.0,
+                dashed: false,
+            });
             if cx.doc.slice(*id).is_some() && pickable(cx) {
-                o.extend(Handle::ALL.iter().map(|h| Overlay::Anchor { p: h.pos(r), color: BLUE, filled: false, size: 7.0 }));
+                o.extend(Handle::ALL.iter().map(|h| Overlay::Anchor {
+                    p: h.pos(r),
+                    color: BLUE,
+                    filled: false,
+                    size: 7.0,
+                }));
             }
         }
         // Smart Guides › Measurement Labels: the size readouts while resizing or moving slices.
         match self.drag.as_ref().filter(|_| cx.measurement_labels) {
-            Some(Drag::Resize { id, began: true, .. }) => {
+            Some(Drag::Resize {
+                id, began: true, ..
+            }) => {
                 if let Some(r) = cx.doc.slice_bounds(*id) {
                     o.push(Overlay::Measure {
                         p: Point::new(r.x1, r.y1) + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
@@ -292,8 +398,14 @@ impl Tool for SliceSelectionTool {
                     });
                 }
             }
-            Some(Drag::Move { ids, began: true, .. }) => {
-                if let Some(r) = ids.iter().filter_map(|id| cx.doc.slice_bounds(*id)).reduce(|a, b| a.union(b)) {
+            Some(Drag::Move {
+                ids, began: true, ..
+            }) => {
+                if let Some(r) = ids
+                    .iter()
+                    .filter_map(|id| cx.doc.slice_bounds(*id))
+                    .reduce(|a, b| a.union(b))
+                {
                     o.push(Overlay::Measure {
                         p: Point::new(r.x1, r.y1) + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
                         text: cx.size_label(r.width(), r.height()),
@@ -316,7 +428,11 @@ impl Tool for SliceSelectionTool {
     }
 
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
-        if self.drag.take().is_some_and(|d| d.began()) { vec![Action::Cancel] } else { vec![] }
+        if self.drag.take().is_some_and(|d| d.began()) {
+            vec![Action::Cancel]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -350,39 +466,100 @@ mod tests {
         let mut c = cx(&d, &s, &p);
         c.smart_guides = false;
         let mut t = SliceTool::default();
-        assert!(t.pointer(&c, &ev(PointerKind::Down, 300.0, 300.0)).is_empty());
-        assert!(t.pointer(&c, &ev(PointerKind::Drag, 300.5, 300.0)).is_empty(), "a jitter is no drag");
+        assert!(
+            t.pointer(&c, &ev(PointerKind::Down, 300.0, 300.0))
+                .is_empty()
+        );
+        assert!(
+            t.pointer(&c, &ev(PointerKind::Drag, 300.5, 300.0))
+                .is_empty(),
+            "a jitter is no drag"
+        );
         let a = t.pointer(&c, &ev(PointerKind::Drag, 350.0, 320.0));
         assert_eq!(a[0], Action::Begin("Slice".into()));
-        assert_eq!(create_preview(&a), Some(json!({"x": 300.0, "y": 300.0, "width": 50.0, "height": 20.0})));
-        assert!(matches!(t.overlays(&c).last(), Some(Overlay::Measure { .. })));
+        assert_eq!(
+            create_preview(&a),
+            Some(json!({"x": 300.0, "y": 300.0, "width": 50.0, "height": 20.0}))
+        );
+        assert!(matches!(
+            t.overlays(&c).last(),
+            Some(Overlay::Measure { .. })
+        ));
         // Shift: a square; Alt: from the centre.
-        let sq = t.pointer(&c, &with(PointerKind::Drag, 350.0, 320.0, Mods { shift: true, ..Default::default() }));
-        assert_eq!(create_preview(&sq), Some(json!({"x": 300.0, "y": 300.0, "width": 50.0, "height": 50.0})));
-        let mid = t.pointer(&c, &with(PointerKind::Drag, 350.0, 320.0, Mods { alt: true, ..Default::default() }));
-        assert_eq!(create_preview(&mid), Some(json!({"x": 250.0, "y": 280.0, "width": 100.0, "height": 40.0})));
+        let sq = t.pointer(
+            &c,
+            &with(
+                PointerKind::Drag,
+                350.0,
+                320.0,
+                Mods {
+                    shift: true,
+                    ..Default::default()
+                },
+            ),
+        );
+        assert_eq!(
+            create_preview(&sq),
+            Some(json!({"x": 300.0, "y": 300.0, "width": 50.0, "height": 50.0}))
+        );
+        let mid = t.pointer(
+            &c,
+            &with(
+                PointerKind::Drag,
+                350.0,
+                320.0,
+                Mods {
+                    alt: true,
+                    ..Default::default()
+                },
+            ),
+        );
+        assert_eq!(
+            create_preview(&mid),
+            Some(json!({"x": 250.0, "y": 280.0, "width": 100.0, "height": 40.0}))
+        );
         // The edge near a guide snaps to it.
         let g = t.pointer(&c, &ev(PointerKind::Drag, 401.0, 320.0));
-        assert_eq!(create_preview(&g), Some(json!({"x": 300.0, "y": 300.0, "width": 103.0, "height": 20.0})));
+        assert_eq!(
+            create_preview(&g),
+            Some(json!({"x": 300.0, "y": 300.0, "width": 103.0, "height": 20.0}))
+        );
         // A drag along one axis has no area: no preview.
-        assert_eq!(create_preview(&t.pointer(&c, &ev(PointerKind::Drag, 350.0, 300.0))), None);
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Up, 350.0, 320.0)), vec![Action::Commit]);
+        assert_eq!(
+            create_preview(&t.pointer(&c, &ev(PointerKind::Drag, 350.0, 300.0))),
+            None
+        );
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Up, 350.0, 320.0)),
+            vec![Action::Commit]
+        );
         assert!(!t.busy());
         // A click makes nothing; Escape cancels a drag.
         t.pointer(&c, &ev(PointerKind::Down, 10.0, 10.0));
         assert!(t.pointer(&c, &ev(PointerKind::Up, 10.0, 10.0)).is_empty());
         t.pointer(&c, &ev(PointerKind::Down, 10.0, 10.0));
         t.pointer(&c, &ev(PointerKind::Drag, 40.0, 40.0));
-        assert_eq!(t.key(&c, ToolKey::Escape, Mods::default()), vec![Action::Cancel]);
+        assert_eq!(
+            t.key(&c, ToolKey::Escape, Mods::default()),
+            vec![Action::Cancel]
+        );
         assert_eq!(t.cursor(&c, Point::ZERO, Mods::default()), Cursor::Slice);
     }
 
     fn doc_with_slices() -> (Document, NodeId, NodeId) {
         let (mut d, _) = doc_with_rect();
         let a = d.alloc_id();
-        d.slices.push(Slice { id: a, rect: Rect::new(10.0, 10.0, 60.0, 40.0), options: Default::default() });
+        d.slices.push(Slice {
+            id: a,
+            rect: Rect::new(10.0, 10.0, 60.0, 40.0),
+            options: Default::default(),
+        });
         let b = d.alloc_id();
-        d.slices.push(Slice { id: b, rect: Rect::new(300.0, 300.0, 400.0, 400.0), options: Default::default() });
+        d.slices.push(Slice {
+            id: b,
+            rect: Rect::new(300.0, 300.0, 400.0, 400.0),
+            options: Default::default(),
+        });
         (d, a, b)
     }
 
@@ -394,42 +571,99 @@ mod tests {
         let c = cx(&d, &none, &p);
         let mut t = SliceSelectionTool::default();
         // A click selects the slice under the pointer; a drag moves it as one gesture.
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Down, 20.0, 20.0)), vec![Action::Exec("object.slice.select".into(), json!({"slices": [a.0]}))]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Down, 20.0, 20.0)),
+            vec![Action::Exec(
+                "object.slice.select".into(),
+                json!({"slices": [a.0]})
+            )]
+        );
         let mut sel = Selection::default();
         sel.set_slices([a]);
         let c = cx(&d, &sel, &p);
         let m = t.pointer(&c, &ev(PointerKind::Drag, 30.0, 25.0));
         assert_eq!(
             m,
-            vec![Action::Begin("Move Slice".into()), Action::Preview("object.slice.move".into(), json!({"slices": [a.0], "dx": 10.0, "dy": 5.0}))]
+            vec![
+                Action::Begin("Move Slice".into()),
+                Action::Preview(
+                    "object.slice.move".into(),
+                    json!({"slices": [a.0], "dx": 10.0, "dy": 5.0})
+                )
+            ]
         );
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Up, 30.0, 25.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Up, 30.0, 25.0)),
+            vec![Action::Commit]
+        );
         // Shift-click toggles another slice.
-        let shift = Mods { shift: true, ..Default::default() };
+        let shift = Mods {
+            shift: true,
+            ..Default::default()
+        };
         assert_eq!(
             t.pointer(&c, &with(PointerKind::Down, 350.0, 350.0, shift)),
-            vec![Action::Exec("object.slice.select".into(), json!({"slices": [b.0], "toggle": true}))]
+            vec![Action::Exec(
+                "object.slice.select".into(),
+                json!({"slices": [b.0], "toggle": true})
+            )]
         );
         t.pointer(&c, &ev(PointerKind::Up, 350.0, 350.0));
         // A corner handle of the selected user slice resizes it.
-        assert_eq!(t.cursor(&c, Point::new(60.0, 40.0), Mods::default()), Cursor::ResizeNwSe);
+        assert_eq!(
+            t.cursor(&c, Point::new(60.0, 40.0), Mods::default()),
+            Cursor::ResizeNwSe
+        );
         assert!(t.pointer(&c, &ev(PointerKind::Down, 60.0, 40.0)).is_empty());
         let r = t.pointer(&c, &ev(PointerKind::Drag, 80.0, 50.0));
         assert_eq!(r[0], Action::Begin("Resize Slice".into()));
-        assert_eq!(r[1], Action::Preview("object.slice.setRect".into(), json!({"id": a.0, "x": 10.0, "y": 10.0, "width": 70.0, "height": 40.0})));
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Up, 80.0, 50.0)), vec![Action::Commit]);
-        assert!(t.overlays(&c).iter().filter(|o| matches!(o, Overlay::Anchor { .. })).count() == 8);
+        assert_eq!(
+            r[1],
+            Action::Preview(
+                "object.slice.setRect".into(),
+                json!({"id": a.0, "x": 10.0, "y": 10.0, "width": 70.0, "height": 40.0})
+            )
+        );
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Up, 80.0, 50.0)),
+            vec![Action::Commit]
+        );
+        assert!(
+            t.overlays(&c)
+                .iter()
+                .filter(|o| matches!(o, Overlay::Anchor { .. }))
+                .count()
+                == 8
+        );
         // A double click opens Slice Options; Delete deletes the selected slices.
-        assert_eq!(t.pointer(&c, &ev(PointerKind::DoubleClick, 20.0, 20.0)), vec![Action::Dialog("sliceOptions".into(), json!({}))]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::DoubleClick, 20.0, 20.0)),
+            vec![Action::Dialog("sliceOptions".into(), json!({}))]
+        );
         assert!(t.claims_key(&c, ToolKey::Delete));
-        assert_eq!(t.key(&c, ToolKey::Delete, Mods::default()), vec![Action::Exec("object.slice.delete".into(), json!({}))]);
+        assert_eq!(
+            t.key(&c, ToolKey::Delete, Mods::default()),
+            vec![Action::Exec("object.slice.delete".into(), json!({}))]
+        );
         // A click on no slice deselects.
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Down, 200.0, 5.0)), vec![Action::Exec("object.slice.select".into(), json!({"slices": []}))]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Down, 200.0, 5.0)),
+            vec![Action::Exec(
+                "object.slice.select".into(),
+                json!({"slices": []})
+            )]
+        );
         // Locked slices can't be picked.
         let mut locked = cx(&d, &sel, &p);
         locked.slices_locked = true;
-        assert!(t.pointer(&locked, &ev(PointerKind::Down, 20.0, 20.0)).is_empty());
+        assert!(
+            t.pointer(&locked, &ev(PointerKind::Down, 20.0, 20.0))
+                .is_empty()
+        );
         assert!(!t.claims_key(&locked, ToolKey::Delete));
-        assert_eq!(t.cursor(&locked, Point::new(60.0, 40.0), Mods::default()), Cursor::SliceSelect);
+        assert_eq!(
+            t.cursor(&locked, Point::new(60.0, 40.0), Mods::default()),
+            Cursor::SliceSelect
+        );
     }
 }

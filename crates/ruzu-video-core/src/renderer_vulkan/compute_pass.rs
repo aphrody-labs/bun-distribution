@@ -269,8 +269,7 @@ impl ComputePass {
     ) -> Result<Self, vk::Result> {
         let logical = device.get_logical();
         // Create descriptor set layout
-        let layout_ci = vk::DescriptorSetLayoutCreateInfo::default()
-            .bindings(bindings);
+        let layout_ci = vk::DescriptorSetLayoutCreateInfo::default().bindings(bindings);
         let descriptor_set_layout =
             unsafe { logical.create_descriptor_set_layout(&layout_ci, None)? };
         // Create pipeline layout
@@ -392,7 +391,11 @@ impl ComputePass {
                 .layout(layout);
 
             let pipelines = match unsafe {
-                logical.create_compute_pipelines(device.static_pipeline_cache(), &[pipeline_ci], None)
+                logical.create_compute_pipelines(
+                    device.static_pipeline_cache(),
+                    &[pipeline_ci],
+                    None,
+                )
             } {
                 Ok(pipelines) => pipelines,
                 Err((pipelines, error)) => {

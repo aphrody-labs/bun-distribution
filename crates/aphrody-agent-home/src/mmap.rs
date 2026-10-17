@@ -75,7 +75,9 @@ impl MappedBytes {
     /// it already holds the content).
     #[must_use]
     pub fn from_bytes(bytes: impl Into<Arc<[u8]>>) -> Self {
-        Self { backing: Backing::Heap(bytes.into()) }
+        Self {
+            backing: Backing::Heap(bytes.into()),
+        }
     }
 
     /// Host-only memory-mapping path.
@@ -86,7 +88,9 @@ impl MappedBytes {
         // Mapping a zero-length file is UB / errors on multiple platforms.
         // Use a heap empty slice instead — same observable behaviour.
         if len == 0 {
-            return Ok(Self { backing: Backing::Heap(Arc::from(&[][..])) });
+            return Ok(Self {
+                backing: Backing::Heap(Arc::from(&[][..])),
+            });
         }
         // SAFETY: We map a file we just opened read-only. memmap2 requires the
         // caller to ensure the underlying file is not concurrently truncated
@@ -97,14 +101,18 @@ impl MappedBytes {
         // before the bytes are re-read. The mapping is read-only and never
         // written through.
         let mmap = unsafe { memmap2::Mmap::map(&file) }.map_err(|e| HomeError::io(path, e))?;
-        Ok(Self { backing: Backing::Mmap(Arc::new(mmap)) })
+        Ok(Self {
+            backing: Backing::Mmap(Arc::new(mmap)),
+        })
     }
 
     /// Heap read path (wasm fallback; also reusable on host).
     #[cfg(target_arch = "wasm32")]
     fn load_heap(path: &Path) -> Result<Self, HomeError> {
         let bytes = std::fs::read(path).map_err(|e| HomeError::io(path, e))?;
-        Ok(Self { backing: Backing::Heap(Arc::from(bytes.into_boxed_slice())) })
+        Ok(Self {
+            backing: Backing::Heap(Arc::from(bytes.into_boxed_slice())),
+        })
     }
 
     /// Byte length.

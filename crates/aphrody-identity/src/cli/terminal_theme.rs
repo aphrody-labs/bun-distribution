@@ -24,7 +24,10 @@ pub fn terminal_theme_main(args: Vec<OsString>) -> i32 {
     let mut out: Option<PathBuf> = None;
     let mut print: Option<String> = None;
     let mut contrast_only = false;
-    let mut it = args.into_iter().skip(1).map(|a| a.to_string_lossy().into_owned());
+    let mut it = args
+        .into_iter()
+        .skip(1)
+        .map(|a| a.to_string_lossy().into_owned());
     while let Some(arg) = it.next() {
         match arg.as_str() {
             "--check" | "--verifier" => check = true,
@@ -40,7 +43,7 @@ pub fn terminal_theme_main(args: Vec<OsString>) -> i32 {
             "-h" | "--help" => {
                 println!("{}", help());
                 return 0;
-            },
+            }
             other => return usage(&format!("unknown argument: {other}")),
         }
     }
@@ -67,8 +70,11 @@ pub fn terminal_theme_main(args: Vec<OsString>) -> i32 {
             .map_or_else(|| PathBuf::from("."), PathBuf::from)
             .join(CONFIG_DIR)
     });
-    let mut wanted: Vec<(PathBuf, String)> =
-        theme.files().into_iter().map(|(rel, text)| (dir.join(rel), text)).collect();
+    let mut wanted: Vec<(PathBuf, String)> = theme
+        .files()
+        .into_iter()
+        .map(|(rel, text)| (dir.join(rel), text))
+        .collect();
     let settings = dir.join("settings.json");
     if let Ok(current) = std::fs::read_to_string(&settings) {
         match theme.splice_wt_settings(&current) {
@@ -76,7 +82,7 @@ pub fn terminal_theme_main(args: Vec<OsString>) -> i32 {
             Err(e) => {
                 eprintln!("{}: {e}", settings.display());
                 return 1;
-            },
+            }
         }
     }
 
@@ -113,7 +119,11 @@ pub fn terminal_theme_main(args: Vec<OsString>) -> i32 {
 
 fn report(theme: &TerminalTheme) -> i32 {
     for m in theme.modes() {
-        println!("\n{} ({})", m.wt_name(), if m.dark { "dark" } else { "light" });
+        println!(
+            "\n{} ({})",
+            m.wt_name(),
+            if m.dark { "dark" } else { "light" }
+        );
         for (i, name) in ANSI_NAMES.iter().enumerate() {
             let h = hct(m.ansi[i]);
             println!(
@@ -127,13 +137,23 @@ fn report(theme: &TerminalTheme) -> i32 {
     }
     let checks = theme.contrast_checks();
     let failing: Vec<_> = checks.iter().filter(|c| !c.ok()).collect();
-    let lowest = checks.iter().filter(|c| c.minimum >= 4.5).min_by(|a, b| a.ratio.total_cmp(&b.ratio));
-    println!("\n{} contrast pairs, {} below their minimum", checks.len(), failing.len());
+    let lowest = checks
+        .iter()
+        .filter(|c| c.minimum >= 4.5)
+        .min_by(|a, b| a.ratio.total_cmp(&b.ratio));
+    println!(
+        "\n{} contrast pairs, {} below their minimum",
+        checks.len(),
+        failing.len()
+    );
     if let Some(c) = lowest {
         println!("lowest text pair: {} {} {:.2}:1", c.mode, c.what, c.ratio);
     }
     for c in &failing {
-        eprintln!("  FAIL {} {} {:.2} < {}", c.mode, c.what, c.ratio, c.minimum);
+        eprintln!(
+            "  FAIL {} {} {:.2} < {}",
+            c.mode, c.what, c.ratio, c.minimum
+        );
     }
     i32::from(!failing.is_empty())
 }

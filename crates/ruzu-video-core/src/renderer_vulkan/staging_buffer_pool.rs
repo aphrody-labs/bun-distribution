@@ -209,8 +209,7 @@ impl StagingBufferPool {
         let stream_buffer_address = if vulkan_device.is_buffer_device_address_supported() {
             unsafe {
                 vulkan_device.get_logical().get_buffer_device_address(
-                    &vk::BufferDeviceAddressInfo::default()
-                        .buffer(allocation.handle()),
+                    &vk::BufferDeviceAddressInfo::default().buffer(allocation.handle()),
                 )
             }
         } else {
@@ -561,8 +560,7 @@ impl StagingBufferPool {
                     .get()
                     .get_logical()
                     .get_buffer_device_address(
-                        &vk::BufferDeviceAddressInfo::default()
-                            .buffer(buffer),
+                        &vk::BufferDeviceAddressInfo::default().buffer(buffer),
                     )
             }
         } else {

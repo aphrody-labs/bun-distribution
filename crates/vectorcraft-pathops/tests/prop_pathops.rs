@@ -10,7 +10,8 @@ use vectorcraft_geom::{FillRule, PathData, Point, Rect};
 use vectorcraft_pathops::*;
 use vectorcraft_testkit::geom::{directed_hausdorff, grid, hausdorff, polygon_area, rel_close};
 use vectorcraft_testkit::strategies::{
-    arb_closed_shape, arb_convex_polygon, arb_ellipse, arb_rect, arb_smooth_curve, arb_star_polygon, polygon_path,
+    arb_closed_shape, arb_convex_polygon, arb_ellipse, arb_rect, arb_smooth_curve,
+    arb_star_polygon, polygon_path,
 };
 
 const NZ: FillRule = FillRule::NonZero;
@@ -212,7 +213,10 @@ fn non_finite_input_is_an_error() {
     let mut p = vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
     p.subpaths[0].anchors[1].p.x = f64::NAN;
     let q = vectorcraft_geom::shapes::rectangle(Rect::new(5.0, 5.0, 15.0, 15.0));
-    assert_eq!(try_boolean(&p, NZ, &q, NZ, BoolOp::Union, DEFAULT_PRECISION), Err(PathOpsError::NonFinite));
+    assert_eq!(
+        try_boolean(&p, NZ, &q, NZ, BoolOp::Union, DEFAULT_PRECISION),
+        Err(PathOpsError::NonFinite)
+    );
     assert!(boolean(&p, NZ, &q, NZ, BoolOp::Union).is_empty());
     assert!(offset_path(&q, f64::NAN, Join::Round, 4.0).is_empty());
     assert!(outline_stroke(&q, f64::INFINITY, Cap::Butt, Join::Round, 4.0).is_empty());
@@ -222,7 +226,11 @@ fn non_finite_input_is_an_error() {
 fn empty_inputs() {
     let e = PathData::default();
     let q = vectorcraft_geom::shapes::rectangle(Rect::new(5.0, 5.0, 15.0, 15.0));
-    assert!(rel_close(area(&boolean(&e, NZ, &q, NZ, BoolOp::Union), NZ), 100.0, 1e-9));
+    assert!(rel_close(
+        area(&boolean(&e, NZ, &q, NZ, BoolOp::Union), NZ),
+        100.0,
+        1e-9
+    ));
     assert!(boolean(&e, NZ, &q, NZ, BoolOp::Intersect).is_empty());
     assert!(pathfinder(PathfinderOp::Divide, &[]).is_empty());
     assert!(regions(&[]).is_empty());
@@ -232,20 +240,51 @@ fn empty_inputs() {
 #[test]
 fn bug_simplify_adds_anchors() {
     use vectorcraft_geom::{Anchor, SubPath};
-    let a = |p: (f64, f64), i: (f64, f64), o: (f64, f64)| Anchor::with_handles(p.into(), i.into(), o.into());
+    let a = |p: (f64, f64), i: (f64, f64), o: (f64, f64)| {
+        Anchor::with_handles(p.into(), i.into(), o.into())
+    };
     let c = PathData::single(SubPath::new(
         vec![
-            a((0.0, 100.0), (-4.964818950742777, 102.85147018094767), (4.964818950742777, 97.14852981905233)),
-            a((29.788913704456665, 82.89117891431397), (19.859275802971112, 82.89117891431397), (39.71855160594222, 82.89117891431397)),
-            a((59.57782740891333, 100.0), (49.64818950742777, 94.34401856927909), (69.50746531039889, 105.65598143072091)),
-            a((89.36674111337, 116.82706749863948), (79.43710321188445, 116.82706749863948), (99.29637901485555, 116.82706749863948)),
-            a((119.15565481782666, 100.0), (109.22601691634111, 102.80451124977324), (129.0852927193122, 97.19548875022676)),
-            a((148.94456852228333, 100.0), (143.97974957154057, 100.0), (153.9093874730261, 100.0)),
+            a(
+                (0.0, 100.0),
+                (-4.964818950742777, 102.85147018094767),
+                (4.964818950742777, 97.14852981905233),
+            ),
+            a(
+                (29.788913704456665, 82.89117891431397),
+                (19.859275802971112, 82.89117891431397),
+                (39.71855160594222, 82.89117891431397),
+            ),
+            a(
+                (59.57782740891333, 100.0),
+                (49.64818950742777, 94.34401856927909),
+                (69.50746531039889, 105.65598143072091),
+            ),
+            a(
+                (89.36674111337, 116.82706749863948),
+                (79.43710321188445, 116.82706749863948),
+                (99.29637901485555, 116.82706749863948),
+            ),
+            a(
+                (119.15565481782666, 100.0),
+                (109.22601691634111, 102.80451124977324),
+                (129.0852927193122, 97.19548875022676),
+            ),
+            a(
+                (148.94456852228333, 100.0),
+                (143.97974957154057, 100.0),
+                (153.9093874730261, 100.0),
+            ),
         ],
         false,
     ));
     let s = simplify(&c, 0.2);
-    assert!(s.anchor_count() <= c.anchor_count(), "{} anchors in, {} out", c.anchor_count(), s.anchor_count());
+    assert!(
+        s.anchor_count() <= c.anchor_count(),
+        "{} anchors in, {} out",
+        c.anchor_count(),
+        s.anchor_count()
+    );
 }
 
 #[test]

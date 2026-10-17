@@ -4,7 +4,10 @@
 use crate::gaintable::GainTableMap;
 use crate::profile::{HsvTable, ProfileLook, ToneCurve};
 use crate::tiffraw::{Packing, read_image_in};
-use crate::{BlackLevel, Cfa, ColorData, Mat3, Mode, RawData, RawError, RawFormat, RawImage, Rect, Result, opcodes};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mat3, Mode, RawData, RawError, RawFormat, RawImage, Rect, Result,
+    opcodes,
+};
 use lightcraft_color::Xy;
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::tags::{self as t, photometric};
@@ -15,8 +18,17 @@ pub(crate) fn raw_ifd(tiff: &Tiff) -> Option<&Ifd> {
     tiff.all_ifds()
         .into_iter()
         .filter(|i| i.u32(t::NEW_SUBFILE_TYPE).unwrap_or(0) == 0)
-        .filter(|i| matches!(i.u16(t::PHOTOMETRIC), Some(photometric::CFA) | Some(photometric::LINEAR_RAW)))
-        .max_by_key(|i| i.u64(t::IMAGE_WIDTH).unwrap_or(0).saturating_mul(i.u64(t::IMAGE_LENGTH).unwrap_or(0)))
+        .filter(|i| {
+            matches!(
+                i.u16(t::PHOTOMETRIC),
+                Some(photometric::CFA) | Some(photometric::LINEAR_RAW)
+            )
+        })
+        .max_by_key(|i| {
+            i.u64(t::IMAGE_WIDTH)
+                .unwrap_or(0)
+                .saturating_mul(i.u64(t::IMAGE_LENGTH).unwrap_or(0))
+        })
 }
 
 /// Undo the DNG 1.7 row/column interleave, which reorders the stored raster without changing its
@@ -30,14 +42,23 @@ pub(crate) fn raw_ifd(tiff: &Tiff) -> Option<&Ifd> {
 /// field, with the CFA pattern then read across permuted samples — so it is not merely misplaced,
 /// it is the wrong colour as well (`RowInterleaveFactor = ColumnInterleaveFactor = 2` is what DNG
 /// 1.7 JPEG XL files from Adobe's converter carry).
-fn deinterleave(data: &mut RawData, w: usize, h: usize, cpp: usize, rows: usize, cols: usize) -> Result<()> {
+fn deinterleave(
+    data: &mut RawData,
+    w: usize,
+    h: usize,
+    cpp: usize,
+    rows: usize,
+    cols: usize,
+) -> Result<()> {
     if rows <= 1 && cols <= 1 {
         return Ok(());
     }
     // The spec sets no bound on the value (it is only "the number of interleaved fields"); this
     // caps the field table we build and the permutation, and rejects a hostile tag.
     if !(1..=16).contains(&rows) || !(1..=16).contains(&cols) {
-        return Err(RawError::Unsupported(format!("interleave factors {rows} × {cols}")));
+        return Err(RawError::Unsupported(format!(
+            "interleave factors {rows} × {cols}"
+        )));
     }
     let (map_r, map_c) = (field_map(h, rows), field_map(w, cols));
     let dest = |r: usize, c: usize| map_r[r] * w + map_c[c];
@@ -73,10 +94,21 @@ fn field_map(len: usize, n: usize) -> Vec<usize> {
 
 /// Move every `cpp`-sample pixel of `v` from its stored position to `dest(r, c)`, the image
 /// position it belongs at. The permutation is not its own inverse, so it needs a destination.
-fn permute<T: Copy + Default, F: Fn(usize, usize) -> usize>(v: &mut Vec<T>, w: usize, h: usize, cpp: usize, dest: F) -> Result<()> {
-    let n = w.checked_mul(h).and_then(|n| n.checked_mul(cpp)).ok_or_else(|| RawError::Corrupt("image too large".into()))?;
+fn permute<T: Copy + Default, F: Fn(usize, usize) -> usize>(
+    v: &mut Vec<T>,
+    w: usize,
+    h: usize,
+    cpp: usize,
+    dest: F,
+) -> Result<()> {
+    let n = w
+        .checked_mul(h)
+        .and_then(|n| n.checked_mul(cpp))
+        .ok_or_else(|| RawError::Corrupt("image too large".into()))?;
     if v.len() != n {
-        return Err(RawError::Corrupt("mosaic size does not match the image".into()));
+        return Err(RawError::Corrupt(
+            "mosaic size does not match the image".into(),
+        ));
     }
     let mut out = vec![T::default(); n];
     for r in 0..h {
@@ -109,17 +141,36 @@ pub(crate) fn color_data(ifd0: &Ifd, raw: &Ifd, order: ByteOrder) -> ColorData {
     let get = |tag: u16| raw.f64s(tag).or_else(|| ifd0.f64s(tag));
     let geti = |tag: u16| raw.u16(tag).or_else(|| ifd0.u16(tag));
     ColorData {
-        illuminant: [geti(t::CALIBRATION_ILLUMINANT_1).unwrap_or(0), geti(t::CALIBRATION_ILLUMINANT_2).unwrap_or(0)],
+        illuminant: [
+            geti(t::CALIBRATION_ILLUMINANT_1).unwrap_or(0),
+            geti(t::CALIBRATION_ILLUMINANT_2).unwrap_or(0),
+        ],
         color_matrix: [mat3(get(t::COLOR_MATRIX_1)), mat3(get(t::COLOR_MATRIX_2))],
-        forward_matrix: [mat3(get(t::FORWARD_MATRIX_1)), mat3(get(t::FORWARD_MATRIX_2))],
-        camera_calibration: [mat3(get(t::CAMERA_CALIBRATION_1)), mat3(get(t::CAMERA_CALIBRATION_2))],
+        forward_matrix: [
+            mat3(get(t::FORWARD_MATRIX_1)),
+            mat3(get(t::FORWARD_MATRIX_2)),
+        ],
+        camera_calibration: [
+            mat3(get(t::CAMERA_CALIBRATION_1)),
+            mat3(get(t::CAMERA_CALIBRATION_2)),
+        ],
         analog_balance: vec3(get(t::ANALOG_BALANCE)),
         as_shot_neutral: vec3(get(t::AS_SHOT_NEUTRAL)),
-        as_shot_white_xy: get(t::AS_SHOT_WHITE_XY).filter(|v| v.len() == 2 && v[0] > 0.0 && v[1] > 0.0).map(|v| Xy::new(v[0], v[1])),
-        baseline_exposure: get(t::BASELINE_EXPOSURE).and_then(|v| v.first().copied()).filter(|v| v.is_finite()).unwrap_or(0.0)
-            + get(t::BASELINE_EXPOSURE_OFFSET).and_then(|v| v.first().copied()).filter(|v| v.is_finite()).unwrap_or(0.0),
+        as_shot_white_xy: get(t::AS_SHOT_WHITE_XY)
+            .filter(|v| v.len() == 2 && v[0] > 0.0 && v[1] > 0.0)
+            .map(|v| Xy::new(v[0], v[1])),
+        baseline_exposure: get(t::BASELINE_EXPOSURE)
+            .and_then(|v| v.first().copied())
+            .filter(|v| v.is_finite())
+            .unwrap_or(0.0)
+            + get(t::BASELINE_EXPOSURE_OFFSET)
+                .and_then(|v| v.first().copied())
+                .filter(|v| v.is_finite())
+                .unwrap_or(0.0),
         // DNG 1.7 BaselineSharpness (IFD 0 or the enhanced IFD); implausible values are ignored
-        baseline_sharpness: get(t::BASELINE_SHARPNESS).and_then(|v| v.first().copied()).filter(|v| v.is_finite() && *v > 0.0 && *v <= 16.0),
+        baseline_sharpness: get(t::BASELINE_SHARPNESS)
+            .and_then(|v| v.first().copied())
+            .filter(|v| v.is_finite() && *v > 0.0 && *v <= 16.0),
         profile: profile_look(ifd0, raw, order),
         kelvin_presets: None,
     }
@@ -134,15 +185,33 @@ pub(crate) fn profile_look(ifd0: &Ifd, raw: &Ifd, order: ByteOrder) -> ProfileLo
         let ifd = pick(dims);
         let dims = ifd.u64s(dims)?;
         let data = ifd.f64s(data)?;
-        HsvTable::from_tags(&dims, &data, ifd.u64s(enc).and_then(|v| v.first().copied()).unwrap_or(0))
+        HsvTable::from_tags(
+            &dims,
+            &data,
+            ifd.u64s(enc).and_then(|v| v.first().copied()).unwrap_or(0),
+        )
     };
     ProfileLook {
         hue_sat_map: [
-            table(t::PROFILE_HUE_SAT_MAP_DIMS, t::PROFILE_HUE_SAT_MAP_DATA_1, t::PROFILE_HUE_SAT_MAP_ENCODING),
-            table(t::PROFILE_HUE_SAT_MAP_DIMS, t::PROFILE_HUE_SAT_MAP_DATA_2, t::PROFILE_HUE_SAT_MAP_ENCODING),
+            table(
+                t::PROFILE_HUE_SAT_MAP_DIMS,
+                t::PROFILE_HUE_SAT_MAP_DATA_1,
+                t::PROFILE_HUE_SAT_MAP_ENCODING,
+            ),
+            table(
+                t::PROFILE_HUE_SAT_MAP_DIMS,
+                t::PROFILE_HUE_SAT_MAP_DATA_2,
+                t::PROFILE_HUE_SAT_MAP_ENCODING,
+            ),
         ],
-        look_table: table(t::PROFILE_LOOK_TABLE_DIMS, t::PROFILE_LOOK_TABLE_DATA, t::PROFILE_LOOK_TABLE_ENCODING),
-        tone_curve: pick(t::PROFILE_TONE_CURVE).f64s(t::PROFILE_TONE_CURVE).and_then(|v| ToneCurve::from_tag(&v)),
+        look_table: table(
+            t::PROFILE_LOOK_TABLE_DIMS,
+            t::PROFILE_LOOK_TABLE_DATA,
+            t::PROFILE_LOOK_TABLE_ENCODING,
+        ),
+        tone_curve: pick(t::PROFILE_TONE_CURVE)
+            .f64s(t::PROFILE_TONE_CURVE)
+            .and_then(|v| ToneCurve::from_tag(&v)),
         gain_table_map: gain_table_map(ifd0, raw, order),
     }
 }
@@ -152,7 +221,10 @@ pub(crate) fn profile_look(ifd0: &Ifd, raw: &Ifd, order: ByteOrder) -> ProfileLo
 /// 1.6 put it, and where Apple writes it), else from IFD 0 (where DNG 1.7 says it was meant to be).
 /// A malformed tag falls through to the next one.
 fn gain_table_map(ifd0: &Ifd, raw: &Ifd, order: ByteOrder) -> Option<GainTableMap> {
-    let parse = |ifd: &Ifd, tag: u16| ifd.bytes(tag).and_then(|b| GainTableMap::parse(b, order, tag == t::PROFILE_GAIN_TABLE_MAP_2));
+    let parse = |ifd: &Ifd, tag: u16| {
+        ifd.bytes(tag)
+            .and_then(|b| GainTableMap::parse(b, order, tag == t::PROFILE_GAIN_TABLE_MAP_2))
+    };
     parse(ifd0, t::PROFILE_GAIN_TABLE_MAP_2)
         .or_else(|| parse(raw, t::PROFILE_GAIN_TABLE_MAP_2))
         .or_else(|| parse(raw, t::PROFILE_GAIN_TABLE_MAP))
@@ -170,8 +242,15 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
 /// in them needs a maker-specific reader. Without the white-balance tag nothing in the file says how
 /// to read its colour, and the file stays an undecodable raw.
 pub(crate) fn is_plain_cfa_tiff(tiff: &Tiff, bytes: &[u8]) -> bool {
-    let Some(raw) = raw_ifd(tiff) else { return false };
-    if !raw.contains(t::AS_SHOT_NEUTRAL) && !tiff.ifds.first().is_some_and(|i| i.contains(t::AS_SHOT_NEUTRAL)) {
+    let Some(raw) = raw_ifd(tiff) else {
+        return false;
+    };
+    if !raw.contains(t::AS_SHOT_NEUTRAL)
+        && !tiff
+            .ifds
+            .first()
+            .is_some_and(|i| i.contains(t::AS_SHOT_NEUTRAL))
+    {
         return false;
     }
     let Ok(info) = raw.image() else { return false };
@@ -195,18 +274,27 @@ pub(crate) fn is_plain_cfa_tiff(tiff: &Tiff, bytes: &[u8]) -> bool {
 pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<RawImage> {
     let tiff = Tiff::parse(bytes)?;
     let ifd0 = &tiff.ifds[0];
-    let raw = raw_ifd(&tiff).ok_or_else(|| RawError::Corrupt("DNG without a raw image IFD".into()))?;
+    let raw =
+        raw_ifd(&tiff).ok_or_else(|| RawError::Corrupt("DNG without a raw image IFD".into()))?;
     // GoPro's GPR: a DNG whose raw data is VC-5 coded, which is not decoded (yet). Named here, before
     // the generic "TIFF compression 9" of the chunk decoder. Header mode still describes the file
     // (a GPR has no embedded preview, and a library keeps the photo with this reason shown, as it
     // does for any file whose pixels fail to decode, rather than refusing to import it).
     if mode == Mode::Full
-        && let Some(c) = raw.u16(t::COMPRESSION).filter(|&c| c == t::compression::VC5)
+        && let Some(c) = raw
+            .u16(t::COMPRESSION)
+            .filter(|&c| c == t::compression::VC5)
     {
-        return Err(RawError::Unsupported(format!("DNG compression {c} (GoPro VC-5) is not decoded yet")));
+        return Err(RawError::Unsupported(format!(
+            "DNG compression {c} (GoPro VC-5) is not decoded yet"
+        )));
     }
     let info = raw.image()?;
-    let (w, h, cpp) = (info.width as usize, info.height as usize, info.samples_per_pixel as usize);
+    let (w, h, cpp) = (
+        info.width as usize,
+        info.height as usize,
+        info.samples_per_pixel as usize,
+    );
     if !(1..=4).contains(&cpp) {
         return Err(RawError::Unsupported(format!("{cpp} samples per pixel")));
     }
@@ -217,21 +305,42 @@ pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<R
     // anything reads a sample as a pixel.
     if mode == Mode::Full {
         let factor = |tag| raw.u16(tag).map(usize::from).unwrap_or(1);
-        deinterleave(&mut data, w, h, cpp, factor(t::ROW_INTERLEAVE_FACTOR), factor(t::COLUMN_INTERLEAVE_FACTOR))?;
+        deinterleave(
+            &mut data,
+            w,
+            h,
+            cpp,
+            factor(t::ROW_INTERLEAVE_FACTOR),
+            factor(t::COLUMN_INTERLEAVE_FACTOR),
+        )?;
     }
 
     // linearization table (integer data only)
     let mut linearized = false;
-    if let (RawData::U16(v), Some(table)) = (&mut data, raw.u64s(t::LINEARIZATION_TABLE).filter(|t| !t.is_empty())) {
+    if let (RawData::U16(v), Some(table)) = (
+        &mut data,
+        raw.u64s(t::LINEARIZATION_TABLE).filter(|t| !t.is_empty()),
+    ) {
         let table: Vec<u16> = table.iter().map(|&x| x.min(65535) as u16).collect();
         let last = table.len() - 1;
-        v.iter_mut().for_each(|s| *s = table[(*s as usize).min(last)]);
+        v.iter_mut()
+            .for_each(|s| *s = table[(*s as usize).min(last)]);
         linearized = true;
     }
 
     let float = matches!(data, RawData::F32(_));
-    let default_white = if float { 1.0 } else { ((1u64 << bits.min(16)) - 1) as f32 };
-    let mut white: Vec<f32> = raw.f64s(t::WHITE_LEVEL).unwrap_or_default().into_iter().map(|v| v as f32).filter(|v| *v > 0.0).collect();
+    let default_white = if float {
+        1.0
+    } else {
+        ((1u64 << bits.min(16)) - 1) as f32
+    };
+    let mut white: Vec<f32> = raw
+        .f64s(t::WHITE_LEVEL)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|v| v as f32)
+        .filter(|v| *v > 0.0)
+        .collect();
     if white.is_empty() {
         white = vec![default_white];
     }
@@ -241,7 +350,15 @@ pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<R
     if let RawData::F32(v) = &mut data {
         for (i, s) in v.iter_mut().enumerate() {
             if !s.is_finite() {
-                *s = if *s > 0.0 { white.get(i % cpp).or(white.first()).copied().unwrap_or(default_white) } else { 0.0 };
+                *s = if *s > 0.0 {
+                    white
+                        .get(i % cpp)
+                        .or(white.first())
+                        .copied()
+                        .unwrap_or(default_white)
+                } else {
+                    0.0
+                };
             }
         }
     }
@@ -251,24 +368,59 @@ pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<R
         [r, c] if (1..=16).contains(r) && (1..=16).contains(c) => (*r as usize, *c as usize),
         _ => (1, 1),
     };
-    let mut values: Vec<f32> = raw.f64s(t::BLACK_LEVEL).unwrap_or_default().into_iter().map(|v| v as f32).collect();
+    let mut values: Vec<f32> = raw
+        .f64s(t::BLACK_LEVEL)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|v| v as f32)
+        .collect();
     if values.len() != br * bc * cpp {
         values = vec![values.first().copied().unwrap_or(0.0)];
     }
     let (br, bc) = if values.len() == 1 { (1, 1) } else { (br, bc) };
-    let floats = |tag| raw.f64s(tag).unwrap_or_default().into_iter().map(|v| v as f32).collect::<Vec<f32>>();
-    let black =
-        BlackLevel { repeat_rows: br, repeat_cols: bc, values, delta_h: floats(t::BLACK_LEVEL_DELTA_H), delta_v: floats(t::BLACK_LEVEL_DELTA_V) };
+    let floats = |tag| {
+        raw.f64s(tag)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| v as f32)
+            .collect::<Vec<f32>>()
+    };
+    let black = BlackLevel {
+        repeat_rows: br,
+        repeat_cols: bc,
+        values,
+        delta_h: floats(t::BLACK_LEVEL_DELTA_H),
+        delta_v: floats(t::BLACK_LEVEL_DELTA_V),
+    };
 
     let active_area = match raw.u64s(t::ACTIVE_AREA).as_deref() {
-        Some([top, left, bottom, right]) if bottom > top && right > left && (*bottom as usize) <= h && (*right as usize) <= w => {
-            Rect::new(*left as usize, *top as usize, (*right - *left) as usize, (*bottom - *top) as usize)
+        Some([top, left, bottom, right])
+            if bottom > top
+                && right > left
+                && (*bottom as usize) <= h
+                && (*right as usize) <= w =>
+        {
+            Rect::new(
+                *left as usize,
+                *top as usize,
+                (*right - *left) as usize,
+                (*bottom - *top) as usize,
+            )
         }
         _ => Rect::new(0, 0, w, h),
     };
-    let crop = match (raw.f64s(t::DEFAULT_CROP_ORIGIN).as_deref(), raw.f64s(t::DEFAULT_CROP_SIZE).as_deref()) {
+    let crop = match (
+        raw.f64s(t::DEFAULT_CROP_ORIGIN).as_deref(),
+        raw.f64s(t::DEFAULT_CROP_SIZE).as_deref(),
+    ) {
         (Some([x, y]), Some([cw, ch])) if *cw >= 1.0 && *ch >= 1.0 && *x >= 0.0 && *y >= 0.0 => {
-            Rect::new(x.round() as usize, y.round() as usize, cw.round() as usize, ch.round() as usize).clipped(active_area.width, active_area.height)
+            Rect::new(
+                x.round() as usize,
+                y.round() as usize,
+                cw.round() as usize,
+                ch.round() as usize,
+            )
+            .clipped(active_area.width, active_area.height)
         }
         _ => Rect::new(0, 0, active_area.width, active_area.height),
     };
@@ -277,7 +429,9 @@ pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<R
         if raw.u16(t::CFA_LAYOUT).unwrap_or(1) != 1 {
             return Err(RawError::Unsupported("non-rectangular CFA layout".into()));
         }
-        let dim = raw.u64s(t::CFA_REPEAT_PATTERN_DIM).unwrap_or_else(|| vec![2, 2]);
+        let dim = raw
+            .u64s(t::CFA_REPEAT_PATTERN_DIM)
+            .unwrap_or_else(|| vec![2, 2]);
         let (rows, cols) = match dim.as_slice() {
             [r, c] if (1..=16).contains(r) && (1..=16).contains(c) => (*r as usize, *c as usize),
             _ => return Err(RawError::Corrupt("bad CFARepeatPatternDim".into())),
@@ -292,25 +446,46 @@ pub(crate) fn decode_as(bytes: &[u8], mode: Mode, format: RawFormat) -> Result<R
         if pat.len() != rows * cols {
             return Err(RawError::Corrupt("CFAPattern size mismatch".into()));
         }
-        let planes = raw.bytes(t::CFA_PLANE_COLOR).map(|b| b.to_vec()).unwrap_or_else(|| vec![0, 1, 2]);
+        let planes = raw
+            .bytes(t::CFA_PLANE_COLOR)
+            .map(|b| b.to_vec())
+            .unwrap_or_else(|| vec![0, 1, 2]);
         let pattern: Vec<u8> = pat
             .iter()
-            .map(|c| planes.iter().position(|p| p == c).map(|i| i as u8).filter(|&i| i < 3))
+            .map(|c| {
+                planes
+                    .iter()
+                    .position(|p| p == c)
+                    .map(|i| i as u8)
+                    .filter(|&i| i < 3)
+            })
             .collect::<Option<_>>()
             .ok_or_else(|| RawError::Unsupported("CFA with more than three colours".into()))?;
         if cpp != 1 {
-            return Err(RawError::Unsupported("CFA data with several samples per pixel".into()));
+            return Err(RawError::Unsupported(
+                "CFA data with several samples per pixel".into(),
+            ));
         }
         // the tag is anchored at the top-left of the ActiveArea (DNG spec); `RawImage::cfa` is anchored at the
         // sensor origin (the crop to the active area shifts it back), so move the anchor out by the area's offset
-        Some(Cfa { width: cols, height: rows, pattern }.shifted(cols - active_area.x % cols, rows - active_area.y % rows))
+        Some(
+            Cfa {
+                width: cols,
+                height: rows,
+                pattern,
+            }
+            .shifted(cols - active_area.x % cols, rows - active_area.y % rows),
+        )
     } else {
         None
     };
 
     let opcode_list = |tag| raw.bytes(tag).map(opcodes::parse_list).unwrap_or_default();
-    let opcodes =
-        crate::OpcodeLists { list1: opcode_list(t::OPCODE_LIST_1), list2: opcode_list(t::OPCODE_LIST_2), list3: opcode_list(t::OPCODE_LIST_3) };
+    let opcodes = crate::OpcodeLists {
+        list1: opcode_list(t::OPCODE_LIST_1),
+        list2: opcode_list(t::OPCODE_LIST_2),
+        list3: opcode_list(t::OPCODE_LIST_3),
+    };
 
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
     metadata.width = Some(crop.width as u32);
@@ -351,7 +526,8 @@ mod tests {
         let mut out = vec![0u16; w * h];
         for r in 0..h {
             for c in 0..w {
-                out[((r % rows) * gh + r / rows) * w + (c % cols) * gw + c / cols] = image[r * w + c];
+                out[((r % rows) * gh + r / rows) * w + (c % cols) * gw + c / cols] =
+                    image[r * w + c];
             }
         }
         out
@@ -387,7 +563,11 @@ mod tests {
         let (w, h, rows, cols) = (12, 9, 3, 3);
         let image: Vec<u16> = (0..w * h).map(|i| i as u16).collect();
         let mut data = RawData::U16(interleave(&image, w, h, rows, cols));
-        assert_ne!(samples(&data), image, "the fixture has to actually be permuted");
+        assert_ne!(
+            samples(&data),
+            image,
+            "the fixture has to actually be permuted"
+        );
         deinterleave(&mut data, w, h, 1, rows, cols).unwrap();
         assert_eq!(samples(&data), image);
 
@@ -409,8 +589,17 @@ mod tests {
         // hold image rows [0,3,6,1,4,7,2,5,8]; 2 column fields of w = 4 give [0,2,1,3].
         let (w, h) = (4, 9);
         let image: Vec<u16> = (0..(w * h) as u16).collect();
-        let mut data = RawData::U16(store(&image, w, &[0, 3, 6, 1, 4, 7, 2, 5, 8], &[0, 2, 1, 3]));
-        assert_ne!(samples(&data), image, "the fixture has to actually be permuted");
+        let mut data = RawData::U16(store(
+            &image,
+            w,
+            &[0, 3, 6, 1, 4, 7, 2, 5, 8],
+            &[0, 2, 1, 3],
+        ));
+        assert_ne!(
+            samples(&data),
+            image,
+            "the fixture has to actually be permuted"
+        );
         deinterleave(&mut data, w, h, 1, 3, 2).unwrap();
         assert_eq!(samples(&data), image);
     }
@@ -424,7 +613,11 @@ mod tests {
         let (w, h) = (5, 7);
         let image: Vec<u16> = (0..(w * h) as u16).collect();
         let mut data = RawData::U16(store(&image, w, &[0, 3, 6, 1, 4, 2, 5], &[0, 2, 4, 1, 3]));
-        assert_ne!(samples(&data), image, "the fixture has to actually be permuted");
+        assert_ne!(
+            samples(&data),
+            image,
+            "the fixture has to actually be permuted"
+        );
         deinterleave(&mut data, w, h, 1, 3, 2).unwrap();
         assert_eq!(samples(&data), image);
     }

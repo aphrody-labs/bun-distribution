@@ -17,7 +17,11 @@ pub fn asr_reg(value: u32, shift: u8) -> u32 {
 }
 
 pub fn ror_imm(regs: &Regs, value: u32, shift: u8) -> u32 {
-    if shift == 0 { super::shifts::rrx(regs, value) } else { value.rotate_right(shift as u32) }
+    if shift == 0 {
+        super::shifts::rrx(regs, value)
+    } else {
+        value.rotate_right(shift as u32)
+    }
 }
 
 pub fn ror_reg(value: u32, shift: u8) -> u32 {

@@ -58,7 +58,11 @@ impl MultibootSignature {
     fn check_size(data: &'_ [u8]) -> Result<(), RawMultibootSignatureError> {
         let size = size_of::<Self>();
         if data.len() < size {
-            DataTooSmallSnafu { expected: size, actual: data.len() }.fail()
+            DataTooSmallSnafu {
+                expected: size,
+                actual: data.len(),
+            }
+            .fail()
         } else {
             Ok(())
         }
@@ -89,7 +93,10 @@ impl MultibootSignature {
 
     /// Creates a [`DisplayMultibootSignature`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayMultibootSignature<'_> {
-        DisplayMultibootSignature { multiboot_signature: self, indent }
+        DisplayMultibootSignature {
+            multiboot_signature: self,
+            indent,
+        }
     }
 
     /// Returns the magic number of this [`MultibootSignature`]. This is always equal to [`MULTIBOOT_SIGNATURE_MAGIC`].
@@ -118,8 +125,16 @@ impl Display for DisplayMultibootSignature<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let i = " ".repeat(self.indent);
         let multiboot_signature = &self.multiboot_signature;
-        writeln!(f, "{i}Magic number ... : {:#010x}", multiboot_signature.magic)?;
-        writeln!(f, "{i}RSA key seed ... : {:#010x}", multiboot_signature.key_seed)?;
+        writeln!(
+            f,
+            "{i}Magic number ... : {:#010x}",
+            multiboot_signature.magic
+        )?;
+        writeln!(
+            f,
+            "{i}RSA key seed ... : {:#010x}",
+            multiboot_signature.key_seed
+        )?;
         writeln!(
             f,
             "{i}RSA signature .. :\n{}",

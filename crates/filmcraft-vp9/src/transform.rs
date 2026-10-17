@@ -14,7 +14,12 @@ macro_rules! adst4 {
     ($name:ident, $t:ty) => {
         #[inline(always)]
         fn $name(x: [$t; 4]) -> [$t; 4] {
-            let (s1_9, s2_9, s3_9, s4_9) = (SINPI_1_9 as $t, SINPI_2_9 as $t, SINPI_3_9 as $t, SINPI_4_9 as $t);
+            let (s1_9, s2_9, s3_9, s4_9) = (
+                SINPI_1_9 as $t,
+                SINPI_2_9 as $t,
+                SINPI_3_9 as $t,
+                SINPI_4_9 as $t,
+            );
             let s0 = s1_9.wrapping_mul(x[0]);
             let s1 = s2_9.wrapping_mul(x[0]);
             let s2 = s3_9.wrapping_mul(x[1]);
@@ -29,7 +34,12 @@ macro_rules! adst4 {
             let x2 = s7;
             let x3 = s2;
             let r = |v: $t| v.wrapping_add(1 << 13) >> 14;
-            [r(x0.wrapping_add(x3)), r(x1.wrapping_add(x3)), r(x2), r(x0.wrapping_add(x1).wrapping_sub(x3))]
+            [
+                r(x0.wrapping_add(x3)),
+                r(x1.wrapping_add(x3)),
+                r(x2),
+                r(x0.wrapping_add(x1).wrapping_sub(x3)),
+            ]
         }
     };
 }
@@ -145,13 +155,27 @@ fn sat(v: i32, lim: i32) -> i32 {
 /// Inverse transform `coefs` (row-major n x n dequantized coefficients, `rows` = number of leading
 /// rows that can hold non-zero values) and add the residual to `dst` (8.6.2 step 4).
 #[allow(clippy::too_many_arguments)]
-pub fn inverse_transform_add(coefs: &[i32], tx_size: u8, tx_type: u8, lossless: bool, eob: usize, rows: usize, bit_depth: u8, dst: &mut [u16], stride: usize) {
+pub fn inverse_transform_add(
+    coefs: &[i32],
+    tx_size: u8,
+    tx_type: u8,
+    lossless: bool,
+    eob: usize,
+    rows: usize,
+    bit_depth: u8,
+    dst: &mut [u16],
+    stride: usize,
+) {
     let n = 4usize << tx_size;
     let max = (1i32 << bit_depth) - 1;
     if lossless {
         let mut t = [0i32; 16];
         for i in 0..4 {
-            let c = coefs.get(i * 4..).and_then(|c| c.first_chunk::<4>()).copied().unwrap_or_default();
+            let c = coefs
+                .get(i * 4..)
+                .and_then(|c| c.first_chunk::<4>())
+                .copied()
+                .unwrap_or_default();
             let r = iwht4(c, 2);
             t[i * 4..i * 4 + 4].copy_from_slice(&r);
         }
@@ -182,7 +206,14 @@ pub fn inverse_transform_add(coefs: &[i32], tx_size: u8, tx_type: u8, lossless: 
     }
     let row_adst = matches!(tx_type, DCT_ADST | ADST_ADST);
     let col_adst = matches!(tx_type, ADST_DCT | ADST_ADST);
-    let p = TxParams { row_adst, col_adst, rows, shift, round, max };
+    let p = TxParams {
+        row_adst,
+        col_adst,
+        rows,
+        shift,
+        round,
+        max,
+    };
     match (tx_size, bit_depth == 8) {
         (0, true) => itx_narrow::<4>(coefs, &p, dst, stride),
         (1, true) => itx_narrow::<8>(coefs, &p, dst, stride),
@@ -220,12 +251,20 @@ fn itx_narrow<const N: usize>(coefs: &[i32], p: &TxParams, dst: &mut [u16], stri
     // Column pass across 4 / 8 columns at once (the same butterflies on lane vectors), then
     // the rounding, residual add and clipping per row of lanes.
     if N == 4 {
-        let x: [Cols<4>; N] = std::array::from_fn(|i| Cols(t[i].first_chunk::<4>().copied().unwrap_or_default()));
+        let x: [Cols<4>; N] =
+            std::array::from_fn(|i| Cols(t[i].first_chunk::<4>().copied().unwrap_or_default()));
         let y = col_tx4(x, p.col_adst);
         add_cols(&y, 0, p, dst, stride);
     } else {
         for c0 in (0..N).step_by(8) {
-            let x: [Cols<8>; N] = std::array::from_fn(|i| Cols(t[i].get(c0..).and_then(|r| r.first_chunk::<8>()).copied().unwrap_or_default()));
+            let x: [Cols<8>; N] = std::array::from_fn(|i| {
+                Cols(
+                    t[i].get(c0..)
+                        .and_then(|r| r.first_chunk::<8>())
+                        .copied()
+                        .unwrap_or_default(),
+                )
+            });
             let y = col_tx8(x, p.col_adst);
             add_cols(&y, c0, p, dst, stride);
         }
@@ -234,9 +273,18 @@ fn itx_narrow<const N: usize>(coefs: &[i32], p: &TxParams, dst: &mut [u16], stri
 
 /// Round the column pass output `y` (columns c0..c0 + W of every row) and add it to `dst`.
 #[inline(always)]
-fn add_cols<const N: usize, const W: usize>(y: &[Cols<W>; N], c0: usize, p: &TxParams, dst: &mut [u16], stride: usize) {
+fn add_cols<const N: usize, const W: usize>(
+    y: &[Cols<W>; N],
+    c0: usize,
+    p: &TxParams,
+    dst: &mut [u16],
+    stride: usize,
+) {
     for (i, v) in y.iter().enumerate() {
-        let Some(d) = dst.get_mut(i * stride + c0..).and_then(|d| d.first_chunk_mut::<W>()) else {
+        let Some(d) = dst
+            .get_mut(i * stride + c0..)
+            .and_then(|d| d.first_chunk_mut::<W>())
+        else {
             return;
         };
         for j in 0..W {
@@ -291,7 +339,11 @@ impl<const W: usize> std::ops::Shr<i32> for Cols<W> {
 #[inline(always)]
 fn col_tx4<const N: usize>(x: [Cols<4>; N], adst: bool) -> [Cols<4>; N] {
     use crate::transform_gen::cols4;
-    let r = if adst { iadst4_cols(fixed(&x)) } else { cols4::idct4(fixed(&x)) };
+    let r = if adst {
+        iadst4_cols(fixed(&x))
+    } else {
+        cols4::idct4(fixed(&x))
+    };
     std::array::from_fn(|i| r[i])
 }
 
@@ -333,7 +385,12 @@ fn iadst4_cols(x: [Cols<4>; 4]) -> [Cols<4>; 4] {
     let x2 = s7;
     let x3 = s2;
     let r = |v: Cols<4>| v.wrapping_add(1 << 13) >> 14;
-    [r(x0.wrapping_add(x3)), r(x1.wrapping_add(x3)), r(x2), r(x0.wrapping_add(x1).wrapping_sub(x3))]
+    [
+        r(x0.wrapping_add(x3)),
+        r(x1.wrapping_add(x3)),
+        r(x2),
+        r(x0.wrapping_add(x1).wrapping_sub(x3)),
+    ]
 }
 
 /// 2D inverse transform of size N with 64-bit intermediates (high bit depth).
@@ -357,7 +414,8 @@ fn itx_wide<const N: usize>(coefs: &[i32], p: &TxParams, dst: &mut [u16], stride
         tx1d_wide(&mut col, N, p.col_adst);
         for i in 0..N {
             let d = &mut dst[i * stride + j];
-            let r = ((col[i].clamp(-lim, lim) + p.round as i64) >> p.shift).clamp(-(1 << 30), 1 << 30) as i32;
+            let r = ((col[i].clamp(-lim, lim) + p.round as i64) >> p.shift)
+                .clamp(-(1 << 30), 1 << 30) as i32;
             *d = (*d as i32 + r).clamp(0, p.max) as u16;
         }
     }
@@ -375,7 +433,9 @@ mod tests {
             .map(|x| {
                 let mut s = input[0] / 2f64.sqrt();
                 for (k, &v) in input.iter().enumerate().skip(1) {
-                    s += v * ((2 * x + 1) as f64 * k as f64 * std::f64::consts::PI / (2 * n) as f64).cos();
+                    s += v
+                        * ((2 * x + 1) as f64 * k as f64 * std::f64::consts::PI / (2 * n) as f64)
+                            .cos();
                 }
                 s
             })
@@ -393,7 +453,10 @@ mod tests {
                 inp[k] = 1000.0;
                 let r = float_idct(&inp);
                 for (a, b) in buf.iter().zip(&r) {
-                    assert!((*a as f64 - b).abs() <= 3.0, "n {n} k {k}: {buf:?} vs {r:?}");
+                    assert!(
+                        (*a as f64 - b).abs() <= 3.0,
+                        "n {n} k {k}: {buf:?} vs {r:?}"
+                    );
                 }
                 let mut w: Vec<i64> = vec![0; n];
                 w[k] = 1000;
@@ -412,10 +475,20 @@ mod tests {
                 buf[k] = 1000;
                 tx1d_narrow(&mut buf, n, true);
                 let r: Vec<f64> = (0..n)
-                    .map(|x| 1000.0 * ((2 * x + 1) as f64 * (2 * k + 1) as f64 * std::f64::consts::PI / (4 * n) as f64).sin() * 2f64.sqrt() / 2f64.sqrt())
+                    .map(|x| {
+                        1000.0
+                            * ((2 * x + 1) as f64 * (2 * k + 1) as f64 * std::f64::consts::PI
+                                / (4 * n) as f64)
+                                .sin()
+                            * 2f64.sqrt()
+                            / 2f64.sqrt()
+                    })
                     .collect();
                 for (a, b) in buf.iter().zip(&r) {
-                    assert!((*a as f64 - b).abs() <= 4.0, "n {n} k {k}: {buf:?} vs {r:?}");
+                    assert!(
+                        (*a as f64 - b).abs() <= 4.0,
+                        "n {n} k {k}: {buf:?} vs {r:?}"
+                    );
                 }
             }
         }
@@ -424,8 +497,15 @@ mod tests {
             let mut buf = vec![0i32; 4];
             buf[k] = 1000;
             tx1d_narrow(&mut buf, 4, true);
-            let r: Vec<f64> =
-                (0..4).map(|x| 1000.0 * (std::f64::consts::PI * (x + 1) as f64 * (2 * k + 1) as f64 / 9.0).sin() * 2.0 * 2f64.sqrt() / 3.0).collect();
+            let r: Vec<f64> = (0..4)
+                .map(|x| {
+                    1000.0
+                        * (std::f64::consts::PI * (x + 1) as f64 * (2 * k + 1) as f64 / 9.0).sin()
+                        * 2.0
+                        * 2f64.sqrt()
+                        / 3.0
+                })
+                .collect();
             for (a, b) in buf.iter().zip(&r) {
                 assert!((*a as f64 - b).abs() <= 3.0, "k {k}: {buf:?} vs {r:?}");
             }
@@ -469,7 +549,9 @@ mod tests {
             tx1d_narrow(&mut col, N, p.col_adst);
             for i in 0..N {
                 let d = &mut dst[i * stride + j];
-                *d = (*d as i32 + (col[i].wrapping_add(p.round) >> p.shift).clamp(-(1 << 20), 1 << 20)).clamp(0, p.max) as u16;
+                *d = (*d as i32
+                    + (col[i].wrapping_add(p.round) >> p.shift).clamp(-(1 << 20), 1 << 20))
+                .clamp(0, p.max) as u16;
             }
         }
     }
@@ -484,11 +566,30 @@ mod tests {
         let tx_size = N.trailing_zeros() - 2;
         let shift = (tx_size + 4).min(6);
         for case in 0..200 {
-            let (row_adst, col_adst) = if N == 32 { (false, false) } else { (case & 1 == 1, case & 2 == 2) };
+            let (row_adst, col_adst) = if N == 32 {
+                (false, false)
+            } else {
+                (case & 1 == 1, case & 2 == 2)
+            };
             let rows = 1 + rnd() as usize % N;
             let big = if case % 7 == 0 { 1 << 22 } else { 2000 };
-            let coefs: Vec<i32> = (0..N * N).map(|i| if i / N < rows && rnd() % 3 == 0 { (rnd() % (2 * big)) as i32 - big as i32 } else { 0 }).collect();
-            let p = TxParams { row_adst, col_adst, rows, shift, round: 1 << (shift - 1), max: 255 };
+            let coefs: Vec<i32> = (0..N * N)
+                .map(|i| {
+                    if i / N < rows && rnd() % 3 == 0 {
+                        (rnd() % (2 * big)) as i32 - big as i32
+                    } else {
+                        0
+                    }
+                })
+                .collect();
+            let p = TxParams {
+                row_adst,
+                col_adst,
+                rows,
+                shift,
+                round: 1 << (shift - 1),
+                max: 255,
+            };
             let stride = N + 5;
             let base: Vec<u16> = (0..N * stride).map(|_| (rnd() % 256) as u16).collect();
             let (mut a, mut b) = (base.clone(), base);

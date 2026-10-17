@@ -198,7 +198,11 @@ pub fn find_mode(slug: &str) -> Option<&'static ModeDef> {
     MODES
         .iter()
         .find(|definition| definition.slug == slug)
-        .or_else(|| MODES.iter().find(|definition| definition.legacy_slug == Some(slug)))
+        .or_else(|| {
+            MODES
+                .iter()
+                .find(|definition| definition.legacy_slug == Some(slug))
+        })
 }
 
 #[cfg(test)]
@@ -208,9 +212,19 @@ mod tests {
     #[test]
     fn catalog_has_unique_slugs_and_five_official_modes() {
         assert_eq!(MODES.len(), 12);
-        assert_eq!(MODES.iter().filter(|definition| definition.official).count(), 5);
+        assert_eq!(
+            MODES
+                .iter()
+                .filter(|definition| definition.official)
+                .count(),
+            5
+        );
         for (index, definition) in MODES.iter().enumerate() {
-            assert!(MODES[..index].iter().all(|earlier| earlier.slug != definition.slug));
+            assert!(
+                MODES[..index]
+                    .iter()
+                    .all(|earlier| earlier.slug != definition.slug)
+            );
         }
     }
 

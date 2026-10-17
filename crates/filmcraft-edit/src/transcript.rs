@@ -69,12 +69,17 @@ pub fn sequence_words(seq: &Sequence, transcripts: &Transcripts) -> Vec<SeqWord>
             if !it.enabled || it.reverse || it.frame_hold.is_some() || it.speed <= 0.0 {
                 continue;
             }
-            let Some(tr) = transcripts.get(&it.item) else { continue };
+            let Some(tr) = transcripts.get(&it.item) else {
+                continue;
+            };
             mine.push(it.range());
             let speed = it.speed;
             let media_end = it.source_in + ticks(it.duration.0 as f64 * speed);
             let to_tl = |m: Tick| it.start + ticks((m - it.source_in).0 as f64 / speed);
-            for wi in tr.words_in(TimeRange::from_bounds(it.source_in, media_end.max(it.source_in))) {
+            for wi in tr.words_in(TimeRange::from_bounds(
+                it.source_in,
+                media_end.max(it.source_in),
+            )) {
                 let w = &tr.words[wi];
                 let (a, b) = (to_tl(w.start), to_tl(w.end.max(w.start)));
                 let mid = Tick(a.0 + (b.0 - a.0) / 2);
@@ -113,7 +118,10 @@ pub fn paragraphs(words: &[SeqWord], gap: Tick) -> Vec<std::ops::Range<usize>> {
     let mut out = Vec::new();
     let mut a = 0;
     for i in 1..=words.len() {
-        if i == words.len() || words[i].speaker != words[i - 1].speaker || words[i].start - words[i - 1].end >= gap {
+        if i == words.len()
+            || words[i].speaker != words[i - 1].speaker
+            || words[i].start - words[i - 1].end >= gap
+        {
             if a < i {
                 out.push(a..i);
             }
@@ -126,14 +134,24 @@ pub fn paragraphs(words: &[SeqWord], gap: Tick) -> Vec<std::ops::Range<usize>> {
 /// Matches of `query` (one or more words, case and punctuation ignored; the last query word may be
 /// a prefix) as word index ranges.
 pub fn search(words: &[SeqWord], query: &str) -> Vec<std::ops::Range<usize>> {
-    let q: Vec<String> = query.split_whitespace().map(filmcraft_project::transcript::normalize_word).filter(|s| !s.is_empty()).collect();
+    let q: Vec<String> = query
+        .split_whitespace()
+        .map(filmcraft_project::transcript::normalize_word)
+        .filter(|s| !s.is_empty())
+        .collect();
     if q.is_empty() {
         return Vec::new();
     }
     let norm: Vec<String> = words.iter().map(SeqWord::normalized).collect();
     let mut out = Vec::new();
     for i in 0..norm.len().saturating_sub(q.len() - 1) {
-        let ok = q.iter().enumerate().all(|(k, qw)| if k + 1 == q.len() { norm[i + k].starts_with(qw.as_str()) } else { norm[i + k] == *qw });
+        let ok = q.iter().enumerate().all(|(k, qw)| {
+            if k + 1 == q.len() {
+                norm[i + k].starts_with(qw.as_str())
+            } else {
+                norm[i + k] == *qw
+            }
+        });
         if ok {
             out.push(i..i + q.len());
         }
@@ -191,7 +209,9 @@ pub fn find_pauses(words: &[SeqWord], min: Tick, keep: Tick, rate: FrameRate) ->
 }
 
 /// The default filler words and phrases (configurable in preferences and per command).
-pub const DEFAULT_FILLERS: &[&str] = &["um", "uh", "umm", "uhm", "erm", "er", "ah", "hmm", "mm", "mhm"];
+pub const DEFAULT_FILLERS: &[&str] = &[
+    "um", "uh", "umm", "uhm", "erm", "er", "ah", "hmm", "mm", "mhm",
+];
 
 /// Filler words: word index ranges matching one of `fillers` (each a word or a phrase such as
 /// "you know"; case and punctuation ignored).
@@ -199,7 +219,12 @@ pub fn find_fillers(words: &[SeqWord], fillers: &[String]) -> Vec<std::ops::Rang
     let norm: Vec<String> = words.iter().map(SeqWord::normalized).collect();
     let mut phrases: Vec<Vec<String>> = fillers
         .iter()
-        .map(|f| f.split_whitespace().map(filmcraft_project::transcript::normalize_word).filter(|s| !s.is_empty()).collect::<Vec<_>>())
+        .map(|f| {
+            f.split_whitespace()
+                .map(filmcraft_project::transcript::normalize_word)
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+        })
         .filter(|p| !p.is_empty())
         .collect();
     // longest phrases first, so "you know" wins over a lone "you"
@@ -207,7 +232,9 @@ pub fn find_fillers(words: &[SeqWord], fillers: &[String]) -> Vec<std::ops::Rang
     let mut out = Vec::new();
     let mut i = 0;
     while i < norm.len() {
-        let hit = phrases.iter().find(|p| i + p.len() <= norm.len() && p.iter().enumerate().all(|(k, w)| norm[i + k] == *w));
+        let hit = phrases.iter().find(|p| {
+            i + p.len() <= norm.len() && p.iter().enumerate().all(|(k, w)| norm[i + k] == *w)
+        });
         match hit {
             Some(p) => {
                 out.push(i..i + p.len());
@@ -221,7 +248,11 @@ pub fn find_fillers(words: &[SeqWord], fillers: &[String]) -> Vec<std::ops::Rang
 
 /// Timeline ranges removing the filler words `hits`: each word range snapped to the nearest frames
 /// (never into the neighbouring words' frames).
-pub fn filler_ranges(words: &[SeqWord], hits: &[std::ops::Range<usize>], rate: FrameRate) -> Vec<TimeRange> {
+pub fn filler_ranges(
+    words: &[SeqWord],
+    hits: &[std::ops::Range<usize>],
+    rate: FrameRate,
+) -> Vec<TimeRange> {
     let mut out = Vec::new();
     for h in hits {
         let (a, b) = (h.start, h.end - 1);
@@ -248,7 +279,9 @@ pub fn merge_ranges(mut r: Vec<TimeRange>) -> Vec<TimeRange> {
     let mut out: Vec<TimeRange> = Vec::new();
     for x in r {
         match out.last_mut() {
-            Some(l) if x.start <= l.end() => *l = TimeRange::from_bounds(l.start, l.end().max(x.end())),
+            Some(l) if x.start <= l.end() => {
+                *l = TimeRange::from_bounds(l.start, l.end().max(x.end()))
+            }
             _ => out.push(x),
         }
     }
@@ -258,7 +291,11 @@ pub fn merge_ranges(mut r: Vec<TimeRange>) -> Vec<TimeRange> {
 /// Ripple-delete every range on every unlocked track (and sync-locked caption tracks), right to
 /// left so earlier ranges keep their positions. Returns the total time removed.
 pub fn ripple_delete_ranges(seq: &mut Sequence, ranges: Vec<TimeRange>, ctx: &mut EditCtx) -> Tick {
-    let tracks: Vec<TrackId> = seq.all_tracks().filter(|t| !t.locked).map(|t| t.id).collect();
+    let tracks: Vec<TrackId> = seq
+        .all_tracks()
+        .filter(|t| !t.locked)
+        .map(|t| t.id)
+        .collect();
     let mut total = Tick::ZERO;
     for r in merge_ranges(ranges).into_iter().rev() {
         if r.duration <= Tick::ZERO {
@@ -318,7 +355,11 @@ pub struct CaptionBlock {
 /// at a pause of `break_pause`, after `max_duration`, or after sentence-ending punctuation once the
 /// block is past half full. Times are snapped to frames, blocks never overlap and keep
 /// `gap_frames` between them.
-pub fn caption_blocks(words: &[SeqWord], rules: &CaptionRules, rate: FrameRate) -> Vec<CaptionBlock> {
+pub fn caption_blocks(
+    words: &[SeqWord],
+    rules: &CaptionRules,
+    rate: FrameRate,
+) -> Vec<CaptionBlock> {
     let max_chars = rules.max_chars.max(1);
     let max_lines = rules.lines.max(1);
     let cap_chars = max_chars * max_lines;
@@ -335,8 +376,11 @@ pub fn caption_blocks(words: &[SeqWord], rules: &CaptionRules, rate: FrameRate) 
             let fits = fits_line || lines.len() < max_lines;
             let used: usize = lines.iter().sum::<usize>() + lines.len() - 1;
             let sentence_end = prev.text.ends_with(['.', '?', '!']) && used * 2 >= cap_chars;
-            let brk =
-                !fits || w.speaker != prev.speaker || w.start - prev.end >= rules.break_pause || w.end - words[a].start > rules.max_duration || sentence_end;
+            let brk = !fits
+                || w.speaker != prev.speaker
+                || w.start - prev.end >= rules.break_pause
+                || w.end - words[a].start > rules.max_duration
+                || sentence_end;
             if brk {
                 groups.push(a..i);
                 a = i;
@@ -364,7 +408,9 @@ pub fn caption_blocks(words: &[SeqWord], rules: &CaptionRules, rate: FrameRate) 
     for g in groups {
         let mut text_lines: Vec<String> = vec![String::new()];
         for w in &words[g.clone()] {
-            let Some(l) = text_lines.last_mut() else { break };
+            let Some(l) = text_lines.last_mut() else {
+                break;
+            };
             if l.is_empty() {
                 l.push_str(&w.text);
             } else if l.chars().count() + 1 + w.text.chars().count() <= max_chars {
@@ -379,7 +425,13 @@ pub fn caption_blocks(words: &[SeqWord], rules: &CaptionRules, rate: FrameRate) 
         if end < words[g.end - 1].end {
             end += fd;
         }
-        out.push(CaptionBlock { start, end: end.max(start + fd), text: text_lines.join("\n"), speaker: words[g.start].speaker.clone(), words: g });
+        out.push(CaptionBlock {
+            start,
+            end: end.max(start + fd),
+            text: text_lines.join("\n"),
+            speaker: words[g.start].speaker.clone(),
+            words: g,
+        });
     }
     // no overlaps, minimum duration (into the silence after a block, never over the next one)
     for i in 0..out.len() {

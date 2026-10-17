@@ -40,7 +40,10 @@ pub struct RunReport {
 struct ReportSink(Arc<Mutex<RunReport>>);
 
 /// The app running `machine`; call `.run()` and then read the report.
-pub fn machine_app(machine: Box<dyn Machine>, options: &RunOptions) -> (App, Arc<Mutex<RunReport>>) {
+pub fn machine_app(
+    machine: Box<dyn Machine>,
+    options: &RunOptions,
+) -> (App, Arc<Mutex<RunReport>>) {
     let mut app = App::new();
     let engine = if options.headless {
         BunEnginePlugin::headless()
@@ -57,7 +60,11 @@ pub fn machine_app(machine: Box<dyn Machine>, options: &RunOptions) -> (App, Arc
     #[cfg(feature = "render")]
     if options.fsr && !options.headless {
         let image = app.world().resource::<super::MachineScreen>().image.clone();
-        app.insert_resource(super::fsr1::Fsr1Upscale { image, sharpness_stops: options.sharpness_stops, target: None });
+        app.insert_resource(super::fsr1::Fsr1Upscale {
+            image,
+            sharpness_stops: options.sharpness_stops,
+            target: None,
+        });
     }
     let report = Arc::new(Mutex::new(RunReport::default()));
     app.insert_resource(ReportSink(report.clone()))

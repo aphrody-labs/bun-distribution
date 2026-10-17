@@ -7,7 +7,9 @@
 use crate::convert::{Buf, Meta, Model, Raw, check_size, finish};
 use crate::space::{NamedSpace, SourceSpace, SpaceOrigin, Trc};
 use crate::{DecodeOptions, Decoded, Error, Format, Result};
-use jxl_oxide::color::{ColourSpace, EnumColourEncoding, Primaries, RenderingIntent, TransferFunction, WhitePoint};
+use jxl_oxide::color::{
+    ColourSpace, EnumColourEncoding, Primaries, RenderingIntent, TransferFunction, WhitePoint,
+};
 use jxl_oxide::{AuxBoxData, JxlImage};
 
 const F: Format = Format::Jxl;
@@ -17,22 +19,38 @@ fn err(e: impl std::fmt::Display) -> Error {
 }
 
 pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
-    let mut img = JxlImage::builder().read(std::io::Cursor::new(bytes)).map_err(err)?;
+    let mut img = JxlImage::builder()
+        .read(std::io::Cursor::new(bytes))
+        .map_err(err)?;
     let (w, h) = (img.width(), img.height());
     check_size(F, w as u64, h as u64, opts)?;
     let header = img.image_header();
     let bits = header.metadata.bit_depth.bits_per_sample() as u8;
-    let float = matches!(header.metadata.bit_depth, jxl_oxide::image::BitDepth::FloatSample { .. });
+    let float = matches!(
+        header.metadata.bit_depth,
+        jxl_oxide::image::BitDepth::FloatSample { .. }
+    );
     let gray = header.metadata.grayscale();
     let icc = img.original_icc().map(|v| v.to_vec());
-    let mut meta = Meta { orientation: Some(1), ..Default::default() };
+    let mut meta = Meta {
+        orientation: Some(1),
+        ..Default::default()
+    };
     // linear sRGB primaries, unclamped, then our own matrix to Rec.2020 (see the module docs)
     let via_srgb = icc.is_none() && !gray && header.metadata.xyb_encoded;
     if icc.is_none() {
         img.request_color_encoding(EnumColourEncoding {
-            colour_space: if gray { ColourSpace::Grey } else { ColourSpace::Rgb },
+            colour_space: if gray {
+                ColourSpace::Grey
+            } else {
+                ColourSpace::Rgb
+            },
             white_point: WhitePoint::D65,
-            primaries: if via_srgb { Primaries::Srgb } else { Primaries::Bt2100 },
+            primaries: if via_srgb {
+                Primaries::Srgb
+            } else {
+                Primaries::Bt2100
+            },
             tf: TransferFunction::Linear,
             rendering_intent: RenderingIntent::Relative,
         });
@@ -46,7 +64,11 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
         meta.exif = Some(ex.payload().to_vec());
     }
     if let AuxBoxData::Data(x) = img.aux_boxes().first_xml() {
-        meta.xmp = Some(String::from_utf8_lossy(x).trim_end_matches('\0').to_string());
+        meta.xmp = Some(
+            String::from_utf8_lossy(x)
+                .trim_end_matches('\0')
+                .to_string(),
+        );
     }
     let render = img.render_frame(0).map_err(err)?;
     let fb = render.image_all_channels();
@@ -59,7 +81,9 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
     let keep = n_color + has_alpha as usize;
     let src = fb.buf();
     let mut v = Vec::with_capacity(fw * fh * keep);
-    let to_2020 = lightcraft_color::SRGB.to_space(&lightcraft_color::REC2020).to_f32();
+    let to_2020 = lightcraft_color::SRGB
+        .to_space(&lightcraft_color::REC2020)
+        .to_f32();
     for px in src.chunks_exact(ch) {
         let start = v.len();
         v.extend_from_slice(&px[..keep.min(ch)]);

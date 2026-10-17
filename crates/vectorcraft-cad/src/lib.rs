@@ -34,8 +34,15 @@ const MAX_NEST: u32 = 8;
 const CAP_HEIGHT: f64 = 0.7;
 
 /// The `$INSUNITS` codes of the units documents use (feet and inches write feet).
-const INSUNITS: [(u8, Unit); 7] =
-    [(1, Unit::Inches), (2, Unit::Feet), (2, Unit::FeetInches), (4, Unit::Millimeters), (5, Unit::Centimeters), (6, Unit::Meters), (10, Unit::Yards)];
+const INSUNITS: [(u8, Unit); 7] = [
+    (1, Unit::Inches),
+    (2, Unit::Feet),
+    (2, Unit::FeetInches),
+    (4, Unit::Millimeters),
+    (5, Unit::Centimeters),
+    (6, Unit::Meters),
+    (10, Unit::Yards),
+];
 
 /// The `$INSUNITS` code of `unit` (none for points, picas and pixels).
 fn insunits_code(unit: Unit) -> Option<u8> {
@@ -59,7 +66,17 @@ pub enum DxfVersion {
 
 impl DxfVersion {
     /// Newest first, as version menus list them.
-    pub const ALL: [Self; 9] = [Self::R2018, Self::R2013, Self::R2010, Self::R2007, Self::R2004, Self::R2000, Self::R14, Self::R13, Self::R12];
+    pub const ALL: [Self; 9] = [
+        Self::R2018,
+        Self::R2013,
+        Self::R2010,
+        Self::R2007,
+        Self::R2004,
+        Self::R2000,
+        Self::R14,
+        Self::R13,
+        Self::R12,
+    ];
 
     /// The `version` param value.
     pub fn id(self) -> &'static str {
@@ -111,7 +128,9 @@ impl DxfVersion {
         let s = s.trim();
         Self::ALL.into_iter().find(|v| {
             let id = v.id();
-            s.eq_ignore_ascii_case(id) || s.eq_ignore_ascii_case(v.acadver()) || s.strip_prefix(['R', 'r']).is_some_and(|y| y == id)
+            s.eq_ignore_ascii_case(id)
+                || s.eq_ignore_ascii_case(v.acadver())
+                || s.strip_prefix(['R', 'r']).is_some_and(|y| y == id)
         })
     }
 
@@ -225,7 +244,9 @@ impl RasterFormat {
         if s.eq_ignore_ascii_case("jpg") {
             return Some(Self::Jpeg);
         }
-        Self::ALL.into_iter().find(|f| s.eq_ignore_ascii_case(f.id()))
+        Self::ALL
+            .into_iter()
+            .find(|f| s.eq_ignore_ascii_case(f.id()))
     }
 }
 
@@ -260,7 +281,9 @@ impl Preserve {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|p| s.trim().eq_ignore_ascii_case(p.id()))
+        Self::ALL
+            .into_iter()
+            .find(|p| s.trim().eq_ignore_ascii_case(p.id()))
     }
 }
 
@@ -329,7 +352,12 @@ pub const SCALE_RANGE: std::ops::RangeInclusive<f64> = 1e-6..=1e6;
 /// layers, guides and hidden objects are left out.
 pub fn export(doc: &Document, opts: &DxfOptions) -> Result<DxfOutput, String> {
     if !(opts.scale.is_finite() && SCALE_RANGE.contains(&opts.scale)) {
-        return Err(format!("scale must be a number from {} to {}, not {}", SCALE_RANGE.start(), SCALE_RANGE.end(), opts.scale));
+        return Err(format!(
+            "scale must be a number from {} to {}, not {}",
+            SCALE_RANGE.start(),
+            SCALE_RANGE.end(),
+            opts.scale
+        ));
     }
     let r = opts.region;
     if ![r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()) {

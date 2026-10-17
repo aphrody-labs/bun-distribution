@@ -1,7 +1,7 @@
 use super::{
+    StandardMaterialAssets,
     allocator::{RetainedBindingArray, SlotAllocator},
     instances::InstanceState,
-    StandardMaterialAssets,
 };
 use bevy_asset::AssetId;
 use bevy_color::{ColorToComponents, LinearRgba};

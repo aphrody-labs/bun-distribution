@@ -8,7 +8,7 @@ use core::{
 use std::io;
 
 use bevy_asset::{
-    io::Reader, Asset, AssetEvent, AssetId, AssetLoader, AssetPath, Assets, Handle, LoadContext,
+    Asset, AssetEvent, AssetId, AssetLoader, AssetPath, Assets, Handle, LoadContext, io::Reader,
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
@@ -19,13 +19,13 @@ use bevy_ecs::{
     system::{Local, Res, ResMut},
     template::FromTemplate,
 };
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
-use bevy_reflect::{prelude::ReflectDefault, Reflect, TypePath};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
+use bevy_reflect::{Reflect, TypePath, prelude::ReflectDefault};
 use bitvec::vec::BitVec;
 use derive_more::derive::From;
 use petgraph::{
-    graph::{DiGraph, NodeIndex},
     Direction,
+    graph::{DiGraph, NodeIndex},
 };
 use ron::de::SpannedError;
 use serde::{Deserialize, Serialize};
@@ -905,7 +905,9 @@ impl TryFrom<AnimationGraph> for SerializedAnimationGraph {
 
 /// Error for when only path [`Handle`]s are supported.
 #[derive(Error, Debug)]
-#[error("AnimationGraph contains a handle to an AnimationClip that does not correspond to an asset path")]
+#[error(
+    "AnimationGraph contains a handle to an AnimationClip that does not correspond to an asset path"
+)]
 pub struct NonPathHandleError;
 
 /// A system that creates, updates, and removes [`ThreadedAnimationGraph`]
@@ -1288,10 +1290,9 @@ mod tests {
     use petgraph::graph::NodeIndex;
 
     use crate::{
-        animated_field,
+        AnimationClip, AnimationTargetId, animated_field,
         animation_curves::AnimatableCurve,
         graph::{AnimationGraph, ThreadedAnimationGraph},
-        AnimationClip, AnimationTargetId,
     };
 
     /// Tests that each target's subgraph only contains clips relevant to that

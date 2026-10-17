@@ -436,7 +436,10 @@ fn is_valid_pclntab_magic(data: &[u8]) -> bool {
         return false;
     }
     let magic = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-    matches!(magic, PCLNTAB_MAGIC_12 | PCLNTAB_MAGIC_116 | PCLNTAB_MAGIC_118 | PCLNTAB_MAGIC_120)
+    matches!(
+        magic,
+        PCLNTAB_MAGIC_12 | PCLNTAB_MAGIC_116 | PCLNTAB_MAGIC_118 | PCLNTAB_MAGIC_120
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -504,7 +507,11 @@ fn parse_pclntab_118_120(
 
     // In Go 1.18 the header is 8 + 3*ptr_size bytes.
     // In Go 1.20 the text_start field was removed so it's 8 + 2*ptr_size.
-    let header_size = if is_120 { 8 + 2 * ptr_size } else { 8 + 3 * ptr_size };
+    let header_size = if is_120 {
+        8 + 2 * ptr_size
+    } else {
+        8 + 3 * ptr_size
+    };
 
     // FuncTab array: num_functions+1 entries, each is 2*ptr_size bytes
     // (entry_pc, entry_offset_into_func_data).
@@ -685,7 +692,11 @@ fn parse_pclntab_12(tab: &[u8], _full_binary: &[u8]) -> (usize, Vec<GoFunc>, Vec
         let name = read_cstr(tab, name_off);
         total += 1;
         if funcs.len() < MAX_FUNCS && !name.is_empty() {
-            funcs.push(GoFunc { name, addr: func_pc, file: String::new() });
+            funcs.push(GoFunc {
+                name,
+                addr: func_pc,
+                file: String::new(),
+            });
         }
     }
 
@@ -701,13 +712,17 @@ fn parse_pclntab_12(tab: &[u8], _full_binary: &[u8]) -> (usize, Vec<GoFunc>, Vec
 fn read_uint(data: &[u8], offset: usize, size: usize) -> u64 {
     match size {
         4 => {
-            let Some(b) = data.get(offset..offset + 4) else { return 0 };
+            let Some(b) = data.get(offset..offset + 4) else {
+                return 0;
+            };
             u64::from(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-        },
+        }
         8 => {
-            let Some(b) = data.get(offset..offset + 8) else { return 0 };
+            let Some(b) = data.get(offset..offset + 8) else {
+                return 0;
+            };
             u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]])
-        },
+        }
         _ => 0,
     }
 }
@@ -716,7 +731,10 @@ fn read_uint(data: &[u8], offset: usize, size: usize) -> u64 {
 /// Used to distinguish real function names from garbage bytes.
 fn looks_like_func_char(c: char) -> bool {
     c.is_ascii_alphanumeric()
-        || matches!(c, '.' | '_' | '/' | '(' | ')' | '*' | '[' | ']' | '{' | '}' | ',')
+        || matches!(
+            c,
+            '.' | '_' | '/' | '(' | ')' | '*' | '[' | ']' | '{' | '}' | ','
+        )
 }
 
 /// Read a NUL-terminated UTF-8 string from `data[offset..]`.
@@ -726,7 +744,10 @@ fn read_cstr(data: &[u8], offset: usize) -> String {
         Some(s) if !s.is_empty() => s,
         _ => return String::new(),
     };
-    let end = slice.iter().position(|&b| b == 0).unwrap_or(slice.len().min(512));
+    let end = slice
+        .iter()
+        .position(|&b| b == 0)
+        .unwrap_or(slice.len().min(512));
     String::from_utf8_lossy(&slice[..end]).into_owned()
 }
 
@@ -790,8 +811,15 @@ fn sample_types(data: &[u8], limit: usize) -> Vec<String> {
     //
     // We look for sequences that start with one of these ASCII patterns and
     // read up to 128 readable chars.
-    let type_prefixes: &[&[u8]] =
-        &[b"*", b"[]", b"map[", b"chan ", b"func(", b"interface {", b"struct {"];
+    let type_prefixes: &[&[u8]] = &[
+        b"*",
+        b"[]",
+        b"map[",
+        b"chan ",
+        b"func(",
+        b"interface {",
+        b"struct {",
+    ];
 
     'outer: for (idx, window) in data.windows(2).enumerate() {
         if types.len() >= limit {
@@ -804,7 +832,9 @@ fn sample_types(data: &[u8], limit: usize) -> Vec<String> {
         }
         let name_start = idx + 1;
         let name_end = name_start.saturating_add(len_byte);
-        let Some(name_bytes) = data.get(name_start..name_end) else { continue };
+        let Some(name_bytes) = data.get(name_start..name_end) else {
+            continue;
+        };
 
         // Must start with a known prefix and be valid UTF-8.
         let matches_prefix = type_prefixes.iter().any(|p| name_bytes.starts_with(p));
@@ -812,7 +842,10 @@ fn sample_types(data: &[u8], limit: usize) -> Vec<String> {
             continue;
         }
         // Validate that all bytes are printable ASCII or common UTF-8 chars.
-        if !name_bytes.iter().all(|&b| b.is_ascii_graphic() || b == b' ' || b == b'.') {
+        if !name_bytes
+            .iter()
+            .all(|&b| b.is_ascii_graphic() || b == b' ' || b == b'.')
+        {
             continue;
         }
         let name = match std::str::from_utf8(name_bytes) {
@@ -945,7 +978,11 @@ mod tests {
         // analyze_go needs the pclntab magic to be present in raw bytes.
         let report = analyze_go(&input).expect("should detect Go via pclntab magic");
         assert!(report.is_go);
-        assert!(report.func_count >= 3, "expected >=3 functions, got {}", report.func_count);
+        assert!(
+            report.func_count >= 3,
+            "expected >=3 functions, got {}",
+            report.func_count
+        );
         // Check that we got some functions back.
         assert!(!report.funcs.is_empty(), "funcs should not be empty");
     }
@@ -953,10 +990,26 @@ mod tests {
     #[test]
     fn derive_packages_correct() {
         let funcs = vec![
-            GoFunc { name: "main.main".into(), addr: 0x1000, file: String::new() },
-            GoFunc { name: "net/http.(*Client).Do".into(), addr: 0x2000, file: String::new() },
-            GoFunc { name: "runtime.goexit".into(), addr: 0x3000, file: String::new() },
-            GoFunc { name: "runtime.goexit".into(), addr: 0x3000, file: String::new() }, // dup
+            GoFunc {
+                name: "main.main".into(),
+                addr: 0x1000,
+                file: String::new(),
+            },
+            GoFunc {
+                name: "net/http.(*Client).Do".into(),
+                addr: 0x2000,
+                file: String::new(),
+            },
+            GoFunc {
+                name: "runtime.goexit".into(),
+                addr: 0x3000,
+                file: String::new(),
+            },
+            GoFunc {
+                name: "runtime.goexit".into(),
+                addr: 0x3000,
+                file: String::new(),
+            }, // dup
         ];
         let pkgs = derive_packages(&funcs);
         assert!(pkgs.contains(&"main".to_owned()));
@@ -993,7 +1046,11 @@ mod tests {
             build_flags: String::new(),
             module_path: String::new(),
             func_count: 2,
-            funcs: vec![GoFunc { name: "main.main".into(), addr: 0x1000, file: String::new() }],
+            funcs: vec![GoFunc {
+                name: "main.main".into(),
+                addr: 0x1000,
+                file: String::new(),
+            }],
             packages: vec!["main".into()],
             types_sample: Vec::new(),
         };

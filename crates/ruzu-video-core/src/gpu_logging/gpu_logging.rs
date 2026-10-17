@@ -862,9 +862,13 @@ mod tests {
         let root = match std::env::var_os(ROOT) {
             Some(root) => std::path::PathBuf::from(root),
             None => {
-                let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+                let nonce = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
                 let root = std::env::temp_dir().join(format!(
-                    "ruzu-gpu-log-options-{}-{nonce}", std::process::id()
+                    "ruzu-gpu-log-options-{}-{nonce}",
+                    std::process::id()
                 ));
                 std::fs::create_dir(&root).unwrap();
                 let status = std::process::Command::new(std::env::current_exe().unwrap())
@@ -906,8 +910,14 @@ mod tests {
         for name in ["vkCmdA", "vkCmdB", "vkCmdC"] {
             logger.log_vulkan_call(name, "synthetic", 0);
         }
-        let names = || logger.get_current_snapshot().recent_calls.into_iter()
-            .map(|call| call.call_name).collect::<Vec<_>>();
+        let names = || {
+            logger
+                .get_current_snapshot()
+                .recent_calls
+                .into_iter()
+                .map(|call| call.call_name)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(names(), ["vkCmdB", "vkCmdC"]);
         logger.set_ring_buffer_size(1);
         assert_eq!(names(), ["vkCmdC"]);
@@ -917,7 +927,10 @@ mod tests {
         logger.set_ring_buffer_size(0);
         logger.log_vulkan_call("vkCmdWithoutHistory", "", 0);
         assert!(names().is_empty());
-        assert_eq!(logger.ring_buffer.lock().unwrap().total_vulkan_calls, previous_calls + 5);
+        assert_eq!(
+            logger.ring_buffer.lock().unwrap().total_vulkan_calls,
+            previous_calls + 5
+        );
         logger.set_ring_buffer_size(2);
         logger.log_vulkan_call("vkCmdRestored", "", 0);
         logger.set_ring_buffer_size(usize::MAX);
@@ -953,7 +966,10 @@ mod tests {
 
         logger.enable_driver_debug_info(false);
         logger.log_driver_debug_info("driver-snapshot-only");
-        assert_eq!(logger.get_current_snapshot().driver_debug_info, "driver-snapshot-only");
+        assert_eq!(
+            logger.get_current_snapshot().driver_debug_info,
+            "driver-snapshot-only"
+        );
         logger.enable_driver_debug_info(true);
         logger.log_driver_debug_info("driver-file-output");
         logger.shutdown();

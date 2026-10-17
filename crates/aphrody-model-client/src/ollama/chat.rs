@@ -154,7 +154,9 @@ pub fn build_ollama_chat_request(
         if key == "options"
             && let Value::Object(extra_options) = value
         {
-            let target = body.entry("options").or_insert_with(|| Value::Object(Map::new()));
+            let target = body
+                .entry("options")
+                .or_insert_with(|| Value::Object(Map::new()));
             if let Value::Object(map) = target {
                 for (name, option) in extra_options {
                     map.insert(name.clone(), option.clone());
@@ -273,12 +275,18 @@ fn message_to_ollama(message: &ChatMessage) -> Vec<Value> {
         Role::Tool => {
             let mut results = ToolResults::default();
             for part in &message.parts {
-                if let Part::FunctionResponse { id, name, response, images } = part {
+                if let Part::FunctionResponse {
+                    id,
+                    name,
+                    response,
+                    images,
+                } = part
+                {
                     results.push(id, name, response, images);
                 }
             }
             results.into_messages()
-        },
+        }
     }
 }
 
@@ -294,10 +302,15 @@ fn user_messages(message: &ChatMessage) -> Vec<Value> {
             Part::Image(image) => place_image(image, &mut images, &mut notes),
             // A tool result filed under a user message (Gemini-style history)
             // still reaches the wire as a `tool` message.
-            Part::FunctionResponse { id, name, response, images } => {
+            Part::FunctionResponse {
+                id,
+                name,
+                response,
+                images,
+            } => {
                 results.push(id, name, response, images);
-            },
-            Part::FunctionCall { .. } | Part::Reasoning { .. } => {},
+            }
+            Part::FunctionCall { .. } | Part::Reasoning { .. } => {}
         }
     }
 
@@ -324,13 +337,13 @@ fn assistant_message(message: &ChatMessage) -> Option<Value> {
             Part::Text(text) => texts.push(text.as_str()),
             Part::Reasoning { text, opaque } if is_ollama_reasoning(opaque) && !text.is_empty() => {
                 thinking.push(text.as_str());
-            },
+            }
             Part::FunctionCall { id, name, args } => {
                 calls.push(tool_call_to_ollama(calls.len(), id, name, args));
-            },
+            }
             // Foreign reasoning items have no meaning for Ollama; images and
             // tool responses do not belong on an assistant message.
-            Part::Reasoning { .. } | Part::Image(_) | Part::FunctionResponse { .. } => {},
+            Part::Reasoning { .. } | Part::Image(_) | Part::FunctionResponse { .. } => {}
         }
     }
 
@@ -383,14 +396,17 @@ impl ChatStreamParser {
             self.done = true;
             // The HTTP status was already 200; a mid-stream failure is a bad
             // gateway from the caller's point of view (as on the OpenAI wire).
-            return vec![Err(ModelError::Api { status: 502, message: message.to_string() })];
+            return vec![Err(ModelError::Api {
+                status: 502,
+                message: message.to_string(),
+            })];
         }
         let chunk = match OllamaChatChunk::deserialize(value) {
             Ok(chunk) => chunk,
             Err(error) => {
                 self.done = true;
                 return vec![Err(ModelError::Decode(error))];
-            },
+            }
         };
 
         let mut events = Vec::new();
@@ -415,12 +431,20 @@ impl ChatStreamParser {
             } else {
                 call.function.name
             };
-            let id = if call.id.is_empty() { crate::generate_call_id(&name) } else { call.id };
+            let id = if call.id.is_empty() {
+                crate::generate_call_id(&name)
+            } else {
+                call.id
+            };
             let arguments = match call.function.arguments {
                 Value::Null => json!({}),
                 other => other,
             };
-            events.push(Ok(ModelStreamEvent::ToolCall { id, name, arguments }));
+            events.push(Ok(ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            }));
         }
 
         if chunk.done {
@@ -478,10 +502,11 @@ where
                         let events = parser.feed(&value);
                         let finished = parser.is_done();
                         Some((futures::stream::iter(events), (values, parser, finished)))
-                    },
-                    Some(Err(error)) => {
-                        Some((futures::stream::iter(vec![Err(error)]), (values, parser, true)))
-                    },
+                    }
+                    Some(Err(error)) => Some((
+                        futures::stream::iter(vec![Err(error)]),
+                        (values, parser, true),
+                    )),
                     None => {
                         let tail = parser.finish();
                         if tail.is_empty() {
@@ -489,7 +514,7 @@ where
                         } else {
                             Some((futures::stream::iter(tail), (values, parser, true)))
                         }
-                    },
+                    }
                 }
             },
         )
@@ -506,11 +531,17 @@ mod tests {
     use crate::{ToolDecl, TurnOptions};
 
     fn user(text: &str) -> ChatMessage {
-        ChatMessage { role: Role::User, parts: vec![Part::Text(text.to_string())] }
+        ChatMessage {
+            role: Role::User,
+            parts: vec![Part::Text(text.to_string())],
+        }
     }
 
     fn turn(messages: Vec<ChatMessage>) -> ChatTurn {
-        ChatTurn { messages, ..ChatTurn::default() }
+        ChatTurn {
+            messages,
+            ..ChatTurn::default()
+        }
     }
 
     fn body(turn: &ChatTurn) -> Value {
@@ -624,7 +655,9 @@ mod tests {
             },
         ]);
         let request = body(&turn);
-        let calls = request["messages"][0]["tool_calls"].as_array().expect("calls");
+        let calls = request["messages"][0]["tool_calls"]
+            .as_array()
+            .expect("calls");
         assert_eq!(calls[0]["function"]["index"], 0);
         assert_eq!(calls[1]["function"]["index"], 1);
         assert_eq!(calls[1]["id"], "c2");
@@ -670,13 +703,19 @@ mod tests {
         assert_eq!(request["messages"][0]["content"], "{\"ok\":true}");
         assert_eq!(request["messages"][1]["role"], "user");
         assert_eq!(request["messages"][1]["images"], json!(["BBBB"]));
-        assert_eq!(request["messages"][1]["content"], "Image output of tool call(s): screenshot");
+        assert_eq!(
+            request["messages"][1]["content"],
+            "Image output of tool call(s): screenshot"
+        );
     }
 
     #[test]
     fn options_think_format_and_extra_are_mapped_and_merged() {
         let mut extra = Map::new();
-        extra.insert("options".to_string(), json!({ "num_ctx": 32768, "temperature": 0.9 }));
+        extra.insert(
+            "options".to_string(),
+            json!({ "num_ctx": 32768, "temperature": 0.9 }),
+        );
         extra.insert("keep_alive".to_string(), json!("30m"));
         let turn = ChatTurn {
             messages: vec![user("hi")],
@@ -715,15 +754,20 @@ mod tests {
 
     #[test]
     fn the_client_default_think_applies_when_the_turn_has_none() {
-        let defaults = OllamaChatDefaults { think: Some(Think::Off), ..Default::default() };
+        let defaults = OllamaChatDefaults {
+            think: Some(Think::Off),
+            ..Default::default()
+        };
         let request = build_ollama_chat_request(&turn(vec![user("hi")]), "m", &defaults);
         assert_eq!(request["think"], false);
         assert!(body(&turn(vec![user("hi")])).get("think").is_none());
     }
 
     fn lines(parts: &[&str]) -> impl Stream<Item = Result<Bytes, ModelError>> + Send + 'static {
-        let owned: Vec<Result<Bytes, ModelError>> =
-            parts.iter().map(|part| Ok(Bytes::from(part.to_string()))).collect();
+        let owned: Vec<Result<Bytes, ModelError>> = parts
+            .iter()
+            .map(|part| Ok(Bytes::from(part.to_string())))
+            .collect();
         futures::stream::iter(owned)
     }
 
@@ -783,8 +827,11 @@ mod tests {
             "{\"message\":{\"content\":\"\"},\"done\":true}\n",
         ])
         .await;
-        let ModelStreamEvent::ToolCall { id, name, arguments } =
-            items[1].as_ref().expect("event").clone()
+        let ModelStreamEvent::ToolCall {
+            id,
+            name,
+            arguments,
+        } = items[1].as_ref().expect("event").clone()
         else {
             panic!("expected a tool call, got {:?}", items[1]);
         };
@@ -813,7 +860,10 @@ mod tests {
     #[tokio::test]
     async fn a_body_that_ends_without_done_is_an_error() {
         let items = events(&["{\"message\":{\"content\":\"partial\"},\"done\":false}\n"]).await;
-        assert!(matches!(items.last(), Some(Err(ModelError::Stream(_)))), "{items:?}");
+        assert!(
+            matches!(items.last(), Some(Err(ModelError::Stream(_)))),
+            "{items:?}"
+        );
     }
 
     #[tokio::test]
@@ -835,7 +885,10 @@ mod tests {
         );
         assert_eq!(
             items[3],
-            ModelStreamEvent::Completed { usage: None, finish_reason: Some("length".to_string()) }
+            ModelStreamEvent::Completed {
+                usage: None,
+                finish_reason: Some("length".to_string())
+            }
         );
     }
 }

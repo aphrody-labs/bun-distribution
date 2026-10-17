@@ -221,8 +221,12 @@ mod tests {
         assert!(!state.failed);
         assert_eq!(state.sequence, 2);
         let bytes = std::fs::read(&path.0).unwrap();
-        assert!(std::str::from_utf8(&bytes[..RECORD_SIZE]).unwrap().contains("recorded_work"));
-        assert!(std::str::from_utf8(&bytes[RECORD_SIZE..2 * RECORD_SIZE]).unwrap().contains("recorded_shaders"));
+        assert!(std::str::from_utf8(&bytes[..RECORD_SIZE])
+            .unwrap()
+            .contains("recorded_work"));
+        assert!(std::str::from_utf8(&bytes[RECORD_SIZE..2 * RECORD_SIZE])
+            .unwrap()
+            .contains("recorded_shaders"));
     }
 
     #[test]

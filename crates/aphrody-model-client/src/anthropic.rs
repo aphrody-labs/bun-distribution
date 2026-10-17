@@ -100,9 +100,11 @@ impl AnthropicClient {
         match (&self.runtime.bearer_token, self.auth) {
             (Some(key), AnthropicAuth::ApiKey) => request = request.header("x-api-key", key),
             (Some(token), AnthropicAuth::Bearer) => {
-                request = request.bearer_auth(token).header("anthropic-beta", ANTHROPIC_OAUTH_BETA);
-            },
-            (None, _) => {},
+                request = request
+                    .bearer_auth(token)
+                    .header("anthropic-beta", ANTHROPIC_OAUTH_BETA);
+            }
+            (None, _) => {}
         }
         request
     }
@@ -186,7 +188,10 @@ pub fn build_messages_request(turn: &ChatTurn, model: &str) -> Value {
         output_config.insert("effort".into(), json!(effort));
     }
     if let Some(schema) = &turn.options.response_schema {
-        output_config.insert("format".into(), json!({ "type": "json_schema", "schema": schema }));
+        output_config.insert(
+            "format".into(),
+            json!({ "type": "json_schema", "schema": schema }),
+        );
     }
     if !output_config.is_empty() {
         body["output_config"] = Value::Object(output_config);
@@ -239,7 +244,7 @@ fn message_to_anthropic(message: &ChatMessage) -> Option<Value> {
                 if !text.is_empty() {
                     content.push(json!({ "type": "text", "text": text }));
                 }
-            },
+            }
             Part::Image(image) => content.push(image_block(image)),
             Part::Reasoning { text, opaque } => {
                 if let Some(signature) = opaque.get("signature").and_then(Value::as_str) {
@@ -249,23 +254,32 @@ fn message_to_anthropic(message: &ChatMessage) -> Option<Value> {
                         "signature": signature,
                     }));
                 }
-            },
+            }
             Part::FunctionCall { id, name, args } => {
-                let input = if args.is_object() { args.clone() } else { json!({}) };
+                let input = if args.is_object() {
+                    args.clone()
+                } else {
+                    json!({})
+                };
                 content.push(json!({
                     "type": "tool_use",
                     "id": if id.is_empty() { name } else { id },
                     "name": name,
                     "input": input,
                 }));
-            },
-            Part::FunctionResponse { id, name, response, images } => {
+            }
+            Part::FunctionResponse {
+                id,
+                name,
+                response,
+                images,
+            } => {
                 content.push(json!({
                     "type": "tool_result",
                     "tool_use_id": if id.is_empty() { name } else { id },
                     "content": tool_result_content(response, images),
                 }));
-            },
+            }
         }
     }
     if content.is_empty() {
@@ -285,8 +299,15 @@ fn message_to_anthropic(message: &ChatMessage) -> Option<Value> {
 #[derive(Debug)]
 enum OpenBlock {
     Text,
-    Thinking { text: String, signature: Option<String> },
-    ToolUse { id: String, name: String, input_json: String },
+    Thinking {
+        text: String,
+        signature: Option<String>,
+    },
+    ToolUse {
+        id: String,
+        name: String,
+        input_json: String,
+    },
 }
 
 /// Incremental decoder for the Messages SSE event family.
@@ -317,23 +338,33 @@ impl MessagesStreamParser {
     /// input is not valid JSON.
     pub fn feed_event(&mut self, json: &str) -> Result<Vec<ModelStreamEvent>, ModelError> {
         let value: Value = serde_json::from_str(json)?;
-        let kind = value.get("type").and_then(Value::as_str).unwrap_or_default();
+        let kind = value
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
         let mut events = Vec::new();
         match kind {
             "message_start" => {
                 if let Some(usage) = value.pointer("/message/usage") {
                     self.absorb_usage(usage);
                 }
-            },
+            }
             "content_block_start" => {
                 let index = block_index(&value);
                 let Some(block) = value.get("content_block") else {
                     return Ok(events);
                 };
-                match block.get("type").and_then(Value::as_str).unwrap_or_default() {
+                match block
+                    .get("type")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                {
                     "tool_use" => {
                         let id = block.get("id").and_then(Value::as_str).unwrap_or_default();
-                        let name = block.get("name").and_then(Value::as_str).unwrap_or_default();
+                        let name = block
+                            .get("name")
+                            .and_then(Value::as_str)
+                            .unwrap_or_default();
                         events.push(ModelStreamEvent::ToolCallDelta {
                             id: Some(id.to_owned()),
                             name: Some(name.to_owned()),
@@ -347,38 +378,50 @@ impl MessagesStreamParser {
                                 input_json: String::new(),
                             },
                         );
-                    },
+                    }
                     "thinking" | "redacted_thinking" => {
-                        let text =
-                            block.get("thinking").and_then(Value::as_str).unwrap_or_default();
+                        let text = block
+                            .get("thinking")
+                            .and_then(Value::as_str)
+                            .unwrap_or_default();
                         if !text.is_empty() {
                             events.push(ModelStreamEvent::ReasoningDelta(text.to_owned()));
                         }
                         self.blocks.insert(
                             index,
-                            OpenBlock::Thinking { text: text.to_owned(), signature: None },
+                            OpenBlock::Thinking {
+                                text: text.to_owned(),
+                                signature: None,
+                            },
                         );
-                    },
+                    }
                     _ => {
-                        let text = block.get("text").and_then(Value::as_str).unwrap_or_default();
+                        let text = block
+                            .get("text")
+                            .and_then(Value::as_str)
+                            .unwrap_or_default();
                         if !text.is_empty() {
                             events.push(ModelStreamEvent::TextDelta(text.to_owned()));
                         }
                         self.blocks.insert(index, OpenBlock::Text);
-                    },
+                    }
                 }
-            },
+            }
             "content_block_delta" => {
                 let index = block_index(&value);
                 let Some(delta) = value.get("delta") else {
                     return Ok(events);
                 };
-                match delta.get("type").and_then(Value::as_str).unwrap_or_default() {
+                match delta
+                    .get("type")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                {
                     "text_delta" => {
                         if let Some(text) = delta.get("text").and_then(Value::as_str) {
                             events.push(ModelStreamEvent::TextDelta(text.to_owned()));
                         }
-                    },
+                    }
                     "thinking_delta" => {
                         if let Some(fragment) = delta.get("thinking").and_then(Value::as_str) {
                             events.push(ModelStreamEvent::ReasoningDelta(fragment.to_owned()));
@@ -388,7 +431,7 @@ impl MessagesStreamParser {
                                 text.push_str(fragment);
                             }
                         }
-                    },
+                    }
                     "signature_delta" => {
                         if let (Some(value), Some(OpenBlock::Thinking { signature, .. })) = (
                             delta.get("signature").and_then(Value::as_str),
@@ -396,10 +439,12 @@ impl MessagesStreamParser {
                         ) {
                             signature.get_or_insert_with(String::new).push_str(value);
                         }
-                    },
+                    }
                     "input_json_delta" => {
-                        let fragment =
-                            delta.get("partial_json").and_then(Value::as_str).unwrap_or_default();
+                        let fragment = delta
+                            .get("partial_json")
+                            .and_then(Value::as_str)
+                            .unwrap_or_default();
                         if let Some(OpenBlock::ToolUse { id, input_json, .. }) =
                             self.blocks.get_mut(&index)
                         {
@@ -410,14 +455,18 @@ impl MessagesStreamParser {
                                 arguments_fragment: fragment.to_owned(),
                             });
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
-            },
+            }
             "content_block_stop" => {
                 let index = block_index(&value);
                 match self.blocks.remove(&index) {
-                    Some(OpenBlock::ToolUse { id, name, input_json }) => {
+                    Some(OpenBlock::ToolUse {
+                        id,
+                        name,
+                        input_json,
+                    }) => {
                         let arguments = if input_json.trim().is_empty() {
                             json!({})
                         } else {
@@ -427,18 +476,22 @@ impl MessagesStreamParser {
                                 ))
                             })?
                         };
-                        events.push(ModelStreamEvent::ToolCall { id, name, arguments });
-                    },
+                        events.push(ModelStreamEvent::ToolCall {
+                            id,
+                            name,
+                            arguments,
+                        });
+                    }
                     Some(OpenBlock::Thinking { text, signature }) => {
                         let opaque = match signature {
                             Some(signature) => json!({ "signature": signature }),
                             None => Value::Null,
                         };
                         events.push(ModelStreamEvent::ReasoningItem { text, opaque });
-                    },
-                    Some(OpenBlock::Text) | None => {},
+                    }
+                    Some(OpenBlock::Text) | None => {}
                 }
-            },
+            }
             "message_delta" => {
                 if let Some(reason) = value.pointer("/delta/stop_reason").and_then(Value::as_str) {
                     self.stop_reason = Some(reason.to_owned());
@@ -446,21 +499,24 @@ impl MessagesStreamParser {
                 if let Some(usage) = value.get("usage") {
                     self.absorb_usage(usage);
                 }
-            },
+            }
             "message_stop" => {
                 if let Some(completed) = self.finish() {
                     events.push(completed);
                 }
-            },
+            }
             "error" => {
                 let message = value
                     .pointer("/error/message")
                     .and_then(Value::as_str)
                     .unwrap_or("provider reported a stream error");
-                return Err(ModelError::Api { status: 0, message: message.to_owned() });
-            },
+                return Err(ModelError::Api {
+                    status: 0,
+                    message: message.to_owned(),
+                });
+            }
             // `ping` and unknown event types carry nothing for the caller.
-            _ => {},
+            _ => {}
         }
         Ok(events)
     }
@@ -477,7 +533,10 @@ impl MessagesStreamParser {
             ..self.usage.clone()
         };
         let usage = (usage.total_tokens > 0).then_some(usage);
-        Some(ModelStreamEvent::Completed { usage, finish_reason: self.stop_reason.take() })
+        Some(ModelStreamEvent::Completed {
+            usage,
+            finish_reason: self.stop_reason.take(),
+        })
     }
 
     fn absorb_usage(&mut self, usage: &Value) {
@@ -495,7 +554,10 @@ impl MessagesStreamParser {
 }
 
 fn block_index(value: &Value) -> u64 {
-    value.get("index").and_then(Value::as_u64).unwrap_or_default()
+    value
+        .get("index")
+        .and_then(Value::as_u64)
+        .unwrap_or_default()
 }
 
 /// Decode a Messages SSE byte stream into unified events.
@@ -507,7 +569,12 @@ where
 {
     futures::stream::once(async { Ok(ModelStreamEvent::Created) }).chain(
         futures::stream::unfold(
-            (Box::pin(bytes.fuse()), String::new(), MessagesStreamParser::new(), false),
+            (
+                Box::pin(bytes.fuse()),
+                String::new(),
+                MessagesStreamParser::new(),
+                false,
+            ),
             |(mut stream, mut buffer, mut parser, mut done)| async move {
                 loop {
                     if done {
@@ -544,7 +611,7 @@ where
                                     )))]),
                                     (stream, buffer, parser, done),
                                 ));
-                            },
+                            }
                         },
                         Some(Err(error)) => {
                             done = true;
@@ -552,7 +619,7 @@ where
                                 futures::stream::iter(vec![Err(error)]),
                                 (stream, buffer, parser, done),
                             ));
-                        },
+                        }
                         None => {
                             done = true;
                             let tail = std::mem::take(&mut buffer);
@@ -575,7 +642,7 @@ where
                                 futures::stream::iter(items),
                                 (stream, buffer, parser, done),
                             ));
-                        },
+                        }
                     }
                 }
             },
@@ -622,14 +689,21 @@ mod tests {
                             text: "check the tool".into(),
                             opaque: json!({ "signature": "sig-1" }),
                         },
-                        Part::Reasoning { text: "foreign reasoning".into(), opaque: Value::Null },
+                        Part::Reasoning {
+                            text: "foreign reasoning".into(),
+                            opaque: Value::Null,
+                        },
                         Part::Text(String::new()),
                         Part::function_call("toolu_1", "get_weather", json!({ "city": "Paris" })),
                     ],
                 },
                 ChatMessage {
                     role: Role::Tool,
-                    parts: vec![Part::function_response("toolu_1", "get_weather", json!("18°C"))],
+                    parts: vec![Part::function_response(
+                        "toolu_1",
+                        "get_weather",
+                        json!("18°C"),
+                    )],
                 },
             ],
             tools: vec![ToolDecl {
@@ -680,7 +754,10 @@ mod tests {
     #[test]
     fn request_without_effort_omits_thinking_fields() {
         let turn = ChatTurn {
-            messages: vec![ChatMessage { role: Role::User, parts: vec![Part::Text("hi".into())] }],
+            messages: vec![ChatMessage {
+                role: Role::User,
+                parts: vec![Part::Text("hi".into())],
+            }],
             ..ChatTurn::default()
         };
         let body = build_messages_request(&turn, "claude-haiku-4-5");
@@ -810,7 +887,9 @@ mod tests {
         parser
             .feed_event(r#"{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"a\":"}}"#)
             .unwrap();
-        let error = parser.feed_event(r#"{"type":"content_block_stop","index":0}"#).unwrap_err();
+        let error = parser
+            .feed_event(r#"{"type":"content_block_stop","index":0}"#)
+            .unwrap_err();
         assert!(matches!(error, ModelError::Stream(_)));
     }
 
@@ -830,14 +909,21 @@ mod tests {
         let mut sse = String::new();
         for frame in STREAM {
             let kind: Value = serde_json::from_str(frame).unwrap();
-            sse.push_str(&format!("event: {}\ndata: {frame}\n\n", kind["type"].as_str().unwrap()));
+            sse.push_str(&format!(
+                "event: {}\ndata: {frame}\n\n",
+                kind["type"].as_str().unwrap()
+            ));
         }
         (StatusCode::OK, [("content-type", "text/event-stream")], sse)
     }
 
     async fn serve(seen: Arc<Seen>) -> String {
-        let router = Router::new().route("/v1/messages", post(messages_handler)).with_state(seen);
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let router = Router::new()
+            .route("/v1/messages", post(messages_handler))
+            .with_state(seen);
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let address = listener.local_addr().expect("addr");
         tokio::spawn(async move {
             let _ = axum::serve(listener, router).await;
@@ -874,7 +960,10 @@ mod tests {
 
         let headers = seen.headers.lock().unwrap().clone().expect("request seen");
         assert_eq!(headers.get("x-api-key").unwrap(), "sk-ant-test");
-        assert_eq!(headers.get("anthropic-version").unwrap(), ANTHROPIC_API_VERSION);
+        assert_eq!(
+            headers.get("anthropic-version").unwrap(),
+            ANTHROPIC_API_VERSION
+        );
         assert!(headers.get("authorization").is_none());
         let body = seen.body.lock().unwrap().clone().expect("body seen");
         assert_eq!(body["model"], "claude-opus-5");

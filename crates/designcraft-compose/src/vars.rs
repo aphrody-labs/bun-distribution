@@ -16,7 +16,12 @@ pub fn has_vars(st: &Story) -> bool {
 
 /// Does the story contain a running-header variable instance?
 pub fn has_running(doc: &Document, st: &Story) -> bool {
-    st.text.chars().filter_map(var_index).any(|i| matches!(doc.text_variables.get(i).map(|v| &v.kind), Some(VarKind::RunningHeader { .. })))
+    st.text.chars().filter_map(var_index).any(|i| {
+        matches!(
+            doc.text_variables.get(i).map(|v| &v.kind),
+            Some(VarKind::RunningHeader { .. })
+        )
+    })
 }
 
 /// Absolute page showing story byte `pos` of a composed story.
@@ -37,8 +42,11 @@ pub struct RunningIndex {
 }
 
 fn clean(s: &str) -> String {
-    let t: String =
-        s.chars().filter(|c| !('\u{E000}'..='\u{E1FF}').contains(c)).map(|c| if c == '\t' || c == '\u{2028}' { ' ' } else { c }).collect();
+    let t: String = s
+        .chars()
+        .filter(|c| !('\u{E000}'..='\u{E1FF}').contains(c))
+        .map(|c| if c == '\t' || c == '\u{2028}' { ' ' } else { c })
+        .collect();
     t.trim().to_string()
 }
 
@@ -47,10 +55,16 @@ pub(crate) fn place(doc: &Document, cs: &ComposedStory, pos: usize) -> Option<(u
     let (fi, x, baseline, ..) = crate::caret(cs, pos)?;
     let ft = cs.frames.get(fi)?;
     let loc = doc.find(ft.frame)?;
-    let SpreadRef::Doc(si) = loc.spread else { return None };
+    let SpreadRef::Doc(si) = loc.spread else {
+        return None;
+    };
     let b = doc.item(ft.frame)?.bounds();
     let pi = doc.spreads.get(si)?.page_at_x(b.center().x).unwrap_or(0);
-    Some((doc.first_page_of_spread(si) + pi, ((b.y0 + baseline) * 10.0) as i64, ((b.x0 + x) * 10.0) as i64))
+    Some((
+        doc.first_page_of_spread(si) + pi,
+        ((b.y0 + baseline) * 10.0) as i64,
+        ((b.x0 + x) * 10.0) as i64,
+    ))
 }
 
 impl RunningIndex {
@@ -61,7 +75,9 @@ impl RunningIndex {
             .text_variables
             .iter()
             .filter_map(|v| match &v.kind {
-                VarKind::RunningHeader { style, character, .. } => Some((style.clone(), *character)),
+                VarKind::RunningHeader {
+                    style, character, ..
+                } => Some((style.clone(), *character)),
                 _ => None,
             })
             .collect();
@@ -73,8 +89,14 @@ impl RunningIndex {
             if has_running(doc, st) {
                 continue;
             }
-            let para_hit = st.paras.iter().any(|f| wanted.iter().any(|(s, c)| !c && *s == f.style));
-            let char_hit = wanted.iter().any(|(_, c)| *c) && st.runs().any(|(_, f)| wanted.iter().any(|(s, c)| *c && *s == f.style));
+            let para_hit = st
+                .paras
+                .iter()
+                .any(|f| wanted.iter().any(|(s, c)| !c && *s == f.style));
+            let char_hit = wanted.iter().any(|(_, c)| *c)
+                && st
+                    .runs()
+                    .any(|(_, f)| wanted.iter().any(|(s, c)| *c && *s == f.style));
             if !para_hit && !char_hit {
                 continue;
             }
@@ -115,7 +137,10 @@ impl RunningIndex {
             v.sort_by_key(|(at, _)| *at);
             let mut pages: BTreeMap<usize, (String, String)> = BTreeMap::new();
             for ((page, ..), text) in v {
-                pages.entry(page).and_modify(|e| e.1 = text.clone()).or_insert((text.clone(), text));
+                pages
+                    .entry(page)
+                    .and_modify(|e| e.1 = text.clone())
+                    .or_insert((text.clone(), text));
             }
             map.insert(key, pages);
         }
@@ -124,11 +149,21 @@ impl RunningIndex {
 
     /// The running header for `page`: the first/last on the page, else the last before it.
     pub fn value(&self, style: &str, character: bool, use_: Use, page: usize) -> String {
-        let Some(pages) = self.map.get(&(style.to_string(), character)) else { return String::new() };
+        let Some(pages) = self.map.get(&(style.to_string(), character)) else {
+            return String::new();
+        };
         if let Some((first, last)) = pages.get(&page) {
-            return if use_ == Use::FirstOnPage { first.clone() } else { last.clone() };
+            return if use_ == Use::FirstOnPage {
+                first.clone()
+            } else {
+                last.clone()
+            };
         }
-        pages.range(..page).next_back().map(|(_, (_, last))| last.clone()).unwrap_or_default()
+        pages
+            .range(..page)
+            .next_back()
+            .map(|(_, (_, last))| last.clone())
+            .unwrap_or_default()
     }
 }
 
@@ -138,7 +173,11 @@ pub fn values(doc: &Document, page: Option<usize>, running: Option<&RunningIndex
         .iter()
         .enumerate()
         .map(|(i, v)| match &v.kind {
-            VarKind::RunningHeader { style, use_, character } => {
+            VarKind::RunningHeader {
+                style,
+                use_,
+                character,
+            } => {
                 let body = match (running, page) {
                     (Some(r), Some(p)) => r.value(style, *character, *use_, p),
                     _ => String::new(),

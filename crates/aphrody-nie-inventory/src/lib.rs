@@ -52,7 +52,10 @@ impl Inventory {
     /// fails (malformed schema, truncated file, etc.).
     pub fn load(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let bytes = std::fs::read(path.as_ref()).map_err(|e| {
-            anyhow::anyhow!("failed to read inventory file `{}`: {e}", path.as_ref().display())
+            anyhow::anyhow!(
+                "failed to read inventory file `{}`: {e}",
+                path.as_ref().display()
+            )
         })?;
         let inv: Self = serde_json::from_slice(&bytes).map_err(|e| {
             anyhow::anyhow!(
@@ -93,8 +96,10 @@ impl Inventory {
             entry.0 += 1;
             entry.1 += b.size_bytes;
         }
-        let mut v: Vec<_> =
-            map.into_iter().map(|(ext, (count, bytes))| (ext, count, bytes)).collect();
+        let mut v: Vec<_> = map
+            .into_iter()
+            .map(|(ext, (count, bytes))| (ext, count, bytes))
+            .collect();
         // Primary sort: largest total byte footprint first.
         v.sort_by_key(|b| std::cmp::Reverse(b.2));
         v

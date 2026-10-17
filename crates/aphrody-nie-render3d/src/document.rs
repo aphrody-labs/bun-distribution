@@ -34,7 +34,10 @@ pub struct SceneDocument {
 
 impl Default for SceneDocument {
     fn default() -> Self {
-        Self { version: 1, objects: vec![] }
+        Self {
+            version: 1,
+            objects: vec![],
+        }
     }
 }
 
@@ -50,12 +53,18 @@ impl SceneDocument {
             );
             ensure!(object.name.len() <= 256, "nom d'objet trop long");
             ensure!(
-                object.position.iter().all(|v| v.is_finite() && v.abs() <= 1e6),
+                object
+                    .position
+                    .iter()
+                    .all(|v| v.is_finite() && v.abs() <= 1e6),
                 "position invalide"
             );
             ensure!(object.yaw.is_finite(), "rotation invalide");
             ensure!(
-                object.scale.iter().all(|v| v.is_finite() && (0.001..=1000.0).contains(v)),
+                object
+                    .scale
+                    .iter()
+                    .all(|v| v.is_finite() && (0.001..=1000.0).contains(v)),
                 "échelle invalide"
             );
         }
@@ -66,7 +75,10 @@ impl SceneDocument {
     /// Le résolveur permet de partager le même document entre disque, VFS et navigateur.
     pub fn compose(&self, mut resolve: impl FnMut(&str) -> Result<Model>) -> Result<Model> {
         self.validate()?;
-        let mut scene = Model { primitives: vec![], textures: vec![] };
+        let mut scene = Model {
+            primitives: vec![],
+            textures: vec![],
+        };
         for object in self.objects.iter().filter(|o| o.visible) {
             let mut model = resolve(&object.asset)?;
             let texture_base = scene.textures.len();
@@ -136,7 +148,10 @@ pub struct SceneDocumentV2 {
 
 impl Default for SceneDocumentV2 {
     fn default() -> Self {
-        Self { version: 2, objects: vec![] }
+        Self {
+            version: 2,
+            objects: vec![],
+        }
     }
 }
 
@@ -200,12 +215,12 @@ impl SceneDocumentV2 {
                 let document: SceneDocument = serde_json::from_value(header)?;
                 document.validate()?;
                 Ok(Self::from_v1(&document))
-            },
+            }
             2 => {
                 let document: Self = serde_json::from_value(header)?;
                 document.validate()?;
                 Ok(document)
-            },
+            }
             _ => anyhow::bail!("version de scène non prise en charge: {version}"),
         }
     }
@@ -222,7 +237,10 @@ impl SceneDocumentV2 {
                 ..SceneObjectV2::from_v1_object(object)
             })
             .collect();
-        Self { version: 2, objects }
+        Self {
+            version: 2,
+            objects,
+        }
     }
 
     /// Validates identifiers, hierarchy and finite full-TRS values.
@@ -238,24 +256,36 @@ impl SceneDocumentV2 {
                 !object.id.is_empty() && object.id.len() <= 256,
                 "identifiant d'objet invalide"
             );
-            ensure!(ids.insert(object.id.as_str()), "identifiant d'objet dupliqué");
+            ensure!(
+                ids.insert(object.id.as_str()),
+                "identifiant d'objet dupliqué"
+            );
             ensure!(
                 !object.asset.is_empty() && object.asset.len() <= 4096,
                 "référence d'asset invalide"
             );
             ensure!(object.name.len() <= 256, "nom d'objet trop long");
             ensure!(
-                object.position.iter().all(|v| v.is_finite() && v.abs() <= 1e6),
+                object
+                    .position
+                    .iter()
+                    .all(|v| v.is_finite() && v.abs() <= 1e6),
                 "position invalide"
             );
-            ensure!(object.rotation.iter().all(|v| v.is_finite()), "rotation invalide");
+            ensure!(
+                object.rotation.iter().all(|v| v.is_finite()),
+                "rotation invalide"
+            );
             let norm_sq = object.rotation.iter().map(|v| v * v).sum::<f32>();
             ensure!(
                 norm_sq.is_finite() && (norm_sq - 1.0).abs() <= 1e-4,
                 "quaternion non normalisé"
             );
             ensure!(
-                object.scale.iter().all(|v| v.is_finite() && (0.001..=1000.0).contains(v)),
+                object
+                    .scale
+                    .iter()
+                    .all(|v| v.is_finite() && (0.001..=1000.0).contains(v)),
                 "échelle invalide"
             );
         }
@@ -282,10 +312,15 @@ impl SceneDocumentV2 {
     /// Returns inherited visibility after following the validated parent chain.
     pub fn is_effectively_visible(&self, id: &str) -> Result<bool> {
         self.validate()?;
-        let objects: HashMap<&str, &SceneObjectV2> =
-            self.objects.iter().map(|object| (object.id.as_str(), object)).collect();
-        let mut current =
-            objects.get(id).copied().ok_or_else(|| anyhow::anyhow!("objet introuvable"))?;
+        let objects: HashMap<&str, &SceneObjectV2> = self
+            .objects
+            .iter()
+            .map(|object| (object.id.as_str(), object))
+            .collect();
+        let mut current = objects
+            .get(id)
+            .copied()
+            .ok_or_else(|| anyhow::anyhow!("objet introuvable"))?;
         loop {
             if !current.visible {
                 return Ok(false);
@@ -308,10 +343,15 @@ impl SceneDocumentV2 {
     /// document never runs.
     pub fn world_matrix(&self, id: &str) -> Result<[[f32; 4]; 4]> {
         self.validate()?;
-        let objects: HashMap<&str, &SceneObjectV2> =
-            self.objects.iter().map(|object| (object.id.as_str(), object)).collect();
-        let mut current =
-            objects.get(id).copied().ok_or_else(|| anyhow::anyhow!("objet introuvable"))?;
+        let objects: HashMap<&str, &SceneObjectV2> = self
+            .objects
+            .iter()
+            .map(|object| (object.id.as_str(), object))
+            .collect();
+        let mut current = objects
+            .get(id)
+            .copied()
+            .ok_or_else(|| anyhow::anyhow!("objet introuvable"))?;
         let mut chain = vec![current];
         while let Some(parent) = current.parent.as_deref() {
             current = objects[parent];
@@ -363,7 +403,10 @@ impl SceneDocumentV2 {
     ) -> Result<(Model, Vec<String>)> {
         self.validate()?;
         let mut owners: Vec<String> = Vec::new();
-        let mut scene = Model { primitives: vec![], textures: vec![] };
+        let mut scene = Model {
+            primitives: vec![],
+            textures: vec![],
+        };
         for object in &self.objects {
             if !self.is_effectively_visible(&object.id)? {
                 continue;
@@ -408,16 +451,38 @@ impl SceneDocumentV2 {
 fn trs_matrix(object: &SceneObjectV2) -> [[f32; 4]; 4] {
     let [x, y, z, w] = object.rotation;
     let rotation = [
-        [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - w * z), 2.0 * (x * z + w * y)],
-        [2.0 * (x * y + w * z), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - w * x)],
-        [2.0 * (x * z - w * y), 2.0 * (y * z + w * x), 1.0 - 2.0 * (x * x + y * y)],
+        [
+            1.0 - 2.0 * (y * y + z * z),
+            2.0 * (x * y - w * z),
+            2.0 * (x * z + w * y),
+        ],
+        [
+            2.0 * (x * y + w * z),
+            1.0 - 2.0 * (x * x + z * z),
+            2.0 * (y * z - w * x),
+        ],
+        [
+            2.0 * (x * z - w * y),
+            2.0 * (y * z + w * x),
+            1.0 - 2.0 * (x * x + y * y),
+        ],
     ];
     let [sx, sy, sz] = object.scale;
     let [tx, ty, tz] = object.position;
     let column = |c: usize, scale: f32| {
-        [rotation[0][c] * scale, rotation[1][c] * scale, rotation[2][c] * scale, 0.0]
+        [
+            rotation[0][c] * scale,
+            rotation[1][c] * scale,
+            rotation[2][c] * scale,
+            0.0,
+        ]
     };
-    [column(0, sx), column(1, sy), column(2, sz), [tx, ty, tz, 1.0]]
+    [
+        column(0, sx),
+        column(1, sy),
+        column(2, sz),
+        [tx, ty, tz, 1.0],
+    ]
 }
 
 /// `a·b` for column-major 4×4 matrices.
@@ -431,7 +496,11 @@ fn mat_mul(a: &[[f32; 4]; 4], b: &[[f32; 4]; 4]) -> [[f32; 4]; 4] {
 }
 
 fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 /// The unit quaternion `[x, y, z, w]` of a rotation matrix given as `r(row, col)`.
@@ -439,19 +508,43 @@ fn quat_from_rotation(r: impl Fn(usize, usize) -> f32) -> [f32; 4] {
     let trace = r(0, 0) + r(1, 1) + r(2, 2);
     let q = if trace > 0.0 {
         let s = 0.5 / (trace + 1.0).sqrt();
-        [(r(2, 1) - r(1, 2)) * s, (r(0, 2) - r(2, 0)) * s, (r(1, 0) - r(0, 1)) * s, 0.25 / s]
+        [
+            (r(2, 1) - r(1, 2)) * s,
+            (r(0, 2) - r(2, 0)) * s,
+            (r(1, 0) - r(0, 1)) * s,
+            0.25 / s,
+        ]
     } else if r(0, 0) > r(1, 1) && r(0, 0) > r(2, 2) {
         let s = 2.0 * (1.0 + r(0, 0) - r(1, 1) - r(2, 2)).sqrt();
-        [0.25 * s, (r(1, 0) + r(0, 1)) / s, (r(0, 2) + r(2, 0)) / s, (r(2, 1) - r(1, 2)) / s]
+        [
+            0.25 * s,
+            (r(1, 0) + r(0, 1)) / s,
+            (r(0, 2) + r(2, 0)) / s,
+            (r(2, 1) - r(1, 2)) / s,
+        ]
     } else if r(1, 1) > r(2, 2) {
         let s = 2.0 * (1.0 - r(0, 0) + r(1, 1) - r(2, 2)).sqrt();
-        [(r(1, 0) + r(0, 1)) / s, 0.25 * s, (r(2, 1) + r(1, 2)) / s, (r(0, 2) - r(2, 0)) / s]
+        [
+            (r(1, 0) + r(0, 1)) / s,
+            0.25 * s,
+            (r(2, 1) + r(1, 2)) / s,
+            (r(0, 2) - r(2, 0)) / s,
+        ]
     } else {
         let s = 2.0 * (1.0 - r(0, 0) - r(1, 1) + r(2, 2)).sqrt();
-        [(r(0, 2) + r(2, 0)) / s, (r(2, 1) + r(1, 2)) / s, 0.25 * s, (r(1, 0) - r(0, 1)) / s]
+        [
+            (r(0, 2) + r(2, 0)) / s,
+            (r(2, 1) + r(1, 2)) / s,
+            0.25 * s,
+            (r(1, 0) - r(0, 1)) / s,
+        ]
     };
     let length = q.iter().map(|v| v * v).sum::<f32>().sqrt();
-    if length > 1e-12 { q.map(|v| v / length) } else { [0.0, 0.0, 0.0, 1.0] }
+    if length > 1e-12 {
+        q.map(|v| v / length)
+    } else {
+        [0.0, 0.0, 0.0, 1.0]
+    }
 }
 
 impl From<&SceneDocument> for SceneDocumentV2 {
@@ -499,7 +592,10 @@ mod tests {
         };
         let (model, owners) = document
             .compose_indexed(|_| {
-                Ok(Model { primitives: vec![primitive(), primitive()], textures: vec![] })
+                Ok(Model {
+                    primitives: vec![primitive(), primitive()],
+                    textures: vec![],
+                })
             })
             .unwrap();
 
@@ -692,7 +788,14 @@ mod tests {
             vec![object("a", Some("b")), object("b", Some("a"))],
         ];
         for objects in invalid {
-            assert!(SceneDocumentV2 { version: 2, objects }.validate().is_err());
+            assert!(
+                SceneDocumentV2 {
+                    version: 2,
+                    objects
+                }
+                .validate()
+                .is_err()
+            );
         }
     }
 
@@ -728,7 +831,10 @@ mod tests {
         };
         let document = SceneDocumentV2 {
             version: 2,
-            objects: vec![object("root", None, false), object("child", Some("root"), true)],
+            objects: vec![
+                object("root", None, false),
+                object("child", Some("root"), true),
+            ],
         };
         assert!(!document.is_effectively_visible("child").unwrap());
         assert!(!document.is_effectively_visible("root").unwrap());
@@ -804,7 +910,11 @@ mod tests {
                 id: id.into(),
                 parent: parent.map(Into::into),
                 name: id.into(),
-                asset: if id == "child" { "mesh.glb".into() } else { "empty.glb".into() },
+                asset: if id == "child" {
+                    "mesh.glb".into()
+                } else {
+                    "empty.glb".into()
+                },
                 position: [0.0; 3],
                 rotation,
                 scale,
@@ -814,7 +924,12 @@ mod tests {
             version: 2,
             objects: vec![
                 object("parent", None, [0.0, 0.0, 0.0, 1.0], [2.0, 1.0, 1.0]),
-                object("child", Some("parent"), [0.0, 0.0, quarter.sin(), quarter.cos()], [1.0; 3]),
+                object(
+                    "child",
+                    Some("parent"),
+                    [0.0, 0.0, quarter.sin(), quarter.cos()],
+                    [1.0; 3],
+                ),
             ],
         };
         let (composed, owners) = document

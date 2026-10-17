@@ -20,7 +20,10 @@ pub trait ConfigStore: Send + Sync {
     fn read_bounded(&self, name: &str, max_bytes: usize) -> std::io::Result<Option<String>> {
         let text = self.read(name);
         if text.as_ref().is_some_and(|text| text.len() > max_bytes) {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "configuration entry exceeds its size limit"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "configuration entry exceeds its size limit",
+            ));
         }
         Ok(text)
     }
@@ -58,7 +61,9 @@ pub struct StdFiles;
 
 impl FileOps for StdFiles {
     fn list(&self, dir: &Path) -> Vec<(String, std::time::SystemTime)> {
-        let Ok(rd) = std::fs::read_dir(dir) else { return vec![] };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return vec![];
+        };
         rd.flatten()
             .filter_map(|e| {
                 let m = e.metadata().ok().filter(|m| m.is_file())?.modified().ok()?;
@@ -104,8 +109,14 @@ impl ConfigStore for MemoryConfig {
     }
     fn list(&self, dir: &str) -> Vec<String> {
         let pre = format!("{}/", dir.trim_end_matches('/'));
-        let Ok(m) = self.files.lock() else { return vec![] };
-        m.keys().filter_map(|k| k.strip_prefix(&pre)).filter(|n| !n.is_empty() && !n.contains('/')).map(str::to_string).collect()
+        let Ok(m) = self.files.lock() else {
+            return vec![];
+        };
+        m.keys()
+            .filter_map(|k| k.strip_prefix(&pre))
+            .filter(|n| !n.is_empty() && !n.contains('/'))
+            .map(str::to_string)
+            .collect()
     }
 }
 
@@ -129,7 +140,12 @@ impl ConfigStore for DirConfig {
         let limit = u64::try_from(max_bytes)
             .ok()
             .and_then(|n| n.checked_add(1))
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "configuration read limit is too large"))?;
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "configuration read limit is too large",
+                )
+            })?;
         let file = match std::fs::File::open(self.dir.join(name)) {
             Ok(file) => file,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -138,7 +154,10 @@ impl ConfigStore for DirConfig {
         let mut text = String::new();
         file.take(limit).read_to_string(&mut text)?;
         if text.len() > max_bytes {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "configuration entry exceeds its size limit"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "configuration entry exceeds its size limit",
+            ));
         }
         Ok(Some(text))
     }
@@ -148,8 +167,14 @@ impl ConfigStore for DirConfig {
         atomic_write(&path, data.as_bytes())
     }
     fn list(&self, dir: &str) -> Vec<String> {
-        let Ok(rd) = std::fs::read_dir(self.dir.join(dir)) else { return vec![] };
-        let mut v: Vec<String> = rd.flatten().filter(|e| e.path().is_file()).map(|e| e.file_name().to_string_lossy().to_string()).collect();
+        let Ok(rd) = std::fs::read_dir(self.dir.join(dir)) else {
+            return vec![];
+        };
+        let mut v: Vec<String> = rd
+            .flatten()
+            .filter(|e| e.path().is_file())
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .collect();
         v.sort();
         v
     }
@@ -166,7 +191,10 @@ impl ConfigStore for DirConfig {
 
 /// The temporary file an atomic write of `path` goes through.
 pub fn temp_path(path: &Path) -> PathBuf {
-    let mut name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
+    let mut name = path
+        .file_name()
+        .map(|n| n.to_os_string())
+        .unwrap_or_default();
     name.push(".tmp");
     path.with_file_name(name)
 }
@@ -185,7 +213,11 @@ pub fn atomic_write(path: &Path, data: &[u8]) -> std::io::Result<()> {
 
 /// [`atomic_write`] with an injectable temp-file writer (tests simulate a crash mid-write). A
 /// failed write removes the temporary file and leaves `path` untouched.
-pub fn atomic_write_with(path: &Path, data: &[u8], write: impl FnOnce(&Path, &[u8]) -> std::io::Result<()>) -> std::io::Result<()> {
+pub fn atomic_write_with(
+    path: &Path,
+    data: &[u8],
+    write: impl FnOnce(&Path, &[u8]) -> std::io::Result<()>,
+) -> std::io::Result<()> {
     let tmp = temp_path(path);
     if let Err(e) = write(&tmp, data) {
         let _ = std::fs::remove_file(&tmp);

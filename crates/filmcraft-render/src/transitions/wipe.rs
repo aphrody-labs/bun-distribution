@@ -18,8 +18,14 @@ pub struct WipeStyle {
 
 impl WipeStyle {
     pub(crate) fn of(t: &Tx) -> Self {
-        let aa = [0.5, 1.0, 1.75, 2.5][t.choice("antialias").min(3) as usize] * t.scale.clamp(0.25, 1.0);
-        WipeStyle { feather: t.px("feather"), border: t.px("border_width"), border_color: t.color("border_color"), aa }
+        let aa =
+            [0.5, 1.0, 1.75, 2.5][t.choice("antialias").min(3) as usize] * t.scale.clamp(0.25, 1.0);
+        WipeStyle {
+            feather: t.px("feather"),
+            border: t.px("border_width"),
+            border_color: t.color("border_color"),
+            aa,
+        }
     }
     fn margin(&self) -> f32 {
         self.border + self.feather + 2.0 * self.aa + 1.0
@@ -31,7 +37,11 @@ impl WipeStyle {
 pub(crate) fn coverage(st: &WipeStyle, d: f32) -> (f32, f32) {
     let s = (st.feather + st.aa) * 0.5;
     let kb = 1.0 - smoothstep(-s, s, d);
-    let ko = if st.border > 0.0 { 1.0 - smoothstep(st.border - s, st.border + s, d) } else { kb };
+    let ko = if st.border > 0.0 {
+        1.0 - smoothstep(st.border - s, st.border + s, d)
+    } else {
+        kb
+    };
     (kb, ko.max(kb))
 }
 
@@ -67,7 +77,9 @@ pub(crate) fn field_wipe(t: &Tx, st: WipeStyle, field: impl Fn(f32, f32) -> f32 
     let (lo, hi) = field_range(t.wf, t.hf, &field);
     let m = st.margin() + (hi - lo) * 0.01;
     let thr = lo - m + t.p * (hi - lo + 2.0 * m);
-    paint(t.w, t.h, |x, y| wipe_px(&st, t.pa(x, y), t.pb(x, y), field(x, y) - thr))
+    paint(t.w, t.h, |x, y| {
+        wipe_px(&st, t.pa(x, y), t.pb(x, y), field(x, y) - thr)
+    })
 }
 
 /// Unit vector of travel for an angle param (0° = up, 90° = right).
@@ -117,7 +129,11 @@ pub(crate) fn star_dist(x: f32, y: f32, n: u32, inner: f32) -> f32 {
     let (ex, ey) = (p1x - 1.0, p1y);
     let (dx, dy) = (a.cos(), a.sin());
     let denom = dx * ey - dy * ex;
-    let tr = if denom.abs() < 1e-9 { 1.0 } else { (ey) / denom }; // cross(P0, E) / cross(D, E) with P0 = (1, 0)
+    let tr = if denom.abs() < 1e-9 {
+        1.0
+    } else {
+        (ey) / denom
+    }; // cross(P0, E) / cross(D, E) with P0 = (1, 0)
     r / tr.max(0.05)
 }
 
@@ -222,7 +238,12 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             let m = glow * 0.5 + 2.0;
             let thr = lo - m + t.p * (hi - lo + 2.0 * m);
             let fade = (t.p * 10.0).min((1.0 - t.p) * 10.0).min(1.0);
-            let st = WipeStyle { feather: 0.0, border: 0.0, border_color: [0.0; 4], aa: st.aa };
+            let st = WipeStyle {
+                feather: 0.0,
+                border: 0.0,
+                border_color: [0.0; 4],
+                aa: st.aa,
+            };
             paint(t.w, t.h, |x, y| {
                 let d = x * dx + y * dy - thr;
                 let base = wipe_px(&st, t.pa(x, y), t.pb(x, y), d);
@@ -233,7 +254,9 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
             })
         }
         // Legacy wipes rebuilt on the field engine (border / anti-aliasing / centre).
-        "iris_round" => field_wipe(t, st, move |x, y| ((x - cx).powi(2) + (y - cy).powi(2)).sqrt()),
+        "iris_round" => field_wipe(t, st, move |x, y| {
+            ((x - cx).powi(2) + (y - cy).powi(2)).sqrt()
+        }),
         "iris_box" => field_wipe(t, st, move |x, y| (x - cx).abs().max((y - cy).abs() * asp)),
         "iris_diamond" => field_wipe(t, st, move |x, y| (x - cx).abs() + (y - cy).abs() * asp),
         "iris_cross" => field_wipe(t, st, move |x, y| {
@@ -243,7 +266,13 @@ pub(super) fn apply(id: &str, t: &Tx) -> Option<Image> {
         }),
         "barn_doors" => {
             let vertical = t.choice("orientation") == 1;
-            field_wipe(t, st, move |x, y| if vertical { (x - cx).abs() } else { (y - cy).abs() * asp })
+            field_wipe(t, st, move |x, y| {
+                if vertical {
+                    (x - cx).abs()
+                } else {
+                    (y - cy).abs() * asp
+                }
+            })
         }
         "inset" => {
             let (ox, oy) = match t.choice("corner") {

@@ -11,7 +11,9 @@ use effectcraft_raster::Image;
 
 use crate::Frame;
 use crate::fit::{Model, ransac};
-use crate::klt::{CornerOpts, GrayPyramid, LkOpts, analysis_factor, good_features, luma_plane, track};
+use crate::klt::{
+    CornerOpts, GrayPyramid, LkOpts, analysis_factor, good_features, luma_plane, track,
+};
 use crate::solve::Homography;
 
 /// Point-in-polygon (even–odd rule).
@@ -24,7 +26,9 @@ pub fn inside_polygon(poly: &[[f64; 2]], p: [f64; 2]) -> bool {
     let mut j = n - 1;
     for i in 0..n {
         let (a, b) = (poly[i], poly[j]);
-        if (a[1] > p[1]) != (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0] {
+        if (a[1] > p[1]) != (b[1] > p[1])
+            && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
             c = !c;
         }
         j = i;
@@ -72,7 +76,14 @@ pub struct MaskStep {
 impl MaskTracker {
     /// Start on `frame` with the mask `outline` (a closed polyline in layer pixels).
     pub fn new(model: Model, outline: Vec<[f64; 2]>, frame: &Frame) -> MaskTracker {
-        MaskTracker { model, outline, velocity: Homography::IDENTITY, prev: Some(frame.img.clone()), prev_offset: frame.offset, last_features: 0 }
+        MaskTracker {
+            model,
+            outline,
+            velocity: Homography::IDENTITY,
+            prev: Some(frame.img.clone()),
+            prev_offset: frame.offset,
+            last_features: 0,
+        }
     }
 
     /// Track into `frame` (the next frame in either direction). `None` when the mask's pixels
@@ -106,7 +117,10 @@ impl MaskTracker {
             if x1 <= x0 + 8 || y1 <= y0 + 8 {
                 return None;
             }
-            Some((img.crop(x0, y0, (x1 - x0) as u32, (y1 - y0) as u32), [off[0] - x0 as f64, off[1] - y0 as f64]))
+            Some((
+                img.crop(x0, y0, (x1 - x0) as u32, (y1 - y0) as u32),
+                [off[0] - x0 as f64, off[1] - y0 as f64],
+            ))
         };
         let (ca, oa) = crop(prev, prev_off)?;
         let (cb, ob) = crop(frame.img, frame.offset)?;
@@ -116,7 +130,11 @@ impl MaskTracker {
         let pa = GrayPyramid::from_plane(luma_plane(&ca, factor), oa, factor as f64, levels);
         let pb_raw = luma_plane(&cb, factor);
         // Shift frame b's crop into frame a's plane coordinates when the offsets differ.
-        let pb = if (oa[0] - ob[0]).abs() < 1e-9 && (oa[1] - ob[1]).abs() < 1e-9 && ca.width == cb.width && ca.height == cb.height {
+        let pb = if (oa[0] - ob[0]).abs() < 1e-9
+            && (oa[1] - ob[1]).abs() < 1e-9
+            && ca.width == cb.width
+            && ca.height == cb.height
+        {
             GrayPyramid::from_plane(pb_raw, oa, factor as f64, levels)
         } else {
             let mut q = crate::plane::Plane::new(pa.levels[0].w, pa.levels[0].h, 1);
@@ -125,7 +143,10 @@ impl MaskTracker {
                 for x in 0..q.w {
                     // plane a (x, y) → layer → plane b.
                     let l = pa.to_layer([x as f64 + 0.5, y as f64 + 0.5]);
-                    let pbp = [(l[0] + ob[0]) / factor as f64, (l[1] + ob[1]) / factor as f64];
+                    let pbp = [
+                        (l[0] + ob[0]) / factor as f64,
+                        (l[1] + ob[1]) / factor as f64,
+                    ];
                     pb_raw.sample(pbp[0], pbp[1], &mut v);
                     q.data[y * q.w + x] = v[0];
                 }
@@ -136,7 +157,17 @@ impl MaskTracker {
         let area = bw * bh / (factor * factor) as f64;
         let md = (area / 500.0).sqrt().clamp(3.0, 12.0);
         let inside = |p: [f64; 2]| inside_polygon(&outline, p);
-        let feats = good_features(&pa, &CornerOpts { max_features: 500, min_distance: md, quality: 0.005, window: 2, border: 3 }, Some(&inside));
+        let feats = good_features(
+            &pa,
+            &CornerOpts {
+                max_features: 500,
+                min_distance: md,
+                quality: 0.005,
+                window: 2,
+                border: 3,
+            },
+            Some(&inside),
+        );
         self.last_features = feats.len();
         if feats.len() < 3 {
             return None;
@@ -150,11 +181,30 @@ impl MaskTracker {
                 [(m[0] - l[0]) / factor as f64, (m[1] - l[1]) / factor as f64]
             })
             .collect();
-        let tracked = track(&pa, &pb, &feats, Some(&guesses), &LkOpts { radius: 6, fb_max: 0.75, ..Default::default() });
-        let (src, dst): (Vec<[f64; 2]>, Vec<[f64; 2]>) = feats.iter().zip(&tracked).filter_map(|(p, q)| q.map(|q| (pa.to_layer(*p), pa.to_layer(q)))).unzip();
+        let tracked = track(
+            &pa,
+            &pb,
+            &feats,
+            Some(&guesses),
+            &LkOpts {
+                radius: 6,
+                fb_max: 0.75,
+                ..Default::default()
+            },
+        );
+        let (src, dst): (Vec<[f64; 2]>, Vec<[f64; 2]>) = feats
+            .iter()
+            .zip(&tracked)
+            .filter_map(|(p, q)| q.map(|q| (pa.to_layer(*p), pa.to_layer(q))))
+            .unzip();
         let thr = 1.5 * factor as f64;
         let chain: &[Model] = match self.model {
-            Model::Homography => &[Model::Homography, Model::Affine, Model::Similarity, Model::Translation],
+            Model::Homography => &[
+                Model::Homography,
+                Model::Affine,
+                Model::Similarity,
+                Model::Translation,
+            ],
             Model::Affine => &[Model::Affine, Model::Similarity, Model::Translation],
             Model::Similarity => &[Model::Similarity, Model::Translation],
             Model::TranslationScale => &[Model::TranslationScale, Model::Translation],
@@ -169,7 +219,11 @@ impl MaskTracker {
             if let Some(f) = ransac(*m, &src, &dst, thr, 400, 0x5eed + src.len() as u64) {
                 let c = f.inlier_count();
                 if c >= need && c * 3 >= src.len() {
-                    return Some(MaskStep { motion: f.h, inliers: c, model: *m });
+                    return Some(MaskStep {
+                        motion: f.h,
+                        inliers: c,
+                        model: *m,
+                    });
                 }
             }
         }
@@ -182,7 +236,9 @@ mod tests {
     use super::*;
 
     fn tex(x: f64, y: f64) -> f32 {
-        let v = (x * 0.37).sin() * (y * 0.29).cos() + 0.6 * ((x + 1.7 * y) * 0.21).sin() + 0.4 * ((x * 0.83 - y * 0.61).sin());
+        let v = (x * 0.37).sin() * (y * 0.29).cos()
+            + 0.6 * ((x + 1.7 * y) * 0.21).sin()
+            + 0.4 * ((x * 0.83 - y * 0.61).sin());
         (0.5 + 0.18 * v) as f32
     }
 
@@ -193,7 +249,11 @@ mod tests {
         for y in 0..240 {
             for x in 0..320 {
                 let o = inv.apply([x as f64 + 0.5, y as f64 + 0.5]);
-                let v = if o[0].hypot(o[1]) <= 50.0 { tex(o[0], o[1]) } else { 0.3 };
+                let v = if o[0].hypot(o[1]) <= 50.0 {
+                    tex(o[0], o[1])
+                } else {
+                    0.3
+                };
                 im.set(x, y, [v, v, v, 1.0]);
             }
         }
@@ -205,17 +265,33 @@ mod tests {
         let pose = |f: usize| {
             let a = (f as f64 * 4.0).to_radians();
             let s = 1.0 + 0.03 * f as f64;
-            Homography([[s * a.cos(), -s * a.sin(), 140.0 + 4.0 * f as f64], [s * a.sin(), s * a.cos(), 110.0 + 2.0 * f as f64], [0.0, 0.0, 1.0]])
+            Homography([
+                [s * a.cos(), -s * a.sin(), 140.0 + 4.0 * f as f64],
+                [s * a.sin(), s * a.cos(), 110.0 + 2.0 * f as f64],
+                [0.0, 0.0, 1.0],
+            ])
         };
-        let ring: Vec<[f64; 2]> = (0..24).map(|i| (i as f64 * 15.0).to_radians()).map(|a| [40.0 * a.cos(), 40.0 * a.sin()]).collect();
+        let ring: Vec<[f64; 2]> = (0..24)
+            .map(|i| (i as f64 * 15.0).to_radians())
+            .map(|a| [40.0 * a.cos(), 40.0 * a.sin()])
+            .collect();
         let f0 = frame(&pose(0));
-        let mut mt = MaskTracker::new(Model::Similarity, ring.iter().map(|p| pose(0).apply(*p)).collect(), &Frame::new(&f0));
+        let mut mt = MaskTracker::new(
+            Model::Similarity,
+            ring.iter().map(|p| pose(0).apply(*p)).collect(),
+            &Frame::new(&f0),
+        );
         for f in 1..8 {
             let img = frame(&pose(f));
             let st = mt.step(&Frame::new(&img)).expect("tracked");
             assert!(st.inliers > 10);
             let want: Vec<[f64; 2]> = ring.iter().map(|p| pose(f).apply(*p)).collect();
-            let err = mt.outline.iter().zip(&want).map(|(a, b)| (a[0] - b[0]).hypot(a[1] - b[1])).fold(0.0, f64::max);
+            let err = mt
+                .outline
+                .iter()
+                .zip(&want)
+                .map(|(a, b)| (a[0] - b[0]).hypot(a[1] - b[1]))
+                .fold(0.0, f64::max);
             assert!(err < 1.5, "frame {f}: max vertex error {err}");
         }
     }

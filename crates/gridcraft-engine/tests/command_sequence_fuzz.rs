@@ -62,7 +62,10 @@ const EXCLUDED: &[(&str, &str)] = &[
     ("view.newWindow", "opens another document"),
     ("insert.picture", "reads files"),
     ("pageLayout.background", "reads files"),
-    ("formulas.calculationOptions", "manual and iterative calculation differ from a full recalc by design"),
+    (
+        "formulas.calculationOptions",
+        "manual and iterative calculation differ from a full recalc by design",
+    ),
 ];
 
 // ---------------------------------------------------------------- deterministic randomness
@@ -79,7 +82,11 @@ impl Rng {
         z ^ (z >> 31)
     }
     fn below(&mut self, n: usize) -> usize {
-        if n == 0 { 0 } else { (self.next() % n as u64) as usize }
+        if n == 0 {
+            0
+        } else {
+            (self.next() % n as u64) as usize
+        }
     }
     /// Inclusive range.
     fn int(&mut self, lo: i64, hi: i64) -> i64 {
@@ -107,7 +114,10 @@ struct Failure {
 }
 
 fn env_num(name: &str, default: u64) -> u64 {
-    std::env::var(name).ok().and_then(|v| v.trim().parse().ok()).unwrap_or(default)
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(default)
 }
 
 #[test]
@@ -115,7 +125,10 @@ fn command_sequences_keep_the_workbook_consistent() {
     let seeds = env_num("GRIDCRAFT_FUZZ_SEEDS", 6);
     let steps = env_num("GRIDCRAFT_FUZZ_STEPS", 40) as usize;
     let keep_going = std::env::var_os("GRIDCRAFT_FUZZ_KEEP_GOING").is_some();
-    let list: Vec<u64> = match std::env::var("GRIDCRAFT_FUZZ_SEED").ok().and_then(|v| v.trim().parse().ok()) {
+    let list: Vec<u64> = match std::env::var("GRIDCRAFT_FUZZ_SEED")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+    {
         Some(one) => vec![one],
         None => (0..seeds).collect(),
     };
@@ -129,7 +142,12 @@ fn command_sequences_keep_the_workbook_consistent() {
             }
         }
     }
-    assert!(reports.is_empty(), "{} failing seed(s)\n\n{}", reports.len(), reports.join("\n\n"));
+    assert!(
+        reports.is_empty(),
+        "{} failing seed(s)\n\n{}",
+        reports.len(),
+        reports.join("\n\n")
+    );
 }
 
 fn report(seed: u64, steps: usize, sample: &str, sequence: &[Step], f: &Failure) -> String {
@@ -149,7 +167,10 @@ fn report(seed: u64, steps: usize, sample: &str, sequence: &[Step], f: &Failure)
     }
     if std::env::var_os("GRIDCRAFT_FUZZ_SHRINK").is_some() {
         let min = shrink(sample, &sequence[..end], f.kind);
-        out.push_str(&format!("  minimal sequence ({} steps) from file.new {{\"sample\": \"{sample}\"}}:\n", min.len()));
+        out.push_str(&format!(
+            "  minimal sequence ({} steps) from file.new {{\"sample\": \"{sample}\"}}:\n",
+            min.len()
+        ));
         for (id, p) in &min {
             out.push_str(&format!("    s.execute(\"{id}\", json!({p})).ok();\n"));
         }
@@ -223,16 +244,28 @@ struct Harness {
 }
 
 fn fail(step: usize, kind: &'static str, what: impl Into<String>) -> Failure {
-    Failure { step, kind, what: what.into() }
+    Failure {
+        step,
+        kind,
+        what: what.into(),
+    }
 }
 
 /// Runs `f`, turning a panic into a failure (for checks that run outside `Session::execute`).
-fn guarded<T>(step: usize, kind: &'static str, f: impl FnOnce() -> Result<T, String>) -> Result<T, Failure> {
+fn guarded<T>(
+    step: usize,
+    kind: &'static str,
+    f: impl FnOnce() -> Result<T, String>,
+) -> Result<T, Failure> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
         Ok(Ok(v)) => Ok(v),
         Ok(Err(e)) => Err(fail(step, kind, e)),
         Err(p) => {
-            let msg = p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_default();
+            let msg = p
+                .downcast_ref::<&str>()
+                .map(|s| s.to_string())
+                .or_else(|| p.downcast_ref::<String>().cloned())
+                .unwrap_or_default();
             Err(fail(step, kind, format!("panicked: {msg}")))
         }
     }
@@ -241,7 +274,8 @@ fn guarded<T>(step: usize, kind: &'static str, f: impl FnOnce() -> Result<T, Str
 impl Harness {
     fn new(sample: &str) -> Harness {
         let mut s = Session::new();
-        s.execute("file.new", json!({"sample": sample})).expect("sample opens");
+        s.execute("file.new", json!({"sample": sample}))
+            .expect("sample opens");
         let base = s.doc().expect("document").wb.clone();
         Harness { s, base }
     }
@@ -255,10 +289,18 @@ impl Harness {
         let r = self.s.execute(id, params.clone());
         self.s.take_ui_requests();
         if let Err(EngineError::Internal(_, msg)) = &r {
-            return Err(fail(i, "panic", format!("`{id}` panicked (caught by Session::execute): {msg}")));
+            return Err(fail(
+                i,
+                "panic",
+                format!("`{id}` panicked (caught by Session::execute): {msg}"),
+            ));
         }
         if self.s.documents().len() != 1 {
-            return Err(fail(i, "documents", format!("`{id}` changed the number of open documents; exclude it in EXCLUDED")));
+            return Err(fail(
+                i,
+                "documents",
+                format!("`{id}` changed the number of open documents; exclude it in EXCLUDED"),
+            ));
         }
         let after = self.wb();
         let spec = find_command(id).expect("generated ids are registered");
@@ -266,7 +308,11 @@ impl Harness {
             && !matches!(id, "edit.undo" | "edit.redo")
             && let Some(diff) = content_diff(&before, &after)
         {
-            return Err(fail(i, "not undoable", format!("non-undoable `{id}` changed cell content: {diff}")));
+            return Err(fail(
+                i,
+                "not undoable",
+                format!("non-undoable `{id}` changed cell content: {diff}"),
+            ));
         }
         self.check_state(i)?;
         if (i + 1).is_multiple_of(ROUNDTRIP_EVERY) {
@@ -295,7 +341,11 @@ impl Harness {
         let mut n = 0;
         while !self.s.doc().expect("document").undo.is_empty() {
             if let Err(EngineError::Internal(_, msg)) = self.s.execute("edit.undo", json!({})) {
-                return Err(fail(i, "panic", format!("`edit.undo` panicked while undoing everything: {msg}")));
+                return Err(fail(
+                    i,
+                    "panic",
+                    format!("`edit.undo` panicked while undoing everything: {msg}"),
+                ));
             }
             n += 1;
             if n > 1_000 {
@@ -304,20 +354,36 @@ impl Harness {
         }
         let undone = self.wb();
         if let Some(diff) = workbook_diff(&self.base, &undone) {
-            return Err(fail(i, "undo", format!("undoing all {n} steps doesn't give back the starting workbook: {diff}")));
+            return Err(fail(
+                i,
+                "undo",
+                format!("undoing all {n} steps doesn't give back the starting workbook: {diff}"),
+            ));
         }
         if watch_list(&end) != watch_list(&undone) {
-            return Err(fail(i, "undo", format!("undoing all {n} steps changed the Watch Window list (not an edit)")));
+            return Err(fail(
+                i,
+                "undo",
+                format!("undoing all {n} steps changed the Watch Window list (not an edit)"),
+            ));
         }
         self.check_state(i)?;
         // Only the steps undone here: an `edit.undo {steps}` in the sequence may have left more.
         for _ in 0..n {
             if let Err(EngineError::Internal(_, msg)) = self.s.execute("edit.redo", json!({})) {
-                return Err(fail(i, "panic", format!("`edit.redo` panicked while redoing everything: {msg}")));
+                return Err(fail(
+                    i,
+                    "panic",
+                    format!("`edit.redo` panicked while redoing everything: {msg}"),
+                ));
             }
         }
         if let Some(diff) = workbook_diff(&end, &self.wb()) {
-            return Err(fail(i, "redo", format!("redoing all {n} steps doesn't give back the final workbook: {diff}")));
+            return Err(fail(
+                i,
+                "redo",
+                format!("redoing all {n} steps doesn't give back the final workbook: {diff}"),
+            ));
         }
         self.check_state(i)?;
         guarded(i, "xlsx roundtrip", || roundtrip_diff(&end))?;
@@ -351,13 +417,20 @@ fn content_diff(a: &Workbook, b: &Workbook) -> Option<String> {
         }
         for c in x.cells.diff(&y.cells) {
             let content = |s: &Sheet| {
-                s.cell(c).filter(|c| has_content(c)).map(|c| match &c.formula {
-                    Some(f) => format!("={}", f.text),
-                    None => format!("{:?}", c.value),
-                })
+                s.cell(c)
+                    .filter(|c| has_content(c))
+                    .map(|c| match &c.formula {
+                        Some(f) => format!("={}", f.text),
+                        None => format!("{:?}", c.value),
+                    })
             };
             if content(x) != content(y) {
-                return Some(format!("{}!{c}: {:?} became {:?}", x.name, content(x), content(y)));
+                return Some(format!(
+                    "{}!{c}: {:?} became {:?}",
+                    x.name,
+                    content(x),
+                    content(y)
+                ));
             }
         }
     }
@@ -373,16 +446,33 @@ fn structure_problem(wb: &Workbook, sel: &gridcraft_engine::Selection) -> Option
         return Some("no sheets left".into());
     }
     if wb.active_sheet >= wb.sheets.len() {
-        return Some(format!("active sheet {} of {}", wb.active_sheet, wb.sheets.len()));
+        return Some(format!(
+            "active sheet {} of {}",
+            wb.active_sheet,
+            wb.sheets.len()
+        ));
     }
     let mut tables = BTreeSet::new();
     for (i, sh) in wb.sheets.iter().enumerate() {
         if let Err(e) = wb.check_sheet_name(&sh.name, Some(i)) {
             return Some(format!("sheet name `{}`: {e}", sh.name));
         }
-        let on_sheet = |r: &RangeRef| r.start.is_valid() && r.end.is_valid() && r.start.row <= r.end.row && r.start.col <= r.end.col;
-        if let Some(r) = sh.merges.iter().chain(sh.tables.iter().map(|t| &t.range)).find(|r| !on_sheet(r)) {
-            return Some(format!("{}: merge or table range {r:?} isn't on the sheet", sh.name));
+        let on_sheet = |r: &RangeRef| {
+            r.start.is_valid()
+                && r.end.is_valid()
+                && r.start.row <= r.end.row
+                && r.start.col <= r.end.col
+        };
+        if let Some(r) = sh
+            .merges
+            .iter()
+            .chain(sh.tables.iter().map(|t| &t.range))
+            .find(|r| !on_sheet(r))
+        {
+            return Some(format!(
+                "{}: merge or table range {r:?} isn't on the sheet",
+                sh.name
+            ));
         }
         // A legacy array formula lives in the top-left cell of its range.
         for (c, cell) in sh.cells.iter() {
@@ -402,14 +492,33 @@ fn structure_problem(wb: &Workbook, sel: &gridcraft_engine::Selection) -> Option
                 return Some(format!("two tables named `{}`", t.name));
             }
             if t.columns.len() as u32 != t.range.end.col - t.range.start.col + 1 {
-                return Some(format!("table `{}` at {} has {} columns", t.name, t.range, t.columns.len()));
+                return Some(format!(
+                    "table `{}` at {} has {} columns",
+                    t.name,
+                    t.range,
+                    t.columns.len()
+                ));
             }
-            if let Some(o) = sh.tables.iter().skip(k + 1).find(|o| overlaps(&t.range, &o.range)) {
-                return Some(format!("{}: tables `{}` ({}) and `{}` ({}) overlap", sh.name, t.name, t.range, o.name, o.range));
+            if let Some(o) = sh
+                .tables
+                .iter()
+                .skip(k + 1)
+                .find(|o| overlaps(&t.range, &o.range))
+            {
+                return Some(format!(
+                    "{}: tables `{}` ({}) and `{}` ({}) overlap",
+                    sh.name, t.name, t.range, o.name, o.range
+                ));
             }
         }
     }
-    if sel.ranges.is_empty() || !sel.active.is_valid() || sel.ranges.iter().any(|r| !r.start.is_valid() || !r.end.is_valid()) {
+    if sel.ranges.is_empty()
+        || !sel.active.is_valid()
+        || sel
+            .ranges
+            .iter()
+            .any(|r| !r.start.is_valid() || !r.end.is_valid())
+    {
         return Some(format!("selection {sel:?}"));
     }
     None
@@ -427,14 +536,26 @@ fn value_diff(a: &Workbook, b: &Workbook, what: &str) -> Option<String> {
     for (x, y) in a.sheets.iter().zip(&b.sheets) {
         let mut keys: BTreeSet<CellRef> = BTreeSet::new();
         for s in [x, y] {
-            keys.extend(s.cells.iter().filter(|(_, c)| has_content(c)).map(|(c, _)| c));
+            keys.extend(
+                s.cells
+                    .iter()
+                    .filter(|(_, c)| has_content(c))
+                    .map(|(c, _)| c),
+            );
             keys.extend(s.spill.keys().copied());
         }
         for c in keys {
             let (va, vb) = (x.value(c), y.value(c));
             if !same_value(&va, &vb) {
-                let f = x.cell(c).and_then(|c| c.formula.as_ref()).map(|f| format!(" (formula ={})", f.text)).unwrap_or_default();
-                return Some(format!("{}!{c}{f}: {va:?} in memory, {vb:?} after {what}", x.name));
+                let f = x
+                    .cell(c)
+                    .and_then(|c| c.formula.as_ref())
+                    .map(|f| format!(" (formula ={})", f.text))
+                    .unwrap_or_default();
+                return Some(format!(
+                    "{}!{c}{f}: {va:?} in memory, {vb:?} after {what}",
+                    x.name
+                ));
             }
         }
     }
@@ -453,23 +574,41 @@ fn recalc_diff(wb: &Workbook) -> Result<(), String> {
 
 fn normalized_formula(f: &Formula) -> String {
     let text = Formula::new(&f.text).text;
-    if f.array.is_some() { format!("{{={text}}}") } else { format!("={text}") }
+    if f.array.is_some() {
+        format!("{{={text}}}")
+    } else {
+        format!("={text}")
+    }
 }
 
 /// Save to XLSX, reload (recalculating like opening does) and compare sheets, formulas and values.
 fn roundtrip_diff(wb: &Workbook) -> Result<(), String> {
     let bytes = io::save_bytes(wb, "fuzz.xlsx").map_err(|e| format!("save failed: {e}"))?;
-    let (mut back, _) = io::open_bytes("fuzz.xlsx", &bytes).map_err(|e| format!("reload failed: {e}"))?;
+    let (mut back, _) =
+        io::open_bytes("fuzz.xlsx", &bytes).map_err(|e| format!("reload failed: {e}"))?;
     Calc::new().recalc_all(&mut back);
     let names = |wb: &Workbook| wb.sheets.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
     if names(wb) != names(&back) {
-        return Err(format!("sheets {:?} reload as {:?}", names(wb), names(&back)));
+        return Err(format!(
+            "sheets {:?} reload as {:?}",
+            names(wb),
+            names(&back)
+        ));
     }
     for (x, y) in wb.sheets.iter().zip(&back.sheets) {
-        let formulas = |s: &Sheet| s.cells.iter().filter_map(|(c, cell)| Some((c, normalized_formula(cell.formula.as_ref()?)))).collect::<Vec<_>>();
+        let formulas = |s: &Sheet| {
+            s.cells
+                .iter()
+                .filter_map(|(c, cell)| Some((c, normalized_formula(cell.formula.as_ref()?))))
+                .collect::<Vec<_>>()
+        };
         let (fx, fy) = (formulas(x), formulas(y));
         if fx != fy {
-            let first = fx.iter().zip(&fy).find(|(a, b)| a != b).map(|(a, b)| format!("{a:?} vs {b:?}"));
+            let first = fx
+                .iter()
+                .zip(&fy)
+                .find(|(a, b)| a != b)
+                .map(|(a, b)| format!("{a:?} vs {b:?}"));
             let first = first.unwrap_or_else(|| format!("{} formulas vs {}", fx.len(), fy.len()));
             return Err(format!("{}: formulas differ after reload: {first}", x.name));
         }
@@ -482,7 +621,10 @@ fn roundtrip_diff(wb: &Workbook) -> Result<(), String> {
 
 /// The Watch Window list, which is workbook state but not an edit (undo keeps it).
 fn watch_list(wb: &Workbook) -> Option<&str> {
-    wb.names.iter().find(|n| n.name == WATCH_NAME).map(|n| n.formula.as_str())
+    wb.names
+        .iter()
+        .find(|n| n.name == WATCH_NAME)
+        .map(|n| n.formula.as_str())
 }
 
 /// The workbook with view state (active sheet, scroll, active cell) and the Watch Window list
@@ -510,7 +652,12 @@ fn workbook_diff(a: &Workbook, b: &Workbook) -> Option<String> {
     for (x, y) in a.sheets.iter().zip(&b.sheets) {
         if x != y {
             if let Some(c) = x.cells.diff(&y.cells).first() {
-                return Some(format!("{}!{c}: {:?} vs {:?}", x.name, x.cell(*c), y.cell(*c)));
+                return Some(format!(
+                    "{}!{c}: {:?} vs {:?}",
+                    x.name,
+                    x.cell(*c),
+                    y.cell(*c)
+                ));
             }
             let field = [
                 ("merges", x.merges != y.merges),
@@ -521,7 +668,10 @@ fn workbook_diff(a: &Workbook, b: &Workbook) -> Option<String> {
                 ("autofilter", x.autofilter != y.autofilter),
                 ("cond_formats", x.cond_formats != y.cond_formats),
                 ("validations", x.validations != y.validations),
-                ("spill", x.spill != y.spill || x.spill_ranges != y.spill_ranges),
+                (
+                    "spill",
+                    x.spill != y.spill || x.spill_ranges != y.spill_ranges,
+                ),
             ]
             .into_iter()
             .find(|(_, d)| *d)
@@ -588,7 +738,11 @@ fn rows_spec(rng: &mut Rng) -> String {
 
 fn cols_spec(rng: &mut Rng) -> String {
     let c = coord(rng, 11, 40, MAX_COLS);
-    format!("{}:{}", letter(c), letter((c + rng.int(0, 1) as u32).min(MAX_COLS - 1)))
+    format!(
+        "{}:{}",
+        letter(c),
+        letter((c + rng.int(0, 1) as u32).min(MAX_COLS - 1))
+    )
 }
 
 fn quoted(name: &str) -> String {
@@ -600,11 +754,19 @@ fn wb_of(s: &Session) -> &Workbook {
 }
 
 fn spill_anchors(wb: &Workbook) -> Vec<(usize, CellRef)> {
-    wb.sheets.iter().enumerate().flat_map(|(i, sh)| sh.spill_ranges.keys().map(move |c| (i, *c))).collect()
+    wb.sheets
+        .iter()
+        .enumerate()
+        .flat_map(|(i, sh)| sh.spill_ranges.keys().map(move |c| (i, *c)))
+        .collect()
 }
 
 fn tables(wb: &Workbook) -> Vec<(usize, &gridcraft_engine::model::Table)> {
-    wb.sheets.iter().enumerate().flat_map(|(i, sh)| sh.tables.iter().map(move |t| (i, t))).collect()
+    wb.sheets
+        .iter()
+        .enumerate()
+        .flat_map(|(i, sh)| sh.tables.iter().map(move |t| (i, t)))
+        .collect()
 }
 
 fn other_sheet(rng: &mut Rng, wb: &Workbook) -> String {
@@ -626,7 +788,11 @@ fn formula(rng: &mut Rng, wb: &Workbook) -> String {
         4 => format!("=SEQUENCE({n},{})", rng.int(1, 3)),
         5 | 6 if !tabs.is_empty() => {
             let (_, t) = rng.pick(&tabs);
-            let column = t.columns.get(rng.below(t.columns.len())).map(|c| c.name.clone()).unwrap_or_default();
+            let column = t
+                .columns
+                .get(rng.below(t.columns.len()))
+                .map(|c| c.name.clone())
+                .unwrap_or_default();
             match rng.below(4) {
                 0 => format!("=SUM({}[{column}])", t.name),
                 1 => format!("=ROWS({})", t.name),
@@ -648,7 +814,11 @@ fn formula(rng: &mut Rng, wb: &Workbook) -> String {
         12 => format!("=UNIQUE({r})"),
         13 => format!("=TRANSPOSE({r})"),
         14 => format!("=COUNTIF({col}:{col},\">0\")"),
-        15 => format!("=SUM({}:{}!{c})", other_sheet(rng, wb), other_sheet(rng, wb)),
+        15 => format!(
+            "=SUM({}:{}!{c})",
+            other_sheet(rng, wb),
+            other_sheet(rng, wb)
+        ),
         16 => format!("=LET(x,{c},x*2)"),
         17 => format!("=XLOOKUP({c},{col}1:{col}20,{col}1:{col}20)"),
         18 => format!("=FILTER({col}1:{col}20,{col}1:{col}20>{n})"),
@@ -660,7 +830,16 @@ fn formula(rng: &mut Rng, wb: &Workbook) -> String {
         21 => format!("={c}&\"-\"&{c2}"),
         22 => format!("=AVERAGE({r})*{n}"),
         23 => format!("=MAX({r})-MIN({r})"),
-        24 => rng.pick(&["=1/0", "=NA()", "=#REF!+1", "=NOSUCHFN(1)", "=SUM(", "=\"text\""]).to_string(),
+        24 => rng
+            .pick(&[
+                "=1/0",
+                "=NA()",
+                "=#REF!+1",
+                "=NOSUCHFN(1)",
+                "=SUM(",
+                "=\"text\"",
+            ])
+            .to_string(),
         25 => format!("={r}"),
         26 => format!("=INDEX({r},{n},1)"),
         27 => format!("=VLOOKUP({c},{r},2,FALSE)"),
@@ -673,7 +852,9 @@ fn literal(rng: &mut Rng) -> String {
     match rng.below(14) {
         0..=3 => rng.int(-50, 500).to_string(),
         4 => format!("{}.{}", rng.int(-9, 99), rng.int(0, 99)),
-        5 => rng.pick(&["North", "South", "East", "West", "abc", "Total", "x y"]).to_string(),
+        5 => rng
+            .pick(&["North", "South", "East", "West", "abc", "Total", "x y"])
+            .to_string(),
         6 => rng.pick(&["TRUE", "FALSE"]).to_string(),
         7 => format!("{}%", rng.int(0, 100)),
         8 => format!("2026-{:02}-{:02}", rng.int(1, 12), rng.int(1, 28)),
@@ -686,7 +867,11 @@ fn literal(rng: &mut Rng) -> String {
 }
 
 fn input(rng: &mut Rng, wb: &Workbook) -> String {
-    if rng.chance(55) { formula(rng, wb) } else { literal(rng) }
+    if rng.chance(55) {
+        formula(rng, wb)
+    } else {
+        literal(rng)
+    }
 }
 
 fn json_input(rng: &mut Rng, wb: &Workbook) -> Json {
@@ -700,7 +885,11 @@ fn json_input(rng: &mut Rng, wb: &Workbook) -> Json {
 
 fn values_2d(rng: &mut Rng, wb: &Workbook) -> Json {
     let (h, w) = (rng.int(1, 4), rng.int(1, 3));
-    Json::Array((0..h).map(|_| Json::Array((0..w).map(|_| json_input(rng, wb)).collect())).collect())
+    Json::Array(
+        (0..h)
+            .map(|_| Json::Array((0..w).map(|_| json_input(rng, wb)).collect()))
+            .collect(),
+    )
 }
 
 fn sheet_param(rng: &mut Rng, wb: &Workbook) -> Json {
@@ -712,11 +901,23 @@ fn sheet_param(rng: &mut Rng, wb: &Workbook) -> Json {
 }
 
 fn new_name(rng: &mut Rng) -> String {
-    rng.pick(&["Data", "Q4 2026", "Summary", "Sheet9", "x", "Sales", "Long name of a sheet 31 chars!", "it's", "Grades"]).to_string()
+    rng.pick(&[
+        "Data",
+        "Q4 2026",
+        "Summary",
+        "Sheet9",
+        "x",
+        "Sales",
+        "Long name of a sheet 31 chars!",
+        "it's",
+        "Grades",
+    ])
+    .to_string()
 }
 
 fn color(rng: &mut Rng) -> String {
-    rng.pick(&["#FF0000", "#00B050", "#FFFF00", "#1F4E79", "none"]).to_string()
+    rng.pick(&["#FF0000", "#00B050", "#FFFF00", "#1F4E79", "none"])
+        .to_string()
 }
 
 fn table_param(rng: &mut Rng, wb: &Workbook) -> Json {
@@ -728,7 +929,10 @@ fn table_param(rng: &mut Rng, wb: &Workbook) -> Json {
 }
 
 fn chart_ids(wb: &Workbook) -> Vec<u32> {
-    wb.sheets.iter().flat_map(|s| s.charts.iter().map(|c| c.id)).collect()
+    wb.sheets
+        .iter()
+        .flat_map(|s| s.charts.iter().map(|c| c.id))
+        .collect()
 }
 
 /// Curated state-changing commands and their weights.
@@ -798,13 +1002,22 @@ fn generate(rng: &mut Rng, s: &Session) -> Step {
             roll -= w;
         }
     }
-    let specs: Vec<_> = command_specs().iter().filter(|c| !EXCLUDED.iter().any(|(x, _)| *x == c.id)).collect();
+    let specs: Vec<_> = command_specs()
+        .iter()
+        .filter(|c| !EXCLUDED.iter().any(|(x, _)| *x == c.id))
+        .collect();
     let spec = specs[rng.below(specs.len())];
     (spec.id.to_string(), doc_params(rng, wb, spec.params))
 }
 
 fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
-    let maybe_range = |rng: &mut Rng| if rng.chance(70) { json!({"range": range(rng)}) } else { json!({}) };
+    let maybe_range = |rng: &mut Rng| {
+        if rng.chance(70) {
+            json!({"range": range(rng)})
+        } else {
+            json!({})
+        }
+    };
     match id {
         "cell.set" => {
             let mut p = json!({"cell": cell(rng).a1(), "input": input(rng, wb)});
@@ -842,14 +1055,26 @@ fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
         }),
         "edit.autoFill" => {
             let src = near_range(rng);
-            let tgt = RangeRef::new(src.start, CellRef::new(src.end.row + rng.int(0, 6) as u32, src.end.col + rng.int(0, 1) as u32));
+            let tgt = RangeRef::new(
+                src.start,
+                CellRef::new(
+                    src.end.row + rng.int(0, 6) as u32,
+                    src.end.col + rng.int(0, 1) as u32,
+                ),
+            );
             json!({"source": src.a1(), "target": tgt.a1(), "mode": rng.pick(&["series", "copy", "alternate", "formats", "values"])})
         }
-        "edit.fillSeries" => json!({"range": near_range(rng).a1(), "type": rng.pick(&["linear", "growth", "autofill"]), "step": rng.int(-2, 3)}),
+        "edit.fillSeries" => {
+            json!({"range": near_range(rng).a1(), "type": rng.pick(&["linear", "growth", "autofill"]), "step": rng.int(-2, 3)})
+        }
         "home.bold" => json!({"range": range(rng)}),
         "home.fillColor" => json!({"range": range(rng), "color": color(rng)}),
-        "home.numberFormat" => json!({"range": range(rng), "format": rng.pick(&["Currency", "Percentage", "Short Date", "Text", "General"])}),
-        "home.borders" => json!({"range": range(rng), "preset": rng.pick(&["all", "outside", "none", "thickBottom"])}),
+        "home.numberFormat" => {
+            json!({"range": range(rng), "format": rng.pick(&["Currency", "Percentage", "Short Date", "Text", "General"])})
+        }
+        "home.borders" => {
+            json!({"range": range(rng), "preset": rng.pick(&["all", "outside", "none", "thickBottom"])})
+        }
         "home.insertRows" | "home.deleteRows" | "home.hideRows" | "home.unhideRows" => {
             let mut p = json!({"rows": rows_spec(rng)});
             if id == "home.insertRows" && rng.chance(20) {
@@ -858,8 +1083,12 @@ fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
             p
         }
         "home.insertColumns" | "home.deleteColumns" => json!({"cols": cols_spec(rng)}),
-        "home.insertCells" => json!({"range": near_range(rng).a1(), "shift": rng.pick(&["right", "down", "row", "column"])}),
-        "home.deleteCells" => json!({"range": near_range(rng).a1(), "shift": rng.pick(&["left", "up", "row", "column"])}),
+        "home.insertCells" => {
+            json!({"range": near_range(rng).a1(), "shift": rng.pick(&["right", "down", "row", "column"])})
+        }
+        "home.deleteCells" => {
+            json!({"range": near_range(rng).a1(), "shift": rng.pick(&["left", "up", "row", "column"])})
+        }
         "home.insertSheet" => {
             let mut p = json!({});
             if rng.chance(40) {
@@ -872,7 +1101,9 @@ fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
         }
         "home.deleteSheet" | "sheet.activate" => json!({"sheet": sheet_param(rng, wb)}),
         "sheet.rename" => json!({"sheet": sheet_param(rng, wb), "name": new_name(rng)}),
-        "sheet.move" => json!({"sheet": sheet_param(rng, wb), "to": rng.below(wb.sheets.len() + 1), "copy": rng.chance(35)}),
+        "sheet.move" => {
+            json!({"sheet": sheet_param(rng, wb), "to": rng.below(wb.sheets.len() + 1), "copy": rng.chance(35)})
+        }
         "insert.table" => {
             let mut p = json!({"range": near_range(rng).a1(), "header": rng.chance(80)});
             if rng.chance(40) {
@@ -911,7 +1142,9 @@ fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
             let column = letter(rng.int(0, 9) as u32);
             match rng.below(4) {
                 0 => json!({"column": column, "values": [literal(rng), literal(rng)]}),
-                1 => json!({"column": column, "custom": {"op": ">", "value": rng.int(0, 60000).to_string()}}),
+                1 => {
+                    json!({"column": column, "custom": {"op": ">", "value": rng.int(0, 60000).to_string()}})
+                }
                 2 => json!({"column": column, "top": {"count": rng.int(1, 5)}}),
                 _ => json!({"column": column, "clear": true}),
             }
@@ -920,21 +1153,31 @@ fn curated_params(rng: &mut Rng, wb: &Workbook, id: &str) -> Json {
         "formulas.defineName" => {
             let sheet = other_sheet(rng, wb);
             let r = near_range(rng);
-            let abs = format!("${}${}:${}${}", letter(r.start.col), r.start.row + 1, letter(r.end.col), r.end.row + 1);
+            let abs = format!(
+                "${}${}:${}${}",
+                letter(r.start.col),
+                r.start.row + 1,
+                letter(r.end.col),
+                r.end.row + 1
+            );
             json!({"name": rng.pick(&["Rate", "Totals", "my_list", "Q"]), "refersTo": format!("={sheet}!{abs}")})
         }
         "formulas.deleteName" => match wb.names.get(rng.below(wb.names.len() + 1)) {
             Some(n) => json!({"name": n.name}),
             None => json!({"name": "Nope"}),
         },
-        "edit.replace" => json!({"what": rng.pick(&["North", "1", "A", "Sales"]), "with": rng.pick(&["South", "2", "B", ""]), "all": true}),
+        "edit.replace" => {
+            json!({"what": rng.pick(&["North", "1", "A", "Sales"]), "with": rng.pick(&["South", "2", "B", ""]), "all": true})
+        }
         _ => maybe_range(rng),
     }
 }
 
 /// Top-level keys of a params doc (`{range?, shift: right|down, count?}`): (key, optional, hint).
 fn doc_keys(doc: &str) -> Vec<(String, bool, String)> {
-    let Some(start) = doc.find('{') else { return vec![] };
+    let Some(start) = doc.find('{') else {
+        return vec![];
+    };
     let mut parts = Vec::new();
     let (mut depth, mut in_str, mut cur) = (0i32, false, String::new());
     for ch in doc[start + 1..].chars() {
@@ -961,7 +1204,10 @@ fn doc_keys(doc: &str) -> Vec<(String, bool, String)> {
     let mut out = Vec::new();
     for part in parts {
         let part = part.trim();
-        let key: String = part.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+        let key: String = part
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .collect();
         if key.is_empty() {
             continue;
         }
@@ -981,8 +1227,20 @@ fn alternatives(hint: &str) -> Option<Vec<String>> {
     }
     let alts: Vec<String> = hint
         .split('|')
-        .map(|a| a.split(" (").next().unwrap_or(a).trim().trim_matches('"').trim_end_matches('…').to_string())
-        .filter(|a| !a.is_empty() && a.chars().all(|c| c.is_ascii_alphanumeric() || " .".contains(c)))
+        .map(|a| {
+            a.split(" (")
+                .next()
+                .unwrap_or(a)
+                .trim()
+                .trim_matches('"')
+                .trim_end_matches('…')
+                .to_string()
+        })
+        .filter(|a| {
+            !a.is_empty()
+                && a.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || " .".contains(c))
+        })
         .collect();
     (!alts.is_empty()).then_some(alts)
 }
@@ -1005,30 +1263,43 @@ fn doc_value(rng: &mut Rng, wb: &Workbook, key: &str, hint: &str) -> Option<Json
     let lower = key.to_ascii_lowercase();
     let v = match lower.as_str() {
         "path" | "base64" | "password" | "html" => return None,
-        "range" | "source" | "target" | "destination" | "criteria" | "copyto" | "printarea" | "location" | "resultcells" | "changing"
-        | "rowinput" | "columninput" | "add" | "remove" | "apply" => json!(range(rng)),
+        "range" | "source" | "target" | "destination" | "criteria" | "copyto" | "printarea"
+        | "location" | "resultcells" | "changing" | "rowinput" | "columninput" | "add"
+        | "remove" | "apply" => json!(range(rng)),
         "refersto" => json!(format!("={}!$A$1:$B$4", other_sheet(rng, wb))),
         "cell" | "at" | "active" | "fromcell" | "set" | "reference" => json!(cell(rng).a1()),
         "rows" | "titlerows" if !hint.starts_with('[') => json!(rows_spec(rng)),
         "cols" | "titlecols" if !hint.starts_with('[') => json!(cols_spec(rng)),
         "sheet" => sheet_param(rng, wb),
-        "input" | "formula" | "formula1" | "formula2" | "value" | "value2" | "with" => json!(input(rng, wb)),
+        "input" | "formula" | "formula1" | "formula2" | "value" | "value2" | "with" => {
+            json!(input(rng, wb))
+        }
         "table" => table_param(rng, wb),
         "chart" | "id" => {
             let ids = chart_ids(wb);
-            json!(ids.get(rng.below(ids.len() + 1)).copied().unwrap_or(rng.int(0, 5) as u32))
+            json!(
+                ids.get(rng.below(ids.len() + 1))
+                    .copied()
+                    .unwrap_or(rng.int(0, 5) as u32)
+            )
         }
         "ids" => json!(chart_ids(wb)),
         "color" => json!(color(rng)),
         "values" if hint.starts_with("[[") => values_2d(rng, wb),
-        "keys" => json!([{"column": letter(rng.int(0, 9) as u32), "order": rng.pick(&["asc", "desc"])}]),
+        "keys" => {
+            json!([{"column": letter(rng.int(0, 9) as u32), "order": rng.pick(&["asc", "desc"])}])
+        }
         "column" | "groupby" => json!(letter(rng.int(0, 9) as u32)),
         "columns" | "sources" if !hint.contains('|') => json!([letter(rng.int(0, 9) as u32)]),
         "points" => json!([[10, 10], [40, 25], [70, 5]]),
-        "commands" => json!([{"command": "cell.set", "params": {"cell": near_cell(rng).a1(), "input": input(rng, wb)}}]),
+        "commands" => {
+            json!([{"command": "cell.set", "params": {"cell": near_cell(rng).a1(), "input": input(rng, wb)}}])
+        }
         "char" => json!("€"),
         "name" | "oldname" if alternatives(hint).is_none() => json!(new_name(rng)),
-        "text" | "title" | "comment" | "author" | "word" | "header" | "footer" | "what" if alternatives(hint).is_none() => {
+        "text" | "title" | "comment" | "author" | "word" | "header" | "footer" | "what"
+            if alternatives(hint).is_none() =>
+        {
             json!(rng.pick(&["North", "note", "&CPage &P", "x"]))
         }
         _ => return Some(hint_value(rng, wb, hint)),
@@ -1044,7 +1315,10 @@ fn hint_value(rng: &mut Rng, wb: &Workbook, hint: &str) -> Json {
         return json!(rng.chance(50));
     }
     if let Some((a, b)) = hint.split_once("..")
-        && let (Ok(a), Ok(b)) = (a.trim().parse::<i64>(), b.trim().split(' ').next().unwrap_or("").parse::<i64>())
+        && let (Ok(a), Ok(b)) = (
+            a.trim().parse::<i64>(),
+            b.trim().split(' ').next().unwrap_or("").parse::<i64>(),
+        )
     {
         return json!(rng.int(a, b));
     }
@@ -1052,7 +1326,10 @@ fn hint_value(rng: &mut Rng, wb: &Workbook, hint: &str) -> Json {
         return json!((n * rng.int(0, 3) as f64).round());
     }
     if hint.starts_with('[') {
-        let heads: Vec<String> = tables(wb).iter().flat_map(|(_, t)| t.columns.iter().map(|c| c.name.clone())).collect();
+        let heads: Vec<String> = tables(wb)
+            .iter()
+            .flat_map(|(_, t)| t.columns.iter().map(|c| c.name.clone()))
+            .collect();
         return match heads.get(rng.below(heads.len() + 1)) {
             Some(h) => json!([h]),
             None => json!([]),
@@ -1073,18 +1350,33 @@ fn hint_value(rng: &mut Rng, wb: &Workbook, hint: &str) -> Json {
 
 #[test]
 fn params_docs_parse_into_keys() {
-    let keys = doc_keys("{range?, shift: right|down|row|column, input: \"text, number or =formula\"}");
+    let keys =
+        doc_keys("{range?, shift: right|down|row|column, input: \"text, number or =formula\"}");
     let names: Vec<_> = keys.iter().map(|(k, o, _)| (k.as_str(), *o)).collect();
     assert_eq!(names, [("range", true), ("shift", false), ("input", false)]);
-    assert_eq!(alternatives(&keys[1].2), Some(vec!["right".into(), "down".into(), "row".into(), "column".into()]));
+    assert_eq!(
+        alternatives(&keys[1].2),
+        Some(vec![
+            "right".into(),
+            "down".into(),
+            "row".into(),
+            "column".into()
+        ])
+    );
     // Every registered command's doc parses, and the fuzzer's exclusions name real commands.
     for spec in command_specs() {
         let _ = doc_keys(spec.params);
     }
     for (id, _) in EXCLUDED {
-        assert!(find_command(id).is_some(), "EXCLUDED names unknown command `{id}`");
+        assert!(
+            find_command(id).is_some(),
+            "EXCLUDED names unknown command `{id}`"
+        );
     }
     for (id, _) in CURATED {
-        assert!(find_command(id).is_some(), "CURATED names unknown command `{id}`");
+        assert!(
+            find_command(id).is_some(),
+            "CURATED names unknown command `{id}`"
+        );
     }
 }

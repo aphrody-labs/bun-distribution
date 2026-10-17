@@ -27,7 +27,10 @@ pub struct ShellGuardrails {
 
 impl Default for ShellGuardrails {
     fn default() -> Self {
-        Self { default_timeout: DEFAULT_TIMEOUT, max_output_bytes: DEFAULT_MAX_OUTPUT_BYTES }
+        Self {
+            default_timeout: DEFAULT_TIMEOUT,
+            max_output_bytes: DEFAULT_MAX_OUTPUT_BYTES,
+        }
     }
 }
 
@@ -150,7 +153,10 @@ impl RuntimeConfig {
     /// Build a config targeting `model` with runtime defaults otherwise.
     #[must_use]
     pub fn new(model: impl Into<String>) -> Self {
-        Self { model: model.into(), ..Self::default() }
+        Self {
+            model: model.into(),
+            ..Self::default()
+        }
     }
 
     /// Set the system prompt (builder style).
@@ -198,7 +204,8 @@ impl RuntimeConfig {
     /// Run autonomously until completion, interruption, or a model/tool error.
     #[must_use]
     pub fn with_yolo(self) -> Self {
-        self.with_autonomy(AutonomyMode::FullAuto).with_max_tool_iterations(0)
+        self.with_autonomy(AutonomyMode::FullAuto)
+            .with_max_tool_iterations(0)
     }
 
     /// Set the working directory the tools resolve relative paths against

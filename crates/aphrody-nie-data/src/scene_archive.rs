@@ -78,7 +78,9 @@ impl SceneArchiveFlag {
         let h = field_hash(v, "activeTempBitFlagCrc");
         // On accepte aussi les hash nuls (entrée valide même si CRC = 0).
         let _ = v.get("activeTempBitFlagCrc")?; // garantit que le champ existe
-        Some(Self { active_temp_bit_flag_crc: h })
+        Some(Self {
+            active_temp_bit_flag_crc: h,
+        })
     }
 }
 
@@ -275,7 +277,10 @@ impl SceneArchiveConfig {
     /// Vérité terrain : `chapter_no` va de 0 à 8 dans le dump réel.
     #[must_use]
     pub fn filter_by_chapter(&self, chapter_no: i64) -> Vec<&SceneArchiveData> {
-        self.scenes.iter().filter(|s| s.chapter_no == chapter_no).collect()
+        self.scenes
+            .iter()
+            .filter(|s| s.chapter_no == chapter_no)
+            .collect()
     }
 
     /// Renvoie toutes les scènes d'une catégorie donnée.
@@ -283,7 +288,10 @@ impl SceneArchiveConfig {
     /// Vérité terrain : catégorie 0 = histoire principale, 2 = side story.
     #[must_use]
     pub fn filter_by_category(&self, category: i64) -> Vec<&SceneArchiveData> {
-        self.scenes.iter().filter(|s| s.category == category).collect()
+        self.scenes
+            .iter()
+            .filter(|s| s.category == category)
+            .collect()
     }
 }
 

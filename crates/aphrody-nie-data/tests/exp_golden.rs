@@ -26,10 +26,13 @@ fn exp_fixture() -> serde_json::Value {
         (9, 384),
         (10, 449),
     ];
-    let exp_list: Vec<serde_json::Value> =
-        real.iter().map(|(lvl, need)| json!({ "level": lvl, "needExp": need })).collect();
-    let rates: Vec<serde_json::Value> =
-        (0..=8).map(|r| json!({ "rarity": r, "rate": if r <= 3 { 1 } else { 3 } })).collect();
+    let exp_list: Vec<serde_json::Value> = real
+        .iter()
+        .map(|(lvl, need)| json!({ "level": lvl, "needExp": need }))
+        .collect();
+    let rates: Vec<serde_json::Value> = (0..=8)
+        .map(|r| json!({ "rarity": r, "rate": if r <= 3 { 1 } else { 3 } }))
+        .collect();
     json!({
         "version": 100,
         "lists": [
@@ -43,9 +46,27 @@ fn exp_fixture() -> serde_json::Value {
 fn exp_entries_premiers_niveaux() {
     let t = parse_exp_table(&exp_fixture());
     assert_eq!(t.exp_table.len(), 10);
-    assert_eq!(t.exp_table[0], CharaExpEntry { level: 1, need_exp: 124 });
-    assert_eq!(t.exp_table[1], CharaExpEntry { level: 2, need_exp: 130 });
-    assert_eq!(t.exp_table[2], CharaExpEntry { level: 3, need_exp: 146 });
+    assert_eq!(
+        t.exp_table[0],
+        CharaExpEntry {
+            level: 1,
+            need_exp: 124
+        }
+    );
+    assert_eq!(
+        t.exp_table[1],
+        CharaExpEntry {
+            level: 2,
+            need_exp: 130
+        }
+    );
+    assert_eq!(
+        t.exp_table[2],
+        CharaExpEntry {
+            level: 3,
+            need_exp: 146
+        }
+    );
     assert_eq!(t.exp_for_level(1), Some(124));
     assert_eq!(t.exp_for_level(3), Some(146));
     assert_eq!(t.exp_for_level(999), None);

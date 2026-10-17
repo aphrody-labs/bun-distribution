@@ -7,7 +7,10 @@ use pdfcraft_sign::cms::SignedData;
 use pdfcraft_sign::keys::{DigestAlg, PssParams, Scheme};
 
 fn unhex(s: &str) -> Vec<u8> {
-    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
 }
 
 const C_RSA_SHA3_256: &str = "308205e906092a864886f70d010702a08205da308205d6020101310d300b0609608648016503040208300b06092a864886f70d010701a0820357308203533082023ba003020102020203e9300d06092a864886f70d01010b050030423118301606035504030c0f54657374205369676e65722052534131193017060355040a0c105072696e744372616674205465737473310b3009060355040613025553301e170d3236313030323036313733345a170d3336303932393036313733345a30423118301606035504030c0f54657374205369676e65722052534131193017060355040a0c105072696e744372616674205465737473310b300906035504061302555330820122300d06092a864886f70d01010105000382010f003082010a0282010100cbe14960a30ad858bd7301dacbd61437f2815dfdf9506277000efe402b8e617a5421bfdcf019321bb80b8624fb72773794bca818dd176558b24525e6ae768375889ea2951da2d202c11181764210aa79b80790d139ba9d7008a995dca64c4d6259d1e2a52fe69e91238e566028c171d7e625a8f1fbf611d20dd9562aac97b4501bb81e4445c9bc5eb10adcc7b77a090af39724b45999ec2c6009011c8e1a87f3b48eb3165cbb27075ea81b59d0f233fd778bc0823ac1fd927762303b62ac2795f71daacdf3433d07101291a4839143282ec07567a7caacfc06617e4150a54c5e3e5be9be1cab909dd1aee44fc60cb82409acb2224a8ad88bba6f2c095f882da10203010001a3533051301d0603551d0e0416041459098dd173d7761ef139cc9504b7dca2d7d6f99f301f0603551d2304183016801459098dd173d7761ef139cc9504b7dca2d7d6f99f300f0603551d130101ff040530030101ff300d06092a864886f70d01010b050003820101009b1ff9466acd740894f2217bb203e9b5da792a229555bddf16b3b330fb06b7277b0670150abcc75e325ef9dd8725ca8c3ac3714ef1aee8d916b5a86d18cd4e2697b58a3a508c1c58259fd21dc23f31b2a6cd229919ea034296e00163f35cc5912fe97c5fc42d1bd5c29b6c85f26e7620bb5c62a206783b2f44d32493723486168d7b4c1914c2c043cf67ab4de33386453450a071b7a10659d47ab8524ec3a48a7f51e3886c56d632437e2ea30b70a60a19d5eb13ae856bbaeb54038580512d5dabd840e63622b0683ab410b4b591220c130313a2b1c7191d17d5dfacc164b0a360cf001917875589e78bac0a9812a836276c97f9725ce1cfb6538613cefe42423182025830820254020101304830423118301606035504030c0f54657374205369676e65722052534131193017060355040a0c105072696e744372616674205465737473310b3009060355040613025553020203e9300b0609608648016503040208a081e4301806092a864886f70d010903310b06092a864886f70d010701301c06092a864886f70d010905310f170d3236313030373130303831315a302f06092a864886f70d010904312204203338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392307906092a864886f70d01090f316c306a300b060960864801650304012a300b0609608648016503040116300b0609608648016503040102300a06082a864886f70d0307300e06082a864886f70d030202020080300d06082a864886f70d0302020140300706052b0e030207300d06082a864886f70d0302020128300d06092a864886f70d01010105000482010004884153af307d5b12f87d673598b15b1c722ed15091d97af4d36e40942b009f849b55e4429ee550ad7f001db9a1cb293c2319b253a1d998266897f27c35e9670c87080a71e932beb932d594c4f9735e5dd20d3145db26c4352a1ebea7c7692e3272032e1a1736445eb238b93825315369beed81839f71525848fb8a725b9804cc2ac6c8756754f46fc182df5a1bf0dbc97bcf8a5dbc0d4d9da26f7b68029d1e7fc35893958d6c7084f3199605e103788e2a61cd8a68847588d8607a1a31cb1106753d35109cdd309a098553dfd0f33c2269fd5b396318f35e06c4d67be6a7b05dbacd2c265a3bbfa11c1a4c192052e4130aac97addb703514d43e62dc8b629b";
@@ -28,20 +31,39 @@ fn check_cms(name: &str, hex: &str, digest: DigestAlg, scheme: impl Fn(Scheme) -
     assert_eq!(s.digest, digest, "{name}");
     assert!(scheme(s.scheme), "{name}: {:?}", s.scheme);
     let content = digest.digest(&[b"hello"]);
-    assert_eq!(s.message_digest.as_deref(), Some(&content[..]), "{name}: the message digest attribute is our digest of the content");
-    let cert = sd.signer_certificate().unwrap_or_else(|| panic!("{name}: signer certificate"));
-    assert!(sd.verify_signature(cert, &content).unwrap_or_else(|e| panic!("{name}: {e}")), "{name}");
+    assert_eq!(
+        s.message_digest.as_deref(),
+        Some(&content[..]),
+        "{name}: the message digest attribute is our digest of the content"
+    );
+    let cert = sd
+        .signer_certificate()
+        .unwrap_or_else(|| panic!("{name}: signer certificate"));
+    assert!(
+        sd.verify_signature(cert, &content)
+            .unwrap_or_else(|e| panic!("{name}: {e}")),
+        "{name}"
+    );
     let mut bad = sd.clone();
     let mid = bad.signer.signature.len() / 2;
     bad.signer.signature[mid] ^= 0x10;
-    assert!(!bad.verify_signature(cert, &content).unwrap_or(false), "{name}: damaged signature");
+    assert!(
+        !bad.verify_signature(cert, &content).unwrap_or(false),
+        "{name}: damaged signature"
+    );
 }
 
 #[test]
 fn rsa_with_sha3_sha512_256_and_ripemd160() {
-    check_cms("sha3-256", C_RSA_SHA3_256, DigestAlg::Sha3_256, |s| s == Scheme::RsaPkcs1);
-    check_cms("sha512/256", C_RSA_SHA512_256, DigestAlg::Sha512_256, |s| s == Scheme::RsaPkcs1);
-    check_cms("ripemd160", C_RSA_RIPEMD160, DigestAlg::Ripemd160, |s| s == Scheme::RsaPkcs1);
+    check_cms("sha3-256", C_RSA_SHA3_256, DigestAlg::Sha3_256, |s| {
+        s == Scheme::RsaPkcs1
+    });
+    check_cms("sha512/256", C_RSA_SHA512_256, DigestAlg::Sha512_256, |s| {
+        s == Scheme::RsaPkcs1
+    });
+    check_cms("ripemd160", C_RSA_RIPEMD160, DigestAlg::Ripemd160, |s| {
+        s == Scheme::RsaPkcs1
+    });
 }
 
 #[test]
@@ -50,7 +72,10 @@ fn only_weak_digests_leave_a_note_when_a_signature_validates() {
         let sd = SignedData::parse(&unhex(hex)).unwrap();
         let cert = sd.signer_certificate().unwrap();
         let mut notes = Vec::new();
-        assert!(sd.verify_signature_noting(cert, &sd.signer.digest.digest(&[b"hello"]), &mut notes).unwrap());
+        assert!(
+            sd.verify_signature_noting(cert, &sd.signer.digest.digest(&[b"hello"]), &mut notes)
+                .unwrap()
+        );
         notes
     };
     // RIPEMD-160 is named; SHA3-256 and SHA-512/256 are not.
@@ -62,47 +87,112 @@ fn only_weak_digests_leave_a_note_when_a_signature_validates() {
 
 #[test]
 fn rsa_pss_with_its_declared_parameters() {
-    check_cms("pss sha256 mgf1-sha1 salt 20", C_PSS_SHA256_MGF1SHA1_SALT20, DigestAlg::Sha256, |s| {
-        s == Scheme::RsaPss(PssParams { mgf: DigestAlg::Sha1, salt_len: Some(20) })
-    });
-    check_cms("pss sha384 mgf1-sha256 salt 0", C_PSS_SHA384_MGF1SHA256_SALT0, DigestAlg::Sha384, |s| {
-        s == Scheme::RsaPss(PssParams { mgf: DigestAlg::Sha256, salt_len: Some(0) })
-    });
+    check_cms(
+        "pss sha256 mgf1-sha1 salt 20",
+        C_PSS_SHA256_MGF1SHA1_SALT20,
+        DigestAlg::Sha256,
+        |s| {
+            s == Scheme::RsaPss(PssParams {
+                mgf: DigestAlg::Sha1,
+                salt_len: Some(20),
+            })
+        },
+    );
+    check_cms(
+        "pss sha384 mgf1-sha256 salt 0",
+        C_PSS_SHA384_MGF1SHA256_SALT0,
+        DigestAlg::Sha384,
+        |s| {
+            s == Scheme::RsaPss(PssParams {
+                mgf: DigestAlg::Sha256,
+                salt_len: Some(0),
+            })
+        },
+    );
     // PSS over SHA-3 and SHA-512/256 digests, MGF1 with the same hash.
-    let id = pdfcraft_sign::pkcs12::open(&std::fs::read(format!("{}/tests/data/rsa-aes.p12", env!("CARGO_MANIFEST_DIR"))).unwrap(), "test").unwrap();
+    let id = pdfcraft_sign::pkcs12::open(
+        &std::fs::read(format!(
+            "{}/tests/data/rsa-aes.p12",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap(),
+        "test",
+    )
+    .unwrap();
     let key = &id.certificate.public_key;
-    for (name, alg, salt, sig) in [("sha3-256", DigestAlg::Sha3_256, 32, PSS_SHA3_256), ("sha512/256", DigestAlg::Sha512_256, 0, PSS_SHA512_256)] {
+    for (name, alg, salt, sig) in [
+        ("sha3-256", DigestAlg::Sha3_256, 32, PSS_SHA3_256),
+        ("sha512/256", DigestAlg::Sha512_256, 0, PSS_SHA512_256),
+    ] {
         let digest = alg.digest(&[b"hello"]);
-        let pss = Scheme::RsaPss(PssParams { mgf: alg, salt_len: Some(salt) });
-        assert!(key.verify(pss, alg, &digest, &unhex(sig)).unwrap(), "{name}");
-        assert!(!key.verify(pss, alg, &alg.digest(&[b"hellp"]), &unhex(sig)).unwrap(), "{name}: other message");
-        let wrong_mgf = Scheme::RsaPss(PssParams { mgf: DigestAlg::Sha1, salt_len: Some(salt) });
-        assert!(!key.verify(wrong_mgf, alg, &digest, &unhex(sig)).unwrap(), "{name}: the MGF1 hash matters");
+        let pss = Scheme::RsaPss(PssParams {
+            mgf: alg,
+            salt_len: Some(salt),
+        });
+        assert!(
+            key.verify(pss, alg, &digest, &unhex(sig)).unwrap(),
+            "{name}"
+        );
+        assert!(
+            !key.verify(pss, alg, &alg.digest(&[b"hellp"]), &unhex(sig))
+                .unwrap(),
+            "{name}: other message"
+        );
+        let wrong_mgf = Scheme::RsaPss(PssParams {
+            mgf: DigestAlg::Sha1,
+            salt_len: Some(salt),
+        });
+        assert!(
+            !key.verify(wrong_mgf, alg, &digest, &unhex(sig)).unwrap(),
+            "{name}: the MGF1 hash matters"
+        );
     }
 }
 
 #[test]
 fn ed25519_signs_the_signed_attributes_themselves() {
-    check_cms("ed25519", C_ED25519, DigestAlg::Sha512, |s| s == Scheme::Ed25519);
+    check_cms("ed25519", C_ED25519, DigestAlg::Sha512, |s| {
+        s == Scheme::Ed25519
+    });
     let sd = SignedData::parse(&unhex(C_ED25519)).unwrap();
     let cert = sd.signer_certificate().unwrap();
     assert_eq!(cert.public_key.describe(), "Ed25519");
-    assert!(cert.is_self_signed(), "the certificate's own Ed25519 signature checks");
+    assert!(
+        cert.is_self_signed(),
+        "the certificate's own Ed25519 signature checks"
+    );
     // A digest can't be verified with Ed25519: it signs the message.
-    let r = cert.public_key.verify(Scheme::Ed25519, DigestAlg::Sha512, &[0; 64], &sd.signer.signature);
+    let r = cert.public_key.verify(
+        Scheme::Ed25519,
+        DigestAlg::Sha512,
+        &[0; 64],
+        &sd.signer.signature,
+    );
     assert!(matches!(r, Err(pdfcraft_sign::SignError::Unsupported(_))));
 }
 
 #[test]
 fn ecdsa_on_brainpool_p512r1() {
-    check_cms("bp512 sha512", C_BP512_SHA512, DigestAlg::Sha512, |s| s == Scheme::Ecdsa);
-    check_cms("bp512 sha3-256", C_BP512_SHA3_256, DigestAlg::Sha3_256, |s| s == Scheme::Ecdsa);
+    check_cms("bp512 sha512", C_BP512_SHA512, DigestAlg::Sha512, |s| {
+        s == Scheme::Ecdsa
+    });
+    check_cms(
+        "bp512 sha3-256",
+        C_BP512_SHA3_256,
+        DigestAlg::Sha3_256,
+        |s| s == Scheme::Ecdsa,
+    );
     let sd = SignedData::parse(&unhex(C_BP512_SHA512)).unwrap();
     let cert = sd.signer_certificate().unwrap();
     assert_eq!(cert.public_key.describe(), "ECDSA brainpoolP512r1");
-    assert!(cert.is_self_signed(), "certificate signed with ecdsa-with-SHA512 on brainpoolP512r1");
+    assert!(
+        cert.is_self_signed(),
+        "certificate signed with ecdsa-with-SHA512 on brainpoolP512r1"
+    );
     let spki = cert.public_key.spki();
-    let back = pdfcraft_sign::PublicKey::from_spki(&pdfcraft_sign::der::Tlv::parse_all(&spki).unwrap()).unwrap();
+    let back =
+        pdfcraft_sign::PublicKey::from_spki(&pdfcraft_sign::der::Tlv::parse_all(&spki).unwrap())
+            .unwrap();
     assert_eq!(back, cert.public_key, "re-encodes the SubjectPublicKeyInfo");
 }
 
@@ -121,20 +211,30 @@ fn add_be(a: &[u8], b: &[u8]) -> Option<Vec<u8>> {
 #[test]
 fn brainpool_p512r1_keys_must_have_coordinates_reduced_modulo_p() {
     use pdfcraft_sign::PublicKey;
-    const P: &str =
-        "aadd9db8dbe9c48b3fd4e6ae33c9fc07cb308db3b3c9d20ed6639cca703308717d4d9b009bc66842aecda12ae6a380e62881ff2f2d82c68528aa6056583a48f3";
+    const P: &str = "aadd9db8dbe9c48b3fd4e6ae33c9fc07cb308db3b3c9d20ed6639cca703308717d4d9b009bc66842aecda12ae6a380e62881ff2f2d82c68528aa6056583a48f3";
     let sd = SignedData::parse(&unhex(C_BP512_SHA512)).unwrap();
     let cert = sd.signer_certificate().unwrap();
     let content = DigestAlg::Sha512.digest(&[b"hello"]);
-    assert!(sd.verify_signature(cert, &content).unwrap(), "the key as written verifies");
-    let PublicKey::BrainpoolP512(point) = &cert.public_key else { panic!("a brainpoolP512r1 key") };
+    assert!(
+        sd.verify_signature(cert, &content).unwrap(),
+        "the key as written verifies"
+    );
+    let PublicKey::BrainpoolP512(point) = &cert.public_key else {
+        panic!("a brainpoolP512r1 key")
+    };
     let (x, y) = (&point[1..65], &point[65..]);
     let p = unhex(P);
     // The same point written with x + p (or y + p): congruent, but not the canonical encoding.
-    for (what, x, y) in [("x + p", add_be(x, &p).unwrap(), y.to_vec()), ("y + p", x.to_vec(), add_be(y, &p).unwrap())] {
+    for (what, x, y) in [
+        ("x + p", add_be(x, &p).unwrap(), y.to_vec()),
+        ("y + p", x.to_vec(), add_be(y, &p).unwrap()),
+    ] {
         let mut forged = cert.clone();
         forged.public_key = PublicKey::BrainpoolP512([&[4u8][..], &x, &y].concat());
         let r = sd.verify_signature(&forged, &content);
-        assert!(matches!(r, Err(pdfcraft_sign::SignError::Malformed(_))), "{what}: {r:?}");
+        assert!(
+            matches!(r, Err(pdfcraft_sign::SignError::Malformed(_))),
+            "{what}: {r:?}"
+        );
     }
 }

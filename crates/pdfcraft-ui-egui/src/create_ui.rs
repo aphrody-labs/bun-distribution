@@ -22,15 +22,44 @@ pub struct ImageImport {
 
 pub(crate) fn image_import_body(ui: &mut egui::Ui, app: &mut PdfCraftApp) -> (bool, bool) {
     ui.heading(tl!("Create PDF from images"));
-    let Some(draft) = app.image_import.as_mut() else { return (false, true) };
-    ui.label(crate::i18n::fmt(tl!("Selected image files: {count}"), &[("count", &draft.images.len().to_string())]));
+    let Some(draft) = app.image_import.as_mut() else {
+        return (false, true);
+    };
+    ui.label(crate::i18n::fmt(
+        tl!("Selected image files: {count}"),
+        &[("count", &draft.images.len().to_string())],
+    ));
     ui.add_space(8.0);
-    widgets::radio_value(ui, &mut draft.choice, ResolutionChoice::Image, tl!("Use image resolution"));
-    ui.label(tl!("Use each image's embedded DPI; use 72 DPI when it is absent."));
-    widgets::radio_value(ui, &mut draft.choice, ResolutionChoice::Default72, tl!("Use 72 DPI (one point per pixel)"));
-    widgets::radio_value(ui, &mut draft.choice, ResolutionChoice::Custom, tl!("Use custom DPI"));
-    ui.add_enabled(draft.choice == ResolutionChoice::Custom, egui::DragValue::new(&mut draft.dpi).range(1.0..=1200.0).suffix(" DPI"));
-    ui.label(tl!("DPI sets the printed page size without resampling the image."));
+    widgets::radio_value(
+        ui,
+        &mut draft.choice,
+        ResolutionChoice::Image,
+        tl!("Use image resolution"),
+    );
+    ui.label(tl!(
+        "Use each image's embedded DPI; use 72 DPI when it is absent."
+    ));
+    widgets::radio_value(
+        ui,
+        &mut draft.choice,
+        ResolutionChoice::Default72,
+        tl!("Use 72 DPI (one point per pixel)"),
+    );
+    widgets::radio_value(
+        ui,
+        &mut draft.choice,
+        ResolutionChoice::Custom,
+        tl!("Use custom DPI"),
+    );
+    ui.add_enabled(
+        draft.choice == ResolutionChoice::Custom,
+        egui::DragValue::new(&mut draft.dpi)
+            .range(1.0..=1200.0)
+            .suffix(" DPI"),
+    );
+    ui.label(tl!(
+        "DPI sets the printed page size without resampling the image."
+    ));
     ui.add_space(12.0);
     let mut go = false;
     let mut cancel = false;
@@ -61,13 +90,23 @@ pub enum Clip {
 fn read_clipboard() -> Option<Clip> {
     let mut cb = arboard::Clipboard::new().ok()?;
     if let Ok(img) = cb.get_image() {
-        return Some(Clip::Image { width: img.width, height: img.height, rgba: img.bytes.into_owned() });
+        return Some(Clip::Image {
+            width: img.width,
+            height: img.height,
+            rgba: img.bytes.into_owned(),
+        });
     }
-    cb.get_text().ok().filter(|t| !t.trim().is_empty()).map(Clip::Text)
+    cb.get_text()
+        .ok()
+        .filter(|t| !t.trim().is_empty())
+        .map(Clip::Text)
 }
 
 fn png_from_rgba(width: usize, height: usize, rgba: &[u8]) -> Result<Vec<u8>, String> {
-    let (w, h) = (u32::try_from(width).map_err(|e| e.to_string())?, u32::try_from(height).map_err(|e| e.to_string())?);
+    let (w, h) = (
+        u32::try_from(width).map_err(|e| e.to_string())?,
+        u32::try_from(height).map_err(|e| e.to_string())?,
+    );
     if w == 0 || h == 0 || rgba.len() != width * height * 4 {
         return Err("the clipboard image is empty or malformed".into());
     }
@@ -88,22 +127,47 @@ fn stem(name: &str) -> &str {
 impl PdfCraftApp {
     /// Convert a non-PDF file (image, text) into a new tab. Returns `None` when `bytes` is not
     /// something Create understands (the caller then tries to open it as a PDF).
-    pub(crate) fn open_converted(&mut self, name: &str, bytes: &[u8]) -> Option<Result<(), String>> {
+    pub(crate) fn open_converted(
+        &mut self,
+        name: &str,
+        bytes: &[u8],
+    ) -> Option<Result<(), String>> {
         use pdfcraft_engine::SourceKind;
-        if !matches!(pdfcraft_engine::source_kind(name, bytes), Some(SourceKind::Image | SourceKind::Text)) {
+        if !matches!(
+            pdfcraft_engine::source_kind(name, bytes),
+            Some(SourceKind::Image | SourceKind::Text)
+        ) {
             return None;
         }
-        let created = self.session.convert_to_pdf(name, &Arc::new(bytes.to_vec())).map(|(_, pdf)| pdf);
-        Some(self.open_created_bytes(&format!("{}.pdf", stem(name)), created.map_err(|e| e.to_string())))
+        let created = self
+            .session
+            .convert_to_pdf(name, &Arc::new(bytes.to_vec()))
+            .map(|(_, pdf)| pdf);
+        Some(self.open_created_bytes(
+            &format!("{}.pdf", stem(name)),
+            created.map_err(|e| e.to_string()),
+        ))
     }
 
-    fn open_created_bytes(&mut self, name: &str, created: Result<Arc<Vec<u8>>, String>) -> Result<(), String> {
+    fn open_created_bytes(
+        &mut self,
+        name: &str,
+        created: Result<Arc<Vec<u8>>, String>,
+    ) -> Result<(), String> {
         let bytes = created?;
-        let id = self.session.open_new(name, bytes).map_err(|e| e.to_string())?;
+        let id = self
+            .session
+            .open_new(name, bytes)
+            .map_err(|e| e.to_string())?;
         // The reading-colours preference is app-wide: the newly created document starts with it.
         self.session.set_reading_colors(id, self.reading_colors);
-        let info = &self.session.get(id).ok_or("the new document could not be opened")?.info;
-        self.views.push(crate::DocView::new(id, info, self.view_defaults));
+        let info = &self
+            .session
+            .get(id)
+            .ok_or("the new document could not be opened")?
+            .info;
+        self.views
+            .push(crate::DocView::new(id, info, self.view_defaults));
         self.active = Some(self.views.len() - 1);
         Ok(())
     }
@@ -128,9 +192,14 @@ impl PdfCraftApp {
     /// Create a new document from clipboard contents.
     pub fn create_from_clip(&mut self, clip: Clip) -> Result<(), String> {
         let created = match clip {
-            Clip::Image { width, height, rgba } => {
+            Clip::Image {
+                width,
+                height,
+                rgba,
+            } => {
                 let png = png_from_rgba(width, height, &rgba)?;
-                self.session.create_from_images(&[("Clipboard.png".into(), png)])
+                self.session
+                    .create_from_images(&[("Clipboard.png".into(), png)])
             }
             Clip::Text(t) => self.session.create_from_text("Clipboard", &t),
         };
@@ -139,7 +208,10 @@ impl PdfCraftApp {
 
     /// Create ▸ Blank page: a new untitled US Letter document.
     pub(crate) fn create_blank(&mut self) {
-        let created = self.session.create_blank(612.0, 792.0, 1).map_err(|e| e.to_string());
+        let created = self
+            .session
+            .create_blank(612.0, 792.0, 1)
+            .map_err(|e| e.to_string());
         if let Err(e) = self.open_created_bytes("Untitled.pdf", created) {
             self.notify_fmt("Couldn't create a PDF: {e}", &[("e", &e.to_string())]);
         }
@@ -150,15 +222,28 @@ impl PdfCraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let dialog = rfd::AsyncFileDialog::new()
-                .add_filter(tl!("Images"), &["png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx"])
+                .add_filter(
+                    tl!("Images"),
+                    &[
+                        "png", "jpg", "jpeg", "tif", "tiff", "gif", "bmp", "jp2", "j2k", "jpx",
+                    ],
+                )
                 .set_title(tl!("Choose images"));
             self.ask(crate::pickers::Ask::Files(dialog), None, |app, files| {
                 let mut images = Vec::new();
                 for f in files {
                     match std::fs::read(&f) {
-                        Ok(b) => images.push((f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(), b)),
+                        Ok(b) => images.push((
+                            f.file_name()
+                                .map(|n| n.to_string_lossy().into_owned())
+                                .unwrap_or_default(),
+                            b,
+                        )),
                         Err(e) => {
-                            app.notify_fmt("Couldn't read {name}: {e}", &[("name", &f.display().to_string()), ("e", &e.to_string())]);
+                            app.notify_fmt(
+                                "Couldn't read {name}: {e}",
+                                &[("name", &f.display().to_string()), ("e", &e.to_string())],
+                            );
                             return;
                         }
                     }
@@ -182,8 +267,12 @@ impl PdfCraftApp {
             .iter()
             .map(|p| {
                 let path = std::path::Path::new(p);
-                let bytes = std::fs::read(path).map_err(|e| format!("Couldn't read {}: {e}", path.display()))?;
-                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                let bytes = std::fs::read(path)
+                    .map_err(|e| format!("Couldn't read {}: {e}", path.display()))?;
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
                 Ok((name, bytes))
             })
             .collect::<Result<Vec<_>, String>>()?;
@@ -196,12 +285,18 @@ impl PdfCraftApp {
         if images.is_empty() {
             return;
         }
-        self.image_import = Some(ImageImport { images, choice: ResolutionChoice::Image, dpi: 300.0 });
+        self.image_import = Some(ImageImport {
+            images,
+            choice: ResolutionChoice::Image,
+            dpi: 300.0,
+        });
         self.dialog = Some(crate::Dialog::CreateImages);
     }
 
     pub(crate) fn finish_image_import(&mut self) {
-        let Some(draft) = self.image_import.take() else { return };
+        let Some(draft) = self.image_import.take() else {
+            return;
+        };
         let resolution = match draft.choice {
             ResolutionChoice::Image => pdfcraft_engine::ImageResolution::Embedded,
             ResolutionChoice::Default72 => pdfcraft_engine::ImageResolution::Dpi(72.0),
@@ -211,13 +306,23 @@ impl PdfCraftApp {
     }
 
     /// Create directly at the requested resolution (also used by UI tests).
-    pub fn create_from_images_with_resolution(&mut self, images: Vec<(String, Vec<u8>)>, resolution: pdfcraft_engine::ImageResolution) {
+    pub fn create_from_images_with_resolution(
+        &mut self,
+        images: Vec<(String, Vec<u8>)>,
+        resolution: pdfcraft_engine::ImageResolution,
+    ) {
         if images.is_empty() {
             return;
         }
-        let name =
-            if let Some((name, _)) = images.first().filter(|_| images.len() == 1) { format!("{}.pdf", stem(name)) } else { "Images.pdf".to_string() };
-        let created = self.session.create_from_images_with_resolution(&images, resolution).map_err(|e| e.to_string());
+        let name = if let Some((name, _)) = images.first().filter(|_| images.len() == 1) {
+            format!("{}.pdf", stem(name))
+        } else {
+            "Images.pdf".to_string()
+        };
+        let created = self
+            .session
+            .create_from_images_with_resolution(&images, resolution)
+            .map_err(|e| e.to_string());
         if let Err(e) = self.open_created_bytes(&name, created) {
             self.notify_fmt("Couldn't create a PDF: {e}", &[("e", &e.to_string())]);
         }
@@ -226,7 +331,11 @@ impl PdfCraftApp {
     /// Reduce File Size: write a compacted copy with images downsampled (the open document is
     /// unchanged). It runs in the background with a progress bar, like the PDF Optimizer.
     pub(crate) fn reduce_file_size(&mut self) {
-        self.start_optimize(crate::optimize_ui::OptimizeKind::Reduce, &pdfcraft_engine::optimize::Settings::default(), &[]);
+        self.start_optimize(
+            crate::optimize_ui::OptimizeKind::Reduce,
+            &pdfcraft_engine::optimize::Settings::default(),
+            &[],
+        );
     }
 
     /// Save an optimized copy (Reduce File Size, Optimize PDF) next to the original, reporting
@@ -237,8 +346,13 @@ impl PdfCraftApp {
         kind: crate::optimize_ui::OptimizeKind,
         result: Result<(Arc<Vec<u8>>, String), pdfcraft_engine::EditError>,
     ) {
-        let Some(doc) = self.session.get(id) else { return };
-        let (before, name) = (doc.bytes.len(), format!("{} ({}).pdf", stem(&doc.name), kind.suffix()));
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
+        let (before, name) = (
+            doc.bytes.len(),
+            format!("{} ({}).pdf", stem(&doc.name), kind.suffix()),
+        );
         let (bytes, detail) = match result {
             Ok(r) => r,
             Err(e) => {
@@ -255,39 +369,65 @@ impl PdfCraftApp {
             return;
         }
         let saved = move |app: &mut PdfCraftApp, place: String| {
-            let (b, a) = (crate::panels::human_size(before), crate::panels::human_size(after));
+            let (b, a) = (
+                crate::panels::human_size(before),
+                crate::panels::human_size(after),
+            );
             if after < before {
                 let pct = 100.0 * (1.0 - after as f64 / before.max(1) as f64);
                 app.notify_fmt(
                     "Saved {place}: {before} → {after} ({pct}% smaller){detail}",
-                    &[("place", &place), ("before", &b), ("after", &a), ("pct", &format!("{pct:.0}")), ("detail", &detail)],
+                    &[
+                        ("place", &place),
+                        ("before", &b),
+                        ("after", &a),
+                        ("pct", &format!("{pct:.0}")),
+                        ("detail", &detail),
+                    ],
                 );
             } else {
                 // Optimize PDF still saves: what it discards may matter more than the size.
                 app.notify_fmt(
                     "Saved {place}: {before} → {after} (not smaller){detail}",
-                    &[("place", &place), ("before", &b), ("after", &a), ("detail", &detail)],
+                    &[
+                        ("place", &place),
+                        ("before", &b),
+                        ("after", &a),
+                        ("detail", &detail),
+                    ],
                 );
             }
         };
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let write = move |app: &mut Self, path: String| match crate::editing::write_atomically(&path, &bytes) {
+            let write = move |app: &mut Self, path: String| match crate::editing::write_atomically(
+                &path, &bytes,
+            ) {
                 Ok(()) => saved(app, path),
-                Err(e) => app.notify_fmt("Couldn't write {path}: {e}", &[("path", &path), ("e", &e.to_string())]),
+                Err(e) => app.notify_fmt(
+                    "Couldn't write {path}: {e}",
+                    &[("path", &path), ("e", &e.to_string())],
+                ),
             };
             match self.save_override.clone() {
                 Some(p) => write(self, p),
                 None => {
-                    let dialog = rfd::AsyncFileDialog::new().add_filter("PDF", &["pdf"]).set_file_name(&name);
-                    self.ask_one(crate::pickers::Ask::Save(dialog), None, move |app, p| write(app, p.to_string_lossy().into_owned()));
+                    let dialog = rfd::AsyncFileDialog::new()
+                        .add_filter("PDF", &["pdf"])
+                        .set_file_name(&name);
+                    self.ask_one(crate::pickers::Ask::Save(dialog), None, move |app, p| {
+                        write(app, p.to_string_lossy().into_owned())
+                    });
                 }
             }
         }
         #[cfg(target_arch = "wasm32")]
         match crate::editing::download(&name, &bytes) {
             Ok(()) => saved(self, name),
-            Err(e) => self.notify_fmt("Couldn't download {name}: {e}", &[("name", &name), ("e", &e.to_string())]),
+            Err(e) => self.notify_fmt(
+                "Couldn't download {name}: {e}",
+                &[("name", &name), ("e", &e.to_string())],
+            ),
         }
     }
 }

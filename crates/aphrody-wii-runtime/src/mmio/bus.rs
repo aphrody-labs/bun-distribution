@@ -324,7 +324,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 }) as u8
-            },
+            }
             DI_BASE..=DI_END => crate::dvd::di_read(self, phys, 1).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "DI",
@@ -356,7 +356,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 }) as u8
-            },
+            }
             AI_BASE..=AI_END => crate::flipper::ai::ai_read(self, phys, 1).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "AI",
@@ -369,22 +369,22 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             }) as u8,
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_read(self, phys, 1).unwrap_or(0) as u8
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_read(self, phys, 1).unwrap_or(0) as u8
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 1).unwrap_or(0) as u8
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 1).unwrap_or(0) as u8
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_read(self, phys, 1).unwrap_or(0) as u8
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -394,11 +394,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u8(phys)
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 tracing::error!(addr = format!("{:08X}", addr), "Invalid GX FIFO read");
                 0
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -408,7 +408,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u8(phys)
-            },
+            }
             _ => self.mmio.phys_read_u8(phys),
         }
     }
@@ -477,7 +477,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 }) as u16
-            },
+            }
             DI_BASE..=DI_END => crate::dvd::di_read(self, phys, 2).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "DI",
@@ -509,7 +509,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 }) as u16
-            },
+            }
             AI_BASE..=AI_END => crate::flipper::ai::ai_read(self, phys, 2).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "AI",
@@ -522,22 +522,22 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             }) as u16,
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_read(self, phys, 2).unwrap_or(0) as u16
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_read(self, phys, 2).unwrap_or(0) as u16
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 2).unwrap_or(0) as u16
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 2).unwrap_or(0) as u16
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_read(self, phys, 2).unwrap_or(0) as u16
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -547,11 +547,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u16(phys)
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 tracing::error!(addr = format!("{:08X}", addr), "Invalid GX FIFO read");
                 0
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -561,7 +561,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u16(phys)
-            },
+            }
             _ => self.mmio.phys_read_u16(phys),
         }
     }
@@ -574,7 +574,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                 let y = (phys >> 12) & 0x3FF;
 
                 self.render_sink.peek_efb_depth(x, y)
-            },
+            }
             CP_BASE..=CP_END => crate::flipper::cp::cp_read(self, phys, 4).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "CP",
@@ -636,7 +636,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 })
-            },
+            }
             DI_BASE..=DI_END => crate::dvd::di_read(self, phys, 4).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "DI",
@@ -668,7 +668,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     );
                     0
                 })
-            },
+            }
             AI_BASE..=AI_END => crate::flipper::ai::ai_read(self, phys, 4).unwrap_or_else(|| {
                 tracing::warn!(
                     device = "AI",
@@ -681,22 +681,22 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
             }),
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_read(self, phys, 4).unwrap_or(0)
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_read(self, phys, 4).unwrap_or(0)
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 4).unwrap_or(0)
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_read(self, phys, 4).unwrap_or(0)
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_read(self, phys, 4).unwrap_or(0)
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -706,11 +706,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u32(phys)
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 tracing::error!(addr = format!("{:08X}", addr), "Invalid GX FIFO read");
                 0
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -720,7 +720,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO read"
                 );
                 self.mmio.phys_read_u32(phys)
-            },
+            }
             _ => self.mmio.phys_read_u32(phys),
         }
     }
@@ -740,7 +740,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PE_BASE..=PE_END => {
                 if !crate::flipper::pe::pe_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -752,7 +752,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             VI_BASE..=VI_END => {
                 if !crate::flipper::vi::vi_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -764,7 +764,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PI_BASE..=PI_END => {
                 if !crate::flipper::pi::pi_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -776,7 +776,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             MI_BASE..=MI_END => {
                 if !crate::flipper::mi::mi_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -788,7 +788,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DSP_BASE..=DSP_END => {
                 if !crate::flipper::dsp::dsp_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -800,7 +800,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DI_BASE..=DI_END => {
                 if !crate::dvd::di_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -812,7 +812,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             SI_BASE..=SI_END => {
                 if !crate::flipper::si::si_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -824,7 +824,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             EXI_BASE..=EXI_END => {
                 if !crate::flipper::exi::exi_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -836,7 +836,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             AI_BASE..=AI_END => {
                 if !crate::flipper::ai::ai_write(self, phys, 1, raw) {
                     tracing::warn!(
@@ -848,25 +848,25 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_write(self, phys, 1, raw);
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_write(self, phys, 1, raw);
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 1, raw);
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 1, raw);
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_write(self, phys, 1, raw);
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -877,10 +877,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u8(phys, val);
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 crate::flipper::cp::gather_pipe_write_u8(self, val);
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -891,7 +891,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u8(phys, val);
-            },
+            }
             _ => self.mmio.phys_write_u8(phys, val),
         }
     }
@@ -911,7 +911,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PE_BASE..=PE_END => {
                 if !crate::flipper::pe::pe_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -923,7 +923,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             VI_BASE..=VI_END => {
                 if !crate::flipper::vi::vi_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -935,7 +935,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PI_BASE..=PI_END => {
                 if !crate::flipper::pi::pi_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -947,7 +947,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             MI_BASE..=MI_END => {
                 if !crate::flipper::mi::mi_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -959,7 +959,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DSP_BASE..=DSP_END => {
                 if !crate::flipper::dsp::dsp_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -971,7 +971,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DI_BASE..=DI_END => {
                 if !crate::dvd::di_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -983,7 +983,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             SI_BASE..=SI_END => {
                 if !crate::flipper::si::si_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -995,7 +995,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             EXI_BASE..=EXI_END => {
                 if !crate::flipper::exi::exi_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -1007,7 +1007,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             AI_BASE..=AI_END => {
                 if !crate::flipper::ai::ai_write(self, phys, 2, raw) {
                     tracing::warn!(
@@ -1019,25 +1019,25 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_write(self, phys, 2, raw);
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_write(self, phys, 2, raw);
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 2, raw);
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 2, raw);
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_write(self, phys, 2, raw);
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -1048,10 +1048,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u16(phys, val);
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 crate::flipper::cp::gather_pipe_write_u16(self, val);
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -1062,7 +1062,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u16(phys, val);
-            },
+            }
             _ => self.mmio.phys_write_u16(phys, val),
         }
     }
@@ -1081,7 +1081,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PE_BASE..=PE_END => {
                 if !crate::flipper::pe::pe_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1093,7 +1093,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             VI_BASE..=VI_END => {
                 if !crate::flipper::vi::vi_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1105,7 +1105,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             PI_BASE..=PI_END => {
                 if !crate::flipper::pi::pi_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1117,7 +1117,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             MI_BASE..=MI_END => {
                 if !crate::flipper::mi::mi_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1129,7 +1129,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DSP_BASE..=DSP_END => {
                 if !crate::flipper::dsp::dsp_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1141,7 +1141,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             DI_BASE..=DI_END => {
                 if !crate::dvd::di_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1153,7 +1153,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             SI_BASE..=SI_END => {
                 if !crate::flipper::si::si_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1165,7 +1165,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             EXI_BASE..=EXI_END => {
                 if !crate::flipper::exi::exi_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1177,7 +1177,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             AI_BASE..=AI_END => {
                 if !crate::flipper::ai::ai_write(self, phys, 4, val) {
                     tracing::warn!(
@@ -1189,25 +1189,25 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                         "Unimplemented MMIO write"
                     );
                 }
-            },
+            }
             IPC_BASE..=IPC_END if SYSTEM == WII => {
                 crate::hollywood::ipc::ipc_write(self, phys, 4, val);
-            },
+            }
             HOLLYWOOD_IRQ_BASE..=HOLLYWOOD_IRQ_END if SYSTEM == WII => {
                 crate::hollywood::irq::irq_write(self, phys, 4, val);
-            },
+            }
             HOLLYWOOD_GPIO_PPC_BASE..=HOLLYWOOD_GPIO_PPC_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 4, val);
-            },
+            }
             HOLLYWOOD_GPIO_ARM_BASE..=HOLLYWOOD_GPIO_ARM_END if SYSTEM == WII => {
                 crate::hollywood::gpio::gpio_write(self, phys, 4, val);
-            },
+            }
             HOLLYWOOD_COMPAT_BASE..=HOLLYWOOD_COMPAT_END
             | HOLLYWOOD_PLL_AI_BASE..=HOLLYWOOD_PLL_AI_END
                 if SYSTEM == WII =>
             {
                 crate::hollywood::compat::compat_write(self, phys, 4, val);
-            },
+            }
             HW_HOLLYWOOD_BASE..=HW_HOLLYWOOD_END if SYSTEM == WII => {
                 tracing::warn!(
                     device = "HOLLYWOOD",
@@ -1218,10 +1218,10 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u32(phys, val);
-            },
+            }
             GX_FIFO_BASE..=GX_FIFO_END => {
                 crate::flipper::cp::gather_pipe_write_u32(self, val);
-            },
+            }
             address if (HW_REG_BASE..=HW_REG_END).contains(&address) => {
                 tracing::warn!(
                     device = "HW_REG",
@@ -1232,7 +1232,7 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
                     "Unimplemented MMIO write"
                 );
                 self.mmio.phys_write_u32(phys, val);
-            },
+            }
             _ => self.mmio.phys_write_u32(phys, val),
         }
     }

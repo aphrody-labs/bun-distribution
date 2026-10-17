@@ -52,7 +52,11 @@ impl Styled {
             img.blend_from(&p.img, *m, 1.0, 0);
         }
         img.blend_from(&self.body.img, BlendMode::Normal, 1.0, 0);
-        Buf { img, offset: self.body.offset, scale: self.body.scale }
+        Buf {
+            img,
+            offset: self.body.offset,
+            scale: self.body.scale,
+        }
     }
 }
 
@@ -69,21 +73,37 @@ pub struct Blending {
 
 impl Default for Blending {
     fn default() -> Self {
-        Blending { fill: 1.0, channels: [true; 3], knockout: 0, interior_group: false }
+        Blending {
+            fill: 1.0,
+            channels: [true; 3],
+            knockout: 0,
+            interior_group: false,
+        }
     }
 }
 
 /// The layer's Layer Styles group when styles are switched on.
 pub fn group(layer: &Layer) -> Option<&PropGroup> {
-    layer.layer_styles().filter(|g| g.enabled && layer.can_have_styles())
+    layer
+        .layer_styles()
+        .filter(|g| g.enabled && layer.can_have_styles())
 }
 
 /// Evaluated Advanced Blending (defaults when the layer has no styles).
 pub fn blending(ctx: &EvalCtx, layer: &Layer) -> Blending {
-    let Some(adv) = group(layer).and_then(|g| g.sub(st::BLENDING)).and_then(|b| b.sub("advancedBlending")) else { return Blending::default() };
+    let Some(adv) = group(layer)
+        .and_then(|g| g.sub(st::BLENDING))
+        .and_then(|b| b.sub("advancedBlending"))
+    else {
+        return Blending::default();
+    };
     Blending {
         fill: (ctx.f(layer, adv, "fillOpacity", 100.0) / 100.0).clamp(0.0, 1.0) as f32,
-        channels: [ctx.b(layer, adv, "red"), ctx.b(layer, adv, "green"), ctx.b(layer, adv, "blue")],
+        channels: [
+            ctx.b(layer, adv, "red"),
+            ctx.b(layer, adv, "green"),
+            ctx.b(layer, adv, "blue"),
+        ],
         knockout: ctx.e(layer, adv, "knockout"),
         interior_group: ctx.b(layer, adv, "blendInteriorAsGroup"),
     }
@@ -92,7 +112,10 @@ pub fn blending(ctx: &EvalCtx, layer: &Layer) -> Blending {
 /// Global light (angle, altitude) in degrees for the layer.
 fn global_light(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> (f64, f64) {
     match g.sub(st::BLENDING) {
-        Some(bo) => (ctx.f(layer, bo, "globalLightAngle", st::DEFAULT_ANGLE), ctx.f(layer, bo, "globalLightAltitude", st::DEFAULT_ALTITUDE)),
+        Some(bo) => (
+            ctx.f(layer, bo, "globalLightAngle", st::DEFAULT_ANGLE),
+            ctx.f(layer, bo, "globalLightAltitude", st::DEFAULT_ALTITUDE),
+        ),
         None => (st::DEFAULT_ANGLE, st::DEFAULT_ALTITUDE),
     }
 }
@@ -100,13 +123,18 @@ fn global_light(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> (f64, f64) {
 /// Does the layer need the styled path (any style on, or non-default blending)?
 pub fn active(ctx: &EvalCtx, layer: &Layer) -> bool {
     let Some(g) = group(layer) else { return false };
-    g.groups().any(|s| s.enabled && s.match_id != st::BLENDING) || blending(ctx, layer) != Blending::default()
+    g.groups().any(|s| s.enabled && s.match_id != st::BLENDING)
+        || blending(ctx, layer) != Blending::default()
 }
 
 /// Blend modes of the exterior passes [`render`] produces (Drop Shadow, then Outer Glow).
 pub fn pass_modes(ctx: &EvalCtx, layer: &Layer) -> Vec<BlendMode> {
     let Some(g) = group(layer) else { return vec![] };
-    ["dropShadow", "outerGlow"].iter().filter_map(|id| g.sub(id).filter(|s| s.enabled)).map(|s| style_blend_mode(ctx.e(layer, s, "blendMode"))).collect()
+    ["dropShadow", "outerGlow"]
+        .iter()
+        .filter_map(|id| g.sub(id).filter(|s| s.enabled))
+        .map(|s| style_blend_mode(ctx.e(layer, s, "blendMode")))
+        .collect()
 }
 
 // ------------------------------------------------------------------------------------------
@@ -216,7 +244,13 @@ fn evaluate(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> Styles {
         let pct = |m: &str, d: f64| (ctx.f(layer, sg, m, d) / 100.0).clamp(0.0, 1.0);
         let mode = |m: &str| style_blend_mode(ctx.e(layer, sg, m));
         let col = |m: &str| rgb(ctx.color(layer, sg, m));
-        let ang = || if ctx.b(layer, sg, "useGlobalLight") { ga } else { f("angle", st::DEFAULT_ANGLE) };
+        let ang = || {
+            if ctx.b(layer, sg, "useGlobalLight") {
+                ga
+            } else {
+                f("angle", st::DEFAULT_ANGLE)
+            }
+        };
         let grad = || match ctx.group_value(layer, sg, "colors") {
             Some(Value::Gradient(g)) => g,
             _ => Gradient::default(),
@@ -270,10 +304,27 @@ fn evaluate(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> Styles {
                     down: ctx.e(layer, sg, "direction") == 1,
                     size: f("size", 5.0).clamp(0.0, 250.0),
                     soften: f("soften", 0.0).clamp(0.0, 16.0),
-                    angle: if gl { ga } else { f("angle", st::DEFAULT_ANGLE) },
-                    altitude: if gl { galt } else { f("altitude", st::DEFAULT_ALTITUDE) }.clamp(0.0, 90.0),
-                    hl: (mode("highlightMode"), col("highlightColor"), pct("highlightOpacity", 75.0) as f32),
-                    sh: (mode("shadowMode"), col("shadowColor"), pct("shadowOpacity", 75.0) as f32),
+                    angle: if gl {
+                        ga
+                    } else {
+                        f("angle", st::DEFAULT_ANGLE)
+                    },
+                    altitude: if gl {
+                        galt
+                    } else {
+                        f("altitude", st::DEFAULT_ALTITUDE)
+                    }
+                    .clamp(0.0, 90.0),
+                    hl: (
+                        mode("highlightMode"),
+                        col("highlightColor"),
+                        pct("highlightOpacity", 75.0) as f32,
+                    ),
+                    sh: (
+                        mode("shadowMode"),
+                        col("shadowColor"),
+                        pct("shadowOpacity", 75.0) as f32,
+                    ),
                 });
             }
             "satin" => {
@@ -286,7 +337,13 @@ fn evaluate(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> Styles {
                     invert: ctx.b(layer, sg, "invert"),
                 });
             }
-            "colorOverlay" => s.color = Some(Overlay { mode: mode("blendMode"), color: col("color"), opacity: pct("opacity", 100.0) as f32 }),
+            "colorOverlay" => {
+                s.color = Some(Overlay {
+                    mode: mode("blendMode"),
+                    color: col("color"),
+                    opacity: pct("opacity", 100.0) as f32,
+                })
+            }
             "gradientOverlay" => {
                 s.gradient = Some(GradOverlay {
                     mode: mode("blendMode"),
@@ -361,7 +418,9 @@ fn dt1d(f: &[f32], d: &mut [f32]) {
     let mut k = 0usize;
     z[0] = f64::NEG_INFINITY;
     z[1] = f64::INFINITY;
-    let cross = |q: usize, p: usize| ((fv(q) + (q * q) as f64) - (fv(p) + (p * p) as f64)) / (2.0 * (q as f64 - p as f64));
+    let cross = |q: usize, p: usize| {
+        ((fv(q) + (q * q) as f64) - (fv(p) + (p * p) as f64)) / (2.0 * (q as f64 - p as f64))
+    };
     for q in 1..n {
         let mut s = cross(q, v[k]);
         while k > 0 && s <= z[k] {
@@ -385,7 +444,14 @@ fn dt1d(f: &[f32], d: &mut [f32]) {
 
 /// Euclidean distance (pixels) from every pixel to the nearest pixel where `seed` is true.
 fn edt(w: usize, h: usize, seed: impl Fn(usize) -> bool + Sync) -> Plane {
-    let f = Plane { w, h, data: (0..w * h).into_par_iter().map(|i| if seed(i) { 0.0 } else { FAR as f32 }).collect() };
+    let f = Plane {
+        w,
+        h,
+        data: (0..w * h)
+            .into_par_iter()
+            .map(|i| if seed(i) { 0.0 } else { FAR as f32 })
+            .collect(),
+    };
     let rows = f.map_rows(dt1d);
     let cols = rows.transpose().map_rows(dt1d).transpose();
     cols.map(|v| v.sqrt())
@@ -432,14 +498,22 @@ fn soft_shape(alpha: &Plane, d: &Lazy, size: f64, spread: f64, inverse: bool) ->
     let base = if hard > 0.01 {
         let sd = d.get(alpha);
         let r = hard as f32;
-        if inverse { sd.map(|v| grown(-v, r)) } else { sd.map(|v| grown(v, r)) }
+        if inverse {
+            sd.map(|v| grown(-v, r))
+        } else {
+            sd.map(|v| grown(v, r))
+        }
     } else if inverse {
         alpha.map(|a| 1.0 - a)
     } else {
         alpha.clone()
     };
     let sigma = (size - hard).max(0.0) / 2.0;
-    if sigma > 0.05 { gauss_plane(&base, sigma, sigma) } else { base }
+    if sigma > 0.05 {
+        gauss_plane(&base, sigma, sigma)
+    } else {
+        base
+    }
 }
 
 /// Bilinear read of `p` displaced by `off` pixels (the plane moves by `off`).
@@ -457,27 +531,51 @@ impl Lazy {
 
 #[inline]
 fn noisy(a: f32, noise: f32, x: usize, y: usize, seed: u32) -> f32 {
-    if noise <= 0.0 { a } else { a * (1.0 - noise * hash_noise(x as u32, y as u32, seed)) }
+    if noise <= 0.0 {
+        a
+    } else {
+        a * (1.0 - noise * hash_noise(x as u32, y as u32, seed))
+    }
 }
 
 /// `dst` with the straight colour `c` at coverage `a` blended onto it at pixel (`x`, `y`).
 #[inline]
-fn blend_style(mode: BlendMode, seed: u32, x: usize, y: usize, dst: [f32; 4], c: [f32; 3], a: f32) -> [f32; 4] {
-    let n = if mode == BlendMode::Dissolve { hash_noise(x as u32, y as u32, seed) } else { 0.5 };
+fn blend_style(
+    mode: BlendMode,
+    seed: u32,
+    x: usize,
+    y: usize,
+    dst: [f32; 4],
+    c: [f32; 3],
+    a: f32,
+) -> [f32; 4] {
+    let n = if mode == BlendMode::Dissolve {
+        hash_noise(x as u32, y as u32, seed)
+    } else {
+        0.5
+    };
     blend_pixel(mode, dst, [c[0] * a, c[1] * a, c[2] * a, a], n)
 }
 
 /// Blend a straight colour with coverage `a` onto every pixel of `img` (`f(x, y)` → (colour, a)).
-fn blend_into(img: &mut Image, mode: BlendMode, seed: u32, f: impl Fn(usize, usize) -> ([f32; 3], f32) + Sync) {
+fn blend_into(
+    img: &mut Image,
+    mode: BlendMode,
+    seed: u32,
+    f: impl Fn(usize, usize) -> ([f32; 3], f32) + Sync,
+) {
     let w = img.width as usize;
-    img.data.par_chunks_mut(w.max(1)).enumerate().for_each(|(y, row)| {
-        for (x, d) in row.iter_mut().enumerate() {
-            let (c, a) = f(x, y);
-            if a > 0.0 {
-                *d = blend_style(mode, seed, x, y, *d, c, a);
+    img.data
+        .par_chunks_mut(w.max(1))
+        .enumerate()
+        .for_each(|(y, row)| {
+            for (x, d) in row.iter_mut().enumerate() {
+                let (c, a) = f(x, y);
+                if a > 0.0 {
+                    *d = blend_style(mode, seed, x, y, *d, c, a);
+                }
             }
-        }
-    });
+        });
 }
 
 /// Blend an interior style clipped to the content: `f(x, y)` → (straight colour, opacity) is
@@ -485,30 +583,43 @@ fn blend_into(img: &mut Image, mode: BlendMode, seed: u32, f: impl Fn(usize, usi
 /// alpha and an anti-aliased edge pixel mixes the style with the layer's colour in the
 /// proportion the style covers it, instead of letting the layer's own colour show through
 /// around a blended edge (#416).
-fn blend_clipped(img: &mut Image, clip: &Plane, mode: BlendMode, seed: u32, f: impl Fn(usize, usize) -> ([f32; 3], f32) + Sync) {
+fn blend_clipped(
+    img: &mut Image,
+    clip: &Plane,
+    mode: BlendMode,
+    seed: u32,
+    f: impl Fn(usize, usize) -> ([f32; 3], f32) + Sync,
+) {
     let w = img.width as usize;
-    img.data.par_chunks_mut(w.max(1)).zip(clip.data.par_chunks(w.max(1))).enumerate().for_each(|(y, (row, cov))| {
-        for (x, (d, &k)) in row.iter_mut().zip(cov).enumerate() {
-            if k > 0.0
-                && let (c, a) = f(x, y)
-                && a > 0.0
-            {
-                *d = blend_style(mode, seed, x, y, d.map(|v| v / k), c, a).map(|v| v * k);
+    img.data
+        .par_chunks_mut(w.max(1))
+        .zip(clip.data.par_chunks(w.max(1)))
+        .enumerate()
+        .for_each(|(y, (row, cov))| {
+            for (x, (d, &k)) in row.iter_mut().zip(cov).enumerate() {
+                if k > 0.0
+                    && let (c, a) = f(x, y)
+                    && a > 0.0
+                {
+                    *d = blend_style(mode, seed, x, y, d.map(|v| v / k), c, a).map(|v| v * k);
+                }
             }
-        }
-    });
+        });
 }
 
 /// A pass image filled with a straight colour at coverage `f(x, y)`.
 fn pass_image(w: usize, h: usize, f: impl Fn(usize, usize) -> ([f32; 3], f32) + Sync) -> Image {
     let mut img = Image::new(w as u32, h as u32);
-    img.data.par_chunks_mut(w.max(1)).enumerate().for_each(|(y, row)| {
-        for (x, d) in row.iter_mut().enumerate() {
-            let (c, a) = f(x, y);
-            let a = a.clamp(0.0, 1.0);
-            *d = [c[0] * a, c[1] * a, c[2] * a, a];
-        }
-    });
+    img.data
+        .par_chunks_mut(w.max(1))
+        .enumerate()
+        .for_each(|(y, row)| {
+            for (x, d) in row.iter_mut().enumerate() {
+                let (c, a) = f(x, y);
+                let a = a.clamp(0.0, 1.0);
+                *d = [c[0] * a, c[1] * a, c[2] * a, a];
+            }
+        });
     img
 }
 
@@ -518,7 +629,11 @@ fn glow_color(g: &Glow, v: f32, x: usize, y: usize) -> ([f32; 3], f32) {
     match &g.gradient {
         None => (g.color, v),
         Some(gr) => {
-            let j = if g.jitter > 0.0 { (hash_noise(x as u32, y as u32, 77) - 0.5) * g.jitter } else { 0.0 };
+            let j = if g.jitter > 0.0 {
+                (hash_noise(x as u32, y as u32, 77) - 0.5) * g.jitter
+            } else {
+                0.0
+            };
             let c = gr.sample((1.0 - v + j) as f64);
             ([c[0], c[1], c[2]], c[3] * (v * 8.0).min(1.0))
         }
@@ -546,14 +661,22 @@ fn glow_intensity(alpha: &Plane, d: &Lazy, g: &Glow, s: f64, inner: bool) -> Pla
 /// Render the layer's styles around its processed `content` (layer size `layer_size` in layer
 /// pixels, for Gradient Overlay without Align with Layer).
 pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2]) -> Styled {
-    let Some(g) = group(layer) else { return Styled { passes: vec![], body: content.clone() } };
+    let Some(g) = group(layer) else {
+        return Styled {
+            passes: vec![],
+            body: content.clone(),
+        };
+    };
     let styles = evaluate(ctx, layer, g);
     let bl = blending(ctx, layer);
     let s = content.scale.max(1e-6);
     let pad = ((reach(&styles) * s).ceil() + 2.0).min(MAX_PAD) as u32;
     let mut buf = content.clone();
     if content.img.is_empty() {
-        return Styled { passes: vec![], body: buf };
+        return Styled {
+            passes: vec![],
+            body: buf,
+        };
     }
     buf.pad(pad);
     let (w, h) = (buf.img.width as usize, buf.img.height as usize);
@@ -573,7 +696,14 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
             }
             (ds.color, noisy(a, ds.noise, x, y, seed))
         });
-        passes.push((Buf { img, offset: buf.offset, scale: buf.scale }, ds.mode));
+        passes.push((
+            Buf {
+                img,
+                offset: buf.offset,
+                scale: buf.scale,
+            },
+            ds.mode,
+        ));
     }
     if let Some(gl) = &styles.outer_glow {
         let v = glow_intensity(&alpha, &d, gl, s, false);
@@ -581,9 +711,25 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
             let i = y * w + x;
             let (c, a) = glow_color(gl, v.data[i], x, y);
             // The glow sits outside the content (knocked out under it).
-            (c, noisy(a * gl.opacity * (1.0 - alpha.data[i]), gl.noise, x, y, seed ^ 0x5a5a))
+            (
+                c,
+                noisy(
+                    a * gl.opacity * (1.0 - alpha.data[i]),
+                    gl.noise,
+                    x,
+                    y,
+                    seed ^ 0x5a5a,
+                ),
+            )
         });
-        passes.push((Buf { img, offset: buf.offset, scale: buf.scale }, gl.mode));
+        passes.push((
+            Buf {
+                img,
+                offset: buf.offset,
+                scale: buf.scale,
+            },
+            gl.mode,
+        ));
     }
 
     // ---- body
@@ -618,13 +764,17 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
         });
     }
     if let Some(co) = &styles.color {
-        blend_clipped(&mut body, &alpha, co.mode, seed, |_, _| (co.color, co.opacity));
+        blend_clipped(&mut body, &alpha, co.mode, seed, |_, _| {
+            (co.color, co.opacity)
+        });
     }
     if let Some(sa) = &styles.satin {
         let b = gauss_plane(&alpha, sa.size * s / 2.0, sa.size * s / 2.0);
         let off = [sa.offset[0] * s, sa.offset[1] * s];
         blend_clipped(&mut body, &alpha, sa.mode, seed, |x, y| {
-            let v = (shifted(&b, x, y, off) - shifted(&b, x, y, [-off[0], -off[1]])).abs().min(1.0);
+            let v = (shifted(&b, x, y, off) - shifted(&b, x, y, [-off[0], -off[1]]))
+                .abs()
+                .min(1.0);
             let v = if sa.invert { 1.0 - v } else { v };
             (sa.color, v * sa.opacity)
         });
@@ -633,7 +783,11 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
         let v = glow_intensity(&alpha, &d, gl, s, true);
         blend_clipped(&mut body, &alpha, gl.mode, seed, |x, y| {
             let i = y * w + x;
-            let e = if gl.center { 1.0 - v.data[i] } else { v.data[i] };
+            let e = if gl.center {
+                1.0 - v.data[i]
+            } else {
+                v.data[i]
+            };
             let (c, a) = glow_color(gl, e, x, y);
             (c, noisy(a * gl.opacity, gl.noise, x, y, seed ^ 0x3c3c))
         });
@@ -672,7 +826,12 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
             body.data.par_iter_mut().enumerate().for_each(|(i, p)| {
                 let ring = (grown(sd.data[i], r_out) - alpha.data[i]).max(0.0) * sk.opacity;
                 if ring > 0.0 {
-                    let src = [sk.color[0] * ring, sk.color[1] * ring, sk.color[2] * ring, ring];
+                    let src = [
+                        sk.color[0] * ring,
+                        sk.color[1] * ring,
+                        sk.color[2] * ring,
+                        ring,
+                    ];
                     for c in 0..4 {
                         p[c] += src[c];
                     }
@@ -683,14 +842,30 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, content: &Buf, layer_size: [f64; 2])
     if let Some(bv) = &styles.bevel {
         bevel(&mut body, &alpha, &d, bv, s, seed);
     }
-    Styled { passes, body: Buf { img: body, offset: buf.offset, scale: buf.scale } }
+    Styled {
+        passes,
+        body: Buf {
+            img: body,
+            offset: buf.offset,
+            scale: buf.scale,
+        },
+    }
 }
 
 /// Gradient Overlay frame in buffer pixels: centre and half extents.
-fn gradient_frame(go: &GradOverlay, buf: &Buf, alpha: &Plane, layer_size: [f64; 2]) -> (f64, f64, f64, f64) {
+fn gradient_frame(
+    go: &GradOverlay,
+    buf: &Buf,
+    alpha: &Plane,
+    layer_size: [f64; 2],
+) -> (f64, f64, f64, f64) {
     let s = buf.scale;
     let (x0, y0, x1, y1) = if go.align {
-        let img = Image { width: alpha.w as u32, height: alpha.h as u32, data: alpha.data.iter().map(|&a| [0.0, 0.0, 0.0, a]).collect() };
+        let img = Image {
+            width: alpha.w as u32,
+            height: alpha.h as u32,
+            data: alpha.data.iter().map(|&a| [0.0, 0.0, 0.0, a]).collect(),
+        };
         match img.alpha_bounds() {
             Some((a, b, c, d)) => (a as f64, b as f64, c as f64, d as f64),
             None => (0.0, 0.0, 1.0, 1.0),
@@ -700,7 +875,12 @@ fn gradient_frame(go: &GradOverlay, buf: &Buf, alpha: &Plane, layer_size: [f64; 
         let (c, d) = buf.to_px(layer_size);
         (a, b, c, d)
     };
-    ((x0 + x1) / 2.0 + go.offset[0] * s, (y0 + y1) / 2.0 + go.offset[1] * s, (x1 - x0) / 2.0, (y1 - y0) / 2.0)
+    (
+        (x0 + x1) / 2.0 + go.offset[0] * s,
+        (y0 + y1) / 2.0 + go.offset[1] * s,
+        (x1 - x0) / 2.0,
+        (y1 - y0) / 2.0,
+    )
 }
 
 /// Bevel and Emboss: a height field from the content edge, lit by a directional light.
@@ -732,7 +912,11 @@ fn bevel(body: &mut Image, alpha: &Plane, d: &Lazy, bv: &Bevel, s: f64, seed: u3
     let sign = if bv.down { -1.0 } else { 1.0 };
     let k = (size as f64 * bv.depth) as f32 * sign;
     let (th, al) = (bv.angle.to_radians(), bv.altitude.to_radians());
-    let light = [(al.cos() * th.cos()) as f32, (-al.cos() * th.sin()) as f32, al.sin() as f32];
+    let light = [
+        (al.cos() * th.cos()) as f32,
+        (-al.cos() * th.sin()) as f32,
+        al.sin() as f32,
+    ];
     let flat = light[2];
     let region = |i: usize| -> f32 {
         let a = alpha.data[i];

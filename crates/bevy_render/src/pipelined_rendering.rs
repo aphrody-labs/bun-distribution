@@ -242,7 +242,7 @@ fn renderer_extract(app_world: &mut World, _world: &mut World) {
 #[cfg(all(test, feature = "multi_threaded"))]
 mod tests {
     use super::*;
-    use bevy_tasks::{block_on, TaskPool};
+    use bevy_tasks::{TaskPool, block_on};
     use core::time::Duration;
     use std::{
         sync::mpsc,

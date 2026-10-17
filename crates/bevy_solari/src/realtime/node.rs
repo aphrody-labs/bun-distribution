@@ -1,27 +1,27 @@
 use super::prepare::{
-    SolariLightingResources, LIGHT_TILE_BLOCKS, WORLD_CACHE_ACTIVE_CELLS_COUNT_OFFSET,
+    LIGHT_TILE_BLOCKS, SolariLightingResources, WORLD_CACHE_ACTIVE_CELLS_COUNT_OFFSET,
     WORLD_CACHE_SIZE,
 };
 use crate::scene::RaytracingSceneBindings;
 #[cfg(all(feature = "dlss", not(feature = "force_disable_dlss")))]
 use bevy_anti_alias::dlss::ViewDlssRayReconstructionTextures;
-use bevy_asset::{load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, load_embedded_asset};
 use bevy_core_pipeline::prepass::{
-    PreviousViewData, PreviousViewUniformOffset, PreviousViewUniforms, ViewPrepassTextures,
-    MOTION_VECTOR_PREPASS_FORMAT,
+    MOTION_VECTOR_PREPASS_FORMAT, PreviousViewData, PreviousViewUniformOffset,
+    PreviousViewUniforms, ViewPrepassTextures,
 };
 use bevy_ecs::{prelude::*, resource::Resource, system::Commands};
 use bevy_render::{
     diagnostic::RecordDiagnostics as _,
     render_resource::{
-        binding_types::{
-            storage_buffer_sized, texture_2d, texture_depth_2d, texture_storage_2d, uniform_buffer,
-            uniform_buffer_sized,
-        },
         BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedComputePipelineId, ComputePassDescriptor, ComputePipelineDescriptor, LoadOp,
         PipelineCache, RenderPassDescriptor, ShaderStages, StorageTextureAccess, TextureFormat,
         TextureFormatFeatureFlags, TextureSampleType,
+        binding_types::{
+            storage_buffer_sized, texture_2d, texture_depth_2d, texture_storage_2d, uniform_buffer,
+            uniform_buffer_sized,
+        },
     },
     renderer::{RenderAdapter, RenderContext, RenderDevice, ViewQuery},
     view::{ViewTarget, ViewUniform, ViewUniformOffset, ViewUniforms},

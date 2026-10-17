@@ -4,7 +4,12 @@ use lightcraft_codecs::ChromaSubsampling;
 use std::time::Instant;
 
 fn psnr(a: &[u8], b: &[u8]) -> f64 {
-    let mse = a.iter().zip(b).map(|(x, y)| (*x as f64 - *y as f64).powi(2)).sum::<f64>() / a.len() as f64;
+    let mse = a
+        .iter()
+        .zip(b)
+        .map(|(x, y)| (*x as f64 - *y as f64).powi(2))
+        .sum::<f64>()
+        / a.len() as f64;
     10.0 * (255.0f64.powi(2) / mse.max(1e-9)).log10()
 }
 
@@ -31,22 +36,33 @@ fn main() {
             let mut v = Vec::with_capacity(w * h * 3);
             for y in 0..h {
                 for x in 0..w {
-                    let t = (((x as f32 / 37.0).sin() * (y as f32 / 23.0).cos()) * 0.5 + 0.5) * 255.0;
+                    let t =
+                        (((x as f32 / 37.0).sin() * (y as f32 / 23.0).cos()) * 0.5 + 0.5) * 255.0;
                     v.extend_from_slice(&[(x * 255 / w) as u8, t as u8, ((x ^ y) & 0xff) as u8]);
                 }
             }
             (w, h, v)
         }
     };
-    for (sub, js) in
-        [(ChromaSubsampling::S444, jpeg_encoder::SamplingFactor::R_4_4_4), (ChromaSubsampling::S420, jpeg_encoder::SamplingFactor::R_4_2_0)]
-    {
-        let (ours, t_ours) = best(5, || lightcraft_codecs::jpeg_par::encode(&rgb, w, h, 3, 90, sub, &[]));
+    for (sub, js) in [
+        (
+            ChromaSubsampling::S444,
+            jpeg_encoder::SamplingFactor::R_4_4_4,
+        ),
+        (
+            ChromaSubsampling::S420,
+            jpeg_encoder::SamplingFactor::R_4_2_0,
+        ),
+    ] {
+        let (ours, t_ours) = best(5, || {
+            lightcraft_codecs::jpeg_par::encode(&rgb, w, h, 3, 90, sub, &[])
+        });
         let (theirs, t_theirs) = best(3, || {
             let mut out = Vec::new();
             let mut e = jpeg_encoder::Encoder::new(&mut out, 90);
             e.set_sampling_factor(js);
-            e.encode(&rgb, w as u16, h as u16, jpeg_encoder::ColorType::Rgb).unwrap();
+            e.encode(&rgb, w as u16, h as u16, jpeg_encoder::ColorType::Rgb)
+                .unwrap();
             out
         });
         let dec = |b: &[u8]| jpeg_decoder::Decoder::new(b).decode().unwrap();

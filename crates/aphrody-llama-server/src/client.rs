@@ -68,7 +68,10 @@ impl ServerClient {
             .no_proxy()
             .build()
             .unwrap_or_default();
-        Self { http, server_url: server_url.into().trim_end_matches('/').to_string() }
+        Self {
+            http,
+            server_url: server_url.into().trim_end_matches('/').to_string(),
+        }
     }
 
     fn url(&self, path: &str) -> String {
@@ -88,12 +91,15 @@ impl ServerClient {
 
     /// Probe `/health`. Never fails: an unreachable server is [`Health::Down`].
     pub async fn health(&self) -> Health {
-        let request = self.http.get(self.url("/health")).timeout(Duration::from_secs(3));
+        let request = self
+            .http
+            .get(self.url("/health"))
+            .timeout(Duration::from_secs(3));
         match request.send().await {
             Ok(response) if response.status().is_success() => Health::Ready,
             Ok(response) if response.status() == reqwest::StatusCode::SERVICE_UNAVAILABLE => {
                 Health::Loading
-            },
+            }
             Ok(response) => Health::Down(format!("unexpected status {}", response.status())),
             Err(error) => Health::Down(error.to_string()),
         }
@@ -141,8 +147,10 @@ impl ServerClient {
     ///
     /// See [`ClientError`].
     pub async fn set_lora_scales(&self, scales: &[(u32, f32)]) -> Result<(), ClientError> {
-        let body: Vec<Value> =
-            scales.iter().map(|(id, scale)| json!({ "id": id, "scale": scale })).collect();
+        let body: Vec<Value> = scales
+            .iter()
+            .map(|(id, scale)| json!({ "id": id, "scale": scale }))
+            .collect();
         let response = self
             .http
             .post(self.url("/lora-adapters"))
@@ -159,8 +167,12 @@ impl ServerClient {
     ///
     /// See [`ClientError`].
     pub async fn props(&self) -> Result<Value, ClientError> {
-        let response =
-            self.http.get(self.url("/props")).timeout(Duration::from_secs(10)).send().await?;
+        let response = self
+            .http
+            .get(self.url("/props"))
+            .timeout(Duration::from_secs(10))
+            .send()
+            .await?;
         Ok(Self::checked(response).await?.json().await?)
     }
 }

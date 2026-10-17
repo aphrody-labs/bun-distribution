@@ -1,7 +1,8 @@
 //! [`wordcraft_doc::math`] tree → Office Math (OMML).
 
 use wordcraft_doc::math::{
-    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, Math, MathJc, MathProps, ScriptKind, parse_linear,
+    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, Math,
+    MathJc, MathProps, ScriptKind, parse_linear,
 };
 
 use crate::xml::W;
@@ -23,7 +24,10 @@ pub fn write_equation(w: &mut W, linear: &str, display: bool, math: &Math) {
             w.close("m:oMathParaPr");
         }
     }
-    if !math.omml.is_empty() && math.omml.starts_with("<m:oMath") && crate::xml::parse(wrap_ns(&math.omml).as_bytes()).is_ok() {
+    if !math.omml.is_empty()
+        && math.omml.starts_with("<m:oMath")
+        && crate::xml::parse(wrap_ns(&math.omml).as_bytes()).is_ok()
+    {
         w.raw(&math.omml);
     } else {
         let parsed;
@@ -48,7 +52,9 @@ pub fn resolve_numbers(math: &Math, display: bool, counter: &mut u32) -> Option<
     if !display {
         return None;
     }
-    let [MNode::EqArr { rows }] = math.nodes.as_slice() else { return None };
+    let [MNode::EqArr { rows }] = math.nodes.as_slice() else {
+        return None;
+    };
     let mut out = rows.clone();
     let mut changed = false;
     for row in out.iter_mut() {
@@ -75,16 +81,31 @@ pub fn resolve_numbers(math: &Math, display: bool, counter: &mut u32) -> Option<
         }
         if empty {
             let n = vec![MNode::Run(MRun::new(counter.to_string()))];
-            row.push(MNode::Delim { beg: Some('('), end: Some(')'), sep: None, grow: true, shp_match: false, elems: vec![n] });
+            row.push(MNode::Delim {
+                beg: Some('('),
+                end: Some(')'),
+                sep: None,
+                grow: true,
+                shp_match: false,
+                elems: vec![n],
+            });
             changed = true;
         }
     }
-    changed.then(|| Math { nodes: vec![MNode::EqArr { rows: out }], omml: String::new(), ..math.clone() })
+    changed.then(|| Math {
+        nodes: vec![MNode::EqArr { rows: out }],
+        omml: String::new(),
+        ..math.clone()
+    })
 }
 
 /// The kept XML with namespace declarations, for validating it on its own.
 fn wrap_ns(xml: &str) -> String {
-    let decl: String = crate::xml::body_ns().iter().filter(|(k, _)| k.starts_with("xmlns:")).map(|(k, v)| format!(" {k}=\"{v}\"")).collect();
+    let decl: String = crate::xml::body_ns()
+        .iter()
+        .filter(|(k, _)| k.starts_with("xmlns:"))
+        .map(|(k, v)| format!(" {k}=\"{v}\""))
+        .collect();
     format!("<w:x{decl}>{xml}</w:x>")
 }
 
@@ -106,7 +127,11 @@ pub fn math_pr(w: &mut W, m: &MathProps) {
     if m.wrap_right {
         w.empty("m:wrapRight", &[]);
     } else {
-        let indent = if m.wrap_indent.is_finite() { m.wrap_indent.clamp(0.0, 1584.0) } else { wordcraft_doc::math::DEFAULT_WRAP_INDENT };
+        let indent = if m.wrap_indent.is_finite() {
+            m.wrap_indent.clamp(0.0, 1584.0)
+        } else {
+            wordcraft_doc::math::DEFAULT_WRAP_INDENT
+        };
         val(w, "m:wrapIndent", &crate::units::twips(indent));
     }
     w.close("m:mathPr");
@@ -138,7 +163,10 @@ fn arg_inner(w: &mut W, a: &[MNode], depth: usize) {
 fn ctrl(w: &mut W) {
     w.open("m:ctrlPr", &[]);
     w.open("w:rPr", &[]);
-    w.empty("w:rFonts", &[("w:ascii", "Cambria Math"), ("w:hAnsi", "Cambria Math")]);
+    w.empty(
+        "w:rFonts",
+        &[("w:ascii", "Cambria Math"), ("w:hAnsi", "Cambria Math")],
+    );
     w.empty("w:i", &[]);
     w.close("w:rPr");
     w.close("m:ctrlPr");
@@ -167,7 +195,12 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
             arg(w, "m:den", den, depth);
             w.close("m:f");
         }
-        MNode::Script { kind, base, sub, sup } => {
+        MNode::Script {
+            kind,
+            base,
+            sub,
+            sup,
+        } => {
             let (el, pr) = match kind {
                 ScriptKind::Sup => ("m:sSup", "m:sSupPr"),
                 ScriptKind::Sub => ("m:sSub", "m:sSubPr"),
@@ -205,7 +238,16 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
             arg(w, "m:e", e, depth);
             w.close("m:rad");
         }
-        MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub, sup, e } => {
+        MNode::Nary {
+            chr,
+            lim_loc,
+            grow,
+            sub_hide,
+            sup_hide,
+            sub,
+            sup,
+            e,
+        } => {
             w.open("m:nary", &[]);
             w.open("m:naryPr", &[]);
             if *chr != '∫' {
@@ -232,7 +274,14 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
             arg(w, "m:e", e, depth);
             w.close("m:nary");
         }
-        MNode::Delim { beg, end, sep, grow, shp_match, elems } => {
+        MNode::Delim {
+            beg,
+            end,
+            sep,
+            grow,
+            shp_match,
+            elems,
+        } => {
             w.open("m:d", &[]);
             w.open("m:dPr", &[]);
             if *beg != Some('(') {
@@ -267,7 +316,11 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
             w.close("m:func");
         }
         MNode::Lim { upper, e, lim } => {
-            let (el, pr) = if *upper { ("m:limUpp", "m:limUppPr") } else { ("m:limLow", "m:limLowPr") };
+            let (el, pr) = if *upper {
+                ("m:limUpp", "m:limUppPr")
+            } else {
+                ("m:limLow", "m:limLowPr")
+            };
             w.open(el, &[]);
             w.open(pr, &[]);
             ctrl(w);
@@ -297,12 +350,19 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
         MNode::BorderBox { hide, strike, e } => {
             w.open("m:borderBox", &[]);
             w.open("m:borderBoxPr", &[]);
-            for (on, name) in hide.iter().zip(["m:hideTop", "m:hideBot", "m:hideLeft", "m:hideRight"]) {
+            for (on, name) in
+                hide.iter()
+                    .zip(["m:hideTop", "m:hideBot", "m:hideLeft", "m:hideRight"])
+            {
                 if *on {
                     val(w, name, "1");
                 }
             }
-            for (on, name) in strike.iter().zip(["m:strikeH", "m:strikeV", "m:strikeBLTR", "m:strikeTLBR"]) {
+            for (on, name) in
+                strike
+                    .iter()
+                    .zip(["m:strikeH", "m:strikeV", "m:strikeBLTR", "m:strikeTLBR"])
+            {
                 if *on {
                     val(w, name, "1");
                 }
@@ -369,17 +429,32 @@ fn node(w: &mut W, n: &MNode, depth: usize) {
             for r in rows {
                 w.open("m:mr", &[]);
                 for c in 0..cols {
-                    arg(w, "m:e", r.get(c).map(|v| v.as_slice()).unwrap_or(&[]), depth);
+                    arg(
+                        w,
+                        "m:e",
+                        r.get(c).map(|v| v.as_slice()).unwrap_or(&[]),
+                        depth,
+                    );
                 }
                 w.close("m:mr");
             }
             w.close("m:m");
         }
-        MNode::Phant { show, zero_wid, zero_asc, zero_desc, e } => {
+        MNode::Phant {
+            show,
+            zero_wid,
+            zero_asc,
+            zero_desc,
+            e,
+        } => {
             w.open("m:phant", &[]);
             w.open("m:phantPr", &[]);
             val(w, "m:show", if *show { "1" } else { "0" });
-            for (on, name) in [(*zero_wid, "m:zeroWid"), (*zero_asc, "m:zeroAsc"), (*zero_desc, "m:zeroDesc")] {
+            for (on, name) in [
+                (*zero_wid, "m:zeroWid"),
+                (*zero_asc, "m:zeroAsc"),
+                (*zero_desc, "m:zeroDesc"),
+            ] {
                 if on {
                     val(w, name, "1");
                 }
@@ -430,7 +505,11 @@ fn run(w: &mut W, r: &MRun) {
         w.close("m:rPr");
     }
     w.open("w:rPr", &[]);
-    let font = r.font.as_deref().filter(|_| r.nor).unwrap_or("Cambria Math");
+    let font = r
+        .font
+        .as_deref()
+        .filter(|_| r.nor)
+        .unwrap_or("Cambria Math");
     w.empty("w:rFonts", &[("w:ascii", font), ("w:hAnsi", font)]);
     if let Some(c) = r.color {
         w.val("w:color", &c.hex());

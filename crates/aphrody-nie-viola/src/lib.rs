@@ -102,10 +102,10 @@ pub fn enumerer(racine: &Path) -> Result<Vec<(PathBuf, String)>, String> {
                         continue;
                     };
                     out.push((chemin.clone(), rel.to_string_lossy().replace('\\', "/")));
-                },
+                }
                 // Les liens et les entrées illisibles sont ignorés plutôt que de faire échouer
                 // toute l'opération sur un cas marginal.
-                _ => {},
+                _ => {}
             }
         }
     }
@@ -126,7 +126,10 @@ mod tests {
         assert!(glob_match("*chr*g4md", "data/chr/c01.g4md"));
         assert!(glob_match("*", "n'importe quoi"));
         assert!(glob_match("exact", "exact"));
-        assert!(!glob_match("exact", "exactement"), "sans joker, l'égalité est stricte");
+        assert!(
+            !glob_match("exact", "exactement"),
+            "sans joker, l'égalité est stricte"
+        );
         assert!(!glob_match("exact", "inexact"));
     }
 
@@ -138,7 +141,11 @@ mod tests {
         std::fs::write(dir.join("b/c/a.bin"), b"a").expect("a");
         let v = enumerer(&dir).expect("énumération");
         let rels: Vec<&str> = v.iter().map(|(_, r)| r.as_str()).collect();
-        assert_eq!(rels, vec!["b/c/a.bin", "z.bin"], "récursif, trié, séparateurs normalisés");
+        assert_eq!(
+            rels,
+            vec!["b/c/a.bin", "z.bin"],
+            "récursif, trié, séparateurs normalisés"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 }

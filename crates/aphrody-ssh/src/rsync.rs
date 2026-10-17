@@ -45,7 +45,10 @@ pub struct RsyncOptions {
 
 impl Default for RsyncOptions {
     fn default() -> Self {
-        Self { block_size: DEFAULT_BLOCK_SIZE, crypto_hash_size: DEFAULT_CRYPTO_HASH_SIZE }
+        Self {
+            block_size: DEFAULT_BLOCK_SIZE,
+            crypto_hash_size: DEFAULT_CRYPTO_HASH_SIZE,
+        }
     }
 }
 

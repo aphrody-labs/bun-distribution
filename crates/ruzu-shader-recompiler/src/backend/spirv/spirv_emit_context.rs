@@ -5560,7 +5560,9 @@ impl SpirvEmitContext {
                     Opcode::QuadBroadcast => {
                         super::emit_spirv_warp::emit_quad_broadcast(self, value, operand)
                     }
-                    Opcode::QuadSwap => super::emit_spirv_warp::emit_quad_swap(self, value, operand),
+                    Opcode::QuadSwap => {
+                        super::emit_spirv_warp::emit_quad_swap(self, value, operand)
+                    }
                     _ => unreachable!(),
                 };
                 self.set_value(block_idx, inst_idx, id);

@@ -114,7 +114,10 @@ pub(crate) struct FireflyToPhotoshopRequest {
 /// Get the PSD/image layer manifest. Returns the raw Photoshop job JSON.
 pub(crate) async fn manifest(req: PsManifestRequest) -> String {
     let storage = parse_storage(req.storage.as_deref());
-    let input = PsInput { href: req.input_url, storage };
+    let input = PsInput {
+        href: req.input_url,
+        storage,
+    };
     match ps_client().await {
         Ok(c) => match c.document_manifest(vec![input]).await {
             Ok(job) => job_json(&job),
@@ -126,8 +129,10 @@ pub(crate) async fn manifest(req: PsManifestRequest) -> String {
 
 /// Render a PSD/image to an output URL.
 pub(crate) async fn rendition(req: PsRenditionRequest) -> String {
-    let input =
-        PsInput { href: req.input_url, storage: parse_storage(req.input_storage.as_deref()) };
+    let input = PsInput {
+        href: req.input_url,
+        storage: parse_storage(req.input_storage.as_deref()),
+    };
     let output = PsOutput {
         href: req.output_url,
         storage: parse_storage(req.output_storage.as_deref()),
@@ -147,11 +152,17 @@ pub(crate) async fn rendition(req: PsRenditionRequest) -> String {
 pub(crate) async fn document_operations(req: PsDocOpsRequest) -> String {
     let inputs = vec![PsInput::external(req.input_url)];
     let outputs = match req.output_url {
-        Some(url) => vec![PsOutput::external(url, parse_output_type(req.format.as_deref()))],
+        Some(url) => vec![PsOutput::external(
+            url,
+            parse_output_type(req.format.as_deref()),
+        )],
         None => vec![],
     };
-    let dop =
-        aphrody_firefly::DocumentOperationsRequest { inputs, outputs, options: Some(req.options) };
+    let dop = aphrody_firefly::DocumentOperationsRequest {
+        inputs,
+        outputs,
+        options: Some(req.options),
+    };
     match ps_client().await {
         Ok(c) => match c.document_operations(&dop).await {
             Ok(job) => job_json(&job),
@@ -177,15 +188,25 @@ async fn bridge_inner(req: FireflyToPhotoshopRequest) -> Result<Value, String> {
     let gen_req = GenerateImageRequest::new(req.prompt)
         .with_variations(1)
         .with_content_class(ContentClass::Auto);
-    let result = ff.generate(&gen_req).await.map_err(|e| format!("Firefly generation: {e}"))?;
-    let image_url =
-        result.outputs.first().map(|o| o.image.url.clone()).ok_or("Firefly returned no image")?;
+    let result = ff
+        .generate(&gen_req)
+        .await
+        .map_err(|e| format!("Firefly generation: {e}"))?;
+    let image_url = result
+        .outputs
+        .first()
+        .map(|o| o.image.url.clone())
+        .ok_or("Firefly returned no image")?;
 
     // 2. Feed the presigned URL into the Photoshop API as an external input.
     let ps = ps_client().await?;
     let input = PsInput::external(image_url.clone());
     let job = if let Some(out) = req.output_url {
-        let kind = req.format.as_deref().and_then(OutputType::from_ext).unwrap_or(OutputType::Psd);
+        let kind = req
+            .format
+            .as_deref()
+            .and_then(OutputType::from_ext)
+            .unwrap_or(OutputType::Psd);
         ps.create_rendition(vec![input], vec![PsOutput::external(out, kind)])
             .await
             .map_err(|e| format!("Photoshop renditionCreate: {e}"))?
@@ -315,7 +336,11 @@ impl PsAdjustRequest {
         PsOutput {
             href: self.output_url.clone(),
             storage: parse_storage(self.output_storage.as_deref()),
-            kind: self.format.as_deref().and_then(OutputType::from_ext).unwrap_or(OutputType::Jpeg),
+            kind: self
+                .format
+                .as_deref()
+                .and_then(OutputType::from_ext)
+                .unwrap_or(OutputType::Jpeg),
             overwrite: Some(true),
         }
     }
@@ -434,8 +459,10 @@ pub(crate) async fn depth_blur(req: PsEditRequest) -> String {
 /// Play an `actionJSON` program over a PSD/image (documentOperations).
 pub(crate) async fn action_json(req: PsActionJsonRequest) -> String {
     let inputs = vec![PsInput::external(req.input_url)];
-    let outputs =
-        vec![PsOutput::external(req.output_url, parse_output_type(req.format.as_deref()))];
+    let outputs = vec![PsOutput::external(
+        req.output_url,
+        parse_output_type(req.format.as_deref()),
+    )];
     match ps_client().await {
         Ok(c) => match c.action_json(inputs, outputs, req.actions).await {
             Ok(job) => job_json(&job),
@@ -493,7 +520,10 @@ pub(crate) struct FireflyFillRequest {
 pub(crate) async fn generative_expand(req: FireflyExpandRequest) -> String {
     let mut fx = ExpandRequest::new(
         ImageSourceRef::url(req.image_url),
-        Size { width: req.width, height: req.height },
+        Size {
+            width: req.width,
+            height: req.height,
+        },
     );
     if let Some(n) = req.variations {
         fx = fx.with_variations(n);
@@ -512,8 +542,10 @@ pub(crate) async fn generative_expand(req: FireflyExpandRequest) -> String {
 
 /// Generative fill: replace the masked region of an image with prompt content.
 pub(crate) async fn generative_fill(req: FireflyFillRequest) -> String {
-    let mut fx =
-        FillRequest::new(ImageSourceRef::url(req.image_url), ImageSourceRef::url(req.mask_url));
+    let mut fx = FillRequest::new(
+        ImageSourceRef::url(req.image_url),
+        ImageSourceRef::url(req.mask_url),
+    );
     if let Some(p) = req.prompt {
         fx = fx.with_prompt(p);
     }
@@ -547,7 +579,7 @@ async fn download_and_report(
                         Err(e) => return json!({ "error": format!("save: {e}") }).to_string(),
                     }
                 }
-            },
+            }
             Err(e) => return json!({ "error": format!("download: {e}") }).to_string(),
         }
     }

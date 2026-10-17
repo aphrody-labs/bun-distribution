@@ -167,9 +167,12 @@ impl IsResource {
                     .components()
                     .get_name(resource_component_id)
                     .expect("resource is registered");
-                warn!("Tried inserting the resource {} while one already exists. \
+                warn!(
+                    "Tried inserting the resource {} while one already exists. \
                 Resources are unique components stored on a single entity. \
-                Inserting on a different entity, when one already exists, causes the new value to be removed.", name);
+                Inserting on a different entity, when one already exists, causes the new value to be removed.",
+                    name
+                );
             }
         } else {
             // SAFETY: We have exclusive world access (as long as we don't make structural changes).

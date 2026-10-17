@@ -175,7 +175,10 @@ void geometry_replay_mesh(const object_data GeometryReplayPayload& payload [[pay
             input_vertices = layout.input_vertices,
             arguments = arguments.join(", ")
         );
-        let library = device.shader_cache().library(device.device(), &source, artifact.language_version)?;
+        let library =
+            device
+                .shader_cache()
+                .library(device.device(), &source, artifact.language_version)?;
         let function = |name: &str| {
             library
                 .newFunctionWithName(&NSString::from_str(name))
@@ -206,11 +209,15 @@ void geometry_replay_mesh(const object_data GeometryReplayPayload& payload [[pay
             .ok_or(MetalGeometryPipelineError::Layout)?
             .arguments()
             .iter()
-            .find(|a| a.r#type() == objc2_metal::MTLArgumentType::Buffer && a.index() == (base + 4) as usize)
+            .find(|a| {
+                a.r#type() == objc2_metal::MTLArgumentType::Buffer
+                    && a.index() == (base + 4) as usize
+            })
             .map(|a| (a.bufferDataSize(), a.bufferAlignment()))
             .filter(|&(size, alignment)| size != 0 && alignment != 0)
             .ok_or(MetalGeometryPipelineError::Layout)?;
-        let record_stride = record_size.checked_add(record_alignment - 1)
+        let record_stride = record_size
+            .checked_add(record_alignment - 1)
             .map(|size| size / record_alignment * record_alignment)
             .ok_or(MetalGeometryPipelineError::OutputSize)?;
         Ok(Self {

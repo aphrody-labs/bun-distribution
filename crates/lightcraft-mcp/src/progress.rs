@@ -27,29 +27,41 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 }
 
 impl Server {
-    pub(super) fn serve_wire(&mut self, input: impl BufRead + Send, output: impl Write + Send) -> std::io::Result<()> {
+    pub(super) fn serve_wire(
+        &mut self,
+        input: impl BufRead + Send,
+        output: impl Write + Send,
+    ) -> std::io::Result<()> {
         std::thread::scope(|scope| {
             let (in_tx, in_rx) = std::sync::mpsc::channel::<Input>();
             let (out_tx, out_rx) = std::sync::mpsc::channel::<String>();
-            let wire = Wire { inbox: Arc::new(Mutex::new(in_rx)), out: out_tx, deferred: Arc::new(Mutex::new(VecDeque::new())) };
-            let writer = std::thread::Builder::new().name("mcp-output".into()).spawn_scoped(scope, move || -> std::io::Result<()> {
-                let mut output = output;
-                for line in out_rx {
-                    output.write_all(line.as_bytes())?;
-                    output.write_all(b"\n")?;
-                    output.flush()?;
-                }
-                Ok(())
-            })?;
-            let reader = match std::thread::Builder::new().name("mcp-input".into()).spawn_scoped(scope, move || {
-                for line in input.lines() {
-                    let failed = line.is_err();
-                    if in_tx.send(Some(line)).is_err() || failed {
-                        return;
+            let wire = Wire {
+                inbox: Arc::new(Mutex::new(in_rx)),
+                out: out_tx,
+                deferred: Arc::new(Mutex::new(VecDeque::new())),
+            };
+            let writer = std::thread::Builder::new()
+                .name("mcp-output".into())
+                .spawn_scoped(scope, move || -> std::io::Result<()> {
+                    let mut output = output;
+                    for line in out_rx {
+                        output.write_all(line.as_bytes())?;
+                        output.write_all(b"\n")?;
+                        output.flush()?;
                     }
-                }
-                let _ = in_tx.send(None);
-            }) {
+                    Ok(())
+                })?;
+            let reader = match std::thread::Builder::new()
+                .name("mcp-input".into())
+                .spawn_scoped(scope, move || {
+                    for line in input.lines() {
+                        let failed = line.is_err();
+                        if in_tx.send(Some(line)).is_err() || failed {
+                            return;
+                        }
+                    }
+                    let _ = in_tx.send(None);
+                }) {
                 Ok(reader) => reader,
                 Err(error) => {
                     drop(wire);
@@ -67,14 +79,21 @@ impl Server {
                     };
                     let Some(line) = line else { return Ok(()) };
                     if let Some(reply) = self.handle_line(&line?) {
-                        wire.out.send(reply).map_err(|_| std::io::Error::new(std::io::ErrorKind::BrokenPipe, "MCP output closed"))?;
+                        wire.out.send(reply).map_err(|_| {
+                            std::io::Error::new(std::io::ErrorKind::BrokenPipe, "MCP output closed")
+                        })?;
                     }
                 }
             })();
             self.wire = None;
             drop(wire);
-            let written = writer.join().map_err(|_| std::io::Error::other("MCP output thread panicked")).and_then(|r| r);
-            let read = reader.join().map_err(|_| std::io::Error::other("MCP input thread panicked"));
+            let written = writer
+                .join()
+                .map_err(|_| std::io::Error::other("MCP output thread panicked"))
+                .and_then(|r| r);
+            let read = reader
+                .join()
+                .map_err(|_| std::io::Error::other("MCP input thread panicked"));
             served.and(written).and(read)
         })
     }
@@ -108,14 +127,22 @@ impl Server {
                 };
                 let msg: Value = serde_json::from_str(&line).unwrap_or(Value::Null);
                 match msg.get("method").and_then(Value::as_str) {
-                    Some("notifications/cancelled") if msg.get("id").is_none() && msg["params"]["requestId"] == id => {
+                    Some("notifications/cancelled")
+                        if msg.get("id").is_none() && msg["params"]["requestId"] == id =>
+                    {
                         suppress.store(true, Ordering::Relaxed);
                     }
                     Some("ping")
-                        if msg.get("id").is_some_and(|i| i.is_string() || i.is_number())
-                            && msg.get("params").is_none_or(|p| p.is_null() || p.is_object()) =>
+                        if msg
+                            .get("id")
+                            .is_some_and(|i| i.is_string() || i.is_number())
+                            && msg
+                                .get("params")
+                                .is_none_or(|p| p.is_null() || p.is_object()) =>
                     {
-                        let _ = wire.out.send(response(msg["id"].clone(), json!({})).to_string());
+                        let _ = wire
+                            .out
+                            .send(response(msg["id"].clone(), json!({})).to_string());
                     }
                     _ => lock(&wire.deferred).push_back(Some(Ok(line))),
                 }
@@ -126,7 +153,8 @@ impl Server {
             if let Some(token) = &token
                 && total > 0
                 && last.is_none_or(|last| done > last)
-                && (done == total || reported.is_none_or(|at| at.elapsed() >= Duration::from_millis(100)))
+                && (done == total
+                    || reported.is_none_or(|at| at.elapsed() >= Duration::from_millis(100)))
             {
                 last = Some(done);
                 reported = Some(Instant::now());

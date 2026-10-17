@@ -65,7 +65,12 @@ impl HostMemoryImpl {
             VirtualAlloc, MEM_COMMIT, MEM_RESERVE, PAGE_READWRITE,
         };
         let ptr = unsafe {
-            VirtualAlloc(ptr::null_mut(), size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)
+            VirtualAlloc(
+                ptr::null_mut(),
+                size,
+                MEM_RESERVE | MEM_COMMIT,
+                PAGE_READWRITE,
+            )
         };
         if ptr.is_null() {
             error!(
@@ -966,10 +971,7 @@ impl HostMemory {
                     };
                 }
                 Err(e) => {
-                    log::warn!(
-                        "Platform can support fastmem, but can't create it ({})",
-                        e
-                    );
+                    log::warn!("Platform can support fastmem, but can't create it ({})", e);
                 }
             }
         }

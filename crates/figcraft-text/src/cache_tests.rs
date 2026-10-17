@@ -13,7 +13,10 @@ fn equal_texts_share_a_layout_and_unequal_ones_never_do() {
     let a = layout_cached(&t1, Some(100.0), None);
     let b = layout_cached(&t1.clone(), Some(100.0), None);
     // Fonts loading elsewhere may clear the cache in between; then a fresh layout is right too.
-    assert!(Arc::ptr_eq(&a, &b) || layout_generation() != g0, "a cache hit");
+    assert!(
+        Arc::ptr_eq(&a, &b) || layout_generation() != g0,
+        "a cache hit"
+    );
     // Same characters, family, style and size (the cheap fingerprint), different spacing.
     let mut t2 = t1.clone();
     t2.style.letter_spacing = LetterSpacing::Pixels(5.0);

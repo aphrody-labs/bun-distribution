@@ -67,15 +67,23 @@ pub struct PrintReadiness {
 impl PrintReadiness {
     /// A plain-text report. The document is unchanged.
     pub fn text(&self) -> String {
-        let mut out = String::from("Print readiness (verification only; the file was not changed)\n");
+        let mut out =
+            String::from("Print readiness (verification only; the file was not changed)\n");
         if self.output_intents.is_empty() {
             out.push_str("Output intent: none\n");
         } else {
-            out.push_str(&format!("Output intent: {}\n", self.output_intents.join(", ")));
+            out.push_str(&format!(
+                "Output intent: {}\n",
+                self.output_intents.join(", ")
+            ));
         }
         for page in &self.pages {
             if !page.trim_set {
-                out.push_str(&format!("Page {}: media {} mm, no TrimBox\n", page.page, size_mm(page.media_mm)));
+                out.push_str(&format!(
+                    "Page {}: media {} mm, no TrimBox\n",
+                    page.page,
+                    size_mm(page.media_mm)
+                ));
                 continue;
             }
             out.push_str(&format!(
@@ -99,18 +107,30 @@ impl PrintReadiness {
             ));
         }
         if self.resolution_unknown > 0 {
-            out.push_str(&format!("Images with unknown resolution: {}\n", self.resolution_unknown));
+            out.push_str(&format!(
+                "Images with unknown resolution: {}\n",
+                self.resolution_unknown
+            ));
         }
         if self.fonts_not_embedded.is_empty() {
             out.push_str("Fonts: every referenced font is embedded, or the file has none\n");
         } else {
-            out.push_str(&format!("Fonts not embedded: {}\n", self.fonts_not_embedded.join(", ")));
+            out.push_str(&format!(
+                "Fonts not embedded: {}\n",
+                self.fonts_not_embedded.join(", ")
+            ));
         }
         let level = Level::A2b.label();
         if self.pdfa_issues.is_empty() {
-            out.push_str(&format!("{level}: no problems found by the structural check\n"));
+            out.push_str(&format!(
+                "{level}: no problems found by the structural check\n"
+            ));
         } else {
-            out.push_str(&format!("{level}: {} problem{}\n", self.pdfa_issues.len(), if self.pdfa_issues.len() == 1 { "" } else { "s" }));
+            out.push_str(&format!(
+                "{level}: {} problem{}\n",
+                self.pdfa_issues.len(),
+                if self.pdfa_issues.len() == 1 { "" } else { "s" }
+            ));
             for issue in &self.pdfa_issues {
                 match issue.page {
                     Some(p) => out.push_str(&format!("- page {}: {}\n", p + 1, issue.message)),
@@ -159,7 +179,9 @@ fn inspect(doc: &Document) -> PrintReadiness {
     let pdfa_issues = pdfcraft_preflight::verify(doc, Level::A2b);
     let fonts_not_embedded = pdfa_issues
         .iter()
-        .filter(|issue| issue.pattern.contains("isn't embedded") || issue.pattern == "A font isn't embedded")
+        .filter(|issue| {
+            issue.pattern.contains("isn't embedded") || issue.pattern == "A font isn't embedded"
+        })
         .map(|issue| issue.value.clone().unwrap_or_else(|| "unnamed font".into()))
         .collect();
     let model_pages = pdfcraft_model::pages(doc);
@@ -176,13 +198,19 @@ fn inspect(doc: &Document) -> PrintReadiness {
             message: if untrimmed == pages.len() {
                 "No page has a TrimBox, so bleed can't be measured.".to_string()
             } else {
-                format!("{untrimmed} of {} pages have no TrimBox, so their bleed can't be measured.", pages.len())
+                format!(
+                    "{untrimmed} of {} pages have no TrimBox, so their bleed can't be measured.",
+                    pages.len()
+                )
             },
             page: None,
         });
     }
     for page in pages.iter().filter(|page| page.trim_set) {
-        let tight = page.bleed_margin_mm.into_iter().fold(f64::INFINITY, f64::min);
+        let tight = page
+            .bleed_margin_mm
+            .into_iter()
+            .fold(f64::INFINITY, f64::min);
         if tight < MIN_BLEED_MM {
             findings.push(Finding {
                 id: "page-bleed",
@@ -219,8 +247,14 @@ fn inspect(doc: &Document) -> PrintReadiness {
             });
         }
     }
-    if declared.output_intents.iter().any(|intent| is_screen_profile(intent))
-        && !declared.output_intents.iter().any(|intent| is_press_profile(intent))
+    if declared
+        .output_intents
+        .iter()
+        .any(|intent| is_screen_profile(intent))
+        && !declared
+            .output_intents
+            .iter()
+            .any(|intent| is_press_profile(intent))
     {
         findings.push(Finding {
             id: "output-intent",
@@ -243,8 +277,21 @@ fn inspect(doc: &Document) -> PrintReadiness {
             page: None,
         });
     }
-    findings.sort_by(|a, b| a.page.cmp(&b.page).then(a.id.cmp(b.id)).then(a.message.cmp(&b.message)));
-    PrintReadiness { pages, images, output_intents: declared.output_intents, fonts_not_embedded, pdfa_issues, findings, resolution_unknown }
+    findings.sort_by(|a, b| {
+        a.page
+            .cmp(&b.page)
+            .then(a.id.cmp(b.id))
+            .then(a.message.cmp(&b.message))
+    });
+    PrintReadiness {
+        pages,
+        images,
+        output_intents: declared.output_intents,
+        fonts_not_embedded,
+        pdfa_issues,
+        findings,
+        resolution_unknown,
+    }
 }
 
 fn page_reports(doc: &Document, pages: &[pdfcraft_model::Page]) -> Vec<PageBoxes> {
@@ -264,7 +311,12 @@ fn page_reports(doc: &Document, pages: &[pdfcraft_model::Page]) -> Vec<PageBoxes
                 bleed_mm: wh_mm(bleed),
                 trim_set: page.dict.contains(b"TrimBox"),
                 bleed_set: page.dict.contains(b"BleedBox"),
-                bleed_margin_mm: [mm(trim[0] - bleed[0]), mm(trim[1] - bleed[1]), mm(bleed[2] - trim[2]), mm(bleed[3] - trim[3])],
+                bleed_margin_mm: [
+                    mm(trim[0] - bleed[0]),
+                    mm(trim[1] - bleed[1]),
+                    mm(bleed[2] - trim[2]),
+                    mm(bleed[3] - trim[3]),
+                ],
             }
         })
         .collect()
@@ -289,7 +341,13 @@ fn image_reports(doc: &Document, pages: &[pdfcraft_model::Page]) -> (Vec<DrawnIm
                     }
                     let w = (image.rect[2] - image.rect[0]).abs();
                     let h = (image.rect[3] - image.rect[1]).abs();
-                    out.push(DrawnImage { page: page_no, name: image.name, ppi, pixels: [image.width, image.height], size_mm: [mm(w), mm(h)] });
+                    out.push(DrawnImage {
+                        page: page_no,
+                        name: image.name,
+                        ppi,
+                        pixels: [image.width, image.height],
+                        size_mm: [mm(w), mm(h)],
+                    });
                 }
             }
         }
@@ -303,10 +361,21 @@ fn image_reports(doc: &Document, pages: &[pdfcraft_model::Page]) -> (Vec<DrawnIm
                 unknown = unknown.saturating_add(1);
                 continue;
             }
-            out.push(DrawnImage { page: page_no, name: format!("object {object}"), ppi, pixels: [0, 0], size_mm: [0.0, 0.0] });
+            out.push(DrawnImage {
+                page: page_no,
+                name: format!("object {object}"),
+                ppi,
+                pixels: [0, 0],
+                size_mm: [0.0, 0.0],
+            });
         }
     }
-    out.sort_by(|a, b| a.page.cmp(&b.page).then(a.name.cmp(&b.name)).then(a.ppi.total_cmp(&b.ppi)));
+    out.sort_by(|a, b| {
+        a.page
+            .cmp(&b.page)
+            .then(a.name.cmp(&b.name))
+            .then(a.ppi.total_cmp(&b.ppi))
+    });
     (out, unknown)
 }
 
@@ -338,7 +407,11 @@ fn is_screen_profile(intent: &str) -> bool {
 
 fn is_press_profile(intent: &str) -> bool {
     let id = intent.to_ascii_lowercase();
-    id.contains("cmyk") || id.contains("fogra") || id.contains("coated") || id.contains("swop") || id.contains("gracol")
+    id.contains("cmyk")
+        || id.contains("fogra")
+        || id.contains("coated")
+        || id.contains("swop")
+        || id.contains("gracol")
 }
 
 fn mm(points: f64) -> f64 {
@@ -355,7 +428,11 @@ fn size_mm(wh: [f64; 2]) -> String {
 
 fn min_mm(sides: [f64; 4]) -> String {
     let n = sides.into_iter().fold(f64::INFINITY, f64::min);
-    if n.is_finite() { format!("{n:.1}") } else { "0.0".into() }
+    if n.is_finite() {
+        format!("{n:.1}")
+    } else {
+        "0.0".into()
+    }
 }
 
 #[cfg(test)]
@@ -372,25 +449,45 @@ mod tests {
         d.set(b"Height".to_vec(), Object::Int(h as i64));
         d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
         d.set(b"ColorSpace".to_vec(), Object::name("DeviceGray"));
-        doc.add(Object::Stream(Stream::flate(d, &vec![0; (w as usize) * (h as usize)])))
+        doc.add(Object::Stream(Stream::flate(
+            d,
+            &vec![0; (w as usize) * (h as usize)],
+        )))
     }
 
-    fn page(doc: &mut Document, name: &str, object: pdfcraft_cos::ObjRef, content: &str) -> pdfcraft_cos::ObjRef {
-        let pages = doc.root().and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages"))).unwrap();
+    fn page(
+        doc: &mut Document,
+        name: &str,
+        object: pdfcraft_cos::ObjRef,
+        content: &str,
+    ) -> pdfcraft_cos::ObjRef {
+        let pages = doc
+            .root()
+            .and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages")))
+            .unwrap();
         let mut x = Dict::new();
         x.set(name.as_bytes().to_vec(), Object::Ref(object));
         let mut res = Dict::new();
         res.set(b"XObject".to_vec(), Object::Dict(x));
-        let contents = doc.add(Object::Stream(Stream::from_raw(Dict::new(), content.as_bytes().to_vec())));
+        let contents = doc.add(Object::Stream(Stream::from_raw(
+            Dict::new(),
+            content.as_bytes().to_vec(),
+        )));
         let mut p = Dict::new();
         p.set(b"Type".to_vec(), Object::name("Page"));
         p.set(b"Parent".to_vec(), Object::Ref(pages));
-        p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]));
+        p.set(
+            b"MediaBox".to_vec(),
+            Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]),
+        );
         p.set(b"Resources".to_vec(), Object::Dict(res));
         p.set(b"Contents".to_vec(), Object::Ref(contents));
         let r = doc.add(Object::Dict(p));
         doc.update_dict(pages, |d| {
-            let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+            let mut kids = d
+                .get(b"Kids")
+                .and_then(|k| k.as_array().cloned())
+                .unwrap_or_default();
             kids.push(Object::Ref(r));
             d.set(b"Count".to_vec(), Object::Int(kids.len() as i64));
             d.set(b"Kids".to_vec(), Object::Array(kids));
@@ -409,25 +506,57 @@ mod tests {
         page(&mut doc, "Soft", soft, "q 144 0 0 144 36 600 cm /Soft Do Q");
         let sharp_page = page(&mut doc, "Sharp", sharp, "q 72 0 0 72 36 36 cm /Sharp Do Q");
         doc.update_dict(sharp_page, |d| {
-            let inset = |n: i64| Object::Array(vec![n.into(), n.into(), (612 - n).into(), (792 - n).into()]);
+            let inset = |n: i64| {
+                Object::Array(vec![n.into(), n.into(), (612 - n).into(), (792 - n).into()])
+            };
             d.set(b"TrimBox".to_vec(), inset(18));
             d.set(b"BleedBox".to_vec(), inset(0));
         })
         .unwrap();
 
         let report = inspect(&doc);
-        let soft = report.images.iter().find(|image| image.name == "Soft").unwrap();
-        let sharp = report.images.iter().find(|image| image.name == "Sharp").unwrap();
+        let soft = report
+            .images
+            .iter()
+            .find(|image| image.name == "Soft")
+            .unwrap();
+        let sharp = report
+            .images
+            .iter()
+            .find(|image| image.name == "Sharp")
+            .unwrap();
         assert!((soft.ppi - 50.0).abs() < 0.5, "{}", soft.ppi);
         assert!((sharp.ppi - 600.0).abs() < 0.5, "{}", sharp.ppi);
-        assert!(report.findings.iter().any(|f| f.id == "image-ppi" && f.severity == "fail" && f.page == Some(1)));
-        assert!(!report.findings.iter().any(|f| f.id == "image-ppi" && f.page == Some(2)));
+        assert!(
+            report
+                .findings
+                .iter()
+                .any(|f| f.id == "image-ppi" && f.severity == "fail" && f.page == Some(1))
+        );
+        assert!(
+            !report
+                .findings
+                .iter()
+                .any(|f| f.id == "image-ppi" && f.page == Some(2))
+        );
         // Page 1 has no TrimBox: one document-level note, not a bleed warning per page.
-        assert!(!report.findings.iter().any(|f| f.id == "page-bleed"), "{:?}", report.findings);
-        let trim: Vec<_> = report.findings.iter().filter(|f| f.id == "page-trim").collect();
+        assert!(
+            !report.findings.iter().any(|f| f.id == "page-bleed"),
+            "{:?}",
+            report.findings
+        );
+        let trim: Vec<_> = report
+            .findings
+            .iter()
+            .filter(|f| f.id == "page-trim")
+            .collect();
         assert_eq!(trim.len(), 1, "{:?}", report.findings);
         assert_eq!((trim[0].severity, trim[0].page), ("info", None));
-        assert!(trim[0].message.starts_with("1 of 2 pages"), "{}", trim[0].message);
+        assert!(
+            trim[0].message.starts_with("1 of 2 pages"),
+            "{}",
+            trim[0].message
+        );
         assert_eq!(report.resolution_unknown, 0);
         assert!(report.text().contains("50 ppi"));
         assert!(report.text().contains("verification only"));
@@ -441,16 +570,41 @@ mod tests {
             page(&mut doc, "Im", img, "q 72 0 0 72 36 36 cm /Im Do Q");
         }
         let report = inspect(&doc);
-        let notes: Vec<_> = report.findings.iter().filter(|f| f.id.starts_with("page-")).collect();
+        let notes: Vec<_> = report
+            .findings
+            .iter()
+            .filter(|f| f.id.starts_with("page-"))
+            .collect();
         assert_eq!(notes.len(), 1, "{notes:?}");
-        assert_eq!(notes[0].message, "No page has a TrimBox, so bleed can't be measured.");
+        assert_eq!(
+            notes[0].message,
+            "No page has a TrimBox, so bleed can't be measured."
+        );
 
         // A TrimBox 1 pt inside the crop, with no BleedBox: 0.35 mm of bleed is a real warning.
         let tight = page(&mut doc, "Im", img, "q 72 0 0 72 36 36 cm /Im Do Q");
-        doc.update_dict(tight, |d| d.set(b"TrimBox".to_vec(), Object::Array(vec![1.into(), 1.into(), 611.into(), 791.into()]))).unwrap();
+        doc.update_dict(tight, |d| {
+            d.set(
+                b"TrimBox".to_vec(),
+                Object::Array(vec![1.into(), 1.into(), 611.into(), 791.into()]),
+            )
+        })
+        .unwrap();
         let report = inspect(&doc);
-        assert!(report.findings.iter().any(|f| f.id == "page-bleed" && f.severity == "warn" && f.page == Some(4)));
-        assert_eq!(report.findings.iter().filter(|f| f.id == "page-bleed").count(), 1);
+        assert!(
+            report
+                .findings
+                .iter()
+                .any(|f| f.id == "page-bleed" && f.severity == "warn" && f.page == Some(4))
+        );
+        assert_eq!(
+            report
+                .findings
+                .iter()
+                .filter(|f| f.id == "page-bleed")
+                .count(),
+            1
+        );
     }
 
     #[test]
@@ -466,9 +620,22 @@ mod tests {
         let mut doc = Document::new_empty();
         let img = image(&mut doc, 100, 100);
         let huge = format!("1{}", "0".repeat(400));
-        page(&mut doc, "Im", img, &format!("q {huge} 0 0 {huge} 0 0 cm 0 1 1 0 0 0 cm /Im Do Q"));
+        page(
+            &mut doc,
+            "Im",
+            img,
+            &format!("q {huge} 0 0 {huge} 0 0 cm 0 1 1 0 0 0 cm /Im Do Q"),
+        );
         let report = inspect(&doc);
-        assert!(report.images.iter().all(|image| image.ppi.is_finite()), "{:?}", report.images);
-        assert!(!report.findings.iter().any(|f| f.id == "image-ppi"), "{:?}", report.findings);
+        assert!(
+            report.images.iter().all(|image| image.ppi.is_finite()),
+            "{:?}",
+            report.images
+        );
+        assert!(
+            !report.findings.iter().any(|f| f.id == "image-ppi"),
+            "{:?}",
+            report.findings
+        );
     }
 }

@@ -39,9 +39,12 @@ fn plugin_params(p: &Value) -> Value {
         return v.clone();
     }
     match p {
-        Value::Object(m) => {
-            Value::Object(m.iter().filter(|(k, _)| !matches!(k.as_str(), "id" | "ids")).map(|(k, v)| (k.clone(), v.clone())).collect())
-        }
+        Value::Object(m) => Value::Object(
+            m.iter()
+                .filter(|(k, _)| !matches!(k.as_str(), "id" | "ids"))
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        ),
         _ => Value::Object(Map::new()),
     }
 }
@@ -56,16 +59,29 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let plugin = plugin_by_id(C, p)?;
     let m = plugin.manifest();
     if m.kind != Kind::Filter {
-        return Err(bad(C, format!("`{}` is a live effect: apply it with effect.apply {{\"effect\": \"{}\"}}", m.id, effect::effect_id(&m.id))));
+        return Err(bad(
+            C,
+            format!(
+                "`{}` is a live effect: apply it with effect.apply {{\"effect\": \"{}\"}}",
+                m.id,
+                effect::effect_id(&m.id)
+            ),
+        ));
     }
     // Bad parameters fail before anything runs.
-    let mut params = Value::Object(m.resolve_params(&plugin_params(p)).map_err(|e| bad(C, e.to_string()))?);
+    let mut params = Value::Object(
+        m.resolve_params(&plugin_params(p))
+            .map_err(|e| bad(C, e.to_string()))?,
+    );
     let st = s.doc()?;
     let selected = ids_param(p, "ids").unwrap_or_else(|| st.selection.objects.clone());
     let inputs = objects::filter_targets(&st.doc, &selected);
     let parent = st.insertion_parent();
     let bounds = st.doc.bounds_of(&inputs, false);
-    let board = bounds.and_then(|b| st.doc.artboard_at(b.center())).and_then(|i| st.doc.artboards.get(i)).or(st.doc.artboards.first());
+    let board = bounds
+        .and_then(|b| st.doc.artboard_at(b.center()))
+        .and_then(|i| st.doc.artboards.get(i))
+        .or(st.doc.artboards.first());
     let rect = |r: vectorcraft_geom::Rect| json!([r.x0, r.y0, r.x1, r.y1]);
     params["_context"] = json!({"mode": "filter", "bounds": bounds.map(rect), "artboard": board.map(|a| rect(a.rect))});
     let input = objects::encode_input(&st.doc, &inputs);
@@ -87,23 +103,38 @@ pub const EXTS: &[&str] = &["wasm"];
 
 fn install(_: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "plugin.install";
-    let plugin = match (str_param(p, "path").filter(|s| !s.is_empty()), str_param(p, "dataBase64")) {
+    let plugin = match (
+        str_param(p, "path").filter(|s| !s.is_empty()),
+        str_param(p, "dataBase64"),
+    ) {
         (_, Some(data)) => {
             if data.len() > MAX_DATA_CHARS {
                 return Err(bad(C, "`dataBase64` is larger than the module limit"));
             }
-            let bytes = vectorcraft_format::base64_decode(data).ok_or_else(|| bad(C, "`dataBase64` is not valid base64"))?;
-            let plugin = Plugin::load(&bytes, vectorcraft_plugins::Limits::default()).map_err(err)?;
+            let bytes = vectorcraft_format::base64_decode(data)
+                .ok_or_else(|| bad(C, "`dataBase64` is not valid base64"))?;
+            let plugin =
+                Plugin::load(&bytes, vectorcraft_plugins::Limits::default()).map_err(err)?;
             match str_param(p, "name") {
                 Some(name) => plugin.with_source(name),
                 None => plugin,
             }
         }
         (Some(path), None) => load_path(path)?,
-        (None, None) => return Err(bad(C, "give `path` (a .wasm file) or `dataBase64` (the module)")),
+        (None, None) => {
+            return Err(bad(
+                C,
+                "give `path` (a .wasm file) or `dataBase64` (the module)",
+            ));
+        }
     };
-    if !p.get("replace").and_then(Value::as_bool).unwrap_or(true) && registry::get(plugin.id()).is_some() {
-        return Err(bad(C, format!("a plug-in with id {:?} is already installed", plugin.id())));
+    if !p.get("replace").and_then(Value::as_bool).unwrap_or(true)
+        && registry::get(plugin.id()).is_some()
+    {
+        return Err(bad(
+            C,
+            format!("a plug-in with id {:?} is already installed", plugin.id()),
+        ));
     }
     Ok(describe(&registry::install(plugin)))
 }
@@ -111,12 +142,19 @@ fn install(_: &mut Session, p: &Value) -> Result<Value> {
 #[cfg(not(target_arch = "wasm32"))]
 fn load_path(path: &str) -> Result<Plugin> {
     crate::file_access::check_read(path).map_err(EngineError::Other)?;
-    registry::load_file(std::path::Path::new(path), vectorcraft_plugins::Limits::default()).map_err(err)
+    registry::load_file(
+        std::path::Path::new(path),
+        vectorcraft_plugins::Limits::default(),
+    )
+    .map_err(err)
 }
 
 #[cfg(target_arch = "wasm32")]
 fn load_path(_: &str) -> Result<Plugin> {
-    Err(EngineError::Other("installing from a path is not available on the web; pass the module as `dataBase64`".into()))
+    Err(EngineError::Other(
+        "installing from a path is not available on the web; pass the module as `dataBase64`"
+            .into(),
+    ))
 }
 
 /// The plug-in folder last loaded from the preferences, and what happened.
@@ -142,7 +180,9 @@ fn load_folder(folder: &str) -> Value {
         return json!({"folder": folder, "error": e});
     }
     // A file in it may be a link to one elsewhere.
-    match registry::load_folder_where(std::path::Path::new(folder), |f| crate::file_access::check_read(&f.to_string_lossy())) {
+    match registry::load_folder_where(std::path::Path::new(folder), |f| {
+        crate::file_access::check_read(&f.to_string_lossy())
+    }) {
         Ok(r) => {
             json!({"folder": folder, "loaded": r.loaded, "failed": r.failed.iter().map(|(f, e)| json!({"file": f, "error": e})).collect::<Vec<_>>()})
         }
@@ -158,11 +198,19 @@ fn load_folder(folder: &str) -> Value {
 fn reload(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "plugin.reload";
     let folder = match p.get("path") {
-        Some(v) => v.as_str().map(str::trim).filter(|f| !f.is_empty()).ok_or_else(|| bad(C, "`path` must be a folder"))?.to_string(),
+        Some(v) => v
+            .as_str()
+            .map(str::trim)
+            .filter(|f| !f.is_empty())
+            .ok_or_else(|| bad(C, "`path` must be a folder"))?
+            .to_string(),
         None => s.prefs.plugins_folder.trim().to_string(),
     };
     if folder.is_empty() {
-        return Err(bad(C, "no folder: pass `path` or set Preferences › Performance & Storage › Additional Plug-ins Folder"));
+        return Err(bad(
+            C,
+            "no folder: pass `path` or set Preferences › Performance & Storage › Additional Plug-ins Folder",
+        ));
     }
     let report = load_folder(&folder);
     if let Some(e) = report.get("error").and_then(Value::as_str) {
@@ -173,8 +221,14 @@ fn reload(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn list(_: &mut Session, _: &Value) -> Result<Value> {
-    let folder = FOLDER.lock().unwrap_or_else(|e| e.into_inner()).as_ref().map(|(_, r)| r.clone());
-    Ok(json!({"plugins": registry::list().iter().map(|p| describe(p)).collect::<Vec<_>>(), "folder": folder}))
+    let folder = FOLDER
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .map(|(_, r)| r.clone());
+    Ok(
+        json!({"plugins": registry::list().iter().map(|p| describe(p)).collect::<Vec<_>>(), "folder": folder}),
+    )
 }
 
 fn info(_: &mut Session, p: &Value) -> Result<Value> {
@@ -188,7 +242,11 @@ fn info(_: &mut Session, p: &Value) -> Result<Value> {
 
 fn remove(_: &mut Session, p: &Value) -> Result<Value> {
     let id = str_param(p, "id").ok_or_else(|| bad("plugin.remove", "missing `id`"))?;
-    if registry::remove(id) { Ok(json!({"removed": id})) } else { Err(err(vectorcraft_plugins::Error::NotFound(id.into()))) }
+    if registry::remove(id) {
+        Ok(json!({"removed": id}))
+    } else {
+        Err(err(vectorcraft_plugins::Error::NotFound(id.into())))
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {

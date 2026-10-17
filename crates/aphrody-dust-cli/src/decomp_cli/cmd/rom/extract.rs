@@ -40,7 +40,7 @@ impl Extract {
             Err(RomSaveError::BlowfishKeyNeeded) => {
                 log::error!("The ROM is encrypted, please provide ARM7 BIOS");
                 bail!("The ROM is encrypted, please provide ARM7 BIOS");
-            },
+            }
             result => Ok(result?),
         }
     }

@@ -25,7 +25,12 @@
 
 //! NVDEC declarations transcribed from NVIDIA's MIT headers (NVDEC API 13.1).
 //! Linux LP64 only; C `tcu_ulong` is an unsigned long, not a u32.
-#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
+#![allow(
+    non_snake_case,
+    non_camel_case_types,
+    non_upper_case_globals,
+    dead_code
+)]
 use std::ffi::{c_int, c_uint, c_ulong, c_void};
 pub const cudaVideoCodec_H264: c_int = 4;
 pub const cudaVideoCodec_HEVC: c_int = 8;
@@ -214,11 +219,14 @@ pub struct CUVIDPROCPARAMS {
     pub pCuvidProcExt: *mut c_void,
 }
 pub type GetDecoderCaps = unsafe extern "C" fn(*mut CUVIDDECODECAPS) -> c_int;
-pub type CreateDecoder = unsafe extern "C" fn(*mut *mut c_void, *mut CUVIDDECODECREATEINFO) -> c_int;
+pub type CreateDecoder =
+    unsafe extern "C" fn(*mut *mut c_void, *mut CUVIDDECODECREATEINFO) -> c_int;
 pub type DestroyDecoder = unsafe extern "C" fn(*mut c_void) -> c_int;
 pub type DecodePicture = unsafe extern "C" fn(*mut c_void, *mut CUVIDPICPARAMS) -> c_int;
-pub type MapVideoFrame = unsafe extern "C" fn(*mut c_void, c_int, *mut u64, *mut u32, *mut CUVIDPROCPARAMS) -> c_int;
+pub type MapVideoFrame =
+    unsafe extern "C" fn(*mut c_void, c_int, *mut u64, *mut u32, *mut CUVIDPROCPARAMS) -> c_int;
 pub type UnmapVideoFrame = unsafe extern "C" fn(*mut c_void, u64) -> c_int;
-pub type CreateVideoParser = unsafe extern "C" fn(*mut *mut c_void, *mut CUVIDPARSERPARAMS) -> c_int;
+pub type CreateVideoParser =
+    unsafe extern "C" fn(*mut *mut c_void, *mut CUVIDPARSERPARAMS) -> c_int;
 pub type ParseVideoData = unsafe extern "C" fn(*mut c_void, *mut CUVIDSOURCEDATAPACKET) -> c_int;
 pub type DestroyVideoParser = unsafe extern "C" fn(*mut c_void) -> c_int;

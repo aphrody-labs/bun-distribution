@@ -23,6 +23,7 @@ use winit::{
 };
 
 use crate::{
+    CreateMonitorParams, CreateWindowParams, WINIT_WINDOWS,
     accessibility::ACCESS_KIT_ADAPTERS,
     converters::{
         convert_enabled_buttons, convert_resize_direction, convert_window_level,
@@ -31,7 +32,6 @@ use crate::{
     resolve_exclusive_fullscreen, select_monitor,
     state::react_to_resize,
     winit_monitors::WinitMonitors,
-    CreateMonitorParams, CreateWindowParams, WINIT_WINDOWS,
 };
 use bevy_app::AppExit;
 use bevy_ecs::{prelude::MessageReader, query::With, system::Res};

@@ -131,7 +131,10 @@ fn fixture_entree0_champs_complets() {
     assert_eq!(e.user_name_plate_id, HashId(0x0976_673C));
     assert_eq!(e.user_name_plate_name_id, HashId(0x011D_2282));
     assert_eq!(e.sort_no, 1);
-    assert_eq!(e.texture_file_name_text, "#/menu/200_icon/25_icon_nameplate/nm00001.g4tx");
+    assert_eq!(
+        e.texture_file_name_text,
+        "#/menu/200_icon/25_icon_nameplate/nm00001.g4tx"
+    );
     assert_eq!(e.texture_file_name_crc, HashId(0xAF39_37FF));
     assert_eq!(e.main_texture_name_crc, HashId(0xA892_B3C2));
     assert_eq!(e.shadow_texture_name_crc, HashId(0x319B_E278));
@@ -212,7 +215,10 @@ fn real_file_entree0_valeurs() {
     assert_eq!(e.user_name_plate_id, HashId(0x0976_673C));
     assert_eq!(e.user_name_plate_name_id, HashId(0x011D_2282));
     assert_eq!(e.sort_no, 1);
-    assert_eq!(e.texture_file_name_text, "#/menu/200_icon/25_icon_nameplate/nm00001.g4tx");
+    assert_eq!(
+        e.texture_file_name_text,
+        "#/menu/200_icon/25_icon_nameplate/nm00001.g4tx"
+    );
     assert_eq!(e.texture_file_name_crc, HashId(0xAF39_37FF));
     assert_eq!(e.main_texture_name_crc, HashId(0xA892_B3C2));
     assert_eq!(e.shadow_texture_name_crc, HashId(0x319B_E278));
@@ -238,7 +244,10 @@ fn real_file_entree18_police_alternative() {
     // Première entrée à police 0x72A1CF45 (nm00307).
     let e = &cfg.entries[18];
     assert_eq!(e.user_name_plate_id, HashId(0xE253_7C50));
-    assert_eq!(e.texture_file_name_text, "#/menu/200_icon/25_icon_nameplate/nm00307.g4tx");
+    assert_eq!(
+        e.texture_file_name_text,
+        "#/menu/200_icon/25_icon_nameplate/nm00307.g4tx"
+    );
     assert_eq!(e.name_font_style, HashId(0x72A1_CF45));
 }
 
@@ -249,7 +258,10 @@ fn real_file_legacy_entry_53() {
     assert_eq!(e.user_name_plate_id, HashId(0x39A1_3FD2));
     assert_eq!(e.user_name_plate_name_id, HashId(0x31CA_7A6C));
     assert_eq!(e.sort_no, 54);
-    assert_eq!(e.texture_file_name_text, "#/menu/200_icon/25_icon_nameplate/nm05401.g4tx");
+    assert_eq!(
+        e.texture_file_name_text,
+        "#/menu/200_icon/25_icon_nameplate/nm05401.g4tx"
+    );
     assert_eq!(e.name_font_style, HashId(0x72A1_CF45));
     assert_eq!(e.flag_index, 53);
     assert_eq!(e.enable_cond, "AAAAABgFNRftNPcACgEoAAYCNDmhP9IyAAAAAXg=");
@@ -262,7 +274,11 @@ fn real_file_sort_no_unique_and_legacy_prefix_sequential() {
         assert_eq!(e.sort_no, (i + 1) as i64, "sortNo séquentiel à l'index {i}");
     }
     let unique: BTreeSet<_> = cfg.entries.iter().map(|entry| entry.sort_no).collect();
-    assert_eq!(unique.len(), cfg.entries.len(), "all sortNo values are unique");
+    assert_eq!(
+        unique.len(),
+        cfg.entries.len(),
+        "all sortNo values are unique"
+    );
 }
 
 #[test]
@@ -271,7 +287,12 @@ fn real_file_flag_index_legacy_prefix_then_grouped_zero() {
     for (i, e) in cfg.entries.iter().take(60).enumerate() {
         assert_eq!(e.flag_index, i as i64, "flagIndex séquentiel à l'index {i}");
     }
-    assert!(cfg.entries.iter().skip(60).all(|entry| entry.flag_index == 0));
+    assert!(
+        cfg.entries
+            .iter()
+            .skip(60)
+            .all(|entry| entry.flag_index == 0)
+    );
 }
 
 #[test]
@@ -295,7 +316,15 @@ fn real_file_polices_distinctes() {
         HashId(0x0B68_A546),
         HashId(0x9261_F4FC),
     ];
-    assert!(cfg.entries.iter().all(|entry| expected.contains(&entry.name_font_style)));
-    let observed: BTreeSet<_> = cfg.entries.iter().map(|entry| entry.name_font_style).collect();
+    assert!(
+        cfg.entries
+            .iter()
+            .all(|entry| expected.contains(&entry.name_font_style))
+    );
+    let observed: BTreeSet<_> = cfg
+        .entries
+        .iter()
+        .map(|entry| entry.name_font_style)
+        .collect();
     assert_eq!(observed.len(), expected.len());
 }

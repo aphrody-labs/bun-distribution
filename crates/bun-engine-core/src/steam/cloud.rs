@@ -77,7 +77,9 @@ fn cname(name: &str) -> Result<CString, String> {
 }
 
 fn now() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs() as i64)
 }
 
 fn mtime(path: &Path) -> i64 {
@@ -97,12 +99,15 @@ pub fn quota() -> (u64, u64) {
 }
 
 pub fn exists(name: &str) -> bool {
-    cname(name).is_ok_and(|n| unsafe { sys::SteamAPI_ISteamRemoteStorage_FileExists(rs(), n.as_ptr()) })
+    cname(name)
+        .is_ok_and(|n| unsafe { sys::SteamAPI_ISteamRemoteStorage_FileExists(rs(), n.as_ptr()) })
 }
 
 /// Cloud timestamp of `name` (Unix seconds), 0 when absent.
 pub fn timestamp(name: &str) -> i64 {
-    cname(name).map_or(0, |n| unsafe { sys::SteamAPI_ISteamRemoteStorage_GetFileTimestamp(rs(), n.as_ptr()) })
+    cname(name).map_or(0, |n| unsafe {
+        sys::SteamAPI_ISteamRemoteStorage_GetFileTimestamp(rs(), n.as_ptr())
+    })
 }
 
 /// Reads a whole cloud file.
@@ -115,7 +120,12 @@ pub fn read(name: &str) -> Result<Vec<u8>, String> {
         }
         let size = sys::SteamAPI_ISteamRemoteStorage_GetFileSize(rs(), n.as_ptr()).max(0) as usize;
         let mut data = vec![0u8; size];
-        let read = sys::SteamAPI_ISteamRemoteStorage_FileRead(rs(), n.as_ptr(), data.as_mut_ptr().cast(), size as i32);
+        let read = sys::SteamAPI_ISteamRemoteStorage_FileRead(
+            rs(),
+            n.as_ptr(),
+            data.as_mut_ptr().cast(),
+            size as i32,
+        );
         if read as usize != size {
             return Err(format!("{name}: read {read} of {size} bytes"));
         }
@@ -128,7 +138,9 @@ pub fn write(name: &str, data: &[u8]) -> Result<(), String> {
     let n = cname(name)?;
     let size = data.len() as u64;
     if size > MAX_FILE {
-        return Err(format!("{name}: {size} bytes exceeds the 100 MiB Steam Cloud file limit"));
+        return Err(format!(
+            "{name}: {size} bytes exceeds the 100 MiB Steam Cloud file limit"
+        ));
     }
     let (total, available) = quota();
     // SAFETY: `n` is NUL-terminated.
@@ -144,12 +156,24 @@ pub fn write(name: &str, data: &[u8]) -> Result<(), String> {
         ));
     }
     // SAFETY: `data` is valid for `size` bytes.
-    let ok = unsafe { sys::SteamAPI_ISteamRemoteStorage_FileWrite(rs(), n.as_ptr(), data.as_ptr().cast(), size as i32) };
-    if ok { Ok(()) } else { Err(format!("{name}: ISteamRemoteStorage::FileWrite failed")) }
+    let ok = unsafe {
+        sys::SteamAPI_ISteamRemoteStorage_FileWrite(
+            rs(),
+            n.as_ptr(),
+            data.as_ptr().cast(),
+            size as i32,
+        )
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(format!("{name}: ISteamRemoteStorage::FileWrite failed"))
+    }
 }
 
 pub fn delete(name: &str) -> bool {
-    cname(name).is_ok_and(|n| unsafe { sys::SteamAPI_ISteamRemoteStorage_FileDelete(rs(), n.as_ptr()) })
+    cname(name)
+        .is_ok_and(|n| unsafe { sys::SteamAPI_ISteamRemoteStorage_FileDelete(rs(), n.as_ptr()) })
 }
 
 /// Every cloud file of the app: `(name, size)`.
@@ -169,28 +193,41 @@ pub fn list() -> Vec<(String, u64)> {
 
 pub fn load_manifest() -> Result<Manifest, String> {
     if !exists(MANIFEST) {
-        return Ok(Manifest { version: 1, ..Manifest::default() });
+        return Ok(Manifest {
+            version: 1,
+            ..Manifest::default()
+        });
     }
     serde_json::from_slice(&read(MANIFEST)?).map_err(|e| format!("{MANIFEST}: {e}"))
 }
 
 pub fn store_manifest(manifest: &Manifest) -> Result<(), String> {
-    write(MANIFEST, &serde_json::to_vec_pretty(manifest).map_err(|e| e.to_string())?)
+    write(
+        MANIFEST,
+        &serde_json::to_vec_pretty(manifest).map_err(|e| e.to_string())?,
+    )
 }
 
 /// Local save directory of a ROM: `BUN_ENGINE_SAVES/<sha256>`, else the per-user Aphrody data
 /// directory (`%LOCALAPPDATA%\Aphrody\bun-engine\saves`, `$XDG_DATA_HOME/aphrody/bun-engine/saves`).
 pub fn save_dir(rom_sha256: &str) -> PathBuf {
-    let base = std::env::var_os("BUN_ENGINE_SAVES").map(PathBuf::from).unwrap_or_else(|| {
-        let data = if cfg!(windows) {
-            std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("Aphrody"))
-        } else {
-            std::env::var_os("XDG_DATA_HOME")
-                .map(|p| PathBuf::from(p).join("aphrody"))
-                .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share/aphrody")))
-        };
-        data.unwrap_or_else(|| PathBuf::from(".")).join("bun-engine").join("saves")
-    });
+    let base = std::env::var_os("BUN_ENGINE_SAVES")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            let data = if cfg!(windows) {
+                std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("Aphrody"))
+            } else {
+                std::env::var_os("XDG_DATA_HOME")
+                    .map(|p| PathBuf::from(p).join("aphrody"))
+                    .or_else(|| {
+                        std::env::var_os("HOME")
+                            .map(|h| PathBuf::from(h).join(".local/share/aphrody"))
+                    })
+            };
+            data.unwrap_or_else(|| PathBuf::from("."))
+                .join("bun-engine")
+                .join("saves")
+        });
     base.join(rom_sha256)
 }
 
@@ -225,15 +262,28 @@ fn write_local(path: &Path, data: &[u8], modified: i64) -> Result<(), String> {
 }
 
 /// Synchronizes one ROM's save directory with Steam Cloud.
-pub fn sync(rom_sha256: &str, title: &str, system: &str, dir: &Path, direction: Direction) -> Result<SyncReport, String> {
+pub fn sync(
+    rom_sha256: &str,
+    title: &str,
+    system: &str,
+    dir: &Path,
+    direction: Direction,
+) -> Result<SyncReport, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let mut manifest = load_manifest()?;
     manifest.version = 1;
     let entry = manifest.roms.entry(rom_sha256.to_string()).or_default();
     entry.title = title.to_string();
     entry.system = system.to_string();
-    let mut report = SyncReport { rom: rom_sha256.to_string(), dir: dir.to_path_buf(), ..SyncReport::default() };
-    let names: BTreeSet<String> = local_files(dir).into_iter().chain(entry.files.keys().cloned()).collect();
+    let mut report = SyncReport {
+        rom: rom_sha256.to_string(),
+        dir: dir.to_path_buf(),
+        ..SyncReport::default()
+    };
+    let names: BTreeSet<String> = local_files(dir)
+        .into_iter()
+        .chain(entry.files.keys().cloned())
+        .collect();
     let mut dirty = false;
     for name in names {
         let path = dir.join(&name);
@@ -268,7 +318,12 @@ pub fn sync(rom_sha256: &str, title: &str, system: &str, dir: &Path, direction: 
             }
             entry.files.insert(
                 name.clone(),
-                FileEntry { sha256: sha256_hex(&data), size: data.len() as u64, modified: mtime(&path), uploaded: now() },
+                FileEntry {
+                    sha256: sha256_hex(&data),
+                    size: data.len() as u64,
+                    modified: mtime(&path),
+                    uploaded: now(),
+                },
             );
             dirty = true;
             report.uploaded.push(name);
@@ -279,7 +334,9 @@ pub fn sync(rom_sha256: &str, title: &str, system: &str, dir: &Path, direction: 
             }
             let data = read(&remote)?;
             if sha256_hex(&data) != c.sha256 {
-                return Err(format!("{remote}: cloud data does not match the manifest hash"));
+                return Err(format!(
+                    "{remote}: cloud data does not match the manifest hash"
+                ));
             }
             write_local(&path, &data, c.modified)?;
             report.downloaded.push(name);

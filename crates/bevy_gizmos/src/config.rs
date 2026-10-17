@@ -6,7 +6,7 @@ pub use bevy_gizmos_macros::GizmoConfigGroup;
 use {crate::GizmoAsset, bevy_asset::Handle, bevy_ecs::component::Component};
 
 use bevy_ecs::{reflect::ReflectResource, resource::Resource, template::FromTemplate};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect, TypePath};
+use bevy_reflect::{Reflect, TypePath, std_traits::ReflectDefault};
 use bevy_utils::TypeIdHashMap;
 use core::{
     any::TypeId,
@@ -119,7 +119,10 @@ impl GizmoConfigStore {
     /// [`get_config`]: Self::get_config
     pub fn config<T: GizmoConfigGroup>(&self) -> (&GizmoConfig, &T) {
         let Some(configs) = self.get_config() else {
-            panic!("Requested config {} does not exist in `GizmoConfigStore`! Did you forget to add it using `app.init_gizmo_group<T>()`?", T::type_path());
+            panic!(
+                "Requested config {} does not exist in `GizmoConfigStore`! Did you forget to add it using `app.init_gizmo_group<T>()`?",
+                T::type_path()
+            );
         };
         configs
     }
@@ -156,7 +159,10 @@ impl GizmoConfigStore {
     /// [`get_config_mut`]: Self::get_config_mut
     pub fn config_mut<T: GizmoConfigGroup>(&mut self) -> (&mut GizmoConfig, &mut T) {
         let Some(configs) = self.get_config_mut() else {
-            panic!("Requested config {} does not exist in `GizmoConfigStore`! Did you forget to add it using `app.init_gizmo_group<T>()`?", T::type_path());
+            panic!(
+                "Requested config {} does not exist in `GizmoConfigStore`! Did you forget to add it using `app.init_gizmo_group<T>()`?",
+                T::type_path()
+            );
         };
         configs
     }

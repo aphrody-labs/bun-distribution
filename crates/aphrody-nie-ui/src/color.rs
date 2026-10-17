@@ -80,7 +80,11 @@ macro_rules! color_token {
         #[doc = $doc]
         pub const $ident: ColorToken = ColorToken {
             name: $name,
-            oklch: Oklch { l: $l, c: $c, h: $h },
+            oklch: Oklch {
+                l: $l,
+                c: $c,
+                h: $h,
+            },
             hex: $hex,
             source_hue: $hue,
             source_share_pct: $pct,
@@ -505,8 +509,13 @@ pub const GAME_COLORS: [ColorToken; 29] = [
 /// Si `hex` n'est pas de la forme `#rrggbb` (7 caractères ASCII hexadécimaux après le `#`).
 #[must_use]
 pub fn hex_to_rgb_triplet(hex: &str) -> [u8; 3] {
-    let digits = hex.strip_prefix('#').unwrap_or_else(|| panic!("« {hex} » n'a pas de préfixe #"));
-    assert!(digits.len() == 6, "« {hex} » n'a pas 6 chiffres hexadécimaux");
+    let digits = hex
+        .strip_prefix('#')
+        .unwrap_or_else(|| panic!("« {hex} » n'a pas de préfixe #"));
+    assert!(
+        digits.len() == 6,
+        "« {hex} » n'a pas 6 chiffres hexadécimaux"
+    );
     let byte = |i: usize| {
         u8::from_str_radix(&digits[i..i + 2], 16).unwrap_or_else(|e| panic!("« {hex} » : {e}"))
     };
@@ -543,7 +552,10 @@ mod tests {
         // Ce sont les deux seules couleurs que `crate::tokens` compose en `rgb()` — cf. le CSS
         // livré : `--jeu-ombre-tuile` cite `#131420` (ABYSS_BACKGROUND), `--jeu-lueur-accent`
         // cite `#97c0fc` (CYAN_ACCENT).
-        assert_eq!(hex_to_rgb_triplet(super::ABYSS_BACKGROUND.hex), [0x13, 0x14, 0x20]);
+        assert_eq!(
+            hex_to_rgb_triplet(super::ABYSS_BACKGROUND.hex),
+            [0x13, 0x14, 0x20]
+        );
         assert_eq!(hex_to_rgb_triplet(CYAN_ACCENT.hex), [0x97, 0xc0, 0xfc]);
     }
 

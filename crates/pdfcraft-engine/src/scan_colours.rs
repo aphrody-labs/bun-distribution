@@ -16,30 +16,63 @@ const RING: f32 = 4.0;
 
 /// The paper and ink colours (RGB 0–1) of invisible paragraph `b` on `page`, or `None` when the
 /// paragraph is visible text or the page can't be read.
-pub(crate) fn sample(cos: &pdfcraft_cos::Document, info: &PageInfo, page: usize, b: &TextBlock) -> Option<([f64; 3], [f64; 3])> {
+pub(crate) fn sample(
+    cos: &pdfcraft_cos::Document,
+    info: &PageInfo,
+    page: usize,
+    b: &TextBlock,
+) -> Option<([f64; 3], [f64; 3])> {
     if !b.invisible {
         return None;
     }
     // The word's box in view space (points, y down).
-    let corners = [[b.rect[0], b.rect[1]], [b.rect[2], b.rect[1]], [b.rect[0], b.rect[3]], [b.rect[2], b.rect[3]]]
-        .map(|[x, y]| info.user_to_view(x as f32, y as f32));
-    let (x0, x1) = corners.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(a, z), c| (a.min(c[0]), z.max(c[0])));
-    let (y0, y1) = corners.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(a, z), c| (a.min(c[1]), z.max(c[1])));
+    let corners = [
+        [b.rect[0], b.rect[1]],
+        [b.rect[2], b.rect[1]],
+        [b.rect[0], b.rect[3]],
+        [b.rect[2], b.rect[3]],
+    ]
+    .map(|[x, y]| info.user_to_view(x as f32, y as f32));
+    let (x0, x1) = corners
+        .iter()
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(a, z), c| {
+            (a.min(c[0]), z.max(c[0]))
+        });
+    let (y0, y1) = corners
+        .iter()
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(a, z), c| {
+            (a.min(c[1]), z.max(c[1]))
+        });
     let word = [x0, y0, x1, y1];
     let area = [x0 - RING, y0 - RING, x1 + RING, y1 + RING];
     if word.iter().any(|v| !v.is_finite()) || x1 <= x0 || y1 <= y0 {
         return None;
     }
     let pixels = (area[2] - area[0]) * (area[3] - area[1]) * SCALE * SCALE;
-    let scale = if pixels > MAX_PIXELS { SCALE * (MAX_PIXELS / pixels).sqrt() } else { SCALE };
+    let scale = if pixels > MAX_PIXELS {
+        SCALE * (MAX_PIXELS / pixels).sqrt()
+    } else {
+        SCALE
+    };
     let (page_w, page_h) = (info.width * scale, info.height * scale);
     let clamp = |v: f32, max: f32| v.clamp(0.0, max.max(0.0)).floor() as u32;
-    let (tx0, ty0) = (clamp(area[0] * scale, page_w), clamp(area[1] * scale, page_h));
-    let (tx1, ty1) = (clamp(area[2] * scale, page_w), clamp(area[3] * scale, page_h));
+    let (tx0, ty0) = (
+        clamp(area[0] * scale, page_w),
+        clamp(area[1] * scale, page_h),
+    );
+    let (tx1, ty1) = (
+        clamp(area[2] * scale, page_w),
+        clamp(area[3] * scale, page_h),
+    );
     if tx1 <= tx0 || ty1 <= ty0 {
         return None;
     }
-    let tile = Tile { x: tx0, y: ty0, w: tx1 - tx0, h: ty1 - ty0 };
+    let tile = Tile {
+        x: tx0,
+        y: ty0,
+        w: tx1 - tx0,
+        h: ty1 - ty0,
+    };
     // The working file as it is: written out only if the document holds unsaved changes, which
     // it doesn't between edits (each one reopens the file it wrote).
     let bytes = if cos.is_modified() {
@@ -48,14 +81,22 @@ pub(crate) fn sample(cos: &pdfcraft_cos::Document, info: &PageInfo, page: usize,
         cos.bytes().clone()
     };
     // The document's true colours, whatever the reading colours are set to.
-    let shot = PageRenderer::new(bytes, RenderConfig::default()).render(RenderRequest { page, scale, tile: Some(tile), ..Default::default() });
+    let shot = PageRenderer::new(bytes, RenderConfig::default()).render(RenderRequest {
+        page,
+        scale,
+        tile: Some(tile),
+        ..Default::default()
+    });
     if shot.error.is_some() {
         return None;
     }
     let pad = ((y1 - y0) * 0.1).clamp(0.5, 2.0);
     let (mut paper, mut ink) = (Vec::new(), Vec::new());
     for (i, px) in shot.rgba.as_chunks::<4>().0.iter().enumerate() {
-        let (col, row) = (i % shot.width.max(1) as usize, i / shot.width.max(1) as usize);
+        let (col, row) = (
+            i % shot.width.max(1) as usize,
+            i / shot.width.max(1) as usize,
+        );
         let x = (tx0 as f32 + col as f32 + 0.5) / scale;
         let y = (ty0 as f32 + row as f32 + 0.5) / scale;
         let rgb = [px[0], px[1], px[2]].map(|c| f64::from(c) / 255.0);
@@ -76,9 +117,15 @@ pub(crate) fn sample(cos: &pdfcraft_cos::Document, info: &PageInfo, page: usize,
     let ink = if darkest.is_empty() {
         [0.0; 3]
     } else {
-        let sum = darkest.iter().fold([0.0; 3], |s, c| [s[0] + c[0], s[1] + c[1], s[2] + c[2]]);
+        let sum = darkest
+            .iter()
+            .fold([0.0; 3], |s, c| [s[0] + c[0], s[1] + c[1], s[2] + c[2]]);
         sum.map(|v| v / darkest.len() as f64)
     };
-    let ink = if luma(&paper) - luma(&ink) < 0.25 { [0.0; 3] } else { ink };
+    let ink = if luma(&paper) - luma(&ink) < 0.25 {
+        [0.0; 3]
+    } else {
+        ink
+    };
     Some((paper, ink))
 }

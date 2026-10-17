@@ -64,7 +64,14 @@ fn resource(uri: &str, name: &str, title: &str, description: &str) -> Value {
 
 impl Server {
     pub fn new(backend: Box<dyn Backend>) -> Self {
-        Self { backend, initialized: false, command_tools: true, wire: None, current: None, suppress: Arc::new(AtomicBool::new(false)) }
+        Self {
+            backend,
+            initialized: false,
+            command_tools: true,
+            wire: None,
+            current: None,
+            suppress: Arc::new(AtomicBool::new(false)),
+        }
     }
 
     /// Whether `tools/list` includes one `cmd_*` tool per registered command (default true).
@@ -85,7 +92,11 @@ impl Server {
 
     /// Serve newline-delimited JSON-RPC until `input` closes. Logs go to stderr only (stdout is
     /// the protocol stream).
-    pub fn serve(&mut self, input: impl BufRead + Send, output: impl Write + Send) -> std::io::Result<()> {
+    pub fn serve(
+        &mut self,
+        input: impl BufRead + Send,
+        output: impl Write + Send,
+    ) -> std::io::Result<()> {
         self.serve_wire(input, output)
     }
 
@@ -101,7 +112,8 @@ impl Server {
                 if batch.is_empty() {
                     Some(error(Value::Null, INVALID_REQUEST, "empty batch"))
                 } else {
-                    let replies: Vec<Value> = batch.into_iter().filter_map(|m| self.handle(m)).collect();
+                    let replies: Vec<Value> =
+                        batch.into_iter().filter_map(|m| self.handle(m)).collect();
                     (!replies.is_empty()).then_some(Value::Array(replies))
                 }
             }
@@ -113,14 +125,25 @@ impl Server {
 
     /// Handle one JSON-RPC message; `None` for notifications and responses.
     pub fn handle(&mut self, msg: Value) -> Option<Value> {
-        let Value::Object(o) = &msg else { return Some(error(Value::Null, INVALID_REQUEST, "message must be an object")) };
+        let Value::Object(o) = &msg else {
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "message must be an object",
+            ));
+        };
         let id = o.get("id").cloned();
         let Some(method) = o.get("method").and_then(Value::as_str) else {
             // A response to a server→client request (we send none) — ignore; anything else is invalid.
             if o.contains_key("result") || o.contains_key("error") {
                 return None;
             }
-            return Some(error(id.filter(|i| i.is_string() || i.is_number()).unwrap_or(Value::Null), INVALID_REQUEST, "missing `method`"));
+            return Some(error(
+                id.filter(|i| i.is_string() || i.is_number())
+                    .unwrap_or(Value::Null),
+                INVALID_REQUEST,
+                "missing `method`",
+            ));
         };
         let params = o.get("params").cloned().unwrap_or(Value::Null);
         let Some(id) = id else {
@@ -128,12 +151,20 @@ impl Server {
             return None;
         };
         if !(id.is_string() || id.is_number()) {
-            return Some(error(Value::Null, INVALID_REQUEST, "`id` must be a string or number"));
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "`id` must be a string or number",
+            ));
         }
         if !(params.is_object() || params.is_null()) {
             return Some(error(id, INVALID_PARAMS, "`params` must be an object"));
         }
-        let token = params.get("_meta").and_then(|m| m.get("progressToken")).filter(|t| t.is_string() || t.is_number()).cloned();
+        let token = params
+            .get("_meta")
+            .and_then(|m| m.get("progressToken"))
+            .filter(|t| t.is_string() || t.is_number())
+            .cloned();
         self.current = Some((id.clone(), token));
         self.suppress.store(false, Ordering::Relaxed);
         let result = self.request(method, &params);
@@ -153,7 +184,9 @@ impl Server {
     fn notification(&mut self, method: &str, _params: &Value) {
         match method {
             "notifications/initialized" => self.initialized = true,
-            "notifications/cancelled" | "notifications/progress" | "notifications/roots/list_changed" => {}
+            "notifications/cancelled"
+            | "notifications/progress"
+            | "notifications/roots/list_changed" => {}
             other => log::debug!("ignoring notification {other}"),
         }
     }
@@ -161,8 +194,15 @@ impl Server {
     fn request(&mut self, method: &str, params: &Value) -> Result<Value, (i64, String)> {
         match method {
             "initialize" => {
-                let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSION);
-                let version = if SUPPORTED_VERSIONS.contains(&asked) { asked } else { PROTOCOL_VERSION };
+                let asked = params
+                    .get("protocolVersion")
+                    .and_then(Value::as_str)
+                    .unwrap_or(PROTOCOL_VERSION);
+                let version = if SUPPORTED_VERSIONS.contains(&asked) {
+                    asked
+                } else {
+                    PROTOCOL_VERSION
+                };
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": {"tools": {"listChanged": false}, "resources": {"subscribe": false, "listChanged": false}},
@@ -173,17 +213,26 @@ impl Server {
             "ping" => Ok(json!({})),
             "tools/list" => {
                 let command_tools = self.command_tools;
-                let tools = self.guarded(|b| tool_definitions(b, command_tools)).map_err(|e| (INTERNAL_ERROR, e))?;
+                let tools = self
+                    .guarded(|b| tool_definitions(b, command_tools))
+                    .map_err(|e| (INTERNAL_ERROR, e))?;
                 Ok(json!({"tools": tools}))
             }
             "tools/call" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
+                let name = params
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
                 check_args(name, &args).map_err(|e| (INVALID_PARAMS, e))?;
                 let long = matches!(name, "export" | "cmd_app_export")
                     || (name == "command_run" && args["id"] == "app.export")
                     || (name == "run_command" && args["command"] == "app.export");
-                let hook = if long && !self.backend.has_ui() { self.progress_hook() } else { None };
+                let hook = if long && !self.backend.has_ui() {
+                    self.progress_hook()
+                } else {
+                    None
+                };
                 let result = self.guarded(|b| {
                     b.set_progress(hook);
                     call_tool(b, name, &args)
@@ -206,7 +255,10 @@ impl Server {
             ]})),
             "resources/templates/list" => Ok(json!({"resourceTemplates": []})),
             "resources/read" => {
-                let uri = params.get("uri").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
+                let uri = params
+                    .get("uri")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
                 let cmd = match uri {
                     DOCUMENT_URI | COMMANDS_URI => "",
                     LIBRARY_URI => "library.state",
@@ -224,7 +276,9 @@ impl Server {
                     })
                     .and_then(|v| v)
                     .map_err(|e| (INTERNAL_ERROR, e))?;
-                Ok(json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}))
+                Ok(
+                    json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}),
+                )
             }
             other => Err((METHOD_NOT_FOUND, format!("method not found: {other}"))),
         }
@@ -234,17 +288,25 @@ impl Server {
 impl Server {
     /// Escaped backend panics become errors; subsequent requests can keep using the session.
     fn guarded<T>(&mut self, f: impl FnOnce(&mut dyn Backend) -> T) -> Result<T, String> {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(self.backend.as_mut()))).map_err(|p| {
-            let message =
-                p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into());
-            format!("internal error: {message}")
-        })
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(self.backend.as_mut()))).map_err(
+            |p| {
+                let message = p
+                    .downcast_ref::<&str>()
+                    .map(|s| s.to_string())
+                    .or_else(|| p.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "panic".into());
+                format!("internal error: {message}")
+            },
+        )
     }
 }
 
 /// Per-request protocol metadata leaves initialize-based clients' result shapes unchanged.
 fn modern_result_fields(method: &str, params: &Value, result: &mut Value) {
-    let modern = params.pointer("/_meta/io.modelcontextprotocol~1protocolVersion").and_then(Value::as_str).is_some_and(|v| v >= "2026-07-28");
+    let modern = params
+        .pointer("/_meta/io.modelcontextprotocol~1protocolVersion")
+        .and_then(Value::as_str)
+        .is_some_and(|v| v >= "2026-07-28");
     let ttl = match method {
         "tools/list" | "resources/list" | "resources/templates/list" => Some(600_000),
         "resources/read" => Some(0),

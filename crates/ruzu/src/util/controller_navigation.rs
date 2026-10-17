@@ -56,12 +56,16 @@ pub(crate) fn install_interface_navigation(
             return gtk::glib::ControlFlow::Continue;
         }
         if let Some(key) = repeat.poll(held, std::time::Instant::now()) {
-            if !keys.contains(&key) { keys.push(key); }
+            if !keys.contains(&key) {
+                keys.push(key);
+            }
         }
         for key in keys {
             // A directional action can select Controls within the same window.
             // Do not deliver the rest of that batch to its mapping widgets.
-            if !interface_navigation_allowed(&target) { break; }
+            if !interface_navigation_allowed(&target) {
+                break;
+            }
             if target == main && list_key(key) {
                 target.set_focus_visible(true);
             } else {
@@ -291,17 +295,38 @@ fn activate_key_binding(focus: &gtk::Widget, key: NavigationKey) -> bool {
     // The same capture-phase shortcuts handle physical keyboard presses.
     let mut owner = Some(focus.clone());
     while let Some(widget) = owner {
-        if widget.is::<gtk::Popover>() || widget.is::<gtk::Window>() { break; }
-        for controller in widget.observe_controllers().iter::<gtk::glib::Object>().flatten()
-            .filter_map(|object| object.downcast::<gtk::EventController>().ok()) {
-            if controller.name().as_deref() != Some("ruzu-directional-navigation") { continue; }
-            let Some(controller) = controller.downcast_ref::<gtk::ShortcutController>() else { continue; };
-            for shortcut in controller.iter::<gtk::glib::Object>().flatten()
-                .filter_map(|object| object.downcast::<gtk::Shortcut>().ok()) {
-                let Some(trigger) = shortcut.trigger().and_downcast::<gtk::KeyvalTrigger>() else { continue; };
-                if trigger.keyval() == keyval && trigger.modifiers().is_empty()
-                    && shortcut.action().is_some_and(|action| action.activate(
-                        gtk::ShortcutActionFlags::empty(), &widget, shortcut.arguments().as_ref()))
+        if widget.is::<gtk::Popover>() || widget.is::<gtk::Window>() {
+            break;
+        }
+        for controller in widget
+            .observe_controllers()
+            .iter::<gtk::glib::Object>()
+            .flatten()
+            .filter_map(|object| object.downcast::<gtk::EventController>().ok())
+        {
+            if controller.name().as_deref() != Some("ruzu-directional-navigation") {
+                continue;
+            }
+            let Some(controller) = controller.downcast_ref::<gtk::ShortcutController>() else {
+                continue;
+            };
+            for shortcut in controller
+                .iter::<gtk::glib::Object>()
+                .flatten()
+                .filter_map(|object| object.downcast::<gtk::Shortcut>().ok())
+            {
+                let Some(trigger) = shortcut.trigger().and_downcast::<gtk::KeyvalTrigger>() else {
+                    continue;
+                };
+                if trigger.keyval() == keyval
+                    && trigger.modifiers().is_empty()
+                    && shortcut.action().is_some_and(|action| {
+                        action.activate(
+                            gtk::ShortcutActionFlags::empty(),
+                            &widget,
+                            shortcut.arguments().as_ref(),
+                        )
+                    })
                 {
                     return true;
                 }
@@ -417,10 +442,19 @@ impl NavigationRepeat {
         self.suppressed = held.is_some();
     }
 
-    fn poll(&mut self, held: Option<NavigationKey>, now: std::time::Instant) -> Option<NavigationKey> {
+    fn poll(
+        &mut self,
+        held: Option<NavigationKey>,
+        now: std::time::Instant,
+    ) -> Option<NavigationKey> {
         let held = held.filter(|key| matches!(key, NavigationKey::Up | NavigationKey::Down));
-        if held.is_none() { *self = Self::default(); return None; }
-        if self.suppressed { return None; }
+        if held.is_none() {
+            *self = Self::default();
+            return None;
+        }
+        if self.suppressed {
+            return None;
+        }
         if self.held != held {
             self.held = held;
             self.next = Some(now + std::time::Duration::from_millis(400));
@@ -430,7 +464,9 @@ impl NavigationRepeat {
             // Do not replay a backlog if the UI thread was busy.
             self.next = Some(now + std::time::Duration::from_millis(80));
             held
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 
@@ -543,7 +579,9 @@ impl ControllerNavigation {
     }
 
     fn held_vertical_direction(&self) -> Option<NavigationKey> {
-        if !*common::settings::values().controller_navigation.get_value() { return None; }
+        if !*common::settings::values().controller_navigation.get_value() {
+            return None;
+        }
         let controller = self.player_1_controller.lock();
         let style = controller.get_npad_style_index(false);
         drop(controller);
@@ -899,8 +937,13 @@ fn controller_update_stick(
 }
 
 fn vertical_direction(state: &NavigationState, style: NpadStyleIndex) -> Option<NavigationKey> {
-    let standard = matches!(style, NpadStyleIndex::Fullkey | NpadStyleIndex::JoyconDual
-        | NpadStyleIndex::Handheld | NpadStyleIndex::GameCube);
+    let standard = matches!(
+        style,
+        NpadStyleIndex::Fullkey
+            | NpadStyleIndex::JoyconDual
+            | NpadStyleIndex::Handheld
+            | NpadStyleIndex::GameCube
+    );
     let stick = stick_navigation_key(style, &state.stick_values);
     let up = (standard && state.button_values[native_button::Values::DUp as usize].value)
         || stick == Some(NavigationKey::Up);

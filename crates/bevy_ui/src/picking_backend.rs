@@ -21,13 +21,13 @@
 //!   `(-0.5, -0.5, 0.)` at the top left and `(0.5, 0.5, 0.)` in the bottom right. Coordinates are
 //!   relative to the entire node, not just the visible region. This backend does not provide a `normal`.
 
-use crate::{prelude::*, ui_transform::UiGlobalTransform, UiStack};
+use crate::{UiStack, prelude::*, ui_transform::UiGlobalTransform};
 use bevy_app::prelude::*;
-use bevy_camera::{visibility::InheritedVisibility, Camera, RenderTarget};
+use bevy_camera::{Camera, RenderTarget, visibility::InheritedVisibility};
 use bevy_ecs::{prelude::*, query::QueryData};
 use bevy_math::Vec2;
 use bevy_platform::collections::HashMap;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_text::{ComputedTextBlock, TextLayoutInfo};
 use bevy_window::PrimaryWindow;
 

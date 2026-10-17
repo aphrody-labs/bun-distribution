@@ -25,16 +25,31 @@ const CMD: &str = "object.blend.options";
 const LABEL_W: f32 = 82.0;
 
 /// Spacing modes: (value, label).
-const SPACING: [(&str, &str); 3] = [("smooth", "Smooth Color"), ("steps", "Specified Steps"), ("distance", "Specified Distance")];
+const SPACING: [(&str, &str); 3] = [
+    ("smooth", "Smooth Color"),
+    ("steps", "Specified Steps"),
+    ("distance", "Specified Distance"),
+];
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Blend Options").into(), body, confirm, preview: true, min_width: 300.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Blend Options").into(),
+    body,
+    confirm,
+    preview: true,
+    min_width: 300.0,
+    ..DialogSpec::FORM
+};
 
 /// Open Blend Options on the selected blend's options (else those new blends start with).
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let mut fields = app.session.execute("object.blend.info", &json!({})).map_err(|e| e.to_string())?;
+    let mut fields = app
+        .session
+        .execute("object.blend.info", &json!({}))
+        .map_err(|e| e.to_string())?;
     let target = fields["target"].clone();
-    let Some(o) = fields.as_object_mut() else { return Err("no blend options".into()) };
+    let Some(o) = fields.as_object_mut() else {
+        return Err("no blend options".into());
+    };
     o.retain(|k, _| matches!(k.as_str(), "spacing" | "steps" | "distance" | "orientation"));
     o.insert("__target".into(), target);
     o.insert("preview".into(), json!(true));
@@ -61,10 +76,15 @@ fn params(d: &Dialog) -> Value {
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let unit = app.session.general_unit();
     let mode = d.str("spacing");
-    let shown = SPACING.iter().find(|(v, _)| *v == mode).map_or(SPACING[0].1, |(_, l)| l);
+    let shown = SPACING
+        .iter()
+        .find(|(v, _)| *v == mode)
+        .map_or(SPACING[0].1, |(_, l)| l);
     let labels = SPACING.map(|(_, l)| l);
     widgets::label_row(ui, tl!("Spacing:"), LABEL_W, |ui| {
-        if let Some((value, _)) = widgets::dropdown(ui, "blend-spacing", shown, &labels, 150.0).and_then(|i| SPACING.get(i)) {
+        if let Some((value, _)) = widgets::dropdown(ui, "blend-spacing", shown, &labels, 150.0)
+            .and_then(|i| SPACING.get(i))
+        {
             d.fields.insert("spacing".into(), json!(value));
         }
         ui.add_space(6.0);
@@ -77,7 +97,8 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
                 let steps = d.f64("steps", 5.0);
                 ui.add_enabled_ui(m == "steps", |ui| {
                     if let Some(n) = widgets::plain_field(ui, "blend-steps", steps, "", 0, 72.0) {
-                        d.fields.insert("steps".into(), json!(n.round().clamp(1.0, 1000.0)));
+                        d.fields
+                            .insert("steps".into(), json!(n.round().clamp(1.0, 1000.0)));
                     }
                 });
             }
@@ -86,7 +107,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     ui.add_space(6.0);
     widgets::label_row(ui, tl!("Orientation:"), LABEL_W, |ui| {
         let path = d.str("orientation") == "path";
-        for (value, along, tip) in [("page", false, tl!("Align to Page")), ("path", true, tl!("Align to Path"))] {
+        for (value, along, tip) in [
+            ("page", false, tl!("Align to Page")),
+            ("path", true, tl!("Align to Path")),
+        ] {
             if orientation_button(ui, along, path == along, tip) {
                 d.fields.insert("orientation".into(), json!(value));
             }
@@ -117,18 +141,28 @@ fn orientation_button(ui: &mut egui::Ui, along: bool, selected: bool, tip: &str)
     let c = rect.center() + vec2(0.0, -2.0);
     let at = |x: f32| pos2(c.x + 9.0 * x, c.y + 6.0 * x * x);
     let curve: Vec<egui::Pos2> = (0..=12).map(|i| at(-1.0 + i as f32 / 6.0)).collect();
-    ui.painter().add(egui::Shape::line(curve, Stroke::new(1.0, color)));
+    ui.painter()
+        .add(egui::Shape::line(curve, Stroke::new(1.0, color)));
     for x in [-0.8f32, 0.0, 0.8] {
         let p = at(x);
         // Normal to the arch at x (pointing up), or straight up.
-        let n = if along { vec2(-12.0 * x / 9.0, -1.0).normalized() } else { vec2(0.0, -1.0) };
-        ui.painter().line_segment([p, p + n * 7.0], Stroke::new(2.0, color));
+        let n = if along {
+            vec2(-12.0 * x / 9.0, -1.0).normalized()
+        } else {
+            vec2(0.0, -1.0)
+        };
+        ui.painter()
+            .line_segment([p, p + n * 7.0], Stroke::new(2.0, color));
     }
     resp.on_hover_text(tip).clicked()
 }
 
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    if on_blend(d) { form::commit_preview(app, CMD, params(d)) } else { run_and_close(app, CMD, params(d)) }
+    if on_blend(d) {
+        form::commit_preview(app, CMD, params(d))
+    } else {
+        run_and_close(app, CMD, params(d))
+    }
 }
 
 #[cfg(test)]
@@ -141,12 +175,22 @@ mod tests {
     fn frame(app: &mut VectorcraftApp) {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| super::super::show(app, ui.ctx()));
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+            super::super::show(app, ui.ctx())
+        });
         out.textures_delta.clear();
     }
 
     fn spec(app: &VectorcraftApp, id: u64) -> vectorcraft_doc::BlendSpec {
-        match &app.session.doc().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().kind {
+        match &app
+            .session
+            .doc()
+            .unwrap()
+            .doc
+            .node(vectorcraft_doc::NodeId(id))
+            .unwrap()
+            .kind
+        {
             NodeKind::Blend { spec, .. } => (**spec).clone(),
             _ => panic!("not a blend"),
         }
@@ -155,11 +199,24 @@ mod tests {
     #[test]
     fn opens_on_the_blend_previews_and_keeps_smooth_color() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20})).unwrap();
-        app.run("shape.rectangle", json!({"x": 200, "y": 0, "width": 20, "height": 20})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 20, "height": 20}),
+        )
+        .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 200, "y": 0, "width": 20, "height": 20}),
+        )
+        .unwrap();
         app.run("select.all", json!({})).unwrap();
-        let id = app.run("object.blend.make", json!({"smooth": true})).unwrap()["id"].as_u64().unwrap();
+        let id = app
+            .run("object.blend.make", json!({"smooth": true}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         // The menu item opens the dialog on the blend's own options.
         crate::menus::invoke(&mut app, CMD, json!({}));
         assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(KIND));
@@ -194,7 +251,8 @@ mod tests {
     #[test]
     fn with_nothing_selected_it_sets_what_new_blends_start_with() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
         app.run("ui.blendOptions", json!({})).unwrap();
         assert_eq!(app.ui.dialog.as_ref().unwrap().str("__target"), "defaults");
         let d = app.ui.dialog.as_mut().unwrap();
@@ -203,11 +261,24 @@ mod tests {
         d.fields.insert("orientation".into(), json!("path"));
         frame(&mut app);
         crate::dialogs::confirm(&mut app).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 20, "height": 20})).unwrap();
-        app.run("shape.rectangle", json!({"x": 200, "y": 0, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 20, "height": 20}),
+        )
+        .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 200, "y": 0, "width": 20, "height": 20}),
+        )
+        .unwrap();
         app.run("select.all", json!({})).unwrap();
-        let id = app.run("object.blend.make", json!({})).unwrap()["id"].as_u64().unwrap();
+        let id = app.run("object.blend.make", json!({})).unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let s = spec(&app, id);
-        assert_eq!((s.spacing, s.orientation), (BlendSpacing::Steps(7), BlendOrientation::AlignToPath));
+        assert_eq!(
+            (s.spacing, s.orientation),
+            (BlendSpacing::Steps(7), BlendOrientation::AlignToPath)
+        );
     }
 }

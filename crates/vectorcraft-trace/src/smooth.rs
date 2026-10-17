@@ -31,8 +31,15 @@ fn pass(src: &[u8], w: usize, h: usize, along_rows: bool) -> Vec<u8> {
                 [(y > 0).then(|| (x, y - 1)), (y + 1 < h).then(|| (x, y + 1))]
             };
             let (mut sum, mut weight) = ([f64::from(p[0]), f64::from(p[1]), f64::from(p[2])], 1.0);
-            for q in near.into_iter().flatten().filter_map(|(x, y)| px(x, y)).filter(|q| q[3] >= 128) {
-                let d2: f64 = (0..3).map(|k| (f64::from(q[k]) - f64::from(p[k])).powi(2)).sum();
+            for q in near
+                .into_iter()
+                .flatten()
+                .filter_map(|(x, y)| px(x, y))
+                .filter(|q| q[3] >= 128)
+            {
+                let d2: f64 = (0..3)
+                    .map(|k| (f64::from(q[k]) - f64::from(p[k])).powi(2))
+                    .sum();
                 let wt = 1.0 / (1.0 + d2 / (ALIKE * ALIKE)).powi(2);
                 for k in 0..3 {
                     sum[k] += wt * f64::from(q[k]);
@@ -56,7 +63,11 @@ pub(crate) fn smoothed(img: &Raster) -> Raster {
             rgba = pass(&pass(&rgba, w, h, true), w, h, false);
         }
     }
-    Raster { width: img.width, height: img.height, rgba }
+    Raster {
+        width: img.width,
+        height: img.height,
+        rgba,
+    }
 }
 
 #[cfg(test)]
@@ -76,22 +87,36 @@ mod tests {
         });
         let out = smoothed(&img);
         let spread = |r: &Raster, x0: u32, x1: u32| {
-            let v: Vec<u8> = (0..20).flat_map(|y| (x0..x1).map(move |x| (x, y))).map(|(x, y)| r.pixel(x, y)[0]).collect();
+            let v: Vec<u8> = (0..20)
+                .flat_map(|y| (x0..x1).map(move |x| (x, y)))
+                .map(|(x, y)| r.pixel(x, y)[0])
+                .collect();
             v.iter().max().unwrap() - v.iter().min().unwrap()
         };
         assert_eq!(spread(&img, 0, 20), 12);
-        assert!(spread(&out, 0, 20) <= 6 && spread(&out, 20, 40) <= 6, "{} {}", spread(&out, 0, 20), spread(&out, 20, 40));
+        assert!(
+            spread(&out, 0, 20) <= 6 && spread(&out, 20, 40) <= 6,
+            "{} {}",
+            spread(&out, 0, 20),
+            spread(&out, 20, 40)
+        );
         // The edge is still one pixel sharp, where it was.
         assert!(out.pixel(19, 10)[0] < 70 && out.pixel(20, 10)[0] > 150);
     }
 
     #[test]
     fn transparent_pixels_and_odd_sizes_pass_through() {
-        let img = Raster::from_fn(3, 1, |x, _| [10 * x as u8, 0, 0, if x == 1 { 0 } else { 255 }]);
+        let img = Raster::from_fn(3, 1, |x, _| {
+            [10 * x as u8, 0, 0, if x == 1 { 0 } else { 255 }]
+        });
         let out = smoothed(&img);
         assert_eq!(out.pixel(1, 0), [10, 0, 0, 0]);
         assert_eq!((out.width, out.height, out.rgba.len()), (3, 1, 12));
-        let broken = Raster { width: 4, height: 4, rgba: vec![0; 7] };
+        let broken = Raster {
+            width: 4,
+            height: 4,
+            rgba: vec![0; 7],
+        };
         assert_eq!(smoothed(&broken).rgba.len(), 7);
     }
 }

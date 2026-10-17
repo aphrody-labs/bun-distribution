@@ -19,19 +19,33 @@ impl Harness {
     /// The dialog of 3D effect `effect` on a path drawn from SVG path data `d`.
     fn with(d: &str, effect: &str, screen: Vec2) -> Self {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width":300,"height":300})).unwrap();
+        app.run("file.new", json!({"width":300,"height":300}))
+            .unwrap();
         app.run("path.create", json!({"d": d})).unwrap();
-        app.run("paint.setFill", json!({"color":"#338ad6"})).unwrap();
-        app.run("effect.dialog", json!({"effect":effect,"item":null})).unwrap();
+        app.run("paint.setFill", json!({"color":"#338ad6"}))
+            .unwrap();
+        app.run("effect.dialog", json!({"effect":effect,"item":null}))
+            .unwrap();
         let ctx = egui::Context::default();
         theme::install_fonts(&ctx);
         theme::apply(&ctx, Default::default());
-        Self { app, ctx, screen, texts: vec![] }
+        Self {
+            app,
+            ctx,
+            screen,
+            texts: vec![],
+        }
     }
 
     fn frame(&mut self, events: Vec<Event>) {
-        let input = egui::RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, self.screen)), events, ..Default::default() };
-        let mut out = self.ctx.run_ui(input, |ui| dialogs::show(&mut self.app, ui.ctx()));
+        let input = egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, self.screen)),
+            events,
+            ..Default::default()
+        };
+        let mut out = self
+            .ctx
+            .run_ui(input, |ui| dialogs::show(&mut self.app, ui.ctx()));
         out.textures_delta.clear();
         fn collect(shape: &egui::Shape, clip: Rect, texts: &mut Vec<(String, Rect)>) {
             match shape {
@@ -43,7 +57,9 @@ impl Harness {
             }
         }
         self.texts.clear();
-        out.shapes.iter().for_each(|s| collect(&s.shape, s.clip_rect, &mut self.texts));
+        out.shapes
+            .iter()
+            .for_each(|s| collect(&s.shape, s.clip_rect, &mut self.texts));
     }
 
     fn settle(&mut self) {
@@ -53,7 +69,11 @@ impl Harness {
     }
 
     fn rect(&self, text: &str) -> Rect {
-        self.texts.iter().find(|(s, _)| s == text).map(|(_, r)| *r).unwrap_or_else(|| panic!("missing text {text:?}"))
+        self.texts
+            .iter()
+            .find(|(s, _)| s == text)
+            .map(|(_, r)| *r)
+            .unwrap_or_else(|| panic!("missing text {text:?}"))
     }
 
     fn response(&self, id: impl std::hash::Hash + std::fmt::Debug) -> Rect {
@@ -81,7 +101,12 @@ impl Harness {
 }
 
 fn button(pos: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() }
+    Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Default::default(),
+    }
 }
 
 #[test]
@@ -89,23 +114,54 @@ fn values_labels_sliders_and_reset_dots_change_the_live_effect_in_one_undo_step(
     let mut h = Harness::new(vec2(1280.0, 900.0));
     let before = h.app.session.doc().unwrap().doc.clone();
     h.settle();
-    assert!(!h.rect("Advanced").is_negative(), "Advanced is visible without scrolling in a normal window");
-    let panel = h.ctx.memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve"))).unwrap();
-    assert!(panel.width() < 420.0 && panel.height() < 540.0, "compact controls: {panel:?}");
+    assert!(
+        !h.rect("Advanced").is_negative(),
+        "Advanced is visible without scrolling in a normal window"
+    );
+    let panel = h
+        .ctx
+        .memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve")))
+        .unwrap();
+    assert!(
+        panel.width() < 420.0 && panel.height() < 540.0,
+        "compact controls: {panel:?}"
+    );
     let label = h.rect("Rotation X");
-    h.drag(pos2(label.left() + LABEL_W + 6.0 + VALUE_W / 2.0, label.center().y), vec2(40.0, 0.0));
+    h.drag(
+        pos2(
+            label.left() + LABEL_W + 6.0 + VALUE_W / 2.0,
+            label.center().y,
+        ),
+        vec2(40.0, 0.0),
+    );
     assert!(h.value("rotationX") > 0.0, "the value itself drags");
     let label = h.rect("Rotation Y");
     h.drag(label.center(), vec2(40.0, 0.0));
     assert!(h.value("rotationY") > 0.0, "the label scrubs");
     let label = h.rect("Revolve angle");
-    h.click(pos2(label.left() + LABEL_W + VALUE_W + 24.0, label.center().y));
+    h.click(pos2(
+        label.left() + LABEL_W + VALUE_W + 24.0,
+        label.center().y,
+    ));
     assert!(h.value("angle") < 180.0, "the slider changes the sweep");
     h.click(h.response(("revolve-reset", "rotationX")).center());
     assert_eq!(h.value("rotationX"), 0.0);
-    assert!(h.value("angle") < 180.0, "a dot resets only its own setting");
-    let node = h.app.session.doc().unwrap().doc.node(h.app.session.doc().unwrap().selection.objects[0]).unwrap();
-    assert_eq!(node.appearance.effects[0].params["angle"], json!(h.value("angle")));
+    assert!(
+        h.value("angle") < 180.0,
+        "a dot resets only its own setting"
+    );
+    let node = h
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .doc
+        .node(h.app.session.doc().unwrap().selection.objects[0])
+        .unwrap();
+    assert_eq!(
+        node.appearance.effects[0].params["angle"],
+        json!(h.value("angle"))
+    );
     h.click(h.response("revolve-reset-all").center());
     let defaults = vectorcraft_effects::default_params(REVOLVE).unwrap();
     let dialog = h.app.ui.dialog.as_ref().unwrap();
@@ -120,7 +176,13 @@ fn values_labels_sliders_and_reset_dots_change_the_live_effect_in_one_undo_step(
 #[test]
 fn preview_off_changes_fields_without_changing_the_document() {
     let mut h = Harness::new(vec2(1280.0, 900.0));
-    h.app.ui.dialog.as_mut().unwrap().fields.insert("preview".into(), json!(false));
+    h.app
+        .ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert("preview".into(), json!(false));
     let before = h.app.session.doc().unwrap().doc.clone();
     h.settle();
     h.drag(h.rect("Rotation Y").center(), vec2(40.0, 0.0));
@@ -155,8 +217,14 @@ fn lighting_tab_shows_light_fields_and_keeps_the_dialog_compact() {
     for label in ["Shading", "Direction", "Elevation", "Intensity", "Ambient"] {
         assert!(Rect::from_min_size(Pos2::ZERO, h.screen).contains_rect(h.rect(label)));
     }
-    let panel = h.ctx.memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve"))).unwrap();
-    assert!(panel.width() < 420.0 && panel.height() < 460.0, "compact lighting controls: {panel:?}");
+    let panel = h
+        .ctx
+        .memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve")))
+        .unwrap();
+    assert!(
+        panel.width() < 420.0 && panel.height() < 460.0,
+        "compact lighting controls: {panel:?}"
+    );
     h.drag(h.rect("Direction").center(), vec2(24.0, 0.0));
     assert_ne!(h.value("lightAzimuth"), -45.0);
     h.click(h.response(("revolve-reset", "lightAzimuth")).center());
@@ -171,7 +239,10 @@ fn advanced_visibility_option_is_saved_resettable_and_leaves_preview_geometry_co
     let mut h = Harness::new(vec2(1280.0, 1000.0));
     h.settle();
     h.click(h.rect("Advanced").center());
-    let panel = h.ctx.memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve"))).unwrap();
+    let panel = h
+        .ctx
+        .memory(|m| m.area_rect(Id::new(("dialog", "effect")).with("revolve")))
+        .unwrap();
     h.frame(vec![
         Event::PointerMoved(panel.center()),
         Event::MouseWheel {
@@ -192,7 +263,10 @@ fn advanced_visibility_option_is_saved_resettable_and_leaves_preview_geometry_co
     assert!(!h.app.ui.dialog.as_ref().unwrap().bool("expandVisibleOnly"));
     let state = h.app.session.doc().unwrap();
     let node = state.doc.node(state.selection.objects[0]).unwrap();
-    assert_eq!(node.appearance.effects[0].params["expandVisibleOnly"], json!(false));
+    assert_eq!(
+        node.appearance.effects[0].params["expandVisibleOnly"],
+        json!(false)
+    );
     assert_eq!(vectorcraft_effects::revolve_art(node), Some(before));
     h.click(h.response(("revolve-reset", "expandVisibleOnly")).center());
     assert!(h.app.ui.dialog.as_ref().unwrap().bool("expandVisibleOnly"));
@@ -202,7 +276,15 @@ fn advanced_visibility_option_is_saved_resettable_and_leaves_preview_geometry_co
     dialogs::confirm(&mut h.app).unwrap();
     let state = h.app.session.doc().unwrap();
     let loaded = vectorcraft_format::load(&vectorcraft_format::save(&state.doc, false)).unwrap();
-    assert_eq!(loaded.node(state.selection.objects[0]).unwrap().appearance.effects[0].params["expandVisibleOnly"], json!(true));
+    assert_eq!(
+        loaded
+            .node(state.selection.objects[0])
+            .unwrap()
+            .appearance
+            .effects[0]
+            .params["expandVisibleOnly"],
+        json!(true)
+    );
 }
 
 /// Extrude & Bevel, Inflate and Rotate open the same compact controls, with their own options, the
@@ -212,8 +294,24 @@ fn the_other_3d_effects_show_their_options_and_position_presets() {
     use vectorcraft_effects::{EXTRUDE, INFLATE, ROTATE, ROTATION_PRESETS};
     let square = "M100 100 L200 100 L200 200 L100 200 Z";
     for (effect, own) in [
-        (EXTRUDE, &["Depth", "Twist", "Taper", "Cap", "Bevel", "Bevel Shape", "Space", "Bevel Inside", "Bevel both sides"][..]),
-        (INFLATE, &["Depth", "Twist", "Taper", "Cap", "Volume", "Both sides"][..]),
+        (
+            EXTRUDE,
+            &[
+                "Depth",
+                "Twist",
+                "Taper",
+                "Cap",
+                "Bevel",
+                "Bevel Shape",
+                "Space",
+                "Bevel Inside",
+                "Bevel both sides",
+            ][..],
+        ),
+        (
+            INFLATE,
+            &["Depth", "Twist", "Taper", "Cap", "Volume", "Both sides"][..],
+        ),
         (ROTATE, &[][..]),
     ] {
         let mut h = Harness::with(square, effect, vec2(1400.0, 1000.0));
@@ -223,7 +321,13 @@ fn the_other_3d_effects_show_their_options_and_position_presets() {
             h.rect(text);
         }
         if !own.is_empty() {
-            h.app.ui.dialog.as_mut().unwrap().fields.insert("__tab".into(), json!("rotation"));
+            h.app
+                .ui
+                .dialog
+                .as_mut()
+                .unwrap()
+                .fields
+                .insert("__tab".into(), json!("rotation"));
             h.settle();
         }
         for text in ["Presets", "Rotation X", "Perspective"] {
@@ -231,16 +335,32 @@ fn the_other_3d_effects_show_their_options_and_position_presets() {
         }
         // The defaults are the Off-Axis Front position, shown by name.
         h.rect("Off-Axis Front");
-        assert!(!h.texts.iter().any(|(t, _)| t == "Revolve angle"), "{effect}: Revolve's own options stay out");
+        assert!(
+            !h.texts.iter().any(|(t, _)| t == "Revolve angle"),
+            "{effect}: Revolve's own options stay out"
+        );
         let d = h.app.ui.dialog.as_ref().unwrap();
-        assert!(dialogs::revolve_gizmo::active(d), "{effect}: the gizmo is on");
+        assert!(
+            dialogs::revolve_gizmo::active(d),
+            "{effect}: the gizmo is on"
+        );
         // A preset's angles show its name; other angles are Custom.
         let [x, y, z] = ROTATION_PRESETS[14].1;
         let d = h.app.ui.dialog.as_mut().unwrap();
-        d.fields.extend([("rotationX".into(), json!(x)), ("rotationY".into(), json!(y)), ("rotationZ".into(), json!(z))]);
+        d.fields.extend([
+            ("rotationX".into(), json!(x)),
+            ("rotationY".into(), json!(y)),
+            ("rotationZ".into(), json!(z)),
+        ]);
         h.settle();
         h.rect("Isometric Top");
-        h.app.ui.dialog.as_mut().unwrap().fields.insert("rotationZ".into(), json!(12.5));
+        h.app
+            .ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("rotationZ".into(), json!(12.5));
         h.settle();
         h.rect("Custom");
     }
@@ -248,12 +368,33 @@ fn the_other_3d_effects_show_their_options_and_position_presets() {
 
 #[test]
 fn extrude_bevel_options_enable_with_a_bevel_shape() {
-    let mut h = Harness::with("M100 100 L200 100 L200 200 L100 200 Z", vectorcraft_effects::EXTRUDE, vec2(1400.0, 1000.0));
+    let mut h = Harness::with(
+        "M100 100 L200 100 L200 200 L100 200 Z",
+        vectorcraft_effects::EXTRUDE,
+        vec2(1400.0, 1000.0),
+    );
     h.settle();
     let width = h.response(("revolve-reset", "bevelWidth"));
-    assert!(!h.ctx.read_response(Id::new(("revolve-reset", "bevelWidth"))).unwrap().enabled(), "no bevel: its sizes are off");
-    h.app.ui.dialog.as_mut().unwrap().fields.insert("bevel".into(), json!("rounded"));
+    assert!(
+        !h.ctx
+            .read_response(Id::new(("revolve-reset", "bevelWidth")))
+            .unwrap()
+            .enabled(),
+        "no bevel: its sizes are off"
+    );
+    h.app
+        .ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert("bevel".into(), json!("rounded"));
     h.settle();
-    assert!(h.ctx.read_response(Id::new(("revolve-reset", "bevelWidth"))).unwrap().enabled());
+    assert!(
+        h.ctx
+            .read_response(Id::new(("revolve-reset", "bevelWidth")))
+            .unwrap()
+            .enabled()
+    );
     assert_eq!(h.response(("revolve-reset", "bevelWidth")), width);
 }

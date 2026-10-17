@@ -12,7 +12,9 @@ use vectorcraft_svg::{ImportOptions, import_with, import_with_report};
 use vectorcraft_testkit::raster::{Image, assert_similar, render_artboard};
 
 fn svg(body: &str) -> String {
-    format!(r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120">{body}</svg>"#)
+    format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120">{body}</svg>"#
+    )
 }
 
 /// All non-layer nodes in paint order.
@@ -41,8 +43,16 @@ fn resvg_render(svg: &str, w: u32, h: u32) -> Image {
     let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).expect("parse");
     let mut pm = resvg::tiny_skia::Pixmap::new(w, h).unwrap();
     pm.fill(resvg::tiny_skia::Color::WHITE);
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pm.as_mut());
-    Image { width: w, height: h, rgba: pm.data().to_vec() }
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pm.as_mut(),
+    );
+    Image {
+        width: w,
+        height: h,
+        rgba: pm.data().to_vec(),
+    }
 }
 
 fn png(w: u32, h: u32) -> Vec<u8> {
@@ -64,13 +74,24 @@ fn folder(name: &str) -> PathBuf {
 /// Reads files as the app does (the link knows the size and hash).
 fn read(path: &str) -> Option<(Vec<u8>, LinkInfo)> {
     let bytes = std::fs::read(path).ok()?;
-    let link = LinkInfo { size: Some(bytes.len() as u64), hash: Some(vectorcraft_doc::links::hash_bytes(&bytes)), ..LinkInfo::new(path) };
+    let link = LinkInfo {
+        size: Some(bytes.len() as u64),
+        hash: Some(vectorcraft_doc::links::hash_bytes(&bytes)),
+        ..LinkInfo::new(path)
+    };
     Some((bytes, link))
 }
 
 fn open_in(dir: &Path, body: &str) -> (Document, Vec<String>) {
     let folder = dir.to_string_lossy();
-    import_with(&svg(body), &ImportOptions { folder: Some(&folder), read: Some(&read) }).unwrap()
+    import_with(
+        &svg(body),
+        &ImportOptions {
+            folder: Some(&folder),
+            read: Some(&read),
+        },
+    )
+    .unwrap()
 }
 
 #[test]
@@ -78,52 +99,98 @@ fn a_linked_png_resolves_against_the_svg_folder_and_stays_linked() {
     let dir = folder("linked");
     let bytes = png(40, 20);
     std::fs::write(dir.join("img").join("photo one.png"), &bytes).unwrap();
-    let (d, w) = open_in(&dir, r#"<image href="img/photo%20one.png" x="10" y="20" width="80" height="40"/>"#);
+    let (d, w) = open_in(
+        &dir,
+        r#"<image href="img/photo%20one.png" x="10" y="20" width="80" height="40"/>"#,
+    );
     assert!(w.is_empty(), "{w:?}");
-    let [(_, im)] = images(&d)[..] else { panic!("{:?}", art(&d)) };
+    let [(_, im)] = images(&d)[..] else {
+        panic!("{:?}", art(&d))
+    };
     let link = im.link.as_ref().unwrap();
     assert_eq!(Path::new(&link.path), dir.join("img").join("photo one.png"));
     assert_eq!(link.hash, Some(vectorcraft_doc::links::hash_bytes(&bytes)));
     assert_eq!((im.width, im.height), (40, 20));
     assert_eq!(*d.images[&im.key].bytes, bytes, "the file's pixels");
     let b = im.xf.transform_rect_bbox(Rect::new(0.0, 0.0, 40.0, 20.0));
-    assert!((b.x0 - 10.0).abs() < 1e-6 && (b.y0 - 20.0).abs() < 1e-6 && (b.width() - 80.0).abs() < 1e-6, "{b:?}");
+    assert!(
+        (b.x0 - 10.0).abs() < 1e-6 && (b.y0 - 20.0).abs() < 1e-6 && (b.width() - 80.0).abs() < 1e-6,
+        "{b:?}"
+    );
 }
 
 #[test]
 fn a_missing_link_warns_and_keeps_a_placeholder_in_its_box() {
     let dir = folder("missing");
-    let (d, w) = open_in(&dir, r#"<image href="img/gone.png" x="10" y="20" width="100" height="50"/>"#);
-    assert!(w.iter().any(|w| w.contains("gone.png") && w.contains("not found")), "{w:?}");
-    let [(_, im)] = images(&d)[..] else { panic!("{:?}", art(&d)) };
-    assert_eq!(Path::new(&im.link.as_ref().unwrap().path), dir.join("img").join("gone.png"));
+    let (d, w) = open_in(
+        &dir,
+        r#"<image href="img/gone.png" x="10" y="20" width="100" height="50"/>"#,
+    );
+    assert!(
+        w.iter()
+            .any(|w| w.contains("gone.png") && w.contains("not found")),
+        "{w:?}"
+    );
+    let [(_, im)] = images(&d)[..] else {
+        panic!("{:?}", art(&d))
+    };
+    assert_eq!(
+        Path::new(&im.link.as_ref().unwrap().path),
+        dir.join("img").join("gone.png")
+    );
     assert!(d.images[&im.key].is_proxy(), "a placeholder, not the file");
     // Stretched to the image's box, whatever its aspect.
-    let b = im.xf.transform_rect_bbox(Rect::new(0.0, 0.0, im.width as f64, im.height as f64));
-    assert!((b.x0 - 10.0).abs() < 1e-6 && (b.width() - 100.0).abs() < 1e-6 && (b.height() - 50.0).abs() < 1e-6, "{b:?}");
+    let b = im
+        .xf
+        .transform_rect_bbox(Rect::new(0.0, 0.0, im.width as f64, im.height as f64));
+    assert!(
+        (b.x0 - 10.0).abs() < 1e-6
+            && (b.width() - 100.0).abs() < 1e-6
+            && (b.height() - 50.0).abs() < 1e-6,
+        "{b:?}"
+    );
     // Without a reader nothing is read: the same placeholder.
-    let (d, w) = import_with_report(&svg(r#"<image href="/abs/photo.png" width="10" height="10"/>"#)).unwrap();
-    assert_eq!(images(&d)[0].1.link.as_ref().unwrap().path, "/abs/photo.png");
+    let (d, w) = import_with_report(&svg(
+        r#"<image href="/abs/photo.png" width="10" height="10"/>"#,
+    ))
+    .unwrap();
+    assert_eq!(
+        images(&d)[0].1.link.as_ref().unwrap().path,
+        "/abs/photo.png"
+    );
     assert!(!w.is_empty());
 }
 
 #[test]
 fn svg_images_import_as_vector_art() {
     let dir = folder("svgimage");
-    let inner =
-        r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" viewBox="0 0 20 10"><rect width="10" height="10" fill="#f00"/></svg>"##;
+    let inner = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" viewBox="0 0 20 10"><rect width="10" height="10" fill="#f00"/></svg>"##;
     std::fs::write(dir.join("img").join("logo.svg"), inner).unwrap();
-    let data = format!("data:image/svg+xml;base64,{}", vectorcraft_svg::base64_encode(inner.as_bytes()));
-    let body =
-        format!(r#"<image href="img/logo.svg" x="10" y="10" width="40" height="20"/><image href="{data}" x="100" y="10" width="40" height="20"/>"#);
+    let data = format!(
+        "data:image/svg+xml;base64,{}",
+        vectorcraft_svg::base64_encode(inner.as_bytes())
+    );
+    let body = format!(
+        r#"<image href="img/logo.svg" x="10" y="10" width="40" height="20"/><image href="{data}" x="100" y="10" width="40" height="20"/>"#
+    );
     let (d, w) = open_in(&dir, &body);
     assert!(w.is_empty(), "{w:?}");
     assert!(images(&d).is_empty());
-    let mut boxes: Vec<Rect> = art(&d).iter().filter(|n| n.path_data().is_some()).filter_map(|n| n.geometric_bounds()).collect();
+    let mut boxes: Vec<Rect> = art(&d)
+        .iter()
+        .filter(|n| n.path_data().is_some())
+        .filter_map(|n| n.geometric_bounds())
+        .collect();
     boxes.sort_by(|a, b| a.x0.total_cmp(&b.x0));
     assert_eq!(boxes.len(), 2, "{:?}", art(&d));
-    assert!((boxes[0].x0 - 10.0).abs() < 1e-6 && (boxes[0].width() - 20.0).abs() < 1e-6, "{boxes:?}");
-    assert!((boxes[1].x0 - 100.0).abs() < 1e-6 && (boxes[1].height() - 20.0).abs() < 1e-6, "{boxes:?}");
+    assert!(
+        (boxes[0].x0 - 10.0).abs() < 1e-6 && (boxes[0].width() - 20.0).abs() < 1e-6,
+        "{boxes:?}"
+    );
+    assert!(
+        (boxes[1].x0 - 100.0).abs() < 1e-6 && (boxes[1].height() - 20.0).abs() < 1e-6,
+        "{boxes:?}"
+    );
 }
 
 #[test]
@@ -134,7 +201,9 @@ fn nested_clips_intersect() {
     let (d, w) = import_with_report(&svg(body)).unwrap();
     assert!(w.is_empty(), "{w:?}");
     let a = art(&d);
-    assert!(matches!(&a[0].kind, NodeKind::Group { clip: true, children } if matches!(children[1].kind, NodeKind::Group { clip: true, .. })));
+    assert!(
+        matches!(&a[0].kind, NodeKind::Group { clip: true, children } if matches!(children[1].kind, NodeKind::Group { clip: true, .. }))
+    );
     let mine = render_artboard(&d);
     assert_similar(&mine, &resvg_render(&svg(body), 200, 120), 24.0, 0.003);
     // The left half of the circle is cut.
@@ -156,7 +225,10 @@ fn undisplayed_objects_import_hidden() {
     assert!(top[1].path_data().is_some());
     assert!(matches!(top[3].kind, NodeKind::Image(_)));
     assert_eq!(top[2].name.as_deref(), Some("p"), "named after its id");
-    assert!(top[0].name.is_none() && top[1].name.is_none(), "made-up ids aren't names");
+    assert!(
+        top[0].name.is_none() && top[1].name.is_none(),
+        "made-up ids aren't names"
+    );
 }
 
 #[test]
@@ -175,10 +247,17 @@ fn reflect_and_repeat_match_resvg() {
             r##"<radialGradient id="g" cx="100" cy="60" r="25" fx="90" fy="55" gradientUnits="userSpaceOnUse" spreadMethod="reflect"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#0cf"/></radialGradient>"##,
         ),
     ] {
-        let body = format!(r#"<defs>{grad}</defs><rect x="10" y="10" width="180" height="100" fill="url(#g)"/>"#);
+        let body = format!(
+            r#"<defs>{grad}</defs><rect x="10" y="10" width="180" height="100" fill="url(#g)"/>"#
+        );
         let (d, w) = import_with_report(&svg(&body)).unwrap();
         assert!(w.is_empty(), "{spread}: {w:?}");
-        assert_similar(&render_artboard(&d), &resvg_render(&svg(&body), 200, 120), 24.0, 0.01);
+        assert_similar(
+            &render_artboard(&d),
+            &resvg_render(&svg(&body), 200, 120),
+            24.0,
+            0.01,
+        );
     }
 }
 
@@ -195,9 +274,15 @@ fn css_transforms_move_objects() {
     )
     .unwrap()
     .0;
-    let b: Vec<Rect> = art(&d).iter().map(|n| n.geometric_bounds().unwrap()).collect();
-    let near =
-        |r: Rect, x0: f64, y0: f64, x1: f64, y1: f64| [(r.x0, x0), (r.y0, y0), (r.x1, x1), (r.y1, y1)].iter().all(|(a, b)| (a - b).abs() < 1e-6);
+    let b: Vec<Rect> = art(&d)
+        .iter()
+        .map(|n| n.geometric_bounds().unwrap())
+        .collect();
+    let near = |r: Rect, x0: f64, y0: f64, x1: f64, y1: f64| {
+        [(r.x0, x0), (r.y0, y0), (r.x1, x1), (r.y1, y1)]
+            .iter()
+            .all(|(a, b)| (a - b).abs() < 1e-6)
+    };
     assert!(near(b[0], 100.0, 100.0, 150.0, 150.0), "{:?}", b[0]);
     assert!(near(b[1], 100.0, 0.0, 150.0, 50.0), "{:?}", b[1]);
     assert!(near(b[2], -20.0, 0.0, 0.0, 50.0), "{:?}", b[2]);
@@ -214,7 +299,12 @@ fn percentages_in_a_symbol_are_of_its_view_box() {
         ));
         render_artboard(&import_with(&s, &ImportOptions::default()).unwrap().0)
     };
-    assert_similar(&drawing("100%", "100%", "25%", "50%"), &drawing("100", "50", "25", "25"), 24.0, 0.001);
+    assert_similar(
+        &drawing("100%", "100%", "25%", "50%"),
+        &drawing("100", "50", "25", "25"),
+        24.0,
+        0.001,
+    );
 }
 
 /// #1598: an unsupported filter's warning names the filter, its primitives and the object, and
@@ -225,9 +315,22 @@ fn unsupported_filters_are_named_in_the_warning() {
         <rect x="20" y="20" width="60" height="60" fill="red" filter="url(#f)"/>
         <rect id="r" x="100" y="20" width="60" height="60" fill="blue" filter="url(#t)"/>"#;
     let (d, w) = import_with_report(&svg(body)).unwrap();
-    assert!(w.iter().any(|w| w == "filter 'f' (feColorMatrix) on an object isn't supported; drawn without it"), "{w:?}");
-    assert!(w.iter().any(|w| w == "filter 't' (feTurbulence) on 'r' isn't supported; drawn without it"), "{w:?}");
-    assert_eq!(art(&d).iter().filter(|n| n.path_data().is_some()).count(), 2, "both drawn");
+    assert!(
+        w.iter()
+            .any(|w| w
+                == "filter 'f' (feColorMatrix) on an object isn't supported; drawn without it"),
+        "{w:?}"
+    );
+    assert!(
+        w.iter()
+            .any(|w| w == "filter 't' (feTurbulence) on 'r' isn't supported; drawn without it"),
+        "{w:?}"
+    );
+    assert_eq!(
+        art(&d).iter().filter(|n| n.path_data().is_some()).count(),
+        2,
+        "both drawn"
+    );
 }
 
 /// #1601: Inkscape's pages become artboards, at their places (through the viewBox) and with their
@@ -238,8 +341,21 @@ fn inkscape_pages_become_artboards() {
         <sodipodi:namedview><inkscape:page x="0" y="0" width="100" height="100" inkscape:label="Front"/><inkscape:page x="120" y="0" width="60" height="150"/><inkscape:page x="0" y="0" width="0" height="10"/></sodipodi:namedview>
         <rect x="10" y="10" width="80" height="80" fill="red"/></svg>"#;
     let d = import_with(svg, &ImportOptions::default()).unwrap().0;
-    let b: Vec<(String, Rect)> = d.artboards.iter().map(|a| (a.name.clone(), a.rect)).collect();
-    assert_eq!(b, vec![("Front".to_string(), Rect::new(0.0, 0.0, 200.0, 200.0)), ("Artboard 2".to_string(), Rect::new(240.0, 0.0, 360.0, 300.0))]);
+    let b: Vec<(String, Rect)> = d
+        .artboards
+        .iter()
+        .map(|a| (a.name.clone(), a.rect))
+        .collect();
+    assert_eq!(
+        b,
+        vec![
+            ("Front".to_string(), Rect::new(0.0, 0.0, 200.0, 200.0)),
+            (
+                "Artboard 2".to_string(),
+                Rect::new(240.0, 0.0, 360.0, 300.0)
+            )
+        ]
+    );
     // Hostile boxes (too large to add up, not numbers, negative) are no pages, and at most 1,000 are read.
     let pages = r#"<inkscape:page x="1e308" y="0" width="1e308" height="10"/><inkscape:page x="NaN" y="0" width="10" height="10"/><inkscape:page width="inf" height="10"/><inkscape:page width="-5" height="10"/>"#.to_string()
         + &r#"<inkscape:page width="10" height="10"/>"#.repeat(1500);
@@ -248,9 +364,17 @@ fn inkscape_pages_become_artboards() {
     );
     let d = import_with(&hostile, &ImportOptions::default()).unwrap().0;
     assert_eq!(d.artboards.len(), 1000);
-    assert!(d.artboards.iter().all(|a| a.rect == Rect::new(0.0, 0.0, 10.0, 10.0)), "{:?}", d.artboards.first());
+    assert!(
+        d.artboards
+            .iter()
+            .all(|a| a.rect == Rect::new(0.0, 0.0, 10.0, 10.0)),
+        "{:?}",
+        d.artboards.first()
+    );
     // A file without pages keeps its one artboard.
-    let d = import_with(&svg_doc(), &ImportOptions::default()).unwrap().0;
+    let d = import_with(&svg_doc(), &ImportOptions::default())
+        .unwrap()
+        .0;
     assert_eq!(d.artboards.len(), 1);
 }
 

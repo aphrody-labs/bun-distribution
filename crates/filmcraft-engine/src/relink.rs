@@ -51,8 +51,15 @@ pub fn fingerprint(size: u64, head: &[u8], tail: &[u8]) -> u64 {
 pub fn identity_of_bytes(b: &[u8]) -> MediaIdentity {
     let size = b.len() as u64;
     let head = &b[..b.len().min(FINGERPRINT_SPAN)];
-    let tail = if b.len() > 2 * FINGERPRINT_SPAN { &b[b.len() - FINGERPRINT_SPAN..] } else { &b[head.len()..] };
-    MediaIdentity { size, fingerprint: fingerprint(size, head, tail) }
+    let tail = if b.len() > 2 * FINGERPRINT_SPAN {
+        &b[b.len() - FINGERPRINT_SPAN..]
+    } else {
+        &b[head.len()..]
+    };
+    MediaIdentity {
+        size,
+        fingerprint: fingerprint(size, head, tail),
+    }
 }
 
 /// Identity of a file, reading at most 2 MiB of it.
@@ -60,9 +67,15 @@ pub fn identity_of(services: &dyn Services, path: &str) -> std::io::Result<Media
     let size = services.file_size(path)?;
     let n = FINGERPRINT_SPAN as u64;
     let head = services.read_range(path, 0, FINGERPRINT_SPAN)?;
-    let tail =
-        if size > 2 * n { services.read_range(path, size - n, FINGERPRINT_SPAN)? } else { services.read_range(path, head.len() as u64, FINGERPRINT_SPAN)? };
-    Ok(MediaIdentity { size, fingerprint: fingerprint(size, &head, &tail) })
+    let tail = if size > 2 * n {
+        services.read_range(path, size - n, FINGERPRINT_SPAN)?
+    } else {
+        services.read_range(path, head.len() as u64, FINGERPRINT_SPAN)?
+    };
+    Ok(MediaIdentity {
+        size,
+        fingerprint: fingerprint(size, &head, &tail),
+    })
 }
 
 /// What the Link Media dialog lists.
@@ -104,8 +117,12 @@ fn split_ext(name: &str) -> (&str, &str) {
 pub fn scan(p: &Project, services: &dyn Services) -> Vec<Missing> {
     let mut out = Vec::new();
     for it in p.items.values() {
-        let ItemKind::Media(m) = &it.kind else { continue };
-        let MediaRef::File { path } = &m.media else { continue };
+        let ItemKind::Media(m) = &it.kind else {
+            continue;
+        };
+        let MediaRef::File { path } = &m.media else {
+            continue;
+        };
         let status = if m.offline {
             "offline"
         } else if services.file_size(path).is_err() {
@@ -133,7 +150,11 @@ pub fn scan(p: &Project, services: &dyn Services) -> Vec<Missing> {
 /// Rescan and remember the result. Returns the list.
 pub fn refresh(s: &mut Session) -> Vec<Missing> {
     let list = scan(&s.project, &*s.services);
-    s.offline.missing = list.iter().filter(|m| m.status != "proxyMissing").map(|m| ItemId(m.item)).collect();
+    s.offline.missing = list
+        .iter()
+        .filter(|m| m.status != "proxyMissing")
+        .map(|m| ItemId(m.item))
+        .collect();
     list
 }
 
@@ -158,13 +179,25 @@ pub struct MatchOptions {
 
 impl Default for MatchOptions {
     fn default() -> Self {
-        Self { file_name: true, extension: true, clip_id: true, duration: true, media_start: false, metadata: true, align_timecode: false, relink_others: true }
+        Self {
+            file_name: true,
+            extension: true,
+            clip_id: true,
+            duration: true,
+            media_start: false,
+            metadata: true,
+            align_timecode: false,
+            relink_others: true,
+        }
     }
 }
 
 impl MatchOptions {
     pub fn from_params(p: &Value) -> Self {
-        let mut o: MatchOptions = p.get("match").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or_default();
+        let mut o: MatchOptions = p
+            .get("match")
+            .and_then(|m| serde_json::from_value(m.clone()).ok())
+            .unwrap_or_default();
         if let Some(b) = bool_p(p, "relinkOthers") {
             o.relink_others = b;
         }
@@ -197,14 +230,29 @@ pub struct Candidate {
 
 /// Check `path` as the new file of media item `item`. Opening the file (needed for duration,
 /// timecode and metadata) is skipped when a cheap check already failed.
-pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) -> Result<Candidate> {
-    let it = s.project.item(item).ok_or_else(|| bad("media.relink", format!("no item {}", item.0)))?;
-    let m = it.as_media().ok_or_else(|| bad("media.relink", format!("item {} is not media", item.0)))?;
+pub fn check_candidate(
+    s: &Session,
+    item: ItemId,
+    path: &str,
+    o: &MatchOptions,
+) -> Result<Candidate> {
+    let it = s
+        .project
+        .item(item)
+        .ok_or_else(|| bad("media.relink", format!("no item {}", item.0)))?;
+    let m = it
+        .as_media()
+        .ok_or_else(|| bad("media.relink", format!("item {} is not media", item.0)))?;
     let old = match &m.media {
         MediaRef::File { path } => path.clone(),
-        MediaRef::Generator(_) => return Err(bad("media.relink", "generated media has no file to link")),
+        MediaRef::Generator(_) => {
+            return Err(bad("media.relink", "generated media has no file to link"));
+        }
     };
-    let mut c = Candidate { path: path.to_string(), ..Default::default() };
+    let mut c = Candidate {
+        path: path.to_string(),
+        ..Default::default()
+    };
     let (on, oe) = split_ext(file_name(&old));
     let (nn, ne) = split_ext(file_name(path));
     let name_ok = on.eq_ignore_ascii_case(nn);
@@ -213,7 +261,8 @@ pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) 
         c.problems.push(format!("file name differs ({nn} vs {on})"));
     }
     if o.extension && !ext_ok {
-        c.problems.push(format!("extension differs (.{ne} vs .{oe})"));
+        c.problems
+            .push(format!("extension differs (.{ne} vs .{oe})"));
     }
     match identity_of(&*s.services, path) {
         Ok(id) => {
@@ -223,7 +272,10 @@ pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) 
                 c.identity_match = Some(same);
                 if o.clip_id && !same {
                     c.problems.push(if want.size != id.size {
-                        format!("not the same file: {} bytes, the original had {}", id.size, want.size)
+                        format!(
+                            "not the same file: {} bytes, the original had {}",
+                            id.size, want.size
+                        )
                     } else {
                         "not the same file: the content fingerprint differs".to_string()
                     });
@@ -240,15 +292,26 @@ pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) 
             Ok(src) => {
                 let info = src.info().clone();
                 let fd = m.info.frame_rate().frame_duration();
-                if o.duration && m.info.duration > Tick::ZERO && (info.duration - m.info.duration).0.abs() > fd.0 {
-                    c.problems.push(format!("duration differs ({:.3}s vs {:.3}s)", info.duration.seconds(), m.info.duration.seconds()));
+                if o.duration
+                    && m.info.duration > Tick::ZERO
+                    && (info.duration - m.info.duration).0.abs() > fd.0
+                {
+                    c.problems.push(format!(
+                        "duration differs ({:.3}s vs {:.3}s)",
+                        info.duration.seconds(),
+                        m.info.duration.seconds()
+                    ));
                 }
                 if o.media_start && info.start_timecode != m.info.start_timecode {
-                    c.problems.push(format!("media start differs ({:?} vs {:?})", info.start_timecode, m.info.start_timecode));
+                    c.problems.push(format!(
+                        "media start differs ({:?} vs {:?})",
+                        info.start_timecode, m.info.start_timecode
+                    ));
                 }
                 if o.metadata {
                     if let (Some(a), Some(b)) = (&info.video, &m.info.video)
-                        && ((a.width, a.height) != (b.width, b.height) || a.frame_rate != b.frame_rate)
+                        && ((a.width, a.height) != (b.width, b.height)
+                            || a.frame_rate != b.frame_rate)
                     {
                         c.problems.push(format!(
                             "video differs ({}×{} {} vs {}×{} {})",
@@ -266,7 +329,10 @@ pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) 
                     if let (Some(a), Some(b)) = (info.audio(), m.info.audio())
                         && a.channels != b.channels
                     {
-                        c.problems.push(format!("audio channels differ ({} vs {})", a.channels, b.channels));
+                        c.problems.push(format!(
+                            "audio channels differ ({} vs {})",
+                            a.channels, b.channels
+                        ));
                     }
                 }
                 c.info = Some(info);
@@ -276,7 +342,10 @@ pub fn check_candidate(s: &Session, item: ItemId, path: &str, o: &MatchOptions) 
         }
     }
     c.ok = c.problems.is_empty();
-    c.score = u32::from(c.identity_match == Some(true)) * 8 + u32::from(name_ok) * 4 + u32::from(ext_ok) * 2 + u32::from(c.ok);
+    c.score = u32::from(c.identity_match == Some(true)) * 8
+        + u32::from(name_ok) * 4
+        + u32::from(ext_ok) * 2
+        + u32::from(c.ok);
     Ok(c)
 }
 
@@ -319,16 +388,35 @@ struct Plan {
 }
 
 /// Apply planned relinks as one undo step.
-fn apply(s: &mut Session, plans: Vec<Plan>, align_timecode: bool, label: &str) -> Result<Vec<Value>> {
-    let rows: Vec<Value> = plans.iter().map(|p| json!({"item": p.item.0, "path": p.cand.path})).collect();
-    let sources: Vec<(ItemId, String, filmcraft_media::SharedSource)> =
-        plans.iter().filter_map(|p| p.cand.source.clone().map(|src| (p.item, p.cand.path.clone(), src))).collect();
+fn apply(
+    s: &mut Session,
+    plans: Vec<Plan>,
+    align_timecode: bool,
+    label: &str,
+) -> Result<Vec<Value>> {
+    let rows: Vec<Value> = plans
+        .iter()
+        .map(|p| json!({"item": p.item.0, "path": p.cand.path}))
+        .collect();
+    let sources: Vec<(ItemId, String, filmcraft_media::SharedSource)> = plans
+        .iter()
+        .filter_map(|p| {
+            p.cand
+                .source
+                .clone()
+                .map(|src| (p.item, p.cand.path.clone(), src))
+        })
+        .collect();
     s.edit(label, |proj, _| {
         for p in &plans {
-            let Some(m) = proj.item_mut(p.item).and_then(|i| i.as_media_mut()) else { continue };
+            let Some(m) = proj.item_mut(p.item).and_then(|i| i.as_media_mut()) else {
+                continue;
+            };
             let old_tc = m.info.start_timecode;
             let rate = m.info.frame_rate();
-            m.media = MediaRef::File { path: p.cand.path.clone() };
+            m.media = MediaRef::File {
+                path: p.cand.path.clone(),
+            };
             m.offline = false;
             if p.cand.identity.is_some() {
                 m.identity = p.cand.identity;
@@ -399,17 +487,36 @@ fn others(s: &Session, skip: ItemId, old: &str, new: &str, o: &MatchOptions) -> 
 
 /// `media.relink`: link `item` to `path` (checked unless `force`), then the others.
 pub fn relink(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = u64_p(p, "item").map(ItemId).ok_or_else(|| bad("media.relink", "need `item`"))?;
-    let path = str_p(p, "path").ok_or_else(|| bad("media.relink", "need `path`"))?.to_string();
+    let item = u64_p(p, "item")
+        .map(ItemId)
+        .ok_or_else(|| bad("media.relink", "need `item`"))?;
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("media.relink", "need `path`"))?
+        .to_string();
     let force = bool_p(p, "force").unwrap_or(false);
     let o = MatchOptions::from_params(p);
-    let old = match s.project.item(item).and_then(|i| i.as_media()).map(|m| m.media.clone()) {
+    let old = match s
+        .project
+        .item(item)
+        .and_then(|i| i.as_media())
+        .map(|m| m.media.clone())
+    {
         Some(MediaRef::File { path }) => path,
-        _ => return Err(bad("media.relink", format!("item {} is not file media", item.0))),
+        _ => {
+            return Err(bad(
+                "media.relink",
+                format!("item {} is not file media", item.0),
+            ));
+        }
     };
     let mut c = check_candidate(s, item, &path, &o)?;
     if !c.ok && !force {
-        return Err(EngineError::Other(format!("{} doesn't match {}: {}", file_name(&path), file_name(&old), c.problems.join("; "))));
+        return Err(EngineError::Other(format!(
+            "{} doesn't match {}: {}",
+            file_name(&path),
+            file_name(&old),
+            c.problems.join("; ")
+        )));
     }
     if c.source.is_none() {
         // Forced past a failed check: the file was never opened for its properties, so do it now
@@ -425,22 +532,34 @@ pub fn relink(s: &mut Session, p: &Value) -> Result<Value> {
         plans.extend(others(s, item, &old, &path, &o));
     }
     let rows = apply(s, plans, o.align_timecode, "Link Media")?;
-    Ok(json!({"relinked": rows, "remaining": s.offline.missing.iter().map(|i| i.0).collect::<Vec<_>>()}))
+    Ok(
+        json!({"relinked": rows, "remaining": s.offline.missing.iter().map(|i| i.0).collect::<Vec<_>>()}),
+    )
 }
 
 /// `media.autoRelink`: `{from, to}` remaps a folder prefix; `{folder}` searches a folder tree.
 pub fn auto_relink(s: &mut Session, p: &Value) -> Result<Value> {
     let o = MatchOptions::from_params(p);
-    let missing: Vec<Missing> = scan(&s.project, &*s.services).into_iter().filter(|m| m.status == "missing").collect();
+    let missing: Vec<Missing> = scan(&s.project, &*s.services)
+        .into_iter()
+        .filter(|m| m.status == "missing")
+        .collect();
     let mut plans = Vec::new();
     let mut failed = Vec::new();
     if let (Some(from), Some(to)) = (str_p(p, "from"), str_p(p, "to")) {
         for m in &missing {
-            let Some(np) = apply_remap(&m.path, from, to) else { continue };
+            let Some(np) = apply_remap(&m.path, from, to) else {
+                continue;
+            };
             match check_candidate(s, ItemId(m.item), &np, &o) {
-                Ok(c) if c.ok => plans.push(Plan { item: ItemId(m.item), cand: c }),
+                Ok(c) if c.ok => plans.push(Plan {
+                    item: ItemId(m.item),
+                    cand: c,
+                }),
                 Ok(c) => failed.push(json!({"item": m.item, "path": np, "problems": c.problems})),
-                Err(e) => failed.push(json!({"item": m.item, "path": np, "problems": [e.to_string()]})),
+                Err(e) => {
+                    failed.push(json!({"item": m.item, "path": np, "problems": [e.to_string()]}))
+                }
             }
         }
     } else if let Some(folder) = str_p(p, "folder") {
@@ -457,16 +576,27 @@ pub fn auto_relink(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
             match best {
-                Some(c) => plans.push(Plan { item: ItemId(m.item), cand: c }),
-                None => failed.push(json!({"item": m.item, "path": m.path, "problems": ["no matching file found"]})),
+                Some(c) => plans.push(Plan {
+                    item: ItemId(m.item),
+                    cand: c,
+                }),
+                None => failed.push(
+                    json!({"item": m.item, "path": m.path, "problems": ["no matching file found"]}),
+                ),
             }
         }
     } else {
         return Err(bad("media.autoRelink", "need `from` and `to`, or `folder`"));
     }
-    let rows = if plans.is_empty() { Vec::new() } else { apply(s, plans, o.align_timecode, "Link Media")? };
+    let rows = if plans.is_empty() {
+        Vec::new()
+    } else {
+        apply(s, plans, o.align_timecode, "Link Media")?
+    };
     refresh(s);
-    Ok(json!({"relinked": rows, "failed": failed, "remaining": s.offline.missing.iter().map(|i| i.0).collect::<Vec<_>>()}))
+    Ok(
+        json!({"relinked": rows, "failed": failed, "remaining": s.offline.missing.iter().map(|i| i.0).collect::<Vec<_>>()}),
+    )
 }
 
 /// Files under `root` by lower-case file name (breadth-first, at most `limit` files).
@@ -475,7 +605,9 @@ pub fn index_folder(root: &Path, limit: usize) -> BTreeMap<String, Vec<PathBuf>>
     let mut queue = std::collections::VecDeque::from([root.to_path_buf()]);
     let mut n = 0;
     while let Some(d) = queue.pop_front() {
-        let Ok(rd) = std::fs::read_dir(&d) else { continue };
+        let Ok(rd) = std::fs::read_dir(&d) else {
+            continue;
+        };
         let mut entries: Vec<_> = rd.filter_map(|e| e.ok()).collect();
         entries.sort_by_key(|e| e.file_name());
         for e in entries {
@@ -505,17 +637,32 @@ pub fn search(s: &Session, p: &Value) -> Result<Value> {
     let o = MatchOptions::from_params(p);
     let items: Vec<ItemId> = match u64_p(p, "item") {
         Some(i) => vec![ItemId(i)],
-        None => scan(&s.project, &*s.services).into_iter().filter(|m| m.status == "missing").map(|m| ItemId(m.item)).collect(),
+        None => scan(&s.project, &*s.services)
+            .into_iter()
+            .filter(|m| m.status == "missing")
+            .map(|m| ItemId(m.item))
+            .collect(),
     };
     let index = index_folder(Path::new(folder), 20_000);
     let mut out = Vec::new();
     for id in items {
-        let Some(MediaRef::File { path }) = s.project.item(id).and_then(|i| i.as_media()).map(|m| m.media.clone()) else { continue };
+        let Some(MediaRef::File { path }) = s
+            .project
+            .item(id)
+            .and_then(|i| i.as_media())
+            .map(|m| m.media.clone())
+        else {
+            continue;
+        };
         let fname = file_name(&path).to_ascii_lowercase();
         let stem = split_ext(&fname).0.to_string();
         let mut cands: Vec<Candidate> = Vec::new();
         for (name, paths) in &index {
-            let hit = if exact { *name == fname } else { split_ext(name).0 == stem || name.contains(&stem) };
+            let hit = if exact {
+                *name == fname
+            } else {
+                split_ext(name).0 == stem || name.contains(&stem)
+            };
             if !hit {
                 continue;
             }
@@ -535,13 +682,22 @@ pub fn search(s: &Session, p: &Value) -> Result<Value> {
 pub fn make_offline(s: &mut Session, p: &Value) -> Result<Value> {
     let items: Vec<ItemId> = match p.get("items").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(Value::as_u64).map(ItemId).collect(),
-        None => u64_p(p, "item").map(|i| vec![ItemId(i)]).unwrap_or_else(|| s.state.project_selection.clone()),
+        None => u64_p(p, "item")
+            .map(|i| vec![ItemId(i)])
+            .unwrap_or_else(|| s.state.project_selection.clone()),
     };
     let files: Vec<(ItemId, String)> = items
         .iter()
-        .filter_map(|i| match s.project.item(*i).and_then(|it| it.as_media()).map(|m| &m.media) {
-            Some(MediaRef::File { path }) => Some((*i, path.clone())),
-            _ => None,
+        .filter_map(|i| {
+            match s
+                .project
+                .item(*i)
+                .and_then(|it| it.as_media())
+                .map(|m| &m.media)
+            {
+                Some(MediaRef::File { path }) => Some((*i, path.clone())),
+                _ => None,
+            }
         })
         .collect();
     if files.is_empty() {
@@ -580,12 +736,16 @@ fn status_json(s: &Session, id: ItemId) -> Option<Value> {
         Some(_) if m.offline => "offline",
         Some(p) if s.services.file_size(p).is_err() => "missing",
         Some(_) => match s.media.offline_status(id) {
-            Some(o) if o.reason == filmcraft_render::offline::OfflineReason::Unreadable => "unreadable",
+            Some(o) if o.reason == filmcraft_render::offline::OfflineReason::Unreadable => {
+                "unreadable"
+            }
             _ => "online",
         },
     };
     let proxy = match &m.proxy {
-        Some(MediaRef::File { path }) => json!({"path": path, "online": s.services.file_size(path).is_ok()}),
+        Some(MediaRef::File { path }) => {
+            json!({"path": path, "online": s.services.file_size(path).is_ok()})
+        }
         _ => Value::Null,
     };
     Some(json!({
@@ -623,9 +783,17 @@ pub fn commands() -> Vec<CommandSpec> {
             run: |s, p| {
                 let ids: Vec<ItemId> = match u64_p(p, "item") {
                     Some(i) => vec![ItemId(i)],
-                    None => s.project.items.values().filter(|i| i.as_media().is_some()).map(|i| i.id).collect(),
+                    None => s
+                        .project
+                        .items
+                        .values()
+                        .filter(|i| i.as_media().is_some())
+                        .map(|i| i.id)
+                        .collect(),
                 };
-                Ok(Value::Array(ids.into_iter().filter_map(|i| status_json(s, i)).collect()))
+                Ok(Value::Array(
+                    ids.into_iter().filter_map(|i| status_json(s, i)).collect(),
+                ))
             },
             journal: false,
         },
@@ -705,12 +873,17 @@ pub fn commands() -> Vec<CommandSpec> {
             shortcut: None,
             params: r#"{"items":[id]?,"deleteFiles":bool=false}"#,
             enabled: |s| {
-                let any = s
-                    .state
-                    .project_selection
-                    .iter()
-                    .any(|i| s.project.item(*i).and_then(|x| x.as_media()).is_some_and(|m| matches!(m.media, MediaRef::File { .. })));
-                if any { Ok(()) } else { Err("select file-based media in the Project panel".into()) }
+                let any = s.state.project_selection.iter().any(|i| {
+                    s.project
+                        .item(*i)
+                        .and_then(|x| x.as_media())
+                        .is_some_and(|m| matches!(m.media, MediaRef::File { .. }))
+                });
+                if any {
+                    Ok(())
+                } else {
+                    Err("select file-based media in the Project panel".into())
+                }
             },
             run: make_offline,
             journal: true,
@@ -736,7 +909,10 @@ pub fn on_open(s: &mut Session) -> usize {
     let list = refresh(s);
     s.offline.prompt = !s.offline.missing.is_empty();
     if !s.offline.missing.is_empty() {
-        s.toast(format!("{} media file(s) are missing; File ▸ Link Media… reconnects them", s.offline.missing.len()));
+        s.toast(format!(
+            "{} media file(s) are missing; File ▸ Link Media… reconnects them",
+            s.offline.missing.len()
+        ));
     }
     list.len()
 }

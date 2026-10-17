@@ -122,10 +122,19 @@ impl FieldCode {
             }
         }
         let mut words = words.into_iter().peekable();
-        let mut f =
-            FieldCode { name: words.next().map(|(w, _)| w.trim_start_matches('=').to_ascii_uppercase()).unwrap_or_default(), ..Default::default() };
+        let mut f = FieldCode {
+            name: words
+                .next()
+                .map(|(w, _)| w.trim_start_matches('=').to_ascii_uppercase())
+                .unwrap_or_default(),
+            ..Default::default()
+        };
         while let Some((w, quoted)) = words.next() {
-            let sw = if quoted { None } else { w.strip_prefix('\\').and_then(|r| r.chars().next()) };
+            let sw = if quoted {
+                None
+            } else {
+                w.strip_prefix('\\').and_then(|r| r.chars().next())
+            };
             match sw {
                 Some(c) => {
                     let arg = match words.peek() {
@@ -146,7 +155,10 @@ impl FieldCode {
 
     /// The argument of switch `c`, if the switch is there with one.
     pub fn arg(&self, c: char) -> Option<&str> {
-        self.switches.iter().find(|(k, _)| *k == c).and_then(|(_, a)| a.as_deref())
+        self.switches
+            .iter()
+            .find(|(k, _)| *k == c)
+            .and_then(|(_, a)| a.as_deref())
     }
 }
 
@@ -197,7 +209,14 @@ pub fn toc_instr(v: &Value) -> String {
     } else if !on("rightAlign", true) {
         s.push_str(" \\p \" \"");
     }
-    let clean = |n: &str| n.chars().filter(|c| !matches!(c, '"' | ',' | '\\')).take(64).collect::<String>().trim().to_string();
+    let clean = |n: &str| {
+        n.chars()
+            .filter(|c| !matches!(c, '"' | ',' | '\\'))
+            .take(64)
+            .collect::<String>()
+            .trim()
+            .to_string()
+    };
     let pairs: Vec<String> = match v.get("styleLevels") {
         Some(Value::Object(m)) => m
             .iter()
@@ -225,68 +244,136 @@ struct TocEntry {
 
 /// The heading level (1–9) of a built-in heading style.
 fn heading_style_level(p: &Paragraph) -> Option<u8> {
-    p.props.style.as_deref()?.strip_prefix("Heading")?.trim().parse::<u8>().ok().filter(|l| (1..=9).contains(l))
+    p.props
+        .style
+        .as_deref()?
+        .strip_prefix("Heading")?
+        .trim()
+        .parse::<u8>()
+        .ok()
+        .filter(|l| (1..=9).contains(l))
 }
 
 /// The entries a TOC field collects from the body, in document order: built-in heading styles
 /// in the `\o` range, paragraphs with an outline level (`\u`), styles listed in `\t`, and TC
 /// fields (`\f`, levels `\l`).
 fn toc_entries(s: &Session, f: &FieldCode) -> Vec<TocEntry> {
-    let o = f.has('o').then(|| f.arg('o').and_then(level_range).unwrap_or((1, 9)));
+    let o = f
+        .has('o')
+        .then(|| f.arg('o').and_then(level_range).unwrap_or((1, 9)));
     let max = o.map(|r| r.1).unwrap_or(9);
     let styles: Vec<(String, u8)> = f
         .arg('t')
         .map(|t| {
             let parts: Vec<&str> = t.split([',', ';']).map(str::trim).collect();
-            parts.chunks(2).filter_map(|c| Some((c.first()?.to_string(), c.get(1)?.parse::<u8>().ok()?.clamp(1, 9)))).collect()
+            parts
+                .chunks(2)
+                .filter_map(|c| {
+                    Some((
+                        c.first()?.to_string(),
+                        c.get(1)?.parse::<u8>().ok()?.clamp(1, 9),
+                    ))
+                })
+                .collect()
         })
         .unwrap_or_default();
-    let tc = f.has('f').then(|| f.arg('f').unwrap_or("").to_ascii_uppercase());
+    let tc = f
+        .has('f')
+        .then(|| f.arg('f').unwrap_or("").to_ascii_uppercase());
     let tc_levels = f.arg('l').and_then(level_range).unwrap_or((1, 9));
     let mut v = Vec::new();
     for path in s.doc.para_paths(StoryRef::Body) {
         if path.depth() > 0 {
             continue;
         }
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         let style = p.props.style.as_deref().unwrap_or("Normal");
         if style.starts_with("TOC") {
             continue;
         }
         let lead = p.text.bytes().take_while(|b| *b == 0x0C).count();
-        let by_style =
-            styles.iter().find(|(n, _)| s.doc.styles.get(style).is_some_and(|st| st.name.eq_ignore_ascii_case(n)) || n == style).map(|(_, l)| *l);
+        let by_style = styles
+            .iter()
+            .find(|(n, _)| {
+                s.doc
+                    .styles
+                    .get(style)
+                    .is_some_and(|st| st.name.eq_ignore_ascii_case(n))
+                    || n == style
+            })
+            .map(|(_, l)| *l);
         // `Some(9)` direct outline level is body text: "Do Not Show in Table of Contents".
-        let by_outline = f.has('u').then_some(p.props.outline_level).flatten().filter(|l| *l < 9).map(|l| l + 1).filter(|l| *l <= max);
+        let by_outline = f
+            .has('u')
+            .then_some(p.props.outline_level)
+            .flatten()
+            .filter(|l| *l < 9)
+            .map(|l| l + 1)
+            .filter(|l| *l <= max);
         let hidden = f.has('u') && p.props.outline_level == Some(9);
         let by_heading = o.and_then(|(a, b)| {
             let l = heading_style_level(p).or_else(|| {
                 s.doc
                     .styles
-                    .resolve_para(&wordcraft_doc::ParaProps { style: p.props.style.clone(), ..Default::default() })
+                    .resolve_para(&wordcraft_doc::ParaProps {
+                        style: p.props.style.clone(),
+                        ..Default::default()
+                    })
                     .outline_level
                     .map(|l| l + 1)
             })?;
             (a..=b).contains(&l).then_some(l)
         });
-        if let Some(l) = by_style.or(by_outline).or(if hidden { None } else { by_heading }) {
-            let t = p.plain_text().replace(['\u{000C}', '\n', '\t'], " ").trim().to_string();
+        if let Some(l) = by_style
+            .or(by_outline)
+            .or(if hidden { None } else { by_heading })
+        {
+            let t = p
+                .plain_text()
+                .replace(['\u{000C}', '\n', '\t'], " ")
+                .trim()
+                .to_string();
             if !t.is_empty() {
-                v.push(TocEntry { path: path.clone(), level: l - 1, text: t, lead });
+                v.push(TocEntry {
+                    path: path.clone(),
+                    level: l - 1,
+                    text: t,
+                    lead,
+                });
             }
         }
         if let Some(id) = &tc {
             for off in p.object_offsets() {
-                let Some(InlineObject::Field { instr, .. }) = p.object_at(off) else { continue };
+                let Some(InlineObject::Field { instr, .. }) = p.object_at(off) else {
+                    continue;
+                };
                 let c = FieldCode::parse(instr);
                 if c.name != "TC" {
                     continue;
                 }
                 let kind = c.arg('f').unwrap_or("C").to_ascii_uppercase();
-                let l = c.arg('l').and_then(|l| l.trim().parse::<u8>().ok()).unwrap_or(1).clamp(1, 9);
-                let text = c.args.first().map(|t| t.trim().to_string()).unwrap_or_default();
-                if (id.is_empty() || *id == kind) && (tc_levels.0..=tc_levels.1).contains(&l) && !text.is_empty() {
-                    v.push(TocEntry { path: path.clone(), level: l - 1, text, lead: off });
+                let l = c
+                    .arg('l')
+                    .and_then(|l| l.trim().parse::<u8>().ok())
+                    .unwrap_or(1)
+                    .clamp(1, 9);
+                let text = c
+                    .args
+                    .first()
+                    .map(|t| t.trim().to_string())
+                    .unwrap_or_default();
+                if (id.is_empty() || *id == kind)
+                    && (tc_levels.0..=tc_levels.1).contains(&l)
+                    && !text.is_empty()
+                {
+                    v.push(TocEntry {
+                        path: path.clone(),
+                        level: l - 1,
+                        text,
+                        lead: off,
+                    });
                 }
             }
         }
@@ -297,10 +384,18 @@ fn toc_entries(s: &Session, f: &FieldCode) -> Vec<TocEntry> {
 /// The TOC block range in the body: the paragraph holding the TOC field and the TOC entries after
 /// it. A TOC with `\c` is a table of figures, kept by the generated lists.
 fn toc_range(s: &Session) -> Option<(usize, usize)> {
-    let start = s.doc.body.iter().position(|b| b.as_para().is_some_and(|p| toc_field(p).is_some()))?;
+    let start = s
+        .doc
+        .body
+        .iter()
+        .position(|b| b.as_para().is_some_and(|p| toc_field(p).is_some()))?;
     let mut end = start;
     while let Some(Block::Para(p)) = s.doc.body.get(end + 1).map(|b| &**b) {
-        if p.props.style.as_deref().is_some_and(|st| st.starts_with("TOC") && st != "TOCHeading") {
+        if p.props
+            .style
+            .as_deref()
+            .is_some_and(|st| st.starts_with("TOC") && st != "TOCHeading")
+        {
             end += 1;
         } else {
             break;
@@ -323,19 +418,34 @@ fn range_toc_to_field(s: &mut Session) -> Result<(), CmdError> {
         let field = FieldCode::parse(instr);
         field.name == "TOC" && !field.has('c')
     };
-    let Some(r) = s
-        .doc
-        .field_ranges(StoryRef::Body)
-        .into_iter()
-        .find(|r| r.depth == 0 && !r.locked && is_toc(&r.instr) && r.start.path.depth() == 0 && r.end.path.depth() == 0)
-    else {
+    let Some(r) = s.doc.field_ranges(StoryRef::Body).into_iter().find(|r| {
+        r.depth == 0
+            && !r.locked
+            && is_toc(&r.instr)
+            && r.start.path.depth() == 0
+            && r.end.path.depth() == 0
+    }) else {
         return Ok(());
     };
-    let Some(after_end) = r.end.off.checked_add(OBJ.len_utf8()) else { return Ok(()) };
-    let end = Pos { off: after_end, ..r.end.clone() };
-    let props = s.doc.para_at(&r.start).map(|p| p.props_of_char(r.start.off).clone()).unwrap_or_default();
+    let Some(after_end) = r.end.off.checked_add(OBJ.len_utf8()) else {
+        return Ok(());
+    };
+    let end = Pos {
+        off: after_end,
+        ..r.end.clone()
+    };
+    let props = s
+        .doc
+        .para_at(&r.start)
+        .map(|p| p.props_of_char(r.start.off).clone())
+        .unwrap_or_default();
     let at = s.doc.delete_range(&r.start, &end)?;
-    let field = InlineObject::Field { instr: r.instr.trim().to_string(), result: String::new(), locked: false, code: false };
+    let field = InlineObject::Field {
+        instr: r.instr.trim().to_string(),
+        result: String::new(),
+        locked: false,
+        code: false,
+    };
     let after = s.doc.insert_object(&at, field, &props)?;
     if s.doc.para_at(&after).is_some_and(|p| after.off < p.len()) {
         s.doc.split_paragraph(&after)?;
@@ -370,22 +480,37 @@ fn insert_toc(s: &mut Session, v: &Value) -> CmdResult {
             for i in (start..=end).rev() {
                 s.doc.remove_block(StoryRef::Body, &Path::top(i))?;
             }
-            s.doc.insert_block(StoryRef::Body, &Path::top(start), Block::Para(Paragraph::new()))?;
+            s.doc.insert_block(
+                StoryRef::Body,
+                &Path::top(start),
+                Block::Para(Paragraph::new()),
+            )?;
             placeholder = true;
-            s.sel = Selection::caret(Pos { story: StoryRef::Body, path: Path::top(start), off: 0 });
+            s.sel = Selection::caret(Pos {
+                story: StoryRef::Body,
+                path: Path::top(start),
+                off: 0,
+            });
             s.sel.focus.clone()
         }
         None => delete_selection(s)?,
     };
     let title = p::str(v, "title").unwrap_or("Contents").to_string();
     if at.story != StoryRef::Body || at.path.depth() > 0 {
-        return Err(CmdError::Failed("a table of contents goes in the main text".into()));
+        return Err(CmdError::Failed(
+            "a table of contents goes in the main text".into(),
+        ));
     }
     // Title paragraph carrying the TOC field marker.
     let mut head = Paragraph::with_text(&title, CharProps::default()).styled("TOCHeading");
     head.insert_object(
         head.len(),
-        InlineObject::Field { instr: toc_instr(v), result: String::new(), locked: false, code: false },
+        InlineObject::Field {
+            instr: toc_instr(v),
+            result: String::new(),
+            locked: false,
+            code: false,
+        },
         &CharProps::default(),
     )?;
     let i = if s.doc.para_at(&at).is_some_and(|p| p.is_empty()) {
@@ -396,7 +521,8 @@ fn insert_toc(s: &mut Session, v: &Value) -> CmdResult {
     } else {
         s.doc.split_paragraph(&at)?.path.last()
     };
-    s.doc.insert_block(StoryRef::Body, &Path::top(i), Block::Para(head))?;
+    s.doc
+        .insert_block(StoryRef::Body, &Path::top(i), Block::Para(head))?;
     let leader = leader(p::str(v, "tabLeader").unwrap_or("dot"));
     regenerate_toc(s, Some(leader))?;
     s.clamp_selection();
@@ -407,20 +533,41 @@ fn insert_toc(s: &mut Session, v: &Value) -> CmdResult {
 /// reusing one already there; its name.
 fn toc_bookmark(s: &mut Session, i: usize, lead: usize) -> Result<String, CmdError> {
     const MARK: usize = wordcraft_doc::para::OBJ.len_utf8();
-    let para = s.doc.para(StoryRef::Body, &Path::top(i)).ok_or_else(|| CmdError::Failed("heading is gone".into()))?;
+    let para = s
+        .doc
+        .para(StoryRef::Body, &Path::top(i))
+        .ok_or_else(|| CmdError::Failed("heading is gone".into()))?;
     if let Some(InlineObject::BookmarkStart { name }) = para.object_at(lead)
         && name.starts_with("_Toc")
     {
         return Ok(name.clone());
     }
-    let next =
-        s.doc.bookmarks().iter().filter_map(|(n, _)| n.strip_prefix("_Toc").and_then(|d| d.parse::<u64>().ok())).max().unwrap_or(0).saturating_add(1);
+    let next = s
+        .doc
+        .bookmarks()
+        .iter()
+        .filter_map(|(n, _)| n.strip_prefix("_Toc").and_then(|d| d.parse::<u64>().ok()))
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1);
     let name = format!("_Toc{next:09}");
     let end = para.len();
     let props = CharProps::default();
-    let pos = |off| Pos { story: StoryRef::Body, path: Path::top(i), off };
-    s.doc.insert_object(&pos(end), InlineObject::BookmarkEnd { name: name.clone() }, &props)?;
-    s.doc.insert_object(&pos(lead), InlineObject::BookmarkStart { name: name.clone() }, &props)?;
+    let pos = |off| Pos {
+        story: StoryRef::Body,
+        path: Path::top(i),
+        off,
+    };
+    s.doc.insert_object(
+        &pos(end),
+        InlineObject::BookmarkEnd { name: name.clone() },
+        &props,
+    )?;
+    s.doc.insert_object(
+        &pos(lead),
+        InlineObject::BookmarkStart { name: name.clone() },
+        &props,
+    )?;
     // The caret in that paragraph stays on the same text.
     let shift = |p: &mut Pos| {
         if p.story == StoryRef::Body && p.path == Path::top(i) {
@@ -445,8 +592,18 @@ pub fn update_toc(s: &mut Session) -> Result<(), CmdError> {
 /// the entries had (Word keeps it in the entries' tab stops, not in the field).
 fn regenerate_toc(s: &mut Session, leader: Option<TabLeader>) -> Result<(), CmdError> {
     range_toc_to_field(s)?;
-    let Some((start, end)) = toc_range(s) else { return Ok(()) };
-    let Some(instr) = s.doc.body.get(start).and_then(|b| b.as_para()).and_then(toc_field) else { return Ok(()) };
+    let Some((start, end)) = toc_range(s) else {
+        return Ok(());
+    };
+    let Some(instr) = s
+        .doc
+        .body
+        .get(start)
+        .and_then(|b| b.as_para())
+        .and_then(toc_field)
+    else {
+        return Ok(());
+    };
     let f = FieldCode::parse(&instr);
     let leader = leader.unwrap_or_else(|| {
         s.doc
@@ -466,15 +623,23 @@ fn regenerate_toc(s: &mut Session, leader: Option<TabLeader>) -> Result<(), CmdE
         let mut v = Vec::new();
         for e in &entries {
             // TC fields link to their paragraph's start.
-            let lead = s.doc.para(StoryRef::Body, &e.path).map_or(0, |p| p.text.bytes().take_while(|b| *b == 0x0C).count());
+            let lead = s
+                .doc
+                .para(StoryRef::Body, &e.path)
+                .map_or(0, |p| p.text.bytes().take_while(|b| *b == 0x0C).count());
             v.push(Some(format!("#{}", toc_bookmark(s, e.path.last(), lead)?)));
         }
         v
     } else {
         vec![None; entries.len()]
     };
-    let no_pages = f.has('n').then(|| f.arg('n').and_then(level_range).unwrap_or((1, 9)));
-    let sep = f.arg('p').map(str::to_string).unwrap_or_else(|| "\t".into());
+    let no_pages = f
+        .has('n')
+        .then(|| f.arg('n').and_then(level_range).unwrap_or((1, 9)));
+    let sep = f
+        .arg('p')
+        .map(str::to_string)
+        .unwrap_or_else(|| "\t".into());
     for pass in 0..2 {
         // Pass 1 lays out with the entries in place, so headings below the TOC sit `entries.len()`
         // blocks further down and their pages account for the TOC's own length.
@@ -489,17 +654,37 @@ fn regenerate_toc(s: &mut Session, leader: Option<TabLeader>) -> Result<(), CmdE
         let shift = if pass == 0 { 0 } else { entries.len() };
         for (k, e) in entries.iter().enumerate() {
             let target = Path::top(e.path.last() + if e.path.last() > start { shift } else { 0 });
-            let page =
-                l.caret(&Pos { story: StoryRef::Body, path: target, off: e.lead }).and_then(|c| l.pages.get(c.page)).map(|pg| pg.number).unwrap_or(1);
+            let page = l
+                .caret(&Pos {
+                    story: StoryRef::Body,
+                    path: target,
+                    off: e.lead,
+                })
+                .and_then(|c| l.pages.get(c.page))
+                .map(|pg| pg.number)
+                .unwrap_or(1);
             let show_page = no_pages.is_none_or(|(a, b)| !(a..=b).contains(&(e.level + 1)));
-            let text = if show_page { format!("{}{sep}{page}", e.text) } else { e.text.clone() };
-            let props = CharProps { link: links.get(k).cloned().flatten(), ..Default::default() };
-            let mut para = Paragraph::with_text(&text, props).styled(&format!("TOC{}", e.level + 1));
+            let text = if show_page {
+                format!("{}{sep}{page}", e.text)
+            } else {
+                e.text.clone()
+            };
+            let props = CharProps {
+                link: links.get(k).cloned().flatten(),
+                ..Default::default()
+            };
+            let mut para =
+                Paragraph::with_text(&text, props).styled(&format!("TOC{}", e.level + 1));
             para.mark = CharProps::default();
             if show_page && sep.contains('\t') {
-                para.props.tabs = Some(vec![TabStop { pos: width - 0.5, align: TabAlign::Right, leader }]);
+                para.props.tabs = Some(vec![TabStop {
+                    pos: width - 0.5,
+                    align: TabAlign::Right,
+                    leader,
+                }]);
             }
-            s.doc.insert_block(StoryRef::Body, &Path::top(start + 1 + k), Block::Para(para))?;
+            s.doc
+                .insert_block(StoryRef::Body, &Path::top(start + 1 + k), Block::Para(para))?;
         }
     }
     s.touch();
@@ -509,7 +694,13 @@ fn regenerate_toc(s: &mut Session, leader: Option<TabLeader>) -> Result<(), CmdE
 fn note(s: &mut Session, v: &Value, kind: NoteKind) -> CmdResult {
     let text = p::str(v, "text").unwrap_or("").to_string();
     // A custom mark: a few characters, as Word's dialog takes.
-    let custom: String = p::str(v, "mark").unwrap_or("").trim().chars().filter(|c| !c.is_control()).take(10).collect();
+    let custom: String = p::str(v, "mark")
+        .unwrap_or("")
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(10)
+        .collect();
     let (pk, style, refstyle) = match kind {
         NoteKind::Footnote => (PartKind::Footnote, "FootnoteText", "FootnoteReference"),
         NoteKind::Endnote => (PartKind::Endnote, "EndnoteText", "EndnoteReference"),
@@ -518,14 +709,29 @@ fn note(s: &mut Session, v: &Value, kind: NoteKind) -> CmdResult {
     let id = s.doc.add_part(pk, Vec::new());
     para.insert_object(
         0,
-        InlineObject::NoteRef { kind, id, custom: custom.clone() },
-        &CharProps { style: Some(refstyle.into()), ..Default::default() },
+        InlineObject::NoteRef {
+            kind,
+            id,
+            custom: custom.clone(),
+        },
+        &CharProps {
+            style: Some(refstyle.into()),
+            ..Default::default()
+        },
     )?;
     let len = para.len();
     para.insert_text(len, &format!(" {text}"), &CharProps::default())?;
-    s.doc.set_story(StoryRef::Part(id), vec![para_block(para)])?;
+    s.doc
+        .set_story(StoryRef::Part(id), vec![para_block(para)])?;
     let at = delete_selection(s)?;
-    s.doc.insert_object(&at, InlineObject::NoteRef { kind, id, custom }, &CharProps { style: Some(refstyle.into()), ..Default::default() })?;
+    s.doc.insert_object(
+        &at,
+        InlineObject::NoteRef { kind, id, custom },
+        &CharProps {
+            style: Some(refstyle.into()),
+            ..Default::default()
+        },
+    )?;
     // Like Word, the caret moves into the new note.
     s.sel = Selection::caret(s.doc.end_of(StoryRef::Part(id)));
     Ok(json!({"id": id}))
@@ -547,7 +753,11 @@ pub(super) fn note_options(s: &mut Session, v: &Value) -> CmdResult {
     let endnote = match p::str(v, "kind") {
         None | Some("footnote") => false,
         Some("endnote") => true,
-        Some(k) => return Err(CmdError::Params(format!("unknown `kind` {k:?}; use footnote or endnote"))),
+        Some(k) => {
+            return Err(CmdError::Params(format!(
+                "unknown `kind` {k:?}; use footnote or endnote"
+            )));
+        }
     };
     let pos = match p::str(v, "pos") {
         None => None,
@@ -555,29 +765,48 @@ pub(super) fn note_options(s: &mut Session, v: &Value) -> CmdResult {
             Some(p @ (NotePos::PageBottom | NotePos::BeneathText)) if !endnote => Some(p),
             Some(p @ (NotePos::SectEnd | NotePos::DocEnd)) if endnote => Some(p),
             _ => {
-                let ok = if endnote { "sectEnd or docEnd" } else { "pageBottom or beneathText" };
-                return Err(CmdError::Params(format!("`pos` {x:?} doesn't apply here; use {ok}")));
+                let ok = if endnote {
+                    "sectEnd or docEnd"
+                } else {
+                    "pageBottom or beneathText"
+                };
+                return Err(CmdError::Params(format!(
+                    "`pos` {x:?} doesn't apply here; use {ok}"
+                )));
             }
         },
     };
     let num_restart = match p::str(v, "numRestart") {
         None => None,
         Some(r) => match NoteRestart::from_ooxml(r) {
-            Some(NoteRestart::EachPage) if endnote => return Err(CmdError::Params("endnotes can't start again on each page".into())),
+            Some(NoteRestart::EachPage) if endnote => {
+                return Err(CmdError::Params(
+                    "endnotes can't start again on each page".into(),
+                ));
+            }
             Some(r) => Some(r),
-            None => return Err(CmdError::Params(format!("unknown `numRestart` {r:?}; use continuous, eachSect or eachPage"))),
+            None => {
+                return Err(CmdError::Params(format!(
+                    "unknown `numRestart` {r:?}; use continuous, eachSect or eachPage"
+                )));
+            }
         },
     };
     let change = NoteProps {
         pos,
         num_fmt: fmt("numFmt")?,
-        num_start: p::f32(v, "numStart").map(|n| n.round().clamp(1.0, MAX_NOTE_START as f32) as u32),
+        num_start: p::f32(v, "numStart")
+            .map(|n| n.round().clamp(1.0, MAX_NOTE_START as f32) as u32),
         num_restart,
     };
     let whole = match p::str(v, "scope") {
         None | Some("document") => true,
         Some("section") => false,
-        Some(x) => return Err(CmdError::Params(format!("unknown `scope` {x:?}; use document or section"))),
+        Some(x) => {
+            return Err(CmdError::Params(format!(
+                "unknown `scope` {x:?}; use document or section"
+            )));
+        }
     };
     // Set `from`'s fields on `to`; `clear` instead unsets the fields `from` sets.
     let merge = |to: &mut NoteProps, from: &NoteProps, clear: bool| {
@@ -595,16 +824,35 @@ pub(super) fn note_options(s: &mut Session, v: &Value) -> CmdResult {
         }
     };
     fn pick(sect: &mut wordcraft_doc::SectionProps, endnote: bool) -> &mut NoteProps {
-        if endnote { &mut sect.endnote_pr } else { &mut sect.footnote_pr }
+        if endnote {
+            &mut sect.endnote_pr
+        } else {
+            &mut sect.footnote_pr
+        }
     }
     if change.is_empty() {
         // Nothing to change: the options in effect.
     } else if whole {
         let st = &mut s.doc.settings;
         if let Some(f) = change.num_fmt {
-            *(if endnote { &mut st.endnote_format } else { &mut st.footnote_format }) = f;
+            *(if endnote {
+                &mut st.endnote_format
+            } else {
+                &mut st.footnote_format
+            }) = f;
         }
-        merge(if endnote { &mut st.endnote_pr } else { &mut st.footnote_pr }, &NoteProps { num_fmt: None, ..change }, false);
+        merge(
+            if endnote {
+                &mut st.endnote_pr
+            } else {
+                &mut st.footnote_pr
+            },
+            &NoteProps {
+                num_fmt: None,
+                ..change
+            },
+            false,
+        );
         // Every section follows the document now.
         let ends: Vec<usize> = s.doc.sections().iter().map(|(e, _)| *e).collect();
         for e in ends {
@@ -631,10 +879,16 @@ pub(super) fn note_options(s: &mut Session, v: &Value) -> CmdResult {
 fn note_refs(s: &Session) -> Vec<Pos> {
     let mut v = Vec::new();
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for o in p.object_offsets() {
             if matches!(p.object_at(o), Some(InlineObject::NoteRef { .. })) {
-                v.push(Pos { story: StoryRef::Body, path: path.clone(), off: o });
+                v.push(Pos {
+                    story: StoryRef::Body,
+                    path: path.clone(),
+                    off: o,
+                });
             }
         }
     }
@@ -659,23 +913,44 @@ pub const CHAPTER_SEPARATORS: [&str; 5] = ["-", ".", ":", "\u{2014}", "\u{2013}"
 /// a chapter number (`STYLEREF n \s` and a separator) and a `SEQ label \* format \s n` number
 /// (ECMA-376 §17.16.5.56, §17.16.5.59).
 fn caption(s: &mut Session, v: &Value) -> CmdResult {
-    let label: String = p::str(v, "label").unwrap_or("Figure").chars().filter(|c| !matches!(c, '"' | '\\') && !c.is_control()).take(40).collect();
-    let label = if label.trim().is_empty() { "Figure".to_string() } else { label.trim().to_string() };
+    let label: String = p::str(v, "label")
+        .unwrap_or("Figure")
+        .chars()
+        .filter(|c| !matches!(c, '"' | '\\') && !c.is_control())
+        .take(40)
+        .collect();
+    let label = if label.trim().is_empty() {
+        "Figure".to_string()
+    } else {
+        label.trim().to_string()
+    };
     // SEQ identifiers are one word: Word joins a multi-word label with underscores.
     let ident = label.split_whitespace().collect::<Vec<_>>().join("_");
     let text = p::str(v, "text").unwrap_or("").to_string();
     let above = p::str(v, "position") == Some("above");
     let format = seq_format(p::str(v, "format").unwrap_or("ARABIC"));
     let chapter = p::u64(v, "chapter").filter(|l| (1..=9).contains(l));
-    let sep = p::str(v, "separator").and_then(|x| CHAPTER_SEPARATORS.iter().find(|s| **s == x)).copied().unwrap_or("-");
+    let sep = p::str(v, "separator")
+        .and_then(|x| CHAPTER_SEPARATORS.iter().find(|s| **s == x))
+        .copied()
+        .unwrap_or("-");
     let mut para = Paragraph::new().styled("Caption");
-    let field = |instr: String| InlineObject::Field { instr, result: String::new(), locked: false, code: false };
+    let field = |instr: String| InlineObject::Field {
+        instr,
+        result: String::new(),
+        locked: false,
+        code: false,
+    };
     if !p::bool(v, "excludeLabel").unwrap_or(false) {
         para.insert_text(0, &format!("{label} "), &CharProps::default())?;
     }
     let mut seq = format!("SEQ {ident} \\* {format}");
     if let Some(l) = chapter {
-        para.insert_object(para.len(), field(format!("STYLEREF {l} \\s")), &CharProps::default())?;
+        para.insert_object(
+            para.len(),
+            field(format!("STYLEREF {l} \\s")),
+            &CharProps::default(),
+        )?;
         para.insert_text(para.len(), sep, &CharProps::default())?;
         seq.push_str(&format!(" \\s {l}"));
     }
@@ -687,17 +962,23 @@ fn caption(s: &mut Session, v: &Value) -> CmdResult {
     let f = s.sel.focus.clone();
     let top = f.path.0.first().copied().unwrap_or(0) as usize;
     let i = if above { top } else { top.saturating_add(1) };
-    s.doc.insert_block(f.story, &Path::top(i), Block::Para(para))?;
+    s.doc
+        .insert_block(f.story, &Path::top(i), Block::Para(para))?;
     update_seq(s)?;
     let off = s.doc.para(f.story, &Path::top(i)).map_or(0, |p| p.len());
-    s.sel = Selection::caret(Pos { story: f.story, path: Path::top(i), off });
+    s.sel = Selection::caret(Pos {
+        story: f.story,
+        path: Path::top(i),
+        off,
+    });
     sel_result(s)
 }
 
 /// The number part of a heading's list label (`Chapter 2.` → `2`).
 fn chapter_number(label: &str) -> String {
     let word = label.split_whitespace().last().unwrap_or("");
-    word.trim_matches(|c: char| !c.is_alphanumeric()).to_string()
+    word.trim_matches(|c: char| !c.is_alphanumeric())
+        .to_string()
 }
 
 /// Renumber the body's SEQ fields in document order, honouring `\* format`, `\s level` (restart
@@ -711,7 +992,9 @@ pub fn update_seq(s: &mut Session) -> Result<(), CmdError> {
     let mut heading_text: [String; 9] = Default::default();
     let mut seq: std::collections::HashMap<String, (u32, u32)> = Default::default();
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         let label = p
             .props
             .numbering
@@ -724,7 +1007,10 @@ pub fn update_seq(s: &mut Session) -> Result<(), CmdError> {
             && let Some(count) = headings.get_mut(k)
         {
             *count = count.saturating_add(1);
-            let n = label.map(|l| chapter_number(&l)).filter(|n| !n.is_empty()).unwrap_or_else(|| count.to_string());
+            let n = label
+                .map(|l| chapter_number(&l))
+                .filter(|n| !n.is_empty())
+                .unwrap_or_else(|| count.to_string());
             if let Some(c) = chapter.get_mut(k) {
                 *c = n;
             }
@@ -734,13 +1020,24 @@ pub fn update_seq(s: &mut Session) -> Result<(), CmdError> {
         }
         let mut updates: Vec<(usize, String)> = Vec::new();
         for (k, o) in p.objects.iter().enumerate() {
-            let InlineObject::Field { instr, locked: false, .. } = o else { continue };
+            let InlineObject::Field {
+                instr,
+                locked: false,
+                ..
+            } = o
+            else {
+                continue;
+            };
             let f = FieldCode::parse(instr);
             match f.name.as_str() {
                 "SEQ" => {
                     let Some(id) = f.args.first() else { continue };
-                    let restart =
-                        f.arg('s').and_then(|l| l.parse::<usize>().ok()).and_then(|l| l.checked_sub(1)).and_then(|l| headings.get(l)).copied();
+                    let restart = f
+                        .arg('s')
+                        .and_then(|l| l.parse::<usize>().ok())
+                        .and_then(|l| l.checked_sub(1))
+                        .and_then(|l| headings.get(l))
+                        .copied();
                     let n = seq.entry(id.clone()).or_insert((0, 0));
                     if let Some(epoch) = restart
                         && n.1 != epoch
@@ -753,16 +1050,33 @@ pub fn update_seq(s: &mut Session) -> Result<(), CmdError> {
                         n.0 = n.0.saturating_add(1);
                     }
                     let fmt = wordcraft_layout::fields::format_switch(instr).unwrap_or_default();
-                    updates.push((k, if f.has('h') { String::new() } else { fmt.format(n.0) }));
+                    updates.push((
+                        k,
+                        if f.has('h') {
+                            String::new()
+                        } else {
+                            fmt.format(n.0)
+                        },
+                    ));
                 }
                 "STYLEREF" => {
                     let level = f
                         .args
                         .first()
-                        .and_then(|a| a.strip_prefix("Heading").unwrap_or(a).trim().parse::<usize>().ok())
+                        .and_then(|a| {
+                            a.strip_prefix("Heading")
+                                .unwrap_or(a)
+                                .trim()
+                                .parse::<usize>()
+                                .ok()
+                        })
                         .and_then(|l| l.checked_sub(1));
                     let Some(level) = level else { continue };
-                    let r = if f.has('s') || f.has('n') { chapter.get(level) } else { heading_text.get(level) };
+                    let r = if f.has('s') || f.has('n') {
+                        chapter.get(level)
+                    } else {
+                        heading_text.get(level)
+                    };
                     if let Some(r) = r {
                         updates.push((k, r.clone()));
                     }
@@ -790,26 +1104,53 @@ pub fn update_fields(s: &mut Session) -> Result<(), CmdError> {
     let mut pages: std::collections::HashMap<String, u32> = Default::default();
     for (name, pos) in s.doc.bookmarks() {
         let l = s.layout();
-        let page = l.caret(&pos).and_then(|c| l.pages.get(c.page)).map(|p| p.number).unwrap_or(1);
+        let page = l
+            .caret(&pos)
+            .and_then(|c| l.pages.get(c.page))
+            .map(|p| p.number)
+            .unwrap_or(1);
         pages.entry(name).or_insert(page);
     }
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
-        if !p.objects.iter().any(|o| matches!(o, InlineObject::Field { .. })) {
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
+        if !p
+            .objects
+            .iter()
+            .any(|o| matches!(o, InlineObject::Field { .. }))
+        {
             continue;
         }
         let mut updates: Vec<(usize, String)> = Vec::new();
         for (k, o) in p.objects.iter().enumerate() {
-            let InlineObject::Field { instr, locked: false, .. } = o else { continue };
+            let InlineObject::Field {
+                instr,
+                locked: false,
+                ..
+            } = o
+            else {
+                continue;
+            };
             let name = wordcraft_layout::fields::field_name(instr);
             match name.as_str() {
                 "DATE" | "TIME" | "CREATEDATE" | "SAVEDATE" | "PRINTDATE" => {
-                    let pic = date_picture(instr).unwrap_or_else(|| if name == "TIME" { "h:mm am/pm".into() } else { "M/d/yyyy".into() });
+                    let pic = date_picture(instr).unwrap_or_else(|| {
+                        if name == "TIME" {
+                            "h:mm am/pm".into()
+                        } else {
+                            "M/d/yyyy".into()
+                        }
+                    });
                     updates.push((k, super::insert::format_date(&pic)));
                 }
                 "REF" | "PAGEREF" => {
                     let target = instr.split_whitespace().nth(1).unwrap_or("");
-                    let r = if name == "REF" { bookmark_text(&s.doc, target) } else { pages.get(target).map(u32::to_string) };
+                    let r = if name == "REF" {
+                        bookmark_text(&s.doc, target)
+                    } else {
+                        pages.get(target).map(u32::to_string)
+                    };
                     if let Some(r) = r {
                         updates.push((k, r));
                     }
@@ -855,7 +1196,18 @@ pub fn bookmark_text(doc: &wordcraft_doc::Document, name: &str) -> Option<String
         .into_iter()
         .find(|o| *o > start.off && matches!(para.object_at(*o), Some(InlineObject::BookmarkEnd { name: n }) if n == name))
         .unwrap_or(para.len());
-    Some(doc.copy_range(&start, &Pos { off: end, ..start.clone() }).plain_text().trim().to_string())
+    Some(
+        doc.copy_range(
+            &start,
+            &Pos {
+                off: end,
+                ..start.clone()
+            },
+        )
+        .plain_text()
+        .trim()
+        .to_string(),
+    )
 }
 
 #[cfg(test)]
@@ -879,43 +1231,93 @@ mod tests {
     /// (`\p`), or none at all (`\n`).
     #[test]
     fn toc_switches_shape_the_entries() {
-        let mut s = Session::new(wordcraft_doc::Document::from_text("Intro\nPart\nDeep\nNote"));
-        for (text, style) in [("Intro", "Heading 1"), ("Part", "Heading 2"), ("Deep", "Heading 3"), ("Note", "Quote")] {
+        let mut s = Session::new(wordcraft_doc::Document::from_text(
+            "Intro\nPart\nDeep\nNote",
+        ));
+        for (text, style) in [
+            ("Intro", "Heading 1"),
+            ("Part", "Heading 2"),
+            ("Deep", "Heading 3"),
+            ("Note", "Quote"),
+        ] {
             s.run("select.text", &json!({"text": text})).unwrap();
             s.run("styles.apply", &json!({"style": style})).unwrap();
         }
         s.run("caret.docStart", &json!({})).unwrap();
         s.run("references.toc", &json!({"levels": 2, "hyperlinks": false, "rightAlign": false, "styleLevels": {"Quote": 2}})).unwrap();
-        assert_eq!(fields(&s)[0].0, "TOC \\o \"1-2\" \\z \\u \\p \" \" \\t \"Quote,2\"");
+        assert_eq!(
+            fields(&s)[0].0,
+            "TOC \\o \"1-2\" \\z \\u \\p \" \" \\t \"Quote,2\""
+        );
         let entries: Vec<(String, String)> = s
             .doc
             .body
             .iter()
             .filter_map(|b| b.as_para())
-            .filter(|p| p.props.style.as_deref().is_some_and(|st| st.starts_with("TOC") && st != "TOCHeading"))
+            .filter(|p| {
+                p.props
+                    .style
+                    .as_deref()
+                    .is_some_and(|st| st.starts_with("TOC") && st != "TOCHeading")
+            })
             .map(|p| (p.props.style.clone().unwrap(), p.plain_text()))
             .collect();
-        assert_eq!(entries, [("TOC1", "Intro 1"), ("TOC2", "Part 1"), ("TOC2", "Note 1")].map(|(a, b)| (a.to_string(), b.to_string())));
-        assert!(s.doc.bookmarks().is_empty(), "no hyperlinks, no _Toc bookmarks");
+        assert_eq!(
+            entries,
+            [("TOC1", "Intro 1"), ("TOC2", "Part 1"), ("TOC2", "Note 1")]
+                .map(|(a, b)| (a.to_string(), b.to_string()))
+        );
+        assert!(
+            s.doc.bookmarks().is_empty(),
+            "no hyperlinks, no _Toc bookmarks"
+        );
         // Settings again replace the table in place; hyperlinks bookmark the headings.
-        s.run("references.toc", &json!({"levels": 3, "pageNumbers": false})).unwrap();
-        assert_eq!(s.doc.plain_text(StoryRef::Body).matches("Contents").count(), 1);
-        let toc: Vec<String> =
-            s.doc.body.iter().filter_map(|b| b.as_para()).filter(|p| p.props.style.as_deref() == Some("TOC3")).map(|p| p.plain_text()).collect();
+        s.run(
+            "references.toc",
+            &json!({"levels": 3, "pageNumbers": false}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.doc.plain_text(StoryRef::Body).matches("Contents").count(),
+            1
+        );
+        let toc: Vec<String> = s
+            .doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .filter(|p| p.props.style.as_deref() == Some("TOC3"))
+            .map(|p| p.plain_text())
+            .collect();
         assert_eq!(toc, ["Deep"]);
-        let first = s.doc.body.iter().filter_map(|b| b.as_para()).find(|p| p.props.style.as_deref() == Some("TOC1")).unwrap();
+        let first = s
+            .doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .find(|p| p.props.style.as_deref() == Some("TOC1"))
+            .unwrap();
         let link = first.runs[0].props.link.clone().unwrap();
-        assert!(s.doc.bookmarks().iter().any(|(n, _)| format!("#{n}") == link), "{link}");
+        assert!(
+            s.doc
+                .bookmarks()
+                .iter()
+                .any(|(n, _)| format!("#{n}") == link),
+            "{link}"
+        );
     }
 
     /// #402: Caption numbering — a custom label above the paragraph, letters, and chapter
     /// numbers that restart after each Heading 1 (`STYLEREF 1 \s`, `SEQ … \s 1`).
     #[test]
     fn caption_numbering_with_chapters() {
-        let mut s = Session::new(wordcraft_doc::Document::from_text("One\nPic\nPic two\nTwo\nPic three"));
+        let mut s = Session::new(wordcraft_doc::Document::from_text(
+            "One\nPic\nPic two\nTwo\nPic three",
+        ));
         for t in ["One", "Two"] {
             s.run("select.text", &json!({"text": t})).unwrap();
-            s.run("styles.apply", &json!({"style": "Heading 1"})).unwrap();
+            s.run("styles.apply", &json!({"style": "Heading 1"}))
+                .unwrap();
         }
         let opts = json!({"label": "Photo Plate", "format": "upperLetter", "chapter": 1, "separator": "."});
         for t in ["Pic three", "Pic two", "Pic"] {
@@ -925,15 +1327,50 @@ mod tests {
             v["text"] = json!(t);
             s.run("references.caption", &v).unwrap();
         }
-        let caps: Vec<String> =
-            s.doc.body.iter().filter_map(|b| b.as_para()).filter(|p| p.props.style.as_deref() == Some("Caption")).map(|p| p.plain_text()).collect();
-        assert_eq!(caps, ["Photo Plate 1.A: Pic", "Photo Plate 1.B: Pic two", "Photo Plate 2.A: Pic three"]);
-        assert!(fields(&s).contains(&("SEQ Photo_Plate \\* ALPHABETIC \\s 1".to_string(), "A".to_string())), "{:?}", fields(&s));
+        let caps: Vec<String> = s
+            .doc
+            .body
+            .iter()
+            .filter_map(|b| b.as_para())
+            .filter(|p| p.props.style.as_deref() == Some("Caption"))
+            .map(|p| p.plain_text())
+            .collect();
+        assert_eq!(
+            caps,
+            [
+                "Photo Plate 1.A: Pic",
+                "Photo Plate 1.B: Pic two",
+                "Photo Plate 2.A: Pic three"
+            ]
+        );
+        assert!(
+            fields(&s).contains(&(
+                "SEQ Photo_Plate \\* ALPHABETIC \\s 1".to_string(),
+                "A".to_string()
+            )),
+            "{:?}",
+            fields(&s)
+        );
         // The caption sits above its paragraph; excluding the label leaves the number.
-        let i = s.doc.body.iter().position(|b| b.as_para().is_some_and(|p| p.plain_text() == "Pic")).unwrap();
-        assert_eq!(s.doc.body[i - 1].as_para().unwrap().plain_text(), "Photo Plate 1.A: Pic");
+        let i = s
+            .doc
+            .body
+            .iter()
+            .position(|b| b.as_para().is_some_and(|p| p.plain_text() == "Pic"))
+            .unwrap();
+        assert_eq!(
+            s.doc.body[i - 1].as_para().unwrap().plain_text(),
+            "Photo Plate 1.A: Pic"
+        );
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("references.caption", &json!({"label": "Table", "excludeLabel": true, "format": "ROMAN"})).unwrap();
-        assert_eq!(s.doc.body.last().unwrap().as_para().unwrap().plain_text(), "I");
+        s.run(
+            "references.caption",
+            &json!({"label": "Table", "excludeLabel": true, "format": "ROMAN"}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.doc.body.last().unwrap().as_para().unwrap().plain_text(),
+            "I"
+        );
     }
 }

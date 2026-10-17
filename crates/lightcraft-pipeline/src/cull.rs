@@ -11,7 +11,10 @@ const EDGE: usize = 512;
 fn luma(img: &Rgb32f) -> (Vec<f32>, usize, usize) {
     let (w, h) = (img.width.max(1), img.height.max(1));
     let s = (EDGE as f64 / w.max(h) as f64).min(1.0);
-    let (ow, oh) = (((w as f64 * s).round() as usize).max(8), ((h as f64 * s).round() as usize).max(8));
+    let (ow, oh) = (
+        ((w as f64 * s).round() as usize).max(8),
+        ((h as f64 * s).round() as usize).max(8),
+    );
     let mut out = vec![0f32; ow * oh];
     for (y, row) in out.chunks_mut(ow).enumerate() {
         let (y0, y1) = (y * h / oh, ((y + 1) * h / oh).max(y * h / oh + 1).min(h));
@@ -44,7 +47,11 @@ pub fn sharpness(img: &Rgb32f) -> f32 {
             for y in by..(by + b).min(h - 1) {
                 for x in bx..(bx + b).min(w - 1) {
                     let c = l[y * w + x];
-                    let lap = 4.0 * c - l[y * w + x - 1] - l[y * w + x + 1] - l[(y - 1) * w + x] - l[(y + 1) * w + x];
+                    let lap = 4.0 * c
+                        - l[y * w + x - 1]
+                        - l[y * w + x + 1]
+                        - l[(y - 1) * w + x]
+                        - l[(y + 1) * w + x];
                     e += lap * lap;
                     n += 1;
                 }
@@ -68,7 +75,11 @@ pub fn sharpness(img: &Rgb32f) -> f32 {
 /// Share of clipped pixels (crushed blacks + blown highlights), 0..1.
 pub fn clipped(img: &Rgb32f) -> f32 {
     let n = img.data.len().max(1);
-    let c = img.data.iter().filter(|p| p.iter().any(|v| *v >= 0.985) || p.iter().all(|v| *v <= 0.002)).count();
+    let c = img
+        .data
+        .iter()
+        .filter(|p| p.iter().any(|v| *v >= 0.985) || p.iter().all(|v| *v <= 0.002))
+        .count();
     c as f32 / n as f32
 }
 
@@ -97,7 +108,11 @@ pub fn signature(img: &Rgb32f) -> [f32; 64] {
 
 /// Similarity of two signatures: 1 = the same picture, 0 = unrelated.
 pub fn similarity(a: &[f32; 64], b: &[f32; 64]) -> f32 {
-    a.iter().zip(b).map(|(x, y)| x * y).sum::<f32>().clamp(-1.0, 1.0)
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| x * y)
+        .sum::<f32>()
+        .clamp(-1.0, 1.0)
 }
 
 #[cfg(test)]
@@ -130,7 +145,10 @@ mod tests {
         let soft = blur(&img, 4);
         let (a, b) = (sharpness(&img), sharpness(&soft));
         assert!(a > b + 10.0, "sharp {a} vs blurred {b}");
-        assert!(similarity(&signature(&img), &signature(&soft)) > 0.95, "the same picture");
+        assert!(
+            similarity(&signature(&img), &signature(&soft)) > 0.95,
+            "the same picture"
+        );
         let other = lightcraft_scenes::demo_library()[5].render(480, 320);
         assert!(similarity(&signature(&img), &signature(&other)) < 0.9);
         assert!(clipped(&img) < 0.5);

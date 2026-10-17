@@ -61,7 +61,8 @@ pub fn split_path(full_path: &str) -> Option<(String, String, String)> {
 
     let dir_end = full_path
         .rfind(|c| c == '/' || (cfg!(windows) && matches!(c, '\\' | ':')))
-        .map(|i| i + 1).unwrap_or(0);
+        .map(|i| i + 1)
+        .unwrap_or(0);
 
     let fname_end = full_path
         .rfind('.')

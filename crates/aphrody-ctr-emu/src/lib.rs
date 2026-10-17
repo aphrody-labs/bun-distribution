@@ -20,8 +20,8 @@ use zakuro_common::Screen;
 use zakuro_core::services::hid::InputState;
 use zakuro_core::{Config, FrameOutcome, System, loader};
 
-pub use zakuro_core::services::hid::PadState as Buttons;
 pub use zakuro_core::CYCLES_PER_FRAME;
+pub use zakuro_core::services::hid::PadState as Buttons;
 
 /// ARM11 clock in hertz.
 pub const CPU_CLOCK_HZ: f64 = 268_111_856.0;
@@ -236,7 +236,10 @@ impl Emu {
     }
 
     fn from_system(system: System) -> Self {
-        Self { system: Box::new(system), console_read: 0 }
+        Self {
+            system: Box::new(system),
+            console_read: 0,
+        }
     }
 
     /// Runs one screen refresh (about 59.83 per second).
@@ -276,15 +279,27 @@ impl Emu {
     pub fn video(&mut self) -> Video {
         let mut image = |screen| {
             let (rgba, width, height) = self.system.read_screen_scaled(screen);
-            Image { width, height, rgba }
+            Image {
+                width,
+                height,
+                rgba,
+            }
         };
         let top = image(Screen::Top);
         let bottom = image(Screen::Bottom);
         let top_right = self
             .system
             .read_right_eye_scaled()
-            .map(|(rgba, width, height)| Image { width, height, rgba });
-        Video { top, bottom, top_right }
+            .map(|(rgba, width, height)| Image {
+                width,
+                height,
+                rgba,
+            });
+        Video {
+            top,
+            bottom,
+            top_right,
+        }
     }
 
     /// DSP output produced since the last call: stereo signed 16-bit PCM at
@@ -316,7 +331,9 @@ impl Emu {
 
     /// Debugger view over the machine.
     pub fn debug(&mut self) -> Debug<'_> {
-        Debug { system: &mut self.system }
+        Debug {
+            system: &mut self.system,
+        }
     }
 }
 
@@ -336,7 +353,11 @@ pub struct Debug<'a> {
 impl Debug<'_> {
     pub fn registers(&self) -> Registers {
         let cpu = &self.system.cpu;
-        Registers { r: cpu.regs, cpsr: cpu.cpsr.to_bits(), spsr: cpu.spsr.to_bits() }
+        Registers {
+            r: cpu.regs,
+            cpsr: cpu.cpsr.to_bits(),
+            spsr: cpu.spsr.to_bits(),
+        }
     }
 
     /// Reads guest virtual memory; unmapped pages read as zero.

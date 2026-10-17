@@ -13,14 +13,16 @@ trailer << /Root 1 0 R >>
 %%EOF";
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, FIXTURE.to_vec()).unwrap();
-        app.set_option("left", "closed").unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, FIXTURE.to_vec()).unwrap();
+            app.set_option("left", "closed").unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     h.run_steps(6);
     h
 }
@@ -51,10 +53,20 @@ fn the_crop_tool_crops_to_the_dragged_rectangle_then_returns_to_select() {
     h.drop_at(b);
     h.run_steps(4);
     let (w, hh) = size(&h, 0);
-    assert!((w - 150.0).abs() < 2.0 && (hh - 200.0).abs() < 2.0, "{w}×{hh}");
+    assert!(
+        (w - 150.0).abs() < 2.0 && (hh - 200.0).abs() < 2.0,
+        "{w}×{hh}"
+    );
     assert_eq!(size(&h, 1), (300.0, 400.0));
     assert_eq!(h.state().quick_tool, QuickTool::Select);
-    assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().can_undo(), Some("Crop page"));
+    assert_eq!(
+        h.state()
+            .session
+            .get(h.state().views[0].id)
+            .unwrap()
+            .can_undo(),
+        Some("Crop page")
+    );
 }
 
 #[test]

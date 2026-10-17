@@ -29,7 +29,13 @@ impl TemplatesForm {
         app.dialog_pick = None;
         let s = &app.session.doc.settings;
         let path = s.attached_template.clone().unwrap_or_default();
-        TemplatesForm { was_path: path.clone(), path, link: s.link_styles, was_link: s.link_styles, message: String::new() }
+        TemplatesForm {
+            was_path: path.clone(),
+            path,
+            link: s.link_styles,
+            was_link: s.link_styles,
+            message: String::new(),
+        }
     }
 
     /// OK: attach (updating the styles now when they follow the template), detach, or just switch
@@ -45,7 +51,10 @@ impl TemplatesForm {
             return Ok(());
         }
         if path != self.was_path || self.link != self.was_link || self.link {
-            app.run("tools.attachTemplate", json!({"path": path, "linkStyles": self.link, "update": self.link}))?;
+            app.run(
+                "tools.attachTemplate",
+                json!({"path": path, "linkStyles": self.link, "update": self.link}),
+            )?;
         }
         Ok(())
     }
@@ -54,12 +63,18 @@ impl TemplatesForm {
 /// Whether this host shows a file picker whose answer comes back to the dialog (the web's picker
 /// opens what it picks instead).
 fn can_pick(app: &WordApp) -> bool {
-    app.services.open_async.is_none() && (app.services.file_dialog.is_some() || app.services.pick_open.is_some())
+    app.services.open_async.is_none()
+        && (app.services.file_dialog.is_some() || app.services.pick_open.is_some())
 }
 
 /// Ask for a template or document; the answer arrives in `app.dialog_pick`.
 fn pick(app: &mut WordApp) {
-    let _ = app.ask_file(FileDialogRequest::Open { purpose: "template".into() }, AfterPick::ForDialog);
+    let _ = app.ask_file(
+        FileDialogRequest::Open {
+            purpose: "template".into(),
+        },
+        AfterPick::ForDialog,
+    );
 }
 
 /// Returns true to close.
@@ -70,7 +85,10 @@ pub fn templates(app: &mut WordApp, ui: &mut Ui, f: &mut TemplatesForm) -> bool 
     ui.label(egui::RichText::new(tl!("Document template:")).font(semibold(12.5)));
     ui.horizontal(|ui| {
         ui.add(egui::TextEdit::singleline(&mut f.path).desired_width(300.0));
-        if ui.add_enabled(can_pick(app), egui::Button::new(tl!("Attach…"))).clicked() {
+        if ui
+            .add_enabled(can_pick(app), egui::Button::new(tl!("Attach…")))
+            .clicked()
+        {
             pick(app);
         }
     });
@@ -78,12 +96,24 @@ pub fn templates(app: &mut WordApp, ui: &mut Ui, f: &mut TemplatesForm) -> bool 
     ui.add_space(6.0);
     let organizer = ui.button(tl!("Organizer…")).clicked();
     if !f.message.is_empty() {
-        ui.add(egui::Label::new(egui::RichText::new(f.message.as_str()).small().color(ui.visuals().error_fg_color)).wrap());
+        ui.add(
+            egui::Label::new(
+                egui::RichText::new(f.message.as_str())
+                    .small()
+                    .color(ui.visuals().error_fg_color),
+            )
+            .wrap(),
+        );
     }
     let (ok, cancel) = buttons(ui, tl!("OK"));
     if organizer {
-        let back = TemplatesForm { message: String::new(), ..f.clone() };
-        app.dialog = Some(Dialog::Organizer { form: Box::new(OrganizerForm::read(app, Some(back))) });
+        let back = TemplatesForm {
+            message: String::new(),
+            ..f.clone()
+        };
+        app.dialog = Some(Dialog::Organizer {
+            form: Box::new(OrganizerForm::read(app, Some(back))),
+        });
         return true;
     }
     if ok && let Err(e) = f.apply(app) {
@@ -116,8 +146,11 @@ impl OrganizerForm {
     /// Opens with the attached template (or the template typed in Templates and Add-ins) on the right.
     pub fn read(app: &mut WordApp, back: Option<TemplatesForm>) -> OrganizerForm {
         app.dialog_pick = None;
-        let file =
-            back.as_ref().map(|b| b.path.trim().to_string()).or_else(|| app.session.doc.settings.attached_template.clone()).unwrap_or_default();
+        let file = back
+            .as_ref()
+            .map(|b| b.path.trim().to_string())
+            .or_else(|| app.session.doc.settings.attached_template.clone())
+            .unwrap_or_default();
         let mut f = OrganizerForm {
             file: String::new(),
             other: Vec::new(),
@@ -136,8 +169,14 @@ impl OrganizerForm {
     fn load(&mut self, app: &mut WordApp, path: &str) {
         match app.session.run("styles.organizer", &json!({"path": path})) {
             Ok(v) => {
-                let list = v.get("file").and_then(|f| f.get("styles")).and_then(Value::as_array).cloned().unwrap_or_default();
-                let s = |x: &Value, k: &str| x.get(k).and_then(Value::as_str).unwrap_or("").to_string();
+                let list = v
+                    .get("file")
+                    .and_then(|f| f.get("styles"))
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                let s =
+                    |x: &Value, k: &str| x.get(k).and_then(Value::as_str).unwrap_or("").to_string();
                 self.other = list.iter().map(|x| (s(x, "name"), s(x, "type"))).collect();
                 self.file = path.to_string();
                 self.right.clear();
@@ -170,24 +209,40 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
     }
     let t = Tokens::get(ui.ctx());
     let list_frame = |ui: &mut Ui, salt: &str, add: &mut dyn FnMut(&mut Ui)| {
-        egui::Frame::NONE.stroke(egui::Stroke::new(1.0, t.border)).inner_margin(4).show(ui, |ui| {
-            ui.set_width(220.0);
-            ui.set_height(240.0);
-            egui::ScrollArea::vertical().id_salt(salt).max_height(240.0).auto_shrink([false, false]).show(ui, |ui| add(ui));
-        });
+        egui::Frame::NONE
+            .stroke(egui::Stroke::new(1.0, t.border))
+            .inner_margin(4)
+            .show(ui, |ui| {
+                ui.set_width(220.0);
+                ui.set_height(240.0);
+                egui::ScrollArea::vertical()
+                    .id_salt(salt)
+                    .max_height(240.0)
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| add(ui));
+            });
     };
     let mut copy = false;
     let mut delete = false;
     let mut rename = false;
     let mut browse = false;
-    let left_builtin = mine.iter().find(|x| s(x, "id") == f.left).is_none_or(|x| x.get("builtIn").and_then(Value::as_bool).unwrap_or(true));
+    let left_builtin = mine
+        .iter()
+        .find(|x| s(x, "id") == f.left)
+        .is_none_or(|x| x.get("builtIn").and_then(Value::as_bool).unwrap_or(true));
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.label(egui::RichText::new(tl!("Document")).font(semibold(12.5)));
             list_frame(ui, "organizer_mine", &mut |ui| {
                 for st in &mine {
                     let id = s(st, "id");
-                    if ui.selectable_label(f.left == id, format!("{}  {}", glyph(&s(st, "type")), s(st, "name"))).clicked() {
+                    if ui
+                        .selectable_label(
+                            f.left == id,
+                            format!("{}  {}", glyph(&s(st, "type")), s(st, "name")),
+                        )
+                        .clicked()
+                    {
                         f.left = id;
                         f.rename = None;
                     }
@@ -197,25 +252,46 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
         ui.vertical(|ui| {
             ui.add_space(60.0);
             let w = vec2(96.0, 0.0);
-            copy = ui.add_enabled(!f.right.is_empty(), egui::Button::new(format!("◀ {}", tl!("Copy"))).min_size(w)).clicked();
-            delete = ui.add_enabled(!left_builtin, egui::Button::new(tl!("Delete")).min_size(w)).clicked();
-            rename = ui.add_enabled(!left_builtin, egui::Button::new(tl!("Rename…")).min_size(w)).clicked();
+            copy = ui
+                .add_enabled(
+                    !f.right.is_empty(),
+                    egui::Button::new(format!("◀ {}", tl!("Copy"))).min_size(w),
+                )
+                .clicked();
+            delete = ui
+                .add_enabled(!left_builtin, egui::Button::new(tl!("Delete")).min_size(w))
+                .clicked();
+            rename = ui
+                .add_enabled(!left_builtin, egui::Button::new(tl!("Rename…")).min_size(w))
+                .clicked();
         });
         ui.vertical(|ui| {
-            let name = std::path::Path::new(&f.file).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "—".into());
-            ui.label(egui::RichText::new(name).font(semibold(12.5))).on_hover_text(f.file.as_str());
+            let name = std::path::Path::new(&f.file)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "—".into());
+            ui.label(egui::RichText::new(name).font(semibold(12.5)))
+                .on_hover_text(f.file.as_str());
             list_frame(ui, "organizer_other", &mut |ui| {
                 for (n, ty) in &f.other {
-                    if ui.selectable_label(f.right == *n, format!("{}  {n}", glyph(ty))).clicked() {
+                    if ui
+                        .selectable_label(f.right == *n, format!("{}  {n}", glyph(ty)))
+                        .clicked()
+                    {
                         f.right = n.clone();
                     }
                 }
             });
-            browse = ui.add_enabled(can_pick(app), egui::Button::new(tl!("Browse…"))).clicked();
+            browse = ui
+                .add_enabled(can_pick(app), egui::Button::new(tl!("Browse…")))
+                .clicked();
         });
     });
     if copy {
-        let r = app.run("styles.copyFrom", json!({"path": f.file, "styles": [f.right]}));
+        let r = app.run(
+            "styles.copyFrom",
+            json!({"path": f.file, "styles": [f.right]}),
+        );
         f.message = r.err().unwrap_or_default();
     }
     if delete {
@@ -224,7 +300,10 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
         f.left.clear();
     }
     if rename {
-        f.rename = mine.iter().find(|x| s(x, "id") == f.left).map(|x| s(x, "name"));
+        f.rename = mine
+            .iter()
+            .find(|x| s(x, "id") == f.left)
+            .map(|x| s(x, "name"));
     }
     if browse {
         pick(app);
@@ -235,7 +314,8 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
         ui.horizontal(|ui| {
             ui.label(tl!("Name:"));
             let r = ui.add(egui::TextEdit::singleline(new).desired_width(220.0));
-            renamed = ui.button(tl!("OK")).clicked() || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)));
+            renamed = ui.button(tl!("OK")).clicked()
+                || (r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)));
         });
     }
     if renamed && let Some(new) = f.rename.take() {
@@ -243,7 +323,14 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
         f.message = r.err().unwrap_or_default();
     }
     if !f.message.is_empty() {
-        ui.add(egui::Label::new(egui::RichText::new(f.message.as_str()).small().color(ui.visuals().error_fg_color)).wrap());
+        ui.add(
+            egui::Label::new(
+                egui::RichText::new(f.message.as_str())
+                    .small()
+                    .color(ui.visuals().error_fg_color),
+            )
+            .wrap(),
+        );
     }
     // Escape while renaming only stops renaming.
     if f.rename.is_some() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
@@ -255,7 +342,9 @@ pub fn organizer(app: &mut WordApp, ui: &mut Ui, f: &mut OrganizerForm) -> bool 
     let mut close = ui.input(|i| i.key_pressed(egui::Key::Escape));
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            close |= ui.add(crate::widgets::primary_button(ui, tl!("Close"))).clicked();
+            close |= ui
+                .add(crate::widgets::primary_button(ui, tl!("Close")))
+                .clicked();
         });
     });
     if close {
@@ -277,7 +366,8 @@ mod tests {
     /// Organizer copies a style from it into the document and Close goes back.
     #[test]
     fn templates_dialog_attaches_and_organizer_copies() {
-        let dir = std::env::temp_dir().join(format!("wordcraft-ui-templates-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("wordcraft-ui-templates-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("House.dotx");
@@ -291,23 +381,44 @@ mod tests {
         wordcraft_engine::io::save_path(&path, &t).unwrap();
         let p = path.to_string_lossy().to_string();
 
-        let mut a = WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default());
-        assert_eq!(a.run("tools.templates", json!({})).unwrap(), json!({"pending": "templates"}));
-        let Some(Dialog::Templates { form }) = &mut a.dialog else { panic!("dialog") };
+        let mut a = WordApp::new(
+            Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
+        );
+        assert_eq!(
+            a.run("tools.templates", json!({})).unwrap(),
+            json!({"pending": "templates"})
+        );
+        let Some(Dialog::Templates { form }) = &mut a.dialog else {
+            panic!("dialog")
+        };
         form.path = p.clone();
         let form = form.clone();
         form.apply(&mut a).unwrap();
-        assert_eq!(a.session.doc.settings.attached_template.as_deref(), Some(p.as_str()));
+        assert_eq!(
+            a.session.doc.settings.attached_template.as_deref(),
+            Some(p.as_str())
+        );
 
         let mut org = OrganizerForm::read(&mut a, None);
-        assert!(org.other.iter().any(|(n, _)| n == "Memo"), "{:?}", org.other);
+        assert!(
+            org.other.iter().any(|(n, _)| n == "Memo"),
+            "{:?}",
+            org.other
+        );
         org.right = "Memo".into();
-        let r = a.run("styles.copyFrom", json!({"path": org.file, "styles": [org.right]}));
+        let r = a.run(
+            "styles.copyFrom",
+            json!({"path": org.file, "styles": [org.right]}),
+        );
         assert!(r.is_ok(), "{r:?}");
         assert!(a.session.doc.styles.get("Memo").is_some());
         // Agents and scripts get the state, never the dialog.
         a.dialog = None;
-        assert_eq!(a.execute("tools.templates", json!({})).unwrap()["template"], json!(p));
+        assert_eq!(
+            a.execute("tools.templates", json!({})).unwrap()["template"],
+            json!(p)
+        );
         assert!(a.dialog.is_none());
         let _ = std::fs::remove_dir_all(&dir);
     }

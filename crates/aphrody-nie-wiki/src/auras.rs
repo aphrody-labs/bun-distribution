@@ -20,12 +20,36 @@ struct AuraSource {
 }
 
 const SOURCES: &[AuraSource] = &[
-    AuraSource { table: "inagle_keshins", slug: "esprits-guerriers", kind: "keshin" },
-    AuraSource { table: "inagle_souls", slug: "totems", kind: "soul" },
-    AuraSource { table: "inagle_miximax", slug: "miximax", kind: "miximax" },
-    AuraSource { table: "inagle_awakenings", slug: "eveil", kind: "awakening" },
-    AuraSource { table: "inagle_mode_changes", slug: "changement-mode", kind: "mode_change" },
-    AuraSource { table: "inagle_auras", slug: "autres", kind: "aura" },
+    AuraSource {
+        table: "inagle_keshins",
+        slug: "esprits-guerriers",
+        kind: "keshin",
+    },
+    AuraSource {
+        table: "inagle_souls",
+        slug: "totems",
+        kind: "soul",
+    },
+    AuraSource {
+        table: "inagle_miximax",
+        slug: "miximax",
+        kind: "miximax",
+    },
+    AuraSource {
+        table: "inagle_awakenings",
+        slug: "eveil",
+        kind: "awakening",
+    },
+    AuraSource {
+        table: "inagle_mode_changes",
+        slug: "changement-mode",
+        kind: "mode_change",
+    },
+    AuraSource {
+        table: "inagle_auras",
+        slug: "autres",
+        kind: "aura",
+    },
 ];
 
 /// Parameters for a bounded aura search.
@@ -132,7 +156,7 @@ fn row_to_record(row: &Row<'_>, source: AuraSource) -> rusqlite::Result<AuraReco
             let mut merged = base.clone();
             merged.extend(overlay.clone());
             Value::Object(merged)
-        },
+        }
         (_, Value::Object(overlay)) if !overlay.is_empty() => Value::Object(overlay.clone()),
         _ => data.clone(),
     };
@@ -208,8 +232,17 @@ pub fn list_auras(conn: &Connection, request: &AuraListRequest) -> anyhow::Resul
     });
     let total = records.len();
     let offset = usize::try_from((page - 1) * limit).unwrap_or(usize::MAX);
-    let data = records.into_iter().skip(offset).take(limit as usize).collect();
-    Ok(AuraPage { data, total, page, limit })
+    let data = records
+        .into_iter()
+        .skip(offset)
+        .take(limit as usize)
+        .collect();
+    Ok(AuraPage {
+        data,
+        total,
+        page,
+        limit,
+    })
 }
 
 /// Resolve one aura by mirror ID or asset code.
@@ -267,7 +300,9 @@ mod tests {
 
     #[test]
     fn resolves_asset_code_without_treating_percent_as_sql_wildcard() {
-        let aura = get_aura(&fixture(), "a01", Some("autres")).unwrap().unwrap();
+        let aura = get_aura(&fixture(), "a01", Some("autres"))
+            .unwrap()
+            .unwrap();
         assert_eq!(aura.id, "aura_0x01");
         assert!(get_aura(&fixture(), "%", None).unwrap().is_none());
     }

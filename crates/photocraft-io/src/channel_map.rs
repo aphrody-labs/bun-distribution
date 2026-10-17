@@ -33,7 +33,15 @@ pub(crate) fn display_info(channels: &[&AlphaChannel], transparency: bool) -> Ve
     for c in channels {
         let (color, opacity, kind) = match c.spot {
             Some((ink, solidity)) => (ink, solidity, 2u8),
-            None => (c.color, c.opacity, if c.indicates == ColorIndicates::SelectedAreas { 0 } else { 1 }),
+            None => (
+                c.color,
+                c.opacity,
+                if c.indicates == ColorIndicates::SelectedAreas {
+                    0
+                } else {
+                    1
+                },
+            ),
         };
         let rgb = color.to_rgb();
         out.extend_from_slice(&SPACE_RGB.to_be_bytes());
@@ -49,8 +57,17 @@ pub(crate) fn display_info(channels: &[&AlphaChannel], transparency: bool) -> Ve
 /// Applies a DisplayInfo resource (`versioned` = 1077: 13-byte records after a version; else the
 /// older 1007 with 14-byte records) to the imported channels in order, after skipping `skip`
 /// records (the merged transparency channel's).
-pub(crate) fn apply_display_info(data: &[u8], versioned: bool, skip: usize, channels: &mut [AlphaChannel]) {
-    let (body, size) = if versioned { (data.get(4..).unwrap_or(&[]), 13) } else { (data, 14) };
+pub(crate) fn apply_display_info(
+    data: &[u8],
+    versioned: bool,
+    skip: usize,
+    channels: &mut [AlphaChannel],
+) {
+    let (body, size) = if versioned {
+        (data.get(4..).unwrap_or(&[]), 13)
+    } else {
+        (data, 14)
+    };
     for (c, rec) in channels.iter_mut().zip(body.chunks_exact(size).skip(skip)) {
         let u = |i: usize| u16::from_be_bytes([rec[i], rec[i + 1]]);
         let comps = [u(2), u(4), u(6), u(8)];
@@ -63,7 +80,11 @@ pub(crate) fn apply_display_info(data: &[u8], versioned: bool, skip: usize, chan
                 c.spot = None;
                 c.color = color;
                 c.opacity = opacity;
-                c.indicates = if k == 0 { ColorIndicates::SelectedAreas } else { ColorIndicates::MaskedAreas };
+                c.indicates = if k == 0 {
+                    ColorIndicates::SelectedAreas
+                } else {
+                    ColorIndicates::MaskedAreas
+                };
             }
         }
     }
@@ -90,7 +111,11 @@ pub(crate) fn decode_known_color(space: u16, c: [u16; 4]) -> Option<Color> {
         }
         // Photoshop colour structures store CMYK inverted (65535 = no ink).
         SPACE_CMYK => {
-            let cmyk = Color { mode: ColorMode::Cmyk, c: [1.0 - n(c[0]), 1.0 - n(c[1]), 1.0 - n(c[2]), 1.0 - n(c[3])], alpha: 1.0 };
+            let cmyk = Color {
+                mode: ColorMode::Cmyk,
+                c: [1.0 - n(c[0]), 1.0 - n(c[1]), 1.0 - n(c[2]), 1.0 - n(c[3])],
+                alpha: 1.0,
+            };
             let rgb = cmyk.to_rgb();
             Color::rgb(rgb[0], rgb[1], rgb[2])
         }
@@ -98,7 +123,11 @@ pub(crate) fn decode_known_color(space: u16, c: [u16; 4]) -> Option<Color> {
             let l = f32::from(c[0].min(10000)) / 10000.0;
             let a = f32::from(c[1] as i16) / 100.0;
             let b = f32::from(c[2] as i16) / 100.0;
-            let lab = Color { mode: ColorMode::Lab, c: [l, (a + 128.0) / 255.0, (b + 128.0) / 255.0, 0.0], alpha: 1.0 };
+            let lab = Color {
+                mode: ColorMode::Lab,
+                c: [l, (a + 128.0) / 255.0, (b + 128.0) / 255.0, 0.0],
+                alpha: 1.0,
+            };
             let rgb = lab.to_rgb();
             Color::rgb(rgb[0], rgb[1], rgb[2])
         }
@@ -112,7 +141,11 @@ pub(crate) fn decode_known_color(space: u16, c: [u16; 4]) -> Option<Color> {
 
 /// HSB (hue in degrees, saturation and brightness 0..1) → RGB.
 fn hsb_to_rgb(h: f32, s: f32, v: f32) -> [f32; 3] {
-    let h = if h.is_finite() { h.rem_euclid(360.0) / 60.0 } else { 0.0 };
+    let h = if h.is_finite() {
+        h.rem_euclid(360.0) / 60.0
+    } else {
+        0.0
+    };
     let (s, v) = (s.clamp(0.0, 1.0), v.clamp(0.0, 1.0));
     let f = h - h.floor();
     let (p, q, t) = (v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f)));
@@ -143,7 +176,10 @@ mod tests {
         let bytes = display_info(&[&a, &s], false);
         // 13 bytes per channel, as every corpus file (Photoshop's included) lays out 1077.
         assert_eq!(bytes.len(), 4 + 2 * 13);
-        let mut back = vec![AlphaChannel::new("A", Surface::new(PixelFormat::GRAY8)), AlphaChannel::new("S", Surface::new(PixelFormat::GRAY8))];
+        let mut back = vec![
+            AlphaChannel::new("A", Surface::new(PixelFormat::GRAY8)),
+            AlphaChannel::new("S", Surface::new(PixelFormat::GRAY8)),
+        ];
         apply_display_info(&bytes, true, 0, &mut back);
         assert_eq!(back[0].color, a.color);
         assert!((back[0].opacity - 0.3).abs() < 1e-6);
@@ -152,7 +188,10 @@ mod tests {
         // With the merged transparency's record first, the channels still get their own.
         let with_t = display_info(&[&a, &s], true);
         assert_eq!(with_t.len(), 4 + 3 * 13);
-        let mut back = vec![AlphaChannel::new("A", Surface::new(PixelFormat::GRAY8)), AlphaChannel::new("S", Surface::new(PixelFormat::GRAY8))];
+        let mut back = vec![
+            AlphaChannel::new("A", Surface::new(PixelFormat::GRAY8)),
+            AlphaChannel::new("S", Surface::new(PixelFormat::GRAY8)),
+        ];
         apply_display_info(&with_t, true, 1, &mut back);
         assert_eq!(back[0].indicates, ColorIndicates::SelectedAreas);
         assert_eq!(back[1].spot, s.spot);
@@ -170,11 +209,17 @@ mod tests {
         assert!(lab.iter().all(|v| *v > 0.95), "{lab:?}");
         // HSB: hue 120 degrees (65535 / 3), full saturation and brightness is pure green.
         let g = decode_color(SPACE_HSB, [21845, 65535, 65535, 0]).to_rgb();
-        assert!((g[0]).abs() < 1e-3 && (g[1] - 1.0).abs() < 1e-3 && g[2].abs() < 1e-3, "{g:?}");
+        assert!(
+            (g[0]).abs() < 1e-3 && (g[1] - 1.0).abs() < 1e-3 && g[2].abs() < 1e-3,
+            "{g:?}"
+        );
         let half = decode_color(SPACE_HSB, [0, 0, 32768, 0]).to_rgb();
         assert!(half.iter().all(|v| (v - 0.5).abs() < 1e-3), "{half:?}");
         // Unknown spaces (book colours) are not guessed.
         assert_eq!(decode_known_color(3, [1, 2, 3, 4]), None);
-        assert_eq!(decode_known_color(SPACE_RGB, [65535, 0, 0, 0]), Some(Color::rgb(1.0, 0.0, 0.0)));
+        assert_eq!(
+            decode_known_color(SPACE_RGB, [65535, 0, 0, 0]),
+            Some(Color::rgb(1.0, 0.0, 0.0))
+        );
     }
 }

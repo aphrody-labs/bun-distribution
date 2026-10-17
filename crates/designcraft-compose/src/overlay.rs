@@ -13,7 +13,9 @@ thread_local! {
 
 fn is_event(u: &NestedUntil, c: char, prev: Option<char>, next: Option<char>) -> bool {
     match u {
-        NestedUntil::Sentences => matches!(c, '.' | '!' | '?') && next.is_none_or(char::is_whitespace),
+        NestedUntil::Sentences => {
+            matches!(c, '.' | '!' | '?') && next.is_none_or(char::is_whitespace)
+        }
         NestedUntil::Words => c.is_whitespace() && prev.is_some_and(|p| !p.is_whitespace()),
         NestedUntil::Characters => !matches!(c, '\n'),
         NestedUntil::Letters => c.is_alphabetic(),
@@ -27,7 +29,12 @@ fn is_event(u: &NestedUntil, c: char, prev: Option<char>, next: Option<char>) ->
 }
 
 /// Character-style ranges for the paragraph `text[range]`, in application order (later wins).
-pub(crate) fn overlays(text: &str, range: Range<usize>, nested: &[NestedStyle], grep: &[GrepStyle]) -> Vec<(Range<usize>, String)> {
+pub(crate) fn overlays(
+    text: &str,
+    range: Range<usize>,
+    nested: &[NestedStyle],
+    grep: &[GrepStyle],
+) -> Vec<(Range<usize>, String)> {
     let mut out = Vec::new();
     let para = &text[range.clone()];
     // The paragraph's own end mark isn't styled.
@@ -39,7 +46,10 @@ pub(crate) fn overlays(text: &str, range: Range<usize>, nested: &[NestedStyle], 
         }
         let mut count = 0;
         let mut stop = end;
-        let chars: Vec<(usize, char)> = text[pos..end].char_indices().map(|(i, c)| (pos + i, c)).collect();
+        let chars: Vec<(usize, char)> = text[pos..end]
+            .char_indices()
+            .map(|(i, c)| (pos + i, c))
+            .collect();
         for (k, &(i, c)) in chars.iter().enumerate() {
             let prev = if k > 0 { Some(chars[k - 1].1) } else { None };
             let next = chars.get(k + 1).map(|x| x.1);
@@ -62,11 +72,16 @@ pub(crate) fn overlays(text: &str, range: Range<usize>, nested: &[NestedStyle], 
         }
         PATTERNS.with(|p| {
             let mut p = p.borrow_mut();
-            let re = p.entry(g.pattern.clone()).or_insert_with(|| regex::Regex::new(&g.pattern).ok());
+            let re = p
+                .entry(g.pattern.clone())
+                .or_insert_with(|| regex::Regex::new(&g.pattern).ok());
             if let Some(re) = re {
                 for m in re.find_iter(&text[range.start..end]) {
                     if !m.is_empty() {
-                        out.push((range.start + m.start()..range.start + m.end(), g.style.clone()));
+                        out.push((
+                            range.start + m.start()..range.start + m.end(),
+                            g.style.clone(),
+                        ));
                     }
                 }
             }
@@ -82,16 +97,52 @@ mod tests {
     #[test]
     fn nested_and_grep_ranges() {
         let text = "Q: what is 42? A drop of 7 words.\n".to_string();
-        let n = |style: &str, through: bool, count: u32, until: NestedUntil| NestedStyle { style: style.into(), through, count, until };
+        let n = |style: &str, through: bool, count: u32, until: NestedUntil| NestedStyle {
+            style: style.into(),
+            through,
+            count,
+            until,
+        };
         // Through the first ':' then up to the second word end.
-        let o = overlays(&text, 0..text.len(), &[n("Lead", true, 1, NestedUntil::Chars(":".into())), n("Next", false, 2, NestedUntil::Words)], &[]);
+        let o = overlays(
+            &text,
+            0..text.len(),
+            &[
+                n("Lead", true, 1, NestedUntil::Chars(":".into())),
+                n("Next", false, 2, NestedUntil::Words),
+            ],
+            &[],
+        );
         assert_eq!(&text[o[0].0.clone()], "Q:");
-        assert_eq!(&text[o[1].0.clone()], " what is", "up to the end of the second word");
+        assert_eq!(
+            &text[o[1].0.clone()],
+            " what is",
+            "up to the end of the second word"
+        );
         // Digits by GREP.
-        let o = overlays(&text, 0..text.len(), &[], &[GrepStyle { style: "Num".into(), pattern: r"\d+".into() }]);
+        let o = overlays(
+            &text,
+            0..text.len(),
+            &[],
+            &[GrepStyle {
+                style: "Num".into(),
+                pattern: r"\d+".into(),
+            }],
+        );
         let got: Vec<&str> = o.iter().map(|(r, _)| &text[r.clone()]).collect();
         assert_eq!(got, ["42", "7"]);
         // A bad pattern is ignored.
-        assert!(overlays(&text, 0..text.len(), &[], &[GrepStyle { style: "X".into(), pattern: "(".into() }]).is_empty());
+        assert!(
+            overlays(
+                &text,
+                0..text.len(),
+                &[],
+                &[GrepStyle {
+                    style: "X".into(),
+                    pattern: "(".into()
+                }]
+            )
+            .is_empty()
+        );
     }
 }

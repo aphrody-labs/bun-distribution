@@ -31,7 +31,9 @@ impl MarkStyle {
 
     /// Parse an id, ignoring case.
     pub fn parse(s: &str) -> Option<Self> {
-        [MarkStyle::Roman, MarkStyle::Japanese].into_iter().find(|m| m.id().eq_ignore_ascii_case(s))
+        [MarkStyle::Roman, MarkStyle::Japanese]
+            .into_iter()
+            .find(|m| m.id().eq_ignore_ascii_case(s))
     }
 }
 
@@ -51,14 +53,23 @@ pub struct TrimMarks {
 
 impl Default for TrimMarks {
     fn default() -> Self {
-        Self { style: MarkStyle::Roman, offset: 9.0, length: 18.0, bleed: 3.0 * 72.0 / 25.4, weight: 0.3 }
+        Self {
+            style: MarkStyle::Roman,
+            offset: 9.0,
+            length: 18.0,
+            bleed: 3.0 * 72.0 / 25.4,
+            weight: 0.3,
+        }
     }
 }
 
 impl TrimMarks {
     /// The default marks of `style`.
     pub fn of(style: MarkStyle) -> Self {
-        Self { style, ..Default::default() }
+        Self {
+            style,
+            ..Default::default()
+        }
     }
 
     /// How far the marks reach outside the trim box.
@@ -74,7 +85,12 @@ impl TrimMarks {
     pub fn lines(&self, r: Rect) -> Vec<(Point, Point)> {
         let (l, mut out) = (self.length, vec![]);
         // Each corner with its outward directions.
-        let corners = [(r.x0, r.y0, -1.0, -1.0), (r.x1, r.y0, 1.0, -1.0), (r.x1, r.y1, 1.0, 1.0), (r.x0, r.y1, -1.0, 1.0)];
+        let corners = [
+            (r.x0, r.y0, -1.0, -1.0),
+            (r.x1, r.y0, 1.0, -1.0),
+            (r.x1, r.y1, 1.0, 1.0),
+            (r.x0, r.y1, -1.0, 1.0),
+        ];
         match self.style {
             MarkStyle::Roman => {
                 let o = self.offset;
@@ -89,8 +105,14 @@ impl TrimMarks {
                     // The trim lines, outside the bleed, and the bleed lines meeting at its corner.
                     out.push((Point::new(x + sx * b, y), Point::new(x + sx * (b + l), y)));
                     out.push((Point::new(x, y + sy * b), Point::new(x, y + sy * (b + l))));
-                    out.push((Point::new(x, y + sy * b), Point::new(x + sx * (b + l), y + sy * b)));
-                    out.push((Point::new(x + sx * b, y), Point::new(x + sx * b, y + sy * (b + l))));
+                    out.push((
+                        Point::new(x, y + sy * b),
+                        Point::new(x + sx * (b + l), y + sy * b),
+                    ));
+                    out.push((
+                        Point::new(x + sx * b, y),
+                        Point::new(x + sx * b, y + sy * (b + l)),
+                    ));
                 }
                 // A cross outside the bleed at the middle of each side.
                 let c = r.center();
@@ -103,7 +125,10 @@ impl TrimMarks {
                     let at = |d: f64| Point::new(p.x + dx * d, p.y + dy * d);
                     out.push((at(b), at(b + l)));
                     let m = at(b + l / 2.0);
-                    out.push((Point::new(m.x - dy * l / 2.0, m.y - dx * l / 2.0), Point::new(m.x + dy * l / 2.0, m.y + dx * l / 2.0)));
+                    out.push((
+                        Point::new(m.x - dy * l / 2.0, m.y - dx * l / 2.0),
+                        Point::new(m.x + dy * l / 2.0, m.y + dx * l / 2.0),
+                    ));
                 }
             }
         }
@@ -114,7 +139,11 @@ impl TrimMarks {
     /// ids from `alloc` (the group's last).
     pub fn group(&self, r: Rect, alloc: &mut dyn FnMut() -> NodeId) -> Node {
         let ap = Appearance::basic(Paint::None, Paint::registration(), self.weight);
-        let children = self.lines(r).into_iter().map(|(a, b)| Arc::new(Node::path(alloc(), shapes::line(a, b), ap.clone()))).collect();
+        let children = self
+            .lines(r)
+            .into_iter()
+            .map(|(a, b)| Arc::new(Node::path(alloc(), shapes::line(a, b), ap.clone())))
+            .collect();
         let mut g = Node::group(alloc(), children);
         g.name = Some("Trim Marks".into());
         g
@@ -175,7 +204,13 @@ impl PrinterMarks {
     pub fn trim_marks(&self, bleed: [f64; 4]) -> TrimMarks {
         let most = bleed.iter().copied().fold(0.0, f64::max);
         let d = TrimMarks::of(self.style);
-        TrimMarks { offset: self.offset.max(most), length: Self::LENGTH, bleed: if most > 0.0 { most } else { d.bleed }, weight: self.weight, ..d }
+        TrimMarks {
+            offset: self.offset.max(most),
+            length: Self::LENGTH,
+            bleed: if most > 0.0 { most } else { d.bleed },
+            weight: self.weight,
+            ..d
+        }
     }
 
     /// The distance from the trim box to the band of marks.
@@ -194,7 +229,11 @@ impl PrinterMarks {
             return [0.0; 4];
         }
         let band = self.gap(bleed) + Self::LENGTH + self.weight;
-        let bottom = if self.page_info { band + Self::INFO_SIZE * 1.6 } else { band };
+        let bottom = if self.page_info {
+            band + Self::INFO_SIZE * 1.6
+        } else {
+            band
+        };
         [band, bottom, band, band]
     }
 
@@ -225,8 +264,14 @@ impl PrinterMarks {
                 out.rings.push((at, l / 6.0));
                 // Japanese trim marks draw this cross already.
                 if !(self.trim && self.style == MarkStyle::Japanese) {
-                    out.lines.push((Point::new(at.x - l / 2.0, at.y), Point::new(at.x + l / 2.0, at.y)));
-                    out.lines.push((Point::new(at.x, at.y - l / 2.0), Point::new(at.x, at.y + l / 2.0)));
+                    out.lines.push((
+                        Point::new(at.x - l / 2.0, at.y),
+                        Point::new(at.x + l / 2.0, at.y),
+                    ));
+                    out.lines.push((
+                        Point::new(at.x, at.y - l / 2.0),
+                        Point::new(at.x, at.y + l / 2.0),
+                    ));
                 }
             }
         }
@@ -246,9 +291,18 @@ impl PrinterMarks {
                 cmyk(0.0, 1.0, 1.0, 0.0),
                 cmyk(1.0, 1.0, 1.0, 0.0),
             ];
-            let tints: Vec<Paint> = (1..=10).map(|i| cmyk(0.0, 0.0, 0.0, i as f32 / 10.0)).collect();
+            let tints: Vec<Paint> = (1..=10)
+                .map(|i| cmyk(0.0, 0.0, 0.0, i as f32 / 10.0))
+                .collect();
             let clear = l / 2.0 + 2.0;
-            let rows = [(solids.iter().chain(spots).cloned().collect(), trim.x0 + s / 2.0, c.x - clear), (tints, c.x + clear, trim.x1 - s / 2.0)];
+            let rows = [
+                (
+                    solids.iter().chain(spots).cloned().collect(),
+                    trim.x0 + s / 2.0,
+                    c.x - clear,
+                ),
+                (tints, c.x + clear, trim.x1 - s / 2.0),
+            ];
             for (paints, from, to) in rows {
                 let fits = ((to - from) / s).floor().max(0.0) as usize;
                 for (i, paint) in paints.into_iter().take(fits).enumerate() {
@@ -258,7 +312,10 @@ impl PrinterMarks {
             }
         }
         if self.page_info {
-            out.info = Some(Point::new(trim.x0, trim.y1 + gap + l + self.weight + Self::INFO_SIZE * 1.1));
+            out.info = Some(Point::new(
+                trim.x0,
+                trim.y1 + gap + l + self.weight + Self::INFO_SIZE * 1.1,
+            ));
         }
         out
     }
@@ -266,17 +323,50 @@ impl PrinterMarks {
     /// The marks around `trim` as a group named "Printer's Marks", with ids from `alloc` (the
     /// group's last): the colour bar patches, then Registration lines and rings, then `info` as
     /// point type in Registration.
-    pub fn art(&self, trim: Rect, bleed: [f64; 4], spots: &[Paint], info: &str, alloc: &mut dyn FnMut() -> NodeId) -> Node {
+    pub fn art(
+        &self,
+        trim: Rect,
+        bleed: [f64; 4],
+        spots: &[Paint],
+        info: &str,
+        alloc: &mut dyn FnMut() -> NodeId,
+    ) -> Node {
         let m = self.layout(trim, bleed, spots);
         let reg = Appearance::basic(Paint::None, Paint::registration(), self.weight);
         let shape = |id, path, ap: &Appearance| Arc::new(Node::path(id, path, ap.clone()));
-        let mut children: Vec<Arc<Node>> =
-            m.patches.into_iter().map(|(r, p)| shape(alloc(), shapes::rectangle(r), &Appearance::basic(p, Paint::None, 0.0))).collect();
-        children.extend(m.lines.into_iter().map(|(a, b)| shape(alloc(), shapes::line(a, b), &reg)));
-        children.extend(m.rings.into_iter().map(|(c, r)| shape(alloc(), shapes::ellipse(Rect::from_center_size(c, (2.0 * r, 2.0 * r))), &reg)));
+        let mut children: Vec<Arc<Node>> = m
+            .patches
+            .into_iter()
+            .map(|(r, p)| {
+                shape(
+                    alloc(),
+                    shapes::rectangle(r),
+                    &Appearance::basic(p, Paint::None, 0.0),
+                )
+            })
+            .collect();
+        children.extend(
+            m.lines
+                .into_iter()
+                .map(|(a, b)| shape(alloc(), shapes::line(a, b), &reg)),
+        );
+        children.extend(m.rings.into_iter().map(|(c, r)| {
+            shape(
+                alloc(),
+                shapes::ellipse(Rect::from_center_size(c, (2.0 * r, 2.0 * r))),
+                &reg,
+            )
+        }));
         if let Some(at) = m.info.filter(|_| !info.is_empty()) {
-            let style = CharStyle { size: Self::INFO_SIZE, fill: Paint::registration(), ..Default::default() };
-            children.push(Arc::new(Node::new(alloc(), NodeKind::Text(Box::new(TextObject::point(at, info, style))))));
+            let style = CharStyle {
+                size: Self::INFO_SIZE,
+                fill: Paint::registration(),
+                ..Default::default()
+            };
+            children.push(Arc::new(Node::new(
+                alloc(),
+                NodeKind::Text(Box::new(TextObject::point(at, info, style))),
+            )));
         }
         let mut g = Node::group(alloc(), children);
         g.name = Some("Printer's Marks".into());
@@ -293,27 +383,57 @@ mod tests {
         let r = Rect::new(0.0, 0.0, 100.0, 50.0);
         let roman = TrimMarks::default().lines(r);
         assert_eq!(roman.len(), 8);
-        assert!(roman.iter().all(|(a, b)| !r.contains(*a) && !r.contains(*b)));
+        assert!(
+            roman
+                .iter()
+                .all(|(a, b)| !r.contains(*a) && !r.contains(*b))
+        );
         assert_eq!(roman[0], (Point::new(-9.0, 0.0), Point::new(-27.0, 0.0)));
         let jp = TrimMarks::of(MarkStyle::Japanese);
         let lines = jp.lines(r);
-        assert_eq!(lines.len(), 24, "four lines per corner and a cross per side");
+        assert_eq!(
+            lines.len(),
+            24,
+            "four lines per corner and a cross per side"
+        );
         // Two horizontal lines at the top-left corner: the trim line and the bleed line.
-        let tl: Vec<f64> = lines[..4].iter().filter(|(a, b)| a.y == b.y).map(|(a, _)| a.y).collect();
+        let tl: Vec<f64> = lines[..4]
+            .iter()
+            .filter(|(a, b)| a.y == b.y)
+            .map(|(a, _)| a.y)
+            .collect();
         assert_eq!(tl.len(), 2);
-        assert!((tl[0] - 0.0).abs() < 1e-9 && (tl[1] + jp.bleed).abs() < 1e-9, "{tl:?}");
+        assert!(
+            (tl[0] - 0.0).abs() < 1e-9 && (tl[1] + jp.bleed).abs() < 1e-9,
+            "{tl:?}"
+        );
         let mut n = 0;
         let g = jp.group(r, &mut || {
             n += 1;
             NodeId(n)
         });
         assert_eq!((g.children().unwrap().len(), g.id), (24, NodeId(25)));
-        assert!(g.children().unwrap()[0].appearance.stroke().unwrap().paint.is_registration());
+        assert!(
+            g.children().unwrap()[0]
+                .appearance
+                .stroke()
+                .unwrap()
+                .paint
+                .is_registration()
+        );
         assert_eq!(MarkStyle::parse("Japanese"), Some(MarkStyle::Japanese));
     }
 
     fn all(style: MarkStyle) -> PrinterMarks {
-        PrinterMarks { trim: true, registration: true, color_bars: true, page_info: true, style, weight: 0.25, offset: 6.0 }
+        PrinterMarks {
+            trim: true,
+            registration: true,
+            color_bars: true,
+            page_info: true,
+            style,
+            weight: 0.25,
+            offset: 6.0,
+        }
     }
 
     #[test]
@@ -322,24 +442,76 @@ mod tests {
         let m = all(MarkStyle::Roman);
         let lay = m.layout(trim, [0.0; 4], &[]);
         // Golden positions: the band starts at the 6 pt offset and is 18 pt deep.
-        assert_eq!(lay.lines[0], (Point::new(-6.0, 0.0), Point::new(-24.0, 0.0)), "top-left trim mark");
-        assert_eq!(lay.rings[..2], [(Point::new(100.0, -15.0), 6.0), (Point::new(100.0, -15.0), 3.0)], "top target");
-        assert_eq!(lay.lines[8..10], [(Point::new(91.0, -15.0), Point::new(109.0, -15.0)), (Point::new(100.0, -24.0), Point::new(100.0, -6.0))]);
-        assert_eq!(lay.patches[0], (Rect::new(5.0, -20.0, 15.0, -10.0), Paint::solid(Color::cmyk(1.0, 0.0, 0.0, 0.0))), "cyan first");
-        assert_eq!(lay.patches[8].0, Rect::new(111.0, -20.0, 121.0, -10.0), "black tints right of the target");
+        assert_eq!(
+            lay.lines[0],
+            (Point::new(-6.0, 0.0), Point::new(-24.0, 0.0)),
+            "top-left trim mark"
+        );
+        assert_eq!(
+            lay.rings[..2],
+            [
+                (Point::new(100.0, -15.0), 6.0),
+                (Point::new(100.0, -15.0), 3.0)
+            ],
+            "top target"
+        );
+        assert_eq!(
+            lay.lines[8..10],
+            [
+                (Point::new(91.0, -15.0), Point::new(109.0, -15.0)),
+                (Point::new(100.0, -24.0), Point::new(100.0, -6.0))
+            ]
+        );
+        assert_eq!(
+            lay.patches[0],
+            (
+                Rect::new(5.0, -20.0, 15.0, -10.0),
+                Paint::solid(Color::cmyk(1.0, 0.0, 0.0, 0.0))
+            ),
+            "cyan first"
+        );
+        assert_eq!(
+            lay.patches[8].0,
+            Rect::new(111.0, -20.0, 121.0, -10.0),
+            "black tints right of the target"
+        );
         assert_eq!(lay.patches.len(), 8 + 8, "as many patches as fit each half");
         assert_eq!(lay.info, Some(Point::new(0.0, 100.0 + 24.25 + 7.7)));
         let reach = m.reach([0.0; 4]);
         assert_eq!(reach, [24.25, 24.25 + 11.2, 24.25, 24.25]);
         // Everything lies outside the trim box and inside the sheet the reach makes.
         let sheet = outset(trim, reach);
-        let points = lay.lines.iter().flat_map(|(a, b)| [*a, *b]).chain(lay.rings.iter().map(|(c, _)| *c));
-        for p in points.chain(lay.patches.iter().flat_map(|(r, _)| [r.origin(), Point::new(r.x1, r.y1)])) {
-            assert!(sheet.contains(p) && !trim.inflate(-1e-9, -1e-9).contains(p), "{p:?}");
+        let points = lay
+            .lines
+            .iter()
+            .flat_map(|(a, b)| [*a, *b])
+            .chain(lay.rings.iter().map(|(c, _)| *c));
+        for p in points.chain(
+            lay.patches
+                .iter()
+                .flat_map(|(r, _)| [r.origin(), Point::new(r.x1, r.y1)]),
+        ) {
+            assert!(
+                sheet.contains(p) && !trim.inflate(-1e-9, -1e-9).contains(p),
+                "{p:?}"
+            );
         }
         // A bleed pushes the marks out; no marks reach nothing.
-        assert_eq!(m.layout(trim, [9.0, 0.0, 0.0, 0.0], &[]).lines[0], (Point::new(-9.0, 0.0), Point::new(-27.0, 0.0)));
-        assert_eq!(PrinterMarks { trim: false, registration: false, color_bars: false, page_info: false, ..m }.reach([9.0; 4]), [0.0; 4]);
+        assert_eq!(
+            m.layout(trim, [9.0, 0.0, 0.0, 0.0], &[]).lines[0],
+            (Point::new(-9.0, 0.0), Point::new(-27.0, 0.0))
+        );
+        assert_eq!(
+            PrinterMarks {
+                trim: false,
+                registration: false,
+                color_bars: false,
+                page_info: false,
+                ..m
+            }
+            .reach([9.0; 4]),
+            [0.0; 4]
+        );
     }
 
     #[test]
@@ -347,21 +519,50 @@ mod tests {
         let trim = Rect::new(0.0, 0.0, 200.0, 100.0);
         let m = all(MarkStyle::Japanese);
         let lay = m.layout(trim, [0.0; 4], &[]);
-        assert_eq!(lay.lines.len(), 24, "the targets add rings to the trim marks' centre crosses");
+        assert_eq!(
+            lay.lines.len(),
+            24,
+            "the targets add rings to the trim marks' centre crosses"
+        );
         let b = TrimMarks::default().bleed;
         assert_eq!(lay.rings[0].0, Point::new(100.0, -(b + 9.0)));
-        let spot = Paint::Solid { color: Color::cmyk(0.0, 0.5, 1.0, 0.0), swatch: Some("Ink".into()), tint: 1.0 };
+        let spot = Paint::Solid {
+            color: Color::cmyk(0.0, 0.5, 1.0, 0.0),
+            swatch: Some("Ink".into()),
+            tint: 1.0,
+        };
         let wide = Rect::new(0.0, 0.0, 400.0, 100.0);
-        assert_eq!(m.layout(wide, [0.0; 4], std::slice::from_ref(&spot)).patches[8].1, spot, "spot inks follow the process patches");
+        assert_eq!(
+            m.layout(wide, [0.0; 4], std::slice::from_ref(&spot))
+                .patches[8]
+                .1,
+            spot,
+            "spot inks follow the process patches"
+        );
         let mut n = 0;
         let g = m.art(trim, [0.0; 4], &[], "Page 1", &mut || {
             n += 1;
             NodeId(n)
         });
         let kids = g.children().unwrap();
-        let NodeKind::Text(t) = &kids.last().unwrap().kind else { panic!("the page information is type") };
-        assert_eq!((t.plain_text().as_str(), t.first_style().fill.is_registration()), ("Page 1", true));
-        let strokes: Vec<_> = kids.iter().filter_map(|k| k.appearance.stroke()).filter(|s| !s.paint.is_none()).collect();
-        assert!(strokes.len() == 24 + 8 && strokes.iter().all(|s| s.paint.is_registration()), "lines and rings in Registration");
+        let NodeKind::Text(t) = &kids.last().unwrap().kind else {
+            panic!("the page information is type")
+        };
+        assert_eq!(
+            (
+                t.plain_text().as_str(),
+                t.first_style().fill.is_registration()
+            ),
+            ("Page 1", true)
+        );
+        let strokes: Vec<_> = kids
+            .iter()
+            .filter_map(|k| k.appearance.stroke())
+            .filter(|s| !s.paint.is_none())
+            .collect();
+        assert!(
+            strokes.len() == 24 + 8 && strokes.iter().all(|s| s.paint.is_registration()),
+            "lines and rings in Registration"
+        );
     }
 }

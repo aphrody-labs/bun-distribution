@@ -39,13 +39,20 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         None | Some(Value::Null) => local_collections(doc).collect(),
         Some(Value::Array(a)) => a
             .iter()
-            .map(|x| x.as_str().and_then(|k| doc.variables.collection(k)).ok_or_else(|| bad(cmd, format!("no collection {x}"))))
+            .map(|x| {
+                x.as_str()
+                    .and_then(|k| doc.variables.collection(k))
+                    .ok_or_else(|| bad(cmd, format!("no collection {x}")))
+            })
             .collect::<Result<_>>()?,
         Some(_) => return Err(bad(cmd, "collections: [collection ids or names]")),
     };
     let text = match string(p, "format").as_deref().unwrap_or("json") {
-        "json" => serde_json::to_string_pretty(&figcraft_format::rest::export_variables(&doc.variables, &colls))
-            .map_err(|e| EngineError::Other(e.to_string()))?,
+        "json" => serde_json::to_string_pretty(&figcraft_format::rest::export_variables(
+            &doc.variables,
+            &colls,
+        ))
+        .map_err(|e| EngineError::Other(e.to_string()))?,
         "css" => css(&doc.variables, &colls),
         _ => return Err(bad(cmd, "format: json|css")),
     };
@@ -71,8 +78,20 @@ fn css(vars: &Variables, colls: &[&Collection]) -> String {
     for c in colls {
         let attr = css_var_name(&c.name);
         for (i, m) in c.modes.iter().enumerate() {
-            let sel = if i == 0 { ":root".to_string() } else { format!("[data-{}=\"{}\"]", attr.trim_start_matches('-'), css_safe(&m.name)) };
-            out.push_str(&format!("/* {} · {} */\n{sel} {{\n", css_safe(&c.name), css_safe(&m.name)));
+            let sel = if i == 0 {
+                ":root".to_string()
+            } else {
+                format!(
+                    "[data-{}=\"{}\"]",
+                    attr.trim_start_matches('-'),
+                    css_safe(&m.name)
+                )
+            };
+            out.push_str(&format!(
+                "/* {} · {} */\n{sel} {{\n",
+                css_safe(&c.name),
+                css_safe(&m.name)
+            ));
             for v in vars.variables.iter().filter(|v| v.collection == c.id) {
                 let value = match v.values.get(&m.id) {
                     Some(VariableValue::Color(col)) => col.to_css(),
@@ -95,22 +114,36 @@ fn css(vars: &Variables, colls: &[&Collection]) -> String {
 
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "variable.import";
-    let v =
-        super::file::variables_param(cmd, p)?.ok_or_else(|| bad(cmd, "`variables` (the variables JSON: an object, JSON text or a path) required"))?;
-    let (src, mut warnings) = figcraft_format::rest::read_variables(&v).ok_or_else(|| bad(cmd, "not a variables JSON"))?;
+    let v = super::file::variables_param(cmd, p)?.ok_or_else(|| {
+        bad(
+            cmd,
+            "`variables` (the variables JSON: an object, JSON text or a path) required",
+        )
+    })?;
+    let (src, mut warnings) = figcraft_format::rest::read_variables(&v)
+        .ok_or_else(|| bad(cmd, "not a variables JSON"))?;
     let doc = s.doc_mut()?;
     // Imported collection → (this file's collection, imported mode → its mode).
-    let mut colls: BTreeMap<CollectionId, (CollectionId, BTreeMap<ModeId, ModeId>)> = BTreeMap::new();
+    let mut colls: BTreeMap<CollectionId, (CollectionId, BTreeMap<ModeId, ModeId>)> =
+        BTreeMap::new();
     let mut added_colls = 0usize;
     for c in &src.collections {
         // Never a library copy (read-only) or an extended collection (its modes are inherited).
-        let same = doc.variables.collections.iter().find(|x| x.name == c.name && x.extends.is_none() && !is_remote_collection(doc, &x.id));
+        let same =
+            doc.variables.collections.iter().find(|x| {
+                x.name == c.name && x.extends.is_none() && !is_remote_collection(doc, &x.id)
+            });
         let cid = match same.map(|x| x.id.clone()) {
             Some(id) => id,
             None => {
                 let id = doc.new_collection_id();
                 let name = super::variables::free_collection_name(doc, &c.name);
-                doc.variables.collections.push(Collection { id: id.clone(), name, modes: Vec::new(), extends: None });
+                doc.variables.collections.push(Collection {
+                    id: id.clone(),
+                    name,
+                    modes: Vec::new(),
+                    extends: None,
+                });
                 added_colls += 1;
                 id
             }
@@ -122,12 +155,22 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
                 Some(y) => y.id.clone(),
                 None => {
                     let first = coll.and_then(|x| x.default_mode()).cloned();
-                    let Some(id) = doc.new_mode_id(&cid) else { continue };
+                    let Some(id) = doc.new_mode_id(&cid) else {
+                        continue;
+                    };
                     if let Some(x) = doc.variables.collections.iter_mut().find(|x| x.id == cid) {
-                        x.modes.push(Mode { id: id.clone(), name: m.name.clone() });
+                        x.modes.push(Mode {
+                            id: id.clone(),
+                            name: m.name.clone(),
+                        });
                     }
                     // Its variables start with their default mode's values (as with variable.addMode).
-                    for var in doc.variables.variables.iter_mut().filter(|x| x.collection == cid) {
+                    for var in doc
+                        .variables
+                        .variables
+                        .iter_mut()
+                        .filter(|x| x.collection == cid)
+                    {
                         if let Some(val) = first.as_ref().and_then(|f| var.values.get(f)).cloned() {
                             var.values.insert(id.clone(), val);
                         }
@@ -144,10 +187,22 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let mut added = 0usize;
     let mut updated = 0usize;
     for v in &src.variables {
-        let Some((cid, _)) = colls.get(&v.collection) else { continue };
-        match doc.variables.variables.iter().find(|x| x.collection == *cid && x.name == v.name) {
+        let Some((cid, _)) = colls.get(&v.collection) else {
+            continue;
+        };
+        match doc
+            .variables
+            .variables
+            .iter()
+            .find(|x| x.collection == *cid && x.name == v.name)
+        {
             Some(x) if x.kind != v.kind => {
-                warnings.push(format!("`{}` is a {} variable in this file: the {} one was skipped", v.name, x.kind.id(), v.kind.id()));
+                warnings.push(format!(
+                    "`{}` is a {} variable in this file: the {} one was skipped",
+                    v.name,
+                    x.kind.id(),
+                    v.kind.id()
+                ));
             }
             Some(x) => {
                 ids.insert(v.id.clone(), x.id.clone());
@@ -170,14 +225,22 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     for v in &src.variables {
-        let (Some(local), Some((cid, modes))) = (ids.get(&v.id), colls.get(&v.collection)) else { continue };
+        let (Some(local), Some((cid, modes))) = (ids.get(&v.id), colls.get(&v.collection)) else {
+            continue;
+        };
         for (m, val) in &v.values {
             let Some(lm) = modes.get(m) else { continue };
             let val = match val {
                 VariableValue::Alias(a) => {
-                    let Some(var) = doc.variables.variables.iter().find(|x| x.id == *local) else { continue };
-                    let target = ids.get(a).ok_or_else(|| "its alias target wasn't imported".to_string());
-                    match target.and_then(|t| super::variables::alias_target(&doc.variables, var, t)) {
+                    let Some(var) = doc.variables.variables.iter().find(|x| x.id == *local) else {
+                        continue;
+                    };
+                    let target = ids
+                        .get(a)
+                        .ok_or_else(|| "its alias target wasn't imported".to_string());
+                    match target
+                        .and_then(|t| super::variables::alias_target(&doc.variables, var, t))
+                    {
                         Ok(t) => VariableValue::Alias(t),
                         Err(e) => {
                             warnings.push(format!("`{}`: {e}", v.name));
@@ -193,14 +256,25 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         }
         // A value in every mode of its collection: modes the JSON lacks take the default mode's
         // (a new variable whose values all failed starts like one made with variable.create).
-        let all: Vec<ModeId> =
-            doc.variables.collections.iter().find(|x| x.id == *cid).map(|x| x.modes.iter().map(|m| m.id.clone()).collect()).unwrap_or_default();
+        let all: Vec<ModeId> = doc
+            .variables
+            .collections
+            .iter()
+            .find(|x| x.id == *cid)
+            .map(|x| x.modes.iter().map(|m| m.id.clone()).collect())
+            .unwrap_or_default();
         if let Some(slot) = doc.variables.variables.iter_mut().find(|x| x.id == *local) {
-            let first = all.iter().find_map(|m| slot.values.get(m)).cloned().unwrap_or_else(|| VariableValue::default_for(slot.kind));
+            let first = all
+                .iter()
+                .find_map(|m| slot.values.get(m))
+                .cloned()
+                .unwrap_or_else(|| VariableValue::default_for(slot.kind));
             for m in all {
                 slot.values.entry(m).or_insert_with(|| first.clone());
             }
         }
     }
-    Ok(json!({"collections": added_colls, "variables": added, "updated": updated, "warnings": warnings}))
+    Ok(
+        json!({"collections": added_colls, "variables": added, "updated": updated, "warnings": warnings}),
+    )
 }

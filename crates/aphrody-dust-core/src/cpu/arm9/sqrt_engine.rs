@@ -19,7 +19,11 @@ pub struct SqrtEngine {
 impl SqrtEngine {
     pub(super) fn new(schedule: &mut Schedule) -> Self {
         schedule.set_event(event_slots::SQRT, Event::SqrtResultReady);
-        SqrtEngine { control: Control(0), input: 0, result: 0 }
+        SqrtEngine {
+            control: Control(0),
+            input: 0,
+            result: 0,
+        }
     }
 
     fn schedule_data_ready(&mut self, schedule: &mut Schedule) {

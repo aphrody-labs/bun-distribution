@@ -4,15 +4,18 @@ use egui_kittest::Harness;
 use pdfcraft_ui_egui::PdfCraftApp;
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, include_bytes!("data/form.pdf").to_vec()).unwrap();
-        app.set_option("left", "closed").unwrap();
-        // The whole 300×400 pt page on screen.
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("form.pdf", None, include_bytes!("data/form.pdf").to_vec())
+                .unwrap();
+            app.set_option("left", "closed").unwrap();
+            // The whole 300×400 pt page on screen.
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     for _ in 0..60 {
         h.run_steps(2);
         if !h.state().render_pending() {
@@ -25,7 +28,15 @@ fn harness() -> Harness<'static, PdfCraftApp> {
 
 fn value(h: &Harness<'static, PdfCraftApp>, name: &str) -> Vec<String> {
     let s = h.state();
-    s.session.get(s.views[0].id).unwrap().form.iter().find(|f| f.name == name).unwrap().value.clone()
+    s.session
+        .get(s.views[0].id)
+        .unwrap()
+        .form
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap()
+        .value
+        .clone()
 }
 
 /// Click the centre of a field's widget.
@@ -34,7 +45,9 @@ fn click_field(h: &mut Harness<'static, PdfCraftApp>, name: &str, widget: usize)
         let s = h.state();
         let doc = s.session.get(s.views[0].id).unwrap();
         let f = doc.form.iter().find(|f| f.name == name).unwrap();
-        pdfcraft_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, widget).expect("on screen").center()
+        pdfcraft_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, widget)
+            .expect("on screen")
+            .center()
     };
     h.hover_at(p);
     h.run_steps(1);
@@ -48,14 +61,21 @@ fn click_field(h: &mut Harness<'static, PdfCraftApp>, name: &str, widget: usize)
 fn typing_into_a_text_field_and_tabbing_on() {
     let mut h = harness();
     click_field(&mut h, "name", 0);
-    assert!(h.state().views[0].forms.focus.is_some(), "the editor opened");
+    assert!(
+        h.state().views[0].forms.focus.is_some(),
+        "the editor opened"
+    );
     h.event(egui::Event::Text("Ada Lovelace".into()));
     h.run_steps(2);
     h.key_press(egui::Key::Tab);
     h.run_steps(4);
     assert_eq!(value(&h, "name"), ["Ada Lovelace"]);
     assert_eq!(
-        h.state().views[0].forms.focus.as_ref().map(|f| f.name.as_str()),
+        h.state().views[0]
+            .forms
+            .focus
+            .as_ref()
+            .map(|f| f.name.as_str()),
         Some("country"),
         "Tab moves to the next field that takes typing or a choice"
     );
@@ -63,7 +83,14 @@ fn typing_into_a_text_field_and_tabbing_on() {
     h.key_press(egui::Key::Escape);
     h.run_steps(2);
     click_field(&mut h, "city", 0);
-    assert_eq!(h.state().views[0].forms.focus.as_ref().map(|f| f.name.as_str()), Some("city"));
+    assert_eq!(
+        h.state().views[0]
+            .forms
+            .focus
+            .as_ref()
+            .map(|f| f.name.as_str()),
+        Some("city")
+    );
     h.event(egui::Event::Text("Paris".into()));
     h.run_steps(1);
     h.key_press(egui::Key::Escape);
@@ -114,7 +141,14 @@ fn tabbing_into_a_filled_field_selects_it_so_typing_replaces() {
     h.run_steps(3);
     h.key_press(egui::Key::Tab);
     h.run_steps(4);
-    assert_eq!(h.state().views[0].forms.focus.as_ref().map(|f| f.name.as_str()), Some("city"));
+    assert_eq!(
+        h.state().views[0]
+            .forms
+            .focus
+            .as_ref()
+            .map(|f| f.name.as_str()),
+        Some("city")
+    );
     h.event(egui::Event::Text("Lyon".into()));
     h.run_steps(1);
     h.key_press(egui::Key::Enter);
@@ -135,15 +169,31 @@ fn date_fields_offer_a_calendar() {
     h.run_steps(4);
     click_field(&mut h, "due", 0);
     let (y, m, _) = h.state().session.today();
-    let month =
-        ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][(m - 1) as usize];
+    let month = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ][(m - 1) as usize];
     h.get_by_label(&format!("{month} {y}"));
     h.get_by_label("›").click();
     h.run_steps(2);
     h.get_by_label("15").click();
     h.run_steps(4);
     let (ny, nm) = if m == 12 { (y + 1, 1) } else { (y, m + 1) };
-    assert_eq!(value(&h, "due"), vec![format!("{nm:02}/15/{ny}")], "picked in the field's format");
+    assert_eq!(
+        value(&h, "due"),
+        vec![format!("{nm:02}/15/{ny}")],
+        "picked in the field's format"
+    );
 }
 
 #[test]
@@ -160,7 +210,20 @@ fn lithuanian_calendar_localizes_months_and_weekdays_without_changing_field_valu
     h.run_steps(4);
     click_field(&mut h, "due", 0);
     let (y, m, _) = h.state().session.today();
-    let months = ["sausis", "vasaris", "kovas", "balandis", "gegužė", "birželis", "liepa", "rugpjūtis", "rugsėjis", "spalis", "lapkritis", "gruodis"];
+    let months = [
+        "sausis",
+        "vasaris",
+        "kovas",
+        "balandis",
+        "gegužė",
+        "birželis",
+        "liepa",
+        "rugpjūtis",
+        "rugsėjis",
+        "spalis",
+        "lapkritis",
+        "gruodis",
+    ];
     h.get_by_label(&format!("{y} m. {}", months[(m - 1) as usize]));
     for day in ["Sk", "Pr", "An", "Tr", "Kt", "Pn", "Št"] {
         h.get_by_label(day);
@@ -171,15 +234,28 @@ fn lithuanian_calendar_localizes_months_and_weekdays_without_changing_field_valu
     h.get_by_label(&format!("{ny} m. {}", months[(nm - 1) as usize]));
     h.get_by_label("15").click();
     h.run_steps(4);
-    assert_eq!(value(&h, "due"), vec![format!("{nm:02}/15/{ny}")], "the PDF field keeps its own date format");
+    assert_eq!(
+        value(&h, "due"),
+        vec![format!("{nm:02}/15/{ny}")],
+        "the PDF field keeps its own date format"
+    );
 }
 
 /// The value of `name` in a saved PDF, read back by opening it in a fresh app.
 fn saved_value(path: &std::path::Path, name: &str) -> Vec<String> {
     let mut app = PdfCraftApp::new();
     app.set_option("language", "en").unwrap();
-    app.open_bytes("saved.pdf", None, std::fs::read(path).unwrap()).unwrap();
-    app.session.get(app.views[0].id).unwrap().form.iter().find(|f| f.name == name).unwrap().value.clone()
+    app.open_bytes("saved.pdf", None, std::fs::read(path).unwrap())
+        .unwrap();
+    app.session
+        .get(app.views[0].id)
+        .unwrap()
+        .form
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap()
+        .value
+        .clone()
 }
 
 fn scratch(name: &str) -> std::path::PathBuf {
@@ -202,10 +278,17 @@ fn saving_while_still_typing_in_a_field_saves_the_text() {
     h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
     h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::S);
     h.run_steps(3);
-    assert_eq!(saved_value(&out, "name"), ["Browser Form 123"], "the saved PDF has the typed text");
+    assert_eq!(
+        saved_value(&out, "name"),
+        ["Browser Form 123"],
+        "the saved PDF has the typed text"
+    );
     assert_eq!(value(&h, "name"), ["Browser Form 123"]);
     let doc = h.state().session.get(h.state().views[0].id).unwrap();
-    assert!(!doc.dirty, "and the document is saved, not left with an unsaved change");
+    assert!(
+        !doc.dirty,
+        "and the document is saved, not left with an unsaved change"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -235,38 +318,62 @@ fn tabbing_back_to_the_same_field_then_saving_keeps_the_committed_value() {
         } else {
             validated_form()
         };
-        let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-            let mut app = PdfCraftApp::new();
-            app.set_option("language", "en").unwrap();
-            app.open_bytes("tab.pdf", None, bytes).unwrap();
-            app.set_option("left", "closed").unwrap();
-            app.set_option("zoom", "150").unwrap();
-            app
-        });
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1400.0, 900.0))
+            .build_eframe(|_cc| {
+                let mut app = PdfCraftApp::new();
+                app.set_option("language", "en").unwrap();
+                app.open_bytes("tab.pdf", None, bytes).unwrap();
+                app.set_option("left", "closed").unwrap();
+                app.set_option("zoom", "150").unwrap();
+                app
+            });
         h.run_steps(6);
         click_field(&mut h, "qty", 0);
         h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
         h.event(egui::Event::Text("42".into()));
         h.run_steps(2);
         h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
-        let modifiers = if backwards { egui::Modifiers::SHIFT } else { egui::Modifiers::NONE };
+        let modifiers = if backwards {
+            egui::Modifiers::SHIFT
+        } else {
+            egui::Modifiers::NONE
+        };
         if same_frame {
-            one_frame(&mut h, vec![key(egui::Key::Tab, modifiers), key(egui::Key::S, egui::Modifiers::COMMAND)]);
+            one_frame(
+                &mut h,
+                vec![
+                    key(egui::Key::Tab, modifiers),
+                    key(egui::Key::S, egui::Modifiers::COMMAND),
+                ],
+            );
         } else {
             h.key_press_modifiers(modifiers, egui::Key::Tab);
             h.run_steps(3);
             h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::S);
         }
         h.run_steps(4);
-        assert_eq!(saved_value(&out, "qty"), ["42"], "{case}: saving cannot restore the old value");
+        assert_eq!(
+            saved_value(&out, "qty"),
+            ["42"],
+            "{case}: saving cannot restore the old value"
+        );
         assert_eq!(value(&h, "qty"), ["42"], "{case}");
         // One typing action is one history entry, even after saving. Escape closes the
         // untouched editor before undoing the document rather than the TextEdit buffer.
         h.key_press(egui::Key::Escape);
         h.state_mut().undo();
-        assert_eq!(value(&h, "qty"), ["4"], "{case}: a single undo restores the original");
+        assert_eq!(
+            value(&h, "qty"),
+            ["4"],
+            "{case}: a single undo restores the original"
+        );
         h.state_mut().redo();
-        assert_eq!(value(&h, "qty"), ["42"], "{case}: redo restores the committed value");
+        assert_eq!(
+            value(&h, "qty"),
+            ["42"],
+            "{case}: redo restores the committed value"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
@@ -278,7 +385,10 @@ fn closing_while_still_typing_in_a_field_asks_to_save() {
     h.event(egui::Event::Text("Not lost".into()));
     h.run_steps(2);
     h.state_mut().request_close_tab(0);
-    assert!(h.state().close_request.is_some(), "typed text is an unsaved change: the user is asked");
+    assert!(
+        h.state().close_request.is_some(),
+        "typed text is an unsaved change: the user is asked"
+    );
     assert_eq!(h.state().views.len(), 1);
 }
 
@@ -291,10 +401,15 @@ fn close_all_saves_text_typed_in_a_tab_that_is_no_longer_active() {
     h.event(egui::Event::Text("Typed in tab one".into()));
     h.run_steps(2);
     // Another document becomes active while the first one's field still has its draft.
-    h.state_mut().open_bytes("other.pdf", None, include_bytes!("data/form.pdf").to_vec()).unwrap();
+    h.state_mut()
+        .open_bytes("other.pdf", None, include_bytes!("data/form.pdf").to_vec())
+        .unwrap();
     h.run_steps(2);
     h.state_mut().close_all();
-    assert!(h.state().close_request.is_some(), "the first document has an unsaved change");
+    assert!(
+        h.state().close_request.is_some(),
+        "the first document has an unsaved change"
+    );
     h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
     let ctx = h.ctx.clone();
     h.state_mut().resolve_close(&ctx, Some(true));
@@ -304,7 +419,13 @@ fn close_all_saves_text_typed_in_a_tab_that_is_no_longer_active() {
 
 /// A key press as one event (kittest's `key_press` runs a frame per queued event).
 fn key(key: egui::Key, modifiers: egui::Modifiers) -> egui::Event {
-    egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers }
+    egui::Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers,
+    }
 }
 
 /// Deliver `events` together, in one frame.
@@ -314,7 +435,13 @@ fn one_frame(h: &mut Harness<'static, PdfCraftApp>, events: Vec<egui::Event>) {
 }
 
 /// Type `text` into field `name`, then press ⌘S in the same frame as `last` (more input).
-fn type_then_save_in_one_frame(h: &mut Harness<'static, PdfCraftApp>, name: &str, text: &str, last: egui::Event, out: &std::path::Path) {
+fn type_then_save_in_one_frame(
+    h: &mut Harness<'static, PdfCraftApp>,
+    name: &str,
+    text: &str,
+    last: egui::Event,
+    out: &std::path::Path,
+) {
     click_field(h, name, 0);
     h.event(egui::Event::Text(text.into()));
     h.run_steps(2);
@@ -328,7 +455,13 @@ fn typing_and_saving_in_the_same_frame_saves_the_last_keystrokes() {
     let dir = scratch("same-frame");
     let out = dir.join("saved.pdf");
     let mut h = harness();
-    type_then_save_in_one_frame(&mut h, "name", "Browser", egui::Event::Text(" Form 123".into()), &out);
+    type_then_save_in_one_frame(
+        &mut h,
+        "name",
+        "Browser",
+        egui::Event::Text(" Form 123".into()),
+        &out,
+    );
     assert_eq!(saved_value(&out, "name"), ["Browser Form 123"]);
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -339,8 +472,18 @@ fn escape_and_save_in_the_same_frame_discards_the_draft() {
     let out = dir.join("saved.pdf");
     let mut h = harness();
     let before = value(&h, "name");
-    type_then_save_in_one_frame(&mut h, "name", "Discard me", key(egui::Key::Escape, egui::Modifiers::NONE), &out);
-    assert_eq!(value(&h, "name"), before, "Escape cancels typing, even with ⌘S right after it");
+    type_then_save_in_one_frame(
+        &mut h,
+        "name",
+        "Discard me",
+        key(egui::Key::Escape, egui::Modifiers::NONE),
+        &out,
+    );
+    assert_eq!(
+        value(&h, "name"),
+        before,
+        "Escape cancels typing, even with ⌘S right after it"
+    );
     assert!(h.state().views[0].forms.focus.is_none());
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -353,9 +496,16 @@ fn an_unrelated_command_leaves_the_field_being_typed_in_alone() {
     h.run_steps(2);
     assert!(h.state_mut().execute("view.theme.dark"));
     h.run_steps(2);
-    let focus = h.state().views[0].forms.focus.clone().expect("the editor stays open");
+    let focus = h.state().views[0]
+        .forms
+        .focus
+        .clone()
+        .expect("the editor stays open");
     assert_eq!(focus.text, "Still typing");
-    assert!(!h.state().session.get(h.state().views[0].id).unwrap().dirty, "nothing was committed");
+    assert!(
+        !h.state().session.get(h.state().views[0].id).unwrap().dirty,
+        "nothing was committed"
+    );
 }
 
 #[test]
@@ -368,7 +518,11 @@ fn exporting_form_data_while_typing_includes_the_text() {
     h.run_steps(2);
     h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
     h.state_mut().export_data_dialog(false, true);
-    assert!(std::fs::read_to_string(&out).unwrap().contains("Exported value"));
+    assert!(
+        std::fs::read_to_string(&out)
+            .unwrap()
+            .contains("Exported value")
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -395,7 +549,13 @@ fn pdf_from_objects(objs: &[&str]) -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -403,14 +563,16 @@ fn pdf_from_objects(objs: &[&str]) -> Vec<u8> {
 fn a_rejected_value_keeps_the_typing_and_stops_the_save() {
     let dir = scratch("rejected");
     let out = dir.join("saved.pdf");
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("order.pdf", None, validated_form()).unwrap();
-        app.set_option("left", "closed").unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("order.pdf", None, validated_form()).unwrap();
+            app.set_option("left", "closed").unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     h.run_steps(6);
     click_field(&mut h, "qty", 0);
     h.event(egui::Event::Text("500".into()));
@@ -420,8 +582,15 @@ fn a_rejected_value_keeps_the_typing_and_stops_the_save() {
     h.run_steps(4);
     assert!(!out.exists(), "nothing is saved without the typed value");
     assert_eq!(value(&h, "qty"), ["4"], "the field keeps its valid value");
-    let focus = h.state().views[0].forms.focus.clone().expect("the editor stays open");
-    assert_eq!(focus.text, "4500", "with the text (typed after the 4), so the user can fix it");
+    let focus = h.state().views[0]
+        .forms
+        .focus
+        .clone()
+        .expect("the editor stays open");
+    assert_eq!(
+        focus.text, "4500",
+        "with the text (typed after the 4), so the user can fix it"
+    );
     // And closing asks rather than dropping it.
     h.state_mut().request_close_tab(0);
     assert!(h.state().close_request.is_some());
@@ -440,9 +609,14 @@ fn a_save_shortcut_pressed_while_typing_saves_only_the_document_it_was_pressed_i
     one_frame(&mut h, vec![key(egui::Key::S, egui::Modifiers::COMMAND)]);
     assert!(!out.exists(), "⌘S while typing waits a frame for the field");
     // Before the deferred ⌘S runs, another document becomes active.
-    h.state_mut().open_bytes("other.pdf", None, include_bytes!("data/form.pdf").to_vec()).unwrap();
+    h.state_mut()
+        .open_bytes("other.pdf", None, include_bytes!("data/form.pdf").to_vec())
+        .unwrap();
     h.run_steps(3);
-    assert!(!out.exists(), "the other document is not saved by a shortcut pressed in the first");
+    assert!(
+        !out.exists(),
+        "the other document is not saved by a shortcut pressed in the first"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -459,25 +633,43 @@ fn a_value_refused_on_tab_keeps_save_in_the_same_frame_from_running() {
 fn refused_value_stops_save(commit_key: egui::Key, case: &str) {
     let dir = scratch(case);
     let out = dir.join("saved.pdf");
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("order.pdf", None, validated_form()).unwrap();
-        app.set_option("left", "closed").unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("order.pdf", None, validated_form()).unwrap();
+            app.set_option("left", "closed").unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     h.run_steps(6);
     click_field(&mut h, "qty", 0);
     h.event(egui::Event::Text("500".into()));
     h.run_steps(2);
     h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
-    one_frame(&mut h, vec![key(commit_key, egui::Modifiers::NONE), key(egui::Key::S, egui::Modifiers::COMMAND)]);
+    one_frame(
+        &mut h,
+        vec![
+            key(commit_key, egui::Modifiers::NONE),
+            key(egui::Key::S, egui::Modifiers::COMMAND),
+        ],
+    );
     h.run_steps(3);
     assert_eq!(value(&h, "qty"), ["4"]);
-    assert!(!out.exists(), "nothing is saved right after the field refused its value");
+    assert!(
+        !out.exists(),
+        "nothing is saved right after the field refused its value"
+    );
     // The refused text is back in the field, so a later ⌘S stops again instead of saving 4.
-    assert_eq!(h.state().views[0].forms.focus.as_ref().map(|f| f.text.as_str()), Some("4500"));
+    assert_eq!(
+        h.state().views[0]
+            .forms
+            .focus
+            .as_ref()
+            .map(|f| f.text.as_str()),
+        Some("4500")
+    );
     h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::S);
     h.run_steps(4);
     assert!(!out.exists());
@@ -494,10 +686,18 @@ fn flattening_while_typing_flattens_the_typed_text() {
     h.run_steps(2);
     let s = h.state();
     let doc = s.session.get(s.views[0].id).unwrap();
-    assert!(doc.form.iter().all(|f| f.name != "name"), "the field is flattened");
+    assert!(
+        doc.form.iter().all(|f| f.name != "name"),
+        "the field is flattened"
+    );
     let mut r = pdfcraft_render::PageRenderer::new(doc.bytes.clone(), Default::default());
     let text = r
-        .render(pdfcraft_render::RenderRequest { page: 0, kind: pdfcraft_render::RequestKind::Text, scale: 1.0, ..Default::default() })
+        .render(pdfcraft_render::RenderRequest {
+            page: 0,
+            kind: pdfcraft_render::RequestKind::Text,
+            scale: 1.0,
+            ..Default::default()
+        })
         .text
         .map(|t| t.plain_text())
         .unwrap_or_default();
@@ -516,7 +716,11 @@ mod revert_tests {
         fn new() -> Self {
             static NEXT: AtomicU64 = AtomicU64::new(0);
             for _ in 0..128 {
-                let path = std::env::temp_dir().join(format!("pdfcraft-revert-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+                let path = std::env::temp_dir().join(format!(
+                    "pdfcraft-revert-{}-{}",
+                    std::process::id(),
+                    NEXT.fetch_add(1, Ordering::Relaxed)
+                ));
                 match std::fs::create_dir(&path) {
                     Ok(()) => return Self(path),
                     Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -537,20 +741,32 @@ mod revert_tests {
         let dir = RevertDir::new();
         let path = dir.0.join("saved.pdf");
         let mut h = harness();
-        assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::SetFieldValue {
-            name: "name".into(),
-            value: pdfcraft_engine::FieldValue::Text("Saved original".into()),
-        }));
+        assert!(
+            h.state_mut()
+                .apply_edit(pdfcraft_engine::Edit::SetFieldValue {
+                    name: "name".into(),
+                    value: pdfcraft_engine::FieldValue::Text("Saved original".into()),
+                })
+        );
         h.state_mut().save_override = Some(path.to_string_lossy().into_owned());
-        assert!(h.state_mut().save_active(pdfcraft_ui_egui::SaveTarget::InPlace));
+        assert!(
+            h.state_mut()
+                .save_active(pdfcraft_ui_egui::SaveTarget::InPlace)
+        );
         let saved = std::fs::read(&path).unwrap();
-        assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::SetFieldProps {
-            name: "name".into(),
-            props: Box::new(pdfcraft_engine::FieldProps {
-                validate: Some(pdfcraft_engine::form_scripts::Validate::Range { min: Some(0.0), max: Some(10.0) }),
-                ..Default::default()
-            }),
-        }));
+        assert!(
+            h.state_mut()
+                .apply_edit(pdfcraft_engine::Edit::SetFieldProps {
+                    name: "name".into(),
+                    props: Box::new(pdfcraft_engine::FieldProps {
+                        validate: Some(pdfcraft_engine::form_scripts::Validate::Range {
+                            min: Some(0.0),
+                            max: Some(10.0)
+                        }),
+                        ..Default::default()
+                    }),
+                })
+        );
         h.run_steps(3);
         click_field(&mut h, "name", 0);
         h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
@@ -559,40 +775,81 @@ mod revert_tests {
         h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::S);
         h.run_steps(4);
         assert_eq!(h.state().views[0].forms.focus.as_ref().unwrap().text, "99");
-        assert_eq!(std::fs::read(&path).unwrap(), saved, "rejection leaves the saved file untouched");
+        assert_eq!(
+            std::fs::read(&path).unwrap(),
+            saved,
+            "rejection leaves the saved file untouched"
+        );
         assert!(h.state_mut().execute("file.revert"));
         h.run_steps(2);
-        h.get_all_by_label("Revert").last().expect("confirmation button").click();
+        h.get_all_by_label("Revert")
+            .last()
+            .expect("confirmation button")
+            .click();
         h.run_steps(4);
-        assert!(h.state().views[0].forms.focus.is_none() && h.state().views[0].pending_edit.is_none());
-        assert_eq!(h.state().first_dirty(), None, "Revert discards rejected typing too");
+        assert!(
+            h.state().views[0].forms.focus.is_none() && h.state().views[0].pending_edit.is_none()
+        );
+        assert_eq!(
+            h.state().first_dirty(),
+            None,
+            "Revert discards rejected typing too"
+        );
         assert_eq!(value(&h, "name"), ["Saved original"]);
-        assert!(h.state_mut().save_active(pdfcraft_ui_egui::SaveTarget::InPlace));
+        assert!(
+            h.state_mut()
+                .save_active(pdfcraft_ui_egui::SaveTarget::InPlace)
+        );
         assert_eq!(saved_value(&path, "name"), ["Saved original"]);
         let bytes = std::fs::read(&path).unwrap();
-        assert_eq!(bytes, saved, "later Save cannot resurrect the discarded draft");
-        let mut renderer = pdfcraft_render::PageRenderer::new(std::sync::Arc::new(bytes), Default::default());
-        let output = renderer.render(pdfcraft_render::RenderRequest { page: 0, kind: pdfcraft_render::RequestKind::Text, ..Default::default() });
-        assert!(output.error.is_none(), "saved appearance is readable: {:?}", output.error);
-        assert!(output.text.unwrap().plain_text().contains("Saved original"), "saved AP still draws the original value");
+        assert_eq!(
+            bytes, saved,
+            "later Save cannot resurrect the discarded draft"
+        );
+        let mut renderer =
+            pdfcraft_render::PageRenderer::new(std::sync::Arc::new(bytes), Default::default());
+        let output = renderer.render(pdfcraft_render::RenderRequest {
+            page: 0,
+            kind: pdfcraft_render::RequestKind::Text,
+            ..Default::default()
+        });
+        assert!(
+            output.error.is_none(),
+            "saved appearance is readable: {:?}",
+            output.error
+        );
+        assert!(
+            output.text.unwrap().plain_text().contains("Saved original"),
+            "saved AP still draws the original value"
+        );
     }
 }
 
 #[test]
 fn calculated_field_and_script_side_effect_on_another_page_re_render() {
     let mut h = harness();
-    assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::InsertBlankPage { at: 1, width: 300.0, height: 400.0 }));
+    assert!(
+        h.state_mut()
+            .apply_edit(pdfcraft_engine::Edit::InsertBlankPage {
+                at: 1,
+                width: 300.0,
+                height: 400.0
+            })
+    );
     assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::AddField {
         page: 1,
         rect: [20.0, 20.0, 100.0, 40.0],
         kind: pdfcraft_engine::NewField::Text { multiline: false },
         name: Some("page2_field".into()),
     }));
-    assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::SetFieldScript {
-        name: "page2_field".into(),
-        event: "calculate".into(),
-        script: Some("event.value = 'from_' + getField('name').value;".into()),
-    }));
+    assert!(
+        h.state_mut()
+            .apply_edit(pdfcraft_engine::Edit::SetFieldScript {
+                name: "page2_field".into(),
+                event: "calculate".into(),
+                script: Some("event.value = 'from_' + getField('name').value;".into()),
+            })
+    );
     for _ in 0..60 {
         h.run_steps(2);
         if !h.state().render_pending() {
@@ -636,20 +893,33 @@ fn overlay_clears_after_fresh_tiles_zoom_then_edit_and_rejected_edit() {
         }
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
-    assert!(!h.state().views[0].forms.unbaked.contains(&("name".to_string(), 0)));
+    assert!(
+        !h.state().views[0]
+            .forms
+            .unbaked
+            .contains(&("name".to_string(), 0))
+    );
 
     // 2. Rejected edit: typing rejected by validate script leaves unbaked clean.
-    assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::SetFieldScript {
-        name: "city".into(),
-        event: "validate".into(),
-        script: Some("event.rc = false;".into()),
-    }));
+    assert!(
+        h.state_mut()
+            .apply_edit(pdfcraft_engine::Edit::SetFieldScript {
+                name: "city".into(),
+                event: "validate".into(),
+                script: Some("event.rc = false;".into()),
+            })
+    );
     click_field(&mut h, "city", 0);
     h.event(egui::Event::Text("BadVal".into()));
     h.run_steps(2);
     h.key_press(egui::Key::Tab);
     h.run_steps(2);
-    assert!(!h.state().views[0].forms.unbaked.contains(&("city".to_string(), 0)));
+    assert!(
+        !h.state().views[0]
+            .forms
+            .unbaked
+            .contains(&("city".to_string(), 0))
+    );
     h.key_press(egui::Key::Escape);
     h.run_steps(2);
 
@@ -676,7 +946,12 @@ fn overlay_clears_after_fresh_tiles_zoom_then_edit_and_rejected_edit() {
         }
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
-    assert!(!h.state().views[0].forms.unbaked.contains(&("name".to_string(), 0)));
+    assert!(
+        !h.state().views[0]
+            .forms
+            .unbaked
+            .contains(&("name".to_string(), 0))
+    );
 }
 
 /// A field whose /P is a page number past the document's end (#1307) is listed under
@@ -690,13 +965,15 @@ fn the_fields_panel_lists_a_field_on_a_missing_page_as_unplaced() {
         "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] /Annots [4 0 R] >>",
         "<< /Type /Annot /Subtype /Widget /FT /Tx /T (orphan) /Rect [10 10 100 30] /P 99 /F 4 >>",
     ]);
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("orphan.pdf", None, bytes).unwrap();
-        app.set_option("panel", "fields").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("orphan.pdf", None, bytes).unwrap();
+            app.set_option("panel", "fields").unwrap();
+            app
+        });
     h.run_steps(6);
     h.get_by_label("Unplaced");
     assert_eq!(h.query_all_by_label("orphan").count(), 1);

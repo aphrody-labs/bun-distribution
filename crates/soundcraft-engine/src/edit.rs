@@ -17,7 +17,10 @@ pub struct TimeCtx<'a> {
 
 impl<'a> TimeCtx<'a> {
     pub fn of(s: &'a Session) -> Self {
-        TimeCtx { tempo: &s.tempo, sr: s.sample_rate }
+        TimeCtx {
+            tempo: &s.tempo,
+            sr: s.sample_rate,
+        }
     }
     fn ticks(&self, s: Samples) -> i64 {
         self.tempo.samples_to_ticks(s, self.sr)
@@ -25,7 +28,12 @@ impl<'a> TimeCtx<'a> {
 }
 
 /// Split `clip` at absolute position `at` (strictly inside). Returns (left, right) where right gets `new_id`.
-pub fn split_clip(clip: &Clip, at: Samples, new_id: ClipId, t: TimeCtx<'_>) -> Option<(Clip, Clip)> {
+pub fn split_clip(
+    clip: &Clip,
+    at: Samples,
+    new_id: ClipId,
+    t: TimeCtx<'_>,
+) -> Option<(Clip, Clip)> {
     if at <= clip.start || at >= clip.end() {
         return None;
     }
@@ -36,7 +44,9 @@ pub fn split_clip(clip: &Clip, at: Samples, new_id: ClipId, t: TimeCtx<'_>) -> O
     right.trim_start_to(at);
     left.fade_out = Fade::default();
     right.fade_in = Fade::default();
-    if let (ClipContent::Midi { sequence: ls }, ClipContent::Midi { sequence: rs }) = (&mut left.content, &mut right.content) {
+    if let (ClipContent::Midi { sequence: ls }, ClipContent::Midi { sequence: rs }) =
+        (&mut left.content, &mut right.content)
+    {
         let boundary = t.ticks(at) - t.ticks(clip.start);
         ls.notes.retain(|n| n.start < boundary);
         ls.ctrls.retain(|c| c.tick < boundary);
@@ -74,13 +84,23 @@ fn rebase_midi_start(clip: &mut Clip, old_start: Samples, t: TimeCtx<'_>) {
 pub fn separate_at(s: &mut Session, track: TrackId, at: Samples) -> usize {
     let tc_tempo = s.tempo.clone();
     let sr = s.sample_rate;
-    let t = TimeCtx { tempo: &tc_tempo, sr };
+    let t = TimeCtx {
+        tempo: &tc_tempo,
+        sr,
+    };
     let mut ids = Vec::new();
-    let n_split = s.track(track).map_or(0, |tr| tr.clips().iter().filter(|c| at > c.start && at < c.end()).count());
+    let n_split = s.track(track).map_or(0, |tr| {
+        tr.clips()
+            .iter()
+            .filter(|c| at > c.start && at < c.end())
+            .count()
+    });
     for _ in 0..n_split {
         ids.push(s.new_clip_id());
     }
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     let mut out = Vec::with_capacity(pl.clips.len() + ids.len());
     let mut count = 0;
     for c in pl.clips.drain(..) {
@@ -109,7 +129,9 @@ pub fn clear_range(s: &mut Session, track: TrackId, range: Range, shuffle: bool)
     }
     separate_at(s, track, range.start);
     separate_at(s, track, range.end);
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return Vec::new() };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return Vec::new();
+    };
     let mut removed = Vec::new();
     pl.clips.retain(|c| {
         if c.start >= range.start && c.end() <= range.end {
@@ -136,10 +158,14 @@ pub fn clear_range(s: &mut Session, track: TrackId, range: Range, shuffle: bool)
 /// Copy the material inside `range` (clips trimmed to the range), relative to `range.start`.
 pub fn copy_range(s: &Session, track: TrackId, range: Range) -> Vec<Clip> {
     let t = TimeCtx::of(s);
-    let Some(tr) = s.track(track) else { return Vec::new() };
+    let Some(tr) = s.track(track) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for c in tr.clips() {
-        let Some(isect) = c.range().intersect(&range) else { continue };
+        let Some(isect) = c.range().intersect(&range) else {
+            continue;
+        };
         let mut part = c.clone();
         if isect.start > part.start {
             let old = part.start;
@@ -157,7 +183,14 @@ pub fn copy_range(s: &Session, track: TrackId, range: Range) -> Vec<Clip> {
 
 /// Insert `clips` (positions relative to 0) at `at`. Overwrites what's underneath unless
 /// `shuffle`, which first pushes later material right by `length`.
-pub fn paste(s: &mut Session, track: TrackId, at: Samples, clips: &[Clip], length: Samples, shuffle: bool) -> Vec<ClipId> {
+pub fn paste(
+    s: &mut Session,
+    track: TrackId,
+    at: Samples,
+    clips: &[Clip],
+    length: Samples,
+    shuffle: bool,
+) -> Vec<ClipId> {
     let length = length.max(clips.iter().map(Clip::end).max().unwrap_or(0));
     if shuffle {
         separate_at(s, track, at);
@@ -207,8 +240,13 @@ pub fn insert_silence(s: &mut Session, track: TrackId, range: Range) {
 /// Trim clips to keep only material inside `range`.
 pub fn trim_to(s: &mut Session, track: TrackId, range: Range) -> usize {
     let tempo = s.tempo.clone();
-    let tc = TimeCtx { tempo: &tempo, sr: s.sample_rate };
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let tc = TimeCtx {
+        tempo: &tempo,
+        sr: s.sample_rate,
+    };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     let mut n = 0;
     for c in &mut pl.clips {
         if let Some(i) = c.range().intersect(&range)
@@ -227,8 +265,13 @@ pub fn trim_to(s: &mut Session, track: TrackId, range: Range) -> usize {
 /// Trim the start of clips under `at` to `at` (Trim Start to Insertion).
 pub fn trim_start_to(s: &mut Session, track: TrackId, at: Samples) -> usize {
     let tempo = s.tempo.clone();
-    let tc = TimeCtx { tempo: &tempo, sr: s.sample_rate };
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let tc = TimeCtx {
+        tempo: &tempo,
+        sr: s.sample_rate,
+    };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     let mut n = 0;
     for c in &mut pl.clips {
         if c.range().contains(at) && at > c.start {
@@ -242,7 +285,9 @@ pub fn trim_start_to(s: &mut Session, track: TrackId, at: Samples) -> usize {
 }
 
 pub fn trim_end_to(s: &mut Session, track: TrackId, at: Samples) -> usize {
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     let mut n = 0;
     for c in &mut pl.clips {
         if at > c.start && at < c.end() {
@@ -255,15 +300,27 @@ pub fn trim_end_to(s: &mut Session, track: TrackId, at: Samples) -> usize {
 
 /// Heal separations inside `range`: merge neighbouring audio clips that continue the same file.
 pub fn heal(s: &mut Session, track: TrackId, range: Range) -> usize {
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     pl.sort();
     let mut out: Vec<Clip> = Vec::with_capacity(pl.clips.len());
     let mut healed = 0;
     for c in pl.clips.drain(..) {
         if let Some(prev) = out.last_mut() {
-            let contiguous = prev.end() == c.start && c.start >= range.start && c.start <= range.end;
+            let contiguous =
+                prev.end() == c.start && c.start >= range.start && c.start <= range.end;
             let same = match (&prev.content, &c.content) {
-                (ClipContent::Audio { source: a, offset: oa }, ClipContent::Audio { source: b, offset: ob }) => a == b && oa + prev.length == *ob,
+                (
+                    ClipContent::Audio {
+                        source: a,
+                        offset: oa,
+                    },
+                    ClipContent::Audio {
+                        source: b,
+                        offset: ob,
+                    },
+                ) => a == b && oa + prev.length == *ob,
                 _ => false,
             };
             if contiguous && same && (prev.gain_db - c.gain_db).abs() < 1e-6 {
@@ -280,7 +337,12 @@ pub fn heal(s: &mut Session, track: TrackId, range: Range) -> usize {
 }
 
 /// Move clips by `delta` (and optionally to another track), overwriting what they land on.
-pub fn move_clips(s: &mut Session, ids: &[ClipId], delta: Samples, to_track: Option<TrackId>) -> usize {
+pub fn move_clips(
+    s: &mut Session,
+    ids: &[ClipId],
+    delta: Samples,
+    to_track: Option<TrackId>,
+) -> usize {
     let mut moving: Vec<(TrackId, Clip)> = Vec::new();
     for t in &mut s.tracks {
         let tid = t.id;
@@ -316,11 +378,15 @@ pub fn create_fades(s: &mut Session, track: TrackId, range: Range, shape: FadeSh
             .map(|c| {
                 let avail = match c.content {
                     ClipContent::Audio { source, offset } => {
-                        let total = s.source(source).map_or(0, |src| i64::try_from(src.frames).unwrap_or(i64::MAX));
+                        let total = s
+                            .source(source)
+                            .map_or(0, |src| i64::try_from(src.frames).unwrap_or(i64::MAX));
                         total.saturating_sub(offset).saturating_sub(c.length)
                     }
                     ClipContent::Video { source, offset } => {
-                        let total = s.video(source).map_or(0, |v| s.sample_rate.samples(v.duration.clamp(0.0, 1e7)));
+                        let total = s
+                            .video(source)
+                            .map_or(0, |v| s.sample_rate.samples(v.duration.clamp(0.0, 1e7)));
                         total.saturating_sub(offset).saturating_sub(c.length)
                     }
                     ClipContent::Midi { .. } => 0,
@@ -329,14 +395,18 @@ pub fn create_fades(s: &mut Session, track: TrackId, range: Range, shape: FadeSh
             })
             .collect()
     };
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     pl.sort();
     let mut made = 0;
     let mut xfaded: Vec<ClipId> = Vec::new();
     let n = pl.clips.len();
     // Crossfades between adjacent clips whose boundary is inside the range.
     for i in 0..n.saturating_sub(1) {
-        let (Some(a), Some(b)) = (pl.clips.get(i).cloned(), pl.clips.get(i + 1).cloned()) else { continue };
+        let (Some(a), Some(b)) = (pl.clips.get(i).cloned(), pl.clips.get(i + 1).cloned()) else {
+            continue;
+        };
         let boundary = a.end();
         if b.start == boundary && range.start < boundary && range.end > boundary {
             let before = boundary - range.start.max(a.start);
@@ -348,12 +418,18 @@ pub fn create_fades(s: &mut Session, track: TrackId, range: Range, shape: FadeSh
             let ext_b = before.min(b_handle).max(0);
             if let Some(ca) = pl.clips.get_mut(i) {
                 ca.length += ext_a;
-                ca.fade_out = Fade { len: (ext_a + before).min(ca.length), shape };
+                ca.fade_out = Fade {
+                    len: (ext_a + before).min(ca.length),
+                    shape,
+                };
             }
             if let Some(cb) = pl.clips.get_mut(i + 1) {
                 let old = cb.start;
                 cb.trim_start_to(old - ext_b);
-                cb.fade_in = Fade { len: (ext_b + after).min(cb.length), shape };
+                cb.fade_in = Fade {
+                    len: (ext_b + after).min(cb.length),
+                    shape,
+                };
             }
             made += 1;
             xfaded.push(a.id);
@@ -362,10 +438,16 @@ pub fn create_fades(s: &mut Session, track: TrackId, range: Range, shape: FadeSh
     }
     for c in pl.clips.iter_mut().filter(|c| !xfaded.contains(&c.id)) {
         if range.start <= c.start && range.end > c.start && range.end < c.end() {
-            c.fade_in = Fade { len: range.end - c.start, shape };
+            c.fade_in = Fade {
+                len: range.end - c.start,
+                shape,
+            };
             made += 1;
         } else if range.end >= c.end() && range.start > c.start && range.start < c.end() {
-            c.fade_out = Fade { len: c.end() - range.start, shape };
+            c.fade_out = Fade {
+                len: c.end() - range.start,
+                shape,
+            };
             made += 1;
         }
     }
@@ -374,7 +456,9 @@ pub fn create_fades(s: &mut Session, track: TrackId, range: Range, shape: FadeSh
 
 /// Remove fades on clips touching `range`.
 pub fn delete_fades(s: &mut Session, track: TrackId, range: Range) -> usize {
-    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else { return 0 };
+    let Some(pl) = s.track_mut(track).and_then(|t| t.playlist_mut()) else {
+        return 0;
+    };
     let mut n = 0;
     for c in &mut pl.clips {
         if c.range().overlaps(&range) || (range.is_empty() && c.range().contains(range.start)) {
@@ -388,7 +472,12 @@ pub fn delete_fades(s: &mut Session, track: TrackId, range: Range) -> usize {
     // Overlapping (crossfaded) neighbours are trimmed back to the midpoint.
     pl.sort();
     for i in 0..pl.clips.len().saturating_sub(1) {
-        let (Some(a_end), Some(b_start)) = (pl.clips.get(i).map(Clip::end), pl.clips.get(i + 1).map(|c| c.start)) else { continue };
+        let (Some(a_end), Some(b_start)) = (
+            pl.clips.get(i).map(Clip::end),
+            pl.clips.get(i + 1).map(|c| c.start),
+        ) else {
+            continue;
+        };
         if a_end > b_start {
             let mid = b_start + (a_end - b_start) / 2;
             if let Some(a) = pl.clips.get_mut(i) {
@@ -423,13 +512,19 @@ mod tests {
         });
         let id = s.new_clip_id();
         if let Some(pl) = s.track_mut(t).and_then(|t| t.playlist_mut()) {
-            pl.clips.push(Clip::audio(id, "a", SourceId(500), 1000, 1000, 4000));
+            pl.clips
+                .push(Clip::audio(id, "a", SourceId(500), 1000, 1000, 4000));
         }
         (s, t)
     }
 
     fn clips(s: &Session, t: TrackId) -> Vec<(Samples, Samples, Samples)> {
-        s.track(t).unwrap().clips().iter().map(|c| (c.start, c.length, c.source_offset())).collect()
+        s.track(t)
+            .unwrap()
+            .clips()
+            .iter()
+            .map(|c| (c.start, c.length, c.source_offset()))
+            .collect()
     }
 
     #[test]
@@ -459,7 +554,10 @@ mod tests {
         let (mut s, t) = session_with_clip();
         let copied = copy_range(&s, t, Range::new(1500, 2500));
         assert_eq!(copied.len(), 1);
-        assert_eq!((copied[0].start, copied[0].length, copied[0].source_offset()), (0, 1000, 1500));
+        assert_eq!(
+            (copied[0].start, copied[0].length, copied[0].source_offset()),
+            (0, 1000, 1500)
+        );
         paste(&mut s, t, 4000, &copied, 1000, false);
         assert_eq!(clips(&s, t), vec![(1000, 3000, 1000), (4000, 1000, 1500)]);
     }
@@ -485,11 +583,17 @@ mod tests {
     #[test]
     fn fades_and_crossfades() {
         let (mut s, t) = session_with_clip();
-        assert_eq!(create_fades(&mut s, t, Range::new(500, 1500), FadeShape::Linear), 1);
+        assert_eq!(
+            create_fades(&mut s, t, Range::new(500, 1500), FadeShape::Linear),
+            1
+        );
         assert_eq!(s.track(t).unwrap().clips()[0].fade_in.len, 500);
         let (mut s, t) = session_with_clip();
         separate_at(&mut s, t, 3000);
-        assert_eq!(create_fades(&mut s, t, Range::new(2900, 3100), FadeShape::EqualPower), 1);
+        assert_eq!(
+            create_fades(&mut s, t, Range::new(2900, 3100), FadeShape::EqualPower),
+            1
+        );
         let c = s.track(t).unwrap().clips();
         assert_eq!(c[0].end(), 3100);
         assert_eq!(c[1].start, 2900);

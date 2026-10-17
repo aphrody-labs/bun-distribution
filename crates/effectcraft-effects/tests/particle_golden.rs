@@ -7,7 +7,9 @@
 //! hashing and re-pinning (`SIM_GOLDEN_PRINT=1`, `SIM_GOLDEN_OUT=<dir>`) as `sim_golden.rs`: any
 //! change to the CPU output of these effects, however small, fails the test.
 
-use effectcraft_effects::{Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find};
+use effectcraft_effects::{
+    Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find,
+};
 use effectcraft_keyframe::Value;
 use effectcraft_raster::Image;
 
@@ -33,7 +35,11 @@ fn layer(hdr: bool) -> Image {
                 1.0
             };
             let gain = if hdr && x < 20 { 1.6 } else { 1.0 };
-            let c = [u * gain, v * gain, (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain];
+            let c = [
+                u * gain,
+                v * gain,
+                (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain,
+            ];
             img.set(x, y, [c[0] * a, c[1] * a, c[2] * a, a]);
         }
     }
@@ -63,7 +69,14 @@ struct Host;
 impl EffectHost for Host {
     fn layer(&self, id: u64, _: bool) -> Option<LayerPixels> {
         let img = other(id);
-        Some(LayerPixels { buf: Buf { img, offset: [0.0; 2], scale: 1.0 }, size: [W as f64, H as f64] })
+        Some(LayerPixels {
+            buf: Buf {
+                img,
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+            size: [W as f64, H as f64],
+        })
     }
     fn layer_at(&self, id: u64, comp_time: f64, _: bool) -> Option<LayerPixels> {
         // A frame that changes with time (Particle Playground's Layer Map times).
@@ -72,7 +85,14 @@ impl EffectHost for Host {
         for p in img.data.iter_mut() {
             p[0] = (p[0] + k).min(1.0) * p[3];
         }
-        Some(LayerPixels { buf: Buf { img, offset: [0.0; 2], scale: 1.0 }, size: [W as f64, H as f64] })
+        Some(LayerPixels {
+            buf: Buf {
+                img,
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+            size: [W as f64, H as f64],
+        })
     }
     fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
         None
@@ -125,12 +145,40 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.sim.ccparticleworld",
             vec![
                 vec![],
-                vec![("birthRate", n(2.0)), ("particle/particleType", e(1)), ("particle/transferMode", e(2)), ("physics/animation", e(1))],
-                vec![("particle/particleType", e(4)), ("physics/animation", e(2)), ("particle/transferMode", e(1)), ("producer/radiusZ", n(0.3))],
-                vec![("particle/particleType", e(8)), ("physics/animation", e(5)), ("particle/transferMode", e(3)), ("particle/birthSize", n(0.4))],
-                vec![("particle/particleType", e(5)), ("physics/animation", e(8)), ("particle/sizeVariation", n(50.0)), ("physics/resistance", n(1.0))],
-                vec![("particle/particleType", e(3)), ("physics/animation", e(6)), ("particle/maxOpacity", n(100.0))],
-                vec![("particle/particleType", e(6)), ("physics/animation", e(4)), ("particle/deathSize", n(0.6))],
+                vec![
+                    ("birthRate", n(2.0)),
+                    ("particle/particleType", e(1)),
+                    ("particle/transferMode", e(2)),
+                    ("physics/animation", e(1)),
+                ],
+                vec![
+                    ("particle/particleType", e(4)),
+                    ("physics/animation", e(2)),
+                    ("particle/transferMode", e(1)),
+                    ("producer/radiusZ", n(0.3)),
+                ],
+                vec![
+                    ("particle/particleType", e(8)),
+                    ("physics/animation", e(5)),
+                    ("particle/transferMode", e(3)),
+                    ("particle/birthSize", n(0.4)),
+                ],
+                vec![
+                    ("particle/particleType", e(5)),
+                    ("physics/animation", e(8)),
+                    ("particle/sizeVariation", n(50.0)),
+                    ("physics/resistance", n(1.0)),
+                ],
+                vec![
+                    ("particle/particleType", e(3)),
+                    ("physics/animation", e(6)),
+                    ("particle/maxOpacity", n(100.0)),
+                ],
+                vec![
+                    ("particle/particleType", e(6)),
+                    ("physics/animation", e(4)),
+                    ("particle/deathSize", n(0.6)),
+                ],
                 vec![("particle/particleType", e(7)), ("physics/animation", e(3))],
                 vec![("particle/particleType", e(2)), ("physics/animation", e(9))],
             ],
@@ -139,11 +187,33 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.sim.ccparticlesystems2",
             vec![
                 vec![],
-                vec![("particle/particleType", e(1)), ("particle/transferMode", e(2)), ("physics/animation", e(2)), ("birthRate", n(4.0))],
-                vec![("particle/particleType", e(5)), ("physics/animation", e(6)), ("particle/transferMode", e(1))],
-                vec![("particle/particleType", e(7)), ("particle/transferMode", e(3)), ("physics/animation", e(9)), ("producer/radiusX", n(10.0))],
-                vec![("particle/particleType", e(3)), ("physics/animation", e(4)), ("particle/sizeVariation", n(40.0))],
-                vec![("particle/particleType", e(4)), ("physics/animation", e(5)), ("physics/direction", n(60.0))],
+                vec![
+                    ("particle/particleType", e(1)),
+                    ("particle/transferMode", e(2)),
+                    ("physics/animation", e(2)),
+                    ("birthRate", n(4.0)),
+                ],
+                vec![
+                    ("particle/particleType", e(5)),
+                    ("physics/animation", e(6)),
+                    ("particle/transferMode", e(1)),
+                ],
+                vec![
+                    ("particle/particleType", e(7)),
+                    ("particle/transferMode", e(3)),
+                    ("physics/animation", e(9)),
+                    ("producer/radiusX", n(10.0)),
+                ],
+                vec![
+                    ("particle/particleType", e(3)),
+                    ("physics/animation", e(4)),
+                    ("particle/sizeVariation", n(40.0)),
+                ],
+                vec![
+                    ("particle/particleType", e(4)),
+                    ("physics/animation", e(5)),
+                    ("physics/direction", n(60.0)),
+                ],
             ],
         ),
         (
@@ -157,7 +227,11 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                     ("gravity/gravityForce", n(40.0)),
                 ],
                 grid(vec![]),
-                grid(vec![("options/gridText", s("Ab C")), ("grid/gridParticleRadius", n(12.0)), ("options/autoOrientRotation", b(true))]),
+                grid(vec![
+                    ("options/gridText", s("Ab C")),
+                    ("grid/gridParticleRadius", n(12.0)),
+                    ("options/autoOrientRotation", b(true)),
+                ]),
                 vec![
                     ("cannonEnabled", b(false)),
                     ("exploderEnabled", b(true)),
@@ -184,15 +258,32 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                     ("ephemeralPropertyMapper/greenOperator", e(1)),
                     ("ephemeralPropertyMapper/greenMax", n(4.0)),
                 ]),
-                grid(vec![("repel/repelForce", n(5.0)), ("repel/repelForceRadius", n(12.0)), ("options/cannonText", s("xy")), ("cannonEnabled", b(true))]),
+                grid(vec![
+                    ("repel/repelForce", n(5.0)),
+                    ("repel/repelForceRadius", n(12.0)),
+                    ("options/cannonText", s("xy")),
+                    ("cannonEnabled", b(true)),
+                ]),
             ],
         ),
         (
             "ec.sim.ccballaction",
             vec![
                 vec![],
-                vec![("scatter", n(20.0)), ("rotationAxis", e(6)), ("rotation", n(40.0)), ("twistProperty", e(3)), ("twistAngle", n(90.0))],
-                vec![("gridSpacing", n(2.0)), ("ballSize", n(80.0)), ("instabilityState", n(45.0)), ("twistProperty", e(2)), ("twistAngle", n(30.0))],
+                vec![
+                    ("scatter", n(20.0)),
+                    ("rotationAxis", e(6)),
+                    ("rotation", n(40.0)),
+                    ("twistProperty", e(3)),
+                    ("twistAngle", n(90.0)),
+                ],
+                vec![
+                    ("gridSpacing", n(2.0)),
+                    ("ballSize", n(80.0)),
+                    ("instabilityState", n(45.0)),
+                    ("twistProperty", e(2)),
+                    ("twistAngle", n(30.0)),
+                ],
             ],
         ),
         (
@@ -201,12 +292,26 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                 vec![],
                 vec![("object", e(1)), ("gridSpacing", n(6.0))],
                 vec![("object", e(2)), ("spinning", n(90.0))],
-                vec![("object", e(3)), ("enableDepthSort", b(false)), ("gravity", n(2.0)), ("startTime", n(0.3))],
+                vec![
+                    ("object", e(3)),
+                    ("enableDepthSort", b(false)),
+                    ("gravity", n(2.0)),
+                    ("startTime", n(0.3)),
+                ],
             ],
         ),
         (
             "ec.sim.ccscatterize",
-            vec![vec![], vec![("scatter", n(10.0))], vec![("rightTwist", n(60.0)), ("leftTwist", n(-30.0)), ("transferMode", e(1)), ("scatter", n(4.0))]],
+            vec![
+                vec![],
+                vec![("scatter", n(10.0))],
+                vec![
+                    ("rightTwist", n(60.0)),
+                    ("leftTwist", n(-30.0)),
+                    ("transferMode", e(1)),
+                    ("scatter", n(4.0)),
+                ],
+            ],
         ),
         (
             "ec.noise.curlnoise",
@@ -247,7 +352,13 @@ fn fnv(img: &Image) -> u64 {
 fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
     let spec = find(id).unwrap_or_else(|| panic!("no effect {id}"));
     let size = [W as f64, H as f64];
-    let mut params = Params { values: spec.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: spec
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (k, v) in set {
         assert!(params.values.contains_key(*k), "{id}: unknown param {k}");
         params.values.insert(k.to_string(), v.clone());
@@ -257,22 +368,47 @@ fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
         img.clamp01();
         img.quantize(255.0);
     }
-    let mut buf = Buf { img, offset: [0.0; 2], scale: 1.0 };
+    let mut buf = Buf {
+        img,
+        offset: [0.0; 2],
+        scale: 1.0,
+    };
     if half {
         // A half-resolution preview buffer padded by 3 px.
         let (w2, h2) = (W / 2, H / 2);
         let mut small = Image::new(w2, h2);
         for y in 0..h2 {
             for x in 0..w2 {
-                small.set(x, y, buf.img.sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0));
+                small.set(
+                    x,
+                    y,
+                    buf.img
+                        .sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0),
+                );
             }
         }
-        buf = Buf { img: small, offset: [0.0; 2], scale: 0.5 };
+        buf = Buf {
+            img: small,
+            offset: [0.0; 2],
+            scale: 0.5,
+        };
         buf.pad(3);
     }
     let host = Host;
-    let env = EffectEnv { host: Some(&host), frame_rate: 30.0, comp_time: time, ..Default::default() };
-    let ctx = EffectCtx { params: &params, time, layer_size: size, seed: 1, adjustment: false, env };
+    let env = EffectEnv {
+        host: Some(&host),
+        frame_rate: 30.0,
+        comp_time: time,
+        ..Default::default()
+    };
+    let ctx = EffectCtx {
+        params: &params,
+        time,
+        layer_size: size,
+        seed: 1,
+        adjustment: false,
+        env,
+    };
     let mut out = apply(spec, &ctx, buf).img;
     if bpc8 {
         out.clamp01();
@@ -296,10 +432,23 @@ fn hashes() -> Vec<(String, u64)> {
                 }
                 for t in TIMES {
                     let img = render(id, set, t, bpc8, half);
-                    let name = format!("{id}/{si}/{}{}/t{t}", if bpc8 { "8bpc" } else { "32bpc" }, if half { "/half" } else { "" });
+                    let name = format!(
+                        "{id}/{si}/{}{}/t{t}",
+                        if bpc8 { "8bpc" } else { "32bpc" },
+                        if half { "/half" } else { "" }
+                    );
                     if let Some(d) = &out_dir {
-                        let bytes: Vec<u8> = img.data.iter().flat_map(|p| p.iter().flat_map(|c| c.to_le_bytes())).collect();
-                        let file = format!("{}_{}x{}.f32", name.replace('/', "_"), img.width, img.height);
+                        let bytes: Vec<u8> = img
+                            .data
+                            .iter()
+                            .flat_map(|p| p.iter().flat_map(|c| c.to_le_bytes()))
+                            .collect();
+                        let file = format!(
+                            "{}_{}x{}.f32",
+                            name.replace('/', "_"),
+                            img.width,
+                            img.height
+                        );
                         std::fs::write(d.join(file), bytes).unwrap();
                     }
                     v.push((name, fnv(&img)));
@@ -342,10 +491,22 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.sim.ccparticleworld/0/32bpc/t1.5", 0x2b5682e32bb3e916),
     ("ec.sim.ccparticleworld/0/32bpc/t0.8", 0xe6aaed9716d15c42),
     ("ec.sim.ccparticleworld/0/32bpc/t2.2", 0xa6e9a6f2acad94c0),
-    ("ec.sim.ccparticleworld/0/8bpc/half/t0.5", 0xbb0b6803512a6b99),
-    ("ec.sim.ccparticleworld/0/8bpc/half/t1.5", 0x70c578ea73992099),
-    ("ec.sim.ccparticleworld/0/8bpc/half/t0.8", 0x2d26cb3f73a26b4f),
-    ("ec.sim.ccparticleworld/0/8bpc/half/t2.2", 0x2b474438a48ee0e4),
+    (
+        "ec.sim.ccparticleworld/0/8bpc/half/t0.5",
+        0xbb0b6803512a6b99,
+    ),
+    (
+        "ec.sim.ccparticleworld/0/8bpc/half/t1.5",
+        0x70c578ea73992099,
+    ),
+    (
+        "ec.sim.ccparticleworld/0/8bpc/half/t0.8",
+        0x2d26cb3f73a26b4f,
+    ),
+    (
+        "ec.sim.ccparticleworld/0/8bpc/half/t2.2",
+        0x2b474438a48ee0e4,
+    ),
     ("ec.sim.ccparticleworld/1/8bpc/t0.5", 0x294502dc827b0326),
     ("ec.sim.ccparticleworld/1/8bpc/t1.5", 0xf7874709f4012aaa),
     ("ec.sim.ccparticleworld/1/8bpc/t0.8", 0x87664ce9a05e67f9),
@@ -418,10 +579,22 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.sim.ccparticlesystems2/0/32bpc/t1.5", 0x4c50991034336999),
     ("ec.sim.ccparticlesystems2/0/32bpc/t0.8", 0xaacc2ea722f2e9e3),
     ("ec.sim.ccparticlesystems2/0/32bpc/t2.2", 0x1a5f7fc66db90a83),
-    ("ec.sim.ccparticlesystems2/0/8bpc/half/t0.5", 0x8c89f83a2829dba1),
-    ("ec.sim.ccparticlesystems2/0/8bpc/half/t1.5", 0x9239cd8895757d17),
-    ("ec.sim.ccparticlesystems2/0/8bpc/half/t0.8", 0x91a16fb0a382d8e1),
-    ("ec.sim.ccparticlesystems2/0/8bpc/half/t2.2", 0xc86d8250fe1402c5),
+    (
+        "ec.sim.ccparticlesystems2/0/8bpc/half/t0.5",
+        0x8c89f83a2829dba1,
+    ),
+    (
+        "ec.sim.ccparticlesystems2/0/8bpc/half/t1.5",
+        0x9239cd8895757d17,
+    ),
+    (
+        "ec.sim.ccparticlesystems2/0/8bpc/half/t0.8",
+        0x91a16fb0a382d8e1,
+    ),
+    (
+        "ec.sim.ccparticlesystems2/0/8bpc/half/t2.2",
+        0xc86d8250fe1402c5,
+    ),
     ("ec.sim.ccparticlesystems2/1/8bpc/t0.5", 0xabade8d131837f05),
     ("ec.sim.ccparticlesystems2/1/8bpc/t1.5", 0x6a3566257b9a0bad),
     ("ec.sim.ccparticlesystems2/1/8bpc/t0.8", 0xc1199f209bad5c33),
@@ -470,10 +643,22 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.sim.particleplayground/0/32bpc/t1.5", 0xb51f5a6d27dc1d85),
     ("ec.sim.particleplayground/0/32bpc/t0.8", 0x8da8efac055a67e5),
     ("ec.sim.particleplayground/0/32bpc/t2.2", 0x7ad7e7a36e107a6d),
-    ("ec.sim.particleplayground/0/8bpc/half/t0.5", 0xe262aec0816c3ccd),
-    ("ec.sim.particleplayground/0/8bpc/half/t1.5", 0x87e664a185ad2ca1),
-    ("ec.sim.particleplayground/0/8bpc/half/t0.8", 0x34e36782ea9592fd),
-    ("ec.sim.particleplayground/0/8bpc/half/t2.2", 0x0cf9289dd2950f89),
+    (
+        "ec.sim.particleplayground/0/8bpc/half/t0.5",
+        0xe262aec0816c3ccd,
+    ),
+    (
+        "ec.sim.particleplayground/0/8bpc/half/t1.5",
+        0x87e664a185ad2ca1,
+    ),
+    (
+        "ec.sim.particleplayground/0/8bpc/half/t0.8",
+        0x34e36782ea9592fd,
+    ),
+    (
+        "ec.sim.particleplayground/0/8bpc/half/t2.2",
+        0x0cf9289dd2950f89,
+    ),
     ("ec.sim.particleplayground/1/8bpc/t0.5", 0x5dfbd4b5eb4382b9),
     ("ec.sim.particleplayground/1/8bpc/t1.5", 0xac3e8f2a9d4df855),
     ("ec.sim.particleplayground/1/8bpc/t0.8", 0x847292a51edbf41d),

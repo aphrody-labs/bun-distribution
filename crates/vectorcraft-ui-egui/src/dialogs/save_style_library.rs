@@ -17,8 +17,13 @@ use crate::state::Dialog;
 /// The dialog kind of Save Graphic Style Library.
 pub const KIND: &str = "saveGraphicStyleLibrary";
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Save Graphic Style Library").into(), body, confirm, min_width: 360.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Save Graphic Style Library").into(),
+    body,
+    confirm,
+    min_width: 360.0,
+    ..DialogSpec::FORM
+};
 
 /// Open Save Graphic Style Library for the document's styles (`names`: the ones selected in the
 /// panel).

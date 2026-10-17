@@ -6,7 +6,11 @@ use super::*;
 
 #[test]
 fn cleared_generation_cannot_read_or_repopulate_memory_or_disk() {
-    let dir = std::env::temp_dir().join(format!("lc-thumbnail-generation-{}-{}", std::process::id(), next_tick()));
+    let dir = std::env::temp_dir().join(format!(
+        "lc-thumbnail-generation-{}-{}",
+        std::process::id(),
+        next_tick()
+    ));
     let cache = Arc::new(PreviewCache::with_disk(1 << 20, &dir, 1 << 20));
     let key = hash_bytes(b"same-key");
     let old = cache.generation();
@@ -45,7 +49,11 @@ fn retired_cache_keeps_its_files_but_refuses_every_read_and_write() {
     old.clear();
     // a replacement for the same directory still finds the valid file, and only that
     let new = PreviewCache::with_disk(1 << 20, &dir, 1 << 20);
-    assert_eq!(new.get(kept).map(|i| (i.width, i.height)), Some((8, 8)), "the disk file stays (JPEG: lossy)");
+    assert_eq!(
+        new.get(kept).map(|i| (i.width, i.height)),
+        Some((8, 8)),
+        "the disk file stays (JPEG: lossy)"
+    );
     assert!(new.get(late).is_none());
     new.clear();
 }
@@ -57,8 +65,21 @@ fn temp_dir(tag: &str) -> std::path::PathBuf {
 }
 
 fn gradient(w: usize, h: usize, seed: u8) -> Rgba8 {
-    let data = (0..w * h).map(|i| [((i % w) * 255 / w) as u8, ((i / w) * 255 / h) as u8, seed, 255]).collect();
-    Rgba8 { width: w, height: h, data }
+    let data = (0..w * h)
+        .map(|i| {
+            [
+                ((i % w) * 255 / w) as u8,
+                ((i / w) * 255 / h) as u8,
+                seed,
+                255,
+            ]
+        })
+        .collect();
+    Rgba8 {
+        width: w,
+        height: h,
+        data,
+    }
 }
 
 #[test]
@@ -67,7 +88,10 @@ fn hashes_are_stable_and_distinct() {
     assert_eq!(a, hash_bytes(b"hello"));
     assert_ne!(a, hash_bytes(b"hellp"));
     assert_eq!(Hash128::parse(&a.to_string()), Some(a));
-    assert_ne!(Hasher128::new().str("ab").str("c").finish(), Hasher128::new().str("a").str("bc").finish());
+    assert_ne!(
+        Hasher128::new().str("ab").str("c").finish(),
+        Hasher128::new().str("a").str("bc").finish()
+    );
     // streaming == one shot
     assert_eq!(Hasher128::new().update(b"hel").update(b"lo").finish(), a);
 }
@@ -99,7 +123,13 @@ fn disk_cache_roundtrip_and_prune() {
     d.put(k, &img);
     let back = d.get(k).expect("hit");
     assert_eq!((back.width, back.height), (160, 100));
-    let err: i64 = img.data.iter().zip(&back.data).map(|(a, b)| (a[0] as i64 - b[0] as i64).abs() + (a[1] as i64 - b[1] as i64).abs()).max().unwrap();
+    let err: i64 = img
+        .data
+        .iter()
+        .zip(&back.data)
+        .map(|(a, b)| (a[0] as i64 - b[0] as i64).abs() + (a[1] as i64 - b[1] as i64).abs())
+        .max()
+        .unwrap();
     assert!(err < 24, "JPEG error {err}");
     assert!(back.data.iter().all(|p| p[3] == 255));
     // fill past the budget: the oldest entries go, the newest stay
@@ -145,7 +175,8 @@ fn disk_cache_overwrite_accounts_for_replaced_jpeg_only_once() {
         let hex = key.to_string();
         dir.join(&hex[..2]).join(format!("{hex}.jpg"))
     };
-    let actual = std::fs::metadata(path(a)).unwrap().len() + std::fs::metadata(path(b)).unwrap().len();
+    let actual =
+        std::fs::metadata(path(a)).unwrap().len() + std::fs::metadata(path(b)).unwrap().len();
     assert_eq!(cache.size(), actual);
     cache.clear();
     let _ = std::fs::remove_dir_all(&dir);
@@ -166,7 +197,13 @@ fn preview_cache_memory_then_disk() {
     assert_eq!(c.mem_usage().0, 0);
     assert_eq!(c.get(k).map(|i| i.width), Some(64));
     assert_eq!(c.mem_usage().0, 1);
-    assert_eq!(c.disk().unwrap().hits.load(std::sync::atomic::Ordering::Relaxed), 1);
+    assert_eq!(
+        c.disk()
+            .unwrap()
+            .hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -253,7 +290,10 @@ fn pool_drop_waits_for_running_job() {
     use std::sync::atomic::{AtomicBool, Ordering};
     let mut p: JobPool<u8, ()> = JobPool::new(1);
     let (started, has_started) = std::sync::mpsc::channel();
-    let (finished, queued_ran) = (Arc::new(AtomicBool::new(false)), Arc::new(AtomicBool::new(false)));
+    let (finished, queued_ran) = (
+        Arc::new(AtomicBool::new(false)),
+        Arc::new(AtomicBool::new(false)),
+    );
     let f = finished.clone();
     p.submit(
         1,
@@ -269,8 +309,14 @@ fn pool_drop_waits_for_running_job() {
     let q = queued_ran.clone();
     p.submit(2, 0, 1, Box::new(move || q.store(true, Ordering::SeqCst)));
     drop(p);
-    assert!(finished.load(Ordering::SeqCst), "drop returned while the job was still running");
-    assert!(!queued_ran.load(Ordering::SeqCst), "a job that had not started is discarded");
+    assert!(
+        finished.load(Ordering::SeqCst),
+        "drop returned while the job was still running"
+    );
+    assert!(
+        !queued_ran.load(Ordering::SeqCst),
+        "a job that had not started is discarded"
+    );
 }
 
 #[test]
@@ -278,9 +324,16 @@ fn pool_shutdown_reports_workers_and_drop_does_not_wait_again() {
     let (mut p, release) = pool_with_a_running_job();
     assert_eq!(p.live_workers(), 1);
     let t0 = std::time::Instant::now();
-    assert!(!p.shutdown(std::time::Duration::from_millis(100)), "the job is still running");
+    assert!(
+        !p.shutdown(std::time::Duration::from_millis(100)),
+        "the job is still running"
+    );
     let waited = t0.elapsed();
-    assert!(waited >= std::time::Duration::from_millis(100) && waited < std::time::Duration::from_secs(30), "{waited:?}");
+    assert!(
+        waited >= std::time::Duration::from_millis(100)
+            && waited < std::time::Duration::from_secs(30),
+        "{waited:?}"
+    );
     assert_eq!(p.live_workers(), 1);
     // stopped: nothing new is queued, and the job that ends is noticed
     p.submit(2, 0, 1, Box::new(|| ()));
@@ -293,7 +346,10 @@ fn pool_shutdown_reports_workers_and_drop_does_not_wait_again() {
     assert!(!p.shutdown(std::time::Duration::ZERO));
     let t0 = std::time::Instant::now();
     drop(p);
-    assert!(t0.elapsed() < std::time::Duration::from_secs(1), "dropped after a shutdown: no second wait");
+    assert!(
+        t0.elapsed() < std::time::Duration::from_secs(1),
+        "dropped after a shutdown: no second wait"
+    );
 }
 
 #[test]
@@ -303,21 +359,30 @@ fn pool_drop_is_bounded_when_a_job_never_ends() {
     let t0 = std::time::Instant::now();
     drop(p);
     let waited = t0.elapsed();
-    assert!(waited >= std::time::Duration::from_secs(1) && waited < std::time::Duration::from_secs(30), "{waited:?}");
+    assert!(
+        waited >= std::time::Duration::from_secs(1) && waited < std::time::Duration::from_secs(30),
+        "{waited:?}"
+    );
 }
 
 #[test]
 fn pool_stops_after_a_job_panicked_and_when_dropped_by_its_own_job() {
     // a worker that unwound is not waited for
     let mut p: JobPool<u8, ()> = JobPool::new(1);
-    p.submit(1, 0, 1, Box::new(|| panic!("a job panics (expected in this test)")));
+    p.submit(
+        1,
+        0,
+        1,
+        Box::new(|| panic!("a job panics (expected in this test)")),
+    );
     while p.live_workers() > 0 {
         std::thread::yield_now();
     }
     assert!(p.shutdown(std::time::Duration::from_secs(30)));
 
     // the last owner of a pool is one of its jobs: the worker must not wait for (or join) itself
-    let slot: Arc<std::sync::Mutex<Option<JobPool<u8, ()>>>> = Arc::new(std::sync::Mutex::new(None));
+    let slot: Arc<std::sync::Mutex<Option<JobPool<u8, ()>>>> =
+        Arc::new(std::sync::Mutex::new(None));
     let (dropped, has_dropped) = std::sync::mpsc::channel();
     let mut p: JobPool<u8, ()> = JobPool::new(1);
     let s = slot.clone();
@@ -338,7 +403,9 @@ fn pool_stops_after_a_job_panicked_and_when_dropped_by_its_own_job() {
         }),
     );
     *slot.lock().unwrap() = Some(p);
-    let waited = has_dropped.recv_timeout(std::time::Duration::from_secs(30)).unwrap();
+    let waited = has_dropped
+        .recv_timeout(std::time::Duration::from_secs(30))
+        .unwrap();
     assert!(waited < std::time::Duration::from_secs(1), "{waited:?}");
 }
 
@@ -350,7 +417,8 @@ fn disk_cache_never_touches_foreign_files() {
         dir.join("readme.txt"),
         dir.join("ab").join("holiday.jpg"),
         dir.join("ab").join("0123456789abcdef0123456789abcdef.jpg"), // wrong shard
-        dir.join("small").join("0123456789abcdef0123456789abcdef.jpg"),
+        dir.join("small")
+            .join("0123456789abcdef0123456789abcdef.jpg"),
         dir.join("01").join("0123456789ABCDEF0123456789ABCDEF.jpg"), // upper case
         dir.join("01").join("0123456789abcdef0123456789abcdef.jpeg"),
         dir.join("01").join("0123456789abcdef0123456789abcdef.tmp"),
@@ -360,7 +428,9 @@ fn disk_cache_never_touches_foreign_files() {
         std::fs::write(p, vec![7u8; 50_000]).unwrap();
     }
     // a stale temp file of our own is cleaned up
-    let own_tmp = dir.join("01").join("0123456789abcdef0123456789abcdef.tmpThreadId9");
+    let own_tmp = dir
+        .join("01")
+        .join("0123456789abcdef0123456789abcdef.tmpThreadId9");
     std::fs::write(&own_tmp, b"partial").unwrap();
     let d = DiskCache::new(&dir, 40_000);
     assert_eq!(d.size(), 7, "only the cache's own temp file counts");
@@ -375,8 +445,14 @@ fn disk_cache_never_touches_foreign_files() {
     for p in &foreign {
         assert!(p.exists(), "foreign file deleted: {}", p.display());
     }
-    assert!(disk::is_cache_file("01", "0123456789abcdef0123456789abcdef.jpg"));
-    assert!(!disk::is_cache_file("01", "0123456789abcdef0123456789abcdef.jpg.bak"));
+    assert!(disk::is_cache_file(
+        "01",
+        "0123456789abcdef0123456789abcdef.jpg"
+    ));
+    assert!(!disk::is_cache_file(
+        "01",
+        "0123456789abcdef0123456789abcdef.jpg.bak"
+    ));
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -385,7 +461,10 @@ fn disk_cache_never_touches_foreign_files() {
 #[test]
 fn pool_wait_keeps_the_finished_job_for_try_recv() {
     let mut p: JobPool<u8, u8> = JobPool::new(1);
-    assert!(!p.wait(std::time::Duration::from_millis(10)), "nothing runs");
+    assert!(
+        !p.wait(std::time::Duration::from_millis(10)),
+        "nothing runs"
+    );
     p.submit(1, 0, 1, Box::new(|| 7));
     assert!(p.wait(std::time::Duration::from_secs(10)));
     assert!(p.wait(std::time::Duration::ZERO), "kept until taken");
@@ -443,7 +522,10 @@ fn a_slot_runs_one_job_at_a_time() {
         done.contains(&9)
     }));
     std::thread::sleep(std::time::Duration::from_millis(50));
-    assert!(has_started.try_recv().is_err(), "a second job of slot 1 started beside the first");
+    assert!(
+        has_started.try_recv().is_err(),
+        "a second job of slot 1 started beside the first"
+    );
     assert!(p.is_queued(1));
     drop(release);
     assert!(eventually(10, || {
@@ -451,7 +533,11 @@ fn a_slot_runs_one_job_at_a_time() {
         done.contains(&3)
     }));
     assert!(!done.contains(&2), "the replaced job never runs");
-    assert_eq!(most.load(Ordering::SeqCst), 1, "slot 1 ran two jobs at once");
+    assert_eq!(
+        most.load(Ordering::SeqCst),
+        1,
+        "slot 1 ran two jobs at once"
+    );
 }
 
 /// A job that panics still frees its slot: the slot's next job runs (on another worker).

@@ -12,12 +12,12 @@
 // The default bindings come from `UISettings::default_hotkeys` in
 // `crate::uisettings`, matching upstream ownership.
 
-use std::rc::Rc;
+use hid_core::hid_core::{EmulatedControllerHandle, HIDCore};
+use hid_core::hid_types::{NpadButton, NpadIdType};
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use hid_core::hid_core::{HIDCore, EmulatedControllerHandle};
-use hid_core::hid_types::{NpadButton, NpadIdType};
 
 use gtk::prelude::*;
 
@@ -72,7 +72,9 @@ pub fn page(hid: &Arc<parking_lot::Mutex<HIDCore>>) -> (Page, Rc<ControllerCaptu
     );
     let capture = Rc::new(ControllerCapture {
         controller: hid.lock().get_emulated_controller(NpadIdType::Player1),
-        rows: Rc::clone(&rows), active: RefCell::new(None), timer: RefCell::new(None),
+        rows: Rc::clone(&rows),
+        active: RefCell::new(None),
+        timer: RefCell::new(None),
     });
     let child_store = gtk::gio::ListStore::new::<HotkeyRow>();
     for row in rows.iter() {
@@ -98,7 +100,11 @@ pub fn page(hid: &Arc<parking_lot::Mutex<HIDCore>>) -> (Page, Rc<ControllerCaptu
         |row| row.action(),
         Rc::clone(&capture),
     ));
-    view.append_column(&hotkey_column(HOTKEY_COLUMN_WIDTH, Rc::clone(&rows), Rc::clone(&capture)));
+    view.append_column(&hotkey_column(
+        HOTKEY_COLUMN_WIDTH,
+        Rc::clone(&rows),
+        Rc::clone(&capture),
+    ));
     view.append_column(&controller_hotkey_column(
         "Controller Hotkey",
         HOTKEY_COLUMN_WIDTH,
@@ -174,59 +180,99 @@ pub struct ControllerCapture {
 
 impl ControllerCapture {
     fn start(self: &Rc<Self>, source: &gtk::Widget, row: &HotkeyRow) {
-        if self.active.borrow().is_some() { return; }
+        if self.active.borrow().is_some() {
+            return;
+        }
         if let Some(window) = source.root().and_downcast::<gtk::Window>() {
             window.add_css_class("ruzu-controller-capture");
         }
         *self.active.borrow_mut() = Some(PendingControllerCapture {
-            row: row.clone(), previous: row.controller_hotkey(), source: source.downgrade(),
-            started: Instant::now(), buttons: NpadButton::empty(), home: false, screenshot: false,
+            row: row.clone(),
+            previous: row.controller_hotkey(),
+            source: source.downgrade(),
+            started: Instant::now(),
+            buttons: NpadButton::empty(),
+            home: false,
+            screenshot: false,
         });
         row.set_controller_hotkey(&crate::i18n::tr("[waiting]"));
         hid_core::hid_core::with_controller(&self.controller, |controller| {
             controller.disable_configuration()
         });
         let weak = Rc::downgrade(self);
-        *self.timer.borrow_mut() = Some(gtk::glib::timeout_add_local(Duration::from_millis(100), move || {
-            let Some(capture) = weak.upgrade() else { return gtk::glib::ControlFlow::Break; };
-            if capture.poll() {
-                gtk::glib::ControlFlow::Continue
-            } else {
-                capture.timer.borrow_mut().take();
-                capture.finish(false);
-                gtk::glib::ControlFlow::Break
-            }
-        }));
+        *self.timer.borrow_mut() = Some(gtk::glib::timeout_add_local(
+            Duration::from_millis(100),
+            move || {
+                let Some(capture) = weak.upgrade() else {
+                    return gtk::glib::ControlFlow::Break;
+                };
+                if capture.poll() {
+                    gtk::glib::ControlFlow::Continue
+                } else {
+                    capture.timer.borrow_mut().take();
+                    capture.finish(false);
+                    gtk::glib::ControlFlow::Break
+                }
+            },
+        ));
     }
 
     fn poll(&self) -> bool {
         let reader = self.controller.lock().button_state_reader();
         let (npad, home, screenshot) = reader.read();
         let mut active = self.active.borrow_mut();
-        let Some(active) = active.as_mut() else { return false; };
+        let Some(active) = active.as_mut() else {
+            return false;
+        };
         active.buttons |= npad.raw;
         active.home |= home.raw != 0;
         active.screenshot |= screenshot.raw != 0;
         if !active.buttons.is_empty() || active.home || active.screenshot {
-            active.row.set_controller_hotkey(&format!("{}...", get_button_combination_name(active.buttons, active.home, active.screenshot)));
+            active.row.set_controller_hotkey(&format!(
+                "{}...",
+                get_button_combination_name(active.buttons, active.home, active.screenshot)
+            ));
         }
         active.started.elapsed() < Duration::from_millis(2500)
     }
 
     fn finish(&self, cancel: bool) {
-        let Some(active) = self.active.borrow_mut().take() else { return; };
-        if let Some(window) = active.source.upgrade().and_then(|source| source.root()).and_downcast::<gtk::Window>() {
+        let Some(active) = self.active.borrow_mut().take() else {
+            return;
+        };
+        if let Some(window) = active
+            .source
+            .upgrade()
+            .and_then(|source| source.root())
+            .and_downcast::<gtk::Window>()
+        {
             window.remove_css_class("ruzu-controller-capture");
         }
         if cancel || (active.buttons.is_empty() && !active.home && !active.screenshot) {
             active.row.set_controller_hotkey(&active.previous);
         } else {
-            let sequence = get_button_combination_name(active.buttons, active.home, active.screenshot);
-            if let Some(conflict) = self.rows.iter().find(|row| row.controller_hotkey() == sequence) {
+            let sequence =
+                get_button_combination_name(active.buttons, active.home, active.screenshot);
+            if let Some(conflict) = self
+                .rows
+                .iter()
+                .find(|row| row.controller_hotkey() == sequence)
+            {
                 active.row.set_controller_hotkey(&active.previous);
-                let parent = active.source.upgrade().and_then(|source| source.root()).and_downcast::<gtk::Window>();
-                crate::gtk_compat::show_warning(parent.as_ref(), "Conflicting Key Sequence",
-                    &format!("{} {}", crate::i18n::tr("The entered key sequence is already assigned to:"), conflict.action()));
+                let parent = active
+                    .source
+                    .upgrade()
+                    .and_then(|source| source.root())
+                    .and_downcast::<gtk::Window>();
+                crate::gtk_compat::show_warning(
+                    parent.as_ref(),
+                    "Conflicting Key Sequence",
+                    &format!(
+                        "{} {}",
+                        crate::i18n::tr("The entered key sequence is already assigned to:"),
+                        conflict.action()
+                    ),
+                );
             } else {
                 active.row.set_controller_hotkey(&sequence);
             }
@@ -235,56 +281,116 @@ impl ControllerCapture {
     }
 
     pub fn cancel(&self) {
-        if let Some(timer) = self.timer.borrow_mut().take() { timer.remove(); }
+        if let Some(timer) = self.timer.borrow_mut().take() {
+            timer.remove();
+        }
         self.finish(true);
     }
 }
 
 impl Drop for ControllerCapture {
-    fn drop(&mut self) { self.cancel(); }
+    fn drop(&mut self) {
+        self.cancel();
+    }
 }
 
 fn get_button_combination_name(buttons: NpadButton, home: bool, screenshot: bool) -> String {
     let mut names = Vec::new();
-    if home { names.push("Home"); }
-    if screenshot { names.push("Screenshot"); }
+    if home {
+        names.push("Home");
+    }
+    if screenshot {
+        names.push("Screenshot");
+    }
     for (mask, name) in [
-        (NpadButton::A, "A"), (NpadButton::B, "B"), (NpadButton::X, "X"), (NpadButton::Y, "Y"),
-        (NpadButton::L | NpadButton::LEFT_SL | NpadButton::RIGHT_SL, "L"),
-        (NpadButton::R | NpadButton::LEFT_SR | NpadButton::RIGHT_SR, "R"),
-        (NpadButton::ZL, "ZL"), (NpadButton::ZR, "ZR"),
-        (NpadButton::LEFT, "Dpad_Left"), (NpadButton::RIGHT, "Dpad_Right"),
-        (NpadButton::UP, "Dpad_Up"), (NpadButton::DOWN, "Dpad_Down"),
-        (NpadButton::STICK_L, "Left_Stick"), (NpadButton::STICK_R, "Right_Stick"),
-        (NpadButton::MINUS, "Minus"), (NpadButton::PLUS, "Plus"),
-    ] { if buttons.intersects(mask) { names.push(name); } }
-    if names.is_empty() { crate::i18n::tr("Invalid") } else { names.join("+") }
+        (NpadButton::A, "A"),
+        (NpadButton::B, "B"),
+        (NpadButton::X, "X"),
+        (NpadButton::Y, "Y"),
+        (
+            NpadButton::L | NpadButton::LEFT_SL | NpadButton::RIGHT_SL,
+            "L",
+        ),
+        (
+            NpadButton::R | NpadButton::LEFT_SR | NpadButton::RIGHT_SR,
+            "R",
+        ),
+        (NpadButton::ZL, "ZL"),
+        (NpadButton::ZR, "ZR"),
+        (NpadButton::LEFT, "Dpad_Left"),
+        (NpadButton::RIGHT, "Dpad_Right"),
+        (NpadButton::UP, "Dpad_Up"),
+        (NpadButton::DOWN, "Dpad_Down"),
+        (NpadButton::STICK_L, "Left_Stick"),
+        (NpadButton::STICK_R, "Right_Stick"),
+        (NpadButton::MINUS, "Minus"),
+        (NpadButton::PLUS, "Plus"),
+    ] {
+        if buttons.intersects(mask) {
+            names.push(name);
+        }
+    }
+    if names.is_empty() {
+        crate::i18n::tr("Invalid")
+    } else {
+        names.join("+")
+    }
 }
 
 /// RestoreHotkey/RestoreControllerHotkey, including upstream's same-value
 /// exception to conflict detection. A conflict leaves the previous value intact.
 fn restore_hotkey(row: &HotkeyRow, rows: &[HotkeyRow], controller: bool) -> Result<(), String> {
-    let Some(default) = crate::uisettings::DEFAULT_HOTKEYS.iter().find(|key| key.name == row.action()) else {
+    let Some(default) = crate::uisettings::DEFAULT_HOTKEYS
+        .iter()
+        .find(|key| key.name == row.action())
+    else {
         return Ok(());
     };
-    let value = if controller { default.controller_keyseq } else { default.keyseq };
-    let current = if controller { row.controller_hotkey() } else { row.hotkey() };
-    let same = |left: &str, right: &str| if controller { left == right } else { same_key_sequence(left, right) };
+    let value = if controller {
+        default.controller_keyseq
+    } else {
+        default.keyseq
+    };
+    let current = if controller {
+        row.controller_hotkey()
+    } else {
+        row.hotkey()
+    };
+    let same = |left: &str, right: &str| {
+        if controller {
+            left == right
+        } else {
+            same_key_sequence(left, right)
+        }
+    };
     if !same(&current, value) {
         if let Some(conflict) = rows.iter().find(|candidate| {
-            let candidate = if controller { candidate.controller_hotkey() } else { candidate.hotkey() };
+            let candidate = if controller {
+                candidate.controller_hotkey()
+            } else {
+                candidate.hotkey()
+            };
             same(&candidate, value)
-        }) { return Err(conflict.action()); }
+        }) {
+            return Err(conflict.action());
+        }
     }
-    if controller { row.set_controller_hotkey(value); } else { row.set_hotkey(value); }
+    if controller {
+        row.set_controller_hotkey(value);
+    } else {
+        row.set_hotkey(value);
+    }
     Ok(())
 }
 
 /// PopupContextMenu: Action and Hotkey columns edit the keyboard sequence;
 /// only the Controller Hotkey column edits the controller sequence.
 fn install_context_menu(
-    widget: &impl IsA<gtk::Widget>, item: &gtk::ListItem,
-    rows: Rc<Vec<HotkeyRow>>, capture: Rc<ControllerCapture>, controller: bool,
+    widget: &impl IsA<gtk::Widget>,
+    item: &gtk::ListItem,
+    rows: Rc<Vec<HotkeyRow>>,
+    capture: Rc<ControllerCapture>,
+    controller: bool,
 ) {
     let click = gtk::GestureClick::new();
     click.set_button(3);
@@ -292,17 +398,31 @@ fn install_context_menu(
     let source = widget.downgrade();
     let item = item.downgrade();
     click.connect_pressed(move |gesture, _, x, y| {
-        let (Some(source), Some(item)) = (source.upgrade(), item.upgrade()) else { return; };
-        let Some(row) = item.item().and_downcast::<gtk::TreeListRow>()
-            .and_then(|item| item.item()).and_downcast::<HotkeyRow>() else { return; };
-        if row.is_group() { return; }
+        let (Some(source), Some(item)) = (source.upgrade(), item.upgrade()) else {
+            return;
+        };
+        let Some(row) = item
+            .item()
+            .and_downcast::<gtk::TreeListRow>()
+            .and_then(|item| item.item())
+            .and_downcast::<HotkeyRow>()
+        else {
+            return;
+        };
+        if row.is_group() {
+            return;
+        }
         gesture.set_state(gtk::EventSequenceState::Claimed);
         let popover = gtk::Popover::new();
         popover.set_parent(&source);
         popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
         let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
         for restore in [true, false] {
-            let button = gtk::Button::with_label(&crate::i18n::tr(if restore { "Restore Default" } else { "Clear" }));
+            let button = gtk::Button::with_label(&crate::i18n::tr(if restore {
+                "Restore Default"
+            } else {
+                "Clear"
+            }));
             button.add_css_class("flat");
             button.connect_clicked({
                 let row = row.clone();
@@ -312,20 +432,41 @@ fn install_context_menu(
                 let source = source.downgrade();
                 move |_| {
                     capture.cancel();
-                    let result = if restore { restore_hotkey(&row, &rows, controller) } else {
-                        if controller { row.set_controller_hotkey(""); } else { row.set_hotkey(""); }
+                    let result = if restore {
+                        restore_hotkey(&row, &rows, controller)
+                    } else {
+                        if controller {
+                            row.set_controller_hotkey("");
+                        } else {
+                            row.set_hotkey("");
+                        }
                         Ok(())
                     };
-                    if let Some(popover) = popover.upgrade() { popover.popdown(); }
-                    if crate::util::inline_menu::enabled() { crate::util::inline_menu::hide_context_menu(); }
+                    if let Some(popover) = popover.upgrade() {
+                        popover.popdown();
+                    }
+                    if crate::util::inline_menu::enabled() {
+                        crate::util::inline_menu::hide_context_menu();
+                    }
                     if let Err(action) = result {
-                        let parent = source.upgrade().and_then(|source| source.root()).and_downcast::<gtk::Window>();
-                        crate::gtk_compat::show_warning(parent.as_ref(),
-                            if controller { "Conflicting Button Sequence" } else { "Conflicting Key Sequence" },
+                        let parent = source
+                            .upgrade()
+                            .and_then(|source| source.root())
+                            .and_downcast::<gtk::Window>();
+                        crate::gtk_compat::show_warning(
+                            parent.as_ref(),
+                            if controller {
+                                "Conflicting Button Sequence"
+                            } else {
+                                "Conflicting Key Sequence"
+                            },
                             &crate::i18n::tr(if controller {
                                 "The default button sequence is already assigned to: %1"
-                            } else { "The default key sequence is already assigned to: %1" })
-                                .replace("%1", &crate::i18n::tr(&action)));
+                            } else {
+                                "The default key sequence is already assigned to: %1"
+                            })
+                            .replace("%1", &crate::i18n::tr(&action)),
+                        );
                     }
                 }
             });
@@ -346,7 +487,11 @@ fn install_context_menu(
 /// Editable keyboard-binding column. Upstream routes a double-click in either
 /// the action or keyboard column to the keyboard `SequenceDialog`; the binding
 /// cell is the GTK interaction target advertised by the hint above the table.
-fn hotkey_column(width: i32, rows: Rc<Vec<HotkeyRow>>, capture: Rc<ControllerCapture>) -> gtk::ColumnViewColumn {
+fn hotkey_column(
+    width: i32,
+    rows: Rc<Vec<HotkeyRow>>,
+    capture: Rc<ControllerCapture>,
+) -> gtk::ColumnViewColumn {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(move |_, item| {
         let item = item.downcast_ref::<gtk::ListItem>().unwrap().clone();
@@ -449,8 +594,10 @@ fn same_key_sequence(left: &str, right: &str) -> bool {
     // IsUsedKey compares decoded QKeySequences, not their display strings.
     // Use the same native-label conversion as the GTK action registry so
     // modifier ordering and aliases cannot conceal duplicate bindings.
-    let parse = |text: &str| crate::hotkeys::gtk_accelerator_from_native(text)
-        .and_then(|accelerator| gtk::accelerator_parse(&accelerator));
+    let parse = |text: &str| {
+        crate::hotkeys::gtk_accelerator_from_native(text)
+            .and_then(|accelerator| gtk::accelerator_parse(&accelerator))
+    };
     match (parse(left), parse(right)) {
         (Some((left_key, left_mods)), Some((right_key, right_mods))) => {
             return left_key.to_lower() == right_key.to_lower() && left_mods == right_mods;
@@ -484,7 +631,13 @@ fn expander_column(
         label.set_xalign(0.0);
         let expander = gtk::TreeExpander::new();
         expander.set_child(Some(&label));
-        install_context_menu(&expander, &list_item, Rc::clone(&rows), Rc::clone(&capture), false);
+        install_context_menu(
+            &expander,
+            &list_item,
+            Rc::clone(&rows),
+            Rc::clone(&capture),
+            false,
+        );
 
         let click = gtk::GestureClick::new();
         click.set_button(1);
@@ -536,12 +689,23 @@ fn expander_column(
 }
 
 /// Controller-binding column, routed to ConfigureController on double-click.
-fn controller_hotkey_column(title: &str, width: i32, get: fn(&HotkeyRow) -> String, capture: Rc<ControllerCapture>) -> gtk::ColumnViewColumn {
+fn controller_hotkey_column(
+    title: &str,
+    width: i32,
+    get: fn(&HotkeyRow) -> String,
+    capture: Rc<ControllerCapture>,
+) -> gtk::ColumnViewColumn {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(move |_, item| {
         let label = gtk::Label::new(None);
         label.set_xalign(0.0);
-        install_context_menu(&label, item.downcast_ref::<gtk::ListItem>().unwrap(), Rc::clone(&capture.rows), Rc::clone(&capture), true);
+        install_context_menu(
+            &label,
+            item.downcast_ref::<gtk::ListItem>().unwrap(),
+            Rc::clone(&capture.rows),
+            Rc::clone(&capture),
+            true,
+        );
         let click = gtk::GestureClick::new();
         click.set_button(1);
         click.connect_pressed({
@@ -549,11 +713,21 @@ fn controller_hotkey_column(title: &str, width: i32, get: fn(&HotkeyRow) -> Stri
             let item = item.downcast_ref::<gtk::ListItem>().unwrap().downgrade();
             let label = label.downgrade();
             move |_, count, _, _| {
-                if count != 2 { return; }
-                let (Some(item), Some(label)) = (item.upgrade(), label.upgrade()) else { return; };
-                if let Some(row) = item.item().and_downcast::<gtk::TreeListRow>()
-                    .and_then(|item| item.item()).and_downcast::<HotkeyRow>() {
-                    if !row.is_group() { capture.start(label.upcast_ref(), &row); }
+                if count != 2 {
+                    return;
+                }
+                let (Some(item), Some(label)) = (item.upgrade(), label.upgrade()) else {
+                    return;
+                };
+                if let Some(row) = item
+                    .item()
+                    .and_downcast::<gtk::TreeListRow>()
+                    .and_then(|item| item.item())
+                    .and_downcast::<HotkeyRow>()
+                {
+                    if !row.is_group() {
+                        capture.start(label.upcast_ref(), &row);
+                    }
                 }
             }
         });
@@ -749,22 +923,32 @@ mod tests {
     #[ignore = "requires GTK display; run in an isolated process"]
     fn per_row_restore_checks_conflicts_without_touching_the_other_column() {
         gtk::init().unwrap();
-        let default = crate::uisettings::DEFAULT_HOTKEYS.iter()
-            .find(|key| key.name == "Configure").unwrap();
+        let default = crate::uisettings::DEFAULT_HOTKEYS
+            .iter()
+            .find(|key| key.name == "Configure")
+            .unwrap();
         let row = HotkeyRow::binding(default.name, "F12", "A+B");
         let other = HotkeyRow::binding("Synthetic action", default.keyseq, "");
         let rows = vec![row.clone(), other.clone()];
-        assert_eq!(restore_hotkey(&row, &rows, false), Err("Synthetic action".into()));
+        assert_eq!(
+            restore_hotkey(&row, &rows, false),
+            Err("Synthetic action".into())
+        );
         assert_eq!(row.hotkey(), "F12");
         other.set_hotkey("F11");
         assert!(restore_hotkey(&row, &rows, false).is_ok());
         assert_eq!(row.hotkey(), default.keyseq);
         assert_eq!(row.controller_hotkey(), "A+B");
         other.set_hotkey(default.keyseq);
-        assert!(restore_hotkey(&row, &rows, false).is_ok(), "restoring same value is allowed");
+        assert!(
+            restore_hotkey(&row, &rows, false).is_ok(),
+            "restoring same value is allowed"
+        );
 
-        let default = crate::uisettings::DEFAULT_HOTKEYS.iter()
-            .find(|key| !key.controller_keyseq.is_empty()).unwrap();
+        let default = crate::uisettings::DEFAULT_HOTKEYS
+            .iter()
+            .find(|key| !key.controller_keyseq.is_empty())
+            .unwrap();
         let row = HotkeyRow::binding(default.name, "F10", "A+B+X");
         let other = HotkeyRow::binding("Synthetic action", "", default.controller_keyseq);
         let rows = vec![row.clone(), other.clone()];
@@ -778,11 +962,30 @@ mod tests {
 
     #[test]
     fn controller_combination_names_follow_upstream_order_and_side_buttons() {
-        assert_eq!(get_button_combination_name(NpadButton::PLUS | NpadButton::B | NpadButton::A, true, true),
-            "Home+Screenshot+A+B+Plus");
-        assert_eq!(get_button_combination_name(NpadButton::LEFT_SL | NpadButton::RIGHT_SL | NpadButton::RIGHT_SR, false, false), "L+R");
-        assert_eq!(get_button_combination_name(NpadButton::LEFT | NpadButton::STICK_R | NpadButton::MINUS, false, false),
-            "Dpad_Left+Right_Stick+Minus");
+        assert_eq!(
+            get_button_combination_name(
+                NpadButton::PLUS | NpadButton::B | NpadButton::A,
+                true,
+                true
+            ),
+            "Home+Screenshot+A+B+Plus"
+        );
+        assert_eq!(
+            get_button_combination_name(
+                NpadButton::LEFT_SL | NpadButton::RIGHT_SL | NpadButton::RIGHT_SR,
+                false,
+                false
+            ),
+            "L+R"
+        );
+        assert_eq!(
+            get_button_combination_name(
+                NpadButton::LEFT | NpadButton::STICK_R | NpadButton::MINUS,
+                false,
+                false
+            ),
+            "Dpad_Left+Right_Stick+Minus"
+        );
     }
 
     #[test]
@@ -793,7 +996,9 @@ mod tests {
         gtk::init().unwrap();
         let mut input = input_common::InputSubsystem::new();
         input.initialize();
-        let controller = Arc::new(parking_lot::Mutex::new(EmulatedController::new(NpadIdType::Player1)));
+        let controller = Arc::new(parking_lot::Mutex::new(EmulatedController::new(
+            NpadIdType::Player1,
+        )));
         {
             let mut owner = controller.lock();
             owner.set_npad_style_index(NpadStyleIndex::Fullkey);
@@ -812,8 +1017,10 @@ mod tests {
         let row = HotkeyRow::binding("First", "", "Home");
         let conflict = HotkeyRow::binding("Second", "", "B");
         let capture = Rc::new(ControllerCapture {
-            controller: Arc::clone(&controller), rows: Rc::new(vec![row.clone(), conflict]),
-            active: RefCell::new(None), timer: RefCell::new(None),
+            controller: Arc::clone(&controller),
+            rows: Rc::new(vec![row.clone(), conflict]),
+            active: RefCell::new(None),
+            timer: RefCell::new(None),
         });
         let source = gtk::Label::new(None);
         capture.start(source.upcast_ref(), &row);
@@ -827,10 +1034,13 @@ mod tests {
         assert_eq!(row.controller_hotkey(), "A+B...");
         gamepad.set_button_state_by_id(0, 1, false);
         // Exercise the actual timeout source without sleeping 2.5 seconds.
-        capture.active.borrow_mut().as_mut().unwrap().started = Instant::now() - Duration::from_secs(3);
+        capture.active.borrow_mut().as_mut().unwrap().started =
+            Instant::now() - Duration::from_secs(3);
         let deadline = Instant::now() + Duration::from_secs(2);
         while capture.active.borrow().is_some() && Instant::now() < deadline {
-            while gtk::glib::MainContext::default().pending() { gtk::glib::MainContext::default().iteration(false); }
+            while gtk::glib::MainContext::default().pending() {
+                gtk::glib::MainContext::default().iteration(false);
+            }
             std::thread::sleep(Duration::from_millis(5));
         }
         assert!(capture.active.borrow().is_none());
@@ -843,7 +1053,11 @@ mod tests {
         capture.poll();
         capture.timer.borrow_mut().take().unwrap().remove();
         capture.finish(false);
-        assert_eq!(row.controller_hotkey(), "A+B", "conflict restores previous sequence");
+        assert_eq!(
+            row.controller_hotkey(),
+            "A+B",
+            "conflict restores previous sequence"
+        );
         gamepad.set_button_state_by_id(0, 1, false);
         capture.start(source.upcast_ref(), &row);
         capture.cancel();
@@ -853,9 +1067,15 @@ mod tests {
         capture.start(source.upcast_ref(), &row);
         capture.timer.borrow_mut().take().unwrap().remove();
         capture.finish(false);
-        assert_eq!(row.controller_hotkey(), "A+B", "empty timeout restores previous sequence");
+        assert_eq!(
+            row.controller_hotkey(),
+            "A+B",
+            "empty timeout restores previous sequence"
+        );
         for widget in gtk::Window::list_toplevels() {
-            if let Ok(window) = widget.downcast::<gtk::Window>() { window.close(); }
+            if let Ok(window) = widget.downcast::<gtk::Window>() {
+                window.close();
+            }
         }
     }
 

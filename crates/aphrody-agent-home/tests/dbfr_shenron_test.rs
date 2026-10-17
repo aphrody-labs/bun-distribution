@@ -14,9 +14,21 @@ fn fixture(profile: &str) -> (tempfile::TempDir, std::path::PathBuf) {
         "SOUL.md",
         "---\ntone: souverain, précis\nbrevity: terse\nhumor: dry\ndefault_bluntness: frank\n---\n\nTu es Shenron, inspiré par Akira Toriyama.\n",
     );
-    write(&workspace, "AGENTS.md", "# Règles\nVérifie les sources Dragon Ball.\n");
-    write(&workspace, "USER.md", "# Utilisateur\nUtilisateur de qualification synthétique.\n");
-    write(&workspace, "TOOLS.md", "# Outils\nInventaire synthétique de qualification.\n");
+    write(
+        &workspace,
+        "AGENTS.md",
+        "# Règles\nVérifie les sources Dragon Ball.\n",
+    );
+    write(
+        &workspace,
+        "USER.md",
+        "# Utilisateur\nUtilisateur de qualification synthétique.\n",
+    );
+    write(
+        &workspace,
+        "TOOLS.md",
+        "# Outils\nInventaire synthétique de qualification.\n",
+    );
     (root, workspace)
 }
 
@@ -72,7 +84,10 @@ fn test_open_agent_home_shenron() {
     let home = AgentHome::open(options).expect("failed to open shenron agent home");
 
     assert_eq!(home.root(), workspace);
-    assert!(home.soul().is_some(), "SOUL.md must be present for shenron profile");
+    assert!(
+        home.soul().is_some(),
+        "SOUL.md must be present for shenron profile"
+    );
     let budget = BootstrapBudget::default();
     let prompt = home.system_prompt(&budget).render();
     assert!(prompt.contains("Shenron") || prompt.contains("Toriyama"));
@@ -83,7 +98,10 @@ fn test_open_explicit_dbfr_workspace_with_shenron_persona() {
     let (_fixture, workspace) = fixture("dbfr");
     // Shenron is a persona of the dbfr workspace; its source crate does not
     // own a second checked-in home or the user's persistent documents.
-    let options = HomeOptions { workspace: Some(workspace.clone()), ..Default::default() };
+    let options = HomeOptions {
+        workspace: Some(workspace.clone()),
+        ..Default::default()
+    };
     let home = AgentHome::open(options).expect("failed to open explicit dbfr home");
     assert_eq!(home.root(), workspace);
     let soul = home.soul().expect("dbfr SOUL.md must be parsed");

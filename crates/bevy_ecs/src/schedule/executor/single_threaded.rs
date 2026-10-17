@@ -13,14 +13,14 @@ use crate::{error::BevyError, system::BoxedSystem};
 use crate::{
     error::{ErrorContext, ErrorHandler},
     schedule::{
-        is_apply_deferred, BoxedCondition, ConditionWithAccess, SystemExecutor, SystemSchedule,
+        BoxedCondition, ConditionWithAccess, SystemExecutor, SystemSchedule, is_apply_deferred,
     },
     system::{RunSystemError, ScheduleSystem},
     world::World,
 };
 
 #[cfg(feature = "hotpatching")]
-use crate::{change_detection::DetectChanges, HotPatchChanges};
+use crate::{HotPatchChanges, change_detection::DetectChanges};
 
 use super::__rust_begin_short_backtrace;
 

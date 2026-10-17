@@ -11,7 +11,11 @@ fn reference() -> Value {
 
 fn reranker(id: &str, threads: usize, batch_size: usize) -> Option<Reranker> {
     let (spec, dir) = common::reranker_or_skip(id)?;
-    let opts = EmbedOptions { threads, batch_size, ..EmbedOptions::default() };
+    let opts = EmbedOptions {
+        threads,
+        batch_size,
+        ..EmbedOptions::default()
+    };
     Some(Reranker::load(&dir, &spec, opts).expect("load reranker"))
 }
 
@@ -19,8 +23,10 @@ fn check_parity(case: &Value, pairs: &[(String, String)]) -> Option<f32> {
     let model = case["model"].as_str().unwrap();
     let reranker = reranker(model, 4, 0)?;
     let mut worst = 0.0f32;
-    for (i, ((query, passage), want)) in
-        pairs.iter().zip(case["scores"].as_array().unwrap()).enumerate()
+    for (i, ((query, passage), want)) in pairs
+        .iter()
+        .zip(case["scores"].as_array().unwrap())
+        .enumerate()
     {
         let want = want.as_f64().unwrap() as f32;
         let got = reranker.score(query, &[passage.as_str()]).unwrap()[0];
@@ -48,7 +54,12 @@ fn pairs(reference: &Value) -> Vec<(String, String)> {
         .as_array()
         .unwrap()
         .iter()
-        .map(|p| (p[0].as_str().unwrap().to_string(), p[1].as_str().unwrap().to_string()))
+        .map(|p| {
+            (
+                p[0].as_str().unwrap().to_string(),
+                p[1].as_str().unwrap().to_string(),
+            )
+        })
         .collect()
 }
 
@@ -115,7 +126,9 @@ fn over_long_inputs_are_truncated_not_rejected() {
     };
     let long_query = "crawler frontier politeness ".repeat(400);
     let long_passage = "Search engines rank documents. ".repeat(300);
-    let scores = reranker.score(&long_query, &[long_passage.as_str(), "short passage"]).unwrap();
+    let scores = reranker
+        .score(&long_query, &[long_passage.as_str(), "short passage"])
+        .unwrap();
     assert!(scores.iter().all(|s| s.is_finite()));
     assert_eq!(reranker.max_seq_len(), 512);
 }
@@ -130,9 +143,11 @@ fn rerank_json_facade_sorts_descending() {
         return;
     }
     let passages = r#"["Bananas are yellow.", "Berlin has about 3.5 million inhabitants.", "Paris is in France."]"#;
-    let out: Value =
-        serde_json::from_str(&aphrody_embed::native::rerank_json("population of Berlin", passages))
-            .unwrap();
+    let out: Value = serde_json::from_str(&aphrody_embed::native::rerank_json(
+        "population of Berlin",
+        passages,
+    ))
+    .unwrap();
     let items = out.as_array().expect("array result");
     assert_eq!(items.len(), 3);
     assert_eq!(items[0]["index"], 1);

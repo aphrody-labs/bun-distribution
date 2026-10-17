@@ -38,11 +38,19 @@ fn is_zero(v: &Vec2) -> bool {
 
 impl MaskVertex {
     pub fn corner(p: Vec2) -> Self {
-        Self { p, t_in: Vec2::ZERO, t_out: Vec2::ZERO }
+        Self {
+            p,
+            t_in: Vec2::ZERO,
+            t_out: Vec2::ZERO,
+        }
     }
     /// A smooth vertex with mirrored tangents (`t_out = t`, `t_in = -t`).
     pub fn smooth(p: Vec2, t: Vec2) -> Self {
-        Self { p, t_in: t * -1.0, t_out: t }
+        Self {
+            p,
+            t_in: t * -1.0,
+            t_out: t,
+        }
     }
     pub fn is_corner(&self) -> bool {
         is_zero(&self.t_in) && is_zero(&self.t_out)
@@ -72,22 +80,37 @@ impl MaskPath {
             MaskVertex::smooth(center + Vec2::new(0.0, ry), Vec2::new(-rx * k, 0.0)),
             MaskVertex::smooth(center + Vec2::new(-rx, 0.0), Vec2::new(0.0, -ry * k)),
         ];
-        Self { vertices: v, closed: true }
+        Self {
+            vertices: v,
+            closed: true,
+        }
     }
     /// A polygon through `points` (corner vertices).
     pub fn polygon(points: &[Vec2]) -> Self {
-        Self { vertices: points.iter().map(|p| MaskVertex::corner(*p)).collect(), closed: true }
+        Self {
+            vertices: points.iter().map(|p| MaskVertex::corner(*p)).collect(),
+            closed: true,
+        }
     }
     /// An axis-aligned rectangle (Premiere's 4-point polygon mask default).
     pub fn rect(x0: f64, y0: f64, x1: f64, y1: f64) -> Self {
-        Self::polygon(&[Vec2::new(x0, y0), Vec2::new(x1, y0), Vec2::new(x1, y1), Vec2::new(x0, y1)])
+        Self::polygon(&[
+            Vec2::new(x0, y0),
+            Vec2::new(x1, y0),
+            Vec2::new(x1, y1),
+            Vec2::new(x0, y1),
+        ])
     }
 
     /// An axis-aligned rectangle with corners rounded by `radius` (Premiere 26's rounded
     /// rectangle mask). `radius` ≤ 0 (or not finite) gives the plain 4-point [`MaskPath::rect`].
     pub fn rounded_rect(x0: f64, y0: f64, x1: f64, y1: f64, radius: f64) -> Self {
         let r = Self::rect(x0, y0, x1, y1);
-        if radius.is_finite() && radius > 0.0 { r.with_rounded_corners(radius, &[0, 1, 2, 3]) } else { r }
+        if radius.is_finite() && radius > 0.0 {
+            r.with_rounded_corners(radius, &[0, 1, 2, 3])
+        } else {
+            r
+        }
     }
 
     /// Indices of the sharp corners [`MaskPath::with_rounded_corners`] can round: corner vertices
@@ -99,7 +122,11 @@ impl MaskPath {
         }
         (0..n)
             .filter(|&i| {
-                let (Some(prev), Some(v), Some(next)) = (self.vertices.get((i + n - 1) % n), self.vertices.get(i), self.vertices.get((i + 1) % n)) else {
+                let (Some(prev), Some(v), Some(next)) = (
+                    self.vertices.get((i + n - 1) % n),
+                    self.vertices.get(i),
+                    self.vertices.get((i + 1) % n),
+                ) else {
                     return false;
                 };
                 v.is_corner() && is_zero(&prev.t_out) && is_zero(&next.t_in)
@@ -123,36 +150,56 @@ impl MaskPath {
             }
         }
         let roundable = self.roundable_corners();
-        round.iter_mut().enumerate().for_each(|(i, r)| *r &= roundable.binary_search(&i).is_ok());
-        let radius = if radius.is_finite() { radius.clamp(0.0, 1e7) } else { 0.0 };
+        round
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, r)| *r &= roundable.binary_search(&i).is_ok());
+        let radius = if radius.is_finite() {
+            radius.clamp(0.0, 1e7)
+        } else {
+            0.0
+        };
         let mut vertices = Vec::with_capacity(n.saturating_mul(2));
         for (i, v) in self.vertices.iter().enumerate() {
             if !round.get(i).copied().unwrap_or(false) {
                 vertices.push(*v);
                 continue;
             }
-            let (Some(prev), Some(next)) = (self.vertices.get((i + n - 1) % n), self.vertices.get((i + 1) % n)) else {
+            let (Some(prev), Some(next)) = (
+                self.vertices.get((i + n - 1) % n),
+                self.vertices.get((i + 1) % n),
+            ) else {
                 vertices.push(*v);
                 continue;
             };
             let (a, b) = (v.p - prev.p, next.p - v.p);
             let (la, lb) = (a.length(), b.length());
-            let fillet = (la > 1e-9 && lb > 1e-9 && radius > 0.0).then(|| (a * (1.0 / la), b * (1.0 / lb))).and_then(|(u, w)| {
-                // turn angle φ between the incoming and outgoing directions
-                let phi = (u.x * w.x + u.y * w.y).clamp(-1.0, 1.0).acos();
-                if !(1e-6..std::f64::consts::PI - 1e-6).contains(&phi) {
-                    return None;
-                }
-                let tan_half = (phi / 2.0).tan();
-                let d = (radius * tan_half).min(la / 2.0).min(lb / 2.0);
-                let r = d / tan_half;
-                let h = 4.0 / 3.0 * (phi / 4.0).tan() * r;
-                Some((u, w, d, h))
-            });
+            let fillet = (la > 1e-9 && lb > 1e-9 && radius > 0.0)
+                .then(|| (a * (1.0 / la), b * (1.0 / lb)))
+                .and_then(|(u, w)| {
+                    // turn angle φ between the incoming and outgoing directions
+                    let phi = (u.x * w.x + u.y * w.y).clamp(-1.0, 1.0).acos();
+                    if !(1e-6..std::f64::consts::PI - 1e-6).contains(&phi) {
+                        return None;
+                    }
+                    let tan_half = (phi / 2.0).tan();
+                    let d = (radius * tan_half).min(la / 2.0).min(lb / 2.0);
+                    let r = d / tan_half;
+                    let h = 4.0 / 3.0 * (phi / 4.0).tan() * r;
+                    Some((u, w, d, h))
+                });
             match fillet {
                 Some((u, w, d, h)) => {
-                    vertices.push(MaskVertex { p: v.p - u * d, t_in: Vec2::ZERO, t_out: u * h });
-                    vertices.push(MaskVertex { p: v.p + w * d, t_in: w * -h, t_out: Vec2::ZERO });
+                    vertices.push(MaskVertex {
+                        p: v.p - u * d,
+                        t_in: Vec2::ZERO,
+                        t_out: u * h,
+                    });
+                    vertices.push(MaskVertex {
+                        p: v.p + w * d,
+                        t_in: w * -h,
+                        t_out: Vec2::ZERO,
+                    });
                 }
                 None => {
                     vertices.push(MaskVertex::corner(v.p));
@@ -160,7 +207,10 @@ impl MaskPath {
                 }
             }
         }
-        Self { vertices, closed: self.closed }
+        Self {
+            vertices,
+            closed: self.closed,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -172,9 +222,21 @@ impl MaskPath {
 
     /// The path with every point and tangent mapped by `m` (tangents by its linear part).
     pub fn transformed(&self, m: &Affine) -> Self {
-        let lin = Affine { e: 0.0, f: 0.0, ..*m };
+        let lin = Affine {
+            e: 0.0,
+            f: 0.0,
+            ..*m
+        };
         Self {
-            vertices: self.vertices.iter().map(|v| MaskVertex { p: m.apply(v.p), t_in: lin.apply(v.t_in), t_out: lin.apply(v.t_out) }).collect(),
+            vertices: self
+                .vertices
+                .iter()
+                .map(|v| MaskVertex {
+                    p: m.apply(v.p),
+                    t_in: lin.apply(v.t_in),
+                    t_out: lin.apply(v.t_out),
+                })
+                .collect(),
             closed: self.closed,
         }
     }
@@ -259,7 +321,10 @@ impl MaskPath {
 
     /// Flattened components for keyframe interpolation: `[x, y, in.x, in.y, out.x, out.y]` per vertex.
     pub fn components(&self) -> Vec<f64> {
-        self.vertices.iter().flat_map(|v| [v.p.x, v.p.y, v.t_in.x, v.t_in.y, v.t_out.x, v.t_out.y]).collect()
+        self.vertices
+            .iter()
+            .flat_map(|v| [v.p.x, v.p.y, v.t_in.x, v.t_in.y, v.t_out.x, v.t_out.y])
+            .collect()
     }
     /// Inverse of [`MaskPath::components`] (`closed` is taken from `self`).
     pub fn with_components(&self, c: &[f64]) -> Self {
@@ -268,7 +333,11 @@ impl MaskPath {
                 .as_chunks::<6>()
                 .0
                 .iter()
-                .map(|k| MaskVertex { p: Vec2::new(k[0], k[1]), t_in: Vec2::new(k[2], k[3]), t_out: Vec2::new(k[4], k[5]) })
+                .map(|k| MaskVertex {
+                    p: Vec2::new(k[0], k[1]),
+                    t_in: Vec2::new(k[2], k[3]),
+                    t_out: Vec2::new(k[4], k[5]),
+                })
                 .collect(),
             closed: self.closed,
         }
@@ -302,8 +371,15 @@ pub enum MaskMode {
 }
 
 impl MaskMode {
-    pub const ALL: [MaskMode; 7] =
-        [MaskMode::None, MaskMode::Add, MaskMode::Subtract, MaskMode::Intersect, MaskMode::Lighten, MaskMode::Darken, MaskMode::Difference];
+    pub const ALL: [MaskMode; 7] = [
+        MaskMode::None,
+        MaskMode::Add,
+        MaskMode::Subtract,
+        MaskMode::Intersect,
+        MaskMode::Lighten,
+        MaskMode::Darken,
+        MaskMode::Difference,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             MaskMode::None => "None",
@@ -317,7 +393,9 @@ impl MaskMode {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         let s = s.to_ascii_lowercase();
-        Self::ALL.into_iter().find(|m| m.label().to_ascii_lowercase() == s)
+        Self::ALL
+            .into_iter()
+            .find(|m| m.label().to_ascii_lowercase() == s)
     }
     /// Shader / wire index.
     pub fn index(self) -> u32 {
@@ -355,7 +433,11 @@ pub enum TrackMethod {
 }
 
 impl TrackMethod {
-    pub const ALL: [TrackMethod; 3] = [TrackMethod::Position, TrackMethod::PositionRotation, TrackMethod::PositionScaleRotation];
+    pub const ALL: [TrackMethod; 3] = [
+        TrackMethod::Position,
+        TrackMethod::PositionRotation,
+        TrackMethod::PositionScaleRotation,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             TrackMethod::Position => "Position",
@@ -364,7 +446,11 @@ impl TrackMethod {
         }
     }
     pub fn from_name(s: &str) -> Option<Self> {
-        match s.to_ascii_lowercase().replace([' ', '_', '-', '&', ','], "").as_str() {
+        match s
+            .to_ascii_lowercase()
+            .replace([' ', '_', '-', '&', ','], "")
+            .as_str()
+        {
             "position" => Some(TrackMethod::Position),
             "positionrotation" => Some(TrackMethod::PositionRotation),
             "positionscalerotation" => Some(TrackMethod::PositionScaleRotation),
@@ -434,11 +520,18 @@ impl Mask {
         }
     }
     pub fn is_animated(&self) -> bool {
-        MASK_PARAMS.iter().any(|p| self.param(p).is_some_and(Param::is_animated))
+        MASK_PARAMS
+            .iter()
+            .any(|p| self.param(p).is_some_and(Param::is_animated))
     }
     /// Keyframe times of every mask parameter (for the keyframe lane / presets).
     pub fn params_mut(&mut self) -> [&mut Param; 4] {
-        [&mut self.path, &mut self.feather, &mut self.opacity, &mut self.expansion]
+        [
+            &mut self.path,
+            &mut self.feather,
+            &mut self.opacity,
+            &mut self.expansion,
+        ]
     }
 }
 
@@ -447,19 +540,55 @@ pub fn mask_param_defs() -> &'static [ParamDef] {
     use std::sync::OnceLock;
     static DEFS: OnceLock<Vec<ParamDef>> = OnceLock::new();
     DEFS.get_or_init(|| {
-        let fl = |id, label, def, (min, max): (f64, f64), (smin, smax): (f64, f64), unit| ParamDef {
-            id,
-            label,
-            kind: ParamKind::Float { min, max, soft_min: smin, soft_max: smax, unit, decimals: 1 },
-            default: ParamValue::Float(def),
-            animatable: true,
-            group: None,
-        };
+        let fl =
+            |id, label, def, (min, max): (f64, f64), (smin, smax): (f64, f64), unit| ParamDef {
+                id,
+                label,
+                kind: ParamKind::Float {
+                    min,
+                    max,
+                    soft_min: smin,
+                    soft_max: smax,
+                    unit,
+                    decimals: 1,
+                },
+                default: ParamValue::Float(def),
+                animatable: true,
+                group: None,
+            };
         vec![
-            ParamDef { id: "path", label: "Mask Path", kind: ParamKind::Path, default: ParamValue::Path(MaskPath::default()), animatable: true, group: None },
-            fl("feather", "Mask Feather", 10.0, (0.0, 10_000.0), (0.0, 500.0), ""),
-            fl("opacity", "Mask Opacity", 100.0, (0.0, 100.0), (0.0, 100.0), " %"),
-            fl("expansion", "Mask Expansion", 0.0, (-10_000.0, 10_000.0), (-500.0, 500.0), ""),
+            ParamDef {
+                id: "path",
+                label: "Mask Path",
+                kind: ParamKind::Path,
+                default: ParamValue::Path(MaskPath::default()),
+                animatable: true,
+                group: None,
+            },
+            fl(
+                "feather",
+                "Mask Feather",
+                10.0,
+                (0.0, 10_000.0),
+                (0.0, 500.0),
+                "",
+            ),
+            fl(
+                "opacity",
+                "Mask Opacity",
+                100.0,
+                (0.0, 100.0),
+                (0.0, 100.0),
+                " %",
+            ),
+            fl(
+                "expansion",
+                "Mask Expansion",
+                0.0,
+                (-10_000.0, 10_000.0),
+                (-500.0, 500.0),
+                "",
+            ),
         ]
     })
 }
@@ -483,7 +612,15 @@ mod tests {
     #[test]
     fn polygon_flattens_to_its_corners() {
         let p = MaskPath::rect(0.0, 0.0, 10.0, 5.0);
-        assert_eq!(p.flatten(0.1), vec![Vec2::new(0.0, 0.0), Vec2::new(10.0, 0.0), Vec2::new(10.0, 5.0), Vec2::new(0.0, 5.0)]);
+        assert_eq!(
+            p.flatten(0.1),
+            vec![
+                Vec2::new(0.0, 0.0),
+                Vec2::new(10.0, 0.0),
+                Vec2::new(10.0, 5.0),
+                Vec2::new(0.0, 5.0)
+            ]
+        );
     }
 
     #[test]
@@ -497,8 +634,18 @@ mod tests {
         assert_eq!(mid.vertices[0].p, Vec2::new(50.0, 10.0));
         assert_eq!(mid.vertices[2].p, Vec2::new(60.0, 20.0));
         // different vertex counts hold the earlier path
-        m.path.put_keyframe(Tick(200), ParamValue::Path(MaskPath::ellipse(Vec2::ZERO, Vec2::new(1.0, 1.0))));
-        m.path.put_keyframe(Tick(300), ParamValue::Path(MaskPath::polygon(&[Vec2::ZERO, Vec2::new(1.0, 0.0), Vec2::new(0.0, 1.0)])));
+        m.path.put_keyframe(
+            Tick(200),
+            ParamValue::Path(MaskPath::ellipse(Vec2::ZERO, Vec2::new(1.0, 1.0))),
+        );
+        m.path.put_keyframe(
+            Tick(300),
+            ParamValue::Path(MaskPath::polygon(&[
+                Vec2::ZERO,
+                Vec2::new(1.0, 0.0),
+                Vec2::new(0.0, 1.0),
+            ])),
+        );
         assert_eq!(m.path_at(Tick(250)).len(), 4);
     }
 
@@ -509,12 +656,18 @@ mod tests {
         assert_eq!(MaskMode::Intersect.combine(0.5, 0.5), 0.25);
         assert_eq!(MaskMode::Difference.combine(1.0, 1.0), 0.0);
         assert_eq!(MaskMode::from_name("intersect"), Some(MaskMode::Intersect));
-        assert_eq!(TrackMethod::from_name("Position & Rotation"), Some(TrackMethod::PositionRotation));
+        assert_eq!(
+            TrackMethod::from_name("Position & Rotation"),
+            Some(TrackMethod::PositionRotation)
+        );
     }
 
     #[test]
     fn mask_serde_round_trip() {
-        let mut m = Mask::new("Mask (1)", MaskPath::ellipse(Vec2::new(5.0, 5.0), Vec2::new(3.0, 2.0)));
+        let mut m = Mask::new(
+            "Mask (1)",
+            MaskPath::ellipse(Vec2::new(5.0, 5.0), Vec2::new(3.0, 2.0)),
+        );
         m.inverted = true;
         m.mode = MaskMode::Subtract;
         m.feather.put_keyframe(Tick(10), ParamValue::Float(4.0));
@@ -535,15 +688,27 @@ mod tests {
             let d = ((q.x - cx).powi(2) + (q.y - cy).powi(2)).sqrt();
             if (q.x - cx).abs() > 1e-9 && (q.y - cy).abs() > 1e-9 {
                 on_arc += 1;
-                assert!((d - 20.0).abs() < 0.03, "{q:?} is {d} from its corner centre");
+                assert!(
+                    (d - 20.0).abs() < 0.03,
+                    "{q:?} is {d} from its corner centre"
+                );
             }
-            assert!(q.x >= -1e-9 && q.x <= 100.0 + 1e-9 && q.y >= -1e-9 && q.y <= 60.0 + 1e-9, "{q:?} outside the rectangle");
+            assert!(
+                q.x >= -1e-9 && q.x <= 100.0 + 1e-9 && q.y >= -1e-9 && q.y <= 60.0 + 1e-9,
+                "{q:?} outside the rectangle"
+            );
         }
         assert!(on_arc >= 8, "the corners are curved: {on_arc} arc points");
         // the sharp corner itself is cut away
-        assert!(pts.iter().all(|q| q.x + q.y > 5.0), "the corner at (0, 0) is rounded off");
+        assert!(
+            pts.iter().all(|q| q.x + q.y > 5.0),
+            "the corner at (0, 0) is rounded off"
+        );
         // radius 0 is the plain rectangle
-        assert_eq!(MaskPath::rounded_rect(0.0, 0.0, 10.0, 5.0, 0.0), MaskPath::rect(0.0, 0.0, 10.0, 5.0));
+        assert_eq!(
+            MaskPath::rounded_rect(0.0, 0.0, 10.0, 5.0, 0.0),
+            MaskPath::rect(0.0, 0.0, 10.0, 5.0)
+        );
     }
 
     #[test]
@@ -554,9 +719,19 @@ mod tests {
         for v in &p.vertices {
             assert!(v.p.x.is_finite() && v.p.y.is_finite());
         }
-        assert!(p.vertices.iter().any(|v| (v.p - Vec2::new(0.0, 20.0)).length() < 1e-9), "{:?}", p.vertices);
+        assert!(
+            p.vertices
+                .iter()
+                .any(|v| (v.p - Vec2::new(0.0, 20.0)).length() < 1e-9),
+            "{:?}",
+            p.vertices
+        );
         // a triangle: the 60° turns get fillets tangent to both edges, within the triangle
-        let tri = MaskPath::polygon(&[Vec2::new(0.0, 0.0), Vec2::new(100.0, 0.0), Vec2::new(50.0, 86.6)]);
+        let tri = MaskPath::polygon(&[
+            Vec2::new(0.0, 0.0),
+            Vec2::new(100.0, 0.0),
+            Vec2::new(50.0, 86.6),
+        ]);
         let r = tri.with_rounded_corners(10.0, &tri.roundable_corners());
         assert_eq!(r.len(), 6);
         assert!(r.vertices.iter().all(|v| v.p.y >= -1e-9));
@@ -569,10 +744,19 @@ mod tests {
         for bad in [f64::NAN, f64::INFINITY, -3.0, 0.0] {
             let q = sq.with_rounded_corners(bad, &[0]);
             assert_eq!(q.len(), 5, "a listed corner always splits in two");
-            assert!(q.vertices.iter().all(|v| v.is_corner() && v.p.x.is_finite()));
+            assert!(
+                q.vertices
+                    .iter()
+                    .all(|v| v.is_corner() && v.p.x.is_finite())
+            );
         }
         // a collinear vertex splits into two coincident corners, keeping vertex counts stable
-        let line = MaskPath::polygon(&[Vec2::new(0.0, 0.0), Vec2::new(5.0, 0.0), Vec2::new(10.0, 0.0), Vec2::new(5.0, 5.0)]);
+        let line = MaskPath::polygon(&[
+            Vec2::new(0.0, 0.0),
+            Vec2::new(5.0, 0.0),
+            Vec2::new(10.0, 0.0),
+            Vec2::new(5.0, 5.0),
+        ]);
         let q = line.with_rounded_corners(2.0, &[1]);
         assert_eq!(q.len(), 5);
         assert_eq!(q.vertices[1].p, q.vertices[2].p);

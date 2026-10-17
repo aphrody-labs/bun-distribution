@@ -22,7 +22,9 @@ use miette::{IntoDiagnostic, Result, miette};
 pub(crate) fn config_dir() -> Result<PathBuf> {
     #[cfg(windows)]
     {
-        env::var_os("APPDATA").map(PathBuf::from).ok_or_else(|| miette!("APPDATA is not set"))
+        env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .ok_or_else(|| miette!("APPDATA is not set"))
     }
     #[cfg(target_os = "macos")]
     {
@@ -48,7 +50,9 @@ pub(crate) fn config_dir() -> Result<PathBuf> {
 /// User home directory for the Unix configuration paths.
 #[cfg(unix)]
 pub(crate) fn home_dir() -> Result<PathBuf> {
-    env::var_os("HOME").map(PathBuf::from).ok_or_else(|| miette!("HOME is not set"))
+    env::var_os("HOME")
+        .map(PathBuf::from)
+        .ok_or_else(|| miette!("HOME is not set"))
 }
 /// Ensure a directory exists (creating it recursively if needed).
 #[allow(dead_code)]

@@ -10,6 +10,6 @@ use utoipa::{IntoParams, ToSchema};
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListUntaggedMediaFilesQueryParams {
-  pub cursor: Option<String>,
-  pub limit: Option<u32>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
 }

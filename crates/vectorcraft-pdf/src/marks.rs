@@ -41,7 +41,17 @@ impl BleedSettings {
     /// The bleed of `doc`'s pages, `[top, bottom, left, right]` in points: the document's with
     /// [`Self::use_document`] (kept to 0–[`MAX_BLEED`]), else these values.
     pub fn of(&self, doc: &Document) -> [f64; 4] {
-        if self.use_document { doc.setup.bleed.map(|b| if b.is_finite() { b.clamp(0.0, MAX_BLEED) } else { 0.0 }) } else { self.values() }
+        if self.use_document {
+            doc.setup.bleed.map(|b| {
+                if b.is_finite() {
+                    b.clamp(0.0, MAX_BLEED)
+                } else {
+                    0.0
+                }
+            })
+        } else {
+            self.values()
+        }
     }
 }
 
@@ -60,23 +70,45 @@ impl PageBoxes {
     pub fn new(trim: Rect, bleed: [f64; 4], marks: &PrinterMarks) -> Self {
         let reach = marks.reach(bleed);
         let most: [f64; 4] = std::array::from_fn(|i| bleed[i].max(reach[i]));
-        Self { trim, bleed: outset(trim, bleed), media: outset(trim, most) }
+        Self {
+            trim,
+            bleed: outset(trim, bleed),
+            media: outset(trim, most),
+        }
     }
 }
 
 /// The page information printed under the marks: the file's title, the artboard (its name and
 /// number) and the date and time of the export (UTC).
-pub(crate) fn page_info(doc: &Document, title: &str, artboard: usize, created: Option<i64>) -> String {
+pub(crate) fn page_info(
+    doc: &Document,
+    title: &str,
+    artboard: usize,
+    created: Option<i64>,
+) -> String {
     page_info_of(doc, title, Some(artboard), created)
 }
 
 /// [`page_info`] of a page that may show no artboard (print with artboards ignored).
-pub(crate) fn page_info_of(doc: &Document, title: &str, artboard: Option<usize>, created: Option<i64>) -> String {
-    let title = if title.trim().is_empty() { "Untitled" } else { title.trim() };
+pub(crate) fn page_info_of(
+    doc: &Document,
+    title: &str,
+    artboard: Option<usize>,
+    created: Option<i64>,
+) -> String {
+    let title = if title.trim().is_empty() {
+        "Untitled"
+    } else {
+        title.trim()
+    };
     let mut info = title.to_string();
     if let Some(i) = artboard {
         let name = doc.artboards.get(i).map_or("", |a| a.name.as_str());
-        info.push_str(&format!("  ·  {name} ({} of {})", i + 1, doc.artboards.len()));
+        info.push_str(&format!(
+            "  ·  {name} ({} of {})",
+            i + 1,
+            doc.artboards.len()
+        ));
     }
     if let Some(t) = created {
         let [y, mo, d, h, mi, _] = vectorcraft_doc::metadata::civil(t);
@@ -86,14 +118,26 @@ pub(crate) fn page_info_of(doc: &Document, title: &str, artboard: Option<usize>,
 }
 
 /// The marks of a page as art (`None` without marks): its spot inks get colour bar patches.
-pub(crate) fn art(doc: &Document, marks: &PrinterMarks, boxes: &PageBoxes, bleed: [f64; 4], info: &str) -> Option<Node> {
+pub(crate) fn art(
+    doc: &Document,
+    marks: &PrinterMarks,
+    boxes: &PageBoxes,
+    bleed: [f64; 4],
+    info: &str,
+) -> Option<Node> {
     if !marks.any() {
         return None;
     }
     let spots: Vec<Paint> = doc
         .spot_names()
         .into_iter()
-        .filter_map(|name| doc.global_color(&name).map(|color| Paint::Solid { color, swatch: Some(name), tint: 1.0 }))
+        .filter_map(|name| {
+            doc.global_color(&name).map(|color| Paint::Solid {
+                color,
+                swatch: Some(name),
+                tint: 1.0,
+            })
+        })
         .collect();
     // The marks are drawn straight from this art, so their ids don't matter.
     let mut next = 0;

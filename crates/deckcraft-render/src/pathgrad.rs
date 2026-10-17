@@ -21,14 +21,24 @@ const MAX_SIDE: f64 = 384.0;
 /// Colour position (0 at the focus, 1 at the edge) of `p` for path `kind` in `bounds` with the
 /// focus rect `focus` (fractions inset from left, top, right, bottom), `outline` being the
 /// shape's flattened polygon(s) for `shape`.
-pub fn position(kind: &str, bounds: Rect, focus: [f64; 4], outline: &[Vec<Point>], p: Point) -> f64 {
+pub fn position(
+    kind: &str,
+    bounds: Rect,
+    focus: [f64; 4],
+    outline: &[Vec<Point>],
+    p: Point,
+) -> f64 {
     let f = Rect::new(
         bounds.x0 + bounds.width() * focus[0].clamp(0.0, 1.0),
         bounds.y0 + bounds.height() * focus[1].clamp(0.0, 1.0),
         bounds.x1 - bounds.width() * focus[2].clamp(0.0, 1.0),
         bounds.y1 - bounds.height() * focus[3].clamp(0.0, 1.0),
     );
-    let f = if f.x0 <= f.x1 && f.y0 <= f.y1 { f } else { Rect::from_center_size(f.center(), (0.0, 0.0)) };
+    let f = if f.x0 <= f.x1 && f.y0 <= f.y1 {
+        f
+    } else {
+        Rect::from_center_size(f.center(), (0.0, 0.0))
+    };
     match kind {
         "shape" if !outline.is_empty() => shape_position(outline, f.center(), p),
         _ => {
@@ -42,7 +52,9 @@ pub fn position(kind: &str, bounds: Rect, focus: [f64; 4], outline: &[Vec<Point>
                     0.0
                 }
             };
-            axis(p.x, f.x0, f.x1, bounds.x0, bounds.x1).max(axis(p.y, f.y0, f.y1, bounds.y0, bounds.y1)).clamp(0.0, 1.0)
+            axis(p.x, f.x0, f.x1, bounds.x0, bounds.x1)
+                .max(axis(p.y, f.y0, f.y1, bounds.y0, bounds.y1))
+                .clamp(0.0, 1.0)
         }
     }
 }
@@ -73,7 +85,11 @@ fn shape_position(outline: &[Vec<Point>], c: Point, p: Point) -> f64 {
             }
         }
     }
-    if best.is_finite() { (1.0 / best).clamp(0.0, 1.0) } else { 1.0 }
+    if best.is_finite() {
+        (1.0 / best).clamp(0.0, 1.0)
+    } else {
+        1.0
+    }
 }
 
 /// The outline flattened into closed polygons.
@@ -116,10 +132,19 @@ pub fn ramp(stops: &[(f64, Rgba)]) -> Vec<Rgba> {
             let t = i as f64 / 255.0;
             let after = stops.iter().position(|s| s.0 >= t);
             match after {
-                Some(0) | None => stops.get(after.unwrap_or(stops.len().saturating_sub(1))).map(|s| s.1).unwrap_or(Rgba::BLACK),
+                Some(0) | None => stops
+                    .get(after.unwrap_or(stops.len().saturating_sub(1)))
+                    .map(|s| s.1)
+                    .unwrap_or(Rgba::BLACK),
                 Some(j) => {
-                    let (Some(a), Some(b)) = (stops.get(j - 1), stops.get(j)) else { return Rgba::BLACK };
-                    let k = if b.0 - a.0 > 1e-12 { (t - a.0) / (b.0 - a.0) } else { 1.0 };
+                    let (Some(a), Some(b)) = (stops.get(j - 1), stops.get(j)) else {
+                        return Rgba::BLACK;
+                    };
+                    let k = if b.0 - a.0 > 1e-12 {
+                        (t - a.0) / (b.0 - a.0)
+                    } else {
+                        1.0
+                    };
                     a.1.lerp(b.1, k)
                 }
             }
@@ -130,7 +155,16 @@ pub fn ramp(stops: &[(f64, Rgba)]) -> Vec<Rgba> {
 /// Fill `path` with a `rect` or `shape` path gradient of `stops` (sorted and expanded, see
 /// `ramp::expand`) over `bounds`, faded by `alpha`; `m` maps the path to the output.
 #[allow(clippy::too_many_arguments)]
-pub fn fill(ctx: &mut RenderContext, kind: &str, focus: [f64; 4], stops: &[(f64, Rgba)], bounds: Rect, path: &BezPath, m: Affine, alpha: f64) {
+pub fn fill(
+    ctx: &mut RenderContext,
+    kind: &str,
+    focus: [f64; 4],
+    stops: &[(f64, Rgba)],
+    bounds: Rect,
+    path: &BezPath,
+    m: Affine,
+    alpha: f64,
+) {
     if bounds.width() <= 0.0 || bounds.height() <= 0.0 || !bounds.is_finite() || stops.is_empty() {
         return;
     }
@@ -138,29 +172,51 @@ pub fn fill(ctx: &mut RenderContext, kind: &str, focus: [f64; 4], stops: &[(f64,
     let k = if k.is_finite() && k > 0.0 { k } else { 1.0 };
     let longest = bounds.width().max(bounds.height()) * k;
     let s = (MAX_SIDE / longest).min(1.0) * k;
-    let (pw, ph) = (((bounds.width() * s).ceil() as u32).clamp(1, 4096), ((bounds.height() * s).ceil() as u32).clamp(1, 4096));
-    let outline = if kind == "shape" { polygons(path) } else { Vec::new() };
+    let (pw, ph) = (
+        ((bounds.width() * s).ceil() as u32).clamp(1, 4096),
+        ((bounds.height() * s).ceil() as u32).clamp(1, 4096),
+    );
+    let outline = if kind == "shape" {
+        polygons(path)
+    } else {
+        Vec::new()
+    };
     let lut = ramp(stops);
     let a = alpha.clamp(0.0, 1.0);
     let mut data = Vec::with_capacity((pw * ph) as usize);
     for j in 0..ph {
         for i in 0..pw {
-            let p = Point::new(bounds.x0 + (i as f64 + 0.5) / pw as f64 * bounds.width(), bounds.y0 + (j as f64 + 0.5) / ph as f64 * bounds.height());
+            let p = Point::new(
+                bounds.x0 + (i as f64 + 0.5) / pw as f64 * bounds.width(),
+                bounds.y0 + (j as f64 + 0.5) / ph as f64 * bounds.height(),
+            );
             let t = position(kind, bounds, focus, &outline, p);
-            let c = lut.get((t * 255.0).round().clamp(0.0, 255.0) as usize).copied().unwrap_or(Rgba::BLACK);
+            let c = lut
+                .get((t * 255.0).round().clamp(0.0, 255.0) as usize)
+                .copied()
+                .unwrap_or(Rgba::BLACK);
             let ca = (c.a as f64 * a).round().clamp(0.0, 255.0);
             let mul = |v: u8| (v as f64 * ca / 255.0).round().clamp(0.0, 255.0) as u8;
-            data.push(vello_cpu::color::PremulRgba8 { r: mul(c.r), g: mul(c.g), b: mul(c.b), a: ca as u8 });
+            data.push(vello_cpu::color::PremulRgba8 {
+                r: mul(c.r),
+                g: mul(c.g),
+                b: mul(c.b),
+                a: ca as u8,
+            });
         }
     }
     let pm = Arc::new(Pixmap::from_parts(data, pw as u16, ph as u16));
     ctx.set_transform(m);
     ctx.set_paint(vello_cpu::Image {
         image: vello_cpu::ImageSource::Pixmap(pm),
-        sampler: peniko::ImageSampler { quality: peniko::ImageQuality::Medium, ..Default::default() },
+        sampler: peniko::ImageSampler {
+            quality: peniko::ImageQuality::Medium,
+            ..Default::default()
+        },
     });
     ctx.set_paint_transform(
-        Affine::translate(bounds.origin().to_vec2()) * Affine::scale_non_uniform(bounds.width() / pw as f64, bounds.height() / ph as f64),
+        Affine::translate(bounds.origin().to_vec2())
+            * Affine::scale_non_uniform(bounds.width() / pw as f64, bounds.height() / ph as f64),
     );
     ctx.fill_path(path);
     ctx.reset_paint_transform();
@@ -180,7 +236,10 @@ mod tests {
         let at = |x: f64, y: f64| position("rect", b, CENTRE, &[], Point::new(x, y));
         assert!((at(160.0, 100.0) - 20.0 / 140.0).abs() < 1e-9);
         assert!((at(140.0, 120.0) - 20.0 / 100.0).abs() < 1e-9);
-        assert!((at(168.0, 120.0) - 0.2).abs() < 1e-9, "the diagonal takes the larger share");
+        assert!(
+            (at(168.0, 120.0) - 0.2).abs() < 1e-9,
+            "the diagonal takes the larger share"
+        );
         assert_eq!(at(0.0, 0.0), 1.0);
         // From a corner (fillToRect 0,0,100%,100%): the far corner is the end.
         let corner = [0.0, 0.0, 1.0, 1.0];
@@ -209,12 +268,20 @@ mod tests {
 
     #[test]
     fn the_ramp_runs_through_the_stops() {
-        let stops = [(0.0, Rgba::rgb(0, 0, 0)), (0.5, Rgba::rgb(128, 128, 128)), (1.0, Rgba::rgb(255, 255, 255))];
+        let stops = [
+            (0.0, Rgba::rgb(0, 0, 0)),
+            (0.5, Rgba::rgb(128, 128, 128)),
+            (1.0, Rgba::rgb(255, 255, 255)),
+        ];
         let r = ramp(&stops);
         assert_eq!(r.len(), 256);
         assert_eq!(r[0], Rgba::rgb(0, 0, 0));
         assert_eq!(r[255], Rgba::rgb(255, 255, 255));
         assert!((r[64].r as i32 - 64).abs() <= 2);
-        assert!(ramp(&[(0.3, Rgba::rgb(9, 9, 9))]).iter().all(|c| *c == Rgba::rgb(9, 9, 9)));
+        assert!(
+            ramp(&[(0.3, Rgba::rgb(9, 9, 9))])
+                .iter()
+                .all(|c| *c == Rgba::rgb(9, 9, 9))
+        );
     }
 }

@@ -40,8 +40,9 @@ const ANNEX_K_CHROMA: [u16; 64] = [
 /// The natural-order index of the k-th coefficient in zig-zag order (T.81 Figure A.6): DQT
 /// stores its 64 values in this order.
 const ZIGZAG: [usize; 64] = [
-    0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29,
-    22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
+    0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20,
+    13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59,
+    52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
 ];
 
 /// One quantisation table from a DQT segment, in natural order, with its precision.
@@ -84,7 +85,11 @@ fn scaled(base: u16, q: u8, wide: bool) -> u32 {
 
 /// How far `t` is from `base` scaled to quality `q`: the summed absolute difference.
 fn table_error(t: &Table, base: &[u16; 64], q: u8) -> u64 {
-    t.values.iter().zip(base).map(|(&v, &b)| u64::from(u32::from(v).abs_diff(scaled(b, q, t.wide)))).sum()
+    t.values
+        .iter()
+        .zip(base)
+        .map(|(&v, &b)| u64::from(u32::from(v).abs_diff(scaled(b, q, t.wide))))
+        .sum()
 }
 
 /// The quantisation tables 0..=3 defined before the first scan (a later definition of the same
@@ -107,8 +112,15 @@ fn jpeg_tables(b: &[u8]) -> [Option<Table>; 4] {
         if marker == 0xDA || marker == 0xD9 {
             break;
         }
-        let Some(len) = b.get(i + 2..i + 4).map(|l| usize::from(u16::from_be_bytes([l[0], l[1]]))) else { break };
-        let Some(seg) = len.checked_sub(2).and_then(|n| b.get(i + 4..i + 4 + n)) else { break };
+        let Some(len) = b
+            .get(i + 2..i + 4)
+            .map(|l| usize::from(u16::from_be_bytes([l[0], l[1]])))
+        else {
+            break;
+        };
+        let Some(seg) = len.checked_sub(2).and_then(|n| b.get(i + 4..i + 4 + n)) else {
+            break;
+        };
         if marker == 0xDB {
             read_dqt(seg, &mut tables);
         }
@@ -129,7 +141,12 @@ fn read_dqt(mut seg: &[u8], tables: &mut [Option<Table>; 4]) {
         let Some(data) = rest.get(..n) else { return };
         let mut values = [0u16; 64];
         for (k, &natural) in ZIGZAG.iter().enumerate() {
-            let v = if wide { data.get(2 * k..2 * k + 2).map_or(0, |p| u16::from_be_bytes([p[0], p[1]])) } else { data.get(k).map_or(0, |&p| u16::from(p)) };
+            let v = if wide {
+                data.get(2 * k..2 * k + 2)
+                    .map_or(0, |p| u16::from_be_bytes([p[0], p[1]]))
+            } else {
+                data.get(k).map_or(0, |&p| u16::from(p))
+            };
             if let Some(dst) = values.get_mut(natural) {
                 *dst = v;
             }
@@ -164,13 +181,18 @@ pub fn webp_encoding(bytes: &[u8]) -> Option<WebpEncoding> {
 fn find_image_chunk(mut chunks: &[u8], depth: u8) -> Option<WebpEncoding> {
     while let Some(head) = chunks.get(..8) {
         let fourcc = head.get(..4)?;
-        let size = usize::try_from(u32::from_le_bytes([head[4], head[5], head[6], head[7]])).ok()?;
+        let size =
+            usize::try_from(u32::from_le_bytes([head[4], head[5], head[6], head[7]])).ok()?;
         let end = 8usize.checked_add(size)?;
         // A truncated last chunk still holds its header.
         let payload = chunks.get(8..end.min(chunks.len()))?;
         match fourcc {
             b"VP8L" => return Some(WebpEncoding::Lossless),
-            b"VP8 " => return Some(WebpEncoding::Lossy { quality: vp8_quality(payload) }),
+            b"VP8 " => {
+                return Some(WebpEncoding::Lossy {
+                    quality: vp8_quality(payload),
+                });
+            }
             // An animation frame: a 16-byte header, then the frame's own chunks.
             b"ANMF" if depth == 0 => {
                 if let Some(found) = payload.get(16..).and_then(|c| find_image_chunk(c, 1)) {
@@ -268,7 +290,14 @@ struct BoolDecoder<'a> {
 
 impl<'a> BoolDecoder<'a> {
     fn new(data: &'a [u8]) -> Self {
-        let mut d = BoolDecoder { data, pos: 0, value: 0, range: 255, bit_count: 0, overrun: 0 };
+        let mut d = BoolDecoder {
+            data,
+            pos: 0,
+            value: 0,
+            range: 255,
+            bit_count: 0,
+            overrun: 0,
+        };
         d.value = (d.next_byte() << 8) | d.next_byte();
         d
     }

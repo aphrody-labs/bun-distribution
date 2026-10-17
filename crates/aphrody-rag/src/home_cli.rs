@@ -83,17 +83,20 @@ fn run(cli: &Cli) -> Result<serde_json::Value> {
             let layout = cli.store.layout().map_err(other)?;
             let root = std::fs::canonicalize(root)?;
             let label = label.clone().unwrap_or_else(|| {
-                root.file_name().map_or_else(|| "tree".to_owned(), |n| n.to_string_lossy().into_owned())
+                root.file_name()
+                    .map_or_else(|| "tree".to_owned(), |n| n.to_string_lossy().into_owned())
             });
             let runtime = tokio::runtime::Builder::new_current_thread().build()?;
             let report = runtime.block_on(run_pipeline(&layout, &label, &root))?;
             Ok(serde_json::to_value(report)?)
-        },
+        }
         Command::ImportKnowledge { path, label, apply } => {
             let layout = cli.store.layout().map_err(other)?;
             let runtime = tokio::runtime::Builder::new_current_thread().build()?;
-            runtime.block_on(crate::pipeline::import_knowledge(&layout, path, label, *apply))
-        },
+            runtime.block_on(crate::pipeline::import_knowledge(
+                &layout, path, label, *apply,
+            ))
+        }
         Command::Query { text, limit, kinds } => {
             let layout = cli.store.layout().map_err(other)?;
             let db = HomeDb::open_read_only(&layout.db_path).map_err(other)?;
@@ -110,7 +113,7 @@ fn run(cli: &Cli) -> Result<serde_json::Value> {
                 ..UnifiedOptions::default()
             };
             Ok(serde_json::json!({ "query": text, "hits": unified_search(&db, text, &options)? }))
-        },
+        }
     }
 }
 
@@ -122,16 +125,19 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return i32::from(error.use_stderr());
-        },
+        }
     };
     match run(&cli) {
         Ok(value) => {
-            println!("{}", serde_json::to_string_pretty(&value).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value).unwrap_or_default()
+            );
             0
-        },
+        }
         Err(error) => {
             eprintln!("aphrody home: {error}");
             1
-        },
+        }
     }
 }

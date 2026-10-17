@@ -85,7 +85,10 @@ fn le_suffixe_d_index_iecode_est_retire_et_non_recopie() {
 
     let entries = cfgbin::iecode_json_to_t2b_entries(&iecode).expect("reconstruction");
     assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0].name, "RACINE_LIST_BEG", "le suffixe de la racine est retiré");
+    assert_eq!(
+        entries[0].name, "RACINE_LIST_BEG",
+        "le suffixe de la racine est retiré"
+    );
     assert_eq!(entries[0].children.len(), 2);
     assert_eq!(entries[0].children[0].name, "LIGNE");
     assert_eq!(
@@ -123,7 +126,10 @@ fn un_parent_qui_n_est_pas_un_conteneur_est_refuse_et_non_vide_en_silence() {
         "entries": [{ "name": "RACINE_0", "variables": [{ "type": "Int", "value": "1" }], "children": [] }]
     });
     let bytes = cfgbin::encode_iecode_t2b(&feuille).expect("encodage");
-    assert_eq!(cfgbin::t2b_to_iecode_json(&bytes).expect("relecture"), feuille);
+    assert_eq!(
+        cfgbin::t2b_to_iecode_json(&bytes).expect("relecture"),
+        feuille
+    );
 }
 
 #[test]
@@ -140,7 +146,10 @@ fn un_nom_finissant_par_des_chiffres_survit_a_l_aller_retour() {
     assert_eq!(entries[0].name, "FOO_2");
 
     let bytes = cfgbin::encode_iecode_t2b(&iecode).expect("encodage");
-    assert_eq!(cfgbin::t2b_to_iecode_json(&bytes).expect("relecture"), iecode);
+    assert_eq!(
+        cfgbin::t2b_to_iecode_json(&bytes).expect("relecture"),
+        iecode
+    );
 }
 
 #[test]

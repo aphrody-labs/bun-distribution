@@ -6,8 +6,8 @@
 use std::sync::OnceLock;
 
 use moxcms::{
-    ColorProfile, DataColorSpace, LocalizableString, LutDataType, LutStore, LutType, LutWarehouse, Matrix3d, ProfileClass, ProfileText,
-    RenderingIntent,
+    ColorProfile, DataColorSpace, LocalizableString, LutDataType, LutStore, LutType, LutWarehouse,
+    Matrix3d, ProfileClass, ProfileText, RenderingIntent,
 };
 
 use super::Intent;
@@ -19,11 +19,19 @@ const B2A_GRID: usize = 17;
 /// ICC v2 legacy 16-bit Lab encoding (lut16Type).
 fn enc_lab(l: Lab) -> [u16; 3] {
     let q = |v: f32| v.round().clamp(0.0, 65535.0) as u16;
-    [q(l.l * 652.8), q((l.a + 128.0) * 256.0), q((l.b + 128.0) * 256.0)]
+    [
+        q(l.l * 652.8),
+        q((l.a + 128.0) * 256.0),
+        q((l.b + 128.0) * 256.0),
+    ]
 }
 
 fn dec_lab(v: [u16; 3]) -> Lab {
-    Lab::new(v[0] as f32 / 652.8, v[1] as f32 / 256.0 - 128.0, v[2] as f32 / 256.0 - 128.0)
+    Lab::new(
+        v[0] as f32 / 652.8,
+        v[1] as f32 / 256.0 - 128.0,
+        v[2] as f32 / 256.0 - 128.0,
+    )
 }
 
 fn lut(inputs: u8, outputs: u8, grid: usize, clut: Vec<u16>) -> LutWarehouse {
@@ -43,7 +51,11 @@ fn lut(inputs: u8, outputs: u8, grid: usize, clut: Vec<u16>) -> LutWarehouse {
 }
 
 fn text(s: &str) -> Option<ProfileText> {
-    Some(ProfileText::Localizable(vec![LocalizableString::new("en".into(), "US".into(), s.into())]))
+    Some(ProfileText::Localizable(vec![LocalizableString::new(
+        "en".into(),
+        "US".into(),
+        s.into(),
+    )]))
 }
 
 /// The Generic CMYK model as an ICC output profile (built once).
@@ -58,7 +70,12 @@ pub fn generic_cmyk_icc() -> &'static [u8] {
             for m in 0..A2B_GRID {
                 for y in 0..A2B_GRID {
                     for k in 0..A2B_GRID {
-                        let lab = g.to_lab_rel([step(c, A2B_GRID), step(m, A2B_GRID), step(y, A2B_GRID), step(k, A2B_GRID)]);
+                        let lab = g.to_lab_rel([
+                            step(c, A2B_GRID),
+                            step(m, A2B_GRID),
+                            step(y, A2B_GRID),
+                            step(k, A2B_GRID),
+                        ]);
                         a2b.extend(enc_lab(lab));
                     }
                 }
@@ -83,7 +100,11 @@ pub fn generic_cmyk_icc() -> &'static [u8] {
         p.color_space = DataColorSpace::Cmyk;
         p.profile_class = ProfileClass::OutputDevice;
         p.rendering_intent = RenderingIntent::RelativeColorimetric;
-        let d50 = moxcms::Xyzd { x: 0.9642, y: 1.0, z: 0.8249 };
+        let d50 = moxcms::Xyzd {
+            x: 0.9642,
+            y: 1.0,
+            z: 0.8249,
+        };
         p.white_point = d50;
         p.media_white_point = Some(d50);
         p.lut_a_to_b_perceptual = Some(a2b.clone());
@@ -93,7 +114,8 @@ pub fn generic_cmyk_icc() -> &'static [u8] {
         p.lut_b_to_a_colorimetric = Some(b2a.clone());
         p.lut_b_to_a_saturation = Some(b2a);
         p.description = text(super::GENERIC_CMYK);
-        p.copyright = text("No copyright; made by DesignCraft from its parametric press model. Use freely.");
+        p.copyright =
+            text("No copyright; made by DesignCraft from its parametric press model. Use freely.");
         p.encode().unwrap_or_default()
     })
 }
@@ -112,11 +134,21 @@ mod tests {
         // Read back: CMYK → sRGB through the profile is close to the model.
         let p = super::super::icc::IccProfile::from_bytes(None, bytes).expect("parses");
         let g = super::super::generic();
-        for cmyk in [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 0.0], [0.2, 0.3, 0.1, 0.5]] {
-            let via = p.to_srgb(&cmyk, Intent::RelativeColorimetric).expect("converts");
+        for cmyk in [
+            [0.0, 0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 1.0, 0.0],
+            [0.2, 0.3, 0.1, 0.5],
+        ] {
+            let via = p
+                .to_srgb(&cmyk, Intent::RelativeColorimetric)
+                .expect("converts");
             let model = g.to_srgb(cmyk, false);
             for i in 0..3 {
-                assert!((via[i] - model[i]).abs() < 0.04, "{cmyk:?}: {via:?} vs {model:?}");
+                assert!(
+                    (via[i] - model[i]).abs() < 0.04,
+                    "{cmyk:?}: {via:?} vs {model:?}"
+                );
             }
         }
     }

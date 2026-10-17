@@ -89,7 +89,9 @@ pub trait DeviceMemoryWriter {
     /// Resolve upstream GetPointer at report creation, not at fence release.
     /// Owners exposing this must keep the physical backing alive through queued
     /// operations. Recording/test writers may instead use the address methods.
-    fn capture_pointer(&self, _addr: u64) -> Option<usize> { None }
+    fn capture_pointer(&self, _addr: u64) -> Option<usize> {
+        None
+    }
 }
 
 /// Shared GPU address translation owner used by `QueryCacheBase::counter_report`.

@@ -102,7 +102,11 @@ impl Chunker for MarkdownChunker {
                 continue;
             }
             if trimmed_start.starts_with("```") || trimmed_start.starts_with("~~~") {
-                fence = Some(if trimmed_start.starts_with("```") { "```" } else { "~~~" });
+                fence = Some(if trimmed_start.starts_with("```") {
+                    "```"
+                } else {
+                    "~~~"
+                });
                 current_lines.push(line.to_string());
                 prev_line = Some(line);
                 i += 1;
@@ -146,7 +150,11 @@ impl Chunker for MarkdownChunker {
                     &current_lines,
                 );
                 current_lines.clear();
-                let level = if line.trim_start().starts_with('=') { 1 } else { 2 };
+                let level = if line.trim_start().starts_with('=') {
+                    1
+                } else {
+                    2
+                };
                 set_heading(&mut hierarchy, level, prev.trim().to_string());
                 current_trail = hierarchy
                     .iter()
@@ -164,7 +172,13 @@ impl Chunker for MarkdownChunker {
             prev_line = Some(line);
             i += 1;
         }
-        flush(&mut sections, &current_trail, current_base, current_heading_start, &current_lines);
+        flush(
+            &mut sections,
+            &current_trail,
+            current_base,
+            current_heading_start,
+            &current_lines,
+        );
 
         for section in sections {
             let borrowed: Vec<&str> = section.lines.iter().map(String::as_str).collect();
@@ -185,8 +199,16 @@ impl Chunker for MarkdownChunker {
                 opts.length_unit,
                 opts.cjk_sentence_breaks,
             );
-            let kind = if packed.len() <= 1 { ChunkKind::Heading } else { ChunkKind::Prose };
-            let symbol = if section.trail.is_empty() { None } else { Some(section.trail.clone()) };
+            let kind = if packed.len() <= 1 {
+                ChunkKind::Heading
+            } else {
+                ChunkKind::Prose
+            };
+            let symbol = if section.trail.is_empty() {
+                None
+            } else {
+                Some(section.trail.clone())
+            };
             // The heading line(s) above this section are never part of any
             // chunk's `content` (matching `_rag-chunk.ts`), but must still be
             // covered by *some* chunk's line range: fold them into the
@@ -200,7 +222,14 @@ impl Chunker for MarkdownChunker {
                 if p.text.trim().is_empty() {
                     continue;
                 }
-                out.push(Chunk::new(ord, kind, symbol.clone(), p.start_line, p.end_line, p.text));
+                out.push(Chunk::new(
+                    ord,
+                    kind,
+                    symbol.clone(),
+                    p.start_line,
+                    p.end_line,
+                    p.text,
+                ));
                 ord += 1;
             }
         }
@@ -234,14 +263,22 @@ fn build_units(lines: &[&str], base_line: u32, cjk_sentence_breaks: bool) -> Vec
         }
         let joined = lines[start_idx..end_idx].join("\n");
         let sub_base = base_line + u32::try_from(start_idx).unwrap_or(0);
-        units.extend(split_sentences_with_offsets(&joined, sub_base, cjk_sentence_breaks));
+        units.extend(split_sentences_with_offsets(
+            &joined,
+            sub_base,
+            cjk_sentence_breaks,
+        ));
     };
 
     while i < lines.len() {
         let trimmed = lines[i].trim_start();
         if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
             flush_plain(&mut units, plain_start, i);
-            let marker = if trimmed.starts_with("```") { "```" } else { "~~~" };
+            let marker = if trimmed.starts_with("```") {
+                "```"
+            } else {
+                "~~~"
+            };
             let fence_start = i;
             i += 1;
             while i < lines.len() && !lines[i].trim_start().starts_with(marker) {

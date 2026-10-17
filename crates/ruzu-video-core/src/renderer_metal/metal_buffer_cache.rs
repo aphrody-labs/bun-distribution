@@ -136,9 +136,14 @@ impl Buffer {
     fn null(runtime: &mut BufferCacheRuntime) -> Self {
         // MSL binds constant uint4*, including indirect CBUF reads. A four-byte
         // Vulkan-style null index buffer cannot satisfy that native contract.
-        let buffer = Self::allocate(runtime, BufferBase::null(NullBufferParams),
-            MAX_CONST_BUFFER_SIZE as u64);
-        buffer.allocation.write(0, &vec![0; MAX_CONST_BUFFER_SIZE])
+        let buffer = Self::allocate(
+            runtime,
+            BufferBase::null(NullBufferParams),
+            MAX_CONST_BUFFER_SIZE as u64,
+        );
+        buffer
+            .allocation
+            .write(0, &vec![0; MAX_CONST_BUFFER_SIZE])
             .expect("initialize Metal null buffer");
         buffer
     }
@@ -178,9 +183,12 @@ impl Buffer {
     }
 
     fn clear_uint8_indices(&mut self) {
-        self.cached_index_bytes.fetch_sub(self.uint8_bytes, Ordering::Relaxed);
-        self.allocated_bytes.fetch_sub(self.uint8_bytes, Ordering::Relaxed);
-        self.cached_index_entries.fetch_sub(self.uint8_indices.len() as u64, Ordering::Relaxed);
+        self.cached_index_bytes
+            .fetch_sub(self.uint8_bytes, Ordering::Relaxed);
+        self.allocated_bytes
+            .fetch_sub(self.uint8_bytes, Ordering::Relaxed);
+        self.cached_index_entries
+            .fetch_sub(self.uint8_indices.len() as u64, Ordering::Relaxed);
         self.uint8_bytes = 0;
         self.uint8_indices.clear();
     }
@@ -237,14 +245,18 @@ impl BufferCacheBuffer for Buffer {
     }
 
     fn immediate_upload(&self, offset: u64, data: &[u8]) {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Upload);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Upload,
+        );
         self.allocation
             .write(offset as usize, data)
             .expect("Metal immediate buffer upload exceeded its allocation");
     }
 
     fn immediate_download(&self, offset: u64, data: &mut [u8]) {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Download);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Download,
+        );
         self.allocation
             .read(offset as usize, data)
             .expect("Metal immediate buffer download exceeded its allocation");
@@ -319,9 +331,10 @@ impl BufferCacheRuntime {
         scheduler: &mut MetalScheduler,
         staging_pool: &mut MetalStagingBufferPool,
     ) -> Self {
-        let null_buffer = Arc::new(MetalBuffer::new(device, MAX_CONST_BUFFER_SIZE)
-            .expect("Metal null buffer"));
-        null_buffer.write(0, &vec![0; MAX_CONST_BUFFER_SIZE])
+        let null_buffer =
+            Arc::new(MetalBuffer::new(device, MAX_CONST_BUFFER_SIZE).expect("Metal null buffer"));
+        null_buffer
+            .write(0, &vec![0; MAX_CONST_BUFFER_SIZE])
             .expect("initialize Metal null buffer");
         Self {
             device: device.clone(),
@@ -331,7 +344,8 @@ impl BufferCacheRuntime {
             cached_index_bytes: Arc::new(AtomicU64::new(0)),
             cached_index_entries: Arc::new(AtomicU64::new(0)),
             null_buffer,
-            uint8_profile: std::env::var_os("RUZU_PROFILE_METAL_SUBMISSIONS").is_some()
+            uint8_profile: std::env::var_os("RUZU_PROFILE_METAL_SUBMISSIONS")
+                .is_some()
                 .then(|| Uint8CacheProfile {
                     ..Default::default()
                 }),
@@ -424,11 +438,17 @@ impl BufferCacheRuntime {
         upload_prefix: bool,
     ) {
         if !upload_prefix {
-            self.scheduler().request_outside_render_pass_operation_context_for(work);
+            self.scheduler()
+                .request_outside_render_pass_operation_context_for(work);
         }
         for copy in copies {
-            let encode = if upload_prefix { MetalBuffer::encode_upload_copy } else { MetalBuffer::encode_copy };
-            encode(src,
+            let encode = if upload_prefix {
+                MetalBuffer::encode_upload_copy
+            } else {
+                MetalBuffer::encode_copy
+            };
+            encode(
+                src,
                 self.scheduler(),
                 dst,
                 copy.src_offset as usize,
@@ -494,9 +514,12 @@ impl BufferCacheRuntime {
             let old_count = source.uint8_indices.len();
             let mut removed_bytes = 0;
             source.uint8_indices.retain(|(offset, count), converted| {
-                let unchanged = cacheable && source.allocation.region_unchanged_since(
-                    source.uint8_generation, *offset as usize, *count as usize,
-                );
+                let unchanged = cacheable
+                    && source.allocation.region_unchanged_since(
+                        source.uint8_generation,
+                        *offset as usize,
+                        *count as usize,
+                    );
                 if !unchanged {
                     removed_bytes += converted.length() as u64;
                 }
@@ -504,14 +527,19 @@ impl BufferCacheRuntime {
             });
             let removed_count = (old_count - source.uint8_indices.len()) as u64;
             source.uint8_bytes -= removed_bytes;
-            source.cached_index_bytes.fetch_sub(removed_bytes, Ordering::Relaxed);
-            source.allocated_bytes.fetch_sub(removed_bytes, Ordering::Relaxed);
-            source.cached_index_entries.fetch_sub(removed_count, Ordering::Relaxed);
+            source
+                .cached_index_bytes
+                .fetch_sub(removed_bytes, Ordering::Relaxed);
+            source
+                .allocated_bytes
+                .fetch_sub(removed_bytes, Ordering::Relaxed);
+            source
+                .cached_index_entries
+                .fetch_sub(removed_count, Ordering::Relaxed);
             if let Some(profile) = self.uint8_profile.as_mut() {
                 profile.invalidated_entries += removed_count;
-                profile.invalidated_requested_range += u64::from(requested_was_cached
-                    && !source.uint8_indices.contains_key(&key),
-                );
+                profile.invalidated_requested_range +=
+                    u64::from(requested_was_cached && !source.uint8_indices.contains_key(&key));
             }
             source.uint8_generation = generation;
         }
@@ -528,16 +556,28 @@ impl BufferCacheRuntime {
             );
         }
         let size = (u64::from(num_indices) * 2).max(4);
-        if cacheable && num_indices != 0
+        if cacheable
+            && num_indices != 0
             && size <= MAX_CACHED_UINT8_BYTES
             && self.cached_index_bytes.load(Ordering::Relaxed) <= MAX_CACHED_UINT8_BYTES - size
-            && self.cached_index_entries.load(Ordering::Relaxed) < MAX_CACHED_UINT8_ENTRIES {
-            let converted = Arc::new(MetalBuffer::new_private(&self.device, size as usize)
-                .expect("Metal cached uint8 allocation failed"));
-            self.uint8_pass.as_ref().unwrap().assemble_into(
-                unsafe { self.scheduler.as_mut() }, num_indices, &source.allocation,
-                source_offset as usize, &converted, 0,
-            ).expect("Metal cached uint8 conversion failed");
+            && self.cached_index_entries.load(Ordering::Relaxed) < MAX_CACHED_UINT8_ENTRIES
+        {
+            let converted = Arc::new(
+                MetalBuffer::new_private(&self.device, size as usize)
+                    .expect("Metal cached uint8 allocation failed"),
+            );
+            self.uint8_pass
+                .as_ref()
+                .unwrap()
+                .assemble_into(
+                    unsafe { self.scheduler.as_mut() },
+                    num_indices,
+                    &source.allocation,
+                    source_offset as usize,
+                    &converted,
+                    0,
+                )
+                .expect("Metal cached uint8 conversion failed");
             source.uint8_indices.insert(key, Arc::clone(&converted));
             source.uint8_bytes += size;
             self.cached_index_bytes.fetch_add(size, Ordering::Relaxed);
@@ -552,7 +592,8 @@ impl BufferCacheRuntime {
             profile.fallback += 1;
         }
         // SAFETY: same stable scheduler/pool ownership as the quad pass above.
-        let staging = self.uint8_pass
+        let staging = self
+            .uint8_pass
             .as_ref()
             .unwrap()
             .assemble(
@@ -654,7 +695,9 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
     }
 
     fn is_free(&mut self, tick: u64) -> bool {
-        self.scheduler().is_free(tick).expect("Metal tick query failed")
+        self.scheduler()
+            .is_free(tick)
+            .expect("Metal tick query failed")
     }
 
     fn wait(&mut self, tick: u64) {
@@ -729,7 +772,13 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
         _barrier: bool,
         _can_reorder_upload: bool,
     ) {
-        self.encode_copies(&dst.allocation, &src.allocation, copies, ComputeWork::BufferCopy, false);
+        self.encode_copies(
+            &dst.allocation,
+            &src.allocation,
+            copies,
+            ComputeWork::BufferCopy,
+            false,
+        );
     }
 
     fn copy_buffer_from_staging(
@@ -740,9 +789,14 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
         _barrier: bool,
         can_reorder_upload: bool,
     ) {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Upload);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Upload,
+        );
         let upload_prefix = can_reorder_upload
-            && Arc::ptr_eq(&src.buffer, unsafe { self.staging_pool.as_ref() }.stream_buf());
+            && Arc::ptr_eq(
+                &src.buffer,
+                unsafe { self.staging_pool.as_ref() }.stream_buf(),
+            );
         let work = if upload_prefix {
             ComputeWork::EligibleUpload
         } else if can_reorder_upload {
@@ -760,8 +814,16 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
         copies: &[BufferCopy],
         _barrier: bool,
     ) {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Download);
-        self.encode_copies(&dst.buffer, &src.allocation, copies, ComputeWork::BufferDownload, false);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Download,
+        );
+        self.encode_copies(
+            &dst.buffer,
+            &src.allocation,
+            copies,
+            ComputeWork::BufferDownload,
+            false,
+        );
     }
 
     fn clear_buffer(&mut self, buffer: &Buffer, offset: u32, size: u64, value: u32) {
@@ -774,7 +836,13 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
             dst_offset: offset as u64,
             size,
         }];
-        self.encode_copies(&buffer.allocation, &staging.buffer, &copies, ComputeWork::BufferClear, false);
+        self.encode_copies(
+            &buffer.allocation,
+            &staging.buffer,
+            &copies,
+            ComputeWork::BufferClear,
+            false,
+        );
     }
 
     fn bind_index_buffer(
@@ -804,7 +872,8 @@ impl base::BufferCacheRuntime for BufferCacheRuntime {
             // The common cache passes index.first in base_vertex, and the
             // rasterizer retains that first_index in the eventual draw. Convert
             // its prefix too, so the converted binding preserves index origin.
-            let end_index = base_vertex.checked_add(num_indices)
+            let end_index = base_vertex
+                .checked_add(num_indices)
                 .expect("Metal uint8 index range overflow");
             let (converted, offset) = self.uint8_index_buffer(buffer, offset, end_index);
             (converted, MTLIndexType::UInt16, offset)
@@ -1079,17 +1148,32 @@ mod tests {
         use crate::texture_cache::image_info::ImageInfo;
         use crate::texture_cache::types::{Extent3D, ImageType, SubresourceExtent};
         use objc2_foundation::NSString;
-        use objc2_metal::{MTLComputeCommandEncoder, MTLDevice, MTLLibrary, MTLSize,
-            MTLRenderPassDescriptor, MTLLoadAction, MTLStoreAction,
-            MTLRenderPipelineDescriptor, MTLRenderCommandEncoder, MTLPixelFormat, MTLPrimitiveType};
+        use objc2_metal::{
+            MTLComputeCommandEncoder, MTLDevice, MTLLibrary, MTLLoadAction, MTLPixelFormat,
+            MTLPrimitiveType, MTLRenderCommandEncoder, MTLRenderPassDescriptor,
+            MTLRenderPipelineDescriptor, MTLSize, MTLStoreAction,
+        };
         for prefix in [false, true] {
             let (device, mut scheduler, _pool, mut runtime) = runtime();
-            let target = MetalImage::new(&device, &ImageInfo {
-                format: PixelFormat::A8B8G8R8Unorm, image_type: ImageType::E2D,
-                size: Extent3D { width: 4, height: 4, depth: 1 },
-                resources: SubresourceExtent { levels: 1, layers: 1 }, num_samples: 1,
-                ..ImageInfo::default()
-            }).unwrap();
+            let target = MetalImage::new(
+                &device,
+                &ImageInfo {
+                    format: PixelFormat::A8B8G8R8Unorm,
+                    image_type: ImageType::E2D,
+                    size: Extent3D {
+                        width: 4,
+                        height: 4,
+                        depth: 1,
+                    },
+                    resources: SubresourceExtent {
+                        levels: 1,
+                        layers: 1,
+                    },
+                    num_samples: 1,
+                    ..ImageInfo::default()
+                },
+            )
+            .unwrap();
             let pass = MTLRenderPassDescriptor::new();
             let color = unsafe { pass.colorAttachments().objectAtIndexedSubscript(0) };
             color.setTexture(Some(target.handle()));
@@ -1102,16 +1186,24 @@ mod tests {
             let destination = Buffer::new(&mut runtime, 0x1000, 4);
             let mut upload = runtime.upload_staging_buffer(4);
             upload.mapped_span_mut()[..4].copy_from_slice(&0x12345678u32.to_ne_bytes());
-            let copies = [BufferCopy { src_offset: upload.offset(), dst_offset: 0, size: 4 }];
+            let copies = [BufferCopy {
+                src_offset: upload.offset(),
+                dst_offset: 0,
+                size: 4,
+            }];
             let tick = scheduler.current_tick();
             runtime.copy_buffer_from_staging(&destination, &upload, &copies, false, prefix);
             if !prefix {
                 // Ordinary copies legitimately change encoder before this.
                 scheduler.begin_render_pass(&pass).unwrap();
             }
-            let before = scheduler.with_render_encoder(|e| e as *const _ as usize).unwrap();
+            let before = scheduler
+                .with_render_encoder(|e| e as *const _ as usize)
+                .unwrap();
             runtime.post_copy_barrier();
-            let after = scheduler.with_render_encoder(|e| e as *const _ as usize).unwrap();
+            let after = scheduler
+                .with_render_encoder(|e| e as *const _ as usize)
+                .unwrap();
             assert_eq!(before, after);
             let library = device.device().newLibraryWithSource_options_error(
                 &NSString::from_str("#include <metal_stdlib>\nusing namespace metal;\n\
@@ -1129,33 +1221,71 @@ mod tests {
                         dst[1] = pixel.x | (pixel.y << 8) | (pixel.z << 16) | (pixel.w << 24);\n\
                     }"), None).unwrap();
             let render_desc = MTLRenderPipelineDescriptor::new();
-            render_desc.setVertexFunction(Some(&library.newFunctionWithName(&NSString::from_str("full_screen")).unwrap()));
-            render_desc.setFragmentFunction(Some(&library.newFunctionWithName(&NSString::from_str("shade")).unwrap()));
+            render_desc.setVertexFunction(Some(
+                &library
+                    .newFunctionWithName(&NSString::from_str("full_screen"))
+                    .unwrap(),
+            ));
+            render_desc.setFragmentFunction(Some(
+                &library
+                    .newFunctionWithName(&NSString::from_str("shade"))
+                    .unwrap(),
+            ));
             unsafe { render_desc.colorAttachments().objectAtIndexedSubscript(0) }
                 .setPixelFormat(MTLPixelFormat::RGBA8Unorm);
-            let render_pipeline = device.device().newRenderPipelineStateWithDescriptor_error(&render_desc).unwrap();
-            scheduler.with_render_encoder(|encoder| unsafe {
-                encoder.setRenderPipelineState(&render_pipeline);
-                encoder.setFragmentBuffer_offset_atIndex(Some(destination.allocation.handle()), 0, 0);
-                encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::Triangle, 0, 3);
-            }).unwrap();
-            let function = library.newFunctionWithName(&NSString::from_str("consume")).unwrap();
-            let pipeline = device.device().newComputePipelineStateWithFunction_error(&function).unwrap();
+            let render_pipeline = device
+                .device()
+                .newRenderPipelineStateWithDescriptor_error(&render_desc)
+                .unwrap();
+            scheduler
+                .with_render_encoder(|encoder| unsafe {
+                    encoder.setRenderPipelineState(&render_pipeline);
+                    encoder.setFragmentBuffer_offset_atIndex(
+                        Some(destination.allocation.handle()),
+                        0,
+                        0,
+                    );
+                    encoder.drawPrimitives_vertexStart_vertexCount(
+                        MTLPrimitiveType::Triangle,
+                        0,
+                        3,
+                    );
+                })
+                .unwrap();
+            let function = library
+                .newFunctionWithName(&NSString::from_str("consume"))
+                .unwrap();
+            let pipeline = device
+                .device()
+                .newComputePipelineStateWithFunction_error(&function)
+                .unwrap();
             let output = MetalBuffer::new(&device, 8).unwrap();
-            scheduler.with_compute_encoder(|encoder| unsafe {
-                encoder.setComputePipelineState(&pipeline);
-                encoder.setBuffer_offset_atIndex(Some(destination.allocation.handle()), 0, 0);
-                encoder.setBuffer_offset_atIndex(Some(output.handle()), 0, 1);
-                encoder.setTexture_atIndex(Some(target.handle()), 0);
-                let one = MTLSize { width: 1, height: 1, depth: 1 };
-                encoder.dispatchThreads_threadsPerThreadgroup(one, one);
-            }).unwrap();
+            scheduler
+                .with_compute_encoder(|encoder| unsafe {
+                    encoder.setComputePipelineState(&pipeline);
+                    encoder.setBuffer_offset_atIndex(Some(destination.allocation.handle()), 0, 0);
+                    encoder.setBuffer_offset_atIndex(Some(output.handle()), 0, 1);
+                    encoder.setTexture_atIndex(Some(target.handle()), 0);
+                    let one = MTLSize {
+                        width: 1,
+                        height: 1,
+                        depth: 1,
+                    };
+                    encoder.dispatchThreads_threadsPerThreadgroup(one, one);
+                })
+                .unwrap();
             assert_eq!(scheduler.current_tick(), tick);
             scheduler.finish_all().unwrap();
             let mut bytes = [0; 8];
             output.read(0, &mut bytes).unwrap();
-            assert_eq!(u32::from_ne_bytes(bytes[..4].try_into().unwrap()), 0x12345678);
-            assert_eq!(u32::from_ne_bytes(bytes[4..].try_into().unwrap()), 0x12345678);
+            assert_eq!(
+                u32::from_ne_bytes(bytes[..4].try_into().unwrap()),
+                0x12345678
+            );
+            assert_eq!(
+                u32::from_ne_bytes(bytes[4..].try_into().unwrap()),
+                0x12345678
+            );
         }
     }
 
@@ -1196,24 +1326,41 @@ mod tests {
         let mut null = Buffer::null(&mut runtime);
         runtime.bind_compute_uniform_buffer(0, &mut null, 0, 0);
         let bound = runtime.compute.uniform_buffers[0].buffer.clone();
-        let library = device.device().newLibraryWithSource_options_error(
-            &NSString::from_str("#include <metal_stdlib>\nusing namespace metal;\n\
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(
+                &NSString::from_str(
+                    "#include <metal_stdlib>\nusing namespace metal;\n\
                 kernel void read_null(constant uint4* c [[buffer(0)]],\n\
-                device uint4* out [[buffer(1)]]) { out[0] = c[0]; out[1] = c[4095]; }"),
-            None).unwrap();
-        let function = library.newFunctionWithName(&NSString::from_str("read_null")).unwrap();
-        let pipeline = device.device().newComputePipelineStateWithFunction_error(&function).unwrap();
+                device uint4* out [[buffer(1)]]) { out[0] = c[0]; out[1] = c[4095]; }",
+                ),
+                None,
+            )
+            .unwrap();
+        let function = library
+            .newFunctionWithName(&NSString::from_str("read_null"))
+            .unwrap();
+        let pipeline = device
+            .device()
+            .newComputePipelineStateWithFunction_error(&function)
+            .unwrap();
         for source in [bound, runtime.null_buffer()] {
             assert_eq!(source.length(), MAX_CONST_BUFFER_SIZE);
             let output = MetalBuffer::new(&device, 32).unwrap();
             output.write(0, &[0xff; 32]).unwrap();
-            scheduler.with_compute_encoder(|encoder| unsafe {
-                encoder.setComputePipelineState(&pipeline);
-                encoder.setBuffer_offset_atIndex(Some(source.handle()), 0, 0);
-                encoder.setBuffer_offset_atIndex(Some(output.handle()), 0, 1);
-                let one = MTLSize { width: 1, height: 1, depth: 1 };
-                encoder.dispatchThreads_threadsPerThreadgroup(one, one);
-            }).unwrap();
+            scheduler
+                .with_compute_encoder(|encoder| unsafe {
+                    encoder.setComputePipelineState(&pipeline);
+                    encoder.setBuffer_offset_atIndex(Some(source.handle()), 0, 0);
+                    encoder.setBuffer_offset_atIndex(Some(output.handle()), 0, 1);
+                    let one = MTLSize {
+                        width: 1,
+                        height: 1,
+                        depth: 1,
+                    };
+                    encoder.dispatchThreads_threadsPerThreadgroup(one, one);
+                })
+                .unwrap();
             scheduler.finish_all().unwrap();
             let mut bytes = [0xff; 32];
             output.read(0, &mut bytes).unwrap();
@@ -1298,9 +1445,13 @@ mod tests {
         let upload = MetalBuffer::new(&device, 8).unwrap();
         upload.write(0, &[9, 10, 11, 12, 13, 14, 15, 0xff]).unwrap();
         let tick = scheduler.current_tick();
-        upload.encode_copy(&mut scheduler, &source.allocation, 0, 0, 4).unwrap();
+        upload
+            .encode_copy(&mut scheduler, &source.allocation, 0, 0, 4)
+            .unwrap();
         let (copy_one, _) = runtime.uint8_index_buffer(&mut source, 0, 4);
-        upload.encode_copy(&mut scheduler, &source.allocation, 4, 0, 4).unwrap();
+        upload
+            .encode_copy(&mut scheduler, &source.allocation, 4, 0, 4)
+            .unwrap();
         let (copy_two, _) = runtime.uint8_index_buffer(&mut source, 0, 4);
         assert_eq!(scheduler.current_tick(), tick);
         assert!(!Arc::ptr_eq(&copy_one, &copy_two));
@@ -1308,14 +1459,21 @@ mod tests {
         // Prior conversions remain valid for their already-recorded consumers.
         let download = MetalBuffer::new(&device, 32).unwrap();
         for (index, converted) in [old, cpu_updated, copy_one, copy_two].iter().enumerate() {
-            converted.encode_copy(&mut scheduler, &download, 0, index * 8, 8).unwrap();
+            converted
+                .encode_copy(&mut scheduler, &download, 0, index * 8, 8)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = [0; 32];
         download.read(0, &mut bytes).unwrap();
-        let actual: Vec<u16> = bytes.chunks_exact(2)
-            .map(|word| u16::from_ne_bytes(word.try_into().unwrap())).collect();
-        assert_eq!(actual, [1,2,3,4, 5,6,7,8, 9,10,11,12, 13,14,15,0xffff]);
+        let actual: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|word| u16::from_ne_bytes(word.try_into().unwrap()))
+            .collect();
+        assert_eq!(
+            actual,
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0xffff]
+        );
     }
 
     #[test]
@@ -1329,7 +1487,9 @@ mod tests {
         upload.write(0, &[9, 10, 11, 0xff]).unwrap();
         let tick = scheduler.current_tick();
         source.mark_written_region(Some(tick), 4, 4);
-        upload.encode_copy(&mut scheduler, &source.allocation, 0, 4, 4).unwrap();
+        upload
+            .encode_copy(&mut scheduler, &source.allocation, 0, 4, 4)
+            .unwrap();
         let reused = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         let updated = runtime.uint8_index_buffer(&mut source, 4, 4).0;
         assert!(Arc::ptr_eq(&left, &reused));
@@ -1339,14 +1499,18 @@ mod tests {
         assert_eq!(runtime.cached_index_entries.load(Ordering::Relaxed), 2);
         let download = MetalBuffer::new(&device, 24).unwrap();
         for (index, converted) in [left, right, updated].iter().enumerate() {
-            converted.encode_copy(&mut scheduler, &download, 0, index * 8, 8).unwrap();
+            converted
+                .encode_copy(&mut scheduler, &download, 0, index * 8, 8)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = [0; 24];
         download.read(0, &mut bytes).unwrap();
-        let actual: Vec<u16> = bytes.chunks_exact(2)
-            .map(|word| u16::from_ne_bytes(word.try_into().unwrap())).collect();
-        assert_eq!(actual, [1,2,3,4, 5,6,7,8, 9,10,11,0xffff]);
+        let actual: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|word| u16::from_ne_bytes(word.try_into().unwrap()))
+            .collect();
+        assert_eq!(actual, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xffff]);
         drop(source);
         assert_eq!(runtime.cached_index_bytes.load(Ordering::Relaxed), 0);
         assert_eq!(runtime.cached_index_entries.load(Ordering::Relaxed), 0);
@@ -1360,9 +1524,14 @@ mod tests {
         let first = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         scheduler.finish_all().unwrap();
         source.immediate_upload(4, &[2; 4]);
-        assert!(Arc::ptr_eq(&first, &runtime.uint8_index_buffer(&mut source, 0, 4).0));
+        assert!(Arc::ptr_eq(
+            &first,
+            &runtime.uint8_index_buffer(&mut source, 0, 4).0
+        ));
         assert!(!scheduler.has_active_work());
-        for _ in 0..65 { source.immediate_upload(4, &[3; 4]); }
+        for _ in 0..65 {
+            source.immediate_upload(4, &[3; 4]);
+        }
         let evicted = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         assert!(!Arc::ptr_eq(&first, &evicted));
         source.set_write_tick(scheduler.current_tick());
@@ -1379,19 +1548,26 @@ mod tests {
         let left = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         let right = runtime.uint8_index_buffer(&mut source, 4, 4).0;
         base::BufferCacheRuntime::clear_buffer(&mut runtime, &source, 4, 4, 0xff001234);
-        assert!(Arc::ptr_eq(&left, &runtime.uint8_index_buffer(&mut source, 0, 4).0));
+        assert!(Arc::ptr_eq(
+            &left,
+            &runtime.uint8_index_buffer(&mut source, 0, 4).0
+        ));
         let cleared = runtime.uint8_index_buffer(&mut source, 4, 4).0;
         assert!(!Arc::ptr_eq(&right, &cleared));
         let download = MetalBuffer::new(&device, 24).unwrap();
         for (index, converted) in [left, right, cleared].iter().enumerate() {
-            converted.encode_copy(&mut scheduler, &download, 0, index * 8, 8).unwrap();
+            converted
+                .encode_copy(&mut scheduler, &download, 0, index * 8, 8)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = [0; 24];
         download.read(0, &mut bytes).unwrap();
-        let actual: Vec<u16> = bytes.chunks_exact(2)
-            .map(|word| u16::from_ne_bytes(word.try_into().unwrap())).collect();
-        assert_eq!(actual, [1,2,3,4, 5,6,7,8, 0x34,0x12,0,0xffff]);
+        let actual: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|word| u16::from_ne_bytes(word.try_into().unwrap()))
+            .collect();
+        assert_eq!(actual, [1, 2, 3, 4, 5, 6, 7, 8, 0x34, 0x12, 0, 0xffff]);
         assert_eq!(runtime.cached_index_bytes.load(Ordering::Relaxed), 16);
         assert_eq!(runtime.cached_index_entries.load(Ordering::Relaxed), 2);
     }
@@ -1399,33 +1575,52 @@ mod tests {
     #[test]
     fn uint8_reuse_tracks_same_tick_compute_writes_and_preserves_old_outputs() {
         use objc2_foundation::NSString;
-        use objc2_metal::{MTLBarrierScope, MTLComputeCommandEncoder, MTLDevice, MTLLibrary, MTLSize};
+        use objc2_metal::{
+            MTLBarrierScope, MTLComputeCommandEncoder, MTLDevice, MTLLibrary, MTLSize,
+        };
         let (device, mut scheduler, _pool, mut runtime) = runtime();
         let mut source = Buffer::new(&mut runtime, 0x1000, 4);
         source.immediate_upload(0, &[1, 2, 3, 4]);
         let first = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         let mut outputs = vec![first];
-        let library = device.device().newLibraryWithSource_options_error(
-            &NSString::from_str("#include <metal_stdlib>\nusing namespace metal;\n\
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(
+                &NSString::from_str(
+                    "#include <metal_stdlib>\nusing namespace metal;\n\
                 kernel void write_indices(device uint* out [[buffer(0)]],\n\
-                constant uint& value [[buffer(1)]]) { out[0] = value; }"),
-            None).unwrap();
-        let function = library.newFunctionWithName(&NSString::from_str("write_indices")).unwrap();
-        let pipeline = device.device().newComputePipelineStateWithFunction_error(&function).unwrap();
+                constant uint& value [[buffer(1)]]) { out[0] = value; }",
+                ),
+                None,
+            )
+            .unwrap();
+        let function = library
+            .newFunctionWithName(&NSString::from_str("write_indices"))
+            .unwrap();
+        let pipeline = device
+            .device()
+            .newComputePipelineStateWithFunction_error(&function)
+            .unwrap();
         let tick = scheduler.current_tick();
         for value in [0x08070605u32, 0xff0b0a09] {
             // Same declaration point as MarkWrittenBuffer before binding a
             // writable shader resource. No CPU write or blit invalidates it.
             BufferCacheBuffer::set_write_tick(&mut source, tick);
-            scheduler.with_compute_encoder(|encoder| unsafe {
-                encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
-                encoder.setComputePipelineState(&pipeline);
-                encoder.setBuffer_offset_atIndex(Some(source.allocation.handle()), 0, 0);
-                encoder.setBytes_length_atIndex(NonNull::from(&value).cast(), 4, 1);
-                let one = MTLSize { width: 1, height: 1, depth: 1 };
-                encoder.dispatchThreads_threadsPerThreadgroup(one, one);
-                encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
-            }).unwrap();
+            scheduler
+                .with_compute_encoder(|encoder| unsafe {
+                    encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
+                    encoder.setComputePipelineState(&pipeline);
+                    encoder.setBuffer_offset_atIndex(Some(source.allocation.handle()), 0, 0);
+                    encoder.setBytes_length_atIndex(NonNull::from(&value).cast(), 4, 1);
+                    let one = MTLSize {
+                        width: 1,
+                        height: 1,
+                        depth: 1,
+                    };
+                    encoder.dispatchThreads_threadsPerThreadgroup(one, one);
+                    encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
+                })
+                .unwrap();
             let converted = runtime.uint8_index_buffer(&mut source, 0, 4).0;
             assert!(!Arc::ptr_eq(outputs.last().unwrap(), &converted));
             let reused = runtime.uint8_index_buffer(&mut source, 0, 4).0;
@@ -1437,13 +1632,17 @@ mod tests {
         }
         let download = MetalBuffer::new(&device, 24).unwrap();
         for (index, converted) in outputs.iter().enumerate() {
-            converted.encode_copy(&mut scheduler, &download, 0, index * 8, 8).unwrap();
+            converted
+                .encode_copy(&mut scheduler, &download, 0, index * 8, 8)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = [0; 24];
         download.read(0, &mut bytes).unwrap();
-        let actual: Vec<u16> = bytes.chunks_exact(2)
-            .map(|word| u16::from_ne_bytes(word.try_into().unwrap())).collect();
+        let actual: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|word| u16::from_ne_bytes(word.try_into().unwrap()))
+            .collect();
         assert_eq!(actual, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xffff]);
         let reused = runtime.uint8_index_buffer(&mut source, 0, 4).0;
         assert!(Arc::ptr_eq(outputs.last().unwrap(), &reused));
@@ -1455,11 +1654,15 @@ mod tests {
         let (_device, mut scheduler, _pool, mut runtime) = runtime();
         let mut source = Buffer::new(&mut runtime, 0x1000, 4);
         source.immediate_upload(0, &[1, 2, 3, 4]);
-        runtime.cached_index_bytes.store(MAX_CACHED_UINT8_BYTES, Ordering::Relaxed);
+        runtime
+            .cached_index_bytes
+            .store(MAX_CACHED_UINT8_BYTES, Ordering::Relaxed);
         runtime.uint8_index_buffer(&mut source, 0, 4);
         assert!(source.uint8_indices.is_empty());
         runtime.cached_index_bytes.store(0, Ordering::Relaxed);
-        runtime.cached_index_entries.store(MAX_CACHED_UINT8_ENTRIES, Ordering::Relaxed);
+        runtime
+            .cached_index_entries
+            .store(MAX_CACHED_UINT8_ENTRIES, Ordering::Relaxed);
         runtime.uint8_index_buffer(&mut source, 0, 4);
         assert!(source.uint8_indices.is_empty());
         runtime.cached_index_entries.store(0, Ordering::Relaxed);
@@ -1595,27 +1798,57 @@ mod tests {
         let (device, mut scheduler, _pool, mut runtime) = runtime();
         for gpu_written in [false, true] {
             let mut source = Buffer::new(&mut runtime, 0x1000, 16);
-            source.immediate_upload(0, &[90, 91, 92, 93, 1, 2, 3, 7, 8, 0xff, 10, 11, 12, 13, 14, 15]);
+            source.immediate_upload(
+                0,
+                &[90, 91, 92, 93, 1, 2, 3, 7, 8, 0xff, 10, 11, 12, 13, 14, 15],
+            );
             if gpu_written {
                 source.set_write_tick(scheduler.current_tick());
             }
-            runtime.bind_index_buffer(PrimitiveTopology::Triangles,
-                IndexFormat::UnsignedByte, 3, 3, &mut source, 4, 6);
+            runtime.bind_index_buffer(
+                PrimitiveTopology::Triangles,
+                IndexFormat::UnsignedByte,
+                3,
+                3,
+                &mut source,
+                4,
+                6,
+            );
             let binding = runtime.index_binding().unwrap().clone();
             let first_index = 3usize;
-            assert!(binding.offset + (first_index + 3) * 2 <= binding.buffer.length(),
-                "converted allocation must cover the draw's first_index + count");
+            assert!(
+                binding.offset + (first_index + 3) * 2 <= binding.buffer.length(),
+                "converted allocation must cover the draw's first_index + count"
+            );
             let download = MetalBuffer::new(&device, 6).unwrap();
-            binding.buffer.encode_copy(&mut scheduler, &download,
-                binding.offset + first_index * 2, 0, 6).unwrap();
+            binding
+                .buffer
+                .encode_copy(
+                    &mut scheduler,
+                    &download,
+                    binding.offset + first_index * 2,
+                    0,
+                    6,
+                )
+                .unwrap();
             scheduler.finish_all().unwrap();
             let mut bytes = [0; 6];
             download.read(0, &mut bytes).unwrap();
             assert_eq!(bytes, [7, 0, 8, 0, 0xff, 0xff]);
-            runtime.bind_index_buffer(PrimitiveTopology::Triangles,
-                IndexFormat::UnsignedByte, 3, 3, &mut source, 4, 6);
+            runtime.bind_index_buffer(
+                PrimitiveTopology::Triangles,
+                IndexFormat::UnsignedByte,
+                3,
+                3,
+                &mut source,
+                4,
+                6,
+            );
             if !gpu_written {
-                assert!(Arc::ptr_eq(&binding.buffer, &runtime.index_binding().unwrap().buffer));
+                assert!(Arc::ptr_eq(
+                    &binding.buffer,
+                    &runtime.index_binding().unwrap().buffer
+                ));
                 assert!(!scheduler.has_active_work());
             }
             scheduler.finish_all().unwrap();

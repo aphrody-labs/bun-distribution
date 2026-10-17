@@ -15,9 +15,12 @@ fn cached_skill<'a>(
     let value = match cache.entry(id.to_owned()) {
         std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
         std::collections::hash_map::Entry::Vacant(entry) => {
-            anyhow::ensure!(count < 128, "Character movesets exceed the bounded skill join budget");
+            anyhow::ensure!(
+                count < 128,
+                "Character movesets exceed the bounded skill join budget"
+            );
             entry.insert(crate::query::get_skill(conn, id)?)
-        },
+        }
     };
     Ok(value.as_ref())
 }
@@ -29,13 +32,16 @@ fn enrich_moveset(
     cache: &mut SkillCache,
     depth: usize,
 ) -> anyhow::Result<()> {
-    anyhow::ensure!(depth <= 16, "Character moveset nesting exceeds its bounded join budget");
+    anyhow::ensure!(
+        depth <= 16,
+        "Character moveset nesting exceeds its bounded join budget"
+    );
     match value {
         serde_json::Value::Array(values) => {
             for value in values {
                 enrich_moveset(conn, value, cache, depth + 1)?;
             }
-        },
+        }
         serde_json::Value::Object(fields) => {
             let id = ["skillId", "skill_id", "skillID"]
                 .iter()
@@ -53,7 +59,9 @@ fn enrich_moveset(
                         ("element", &skill.element),
                     ] {
                         if let Some(value) = value {
-                            fields.entry(key).or_insert_with(|| serde_json::json!(value));
+                            fields
+                                .entry(key)
+                                .or_insert_with(|| serde_json::json!(value));
                         }
                     }
                     for (key, value) in [
@@ -61,7 +69,9 @@ fn enrich_moveset(
                         ("powerMax", skill.power_max),
                         ("tpCost", skill.tp_cost),
                     ] {
-                        fields.entry(key).or_insert_with(|| serde_json::json!(value));
+                        fields
+                            .entry(key)
+                            .or_insert_with(|| serde_json::json!(value));
                     }
                 }
             } else {
@@ -69,8 +79,8 @@ fn enrich_moveset(
                     enrich_moveset(conn, value, cache, depth + 1)?;
                 }
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
     Ok(())
 }
@@ -126,14 +136,26 @@ pub fn character(conn: &Connection, id: &str) -> anyhow::Result<Option<Character
         .collect();
     let mut movesets = ["skillsAlternate", "skillsBasara", "movesets"]
         .into_iter()
-        .filter_map(|key| profile.merged.get(key).cloned().map(|value| (key.to_owned(), value)))
+        .filter_map(|key| {
+            profile
+                .merged
+                .get(key)
+                .cloned()
+                .map(|value| (key.to_owned(), value))
+        })
         .collect::<serde_json::Map<_, _>>();
     movesets.insert("skills".into(), serde_json::Value::Array(profile.skills.iter().map(|slot|
         serde_json::json!({"skillId":slot.skill_id,"learnLevel":slot.learn_level})
     ).collect()));
     let assets = ["icons", "image", "internalCode", "modelId"]
         .into_iter()
-        .filter_map(|key| profile.merged.get(key).cloned().map(|value| (key.to_owned(), value)))
+        .filter_map(|key| {
+            profile
+                .merged
+                .get(key)
+                .cloned()
+                .map(|value| (key.to_owned(), value))
+        })
         .collect::<serde_json::Map<_, _>>();
     anyhow::ensure!(
         profile.skills.len() <= 128,
@@ -222,7 +244,9 @@ mod tests {
             rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
         )
         .unwrap();
-        let card = super::character(&connection, "0x12B74634").unwrap().unwrap();
+        let card = super::character(&connection, "0x12B74634")
+            .unwrap()
+            .unwrap();
         assert_eq!(card.learned_skills.len(), 6);
         let slots = card.movesets["skills"].as_array().unwrap();
         assert_eq!(slots.len(), 6);
@@ -256,7 +280,14 @@ mod tests {
             assert_eq!(card.movesets["skills"], serde_json::json!([]));
             assert_eq!(card.assets["icons"]["small"], "native_icon");
         }
-        assert_eq!(super::character(&connection, "byron-v2").unwrap().unwrap().character.id, "v2");
+        assert_eq!(
+            super::character(&connection, "byron-v2")
+                .unwrap()
+                .unwrap()
+                .character
+                .id,
+            "v2"
+        );
         assert!(super::character(&connection, "missing").unwrap().is_none());
     }
 }

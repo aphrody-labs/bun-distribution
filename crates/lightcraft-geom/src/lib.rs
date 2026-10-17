@@ -3,7 +3,14 @@
 //! Conventions: image coordinates are y-down. *Normalized* coordinates map the full (uncropped,
 //! oriented) image to `0..1` on both axes, so tools and settings are resolution independent.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod crop;
 mod crop_drag;
@@ -60,7 +67,11 @@ impl Vec2 {
     }
     pub fn normalized(self) -> Vec2 {
         let l = self.len();
-        if l > 0.0 { Vec2::new(self.x / l, self.y / l) } else { self }
+        if l > 0.0 {
+            Vec2::new(self.x / l, self.y / l)
+        } else {
+            self
+        }
     }
     pub fn angle(self) -> f64 {
         self.y.atan2(self.x)
@@ -124,7 +135,12 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub const UNIT: Rect = Rect { x0: 0.0, y0: 0.0, x1: 1.0, y1: 1.0 };
+    pub const UNIT: Rect = Rect {
+        x0: 0.0,
+        y0: 0.0,
+        x1: 1.0,
+        y1: 1.0,
+    };
     pub const fn new(x0: f64, y0: f64, x1: f64, y1: f64) -> Self {
         Self { x0, y0, x1, y1 }
     }
@@ -150,7 +166,11 @@ impl Rect {
         Point::new((self.x0 + self.x1) / 2.0, (self.y0 + self.y1) / 2.0)
     }
     pub fn aspect(&self) -> f64 {
-        if self.height() != 0.0 { self.width() / self.height() } else { 0.0 }
+        if self.height() != 0.0 {
+            self.width() / self.height()
+        } else {
+            0.0
+        }
     }
     pub fn contains(&self, p: Point) -> bool {
         p.x >= self.x0 && p.x < self.x1 && p.y >= self.y0 && p.y < self.y1
@@ -159,10 +179,20 @@ impl Rect {
         self.x1 <= self.x0 || self.y1 <= self.y0
     }
     pub fn intersect(&self, o: &Rect) -> Rect {
-        Rect::new(self.x0.max(o.x0), self.y0.max(o.y0), self.x1.min(o.x1), self.y1.min(o.y1))
+        Rect::new(
+            self.x0.max(o.x0),
+            self.y0.max(o.y0),
+            self.x1.min(o.x1),
+            self.y1.min(o.y1),
+        )
     }
     pub fn union(&self, o: &Rect) -> Rect {
-        Rect::new(self.x0.min(o.x0), self.y0.min(o.y0), self.x1.max(o.x1), self.y1.max(o.y1))
+        Rect::new(
+            self.x0.min(o.x0),
+            self.y0.min(o.y0),
+            self.x1.max(o.x1),
+            self.y1.max(o.y1),
+        )
     }
     pub fn inflate(&self, dx: f64, dy: f64) -> Rect {
         Rect::new(self.x0 - dx, self.y0 - dy, self.x1 + dx, self.y1 + dy)
@@ -174,7 +204,12 @@ impl Rect {
         Rect::new(self.x0 + v.x, self.y0 + v.y, self.x1 + v.x, self.y1 + v.y)
     }
     pub fn corners(&self) -> [Point; 4] {
-        [Point::new(self.x0, self.y0), Point::new(self.x1, self.y0), Point::new(self.x1, self.y1), Point::new(self.x0, self.y1)]
+        [
+            Point::new(self.x0, self.y0),
+            Point::new(self.x1, self.y0),
+            Point::new(self.x1, self.y1),
+            Point::new(self.x0, self.y1),
+        ]
     }
     /// Largest rectangle of aspect `a` (w/h) centred in `self`.
     pub fn fit_aspect(&self, a: f64) -> Rect {
@@ -187,7 +222,12 @@ impl Rect {
     }
     /// Round outward to integer pixel bounds.
     pub fn round_out(&self) -> Rect {
-        Rect::new(self.x0.floor(), self.y0.floor(), self.x1.ceil(), self.y1.ceil())
+        Rect::new(
+            self.x0.floor(),
+            self.y0.floor(),
+            self.x1.ceil(),
+            self.y1.ceil(),
+        )
     }
 }
 
@@ -239,8 +279,18 @@ impl Affine {
         }
         let [a, b, c, d, e, f] = self.0;
         let inv = 1.0 / det;
-        let coefficients = [d * inv, -b * inv, -c * inv, a * inv, (c * f - d * e) * inv, (b * e - a * f) * inv];
-        coefficients.iter().all(|v| v.is_finite()).then_some(Affine(coefficients))
+        let coefficients = [
+            d * inv,
+            -b * inv,
+            -c * inv,
+            a * inv,
+            (c * f - d * e) * inv,
+            (b * e - a * f) * inv,
+        ];
+        coefficients
+            .iter()
+            .all(|v| v.is_finite())
+            .then_some(Affine(coefficients))
     }
     /// Bounding box of a transformed rectangle.
     pub fn transform_rect_bbox(&self, r: &Rect) -> Rect {
@@ -259,7 +309,14 @@ impl std::ops::Mul for Affine {
     fn mul(self, o: Affine) -> Affine {
         let [a, b, c, d, e, f] = self.0;
         let [a2, b2, c2, d2, e2, f2] = o.0;
-        Affine([a * a2 + c * b2, b * a2 + d * b2, a * c2 + c * d2, b * c2 + d * d2, a * e2 + c * f2 + e, b * e2 + d * f2 + f])
+        Affine([
+            a * a2 + c * b2,
+            b * a2 + d * b2,
+            a * c2 + c * d2,
+            b * c2 + d * d2,
+            a * e2 + c * f2 + e,
+            b * e2 + d * f2 + f,
+        ])
     }
 }
 
@@ -304,7 +361,13 @@ impl Orientation {
     }
     /// Whether width and height swap.
     pub fn swaps_axes(self) -> bool {
-        matches!(self, Orientation::Transpose | Orientation::Rotate90 | Orientation::Transverse | Orientation::Rotate270)
+        matches!(
+            self,
+            Orientation::Transpose
+                | Orientation::Rotate90
+                | Orientation::Transverse
+                | Orientation::Rotate270
+        )
     }
     /// Decompose into (clockwise quarter turns applied after an optional horizontal flip).
     pub fn to_parts(self) -> (bool, u8) {
@@ -401,7 +464,8 @@ mod tests {
 
     #[test]
     fn affine_compose_and_inverse() {
-        let t = Affine::translate(Vec2::new(3.0, -2.0)) * Affine::rotate(0.7) * Affine::scale(2.0, 0.5);
+        let t =
+            Affine::translate(Vec2::new(3.0, -2.0)) * Affine::rotate(0.7) * Affine::scale(2.0, 0.5);
         let inv = t.inverse().unwrap();
         let p = Point::new(1.5, 4.0);
         assert!(close(inv.apply(t.apply(p)), p));
@@ -438,10 +502,16 @@ mod tests {
         // Rotate90: top-left of stored goes to top-right of display.
         let (x, y) = Orientation::Rotate90.map(0.0, 0.0, 4.0, 2.0);
         assert_eq!((x, y), (2.0, 0.0));
-        assert_eq!(Orientation::Normal.rotated(true).rotated(true), Orientation::Rotate180);
+        assert_eq!(
+            Orientation::Normal.rotated(true).rotated(true),
+            Orientation::Rotate180
+        );
         assert_eq!(Orientation::Normal.rotated(false), Orientation::Rotate270);
         assert_eq!(Orientation::Normal.flipped_h(), Orientation::FlipH);
-        assert_eq!(Orientation::Rotate90.flipped_h().flipped_h(), Orientation::Rotate90);
+        assert_eq!(
+            Orientation::Rotate90.flipped_h().flipped_h(),
+            Orientation::Rotate90
+        );
     }
 
     #[test]
@@ -450,11 +520,26 @@ mod tests {
         for v in 1..=8 {
             let o = Orientation::from_exif(v);
             let back = o.inverse().map_norm_rect(o.map_norm_rect(r));
-            assert!([back.x0 - r.x0, back.y0 - r.y0, back.x1 - r.x1, back.y1 - r.y1].iter().all(|d| d.abs() < 1e-12), "{o:?}: {back:?}");
+            assert!(
+                [
+                    back.x0 - r.x0,
+                    back.y0 - r.y0,
+                    back.x1 - r.x1,
+                    back.y1 - r.y1
+                ]
+                .iter()
+                .all(|d| d.abs() < 1e-12),
+                "{o:?}: {back:?}"
+            );
         }
         // a quarter turn clockwise: the left of the upright photo becomes its top
         let q = Orientation::Rotate90.map_norm_rect(r);
-        assert!([q.x0 - 0.4, q.y0 - 0.1, q.x1 - 0.8, q.y1 - 0.3].iter().all(|d| d.abs() < 1e-12), "{q:?}");
+        assert!(
+            [q.x0 - 0.4, q.y0 - 0.1, q.x1 - 0.8, q.y1 - 0.3]
+                .iter()
+                .all(|d| d.abs() < 1e-12),
+            "{q:?}"
+        );
     }
 
     proptest::proptest! {

@@ -23,7 +23,8 @@ pub const DEFAULT_W: f32 = 15.0 / 2.54 * 72.0;
 pub const DEFAULT_H: f32 = 7.5 / 2.54 * 72.0;
 
 const TYPES: &str = "column|columnStacked|bar|barStacked|line|area|pie|doughnut|scatter";
-const DATA: &str = r#"{"categories": [string], "series": [{"name": string, "values": [number|null]}]}"#;
+const DATA: &str =
+    r#"{"categories": [string], "series": [{"name": string, "values": [number|null]}]}"#;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -129,14 +130,26 @@ fn has_chart(s: &Session) -> Option<&'static str> {
 pub fn chart_graphic(spec: ChartSpec, theme: &[Rgb], w: f32, h: f32) -> Graphic {
     let spec = spec.sanitized();
     let items = wordcraft_docx::chart_items(&spec, theme, w, h);
-    Graphic { kind: GraphicKind::Chart, items, w, h, source: None, chart: Some(Arc::new(spec)), smart_art: None }
+    Graphic {
+        kind: GraphicKind::Chart,
+        items,
+        w,
+        h,
+        source: None,
+        chart: Some(Arc::new(spec)),
+        smart_art: None,
+    }
 }
 
 /// `type` of the params, if given.
 fn chart_type(v: &Value) -> Result<Option<ChartType>, CmdError> {
     match p::str(v, "type") {
-        Some(id) => ChartType::from_id(id).map(Some).ok_or_else(|| CmdError::Params(format!("unknown chart type `{id}`: {TYPES}"))),
-        None if v.get("type").is_some_and(|t| !t.is_null()) => Err(CmdError::Params(format!("`type`: {TYPES}"))),
+        Some(id) => ChartType::from_id(id)
+            .map(Some)
+            .ok_or_else(|| CmdError::Params(format!("unknown chart type `{id}`: {TYPES}"))),
+        None if v.get("type").is_some_and(|t| !t.is_null()) => {
+            Err(CmdError::Params(format!("`type`: {TYPES}")))
+        }
         None => Ok(None),
     }
 }
@@ -151,38 +164,78 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
     let kind = kind.unwrap_or_default();
     let mut spec = ChartSpec::sample(kind);
     if let Some(d) = v.get("data") {
-        spec.categories = d.get("categories").map(categories).transpose()?.unwrap_or_default();
-        spec.series = d.get("series").map(series_list).transpose()?.unwrap_or_default();
+        spec.categories = d
+            .get("categories")
+            .map(categories)
+            .transpose()?
+            .unwrap_or_default();
+        spec.series = d
+            .get("series")
+            .map(series_list)
+            .transpose()?
+            .unwrap_or_default();
         if spec.series.is_empty() {
-            return Err(CmdError::Params(format!("`data.series` needs at least one series: {DATA}")));
+            return Err(CmdError::Params(format!(
+                "`data.series` needs at least one series: {DATA}"
+            )));
         }
     }
     spec.title = p::str(v, "title").map(str::to_string);
     match p::str(v, "legend") {
         Some(id) if id.eq_ignore_ascii_case("none") => spec.legend = None,
-        Some(id) => spec.legend = Some(LegendPos::from_id(id).ok_or_else(|| CmdError::Params("`legend`: right|left|top|bottom|none".into()))?),
+        Some(id) => {
+            spec.legend =
+                Some(LegendPos::from_id(id).ok_or_else(|| {
+                    CmdError::Params("`legend`: right|left|top|bottom|none".into())
+                })?)
+        }
         None => {}
     }
     spec.data_labels = p::bool(v, "dataLabels").unwrap_or(false);
     // Fitted to the text width, as Word sizes a new chart.
-    let max_w = s.doc.sections().first().map(|(_, sp)| sp.text_width()).unwrap_or(468.0).max(36.0);
-    let w = p::f32(v, "width").unwrap_or(DEFAULT_W).clamp(36.0, 2000.0).min(max_w);
+    let max_w = s
+        .doc
+        .sections()
+        .first()
+        .map(|(_, sp)| sp.text_width())
+        .unwrap_or(468.0)
+        .max(36.0);
+    let w = p::f32(v, "width")
+        .unwrap_or(DEFAULT_W)
+        .clamp(36.0, 2000.0)
+        .min(max_w);
     let h = p::f32(v, "height").unwrap_or(DEFAULT_H).clamp(36.0, 2000.0);
     let graphic = chart_graphic(spec, &s.doc.settings.theme_colors, w, h);
     let out = json!({"chart": graphic.chart.as_deref(), "width": w, "height": h});
     let props = s.typing_props();
     let at = delete_selection(s)?;
-    let obj = InlineObject::Graphic { w, h, alt: String::new(), float: Float::default(), graphic: Arc::new(graphic) };
+    let obj = InlineObject::Graphic {
+        w,
+        h,
+        alt: String::new(),
+        float: Float::default(),
+        graphic: Arc::new(graphic),
+    };
     let end = s.doc.insert_object(&at, obj, &props)?;
-    s.sel = Selection { anchor: at, focus: end };
+    s.sel = Selection {
+        anchor: at,
+        focus: end,
+    };
     Ok(out)
 }
 
 /// Change the selected chart's model with `f`, then draw it again at its size.
 fn edit(s: &mut Session, f: impl Fn(&mut ChartSpec) -> Result<(), CmdError>) -> CmdResult {
-    let (pos, obj) = selected(s).ok_or_else(|| CmdError::Disabled("select a chart first".into()))?;
-    let InlineObject::Graphic { w, h, graphic, .. } = obj else { return Err(CmdError::Disabled("select a chart first".into())) };
-    let mut spec = graphic.chart.as_deref().cloned().ok_or_else(|| CmdError::Disabled("this chart can't be edited".into()))?;
+    let (pos, obj) =
+        selected(s).ok_or_else(|| CmdError::Disabled("select a chart first".into()))?;
+    let InlineObject::Graphic { w, h, graphic, .. } = obj else {
+        return Err(CmdError::Disabled("select a chart first".into()));
+    };
+    let mut spec = graphic
+        .chart
+        .as_deref()
+        .cloned()
+        .ok_or_else(|| CmdError::Disabled("this chart can't be edited".into()))?;
     f(&mut spec)?;
     let next = Arc::new(chart_graphic(spec, &s.doc.settings.theme_colors, w, h));
     let out = json!({"chart": next.chart.as_deref()});
@@ -205,7 +258,9 @@ pub fn redraw(o: &mut InlineObject, theme: &[Rgb]) {
 
 /// Category labels from JSON: strings, or numbers written as text.
 fn categories(v: &Value) -> Result<Vec<String>, CmdError> {
-    let a = v.as_array().ok_or_else(|| CmdError::Params("`categories`: an array of strings".into()))?;
+    let a = v
+        .as_array()
+        .ok_or_else(|| CmdError::Params("`categories`: an array of strings".into()))?;
     Ok(a.iter().take(MAX_POINTS).map(cell_text).collect())
 }
 
@@ -219,7 +274,9 @@ fn cell_text(v: &Value) -> String {
 
 /// Series from JSON: `[{"name", "values": [number|null|numeric string]}]`.
 fn series_list(v: &Value) -> Result<Vec<ChartSeries>, CmdError> {
-    let a = v.as_array().ok_or_else(|| CmdError::Params(format!("`series`: {DATA}")))?;
+    let a = v
+        .as_array()
+        .ok_or_else(|| CmdError::Params(format!("`series`: {DATA}")))?;
     a.iter()
         .take(MAX_SERIES)
         .map(|s| {
@@ -227,7 +284,11 @@ fn series_list(v: &Value) -> Result<Vec<ChartSeries>, CmdError> {
             let values = match s.get("values") {
                 Some(Value::Array(vals)) => vals.iter().take(MAX_POINTS).map(number).collect(),
                 None | Some(Value::Null) => Vec::new(),
-                Some(_) => return Err(CmdError::Params("`values`: an array of numbers (null for none)".into())),
+                Some(_) => {
+                    return Err(CmdError::Params(
+                        "`values`: an array of numbers (null for none)".into(),
+                    ));
+                }
             };
             Ok(ChartSeries { name, values })
         })

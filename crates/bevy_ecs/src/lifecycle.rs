@@ -65,7 +65,7 @@ use crate::{
         Local, ReadOnlySystemParam, SystemAccess, SystemMeta, SystemParam,
         SystemParamValidationError,
     },
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World},
+    world::{DeferredWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 use derive_more::derive::Into;

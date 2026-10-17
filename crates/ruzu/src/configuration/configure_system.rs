@@ -102,7 +102,11 @@ pub fn page(runtime_lock: bool) -> Page {
     custom_rtc_check.set_active(rtc_enabled);
     let rtc_offset_value = *common::settings::values().custom_rtc_offset.get_value();
     let custom_rtc_entry = gtk::Entry::new();
-    custom_rtc_entry.set_text(&format_rtc(rtc_display_time(unix_time_seconds(), rtc_enabled, rtc_offset_value)));
+    custom_rtc_entry.set_text(&format_rtc(rtc_display_time(
+        unix_time_seconds(),
+        rtc_enabled,
+        rtc_offset_value,
+    )));
     custom_rtc_entry.set_sensitive(rtc_enabled);
     let rtc_row = gated_row(&custom_rtc_check, &custom_rtc_entry);
     system.append(&rtc_row);
@@ -470,9 +474,8 @@ fn connect_rtc_controls(
             } else {
                 offset.add_css_class("error");
             }
-            let timestamp = rtc_display_time(
-                unix_time_seconds(), enabled.is_active(), offset_state.get(),
-            );
+            let timestamp =
+                rtc_display_time(unix_time_seconds(), enabled.is_active(), offset_state.get());
             previous_time.set(timestamp);
             let text = format_rtc(timestamp);
             displayed_time.set(parse_rtc(&text).unwrap_or(timestamp));
@@ -502,9 +505,9 @@ fn connect_rtc_controls(
                 return;
             }
             if let Some(timestamp) = parse_rtc(&date.text()) {
-                if let Some(new_offset) = rtc_edited_offset(
-                    offset_state.get(), displayed_time.get(), timestamp,
-                ) {
+                if let Some(new_offset) =
+                    rtc_edited_offset(offset_state.get(), displayed_time.get(), timestamp)
+                {
                     // Suppress the intermediate refresh while updating both fields.
                     updating.set(true);
                     offset.set_text(&new_offset.to_string());
@@ -529,7 +532,11 @@ fn parse_rtc_offset(text: &str) -> Option<i64> {
 
 fn rtc_display_time(now: i64, enabled: bool, offset: i64) -> i64 {
     // Same integer behavior as the RTC resource; never overflow in the editor.
-    if enabled { now.wrapping_add(offset) } else { now }
+    if enabled {
+        now.wrapping_add(offset)
+    } else {
+        now
+    }
 }
 
 // ConfigureSystem's update_date_offset lambda: edit relative to the displayed
@@ -567,11 +574,15 @@ fn connect_locale_validation(
         let warning = warning.downgrade();
         move || {
             let (Some(language), Some(region), Some(warning)) =
-                (language.upgrade(), region.upgrade(), warning.upgrade()) else { return };
+                (language.upgrade(), region.upgrade(), warning.upgrade())
+            else {
+                return;
+            };
             // Rebuilding a translated model temporarily clears its selection.
             // There is no locale to validate until both rows are selected.
             if language.selected() == gtk::INVALID_LIST_POSITION
-                || region.selected() == gtk::INVALID_LIST_POSITION {
+                || region.selected() == gtk::INVALID_LIST_POSITION
+            {
                 warning.set_visible(false);
                 return;
             }
@@ -762,7 +773,13 @@ mod tests {
 
     #[test]
     fn rtc_offset_editor_preserves_exact_integer_values() {
-        for offset in [i64::MIN, -4_000_000_000, 4_000_000_000, (1i64 << 53) + 1, i64::MAX] {
+        for offset in [
+            i64::MIN,
+            -4_000_000_000,
+            4_000_000_000,
+            (1i64 << 53) + 1,
+            i64::MAX,
+        ] {
             assert_eq!(parse_rtc_offset(&offset.to_string()), Some(offset));
             assert!(!format_rtc(rtc_display_time(1_800_000_000, true, offset)).is_empty());
         }
@@ -786,7 +803,10 @@ mod tests {
         assert_eq!(refreshed, now + 90 + 3660);
         assert_eq!(rtc_edited_offset(offset, shown + 60, shown), Some(3600));
         // A no-op edit retains the hidden seconds rather than rounding the offset.
-        assert_eq!(rtc_edited_offset(initial_offset, shown, shown), Some(initial_offset));
+        assert_eq!(
+            rtc_edited_offset(initial_offset, shown, shown),
+            Some(initial_offset)
+        );
         assert_eq!(previous.rem_euclid(60), 17);
     }
 

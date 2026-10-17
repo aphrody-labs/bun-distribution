@@ -25,7 +25,10 @@ pub fn install_panic_hook() {
     ONCE.call_once(|| {
         let previous = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
-            let at = info.location().map(|l| format!(" at {}:{}", l.file(), l.line())).unwrap_or_default();
+            let at = info
+                .location()
+                .map(|l| format!(" at {}:{}", l.file(), l.line()))
+                .unwrap_or_default();
             log::error!("panic{at}: {}", panic_message(info.payload()));
             previous(info);
         }));
@@ -34,8 +37,14 @@ pub fn install_panic_hook() {
 
 impl Session {
     /// Run command `id` (`f`) inside the guard.
-    pub(crate) fn guarded(&mut self, id: &str, f: impl FnOnce(&mut Session) -> Result<Value>) -> Result<Value> {
-        let before = self.active().map(|d| (d.uid, d.doc.clone(), d.selection.clone(), d.revision));
+    pub(crate) fn guarded(
+        &mut self,
+        id: &str,
+        f: impl FnOnce(&mut Session) -> Result<Value>,
+    ) -> Result<Value> {
+        let before = self
+            .active()
+            .map(|d| (d.uid, d.doc.clone(), d.selection.clone(), d.revision));
         let depth = self.depth;
         match catch_unwind(AssertUnwindSafe(|| f(self))) {
             Ok(r) => r,
@@ -43,7 +52,8 @@ impl Session {
                 self.depth = depth;
                 let msg = panic_message(payload.as_ref());
                 // Keep the document as it was before the command.
-                if let (Some((uid, doc, selection, revision)), Some(st)) = (before, self.active_mut())
+                if let (Some((uid, doc, selection, revision)), Some(st)) =
+                    (before, self.active_mut())
                     && st.uid == uid
                 {
                     st.doc = doc;
@@ -73,19 +83,36 @@ mod tests {
     fn a_panicking_command_is_an_error_and_keeps_the_document() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("shape.insert", &json!({"preset": "rect", "rect": [36, 36, 200, 200]})).unwrap();
+        s.execute(
+            "shape.insert",
+            &json!({"preset": "rect", "rect": [36, 36, 200, 200]}),
+        )
+        .unwrap();
         let before = s.active().unwrap().doc.clone();
         // A command that edits the document and then panics half way.
         let err = s
             .guarded("test.panic", |s| {
-                s.execute("shape.insert", &json!({"preset": "ellipse", "rect": [36, 236, 200, 400]}))?;
+                s.execute(
+                    "shape.insert",
+                    &json!({"preset": "ellipse", "rect": [36, 236, 200, 400]}),
+                )?;
                 panic!("boom");
             })
             .unwrap_err();
-        assert!(err.to_string().contains("test.panic") && err.to_string().contains("boom"), "{err}");
+        assert!(
+            err.to_string().contains("test.panic") && err.to_string().contains("boom"),
+            "{err}"
+        );
         let st = s.active().unwrap();
-        assert!(std::sync::Arc::ptr_eq(&st.doc, &before), "the document is the one from before the command");
+        assert!(
+            std::sync::Arc::ptr_eq(&st.doc, &before),
+            "the document is the one from before the command"
+        );
         // The session keeps working.
-        s.execute("shape.insert", &json!({"preset": "ellipse", "rect": [36, 236, 200, 400]})).unwrap();
+        s.execute(
+            "shape.insert",
+            &json!({"preset": "ellipse", "rect": [36, 236, 200, 400]}),
+        )
+        .unwrap();
     }
 }

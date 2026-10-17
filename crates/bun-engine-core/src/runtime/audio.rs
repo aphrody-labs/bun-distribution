@@ -12,7 +12,9 @@ use std::{
 use crate::bevy::{
     app::App,
     asset::{Asset, Assets},
-    audio::{AddAudioSource, AudioPlayer, ChannelCount, Decodable, PlaybackSettings, SampleRate, Source},
+    audio::{
+        AddAudioSource, AudioPlayer, ChannelCount, Decodable, PlaybackSettings, SampleRate, Source,
+    },
     ecs::prelude::*,
     reflect::TypePath,
 };
@@ -39,7 +41,10 @@ impl MachineAudioQueue {
     pub fn new(sample_rate: u32) -> Self {
         let max = (sample_rate as usize * 2 * MAX_LATENCY_MS as usize / 1000).max(512);
         Self {
-            shared: Arc::new(Shared { samples: Mutex::new(VecDeque::with_capacity(max * 2)), max }),
+            shared: Arc::new(Shared {
+                samples: Mutex::new(VecDeque::with_capacity(max * 2)),
+                max,
+            }),
             scratch: Arc::new(Mutex::new(Vec::new())),
             sample_rate,
         }
@@ -114,7 +119,11 @@ impl Decodable for MachineAudio {
     type Decoder = MachineAudioSource;
 
     fn decoder(&self) -> Self::Decoder {
-        MachineAudioSource { shared: self.shared.clone(), sample_rate: self.sample_rate, local: VecDeque::new() }
+        MachineAudioSource {
+            shared: self.shared.clone(),
+            sample_rate: self.sample_rate,
+            local: VecDeque::new(),
+        }
     }
 }
 
@@ -128,16 +137,28 @@ pub(super) fn register(app: &mut App) {
 
 /// Install the queue and spawn the sink for a machine producing `sample_rate` Hz stereo.
 pub(super) fn install(world: &mut World, sample_rate: u32) {
-    let Some(mut assets) = world.get_resource_mut::<Assets<MachineAudio>>() else { return };
+    let Some(mut assets) = world.get_resource_mut::<Assets<MachineAudio>>() else {
+        return;
+    };
     let queue = MachineAudioQueue::new(sample_rate);
-    let handle = assets.add(MachineAudio { shared: queue.shared.clone(), sample_rate });
+    let handle = assets.add(MachineAudio {
+        shared: queue.shared.clone(),
+        sample_rate,
+    });
     world.insert_resource(queue);
-    world.spawn((AudioPlayer::<MachineAudio>(handle), PlaybackSettings::ONCE, MachineAudioSink));
+    world.spawn((
+        AudioPlayer::<MachineAudio>(handle),
+        PlaybackSettings::ONCE,
+        MachineAudioSink,
+    ));
 }
 
 pub(super) fn uninstall(world: &mut World) {
     world.remove_resource::<MachineAudioQueue>();
-    let sinks: Vec<Entity> = world.query_filtered::<Entity, With<MachineAudioSink>>().iter(world).collect();
+    let sinks: Vec<Entity> = world
+        .query_filtered::<Entity, With<MachineAudioSink>>()
+        .iter(world)
+        .collect();
     for entity in sinks {
         world.despawn(entity);
     }

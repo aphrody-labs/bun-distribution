@@ -10,8 +10,10 @@
 use std::sync::Arc;
 
 use photocraft_algo::{
-    self as algo, BlurPath, BlurQuality, BlurShape, DepthSource, DiffuseMode, Distribution, ExtrudeType, FieldPin, FilterParams, HsbModel, IrisPin, LensType,
-    Light, LightKind, MezzotintType, SmartBlurMode, SpinPin, TextureChannel, TileFill, UndefinedAreas, WindMethod, ZigZagStyle,
+    self as algo, BlurPath, BlurQuality, BlurShape, DepthSource, DiffuseMode, Distribution,
+    ExtrudeType, FieldPin, FilterParams, HsbModel, IrisPin, LensType, Light, LightKind,
+    MezzotintType, SmartBlurMode, SpinPin, TextureChannel, TileFill, UndefinedAreas, WindMethod,
+    ZigZagStyle,
 };
 use photocraft_doc::{Document, Layer};
 use photocraft_geom::Rect;
@@ -24,7 +26,9 @@ fn f(p: &Value, k: &str, d: f32) -> f32 {
     p.get(k).and_then(Value::as_f64).map_or(d, |v| v as f32)
 }
 fn i(p: &Value, k: &str, d: i64) -> i64 {
-    p.get(k).and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f.round() as i64))).unwrap_or(d)
+    p.get(k)
+        .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f.round() as i64)))
+        .unwrap_or(d)
 }
 fn b(p: &Value, k: &str, d: bool) -> bool {
     p.get(k).and_then(Value::as_bool).unwrap_or(d)
@@ -43,7 +47,11 @@ fn colour(p: &Value, k: &str, d: [f32; 4]) -> [f32; 4] {
             [c(0, 0.0), c(1, 0.0), c(2, 0.0), c(3, 1.0)]
         }
         Some(Value::String(h)) if h.len() == 7 && h.starts_with('#') => {
-            let ch = |j: usize| h.get(j..j + 2).and_then(|s| u8::from_str_radix(s, 16).ok()).map_or(0.0, |v| v as f32 / 255.0);
+            let ch = |j: usize| {
+                h.get(j..j + 2)
+                    .and_then(|s| u8::from_str_radix(s, 16).ok())
+                    .map_or(0.0, |v| v as f32 / 255.0)
+            };
             [ch(1), ch(3), ch(5), 1.0]
         }
         _ => d,
@@ -59,7 +67,10 @@ fn undefined(p: &Value, d: &str) -> UndefinedAreas {
 /// A JSON array param deserialized into `T`s (invalid entries are skipped).
 fn list<T: serde::de::DeserializeOwned>(p: &Value, k: &str) -> Option<Vec<T>> {
     let a = p.get(k)?.as_array()?;
-    let v: Vec<T> = a.iter().filter_map(|e| serde_json::from_value(e.clone()).ok()).collect();
+    let v: Vec<T> = a
+        .iter()
+        .filter_map(|e| serde_json::from_value(e.clone()).ok())
+        .collect();
     (!v.is_empty()).then_some(v)
 }
 
@@ -73,9 +84,17 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
         // ---- Pixelate ----
         "filter.pixelate.colorHalftone" => FilterParams::ColorHalftone {
             max_radius: f(p, "maxRadius", 8.0).clamp(4.0, 127.0),
-            angles: [f(p, "channel1", 108.0), f(p, "channel2", 162.0), f(p, "channel3", 90.0), f(p, "channel4", 45.0)],
+            angles: [
+                f(p, "channel1", 108.0),
+                f(p, "channel2", 162.0),
+                f(p, "channel3", 90.0),
+                f(p, "channel4", 45.0),
+            ],
         },
-        "filter.pixelate.crystallize" => FilterParams::Crystallize { cell_size: f(p, "cellSize", 10.0).clamp(3.0, 300.0), seed: seed(p) },
+        "filter.pixelate.crystallize" => FilterParams::Crystallize {
+            cell_size: f(p, "cellSize", 10.0).clamp(3.0, 300.0),
+            seed: seed(p),
+        },
         "filter.pixelate.facet" => FilterParams::Facet,
         "filter.pixelate.fragment" => FilterParams::Fragment,
         "filter.pixelate.mezzotint" => FilterParams::Mezzotint {
@@ -93,9 +112,11 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             },
             seed: seed(p),
         },
-        "filter.pixelate.pointillize" => {
-            FilterParams::Pointillize { cell_size: f(p, "cellSize", 5.0).clamp(3.0, 300.0), seed: seed(p), background: colour(p, "background", WHITE) }
-        }
+        "filter.pixelate.pointillize" => FilterParams::Pointillize {
+            cell_size: f(p, "cellSize", 5.0).clamp(3.0, 300.0),
+            seed: seed(p),
+            background: colour(p, "background", WHITE),
+        },
         // ---- Stylize ----
         "filter.stylize.diffuse" => FilterParams::Diffuse {
             mode: match s(p, "mode", "normal") {
@@ -107,7 +128,11 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             seed: seed(p),
         },
         "filter.stylize.extrude" => FilterParams::Extrude {
-            kind: if s(p, "type", "blocks") == "pyramids" { ExtrudeType::Pyramids } else { ExtrudeType::Blocks },
+            kind: if s(p, "type", "blocks") == "pyramids" {
+                ExtrudeType::Pyramids
+            } else {
+                ExtrudeType::Blocks
+            },
             size: f(p, "size", 30.0).clamp(2.0, 255.0),
             depth: f(p, "depth", 30.0).clamp(1.0, 255.0),
             level_based: s(p, "depthMode", "random") == "levelBased",
@@ -137,7 +162,10 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             background: colour(p, "background", WHITE),
             seed: seed(p),
         },
-        "filter.stylize.traceContour" => FilterParams::TraceContour { level: f(p, "level", 128.0).clamp(0.0, 255.0), upper: s(p, "edge", "lower") == "upper" },
+        "filter.stylize.traceContour" => FilterParams::TraceContour {
+            level: f(p, "level", 128.0).clamp(0.0, 255.0),
+            upper: s(p, "edge", "lower") == "upper",
+        },
         "filter.stylize.wind" => FilterParams::Wind {
             method: match s(p, "method", "wind") {
                 "blast" => WindMethod::Blast,
@@ -284,7 +312,11 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             brightness: f(p, "brightness", 0.0).clamp(0.0, 100.0),
             threshold: f(p, "threshold", 255.0).clamp(0.0, 255.0),
             noise: f(p, "noise", 0.0).clamp(0.0, 100.0),
-            distribution: if s(p, "distribution", "uniform") == "gaussian" { Distribution::Gaussian } else { Distribution::Uniform },
+            distribution: if s(p, "distribution", "uniform") == "gaussian" {
+                Distribution::Gaussian
+            } else {
+                Distribution::Uniform
+            },
             monochromatic: b(p, "monochromatic", false),
             seed: seed(p),
             depth_map: None,
@@ -327,14 +359,28 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             }),
         },
         "filter.blurGallery.fieldBlur" => FilterParams::FieldBlur {
-            pins: list::<FieldPin>(p, "pins").unwrap_or_else(|| vec![FieldPin { x: f(p, "centerX", 0.5), y: f(p, "centerY", 0.5), blur: blur(15.0) }]),
+            pins: list::<FieldPin>(p, "pins").unwrap_or_else(|| {
+                vec![FieldPin {
+                    x: f(p, "centerX", 0.5),
+                    y: f(p, "centerY", 0.5),
+                    blur: blur(15.0),
+                }]
+            }),
         },
         "filter.blurGallery.spinBlur" => FilterParams::SpinBlur {
             pins: list::<SpinPin>(p, "pins")
                 .map(|mut v| {
                     for pin in &mut v {
-                        pin.angle = if pin.angle.is_finite() { pin.angle.clamp(-360.0, 360.0) } else { 0.0 };
-                        pin.blur_angle = if pin.blur_angle.is_finite() { pin.blur_angle.clamp(0.0, 360.0) } else { 0.0 };
+                        pin.angle = if pin.angle.is_finite() {
+                            pin.angle.clamp(-360.0, 360.0)
+                        } else {
+                            0.0
+                        };
+                        pin.blur_angle = if pin.blur_angle.is_finite() {
+                            pin.blur_angle.clamp(0.0, 360.0)
+                        } else {
+                            0.0
+                        };
                     }
                     v
                 })
@@ -345,7 +391,11 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
                         y: f(p, "centerY", 0.5),
                         radius_x: f(p, "radiusX", 0.3).max(0.001),
                         radius_y: f(p, "radiusY", 0.3).max(0.001),
-                        angle: if a.is_finite() { a.clamp(-360.0, 360.0) } else { 0.0 },
+                        angle: if a.is_finite() {
+                            a.clamp(-360.0, 360.0)
+                        } else {
+                            0.0
+                        },
                         blur_angle: f(p, "blurAngle", 15.0).clamp(0.0, 360.0),
                     }]
                 }),
@@ -363,7 +413,10 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
                 })
                 .unwrap_or_else(|| {
                     vec![BlurPath {
-                        points: vec![[f(p, "startX", 0.2), f(p, "startY", 0.5)], [f(p, "endX", 0.8), f(p, "endY", 0.5)]],
+                        points: vec![
+                            [f(p, "startX", 0.2), f(p, "startY", 0.5)],
+                            [f(p, "endX", 0.8), f(p, "endY", 0.5)],
+                        ],
                         speed: f(p, "speed", 50.0).clamp(0.0, 500.0),
                         taper: f(p, "taper", 0.0).clamp(0.0, 100.0),
                     }]
@@ -374,7 +427,12 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
             kernel: p
                 .get("kernel")
                 .and_then(Value::as_array)
-                .map(|a| a.iter().take(25).map(|v| v.as_f64().unwrap_or(0.0).clamp(-999.0, 999.0) as f32).collect())
+                .map(|a| {
+                    a.iter()
+                        .take(25)
+                        .map(|v| v.as_f64().unwrap_or(0.0).clamp(-999.0, 999.0) as f32)
+                        .collect()
+                })
                 .unwrap_or_else(|| (0..25).map(|k| if k == 12 { 1.0 } else { 0.0 }).collect()),
             scale: f(p, "scale", 1.0).clamp(1.0, 9999.0),
             offset: f(p, "offset", 0.0).clamp(-9999.0, 9999.0),
@@ -385,7 +443,10 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
                 "hsl" => HsbModel::Hsl,
                 _ => HsbModel::Rgb,
             };
-            FilterParams::HsbHsl { input: m("inputMode", "rgb"), output: m("rowOrder", "hsb") }
+            FilterParams::HsbHsl {
+                input: m("inputMode", "rgb"),
+                output: m("rowOrder", "hsb"),
+            }
         }
         crate::color_to_alpha_cmds::ID => crate::color_to_alpha_cmds::params(p),
         // ---- Video ----
@@ -400,7 +461,10 @@ pub fn params_for(id: &str, p: &Value) -> Option<FilterParams> {
 
 /// Ids whose rendering uses the foreground/background colours.
 fn uses_colours(id: &str) -> bool {
-    matches!(id, "filter.render.fibers" | "filter.stylize.tiles" | "filter.pixelate.pointillize") || crate::gallery_cmds::uses_colours(id)
+    matches!(
+        id,
+        "filter.render.fibers" | "filter.stylize.tiles" | "filter.pixelate.pointillize"
+    ) || crate::gallery_cmds::uses_colours(id)
 }
 
 /// Fills in session state a filter reads (the current colours) as explicit params, so the
@@ -410,8 +474,10 @@ pub(crate) fn prepare(s: &Session, id: &str, p: &Value) -> Value {
     if uses_colours(id)
         && let Value::Object(m) = &mut out
     {
-        m.entry("foreground").or_insert_with(|| json!(s.tools.foreground));
-        m.entry("background").or_insert_with(|| json!(s.tools.background));
+        m.entry("foreground")
+            .or_insert_with(|| json!(s.tools.foreground));
+        m.entry("background")
+            .or_insert_with(|| json!(s.tools.background));
     }
     out
 }
@@ -419,19 +485,31 @@ pub(crate) fn prepare(s: &Session, id: &str, p: &Value) -> Value {
 /// A flattened document (or one of its layers) as an RGBA map image.
 fn map_from_document(doc: &Document, layer: Option<u64>) -> Option<algo::Image> {
     let buf = match layer.and_then(|l| doc.layer(photocraft_doc::LayerId(l))) {
-        Some(l) => photocraft_compose::render_layer(l, l.surface().map(|s| s.content_bounds()).filter(|r| !r.is_empty()).unwrap_or_else(|| doc.bounds())),
+        Some(l) => photocraft_compose::render_layer(
+            l,
+            l.surface()
+                .map(|s| s.content_bounds())
+                .filter(|r| !r.is_empty())
+                .unwrap_or_else(|| doc.bounds()),
+        ),
         None => photocraft_compose::flatten(doc),
     };
     if buf.rect.is_empty() {
         return None;
     }
-    Some(algo::Image { rect: buf.rect, ch: 4, data: buf.px.iter().flatten().copied().collect() })
+    Some(algo::Image {
+        rect: buf.rect,
+        ch: 4,
+        data: buf.px.iter().flatten().copied().collect(),
+    })
 }
 
 /// Resolves inputs that live outside the target layer: Displace's map (`mapPath`, or
 /// `mapDocument` index with optional `mapLayer` id).
 pub(crate) fn resolve(s: &Session, fp: &mut FilterParams, p: &Value) -> Result<()> {
-    let FilterParams::Displace { map, .. } = fp else { return Ok(()) };
+    let FilterParams::Displace { map, .. } = fp else {
+        return Ok(());
+    };
     if map.is_some() {
         return Ok(());
     }
@@ -441,26 +519,37 @@ pub(crate) fn resolve(s: &Session, fp: &mut FilterParams, p: &Value) -> Result<(
     } else if let Some(d) = p.get("mapDocument") {
         let docs = s.documents();
         let found = match d {
-            Value::String(name) => docs.iter().find(|ds| ds.doc.name == *name || ds.path.as_deref() == Some(name.as_str())),
+            Value::String(name) => docs
+                .iter()
+                .find(|ds| ds.doc.name == *name || ds.path.as_deref() == Some(name.as_str())),
             other => other.as_u64().and_then(|k| docs.get(k as usize)),
         };
-        let ds = found.ok_or_else(|| EngineError::Other("displacement map document not found".into()))?;
+        let ds = found
+            .ok_or_else(|| EngineError::Other("displacement map document not found".into()))?;
         map_from_document(&ds.doc, layer)
     } else {
-        return Err(EngineError::Other("Displace needs a displacement map: pass `mapPath` or `mapDocument`".into()));
+        return Err(EngineError::Other(
+            "Displace needs a displacement map: pass `mapPath` or `mapDocument`".into(),
+        ));
     };
-    *map = Some(Arc::new(img.ok_or_else(|| EngineError::Other("the displacement map is empty".into()))?));
+    *map = Some(Arc::new(img.ok_or_else(|| {
+        EngineError::Other("the displacement map is empty".into())
+    })?));
     Ok(())
 }
 
 fn map_path(p: &Value) -> Option<&str> {
-    p.get("mapPath").and_then(Value::as_str).filter(|p| !p.is_empty())
+    p.get("mapPath")
+        .and_then(Value::as_str)
+        .filter(|p| !p.is_empty())
 }
 
 /// Displace's map read from a file (flattened, or its `mapLayer`).
 fn map_from_path(path: &str, layer: Option<u64>) -> Result<Option<algo::Image>> {
-    let bytes = std::fs::read(path).map_err(|e| EngineError::Other(format!("cannot read displacement map `{path}`: {e}")))?;
-    let imported = crate::file_cmds::import(path, &bytes).map_err(|e| EngineError::Other(format!("cannot open displacement map `{path}`: {e}")))?;
+    let bytes = std::fs::read(path)
+        .map_err(|e| EngineError::Other(format!("cannot read displacement map `{path}`: {e}")))?;
+    let imported = crate::file_cmds::import(path, &bytes)
+        .map_err(|e| EngineError::Other(format!("cannot open displacement map `{path}`: {e}")))?;
     Ok(map_from_document(&imported, layer))
 }
 
@@ -479,7 +568,11 @@ pub(crate) fn resolve_map_path(fp: &mut FilterParams, p: &Value) -> Result<()> {
 
 /// Resolves inputs read from the target layer itself: the layer mask as Lens Blur depth.
 pub(crate) fn resolve_in_layer(fp: &mut FilterParams, layer: &Layer, bounds: Rect) {
-    if let FilterParams::LensBlur { depth: DepthSource::LayerMask, depth_map, .. } = fp
+    if let FilterParams::LensBlur {
+        depth: DepthSource::LayerMask,
+        depth_map,
+        ..
+    } = fp
         && depth_map.is_none()
         && let Some(m) = &layer.mask
     {
@@ -488,7 +581,10 @@ pub(crate) fn resolve_in_layer(fp: &mut FilterParams, layer: &Layer, bounds: Rec
 }
 
 fn relight_bad(msg: &str) -> EngineError {
-    EngineError::BadParams { cmd: "filter.render.relight".into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: "filter.render.relight".into(),
+        msg: msg.into(),
+    }
 }
 
 fn relight_num(p: &Value, key: &str, default: f32, min: f32, max: f32) -> Result<f32> {
@@ -533,8 +629,16 @@ fn relight_enabled(s: &Session) -> std::result::Result<(), String> {
         return Ok(());
     }
     let l = crate::active_layer_of(s)?;
-    let locks = s.active().ok_or("no document open")?.doc.effective_locks(l.id);
-    if locks.pixels || locks.all { Err(format!("the layer \"{}\" is locked", l.name)) } else { Ok(()) }
+    let locks = s
+        .active()
+        .ok_or("no document open")?
+        .doc
+        .effective_locks(l.id);
+    if locks.pixels || locks.all {
+        Err(format!("the layer \"{}\" is locked", l.name))
+    } else {
+        Ok(())
+    }
 }
 
 fn run_relight(s: &mut Session, p: &Value) -> Result<Value> {
@@ -567,18 +671,43 @@ pub fn specs() -> Vec<CommandSpec> {
             ["Filter", "Pixelate"],
             r##"{"maxRadius":4..127=8,"channel1":-360..360=108,"channel2":-360..360=162,"channel3":-360..360=90,"channel4":-360..360=45}"##
         ),
-        cmd!("filter.pixelate.crystallize", "Crystallize…", ["Filter", "Pixelate"], r##"{"cellSize":3..300=10,"seed":u32=0}"##),
-        cmd!("filter.pixelate.facet", "Facet", ["Filter", "Pixelate"], "{}"),
-        cmd!("filter.pixelate.fragment", "Fragment", ["Filter", "Pixelate"], "{}"),
+        cmd!(
+            "filter.pixelate.crystallize",
+            "Crystallize…",
+            ["Filter", "Pixelate"],
+            r##"{"cellSize":3..300=10,"seed":u32=0}"##
+        ),
+        cmd!(
+            "filter.pixelate.facet",
+            "Facet",
+            ["Filter", "Pixelate"],
+            "{}"
+        ),
+        cmd!(
+            "filter.pixelate.fragment",
+            "Fragment",
+            ["Filter", "Pixelate"],
+            "{}"
+        ),
         cmd!(
             "filter.pixelate.mezzotint",
             "Mezzotint…",
             ["Filter", "Pixelate"],
             r##"{"type":"fineDots|mediumDots|grainyDots|coarseDots|shortLines|mediumLines|longLines|shortStrokes|mediumStrokes|longStrokes","seed":u32=0}"##
         ),
-        cmd!("filter.pixelate.pointillize", "Pointillize…", ["Filter", "Pixelate"], r##"{"cellSize":3..300=5,"seed":u32=0,"background":json}"##),
+        cmd!(
+            "filter.pixelate.pointillize",
+            "Pointillize…",
+            ["Filter", "Pixelate"],
+            r##"{"cellSize":3..300=5,"seed":u32=0,"background":json}"##
+        ),
         // Stylize
-        cmd!("filter.stylize.diffuse", "Diffuse…", ["Filter", "Stylize"], r##"{"mode":"normal|darkenOnly|lightenOnly|anisotropic","seed":u32=0}"##),
+        cmd!(
+            "filter.stylize.diffuse",
+            "Diffuse…",
+            ["Filter", "Stylize"],
+            r##"{"mode":"normal|darkenOnly|lightenOnly|anisotropic","seed":u32=0}"##
+        ),
         cmd!(
             "filter.stylize.extrude",
             "Extrude…",
@@ -597,8 +726,18 @@ pub fn specs() -> Vec<CommandSpec> {
             ["Filter", "Stylize"],
             r##"{"count":1..99=10,"maxOffset":1..99=10,"fill":"background|foreground|inverse|unaltered","seed":u32=0,"foreground":json,"background":json}"##
         ),
-        cmd!("filter.stylize.traceContour", "Trace Contour…", ["Filter", "Stylize"], r##"{"level":0..255=128,"edge":"lower|upper"}"##),
-        cmd!("filter.stylize.wind", "Wind…", ["Filter", "Stylize"], r##"{"method":"wind|blast|stagger","direction":"fromRight|fromLeft","seed":u32=0}"##),
+        cmd!(
+            "filter.stylize.traceContour",
+            "Trace Contour…",
+            ["Filter", "Stylize"],
+            r##"{"level":0..255=128,"edge":"lower|upper"}"##
+        ),
+        cmd!(
+            "filter.stylize.wind",
+            "Wind…",
+            ["Filter", "Stylize"],
+            r##"{"method":"wind|blast|stagger","direction":"fromRight|fromLeft","seed":u32=0}"##
+        ),
         // Distort
         cmd!(
             "filter.distort.displace",
@@ -606,7 +745,12 @@ pub fn specs() -> Vec<CommandSpec> {
             ["Filter", "Distort"],
             r##"{"horizontal":-999..999=10,"vertical":-999..999=10,"fit":"stretch|tile","undefinedAreas":"repeat|wrap","mapDocument":doc,"mapPath":text,"mapLayer":json}"##
         ),
-        cmd!("filter.distort.shear", "Shear…", ["Filter", "Distort"], r##"{"amount":-100..100=0,"undefinedAreas":"wrap|repeat","points":json}"##),
+        cmd!(
+            "filter.distort.shear",
+            "Shear…",
+            ["Filter", "Distort"],
+            r##"{"amount":-100..100=0,"undefinedAreas":"wrap|repeat","points":json}"##
+        ),
         cmd!(
             "filter.distort.zigZag",
             "ZigZag…",
@@ -700,8 +844,18 @@ pub fn specs() -> Vec<CommandSpec> {
             r##"{"speed":0..500=50,"taper":0..100=0,"startX":0..1=0.2,"startY":0..1=0.5,"endX":0..1=0.8,"endY":0..1=0.5,"paths":json}"##
         ),
         // Other
-        cmd!("filter.other.custom", "Custom…", ["Filter", "Other"], r##"{"kernel":int[25],"scale":1..9999=1,"offset":-9999..9999=0}"##),
-        cmd!("filter.other.hsbHsl", "HSB/HSL", ["Filter", "Other"], r##"{"inputMode":"rgb|hsb|hsl","rowOrder":"hsb|hsl|rgb"}"##),
+        cmd!(
+            "filter.other.custom",
+            "Custom…",
+            ["Filter", "Other"],
+            r##"{"kernel":int[25],"scale":1..9999=1,"offset":-9999..9999=0}"##
+        ),
+        cmd!(
+            "filter.other.hsbHsl",
+            "HSB/HSL",
+            ["Filter", "Other"],
+            r##"{"inputMode":"rgb|hsb|hsl","rowOrder":"hsb|hsl|rgb"}"##
+        ),
         // Video
         cmd!(
             "filter.video.deInterlace",
@@ -709,7 +863,12 @@ pub fn specs() -> Vec<CommandSpec> {
             ["Filter", "Video"],
             r##"{"eliminate":"oddFields|evenFields","createBy":"interpolation|duplication"}"##
         ),
-        cmd!("filter.video.ntscColors", "NTSC Colors", ["Filter", "Video"], "{}"),
+        cmd!(
+            "filter.video.ntscColors",
+            "NTSC Colors",
+            ["Filter", "Video"],
+            "{}"
+        ),
     ]
 }
 

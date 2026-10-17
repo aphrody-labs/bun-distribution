@@ -28,6 +28,7 @@ use core::fmt::{Display, Formatter, Write};
 #[cfg(feature = "functions")]
 use crate::func::Function;
 use crate::{
+    PartialReflect, Reflect, ReflectRef, TypeInfo,
     array::Array,
     enums::{Enum, VariantType},
     list::List,
@@ -36,7 +37,6 @@ use crate::{
     structs::Struct,
     tuple::Tuple,
     tuple_struct::TupleStruct,
-    PartialReflect, Reflect, ReflectRef, TypeInfo,
 };
 
 /// String-formats a reflected value, detecting cycles via their [`TypeId`].
@@ -503,8 +503,8 @@ fn write_opaque(
 mod tests {
     use super::*;
     use crate::{
-        array::DynamicArray, map::DynamicMap, set::DynamicSet, structs::DynamicStruct,
-        tuple::DynamicTuple, tuple_struct::DynamicTupleStruct, Reflect,
+        Reflect, array::DynamicArray, map::DynamicMap, set::DynamicSet, structs::DynamicStruct,
+        tuple::DynamicTuple, tuple_struct::DynamicTupleStruct,
     };
     use alloc::{
         boxed::Box,

@@ -15,24 +15,63 @@ pub(crate) fn square_to_quad(q: [Vec2; 4]) -> H3 {
     let sx = p0.x - p1.x + p2.x - p3.x;
     let sy = p0.y - p1.y + p2.y - p3.y;
     if sx.abs() < 1e-12 && sy.abs() < 1e-12 {
-        return [p1.x - p0.x, p2.x - p1.x, p0.x, p1.y - p0.y, p2.y - p1.y, p0.y, 0.0, 0.0, 1.0];
+        return [
+            p1.x - p0.x,
+            p2.x - p1.x,
+            p0.x,
+            p1.y - p0.y,
+            p2.y - p1.y,
+            p0.y,
+            0.0,
+            0.0,
+            1.0,
+        ];
     }
     let (dx1, dx2, dy1, dy2) = (p1.x - p2.x, p3.x - p2.x, p1.y - p2.y, p3.y - p2.y);
     let det = dx1 * dy2 - dx2 * dy1;
     let g = (sx * dy2 - dx2 * sy) / det;
     let h = (dx1 * sy - sx * dy1) / det;
-    [p1.x - p0.x + g * p1.x, p3.x - p0.x + h * p3.x, p0.x, p1.y - p0.y + g * p1.y, p3.y - p0.y + h * p3.y, p0.y, g, h, 1.0]
+    [
+        p1.x - p0.x + g * p1.x,
+        p3.x - p0.x + h * p3.x,
+        p0.x,
+        p1.y - p0.y + g * p1.y,
+        p3.y - p0.y + h * p3.y,
+        p0.y,
+        g,
+        h,
+        1.0,
+    ]
 }
 
 pub(crate) fn h_inverse(m: &H3) -> Option<H3> {
     let [a, b, c, d, e, f, g, h, i] = *m;
-    let co =
-        [e * i - f * h, -(d * i - f * g), d * h - e * g, -(b * i - c * h), a * i - c * g, -(a * h - b * g), b * f - c * e, -(a * f - c * d), a * e - b * d];
+    let co = [
+        e * i - f * h,
+        -(d * i - f * g),
+        d * h - e * g,
+        -(b * i - c * h),
+        a * i - c * g,
+        -(a * h - b * g),
+        b * f - c * e,
+        -(a * f - c * d),
+        a * e - b * d,
+    ];
     let det = a * co[0] + b * co[1] + c * co[2];
     if det.abs() < 1e-18 {
         return None;
     }
-    Some([co[0] / det, co[3] / det, co[6] / det, co[1] / det, co[4] / det, co[7] / det, co[2] / det, co[5] / det, co[8] / det])
+    Some([
+        co[0] / det,
+        co[3] / det,
+        co[6] / det,
+        co[1] / det,
+        co[4] / det,
+        co[7] / det,
+        co[2] / det,
+        co[5] / det,
+        co[8] / det,
+    ])
 }
 
 #[inline]
@@ -41,18 +80,33 @@ pub(crate) fn h_apply(m: &H3, x: f64, y: f64) -> Option<(f64, f64)> {
     if w.abs() < 1e-12 {
         return None;
     }
-    Some(((m[0] * x + m[1] * y + m[2]) / w, (m[3] * x + m[4] * y + m[5]) / w))
+    Some((
+        (m[0] * x + m[1] * y + m[2]) / w,
+        (m[3] * x + m[4] * y + m[5]) / w,
+    ))
 }
 
 /// Corner Pin: the layer's corners moved to four points (a projective warp).
 pub fn corner_pin(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (w, h) = (img.w as f64, img.h as f64);
-    let q = [pv(e, "upper_left", cx, img), pv(e, "upper_right", cx, img), pv(e, "lower_right", cx, img), pv(e, "lower_left", cx, img)];
-    let ident = [Vec2::new(0.0, 0.0), Vec2::new(w, 0.0), Vec2::new(w, h), Vec2::new(0.0, h)];
+    let q = [
+        pv(e, "upper_left", cx, img),
+        pv(e, "upper_right", cx, img),
+        pv(e, "lower_right", cx, img),
+        pv(e, "lower_left", cx, img),
+    ];
+    let ident = [
+        Vec2::new(0.0, 0.0),
+        Vec2::new(w, 0.0),
+        Vec2::new(w, h),
+        Vec2::new(0.0, h),
+    ];
     if q.iter().zip(&ident).all(|(a, b)| (*a - *b).length() < 1e-6) {
         return;
     }
-    let Some(inv) = h_inverse(&square_to_quad(q)) else { return };
+    let Some(inv) = h_inverse(&square_to_quad(q)) else {
+        return;
+    };
     warp_opt(img, |x, y| {
         let (u, v) = h_apply(&inv, x, y)?;
         (u >= -1e-3 && v >= -1e-3 && u <= 1.0 + 1e-3 && v <= 1.0 + 1e-3).then_some((u * w, v * h))
@@ -70,26 +124,37 @@ pub fn magnify(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let mode = chv(e, "mode");
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (dx, dy) = (x as f64 + 0.5 - c.x, y as f64 + 0.5 - c.y);
-            let d = if square { dx.abs().max(dy.abs()) } else { dx.hypot(dy) } as f32;
-            let k = if fe > 0.0 { ((r - d) / fe).clamp(0.0, 1.0) } else { (r - d + 0.5).clamp(0.0, 1.0) } * op;
-            if k <= 0.0 {
-                continue;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (dx, dy) = (x as f64 + 0.5 - c.x, y as f64 + 0.5 - c.y);
+                let d = if square {
+                    dx.abs().max(dy.abs())
+                } else {
+                    dx.hypot(dy)
+                } as f32;
+                let k = if fe > 0.0 {
+                    ((r - d) / fe).clamp(0.0, 1.0)
+                } else {
+                    (r - d + 0.5).clamp(0.0, 1.0)
+                } * op;
+                if k <= 0.0 {
+                    continue;
+                }
+                let s = src.sample_bilinear((c.x + dx / m) as f32, (c.y + dy / m) as f32);
+                let p = &mut row[x * 4..x * 4 + 4];
+                let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
+                let sc = Image::unpremul(s);
+                let mixed = blend_simple(mode, base, sc);
+                let a = s[3];
+                let out = [mixed[0] * a, mixed[1] * a, mixed[2] * a, a];
+                for i in 0..4 {
+                    p[i] += (out[i] - p[i]) * k;
+                }
             }
-            let s = src.sample_bilinear((c.x + dx / m) as f32, (c.y + dy / m) as f32);
-            let p = &mut row[x * 4..x * 4 + 4];
-            let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
-            let sc = Image::unpremul(s);
-            let mixed = blend_simple(mode, base, sc);
-            let a = s[3];
-            let out = [mixed[0] * a, mixed[1] * a, mixed[2] * a, a];
-            for i in 0..4 {
-                p[i] += (out[i] - p[i]) * k;
-            }
-        }
-    });
+        });
 }
 
 /// Spherize: wraps the layer around a sphere of the given radius (centre magnified 2×).
@@ -121,7 +186,10 @@ pub fn turbulent_displace(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     }
     let size = (fv(e, "size", cx) * cx.px_scale).max(0.5);
     let off = pv(e, "offset", cx, img);
-    let (ox, oy) = (((off.x - img.w as f64 / 2.0) / size as f64) as f32, ((off.y - img.h as f64 / 2.0) / size as f64) as f32);
+    let (ox, oy) = (
+        ((off.x - img.w as f64 / 2.0) / size as f64) as f32,
+        ((off.y - img.h as f64 / 2.0) / size as f64) as f32,
+    );
     let mut cplx = fv(e, "complexity", cx).clamp(1.0, 10.0);
     if (3..=5).contains(&kind) {
         cplx = (cplx * 0.5).max(1.0);
@@ -146,7 +214,11 @@ pub fn turbulent_displace(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
                 let eps = 0.05;
                 let gx = (n(u + eps, v, 0.0) - n(u - eps, v, 0.0)) / (2.0 * eps);
                 let gy = (n(u, v + eps, 0.0) - n(u, v - eps, 0.0)) / (2.0 * eps);
-                if kind == 1 || kind == 4 { (gx * 0.3, gy * 0.3) } else { (-gy * 0.3, gx * 0.3) }
+                if kind == 1 || kind == 4 {
+                    (gx * 0.3, gy * 0.3)
+                } else {
+                    (-gy * 0.3, gx * 0.3)
+                }
             }
             6 => (0.0, n(u, v, 0.0)),
             7 => (n(u, v, 0.0), 0.0),
@@ -178,14 +250,22 @@ pub fn turbulent_displace(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 
 /// 3D Rotate: rotates the layer about its centre in 3-D (X, then Y, then Z) with perspective.
 pub fn rotate_3d(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
-    let (ax, ay, az) = ((fv(e, "rot_x", cx) as f64).to_radians(), (fv(e, "rot_y", cx) as f64).to_radians(), (fv(e, "rot_z", cx) as f64).to_radians());
+    let (ax, ay, az) = (
+        (fv(e, "rot_x", cx) as f64).to_radians(),
+        (fv(e, "rot_y", cx) as f64).to_radians(),
+        (fv(e, "rot_z", cx) as f64).to_radians(),
+    );
     let z = fv(e, "z", cx) as f64 * cx.px_scale as f64;
     if ax.abs() < 1e-9 && ay.abs() < 1e-9 && az.abs() < 1e-9 && z.abs() < 1e-9 {
         return;
     }
     let persp = fv(e, "perspective", cx).clamp(0.0, 100.0) as f64;
     let (w, h) = (img.w as f64, img.h as f64);
-    let f = if persp <= 0.0 { 1e7 } else { w.max(h) * (0.6 + (100.0 - persp) / 100.0 * 4.0) };
+    let f = if persp <= 0.0 {
+        1e7
+    } else {
+        w.max(h) * (0.6 + (100.0 - persp) / 100.0 * 4.0)
+    };
     let hide = bv(e, "hide_back");
     let (sx, cxr) = ax.sin_cos();
     let (sy, cy) = ay.sin_cos();
@@ -235,7 +315,11 @@ pub fn rotate_3d(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 pub fn transform_fx(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let fps = cx.frame_rate.max(1.0);
     let angle = fv(e, "shutter_angle", cx);
-    let n = if bv(e, "shutter_override") && angle > 0.5 { 7 } else { 1 };
+    let n = if bv(e, "shutter_override") && angle > 0.5 {
+        7
+    } else {
+        1
+    };
     let span = (angle as f64 / 360.0) / fps;
     motion_blurred(img, n, |im, k| {
         let t = cx.t + Tick::from_seconds_f64(k * span);
@@ -253,13 +337,27 @@ pub fn transform_fx(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         let anchor = crate::effects::point(e, "anchor", &cx2, im);
         let pos = crate::effects::point(e, "position", &cx2, im);
         let sh = crate::effects::f(e, "scale_height", &cx2) as f64 / 100.0;
-        let sw = if crate::effects::b(e, "uniform_scale") { sh } else { crate::effects::f(e, "scale_width", &cx2) as f64 / 100.0 };
+        let sw = if crate::effects::b(e, "uniform_scale") {
+            sh
+        } else {
+            crate::effects::f(e, "scale_width", &cx2) as f64 / 100.0
+        };
         let rot = crate::effects::f(e, "rotation", &cx2) as f64;
-        let skew = (crate::effects::f(e, "skew", &cx2) as f64).to_radians().tan();
+        let skew = (crate::effects::f(e, "skew", &cx2) as f64)
+            .to_radians()
+            .tan();
         let skew_axis = crate::effects::f(e, "skew_axis", &cx2) as f64;
         let op = crate::effects::f(e, "opacity", &cx2) / 100.0;
-        let sk =
-            Affine::rotate_deg(skew_axis).then_apply(&Affine { a: 1.0, b: 0.0, c: skew, d: 1.0, e: 0.0, f: 0.0 }).then_apply(&Affine::rotate_deg(-skew_axis));
+        let sk = Affine::rotate_deg(skew_axis)
+            .then_apply(&Affine {
+                a: 1.0,
+                b: 0.0,
+                c: skew,
+                d: 1.0,
+                e: 0.0,
+                f: 0.0,
+            })
+            .then_apply(&Affine::rotate_deg(-skew_axis));
         let m = Affine::translate(pos.x, pos.y)
             .then_apply(&Affine::rotate_deg(rot))
             .then_apply(&sk)
@@ -301,7 +399,10 @@ fn motion_blurred(img: &mut Image, n: usize, f: impl Fn(&mut Image, f64) + Sync)
         })
         .collect();
     let inv = 1.0 / n as f32;
-    img.px.par_iter_mut().enumerate().for_each(|(i, v)| *v = parts.iter().map(|p| p.px[i]).sum::<f32>() * inv);
+    img.px
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(i, v)| *v = parts.iter().map(|p| p.px[i]).sum::<f32>() * inv);
 }
 
 /// Move: the layer slides from Offset From to Offset To across the clip.
@@ -310,7 +411,9 @@ pub fn move_fx(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let kind = chv(e, "easing");
     let (a, b) = (offv(e, "from", cx), offv(e, "to", cx));
     let blur = fv(e, "motion_blur", cx) as f64 / 100.0;
-    let span = cx.env.map_or(0.0, |env| 1.0 / (env.frame_rate() * env.clip_seconds()).max(1.0));
+    let span = cx.env.map_or(0.0, |env| {
+        1.0 / (env.frame_rate() * env.clip_seconds()).max(1.0)
+    });
     let c = Vec2::new(img.w as f64 / 2.0, img.h as f64 / 2.0);
     let n = if blur > 0.0 && span > 0.0 { 5 } else { 1 };
     motion_blurred(img, n, |im, k| {
@@ -334,8 +437,16 @@ pub fn wiggle(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let seed = fv(e, "seed", cx).max(0.0) as u64;
     let amt = (fv(e, "amount", cx) * cx.px_scale) as f64;
     let dims = chv(e, "dimensions");
-    let ox = if dims == 2 { 0.0 } else { noise1(t, 0, seed) as f64 * amt * 1.6 };
-    let oy = if dims == 1 { 0.0 } else { noise1(t, 1, seed) as f64 * amt * 1.6 };
+    let ox = if dims == 2 {
+        0.0
+    } else {
+        noise1(t, 0, seed) as f64 * amt * 1.6
+    };
+    let oy = if dims == 1 {
+        0.0
+    } else {
+        noise1(t, 1, seed) as f64 * amt * 1.6
+    };
     let rot = noise1(t, 2, seed) as f64 * fv(e, "rotation", cx) as f64 * 1.6;
     let sc = 1.0 + noise1(t, 3, seed) as f64 * fv(e, "scale", cx) as f64 / 100.0 * 1.6;
     let c = Vec2::new(img.w as f64 / 2.0, img.h as f64 / 2.0);
@@ -379,7 +490,15 @@ pub fn camera_shake(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 pub fn spacer(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let k = cx.px_scale as f64;
     let l = fv(e, "left", cx) as f64 * k;
-    let (t, r, b) = if bv(e, "uniform") { (l, l, l) } else { (fv(e, "top", cx) as f64 * k, fv(e, "right", cx) as f64 * k, fv(e, "bottom", cx) as f64 * k) };
+    let (t, r, b) = if bv(e, "uniform") {
+        (l, l, l)
+    } else {
+        (
+            fv(e, "top", cx) as f64 * k,
+            fv(e, "right", cx) as f64 * k,
+            fv(e, "bottom", cx) as f64 * k,
+        )
+    };
     let (w, h) = (img.w as f64, img.h as f64);
     let (bw, bh) = ((w - l - r).max(1.0), (h - t - b).max(1.0));
     let s = (bw / w).min(bh / h);
@@ -417,47 +536,74 @@ pub(crate) fn round_rect_sdf(px: f32, py: f32, x0: f32, y0: f32, x1: f32, y1: f3
 /// Multiply alpha by the coverage of a rounded rectangle (feathered inward by `feather`).
 fn round_rect_alpha(img: &mut Image, x0: f64, y0: f64, x1: f64, y1: f64, r: f32, feather: f32) {
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let d = round_rect_sdf(x as f32 + 0.5, y as f32 + 0.5, x0 as f32, y0 as f32, x1 as f32, y1 as f32, r);
-            let a = if feather > 0.0 { (-d / feather).clamp(0.0, 1.0) } else { (0.5 - d).clamp(0.0, 1.0) };
-            if a < 1.0 {
-                for v in &mut row[x * 4..x * 4 + 4] {
-                    *v *= a;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let d = round_rect_sdf(
+                    x as f32 + 0.5,
+                    y as f32 + 0.5,
+                    x0 as f32,
+                    y0 as f32,
+                    x1 as f32,
+                    y1 as f32,
+                    r,
+                );
+                let a = if feather > 0.0 {
+                    (-d / feather).clamp(0.0, 1.0)
+                } else {
+                    (0.5 - d).clamp(0.0, 1.0)
+                };
+                if a < 1.0 {
+                    for v in &mut row[x * 4..x * 4 + 4] {
+                        *v *= a;
+                    }
                 }
             }
-        }
-    });
+        });
 }
 
 /// Rounded Crop: crop edges with rounded corners, feather and an optional border.
 pub fn rounded_crop(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (w, h) = (img.w as f32, img.h as f32);
-    let (l, t, r, b) = (fv(e, "left", cx) / 100.0 * w, fv(e, "top", cx) / 100.0 * h, w - fv(e, "right", cx) / 100.0 * w, h - fv(e, "bottom", cx) / 100.0 * h);
+    let (l, t, r, b) = (
+        fv(e, "left", cx) / 100.0 * w,
+        fv(e, "top", cx) / 100.0 * h,
+        w - fv(e, "right", cx) / 100.0 * w,
+        h - fv(e, "bottom", cx) / 100.0 * h,
+    );
     let rad = (fv(e, "radius", cx) * cx.px_scale).min(((r - l).min(b - t) / 2.0).max(0.0));
     let fe = fv(e, "feather", cx) * cx.px_scale;
     let border = fv(e, "border", cx) * cx.px_scale;
     let bc = lin(cv(e, "border_color", cx));
     let wi = img.w;
-    img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..wi {
-            let d = round_rect_sdf(x as f32 + 0.5, y as f32 + 0.5, l, t, r, b, rad);
-            let p = &mut row[x * 4..x * 4 + 4];
-            if border > 0.0 {
-                // coverage of the band −border < d < 0 just inside the edge
-                let k = (0.5 - d).clamp(0.0, 1.0) - (0.5 - d - border).clamp(0.0, 1.0);
-                if k > 0.0 {
-                    over(p, [bc[0] * k, bc[1] * k, bc[2] * k, k]);
+    img.px
+        .par_chunks_mut(wi * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..wi {
+                let d = round_rect_sdf(x as f32 + 0.5, y as f32 + 0.5, l, t, r, b, rad);
+                let p = &mut row[x * 4..x * 4 + 4];
+                if border > 0.0 {
+                    // coverage of the band −border < d < 0 just inside the edge
+                    let k = (0.5 - d).clamp(0.0, 1.0) - (0.5 - d - border).clamp(0.0, 1.0);
+                    if k > 0.0 {
+                        over(p, [bc[0] * k, bc[1] * k, bc[2] * k, k]);
+                    }
+                }
+                let a = if fe > 0.0 {
+                    (-d / fe).clamp(0.0, 1.0)
+                } else {
+                    (0.5 - d).clamp(0.0, 1.0)
+                };
+                if a < 1.0 {
+                    for v in p.iter_mut() {
+                        *v *= a;
+                    }
                 }
             }
-            let a = if fe > 0.0 { (-d / fe).clamp(0.0, 1.0) } else { (0.5 - d).clamp(0.0, 1.0) };
-            if a < 1.0 {
-                for v in p.iter_mut() {
-                    *v *= a;
-                }
-            }
-        }
-    });
+        });
 }
 
 /// Clone: the layer repeated in a grid of tiles (optionally mirrored alternately).
@@ -475,21 +621,34 @@ pub fn clone_fx(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let s = (tw / w).min(th / h);
     let src = img.clone();
     let wi = img.w;
-    img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..wi {
-            let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-            let (ci, ri) = ((px / (tw + gap)).floor() as usize, (py / (th + gap)).floor() as usize);
-            let (ci, ri) = (ci.min(cols - 1), ri.min(rows - 1));
-            let (ox, oy) = (ci as f64 * (tw + gap) + (tw - w * s) / 2.0, ri as f64 * (th + gap) + (th - h * s) / 2.0);
-            let mut u = (px - ox) / s;
-            let v = (py - oy) / s;
-            if mirror && (ci + ri) % 2 == 1 {
-                u = w - u;
+    img.px
+        .par_chunks_mut(wi * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..wi {
+                let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
+                let (ci, ri) = (
+                    (px / (tw + gap)).floor() as usize,
+                    (py / (th + gap)).floor() as usize,
+                );
+                let (ci, ri) = (ci.min(cols - 1), ri.min(rows - 1));
+                let (ox, oy) = (
+                    ci as f64 * (tw + gap) + (tw - w * s) / 2.0,
+                    ri as f64 * (th + gap) + (th - h * s) / 2.0,
+                );
+                let mut u = (px - ox) / s;
+                let v = (py - oy) / s;
+                if mirror && (ci + ri) % 2 == 1 {
+                    u = w - u;
+                }
+                let p = if u < 0.0 || v < 0.0 || u > w || v > h {
+                    [0.0; 4]
+                } else {
+                    src.sample_bilinear(u as f32, v as f32)
+                };
+                row[x * 4..x * 4 + 4].copy_from_slice(&p);
             }
-            let p = if u < 0.0 || v < 0.0 || u > w || v > h { [0.0; 4] } else { src.sample_bilinear(u as f32, v as f32) };
-            row[x * 4..x * 4 + 4].copy_from_slice(&p);
-        }
-    });
+        });
 }
 
 /// Auto Align: moves the layer's visible content (alpha bounding box) to the chosen frame edge
@@ -508,13 +667,27 @@ pub fn auto_align(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let xs: Vec<usize> = (0..w).filter(|&x| row[x * 4 + 3] > 0.01).collect();
             Some((xs.first().copied()?, xs.last().copied()?, y))
         })
-        .fold(|| (usize::MAX, 0usize, usize::MAX, 0usize), |a, (x0, x1, y)| (a.0.min(x0), a.1.max(x1), a.2.min(y), a.3.max(y)))
-        .reduce(|| (usize::MAX, 0usize, usize::MAX, 0usize), |a, b| (a.0.min(b.0), a.1.max(b.1), a.2.min(b.2), a.3.max(b.3)));
+        .fold(
+            || (usize::MAX, 0usize, usize::MAX, 0usize),
+            |a, (x0, x1, y)| (a.0.min(x0), a.1.max(x1), a.2.min(y), a.3.max(y)),
+        )
+        .reduce(
+            || (usize::MAX, 0usize, usize::MAX, 0usize),
+            |a, b| (a.0.min(b.0), a.1.max(b.1), a.2.min(b.2), a.3.max(b.3)),
+        );
     if bounds.0 == usize::MAX {
         return;
     }
-    let (x0, x1, y0, y1) = (bounds.0 as f64, bounds.1 as f64 + 1.0, bounds.2 as f64, bounds.3 as f64 + 1.0);
-    let (mx, my) = ((fv(e, "margin_x", cx) * cx.px_scale) as f64, (fv(e, "margin_y", cx) * cx.px_scale) as f64);
+    let (x0, x1, y0, y1) = (
+        bounds.0 as f64,
+        bounds.1 as f64 + 1.0,
+        bounds.2 as f64,
+        bounds.3 as f64 + 1.0,
+    );
+    let (mx, my) = (
+        (fv(e, "margin_x", cx) * cx.px_scale) as f64,
+        (fv(e, "margin_y", cx) * cx.px_scale) as f64,
+    );
     let (fw, fh) = (img.w as f64, img.h as f64);
     let dx = match hz {
         1 => mx - x0,
@@ -540,7 +713,10 @@ pub fn mosaic(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (w, h) = (img.w, img.h);
     let bw = (w as f32 / bx as f32).max(1.0);
     let bh = (h as f32 / by as f32).max(1.0);
-    let (nx, ny) = ((w as f32 / bw).ceil() as usize, (h as f32 / bh).ceil() as usize);
+    let (nx, ny) = (
+        (w as f32 / bw).ceil() as usize,
+        (h as f32 / bh).ceil() as usize,
+    );
     let mut small = Image::new(nx.max(1), ny.max(1));
     for j in 0..small.h {
         for i in 0..small.w {
@@ -549,19 +725,22 @@ pub fn mosaic(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             small.px[k..k + 4].copy_from_slice(&p);
         }
     }
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (u, v) = ((x as f32 + 0.5) / bw, (y as f32 + 0.5) / bh);
-            // tile index as in the original Mosaic (pixel x belongs to tile floor(x / bw))
-            let (ti, tj) = ((x as f32 / bw) as usize, (y as f32 / bh) as usize);
-            let sharp = small.get(ti.min(small.w - 1), tj.min(small.h - 1));
-            let p = if soft > 0.0 {
-                let sm = small.sample_bilinear_clamped(u, v);
-                [0, 1, 2, 3].map(|k| sharp[k] + (sm[k] - sharp[k]) * soft)
-            } else {
-                sharp
-            };
-            row[x * 4..x * 4 + 4].copy_from_slice(&p);
-        }
-    });
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (u, v) = ((x as f32 + 0.5) / bw, (y as f32 + 0.5) / bh);
+                // tile index as in the original Mosaic (pixel x belongs to tile floor(x / bw))
+                let (ti, tj) = ((x as f32 / bw) as usize, (y as f32 / bh) as usize);
+                let sharp = small.get(ti.min(small.w - 1), tj.min(small.h - 1));
+                let p = if soft > 0.0 {
+                    let sm = small.sample_bilinear_clamped(u, v);
+                    [0, 1, 2, 3].map(|k| sharp[k] + (sm[k] - sharp[k]) * soft)
+                } else {
+                    sharp
+                };
+                row[x * 4..x * 4 + 4].copy_from_slice(&p);
+            }
+        });
 }

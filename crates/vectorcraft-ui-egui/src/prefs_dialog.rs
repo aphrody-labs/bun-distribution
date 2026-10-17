@@ -6,7 +6,9 @@
 
 use serde_json::{Map, Value, json};
 use vectorcraft_engine::Prefs;
-use vectorcraft_engine::cmd::prefscmds::{GPU_PREFERENCES, PREF_CATEGORIES, PREF_GROUPS, PREF_SPECS, PrefKind};
+use vectorcraft_engine::cmd::prefscmds::{
+    GPU_PREFERENCES, PREF_CATEGORIES, PREF_GROUPS, PREF_SPECS, PrefKind,
+};
 
 use crate::state::Dialog;
 use crate::theme::{self, Brightness, Tokens};
@@ -14,35 +16,72 @@ use crate::{VectorcraftApp, widgets};
 
 /// UI-only fields shown in the dialog (backed by `UiState`, not engine prefs).
 pub const UI_FIELDS: &[(&str, &str, &str)] = &[
-    ("__smartGuides", "Smart Guides", "Smart Guides (View → Smart Guides)"),
+    (
+        "__smartGuides",
+        "Smart Guides",
+        "Smart Guides (View → Smart Guides)",
+    ),
     ("__snapToGrid", "Guides & Grid", "Snap to Grid"),
     ("__taskBar", "General", "Enable Contextual Task Bar"),
 ];
 
 pub fn open(app: &mut VectorcraftApp, category: Option<&str>) {
     // One field per preference key or group (the flattener presets have commands of their own).
-    let mut fields: Map<String, Value> = app.session.prefs.to_json().as_object().cloned().unwrap_or_default();
-    fields.retain(|k, _| vectorcraft_engine::cmd::prefscmds::spec(k).is_some() || PREF_GROUPS.contains(&k.as_str()));
+    let mut fields: Map<String, Value> = app
+        .session
+        .prefs
+        .to_json()
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
+    fields.retain(|k, _| {
+        vectorcraft_engine::cmd::prefscmds::spec(k).is_some() || PREF_GROUPS.contains(&k.as_str())
+    });
     // Units ▸ General shows (and OK sets) the open document's units.
     if let Some(st) = app.session.active() {
         fields.insert("unitsGeneral".into(), json!(st.doc.units.key()));
     }
-    let cat = category.and_then(|c| PREF_CATEGORIES.iter().find(|x| x.eq_ignore_ascii_case(c))).copied().unwrap_or(PREF_CATEGORIES[0]);
+    let cat = category
+        .and_then(|c| PREF_CATEGORIES.iter().find(|x| x.eq_ignore_ascii_case(c)))
+        .copied()
+        .unwrap_or(PREF_CATEGORIES[0]);
     fields.insert("__category".into(), json!(cat));
     fields.insert("__smartGuides".into(), json!(app.ui.view.smart_guides));
     fields.insert("__snapToGrid".into(), json!(app.ui.view.snap_to_grid));
     fields.insert("__taskBar".into(), json!(app.ui.task_bar));
-    app.ui.dialog = Some(Dialog { kind: "preferences".into(), fields });
+    app.ui.dialog = Some(Dialog {
+        kind: "preferences".into(),
+        fields,
+    });
 }
 
 /// OK: validate and apply every preference in the dialog (nothing changes on error).
 pub fn confirm(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let Some(d) = app.ui.dialog.clone() else { return Err("no dialog open".into()) };
-    let values: Map<String, Value> = d.fields.iter().filter(|(k, _)| !k.starts_with("__")).map(|(k, v)| (k.clone(), v.clone())).collect();
+    let Some(d) = app.ui.dialog.clone() else {
+        return Err("no dialog open".into());
+    };
+    let values: Map<String, Value> = d
+        .fields
+        .iter()
+        .filter(|(k, _)| !k.starts_with("__"))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
     app.run("prefs.set", json!({ "values": values }))?;
-    app.ui.view.smart_guides = d.fields.get("__smartGuides").and_then(Value::as_bool).unwrap_or(app.ui.view.smart_guides);
-    app.ui.view.snap_to_grid = d.fields.get("__snapToGrid").and_then(Value::as_bool).unwrap_or(app.ui.view.snap_to_grid);
-    app.ui.task_bar = d.fields.get("__taskBar").and_then(Value::as_bool).unwrap_or(app.ui.task_bar);
+    app.ui.view.smart_guides = d
+        .fields
+        .get("__smartGuides")
+        .and_then(Value::as_bool)
+        .unwrap_or(app.ui.view.smart_guides);
+    app.ui.view.snap_to_grid = d
+        .fields
+        .get("__snapToGrid")
+        .and_then(Value::as_bool)
+        .unwrap_or(app.ui.view.snap_to_grid);
+    app.ui.task_bar = d
+        .fields
+        .get("__taskBar")
+        .and_then(Value::as_bool)
+        .unwrap_or(app.ui.task_bar);
     app.ui.dialog = None;
     app.ui.engine_prefs = app.session.prefs.to_json();
     Ok(Value::Null)
@@ -122,7 +161,11 @@ pub fn apply_runtime(app: &mut VectorcraftApp, ctx: &egui::Context) {
         theme::apply(ctx, want.brightness);
         // General › Show Tool Tips: off, no button or field shows its tool tip (they never come
         // due), whichever widget asks for one.
-        let delay = if want.tool_tips { egui::style::Interaction::default().tooltip_delay } else { f32::INFINITY };
+        let delay = if want.tool_tips {
+            egui::style::Interaction::default().tooltip_delay
+        } else {
+            f32::INFINITY
+        };
         ctx.global_style_mut(|s| s.interaction.tooltip_delay = delay);
         crate::scrub::set_enabled(ctx, want.scrub);
         crate::widgets::set_bare_numbers_are_points(ctx, want.bare_points);
@@ -147,72 +190,121 @@ pub fn apply_runtime(app: &mut VectorcraftApp, ctx: &egui::Context) {
 }
 
 pub fn show(app: &mut VectorcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.dialog.clone() else { return };
+    let Some(mut d) = app.ui.dialog.clone() else {
+        return;
+    };
     let t = Tokens::get(ctx);
     let (mut ok, mut cancel, mut reset) = (false, false, false);
     let cat = d.str("__category");
-    let cat = PREF_CATEGORIES.iter().find(|c| **c == cat).copied().unwrap_or(PREF_CATEGORIES[0]);
-    crate::dialogs::modal::show(ctx, tl!("Preferences"), egui::Id::new("dialog-preferences"), -20.0, 20, |ui| {
-        ui.set_width(760.0);
-        crate::dialogs::modal::heading(ui, tl!("Preferences"));
-        ui.add_space(12.0);
-        ui.horizontal_top(|ui| {
-            // Category list.
-            egui::Frame::NONE.fill(t.panel_darker).corner_radius(egui::CornerRadius::same(4)).inner_margin(egui::Margin::same(6)).show(ui, |ui| {
-                ui.set_width(196.0);
-                ui.set_min_height(430.0);
+    let cat = PREF_CATEGORIES
+        .iter()
+        .find(|c| **c == cat)
+        .copied()
+        .unwrap_or(PREF_CATEGORIES[0]);
+    crate::dialogs::modal::show(
+        ctx,
+        tl!("Preferences"),
+        egui::Id::new("dialog-preferences"),
+        -20.0,
+        20,
+        |ui| {
+            ui.set_width(760.0);
+            crate::dialogs::modal::heading(ui, tl!("Preferences"));
+            ui.add_space(12.0);
+            ui.horizontal_top(|ui| {
+                // Category list.
+                egui::Frame::NONE
+                    .fill(t.panel_darker)
+                    .corner_radius(egui::CornerRadius::same(4))
+                    .inner_margin(egui::Margin::same(6))
+                    .show(ui, |ui| {
+                        ui.set_width(196.0);
+                        ui.set_min_height(430.0);
+                        ui.vertical(|ui| {
+                            ui.spacing_mut().item_spacing.y = 1.0;
+                            for c in PREF_CATEGORIES {
+                                let sel = *c == cat;
+                                let text = egui::RichText::new(tl!(*c)).size(12.5).color(if sel {
+                                    t.text_strong
+                                } else {
+                                    t.text
+                                });
+                                let b = egui::Button::selectable(sel, text)
+                                    .frame_when_inactive(false)
+                                    .min_size(egui::vec2(184.0, 24.0));
+                                if ui.add(b).clicked() {
+                                    d.fields.insert("__category".into(), json!(c));
+                                }
+                            }
+                        });
+                    });
+                ui.add_space(14.0);
+                // Fields.
                 ui.vertical(|ui| {
-                    ui.spacing_mut().item_spacing.y = 1.0;
-                    for c in PREF_CATEGORIES {
-                        let sel = *c == cat;
-                        let text = egui::RichText::new(tl!(*c)).size(12.5).color(if sel { t.text_strong } else { t.text });
-                        let b = egui::Button::selectable(sel, text).frame_when_inactive(false).min_size(egui::vec2(184.0, 24.0));
-                        if ui.add(b).clicked() {
-                            d.fields.insert("__category".into(), json!(c));
-                        }
-                    }
+                    ui.set_width(530.0);
+                    ui.label(
+                        egui::RichText::new(tl!(cat))
+                            .font(theme::semibold(14.0))
+                            .color(t.text_strong),
+                    );
+                    ui.add_space(8.0);
+                    egui::ScrollArea::vertical()
+                        .id_salt(("prefs", cat))
+                        .max_height(400.0)
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            category_fields(ui, &mut d, cat);
+                        });
                 });
             });
             ui.add_space(14.0);
-            // Fields.
-            ui.vertical(|ui| {
-                ui.set_width(530.0);
-                ui.label(egui::RichText::new(tl!(cat)).font(theme::semibold(14.0)).color(t.text_strong));
-                ui.add_space(8.0);
-                egui::ScrollArea::vertical().id_salt(("prefs", cat)).max_height(400.0).auto_shrink([false, false]).show(ui, |ui| {
-                    category_fields(ui, &mut d, cat);
+            ui.horizontal(|ui| {
+                if widgets::secondary_button(ui, tl!("Reset Preferences"))
+                    .on_hover_text(tl!(
+                        "Restore every preference to its default (applied on OK)"
+                    ))
+                    .clicked()
+                {
+                    reset = true;
+                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if widgets::primary_button(ui, tl!("OK")).clicked() {
+                        ok = true;
+                    }
+                    ui.add_space(8.0);
+                    if widgets::secondary_button(ui, tl!("Cancel")).clicked() {
+                        cancel = true;
+                    }
+                    ui.add_space(16.0);
+                    let i = PREF_CATEGORIES.iter().position(|c| *c == cat).unwrap_or(0);
+                    if ui
+                        .add_enabled(
+                            i + 1 < PREF_CATEGORIES.len(),
+                            egui::Button::new(tl!("Next")),
+                        )
+                        .clicked()
+                    {
+                        d.fields
+                            .insert("__category".into(), json!(PREF_CATEGORIES[i + 1]));
+                    }
+                    if ui
+                        .add_enabled(i > 0, egui::Button::new(tl!("Previous")))
+                        .clicked()
+                    {
+                        d.fields
+                            .insert("__category".into(), json!(PREF_CATEGORIES[i - 1]));
+                    }
                 });
             });
-        });
-        ui.add_space(14.0);
-        ui.horizontal(|ui| {
-            if widgets::secondary_button(ui, tl!("Reset Preferences"))
-                .on_hover_text(tl!("Restore every preference to its default (applied on OK)"))
-                .clicked()
-            {
-                reset = true;
-            }
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if widgets::primary_button(ui, tl!("OK")).clicked() {
-                    ok = true;
-                }
-                ui.add_space(8.0);
-                if widgets::secondary_button(ui, tl!("Cancel")).clicked() {
-                    cancel = true;
-                }
-                ui.add_space(16.0);
-                let i = PREF_CATEGORIES.iter().position(|c| *c == cat).unwrap_or(0);
-                if ui.add_enabled(i + 1 < PREF_CATEGORIES.len(), egui::Button::new(tl!("Next"))).clicked() {
-                    d.fields.insert("__category".into(), json!(PREF_CATEGORIES[i + 1]));
-                }
-                if ui.add_enabled(i > 0, egui::Button::new(tl!("Previous"))).clicked() {
-                    d.fields.insert("__category".into(), json!(PREF_CATEGORIES[i - 1]));
-                }
-            });
-        });
-    });
+        },
+    );
     if reset {
-        for (k, v) in Prefs::default().to_json().as_object().cloned().unwrap_or_default() {
+        for (k, v) in Prefs::default()
+            .to_json()
+            .as_object()
+            .cloned()
+            .unwrap_or_default()
+        {
             d.fields.insert(k, v);
         }
     }
@@ -245,7 +337,11 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 if !first {
                     ui.add_space(8.0);
                 }
-                ui.label(egui::RichText::new(tl!(section)).font(theme::semibold(12.5)).color(t.text_strong));
+                ui.label(
+                    egui::RichText::new(tl!(section))
+                        .font(theme::semibold(12.5))
+                        .color(t.text_strong),
+                );
                 ui.add_space(2.0);
             }
         }
@@ -259,14 +355,20 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
             }
             // Performance › Animated Zoom needs GPU Performance: dimmed while it is off.
             PrefKind::Bool if sp.key == "animatedZoom" => {
-                ui.add_enabled_ui(d.bool("gpuPerformance"), |ui| bool_row(ui, d, sp.key, sp.label));
+                ui.add_enabled_ui(d.bool("gpuPerformance"), |ui| {
+                    bool_row(ui, d, sp.key, sp.label)
+                });
             }
             // Windows and Linux only: macOS always has the system's title bar, the web has none.
             PrefKind::Bool if sp.key == "systemTitleBar" => {
                 if cfg!(all(not(target_arch = "wasm32"), not(target_os = "macos"))) {
                     bool_row(ui, d, sp.key, sp.label);
                     // The window's decorations are chosen once, when the app starts.
-                    ui.label(egui::RichText::new(tl!("Applies the next time VectorCraft starts.")).color(t.text_dim).size(11.0));
+                    ui.label(
+                        egui::RichText::new(tl!("Applies the next time VectorCraft starts."))
+                            .color(t.text_dim)
+                            .size(11.0),
+                    );
                 }
             }
             PrefKind::Bool => bool_row(ui, d, sp.key, sp.label),
@@ -274,9 +376,24 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 labeled(ui, sp.label, |ui| {
                     let mut x = v.as_f64().unwrap_or(min);
                     let new = if sp.key == "uiScaling" {
-                        widgets::slider(ui, egui::Slider::new(&mut x, min..=max).step_by(0.05).text(tl!("Smaller ↔ Larger"))).changed().then_some(x)
+                        widgets::slider(
+                            ui,
+                            egui::Slider::new(&mut x, min..=max)
+                                .step_by(0.05)
+                                .text(tl!("Smaller ↔ Larger")),
+                        )
+                        .changed()
+                        .then_some(x)
                     } else {
-                        widgets::range_field(ui, sp.key, x, min..=max, &format!(" {unit}"), 3, 110.0)
+                        widgets::range_field(
+                            ui,
+                            sp.key,
+                            x,
+                            min..=max,
+                            &format!(" {unit}"),
+                            3,
+                            110.0,
+                        )
                     };
                     if let Some(x) = new {
                         d.fields.insert(sp.key.into(), json!(x));
@@ -285,7 +402,8 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
             }
             PrefKind::Length { min, max, measure } => {
                 // In the dialog's own Units choice, so a change there shows right away.
-                let unit = vectorcraft_doc::Unit::named(&d.str(measure.pref_key())).unwrap_or_default();
+                let unit =
+                    vectorcraft_doc::Unit::named(&d.str(measure.pref_key())).unwrap_or_default();
                 let x = d.f64(sp.key, min);
                 labeled(ui, sp.label, |ui| {
                     if let Some(x) = widgets::num_field(ui, sp.key, Some(x), unit, 110.0) {
@@ -297,9 +415,25 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 labeled(ui, sp.label, |ui| {
                     let mut x = v.as_i64().unwrap_or(min);
                     let new = if sp.key == "anchorSize" {
-                        widgets::slider(ui, egui::Slider::new(&mut x, min..=max).show_value(false).text(tl!("Size"))).changed().then_some(x)
+                        widgets::slider(
+                            ui,
+                            egui::Slider::new(&mut x, min..=max)
+                                .show_value(false)
+                                .text(tl!("Size")),
+                        )
+                        .changed()
+                        .then_some(x)
                     } else {
-                        widgets::range_field(ui, sp.key, x as f64, min as f64..=max as f64, "", 0, 110.0).map(|x| x as i64)
+                        widgets::range_field(
+                            ui,
+                            sp.key,
+                            x as f64,
+                            min as f64..=max as f64,
+                            "",
+                            0,
+                            110.0,
+                        )
+                        .map(|x| x as i64)
                     };
                     if let Some(x) = new {
                         d.fields.insert(sp.key.into(), json!(x));
@@ -307,7 +441,8 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 });
             }
             // Linux only: the other platforms have a single display server.
-            PrefKind::Choice(_) if sp.key == "linuxDisplayServer" && !cfg!(target_os = "linux") => {}
+            PrefKind::Choice(_) if sp.key == "linuxDisplayServer" && !cfg!(target_os = "linux") => {
+            }
             PrefKind::Choice(opts) => {
                 labeled(ui, sp.label, |ui| {
                     let cur = v.as_str().unwrap_or("");
@@ -319,16 +454,25 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 });
                 if sp.key == "gpuPreference" || sp.key == "linuxDisplayServer" {
                     // The window's graphics device and display server are chosen once, when the app starts.
-                    ui.label(egui::RichText::new(tl!("Applies the next time VectorCraft starts.")).color(t.text_dim).size(11.0));
+                    ui.label(
+                        egui::RichText::new(tl!("Applies the next time VectorCraft starts."))
+                            .color(t.text_dim)
+                            .size(11.0),
+                    );
                 }
             }
             PrefKind::Color => {
                 labeled(ui, sp.label, |ui| {
                     let hex = v.as_str().unwrap_or("#000000");
-                    let c = vectorcraft_color::Color::from_hex(hex).map(|c| c.to_rgba8(1.0)).unwrap_or([0, 0, 0, 255]);
+                    let c = vectorcraft_color::Color::from_hex(hex)
+                        .map(|c| c.to_rgba8(1.0))
+                        .unwrap_or([0, 0, 0, 255]);
                     let mut rgb = [c[0], c[1], c[2]];
                     if ui.color_edit_button_srgb(&mut rgb).changed() {
-                        d.fields.insert(sp.key.into(), json!(format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2])));
+                        d.fields.insert(
+                            sp.key.into(),
+                            json!(format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2])),
+                        );
                     }
                     ui.label(egui::RichText::new(hex).color(t.text_dim).size(11.0));
                 });
@@ -337,9 +481,17 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
                 // `auto` plus every registered language, by its own name.
                 labeled(ui, sp.label, |ui| {
                     let cur = v.as_str().unwrap_or("auto");
-                    let codes: Vec<&str> = std::iter::once("auto").chain(crate::i18n::Lang::all().map(|l| l.code())).collect();
-                    let labels: Vec<&str> = std::iter::once(tl!("Auto")).chain(crate::i18n::Lang::all().map(|l| l.name())).collect();
-                    let cur_label = codes.iter().position(|c| c.eq_ignore_ascii_case(cur)).and_then(|i| labels.get(i).copied()).unwrap_or(cur);
+                    let codes: Vec<&str> = std::iter::once("auto")
+                        .chain(crate::i18n::Lang::all().map(|l| l.code()))
+                        .collect();
+                    let labels: Vec<&str> = std::iter::once(tl!("Auto"))
+                        .chain(crate::i18n::Lang::all().map(|l| l.name()))
+                        .collect();
+                    let cur_label = codes
+                        .iter()
+                        .position(|c| c.eq_ignore_ascii_case(cur))
+                        .and_then(|i| labels.get(i).copied())
+                        .unwrap_or(cur);
                     if let Some(i) = widgets::dropdown(ui, sp.key, cur_label, &labels, 260.0)
                         && let Some(code) = codes.get(i)
                     {
@@ -350,7 +502,10 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
             PrefKind::Text => {
                 labeled(ui, sp.label, |ui| {
                     let mut s = v.as_str().unwrap_or("").to_string();
-                    if ui.add(egui::TextEdit::singleline(&mut s).desired_width(260.0)).changed() {
+                    if ui
+                        .add(egui::TextEdit::singleline(&mut s).desired_width(260.0))
+                        .changed()
+                    {
                         d.fields.insert(sp.key.into(), json!(s));
                     }
                 });
@@ -361,7 +516,9 @@ fn category_fields(ui: &mut egui::Ui, d: &mut Dialog, cat: &str) {
 
 /// Is one of the dialog's Units (General, Stroke, Type, East Asian Type) Picas?
 fn picas_in_use(d: &Dialog) -> bool {
-    ["unitsGeneral", "unitsStroke", "unitsType", "unitsAsianType"].iter().any(|k| d.str(k) == vectorcraft_doc::Unit::Picas.key())
+    ["unitsGeneral", "unitsStroke", "unitsType", "unitsAsianType"]
+        .iter()
+        .any(|k| d.str(k) == vectorcraft_doc::Unit::Picas.key())
 }
 
 fn bool_row(ui: &mut egui::Ui, d: &mut Dialog, key: &str, label: &str) {
@@ -375,10 +532,19 @@ fn bool_row(ui: &mut egui::Ui, d: &mut Dialog, key: &str, label: &str) {
 fn labeled(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui::Ui)) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(egui::vec2(210.0, 22.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.set_min_width(210.0);
-            ui.add(egui::Label::new(egui::RichText::new(format!("{}{}", tl!(label), tl!(":"))).color(t.text)).truncate());
-        });
+        ui.allocate_ui_with_layout(
+            egui::vec2(210.0, 22.0),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.set_min_width(210.0);
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!("{}{}", tl!(label), tl!(":"))).color(t.text),
+                    )
+                    .truncate(),
+                );
+            },
+        );
         add(ui);
     });
 }
@@ -398,15 +564,27 @@ mod tests {
             theme::apply(&ctx, brightness);
             for checked in [false, true] {
                 let mut d = Dialog::new("preferences", json!({"showToolTips": checked}));
-                let raw =
-                    egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 200.0))), ..Default::default() };
-                let mut out = ctx.run_ui(raw, |ui| bool_row(ui, &mut d, "showToolTips", "Show Tool Tips"));
+                let raw = egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(400.0, 200.0),
+                    )),
+                    ..Default::default()
+                };
+                let mut out = ctx.run_ui(raw, |ui| {
+                    bool_row(ui, &mut d, "showToolTips", "Show Tool Tips")
+                });
                 out.textures_delta.clear();
                 let outlined = out.shapes.iter().any(|shape| match &shape.shape {
-                    egui::Shape::Rect(r) => r.stroke.width > 0.0 && r.rect.width() <= 24.0 && r.rect.height() <= 24.0,
+                    egui::Shape::Rect(r) => {
+                        r.stroke.width > 0.0 && r.rect.width() <= 24.0 && r.rect.height() <= 24.0
+                    }
                     _ => false,
                 });
-                assert!(outlined, "{brightness:?}, checked={checked}: no checkbox outline");
+                assert!(
+                    outlined,
+                    "{brightness:?}, checked={checked}: no checkbox outline"
+                );
             }
         }
     }
@@ -426,11 +604,21 @@ mod tests {
             ("darkGray", egui::Color32::from_gray(0x5a)),
             ("matchUi", themed),
         ] {
-            app.run("prefs.set", serde_json::json!({"key": "canvasColor", "value": key})).unwrap();
+            app.run(
+                "prefs.set",
+                serde_json::json!({"key": "canvasColor", "value": key}),
+            )
+            .unwrap();
             apply_runtime(&mut app, &ctx);
             assert_eq!(Tokens::get(&ctx).pasteboard, want, "{key}");
         }
-        assert!(app.run("prefs.set", serde_json::json!({"key": "canvasColor", "value": "pink"})).is_err());
+        assert!(
+            app.run(
+                "prefs.set",
+                serde_json::json!({"key": "canvasColor", "value": "pink"})
+            )
+            .is_err()
+        );
     }
 
     fn app() -> VectorcraftApp {
@@ -481,7 +669,10 @@ mod tests {
                 let raw = egui::RawInput {
                     events,
                     time: Some(time),
-                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 300.0))),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(400.0, 300.0),
+                    )),
                     ..Default::default()
                 };
                 let mut out = ctx.run_ui(raw, |ui| {
@@ -494,9 +685,11 @@ mod tests {
             shown.iter().any(|t| t == "The tool tip")
         };
         assert!(hover(&mut a), "on by default");
-        a.run("prefs.set", json!({"key": "showToolTips", "value": false})).unwrap();
+        a.run("prefs.set", json!({"key": "showToolTips", "value": false}))
+            .unwrap();
         assert!(!hover(&mut a), "off: no tool tip");
-        a.run("prefs.set", json!({"key": "showToolTips", "value": true})).unwrap();
+        a.run("prefs.set", json!({"key": "showToolTips", "value": true}))
+            .unwrap();
         assert!(hover(&mut a), "on again");
     }
 
@@ -504,7 +697,11 @@ mod tests {
     fn dialog_ok_with_invalid_value_keeps_dialog_and_prefs() {
         let mut a = app();
         open(&mut a, None);
-        a.ui.dialog.as_mut().unwrap().fields.insert("anchorSize".into(), json!(42));
+        a.ui.dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("anchorSize".into(), json!(42));
         assert!(confirm(&mut a).is_err());
         assert!(a.ui.dialog.is_some());
         assert_eq!(a.session.prefs, Prefs::default());
@@ -513,11 +710,14 @@ mod tests {
     #[test]
     fn prefs_persist_through_ui_state() {
         let mut a = app();
-        a.run("prefs.set", json!({"key": "gridlineEvery", "value": 50})).unwrap();
+        a.run("prefs.set", json!({"key": "gridlineEvery", "value": 50}))
+            .unwrap();
         snapshot(&mut a);
         let saved = serde_json::to_vec(&a.ui).unwrap();
         let mut b = app();
-        b.ui = serde_json::from_slice::<crate::UiState>(&saved).unwrap().sanitized();
+        b.ui = serde_json::from_slice::<crate::UiState>(&saved)
+            .unwrap()
+            .sanitized();
         restore(&mut b);
         assert_eq!(b.session.prefs.gridline_every, 50.0);
     }
@@ -553,14 +753,29 @@ mod tests {
         out.textures_delta.clear();
         let mut shown = vec![];
         out.shapes.iter().for_each(|c| texts(&c.shape, &mut shown));
-        assert!(shown.iter().any(|t| t.starts_with("Graphics Processor")), "{shown:?}");
+        assert!(
+            shown.iter().any(|t| t.starts_with("Graphics Processor")),
+            "{shown:?}"
+        );
         assert!(shown.iter().any(|t| t == "Automatic"), "{shown:?}");
-        assert!(shown.iter().any(|t| t == "Applies the next time VectorCraft starts."), "{shown:?}");
-        a.ui.dialog.as_mut().unwrap().fields.insert("gpuPreference".into(), json!("highPerformance"));
+        assert!(
+            shown
+                .iter()
+                .any(|t| t == "Applies the next time VectorCraft starts."),
+            "{shown:?}"
+        );
+        a.ui.dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("gpuPreference".into(), json!("highPerformance"));
         confirm(&mut a).unwrap();
         assert_eq!(a.session.prefs.gpu_preference, "highPerformance");
         let saved: Value = serde_json::from_slice(&serde_json::to_vec(&a.ui).unwrap()).unwrap();
-        assert_eq!(saved["engine_prefs"]["gpuPreference"], json!("highPerformance"));
+        assert_eq!(
+            saved["engine_prefs"]["gpuPreference"],
+            json!("highPerformance")
+        );
     }
 
     /// User Interface › System Title Bar: shown with its next-launch note, applied by OK and
@@ -586,9 +801,23 @@ mod tests {
         let mut shown = vec![];
         out.shapes.iter().for_each(|c| texts(&c.shape, &mut shown));
         let supported = cfg!(all(not(target_arch = "wasm32"), not(target_os = "macos")));
-        assert_eq!(shown.iter().any(|t| t == "System Title Bar"), supported, "{shown:?}");
-        assert_eq!(shown.iter().any(|t| t == "Applies the next time VectorCraft starts."), supported, "{shown:?}");
-        a.ui.dialog.as_mut().unwrap().fields.insert("systemTitleBar".into(), json!(true));
+        assert_eq!(
+            shown.iter().any(|t| t == "System Title Bar"),
+            supported,
+            "{shown:?}"
+        );
+        assert_eq!(
+            shown
+                .iter()
+                .any(|t| t == "Applies the next time VectorCraft starts."),
+            supported,
+            "{shown:?}"
+        );
+        a.ui.dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("systemTitleBar".into(), json!(true));
         confirm(&mut a).unwrap();
         assert!(a.session.prefs.system_title_bar);
         let saved: Value = serde_json::from_slice(&serde_json::to_vec(&a.ui).unwrap()).unwrap();
@@ -612,7 +841,11 @@ mod tests {
         let read = |ctx: &egui::Context| widgets::typed_unit(ctx, vectorcraft_doc::Unit::Picas);
         frame(&mut a);
         assert_eq!(read(&ctx), vectorcraft_doc::Unit::Points, "on by default");
-        a.run("prefs.set", json!({"key": "numbersWithoutUnitsArePoints", "value": false})).unwrap();
+        a.run(
+            "prefs.set",
+            json!({"key": "numbersWithoutUnitsArePoints", "value": false}),
+        )
+        .unwrap();
         frame(&mut a);
         assert_eq!(read(&ctx), vectorcraft_doc::Unit::Picas, "off");
         // The checkbox: dimmed with every unit in points, enabled once a unit is Picas.
@@ -627,8 +860,12 @@ mod tests {
     /// choices this version offers are kept (#502).
     #[test]
     fn a_graphics_processor_this_version_does_not_offer_reads_as_automatic() {
-        for (saved, read) in [("powerSaving", "automatic"), ("turbo", "automatic"), ("lowPower", "lowPower"), ("highPerformance", "highPerformance")]
-        {
+        for (saved, read) in [
+            ("powerSaving", "automatic"),
+            ("turbo", "automatic"),
+            ("lowPower", "lowPower"),
+            ("highPerformance", "highPerformance"),
+        ] {
             let mut a = app();
             a.ui.engine_prefs = json!({"gpuPreference": saved});
             restore(&mut a);
@@ -651,7 +888,11 @@ mod tests {
         assert!(a.session.prefs.font_names_in_english);
         open(&mut a, Some("Type"));
         assert_eq!(a.ui.dialog.as_ref().unwrap().str("__category"), "Type");
-        a.ui.dialog.as_mut().unwrap().fields.insert("fontNamesInEnglish".into(), json!(false));
+        a.ui.dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("fontNamesInEnglish".into(), json!(false));
         confirm(&mut a).unwrap();
         assert!(a.ui.dialog.is_none());
         assert!(!a.session.prefs.font_names_in_english);
@@ -673,11 +914,18 @@ mod tests {
         open(&mut a, Some("Hyphenation"));
         let d = a.ui.dialog.as_mut().unwrap();
         assert_eq!(d.str("__category"), "Hyphenation");
-        d.fields.insert("hyphenationExceptions".into(), json!("typography, hap-pen"));
+        d.fields
+            .insert("hyphenationExceptions".into(), json!("typography, hap-pen"));
         confirm(&mut a).unwrap();
         assert!(a.ui.dialog.is_none());
-        assert_eq!(a.session.prefs.hyphenation_exceptions, "typography, hap-pen");
-        assert_eq!(vectorcraft_text::hyphenation_exceptions(), "typography, hap-pen");
+        assert_eq!(
+            a.session.prefs.hyphenation_exceptions,
+            "typography, hap-pen"
+        );
+        assert_eq!(
+            vectorcraft_text::hyphenation_exceptions(),
+            "typography, hap-pen"
+        );
         assert!(vectorcraft_text::hyphen::hyphen_points("typography").is_empty());
         assert_eq!(vectorcraft_text::hyphen::hyphen_points("happen"), vec![3]);
     }

@@ -240,7 +240,11 @@ impl IHidServer {
                 "ResetIsSixAxisSensorDeviceNewlyAssigned",
             ),
             (91, Some(Self::activate_gesture), "ActivateGesture"),
-            (92, Some(Self::set_gesture_output_ranges), "SetGestureOutputRanges"),
+            (
+                92,
+                Some(Self::set_gesture_output_ranges),
+                "SetGestureOutputRanges",
+            ),
             (
                 100,
                 Some(Self::set_supported_npad_style_set),
@@ -3378,11 +3382,22 @@ mod tests {
         resource_manager.lock().initialize();
         let npad = resource_manager.lock().get_npad().unwrap();
         let aruid = 0x1234_5678_9abc_def0_u64;
-        assert!(npad.lock().npad_resource_mut().register_applet_resource_user_id(aruid).is_success());
-        npad.lock().npad_resource_mut().set_app_resource_user_id(aruid);
-        let untouched = npad.lock().npad_resource().get_home_protection_enabled(aruid, NpadIdType::Player1);
+        assert!(npad
+            .lock()
+            .npad_resource_mut()
+            .register_applet_resource_user_id(aruid)
+            .is_success());
+        npad.lock()
+            .npad_resource_mut()
+            .set_app_resource_user_id(aruid);
+        let untouched = npad
+            .lock()
+            .npad_resource()
+            .get_home_protection_enabled(aruid, NpadIdType::Player1);
         let server = IHidServer::new(
-            SystemRef::null(), resource_manager, firmware_settings,
+            SystemRef::null(),
+            resource_manager,
+            firmware_settings,
             Arc::new(parking_lot::Mutex::new(BTreeMap::new())),
         );
         let callback = server.handlers()[&132].handler_callback.unwrap();
@@ -3391,25 +3406,47 @@ mod tests {
             // One byte bool, three padding bytes, u32 ID, u64 ARUID.
             // Poison padding/trailing words so misalignment cannot pass by luck.
             ctx.cmd_buf[2..8].copy_from_slice(&[
-                0xa5a5_a500 | u32::from(enabled), NpadIdType::Player2 as u32,
-                aruid as u32, (aruid >> 32) as u32, 0, 0,
+                0xa5a5_a500 | u32::from(enabled),
+                NpadIdType::Player2 as u32,
+                aruid as u32,
+                (aruid >> 32) as u32,
+                0,
+                0,
             ]);
             callback(&server, &mut ctx);
             assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
             let npad = npad.lock();
-            assert_eq!(npad.npad_resource().get_home_protection_enabled(aruid, NpadIdType::Player2), Ok(enabled));
-            assert_eq!(npad.npad_resource().get_home_protection_enabled(aruid, NpadIdType::Player1), untouched);
+            assert_eq!(
+                npad.npad_resource()
+                    .get_home_protection_enabled(aruid, NpadIdType::Player2),
+                Ok(enabled)
+            );
+            assert_eq!(
+                npad.npad_resource()
+                    .get_home_protection_enabled(aruid, NpadIdType::Player1),
+                untouched
+            );
         }
         let callback = server.handlers()[&134].handler_callback.unwrap();
         for enabled in [true, false] {
             let mut ctx = HLERequestContext::new();
             ctx.cmd_buf[2..8].copy_from_slice(&[
-                u32::from(enabled), 0xcccc_cccc, aruid as u32, (aruid >> 32) as u32, 0, 0,
+                u32::from(enabled),
+                0xcccc_cccc,
+                aruid as u32,
+                (aruid >> 32) as u32,
+                0,
+                0,
             ]);
             callback(&server, &mut ctx);
             assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
-            assert_eq!(npad.lock().npad_resource().get_active_data()
-                .get_npad_analog_stick_use_center_clamp(), enabled);
+            assert_eq!(
+                npad.lock()
+                    .npad_resource()
+                    .get_active_data()
+                    .get_npad_analog_stick_use_center_clamp(),
+                enabled
+            );
         }
     }
 
@@ -3417,26 +3454,35 @@ mod tests {
     fn motion_boolean_commands_preserve_byte_aligned_sensor_handle() {
         let firmware_settings = Arc::new(HidFirmwareSettings::new());
         let resource_manager = Arc::new(parking_lot::Mutex::new(ResourceManager::new(
-            Arc::clone(&firmware_settings), Arc::new(parking_lot::Mutex::new(HIDCore::new())),
+            Arc::clone(&firmware_settings),
+            Arc::new(parking_lot::Mutex::new(HIDCore::new())),
         )));
         resource_manager.lock().initialize();
         let six_axis = resource_manager.lock().get_six_axis().unwrap();
         let server = IHidServer::new(
-            SystemRef::null(), resource_manager, firmware_settings,
+            SystemRef::null(),
+            resource_manager,
+            firmware_settings,
             Arc::new(parking_lot::Mutex::new(BTreeMap::new())),
         );
         let handle = SixAxisSensorHandle {
-            npad_type: NpadStyleIndex::Fullkey, npad_id: 1,
-            device_index: DeviceIndex::Left, _padding: 0,
+            npad_type: NpadStyleIndex::Fullkey,
+            npad_id: 1,
+            device_index: DeviceIndex::Left,
+            _padding: 0,
         };
         for command in [69, 84] {
             let callback = server.handlers()[&command].handler_callback.unwrap();
             for enabled in [true, false] {
                 let mut ctx = HLERequestContext::new();
                 ctx.cmd_buf[2..6].copy_from_slice(&[
-                    u32::from(enabled) | ((handle.npad_type as u32) << 8)
-                        | ((handle.npad_id as u32) << 16) | ((handle.device_index as u32) << 24),
-                    0xaaaa_aa00, 0x5566_7788, 0x1122_3344,
+                    u32::from(enabled)
+                        | ((handle.npad_type as u32) << 8)
+                        | ((handle.npad_id as u32) << 16)
+                        | ((handle.device_index as u32) << 24),
+                    0xaaaa_aa00,
+                    0x5566_7788,
+                    0x1122_3344,
                 ]);
                 callback(&server, &mut ctx);
                 assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());
@@ -3459,12 +3505,19 @@ mod tests {
             Arc::new(parking_lot::Mutex::new(HIDCore::new())),
         )));
         let server = IHidServer::new(
-            SystemRef::null(), resource_manager, firmware_settings,
+            SystemRef::null(),
+            resource_manager,
+            firmware_settings,
             Arc::new(parking_lot::Mutex::new(BTreeMap::new())),
         );
-        let info = server.handlers().get(&92).expect("HID command 92 is registered");
+        let info = server
+            .handlers()
+            .get(&92)
+            .expect("HID command 92 is registered");
         assert_eq!(info.name, "SetGestureOutputRanges");
-        let callback = info.handler_callback.expect("HID command 92 is implemented");
+        let callback = info
+            .handler_callback
+            .expect("HID command 92 is implemented");
         // No gesture activation or guest resource is needed. Eden does not
         // interpret these values as signed, clamp them, or reject any range.
         for parameters in [[0; 4], [1, 2, 3, 4], [u32::MAX, 0x8000_0000, 0, u32::MAX]] {

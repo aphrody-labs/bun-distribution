@@ -50,7 +50,9 @@ fn own_guid(style: &str) -> String {
 /// Is `g` the GUID DeckCraft writes for one of its own styles?
 pub fn is_own_guid(g: &str) -> bool {
     let up = g.to_ascii_uppercase();
-    deckcraft_model::table::table_styles().iter().any(|(id, _)| own_guid(id) == up)
+    deckcraft_model::table::table_styles()
+        .iter()
+        .any(|(id, _)| own_guid(id) == up)
 }
 
 /// Table style GUID → our style id (or the GUID itself when unknown).
@@ -64,7 +66,11 @@ pub fn style_from_guid(g: &str) -> String {
             return id;
         }
     }
-    if g.is_empty() { "none".into() } else { g.to_string() }
+    if g.is_empty() {
+        "none".into()
+    } else {
+        g.to_string()
+    }
 }
 
 /// GUID to write for our style id, and whether a definition must be written.
@@ -77,8 +83,14 @@ pub fn guid_for_style(style: &str) -> (String, bool) {
     {
         return (g.to_string(), false);
     }
-    let known = deckcraft_model::table::table_styles().iter().any(|(id, _)| id == style);
-    if known { (own_guid(style), true) } else { ("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}".into(), false) }
+    let known = deckcraft_model::table::table_styles()
+        .iter()
+        .any(|(id, _)| id == style);
+    if known {
+        (own_guid(style), true)
+    } else {
+        ("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}".into(), false)
+    }
 }
 
 fn clr(w: &mut W, slot: &str, mods: &[(&str, i32)]) {
@@ -104,7 +116,14 @@ fn solid(w: &mut W, slot: &str, mods: &[(&str, i32)]) {
 fn borders(w: &mut W, b: Option<(&str, &[(&str, i32)], i32)>) {
     w.open0("a:tcBdr");
     if let Some((slot, mods, width)) = b {
-        for side in ["a:left", "a:right", "a:top", "a:bottom", "a:insideH", "a:insideV"] {
+        for side in [
+            "a:left",
+            "a:right",
+            "a:top",
+            "a:bottom",
+            "a:insideH",
+            "a:insideV",
+        ] {
             w.open0(side);
             w.open("a:ln", A::new().a("w", width).a("cmpd", "sng"));
             w.open0("a:solidFill");
@@ -138,63 +157,175 @@ fn style_def(w: &mut W, id: &str, name: &str) {
         _ => "accent1",
     };
     let acc: &str = acc;
-    w.open("a:tblStyle", A::new().a("styleId", own_guid(id)).a("styleName", name));
-    let part =
-        |w: &mut W, tag: &str, bold: bool, text: Option<&str>, fill: Option<(&str, &[(&str, i32)])>, bdr: Option<(&str, &[(&str, i32)], i32)>| {
-            w.open0(tag);
-            if bold || text.is_some() {
-                txt(w, bold, text);
-            }
-            w.open0("a:tcStyle");
-            borders(w, bdr);
-            if let Some((s, m)) = fill {
-                solid(w, s, m);
-            }
-            w.close("a:tcStyle");
-            w.close(tag);
-        };
+    w.open(
+        "a:tblStyle",
+        A::new().a("styleId", own_guid(id)).a("styleName", name),
+    );
+    let part = |w: &mut W,
+                tag: &str,
+                bold: bool,
+                text: Option<&str>,
+                fill: Option<(&str, &[(&str, i32)])>,
+                bdr: Option<(&str, &[(&str, i32)], i32)>| {
+        w.open0(tag);
+        if bold || text.is_some() {
+            txt(w, bold, text);
+        }
+        w.open0("a:tcStyle");
+        borders(w, bdr);
+        if let Some((s, m)) = fill {
+            solid(w, s, m);
+        }
+        w.close("a:tcStyle");
+        w.close(tag);
+    };
     match kind {
         "grid" => {
-            part(w, "a:wholeTbl", false, Some("dk1"), None, Some(("dk1", &[], 9525)));
+            part(
+                w,
+                "a:wholeTbl",
+                false,
+                Some("dk1"),
+                None,
+                Some(("dk1", &[], 9525)),
+            );
         }
         "light1" => {
             part(w, "a:wholeTbl", false, Some("dk1"), None, None);
-            part(w, "a:band1H", false, None, Some((acc, &[("a:tint", 20000)])), None);
-            part(w, "a:band1V", false, None, Some((acc, &[("a:tint", 20000)])), None);
+            part(
+                w,
+                "a:band1H",
+                false,
+                None,
+                Some((acc, &[("a:tint", 20000)])),
+                None,
+            );
+            part(
+                w,
+                "a:band1V",
+                false,
+                None,
+                Some((acc, &[("a:tint", 20000)])),
+                None,
+            );
             part(w, "a:lastCol", true, None, None, None);
             part(w, "a:firstCol", true, None, None, None);
             part(w, "a:lastRow", true, None, None, None);
             part(w, "a:firstRow", true, None, None, Some((acc, &[], 12700)));
         }
         "light2" => {
-            part(w, "a:wholeTbl", false, Some("dk1"), None, Some((acc, &[], 12700)));
+            part(
+                w,
+                "a:wholeTbl",
+                false,
+                Some("dk1"),
+                None,
+                Some((acc, &[], 12700)),
+            );
             // Schema order: … lastCol, firstCol, lastRow, …, firstRow.
             part(w, "a:firstCol", true, None, None, None);
             part(w, "a:lastRow", true, None, None, None);
-            part(w, "a:firstRow", true, Some("lt1"), Some((acc, &[])), Some((acc, &[], 12700)));
+            part(
+                w,
+                "a:firstRow",
+                true,
+                Some("lt1"),
+                Some((acc, &[])),
+                Some((acc, &[], 12700)),
+            );
         }
         "dark1" => {
-            part(w, "a:wholeTbl", false, Some("lt1"), Some((acc, &[("a:shade", 75000)])), Some(("lt1", &[], 12700)));
-            part(w, "a:band1H", false, None, Some((acc, &[("a:shade", 60000)])), None);
-            part(w, "a:band1V", false, None, Some((acc, &[("a:shade", 60000)])), None);
+            part(
+                w,
+                "a:wholeTbl",
+                false,
+                Some("lt1"),
+                Some((acc, &[("a:shade", 75000)])),
+                Some(("lt1", &[], 12700)),
+            );
+            part(
+                w,
+                "a:band1H",
+                false,
+                None,
+                Some((acc, &[("a:shade", 60000)])),
+                None,
+            );
+            part(
+                w,
+                "a:band1V",
+                false,
+                None,
+                Some((acc, &[("a:shade", 60000)])),
+                None,
+            );
             part(w, "a:firstCol", true, None, None, None);
             part(w, "a:lastRow", true, None, None, None);
             part(w, "a:firstRow", true, Some("lt1"), Some(("dk1", &[])), None);
         }
         "medium4" => {
-            part(w, "a:wholeTbl", false, Some("dk1"), Some((acc, &[("a:tint", 20000)])), Some((acc, &[], 9525)));
-            part(w, "a:band1H", false, None, Some((acc, &[("a:tint", 40000)])), None);
-            part(w, "a:band1V", false, None, Some((acc, &[("a:tint", 40000)])), None);
+            part(
+                w,
+                "a:wholeTbl",
+                false,
+                Some("dk1"),
+                Some((acc, &[("a:tint", 20000)])),
+                Some((acc, &[], 9525)),
+            );
+            part(
+                w,
+                "a:band1H",
+                false,
+                None,
+                Some((acc, &[("a:tint", 40000)])),
+                None,
+            );
+            part(
+                w,
+                "a:band1V",
+                false,
+                None,
+                Some((acc, &[("a:tint", 40000)])),
+                None,
+            );
             part(w, "a:lastCol", true, None, None, None);
             part(w, "a:firstCol", true, None, None, None);
             part(w, "a:lastRow", true, None, None, None);
-            part(w, "a:firstRow", true, None, Some((acc, &[("a:tint", 40000)])), None);
+            part(
+                w,
+                "a:firstRow",
+                true,
+                None,
+                Some((acc, &[("a:tint", 40000)])),
+                None,
+            );
         }
         _ => {
             // medium2
-            part(w, "a:wholeTbl", false, Some("dk1"), Some((acc, &[("a:tint", 20000)])), Some(("lt1", &[], 12700)));
-            part(w, "a:band1H", false, None, Some((acc, &[("a:tint", 40000)])), None);
-            part(w, "a:band1V", false, None, Some((acc, &[("a:tint", 40000)])), None);
+            part(
+                w,
+                "a:wholeTbl",
+                false,
+                Some("dk1"),
+                Some((acc, &[("a:tint", 20000)])),
+                Some(("lt1", &[], 12700)),
+            );
+            part(
+                w,
+                "a:band1H",
+                false,
+                None,
+                Some((acc, &[("a:tint", 40000)])),
+                None,
+            );
+            part(
+                w,
+                "a:band1V",
+                false,
+                None,
+                Some((acc, &[("a:tint", 40000)])),
+                None,
+            );
             part(w, "a:lastCol", true, Some("lt1"), Some((acc, &[])), None);
             part(w, "a:firstCol", true, Some("lt1"), Some((acc, &[])), None);
             part(w, "a:lastRow", true, Some("lt1"), Some((acc, &[])), None);
@@ -206,9 +337,17 @@ fn style_def(w: &mut W, id: &str, name: &str) {
 
 /// `ppt/tableStyles.xml` with definitions for the styles in `used`: ours, generated, and those the
 /// opened file defined (`defs`), written back as they were read.
-pub fn table_styles_xml(used: &[String], defs: &[deckcraft_model::table::TableStyleDef]) -> Vec<u8> {
+pub fn table_styles_xml(
+    used: &[String],
+    defs: &[deckcraft_model::table::TableStyleDef],
+) -> Vec<u8> {
     let mut w = W::new();
-    w.open("a:tblStyleLst", A::new().a("xmlns:a", NS_A).a("def", "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"));
+    w.open(
+        "a:tblStyleLst",
+        A::new()
+            .a("xmlns:a", NS_A)
+            .a("def", "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"),
+    );
     let names = deckcraft_model::table::table_styles();
     let mut done: Vec<&str> = vec![];
     for s in used {
@@ -226,7 +365,11 @@ pub fn table_styles_xml(used: &[String], defs: &[deckcraft_model::table::TableSt
         if !define {
             continue;
         }
-        let name = names.iter().find(|(id, _)| id == s).map(|(_, n)| format!("DeckCraft {n}")).unwrap_or_else(|| s.clone());
+        let name = names
+            .iter()
+            .find(|(id, _)| id == s)
+            .map(|(_, n)| format!("DeckCraft {n}"))
+            .unwrap_or_else(|| s.clone());
         style_def(&mut w, s, &name);
     }
     w.close("a:tblStyleLst");
@@ -240,16 +383,26 @@ mod tests {
     #[test]
     fn style_parts_follow_schema_order() {
         const ORDER: [&str; 14] = [
-            "tblBg", "wholeTbl", "band1H", "band2H", "band1V", "band2V", "lastCol", "firstCol", "lastRow", "seCell", "swCell", "firstRow", "neCell",
-            "nwCell",
+            "tblBg", "wholeTbl", "band1H", "band2H", "band1V", "band2V", "lastCol", "firstCol",
+            "lastRow", "seCell", "swCell", "firstRow", "neCell", "nwCell",
         ];
-        let used: Vec<String> = deckcraft_model::table::table_styles().into_iter().map(|(id, _)| id).collect();
+        let used: Vec<String> = deckcraft_model::table::table_styles()
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
         let d = crate::xml::parse(&table_styles_xml(&used, &[])).unwrap();
         let mut n = 0;
         for st in d.root.children_named("tblStyle") {
             n += 1;
-            let pos: Vec<usize> = st.elements().map(|e| ORDER.iter().position(|o| *o == e.local()).unwrap()).collect();
-            assert!(pos.windows(2).all(|w| w[0] < w[1]), "{:?}: {pos:?}", st.attr("styleName"));
+            let pos: Vec<usize> = st
+                .elements()
+                .map(|e| ORDER.iter().position(|o| *o == e.local()).unwrap())
+                .collect();
+            assert!(
+                pos.windows(2).all(|w| w[0] < w[1]),
+                "{:?}: {pos:?}",
+                st.attr("styleName")
+            );
         }
         assert!(n > 30);
     }
@@ -261,7 +414,13 @@ mod tests {
             assert_eq!(style_from_guid(&g), id, "{id} via {g}");
             assert_eq!(g.len(), 38);
         }
-        assert_eq!(style_from_guid("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"), "medium2-accent1");
-        assert_eq!(style_from_guid("{ABCDEF00-0000-0000-0000-000000000000}"), "{ABCDEF00-0000-0000-0000-000000000000}");
+        assert_eq!(
+            style_from_guid("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"),
+            "medium2-accent1"
+        );
+        assert_eq!(
+            style_from_guid("{ABCDEF00-0000-0000-0000-000000000000}"),
+            "{ABCDEF00-0000-0000-0000-000000000000}"
+        );
     }
 }

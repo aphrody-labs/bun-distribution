@@ -17,7 +17,10 @@ pub fn shortcut_matches(shortcut: &str, key: &str, mods: Mods) -> bool {
         },
     };
     let has = |m: &str| ms.iter().any(|x| x.eq_ignore_ascii_case(m));
-    k.eq_ignore_ascii_case(key) && (has("cmd") || has("ctrl")) == mods.cmd && has("shift") == mods.shift && (has("alt") || has("option")) == mods.alt
+    k.eq_ignore_ascii_case(key)
+        && (has("cmd") || has("ctrl")) == mods.cmd
+        && has("shift") == mods.shift
+        && (has("alt") || has("option")) == mods.alt
 }
 
 /// A key name in one spelling: lower case, `ArrowLeft` → `left`, and egui's names for
@@ -51,7 +54,9 @@ impl Session {
     pub fn key(&mut self, key: &str, mods: Mods) -> Result<Value> {
         self.end_composition();
         let editing = self.active().is_some_and(|d| d.selection.text.is_some());
-        let has_shapes = self.active().is_some_and(|d| !d.selection.shapes.is_empty());
+        let has_shapes = self
+            .active()
+            .is_some_and(|d| !d.selection.shapes.is_empty());
         let k = key_token(key);
         let k = k.as_str();
         if self.tool.drawing_freeform() && matches!(k, "enter" | "return" | "escape") {
@@ -63,16 +68,32 @@ impl Session {
         }
         if editing && !mods.cmd {
             let r = match k {
-                "enter" | "return" => Some(self.execute("text.insert", &json!({"text": if mods.shift { "\u{b}" } else { "\n" }}))),
+                "enter" | "return" => Some(self.execute(
+                    "text.insert",
+                    &json!({"text": if mods.shift { "\u{b}" } else { "\n" }}),
+                )),
                 "escape" | "esc" => Some(self.execute("text.exit", &json!({}))),
                 "tab" => {
                     // Tab at the start of a paragraph changes the list level; elsewhere it types a tab.
-                    let at_start = self.active().and_then(|d| d.selection.text.as_ref()).is_some_and(|t| t.ordered().0.1 == 0 || t.is_range());
-                    let in_cell = self.active().and_then(|d| d.selection.text.as_ref()).is_some_and(|t| t.cell.is_some());
+                    let at_start = self
+                        .active()
+                        .and_then(|d| d.selection.text.as_ref())
+                        .is_some_and(|t| t.ordered().0.1 == 0 || t.is_range());
+                    let in_cell = self
+                        .active()
+                        .and_then(|d| d.selection.text.as_ref())
+                        .is_some_and(|t| t.cell.is_some());
                     if in_cell {
                         Some(self.next_cell(mods.shift))
                     } else if at_start {
-                        Some(self.execute(if mods.shift { "format.outdent" } else { "format.indent" }, &json!({})))
+                        Some(self.execute(
+                            if mods.shift {
+                                "format.outdent"
+                            } else {
+                                "format.indent"
+                            },
+                            &json!({}),
+                        ))
                     } else {
                         Some(self.execute("text.insert", &json!({"text": "\t"})))
                     }
@@ -153,7 +174,13 @@ impl Session {
             "space" | " " => "Space",
             _ => k,
         };
-        let found = crate::command_specs().iter().find(|c| c.shortcut.is_some_and(|s| shortcut_matches(s, key_name, mods))).map(|c| c.id);
+        let found = crate::command_specs()
+            .iter()
+            .find(|c| {
+                c.shortcut
+                    .is_some_and(|s| shortcut_matches(s, key_name, mods))
+            })
+            .map(|c| c.id);
         if let Some(id) = found {
             let r = self.execute(id, &json!({}))?;
             return Ok(json!({"handled": true, "command": id, "result": r}));
@@ -166,7 +193,11 @@ impl Session {
     /// moves by paragraph; Ctrl+Home/End (Cmd+Up/Down on the Mac) go to the ends of the text and
     /// Cmd+Left/Right on the Mac to the ends of the line. Shift extends the selection.
     fn text_key(&self, k: &str, mods: Mods) -> Option<(&'static str, Value)> {
-        let word = if self.mac_keys { mods.alt && !mods.cmd } else { mods.cmd && !mods.alt };
+        let word = if self.mac_keys {
+            mods.alt && !mods.cmd
+        } else {
+            mods.cmd && !mods.alt
+        };
         let mac_cmd = self.mac_keys && mods.cmd && !mods.alt;
         if mods.cmd && !mods.alt && !mods.shift {
             // Ctrl+] / Ctrl+[ grow and shrink the font, like Ctrl+Shift+> / <.
@@ -209,7 +240,9 @@ impl Session {
     pub fn type_text(&mut self, text: &str) -> Result<Value> {
         let st = self.doc()?;
         if st.selection.text.is_none() {
-            let Some(id) = st.selection.shapes.first().copied() else { return Ok(json!({"handled": false})) };
+            let Some(id) = st.selection.shapes.first().copied() else {
+                return Ok(json!({"handled": false}));
+            };
             if st.selection.shapes.len() != 1 {
                 return Ok(json!({"handled": false}));
             }
@@ -250,7 +283,9 @@ impl Session {
         if st.selection.text.is_some() {
             return Ok(true);
         }
-        let Some(id) = st.selection.shapes.first().copied() else { return Ok(false) };
+        let Some(id) = st.selection.shapes.first().copied() else {
+            return Ok(false);
+        };
         if st.selection.shapes.len() != 1 || text.is_empty() {
             return Ok(false);
         }
@@ -261,11 +296,20 @@ impl Session {
 
     fn cycle_selection(&mut self, forward: bool) -> Result<()> {
         let st = self.doc()?;
-        let ids: Vec<_> = st.shapes().iter().filter(|s| !s.hidden).map(|s| s.id).collect();
+        let ids: Vec<_> = st
+            .shapes()
+            .iter()
+            .filter(|s| !s.hidden)
+            .map(|s| s.id)
+            .collect();
         if ids.is_empty() {
             return Ok(());
         }
-        let cur = st.selection.shapes.first().and_then(|c| ids.iter().position(|x| x == c));
+        let cur = st
+            .selection
+            .shapes
+            .first()
+            .and_then(|c| ids.iter().position(|x| x == c));
         let n = ids.len();
         let next = match cur {
             Some(i) if forward => (i + 1) % n,
@@ -282,9 +326,16 @@ impl Session {
 
     fn next_cell(&mut self, back: bool) -> Result<Value> {
         let st = self.doc()?;
-        let Some(t) = st.selection.text.clone() else { return Ok(Value::Null) };
-        let Some((r, c)) = t.cell else { return Ok(Value::Null) };
-        let Some(deckcraft_model::ShapeKind::Table(tb)) = st.shape(t.shape).map(|s| s.kind.clone()) else { return Ok(Value::Null) };
+        let Some(t) = st.selection.text.clone() else {
+            return Ok(Value::Null);
+        };
+        let Some((r, c)) = t.cell else {
+            return Ok(Value::Null);
+        };
+        let Some(deckcraft_model::ShapeKind::Table(tb)) = st.shape(t.shape).map(|s| s.kind.clone())
+        else {
+            return Ok(Value::Null);
+        };
         let (nr, nc) = (tb.n_rows(), tb.n_cols());
         let idx = r * nc + c;
         if !back && idx + 1 >= nr * nc {
@@ -293,7 +344,10 @@ impl Session {
             return self.execute("text.edit", &json!({"id": t.shape, "cell": [r + 1, 0]}));
         }
         let ni = if back { idx.saturating_sub(1) } else { idx + 1 };
-        self.execute("text.edit", &json!({"id": t.shape, "cell": [ni / nc.max(1), ni % nc.max(1)]}))?;
+        self.execute(
+            "text.edit",
+            &json!({"id": t.shape, "cell": [ni / nc.max(1), ni % nc.max(1)]}),
+        )?;
         self.execute("text.selectAll", &json!({}))
     }
 }
@@ -324,7 +378,15 @@ mod tests {
         s.key("Escape", Mods::default()).unwrap();
         let t = s.execute("text.get", &json!({"id": title})).unwrap();
         assert_eq!(t["text"], "Hi\nther");
-        let r = s.key("b", Mods { cmd: true, ..Default::default() }).unwrap();
+        let r = s
+            .key(
+                "b",
+                Mods {
+                    cmd: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
         assert_eq!(r["command"], "format.bold");
         s.key("Right", Mods::default()).unwrap();
         s.key("Delete", Mods::default()).unwrap();

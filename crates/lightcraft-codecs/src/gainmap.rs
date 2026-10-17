@@ -94,12 +94,16 @@ impl GainMapMeta {
         }
         p.push(flags);
         let unsigned = |p: &mut Vec<u8>, v: f32| {
-            let n = (v as f64 * DENOMINATOR as f64).round().clamp(0.0, u32::MAX as f64) as u32;
+            let n = (v as f64 * DENOMINATOR as f64)
+                .round()
+                .clamp(0.0, u32::MAX as f64) as u32;
             p.extend_from_slice(&n.to_be_bytes());
             p.extend_from_slice(&DENOMINATOR.to_be_bytes());
         };
         let signed = |p: &mut Vec<u8>, v: f32| {
-            let n = (v as f64 * DENOMINATOR as f64).round().clamp(i32::MIN as f64, i32::MAX as f64) as i32;
+            let n = (v as f64 * DENOMINATOR as f64)
+                .round()
+                .clamp(i32::MIN as f64, i32::MAX as f64) as i32;
             p.extend_from_slice(&n.to_be_bytes());
             p.extend_from_slice(&DENOMINATOR.to_be_bytes());
         };
@@ -163,7 +167,13 @@ impl GainMapMeta {
     }
 
     fn fill_from_first(&mut self) {
-        for a in [&mut self.min, &mut self.max, &mut self.gamma, &mut self.base_offset, &mut self.alternate_offset] {
+        for a in [
+            &mut self.min,
+            &mut self.max,
+            &mut self.gamma,
+            &mut self.base_offset,
+            &mut self.alternate_offset,
+        ] {
             a[1] = a[0];
             a[2] = a[0];
         }
@@ -175,13 +185,19 @@ impl GainMapMeta {
         if !xmp.contains("hdrgm:") {
             return None;
         }
-        let base_rendition_hdr = xmp_values(xmp, "BaseRenditionIsHDR").is_some_and(|v| v.first().is_some_and(|s| s.eq_ignore_ascii_case("true")));
+        let base_rendition_hdr = xmp_values(xmp, "BaseRenditionIsHDR")
+            .is_some_and(|v| v.first().is_some_and(|s| s.eq_ignore_ascii_case("true")));
         if base_rendition_hdr {
             return None;
         }
         let get = |name: &str, default: f32| -> Option<([f32; 3], bool)> {
-            let Some(v) = xmp_values(xmp, name) else { return Some(([default; 3], false)) };
-            let f: Vec<f32> = v.iter().map(|s| s.trim().parse::<f32>().ok()).collect::<Option<_>>()?;
+            let Some(v) = xmp_values(xmp, name) else {
+                return Some(([default; 3], false));
+            };
+            let f: Vec<f32> = v
+                .iter()
+                .map(|s| s.trim().parse::<f32>().ok())
+                .collect::<Option<_>>()?;
             match f.as_slice() {
                 [a] => Some(([*a; 3], false)),
                 [a, b, c] => Some(([*a, *b, *c], true)),
@@ -216,13 +232,31 @@ impl GainMapMeta {
     /// The gain map image's XMP: the Adobe `hdrgm` parameters (read by Android and Chrome, which
     /// ignore the ISO payload) and Apple's description of the same map (what iMessage keeps).
     pub fn to_gain_map_xmp(&self) -> String {
-        let names = ["GainMapMin", "GainMapMax", "Gamma", "OffsetSDR", "OffsetHDR"];
-        let values = [&self.min, &self.max, &self.gamma, &self.base_offset, &self.alternate_offset];
+        let names = [
+            "GainMapMin",
+            "GainMapMax",
+            "Gamma",
+            "OffsetSDR",
+            "OffsetHDR",
+        ];
+        let values = [
+            &self.min,
+            &self.max,
+            &self.gamma,
+            &self.base_offset,
+            &self.alternate_offset,
+        ];
         let uniform = |v: &[f32; 3]| !self.multichannel || (v[0] == v[1] && v[1] == v[2]);
         let mut s = String::from(XMP_OPEN);
         s.push_str(r#"<rdf:Description rdf:about="" xmlns:hdrgm="http://ns.adobe.com/hdr-gain-map/1.0/" hdrgm:Version="1.0""#);
-        s.push_str(&format!(r#" hdrgm:HDRCapacityMin="{}""#, num(self.base_headroom)));
-        s.push_str(&format!(r#" hdrgm:HDRCapacityMax="{}""#, num(self.alternate_headroom)));
+        s.push_str(&format!(
+            r#" hdrgm:HDRCapacityMin="{}""#,
+            num(self.base_headroom)
+        ));
+        s.push_str(&format!(
+            r#" hdrgm:HDRCapacityMax="{}""#,
+            num(self.alternate_headroom)
+        ));
         s.push_str(r#" hdrgm:BaseRenditionIsHDR="False""#);
         for (n, v) in names.iter().zip(values) {
             if uniform(v) {
@@ -249,7 +283,11 @@ impl GainMapMeta {
     /// Apple's own description of the map (`apdi`, `HDRGainMap`, `HDRToneMap` namespaces).
     fn apple_description(&self) -> String {
         // 'L008' (8-bit luminance) or '444f'; the stored map must really have that many channels
-        let format = if self.multichannel { 0x3434_3466u32 } else { 0x4C30_3038 };
+        let format = if self.multichannel {
+            0x3434_3466u32
+        } else {
+            0x4C30_3038
+        };
         let mut s = String::from(
             r#"<rdf:Description rdf:about="" xmlns:apdi="http://ns.apple.com/pixeldatainfo/1.0/" xmlns:HDRGainMap="http://ns.apple.com/HDRGainMap/1.0/" xmlns:HDRToneMap="http://ns.apple.com/HDRToneMap/1.0/">"#,
         );
@@ -257,8 +295,14 @@ impl GainMapMeta {
         s.push_str(&format!("<apdi:NativeFormat>{format}</apdi:NativeFormat><apdi:StoredFormat>{format}</apdi:StoredFormat>"));
         s.push_str("<HDRGainMap:HDRGainMapVersion>131072</HDRGainMap:HDRGainMapVersion>");
         // linear, not log2: the headroom multiplier itself
-        s.push_str(&format!("<HDRGainMap:HDRGainMapHeadroom>{}</HDRGainMap:HDRGainMapHeadroom>", num(self.alternate_headroom.exp2())));
-        s.push_str(&format!("<HDRToneMap:AlternateHeadroom>{}</HDRToneMap:AlternateHeadroom>", num(self.alternate_headroom)));
+        s.push_str(&format!(
+            "<HDRGainMap:HDRGainMapHeadroom>{}</HDRGainMap:HDRGainMapHeadroom>",
+            num(self.alternate_headroom.exp2())
+        ));
+        s.push_str(&format!(
+            "<HDRToneMap:AlternateHeadroom>{}</HDRToneMap:AlternateHeadroom>",
+            num(self.alternate_headroom)
+        ));
         s.push_str("<HDRToneMap:ChannelMetadata><rdf:Seq>");
         for c in 0..self.channels() {
             s.push_str(&format!(
@@ -271,7 +315,10 @@ impl GainMapMeta {
             ));
         }
         s.push_str("</rdf:Seq></HDRToneMap:ChannelMetadata>");
-        s.push_str(&format!("<HDRToneMap:BaseHeadroom>{}</HDRToneMap:BaseHeadroom>", num(self.base_headroom)));
+        s.push_str(&format!(
+            "<HDRToneMap:BaseHeadroom>{}</HDRToneMap:BaseHeadroom>",
+            num(self.base_headroom)
+        ));
         s.push_str("<HDRToneMap:BaseColorIsWorkingColor>True</HDRToneMap:BaseColorIsWorkingColor><HDRToneMap:Version>1</HDRToneMap:Version>");
         s.push_str("</rdf:Description>");
         s
@@ -293,7 +340,11 @@ fn num(v: f32) -> String {
     }
     let s = format!("{:.6}", v);
     let s = s.trim_end_matches('0').trim_end_matches('.');
-    if s == "-0" || s.is_empty() { "0".into() } else { s.to_string() }
+    if s == "-0" || s.is_empty() {
+        "0".into()
+    } else {
+        s.to_string()
+    }
 }
 
 /// The values of `hdrgm:<name>`: an attribute (`name="v"`) or an element holding an `rdf:Seq`.
@@ -371,7 +422,12 @@ impl GainImage {
         let (x0, y0) = (fx as usize, fy as usize);
         let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
         let (tx, ty) = (fx - x0 as f32, fy - y0 as f32);
-        let at = |x: usize, y: usize| self.data.get((y * w + x) * self.channels + c).copied().unwrap_or(0) as f32;
+        let at = |x: usize, y: usize| {
+            self.data
+                .get((y * w + x) * self.channels + c)
+                .copied()
+                .unwrap_or(0) as f32
+        };
         let a = at(x0, y0) + (at(x1, y0) - at(x0, y0)) * tx;
         let b = at(x0, y1) + (at(x1, y1) - at(x0, y1)) * tx;
         a + (b - a) * ty
@@ -393,7 +449,12 @@ pub struct GainMapOptions {
 
 impl Default for GainMapOptions {
     fn default() -> Self {
-        GainMapOptions { scale: 2, multichannel: false, gamma: 1.0, offset: 1.0 / 64.0 }
+        GainMapOptions {
+            scale: 2,
+            multichannel: false,
+            gamma: 1.0,
+            offset: 1.0 / 64.0,
+        }
     }
 }
 
@@ -407,12 +468,23 @@ pub fn compute(
     luma: [f32; 3],
     o: &GainMapOptions,
 ) -> Result<(GainImage, GainMapMeta)> {
-    let n = width.checked_mul(height).ok_or_else(|| Error::Encode("gain map: image too large".into()))?;
+    let n = width
+        .checked_mul(height)
+        .ok_or_else(|| Error::Encode("gain map: image too large".into()))?;
     if n == 0 || sdr.len() < n || hdr.len() < n {
-        return Err(Error::Encode("gain map: SDR and HDR renditions must match the image size".into()));
+        return Err(Error::Encode(
+            "gain map: SDR and HDR renditions must match the image size".into(),
+        ));
     }
-    if !(matches!(o.scale, 1 | 2 | 4) && o.gamma > 0.0 && o.gamma.is_finite() && o.offset > 0.0 && o.offset.is_finite()) {
-        return Err(Error::Encode("gain map: scale must be 1, 2 or 4, gamma and offset positive".into()));
+    if !(matches!(o.scale, 1 | 2 | 4)
+        && o.gamma > 0.0
+        && o.gamma.is_finite()
+        && o.offset > 0.0
+        && o.offset.is_finite())
+    {
+        return Err(Error::Encode(
+            "gain map: scale must be 1, 2 or 4, gamma and offset positive".into(),
+        ));
     }
     let s = o.scale;
     let (gw, gh) = (width.div_ceil(s), height.div_ceil(s));
@@ -430,7 +502,9 @@ pub fn compute(
             for yy in gy * s..((gy + 1) * s).min(height) {
                 for xx in gx * s..((gx + 1) * s).min(width) {
                     let i = yy * width + xx;
-                    let (Some(a), Some(b)) = (sdr.get(i), hdr.get(i)) else { continue };
+                    let (Some(a), Some(b)) = (sdr.get(i), hdr.get(i)) else {
+                        continue;
+                    };
                     if o.multichannel {
                         for c in 0..3 {
                             acc[c] += ratio(a[c], b[c]);
@@ -476,27 +550,53 @@ pub fn compute(
             (norm.powf(o.gamma) * 255.0).round() as u8
         })
         .collect();
-    Ok((GainImage { width: gw, height: gh, channels: ch, data }, m))
+    Ok((
+        GainImage {
+            width: gw,
+            height: gh,
+            channels: ch,
+            data,
+        },
+        m,
+    ))
 }
 
 /// Rebuild the HDR rendition in place: `base` (`width × height` linear RGB) is replaced by the
 /// rendition at `weight` (0 = the base, 1 = the full alternate rendition; a display with headroom
 /// `H` uses `(H − base_headroom) / (alternate_headroom − base_headroom)`, clamped).
-pub fn apply(base: &mut [[f32; 3]], width: usize, height: usize, gain: &GainImage, m: &GainMapMeta, weight: f32) -> Result<()> {
-    let n = width.checked_mul(height).ok_or_else(|| Error::Encode("gain map: image too large".into()))?;
+pub fn apply(
+    base: &mut [[f32; 3]],
+    width: usize,
+    height: usize,
+    gain: &GainImage,
+    m: &GainMapMeta,
+    weight: f32,
+) -> Result<()> {
+    let n = width
+        .checked_mul(height)
+        .ok_or_else(|| Error::Encode("gain map: image too large".into()))?;
     if base.len() < n
         || gain.width == 0
         || gain.height == 0
         || !matches!(gain.channels, 1 | 3)
         || gain.data.len() < gain.width * gain.height * gain.channels
     {
-        return Err(Error::Encode("gain map: base and gain map sizes don't match".into()));
+        return Err(Error::Encode(
+            "gain map: base and gain map sizes don't match".into(),
+        ));
     }
     if !m.is_valid() {
         return Err(Error::Encode("gain map: unusable metadata".into()));
     }
-    let weight = if weight.is_finite() { weight.clamp(0.0, 1.0) } else { 1.0 };
-    let (sx, sy) = (gain.width as f32 / width as f32, gain.height as f32 / height as f32);
+    let weight = if weight.is_finite() {
+        weight.clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
+    let (sx, sy) = (
+        gain.width as f32 / width as f32,
+        gain.height as f32 / height as f32,
+    );
     let inv_gamma = m.gamma.map(|g| 1.0 / g);
     for (i, p) in base.iter_mut().enumerate().take(n) {
         let (x, y) = ((i % width) as f32 + 0.5, (i / width) as f32 + 0.5);
@@ -504,7 +604,9 @@ pub fn apply(base: &mut [[f32; 3]], width: usize, height: usize, gain: &GainImag
         let mut g = [0f32; 3];
         for (c, gc) in g.iter_mut().enumerate() {
             let src = if gain.channels == 3 { c } else { 0 };
-            let norm = (gain.sample(gx, gy, src) / 255.0).clamp(0.0, 1.0).powf(inv_gamma[c]);
+            let norm = (gain.sample(gx, gy, src) / 255.0)
+                .clamp(0.0, 1.0)
+                .powf(inv_gamma[c]);
             *gc = m.min[c] + (m.max[c] - m.min[c]) * norm;
         }
         for c in 0..3 {
@@ -559,7 +661,13 @@ fn mpf_placeholder() -> Vec<u8> {
     };
     tag(&mut p, 0xB000, 7, 4, *b"0100"); // MPFVersion
     tag(&mut p, 0xB001, 4, 1, 2u32.to_be_bytes()); // NumberOfImages
-    tag(&mut p, 0xB002, 7, 32, (MPF_ENTRIES_FROM_ENDIAN as u32).to_be_bytes()); // MPEntry
+    tag(
+        &mut p,
+        0xB002,
+        7,
+        32,
+        (MPF_ENTRIES_FROM_ENDIAN as u32).to_be_bytes(),
+    ); // MPEntry
     p.extend_from_slice(&0u32.to_be_bytes()); // no next IFD
     // entry 0: baseline primary (0x030000) flagged as the representative image (bit 29)
     for attr in [0x2003_0000u32, jpeg::MPF_GAIN_MAP] {
@@ -571,31 +679,66 @@ fn mpf_placeholder() -> Vec<u8> {
 
 /// Encode a gain map JPEG: `base` (8-bit SDR, 3 or 4 channels, colour-managed by `meta.icc`) and
 /// its gain map, both at `quality`. `meta.xmp` is kept, with the gain map container added.
-pub fn encode_jpeg(base: &EncodeImage, gain: &GainImage, m: &GainMapMeta, quality: u8, sub: ChromaSubsampling, meta: &EncodeMeta) -> Result<Vec<u8>> {
+pub fn encode_jpeg(
+    base: &EncodeImage,
+    gain: &GainImage,
+    m: &GainMapMeta,
+    quality: u8,
+    sub: ChromaSubsampling,
+    meta: &EncodeMeta,
+) -> Result<Vec<u8>> {
     let Samples::U8(data) = base.samples else {
-        return Err(Error::Encode("gain map JPEG needs an 8-bit base image".into()));
+        return Err(Error::Encode(
+            "gain map JPEG needs an 8-bit base image".into(),
+        ));
     };
     let (w, h) = (base.width as usize, base.height as usize);
     if !matches!(base.channels, 3 | 4) || data.len() < w * h * base.channels as usize {
-        return Err(Error::Encode("gain map JPEG needs an RGB base image".into()));
+        return Err(Error::Encode(
+            "gain map JPEG needs an RGB base image".into(),
+        ));
     }
     if w == 0 || h == 0 || w > u16::MAX as usize || h > u16::MAX as usize {
         return Err(Error::Encode("JPEG dimensions are limited to 65535".into()));
     }
-    if !matches!(gain.channels, 1 | 3) || gain.width == 0 || gain.height == 0 || gain.data.len() < gain.width * gain.height * gain.channels {
+    if !matches!(gain.channels, 1 | 3)
+        || gain.width == 0
+        || gain.height == 0
+        || gain.data.len() < gain.width * gain.height * gain.channels
+    {
         return Err(Error::Encode("gain map image is malformed".into()));
     }
     if !m.is_valid() || m.multichannel != (gain.channels == 3) {
-        return Err(Error::Encode("gain map metadata doesn't match the map".into()));
+        return Err(Error::Encode(
+            "gain map metadata doesn't match the map".into(),
+        ));
     }
     // jpeg_par writes 4:4:4 or 4:2:0
-    let sub = if sub == ChromaSubsampling::S422 { ChromaSubsampling::S420 } else { sub };
+    let sub = if sub == ChromaSubsampling::S422 {
+        ChromaSubsampling::S420
+    } else {
+        sub
+    };
 
-    let gain_segs = vec![(0xE1, xmp_segment(&m.to_gain_map_xmp())?), (0xE2, m.to_iso())];
-    let gain_jpeg = jpeg_par::encode(&gain.data, gain.width, gain.height, gain.channels, quality, ChromaSubsampling::S444, &gain_segs);
+    let gain_segs = vec![
+        (0xE1, xmp_segment(&m.to_gain_map_xmp())?),
+        (0xE2, m.to_iso()),
+    ];
+    let gain_jpeg = jpeg_par::encode(
+        &gain.data,
+        gain.width,
+        gain.height,
+        gain.channels,
+        quality,
+        ChromaSubsampling::S444,
+        &gain_segs,
+    );
 
     let xmp = merge_xmp(meta.xmp, &primary_description(gain_jpeg.len()));
-    let mut segs = jpeg_app_segments(&EncodeMeta { xmp: Some(&xmp), ..*meta })?;
+    let mut segs = jpeg_app_segments(&EncodeMeta {
+        xmp: Some(&xmp),
+        ..*meta
+    })?;
     let mut iso_marker = ISO_URN.to_vec();
     iso_marker.extend_from_slice(&[0, 0, 0, 0]); // versions only: "this image has a gain map"
     segs.push((0xE2, iso_marker));
@@ -603,14 +746,27 @@ pub fn encode_jpeg(base: &EncodeImage, gain: &GainImage, m: &GainMapMeta, qualit
     let mut primary = jpeg_par::encode(data, w, h, base.channels as usize, quality, sub, &segs);
 
     // patch the MPF index: sizes, and the gain map's offset from the MPF endian field
-    let markers = jpeg::parse_markers(&primary).ok_or_else(|| Error::Encode("gain map JPEG: primary image unreadable".into()))?;
-    let endian = markers.mpf.as_ref().map(|m| m.0).ok_or_else(|| Error::Encode("gain map JPEG: MPF segment missing".into()))?;
+    let markers = jpeg::parse_markers(&primary)
+        .ok_or_else(|| Error::Encode("gain map JPEG: primary image unreadable".into()))?;
+    let endian = markers
+        .mpf
+        .as_ref()
+        .map(|m| m.0)
+        .ok_or_else(|| Error::Encode("gain map JPEG: MPF segment missing".into()))?;
     let entries = endian + MPF_ENTRIES_FROM_ENDIAN;
     let (plen, glen) = (primary.len(), gain_jpeg.len());
-    let fields = [(entries + 4, plen), (entries + 8, 0), (entries + 20, glen), (entries + 24, plen - endian)];
+    let fields = [
+        (entries + 4, plen),
+        (entries + 8, 0),
+        (entries + 20, glen),
+        (entries + 24, plen - endian),
+    ];
     for (at, v) in fields {
-        let v = u32::try_from(v).map_err(|_| Error::Encode("gain map JPEG larger than 4 GiB".into()))?;
-        let slot = primary.get_mut(at..at + 4).ok_or_else(|| Error::Encode("gain map JPEG: truncated MPF segment".into()))?;
+        let v = u32::try_from(v)
+            .map_err(|_| Error::Encode("gain map JPEG larger than 4 GiB".into()))?;
+        let slot = primary
+            .get_mut(at..at + 4)
+            .ok_or_else(|| Error::Encode("gain map JPEG: truncated MPF segment".into()))?;
         slot.copy_from_slice(&v.to_be_bytes());
     }
     primary.extend_from_slice(&gain_jpeg);
@@ -628,27 +784,56 @@ pub struct JpegGainMap {
 /// primary image is decoded as usual ([`crate::decode`]); combine the two with [`apply`].
 pub fn read_jpeg(bytes: &[u8]) -> Option<JpegGainMap> {
     let m = jpeg::parse_markers(bytes)?;
-    let marked = m.iso_gainmap.is_some() || m.xmp.as_deref().is_some_and(|x| x.contains("hdrgm:Version"));
+    let marked = m.iso_gainmap.is_some()
+        || m.xmp
+            .as_deref()
+            .is_some_and(|x| x.contains("hdrgm:Version"));
     if !marked {
         return None;
     }
     for e in jpeg::mpf_images(&m) {
-        let Some(data) = bytes.get(e.offset..e.offset.saturating_add(e.len)) else { continue };
-        let Some(gm) = jpeg::parse_markers(data) else { continue };
-        let meta = gm.iso_gainmap.as_deref().and_then(GainMapMeta::from_iso).or_else(|| gm.xmp.as_deref().and_then(GainMapMeta::from_hdrgm_xmp));
+        let Some(data) = bytes.get(e.offset..e.offset.saturating_add(e.len)) else {
+            continue;
+        };
+        let Some(gm) = jpeg::parse_markers(data) else {
+            continue;
+        };
+        let meta = gm
+            .iso_gainmap
+            .as_deref()
+            .and_then(GainMapMeta::from_iso)
+            .or_else(|| gm.xmp.as_deref().and_then(GainMapMeta::from_hdrgm_xmp));
         let Some(meta) = meta else { continue };
-        let Ok((w, h, ch, codes)) = jpeg::decode_codes8(data) else { continue };
+        let Ok((w, h, ch, codes)) = jpeg::decode_codes8(data) else {
+            continue;
+        };
         if ch == 3 && !meta.multichannel {
             // a single-channel map stored as RGB: use its first channel
             let g: Vec<u8> = codes.as_chunks::<3>().0.iter().map(|c| c[0]).collect();
-            return Some(JpegGainMap { gain: GainImage { width: w, height: h, channels: 1, data: g }, meta });
+            return Some(JpegGainMap {
+                gain: GainImage {
+                    width: w,
+                    height: h,
+                    channels: 1,
+                    data: g,
+                },
+                meta,
+            });
         }
         let mut meta = meta;
         if ch == 1 && meta.multichannel {
             meta.multichannel = false;
             meta.fill_from_first();
         }
-        return Some(JpegGainMap { gain: GainImage { width: w, height: h, channels: ch, data: codes }, meta });
+        return Some(JpegGainMap {
+            gain: GainImage {
+                width: w,
+                height: h,
+                channels: ch,
+                data: codes,
+            },
+            meta,
+        });
     }
     None
 }
@@ -657,10 +842,16 @@ pub fn read_jpeg(bytes: &[u8]) -> Option<JpegGainMap> {
 pub fn is_gain_map_jpeg(bytes: &[u8]) -> bool {
     crate::sniff(bytes) == Some(Format::Jpeg)
         && jpeg::parse_markers(bytes).is_some_and(|m| {
-            (m.iso_gainmap.is_some() || m.xmp.as_deref().is_some_and(|x| x.contains("hdrgm:Version")))
-                && jpeg::mpf_images(&m)
-                    .iter()
-                    .any(|e| bytes.get(e.offset..e.offset.saturating_add(e.len)).and_then(jpeg::parse_markers).is_some_and(|g| g.is_gain_map()))
+            (m.iso_gainmap.is_some()
+                || m.xmp
+                    .as_deref()
+                    .is_some_and(|x| x.contains("hdrgm:Version")))
+                && jpeg::mpf_images(&m).iter().any(|e| {
+                    bytes
+                        .get(e.offset..e.offset.saturating_add(e.len))
+                        .and_then(jpeg::parse_markers)
+                        .is_some_and(|g| g.is_gain_map())
+                })
         })
 }
 
@@ -684,11 +875,23 @@ mod tests {
 
     #[test]
     fn iso_metadata_round_trips() {
-        for m in [GainMapMeta { alternate_headroom: 3.0, max: [3.0; 3], ..GainMapMeta::default() }, meta3()] {
+        for m in [
+            GainMapMeta {
+                alternate_headroom: 3.0,
+                max: [3.0; 3],
+                ..GainMapMeta::default()
+            },
+            meta3(),
+        ] {
             let p = m.to_iso();
             assert!(p.starts_with(ISO_URN));
             let back = GainMapMeta::from_iso(&p[ISO_URN.len()..]).unwrap();
-            for (a, b) in [(back.min, m.min), (back.max, m.max), (back.gamma, m.gamma), (back.alternate_offset, m.alternate_offset)] {
+            for (a, b) in [
+                (back.min, m.min),
+                (back.max, m.max),
+                (back.gamma, m.gamma),
+                (back.alternate_offset, m.alternate_offset),
+            ] {
                 for c in 0..3 {
                     assert!((a[c] - b[c]).abs() < 1e-6, "{a:?} {b:?}");
                 }
@@ -706,7 +909,10 @@ mod tests {
             p.extend_from_slice(&v.to_be_bytes());
         }
         let m = GainMapMeta::from_iso(&p).unwrap();
-        assert_eq!((m.alternate_headroom, m.max[2], m.gamma[1]), (2.0, 2.0, 1.0));
+        assert_eq!(
+            (m.alternate_headroom, m.max[2], m.gamma[1]),
+            (2.0, 2.0, 1.0)
+        );
         // versions only (a primary image's marker), unknown version, truncated, backward
         assert!(GainMapMeta::from_iso(&[0, 0, 0, 0]).is_none());
         assert!(GainMapMeta::from_iso(&[0, 1, 0, 0, 0]).is_none());
@@ -722,20 +928,36 @@ mod tests {
 
     #[test]
     fn hdrgm_xmp_round_trips_including_per_channel_sequences() {
-        for m in [GainMapMeta { alternate_headroom: 2.0, max: [2.0; 3], ..GainMapMeta::default() }, meta3()] {
+        for m in [
+            GainMapMeta {
+                alternate_headroom: 2.0,
+                max: [2.0; 3],
+                ..GainMapMeta::default()
+            },
+            meta3(),
+        ] {
             let x = m.to_gain_map_xmp();
             assert!(x.contains("apdi:AuxiliaryImageType"));
             if m.multichannel {
-                assert!(x.contains("<hdrgm:GainMapMax><rdf:Seq><rdf:li>2.5</rdf:li>"), "{x}");
+                assert!(
+                    x.contains("<hdrgm:GainMapMax><rdf:Seq><rdf:li>2.5</rdf:li>"),
+                    "{x}"
+                );
             }
             let back = GainMapMeta::from_hdrgm_xmp(&x).unwrap();
             assert_eq!(back.multichannel, m.multichannel);
             for c in 0..3 {
-                assert!((back.max[c] - m.max[c]).abs() < 1e-5 && (back.gamma[c] - m.gamma[c]).abs() < 1e-5);
+                assert!(
+                    (back.max[c] - m.max[c]).abs() < 1e-5
+                        && (back.gamma[c] - m.gamma[c]).abs() < 1e-5
+                );
             }
             assert!((back.alternate_headroom - m.alternate_headroom).abs() < 1e-5);
         }
-        assert!(GainMapMeta::from_hdrgm_xmp("<x hdrgm:Version=\"1.0\"/>").is_none(), "no GainMapMax");
+        assert!(
+            GainMapMeta::from_hdrgm_xmp("<x hdrgm:Version=\"1.0\"/>").is_none(),
+            "no GainMapMax"
+        );
         assert!(GainMapMeta::from_hdrgm_xmp("hdrgm:GainMapMax=\"nope\"").is_none());
     }
 
@@ -766,7 +988,11 @@ mod tests {
         let (w, h) = (64, 8);
         let (sdr, hdr) = renditions(w, h);
         for multichannel in [false, true] {
-            let o = GainMapOptions { scale: 1, multichannel, ..GainMapOptions::default() };
+            let o = GainMapOptions {
+                scale: 1,
+                multichannel,
+                ..GainMapOptions::default()
+            };
             let (g, m) = compute(&sdr, &hdr, w, h, [0.2126, 0.7152, 0.0722], &o).unwrap();
             assert!(m.is_valid() && m.alternate_headroom > 1.0);
             let mut out = sdr.clone();
@@ -774,7 +1000,10 @@ mod tests {
             for (a, b) in out.iter().zip(&hdr) {
                 for c in 0..3 {
                     // 8-bit codes over the gain range: within ~2 % in linear light
-                    assert!((a[c] - b[c]).abs() <= 0.03 * b[c] + 0.01, "{multichannel}: {a:?} vs {b:?}");
+                    assert!(
+                        (a[c] - b[c]).abs() <= 0.03 * b[c] + 0.01,
+                        "{multichannel}: {a:?} vs {b:?}"
+                    );
                 }
             }
             // weight 0 is the base
@@ -790,18 +1019,48 @@ mod tests {
     fn jpeg_round_trip_and_container_structure() {
         let (w, h) = (96, 64);
         let (sdr, hdr) = renditions(w, h);
-        let (g, m) = compute(&sdr, &hdr, w, h, [0.2126, 0.7152, 0.0722], &GainMapOptions::default()).unwrap();
-        let base: Vec<u8> =
-            sdr.iter().flat_map(|p| p.map(|v| (lightcraft_color::transfer::linear_to_srgb(v.clamp(0.0, 1.0)) * 255.0).round() as u8)).collect();
+        let (g, m) = compute(
+            &sdr,
+            &hdr,
+            w,
+            h,
+            [0.2126, 0.7152, 0.0722],
+            &GainMapOptions::default(),
+        )
+        .unwrap();
+        let base: Vec<u8> = sdr
+            .iter()
+            .flat_map(|p| {
+                p.map(|v| {
+                    (lightcraft_color::transfer::linear_to_srgb(v.clamp(0.0, 1.0)) * 255.0).round()
+                        as u8
+                })
+            })
+            .collect();
         let user_xmp = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"/></rdf:RDF></x:xmpmeta>"#;
-        let meta = EncodeMeta { xmp: Some(user_xmp), ..EncodeMeta::default() };
-        let file = encode_jpeg(&EncodeImage::new(w as u32, h as u32, 3, Samples::U8(&base)), &g, &m, 90, ChromaSubsampling::S444, &meta).unwrap();
+        let meta = EncodeMeta {
+            xmp: Some(user_xmp),
+            ..EncodeMeta::default()
+        };
+        let file = encode_jpeg(
+            &EncodeImage::new(w as u32, h as u32, 3, Samples::U8(&base)),
+            &g,
+            &m,
+            90,
+            ChromaSubsampling::S444,
+            &meta,
+        )
+        .unwrap();
         assert!(is_gain_map_jpeg(&file));
         // the primary decodes as an ordinary JPEG of the right size, and keeps the user's XMP
         let d = crate::decode(&file, crate::DecodeOptions::default()).unwrap();
         assert_eq!((d.width, d.height), (w as u32, h as u32));
         let x = d.xmp.unwrap();
-        assert!(x.contains("xmlns:dc=") && x.contains("hdrgm:Version") && x.contains("Item:Semantic=\"GainMap\""));
+        assert!(
+            x.contains("xmlns:dc=")
+                && x.contains("hdrgm:Version")
+                && x.contains("Item:Semantic=\"GainMap\"")
+        );
         // the MPF index points at the gain map, typed as one
         let pm = jpeg::parse_markers(&file).unwrap();
         let e = jpeg::mpf_images(&pm);
@@ -827,7 +1086,12 @@ mod tests {
         b.extend_from_slice(ISO_URN);
         b.extend_from_slice(&[0, 0, 0, 0, 0xFF, 1, 2, 3, 4]);
         assert!(read_jpeg(&b).is_none());
-        let g = GainImage { width: 2, height: 2, channels: 1, data: vec![0; 3] };
+        let g = GainImage {
+            width: 2,
+            height: 2,
+            channels: 1,
+            data: vec![0; 3],
+        };
         assert!(apply(&mut [[0.0; 3]; 4], 2, 2, &g, &GainMapMeta::default(), 1.0).is_err());
         assert!(compute(&[], &[], 0, 0, [0.3, 0.6, 0.1], &GainMapOptions::default()).is_err());
     }

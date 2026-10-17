@@ -31,7 +31,10 @@ pub struct ScriptConsole {
 impl ScriptConsole {
     fn push(&mut self, kind: &str, text: &str) {
         for l in text.lines() {
-            self.log.push(ConsoleLine { text: l.to_string(), kind: kind.to_string() });
+            self.log.push(ConsoleLine {
+                text: l.to_string(),
+                kind: kind.to_string(),
+            });
         }
         if self.log.len() > 2000 {
             let extra = self.log.len() - 2000;
@@ -48,8 +51,14 @@ impl ScriptConsole {
                     self.push("output", o);
                 }
                 if let Some(e) = v.get("error").filter(|e| !e.is_null()) {
-                    let line = e["line"].as_u64().map(|l| format!("line {l}: ")).unwrap_or_default();
-                    self.push("error", &format!("{line}{}", e["message"].as_str().unwrap_or("error")));
+                    let line = e["line"]
+                        .as_u64()
+                        .map(|l| format!("line {l}: "))
+                        .unwrap_or_default();
+                    self.push(
+                        "error",
+                        &format!("{line}{}", e["message"].as_str().unwrap_or("error")),
+                    );
                 } else if !v["result"].is_null() {
                     self.push("result", &v["result"].to_string());
                 }
@@ -65,7 +74,12 @@ pub fn run(app: &mut EffectcraftApp, ctx: &egui::Context) {
     if code.is_empty() {
         return;
     }
-    let r = crate::menus::invoke(app, ctx, "script.run", json!({"code": code, "name": "Script Console", "console": true}));
+    let r = crate::menus::invoke(
+        app,
+        ctx,
+        "script.run",
+        json!({"code": code, "name": "Script Console", "console": true}),
+    );
     let con = &mut app.ui.script_console;
     con.record(&code, &r);
     if con.history.last() != Some(&code) {
@@ -93,7 +107,16 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             "result" => t.accent,
             _ => t.text,
         };
-        p.text(pos2(out_rect.min.x + 8.0, out_rect.min.y + 4.0 + i as f32 * line_h), Align2::LEFT_TOP, &l.text, Tokens::mono(11.5), color);
+        p.text(
+            pos2(
+                out_rect.min.x + 8.0,
+                out_rect.min.y + 4.0 + i as f32 * line_h,
+            ),
+            Align2::LEFT_TOP,
+            &l.text,
+            Tokens::mono(11.5),
+            color,
+        );
     }
     if log.is_empty() {
         p.text(
@@ -104,9 +127,13 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
             t.text_faint,
         );
     }
-    app.auto.add("scriptConsole.output", out_rect, "Script Console output");
+    app.auto
+        .add("scriptConsole.output", out_rect, "Script Console output");
     // Input.
-    let in_rect = Rect::from_min_size(pos2(rect.min.x + 4.0, out_rect.max.y + 4.0), vec2(rect.width() - 8.0, input_h - 8.0));
+    let in_rect = Rect::from_min_size(
+        pos2(rect.min.x + 4.0, out_rect.max.y + 4.0),
+        vec2(rect.width() - 8.0, input_h - 8.0),
+    );
     let mut run_now = false;
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(in_rect));
     let te = egui::TextEdit::multiline(&mut app.ui.script_console.input)
@@ -119,17 +146,50 @@ pub fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, rect: Rect) {
     if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter) && i.modifiers.command) {
         run_now = true;
     }
-    app.auto.add("scriptConsole.input", in_rect, "Script Console input");
+    app.auto
+        .add("scriptConsole.input", in_rect, "Script Console input");
     // Buttons.
-    let bar = Rect::from_min_size(pos2(rect.min.x, rect.max.y - bar_h), vec2(rect.width(), bar_h));
+    let bar = Rect::from_min_size(
+        pos2(rect.min.x, rect.max.y - bar_h),
+        vec2(rect.width(), bar_h),
+    );
     let run_r = Rect::from_min_size(pos2(bar.max.x - 64.0, bar.min.y + 2.0), vec2(56.0, 20.0));
     let clear_r = Rect::from_min_size(pos2(bar.max.x - 128.0, bar.min.y + 2.0), vec2(56.0, 20.0));
     let run_resp = ui.interact(run_r, egui::Id::new("script-console-run"), Sense::click());
-    p.rect_filled(run_r, 3.0, if run_resp.hovered() { t.accent_hover } else { t.accent });
-    p.text(run_r.center(), Align2::CENTER_CENTER, tr("Run"), Tokens::ui(12.0), egui::Color32::WHITE);
-    let clear_resp = ui.interact(clear_r, egui::Id::new("script-console-clear"), Sense::click());
-    p.rect_stroke(clear_r, 3.0, egui::Stroke::new(1.0, t.field_border), egui::StrokeKind::Inside);
-    p.text(clear_r.center(), Align2::CENTER_CENTER, tr("Clear"), Tokens::ui(12.0), t.text);
+    p.rect_filled(
+        run_r,
+        3.0,
+        if run_resp.hovered() {
+            t.accent_hover
+        } else {
+            t.accent
+        },
+    );
+    p.text(
+        run_r.center(),
+        Align2::CENTER_CENTER,
+        tr("Run"),
+        Tokens::ui(12.0),
+        egui::Color32::WHITE,
+    );
+    let clear_resp = ui.interact(
+        clear_r,
+        egui::Id::new("script-console-clear"),
+        Sense::click(),
+    );
+    p.rect_stroke(
+        clear_r,
+        3.0,
+        egui::Stroke::new(1.0, t.field_border),
+        egui::StrokeKind::Inside,
+    );
+    p.text(
+        clear_r.center(),
+        Align2::CENTER_CENTER,
+        tr("Clear"),
+        Tokens::ui(12.0),
+        t.text,
+    );
     app.auto.add("scriptConsole.run", run_r, "Run");
     app.auto.add("scriptConsole.clear", clear_r, "Clear");
     if run_resp.clicked() {

@@ -26,7 +26,14 @@ pub struct Guide {
 impl Guide {
     /// A plain line from `a` to `b` (a marker when they are the same point).
     pub fn new(a: Point, b: Point) -> Self {
-        Self { x0: a.x, y0: a.y, x1: b.x, y1: b.y, label: None, dashed: false }
+        Self {
+            x0: a.x,
+            y0: a.y,
+            x1: b.x,
+            y1: b.y,
+            label: None,
+            dashed: false,
+        }
     }
 }
 
@@ -63,7 +70,11 @@ impl Targets {
     pub fn gather(doc: &Document, page: NodeId, moving: &[NodeId]) -> Targets {
         let parent = parent_of(doc, page, moving);
         let xf = doc.world_transform(parent);
-        let space = if parent != page && !guides::axis_aligned(xf) { xf } else { Affine::IDENTITY };
+        let space = if parent != page && !guides::axis_aligned(xf) {
+            xf
+        } else {
+            Affine::IDENTITY
+        };
         Self::gather_in(doc, page, moving, space)
     }
 
@@ -72,8 +83,19 @@ impl Targets {
     pub fn gather_in(doc: &Document, page: NodeId, moving: &[NodeId], space: Affine) -> Targets {
         let to = space.inverse();
         // A layer's box in snap space.
-        let bbox = |id: NodeId| doc.node(id).map(|n| transform_rect_bbox(to * doc.world_transform(id), n.local_rect())).filter(|b| b.is_finite());
-        let mut t = Targets { space, moving: moving.iter().filter_map(|m| bbox(*m)).reduce(|a, b| a.union(b)), ..Default::default() };
+        let bbox = |id: NodeId| {
+            doc.node(id)
+                .map(|n| transform_rect_bbox(to * doc.world_transform(id), n.local_rect()))
+                .filter(|b| b.is_finite())
+        };
+        let mut t = Targets {
+            space,
+            moving: moving
+                .iter()
+                .filter_map(|m| bbox(*m))
+                .reduce(|a, b| a.union(b)),
+            ..Default::default()
+        };
         let push = |r: Rect, t: &mut Targets| {
             for x in [r.x0, r.center().x, r.x1] {
                 t.xs.push((x, r.y0, r.y1));
@@ -94,7 +116,8 @@ impl Targets {
             for y in [b.y0, b.center().y, b.y1] {
                 t.ys.push((y, b.x0, b.x1));
             }
-            let (gx, gy) = figcraft_layout::grid_snap_lines_in(doc, parent, to * doc.world_transform(parent));
+            let (gx, gy) =
+                figcraft_layout::grid_snap_lines_in(doc, parent, to * doc.world_transform(parent));
             for x in gx {
                 t.xs.push((x, b.y0, b.y1));
             }
@@ -157,7 +180,9 @@ impl Targets {
     /// vector) and the guides to draw. Besides lines, the box snaps to equal spacing with the
     /// layers beside it (whichever is nearer on each axis), and equal gaps show labelled.
     pub fn snap_move(&self, d: Vec2, threshold: f64) -> (Vec2, Vec<Guide>) {
-        let Some(b) = self.moving else { return (Vec2::ZERO, Vec::new()) };
+        let Some(b) = self.moving else {
+            return (Vec2::ZERO, Vec::new());
+        };
         let r = b + self.to_space_vec(d);
         let (xs, ys) = rect_spans(r);
         let (mut dx, mut dy, _) = self.snap_spans(&xs, &ys, threshold);
@@ -181,10 +206,21 @@ impl Targets {
     /// one before it as that one is from the next, or as far before the one after it. Each: how far
     /// `r` would move along the row, and the two gaps (from, to, across) that are equal then.
     fn spacings(&self, r: Rect, horizontal: bool) -> Vec<(f64, [Gap; 2])> {
-        let t = |b: Rect| if horizontal { b } else { Rect::new(b.y0, b.x0, b.y1, b.x1) };
+        let t = |b: Rect| {
+            if horizontal {
+                b
+            } else {
+                Rect::new(b.y0, b.x0, b.y1, b.x1)
+            }
+        };
         let r = t(r);
-        let row = self.boxes.iter().map(|b| t(*b)).filter(|b| b.y0 < r.y1 && b.y1 > r.y0);
-        let (mut before, mut after): (Vec<Rect>, Vec<Rect>) = row.partition(|b| b.center().x < r.center().x);
+        let row = self
+            .boxes
+            .iter()
+            .map(|b| t(*b))
+            .filter(|b| b.y0 < r.y1 && b.y1 > r.y0);
+        let (mut before, mut after): (Vec<Rect>, Vec<Rect>) =
+            row.partition(|b| b.center().x < r.center().x);
         before.sort_by(|a, b| b.x1.total_cmp(&a.x1));
         after.sort_by(|a, b| a.x0.total_cmp(&b.x0));
         // Across the middle of what two boxes share.
@@ -209,23 +245,40 @@ impl Targets {
             let x0 = n.x0 - (n2.x0 - n.x1) - w;
             out.push((x0, [(x0 + w, n.x0, mid(&r, n)), (n.x1, n2.x0, mid(n, n2))]));
         }
-        out.into_iter().map(|(x0, gaps)| (x0 - r.x0, gaps)).filter(|(d, _)| d.is_finite()).collect()
+        out.into_iter()
+            .map(|(x0, gaps)| (x0 - r.x0, gaps))
+            .filter(|(d, _)| d.is_finite())
+            .collect()
     }
 
     /// The correction (snap space, along the row or column) that spaces `r` equally, if one is in
     /// reach.
     fn equal_spacing(&self, r: Rect, threshold: f64, horizontal: bool) -> Option<f64> {
-        self.spacings(r, horizontal).into_iter().map(|(d, _)| d).filter(|d| d.abs() <= threshold).min_by(|a, b| a.abs().total_cmp(&b.abs()))
+        self.spacings(r, horizontal)
+            .into_iter()
+            .map(|(d, _)| d)
+            .filter(|d| d.abs() <= threshold)
+            .min_by(|a, b| a.abs().total_cmp(&b.abs()))
     }
 
     /// Labelled lines across the gaps that are equal around `r` in its row or column.
     fn spacing_guides(&self, r: Rect, horizontal: bool) -> Vec<Guide> {
         let mut out: Vec<Guide> = Vec::new();
-        for (_, gaps) in self.spacings(r, horizontal).into_iter().filter(|(d, _)| d.abs() < 1e-6) {
+        for (_, gaps) in self
+            .spacings(r, horizontal)
+            .into_iter()
+            .filter(|(d, _)| d.abs() < 1e-6)
+        {
             for (from, to, across) in gaps {
-                let (p, q) =
-                    if horizontal { (Point::new(from, across), Point::new(to, across)) } else { (Point::new(across, from), Point::new(across, to)) };
-                let line = Guide { label: Some(crate::distance::label(to - from)), ..Guide::new(p, q) };
+                let (p, q) = if horizontal {
+                    (Point::new(from, across), Point::new(to, across))
+                } else {
+                    (Point::new(across, from), Point::new(across, to))
+                };
+                let line = Guide {
+                    label: Some(crate::distance::label(to - from)),
+                    ..Guide::new(p, q)
+                };
                 if !out.contains(&line) {
                     out.push(line);
                 }
@@ -239,7 +292,10 @@ impl Targets {
     pub fn round_move(&self, d: Vec2) -> Vec2 {
         let Some(b) = self.moving else { return d };
         let l = self.to_space_vec(d);
-        self.to_page_vec(Vec2::new((b.x0 + l.x).round() - b.x0, (b.y0 + l.y).round() - b.y0))
+        self.to_page_vec(Vec2::new(
+            (b.x0 + l.x).round() - b.x0,
+            (b.y0 + l.y).round() - b.y0,
+        ))
     }
 
     /// Snap a single page point (resize handles, drawing): the correction (a page vector) and
@@ -269,8 +325,17 @@ impl Targets {
         guides
             .into_iter()
             .map(|g| {
-                let (a, b) = (self.space * Point::new(g.x0, g.y0), self.space * Point::new(g.x1, g.y1));
-                Guide { x0: a.x, y0: a.y, x1: b.x, y1: b.y, ..g }
+                let (a, b) = (
+                    self.space * Point::new(g.x0, g.y0),
+                    self.space * Point::new(g.x1, g.y1),
+                );
+                Guide {
+                    x0: a.x,
+                    y0: a.y,
+                    x1: b.x,
+                    y1: b.y,
+                    ..g
+                }
             })
             .collect()
     }
@@ -278,7 +343,11 @@ impl Targets {
     /// Snap several moving points together (vector points): the correction on each axis (`None`
     /// where nothing was in reach), the guides, and a marker (a zero-length guide) on every target
     /// point a moving point lands on.
-    pub fn snap_points(&self, pts: &[Point], threshold: f64) -> (Option<f64>, Option<f64>, Vec<Guide>) {
+    pub fn snap_points(
+        &self,
+        pts: &[Point],
+        threshold: f64,
+    ) -> (Option<f64>, Option<f64>, Vec<Guide>) {
         let xs: Vec<Span> = pts.iter().map(|p| (p.x, p.y, p.y)).collect();
         let ys: Vec<Span> = pts.iter().map(|p| (p.y, p.x, p.x)).collect();
         let (dx, dy, mut guides) = self.snap_spans(&xs, &ys, threshold);
@@ -295,7 +364,12 @@ impl Targets {
     /// Snap moving lines: `xs` are vertical ones (x with the y-span they cover), `ys` horizontal
     /// ones. Returns the nearest correction on each axis within `threshold` and the guides for the
     /// lines that coincide with targets afterwards.
-    pub fn snap_spans(&self, xs: &[Span], ys: &[Span], threshold: f64) -> (Option<f64>, Option<f64>, Vec<Guide>) {
+    pub fn snap_spans(
+        &self,
+        xs: &[Span],
+        ys: &[Span],
+        threshold: f64,
+    ) -> (Option<f64>, Option<f64>, Vec<Guide>) {
         let best = |cands: &[Span], vals: &[Span]| -> Option<f64> {
             let mut best: Option<f64> = None;
             for (line, _, _) in cands {
@@ -310,8 +384,14 @@ impl Targets {
         };
         let (dx, dy) = (best(&self.xs, xs), best(&self.ys, ys));
         let (ox, oy) = (dx.unwrap_or(0.0), dy.unwrap_or(0.0));
-        let xs: Vec<Span> = xs.iter().map(|(x, a, b)| (x + ox, a + oy, b + oy)).collect();
-        let ys: Vec<Span> = ys.iter().map(|(y, a, b)| (y + oy, a + ox, b + ox)).collect();
+        let xs: Vec<Span> = xs
+            .iter()
+            .map(|(x, a, b)| (x + ox, a + oy, b + oy))
+            .collect();
+        let ys: Vec<Span> = ys
+            .iter()
+            .map(|(y, a, b)| (y + oy, a + ox, b + ox))
+            .collect();
         (dx, dy, self.guides_spans(&xs, &ys))
     }
 
@@ -325,8 +405,16 @@ impl Targets {
     /// spanning the line and the targets on it.
     fn guides_spans(&self, xs: &[Span], ys: &[Span]) -> Vec<Guide> {
         let span = |cands: &[Span], (v, a, b): Span| -> Option<(f64, f64)> {
-            let hits: Vec<&Span> = cands.iter().filter(|(l, _, _)| (l - v).abs() < 1e-6).collect();
-            (!hits.is_empty()).then(|| (hits.iter().map(|h| h.1).fold(a, f64::min).max(-1e6), hits.iter().map(|h| h.2).fold(b, f64::max).min(1e6)))
+            let hits: Vec<&Span> = cands
+                .iter()
+                .filter(|(l, _, _)| (l - v).abs() < 1e-6)
+                .collect();
+            (!hits.is_empty()).then(|| {
+                (
+                    hits.iter().map(|h| h.1).fold(a, f64::min).max(-1e6),
+                    hits.iter().map(|h| h.2).fold(b, f64::max).min(1e6),
+                )
+            })
         };
         let mut out = Vec::new();
         for x in xs {
@@ -345,7 +433,11 @@ impl Targets {
 
 /// The parent of the moving layers (the first one's), or the page.
 fn parent_of(doc: &Document, page: NodeId, moving: &[NodeId]) -> NodeId {
-    moving.first().and_then(|m| doc.node(*m)).and_then(|n| n.parent).unwrap_or(page)
+    moving
+        .first()
+        .and_then(|m| doc.node(*m))
+        .and_then(|n| n.parent)
+        .unwrap_or(page)
 }
 
 /// Vector `v` mapped by `m` (without its translation).
@@ -357,5 +449,8 @@ fn linear(m: Affine, v: Vec2) -> Vec2 {
 /// A box's edges and centre lines as moving lines (see [`Targets::snap_spans`]).
 fn rect_spans(r: Rect) -> ([Span; 3], [Span; 3]) {
     let c = r.center();
-    ([(r.x0, r.y0, r.y1), (c.x, r.y0, r.y1), (r.x1, r.y0, r.y1)], [(r.y0, r.x0, r.x1), (c.y, r.x0, r.x1), (r.y1, r.x0, r.x1)])
+    (
+        [(r.x0, r.y0, r.y1), (c.x, r.y0, r.y1), (r.x1, r.y0, r.y1)],
+        [(r.y0, r.x0, r.x1), (c.y, r.x0, r.x1), (r.y1, r.x0, r.x1)],
+    )
 }

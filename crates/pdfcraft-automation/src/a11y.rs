@@ -60,28 +60,49 @@ pub(crate) fn report_json(r: &Report) -> Value {
 }
 
 fn review_hash(bytes: &[u8]) -> String {
-    Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 fn review_decisions(value: &Value, pages: usize) -> Result<Vec<Value>> {
-    let rows = value.as_array().ok_or_else(|| ToolError::InvalidArgs("decisions must be an array".into()))?;
+    let rows = value
+        .as_array()
+        .ok_or_else(|| ToolError::InvalidArgs("decisions must be an array".into()))?;
     let mut seen = BTreeSet::new();
     rows.iter()
         .map(|row| {
-            let fields = row.as_object().ok_or_else(|| ToolError::InvalidArgs("each decision must be an object".into()))?;
-            if fields.keys().any(|key| !matches!(key.as_str(), "rule" | "decision" | "page" | "note")) {
+            let fields = row
+                .as_object()
+                .ok_or_else(|| ToolError::InvalidArgs("each decision must be an object".into()))?;
+            if fields
+                .keys()
+                .any(|key| !matches!(key.as_str(), "rule" | "decision" | "page" | "note"))
+            {
                 return Err(ToolError::InvalidArgs("unknown decision property".into()));
             }
-            let rule = row["rule"].as_str().and_then(Rule::from_id).ok_or_else(|| ToolError::InvalidArgs("decision has an unknown rule".into()))?;
-            let decision = row["decision"].as_str().ok_or_else(|| ToolError::InvalidArgs("decision status is required".into()))?;
+            let rule = row["rule"]
+                .as_str()
+                .and_then(Rule::from_id)
+                .ok_or_else(|| ToolError::InvalidArgs("decision has an unknown rule".into()))?;
+            let decision = row["decision"]
+                .as_str()
+                .ok_or_else(|| ToolError::InvalidArgs("decision status is required".into()))?;
             if !matches!(decision, "accepted" | "needs_work" | "skipped") {
-                return Err(ToolError::InvalidArgs("decision must be accepted, needs_work or skipped".into()));
+                return Err(ToolError::InvalidArgs(
+                    "decision must be accepted, needs_work or skipped".into(),
+                ));
             }
             let page = match row.get("page").filter(|value| !value.is_null()) {
                 Some(value) => {
-                    let page = value.as_u64().ok_or_else(|| ToolError::InvalidArgs("decision page must be positive".into()))?;
+                    let page = value.as_u64().ok_or_else(|| {
+                        ToolError::InvalidArgs("decision page must be positive".into())
+                    })?;
                     if page == 0 || page > pages as u64 {
-                        return Err(ToolError::InvalidArgs("decision page is outside the document".into()));
+                        return Err(ToolError::InvalidArgs(
+                            "decision page is outside the document".into(),
+                        ));
                     }
                     Some(page)
                 }
@@ -89,16 +110,22 @@ fn review_decisions(value: &Value, pages: usize) -> Result<Vec<Value>> {
             };
             let note = match row.get("note").filter(|value| !value.is_null()) {
                 Some(value) => {
-                    let note = value.as_str().ok_or_else(|| ToolError::InvalidArgs("decision note must be text".into()))?;
+                    let note = value.as_str().ok_or_else(|| {
+                        ToolError::InvalidArgs("decision note must be text".into())
+                    })?;
                     if note.len() > 4096 {
-                        return Err(ToolError::InvalidArgs("decision note exceeds 4096 bytes".into()));
+                        return Err(ToolError::InvalidArgs(
+                            "decision note exceeds 4096 bytes".into(),
+                        ));
                     }
                     Some(note)
                 }
                 None => None,
             };
             if !seen.insert((rule.id(), page)) {
-                return Err(ToolError::InvalidArgs("duplicate decision for a rule and page".into()));
+                return Err(ToolError::InvalidArgs(
+                    "duplicate decision for a rule and page".into(),
+                ));
             }
             Ok(json!({ "rule": rule.id(), "decision": decision, "page": page, "note": note }))
         })
@@ -114,7 +141,12 @@ const MAX_REVIEW_SIDECAR_BYTES: u64 = 1 << 20;
 fn read_review_sidecar(path: &std::path::Path) -> Result<Vec<u8>> {
     use std::io::Read;
     let mut bytes = Vec::new();
-    std::fs::File::open(path).and_then(|file| file.take(MAX_REVIEW_SIDECAR_BYTES.saturating_add(1)).read_to_end(&mut bytes)).map_err(failed)?;
+    std::fs::File::open(path)
+        .and_then(|file| {
+            file.take(MAX_REVIEW_SIDECAR_BYTES.saturating_add(1))
+                .read_to_end(&mut bytes)
+        })
+        .map_err(failed)?;
     if bytes.len() as u64 > MAX_REVIEW_SIDECAR_BYTES {
         return Err(failed("file is not an accessibility review sidecar"));
     }
@@ -122,29 +154,52 @@ fn read_review_sidecar(path: &std::path::Path) -> Result<Vec<u8>> {
 }
 
 fn parse_review_sidecar(bytes: &[u8]) -> Result<Value> {
-    let value: Value = serde_json::from_slice(bytes).map_err(|_| failed("file is not an accessibility review sidecar"))?;
-    let hash = value["sha256"].as_str().ok_or_else(|| failed("review sidecar has no document hash"))?;
-    let Some(pages) = value["pages"].as_u64().and_then(|n| usize::try_from(n).ok()).filter(|n| *n > 0) else {
-        return Err(failed("unsupported or invalid accessibility review sidecar"));
+    let value: Value = serde_json::from_slice(bytes)
+        .map_err(|_| failed("file is not an accessibility review sidecar"))?;
+    let hash = value["sha256"]
+        .as_str()
+        .ok_or_else(|| failed("review sidecar has no document hash"))?;
+    let Some(pages) = value["pages"]
+        .as_u64()
+        .and_then(|n| usize::try_from(n).ok())
+        .filter(|n| *n > 0)
+    else {
+        return Err(failed(
+            "unsupported or invalid accessibility review sidecar",
+        ));
     };
     if value["schema"] != 1 || hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(failed("unsupported or invalid accessibility review sidecar"));
+        return Err(failed(
+            "unsupported or invalid accessibility review sidecar",
+        ));
     }
     review_decisions(&value["decisions"], pages).map_err(failed)?;
     Ok(value)
 }
 
 fn html_escape(value: &str) -> String {
-    value.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;").replace('\'', "&#39;")
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 /// A self-contained, human-readable view of the same evidence as the JSON review record.
 fn review_html(record: &Value) -> Result<String> {
     let str_at = |value: &Value, key: &str| -> Result<String> {
-        value.get(key).and_then(Value::as_str).map(html_escape).ok_or_else(|| failed(format!("review record is missing {key}")))
+        value
+            .get(key)
+            .and_then(Value::as_str)
+            .map(html_escape)
+            .ok_or_else(|| failed(format!("review record is missing {key}")))
     };
     let count = |value: &Value, key: &str| -> Result<u64> {
-        value.get(key).and_then(Value::as_u64).ok_or_else(|| failed(format!("review record is missing {key}")))
+        value
+            .get(key)
+            .and_then(Value::as_u64)
+            .ok_or_else(|| failed(format!("review record is missing {key}")))
     };
     let before = &record["before"];
     let after = &record["after"];
@@ -175,9 +230,13 @@ fn review_html(record: &Value) -> Result<String> {
         str_at(after, "sha256")?
     ));
     html.push_str("<h2>Rule comparison</h2><table><caption>Before and after checker results</caption><thead><tr><th scope=\"col\">Rule</th><th scope=\"col\">Before</th><th scope=\"col\">Before findings</th><th scope=\"col\">After</th><th scope=\"col\">After findings</th><th scope=\"col\">Change</th></tr></thead><tbody>");
-    let rules = record["rules"].as_array().ok_or_else(|| failed("review record is missing rules"))?;
+    let rules = record["rules"]
+        .as_array()
+        .ok_or_else(|| failed("review record is missing rules"))?;
     for row in rules {
-        let id = row["rule"].as_str().ok_or_else(|| failed("review record has a rule without an id"))?;
+        let id = row["rule"]
+            .as_str()
+            .ok_or_else(|| failed("review record has a rule without an id"))?;
         let name = Rule::from_id(id).map(Rule::name).unwrap_or(id);
         let old = &row["before"];
         let new = &row["after"];
@@ -193,19 +252,32 @@ fn review_html(record: &Value) -> Result<String> {
         ));
     }
     html.push_str("</tbody></table><h2>Still requiring review</h2><ul>");
-    for id in record["review_required"].as_array().ok_or_else(|| failed("review record is missing review_required"))? {
-        let id = id.as_str().ok_or_else(|| failed("review record has an invalid review_required entry"))?;
-        html.push_str(&format!("<li>{}</li>", html_escape(Rule::from_id(id).map(Rule::name).unwrap_or(id))));
+    for id in record["review_required"]
+        .as_array()
+        .ok_or_else(|| failed("review record is missing review_required"))?
+    {
+        let id = id
+            .as_str()
+            .ok_or_else(|| failed("review record has an invalid review_required entry"))?;
+        html.push_str(&format!(
+            "<li>{}</li>",
+            html_escape(Rule::from_id(id).map(Rule::name).unwrap_or(id))
+        ));
     }
     html.push_str("</ul>");
-    html.push_str(&format!("<p>{}</p></main></body></html>\n", str_at(record, "note")?));
+    html.push_str(&format!(
+        "<p>{}</p></main></body></html>\n",
+        str_at(record, "note")?
+    ));
     Ok(html)
 }
 
 impl Automation {
     pub(crate) fn accessibility_autotag_apply(&mut self, a: &Args) -> Result<Value> {
         let id = self.doc(a)?.id;
-        self.session.apply(id, pdfcraft_engine::Edit::AutoTagText).map_err(failed)?;
+        self.session
+            .apply(id, pdfcraft_engine::Edit::AutoTagText)
+            .map_err(failed)?;
         let tags = self.accessibility_tags(a)?;
         Ok(json!({
             "tags": tags["tags"], "count": tags["count"],
@@ -245,7 +317,10 @@ impl Automation {
             o.rules = a
                 .strs("rules")?
                 .iter()
-                .map(|id| Rule::from_id(id).ok_or_else(|| ToolError::InvalidArgs(format!("unknown rule {id:?}"))))
+                .map(|id| {
+                    Rule::from_id(id)
+                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown rule {id:?}")))
+                })
                 .collect::<Result<_>>()?;
         }
         if a.get("categories").is_some() {
@@ -255,7 +330,8 @@ impl Automation {
                     return Err(ToolError::InvalidArgs(format!("unknown category {c:?}")));
                 }
             }
-            o.rules.retain(|r| cats.contains(&category_id(r.category())));
+            o.rules
+                .retain(|r| cats.contains(&category_id(r.category())));
         }
         if a.opt_ints("pages")?.is_some() {
             o.pages = Some(self.pages(a, "pages")?);
@@ -265,19 +341,30 @@ impl Automation {
 
     pub(crate) fn a11y_check(&self, a: &Args) -> Result<Value> {
         let o = self.a11y_options(a)?;
-        let r = self.doc(a)?.accessibility_check(&o).ok_or_else(|| failed("the document can't be read for checking"))?;
+        let r = self
+            .doc(a)?
+            .accessibility_check(&o)
+            .ok_or_else(|| failed("the document can't be read for checking"))?;
         Ok(report_json(&r))
     }
 
     pub(crate) fn a11y_report(&self, a: &Args) -> Result<Value> {
         let o = self.a11y_options(a)?;
         let doc = self.doc(a)?;
-        let r = doc.accessibility_check(&o).ok_or_else(|| failed("the document can't be read for checking"))?;
+        let r = doc
+            .accessibility_check(&o)
+            .ok_or_else(|| failed("the document can't be read for checking"))?;
         let path = self.resolve(a.str("path")?, true)?;
         let (y, m, d) = self.session.today();
         // A script's report is in English, like the rest of what the tools say and answer with.
         let words = pdfcraft_engine::a11y::in_english;
-        let html = pdfcraft_engine::a11y::report_html(&r, &doc.name, &format!("{y}-{m:02}-{d:02}"), "en", &words);
+        let html = pdfcraft_engine::a11y::report_html(
+            &r,
+            &doc.name,
+            &format!("{y}-{m:02}-{d:02}"),
+            "en",
+            &words,
+        );
         write_atomic(&path, html.as_bytes())?;
         let mut out = report_json(&r);
         out["path"] = json!(path.to_string_lossy());
@@ -286,7 +373,8 @@ impl Automation {
 
     fn review_record_value(&self, a: &Args) -> Result<Value> {
         let id = |key| -> Result<DocId> {
-            let n = u64::try_from(a.int(key)?).map_err(|_| ToolError::InvalidArgs(format!("{key} must be positive")))?;
+            let n = u64::try_from(a.int(key)?)
+                .map_err(|_| ToolError::InvalidArgs(format!("{key} must be positive")))?;
             if n == 0 {
                 return Err(ToolError::InvalidArgs(format!("{key} must be positive")));
             }
@@ -295,25 +383,41 @@ impl Automation {
         let before_id = id("before")?;
         let after_id = id("after")?;
         if before_id == after_id {
-            return Err(ToolError::InvalidArgs("before and after must be separate open documents".into()));
+            return Err(ToolError::InvalidArgs(
+                "before and after must be separate open documents".into(),
+            ));
         }
-        let before = self.session.get(before_id).ok_or_else(|| failed(format!("no open document with id {}", before_id.0)))?;
-        let after = self.session.get(after_id).ok_or_else(|| failed(format!("no open document with id {}", after_id.0)))?;
+        let before = self
+            .session
+            .get(before_id)
+            .ok_or_else(|| failed(format!("no open document with id {}", before_id.0)))?;
+        let after = self
+            .session
+            .get(after_id)
+            .ok_or_else(|| failed(format!("no open document with id {}", after_id.0)))?;
         let mut options = Options::default();
         if a.opt_bool("all")?.unwrap_or(false) {
             options.rules = Rule::ALL.into_iter().collect();
         }
-        let before_report = before.accessibility_check(&options).ok_or_else(|| failed("the original document can't be read for checking"))?;
-        let after_report = after.accessibility_check(&options).ok_or_else(|| failed("the edited document can't be read for checking"))?;
+        let before_report = before
+            .accessibility_check(&options)
+            .ok_or_else(|| failed("the original document can't be read for checking"))?;
+        let after_report = after
+            .accessibility_check(&options)
+            .ok_or_else(|| failed("the edited document can't be read for checking"))?;
         if before_report.results.len() != after_report.results.len() {
-            return Err(failed("the two accessibility checks returned different rule sets"));
+            return Err(failed(
+                "the two accessibility checks returned different rule sets",
+            ));
         }
         let mut rules = Vec::new();
         let mut changed = Vec::new();
         let mut review_required = Vec::new();
         for (prior, current) in before_report.results.iter().zip(&after_report.results) {
             if prior.rule != current.rule {
-                return Err(failed("the two accessibility checks returned different rule sets"));
+                return Err(failed(
+                    "the two accessibility checks returned different rule sets",
+                ));
             }
             let rule = prior.rule.id();
             let before_status = status_id(prior.status);
@@ -333,7 +437,12 @@ impl Automation {
             }));
         }
         let (y, m, d) = self.session.today();
-        let hash = |bytes: &[u8]| Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let hash = |bytes: &[u8]| {
+            Sha256::digest(bytes)
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect::<String>()
+        };
         let record = json!({
             "schema": 1,
             "date": format!("{y}-{m:02}-{d:02}"),
@@ -363,19 +472,24 @@ impl Automation {
 
     pub(crate) fn a11y_review_save(&self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
-        let decisions = review_decisions(a.get("decisions").ok_or_else(|| Args::missing("decisions"))?, doc.info.pages.len())?;
+        let decisions = review_decisions(
+            a.get("decisions")
+                .ok_or_else(|| Args::missing("decisions"))?,
+            doc.info.pages.len(),
+        )?;
         let hash = review_hash(doc.bytes.as_slice());
         let path = self.resolve(a.str("path")?, true)?;
         if path.exists() {
             let prior = read_review_sidecar(&path)?;
             let prior = parse_review_sidecar(&prior)?;
             if prior["sha256"] != hash && !a.opt_bool("replace")?.unwrap_or(false) {
-                return Err(failed("review sidecar belongs to a different PDF revision; pass replace: true to replace it"));
+                return Err(failed(
+                    "review sidecar belongs to a different PDF revision; pass replace: true to replace it",
+                ));
             }
         }
         let (y, m, d) = self.session.today();
-        let sidecar =
-            json!({ "schema": 1, "date": format!("{y}-{m:02}-{d:02}"), "sha256": hash, "pages": doc.info.pages.len(), "decisions": decisions });
+        let sidecar = json!({ "schema": 1, "date": format!("{y}-{m:02}-{d:02}"), "sha256": hash, "pages": doc.info.pages.len(), "decisions": decisions });
         write_atomic(&path, &serde_json::to_vec_pretty(&sidecar).map_err(failed)?)?;
         Ok(json!({ "path": path.to_string_lossy(), "review": sidecar }))
     }
@@ -400,13 +514,24 @@ impl Automation {
 
     pub(crate) fn a11y_fix(&mut self, a: &Args) -> Result<Value> {
         let id = a.str("rule")?;
-        let rule = Rule::from_id(id).ok_or_else(|| ToolError::InvalidArgs(format!("unknown rule {id:?}")))?;
-        let edit = self.doc(a)?.accessibility_fix(rule, a.opt_str("value")?).map_err(failed)?;
+        let rule = Rule::from_id(id)
+            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown rule {id:?}")))?;
+        let edit = self
+            .doc(a)?
+            .accessibility_fix(rule, a.opt_str("value")?)
+            .map_err(failed)?;
         let doc = self.doc(a)?.id;
         self.session.apply(doc, edit).map_err(failed)?;
-        let r =
-            self.doc(a)?.accessibility_check(&Options { rules: [rule].into(), pages: None }).ok_or_else(|| failed("the document can't be read"))?;
-        Ok(json!({ "rule": id, "status": status_id(r.results.iter().find(|x| x.rule == rule).map_or(Status::Skipped, |x| x.status)) }))
+        let r = self
+            .doc(a)?
+            .accessibility_check(&Options {
+                rules: [rule].into(),
+                pages: None,
+            })
+            .ok_or_else(|| failed("the document can't be read"))?;
+        Ok(
+            json!({ "rule": id, "status": status_id(r.results.iter().find(|x| x.rule == rule).map_or(Status::Skipped, |x| x.status)) }),
+        )
     }
 
     pub(crate) fn accessibility_figures(&self, a: &Args) -> Result<Value> {
@@ -429,12 +554,18 @@ impl Automation {
     }
 
     pub(crate) fn accessibility_set_alt(&mut self, a: &Args) -> Result<Value> {
-        let figure = u32::try_from(a.int("figure")?)
-            .map_err(|_| ToolError::InvalidArgs("figure must be a figure number from accessibility_figures".into()))?;
+        let figure = u32::try_from(a.int("figure")?).map_err(|_| {
+            ToolError::InvalidArgs(
+                "figure must be a figure number from accessibility_figures".into(),
+            )
+        })?;
         let edit = if a.opt_bool("decorative")?.unwrap_or(false) {
             pdfcraft_engine::Edit::MarkDecorative { figure }
         } else {
-            pdfcraft_engine::Edit::SetAltText { figure, alt: a.opt_str("alt")?.map(str::to_owned) }
+            pdfcraft_engine::Edit::SetAltText {
+                figure,
+                alt: a.opt_str("alt")?.map(str::to_owned),
+            }
         };
         let id = self.doc(a)?.id;
         self.session.apply(id, edit).map_err(failed)?;
@@ -459,31 +590,54 @@ impl Automation {
     }
 
     pub(crate) fn accessibility_set_tag_property(&mut self, a: &Args) -> Result<Value> {
-        let object = u32::try_from(a.int("object")?).map_err(|_| ToolError::InvalidArgs("object must be a positive tag object number".into()))?;
+        let object = u32::try_from(a.int("object")?).map_err(|_| {
+            ToolError::InvalidArgs("object must be a positive tag object number".into())
+        })?;
         if object == 0 {
-            return Err(ToolError::InvalidArgs("object must be a positive tag object number".into()));
+            return Err(ToolError::InvalidArgs(
+                "object must be a positive tag object number".into(),
+            ));
         }
-        let generation = u16::try_from(a.int("generation")?)
-            .map_err(|_| ToolError::InvalidArgs("generation must be a PDF object generation from accessibility_tags".into()))?;
+        let generation = u16::try_from(a.int("generation")?).map_err(|_| {
+            ToolError::InvalidArgs(
+                "generation must be a PDF object generation from accessibility_tags".into(),
+            )
+        })?;
         let property_id = a.str("property")?;
-        let property = pdfcraft_engine::a11y::TagProperty::from_id(property_id)
-            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown tag property {property_id:?}")))?;
+        let property =
+            pdfcraft_engine::a11y::TagProperty::from_id(property_id).ok_or_else(|| {
+                ToolError::InvalidArgs(format!("unknown tag property {property_id:?}"))
+            })?;
         let value = a.opt_str("value")?.map(str::to_owned);
         let id = self.doc(a)?.id;
         self.session
-            .apply(id, pdfcraft_engine::Edit::SetTagProperty { object: pdfcraft_cos::ObjRef::new(object, generation), property, value })
+            .apply(
+                id,
+                pdfcraft_engine::Edit::SetTagProperty {
+                    object: pdfcraft_cos::ObjRef::new(object, generation),
+                    property,
+                    value,
+                },
+            )
             .map_err(failed)?;
         self.accessibility_tags(a)
     }
 
     pub(crate) fn accessibility_move_tag(&mut self, a: &Args) -> Result<Value> {
         let reference = |number: &str, generation: &str| -> Result<pdfcraft_cos::ObjRef> {
-            let n = u32::try_from(a.int(number)?).map_err(|_| ToolError::InvalidArgs(format!("{number} must be a positive tag object number")))?;
+            let n = u32::try_from(a.int(number)?).map_err(|_| {
+                ToolError::InvalidArgs(format!("{number} must be a positive tag object number"))
+            })?;
             if n == 0 {
-                return Err(ToolError::InvalidArgs(format!("{number} must be a positive tag object number")));
+                return Err(ToolError::InvalidArgs(format!(
+                    "{number} must be a positive tag object number"
+                )));
             }
-            let g = u16::try_from(a.int(generation)?)
-                .map_err(|_| ToolError::InvalidArgs(format!("{generation} must be a PDF object generation from accessibility_tags")))?;
+            let g = u16::try_from(a.int(generation)?).map_err(|_| {
+                ToolError::InvalidArgs(format!(
+                    "{generation} must be a PDF object generation from accessibility_tags"
+                ))
+            })?;
             Ok(pdfcraft_cos::ObjRef::new(n, g))
         };
         let object = reference("object", "generation")?;
@@ -491,10 +645,23 @@ impl Automation {
         let placement = match a.str("placement")? {
             "before" => pdfcraft_engine::a11y::TagPlacement::Before,
             "after" => pdfcraft_engine::a11y::TagPlacement::After,
-            other => return Err(ToolError::InvalidArgs(format!("placement must be before or after, not {other:?}"))),
+            other => {
+                return Err(ToolError::InvalidArgs(format!(
+                    "placement must be before or after, not {other:?}"
+                )));
+            }
         };
         let id = self.doc(a)?.id;
-        self.session.apply(id, pdfcraft_engine::Edit::MoveTag { object, anchor, placement }).map_err(failed)?;
+        self.session
+            .apply(
+                id,
+                pdfcraft_engine::Edit::MoveTag {
+                    object,
+                    anchor,
+                    placement,
+                },
+            )
+            .map_err(failed)?;
         self.accessibility_tags(a)
     }
 }
@@ -507,7 +674,9 @@ impl Automation {
         }
         if let Some(l) = a.opt_str("language")? {
             if !pdfcraft_engine::ocr::LANGUAGES.iter().any(|x| x.0 == l) {
-                return Err(ToolError::InvalidArgs(format!("unsupported language {l:?}")));
+                return Err(ToolError::InvalidArgs(format!(
+                    "unsupported language {l:?}"
+                )));
             }
             settings.language = l.into();
         }
@@ -530,10 +699,23 @@ impl Automation {
         let ocr = pdfcraft_engine::ocr::engine().map_err(failed)?;
         let mut out = Vec::new();
         for p in paths {
-            let name = std::path::Path::new(p).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "document.pdf".into());
-            let result =
-                self.resolve(p, false).map_err(|e| e.to_string()).and_then(|src| std::fs::read(&src).map_err(|e| e.to_string())).and_then(|bytes| {
-                    pdfcraft_engine::ocr::recognize_file(&name, std::sync::Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true)
+            let name = std::path::Path::new(p)
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "document.pdf".into());
+            let result = self
+                .resolve(p, false)
+                .map_err(|e| e.to_string())
+                .and_then(|src| std::fs::read(&src).map_err(|e| e.to_string()))
+                .and_then(|bytes| {
+                    pdfcraft_engine::ocr::recognize_file(
+                        &name,
+                        std::sync::Arc::new(bytes),
+                        None,
+                        settings.clone(),
+                        &ocr,
+                        |_, _| true,
+                    )
                 });
             out.push(match result {
                 Ok(r) => {
@@ -550,9 +732,16 @@ impl Automation {
 
     pub(crate) fn ocr_recognize(&mut self, a: &Args) -> Result<Value> {
         let settings = self.ocr_settings(a)?;
-        let pages = if a.opt_ints("pages")?.is_some() { self.pages(a, "pages")? } else { Vec::new() };
+        let pages = if a.opt_ints("pages")?.is_some() {
+            self.pages(a, "pages")?
+        } else {
+            Vec::new()
+        };
         let id = self.doc(a)?.id;
-        let found = self.session.recognize_text(id, &pages, settings).map_err(failed)?;
+        let found = self
+            .session
+            .recognize_text(id, &pages, settings)
+            .map_err(failed)?;
         let list: Vec<Value> = found
             .iter()
             .map(|p| match &p.skipped {
@@ -565,8 +754,14 @@ impl Automation {
 
     pub(crate) fn ocr_status(&self) -> Result<Value> {
         use pdfcraft_engine::ocr;
-        let dirs: Vec<String> = ocr::Models::search_dirs().iter().map(|d| d.to_string_lossy().into_owned()).collect();
-        let langs: Vec<Value> = ocr::LANGUAGES.iter().map(|(c, n)| json!({ "code": c, "name": n })).collect();
+        let dirs: Vec<String> = ocr::Models::search_dirs()
+            .iter()
+            .map(|d| d.to_string_lossy().into_owned())
+            .collect();
+        let langs: Vec<Value> = ocr::LANGUAGES
+            .iter()
+            .map(|(c, n)| json!({ "code": c, "name": n }))
+            .collect();
         Ok(json!({ "available": ocr::available(), "search_dirs": dirs, "languages": langs }))
     }
 }
@@ -588,18 +783,31 @@ fn request_json(r: &pdfcraft_engine::js::Request) -> Value {
 impl Automation {
     pub(crate) fn js_run(&mut self, a: &Args) -> Result<Value> {
         let id = self.doc(a)?.id;
-        let o = self.session.run_javascript(id, a.str("script")?, a.opt_str("field")?).map_err(failed)?;
+        let o = self
+            .session
+            .run_javascript(id, a.str("script")?, a.opt_str("field")?)
+            .map_err(failed)?;
         let reqs: Vec<Value> = o.requests.iter().map(request_json).collect();
-        Ok(json!({ "alerts": o.alerts, "console": o.console, "requests": reqs, "error": o.error, "result": o.result }))
+        Ok(
+            json!({ "alerts": o.alerts, "console": o.console, "requests": reqs, "error": o.error, "result": o.result }),
+        )
     }
 
     pub(crate) fn js_document_scripts(&self, a: &Args) -> Result<Value> {
-        let list: Vec<Value> = self.doc(a)?.document_scripts().into_iter().map(|(n, s)| json!({ "name": n, "script": s })).collect();
+        let list: Vec<Value> = self
+            .doc(a)?
+            .document_scripts()
+            .into_iter()
+            .map(|(n, s)| json!({ "name": n, "script": s }))
+            .collect();
         Ok(json!({ "scripts": list }))
     }
 
     pub(crate) fn js_set_document_script(&mut self, a: &Args) -> Result<Value> {
-        let edit = pdfcraft_engine::Edit::SetDocumentScript { name: a.str("name")?.into(), script: a.opt_str("script")?.map(str::to_string) };
+        let edit = pdfcraft_engine::Edit::SetDocumentScript {
+            name: a.str("name")?.into(),
+            script: a.opt_str("script")?.map(str::to_string),
+        };
         let id = self.doc(a)?.id;
         self.session.apply(id, edit).map_err(failed)?;
         self.js_document_scripts(a)
@@ -614,14 +822,19 @@ impl Automation {
         let id = self.doc(a)?.id;
         self.session.apply(id, edit).map_err(failed)?;
         let out = self.session.take_js_output(id);
-        Ok(json!({ "field": a.str("field")?, "event": a.str("event")?, "console": out.console, "errors": out.errors }))
+        Ok(
+            json!({ "field": a.str("field")?, "event": a.str("event")?, "console": out.console, "errors": out.errors }),
+        )
     }
 
     pub(crate) fn form_merge_data(&mut self, a: &Args) -> Result<Value> {
         let mut files = Vec::new();
         for p in a.strs("paths")? {
             let path = self.resolve(p, false)?;
-            files.push((p.to_string(), std::fs::read(&path).map_err(|e| failed(format!("{p}: {e}")))?));
+            files.push((
+                p.to_string(),
+                std::fs::read(&path).map_err(|e| failed(format!("{p}: {e}")))?,
+            ));
         }
         let csv = pdfcraft_engine::merge_data_files(&files).map_err(failed)?;
         let target = self.resolve(a.str("path")?, true)?;
@@ -632,17 +845,27 @@ impl Automation {
 
     pub(crate) fn doc_export_office(&self, a: &Args) -> Result<Value> {
         let path = self.resolve(a.str("path")?, true)?;
-        let ext = path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
-        let format = pdfcraft_engine::compare::OfficeFormat::from_extension(&ext)
-            .ok_or_else(|| ToolError::InvalidArgs(format!("unsupported extension {ext:?} (docx, pptx, html or rtf)")))?;
+        let ext = path
+            .extension()
+            .map(|e| e.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let format =
+            pdfcraft_engine::compare::OfficeFormat::from_extension(&ext).ok_or_else(|| {
+                ToolError::InvalidArgs(format!(
+                    "unsupported extension {ext:?} (docx, pptx, html or rtf)"
+                ))
+            })?;
         let bytes = self.doc_to_copy(a)?.export_office(format);
         write_atomic(&path, &bytes)?;
-        Ok(json!({ "path": path.to_string_lossy(), "bytes": bytes.len(), "format": format.extension() }))
+        Ok(
+            json!({ "path": path.to_string_lossy(), "bytes": bytes.len(), "format": format.extension() }),
+        )
     }
 
     fn pdfa_level(&self, a: &Args) -> Result<pdfcraft_engine::pdfa::Level> {
         let l = a.opt_str("level")?.unwrap_or("2b");
-        pdfcraft_engine::pdfa::Level::from_id(l).ok_or_else(|| ToolError::InvalidArgs(format!("unknown PDF/A level {l:?} (2b or 3b)")))
+        pdfcraft_engine::pdfa::Level::from_id(l)
+            .ok_or_else(|| ToolError::InvalidArgs(format!("unknown PDF/A level {l:?} (2b or 3b)")))
     }
 
     pub(crate) fn pdfa_verify(&self, a: &Args) -> Result<Value> {
@@ -715,7 +938,9 @@ impl Automation {
     pub(crate) fn pdfa_convert(&mut self, a: &Args) -> Result<Value> {
         let level = self.pdfa_level(a)?;
         let id = self.doc(a)?.id;
-        self.session.apply(id, pdfcraft_engine::Edit::ConvertPdfA { level }).map_err(failed)?;
+        self.session
+            .apply(id, pdfcraft_engine::Edit::ConvertPdfA { level })
+            .map_err(failed)?;
         self.pdfa_verify(a)
     }
 
@@ -726,7 +951,10 @@ impl Automation {
             .iter()
             .map(|a| json!({ "name": a.name, "description": a.description, "steps": a.steps.iter().map(step_json).collect::<Vec<_>>() }))
             .collect();
-        let steps: Vec<Value> = Step::all().iter().map(|s| json!({ "step": s.id(), "label": s.label(), "takes_arg": s.arg().is_some() })).collect();
+        let steps: Vec<Value> = Step::all()
+            .iter()
+            .map(|s| json!({ "step": s.id(), "label": s.label(), "takes_arg": s.arg().is_some() }))
+            .collect();
         Ok(json!({ "actions": actions, "steps": steps }))
     }
 
@@ -738,21 +966,33 @@ impl Automation {
                 .find(|x| x.name.eq_ignore_ascii_case(name))
                 .ok_or_else(|| ToolError::InvalidArgs(format!("no built-in action {name:?}")))?
         } else {
-            let items = a.get("steps").and_then(Value::as_array).ok_or_else(|| ToolError::InvalidArgs("give action or steps".into()))?;
+            let items = a
+                .get("steps")
+                .and_then(Value::as_array)
+                .ok_or_else(|| ToolError::InvalidArgs("give action or steps".into()))?;
             let steps = items
                 .iter()
                 .map(|it| {
                     let id = it["step"].as_str().unwrap_or("");
-                    Step::from_id(id, it["arg"].as_str().unwrap_or("")).ok_or_else(|| ToolError::InvalidArgs(format!("unknown step {id:?}")))
+                    Step::from_id(id, it["arg"].as_str().unwrap_or(""))
+                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown step {id:?}")))
                 })
                 .collect::<Result<Vec<_>>>()?;
-            Action { name: "Custom".into(), description: String::new(), steps, builtin: false }
+            Action {
+                name: "Custom".into(),
+                description: String::new(),
+                steps,
+                builtin: false,
+            }
         };
         let folder = self.resolve(a.str("folder")?, true)?;
         std::fs::create_dir_all(&folder).map_err(|e| failed(e.to_string()))?;
         let mut out = Vec::new();
         for p in a.strs("paths")? {
-            let name = std::path::Path::new(p).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "document.pdf".into());
+            let name = std::path::Path::new(p)
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "document.pdf".into());
             let result = self
                 .resolve(p, false)
                 .map_err(|e| e.to_string())
@@ -762,14 +1002,19 @@ impl Automation {
                 Ok(r) => {
                     let target = child(&folder, &name);
                     let target = if target.exists() {
-                        let stem =
-                            std::path::Path::new(&name).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "document".into());
+                        let stem = std::path::Path::new(&name)
+                            .file_stem()
+                            .map(|s| s.to_string_lossy().into_owned())
+                            .unwrap_or_else(|| "document".into());
                         unused(&folder, &stem)
                     } else {
                         target
                     };
                     if target.exists() {
-                        return Err(failed(format!("{}: no unused output name available", target.display())));
+                        return Err(failed(format!(
+                            "{}: no unused output name available",
+                            target.display()
+                        )));
                     }
                     write_atomic(&target, &r.bytes)?;
                     json!({ "path": p, "output": target.to_string_lossy(), "log": r.log })
@@ -797,8 +1042,7 @@ impl Automation {
         let c = self.session.compare(old, new).map_err(failed)?;
         let limit = a.opt_int("limit")?.unwrap_or(500).max(1) as usize;
         let r2 = |r: &[f64; 4]| r.map(|v| (v * 100.0).round() / 100.0);
-        let side =
-            |s: &pdfcraft_engine::compare::Side| json!({ "text": s.text, "page": s.page + 1, "rects": s.rects.iter().map(r2).collect::<Vec<_>>() });
+        let side = |s: &pdfcraft_engine::compare::Side| json!({ "text": s.text, "page": s.page + 1, "rects": s.rects.iter().map(r2).collect::<Vec<_>>() });
         let list: Vec<Value> = c
             .changes
             .iter()
@@ -806,7 +1050,12 @@ impl Automation {
             .map(|ch| json!({ "kind": ch.kind.label().to_lowercase(), "old": side(&ch.old), "new": side(&ch.new) }))
             .collect();
         let visual: Vec<Value> = if a.opt_bool("visual")?.unwrap_or(false) {
-            self.session.compare_visual(old, new, 72.0).map_err(failed)?.iter().map(|(p, r)| json!({ "page": p + 1, "rect": r2(r) })).collect()
+            self.session
+                .compare_visual(old, new, 72.0)
+                .map_err(failed)?
+                .iter()
+                .map(|(p, r)| json!({ "page": p + 1, "rect": r2(r) }))
+                .collect()
         } else {
             Vec::new()
         };
@@ -837,7 +1086,11 @@ impl Automation {
     }
 
     pub(crate) fn form_detect_fields(&mut self, a: &Args) -> Result<Value> {
-        let pages = if a.opt_ints("pages")?.is_some() { self.pages(a, "pages")? } else { Vec::new() };
+        let pages = if a.opt_ints("pages")?.is_some() {
+            self.pages(a, "pages")?
+        } else {
+            Vec::new()
+        };
         let id = self.doc(a)?.id;
         let found = self.session.detect_fields(id, &pages);
         let list: Vec<Value> = found
@@ -851,7 +1104,9 @@ impl Automation {
             })
             .collect();
         if a.opt_bool("add")?.unwrap_or(true) && !found.is_empty() {
-            self.session.auto_detect_fields(id, &pages).map_err(failed)?;
+            self.session
+                .auto_detect_fields(id, &pages)
+                .map_err(failed)?;
         }
         Ok(json!({ "fields": list }))
     }
@@ -870,7 +1125,10 @@ impl Automation {
                     A::Named(n) => json!({ "menu": n }),
                     A::GoTo(p) => json!({ "page": p + 1 }),
                     A::ShowHide { fields, hide: true } => json!({ "hide": fields }),
-                    A::ShowHide { fields, hide: false } => json!({ "show": fields }),
+                    A::ShowHide {
+                        fields,
+                        hide: false,
+                    } => json!({ "show": fields }),
                     A::Submit(u) => json!({ "submit": u }),
                     A::Other(s) => json!({ "other": s }),
                 };
@@ -883,10 +1141,19 @@ impl Automation {
 
     pub(crate) fn form_set_actions(&mut self, a: &Args) -> Result<Value> {
         use pdfcraft_engine::{FieldAction as A, FieldTrigger as T};
-        let items = a.get("actions").and_then(Value::as_array).ok_or_else(|| ToolError::InvalidArgs("actions must be an array".into()))?;
+        let items = a
+            .get("actions")
+            .and_then(Value::as_array)
+            .ok_or_else(|| ToolError::InvalidArgs("actions must be an array".into()))?;
         let bad = |m: String| ToolError::InvalidArgs(m);
         let names = |v: &Value| -> Vec<String> {
-            v.as_array().map(|x| x.iter().filter_map(|s| s.as_str().map(str::to_string)).collect()).unwrap_or_default()
+            v.as_array()
+                .map(|x| {
+                    x.iter()
+                        .filter_map(|s| s.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default()
         };
         let mut acts = Vec::new();
         for it in items {
@@ -903,19 +1170,32 @@ impl Automation {
             } else if let Some(p) = it["page"].as_u64() {
                 A::GoTo((p.max(1) - 1) as usize)
             } else if it.get("show").is_some() {
-                A::ShowHide { fields: names(&it["show"]), hide: false }
+                A::ShowHide {
+                    fields: names(&it["show"]),
+                    hide: false,
+                }
             } else if it.get("hide").is_some() {
-                A::ShowHide { fields: names(&it["hide"]), hide: true }
+                A::ShowHide {
+                    fields: names(&it["hide"]),
+                    hide: true,
+                }
             } else if let Some(u) = it["submit"].as_str() {
                 A::Submit(u.into())
             } else {
-                return Err(bad(format!("{tid}: give one action (javascript, url, reset, menu, page, show, hide or submit)")));
+                return Err(bad(format!(
+                    "{tid}: give one action (javascript, url, reset, menu, page, show, hide or submit)"
+                )));
             };
             acts.push((t, act));
         }
         let name = a.str("field")?.to_string();
-        let edit =
-            pdfcraft_engine::Edit::SetFieldProps { name, props: Box::new(pdfcraft_engine::FieldProps { actions: Some(acts), ..Default::default() }) };
+        let edit = pdfcraft_engine::Edit::SetFieldProps {
+            name,
+            props: Box::new(pdfcraft_engine::FieldProps {
+                actions: Some(acts),
+                ..Default::default()
+            }),
+        };
         let id = self.doc(a)?.id;
         self.session.apply(id, edit).map_err(failed)?;
         self.form_actions(a)

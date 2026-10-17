@@ -25,7 +25,12 @@ fn text(d: &Document) -> (Node, TextObject) {
 }
 
 fn under(n: &Node) -> &StrokeLayer {
-    assert_eq!((n.appearance.items.len(), n.appearance.contents_at()), (1, 1), "one stroke below the characters: {:?}", n.appearance);
+    assert_eq!(
+        (n.appearance.items.len(), n.appearance.contents_at()),
+        (1, 1),
+        "one stroke below the characters: {:?}",
+        n.appearance
+    );
     match &n.appearance.items[0] {
         AppearanceItem::Stroke(s) => s,
         i => panic!("{i:?}"),
@@ -35,7 +40,10 @@ fn under(n: &Node) -> &StrokeLayer {
 /// Pixels of the letters' yellow left showing (a stroke drawn over them hides them).
 fn yellow_letters(d: &Document) -> usize {
     let img = render_artboard(d);
-    (100..190).flat_map(|x| (0..80).map(move |y| (x, y))).filter(|&(x, y)| img.over_white(x, y) == [0xff, 0xcc, 0]).count()
+    (100..190)
+        .flat_map(|x| (0..80).map(move |y| (x, y)))
+        .filter(|&(x, y)| img.over_white(x, y) == [0xff, 0xcc, 0])
+        .count()
 }
 
 #[test]
@@ -44,8 +52,22 @@ fn a_stroke_first_text_strokes_under_its_characters() {
     assert!(warnings.is_empty(), "{warnings:?}");
     let (n, t) = text(&d);
     let s = under(&n);
-    assert_eq!((s.paint.clone(), s.width, s.join), (Paint::solid(Color::BLACK), 8.0, vectorcraft_doc::LineJoin::Round));
-    assert!(t.runs.iter().all(|r| !r.style.has_stroke() && r.style.fill == Paint::solid(Color::rgb8(0xff, 0xcc, 0))), "{:?}", t.runs);
+    assert_eq!(
+        (s.paint.clone(), s.width, s.join),
+        (
+            Paint::solid(Color::BLACK),
+            8.0,
+            vectorcraft_doc::LineJoin::Round
+        )
+    );
+    assert!(
+        t.runs
+            .iter()
+            .all(|r| !r.style.has_stroke()
+                && r.style.fill == Paint::solid(Color::rgb8(0xff, 0xcc, 0))),
+        "{:?}",
+        t.runs
+    );
 
     // The letters stay yellow inside their black halo.
     assert!(yellow_letters(&d) > 150, "{}", yellow_letters(&d));
@@ -62,14 +84,22 @@ fn the_stroke_under_scales_with_the_text_and_keeps_its_gradient() {
     let (n, t) = text(&d);
     let s = under(&n);
     assert_eq!(s.width, 6.0);
-    let Paint::Gradient(g) = &s.paint else { panic!("{:?}", s.paint) };
+    let Paint::Gradient(g) = &s.paint else {
+        panic!("{:?}", s.paint)
+    };
     // The bounding-box gradient spans the text's ink in the document (x from about 20).
     let geom = g.geom.unwrap();
-    assert!(geom.start.x > 15.0 && geom.end.x > geom.start.x + 40.0, "{geom:?}");
+    assert!(
+        geom.start.x > 15.0 && geom.end.x > geom.start.x + 40.0,
+        "{geom:?}"
+    );
     assert!(t.runs.iter().all(|r| !r.style.has_stroke()));
 
     // Non-scaling: the stroke under the characters is as wide as on screen.
-    let svg = svg.replace("paint-order", r#"vector-effect="non-scaling-stroke" paint-order"#);
+    let svg = svg.replace(
+        "paint-order",
+        r#"vector-effect="non-scaling-stroke" paint-order"#,
+    );
     let (d, _) = import_with_report(&svg).unwrap();
     assert_eq!(under(&text(&d).0).width, 3.0);
 }
@@ -80,7 +110,12 @@ fn characters_with_different_strokes_keep_them_and_warn() {
       <text id="mixed" x="10" y="45" font-size="36" fill="#fc0" stroke="#000" stroke-width="8" paint-order="stroke">A<tspan stroke-width="2">b</tspan></text>
     </svg>"##;
     let (d, warnings) = import_with_report(svg).unwrap();
-    assert!(warnings.iter().any(|w| w.contains("paint-order on text 'mixed'")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("paint-order on text 'mixed'")),
+        "{warnings:?}"
+    );
     let (n, t) = text(&d);
     assert!(n.appearance.items.is_empty());
     assert!(t.runs.iter().all(|r| r.style.has_stroke()));
@@ -88,7 +123,8 @@ fn characters_with_different_strokes_keep_them_and_warn() {
 
 #[test]
 fn normal_paint_order_leaves_the_character_strokes() {
-    let (d, warnings) = import_with_report(&HALO.replace(r#"paint-order="stroke">Ab"#, ">Ab")).unwrap();
+    let (d, warnings) =
+        import_with_report(&HALO.replace(r#"paint-order="stroke">Ab"#, ">Ab")).unwrap();
     assert!(warnings.is_empty(), "{warnings:?}");
     let (n, t) = text(&d);
     assert!(n.appearance.items.is_empty() && t.runs.iter().all(|r| r.style.has_stroke()));

@@ -71,21 +71,40 @@ impl Projective {
             (0.0, 0.0)
         } else {
             let den = dx1 * dy2 - dx2 * dy1;
-            if den.abs() < 1e-12 { (0.0, 0.0) } else { ((dx3 * dy2 - dx2 * dy3) / den, (dx1 * dy3 - dx3 * dy1) / den) }
+            if den.abs() < 1e-12 {
+                (0.0, 0.0)
+            } else {
+                ((dx3 * dy2 - dx2 * dy3) / den, (dx1 * dy3 - dx3 * dy1) / den)
+            }
         };
         let a = p1.x - p0.x + g * p1.x;
         let b = p3.x - p0.x + h * p3.x;
         let d = p1.y - p0.y + g * p1.y;
         let e = p3.y - p0.y + h * p3.y;
-        Self { m: [a, b, p0.x, d, e, p0.y, g, h], src }
+        Self {
+            m: [a, b, p0.x, d, e, p0.y, g, h],
+            src,
+        }
     }
 
     pub fn apply(&self, p: Point) -> Point {
         let [a, b, c, d, e, f, g, h] = self.m;
-        let u = if self.src.width().abs() > 1e-12 { (p.x - self.src.x0) / self.src.width() } else { 0.0 };
-        let v = if self.src.height().abs() > 1e-12 { (p.y - self.src.y0) / self.src.height() } else { 0.0 };
+        let u = if self.src.width().abs() > 1e-12 {
+            (p.x - self.src.x0) / self.src.width()
+        } else {
+            0.0
+        };
+        let v = if self.src.height().abs() > 1e-12 {
+            (p.y - self.src.y0) / self.src.height()
+        } else {
+            0.0
+        };
         let w = g * u + h * v + 1.0;
-        let w = if w.abs() < 1e-9 { 1e-9_f64.copysign(w) } else { w };
+        let w = if w.abs() < 1e-9 {
+            1e-9_f64.copysign(w)
+        } else {
+            w
+        };
         Point::new((a * u + b * v + c) / w, (d * u + e * v + f) / w)
     }
 
@@ -115,7 +134,9 @@ fn warp_node(n: &mut Node, pr: &Projective) {
                 }
             }
         }
-        NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
+        NodeKind::Layer { children, .. }
+        | NodeKind::Group { children, .. }
+        | NodeKind::Compound { children, .. } => {
             for c in children.iter_mut() {
                 warp_node(Arc::make_mut(c), pr);
             }
@@ -138,21 +159,43 @@ fn distort(s: &mut Session, p: &Value) -> Result<Value> {
         .get("corners")
         .and_then(Value::as_array)
         .filter(|a| a.len() == 4)
-        .and_then(|a| a.iter().map(|c| finite_numbers(c).map(|[x, y]| Point::new(x, y))).collect());
-    let Some(&[tl, tr, br, bl]) = corners.as_deref() else { return Err(bad(C, "corners must be 4 [x, y] points (TL, TR, BR, BL)")) };
-    let ids = if p.get("ids").is_some_and(|v| !v.is_null()) { checked_ids_param(s, p, "ids", C)? } else { selected_roots(s)? };
+        .and_then(|a| {
+            a.iter()
+                .map(|c| finite_numbers(c).map(|[x, y]| Point::new(x, y)))
+                .collect()
+        });
+    let Some(&[tl, tr, br, bl]) = corners.as_deref() else {
+        return Err(bad(C, "corners must be 4 [x, y] points (TL, TR, BR, BL)"));
+    };
+    let ids = if p.get("ids").is_some_and(|v| !v.is_null()) {
+        checked_ids_param(s, p, "ids", C)?
+    } else {
+        selected_roots(s)?
+    };
     if ids.is_empty() {
         return Err(bad(C, "nothing to distort"));
     }
     let src = match p.get("from").filter(|v| !v.is_null()) {
-        None => s.doc()?.doc.bounds_of(&ids, false).ok_or_else(|| bad(C, "nothing to distort"))?,
+        None => s
+            .doc()?
+            .doc
+            .bounds_of(&ids, false)
+            .ok_or_else(|| bad(C, "nothing to distort"))?,
         Some(v) => {
-            let [x0, y0, x1, y1] = finite_numbers(v).ok_or_else(|| bad(C, "from must be [x0, y0, x1, y1]"))?;
+            let [x0, y0, x1, y1] =
+                finite_numbers(v).ok_or_else(|| bad(C, "from must be [x0, y0, x1, y1]"))?;
             Rect::new(x0, y0, x1, y1)
         }
     };
-    if !src.width().is_finite() || !src.height().is_finite() || src.width().abs() < 1e-9 || src.height().abs() < 1e-9 {
-        return Err(bad(C, "cannot distort a zero-size or non-finite bounding box"));
+    if !src.width().is_finite()
+        || !src.height().is_finite()
+        || src.width().abs() < 1e-9
+        || src.height().abs() < 1e-9
+    {
+        return Err(bad(
+            C,
+            "cannot distort a zero-size or non-finite bounding box",
+        ));
     }
     let pr = Projective::from_rect(src, [tl, tr, br, bl]);
     s.edit("Free Distort", |d, _| {
@@ -179,7 +222,11 @@ pub struct FillAttrs {
 }
 
 impl FillAttrs {
-    pub const ALL: Self = Self { color: true, transparency: true, overprint: true };
+    pub const ALL: Self = Self {
+        color: true,
+        transparency: true,
+        overprint: true,
+    };
 }
 
 impl Default for FillAttrs {
@@ -206,7 +253,16 @@ pub struct StrokeAttrs {
 }
 
 impl StrokeAttrs {
-    pub const ALL: Self = Self { color: true, transparency: true, overprint: true, weight: true, cap: true, join: true, miter: true, dash: true };
+    pub const ALL: Self = Self {
+        color: true,
+        transparency: true,
+        overprint: true,
+        weight: true,
+        cap: true,
+        join: true,
+        miter: true,
+        dash: true,
+    };
 }
 
 impl Default for StrokeAttrs {
@@ -228,7 +284,11 @@ pub struct AppearanceAttrs {
 
 impl Default for AppearanceAttrs {
     fn default() -> Self {
-        Self { transparency: true, fill: FillAttrs::ALL, stroke: StrokeAttrs::ALL }
+        Self {
+            transparency: true,
+            fill: FillAttrs::ALL,
+            stroke: StrokeAttrs::ALL,
+        }
     }
 }
 
@@ -245,7 +305,11 @@ pub struct EyedropperAttrs {
 
 impl Default for EyedropperAttrs {
     fn default() -> Self {
-        Self { appearance: Default::default(), character: true, paragraph: true }
+        Self {
+            appearance: Default::default(),
+            character: true,
+            paragraph: true,
+        }
     }
 }
 
@@ -276,7 +340,11 @@ pub struct EyedropperOptions {
 
 impl Default for EyedropperOptions {
     fn default() -> Self {
-        Self { sample_size: 1, pick_up: Default::default(), apply: Default::default() }
+        Self {
+            sample_size: 1,
+            pick_up: Default::default(),
+            apply: Default::default(),
+        }
     }
 }
 
@@ -286,7 +354,10 @@ impl EyedropperOptions {
     pub(crate) fn merged(&self, p: &Value) -> std::result::Result<Self, String> {
         let mut v = serde_json::to_value(self).map_err(|e| e.to_string())?;
         if let Some(n) = p.get("sampleSize").filter(|n| !n.is_null()) {
-            let n = n.as_u64().filter(|n| matches!(n, 1 | 3 | 5)).ok_or("`sampleSize` must be 1, 3 or 5")?;
+            let n = n
+                .as_u64()
+                .filter(|n| matches!(n, 1 | 3 | 5))
+                .ok_or("`sampleSize` must be 1, 3 or 5")?;
             v["sampleSize"] = json!(n);
         }
         for key in ["pickUp", "apply"] {
@@ -314,11 +385,15 @@ fn merge_flags(dst: &mut Value, src: &Value, path: &str) -> std::result::Result<
             *d = *b;
             Ok(())
         }
-        (Value::Object(d), Value::Bool(_)) => d.values_mut().try_for_each(|v| merge_flags(v, src, path)),
-        (Value::Object(d), Value::Object(s)) => s.iter().try_for_each(|(k, v)| match d.get_mut(k) {
-            Some(dv) => merge_flags(dv, v, &format!("{path}.{k}")),
-            None => Err(format!("unknown option `{path}.{k}`")),
-        }),
+        (Value::Object(d), Value::Bool(_)) => {
+            d.values_mut().try_for_each(|v| merge_flags(v, src, path))
+        }
+        (Value::Object(d), Value::Object(s)) => {
+            s.iter().try_for_each(|(k, v)| match d.get_mut(k) {
+                Some(dv) => merge_flags(dv, v, &format!("{path}.{k}")),
+                None => Err(format!("unknown option `{path}.{k}`")),
+            })
+        }
         _ => Err(format!("`{path}` must be a bool or an object of bools")),
     }
 }
@@ -333,18 +408,34 @@ fn and_flags(dst: &mut Value, other: &Value) {
 }
 
 fn eyedropper_options(s: &mut Session, p: &Value) -> Result<Value> {
-    s.prefs.eyedropper = s.prefs.eyedropper.merged(p).map_err(|e| bad("eyedropper.setOptions", e))?;
+    s.prefs.eyedropper = s
+        .prefs
+        .eyedropper
+        .merged(p)
+        .map_err(|e| bad("eyedropper.setOptions", e))?;
     Ok(json!(s.prefs.eyedropper))
 }
 
 fn sample_color(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "paint.sampleColor";
-    let stroke = p.get("stroke").and_then(Value::as_bool).unwrap_or(!s.fill_active);
+    let stroke = p
+        .get("stroke")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.fill_active);
     let c = p.get("color").ok_or_else(|| bad(C, "missing color"))?;
     let (id, mut q) = match p.get("stop") {
-        None | Some(Value::Null) => (if stroke { "paint.setStroke" } else { "paint.setFill" }, json!({ "color": c })),
+        None | Some(Value::Null) => (
+            if stroke {
+                "paint.setStroke"
+            } else {
+                "paint.setFill"
+            },
+            json!({ "color": c }),
+        ),
         Some(v) => {
-            let i = v.as_u64().ok_or_else(|| bad(C, "`stop` must be a stop index"))? as usize;
+            let i = v
+                .as_u64()
+                .ok_or_else(|| bad(C, "`stop` must be a stop index"))? as usize;
             let color = color_value(c).ok_or_else(|| bad(C, format!("bad color {c}")))?;
             let (fill, stroke_paint) = s.proxy_paints();
             let Paint::Gradient(g) = (if stroke { stroke_paint } else { fill }) else {
@@ -352,8 +443,14 @@ fn sample_color(s: &mut Session, p: &Value) -> Result<Value> {
             };
             let mut stops = g.gradient.stops;
             let n = stops.len();
-            stops.get_mut(i).ok_or_else(|| bad(C, format!("no stop {i} (the gradient has {n})")))?.set_color(color, None);
-            ("paint.editGradient", json!({ "stops": vectorcraft_tools::params::stops_json(&stops), "stroke": stroke }))
+            stops
+                .get_mut(i)
+                .ok_or_else(|| bad(C, format!("no stop {i} (the gradient has {n})")))?
+                .set_color(color, None);
+            (
+                "paint.editGradient",
+                json!({ "stops": vectorcraft_tools::params::stops_json(&stops), "stroke": stroke }),
+            )
         }
     };
     if let Some(ids) = p.get("ids") {
@@ -373,35 +470,53 @@ fn artboard_move(s: &mut Session, p: &Value) -> Result<Value> {
     let mut arts: Vec<(usize, Vec<NodeId>)> = vec![];
     for &i in &indices {
         let art = super::panelcmds::artboard_art(s, i, move_art)?;
-        let art = art.into_iter().filter(|id| !arts.iter().any(|(_, a)| a.contains(id))).collect();
+        let art = art
+            .into_iter()
+            .filter(|id| !arts.iter().any(|(_, a)| a.contains(id)))
+            .collect();
         arts.push((i, art));
     }
     let ids: Vec<NodeId> = arts.iter().flat_map(|(_, a)| a.iter().copied()).collect();
-    let sc = Scaling { patterns: super::object::transform_patterns(s, p, &ids)?, ..Scaling::default() };
+    let sc = Scaling {
+        patterns: super::object::transform_patterns(s, p, &ids)?,
+        ..Scaling::default()
+    };
     let copy = bool_or(p, "copy", false);
-    let (index, moved) = s.edit(if copy { "Duplicate Artboard" } else { "Move Artboard" }, |d, _| {
-        let (mut index, mut moved) = (vec![], vec![]);
-        for (i, art) in &arts {
-            // A copy keeps the artboard (and its art) where they are and moves duplicates instead.
-            if copy {
-                let (at, copies) = super::panelcmds::copy_artboard(d, *i, dv, art, sc)?;
-                index.push(at);
-                moved.extend(copies);
-                continue;
-            }
-            let a = d.artboards.get_mut(*i).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
-            a.rect = a.rect + dv;
-            let id = a.id;
-            d.move_artboard_guides(id, dv);
-            for id in art {
-                if let Some(n) = d.node_mut(*id) {
-                    n.transform(Affine::translate(dv), sc);
+    let (index, moved) = s.edit(
+        if copy {
+            "Duplicate Artboard"
+        } else {
+            "Move Artboard"
+        },
+        |d, _| {
+            let (mut index, mut moved) = (vec![], vec![]);
+            for (i, art) in &arts {
+                // A copy keeps the artboard (and its art) where they are and moves duplicates instead.
+                if copy {
+                    let (at, copies) = super::panelcmds::copy_artboard(d, *i, dv, art, sc)?;
+                    index.push(at);
+                    moved.extend(copies);
+                    continue;
                 }
+                let a = d
+                    .artboards
+                    .get_mut(*i)
+                    .ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+                a.rect = a.rect + dv;
+                let id = a.id;
+                d.move_artboard_guides(id, dv);
+                for id in art {
+                    if let Some(n) = d.node_mut(*id) {
+                        n.transform(Affine::translate(dv), sc);
+                    }
+                }
+                index.push(*i);
+                moved.extend(art.iter().copied());
             }
-            index.push(*i);
-            moved.extend(art.iter().copied());
-        }
-        Ok((index, moved))
-    })?;
-    Ok(json!({ "index": index.first(), "indices": index, "moved": moved.iter().map(|i| i.0).collect::<Vec<_>>() }))
+            Ok((index, moved))
+        },
+    )?;
+    Ok(
+        json!({ "index": index.first(), "indices": index, "moved": moved.iter().map(|i| i.0).collect::<Vec<_>>() }),
+    )
 }

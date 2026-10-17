@@ -27,7 +27,6 @@
 #![forbid(unused_imports)]
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
-
 // Always allow
 #![allow(dead_code)]
 #![allow(non_snake_case)]
@@ -36,23 +35,24 @@
 // https://en.wikipedia.org/wiki/Base32#Crockford's_Base32
 pub(crate) const CROCKFORD_UPPERCASE_CHARSET: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 pub(crate) const CROCKFORD_LOWERCASE_CHARSET: &[u8] = b"0123456789abcdefghjkmnpqrstvwxyz";
-pub(crate) const CROCKFORD_MIXED_CASE_CHARSET: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz";
+pub(crate) const CROCKFORD_MIXED_CASE_CHARSET: &[u8] =
+    b"0123456789ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz";
 
 pub(crate) enum TokenCharacterSet {
-  CrockfordUpper,
-  CrockfordLower,
-  CrockfordMixed,
+    CrockfordUpper,
+    CrockfordLower,
+    CrockfordMixed,
 }
 
 /// Every token must have at least this many "characters" of entropy.
-pub(crate) static MINIMUM_CHARACTER_ENTROPY : usize = 8;
+pub(crate) static MINIMUM_CHARACTER_ENTROPY: usize = 8;
 
 #[macro_use]
-pub (crate) mod macros;
+pub(crate) mod macros;
 
-pub (crate) mod deterministic_rng;
-pub (crate) mod prefixes;
+pub(crate) mod deterministic_rng;
+pub(crate) mod prefixes;
 
+mod safe_entropy;
 pub mod tokens;
 pub mod traits;
-mod safe_entropy;

@@ -16,10 +16,13 @@ pub(super) async fn dispatch(enabled: bool, params: &Value) -> Result<Value, App
             "aphrody/google/search requires anonymous=true; account cookies are unavailable".into(),
         ));
     }
-    tokio::time::timeout(std::time::Duration::from_secs(30), execute_search_request(params))
-        .await
-        .map_err(|_| AppServerError::Runtime("Google Search exceeded its 30s budget".into()))?
-        .map_err(AppServerError::Runtime)
+    tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        execute_search_request(params),
+    )
+    .await
+    .map_err(|_| AppServerError::Runtime("Google Search exceeded its 30s budget".into()))?
+    .map_err(AppServerError::Runtime)
 }
 
 #[cfg(test)]
@@ -45,11 +48,19 @@ mod tests {
             request(&mut server, json!({"query":"Aphrody","anonymous":true})).await["error"]["code"],
             -32002
         );
-        server.handle(r#"{"id":0,"method":"initialize"}"#).await.unwrap();
+        server
+            .handle(r#"{"id":0,"method":"initialize"}"#)
+            .await
+            .unwrap();
         server.handle(r#"{"method":"initialized"}"#).await.unwrap();
         let denied = request(&mut server, json!({"query":"Aphrody","anonymous":true})).await;
         assert_eq!(denied["error"]["code"], -32602);
-        assert!(denied["error"]["message"].as_str().unwrap().contains("capabilities.aphrody"));
+        assert!(
+            denied["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("capabilities.aphrody")
+        );
     }
 
     #[tokio::test]
@@ -70,7 +81,10 @@ mod tests {
         ] {
             let result = request(&mut server, params).await;
             assert_eq!(result["error"]["code"], -32602, "{result}");
-            assert_ne!(result["error"]["message"], "method not found: aphrody/google/search");
+            assert_ne!(
+                result["error"]["message"],
+                "method not found: aphrody/google/search"
+            );
         }
     }
 }

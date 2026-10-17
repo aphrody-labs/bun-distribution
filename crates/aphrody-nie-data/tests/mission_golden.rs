@@ -187,7 +187,10 @@ fn fixture_mission_config_mission_code() {
     let info: &MissionConfigInfo = &infos[0];
 
     // MISSION_CONFIG_INFO_0.variables[1] : type=String, value="msa999999"
-    assert_eq!(info.mission_code, "msa999999", "mission_code = \"msa999999\"");
+    assert_eq!(
+        info.mission_code, "msa999999",
+        "mission_code = \"msa999999\""
+    );
 }
 
 #[test]
@@ -198,7 +201,11 @@ fn fixture_mission_config_raw_valeurs() {
     // raw[0] = var[2] = 1316720857 → 0x4E7B90D9
     assert_eq!(info.raw[0], RAW_0_VAR2, "raw[0] = var[2] = 0x4E7B90D9");
     // raw[1] = var[3] = 1 → 0x00000001
-    assert_eq!(info.raw[1], HashId::from_i64(1), "raw[1] = var[3] = 0x00000001");
+    assert_eq!(
+        info.raw[1],
+        HashId::from_i64(1),
+        "raw[1] = var[3] = 0x00000001"
+    );
     // raw[2] = var[4] = 0 → ZERO
     assert_eq!(info.raw[2], HashId::ZERO, "raw[2] = var[4] = 0");
     // raw[3] = var[5] = -736280260 → 0xD41D413C
@@ -242,7 +249,10 @@ fn fixture_trigger_item0_type_et_hash() {
     // DATA_ITEM_0.variables[0].value = "1" → trigger_type = 1
     assert_eq!(item.trigger_type, 1, "trigger_type = 1");
     // DATA_ITEM_0.variables[1].value = "-1369358024" → 0xAE614138
-    assert_eq!(item.trigger_hash, TRIGGER_HASH_0, "trigger_hash = 0xAE614138");
+    assert_eq!(
+        item.trigger_hash, TRIGGER_HASH_0,
+        "trigger_hash = 0xAE614138"
+    );
 }
 
 #[test]
@@ -251,7 +261,10 @@ fn fixture_trigger_item0_data() {
     let item = &items[0];
 
     // DATA_ITEM_0.variables[3] : type=String, value="AAAAAAoDNbkZNtoAAQB4"
-    assert_eq!(item.data, "AAAAAAoDNbkZNtoAAQB4", "data = \"AAAAAAoDNbkZNtoAAQB4\"");
+    assert_eq!(
+        item.data, "AAAAAAoDNbkZNtoAAQB4",
+        "data = \"AAAAAAoDNbkZNtoAAQB4\""
+    );
 }
 
 #[test]
@@ -317,7 +330,10 @@ fn real_file_mission_config_code() {
     let infos = parse_mission_config(&root);
 
     // mission_config_0.00.00 : MISSION_CONFIG_INFO_0.variables[1].value = "msa999999"
-    assert_eq!(infos[0].mission_code, "msa999999", "mission_code = \"msa999999\"");
+    assert_eq!(
+        infos[0].mission_code, "msa999999",
+        "mission_code = \"msa999999\""
+    );
 }
 
 #[test]
@@ -329,15 +345,35 @@ fn real_file_mission_config_raw_hashes_non_nuls() {
     let info = &infos[0];
 
     // raw[0] = var[2] = 1316720857 → 0x4E7B90D9 (non-nul)
-    assert_eq!(info.raw[0], HashId::from_i64(1316720857), "raw[0] = var[2] = 0x4E7B90D9");
+    assert_eq!(
+        info.raw[0],
+        HashId::from_i64(1316720857),
+        "raw[0] = var[2] = 0x4E7B90D9"
+    );
     // raw[3] = var[5] = -736280260 → 0xD41D413C (non-nul)
-    assert_eq!(info.raw[3], HashId::from_i64(-736280260), "raw[3] = var[5] = 0xD41D413C");
+    assert_eq!(
+        info.raw[3],
+        HashId::from_i64(-736280260),
+        "raw[3] = var[5] = 0xD41D413C"
+    );
     // raw[7] = var[9] = 1475254969 → 0x57EE9AB9
-    assert_eq!(info.raw[7], HashId::from_i64(1475254969), "raw[7] = var[9] = 0x57EE9AB9");
+    assert_eq!(
+        info.raw[7],
+        HashId::from_i64(1475254969),
+        "raw[7] = var[9] = 0x57EE9AB9"
+    );
     // raw[8] = var[10] = -813411175 → 0xCF845499
-    assert_eq!(info.raw[8], HashId::from_i64(-813411175), "raw[8] = var[10] = 0xCF845499");
+    assert_eq!(
+        info.raw[8],
+        HashId::from_i64(-813411175),
+        "raw[8] = var[10] = 0xCF845499"
+    );
     // raw[9] = var[11] = 2083486252 → 0x7C2F7A2C
-    assert_eq!(info.raw[9], HashId::from_i64(2083486252), "raw[9] = var[11] = 0x7C2F7A2C");
+    assert_eq!(
+        info.raw[9],
+        HashId::from_i64(2083486252),
+        "raw[9] = var[11] = 0x7C2F7A2C"
+    );
 }
 
 // — msa999999_trigger —
@@ -362,7 +398,11 @@ fn real_file_trigger_item0_type_et_hash() {
     // DATA_ITEM_0.variables[0].value = "1" → trigger_type = 1
     assert_eq!(items[0].trigger_type, 1, "trigger_type = 1");
     // DATA_ITEM_0.variables[1].value = "-1369358024" → 0xAE614138
-    assert_eq!(items[0].trigger_hash, HashId::from_i64(-1369358024), "trigger_hash = 0xAE614138");
+    assert_eq!(
+        items[0].trigger_hash,
+        HashId::from_i64(-1369358024),
+        "trigger_hash = 0xAE614138"
+    );
 }
 
 #[test]
@@ -373,7 +413,10 @@ fn real_file_trigger_item0_data() {
     let items = parse_mission_trigger(&root);
 
     // DATA_ITEM_0.variables[3] : type=String, value="AAAAAAoDNbkZNtoAAQB4"
-    assert_eq!(items[0].data, "AAAAAAoDNbkZNtoAAQB4", "data = \"AAAAAAoDNbkZNtoAAQB4\"");
+    assert_eq!(
+        items[0].data, "AAAAAAoDNbkZNtoAAQB4",
+        "data = \"AAAAAAoDNbkZNtoAAQB4\""
+    );
     assert!(!items[0].data.is_empty(), "data non vide");
 }
 

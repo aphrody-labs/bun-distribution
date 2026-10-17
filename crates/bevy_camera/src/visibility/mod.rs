@@ -36,7 +36,7 @@ use bevy_ecs::entity::EntityHashMap;
 use bevy_ecs::lifecycle::HookContext;
 use bevy_ecs::world::DeferredWorld;
 use bevy_mesh::skinning::{
-    entity_aabb_from_skinned_mesh_bounds, SkinnedMesh, SkinnedMeshInverseBindposes,
+    SkinnedMesh, SkinnedMeshInverseBindposes, entity_aabb_from_skinned_mesh_bounds,
 };
 use derive_more::derive::{Deref, DerefMut};
 pub use range::*;
@@ -46,17 +46,17 @@ use bevy_app::{Plugin, PostUpdate, ValidateParentHasComponentPlugin};
 use bevy_asset::prelude::AssetChanged;
 use bevy_asset::{AssetEventSystems, Assets};
 use bevy_ecs::prelude::*;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
-use bevy_transform::{components::GlobalTransform, TransformSystems};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
+use bevy_transform::{TransformSystems, components::GlobalTransform};
 use bevy_utils::{Parallel, TypeIdHashMap};
 use smallvec::SmallVec;
 
 use crate::{
+    Projection,
     camera::Camera,
     primitives::{Aabb, Frustum, MeshAabb, Sphere},
-    Projection,
 };
-use bevy_mesh::{mark_3d_meshes_as_changed_if_their_assets_changed, Mesh, Mesh2d, Mesh3d};
+use bevy_mesh::{Mesh, Mesh2d, Mesh3d, mark_3d_meshes_as_changed_if_their_assets_changed};
 
 /// Use this component to opt-out of the built-in CPU frustum culling, see
 /// [`Frustum`]. This can be attached to a [`Camera`] or to individual entities.

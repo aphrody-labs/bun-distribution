@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-#![allow(linker_messages, reason = "MSVC import-library progress is not a compiler diagnostic")]
+#![allow(
+    linker_messages,
+    reason = "MSVC import-library progress is not a compiler diagnostic"
+)]
 //! `aphrody` binary entry point.
 //!
 //! A thin shell over the `aphrody` library crate (`src/lib.rs`): every command

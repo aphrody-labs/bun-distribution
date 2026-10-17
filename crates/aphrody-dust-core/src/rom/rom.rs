@@ -431,7 +431,12 @@ impl<'a> Rom<'a> {
 
         // --------------------- Load ARM9 overlays ---------------------
         let arm9_overlays = if let Some(arm9_overlays_config) = &config.arm9_overlays {
-            Self::load_overlays(&path.join(arm9_overlays_config), "arm9", arm9_hmac_sha1, &options)?
+            Self::load_overlays(
+                &path.join(arm9_overlays_config),
+                "arm9",
+                arm9_hmac_sha1,
+                &options,
+            )?
         } else {
             Default::default()
         };
@@ -447,7 +452,9 @@ impl<'a> Rom<'a> {
                 dsprot_state: arm9_build_config.dsprot_state,
             },
         )?;
-        arm9_build_config.build_info.assign_to_raw(arm9.build_info_mut()?);
+        arm9_build_config
+            .build_info
+            .assign_to_raw(arm9.build_info_mut()?);
         arm9.update_overlay_signatures(&arm9_overlays)?;
         if arm9.dsprot_state().is_unencrypted() && options.encrypt {
             log::info!("Encrypting DS Protect in ARM9 program");
@@ -552,7 +559,10 @@ impl<'a> Rom<'a> {
             )?;
 
             if overlay.dsprot_state().is_unencrypted() && options.encrypt {
-                log::info!("Encrypting DS Protect in {processor} overlay {}", overlay.id());
+                log::info!(
+                    "Encrypting DS Protect in {processor} overlay {}",
+                    overlay.id()
+                );
                 overlay.encrypt_dsprot(&DsProtEncryptOptions::default())?;
             }
 
@@ -618,7 +628,8 @@ impl<'a> Rom<'a> {
             &mut create_file_and_dirs(path.join(&self.config.header))?,
             &self.header,
         )?;
-        self.header_logo.save_png(path.join(&self.config.header_logo))?;
+        self.header_logo
+            .save_png(path.join(&self.config.header_logo))?;
 
         // --------------------- Save ARM9 program ---------------------
         let mut plain_arm9 = self.arm9.clone();
@@ -664,12 +675,14 @@ impl<'a> Rom<'a> {
         if self.header.original.unitcode != 0x02 {
             for autoload in &plain_arm9.autoloads()? {
                 let (bin_path, config_path) = match autoload.kind() {
-                    raw::AutoloadKind::Itcm => {
-                        (path.join(&self.config.itcm.bin), path.join(&self.config.itcm.config))
-                    },
-                    raw::AutoloadKind::Dtcm => {
-                        (path.join(&self.config.dtcm.bin), path.join(&self.config.dtcm.config))
-                    },
+                    raw::AutoloadKind::Itcm => (
+                        path.join(&self.config.itcm.bin),
+                        path.join(&self.config.itcm.config),
+                    ),
+                    raw::AutoloadKind::Dtcm => (
+                        path.join(&self.config.dtcm.bin),
+                        path.join(&self.config.dtcm.config),
+                    ),
                     raw::AutoloadKind::Unknown(index) => {
                         let unknown_autoload = self
                             .config
@@ -681,7 +694,7 @@ impl<'a> Rom<'a> {
                             path.join(&unknown_autoload.files.bin),
                             path.join(&unknown_autoload.files.config),
                         )
-                    },
+                    }
                 };
                 create_file_and_dirs(bin_path)?.write_all(autoload.code())?;
                 serde_saphyr::to_io_writer(
@@ -784,9 +797,13 @@ impl<'a> Rom<'a> {
                     plain_overlay.decompress()?;
                 }
                 if plain_overlay.dsprot_state().is_encrypted() {
-                    log::info!("Decrypting DS Protect in {processor} overlay {}", overlay.id());
-                    plain_overlay
-                        .decrypt_dsprot(&DsProtDecryptOptions { decode_relocations: false })?;
+                    log::info!(
+                        "Decrypting DS Protect in {processor} overlay {}",
+                        overlay.id()
+                    );
+                    plain_overlay.decrypt_dsprot(&DsProtDecryptOptions {
+                        decode_relocations: false,
+                    })?;
                 }
 
                 configs.push(OverlayConfig {
@@ -937,7 +954,10 @@ impl<'a> Rom<'a> {
     ///
     /// This function will return an error if an I/O operation fails or a component fails to build.
     pub fn build(mut self, key: Option<&BlowfishKey>) -> Result<raw::Rom<'a>, RomBuildError> {
-        let mut context = BuildContext { blowfish_key: key, ..Default::default() };
+        let mut context = BuildContext {
+            blowfish_key: key,
+            ..Default::default()
+        };
 
         let mut cursor = Cursor::new(Vec::with_capacity(128 * 1024)); // smallest possible ROM
 
@@ -946,13 +966,19 @@ impl<'a> Rom<'a> {
         cursor.write_all(&[0u8; size_of::<raw::Header>()])?;
 
         // --------------------- Write ARM9 program ---------------------
-        self.align(&mut cursor, self.config.alignment.arm9, self.config.padding.arm9)?;
+        self.align(
+            &mut cursor,
+            self.config.alignment.arm9,
+            self.config.padding.arm9,
+        )?;
         context.arm9_offset = Some(cursor.position() as u32);
         context.arm9_autoload_callback = Some(self.arm9.autoload_callback());
         context.arm9_build_info_offset = Some(self.arm9.build_info_offset());
         cursor.write_all(self.arm9.full_data())?;
-        let footer =
-            Arm9Footer::new(self.arm9.build_info_offset(), self.arm9.overlay_signatures_offset());
+        let footer = Arm9Footer::new(
+            self.arm9.build_info_offset(),
+            self.arm9.overlay_signatures_offset(),
+        );
         cursor.write_all(bytemuck::bytes_of(&footer))?;
 
         let max_file_id = self.files.max_file_id();
@@ -988,7 +1014,11 @@ impl<'a> Rom<'a> {
         }
 
         // --------------------- Write ARM7 program ---------------------
-        self.align(&mut cursor, self.config.alignment.arm7, self.config.padding.arm7)?;
+        self.align(
+            &mut cursor,
+            self.config.alignment.arm7,
+            self.config.padding.arm7,
+        )?;
         context.arm7_offset = Some(cursor.position() as u32);
         context.arm7_autoload_callback = Some(self.arm7.autoload_callback());
         context.arm7_build_info_offset = None;
@@ -1024,11 +1054,17 @@ impl<'a> Rom<'a> {
         }
 
         // --------------------- Write file name table (FNT) ---------------------
-        self.align(&mut cursor, self.config.alignment.file_name_table, self.config.padding.fnt)?;
+        self.align(
+            &mut cursor,
+            self.config.alignment.file_name_table,
+            self.config.padding.fnt,
+        )?;
         self.files.sort_for_fnt();
         let fnt = self.files.build_fnt()?.build()?;
-        context.fnt_offset =
-            Some(TableOffset { offset: cursor.position() as u32, size: fnt.len() as u32 });
+        context.fnt_offset = Some(TableOffset {
+            offset: cursor.position() as u32,
+            size: fnt.len() as u32,
+        });
         cursor.write_all(&fnt)?;
 
         // --------------------- Write file allocation table (FAT) placeholder ---------------------
@@ -1044,7 +1080,11 @@ impl<'a> Rom<'a> {
         cursor.write_all(bytemuck::cast_slice(&file_allocs))?;
 
         // --------------------- Write banner ---------------------
-        self.align(&mut cursor, self.config.alignment.banner, self.config.padding.banner)?;
+        self.align(
+            &mut cursor,
+            self.config.alignment.banner,
+            self.config.padding.banner,
+        )?;
         let banner = self.banner.build()?;
         context.banner_offset = Some(TableOffset {
             offset: cursor.position() as u32,
@@ -1059,18 +1099,27 @@ impl<'a> Rom<'a> {
             self.config.padding.file_image,
         )?;
         self.files.sort_for_rom();
-        self.files.traverse_files(self.path_order.iter().map(std::string::String::as_str), |file, _| {
-            // TODO: Rewrite traverse_files as an iterator so these errors can be returned
-            self.align(&mut cursor, self.config.alignment.file, self.config.padding.file_image)
+        self.files.traverse_files(
+            self.path_order.iter().map(std::string::String::as_str),
+            |file, _| {
+                // TODO: Rewrite traverse_files as an iterator so these errors can be returned
+                self.align(
+                    &mut cursor,
+                    self.config.alignment.file,
+                    self.config.padding.file_image,
+                )
                 .expect("failed to align after file");
 
-            let contents = file.contents();
-            let start = cursor.position() as u32;
-            let end = start + contents.len() as u32;
-            file_allocs[file.id() as usize] = FileAlloc { start, end };
+                let contents = file.contents();
+                let start = cursor.position() as u32;
+                let end = start + contents.len() as u32;
+                file_allocs[file.id() as usize] = FileAlloc { start, end };
 
-            cursor.write_all(contents).expect("failed to write file contents");
-        });
+                cursor
+                    .write_all(contents)
+                    .expect("failed to write file contents");
+            },
+        );
 
         // --------------------- Write multiboot signature ---------------------
         // Multiboot signature is placed "after" the ROM ends
@@ -1101,7 +1150,10 @@ impl<'a> Rom<'a> {
         alignment: u32,
         padding_value: u8,
     ) -> Result<(), RomBuildError> {
-        assert!(alignment.is_power_of_two(), "alignment must be a power of two");
+        assert!(
+            alignment.is_power_of_two(),
+            "alignment must be a power of two"
+        );
         let mask = alignment - 1;
         let padding = (!cursor.position() as u32 + 1) & mask;
         for _ in 0..padding {

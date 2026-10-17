@@ -69,7 +69,11 @@ pub fn thumb_size(l: &Layer, ts: f32, room: f32) -> f32 {
     let n = masks(l).len() as f32;
     let need = ts + 6.0 + width(l, ts) + crate::layer_row_ui::MIN_NAME_W;
     let short = need - room;
-    if short <= 0.0 { ts } else { (ts - short / (1.0 + n)).clamp(14.0_f32.min(ts), ts) }
+    if short <= 0.0 {
+        ts
+    } else {
+        (ts - short / (1.0 + n)).clamp(14.0_f32.min(ts), ts)
+    }
 }
 
 /// Where a row's mask thumbnails and chains went.
@@ -83,11 +87,17 @@ pub struct MaskRects {
 
 impl MaskRects {
     pub fn thumb(&self, kind: MaskKind) -> Option<Rect> {
-        self.thumbs.iter().find(|(k, _)| *k == kind).map(|(_, r)| *r)
+        self.thumbs
+            .iter()
+            .find(|(k, _)| *k == kind)
+            .map(|(_, r)| *r)
     }
     /// The mask thumbnail under `p`, if any.
     pub fn hit(&self, p: Pos2) -> Option<MaskKind> {
-        self.thumbs.iter().find(|(_, r)| r.expand(2.0).contains(p)).map(|(k, _)| *k)
+        self.thumbs
+            .iter()
+            .find(|(_, r)| r.expand(2.0).contains(p))
+            .map(|(k, _)| *k)
     }
 }
 
@@ -110,26 +120,52 @@ pub fn paint(
     let mut out = MaskRects::default();
     for (kind, enabled, linked) in masks(l) {
         // The chain sits in the gap before the thumbnail, centred between the two.
-        let chain = Rect::from_min_max(pos2(*x - 4.0, cy - ts / 2.0), pos2(*x - 4.0 + CHAIN_W, cy + ts / 2.0));
-        let resp = ui.interact(chain, ui.id().with(("mask-chain", l.id.0, kind == MaskKind::Vector)), Sense::click());
+        let chain = Rect::from_min_max(
+            pos2(*x - 4.0, cy - ts / 2.0),
+            pos2(*x - 4.0 + CHAIN_W, cy + ts / 2.0),
+        );
+        let resp = ui.interact(
+            chain,
+            ui.id()
+                .with(("mask-chain", l.id.0, kind == MaskKind::Vector)),
+            Sense::click(),
+        );
         if linked {
-            paint_chain(painter, chain.center(), if resp.hovered() { t.text } else { t.icon });
+            paint_chain(
+                painter,
+                chain.center(),
+                if resp.hovered() { t.text } else { t.icon },
+            );
         } else if resp.hovered() {
             paint_chain(painter, chain.center(), t.text_faint);
         }
-        let (verb, what, name) = (if linked { "Unlink" } else { "Link" }, kind.label(), l.name.clone());
-        let resp = resp.on_hover_text(if linked { tl!("Unlink the mask from the layer") } else { tl!("Link the mask to the layer") });
+        let (verb, what, name) = (
+            if linked { "Unlink" } else { "Link" },
+            kind.label(),
+            l.name.clone(),
+        );
+        let resp = resp.on_hover_text(if linked {
+            tl!("Unlink the mask from the layer")
+        } else {
+            tl!("Link the mask to the layer")
+        });
         let template = "{verb} {mask} {layer}";
         resp.widget_info(|| {
             egui::WidgetInfo::labeled(
                 egui::WidgetType::Button,
                 true,
-                crate::i18n::fmt(tl!(template), &[("verb", tl!(verb)), ("mask", tl!(what)), ("layer", &name)]),
+                crate::i18n::fmt(
+                    tl!(template),
+                    &[("verb", tl!(verb)), ("mask", tl!(what)), ("layer", &name)],
+                ),
             )
         });
         if resp.clicked() {
             out.clicked = true;
-            actions.push((format!("{}.linked", kind.command()), json!({"layer": l.id.0, "linked": !linked})));
+            actions.push((
+                format!("{}.linked", kind.command()),
+                json!({"layer": l.id.0, "linked": !linked}),
+            ));
         }
         out.chains.push((kind, chain));
         *x += CHAIN_W - 2.0;
@@ -137,10 +173,18 @@ pub fn paint(
         if ui.is_rect_visible(r) {
             let tex = match kind {
                 MaskKind::Pixel => l.mask.as_ref().map(|m| app.mask_thumb(ctx, doc, l.id, m)),
-                MaskKind::Vector => l.vector_mask.as_ref().map(|m| app.vector_mask_thumb(ctx, doc, l.id, m)),
+                MaskKind::Vector => l
+                    .vector_mask
+                    .as_ref()
+                    .map(|m| app.vector_mask_thumb(ctx, doc, l.id, m)),
             };
             if let Some(tex) = tex {
-                painter.image(tex, r, Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)), Color32::WHITE);
+                painter.image(
+                    tex,
+                    r,
+                    Rect::from_min_max(Pos2::ZERO, pos2(1.0, 1.0)),
+                    Color32::WHITE,
+                );
             }
             if !enabled {
                 // Photoshop's red X over a disabled mask.
@@ -153,14 +197,24 @@ pub fn paint(
         painter.rect_stroke(
             r,
             if t.pro { 0.0 } else { 4.0 },
-            Stroke::new(1.0, if t.pro { Color32::from_gray(20) } else { t.field_border }),
+            Stroke::new(
+                1.0,
+                if t.pro {
+                    Color32::from_gray(20)
+                } else {
+                    t.field_border
+                },
+            ),
             StrokeKind::Outside,
         );
         out.thumbs.push((kind, r));
         *x += ts + 6.0 + 2.0;
     }
     let rects = (out.thumbs.clone(), out.chains.clone());
-    ctx.data_mut(|d| d.get_temp_mut_or_default::<std::collections::HashMap<u64, Rects>>(rects_id()).insert(l.id.0, rects));
+    ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<std::collections::HashMap<u64, Rects>>(rects_id())
+            .insert(l.id.0, rects)
+    });
     out
 }
 
@@ -172,15 +226,26 @@ fn rects_id() -> egui::Id {
 
 /// The mask thumbnails and chains last drawn for layer `id` (for tests and automation).
 pub fn recorded(ctx: &egui::Context, id: u64) -> Option<Rects> {
-    ctx.data(|d| d.get_temp::<std::collections::HashMap<u64, Rects>>(rects_id())).and_then(|m| m.get(&id).cloned())
+    ctx.data(|d| d.get_temp::<std::collections::HashMap<u64, Rects>>(rects_id()))
+        .and_then(|m| m.get(&id).cloned())
 }
 
 /// A small vertical chain: two interlocking links.
 fn paint_chain(painter: &Painter, c: Pos2, color: Color32) {
     let st = Stroke::new(1.2, color);
     let link = vec2(5.0, 7.0);
-    painter.rect_stroke(Rect::from_center_size(c - vec2(0.0, 2.5), link), 2.0, st, StrokeKind::Middle);
-    painter.rect_stroke(Rect::from_center_size(c + vec2(0.0, 2.5), link), 2.0, st, StrokeKind::Middle);
+    painter.rect_stroke(
+        Rect::from_center_size(c - vec2(0.0, 2.5), link),
+        2.0,
+        st,
+        StrokeKind::Middle,
+    );
+    painter.rect_stroke(
+        Rect::from_center_size(c + vec2(0.0, 2.5), link),
+        2.0,
+        st,
+        StrokeKind::Middle,
+    );
 }
 
 /// The command a click on mask thumbnail `kind` issues with modifiers `m`, if it is one that
@@ -191,14 +256,26 @@ pub fn click_command(l: &Layer, kind: MaskKind, m: egui::Modifiers) -> Option<(S
         return None;
     }
     if m.alt {
-        let mode = if m.shift { "toggleOverlay" } else { "toggleGray" };
-        return (kind == MaskKind::Pixel && l.mask.is_some()).then(|| (photocraft_engine::mask_view_cmds::ID.into(), json!({"layer": l.id.0, "mode": mode})));
+        let mode = if m.shift {
+            "toggleOverlay"
+        } else {
+            "toggleGray"
+        };
+        return (kind == MaskKind::Pixel && l.mask.is_some()).then(|| {
+            (
+                photocraft_engine::mask_view_cmds::ID.into(),
+                json!({"layer": l.id.0, "mode": mode}),
+            )
+        });
     }
     if !m.shift {
         return None;
     }
     let enabled = masks(l).into_iter().find(|(k, _, _)| *k == kind)?.1;
-    Some((format!("{}.enabled", kind.command()), json!({"layer": l.id.0, "enabled": !enabled})))
+    Some((
+        format!("{}.enabled", kind.command()),
+        json!({"layer": l.id.0, "enabled": !enabled}),
+    ))
 }
 
 /// The `select.loadSelection` params for a ⌘-click on mask thumbnail `kind` (⌘⇧ add, ⌘⌥
@@ -214,7 +291,11 @@ pub fn load_params(l: &Layer, kind: MaskKind, m: egui::Modifiers) -> Value {
 /// What double-clicking a mask thumbnail does: pixel mask launches Select and Mask if preference is enabled.
 pub fn double_click_command(app: &PhotocraftApp, kind: MaskKind) -> Option<(&'static str, Value)> {
     if kind == MaskKind::Pixel
-        && app.session.prefs().tools.double_click_layer_mask_launches_select_and_mask
+        && app
+            .session
+            .prefs()
+            .tools
+            .double_click_layer_mask_launches_select_and_mask
         && crate::menus::is_enabled(app, "select.selectAndMask")
     {
         Some(("select.selectAndMask", Value::Null))
@@ -225,7 +306,11 @@ pub fn double_click_command(app: &PhotocraftApp, kind: MaskKind) -> Option<(&'st
 
 /// The active layer of `st` has a vector mask (shape layers' paths are content, not masks).
 pub fn has_vector_mask(st: &photocraft_engine::DocState) -> bool {
-    st.active_layer.and_then(|id| st.doc.layer(id)).is_some_and(|l| l.vector_mask.is_some() && !matches!(l.content, photocraft_doc::LayerContent::Shape(_)))
+    st.active_layer
+        .and_then(|id| st.doc.layer(id))
+        .is_some_and(|l| {
+            l.vector_mask.is_some() && !matches!(l.content, photocraft_doc::LayerContent::Shape(_))
+        })
 }
 
 /// Photoshop's target brackets: corner marks just outside thumbnail `r`.
@@ -233,7 +318,12 @@ pub fn paint_brackets(painter: &Painter, r: Rect, color: Color32) {
     let r = r.expand(3.0);
     let k = 6.0;
     let st = Stroke::new(1.5, color);
-    for (c, dx, dy) in [(r.left_top(), 1.0, 1.0), (r.right_top(), -1.0, 1.0), (r.right_bottom(), -1.0, -1.0), (r.left_bottom(), 1.0, -1.0)] {
+    for (c, dx, dy) in [
+        (r.left_top(), 1.0, 1.0),
+        (r.right_top(), -1.0, 1.0),
+        (r.right_bottom(), -1.0, -1.0),
+        (r.left_bottom(), 1.0, -1.0),
+    ] {
         painter.line_segment([c, c + vec2(k * dx, 0.0)], st);
         painter.line_segment([c, c + vec2(0.0, k * dy)], st);
     }
@@ -253,7 +343,8 @@ pub fn brackets(ctx: &egui::Context) -> Option<Rect> {
 pub fn vector_fingerprint(m: &VectorMask) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     let mut mix = |v: u64| h = (h ^ v).wrapping_mul(0x100_0000_01b3);
-    mix(u64::from(m.path.inverted) | u64::from(m.path.fill_rule == photocraft_doc::FillRule::EvenOdd) << 1);
+    mix(u64::from(m.path.inverted)
+        | u64::from(m.path.fill_rule == photocraft_doc::FillRule::EvenOdd) << 1);
     mix(u64::from(m.density.to_bits()));
     for s in &m.path.subpaths {
         mix(u64::from(s.closed) | (s.op as u64) << 1 | (s.knots.len() as u64) << 8);
@@ -271,13 +362,28 @@ pub fn vector_fingerprint(m: &VectorMask) -> u64 {
 /// hides, letterboxed to the document's aspect like the other row thumbnails. Disabled masks
 /// still show their shape (the row crosses them out).
 pub fn vector_thumb_image(doc: &Document, m: &VectorMask, side: usize) -> egui::ColorImage {
-    let (w, h) = (f64::from(doc.size.width.max(1)), f64::from(doc.size.height.max(1)));
+    let (w, h) = (
+        f64::from(doc.size.width.max(1)),
+        f64::from(doc.size.height.max(1)),
+    );
     let s = side as f64 / w.max(h);
     let (ox, oy) = ((side as f64 - w * s) / 2.0, (side as f64 - h * s) / 2.0);
-    let shown = VectorMask { path: m.path.transform(&photocraft_geom::Affine { m: [s, 0.0, 0.0, s, ox, oy] }), enabled: true, ..m.clone() };
+    let shown = VectorMask {
+        path: m.path.transform(&photocraft_geom::Affine {
+            m: [s, 0.0, 0.0, s, ox, oy],
+        }),
+        enabled: true,
+        ..m.clone()
+    };
     let n = side as i32;
-    let values = photocraft_vector::vector_mask_values(&shown, photocraft_geom::Rect::new(0, 0, n, n));
-    let (x0, y0, x1, y1) = (ox.floor() as usize, oy.floor() as usize, (ox + w * s).ceil() as usize, (oy + h * s).ceil() as usize);
+    let values =
+        photocraft_vector::vector_mask_values(&shown, photocraft_geom::Rect::new(0, 0, n, n));
+    let (x0, y0, x1, y1) = (
+        ox.floor() as usize,
+        oy.floor() as usize,
+        (ox + w * s).ceil() as usize,
+        (oy + h * s).ceil() as usize,
+    );
     let mut px = vec![Color32::TRANSPARENT; side * side];
     for (i, p) in px.iter_mut().enumerate() {
         let (tx, ty) = (i % side, i / side);
@@ -292,8 +398,16 @@ pub fn vector_thumb_image(doc: &Document, m: &VectorMask, side: usize) -> egui::
 
 impl PhotocraftApp {
     /// Cached thumbnail of `l`'s vector mask (see [`vector_thumb_image`]).
-    pub fn vector_mask_thumb(&mut self, ctx: &egui::Context, doc: &Document, id: LayerId, m: &VectorMask) -> egui::TextureId {
-        let rev = vector_fingerprint(m) ^ (u64::from(doc.size.width) << 40) ^ (u64::from(doc.size.height) << 20);
+    pub fn vector_mask_thumb(
+        &mut self,
+        ctx: &egui::Context,
+        doc: &Document,
+        id: LayerId,
+        m: &VectorMask,
+    ) -> egui::TextureId {
+        let rev = vector_fingerprint(m)
+            ^ (u64::from(doc.size.width) << 40)
+            ^ (u64::from(doc.size.height) << 20);
         let key = (id, THUMB_VECTOR);
         if let Some((r, tex)) = self.thumbs.get(&key)
             && *r == rev

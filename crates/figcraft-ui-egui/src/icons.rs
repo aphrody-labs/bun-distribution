@@ -194,7 +194,9 @@ fn arc_pts(cx: f32, cy: f32, r: f32, a0: f32, a1: f32) -> impl Iterator<Item = (
 /// A capsule (stadium) outline from `a` to `b` with radius `r`.
 fn capsule(a: (f32, f32), b: (f32, f32), r: f32) -> Vec<(f32, f32)> {
     let th = (b.1 - a.1).atan2(b.0 - a.0);
-    arc_pts(b.0, b.1, r, th - FRAC_PI_2, th + FRAC_PI_2).chain(arc_pts(a.0, a.1, r, th + FRAC_PI_2, th + 3.0 * FRAC_PI_2)).collect()
+    arc_pts(b.0, b.1, r, th - FRAC_PI_2, th + FRAC_PI_2)
+        .chain(arc_pts(a.0, a.1, r, th + FRAC_PI_2, th + 3.0 * FRAC_PI_2))
+        .collect()
 }
 
 /// Triangles of a simple polygon (ear clipping); empty when it can't be split.
@@ -203,8 +205,14 @@ fn triangulate(v: &[Pos2]) -> Vec<u32> {
     if n < 3 {
         return Vec::new();
     }
-    let area: f32 = (0..n).map(|i| v[i].x * v[(i + 1) % n].y - v[(i + 1) % n].x * v[i].y).sum();
-    let mut idx: Vec<usize> = if area >= 0.0 { (0..n).collect() } else { (0..n).rev().collect() };
+    let area: f32 = (0..n)
+        .map(|i| v[i].x * v[(i + 1) % n].y - v[(i + 1) % n].x * v[i].y)
+        .sum();
+    let mut idx: Vec<usize> = if area >= 0.0 {
+        (0..n).collect()
+    } else {
+        (0..n).rev().collect()
+    };
     let cross = |a: Pos2, b: Pos2, c: Pos2| (b - a).x * (c - b).y - (b - a).y * (c - b).x;
     let mut out = Vec::with_capacity((n - 2) * 3);
     while idx.len() > 3 {
@@ -213,12 +221,21 @@ fn triangulate(v: &[Pos2]) -> Vec<u32> {
             let (ia, ib, ic) = (idx[(i + m - 1) % m], idx[i], idx[(i + 1) % m]);
             let (a, b, c) = (v[ia], v[ib], v[ic]);
             cross(a, b, c) > 0.0
-                && !idx
-                    .iter()
-                    .any(|&k| k != ia && k != ib && k != ic && cross(a, b, v[k]) >= 0.0 && cross(b, c, v[k]) >= 0.0 && cross(c, a, v[k]) >= 0.0)
+                && !idx.iter().any(|&k| {
+                    k != ia
+                        && k != ib
+                        && k != ic
+                        && cross(a, b, v[k]) >= 0.0
+                        && cross(b, c, v[k]) >= 0.0
+                        && cross(c, a, v[k]) >= 0.0
+                })
         });
         let Some(i) = ear else { return Vec::new() };
-        out.extend([idx[(i + m - 1) % m] as u32, idx[i] as u32, idx[(i + 1) % m] as u32]);
+        out.extend([
+            idx[(i + m - 1) % m] as u32,
+            idx[i] as u32,
+            idx[(i + 1) % m] as u32,
+        ]);
         idx.remove(i);
     }
     out.extend(idx.iter().map(|&i| i as u32));
@@ -296,7 +313,8 @@ impl P<'_> {
         };
         let convex = n >= 3 && ((0..n).all(|i| turn(i) >= 0.0) || (0..n).all(|i| turn(i) <= 0.0));
         if convex {
-            self.painter.add(Shape::convex_polygon(v, self.color, Stroke::NONE));
+            self.painter
+                .add(Shape::convex_polygon(v, self.color, Stroke::NONE));
             return;
         }
         let indices = triangulate(&v);
@@ -309,22 +327,37 @@ impl P<'_> {
             self.painter.add(Shape::mesh(mesh));
         }
         // A hairline around the mesh gives it the same soft edge as the convex fills.
-        self.painter.add(Shape::closed_line(v, Stroke::new(self.px, self.color)));
+        self.painter
+            .add(Shape::closed_line(v, Stroke::new(self.px, self.color)));
     }
     fn rect(&self, x0: f32, y0: f32, x1: f32, y1: f32, r: f32) {
         let rr = Rect::from_min_max(self.sp(x0, y0), self.sp(x1, y1));
-        self.painter.rect_stroke(rr, egui::CornerRadius::same((r * self.s).round() as u8), self.stroke, egui::StrokeKind::Middle);
+        self.painter.rect_stroke(
+            rr,
+            egui::CornerRadius::same((r * self.s).round() as u8),
+            self.stroke,
+            egui::StrokeKind::Middle,
+        );
     }
     fn fill_rect(&self, x0: f32, y0: f32, x1: f32, y1: f32, r: f32) {
         let (a, b) = (self.raw(x0, y0), self.raw(x1, y1));
-        let rr = Rect::from_min_max(pos2(self.snap_e(a.x), self.snap_e(a.y)), pos2(self.snap_e(b.x), self.snap_e(b.y)));
-        self.painter.rect_filled(rr, egui::CornerRadius::same((r * self.s).round() as u8), self.color);
+        let rr = Rect::from_min_max(
+            pos2(self.snap_e(a.x), self.snap_e(a.y)),
+            pos2(self.snap_e(b.x), self.snap_e(b.y)),
+        );
+        self.painter.rect_filled(
+            rr,
+            egui::CornerRadius::same((r * self.s).round() as u8),
+            self.color,
+        );
     }
     fn circle(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_stroke(self.raw(x, y), r * self.s, self.stroke);
+        self.painter
+            .circle_stroke(self.raw(x, y), r * self.s, self.stroke);
     }
     fn dot(&self, x: f32, y: f32, r: f32) {
-        self.painter.circle_filled(self.raw(x, y), r * self.s, self.color);
+        self.painter
+            .circle_filled(self.raw(x, y), r * self.s, self.color);
     }
     fn arc(&self, cx: f32, cy: f32, r: f32, a0: f32, a1: f32) {
         self.path(&arc_pts(cx, cy, r, a0, a1).collect::<Vec<_>>(), false);
@@ -332,7 +365,10 @@ impl P<'_> {
     /// An open arrowhead at `tip` pointing along angle `dir`, arms `len` long.
     fn head(&self, tip: (f32, f32), dir: f32, len: f32) {
         let arm = |a: f32| (tip.0 + len * a.cos(), tip.1 + len * a.sin());
-        self.path(&[arm(dir + PI - FRAC_PI_4), tip, arm(dir + PI + FRAC_PI_4)], false);
+        self.path(
+            &[arm(dir + PI - FRAC_PI_4), tip, arm(dir + PI + FRAC_PI_4)],
+            false,
+        );
     }
     /// An arc with an arrowhead at its end, pointing the way it runs.
     fn arc_arrow(&self, cx: f32, cy: f32, r: f32, a0: f32, a1: f32) {
@@ -385,14 +421,29 @@ pub fn paint(painter: &Painter, rect: Rect, icon: Icon, color: Color32) {
     let o = rect.center() - vec2(8.0 * s, 8.0 * s);
     let o = pos2(snap(o.x), snap(o.y));
     let w = (k * 0.9).round().max(1.0) * px;
-    let p = P { painter, o, s, px, stroke: Stroke::new(w, color), color };
+    let p = P {
+        painter,
+        o,
+        s,
+        px,
+        stroke: Stroke::new(w, color),
+        color,
+    };
     draw(&p, icon);
 }
 
 fn draw(p: &P, icon: Icon) {
     use Icon::*;
     match icon {
-        Move => p.fill(&[(4.0, 2.0), (4.0, 13.6), (6.9, 10.9), (8.8, 14.8), (10.6, 14.0), (8.7, 10.2), (12.6, 10.2)]),
+        Move => p.fill(&[
+            (4.0, 2.0),
+            (4.0, 13.6),
+            (6.9, 10.9),
+            (8.8, 14.8),
+            (10.6, 14.0),
+            (8.7, 10.2),
+            (12.6, 10.2),
+        ]),
         Scale => {
             p.rect(2.5, 7.5, 8.5, 13.5, 0.0);
             p.line(6.0, 10.0, 13.0, 3.0);
@@ -433,7 +484,10 @@ fn draw(p: &P, icon: Icon) {
                 .map(|i| {
                     let t = i as f32 / 16.0;
                     let u = 1.0 - t;
-                    (u * u * 2.5 + 2.0 * u * t * 8.0 + t * t * 13.5, u * u * 13.5 + 2.0 * u * t * 1.5 + t * t * 13.5)
+                    (
+                        u * u * 2.5 + 2.0 * u * t * 8.0 + t * t * 13.5,
+                        u * u * 13.5 + 2.0 * u * t * 1.5 + t * t * 13.5,
+                    )
                 })
                 .collect();
             p.path(&pts, false);
@@ -449,7 +503,12 @@ fn draw(p: &P, icon: Icon) {
             p.dot(13.5, 11.5, 1.5);
         }
         Lasso => {
-            p.path(&arc_pts(8.5, 6.5, 5.0, 0.0, TAU).map(|(x, y)| (x, 6.5 + (y - 6.5) * 0.7)).collect::<Vec<_>>(), true);
+            p.path(
+                &arc_pts(8.5, 6.5, 5.0, 0.0, TAU)
+                    .map(|(x, y)| (x, 6.5 + (y - 6.5) * 0.7))
+                    .collect::<Vec<_>>(),
+                true,
+            );
             p.path(&[(5.0, 9.3), (4.5, 11.5), (6.0, 12.5), (4.5, 14.5)], false);
         }
         Cut => {
@@ -478,16 +537,43 @@ fn draw(p: &P, icon: Icon) {
         }
         Image => {
             p.rect(2.5, 3.5, 13.5, 12.5, 1.0);
-            p.poly(&[(2.5, 11.5), (6.0, 8.0), (9.0, 11.0), (10.5, 9.5), (13.5, 12.5)], false);
+            p.poly(
+                &[
+                    (2.5, 11.5),
+                    (6.0, 8.0),
+                    (9.0, 11.0),
+                    (10.5, 9.5),
+                    (13.5, 12.5),
+                ],
+                false,
+            );
             p.dot(10.5, 6.5, 1.1);
         }
         Pen => {
-            p.poly(&[(8.0, 2.0), (12.5, 8.5), (10.5, 13.5), (5.5, 13.5), (3.5, 8.5)], true);
+            p.poly(
+                &[
+                    (8.0, 2.0),
+                    (12.5, 8.5),
+                    (10.5, 13.5),
+                    (5.5, 13.5),
+                    (3.5, 8.5),
+                ],
+                true,
+            );
             p.line(8.0, 2.0, 8.0, 7.0);
             p.dot(8.0, 8.8, 1.2);
         }
         Pencil => {
-            p.poly(&[(2.5, 13.5), (3.2, 10.3), (10.5, 3.0), (13.0, 5.5), (5.7, 12.8)], true);
+            p.poly(
+                &[
+                    (2.5, 13.5),
+                    (3.2, 10.3),
+                    (10.5, 3.0),
+                    (13.0, 5.5),
+                    (5.7, 12.8),
+                ],
+                true,
+            );
             p.line(9.0, 4.5, 11.5, 7.0);
         }
         Text => {
@@ -502,7 +588,17 @@ fn draw(p: &P, icon: Icon) {
             b.push((2.5, 13.5));
             p.path(&b, true);
         }
-        Actions => p.poly(&[(9.0, 2.0), (3.5, 9.0), (7.5, 9.0), (6.5, 14.0), (12.5, 7.0), (8.5, 7.0)], true),
+        Actions => p.poly(
+            &[
+                (9.0, 2.0),
+                (3.5, 9.0),
+                (7.5, 9.0),
+                (6.5, 14.0),
+                (12.5, 7.0),
+                (8.5, 7.0),
+            ],
+            true,
+        ),
         Chevron => p.poly(&[(4.5, 6.0), (8.0, 9.5), (11.5, 6.0)], false),
         ChevronUp => p.poly(&[(4.5, 10.0), (8.0, 6.5), (11.5, 10.0)], false),
         ChevronRight => p.poly(&[(6.0, 4.5), (9.5, 8.0), (6.0, 11.5)], false),
@@ -517,7 +613,8 @@ fn draw(p: &P, icon: Icon) {
             let (r, cy, half) = (7.0f32, 7.5f32, 5.5f32);
             let a = (half / r).asin();
             let d = r * a.cos();
-            let mut e: Vec<(f32, f32)> = arc_pts(8.0, cy + d, r, -FRAC_PI_2 - a, -FRAC_PI_2 + a).collect();
+            let mut e: Vec<(f32, f32)> =
+                arc_pts(8.0, cy + d, r, -FRAC_PI_2 - a, -FRAC_PI_2 + a).collect();
             e.extend(arc_pts(8.0, cy - d, r, FRAC_PI_2 - a, FRAC_PI_2 + a));
             p.path(&e, true);
             if icon == Eye {
@@ -540,17 +637,35 @@ fn draw(p: &P, icon: Icon) {
         }
         Component => {
             for (cx, cy) in [(8.0, 4.2), (11.8, 8.0), (8.0, 11.8), (4.2, 8.0)] {
-                p.fill(&[(cx, cy - 2.5), (cx + 2.5, cy), (cx, cy + 2.5), (cx - 2.5, cy)]);
+                p.fill(&[
+                    (cx, cy - 2.5),
+                    (cx + 2.5, cy),
+                    (cx, cy + 2.5),
+                    (cx - 2.5, cy),
+                ]);
             }
         }
         ComponentSet => {
             for (cx, cy) in [(8.0, 4.3), (11.7, 8.0), (8.0, 11.7), (4.3, 8.0)] {
-                p.path(&[(cx, cy - 2.2), (cx + 2.2, cy), (cx, cy + 2.2), (cx - 2.2, cy)], true);
+                p.path(
+                    &[
+                        (cx, cy - 2.2),
+                        (cx + 2.2, cy),
+                        (cx, cy + 2.2),
+                        (cx - 2.2, cy),
+                    ],
+                    true,
+                );
             }
         }
         Instance => p.path(&[(8.0, 2.0), (14.0, 8.0), (8.0, 14.0), (2.0, 8.0)], true),
         Group => {
-            for (x, y, dx, dy) in [(2.5, 2.5, 1.0, 1.0), (13.5, 2.5, -1.0, 1.0), (2.5, 13.5, 1.0, -1.0), (13.5, 13.5, -1.0, -1.0)] {
+            for (x, y, dx, dy) in [
+                (2.5, 2.5, 1.0, 1.0),
+                (13.5, 2.5, -1.0, 1.0),
+                (2.5, 13.5, 1.0, -1.0),
+                (13.5, 13.5, -1.0, -1.0),
+            ] {
                 p.poly(&[(x + 3.5 * dx, y), (x, y), (x, y + 3.5 * dy)], false);
             }
         }
@@ -580,7 +695,16 @@ fn draw(p: &P, icon: Icon) {
             p.rect(6.5, 6.5, 9.5, 9.5, 0.0);
         }
         Page => {
-            p.poly(&[(3.5, 2.5), (9.5, 2.5), (12.5, 5.5), (12.5, 13.5), (3.5, 13.5)], true);
+            p.poly(
+                &[
+                    (3.5, 2.5),
+                    (9.5, 2.5),
+                    (12.5, 5.5),
+                    (12.5, 13.5),
+                    (3.5, 13.5),
+                ],
+                true,
+            );
             p.poly(&[(9.5, 2.5), (9.5, 5.5), (12.5, 5.5)], false);
         }
         Check => p.poly(&[(3.0, 8.5), (6.5, 12.0), (13.0, 4.5)], false),
@@ -593,7 +717,16 @@ fn draw(p: &P, icon: Icon) {
         WinRestore => {
             // A window in front of another.
             p.rect(3.5, 5.5, 10.5, 12.5, 0.0);
-            p.poly(&[(5.5, 5.5), (5.5, 3.5), (12.5, 3.5), (12.5, 10.5), (10.5, 10.5)], false);
+            p.poly(
+                &[
+                    (5.5, 5.5),
+                    (5.5, 3.5),
+                    (12.5, 3.5),
+                    (12.5, 10.5),
+                    (10.5, 10.5),
+                ],
+                false,
+            );
         }
         Search => {
             p.circle(7.0, 7.0, 4.5);
@@ -664,7 +797,12 @@ fn draw(p: &P, icon: Icon) {
         }
         CornerRadius => p.corner(2.5, 2.5, 1.0, 1.0, 11.5, 6.0),
         IndependentCorners => {
-            for (x, y, dx, dy) in [(2.5, 2.5, 1.0, 1.0), (13.5, 2.5, -1.0, 1.0), (2.5, 13.5, 1.0, -1.0), (13.5, 13.5, -1.0, -1.0)] {
+            for (x, y, dx, dy) in [
+                (2.5, 2.5, 1.0, 1.0),
+                (13.5, 2.5, -1.0, 1.0),
+                (2.5, 13.5, 1.0, -1.0),
+                (13.5, 13.5, -1.0, -1.0),
+            ] {
                 p.corner(x, y, dx, dy, 4.0, 2.0);
             }
         }
@@ -711,7 +849,12 @@ fn draw(p: &P, icon: Icon) {
             for i in 0..8 {
                 let a = i as f32 * FRAC_PI_4;
                 let (r0, r1) = if i % 2 == 0 { (4.8, 6.6) } else { (4.6, 5.8) };
-                p.line(8.0 + r0 * a.cos(), 8.0 + r0 * a.sin(), 8.0 + r1 * a.cos(), 8.0 + r1 * a.sin());
+                p.line(
+                    8.0 + r0 * a.cos(),
+                    8.0 + r0 * a.sin(),
+                    8.0 + r1 * a.cos(),
+                    8.0 + r1 * a.sin(),
+                );
             }
         }
         Styles => {
@@ -727,7 +870,18 @@ fn draw(p: &P, icon: Icon) {
         Play => p.fill(&[(4.5, 2.5), (13.5, 8.0), (4.5, 13.5)]),
         Home => {
             // Unhinted so the roof's peak stays centred; the floor stops at the door.
-            p.path(&[(6.5, 13.5), (3.5, 13.5), (3.5, 7.0), (8.0, 2.8), (12.5, 7.0), (12.5, 13.5), (9.5, 13.5)], false);
+            p.path(
+                &[
+                    (6.5, 13.5),
+                    (3.5, 13.5),
+                    (3.5, 7.0),
+                    (8.0, 2.8),
+                    (12.5, 7.0),
+                    (12.5, 13.5),
+                    (9.5, 13.5),
+                ],
+                false,
+            );
             p.poly(&[(6.5, 13.5), (6.5, 9.5), (9.5, 9.5), (9.5, 13.5)], false);
         }
         Bell => {
@@ -796,7 +950,16 @@ fn draw(p: &P, icon: Icon) {
             p.head((7.5, 11.0), FRAC_PI_2, 3.2);
         }
         Eyedropper => {
-            p.poly(&[(2.5, 13.5), (3.0, 11.0), (8.5, 5.5), (10.5, 7.5), (5.0, 13.0)], true);
+            p.poly(
+                &[
+                    (2.5, 13.5),
+                    (3.0, 11.0),
+                    (8.5, 5.5),
+                    (10.5, 7.5),
+                    (5.0, 13.0),
+                ],
+                true,
+            );
             p.path(&capsule((10.5, 5.5), (12.0, 4.0), 1.6), true);
             p.line(7.5, 4.5, 11.5, 8.5);
         }
@@ -812,8 +975,28 @@ fn draw(p: &P, icon: Icon) {
             p.poly(&[(11.0, 9.0), (13.5, 13.5), (8.5, 13.5)], true);
         }
         Library => {
-            p.poly(&[(7.5, 4.5), (5.5, 3.5), (1.5, 3.5), (1.5, 12.5), (5.5, 12.5), (7.5, 13.5)], false);
-            p.poly(&[(8.5, 4.5), (10.5, 3.5), (14.5, 3.5), (14.5, 12.5), (10.5, 12.5), (8.5, 13.5)], false);
+            p.poly(
+                &[
+                    (7.5, 4.5),
+                    (5.5, 3.5),
+                    (1.5, 3.5),
+                    (1.5, 12.5),
+                    (5.5, 12.5),
+                    (7.5, 13.5),
+                ],
+                false,
+            );
+            p.poly(
+                &[
+                    (8.5, 4.5),
+                    (10.5, 3.5),
+                    (14.5, 3.5),
+                    (14.5, 12.5),
+                    (10.5, 12.5),
+                    (8.5, 13.5),
+                ],
+                false,
+            );
             p.line(7.5, 4.5, 7.5, 13.5);
             p.line(8.5, 4.5, 8.5, 13.5);
         }
@@ -836,7 +1019,8 @@ fn draw(p: &P, icon: Icon) {
         Moon => {
             // A crescent: the outer rim, then the shadowing circle's edge back. Both arcs stop short
             // of where the circles meet, so each tip is two blunt joins (a single cusp join folds).
-            let mut m: Vec<(f32, f32)> = arc_pts(8.0, 8.0, 5.5, 0.166 + 0.12, TAU - 1.737 - 0.12).collect();
+            let mut m: Vec<(f32, f32)> =
+                arc_pts(8.0, 8.0, 5.5, 0.166 + 0.12, TAU - 1.737 - 0.12).collect();
             m.extend(arc_pts(11.0, 5.0, 4.6, -2.586 - 0.18, 1.016 - TAU + 0.18));
             p.path(&m, true);
         }
@@ -877,7 +1061,9 @@ fn draw(p: &P, icon: Icon) {
         Online => {
             p.circle(8.0, 8.0, 5.5);
             p.line(2.5, 8.0, 13.5, 8.0);
-            let meridian: Vec<(f32, f32)> = arc_pts(0.0, 0.0, 1.0, 0.0, TAU).map(|(x, y)| (8.0 + 2.4 * x, 8.0 + 5.5 * y)).collect();
+            let meridian: Vec<(f32, f32)> = arc_pts(0.0, 0.0, 1.0, 0.0, TAU)
+                .map(|(x, y)| (8.0 + 2.4 * x, 8.0 + 5.5 * y))
+                .collect();
             p.path(&meridian, true);
         }
         LiveShared => {
@@ -903,7 +1089,9 @@ fn draw(p: &P, icon: Icon) {
             p.circle(8.0 - d, 8.0, r);
             p.circle(8.0 + d, 8.0, r);
             if icon == ShapeBuilder {
-                let lens: Vec<(f32, f32)> = arc_pts(8.0 - d, 8.0, r, -a, a).chain(arc_pts(8.0 + d, 8.0, r, PI - a, PI + a)).collect();
+                let lens: Vec<(f32, f32)> = arc_pts(8.0 - d, 8.0, r, -a, a)
+                    .chain(arc_pts(8.0 + d, 8.0, r, PI - a, PI + a))
+                    .collect();
                 p.fill(&lens);
             } else {
                 p.line(6.2, 9.8, 9.8, 6.2);
@@ -911,7 +1099,16 @@ fn draw(p: &P, icon: Icon) {
         }
         Eraser => {
             // A tilted block with a band near its tip, over a short trace line.
-            p.poly(&[(2.5, 10.0), (9.5, 3.0), (13.5, 7.0), (7.0, 13.5), (6.0, 13.5)], true);
+            p.poly(
+                &[
+                    (2.5, 10.0),
+                    (9.5, 3.0),
+                    (13.5, 7.0),
+                    (7.0, 13.5),
+                    (6.0, 13.5),
+                ],
+                true,
+            );
             p.line(5.5, 7.0, 9.5, 11.0);
             p.line(7.0, 13.5, 14.0, 13.5);
         }
@@ -922,7 +1119,10 @@ fn draw(p: &P, icon: Icon) {
                 let f = i as f32 / 12.0;
                 (2.0 + 11.0 * f, 7.5 + side * 3.0 * (PI * f).sin())
             };
-            let lens: Vec<(f32, f32)> = (0..=12).map(|i| edge(i, -1.0)).chain((0..=12).rev().map(|i| edge(i, 1.0))).collect();
+            let lens: Vec<(f32, f32)> = (0..=12)
+                .map(|i| edge(i, -1.0))
+                .chain((0..=12).rev().map(|i| edge(i, 1.0)))
+                .collect();
             p.fill(&lens);
             p.line(7.5, 2.0, 7.5, 13.0);
             p.dot(7.5, 2.0, 1.5);
@@ -1028,7 +1228,8 @@ fn draw(p: &P, icon: Icon) {
             tail.extend(arc_pts(7.25, 6.5, 3.5, 3.0 * FRAC_PI_2, 5.0 * FRAC_PI_2));
             tail.extend(arc_pts(7.25, 8.25, 1.75, FRAC_PI_2, 3.0 * FRAC_PI_2));
             let v: Vec<Pos2> = tail.iter().map(|&(x, y)| p.raw(x, y)).collect();
-            p.painter.add(Shape::line(v, Stroke::new(1.7 * p.s, p.color)));
+            p.painter
+                .add(Shape::line(v, Stroke::new(1.7 * p.s, p.color)));
             p.dot(13.75, 13.0, 0.85);
             p.dot(7.25, 6.5, 0.85);
         }
@@ -1036,7 +1237,13 @@ fn draw(p: &P, icon: Icon) {
 }
 
 /// Allocate a square icon button; returns the response. `active` paints the selected look.
-pub fn button(ui: &mut egui::Ui, icon: Icon, size: f32, active: bool, tooltip: &str) -> egui::Response {
+pub fn button(
+    ui: &mut egui::Ui,
+    icon: Icon,
+    size: f32,
+    active: bool,
+    tooltip: &str,
+) -> egui::Response {
     let t = crate::theme::Tokens::get(ui.ctx());
     let (rect, resp) = ui.allocate_exact_size(vec2(size, size), egui::Sense::click());
     let bg = if active {
@@ -1048,11 +1255,17 @@ pub fn button(ui: &mut egui::Ui, icon: Icon, size: f32, active: bool, tooltip: &
     } else {
         Color32::TRANSPARENT
     };
-    ui.painter().rect_filled(rect, egui::CornerRadius::same(5), bg);
+    ui.painter()
+        .rect_filled(rect, egui::CornerRadius::same(5), bg);
     let col = if active { t.accent_text } else { t.icon };
     // The glyph at its native 16 px in the usual buttons, smaller in compact ones.
     let glyph = if size >= 22.0 { 16.0 } else { 12.0 };
-    paint(ui.painter(), Rect::from_center_size(rect.center(), Vec2::splat(glyph)), icon, col);
+    paint(
+        ui.painter(),
+        Rect::from_center_size(rect.center(), Vec2::splat(glyph)),
+        icon,
+        col,
+    );
     if tooltip.is_empty() {
         return resp;
     }
@@ -1067,20 +1280,34 @@ pub fn button(ui: &mut egui::Ui, icon: Icon, size: f32, active: bool, tooltip: &
 /// Every icon at the sizes the UI uses, labelled: for reviewing the set (`ui.set {iconGallery}`).
 pub fn gallery(ctx: &egui::Context) {
     let t = crate::theme::Tokens::get(ctx);
-    egui::Area::new(egui::Id::new("icon_gallery")).order(egui::Order::Foreground).fixed_pos(Pos2::ZERO).show(ctx, |ui| {
-        let screen = ctx.content_rect();
-        let (r, _) = ui.allocate_exact_size(screen.size(), egui::Sense::click());
-        ui.painter().rect_filled(r, 0.0, t.panel);
-        let cols = ((screen.width() - 20.0) / 118.0).floor().max(1.0) as usize;
-        for (i, icon) in Icon::ALL.iter().enumerate() {
-            let x = 10.0 + (i % cols) as f32 * 118.0;
-            let y = 10.0 + (i / cols) as f32 * 70.0;
-            for (dx, size) in [(0.0, 12.0), (16.0, 16.0), (40.0, 24.0), (72.0, 32.0)] {
-                paint(ui.painter(), Rect::from_min_size(pos2(x + dx, y), Vec2::splat(size)), *icon, t.icon);
+    egui::Area::new(egui::Id::new("icon_gallery"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(Pos2::ZERO)
+        .show(ctx, |ui| {
+            let screen = ctx.content_rect();
+            let (r, _) = ui.allocate_exact_size(screen.size(), egui::Sense::click());
+            ui.painter().rect_filled(r, 0.0, t.panel);
+            let cols = ((screen.width() - 20.0) / 118.0).floor().max(1.0) as usize;
+            for (i, icon) in Icon::ALL.iter().enumerate() {
+                let x = 10.0 + (i % cols) as f32 * 118.0;
+                let y = 10.0 + (i / cols) as f32 * 70.0;
+                for (dx, size) in [(0.0, 12.0), (16.0, 16.0), (40.0, 24.0), (72.0, 32.0)] {
+                    paint(
+                        ui.painter(),
+                        Rect::from_min_size(pos2(x + dx, y), Vec2::splat(size)),
+                        *icon,
+                        t.icon,
+                    );
+                }
+                ui.painter().text(
+                    pos2(x, y + 40.0),
+                    egui::Align2::LEFT_TOP,
+                    format!("{icon:?}"),
+                    egui::FontId::proportional(10.0),
+                    t.text,
+                );
             }
-            ui.painter().text(pos2(x, y + 40.0), egui::Align2::LEFT_TOP, format!("{icon:?}"), egui::FontId::proportional(10.0), t.text);
-        }
-    });
+        });
 }
 
 #[cfg(test)]
@@ -1094,7 +1321,12 @@ mod tests {
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
             for &icon in Icon::ALL {
                 for size in [8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 32.0, 48.0] {
-                    paint(ui.painter(), Rect::from_min_size(pos2(3.3, 7.7), Vec2::splat(size)), icon, Color32::WHITE);
+                    paint(
+                        ui.painter(),
+                        Rect::from_min_size(pos2(3.3, 7.7), Vec2::splat(size)),
+                        icon,
+                        Color32::WHITE,
+                    );
                 }
             }
         });
@@ -1104,7 +1336,15 @@ mod tests {
 
     #[test]
     fn concave_polygons_triangulate() {
-        let arrow = [pos2(4.0, 2.0), pos2(4.0, 13.6), pos2(6.9, 10.9), pos2(8.8, 14.8), pos2(10.6, 14.0), pos2(8.7, 10.2), pos2(12.6, 10.2)];
+        let arrow = [
+            pos2(4.0, 2.0),
+            pos2(4.0, 13.6),
+            pos2(6.9, 10.9),
+            pos2(8.8, 14.8),
+            pos2(10.6, 14.0),
+            pos2(8.7, 10.2),
+            pos2(12.6, 10.2),
+        ];
         assert_eq!(triangulate(&arrow).len(), (arrow.len() - 2) * 3);
         let rev: Vec<Pos2> = arrow.iter().rev().copied().collect();
         assert_eq!(triangulate(&rev).len(), (arrow.len() - 2) * 3);

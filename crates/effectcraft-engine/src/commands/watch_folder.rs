@@ -27,17 +27,22 @@ pub fn status_path(project: &Path) -> PathBuf {
 /// Projects in `folder` (and its direct subfolders) without a status file, sorted.
 pub fn pending(folder: &Path) -> std::io::Result<Vec<PathBuf>> {
     let mut out = vec![];
-    let scan = |dir: &Path, out: &mut Vec<PathBuf>, subdirs: &mut Vec<PathBuf>| -> std::io::Result<()> {
-        for e in std::fs::read_dir(dir)? {
-            let p = e?.path();
-            if p.is_dir() {
-                subdirs.push(p);
-            } else if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("ecproj")) && !status_path(&p).exists() {
-                out.push(p);
+    let scan =
+        |dir: &Path, out: &mut Vec<PathBuf>, subdirs: &mut Vec<PathBuf>| -> std::io::Result<()> {
+            for e in std::fs::read_dir(dir)? {
+                let p = e?.path();
+                if p.is_dir() {
+                    subdirs.push(p);
+                } else if p
+                    .extension()
+                    .is_some_and(|x| x.eq_ignore_ascii_case("ecproj"))
+                    && !status_path(&p).exists()
+                {
+                    out.push(p);
+                }
             }
-        }
-        Ok(())
-    };
+            Ok(())
+        };
     let mut subdirs = vec![];
     scan(folder, &mut out, &mut subdirs)?;
     for d in subdirs {
@@ -49,25 +54,45 @@ pub fn pending(folder: &Path) -> std::io::Result<Vec<PathBuf>> {
 }
 
 fn write_status(path: &Path, v: &Value) {
-    let _ = std::fs::write(status_path(path), serde_json::to_vec_pretty(v).unwrap_or_default());
+    let _ = std::fs::write(
+        status_path(path),
+        serde_json::to_vec_pretty(v).unwrap_or_default(),
+    );
 }
 
 fn now() -> u64 {
-    web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+    web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 /// Render one project (in its own session sharing `host`'s services) and write its status.
 fn render_project(host: &Session, path: &Path) -> Value {
     let name = path.to_string_lossy().to_string();
-    write_status(path, &json!({"project": name, "state": "rendering", "started": now()}));
-    let mut s = Session { services: host.services.clone(), footage: host.footage.clone(), expr: host.expr.clone(), ..Default::default() };
+    write_status(
+        path,
+        &json!({"project": name, "state": "rendering", "started": now()}),
+    );
+    let mut s = Session {
+        services: host.services.clone(),
+        footage: host.footage.clone(),
+        expr: host.expr.clone(),
+        ..Default::default()
+    };
     s.importer = host.importer.clone();
     s.exporter = host.exporter.clone();
     s.accel = host.accel.clone();
     s.prefs = host.prefs.clone();
     let result = (|| -> std::result::Result<Value, String> {
-        s.execute("file.open", json!({"path": name})).map_err(|e| e.to_string())?;
-        let queued = s.project.render_queue.iter().filter(|i| i.render && i.status == RenderStatus::Queued).count();
+        s.execute("file.open", json!({"path": name}))
+            .map_err(|e| e.to_string())?;
+        let queued = s
+            .project
+            .render_queue
+            .iter()
+            .filter(|i| i.render && i.status == RenderStatus::Queued)
+            .count();
         if queued == 0 {
             return Ok(json!({"state": "done", "items": [], "note": "nothing queued"}));
         }
@@ -85,7 +110,11 @@ fn render_project(host: &Session, path: &Path) -> Value {
                 })
             })
             .collect();
-        let failed = s.project.render_queue.iter().any(|i| matches!(i.status, RenderStatus::Failed(_)));
+        let failed = s
+            .project
+            .render_queue
+            .iter()
+            .any(|i| matches!(i.status, RenderStatus::Failed(_)));
         Ok(json!({"state": if failed { "failed" } else { "done" }, "items": items}))
     })();
     let mut v = match result {
@@ -111,7 +140,10 @@ fn watch(s: &mut Session, p: &Value) -> Result<Value> {
         s.bump();
         return Ok(json!({"watching": null}));
     }
-    let folder = str_p(p, "folder").or(str_p(p, "path")).ok_or_else(|| bad(C, "missing `folder`"))?.to_string();
+    let folder = str_p(p, "folder")
+        .or(str_p(p, "path"))
+        .ok_or_else(|| bad(C, "missing `folder`"))?
+        .to_string();
     if !Path::new(&folder).is_dir() {
         return Err(bad(C, format!("{folder} is not a folder")));
     }
@@ -125,7 +157,10 @@ fn watch(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn poll_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.watchFolder.poll";
-    let folder = str_p(p, "folder").map(str::to_string).or_else(|| s.state.watch_folder.clone()).ok_or_else(|| bad(C, "no folder is being watched"))?;
+    let folder = str_p(p, "folder")
+        .map(str::to_string)
+        .or_else(|| s.state.watch_folder.clone())
+        .ok_or_else(|| bad(C, "no folder is being watched"))?;
     let done = poll(s, &folder).map_err(|e| bad(C, e))?;
     Ok(json!({"watching": folder, "rendered": done}))
 }
@@ -147,7 +182,11 @@ pub fn specs() -> Vec<CommandSpec> {
             [],
             None,
             "{folder? (default: the watched one)} → renders new projects now: {watching, rendered: [{project, state: done|failed, items: [{comp, status, output}]}]}",
-            |s: &Session| if s.state.watch_folder.is_some() { Ok(()) } else { Err("no folder is being watched".into()) },
+            |s: &Session| if s.state.watch_folder.is_some() {
+                Ok(())
+            } else {
+                Err("no folder is being watched".into())
+            },
             poll_cmd
         ),
     ]

@@ -128,7 +128,10 @@ fn texture_preview(
     ui.separator();
     ui.label(format!("RAM: 0x{:08X}", tex.ram_addr));
     ui.label(format!("Wrap S: {:?}  T: {:?}", tex.wrap_s, tex.wrap_t));
-    ui.label(format!("Mag: {:?}  Min: {:?}", tex.mag_filter, tex.min_filter));
+    ui.label(format!(
+        "Mag: {:?}  Min: {:?}",
+        tex.mag_filter, tex.min_filter
+    ));
 }
 
 pub fn show_gx<const SYSTEM: SystemId>(
@@ -188,60 +191,66 @@ pub fn show_gx<const SYSTEM: SystemId>(
 
             // Viewport / Scissor
             ui.collapsing("Viewport / Scissor", |ui| {
-                Grid::new("vp_sc").num_columns(2).striped(true).show(ui, |ui| {
-                    let vp = &gx.cur_viewport;
-                    ui.label("Viewport");
-                    ui.monospace(format!(
-                        "({:.0}, {:.0}) {}x{} depth [{:.2}, {:.2}]",
-                        vp.x, vp.y, vp.w, vp.h, vp.min_depth, vp.max_depth
-                    ));
-                    ui.end_row();
+                Grid::new("vp_sc")
+                    .num_columns(2)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        let vp = &gx.cur_viewport;
+                        ui.label("Viewport");
+                        ui.monospace(format!(
+                            "({:.0}, {:.0}) {}x{} depth [{:.2}, {:.2}]",
+                            vp.x, vp.y, vp.w, vp.h, vp.min_depth, vp.max_depth
+                        ));
+                        ui.end_row();
 
-                    let sc = &gx.cur_scissor;
-                    ui.label("Scissor");
-                    ui.monospace(format!("({}, {}) {}x{}", sc.x, sc.y, sc.w, sc.h));
-                    ui.end_row();
+                        let sc = &gx.cur_scissor;
+                        ui.label("Scissor");
+                        ui.monospace(format!("({}, {}) {}x{}", sc.x, sc.y, sc.w, sc.h));
+                        ui.end_row();
 
-                    ui.label("Scissor Offset");
-                    ui.monospace(format!(
-                        "({}, {})",
-                        gx.cur_scissor_offset_x, gx.cur_scissor_offset_y
-                    ));
-                    ui.end_row();
-                });
+                        ui.label("Scissor Offset");
+                        ui.monospace(format!(
+                            "({}, {})",
+                            gx.cur_scissor_offset_x, gx.cur_scissor_offset_y
+                        ));
+                        ui.end_row();
+                    });
             });
 
             // Blend / Depth
             ui.collapsing("Output (PE)", |ui| {
-                Grid::new("pe_state").num_columns(2).striped(true).show(ui, |ui| {
-                    let bm = gx.cur_blend_mode;
-                    ui.label("Blend");
-                    if bm.blend_enable() {
-                        ui.monospace(format!(
-                            "{:?} -> {:?}{}",
-                            bm.src_factor(),
-                            bm.dst_factor(),
-                            if bm.subtract() { " (sub)" } else { "" },
-                        ));
-                    } else {
-                        ui.label("disabled");
-                    }
-                    ui.end_row();
+                Grid::new("pe_state")
+                    .num_columns(2)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        let bm = gx.cur_blend_mode;
+                        ui.label("Blend");
+                        if bm.blend_enable() {
+                            ui.monospace(format!(
+                                "{:?} -> {:?}{}",
+                                bm.src_factor(),
+                                bm.dst_factor(),
+                                if bm.subtract() { " (sub)" } else { "" },
+                            ));
+                        } else {
+                            ui.label("disabled");
+                        }
+                        ui.end_row();
 
-                    let zm = gx.cur_zmode;
-                    ui.label("Depth");
-                    if zm.enable() {
-                        ui.monospace(format!("{:?} write={}", zm.func(), zm.update_enable()));
-                    } else {
-                        ui.label("disabled");
-                    }
-                    ui.end_row();
+                        let zm = gx.cur_zmode;
+                        ui.label("Depth");
+                        if zm.enable() {
+                            ui.monospace(format!("{:?} write={}", zm.func(), zm.update_enable()));
+                        } else {
+                            ui.label("disabled");
+                        }
+                        ui.end_row();
 
-                    let ac = gx.cur_alpha_compare;
-                    ui.label("Alpha Compare");
-                    ui.monospace(format!("{:?} / {:?}", ac.comp0(), ac.comp1()));
-                    ui.end_row();
-                });
+                        let ac = gx.cur_alpha_compare;
+                        ui.label("Alpha Compare");
+                        ui.monospace(format!("{:?} / {:?}", ac.comp0(), ac.comp1()));
+                        ui.end_row();
+                    });
             });
 
             // TEV configuration
@@ -251,9 +260,10 @@ pub fn show_gx<const SYSTEM: SystemId>(
                     let alpha = gx.cur_tev_alpha_env[stage];
 
                     ui.collapsing(format!("Stage {stage}"), |ui| {
-                        Grid::new(format!("tev_{stage}")).num_columns(2).striped(true).show(
-                            ui,
-                            |ui| {
+                        Grid::new(format!("tev_{stage}"))
+                            .num_columns(2)
+                            .striped(true)
+                            .show(ui, |ui| {
                                 ui.label("Color A");
                                 ui.monospace(format!("{}", color.a()));
                                 ui.end_row();
@@ -285,8 +295,7 @@ pub fn show_gx<const SYSTEM: SystemId>(
                                 ui.label("Alpha Dest");
                                 ui.monospace(format!("{}", alpha.dest()));
                                 ui.end_row();
-                            },
-                        );
+                            });
                     });
                 }
             });

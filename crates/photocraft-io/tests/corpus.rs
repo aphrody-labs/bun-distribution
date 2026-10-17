@@ -54,12 +54,18 @@ use photocraft_io::*;
 use photocraft_psd::PsdFile;
 
 fn collect(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
             collect(&p, out);
-        } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb")) {
+        } else if p
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb"))
+        {
             out.push(p);
         }
     }
@@ -95,7 +101,11 @@ fn dissolve_matches(doc: &photocraft_doc::Document, ours: &[[f32; 4]], ps: &[[f3
         return false;
     }
     let pm = |p: &[f32; 4], c: usize| if c < 3 { p[c] * p[3] } else { p[3] };
-    let inside = |x: i32, y: i32| regions.iter().any(|r| r.contains(x + canvas.x0, y + canvas.y0));
+    let inside = |x: i32, y: i32| {
+        regions
+            .iter()
+            .any(|r| r.contains(x + canvas.x0, y + canvas.y0))
+    };
     for y in 0..h {
         for x in 0..w {
             let i = (y * w + x) as usize;
@@ -132,7 +142,10 @@ thread_local! {
 }
 
 /// Files known to be invalid upstream: their parse error is expected.
-const KNOWN_BAD: &[(&str, &str)] = &[("group-divider-blend-mode.psd", "psd-tools fixture stripped to 1906 bytes: merged image data missing")];
+const KNOWN_BAD: &[(&str, &str)] = &[(
+    "group-divider-blend-mode.psd",
+    "psd-tools fixture stripped to 1906 bytes: merged image data missing",
+)];
 
 /// One corpus directory with its own floors.
 struct Source {
@@ -148,20 +161,45 @@ struct Source {
 }
 
 /// Hand-picked mix in `corpus/psd` (170 files: 134 vs the merged image + 12 vs the thumbnail).
-const MIXED: Source = Source { label: "io corpus", dir: "corpus/psd", group_depth: 0, pass_floor: 146, roundtrip_floor: 169 };
+const MIXED: Source = Source {
+    label: "io corpus",
+    dir: "corpus/psd",
+    group_depth: 0,
+    pass_floor: 146,
+    roundtrip_floor: 169,
+};
 
 /// The full psd-tools test set (309 files at the pinned commit; see `xtask/psd-tools-corpus.sha256`):
 /// 226 vs the merged image + 10 vs the thumbnail (Advanced Blending knockouts: +7).
-const PSD_TOOLS: Source = Source { label: "psd-tools corpus", dir: "corpus/psd-tools", group_depth: 0, pass_floor: 236, roundtrip_floor: 308 };
+const PSD_TOOLS: Source = Source {
+    label: "psd-tools corpus",
+    dir: "corpus/psd-tools",
+    group_depth: 0,
+    pass_floor: 236,
+    roundtrip_floor: 308,
+};
 
 /// Our Photoshop-authored oracles (256 files; https://github.com/storytold/photocraft-corpus),
 /// grouped by feature (`smart-filters`, `effects`, `text`, `adjustments/<mode><bits>`).
-const PHOTOSHOP: Source = Source { label: "photoshop oracles", dir: "corpus/photoshop", group_depth: 2, pass_floor: 145, roundtrip_floor: 258 };
+const PHOTOSHOP: Source = Source {
+    label: "photoshop oracles",
+    dir: "corpus/photoshop",
+    group_depth: 2,
+    pass_floor: 145,
+    roundtrip_floor: 258,
+};
 
 /// The corpus directory; a missing corpus fails the test.
 fn locate(src: &Source) -> PathBuf {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/photocraft/crates").join(src.dir);
-    assert!(root.is_dir(), "{}: {} is missing: run `cargo xtask corpus --all`", src.label, root.display());
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../docs/libraries/photocraft/crates")
+        .join(src.dir);
+    assert!(
+        root.is_dir(),
+        "{}: {} is missing: run `cargo xtask corpus --all`",
+        src.label,
+        root.display()
+    );
     root
 }
 
@@ -169,7 +207,11 @@ fn locate(src: &Source) -> PathBuf {
 fn group_of(name: &str, depth: usize) -> String {
     let parts: Vec<&str> = name.split(['/', '\\']).collect();
     let n = depth.min(parts.len().saturating_sub(1));
-    if n == 0 { ".".into() } else { parts[..n].join("/") }
+    if n == 0 {
+        ".".into()
+    } else {
+        parts[..n].join("/")
+    }
 }
 
 fn files_in(root: &Path) -> Vec<PathBuf> {
@@ -180,7 +222,10 @@ fn files_in(root: &Path) -> Vec<PathBuf> {
 }
 
 fn panic_message(e: &(dyn std::any::Any + Send)) -> String {
-    e.downcast_ref::<&str>().map(|s| (*s).to_string()).or_else(|| e.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into())
+    e.downcast_ref::<&str>()
+        .map(|s| (*s).to_string())
+        .or_else(|| e.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic".into())
 }
 
 /// Thumbnail oracle: mean absolute error and the share of pixels off by more than
@@ -198,7 +243,15 @@ fn thumbnail(file: &PsdFile) -> Option<(u32, u32, Vec<[f32; 3]>)> {
     }
     let img = photocraft_codecs::decode(r.data.get(28..)?).ok()?;
     let rgba = img.to_rgba8();
-    Some((img.width(), img.height(), rgba.as_chunks::<4>().0.iter().map(|p| [0, 1, 2].map(|c| f32::from(p[c]) / 255.0)).collect()))
+    Some((
+        img.width(),
+        img.height(),
+        rgba.as_chunks::<4>()
+            .0
+            .iter()
+            .map(|p| [0, 1, 2].map(|c| f32::from(p[c]) / 255.0))
+            .collect(),
+    ))
 }
 
 /// 3×3 box blur of an RGB plane (edges clamp): absorbs the sub-pixel offsets between our box
@@ -210,7 +263,10 @@ fn blur3(v: &[[f32; 3]], w: usize, h: usize) -> Vec<[f32; 3]> {
             let mut acc = [0.0f32; 3];
             for dy in [-1i64, 0, 1] {
                 for dx in [-1i64, 0, 1] {
-                    let (sx, sy) = ((x as i64 + dx).clamp(0, w as i64 - 1) as usize, (y as i64 + dy).clamp(0, h as i64 - 1) as usize);
+                    let (sx, sy) = (
+                        (x as i64 + dx).clamp(0, w as i64 - 1) as usize,
+                        (y as i64 + dy).clamp(0, h as i64 - 1) as usize,
+                    );
                     for c in 0..3 {
                         acc[c] += v[sy * w + sx][c];
                     }
@@ -277,9 +333,20 @@ fn check_file(name: &str, bytes: &[u8]) -> (Outcome, Option<f32>) {
     let file = match PsdFile::from_bytes(bytes) {
         Ok(f) => f,
         Err(e) => {
-            let tag = if known_bad { "KNOWN-BAD" } else { "PARSE-ERROR" };
+            let tag = if known_bad {
+                "KNOWN-BAD"
+            } else {
+                "PARSE-ERROR"
+            };
             eprintln!("{name:<60} {:>6} {:>9} {:>8}  {tag} {e}", "-", "-", "-");
-            return (if known_bad { Outcome::Skip } else { Outcome::Error }, None);
+            return (
+                if known_bad {
+                    Outcome::Skip
+                } else {
+                    Outcome::Error
+                },
+                None,
+            );
         }
     };
     let imp = match import(name, bytes) {
@@ -319,25 +386,52 @@ fn check_file(name: &str, bytes: &[u8]) -> (Outcome, Option<f32>) {
     let ours = photocraft_compose::flatten(doc).px;
     // Our own export must not change how the document renders.
     let again = photocraft_compose::flatten(&reimported).px;
-    let rt = if again.len() == ours.len() { common::max_diff(&ours, &again) } else { f32::INFINITY };
+    let rt = if again.len() == ours.len() {
+        common::max_diff(&ours, &again)
+    } else {
+        f32::INFINITY
+    };
     let layers = doc.layer_count();
     // Oracle choice: the merged image (Photoshop's composite; for files without layers it is the
     // whole image, decoded independently by the psd crate). When Photoshop wrote no real merged
     // image (Maximize Compatibility off) or it decodes through our own model code (Multichannel),
     // its embedded thumbnail is the oracle at thumbnail size.
-    let use_thumb = file.has_real_merged_data() == Some(false) || file.header.color_mode == photocraft_psd::ColorMode::Multichannel;
-    let merged = if use_thumb { None } else { merged_composite(&file).ok() };
+    let use_thumb = file.has_real_merged_data() == Some(false)
+        || file.header.color_mode == photocraft_psd::ColorMode::Multichannel;
+    let merged = if use_thumb {
+        None
+    } else {
+        merged_composite(&file).ok()
+    };
     let Some(merged) = merged else {
         let notes: Vec<&str> = imp.warnings.iter().map(String::as_str).take(2).collect();
         return match thumbnail_oracle(&file, &ours) {
             Some((mean, frac)) => {
                 let ok = mean <= THUMB_MEAN_TOL && frac <= THUMB_BAD_FRAC;
-                let status = if ok { "PASS (thumbnail)" } else { "DIFF (thumbnail)" };
-                eprintln!("{name:<60} {layers:>6} {mean:>9.4} {:>7.2}%  {status} {}", 100.0 * frac, notes.join(" | "));
-                (if ok { Outcome::ThumbPass } else { Outcome::Diff }, Some(rt))
+                let status = if ok {
+                    "PASS (thumbnail)"
+                } else {
+                    "DIFF (thumbnail)"
+                };
+                eprintln!(
+                    "{name:<60} {layers:>6} {mean:>9.4} {:>7.2}%  {status} {}",
+                    100.0 * frac,
+                    notes.join(" | ")
+                );
+                (
+                    if ok {
+                        Outcome::ThumbPass
+                    } else {
+                        Outcome::Diff
+                    },
+                    Some(rt),
+                )
             }
             None => {
-                eprintln!("{name:<60} {layers:>6} {:>9} {:>8}  SKIP (no real composite and no thumbnail)", "-", "-");
+                eprintln!(
+                    "{name:<60} {layers:>6} {:>9} {:>8}  SKIP (no real composite and no thumbnail)",
+                    "-", "-"
+                );
                 (Outcome::Skip, Some(rt))
             }
         };
@@ -354,7 +448,11 @@ fn check_file(name: &str, bytes: &[u8]) -> (Outcome, Option<f32>) {
             .collect()
     };
     let m = common::max_diff(&ours, &merged);
-    let bad = ours.iter().zip(&merged).filter(|(a, b)| (0..4).any(|c| (a[c] * a[3] - b[c] * b[3]).abs() > PASS_TOL)).count();
+    let bad = ours
+        .iter()
+        .zip(&merged)
+        .filter(|(a, b)| (0..4).any(|c| (a[c] * a[3] - b[c] * b[3]).abs() > PASS_TOL))
+        .count();
     let pct = 100.0 * bad as f32 / ours.len().max(1) as f32;
     let (outcome, status) = if m <= PASS_TOL {
         (Outcome::Pass, "PASS")
@@ -364,7 +462,12 @@ fn check_file(name: &str, bytes: &[u8]) -> (Outcome, Option<f32>) {
         (Outcome::Diff, "DIFF")
     };
     let notes: Vec<&str> = imp.warnings.iter().map(String::as_str).take(2).collect();
-    eprintln!("{name:<60} {layers:>6} {:>9.4} {:>7.2}%  {status} {}", m, pct, notes.join(" | "));
+    eprintln!(
+        "{name:<60} {layers:>6} {:>9.4} {:>7.2}%  {status} {}",
+        m,
+        pct,
+        notes.join(" | ")
+    );
     if std::env::var_os("CORPUS_THUMB_CALIBRATE").is_some()
         && let Some((mean, frac)) = thumbnail_oracle(&file, &ours)
     {
@@ -380,7 +483,10 @@ fn run_oracle(src: &Source) {
     let mut groups: std::collections::BTreeMap<String, (usize, usize)> = Default::default();
     let (mut pass, mut thumb_pass, mut diff, mut skipped, mut errors) = (0, 0, 0, 0, 0);
     let (mut rt_same, mut rt_diff, mut crashes) = (0, Vec::new(), Vec::new());
-    eprintln!("{:<60} {:>6} {:>9} {:>8}  status", "file", "layers", "max_err", "bad_px%");
+    eprintln!(
+        "{:<60} {:>6} {:>9} {:>8}  status",
+        "file", "layers", "max_err", "bad_px%"
+    );
     for p in &files {
         let name = p.strip_prefix(&root).unwrap_or(p).display().to_string();
         let bytes = std::fs::read(p).unwrap_or_default();
@@ -424,16 +530,34 @@ fn run_oracle(src: &Source) {
             eprintln!("{label}:   {g:<28} {p:>4} / {n:<4} pass");
         }
     }
-    eprintln!("{label}: export -> re-import renders the same for {rt_same} files; differs for {}: {}", rt_diff.len(), rt_diff.join(", "));
+    eprintln!(
+        "{label}: export -> re-import renders the same for {rt_same} files; differs for {}: {}",
+        rt_diff.len(),
+        rt_diff.join(", ")
+    );
     let block_errors = BLOCK_ERRORS.with(|b| b.borrow().clone());
-    eprintln!("{label}: exported files whose tagged blocks fail the strict re-parse: {}", block_errors.len());
+    eprintln!(
+        "{label}: exported files whose tagged blocks fail the strict re-parse: {}",
+        block_errors.len()
+    );
     if std::env::var_os("PHOTOCRAFT_CORPUS_STRICT").is_some() {
         assert_eq!(errors, 0);
     }
     assert!(crashes.is_empty(), "{label}: panics (Rule 9): {crashes:?}");
-    assert!(block_errors.is_empty(), "{label}: exported tagged blocks fail the strict re-parse (#200): {block_errors:?}");
-    assert!(pass >= src.pass_floor, "{label}: oracle pass count {pass} fell below the floor {}", src.pass_floor);
-    assert!(rt_same >= src.roundtrip_floor, "{label}: export round trip {rt_same} fell below the floor {}: {rt_diff:?}", src.roundtrip_floor);
+    assert!(
+        block_errors.is_empty(),
+        "{label}: exported tagged blocks fail the strict re-parse (#200): {block_errors:?}"
+    );
+    assert!(
+        pass >= src.pass_floor,
+        "{label}: oracle pass count {pass} fell below the floor {}",
+        src.pass_floor
+    );
+    assert!(
+        rt_same >= src.roundtrip_floor,
+        "{label}: export round trip {rt_same} fell below the floor {}: {rt_diff:?}",
+        src.roundtrip_floor
+    );
 }
 
 /// Deterministic xorshift for the mutation sweep.
@@ -453,7 +577,9 @@ fn run_mutations(src: &Source) {
     let (mut runs, mut panics, mut slow) = (0usize, Vec::new(), Vec::new());
     for p in &files {
         let name = p.strip_prefix(&root).unwrap_or(p).display().to_string();
-        let Ok(bytes) = std::fs::read(p) else { continue };
+        let Ok(bytes) = std::fs::read(p) else {
+            continue;
+        };
         let mut seed = 0x9E37_79B9_7F4A_7C15u64 ^ bytes.len() as u64;
         let span = bytes.len().clamp(1, 64 * 1024);
         let mut variants: Vec<(String, Vec<u8>)> = Vec::new();
@@ -498,8 +624,17 @@ fn run_mutations(src: &Source) {
             }
         }
     }
-    eprintln!("{}: {runs} mutated imports, {} panics, {} slow (> 20 s): {slow:?}", src.label, panics.len(), slow.len());
-    assert!(panics.is_empty(), "{}: mutated files panicked (Rule 9): {panics:?}", src.label);
+    eprintln!(
+        "{}: {runs} mutated imports, {} panics, {} slow (> 20 s): {slow:?}",
+        src.label,
+        panics.len(),
+        slow.len()
+    );
+    assert!(
+        panics.is_empty(),
+        "{}: mutated files panicked (Rule 9): {panics:?}",
+        src.label
+    );
 }
 
 #[test]

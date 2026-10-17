@@ -18,7 +18,10 @@
 use super::{black_from_columns, cfa_from_exif, white_from_data};
 
 use crate::tiffraw::{Packing, read_image_in};
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::{ImageInfo, chunk_bytes};
 use lightcraft_tiff::{ByteOrder, Tiff, makernote, tags as t};
@@ -44,7 +47,9 @@ impl Huffman {
                 continue;
             }
             if len > 12 || sym > 16 {
-                return Err(RawError::Unsupported(format!("PEF Huffman code of length {len}")));
+                return Err(RawError::Unsupported(format!(
+                    "PEF Huffman code of length {len}"
+                )));
             }
             let first = (code >> (12 - len) << (12 - len)) as usize;
             for e in &mut lut[first..first + (1 << (12 - len))] {
@@ -67,7 +72,12 @@ pub(crate) struct Bits<'a> {
 
 impl<'a> Bits<'a> {
     pub fn new(src: &'a [u8]) -> Self {
-        Bits { src, pos: 0, acc: 0, n: 0 }
+        Bits {
+            src,
+            pos: 0,
+            acc: 0,
+            n: 0,
+        }
     }
     #[inline]
     fn fill(&mut self) {
@@ -124,23 +134,39 @@ pub(crate) fn diff(bits: &mut Bits, h: &Huffman) -> Option<i32> {
         return None;
     }
     let v = bits.get(s) as i32;
-    Some(if v < 1 << (s - 1) { v - (1 << s) + 1 } else { v })
+    Some(if v < 1 << (s - 1) {
+        v - (1 << s) + 1
+    } else {
+        v
+    })
 }
 
 /// Parse the maker-note Huffman table.
 pub(crate) fn table(b: &[u8], order: ByteOrder) -> Result<Huffman> {
     let u16_at = |i: usize| b.get(i..i + 2).map(|s| order.u16([s[0], s[1]]));
-    let d = u16_at(0).ok_or_else(|| RawError::Corrupt("PEF Huffman table too short".into()))? as usize;
+    let d =
+        u16_at(0).ok_or_else(|| RawError::Corrupt("PEF Huffman table too short".into()))? as usize;
     let n = d + 12;
     if n > 17 || b.len() < 14 + 3 * n {
-        return Err(RawError::Corrupt(format!("PEF Huffman table: {n} symbols in {} bytes", b.len())));
+        return Err(RawError::Corrupt(format!(
+            "PEF Huffman table: {n} symbols in {} bytes",
+            b.len()
+        )));
     }
-    let codes: Vec<(u16, u8)> = (0..n).map(|i| (u16_at(14 + 2 * i).unwrap_or(0) & 0x0fff, b[14 + 2 * n + i])).collect();
+    let codes: Vec<(u16, u8)> = (0..n)
+        .map(|i| (u16_at(14 + 2 * i).unwrap_or(0) & 0x0fff, b[14 + 2 * n + i]))
+        .collect();
     Huffman::new(&codes)
 }
 
 /// Decode a `w × h` Huffman-coded image.
-pub(crate) fn decode_huffman(src: &[u8], h: &Huffman, w: usize, hgt: usize, bits_per: u32) -> Result<Vec<u16>> {
+pub(crate) fn decode_huffman(
+    src: &[u8],
+    h: &Huffman,
+    w: usize,
+    hgt: usize,
+    bits_per: u32,
+) -> Result<Vec<u16>> {
     let mut out = vec![0u16; w * hgt];
     let mut bits = Bits::new(src);
     let mut vpred = [[0i32; 2]; 2];
@@ -149,7 +175,9 @@ pub(crate) fn decode_huffman(src: &[u8], h: &Huffman, w: usize, hgt: usize, bits
         let mut hpred = [0i32; 2];
         let row = &mut out[y * w..(y + 1) * w];
         for (x, o) in row.iter_mut().enumerate() {
-            let d = diff(&mut bits, h).ok_or_else(|| RawError::Corrupt(format!("PEF: invalid Huffman code at row {y}")))?;
+            let d = diff(&mut bits, h).ok_or_else(|| {
+                RawError::Corrupt(format!("PEF: invalid Huffman code at row {y}"))
+            })?;
             let p = if x < 2 {
                 vpred[y & 1][x] += d;
                 hpred[x] = vpred[y & 1][x];
@@ -161,7 +189,9 @@ pub(crate) fn decode_huffman(src: &[u8], h: &Huffman, w: usize, hgt: usize, bits
             *o = p.clamp(0, max) as u16;
         }
         if bits.overrun() {
-            return Err(RawError::Corrupt(format!("PEF: data ends at row {y} of {hgt}")));
+            return Err(RawError::Corrupt(format!(
+                "PEF: data ends at row {y} of {hgt}"
+            )));
         }
     }
     Ok(out)
@@ -177,9 +207,15 @@ fn dark_trimmed(d: &[u16], w: usize, h: usize, black: Option<f64>, white: f32) -
     }
     let (xstep, ystep) = (w / 256, h / 256);
     let at = |x: usize, y: usize| d.get(y * w + x).map_or(0.0, |&v| f64::from(v));
-    let col_mean = |x: usize| (0..h).step_by(ystep).map(|y| at(x, y)).sum::<f64>() / h.div_ceil(ystep) as f64;
-    let row_mean = |y: usize| (0..w).step_by(xstep).map(|x| at(x, y)).sum::<f64>() / w.div_ceil(xstep) as f64;
-    let interior = (w / 4..w * 3 / 4).step_by(w / 64).map(col_mean).sum::<f64>() / 32.0;
+    let col_mean =
+        |x: usize| (0..h).step_by(ystep).map(|y| at(x, y)).sum::<f64>() / h.div_ceil(ystep) as f64;
+    let row_mean =
+        |y: usize| (0..w).step_by(xstep).map(|x| at(x, y)).sum::<f64>() / w.div_ceil(xstep) as f64;
+    let interior = (w / 4..w * 3 / 4)
+        .step_by(w / 64)
+        .map(col_mean)
+        .sum::<f64>()
+        / 32.0;
     let (base, tol) = match black {
         Some(b) => (b, ((f64::from(white) - b) / 256.0).max(16.0)),
         None => (0.0, interior * 0.05),
@@ -192,10 +228,19 @@ fn dark_trimmed(d: &[u16], w: usize, h: usize, black: Option<f64>, white: f32) -
     // lines from one edge that hold no picture: within `tol` of the outermost line's level when that sits a little
     // above black (K-70, K-1: 65 over BlackPoint), and saturated lines when dark ones follow (645Z)
     let run = |mean: &dyn Fn(usize) -> f64| {
-        let saturated = (0..64).take_while(|&k| mean(k) - base >= range * 0.98).count();
+        let saturated = (0..64)
+            .take_while(|&k| mean(k) - base >= range * 0.98)
+            .count();
         let outer = mean(saturated) - base;
-        let level = if outer > 0.0 && outer < range * 0.01 { outer } else { 0.0 };
-        match (saturated..64).take_while(|&k| mean(k) - base < level + tol).count() {
+        let level = if outer > 0.0 && outer < range * 0.01 {
+            outer
+        } else {
+            0.0
+        };
+        match (saturated..64)
+            .take_while(|&k| mean(k) - base < level + tol)
+            .count()
+        {
             0 => 0,
             dark => saturated + dark,
         }
@@ -216,11 +261,18 @@ fn dark_trimmed(d: &[u16], w: usize, h: usize, black: Option<f64>, white: f32) -
 /// exact match is what tells plain samples under a compression tag that says otherwise.
 fn is_exactly_packed(info: &ImageInfo, file_len: u64) -> bool {
     let bits = u64::from(info.bits());
-    if info.samples_per_pixel != 1 || info.planar != 1 || !(1..=16).contains(&bits) || info.byte_counts.len() != info.offsets.len() {
+    if info.samples_per_pixel != 1
+        || info.planar != 1
+        || !(1..=16).contains(&bits)
+        || info.byte_counts.len() != info.offsets.len()
+    {
         return false;
     }
     let chunks = info.chunks(file_len);
-    !chunks.is_empty() && chunks.iter().all(|c| c.len == (u64::from(c.width) * bits).div_ceil(8) * u64::from(c.height))
+    !chunks.is_empty()
+        && chunks
+            .iter()
+            .all(|c| c.len == (u64::from(c.width) * bits).div_ceil(8) * u64::from(c.height))
 }
 
 pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
@@ -233,52 +285,98 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         return Err(RawError::Limit("image too large"));
     }
     let make = ifd0.string(t::MAKE).unwrap_or_default();
-    let mn =
-        tiff.exif().and_then(|e| e.get(t::MAKER_NOTE)).and_then(|e| makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make));
-    let pair = |tag: u16| mn.as_ref().and_then(|m| m.ifd.u64s(tag)).filter(|v| v.len() == 2).map(|v| (v[0] as usize, v[1] as usize));
+    let mn = tiff
+        .exif()
+        .and_then(|e| e.get(t::MAKER_NOTE))
+        .and_then(|e| {
+            makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)
+        });
+    let pair = |tag: u16| {
+        mn.as_ref()
+            .and_then(|m| m.ifd.u64s(tag))
+            .filter(|v| v.len() == 2)
+            .map(|v| (v[0] as usize, v[1] as usize))
+    };
     let tagged = match (pair(CROP_ORIGIN), pair(CROP_SIZE)) {
-        (Some((x, y)), Some((cw, ch))) if cw > 0 && ch > 0 && x + cw <= w && y + ch <= hgt => Some(Rect::new(x, y, cw, ch)),
+        (Some((x, y)), Some((cw, ch))) if cw > 0 && ch > 0 && x + cw <= w && y + ch <= hgt => {
+            Some(Rect::new(x, y, cw, ch))
+        }
         _ => None,
     };
     // without crop tags the image area is found from the samples (dark borders)
     let read = if tagged.is_some() { mode } else { Mode::Full };
     let data = match info.compression {
         65535 => {
-            let mn = mn.as_ref().ok_or_else(|| RawError::Corrupt("compressed PEF without maker note".into()))?;
-            let tb = mn.ifd.bytes(HUFFMAN).ok_or_else(|| RawError::Unsupported("compressed PEF without a Huffman table".into()))?;
+            let mn = mn
+                .as_ref()
+                .ok_or_else(|| RawError::Corrupt("compressed PEF without maker note".into()))?;
+            let tb = mn.ifd.bytes(HUFFMAN).ok_or_else(|| {
+                RawError::Unsupported("compressed PEF without a Huffman table".into())
+            })?;
             let huff = table(tb, mn.order)?;
             let chunks = info.chunks(bytes.len() as u64);
-            let first = chunks.first().ok_or_else(|| RawError::Corrupt("PEF without image data".into()))?;
+            let first = chunks
+                .first()
+                .ok_or_else(|| RawError::Corrupt("PEF without image data".into()))?;
             let mut c = *first;
             c.len = chunks.iter().map(|c| c.len).sum::<u64>().max(first.len);
             let src = chunk_bytes(bytes, &c)
                 .or_else(|| bytes.get(first.offset as usize..))
                 .ok_or_else(|| RawError::Corrupt("PEF data outside file".into()))?;
-            if read == Mode::Full { RawData::U16(decode_huffman(src, &huff, w, hgt, bits)?) } else { RawData::U16(Vec::new()) }
+            if read == Mode::Full {
+                RawData::U16(decode_huffman(src, &huff, w, hgt, bits)?)
+            } else {
+                RawData::U16(Vec::new())
+            }
         }
         1 => {
             let strip: u64 = info.chunks(bytes.len() as u64).iter().map(|c| c.len).sum();
-            let packing = if strip >= (w * hgt * 2) as u64 { Packing::Word16 } else { Packing::Msb };
+            let packing = if strip >= (w * hgt * 2) as u64 {
+                Packing::Word16
+            } else {
+                Packing::Msb
+            };
             read_image_in(read, bytes, &info, tiff.order, packing)?
         }
         // Some bodies tag plain packed samples as PackBits (32773). Only a strip that holds exactly the packed
         // size of its rows is read, as the uncompressed MSB-first samples it is; any other size stays unsupported.
         32773 if is_exactly_packed(&info, bytes.len() as u64) => {
-            let packed = ImageInfo { compression: 1, ..info.clone() };
+            let packed = ImageInfo {
+                compression: 1,
+                ..info.clone()
+            };
             read_image_in(read, bytes, &packed, tiff.order, Packing::Msb)?
         }
         c => return Err(RawError::Unsupported(format!("PEF compression {c}"))),
     };
-    let RawData::U16(ref samples) = data else { return Err(RawError::Unsupported("float PEF".into())) };
+    let RawData::U16(ref samples) = data else {
+        return Err(RawError::Unsupported("float PEF".into()));
+    };
 
     let white = white_from_data(samples, bits);
-    let black_point = mn.as_ref().and_then(|m| m.ifd.f64s(BLACK_POINT)).filter(|v| v.len() == 4);
+    let black_point = mn
+        .as_ref()
+        .and_then(|m| m.ifd.f64s(BLACK_POINT))
+        .filter(|v| v.len() == 4);
     let active = match tagged {
         Some(r) => r,
-        None => dark_trimmed(samples, w, hgt, black_point.as_deref().map(|v| v.iter().sum::<f64>() / 4.0), white),
+        None => dark_trimmed(
+            samples,
+            w,
+            hgt,
+            black_point.as_deref().map(|v| v.iter().sum::<f64>() / 4.0),
+            white,
+        ),
     };
-    let cfa = match (ifd0.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(), ifd0.bytes(t::CFA_PATTERN_EP)) {
-        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa { width: 2, height: 2, pattern: p.to_vec() },
+    let cfa = match (
+        ifd0.u64s(t::CFA_REPEAT_PATTERN_DIM).as_deref(),
+        ifd0.bytes(t::CFA_PATTERN_EP),
+    ) {
+        (Some([2, 2]), Some(p)) if p.len() == 4 && p.iter().all(|&c| c <= 2) => Cfa {
+            width: 2,
+            height: 2,
+            pattern: p.to_vec(),
+        },
         // Every body states its layout in the Exif `CFAPattern`, read from the first sample of the stored array, not
         // of the image area: the *ist D (origin 19, 11) and the 645D (80, 59) only fit unshifted. The 12-bit 10 MP
         // bodies and everything from the K-3 on say RGGB; the K-7 / K-5 / 645D generation says BGGR. Files without the
@@ -289,16 +387,31 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         Some(v @ [_, _, _, _]) => {
             // RGGB-ordered levels → per CFA position at the active area origin
             let a = cfa.shifted(active.x, active.y);
-            let values = a.pattern.iter().map(|&c| [v[0], (v[1] + v[2]) / 2.0, v[3]][c as usize] as f32).collect();
-            BlackLevel { repeat_rows: 2, repeat_cols: 2, values, ..Default::default() }
+            let values = a
+                .pattern
+                .iter()
+                .map(|&c| [v[0], (v[1] + v[2]) / 2.0, v[3]][c as usize] as f32)
+                .collect();
+            BlackLevel {
+                repeat_rows: 2,
+                repeat_cols: 2,
+                values,
+                ..Default::default()
+            }
         }
-        _ if active.x >= 4 => black_from_columns(samples, w, 0..active.x.saturating_sub(2), 0..hgt, active),
+        _ if active.x >= 4 => {
+            black_from_columns(samples, w, 0..active.x.saturating_sub(2), 0..hgt, active)
+        }
         _ => BlackLevel::uniform(0.0),
     };
-    let wb = mn.as_ref().and_then(|m| m.ifd.f64s(WB_LEVELS)).filter(|v| v.len() == 4 && v.iter().all(|x| *x > 0.0)).map(|v| {
-        let g = (v[1] + v[2]) / 2.0;
-        [(v[0] / g) as f32, 1.0, (v[3] / g) as f32]
-    });
+    let wb = mn
+        .as_ref()
+        .and_then(|m| m.ifd.f64s(WB_LEVELS))
+        .filter(|v| v.len() == 4 && v.iter().all(|x| *x > 0.0))
+        .map(|v| {
+            let g = (v[1] + v[2]) / 2.0;
+            [(v[0] / g) as f32, 1.0, (v[3] / g) as f32]
+        });
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
     metadata.width = Some(active.width as u32);
     metadata.height = Some(active.height as u32);
@@ -354,7 +467,9 @@ mod tests {
 
     fn encode(px: &[u16], w: usize, codes: &[(u16, u8)]) -> Vec<u8> {
         let mut bits: Vec<bool> = Vec::new();
-        let put = |v: u32, n: u8, bits: &mut Vec<bool>| (0..n).rev().for_each(|i| bits.push(v >> i & 1 == 1));
+        let put = |v: u32, n: u8, bits: &mut Vec<bool>| {
+            (0..n).rev().for_each(|i| bits.push(v >> i & 1 == 1))
+        };
         let mut vpred = [[0i32; 2]; 2];
         for (y, row) in px.chunks(w).enumerate() {
             let mut hpred = [0i32; 2];
@@ -365,16 +480,30 @@ mod tests {
                     vpred[y & 1][x] = v as i32;
                 }
                 hpred[x & 1] = v as i32;
-                let s = if d == 0 { 0 } else { 32 - d.unsigned_abs().leading_zeros() } as u8;
+                let s = if d == 0 {
+                    0
+                } else {
+                    32 - d.unsigned_abs().leading_zeros()
+                } as u8;
                 let (c, l) = codes[s as usize];
                 put((c >> (12 - l)) as u32, l, &mut bits);
                 if s > 0 {
-                    let extra = if d < 0 { (d - 1) as u32 & ((1 << s) - 1) } else { d as u32 };
+                    let extra = if d < 0 {
+                        (d - 1) as u32 & ((1 << s) - 1)
+                    } else {
+                        d as u32
+                    };
                     put(extra, s, &mut bits);
                 }
             }
         }
-        bits.chunks(8).map(|c| c.iter().enumerate().fold(0u8, |a, (i, &b)| a | (b as u8) << (7 - i))).collect()
+        bits.chunks(8)
+            .map(|c| {
+                c.iter()
+                    .enumerate()
+                    .fold(0u8, |a, (i, &b)| a | (b as u8) << (7 - i))
+            })
+            .collect()
     }
 
     #[test]
@@ -418,13 +547,17 @@ mod tests {
     }
 
     /// Eight 12-bit samples, two rows of four, packed MSB-first: 0x123 0x456 0x789 0xabc / 0xdef 0x012 0x345 0x678.
-    const PACKED: [u8; 12] = [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78];
+    const PACKED: [u8; 12] = [
+        0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12, 0x34, 0x56, 0x78,
+    ];
 
     #[test]
     fn packed_samples_under_the_packbits_tag_are_read_when_the_strip_has_exactly_the_packed_size() {
         let file = tiny_pef(4, 2, 32773, 12, &PACKED);
         let img = decode(&file, Mode::Full).unwrap();
-        let RawData::U16(v) = &img.data else { panic!("integer samples") };
+        let RawData::U16(v) = &img.data else {
+            panic!("integer samples")
+        };
         assert_eq!(v, &[0x123, 0x456, 0x789, 0xabc, 0xdef, 0x012, 0x345, 0x678]);
         assert_eq!((img.width, img.height, img.bits), (4, 2, 12));
         // the same bytes tagged as plain uncompressed give the same samples
@@ -441,7 +574,10 @@ mod tests {
             payload.resize(24, 0x55);
             let file = tiny_pef(4, 2, 32773, len, &payload);
             let err = decode(&file, Mode::Full).unwrap_err();
-            assert!(matches!(&err, RawError::Unsupported(m) if m.contains("32773")), "strip of {len} bytes: {err:?}");
+            assert!(
+                matches!(&err, RawError::Unsupported(m) if m.contains("32773")),
+                "strip of {len} bytes: {err:?}"
+            );
         }
     }
 
@@ -455,7 +591,16 @@ mod tests {
         let (tb, codes) = test_table();
         let strip: Vec<u8> = match compression {
             1 => px.iter().flat_map(|v| v.to_be_bytes()).collect(),
-            32773 => px.chunks(2).flat_map(|p| [(p[0] >> 4) as u8, ((p[0] & 15) << 4 | p[1] >> 8) as u8, p[1] as u8]).collect(),
+            32773 => px
+                .chunks(2)
+                .flat_map(|p| {
+                    [
+                        (p[0] >> 4) as u8,
+                        ((p[0] & 15) << 4 | p[1] >> 8) as u8,
+                        p[1] as u8,
+                    ]
+                })
+                .collect(),
             _ => encode(&px, w, &codes),
         };
         let build = |table_at: u32| {
@@ -466,10 +611,16 @@ mod tests {
             ifd.set(0x0103, Value::Short(vec![compression]));
             ifd.set(0x0106, Value::Short(vec![32803]));
             ifd.set(0x010f, Value::Ascii("PENTAX Corporation".into()));
-            ifd.set_image(ImageData::Strips { rows_per_strip: h as u32, strips: vec![strip.clone()] });
+            ifd.set_image(ImageData::Strips {
+                rows_per_strip: h as u32,
+                strips: vec![strip.clone()],
+            });
             // AOC + "MM", then the IFD (area origin, area size and, for Huffman data, the table), next-IFD 0, the table
             let mut note = b"AOC MM".to_vec();
-            let mut entries = vec![(0x0038u16, 3u16, 2u32, [0u8, 3, 0, 1]), (0x0039, 3, 2, [0, 12, 0, 6])];
+            let mut entries = vec![
+                (0x0038u16, 3u16, 2u32, [0u8, 3, 0, 1]),
+                (0x0039, 3, 2, [0, 12, 0, 6]),
+            ];
             if compression == 65535 {
                 entries.push((0x0220, 7, tb.len() as u32, table_at.to_be_bytes()));
             }
@@ -485,26 +636,50 @@ mod tests {
                 note.extend_from_slice(&tb);
             }
             let mut exif = IfdBuilder::new();
-            exif.set(0xa302, Value::Undefined([&[0, 2, 0, 2][..], &pattern[..]].concat()));
+            exif.set(
+                0xa302,
+                Value::Undefined([&[0, 2, 0, 2][..], &pattern[..]].concat()),
+            );
             exif.set(0x927c, Value::Undefined(note));
             ifd.set_child(0x8769, exif);
-            TiffWriter::new(ByteOrder::Big, false).write(&[ifd]).unwrap()
+            TiffWriter::new(ByteOrder::Big, false)
+                .write(&[ifd])
+                .unwrap()
         };
         let first = build(0);
         if compression != 65535 {
             return first;
         }
-        let at = Tiff::parse(&first).unwrap().exif().unwrap().get(0x927c).unwrap().offset;
+        let at = Tiff::parse(&first)
+            .unwrap()
+            .exif()
+            .unwrap()
+            .get(0x927c)
+            .unwrap()
+            .offset;
         build((at + 6 + 2 + 3 * 12 + 4) as u32)
     }
 
     #[test]
     fn the_pattern_is_the_exif_cfapattern_from_the_array_origin_for_every_compression() {
         for compression in [1u16, 32773, 65535] {
-            for (p, name) in [([0u8, 1, 1, 2], "RGGB"), ([2, 1, 1, 0], "BGGR"), ([1, 0, 2, 1], "GRBG"), ([1, 2, 0, 1], "GBRG")] {
+            for (p, name) in [
+                ([0u8, 1, 1, 2], "RGGB"),
+                ([2, 1, 1, 0], "BGGR"),
+                ([1, 0, 2, 1], "GRBG"),
+                ([1, 2, 0, 1], "GBRG"),
+            ] {
                 let img = decode(&pef_with_pattern(compression, p), Mode::Full).unwrap();
-                assert_eq!(img.active_area, Rect::new(3, 1, 12, 6), "compression {compression}");
-                assert_eq!(img.cfa, Some(Cfa::bayer_static(name)), "compression {compression}, Exif {name}");
+                assert_eq!(
+                    img.active_area,
+                    Rect::new(3, 1, 12, 6),
+                    "compression {compression}"
+                );
+                assert_eq!(
+                    img.cfa,
+                    Some(Cfa::bayer_static(name)),
+                    "compression {compression}, Exif {name}"
+                );
             }
         }
         // no tag: the assumed layout stays
@@ -514,9 +689,16 @@ mod tests {
 
     /// A `w x h` big-endian 14-bit PEF of plain 16-bit words without area tags, whose maker note has only a
     /// BlackPoint of `black`, with `px(x, y)` as the samples.
-    fn pef_with_black_point(w: usize, h: usize, black: u16, px: impl Fn(usize, usize) -> u16) -> Vec<u8> {
+    fn pef_with_black_point(
+        w: usize,
+        h: usize,
+        black: u16,
+        px: impl Fn(usize, usize) -> u16,
+    ) -> Vec<u8> {
         use lightcraft_tiff::{IfdBuilder, ImageData, TiffWriter, Value};
-        let strip: Vec<u8> = (0..w * h).flat_map(|i| px(i % w, i / w).to_be_bytes()).collect();
+        let strip: Vec<u8> = (0..w * h)
+            .flat_map(|i| px(i % w, i / w).to_be_bytes())
+            .collect();
         let build = |levels_at: u32| {
             let mut ifd = IfdBuilder::new();
             ifd.set(0x0100, Value::Long(vec![w as u32]));
@@ -525,7 +707,10 @@ mod tests {
             ifd.set(0x0103, Value::Short(vec![1]));
             ifd.set(0x0106, Value::Short(vec![32803]));
             ifd.set(0x010f, Value::Ascii("PENTAX Corporation".into()));
-            ifd.set_image(ImageData::Strips { rows_per_strip: h as u32, strips: vec![strip.clone()] });
+            ifd.set_image(ImageData::Strips {
+                rows_per_strip: h as u32,
+                strips: vec![strip.clone()],
+            });
             // AOC\0 + "MM", one entry (BlackPoint, four shorts stored after the IFD), next-IFD 0, the four levels
             let mut note = b"AOC\0MM\0\x01".to_vec();
             note.extend_from_slice(&[0x02, 0x00, 0, 3, 0, 0, 0, 4]);
@@ -535,9 +720,17 @@ mod tests {
             let mut exif = IfdBuilder::new();
             exif.set(0x927c, Value::Undefined(note));
             ifd.set_child(0x8769, exif);
-            TiffWriter::new(ByteOrder::Big, false).write(&[ifd]).unwrap()
+            TiffWriter::new(ByteOrder::Big, false)
+                .write(&[ifd])
+                .unwrap()
         };
-        let at = Tiff::parse(&build(0)).unwrap().exif().unwrap().get(0x927c).unwrap().offset;
+        let at = Tiff::parse(&build(0))
+            .unwrap()
+            .exif()
+            .unwrap()
+            .get(0x927c)
+            .unwrap()
+            .offset;
         build((at + 6 + 2 + 12 + 4) as u32)
     }
 
@@ -598,7 +791,10 @@ mod tests {
                 2064 + ((x * 7 + y * 13) % 64) as u16
             }
         });
-        assert_eq!(decode(&file, Mode::Full).unwrap().active_area, Rect::new(56, 28, 264, 248));
+        assert_eq!(
+            decode(&file, Mode::Full).unwrap().active_area,
+            Rect::new(56, 28, 264, 248)
+        );
     }
 
     /// The 645Z layout: 12 saturated columns outside 46 masked ones on the right; they hold no picture either.
@@ -614,15 +810,27 @@ mod tests {
                 2064 + ((x * 7 + y * 13) % 64) as u16
             }
         });
-        assert_eq!(decode(&file, Mode::Full).unwrap().active_area, Rect::new(0, 0, w - 58, h));
+        assert_eq!(
+            decode(&file, Mode::Full).unwrap().active_area,
+            Rect::new(0, 0, w - 58, h)
+        );
     }
 
     /// A blown-out edge with the picture right behind it is picture: nothing is trimmed.
     #[test]
     fn a_saturated_edge_followed_by_picture_stays() {
         let (w, h) = (400, 288);
-        let file = pef_with_black_point(w, h, 64, |x, y| if x >= w - 12 { 16316 } else { 2064 + ((x * 7 + y * 13) % 64) as u16 });
-        assert_eq!(decode(&file, Mode::Full).unwrap().active_area, Rect::new(0, 0, w, h));
+        let file = pef_with_black_point(w, h, 64, |x, y| {
+            if x >= w - 12 {
+                16316
+            } else {
+                2064 + ((x * 7 + y * 13) % 64) as u16
+            }
+        });
+        assert_eq!(
+            decode(&file, Mode::Full).unwrap().active_area,
+            Rect::new(0, 0, w, h)
+        );
     }
 
     /// A frame at the black level everywhere (a lens-cap shot) has no picture to tell masked lines from: it keeps
@@ -631,6 +839,9 @@ mod tests {
     fn a_frame_at_the_black_level_keeps_its_whole_area() {
         let (w, h) = (320, 288);
         let file = pef_with_black_point(w, h, 64, |x, y| 64 + ((x * 7 + y * 13) % 5) as u16);
-        assert_eq!(decode(&file, Mode::Full).unwrap().active_area, Rect::new(0, 0, w, h));
+        assert_eq!(
+            decode(&file, Mode::Full).unwrap().active_area,
+            Rect::new(0, 0, w, h)
+        );
     }
 }

@@ -37,14 +37,20 @@ fn io_error<'a>(
     action: &'static str,
     path: &'a Path,
 ) -> impl FnOnce(io::Error) -> FsIndexError + 'a {
-    move |source| FsIndexError::Io { action, path: path.to_path_buf(), source }
+    move |source| FsIndexError::Io {
+        action,
+        path: path.to_path_buf(),
+        source,
+    }
 }
 
 impl PathIndex {
     /// Refers to the index at `path`; nothing is opened until a method needs it.
     #[must_use]
     pub fn open(path: impl AsRef<Path>) -> Self {
-        Self { path: path.as_ref().to_path_buf() }
+        Self {
+            path: path.as_ref().to_path_buf(),
+        }
     }
 
     /// Location of the database file.
@@ -55,8 +61,10 @@ impl PathIndex {
 
     fn create(path: &Path) -> Result<Connection, FsIndexError> {
         let _ = fs::remove_file(path);
-        let db = Connection::open(path)
-            .map_err(|source| FsIndexError::Open { path: path.to_path_buf(), source })?;
+        let db = Connection::open(path).map_err(|source| FsIndexError::Open {
+            path: path.to_path_buf(),
+            source,
+        })?;
         db.execute_batch(
             "PRAGMA journal_mode = OFF;
              PRAGMA synchronous = OFF;
@@ -94,8 +102,10 @@ impl PathIndex {
         tx.execute("INSERT INTO files_fts (files_fts) VALUES ('rebuild')", [])?;
         tx.commit()?;
         drop(db);
-        fs::rename(&partial, &self.path)
-            .map_err(io_error("cannot move filesystem index into place", &self.path))?;
+        fs::rename(&partial, &self.path).map_err(io_error(
+            "cannot move filesystem index into place",
+            &self.path,
+        ))?;
         Ok(count)
     }
 
@@ -114,7 +124,11 @@ impl PathIndex {
                 let mut fields = line.rsplitn(3, '\t');
                 let modified = fields.next()?.parse().ok()?;
                 let size = fields.next()?.parse().ok()?;
-                Some(PathHit { path: fields.next()?.to_owned(), size, modified })
+                Some(PathHit {
+                    path: fields.next()?.to_owned(),
+                    size,
+                    modified,
+                })
             })
             .collect();
         let count = self.write(entries)?;
@@ -123,8 +137,12 @@ impl PathIndex {
     }
 
     fn connect(&self) -> Result<Connection, FsIndexError> {
-        Connection::open_with_flags(&self.path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-            .map_err(|source| FsIndexError::Open { path: self.path.clone(), source })
+        Connection::open_with_flags(&self.path, OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(
+            |source| FsIndexError::Open {
+                path: self.path.clone(),
+                source,
+            },
+        )
     }
 
     /// Paths containing every whitespace-separated word of `query`, case-insensitively, shortest
@@ -157,7 +175,10 @@ impl PathIndex {
         }
         for word in short {
             filters.push("lower(f.path) LIKE ? ESCAPE '!'".into());
-            let escaped = word.replace('!', "!!").replace('%', "!%").replace('_', "!_");
+            let escaped = word
+                .replace('!', "!!")
+                .replace('%', "!%")
+                .replace('_', "!_");
             params.push(format!("%{escaped}%"));
         }
         sql.push_str(" WHERE ");
@@ -183,8 +204,9 @@ impl PathIndex {
     ///
     /// [`FsIndexError::Open`] / [`FsIndexError::Sqlite`] on a database failure.
     pub fn len(&self) -> Result<usize, FsIndexError> {
-        let count: i64 =
-            self.connect()?.query_row("SELECT count(*) FROM files", [], |r| r.get(0))?;
+        let count: i64 = self
+            .connect()?
+            .query_row("SELECT count(*) FROM files", [], |r| r.get(0))?;
         Ok(usize::try_from(count).unwrap_or_default())
     }
 
@@ -203,11 +225,20 @@ mod tests {
     use super::*;
 
     fn hit(path: &str, size: u64, modified: u64) -> PathHit {
-        PathHit { path: path.to_owned(), size, modified }
+        PathHit {
+            path: path.to_owned(),
+            size,
+            modified,
+        }
     }
 
     fn found(index: &PathIndex, query: &str) -> Vec<String> {
-        index.search(query, 10).unwrap().into_iter().map(|hit| hit.path).collect()
+        index
+            .search(query, 10)
+            .unwrap()
+            .into_iter()
+            .map(|hit| hit.path)
+            .collect()
     }
 
     #[test]
@@ -229,25 +260,48 @@ mod tests {
         assert_eq!(found(&index, "HTTP client"), ["repo/src/http/client.rs"]);
         assert_eq!(
             found(&index, "http"),
-            ["repo/docs/http.md", "repo/src/http/client.rs", "repo/src/http/server.rs"]
+            [
+                "repo/docs/http.md",
+                "repo/src/http/client.rs",
+                "repo/src/http/server.rs"
+            ]
         );
-        assert_eq!(found(&index, "workflows"), ["repo/.github/workflows/ci.yml"]);
+        assert_eq!(
+            found(&index, "workflows"),
+            ["repo/.github/workflows/ci.yml"]
+        );
         assert_eq!(found(&index, "ci yml"), ["repo/.github/workflows/ci.yml"]);
         assert!(found(&index, "rs 100%").is_empty());
         assert_eq!(found(&index, "0%"), ["repo/100%_done.txt"]);
         assert_eq!(found(&index, "%_"), ["repo/100%_done.txt"]);
         assert!(found(&index, "\"quoted\"").is_empty());
-        assert!(matches!(index.search("  ", 10), Err(FsIndexError::EmptyQuery)));
+        assert!(matches!(
+            index.search("  ", 10),
+            Err(FsIndexError::EmptyQuery)
+        ));
         assert_eq!(index.search("http", 2).unwrap().len(), 2);
-        assert!(index.search("http", 10).unwrap().iter().all(|h| h.size == 1 && h.modified == 9));
+        assert!(
+            index
+                .search("http", 10)
+                .unwrap()
+                .iter()
+                .all(|h| h.size == 1 && h.modified == 9)
+        );
     }
 
     #[test]
     fn write_replaces_the_previous_index() {
         let dir = tempfile::tempdir().unwrap();
         let index = PathIndex::open(dir.path().join("fsindex.sqlite"));
-        index.write([hit("old/a.rs", 1, 1), hit("old/b.rs", 1, 1)]).unwrap();
-        assert_eq!(index.write([hit("new/a.rs", 2, 2), hit("new/a.rs", 3, 3)]).unwrap(), 2);
+        index
+            .write([hit("old/a.rs", 1, 1), hit("old/b.rs", 1, 1)])
+            .unwrap();
+        assert_eq!(
+            index
+                .write([hit("new/a.rs", 2, 2), hit("new/a.rs", 3, 3)])
+                .unwrap(),
+            2
+        );
         assert_eq!(index.len().unwrap(), 1);
         assert!(found(&index, "old").is_empty());
         assert_eq!(index.search("a.rs", 5).unwrap(), [hit("new/a.rs", 3, 3)]);
@@ -263,7 +317,10 @@ mod tests {
         assert!(!legacy.exists());
         let hits = index.search("lib.RS", 5).unwrap();
         assert_eq!(hits, [hit("C:\\repo\\src\\Lib.rs", 42, 7)]);
-        assert!(matches!(index.import_legacy(&legacy), Err(FsIndexError::Io { .. })));
+        assert!(matches!(
+            index.import_legacy(&legacy),
+            Err(FsIndexError::Io { .. })
+        ));
     }
 
     #[test]

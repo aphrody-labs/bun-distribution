@@ -109,7 +109,7 @@ impl ExiMemoryCard {
             2 => self.address |= (byte as u32) << 9,
             3 => self.address |= ((byte as u32) & 3) << 7,
             4 => self.address |= (byte as u32) & 0x7F,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -145,7 +145,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                         let shift = 24 - (((self.position - 2) & 3) * 8);
                         *byte = (self.card_id >> shift) as u8;
                     }
-                },
+                }
                 Command::ReadArray => {
                     self.accumulate_address(*byte);
 
@@ -158,7 +158,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                             self.advance_address();
                         }
                     }
-                },
+                }
                 Command::ReadStatus => *byte = self.status,
                 Command::ReadId => {
                     *byte = if self.position == 1 || self.position & 1 == 0 {
@@ -166,17 +166,17 @@ impl super::device::ExiDevice for ExiMemoryCard {
                     } else {
                         FLASH_ID as u8
                     };
-                },
+                }
                 Command::SectorErase => {
                     self.accumulate_address(*byte);
                     *byte = 0xFF;
-                },
+                }
                 Command::SetInterrupt => {
                     if self.position == 1 {
                         self.interrupt_switch = *byte;
                     }
                     *byte = 0xFF;
-                },
+                }
                 Command::PageProgram => {
                     self.accumulate_address(*byte);
 
@@ -184,7 +184,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                         self.program_buffer[((self.position - 5) & 0x7F) as usize] = *byte;
                     }
                     *byte = 0xFF;
-                },
+                }
                 _ => *byte = 0xFF,
             }
         }
@@ -206,7 +206,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                 tracing::debug!(block = block / BLOCK_SIZE, "memory card sector erase");
 
                 Some(CMD_DONE_DELAY_CYCLES)
-            },
+            }
             Command::PageProgram if self.position >= 5 => {
                 self.status &= !MC_STATUS_BUSY;
 
@@ -221,7 +221,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                 tracing::debug!(bytes = count, "memory card page program");
 
                 Some(CMD_DONE_DELAY_CYCLES)
-            },
+            }
             Command::ChipErase if self.position > 2 => {
                 self.data.fill(0xFF);
                 self.status &= !MC_STATUS_BUSY;
@@ -230,7 +230,7 @@ impl super::device::ExiDevice for ExiMemoryCard {
                 tracing::debug!("memory card chip erase");
 
                 None
-            },
+            }
             _ => None,
         }
     }

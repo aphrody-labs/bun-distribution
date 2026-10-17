@@ -19,9 +19,8 @@ use core::{
 use bevy_reflect::Reflect;
 pub use indexmap::map::Entry;
 use indexmap::{
-    self,
+    self, IndexMap,
     map::{self, IntoValues, ValuesMut},
-    IndexMap,
 };
 
 use super::{Entity, EntityEquivalent, EntityHash, EntitySetIterator};

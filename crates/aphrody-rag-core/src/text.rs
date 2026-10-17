@@ -131,7 +131,11 @@ pub fn split_sentences_with_offsets(
     cjk_sentence_breaks: bool,
 ) -> Vec<Sentence> {
     let index = LineIndex::new(text, base_line);
-    let re: &Regex = if cjk_sentence_breaks { &SENTENCE_END_WITH_CJK } else { &SENTENCE_END };
+    let re: &Regex = if cjk_sentence_breaks {
+        &SENTENCE_END_WITH_CJK
+    } else {
+        &SENTENCE_END
+    };
     let mut sentences = Vec::new();
     let mut seg_start = 0usize;
     for m in re.find_iter(text) {
@@ -211,15 +215,31 @@ pub fn pack_sentences_with_overlap(
         if current.is_empty() {
             return;
         }
-        let start_line = current.iter().map(|s| s.start_line).min().unwrap_or_default();
+        let start_line = current
+            .iter()
+            .map(|s| s.start_line)
+            .min()
+            .unwrap_or_default();
         let end_line = current.iter().map(|s| s.end_line).max().unwrap_or_default();
-        let joined = current.iter().map(|s| s.text.as_str()).collect::<Vec<_>>().join(" ");
-        out.push(PackedUnit { text: format!("{prefix}{joined}"), start_line, end_line });
+        let joined = current
+            .iter()
+            .map(|s| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        out.push(PackedUnit {
+            text: format!("{prefix}{joined}"),
+            start_line,
+            end_line,
+        });
     };
 
     for sentence in sentences {
         let s_len = measure(&sentence.text, unit);
-        let incremental = if current.is_empty() { s_len } else { s_len + sep };
+        let incremental = if current.is_empty() {
+            s_len
+        } else {
+            s_len + sep
+        };
         if current_len + incremental > max_chars && !current.is_empty() {
             emit(&current, &mut out);
 
@@ -241,7 +261,11 @@ pub fn pack_sentences_with_overlap(
             current = overlap;
             current_len = overlap_len;
         }
-        let push_incremental = if current.is_empty() { s_len } else { s_len + sep };
+        let push_incremental = if current.is_empty() {
+            s_len
+        } else {
+            s_len + sep
+        };
         current.push(sentence);
         current_len += push_incremental;
     }
@@ -298,7 +322,11 @@ pub fn pack_lines_with_overlap(
     }
     if !buf.is_empty() {
         let end = base_line + u32::try_from(lines.len()).unwrap_or(u32::MAX) - 1;
-        paragraphs.push(Paragraph { text: buf.join("\n"), start_line: buf_start, end_line: end });
+        paragraphs.push(Paragraph {
+            text: buf.join("\n"),
+            start_line: buf_start,
+            end_line: end,
+        });
     }
 
     // A paragraph that alone exceeds max_chars is further split by line.
@@ -327,10 +355,22 @@ pub fn pack_lines_with_overlap(
         if current.is_empty() {
             return;
         }
-        let start_line = current.iter().map(|p| p.start_line).min().unwrap_or_default();
+        let start_line = current
+            .iter()
+            .map(|p| p.start_line)
+            .min()
+            .unwrap_or_default();
         let end_line = current.iter().map(|p| p.end_line).max().unwrap_or_default();
-        let text = current.iter().map(|p| p.text.as_str()).collect::<Vec<_>>().join("\n\n");
-        out.push(PackedUnit { text, start_line, end_line });
+        let text = current
+            .iter()
+            .map(|p| p.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        out.push(PackedUnit {
+            text,
+            start_line,
+            end_line,
+        });
     };
 
     for p in &units {

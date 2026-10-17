@@ -249,7 +249,11 @@ impl Libraries {
 impl Document {
     /// The library store's root, if the document has one.
     pub fn library_store(&self) -> Option<NodeId> {
-        self.libraries.store.filter(|s| self.node(*s).is_some_and(|n| n.is_page() && n.parent.is_none()) && !self.pages.contains(s))
+        self.libraries.store.filter(|s| {
+            self.node(*s)
+                .is_some_and(|n| n.is_page() && n.parent.is_none())
+                && !self.pages.contains(s)
+        })
     }
 
     /// The library store's root, created when missing.
@@ -260,7 +264,12 @@ impl Document {
         let id = self.alloc_id();
         let node = Node::new(
             id,
-            NodeKind::Page { background: figcraft_color::Color::DEFAULT_PAGE, flows: Vec::new(), prototype: Default::default(), guides: Vec::new() },
+            NodeKind::Page {
+                background: figcraft_color::Color::DEFAULT_PAGE,
+                flows: Vec::new(),
+                prototype: Default::default(),
+                guides: Vec::new(),
+            },
             STORE_NAME,
             0.0,
             0.0,
@@ -273,7 +282,8 @@ impl Document {
 
     /// Whether `id` is a remote (library) layer kept in the library store.
     pub fn is_remote(&self, id: NodeId) -> bool {
-        self.library_store().is_some_and(|s| self.page_of(id) == Some(s))
+        self.library_store()
+            .is_some_and(|s| self.page_of(id) == Some(s))
     }
 
     /// Mutable library data (copy-on-write).

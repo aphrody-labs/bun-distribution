@@ -15,18 +15,22 @@ pub const NS_MAIN: &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/
 pub const NS_REL: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 pub const XML_DECL: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
-pub const CT_WORKSHEET: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
+pub const CT_WORKSHEET: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
 pub const CT_DRAWING: &str = "application/vnd.openxmlformats-officedocument.drawing+xml";
 pub const CT_CHART: &str = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 pub const CT_TABLE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml";
-pub const CT_COMMENTS: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml";
+pub const CT_COMMENTS: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml";
 pub const CT_VBA: &str = "application/vnd.ms-office.vbaProject";
 pub const CT_THREADED_COMMENTS: &str = "application/vnd.ms-excel.threadedcomments+xml";
 pub const CT_PERSONS: &str = "application/vnd.ms-excel.person+xml";
-pub const REL_THREADED_COMMENT: &str = "http://schemas.microsoft.com/office/2017/10/relationships/threadedComment";
+pub const REL_THREADED_COMMENT: &str =
+    "http://schemas.microsoft.com/office/2017/10/relationships/threadedComment";
 pub const REL_PERSON: &str = "http://schemas.microsoft.com/office/2017/10/relationships/person";
 /// Namespace of the threaded comments and persons parts ([MS-XLSX]).
-pub const NS_THREADED: &str = "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments";
+pub const NS_THREADED: &str =
+    "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments";
 
 /// A part's relationships.
 #[derive(Default)]
@@ -50,26 +54,39 @@ impl Rels {
     }
     pub fn add_external(&mut self, kind: &str, target: &str) -> String {
         let id = format!("rId{}", self.items.len() + 1);
-        self.items.push((id.clone(), format!("{NS_REL}/{kind}"), target.to_string(), true));
+        self.items.push((
+            id.clone(),
+            format!("{NS_REL}/{kind}"),
+            target.to_string(),
+            true,
+        ));
         id
     }
     /// Adds a Microsoft extension relationship with its complete namespace URI.
     pub fn add_uri(&mut self, ty: &str, target: &str) -> String {
         let id = format!("rId{}", self.items.len() + 1);
-        self.items.push((id.clone(), ty.to_string(), target.to_string(), false));
+        self.items
+            .push((id.clone(), ty.to_string(), target.to_string(), false));
         id
     }
     /// Adds a relationship with its complete type URI, internal or external (kept content).
     pub fn add_raw(&mut self, ty: &str, target: &str, external: bool) -> String {
         let id = format!("rId{}", self.items.len() + 1);
-        self.items.push((id.clone(), crate::xml::esc_attr(ty), target.to_string(), external));
+        self.items.push((
+            id.clone(),
+            crate::xml::esc_attr(ty),
+            target.to_string(),
+            external,
+        ));
         id
     }
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
     pub fn xml(&self) -> String {
-        let mut s = format!("{XML_DECL}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">");
+        let mut s = format!(
+            "{XML_DECL}<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+        );
         for (id, ty, target, ext) in &self.items {
             let _ = write!(
                 s,
@@ -136,14 +153,19 @@ impl Out {
         self.parts.push((name.to_string(), data));
     }
     pub fn default_type(&mut self, ext: &str, ct: &str) {
-        self.defaults.entry(ext.to_string()).or_insert_with(|| ct.to_string());
+        self.defaults
+            .entry(ext.to_string())
+            .or_insert_with(|| ct.to_string());
     }
 }
 
 /// Id of the i-th person of `xl/persons/person.xml`: a GUID-shaped, deterministic id (the
 /// file only needs ids that are unique within it).
 pub fn person_guid(i: usize) -> String {
-    format!("{{00000000-0000-4000-8002-{:012X}}}", i as u64 & 0xFFFF_FFFF_FFFF)
+    format!(
+        "{{00000000-0000-4000-8002-{:012X}}}",
+        i as u64 & 0xFFFF_FFFF_FFFF
+    )
 }
 
 /// `$A$1:$D$20` (or `$1:$3` / `$A:$C`).
@@ -158,7 +180,13 @@ pub fn abs_range(r: &RangeRef) -> String {
     if r.is_single() {
         return format!("${}${}", c(r.start.col), r.start.row + 1);
     }
-    format!("${}${}:${}${}", c(r.start.col), r.start.row + 1, c(r.end.col), r.end.row + 1)
+    format!(
+        "${}${}:${}${}",
+        c(r.start.col),
+        r.start.row + 1,
+        c(r.end.col),
+        r.end.row + 1
+    )
 }
 
 /// Refuses sheet names XLSX cannot hold. The reader repairs such names (cuts, strips, renames
@@ -171,7 +199,10 @@ fn check_sheet_names(wb: &Workbook) -> Result<(), IoError> {
             Some("is blank")
         } else if name.chars().count() > 31 {
             Some("is longer than 31 characters")
-        } else if name.chars().any(|c| matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']')) {
+        } else if name
+            .chars()
+            .any(|c| matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']'))
+        {
             Some("contains one of : \\ / ? * [ ]")
         } else if !seen.insert(name.to_ascii_lowercase()) {
             Some("is used by another sheet")
@@ -179,7 +210,9 @@ fn check_sheet_names(wb: &Workbook) -> Result<(), IoError> {
             None
         };
         if let Some(why) = bad {
-            return Err(IoError::Format(format!("sheet name \"{name}\" {why}; rename the sheet before saving as XLSX")));
+            return Err(IoError::Format(format!(
+                "sheet name \"{name}\" {why}; rename the sheet before saving as XLSX"
+            )));
         }
     }
     Ok(())
@@ -187,10 +220,19 @@ fn check_sheet_names(wb: &Workbook) -> Result<(), IoError> {
 
 pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
     if wb.sheets.is_empty() {
-        return Err(IoError::Format("a workbook needs at least one sheet".into()));
+        return Err(IoError::Format(
+            "a workbook needs at least one sheet".into(),
+        ));
     }
-    if wb.sheets.iter().any(|sheet| sheet.cell_pictures.keys().any(|c| sheet.cell(*c).is_some_and(|cell| cell.formula.is_some()))) {
-        return Err(IoError::Format("a static cell picture cannot also contain a formula".into()));
+    if wb.sheets.iter().any(|sheet| {
+        sheet
+            .cell_pictures
+            .keys()
+            .any(|c| sheet.cell(*c).is_some_and(|cell| cell.formula.is_some()))
+    }) {
+        return Err(IoError::Format(
+            "a static cell picture cannot also contain a formula".into(),
+        ));
     }
     check_sheet_names(wb)?;
     let mut out = Out {
@@ -212,15 +254,28 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         cell_pictures: Default::default(),
         kept: Default::default(),
     };
-    out.default_type("rels", "application/vnd.openxmlformats-package.relationships+xml");
+    out.default_type(
+        "rels",
+        "application/vnd.openxmlformats-package.relationships+xml",
+    );
     out.default_type("xml", "application/xml");
 
     // Which sheet is active (must be visible), and at least one visible sheet.
-    let any_visible = wb.sheets.iter().any(|s| s.visibility == Visibility::Visible);
-    let active = if wb.sheets.get(wb.active_sheet).is_some_and(|s| s.visibility == Visibility::Visible) {
+    let any_visible = wb
+        .sheets
+        .iter()
+        .any(|s| s.visibility == Visibility::Visible);
+    let active = if wb
+        .sheets
+        .get(wb.active_sheet)
+        .is_some_and(|s| s.visibility == Visibility::Visible)
+    {
         wb.active_sheet
     } else {
-        wb.sheets.iter().position(|s| s.visibility == Visibility::Visible).unwrap_or(0)
+        wb.sheets
+            .iter()
+            .position(|s| s.visibility == Visibility::Visible)
+            .unwrap_or(0)
     };
 
     let mut wb_rels = Rels::default();
@@ -238,7 +293,11 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         let name = format!("xl/worksheets/sheet{}.xml", i + 1);
         out.part(&name, Some(CT_WORKSHEET), xml.into_bytes());
         if !rels.is_empty() {
-            out.part(&format!("xl/worksheets/_rels/sheet{}.xml.rels", i + 1), None, rels.xml().into_bytes());
+            out.part(
+                &format!("xl/worksheets/_rels/sheet{}.xml.rels", i + 1),
+                None,
+                rels.xml().into_bytes(),
+            );
         }
         let rid = wb_rels.add("worksheet", &format!("worksheets/sheet{}.xml", i + 1));
         let state = match sheet.visibility {
@@ -248,7 +307,11 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
             Visibility::VeryHidden => " state=\"veryHidden\"",
         };
         let name: String = sheet.name.chars().take(31).collect();
-        let _ = write!(sheets_xml, "<sheet name=\"{}\" sheetId=\"{sheet_id}\"{state} r:id=\"{rid}\"/>", esc_attr(&name));
+        let _ = write!(
+            sheets_xml,
+            "<sheet name=\"{}\" sheetId=\"{sheet_id}\"{state} r:id=\"{rid}\"/>",
+            esc_attr(&name)
+        );
         sheet_id += 1;
     }
     sheets_xml.push_str(&kept.sheet_entries(wb.sheets.len(), true, sheet_id).0);
@@ -275,7 +338,11 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         if !n.comment.is_empty() {
             let _ = write!(names, " comment=\"{}\"", esc_attr(&n.comment));
         }
-        let _ = write!(names, ">{}</definedName>", esc(&crate::fmla::text_to_file(&n.formula)));
+        let _ = write!(
+            names,
+            ">{}</definedName>",
+            esc(&crate::fmla::text_to_file(&n.formula))
+        );
     }
     for (i, f) in out.chart_names.iter().enumerate() {
         let _ = write!(
@@ -298,10 +365,16 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         }
         let mut titles = vec![];
         if let Some((c0, c1)) = sheet.print.title_cols {
-            titles.push(format!("{q}!{}", abs_range(&RangeRef::cols(c0.min(c1), c0.max(c1)))));
+            titles.push(format!(
+                "{q}!{}",
+                abs_range(&RangeRef::cols(c0.min(c1), c0.max(c1)))
+            ));
         }
         if let Some((r0, r1)) = sheet.print.title_rows {
-            titles.push(format!("{q}!{}", abs_range(&RangeRef::rows(r0.min(r1), r0.max(r1)))));
+            titles.push(format!(
+                "{q}!{}",
+                abs_range(&RangeRef::rows(r0.min(r1), r0.max(r1)))
+            ));
         }
         if !titles.is_empty() {
             let _ = write!(
@@ -315,12 +388,24 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
 
     let mut w = format!("{XML_DECL}<workbook xmlns=\"{NS_MAIN}\" xmlns:r=\"{NS_REL}\">");
     w.push_str(&crate::passthrough::workbook_elements(wb, "fileVersion"));
-    w.push_str(if wb.date_system == gridcraft_core::DateSystem::D1904 { "<workbookPr date1904=\"1\"/>" } else { "<workbookPr/>" });
+    w.push_str(if wb.date_system == gridcraft_core::DateSystem::D1904 {
+        "<workbookPr date1904=\"1\"/>"
+    } else {
+        "<workbookPr/>"
+    });
     if wb.protected_structure {
-        let pw = wb.structure_password.as_ref().map(|h| crate::sheet_write::password_attrs(h, "workbook")).unwrap_or_default();
+        let pw = wb
+            .structure_password
+            .as_ref()
+            .map(|h| crate::sheet_write::password_attrs(h, "workbook"))
+            .unwrap_or_default();
         let _ = write!(w, "<workbookProtection{pw} lockStructure=\"1\"/>");
     }
-    let _ = write!(w, "<bookViews><workbookView activeTab=\"{}\"/></bookViews><sheets>{sheets_xml}</sheets>", kept.file_index(active));
+    let _ = write!(
+        w,
+        "<bookViews><workbookView activeTab=\"{}\"/></bookViews><sheets>{sheets_xml}</sheets>",
+        kept.file_index(active)
+    );
     w.push_str(&kept.elements);
     if !names.is_empty() {
         let _ = write!(w, "<definedNames>{names}</definedNames>");
@@ -359,12 +444,26 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
 
     // Workbook-level parts.
     let (styles, fmt_ids) = crate::styles::write_styles(wb, &out.dxfs, &pivots.number_formats(wb));
-    pivots.finish(wb, &mut out, &|code: &str| crate::tables::builtin_id(code).or_else(|| fmt_ids.get(code).copied()));
-    out.part("xl/styles.xml", Some("application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"), styles.into_bytes());
+    pivots.finish(wb, &mut out, &|code: &str| {
+        crate::tables::builtin_id(code).or_else(|| fmt_ids.get(code).copied())
+    });
+    out.part(
+        "xl/styles.xml",
+        Some("application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"),
+        styles.into_bytes(),
+    );
     wb_rels.add("styles", "styles.xml");
-    if wb.styles.iter().any(|(_, st)| st.num_fmt.as_str() == "checkbox") {
+    if wb
+        .styles
+        .iter()
+        .any(|(_, st)| st.num_fmt.as_str() == "checkbox")
+    {
         use crate::feature_bags as fpb;
-        out.part(fpb::PART, Some(fpb::CONTENT_TYPE), fpb::checkbox_part().into_bytes());
+        out.part(
+            fpb::PART,
+            Some(fpb::CONTENT_TYPE),
+            fpb::checkbox_part().into_bytes(),
+        );
         wb_rels.add_uri(fpb::REL, "featurePropertyBag/featurePropertyBag.xml");
     }
     out.part(
@@ -373,12 +472,20 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         crate::theme::write_theme(&wb.theme).into_bytes(),
     );
     wb_rels.add("theme", "theme/theme1.xml");
-    let mut sst = format!("{XML_DECL}<sst xmlns=\"{NS_MAIN}\" count=\"{}\" uniqueCount=\"{}\">", out.sst.count, out.sst.list.len());
+    let mut sst = format!(
+        "{XML_DECL}<sst xmlns=\"{NS_MAIN}\" count=\"{}\" uniqueCount=\"{}\">",
+        out.sst.count,
+        out.sst.list.len()
+    );
     for t in &out.sst.list {
         let _ = write!(sst, "<si>{}</si>", crate::xml::t_el(t));
     }
     sst.push_str("</sst>");
-    out.part("xl/sharedStrings.xml", Some("application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"), sst.into_bytes());
+    out.part(
+        "xl/sharedStrings.xml",
+        Some("application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"),
+        sst.into_bytes(),
+    );
     wb_rels.add("sharedStrings", "sharedStrings.xml");
     if !out.cell_pictures.is_empty() {
         crate::richdata::write(&mut out, &mut wb_rels)?;
@@ -394,19 +501,31 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         let mut x = format!("{XML_DECL}<personList xmlns=\"{NS_THREADED}\" xmlns:x=\"{NS_MAIN}\">");
         for (i, name) in out.persons.iter().enumerate() {
             let n = esc_attr(name);
-            let _ = write!(x, "<person displayName=\"{n}\" id=\"{}\" userId=\"{n}\" providerId=\"None\"/>", person_guid(i));
+            let _ = write!(
+                x,
+                "<person displayName=\"{n}\" id=\"{}\" userId=\"{n}\" providerId=\"None\"/>",
+                person_guid(i)
+            );
         }
         x.push_str("</personList>");
         out.part("xl/persons/person.xml", Some(CT_PERSONS), x.into_bytes());
         wb_rels.add_uri(REL_PERSON, "persons/person.xml");
     }
-    out.part("xl/workbook.xml", Some(kind.main_content_type()), w.into_bytes());
+    out.part(
+        "xl/workbook.xml",
+        Some(kind.main_content_type()),
+        w.into_bytes(),
+    );
     // A macro-free package can't hold a VBA project (Excel refuses such a file).
     if let Some(data) = wb.vba_project.as_ref().filter(|_| kind.is_macro_enabled()) {
         wb_rels.add("vbaProject", "vbaProject.bin");
         out.part("xl/vbaProject.bin", Some(CT_VBA), data.clone());
     }
-    out.part("xl/_rels/workbook.xml.rels", None, wb_rels.xml().into_bytes());
+    out.part(
+        "xl/_rels/workbook.xml.rels",
+        None,
+        wb_rels.xml().into_bytes(),
+    );
 
     // Document properties.
     let p = &wb.props;
@@ -425,14 +544,22 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
         }
     }
     core.push_str("</cp:coreProperties>");
-    out.part("docProps/core.xml", Some("application/vnd.openxmlformats-package.core-properties+xml"), core.into_bytes());
+    out.part(
+        "docProps/core.xml",
+        Some("application/vnd.openxmlformats-package.core-properties+xml"),
+        core.into_bytes(),
+    );
     let mut app = String::from(XML_DECL);
     app.push_str("<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>GridCraft</Application>");
     if !p.company.is_empty() {
         let _ = write!(app, "<Company>{}</Company>", esc(&p.company));
     }
     app.push_str("</Properties>");
-    out.part("docProps/app.xml", Some("application/vnd.openxmlformats-officedocument.extended-properties+xml"), app.into_bytes());
+    out.part(
+        "docProps/app.xml",
+        Some("application/vnd.openxmlformats-officedocument.extended-properties+xml"),
+        app.into_bytes(),
+    );
     let mut root = Rels::default();
     root.add("officeDocument", "xl/workbook.xml");
     root.add("core-properties", "docProps/core.xml");
@@ -441,13 +568,25 @@ pub fn write_xlsx(wb: &Workbook, kind: XlsxKind) -> Result<Vec<u8>, IoError> {
     out.part("_rels/.rels", None, root.xml().into_bytes());
 
     // Content types first, then the parts in creation order.
-    let mut ct = format!("{XML_DECL}<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">");
+    let mut ct = format!(
+        "{XML_DECL}<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+    );
     for (ext, t) in &out.defaults {
         // Kept parts bring their content types (and extensions) from the input file: escape them.
-        let _ = write!(ct, "<Default Extension=\"{}\" ContentType=\"{}\"/>", esc_attr(ext), esc_attr(t));
+        let _ = write!(
+            ct,
+            "<Default Extension=\"{}\" ContentType=\"{}\"/>",
+            esc_attr(ext),
+            esc_attr(t)
+        );
     }
     for (part, t) in &out.overrides {
-        let _ = write!(ct, "<Override PartName=\"{}\" ContentType=\"{}\"/>", esc_attr(part), esc_attr(t));
+        let _ = write!(
+            ct,
+            "<Override PartName=\"{}\" ContentType=\"{}\"/>",
+            esc_attr(part),
+            esc_attr(t)
+        );
     }
     ct.push_str("</Types>");
     let mut zip = ZipOut::new();

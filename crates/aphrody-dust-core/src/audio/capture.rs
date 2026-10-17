@@ -121,7 +121,9 @@ impl CaptureUnit {
             arm7::bus::write_32::<DmaAccess, _>(
                 emu,
                 cur_dst_addr,
-                emu.audio.capture[i.get() as usize].fifo.read_le(read_pos as usize),
+                emu.audio.capture[i.get() as usize]
+                    .fifo
+                    .read_le(read_pos as usize),
             );
             cur_dst_addr = (cur_dst_addr + 4) & 0x0FFF_FFFC;
             if cur_dst_addr == dst_end_addr {
@@ -145,7 +147,9 @@ impl CaptureUnit {
                 capture.fifo_write_pos =
                     FifoWritePos::new((capture.fifo_write_pos.get() + 1) & 0x1F);
             } else {
-                capture.fifo.write_le(capture.fifo_write_pos.get() as usize & !1, sample);
+                capture
+                    .fifo
+                    .write_le(capture.fifo_write_pos.get() as usize & !1, sample);
                 capture.buffer_pos += 2;
                 capture.fifo_write_pos =
                     FifoWritePos::new((capture.fifo_write_pos.get() + 2) & 0x1E);
@@ -163,7 +167,10 @@ impl CaptureUnit {
                     capture.fifo_read_half = false;
                     capture.fifo_write_pos = FifoWritePos::new(0);
                 }
-            } else if capture.fifo_write_pos.get().wrapping_sub((capture.fifo_read_half as u8) << 4)
+            } else if capture
+                .fifo_write_pos
+                .get()
+                .wrapping_sub((capture.fifo_read_half as u8) << 4)
                 & 0x1F
                 >= 16
             {

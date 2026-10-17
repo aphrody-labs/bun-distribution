@@ -39,8 +39,13 @@ impl CpuRunner {
         crate::manifest::validate(manifest).map_err(|e| Error::Load(e.to_string()))?;
         let started = Instant::now();
         let net = crate::onnx::read(path).map_err(|e| Error::Load(e.to_string()))?;
-        let runner = crate::cpu::NetRunner::new(&net, manifest.tile as usize).map_err(|e| Error::Load(e.to_string()))?;
-        Ok(Self { runner, manifest: manifest.clone(), load_ms: started.elapsed().as_secs_f64() * 1e3 })
+        let runner = crate::cpu::NetRunner::new(&net, manifest.tile as usize)
+            .map_err(|e| Error::Load(e.to_string()))?;
+        Ok(Self {
+            runner,
+            manifest: manifest.clone(),
+            load_ms: started.elapsed().as_secs_f64() * 1e3,
+        })
     }
     pub fn manifest(&self) -> &DenoiserManifest {
         &self.manifest
@@ -77,20 +82,37 @@ fn self_test(runner: &dyn TileRunner, manifest: &DenoiserManifest, load_ms: f64)
             checks.push((format!("gives {} finite numbers per tile", a.len()), true));
             checks.push((
                 "gives the same answer for the same tile".into(),
-                a.iter().zip(b).all(|(x, y)| (x - y).abs() <= 1e-4 * x.abs().max(y.abs()).max(1e-9)),
+                a.iter()
+                    .zip(b)
+                    .all(|(x, y)| (x - y).abs() <= 1e-4 * x.abs().max(y.abs()).max(1e-9)),
             ));
             let side = 2 * t;
-            let mean_in = base.iter().map(|&v| f64::from(v)).sum::<f64>() / base.len().max(1) as f64;
+            let mean_in =
+                base.iter().map(|&v| f64::from(v)).sum::<f64>() / base.len().max(1) as f64;
             let mean_out = a.iter().map(|&v| f64::from(v)).sum::<f64>() / a.len().max(1) as f64;
-            scale = if mean_in > 0.0 { mean_out / mean_in } else { 0.0 };
-            if let Gain::MatchMean { nominal, max_deviation } = manifest.gain {
+            scale = if mean_in > 0.0 {
+                mean_out / mean_in
+            } else {
+                0.0
+            };
+            if let Gain::MatchMean {
+                nominal,
+                max_deviation,
+            } = manifest.gain
+            {
                 let ratio = scale / f64::from(nominal);
                 let tolerance = f64::from(max_deviation).max(0.05) * 4.0;
-                checks.push((format!("its scale is the {nominal:.3e} the description says (found {scale:.3e})"), (ratio - 1.0).abs() <= tolerance));
+                checks.push((
+                    format!(
+                        "its scale is the {nominal:.3e} the description says (found {scale:.3e})"
+                    ),
+                    (ratio - 1.0).abs() <= tolerance,
+                ));
             }
             // noise left after bringing the answer back to the input's scale, against the noise that went in
             let g = if scale > 0.0 { 1.0 / scale } else { 1.0 };
-            let (mut noise_in, mut noise_out, mut n_in, mut n_out) = (0.0f64, 0.0f64, 0usize, 0usize);
+            let (mut noise_in, mut noise_out, mut n_in, mut n_out) =
+                (0.0f64, 0.0f64, 0usize, 0usize);
             for (i, (&v, &s)) in input.iter().zip(base.iter().cycle()).enumerate() {
                 // centre of each plane only: edges are the model's guess
                 let (x, y) = ((i % (t * t)) % t, (i % (t * t)) / t);
@@ -102,15 +124,24 @@ fn self_test(runner: &dyn TileRunner, manifest: &DenoiserManifest, load_ms: f64)
             for c in 0..3 {
                 for y in side / 4..3 * side / 4 {
                     for x in side / 4..3 * side / 4 {
-                        if let (Some(&o), Some(&s)) = (a.get(c * side * side + y * side + x), base.get((y / 2) * t + x / 2)) {
+                        if let (Some(&o), Some(&s)) = (
+                            a.get(c * side * side + y * side + x),
+                            base.get((y / 2) * t + x / 2),
+                        ) {
                             noise_out += (f64::from(o) * g - f64::from(s)).powi(2);
                             n_out += 1;
                         }
                     }
                 }
             }
-            let (rms_in, rms_out) = ((noise_in / n_in.max(1) as f64).sqrt(), (noise_out / n_out.max(1) as f64).sqrt());
-            checks.push((format!("takes noise down (from {rms_in:.4} to {rms_out:.4})"), rms_out < 0.8 * rms_in));
+            let (rms_in, rms_out) = (
+                (noise_in / n_in.max(1) as f64).sqrt(),
+                (noise_out / n_out.max(1) as f64).sqrt(),
+            );
+            checks.push((
+                format!("takes noise down (from {rms_in:.4} to {rms_out:.4})"),
+                rms_out < 0.8 * rms_in,
+            ));
         }
         (Err(e), _) | (_, Err(e)) => checks.push((format!("runs: {e}"), false)),
     }
@@ -138,7 +169,9 @@ pub fn test_tile(t: usize) -> (Vec<f32>, Vec<f32>) {
         seed ^= seed << 5;
         (seed >> 8) as f32 / (1u32 << 24) as f32
     };
-    let base: Vec<f32> = (0..t * t).map(|i| 0.12 + 0.3 * (((i % t) + (i / t)) as f32 / (2 * t) as f32)).collect();
+    let base: Vec<f32> = (0..t * t)
+        .map(|i| 0.12 + 0.3 * (((i % t) + (i / t)) as f32 / (2 * t) as f32))
+        .collect();
     let input = (0..4 * t * t)
         .map(|i| {
             // sum of four uniforms: close to Gaussian, deviation 0.0577 × 2 before scaling
@@ -241,7 +274,16 @@ mod tests {
     /// The same with another number of convolution channels; only 12 can be arranged into the three colours.
     fn tiny_model_with(t: u64, scale: f32, channels: u64) -> Vec<u8> {
         let mut graph = Vec::new();
-        len_field(1, &node("Conv", &["data", "w"], if channels == 12 { "c" } else { "rgb" }, &[("group", 1)]), &mut graph);
+        len_field(
+            1,
+            &node(
+                "Conv",
+                &["data", "w"],
+                if channels == 12 { "c" } else { "rgb" },
+                &[("group", 1)],
+            ),
+            &mut graph,
+        );
         if channels == 12 {
             let mut depth_to_space = node("DepthToSpace", &["c"], "rgb", &[("blocksize", 2)]);
             let mut mode = Vec::new();
@@ -259,8 +301,16 @@ mod tests {
             w[oc * 4 + plane] = scale;
         }
         len_field(5, &tensor("w", &[channels, 4, 1, 1], &w), &mut graph);
-        len_field(11, &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(t), Ok(t)]), &mut graph);
-        len_field(12, &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(2 * t), Ok(2 * t)]), &mut graph);
+        len_field(
+            11,
+            &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(t), Ok(t)]),
+            &mut graph,
+        );
+        len_field(
+            12,
+            &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(2 * t), Ok(2 * t)]),
+            &mut graph,
+        );
         let mut ops = Vec::new();
         len_field(1, b"", &mut ops);
         varint_field(2, 13, &mut ops);
@@ -284,12 +334,18 @@ mod tests {
             domain: Domain::BayerToRgb,
             tile,
             overlap: 16,
-            gain: Gain::MatchMean { nominal, max_deviation: 0.05 },
+            gain: Gain::MatchMean {
+                nominal,
+                max_deviation: 0.05,
+            },
         }
     }
 
     fn temp_model(name: &str, bytes: &[u8]) -> std::path::PathBuf {
-        let p = std::env::temp_dir().join(format!("lc-denoise-runtime-{name}-{}.onnx", std::process::id()));
+        let p = std::env::temp_dir().join(format!(
+            "lc-denoise-runtime-{name}-{}.onnx",
+            std::process::id()
+        ));
         std::fs::write(&p, bytes).unwrap();
         p
     }
@@ -304,7 +360,12 @@ mod tests {
         // output (colour c, pixel (2y+dy, 2x+dx)) = scale × input plane [R, G1, B][c] at (y, x)
         for (c, plane) in [0usize, 1, 3].into_iter().enumerate() {
             let (y, x) = (5usize, 9usize);
-            assert!((out[c * 128 * 128 + (2 * y + 1) * 128 + 2 * x] - 1000.0 * input[plane * 64 * 64 + y * 64 + x]).abs() < 1e-2);
+            assert!(
+                (out[c * 128 * 128 + (2 * y + 1) * 128 + 2 * x]
+                    - 1000.0 * input[plane * 64 * 64 + y * 64 + x])
+                    .abs()
+                    < 1e-2
+            );
         }
         let _ = std::fs::remove_file(p);
     }
@@ -313,14 +374,30 @@ mod tests {
     fn the_self_test_checks_scale_and_noise() {
         // a model that only multiplies cannot take noise down: it must fail that check but pass the others
         let p = temp_model("selftest", &tiny_model(64, 1000.0));
-        let t = CpuRunner::load(&p, &manifest(64, 1000.0)).unwrap().self_test();
+        let t = CpuRunner::load(&p, &manifest(64, 1000.0))
+            .unwrap()
+            .self_test();
         assert!(!t.ok, "{t:?}");
-        assert!(t.checks.iter().any(|(c, ok)| c.contains("same answer") && *ok), "{t:?}");
-        assert!(t.checks.iter().any(|(c, ok)| c.contains("scale") && *ok), "{t:?}");
-        assert!(t.checks.iter().any(|(c, ok)| c.contains("noise") && !*ok), "{t:?}");
+        assert!(
+            t.checks
+                .iter()
+                .any(|(c, ok)| c.contains("same answer") && *ok),
+            "{t:?}"
+        );
+        assert!(
+            t.checks.iter().any(|(c, ok)| c.contains("scale") && *ok),
+            "{t:?}"
+        );
+        assert!(
+            t.checks.iter().any(|(c, ok)| c.contains("noise") && !*ok),
+            "{t:?}"
+        );
         // and one that claims the wrong scale fails that check
         let q = CpuRunner::load(&p, &manifest(64, 5.0)).unwrap().self_test();
-        assert!(q.checks.iter().any(|(c, ok)| c.contains("scale") && !*ok), "{q:?}");
+        assert!(
+            q.checks.iter().any(|(c, ok)| c.contains("scale") && !*ok),
+            "{q:?}"
+        );
         let _ = std::fs::remove_file(p);
     }
 
@@ -331,17 +408,29 @@ mod tests {
         assert!(matches!(r.run(&[0.0; 10]), Err(Error::Input(_))));
         // a fully convolutional model works at whatever tile size the manifest asks for
         let wide = CpuRunner::load(&p, &manifest(128, 1.0)).unwrap();
-        assert_eq!(wide.run(&vec![0.5; 4 * 128 * 128]).unwrap().len(), 3 * 256 * 256);
+        assert_eq!(
+            wide.run(&vec![0.5; 4 * 128 * 128]).unwrap().len(),
+            3 * 256 * 256
+        );
         // a model that gives another number of values than the manifest promises is an error
         let q = temp_model("channels", &tiny_model_with(64, 1.0, 8));
-        assert!(CpuRunner::load(&q, &manifest(64, 1.0)).is_err(), "shape is refused before execution");
+        assert!(
+            CpuRunner::load(&q, &manifest(64, 1.0)).is_err(),
+            "shape is refused before execution"
+        );
         let _ = std::fs::remove_file(q);
         for (name, bytes) in [("junk", b"nonsense".to_vec()), ("empty", Vec::new())] {
             let q = temp_model(name, &bytes);
             assert!(CpuRunner::load(&q, &manifest(64, 1.0)).is_err(), "{name}");
             let _ = std::fs::remove_file(q);
         }
-        assert!(CpuRunner::load(&std::env::temp_dir().join("does-not-exist.onnx"), &manifest(64, 1.0)).is_err());
+        assert!(
+            CpuRunner::load(
+                &std::env::temp_dir().join("does-not-exist.onnx"),
+                &manifest(64, 1.0)
+            )
+            .is_err()
+        );
         let _ = std::fs::remove_file(p);
     }
 
@@ -354,7 +443,10 @@ mod tests {
         }
         let c = check_tile(64);
         let near = |lo: f32, hi: f32| c.iter().filter(|v| (lo..=hi).contains(*v)).count();
-        assert!(near(0.0, 0.0) >= 4 * 8 * 8 && near(1.0, 1.0) >= 4 * 8 * 8, "a flat black and a clipped white corner");
+        assert!(
+            near(0.0, 0.0) >= 4 * 8 * 8 && near(1.0, 1.0) >= 4 * 8 * 8,
+            "a flat black and a clipped white corner"
+        );
         for band in 0..10 {
             let lo = band as f32 / 10.0;
             assert!(near(lo, lo + 0.1) > 100, "values around {lo}");
@@ -388,11 +480,16 @@ mod tests {
     #[test]
     #[ignore = "needs a real model file: set LC_DENOISE_MODEL"]
     fn a_real_model_passes_the_self_test() {
-        let Some(path) = std::env::var_os("LC_DENOISE_MODEL") else { return };
+        let Some(path) = std::env::var_os("LC_DENOISE_MODEL") else {
+            return;
+        };
         let m = manifest(512, 1.0e6);
         let r = CpuRunner::load(Path::new(&path), &m).unwrap();
         let t = r.self_test();
-        println!("load {:.0} ms | {:.0} ms per tile | scale {:.4e} | {:?}", t.load_ms, t.tile_ms, t.scale, t.checks);
+        println!(
+            "load {:.0} ms | {:.0} ms per tile | scale {:.4e} | {:?}",
+            t.load_ms, t.tile_ms, t.scale, t.checks
+        );
         assert!(t.ok);
     }
 }
@@ -425,7 +522,12 @@ mod cpu_tests {
         let r = CpuRunner::load(&path, &m).unwrap();
         let x = check_tile(64);
         assert_eq!(r.run(&x).unwrap(), r.run(&x).unwrap());
-        assert!(r.self_test().checks.iter().any(|(text, ok)| text.contains("same answer") && *ok));
+        assert!(
+            r.self_test()
+                .checks
+                .iter()
+                .any(|(text, ok)| text.contains("same answer") && *ok)
+        );
         m.tile = u32::MAX;
         assert!(CpuRunner::load(&path, &m).is_err());
         std::fs::remove_file(path).unwrap();

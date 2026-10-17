@@ -18,7 +18,9 @@
 use std::sync::Mutex;
 
 use lightcraft_color::perceptual::{oklab_from_2020, oklab_to_2020};
-use lightcraft_develop::{DevelopSettings, EmbeddedLens, EmbeddedVignette, EmbeddedWarp, EmbeddedWarpStage};
+use lightcraft_develop::{
+    DevelopSettings, EmbeddedLens, EmbeddedVignette, EmbeddedWarp, EmbeddedWarpStage,
+};
 use lightcraft_geom::{Affine, Homography, Interval, Orientation, Point, Real};
 use lightcraft_raster::{Plane, Rgb32f};
 
@@ -80,7 +82,11 @@ impl Warp {
         wp.k1 = -DISTORTION_K * o.distortion / 100.0;
         wp.vig_stops = VIGNETTE_STOPS * o.vignetting / 100.0;
         wp.vig_power = 1.0 + 6.0 * (o.vignetting_midpoint / 100.0).clamp(0.0, 1.0);
-        wp.ca = [CA_SCALE * o.ca_red / 100.0, 0.0, CA_SCALE * o.ca_blue / 100.0];
+        wp.ca = [
+            CA_SCALE * o.ca_red / 100.0,
+            0.0,
+            CA_SCALE * o.ca_blue / 100.0,
+        ];
         if o.lens_profile
             && let Some(l) = lens
         {
@@ -104,7 +110,10 @@ impl Warp {
         self.persp != Homography::IDENTITY
             || self.k1 != 0.0
             || self.ca.iter().any(|c| *c != 0.0)
-            || (self.lens_dist != 0.0 && self.lens.is_some_and(|l| l.warp.is_some() || l.has_stages()))
+            || (self.lens_dist != 0.0
+                && self
+                    .lens
+                    .is_some_and(|l| l.warp.is_some() || l.has_stages()))
     }
 
     /// Whether the embedded lens warp is a `WarpRectilinear2` chain, whose degree-14 polynomials are ill-conditioned
@@ -117,13 +126,23 @@ impl Warp {
     pub fn per_channel(&self) -> bool {
         self.ca[0] != self.ca[1]
             || self.ca[1] != self.ca[2]
-            || (self.lens_dist != 0.0 && self.lens.and_then(|l| l.warp).is_some_and(|w| w.planes[0] != w.planes[1] || w.planes[1] != w.planes[2]))
             || (self.lens_dist != 0.0
-                && self.lens.is_some_and(|l| l.stages.iter().flatten().any(|s| s.planes[0] != s.planes[1] || s.planes[1] != s.planes[2])))
+                && self
+                    .lens
+                    .and_then(|l| l.warp)
+                    .is_some_and(|w| w.planes[0] != w.planes[1] || w.planes[1] != w.planes[2]))
+            || (self.lens_dist != 0.0
+                && self.lens.is_some_and(|l| {
+                    l.stages
+                        .iter()
+                        .flatten()
+                        .any(|s| s.planes[0] != s.planes[1] || s.planes[1] != s.planes[2])
+                }))
     }
 
     pub fn has_gain(&self) -> bool {
-        self.vig_stops != 0.0 || (self.lens_vig != 0.0 && self.lens.is_some_and(|l| l.vignette.is_some()))
+        self.vig_stops != 0.0
+            || (self.lens_vig != 0.0 && self.lens.is_some_and(|l| l.vignette.is_some()))
     }
 
     pub fn is_identity(&self) -> bool {
@@ -152,7 +171,9 @@ impl Warp {
             return p;
         }
         let (c, l) = (self.centre(), self.half_long());
-        let q = self.persp.apply(Point::new((p.x - c.x) / l, (p.y - c.y) / l));
+        let q = self
+            .persp
+            .apply(Point::new((p.x - c.x) / l, (p.y - c.y) / l));
         Point::new(c.x + q.x * l, c.y + q.y * l)
     }
 
@@ -177,7 +198,10 @@ impl Warp {
             && let Some(wp) = self.lens.and_then(|l| l.warp)
         {
             let (sx, sy) = embedded_warp_real(&wp, qx, qy, ch, self.w, self.h);
-            (qx, qy) = (qx + (sx - qx) * self.lens_dist, qy + (sy - qy) * self.lens_dist);
+            (qx, qy) = (
+                qx + (sx - qx) * self.lens_dist,
+                qy + (sy - qy) * self.lens_dist,
+            );
         }
         if self.lens_dist != 0.0
             && let Some(l) = self.lens.filter(|l| l.has_stages())
@@ -187,7 +211,10 @@ impl Warp {
             for st in l.stages.iter().rev().flatten() {
                 (sx, sy) = embedded_stage_real(st, sx, sy, ch, self.w, self.h);
             }
-            (qx, qy) = (qx + (sx - qx) * self.lens_dist, qy + (sy - qy) * self.lens_dist);
+            (qx, qy) = (
+                qx + (sx - qx) * self.lens_dist,
+                qy + (sy - qy) * self.lens_dist,
+            );
         }
         let k = self.ca[ch];
         if k != 0.0 {
@@ -261,7 +288,14 @@ impl Warp {
     /// and overflow make the bounds undecided (NaN), and NaN fails every test below. So when the bounds lie
     /// within [`edges`](Self::edges) every pixel's position does, and when they lie beyond one edge every
     /// pixel's position does: the same `f64` comparisons [`inside`](Self::inside) makes, no margin needed.
-    pub fn block_coverage(&self, o2t: &Affine, x0: usize, x1: usize, y0: usize, y1: usize) -> Option<bool> {
+    pub fn block_coverage(
+        &self,
+        o2t: &Affine,
+        x0: usize,
+        x1: usize,
+        y0: usize,
+        y1: usize,
+    ) -> Option<bool> {
         if x1 <= x0 || y1 <= y0 {
             return None;
         }
@@ -308,7 +342,14 @@ pub fn embedded_stage(st: &EmbeddedWarpStage, p: Point, ch: usize, w: f64, h: f6
 /// [`embedded_stage`] for any [`Real`]: DNG specification 1.6.0.0, "WarpRectilinear2" — the radial term is
 /// `f(clamp(r, min_valid_radius, max_valid_radius))` with `f(r) = Σ krₚ rᵖ` (p = 0..14), used as `d·f` or, with
 /// `reciprocalRadial`, `d/f`; the tangential terms are those of `WarpRectilinear` (with the unclamped `r`).
-fn embedded_stage_real<T: Real>(st: &EmbeddedWarpStage, x: T, y: T, ch: usize, w: f64, h: f64) -> (T, T) {
+fn embedded_stage_real<T: Real>(
+    st: &EmbeddedWarpStage,
+    x: T,
+    y: T,
+    ch: usize,
+    w: f64,
+    h: f64,
+) -> (T, T) {
     let (cx, cy) = (st.center.x * w, st.center.y * h);
     let m = (st.radius * w.max(h)).max(1e-9);
     let k = &st.planes[ch.min(2)];
@@ -320,7 +361,11 @@ fn embedded_stage_real<T: Real>(st: &EmbeddedWarpStage, x: T, y: T, ch: usize, w
     for &c in k[..13].iter().rev() {
         f = f * r + c;
     }
-    let (rx, ry) = if st.reciprocal { (dx / f, dy / f) } else { (dx * f, dy * f) };
+    let (rx, ry) = if st.reciprocal {
+        (dx / f, dy / f)
+    } else {
+        (dx * f, dy * f)
+    };
     let sx = rx + dx * (k[15] * 2.0) * dy + (r2 + dx * 2.0 * dx) * k[16];
     let sy = ry + dx * (k[16] * 2.0) * dy + (r2 + dy * 2.0 * dy) * k[15];
     (sx * m + cx, sy * m + cy)
@@ -359,9 +404,17 @@ pub fn reorient_lens(lens: &EmbeddedLens, o: Orientation, w: f64, h: f64) -> Emb
             let e = o.map(c.x + kt1, c.y + kt0, w, h);
             [a, b, cc, d, e.1 - c2.1, e.0 - c2.0]
         });
-        EmbeddedWarp { planes, center: map_pt(wp.center), radius: wp.radius * long_ratio }
+        EmbeddedWarp {
+            planes,
+            center: map_pt(wp.center),
+            radius: wp.radius * long_ratio,
+        }
     });
-    let vignette = lens.vignette.map(|v| EmbeddedVignette { k: v.k, center: map_pt(v.center), radius: v.radius * long_ratio });
+    let vignette = lens.vignette.map(|v| EmbeddedVignette {
+        k: v.k,
+        center: map_pt(v.center),
+        radius: v.radius * long_ratio,
+    });
     let stages = lens.stages.map(|st| {
         st.map(|st| {
             let c = Point::new(st.center.x * w, st.center.y * h);
@@ -372,10 +425,19 @@ pub fn reorient_lens(lens: &EmbeddedLens, o: Orientation, w: f64, h: f64) -> Emb
                 (k[15], k[16]) = (e.1 - c2.1, e.0 - c2.0);
                 k
             });
-            EmbeddedWarpStage { planes, center: map_pt(st.center), radius: st.radius * long_ratio, reciprocal: st.reciprocal }
+            EmbeddedWarpStage {
+                planes,
+                center: map_pt(st.center),
+                radius: st.radius * long_ratio,
+                reciprocal: st.reciprocal,
+            }
         })
     });
-    EmbeddedLens { warp, vignette, stages }
+    EmbeddedLens {
+        warp,
+        vignette,
+        stages,
+    }
 }
 
 // ------------------------------------------------------------------------------------------ lateral CA
@@ -492,17 +554,28 @@ fn estimate_lateral_ca_uncached(img: &Rgb32f) -> [f64; 2] {
         let rr = vx.hypot(vy);
         let (ux, uy) = (vx / rr, vy / rr);
         let (px, py) = (x as f64, y as f64);
-        let mut gp: Vec<f32> = (-HALF..=HALF).map(|t| sample(g, px + ux * t as f64, py + uy * t as f64)).collect();
+        let mut gp: Vec<f32> = (-HALF..=HALF)
+            .map(|t| sample(g, px + ux * t as f64, py + uy * t as f64))
+            .collect();
         if !znorm(&mut gp) {
             continue;
         }
         for (k, ch) in [0usize, 2].into_iter().enumerate() {
             let reach = HALF + MAXD;
-            let fine: Vec<f32> =
-                (-reach * SUB..=reach * SUB).map(|i| sample(&planes[ch], px + ux * i as f64 / SUB as f64, py + uy * i as f64 / SUB as f64)).collect();
+            let fine: Vec<f32> = (-reach * SUB..=reach * SUB)
+                .map(|i| {
+                    sample(
+                        &planes[ch],
+                        px + ux * i as f64 / SUB as f64,
+                        py + uy * i as f64 / SUB as f64,
+                    )
+                })
+                .collect();
             let mut best = (f32::MAX, 0i32);
             for d in -MAXD * SUB..=MAXD * SUB {
-                let mut prof: Vec<f32> = (-HALF..=HALF).map(|t| fine[((t + reach) * SUB + d) as usize]).collect();
+                let mut prof: Vec<f32> = (-HALF..=HALF)
+                    .map(|t| fine[((t + reach) * SUB + d) as usize])
+                    .collect();
                 if !znorm(&mut prof) {
                     continue;
                 }
@@ -523,7 +596,9 @@ fn estimate_lateral_ca_uncached(img: &Rgb32f) -> [f64; 2] {
             return 0.0;
         }
         let solve = |o: &[&(f64, f64, f64)]| {
-            let (num, den) = o.iter().fold((0.0, 0.0), |(n, d), (r, dd, wt)| (n + wt * dd * r, d + wt * r * r));
+            let (num, den) = o.iter().fold((0.0, 0.0), |(n, d), (r, dd, wt)| {
+                (n + wt * dd * r, d + wt * r * r)
+            });
             if den > 0.0 { num / den } else { 0.0 }
         };
         let all: Vec<&(f64, f64, f64)> = o.iter().collect();
@@ -532,7 +607,10 @@ fn estimate_lateral_ca_uncached(img: &Rgb32f) -> [f64; 2] {
             let mut res: Vec<f64> = o.iter().map(|(r, d, _)| (d - a * r).abs()).collect();
             res.sort_by(f64::total_cmp);
             let mad = res[res.len() / 2].max(0.05);
-            let keep: Vec<&(f64, f64, f64)> = o.iter().filter(|(r, d, _)| (d - a * r).abs() <= 2.5 * mad).collect();
+            let keep: Vec<&(f64, f64, f64)> = o
+                .iter()
+                .filter(|(r, d, _)| (d - a * r).abs() <= 2.5 * mad)
+                .collect();
             if keep.len() < 8 {
                 break;
             }
@@ -574,7 +652,9 @@ pub const DEFRINGE_REF_LONG: f64 = 4000.0;
 /// fraction of the image at any size.
 pub fn defringe(img: &mut Rgb32f, s: &DevelopSettings, scale: f64) {
     let o = &s.optics;
-    if !s.section_enabled("optics") || (o.defringe_purple_amount <= 0.0 && o.defringe_green_amount <= 0.0) {
+    if !s.section_enabled("optics")
+        || (o.defringe_purple_amount <= 0.0 && o.defringe_green_amount <= 0.0)
+    {
         return;
     }
     let (w, h) = (img.width, img.height);
@@ -582,15 +662,27 @@ pub fn defringe(img: &mut Rgb32f, s: &DevelopSettings, scale: f64) {
     // fringe width in source px grows with the amount (1..7 px), in output px at least one
     let radius = ((1.0 + max_amt * 0.3) * scale).round().max(1.0) as usize;
     // perceptual lightness and its local range (dilated contrast)
-    let lab: Vec<[f32; 3]> = img.data.iter().map(|p| oklab_from_2020([p[0].max(0.0), p[1].max(0.0), p[2].max(0.0)])).collect();
-    let l = Plane { width: w, height: h, data: lab.iter().map(|p| p[0]).collect() };
+    let lab: Vec<[f32; 3]> = img
+        .data
+        .iter()
+        .map(|p| oklab_from_2020([p[0].max(0.0), p[1].max(0.0), p[2].max(0.0)]))
+        .collect();
+    let l = Plane {
+        width: w,
+        height: h,
+        data: lab.iter().map(|p| p[0]).collect(),
+    };
     let (lo, hi) = (min_filter(&l, radius, false), min_filter(&l, radius, true));
     let range = |lo: f64, hi: f64, span: (f32, f32)| {
         let a = span.0 + (span.1 - span.0) * (lo / 100.0) as f32;
         let b = span.0 + (span.1 - span.0) * (hi / 100.0) as f32;
         (a.min(b), a.max(b))
     };
-    let pr = range(o.defringe_purple_hue_lo, o.defringe_purple_hue_hi, PURPLE_HUES);
+    let pr = range(
+        o.defringe_purple_hue_lo,
+        o.defringe_purple_hue_hi,
+        PURPLE_HUES,
+    );
     let gr = range(o.defringe_green_hue_lo, o.defringe_green_hue_hi, GREEN_HUES);
     let ps = (o.defringe_purple_amount / 8.0).min(1.0) as f32;
     let gs = (o.defringe_green_amount / 8.0).min(1.0) as f32;
@@ -608,7 +700,9 @@ pub fn defringe(img: &mut Rgb32f, s: &DevelopSettings, scale: f64) {
                 continue;
             }
             let hue = b.atan2(a).to_degrees().rem_euclid(360.0);
-            let k = (ps * hue_weight(hue, pr.0, pr.1)).max(gs * hue_weight(hue, gr.0, gr.1)) * edge * chroma_w;
+            let k = (ps * hue_weight(hue, pr.0, pr.1)).max(gs * hue_weight(hue, gr.0, gr.1))
+                * edge
+                * chroma_w;
             if k <= 0.0 {
                 continue;
             }
@@ -665,14 +759,25 @@ mod tests {
         }
         /// `range(lo, hi)` or, one time in four, exactly 0 (to take the "no correction" branches).
         fn maybe(&mut self, lo: f64, hi: f64) -> f64 {
-            if self.next().is_multiple_of(4) { 0.0 } else { self.range(lo, hi) }
+            if self.next().is_multiple_of(4) {
+                0.0
+            } else {
+                self.range(lo, hi)
+            }
         }
     }
 
     /// A pseudo-random warp: perspective, manual distortion, CA and an embedded lens warp, each sometimes off.
     /// Sizes are Pythagorean (exact `hypot`), so results don't depend on the platform's libm.
     fn random_warp(r: &mut Rng) -> Warp {
-        const SIZES: [(f64, f64); 6] = [(4000.0, 3000.0), (3000.0, 4000.0), (1200.0, 900.0), (1200.0, 500.0), (56.0, 33.0), (6000.0, 4500.0)];
+        const SIZES: [(f64, f64); 6] = [
+            (4000.0, 3000.0),
+            (3000.0, 4000.0),
+            (1200.0, 900.0),
+            (1200.0, 500.0),
+            (56.0, 33.0),
+            (6000.0, 4500.0),
+        ];
         let (w, h) = SIZES[(r.next() % SIZES.len() as u64) as usize];
         let mut wp = Warp::identity(w, h);
         if !r.next().is_multiple_of(4) {
@@ -691,7 +796,11 @@ mod tests {
             wp.persp = wp.persp_inv.inverse().unwrap_or(Homography::IDENTITY);
         }
         wp.k1 = r.maybe(-0.2, 0.2);
-        wp.ca = [r.maybe(-0.003, 0.003), r.maybe(-0.003, 0.003), r.maybe(-0.003, 0.003)];
+        wp.ca = [
+            r.maybe(-0.003, 0.003),
+            r.maybe(-0.003, 0.003),
+            r.maybe(-0.003, 0.003),
+        ];
         if !r.next().is_multiple_of(4) {
             let mut plane = || {
                 [
@@ -704,8 +813,16 @@ mod tests {
                 ]
             };
             let planes = [plane(), plane(), plane()];
-            let warp = EmbeddedWarp { planes, center: Point::new(r.range(0.4, 0.6), r.range(0.4, 0.6)), radius: r.range(0.5, 0.8) };
-            wp.lens = Some(EmbeddedLens { warp: Some(warp), vignette: None, ..Default::default() });
+            let warp = EmbeddedWarp {
+                planes,
+                center: Point::new(r.range(0.4, 0.6), r.range(0.4, 0.6)),
+                radius: r.range(0.5, 0.8),
+            };
+            wp.lens = Some(EmbeddedLens {
+                warp: Some(warp),
+                vignette: None,
+                ..Default::default()
+            });
             wp.lens_dist = r.maybe(0.0, 2.0);
         }
         wp
@@ -740,7 +857,9 @@ mod tests {
             for _ in 0..40 {
                 let p = Point::new(r.range(-0.2, 1.2) * wp.w, r.range(-0.2, 1.2) * wp.h);
                 eat(a.apply(p));
-                eat(wp.persp_inv.apply(Point::new(p.x / wp.w - 0.5, p.y / wp.h - 0.5)));
+                eat(wp
+                    .persp_inv
+                    .apply(Point::new(p.x / wp.w - 0.5, p.y / wp.h - 0.5)));
                 eat(wp.to_corrected(p));
                 eat(wp.from_corrected(p));
                 for ch in 0..3 {
@@ -757,7 +876,9 @@ mod tests {
         // `Homography::apply`'s near-zero denominator clamp, including subnormal and signed-zero denominators and
         // ±1e-300 exactly (not clamped: `<`, not `<=`)
         let hz = Homography([1.0, 0.5, 0.25, -0.5, 1.0, 0.125, 1.0, 0.0, 0.0]);
-        for x in [0.0, -0.0, 1e-310, -1e-310, 1e-300, -1e-300, 1e-299, -1e-299, 0.5] {
+        for x in [
+            0.0, -0.0, 1e-310, -1e-310, 1e-300, -1e-300, 1e-299, -1e-299, 0.5,
+        ] {
             eat(hz.apply(Point::new(x, 0.75)));
         }
         assert_eq!(hash, 0x3FA5_7473_D795_9E32, "f64 warp results changed");
@@ -812,7 +933,11 @@ mod tests {
     fn block_coverage_agrees_with_every_pixel() {
         let lens = EmbeddedLens {
             warp: Some(EmbeddedWarp {
-                planes: [[1.0, -0.03, 0.01, 0.0, 0.001, -0.002], [1.0, -0.028, 0.01, 0.0, 0.001, -0.002], [1.0, -0.026, 0.01, 0.0, 0.001, -0.002]],
+                planes: [
+                    [1.0, -0.03, 0.01, 0.0, 0.001, -0.002],
+                    [1.0, -0.028, 0.01, 0.0, 0.001, -0.002],
+                    [1.0, -0.026, 0.01, 0.0, 0.001, -0.002],
+                ],
                 center: Point::new(0.52, 0.48),
                 radius: 0.6,
             }),
@@ -848,11 +973,17 @@ mod tests {
                     for x0 in (0..w).step_by(tw) {
                         let (x1, y1) = ((x0 + tw).min(w), (y0 + th).min(h));
                         tiles += 1;
-                        let Some(all) = wp.block_coverage(&o2t, x0, x1, y0, y1) else { continue };
+                        let Some(all) = wp.block_coverage(&o2t, x0, x1, y0, y1) else {
+                            continue;
+                        };
                         decided += 1;
                         for y in y0..y1 {
                             for x in x0..x1 {
-                                assert_eq!(wp.covers(&o2t, x, y), all, "case {i}: pixel {x},{y} in block {x0}..{x1} × {y0}..{y1}");
+                                assert_eq!(
+                                    wp.covers(&o2t, x, y),
+                                    all,
+                                    "case {i}: pixel {x},{y} in block {x0}..{x1} × {y0}..{y1}"
+                                );
                                 blank += !all as usize;
                             }
                         }
@@ -860,7 +991,10 @@ mod tests {
                 }
             }
             // most blocks are decided wholesale, including blank ones away from the edge
-            assert!(decided * 10 > tiles * 8, "case {i}: {decided}/{tiles} blocks decided");
+            assert!(
+                decided * 10 > tiles * 8,
+                "case {i}: {decided}/{tiles} blocks decided"
+            );
             // strong distortion leaves blank margins wide enough for whole blocks
             assert!(blank > 0 || i < 2, "case {i}: no blank block decided");
             assert_eq!(wp.block_coverage(&o2t, 5, 5, 0, 1), None, "empty block");
@@ -921,14 +1055,25 @@ mod tests {
     #[test]
     fn reorient_keeps_centre_mapping() {
         let lens = EmbeddedLens {
-            warp: Some(EmbeddedWarp { planes: [[1.0, 0.01, 0.0, 0.0, 0.001, 0.002]; 3], center: Point::new(0.4, 0.5), radius: 0.6 }),
-            vignette: Some(EmbeddedVignette { k: [0.2, 0.0, 0.0, 0.0, 0.0], center: Point::new(0.4, 0.5), radius: 0.6 }),
+            warp: Some(EmbeddedWarp {
+                planes: [[1.0, 0.01, 0.0, 0.0, 0.001, 0.002]; 3],
+                center: Point::new(0.4, 0.5),
+                radius: 0.6,
+            }),
+            vignette: Some(EmbeddedVignette {
+                k: [0.2, 0.0, 0.0, 0.0, 0.0],
+                center: Point::new(0.4, 0.5),
+                radius: 0.6,
+            }),
             ..Default::default()
         };
         let r = reorient_lens(&lens, Orientation::Rotate90, 300.0, 200.0);
         // rotate 90° cw: (x, y) → (h − y, x)
         let c = r.warp.unwrap().center;
-        assert!((c.x - 0.5).abs() < 1e-9 && (c.y - 0.4).abs() < 1e-9, "{c:?}");
+        assert!(
+            (c.x - 0.5).abs() < 1e-9 && (c.y - 0.4).abs() < 1e-9,
+            "{c:?}"
+        );
         // a point's warped position transforms like the point itself
         let p = Point::new(50.0, 30.0);
         let s0 = embedded_warp(&lens.warp.unwrap(), p, 0, 300.0, 200.0);
@@ -941,13 +1086,23 @@ mod tests {
     }
 
     /// A `WarpRectilinear2` stage with the same coefficients on every plane.
-    fn stage(kr: &[(usize, f64)], center: Point, radius: f64, reciprocal: bool) -> EmbeddedWarpStage {
+    fn stage(
+        kr: &[(usize, f64)],
+        center: Point,
+        radius: f64,
+        reciprocal: bool,
+    ) -> EmbeddedWarpStage {
         let mut k = [0.0; 19];
         for &(i, v) in kr {
             k[i] = v;
         }
         k[18] = 1.0;
-        EmbeddedWarpStage { planes: [k; 3], center, radius, reciprocal }
+        EmbeddedWarpStage {
+            planes: [k; 3],
+            center,
+            radius,
+            reciprocal,
+        }
     }
 
     fn chain(stages: &[EmbeddedWarpStage]) -> Warp {
@@ -985,13 +1140,20 @@ mod tests {
         let ab = chain(&[a, b]);
         let by_hand = chain(&[a]).corrected_to_source(chain(&[b]).corrected_to_source(p, 1), 1);
         assert!(ab.corrected_to_source(p, 1).dist(by_hand) < 1e-9);
-        assert!(ab.corrected_to_source(p, 1).dist(chain(&[b, a]).corrected_to_source(p, 1)) > 1e-3, "order matters");
+        assert!(
+            ab.corrected_to_source(p, 1)
+                .dist(chain(&[b, a]).corrected_to_source(p, 1))
+                > 1e-3,
+            "order matters"
+        );
         // strength scales the correction; a lens without a chain or warp does not move pixels
         let mut half = ab.clone();
         half.lens_dist = 0.5;
         let (full, mid) = (ab.corrected_to_source(p, 1), half.corrected_to_source(p, 1));
         assert!(mid.dist(Point::new((p.x + full.x) / 2.0, (p.y + full.y) / 2.0)) < 1e-9);
-        assert!(ab.needs_f64() && !chain(&[]).moves_pixels() && !Warp::identity(3.0, 3.0).needs_f64());
+        assert!(
+            ab.needs_f64() && !chain(&[]).moves_pixels() && !Warp::identity(3.0, 3.0).needs_f64()
+        );
         // planes that differ (lateral CA) are sampled separately
         let mut st = stage(&[(0, 1.0)], c, 0.6, false);
         st.planes[0][0] = 1.01;
@@ -1002,7 +1164,9 @@ mod tests {
     fn warp_rectilinear2_valid_radius_clamps_the_polynomial() {
         let c = Point::new(0.5, 0.5);
         let mut st = stage(&[(0, 1.0), (1, 1.0)], c, 0.5, false);
-        st.planes.iter_mut().for_each(|k| (k[17], k[18]) = (0.2, 0.4));
+        st.planes
+            .iter_mut()
+            .for_each(|k| (k[17], k[18]) = (0.2, 0.4));
         let wp = chain(&[st]);
         let m = 0.5 * 300.0;
         // far out (r > 0.4): f stays f(0.4) = 1.4
@@ -1021,7 +1185,12 @@ mod tests {
         for _ in 0..200 {
             let mut stages = Vec::new();
             for _ in 0..2 {
-                let mut st = stage(&[], Point::new(r.range(0.4, 0.6), r.range(0.4, 0.6)), r.range(0.5, 0.8), r.next().is_multiple_of(3));
+                let mut st = stage(
+                    &[],
+                    Point::new(r.range(0.4, 0.6), r.range(0.4, 0.6)),
+                    r.range(0.5, 0.8),
+                    r.next().is_multiple_of(3),
+                );
                 for k in st.planes.iter_mut() {
                     k[0] = 1.0 + r.range(-0.05, 0.05);
                     for v in k[1..15].iter_mut() {
@@ -1044,7 +1213,10 @@ mod tests {
                 }
                 for i in 0..=4 {
                     for j in 0..=4 {
-                        let (x, y) = ((x0 + bw * i as f64 / 4.0).clamp(ix.lo(), ix.hi()), (y0 + bh * j as f64 / 4.0).clamp(iy.lo(), iy.hi()));
+                        let (x, y) = (
+                            (x0 + bw * i as f64 / 4.0).clamp(ix.lo(), ix.hi()),
+                            (y0 + bh * j as f64 / 4.0).clamp(iy.lo(), iy.hi()),
+                        );
                         let (_, (fx, fy)) = wp.framing(&a, x, y);
                         assert!(
                             sx.lo() <= fx && fx <= sx.hi() && sy.lo() <= fy && fy <= sy.hi(),
@@ -1058,8 +1230,15 @@ mod tests {
 
     #[test]
     fn reorient_rotates_a_warp_rectilinear2_stage_like_the_point() {
-        let mut st = stage(&[(0, 1.0), (1, 0.05), (2, -0.1)], Point::new(0.4, 0.5), 0.6, false);
-        st.planes.iter_mut().for_each(|k| (k[15], k[16]) = (0.001, 0.002));
+        let mut st = stage(
+            &[(0, 1.0), (1, 0.05), (2, -0.1)],
+            Point::new(0.4, 0.5),
+            0.6,
+            false,
+        );
+        st.planes
+            .iter_mut()
+            .for_each(|k| (k[15], k[16]) = (0.001, 0.002));
         let mut lens = EmbeddedLens::default();
         lens.stages[0] = Some(st);
         let p = Point::new(50.0, 30.0);
@@ -1071,7 +1250,10 @@ mod tests {
         let s0 = embedded_stage(&st, p, 0, 300.0, 200.0);
         let s1 = embedded_stage(&r.stages[0].unwrap(), m(p), 0, 200.0, 300.0);
         assert!(s1.dist(m(s0)) < 1e-6, "{s1:?} vs {:?}", m(s0));
-        assert_eq!(reorient_lens(&lens, Orientation::Normal, 300.0, 200.0), lens);
+        assert_eq!(
+            reorient_lens(&lens, Orientation::Normal, 300.0, 200.0),
+            lens
+        );
     }
 
     #[test]

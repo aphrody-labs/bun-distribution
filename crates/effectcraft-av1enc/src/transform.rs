@@ -8,7 +8,11 @@ use crate::tables::*;
 
 #[inline(always)]
 fn round2_64(x: i64, n: u32) -> i32 {
-    if n == 0 { x as i32 } else { ((x + (1i64 << (n - 1))) >> n) as i32 }
+    if n == 0 {
+        x as i32
+    } else {
+        ((x + (1i64 << (n - 1))) >> n) as i32
+    }
 }
 
 #[inline(always)]
@@ -99,7 +103,13 @@ fn inverse_dct(t: &mut [i32], n: u32, r: u32) {
     if n >= 5 {
         for i in 0..2 {
             for j in 0..2 {
-                bf(t, 30 - 4 * i - j, 17 + 4 * i + j, 24 + ((j as i32) << 6) + (((1 - i) as i32) << 5), true);
+                bf(
+                    t,
+                    30 - 4 * i - j,
+                    17 + 4 * i + j,
+                    24 + ((j as i32) << 6) + (((1 - i) as i32) << 5),
+                    true,
+                );
             }
         }
     }
@@ -182,7 +192,15 @@ const SINPI_4_9: i64 = 3803;
 
 fn inverse_adst4(t: &mut [i32]) {
     let (t0, t1, t2, t3) = (t[0] as i64, t[1] as i64, t[2] as i64, t[3] as i64);
-    let mut s = [SINPI_1_9 * t0, SINPI_2_9 * t0, SINPI_3_9 * t1, SINPI_4_9 * t2, SINPI_1_9 * t2, SINPI_2_9 * t3, SINPI_4_9 * t3];
+    let mut s = [
+        SINPI_1_9 * t0,
+        SINPI_2_9 * t0,
+        SINPI_3_9 * t1,
+        SINPI_4_9 * t2,
+        SINPI_1_9 * t2,
+        SINPI_2_9 * t3,
+        SINPI_4_9 * t3,
+    ];
     let a7 = t0 - t2;
     let b7 = a7 + t3;
     s[0] += s[3];
@@ -262,7 +280,13 @@ fn inverse_adst16(t: &mut [i32], r: u32) {
     }
     for i in 0..2 {
         for j in 0..2 {
-            bf(t, 4 + 8 * j + 3 * i, 5 + 8 * j + i, 48 - 32 * i as i32, true);
+            bf(
+                t,
+                4 + 8 * j + 3 * i,
+                5 + 8 * j + i,
+                48 - 32 * i as i32,
+                true,
+            );
         }
     }
     for i in 0..2 {
@@ -311,7 +335,13 @@ fn inverse_1d(t: &mut [i32], kind: Kind, n: u32, r: u32) {
 
 /// 2-D inverse transform (7.13.3) of a square `n x n` block (n = 4..=32) of dequantised
 /// coefficients (row stride `n`) into `residual` (row stride `n`).
-pub(crate) fn inverse_2d(dequant: &[i32], residual: &mut [i32], tx_sz: usize, tx_type: usize, bit_depth: u32) {
+pub(crate) fn inverse_2d(
+    dequant: &[i32],
+    residual: &mut [i32],
+    tx_sz: usize,
+    tx_type: usize,
+    bit_depth: u32,
+) {
     let log2 = TX_WIDTH_LOG2[tx_sz] as u32;
     let n = 1usize << log2;
     let row_shift = TRANSFORM_ROW_SHIFT[tx_sz] as u32;
@@ -372,9 +402,16 @@ fn bases() -> &'static Bases {
             let n = 4usize << l;
             let mut m = vec![0f32; n * n];
             for k in 0..n {
-                let c = if k == 0 { std::f64::consts::FRAC_1_SQRT_2 } else { 1.0 };
+                let c = if k == 0 {
+                    std::f64::consts::FRAC_1_SQRT_2
+                } else {
+                    1.0
+                };
                 for i in 0..n {
-                    m[k * n + i] = (c * (2.0 / n as f64).sqrt() * (pi * (2 * i + 1) as f64 * k as f64 / (2 * n) as f64).cos()) as f32;
+                    m[k * n + i] = (c
+                        * (2.0 / n as f64).sqrt()
+                        * (pi * (2 * i + 1) as f64 * k as f64 / (2 * n) as f64).cos())
+                        as f32;
                 }
             }
             m
@@ -388,7 +425,9 @@ fn bases() -> &'static Bases {
                         // the AV1 4-point ADST (sin(pi (i + 1)(2k + 1) / 9) basis)
                         (2.0 / 3.0 * (pi * ((i + 1) * (2 * k + 1)) as f64 / 9.0).sin()) as f32
                     } else {
-                        ((2.0 / n as f64).sqrt() * (pi * ((2 * i + 1) * (2 * k + 1)) as f64 / (4 * n) as f64).sin()) as f32
+                        ((2.0 / n as f64).sqrt()
+                            * (pi * ((2 * i + 1) * (2 * k + 1)) as f64 / (4 * n) as f64).sin())
+                            as f32
                     };
                 }
             }
@@ -396,7 +435,12 @@ fn bases() -> &'static Bases {
         });
         let dct_t = std::array::from_fn(|l| transpose(&dct[l]));
         let adst_t = std::array::from_fn(|l| transpose(&adst[l]));
-        Bases { dct, adst, dct_t, adst_t }
+        Bases {
+            dct,
+            adst,
+            dct_t,
+            adst_t,
+        }
     })
 }
 
@@ -477,7 +521,12 @@ mod tests {
                 let deq: Vec<i32> = coef.iter().map(|&c| (c / denom).round() as i32).collect();
                 let mut out = vec![0i32; n * n];
                 inverse_2d(&deq, &mut out, tx, tx_type, 8);
-                let err: i32 = res.iter().zip(&out).map(|(a, b)| (a - b).abs()).max().unwrap();
+                let err: i32 = res
+                    .iter()
+                    .zip(&out)
+                    .map(|(a, b)| (a - b).abs())
+                    .max()
+                    .unwrap();
                 assert!(err <= 1, "tx {tx} type {tx_type}: max error {err}");
             }
         }

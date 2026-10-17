@@ -57,7 +57,9 @@ fn assemble_et_export_glb_astro_lor() {
         }
     }
 
-    let attach_matrix = skel_bytes.as_ref().and_then(|bytes| bone_rest_world(bytes, "c_head_1_0"));
+    let attach_matrix = skel_bytes
+        .as_ref()
+        .and_then(|bytes| bone_rest_world(bytes, "c_head_1_0"));
 
     if attach_matrix.is_some() {
         eprintln!("Matrice d'attache 'c_head_1_0' résolue avec succès");
@@ -68,14 +70,20 @@ fn assemble_et_export_glb_astro_lor() {
     }
 
     // Corps avatar tall / normal (u000105) sous u000101
-    let body_candidates =
-        ["data/common/chr/_uniform/u000101/u000105", "data/common/chr/_uniform/u000101/u000101"];
+    let body_candidates = [
+        "data/common/chr/_uniform/u000101/u000105",
+        "data/common/chr/_uniform/u000101/u000101",
+    ];
     let mut body_parts = None;
     for body_base in body_candidates {
         let md_path = format!("{body_base}.g4md");
         let mg_path = format!("{body_base}.g4mg");
         if let (Ok(md), Ok(mg)) = (vfs.read(&md_path), vfs.read(&mg_path)) {
-            eprintln!("Corps avatar trouvé : {body_base} (md={}, mg={})", md.len(), mg.len());
+            eprintln!(
+                "Corps avatar trouvé : {body_base} (md={}, mg={})",
+                md.len(),
+                mg.len()
+            );
             body_parts = Some((md, mg));
             break;
         }
@@ -83,18 +91,20 @@ fn assemble_et_export_glb_astro_lor() {
 
     // Chaussures avatar (s000201)
     let shoes_base = "data/common/chr/_uniform/s000201/s000201";
-    let shoes_parts =
-        match (vfs.read(&format!("{shoes_base}.g4md")), vfs.read(&format!("{shoes_base}.g4mg"))) {
-            (Ok(md), Ok(mg)) => {
-                eprintln!(
-                    "Chaussures avatar trouvées : {shoes_base} (md={}, mg={})",
-                    md.len(),
-                    mg.len()
-                );
-                Some((md, mg))
-            },
-            _ => None,
-        };
+    let shoes_parts = match (
+        vfs.read(&format!("{shoes_base}.g4md")),
+        vfs.read(&format!("{shoes_base}.g4mg")),
+    ) {
+        (Ok(md), Ok(mg)) => {
+            eprintln!(
+                "Chaussures avatar trouvées : {shoes_base} (md={}, mg={})",
+                md.len(),
+                mg.len()
+            );
+            Some((md, mg))
+        }
+        _ => None,
+    };
 
     // Paires de test : (code, group, vfs_md, vfs_mg)
     let variants = [
@@ -140,7 +150,7 @@ fn assemble_et_export_glb_astro_lor() {
                     continue;
                 };
                 (md, mg)
-            },
+            }
         };
 
         let mut pieces = Vec::new();
@@ -178,11 +188,20 @@ fn assemble_et_export_glb_astro_lor() {
 
         let total_verts = model.total_vertex_count();
         let total_tris = model.total_triangle_count();
-        assert!(total_verts > 0, "Le modèle assemblé {code} doit contenir des sommets");
-        assert!(total_tris > 0, "Le modèle assemblé {code} doit contenir des triangles");
+        assert!(
+            total_verts > 0,
+            "Le modèle assemblé {code} doit contenir des sommets"
+        );
+        assert!(
+            total_tris > 0,
+            "Le modèle assemblé {code} doit contenir des triangles"
+        );
 
         let glb = model.to_glb();
-        assert!(glb.len() > 12, "Le GLB généré pour {code} ne doit pas être vide");
+        assert!(
+            glb.len() > 12,
+            "Le GLB généré pour {code} ne doit pas être vide"
+        );
 
         // Validation du magic glTF (0x46546C67 = "glTF" en little-endian)
         let magic = u32::from_le_bytes([glb[0], glb[1], glb[2], glb[3]]);
@@ -196,7 +215,12 @@ fn assemble_et_export_glb_astro_lor() {
             .unwrap_or_else(|e| panic!("Impossible d'écrire {}: {e}", oc_glb_path.display()));
 
         // 2. var/ocgen/chr/<group>/<code_internal>/<code_internal>.glb
-        let var_target_dir = root.join("var").join("ocgen").join("chr").join(group).join(code);
+        let var_target_dir = root
+            .join("var")
+            .join("ocgen")
+            .join("chr")
+            .join(group)
+            .join(code);
         let var_glb_path = var_target_dir.join(format!("{code}.glb"));
         std::fs::write(&var_glb_path, &glb)
             .unwrap_or_else(|e| panic!("Impossible d'écrire {}: {e}", var_glb_path.display()));

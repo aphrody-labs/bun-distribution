@@ -22,7 +22,10 @@ pub struct El {
 
 impl El {
     pub fn attr(&self, k: &str) -> Option<&str> {
-        self.attrs.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str())
+        self.attrs
+            .iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.as_str())
     }
     pub fn attr_u32(&self, k: &str) -> Option<u32> {
         self.attr(k).and_then(|v| v.trim().parse::<u32>().ok())
@@ -31,7 +34,9 @@ impl El {
         self.attr(k).and_then(|v| v.trim().parse::<i64>().ok())
     }
     pub fn attr_f64(&self, k: &str) -> Option<f64> {
-        self.attr(k).and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite())
+        self.attr(k)
+            .and_then(|v| v.trim().parse::<f64>().ok())
+            .filter(|v| v.is_finite())
     }
     /// xsd:boolean (`1`/`true`/`0`/`false`).
     pub fn attr_bool(&self, k: &str) -> Option<bool> {
@@ -88,8 +93,16 @@ pub(crate) fn to_utf8(xml: &[u8]) -> std::borrow::Cow<'_, [u8]> {
         return std::borrow::Cow::Borrowed(rest);
     }
     let utf16 = |le: bool, b: &[u8]| -> Vec<u8> {
-        let units = b.as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes(*c) } else { u16::from_be_bytes(*c) });
-        let s: String = char::decode_utf16(units).map(|r| r.unwrap_or('\u{FFFD}')).collect();
+        let units = b.as_chunks::<2>().0.iter().map(|c| {
+            if le {
+                u16::from_le_bytes(*c)
+            } else {
+                u16::from_be_bytes(*c)
+            }
+        });
+        let s: String = char::decode_utf16(units)
+            .map(|r| r.unwrap_or('\u{FFFD}'))
+            .collect();
         // The declaration may claim UTF-16; quick-xml without the encoding feature ignores it.
         s.into_bytes()
     };
@@ -118,7 +131,10 @@ fn local(name: &[u8]) -> String {
 }
 
 fn start_el(e: &BytesStart<'_>) -> El {
-    let mut el = El { name: local(e.name().as_ref()), ..Default::default() };
+    let mut el = El {
+        name: local(e.name().as_ref()),
+        ..Default::default()
+    };
     for a in e.attributes().with_checks(false).flatten() {
         let key = a.key.as_ref();
         // Namespace declarations carry no data for us.
@@ -152,7 +168,11 @@ pub fn parse(xml: &[u8]) -> Result<El, IoError> {
 
 /// Parses a part; complete elements named in `split` (below the root) are handed to `cb` and not
 /// kept in the returned tree.
-pub fn parse_streaming(xml: &[u8], split: &[&str], cb: &mut dyn FnMut(El) -> Result<(), IoError>) -> Result<El, IoError> {
+pub fn parse_streaming(
+    xml: &[u8],
+    split: &[&str],
+    cb: &mut dyn FnMut(El) -> Result<(), IoError>,
+) -> Result<El, IoError> {
     let data = to_utf8(xml);
     let mut reader = Reader::from_reader(data.as_ref());
     {
@@ -167,7 +187,13 @@ pub fn parse_streaming(xml: &[u8], split: &[&str], cb: &mut dyn FnMut(El) -> Res
     let mut root: Option<El> = None;
     let mut buf = Vec::new();
     // Attach a finished element to its parent (or emit it / make it the root).
-    fn finish(stack: &mut [El], root: &mut Option<El>, el: El, split: &[&str], cb: &mut dyn FnMut(El) -> Result<(), IoError>) -> Result<(), IoError> {
+    fn finish(
+        stack: &mut [El],
+        root: &mut Option<El>,
+        el: El,
+        split: &[&str],
+        cb: &mut dyn FnMut(El) -> Result<(), IoError>,
+    ) -> Result<(), IoError> {
         match stack.last_mut() {
             Some(parent) => {
                 if split.contains(&el.name.as_str()) {
@@ -185,7 +211,9 @@ pub fn parse_streaming(xml: &[u8], split: &[&str], cb: &mut dyn FnMut(El) -> Res
         Ok(())
     }
     loop {
-        let ev = reader.read_event_into(&mut buf).map_err(|e| IoError::Xml(format!("{e} at byte {}", reader.buffer_position())))?;
+        let ev = reader
+            .read_event_into(&mut buf)
+            .map_err(|e| IoError::Xml(format!("{e} at byte {}", reader.buffer_position())))?;
         match ev {
             Event::Start(e) => {
                 if stack.len() >= MAX_DEPTH {
@@ -204,7 +232,9 @@ pub fn parse_streaming(xml: &[u8], split: &[&str], cb: &mut dyn FnMut(El) -> Res
             }
             Event::Text(t) => {
                 if let Some(top) = stack.last_mut() {
-                    let s = t.xml_content(XmlVersion::Explicit1_0).map_err(|e| IoError::Xml(e.to_string()))?;
+                    let s = t
+                        .xml_content(XmlVersion::Explicit1_0)
+                        .map_err(|e| IoError::Xml(e.to_string()))?;
                     top.text.push_str(&s);
                 }
             }
@@ -301,7 +331,9 @@ pub fn encode_xstring(s: &str) -> String {
 }
 
 fn looks_like_escape(chars: &[char], i: usize) -> bool {
-    chars.get(i + 1) == Some(&'x') && chars.get(i + 6) == Some(&'_') && (i + 2..i + 6).all(|k| chars.get(k).is_some_and(|c| c.is_ascii_hexdigit()))
+    chars.get(i + 1) == Some(&'x')
+        && chars.get(i + 6) == Some(&'_')
+        && (i + 2..i + 6).all(|k| chars.get(k).is_some_and(|c| c.is_ascii_hexdigit()))
 }
 
 /// Inverse of [`encode_xstring`].
@@ -330,7 +362,10 @@ pub fn decode_xstring(s: &str) -> String {
 /// `<t>` element with `xml:space="preserve"` when needed.
 pub fn t_el(s: &str) -> String {
     let enc = esc(&encode_xstring(s));
-    if s.starts_with([' ', '\t', '\n', '\r']) || s.ends_with([' ', '\t', '\n', '\r']) || s.contains('\n') {
+    if s.starts_with([' ', '\t', '\n', '\r'])
+        || s.ends_with([' ', '\t', '\n', '\r'])
+        || s.contains('\n')
+    {
         format!("<t xml:space=\"preserve\">{enc}</t>")
     } else {
         format!("<t>{enc}</t>")

@@ -196,8 +196,10 @@ impl LocalAiContract {
     /// Every env entry with the id of the binary, gateway or capability that
     /// owns it.
     pub fn env_entries(&self) -> impl Iterator<Item = (&str, &LocalAiEnv)> {
-        let binaries =
-            self.binaries.iter().flat_map(|(id, b)| b.env.iter().map(move |e| (id.as_str(), e)));
+        let binaries = self
+            .binaries
+            .iter()
+            .flat_map(|(id, b)| b.env.iter().map(move |e| (id.as_str(), e)));
         let endpoints = self
             .gateways
             .iter()

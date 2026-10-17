@@ -265,7 +265,10 @@ pub fn decode_named_to_rgba(g4tx_data: &[u8], nom: &str) -> Option<(u32, u32, Ve
     let parsed = g4tx::parse(g4tx_data).ok()?;
 
     // 1. Texture principale portant ce nom → payload autonome, décodage direct.
-    if let Some(tex) = parsed.textures.iter().find(|t| t.is_dds && t.name.eq_ignore_ascii_case(nom))
+    if let Some(tex) = parsed
+        .textures
+        .iter()
+        .find(|t| t.is_dds && t.name.eq_ignore_ascii_case(nom))
     {
         return decode_texture_rgba(g4tx_data, tex);
     }
@@ -382,7 +385,12 @@ mod tests {
     #[test]
     fn dds_uncompressed_bgra8_resolu_a_128() {
         // DDPF_RGB, 32 bpp, B en octet bas (masque B=0xff) → BGRA8 (défaut Level-5).
-        let h = dds_header(0x40, &[0; 4], &[(88, 32), (92, 0x00ff_0000), (100, 0x0000_00ff)], 256);
+        let h = dds_header(
+            0x40,
+            &[0; 4],
+            &[(88, 32), (92, 0x00ff_0000), (100, 0x0000_00ff)],
+            256,
+        );
         let (fmt, off) = dds_format_and_pixel_offset(&h).expect("BGRA8 doit être reconnu");
         assert!(matches!(fmt, ImageFormat::Bgra8Unorm));
         assert_eq!(off, 128);
@@ -390,7 +398,12 @@ mod tests {
 
     #[test]
     fn dds_uncompressed_rgba8_resolu_a_128() {
-        let h = dds_header(0x40, &[0; 4], &[(88, 32), (92, 0x0000_00ff), (100, 0x00ff_0000)], 256);
+        let h = dds_header(
+            0x40,
+            &[0; 4],
+            &[(88, 32), (92, 0x0000_00ff), (100, 0x00ff_0000)],
+            256,
+        );
         let (fmt, _) = dds_format_and_pixel_offset(&h).expect("RGBA8 doit être reconnu");
         assert!(matches!(fmt, ImageFormat::Rgba8Unorm));
     }
@@ -456,20 +469,34 @@ mod tests {
         };
 
         let parsed = crate::g4tx::parse(&data).expect("G4TX parsable");
-        let noms: Vec<String> =
-            parsed.textures.iter().filter(|t| t.is_dds).map(|t| t.name.clone()).collect();
-        assert!(noms.len() >= 2, "conteneur multi-textures attendu, vu {} texture(s)", noms.len());
+        let noms: Vec<String> = parsed
+            .textures
+            .iter()
+            .filter(|t| t.is_dds)
+            .map(|t| t.name.clone())
+            .collect();
+        assert!(
+            noms.len() >= 2,
+            "conteneur multi-textures attendu, vu {} texture(s)",
+            noms.len()
+        );
 
         // Deux noms DIFFÉRENTS doivent rendre deux images DIFFÉRENTES.
         let a = decode_named_to_png(&data, &noms[0]).expect("1re texture nommée décodée");
         let b = decode_named_to_png(&data, &noms[noms.len() - 1])
             .expect("dernière texture nommée décodée");
-        assert_ne!(a, b, "deux noms distincts rendent le même PNG — sélection par nom inopérante");
+        assert_ne!(
+            a, b,
+            "deux noms distincts rendent le même PNG — sélection par nom inopérante"
+        );
 
         // La casse ne doit pas compter.
         let a_maj =
             decode_named_to_png(&data, &noms[0].to_ascii_uppercase()).expect("nom en majuscules");
-        assert_eq!(a, a_maj, "la comparaison de nom doit être insensible à la casse");
+        assert_eq!(
+            a, a_maj,
+            "la comparaison de nom doit être insensible à la casse"
+        );
 
         // Un nom absent ne doit PAS retomber sur une texture arbitraire.
         assert!(
@@ -481,8 +508,13 @@ mod tests {
         // servir à adresser les 79 autres.
         let best =
             decode_best_to_png(&data, basename_of(CHEMIN)).expect("meilleure texture décodée");
-        let egal_a_une_nommee =
-            noms.iter().filter_map(|n| decode_named_to_png(&data, n)).any(|png| png == best);
-        assert!(egal_a_une_nommee, "la meilleure texture doit être l'une des textures nommées");
+        let egal_a_une_nommee = noms
+            .iter()
+            .filter_map(|n| decode_named_to_png(&data, n))
+            .any(|png| png == best);
+        assert!(
+            egal_a_une_nommee,
+            "la meilleure texture doit être l'une des textures nommées"
+        );
     }
 }

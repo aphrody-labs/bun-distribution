@@ -60,7 +60,11 @@ pub trait Host {
     fn note_volatile(&mut self) {}
     /// The spill range of the dynamic array anchored at `anchor` (`None`: it doesn't spill).
     fn spill_range(&mut self, sheet: usize, anchor: CellRef) -> Option<RangeRef> {
-        self.workbook().sheet(sheet)?.spill_ranges.get(&anchor).copied()
+        self.workbook()
+            .sheet(sheet)?
+            .spill_ranges
+            .get(&anchor)
+            .copied()
     }
     /// Values of a block, row-major. Hosts can override with a sparse fast path.
     fn range_values(&mut self, sheet: usize, range: RangeRef) -> Vec<Value> {
@@ -73,7 +77,12 @@ pub trait Host {
     }
     /// Calls `f` on each stored value of a block, row-major (formula cells evaluated first),
     /// until `f` returns false. `false` when this host can't (callers use `range_values`).
-    fn visit_range(&mut self, _sheet: usize, _range: RangeRef, _f: &mut dyn FnMut(&Value) -> bool) -> bool {
+    fn visit_range(
+        &mut self,
+        _sheet: usize,
+        _range: RangeRef,
+        _f: &mut dyn FnMut(&Value) -> bool,
+    ) -> bool {
         false
     }
 }
@@ -108,27 +117,59 @@ impl Ctx for FnCtx<'_, '_> {
     /// outside both the database and the criteria cell's own precedents (say `=G2<H2` with column H
     /// outside the database) is read here but not tracked, so editing that cell doesn't recalculate
     /// the D-function until something else does.
-    fn computed_criterion(&mut self, row: usize, col: usize, db: &Array, record: usize) -> Option<bool> {
+    fn computed_criterion(
+        &mut self,
+        row: usize,
+        col: usize,
+        db: &Array,
+        record: usize,
+    ) -> Option<bool> {
         let area = self.criteria?;
-        let at = area.range.start.offset(row as i64, col as i64).filter(|c| area.range.contains(*c))?;
-        let expr = self.ev.host.workbook().sheet(area.sheet)?.cell(at)?.formula.as_ref()?.expr_arc()?;
-        let shifted = gridcraft_formula::adjust::shift_relative((*expr).clone(), record as i64 - 1, 0);
+        let at = area
+            .range
+            .start
+            .offset(row as i64, col as i64)
+            .filter(|c| area.range.contains(*c))?;
+        let expr = self
+            .ev
+            .host
+            .workbook()
+            .sheet(area.sheet)?
+            .cell(at)?
+            .formula
+            .as_ref()?
+            .expr_arc()?;
+        let shifted =
+            gridcraft_formula::adjust::shift_relative((*expr).clone(), record as i64 - 1, 0);
         let env = (0..db.cols)
             .filter_map(|c| match db.get(0, c) {
-                Some(Value::Text(t)) if !t.trim().is_empty() => {
-                    Some((t.trim().to_string(), Ev::V(db.get(record, c).cloned().unwrap_or(Value::Empty))))
-                }
+                Some(Value::Text(t)) if !t.trim().is_empty() => Some((
+                    t.trim().to_string(),
+                    Ev::V(db.get(record, c).cloned().unwrap_or(Value::Empty)),
+                )),
                 _ => None,
             })
             .collect();
-        let mut ev = Evaluator { host: &mut *self.ev.host, sheet: area.sheet, at, env, depth: self.ev.depth };
+        let mut ev = Evaluator {
+            host: &mut *self.ev.host,
+            sheet: area.sheet,
+            at,
+            env,
+            depth: self.ev.depth,
+        };
         Some(matches!(ev.value(&shifted).scalar().to_bool(), Ok(true)))
     }
 }
 
 impl<'h> Evaluator<'h> {
     pub fn new(host: &'h mut dyn Host, sheet: usize, at: CellRef) -> Self {
-        Evaluator { host, sheet, at, env: Vec::new(), depth: 0 }
+        Evaluator {
+            host,
+            sheet,
+            at,
+            env: Vec::new(),
+            depth: 0,
+        }
     }
 
     /// Evaluates to a value (references are dereferenced; multi-cell → array).
@@ -143,7 +184,10 @@ impl<'h> Evaluator<'h> {
             SheetSel::Current => Ok(vec![self.sheet]),
             SheetSel::Named(n) => wb.sheet_index(n).map(|i| vec![i]).ok_or(CellError::Ref),
             SheetSel::Span(a, b) => {
-                let (i, j) = (wb.sheet_index(a).ok_or(CellError::Ref)?, wb.sheet_index(b).ok_or(CellError::Ref)?);
+                let (i, j) = (
+                    wb.sheet_index(a).ok_or(CellError::Ref)?,
+                    wb.sheet_index(b).ok_or(CellError::Ref)?,
+                );
                 Ok((i.min(j)..=i.max(j)).collect())
             }
         }
@@ -151,7 +195,11 @@ impl<'h> Evaluator<'h> {
 
     pub fn reference_areas(&self, r: &Reference) -> Result<Vec<Area>, CellError> {
         let range = r.range();
-        Ok(self.resolve_sheet(&r.sheet)?.into_iter().map(|sheet| Area { sheet, range }).collect())
+        Ok(self
+            .resolve_sheet(&r.sheet)?
+            .into_iter()
+            .map(|sheet| Area { sheet, range })
+            .collect())
     }
 
     /// Dereferences: one cell → its value; a block → an array (trimmed to the used range);
@@ -174,13 +222,19 @@ impl<'h> Evaluator<'h> {
         // A reference keeps its size, so the array has its shape and its blanks count
         // (`=A1:A10`, `SUMPRODUCT(--(A1:A10=""))`).
         let cells = u64::from(a.range.height()) * u64::from(a.range.width());
-        let range = if cells > FULL_SIZE_CELLS { self.trim(a) } else { a.range };
+        let range = if cells > FULL_SIZE_CELLS {
+            self.trim(a)
+        } else {
+            a.range
+        };
         let (h, w) = (range.height() as usize, range.width() as usize);
         if (h as u64) * (w as u64) > MAX_CELLS {
             return Value::Error(CellError::Num);
         }
         let data = self.host.range_values(a.sheet, range);
-        Array::new(h, w, data).map(Value::from).unwrap_or(Value::Error(CellError::Value))
+        Array::new(h, w, data)
+            .map(Value::from)
+            .unwrap_or(Value::Error(CellError::Value))
     }
 
     /// Trims the bottom/right of an area to the sheet's used range (keeps the top-left so
@@ -233,7 +287,11 @@ impl<'h> Evaluator<'h> {
                         data.push(v);
                     }
                 }
-                Ev::V(Array::new(h, w, data).map(Value::from).unwrap_or(Value::Error(CellError::Value)))
+                Ev::V(
+                    Array::new(h, w, data)
+                        .map(Value::from)
+                        .unwrap_or(Value::Error(CellError::Value)),
+                )
             }
             Expr::Ref(r) => match self.reference_areas(r) {
                 Ok(a) => Ev::R(a),
@@ -256,7 +314,12 @@ impl<'h> Evaluator<'h> {
     }
 
     fn name(&mut self, n: &str) -> Ev {
-        if let Some((_, v)) = self.env.iter().rev().find(|(k, _)| k.eq_ignore_ascii_case(n)) {
+        if let Some((_, v)) = self
+            .env
+            .iter()
+            .rev()
+            .find(|(k, _)| k.eq_ignore_ascii_case(n))
+        {
             return v.clone();
         }
         let wb = self.host.workbook();
@@ -276,7 +339,11 @@ impl<'h> Evaluator<'h> {
                     // Relative references in a name are relative to A1: used here, they move by
                     // this cell's offset from it.
                     let expr = if gridcraft_formula::adjust::has_relative_refs(&expr) {
-                        gridcraft_formula::adjust::shift_relative_wrapping(expr, self.at.row as i64, self.at.col as i64)
+                        gridcraft_formula::adjust::shift_relative_wrapping(
+                            expr,
+                            self.at.row as i64,
+                            self.at.col as i64,
+                        )
                     } else {
                         expr
                     };
@@ -295,7 +362,10 @@ impl<'h> Evaluator<'h> {
             && let Some(t) = wb.sheet(si).and_then(|s| s.tables.get(ti))
             && let Some(d) = t.data_range()
         {
-            return Ev::R(vec![Area { sheet: si, range: d }]);
+            return Ev::R(vec![Area {
+                sheet: si,
+                range: d,
+            }]);
         }
         err(CellError::Name)
     }
@@ -303,12 +373,21 @@ impl<'h> Evaluator<'h> {
     fn structured(&mut self, s: &StructRef) -> Ev {
         let wb = self.host.workbook();
         let found = if s.table.is_empty() {
-            wb.sheet(self.sheet).and_then(|sh| sh.tables.iter().position(|t| t.range.contains(self.at)).map(|ti| (self.sheet, ti)))
+            wb.sheet(self.sheet).and_then(|sh| {
+                sh.tables
+                    .iter()
+                    .position(|t| t.range.contains(self.at))
+                    .map(|ti| (self.sheet, ti))
+            })
         } else {
             wb.table(&s.table)
         };
-        let Some((si, ti)) = found else { return err(CellError::Ref) };
-        let Some(t) = wb.sheet(si).and_then(|sh| sh.tables.get(ti)) else { return err(CellError::Ref) };
+        let Some((si, ti)) = found else {
+            return err(CellError::Ref);
+        };
+        let Some(t) = wb.sheet(si).and_then(|sh| sh.tables.get(ti)) else {
+            return err(CellError::Ref);
+        };
         let mut r0 = t.range.start.row;
         let mut r1 = t.range.end.row;
         let data = t.data_range();
@@ -362,17 +441,24 @@ impl<'h> Evaluator<'h> {
         }
         let (mut c0, mut c1) = (t.range.start.col, t.range.end.col);
         if let Some(a) = &s.col_start {
-            let Some(i) = t.column_index(a) else { return err(CellError::Ref) };
+            let Some(i) = t.column_index(a) else {
+                return err(CellError::Ref);
+            };
             c0 = t.range.start.col + i as u32;
             c1 = c0;
             if let Some(b) = &s.col_end {
-                let Some(j) = t.column_index(b) else { return err(CellError::Ref) };
+                let Some(j) = t.column_index(b) else {
+                    return err(CellError::Ref);
+                };
                 let cj = t.range.start.col + j as u32;
                 c0 = c0.min(cj);
                 c1 = c1.max(cj);
             }
         }
-        Ev::R(vec![Area { sheet: si, range: RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)) }])
+        Ev::R(vec![Area {
+            sheet: si,
+            range: RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)),
+        }])
     }
 
     fn unary(&mut self, op: UnOp, x: &Expr) -> Ev {
@@ -382,10 +468,15 @@ impl<'h> Evaluator<'h> {
         if op == UnOp::Spill {
             return match self.eval(x) {
                 Ev::R(areas) => match areas.as_slice() {
-                    [a] if a.range.is_single() => match self.host.spill_range(a.sheet, a.range.start) {
-                        Some(range) => Ev::R(vec![Area { sheet: a.sheet, range }]),
-                        None => err(CellError::Ref),
-                    },
+                    [a] if a.range.is_single() => {
+                        match self.host.spill_range(a.sheet, a.range.start) {
+                            Some(range) => Ev::R(vec![Area {
+                                sheet: a.sheet,
+                                range,
+                            }]),
+                            None => err(CellError::Ref),
+                        }
+                    }
                     _ => err(CellError::Ref),
                 },
                 Ev::V(Value::Error(e)) => err(e),
@@ -449,7 +540,9 @@ impl<'h> Evaluator<'h> {
                     return err(CellError::Value);
                 };
                 let all: Vec<&Area> = xa.iter().chain(ya.iter()).collect();
-                let Some(first) = all.first() else { return err(CellError::Ref) };
+                let Some(first) = all.first() else {
+                    return err(CellError::Ref);
+                };
                 if all.iter().any(|ar| ar.sheet != first.sheet) {
                     return err(CellError::Value);
                 }
@@ -457,7 +550,10 @@ impl<'h> Evaluator<'h> {
                 for ar in &all {
                     r = r.union(&ar.range);
                 }
-                Ev::R(vec![Area { sheet: first.sheet, range: r }])
+                Ev::R(vec![Area {
+                    sheet: first.sheet,
+                    range: r,
+                }])
             }
             BinOp::Union => {
                 let (x, y) = (self.eval(a), self.eval(b));
@@ -480,11 +576,18 @@ impl<'h> Evaluator<'h> {
                                 if p.sheet == q.sheet
                                     && let Some(i) = p.range.intersection(&q.range)
                                 {
-                                    out.push(Area { sheet: p.sheet, range: i });
+                                    out.push(Area {
+                                        sheet: p.sheet,
+                                        range: i,
+                                    });
                                 }
                             }
                         }
-                        if out.is_empty() { err(CellError::Null) } else { Ev::R(out) }
+                        if out.is_empty() {
+                            err(CellError::Null)
+                        } else {
+                            Ev::R(out)
+                        }
                     }
                     (Ev::V(Value::Error(e)), _) | (_, Ev::V(Value::Error(e))) => err(e),
                     _ => err(CellError::Value),
@@ -539,7 +642,11 @@ impl<'h> Evaluator<'h> {
                 if let Value::Array(arr) = &c {
                     // Array condition: element-wise.
                     let t = self.arg_val(args, 1).unwrap_or(Value::Bool(true));
-                    let f = if args.len() > 2 { self.arg_val(args, 2).unwrap_or(Value::Bool(false)) } else { Value::Bool(false) };
+                    let f = if args.len() > 2 {
+                        self.arg_val(args, 2).unwrap_or(Value::Bool(false))
+                    } else {
+                        Value::Bool(false)
+                    };
                     return Ev::V(zip3(arr, &t, &f, |c, t, f| match c.to_bool() {
                         Ok(true) => t.clone(),
                         Ok(false) => f.clone(),
@@ -584,19 +691,51 @@ impl<'h> Evaluator<'h> {
                 let catch = |e: CellError| if na_only { e == CellError::NA } else { true };
                 match &v {
                     Ev::V(Value::Error(e)) if catch(*e) => self.eval(&args[1]),
-                    Ev::V(Value::Array(a)) if a.data.iter().any(|x| x.as_error().is_some_and(catch)) => {
+                    Ev::V(Value::Array(a))
+                        if a.data.iter().any(|x| x.as_error().is_some_and(catch)) =>
+                    {
                         let alt = self.arg_val(args, 1).unwrap_or_default();
-                        let data = a.data.iter().map(|x| if x.as_error().is_some_and(catch) { alt.scalar() } else { x.clone() }).collect();
-                        Ev::V(Array::new(a.rows, a.cols, data).map(Value::from).unwrap_or(Value::Error(CellError::Value)))
+                        let data = a
+                            .data
+                            .iter()
+                            .map(|x| {
+                                if x.as_error().is_some_and(catch) {
+                                    alt.scalar()
+                                } else {
+                                    x.clone()
+                                }
+                            })
+                            .collect();
+                        Ev::V(
+                            Array::new(a.rows, a.cols, data)
+                                .map(Value::from)
+                                .unwrap_or(Value::Error(CellError::Value)),
+                        )
                     }
                     Ev::R(_) => {
                         let val = self.deref(v.clone());
                         match val {
                             Value::Error(e) if catch(e) => self.eval(&args[1]),
-                            Value::Array(ref a) if a.data.iter().any(|x| x.as_error().is_some_and(catch)) => {
+                            Value::Array(ref a)
+                                if a.data.iter().any(|x| x.as_error().is_some_and(catch)) =>
+                            {
                                 let alt = self.arg_val(args, 1).unwrap_or_default();
-                                let data = a.data.iter().map(|x| if x.as_error().is_some_and(catch) { alt.scalar() } else { x.clone() }).collect();
-                                Ev::V(Array::new(a.rows, a.cols, data).map(Value::from).unwrap_or(Value::Error(CellError::Value)))
+                                let data = a
+                                    .data
+                                    .iter()
+                                    .map(|x| {
+                                        if x.as_error().is_some_and(catch) {
+                                            alt.scalar()
+                                        } else {
+                                            x.clone()
+                                        }
+                                    })
+                                    .collect();
+                                Ev::V(
+                                    Array::new(a.rows, a.cols, data)
+                                        .map(Value::from)
+                                        .unwrap_or(Value::Error(CellError::Value)),
+                                )
                             }
                             _ => v,
                         }
@@ -612,13 +751,24 @@ impl<'h> Evaluator<'h> {
                 if let Value::Array(_) = index {
                     // An array of indexes picks element by element: `CHOOSE({1,2},A1:A3,B1:B3)`
                     // is a two-column array. The library CHOOSE lifts over its arguments.
-                    let Some(spec) = gridcraft_functions::lookup(name) else { return err(CellError::Name) };
-                    let mut evaluated = vec![Arg { value: index, from_ref: false }];
+                    let Some(spec) = gridcraft_functions::lookup(name) else {
+                        return err(CellError::Name);
+                    };
+                    let mut evaluated = vec![Arg {
+                        value: index,
+                        from_ref: false,
+                    }];
                     for a in &args[1..] {
                         let value = self.value(a);
-                        evaluated.push(Arg { value, from_ref: false });
+                        evaluated.push(Arg {
+                            value,
+                            from_ref: false,
+                        });
                     }
-                    let mut ctx = FnCtx { ev: self, criteria: None };
+                    let mut ctx = FnCtx {
+                        ev: self,
+                        criteria: None,
+                    };
                     return gridcraft_functions::call(spec, &evaluated, &mut ctx).pipe(Ev::V);
                 }
                 let i = match index.to_number() {
@@ -642,28 +792,53 @@ impl<'h> Evaluator<'h> {
                 let mut i = 0;
                 while i + 1 < rest.len() {
                     let cand = self.value(&rest[i]).scalar();
-                    if !cand.is_error() && compare(&v, &cand) == std::cmp::Ordering::Equal && same_kind(&v, &cand) {
+                    if !cand.is_error()
+                        && compare(&v, &cand) == std::cmp::Ordering::Equal
+                        && same_kind(&v, &cand)
+                    {
                         return self.eval(&rest[i + 1]);
                     }
                     i += 2;
                 }
-                if rest.len() % 2 == 1 { rest.last().map_or(err(CellError::NA), |d| self.eval(d)) } else { err(CellError::NA) }
+                if rest.len() % 2 == 1 {
+                    rest.last().map_or(err(CellError::NA), |d| self.eval(d))
+                } else {
+                    err(CellError::NA)
+                }
             }
             "ROW" | "COLUMN" => {
                 let is_row = name == "ROW";
                 if args.is_empty() || matches!(args.first(), Some(Expr::Missing)) {
-                    return Ev::V(Value::number(if is_row { self.at.row + 1 } else { self.at.col + 1 } as f64));
+                    return Ev::V(Value::number(if is_row {
+                        self.at.row + 1
+                    } else {
+                        self.at.col + 1
+                    } as f64));
                 }
                 match self.eval(&args[0]) {
                     Ev::R(a) => {
-                        let Some(a) = a.first() else { return err(CellError::Ref) };
+                        let Some(a) = a.first() else {
+                            return err(CellError::Ref);
+                        };
                         let r = self.trim_lines(a);
                         if is_row {
-                            let rows: Vec<Value> = (r.start.row..=r.end.row).map(|x| Value::number(x as f64 + 1.0)).collect();
-                            if rows.len() == 1 { Ev::V(rows.into_iter().next().unwrap_or_default()) } else { Ev::V(Array::column(rows).into()) }
+                            let rows: Vec<Value> = (r.start.row..=r.end.row)
+                                .map(|x| Value::number(x as f64 + 1.0))
+                                .collect();
+                            if rows.len() == 1 {
+                                Ev::V(rows.into_iter().next().unwrap_or_default())
+                            } else {
+                                Ev::V(Array::column(rows).into())
+                            }
                         } else {
-                            let cols: Vec<Value> = (r.start.col..=r.end.col).map(|x| Value::number(x as f64 + 1.0)).collect();
-                            if cols.len() == 1 { Ev::V(cols.into_iter().next().unwrap_or_default()) } else { Ev::V(Array::row(cols).into()) }
+                            let cols: Vec<Value> = (r.start.col..=r.end.col)
+                                .map(|x| Value::number(x as f64 + 1.0))
+                                .collect();
+                            if cols.len() == 1 {
+                                Ev::V(cols.into_iter().next().unwrap_or_default())
+                            } else {
+                                Ev::V(Array::row(cols).into())
+                            }
                         }
                     }
                     Ev::V(Value::Error(e)) => err(e),
@@ -677,10 +852,18 @@ impl<'h> Evaluator<'h> {
                 let is_rows = name == "ROWS";
                 match self.eval(&args[0]) {
                     Ev::R(a) => match a.as_slice() {
-                        [a] => Ev::V(Value::number(if is_rows { a.range.height() } else { a.range.width() } as f64)),
+                        [a] => Ev::V(Value::number(if is_rows {
+                            a.range.height()
+                        } else {
+                            a.range.width()
+                        } as f64)),
                         _ => err(CellError::Ref),
                     },
-                    Ev::V(Value::Array(arr)) => Ev::V(Value::number(if is_rows { arr.rows } else { arr.cols } as f64)),
+                    Ev::V(Value::Array(arr)) => {
+                        Ev::V(Value::number(
+                            if is_rows { arr.rows } else { arr.cols } as f64
+                        ))
+                    }
                     Ev::V(Value::Error(e)) => err(e),
                     Ev::V(_) => Ev::V(Value::Number(1.0)),
                     Ev::L(_) => err(CellError::Value),
@@ -691,11 +874,23 @@ impl<'h> Evaluator<'h> {
                 Some(Ev::V(Value::Error(e))) => err(e),
                 _ => err(CellError::Value),
             },
-            "ISREF" => Ev::V(Value::Bool(matches!(args.first().map(|a| self.eval(a)), Some(Ev::R(_))))),
+            "ISREF" => Ev::V(Value::Bool(matches!(
+                args.first().map(|a| self.eval(a)),
+                Some(Ev::R(_))
+            ))),
             "ISFORMULA" | "FORMULATEXT" => {
-                let Some(Ev::R(a)) = args.first().map(|a| self.eval(a)) else { return err(CellError::NA) };
-                let Some(a) = a.first() else { return err(CellError::NA) };
-                let f = self.host.workbook().sheet(a.sheet).and_then(|s| s.cell(a.range.start)).and_then(|c| c.formula.clone());
+                let Some(Ev::R(a)) = args.first().map(|a| self.eval(a)) else {
+                    return err(CellError::NA);
+                };
+                let Some(a) = a.first() else {
+                    return err(CellError::NA);
+                };
+                let f = self
+                    .host
+                    .workbook()
+                    .sheet(a.sheet)
+                    .and_then(|s| s.cell(a.range.start))
+                    .and_then(|c| c.formula.clone());
                 if name == "ISFORMULA" {
                     Ev::V(Value::Bool(f.is_some()))
                 } else {
@@ -708,12 +903,18 @@ impl<'h> Evaluator<'h> {
             "SHEET" | "SHEETS" => {
                 let wb = self.host.workbook();
                 if args.is_empty() {
-                    return Ev::V(Value::number(if name == "SHEET" { self.sheet + 1 } else { wb.sheets.len() } as f64));
+                    return Ev::V(Value::number(if name == "SHEET" {
+                        self.sheet + 1
+                    } else {
+                        wb.sheets.len()
+                    } as f64));
                 }
                 match self.eval(&args[0]) {
                     Ev::R(a) => {
                         if name == "SHEET" {
-                            a.first().map_or(err(CellError::Ref), |a| Ev::V(Value::number(a.sheet as f64 + 1.0)))
+                            a.first().map_or(err(CellError::Ref), |a| {
+                                Ev::V(Value::number(a.sheet as f64 + 1.0))
+                            })
                         } else {
                             let mut s: Vec<usize> = a.iter().map(|x| x.sheet).collect();
                             s.dedup();
@@ -722,7 +923,8 @@ impl<'h> Evaluator<'h> {
                     }
                     Ev::V(Value::Text(t)) if name == "SHEET" => {
                         let wb = self.host.workbook();
-                        wb.sheet_index(&t).map_or(err(CellError::NA), |i| Ev::V(Value::number(i as f64 + 1.0)))
+                        wb.sheet_index(&t)
+                            .map_or(err(CellError::NA), |i| Ev::V(Value::number(i as f64 + 1.0)))
                     }
                     _ => err(CellError::NA),
                 }
@@ -764,18 +966,28 @@ impl<'h> Evaluator<'h> {
                 let mut params = Vec::new();
                 for p in &args[..args.len() - 1] {
                     match p {
-                        Expr::Name(n) => params.push(n.trim_start_matches('[').trim_end_matches(']').to_string()),
+                        Expr::Name(n) => {
+                            params.push(n.trim_start_matches('[').trim_end_matches(']').to_string())
+                        }
                         _ => return err(CellError::Value),
                     }
                 }
-                let Some(body) = args.last() else { return err(CellError::Value) };
-                Ev::L(Arc::new(Lambda { params, body: body.clone(), env: self.env.clone() }))
+                let Some(body) = args.last() else {
+                    return err(CellError::Value);
+                };
+                Ev::L(Arc::new(Lambda {
+                    params,
+                    body: body.clone(),
+                    env: self.env.clone(),
+                }))
             }
             "ISOMITTED" => {
                 let r = matches!(args.first(), Some(Expr::Name(n)) if self.env.iter().rev().find(|(k, _)| k.eq_ignore_ascii_case(n)).is_some_and(|(_, v)| matches!(v, Ev::V(Value::Empty))));
                 Ev::V(Value::Bool(r))
             }
-            "MAP" | "REDUCE" | "SCAN" | "BYROW" | "BYCOL" | "MAKEARRAY" => self.higher_order(name, args),
+            "MAP" | "REDUCE" | "SCAN" | "BYROW" | "BYCOL" | "MAKEARRAY" => {
+                self.higher_order(name, args)
+            }
             "GROUPBY" | "PIVOTBY" => {
                 // The aggregation may be a function given by name (`SUM`): pass it as its name.
                 let i = if name == "GROUPBY" { 2 } else { 3 };
@@ -833,7 +1045,10 @@ impl<'h> Evaluator<'h> {
                     && let (Some((h, w)), Ev::R(areas)) = (criteria_shape, &ev)
                     && let [area] = areas.as_slice()
                 {
-                    ev = Ev::R(vec![Area { sheet: area.sheet, range: resized_sum_range(area.range, h, w) }]);
+                    ev = Ev::R(vec![Area {
+                        sheet: area.sheet,
+                        range: resized_sum_range(area.range, h, w),
+                    }]);
                 }
             }
             let from_ref = matches!(ev, Ev::R(_));
@@ -867,7 +1082,10 @@ impl<'h> Evaluator<'h> {
         for a in args {
             let ev = self.eval(a);
             let steps = match ev {
-                Ev::R(areas) => areas.iter().map(|area| self.aggregate_area(kind, area, &mut acc)).collect(),
+                Ev::R(areas) => areas
+                    .iter()
+                    .map(|area| self.aggregate_area(kind, area, &mut acc))
+                    .collect(),
                 ev => {
                     let value = self.deref(ev);
                     vec![self.aggregate_value(kind, value, false, &mut acc)]
@@ -884,7 +1102,9 @@ impl<'h> Evaluator<'h> {
     fn aggregate_area(&mut self, kind: Agg, a: &Area, acc: &mut Acc) -> Result<(), Ev> {
         if !a.range.is_single() {
             let mut error = None;
-            let walked = self.host.visit_range(a.sheet, a.range, &mut |v| match acc.add_cell(kind, v) {
+            let walked = self.host.visit_range(a.sheet, a.range, &mut |v| match acc
+                .add_cell(kind, v)
+            {
                 Ok(()) => true,
                 Err(e) => {
                     error = Some(e);
@@ -901,19 +1121,42 @@ impl<'h> Evaluator<'h> {
 
     /// Adds one argument's value by calling `SUM` and `COUNT` on it, so coercion and error rules
     /// stay in one place (`AVERAGE` of an argument is its `SUM` over its `COUNT`).
-    fn aggregate_value(&mut self, kind: Agg, value: Value, from_ref: bool, acc: &mut Acc) -> Result<(), Ev> {
-        let (Some(sum), Some(count)) = (gridcraft_functions::lookup("SUM"), gridcraft_functions::lookup("COUNT")) else {
+    fn aggregate_value(
+        &mut self,
+        kind: Agg,
+        value: Value,
+        from_ref: bool,
+        acc: &mut Acc,
+    ) -> Result<(), Ev> {
+        let (Some(sum), Some(count)) = (
+            gridcraft_functions::lookup("SUM"),
+            gridcraft_functions::lookup("COUNT"),
+        ) else {
             return Err(err(CellError::Name));
         };
         let args = [Arg { value, from_ref }];
         if kind != Agg::Count {
-            match gridcraft_functions::call(sum, &args, &mut FnCtx { ev: self, criteria: None }) {
+            match gridcraft_functions::call(
+                sum,
+                &args,
+                &mut FnCtx {
+                    ev: self,
+                    criteria: None,
+                },
+            ) {
                 Value::Number(n) => acc.sum += n,
                 other => return Err(Ev::V(other)),
             }
         }
         if kind != Agg::Sum {
-            match gridcraft_functions::call(count, &args, &mut FnCtx { ev: self, criteria: None }) {
+            match gridcraft_functions::call(
+                count,
+                &args,
+                &mut FnCtx {
+                    ev: self,
+                    criteria: None,
+                },
+            ) {
                 Value::Number(n) => acc.count = acc.count.saturating_add(n as u64),
                 other => return Err(Ev::V(other)),
             }
@@ -975,7 +1218,9 @@ impl<'h> Evaluator<'h> {
     /// that name.
     fn function_by_name(&self, e: &Expr) -> Option<String> {
         let Expr::Name(n) = e else { return None };
-        if self.env.iter().any(|(k, _)| k.eq_ignore_ascii_case(n)) || self.host.workbook().name(n, self.sheet).is_some() {
+        if self.env.iter().any(|(k, _)| k.eq_ignore_ascii_case(n))
+            || self.host.workbook().name(n, self.sheet).is_some()
+        {
             return None;
         }
         let u = n.to_ascii_uppercase();
@@ -988,7 +1233,11 @@ impl<'h> Evaluator<'h> {
         if let Some(f) = e.and_then(|x| self.function_by_name(x)) {
             let params: Vec<String> = (0..arity).map(|i| format!("_xleta.{i}")).collect();
             let body = Expr::Call(f, params.iter().map(|p| Expr::Name(p.clone())).collect());
-            return Some(Arc::new(Lambda { params, body, env: Vec::new() }));
+            return Some(Arc::new(Lambda {
+                params,
+                body,
+                env: Vec::new(),
+            }));
         }
         match e.map(|x| self.eval(x)) {
             Some(Ev::L(l)) => Some(l),
@@ -1008,8 +1257,13 @@ impl<'h> Evaluator<'h> {
                 if args.len() < 2 {
                     return err(CellError::Value);
                 }
-                let Some(l) = self.lambda_arg(args.last(), args.len() - 1) else { return err(CellError::Value) };
-                let arrays: Vec<Arc<Array>> = args[..args.len() - 1].iter().map(|a| as_array(self.value(a))).collect();
+                let Some(l) = self.lambda_arg(args.last(), args.len() - 1) else {
+                    return err(CellError::Value);
+                };
+                let arrays: Vec<Arc<Array>> = args[..args.len() - 1]
+                    .iter()
+                    .map(|a| as_array(self.value(a)))
+                    .collect();
                 let rows = arrays.iter().map(|a| a.rows).max().unwrap_or(1);
                 let cols = arrays.iter().map(|a| a.cols).max().unwrap_or(1);
                 if (rows * cols) as u64 > MAX_CELLS {
@@ -1018,12 +1272,21 @@ impl<'h> Evaluator<'h> {
                 let mut out = Vec::with_capacity(rows * cols);
                 for r in 0..rows {
                     for c in 0..cols {
-                        let bound = l.params.iter().zip(arrays.iter()).map(|(p, a)| (p.clone(), Ev::V(a.get_broadcast(r, c)))).collect();
+                        let bound = l
+                            .params
+                            .iter()
+                            .zip(arrays.iter())
+                            .map(|(p, a)| (p.clone(), Ev::V(a.get_broadcast(r, c))))
+                            .collect();
                         let v = self.call_lambda_values(&l, bound);
                         out.push(self.deref(v).scalar());
                     }
                 }
-                Ev::V(Array::new(rows, cols, out).map(Value::from).unwrap_or(Value::Error(CellError::Calc)))
+                Ev::V(
+                    Array::new(rows, cols, out)
+                        .map(Value::from)
+                        .unwrap_or(Value::Error(CellError::Calc)),
+                )
             }
             "REDUCE" | "SCAN" => {
                 if args.len() != 3 {
@@ -1031,13 +1294,18 @@ impl<'h> Evaluator<'h> {
                 }
                 let mut acc = self.value(&args[0]);
                 let arr = as_array(self.value(&args[1]));
-                let Some(l) = self.lambda_arg(args.get(2), 2) else { return err(CellError::Value) };
+                let Some(l) = self.lambda_arg(args.get(2), 2) else {
+                    return err(CellError::Value);
+                };
                 if l.params.len() != 2 {
                     return err(CellError::Value);
                 }
                 let mut scan = Vec::with_capacity(arr.data.len());
                 for v in arr.data.iter() {
-                    let bound = vec![(l.params[0].clone(), Ev::V(acc.clone())), (l.params[1].clone(), Ev::V(v.clone()))];
+                    let bound = vec![
+                        (l.params[0].clone(), Ev::V(acc.clone())),
+                        (l.params[1].clone(), Ev::V(v.clone())),
+                    ];
                     let r = self.call_lambda_values(&l, bound);
                     acc = self.deref(r);
                     if name == "SCAN" {
@@ -1045,7 +1313,11 @@ impl<'h> Evaluator<'h> {
                     }
                 }
                 if name == "SCAN" {
-                    Ev::V(Array::new(arr.rows, arr.cols, scan).map(Value::from).unwrap_or(Value::Error(CellError::Calc)))
+                    Ev::V(
+                        Array::new(arr.rows, arr.cols, scan)
+                            .map(Value::from)
+                            .unwrap_or(Value::Error(CellError::Calc)),
+                    )
                 } else {
                     Ev::V(acc)
                 }
@@ -1055,22 +1327,38 @@ impl<'h> Evaluator<'h> {
                     return err(CellError::Value);
                 }
                 let arr = as_array(self.value(&args[0]));
-                let Some(l) = self.lambda_arg(args.get(1), 1) else { return err(CellError::Value) };
-                let Some(p) = l.params.first().cloned() else { return err(CellError::Value) };
+                let Some(l) = self.lambda_arg(args.get(1), 1) else {
+                    return err(CellError::Value);
+                };
+                let Some(p) = l.params.first().cloned() else {
+                    return err(CellError::Value);
+                };
                 let by_row = name == "BYROW";
                 let n = if by_row { arr.rows } else { arr.cols };
                 let mut out = Vec::with_capacity(n);
                 for i in 0..n {
                     let slice: Vec<Value> = if by_row {
-                        (0..arr.cols).map(|c| arr.get(i, c).cloned().unwrap_or_default()).collect()
+                        (0..arr.cols)
+                            .map(|c| arr.get(i, c).cloned().unwrap_or_default())
+                            .collect()
                     } else {
-                        (0..arr.rows).map(|r| arr.get(r, i).cloned().unwrap_or_default()).collect()
+                        (0..arr.rows)
+                            .map(|r| arr.get(r, i).cloned().unwrap_or_default())
+                            .collect()
                     };
-                    let a = if by_row { Array::row(slice) } else { Array::column(slice) };
+                    let a = if by_row {
+                        Array::row(slice)
+                    } else {
+                        Array::column(slice)
+                    };
                     let r = self.call_lambda_values(&l, vec![(p.clone(), Ev::V(a.into()))]);
                     out.push(self.deref(r).scalar());
                 }
-                let a = if by_row { Array::column(out) } else { Array::row(out) };
+                let a = if by_row {
+                    Array::column(out)
+                } else {
+                    Array::row(out)
+                };
                 Ev::V(a.into())
             }
             "MAKEARRAY" => {
@@ -1084,7 +1372,9 @@ impl<'h> Evaluator<'h> {
                 if rows < 1.0 || cols < 1.0 || rows * cols > MAX_CELLS as f64 {
                     return err(CellError::Value);
                 }
-                let Some(l) = self.lambda_arg(args.get(2), 2) else { return err(CellError::Value) };
+                let Some(l) = self.lambda_arg(args.get(2), 2) else {
+                    return err(CellError::Value);
+                };
                 if l.params.len() != 2 {
                     return err(CellError::Value);
                 }
@@ -1100,7 +1390,11 @@ impl<'h> Evaluator<'h> {
                         out.push(self.deref(v).scalar());
                     }
                 }
-                Ev::V(Array::new(rows, cols, out).map(Value::from).unwrap_or(Value::Error(CellError::Calc)))
+                Ev::V(
+                    Array::new(rows, cols, out)
+                        .map(Value::from)
+                        .unwrap_or(Value::Error(CellError::Calc)),
+                )
             }
             _ => err(CellError::Name),
         }
@@ -1108,7 +1402,11 @@ impl<'h> Evaluator<'h> {
 
     /// Whole rows/columns trimmed for ROW()/COLUMN() arrays.
     fn trim_lines(&mut self, a: &Area) -> RangeRef {
-        if a.range.is_full_cols() || a.range.is_full_rows() { self.trim(a) } else { a.range }
+        if a.range.is_full_cols() || a.range.is_full_rows() {
+            self.trim(a)
+        } else {
+            a.range
+        }
     }
 
     fn offset(&mut self, args: &[Expr]) -> Ev {
@@ -1142,12 +1440,26 @@ impl<'h> Evaluator<'h> {
         }
         let r0 = (base.range.start.row as i64).saturating_add(rows);
         let c0 = (base.range.start.col as i64).saturating_add(cols);
-        let (r0, r1) = if h > 0 { (r0, r0.saturating_add(h - 1)) } else { (r0.saturating_add(h + 1), r0) };
-        let (c0, c1) = if w > 0 { (c0, c0.saturating_add(w - 1)) } else { (c0.saturating_add(w + 1), c0) };
+        let (r0, r1) = if h > 0 {
+            (r0, r0.saturating_add(h - 1))
+        } else {
+            (r0.saturating_add(h + 1), r0)
+        };
+        let (c0, c1) = if w > 0 {
+            (c0, c0.saturating_add(w - 1))
+        } else {
+            (c0.saturating_add(w + 1), c0)
+        };
         if r0 < 0 || c0 < 0 || r1 >= MAX_ROWS as i64 || c1 >= MAX_COLS as i64 {
             return err(CellError::Ref);
         }
-        Ev::R(vec![Area { sheet: base.sheet, range: RangeRef::new(CellRef::new(r0 as u32, c0 as u32), CellRef::new(r1 as u32, c1 as u32)) }])
+        Ev::R(vec![Area {
+            sheet: base.sheet,
+            range: RangeRef::new(
+                CellRef::new(r0 as u32, c0 as u32),
+                CellRef::new(r1 as u32, c1 as u32),
+            ),
+        }])
     }
 
     fn indirect(&mut self, args: &[Expr]) -> Ev {
@@ -1202,7 +1514,11 @@ impl<'h> Evaluator<'h> {
             Err(e) => return err(e),
         };
         let two = args.len() == 2;
-        let num = |v: &Option<Value>| v.as_ref().map_or(Ok(0.0), |v| v.to_number()).map(|n| n.trunc() as i64);
+        let num = |v: &Option<Value>| {
+            v.as_ref()
+                .map_or(Ok(0.0), |v| v.to_number())
+                .map(|n| n.trunc() as i64)
+        };
         // Arrays of positions pick a value for each: INDEX(A1:C10,{1;2},{1,3}) is 2×2.
         if let (Some(Value::Array(_)), _) | (_, Some(Value::Array(_))) = (&rows, &cols) {
             let as_array = |v: &Option<Value>| match v {
@@ -1218,12 +1534,17 @@ impl<'h> Evaluator<'h> {
             let mut out = Vec::with_capacity(h * w);
             for r in 0..h {
                 for c in 0..w {
-                    let pos = (num(&Some(ra.get_broadcast(r, c))), num(&Some(ca.get_broadcast(r, c))));
+                    let pos = (
+                        num(&Some(ra.get_broadcast(r, c))),
+                        num(&Some(ca.get_broadcast(r, c))),
+                    );
                     let v = match pos {
                         (Ok(row), Ok(col)) => {
                             let one = self.index_one(src.clone(), row, col, area_n, two);
                             match self.deref(one) {
-                                Value::Array(a) if a.rows * a.cols > 1 => Value::Error(CellError::Calc),
+                                Value::Array(a) if a.rows * a.cols > 1 => {
+                                    Value::Error(CellError::Calc)
+                                }
                                 v => v.scalar(),
                             }
                         }
@@ -1232,7 +1553,11 @@ impl<'h> Evaluator<'h> {
                     out.push(v);
                 }
             }
-            return Ev::V(Array::new(h, w, out).map(Value::from).unwrap_or(Value::Error(CellError::Value)));
+            return Ev::V(
+                Array::new(h, w, out)
+                    .map(Value::from)
+                    .unwrap_or(Value::Error(CellError::Value)),
+            );
         }
         let (row, col) = match (num(&rows), num(&cols)) {
             (Ok(r), Ok(c)) => (r, c),
@@ -1249,27 +1574,66 @@ impl<'h> Evaluator<'h> {
         match src {
             Ev::R(areas) => {
                 let area = usize::try_from((area_n as u64).saturating_sub(1)).ok();
-                let Some(a) = area.and_then(|i| areas.get(i)).copied() else { return err(CellError::Ref) };
+                let Some(a) = area.and_then(|i| areas.get(i)).copied() else {
+                    return err(CellError::Ref);
+                };
                 let r = a.range;
                 // A single row or column with one index picks along it.
-                let (row, col) = if two_args && r.height() == 1 { (1, row) } else { (row, col) };
+                let (row, col) = if two_args && r.height() == 1 {
+                    (1, row)
+                } else {
+                    (row, col)
+                };
                 if row as u64 > r.height() as u64 || col as u64 > r.width() as u64 {
                     return err(CellError::Ref);
                 }
-                let (r0, r1) = if row == 0 { (r.start.row, r.end.row) } else { (r.start.row + row as u32 - 1, r.start.row + row as u32 - 1) };
-                let (c0, c1) = if col == 0 { (r.start.col, r.end.col) } else { (r.start.col + col as u32 - 1, r.start.col + col as u32 - 1) };
-                Ev::R(vec![Area { sheet: a.sheet, range: RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)) }])
+                let (r0, r1) = if row == 0 {
+                    (r.start.row, r.end.row)
+                } else {
+                    (r.start.row + row as u32 - 1, r.start.row + row as u32 - 1)
+                };
+                let (c0, c1) = if col == 0 {
+                    (r.start.col, r.end.col)
+                } else {
+                    (r.start.col + col as u32 - 1, r.start.col + col as u32 - 1)
+                };
+                Ev::R(vec![Area {
+                    sheet: a.sheet,
+                    range: RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)),
+                }])
             }
             Ev::V(Value::Array(arr)) => {
-                let (row, col) = if two_args && arr.rows == 1 { (1, row) } else { (row, col) };
+                let (row, col) = if two_args && arr.rows == 1 {
+                    (1, row)
+                } else {
+                    (row, col)
+                };
                 if row as usize > arr.rows || col as usize > arr.cols {
                     return err(CellError::Ref);
                 }
                 match (row, col) {
                     (0, 0) => Ev::V(Value::Array(arr)),
-                    (0, c) => Ev::V(Array::column((0..arr.rows).map(|r| arr.get(r, c as usize - 1).cloned().unwrap_or_default()).collect()).into()),
-                    (r, 0) => Ev::V(Array::row((0..arr.cols).map(|c| arr.get(r as usize - 1, c).cloned().unwrap_or_default()).collect()).into()),
-                    (r, c) => Ev::V(arr.get(r as usize - 1, c as usize - 1).cloned().unwrap_or(Value::Error(CellError::Ref))),
+                    (0, c) => Ev::V(
+                        Array::column(
+                            (0..arr.rows)
+                                .map(|r| arr.get(r, c as usize - 1).cloned().unwrap_or_default())
+                                .collect(),
+                        )
+                        .into(),
+                    ),
+                    (r, 0) => Ev::V(
+                        Array::row(
+                            (0..arr.cols)
+                                .map(|c| arr.get(r as usize - 1, c).cloned().unwrap_or_default())
+                                .collect(),
+                        )
+                        .into(),
+                    ),
+                    (r, c) => Ev::V(
+                        arr.get(r as usize - 1, c as usize - 1)
+                            .cloned()
+                            .unwrap_or(Value::Error(CellError::Ref)),
+                    ),
                 }
             }
             Ev::V(Value::Error(e)) => err(e),
@@ -1297,9 +1661,22 @@ impl<'h> Evaluator<'h> {
             let (l, r) = (*l, *r);
             let vertical = l.range.width() == 1 && l.range.height() > 1;
             let horizontal = l.range.height() == 1 && l.range.width() > 1;
-            let same_len = if vertical { r.range.height() == l.range.height() } else { r.range.width() == l.range.width() };
+            let same_len = if vertical {
+                r.range.height() == l.range.height()
+            } else {
+                r.range.width() == l.range.width()
+            };
             if !matches!(key, Value::Array(_)) && (vertical || horizontal) && same_len {
-                let mut xargs = vec![Arg { value: key, from_ref: false }, Arg { value: self.area_value(&l), from_ref: true }];
+                let mut xargs = vec![
+                    Arg {
+                        value: key,
+                        from_ref: false,
+                    },
+                    Arg {
+                        value: self.area_value(&l),
+                        from_ref: true,
+                    },
+                ];
                 // An empty match_mode before a given search_mode is the default (0), not the end.
                 let given = |i: usize| args.get(i).is_some_and(|e| !matches!(e, Expr::Missing));
                 let last = if given(5) {
@@ -1311,14 +1688,23 @@ impl<'h> Evaluator<'h> {
                 };
                 for i in 4..=last {
                     match args.get(i) {
-                        Some(Expr::Missing) | None => xargs.push(Arg { value: Value::Number(0.0), from_ref: false }),
+                        Some(Expr::Missing) | None => xargs.push(Arg {
+                            value: Value::Number(0.0),
+                            from_ref: false,
+                        }),
                         Some(e) => {
                             let value = self.value(e);
-                            xargs.push(Arg { value, from_ref: false });
+                            xargs.push(Arg {
+                                value,
+                                from_ref: false,
+                            });
                         }
                     }
                 }
-                let mut ctx = FnCtx { ev: self, criteria: None };
+                let mut ctx = FnCtx {
+                    ev: self,
+                    criteria: None,
+                };
                 return match gridcraft_functions::call(spec, &xargs, &mut ctx) {
                     Value::Number(p) if p >= 1.0 => {
                         let k = p as u32 - 1;
@@ -1333,9 +1719,16 @@ impl<'h> Evaluator<'h> {
                                 CellRef::new(r.range.end.row, r.range.start.col + k),
                             )
                         };
-                        Ev::R(vec![Area { sheet: r.sheet, range }])
+                        Ev::R(vec![Area {
+                            sheet: r.sheet,
+                            range,
+                        }])
                     }
-                    Value::Error(CellError::NA) if args.get(3).is_some_and(|e| !matches!(e, Expr::Missing)) => self.eval(&args[3]),
+                    Value::Error(CellError::NA)
+                        if args.get(3).is_some_and(|e| !matches!(e, Expr::Missing)) =>
+                    {
+                        self.eval(&args[3])
+                    }
                     Value::Error(e) => err(e),
                     _ => err(CellError::Value),
                 };
@@ -1352,15 +1745,24 @@ impl<'h> Evaluator<'h> {
         };
         let area = match args.get(1).map(|a| self.eval(a)) {
             Some(Ev::R(a)) => a.first().copied(),
-            None => Some(Area { sheet: self.sheet, range: RangeRef::cell(self.at) }),
+            None => Some(Area {
+                sheet: self.sheet,
+                range: RangeRef::cell(self.at),
+            }),
             _ => return err(CellError::Value),
         };
-        let Some(a) = area else { return err(CellError::Ref) };
+        let Some(a) = area else {
+            return err(CellError::Ref);
+        };
         let c = a.range.start;
         let wb = self.host.workbook();
         let sheet = wb.sheet(a.sheet);
         match kind.as_str() {
-            "address" => Ev::V(Value::text(format!("${}${}", gridcraft_core::col_to_letters(c.col), c.row + 1))),
+            "address" => Ev::V(Value::text(format!(
+                "${}${}",
+                gridcraft_core::col_to_letters(c.col),
+                c.row + 1
+            ))),
             "row" => Ev::V(Value::number(c.row as f64 + 1.0)),
             "col" => Ev::V(Value::number(c.col as f64 + 1.0)),
             "contents" => Ev::V(self.host.cell_value(a.sheet, c)),
@@ -1372,12 +1774,28 @@ impl<'h> Evaluator<'h> {
                     _ => "v",
                 }))
             }
-            "width" => Ev::V(Value::number(sheet.map_or(8.43, |s| gridcraft_model::points_to_chars(s.col_width(c.col) as f64)).round())),
+            "width" => Ev::V(Value::number(
+                sheet
+                    .map_or(8.43, |s| {
+                        gridcraft_model::points_to_chars(s.col_width(c.col) as f64)
+                    })
+                    .round(),
+            )),
             "filename" => Ev::V(Value::text(String::new())),
-            "sheetname" => Ev::V(Value::text(sheet.map(|s| s.name.clone()).unwrap_or_default())),
-            "protect" => Ev::V(Value::number(if sheet.is_some_and(|s| wb.styles.get(s.style_id(c)).protection.locked) { 1.0 } else { 0.0 })),
+            "sheetname" => Ev::V(Value::text(
+                sheet.map(|s| s.name.clone()).unwrap_or_default(),
+            )),
+            "protect" => Ev::V(Value::number(
+                if sheet.is_some_and(|s| wb.styles.get(s.style_id(c)).protection.locked) {
+                    1.0
+                } else {
+                    0.0
+                },
+            )),
             "format" => {
-                let code = sheet.map(|s| wb.styles.get(s.style_id(c)).num_fmt.as_str().to_string()).unwrap_or_default();
+                let code = sheet
+                    .map(|s| wb.styles.get(s.style_id(c)).num_fmt.as_str().to_string())
+                    .unwrap_or_default();
                 Ev::V(Value::text(cell_format_code(&code)))
             }
             "color" | "parentheses" => Ev::V(Value::Number(0.0)),
@@ -1403,7 +1821,11 @@ impl<'h> Evaluator<'h> {
             };
             (code, opt, &args[2..])
         } else {
-            let (f, ignore_hidden) = if code > 100 { (code - 100, true) } else { (code, false) };
+            let (f, ignore_hidden) = if code > 100 {
+                (code - 100, true)
+            } else {
+                (code, false)
+            };
             (f, if ignore_hidden { 5 } else { 0 }, &args[1..])
         };
         if !(1..=19).contains(&func) || (name == "SUBTOTAL" && func > 11) {
@@ -1418,7 +1840,11 @@ impl<'h> Evaluator<'h> {
         let skip_nested = name == "SUBTOTAL" || options <= 3;
         let mut values = Vec::new();
         let mut k = None;
-        let refs = if name == "AGGREGATE" && func >= 14 { &rest[..1.min(rest.len())] } else { rest };
+        let refs = if name == "AGGREGATE" && func >= 14 {
+            &rest[..1.min(rest.len())]
+        } else {
+            rest
+        };
         if name == "AGGREGATE" && func >= 14 {
             k = rest.get(1).map(|e| self.value(e));
         }
@@ -1431,13 +1857,20 @@ impl<'h> Evaluator<'h> {
                             let (hidden, nested) = {
                                 let wb = self.host.workbook();
                                 let s = wb.sheet(a.sheet);
-                                let hidden =
-                                    s.is_some_and(|s| if skip_hidden { s.is_row_hidden(c.row) } else { skip_filtered && s.is_row_filtered(c.row) });
+                                let hidden = s.is_some_and(|s| {
+                                    if skip_hidden {
+                                        s.is_row_hidden(c.row)
+                                    } else {
+                                        skip_filtered && s.is_row_filtered(c.row)
+                                    }
+                                });
                                 let nested = skip_nested
-                                    && s.and_then(|s| s.cell(c)).and_then(|cell| cell.formula.as_ref()).is_some_and(|f| {
-                                        let u = f.text.to_ascii_uppercase();
-                                        u.contains("SUBTOTAL(") || u.contains("AGGREGATE(")
-                                    });
+                                    && s.and_then(|s| s.cell(c))
+                                        .and_then(|cell| cell.formula.as_ref())
+                                        .is_some_and(|f| {
+                                            let u = f.text.to_ascii_uppercase();
+                                            u.contains("SUBTOTAL(") || u.contains("AGGREGATE(")
+                                        });
                                 (hidden, nested)
                             };
                             if hidden || nested {
@@ -1451,14 +1884,23 @@ impl<'h> Evaluator<'h> {
                         }
                     }
                 }
-                Ev::V(Value::Array(a)) => values.extend(a.data.iter().filter(|v| !(skip_errors && v.is_error())).cloned()),
+                Ev::V(Value::Array(a)) => values.extend(
+                    a.data
+                        .iter()
+                        .filter(|v| !(skip_errors && v.is_error()))
+                        .cloned(),
+                ),
                 Ev::V(v) => values.push(v),
                 Ev::L(_) => return err(CellError::Value),
             }
         }
         if let Some(k) = k {
             values.push(Value::Empty);
-            return Ev::V(gridcraft_functions::aggregate_values_k(func, &values[..values.len() - 1], &k));
+            return Ev::V(gridcraft_functions::aggregate_values_k(
+                func,
+                &values[..values.len() - 1],
+                &k,
+            ));
         }
         Ev::V(gridcraft_functions::aggregate_values(func, &values))
     }
@@ -1499,7 +1941,8 @@ fn cell_format_code(code: &str) -> String {
 }
 
 fn decimals(c: &str) -> usize {
-    c.split_once('.').map_or(0, |(_, d)| d.chars().take_while(|ch| *ch == '0').count())
+    c.split_once('.')
+        .map_or(0, |(_, d)| d.chars().take_while(|ch| *ch == '0').count())
 }
 
 fn same_kind(a: &Value, b: &Value) -> bool {
@@ -1515,7 +1958,9 @@ pub fn r1c1_to_a1(s: &str, at: CellRef) -> Result<Option<String>, CellError> {
     };
     let conv = |part: &str| -> Result<Option<String>, CellError> {
         let u = part.to_ascii_uppercase();
-        let Some((rpart, cpart)) = u.strip_prefix('R').and_then(|rest| rest.split_once('C')) else { return Ok(None) };
+        let Some((rpart, cpart)) = u.strip_prefix('R').and_then(|rest| rest.split_once('C')) else {
+            return Ok(None);
+        };
         // `None`: not R1C1. `Some(None)`: R1C1, but past the sheet.
         let num = |p: &str, base: u32, max: u32| -> Option<Option<(u32, bool)>> {
             let (v, absolute) = if p.is_empty() {
@@ -1525,11 +1970,25 @@ pub fn r1c1_to_a1(s: &str, at: CellRef) -> Result<Option<String>, CellError> {
             } else {
                 (p.parse::<u32>().ok()?.checked_sub(1).map(i64::from), true)
             };
-            Some(v.filter(|v| (0..i64::from(max)).contains(v)).map(|v| (v as u32, absolute)))
+            Some(
+                v.filter(|v| (0..i64::from(max)).contains(v))
+                    .map(|v| (v as u32, absolute)),
+            )
         };
-        let (Some(r), Some(c)) = (num(rpart, at.row, MAX_ROWS), num(cpart, at.col, MAX_COLS)) else { return Ok(None) };
-        let (Some((r, ra)), Some((c, ca))) = (r, c) else { return Err(CellError::Ref) };
-        Ok(Some(format!("{}{}{}{}", if ca { "$" } else { "" }, gridcraft_core::col_to_letters(c), if ra { "$" } else { "" }, r + 1)))
+        let (Some(r), Some(c)) = (num(rpart, at.row, MAX_ROWS), num(cpart, at.col, MAX_COLS))
+        else {
+            return Ok(None);
+        };
+        let (Some((r, ra)), Some((c, ca))) = (r, c) else {
+            return Err(CellError::Ref);
+        };
+        Ok(Some(format!(
+            "{}{}{}{}",
+            if ca { "$" } else { "" },
+            gridcraft_core::col_to_letters(c),
+            if ra { "$" } else { "" },
+            r + 1
+        )))
     };
     let out = match body.split_once(':') {
         Some((a, b)) => match (conv(a)?, conv(b)?) {
@@ -1597,9 +2056,18 @@ impl Acc {
 
 // ---------------------------------------------------------------- operators
 
-fn map_unary(v: &Value, f: &dyn Fn(f64) -> Value, plus: bool, sys: gridcraft_core::DateSystem) -> Value {
+fn map_unary(
+    v: &Value,
+    f: &dyn Fn(f64) -> Value,
+    plus: bool,
+    sys: gridcraft_core::DateSystem,
+) -> Value {
     match v {
-        Value::Array(a) => Value::from(Array { rows: a.rows, cols: a.cols, data: a.data.iter().map(|x| map_unary(x, f, plus, sys)).collect() }),
+        Value::Array(a) => Value::from(Array {
+            rows: a.rows,
+            cols: a.cols,
+            data: a.data.iter().map(|x| map_unary(x, f, plus, sys)).collect(),
+        }),
         Value::Error(e) => Value::Error(*e),
         Value::Text(_) if plus => v.clone(),
         other => match other.to_number_in(sys) {
@@ -1623,8 +2091,16 @@ pub fn zip2(a: &Value, b: &Value, f: impl Fn(&Value, &Value) -> Value) -> Value 
             }
             Value::from(Array { rows, cols, data })
         }
-        (Value::Array(x), s) => Value::from(Array { rows: x.rows, cols: x.cols, data: x.data.iter().map(|v| f(v, s)).collect() }),
-        (s, Value::Array(y)) => Value::from(Array { rows: y.rows, cols: y.cols, data: y.data.iter().map(|v| f(s, v)).collect() }),
+        (Value::Array(x), s) => Value::from(Array {
+            rows: x.rows,
+            cols: x.cols,
+            data: x.data.iter().map(|v| f(v, s)).collect(),
+        }),
+        (s, Value::Array(y)) => Value::from(Array {
+            rows: y.rows,
+            cols: y.cols,
+            data: y.data.iter().map(|v| f(s, v)).collect(),
+        }),
         (x, y) => f(x, y),
     }
 }
@@ -1640,16 +2116,32 @@ fn broadcast_dim(a: usize, b: usize) -> usize {
 }
 
 fn zip3(c: &Array, t: &Value, f: &Value, g: impl Fn(&Value, &Value, &Value) -> Value) -> Value {
-    let dims = |v: &Value| if let Value::Array(a) = v { (a.rows, a.cols) } else { (1, 1) };
+    let dims = |v: &Value| {
+        if let Value::Array(a) = v {
+            (a.rows, a.cols)
+        } else {
+            (1, 1)
+        }
+    };
     let (tr, tc) = dims(t);
     let (fr, fc) = dims(f);
     let rows = broadcast_dim(broadcast_dim(c.rows, tr), fr);
     let cols = broadcast_dim(broadcast_dim(c.cols, tc), fc);
-    let get = |v: &Value, r: usize, col: usize| if let Value::Array(a) = v { a.get_broadcast(r, col) } else { v.clone() };
+    let get = |v: &Value, r: usize, col: usize| {
+        if let Value::Array(a) = v {
+            a.get_broadcast(r, col)
+        } else {
+            v.clone()
+        }
+    };
     let mut data = Vec::with_capacity(rows * cols);
     for r in 0..rows {
         for col in 0..cols {
-            data.push(g(&c.get_broadcast(r, col), &get(t, r, col), &get(f, r, col)));
+            data.push(g(
+                &c.get_broadcast(r, col),
+                &get(t, r, col),
+                &get(f, r, col),
+            ));
         }
     }
     Value::from(Array { rows, cols, data })
@@ -1675,7 +2167,13 @@ fn binary_scalar(op: BinOp, a: &Value, b: &Value, sys: gridcraft_core::DateSyste
         BinOp::Add => num(|x, y| Value::number(x + y)),
         BinOp::Sub => num(|x, y| Value::number(x - y)),
         BinOp::Mul => num(|x, y| Value::number(x * y)),
-        BinOp::Div => num(|x, y| if y == 0.0 { Value::Error(CellError::Div0) } else { Value::number(x / y) }),
+        BinOp::Div => num(|x, y| {
+            if y == 0.0 {
+                Value::Error(CellError::Div0)
+            } else {
+                Value::number(x / y)
+            }
+        }),
         BinOp::Pow => num(|x, y| {
             if x == 0.0 && y == 0.0 {
                 Value::Error(CellError::Num)
@@ -1717,7 +2215,10 @@ fn ev_shape(ev: &Ev) -> Option<(u32, u32)> {
             [a] => Some((a.range.height(), a.range.width())),
             _ => None,
         },
-        Ev::V(Value::Array(a)) => Some((u32::try_from(a.rows).unwrap_or(u32::MAX), u32::try_from(a.cols).unwrap_or(u32::MAX))),
+        Ev::V(Value::Array(a)) => Some((
+            u32::try_from(a.rows).unwrap_or(u32::MAX),
+            u32::try_from(a.cols).unwrap_or(u32::MAX),
+        )),
         Ev::V(_) => Some((1, 1)),
         Ev::L(_) => None,
     }
@@ -1726,8 +2227,16 @@ fn ev_shape(ev: &Ev) -> Option<(u32, u32)> {
 /// The range SUMIF/AVERAGEIF add up: from the sum range's top-left cell, as many rows and columns
 /// as the criteria range (`height` × `width`), cut off at the sheet's edge.
 pub fn resized_sum_range(sum: RangeRef, height: u32, width: u32) -> RangeRef {
-    let row = sum.start.row.saturating_add(height.saturating_sub(1)).min(MAX_ROWS - 1);
-    let col = sum.start.col.saturating_add(width.saturating_sub(1)).min(MAX_COLS - 1);
+    let row = sum
+        .start
+        .row
+        .saturating_add(height.saturating_sub(1))
+        .min(MAX_ROWS - 1);
+    let col = sum
+        .start
+        .col
+        .saturating_add(width.saturating_sub(1))
+        .min(MAX_COLS - 1);
     RangeRef::new(sum.start, CellRef::new(row, col))
 }
 
@@ -1755,24 +2264,55 @@ pub fn precedents(wb: &Workbook, sheet: usize, e: &Expr) -> (Vec<Area>, bool) {
         Expr::Ref(r) => push(&mut out, r, r.range()),
         // The cells SUMIF/AVERAGEIF really read from the sum range (see `resized_sum_range`); when
         // the criteria range's size isn't known statically, recalculate the formula every time.
-        Expr::Call(n, args) if resizes_sum_range(n, args.len()) => match (args.first(), args.get(2)) {
-            (Some(Expr::Ref(c)), Some(Expr::Ref(s))) => {
-                let (crit, sum) = (c.range(), s.range());
-                push(&mut out, s, resized_sum_range(sum, crit.height(), crit.width()));
+        Expr::Call(n, args) if resizes_sum_range(n, args.len()) => {
+            match (args.first(), args.get(2)) {
+                (Some(Expr::Ref(c)), Some(Expr::Ref(s))) => {
+                    let (crit, sum) = (c.range(), s.range());
+                    push(
+                        &mut out,
+                        s,
+                        resized_sum_range(sum, crit.height(), crit.width()),
+                    );
+                }
+                (
+                    _,
+                    Some(
+                        Expr::Number(_)
+                        | Expr::Text(_)
+                        | Expr::Bool(_)
+                        | Expr::Error(_)
+                        | Expr::Array(_)
+                        | Expr::Missing,
+                    ),
+                ) => {}
+                _ => dynamic = true,
             }
-            (_, Some(Expr::Number(_) | Expr::Text(_) | Expr::Bool(_) | Expr::Error(_) | Expr::Array(_) | Expr::Missing)) => {}
-            _ => dynamic = true,
-        },
+        }
         Expr::Call(n, _)
-            if matches!(n.as_str(), "INDIRECT" | "OFFSET" | "NOW" | "TODAY" | "RAND" | "RANDBETWEEN" | "RANDARRAY" | "CELL" | "INFO") =>
+            if matches!(
+                n.as_str(),
+                "INDIRECT"
+                    | "OFFSET"
+                    | "NOW"
+                    | "TODAY"
+                    | "RAND"
+                    | "RANDBETWEEN"
+                    | "RANDARRAY"
+                    | "CELL"
+                    | "INFO"
+            ) =>
         {
             dynamic = true
         }
         Expr::Name(_) | Expr::Struct(_) => dynamic = true,
-        Expr::Call(n, _) if gridcraft_functions::lookup(n).is_none() && !is_special(n) => dynamic = true,
+        Expr::Call(n, _) if gridcraft_functions::lookup(n).is_none() && !is_special(n) => {
+            dynamic = true
+        }
         // A range ending in a function's result (`A1:INDEX(B1:B9,n)`) covers the cells between
         // the references inside it, not only those references.
-        Expr::Binary(BinOp::Range, a, b) if !matches!((&**a, &**b), (Expr::Ref(_), Expr::Ref(_))) => {
+        Expr::Binary(BinOp::Range, a, b)
+            if !matches!((&**a, &**b), (Expr::Ref(_), Expr::Ref(_))) =>
+        {
             let mut inner = precedents(wb, sheet, a).0;
             inner.extend(precedents(wb, sheet, b).0);
             let mut boxes: Vec<Area> = Vec::new();

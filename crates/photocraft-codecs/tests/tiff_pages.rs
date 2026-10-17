@@ -28,7 +28,11 @@ struct Truth {
 fn truth(n: usize, seed: u64) -> Truth {
     let mut r = Rng::new(seed);
     let u16s: Vec<u16> = (0..n).map(|_| r.next_u64() as u16).collect();
-    Truth { u8s: u16s.iter().map(|v| (v >> 8) as u8).collect(), f32s: u16s.iter().map(|&v| f32::from(v) / 65535.0).collect(), u16s }
+    Truth {
+        u8s: u16s.iter().map(|v| (v >> 8) as u8).collect(),
+        f32s: u16s.iter().map(|&v| f32::from(v) / 65535.0).collect(),
+        u16s,
+    }
 }
 
 /// `(bits, sample format, file bytes in this order, expected native bytes, sample type)`.
@@ -38,7 +42,13 @@ fn depths(t: &Truth, little: bool) -> Vec<Depth> {
     vec![
         (8, 1, t.u8s.clone(), t.u8s.clone(), SampleType::U8),
         (16, 1, u16s(&t.u16s, little), ne16(&t.u16s), SampleType::U16),
-        (32, 3, f32s(&t.f32s, little), ne32f(&t.f32s), SampleType::F32),
+        (
+            32,
+            3,
+            f32s(&t.f32s, little),
+            ne32f(&t.f32s),
+            SampleType::F32,
+        ),
     ]
 }
 
@@ -54,18 +64,38 @@ fn bigtiff_and_classic_in_both_byte_orders_at_every_depth() {
         for (little, big) in ORDERS {
             for (bits, format, file, want, sample) in depths(&t, little) {
                 let photometric = if spp == 1 { 1 } else { 2 };
-                let mut d = strips(w, h, bits, spp, photometric, 2, &file).tag(339, SHORT, &vec![u64::from(format); spp as usize]);
+                let mut d = strips(w, h, bits, spp, photometric, 2, &file).tag(
+                    339,
+                    SHORT,
+                    &vec![u64::from(format); spp as usize],
+                );
                 if spp == 4 {
                     d = d.tag(338, SHORT, &[2]);
                 }
                 let b = build(little, big, &[d], &[0]);
                 let img = decode_ok(&b.bytes);
-                assert_eq!((img.dimensions(), img.sample_type()), ((w, h), sample), "little {little} big {big} bits {bits} spp {spp}");
+                assert_eq!(
+                    (img.dimensions(), img.sample_type()),
+                    ((w, h), sample),
+                    "little {little} big {big} bits {bits} spp {spp}"
+                );
                 assert_eq!(img.layout().channels(), spp as usize);
-                assert_eq!(img.data(), &want[..], "little {little} big {big} bits {bits} spp {spp}");
+                assert_eq!(
+                    img.data(),
+                    &want[..],
+                    "little {little} big {big} bits {bits} spp {spp}"
+                );
                 assert_eq!(img.warnings, []);
                 let info = tiff_info(&b.bytes).unwrap();
-                assert_eq!((info.big_tiff, info.little_endian, info.pages.len(), info.complete), (big, little, 1, true));
+                assert_eq!(
+                    (
+                        info.big_tiff,
+                        info.little_endian,
+                        info.pages.len(),
+                        info.complete
+                    ),
+                    (big, little, 1, true)
+                );
             }
         }
     }
@@ -81,11 +111,21 @@ fn tiles_with_padding_in_both_planar_configurations() {
                 let bps = bits as usize / 8;
                 for planar in [false, true] {
                     let mut d = Dir {
-                        entries: base(w as u32, h as u32, bits, spp as u16, if spp == 1 { 1 } else { 2 }),
+                        entries: base(
+                            w as u32,
+                            h as u32,
+                            bits,
+                            spp as u16,
+                            if spp == 1 { 1 } else { 2 },
+                        ),
                         chunks: tile_split(&file, w, h, spp, bps, 16, 16, planar),
                         tiled: true,
                     };
-                    d = d.tag(322, SHORT, &[16]).tag(323, SHORT, &[16]).tag(339, SHORT, &[u64::from(format)]);
+                    d = d.tag(322, SHORT, &[16]).tag(323, SHORT, &[16]).tag(
+                        339,
+                        SHORT,
+                        &[u64::from(format)],
+                    );
                     if planar {
                         d = d.tag(284, SHORT, &[2]);
                     }
@@ -94,7 +134,11 @@ fn tiles_with_padding_in_both_planar_configurations() {
                     }
                     let b = build(little, big, &[d], &[0]);
                     let img = decode_ok(&b.bytes);
-                    assert_eq!(img.data(), &want[..], "tiles: little {little} big {big} bits {bits} spp {spp} planar {planar}");
+                    assert_eq!(
+                        img.data(),
+                        &want[..],
+                        "tiles: little {little} big {big} bits {bits} spp {spp} planar {planar}"
+                    );
                     let info = tiff_info(&b.bytes).unwrap();
                     assert!(info.pages[0].tiled && info.pages[0].planar == planar);
                 }
@@ -116,12 +160,20 @@ fn planar_strips_at_every_depth() {
                         chunks: planar_strips(&file, w, h, spp, bits as usize / 8, rows),
                         tiled: false,
                     };
-                    d = d.tag(278, LONG, &[rows as u64]).tag(284, SHORT, &[2]).tag(339, SHORT, &[u64::from(format)]);
+                    d = d.tag(278, LONG, &[rows as u64]).tag(284, SHORT, &[2]).tag(
+                        339,
+                        SHORT,
+                        &[u64::from(format)],
+                    );
                     if spp == 4 {
                         d = d.tag(338, SHORT, &[2]);
                     }
                     let img = decode_ok(&build(little, big, &[d], &[0]).bytes);
-                    assert_eq!(img.data(), &want[..], "planar strips: little {little} big {big} bits {bits} spp {spp} rows {rows}");
+                    assert_eq!(
+                        img.data(),
+                        &want[..],
+                        "planar strips: little {little} big {big} bits {bits} spp {spp} rows {rows}"
+                    );
                 }
             }
         }
@@ -132,12 +184,27 @@ fn planar_strips_at_every_depth() {
 fn extra_samples_that_are_not_alpha_are_dropped() {
     let (w, h) = (5usize, 3usize);
     let t = truth(w * h * 5, 4);
-    let rgb_of = |spp: usize, keep: usize| -> Vec<u8> { t.u8s[..w * h * spp].chunks(spp).flat_map(|p| p[..keep].to_vec()).collect() };
+    let rgb_of = |spp: usize, keep: usize| -> Vec<u8> {
+        t.u8s[..w * h * spp]
+            .chunks(spp)
+            .flat_map(|p| p[..keep].to_vec())
+            .collect()
+    };
     for planar in [false, true] {
         // RGB + one unspecified extra sample: RGB.
         let px = &t.u8s[..w * h * 4];
-        let chunks = if planar { planar_strips(px, w, h, 4, 1, 2) } else { px.chunks(w * 4 * 2).map(<[u8]>::to_vec).collect() };
-        let mut d = Dir { entries: base(w as u32, h as u32, 8, 4, 2), chunks, tiled: false }.tag(278, LONG, &[2]).tag(338, SHORT, &[0]);
+        let chunks = if planar {
+            planar_strips(px, w, h, 4, 1, 2)
+        } else {
+            px.chunks(w * 4 * 2).map(<[u8]>::to_vec).collect()
+        };
+        let mut d = Dir {
+            entries: base(w as u32, h as u32, 8, 4, 2),
+            chunks,
+            tiled: false,
+        }
+        .tag(278, LONG, &[2])
+        .tag(338, SHORT, &[0]);
         if planar {
             d = d.tag(284, SHORT, &[2]);
         }
@@ -146,8 +213,18 @@ fn extra_samples_that_are_not_alpha_are_dropped() {
         assert_eq!(img.data(), &rgb_of(4, 3)[..], "planar {planar}");
         // RGB + alpha + an unspecified extra sample: RGBA.
         let px = &t.u8s[..w * h * 5];
-        let chunks = if planar { planar_strips(px, w, h, 5, 1, 2) } else { px.chunks(w * 5 * 2).map(<[u8]>::to_vec).collect() };
-        let mut d = Dir { entries: base(w as u32, h as u32, 8, 5, 2), chunks, tiled: false }.tag(278, LONG, &[2]).tag(338, SHORT, &[2, 0]);
+        let chunks = if planar {
+            planar_strips(px, w, h, 5, 1, 2)
+        } else {
+            px.chunks(w * 5 * 2).map(<[u8]>::to_vec).collect()
+        };
+        let mut d = Dir {
+            entries: base(w as u32, h as u32, 8, 5, 2),
+            chunks,
+            tiled: false,
+        }
+        .tag(278, LONG, &[2])
+        .tag(338, SHORT, &[2, 0]);
         if planar {
             d = d.tag(284, SHORT, &[2]);
         }
@@ -172,26 +249,47 @@ fn extra_samples_that_are_not_alpha_are_dropped() {
 fn alpha_after_an_unspecified_extra_sample_is_kept() {
     // #1349: TIFF 6.0 lets alpha be any extra sample; ExtraSamples [0, 2] puts it second.
     let (w, h) = (5usize, 3usize);
-    for (photometric, color, layout) in [(2u16, 3usize, ChannelLayout::Rgba), (5, 4, ChannelLayout::CmykA), (1, 1, ChannelLayout::GrayA)] {
+    for (photometric, color, layout) in [
+        (2u16, 3usize, ChannelLayout::Rgba),
+        (5, 4, ChannelLayout::CmykA),
+        (1, 1, ChannelLayout::GrayA),
+    ] {
         let spp = color + 2;
         let t = truth(w * h * spp, 13 + spp as u64);
         for (little, big) in ORDERS {
             for (bits, format, file, want_all, sample) in depths(&t, little) {
                 let bps = bits as usize / 8;
                 // The colour samples, then the second extra sample (the alpha).
-                let want: Vec<u8> = want_all.chunks(spp * bps).flat_map(|p| [&p[..color * bps], &p[(color + 1) * bps..]].concat()).collect();
+                let want: Vec<u8> = want_all
+                    .chunks(spp * bps)
+                    .flat_map(|p| [&p[..color * bps], &p[(color + 1) * bps..]].concat())
+                    .collect();
                 for planar in [false, true] {
-                    let chunks = if planar { planar_strips(&file, w, h, spp, bps, 2) } else { file.chunks(w * spp * bps * 2).map(<[u8]>::to_vec).collect() };
-                    let mut d = Dir { entries: base(w as u32, h as u32, bits, spp as u16, photometric), chunks, tiled: false }
-                        .tag(278, LONG, &[2])
-                        .tag(339, SHORT, &vec![u64::from(format); spp])
-                        .tag(338, SHORT, &[0, 2]);
+                    let chunks = if planar {
+                        planar_strips(&file, w, h, spp, bps, 2)
+                    } else {
+                        file.chunks(w * spp * bps * 2).map(<[u8]>::to_vec).collect()
+                    };
+                    let mut d = Dir {
+                        entries: base(w as u32, h as u32, bits, spp as u16, photometric),
+                        chunks,
+                        tiled: false,
+                    }
+                    .tag(278, LONG, &[2])
+                    .tag(339, SHORT, &vec![u64::from(format); spp])
+                    .tag(338, SHORT, &[0, 2]);
                     if planar {
                         d = d.tag(284, SHORT, &[2]);
                     }
                     let img = decode_ok(&build(little, big, &[d], &[0]).bytes);
-                    let what = format!("photometric {photometric} little {little} big {big} bits {bits} planar {planar}");
-                    assert_eq!((img.layout(), img.sample_type()), (layout, sample), "{what}");
+                    let what = format!(
+                        "photometric {photometric} little {little} big {big} bits {bits} planar {planar}"
+                    );
+                    assert_eq!(
+                        (img.layout(), img.sample_type()),
+                        (layout, sample),
+                        "{what}"
+                    );
                     assert_eq!(img.data(), &want[..], "{what}");
                     assert_eq!(img.warnings, [], "{what}");
                 }
@@ -227,29 +325,64 @@ fn associated_alpha_is_made_straight() {
 #[test]
 fn white_is_zero_opens_with_the_right_tones() {
     // #691: 00 FF 00 in a WhiteIsZero file is white, black, white.
-    let b = build(true, false, &[strips(3, 1, 8, 1, 0, 1, &[0x00, 0xff, 0x00])], &[0]);
+    let b = build(
+        true,
+        false,
+        &[strips(3, 1, 8, 1, 0, 1, &[0x00, 0xff, 0x00])],
+        &[0],
+    );
     let ours = decode_ok(&b.bytes);
-    let oracle = image::load_from_memory_with_format(&b.bytes, image::ImageFormat::Tiff).unwrap().into_luma8();
+    let oracle = image::load_from_memory_with_format(&b.bytes, image::ImageFormat::Tiff)
+        .unwrap()
+        .into_luma8();
     assert_eq!(oracle.as_raw(), &[255u8, 0, 255]);
     assert_eq!(ours.data(), &oracle.as_raw()[..]);
     // The BlackIsZero control keeps the stored bytes.
-    let b = build(true, false, &[strips(3, 1, 8, 1, 1, 1, &[0x00, 0xff, 0x00])], &[0]);
+    let b = build(
+        true,
+        false,
+        &[strips(3, 1, 8, 1, 1, 1, &[0x00, 0xff, 0x00])],
+        &[0],
+    );
     assert_eq!(decode_ok(&b.bytes).data(), &[0, 255, 0]);
     // 16-bit, in both byte orders and BigTIFF.
     for (little, big) in ORDERS {
-        let b = build(little, big, &[strips(2, 1, 16, 1, 0, 1, &u16s(&[0, 65535], little))], &[0]);
+        let b = build(
+            little,
+            big,
+            &[strips(2, 1, 16, 1, 0, 1, &u16s(&[0, 65535], little))],
+            &[0],
+        );
         assert_eq!(decode_ok(&b.bytes).to_u16_samples().unwrap(), [65535, 0]);
     }
     // 1-bit (a fax-style scan): bit set = black.
-    let b = build(true, false, &[strips(8, 1, 1, 1, 0, 1, &[0b1010_0000])], &[0]);
-    assert_eq!(decode_ok(&b.bytes).data(), &[0, 255, 0, 255, 255, 255, 255, 255]);
+    let b = build(
+        true,
+        false,
+        &[strips(8, 1, 1, 1, 0, 1, &[0b1010_0000])],
+        &[0],
+    );
+    assert_eq!(
+        decode_ok(&b.bytes).data(),
+        &[0, 255, 0, 255, 255, 255, 255, 255]
+    );
     // With alpha: the gray inverts, the alpha does not.
-    let b = build(true, false, &[strips(2, 1, 8, 2, 0, 1, &[0, 255, 255, 10]).tag(338, SHORT, &[2])], &[0]);
+    let b = build(
+        true,
+        false,
+        &[strips(2, 1, 8, 2, 0, 1, &[0, 255, 255, 10]).tag(338, SHORT, &[2])],
+        &[0],
+    );
     let img = decode_ok(&b.bytes);
     assert_eq!(img.layout(), ChannelLayout::GrayA);
     assert_eq!(img.data(), &[255, 255, 0, 10]);
     // 32-bit float.
-    let b = build(true, false, &[strips(2, 1, 32, 1, 0, 1, &f32s(&[0.0, 0.25], true)).tag(339, SHORT, &[3])], &[0]);
+    let b = build(
+        true,
+        false,
+        &[strips(2, 1, 32, 1, 0, 1, &f32s(&[0.0, 0.25], true)).tag(339, SHORT, &[3])],
+        &[0],
+    );
     assert_eq!(decode_ok(&b.bytes).to_f32_samples().unwrap(), [1.0, 0.75]);
 }
 
@@ -264,7 +397,14 @@ fn bigtiff_orientation_is_applied_like_classic_tiff() {
         let img = decode_ok(&b.bytes);
         assert_eq!(img.dimensions(), (1, 2), "little {little} big {big}");
         assert_eq!(img.data(), &[10, 200]);
-        let kept = decode_with(&b.bytes, &DecodeOptions { keep_orientation: true, ..Default::default() }).unwrap();
+        let kept = decode_with(
+            &b.bytes,
+            &DecodeOptions {
+                keep_orientation: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(kept.dimensions(), (2, 1));
     }
 }
@@ -280,7 +420,10 @@ fn palette_images_open_as_rgb() {
     for (little, big) in ORDERS {
         let d = strips(3, 1, 8, 1, 3, 1, &[0, 1, 0]).tag(320, SHORT, &map);
         let img = decode_ok(&build(little, big, &[d], &[0]).bytes);
-        assert_eq!((img.layout(), img.sample_type()), (ChannelLayout::Rgb, SampleType::U8));
+        assert_eq!(
+            (img.layout(), img.sample_type()),
+            (ChannelLayout::Rgb, SampleType::U8)
+        );
         assert_eq!(img.data(), &[255, 0, 0, 16, 32, 48, 255, 0, 0]);
     }
     // 4-bit indices.
@@ -288,7 +431,10 @@ fn palette_images_open_as_rgb() {
     map[15] = 0xffff;
     map[16 + 15] = 0x8000;
     let d = strips(2, 1, 4, 1, 3, 1, &[0xf0]).tag(320, SHORT, &map);
-    assert_eq!(decode_ok(&build(true, false, &[d], &[0]).bytes).data(), &[255, 128, 0, 0, 0, 0]);
+    assert_eq!(
+        decode_ok(&build(true, false, &[d], &[0]).bytes).data(),
+        &[255, 128, 0, 0, 0, 0]
+    );
     // A missing or short colour map is an error.
     let d = strips(2, 1, 8, 1, 3, 1, &[0, 1]);
     assert!(decode(&build(true, false, &[d], &[0]).bytes).is_err());
@@ -299,29 +445,91 @@ fn palette_images_open_as_rgb() {
 #[test]
 fn wide_and_odd_sample_formats() {
     for (little, big) in ORDERS {
-        let e = |v: u32| if little { v.to_le_bytes() } else { v.to_be_bytes() };
+        let e = |v: u32| {
+            if little {
+                v.to_le_bytes()
+            } else {
+                v.to_be_bytes()
+            }
+        };
         // 32-bit unsigned keeps its top 16 bits.
-        let px: Vec<u8> = [0x1234_5678u32, 0xffff_0000].iter().flat_map(|&v| e(v)).collect();
+        let px: Vec<u8> = [0x1234_5678u32, 0xffff_0000]
+            .iter()
+            .flat_map(|&v| e(v))
+            .collect();
         let img = decode_ok(&build(little, big, &[strips(2, 1, 32, 1, 1, 1, &px)], &[0]).bytes);
         assert_eq!(img.to_u16_samples().unwrap(), [0x1234, 0xffff]);
         // 64-bit float becomes 32-bit float.
-        let px: Vec<u8> = [0.5f64, 2.0].iter().flat_map(|v| if little { v.to_le_bytes() } else { v.to_be_bytes() }).collect();
-        let img = decode_ok(&build(little, big, &[strips(2, 1, 64, 1, 1, 1, &px).tag(339, SHORT, &[3])], &[0]).bytes);
+        let px: Vec<u8> = [0.5f64, 2.0]
+            .iter()
+            .flat_map(|v| {
+                if little {
+                    v.to_le_bytes()
+                } else {
+                    v.to_be_bytes()
+                }
+            })
+            .collect();
+        let img = decode_ok(
+            &build(
+                little,
+                big,
+                &[strips(2, 1, 64, 1, 1, 1, &px).tag(339, SHORT, &[3])],
+                &[0],
+            )
+            .bytes,
+        );
         assert_eq!(img.to_f32_samples().unwrap(), [0.5, 2.0]);
         // 16-bit float stays half.
-        let px: Vec<u8> = [f16::from_f32(0.25), f16::ONE].iter().flat_map(|v| if little { v.to_le_bytes() } else { v.to_be_bytes() }).collect();
-        let img = decode_ok(&build(little, big, &[strips(2, 1, 16, 1, 1, 1, &px).tag(339, SHORT, &[3])], &[0]).bytes);
+        let px: Vec<u8> = [f16::from_f32(0.25), f16::ONE]
+            .iter()
+            .flat_map(|v| {
+                if little {
+                    v.to_le_bytes()
+                } else {
+                    v.to_be_bytes()
+                }
+            })
+            .collect();
+        let img = decode_ok(
+            &build(
+                little,
+                big,
+                &[strips(2, 1, 16, 1, 1, 1, &px).tag(339, SHORT, &[3])],
+                &[0],
+            )
+            .bytes,
+        );
         assert_eq!(img.sample_type(), SampleType::F16);
         assert_eq!(img.to_normalized(), [0.25, 1.0]);
     }
     // 2- and 4-bit gray, rows padded to a byte, in several strips.
-    let img = decode_ok(&build(true, false, &[strips(3, 2, 2, 1, 1, 1, &[0b0001_1011, 0b1110_0100])], &[0]).bytes);
+    let img = decode_ok(
+        &build(
+            true,
+            false,
+            &[strips(3, 2, 2, 1, 1, 1, &[0b0001_1011, 0b1110_0100])],
+            &[0],
+        )
+        .bytes,
+    );
     assert_eq!(img.data(), &[0, 85, 170, 255, 170, 85]);
-    let img = decode_ok(&build(false, true, &[strips(3, 2, 4, 1, 1, 1, &[0x0f, 0x80, 0x12, 0x30])], &[0]).bytes);
+    let img = decode_ok(
+        &build(
+            false,
+            true,
+            &[strips(3, 2, 4, 1, 1, 1, &[0x0f, 0x80, 0x12, 0x30])],
+            &[0],
+        )
+        .bytes,
+    );
     assert_eq!(img.data(), &[0, 255, 136, 17, 34, 51]);
     // Signed integers are unsupported, not a crash.
     let d = strips(2, 1, 16, 1, 1, 1, &[0, 0, 0, 0]).tag(339, SHORT, &[2]);
-    assert!(matches!(decode(&build(true, false, &[d], &[0]).bytes), Err(CodecError::Unsupported { .. })));
+    assert!(matches!(
+        decode(&build(true, false, &[d], &[0]).bytes),
+        Err(CodecError::Unsupported { .. })
+    ));
 }
 
 /// A flat gray page of `w`×`h` at `level`, with an optional NewSubfileType.
@@ -348,11 +556,22 @@ fn every_ifd_and_subifd_is_listed_and_decodable() {
         let b = build(little, big, &dirs, &[0, 1, 2, 3]);
         let info = tiff_info(&b.bytes).unwrap();
         assert!(info.complete);
-        let summary: Vec<(u32, Option<usize>, TiffPageKind)> = info.pages.iter().map(|p| (p.width, p.parent, p.kind)).collect();
+        let summary: Vec<(u32, Option<usize>, TiffPageKind)> = info
+            .pages
+            .iter()
+            .map(|p| (p.width, p.parent, p.kind))
+            .collect();
         use TiffPageKind::*;
         assert_eq!(
             summary,
-            [(4, None, ReducedResolution), (9, None, Page), (3, Some(1), ReducedResolution), (2, Some(1), ReducedResolution), (9, None, Mask), (5, None, Page)]
+            [
+                (4, None, ReducedResolution),
+                (9, None, Page),
+                (3, Some(1), ReducedResolution),
+                (2, Some(1), ReducedResolution),
+                (9, None, Mask),
+                (5, None, Page)
+            ]
         );
         assert_eq!(info.pages[1].ifd_offset, b.ifd_at[1]);
         assert_eq!((info.default_page(), info.page_count()), (Some(1), 2));
@@ -361,11 +580,21 @@ fn every_ifd_and_subifd_is_listed_and_decodable() {
         assert_eq!((img.dimensions(), img.data()[0]), ((9, 7), 2));
         assert_eq!(img.warnings, [DecodeWarning::MorePages { total: Some(2) }]);
         // Every directory decodes on request.
-        for (i, (w, level)) in [(4, 1u8), (9, 2), (3, 5), (2, 6), (9, 3), (5, 4)].into_iter().enumerate() {
+        for (i, (w, level)) in [(4, 1u8), (9, 2), (3, 5), (2, 6), (9, 3), (5, 4)]
+            .into_iter()
+            .enumerate()
+        {
             let img = decode_tiff_page(&b.bytes, i, &DecodeOptions::default()).unwrap();
-            assert_eq!((img.width(), img.data()[0]), (w, level), "page {i} little {little} big {big}");
+            assert_eq!(
+                (img.width(), img.data()[0]),
+                (w, level),
+                "page {i} little {little} big {big}"
+            );
         }
-        assert!(matches!(decode_tiff_page(&b.bytes, 6, &DecodeOptions::default()), Err(CodecError::InvalidImage(_))));
+        assert!(matches!(
+            decode_tiff_page(&b.bytes, 6, &DecodeOptions::default()),
+            Err(CodecError::InvalidImage(_))
+        ));
     }
 }
 
@@ -380,7 +609,12 @@ fn a_file_of_only_thumbnails_still_opens() {
 fn cyclic_chains_and_subifds_terminate() {
     for (little, big) in ORDERS {
         // IFD1 points back to IFD0.
-        let mut b = build(little, big, &[gray_page(2, 2, 1, None), gray_page(2, 2, 2, None)], &[0, 1]);
+        let mut b = build(
+            little,
+            big,
+            &[gray_page(2, 2, 1, None), gray_page(2, 2, 2, None)],
+            &[0, 1],
+        );
         let first = b.ifd_at[0];
         set_next(&mut b, little, big, 1, first);
         let info = tiff_info(&b.bytes).unwrap();
@@ -395,13 +629,26 @@ fn cyclic_chains_and_subifds_terminate() {
         assert_eq!(decode_ok(&b.bytes).warnings, []);
         // A SubIFD listing its own parent, and one listing itself.
         let sub_ty = if big { IFD8 } else { IFD };
-        let b = build(little, big, &[gray_page(2, 2, 1, None).sub_ifds(sub_ty, &[1]), gray_page(1, 1, 2, Some(1)).sub_ifds(sub_ty, &[0, 1])], &[0]);
+        let b = build(
+            little,
+            big,
+            &[
+                gray_page(2, 2, 1, None).sub_ifds(sub_ty, &[1]),
+                gray_page(1, 1, 2, Some(1)).sub_ifds(sub_ty, &[0, 1]),
+            ],
+            &[0],
+        );
         let info = tiff_info(&b.bytes).unwrap();
         assert_eq!((info.pages.len(), info.complete), (2, false));
         decode_ok(&b.bytes);
         // A next pointer past the end, or into the header.
         for to in [b.bytes.len() as u64 + 100, 3, u64::MAX] {
-            let mut b = build(little, big, &[gray_page(2, 2, 1, None), gray_page(2, 2, 2, None)], &[0, 1]);
+            let mut b = build(
+                little,
+                big,
+                &[gray_page(2, 2, 1, None), gray_page(2, 2, 2, None)],
+                &[0, 1],
+            );
             set_next(&mut b, little, big, 1, to);
             let info = tiff_info(&b.bytes).unwrap();
             assert_eq!((info.pages.len(), info.complete), (2, false));
@@ -418,7 +665,10 @@ fn the_chain_walk_is_capped() {
     let b = build(true, false, &dirs, &chain);
     let info = tiff_info(&b.bytes).unwrap();
     assert_eq!((info.pages.len(), info.complete), (10_000, false));
-    assert_eq!(decode_ok(&b.bytes).warnings, [DecodeWarning::MorePages { total: None }]);
+    assert_eq!(
+        decode_ok(&b.bytes).warnings,
+        [DecodeWarning::MorePages { total: None }]
+    );
 }
 
 #[test]
@@ -431,14 +681,24 @@ fn image_data_cut_off_decodes_with_a_warning() {
         let len = b.bytes.len() as u64;
         patch_value(&mut b, little, big, 0, 273, 3, len + 1000);
         let img = decode_ok(&b.bytes);
-        assert_eq!(img.warnings, [DecodeWarning::Truncated { format: Format::Tiff }]);
+        assert_eq!(
+            img.warnings,
+            [DecodeWarning::Truncated {
+                format: Format::Tiff
+            }]
+        );
         assert_eq!(&img.data()[..24], &px[..24]);
         assert_eq!(&img.data()[24..], &[0; 8]);
         // A strip running into the end of the file.
         let mut b = build(little, big, &[strips(w, h, 8, 1, 1, 2, &px)], &[0]);
         let len = b.bytes.len() as u64;
         patch_value(&mut b, little, big, 0, 273, 1, len - 3);
-        assert_eq!(decode_ok(&b.bytes).warnings, [DecodeWarning::Truncated { format: Format::Tiff }]);
+        assert_eq!(
+            decode_ok(&b.bytes).warnings,
+            [DecodeWarning::Truncated {
+                format: Format::Tiff
+            }]
+        );
         // Every strip missing: nothing to show, an error.
         let mut b = build(little, big, &[strips(w, h, 8, 1, 1, 2, &px)], &[0]);
         let len = b.bytes.len() as u64;
@@ -451,22 +711,47 @@ fn image_data_cut_off_decodes_with_a_warning() {
 
 #[test]
 fn hostile_sizes_and_counts_are_refused_without_allocating() {
-    let tight = DecodeOptions { limits: Limits { max_alloc: 64 << 20, ..Limits::default() }, ..Default::default() };
+    let tight = DecodeOptions {
+        limits: Limits {
+            max_alloc: 64 << 20,
+            ..Limits::default()
+        },
+        ..Default::default()
+    };
     for (little, big) in ORDERS {
         let px = vec![7u8; 16];
         let fresh = || build(little, big, &[strips(4, 4, 8, 1, 1, 1, &px)], &[0]);
         // Huge declared dimensions: over the limits, or far more than the file can hold.
-        for (wv, hv) in [(1u64 << 31, 4u64), (4, 1 << 31), (u32::MAX as u64, u32::MAX as u64), (200_000, 200_000), (30_000, 30_000)] {
+        for (wv, hv) in [
+            (1u64 << 31, 4u64),
+            (4, 1 << 31),
+            (u32::MAX as u64, u32::MAX as u64),
+            (200_000, 200_000),
+            (30_000, 30_000),
+        ] {
             let mut b = fresh();
             patch_value(&mut b, little, big, 0, 256, 0, wv);
             patch_value(&mut b, little, big, 0, 257, 0, hv);
             assert!(decode(&b.bytes).is_err(), "{wv}x{hv}");
-            assert!(decode_with(&b.bytes, &DecodeOptions { limits: Limits::none(), ..Default::default() }).is_err(), "{wv}x{hv} without limits");
+            assert!(
+                decode_with(
+                    &b.bytes,
+                    &DecodeOptions {
+                        limits: Limits::none(),
+                        ..Default::default()
+                    }
+                )
+                .is_err(),
+                "{wv}x{hv} without limits"
+            );
         }
         // A strip-offset count far past the end of the file.
         let mut b = fresh();
         patch_count(&mut b, little, big, 0, 273, 1 << 30);
-        assert!(matches!(decode(&b.bytes), Err(CodecError::Malformed { .. })));
+        assert!(matches!(
+            decode(&b.bytes),
+            Err(CodecError::Malformed { .. })
+        ));
         let mut b = fresh();
         patch_count(&mut b, little, big, 0, 258, u32::MAX as u64);
         assert!(decode(&b.bytes).is_err());
@@ -478,9 +763,17 @@ fn hostile_sizes_and_counts_are_refused_without_allocating() {
         }
         // Absurd tiles over a tiny image, chunky and planar.
         for planar in [false, true] {
-            for (tw, th) in [(1u64 << 30, 16u64), (16, 1 << 30), (u32::MAX as u64, u32::MAX as u64)] {
+            for (tw, th) in [
+                (1u64 << 30, 16u64),
+                (16, 1 << 30),
+                (u32::MAX as u64, u32::MAX as u64),
+            ] {
                 let spp = if planar { 3 } else { 1 };
-                let mut d = Dir { entries: base(4, 4, 8, spp, if planar { 2 } else { 1 }), chunks: vec![vec![1u8; 64]; spp as usize], tiled: true };
+                let mut d = Dir {
+                    entries: base(4, 4, 8, spp, if planar { 2 } else { 1 }),
+                    chunks: vec![vec![1u8; 64]; spp as usize],
+                    tiled: true,
+                };
                 d = d.tag(322, LONG, &[tw]).tag(323, LONG, &[th]);
                 if planar {
                     d = d.tag(284, SHORT, &[2]);
@@ -509,18 +802,38 @@ fn banded_decode_matches_the_encoder_on_larger_images() {
         (ChannelLayout::Cmyk, SampleType::U8),
     ] {
         let img = common::synth(613, 411, layout, sample, 3, 0.2);
-        for c in [TiffCompression::None, TiffCompression::Lzw, TiffCompression::Deflate, TiffCompression::PackBits] {
-            let bytes = encode(&img, Format::Tiff, &EncodeOptions { tiff_compression: c, ..Default::default() }).unwrap();
+        for c in [
+            TiffCompression::None,
+            TiffCompression::Lzw,
+            TiffCompression::Deflate,
+            TiffCompression::PackBits,
+        ] {
+            let bytes = encode(
+                &img,
+                Format::Tiff,
+                &EncodeOptions {
+                    tiff_compression: c,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
             let back = decode_ok(&bytes);
             assert_eq!(back.data(), img.data(), "{layout:?} {sample:?} {c:?}");
         }
     }
     // Tiles across many bands.
     let t = truth(300 * 260 * 3, 77);
-    let d = Dir { entries: base(300, 260, 16, 3, 2), chunks: tile_split(&u16s(&t.u16s, false), 300, 260, 3, 2, 64, 32, false), tiled: true }
-        .tag(322, SHORT, &[64])
-        .tag(323, SHORT, &[32]);
-    assert_eq!(decode_ok(&build(false, true, &[d], &[0]).bytes).data(), &ne16(&t.u16s)[..]);
+    let d = Dir {
+        entries: base(300, 260, 16, 3, 2),
+        chunks: tile_split(&u16s(&t.u16s, false), 300, 260, 3, 2, 64, 32, false),
+        tiled: true,
+    }
+    .tag(322, SHORT, &[64])
+    .tag(323, SHORT, &[32]);
+    assert_eq!(
+        decode_ok(&build(false, true, &[d], &[0]).bytes).data(),
+        &ne16(&t.u16s)[..]
+    );
 }
 
 #[test]
@@ -528,17 +841,50 @@ fn bigtiff_is_written_on_request_and_reads_back() {
     let mut img = common::synth(23, 17, ChannelLayout::Rgba, SampleType::U16, 2, 0.3);
     img.meta.photoshop_layers = Some(b"Adobe Photoshop Document Data Block\0MIB8ryaL".to_vec());
     img.meta.photoshop_resources = Some(b"8BIM\x04\x04\0\0\0\0\0\0".to_vec());
-    for c in [TiffCompression::None, TiffCompression::Deflate, TiffCompression::Lzw] {
-        let classic = encode(&img, Format::Tiff, &EncodeOptions { tiff_compression: c, ..Default::default() }).unwrap();
-        let big = encode(&img, Format::Tiff, &EncodeOptions { tiff_compression: c, tiff_bigtiff: true, ..Default::default() }).unwrap();
-        let version = |b: &[u8]| if b.starts_with(b"II") { u16::from_le_bytes([b[2], b[3]]) } else { u16::from_be_bytes([b[2], b[3]]) };
+    for c in [
+        TiffCompression::None,
+        TiffCompression::Deflate,
+        TiffCompression::Lzw,
+    ] {
+        let classic = encode(
+            &img,
+            Format::Tiff,
+            &EncodeOptions {
+                tiff_compression: c,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let big = encode(
+            &img,
+            Format::Tiff,
+            &EncodeOptions {
+                tiff_compression: c,
+                tiff_bigtiff: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let version = |b: &[u8]| {
+            if b.starts_with(b"II") {
+                u16::from_le_bytes([b[2], b[3]])
+            } else {
+                u16::from_be_bytes([b[2], b[3]])
+            }
+        };
         assert_eq!((version(&classic), version(&big)), (42, 43));
         assert!(tiff_info(&big).unwrap().big_tiff);
         let back = decode_ok(&big);
         assert_eq!(back.data(), img.data(), "{c:?}");
         assert_eq!(back.meta.photoshop_layers, img.meta.photoshop_layers);
         assert_eq!(back.meta.photoshop_resources, img.meta.photoshop_resources);
-        assert_eq!(tiff_photoshop_tags(&big), (img.meta.photoshop_resources.as_deref(), img.meta.photoshop_layers.as_deref()));
+        assert_eq!(
+            tiff_photoshop_tags(&big),
+            (
+                img.meta.photoshop_resources.as_deref(),
+                img.meta.photoshop_layers.as_deref()
+            )
+        );
     }
 }
 
@@ -548,15 +894,28 @@ fn zoo() -> Vec<Vec<u8>> {
     let t = truth(6 * 5 * 4, 5);
     for (little, big) in ORDERS {
         let sub_ty = if big { IFD8 } else { IFD };
-        let tiles = Dir { entries: base(6, 5, 8, 3, 2), chunks: tile_split(&t.u8s, 6, 5, 3, 1, 16, 16, true), tiled: true }
-            .tag(322, SHORT, &[16])
-            .tag(323, SHORT, &[16])
-            .tag(284, SHORT, &[2]);
-        let planar = Dir { entries: base(6, 5, 16, 4, 2), chunks: planar_strips(&u16s(&t.u16s, little), 6, 5, 4, 2, 2), tiled: false }
-            .tag(278, SHORT, &[2])
-            .tag(284, SHORT, &[2])
-            .tag(338, SHORT, &[1]);
-        let dirs = vec![gray_page(3, 2, 1, Some(1)), tiles.sub_ifds(sub_ty, &[3]), planar, gray_page(2, 2, 4, Some(1)).tag(274, SHORT, &[6])];
+        let tiles = Dir {
+            entries: base(6, 5, 8, 3, 2),
+            chunks: tile_split(&t.u8s, 6, 5, 3, 1, 16, 16, true),
+            tiled: true,
+        }
+        .tag(322, SHORT, &[16])
+        .tag(323, SHORT, &[16])
+        .tag(284, SHORT, &[2]);
+        let planar = Dir {
+            entries: base(6, 5, 16, 4, 2),
+            chunks: planar_strips(&u16s(&t.u16s, little), 6, 5, 4, 2, 2),
+            tiled: false,
+        }
+        .tag(278, SHORT, &[2])
+        .tag(284, SHORT, &[2])
+        .tag(338, SHORT, &[1]);
+        let dirs = vec![
+            gray_page(3, 2, 1, Some(1)),
+            tiles.sub_ifds(sub_ty, &[3]),
+            planar,
+            gray_page(2, 2, 4, Some(1)).tag(274, SHORT, &[6]),
+        ];
         v.push(build(little, big, &dirs, &[0, 1, 2]).bytes);
         v.push(build(little, big, &[strips(5, 3, 1, 1, 0, 2, &[0xa5; 3])], &[0]).bytes);
     }
@@ -565,7 +924,16 @@ fn zoo() -> Vec<Vec<u8>> {
 
 fn poke(bytes: &[u8]) {
     let _ = decode(bytes);
-    let _ = decode_with(bytes, &DecodeOptions { limits: Limits { max_alloc: 16 << 20, ..Limits::default() }, ..Default::default() });
+    let _ = decode_with(
+        bytes,
+        &DecodeOptions {
+            limits: Limits {
+                max_alloc: 16 << 20,
+                ..Limits::default()
+            },
+            ..Default::default()
+        },
+    );
     let _ = exif_orientation(bytes);
     let _ = tiff_orientation(bytes);
     if let Ok(info) = tiff_info(bytes) {
@@ -609,7 +977,10 @@ fn zoo_decodes_and_never_panics_when_cut_or_corrupted() {
 #[test]
 #[ignore = "long fuzz run"]
 fn zoo_long_random_mutations() {
-    let iters: usize = std::env::var("TIFF_FUZZ_ITERS").ok().and_then(|v| v.parse().ok()).unwrap_or(20_000);
+    let iters: usize = std::env::var("TIFF_FUZZ_ITERS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(20_000);
     let mut r = Rng::new(0x5eed);
     let zoo = zoo();
     for k in 0..iters {

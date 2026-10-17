@@ -10,8 +10,8 @@ pub fn toggle_console() {
     {
         use std::cell::Cell;
         use windows_sys::Win32::System::Console::{
-            AllocConsole, FreeConsole, SetConsoleOutputCP, SetStdHandle,
-            STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+            AllocConsole, FreeConsole, SetConsoleOutputCP, SetStdHandle, STD_ERROR_HANDLE,
+            STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
         };
         thread_local! {
             static CONSOLE_SHOWN: Cell<bool> = const { Cell::new(false) };
@@ -49,7 +49,9 @@ mod tests {
     fn console_can_be_reopened_and_detached_stderr_remains_writable() {
         use std::io::Write;
         use windows_sys::Win32::System::Console::{FreeConsole, GetConsoleWindow};
-        unsafe { FreeConsole(); }
+        unsafe {
+            FreeConsole();
+        }
         for _ in 0..2 {
             crate::uisettings::with_mut(|values| values.show_console.set_value(true));
             super::toggle_console();

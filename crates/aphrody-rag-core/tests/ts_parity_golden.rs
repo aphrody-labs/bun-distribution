@@ -52,8 +52,14 @@ fn hits_for(q: &str) -> Vec<RetrievedHit> {
             hit(4, "Freezer Hell", "/wiki/freezer-hell", "final form", 0.8),
         ],
         "zeni currency" => {
-            vec![hit(5, "Currency", "/wiki/monnaie", "The zeni is used on Earth.", 0.7)]
-        },
+            vec![hit(
+                5,
+                "Currency",
+                "/wiki/monnaie",
+                "The zeni is used on Earth.",
+                0.7,
+            )]
+        }
         "kamehameha" => vec![
             hit(6, "Goku", "/wiki/goku", "uses techniques", 0.4),
             hit(7, "Kamehameha", "/wiki/kamehameha", "signature move", 0.85),
@@ -75,7 +81,11 @@ fn cases() -> Vec<GoldCase> {
             expect_url: vec!["/wiki/freezer".into(), "/wiki/freezer-hell".into()],
             ..Default::default()
         },
-        GoldCase { q: "zeni currency".into(), expect: vec!["zeni".into()], ..Default::default() },
+        GoldCase {
+            q: "zeni currency".into(),
+            expect: vec!["zeni".into()],
+            ..Default::default()
+        },
         GoldCase {
             q: "kamehameha".into(),
             expect_url: vec!["/wiki/kamehameha".into()],
@@ -103,7 +113,10 @@ fn eval_matches_bun_generated_golden() {
         normalize_url("https://www.dragonballfr.com/wiki/Freezer/"),
         golden.normalize_url["https://www.dragonballfr.com/wiki/Freezer/"]
     );
-    assert_eq!(normalize_url("/wiki/Freezer/?x=1"), golden.normalize_url["/wiki/Freezer/?x=1"]);
+    assert_eq!(
+        normalize_url("/wiki/Freezer/?x=1"),
+        golden.normalize_url["/wiki/Freezer/?x=1"]
+    );
 
     assert_eq!(
         matches_expected_url("/wiki/freezer-futur", "/wiki/freezer"),
@@ -123,7 +136,10 @@ fn eval_matches_bun_generated_golden() {
         .collect();
     let overall = aggregate(&results);
 
-    assert_eq!(overall.cases, golden.overall["cases"].as_u64().unwrap() as usize);
+    assert_eq!(
+        overall.cases,
+        golden.overall["cases"].as_u64().unwrap() as usize
+    );
     for &k in &aphrody_rag_core::eval::RANKS {
         let expected = golden.overall["recall"][k.to_string()].as_f64().unwrap();
         assert!(
@@ -133,16 +149,33 @@ fn eval_matches_bun_generated_golden() {
         );
     }
     assert!(approx(overall.mrr, golden.overall["mrr"].as_f64().unwrap()));
-    assert!(approx(overall.ndcg, golden.overall["ndcg"].as_f64().unwrap()));
+    assert!(approx(
+        overall.ndcg,
+        golden.overall["ndcg"].as_f64().unwrap()
+    ));
 
     let by_tag = aggregate_by_tag(&results);
     for (ts_tag, expected) in &golden.by_tag {
         // The Rust port renames the TS default group "sans-tag" to "untagged".
-        let rust_tag = if ts_tag == "sans-tag" { "untagged" } else { ts_tag.as_str() };
+        let rust_tag = if ts_tag == "sans-tag" {
+            "untagged"
+        } else {
+            ts_tag.as_str()
+        };
         let actual = &by_tag[rust_tag];
-        assert_eq!(actual.cases, expected["cases"].as_u64().unwrap() as usize, "tag {rust_tag}");
-        assert!(approx(actual.mrr, expected["mrr"].as_f64().unwrap()), "tag {rust_tag} mrr");
-        assert!(approx(actual.ndcg, expected["ndcg"].as_f64().unwrap()), "tag {rust_tag} ndcg");
+        assert_eq!(
+            actual.cases,
+            expected["cases"].as_u64().unwrap() as usize,
+            "tag {rust_tag}"
+        );
+        assert!(
+            approx(actual.mrr, expected["mrr"].as_f64().unwrap()),
+            "tag {rust_tag} mrr"
+        );
+        assert!(
+            approx(actual.ndcg, expected["ndcg"].as_f64().unwrap()),
+            "tag {rust_tag} ndcg"
+        );
     }
 }
 
@@ -224,7 +257,12 @@ fn prose_chunker_matches_bun_golden_for_french_accents_under_utf16() {
         "chunk count must match the real chunkDocument run"
     );
     let actual: Vec<&str> = chunks.iter().map(|c| c.text.as_str()).collect();
-    let expected: Vec<&str> = golden.fr.chunks.iter().map(|c| c.content.as_str()).collect();
+    let expected: Vec<&str> = golden
+        .fr
+        .chunks
+        .iter()
+        .map(|c| c.content.as_str())
+        .collect();
     assert_eq!(actual, expected);
 }
 
@@ -296,15 +334,20 @@ fn prose_chunker_default_options_split_japanese_without_ascii_punctuation() {
         after_opts.max_chars,
     );
 
-    assert_eq!(before.len(), 1, "before: parity mode still can't split CJK-only prose");
-    assert!(
-        before
-            .iter()
-            .any(|c| aphrody_rag_core::text::measure(&c.text, aphrody_rag_core::LengthUnit::Utf16)
-                > before_opts.max_chars)
+    assert_eq!(
+        before.len(),
+        1,
+        "before: parity mode still can't split CJK-only prose"
     );
+    assert!(before.iter().any(|c| aphrody_rag_core::text::measure(
+        &c.text,
+        aphrody_rag_core::LengthUnit::Utf16
+    ) > before_opts.max_chars));
 
-    assert!(after.len() > 1, "after: the default cjk_sentence_breaks must split this paragraph");
+    assert!(
+        after.len() > 1,
+        "after: the default cjk_sentence_breaks must split this paragraph"
+    );
     for c in &after {
         let len = aphrody_rag_core::text::measure(&c.text, aphrody_rag_core::LengthUnit::Utf16);
         assert!(

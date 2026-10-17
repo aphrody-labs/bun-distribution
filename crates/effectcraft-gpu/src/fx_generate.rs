@@ -69,7 +69,14 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// Run a per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, b: GBuf, aux: Option<&crate::context::GpuImage>, data: Option<&[f32]>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    b: GBuf,
+    aux: Option<&crate::context::GpuImage>,
+    data: Option<&[f32]>,
+) -> Option<GBuf> {
     let buf = data.map(|d| e.data(d));
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, aux, &out, buf.as_ref());
@@ -162,14 +169,30 @@ fn camera_lens(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
             return None;
         }
         let pre = e.image(w + 1, h);
-        e.dispatch("gen_row_prefix", &Params::default(), &src, None, &pre, None, (h.div_ceil(64), 1));
+        e.dispatch(
+            "gen_row_prefix",
+            &Params::default(),
+            &src,
+            None,
+            &pre,
+            None,
+            (h.div_ceil(64), 1),
+        );
         Some(pre)
     } else {
         None
     };
-    let data: Vec<f32> = spans.iter().flat_map(|&(dy, l, r)| [dy as f32, l as f32, r as f32]).collect();
+    let data: Vec<f32> = spans
+        .iter()
+        .flat_map(|&(dy, l, r)| [dy as f32, l as f32, r as f32])
+        .collect();
     let mut p = Params::default();
-    p.u[0] = [spans.len() as u32, repeat as u32, linear as u32, prefix as u32];
+    p.u[0] = [
+        spans.len() as u32,
+        repeat as u32,
+        linear as u32,
+        prefix as u32,
+    ];
     p.f[0][0] = norm as f32;
     let buf = e.data(&data);
     let out = e.scratch(w, h);
@@ -188,7 +211,10 @@ fn linear_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (dx, dy) = (ang.sin(), -ang.cos());
     let corners = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)];
     let proj: Vec<f64> = corners.iter().map(|(x, y)| x * dx + y * dy).collect();
-    let (lo, hi) = (proj.iter().cloned().fold(f64::INFINITY, f64::min), proj.iter().cloned().fold(f64::NEG_INFINITY, f64::max));
+    let (lo, hi) = (
+        proj.iter().cloned().fold(f64::INFINITY, f64::min),
+        proj.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
+    );
     let edge = lo - feather + (hi - lo + 2.0 * feather) * done;
     let mut data = Vec::with_capacity(2 * (b.img.width + b.img.height) as usize);
     for x in 0..b.img.width {
@@ -265,9 +291,18 @@ fn gradient_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let grad = match ctx.layer_param("gradientLayer", false) {
         Some(o) => {
             // place_layer reads only the buffer's size, offset and scale.
-            let img = effectcraft_raster::Image { width: b.img.width, height: b.img.height, data: vec![] };
-            let cpu = effectcraft_effects::Buf { img, offset: b.offset, scale: b.scale };
-            let img = effectcraft_effects::place_layer(ctx, &cpu, &o, ctx.params.e("gradientPlacement"));
+            let img = effectcraft_raster::Image {
+                width: b.img.width,
+                height: b.img.height,
+                data: vec![],
+            };
+            let cpu = effectcraft_effects::Buf {
+                img,
+                offset: b.offset,
+                scale: b.scale,
+            };
+            let img =
+                effectcraft_effects::place_layer(ctx, &cpu, &o, ctx.params.e("gradientPlacement"));
             Some(e.g.upload_image(&img)?)
         }
         None => None,
@@ -276,7 +311,14 @@ fn gradient_wipe(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     p.u[0][0] = ctx.params.b("invert") as u32;
     p.f[0] = [done, soft, 0.0, 0.0];
     let out = e.scratch(b.img.width, b.img.height);
-    e.pixels("gen_gradient_wipe", &p, &b.img, Some(grad.as_ref().unwrap_or(&b.img)), &out, None);
+    e.pixels(
+        "gen_gradient_wipe",
+        &p,
+        &b.img,
+        Some(grad.as_ref().unwrap_or(&b.img)),
+        &out,
+        None,
+    );
     Some(GBuf { img: out, ..b })
 }
 
@@ -298,10 +340,20 @@ fn cell_pattern(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         return None;
     }
     let mut p = Params::default();
-    p.u[0] = [effectcraft_effects::cell_pattern_kind(pr.e("cellPattern")), pr.e("overflow"), pr.b("invert") as u32, seed];
+    p.u[0] = [
+        effectcraft_effects::cell_pattern_kind(pr.e("cellPattern")),
+        pr.e("overflow"),
+        pr.b("invert") as u32,
+        seed,
+    ];
     p.u[1] = [tile as u32, nx as u32, ny as u32, 0];
     // cos / sin of 2π·(h + evo) only see evo modulo 1.
-    p.f[0] = [pr.f("contrast") as f32 / 100.0, pr.f("disperse").clamp(0.0, 1.5) as f32, size as f32, evo.rem_euclid(1.0) as f32];
+    p.f[0] = [
+        pr.f("contrast") as f32 / 100.0,
+        pr.f("disperse").clamp(0.0, 1.5) as f32,
+        size as f32,
+        evo.rem_euclid(1.0) as f32,
+    ];
     p.f[1] = [(0.5 - off.0) as f32, (0.5 - off.1) as f32, 0.0, 0.0];
     run(e, "gen_cell_pattern", &p, b, None, None)
 }
@@ -313,8 +365,14 @@ fn cell_size(ctx: &EffectCtx, b: &GBuf, anchor: (f64, f64)) -> (f64, f64) {
             let c = b.to_px(ctx.params.v2("corner"));
             ((c.0 - anchor.0).abs(), (c.1 - anchor.1).abs())
         }
-        1 => (ctx.params.f("width") * b.scale, ctx.params.f("width") * b.scale),
-        _ => (ctx.params.f("width") * b.scale, ctx.params.f("height") * b.scale),
+        1 => (
+            ctx.params.f("width") * b.scale,
+            ctx.params.f("width") * b.scale,
+        ),
+        _ => (
+            ctx.params.f("width") * b.scale,
+            ctx.params.f("height") * b.scale,
+        ),
     };
     (w.max(1.0), h.max(1.0))
 }
@@ -326,8 +384,18 @@ fn checkerboard(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let fh = (ctx.params.f("feather/featherHeight") * b.scale).max(1.0);
     let mut p = Params::default();
     p.u[0][0] = gen_mode(ctx.params.e("blendingMode"));
-    p.f[0] = [(0.5 - anchor.0) as f32, (0.5 - anchor.1) as f32, w as f32, h as f32];
-    p.f[1] = [fw as f32, fh as f32, ctx.params.f("opacity") as f32 / 100.0, 0.0];
+    p.f[0] = [
+        (0.5 - anchor.0) as f32,
+        (0.5 - anchor.1) as f32,
+        w as f32,
+        h as f32,
+    ];
+    p.f[1] = [
+        fw as f32,
+        fh as f32,
+        ctx.params.f("opacity") as f32 / 100.0,
+        0.0,
+    ];
     p.f[2] = ctx.params.color("color");
     run(e, "gen_checker", &p, b, None, None)
 }
@@ -339,9 +407,24 @@ fn grid(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let fw = (ctx.params.f("feather/featherWidth") * b.scale).max(1.0);
     let fh = (ctx.params.f("feather/featherHeight") * b.scale).max(1.0);
     let mut p = Params::default();
-    p.u[0] = [gen_mode(ctx.params.e("blendingMode")), ctx.params.b("invertGrid") as u32, 0, 0];
-    p.f[0] = [(0.5 - anchor.0) as f32, (0.5 - anchor.1) as f32, w as f32, h as f32];
-    p.f[1] = [fw as f32, fh as f32, ctx.params.f("opacity") as f32 / 100.0, border as f32];
+    p.u[0] = [
+        gen_mode(ctx.params.e("blendingMode")),
+        ctx.params.b("invertGrid") as u32,
+        0,
+        0,
+    ];
+    p.f[0] = [
+        (0.5 - anchor.0) as f32,
+        (0.5 - anchor.1) as f32,
+        w as f32,
+        h as f32,
+    ];
+    p.f[1] = [
+        fw as f32,
+        fh as f32,
+        ctx.params.f("opacity") as f32 / 100.0,
+        border as f32,
+    ];
     p.f[2] = ctx.params.color("color");
     run(e, "gen_grid", &p, b, None, None)
 }
@@ -356,7 +439,12 @@ fn four_color(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let blend = ctx.params.f("blend").max(1.0);
     let jitter = (ctx.params.f("jitter") / 100.0).clamp(0.0, 1.0) as f32;
     p.u[0] = [gen_mode(ctx.params.e("blendingMode")), ctx.seed, 0, 0];
-    p.f[8] = [(blend * 100.0) as f32, jitter, ctx.params.f("opacity") as f32 / 100.0, 0.0];
+    p.f[8] = [
+        (blend * 100.0) as f32,
+        jitter,
+        ctx.params.f("opacity") as f32 / 100.0,
+        0.0,
+    ];
     run(e, "gen_fourcolor", &p, b, None, None)
 }
 
@@ -367,7 +455,12 @@ fn noise(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let clip = ctx.params.get("clip").is_none_or(|v| v.as_bool());
     let frame_seed = (ctx.time * 1000.0) as u32 ^ ctx.seed;
     let mut p = Params::default();
-    p.u[0] = [frame_seed, ctx.params.b("color") as u32, clip as u32, b.img.width];
+    p.u[0] = [
+        frame_seed,
+        ctx.params.b("color") as u32,
+        clip as u32,
+        b.img.width,
+    ];
     p.f[0][0] = amt;
     run(e, "gen_noise", &p, b, None, None)
 }
@@ -380,10 +473,23 @@ fn add_grain(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (w, h) = (b.img.width, b.img.height);
     // GrainLook::planes.
     let size = look.size * b.scale as f32;
-    let s = |k: usize| (size * if look.mono { 1.0 } else { look.channel_size[k].max(0.05) }).max(0.05);
+    let s = |k: usize| {
+        (size
+            * if look.mono {
+                1.0
+            } else {
+                look.channel_size[k].max(0.05)
+            })
+        .max(0.05)
+    };
     let mut p = Params::default();
     p.u[0] = [look.mono as u32, look.seed, 101, 0];
-    p.f[0] = [s(0) * look.aspect, s(1) * look.aspect, s(2) * look.aspect, look.frame];
+    p.f[0] = [
+        s(0) * look.aspect,
+        s(1) * look.aspect,
+        s(2) * look.aspect,
+        look.frame,
+    ];
     p.f[1] = [s(0), s(1), s(2), 0.0];
     let mut planes = e.image(w, h);
     e.pixels("gen_grain_planes", &p, &b.img, None, &planes, None);
@@ -395,10 +501,20 @@ fn add_grain(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let l = effectcraft_color::luminance(look.tint[0], look.tint[1], look.tint[2]).max(1e-3);
     let tint = [0, 1, 2].map(|k| (1.0 - look.tint_amount) + look.tint_amount * look.tint[k] / l);
     let mut p = Params::default();
-    p.u[0] = [look.mono as u32, look.mode, (look.tint_amount > 0.0) as u32, 0];
+    p.u[0] = [
+        look.mono as u32,
+        look.mode,
+        (look.tint_amount > 0.0) as u32,
+        0,
+    ];
     p.f[0] = [look.intensity * 0.25, look.saturation, look.midpoint, 0.0];
     p.f[1] = [tint[0], tint[1], tint[2], 0.0];
-    p.f[2] = [look.channel_intensity[0], look.channel_intensity[1], look.channel_intensity[2], 0.0];
+    p.f[2] = [
+        look.channel_intensity[0],
+        look.channel_intensity[1],
+        look.channel_intensity[2],
+        0.0,
+    ];
     p.f[3] = [look.tones[0], look.tones[1], look.tones[2], 0.0];
     run(e, "gen_grain_apply", &p, b, Some(&planes), None)
 }

@@ -82,7 +82,7 @@ pub(crate) async fn catalog(request: SiteCatalogRequest) -> String {
         Ok(Err(error)) => error_value(&error),
         Err(error) => {
             json!({"ok": false, "error": {"code": "worker_failed", "message": error.to_string()}})
-        },
+        }
     };
     value.to_string()
 }
@@ -120,7 +120,12 @@ mod tests {
         let value = error_value(&error);
         assert_eq!(value["ok"], false);
         assert_eq!(value["error"]["code"], "invalid_input");
-        assert!(value["error"]["message"].as_str().unwrap().contains("absolute"));
+        assert!(
+            value["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("absolute")
+        );
     }
 
     #[test]
@@ -128,7 +133,13 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(directory.path().join("m3/templates")).unwrap();
         std::fs::write(directory.path().join("m3/templates/stack.toml"), "").unwrap();
-        let root = directory.path().canonicalize().unwrap().to_str().unwrap().to_owned();
+        let root = directory
+            .path()
+            .canonicalize()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
         let combined = load_catalog(&SiteCatalogRequest {
             root: root.clone(),
             section: None,
@@ -180,7 +191,10 @@ mod tests {
         request.q = None;
         request.category = None;
         request.id = Some("llms-txt-standard".into());
-        assert_eq!(load_catalog(&request).unwrap()[0]["id"], "llms-txt-standard");
+        assert_eq!(
+            load_catalog(&request).unwrap()[0]["id"],
+            "llms-txt-standard"
+        );
     }
 
     #[test]

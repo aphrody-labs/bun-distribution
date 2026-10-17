@@ -68,8 +68,14 @@ fn sections_and_colors() {
     assert_eq!(f("0_);(0)", -5.0), "(5)");
     assert_eq!(f(";;;", 5.0), "");
     assert_eq!(t(";;;", "x"), "");
-    assert_eq!(full("[Color10]0", Value::Number(1.0)).color, Some(FormatColor::Indexed(10)));
-    assert_eq!(full("[blue]0", Value::Number(1.0)).color, Some(FormatColor::Blue));
+    assert_eq!(
+        full("[Color10]0", Value::Number(1.0)).color,
+        Some(FormatColor::Indexed(10))
+    );
+    assert_eq!(
+        full("[blue]0", Value::Number(1.0)).color,
+        Some(FormatColor::Blue)
+    );
     assert_eq!(full("[Color99]0", Value::Number(1.0)).color, None);
 }
 
@@ -88,7 +94,10 @@ fn conditions() {
     let phone = "[<=9999999]###-####;(###) ###-####";
     assert_eq!(f(phone, 5551234.0), "555-1234");
     assert_eq!(f(phone, 2125551234.0), "(212) 555-1234");
-    assert_eq!(full("[Red][<=100]0;[Blue][>100]0", Value::Number(150.0)).color, Some(FormatColor::Blue));
+    assert_eq!(
+        full("[Red][<=100]0;[Blue][>100]0", Value::Number(150.0)).color,
+        Some(FormatColor::Blue)
+    );
 }
 
 #[test]
@@ -247,7 +256,10 @@ fn literals_and_fill() {
 #[test]
 fn dates_and_times() {
     assert_eq!(f("m/d/yyyy", 46302.0), "10/7/2026");
-    assert_eq!(f("dddd, mmmm d, yyyy", 46302.0), "Wednesday, October 7, 2026");
+    assert_eq!(
+        f("dddd, mmmm d, yyyy", 46302.0),
+        "Wednesday, October 7, 2026"
+    );
     assert_eq!(f("ddd mmm yy", 46302.0), "Wed Oct 26");
     assert_eq!(f("mmmmm", 46302.0), "O");
     assert_eq!(f("dd/mm/yyyy", 46302.0), "07/10/2026");
@@ -269,12 +281,32 @@ fn dates_and_times() {
     assert_eq!(f("h:mm", 0.5 + 40.0 / 86400.0), "12:00");
     assert_eq!(f("m/d/yyyy", 60.0), "2/29/1900");
     assert_eq!(f("m/d/yyyy", 0.0), "1/0/1900");
-    assert_eq!(format_value(&Value::Number(0.0), &NumberFormat::parse("m/d/yyyy"), DateSystem::D1904).text, "1/1/1904");
+    assert_eq!(
+        format_value(
+            &Value::Number(0.0),
+            &NumberFormat::parse("m/d/yyyy"),
+            DateSystem::D1904
+        )
+        .text,
+        "1/1/1904"
+    );
     let fmt = NumberFormat::parse("m/d/yyyy");
-    assert_eq!(format_value(&Value::Number(2957003.5), &fmt, DateSystem::D1904).text, "12/31/9999");
-    assert_eq!(format_value(&Value::Number(2957004.0), &fmt, DateSystem::D1904).text, "########");
-    assert_eq!(format_value(&Value::Number(2958465.0), &fmt, DateSystem::D1900).text, "12/31/9999");
-    assert_eq!(format_value(&Value::Number(2958466.0), &fmt, DateSystem::D1900).text, "########");
+    assert_eq!(
+        format_value(&Value::Number(2957003.5), &fmt, DateSystem::D1904).text,
+        "12/31/9999"
+    );
+    assert_eq!(
+        format_value(&Value::Number(2957004.0), &fmt, DateSystem::D1904).text,
+        "########"
+    );
+    assert_eq!(
+        format_value(&Value::Number(2958465.0), &fmt, DateSystem::D1900).text,
+        "12/31/9999"
+    );
+    assert_eq!(
+        format_value(&Value::Number(2958466.0), &fmt, DateSystem::D1900).text,
+        "########"
+    );
     assert_eq!(f("m/d/yyyy", -1.0), "########");
     assert_eq!(f("m/d/yyyy", 3e6), "########");
     assert_eq!(f("[$-409]m/d/yyyy", 46302.0), "10/7/2026");
@@ -294,8 +326,14 @@ fn text_and_other_values() {
     assert!(!NumberFormat::parse("0;@").is_text());
     let g = NumberFormat::general();
     assert_eq!(format_value(&Value::Bool(true), &g, S).text, "TRUE");
-    assert_eq!(format_value(&Value::Bool(false), &NumberFormat::parse("0.00"), S).text, "FALSE");
-    assert_eq!(format_value(&Value::Error(CellError::Div0), &g, S).text, "#DIV/0!");
+    assert_eq!(
+        format_value(&Value::Bool(false), &NumberFormat::parse("0.00"), S).text,
+        "FALSE"
+    );
+    assert_eq!(
+        format_value(&Value::Error(CellError::Div0), &g, S).text,
+        "#DIV/0!"
+    );
     assert_eq!(format_value(&Value::Empty, &g, S), Formatted::default());
     let r = format_value(&Value::from("x"), &g, S);
     assert!(!r.numeric);
@@ -320,14 +358,26 @@ fn general() {
 fn kinds() {
     assert_eq!(NumberFormat::general().kind(), FormatKind::General);
     assert_eq!(NumberFormat::parse("0.00").kind(), FormatKind::Number);
-    assert_eq!(NumberFormat::parse("#,##0.00;[Red](#,##0.00)").kind(), FormatKind::Number);
-    assert_eq!(NumberFormat::parse("\"$\"#,##0.00").kind(), FormatKind::Currency);
-    assert_eq!(NumberFormat::parse(builtin_format(44).unwrap()).kind(), FormatKind::Accounting);
+    assert_eq!(
+        NumberFormat::parse("#,##0.00;[Red](#,##0.00)").kind(),
+        FormatKind::Number
+    );
+    assert_eq!(
+        NumberFormat::parse("\"$\"#,##0.00").kind(),
+        FormatKind::Currency
+    );
+    assert_eq!(
+        NumberFormat::parse(builtin_format(44).unwrap()).kind(),
+        FormatKind::Accounting
+    );
     assert_eq!(NumberFormat::parse("m/d/yyyy").kind(), FormatKind::Date);
     assert_eq!(NumberFormat::parse("h:mm AM/PM").kind(), FormatKind::Time);
     assert_eq!(NumberFormat::parse("0%").kind(), FormatKind::Percentage);
     assert_eq!(NumberFormat::parse("# ?/?").kind(), FormatKind::Fraction);
-    assert_eq!(NumberFormat::parse("0.00E+00").kind(), FormatKind::Scientific);
+    assert_eq!(
+        NumberFormat::parse("0.00E+00").kind(),
+        FormatKind::Scientific
+    );
     assert_eq!(NumberFormat::parse("@").kind(), FormatKind::Text);
     assert_eq!(NumberFormat::parse("00000").kind(), FormatKind::Special);
     assert_eq!(NumberFormat::parse("\"hello\"").kind(), FormatKind::Custom);
@@ -357,20 +407,53 @@ fn builtins() {
 
 #[test]
 fn text_fn() {
-    assert_eq!(text_function(&Value::Number(1234.5), "$#,##0.00", S), Ok("$1,234.50".into()));
-    assert_eq!(text_function(&Value::from("5"), "0.00", S), Ok("5.00".into()));
-    assert_eq!(text_function(&Value::from("abc"), "0.00", S), Ok("abc".into()));
-    assert_eq!(text_function(&Value::Error(CellError::NA), "0", S), Err(CellError::NA));
-    assert_eq!(text_function(&Value::Number(46302.0), "yyyy", S), Ok("2026".into()));
-    assert_eq!(text_function(&Value::Number(0.5), "General", S), Ok("0.5".into()));
-    assert_eq!(text_function(&Value::Number(1.0 / 3.0), "0.000", S), Ok("0.333".into()));
+    assert_eq!(
+        text_function(&Value::Number(1234.5), "$#,##0.00", S),
+        Ok("$1,234.50".into())
+    );
+    assert_eq!(
+        text_function(&Value::from("5"), "0.00", S),
+        Ok("5.00".into())
+    );
+    assert_eq!(
+        text_function(&Value::from("abc"), "0.00", S),
+        Ok("abc".into())
+    );
+    assert_eq!(
+        text_function(&Value::Error(CellError::NA), "0", S),
+        Err(CellError::NA)
+    );
+    assert_eq!(
+        text_function(&Value::Number(46302.0), "yyyy", S),
+        Ok("2026".into())
+    );
+    assert_eq!(
+        text_function(&Value::Number(0.5), "General", S),
+        Ok("0.5".into())
+    );
+    assert_eq!(
+        text_function(&Value::Number(1.0 / 3.0), "0.000", S),
+        Ok("0.333".into())
+    );
     assert_eq!(text_function(&Value::Empty, "0.00", S), Ok("0.00".into()));
     assert_eq!(text_function(&Value::Number(5.0), "", S), Ok("".into()));
-    assert_eq!(text_function(&Value::Number(-1.0), "m/d/yyyy", S), Err(CellError::Value));
-    assert_eq!(text_function(&Value::Number(2957003.0), "m/d/yyyy", DateSystem::D1904), Ok("12/31/9999".into()));
-    assert_eq!(text_function(&Value::Number(2957004.0), "m/d/yyyy", DateSystem::D1904), Err(CellError::Value));
+    assert_eq!(
+        text_function(&Value::Number(-1.0), "m/d/yyyy", S),
+        Err(CellError::Value)
+    );
+    assert_eq!(
+        text_function(&Value::Number(2957003.0), "m/d/yyyy", DateSystem::D1904),
+        Ok("12/31/9999".into())
+    );
+    assert_eq!(
+        text_function(&Value::Number(2957004.0), "m/d/yyyy", DateSystem::D1904),
+        Err(CellError::Value)
+    );
     assert_eq!(text_function(&Value::Bool(true), "0", S), Ok("TRUE".into()));
-    assert_eq!(text_function(&Value::Number(-0.0033), "0", S), Ok("0".into()));
+    assert_eq!(
+        text_function(&Value::Number(-0.0033), "0", S),
+        Ok("0".into())
+    );
     assert_eq!(text_function(&Value::Number(-0.4), "0", S), Ok("0".into()));
     // Booleans go through the text section as TRUE/FALSE (observed Excel results).
     let cases: &[(bool, &str, &str)] = &[
@@ -385,7 +468,11 @@ fn text_fn() {
         (true, "0.00", "TRUE"),
     ];
     for &(b, code, want) in cases {
-        assert_eq!(text_function(&Value::Bool(b), code, S), Ok(want.into()), "{code} with {b}");
+        assert_eq!(
+            text_function(&Value::Bool(b), code, S),
+            Ok(want.into()),
+            "{code} with {b}"
+        );
     }
 }
 
@@ -514,7 +601,13 @@ fn fuzz_no_panic() {
             code.push_str(rng.pick(&pieces));
         }
         let fmt = NumberFormat::parse(&code);
-        let _ = (fmt.kind(), fmt.is_date(), fmt.is_percent(), fmt.is_text(), fmt.code());
+        let _ = (
+            fmt.kind(),
+            fmt.is_date(),
+            fmt.is_percent(),
+            fmt.is_text(),
+            fmt.code(),
+        );
         for &v in &values {
             let r = format_value(&Value::Number(v), &fmt, S);
             if let Some((_, pos)) = r.fill {
@@ -529,7 +622,9 @@ fn fuzz_no_panic() {
     // Random bytes as codes.
     for _ in 0..500 {
         let len = (rng.next() % 24) as usize;
-        let code: String = (0..len).map(|_| char::from_u32((rng.next() % 0x3000) as u32).unwrap_or('x')).collect();
+        let code: String = (0..len)
+            .map(|_| char::from_u32((rng.next() % 0x3000) as u32).unwrap_or('x'))
+            .collect();
         let fmt = NumberFormat::parse(&code);
         for _ in 0..5 {
             let v = f64::from_bits(rng.next());
@@ -638,7 +733,11 @@ fn text_uncached(v: &Value, code: &str, sys: DateSystem) -> Result<String, CellE
         return Err(CellError::Num);
     }
     let (f, overflow) = fmt.format_number(n, sys);
-    if overflow { Err(CellError::Value) } else { Ok(f.text) }
+    if overflow {
+        Err(CellError::Value)
+    } else {
+        Ok(f.text)
+    }
 }
 
 const CACHE_CODES: &[&str] = &[
@@ -720,15 +819,33 @@ fn parse_cached_gives_the_same_results_cold_and_warm() {
             let cached = NumberFormat::parse_cached(code);
             assert_eq!(cached.code(), direct.code(), "{code:?}");
             assert_eq!(
-                (cached.kind(), cached.is_date(), cached.is_text(), cached.is_general()),
-                (direct.kind(), direct.is_date(), direct.is_text(), direct.is_general())
+                (
+                    cached.kind(),
+                    cached.is_date(),
+                    cached.is_text(),
+                    cached.is_general()
+                ),
+                (
+                    direct.kind(),
+                    direct.is_date(),
+                    direct.is_text(),
+                    direct.is_general()
+                )
             );
             for v in &values {
                 let want = text_uncached(v, code, sys);
                 assert_eq!(text_function(v, code, sys), want, "TEXT({v:?}, {code:?})");
                 // Again, now certainly warm.
-                assert_eq!(text_function(v, code, sys), want, "warm TEXT({v:?}, {code:?})");
-                assert_eq!(format_value(v, &cached, sys), format_value(v, &direct, sys), "{v:?} {code:?}");
+                assert_eq!(
+                    text_function(v, code, sys),
+                    want,
+                    "warm TEXT({v:?}, {code:?})"
+                );
+                assert_eq!(
+                    format_value(v, &cached, sys),
+                    format_value(v, &direct, sys),
+                    "{v:?} {code:?}"
+                );
             }
         }
     }
@@ -767,7 +884,10 @@ fn parse_cache_is_bounded() {
     let n = parse_cache::CAPACITY + 10;
     for i in 0..n {
         let c = format!("0.00\"{i}\"");
-        assert_eq!(text_function(&Value::Number(1.0), &c, S), Ok(format!("1.00{i}")));
+        assert_eq!(
+            text_function(&Value::Number(1.0), &c, S),
+            Ok(format!("1.00{i}"))
+        );
     }
     // ...the first ones were evicted (parsed again), the newest is still cached.
     let before = parse_cache::parses();
@@ -805,17 +925,26 @@ fn format_codes_are_capped_at_255_characters() {
     let long = format!("0{}", "0".repeat(255));
     assert_eq!(ok.chars().count(), MAX_FORMAT_CODE_CHARS);
     assert!(text_function(&Value::Number(1.0), &ok, S).is_ok());
-    assert_eq!(text_function(&Value::Number(1.0), &long, S), Err(CellError::Value));
+    assert_eq!(
+        text_function(&Value::Number(1.0), &long, S),
+        Err(CellError::Value)
+    );
     // Capped codes display as General.
     assert_eq!(f(&long, 0.5), "0.5");
     // Characters are counted, not bytes: 255 two-byte characters are fine, 256 are not.
     let multi_ok = "é".repeat(255);
     assert!(multi_ok.len() > 255);
     assert!(text_function(&Value::Number(1.0), &multi_ok, S).is_ok());
-    assert_eq!(text_function(&Value::Number(1.0), &"é".repeat(256), S), Err(CellError::Value));
+    assert_eq!(
+        text_function(&Value::Number(1.0), &"é".repeat(256), S),
+        Err(CellError::Value)
+    );
     // 65536 zeros through the public API: no panic, TEXT is #VALUE!.
     let huge = format!("# ?/{}", "0".repeat(65_536));
-    assert_eq!(text_function(&Value::Number(0.5), &huge, S), Err(CellError::Value));
+    assert_eq!(
+        text_function(&Value::Number(0.5), &huge, S),
+        Err(CellError::Value)
+    );
     assert_eq!(f(&huge, 0.5), "0.5");
 }
 
@@ -826,9 +955,17 @@ fn finishes_in_time(code: String) -> String {
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         // Uncapped: `parse` turns a code past 255 characters into General before the parser sees it.
-        let _ = tx.send(format_value(&Value::Number(1234.5), &NumberFormat::parse_uncapped(&code), S).text);
+        let _ = tx.send(
+            format_value(
+                &Value::Number(1234.5),
+                &NumberFormat::parse_uncapped(&code),
+                S,
+            )
+            .text,
+        );
     });
-    rx.recv_timeout(std::time::Duration::from_secs(20)).expect("format code did not parse and render in time")
+    rx.recv_timeout(std::time::Duration::from_secs(20))
+        .expect("format code did not parse and render in time")
 }
 
 #[test]

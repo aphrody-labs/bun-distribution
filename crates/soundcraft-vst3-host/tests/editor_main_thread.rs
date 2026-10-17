@@ -7,7 +7,11 @@ mod common;
 
 fn main() {
     let dir = common::fixture_dir();
-    let gain = soundcraft_vst3_host::scan_paths(&[dir.to_path_buf()]).into_iter().find(|d| d.name == "Fixture Gain").expect("fixture").id;
+    let gain = soundcraft_vst3_host::scan_paths(&[dir.to_path_buf()])
+        .into_iter()
+        .find(|d| d.name == "Fixture Gain")
+        .expect("fixture")
+        .id;
     let mut p = soundcraft_vst3_host::instantiate_plugin(&gain).expect("instantiate");
     // Editor windows are hosted on macOS only; elsewhere the probe reports "unsupported".
     if cfg!(target_os = "macos") {
@@ -22,7 +26,10 @@ fn main() {
     // below and through the editor's own value).
     ed.set_param("7", 1.5);
     ed.set_param("nope", 1.0);
-    assert!(ed.idle().is_empty(), "set_param is not reported back as an edit");
+    assert!(
+        ed.idle().is_empty(),
+        "set_param is not reported back as an edit"
+    );
     drop(p);
     assert!(!ed.is_open());
     assert!(ed.open().is_err(), "the plugin is gone");

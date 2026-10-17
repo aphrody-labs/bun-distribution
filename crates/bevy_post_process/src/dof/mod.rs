@@ -15,7 +15,7 @@
 //! [Depth of field]: https://en.wikipedia.org/wiki/Depth_of_field
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset, load_embedded_asset};
 use bevy_camera::{Camera3d, PhysicalCameraParameters, Projection};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
@@ -28,31 +28,31 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 use bevy_math::ops;
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     extract_component::{ComponentUniforms, DynamicUniformIndex, UniformComponentPlugin},
     render_resource::{
-        binding_types::{
-            sampler, texture_2d, texture_depth_2d, texture_depth_2d_multisampled, uniform_buffer,
-        },
         BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedRenderPipelineId, ColorTargetState, ColorWrites, FilterMode, FragmentState, LoadOp,
         Operations, PipelineCache, RenderPassColorAttachment, RenderPassDescriptor,
         RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages,
         ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines, StoreOp,
         TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
+        binding_types::{
+            sampler, texture_2d, texture_depth_2d, texture_depth_2d_multisampled, uniform_buffer,
+        },
     },
     renderer::{RenderContext, RenderDevice, ViewQuery},
     sync_component::{SyncComponent, SyncComponentPlugin},
     sync_world::RenderEntity,
     texture::{CachedTexture, TextureCache},
     view::{
-        prepare_view_targets, ExtractedView, Msaa, ViewDepthStencilTexture, ViewTarget,
-        ViewUniform, ViewUniformOffset, ViewUniforms,
+        ExtractedView, Msaa, ViewDepthStencilTexture, ViewTarget, ViewUniform, ViewUniformOffset,
+        ViewUniforms, prepare_view_targets,
     },
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::Shader;
 use bevy_utils::{default, once};
@@ -61,8 +61,8 @@ use tracing::{info, warn};
 
 use crate::bloom::bloom;
 use bevy_core_pipeline::{
-    core_3d::DEPTH_PREPASS_TEXTURE_SUPPORTED, schedule::Core3d, tonemapping::tonemapping,
-    FullscreenShader,
+    FullscreenShader, core_3d::DEPTH_PREPASS_TEXTURE_SUPPORTED, schedule::Core3d,
+    tonemapping::tonemapping,
 };
 
 /// A plugin that adds support for the depth of field effect to Bevy.

@@ -8,19 +8,37 @@ use photocraft_geom::Size;
 use photocraft_gpu::{Compositor, Stats};
 use photocraft_raster::Surface;
 
-fn render(comp: &mut Compositor, device: &wgpu::Device, queue: &wgpu::Queue, doc: &Document) -> Result<Stats, Box<dyn std::error::Error>> {
+fn render(
+    comp: &mut Compositor,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    doc: &Document,
+) -> Result<Stats, Box<dyn std::error::Error>> {
     let stats = comp.render(device, queue, doc, doc.bounds(), |_, _| {})?;
-    device.poll(wgpu::PollType::Wait { submission_index: None, timeout: None })?;
+    device.poll(wgpu::PollType::Wait {
+        submission_index: None,
+        timeout: None,
+    })?;
     Ok(stats)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let quick = std::env::args().any(|a| a == "--quick");
-    let size = if quick { Size::new(1024, 768) } else { Size::new(6000, 4000) };
-    let adapter = pollster::block_on(wgpu::Instance::default().request_adapter(&Default::default()))?;
+    let size = if quick {
+        Size::new(1024, 768)
+    } else {
+        Size::new(6000, 4000)
+    };
+    let adapter =
+        pollster::block_on(wgpu::Instance::default().request_adapter(&Default::default()))?;
     let (device, queue) = pollster::block_on(adapter.request_device(&Default::default()))?;
     let format = Compositor::preferred_acc_format(&adapter);
-    println!("adapter={:?}, accumulation={format:?}, size={}x{}", adapter.get_info(), size.width, size.height);
+    println!(
+        "adapter={:?}, accumulation={format:?}, size={}x{}",
+        adapter.get_info(),
+        size.width,
+        size.height
+    );
     for depth in [SampleType::U8, SampleType::U16, SampleType::F32] {
         let mut doc = Document::new("stack", size, ColorMode::Rgb, depth);
         let mut surface = Surface::new(doc.pixel_format());
@@ -39,14 +57,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let cold = Instant::now();
                 render(&mut comp, &device, &queue, &doc)?;
                 let cold_ms = cold.elapsed().as_secs_f64() * 1000.0;
-                doc.layers.get_mut(target).ok_or("missing target layer")?.opacity = 0.45;
+                doc.layers
+                    .get_mut(target)
+                    .ok_or("missing target layer")?
+                    .opacity = 0.45;
                 let adapt = Instant::now();
                 render(&mut comp, &device, &queue, &doc)?;
                 let adapt_ms = adapt.elapsed().as_secs_f64() * 1000.0;
                 let mut samples = Vec::new();
                 let mut stats = Stats::default();
                 for i in 0..11 {
-                    doc.layers.get_mut(target).ok_or("missing target layer")?.opacity = if i % 2 == 0 { 0.7 } else { 0.4 };
+                    doc.layers
+                        .get_mut(target)
+                        .ok_or("missing target layer")?
+                        .opacity = if i % 2 == 0 { 0.7 } else { 0.4 };
                     let start = Instant::now();
                     stats = render(&mut comp, &device, &queue, &doc)?;
                     samples.push(start.elapsed().as_secs_f64() * 1000.0);

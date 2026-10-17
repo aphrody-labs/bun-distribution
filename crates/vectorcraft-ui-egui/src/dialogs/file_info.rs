@@ -21,12 +21,21 @@ const PENDING: &str = "__keyword";
 /// Width of the text fields.
 const FIELD: f32 = 320.0;
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("File Info").into(), body, confirm, min_width: 500.0, max_width: Some(500.0), ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("File Info").into(),
+    body,
+    confirm,
+    min_width: 500.0,
+    max_width: Some(500.0),
+    ..DialogSpec::FORM
+};
 
 /// Open File Info on the active document's.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let mut fields = app.session.execute("file.info", &json!({})).map_err(|e| e.to_string())?;
+    let mut fields = app
+        .session
+        .execute("file.info", &json!({}))
+        .map_err(|e| e.to_string())?;
     fields[PENDING] = json!("");
     app.ui.dialog = Some(Dialog::new(KIND, fields));
     Ok(Value::Null)
@@ -45,13 +54,27 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 
 /// The keywords in `d`.
 fn keywords(d: &Dialog) -> Vec<String> {
-    d.fields.get("keywords").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default()
+    d.fields
+        .get("keywords")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Move the typed keywords (comma- or semicolon-separated) into the list, each once.
 fn add_keywords(d: &mut Dialog) {
     let mut list = keywords(d);
-    for k in d.str(PENDING).split([',', ';']).map(str::trim).filter(|k| !k.is_empty()) {
+    for k in d
+        .str(PENDING)
+        .split([',', ';'])
+        .map(str::trim)
+        .filter(|k| !k.is_empty())
+    {
         if !list.iter().any(|o| o.to_lowercase() == k.to_lowercase()) {
             list.push(k.to_string());
         }
@@ -62,7 +85,11 @@ fn add_keywords(d: &mut Dialog) {
 
 fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
-    for (key, label) in [("title", tl!("Document Title:")), ("author", tl!("Author:")), ("authorTitle", tl!("Author Title:"))] {
+    for (key, label) in [
+        ("title", tl!("Document Title:")),
+        ("author", tl!("Author:")),
+        ("authorTitle", tl!("Author Title:")),
+    ] {
         widgets::label_row(ui, label, LABEL, |ui| {
             form::text(ui, d, key, FIELD);
         });
@@ -96,8 +123,17 @@ fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     });
     ui.add_space(10.0);
     widgets::subheader(ui, tl!("Copyright"));
-    let statuses: Vec<(&str, &str)> = CopyrightStatus::ALL.iter().map(|c| (c.id(), c.label())).collect();
-    choice(ui, d, "copyrightStatus", tl!("Copyright Status:"), &statuses);
+    let statuses: Vec<(&str, &str)> = CopyrightStatus::ALL
+        .iter()
+        .map(|c| (c.id(), c.label()))
+        .collect();
+    choice(
+        ui,
+        d,
+        "copyrightStatus",
+        tl!("Copyright Status:"),
+        &statuses,
+    );
     ui.add_space(4.0);
     top_row(ui, tl!("Copyright Notice:"), |ui| {
         form::text_area(ui, d, "copyrightNotice", FIELD, 2);
@@ -110,11 +146,10 @@ fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     widgets::subheader(ui, tl!("Dates"));
     for (key, label) in [("created", tl!("Created:")), ("modified", tl!("Modified:"))] {
         // ISO 8601 UTC from the engine, shown as "2026-10-05 14:03:00 UTC".
-        let shown = d
-            .fields
-            .get(key)
-            .and_then(Value::as_str)
-            .map_or_else(|| "—".to_string(), |s| format!("{} UTC", s.replace('T', " ").trim_end_matches('Z')));
+        let shown = d.fields.get(key).and_then(Value::as_str).map_or_else(
+            || "—".to_string(),
+            |s| format!("{} UTC", s.replace('T', " ").trim_end_matches('Z')),
+        );
         widgets::label_row(ui, label, LABEL, |ui| {
             ui.label(egui::RichText::new(shown).color(t.text_dim));
         });
@@ -127,7 +162,13 @@ fn top_row(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui::Ui)) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal_top(|ui| {
         let (r, _) = ui.allocate_exact_size(egui::vec2(LABEL, 24.0), egui::Sense::hover());
-        ui.painter().text(r.left_center(), egui::Align2::LEFT_CENTER, tl!(label), egui::FontId::proportional(12.5), t.text);
+        ui.painter().text(
+            r.left_center(),
+            egui::Align2::LEFT_CENTER,
+            tl!(label),
+            egui::FontId::proportional(12.5),
+            t.text,
+        );
         add(ui);
     });
 }
@@ -150,7 +191,8 @@ fn rating(ui: &mut egui::Ui, d: &mut Dialog) {
         icons::paint(ui, "star", rect.shrink(2.0), tint);
         let resp = resp.on_hover_text(crate::i18n::tn(u64::from(i), "{n} star", "{n} stars"));
         if resp.clicked() {
-            d.fields.insert("rating".into(), json!(if i == current { 0 } else { i }));
+            d.fields
+                .insert("rating".into(), json!(if i == current { 0 } else { i }));
         }
     }
 }
@@ -166,17 +208,46 @@ fn chips(ui: &mut egui::Ui, d: &mut Dialog) {
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = egui::vec2(4.0, 4.0);
         for (i, k) in list.iter().enumerate() {
-            let galley = ui.painter().layout_no_wrap(k.clone(), egui::FontId::proportional(12.0), t.text_strong);
+            let galley = ui.painter().layout_no_wrap(
+                k.clone(),
+                egui::FontId::proportional(12.0),
+                t.text_strong,
+            );
             let size = egui::vec2(galley.size().x + 30.0, 22.0);
             let (rect, _) = ui.allocate_exact_size(size, egui::Sense::hover());
-            ui.painter().rect_filled(rect, egui::CornerRadius::same(11), t.hover);
-            ui.painter().rect_stroke(rect, egui::CornerRadius::same(11), egui::Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
-            ui.painter().galley(egui::pos2(rect.left() + 9.0, rect.center().y - galley.size().y / 2.0), galley, t.text_strong);
-            let x = egui::Rect::from_center_size(egui::pos2(rect.right() - 11.0, rect.center().y), egui::vec2(14.0, 14.0));
+            ui.painter()
+                .rect_filled(rect, egui::CornerRadius::same(11), t.hover);
+            ui.painter().rect_stroke(
+                rect,
+                egui::CornerRadius::same(11),
+                egui::Stroke::new(1.0, t.input_border),
+                egui::StrokeKind::Inside,
+            );
+            ui.painter().galley(
+                egui::pos2(rect.left() + 9.0, rect.center().y - galley.size().y / 2.0),
+                galley,
+                t.text_strong,
+            );
+            let x = egui::Rect::from_center_size(
+                egui::pos2(rect.right() - 11.0, rect.center().y),
+                egui::vec2(14.0, 14.0),
+            );
             let resp = ui
                 .interact(x, ui.id().with(("keyword-remove", i)), egui::Sense::click())
-                .on_hover_text(crate::i18n::fmt(tl!("Remove “{keyword}”"), &[("keyword", k.as_str())]));
-            icons::paint(ui, "x", x.shrink(2.0), if resp.hovered() { t.text_strong } else { t.text_dim });
+                .on_hover_text(crate::i18n::fmt(
+                    tl!("Remove “{keyword}”"),
+                    &[("keyword", k.as_str())],
+                ));
+            icons::paint(
+                ui,
+                "x",
+                x.shrink(2.0),
+                if resp.hovered() {
+                    t.text_strong
+                } else {
+                    t.text_dim
+                },
+            );
             if resp.clicked() {
                 remove = Some(i);
             }
@@ -201,7 +272,13 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         crate::theme::apply(&ctx, Default::default());
-        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 900.0))), ..Default::default() };
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1200.0, 900.0),
+            )),
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(raw, |ui| crate::dialogs::show(app, ui.ctx()));
         out.textures_delta.clear();
     }
@@ -209,27 +286,52 @@ mod tests {
     #[test]
     fn file_info_draws_and_ok_is_one_undo_step() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         // The menu item and its shortcut open the dialog; agents use ui.fileInfoDialog.
         crate::menus::invoke(&mut app, "file.info", json!({}));
-        assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(super::KIND));
+        assert_eq!(
+            app.ui.dialog.as_ref().map(|d| d.kind.as_str()),
+            Some(super::KIND)
+        );
         let d = app.ui.dialog.as_mut().unwrap();
-        assert!(d.fields["created"].is_string(), "a new document has its creation date");
-        for (k, v) in [("author", json!("Ada")), ("keywords", json!(["poster"])), ("rating", json!(4)), ("copyrightStatus", json!("copyrighted"))] {
+        assert!(
+            d.fields["created"].is_string(),
+            "a new document has its creation date"
+        );
+        for (k, v) in [
+            ("author", json!("Ada")),
+            ("keywords", json!(["poster"])),
+            ("rating", json!(4)),
+            ("copyrightStatus", json!("copyrighted")),
+        ] {
             d.fields.insert(k.into(), v);
         }
-        d.fields.insert(super::PENDING.into(), json!("print, Poster; blue"));
+        d.fields
+            .insert(super::PENDING.into(), json!("print, Poster; blue"));
         frame(&mut app);
         crate::dialogs::confirm(&mut app).unwrap();
         assert!(app.ui.dialog.is_none());
         let st = app.session.active().unwrap();
         let m = &st.doc.metadata;
-        assert_eq!((m.author.as_str(), m.rating, m.copyright_status), ("Ada", 4, vectorcraft_doc::CopyrightStatus::Copyrighted));
-        assert_eq!(m.keywords, ["poster", "print", "blue"], "typed keywords join the chips, each once");
+        assert_eq!(
+            (m.author.as_str(), m.rating, m.copyright_status),
+            ("Ada", 4, vectorcraft_doc::CopyrightStatus::Copyrighted)
+        );
+        assert_eq!(
+            m.keywords,
+            ["poster", "print", "blue"],
+            "typed keywords join the chips, each once"
+        );
         assert_eq!(st.history.undo.len(), 1);
         // A bad value keeps the dialog open.
         app.run("ui.fileInfoDialog", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("rating".into(), json!(9));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("rating".into(), json!(9));
         assert!(crate::dialogs::confirm(&mut app).is_err());
         assert!(app.ui.dialog.is_some());
     }

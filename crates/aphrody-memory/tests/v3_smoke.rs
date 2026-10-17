@@ -76,8 +76,10 @@ async fn mem0_v3_async_add_polls_then_search() {
         headers: HeaderMap,
         Json(body): Json<Value>,
     ) -> (axum::http::StatusCode, Json<Value>) {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         *s.add_body.lock().expect("lock") = Some(body);
         (
             axum::http::StatusCode::ACCEPTED,
@@ -130,7 +132,10 @@ async fn mem0_v3_async_add_polls_then_search() {
     assert_eq!(id, "mem_resolved_42");
 
     // Auth header is `Token fake_key`.
-    assert_eq!(state.auth.lock().expect("lock").as_deref(), Some("Token fake_key"));
+    assert_eq!(
+        state.auth.lock().expect("lock").as_deref(),
+        Some("Token fake_key")
+    );
 
     // Add body carried the user_id + messages + categories.
     let body = state.add_body.lock().expect("lock").clone().expect("body");
@@ -185,13 +190,18 @@ async fn mem0_v3_owner_only_search_uses_list_endpoint() {
         }))
     }
 
-    let router = Router::new().route("/v3/memories/", post(list_handler)).with_state(probe.clone());
+    let router = Router::new()
+        .route("/v3/memories/", post(list_handler))
+        .with_state(probe.clone());
     let base = spawn(router).await;
 
     let provider = Mem0V3Provider::with_base_url("k", &base).expect("build");
 
     // No keyword → list path.
-    let hits = provider.search(MemoryQuery::for_agent("user-2")).await.expect("list");
+    let hits = provider
+        .search(MemoryQuery::for_agent("user-2"))
+        .await
+        .expect("list");
     assert_eq!(hits.len(), 1);
     assert_eq!(hits[0].content, "lives in Paris");
 
@@ -258,8 +268,10 @@ async fn honcho_v3_messages_add_and_dialectic_search() {
         headers: HeaderMap,
         Json(body): Json<Value>,
     ) -> Json<Value> {
-        *s.auth.lock().expect("lock") =
-            headers.get("authorization").and_then(|v| v.to_str().ok()).map(str::to_string);
+        *s.auth.lock().expect("lock") = headers
+            .get("authorization")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         *s.msg_body.lock().expect("lock") = Some(body);
         *s.msg_path.lock().expect("lock") =
             Some(format!("/v3/workspaces/{ws}/sessions/{sess}/messages/"));
@@ -280,8 +292,14 @@ async fn honcho_v3_messages_add_and_dialectic_search() {
     }
 
     let router = Router::new()
-        .route("/v3/workspaces/{workspace_id}/sessions/{session_id}/messages/", post(post_msg))
-        .route("/v3/workspaces/{workspace_id}/peers/{peer_id}/chat", post(chat))
+        .route(
+            "/v3/workspaces/{workspace_id}/sessions/{session_id}/messages/",
+            post(post_msg),
+        )
+        .route(
+            "/v3/workspaces/{workspace_id}/peers/{peer_id}/chat",
+            post(chat),
+        )
         .route("/v3/workspaces/{workspace_id}", get(workspace_root))
         .with_state(state.clone());
     let base = spawn(router).await;
@@ -294,7 +312,10 @@ async fn honcho_v3_messages_add_and_dialectic_search() {
     let id = provider.add(rec).await.expect("add");
     assert_eq!(id, "hmsg_v3_1");
 
-    assert_eq!(state.auth.lock().expect("lock").as_deref(), Some("Bearer fake_key"));
+    assert_eq!(
+        state.auth.lock().expect("lock").as_deref(),
+        Some("Bearer fake_key")
+    );
     let body = state.msg_body.lock().expect("lock").clone().expect("body");
     assert_eq!(body["messages"][0]["content"], "knows rust deeply");
     assert_eq!(body["messages"][0]["peer_id"], "peer-X");
@@ -315,9 +336,17 @@ async fn honcho_v3_messages_add_and_dialectic_search() {
         .await
         .expect("search");
     assert_eq!(hits.len(), 1);
-    assert_eq!(hits[0].content, "This peer is an expert in Rust systems programming.");
+    assert_eq!(
+        hits[0].content,
+        "This peer is an expert in Rust systems programming."
+    );
     assert_eq!(hits[0].agent_id, "peer-X");
-    let chat_body = state.chat_body.lock().expect("lock").clone().expect("chat body");
+    let chat_body = state
+        .chat_body
+        .lock()
+        .expect("lock")
+        .clone()
+        .expect("chat body");
     assert_eq!(chat_body["query"], "rust?");
     assert_eq!(chat_body["stream"], false);
     assert_eq!(chat_body["session_id"], "default");
@@ -341,11 +370,16 @@ async fn honcho_v3_empty_dialectic_is_empty() {
         Json(json!({ "content": null }))
     }
 
-    let router =
-        Router::new().route("/v3/workspaces/{workspace_id}/peers/{peer_id}/chat", post(chat));
+    let router = Router::new().route(
+        "/v3/workspaces/{workspace_id}/peers/{peer_id}/chat",
+        post(chat),
+    );
     let base = spawn(router).await;
 
     let provider = HonchoV3Provider::with_base_url("k", &base, "default").expect("build");
-    let hits = provider.search(MemoryQuery::for_agent("peer-Y")).await.expect("search");
+    let hits = provider
+        .search(MemoryQuery::for_agent("peer-Y"))
+        .await
+        .expect("search");
     assert!(hits.is_empty());
 }

@@ -25,13 +25,22 @@ pub fn label_color(label: lightcraft_catalog::ColorLabel) -> Color32 {
 }
 
 /// A translucent label colour over thumbnail chrome; selection remains brighter.
-pub fn label_background(base: Color32, label: Option<lightcraft_catalog::ColorLabel>, selected: bool) -> Color32 {
-    label.map_or(base, |l| base.lerp_to_gamma(label_color(l), if selected { 0.32 } else { 0.22 }))
+pub fn label_background(
+    base: Color32,
+    label: Option<lightcraft_catalog::ColorLabel>,
+    selected: bool,
+) -> Color32 {
+    label.map_or(base, |l| {
+        base.lerp_to_gamma(label_color(l), if selected { 0.32 } else { 0.22 })
+    })
 }
 
 /// Label confirmations use a pale colour and dark text, distinct from neutral/error HUDs.
 pub fn label_toast_colors(label: lightcraft_catalog::ColorLabel) -> (Color32, Color32) {
-    (Color32::WHITE.lerp_to_gamma(label_color(label), 0.3), Color32::from_rgb(36, 24, 24))
+    (
+        Color32::WHITE.lerp_to_gamma(label_color(label), 0.3),
+        Color32::from_rgb(36, 24, 24),
+    )
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -90,7 +99,12 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 4] = [ThemeKind::Charcoal, ThemeKind::Midnight, ThemeKind::Silver, ThemeKind::Paper];
+    pub const ALL: [ThemeKind; 4] = [
+        ThemeKind::Charcoal,
+        ThemeKind::Midnight,
+        ThemeKind::Silver,
+        ThemeKind::Paper,
+    ];
 
     pub fn is_dark(self) -> bool {
         matches!(self, ThemeKind::Charcoal | ThemeKind::Midnight)
@@ -247,7 +261,8 @@ impl Tokens {
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL)).unwrap_or_default()
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::NULL))
+            .unwrap_or_default()
     }
     pub fn font(&self, size: f32) -> FontId {
         FontId::proportional(size)
@@ -263,7 +278,10 @@ pub fn install_fonts(ctx: &egui::Context) {
 
 /// Install the browser's separately downloaded Chinese face alongside the embedded faces.
 pub fn install_fonts_with_chinese(ctx: &egui::Context, chinese: Option<&Arc<FontData>>) {
-    ctx.set_fonts(font_definitions_with_chinese(lightcraft_engine::CRAFT_FONTS, chinese));
+    ctx.set_fonts(font_definitions_with_chinese(
+        lightcraft_engine::CRAFT_FONTS,
+        chinese,
+    ));
 }
 
 /// Inter remains the default UI face. Egui's default faces and craft-fonts cover other scripts;
@@ -275,10 +293,23 @@ pub fn font_definitions(craft: &'static [lightcraft_engine::CraftFont]) -> FontD
 
 /// The web build keeps the large Simplified Chinese face outside the size-limited WASM module.
 /// Prefer it for Chinese UI text, including Traditional Chinese until it has its own face.
-pub fn font_definitions_with_chinese(craft: &'static [lightcraft_engine::CraftFont], chinese: Option<&Arc<FontData>>) -> FontDefinitions {
+pub fn font_definitions_with_chinese(
+    craft: &'static [lightcraft_engine::CraftFont],
+    chinese: Option<&Arc<FontData>>,
+) -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
-    fonts.font_data.insert("Inter".into(), Arc::new(FontData::from_static(include_bytes!("../../../assets/lightcraft/fonts/Inter-Regular.ttf"))));
-    fonts.font_data.insert("Inter-SemiBold".into(), Arc::new(FontData::from_static(include_bytes!("../../../assets/lightcraft/fonts/Inter-SemiBold.ttf"))));
+    fonts.font_data.insert(
+        "Inter".into(),
+        Arc::new(FontData::from_static(include_bytes!(
+            "../../../assets/lightcraft/fonts/Inter-Regular.ttf"
+        ))),
+    );
+    fonts.font_data.insert(
+        "Inter-SemiBold".into(),
+        Arc::new(FontData::from_static(include_bytes!(
+            "../../../assets/lightcraft/fonts/Inter-SemiBold.ttf"
+        ))),
+    );
     // Craft-fonts faces in preference order for a family drawn in `style`.
     let fallback = |style: &str| {
         lightcraft_engine::fonts::ui_fallback(craft, crate::i18n::language().script(), style)
@@ -289,21 +320,29 @@ pub fn font_definitions_with_chinese(craft: &'static [lightcraft_engine::CraftFo
     let (mut regular, mut bold) = (fallback("Regular"), fallback("Bold"));
     for name in regular.iter().chain(bold.iter()) {
         if let Some(font) = craft.iter().find(|font| &craft_font_name(font) == name) {
-            fonts.font_data.insert(name.clone(), Arc::new(FontData::from_static(font.bytes)));
+            fonts
+                .font_data
+                .insert(name.clone(), Arc::new(FontData::from_static(font.bytes)));
         }
     }
     // A variable face holds every weight in its one file: strong text draws it heavier, from the
     // same bytes. A face with one fixed weight stays as it is.
     for name in &mut bold {
-        let Some(font) = craft.iter().find(|font| &craft_font_name(font) == name) else { continue };
-        let Some(heavier) = strong_weight(font.bytes) else { continue };
+        let Some(font) = craft.iter().find(|font| &craft_font_name(font) == name) else {
+            continue;
+        };
+        let Some(heavier) = strong_weight(font.bytes) else {
+            continue;
+        };
         *name = format!("{name} strong");
         fonts.font_data.insert(name.clone(), Arc::new(heavier));
     }
     let script = crate::i18n::language().script();
     let prefer_chinese = chinese.is_some() && matches!(script, "Hans" | "Hant");
     if let Some(font) = chinese {
-        fonts.font_data.insert(WEB_CHINESE_FONT.into(), font.clone());
+        fonts
+            .font_data
+            .insert(WEB_CHINESE_FONT.into(), font.clone());
         if prefer_chinese {
             regular.insert(0, WEB_CHINESE_FONT.into());
             bold.insert(0, WEB_CHINESE_FONT.into());
@@ -312,7 +351,11 @@ pub fn font_definitions_with_chinese(craft: &'static [lightcraft_engine::CraftFo
             bold.push(WEB_CHINESE_FONT.into());
         }
     }
-    let defaults: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
+    let defaults: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
     let mut prop = vec!["Inter".to_string()];
     prop.extend(defaults.iter().cloned());
     prop.extend(regular);
@@ -320,7 +363,9 @@ pub fn font_definitions_with_chinese(craft: &'static [lightcraft_engine::CraftFo
     let mut semi = vec!["Inter-SemiBold".to_string()];
     semi.extend(defaults);
     semi.extend(bold);
-    fonts.families.insert(FontFamily::Name(FONT_SEMIBOLD.into()), semi);
+    fonts
+        .families
+        .insert(FontFamily::Name(FONT_SEMIBOLD.into()), semi);
     let mono = fonts.families.entry(FontFamily::Monospace).or_default();
     let mut mono_fallback = fallback("Regular");
     if prefer_chinese {
@@ -354,12 +399,18 @@ const STRONG_WEIGHT: f32 = 600.0;
 /// heavier than the weight it draws at by default. The bytes are borrowed, not copied.
 fn strong_weight(bytes: &'static [u8]) -> Option<FontData> {
     let face = FontData::from_static(bytes);
-    let axis = face.variation_axes().into_iter().find(|axis| axis.tag.to_be_bytes() == *b"wght")?;
+    let axis = face
+        .variation_axes()
+        .into_iter()
+        .find(|axis| axis.tag.to_be_bytes() == *b"wght")?;
     let weight = STRONG_WEIGHT.min(axis.range.max);
     if weight.partial_cmp(&axis.default) != Some(std::cmp::Ordering::Greater) {
         return None;
     }
-    let tweak = egui::FontTweak { coords: egui::epaint::text::VariationCoords::new([(axis.tag, weight)]), ..Default::default() };
+    let tweak = egui::FontTweak {
+        coords: egui::epaint::text::VariationCoords::new([(axis.tag, weight)]),
+        ..Default::default()
+    };
     Some(face.tweak(tweak))
 }
 
@@ -407,7 +458,11 @@ pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
         d.insert_temp(theme_id(), kind);
     });
     let dark = kind.is_dark();
-    let mut v = if dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.chrome;
     v.window_fill = t.chrome;
     v.extreme_bg_color = t.field;
@@ -419,27 +474,50 @@ pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
     v.selection.stroke = Stroke::new(1.0, t.accent);
     v.override_text_color = Some(t.text_label);
     let (popup, window) = if dark { (140, 160) } else { (50, 60) };
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(popup) };
-    v.window_shadow = egui::epaint::Shadow { offset: [0, 8], blur: 30, spread: 0, color: Color32::from_black_alpha(window) };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 16,
+        spread: 0,
+        color: Color32::from_black_alpha(popup),
+    };
+    v.window_shadow = egui::epaint::Shadow {
+        offset: [0, 8],
+        blur: 30,
+        spread: 0,
+        color: Color32::from_black_alpha(window),
+    };
     let w = &mut v.widgets;
-    craft_ui::theme::WidgetPalette { noninteractive: t.chrome, inactive: t.button, hovered: t.hover, active: t.pressed, open: t.hover }.apply_to(
-        w,
-        CornerRadius::same(4),
-        Stroke::new(1.0, t.text_label),
-    );
+    craft_ui::theme::WidgetPalette {
+        noninteractive: t.chrome,
+        inactive: t.button,
+        hovered: t.hover,
+        active: t.pressed,
+        open: t.hover,
+    }
+    .apply_to(w, CornerRadius::same(4), Stroke::new(1.0, t.text_label));
     w.noninteractive.bg_stroke = Stroke::new(1.0, t.divider);
     w.inactive.bg_stroke = Stroke::new(1.0, t.button_border);
     ctx.set_visuals_of(egui::Theme::Dark, v.clone());
     ctx.set_visuals_of(egui::Theme::Light, v);
-    ctx.set_theme(if dark { egui::Theme::Dark } else { egui::Theme::Light });
+    ctx.set_theme(if dark {
+        egui::Theme::Dark
+    } else {
+        egui::Theme::Light
+    });
     ctx.all_styles_mut(|s| {
         s.spacing.item_spacing = egui::vec2(6.0, 4.0);
         s.spacing.button_padding = egui::vec2(8.0, 3.0);
         s.spacing.interact_size.y = 22.0;
-        s.text_styles.insert(egui::TextStyle::Body, FontId::proportional(13.0));
-        s.text_styles.insert(egui::TextStyle::Button, FontId::proportional(13.0));
-        s.text_styles.insert(egui::TextStyle::Small, FontId::proportional(11.0));
-        s.text_styles.insert(egui::TextStyle::Heading, FontId::new(16.0, FontFamily::Name(FONT_SEMIBOLD.into())));
+        s.text_styles
+            .insert(egui::TextStyle::Body, FontId::proportional(13.0));
+        s.text_styles
+            .insert(egui::TextStyle::Button, FontId::proportional(13.0));
+        s.text_styles
+            .insert(egui::TextStyle::Small, FontId::proportional(11.0));
+        s.text_styles.insert(
+            egui::TextStyle::Heading,
+            FontId::new(16.0, FontFamily::Name(FONT_SEMIBOLD.into())),
+        );
         s.animation_time = 0.08;
     });
 }
@@ -453,12 +531,26 @@ mod tests {
     /// (`exp(40 / 200)`) instead of growing with the longer scroll.
     #[test]
     fn a_wheel_notch_scrolls_further_but_zooms_as_before_in_every_theme() {
-        for kind in [ThemeKind::Charcoal, ThemeKind::Midnight, ThemeKind::Silver, ThemeKind::Paper] {
+        for kind in [
+            ThemeKind::Charcoal,
+            ThemeKind::Midnight,
+            ThemeKind::Silver,
+            ThemeKind::Paper,
+        ] {
             let ctx = egui::Context::default();
             apply_kind(&ctx, kind);
-            let (line, zoom) = ctx.options(|o| (o.input_options.line_scroll_speed, o.input_options.scroll_zoom_speed));
+            let (line, zoom) = ctx.options(|o| {
+                (
+                    o.input_options.line_scroll_speed,
+                    o.input_options.scroll_zoom_speed,
+                )
+            });
             assert_eq!(line, WHEEL_LINE_POINTS, "{kind:?}");
-            assert!(((zoom * line).exp() - (40.0_f32 / 200.0).exp()).abs() < 1e-4, "{kind:?}: a notch zooms {}", (zoom * line).exp());
+            assert!(
+                ((zoom * line).exp() - (40.0_f32 / 200.0).exp()).abs() < 1e-4,
+                "{kind:?}: a notch zooms {}",
+                (zoom * line).exp()
+            );
         }
     }
 
@@ -466,7 +558,10 @@ mod tests {
     /// craft-fonts build that carries a Thai face, an English UI offers it in every family.
     #[test]
     fn thai_face_is_a_fallback_in_every_ui_family_when_craft_fonts_carry_one() {
-        let Some(thai) = lightcraft_engine::CRAFT_FONTS.iter().find(|f| f.covers("Thai")) else {
+        let Some(thai) = lightcraft_engine::CRAFT_FONTS
+            .iter()
+            .find(|f| f.covers("Thai"))
+        else {
             eprintln!("no Thai face in craft-fonts: nothing to check");
             return;
         };
@@ -476,9 +571,16 @@ mod tests {
         assert!(definitions.font_data.contains_key(&name));
         // (The strong family has the face's heavier twin instead when it is a variable font.)
         let strong = format!("{name} strong");
-        for family in [FontFamily::Proportional, FontFamily::Name(FONT_SEMIBOLD.into()), FontFamily::Monospace] {
+        for family in [
+            FontFamily::Proportional,
+            FontFamily::Name(FONT_SEMIBOLD.into()),
+            FontFamily::Monospace,
+        ] {
             let names = definitions.families.get(&family).expect("UI font family");
-            assert!(names.contains(&name) || (family == semibold_family() && names.contains(&strong)), "{family:?} falls back on {name}");
+            assert!(
+                names.contains(&name) || (family == semibold_family() && names.contains(&strong)),
+                "{family:?} falls back on {name}"
+            );
         }
     }
 
@@ -501,18 +603,39 @@ mod tests {
         set_language(Locale::ZhHans);
         let definitions = font_definitions(FACES);
         let defaults = FontDefinitions::default();
-        let default_prop = defaults.families.get(&FontFamily::Proportional).expect("default proportional fonts");
+        let default_prop = defaults
+            .families
+            .get(&FontFamily::Proportional)
+            .expect("default proportional fonts");
         let chinese = "craft-fonts Noto Sans CJK SC Regular";
-        for (family, primary) in [(FontFamily::Proportional, "Inter"), (FontFamily::Name(FONT_SEMIBOLD.into()), "Inter-SemiBold")] {
+        for (family, primary) in [
+            (FontFamily::Proportional, "Inter"),
+            (FontFamily::Name(FONT_SEMIBOLD.into()), "Inter-SemiBold"),
+        ] {
             let names = definitions.families.get(&family).expect("UI font family");
             assert_eq!(names.first().map(String::as_str), Some(primary));
             assert_eq!(names.get(1), default_prop.first());
-            assert!(names.iter().position(|name| name == chinese).is_some_and(|position| position > default_prop.len()));
+            assert!(
+                names
+                    .iter()
+                    .position(|name| name == chinese)
+                    .is_some_and(|position| position > default_prop.len())
+            );
         }
-        let mono = definitions.families.get(&FontFamily::Monospace).expect("monospace font family");
-        let default_mono = defaults.families.get(&FontFamily::Monospace).expect("default monospace fonts");
+        let mono = definitions
+            .families
+            .get(&FontFamily::Monospace)
+            .expect("monospace font family");
+        let default_mono = defaults
+            .families
+            .get(&FontFamily::Monospace)
+            .expect("default monospace fonts");
         assert_eq!(mono.first(), default_mono.first());
-        assert!(mono.iter().position(|name| name == chinese).is_some_and(|position| position >= default_mono.len()));
+        assert!(
+            mono.iter()
+                .position(|name| name == chinese)
+                .is_some_and(|position| position >= default_mono.len())
+        );
         set_language(Locale::En);
     }
 
@@ -526,19 +649,36 @@ mod tests {
             scripts: &["Jpan", "Latn"],
             bytes: include_bytes!("../../../assets/lightcraft/fonts/Inter-Regular.ttf"),
         }];
-        let embedded = lightcraft_engine::CRAFT_FONTS.iter().find(|font| font.family == "Noto Sans CJK SC" && font.style == "Regular");
-        let fallback: &'static [u8] = include_bytes!("../../../assets/lightcraft/fonts/Inter-Regular.ttf");
+        let embedded = lightcraft_engine::CRAFT_FONTS
+            .iter()
+            .find(|font| font.family == "Noto Sans CJK SC" && font.style == "Regular");
+        let fallback: &'static [u8] =
+            include_bytes!("../../../assets/lightcraft/fonts/Inter-Regular.ttf");
         let source = embedded.map_or(fallback, |font| font.bytes);
         let chinese = Arc::new(FontData::from_static(source));
         set_language(Locale::ZhHans);
         let definitions = font_definitions_with_chinese(JAPANESE, Some(&chinese));
-        let default_count = FontDefinitions::default().families.get(&FontFamily::Proportional).map_or(0, Vec::len);
-        for (family, primary) in [(FontFamily::Proportional, "Inter"), (FontFamily::Name(FONT_SEMIBOLD.into()), "Inter-SemiBold")] {
+        let default_count = FontDefinitions::default()
+            .families
+            .get(&FontFamily::Proportional)
+            .map_or(0, Vec::len);
+        for (family, primary) in [
+            (FontFamily::Proportional, "Inter"),
+            (FontFamily::Name(FONT_SEMIBOLD.into()), "Inter-SemiBold"),
+        ] {
             let names = definitions.families.get(&family).expect("UI font family");
             assert_eq!(names.first().map(String::as_str), Some(primary));
-            assert_eq!(names.get(1 + default_count).map(String::as_str), Some(WEB_CHINESE_FONT));
+            assert_eq!(
+                names.get(1 + default_count).map(String::as_str),
+                Some(WEB_CHINESE_FONT)
+            );
         }
-        assert!(definitions.families.get(&FontFamily::Monospace).is_some_and(|names| names.contains(&WEB_CHINESE_FONT.to_string())));
+        assert!(
+            definitions
+                .families
+                .get(&FontFamily::Monospace)
+                .is_some_and(|names| names.contains(&WEB_CHINESE_FONT.to_string()))
+        );
 
         if embedded.is_some() {
             let ctx = egui::Context::default();
@@ -546,18 +686,34 @@ mod tests {
             let mut frame = ctx.run_ui(egui::RawInput::default(), |_| {});
             frame.textures_delta.clear();
             ctx.fonts_mut(|fonts| {
-                for family in [FontFamily::Proportional, FontFamily::Name(FONT_SEMIBOLD.into()), FontFamily::Monospace] {
+                for family in [
+                    FontFamily::Proportional,
+                    FontFamily::Name(FONT_SEMIBOLD.into()),
+                    FontFamily::Monospace,
+                ] {
                     let id = FontId::new(13.0, family);
-                    assert!("简体中文字".chars().all(|ch| fonts.has_glyph(&id, ch)), "{id:?}");
+                    assert!(
+                        "简体中文字".chars().all(|ch| fonts.has_glyph(&id, ch)),
+                        "{id:?}"
+                    );
                 }
             });
         }
 
         set_language(Locale::Ja);
         let japanese = font_definitions_with_chinese(JAPANESE, Some(&chinese));
-        let names = japanese.families.get(&FontFamily::Proportional).expect("proportional fonts");
-        assert_eq!(names.get(1 + default_count).map(String::as_str), Some("craft-fonts BIZ UDPGothic Regular"));
-        assert_eq!(names.get(2 + default_count).map(String::as_str), Some(WEB_CHINESE_FONT));
+        let names = japanese
+            .families
+            .get(&FontFamily::Proportional)
+            .expect("proportional fonts");
+        assert_eq!(
+            names.get(1 + default_count).map(String::as_str),
+            Some("craft-fonts BIZ UDPGothic Regular")
+        );
+        assert_eq!(
+            names.get(2 + default_count).map(String::as_str),
+            Some(WEB_CHINESE_FONT)
+        );
         set_language(Locale::En);
     }
 
@@ -575,7 +731,8 @@ mod tests {
         let mut frame = ctx.run_ui(egui::RawInput::default(), |_| {});
         frame.textures_delta.clear();
         ctx.fonts_mut(|fonts| {
-            let galley = fonts.layout_no_wrap(text.into(), FontId::new(13.0, family), Color32::WHITE);
+            let galley =
+                fonts.layout_no_wrap(text.into(), FontId::new(13.0, family), Color32::WHITE);
             let atlas = fonts.image();
             let mut ink = 0_u64;
             for glyph in galley.rows.iter().flat_map(|row| row.glyphs.iter()) {
@@ -592,8 +749,14 @@ mod tests {
 
     /// The craft-fonts face for Arabic, when it is a variable font with a weight axis.
     fn variable_arabic_face() -> Option<&'static lightcraft_engine::CraftFont> {
-        let face = lightcraft_engine::CRAFT_FONTS.iter().find(|font| font.covers("Arab"))?;
-        FontData::from_static(face.bytes).variation_axes().iter().any(|axis| axis.tag.to_be_bytes() == *b"wght").then_some(face)
+        let face = lightcraft_engine::CRAFT_FONTS
+            .iter()
+            .find(|font| font.covers("Arab"))?;
+        FontData::from_static(face.bytes)
+            .variation_axes()
+            .iter()
+            .any(|axis| axis.tag.to_be_bytes() == *b"wght")
+            .then_some(face)
     }
 
     /// Strong text in a script whose fallback face is a variable font is really heavier: an Arabic
@@ -607,12 +770,28 @@ mod tests {
         }
         set_language(Locale::En);
         // When an Arabic word is laid out regular and strong at the same size
-        let (regular_width, regular_ink) = width_and_ink(font_definitions(lightcraft_engine::CRAFT_FONTS), ARABIC_WORD, FontFamily::Proportional);
-        let (strong_width, strong_ink) = width_and_ink(font_definitions(lightcraft_engine::CRAFT_FONTS), ARABIC_WORD, semibold_family());
-        eprintln!("{ARABIC_WORD}: regular {regular_width} px, ink {regular_ink}; strong {strong_width} px, ink {strong_ink}");
+        let (regular_width, regular_ink) = width_and_ink(
+            font_definitions(lightcraft_engine::CRAFT_FONTS),
+            ARABIC_WORD,
+            FontFamily::Proportional,
+        );
+        let (strong_width, strong_ink) = width_and_ink(
+            font_definitions(lightcraft_engine::CRAFT_FONTS),
+            ARABIC_WORD,
+            semibold_family(),
+        );
+        eprintln!(
+            "{ARABIC_WORD}: regular {regular_width} px, ink {regular_ink}; strong {strong_width} px, ink {strong_ink}"
+        );
         // Then the strong one is wider and puts down more ink
-        assert!(strong_width > regular_width, "strong Arabic is wider than regular: strong {strong_width} px, regular {regular_width} px");
-        assert!(strong_ink as f64 > regular_ink as f64 * 1.05, "strong Arabic has more ink than regular: strong {strong_ink}, regular {regular_ink}");
+        assert!(
+            strong_width > regular_width,
+            "strong Arabic is wider than regular: strong {strong_width} px, regular {regular_width} px"
+        );
+        assert!(
+            strong_ink as f64 > regular_ink as f64 * 1.05,
+            "strong Arabic has more ink than regular: strong {strong_ink}, regular {regular_ink}"
+        );
     }
 
     /// The heavier face is for strong text only: regular and monospace text keep the face as the
@@ -630,23 +809,48 @@ mod tests {
         // Then the regular Arabic face is the font file untouched, and the only Arabic face of
         // the regular and monospace families
         let name = craft_font_name(arabic);
-        assert_eq!(definitions.font_data.get(&name).map(|data| &data.tweak), Some(&egui::FontTweak::default()));
+        assert_eq!(
+            definitions.font_data.get(&name).map(|data| &data.tweak),
+            Some(&egui::FontTweak::default())
+        );
         let plain_weight = egui::epaint::text::VariationCoords::default();
         for family in [FontFamily::Proportional, FontFamily::Monospace] {
             let names = definitions.families.get(&family).expect("UI font family");
             assert!(names.contains(&name), "{family:?} falls back on {name}");
             for other in names.iter().filter(|other| **other != name) {
-                let coords = definitions.font_data.get(other).map(|data| data.tweak.coords.clone()).unwrap_or_default();
-                assert_eq!(coords, plain_weight, "{family:?}: {other} is drawn at the weight its file has");
+                let coords = definitions
+                    .font_data
+                    .get(other)
+                    .map(|data| data.tweak.coords.clone())
+                    .unwrap_or_default();
+                assert_eq!(
+                    coords, plain_weight,
+                    "{family:?}: {other} is drawn at the weight its file has"
+                );
             }
         }
         // And regular Arabic text is as wide as with that face alone after Inter
         let mut plain = FontDefinitions::default();
-        plain.font_data.insert("Inter".into(), Arc::new(FontData::from_static(include_bytes!("../../../assets/lightcraft/fonts/Inter-Regular.ttf"))));
-        plain.font_data.insert("Arabic".into(), Arc::new(FontData::from_static(arabic.bytes)));
-        plain.families.insert(FontFamily::Proportional, vec!["Inter".into(), "Arabic".into()]);
-        let (width, ink) = width_and_ink(definitions.clone(), ARABIC_WORD, FontFamily::Proportional);
-        assert_eq!((width, ink), width_and_ink(plain, ARABIC_WORD, FontFamily::Proportional));
+        plain.font_data.insert(
+            "Inter".into(),
+            Arc::new(FontData::from_static(include_bytes!(
+                "../../../assets/lightcraft/fonts/Inter-Regular.ttf"
+            ))),
+        );
+        plain.font_data.insert(
+            "Arabic".into(),
+            Arc::new(FontData::from_static(arabic.bytes)),
+        );
+        plain.families.insert(
+            FontFamily::Proportional,
+            vec!["Inter".into(), "Arabic".into()],
+        );
+        let (width, ink) =
+            width_and_ink(definitions.clone(), ARABIC_WORD, FontFamily::Proportional);
+        assert_eq!(
+            (width, ink),
+            width_and_ink(plain, ARABIC_WORD, FontFamily::Proportional)
+        );
         // And Latin text, strong and regular, is as it is without craft-fonts
         for family in [FontFamily::Proportional, semibold_family()] {
             assert_eq!(
@@ -657,7 +861,10 @@ mod tests {
         }
         let (regular, _) = width_and_ink(definitions.clone(), "Library", FontFamily::Proportional);
         let (strong, _) = width_and_ink(definitions, "Library", semibold_family());
-        assert!(strong > regular, "strong Latin stays wider than regular: {strong} px, {regular} px");
+        assert!(
+            strong > regular,
+            "strong Latin stays wider than regular: {strong} px, {regular} px"
+        );
     }
 
     /// A face with one fixed weight is registered once: nothing heavier can be asked of it. Without
@@ -678,10 +885,19 @@ mod tests {
             // Then no face is drawn at another weight than its file has, and the strong family
             // holds what the regular one does after Inter
             assert!(definitions.font_data.values().all(|data| data.tweak.coords == egui::epaint::text::VariationCoords::default()));
-            let regular = definitions.families.get(&FontFamily::Proportional).expect("regular family");
-            let strong = definitions.families.get(&semibold_family()).expect("strong family");
+            let regular = definitions
+                .families
+                .get(&FontFamily::Proportional)
+                .expect("regular family");
+            let strong = definitions
+                .families
+                .get(&semibold_family())
+                .expect("strong family");
             assert_eq!(regular.get(1..), strong.get(1..));
-            assert_eq!(definitions.font_data.len(), FontDefinitions::default().font_data.len() + 2 + craft.len());
+            assert_eq!(
+                definitions.font_data.len(),
+                FontDefinitions::default().font_data.len() + 2 + craft.len()
+            );
         }
     }
 }

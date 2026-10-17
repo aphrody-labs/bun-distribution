@@ -24,7 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let json: serde_json::Value = serde_json::from_slice(&output.stdout)?;
 
-    let verdict = json.get("verdict").and_then(|v| v.as_str()).ok_or("missing verdict field")?;
+    let verdict = json
+        .get("verdict")
+        .and_then(|v| v.as_str())
+        .ok_or("missing verdict field")?;
 
     let peer_status = json
         .get("peer_a2a")
@@ -32,8 +35,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|s| s.as_u64())
         .unwrap_or(0);
 
-    let heartbeat_age =
-        json.get("peer_a2a").and_then(|p| p.get("heartbeat_age_s")).and_then(|a| a.as_u64());
+    let heartbeat_age = json
+        .get("peer_a2a")
+        .and_then(|p| p.get("heartbeat_age_s"))
+        .and_then(|a| a.as_u64());
 
     println!(
         "verdict={verdict} listener={peer_status} heartbeat_age={age}",
@@ -49,6 +54,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => {
             eprintln!("unknown verdict: {verdict}");
             std::process::exit(4)
-        },
+        }
     }
 }

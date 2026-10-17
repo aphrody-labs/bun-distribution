@@ -82,10 +82,10 @@ impl Session {
                 if !prompt.trim().is_empty() {
                     self.last_live_home_prompt = Some(prompt);
                 }
-            },
+            }
             Err(error) => {
                 tracing::warn!(root = %workspace.display(), error = %error, "keeping last valid Agent Home prompt");
-            },
+            }
         }
         self.last_live_home_prompt.as_deref()
     }
@@ -156,12 +156,18 @@ impl Session {
 
     /// Append a user message composed of `parts`.
     pub fn push_user(&mut self, parts: Vec<Part>) {
-        self.push_message(ChatMessage { role: Role::User, parts });
+        self.push_message(ChatMessage {
+            role: Role::User,
+            parts,
+        });
     }
 
     /// Append a model text message.
     pub fn push_model_text(&mut self, text: impl Into<String>) {
-        self.push_message(ChatMessage { role: Role::Model, parts: vec![Part::Text(text.into())] });
+        self.push_message(ChatMessage {
+            role: Role::Model,
+            parts: vec![Part::Text(text.into())],
+        });
     }
 
     /// Append everything one model response produced — reasoning items, visible
@@ -171,7 +177,10 @@ impl Session {
     /// `parts` append nothing.
     pub fn push_model_parts(&mut self, parts: Vec<Part>) {
         if !parts.is_empty() {
-            self.push_message(ChatMessage { role: Role::Model, parts });
+            self.push_message(ChatMessage {
+                role: Role::Model,
+                parts,
+            });
         }
     }
 
@@ -191,7 +200,10 @@ impl Session {
     /// `responses` append nothing.
     pub fn push_tool_responses(&mut self, responses: Vec<Part>) {
         if !responses.is_empty() {
-            self.push_message(ChatMessage { role: Role::Tool, parts: responses });
+            self.push_message(ChatMessage {
+                role: Role::Tool,
+                parts: responses,
+            });
         }
     }
 

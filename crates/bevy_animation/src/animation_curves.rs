@@ -92,18 +92,18 @@ use core::{
 #[cfg(feature = "bevy_mesh")]
 pub use crate::morph::*;
 use crate::{
+    AnimationEntityMut, AnimationEvaluationError,
     graph::AnimationNodeIndex,
     prelude::{Animatable, BlendInput},
-    AnimationEntityMut, AnimationEvaluationError,
 };
 use bevy_curve::{
-    cores::{UnevenCore, UnevenCoreError},
     Curve, Interval,
+    cores::{UnevenCore, UnevenCoreError},
 };
 use bevy_ecs::component::{Component, Mutable};
 use bevy_platform::hash::Hashed;
 use bevy_reflect::{FromReflect, Reflect, Reflectable, TypeInfo, Typed};
-use downcast_rs::{impl_downcast, Downcast};
+use downcast_rs::{Downcast, impl_downcast};
 
 /// A trait for exposing a value in an entity so that it can be animated.
 ///

@@ -11,11 +11,11 @@ use bevy_ecs::{
     system::{Commands, Query, ResMut},
 };
 use bevy_input_focus::{FocusCause, InputFocus};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
-use bevy_ui::{px, widget::Text, ComputedNode, Node, Selected};
+use bevy_ui::{ComputedNode, Node, Selected, px, widget::Text};
 use bevy_ui_widgets::{
-    listbox_update_selection, ListBox, ReselectListRow, SetSelected, ValueChange,
+    ListBox, ReselectListRow, SetSelected, ValueChange, listbox_update_selection,
 };
 
 use super::{

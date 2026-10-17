@@ -15,38 +15,66 @@ fn harness() -> (Harness<'static, SlideApp>, Vec<u32>) {
     s.execute("slide.new", &json!({"layout": "blank"})).unwrap();
     let mut ids = vec![];
     for (i, n) in ["A", "B", "C", "D", "E"].iter().enumerate() {
-        let r = s.execute("shape.insert", &json!({"preset": "rect", "rect": [20.0 + 110.0 * i as f64, 50, 100, 80]})).unwrap();
+        let r = s
+            .execute(
+                "shape.insert",
+                &json!({"preset": "rect", "rect": [20.0 + 110.0 * i as f64, 50, 100, 80]}),
+            )
+            .unwrap();
         let id = r["id"].as_u64().unwrap() as u32;
-        s.execute("shape.rename", &json!({"id": id, "name": n})).unwrap();
+        s.execute("shape.rename", &json!({"id": id, "name": n}))
+            .unwrap();
         ids.push(id);
     }
-    let g = s.execute("arrange.group", &json!({"ids": [ids[3], ids[4]]})).unwrap()["id"].as_u64().unwrap() as u32;
-    s.execute("shape.rename", &json!({"id": g, "name": "G"})).unwrap();
+    let g = s
+        .execute("arrange.group", &json!({"ids": [ids[3], ids[4]]}))
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap() as u32;
+    s.execute("shape.rename", &json!({"id": g, "name": "G"}))
+        .unwrap();
     s.execute("edit.select", &json!({"ids": []})).unwrap();
     ids.push(g);
     let mut app = SlideApp::new(s, Services::default());
     app.ui.pane = Some("selection".into());
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_step_dt(1.0 / 60.0).build_ui_state(
-        |ui, app: &mut SlideApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_ui_state(
+            |ui, app: &mut SlideApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            app,
+        );
     h.run_steps(3);
     (h, ids)
 }
 
 fn names(h: &Harness<'_, SlideApp>) -> String {
     fn rec(v: &[deckcraft_model::Shape]) -> String {
-        v.iter().map(|x| if x.is_group() { format!("{}[{}]", x.name, rec(x.children())) } else { x.name.clone() }).collect::<Vec<_>>().join(" ")
+        v.iter()
+            .map(|x| {
+                if x.is_group() {
+                    format!("{}[{}]", x.name, rec(x.children()))
+                } else {
+                    x.name.clone()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
     }
     rec(h.state().session.active().unwrap().shapes())
 }
 
 fn selected(h: &Harness<'_, SlideApp>) -> Vec<String> {
     let st = h.state().session.active().unwrap();
-    st.selection.shapes.iter().filter_map(|i| st.shape(*i)).map(|s| s.name.clone()).collect()
+    st.selection
+        .shapes
+        .iter()
+        .filter_map(|i| st.shape(*i))
+        .map(|s| s.name.clone())
+        .collect()
 }
 
 fn row(h: &Harness<'_, SlideApp>, name: &str) -> egui::Rect {
@@ -67,10 +95,17 @@ fn shape<'a>(h: &'a Harness<'_, SlideApp>, name: &str) -> &'a deckcraft_model::S
 #[test]
 fn lists_front_most_first_with_groups_expanded() {
     let (h, _) = harness();
-    let ys: Vec<f32> = ["G", "D", "E", "C", "B", "A"].iter().map(|n| row(&h, n).center().y).collect();
+    let ys: Vec<f32> = ["G", "D", "E", "C", "B", "A"]
+        .iter()
+        .map(|n| row(&h, n).center().y)
+        .collect();
     // G is in front, then its children front-most first (E above D), then C, B, A.
     let order = ["G", "E", "D", "C", "B", "A"];
-    let mut by_y: Vec<(&str, f32)> = ["G", "D", "E", "C", "B", "A"].iter().copied().zip(ys).collect();
+    let mut by_y: Vec<(&str, f32)> = ["G", "D", "E", "C", "B", "A"]
+        .iter()
+        .copied()
+        .zip(ys)
+        .collect();
     by_y.sort_by(|a, b| a.1.total_cmp(&b.1));
     assert_eq!(by_y.iter().map(|x| x.0).collect::<Vec<_>>(), order);
     // Children are indented under the group (the name's row starts at the same x; the group
@@ -111,10 +146,16 @@ fn eye_and_padlock_toggle_and_undo() {
     h.get_by_label("Hide B").click();
     h.run_steps(2);
     assert!(shape(&h, "B").hidden);
-    assert!(h.query_by_label("Show B").is_some(), "the eye now offers to show it");
+    assert!(
+        h.query_by_label("Show B").is_some(),
+        "the eye now offers to show it"
+    );
     h.get_by_label("Lock G").click();
     h.run_steps(2);
-    assert!(shape(&h, "G").locked && shape(&h, "D").locked && shape(&h, "E").locked, "the group locks with its children");
+    assert!(
+        shape(&h, "G").locked && shape(&h, "D").locked && shape(&h, "E").locked,
+        "the group locks with its children"
+    );
     h.get_by_label("Unlock D").click();
     h.run_steps(2);
     assert!(!shape(&h, "D").locked && shape(&h, "G").locked);
@@ -123,7 +164,11 @@ fn eye_and_padlock_toggle_and_undo() {
     assert!(["A", "B", "C", "G"].iter().all(|n| shape(&h, n).hidden));
     h.get_by_label("Show All").click();
     h.run_steps(2);
-    assert!(["A", "B", "C", "G", "D", "E"].iter().all(|n| !shape(&h, n).hidden));
+    assert!(
+        ["A", "B", "C", "G", "D", "E"]
+            .iter()
+            .all(|n| !shape(&h, n).hidden)
+    );
     h.state_mut().run("edit.undo", json!({})).unwrap();
     h.run_steps(2);
     assert!(shape(&h, "A").hidden);
@@ -155,7 +200,11 @@ fn drag_and_drop_restacks_among_siblings() {
     assert_eq!(selected(&h), ["A"], "the dragged object is selected");
     // C dragged to the bottom of the list: the back.
     let (c, b) = (row(&h, "C"), row(&h, "B"));
-    drag(&mut h, c.center(), Pos2::new(b.center().x, b.bottom() + 30.0));
+    drag(
+        &mut h,
+        c.center(),
+        Pos2::new(b.center().x, b.bottom() + 30.0),
+    );
     assert_eq!(names(&h), "C B G[D E] A");
     // D (a child) dragged far above its group stays in the group, at its front.
     let (d, a) = (row(&h, "D"), row(&h, "A"));
@@ -164,7 +213,11 @@ fn drag_and_drop_restacks_among_siblings() {
     // B dropped over the group lands among the top-level objects (here just in front of the
     // group), never inside it.
     let (b, g) = (row(&h, "B"), row(&h, "G"));
-    drag(&mut h, b.center(), Pos2::new(g.center().x, g.center().y + 6.0));
+    drag(
+        &mut h,
+        b.center(),
+        Pos2::new(g.center().x, g.center().y + 6.0),
+    );
     assert_eq!(names(&h), "C G[E D] B A");
     // Each drop is one undo step.
     for _ in 0..4 {
@@ -201,12 +254,20 @@ fn double_click_renames_in_place() {
     h.run_steps(1);
     for _ in 0..2 {
         for pressed in [true, false] {
-            h.event(egui::Event::PointerButton { pos: b, button: egui::PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+            h.event(egui::Event::PointerButton {
+                pos: b,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: Modifiers::NONE,
+            });
             h.run_steps(1);
         }
     }
     h.run_steps(2);
-    assert!(h.state().selpane.renaming.is_some(), "double-click starts renaming");
+    assert!(
+        h.state().selpane.renaming.is_some(),
+        "double-click starts renaming"
+    );
     // The whole name is selected: typing replaces it.
     h.event(egui::Event::Text("Bravo".into()));
     h.run_steps(1);
@@ -219,7 +280,10 @@ fn double_click_renames_in_place() {
     h.run_steps(2);
     h.key_press(egui::Key::F2);
     h.run_steps(3);
-    assert!(h.state().selpane.renaming.is_some(), "F2 renames the selected object");
+    assert!(
+        h.state().selpane.renaming.is_some(),
+        "F2 renames the selected object"
+    );
     h.event(egui::Event::Text("Nope".into()));
     h.run_steps(1);
     h.key_press(egui::Key::Escape);

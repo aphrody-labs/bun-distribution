@@ -1,8 +1,8 @@
 use crate::primitives::Frustum;
 
 use super::{
-    visibility::{Visibility, VisibleEntities},
     ClearColorConfig, MsaaWriteback,
+    visibility::{Visibility, VisibleEntities},
 };
 use bevy_asset::Handle;
 use bevy_derive::Deref;
@@ -10,7 +10,7 @@ use bevy_ecs::{
     component::Component, entity::Entity, reflect::ReflectComponent, template::FromTemplate,
 };
 use bevy_image::Image;
-use bevy_math::{ops, Dir3, FloatOrd, Mat4, Rect, URect, UVec2, Vec2, Vec3, Vec3A};
+use bevy_math::{Dir3, FloatOrd, Mat4, Rect, URect, UVec2, Vec2, Vec3, Vec3A, ops};
 use bevy_reflect::prelude::*;
 use bevy_shape::Ray3d;
 use bevy_transform::components::{GlobalTransform, Transform};
@@ -1108,14 +1108,16 @@ mod test {
         );
         let ray = camera.viewport_to_world(&transform, Vec2::ZERO).unwrap();
         assert_eq!(ray.direction, transform.forward());
-        assert!(ray
-            .origin
-            .abs_diff_eq(Vec3::new(-size.x * 0.5, size.y * 0.5, 0.0), 1e-4));
+        assert!(
+            ray.origin
+                .abs_diff_eq(Vec3::new(-size.x * 0.5, size.y * 0.5, 0.0), 1e-4)
+        );
         let ray = camera.viewport_to_world(&transform, size).unwrap();
         assert_eq!(ray.direction, transform.forward());
-        assert!(ray
-            .origin
-            .abs_diff_eq(Vec3::new(size.x * 0.5, -size.y * 0.5, 0.0), 1e-4));
+        assert!(
+            ray.origin
+                .abs_diff_eq(Vec3::new(size.x * 0.5, -size.y * 0.5, 0.0), 1e-4)
+        );
     }
 
     #[test]
@@ -1128,14 +1130,16 @@ mod test {
         );
         let ray = camera.viewport_to_world(&transform, Vec2::ZERO).unwrap();
         assert_eq!(ray.direction, transform.forward());
-        assert!(ray
-            .origin
-            .abs_diff_eq(Vec3::new(-size.x * 0.5, size.y * 0.5, 1000.0), 1e-4));
+        assert!(
+            ray.origin
+                .abs_diff_eq(Vec3::new(-size.x * 0.5, size.y * 0.5, 1000.0), 1e-4)
+        );
         let ray = camera.viewport_to_world(&transform, size).unwrap();
         assert_eq!(ray.direction, transform.forward());
-        assert!(ray
-            .origin
-            .abs_diff_eq(Vec3::new(size.x * 0.5, -size.y * 0.5, 1000.0), 1e-4));
+        assert!(
+            ray.origin
+                .abs_diff_eq(Vec3::new(size.x * 0.5, -size.y * 0.5, 1000.0), 1e-4)
+        );
     }
 
     #[test]

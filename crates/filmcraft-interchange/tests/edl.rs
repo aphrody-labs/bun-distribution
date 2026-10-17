@@ -2,7 +2,10 @@
 
 mod support;
 
-use filmcraft_interchange::{ExportOptions, Format, ImportOptions, ReelMode, detect, export, export_edl_per_track, import, import_with};
+use filmcraft_interchange::{
+    ExportOptions, Format, ImportOptions, ReelMode, detect, export, export_edl_per_track, import,
+    import_with,
+};
 use filmcraft_project::{ItemKind, MediaRef, TrackKind, TransitionAlign};
 use filmcraft_time::{FrameRate, Tick, fields_to_frames};
 use proptest::prelude::*;
@@ -63,7 +66,10 @@ fn golden_drop_frame_dissolves() {
     assert_eq!(media_key(p, a.item), "/proj/media/harbour_wide.mov");
     assert_eq!(a.name, "harbour_wide.mov");
     // dissolve event
-    assert_eq!((b.start, b.duration, b.source_in), (f(r, 120), f(r, 150), f(r, 35_964)));
+    assert_eq!(
+        (b.start, b.duration, b.source_in),
+        (f(r, 120), f(r, 150), f(r, 35_964))
+    );
     assert_eq!(media_key(p, b.item), "/proj/media/harbour_close.mov");
     // M2 speed line
     assert_eq!(g.speed, 2.0);
@@ -74,11 +80,20 @@ fn golden_drop_frame_dissolves() {
     assert_eq!((c.start, c.duration), (f(r, 330), f(r, 60 + 10)));
     let ts = &v1.transitions;
     assert_eq!(ts.len(), 3);
-    assert_eq!((ts[0].start, ts[0].duration, ts[0].from, ts[0].to), (f(r, 120), f(r, 30), Some(a.id), Some(b.id)));
+    assert_eq!(
+        (ts[0].start, ts[0].duration, ts[0].from, ts[0].to),
+        (f(r, 120), f(r, 30), Some(a.id), Some(b.id))
+    );
     assert_eq!(ts[0].align, TransitionAlign::StartAtCut);
     assert_eq!(ts[0].effect.effect, "cross_dissolve");
-    assert_eq!((ts[1].from, ts[1].to, ts[1].duration), (None, Some(c.id), f(r, 15)));
-    assert_eq!((ts[2].from, ts[2].to, ts[2].start, ts[2].duration), (Some(c.id), None, f(r, 390), f(r, 10)));
+    assert_eq!(
+        (ts[1].from, ts[1].to, ts[1].duration),
+        (None, Some(c.id), f(r, 15))
+    );
+    assert_eq!(
+        (ts[2].from, ts[2].to, ts[2].start, ts[2].duration),
+        (Some(c.id), None, f(r, 390), f(r, 10))
+    );
     assert_eq!(ts[2].align, TransitionAlign::EndAtCut);
 
     // B = V + A1, linked; A2 music.
@@ -95,7 +110,10 @@ fn golden_drop_frame_dissolves() {
     assert_eq!(s.markers[0].color, filmcraft_project::Label::Rose);
     // media without a source file is offline with its reel as tape name
     let gm = p.item(g.item).unwrap();
-    assert_eq!(gm.metadata.get("Tape Name").map(String::as_str), Some("GULLS"));
+    assert_eq!(
+        gm.metadata.get("Tape Name").map(String::as_str),
+        Some("GULLS")
+    );
     assert!(gm.as_media().unwrap().offline);
 }
 
@@ -111,7 +129,10 @@ FCM: NON-DROP FRAME
 002  AX       A     D 024    00:00:02:00 00:00:04:00 01:00:02:00 01:00:04:00
 * TO CLIP NAME: B
 ";
-    let opts = ImportOptions { edl_frame_rate: Some(FrameRate::FPS_24), ..Default::default() };
+    let opts = ImportOptions {
+        edl_frame_rate: Some(FrameRate::FPS_24),
+        ..Default::default()
+    };
     for (name, expected, warning) in [
         (Some("CONSTANT GAIN"), "constant_gain", false),
         (Some("EXPONENTIAL FADE"), "exponential_fade", false),
@@ -119,7 +140,11 @@ FCM: NON-DROP FRAME
         (Some("UNRECOGNIZED TRANSITION"), "constant_power", true),
         (None, "constant_power", false),
     ] {
-        let text = format!("{fixture}{}", name.map(|name| format!("* EFFECT NAME: {name}\n")).unwrap_or_default());
+        let text = format!(
+            "{fixture}{}",
+            name.map(|name| format!("* EFFECT NAME: {name}\n"))
+                .unwrap_or_default()
+        );
         let (imp, rep) = import_with(text.as_bytes(), Format::Edl, &opts).unwrap();
         let seq = imp.project.sequence(only_seq(&imp)).unwrap();
         let track = &seq.audio_tracks[0];
@@ -140,7 +165,10 @@ FCM: NON-DROP FRAME
     let video = fixture.replace("AX       A", "AX       V") + "* EFFECT NAME: CROSS DISSOLVE\n";
     let (imp, rep) = import_with(video.as_bytes(), Format::Edl, &opts).unwrap();
     let seq = imp.project.sequence(only_seq(&imp)).unwrap();
-    assert_eq!(seq.video_tracks[0].transitions[0].effect.effect, "cross_dissolve");
+    assert_eq!(
+        seq.video_tracks[0].transitions[0].effect.effect,
+        "cross_dissolve"
+    );
     assert!(!rep.mentions("not supported"), "{rep}");
 }
 
@@ -156,7 +184,10 @@ FCM: NON-DROP FRAME
 003  LOGO     V     K        00:00:00:00 00:00:02:00 00:00:04:00 00:00:06:00
 004  AUDX     A3    C        00:00:00:00 00:00:06:00 00:00:00:00 00:00:06:00
 ";
-    let opts = ImportOptions { edl_frame_rate: Some(FrameRate::FPS_25), ..Default::default() };
+    let opts = ImportOptions {
+        edl_frame_rate: Some(FrameRate::FPS_25),
+        ..Default::default()
+    };
     let (imp, rep) = import_with(edl.as_bytes(), Format::Edl, &opts).unwrap();
     let p = &imp.project;
     let s = p.sequence(only_seq(&imp)).unwrap();
@@ -172,7 +203,10 @@ FCM: NON-DROP FRAME
     assert!(rep.mentions("key"), "{rep}");
 }
 
-fn demo_project(rate: FrameRate, df: bool) -> (filmcraft_project::Project, filmcraft_project::ItemId) {
+fn demo_project(
+    rate: FrameRate,
+    df: bool,
+) -> (filmcraft_project::Project, filmcraft_project::ItemId) {
     let mut p = filmcraft_project::Project::new("P");
     let a = media(&mut p, "/media/Beach Day.mov", true, true, rate);
     let b = media(&mut p, "/media/city.mp4", true, true, rate);
@@ -182,10 +216,37 @@ fn demo_project(rate: FrameRate, df: bool) -> (filmcraft_project::Project, filmc
     let aa = clip(&mut p, s, TrackKind::Audio, 0, a, 0, 100, 10);
     link(&mut p, s, &[va, aa]);
     let vb = clip(&mut p, s, TrackKind::Video, 0, b, 100, 60, 200);
-    transition(&mut p, s, TrackKind::Video, 0, "cross_dissolve", Some(va), Some(vb), 100, 20, TransitionAlign::StartAtCut);
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "cross_dissolve",
+        Some(va),
+        Some(vb),
+        100,
+        20,
+        TransitionAlign::StartAtCut,
+    );
     let vc = clip(&mut p, s, TrackKind::Video, 0, a, 200, 50, 500);
-    transition(&mut p, s, TrackKind::Video, 0, "dip_to_black", None, Some(vc), 200, 10, TransitionAlign::StartAtCut);
-    p.sequence_mut(s).unwrap().find_item_mut(vc).unwrap().1.speed = 2.0;
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "dip_to_black",
+        None,
+        Some(vc),
+        200,
+        10,
+        TransitionAlign::StartAtCut,
+    );
+    p.sequence_mut(s)
+        .unwrap()
+        .find_item_mut(vc)
+        .unwrap()
+        .1
+        .speed = 2.0;
     clip(&mut p, s, TrackKind::Audio, 1, m, 0, 250, 0);
     (p, s)
 }
@@ -225,11 +286,20 @@ M2   BEACH_DA       050.0                00:00:20:00
     assert!(rep.mentions("Dip to Black"), "{rep}");
 
     // …and it imports back to the same structure.
-    let o = ImportOptions { edl_frame_rate: Some(FrameRate::FPS_25), ..Default::default() };
+    let o = ImportOptions {
+        edl_frame_rate: Some(FrameRate::FPS_25),
+        ..Default::default()
+    };
     let (imp, _) = import_with(text.as_bytes(), Format::Edl, &o).unwrap();
     let si = only_seq(&imp);
-    assert_eq!(structure(&imp.project, si, TrackKind::Video), structure(&p, s, TrackKind::Video));
-    assert_eq!(structure(&imp.project, si, TrackKind::Audio), structure(&p, s, TrackKind::Audio));
+    assert_eq!(
+        structure(&imp.project, si, TrackKind::Video),
+        structure(&p, s, TrackKind::Video)
+    );
+    assert_eq!(
+        structure(&imp.project, si, TrackKind::Audio),
+        structure(&p, s, TrackKind::Audio)
+    );
     assert_eq!(links(&imp.project, si), links(&p, s));
 }
 
@@ -243,7 +313,12 @@ fn reel_modes_and_per_track() {
     o.edl.reel_len = 32;
     let (bytes, _) = export(&p, s, Format::Edl, &o).unwrap();
     let t = String::from_utf8(bytes).unwrap();
-    assert!(t.lines().filter(|l| l.starts_with("00")).all(|l| l[5..7] == *"AX" || l[5..7] == *"BL"), "{t}");
+    assert!(
+        t.lines()
+            .filter(|l| l.starts_with("00"))
+            .all(|l| l[5..7] == *"AX" || l[5..7] == *"BL"),
+        "{t}"
+    );
     let (docs, rep) = export_edl_per_track(&p, s, &ExportOptions::default()).unwrap();
     assert_eq!(docs.len(), 2);
     assert_eq!(docs[1].0, "V2");
@@ -253,8 +328,20 @@ fn reel_modes_and_per_track() {
     let _ = rep;
     // long file names are cut to 8 characters, distinct media keep distinct reels
     let mut q = filmcraft_project::Project::new("q");
-    let m1 = media(&mut q, "/x/interview_cam_a.mov", true, false, FrameRate::FPS_24);
-    let m2 = media(&mut q, "/x/interview_cam_b.mov", true, false, FrameRate::FPS_24);
+    let m1 = media(
+        &mut q,
+        "/x/interview_cam_a.mov",
+        true,
+        false,
+        FrameRate::FPS_24,
+    );
+    let m2 = media(
+        &mut q,
+        "/x/interview_cam_b.mov",
+        true,
+        false,
+        FrameRate::FPS_24,
+    );
     let sq = sequence(&mut q, "S", FrameRate::FPS_24, false);
     clip(&mut q, sq, TrackKind::Video, 0, m1, 0, 10, 0);
     clip(&mut q, sq, TrackKind::Video, 0, m2, 10, 10, 0);
@@ -278,10 +365,24 @@ fn drop_frame_roundtrip_59_94() {
     assert!(text.contains("01;00;59;50 01;01;00;24"), "{text}");
     let si = only_seq(&imp);
     // 59.94 is not guessable from the list alone, pass it.
-    let (imp2, _) = import_with(text.as_bytes(), Format::Edl, &ImportOptions { edl_frame_rate: Some(r), ..Default::default() }).unwrap();
+    let (imp2, _) = import_with(
+        text.as_bytes(),
+        Format::Edl,
+        &ImportOptions {
+            edl_frame_rate: Some(r),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let si2 = only_seq(&imp2);
-    assert_eq!(structure(&imp2.project, si2, TrackKind::Video), structure(&p, s, TrackKind::Video));
-    assert_eq!(imp2.project.sequence(si2).unwrap().start_timecode, p.sequence(s).unwrap().start_timecode);
+    assert_eq!(
+        structure(&imp2.project, si2, TrackKind::Video),
+        structure(&p, s, TrackKind::Video)
+    );
+    assert_eq!(
+        imp2.project.sequence(si2).unwrap().start_timecode,
+        p.sequence(s).unwrap().start_timecode
+    );
     // The guessed rate (59.94 because frame fields exceed 29) also works.
     assert_eq!(imp.project.sequence(si).unwrap().settings.frame_rate, r);
 }
@@ -300,18 +401,36 @@ fn freeze_reverse_and_fade_out() {
         q.find_item_mut(c1).unwrap().1.reverse = true;
         q.find_item_mut(c2).unwrap().1.frame_hold = Some(r.tick_of(310));
     }
-    transition(&mut p, s, TrackKind::Video, 0, "cross_dissolve", Some(c3), None, 84, 12, TransitionAlign::EndAtCut);
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "cross_dissolve",
+        Some(c3),
+        None,
+        84,
+        12,
+        TransitionAlign::EndAtCut,
+    );
     let (imp, text, _) = roundtrip(&p, s, Format::Edl, &ExportOptions::default());
     assert!(text.contains("-024.0"), "{text}");
     assert!(text.contains("000.0"), "{text}");
     let si = only_seq(&imp);
-    assert_eq!(structure(&imp.project, si, TrackKind::Video), structure(&p, s, TrackKind::Video), "{text}");
+    assert_eq!(
+        structure(&imp.project, si, TrackKind::Video),
+        structure(&p, s, TrackKind::Video),
+        "{text}"
+    );
 }
 
 #[test]
 fn media_paths_relative_export() {
     let (p, s) = demo_project(FrameRate::FPS_24, false);
-    let o = ExportOptions { relative_to: Some("/media/edl".into()), ..Default::default() };
+    let o = ExportOptions {
+        relative_to: Some("/media/edl".into()),
+        ..Default::default()
+    };
     let (bytes, _) = export(&p, s, Format::Edl, &o).unwrap();
     let t = String::from_utf8(bytes).unwrap();
     assert!(t.contains("* SOURCE FILE: ../city.mp4"), "{t}");
@@ -353,9 +472,24 @@ struct Gen {
 }
 
 fn gen_clip() -> impl Strategy<Value = Gen> {
-    (0i64..3, 12i64..200, 0usize..3, 30i64..5000, any::<bool>(), prop::option::of(1i64..10), 0u8..6).prop_map(
-        |(gap, dur, media, src, with_audio, dissolve, speed)| Gen { gap: if gap == 0 { 0 } else { gap * 7 }, dur, media, src, with_audio, dissolve, speed },
+    (
+        0i64..3,
+        12i64..200,
+        0usize..3,
+        30i64..5000,
+        any::<bool>(),
+        prop::option::of(1i64..10),
+        0u8..6,
     )
+        .prop_map(|(gap, dur, media, src, with_audio, dissolve, speed)| Gen {
+            gap: if gap == 0 { 0 } else { gap * 7 },
+            dur,
+            media,
+            src,
+            with_audio,
+            dissolve,
+            speed,
+        })
 }
 
 proptest! {
@@ -427,12 +561,40 @@ fn a_nested_sequence_is_one_event_from_reel_ax() {
     let events: Vec<&str> = text.lines().filter(|l| l.starts_with("00")).collect();
     assert_eq!(events.len(), 1, "{text}");
     let fields: Vec<&str> = events[0].split_whitespace().collect();
-    assert_eq!(fields, ["001", "AX", "B", "C", "00:00:01:00", "00:00:03:00", "00:00:03:00", "00:00:05:00"], "{text}");
-    assert!(text.lines().any(|l| l == "* FROM CLIP NAME: Nested Sequence 02"), "{text}");
-    assert!(rep.mentions("nested sequences"), "the report says the nest's own edit is not in the EDL: {rep}");
+    assert_eq!(
+        fields,
+        [
+            "001",
+            "AX",
+            "B",
+            "C",
+            "00:00:01:00",
+            "00:00:03:00",
+            "00:00:03:00",
+            "00:00:05:00"
+        ],
+        "{text}"
+    );
+    assert!(
+        text.lines()
+            .any(|l| l == "* FROM CLIP NAME: Nested Sequence 02"),
+        "{text}"
+    );
+    assert!(
+        rep.mentions("nested sequences"),
+        "the report says the nest's own edit is not in the EDL: {rep}"
+    );
     // read back, it is a clip of that name at the same place (an EDL cannot hold the nested edit)
     let (imp, _) = import(&bytes, Format::Edl, None).unwrap();
     let q = imp.project.sequence(only_seq(&imp)).unwrap();
     let c = &q.video_tracks[0].items[0];
-    assert_eq!((c.name.as_str(), c.start, c.duration, c.source_in), ("Nested Sequence 02", rate.tick_of(72), rate.tick_of(48), rate.tick_of(24)));
+    assert_eq!(
+        (c.name.as_str(), c.start, c.duration, c.source_in),
+        (
+            "Nested Sequence 02",
+            rate.tick_of(72),
+            rate.tick_of(48),
+            rate.tick_of(24)
+        )
+    );
 }

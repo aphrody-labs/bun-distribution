@@ -16,15 +16,21 @@ fn filter_menu_on_a_long_list() -> Harness {
     session.new_workbook();
     let mut values = vec![vec![json!("Code")]];
     values.extend((1..=80).map(|i| vec![json!(format!("ITEM-{i:03}"))]));
-    session.execute("range.setValues", json!({"range": "A1", "values": values})).unwrap();
-    session.execute("data.filter", json!({"range": "A1:A81"})).unwrap();
-    let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    session
+        .execute("range.setValues", json!({"range": "A1", "values": values}))
+        .unwrap();
+    session
+        .execute("data.filter", json!({"range": "A1:A81"}))
+        .unwrap();
+    let mut h = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     let button = {
         let app = h.state();
@@ -34,10 +40,18 @@ fn filter_menu_on_a_long_list() -> Harness {
     };
     h.input_mut().events.push(Event::PointerMoved(button));
     for pressed in [true, false] {
-        h.input_mut().events.push(Event::PointerButton { pos: button, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: button,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        });
     }
     h.run_steps(4);
-    assert!(h.state().grid.filter_menu.is_some(), "the filter menu opens");
+    assert!(
+        h.state().grid.filter_menu.is_some(),
+        "the filter menu opens"
+    );
     h
 }
 
@@ -57,5 +71,9 @@ fn filter_list_scrolls_with_the_pointer_right_of_the_values() {
     });
     h.run_steps(20);
     let now = h.query_by_label("ITEM-001").map(|n| n.rect().top());
-    assert!(now.is_none_or(|y| y < first.top() - 20.0), "the wheel scrolls the list: ITEM-001 was at {}, now {now:?}", first.top());
+    assert!(
+        now.is_none_or(|y| y < first.top() - 20.0),
+        "the wheel scrolls the list: ITEM-001 was at {}, now {now:?}",
+        first.top()
+    );
 }

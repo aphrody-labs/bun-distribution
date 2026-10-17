@@ -25,12 +25,16 @@ fn quartered_jpeg(tag: Option<u8>) -> Vec<u8> {
         image::Rgb(c.map(|v| (v * 255.0) as u8))
     });
     let mut jpeg = Vec::new();
-    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 100).encode_image(&img).expect("encode");
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpeg, 100)
+        .encode_image(&img)
+        .expect("encode");
     let Some(tag) = tag else { return jpeg };
     // APP1 "Exif": a big-endian TIFF header and one IFD holding Orientation (0x0112, SHORT).
     let mut app1 = vec![0xFF, 0xE1, 0x00, 0x22];
     app1.extend_from_slice(b"Exif\0\0MM\0\x2A\0\0\0\x08");
-    app1.extend_from_slice(&[0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, tag, 0x00, 0x00]);
+    app1.extend_from_slice(&[
+        0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, tag, 0x00, 0x00,
+    ]);
     app1.extend_from_slice(&[0x00; 4]);
     // (Straight after the SOI marker.)
     jpeg.splice(2..2, app1);
@@ -47,13 +51,20 @@ fn imported(tag: Option<u8>) -> ((u32, u32), [[f32; 3]; 4]) {
     let pool = MediaPool::new();
     pool.add_bytes(&name, bytes);
     let img = pool.frame_at(&f, Tick::ZERO).expect("frame");
-    assert_eq!((img.width, img.height), (f.width, f.height), "orientation {tag:?}: the frame has the probed size");
+    assert_eq!(
+        (img.width, img.height),
+        (f.width, f.height),
+        "orientation {tag:?}: the frame has the probed size"
+    );
     let (w, h) = (img.width as usize, img.height as usize);
     let at = |x: usize, y: usize| {
         let p = img.data[y * w + x];
         [p[0], p[1], p[2]]
     };
-    ((f.width, f.height), [at(2, 2), at(w - 3, 2), at(2, h - 3), at(w - 3, h - 3)])
+    (
+        (f.width, f.height),
+        [at(2, 2), at(w - 3, 2), at(2, h - 3), at(w - 3, h - 3)],
+    )
 }
 
 #[test]
@@ -78,7 +89,10 @@ fn exif_orientation_is_applied_to_stills() {
         assert_eq!(got_size, size, "orientation {tag:?}: size");
         for (i, (g, want)) in got.iter().zip(corners).enumerate() {
             let near = g.iter().zip(want).all(|(a, b)| (a - b).abs() < 0.2);
-            assert!(near, "orientation {tag:?}: corner {i} is {g:?}, expected {want:?}");
+            assert!(
+                near,
+                "orientation {tag:?}: corner {i} is {g:?}, expected {want:?}"
+            );
         }
     }
 }

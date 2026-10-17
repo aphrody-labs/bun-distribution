@@ -11,7 +11,13 @@ use crate::comments::{cluster, insert_mention, mention_matches, mention_query};
 use crate::present_tests::{Ui, id};
 
 fn add(s: &mut Session, x: f64, y: f64, text: &str, author: &str) -> u64 {
-    s.execute("comment.add", &json!({"x": x, "y": y, "text": text, "author": author, "anchor": true})).unwrap()["id"].as_u64().unwrap()
+    s.execute(
+        "comment.add",
+        &json!({"x": x, "y": y, "text": text, "author": author, "anchor": true}),
+    )
+    .unwrap()["id"]
+        .as_u64()
+        .unwrap()
 }
 
 /// The middle of the pin whose spot is page point (`x`, `y`).
@@ -32,7 +38,13 @@ fn click_pin(u: &mut Ui, x: f64, y: f64) {
 }
 
 fn key(u: &mut Ui, key: Key, modifiers: Modifiers) {
-    let k = |pressed| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers };
+    let k = |pressed| Event::Key {
+        key,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers,
+    };
     u.frame(vec![k(true), k(false)]);
     u.frame(vec![]);
 }
@@ -50,26 +62,62 @@ fn mention_helpers() {
     assert_eq!(mention_query("Hi @Sam ", 8), None, "a space ends it");
     assert_eq!(mention_query("mail@x", 6), None, "inside a word");
     assert_eq!(mention_query("@Sa\nx", 5), None, "on another line");
-    assert_eq!(mention_query("é @Sa", 4), Some((3, 5)), "byte range, char cursor");
-    assert_eq!(mention_query("Hi @Sa", 99), Some((3, 6)), "a cursor past the end");
-    let people: Vec<String> = ["Ada Lovelace", "Sam", "Sam Lee", "You"].iter().map(|s| s.to_string()).collect();
-    assert_eq!(mention_matches(&people, "sa", "You"), vec!["Sam", "Sam Lee"]);
-    assert_eq!(mention_matches(&people, "love", "You"), vec!["Ada Lovelace"], "a later word");
-    assert_eq!(mention_matches(&people, "", "You").len(), 3, "everyone but you");
+    assert_eq!(
+        mention_query("é @Sa", 4),
+        Some((3, 5)),
+        "byte range, char cursor"
+    );
+    assert_eq!(
+        mention_query("Hi @Sa", 99),
+        Some((3, 6)),
+        "a cursor past the end"
+    );
+    let people: Vec<String> = ["Ada Lovelace", "Sam", "Sam Lee", "You"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    assert_eq!(
+        mention_matches(&people, "sa", "You"),
+        vec!["Sam", "Sam Lee"]
+    );
+    assert_eq!(
+        mention_matches(&people, "love", "You"),
+        vec!["Ada Lovelace"],
+        "a later word"
+    );
+    assert_eq!(
+        mention_matches(&people, "", "You").len(),
+        3,
+        "everyone but you"
+    );
     // Inserting replaces the query and leaves the cursor after a space.
     let mut t = String::from("Hi @Sa, ok");
     let at = insert_mention(&mut t, (3, 6), "Sam Lee");
     assert_eq!(t, "Hi @Sam Lee , ok");
     assert_eq!(at, 12);
     let mut t = String::from("é");
-    assert_eq!(insert_mention(&mut t, (1, 2), "X"), 1, "not on a char boundary: unchanged");
-    assert_eq!(insert_mention(&mut t, (5, 9), "X"), 1, "out of range: unchanged");
+    assert_eq!(
+        insert_mention(&mut t, (1, 2), "X"),
+        1,
+        "not on a char boundary: unchanged"
+    );
+    assert_eq!(
+        insert_mention(&mut t, (5, 9), "X"),
+        1,
+        "out of range: unchanged"
+    );
     assert_eq!(t, "é");
 }
 
 #[test]
 fn clusters_group_nearby_points() {
-    let pts = [pos2(0.0, 0.0), pos2(10.0, 0.0), pos2(100.0, 0.0), pos2(5.0, 12.0), pos2(300.0, 300.0)];
+    let pts = [
+        pos2(0.0, 0.0),
+        pos2(10.0, 0.0),
+        pos2(100.0, 0.0),
+        pos2(5.0, 12.0),
+        pos2(300.0, 300.0),
+    ];
     assert_eq!(cluster(&pts, 24.0), vec![vec![0, 1, 3], vec![2], vec![4]]);
     assert!(cluster(&[], 24.0).is_empty());
     assert_eq!(cluster(&pts, 0.0).len(), 5);
@@ -78,7 +126,11 @@ fn clusters_group_nearby_points() {
 #[test]
 fn crowded_pins_cluster_and_a_click_zooms_them_apart() {
     let mut s = Session::new();
-    s.execute("node.create", &json!({"type": "frame", "x": 0, "y": 0, "width": 400, "height": 400})).unwrap();
+    s.execute(
+        "node.create",
+        &json!({"type": "frame", "x": 0, "y": 0, "width": 400, "height": 400}),
+    )
+    .unwrap();
     for (i, x) in [100.0, 104.0, 108.0].into_iter().enumerate() {
         add(&mut s, x, 100.0, &format!("Note {i}"), "Sam");
     }
@@ -90,7 +142,11 @@ fn crowded_pins_cluster_and_a_click_zooms_them_apart() {
     click(&mut u, spot);
     let after = u.app.session.ds().unwrap().view.zoom;
     assert!(after >= zoom * 2.0, "{zoom} -> {after}");
-    assert_eq!(comments(&u)["open"], Value::Null, "a cluster click opens no thread");
+    assert_eq!(
+        comments(&u)["open"],
+        Value::Null,
+        "a cluster click opens no thread"
+    );
     // Zoomed in, they stand apart: a click opens one.
     u.run("view.set", json!({"zoom": 8, "cx": 104, "cy": 100}));
     click_pin(&mut u, 108.0, 100.0);
@@ -100,8 +156,17 @@ fn crowded_pins_cluster_and_a_click_zooms_them_apart() {
 #[test]
 fn your_pins_drag_onto_another_frame() {
     let mut s = Session::new();
-    s.execute("node.create", &json!({"type": "frame", "x": 0, "y": 0, "width": 200, "height": 200})).unwrap();
-    let b = id(&s.execute("node.create", &json!({"type": "frame", "x": 300, "y": 0, "width": 200, "height": 200})).unwrap());
+    s.execute(
+        "node.create",
+        &json!({"type": "frame", "x": 0, "y": 0, "width": 200, "height": 200}),
+    )
+    .unwrap();
+    let b = id(&s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 300, "y": 0, "width": 200, "height": 200}),
+        )
+        .unwrap());
     let mine = add(&mut s, 50.0, 50.0, "Mine", "You");
     let theirs = add(&mut s, 50.0, 150.0, "Theirs", "Sam");
     let mut u = Ui::new(s);
@@ -120,11 +185,23 @@ fn your_pins_drag_onto_another_frame() {
     let c = u.app.session.doc().unwrap().comment(mine).unwrap().clone();
     assert_eq!(c.anchor, Some(b));
     let (x, y) = c.position(u.app.session.doc().unwrap());
-    assert!((x - 350.0).abs() < 0.01 && (y - 60.0).abs() < 0.01, "{x}, {y}");
+    assert!(
+        (x - 350.0).abs() < 0.01 && (y - 60.0).abs() < 0.01,
+        "{x}, {y}"
+    );
     // Someone else's pin doesn't move: the press opens it instead.
     let (from, to) = (pin_at(&u, 50.0, 150.0), pin_at(&u, 350.0, 160.0));
     drag(&mut u, from, to);
-    assert_eq!(u.app.session.doc().unwrap().comment(theirs).unwrap().position(u.app.session.doc().unwrap()), (50.0, 150.0));
+    assert_eq!(
+        u.app
+            .session
+            .doc()
+            .unwrap()
+            .comment(theirs)
+            .unwrap()
+            .position(u.app.session.doc().unwrap()),
+        (50.0, 150.0)
+    );
     assert_eq!(comments(&u)["open"], theirs);
 }
 
@@ -144,7 +221,15 @@ fn shift_c_hides_the_pins_and_escape_closes_a_thread() {
     click_pin(&mut u, 100.0, 100.0);
     assert_eq!(comments(&u)["open"], c);
     // Opening it read it.
-    assert!(!u.app.session.doc().unwrap().comment(c).unwrap().is_unread("You"));
+    assert!(
+        !u.app
+            .session
+            .doc()
+            .unwrap()
+            .comment(c)
+            .unwrap()
+            .is_unread("You")
+    );
     key(&mut u, Key::Escape, Modifiers::NONE);
     assert_eq!(comments(&u)["open"], Value::Null);
 }
@@ -178,7 +263,11 @@ fn arrows_step_through_the_threads_with_the_comment_tool() {
 fn typing_at_offers_names_and_enter_inserts_one() {
     let mut s = Session::new();
     let c = add(&mut s, 100.0, 100.0, "Who can check?", "Sam Lee");
-    s.execute("comment.reply", &json!({"id": c, "text": "Me", "author": "Ada"})).unwrap();
+    s.execute(
+        "comment.reply",
+        &json!({"id": c, "text": "Me", "author": "Ada"}),
+    )
+    .unwrap();
     let mut u = Ui::new(s);
     u.run("view.set", json!({"zoom": 1, "cx": 100, "cy": 100}));
     u.run("comment.open", json!({"id": c, "view": "keep"}));
@@ -193,7 +282,10 @@ fn typing_at_offers_names_and_enter_inserts_one() {
     u.frame(vec![Event::Text("!".into())]);
     key(&mut u, Key::Enter, Modifiers::NONE);
     let doc = u.app.session.doc().unwrap();
-    assert_eq!(doc.comment(c).unwrap().replies.last().unwrap().text, "Thanks @Sam Lee !");
+    assert_eq!(
+        doc.comment(c).unwrap().replies.last().unwrap().text,
+        "Thanks @Sam Lee !"
+    );
     assert!(doc.comment(c).unwrap().involves("Sam Lee"));
     assert!(u.app.ui.comments.reply.is_empty());
 }
@@ -201,8 +293,18 @@ fn typing_at_offers_names_and_enter_inserts_one() {
 #[test]
 fn the_presenter_shows_the_frames_comments() {
     let mut s = Session::new();
-    let f = id(&s.execute("node.create", &json!({"type": "frame", "x": 0, "y": 0, "width": 400, "height": 300})).unwrap());
-    let other = id(&s.execute("node.create", &json!({"type": "frame", "x": 600, "y": 0, "width": 400, "height": 300})).unwrap());
+    let f = id(&s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 0, "y": 0, "width": 400, "height": 300}),
+        )
+        .unwrap());
+    let other = id(&s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 600, "y": 0, "width": 400, "height": 300}),
+        )
+        .unwrap());
     let c = add(&mut s, 100.0, 100.0, "On the frame", "Sam");
     add(&mut s, 700.0, 100.0, "Elsewhere", "Sam");
     let mut u = Ui::new(s);
@@ -218,7 +320,10 @@ fn the_presenter_shows_the_frames_comments() {
     let pin = frame_min + vec2(100.0, 100.0) + vec2(14.0, -14.0);
     click(&mut u, pin);
     assert_eq!(comments(&u)["open"], c);
-    assert!(u.app.ui.present.is_some(), "the click didn't reach the prototype or close it");
+    assert!(
+        u.app.ui.present.is_some(),
+        "the click didn't reach the prototype or close it"
+    );
     // Escape closes the thread first, then the presenter.
     key(&mut u, Key::Escape, Modifiers::NONE);
     assert_eq!(comments(&u)["open"], Value::Null);

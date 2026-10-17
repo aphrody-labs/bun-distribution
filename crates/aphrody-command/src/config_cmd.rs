@@ -67,7 +67,7 @@ pub(crate) async fn run(
             let path = aphrody_config_path()?;
             println!("{}", path.display());
             Ok(())
-        },
+        }
         ConfigAction::Show { json } => {
             let (config, warnings) = aphrody_diagnostics::config::resolve_config(
                 profile,
@@ -81,7 +81,10 @@ pub(crate) async fn run(
             }
 
             if json {
-                println!("{}", serde_json::to_string_pretty(&config.to_json()).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&config.to_json()).into_diagnostic()?
+                );
             } else {
                 println!("model_provider = \"{}\"", config.provider.id);
                 if let Some(m) = &config.model {
@@ -98,7 +101,7 @@ pub(crate) async fn run(
                 }
             }
             Ok(())
-        },
+        }
         ConfigAction::ImportCodex { dry_run } => {
             let codex_path = codex_config_path()
                 .ok_or_else(|| miette::miette!("No ~/.codex/config.toml found to import."))?;
@@ -124,7 +127,11 @@ pub(crate) async fn run(
             let serialized = toml::to_string_pretty(&merged).into_diagnostic()?;
 
             if dry_run {
-                println!("--- Dry Run: Proposed {} ---\n{}", target_path.display(), serialized);
+                println!(
+                    "--- Dry Run: Proposed {} ---\n{}",
+                    target_path.display(),
+                    serialized
+                );
             } else {
                 if let Some(parent) = target_path.parent() {
                     std::fs::create_dir_all(parent).into_diagnostic()?;
@@ -136,6 +143,6 @@ pub(crate) async fn run(
                 );
             }
             Ok(())
-        },
+        }
     }
 }

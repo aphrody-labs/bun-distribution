@@ -49,8 +49,9 @@ pub(super) fn text(bytes: &[u8]) -> String {
 
 fn cp1252(b: u8) -> char {
     const HIGH: [char; 32] = [
-        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž', '\u{8f}', '\u{90}', '‘', '’', '“', '”', '•', '–', '—',
-        '˜', '™', 'š', '›', 'œ', '\u{9d}', 'ž', 'Ÿ',
+        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8d}', 'Ž',
+        '\u{8f}', '\u{90}', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9d}',
+        'ž', 'Ÿ',
     ];
     match b {
         0x80..=0x9f => HIGH.get(usize::from(b - 0x80)).copied().unwrap_or('?'),
@@ -71,15 +72,25 @@ pub(super) struct Obj {
 impl Obj {
     /// The values of entry `key` (the first one).
     pub fn get(&self, key: &str) -> Option<&[V]> {
-        self.entries.iter().find(|(k, _)| k.as_deref() == Some(key)).map(|(_, v)| v.as_slice())
+        self.entries
+            .iter()
+            .find(|(k, _)| k.as_deref() == Some(key))
+            .map(|(_, v)| v.as_slice())
     }
     /// The numbers of entry `key`.
     pub fn nums(&self, key: &str) -> Vec<f64> {
-        self.get(key).unwrap_or_default().iter().filter_map(V::num).collect()
+        self.get(key)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(V::num)
+            .collect()
     }
     /// The first text value of entry `key`.
     pub fn text(&self, key: &str) -> Option<String> {
-        self.get(key)?.iter().find(|v| matches!(v, V::Str(_))).and_then(V::text)
+        self.get(key)?
+            .iter()
+            .find(|v| matches!(v, V::Str(_)))
+            .and_then(V::text)
     }
     /// The dictionary value of entry `key`.
     pub fn obj(&self, key: &str) -> Option<&Obj> {
@@ -87,7 +98,11 @@ impl Obj {
     }
     /// The dictionaries an array holds, in order.
     pub fn items(&self) -> impl Iterator<Item = &Obj> {
-        self.entries.iter().flat_map(|(_, v)| v.iter()).chain(self.content.iter()).filter_map(V::obj)
+        self.entries
+            .iter()
+            .flat_map(|(_, v)| v.iter())
+            .chain(self.content.iter())
+            .filter_map(V::obj)
     }
     /// The first text of the content.
     pub fn content_text(&self) -> Option<String> {
@@ -159,10 +174,16 @@ fn escaped(s: &str) -> Option<(char, usize)> {
 
 /// `id` without the `_000…_` suffix that makes it unique.
 fn strip_unique(id: &str) -> &str {
-    let Some(body) = id.strip_suffix('_') else { return id };
+    let Some(body) = id.strip_suffix('_') else {
+        return id;
+    };
     let Some(at) = body.rfind('_') else { return id };
     let digits = body.get(at + 1..).unwrap_or_default();
-    if digits.len() >= 20 && digits.bytes().all(|b| b.is_ascii_digit()) { body.get(..at).unwrap_or(id) } else { id }
+    if digits.len() >= 20 && digits.bytes().all(|b| b.is_ascii_digit()) {
+        body.get(..at).unwrap_or(id)
+    } else {
+        id
+    }
 }
 
 #[cfg(test)]
@@ -175,26 +196,43 @@ mod tests {
         assert_eq!(xml_name("My_Rect__x23_2"), "My Rect #2");
         assert_eq!(xml_name("_x31_abc__x28_paren_x29_"), "1abc (paren)");
         assert_eq!(xml_name("Ünï_日本"), "Ünï 日本");
-        assert_eq!(xml_name("S_00000092429200007574234970000005974767392385616558_"), "S");
+        assert_eq!(
+            xml_name("S_00000092429200007574234970000005974767392385616558_"),
+            "S"
+        );
         assert_eq!(xml_name("a_x_"), "a x ");
         assert_eq!(xml_name("_xD800_"), " xD800 ");
     }
 
     #[test]
     fn entries_and_content() {
-        let mut o = Obj { ty: "XMLUID".into(), ..Obj::default() };
+        let mut o = Obj {
+            ty: "XMLUID".into(),
+            ..Obj::default()
+        };
         let mut st = vec![V::Num(9.0), V::Str(b"Main".to_vec())];
         close(&mut o, &mut st, 1);
         assert_eq!(o.content_text().as_deref(), Some("Main"));
         assert_eq!(st, vec![V::Num(9.0)]);
-        let mut d = Obj { ty: "Dictionary".into(), ..Obj::default() };
-        let mut st = vec![V::Num(1.0), V::Num(2.0), V::Name("RealPoint".into()), V::Str(b"P".to_vec())];
+        let mut d = Obj {
+            ty: "Dictionary".into(),
+            ..Obj::default()
+        };
+        let mut st = vec![
+            V::Num(1.0),
+            V::Num(2.0),
+            V::Name("RealPoint".into()),
+            V::Str(b"P".to_vec()),
+        ];
         add_entry(&mut d, &mut st, 0);
         let mut st = vec![V::Name("Def".into())];
         close(&mut d, &mut st, 0);
         assert_eq!(d.nums("P"), vec![1.0, 2.0]);
         assert_eq!(d.get("Def"), Some(&[][..]));
-        let mut a = Obj { ty: "Array".into(), ..Obj::default() };
+        let mut a = Obj {
+            ty: "Array".into(),
+            ..Obj::default()
+        };
         let mut st = vec![V::Obj(Rc::new(d.clone()))];
         add_entry(&mut a, &mut st, 0);
         assert_eq!(a.items().count(), 1);

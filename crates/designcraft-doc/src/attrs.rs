@@ -169,7 +169,13 @@ impl Digits {
                     {
                         0x06F0
                     }
-                    _ if l.starts_with("hindi") || l.starts_with("marathi") || l.starts_with("nepali") || l.starts_with("sanskrit") => 0x0966,
+                    _ if l.starts_with("hindi")
+                        || l.starts_with("marathi")
+                        || l.starts_with("nepali")
+                        || l.starts_with("sanskrit") =>
+                    {
+                        0x0966
+                    }
                     _ if l.starts_with("bengali") => 0x09E6,
                     _ if l.starts_with("gujarati") => 0x0AE6,
                     _ if l.starts_with("punjabi") => 0x0A66,
@@ -202,7 +208,10 @@ pub fn language_tag(language: &str) -> Option<&'static str> {
     let language = language.trim();
     let language = language.strip_prefix("$ID/").unwrap_or(language);
     let l = language.to_lowercase();
-    let words: Vec<&str> = l.split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).collect();
+    let words: Vec<&str> = l
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect();
     let first = words.first().copied().unwrap_or("");
     let has = |any: &[&str]| words.iter().any(|w| any.contains(w));
     if first == "zh" || has(&["chinese"]) {
@@ -279,11 +288,15 @@ pub fn language_tag(language: &str) -> Option<&'static str> {
 /// The tag of a locale code split into lowercase `words`: a language (2 or 3 letters), then
 /// optionally a region (2 letters or 3 digits) and a reform year (4 digits) → `ll` or `ll-CC`.
 fn locale_code(words: &[&str]) -> Option<String> {
-    let letters = |w: &str, n: std::ops::RangeInclusive<usize>| n.contains(&w.len()) && w.bytes().all(|b| b.is_ascii_lowercase());
+    let letters = |w: &str, n: std::ops::RangeInclusive<usize>| {
+        n.contains(&w.len()) && w.bytes().all(|b| b.is_ascii_lowercase())
+    };
     let digits = |w: &str, n: usize| w.len() == n && w.bytes().all(|b| b.is_ascii_digit());
     match *words {
         [lang] if letters(lang, 2..=3) => Some(lang.to_string()),
-        [lang, region] | [lang, region, _] if letters(lang, 2..=3) && (letters(region, 2..=2) || digits(region, 3)) => {
+        [lang, region] | [lang, region, _]
+            if letters(lang, 2..=3) && (letters(region, 2..=2) || digits(region, 3)) =>
+        {
             if let [_, _, year] = *words
                 && !digits(year, 4)
             {
@@ -300,7 +313,9 @@ fn locale_code(words: &[&str]) -> Option<String> {
 fn intern_tag(tag: String) -> Option<&'static str> {
     const MAX_TAGS: usize = 512;
     static TAGS: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
-    let mut tags = TAGS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut tags = TAGS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(t) = tags.iter().find(|t| **t == tag) {
         return Some(t);
     }
@@ -379,7 +394,13 @@ pub enum Align {
 
 impl Align {
     pub fn is_justified(self) -> bool {
-        matches!(self, Align::LeftJustified | Align::CenterJustified | Align::RightJustified | Align::FullyJustified)
+        matches!(
+            self,
+            Align::LeftJustified
+                | Align::CenterJustified
+                | Align::RightJustified
+                | Align::FullyJustified
+        )
     }
     pub const ALL: [Align; 9] = [
         Align::Left,
@@ -447,7 +468,10 @@ pub struct NestedLineStyle {
 
 impl Default for NestedLineStyle {
     fn default() -> Self {
-        NestedLineStyle { style: String::new(), lines: 1 }
+        NestedLineStyle {
+            style: String::new(),
+            lines: 1,
+        }
     }
 }
 
@@ -463,7 +487,12 @@ pub struct NestedStyle {
 
 impl Default for NestedStyle {
     fn default() -> Self {
-        NestedStyle { style: String::new(), through: true, count: 1, until: NestedUntil::Words }
+        NestedStyle {
+            style: String::new(),
+            through: true,
+            count: 1,
+            until: NestedUntil::Words,
+        }
     }
 }
 
@@ -547,7 +576,16 @@ pub struct Rule {
 
 impl Default for Rule {
     fn default() -> Self {
-        Rule { on: false, weight: 1.0, color: "[Black]".into(), tint: 1.0, column_width: true, offset: 0.0, left_indent: 0.0, right_indent: 0.0 }
+        Rule {
+            on: false,
+            weight: 1.0,
+            color: "[Black]".into(),
+            tint: 1.0,
+            column_width: true,
+            offset: 0.0,
+            left_indent: 0.0,
+            right_indent: 0.0,
+        }
     }
 }
 
@@ -588,7 +626,11 @@ impl NumberStyle {
         if n > MAX_REPEATED_FORM
             && matches!(
                 self,
-                NumberStyle::UpperRoman | NumberStyle::LowerRoman | NumberStyle::UpperLetters | NumberStyle::LowerLetters | NumberStyle::Symbols
+                NumberStyle::UpperRoman
+                    | NumberStyle::LowerRoman
+                    | NumberStyle::UpperLetters
+                    | NumberStyle::LowerLetters
+                    | NumberStyle::Symbols
             )
         {
             return n.to_string();
@@ -909,15 +951,30 @@ impl ParaAttrs {
     /// [`set_json`](Self::set_json), except that a `ruleAbove` / `ruleBelow` object names only the
     /// rule fields to change; the others keep their values in `current` (the resolved attributes
     /// of the paragraph or style being edited).
-    pub fn set_json_over(&mut self, key: &str, value: &serde_json::Value, current: &ParaProps) -> Result<(), String> {
-        let rule = match key.chars().filter(|c| *c != '_').collect::<String>().to_ascii_lowercase().as_str() {
+    pub fn set_json_over(
+        &mut self,
+        key: &str,
+        value: &serde_json::Value,
+        current: &ParaProps,
+    ) -> Result<(), String> {
+        let rule = match key
+            .chars()
+            .filter(|c| *c != '_')
+            .collect::<String>()
+            .to_ascii_lowercase()
+            .as_str()
+        {
             "ruleabove" => &current.rule_above,
             "rulebelow" => &current.rule_below,
             _ => return self.set_json(key, value),
         };
-        let serde_json::Value::Object(patch) = value else { return self.set_json(key, value) };
+        let serde_json::Value::Object(patch) = value else {
+            return self.set_json(key, value);
+        };
         let mut merged = serde_json::to_value(rule).map_err(|e| format!("{key}: {e}"))?;
-        let serde_json::Value::Object(fields) = &mut merged else { return Err(format!("{key}: not an object")) };
+        let serde_json::Value::Object(fields) = &mut merged else {
+            return Err(format!("{key}: not an object"));
+        };
         for (k, v) in patch {
             if !fields.contains_key(k) {
                 return Err(format!("{key}: unknown rule field `{k}`"));
@@ -936,7 +993,11 @@ impl ParaProps {
 
     /// The label of a bulleted paragraph.
     pub fn bullet_label(&self) -> String {
-        let mut s: String = self.bullet_char.chars().filter(|c| *c != '\n' && *c != '\r').collect();
+        let mut s: String = self
+            .bullet_char
+            .chars()
+            .filter(|c| *c != '\n' && *c != '\r')
+            .collect();
         s.push_str(&expand_list_text(&self.list_separator, ""));
         s
     }
@@ -949,15 +1010,38 @@ mod tests {
     #[test]
     fn a_partial_rule_keeps_the_other_fields() {
         let current = ParaProps {
-            rule_below: Rule { on: true, weight: 3.0, color: "Red".into(), offset: 4.0, column_width: false, ..Rule::default() },
+            rule_below: Rule {
+                on: true,
+                weight: 3.0,
+                color: "Red".into(),
+                offset: 4.0,
+                column_width: false,
+                ..Rule::default()
+            },
             ..ParaProps::default()
         };
         let mut a = ParaAttrs::default();
-        a.set_json_over("ruleBelow", &serde_json::json!({"color": "Blue"}), &current).unwrap();
-        assert_eq!(a.rule_below, Some(Rule { color: "Blue".into(), ..current.rule_below.clone() }));
+        a.set_json_over("ruleBelow", &serde_json::json!({"color": "Blue"}), &current)
+            .unwrap();
+        assert_eq!(
+            a.rule_below,
+            Some(Rule {
+                color: "Blue".into(),
+                ..current.rule_below.clone()
+            })
+        );
         assert_eq!(a.rule_above, None);
-        assert!(a.set_json_over("ruleAbove", &serde_json::json!({"colour": "Blue"}), &current).is_err(), "unknown field");
-        a.set_json_over("ruleBelow", &serde_json::Value::Null, &current).unwrap();
+        assert!(
+            a.set_json_over(
+                "ruleAbove",
+                &serde_json::json!({"colour": "Blue"}),
+                &current
+            )
+            .is_err(),
+            "unknown field"
+        );
+        a.set_json_over("ruleBelow", &serde_json::Value::Null, &current)
+            .unwrap();
         assert_eq!(a.rule_below, None, "null clears the override");
     }
 
@@ -1071,8 +1155,15 @@ mod tests {
 
     #[test]
     fn merge_and_resolve() {
-        let mut a = CharAttrs { size: Some(10.0), ..Default::default() };
-        a.merge(&CharAttrs { tracking: Some(20.0), size: Some(11.0), ..Default::default() });
+        let mut a = CharAttrs {
+            size: Some(10.0),
+            ..Default::default()
+        };
+        a.merge(&CharAttrs {
+            tracking: Some(20.0),
+            size: Some(11.0),
+            ..Default::default()
+        });
         assert_eq!(a.size, Some(11.0));
         assert_eq!(a.count(), 2);
         let mut p = CharProps::default();
@@ -1110,7 +1201,10 @@ mod tests {
 
     #[test]
     fn serde_skips_unset() {
-        let a = CharAttrs { size: Some(9.0), ..Default::default() };
+        let a = CharAttrs {
+            size: Some(9.0),
+            ..Default::default()
+        };
         assert_eq!(serde_json::to_string(&a).unwrap(), r#"{"size":9.0}"#);
         let p: ParaProps = serde_json::from_str(r#"{"align":"center"}"#).unwrap();
         assert_eq!(p.align, Align::Center);
@@ -1128,16 +1222,28 @@ mod tests {
         assert_eq!(NumberStyle::ArabicThreeDigits.format(7), "007");
         assert_eq!(NumberStyle::ArabicFourDigits.format(12), "0012");
         // Repeating forms stay small for huge numbers.
-        assert_eq!(NumberStyle::UpperRoman.format(u32::MAX), u32::MAX.to_string());
-        assert_eq!(NumberStyle::LowerLetters.format(u32::MAX), u32::MAX.to_string());
+        assert_eq!(
+            NumberStyle::UpperRoman.format(u32::MAX),
+            u32::MAX.to_string()
+        );
+        assert_eq!(
+            NumberStyle::LowerLetters.format(u32::MAX),
+            u32::MAX.to_string()
+        );
         assert_eq!(NumberStyle::Symbols.format(u32::MAX), u32::MAX.to_string());
     }
 
     #[test]
     fn list_labels_expand_metacharacters() {
-        let p = ParaProps { number_style: NumberStyle::UpperLetters, ..Default::default() };
+        let p = ParaProps {
+            number_style: NumberStyle::UpperLetters,
+            ..Default::default()
+        };
         assert_eq!(p.number_label(2), "B.\t");
-        let p = ParaProps { number_expression: "Tabel ^#^t".into(), ..Default::default() };
+        let p = ParaProps {
+            number_expression: "Tabel ^#^t".into(),
+            ..Default::default()
+        };
         assert_eq!(p.number_label(3), "Tabel 3\t");
         assert_eq!(expand_list_text("^2.^#.^>x^^^", "4"), ".4.\u{2002}x^^");
         assert_eq!(expand_list_text("a\nb^p", "1"), "ab");

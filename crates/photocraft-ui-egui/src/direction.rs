@@ -28,7 +28,10 @@ thread_local! {
 
 /// The direction the UI is drawn in on this thread.
 pub fn current() -> Dir {
-    FORCED.get().or_else(env_override).unwrap_or_else(|| crate::i18n::current().dir())
+    FORCED
+        .get()
+        .or_else(env_override)
+        .unwrap_or_else(|| crate::i18n::current().dir())
 }
 
 /// Is the UI drawn right-to-left?
@@ -48,7 +51,10 @@ pub fn direction_scope(dir: Dir) -> impl Drop {
             FORCED.set(self.previous);
         }
     }
-    let restore = Restore { previous: FORCED.get(), _thread: std::marker::PhantomData };
+    let restore = Restore {
+        previous: FORCED.get(),
+        _thread: std::marker::PhantomData,
+    };
     FORCED.set(Some(dir));
     restore
 }
@@ -69,35 +75,58 @@ fn parse_dir(value: &str) -> Option<Dir> {
 
 /// A side panel on the reading-start side: left, or right in a right-to-left UI (the toolbox).
 pub fn start_panel(id: impl Into<egui::Id>) -> egui::Panel {
-    if is_rtl() { egui::Panel::right(id) } else { egui::Panel::left(id) }
+    if is_rtl() {
+        egui::Panel::right(id)
+    } else {
+        egui::Panel::left(id)
+    }
 }
 
 /// A side panel on the reading-end side: right, or left in a right-to-left UI (the dock).
 pub fn end_panel(id: impl Into<egui::Id>) -> egui::Panel {
-    if is_rtl() { egui::Panel::left(id) } else { egui::Panel::right(id) }
+    if is_rtl() {
+        egui::Panel::left(id)
+    } else {
+        egui::Panel::right(id)
+    }
 }
 
 /// A vertically centred row in reading order.
 pub fn row() -> Layout {
-    if is_rtl() { Layout::right_to_left(Align::Center) } else { Layout::left_to_right(Align::Center) }
+    if is_rtl() {
+        Layout::right_to_left(Align::Center)
+    } else {
+        Layout::left_to_right(Align::Center)
+    }
 }
 
 /// A vertically centred row that starts from the reading end: for groups pinned to the far end
 /// of a bar, such as the title bar's controls or the status bar's Fit button.
 pub fn trailing() -> Layout {
-    if is_rtl() { Layout::left_to_right(Align::Center) } else { Layout::right_to_left(Align::Center) }
+    if is_rtl() {
+        Layout::left_to_right(Align::Center)
+    } else {
+        Layout::right_to_left(Align::Center)
+    }
 }
 
 /// [`egui::Ui::horizontal_centered`] in reading order: a row filling the space left, with its
 /// items centred vertically, starting from the right in a right-to-left UI.
-pub fn horizontal_centered<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> egui::InnerResponse<R> {
+pub fn horizontal_centered<R>(
+    ui: &mut egui::Ui,
+    add: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::InnerResponse<R> {
     let size = ui.available_size_before_wrap();
     ui.allocate_ui_with_layout(size, row(), add)
 }
 
 /// The popup alignment for a menu opening below its button: under its reading-start edge.
 pub fn below() -> egui::RectAlign {
-    if is_rtl() { egui::RectAlign::BOTTOM_END } else { egui::RectAlign::BOTTOM_START }
+    if is_rtl() {
+        egui::RectAlign::BOTTOM_END
+    } else {
+        egui::RectAlign::BOTTOM_START
+    }
 }
 
 #[cfg(test)]

@@ -3,18 +3,18 @@
 
 //! Metal ownership counterpart of Eden's `vk_texture_cache.cpp` runtime.
 
+use std::collections::HashMap;
 use std::ptr::NonNull;
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use objc2::rc::Retained;
 use objc2::runtime::ProtocolObject;
 
 use objc2_metal::{
-    MTLBlitCommandEncoder, MTLLoadAction, MTLOrigin, MTLRenderPassDescriptor, MTLSize,
-    MTLStoreAction, MTLDevice, MTLHeap, MTLHeapDescriptor, MTLHazardTrackingMode,
-    MTLStorageMode, MTLTexture, MTLResource,
+    MTLBlitCommandEncoder, MTLDevice, MTLHazardTrackingMode, MTLHeap, MTLHeapDescriptor,
+    MTLLoadAction, MTLOrigin, MTLRenderPassDescriptor, MTLResource, MTLSize, MTLStorageMode,
+    MTLStoreAction, MTLTexture,
 };
 use thiserror::Error;
 
@@ -132,10 +132,13 @@ struct SamplingSnapshotCache {
     attempted_allocation: bool,
     entries: HashMap<usize, SamplingSnapshot>,
     // Both handles are retained: neither half of the pointer key can be recycled.
-    views: HashMap<(usize, usize), (
-        Retained<ProtocolObject<dyn MTLTexture>>,
-        Retained<ProtocolObject<dyn MTLTexture>>,
-    )>,
+    views: HashMap<
+        (usize, usize),
+        (
+            Retained<ProtocolObject<dyn MTLTexture>>,
+            Retained<ProtocolObject<dyn MTLTexture>>,
+        ),
+    >,
 }
 
 impl SamplingSnapshotCache {
@@ -186,9 +189,14 @@ impl SamplingSnapshotCache {
             Err(error) => return Err(error),
         };
         let image = Arc::new(snapshot);
-        self.entries.insert(key, SamplingSnapshot {
-            _source: source.retained_handle(), revision, image: Arc::clone(&image),
-        });
+        self.entries.insert(
+            key,
+            SamplingSnapshot {
+                _source: source.retained_handle(),
+                revision,
+                image: Arc::clone(&image),
+            },
+        );
         Ok(Some(image))
     }
 }
@@ -220,7 +228,8 @@ impl MetalTextureCacheRuntime {
             sampling_snapshots: SamplingSnapshotCache::default(),
             msaa_scratch_images: Vec::new(),
             memory_profile_last_report: std::env::var_os("RUZU_PROFILE_METAL_SUBMISSIONS")
-                .is_some().then(Instant::now),
+                .is_some()
+                .then(Instant::now),
         }
     }
 
@@ -232,7 +241,8 @@ impl MetalTextureCacheRuntime {
         &mut self,
         source: &MetalImage,
     ) -> Result<Option<Arc<MetalImage>>, MetalImageError> {
-        self.sampling_snapshots.get(&self.device, unsafe { self.scheduler.as_mut() }, source)
+        self.sampling_snapshots
+            .get(&self.device, unsafe { self.scheduler.as_mut() }, source)
     }
 
     pub fn scheduler(&mut self) -> &mut MetalScheduler {
@@ -288,10 +298,22 @@ impl MetalTextureCacheRuntime {
         copies: &[BufferImageCopy],
     ) -> Result<(), MetalTextureCacheError> {
         let planes = converted_depth_stencil_copies(copies);
-        let buffer = self.download_staging_buffer(converted_depth_stencil_linear_size(copies), false)?;
-        image.download_depth_stencil_memory(self.scheduler(), &buffer.buffer, buffer.offset, &planes.depth, &planes.stencil)?;
+        let buffer =
+            self.download_staging_buffer(converted_depth_stencil_linear_size(copies), false)?;
+        image.download_depth_stencil_memory(
+            self.scheduler(),
+            &buffer.buffer,
+            buffer.offset,
+            &planes.depth,
+            &planes.stencil,
+        )?;
         self.finish()?;
-        convert_depth24_stencil8_download(image.guest_format(), buffer.mapped_span(), output, copies)?;
+        convert_depth24_stencil8_download(
+            image.guest_format(),
+            buffer.mapped_span(),
+            output,
+            copies,
+        )?;
         Ok(())
     }
 
@@ -329,7 +351,12 @@ impl MetalTextureCacheRuntime {
     /// Vulkan's aspect rules are the reference. Metal only expands float color
     /// through `CopyMSAA` into a single-sample scratch image.
     pub fn can_download_msaa(&self, info: &ImageInfo) -> bool {
-        can_download_msaa_info(info, self.device.profile().best_supported_sample_count(info.num_samples))
+        can_download_msaa_info(
+            info,
+            self.device
+                .profile()
+                .best_supported_sample_count(info.num_samples),
+        )
     }
 
     /// CPU-facing download. MSAA images go through a single-sample scratch
@@ -340,7 +367,9 @@ impl MetalTextureCacheRuntime {
         output: &mut [u8],
         copies: &[BufferImageCopy],
     ) -> Result<(), MetalTextureCacheError> {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Download);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Download,
+        );
         if image.guest_samples() > 1 || image.samples() > 1 {
             return self.download_msaa_memory(image, output, copies);
         }
@@ -360,11 +389,18 @@ impl MetalTextureCacheRuntime {
             PixelFormat::B5G6R5Unorm | PixelFormat::A1B5G5R5Unorm => {
                 return self.download_packed16_memory(image, output, copies);
             }
-            format @ (PixelFormat::R32G32B32Float | PixelFormat::G4R4Unorm | PixelFormat::X8D24Unorm) => {
+            format @ (PixelFormat::R32G32B32Float
+            | PixelFormat::G4R4Unorm
+            | PixelFormat::X8D24Unorm) => {
                 let (_, native_bytes) = converted_texel_bytes(format)?;
                 let (native_copies, size) = converted_copy_layout(copies, native_bytes)?;
                 let buffer = self.download_staging_buffer(size, false)?;
-                image.download_converted_memory(self.scheduler(), &buffer.buffer, buffer.offset, &native_copies)?;
+                image.download_converted_memory(
+                    self.scheduler(),
+                    &buffer.buffer,
+                    buffer.offset,
+                    &native_copies,
+                )?;
                 self.finish()?;
                 convert_uncompressed_memory(format, buffer.mapped_span(), output, copies, false)?;
                 return Ok(());
@@ -376,7 +412,13 @@ impl MetalTextureCacheRuntime {
         // padding or gaps. Seed those bytes before copying the result back.
         buffer.mapped_span_mut().copy_from_slice(output);
         if image.guest_format() == PixelFormat::D32FloatS8Uint {
-            self.transfer_depth32_stencil8_memory(image, &buffer.buffer, buffer.offset, copies, false)?;
+            self.transfer_depth32_stencil8_memory(
+                image,
+                &buffer.buffer,
+                buffer.offset,
+                copies,
+                false,
+            )?;
         } else {
             image.download_memory(self.scheduler(), &buffer.buffer, buffer.offset, copies)?;
         }
@@ -476,11 +518,8 @@ impl MetalTextureCacheRuntime {
                     ImageId { index: 2 },
                     0,
                 ));
-                let source_view = MetalImageView::new(
-                    NonNull::from(source_base.as_mut()),
-                    &view_info,
-                    source,
-                )?;
+                let source_view =
+                    MetalImageView::new(NonNull::from(source_base.as_mut()), &view_info, source)?;
                 let destination_view = MetalImageView::new(
                     NonNull::from(destination_base.as_mut()),
                     &view_info,
@@ -503,8 +542,12 @@ impl MetalTextureCacheRuntime {
                 let region = MetalBlitRegion {
                     start: (copy.image_offset.x, copy.image_offset.y),
                     end: (
-                        copy.image_offset.x.saturating_add(copy.image_extent.width as i32),
-                        copy.image_offset.y.saturating_add(copy.image_extent.height as i32),
+                        copy.image_offset
+                            .x
+                            .saturating_add(copy.image_extent.width as i32),
+                        copy.image_offset
+                            .y
+                            .saturating_add(copy.image_extent.height as i32),
                     ),
                 };
                 let scheduler = unsafe { self.scheduler.as_mut() };
@@ -669,7 +712,9 @@ impl MetalTextureCacheRuntime {
             && (source.guest_format() == destination.guest_format()
                 || (!source.format().requires_conversion
                     && !destination.format().requires_conversion));
-        if !native_copies.is_empty() { destination.mark_contents_modified(); }
+        if !native_copies.is_empty() {
+            destination.mark_contents_modified();
+        }
         if !same_native_representation {
             return self.copy_image_through_buffer(destination, source, &native_copies);
         }
@@ -1200,14 +1245,21 @@ impl TextureCacheParams for MetalTextureCacheParams {
         staging: &Self::AsyncBuffer,
         copies: &[BufferImageCopy],
     ) {
-        let _timing = super::metal_stall_profiler::Span::start(super::metal_stall_profiler::Operation::Upload);
+        let _timing = super::metal_stall_profiler::Span::start(
+            super::metal_stall_profiler::Operation::Upload,
+        );
         let image = cache.slot_images[image_id]
             .backend
             .take()
             .expect("Metal image backend must be materialized");
         if let Some(dump) = cache.runtime_mut().scheduler().pass_dump_mut() {
-            dump.event(format_args!("upload image={} dst_root={:p} format={:?} samples={}",
-                image_id.index, image.handle(), image.guest_format(), image.samples()));
+            dump.event(format_args!(
+                "upload image={} dst_root={:p} format={:?} samples={}",
+                image_id.index,
+                image.handle(),
+                image.guest_format(),
+                image.samples()
+            ));
         }
         let result = match image.guest_format() {
             PixelFormat::D32FloatS8Uint => cache.runtime_mut().transfer_depth32_stencil8_memory(
@@ -1279,7 +1331,9 @@ impl TextureCacheParams for MetalTextureCacheParams {
                     }
                 }
             }
-            format @ (PixelFormat::R32G32B32Float | PixelFormat::G4R4Unorm | PixelFormat::X8D24Unorm) => {
+            format @ (PixelFormat::R32G32B32Float
+            | PixelFormat::G4R4Unorm
+            | PixelFormat::X8D24Unorm) => {
                 let native_bytes = match format {
                     PixelFormat::R32G32B32Float => 16,
                     PixelFormat::X8D24Unorm => 4,
@@ -1290,10 +1344,18 @@ impl TextureCacheParams for MetalTextureCacheParams {
                     .and_then(|(_, size)| cache.runtime_mut().upload_staging_buffer(size, false));
                 match allocation {
                     Ok(mut converted) => match convert_uncompressed_memory(
-                        format, staging.mapped_span(), converted.mapped_span_mut(), copies, true,
+                        format,
+                        staging.mapped_span(),
+                        converted.mapped_span_mut(),
+                        copies,
+                        true,
                     ) {
                         Ok(native_copies) => image.upload_converted_memory(
-                            cache.runtime_mut().scheduler(), &converted.buffer, converted.offset, &native_copies, native_bytes,
+                            cache.runtime_mut().scheduler(),
+                            &converted.buffer,
+                            converted.offset,
+                            &native_copies,
+                            native_bytes,
                         ),
                         Err(error) => Err(error),
                     },
@@ -1345,8 +1407,14 @@ impl TextureCacheParams for MetalTextureCacheParams {
         src_id: ImageId,
     ) -> bool {
         cache.runtime().should_reinterpret(
-            cache.slot_images[dst_id].backend.as_ref().expect("Metal destination image backend"),
-            cache.slot_images[src_id].backend.as_ref().expect("Metal source image backend"),
+            cache.slot_images[dst_id]
+                .backend
+                .as_ref()
+                .expect("Metal destination image backend"),
+            cache.slot_images[src_id]
+                .backend
+                .as_ref()
+                .expect("Metal source image backend"),
         )
     }
 
@@ -1555,30 +1623,61 @@ fn converted_texel_bytes(format: PixelFormat) -> Result<(usize, usize), MetalIma
         PixelFormat::R32G32B32Float => Ok((12, 16)),
         PixelFormat::G4R4Unorm => Ok((1, 2)),
         PixelFormat::X8D24Unorm => Ok((4, 4)),
-        _ => Err(MetalImageError::InvalidCopy("expanded color conversion format")),
+        _ => Err(MetalImageError::InvalidCopy(
+            "expanded color conversion format",
+        )),
     }
 }
 
-fn converted_copy_layout(copies: &[BufferImageCopy], native_bytes: usize) -> Result<(Vec<BufferImageCopy>, usize), MetalImageError> {
+fn converted_copy_layout(
+    copies: &[BufferImageCopy],
+    native_bytes: usize,
+) -> Result<(Vec<BufferImageCopy>, usize), MetalImageError> {
     let mut end = 0usize;
     let mut native = Vec::with_capacity(copies.len());
     for copy in copies {
         let width = copy.image_extent.width as usize;
         let height = copy.image_extent.height as usize;
         let depth = copy.image_extent.depth as usize;
-        let row = if copy.buffer_row_length == 0 { width } else { copy.buffer_row_length as usize };
-        let rows = if copy.buffer_image_height == 0 { height } else { copy.buffer_image_height as usize };
-        if width == 0 || height == 0 || depth == 0 || copy.image_subresource.num_layers <= 0
-            || row < width || rows < height
+        let row = if copy.buffer_row_length == 0 {
+            width
+        } else {
+            copy.buffer_row_length as usize
+        };
+        let rows = if copy.buffer_image_height == 0 {
+            height
+        } else {
+            copy.buffer_image_height as usize
+        };
+        if width == 0
+            || height == 0
+            || depth == 0
+            || copy.image_subresource.num_layers <= 0
+            || row < width
+            || rows < height
         {
             return Err(MetalImageError::InvalidCopy("expanded color copy extent"));
         }
-        let layers = if depth > 1 { depth } else { copy.image_subresource.num_layers as usize };
-        let size = row.checked_mul(rows).and_then(|v| v.checked_mul(layers))
+        let layers = if depth > 1 {
+            depth
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
+        let size = row
+            .checked_mul(rows)
+            .and_then(|v| v.checked_mul(layers))
             .and_then(|v| v.checked_mul(native_bytes))
-            .ok_or(MetalImageError::InvalidCopy("expanded color copy size overflow"))?;
-        native.push(BufferImageCopy { buffer_offset: end, buffer_size: size, ..*copy });
-        end = end.checked_add(size).ok_or(MetalImageError::InvalidCopy("expanded color staging size overflow"))?;
+            .ok_or(MetalImageError::InvalidCopy(
+                "expanded color copy size overflow",
+            ))?;
+        native.push(BufferImageCopy {
+            buffer_offset: end,
+            buffer_size: size,
+            ..*copy
+        });
+        end = end.checked_add(size).ok_or(MetalImageError::InvalidCopy(
+            "expanded color staging size overflow",
+        ))?;
     }
     Ok((native, end))
 }
@@ -1586,32 +1685,65 @@ fn converted_copy_layout(copies: &[BufferImageCopy], native_bytes: usize) -> Res
 // Native transfer conversion for uncompressed formats. RGB32 payload bits
 // remain unchanged; packed UNORM components are expanded to native channels.
 fn convert_uncompressed_memory(
-    format: PixelFormat, input: &[u8], output: &mut [u8], copies: &[BufferImageCopy], upload: bool,
+    format: PixelFormat,
+    input: &[u8],
+    output: &mut [u8],
+    copies: &[BufferImageCopy],
+    upload: bool,
 ) -> Result<Vec<BufferImageCopy>, MetalImageError> {
     let (guest_bytes, native_bytes) = converted_texel_bytes(format)?;
     let (native, _) = converted_copy_layout(copies, native_bytes)?;
     for (copy, converted) in copies.iter().zip(&native) {
-        let row = if copy.buffer_row_length == 0 { copy.image_extent.width } else { copy.buffer_row_length } as usize;
-        let rows = if copy.buffer_image_height == 0 { copy.image_extent.height } else { copy.buffer_image_height } as usize;
-        let layers = if copy.image_extent.depth > 1 { copy.image_extent.depth as usize }
-            else { copy.image_subresource.num_layers as usize };
+        let row = if copy.buffer_row_length == 0 {
+            copy.image_extent.width
+        } else {
+            copy.buffer_row_length
+        } as usize;
+        let rows = if copy.buffer_image_height == 0 {
+            copy.image_extent.height
+        } else {
+            copy.buffer_image_height
+        } as usize;
+        let layers = if copy.image_extent.depth > 1 {
+            copy.image_extent.depth as usize
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
         // Full native layout was checked above, so these smaller spans fit.
         let texels = ((layers - 1) * rows + copy.image_extent.height as usize - 1) * row
             + copy.image_extent.width as usize;
         let guest_end = copy.buffer_offset.checked_add(texels * guest_bytes);
         let native_end = converted.buffer_offset + texels * native_bytes;
-        let (guest_len, native_len) = if upload { (input.len(), output.len()) } else { (output.len(), input.len()) };
-        if guest_end.is_none_or(|end| end > guest_len) || native_end > native_len
+        let (guest_len, native_len) = if upload {
+            (input.len(), output.len())
+        } else {
+            (output.len(), input.len())
+        };
+        if guest_end.is_none_or(|end| end > guest_len)
+            || native_end > native_len
             || (copy.buffer_size != 0 && texels * guest_bytes > copy.buffer_size)
         {
-            return Err(MetalImageError::InvalidCopy("expanded color conversion buffer range"));
+            return Err(MetalImageError::InvalidCopy(
+                "expanded color conversion buffer range",
+            ));
         }
     }
     for (copy, converted) in copies.iter().zip(&native) {
-        let row = if copy.buffer_row_length == 0 { copy.image_extent.width } else { copy.buffer_row_length } as usize;
-        let rows = if copy.buffer_image_height == 0 { copy.image_extent.height } else { copy.buffer_image_height } as usize;
-        let layers = if copy.image_extent.depth > 1 { copy.image_extent.depth as usize }
-            else { copy.image_subresource.num_layers as usize };
+        let row = if copy.buffer_row_length == 0 {
+            copy.image_extent.width
+        } else {
+            copy.buffer_row_length
+        } as usize;
+        let rows = if copy.buffer_image_height == 0 {
+            copy.image_extent.height
+        } else {
+            copy.buffer_image_height
+        } as usize;
+        let layers = if copy.image_extent.depth > 1 {
+            copy.image_extent.depth as usize
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
         for layer in 0..layers {
             for y in 0..copy.image_extent.height as usize {
                 for x in 0..copy.image_extent.width as usize {
@@ -1619,12 +1751,14 @@ fn convert_uncompressed_memory(
                     let guest = copy.buffer_offset + index * guest_bytes;
                     let host = converted.buffer_offset + index * native_bytes;
                     if format == PixelFormat::X8D24Unorm && upload {
-                        let packed = u32::from_le_bytes(input[guest..guest + 4].try_into().unwrap());
+                        let packed =
+                            u32::from_le_bytes(input[guest..guest + 4].try_into().unwrap());
                         let depth = (packed & 0x00ff_ffff) as f32 / 16_777_215.0;
                         output[host..host + 4].copy_from_slice(&depth.to_le_bytes());
                     } else if format == PixelFormat::X8D24Unorm {
                         let depth = f32::from_le_bytes(input[host..host + 4].try_into().unwrap());
-                        output[guest..guest + 4].copy_from_slice(&depth_float_to_unorm24(depth).to_le_bytes());
+                        output[guest..guest + 4]
+                            .copy_from_slice(&depth_float_to_unorm24(depth).to_le_bytes());
                     } else if format == PixelFormat::G4R4Unorm && upload {
                         output[host] = (input[guest] & 15) * 17;
                         output[host + 1] = (input[guest] >> 4) * 17;
@@ -1667,15 +1801,32 @@ fn convert_packed16_download(
         let width = copy.image_extent.width as usize;
         let height = copy.image_extent.height as usize;
         let depth = copy.image_extent.depth as usize;
-        let row = if copy.buffer_row_length == 0 { width } else { copy.buffer_row_length as usize };
-        let rows = if copy.buffer_image_height == 0 { height } else { copy.buffer_image_height as usize };
-        if width == 0 || height == 0 || depth == 0 || copy.image_subresource.num_layers <= 0
-            || row < width || rows < height
+        let row = if copy.buffer_row_length == 0 {
+            width
+        } else {
+            copy.buffer_row_length as usize
+        };
+        let rows = if copy.buffer_image_height == 0 {
+            height
+        } else {
+            copy.buffer_image_height as usize
+        };
+        if width == 0
+            || height == 0
+            || depth == 0
+            || copy.image_subresource.num_layers <= 0
+            || row < width
+            || rows < height
         {
             return Err(MetalImageError::InvalidCopy("B5G6R5 download extent"));
         }
-        let layers = if depth > 1 { depth } else { copy.image_subresource.num_layers as usize };
-        let span = (layers - 1).checked_mul(rows)
+        let layers = if depth > 1 {
+            depth
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
+        let span = (layers - 1)
+            .checked_mul(rows)
             .and_then(|v| v.checked_add(height - 1))
             .and_then(|v| v.checked_mul(row))
             .and_then(|v| v.checked_add(width))
@@ -1688,16 +1839,28 @@ fn convert_packed16_download(
         }
     }
     for copy in copies {
-        let row = if copy.buffer_row_length == 0 { copy.image_extent.width } else { copy.buffer_row_length } as usize;
-        let rows = if copy.buffer_image_height == 0 { copy.image_extent.height } else { copy.buffer_image_height } as usize;
-        let layers = if copy.image_extent.depth > 1 { copy.image_extent.depth as usize }
-            else { copy.image_subresource.num_layers as usize };
+        let row = if copy.buffer_row_length == 0 {
+            copy.image_extent.width
+        } else {
+            copy.buffer_row_length
+        } as usize;
+        let rows = if copy.buffer_image_height == 0 {
+            copy.image_extent.height
+        } else {
+            copy.buffer_image_height
+        } as usize;
+        let layers = if copy.image_extent.depth > 1 {
+            copy.image_extent.depth as usize
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
         for layer in 0..layers {
             for y in 0..copy.image_extent.height as usize {
                 for x in 0..copy.image_extent.width as usize {
                     let offset = copy.buffer_offset + ((layer * rows + y) * row + x) * 2;
                     let packed = u16::from_le_bytes(input[offset..offset + 2].try_into().unwrap());
-                    let guest = ((packed & 31) << shift) | (packed & preserved) | ((packed >> shift) & 31);
+                    let guest =
+                        ((packed & 31) << shift) | (packed & preserved) | ((packed >> shift) & 31);
                     output[offset..offset + 2].copy_from_slice(&guest.to_le_bytes());
                 }
             }
@@ -1721,7 +1884,12 @@ fn converted_depth_stencil_copies(copies: &[BufferImageCopy]) -> ConvertedDepthS
         depth_copy.buffer_offset = align_up(offset, 8);
         depth_copy.buffer_size = texels.saturating_mul(4);
         let mut stencil_copy = *copy;
-        stencil_copy.buffer_offset = align_up(depth_copy.buffer_offset.saturating_add(depth_copy.buffer_size), 8);
+        stencil_copy.buffer_offset = align_up(
+            depth_copy
+                .buffer_offset
+                .saturating_add(depth_copy.buffer_size),
+            8,
+        );
         stencil_copy.buffer_size = texels;
         offset = stencil_copy.buffer_offset.saturating_add(texels);
         depth.push(depth_copy);
@@ -1743,23 +1911,42 @@ fn convert_depth24_stencil8_download(
     output: &mut [u8],
     copies: &[BufferImageCopy],
 ) -> Result<(), MetalImageError> {
-    if !matches!(format, PixelFormat::D24UnormS8Uint | PixelFormat::S8UintD24Unorm) {
-        return Err(MetalImageError::InvalidCopy("unsupported depth/stencil conversion format"));
+    if !matches!(
+        format,
+        PixelFormat::D24UnormS8Uint | PixelFormat::S8UintD24Unorm
+    ) {
+        return Err(MetalImageError::InvalidCopy(
+            "unsupported depth/stencil conversion format",
+        ));
     }
     let planes = converted_depth_stencil_copies(copies);
     for ((copy, depth), stencil) in copies.iter().zip(&planes.depth).zip(&planes.stencil) {
-        let row = if copy.buffer_row_length == 0 { copy.image_extent.width } else { copy.buffer_row_length } as usize;
-        let rows = if copy.buffer_image_height == 0 { copy.image_extent.height } else { copy.buffer_image_height } as usize;
-        if row < copy.image_extent.width as usize || rows < copy.image_extent.height as usize
+        let row = if copy.buffer_row_length == 0 {
+            copy.image_extent.width
+        } else {
+            copy.buffer_row_length
+        } as usize;
+        let rows = if copy.buffer_image_height == 0 {
+            copy.image_extent.height
+        } else {
+            copy.buffer_image_height
+        } as usize;
+        if row < copy.image_extent.width as usize
+            || rows < copy.image_extent.height as usize
             || copy.image_subresource.num_layers <= 0
             || depth.buffer_offset.saturating_add(depth.buffer_size) > input.len()
             || stencil.buffer_offset.saturating_add(stencil.buffer_size) > input.len()
             || copy.buffer_offset.saturating_add(depth.buffer_size) > output.len()
         {
-            return Err(MetalImageError::InvalidCopy("converted depth/stencil download range"));
+            return Err(MetalImageError::InvalidCopy(
+                "converted depth/stencil download range",
+            ));
         }
-        let layers = if copy.image_extent.depth > 1 { copy.image_extent.depth as usize }
-            else { copy.image_subresource.num_layers as usize };
+        let layers = if copy.image_extent.depth > 1 {
+            copy.image_extent.depth as usize
+        } else {
+            copy.image_subresource.num_layers as usize
+        };
         for layer in 0..layers {
             for y in 0..copy.image_extent.height as usize {
                 for x in 0..copy.image_extent.width as usize {
@@ -1768,7 +1955,11 @@ fn convert_depth24_stencil8_download(
                     let value = f32::from_le_bytes(input[offset..offset + 4].try_into().unwrap());
                     let d = depth_float_to_unorm24(value);
                     let s = input[stencil.buffer_offset + index] as u32;
-                    let packed = if format == PixelFormat::D24UnormS8Uint { d | (s << 24) } else { (d << 8) | s };
+                    let packed = if format == PixelFormat::D24UnormS8Uint {
+                        d | (s << 24)
+                    } else {
+                        (d << 8) | s
+                    };
                     let offset = copy.buffer_offset + index * 4;
                     output[offset..offset + 4].copy_from_slice(&packed.to_le_bytes());
                 }
@@ -1785,7 +1976,8 @@ fn convert_depth24_stencil8_upload(
     copies: &[BufferImageCopy],
 ) -> Result<ConvertedDepthStencilCopies, super::metal_image::MetalImageError> {
     let planes = converted_depth_stencil_copies(copies);
-    for ((copy, depth_copy), stencil_copy) in copies.iter().zip(&planes.depth).zip(&planes.stencil) {
+    for ((copy, depth_copy), stencil_copy) in copies.iter().zip(&planes.depth).zip(&planes.stencil)
+    {
         let texels = copy_linear_texel_count(copy);
         let input_size = texels.saturating_mul(4);
         let input_end = copy.buffer_offset.saturating_add(input_size);
@@ -1883,22 +2075,31 @@ impl MetalTextureCache {
             // callback borrows only runtime and the detached image backend;
             // common GC owns metadata, guest writeback and eviction ordering.
             let runtime = self.base.runtime_mut() as *mut MetalTextureCacheRuntime;
-            self.base.run_garbage_collector_with_downloader(|image_id, base, backend, staging| {
-                let Some(image) = backend.as_ref() else {
-                    log::error!("Metal GC cannot download image {} without native storage", image_id.index);
-                    return false;
-                };
-                let copies = crate::texture_cache::util::full_download_copies(&base.info);
-                // SAFETY: GPU-thread cache work is serialized; this closure
-                // does not access the cache through the runtime.
-                match unsafe { &mut *runtime }.download_single_sample_memory(image, staging, &copies) {
-                    Ok(()) => true,
-                    Err(error) => {
-                        log::error!("Metal GC retained image {} after download failure: {error}", image_id.index);
-                        false
+            self.base
+                .run_garbage_collector_with_downloader(|image_id, base, backend, staging| {
+                    let Some(image) = backend.as_ref() else {
+                        log::error!(
+                            "Metal GC cannot download image {} without native storage",
+                            image_id.index
+                        );
+                        return false;
+                    };
+                    let copies = crate::texture_cache::util::full_download_copies(&base.info);
+                    // SAFETY: GPU-thread cache work is serialized; this closure
+                    // does not access the cache through the runtime.
+                    match unsafe { &mut *runtime }
+                        .download_single_sample_memory(image, staging, &copies)
+                    {
+                        Ok(()) => true,
+                        Err(error) => {
+                            log::error!(
+                                "Metal GC retained image {} after download failure: {error}",
+                                image_id.index
+                            );
+                            false
+                        }
                     }
-                }
-            });
+                });
         }
         // Match TextureCache<P>::TickFrame retirement before runtime/frame
         // advancement. Native command buffers retain encoded resources until
@@ -1918,8 +2119,12 @@ impl MetalTextureCache {
     // resources and snapshot heaps. Device totals are not process footprint.
     fn profile_texture_memory(&mut self) {
         let runtime = self.base.runtime_mut();
-        let Some(last_report) = runtime.memory_profile_last_report.as_mut() else { return; };
-        if last_report.elapsed() < Duration::from_secs(1) { return; }
+        let Some(last_report) = runtime.memory_profile_last_report.as_mut() else {
+            return;
+        };
+        if last_report.elapsed() < Duration::from_secs(1) {
+            return;
+        }
         *last_report = Instant::now();
         let device_bytes = runtime.device.device().currentAllocatedSize();
         let mut root_bytes = 0usize;
@@ -1927,9 +2132,13 @@ impl MetalTextureCache {
         let mut images = 0usize;
         let mut largest = (0usize, 0u32, PixelFormat::Invalid);
         for (id, slot) in self.base.slot_images.iter() {
-            let Some(image) = slot.backend.as_ref() else { continue; };
+            let Some(image) = slot.backend.as_ref() else {
+                continue;
+            };
             let root = image.handle().allocatedSize();
-            let slices = image.slice_handle().map_or(0, |texture| texture.allocatedSize());
+            let slices = image
+                .slice_handle()
+                .map_or(0, |texture| texture.allocatedSize());
             root_bytes += root;
             slice_bytes += slices;
             images += 1;
@@ -1994,13 +2203,17 @@ impl MetalTextureCache {
         view_id: ImageViewId,
         texture_type: TextureType,
     ) -> Result<Option<Retained<ProtocolObject<dyn MTLTexture>>>, MetalTextureCacheError> {
-        if !view_id.is_valid() || view_id == NULL_IMAGE_VIEW_ID
-            || !self.base.slot_image_views.contains(view_id) {
+        if !view_id.is_valid()
+            || view_id == NULL_IMAGE_VIEW_ID
+            || !self.base.slot_image_views.contains(view_id)
+        {
             return Ok(None);
         }
         let view = &self.base.slot_image_views[view_id];
-        if view.is_buffer() || view.image_id == NULL_IMAGE_ID
-            || !self.base.slot_images.contains(view.image_id) {
+        if view.is_buffer()
+            || view.image_id == NULL_IMAGE_ID
+            || !self.base.slot_images.contains(view.image_id)
+        {
             return Ok(None);
         }
         let Some(image) = self.base.slot_images[view.image_id].backend.as_ref() else {
@@ -2012,25 +2225,33 @@ impl MetalTextureCache {
         let Some(snapshot) = runtime.sampling_snapshot(image)? else {
             return Ok(None);
         };
-        let original = view.backend.as_ref().and_then(MetalCachedImageView::image)
+        let original = view
+            .backend
+            .as_ref()
+            .and_then(MetalCachedImageView::image)
             .and_then(|native| native.retained_handle(texture_type));
-        let key = original.as_deref().map(|original| (
-            original as *const _ as usize, snapshot.handle() as *const _ as usize,
-        ));
+        let key = original.as_deref().map(|original| {
+            (
+                original as *const _ as usize,
+                snapshot.handle() as *const _ as usize,
+            )
+        });
         if let Some(cached) = key.and_then(|key| runtime.sampling_snapshots.views.get(&key)) {
             return Ok(Some(cached.1.clone()));
         }
         // This temporary wrapper cannot outlive the borrowed base. Only its
         // retained native handle escapes; it contains no Rust metadata pointer.
-        let snapshot_view = MetalImageView::new(
-            NonNull::from(view.base.as_ref()), &view.info, &snapshot,
-        )?;
+        let snapshot_view =
+            MetalImageView::new(NonNull::from(view.base.as_ref()), &view.info, &snapshot)?;
         let handle = snapshot_view.retained_handle(texture_type);
         if let (Some(key), Some(original), Some(handle)) = (key, original, handle.as_ref()) {
             if runtime.sampling_snapshots.views.len() >= SAMPLING_SNAPSHOT_VIEW_LIMIT {
                 runtime.sampling_snapshots.views.clear();
             }
-            runtime.sampling_snapshots.views.insert(key, (original, handle.clone()));
+            runtime
+                .sampling_snapshots
+                .views
+                .insert(key, (original, handle.clone()));
         }
         Ok(handle)
     }
@@ -2040,7 +2261,9 @@ impl MetalTextureCache {
     /// for partial clears/copies; it may forgo reuse of disjoint subresources.
     pub fn mark_render_target_contents_modified(&self, color_mask: u32, depth_stencil: bool) {
         for (index, view_id) in self.base.render_targets.color_buffer_ids.iter().enumerate() {
-            if color_mask & (1 << index) != 0 { self.mark_view_contents_modified(*view_id); }
+            if color_mask & (1 << index) != 0 {
+                self.mark_view_contents_modified(*view_id);
+            }
         }
         if depth_stencil {
             self.mark_view_contents_modified(self.base.render_targets.depth_buffer_id);
@@ -2048,11 +2271,19 @@ impl MetalTextureCache {
     }
 
     fn mark_view_contents_modified(&self, view_id: ImageViewId) {
-        if !view_id.is_valid() || view_id == NULL_IMAGE_VIEW_ID
-            || !self.base.slot_image_views.contains(view_id) { return; }
+        if !view_id.is_valid()
+            || view_id == NULL_IMAGE_VIEW_ID
+            || !self.base.slot_image_views.contains(view_id)
+        {
+            return;
+        }
         let image_id = self.base.slot_image_views[view_id].image_id;
-        if !image_id.is_valid() || image_id == NULL_IMAGE_ID
-            || !self.base.slot_images.contains(image_id) { return; }
+        if !image_id.is_valid()
+            || image_id == NULL_IMAGE_ID
+            || !self.base.slot_images.contains(image_id)
+        {
+            return;
+        }
         if let Some(image) = self.base.slot_images[image_id].backend.as_ref() {
             image.mark_contents_modified();
         }
@@ -2484,14 +2715,26 @@ mod tests {
             let mut staging = MetalStagingBufferPool::new(&device).unwrap();
             let mut blit = MetalBlitHelper::new(&device).unwrap();
             let mut cache = MetalTextureCache::new(
-                device.clone(), Arc::new(MaxwellDeviceMemoryManager::default()),
-                &mut scheduler, &mut staging, &mut blit,
+                device.clone(),
+                Arc::new(MaxwellDeviceMemoryManager::default()),
+                &mut scheduler,
+                &mut staging,
+                &mut blit,
             );
             let info = ImageInfo {
-                format: PixelFormat::A8B8G8R8Unorm, image_type: ImageType::Linear,
+                format: PixelFormat::A8B8G8R8Unorm,
+                image_type: ImageType::Linear,
                 tiling: TilingMode::PitchLinear(16),
-                size: Extent3D { width: 4, height: 4, depth: 1 },
-                resources: SubresourceExtent { levels: 1, layers: 1 }, num_samples: 1,
+                size: Extent3D {
+                    width: 4,
+                    height: 4,
+                    depth: 1,
+                },
+                resources: SubresourceExtent {
+                    levels: 1,
+                    layers: 1,
+                },
+                num_samples: 1,
                 ..ImageInfo::default()
             };
             let memory = Arc::new(parking_lot::Mutex::new(
@@ -2512,14 +2755,21 @@ mod tests {
             color.setTexture(Some(image.handle()));
             color.setLoadAction(MTLLoadAction::Clear);
             color.setStoreAction(MTLStoreAction::Store);
-            color.setClearColor(objc2_metal::MTLClearColor { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 });
+            color.setClearColor(objc2_metal::MTLClearColor {
+                red: 1.0,
+                green: 0.0,
+                blue: 0.0,
+                alpha: 1.0,
+            });
             pass.setRenderTargetWidth(4);
             pass.setRenderTargetHeight(4);
             pass.setDefaultRasterSampleCount(1);
             scheduler.begin_render_pass(&pass).unwrap();
             scheduler.end_render_pass();
             cache.base.slot_images[id].backend = Some(image);
-            cache.base.slot_images[id].flags.remove(ImageFlagBits::CPU_MODIFIED);
+            cache.base.slot_images[id]
+                .flags
+                .remove(ImageFlagBits::CPU_MODIFIED);
             cache.base.mark_modification_by_id(id);
             let address = cache.base.slot_images[id].cpu_addr;
             if fail_download {
@@ -2528,9 +2778,11 @@ mod tests {
             }
             let writes = Arc::new(parking_lot::Mutex::new(Vec::<(u64, Vec<u8>)>::new()));
             let captured = writes.clone();
-            cache.base.set_guest_memory_writer(Arc::new(move |addr, bytes| {
-                captured.lock().push((addr, bytes.to_vec()));
-            }));
+            cache
+                .base
+                .set_guest_memory_writer(Arc::new(move |addr, bytes| {
+                    captured.lock().push((addr, bytes.to_vec()));
+                }));
             cache.base.frame_tick = 100;
             cache.base.touch_image(recent);
             cache.base.minimum_memory = 0;
@@ -2538,11 +2790,16 @@ mod tests {
             cache.base.critical_memory = u64::MAX;
             let before = cache.base.total_used_memory;
             cache.tick_frame();
-            assert!(cache.base.slot_images.contains(recent), "recently used images must survive GC");
+            assert!(
+                cache.base.slot_images.contains(recent),
+                "recently used images must survive GC"
+            );
             assert_eq!(cache.base.slot_images.contains(id), fail_download);
             if fail_download {
                 assert!(writes.lock().is_empty());
-                assert!(cache.base.slot_images[id].flags.contains(ImageFlagBits::GPU_MODIFIED));
+                assert!(cache.base.slot_images[id]
+                    .flags
+                    .contains(ImageFlagBits::GPU_MODIFIED));
                 assert!(cache.base.slot_images[id].backend.is_some());
                 assert_eq!(cache.base.total_used_memory, before);
             } else {
@@ -2553,7 +2810,9 @@ mod tests {
                     let offset = (*addr - address) as usize;
                     pixels[offset..offset + bytes.len()].copy_from_slice(bytes);
                 }
-                assert!(pixels.chunks_exact(4).all(|pixel| pixel == [255, 0, 0, 255]));
+                assert!(pixels
+                    .chunks_exact(4)
+                    .all(|pixel| pixel == [255, 0, 0, 255]));
                 assert!(cache.base.total_used_memory < before);
                 assert_eq!(cache.base.sentenced_images.retained_len(), 1);
             }
@@ -2564,8 +2823,10 @@ mod tests {
     #[test]
     fn frame_tick_retires_native_images_views_and_framebuffers_without_losing_commands() {
         use crate::texture_cache::image_base::ImageBase;
-        use crate::texture_cache::texture_cache_base::{ImageSlot, ImageViewSlot, TICKS_TO_DESTROY};
         use crate::texture_cache::render_targets::RenderTargets;
+        use crate::texture_cache::texture_cache_base::{
+            ImageSlot, ImageViewSlot, TICKS_TO_DESTROY,
+        };
         use common::slot_vector::SlotId;
 
         let device = MetalDevice::new().unwrap();
@@ -2573,14 +2834,24 @@ mod tests {
         let mut staging = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
         let mut cache = MetalTextureCache::new(
-            device.clone(), Arc::new(MaxwellDeviceMemoryManager::default()),
-            &mut scheduler, &mut staging, &mut blit,
+            device.clone(),
+            Arc::new(MaxwellDeviceMemoryManager::default()),
+            &mut scheduler,
+            &mut staging,
+            &mut blit,
         );
         let info = ImageInfo {
             format: PixelFormat::A8B8G8R8Unorm,
             image_type: ImageType::E2D,
-            size: Extent3D { width: 4, height: 4, depth: 1 },
-            resources: SubresourceExtent { levels: 1, layers: 1 },
+            size: Extent3D {
+                width: 4,
+                height: 4,
+                depth: 1,
+            },
+            resources: SubresourceExtent {
+                levels: 1,
+                layers: 1,
+            },
             num_samples: 1,
             ..ImageInfo::default()
         };
@@ -2594,8 +2865,12 @@ mod tests {
             image_extent: info.size,
             ..BufferImageCopy::default()
         };
-        native.upload_memory(&mut scheduler, &upload, 0, &[copy]).unwrap();
-        native.download_memory(&mut scheduler, &download, 0, &[copy]).unwrap();
+        native
+            .upload_memory(&mut scheduler, &upload, 0, &[copy])
+            .unwrap();
+        native
+            .download_memory(&mut scheduler, &download, 0, &[copy])
+            .unwrap();
         let view_info = ImageViewInfo {
             view_type: ImageViewType::E2D,
             format: info.format,
@@ -2605,7 +2880,8 @@ mod tests {
             view_info.clone(),
             ImageViewBase::new(&view_info, &info, SlotId { index: 1 }, 0x10000),
         );
-        let native_view = MetalImageView::new(NonNull::from(view.base.as_mut()), &view_info, &native).unwrap();
+        let native_view =
+            MetalImageView::new(NonNull::from(view.base.as_mut()), &view_info, &native).unwrap();
         let mut colors = [None; crate::texture_cache::types::NUM_RT];
         colors[0] = Some(&native_view);
         let framebuffer = MetalFramebuffer::new(colors, None, &RenderTargets::default()).unwrap();
@@ -2614,7 +2890,10 @@ mod tests {
         image.backend = Some(native);
         cache.base.sentenced_images.push(image);
         cache.base.sentenced_image_view.push(view);
-        cache.base.sentenced_framebuffers.push(Box::new(framebuffer));
+        cache
+            .base
+            .sentenced_framebuffers
+            .push(Box::new(framebuffer));
         for _ in 1..TICKS_TO_DESTROY {
             cache.tick_frame();
             assert_eq!(cache.base.sentenced_images.retained_len(), 1);
@@ -2641,32 +2920,81 @@ mod tests {
         let mut scheduler = MetalScheduler::new(&device);
         let mut staging = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut cache = MetalTextureCache::new(device.clone(), Arc::new(MaxwellDeviceMemoryManager::default()),
-            &mut scheduler, &mut staging, &mut blit);
+        let mut cache = MetalTextureCache::new(
+            device.clone(),
+            Arc::new(MaxwellDeviceMemoryManager::default()),
+            &mut scheduler,
+            &mut staging,
+            &mut blit,
+        );
         let info = ImageInfo {
-            format: PixelFormat::D32Float, image_type: ImageType::E2D,
-            size: Extent3D { width: 4, height: 4, depth: 1 },
-            resources: SubresourceExtent { levels: 1, layers: 1 }, num_samples: 1,
+            format: PixelFormat::D32Float,
+            image_type: ImageType::E2D,
+            size: Extent3D {
+                width: 4,
+                height: 4,
+                depth: 1,
+            },
+            resources: SubresourceExtent {
+                levels: 1,
+                layers: 1,
+            },
+            num_samples: 1,
             ..ImageInfo::default()
         };
         let native = MetalImage::new(&device, &info).unwrap();
         let mut image = ImageSlot::pending(ImageBase::new(info.clone(), 0x10000, 0x20000));
         image.backend = Some(native);
         let id = cache.base.slot_images.insert(image);
-        let view_info = ImageViewInfo { view_type: ImageViewType::E2D, format: info.format, ..ImageViewInfo::default() };
-        let view = ImageViewSlot::pending(view_info.clone(), ImageViewBase::new(&view_info, &info, id, 0x10000));
+        let view_info = ImageViewInfo {
+            view_type: ImageViewType::E2D,
+            format: info.format,
+            ..ImageViewInfo::default()
+        };
+        let view = ImageViewSlot::pending(
+            view_info.clone(),
+            ImageViewBase::new(&view_info, &info, id, 0x10000),
+        );
         let view_id = cache.base.slot_image_views.insert(view);
         cache.base.render_targets.depth_buffer_id = view_id;
         cache.mark_render_target_contents_modified(u32::MAX, false);
-        assert_eq!(cache.base.slot_images[id].backend.as_ref().unwrap().content_revision(), Some(0));
+        assert_eq!(
+            cache.base.slot_images[id]
+                .backend
+                .as_ref()
+                .unwrap()
+                .content_revision(),
+            Some(0)
+        );
         cache.mark_render_target_contents_modified(0, true);
-        assert_eq!(cache.base.slot_images[id].backend.as_ref().unwrap().content_revision(), Some(1));
+        assert_eq!(
+            cache.base.slot_images[id]
+                .backend
+                .as_ref()
+                .unwrap()
+                .content_revision(),
+            Some(1)
+        );
         cache.base.render_targets.depth_buffer_id = NULL_IMAGE_VIEW_ID;
         cache.base.render_targets.color_buffer_ids[2] = view_id;
         cache.mark_render_target_contents_modified(1, false);
-        assert_eq!(cache.base.slot_images[id].backend.as_ref().unwrap().content_revision(), Some(1));
+        assert_eq!(
+            cache.base.slot_images[id]
+                .backend
+                .as_ref()
+                .unwrap()
+                .content_revision(),
+            Some(1)
+        );
         cache.mark_render_target_contents_modified(1 << 2, false);
-        assert_eq!(cache.base.slot_images[id].backend.as_ref().unwrap().content_revision(), Some(2));
+        assert_eq!(
+            cache.base.slot_images[id]
+                .backend
+                .as_ref()
+                .unwrap()
+                .content_revision(),
+            Some(2)
+        );
     }
 
     #[test]
@@ -2675,17 +3003,42 @@ mod tests {
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
-        let image = MetalImage::new(&device, &ImageInfo {
-            format: PixelFormat::G4R4Unorm, image_type: ImageType::E2D,
-            size: Extent3D { width: 32, height: 32, depth: 1 },
-            resources: SubresourceExtent { levels: 2, layers: 3 }, num_samples: 1,
-            ..ImageInfo::default()
-        }).unwrap();
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let image = MetalImage::new(
+            &device,
+            &ImageInfo {
+                format: PixelFormat::G4R4Unorm,
+                image_type: ImageType::E2D,
+                size: Extent3D {
+                    width: 32,
+                    height: 32,
+                    depth: 1,
+                },
+                resources: SubresourceExtent {
+                    levels: 2,
+                    layers: 3,
+                },
+                num_samples: 1,
+                ..ImageInfo::default()
+            },
+        )
+        .unwrap();
         let copy = BufferImageCopy {
-            buffer_offset: 16, buffer_size: 322, buffer_row_length: 18, buffer_image_height: 10,
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 2 },
-            image_extent: Extent3D { width: 16, height: 8, depth: 1 },
+            buffer_offset: 16,
+            buffer_size: 322,
+            buffer_row_length: 18,
+            buffer_image_height: 10,
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 2,
+            },
+            image_extent: Extent3D {
+                width: 16,
+                height: 8,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let mut guest = [0xcd; 400];
@@ -2698,14 +3051,21 @@ mod tests {
         }
         let (native_copies, size) = converted_copy_layout(&[copy], 2).unwrap();
         let mut expanded = vec![0xa5; size];
-        convert_uncompressed_memory(PixelFormat::G4R4Unorm, &guest, &mut expanded, &[copy], true).unwrap();
+        convert_uncompressed_memory(PixelFormat::G4R4Unorm, &guest, &mut expanded, &[copy], true)
+            .unwrap();
         let upload = MetalBuffer::new(&device, size + 32).unwrap();
         upload.write(32, &expanded).unwrap();
         let download = MetalBuffer::new(&device, size + 32).unwrap();
-        image.upload_converted_memory(runtime.scheduler(), &upload, 32, &native_copies, 2).unwrap();
-        image.download_converted_memory(runtime.scheduler(), &download, 32, &native_copies).unwrap();
+        image
+            .upload_converted_memory(runtime.scheduler(), &upload, 32, &native_copies, 2)
+            .unwrap();
+        image
+            .download_converted_memory(runtime.scheduler(), &download, 32, &native_copies)
+            .unwrap();
         let mut output = [0xcd; 400];
-        runtime.download_single_sample_memory(&image, &mut output, &[copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&image, &mut output, &[copy])
+            .unwrap();
         assert_eq!(output, guest);
         let mut native = vec![0; size];
         download.read(32, &mut native).unwrap();
@@ -2713,7 +3073,10 @@ mod tests {
             for y in 0..8 {
                 for x in 0..16 {
                     let offset = ((layer * 10 + y) * 18 + x) * 2;
-                    assert_eq!(&native[offset..offset + 2], &[x as u8 * 17, (layer * 8 + y) as u8 * 17]);
+                    assert_eq!(
+                        &native[offset..offset + 2],
+                        &[x as u8 * 17, (layer * 8 + y) as u8 * 17]
+                    );
                 }
             }
         }
@@ -2723,13 +3086,22 @@ mod tests {
     fn g4r4_download_quantizes_all_native_byte_pairs_to_nearest_unorm4() {
         let copy = BufferImageCopy {
             buffer_size: 65536,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 1 },
-            image_extent: Extent3D { width: 65536, height: 1, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 65536,
+                height: 1,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let native: Vec<u8> = (0..=u16::MAX).flat_map(u16::to_le_bytes).collect();
         let mut guest = vec![0; 65536];
-        convert_uncompressed_memory(PixelFormat::G4R4Unorm, &native, &mut guest, &[copy], false).unwrap();
+        convert_uncompressed_memory(PixelFormat::G4R4Unorm, &native, &mut guest, &[copy], false)
+            .unwrap();
         for (i, value) in guest.into_iter().enumerate() {
             let r = (((i & 255) as f64 / 255.0) * 15.0).round() as u8;
             let g = (((i >> 8) as f64 / 255.0) * 15.0).round() as u8;
@@ -2743,17 +3115,42 @@ mod tests {
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
-        let image = MetalImage::new(&device, &ImageInfo {
-            format: PixelFormat::R32G32B32Float, image_type: ImageType::E2D,
-            size: Extent3D { width: 8, height: 8, depth: 1 },
-            resources: SubresourceExtent { levels: 2, layers: 3 }, num_samples: 1,
-            ..ImageInfo::default()
-        }).unwrap();
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let image = MetalImage::new(
+            &device,
+            &ImageInfo {
+                format: PixelFormat::R32G32B32Float,
+                image_type: ImageType::E2D,
+                size: Extent3D {
+                    width: 8,
+                    height: 8,
+                    depth: 1,
+                },
+                resources: SubresourceExtent {
+                    levels: 2,
+                    layers: 3,
+                },
+                num_samples: 1,
+                ..ImageInfo::default()
+            },
+        )
+        .unwrap();
         let copy = BufferImageCopy {
-            buffer_offset: 16, buffer_size: 168, buffer_row_length: 3, buffer_image_height: 3,
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 2 },
-            image_extent: Extent3D { width: 2, height: 2, depth: 1 },
+            buffer_offset: 16,
+            buffer_size: 168,
+            buffer_row_length: 3,
+            buffer_image_height: 3,
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 2,
+            },
+            image_extent: Extent3D {
+                width: 2,
+                height: 2,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let mut guest = [0xcd; 256];
@@ -2761,25 +3158,43 @@ mod tests {
             for y in 0..2 {
                 for x in 0..2 {
                     let offset = 16 + ((layer * 3 + y) * 3 + x) * 12;
-                    let words = [0x80000000u32, 0x7fc12345 + layer as u32, 0x3f800000 + (x + y) as u32];
+                    let words = [
+                        0x80000000u32,
+                        0x7fc12345 + layer as u32,
+                        0x3f800000 + (x + y) as u32,
+                    ];
                     for (i, word) in words.into_iter().enumerate() {
-                        guest[offset + i * 4..offset + (i + 1) * 4].copy_from_slice(&word.to_le_bytes());
+                        guest[offset + i * 4..offset + (i + 1) * 4]
+                            .copy_from_slice(&word.to_le_bytes());
                     }
                 }
             }
         }
         let (native_copies, size) = converted_copy_layout(&[copy], 16).unwrap();
         let mut expanded = vec![0xa5; size];
-        convert_uncompressed_memory(PixelFormat::R32G32B32Float, &guest, &mut expanded, &[copy], true).unwrap();
+        convert_uncompressed_memory(
+            PixelFormat::R32G32B32Float,
+            &guest,
+            &mut expanded,
+            &[copy],
+            true,
+        )
+        .unwrap();
         let upload = MetalBuffer::new(&device, size + 32).unwrap();
         upload.write(32, &expanded).unwrap();
         let tick = runtime.scheduler().current_tick();
-        image.upload_converted_memory(runtime.scheduler(), &upload, 32, &native_copies, 16).unwrap();
+        image
+            .upload_converted_memory(runtime.scheduler(), &upload, 32, &native_copies, 16)
+            .unwrap();
         let download = MetalBuffer::new(&device, size + 32).unwrap();
-        image.download_converted_memory(runtime.scheduler(), &download, 32, &native_copies).unwrap();
+        image
+            .download_converted_memory(runtime.scheduler(), &download, 32, &native_copies)
+            .unwrap();
         assert_eq!(runtime.scheduler().current_tick(), tick);
         let mut actual = [0xcd; 256];
-        runtime.download_single_sample_memory(&image, &mut actual, &[copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&image, &mut actual, &[copy])
+            .unwrap();
         assert_eq!(actual, guest);
         let mut native = vec![0; size];
         download.read(32, &mut native).unwrap();
@@ -2798,24 +3213,66 @@ mod tests {
     fn rgb32_conversion_rejects_bad_copies_without_partial_writes() {
         let copy = BufferImageCopy {
             buffer_size: 12,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 1 },
-            image_extent: Extent3D { width: 1, height: 1, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         for upload in [false, true] {
             for bad in [
-                BufferImageCopy { buffer_offset: usize::MAX, ..copy },
-                BufferImageCopy { buffer_size: 11, ..copy },
-                BufferImageCopy { image_extent: Extent3D { width: 2, height: 1, depth: 1 }, buffer_row_length: 1, ..copy },
-                BufferImageCopy { image_subresource: SubresourceLayers { num_layers: 0, ..copy.image_subresource }, ..copy },
+                BufferImageCopy {
+                    buffer_offset: usize::MAX,
+                    ..copy
+                },
+                BufferImageCopy {
+                    buffer_size: 11,
+                    ..copy
+                },
+                BufferImageCopy {
+                    image_extent: Extent3D {
+                        width: 2,
+                        height: 1,
+                        depth: 1,
+                    },
+                    buffer_row_length: 1,
+                    ..copy
+                },
+                BufferImageCopy {
+                    image_subresource: SubresourceLayers {
+                        num_layers: 0,
+                        ..copy.image_subresource
+                    },
+                    ..copy
+                },
             ] {
                 let mut output = [0xcd; 64];
-                assert!(convert_uncompressed_memory(PixelFormat::R32G32B32Float, &[0; 64], &mut output, &[copy, bad], upload).is_err());
+                assert!(convert_uncompressed_memory(
+                    PixelFormat::R32G32B32Float,
+                    &[0; 64],
+                    &mut output,
+                    &[copy, bad],
+                    upload
+                )
+                .is_err());
                 assert_eq!(output, [0xcd; 64]);
             }
         }
         let mut output = [0xcd; 16];
-        assert!(convert_uncompressed_memory(PixelFormat::R32G32B32Float, &[0; 11], &mut output, &[copy], true).is_err());
+        assert!(convert_uncompressed_memory(
+            PixelFormat::R32G32B32Float,
+            &[0; 11],
+            &mut output,
+            &[copy],
+            true
+        )
+        .is_err());
         assert_eq!(output, [0xcd; 16]);
     }
 
@@ -2825,17 +3282,42 @@ mod tests {
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
-        let image = MetalImage::new(&device, &ImageInfo {
-            format: PixelFormat::X8D24Unorm, image_type: ImageType::E2D,
-            size: Extent3D { width: 8, height: 8, depth: 1 },
-            resources: SubresourceExtent { levels: 2, layers: 3 }, num_samples: 1,
-            ..ImageInfo::default()
-        }).unwrap();
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let image = MetalImage::new(
+            &device,
+            &ImageInfo {
+                format: PixelFormat::X8D24Unorm,
+                image_type: ImageType::E2D,
+                size: Extent3D {
+                    width: 8,
+                    height: 8,
+                    depth: 1,
+                },
+                resources: SubresourceExtent {
+                    levels: 2,
+                    layers: 3,
+                },
+                num_samples: 1,
+                ..ImageInfo::default()
+            },
+        )
+        .unwrap();
         let copy = BufferImageCopy {
-            buffer_offset: 16, buffer_size: 76, buffer_row_length: 3, buffer_image_height: 3,
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 2 },
-            image_extent: Extent3D { width: 2, height: 3, depth: 1 },
+            buffer_offset: 16,
+            buffer_size: 76,
+            buffer_row_length: 3,
+            buffer_image_height: 3,
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 2,
+            },
+            image_extent: Extent3D {
+                width: 2,
+                height: 3,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let depths = [0u32, 1, 0x7fffff, 0x800000, 0xfffffe, 0xffffff];
@@ -2853,16 +3335,23 @@ mod tests {
         }
         let (copies, size) = converted_copy_layout(&[copy], 4).unwrap();
         let mut native = vec![0; size];
-        convert_uncompressed_memory(PixelFormat::X8D24Unorm, &guest, &mut native, &[copy], true).unwrap();
+        convert_uncompressed_memory(PixelFormat::X8D24Unorm, &guest, &mut native, &[copy], true)
+            .unwrap();
         let upload = MetalBuffer::new(&device, size + 32).unwrap();
         upload.write(32, &native).unwrap();
         let readback = MetalBuffer::new(&device, size + 32).unwrap();
         let tick = runtime.scheduler().current_tick();
-        image.upload_converted_memory(runtime.scheduler(), &upload, 32, &copies, 4).unwrap();
-        image.download_converted_memory(runtime.scheduler(), &readback, 32, &copies).unwrap();
+        image
+            .upload_converted_memory(runtime.scheduler(), &upload, 32, &copies, 4)
+            .unwrap();
+        image
+            .download_converted_memory(runtime.scheduler(), &readback, 32, &copies)
+            .unwrap();
         assert_eq!(runtime.scheduler().current_tick(), tick);
         let mut actual = [0xcd; 128];
-        runtime.download_single_sample_memory(&image, &mut actual, &[copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&image, &mut actual, &[copy])
+            .unwrap();
         assert_eq!(actual, expected);
         readback.read(32, &mut native).unwrap();
         for layer in 0..2 {
@@ -2870,7 +3359,8 @@ mod tests {
                 for x in 0..2 {
                     let offset = ((layer * 3 + y) * 3 + x) * 4;
                     let value = f32::from_le_bytes(native[offset..offset + 4].try_into().unwrap());
-                    let expected = (depths[(y * 2 + x + layer) % depths.len()] as f64 / 16777215.0) as f32;
+                    let expected =
+                        (depths[(y * 2 + x + layer) % depths.len()] as f64 / 16777215.0) as f32;
                     assert_eq!(value, expected);
                 }
             }
@@ -2885,29 +3375,52 @@ mod tests {
         }
         let copy = BufferImageCopy {
             buffer_size: 4,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 1 },
-            image_extent: Extent3D { width: 1, height: 1, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         for upload in [true, false] {
             let mut output = [0xcd; 16];
-            let invalid = BufferImageCopy { buffer_offset: usize::MAX, ..copy };
-            assert!(convert_uncompressed_memory(PixelFormat::X8D24Unorm, &[0; 16], &mut output, &[copy, invalid], upload).is_err());
+            let invalid = BufferImageCopy {
+                buffer_offset: usize::MAX,
+                ..copy
+            };
+            assert!(convert_uncompressed_memory(
+                PixelFormat::X8D24Unorm,
+                &[0; 16],
+                &mut output,
+                &[copy, invalid],
+                upload
+            )
+            .is_err());
             assert_eq!(output, [0xcd; 16]);
         }
     }
 
     #[test]
     fn packed_1555_and_5551_gpu_reads_match_all_guest_words() {
-        use objc2_foundation::NSString;
-        use objc2_metal::{MTLDevice, MTLLibrary, MTLComputeCommandEncoder};
         use crate::texture_cache::image_view_info::SwizzleSource;
+        use objc2_foundation::NSString;
+        use objc2_metal::{MTLComputeCommandEncoder, MTLDevice, MTLLibrary};
         let device = MetalDevice::new().unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
-        let library = device.device().newLibraryWithSource_options_error(&NSString::from_str(r#"
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let library = device
+            .device()
+            .newLibraryWithSource_options_error(
+                &NSString::from_str(
+                    r#"
 #include <metal_stdlib>
 using namespace metal;
 kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
@@ -2915,72 +3428,142 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
                            uint i [[thread_position_in_grid]]) {
     result[i] = uint4(round(image.read(uint2(i % 256, i / 256)) * scale));
 }
-"#), None).unwrap();
-        let function = library.newFunctionWithName(&NSString::from_str("inspect_packed")).unwrap();
-        let pipeline = device.device().newComputePipelineStateWithFunction_error(&function).unwrap();
+"#,
+                ),
+                None,
+            )
+            .unwrap();
+        let function = library
+            .newFunctionWithName(&NSString::from_str("inspect_packed"))
+            .unwrap();
+        let pipeline = device
+            .device()
+            .newComputePipelineStateWithFunction_error(&function)
+            .unwrap();
         let copy = BufferImageCopy {
             buffer_size: 65536 * 2,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 1 },
-            image_extent: Extent3D { width: 256, height: 256, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 256,
+                height: 256,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let guest: Vec<u8> = (0..=u16::MAX).flat_map(u16::to_le_bytes).collect();
-        for format in [PixelFormat::A1B5G5R5Unorm, PixelFormat::A1R5G5B5Unorm, PixelFormat::A5B5G5R1Unorm] {
+        for format in [
+            PixelFormat::A1B5G5R5Unorm,
+            PixelFormat::A1R5G5B5Unorm,
+            PixelFormat::A5B5G5R1Unorm,
+        ] {
             let image_info = ImageInfo {
-                format, image_type: ImageType::E2D, size: copy.image_extent,
-                resources: SubresourceExtent { levels: 1, layers: 1 }, num_samples: 1,
+                format,
+                image_type: ImageType::E2D,
+                size: copy.image_extent,
+                resources: SubresourceExtent {
+                    levels: 1,
+                    layers: 1,
+                },
+                num_samples: 1,
                 ..ImageInfo::default()
             };
             let image = MetalImage::new(&device, &image_info).unwrap();
             let view_info = ImageViewInfo {
-                format, view_type: ImageViewType::E2D,
-                x_source: SwizzleSource::R as u8, y_source: SwizzleSource::G as u8,
-                z_source: SwizzleSource::B as u8, w_source: SwizzleSource::A as u8,
+                format,
+                view_type: ImageViewType::E2D,
+                x_source: SwizzleSource::R as u8,
+                y_source: SwizzleSource::G as u8,
+                z_source: SwizzleSource::B as u8,
+                w_source: SwizzleSource::A as u8,
                 ..ImageViewInfo::default()
             };
-            let mut view_base = Box::new(ImageViewBase::new(&view_info, &image_info, ImageId { index: 1 }, 0x1000));
-            let view = MetalImageView::new(NonNull::from(view_base.as_mut()), &view_info, &image).unwrap();
+            let mut view_base = Box::new(ImageViewBase::new(
+                &view_info,
+                &image_info,
+                ImageId { index: 1 },
+                0x1000,
+            ));
+            let view =
+                MetalImageView::new(NonNull::from(view_base.as_mut()), &view_info, &image).unwrap();
             let upload = MetalBuffer::new(&device, guest.len() + 32).unwrap();
             if format == PixelFormat::A1B5G5R5Unorm {
                 let mut native = vec![0; guest.len()];
                 let copies = convert_packed16_upload(format, &guest, &mut native, &[copy]).unwrap();
                 upload.write(32, &native).unwrap();
-                image.upload_converted_memory(runtime.scheduler(), &upload, 32, &copies, 2).unwrap();
+                image
+                    .upload_converted_memory(runtime.scheduler(), &upload, 32, &copies, 2)
+                    .unwrap();
             } else {
                 upload.write(32, &guest).unwrap();
-                image.upload_memory(runtime.scheduler(), &upload, 32, &[copy]).unwrap();
+                image
+                    .upload_memory(runtime.scheduler(), &upload, 32, &[copy])
+                    .unwrap();
             }
             let result = MetalBuffer::new(&device, 65536 * 16).unwrap();
             let scale = MetalBuffer::new(&device, 16).unwrap();
             let scales = if format == PixelFormat::A5B5G5R1Unorm {
                 [1.0f32, 31.0, 31.0, 31.0]
-            } else { [31.0f32, 31.0, 31.0, 1.0] };
-            scale.write(0, &scales.into_iter().flat_map(f32::to_le_bytes).collect::<Vec<_>>()).unwrap();
-            runtime.scheduler().with_compute_encoder(|encoder| unsafe {
-                encoder.setComputePipelineState(&pipeline);
-                encoder.setTexture_atIndex(view.handle(TextureType::Color2D), 0);
-                encoder.setBuffer_offset_atIndex(Some(result.handle()), 0, 0);
-                encoder.setBuffer_offset_atIndex(Some(scale.handle()), 0, 1);
-                encoder.dispatchThreads_threadsPerThreadgroup(
-                    MTLSize { width: 65536, height: 1, depth: 1 },
-                    MTLSize { width: 32, height: 1, depth: 1 },
-                );
-            }).unwrap();
+            } else {
+                [31.0f32, 31.0, 31.0, 1.0]
+            };
+            scale
+                .write(
+                    0,
+                    &scales
+                        .into_iter()
+                        .flat_map(f32::to_le_bytes)
+                        .collect::<Vec<_>>(),
+                )
+                .unwrap();
+            runtime
+                .scheduler()
+                .with_compute_encoder(|encoder| unsafe {
+                    encoder.setComputePipelineState(&pipeline);
+                    encoder.setTexture_atIndex(view.handle(TextureType::Color2D), 0);
+                    encoder.setBuffer_offset_atIndex(Some(result.handle()), 0, 0);
+                    encoder.setBuffer_offset_atIndex(Some(scale.handle()), 0, 1);
+                    encoder.dispatchThreads_threadsPerThreadgroup(
+                        MTLSize {
+                            width: 65536,
+                            height: 1,
+                            depth: 1,
+                        },
+                        MTLSize {
+                            width: 32,
+                            height: 1,
+                            depth: 1,
+                        },
+                    );
+                })
+                .unwrap();
             let mut restored = vec![0xcd; guest.len()];
-            runtime.download_single_sample_memory(&image, &mut restored, &[copy]).unwrap();
+            runtime
+                .download_single_sample_memory(&image, &mut restored, &[copy])
+                .unwrap();
             assert_eq!(restored, guest);
             let mut pixels = vec![0; 65536 * 16];
             result.read(0, &mut pixels).unwrap();
             for (word, pixel) in pixels.chunks_exact(16).enumerate() {
                 let (red, blue) = if format == PixelFormat::A1B5G5R5Unorm {
                     (word % 32, word / 1024 % 32)
-                } else { (word / 1024 % 32, word % 32) };
+                } else {
+                    (word / 1024 % 32, word % 32)
+                };
                 let expected = if format == PixelFormat::A5B5G5R1Unorm {
                     [word % 2, word / 2 % 32, word / 64 % 32, word / 2048]
-                } else { [red, word / 32 % 32, blue, word / 32768] };
+                } else {
+                    [red, word / 32 % 32, blue, word / 32768]
+                };
                 for (component, expected) in pixel.chunks_exact(4).zip(expected) {
-                    assert_eq!(u32::from_le_bytes(component.try_into().unwrap()), expected as u32,
-                        "format={format:?} guest={word:#06x}");
+                    assert_eq!(
+                        u32::from_le_bytes(component.try_into().unwrap()),
+                        expected as u32,
+                        "format={format:?} guest={word:#06x}"
+                    );
                 }
             }
         }
@@ -2992,22 +3575,42 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
-        let image = MetalImage::new(&device, &ImageInfo {
-            format: PixelFormat::B5G6R5Unorm,
-            image_type: ImageType::E2D,
-            size: Extent3D { width: 8, height: 8, depth: 1 },
-            resources: SubresourceExtent { levels: 2, layers: 3 },
-            num_samples: 1,
-            ..ImageInfo::default()
-        }).unwrap();
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let image = MetalImage::new(
+            &device,
+            &ImageInfo {
+                format: PixelFormat::B5G6R5Unorm,
+                image_type: ImageType::E2D,
+                size: Extent3D {
+                    width: 8,
+                    height: 8,
+                    depth: 1,
+                },
+                resources: SubresourceExtent {
+                    levels: 2,
+                    layers: 3,
+                },
+                num_samples: 1,
+                ..ImageInfo::default()
+            },
+        )
+        .unwrap();
         let copy = BufferImageCopy {
             buffer_offset: 16,
             buffer_size: 104,
             buffer_row_length: 6,
             buffer_image_height: 5,
-            image_subresource: SubresourceLayers { base_level: 1, base_layer: 1, num_layers: 2 },
-            image_extent: Extent3D { width: 4, height: 4, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 1,
+                base_layer: 1,
+                num_layers: 2,
+            },
+            image_extent: Extent3D {
+                width: 4,
+                height: 4,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let source = MetalBuffer::new(&device, 192).unwrap();
@@ -3029,18 +3632,34 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         source.write(32, &native).unwrap();
         destination.write(0, &[0xcd; 192]).unwrap();
         let tick = runtime.scheduler().current_tick();
-        image.upload_converted_memory(runtime.scheduler(), &source, 32, &[copy], 2).unwrap();
-        image.download_packed16_memory(runtime.scheduler(), &destination, 32, &[copy]).unwrap();
-        assert_eq!(runtime.scheduler().current_tick(), tick, "native transfers must not submit or wait");
+        image
+            .upload_converted_memory(runtime.scheduler(), &source, 32, &[copy], 2)
+            .unwrap();
+        image
+            .download_packed16_memory(runtime.scheduler(), &destination, 32, &[copy])
+            .unwrap();
+        assert_eq!(
+            runtime.scheduler().current_tick(),
+            tick,
+            "native transfers must not submit or wait"
+        );
         let mut actual = [0xcd; 144];
-        runtime.download_single_sample_memory(&image, &mut actual, &[copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&image, &mut actual, &[copy])
+            .unwrap();
         assert_eq!(actual, expected);
         let mut transferred = [0; 192];
         destination.read(0, &mut transferred).unwrap();
         assert_eq!(&transferred[..32], &[0xcd; 32]);
         assert_eq!(&transferred[176..], &[0xcd; 16]);
         let mut unpacked = [0xcd; 144];
-        convert_packed16_download(PixelFormat::B5G6R5Unorm, &transferred[32..176], &mut unpacked, &[copy]).unwrap();
+        convert_packed16_download(
+            PixelFormat::B5G6R5Unorm,
+            &transferred[32..176],
+            &mut unpacked,
+            &[copy],
+        )
+        .unwrap();
         assert_eq!(unpacked, expected);
     }
 
@@ -3049,22 +3668,66 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let copy = BufferImageCopy {
             buffer_offset: 2,
             buffer_size: 2,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 1 },
-            image_extent: Extent3D { width: 1, height: 1, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 1,
+            },
+            image_extent: Extent3D {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         let mut output = [0xcd; 8];
         for bad in [
-            BufferImageCopy { buffer_offset: usize::MAX, ..copy },
-            BufferImageCopy { buffer_size: 1, ..copy },
-            BufferImageCopy { image_extent: Extent3D { width: 0, height: 1, depth: 1 }, ..copy },
-            BufferImageCopy { image_extent: Extent3D { width: 2, height: 1, depth: 1 }, buffer_row_length: 1, ..copy },
-            BufferImageCopy { image_subresource: SubresourceLayers { num_layers: 0, ..copy.image_subresource }, ..copy },
+            BufferImageCopy {
+                buffer_offset: usize::MAX,
+                ..copy
+            },
+            BufferImageCopy {
+                buffer_size: 1,
+                ..copy
+            },
+            BufferImageCopy {
+                image_extent: Extent3D {
+                    width: 0,
+                    height: 1,
+                    depth: 1,
+                },
+                ..copy
+            },
+            BufferImageCopy {
+                image_extent: Extent3D {
+                    width: 2,
+                    height: 1,
+                    depth: 1,
+                },
+                buffer_row_length: 1,
+                ..copy
+            },
+            BufferImageCopy {
+                image_subresource: SubresourceLayers {
+                    num_layers: 0,
+                    ..copy.image_subresource
+                },
+                ..copy
+            },
         ] {
-            assert!(convert_packed16_download(PixelFormat::B5G6R5Unorm, &[0; 8], &mut output, &[copy, bad]).is_err());
+            assert!(convert_packed16_download(
+                PixelFormat::B5G6R5Unorm,
+                &[0; 8],
+                &mut output,
+                &[copy, bad]
+            )
+            .is_err());
             assert_eq!(output, [0xcd; 8]);
         }
-        assert!(convert_packed16_download(PixelFormat::B5G6R5Unorm, &[0; 3], &mut output, &[copy]).is_err());
+        assert!(
+            convert_packed16_download(PixelFormat::B5G6R5Unorm, &[0; 3], &mut output, &[copy])
+                .is_err()
+        );
         assert_eq!(output, [0xcd; 8]);
     }
 
@@ -3074,21 +3737,41 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let mut scheduler = MetalScheduler::new(&device);
         let mut pool = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut runtime = MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
+        let mut runtime =
+            MetalTextureCacheRuntime::new(device.clone(), &mut scheduler, &mut pool, &mut blit);
         for format in [PixelFormat::D24UnormS8Uint, PixelFormat::S8UintD24Unorm] {
-            let image = MetalImage::new(&device, &ImageInfo {
-                format,
-                image_type: ImageType::E2D,
-                size: Extent3D { width: 8, height: 8, depth: 1 },
-                resources: SubresourceExtent { levels: 2, layers: 2 },
-                num_samples: 1,
-                ..ImageInfo::default()
-            }).unwrap();
+            let image = MetalImage::new(
+                &device,
+                &ImageInfo {
+                    format,
+                    image_type: ImageType::E2D,
+                    size: Extent3D {
+                        width: 8,
+                        height: 8,
+                        depth: 1,
+                    },
+                    resources: SubresourceExtent {
+                        levels: 2,
+                        layers: 2,
+                    },
+                    num_samples: 1,
+                    ..ImageInfo::default()
+                },
+            )
+            .unwrap();
             let copy = BufferImageCopy {
                 buffer_offset: 16,
                 buffer_size: 128,
-                image_subresource: SubresourceLayers { base_level: 1, base_layer: 0, num_layers: 2 },
-                image_extent: Extent3D { width: 4, height: 4, depth: 1 },
+                image_subresource: SubresourceLayers {
+                    base_level: 1,
+                    base_layer: 0,
+                    num_layers: 2,
+                },
+                image_extent: Extent3D {
+                    width: 4,
+                    height: 4,
+                    depth: 1,
+                },
                 ..BufferImageCopy::default()
             };
             let mut guest = vec![0; 144];
@@ -3097,16 +3780,36 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
                 let stencil = (255 - i) as u32;
                 let word: u32 = if format == PixelFormat::D24UnormS8Uint {
                     depth | (stencil << 24)
-                } else { (depth << 8) | stencil };
+                } else {
+                    (depth << 8) | stencil
+                };
                 guest[16 + i * 4..20 + i * 4].copy_from_slice(&word.to_le_bytes());
             }
             let size = converted_depth_stencil_linear_size(&[copy]);
             let mut upload = runtime.upload_staging_buffer(size, false).unwrap();
-            let planes = convert_depth24_stencil8_upload(format, &guest, upload.mapped_span_mut(), &[copy]).unwrap();
-            image.upload_depth_stencil_memory(runtime.scheduler(), &upload.buffer, upload.offset, &planes.depth, &planes.stencil).unwrap();
+            let planes =
+                convert_depth24_stencil8_upload(format, &guest, upload.mapped_span_mut(), &[copy])
+                    .unwrap();
+            image
+                .upload_depth_stencil_memory(
+                    runtime.scheduler(),
+                    &upload.buffer,
+                    upload.offset,
+                    &planes.depth,
+                    &planes.stencil,
+                )
+                .unwrap();
             let mut download = runtime.download_staging_buffer(size + 64, true).unwrap();
             download.mapped_span_mut().fill(0xcd);
-            image.download_depth_stencil_memory(runtime.scheduler(), &download.buffer, download.offset + 32, &planes.depth, &planes.stencil).unwrap();
+            image
+                .download_depth_stencil_memory(
+                    runtime.scheduler(),
+                    &download.buffer,
+                    download.offset + 32,
+                    &planes.depth,
+                    &planes.stencil,
+                )
+                .unwrap();
             runtime.finish().unwrap();
             let actual = download.mapped_span();
             assert_eq!(&actual[32..32 + size], upload.mapped_span());
@@ -3114,7 +3817,9 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             assert!(actual[32 + size..].iter().all(|&byte| byte == 0xcd));
             runtime.free_deferred_staging_buffer(&mut download).unwrap();
             let mut packed = vec![0xcc; guest.len() + 16];
-            runtime.download_single_sample_memory(&image, &mut packed, &[copy]).unwrap();
+            runtime
+                .download_single_sample_memory(&image, &mut packed, &[copy])
+                .unwrap();
             assert_eq!(&packed[16..guest.len()], &guest[16..]);
             assert!(packed[..16].iter().all(|&byte| byte == 0xcc));
             assert!(packed[guest.len()..].iter().all(|&byte| byte == 0xcc));
@@ -3128,19 +3833,32 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             assert_ne!(snapshot.handle() as *const _, image.handle() as *const _);
             let mut replacement = runtime.upload_staging_buffer(size, false).unwrap();
             replacement.mapped_span_mut().fill(0);
-            image.upload_depth_stencil_memory(runtime.scheduler(), &replacement.buffer,
-                replacement.offset, &planes.depth, &planes.stencil).unwrap();
+            image
+                .upload_depth_stencil_memory(
+                    runtime.scheduler(),
+                    &replacement.buffer,
+                    replacement.offset,
+                    &planes.depth,
+                    &planes.stencil,
+                )
+                .unwrap();
             assert_ne!(image.content_revision(), Some(revision));
             let refreshed = runtime.sampling_snapshot(&image).unwrap().unwrap();
             assert!(!Arc::ptr_eq(&snapshot, &refreshed));
             let mut overwritten = vec![0xcc; guest.len()];
-            runtime.download_depth24_stencil8_memory(&image, &mut overwritten, &[copy]).unwrap();
+            runtime
+                .download_depth24_stencil8_memory(&image, &mut overwritten, &[copy])
+                .unwrap();
             assert!(overwritten[16..].iter().all(|&byte| byte == 0));
             let mut refreshed_bytes = vec![0xcc; guest.len()];
-            runtime.download_depth24_stencil8_memory(&refreshed, &mut refreshed_bytes, &[copy]).unwrap();
+            runtime
+                .download_depth24_stencil8_memory(&refreshed, &mut refreshed_bytes, &[copy])
+                .unwrap();
             assert!(refreshed_bytes[16..].iter().all(|&byte| byte == 0));
             let mut preserved = vec![0xcc; guest.len()];
-            runtime.download_depth24_stencil8_memory(&snapshot, &mut preserved, &[copy]).unwrap();
+            runtime
+                .download_depth24_stencil8_memory(&snapshot, &mut preserved, &[copy])
+                .unwrap();
             assert_eq!(&preserved[16..], &guest[16..]);
             assert!(preserved[..16].iter().all(|&byte| byte == 0xcc));
         }
@@ -3148,19 +3866,33 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
 
     #[test]
     fn sampling_snapshot_views_preserve_aspects_swizzles_and_subresources() {
-        use crate::texture_cache::texture_cache_base::{ImageSlot, ImageViewSlot};
-        use crate::texture_cache::types::{SubresourceRange, SubresourceBase};
         use crate::texture_cache::image_view_info::SwizzleSource;
+        use crate::texture_cache::texture_cache_base::{ImageSlot, ImageViewSlot};
+        use crate::texture_cache::types::{SubresourceBase, SubresourceRange};
         let device = MetalDevice::new().unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let mut staging = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
-        let mut cache = MetalTextureCache::new(device.clone(), Arc::new(MaxwellDeviceMemoryManager::default()),
-            &mut scheduler, &mut staging, &mut blit);
+        let mut cache = MetalTextureCache::new(
+            device.clone(),
+            Arc::new(MaxwellDeviceMemoryManager::default()),
+            &mut scheduler,
+            &mut staging,
+            &mut blit,
+        );
         let info = ImageInfo {
-            format: PixelFormat::D32FloatS8Uint, image_type: ImageType::E2D,
-            size: Extent3D { width: 8, height: 8, depth: 1 },
-            resources: SubresourceExtent { levels: 2, layers: 2 }, num_samples: 1,
+            format: PixelFormat::D32FloatS8Uint,
+            image_type: ImageType::E2D,
+            size: Extent3D {
+                width: 8,
+                height: 8,
+                depth: 1,
+            },
+            resources: SubresourceExtent {
+                levels: 2,
+                layers: 2,
+            },
+            num_samples: 1,
             ..ImageInfo::default()
         };
         let mut image = ImageSlot::pending(ImageBase::new(info.clone(), 0x10000, 0x20000));
@@ -3168,56 +3900,109 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let image_id = cache.base.slot_images.insert(image);
         for component in [SwizzleSource::R, SwizzleSource::G] {
             let view_info = ImageViewInfo {
-                view_type: ImageViewType::E2DArray, format: info.format,
+                view_type: ImageViewType::E2DArray,
+                format: info.format,
                 range: SubresourceRange {
                     base: SubresourceBase { level: 1, layer: 1 },
-                    extent: SubresourceExtent { levels: 1, layers: 1 },
+                    extent: SubresourceExtent {
+                        levels: 1,
+                        layers: 1,
+                    },
                 },
-                x_source: component as u8, y_source: component as u8,
-                z_source: SwizzleSource::Zero as u8, w_source: SwizzleSource::OneFloat as u8,
+                x_source: component as u8,
+                y_source: component as u8,
+                z_source: SwizzleSource::Zero as u8,
+                w_source: SwizzleSource::OneFloat as u8,
             };
-            let mut view = ImageViewSlot::pending(view_info.clone(),
-                ImageViewBase::new(&view_info, &info, image_id, 0x10000));
-            let original = MetalImageView::new(NonNull::from(view.base.as_mut()), &view_info,
-                cache.base.slot_images[image_id].backend.as_ref().unwrap()).unwrap();
+            let mut view = ImageViewSlot::pending(
+                view_info.clone(),
+                ImageViewBase::new(&view_info, &info, image_id, 0x10000),
+            );
+            let original = MetalImageView::new(
+                NonNull::from(view.base.as_mut()),
+                &view_info,
+                cache.base.slot_images[image_id].backend.as_ref().unwrap(),
+            )
+            .unwrap();
             let original_handle = original.retained_handle(TextureType::ColorArray2D).unwrap();
             view.backend = Some(MetalCachedImageView::Image(original));
             let original = original_handle;
             let view_id = cache.base.slot_image_views.insert(view);
-            let snapshot = cache.retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
-                .unwrap().unwrap();
-            let reused = cache.retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
-                .unwrap().unwrap();
+            let snapshot = cache
+                .retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
+                .unwrap()
+                .unwrap();
+            let reused = cache
+                .retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
+                .unwrap()
+                .unwrap();
             assert_eq!(&*snapshot as *const _, &*reused as *const _);
-            use super::super::metal_graphics_pipeline::{MetalPreparedGraphics, MetalStageTextureBinding, MetalTextureBindingSource};
+            use super::super::metal_graphics_pipeline::{
+                MetalPreparedGraphics, MetalStageTextureBinding, MetalTextureBindingSource,
+            };
             cache.base.render_targets.depth_buffer_id = view_id;
             let mut prepared = MetalPreparedGraphics::default();
             prepared.fragment.textures.push(MetalStageTextureBinding {
-                index: 0, texture: Some(original.clone()),
-                source: MetalTextureBindingSource::Sampled { view_id, texture_type: TextureType::ColorArray2D },
-            });
-            assert!(!prepared.snapshot_read_only_depth_feedback(&mut cache, true).unwrap());
-            assert_eq!(prepared.fragment.textures[0].texture.as_deref().map(|t| t as *const _), Some(&*original as *const _));
-            prepared.vertex.textures.push(MetalStageTextureBinding {
-                index: 1, texture: Some(original.clone()),
-                source: MetalTextureBindingSource::Storage {
-                    view_id, texture_type: TextureType::ColorArray2D, is_written: false,
+                index: 0,
+                texture: Some(original.clone()),
+                source: MetalTextureBindingSource::Sampled {
+                    view_id,
+                    texture_type: TextureType::ColorArray2D,
                 },
             });
-            assert!(!prepared.snapshot_read_only_depth_feedback(&mut cache, false).unwrap());
-            assert_eq!(prepared.fragment.textures[0].texture.as_deref().map(|t| t as *const _), Some(&*original as *const _));
+            assert!(!prepared
+                .snapshot_read_only_depth_feedback(&mut cache, true)
+                .unwrap());
+            assert_eq!(
+                prepared.fragment.textures[0]
+                    .texture
+                    .as_deref()
+                    .map(|t| t as *const _),
+                Some(&*original as *const _)
+            );
+            prepared.vertex.textures.push(MetalStageTextureBinding {
+                index: 1,
+                texture: Some(original.clone()),
+                source: MetalTextureBindingSource::Storage {
+                    view_id,
+                    texture_type: TextureType::ColorArray2D,
+                    is_written: false,
+                },
+            });
+            assert!(!prepared
+                .snapshot_read_only_depth_feedback(&mut cache, false)
+                .unwrap());
+            assert_eq!(
+                prepared.fragment.textures[0]
+                    .texture
+                    .as_deref()
+                    .map(|t| t as *const _),
+                Some(&*original as *const _)
+            );
             prepared.vertex.textures.clear();
             // The common barrier heuristic skips the exact attachment view;
             // native sampling still needs an independent depth snapshot.
             cache.base.rt_active_mask = 1 << crate::texture_cache::types::NUM_RT;
             cache.base.render_targets_serial += 1;
             let mut barrier_requested = false;
-            cache.base.check_feedback_loop(&[ImageViewInOut {
-                id: view_id, ..Default::default()
-            }], || barrier_requested = true);
+            cache.base.check_feedback_loop(
+                &[ImageViewInOut {
+                    id: view_id,
+                    ..Default::default()
+                }],
+                || barrier_requested = true,
+            );
             assert!(!barrier_requested);
-            assert!(prepared.snapshot_read_only_depth_feedback(&mut cache, false).unwrap());
-            assert_eq!(prepared.fragment.textures[0].texture.as_deref().map(|t| t as *const _), Some(&*snapshot as *const _));
+            assert!(prepared
+                .snapshot_read_only_depth_feedback(&mut cache, false)
+                .unwrap());
+            assert_eq!(
+                prepared.fragment.textures[0]
+                    .texture
+                    .as_deref()
+                    .map(|t| t as *const _),
+                Some(&*snapshot as *const _)
+            );
             assert_eq!(snapshot.pixelFormat(), original.pixelFormat());
             assert_eq!(snapshot.textureType(), original.textureType());
             assert_eq!(snapshot.swizzle(), original.swizzle());
@@ -3227,11 +4012,15 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             assert_eq!(snapshot.arrayLength(), 1);
             assert_eq!(snapshot.width(), 4);
             assert_eq!(snapshot.height(), 4);
-            assert_ne!(snapshot.parentTexture().as_deref().map(|p| p as *const _),
-                original.parentTexture().as_deref().map(|p| p as *const _));
+            assert_ne!(
+                snapshot.parentTexture().as_deref().map(|p| p as *const _),
+                original.parentTexture().as_deref().map(|p| p as *const _)
+            );
             drop(cache.base.slot_image_views.take(view_id));
-            assert!(cache.retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
-                .unwrap().is_none());
+            assert!(cache
+                .retained_sampling_snapshot_view(view_id, TextureType::ColorArray2D)
+                .unwrap()
+                .is_none());
             // Escaped handles remain native-only after the base slot is gone.
             assert_eq!(snapshot.width(), 4);
         }
@@ -3248,11 +4037,16 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         descriptor.setHazardTrackingMode(MTLHazardTrackingMode::Tracked);
         let heap = device.device().newHeapWithDescriptor(&descriptor).unwrap();
         let mut cache = SamplingSnapshotCache {
-            heap: Some(heap), attempted_allocation: true, ..SamplingSnapshotCache::default()
+            heap: Some(heap),
+            attempted_allocation: true,
+            ..SamplingSnapshotCache::default()
         };
         let source = image_with_format_and_size(&device, PixelFormat::D32Float, 1024, 1024);
         let tick = scheduler.current_tick();
-        assert!(cache.get(&device, &mut scheduler, &source).unwrap().is_none());
+        assert!(cache
+            .get(&device, &mut scheduler, &source)
+            .unwrap()
+            .is_none());
         assert!(cache.entries.is_empty());
         assert_eq!(scheduler.current_tick(), tick);
         assert!(scheduler.flush().unwrap().is_none());
@@ -3264,7 +4058,10 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let mut scheduler = MetalScheduler::new(&device);
         let mut cache = SamplingSnapshotCache::default();
         let source = image_with_format(&device, PixelFormat::A8B8G8R8Unorm);
-        assert!(cache.get(&device, &mut scheduler, &source).unwrap().is_none());
+        assert!(cache
+            .get(&device, &mut scheduler, &source)
+            .unwrap()
+            .is_none());
         assert!(!cache.attempted_allocation);
         assert!(scheduler.flush().unwrap().is_none());
     }
@@ -3279,7 +4076,9 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         descriptor.setHazardTrackingMode(MTLHazardTrackingMode::Tracked);
         let heap = device.device().newHeapWithDescriptor(&descriptor).unwrap();
         let mut cache = SamplingSnapshotCache {
-            heap: Some(heap.clone()), attempted_allocation: true, ..SamplingSnapshotCache::default()
+            heap: Some(heap.clone()),
+            attempted_allocation: true,
+            ..SamplingSnapshotCache::default()
         };
         let source = image_with_format_and_size(&device, PixelFormat::D32Float, 128, 128);
         let mut allocated = 0;
@@ -3294,7 +4093,10 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             assert!(heap.currentAllocatedSize() <= heap.size());
         }
         assert!(allocated > 0);
-        assert!(allocated < 32, "unsubmitted copies must retain their heap textures");
+        assert!(
+            allocated < 32,
+            "unsubmitted copies must retain their heap textures"
+        );
         scheduler.finish_all().unwrap();
     }
 
@@ -3316,8 +4118,16 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             buffer_size: 96,
             buffer_row_length: 4,
             buffer_image_height: 3,
-            image_subresource: SubresourceLayers { base_level: 0, base_layer: 0, num_layers: 2 },
-            image_extent: Extent3D { width: 2, height: 2, depth: 1 },
+            image_subresource: SubresourceLayers {
+                base_level: 0,
+                base_layer: 0,
+                num_layers: 2,
+            },
+            image_extent: Extent3D {
+                width: 2,
+                height: 2,
+                depth: 1,
+            },
             ..BufferImageCopy::default()
         };
         for format in [PixelFormat::D24UnormS8Uint, PixelFormat::S8UintD24Unorm] {
@@ -3338,9 +4148,21 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
             }
             assert_eq!(output, expected);
             let mut untouched = vec![0xcc; 120];
-            assert!(convert_depth24_stencil8_download(format, &native[..native.len() - 1], &mut untouched, &[copy]).is_err());
+            assert!(convert_depth24_stencil8_download(
+                format,
+                &native[..native.len() - 1],
+                &mut untouched,
+                &[copy]
+            )
+            .is_err());
             assert_eq!(untouched, vec![0xcc; 120]);
-            assert!(convert_depth24_stencil8_download(format, &native, &mut untouched[..107], &[copy]).is_err());
+            assert!(convert_depth24_stencil8_download(
+                format,
+                &native,
+                &mut untouched[..107],
+                &[copy]
+            )
+            .is_err());
             assert_eq!(untouched, vec![0xcc; 120]);
         }
     }
@@ -3574,7 +4396,9 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         download.read(0, &mut result).unwrap();
         assert_eq!(result, pixels);
         let mut cpu_output = vec![0xcd; 64];
-        runtime.download_single_sample_memory(&destination_image, &mut cpu_output, &[buffer_copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&destination_image, &mut cpu_output, &[buffer_copy])
+            .unwrap();
         assert_eq!(cpu_output, pixels);
     }
 
@@ -3591,42 +4415,77 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         let mut staging = MetalStagingBufferPool::new(&device).unwrap();
         let mut blit = MetalBlitHelper::new(&device).unwrap();
         let mut cache = MetalTextureCache::new(
-            device.clone(), Arc::new(MaxwellDeviceMemoryManager::default()),
-            &mut scheduler, &mut staging, &mut blit,
+            device.clone(),
+            Arc::new(MaxwellDeviceMemoryManager::default()),
+            &mut scheduler,
+            &mut staging,
+            &mut blit,
         );
         let memory = Arc::new(parking_lot::Mutex::new(
             crate::memory_manager::MemoryManager::new(17),
         ));
         memory.lock().map(0x10000, 0x100000, 0x30000, 0, true);
         cache.base.set_channel_gpu_memory(memory);
-        let extent = Extent3D { width: 4, height: 4, depth: 1 };
+        let extent = Extent3D {
+            width: 4,
+            height: 4,
+            depth: 1,
+        };
         let mut ids = Vec::new();
-        for (index, format) in [PixelFormat::R32G32Float, PixelFormat::D32FloatS8Uint,
-                                PixelFormat::R32G32Float].into_iter().enumerate() {
+        for (index, format) in [
+            PixelFormat::R32G32Float,
+            PixelFormat::D32FloatS8Uint,
+            PixelFormat::R32G32Float,
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let info = ImageInfo {
-                format, image_type: ImageType::E2D,
-                resources: SubresourceExtent { levels: 1, layers: 1 },
-                size: extent, num_samples: 1, ..ImageInfo::default()
+                format,
+                image_type: ImageType::E2D,
+                resources: SubresourceExtent {
+                    levels: 1,
+                    layers: 1,
+                },
+                size: extent,
+                num_samples: 1,
+                ..ImageInfo::default()
             };
             let id = cache.base.find_or_insert_image_from_info(
-                &info, 0x10000 + index as u64 * 0x10000,
+                &info,
+                0x10000 + index as u64 * 0x10000,
                 0x100000 + index as u64 * 0x10000,
             );
-            cache.base.slot_images[id].flags.remove(ImageFlagBits::CPU_MODIFIED);
+            cache.base.slot_images[id]
+                .flags
+                .remove(ImageFlagBits::CPU_MODIFIED);
             ids.push(id);
         }
         let copy = ImageCopy {
-            src_subresource: SubresourceLayers { num_layers: 1, ..Default::default() },
-            dst_subresource: SubresourceLayers { num_layers: 1, ..Default::default() },
-            extent, ..Default::default()
+            src_subresource: SubresourceLayers {
+                num_layers: 1,
+                ..Default::default()
+            },
+            dst_subresource: SubresourceLayers {
+                num_layers: 1,
+                ..Default::default()
+            },
+            extent,
+            ..Default::default()
         };
         // Explicit relations isolate synchronization policy from overlap discovery.
-        cache.base.slot_images[ids[1]].aliased_images.push(AliasedImage {
-            id: ids[0], copies: vec![copy],
-        });
-        cache.base.slot_images[ids[2]].aliased_images.push(AliasedImage {
-            id: ids[1], copies: vec![copy],
-        });
+        cache.base.slot_images[ids[1]]
+            .aliased_images
+            .push(AliasedImage {
+                id: ids[0],
+                copies: vec![copy],
+            });
+        cache.base.slot_images[ids[2]]
+            .aliased_images
+            .push(AliasedImage {
+                id: ids[1],
+                copies: vec![copy],
+            });
         let input = MetalBuffer::new(&device, 128).unwrap();
         let output = MetalBuffer::new(&device, 128).unwrap();
         let words = [0x80000000u32, 1, 0x3f000000, 0x7fc01234];
@@ -3637,17 +4496,31 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         }
         input.write(0, &bytes).unwrap();
         let buffer_copy = BufferImageCopy {
-            buffer_size: 128, image_extent: extent, ..Default::default()
+            buffer_size: 128,
+            image_extent: extent,
+            ..Default::default()
         };
-        cache.base.slot_images[ids[0]].backend.as_ref().unwrap()
-            .upload_memory(&mut scheduler, &input, 0, &[buffer_copy]).unwrap();
+        cache.base.slot_images[ids[0]]
+            .backend
+            .as_ref()
+            .unwrap()
+            .upload_memory(&mut scheduler, &input, 0, &[buffer_copy])
+            .unwrap();
         cache.base.mark_modification_by_id(ids[0]);
         for pair in ids.windows(2) {
-            assert!(MetalTextureCacheParams::should_reinterpret(&cache.base, pair[1], pair[0]));
+            assert!(MetalTextureCacheParams::should_reinterpret(
+                &cache.base,
+                pair[1],
+                pair[0]
+            ));
             cache.base.prepare_image(pair[1], false, false);
         }
-        cache.base.slot_images[ids[2]].backend.as_ref().unwrap()
-            .download_memory(&mut scheduler, &output, 0, &[buffer_copy]).unwrap();
+        cache.base.slot_images[ids[2]]
+            .backend
+            .as_ref()
+            .unwrap()
+            .download_memory(&mut scheduler, &output, 0, &[buffer_copy])
+            .unwrap();
         scheduler.finish_all().unwrap();
         let mut actual = vec![0; 128];
         output.read(0, &mut actual).unwrap();
@@ -3708,7 +4581,9 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
         }
         assert_eq!(result, expected);
         let mut cpu_output = vec![0x55; 256];
-        runtime.download_single_sample_memory(&depth, &mut cpu_output, &[copy]).unwrap();
+        runtime
+            .download_single_sample_memory(&depth, &mut cpu_output, &[copy])
+            .unwrap();
         assert_eq!(cpu_output, expected[256..]);
     }
 
@@ -4019,16 +4894,34 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
                 height: 8,
                 depth: 1,
             },
-            resources: SubresourceExtent { levels: 1, layers: 1 },
+            resources: SubresourceExtent {
+                levels: 1,
+                layers: 1,
+            },
             num_samples: samples,
             ..ImageInfo::default()
         };
-        assert!(can_download_msaa_info(&color(4, PixelFormat::A8B8G8R8Unorm), 4));
-        assert!(!can_download_msaa_info(&color(1, PixelFormat::A8B8G8R8Unorm), 1));
-        assert!(!can_download_msaa_info(&color(4, PixelFormat::A8B8G8R8Unorm), 2));
-        assert!(!can_download_msaa_info(&color(4, PixelFormat::A8B8G8R8Uint), 4));
+        assert!(can_download_msaa_info(
+            &color(4, PixelFormat::A8B8G8R8Unorm),
+            4
+        ));
+        assert!(!can_download_msaa_info(
+            &color(1, PixelFormat::A8B8G8R8Unorm),
+            1
+        ));
+        assert!(!can_download_msaa_info(
+            &color(4, PixelFormat::A8B8G8R8Unorm),
+            2
+        ));
+        assert!(!can_download_msaa_info(
+            &color(4, PixelFormat::A8B8G8R8Uint),
+            4
+        ));
         assert!(!can_download_msaa_info(&color(4, PixelFormat::D32Float), 4));
-        assert!(!can_download_msaa_info(&color(4, PixelFormat::D32FloatS8Uint), 4));
+        assert!(!can_download_msaa_info(
+            &color(4, PixelFormat::D32FloatS8Uint),
+            4
+        ));
         assert!(!can_download_msaa_info(
             &ImageInfo {
                 format: PixelFormat::A8B8G8R8Unorm,
@@ -4038,7 +4931,10 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
                     height: 8,
                     depth: 4,
                 },
-                resources: SubresourceExtent { levels: 1, layers: 1 },
+                resources: SubresourceExtent {
+                    levels: 1,
+                    layers: 1
+                },
                 num_samples: 4,
                 ..ImageInfo::default()
             },
@@ -4051,8 +4947,8 @@ kernel void inspect_packed(texture2d<float, access::read> image [[texture(0)]],
     fn downloads_msaa_color_through_scratch_copy_without_averaging_samples() {
         use objc2_foundation::NSString;
         use objc2_metal::{
-            MTLCompileOptions, MTLCullMode, MTLLanguageVersion, MTLLibrary,
-            MTLPrimitiveType, MTLRenderCommandEncoder, MTLRenderPipelineDescriptor, MTLViewport,
+            MTLCompileOptions, MTLCullMode, MTLLanguageVersion, MTLLibrary, MTLPrimitiveType,
+            MTLRenderCommandEncoder, MTLRenderPipelineDescriptor, MTLViewport,
         };
 
         let device = MetalDevice::new().unwrap();
@@ -4127,7 +5023,11 @@ fragment float4 f(VOut input [[stage_in]], uint sample [[sample_id]]) {
                     znear: 0.0,
                     zfar: 1.0,
                 });
-                encoder.drawPrimitives_vertexStart_vertexCount(MTLPrimitiveType::TriangleStrip, 0, 4);
+                encoder.drawPrimitives_vertexStart_vertexCount(
+                    MTLPrimitiveType::TriangleStrip,
+                    0,
+                    4,
+                );
             })
             .unwrap();
         runtime.scheduler().end_render_pass();
@@ -4158,7 +5058,10 @@ fragment float4 f(VOut input [[stage_in]], uint sample [[sample_id]]) {
                 ]);
             }
         }
-        assert_eq!(output, expected, "MSAA downloads must expand samples, not resolve");
+        assert_eq!(
+            output, expected,
+            "MSAA downloads must expand samples, not resolve"
+        );
         assert_eq!(runtime.msaa_scratch_images.len(), 1);
 
         let mut again = vec![0xcd; 256];
@@ -4177,7 +5080,10 @@ fragment float4 f(VOut input [[stage_in]], uint sample [[sample_id]]) {
             &ImageInfo {
                 format: PixelFormat::D32Float,
                 image_type: ImageType::E2D,
-                resources: SubresourceExtent { levels: 1, layers: 1 },
+                resources: SubresourceExtent {
+                    levels: 1,
+                    layers: 1,
+                },
                 size: Extent3D {
                     width: 8,
                     height: 8,
@@ -4260,7 +5166,9 @@ fragment float4 f(VOut input [[stage_in]], uint sample [[sample_id]]) {
             ..BufferImageCopy::default()
         };
 
-        let copies = convert_packed16_upload(PixelFormat::B5G6R5Unorm, &input, &mut output, &[copy]).unwrap();
+        let copies =
+            convert_packed16_upload(PixelFormat::B5G6R5Unorm, &input, &mut output, &[copy])
+                .unwrap();
 
         assert_eq!(copies[0].buffer_size, input.len());
         assert_eq!(u16::from_le_bytes(output[0..2].try_into().unwrap()), 0xf800);

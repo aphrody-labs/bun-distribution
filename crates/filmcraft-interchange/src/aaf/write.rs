@@ -12,7 +12,9 @@ use crate::{Error, Report, Result};
 /// UMID-style mob id (SMPTE 330 basic UMID): label, length 0x13, instance 0, material number.
 pub(crate) fn mob_id(seed: u64, n: u64) -> [u8; 32] {
     let mut id = [0u8; 32];
-    id[..12].copy_from_slice(&[0x06, 0x0A, 0x2B, 0x34, 0x01, 0x01, 0x01, 0x05, 0x01, 0x01, 0x0F, 0x20]);
+    id[..12].copy_from_slice(&[
+        0x06, 0x0A, 0x2B, 0x34, 0x01, 0x01, 0x01, 0x05, 0x01, 0x01, 0x0F, 0x20,
+    ]);
     id[12] = 0x13;
     let a = mix(seed ^ n.wrapping_mul(0x9E37_79B9_7F4A_7C15));
     let b = mix(a ^ 0xD6E8_FEB8_6659_FD93);
@@ -31,7 +33,9 @@ fn mix(mut z: u64) -> u64 {
 }
 
 pub(crate) fn fnv(s: &[u8], h: u64) -> u64 {
-    s.iter().fold(h, |h, &b| (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01B3))
+    s.iter().fold(h, |h, &b| {
+        (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01B3)
+    })
 }
 
 fn timestamp() -> Vec<u8> {
@@ -61,15 +65,23 @@ pub(crate) fn indirect(ty: Auid, v: &[u8]) -> Vec<u8> {
 }
 
 fn tagged(name: &str, value: &str) -> Obj {
-    Obj::new(cls::TAGGED_VALUE).data_prop(pid::TAG_NAME, utf16z(name)).data_prop(pid::TAG_VALUE, indirect(def::TYPE_STRING, &utf16z(value)))
+    Obj::new(cls::TAGGED_VALUE)
+        .data_prop(pid::TAG_NAME, utf16z(name))
+        .data_prop(pid::TAG_VALUE, indirect(def::TYPE_STRING, &utf16z(value)))
 }
 
 fn gain_rational(g: f64) -> Vec<u8> {
-    rational((g.max(0.0) * 65536.0).round().min(i32::MAX as f64) as i64, 65536)
+    rational(
+        (g.max(0.0) * 65536.0).round().min(i32::MAX as f64) as i64,
+        65536,
+    )
 }
 
 fn definition(class: Auid, id: Auid, name: &str) -> Obj {
-    Obj::new(class).data_prop(pid::IDENTIFICATION, id.to_vec()).data_prop(pid::NAME, utf16z(name)).data_prop(pid::DESCRIPTION, utf16z(""))
+    Obj::new(class)
+        .data_prop(pid::IDENTIFICATION, id.to_vec())
+        .data_prop(pid::NAME, utf16z(name))
+        .data_prop(pid::DESCRIPTION, utf16z(""))
 }
 
 struct W<'a> {
@@ -96,12 +108,22 @@ fn source_rate(s: &Source) -> (i64, i64) {
 }
 
 /// Serialise a composition document.
-pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mut Report) -> Result<Vec<u8>> {
+pub(crate) fn write(
+    doc: &Document,
+    version: filmcraft_cfb::Version,
+    report: &mut Report,
+) -> Result<Vec<u8>> {
     let comp = doc.compositions.first().ok_or(Error::Empty)?;
-    let mut w = W { report, inexact: false };
+    let mut w = W {
+        report,
+        inexact: false,
+    };
     let mut seed = fnv(comp.name.as_bytes(), 0xCBF2_9CE4_8422_2325);
     for s in &doc.sources {
-        seed = fnv(s.path.as_deref().unwrap_or("").as_bytes(), fnv(s.key.as_bytes(), seed));
+        seed = fnv(
+            s.path.as_deref().unwrap_or("").as_bytes(),
+            fnv(s.key.as_bytes(), seed),
+        );
     }
     seed = fnv(&(comp.tracks.len() as u64).to_le_bytes(), seed);
     let mut next = 0u64;
@@ -131,12 +153,18 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
         let master_id = new_id();
         let first = &doc.sources[members[0]];
         // tape mob: timecode + one slot per essence kind
-        let tc = members.iter().find_map(|&i| doc.sources[i].start_tc.map(|t| (t, doc.sources[i].tc_rate)));
+        let tc = members
+            .iter()
+            .find_map(|&i| doc.sources[i].start_tc.map(|t| (t, doc.sources[i].tc_rate)));
         let tape_id = new_id();
         let mut tape_slots = Vec::new();
         if let Some((start, rate)) = tc {
             let tcr = (rate.num, rate.den);
-            let len = members.iter().map(|&i| doc.sources[i].length).max().unwrap_or(Tick::ZERO);
+            let len = members
+                .iter()
+                .map(|&i| doc.sources[i].length)
+                .max()
+                .unwrap_or(Tick::ZERO);
             let l = w.u(len, tcr);
             tape_slots.push(timeline_slot(
                 1,
@@ -147,12 +175,18 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
                     .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, ddef::TIMECODE))
                     .data_prop(pid::LENGTH, l.to_le_bytes().to_vec())
                     .data_prop(pid::TC_START, start.to_le_bytes().to_vec())
-                    .data_prop(pid::TC_FPS, (rate.timecode_base().clamp(1, u16::MAX as i64) as u16).to_le_bytes().to_vec())
+                    .data_prop(
+                        pid::TC_FPS,
+                        (rate.timecode_base().clamp(1, u16::MAX as i64) as u16)
+                            .to_le_bytes()
+                            .to_vec(),
+                    )
                     .data_prop(pid::TC_DROP, vec![0]),
             ));
         }
         // file mobs keyed by (file, kind)
-        let mut files: Vec<((Option<String>, usize, CKind), [u8; 32], Vec<Obj>, usize)> = Vec::new();
+        let mut files: Vec<((Option<String>, usize, CKind), [u8; 32], Vec<Obj>, usize)> =
+            Vec::new();
         let mut master_slots = Vec::new();
         for (k, &si) in members.iter().enumerate() {
             let s = &doc.sources[si];
@@ -172,9 +206,25 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
             // the file slot → tape mob
             let tape_slot_id = 2 + k as u32;
             let tc_units = 0i64;
-            let clip = source_clip(s.kind, len_units, if tc.is_some() { tape_id } else { [0; 32] }, if tc.is_some() { tape_slot_id } else { 0 }, tc_units);
-            if !files[fi].2.iter().any(|o| o.u32(pid::SLOT_ID) == Some(file_slot)) {
-                files[fi].2.push(timeline_slot(file_slot, &slot_name(s.kind, file_slot), file_slot, rate, clip));
+            let clip = source_clip(
+                s.kind,
+                len_units,
+                if tc.is_some() { tape_id } else { [0; 32] },
+                if tc.is_some() { tape_slot_id } else { 0 },
+                tc_units,
+            );
+            if !files[fi]
+                .2
+                .iter()
+                .any(|o| o.u32(pid::SLOT_ID) == Some(file_slot))
+            {
+                files[fi].2.push(timeline_slot(
+                    file_slot,
+                    &slot_name(s.kind, file_slot),
+                    file_slot,
+                    rate,
+                    clip,
+                ));
             }
             if tc.is_some() {
                 tape_slots.push(timeline_slot(
@@ -196,13 +246,26 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
             master_ref.insert(si, (master_id, master_slot));
         }
         // markers on the master mob (at the picture rate, else the first source's)
-        let marker_rate = members.iter().map(|&i| &doc.sources[i]).find(|s| s.kind == CKind::Picture).map(source_rate).unwrap_or_else(|| source_rate(first));
-        let markers: Vec<&CMarker> = members.iter().flat_map(|&i| doc.sources[i].markers.iter()).collect();
+        let marker_rate = members
+            .iter()
+            .map(|&i| &doc.sources[i])
+            .find(|s| s.kind == CKind::Picture)
+            .map(source_rate)
+            .unwrap_or_else(|| source_rate(first));
+        let markers: Vec<&CMarker> = members
+            .iter()
+            .flat_map(|&i| doc.sources[i].markers.iter())
+            .collect();
         if !markers.is_empty() {
             let mut uniq: Vec<CMarker> = markers.into_iter().cloned().collect();
             uniq.sort_by(|a, b| (a.start, &a.name).cmp(&(b.start, &b.name)));
             uniq.dedup();
-            master_slots.push(event_slot(&mut w, members.len() as u32 + 1, marker_rate, &uniq));
+            master_slots.push(event_slot(
+                &mut w,
+                members.len() as u32 + 1,
+                marker_rate,
+                &uniq,
+            ));
         }
         mobs.push(
             Obj::new(cls::MASTER_MOB)
@@ -225,12 +288,20 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
                     .with(pid::ESSENCE_DESCRIPTION, Value::Strong(Box::new(desc))),
             );
             if let Some(data) = &s.embedded {
-                essence
-                    .push(Obj::new(cls::ESSENCE_DATA).data_prop(pid::ESSENCE_MOB_ID, file_id.to_vec()).with(pid::ESSENCE_STREAM, Value::Stream(data.clone())));
+                essence.push(
+                    Obj::new(cls::ESSENCE_DATA)
+                        .data_prop(pid::ESSENCE_MOB_ID, file_id.to_vec())
+                        .with(pid::ESSENCE_STREAM, Value::Stream(data.clone())),
+                );
             }
         }
         if tc.is_some() {
-            let reel = first.path.as_deref().map(crate::common::file_stem).unwrap_or(&first.name).to_string();
+            let reel = first
+                .path
+                .as_deref()
+                .map(crate::common::file_stem)
+                .unwrap_or(&first.name)
+                .to_string();
             mobs.push(
                 Obj::new(cls::SOURCE_MOB)
                     .data_prop(pid::MOB_ID, tape_id.to_vec())
@@ -238,19 +309,42 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
                     .data_prop(pid::MOB_LAST_MODIFIED, timestamp())
                     .data_prop(pid::MOB_CREATION_TIME, timestamp())
                     .with(pid::SLOTS, Value::StrongVec(tape_slots))
-                    .with(pid::ESSENCE_DESCRIPTION, Value::Strong(Box::new(Obj::new(cls::TAPE_DESCRIPTOR)))),
+                    .with(
+                        pid::ESSENCE_DESCRIPTION,
+                        Value::Strong(Box::new(Obj::new(cls::TAPE_DESCRIPTOR))),
+                    ),
             );
         }
     }
 
     // ---- nested compositions: a clip refers to one as it does to a master mob, through the
     // composition's first track of the clip's kind (a broken-out channel: that channel's track)
-    let mut refs = Refs { mobs: master_ref, rates: HashMap::new() };
+    let mut refs = Refs {
+        mobs: master_ref,
+        rates: HashMap::new(),
+    };
     let nested_ids: Vec<[u8; 32]> = doc.nested.iter().map(|_| new_id()).collect();
     for (si, s) in doc.sources.iter().enumerate() {
-        let Some((comp, id)) = s.nested.and_then(|n| Some((doc.nested.get(n)?, nested_ids.get(n)?))) else { continue };
-        let of_kind: Vec<usize> = comp.tracks.iter().enumerate().filter(|(_, t)| t.kind == s.kind).map(|(i, _)| i).collect();
-        let Some(&track) = s.channel.and_then(|c| of_kind.get(c as usize)).or(of_kind.first()) else { continue };
+        let Some((comp, id)) = s
+            .nested
+            .and_then(|n| Some((doc.nested.get(n)?, nested_ids.get(n)?)))
+        else {
+            continue;
+        };
+        let of_kind: Vec<usize> = comp
+            .tracks
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.kind == s.kind)
+            .map(|(i, _)| i)
+            .collect();
+        let Some(&track) = s
+            .channel
+            .and_then(|c| of_kind.get(c as usize))
+            .or(of_kind.first())
+        else {
+            continue;
+        };
         let rate = match s.kind {
             CKind::Picture => (comp.rate.num, comp.rate.den),
             CKind::Sound => (comp.sample_rate.max(1) as i64, 1),
@@ -261,19 +355,43 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
 
     // ---- the compositions: the exported sequence first
     let comp_id = new_id();
-    let top = composition_mob(&mut w, doc, comp, comp_id, true, &refs, &mut used_ops, &mut uses_varying);
+    let top = composition_mob(
+        &mut w,
+        doc,
+        comp,
+        comp_id,
+        true,
+        &refs,
+        &mut used_ops,
+        &mut uses_varying,
+    );
     mobs.insert(0, top);
     for (k, (nested, id)) in doc.nested.iter().zip(&nested_ids).enumerate() {
-        let mob = composition_mob(&mut w, doc, nested, *id, false, &refs, &mut used_ops, &mut uses_varying);
+        let mob = composition_mob(
+            &mut w,
+            doc,
+            nested,
+            *id,
+            false,
+            &refs,
+            &mut used_ops,
+            &mut uses_varying,
+        );
         mobs.insert(1 + k, mob);
     }
     if w.inexact {
-        w.report.info("some times are not on whole edit units and were rounded");
+        w.report
+            .info("some times are not on whole edit units and were rounded");
     }
 
     // ---- dictionary
     let mut ddefs = Vec::new();
-    for (id, name) in [(ddef::PICTURE, "Picture"), (ddef::SOUND, "Sound"), (ddef::TIMECODE, "Timecode"), (ddef::DESCRIPTIVE_METADATA, "DescriptiveMetadata")] {
+    for (id, name) in [
+        (ddef::PICTURE, "Picture"),
+        (ddef::SOUND, "Sound"),
+        (ddef::TIMECODE, "Timecode"),
+        (ddef::DESCRIPTIVE_METADATA, "DescriptiveMetadata"),
+    ] {
         ddefs.push(definition(cls::DATA_DEFINITION, id, name));
     }
     let mut opdefs = Vec::new();
@@ -297,46 +415,88 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
             .data_prop(pid::OPDEF_IS_TIME_WARP, vec![0])
             .data_prop(pid::OPDEF_NUMBER_INPUTS, inputs.to_le_bytes().to_vec());
         if !params.is_empty() {
-            o.set(pid::OPDEF_PARAMETERS_DEFINED, Value::WeakVec(path::PARAMETER_DEFS.to_vec(), pid::IDENTIFICATION, params));
+            o.set(
+                pid::OPDEF_PARAMETERS_DEFINED,
+                Value::WeakVec(path::PARAMETER_DEFS.to_vec(), pid::IDENTIFICATION, params),
+            );
         }
         opdefs.push(o);
     }
     let pdefs = vec![
-        definition(cls::PARAMETER_DEFINITION, def::PARAM_LEVEL, "Level").data_prop(pid::PARAMDEF_DISPLAY_UNITS, utf16z("")),
-        definition(cls::PARAMETER_DEFINITION, def::PARAM_AMPLITUDE, "Amplitude").data_prop(pid::PARAMDEF_DISPLAY_UNITS, utf16z("")),
+        definition(cls::PARAMETER_DEFINITION, def::PARAM_LEVEL, "Level")
+            .data_prop(pid::PARAMDEF_DISPLAY_UNITS, utf16z("")),
+        definition(cls::PARAMETER_DEFINITION, def::PARAM_AMPLITUDE, "Amplitude")
+            .data_prop(pid::PARAMDEF_DISPLAY_UNITS, utf16z("")),
     ];
     let idefs = if uses_varying || !used_ops.is_empty() {
         vec![
             definition(cls::INTERPOLATION_DEFINITION, def::INTERP_LINEAR, "Linear"),
-            definition(cls::INTERPOLATION_DEFINITION, def::INTERP_CONSTANT, "Constant"),
+            definition(
+                cls::INTERPOLATION_DEFINITION,
+                def::INTERP_CONSTANT,
+                "Constant",
+            ),
         ]
     } else {
         Vec::new()
     };
     let cdefs = vec![
-        definition(cls::CONTAINER_DEFINITION, def::CONTAINER_EXTERNAL, "External Container"),
-        definition(cls::CONTAINER_DEFINITION, def::CONTAINER_AAF, "AAF Container"),
+        definition(
+            cls::CONTAINER_DEFINITION,
+            def::CONTAINER_EXTERNAL,
+            "External Container",
+        ),
+        definition(
+            cls::CONTAINER_DEFINITION,
+            def::CONTAINER_AAF,
+            "AAF Container",
+        ),
     ];
     let mut dict = Obj::new(cls::DICTIONARY)
-        .with(pid::DATA_DEFINITIONS, Value::StrongSet(ddefs, pid::IDENTIFICATION))
-        .with(pid::PARAMETER_DEFINITIONS, Value::StrongSet(pdefs, pid::IDENTIFICATION))
-        .with(pid::CONTAINER_DEFINITIONS, Value::StrongSet(cdefs, pid::IDENTIFICATION));
+        .with(
+            pid::DATA_DEFINITIONS,
+            Value::StrongSet(ddefs, pid::IDENTIFICATION),
+        )
+        .with(
+            pid::PARAMETER_DEFINITIONS,
+            Value::StrongSet(pdefs, pid::IDENTIFICATION),
+        )
+        .with(
+            pid::CONTAINER_DEFINITIONS,
+            Value::StrongSet(cdefs, pid::IDENTIFICATION),
+        );
     if !opdefs.is_empty() {
-        dict.set(pid::OPERATION_DEFINITIONS, Value::StrongSet(opdefs, pid::IDENTIFICATION));
+        dict.set(
+            pid::OPERATION_DEFINITIONS,
+            Value::StrongSet(opdefs, pid::IDENTIFICATION),
+        );
     }
     if !idefs.is_empty() {
-        dict.set(pid::INTERPOLATION_DEFINITIONS, Value::StrongSet(idefs, pid::IDENTIFICATION));
+        dict.set(
+            pid::INTERPOLATION_DEFINITIONS,
+            Value::StrongSet(idefs, pid::IDENTIFICATION),
+        );
     }
 
-    let mut content = Obj::new(cls::CONTENT_STORAGE).with(pid::MOBS, Value::StrongSet(mobs, pid::MOB_ID));
+    let mut content =
+        Obj::new(cls::CONTENT_STORAGE).with(pid::MOBS, Value::StrongSet(mobs, pid::MOB_ID));
     if !essence.is_empty() {
-        content.set(pid::ESSENCE_DATA, Value::StrongSet(essence, pid::ESSENCE_MOB_ID));
+        content.set(
+            pid::ESSENCE_DATA,
+            Value::StrongSet(essence, pid::ESSENCE_MOB_ID),
+        );
     }
     let ident = Obj::new(cls::IDENTIFICATION)
         .data_prop(pid::COMPANY_NAME, utf16z("FilmCraft"))
         .data_prop(pid::PRODUCT_NAME, utf16z("FilmCraft"))
-        .data_prop(pid::PRODUCT_VERSION_STRING, utf16z(env!("CARGO_PKG_VERSION")))
-        .data_prop(pid::PRODUCT_ID, super::ids::guid(0x46494C4D, 0x4352, 0x4146, *b"T-AAF-EP").to_vec())
+        .data_prop(
+            pid::PRODUCT_VERSION_STRING,
+            utf16z(env!("CARGO_PKG_VERSION")),
+        )
+        .data_prop(
+            pid::PRODUCT_ID,
+            super::ids::guid(0x46494C4D, 0x4352, 0x4146, *b"T-AAF-EP").to_vec(),
+        )
         .data_prop(pid::DATE, timestamp())
         .data_prop(pid::PLATFORM, utf16z("FilmCraft"))
         .data_prop(pid::GENERATION_AUID, mob_id(seed, 0)[16..].to_vec());
@@ -353,9 +513,17 @@ pub(crate) fn write(doc: &Document, version: filmcraft_cfb::Version, report: &mu
     // here is baseline, so its class and type definition sets are empty; readers that load them
     // (pyaaf2) still need the sets to be there (#323).
     let meta = Obj::new(META_DICTIONARY)
-        .with(pid::META_CLASS_DEFINITIONS, Value::StrongSet(Vec::new(), pid::META_IDENTIFICATION))
-        .with(pid::META_TYPE_DEFINITIONS, Value::StrongSet(Vec::new(), pid::META_IDENTIFICATION));
-    let root = Obj::new(ROOT).with(pid::ROOT_META_DICTIONARY, Value::Strong(Box::new(meta))).with(pid::ROOT_HEADER, Value::Strong(Box::new(header)));
+        .with(
+            pid::META_CLASS_DEFINITIONS,
+            Value::StrongSet(Vec::new(), pid::META_IDENTIFICATION),
+        )
+        .with(
+            pid::META_TYPE_DEFINITIONS,
+            Value::StrongSet(Vec::new(), pid::META_IDENTIFICATION),
+        );
+    let root = Obj::new(ROOT)
+        .with(pid::ROOT_META_DICTIONARY, Value::Strong(Box::new(meta)))
+        .with(pid::ROOT_HEADER, Value::Strong(Box::new(header)));
     store::write(&root, version).map_err(Error::Other)
 }
 
@@ -406,7 +574,12 @@ fn composition_mob(
             .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, ddef::TIMECODE))
             .data_prop(pid::LENGTH, total_units.to_le_bytes().to_vec())
             .data_prop(pid::TC_START, comp.start_tc.to_le_bytes().to_vec())
-            .data_prop(pid::TC_FPS, (comp.rate.timecode_base().clamp(1, u16::MAX as i64) as u16).to_le_bytes().to_vec())
+            .data_prop(
+                pid::TC_FPS,
+                (comp.rate.timecode_base().clamp(1, u16::MAX as i64) as u16)
+                    .to_le_bytes()
+                    .to_vec(),
+            )
             .data_prop(pid::TC_DROP, vec![comp.drop as u8]),
     ));
     let mut slot_id = 2u32;
@@ -423,7 +596,11 @@ fn composition_mob(
                 CItem::Filler(l) => {
                     let n = w.u(cursor + *l, rate) - w.u(cursor, rate);
                     cursor += *l;
-                    comps.push(Obj::new(cls::FILLER).with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, dd)).data_prop(pid::LENGTH, n.to_le_bytes().to_vec()));
+                    comps.push(
+                        Obj::new(cls::FILLER)
+                            .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, dd))
+                            .data_prop(pid::LENGTH, n.to_le_bytes().to_vec()),
+                    );
                 }
                 CItem::Clip(c) => {
                     let n = w.u(cursor + c.len, rate) - w.u(cursor, rate);
@@ -433,7 +610,10 @@ fn composition_mob(
                     let start = w.u(c.start, refs.rates.get(&c.source).copied().unwrap_or(rate));
                     let mut sc = source_clip(t.kind, n, mid, mslot, start);
                     if !c.name.is_empty() && c.name != s.name {
-                        sc.set(pid::COMPONENT_USER_COMMENTS, Value::StrongVec(vec![tagged("Clip Name", &c.name)]));
+                        sc.set(
+                            pid::COMPONENT_USER_COMMENTS,
+                            Value::StrongVec(vec![tagged("Clip Name", &c.name)]),
+                        );
                     }
                     let seg = match (&c.gain, t.kind) {
                         (Some(g), CKind::Sound) => {
@@ -442,8 +622,14 @@ fn composition_mob(
                             }
                             let param = match g {
                                 Gain::Constant(a) => Obj::new(cls::CONSTANT_VALUE)
-                                    .data_prop(pid::PARAMETER_DEFINITION, def::PARAM_AMPLITUDE.to_vec())
-                                    .data_prop(pid::CONSTANT_VALUE, indirect(def::TYPE_RATIONAL, &gain_rational(*a))),
+                                    .data_prop(
+                                        pid::PARAMETER_DEFINITION,
+                                        def::PARAM_AMPLITUDE.to_vec(),
+                                    )
+                                    .data_prop(
+                                        pid::CONSTANT_VALUE,
+                                        indirect(def::TYPE_RATIONAL, &gain_rational(*a)),
+                                    ),
                                 Gain::Varying { linear, points } => {
                                     *uses_varying = true;
                                     let pts = points
@@ -452,15 +638,31 @@ fn composition_mob(
                                             let o = w.u(cursor + *off, rate) - w.u(cursor, rate);
                                             Obj::new(cls::CONTROL_POINT)
                                                 .data_prop(pid::CP_TIME, rational(o, n.max(1)))
-                                                .data_prop(pid::CP_VALUE, indirect(def::TYPE_RATIONAL, &gain_rational(*a)))
+                                                .data_prop(
+                                                    pid::CP_VALUE,
+                                                    indirect(
+                                                        def::TYPE_RATIONAL,
+                                                        &gain_rational(*a),
+                                                    ),
+                                                )
                                                 .data_prop(pid::CP_EDIT_HINT, vec![0])
                                         })
                                         .collect();
                                     Obj::new(cls::VARYING_VALUE)
-                                        .data_prop(pid::PARAMETER_DEFINITION, def::PARAM_AMPLITUDE.to_vec())
+                                        .data_prop(
+                                            pid::PARAMETER_DEFINITION,
+                                            def::PARAM_AMPLITUDE.to_vec(),
+                                        )
                                         .with(
                                             pid::INTERPOLATION,
-                                            weak(path::INTERPOLATION_DEFS, if *linear { def::INTERP_LINEAR } else { def::INTERP_CONSTANT }),
+                                            weak(
+                                                path::INTERPOLATION_DEFS,
+                                                if *linear {
+                                                    def::INTERP_LINEAR
+                                                } else {
+                                                    def::INTERP_CONSTANT
+                                                },
+                                            ),
                                         )
                                         .with(pid::POINT_LIST, Value::StrongVec(pts))
                                 }
@@ -468,7 +670,10 @@ fn composition_mob(
                             Obj::new(cls::OPERATION_GROUP)
                                 .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, dd))
                                 .data_prop(pid::LENGTH, n.to_le_bytes().to_vec())
-                                .with(pid::OPERATION, weak(path::OPERATION_DEFS, def::MONO_AUDIO_GAIN))
+                                .with(
+                                    pid::OPERATION,
+                                    weak(path::OPERATION_DEFS, def::MONO_AUDIO_GAIN),
+                                )
                                 .with(pid::INPUT_SEGMENTS, Value::StrongVec(vec![sc]))
                                 .with(pid::PARAMETERS, Value::StrongVec(vec![param]))
                         }
@@ -490,7 +695,10 @@ fn composition_mob(
                         .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, dd))
                         .data_prop(pid::LENGTH, n.to_le_bytes().to_vec())
                         .with(pid::OPERATION, weak(path::OPERATION_DEFS, op))
-                        .with(pid::COMPONENT_USER_COMMENTS, Value::StrongVec(vec![tagged("FilmCraft Effect", &x.effect)]));
+                        .with(
+                            pid::COMPONENT_USER_COMMENTS,
+                            Value::StrongVec(vec![tagged("FilmCraft Effect", &x.effect)]),
+                        );
                     if op == def::VIDEO_DISSOLVE {
                         *uses_varying = true;
                         let pts = [(0, 0), (1, 1)]
@@ -498,7 +706,10 @@ fn composition_mob(
                             .map(|&(t, v)| {
                                 Obj::new(cls::CONTROL_POINT)
                                     .data_prop(pid::CP_TIME, rational(t, 1))
-                                    .data_prop(pid::CP_VALUE, indirect(def::TYPE_RATIONAL, &rational(v, 1)))
+                                    .data_prop(
+                                        pid::CP_VALUE,
+                                        indirect(def::TYPE_RATIONAL, &rational(v, 1)),
+                                    )
                                     .data_prop(pid::CP_EDIT_HINT, vec![0])
                             })
                             .collect();
@@ -507,7 +718,10 @@ fn composition_mob(
                             Value::StrongVec(vec![
                                 Obj::new(cls::VARYING_VALUE)
                                     .data_prop(pid::PARAMETER_DEFINITION, def::PARAM_LEVEL.to_vec())
-                                    .with(pid::INTERPOLATION, weak(path::INTERPOLATION_DEFS, def::INTERP_LINEAR))
+                                    .with(
+                                        pid::INTERPOLATION,
+                                        weak(path::INTERPOLATION_DEFS, def::INTERP_LINEAR),
+                                    )
                                     .with(pid::POINT_LIST, Value::StrongVec(pts)),
                             ]),
                         );
@@ -552,7 +766,10 @@ fn composition_mob(
     mob.with(pid::SLOTS, Value::StrongVec(slots)).with(
         pid::MOB_USER_COMMENTS,
         Value::StrongVec(vec![
-            tagged("FilmCraft Frame Size", &format!("{}x{}", comp.width, comp.height)),
+            tagged(
+                "FilmCraft Frame Size",
+                &format!("{}x{}", comp.width, comp.height),
+            ),
             tagged("FilmCraft Audio Sample Rate", &comp.sample_rate.to_string()),
         ]),
     )
@@ -573,7 +790,10 @@ fn timeline_slot(id: u32, name: &str, number: u32, rate: (i64, i64), segment: Ob
         .data_prop(pid::ORIGIN, 0i64.to_le_bytes().to_vec())
         .with(pid::SEGMENT, Value::Strong(Box::new(segment)));
     if number > 0 {
-        o.set(pid::PHYSICAL_TRACK_NUMBER, Value::Data(number.to_le_bytes().to_vec()));
+        o.set(
+            pid::PHYSICAL_TRACK_NUMBER,
+            Value::Data(number.to_le_bytes().to_vec()),
+        );
     }
     o
 }
@@ -598,10 +818,20 @@ fn event_slot(w: &mut W, id: u32, rate: (i64, i64), markers: &[CMarker]) -> Obj 
                 tags.push(tagged("Color", c));
             }
             Obj::new(cls::COMMENT_MARKER)
-                .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, ddef::DESCRIPTIVE_METADATA))
+                .with(
+                    pid::DATA_DEFINITION,
+                    weak(path::DATA_DEFS, ddef::DESCRIPTIVE_METADATA),
+                )
                 .data_prop(pid::LENGTH, len.to_le_bytes().to_vec())
                 .data_prop(pid::POSITION, pos.to_le_bytes().to_vec())
-                .data_prop(pid::COMMENT, utf16z(if m.comment.is_empty() { &m.name } else { &m.comment }))
+                .data_prop(
+                    pid::COMMENT,
+                    utf16z(if m.comment.is_empty() {
+                        &m.name
+                    } else {
+                        &m.comment
+                    }),
+                )
                 .with(pid::COMPONENT_USER_COMMENTS, Value::StrongVec(tags))
         })
         .collect();
@@ -613,7 +843,10 @@ fn event_slot(w: &mut W, id: u32, rate: (i64, i64), markers: &[CMarker]) -> Obj 
             pid::SEGMENT,
             Value::Strong(Box::new(
                 Obj::new(cls::SEQUENCE)
-                    .with(pid::DATA_DEFINITION, weak(path::DATA_DEFS, ddef::DESCRIPTIVE_METADATA))
+                    .with(
+                        pid::DATA_DEFINITION,
+                        weak(path::DATA_DEFS, ddef::DESCRIPTIVE_METADATA),
+                    )
                     .with(pid::COMPONENTS, Value::StrongVec(comps)),
             )),
         )
@@ -633,13 +866,20 @@ fn transition_op(kind: CKind, effect: &str) -> Auid {
 fn descriptor(w: &mut W, s: &Source) -> Obj {
     let rate = source_rate(s);
     let len = w.u(s.length, rate);
-    let container = if s.embedded.is_some() { def::CONTAINER_AAF } else { def::CONTAINER_EXTERNAL };
+    let container = if s.embedded.is_some() {
+        def::CONTAINER_AAF
+    } else {
+        def::CONTAINER_EXTERNAL
+    };
     let mut d = match s.kind {
         CKind::Picture => Obj::new(cls::CDCI_DESCRIPTOR)
             .data_prop(pid::STORED_WIDTH, s.width.to_le_bytes().to_vec())
             .data_prop(pid::STORED_HEIGHT, s.height.to_le_bytes().to_vec())
             .data_prop(pid::FRAME_LAYOUT, vec![0])
-            .data_prop(pid::IMAGE_ASPECT_RATIO, rational(s.width.max(1) as i64, s.height.max(1) as i64))
+            .data_prop(
+                pid::IMAGE_ASPECT_RATIO,
+                rational(s.width.max(1) as i64, s.height.max(1) as i64),
+            )
             .data_prop(pid::VIDEO_LINE_MAP, {
                 let mut v = 2u32.to_le_bytes().to_vec();
                 v.extend_from_slice(&4u32.to_le_bytes());
@@ -655,17 +895,32 @@ fn descriptor(w: &mut W, s: &Source) -> Obj {
                 .data_prop(pid::AUDIO_SAMPLING_RATE, rational(s.sample_rate as i64, 1))
                 .data_prop(pid::LOCKED, vec![1])
                 .data_prop(pid::CHANNELS, s.file_channels.max(1).to_le_bytes().to_vec())
-                .data_prop(pid::QUANTIZATION_BITS, (s.bits as u32).to_le_bytes().to_vec())
+                .data_prop(
+                    pid::QUANTIZATION_BITS,
+                    (s.bits as u32).to_le_bytes().to_vec(),
+                )
                 .data_prop(pid::BLOCK_ALIGN, (block as u16).to_le_bytes().to_vec())
-                .data_prop(pid::AVERAGE_BPS, (block * s.sample_rate).to_le_bytes().to_vec())
+                .data_prop(
+                    pid::AVERAGE_BPS,
+                    (block * s.sample_rate).to_le_bytes().to_vec(),
+                )
         }
     };
     d.set(pid::SAMPLE_RATE, Value::Data(rational(rate.0, rate.1)));
     d.set(pid::FILE_LENGTH, Value::Data(len.to_le_bytes().to_vec()));
     d.set(pid::CONTAINER_FORMAT, weak(path::CONTAINER_DEFS, container));
     if let Some(p) = &s.path {
-        let url = if crate::common::is_absolute(p) { crate::common::path_to_file_url(p, false) } else { p.clone() };
-        d.set(pid::LOCATOR, Value::StrongVec(vec![Obj::new(cls::NETWORK_LOCATOR).data_prop(pid::URL_STRING, utf16z(&url))]));
+        let url = if crate::common::is_absolute(p) {
+            crate::common::path_to_file_url(p, false)
+        } else {
+            p.clone()
+        };
+        d.set(
+            pid::LOCATOR,
+            Value::StrongVec(vec![
+                Obj::new(cls::NETWORK_LOCATOR).data_prop(pid::URL_STRING, utf16z(&url)),
+            ]),
+        );
     }
     d
 }

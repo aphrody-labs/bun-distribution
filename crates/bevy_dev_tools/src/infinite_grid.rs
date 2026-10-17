@@ -4,27 +4,28 @@
 //! artifacts. This fade out is relative to the camera.
 
 use bevy_app::prelude::*;
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset, load_embedded_asset};
 use bevy_camera::{
     prelude::*,
     visibility::{self, NoFrustumCulling, VisibilityClass},
 };
 use bevy_color::{Color, ColorToComponents};
 use bevy_core_pipeline::{
-    core_3d::{Transparent3d, TransparentSortingInfo3d},
     FullscreenShader,
+    core_3d::{Transparent3d, TransparentSortingInfo3d},
 };
 use bevy_ecs::{
     prelude::*,
     query::ROQueryItem,
     system::{
-        lifetimeless::{Read, SRes},
         SystemParamItem,
+        lifetimeless::{Read, SRes},
     },
 };
 use bevy_math::{Mat3, Vec3, Vec4};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    Extract, Render, RenderApp, RenderSystems,
     camera::ExtractedCamera,
     prelude::*,
     render_phase::{
@@ -32,16 +33,15 @@ use bevy_render::{
         RenderCommandResult, SetItemPipeline, TrackedRenderPass, ViewSortedRenderPhases,
     },
     render_resource::{
-        binding_types::uniform_buffer, BindGroup, BindGroupEntries, BindGroupLayoutDescriptor,
-        BindGroupLayoutEntries, BlendState, ColorTargetState, ColorWrites, CompareFunction,
-        DepthStencilState, DynamicUniformBuffer, FragmentState, MultisampleState, PipelineCache,
-        PrimitiveState, RenderPipelineDescriptor, ShaderStages, ShaderType,
-        SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat,
+        BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries, BlendState,
+        ColorTargetState, ColorWrites, CompareFunction, DepthStencilState, DynamicUniformBuffer,
+        FragmentState, MultisampleState, PipelineCache, PrimitiveState, RenderPipelineDescriptor,
+        ShaderStages, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
+        TextureFormat, binding_types::uniform_buffer,
     },
     renderer::{RenderDevice, RenderQueue},
     sync_world::{RenderEntity, SyncToRenderWorld},
     view::{ExtractedView, RenderVisibleEntities, ViewUniform, ViewUniformOffset, ViewUniforms},
-    Extract, Render, RenderApp, RenderSystems,
 };
 use bevy_shader::Shader;
 use bevy_transform::components::{GlobalTransform, Transform};

@@ -30,7 +30,9 @@ pub enum FilePurpose {
 
 /// Discover installed document fonts off the GUI thread, only when the picker is opened.
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) fn installed_font_files(ctx: &egui::Context) -> Option<Vec<pdfcraft_engine::text_fonts::FontFile>> {
+pub(crate) fn installed_font_files(
+    ctx: &egui::Context,
+) -> Option<Vec<pdfcraft_engine::text_fonts::FontFile>> {
     use std::sync::{Mutex, OnceLock};
     type Files = Arc<Mutex<Option<Vec<pdfcraft_engine::text_fonts::FontFile>>>>;
     static CACHE: OnceLock<Files> = OnceLock::new();
@@ -41,7 +43,9 @@ pub(crate) fn installed_font_files(ctx: &egui::Context) -> Option<Vec<pdfcraft_e
         if std::thread::Builder::new()
             .name("document-font-discovery".into())
             .spawn(move || {
-                let fonts = pdfcraft_engine::text_fonts::discover(&pdfcraft_engine::text_fonts::installed_directories());
+                let fonts = pdfcraft_engine::text_fonts::discover(
+                    &pdfcraft_engine::text_fonts::installed_directories(),
+                );
                 if let Ok(mut result) = result.lock() {
                     *result = Some(fonts);
                 }
@@ -66,11 +70,21 @@ fn files_picker(purpose: FilePurpose) -> rfd::AsyncFileDialog {
     if purpose == FilePurpose::RedactWords {
         return dialog.add_filter(tl!("Text"), &["txt"]);
     }
-    if !matches!(purpose, FilePurpose::CreateMultiple | FilePurpose::CreateMultipleSeparate | FilePurpose::InsertPages | FilePurpose::Combine) {
+    if !matches!(
+        purpose,
+        FilePurpose::CreateMultiple
+            | FilePurpose::CreateMultipleSeparate
+            | FilePurpose::InsertPages
+            | FilePurpose::Combine
+    ) {
         return dialog.add_filter("PDF", &["pdf"]);
     }
-    let all: Vec<&str> = std::iter::once("pdf").chain(pdfcraft_engine::CONVERTIBLE).collect();
-    dialog.add_filter(tl!("PDF, images and text"), &all).add_filter("PDF", &["pdf"])
+    let all: Vec<&str> = std::iter::once("pdf")
+        .chain(pdfcraft_engine::CONVERTIBLE)
+        .collect();
+    dialog
+        .add_filter(tl!("PDF, images and text"), &all)
+        .add_filter("PDF", &["pdf"])
 }
 
 /// The Replace Pages dialog: the chosen file and the ranges (1-based, inclusive).
@@ -90,7 +104,10 @@ pub struct ReplaceDraft {
 impl FilePurpose {
     /// Insert and Replace edit the active document, at its selection.
     pub(crate) fn edits_active_document(self) -> bool {
-        matches!(self, Self::InsertPages | Self::ReplacePages | Self::TextFont { .. })
+        matches!(
+            self,
+            Self::InsertPages | Self::ReplacePages | Self::TextFont { .. }
+        )
     }
 }
 
@@ -128,7 +145,11 @@ pub struct SplitDraft {
 
 impl Default for SplitDraft {
     fn default() -> Self {
-        SplitDraft { every: 1, mode: SplitMode::Pages, size_mb: 2.0 }
+        SplitDraft {
+            every: 1,
+            mode: SplitMode::Pages,
+            size_mb: 2.0,
+        }
     }
 }
 
@@ -169,10 +190,25 @@ pub struct ExtractDraft {
 pub(crate) fn file_stem_from_user(name: &str) -> String {
     let name = name.trim();
     // Any case of ".pdf": it's added back on writing.
-    let name =
-        name.len().checked_sub(4).and_then(|i| name.get(i..).filter(|ext| ext.eq_ignore_ascii_case(".pdf")).and(name.get(..i))).unwrap_or(name);
-    let cleaned: String =
-        name.chars().map(|c| if c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') { '_' } else { c }).collect();
+    let name = name
+        .len()
+        .checked_sub(4)
+        .and_then(|i| {
+            name.get(i..)
+                .filter(|ext| ext.eq_ignore_ascii_case(".pdf"))
+                .and(name.get(..i))
+        })
+        .unwrap_or(name);
+    let cleaned: String = name
+        .chars()
+        .map(|c| {
+            if c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
     // At most 200 bytes, so " (page N).pdf" still fits the usual 255-byte file name limit.
     let mut end = cleaned.len().min(200);
     while !cleaned.is_char_boundary(end) {
@@ -182,12 +218,23 @@ pub(crate) fn file_stem_from_user(name: &str) -> String {
     // Trimming trailing dots also leaves "." and ".." empty.
     let stem = cleaned.trim().trim_end_matches(['.', ' ']).trim_start();
     // Windows reserves these device names whatever the extension: "NUL.pdf" writes nowhere.
-    let device = stem.split('.').next().unwrap_or_default().to_ascii_uppercase();
+    let device = stem
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
     let reserved = matches!(device.as_str(), "CON" | "PRN" | "AUX" | "NUL")
         || (device.len() == 4
             && (device.starts_with("COM") || device.starts_with("LPT"))
-            && device.as_bytes().get(3).is_some_and(|d| (b'1'..=b'9').contains(d)));
-    if reserved { format!("_{stem}") } else { stem.to_string() }
+            && device
+                .as_bytes()
+                .get(3)
+                .is_some_and(|d| (b'1'..=b'9').contains(d)));
+    if reserved {
+        format!("_{stem}")
+    } else {
+        stem.to_string()
+    }
 }
 
 /// A safe native Save suggestion for a PDF-supplied attachment name.
@@ -199,17 +246,33 @@ pub(crate) fn attachment_file_name(name: &str) -> String {
         .filter(|c| !c.is_control() && !matches!(c, '\u{061c}' | '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}'))
         .map(|c| if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') { '_' } else { c })
         .collect();
-    let name = cleaned.trim_start().trim_end_matches(|c: char| c == '.' || c.is_whitespace());
+    let name = cleaned
+        .trim_start()
+        .trim_end_matches(|c: char| c == '.' || c.is_whitespace());
     if name.is_empty() {
         return "attachment".into();
     }
-    let device = name.split('.').next().unwrap_or_default().trim_end().to_ascii_uppercase();
+    let device = name
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .trim_end()
+        .to_ascii_uppercase();
     let reserved = matches!(device.as_str(), "CON" | "PRN" | "AUX" | "NUL")
         || device
             .strip_prefix("COM")
             .or_else(|| device.strip_prefix("LPT"))
-            .is_some_and(|number| matches!(number, "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"));
-    if reserved { format!("_{name}") } else { name.to_string() }
+            .is_some_and(|number| {
+                matches!(
+                    number,
+                    "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+                )
+            });
+    if reserved {
+        format!("_{name}")
+    } else {
+        name.to_string()
+    }
 }
 
 /// Pages ▸ Rotate Pages.
@@ -227,14 +290,24 @@ pub struct RotateDraft {
 
 impl Default for RotateDraft {
     fn default() -> Self {
-        RotateDraft { degrees: 90, which: 0, from: 1, to: 1, parity: Default::default(), orientation: Default::default() }
+        RotateDraft {
+            degrees: 90,
+            which: 0,
+            from: 1,
+            to: 1,
+            parity: Default::default(),
+            orientation: Default::default(),
+        }
     }
 }
 
 /// A picked file's name and bytes, or its name and why it can't be read.
 #[cfg(not(target_arch = "wasm32"))]
 fn read_named(path: &std::path::Path) -> Result<(String, Vec<u8>), (String, String)> {
-    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "file.pdf".into());
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "file.pdf".into());
     match std::fs::read(path) {
         Ok(bytes) => Ok((name, bytes)),
         Err(e) => Err((name, e.to_string())),
@@ -282,7 +355,11 @@ impl PdfCraftApp {
 
     pub(crate) fn pick_files(&mut self, purpose: FilePurpose, multiple: bool) {
         #[cfg(not(target_arch = "wasm32"))]
-        self.pick(crate::pickers::PickFor::Files(purpose), files_picker(purpose), multiple);
+        self.pick(
+            crate::pickers::PickFor::Files(purpose),
+            files_picker(purpose),
+            multiple,
+        );
         #[cfg(target_arch = "wasm32")]
         {
             let requests = self.requests.clone();
@@ -292,7 +369,11 @@ impl PdfCraftApp {
             let request = self.file_request(purpose, Vec::new());
             wasm_bindgen_futures::spawn_local(async move {
                 let dialog = files_picker(purpose);
-                let handles = if multiple { dialog.pick_files().await.unwrap_or_default() } else { dialog.pick_file().await.into_iter().collect() };
+                let handles = if multiple {
+                    dialog.pick_files().await.unwrap_or_default()
+                } else {
+                    dialog.pick_file().await.into_iter().collect()
+                };
                 let mut files = Vec::new();
                 for h in handles {
                     files.push((h.file_name(), h.read().await));
@@ -330,7 +411,10 @@ impl PdfCraftApp {
                     Some(dir) => convert(self, std::path::PathBuf::from(dir)),
                     None => {
                         self.ask_one(
-                            crate::pickers::Ask::Folder(rfd::AsyncFileDialog::new().set_title(tl!("Choose a folder for the exported files"))),
+                            crate::pickers::Ask::Folder(
+                                rfd::AsyncFileDialog::new()
+                                    .set_title(tl!("Choose a folder for the exported files")),
+                            ),
                             None,
                             convert,
                         );
@@ -342,9 +426,18 @@ impl PdfCraftApp {
         let mut files = Vec::new();
         let mut modified = Vec::new();
         for p in paths {
-            let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "file.pdf".into());
-            if purpose == FilePurpose::RedactWords && std::fs::metadata(p).is_ok_and(|m| m.len() > crate::redact_ui::MAX_WORD_LIST_BYTES as u64) {
-                self.notify_fmt("{name} is too large for a word list (at most 1 MB).", &[("name", &name)]);
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "file.pdf".into());
+            if purpose == FilePurpose::RedactWords
+                && std::fs::metadata(p)
+                    .is_ok_and(|m| m.len() > crate::redact_ui::MAX_WORD_LIST_BYTES as u64)
+            {
+                self.notify_fmt(
+                    "{name} is too large for a word list (at most 1 MB).",
+                    &[("name", &name)],
+                );
                 return;
             }
             let read = if matches!(purpose, FilePurpose::TextFont { .. }) {
@@ -360,7 +453,10 @@ impl PdfCraftApp {
             match read {
                 Ok(b) => files.push((name, b)),
                 Err(e) => {
-                    self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't read {name}: {e}",
+                        &[("name", &name), ("e", &e.to_string())],
+                    );
                     return;
                 }
             }
@@ -374,7 +470,13 @@ impl PdfCraftApp {
             let incoming = files
                 .into_iter()
                 .zip(modified)
-                .map(|((name, bytes), modified)| crate::combine_ui::Incoming { name, bytes: Arc::new(bytes), modified, note: None, open_doc: None })
+                .map(|((name, bytes), modified)| crate::combine_ui::Incoming {
+                    name,
+                    bytes: Arc::new(bytes),
+                    modified,
+                    note: None,
+                    open_doc: None,
+                })
                 .collect();
             self.stage_combine_with(incoming);
         } else {
@@ -394,10 +496,17 @@ impl PdfCraftApp {
             self.use_paths(FilePurpose::Combine, &[f.path().to_path_buf()]);
             return;
         }
-        let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
+        let name = f
+            .path()
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "dropped.pdf".into());
         match f.bytes() {
             Ok(bytes) => self.use_files(FilePurpose::Combine, vec![(name, bytes)]),
-            Err(e) => self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e.to_string())]),
+            Err(e) => self.notify_fmt(
+                "Couldn't read {name}: {e}",
+                &[("name", &name), ("e", &e.to_string())],
+            ),
         }
     }
 
@@ -408,11 +517,18 @@ impl PdfCraftApp {
         let request = self.file_request(FilePurpose::Combine, Vec::new());
         let ctx = ctx.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "dropped.pdf".into());
             if let Ok(bytes) = f.bytes_async().await
                 && let Ok(mut q) = requests.lock()
             {
-                q.push(FileRequest { files: vec![(name, bytes)], ..request });
+                q.push(FileRequest {
+                    files: vec![(name, bytes)],
+                    ..request
+                });
                 ctx.request_repaint();
             }
         });
@@ -422,13 +538,24 @@ impl PdfCraftApp {
     /// one now, for Insert and Replace. Browsers make it when the picker opens and queue it on
     /// `requests` once the files are read; it is used on a later frame.
     pub fn file_request(&self, purpose: FilePurpose, files: Vec<(String, Vec<u8>)>) -> FileRequest {
-        let target = if purpose.edits_active_document() { self.pick_target(self.active_ids().map(|(_, id)| id)) } else { None };
-        FileRequest { purpose, target, files }
+        let target = if purpose.edits_active_document() {
+            self.pick_target(self.active_ids().map(|(_, id)| id))
+        } else {
+            None
+        };
+        FileRequest {
+            purpose,
+            target,
+            files,
+        }
     }
 
     /// `doc` as it is now, for a pick that will edit it.
     pub(crate) fn pick_target(&self, doc: Option<DocId>) -> Option<PickTarget> {
-        doc.map(|doc| PickTarget { doc, generation: self.session.get(doc).map(|d| d.edit_generation()) })
+        doc.map(|doc| PickTarget {
+            doc,
+            generation: self.session.get(doc).map(|d| d.edit_generation()),
+        })
     }
 
     /// Whether a pick for `target` may still be used: the document is still the active one and
@@ -440,20 +567,34 @@ impl PdfCraftApp {
         if active == Some(t.doc) && generation == t.generation {
             return true;
         }
-        self.notify_tr("The document changed while you were choosing a file, so nothing was changed.");
+        self.notify_tr(
+            "The document changed while you were choosing a file, so nothing was changed.",
+        );
         false
     }
 
     /// Handle files picked asynchronously.
     pub(crate) fn process_file_requests(&mut self) {
-        let pending: Vec<_> = self.requests.lock().map(|mut q| std::mem::take(&mut *q)).unwrap_or_default();
-        for FileRequest { purpose, target, files } in pending {
+        let pending: Vec<_> = self
+            .requests
+            .lock()
+            .map(|mut q| std::mem::take(&mut *q))
+            .unwrap_or_default();
+        for FileRequest {
+            purpose,
+            target,
+            files,
+        } in pending
+        {
             if !self.still_pick_target(target) {
                 continue;
             }
             // Last-resort guard (AGENTS.md §4), as for desktop picks and commands.
             if let Err(m) = pdfcraft_engine::guard(|| self.use_files(purpose, files)) {
-                self.notify_fmt("That didn't work: an internal error stopped it ({m}).", &[("m", m.as_str())]);
+                self.notify_fmt(
+                    "That didn't work: an internal error stopped it ({m}).",
+                    &[("m", m.as_str())],
+                );
             }
         }
     }
@@ -462,9 +603,13 @@ impl PdfCraftApp {
     pub fn use_files(&mut self, purpose: FilePurpose, files: Vec<(String, Vec<u8>)>) {
         match purpose {
             FilePurpose::TextFont { page } => {
-                let Some((_, bytes)) = files.into_iter().next() else { return };
-                if self.apply_edit(Edit::RegisterTextFont { page, bytes: Arc::new(bytes) })
-                    && let Some((index, id)) = self.active_ids()
+                let Some((_, bytes)) = files.into_iter().next() else {
+                    return;
+                };
+                if self.apply_edit(Edit::RegisterTextFont {
+                    page,
+                    bytes: Arc::new(bytes),
+                }) && let Some((index, id)) = self.active_ids()
                     && let Some(doc) = self.session.get(id)
                     && let Some(ed) = self.views[index].line_editor.as_mut()
                     && let Some(ctx) = self.ctx.as_ref()
@@ -482,16 +627,26 @@ impl PdfCraftApp {
             FilePurpose::Ocr => self.ocr_files(files),
             FilePurpose::CreateMultiple => self.stage_create_multiple(files.into_iter().map(Ok)),
             FilePurpose::CreateMultipleSeparate => {
-                let dir = self.export_dir_override.as_ref().map(std::path::PathBuf::from);
+                let dir = self
+                    .export_dir_override
+                    .as_ref()
+                    .map(std::path::PathBuf::from);
                 self.stage_create_separate(files.into_iter().map(Ok), dir);
             }
             FilePurpose::RedactWords => {
-                let Some((name, bytes)) = files.into_iter().next() else { return };
+                let Some((name, bytes)) = files.into_iter().next() else {
+                    return;
+                };
                 if bytes.len() > crate::redact_ui::MAX_WORD_LIST_BYTES {
-                    self.notify_fmt("{name} is too large for a word list (at most 1 MB).", &[("name", &name)]);
+                    self.notify_fmt(
+                        "{name} is too large for a word list (at most 1 MB).",
+                        &[("name", &name)],
+                    );
                     return;
                 }
-                self.redact_search.words = pdfcraft_engine::redact_word_list(&pdfcraft_engine::decode_text(&bytes)).join("\n");
+                self.redact_search.words =
+                    pdfcraft_engine::redact_word_list(&pdfcraft_engine::decode_text(&bytes))
+                        .join("\n");
                 self.redact_search.mode = crate::redact_ui::SearchMode::Words;
             }
         }
@@ -512,14 +667,28 @@ impl PdfCraftApp {
         let src_pages = match self.session.page_count_of(&name, &bytes) {
             Ok(n) => n,
             Err(e) => {
-                self.notify_fmt("Couldn't use {name}: {e}", &[("name", &name), ("e", &e.to_string())]);
+                self.notify_fmt(
+                    "Couldn't use {name}: {e}",
+                    &[("name", &name), ("e", &e.to_string())],
+                );
                 return;
             }
         };
         let targets = self.views[i].target_pages();
-        let (from, to) = (targets.first().map_or(1, |p| p + 1), targets.last().map_or(1, |p| p + 1));
+        let (from, to) = (
+            targets.first().map_or(1, |p| p + 1),
+            targets.last().map_or(1, |p| p + 1),
+        );
         let target = self.pick_target(self.active_ids().map(|(_, id)| id));
-        self.replace_draft = Some(ReplaceDraft { name, bytes, src_pages, from, to, src_from: 1, target });
+        self.replace_draft = Some(ReplaceDraft {
+            name,
+            bytes,
+            src_pages,
+            from,
+            to,
+            src_from: 1,
+            target,
+        });
         self.dialog = Some(crate::Dialog::ReplacePages);
     }
 
@@ -540,7 +709,9 @@ impl PdfCraftApp {
     where
         I: IntoIterator<Item = Result<(String, Vec<u8>), (String, String)>>,
     {
-        let Some(view) = self.active.and_then(|i| self.views.get_mut(i)) else { return };
+        let Some(view) = self.active.and_then(|i| self.views.get_mut(i)) else {
+            return;
+        };
         let (id, chosen) = (view.id, view.insert_at.take());
         let after = view.target_pages().last().map_or(0, |p| p + 1);
         let count = self.session.get(id).map_or(0, |d| d.info.pages.len());
@@ -550,12 +721,17 @@ impl PdfCraftApp {
             let (name, bytes) = match file {
                 Ok(file) => file,
                 Err((name, error)) => {
-                    self.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &error)]);
+                    self.notify_fmt(
+                        "Couldn't read {name}: {e}",
+                        &[("name", &name), ("e", &error)],
+                    );
                     continue;
                 }
             };
-            let converted =
-                self.session.convert_to_pdf(&name, &Arc::new(bytes)).and_then(|(_, pdf)| Ok((self.session.page_count_of(&name, &pdf)?, pdf)));
+            let converted = self
+                .session
+                .convert_to_pdf(&name, &Arc::new(bytes))
+                .and_then(|(_, pdf)| Ok((self.session.page_count_of(&name, &pdf)?, pdf)));
             match converted {
                 Ok((pages, bytes)) => {
                     if self.apply_edit(Edit::InsertPagesFrom {
@@ -580,8 +756,11 @@ impl PdfCraftApp {
 
     /// Show Extract pages, its file name filled in with the active document's (#737).
     pub fn open_extract_dialog(&mut self) {
-        self.extract_draft.name =
-            self.active_ids().and_then(|(_, id)| self.session.get(id)).map(|d| strip_pdf(&d.name).to_string()).unwrap_or_default();
+        self.extract_draft.name = self
+            .active_ids()
+            .and_then(|(_, id)| self.session.get(id))
+            .map(|d| strip_pdf(&d.name).to_string())
+            .unwrap_or_default();
         self.dialog = Some(crate::Dialog::Extract);
     }
 
@@ -591,21 +770,33 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((i, id)) = self.active_ids() else { return };
+        let Some((i, id)) = self.active_ids() else {
+            return;
+        };
         let pages = self.views[i].target_pages();
-        let stem = self.session.get(id).map(|d| strip_pdf(&d.name).to_string()).unwrap_or_default();
+        let stem = self
+            .session
+            .get(id)
+            .map(|d| strip_pdf(&d.name).to_string())
+            .unwrap_or_default();
         let opts = self.extract_draft.clone();
         // The name typed in the dialog (#737), else the document's.
         let chosen = file_stem_from_user(&opts.name);
         let renamed = !chosen.is_empty() && chosen != file_stem_from_user(&stem);
-        let base = if chosen.is_empty() { stem.clone() } else { chosen };
+        let base = if chosen.is_empty() {
+            stem.clone()
+        } else {
+            chosen
+        };
         if opts.separate {
             // Each page as its own file, in a chosen folder.
             let mut named = Vec::new();
             for &p in &pages {
                 match self.session.extract(id, &[p]) {
                     // One page the user named is saved under exactly that name.
-                    Ok(bytes) if renamed && pages.len() == 1 => named.push((format!("{base}.pdf"), bytes)),
+                    Ok(bytes) if renamed && pages.len() == 1 => {
+                        named.push((format!("{base}.pdf"), bytes))
+                    }
                     Ok(bytes) => named.push((format!("{base} (page {}).pdf", p + 1), bytes)),
                     Err(e) => {
                         self.notify_fmt("Couldn't extract pages: {e}", &[("e", &e.to_string())]);
@@ -636,10 +827,17 @@ impl PdfCraftApp {
                     let message = if pages.len() == 1 {
                         tl!("Extracted 1 page").to_string()
                     } else {
-                        crate::i18n::fmt(tl!("Extracted {n} pages"), &[("n", &pages.len().to_string())])
+                        crate::i18n::fmt(
+                            tl!("Extracted {n} pages"),
+                            &[("n", &pages.len().to_string())],
+                        )
                     };
                     // Save As offers the tab's name, so a name typed in the dialog is kept.
-                    let name = if renamed { format!("{base}.pdf") } else { format!("{stem} (extract).pdf") };
+                    let name = if renamed {
+                        format!("{base}.pdf")
+                    } else {
+                        format!("{stem} (extract).pdf")
+                    };
                     self.open_created(&name, bytes, &message)
                 }
                 Err(e) => {
@@ -662,27 +860,50 @@ impl PdfCraftApp {
 
     /// [`Self::write_files`], then `after` once every file is written: now, or on a later frame
     /// when the user chooses the folder. `after` never runs when writing fails or is cancelled.
-    pub(crate) fn write_files_then(&mut self, named: Vec<(String, Arc<Vec<u8>>)>, title: &str, after: impl FnOnce(&mut Self) + Send + 'static) {
+    pub(crate) fn write_files_then(
+        &mut self,
+        named: Vec<(String, Arc<Vec<u8>>)>,
+        title: &str,
+        after: impl FnOnce(&mut Self) + Send + 'static,
+    ) {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let write = move |app: &mut Self, dir: std::path::PathBuf| {
                 for (name, bytes) in &named {
-                    if let Err(e) = crate::editing::write_atomically(&dir.join(name).to_string_lossy(), bytes) {
-                        app.notify_fmt("Couldn't write {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                    if let Err(e) =
+                        crate::editing::write_atomically(&dir.join(name).to_string_lossy(), bytes)
+                    {
+                        app.notify_fmt(
+                            "Couldn't write {name}: {e}",
+                            &[("name", name), ("e", &e.to_string())],
+                        );
                         return;
                     }
                 }
                 if named.len() == 1 {
-                    app.notify_fmt("Wrote 1 file to {dir}", &[("dir", &dir.display().to_string())]);
+                    app.notify_fmt(
+                        "Wrote 1 file to {dir}",
+                        &[("dir", &dir.display().to_string())],
+                    );
                 } else {
-                    app.notify_fmt("Wrote {n} files to {dir}", &[("n", &named.len().to_string()), ("dir", &dir.display().to_string())]);
+                    app.notify_fmt(
+                        "Wrote {n} files to {dir}",
+                        &[
+                            ("n", &named.len().to_string()),
+                            ("dir", &dir.display().to_string()),
+                        ],
+                    );
                 }
                 after(app);
             };
             match &self.export_dir_override {
                 Some(d) => write(self, std::path::PathBuf::from(d)),
                 None => {
-                    self.ask_one(crate::pickers::Ask::Folder(rfd::AsyncFileDialog::new().set_title(title)), None, write);
+                    self.ask_one(
+                        crate::pickers::Ask::Folder(rfd::AsyncFileDialog::new().set_title(title)),
+                        None,
+                        write,
+                    );
                 }
             }
         }
@@ -691,7 +912,10 @@ impl PdfCraftApp {
             let _ = title;
             for (name, bytes) in &named {
                 if let Err(e) = crate::editing::download(name, bytes) {
-                    self.notify_fmt("Couldn't download {name}: {e}", &[("name", name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't download {name}: {e}",
+                        &[("name", name), ("e", &e.to_string())],
+                    );
                     return;
                 }
             }
@@ -701,8 +925,12 @@ impl PdfCraftApp {
 
     /// Pages ▸ Rotate Pages with the dialog's range and filters.
     pub fn rotate_with_draft(&mut self) {
-        let Some((i, id)) = self.active_ids() else { return };
-        let Some(doc) = self.session.get(id) else { return };
+        let Some((i, id)) = self.active_ids() else {
+            return;
+        };
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
         let n = doc.info.pages.len();
         let d = self.rotate_draft.clone();
         let base: Vec<usize> = match d.which {
@@ -715,7 +943,10 @@ impl PdfCraftApp {
             self.notify_tr("No pages match those choices");
             return;
         }
-        self.apply_edit(pdfcraft_engine::Edit::RotatePages { pages, degrees: d.degrees });
+        self.apply_edit(pdfcraft_engine::Edit::RotatePages {
+            pages,
+            degrees: d.degrees,
+        });
     }
 
     /// Split the active document and write the parts: into a chosen folder (desktop, written on
@@ -725,8 +956,14 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((_, id)) = self.active_ids() else { return };
-        let stem = self.session.get(id).map(|d| strip_pdf(&d.name).to_string()).unwrap_or_else(|| "document".into());
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
+        let stem = self
+            .session
+            .get(id)
+            .map(|d| strip_pdf(&d.name).to_string())
+            .unwrap_or_else(|| "document".into());
         let (parts, titles) = match plan {
             SplitPlan::By(by) => (self.session.split(id, by), Vec::new()),
             SplitPlan::Size(max) => (self.session.split_by_size(id, *max), Vec::new()),
@@ -743,13 +980,26 @@ impl PdfCraftApp {
                 return;
             }
         };
-        let safe = |t: &str| t.chars().map(|c| if c.is_alphanumeric() || " -_.,()".contains(c) { c } else { '_' }).collect::<String>();
+        let safe = |t: &str| {
+            t.chars()
+                .map(|c| {
+                    if c.is_alphanumeric() || " -_.,()".contains(c) {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
+                .collect::<String>()
+        };
         let mut used = std::collections::HashSet::new();
         let named: Vec<(String, Arc<Vec<u8>>)> = parts
             .into_iter()
             .map(|(a, b, bytes)| {
                 // Bookmark splits are named after the bookmark that starts the part.
-                let title = titles.iter().find(|(p, _)| *p + 1 == a).map(|(_, t)| safe(t));
+                let title = titles
+                    .iter()
+                    .find(|(p, _)| *p + 1 == a)
+                    .map(|(_, t)| safe(t));
                 let name = match title {
                     Some(t) => format!("{stem} - {t}.pdf"),
                     None if a == b => format!("{stem} (page {a}).pdf"),
@@ -770,11 +1020,21 @@ impl PdfCraftApp {
 
     /// Summarize Comments: make the summary and open it as a new document.
     pub fn summarize_comments(&mut self) {
-        let Some((_, id)) = self.active_ids() else { return };
-        let stem =
-            self.session.get(id).map(|d| std::path::Path::new(&d.name).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
+        let stem = self.session.get(id).map(|d| {
+            std::path::Path::new(&d.name)
+                .file_stem()
+                .map(|s| s.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        });
         match self.session.summarize_comments(id, self.summary_sort) {
-            Ok(bytes) => self.open_created(&format!("Summary of comments on {}.pdf", stem.unwrap_or_default()), bytes, "Created a comment summary"),
+            Ok(bytes) => self.open_created(
+                &format!("Summary of comments on {}.pdf", stem.unwrap_or_default()),
+                bytes,
+                "Created a comment summary",
+            ),
             Err(e) => self.notify_fmt("Couldn't summarize comments: {e}", &[("e", &e.to_string())]),
         }
     }
@@ -784,8 +1044,11 @@ impl PdfCraftApp {
             Ok(id) => {
                 // The reading-colours preference is app-wide: the newly created document starts with it.
                 self.session.set_reading_colors(id, self.reading_colors);
-                let Some(doc) = self.session.get(id) else { return };
-                self.views.push(crate::DocView::new(id, &doc.info, self.view_defaults));
+                let Some(doc) = self.session.get(id) else {
+                    return;
+                };
+                self.views
+                    .push(crate::DocView::new(id, &doc.info, self.view_defaults));
                 self.active = Some(self.views.len() - 1);
                 self.notify_tr(message);
             }
@@ -795,7 +1058,9 @@ impl PdfCraftApp {
 }
 
 pub(crate) fn strip_pdf(name: &str) -> &str {
-    name.strip_suffix(".pdf").or_else(|| name.strip_suffix(".PDF")).unwrap_or(name)
+    name.strip_suffix(".pdf")
+        .or_else(|| name.strip_suffix(".PDF"))
+        .unwrap_or(name)
 }
 
 impl PdfCraftApp {
@@ -805,17 +1070,35 @@ impl PdfCraftApp {
         {
             let import = |app: &mut Self, path: std::path::PathBuf| match std::fs::read(&path) {
                 Ok(bytes) => {
-                    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                    app.apply_edit(pdfcraft_engine::Edit::ImportData { name, bytes: std::sync::Arc::new(bytes) });
+                    let name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    app.apply_edit(pdfcraft_engine::Edit::ImportData {
+                        name,
+                        bytes: std::sync::Arc::new(bytes),
+                    });
                 }
-                Err(e) => app.notify_fmt("Couldn't read {name}: {e}", &[("name", &path.display().to_string()), ("e", &e.to_string())]),
+                Err(e) => app.notify_fmt(
+                    "Couldn't read {name}: {e}",
+                    &[("name", &path.display().to_string()), ("e", &e.to_string())],
+                ),
             };
             match self.save_override.clone() {
-                Some(p) if [".xfdf", ".fdf", ".xml", ".xdp", ".csv", ".txt"].iter().any(|e| p.ends_with(e)) => import(self, p.into()),
+                Some(p)
+                    if [".xfdf", ".fdf", ".xml", ".xdp", ".csv", ".txt"]
+                        .iter()
+                        .any(|e| p.ends_with(e)) =>
+                {
+                    import(self, p.into())
+                }
                 Some(_) => {}
                 None => {
                     let dialog = rfd::AsyncFileDialog::new()
-                        .add_filter(tl!("Comment and form data").to_string(), &["xfdf", "fdf", "xml", "xdp", "csv", "txt"])
+                        .add_filter(
+                            tl!("Comment and form data").to_string(),
+                            &["xfdf", "fdf", "xml", "xdp", "csv", "txt"],
+                        )
                         .set_title(tl!("Import data").to_string());
                     let target = self.active_ids().map(|(_, id)| id);
                     self.ask_one(crate::pickers::Ask::File(dialog), target, import);
@@ -833,19 +1116,35 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((_, id)) = self.active_ids() else { return };
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
         if !self.may_copy(id) {
             return;
         }
-        let Some(doc) = self.session.get(id) else { return };
-        let stem = doc.name.trim_end_matches(".pdf").trim_end_matches(".PDF").to_string();
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
+        let stem = doc
+            .name
+            .trim_end_matches(".pdf")
+            .trim_end_matches(".PDF")
+            .to_string();
         let ext = format.extension();
         let bytes = doc.export_office(format);
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let write = move |app: &mut Self, path: std::path::PathBuf| match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
-                Ok(()) => app.notify_fmt("Exported to {path}", &[("path", &path.display().to_string())]),
-                Err(e) => app.notify_fmt("Couldn't write {name}: {e}", &[("name", &path.display().to_string()), ("e", &e.to_string())]),
+            let write = move |app: &mut Self, path: std::path::PathBuf| {
+                match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
+                    Ok(()) => app.notify_fmt(
+                        "Exported to {path}",
+                        &[("path", &path.display().to_string())],
+                    ),
+                    Err(e) => app.notify_fmt(
+                        "Couldn't write {name}: {e}",
+                        &[("name", &path.display().to_string()), ("e", &e.to_string())],
+                    ),
+                }
             };
             match self.save_override.clone() {
                 Some(p) => write(self, p.into()),
@@ -871,14 +1170,25 @@ impl PdfCraftApp {
         {
             let dialog = rfd::AsyncFileDialog::new()
                 .set_title(tl!("Select data files to merge").to_string())
-                .add_filter(tl!("Form data and PDF forms").to_string(), &["fdf", "xfdf", "pdf"]);
+                .add_filter(
+                    tl!("Form data and PDF forms").to_string(),
+                    &["fdf", "xfdf", "pdf"],
+                );
             self.ask(crate::pickers::Ask::Files(dialog), None, |app, paths| {
                 let mut files = Vec::new();
                 for p in paths {
-                    let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let name = p
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     match std::fs::read(&p) {
                         Ok(b) => files.push((name, b)),
-                        Err(e) => return app.notify_fmt("Couldn't read {name}: {e}", &[("name", &name), ("e", &e.to_string())]),
+                        Err(e) => {
+                            return app.notify_fmt(
+                                "Couldn't read {name}: {e}",
+                                &[("name", &name), ("e", &e.to_string())],
+                            );
+                        }
                     }
                 }
                 if !files.is_empty() {
@@ -900,17 +1210,30 @@ impl PdfCraftApp {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let count = files.len();
-            let write =
-                move |app: &mut Self, path: std::path::PathBuf| match crate::editing::write_atomically(&path.to_string_lossy(), csv.as_bytes()) {
+            let write = move |app: &mut Self, path: std::path::PathBuf| {
+                match crate::editing::write_atomically(&path.to_string_lossy(), csv.as_bytes()) {
                     Ok(()) => {
                         if count == 1 {
-                            app.notify_fmt("Merged 1 file into {path}", &[("path", &path.display().to_string())]);
+                            app.notify_fmt(
+                                "Merged 1 file into {path}",
+                                &[("path", &path.display().to_string())],
+                            );
                         } else {
-                            app.notify_fmt("Merged {n} files into {path}", &[("n", &count.to_string()), ("path", &path.display().to_string())]);
+                            app.notify_fmt(
+                                "Merged {n} files into {path}",
+                                &[
+                                    ("n", &count.to_string()),
+                                    ("path", &path.display().to_string()),
+                                ],
+                            );
                         }
                     }
-                    Err(e) => app.notify_fmt("Couldn't write {name}: {e}", &[("name", &path.display().to_string()), ("e", &e.to_string())]),
-                };
+                    Err(e) => app.notify_fmt(
+                        "Couldn't write {name}: {e}",
+                        &[("name", &path.display().to_string()), ("e", &e.to_string())],
+                    ),
+                }
+            };
             match self.save_override.clone() {
                 Some(p) => write(self, p.into()),
                 None => {
@@ -931,9 +1254,17 @@ impl PdfCraftApp {
         if !self.commit_form_typing() {
             return;
         }
-        let Some((_, id)) = self.active_ids() else { return };
-        let Some(doc) = self.session.get(id) else { return };
-        let stem = doc.name.trim_end_matches(".pdf").trim_end_matches(".PDF").to_string();
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
+        let stem = doc
+            .name
+            .trim_end_matches(".pdf")
+            .trim_end_matches(".PDF")
+            .to_string();
         #[cfg(not(target_arch = "wasm32"))]
         {
             let xfa = doc.info.xfa.is_some();
@@ -942,21 +1273,39 @@ impl PdfCraftApp {
                 if !app.commit_typing_in(id) {
                     return;
                 }
-                let ext = path.extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
-                let format = pdfcraft_engine::DataFormat::from_extension(&ext).unwrap_or(pdfcraft_engine::DataFormat::Xfdf);
+                let ext = path
+                    .extension()
+                    .map(|e| e.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let format = pdfcraft_engine::DataFormat::from_extension(&ext)
+                    .unwrap_or(pdfcraft_engine::DataFormat::Xfdf);
                 match app.session.export_data(id, format, comments, fields) {
-                    Ok(bytes) => match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
-                        Ok(()) => app.notify_fmt("Exported to {path}", &[("path", &path.display().to_string())]),
-                        Err(e) => app.notify_fmt("Couldn't write {name}: {e}", &[("name", &path.display().to_string()), ("e", &e.to_string())]),
-                    },
+                    Ok(bytes) => {
+                        match crate::editing::write_atomically(&path.to_string_lossy(), &bytes) {
+                            Ok(()) => app.notify_fmt(
+                                "Exported to {path}",
+                                &[("path", &path.display().to_string())],
+                            ),
+                            Err(e) => app.notify_fmt(
+                                "Couldn't write {name}: {e}",
+                                &[("name", &path.display().to_string()), ("e", &e.to_string())],
+                            ),
+                        }
+                    }
                     Err(e) => app.notify_error(e),
                 }
             };
             match self.save_override.clone() {
                 Some(p) => write(self, p.into()),
                 None => {
-                    let title = if comments { tl!("Export comments") } else { tl!("Export form data") };
-                    let d = rfd::AsyncFileDialog::new().set_title(title).set_file_name(format!("{stem}.xfdf"));
+                    let title = if comments {
+                        tl!("Export comments")
+                    } else {
+                        tl!("Export form data")
+                    };
+                    let d = rfd::AsyncFileDialog::new()
+                        .set_title(title)
+                        .set_file_name(format!("{stem}.xfdf"));
                     let d = if comments {
                         d.add_filter("XFDF", &["xfdf"]).add_filter("FDF", &["fdf"])
                     } else if xfa {
@@ -980,7 +1329,10 @@ impl PdfCraftApp {
             }
         }
         #[cfg(target_arch = "wasm32")]
-        match self.session.export_data(id, pdfcraft_engine::DataFormat::Xfdf, comments, fields) {
+        match self
+            .session
+            .export_data(id, pdfcraft_engine::DataFormat::Xfdf, comments, fields)
+        {
             Ok(bytes) => {
                 let _ = crate::editing::download(&format!("{stem}.xfdf"), &bytes);
             }
@@ -1006,30 +1358,55 @@ mod stem_tests {
         assert_eq!(file_stem_from_user("Console"), "Console");
         // At most 200 bytes, cut on a character boundary.
         let long = file_stem_from_user(&"文".repeat(300));
-        assert!(long.len() <= 200 && long.chars().all(|c| c == '文'), "{}", long.len());
+        assert!(
+            long.len() <= 200 && long.chars().all(|c| c == '文'),
+            "{}",
+            long.len()
+        );
     }
     #[test]
     fn attachment_save_name_removes_bidi_without_hiding_the_extension() {
-        assert_eq!(attachment_file_name("invoice\u{202e}fdp.exe"), "invoicefdp.exe");
+        assert_eq!(
+            attachment_file_name("invoice\u{202e}fdp.exe"),
+            "invoicefdp.exe"
+        );
         for c in [
-            '\u{061c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}', '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}',
-            '\u{2069}',
+            '\u{061c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}',
+            '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}',
         ] {
             assert_eq!(attachment_file_name(&format!("a{c}b.pdf")), "ab.pdf");
         }
     }
     #[test]
     fn attachment_save_name_preserves_ordinary_unicode_and_extensions() {
-        for name in ["report.pdf", "archive.tar.gz", "مرحبا.pdf", "שלום.txt", "資料.pdf", "می\u{200c}روم.txt", "👩\u{200d}💻.png", "COM10.txt"]
-        {
+        for name in [
+            "report.pdf",
+            "archive.tar.gz",
+            "مرحبا.pdf",
+            "שלום.txt",
+            "資料.pdf",
+            "می\u{200c}روم.txt",
+            "👩\u{200d}💻.png",
+            "COM10.txt",
+        ] {
             assert_eq!(attachment_file_name(name), name);
         }
     }
     #[test]
     fn attachment_save_name_handles_controls_paths_and_device_names() {
         assert_eq!(attachment_file_name("a\u{0}\n\u{85}b.pdf"), "ab.pdf");
-        assert_eq!(attachment_file_name("../a\\b:c*?\"<>|.pdf"), ".._a_b_c______.pdf");
-        for name in ["NUL.tar.gz", "con.txt", "COM1.exe", "LPT9.txt", "COM¹.txt", "LPT³.pdf"] {
+        assert_eq!(
+            attachment_file_name("../a\\b:c*?\"<>|.pdf"),
+            ".._a_b_c______.pdf"
+        );
+        for name in [
+            "NUL.tar.gz",
+            "con.txt",
+            "COM1.exe",
+            "LPT9.txt",
+            "COM¹.txt",
+            "LPT³.pdf",
+        ] {
             assert_eq!(attachment_file_name(name), format!("_{name}"));
         }
     }
@@ -1038,8 +1415,18 @@ mod stem_tests {
         for name in ["", " ", ".", "..", " . . ", "\u{202e}", "\u{0}\n"] {
             assert_eq!(attachment_file_name(name), "attachment");
         }
-        assert_eq!(attachment_file_name(" report.pdf . \u{2003}."), "report.pdf");
-        for name in ["invoice\u{202e}fdp.exe", "../a.pdf", "NUL.txt", " . . ", "report.pdf . ", "資料.pdf"] {
+        assert_eq!(
+            attachment_file_name(" report.pdf . \u{2003}."),
+            "report.pdf"
+        );
+        for name in [
+            "invoice\u{202e}fdp.exe",
+            "../a.pdf",
+            "NUL.txt",
+            " . . ",
+            "report.pdf . ",
+            "資料.pdf",
+        ] {
             let once = attachment_file_name(name);
             assert_eq!(attachment_file_name(&once), once);
         }

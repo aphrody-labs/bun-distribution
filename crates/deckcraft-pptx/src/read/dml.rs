@@ -3,12 +3,13 @@
 use deckcraft_color::{ColorTransform, Rgba, SchemeSlot};
 use deckcraft_geom::{Xfrm, emu_to_pt};
 use deckcraft_model::style::{
-    ColorBase, ColorRef, Compound, Dash, Effects, Fill, Glow, Gradient, GradientShape, GradientStop, Line, LineCap, LineEnd, LineJoin, PatternFill,
-    PictureFill, PictureMode, Reflection, Shadow,
+    ColorBase, ColorRef, Compound, Dash, Effects, Fill, Glow, Gradient, GradientShape,
+    GradientStop, Line, LineCap, LineEnd, LineJoin, PatternFill, PictureFill, PictureMode,
+    Reflection, Shadow,
 };
 use deckcraft_model::text::{
-    Action, Align, Anchor, AutoFit, BodyProps, Bullet, Caps, Hyperlink, LevelStyle, ListStyle, ParaProps, Paragraph, Run, RunKind, RunProps, Spacing,
-    Strike, TabStop, TextBody, TextDir,
+    Action, Align, Anchor, AutoFit, BodyProps, Bullet, Caps, Hyperlink, LevelStyle, ListStyle,
+    ParaProps, Paragraph, Run, RunKind, RunProps, Spacing, Strike, TabStop, TextBody, TextDir,
 };
 
 use super::{Imp, Part};
@@ -30,32 +31,59 @@ pub fn ang(e: &El, name: &str) -> Option<f64> {
 
 fn lin_to_srgb(v: f64) -> f64 {
     let v = v.clamp(0.0, 1.0);
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// A colour element (`srgbClr`, `schemeClr`, …) with its transforms.
 pub fn color_el(c: &El) -> Option<ColorRef> {
     let base = match c.local() {
-        "srgbClr" => ColorBase::Rgb { rgb: Rgba::from_hex(c.attr("val").unwrap_or("000000")).unwrap_or(Rgba::BLACK) },
-        "schemeClr" => ColorBase::Scheme { slot: c.attr("val").and_then(SchemeSlot::from_xml).unwrap_or(SchemeSlot::Tx1) },
+        "srgbClr" => ColorBase::Rgb {
+            rgb: Rgba::from_hex(c.attr("val").unwrap_or("000000")).unwrap_or(Rgba::BLACK),
+        },
+        "schemeClr" => ColorBase::Scheme {
+            slot: c
+                .attr("val")
+                .and_then(SchemeSlot::from_xml)
+                .unwrap_or(SchemeSlot::Tx1),
+        },
         "sysClr" => ColorBase::System {
             name: c.attr("val").unwrap_or("windowText").to_string(),
-            last: c.attr("lastClr").and_then(Rgba::from_hex).unwrap_or(if c.attr("val") == Some("window") { Rgba::WHITE } else { Rgba::BLACK }),
+            last: c.attr("lastClr").and_then(Rgba::from_hex).unwrap_or(
+                if c.attr("val") == Some("window") {
+                    Rgba::WHITE
+                } else {
+                    Rgba::BLACK
+                },
+            ),
         },
-        "prstClr" => ColorBase::Preset { name: c.attr("val").unwrap_or("black").to_string() },
+        "prstClr" => ColorBase::Preset {
+            name: c.attr("val").unwrap_or("black").to_string(),
+        },
         "scrgbClr" => {
             let f = |n: &str| lin_to_srgb(c.f64(n).unwrap_or(0.0) / 100_000.0);
-            ColorBase::Rgb { rgb: Rgba::from_f64(f("r"), f("g"), f("b"), 1.0) }
+            ColorBase::Rgb {
+                rgb: Rgba::from_f64(f("r"), f("g"), f("b"), 1.0),
+            }
         }
         "hslClr" => {
             let h = c.f64("hue").unwrap_or(0.0) / 60_000.0;
             let s = c.f64("sat").unwrap_or(0.0) / 100_000.0;
             let l = c.f64("lum").unwrap_or(0.0) / 100_000.0;
-            ColorBase::Rgb { rgb: Rgba::from_hsl(h, s, l, 255) }
+            ColorBase::Rgb {
+                rgb: Rgba::from_hsl(h, s, l, 255),
+            }
         }
         _ => return None,
     };
-    let mods = c.elements().take(32).filter_map(|m| ColorTransform::from_xml(m.local(), m.i32("val"))).collect();
+    let mods = c
+        .elements()
+        .take(32)
+        .filter_map(|m| ColorTransform::from_xml(m.local(), m.i32("val")))
+        .collect();
     Some(ColorRef { base, mods })
 }
 
@@ -64,23 +92,42 @@ pub fn color(container: &El) -> Option<ColorRef> {
     container.elements().find_map(color_el)
 }
 
-const FILL_NAMES: [&str; 6] = ["noFill", "solidFill", "gradFill", "blipFill", "pattFill", "grpFill"];
+const FILL_NAMES: [&str; 6] = [
+    "noFill",
+    "solidFill",
+    "gradFill",
+    "blipFill",
+    "pattFill",
+    "grpFill",
+];
 
 /// The fill child of `parent`, if any.
 pub fn fill_of(imp: &mut Imp, part: &Part, parent: &El) -> Option<Fill> {
-    parent.elements().find(|e| FILL_NAMES.contains(&e.local())).and_then(|f| fill_el(imp, part, f))
+    parent
+        .elements()
+        .find(|e| FILL_NAMES.contains(&e.local()))
+        .and_then(|f| fill_el(imp, part, f))
 }
 
 pub fn fill_el(imp: &mut Imp, part: &Part, f: &El) -> Option<Fill> {
     Some(match f.local() {
         "noFill" => Fill::None,
-        "solidFill" => Fill::Solid { color: color(f).unwrap_or(ColorRef::rgb(Rgba::BLACK)) },
+        "solidFill" => Fill::Solid {
+            color: color(f).unwrap_or(ColorRef::rgb(Rgba::BLACK)),
+        },
         "gradFill" => Fill::Gradient(gradient(f)),
         "blipFill" => match blip_fill(imp, part, f) {
             // A picture filling a shape or background with neither `a:stretch` nor `a:tile` is
             // tiled at its own size, as PowerPoint draws it.
             Some(mut p) if f.child("stretch").is_none() && f.child("tile").is_none() => {
-                p.mode = PictureMode::Tile { tx: 0.0, ty: 0.0, sx: 1.0, sy: 1.0, flip: "none".into(), align: "tl".into() };
+                p.mode = PictureMode::Tile {
+                    tx: 0.0,
+                    ty: 0.0,
+                    sx: 1.0,
+                    sy: 1.0,
+                    flip: "none".into(),
+                    align: "tl".into(),
+                };
                 Fill::Picture(p)
             }
             Some(p) => Fill::Picture(p),
@@ -88,8 +135,14 @@ pub fn fill_el(imp: &mut Imp, part: &Part, f: &El) -> Option<Fill> {
         },
         "pattFill" => Fill::Pattern(PatternFill {
             preset: f.attr("prst").unwrap_or("pct5").to_string(),
-            fg: f.child("fgClr").and_then(color).unwrap_or(ColorRef::rgb(Rgba::BLACK)),
-            bg: f.child("bgClr").and_then(color).unwrap_or(ColorRef::rgb(Rgba::WHITE)),
+            fg: f
+                .child("fgClr")
+                .and_then(color)
+                .unwrap_or(ColorRef::rgb(Rgba::BLACK)),
+            bg: f
+                .child("bgClr")
+                .and_then(color)
+                .unwrap_or(ColorRef::rgb(Rgba::WHITE)),
         }),
         "grpFill" => Fill::Group,
         _ => return None,
@@ -102,21 +155,37 @@ pub fn gradient(f: &El) -> Gradient {
         .map(|l| {
             l.children_named("gs")
                 .take(256)
-                .map(|g| GradientStop { pos: pct(g, "pos").unwrap_or(0.0).clamp(0.0, 1.0), color: color(g).unwrap_or(ColorRef::rgb(Rgba::BLACK)) })
+                .map(|g| GradientStop {
+                    pos: pct(g, "pos").unwrap_or(0.0).clamp(0.0, 1.0),
+                    color: color(g).unwrap_or(ColorRef::rgb(Rgba::BLACK)),
+                })
                 .collect()
         })
         .unwrap_or_default();
     stops.sort_by(|a, b| a.pos.total_cmp(&b.pos));
     let shape = if let Some(l) = f.child("lin") {
-        GradientShape::Linear { angle: ang(l, "ang").unwrap_or(0.0), scaled: l.bool("scaled").unwrap_or(false) }
+        GradientShape::Linear {
+            angle: ang(l, "ang").unwrap_or(0.0),
+            scaled: l.bool("scaled").unwrap_or(false),
+        }
     } else if let Some(p) = f.child("path") {
         let r = p.child("fillToRect");
         let g = |n: &str| r.and_then(|r| pct(r, n)).unwrap_or(0.0);
-        GradientShape::Path { path: p.attr("path").unwrap_or("circle").to_string(), focus: [g("l"), g("t"), g("r"), g("b")] }
+        GradientShape::Path {
+            path: p.attr("path").unwrap_or("circle").to_string(),
+            focus: [g("l"), g("t"), g("r"), g("b")],
+        }
     } else {
-        GradientShape::Linear { angle: 90.0, scaled: false }
+        GradientShape::Linear {
+            angle: 90.0,
+            scaled: false,
+        }
     };
-    Gradient { stops, shape, rotate_with_shape: f.bool("rotWithShape").unwrap_or(true) }
+    Gradient {
+        stops,
+        shape,
+        rotate_with_shape: f.bool("rotWithShape").unwrap_or(true),
+    }
 }
 
 /// `blipFill` (either `a:` or `p:`) → picture fill, registering the image as media.
@@ -124,7 +193,10 @@ pub fn blip_fill(imp: &mut Imp, part: &Part, bf: &El) -> Option<PictureFill> {
     let blip = bf.child("blip");
     let media = blip.and_then(|b| media_ref(imp, part, b));
     let media = media?;
-    let mut pf = PictureFill { media, ..Default::default() };
+    let mut pf = PictureFill {
+        media,
+        ..Default::default()
+    };
     if let Some(b) = blip {
         for e in b.elements() {
             match e.local() {
@@ -141,7 +213,11 @@ pub fn blip_fill(imp: &mut Imp, part: &Part, bf: &El) -> Option<PictureFill> {
                     }
                 }
                 "clrChange" => {
-                    if let Some(ColorRef { base: ColorBase::Rgb { rgb }, .. }) = e.child("clrFrom").and_then(color) {
+                    if let Some(ColorRef {
+                        base: ColorBase::Rgb { rgb },
+                        ..
+                    }) = e.child("clrFrom").and_then(color)
+                    {
                         pf.adjust.clear_color = Some(rgb);
                     }
                 }
@@ -150,8 +226,13 @@ pub fn blip_fill(imp: &mut Imp, part: &Part, bf: &El) -> Option<PictureFill> {
         }
     }
     if let Some(r) = bf.child("srcRect") {
-        pf.crop = [pct(r, "l").unwrap_or(0.0), pct(r, "t").unwrap_or(0.0), pct(r, "r").unwrap_or(0.0), pct(r, "b").unwrap_or(0.0)]
-            .map(|v| v.clamp(-10.0, 1.0));
+        pf.crop = [
+            pct(r, "l").unwrap_or(0.0),
+            pct(r, "t").unwrap_or(0.0),
+            pct(r, "r").unwrap_or(0.0),
+            pct(r, "b").unwrap_or(0.0),
+        ]
+        .map(|v| v.clamp(-10.0, 1.0));
     }
     if let Some(t) = bf.child("tile") {
         pf.mode = PictureMode::Tile {
@@ -165,7 +246,9 @@ pub fn blip_fill(imp: &mut Imp, part: &Part, bf: &El) -> Option<PictureFill> {
     } else {
         let r = bf.path(&["stretch", "fillRect"]);
         let g = |n: &str| r.and_then(|r| pct(r, n)).unwrap_or(0.0).clamp(-10.0, 1.0);
-        pf.mode = PictureMode::Stretch { fill_rect: [g("l"), g("t"), g("r"), g("b")] };
+        pf.mode = PictureMode::Stretch {
+            fill_rect: [g("l"), g("t"), g("r"), g("b")],
+        };
     }
     Some(pf)
 }
@@ -196,7 +279,10 @@ pub fn media_ref(imp: &mut Imp, part: &Part, b: &El) -> Option<deckcraft_model::
 }
 
 pub fn line(imp: &mut Imp, part: &Part, ln: &El) -> Line {
-    let mut l = Line { width: pt(ln, "w").map(|w| w.clamp(0.0, 2000.0)), ..Default::default() };
+    let mut l = Line {
+        width: pt(ln, "w").map(|w| w.clamp(0.0, 2000.0)),
+        ..Default::default()
+    };
     l.cap = ln.attr("cap").map(|c| match c {
         "rnd" => LineCap::Round,
         "sq" => LineCap::Square,
@@ -206,9 +292,17 @@ pub fn line(imp: &mut Imp, part: &Part, ln: &El) -> Line {
     l.fill = fill_of(imp, part, ln);
     for e in ln.elements() {
         match e.local() {
-            "prstDash" => l.dash = Some(Dash::Preset { name: e.attr("val").unwrap_or("solid").to_string() }),
+            "prstDash" => {
+                l.dash = Some(Dash::Preset {
+                    name: e.attr("val").unwrap_or("solid").to_string(),
+                })
+            }
             "custDash" => {
-                let pattern = e.children_named("ds").take(64).map(|d| (pct(d, "d").unwrap_or(1.0), pct(d, "sp").unwrap_or(1.0))).collect();
+                let pattern = e
+                    .children_named("ds")
+                    .take(64)
+                    .map(|d| (pct(d, "d").unwrap_or(1.0), pct(d, "sp").unwrap_or(1.0)))
+                    .collect();
                 l.dash = Some(Dash::Custom { pattern });
             }
             "round" => l.join = Some(LineJoin::Round),
@@ -224,7 +318,11 @@ pub fn line(imp: &mut Imp, part: &Part, ln: &El) -> Line {
 
 fn line_end(e: &El) -> Option<LineEnd> {
     let kind = e.attr("type").unwrap_or("none");
-    Some(LineEnd { kind: kind.to_string(), w: e.attr("w").unwrap_or("med").to_string(), len: e.attr("len").unwrap_or("med").to_string() })
+    Some(LineEnd {
+        kind: kind.to_string(),
+        w: e.attr("w").unwrap_or("med").to_string(),
+        len: e.attr("len").unwrap_or("med").to_string(),
+    })
 }
 
 fn shadow(e: &El, inner: bool) -> Shadow {
@@ -238,7 +336,10 @@ fn shadow(e: &El, inner: bool) -> Shadow {
         sy: pct(e, "sy").unwrap_or(1.0),
         kx: ang(e, "kx").unwrap_or(0.0),
         ky: ang(e, "ky").unwrap_or(0.0),
-        align: e.attr("algn").unwrap_or(if inner { "" } else { "b" }).to_string(),
+        align: e
+            .attr("algn")
+            .unwrap_or(if inner { "" } else { "b" })
+            .to_string(),
         rotate_with_shape: e.bool("rotWithShape").unwrap_or(true),
     }
 }
@@ -255,7 +356,12 @@ pub fn effects(el: &El) -> Effects {
                 fx.outer_shadow = Some(s);
             }
             "innerShdw" => fx.inner_shadow = Some(shadow(e, true)),
-            "glow" => fx.glow = Some(Glow { color: color(e).unwrap_or(ColorRef::rgb(Rgba::BLACK)), radius: pt(e, "rad").unwrap_or(0.0).max(0.0) }),
+            "glow" => {
+                fx.glow = Some(Glow {
+                    color: color(e).unwrap_or(ColorRef::rgb(Rgba::BLACK)),
+                    radius: pt(e, "rad").unwrap_or(0.0).max(0.0),
+                })
+            }
             "softEdge" => fx.soft_edge = Some(pt(e, "rad").unwrap_or(0.0).max(0.0)),
             "fillOverlay" => {
                 let fill = e.elements().find_map(|f| match f.local() {
@@ -263,7 +369,10 @@ pub fn effects(el: &El) -> Effects {
                     "gradFill" => Some(Fill::Gradient(gradient(f))),
                     _ => None,
                 });
-                fx.fill_overlay = fill.map(|fill| deckcraft_model::style::FillOverlay { blend: e.attr("blend").unwrap_or("over").to_string(), fill });
+                fx.fill_overlay = fill.map(|fill| deckcraft_model::style::FillOverlay {
+                    blend: e.attr("blend").unwrap_or("over").to_string(),
+                    fill,
+                });
             }
             "reflection" => {
                 fx.reflection = Some(Reflection {
@@ -285,7 +394,12 @@ pub fn xfrm(x: &El) -> (Xfrm, Option<Xfrm>) {
     let off = x.child("off");
     let ext = x.child("ext");
     let g = |e: Option<&El>, n: &str| e.and_then(|e| pt(e, n)).unwrap_or(0.0);
-    let mut xf = Xfrm::new(g(off, "x"), g(off, "y"), g(ext, "cx").max(0.0), g(ext, "cy").max(0.0));
+    let mut xf = Xfrm::new(
+        g(off, "x"),
+        g(off, "y"),
+        g(ext, "cx").max(0.0),
+        g(ext, "cy").max(0.0),
+    );
     xf.rot = ang(x, "rot").unwrap_or(0.0);
     if !xf.rot.is_finite() {
         xf.rot = 0.0;
@@ -293,7 +407,12 @@ pub fn xfrm(x: &El) -> (Xfrm, Option<Xfrm>) {
     xf.flip_h = x.bool("flipH").unwrap_or(false);
     xf.flip_v = x.bool("flipV").unwrap_or(false);
     let child = match (x.child("chOff"), x.child("chExt")) {
-        (Some(o), Some(e)) => Some(Xfrm::new(g(Some(o), "x"), g(Some(o), "y"), g(Some(e), "cx").max(0.0), g(Some(e), "cy").max(0.0))),
+        (Some(o), Some(e)) => Some(Xfrm::new(
+            g(Some(o), "x"),
+            g(Some(o), "y"),
+            g(Some(e), "cx").max(0.0),
+            g(Some(e), "cy").max(0.0),
+        )),
         _ => None,
     };
     (xf, child)
@@ -330,8 +449,15 @@ pub fn body_pr(b: &El) -> BodyProps {
             "spAutoFit" => p.autofit = Some(AutoFit::Shape),
             "noAutofit" => p.autofit = Some(AutoFit::None),
             "prstTxWarp" => {
-                p.warp = e.attr("prst").filter(|w| *w != "textNoShape" && !w.is_empty()).map(String::from);
-                p.warp_adj = p.warp.as_deref().map(|w| warp_adjusts(w, e)).unwrap_or_default();
+                p.warp = e
+                    .attr("prst")
+                    .filter(|w| *w != "textNoShape" && !w.is_empty())
+                    .map(String::from);
+                p.warp_adj = p
+                    .warp
+                    .as_deref()
+                    .map(|w| warp_adjusts(w, e))
+                    .unwrap_or_default();
             }
             _ => {}
         }
@@ -343,18 +469,28 @@ pub fn body_pr(b: &El) -> BodyProps {
 /// slots the file leaves out keep the preset's default.
 fn warp_adjusts(preset: &str, e: &El) -> Vec<f64> {
     let mut adj: Vec<f64> = Vec::new();
-    let Some(av) = e.child("avLst") else { return adj };
+    let Some(av) = e.child("avLst") else {
+        return adj;
+    };
     let defaults = deckcraft_geom::warp::adjust_defaults(preset);
     for gd in av.children_named("gd").take(16) {
         let n = gd.attr("name").unwrap_or("");
         let idx = if n == "adj" {
             0
-        } else if let Some(k) = n.strip_prefix("adj").and_then(|k| k.parse::<usize>().ok()).filter(|k| (1..=8).contains(k)) {
+        } else if let Some(k) = n
+            .strip_prefix("adj")
+            .and_then(|k| k.parse::<usize>().ok())
+            .filter(|k| (1..=8).contains(k))
+        {
             k - 1
         } else {
             continue;
         };
-        let Some(v) = gd.attr("fmla").and_then(|f| f.trim().strip_prefix("val")).and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite())
+        let Some(v) = gd
+            .attr("fmla")
+            .and_then(|f| f.trim().strip_prefix("val"))
+            .and_then(|v| v.trim().parse::<f64>().ok())
+            .filter(|v| v.is_finite())
         else {
             continue;
         };
@@ -372,7 +508,8 @@ fn spacing(e: &El) -> Option<Spacing> {
     if let Some(p) = e.child("spcPct") {
         return Some(Spacing::Pct(pct(p, "val").unwrap_or(1.0).clamp(0.0, 100.0)));
     }
-    e.child("spcPts").map(|p| Spacing::Pts(p.f64("val").unwrap_or(0.0).clamp(0.0, 1_000_000.0) / 100.0))
+    e.child("spcPts")
+        .map(|p| Spacing::Pts(p.f64("val").unwrap_or(0.0).clamp(0.0, 1_000_000.0) / 100.0))
 }
 
 /// `a:pPr` / `a:lvlNpPr` → (level, paragraph props, default run props).
@@ -398,7 +535,11 @@ pub fn ppr(imp: &mut Imp, part: &Part, p: &El) -> (Option<u8>, ParaProps, Option
             "spcBef" => pp.space_before = spacing(e),
             "spcAft" => pp.space_after = spacing(e),
             "buNone" => pp.bullet = Some(Bullet::None),
-            "buChar" => pp.bullet = Some(Bullet::Char { char: e.attr("char").unwrap_or("•").chars().take(4).collect() }),
+            "buChar" => {
+                pp.bullet = Some(Bullet::Char {
+                    char: e.attr("char").unwrap_or("•").chars().take(4).collect(),
+                })
+            }
             "buAutoNum" => {
                 pp.bullet = Some(Bullet::AutoNum {
                     scheme: e.attr("type").unwrap_or("arabicPeriod").to_string(),
@@ -417,7 +558,10 @@ pub fn ppr(imp: &mut Imp, part: &Part, p: &El) -> (Option<u8>, ParaProps, Option
                 pp.tabs = Some(
                     e.children_named("tab")
                         .take(64)
-                        .map(|t| TabStop { pos: pt(t, "pos").unwrap_or(0.0), align: t.attr("algn").unwrap_or("l").to_string() })
+                        .map(|t| TabStop {
+                            pos: pt(t, "pos").unwrap_or(0.0),
+                            align: t.attr("algn").unwrap_or("l").to_string(),
+                        })
                         .collect(),
                 )
             }
@@ -443,13 +587,25 @@ pub fn hyperlink(imp: &Imp, part: &Part, h: &El) -> Option<Hyperlink> {
             _ => return None,
         }
     } else if action.starts_with("ppaction://hlinksldjump") {
-        let slide = rel.and_then(|r| imp.slide_by_part.get(&crate::opc::norm(&r.target)).copied())?;
+        let slide =
+            rel.and_then(|r| imp.slide_by_part.get(&crate::opc::norm(&r.target)).copied())?;
         Action::Slide { slide }
     } else if let Some(q) = action.strip_prefix("ppaction://customshow?") {
-        let id = q.split('&').find_map(|kv| kv.strip_prefix("id=")).unwrap_or("0");
-        Action::CustomShow { name: imp.custom_show_names.get(id).cloned().unwrap_or_else(|| id.to_string()) }
+        let id = q
+            .split('&')
+            .find_map(|kv| kv.strip_prefix("id="))
+            .unwrap_or("0");
+        Action::CustomShow {
+            name: imp
+                .custom_show_names
+                .get(id)
+                .cloned()
+                .unwrap_or_else(|| id.to_string()),
+        }
     } else if action.starts_with("ppaction://program") {
-        Action::Program { path: rel.map(|r| r.target.clone()).unwrap_or_default() }
+        Action::Program {
+            path: rel.map(|r| r.target.clone()).unwrap_or_default(),
+        }
     } else if action.starts_with("ppaction://media") {
         Action::PlayMedia
     } else if action.is_empty() || action.starts_with("ppaction://hlinkfile") {
@@ -462,12 +618,18 @@ pub fn hyperlink(imp: &Imp, part: &Part, h: &El) -> Option<Hyperlink> {
         {
             Action::Slide { slide: *s }
         } else {
-            Action::Url { url: r.target.clone() }
+            Action::Url {
+                url: r.target.clone(),
+            }
         }
     } else {
         return None;
     };
-    Some(Hyperlink { action: a, tooltip: h.attr("tooltip").unwrap_or("").to_string(), highlight_click: h.bool("highlightClick").unwrap_or(false) })
+    Some(Hyperlink {
+        action: a,
+        tooltip: h.attr("tooltip").unwrap_or("").to_string(),
+        highlight_click: h.bool("highlightClick").unwrap_or(false),
+    })
 }
 
 pub fn rpr(imp: &mut Imp, part: &Part, r: &El) -> RunProps {
@@ -504,10 +666,30 @@ pub fn rpr(imp: &mut Imp, part: &Part, r: &El) -> RunProps {
             }
             "highlight" => p.highlight = color(e),
             "uFill" => p.underline_color = e.child("solidFill").and_then(color),
-            "latin" => p.font = e.attr("typeface").filter(|t| !t.is_empty()).map(String::from),
-            "ea" => p.font_ea = e.attr("typeface").filter(|t| !t.is_empty()).map(String::from),
-            "cs" => p.font_cs = e.attr("typeface").filter(|t| !t.is_empty()).map(String::from),
-            "sym" => p.font_sym = e.attr("typeface").filter(|t| !t.is_empty()).map(String::from),
+            "latin" => {
+                p.font = e
+                    .attr("typeface")
+                    .filter(|t| !t.is_empty())
+                    .map(String::from)
+            }
+            "ea" => {
+                p.font_ea = e
+                    .attr("typeface")
+                    .filter(|t| !t.is_empty())
+                    .map(String::from)
+            }
+            "cs" => {
+                p.font_cs = e
+                    .attr("typeface")
+                    .filter(|t| !t.is_empty())
+                    .map(String::from)
+            }
+            "sym" => {
+                p.font_sym = e
+                    .attr("typeface")
+                    .filter(|t| !t.is_empty())
+                    .map(String::from)
+            }
             "hlinkClick" => p.link = hyperlink(imp, part, e),
             _ => {}
         }
@@ -520,21 +702,44 @@ pub fn list_style(imp: &mut Imp, part: &Part, ls: &El) -> ListStyle {
     let mut out = ListStyle::default();
     for e in ls.elements() {
         let n = e.local();
-        let Some(l) = n.strip_prefix("lvl").and_then(|r| r.strip_suffix("pPr")).and_then(|d| d.parse::<u8>().ok()) else { continue };
+        let Some(l) = n
+            .strip_prefix("lvl")
+            .and_then(|r| r.strip_suffix("pPr"))
+            .and_then(|d| d.parse::<u8>().ok())
+        else {
+            continue;
+        };
         if !(1..=9).contains(&l) {
             continue;
         }
         let (_, para, run) = ppr(imp, part, e);
-        out.set(l - 1, LevelStyle { para, run: run.unwrap_or_default() });
+        out.set(
+            l - 1,
+            LevelStyle {
+                para,
+                run: run.unwrap_or_default(),
+            },
+        );
     }
     out
 }
 
 pub fn text_body(imp: &mut Imp, part: &Part, tx: &El) -> TextBody {
     let body = tx.child("bodyPr").map(body_pr).unwrap_or_default();
-    let list_style = tx.child("lstStyle").map(|l| list_style(imp, part, l)).unwrap_or_default();
-    let paragraphs = tx.children_named("p").take(100_000).map(|p| paragraph(imp, part, p)).collect();
-    TextBody { body, list_style, paragraphs }
+    let list_style = tx
+        .child("lstStyle")
+        .map(|l| list_style(imp, part, l))
+        .unwrap_or_default();
+    let paragraphs = tx
+        .children_named("p")
+        .take(100_000)
+        .map(|p| paragraph(imp, part, p))
+        .collect();
+    TextBody {
+        body,
+        list_style,
+        paragraphs,
+    }
 }
 
 pub fn paragraph(imp: &mut Imp, part: &Part, p: &El) -> Paragraph {
@@ -547,26 +752,53 @@ pub fn paragraph(imp: &mut Imp, part: &Part, p: &El) -> Paragraph {
                 para.props = pp;
             }
             "r" => {
-                let props = e.child("rPr").map(|r| rpr(imp, part, r)).unwrap_or_default();
+                let props = e
+                    .child("rPr")
+                    .map(|r| rpr(imp, part, r))
+                    .unwrap_or_default();
                 let text: String = e.child("t").map(|t| t.text()).unwrap_or_default();
                 // Vertical tab inside text is a soft break in some writers.
                 for (i, piece) in text.split('\u{b}').enumerate() {
                     if i > 0 {
-                        para.runs.push(Run { text: String::new(), props: props.clone(), kind: RunKind::Break });
+                        para.runs.push(Run {
+                            text: String::new(),
+                            props: props.clone(),
+                            kind: RunKind::Break,
+                        });
                     }
                     if !piece.is_empty() {
-                        para.runs.push(Run { text: piece.to_string(), props: props.clone(), kind: RunKind::Text });
+                        para.runs.push(Run {
+                            text: piece.to_string(),
+                            props: props.clone(),
+                            kind: RunKind::Text,
+                        });
                     }
                 }
             }
             "br" => {
-                let props = e.child("rPr").map(|r| rpr(imp, part, r)).unwrap_or_default();
-                para.runs.push(Run { text: String::new(), props, kind: RunKind::Break });
+                let props = e
+                    .child("rPr")
+                    .map(|r| rpr(imp, part, r))
+                    .unwrap_or_default();
+                para.runs.push(Run {
+                    text: String::new(),
+                    props,
+                    kind: RunKind::Break,
+                });
             }
             "fld" => {
-                let props = e.child("rPr").map(|r| rpr(imp, part, r)).unwrap_or_default();
+                let props = e
+                    .child("rPr")
+                    .map(|r| rpr(imp, part, r))
+                    .unwrap_or_default();
                 let text = e.child("t").map(|t| t.text()).unwrap_or_default();
-                para.runs.push(Run { text, props, kind: RunKind::Field { field: e.attr("type").unwrap_or("").to_string() } });
+                para.runs.push(Run {
+                    text,
+                    props,
+                    kind: RunKind::Field {
+                        field: e.attr("type").unwrap_or("").to_string(),
+                    },
+                });
             }
             "m" => {
                 // Office Math (a14:m) — keep the OMML and its plain text.
@@ -577,7 +809,11 @@ pub fn paragraph(imp: &mut Imp, part: &Part, p: &El) -> Paragraph {
                     text.push_str(&t.text());
                 }
                 let omml = e.elements().map(|c| c.to_xml()).collect::<String>();
-                para.runs.push(Run { text, props: RunProps::default(), kind: RunKind::Math { omml } });
+                para.runs.push(Run {
+                    text,
+                    props: RunProps::default(),
+                    kind: RunKind::Math { omml },
+                });
             }
             "endParaRPr" => para.end_props = rpr(imp, part, e),
             _ => {}
@@ -598,12 +834,31 @@ mod tests {
         )
         .unwrap();
         let c = color(&d.root).unwrap();
-        assert_eq!(c.base, ColorBase::Scheme { slot: SchemeSlot::Accent2 });
-        assert_eq!(c.mods, vec![ColorTransform::LumMod(75000), ColorTransform::Alpha(50000)]);
+        assert_eq!(
+            c.base,
+            ColorBase::Scheme {
+                slot: SchemeSlot::Accent2
+            }
+        );
+        assert_eq!(
+            c.mods,
+            vec![ColorTransform::LumMod(75000), ColorTransform::Alpha(50000)]
+        );
         let d = parse(br#"<x><a:sysClr val="window" lastClr="FFFFFF"/></x>"#).unwrap();
-        assert!(matches!(color(&d.root).unwrap().base, ColorBase::System { last: Rgba::WHITE, .. }));
+        assert!(matches!(
+            color(&d.root).unwrap().base,
+            ColorBase::System {
+                last: Rgba::WHITE,
+                ..
+            }
+        ));
         let d = parse(br#"<x><a:scrgbClr r="100000" g="0" b="0"/></x>"#).unwrap();
-        assert_eq!(color(&d.root).unwrap().base, ColorBase::Rgb { rgb: Rgba::rgb(255, 0, 0) });
+        assert_eq!(
+            color(&d.root).unwrap().base,
+            ColorBase::Rgb {
+                rgb: Rgba::rgb(255, 0, 0)
+            }
+        );
     }
 
     #[test]
@@ -615,6 +870,12 @@ mod tests {
         assert_eq!(b.wrap, Some(false));
         assert_eq!(b.vert, Some(TextDir::Vertical270));
         assert_eq!(b.columns, Some(2));
-        assert_eq!(b.autofit, Some(AutoFit::Shrink { font_scale: 0.625, line_reduction: 0.2 }));
+        assert_eq!(
+            b.autofit,
+            Some(AutoFit::Shrink {
+                font_scale: 0.625,
+                line_reduction: 0.2
+            })
+        );
     }
 }

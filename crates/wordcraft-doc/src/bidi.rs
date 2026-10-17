@@ -67,13 +67,22 @@ mod tests {
         assert!("سلام".chars().all(is_rtl_script));
         assert!("پچژگکی".chars().all(is_rtl_script));
         assert!("۰۱۲۳۴۵۶۷۸۹".chars().all(is_rtl_script));
-        assert!(is_rtl_script('\u{064E}'), "fatha (a combining mark) is Arabic script");
+        assert!(
+            is_rtl_script('\u{064E}'),
+            "fatha (a combining mark) is Arabic script"
+        );
         assert!("שלום".chars().all(is_rtl_script));
         assert!(!"Hello 123".chars().any(is_rtl_script));
-        assert!(!is_rtl_script('\u{200C}'), "ZWNJ is a format character, not a letter");
+        assert!(
+            !is_rtl_script('\u{200C}'),
+            "ZWNJ is a format character, not a letter"
+        );
         assert!(is_complex_script('क') && !is_rtl_script('क'));
         assert!(has_rtl("Word ورد 2024") && !has_rtl("Word 2024"));
-        assert!("می‌خواهم".chars().all(is_word_char), "ZWNJ is inside the word");
+        assert!(
+            "می‌خواهم".chars().all(is_word_char),
+            "ZWNJ is inside the word"
+        );
         assert!("کِتاب".chars().all(is_word_char), "so are harakat");
         assert!(!is_word_char(' ') && !is_word_char('،'));
         assert!(first_strong_is_rtl("سلام"));

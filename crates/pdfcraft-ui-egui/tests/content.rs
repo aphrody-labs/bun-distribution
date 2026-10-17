@@ -11,13 +11,15 @@ fn harness() -> Harness<'static, PdfCraftApp> {
 }
 
 fn harness_bytes(bytes: Vec<u8>) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, bytes.clone()).unwrap();
-        app.set_option("zoom", "150").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("form.pdf", None, bytes.clone()).unwrap();
+            app.set_option("zoom", "150").unwrap();
+            app
+        });
     for _ in 0..60 {
         h.run_steps(2);
         if !h.state().render_pending() {
@@ -53,7 +55,12 @@ fn quick_click(h: &mut Harness<'static, PdfCraftApp>, p: Pos2) {
     h.hover_at(p);
     h.run_steps(1);
     for pressed in [true, false] {
-        h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
     }
     h.run_steps(3);
 }
@@ -82,8 +89,15 @@ fn clicking_elsewhere_keeps_the_text_and_starts_a_new_box() {
     let p = at(&h, 40.0, 200.0);
     click(&mut h, p);
     assert_eq!(texts(&h), ["First"]);
-    assert!(h.state().views[0].content.draft.is_some(), "a new box opened");
-    assert_eq!(h.state().quick_tool, QuickTool::AddText, "still adding text");
+    assert!(
+        h.state().views[0].content.draft.is_some(),
+        "a new box opened"
+    );
+    assert_eq!(
+        h.state().quick_tool,
+        QuickTool::AddText,
+        "still adding text"
+    );
     h.event(egui::Event::Text("Second".into()));
     h.run_steps(2);
     // …and a quick one (both in one frame, as a real mouse click usually arrives).
@@ -107,7 +121,10 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.get_by_label("Edit a PDF");
     let p = at(&h, 40.0, 300.0);
     click(&mut h, p);
-    assert!(h.state().views[0].content.draft.is_some(), "the editor opened");
+    assert!(
+        h.state().views[0].content.draft.is_some(),
+        "the editor opened"
+    );
     h.event(egui::Event::Text("Reviewed".into()));
     h.run_steps(2);
     // Done keeps the text and goes back to Select, with the new text selected.
@@ -115,20 +132,31 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.run_steps(3);
     let a = added(&h);
     assert_eq!(a.len(), 1);
-    let pdfcraft_engine::AddedContent::Text(t) = &a[0].content else { panic!() };
+    let pdfcraft_engine::AddedContent::Text(t) = &a[0].content else {
+        panic!()
+    };
     assert_eq!(t.text, "Reviewed");
     assert_eq!(h.state().quick_tool, QuickTool::Select);
     h.run_steps(2);
-    assert_eq!(h.state().views[0].content.selected, Some((0, 0)), "the new text is selected");
+    assert_eq!(
+        h.state().views[0].content.selected,
+        Some((0, 0)),
+        "the new text is selected"
+    );
     // Bold from the Format panel: one undoable change.
     h.get_by_label("B").click();
     h.run_steps(3);
 
-    let pdfcraft_engine::AddedContent::Text(t) = &added(&h)[0].content else { panic!() };
+    let pdfcraft_engine::AddedContent::Text(t) = &added(&h)[0].content else {
+        panic!()
+    };
     assert!(t.bold);
     {
         let s = h.state();
-        assert_eq!(s.session.get(s.views[0].id).unwrap().can_undo(), Some("Edit content"));
+        assert_eq!(
+            s.session.get(s.views[0].id).unwrap().can_undo(),
+            Some("Edit content")
+        );
     }
     // Delete.
     h.key_press(egui::Key::Delete);
@@ -152,11 +180,15 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.get_by_label("Rotate clockwise").click();
     h.run_steps(3);
     let a = added(&h);
-    let pdfcraft_engine::AddedContent::Image(img) = &a[0].content else { panic!() };
+    let pdfcraft_engine::AddedContent::Image(img) = &a[0].content else {
+        panic!()
+    };
     assert_eq!((img.rotation, img.rect), (3, [140.0, 185.0, 160.0, 215.0]));
     h.get_by_label("Flip horizontal").click();
     h.run_steps(3);
-    let pdfcraft_engine::AddedContent::Image(img) = &added(&h)[0].content else { panic!() };
+    let pdfcraft_engine::AddedContent::Image(img) = &added(&h)[0].content else {
+        panic!()
+    };
     assert!(img.flip_h);
 }
 
@@ -173,18 +205,37 @@ fn text_the_standard_fonts_cant_draw_stays_in_the_editor() {
     h.run_steps(2);
     h.get_by_label_contains("can't draw “世” (U+4E16)");
     if let Ok(dir) = std::env::var("PDFCRAFT_SHOTS") {
-        h.render().unwrap().save(format!("{dir}/undrawable-text.png")).unwrap();
+        h.render()
+            .unwrap()
+            .save(format!("{dir}/undrawable-text.png"))
+            .unwrap();
     }
     h.get_by_label("Done adding text").click();
     h.run_steps(3);
     assert!(texts(&h).is_empty(), "nothing was written to the page");
-    let draft = h.state().views[0].content.draft.as_ref().map(|d| d.text.clone());
-    assert_eq!(draft.as_deref(), Some("Hello 世界"), "the typed text is kept");
+    let draft = h.state().views[0]
+        .content
+        .draft
+        .as_ref()
+        .map(|d| d.text.clone());
+    assert_eq!(
+        draft.as_deref(),
+        Some("Hello 世界"),
+        "the typed text is kept"
+    );
     // A click elsewhere on the page doesn't finish it, or replace it with a new box.
     let elsewhere = at(&h, 40.0, 150.0);
     click(&mut h, elsewhere);
-    let draft = h.state().views[0].content.draft.as_ref().map(|d| d.text.clone());
-    assert_eq!(draft.as_deref(), Some("Hello 世界"), "clicking elsewhere keeps the typed text");
+    let draft = h.state().views[0]
+        .content
+        .draft
+        .as_ref()
+        .map(|d| d.text.clone());
+    assert_eq!(
+        draft.as_deref(),
+        Some("Hello 世界"),
+        "clicking elsewhere keeps the typed text"
+    );
     assert!(texts(&h).is_empty());
     // Once the text can be drawn, Done adds it (Done took the focus, so edit the draft directly).
     if let Some(d) = h.state_mut().views[0].content.draft.as_mut() {
@@ -201,17 +252,38 @@ fn text_the_standard_fonts_cant_draw_stays_in_the_editor() {
 #[test]
 fn a_kept_draft_goes_with_its_deleted_page() {
     let mut h = harness();
-    assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::InsertBlankPage { at: 1, width: 612.0, height: 792.0 }));
+    assert!(
+        h.state_mut()
+            .apply_edit(pdfcraft_engine::Edit::InsertBlankPage {
+                at: 1,
+                width: 612.0,
+                height: 792.0
+            })
+    );
     h.run_steps(2);
     assert!(h.state_mut().execute("edit.text"));
     h.state_mut().views[0].go_to_page(1);
     h.run_steps(4);
-    let p = h.state().views[0].page_screen_rect(1).expect("page 2 on screen").min + egui::vec2(40.0, 40.0);
+    let p = h.state().views[0]
+        .page_screen_rect(1)
+        .expect("page 2 on screen")
+        .min
+        + egui::vec2(40.0, 40.0);
     click(&mut h, p);
     h.event(egui::Event::Text("日本語".into()));
     h.run_steps(2);
-    assert_eq!(h.state().views[0].content.draft.as_ref().map(|d| (d.page, d.text.as_str())), Some((1, "日本語")));
-    assert!(h.state_mut().apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![1] }));
+    assert_eq!(
+        h.state().views[0]
+            .content
+            .draft
+            .as_ref()
+            .map(|d| (d.page, d.text.as_str())),
+        Some((1, "日本語"))
+    );
+    assert!(
+        h.state_mut()
+            .apply_edit(pdfcraft_engine::Edit::DeletePages { pages: vec![1] })
+    );
     h.run_steps(2);
     assert!(h.state().views[0].content.draft.is_none());
 }
@@ -248,7 +320,12 @@ fn item_on_screen(h: &Harness<'static, PdfCraftApp>, r: [f64; 4]) -> egui::Rect 
 
 /// Dark pixels in `r`: glyph ink (the selection outline is blue, the page white).
 fn ink(pixels: &image::RgbaImage, r: egui::Rect) -> usize {
-    let (x0, y0, x1, y1) = (r.left().max(0.0) as u32, r.top().max(0.0) as u32, r.right() as u32, r.bottom() as u32);
+    let (x0, y0, x1, y1) = (
+        r.left().max(0.0) as u32,
+        r.top().max(0.0) as u32,
+        r.right() as u32,
+        r.bottom() as u32,
+    );
     (y0..y1.min(pixels.height()))
         .flat_map(|y| (x0..x1.min(pixels.width())).map(move |x| (x, y)))
         .filter(|(x, y)| pixels.get_pixel(*x, *y).0[..3].iter().all(|v| *v < 90))
@@ -261,14 +338,20 @@ fn probe(r: egui::Rect) -> egui::Rect {
 }
 
 /// Ink in the probes of the text's first and dragged places.
-fn ink_at(h: &mut Harness<'static, PdfCraftApp>, from: egui::Rect, to: egui::Rect) -> (usize, usize) {
+fn ink_at(
+    h: &mut Harness<'static, PdfCraftApp>,
+    from: egui::Rect,
+    to: egui::Rect,
+) -> (usize, usize) {
     let pixels = h.render().unwrap();
     (ink(&pixels, probe(from)), ink(&pixels, probe(to)))
 }
 
 /// Types text, finishes it, and drags it up without releasing, until the drag preview shows.
 /// Returns the text's box, its screen rectangles before and after, and the pointer.
-fn drag_added_text(h: &mut Harness<'static, PdfCraftApp>) -> ([f64; 4], egui::Rect, egui::Rect, Pos2) {
+fn drag_added_text(
+    h: &mut Harness<'static, PdfCraftApp>,
+) -> ([f64; 4], egui::Rect, egui::Rect, Pos2) {
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(2);
     let p = at(h, 40.0, 300.0);
@@ -288,7 +371,10 @@ fn drag_added_text(h: &mut Harness<'static, PdfCraftApp>) -> ([f64; 4], egui::Re
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    assert!(shown > 20, "the added text is on the page ({shown} dark pixels)");
+    assert!(
+        shown > 20,
+        "the added text is on the page ({shown} dark pixels)"
+    );
     let grab = pos2(from.right() - 12.0, from.center().y);
     let shift = egui::vec2(0.0, -150.0);
     h.hover_at(grab);
@@ -315,12 +401,22 @@ fn dragged_text_follows_the_pointer_before_release() {
     let mut h = harness();
     let (rect, from, to, end) = drag_added_text(&mut h);
     if let Ok(dir) = std::env::var("PDFCRAFT_SHOTS") {
-        h.render().unwrap().save(format!("{dir}/added-text-drag.png")).unwrap();
+        h.render()
+            .unwrap()
+            .save(format!("{dir}/added-text-drag.png"))
+            .unwrap();
     }
     let (old, new) = ink_at(&mut h, from, to);
-    assert!(new > 20, "the text is drawn where the box was dragged ({new} dark pixels)");
+    assert!(
+        new > 20,
+        "the text is drawn where the box was dragged ({new} dark pixels)"
+    );
     assert_eq!(old, 0, "and no longer where it was");
-    assert_eq!(added(&h)[0].content.rect(), rect, "nothing is applied before release");
+    assert_eq!(
+        added(&h)[0].content.rect(),
+        rect,
+        "nothing is applied before release"
+    );
     h.drop_at(end);
     h.run_steps(3);
     assert_ne!(added(&h)[0].content.rect(), rect, "releasing moves it");
@@ -350,13 +446,24 @@ fn released_text_does_not_jump_back_before_the_page_is_redrawn() {
         h.run_steps(1);
         assert!(shown.len() < 500, "the page is re-rendered");
         let (old, new) = ink_at(&mut h, from, to);
-        assert_eq!(old, 0, "frame {} after release: the text is back where it was", shown.len() + 1);
+        assert_eq!(
+            old,
+            0,
+            "frame {} after release: the text is back where it was",
+            shown.len() + 1
+        );
         shown.push(new);
     }
     assert!(shown.len() > 2, "frames before the new raster: {shown:?}");
-    assert!(shown.iter().filter(|n| **n <= 20).count() <= 1, "the text stays where it was released: {shown:?}");
+    assert!(
+        shown.iter().filter(|n| **n <= 20).count() <= 1,
+        "the text stays where it was released: {shown:?}"
+    );
     assert_ne!(added(&h)[0].content.rect(), rect, "the move is applied");
     h.run_steps(2);
     let (old, new) = ink_at(&mut h, from, to);
-    assert!(new > 20 && old == 0, "the redrawn page has the text in its new place ({old} old, {new} new)");
+    assert!(
+        new > 20 && old == 0,
+        "the redrawn page has the text in its new place ({old} old, {new} new)"
+    );
 }

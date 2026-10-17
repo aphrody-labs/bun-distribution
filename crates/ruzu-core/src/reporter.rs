@@ -93,7 +93,10 @@ fn save_to_file(json: &serde_json::Value, filename: &PathBuf) {
             }
             bytes.push(b'\n'); // std::setw(4) << json << std::endl upstream.
             #[cfg(windows)]
-            let bytes = String::from_utf8(bytes).unwrap().replace('\n', "\r\n").into_bytes();
+            let bytes = String::from_utf8(bytes)
+                .unwrap()
+                .replace('\n', "\r\n")
+                .into_bytes();
             if let Err(e) = file.write_all(&bytes) {
                 log::error!("Failed to write report to '{}': {}", filename.display(), e);
             }
@@ -189,18 +192,22 @@ fn get_hle_buffer_descriptor_data<const READ_VALUE: bool>(
     descriptors: impl Iterator<Item = (u64, u64)>,
     memory: &crate::memory::memory::Memory,
 ) -> serde_json::Value {
-    serde_json::Value::Array(descriptors.map(|(address, size)| {
-        let mut entry = serde_json::json!({
-            "address": format!("{address:016X}"),
-            "size": format!("{size:016X}"),
-        });
-        if READ_VALUE {
-            let mut data = vec![0; size as usize];
-            memory.read_block(address, &mut data);
-            entry["data"] = serde_json::Value::String(hex::encode_upper(data));
-        }
-        entry
-    }).collect())
+    serde_json::Value::Array(
+        descriptors
+            .map(|(address, size)| {
+                let mut entry = serde_json::json!({
+                    "address": format!("{address:016X}"),
+                    "size": format!("{size:016X}"),
+                });
+                if READ_VALUE {
+                    let mut data = vec![0; size as usize];
+                    memory.read_block(address, &mut data);
+                    entry["data"] = serde_json::Value::String(hex::encode_upper(data));
+                }
+                entry
+            })
+            .collect(),
+    )
 }
 
 fn get_hle_request_context_data(
@@ -341,9 +348,14 @@ impl Reporter {
             "system_tick": format!("{:016X}", system_tick),
         });
 
-        let normal_out: Vec<String> = normal_channel.iter().map(|d| hex::encode_upper(d)).collect();
-        let interactive_out: Vec<String> =
-            interactive_channel.iter().map(|d| hex::encode_upper(d)).collect();
+        let normal_out: Vec<String> = normal_channel
+            .iter()
+            .map(|d| hex::encode_upper(d))
+            .collect();
+        let interactive_out: Vec<String> = interactive_channel
+            .iter()
+            .map(|d| hex::encode_upper(d))
+            .collect();
 
         out["applet_normal_data"] = serde_json::to_value(normal_out).unwrap_or_default();
         out["applet_interactive_data"] = serde_json::to_value(interactive_out).unwrap_or_default();
@@ -428,7 +440,9 @@ impl Reporter {
             let text = {
                 let mut text = Vec::with_capacity(log_message.len());
                 for &byte in log_message {
-                    if byte == b'\n' { text.push(b'\r'); }
+                    if byte == b'\n' {
+                        text.push(b'\r');
+                    }
                     text.push(byte);
                 }
                 text
@@ -459,7 +473,10 @@ impl Reporter {
 
         // Reporter is standalone in Rust; the caller supplies its SystemRef.
         // Use application memory like upstream, not the IPC client's memory.
-        let memory = system.get().memory_shared().expect("application memory is not initialized");
+        let memory = system
+            .get()
+            .memory_shared()
+            .expect("application memory is not initialized");
         let mut function_out = get_hle_request_context_data(ctx, &memory.lock().unwrap());
         function_out["command_id"] = command_id.into();
         function_out["function_name"] = name.into();
@@ -518,9 +535,12 @@ mod tests {
         let report = get_ruzu_version_data();
         assert_eq!(report.as_object().unwrap().len(), 7);
         for (name, expected) in [
-            ("scm_rev", scm_rev::SCM_REV), ("scm_branch", scm_rev::SCM_BRANCH),
-            ("scm_desc", scm_rev::SCM_DESC), ("build_name", scm_rev::BUILD_NAME),
-            ("build_date", scm_rev::BUILD_DATE), ("build_fullname", scm_rev::BUILD_FULLNAME),
+            ("scm_rev", scm_rev::SCM_REV),
+            ("scm_branch", scm_rev::SCM_BRANCH),
+            ("scm_desc", scm_rev::SCM_DESC),
+            ("build_name", scm_rev::BUILD_NAME),
+            ("build_date", scm_rev::BUILD_DATE),
+            ("build_fullname", scm_rev::BUILD_FULLNAME),
             ("build_version", scm_rev::BUILD_VERSION),
         ] {
             assert_eq!(report[name], expected);
@@ -536,101 +556,142 @@ mod tests {
                 .env(CHILD, "1").status().unwrap().success());
             return;
         }
-        std::thread::Builder::new().stack_size(32 * 1024 * 1024).spawn(|| {
-            use std::sync::{Arc, Mutex};
-            use crate::core::{System, SystemRef};
-            use crate::device_memory::DeviceMemory;
-            use crate::hle::ipc;
-            use crate::hle::kernel::k_process::{KProcess, ProcessLock};
-            use crate::hle::service::hle_ipc::HLERequestContext;
-            use crate::memory::memory::Memory;
-            use common::page_table::{PageTable, PageType};
-            use common::fs::path_util::{set_ruzu_path, RuzuPath};
+        std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024)
+            .spawn(|| {
+                use crate::core::{System, SystemRef};
+                use crate::device_memory::DeviceMemory;
+                use crate::hle::ipc;
+                use crate::hle::kernel::k_process::{KProcess, ProcessLock};
+                use crate::hle::service::hle_ipc::HLERequestContext;
+                use crate::memory::memory::Memory;
+                use common::fs::path_util::{set_ruzu_path, RuzuPath};
+                use common::page_table::{PageTable, PageType};
+                use std::sync::{Arc, Mutex};
 
-            let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let directory = std::env::temp_dir().join(format!("ruzu-ipc-report-{}-{nonce}", std::process::id()));
-            fs::create_dir(&directory).unwrap();
-            fs::create_dir(directory.join("sdmc")).unwrap();
-            set_ruzu_path(RuzuPath::LogDir, &directory);
-            set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
-            let reporter = Reporter::new();
-            let mut ctx = HLERequestContext::new();
-            settings::values_mut().reporting_services.set_value(false);
-            reporter.save_unimplemented_function_report(SystemRef::null(), &ctx, 99, "SyntheticCommand", "test:report");
-            assert!(!directory.join("unimpl_func_report").exists());
+                let nonce = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
+                let directory = std::env::temp_dir()
+                    .join(format!("ruzu-ipc-report-{}-{nonce}", std::process::id()));
+                fs::create_dir(&directory).unwrap();
+                fs::create_dir(directory.join("sdmc")).unwrap();
+                set_ruzu_path(RuzuPath::LogDir, &directory);
+                set_ruzu_path(RuzuPath::SDMCDir, &directory.join("sdmc"));
+                let reporter = Reporter::new();
+                let mut ctx = HLERequestContext::new();
+                settings::values_mut().reporting_services.set_value(false);
+                reporter.save_unimplemented_function_report(
+                    SystemRef::null(),
+                    &ctx,
+                    99,
+                    "SyntheticCommand",
+                    "test:report",
+                );
+                assert!(!directory.join("unimpl_func_report").exists());
 
-            let device = Box::new(DeviceMemory::new());
-            let mut table = Box::new(PageTable::new());
-            table.resize(32, 12);
-                        table.entries.get_and_fault(3).store(
-                false,
-                PageType::Memory,
-                1,
-                device.buffer.backing_base_pointer() as usize,
-            );
-            let memory = Arc::new(Mutex::new(unsafe {
-                Memory::new(SystemRef::null(), device.as_ref() as *const _, &device.buffer as *const _)
-            }));
-            memory.lock().unwrap().set_current_page_table(table.as_mut() as *mut _, true);
-            memory.lock().unwrap().write_8(0x3000, 0xAB);
-            memory.lock().unwrap().write_8(0x3001, 0xCD);
-            memory.lock().unwrap().write_8(0x3010, 0xEF);
-            let mut system = Box::new(System::new());
-            let mut process = KProcess::new();
-            process.program_id = 42;
-            process.page_table.set_memory(memory.clone());
-            system.set_current_process_arc(Arc::new(ProcessLock::new(process)));
-            system.set_runtime_program_id(123); // Must use the process, not the launch cache.
+                let device = Box::new(DeviceMemory::new());
+                let mut table = Box::new(PageTable::new());
+                table.resize(32, 12);
+                table.entries.get_and_fault(3).store(
+                    false,
+                    PageType::Memory,
+                    1,
+                    device.buffer.backing_base_pointer() as usize,
+                );
+                let memory = Arc::new(Mutex::new(unsafe {
+                    Memory::new(
+                        SystemRef::null(),
+                        device.as_ref() as *const _,
+                        &device.buffer as *const _,
+                    )
+                }));
+                memory
+                    .lock()
+                    .unwrap()
+                    .set_current_page_table(table.as_mut() as *mut _, true);
+                memory.lock().unwrap().write_8(0x3000, 0xAB);
+                memory.lock().unwrap().write_8(0x3001, 0xCD);
+                memory.lock().unwrap().write_8(0x3010, 0xEF);
+                let mut system = Box::new(System::new());
+                let mut process = KProcess::new();
+                process.program_id = 42;
+                process.page_table.set_memory(memory.clone());
+                system.set_current_process_arc(Arc::new(ProcessLock::new(process)));
+                system.set_runtime_program_id(123); // Must use the process, not the launch cache.
 
-            let mut words = [0u32; ipc::COMMAND_BUFFER_LENGTH];
-            words[0] = ipc::CommandType::Request as u32 | (1 << 16) | (1 << 20) | (1 << 24);
-            words[1] = 8 | ((ipc::BufferDescriptorCFlag::OneDescriptor as u32) << 10);
-            words[2] = 1 << 16; // X: one byte at 0x3010.
-            words[3] = 0x3010;
-            words[4..7].copy_from_slice(&[2, 0x3000, 0]); // A
-            words[7..10].copy_from_slice(&[16, 0x9000, 0]); // B, deliberately unmapped.
-            words[12] = u32::from_le_bytes(*b"SFCI");
-            words[14] = 99;
-            words[18] = 0xA000; // C, also unmapped.
-            words[19] = 32 << 16;
-            words[ipc::COMMAND_BUFFER_LENGTH - 1] = 0xDEAD_BEEF;
-            ctx.populate_from_incoming_command_buffer(&words);
-            assert_eq!(ctx.get_command(), 99);
-            assert!(ctx.get_memory().is_none()); // Read application memory, not ctx memory.
-            let request_words = *ctx.command_buffer();
-            settings::values_mut().reporting_services.set_value(true);
-            reporter.save_unimplemented_function_report(SystemRef::from_ref(&system), &ctx,
-                ctx.get_command(), "SyntheticCommand", "test:report");
-            assert_eq!(ctx.command_buffer(), &request_words);
-            // A later stub reply must not overwrite the saved input snapshot.
-            crate::hle::service::ipc_helpers::ResponseBuilder::new(&mut ctx, 2, 0, 0)
-                .push_result(crate::hle::result::RESULT_SUCCESS);
-            let paths: Vec<_> = fs::read_dir(directory.join("unimpl_func_report")).unwrap().map(|e| e.unwrap().path()).collect();
-            assert_eq!(paths.len(), 1);
-            let report: serde_json::Value = serde_json::from_slice(&fs::read(&paths[0]).unwrap()).unwrap();
-            assert_eq!(report["report_common"]["title_id"], "000000000000002A");
-            let function = &report["function"];
-            assert_eq!(function["command_id"], 99);
-            assert_eq!(function["function_name"], "SyntheticCommand");
-            assert_eq!(function["service_name"], "test:report");
-            assert_eq!(function["command_buffer"], serde_json::json!(request_words.iter().map(|word| format!("{word:08X}")).collect::<Vec<_>>()));
-            for (kind, address, size, data) in [
-                ("a", 0x3000, 2, Some("ABCD")), ("x", 0x3010, 1, Some("EF")),
-                ("b", 0x9000, 16, None), ("c", 0xA000, 32, None),
-            ] {
-                let entries = function[format!("buffer_descriptor_{kind}")].as_array().unwrap();
-                assert_eq!(entries.len(), 1);
-                assert_eq!(entries[0]["address"], format!("{address:016X}"));
-                assert_eq!(entries[0]["size"], format!("{size:016X}"));
-                assert_eq!(entries[0].get("data").and_then(|v| v.as_str()), data);
-            }
-            settings::values_mut().reporting_services.set_value(false);
-            drop(system);
-            drop(memory);
-            drop(table);
-            drop(device);
-            fs::remove_dir_all(directory).unwrap();
-        }).unwrap().join().unwrap();
+                let mut words = [0u32; ipc::COMMAND_BUFFER_LENGTH];
+                words[0] = ipc::CommandType::Request as u32 | (1 << 16) | (1 << 20) | (1 << 24);
+                words[1] = 8 | ((ipc::BufferDescriptorCFlag::OneDescriptor as u32) << 10);
+                words[2] = 1 << 16; // X: one byte at 0x3010.
+                words[3] = 0x3010;
+                words[4..7].copy_from_slice(&[2, 0x3000, 0]); // A
+                words[7..10].copy_from_slice(&[16, 0x9000, 0]); // B, deliberately unmapped.
+                words[12] = u32::from_le_bytes(*b"SFCI");
+                words[14] = 99;
+                words[18] = 0xA000; // C, also unmapped.
+                words[19] = 32 << 16;
+                words[ipc::COMMAND_BUFFER_LENGTH - 1] = 0xDEAD_BEEF;
+                ctx.populate_from_incoming_command_buffer(&words);
+                assert_eq!(ctx.get_command(), 99);
+                assert!(ctx.get_memory().is_none()); // Read application memory, not ctx memory.
+                let request_words = *ctx.command_buffer();
+                settings::values_mut().reporting_services.set_value(true);
+                reporter.save_unimplemented_function_report(
+                    SystemRef::from_ref(&system),
+                    &ctx,
+                    ctx.get_command(),
+                    "SyntheticCommand",
+                    "test:report",
+                );
+                assert_eq!(ctx.command_buffer(), &request_words);
+                // A later stub reply must not overwrite the saved input snapshot.
+                crate::hle::service::ipc_helpers::ResponseBuilder::new(&mut ctx, 2, 0, 0)
+                    .push_result(crate::hle::result::RESULT_SUCCESS);
+                let paths: Vec<_> = fs::read_dir(directory.join("unimpl_func_report"))
+                    .unwrap()
+                    .map(|e| e.unwrap().path())
+                    .collect();
+                assert_eq!(paths.len(), 1);
+                let report: serde_json::Value =
+                    serde_json::from_slice(&fs::read(&paths[0]).unwrap()).unwrap();
+                assert_eq!(report["report_common"]["title_id"], "000000000000002A");
+                let function = &report["function"];
+                assert_eq!(function["command_id"], 99);
+                assert_eq!(function["function_name"], "SyntheticCommand");
+                assert_eq!(function["service_name"], "test:report");
+                assert_eq!(
+                    function["command_buffer"],
+                    serde_json::json!(request_words
+                        .iter()
+                        .map(|word| format!("{word:08X}"))
+                        .collect::<Vec<_>>())
+                );
+                for (kind, address, size, data) in [
+                    ("a", 0x3000, 2, Some("ABCD")),
+                    ("x", 0x3010, 1, Some("EF")),
+                    ("b", 0x9000, 16, None),
+                    ("c", 0xA000, 32, None),
+                ] {
+                    let entries = function[format!("buffer_descriptor_{kind}")]
+                        .as_array()
+                        .unwrap();
+                    assert_eq!(entries.len(), 1);
+                    assert_eq!(entries[0]["address"], format!("{address:016X}"));
+                    assert_eq!(entries[0]["size"], format!("{size:016X}"));
+                    assert_eq!(entries[0].get("data").and_then(|v| v.as_str()), data);
+                }
+                settings::values_mut().reporting_services.set_value(false);
+                drop(system);
+                drop(memory);
+                drop(table);
+                drop(device);
+                fs::remove_dir_all(directory).unwrap();
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 
     #[test]
@@ -638,20 +699,33 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_REPORT_PAYLOADS";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "reporter::tests::diagnostic_payloads_preserve_hex_case_and_empty_channels"])
-                .env(CHILD, "1").status().unwrap().success());
+                .args([
+                    "--exact",
+                    "reporter::tests::diagnostic_payloads_preserve_hex_case_and_empty_channels"
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         use common::fs::path_util::{set_ruzu_path, RuzuPath};
-        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let directory = std::env::temp_dir().join(format!("ruzu-report-data-{}-{nonce}", std::process::id()));
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let directory =
+            std::env::temp_dir().join(format!("ruzu-report-data-{}-{nonce}", std::process::id()));
         fs::create_dir(&directory).unwrap();
         set_ruzu_path(RuzuPath::LogDir, &directory);
         let sdmc = directory.join("sdmc");
         fs::create_dir(&sdmc).unwrap();
         set_ruzu_path(RuzuPath::SDMCDir, &sdmc);
         let read_report = |kind: &str| -> serde_json::Value {
-            let files: Vec<_> = fs::read_dir(directory.join(kind)).unwrap().map(|e| e.unwrap().path()).collect();
+            let files: Vec<_> = fs::read_dir(directory.join(kind))
+                .unwrap()
+                .map(|e| e.unwrap().path())
+                .collect();
             assert_eq!(files.len(), 1);
             let bytes = fs::read(&files[0]).unwrap();
             let newline = if cfg!(windows) { "\r\n" } else { "\n" };
@@ -665,12 +739,27 @@ mod tests {
         assert!(!directory.join("svc_break_report").exists());
         settings::values_mut().reporting_services.set_value(true);
         reporter.save_svc_break_report(42, 0, false, 0, 0, Some(&[0xAB, 0xCD]));
-        assert_eq!(read_report("svc_break_report")["svc_break"]["debug_buffer"], "ABCD");
-        reporter.save_unimplemented_applet_report(42, 0, 0, 0, 0, false, 0,
-            &[vec![0xEF], vec![]], &[vec![0xAB, 0xCD]]);
+        assert_eq!(
+            read_report("svc_break_report")["svc_break"]["debug_buffer"],
+            "ABCD"
+        );
+        reporter.save_unimplemented_applet_report(
+            42,
+            0,
+            0,
+            0,
+            0,
+            false,
+            0,
+            &[vec![0xEF], vec![]],
+            &[vec![0xAB, 0xCD]],
+        );
         let report = read_report("unimpl_applet_report");
         assert_eq!(report["applet_normal_data"], serde_json::json!(["EF", ""]));
-        assert_eq!(report["applet_interactive_data"], serde_json::json!(["ABCD"]));
+        assert_eq!(
+            report["applet_interactive_data"],
+            serde_json::json!(["ABCD"])
+        );
         settings::values_mut().reporting_services.set_value(false);
         fs::remove_dir_all(directory).unwrap();
     }

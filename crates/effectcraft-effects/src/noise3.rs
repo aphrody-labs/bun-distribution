@@ -21,8 +21,17 @@ use crate::generate::{fade, lattice};
 use crate::{Buf, EffectCtx, EffectSpec, ParamSpec, num, p, popup, slider};
 
 /// Fractal Type options (shared by both effects).
-pub const FRACTAL_TYPES: [&str; 9] =
-    ["Basic", "Turbulent Smooth", "Turbulent Basic", "Turbulent Sharp", "Dynamic", "Dynamic Twist", "Dynamic Progressive", "Max", "Strings"];
+pub const FRACTAL_TYPES: [&str; 9] = [
+    "Basic",
+    "Turbulent Smooth",
+    "Turbulent Basic",
+    "Turbulent Sharp",
+    "Dynamic",
+    "Dynamic Twist",
+    "Dynamic Progressive",
+    "Max",
+    "Strings",
+];
 /// Noise Type options: interpolation between lattice values.
 pub const NOISE_TYPES: [&str; 4] = ["Block", "Linear", "Soft Linear", "Spline"];
 /// Overflow options.
@@ -60,54 +69,167 @@ pub const BLEND_NORMAL: u32 = 1;
 /// Index of "Soft Linear" in [`NOISE_TYPES`] (the default, and the GPU path's interpolation).
 pub const NOISE_SOFT_LINEAR: u32 = 2;
 
-fn spec(id: &'static str, name: &'static str, params: Vec<ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Noise & Grain", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Noise & Grain",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn params(turbulent: bool) -> Vec<ParamSpec> {
     let pct = || slider(0.0, 100.0, 0.0, 100.0, 1);
     let scale = || slider(1.0, 10000.0, 20.0, 600.0, 1);
     let mut v = vec![
-        p("fractalType", "Fractal Type", Value::Enum(if turbulent { 1 } else { 0 }), popup(&FRACTAL_TYPES)),
-        p("noiseType", "Noise Type", Value::Enum(NOISE_SOFT_LINEAR), popup(&NOISE_TYPES)),
+        p(
+            "fractalType",
+            "Fractal Type",
+            Value::Enum(if turbulent { 1 } else { 0 }),
+            popup(&FRACTAL_TYPES),
+        ),
+        p(
+            "noiseType",
+            "Noise Type",
+            Value::Enum(NOISE_SOFT_LINEAR),
+            popup(&NOISE_TYPES),
+        ),
         p("invert", "Invert", Value::Bool(false), ParamUi::Checkbox),
-        p("contrast", "Contrast", num(100.0), slider(0.0, 10000.0, 0.0, 400.0, 1)),
-        p("brightness", "Brightness", num(0.0), slider(-10000.0, 10000.0, -200.0, 200.0, 1)),
-        p("overflow", "Overflow", Value::Enum(if turbulent { 0 } else { 3 }), popup(&OVERFLOWS)),
+        p(
+            "contrast",
+            "Contrast",
+            num(100.0),
+            slider(0.0, 10000.0, 0.0, 400.0, 1),
+        ),
+        p(
+            "brightness",
+            "Brightness",
+            num(0.0),
+            slider(-10000.0, 10000.0, -200.0, 200.0, 1),
+        ),
+        p(
+            "overflow",
+            "Overflow",
+            Value::Enum(if turbulent { 0 } else { 3 }),
+            popup(&OVERFLOWS),
+        ),
         p("transform/rotation", "Rotation", num(0.0), ParamUi::Angle),
-        p("transform/uniformScaling", "Uniform Scaling", Value::Bool(true), ParamUi::Checkbox),
+        p(
+            "transform/uniformScaling",
+            "Uniform Scaling",
+            Value::Bool(true),
+            ParamUi::Checkbox,
+        ),
         p("transform/scale", "Scale", num(100.0), scale()),
         p("transform/scaleWidth", "Scale Width", num(100.0), scale()),
         p("transform/scaleHeight", "Scale Height", num(100.0), scale()),
-        p("transform/offset", "Offset Turbulence", Value::Vec2([0.5, 0.5]), ParamUi::Point),
-        p("transform/perspectiveOffset", "Perspective Offset", Value::Bool(false), ParamUi::Checkbox),
-        p("complexity", "Complexity", num(6.0), slider(1.0, 20.0, 1.0, 10.0, 1)),
-        p("subSettings/subInfluence", "Sub Influence (%)", num(70.0), slider(0.0, 100.0, 25.0, 100.0, 1)),
-        p("subSettings/subScaling", "Sub Scaling", num(56.0), slider(10.0, 100.0, 25.0, 100.0, 1)),
+        p(
+            "transform/offset",
+            "Offset Turbulence",
+            Value::Vec2([0.5, 0.5]),
+            ParamUi::Point,
+        ),
+        p(
+            "transform/perspectiveOffset",
+            "Perspective Offset",
+            Value::Bool(false),
+            ParamUi::Checkbox,
+        ),
+        p(
+            "complexity",
+            "Complexity",
+            num(6.0),
+            slider(1.0, 20.0, 1.0, 10.0, 1),
+        ),
+        p(
+            "subSettings/subInfluence",
+            "Sub Influence (%)",
+            num(70.0),
+            slider(0.0, 100.0, 25.0, 100.0, 1),
+        ),
+        p(
+            "subSettings/subScaling",
+            "Sub Scaling",
+            num(56.0),
+            slider(10.0, 100.0, 25.0, 100.0, 1),
+        ),
     ];
     if !turbulent {
         v.extend([
-            p("subSettings/subRotation", "Sub Rotation", num(0.0), ParamUi::Angle),
-            p("subSettings/subOffset", "Sub Offset", Value::Vec2([0.0, 0.0]), ParamUi::Point),
-            p("subSettings/centerSubscale", "Center Subscale", Value::Bool(false), ParamUi::Checkbox),
+            p(
+                "subSettings/subRotation",
+                "Sub Rotation",
+                num(0.0),
+                ParamUi::Angle,
+            ),
+            p(
+                "subSettings/subOffset",
+                "Sub Offset",
+                Value::Vec2([0.0, 0.0]),
+                ParamUi::Point,
+            ),
+            p(
+                "subSettings/centerSubscale",
+                "Center Subscale",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
         ]);
     }
     v.push(p("evolution", "Evolution", num(0.0), ParamUi::Angle));
     if turbulent {
         v.extend([
-            p("evolutionOptions/turbulenceFactor", "Turbulence Factor", num(0.5), slider(0.0, 10.0, 0.0, 2.0, 2)),
-            p("evolutionOptions/randomSeed", "Random Seed", num(0.0), slider(0.0, 100000.0, 0.0, 1000.0, 0)),
+            p(
+                "evolutionOptions/turbulenceFactor",
+                "Turbulence Factor",
+                num(0.5),
+                slider(0.0, 10.0, 0.0, 2.0, 2),
+            ),
+            p(
+                "evolutionOptions/randomSeed",
+                "Random Seed",
+                num(0.0),
+                slider(0.0, 100000.0, 0.0, 1000.0, 0),
+            ),
         ]);
     } else {
         v.extend([
-            p("evolutionOptions/cycleEvolution", "Cycle Evolution", Value::Bool(false), ParamUi::Checkbox),
-            p("evolutionOptions/cycle", "Cycle (in Revolutions)", num(1.0), slider(1.0, 1000.0, 1.0, 30.0, 0)),
-            p("evolutionOptions/seed", "Random Seed", num(0.0), slider(0.0, 100000.0, 0.0, 1000.0, 0)),
+            p(
+                "evolutionOptions/cycleEvolution",
+                "Cycle Evolution",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "evolutionOptions/cycle",
+                "Cycle (in Revolutions)",
+                num(1.0),
+                slider(1.0, 1000.0, 1.0, 30.0, 0),
+            ),
+            p(
+                "evolutionOptions/seed",
+                "Random Seed",
+                num(0.0),
+                slider(0.0, 100000.0, 0.0, 1000.0, 0),
+            ),
         ]);
     }
     v.extend([
         p("opacity", "Opacity", num(100.0), pct()),
-        p("blendingMode", "Blending Mode", Value::Enum(BLEND_NORMAL), popup(&BLEND_MODES)),
+        p(
+            "blendingMode",
+            "Blending Mode",
+            Value::Enum(BLEND_NORMAL),
+            popup(&BLEND_MODES),
+        ),
         // Not in After Effects: a mix with the untouched layer (kept for older projects).
         p("blend", "Blend With Original", num(0.0), pct()),
     ]);
@@ -115,7 +237,20 @@ fn params(turbulent: bool) -> Vec<ParamSpec> {
 }
 
 pub fn specs() -> Vec<EffectSpec> {
-    vec![spec("ec.noise.fractal", "Fractal Noise", params(false), fractal_noise), spec("ec.noise.turbulent", "Turbulent Noise", params(true), turbulent_noise)]
+    vec![
+        spec(
+            "ec.noise.fractal",
+            "Fractal Noise",
+            params(false),
+            fractal_noise,
+        ),
+        spec(
+            "ec.noise.turbulent",
+            "Turbulent Noise",
+            params(true),
+            turbulent_noise,
+        ),
+    ]
 }
 
 // ---------------------------------------------------------------- noise kernels
@@ -127,7 +262,10 @@ const SOFT_LINEAR_GAIN: f32 = (181.0 / 231.0) / 0.55;
 
 #[inline]
 fn catmull(p0: f32, p1: f32, p2: f32, p3: f32, t: f32) -> f32 {
-    0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t)
+    0.5 * (2.0 * p1
+        + (p2 - p0) * t
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t
+        + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t)
 }
 
 /// Uniform quadratic B-spline weights of the lattice values before, at and after the nearest one,
@@ -147,7 +285,11 @@ fn bspline(t: f32) -> [f32; 3] {
 /// into a visible grid (#259); the B-spline's slope there is half the neighbours' difference.
 pub fn typed_noise(x: f32, y: f32, z: f32, seed: u32, noise_type: u32) -> f32 {
     // Soft Linear's taps are centred on the nearest lattice point, the others start at the cell's.
-    let h = if noise_type == NOISE_SOFT_LINEAR { 0.5 } else { 0.0 };
+    let h = if noise_type == NOISE_SOFT_LINEAR {
+        0.5
+    } else {
+        0.0
+    };
     let (x0, y0, z0) = ((x + h).floor(), (y + h).floor(), z.floor());
     let (tx, ty, fz) = (x + h - x0, y + h - y0, fade(z - z0));
     let (ix, iy, iz) = (x0 as i32, y0 as i32, z0 as i32);
@@ -169,7 +311,11 @@ pub fn typed_noise(x: f32, y: f32, z: f32, seed: u32, noise_type: u32) -> f32 {
         }
     };
     let n = l(slice(0), slice(1), fz);
-    if noise_type == NOISE_SOFT_LINEAR { 0.5 + (n - 0.5) * SOFT_LINEAR_GAIN } else { n }
+    if noise_type == NOISE_SOFT_LINEAR {
+        0.5 + (n - 0.5) * SOFT_LINEAR_GAIN
+    } else {
+        n
+    }
 }
 
 /// Everything the per-pixel evaluation needs, resolved from the parameters.
@@ -219,24 +365,41 @@ fn shape(kind: u32, n: f32) -> f32 {
 impl Fractal {
     pub(crate) fn from_params(ctx: &EffectCtx, b: &Buf, turbulent: bool) -> Fractal {
         let pr = ctx.params;
-        let uniform = pr.get("transform/uniformScaling").is_none_or(Value::as_bool);
+        let uniform = pr
+            .get("transform/uniformScaling")
+            .is_none_or(Value::as_bool);
         let s = pr.f("transform/scale");
-        let (sw, sh) = if uniform { (s, s) } else { (pr.f("transform/scaleWidth"), pr.f("transform/scaleHeight")) };
+        let (sw, sh) = if uniform {
+            (s, s)
+        } else {
+            (pr.f("transform/scaleWidth"), pr.f("transform/scaleHeight"))
+        };
         let rot = (pr.f("transform/rotation") as f32).to_radians();
         let (ox, oy) = b.to_px(pr.v2("transform/offset"));
         let (cx, cy) = b.to_px([ctx.layer_size[0] / 2.0, ctx.layer_size[1] / 2.0]);
         let so = pr.v2("subSettings/subOffset");
-        let cycle = (!turbulent && pr.b("evolutionOptions/cycleEvolution")).then(|| pr.f("evolutionOptions/cycle").round().max(1.0) as f32);
-        let seed = if turbulent { (pr.f("evolutionOptions/randomSeed") as i64 as u32) ^ 0x7a3d } else { pr.f("evolutionOptions/seed") as u32 ^ 0x51ed };
+        let cycle = (!turbulent && pr.b("evolutionOptions/cycleEvolution"))
+            .then(|| pr.f("evolutionOptions/cycle").round().max(1.0) as f32);
+        let seed = if turbulent {
+            (pr.f("evolutionOptions/randomSeed") as i64 as u32) ^ 0x7a3d
+        } else {
+            pr.f("evolutionOptions/seed") as u32 ^ 0x51ed
+        };
         Fractal {
             kind: pr.e("fractalType"),
-            noise_type: pr.get("noiseType").map(Value::as_enum).unwrap_or(NOISE_SOFT_LINEAR),
+            noise_type: pr
+                .get("noiseType")
+                .map(Value::as_enum)
+                .unwrap_or(NOISE_SOFT_LINEAR),
             contrast: pr.f("contrast") as f32 / 100.0,
             brightness: pr.f("brightness") as f32 / 100.0,
             overflow: pr.e("overflow"),
             invert: pr.b("invert"),
             rot: rot.sin_cos(),
-            size: [(sw * b.scale).max(1.0) as f32, (sh * b.scale).max(1.0) as f32],
+            size: [
+                (sw * b.scale).max(1.0) as f32,
+                (sh * b.scale).max(1.0) as f32,
+            ],
             origin: [ox as f32, oy as f32],
             center: [cx as f32, cy as f32],
             perspective: pr.b("transform/perspectiveOffset"),
@@ -248,7 +411,11 @@ impl Fractal {
             center_subscale: pr.b("subSettings/centerSubscale"),
             evolution: pr.f("evolution") as f32 / 360.0,
             cycle,
-            turbulence: if turbulent { pr.f("evolutionOptions/turbulenceFactor").max(0.0) as f32 } else { 0.0 },
+            turbulence: if turbulent {
+                pr.f("evolutionOptions/turbulenceFactor").max(0.0) as f32
+            } else {
+                0.0
+            },
             seed,
         }
     }
@@ -265,7 +432,13 @@ impl Fractal {
                 let b = typed_noise(u, v, t - c + z, seed, self.noise_type);
                 a * (1.0 - w) + b * w
             }
-            None => typed_noise(u, v, self.evolution * (1.0 + self.turbulence * o) + z, seed, self.noise_type),
+            None => typed_noise(
+                u,
+                v,
+                self.evolution * (1.0 + self.turbulence * o) + z,
+                seed,
+                self.noise_type,
+            ),
         }
     }
 
@@ -274,23 +447,37 @@ impl Fractal {
         let n_oct = self.octaves.ceil() as usize;
         let frac = self.octaves - self.octaves.floor();
         let (sr, cr) = self.rot;
-        let (mut sum, mut norm, mut amp, mut f, mut best) = (0.0f32, 0.0f32, 1.0f32, 1.0f32, 0.0f32);
+        let (mut sum, mut norm, mut amp, mut f, mut best) =
+            (0.0f32, 0.0f32, 1.0f32, 1.0f32, 0.0f32);
         let mut depth = 1.0f32;
         for o in 0..n_oct {
-            let w = if o + 1 == n_oct && frac > 0.0 { frac } else { 1.0 };
+            let w = if o + 1 == n_oct && frac > 0.0 {
+                frac
+            } else {
+                1.0
+            };
             let of = o as f32;
             // This layer's origin: Perspective Offset moves finer (farther) layers less;
             // turbulence makes them drift faster.
             let k = if self.perspective { depth } else { 1.0 } * (1.0 + self.turbulence * of);
             let mut org = self.origin;
             if k != 1.0 {
-                org = [self.center[0] + (self.origin[0] - self.center[0]) * k, self.center[1] + (self.origin[1] - self.center[1]) * k];
+                org = [
+                    self.center[0] + (self.origin[0] - self.center[0]) * k,
+                    self.center[1] + (self.origin[1] - self.center[1]) * k,
+                ];
             }
             if !self.center_subscale {
-                org = [org[0] + self.sub_offset[0] * of, org[1] + self.sub_offset[1] * of];
+                org = [
+                    org[0] + self.sub_offset[0] * of,
+                    org[1] + self.sub_offset[1] * of,
+                ];
             }
             let (dx, dy) = (x - org[0], y - org[1]);
-            let (mut u, mut v) = ((dx * cr + dy * sr) / self.size[0], (-dx * sr + dy * cr) / self.size[1]);
+            let (mut u, mut v) = (
+                (dx * cr + dy * sr) / self.size[0],
+                (-dx * sr + dy * cr) / self.size[1],
+            );
             if self.sub_rotation != 0.0 {
                 let (s, c) = (self.sub_rotation * of).sin_cos();
                 (u, v) = (u * c + v * s, -u * s + v * c);
@@ -321,7 +508,11 @@ impl Fractal {
             f /= self.sub_scaling;
             depth *= self.sub_scaling;
         }
-        if self.kind == 7 { best } else { sum / norm.max(1e-6) }
+        if self.kind == 7 {
+            best
+        } else {
+            sum / norm.max(1e-6)
+        }
     }
 
     /// Final grey value: contrast, brightness, overflow and invert applied.
@@ -362,22 +553,36 @@ pub struct FractalGpu {
 
 /// [`FractalGpu`] for a buffer with `offset` / `scale`.
 pub fn fractal_gpu(ctx: &EffectCtx, offset: [f64; 2], scale: f64, turbulent: bool) -> FractalGpu {
-    let b = Buf { img: effectcraft_raster::Image::new(0, 0), offset, scale };
+    let b = Buf {
+        img: effectcraft_raster::Image::new(0, 0),
+        offset,
+        scale,
+    };
     let fr = Fractal::from_params(ctx, &b, turbulent);
     let n_oct = fr.octaves.ceil() as usize;
     let frac = fr.octaves - fr.octaves.floor();
     let (mut norm, mut amp, mut f, mut depth) = (0.0f32, 1.0f32, 1.0f32, 1.0f32);
     let mut octaves = Vec::with_capacity(n_oct);
     for o in 0..n_oct {
-        let w = if o + 1 == n_oct && frac > 0.0 { frac } else { 1.0 };
+        let w = if o + 1 == n_oct && frac > 0.0 {
+            frac
+        } else {
+            1.0
+        };
         let of = o as f32;
         let k = if fr.perspective { depth } else { 1.0 } * (1.0 + fr.turbulence * of);
         let mut org = fr.origin;
         if k != 1.0 {
-            org = [fr.center[0] + (fr.origin[0] - fr.center[0]) * k, fr.center[1] + (fr.origin[1] - fr.center[1]) * k];
+            org = [
+                fr.center[0] + (fr.origin[0] - fr.center[0]) * k,
+                fr.center[1] + (fr.origin[1] - fr.center[1]) * k,
+            ];
         }
         if !fr.center_subscale {
-            org = [org[0] + fr.sub_offset[0] * of, org[1] + fr.sub_offset[1] * of];
+            org = [
+                org[0] + fr.sub_offset[0] * of,
+                org[1] + fr.sub_offset[1] * of,
+            ];
         }
         let (s, c) = (fr.sub_rotation * of).sin_cos();
         let evo = fr.evolution * (1.0 + fr.turbulence * of);
@@ -406,9 +611,19 @@ pub fn fractal_gpu(ctx: &EffectCtx, offset: [f64; 2], scale: f64, turbulent: boo
         sub_rotation: fr.sub_rotation != 0.0,
         norm,
         octaves,
-        mode: match ctx.params.get("blendingMode").map(Value::as_enum).unwrap_or(BLEND_NONE) {
+        mode: match ctx
+            .params
+            .get("blendingMode")
+            .map(Value::as_enum)
+            .unwrap_or(BLEND_NONE)
+        {
             BLEND_NONE => None,
-            m => Some(BLEND_MODES.get(m as usize).and_then(|l| BlendMode::from_name(l)).unwrap_or(BlendMode::Normal)),
+            m => Some(
+                BLEND_MODES
+                    .get(m as usize)
+                    .and_then(|l| BlendMode::from_name(l))
+                    .unwrap_or(BlendMode::Normal),
+            ),
         },
         opacity: (ctx.params.f("opacity") as f32 / 100.0).clamp(0.0, 1.0),
         blend: ctx.params.f("blend") as f32 / 100.0,
@@ -431,12 +646,21 @@ pub fn overflow(v: f32, mode: u32) -> f32 {
 /// Composite grey noise `val` over the original pixel by Blending Mode, Opacity and (ours) Blend
 /// With Original. The noise stays inside the layer's alpha, so a masked solid shows it only within
 /// its masks (#939).
-pub(crate) fn composite(orig: [f32; 4], val: f32, opacity: f32, mode: u32, blend_orig: f32) -> [f32; 4] {
+pub(crate) fn composite(
+    orig: [f32; 4],
+    val: f32,
+    opacity: f32,
+    mode: u32,
+    blend_orig: f32,
+) -> [f32; 4] {
     let src = [val * opacity, val * opacity, val * opacity, opacity];
     let out = match mode {
         BLEND_NONE => src,
         m => {
-            let bm = BLEND_MODES.get(m as usize).and_then(|l| BlendMode::from_name(l)).unwrap_or(BlendMode::Normal);
+            let bm = BLEND_MODES
+                .get(m as usize)
+                .and_then(|l| BlendMode::from_name(l))
+                .unwrap_or(BlendMode::Normal);
             blend_pixel(bm, orig, src, 0.5)
         }
     };
@@ -447,7 +671,11 @@ pub(crate) fn composite(orig: [f32; 4], val: f32, opacity: f32, mode: u32, blend
 fn render(ctx: &EffectCtx, mut b: Buf, turbulent: bool) -> Buf {
     let fr = Fractal::from_params(ctx, &b, turbulent);
     let opacity = (ctx.params.f("opacity") as f32 / 100.0).clamp(0.0, 1.0);
-    let mode = ctx.params.get("blendingMode").map(Value::as_enum).unwrap_or(BLEND_NONE);
+    let mode = ctx
+        .params
+        .get("blendingMode")
+        .map(Value::as_enum)
+        .unwrap_or(BLEND_NONE);
     let blend = ctx.params.f("blend") as f32 / 100.0;
     b.img.rows_mut().for_each(|(y, row)| {
         for (x, px) in row.iter_mut().enumerate() {
@@ -473,7 +701,14 @@ mod tests {
     use effectcraft_raster::Image;
 
     fn run(id: &str, vals: &[(&str, Value)]) -> Image {
-        run_fx(id, vals, Image::filled(40, 24, [0.2, 0.4, 0.6, 1.0]), 0.0, EffectEnv::default()).img
+        run_fx(
+            id,
+            vals,
+            Image::filled(40, 24, [0.2, 0.4, 0.6, 1.0]),
+            0.0,
+            EffectEnv::default(),
+        )
+        .img
     }
 
     /// A Fractal Noise saved before the twirl-downs existed: flat ids move into their groups and
@@ -486,7 +721,9 @@ mod tests {
         let mut next = 1;
         let mut ids = Ids(&mut next);
         let mut g = ids.group(spec.id, "Fractal Noise");
-        g.kind = GroupKind::Effect { effect: spec.id.into() };
+        g.kind = GroupKind::Effect {
+            effect: spec.id.into(),
+        };
         for (m, v) in [
             ("fractalType", Value::Enum(1)),
             ("invert", Value::Bool(false)),
@@ -504,25 +741,53 @@ mod tests {
             let id = ids.alloc();
             g.children.push(Property::new(id, m, m, v).into());
         }
-        assert!(crate::migrate::upgrade_instance(spec, &mut g, &mut ids, [40.0, 24.0]));
+        assert!(crate::migrate::upgrade_instance(
+            spec,
+            &mut g,
+            &mut ids,
+            [40.0, 24.0]
+        ));
         assert_eq!(g.prop("transform/scale").unwrap().value, num(40.0));
-        assert_eq!(g.prop("transform/offset").unwrap().value, Value::Vec2([5.0, 6.0]));
+        assert_eq!(
+            g.prop("transform/offset").unwrap().value,
+            Value::Vec2([5.0, 6.0])
+        );
         assert_eq!(g.prop("evolutionOptions/seed").unwrap().value, num(9.0));
         assert!(g.get("scale").is_none() && g.get("seed").is_none());
         // Clip, half-weight half-size octaves and the noise drawn alone, as before.
         assert_eq!(g.get("overflow").unwrap().value, Value::Enum(0));
         assert_eq!(g.prop("subSettings/subInfluence").unwrap().value, num(50.0));
         assert_eq!(g.prop("subSettings/subScaling").unwrap().value, num(50.0));
-        assert_eq!(g.get("blendingMode").unwrap().value, Value::Enum(BLEND_NONE));
+        assert_eq!(
+            g.get("blendingMode").unwrap().value,
+            Value::Enum(BLEND_NONE)
+        );
         assert_eq!(g.sub("transform").unwrap().name, "Transform");
     }
 
     #[test]
     fn noise_types_differ_and_block_is_piecewise_constant() {
-        let a = run("ec.noise.fractal", &[("noiseType", Value::Enum(0)), ("complexity", num(1.0)), ("transform/scale", num(10.0))]);
+        let a = run(
+            "ec.noise.fractal",
+            &[
+                ("noiseType", Value::Enum(0)),
+                ("complexity", num(1.0)),
+                ("transform/scale", num(10.0)),
+            ],
+        );
         // Block noise: neighbours inside one 10 px cell share a value.
         assert_eq!(a.get(4, 4), a.get(5, 5));
-        let others: Vec<Image> = (1..4).map(|t| run("ec.noise.fractal", &[("noiseType", Value::Enum(t)), ("transform/scale", num(10.0))])).collect();
+        let others: Vec<Image> = (1..4)
+            .map(|t| {
+                run(
+                    "ec.noise.fractal",
+                    &[
+                        ("noiseType", Value::Enum(t)),
+                        ("transform/scale", num(10.0)),
+                    ],
+                )
+            })
+            .collect();
         assert_ne!(others[0], others[1]);
         assert_ne!(others[1], others[2]);
     }
@@ -530,12 +795,27 @@ mod tests {
     #[test]
     fn scale_width_height_apply_without_uniform_scaling() {
         let base = &[("complexity", num(1.0)), ("transform/scale", num(8.0))];
-        let uni = run("ec.noise.fractal", &[base[0].clone(), base[1].clone(), ("transform/scaleWidth", num(50.0))]);
+        let uni = run(
+            "ec.noise.fractal",
+            &[
+                base[0].clone(),
+                base[1].clone(),
+                ("transform/scaleWidth", num(50.0)),
+            ],
+        );
         let plain = run("ec.noise.fractal", base);
-        assert_eq!(uni, plain, "Scale Width is ignored while Uniform Scaling is on");
+        assert_eq!(
+            uni, plain,
+            "Scale Width is ignored while Uniform Scaling is on"
+        );
         let wide = run(
             "ec.noise.fractal",
-            &[base[0].clone(), ("transform/uniformScaling", Value::Bool(false)), ("transform/scaleWidth", num(400.0)), ("transform/scaleHeight", num(8.0))],
+            &[
+                base[0].clone(),
+                ("transform/uniformScaling", Value::Bool(false)),
+                ("transform/scaleWidth", num(400.0)),
+                ("transform/scaleHeight", num(8.0)),
+            ],
         );
         // Stretched horizontally: horizontal neighbours are more alike than vertical ones.
         let (mut dh, mut dv) = (0.0, 0.0);
@@ -550,16 +830,36 @@ mod tests {
 
     #[test]
     fn overflow_hdr_keeps_out_of_range_values() {
-        let hi = run("ec.noise.fractal", &[("contrast", num(400.0)), ("blendingMode", Value::Enum(BLEND_NONE))]);
+        let hi = run(
+            "ec.noise.fractal",
+            &[
+                ("contrast", num(400.0)),
+                ("blendingMode", Value::Enum(BLEND_NONE)),
+            ],
+        );
         assert!(hi.data.iter().any(|p| p[0] > 1.0 || p[0] < 0.0));
-        let clip = run("ec.noise.fractal", &[("contrast", num(400.0)), ("overflow", Value::Enum(0)), ("blendingMode", Value::Enum(BLEND_NONE))]);
+        let clip = run(
+            "ec.noise.fractal",
+            &[
+                ("contrast", num(400.0)),
+                ("overflow", Value::Enum(0)),
+                ("blendingMode", Value::Enum(BLEND_NONE)),
+            ],
+        );
         assert!(clip.data.iter().all(|p| (0.0..=1.0).contains(&p[0])));
     }
 
     #[test]
     fn cycle_evolution_loops() {
         let at = |evo: f64| {
-            run("ec.noise.fractal", &[("evolution", num(evo)), ("evolutionOptions/cycleEvolution", Value::Bool(true)), ("evolutionOptions/cycle", num(2.0))])
+            run(
+                "ec.noise.fractal",
+                &[
+                    ("evolution", num(evo)),
+                    ("evolutionOptions/cycleEvolution", Value::Bool(true)),
+                    ("evolutionOptions/cycle", num(2.0)),
+                ],
+            )
         };
         assert_eq!(at(0.0), at(720.0));
         assert_ne!(at(0.0), at(360.0));
@@ -567,7 +867,10 @@ mod tests {
 
     #[test]
     fn blending_modes_composite_over_the_layer() {
-        let none = run("ec.noise.fractal", &[("blendingMode", Value::Enum(BLEND_NONE))]);
+        let none = run(
+            "ec.noise.fractal",
+            &[("blendingMode", Value::Enum(BLEND_NONE))],
+        );
         let mul = run("ec.noise.fractal", &[("blendingMode", Value::Enum(3))]);
         // Multiply keeps the layer's colour cast (blue > red), None is grey.
         assert!(none.data.iter().all(|p| (p[0] - p[2]).abs() < 1e-6));
@@ -588,12 +891,32 @@ mod tests {
             *p = p.map(|c| c * a);
         }
         for mode in [BLEND_NONE, BLEND_NORMAL, 3] {
-            let out = run_fx("ec.noise.fractal", &[("blendingMode", Value::Enum(mode))], img.clone(), 0.0, EffectEnv::default()).img;
+            let out = run_fx(
+                "ec.noise.fractal",
+                &[("blendingMode", Value::Enum(mode))],
+                img.clone(),
+                0.0,
+                EffectEnv::default(),
+            )
+            .img;
             for (o, p) in img.data.iter().zip(&out.data) {
-                assert!((o[3] - p[3]).abs() < 1e-6, "mode {mode}: alpha {} became {}", o[3], p[3]);
-                assert!(p[..3].iter().all(|&c| c <= p[3] + 1e-6), "mode {mode}: premultiplied colour above alpha");
+                assert!(
+                    (o[3] - p[3]).abs() < 1e-6,
+                    "mode {mode}: alpha {} became {}",
+                    o[3],
+                    p[3]
+                );
+                assert!(
+                    p[..3].iter().all(|&c| c <= p[3] + 1e-6),
+                    "mode {mode}: premultiplied colour above alpha"
+                );
             }
-            assert!(out.data.iter().any(|p| p[3] == 1.0 && (p[0] - 0.2).abs() > 0.01), "mode {mode}: noise drawn inside the mask");
+            assert!(
+                out.data
+                    .iter()
+                    .any(|p| p[3] == 1.0 && (p[0] - 0.2).abs() > 0.01),
+                "mode {mode}: noise drawn inside the mask"
+            );
         }
     }
 
@@ -609,26 +932,63 @@ mod tests {
             assert_ne!(run("ec.noise.fractal", &[(k, v)]), base, "{k}");
         }
         for t in 1..FRACTAL_TYPES.len() as u32 {
-            assert_ne!(run("ec.noise.fractal", &[("fractalType", Value::Enum(t))]), base, "type {t}");
+            assert_ne!(
+                run("ec.noise.fractal", &[("fractalType", Value::Enum(t))]),
+                base,
+                "type {t}"
+            );
         }
         // Turbulence factor only matters while evolving.
-        let t0 = run("ec.noise.turbulent", &[("evolution", num(200.0)), ("evolutionOptions/turbulenceFactor", num(0.0))]);
-        let t1 = run("ec.noise.turbulent", &[("evolution", num(200.0)), ("evolutionOptions/turbulenceFactor", num(2.0))]);
+        let t0 = run(
+            "ec.noise.turbulent",
+            &[
+                ("evolution", num(200.0)),
+                ("evolutionOptions/turbulenceFactor", num(0.0)),
+            ],
+        );
+        let t1 = run(
+            "ec.noise.turbulent",
+            &[
+                ("evolution", num(200.0)),
+                ("evolutionOptions/turbulenceFactor", num(2.0)),
+            ],
+        );
         assert_ne!(t0, t1);
     }
 
     /// Turbulent Basic Fractal Noise drawn alone at `w` × `h`.
     fn turbulent_basic(w: u32, h: u32, vals: &[(&str, Value)]) -> Image {
-        let mut all = vec![("fractalType", Value::Enum(2)), ("blendingMode", Value::Enum(BLEND_NONE))];
+        let mut all = vec![
+            ("fractalType", Value::Enum(2)),
+            ("blendingMode", Value::Enum(BLEND_NONE)),
+        ];
         all.extend_from_slice(vals);
-        run_fx("ec.noise.fractal", &all, Image::filled(w, h, [0.0, 0.0, 0.0, 1.0]), 0.0, EffectEnv::default()).img
+        run_fx(
+            "ec.noise.fractal",
+            &all,
+            Image::filled(w, h, [0.0, 0.0, 0.0, 1.0]),
+            0.0,
+            EffectEnv::default(),
+        )
+        .img
     }
 
     /// (x, y, ∂/∂x, ∂/∂y) of the grey value at every inner pixel (central differences).
     fn gradients(img: &Image) -> Vec<(i64, i64, f64, f64)> {
         let v = |x: i64, y: i64| img.get(x, y)[0] as f64;
         let (w, h) = (img.width as i64, img.height as i64);
-        (1..h - 1).flat_map(|y| (1..w - 1).map(move |x| (x, y, (v(x + 1, y) - v(x - 1, y)) / 2.0, (v(x, y + 1) - v(x, y - 1)) / 2.0))).collect()
+        (1..h - 1)
+            .flat_map(|y| {
+                (1..w - 1).map(move |x| {
+                    (
+                        x,
+                        y,
+                        (v(x + 1, y) - v(x - 1, y)) / 2.0,
+                        (v(x, y + 1) - v(x, y - 1)) / 2.0,
+                    )
+                })
+            })
+            .collect()
     }
 
     /// #259: Soft Linear faded between two lattice values with zero slope across every lattice
@@ -637,7 +997,15 @@ mod tests {
     fn soft_linear_has_no_lattice_creases() {
         // One 16 px layer whose lattice lines run through the pixel centres x, y = 16k: the slope
         // across them is about the average slope (with the fade it was 2% of it).
-        let one = turbulent_basic(160, 96, &[("complexity", num(1.0)), ("transform/scale", num(16.0)), ("transform/offset", Value::Vec2([0.5, 0.5]))]);
+        let one = turbulent_basic(
+            160,
+            96,
+            &[
+                ("complexity", num(1.0)),
+                ("transform/scale", num(16.0)),
+                ("transform/offset", Value::Vec2([0.5, 0.5])),
+            ],
+        );
         let (mut on, mut n_on, mut all, mut n_all) = (0.0, 0.0, 0.0, 0.0);
         for (x, y, gx, gy) in gradients(&one) {
             for (k, g) in [(x, gx), (y, gy)] {
@@ -650,10 +1018,21 @@ mod tests {
             }
         }
         let across = (on / n_on) / (all / n_all);
-        assert!(across > 0.5, "slope across lattice lines / average slope: {across}");
+        assert!(
+            across > 0.5,
+            "slope across lattice lines / average slope: {across}"
+        );
         // The issue's settings at a quarter size: gradients run along the lattice axes about as
         // strongly as along the diagonals (with the fade, 1.2× as strongly).
-        let img = turbulent_basic(480, 270, &[("contrast", num(140.0)), ("brightness", num(-35.0)), ("transform/scale", num(105.0))]);
+        let img = turbulent_basic(
+            480,
+            270,
+            &[
+                ("contrast", num(140.0)),
+                ("brightness", num(-35.0)),
+                ("transform/scale", num(105.0)),
+            ],
+        );
         let (mut axis, mut diag) = (0.0, 0.0);
         for (_, _, gx, gy) in gradients(&img) {
             let a = gy.atan2(gx).to_degrees().rem_euclid(90.0);
@@ -663,6 +1042,10 @@ mod tests {
                 diag += gx.hypot(gy);
             }
         }
-        assert!(axis / diag < 1.15, "gradient along the axes / along the diagonals: {}", axis / diag);
+        assert!(
+            axis / diag < 1.15,
+            "gradient along the axes / along the diagonals: {}",
+            axis / diag
+        );
     }
 }

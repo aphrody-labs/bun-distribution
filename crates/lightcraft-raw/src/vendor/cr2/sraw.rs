@@ -27,7 +27,10 @@
 //! tag names.
 
 use super::{COLOR_BALANCE, CR2_SLICE, SENSOR_INFO, words};
-use crate::{BlackLevel, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result, ljpeg};
+use crate::{
+    BlackLevel, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result,
+    ljpeg,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::{Chunk, chunk_bytes};
 use lightcraft_tiff::{ByteOrder, Ifd, Tiff, makernote, tags as t};
@@ -71,8 +74,15 @@ pub(super) struct Layout {
 impl Layout {
     /// The layout of a `frame_width × frame_height` frame with `vertical` chroma subsampling and `cr2_slice` tag
     /// values `slices` (`[n, w, last]`).
-    pub(super) fn new(frame_width: usize, frame_height: usize, vertical: usize, slices: &[u64]) -> Result<Layout> {
-        let &[n, w, last] = slices else { return Err(RawError::Corrupt("sRAW without slice layout".into())) };
+    pub(super) fn new(
+        frame_width: usize,
+        frame_height: usize,
+        vertical: usize,
+        slices: &[u64],
+    ) -> Result<Layout> {
+        let &[n, w, last] = slices else {
+            return Err(RawError::Corrupt("sRAW without slice layout".into()));
+        };
         if n > 64 || w == 0 || last == 0 {
             return Err(RawError::Corrupt("sRAW slice layout".into()));
         }
@@ -80,20 +90,42 @@ impl Layout {
         let mut widths = vec![w as usize; n as usize];
         widths.push(last as usize);
         if widths.iter().any(|w| w % mcu != 0) {
-            return Err(RawError::Corrupt("sRAW slice is not a whole number of MCUs".into()));
+            return Err(RawError::Corrupt(
+                "sRAW slice is not a whole number of MCUs".into(),
+            ));
         }
-        let samples =
-            frame_width.checked_mul(frame_height).and_then(|p| p.checked_add(p / vertical)).ok_or(RawError::Limit("sRAW frame too large"))?;
-        let row = widths.iter().try_fold(0usize, |a, &w| a.checked_add(w)).ok_or(RawError::Limit("sRAW slice widths"))?;
+        let samples = frame_width
+            .checked_mul(frame_height)
+            .and_then(|p| p.checked_add(p / vertical))
+            .ok_or(RawError::Limit("sRAW frame too large"))?;
+        let row = widths
+            .iter()
+            .try_fold(0usize, |a, &w| a.checked_add(w))
+            .ok_or(RawError::Limit("sRAW slice widths"))?;
         if samples == 0 || row == 0 || samples % row != 0 {
-            return Err(RawError::Corrupt(format!("sRAW slices ({row} samples per row) do not divide the frame ({samples} samples)")));
+            return Err(RawError::Corrupt(format!(
+                "sRAW slices ({row} samples per row) do not divide the frame ({samples} samples)"
+            )));
         }
         let rows = samples / row;
         let (width, height) = (row / mcu * 2, rows * vertical);
-        if width.checked_mul(height).and_then(|p| p.checked_mul(3)).is_none_or(|s| s > crate::MAX_SAMPLES) {
+        if width
+            .checked_mul(height)
+            .and_then(|p| p.checked_mul(3))
+            .is_none_or(|s| s > crate::MAX_SAMPLES)
+        {
             return Err(RawError::Limit("sRAW image too large"));
         }
-        Ok(Layout { width, height, vertical, widths, rows, mcu, frame_width, frame_height })
+        Ok(Layout {
+            width,
+            height,
+            vertical,
+            widths,
+            rows,
+            mcu,
+            frame_width,
+            frame_height,
+        })
     }
 }
 
@@ -116,7 +148,14 @@ impl Planes {
     fn arrange(frame: &ljpeg::FrameSubsampled, layout: &Layout) -> Planes {
         let (w, h, v, m) = (layout.width, layout.height, layout.vertical, layout.mcu);
         let cw = w / 2;
-        let mut p = Planes { width: w, height: h, vertical: v, y: vec![0; w * h], cb: vec![0; cw * (h / v)], cr: vec![0; cw * (h / v)] };
+        let mut p = Planes {
+            width: w,
+            height: h,
+            vertical: v,
+            y: vec![0; w * h],
+            cb: vec![0; cw * (h / v)],
+            cr: vec![0; cw * (h / v)],
+        };
         let mcus_per_frame_row = layout.frame_width / 2;
         let mut x0 = 0;
         for &sw in &layout.widths {
@@ -150,7 +189,10 @@ impl Planes {
             ny += row.len() as f64;
         }
         let (cx0, cx1) = (x0 / 2, x1.div_ceil(2).max(x0 / 2 + 1));
-        let (cy0, cy1) = (y0 / self.vertical, y1.div_ceil(self.vertical).max(y0 / self.vertical + 1));
+        let (cy0, cy1) = (
+            y0 / self.vertical,
+            y1.div_ceil(self.vertical).max(y0 / self.vertical + 1),
+        );
         let (mut sb, mut sr, mut nc) = (0f64, 0f64, 0f64);
         for y in cy0..cy1.min(self.height / self.vertical) {
             for x in cx0..cx1.min(self.chroma_width()) {
@@ -160,7 +202,11 @@ impl Planes {
             }
         }
         let nc = nc.max(1.0);
-        (sy / ny.max(1.0), sb / nc - CHROMA_CENTRE, sr / nc - CHROMA_CENTRE)
+        (
+            sy / ny.max(1.0),
+            sb / nc - CHROMA_CENTRE,
+            sr / nc - CHROMA_CENTRE,
+        )
     }
 
     /// Linear RGB (`width × height × 3`): `R = Y + a·Cr`, `B = Y + b·Cb`, `G` from the luma equation.
@@ -170,17 +216,22 @@ impl Planes {
         let cw = self.chroma_width();
         let centre = CHROMA_CENTRE as f32;
         let mut out = vec![0u16; self.width * self.height * 3];
-        out.par_chunks_mut(self.width * 3).enumerate().for_each(|(y, row)| {
-            let luma = &self.y[y * self.width..(y + 1) * self.width];
-            let chroma = (y / self.vertical) * cw;
-            for (x, px) in row.as_chunks_mut::<3>().0.iter_mut().enumerate() {
-                let (cb, cr) = (f32::from(self.cb[chroma + x / 2]) - centre, f32::from(self.cr[chroma + x / 2]) - centre);
-                let l = f32::from(luma[x]);
-                px[0] = (l + a * cr).round().clamp(0.0, 65535.0) as u16;
-                px[1] = (l - gr * cr - gb * cb).round().clamp(0.0, 65535.0) as u16;
-                px[2] = (l + b * cb).round().clamp(0.0, 65535.0) as u16;
-            }
-        });
+        out.par_chunks_mut(self.width * 3)
+            .enumerate()
+            .for_each(|(y, row)| {
+                let luma = &self.y[y * self.width..(y + 1) * self.width];
+                let chroma = (y / self.vertical) * cw;
+                for (x, px) in row.as_chunks_mut::<3>().0.iter_mut().enumerate() {
+                    let (cb, cr) = (
+                        f32::from(self.cb[chroma + x / 2]) - centre,
+                        f32::from(self.cr[chroma + x / 2]) - centre,
+                    );
+                    let l = f32::from(luma[x]);
+                    px[0] = (l + a * cr).round().clamp(0.0, 65535.0) as u16;
+                    px[1] = (l - gr * cr - gb * cb).round().clamp(0.0, 65535.0) as u16;
+                    px[2] = (l + b * cb).round().clamp(0.0, 65535.0) as u16;
+                }
+            });
         out
     }
 }
@@ -196,7 +247,12 @@ struct Preview {
 fn read_preview(bytes: &[u8], tiff: &Tiff) -> Option<Preview> {
     let info = tiff.ifds.get(2)?.image().ok()?;
     let (w, h) = (info.width as usize, info.height as usize);
-    if info.samples_per_pixel != 3 || info.bits_per_sample != [16, 16, 16] || info.compression != 1 || info.planar != 1 || info.sample_format != 1 {
+    if info.samples_per_pixel != 3
+        || info.bits_per_sample != [16, 16, 16]
+        || info.compression != 1
+        || info.planar != 1
+        || info.sample_format != 1
+    {
         return None;
     }
     let n = w.checked_mul(h)?.checked_mul(3)?;
@@ -214,8 +270,18 @@ fn read_preview(bytes: &[u8], tiff: &Tiff) -> Option<Preview> {
         return None;
     }
     let order: ByteOrder = tiff.order;
-    let rgb = raw.as_chunks::<2>().0.iter().take(n).map(|&c| order.u16(c)).collect();
-    Some(Preview { width: w, height: h, rgb })
+    let rgb = raw
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .take(n)
+        .map(|&c| order.u16(c))
+        .collect();
+    Some(Preview {
+        width: w,
+        height: h,
+        rgb,
+    })
 }
 
 #[derive(Default)]
@@ -246,8 +312,10 @@ impl Regression {
         }
         let slope = (self.n * self.sxt - self.sx * self.st) / var;
         let icpt = (self.st - slope * self.sx) / self.n;
-        let rss =
-            self.stt - 2.0 * slope * self.sxt - 2.0 * icpt * self.st + slope * slope * self.sxx + 2.0 * slope * icpt * self.sx + self.n * icpt * icpt;
+        let rss = self.stt - 2.0 * slope * self.sxt - 2.0 * icpt * self.st
+            + slope * slope * self.sxx
+            + 2.0 * slope * icpt * self.sx
+            + self.n * icpt * icpt;
         Some((slope, rss.max(0.0)))
     }
 }
@@ -270,9 +338,24 @@ fn chroma_gains(planes: &Planes, preview: &Preview, active: Rect) -> Option<(f64
     let (pw, ph) = (preview.width as f64, preview.height as f64);
     let (w, h) = (planes.width as f64, planes.height as f64);
     let grids = [
-        Grid { x0: 0.0, y0: 0.0, sx: w / pw, sy: h / ph },
-        Grid { x0: active.x as f64, y0: active.y as f64, sx: active.width as f64 / pw, sy: active.height as f64 / ph },
-        Grid { x0: 0.0, y0: 0.0, sx: (2.0 * w / pw).round() / 2.0, sy: (2.0 * h / ph).round() / 2.0 },
+        Grid {
+            x0: 0.0,
+            y0: 0.0,
+            sx: w / pw,
+            sy: h / ph,
+        },
+        Grid {
+            x0: active.x as f64,
+            y0: active.y as f64,
+            sx: active.width as f64 / pw,
+            sy: active.height as f64 / ph,
+        },
+        Grid {
+            x0: 0.0,
+            y0: 0.0,
+            sx: (2.0 * w / pw).round() / 2.0,
+            sy: (2.0 * h / ph).round() / 2.0,
+        },
     ];
     let mut best: Option<(f64, f64, f64)> = None;
     for g in &grids {
@@ -309,7 +392,8 @@ fn chroma_gains(planes: &Planes, preview: &Preview, active: Rect) -> Option<(f64
             }
         }
     }
-    best.map(|(a, b, _)| (a, b)).filter(|(a, b)| (0.25..=16.0).contains(a) && (0.25..=16.0).contains(b))
+    best.map(|(a, b, _)| (a, b))
+        .filter(|(a, b)| (0.25..=16.0).contains(a) && (0.25..=16.0).contains(b))
 }
 
 /// Word index of `AverageBlackLevel` (four equal-ish values) in the maker note's `ColorData` by `ColorDataVersion`
@@ -335,26 +419,57 @@ fn colour_data_black(words: &[u64]) -> Option<f32> {
 /// Decode a Canon sRAW / mRAW CR2 into linear white-balanced camera RGB (`cpp` 3).
 pub(super) fn decode(bytes: &[u8], tiff: &Tiff, raw: &Ifd, mode: Mode) -> Result<RawImage> {
     let ifd0 = &tiff.ifds[0];
-    let off = raw.u64(t::STRIP_OFFSETS).ok_or(RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(t::STRIP_OFFSETS)))?;
-    let len = raw.u64(t::STRIP_BYTE_COUNTS).unwrap_or(bytes.len() as u64 - off.min(bytes.len() as u64));
-    let chunk = Chunk { index: 0, x: 0, y: 0, width: 0, height: 0, plane: 0, offset: off, len };
-    let src = chunk_bytes(bytes, &chunk).ok_or_else(|| RawError::Corrupt("raw strip outside file".into()))?;
+    let off =
+        raw.u64(t::STRIP_OFFSETS)
+            .ok_or(RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(
+                t::STRIP_OFFSETS,
+            )))?;
+    let len = raw
+        .u64(t::STRIP_BYTE_COUNTS)
+        .unwrap_or(bytes.len() as u64 - off.min(bytes.len() as u64));
+    let chunk = Chunk {
+        index: 0,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        plane: 0,
+        offset: off,
+        len,
+    };
+    let src = chunk_bytes(bytes, &chunk)
+        .ok_or_else(|| RawError::Corrupt("raw strip outside file".into()))?;
     let (fw, fh, vertical) = ljpeg::frame_info_subsampled(src)?;
     let slices = raw.u64s(CR2_SLICE).unwrap_or_default();
     let layout = Layout::new(fw, fh, vertical, &slices)?;
 
     let make = ifd0.string(t::MAKE).unwrap_or_default();
-    let mn =
-        tiff.exif().and_then(|e| e.get(t::MAKER_NOTE)).and_then(|e| makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make));
+    let mn = tiff
+        .exif()
+        .and_then(|e| e.get(t::MAKER_NOTE))
+        .and_then(|e| {
+            makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)
+        });
     let (w, h) = (layout.width, layout.height);
     let mut active = Rect::new(0, 0, w, h);
-    if let Some(si) = mn.as_ref().and_then(|m| m.ifd.u64s(SENSOR_INFO)).filter(|v| v.len() >= 9) {
-        let (l, tp, r, b) = (si[5] as usize, si[6] as usize, si[7] as usize, si[8] as usize);
+    if let Some(si) = mn
+        .as_ref()
+        .and_then(|m| m.ifd.u64s(SENSOR_INFO))
+        .filter(|v| v.len() >= 9)
+    {
+        let (l, tp, r, b) = (
+            si[5] as usize,
+            si[6] as usize,
+            si[7] as usize,
+            si[8] as usize,
+        );
         if r > l && b > tp && r < w && b < h {
             active = Rect::new(l, tp, r - l + 1, b - tp + 1);
         }
     }
-    let colour_data = mn.as_ref().and_then(|m| m.ifd.value(COLOR_BALANCE).map(|v| words(v, m.order)));
+    let colour_data = mn
+        .as_ref()
+        .and_then(|m| m.ifd.value(COLOR_BALANCE).map(|v| words(v, m.order)));
     let black_counts = colour_data.as_deref().and_then(colour_data_black);
     // 1.0 = a CFA CR2 of the same body at full 14-bit scale; see LUMA_GAIN
     let white = LUMA_GAIN * (SENSOR_FULL - black_counts.unwrap_or(0.0));
@@ -363,10 +478,16 @@ pub(super) fn decode(bytes: &[u8], tiff: &Tiff, raw: &Ifd, mode: Mode) -> Result
         Mode::Header => Vec::new(),
         Mode::Full => {
             let samples = fw * fh + fw * fh / vertical;
-            let frame = ljpeg::decode_subsampled(src, samples.min(crate::MAX_SAMPLES), ljpeg::Prediction::Sequential)?;
+            let frame = ljpeg::decode_subsampled(
+                src,
+                samples.min(crate::MAX_SAMPLES),
+                ljpeg::Prediction::Sequential,
+            )?;
             let planes = Planes::arrange(&frame, &layout);
             drop(frame);
-            let (a, b) = read_preview(bytes, tiff).and_then(|p| chroma_gains(&planes, &p, active)).unwrap_or((1.0, 1.0));
+            let (a, b) = read_preview(bytes, tiff)
+                .and_then(|p| chroma_gains(&planes, &p, active))
+                .unwrap_or((1.0, 1.0));
             planes.to_rgb(a, b)
         }
     };
@@ -409,12 +530,24 @@ mod tests {
     /// 1000 1001 / 1002 1003 / 1100 1101 / 1102 1103 in MCU order, Cb 16384 16385 16484 16485, Cr 16484 16486
     /// 16584 16586.
     fn stream_422() -> Vec<u8> {
-        ljpeg::tests::fixture_subsampled(4, 2, 0x21, &[-31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2])
+        ljpeg::tests::fixture_subsampled(
+            4,
+            2,
+            0x21,
+            &[
+                -31768, 1, -16384, -16284, 1, 1, 1, 2, 100, 1, 100, 100, 1, 1, 1, 2,
+            ],
+        )
     }
 
     /// A CR2 whose raw IFD holds `stream` cut into the slices `slices` (IFD2 = a 2 × 2 16-bit RGB image when
     /// `preview` is given).
-    fn sraw_file(stream: Vec<u8>, slices: [u16; 3], sraw_type: u32, preview: Option<[u16; 12]>) -> Vec<u8> {
+    fn sraw_file(
+        stream: Vec<u8>,
+        slices: [u16; 3],
+        sraw_type: u32,
+        preview: Option<[u16; 12]>,
+    ) -> Vec<u8> {
         let mut ifd0 = IfdBuilder::new();
         ifd0.set(t::MAKE, Value::Ascii("Canon".into()));
         ifd0.set(t::MODEL, Value::Ascii("Canon EOS Test".into()));
@@ -426,7 +559,10 @@ mod tests {
             ifd2.set(t::IMAGE_LENGTH, Value::Long(vec![2]));
             ifd2.set(t::BITS_PER_SAMPLE, Value::Short(vec![16, 16, 16]));
             ifd2.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![3]));
-            ifd2.set_image(ImageData::Strips { rows_per_strip: 2, strips: vec![p.iter().flat_map(|v| v.to_le_bytes()).collect()] });
+            ifd2.set_image(ImageData::Strips {
+                rows_per_strip: 2,
+                strips: vec![p.iter().flat_map(|v| v.to_le_bytes()).collect()],
+            });
         } else {
             ifd2.set(1, Value::Short(vec![0]));
         }
@@ -434,8 +570,18 @@ mod tests {
         ifd3.set(t::COMPRESSION, Value::Short(vec![6]));
         ifd3.set(SRAW_TYPE_TAG, Value::Long(vec![sraw_type]));
         ifd3.set(CR2_SLICE, Value::Short(slices.to_vec()));
-        ifd3.set_image(ImageData::Strips { rows_per_strip: 2, strips: vec![stream] });
-        TiffWriter::new(ByteOrder::Little, false).write(&[ifd0, IfdBuilder::new().with(1, Value::Short(vec![0])), ifd2, ifd3]).unwrap()
+        ifd3.set_image(ImageData::Strips {
+            rows_per_strip: 2,
+            strips: vec![stream],
+        });
+        TiffWriter::new(ByteOrder::Little, false)
+            .write(&[
+                ifd0,
+                IfdBuilder::new().with(1, Value::Short(vec![0])),
+                ifd2,
+                ifd3,
+            ])
+            .unwrap()
     }
 
     #[test]
@@ -447,7 +593,9 @@ mod tests {
         assert_eq!((img.width, img.height, img.cpp), (4, 2, 3));
         assert!(img.cfa.is_none());
         assert_eq!(img.wb_multipliers, Some([1.0; 3]));
-        let RawData::U16(px) = &img.data else { panic!("integer data") };
+        let RawData::U16(px) = &img.data else {
+            panic!("integer data")
+        };
         // no IFD2: chroma gains 1; R = Y + Cr', B = Y + Cb', G from the BT.601 luma
         let expect = |y: f64, cb: f64, cr: f64| {
             let (r, b) = (y + cr, y + cb);
@@ -462,8 +610,14 @@ mod tests {
             ((3, 1), expect(1103.0, 101.0, 202.0)),
         ];
         for ((x, y), want) in cases {
-            let got: Vec<i32> = px[(y * 4 + x) * 3..][..3].iter().map(|&v| i32::from(v)).collect();
-            assert!(got.iter().zip(want).all(|(g, w)| (g - w).abs() <= 1), "({x},{y}): {got:?} vs {want:?}");
+            let got: Vec<i32> = px[(y * 4 + x) * 3..][..3]
+                .iter()
+                .map(|&v| i32::from(v))
+                .collect();
+            assert!(
+                got.iter().zip(want).all(|(g, w)| (g - w).abs() <= 1),
+                "({x},{y}): {got:?} vs {want:?}"
+            );
         }
         // header-only decoding reports the same image
         assert_eq!(crate::probe_info(&bytes).unwrap(), img.info());
@@ -483,7 +637,10 @@ mod tests {
         // other raw types (3 is the preview image's) stay unsupported, as before
         for kind in [0, 2, 3, 5] {
             let bytes = sraw_file(stream_422(), [1, 4, 4], kind, None);
-            assert!(matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))), "type {kind}");
+            assert!(
+                matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))),
+                "type {kind}"
+            );
         }
     }
 
@@ -508,26 +665,52 @@ mod tests {
 
     /// Textured luma and smooth chroma on `w × h` planes.
     fn test_planes(w: usize, h: usize, vertical: usize) -> Planes {
-        let y: Vec<u16> = (0..w * h).map(|i| (600 + ((i % w) * 13 + (i / w) * 29) % 1500) as u16).collect();
+        let y: Vec<u16> = (0..w * h)
+            .map(|i| (600 + ((i % w) * 13 + (i / w) * 29) % 1500) as u16)
+            .collect();
         let cw = w / 2;
         let ch = h / vertical;
-        let cb = (0..cw * ch).map(|i| (16384 + (i % cw) as i32 * 7 - (i / cw) as i32 * 3 - 150) as u16).collect();
-        let cr = (0..cw * ch).map(|i| (16384 + (i / cw) as i32 * 5 + (i % cw) as i32 * 2 - 120) as u16).collect();
-        Planes { width: w, height: h, vertical, y, cb, cr }
+        let cb = (0..cw * ch)
+            .map(|i| (16384 + (i % cw) as i32 * 7 - (i / cw) as i32 * 3 - 150) as u16)
+            .collect();
+        let cr = (0..cw * ch)
+            .map(|i| (16384 + (i / cw) as i32 * 5 + (i % cw) as i32 * 2 - 120) as u16)
+            .collect();
+        Planes {
+            width: w,
+            height: h,
+            vertical,
+            y,
+            cb,
+            cr,
+        }
     }
 
     /// An IFD2 image of `pw × ph` pixels at `scale` per pixel, built the way the files relate it to the planes.
-    fn preview_of(p: &Planes, pw: usize, ph: usize, scale: usize, a: f64, b: f64, pedestal: f64) -> Preview {
+    fn preview_of(
+        p: &Planes,
+        pw: usize,
+        ph: usize,
+        scale: usize,
+        a: f64,
+        b: f64,
+        pedestal: f64,
+    ) -> Preview {
         let mut rgb = Vec::new();
         for j in 0..ph {
             for i in 0..pw {
-                let (y, cb, cr) = p.window_mean(i * scale, (i + 1) * scale, j * scale, (j + 1) * scale);
+                let (y, cb, cr) =
+                    p.window_mean(i * scale, (i + 1) * scale, j * scale, (j + 1) * scale);
                 let (r, bl) = (y + a * cr, y + b * cb);
                 let g = (y - KR * r - KB * bl) / KG;
                 rgb.extend([r, g, bl].map(|v| (v + pedestal).round().clamp(0.0, 65535.0) as u16));
             }
         }
-        Preview { width: pw, height: ph, rgb }
+        Preview {
+            width: pw,
+            height: ph,
+            rgb,
+        }
     }
 
     #[test]
@@ -538,9 +721,12 @@ mod tests {
                 // IFD2 is a plain 1/4 reduction, optionally with a black pedestal (some bodies add one)
                 for pedestal in [0.0, 520.0] {
                     let preview = preview_of(&planes, 40, 24, 4, a, b, pedestal);
-                    let (ga, gb) =
-                        chroma_gains(&planes, &preview, Rect::new(0, 0, 160, 96)).unwrap_or_else(|| panic!("no fit for {a}, {b}, {vertical}"));
-                    assert!((ga / a - 1.0).abs() < 0.02 && (gb / b - 1.0).abs() < 0.02, "vertical {vertical}: ({a}, {b}) measured as ({ga}, {gb})");
+                    let (ga, gb) = chroma_gains(&planes, &preview, Rect::new(0, 0, 160, 96))
+                        .unwrap_or_else(|| panic!("no fit for {a}, {b}, {vertical}"));
+                    assert!(
+                        (ga / a - 1.0).abs() < 0.02 && (gb / b - 1.0).abs() < 0.02,
+                        "vertical {vertical}: ({a}, {b}) measured as ({ga}, {gb})"
+                    );
                 }
             }
         }
@@ -548,11 +734,19 @@ mod tests {
         let planes = test_planes(164, 96, 1);
         let mut preview = preview_of(&planes, 40, 24, 4, 5.7, 7.4, 0.0);
         let (ga, gb) = chroma_gains(&planes, &preview, Rect::new(0, 0, 164, 96)).unwrap();
-        assert!((ga / 5.7 - 1.0).abs() < 0.02 && (gb / 7.4 - 1.0).abs() < 0.02, "({ga}, {gb})");
-        // a preview of something else gives no usable fit rather than a wild gain
-        preview.rgb.iter_mut().enumerate().for_each(|(i, v)| *v = (1000 + (i * 7919) % 3000) as u16);
         assert!(
-            chroma_gains(&planes, &preview, Rect::new(0, 0, 164, 96)).is_none_or(|(a, b)| (0.25..=16.0).contains(&a) && (0.25..=16.0).contains(&b))
+            (ga / 5.7 - 1.0).abs() < 0.02 && (gb / 7.4 - 1.0).abs() < 0.02,
+            "({ga}, {gb})"
+        );
+        // a preview of something else gives no usable fit rather than a wild gain
+        preview
+            .rgb
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, v)| *v = (1000 + (i * 7919) % 3000) as u16);
+        assert!(
+            chroma_gains(&planes, &preview, Rect::new(0, 0, 164, 96))
+                .is_none_or(|(a, b)| (0.25..=16.0).contains(&a) && (0.25..=16.0).contains(&b))
         );
     }
 

@@ -10,8 +10,21 @@ use rayon::prelude::*;
 use crate::util::{layer_or_self, lerp4, premul, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Channel", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Channel",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pct() -> ParamUi {
@@ -32,38 +45,53 @@ fn blend(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if orig >= 1.0 {
         return b;
     }
-    let other = layer_or_self(ctx, &b, "blendWithLayer", true, ctx.params.e("ifLayerSizesDiffer") == 1);
-    b.img.data.par_iter_mut().zip(other.data.par_iter()).for_each(|(px, &o)| {
-        let src = *px;
-        let blended = match mode {
-            // Crossfade: the other layer replaces this one.
-            0 => o,
-            // Color Only / Tint Only: hue (and saturation) from the other layer, lightness kept.
-            1 | 2 => {
-                let (c, a) = unpremul(src);
-                let (oc, oa) = unpremul(o);
-                if a <= 0.0 || oa <= 0.0 {
-                    src
-                } else {
-                    let (_, s, l) = rgb_to_hsl(c[0], c[1], c[2]);
-                    let (oh, os, _) = rgb_to_hsl(oc[0], oc[1], oc[2]);
-                    let (h2, s2) = if mode == 1 {
-                        (oh, os)
-                    } else if s > 1e-4 {
-                        (oh, s)
+    let other = layer_or_self(
+        ctx,
+        &b,
+        "blendWithLayer",
+        true,
+        ctx.params.e("ifLayerSizesDiffer") == 1,
+    );
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(other.data.par_iter())
+        .for_each(|(px, &o)| {
+            let src = *px;
+            let blended = match mode {
+                // Crossfade: the other layer replaces this one.
+                0 => o,
+                // Color Only / Tint Only: hue (and saturation) from the other layer, lightness kept.
+                1 | 2 => {
+                    let (c, a) = unpremul(src);
+                    let (oc, oa) = unpremul(o);
+                    if a <= 0.0 || oa <= 0.0 {
+                        src
                     } else {
-                        (0.0, 0.0)
-                    };
-                    let (r, g, bb) = hsl_to_rgb(h2, s2, l);
-                    let t = oa;
-                    lerp4(src, premul([r, g, bb], a), t)
+                        let (_, s, l) = rgb_to_hsl(c[0], c[1], c[2]);
+                        let (oh, os, _) = rgb_to_hsl(oc[0], oc[1], oc[2]);
+                        let (h2, s2) = if mode == 1 {
+                            (oh, os)
+                        } else if s > 1e-4 {
+                            (oh, s)
+                        } else {
+                            (0.0, 0.0)
+                        };
+                        let (r, g, bb) = hsl_to_rgb(h2, s2, l);
+                        let t = oa;
+                        lerp4(src, premul([r, g, bb], a), t)
+                    }
                 }
-            }
-            3 => [src[0].min(o[0]), src[1].min(o[1]), src[2].min(o[2]), src[3]],
-            _ => [src[0].max(o[0]), src[1].max(o[1]), src[2].max(o[2]), src[3].max(o[3])],
-        };
-        *px = lerp4(blended, src, orig);
-    });
+                3 => [src[0].min(o[0]), src[1].min(o[1]), src[2].min(o[2]), src[3]],
+                _ => [
+                    src[0].max(o[0]),
+                    src[1].max(o[1]),
+                    src[2].max(o[2]),
+                    src[3].max(o[3]),
+                ],
+            };
+            *px = lerp4(blended, src, orig);
+        });
     b
 }
 
@@ -126,13 +154,27 @@ fn extract(px: [f32; 4], ch: u32, invert: bool) -> [f32; 4] {
 fn calculations(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let in_ch = ctx.params.e("inputChannel");
     let in_inv = ctx.params.b("invertInput");
-    let second = ctx.params.get("secondLayer").and_then(Value::as_layer).is_some();
+    let second = ctx
+        .params
+        .get("secondLayer")
+        .and_then(Value::as_layer)
+        .is_some();
     let sec_ch = ctx.params.e("secondLayerChannel");
     let sec_op = (ctx.params.f("secondLayerOpacity") as f32 / 100.0).clamp(0.0, 1.0);
     let sec_inv = ctx.params.b("invertSecondLayer");
     let mode = CALC_MODES[(ctx.params.e("blendingMode") as usize).min(CALC_MODES.len() - 1)];
     let keep_alpha = ctx.params.b("preserveTransparency");
-    let other = if second { Some(layer_or_self(ctx, &b, "secondLayer", true, ctx.params.b("stretchSecondLayerToFit"))) } else { None };
+    let other = if second {
+        Some(layer_or_self(
+            ctx,
+            &b,
+            "secondLayer",
+            true,
+            ctx.params.b("stretchSecondLayerToFit"),
+        ))
+    } else {
+        None
+    };
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let orig_a = px[3];
         let mut o = extract(*px, in_ch, in_inv);
@@ -193,11 +235,24 @@ fn cc_composite(ctx: &EffectCtx, mut b: Buf) -> Buf {
         15 => BlendMode::StencilAlpha,
         _ => BlendMode::Normal,
     };
-    let original = ctx.env.host.and_then(|h| h.original()).map(|o| crate::util::fit_buffer(o, b.img.width, b.img.height, b.offset, b.scale));
+    let original = ctx
+        .env
+        .host
+        .and_then(|h| h.original())
+        .map(|o| crate::util::fit_buffer(o, b.img.width, b.img.height, b.offset, b.scale));
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let result = *px;
-        let orig = original.as_ref().and_then(|o| o.data.get(i)).copied().unwrap_or(result).map(|v| v * op);
-        let mut o = if m == 1 { blend_pixel(BlendMode::Normal, orig, result, 0.5) } else { blend_pixel(mode, result, orig, 0.5) };
+        let orig = original
+            .as_ref()
+            .and_then(|o| o.data.get(i))
+            .copied()
+            .unwrap_or(result)
+            .map(|v| v * op);
+        let mut o = if m == 1 {
+            blend_pixel(BlendMode::Normal, orig, result, 0.5)
+        } else {
+            blend_pixel(mode, result, orig, 0.5)
+        };
         o[3] = o[3].clamp(0.0, 1.0);
         if rgb_only {
             let (c, _) = unpremul(o);
@@ -210,8 +265,23 @@ fn cc_composite(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 // ---------------------------------------------------------------- Compound Arithmetic
 
-const OPERATORS: [&str; 15] =
-    ["Copy", "Add", "Subtract", "Multiply", "Difference", "And", "Or", "Xor", "Lighten", "Darken", "Minimum", "Maximum", "Screen", "Overlay", "Hard Light"];
+const OPERATORS: [&str; 15] = [
+    "Copy",
+    "Add",
+    "Subtract",
+    "Multiply",
+    "Difference",
+    "And",
+    "Or",
+    "Xor",
+    "Lighten",
+    "Darken",
+    "Minimum",
+    "Maximum",
+    "Screen",
+    "Overlay",
+    "Hard Light",
+];
 
 /// One channel operation on straight values in 0..1 (may overflow).
 #[inline]
@@ -268,24 +338,34 @@ fn compound_arithmetic(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if orig >= 1.0 {
         return b;
     }
-    let other = layer_or_self(ctx, &b, "secondSource", true, ctx.params.b("stretchSecondSourceToFit"));
-    b.img.data.par_iter_mut().zip(other.data.par_iter()).for_each(|(px, &o)| {
-        let src = *px;
-        let (c, a) = unpremul(src);
-        let (oc, oa) = unpremul(o);
-        let mut rc = c;
-        let mut ra = a;
-        if chans != 2 {
-            for k in 0..3 {
-                rc[k] = overflow(op, arith(op, c[k], oc[k]), how);
+    let other = layer_or_self(
+        ctx,
+        &b,
+        "secondSource",
+        true,
+        ctx.params.b("stretchSecondSourceToFit"),
+    );
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(other.data.par_iter())
+        .for_each(|(px, &o)| {
+            let src = *px;
+            let (c, a) = unpremul(src);
+            let (oc, oa) = unpremul(o);
+            let mut rc = c;
+            let mut ra = a;
+            if chans != 2 {
+                for k in 0..3 {
+                    rc[k] = overflow(op, arith(op, c[k], oc[k]), how);
+                }
             }
-        }
-        if chans != 0 {
-            ra = overflow(op, arith(op, a, oa), how);
-        }
-        let res = premul(rc, ra);
-        *px = lerp4(res, src, orig);
-    });
+            if chans != 0 {
+                ra = overflow(op, arith(op, a, oa), how);
+            }
+            let res = premul(rc, ra);
+            *px = lerp4(res, src, orig);
+        });
     b
 }
 
@@ -297,9 +377,25 @@ pub fn specs() -> Vec<EffectSpec> {
             "Blend",
             vec![
                 layer_param("blendWithLayer", "Blend With Layer"),
-                p("mode", "Mode", Value::Enum(0), popup(&["Crossfade", "Color Only", "Tint Only", "Darken Only", "Lighten Only"])),
+                p(
+                    "mode",
+                    "Mode",
+                    Value::Enum(0),
+                    popup(&[
+                        "Crossfade",
+                        "Color Only",
+                        "Tint Only",
+                        "Darken Only",
+                        "Lighten Only",
+                    ]),
+                ),
                 p("blendWithOriginal", "Blend With Original", num(0.0), pct()),
-                p("ifLayerSizesDiffer", "If Layer Sizes Differ", Value::Enum(0), popup(&SIZE_DIFF)),
+                p(
+                    "ifLayerSizesDiffer",
+                    "If Layer Sizes Differ",
+                    Value::Enum(0),
+                    popup(&SIZE_DIFF),
+                ),
             ],
             blend,
         ),
@@ -307,15 +403,57 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.channel.calculations",
             "Calculations",
             vec![
-                p("inputChannel", "Input Channel", Value::Enum(0), popup(&CHANNELS)),
-                p("invertInput", "Invert Input", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "inputChannel",
+                    "Input Channel",
+                    Value::Enum(0),
+                    popup(&CHANNELS),
+                ),
+                p(
+                    "invertInput",
+                    "Invert Input",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 layer_param("secondLayer", "Second Layer"),
-                p("secondLayerChannel", "Second Layer Channel", Value::Enum(0), popup(&CHANNELS)),
-                p("secondLayerOpacity", "Second Layer Opacity", num(100.0), pct()),
-                p("invertSecondLayer", "Invert Second Layer", Value::Bool(false), ParamUi::Checkbox),
-                p("stretchSecondLayerToFit", "Stretch Second Layer to Fit", Value::Bool(true), ParamUi::Checkbox),
-                p("blendingMode", "Blending Mode", Value::Enum(0), ParamUi::Popup { options: calc_modes.iter().map(|s| s.to_string()).collect() }),
-                p("preserveTransparency", "Preserve Transparency", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "secondLayerChannel",
+                    "Second Layer Channel",
+                    Value::Enum(0),
+                    popup(&CHANNELS),
+                ),
+                p(
+                    "secondLayerOpacity",
+                    "Second Layer Opacity",
+                    num(100.0),
+                    pct(),
+                ),
+                p(
+                    "invertSecondLayer",
+                    "Invert Second Layer",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "stretchSecondLayerToFit",
+                    "Stretch Second Layer to Fit",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    ParamUi::Popup {
+                        options: calc_modes.iter().map(|s| s.to_string()).collect(),
+                    },
+                ),
+                p(
+                    "preserveTransparency",
+                    "Preserve Transparency",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             calculations,
         ),
@@ -324,7 +462,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "CC Composite",
             vec![
                 p("opacity", "Opacity", num(100.0), pct()),
-                p("compositeOriginal", "Composite Original", Value::Enum(0), popup(&CC_COMPOSITE_MODES)),
+                p(
+                    "compositeOriginal",
+                    "Composite Original",
+                    Value::Enum(0),
+                    popup(&CC_COMPOSITE_MODES),
+                ),
                 p("rgbOnly", "RGB Only", Value::Bool(false), ParamUi::Checkbox),
             ],
             cc_composite,
@@ -335,9 +478,24 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 layer_param("secondSource", "Second Source Layer"),
                 p("operator", "Operator", Value::Enum(0), popup(&OPERATORS)),
-                p("operateOnChannels", "Operate On Channels", Value::Enum(0), popup(&["RGB", "ARGB", "Alpha"])),
-                p("overflowBehavior", "Overflow Behavior", Value::Enum(0), popup(&["Clip", "Wrap", "Scale"])),
-                p("stretchSecondSourceToFit", "Stretch Second Source to Fit", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "operateOnChannels",
+                    "Operate On Channels",
+                    Value::Enum(0),
+                    popup(&["RGB", "ARGB", "Alpha"]),
+                ),
+                p(
+                    "overflowBehavior",
+                    "Overflow Behavior",
+                    Value::Enum(0),
+                    popup(&["Clip", "Wrap", "Scale"]),
+                ),
+                p(
+                    "stretchSecondSourceToFit",
+                    "Stretch Second Source to Fit",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
                 p("blendWithOriginal", "Blend With Original", num(0.0), pct()),
             ],
             compound_arithmetic,
@@ -355,7 +513,14 @@ pub(crate) mod tests {
     pub(crate) struct FakeHost(pub Image);
     impl EffectHost for FakeHost {
         fn layer(&self, id: u64, _: bool) -> Option<LayerPixels> {
-            (id == 7).then(|| LayerPixels { buf: Buf { img: self.0.clone(), offset: [0.0; 2], scale: 1.0 }, size: [self.0.width as f64, self.0.height as f64] })
+            (id == 7).then(|| LayerPixels {
+                buf: Buf {
+                    img: self.0.clone(),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [self.0.width as f64, self.0.height as f64],
+            })
         }
         fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
             None
@@ -374,27 +539,57 @@ pub(crate) mod tests {
     }
 
     fn close(a: &Image, b: &Image, tol: f32) -> bool {
-        a.data.iter().zip(b.data.iter()).all(|(p, q)| p.iter().zip(q.iter()).all(|(x, y)| (x - y).abs() <= tol))
+        a.data
+            .iter()
+            .zip(b.data.iter())
+            .all(|(p, q)| p.iter().zip(q.iter()).all(|(x, y)| (x - y).abs() <= tol))
     }
 
     fn with_host<R>(other: Image, f: impl FnOnce(EffectEnv) -> R) -> R {
         let host = FakeHost(other);
-        f(EffectEnv { host: Some(&host), ..Default::default() })
+        f(EffectEnv {
+            host: Some(&host),
+            ..Default::default()
+        })
     }
 
     #[test]
     fn blend_self_crossfade_is_identity_and_layer_crossfades() {
         let img = sample();
-        let out = run_fx("ec.channel.blend", &[], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.channel.blend",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(close(&out.img, &img, 1e-6));
         let red = Image::filled(8, 6, [1.0, 0.0, 0.0, 1.0]);
         let out = with_host(red, |env| {
-            run_fx("ec.channel.blend", &[("blendWithLayer", Value::Layer(Some(7))), ("blendWithOriginal", num(50.0))], img.clone(), 0.0, env)
+            run_fx(
+                "ec.channel.blend",
+                &[
+                    ("blendWithLayer", Value::Layer(Some(7))),
+                    ("blendWithOriginal", num(50.0)),
+                ],
+                img.clone(),
+                0.0,
+                env,
+            )
         });
         let p = out.img.get(0, 0);
         assert!((p[0] - 0.5).abs() < 1e-5 && (p[3] - 1.0).abs() < 1e-5);
         let again = with_host(Image::filled(8, 6, [1.0, 0.0, 0.0, 1.0]), |env| {
-            run_fx("ec.channel.blend", &[("blendWithLayer", Value::Layer(Some(7))), ("blendWithOriginal", num(50.0))], img.clone(), 0.0, env)
+            run_fx(
+                "ec.channel.blend",
+                &[
+                    ("blendWithLayer", Value::Layer(Some(7))),
+                    ("blendWithOriginal", num(50.0)),
+                ],
+                img.clone(),
+                0.0,
+                env,
+            )
         });
         assert_eq!(out.img.data, again.img.data);
     }
@@ -402,13 +597,34 @@ pub(crate) mod tests {
     #[test]
     fn calculations_defaults_identity_and_gray() {
         let img = sample();
-        let out = run_fx("ec.channel.calculations", &[], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.channel.calculations",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(close(&out.img, &img, 1e-6));
-        let g = run_fx("ec.channel.calculations", &[("inputChannel", Value::Enum(2))], img.clone(), 0.0, EffectEnv::default());
+        let g = run_fx(
+            "ec.channel.calculations",
+            &[("inputChannel", Value::Enum(2))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         let p = g.img.get(4, 2);
         assert!((p[0] - 0.5).abs() < 1e-5 && p[0] == p[1] && p[1] == p[2]);
         let m = with_host(Image::filled(8, 6, [0.5, 0.5, 0.5, 1.0]), |env| {
-            run_fx("ec.channel.calculations", &[("secondLayer", Value::Layer(Some(7))), ("blendingMode", Value::Enum(2))], img.clone(), 0.0, env)
+            run_fx(
+                "ec.channel.calculations",
+                &[
+                    ("secondLayer", Value::Layer(Some(7))),
+                    ("blendingMode", Value::Enum(2)),
+                ],
+                img.clone(),
+                0.0,
+                env,
+            )
         });
         let q = m.img.get(4, 0);
         assert!((q[0] - 0.25).abs() < 1e-4, "{q:?}");
@@ -417,27 +633,61 @@ pub(crate) mod tests {
     #[test]
     fn cc_composite_in_front_is_identity_on_opaque() {
         let img = Image::filled(4, 4, [0.3, 0.6, 0.2, 1.0]);
-        let out = run_fx("ec.channel.cccomposite", &[], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.channel.cccomposite",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(close(&out.img, &img, 1e-6));
-        let add = run_fx("ec.channel.cccomposite", &[("compositeOriginal", Value::Enum(2))], img.clone(), 0.0, EffectEnv::default());
+        let add = run_fx(
+            "ec.channel.cccomposite",
+            &[("compositeOriginal", Value::Enum(2))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!((add.img.get(0, 0)[0] - 0.6).abs() < 1e-5);
     }
 
     #[test]
     fn compound_arithmetic_copy_self_identity_and_add() {
         let img = sample();
-        let out = run_fx("ec.channel.compoundarithmetic", &[], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.channel.compoundarithmetic",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert!(close(&out.img, &img, 1e-5));
         let other = Image::filled(8, 6, [0.25, 0.25, 0.25, 1.0]);
         let add = with_host(other, |env| {
-            run_fx("ec.channel.compoundarithmetic", &[("secondSource", Value::Layer(Some(7))), ("operator", Value::Enum(1))], img.clone(), 0.0, env)
+            run_fx(
+                "ec.channel.compoundarithmetic",
+                &[
+                    ("secondSource", Value::Layer(Some(7))),
+                    ("operator", Value::Enum(1)),
+                ],
+                img.clone(),
+                0.0,
+                env,
+            )
         });
         let p = add.img.get(4, 3);
-        assert!((p[0] - (0.5 + 0.25)).abs() < 1e-5 && (p[1] - 0.75).abs() < 1e-5, "{p:?}");
+        assert!(
+            (p[0] - (0.5 + 0.25)).abs() < 1e-5 && (p[1] - 0.75).abs() < 1e-5,
+            "{p:?}"
+        );
         let sc = with_host(Image::filled(8, 6, [1.0, 1.0, 1.0, 1.0]), |env| {
             run_fx(
                 "ec.channel.compoundarithmetic",
-                &[("secondSource", Value::Layer(Some(7))), ("operator", Value::Enum(1)), ("overflowBehavior", Value::Enum(2))],
+                &[
+                    ("secondSource", Value::Layer(Some(7))),
+                    ("operator", Value::Enum(1)),
+                    ("overflowBehavior", Value::Enum(2)),
+                ],
                 img.clone(),
                 0.0,
                 env,
@@ -466,15 +716,27 @@ mod original_tests {
     #[test]
     fn composite_preserves_alpha_opacity_and_padded_alignment() {
         let spec = crate::find("ec.channel.cccomposite").unwrap();
-        let mut params = crate::Params { values: spec.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
-        let host = Original(Buf { img: Image::filled(1, 1, [0.5, 0.0, 0.0, 0.5]), offset: [0.0; 2], scale: 1.0 });
+        let mut params = crate::Params {
+            values: spec
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
+        let host = Original(Buf {
+            img: Image::filled(1, 1, [0.5, 0.0, 0.0, 0.5]),
+            offset: [0.0; 2],
+            scale: 1.0,
+        });
         for (mode, opacity, rgb, want) in [
             (0, 100.0, false, [0.5, 0.0, 0.125, 0.625]),
             (1, 100.0, false, [0.375, 0.0, 0.25, 0.625]),
             (0, 50.0, false, [0.25, 0.0, 0.1875, 0.4375]),
             (0, 100.0, true, [0.2, 0.0, 0.05, 0.25]),
         ] {
-            params.values.insert("compositeOriginal".into(), Value::Enum(mode));
+            params
+                .values
+                .insert("compositeOriginal".into(), Value::Enum(mode));
             params.values.insert("opacity".into(), num(opacity));
             params.values.insert("rgbOnly".into(), Value::Bool(rgb));
             let ctx = EffectCtx {
@@ -483,9 +745,16 @@ mod original_tests {
                 layer_size: [1.0; 2],
                 seed: 0,
                 adjustment: false,
-                env: EffectEnv { host: Some(&host), ..Default::default() },
+                env: EffectEnv {
+                    host: Some(&host),
+                    ..Default::default()
+                },
             };
-            let mut input = Buf { img: Image::filled(1, 1, [0.0, 0.0, 0.25, 0.25]), offset: [0.0; 2], scale: 1.0 };
+            let mut input = Buf {
+                img: Image::filled(1, 1, [0.0, 0.0, 0.25, 0.25]),
+                offset: [0.0; 2],
+                scale: 1.0,
+            };
             input.pad(1);
             let out = cc_composite(&ctx, input);
             for (a, b) in out.img.get(1, 1).iter().zip(want) {

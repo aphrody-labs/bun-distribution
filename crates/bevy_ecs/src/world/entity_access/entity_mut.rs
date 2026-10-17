@@ -4,12 +4,12 @@ use crate::{
     component::{Component, ComponentId, Mutable},
     entity::{ContainsEntity, Entity, EntityEquivalent, EntityLocation},
     query::{
-        has_conflicts, Access, QueryAccessError, ReadOnlyQueryData, ReleaseStateQueryData,
-        SingleEntityQueryData,
+        Access, QueryAccessError, ReadOnlyQueryData, ReleaseStateQueryData, SingleEntityQueryData,
+        has_conflicts,
     },
     world::{
-        error::EntityComponentError, unsafe_world_cell::UnsafeEntityCell, DynamicComponentFetch,
-        EntityRef, FilteredEntityMut, FilteredEntityRef, Mut, Ref,
+        DynamicComponentFetch, EntityRef, FilteredEntityMut, FilteredEntityRef, Mut, Ref,
+        error::EntityComponentError, unsafe_world_cell::UnsafeEntityCell,
     },
 };
 

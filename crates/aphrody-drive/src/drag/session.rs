@@ -30,8 +30,15 @@ impl DragSession {
     pub fn with_id(id: String, config: DragConfig, source_window: String) -> Self {
         let started_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX));
-        Self { id, config, source_window, started_at }
+            .map_or(0, |elapsed| {
+                u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX)
+            });
+        Self {
+            id,
+            config,
+            source_window,
+            started_at,
+        }
     }
 
     /// The `drag:began` payload.

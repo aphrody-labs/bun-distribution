@@ -4,8 +4,8 @@
 use std::collections::BTreeMap;
 
 use figcraft_doc::{
-    DecorationLength, DecorationStyle, LetterSpacing, LineHeight, ListStyle, ParaList, StyleRun, TextAlignH, TextAlignV, TextAutoResize, TextCase,
-    TextData, TextDecoration, TextStyle,
+    DecorationLength, DecorationStyle, LetterSpacing, LineHeight, ListStyle, ParaList, StyleRun,
+    TextAlignH, TextAlignV, TextAutoResize, TextCase, TextData, TextDecoration, TextStyle,
 };
 use serde_json::Value;
 
@@ -24,7 +24,11 @@ pub(super) fn text_data(cx: &mut Ctx, v: &Value) -> TextData {
     }
     let style_json = v.get("style").unwrap_or(&Value::Null);
     let base = type_style(cx, style_json, &TextStyle::default());
-    let mut td = TextData { characters, style: base, ..TextData::default() };
+    let mut td = TextData {
+        characters,
+        style: base,
+        ..TextData::default()
+    };
     paragraph(style_json, &mut td);
     td.runs = runs(cx, v, &td);
     td.normalize();
@@ -55,7 +59,9 @@ fn paragraph(s: &Value, td: &mut TextData) {
     if text(s, "textTruncation") == Some("ENDING") {
         td.auto_resize = TextAutoResize::Truncate;
     }
-    td.max_lines = num(s, "maxLines").filter(|n| *n >= 1.0).map_or(0, |n| n.min(10_000.0) as u32);
+    td.max_lines = num(s, "maxLines")
+        .filter(|n| *n >= 1.0)
+        .map_or(0, |n| n.min(10_000.0) as u32);
     td.paragraph_spacing = len(s, "paragraphSpacing").unwrap_or(0.0);
     td.paragraph_indent = len(s, "paragraphIndent").unwrap_or(0.0);
     td.list_spacing = len(s, "listSpacing").unwrap_or(0.0).min(10_000.0);
@@ -67,7 +73,10 @@ fn paragraph(s: &Value, td: &mut TextData) {
     if let Some(flags) = s.get("openTypeFlags").and_then(Value::as_object) {
         for (tag, on) in flags.iter().take(64) {
             if figcraft_doc::valid_feature_tag(&tag.to_ascii_lowercase()) {
-                td.features.insert(tag.to_ascii_lowercase(), on.as_f64().is_some_and(|x| x != 0.0) || on.as_bool() == Some(true));
+                td.features.insert(
+                    tag.to_ascii_lowercase(),
+                    on.as_f64().is_some_and(|x| x != 0.0) || on.as_bool() == Some(true),
+                );
             }
         }
     }
@@ -82,7 +91,8 @@ fn type_style(cx: &mut Ctx, s: &Value, base: &TextStyle) -> TextStyle {
     if let Some(st) = text(s, "fontStyle").filter(|f| !f.trim().is_empty()) {
         t.font_style = super::props::clip_str(st).to_string();
     } else if s.get("fontWeight").is_some() || s.get("italic").is_some() {
-        let weight = num(s, "fontWeight").map_or_else(|| t.weight(), |w| w.clamp(1.0, 1000.0) as u16);
+        let weight =
+            num(s, "fontWeight").map_or_else(|| t.weight(), |w| w.clamp(1.0, 1000.0) as u16);
         t.font_style = style_name(weight, flag(s, "italic").unwrap_or_else(|| t.italic()));
     }
     if let Some(size) = num(s, "fontSize").filter(|x| *x > 0.0) {
@@ -104,7 +114,11 @@ fn type_style(cx: &mut Ctx, s: &Value, base: &TextStyle) -> TextStyle {
     }
     // Letter spacing is in pixels.
     if let Some(ls) = num(s, "letterSpacing") {
-        t.letter_spacing = if ls == 0.0 { LetterSpacing::default() } else { LetterSpacing::Pixels(ls.clamp(-1e4, 1e4)) };
+        t.letter_spacing = if ls == 0.0 {
+            LetterSpacing::default()
+        } else {
+            LetterSpacing::Pixels(ls.clamp(-1e4, 1e4))
+        };
     }
     match text(s, "textCase") {
         Some("ORIGINAL") => t.case = TextCase::Original,
@@ -126,7 +140,9 @@ fn type_style(cx: &mut Ctx, s: &Value, base: &TextStyle) -> TextStyle {
     }
     if let Some(h) = s.get("hyperlink") {
         match (text(h, "type"), text(h, "url")) {
-            (Some("URL") | None, Some(url)) if !url.is_empty() => t.link = Some(super::props::clip_str(url).to_string()),
+            (Some("URL") | None, Some(url)) if !url.is_empty() => {
+                t.link = Some(super::props::clip_str(url).to_string())
+            }
             _ => {}
         }
     }
@@ -160,9 +176,16 @@ fn runs(cx: &mut Ctx, v: &Value, td: &TextData) -> Vec<StyleRun> {
     let ids: Vec<u64> = v
         .get("characterStyleOverrides")
         .and_then(Value::as_array)
-        .map(|a| a.iter().take(MAX_CHARS * 2).map(|x| x.as_u64().unwrap_or(0)).collect())
+        .map(|a| {
+            a.iter()
+                .take(MAX_CHARS * 2)
+                .map(|x| x.as_u64().unwrap_or(0))
+                .collect()
+        })
         .unwrap_or_default();
-    let Some(table) = v.get("styleOverrideTable").and_then(Value::as_object) else { return Vec::new() };
+    let Some(table) = v.get("styleOverrideTable").and_then(Value::as_object) else {
+        return Vec::new();
+    };
     if ids.iter().all(|i| *i == 0) || table.is_empty() {
         return Vec::new();
     }
@@ -197,7 +220,11 @@ fn runs(cx: &mut Ctx, v: &Value, td: &TextData) -> Vec<StyleRun> {
                 },
             };
             if let Some(style) = style.filter(|s| *s != td.style) {
-                out.push(StyleRun { start: i, end: j, style });
+                out.push(StyleRun {
+                    start: i,
+                    end: j,
+                    style,
+                });
             }
         }
         i = j;
@@ -218,7 +245,11 @@ fn lists(v: &Value, td: &mut TextData) {
                 Some("ORDERED") => ListStyle::Numbered,
                 _ => ListStyle::None,
             },
-            indent: indents.get(i).and_then(Value::as_f64).filter(|d| d.is_finite()).map_or(0, |d| d.clamp(0.0, 255.0) as u8),
+            indent: indents
+                .get(i)
+                .and_then(Value::as_f64)
+                .filter(|d| d.is_finite())
+                .map_or(0, |d| d.clamp(0.0, 255.0) as u8),
         })
         .collect();
     // Clamp the levels and fold one style for all back into the layer's list style.
@@ -244,8 +275,16 @@ fn decoration_look(s: &Value, t: &mut TextStyle) {
         Some("SOLID") => Some(DecorationStyle::Solid),
         _ => None,
     };
-    let (thickness, offset, skip) = (length("textDecorationThickness"), length("textDecorationOffset"), flag(s, "textDecorationSkipInk"));
-    let color = s.get("textDecorationColor").map(|c| c.get("value").and_then(|p| p.get("color")).and_then(super::props::color));
+    let (thickness, offset, skip) = (
+        length("textDecorationThickness"),
+        length("textDecorationOffset"),
+        flag(s, "textDecorationSkipInk"),
+    );
+    let color = s.get("textDecorationColor").map(|c| {
+        c.get("value")
+            .and_then(|p| p.get("color"))
+            .and_then(super::props::color)
+    });
     t.set_look(|l| {
         l.style = style.unwrap_or(l.style);
         l.thickness = thickness.unwrap_or(l.thickness);

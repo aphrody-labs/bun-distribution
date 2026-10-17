@@ -97,12 +97,15 @@ impl CatalogService {
     /// Declared `port`, else the port of the `health` probe.
     #[must_use]
     pub fn effective_port(&self) -> Option<u16> {
-        self.port.or_else(|| self.health.as_deref().and_then(address_port))
+        self.port
+            .or_else(|| self.health.as_deref().and_then(address_port))
     }
 
     #[must_use]
     pub fn provides(&self, capability: &str) -> bool {
-        self.capabilities.as_deref().is_some_and(|list| list.iter().any(|c| c == capability))
+        self.capabilities
+            .as_deref()
+            .is_some_and(|list| list.iter().any(|c| c == capability))
     }
 
     #[must_use]
@@ -132,14 +135,20 @@ impl CatalogService {
 
     #[must_use]
     pub fn is_oneshot(&self) -> bool {
-        self.unit.as_deref().is_some_and(|unit| unit.ends_with(".timer"))
+        self.unit
+            .as_deref()
+            .is_some_and(|unit| unit.ends_with(".timer"))
     }
 
     /// The unit lifecycle commands act on (a timer acts on its service); `None` for a unit-less service.
     #[must_use]
     pub fn systemd_unit_name(&self) -> Option<String> {
         let unit = self.unit.as_deref()?;
-        Some(if self.is_oneshot() { unit.replace(".timer", ".service") } else { unit.to_owned() })
+        Some(if self.is_oneshot() {
+            unit.replace(".timer", ".service")
+        } else {
+            unit.to_owned()
+        })
     }
 }
 

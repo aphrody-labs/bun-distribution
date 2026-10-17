@@ -439,8 +439,11 @@ impl<T> SparseLargeVector<T> {
         }
 
         if !self.is_committed_page(index) {
-            assert!(self.commit_page(index),
-                "Cannot access SparseLargeVector index {} with RW permission", index);
+            assert!(
+                self.commit_page(index),
+                "Cannot access SparseLargeVector index {} with RW permission",
+                index
+            );
         }
         unsafe { &mut *self.base_ptr.add(index) }
     }
@@ -617,9 +620,13 @@ impl<T> SparseLargeVector<T> {
                 page as *mut _,
                 host_page_size() as usize,
                 libc::PROT_READ | libc::PROT_WRITE,
-            ) != 0 {
-                log::error!("Failed to commit large buffer region at index {}, error {}",
-                    index, std::io::Error::last_os_error());
+            ) != 0
+            {
+                log::error!(
+                    "Failed to commit large buffer region at index {}, error {}",
+                    index,
+                    std::io::Error::last_os_error()
+                );
                 return false;
             }
         }
@@ -678,8 +685,15 @@ mod tests {
         let mut v = SparseLargeVector::<u64>::with_count(host_page_size() as usize / 8);
         // A committed NOACCESS page must not be silently made writable by
         // Ruzu's demand-read/permission-promotion policy.
-        assert!(!unsafe { VirtualAlloc(v.base_ptr.cast(), host_page_size() as usize,
-            MEM_COMMIT, PAGE_NOACCESS) }.is_null());
+        assert!(!unsafe {
+            VirtualAlloc(
+                v.base_ptr.cast(),
+                host_page_size() as usize,
+                MEM_COMMIT,
+                PAGE_NOACCESS,
+            )
+        }
+        .is_null());
         assert!(!v.commit_page(0));
         assert!(!v.is_committed_page(0));
         v.set(0, 123); // Must return without touching the protected page.

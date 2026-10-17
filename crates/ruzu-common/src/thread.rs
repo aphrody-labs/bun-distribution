@@ -293,7 +293,8 @@ impl Barrier {
             true
         } else {
             while current_generation == state.generation
-                && !stop.is_some_and(|flag| flag.load(Ordering::Acquire)) {
+                && !stop.is_some_and(|flag| flag.load(Ordering::Acquire))
+            {
                 state = self.condvar.wait(state).unwrap();
             }
             !stop.is_some_and(|flag| flag.load(Ordering::Acquire))
@@ -314,7 +315,8 @@ mod tests {
         let worker_barrier = barrier.clone();
         let worker_stop = stop.clone();
         let worker = std::thread::spawn(move || {
-            tx.send(worker_barrier.sync_with_stop(&worker_stop)).unwrap();
+            tx.send(worker_barrier.sync_with_stop(&worker_stop))
+                .unwrap();
         });
         let deadline = std::time::Instant::now() + Duration::from_secs(2);
         while barrier.mutex.lock().unwrap().waiting == 0 {

@@ -43,14 +43,18 @@ pub fn screen_image(pix: &Pixmap, profile: ColorProfile) -> egui::ColorImage {
         return egui::ColorImage::from_rgba_premultiplied(size, pix.data());
     }
     let mut data = pix.data().to_vec();
-    profile.conversion_to(ColorProfile::Srgb).apply_pixels(&mut data);
+    profile
+        .conversion_to(ColorProfile::Srgb)
+        .apply_pixels(&mut data);
     egui::ColorImage::from_rgba_premultiplied(size, &data)
 }
 
 /// Soft proof: grey diagonal stripes over the pixels whose colours sRGB can't show.
 fn mark_outside_srgb(image: &mut egui::ColorImage, pix: &Pixmap, profile: ColorProfile) {
     let w = image.size[0].max(1);
-    let clipped = profile.conversion_to(ColorProfile::Srgb).clipped_pixels(pix.data());
+    let clipped = profile
+        .conversion_to(ColorProfile::Srgb)
+        .clipped_pixels(pix.data());
     for (i, (px, out)) in image.pixels.iter_mut().zip(clipped).enumerate() {
         if out && ((i % w) + (i / w)) % 8 < 4 {
             *px = egui::Color32::from_gray(128);
@@ -80,7 +84,12 @@ fn run(job: &Job, retained: &mut Retained) -> Option<Done> {
     let ms = t0.elapsed().as_secs_f64() * 1000.0;
     #[cfg(target_arch = "wasm32")]
     let ms = 0.0;
-    Some(Done { image, view, ms, work })
+    Some(Done {
+        image,
+        view,
+        ms,
+        work,
+    })
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -103,35 +112,44 @@ impl Worker {
         let done_with = finished.clone();
         // The window that renders with it (each window has its own worker).
         let viewport = ctx.viewport_id();
-        let spawned = std::thread::Builder::new().name("figcraft-render".into()).spawn(move || {
-            let mut retained = Retained::default();
-            while let Ok((mut seq, mut job)) = jobs.recv() {
-                // Skip to the newest queued job.
-                while let Ok(newer) = jobs.try_recv() {
-                    (seq, job) = newer;
-                }
-                let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(&job, &mut retained)));
-                let done = match res {
-                    Ok(d) => d,
-                    Err(_) => {
-                        // Don't build on an image a panic may have left half drawn.
-                        retained.clear();
-                        None
+        let spawned = std::thread::Builder::new()
+            .name("figcraft-render".into())
+            .spawn(move || {
+                let mut retained = Retained::default();
+                while let Ok((mut seq, mut job)) = jobs.recv() {
+                    // Skip to the newest queued job.
+                    while let Ok(newer) = jobs.try_recv() {
+                        (seq, job) = newer;
                     }
-                };
-                if let Some(d) = done
-                    && done_tx.send(d).is_err()
-                {
-                    break;
+                    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        run(&job, &mut retained)
+                    }));
+                    let done = match res {
+                        Ok(d) => d,
+                        Err(_) => {
+                            // Don't build on an image a panic may have left half drawn.
+                            retained.clear();
+                            None
+                        }
+                    };
+                    if let Some(d) = done
+                        && done_tx.send(d).is_err()
+                    {
+                        break;
+                    }
+                    ctx.request_repaint_of(viewport);
+                    done_with.store(seq, std::sync::atomic::Ordering::Release);
                 }
-                ctx.request_repaint_of(viewport);
-                done_with.store(seq, std::sync::atomic::Ordering::Release);
-            }
-        });
+            });
         if let Err(e) = spawned {
             log::error!("render thread: {e}");
         }
-        Self { tx, rx, submitted: 0, finished }
+        Self {
+            tx,
+            rx,
+            submitted: 0,
+            finished,
+        }
     }
 
     pub fn submit(&mut self, job: Job) {
@@ -164,7 +182,10 @@ pub struct Worker {
 #[cfg(target_arch = "wasm32")]
 impl Worker {
     pub fn new(_ctx: egui::Context) -> Self {
-        Self { pending: None, retained: Retained::default() }
+        Self {
+            pending: None,
+            retained: Retained::default(),
+        }
     }
     pub fn submit(&mut self, job: Job) {
         self.pending = Some(job);

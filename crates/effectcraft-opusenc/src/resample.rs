@@ -33,7 +33,11 @@ fn design(fc: f64, beta: f64, delay: usize) -> Vec<f32> {
     let mut h: Vec<f64> = (0..2 * delay + 1)
         .map(|k| {
             let m = k as f64 - delay as f64;
-            let sinc = if m == 0.0 { wc / std::f64::consts::PI } else { (wc * m).sin() / (std::f64::consts::PI * m) };
+            let sinc = if m == 0.0 {
+                wc / std::f64::consts::PI
+            } else {
+                (wc * m).sin() / (std::f64::consts::PI * m)
+            };
             let r = m / delay as f64;
             sinc * bessel_i0(beta * (1.0 - r * r).max(0.0).sqrt()) / i0b
         })
@@ -63,7 +67,12 @@ impl Downsampler {
         let fc = 0.95 * fs_out as f64 / 2.0;
         let d = delay(fs_out);
         let taps = 2 * d + 1;
-        Downsampler { factor, h: design(fc, 6.5, d), taps, buf: vec![0.0; taps - 1] }
+        Downsampler {
+            factor,
+            h: design(fc, 6.5, d),
+            taps,
+            buf: vec![0.0; taps - 1],
+        }
     }
 
     /// Decimates `input` (a multiple of the factor long), appending to `out`. Output sample `j`
@@ -90,7 +99,9 @@ mod tests {
     use super::*;
 
     fn tone(f: f64, n: usize) -> Vec<f32> {
-        (0..n).map(|i| (2.0 * std::f64::consts::PI * f * i as f64 / 48_000.0).sin() as f32).collect()
+        (0..n)
+            .map(|i| (2.0 * std::f64::consts::PI * f * i as f64 / 48_000.0).sin() as f32)
+            .collect()
     }
 
     fn rms(x: &[f32]) -> f64 {
@@ -99,7 +110,11 @@ mod tests {
 
     #[test]
     fn passes_band_and_rejects_aliases() {
-        for &(fs, pass, stop) in &[(16_000u32, 6_000.0, 8_600.0), (12_000, 4_500.0, 6_500.0), (8_000, 3_000.0, 4_500.0)] {
+        for &(fs, pass, stop) in &[
+            (16_000u32, 6_000.0, 8_600.0),
+            (12_000, 4_500.0, 6_500.0),
+            (8_000, 3_000.0, 4_500.0),
+        ] {
             for &(f, want_pass) in &[(pass, true), (stop, false)] {
                 let mut d = Downsampler::new(fs);
                 let x = tone(f, 9600);
@@ -125,7 +140,15 @@ mod tests {
         let mut y = Vec::new();
         d.process(&x, &mut y);
         // The impulse at 300 shows up centred at 48 kHz time 300 + 83 = 383 (output 127.67).
-        let peak = y.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).map(|(i, _)| i).unwrap_or(0);
-        assert!((peak as f64 - (300.0 + delay(16_000) as f64) / 3.0).abs() < 1.0, "peak at {peak}");
+        let peak = y
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.total_cmp(b.1))
+            .map(|(i, _)| i)
+            .unwrap_or(0);
+        assert!(
+            (peak as f64 - (300.0 + delay(16_000) as f64) / 3.0).abs() < 1.0,
+            "peak at {peak}"
+        );
     }
 }

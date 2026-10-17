@@ -72,8 +72,10 @@ impl Journal {
 
     /// Append a log message to the journal.
     pub fn log(&self, unit: &str, level: LogLevel, pid: Option<u32>, message: impl Into<String>) {
-        let timestamp_usec =
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_micros() as u64).unwrap_or(0);
+        let timestamp_usec = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_micros() as u64)
+            .unwrap_or(0);
 
         let mut cursor_lock = self.next_cursor.write().expect("cursor lock");
         let cursor = *cursor_lock;

@@ -61,7 +61,11 @@ impl LetterSpacing {
 
 pub fn trim_num(v: f64) -> String {
     let r = (v * 100.0).round() / 100.0;
-    if r.fract().abs() < 1e-9 { format!("{}", r as i64) } else { format!("{r}") }
+    if r.fract().abs() < 1e-9 {
+        format!("{}", r as i64)
+    } else {
+        format!("{r}")
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -285,7 +289,12 @@ impl TextStyle {
     /// Take what text style `def` sets (font, size, line height, letter spacing, decoration, case
     /// and axis values) and link to it as `id`; fills and hyperlinks stay.
     pub fn take_text_style(&mut self, def: &TextStyle, id: &str) {
-        *self = TextStyle { fills: self.fills.take(), link: self.link.take(), style_id: Some(id.to_string()), ..def.clone() };
+        *self = TextStyle {
+            fills: self.fills.take(),
+            link: self.link.take(),
+            style_id: Some(id.to_string()),
+            ..def.clone()
+        };
     }
 
     /// Whether these chars show what text style `def` sets.
@@ -303,7 +312,11 @@ impl TextStyle {
 
     /// This style as a text style's definition (linked to nothing).
     pub fn as_text_style(&self) -> TextStyle {
-        TextStyle { style_id: None, link: None, ..self.clone() }
+        TextStyle {
+            style_id: None,
+            link: None,
+            ..self.clone()
+        }
     }
 
     /// How the decoration looks.
@@ -433,7 +446,11 @@ pub struct TextPath {
 impl TextPath {
     /// A text path following `path` (layer space).
     pub fn new(path: &figcraft_geom::BezPath) -> Self {
-        Self { d: path.to_svg(), start: 0.0, flip: false }
+        Self {
+            d: path.to_svg(),
+            start: 0.0,
+            flip: false,
+        }
     }
 
     /// The path (empty when `d` doesn't parse).
@@ -443,7 +460,11 @@ impl TextPath {
 
     /// The start offset clamped into 0..1 (NaN: 0).
     pub fn start(&self) -> f64 {
-        if self.start.is_finite() { self.start.clamp(0.0, 1.0) } else { 0.0 }
+        if self.start.is_finite() {
+            self.start.clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
     }
 
     /// Scale the path by `sx`, `sy` (the layer was resized).
@@ -468,7 +489,10 @@ pub fn valid_axis_tag(tag: &str) -> bool {
 
 impl TextData {
     pub fn new(characters: impl Into<String>) -> Self {
-        Self { characters: characters.into(), ..Default::default() }
+        Self {
+            characters: characters.into(),
+            ..Default::default()
+        }
     }
 
     /// How far text on a path paints past its path's box (glyphs stand on the path, lines after
@@ -484,12 +508,21 @@ impl TextData {
     /// How far vertically trimmed text paints past its box (descenders below the last baseline,
     /// accents above the first cap height): half the largest size; 0 untrimmed.
     pub fn trim_reach(&self) -> f64 {
-        if self.leading_trim == LeadingTrim::None { 0.0 } else { self.max_size() * 0.5 }
+        if self.leading_trim == LeadingTrim::None {
+            0.0
+        } else {
+            self.max_size() * 0.5
+        }
     }
 
     /// The largest font size used (capped like layout caps it).
     fn max_size(&self) -> f64 {
-        self.spans().iter().map(|(_, _, s)| s.font_size).filter(|v| v.is_finite()).fold(0.0, f64::max).min(5000.0)
+        self.spans()
+            .iter()
+            .map(|(_, _, s)| s.font_size)
+            .filter(|v| v.is_finite())
+            .fold(0.0, f64::max)
+            .min(5000.0)
     }
 
     pub fn char_count(&self) -> usize {
@@ -498,7 +531,11 @@ impl TextData {
 
     /// The style at char index `i`.
     pub fn style_at(&self, i: usize) -> &TextStyle {
-        self.runs.iter().find(|r| r.start <= i && i < r.end).map(|r| &r.style).unwrap_or(&self.style)
+        self.runs
+            .iter()
+            .find(|r| r.start <= i && i < r.end)
+            .map(|r| &r.style)
+            .unwrap_or(&self.style)
     }
 
     /// Spans of uniform style covering the whole text: (start, end, style).
@@ -506,7 +543,11 @@ impl TextData {
         let n = self.char_count();
         let mut out = Vec::new();
         let mut pos = 0;
-        let mut runs: Vec<&StyleRun> = self.runs.iter().filter(|r| r.start < r.end && r.start < n).collect();
+        let mut runs: Vec<&StyleRun> = self
+            .runs
+            .iter()
+            .filter(|r| r.start < r.end && r.start < n)
+            .collect();
         runs.sort_by_key(|r| r.start);
         for r in runs {
             let start = r.start.max(pos);
@@ -556,7 +597,11 @@ impl TextData {
                 j += 1;
             }
             if *s != self.style {
-                self.runs.push(StyleRun { start: i, end: j, style: s.clone() });
+                self.runs.push(StyleRun {
+                    start: i,
+                    end: j,
+                    style: s.clone(),
+                });
             }
             i = j;
         }
@@ -566,7 +611,8 @@ impl TextData {
     pub fn normalize(&mut self) {
         let n = self.char_count();
         let base = self.style.clone();
-        self.runs.retain(|r| r.start < r.end && r.start < n && r.style != base);
+        self.runs
+            .retain(|r| r.start < r.end && r.start < n && r.style != base);
         for r in &mut self.runs {
             r.end = r.end.min(n);
         }
@@ -577,18 +623,31 @@ impl TextData {
     pub fn replace_range(&mut self, start: usize, end: usize, text: &str) {
         let n = self.char_count();
         let (start, end) = (start.min(n), end.min(n).max(start.min(n)));
-        let byte = |i: usize| self.characters.char_indices().nth(i).map(|(b, _)| b).unwrap_or(self.characters.len());
+        let byte = |i: usize| {
+            self.characters
+                .char_indices()
+                .nth(i)
+                .map(|(b, _)| b)
+                .unwrap_or(self.characters.len())
+        };
         let (bs, be) = (byte(start), byte(end));
         if !self.paragraphs.is_empty() {
             // Paragraphs merged by removed newlines take the first one's list; new ones copy it.
             let p = self.para_of(start);
-            let removed = self.characters.get(bs..be).unwrap_or("").matches('\n').count();
+            let removed = self
+                .characters
+                .get(bs..be)
+                .unwrap_or("")
+                .matches('\n')
+                .count();
             let added = text.matches('\n').count();
             self.fill_paragraphs();
             let at = self.para_list(p);
             let tail = (p + 1).min(self.paragraphs.len());
-            self.paragraphs.drain(tail..(p + 1 + removed).min(self.paragraphs.len()));
-            self.paragraphs.splice(tail..tail, std::iter::repeat_n(at, added));
+            self.paragraphs
+                .drain(tail..(p + 1 + removed).min(self.paragraphs.len()));
+            self.paragraphs
+                .splice(tail..tail, std::iter::repeat_n(at, added));
         }
         let mut s = String::with_capacity(self.characters.len() + text.len());
         s.push_str(self.characters.get(..bs).unwrap_or(""));
@@ -609,7 +668,11 @@ impl TextData {
             };
             // A run touching the insertion point at its end grows with the typed text.
             let new_start = shift(r.start);
-            let new_end = if r.end == start && r.start < start { start + inserted } else { shift(r.end) };
+            let new_end = if r.end == start && r.start < start {
+                start + inserted
+            } else {
+                shift(r.end)
+            };
             r.start = new_start;
             r.end = new_end;
         }
@@ -622,18 +685,28 @@ impl TextData {
 
     /// The paragraph char index `i` is in.
     pub fn para_of(&self, i: usize) -> usize {
-        self.characters.chars().take(i).filter(|c| *c == '\n').count()
+        self.characters
+            .chars()
+            .take(i)
+            .filter(|c| *c == '\n')
+            .count()
     }
 
     /// Paragraph `p`'s list settings.
     pub fn para_list(&self, p: usize) -> ParaList {
-        self.paragraphs.get(p).copied().unwrap_or(ParaList { list: self.list, indent: 0 })
+        self.paragraphs.get(p).copied().unwrap_or(ParaList {
+            list: self.list,
+            indent: 0,
+        })
     }
 
     /// Spell out every paragraph's list settings in `paragraphs` (and drop extra entries).
     fn fill_paragraphs(&mut self) {
         let n = self.paragraph_count();
-        let fill = ParaList { list: self.list, indent: 0 };
+        let fill = ParaList {
+            list: self.list,
+            indent: 0,
+        };
         self.paragraphs.resize(n, fill);
     }
 
@@ -654,7 +727,11 @@ impl TextData {
         self.fill_paragraphs();
         for pl in self.paragraphs.get_mut(a..=b).unwrap_or(&mut []) {
             f(pl);
-            pl.indent = if pl.list == ListStyle::None { 0 } else { pl.indent.min(MAX_LIST_INDENT) };
+            pl.indent = if pl.list == ListStyle::None {
+                0
+            } else {
+                pl.indent.min(MAX_LIST_INDENT)
+            };
         }
         if let Some(first) = self.paragraphs.first().copied()
             && first.indent == 0
@@ -685,7 +762,10 @@ impl TextData {
 
     /// The text style every char is linked to: `Some(None)` when none is, None when they differ.
     pub fn text_style_link(&self) -> Option<Option<&str>> {
-        let mut spans = self.spans().into_iter().map(|(_, _, s)| s.style_id.as_deref());
+        let mut spans = self
+            .spans()
+            .into_iter()
+            .map(|(_, _, s)| s.style_id.as_deref());
         let first = spans.next()?;
         spans.all(|s| s == first).then_some(first)
     }
@@ -701,7 +781,9 @@ impl TextData {
 
     /// Whether any char links to text style `id`.
     pub fn links_text_style(&self, id: &str) -> bool {
-        std::iter::once(&self.style).chain(self.runs.iter().map(|r| &r.style)).any(|s| s.style_id.as_deref() == Some(id))
+        std::iter::once(&self.style)
+            .chain(self.runs.iter().map(|r| &r.style))
+            .any(|s| s.style_id.as_deref() == Some(id))
     }
 
     /// Follow text style `id`'s new definition wherever chars link to it.
@@ -721,7 +803,10 @@ impl TextData {
     /// Unlink chars whose style is gone (`def` gives None) or that no longer show it (edited since).
     pub fn check_text_styles<'a>(&mut self, def: impl Fn(&str) -> Option<&'a TextStyle>) {
         self.each_style(|s| {
-            if s.style_id.as_deref().is_some_and(|id| !def(id).is_some_and(|d| s.shows_text_style(d))) {
+            if s.style_id
+                .as_deref()
+                .is_some_and(|id| !def(id).is_some_and(|d| s.shows_text_style(d)))
+            {
                 s.style_id = None;
             }
         });
@@ -739,13 +824,23 @@ mod case_tests {
 
     #[test]
     fn title_case_respects_context() {
-        assert_eq!(TextCase::Title.apply("hello wORLD don't 3d x-ray"), "Hello WORLD Don't 3d X-Ray");
+        assert_eq!(
+            TextCase::Title.apply("hello wORLD don't 3d x-ray"),
+            "Hello WORLD Don't 3d X-Ray"
+        );
         // Continuing a word from a previous run: no capital.
-        assert_eq!(TextCase::Title.apply_after("lo world", Some('l')), "lo World");
+        assert_eq!(
+            TextCase::Title.apply_after("lo world", Some('l')),
+            "lo World"
+        );
         assert_eq!(TextCase::Title.apply_after("lo", Some(' ')), "Lo");
         assert_eq!(TextCase::Upper.apply_after("ß", Some('a')), "SS");
         assert!(valid_feature_tag("liga") && valid_feature_tag("ss01"));
-        assert!(!valid_feature_tag("lig") && !valid_feature_tag("ligatures") && !valid_feature_tag("li\u{e9}"));
+        assert!(
+            !valid_feature_tag("lig")
+                && !valid_feature_tag("ligatures")
+                && !valid_feature_tag("li\u{e9}")
+        );
     }
 
     #[test]
@@ -755,7 +850,10 @@ mod case_tests {
         let st: TextStyle = serde_json::from_str(old).unwrap();
         assert!(st.variations.is_empty());
         assert!(!serde_json::to_string(&st).unwrap().contains("variations"));
-        let mut st = TextStyle { font_style: "Regular".into(), ..Default::default() };
+        let mut st = TextStyle {
+            font_style: "Regular".into(),
+            ..Default::default()
+        };
         st.variations.insert("wght".into(), 640.0);
         st.variations.insert("wdth".into(), 80.0);
         assert_eq!(st.weight(), 640);

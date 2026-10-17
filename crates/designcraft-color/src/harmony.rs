@@ -53,7 +53,9 @@ impl Harmony {
             Harmony::Triad => vec![base, hue(120.0), hue(240.0)],
             Harmony::Tetrad => vec![base, hue(60.0), hue(180.0), hue(240.0)],
             Harmony::Square => vec![base, hue(90.0), hue(180.0), hue(270.0)],
-            Harmony::Shades => (0..5).map(|i| Color::from_hsb(h, s, (v * (1.0 - i as f32 * 0.18)).max(0.0))).collect(),
+            Harmony::Shades => (0..5)
+                .map(|i| Color::from_hsb(h, s, (v * (1.0 - i as f32 * 0.18)).max(0.0)))
+                .collect(),
         }
     }
 }
@@ -64,7 +66,11 @@ pub fn variations(base: Color, steps: usize) -> Vec<Color> {
     (0..steps)
         .map(|i| {
             let t = (i as f32 + 1.0) / (n + 1.0);
-            if i < steps / 2 { base.lerp(&Color::BLACK, 1.0 - t * 2.0) } else { base.lerp(&Color::WHITE, (t - 0.5) * 2.0) }
+            if i < steps / 2 {
+                base.lerp(&Color::BLACK, 1.0 - t * 2.0)
+            } else {
+                base.lerp(&Color::WHITE, (t - 0.5) * 2.0)
+            }
         })
         .collect()
 }
@@ -77,7 +83,10 @@ mod tests {
     fn complementary_red() {
         let c = Harmony::Complementary.apply(Color::rgb(1.0, 0.0, 0.0));
         assert_eq!(c[1].to_hex(), "#00ffff");
-        assert_eq!(Harmony::Triad.apply(Color::rgb(1.0, 0.0, 0.0))[1].to_hex(), "#00ff00");
+        assert_eq!(
+            Harmony::Triad.apply(Color::rgb(1.0, 0.0, 0.0))[1].to_hex(),
+            "#00ff00"
+        );
         assert_eq!(variations(Color::rgb(1.0, 0.0, 0.0), 6).len(), 6);
     }
 }

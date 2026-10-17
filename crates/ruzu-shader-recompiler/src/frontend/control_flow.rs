@@ -1315,8 +1315,13 @@ mod tests {
     #[test]
     fn environment_cfg_routes_vertex_a_exit_through_dispatcher() {
         for stage in [
-            Stage::VertexA, Stage::VertexB, Stage::TessellationControl,
-            Stage::TessellationEval, Stage::Geometry, Stage::Fragment, Stage::Compute,
+            Stage::VertexA,
+            Stage::VertexB,
+            Stage::TessellationControl,
+            Stage::TessellationEval,
+            Stage::Geometry,
+            Stage::Fragment,
+            Stage::Compute,
         ] {
             let mut env = PretEnvironment {
                 stage,

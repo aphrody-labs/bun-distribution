@@ -61,7 +61,11 @@ impl Vlc {
             if b > 0 {
                 let off = table.len();
                 table.extend(std::iter::repeat_n(Entry::default(), 1 << b));
-                table[p] = Entry { val: off as i16, len: 0, sub: b as u8 };
+                table[p] = Entry {
+                    val: off as i16,
+                    len: 0,
+                    sub: b as u8,
+                };
             }
         }
         for &(c, n, v) in &codes {
@@ -70,18 +74,28 @@ impl Vlc {
                 for k in 0..(1u32 << shift) {
                     let e = &mut table[((c << shift) | k) as usize];
                     assert!(e.len == 0 && e.sub == 0, "VLC prefix clash");
-                    *e = Entry { val: v, len: n as u8, sub: 0 };
+                    *e = Entry {
+                        val: v,
+                        len: n as u8,
+                        sub: 0,
+                    };
                 }
             } else {
                 let p = (c >> (n - root)) as usize;
-                let Entry { val: off, sub: b, .. } = table[p];
+                let Entry {
+                    val: off, sub: b, ..
+                } = table[p];
                 let b = b as u32;
                 let rest = c & ((1 << (n - root)) - 1);
                 let shift = b - (n - root);
                 for k in 0..(1u32 << shift) {
                     let e = &mut table[off as usize + ((rest << shift) | k) as usize];
                     assert!(e.len == 0, "VLC prefix clash");
-                    *e = Entry { val: v, len: (n - root) as u8, sub: 0 };
+                    *e = Entry {
+                        val: v,
+                        len: (n - root) as u8,
+                        sub: 0,
+                    };
                 }
             }
         }
@@ -336,8 +350,12 @@ pub(crate) const fn rl(run: i16, level: i16) -> i16 {
 }
 
 /// Table zero's codes for levels 12-15 at run 0 (table one has shorter ones).
-pub(crate) const DCT_ZERO_LONG: &[(&str, i16)] =
-    &[("0000 0000 1101 0", rl(0, 12)), ("0000 0000 1100 1", rl(0, 13)), ("0000 0000 1100 0", rl(0, 14)), ("0000 0000 1011 1", rl(0, 15))];
+pub(crate) const DCT_ZERO_LONG: &[(&str, i16)] = &[
+    ("0000 0000 1101 0", rl(0, 12)),
+    ("0000 0000 1100 1", rl(0, 13)),
+    ("0000 0000 1100 0", rl(0, 14)),
+    ("0000 0000 1011 1", rl(0, 15)),
+];
 
 /// Codes from "0000 0000 1" on, common to tables zero and one (sign bit excluded).
 pub(crate) const DCT_LONG: &[(&str, i16)] = &[
@@ -520,7 +538,10 @@ pub(crate) struct Tables {
 }
 
 /// A complete DCT coefficient table: its own short codes plus the shared long ones.
-pub(crate) fn dct_table(short: &'static [(&'static str, i16)], extra: &'static [(&'static str, i16)]) -> Vec<(&'static str, i16)> {
+pub(crate) fn dct_table(
+    short: &'static [(&'static str, i16)],
+    extra: &'static [(&'static str, i16)],
+) -> Vec<(&'static str, i16)> {
     let mut v = short.to_vec();
     v.extend_from_slice(extra);
     v.extend_from_slice(DCT_MID_SHARED);
@@ -532,7 +553,12 @@ pub(crate) fn tables() -> &'static Tables {
     static T: OnceLock<Tables> = OnceLock::new();
     T.get_or_init(|| Tables {
         mba: Vlc::new(8, MBA),
-        mbtype: [Vlc::new(2, MBTYPE_I), Vlc::new(6, MBTYPE_P), Vlc::new(6, MBTYPE_B), Vlc::new(1, MBTYPE_D)],
+        mbtype: [
+            Vlc::new(2, MBTYPE_I),
+            Vlc::new(6, MBTYPE_P),
+            Vlc::new(6, MBTYPE_B),
+            Vlc::new(1, MBTYPE_D),
+        ],
         cbp: Vlc::new(9, CBP),
         motion: Vlc::new(8, MOTION),
         dmv: Vlc::new(2, DMV),
@@ -549,7 +575,10 @@ mod tests {
 
     /// Kraft sum of a code list (2^-len summed).
     fn kraft(codes: &[(&str, i16)]) -> f64 {
-        codes.iter().map(|(c, _)| 0.5f64.powi(parse_code(c).1 as i32)).sum()
+        codes
+            .iter()
+            .map(|(c, _)| 0.5f64.powi(parse_code(c).1 as i32))
+            .sum()
     }
 
     #[test]
@@ -562,7 +591,10 @@ mod tests {
         // B.1: "0000 0000", "0000 0010" and "0000 0001 001/010/011/100/101/110" are unused
         let unused = 2.0 * 0.5f64.powi(8) + 6.0 * 0.5f64.powi(11);
         assert!((kraft(MBA) + unused - 1.0).abs() < 1e-12);
-        assert!((kraft(MBTYPE_I) - 0.75).abs() < 1e-12, "01 is the last I code: 00 is forbidden");
+        assert!(
+            (kraft(MBTYPE_I) - 0.75).abs() < 1e-12,
+            "01 is the last I code: 00 is forbidden"
+        );
         assert!((kraft(MBTYPE_P) + 0.5f64.powi(6) - 1.0).abs() < 1e-12);
         assert!((kraft(MBTYPE_B) + 0.5f64.powi(6) - 1.0).abs() < 1e-12);
         // B.9: only "0000 0000 0" is forbidden
@@ -577,7 +609,11 @@ mod tests {
         assert!((z + 0.5f64.powi(12) - 1.0).abs() < 1e-12, "{z}");
         // table one leaves six 12-bit and four 13-bit codes of table zero unused
         let o = kraft(&dct_table(DCT_ONE, &[]));
-        assert!((o + 0.5f64.powi(12) + 6.0 * 0.5f64.powi(12) + 4.0 * 0.5f64.powi(13) - 1.0).abs() < 1e-12, "{o}");
+        assert!(
+            (o + 0.5f64.powi(12) + 6.0 * 0.5f64.powi(12) + 4.0 * 0.5f64.powi(13) - 1.0).abs()
+                < 1e-12,
+            "{o}"
+        );
     }
 
     #[test]
@@ -597,7 +633,11 @@ mod tests {
                 continue;
             }
             let (code, n) = parse_code(c);
-            let mba = MBA.iter().find(|(m, _)| parse_code(m) == (code, n)).map(|m| m.1).unwrap();
+            let mba = MBA
+                .iter()
+                .find(|(m, _)| parse_code(m) == (code, n))
+                .map(|m| m.1)
+                .unwrap();
             assert_eq!(mba / 2, v.abs());
             assert_eq!(mba % 2 == 0, v < 0, "{c}");
         }

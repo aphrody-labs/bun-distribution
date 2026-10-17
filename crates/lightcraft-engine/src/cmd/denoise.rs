@@ -17,7 +17,10 @@ use lightcraft_denoise::manifest::{self, DenoiserManifest, MAX_MANIFEST_BYTES, M
 use serde_json::{Value, json};
 
 use super::{CommandSpec, always, bad, bool_or, cmd, str_param};
-use crate::denoise::{Pace, RunOn, Settings, forget_gpu_set_ups, installed_models, read_capped, read_settings, write_atomic, write_settings};
+use crate::denoise::{
+    Pace, RunOn, Settings, forget_gpu_set_ups, installed_models, read_capped, read_settings,
+    write_atomic, write_settings,
+};
 use crate::model_download::State;
 use crate::{EngineError, Result, Session};
 
@@ -26,11 +29,22 @@ fn fail(what: &str, e: impl std::fmt::Display) -> EngineError {
 }
 
 fn models_dir(s: &Session, cmd: &str) -> Result<PathBuf> {
-    s.denoise.models_dir.clone().ok_or_else(|| bad(cmd, "this build has nowhere to keep denoise models (the desktop app does)"))
+    s.denoise.models_dir.clone().ok_or_else(|| {
+        bad(
+            cmd,
+            "this build has nowhere to keep denoise models (the desktop app does)",
+        )
+    })
 }
 
 /// What a command says about a model.
-fn row(m: &DenoiserManifest, download_host: Option<String>, installed: bool, selected: bool, accepted: &Value) -> Value {
+fn row(
+    m: &DenoiserManifest,
+    download_host: Option<String>,
+    installed: bool,
+    selected: bool,
+    accepted: &Value,
+) -> Value {
     json!({
         "id": m.id,
         "name": m.name,
@@ -51,7 +65,9 @@ fn row(m: &DenoiserManifest, download_host: Option<String>, installed: bool, sel
 }
 
 fn host_of(k: &Known) -> Option<String> {
-    k.download.as_ref().map(|d| lightcraft_denoise::known::host(&d.url).to_string())
+    k.download
+        .as_ref()
+        .map(|d| lightcraft_denoise::known::host(&d.url).to_string())
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
@@ -64,10 +80,25 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
     let mut models: Vec<Value> = Vec::new();
     for k in known::all() {
         let found = on_disk(&k.manifest.id);
-        models.push(row(&k.manifest, host_of(&k), found.is_some(), chosen(&k.manifest.id), found.map_or(&Value::Null, |f| &f.accepted)));
+        models.push(row(
+            &k.manifest,
+            host_of(&k),
+            found.is_some(),
+            chosen(&k.manifest.id),
+            found.map_or(&Value::Null, |f| &f.accepted),
+        ));
     }
-    for i in installed.iter().filter(|i| known::find(&i.manifest.id).is_none()) {
-        models.push(row(&i.manifest, None, true, chosen(&i.manifest.id), &i.accepted));
+    for i in installed
+        .iter()
+        .filter(|i| known::find(&i.manifest.id).is_none())
+    {
+        models.push(row(
+            &i.manifest,
+            None,
+            true,
+            chosen(&i.manifest.id),
+            &i.accepted,
+        ));
     }
     Ok(json!({
         "dir": dir.as_ref().map(|d| d.display().to_string()),
@@ -92,7 +123,8 @@ struct Source {
 }
 
 fn identify(path: &Path, c: &str, sha_known: Option<&str>) -> Result<Source> {
-    let meta = std::fs::metadata(path).map_err(|e| bad(c, format!("cannot read `{}`: {e}", path.display())))?;
+    let meta = std::fs::metadata(path)
+        .map_err(|e| bad(c, format!("cannot read `{}`: {e}", path.display())))?;
     if !meta.is_file() {
         return Err(bad(c, format!("`{}` is not a file", path.display())));
     }
@@ -101,24 +133,47 @@ fn identify(path: &Path, c: &str, sha_known: Option<&str>) -> Result<Source> {
     }
     let sha256 = match sha_known {
         Some(h) => h.to_string(),
-        None => sha256_file(path).map_err(|e| fail(&format!("could not read {}", path.display()), e))?,
+        None => {
+            sha256_file(path).map_err(|e| fail(&format!("could not read {}", path.display()), e))?
+        }
     };
-    let file_name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let file_name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
     // an archive LightCraft knows (the file darktable publishes the model in)
-    if let Some(k) = known::all().into_iter().find(|k| k.download.as_ref().is_some_and(|d| d.sha256 == sha256)) {
-        return Ok(Source { manifest: k.manifest, entry: k.entry, file_name });
+    if let Some(k) = known::all()
+        .into_iter()
+        .find(|k| k.download.as_ref().is_some_and(|d| d.sha256 == sha256))
+    {
+        return Ok(Source {
+            manifest: k.manifest,
+            entry: k.entry,
+            file_name,
+        });
     }
     // the `.onnx` of a known model
     if let Some(m) = known::by_sha256(&sha256) {
-        return Ok(Source { manifest: m, entry: None, file_name });
+        return Ok(Source {
+            manifest: m,
+            entry: None,
+            file_name,
+        });
     }
     // an `.onnx` with its manifest beside it
     let sibling = path.with_file_name("denoise-model.json");
-    if path.extension().is_some_and(|e| e.eq_ignore_ascii_case("onnx"))
+    if path
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("onnx"))
         && let Some(bytes) = read_capped(&sibling, MAX_MANIFEST_BYTES)
     {
-        let m = manifest::parse(&bytes).map_err(|e| bad(c, format!("{}: {e}", sibling.display())))?;
-        return Ok(Source { manifest: m, entry: None, file_name });
+        let m =
+            manifest::parse(&bytes).map_err(|e| bad(c, format!("{}: {e}", sibling.display())))?;
+        return Ok(Source {
+            manifest: m,
+            entry: None,
+            file_name,
+        });
     }
     Err(bad(
         c,
@@ -150,23 +205,35 @@ fn install_file(
     }
     let home = dir.join(&m.id);
     if home.join("model.onnx").exists() {
-        return Err(bad(c, "that model is already installed; remove it before installing a replacement"));
+        return Err(bad(
+            c,
+            "that model is already installed; remove it before installing a replacement",
+        ));
     }
     std::fs::create_dir_all(&home).map_err(|e| fail("could not create the model's folder", e))?;
-    let mut cleanup = InstallCleanup { home: home.clone(), armed: true };
+    let mut cleanup = InstallCleanup {
+        home: home.clone(),
+        armed: true,
+    };
     let (part, final_path) = (home.join("model.onnx.part"), home.join("model.onnx"));
     let _ = std::fs::remove_file(&part);
     let placed: Result<()> = match ident.entry {
-        Some(entry) => {
-            archive::extract(src, entry, &part, MAX_MODEL_BYTES).map(|_| ()).map_err(|e| fail("could not take the model out of the archive", e))
-        }
+        Some(entry) => archive::extract(src, entry, &part, MAX_MODEL_BYTES)
+            .map(|_| ())
+            .map_err(|e| fail("could not take the model out of the archive", e)),
         None if verified && std::fs::rename(src, &part).is_ok() => Ok(()),
-        None => std::fs::copy(src, &part).map(|_| ()).map_err(|e| fail("could not copy the model (is the disk full?)", e)),
+        None => std::fs::copy(src, &part)
+            .map(|_| ())
+            .map_err(|e| fail("could not copy the model (is the disk full?)", e)),
     };
-    let sha256 = placed.and_then(|_| sha256_file(&part).map_err(|e| fail("could not check the model", e))).and_then(|h| match &m.sha256 {
-        Some(want) if *want != h => Err(EngineError::Other("the model file is not the one its description names (its SHA-256 differs)".into())),
-        _ => Ok(h),
-    });
+    let sha256 = placed
+        .and_then(|_| sha256_file(&part).map_err(|e| fail("could not check the model", e)))
+        .and_then(|h| match &m.sha256 {
+            Some(want) if *want != h => Err(EngineError::Other(
+                "the model file is not the one its description names (its SHA-256 differs)".into(),
+            )),
+            _ => Ok(h),
+        });
     let sha256 = match sha256 {
         Ok(h) => h,
         Err(e) => {
@@ -186,10 +253,17 @@ fn install_file(
     // An installed id is immutable: installing again must never destroy a usable model.
     if final_path.exists() {
         let _ = std::fs::remove_file(&part);
-        return Err(bad(c, "that model is already installed; remove it before installing a replacement"));
+        return Err(bad(
+            c,
+            "that model is already installed; remove it before installing a replacement",
+        ));
     }
     std::fs::rename(&part, &final_path).map_err(|e| fail("could not finish the copy", e))?;
-    write_atomic(&home.join("denoise-model.json"), &serde_json::to_vec_pretty(&m).map_err(|e| fail("manifest", e))?).map_err(EngineError::Other)?;
+    write_atomic(
+        &home.join("denoise-model.json"),
+        &serde_json::to_vec_pretty(&m).map_err(|e| fail("manifest", e))?,
+    )
+    .map_err(EngineError::Other)?;
     let accepted = json!({
         "acceptedAt": accepted_at,
         "licence": m.licence.name,
@@ -198,9 +272,16 @@ fn install_file(
         "sha256": sha256,
         "selfTest": test,
     });
-    write_atomic(&home.join("installed.json"), &serde_json::to_vec_pretty(&accepted).map_err(|e| fail("record", e))?).map_err(EngineError::Other)?;
+    write_atomic(
+        &home.join("installed.json"),
+        &serde_json::to_vec_pretty(&accepted).map_err(|e| fail("record", e))?,
+    )
+    .map_err(EngineError::Other)?;
     cleanup.armed = false;
-    Ok((json!({"installed": row(&m, known::find(&m.id).and_then(|k| host_of(&k)), true, false, &accepted), "model": m.id}), model))
+    Ok((
+        json!({"installed": row(&m, known::find(&m.id).and_then(|k| host_of(&k)), true, false, &accepted), "model": m.id}),
+        model,
+    ))
 }
 
 /// Removes only files created for this new installation, including on a worker panic.
@@ -211,7 +292,12 @@ struct InstallCleanup {
 impl Drop for InstallCleanup {
     fn drop(&mut self) {
         if self.armed {
-            for name in ["model.onnx.part", "model.onnx", "denoise-model.json", "installed.json"] {
+            for name in [
+                "model.onnx.part",
+                "model.onnx",
+                "denoise-model.json",
+                "installed.json",
+            ] {
                 let _ = std::fs::remove_file(self.home.join(name));
             }
             let _ = std::fs::remove_dir(&self.home);
@@ -225,9 +311,16 @@ pub(crate) struct InstallJob {
     result: mpsc::Receiver<std::result::Result<(Value, Arc<dyn crate::denoise::Model>), String>>,
 }
 
-fn activate_install(s: &mut Session, result: &Value, model: Arc<dyn crate::denoise::Model>, activate: bool) -> Result<Value> {
+fn activate_install(
+    s: &mut Session,
+    result: &Value,
+    model: Arc<dyn crate::denoise::Model>,
+    activate: bool,
+) -> Result<Value> {
     let dir = models_dir(s, "denoise.models.install")?;
-    let id = result["installed"]["id"].as_str().ok_or_else(|| bad("denoise.models.install", "missing installed id"))?;
+    let id = result["installed"]["id"]
+        .as_str()
+        .ok_or_else(|| bad("denoise.models.install", "missing installed id"))?;
     let mut st = read_settings(&dir);
     if activate {
         st.model = Some(id.to_string());
@@ -246,7 +339,13 @@ fn activate_install(s: &mut Session, result: &Value, model: Arc<dyn crate::denoi
     Ok(v)
 }
 
-fn start_install(s: &mut Session, src: PathBuf, id: String, activate: bool, verified: bool) -> Result<Value> {
+fn start_install(
+    s: &mut Session,
+    src: PathBuf,
+    id: String,
+    activate: bool,
+    verified: bool,
+) -> Result<Value> {
     const C: &str = "denoise.models.install";
     if s.denoise.install.is_some() {
         return Err(bad(C, "another model is being installed"));
@@ -262,7 +361,8 @@ fn start_install(s: &mut Session, src: PathBuf, id: String, activate: bool, veri
         .spawn(move || {
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let _held = crate::memory::work_gate().acquire(512 * 1024 * 1024);
-                install_file(&dir, &loader, run_on, at, C, &src, true, verified).map_err(|e| plain(&e))
+                install_file(&dir, &loader, run_on, at, C, &src, true, verified)
+                    .map_err(|e| plain(&e))
             }))
             .unwrap_or_else(|_| Err("the model installation stopped unexpectedly".into()));
             if verified {
@@ -271,7 +371,11 @@ fn start_install(s: &mut Session, src: PathBuf, id: String, activate: bool, veri
             let _ = tx.send(outcome);
         })
         .map_err(|e| bad(C, format!("could not start installation: {e}")))?;
-    s.denoise.install = Some(InstallJob { id: id.clone(), activate, result: rx });
+    s.denoise.install = Some(InstallJob {
+        id: id.clone(),
+        activate,
+        result: rx,
+    });
     s.denoise.downloads.set_outcome(&id, State::Installing);
     Ok(json!({"started": id}))
 }
@@ -282,16 +386,33 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
     let acknowledged = bool_or(p, "acknowledged", false);
     let activate = bool_or(p, "activate", true);
     if !acknowledged {
-        return Err(bad(C, "the licence has not been accepted: show its terms first"));
+        return Err(bad(
+            C,
+            "the licence has not been accepted: show its terms first",
+        ));
     }
     if bool_or(p, "background", false) {
-        return start_install(s, PathBuf::from(path), "local-install".into(), activate, false);
+        return start_install(
+            s,
+            PathBuf::from(path),
+            "local-install".into(),
+            activate,
+            false,
+        );
     }
     if s.denoise.install.is_some() {
         return Err(bad(C, "another model is being installed"));
     }
-    let (result, model) =
-        install_file(&models_dir(s, C)?, &s.denoise.loader, s.denoise.settings.run_on(), (s.clock)(), C, Path::new(path), acknowledged, false)?;
+    let (result, model) = install_file(
+        &models_dir(s, C)?,
+        &s.denoise.loader,
+        s.denoise.settings.run_on(),
+        (s.clock)(),
+        C,
+        Path::new(path),
+        acknowledged,
+        false,
+    )?;
     activate_install(s, &result, model, activate)
 }
 
@@ -300,8 +421,14 @@ fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "denoise.models.inspect";
     let path = str_param(p, "path").ok_or_else(|| bad(C, "missing `path`"))?;
     let src = Path::new(path);
-    if !src.extension().is_some_and(|e| e.eq_ignore_ascii_case("onnx")) {
-        return Err(bad(C, "choose an .onnx file with denoise-model.json beside it"));
+    if !src
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("onnx"))
+    {
+        return Err(bad(
+            C,
+            "choose an .onnx file with denoise-model.json beside it",
+        ));
     }
     let sibling = src.with_file_name("denoise-model.json");
     let Some(bytes) = read_capped(&sibling, MAX_MANIFEST_BYTES) else {
@@ -316,10 +443,13 @@ fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
         };
         return Err(bad(C, why));
     };
-    let m = manifest::parse(&bytes).map_err(|e| bad(C, format!("denoise-model.json: {e} (see docs/denoise.md)")))?;
+    let m = manifest::parse(&bytes)
+        .map_err(|e| bad(C, format!("denoise-model.json: {e} (see docs/denoise.md)")))?;
     let dir = models_dir(s, C)?;
-    Ok(json!({"kind": "model", "domain": "denoise", "path": path, "fileName": src.file_name().map(|n| n.to_string_lossy()), "model": m,
-        "sizeBytes": std::fs::metadata(src).ok().map(|m| m.len()), "alreadyInstalled": dir.join(&m.id).join("model.onnx").is_file()}))
+    Ok(
+        json!({"kind": "model", "domain": "denoise", "path": path, "fileName": src.file_name().map(|n| n.to_string_lossy()), "model": m,
+        "sizeBytes": std::fs::metadata(src).ok().map(|m| m.len()), "alreadyInstalled": dir.join(&m.id).join("model.onnx").is_file()}),
+    )
 }
 
 /// What an error says, without the command it came from (for a line shown to the user).
@@ -337,7 +467,9 @@ pub(crate) fn finish_downloads(s: &mut Session) {
         let outcome = match job.result.try_recv() {
             Ok(v) => Some(v),
             Err(mpsc::TryRecvError::Empty) => None,
-            Err(mpsc::TryRecvError::Disconnected) => Some(Err("the installation worker stopped".into())),
+            Err(mpsc::TryRecvError::Disconnected) => {
+                Some(Err("the installation worker stopped".into()))
+            }
         };
         if let Some(outcome) = outcome
             && let Some(job) = s.denoise.install.take()
@@ -356,7 +488,9 @@ pub(crate) fn finish_downloads(s: &mut Session) {
         && let Some((id, path, _sha)) = s.denoise.downloads.finished().into_iter().next()
         && let Err(e) = start_install(s, path, id.clone(), true, true)
     {
-        s.denoise.downloads.set_outcome(&id, State::Failed(plain(&e)));
+        s.denoise
+            .downloads
+            .set_outcome(&id, State::Failed(plain(&e)));
     }
 }
 
@@ -364,10 +498,23 @@ fn download(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "denoise.models.download";
     let id = str_param(p, "id").ok_or_else(|| bad(C, "missing `id`"))?;
     let dir = models_dir(s, C)?;
-    let k = known::find(id).ok_or_else(|| bad(C, "LightCraft has no download for that model: get the file from its page, then add it"))?;
-    let spec = k.download.clone().ok_or_else(|| bad(C, "LightCraft has no download for that model: get the file from its page, then add it"))?;
+    let k = known::find(id).ok_or_else(|| {
+        bad(
+            C,
+            "LightCraft has no download for that model: get the file from its page, then add it",
+        )
+    })?;
+    let spec = k.download.clone().ok_or_else(|| {
+        bad(
+            C,
+            "LightCraft has no download for that model: get the file from its page, then add it",
+        )
+    })?;
     if !cfg!(feature = "denoise") {
-        return Err(bad(C, "this build cannot run denoise models, so there is nothing to download for it"));
+        return Err(bad(
+            C,
+            "this build cannot run denoise models, so there is nothing to download for it",
+        ));
     }
     if !bool_or(p, "acknowledged", false) {
         return Err(bad(
@@ -375,19 +522,29 @@ fn download(s: &mut Session, p: &Value) -> Result<Value> {
             "the licence has not been accepted: show the user the model's terms (see `denoise.models.list`) and pass `acknowledged: true` once they agree",
         ));
     }
-    if installed_models(&dir).iter().any(|i| i.manifest.id == spec.id) {
+    if installed_models(&dir)
+        .iter()
+        .any(|i| i.manifest.id == spec.id)
+    {
         return Err(bad(C, "that model is already installed"));
     }
     let host = lightcraft_denoise::known::host(&spec.url).to_string();
-    s.denoise.downloads.start(spec, &dir, &s.activity, &k.manifest.name).map_err(|e| bad(C, e))?;
+    s.denoise
+        .downloads
+        .start(spec, &dir, &s.activity, &k.manifest.name)
+        .map_err(|e| bad(C, e))?;
     Ok(json!({"started": id, "from": host}))
 }
 
 fn download_row(id: &str, state: &State) -> Value {
     let from = known::find(id).and_then(|k| host_of(&k));
     match state {
-        State::Running { bytes, total } => json!({"id": id, "state": "running", "bytes": bytes, "total": total, "from": from}),
-        State::Done { path, .. } => json!({"id": id, "state": "done", "path": path.display().to_string(), "from": from}),
+        State::Running { bytes, total } => {
+            json!({"id": id, "state": "running", "bytes": bytes, "total": total, "from": from})
+        }
+        State::Done { path, .. } => {
+            json!({"id": id, "state": "done", "path": path.display().to_string(), "from": from})
+        }
         State::Installing => json!({"id": id, "state": "installing", "from": from}),
         State::Installed => json!({"id": id, "state": "installed", "from": from}),
         State::Failed(why) => json!({"id": id, "state": "failed", "error": why, "from": from}),
@@ -397,7 +554,13 @@ fn download_row(id: &str, state: &State) -> Value {
 
 fn downloads(s: &mut Session, _: &Value) -> Result<Value> {
     finish_downloads(s);
-    let all: Vec<Value> = s.denoise.downloads.snapshot().iter().map(|(id, st)| download_row(id, st)).collect();
+    let all: Vec<Value> = s
+        .denoise
+        .downloads
+        .snapshot()
+        .iter()
+        .map(|(id, st)| download_row(id, st))
+        .collect();
     Ok(json!({"running": s.denoise.downloads.running(), "downloads": all}))
 }
 
@@ -411,7 +574,10 @@ fn test(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "denoise.models.test";
     let id = str_param(p, "id").ok_or_else(|| bad(C, "missing `id`"))?;
     let dir = models_dir(s, C)?;
-    let found = installed_models(&dir).into_iter().find(|i| i.manifest.id == id).ok_or_else(|| bad(C, "that model is not installed"))?;
+    let found = installed_models(&dir)
+        .into_iter()
+        .find(|i| i.manifest.id == id)
+        .ok_or_else(|| bad(C, "that model is not installed"))?;
     let run_on = s.denoise.settings.run_on();
     let result = (s.denoise.loader)(&found.onnx, &found.manifest).and_then(|m| m.self_test(run_on));
     let (ok, detail) = match &result {
@@ -421,9 +587,19 @@ fn test(s: &mut Session, p: &Value) -> Result<Value> {
     // keep the latest outcome with the model's record
     let mut record = found.accepted;
     if let Some(o) = record.as_object_mut() {
-        o.insert("selfTest".into(), if ok { detail.clone() } else { json!({"ok": false, "error": detail}) });
-        write_atomic(&found.onnx.with_file_name("installed.json"), &serde_json::to_vec_pretty(&record).map_err(|e| fail("record", e))?)
-            .map_err(EngineError::Other)?;
+        o.insert(
+            "selfTest".into(),
+            if ok {
+                detail.clone()
+            } else {
+                json!({"ok": false, "error": detail})
+            },
+        );
+        write_atomic(
+            &found.onnx.with_file_name("installed.json"),
+            &serde_json::to_vec_pretty(&record).map_err(|e| fail("record", e))?,
+        )
+        .map_err(EngineError::Other)?;
     }
     Ok(json!({"id": id, "ok": ok, "result": detail}))
 }
@@ -443,7 +619,10 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     std::fs::remove_dir_all(&home).map_err(|e| fail("could not remove the model", e))?;
     let mut st = read_settings(&dir);
     if st.model.as_deref() == Some(id) {
-        st.model = installed_models(&dir).into_iter().map(|i| i.manifest.id).find(|m| m != id);
+        st.model = installed_models(&dir)
+            .into_iter()
+            .map(|i| i.manifest.id)
+            .find(|m| m != id);
         write_settings(&dir, &st).map_err(EngineError::Other)?;
     }
     s.denoise.touch();
@@ -456,7 +635,11 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
     let dir = models_dir(s, C)?;
     let id = match p.get("id") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(v.as_str().ok_or_else(|| bad(C, "`id` must be a model id or null"))?.to_string()),
+        Some(v) => Some(
+            v.as_str()
+                .ok_or_else(|| bad(C, "`id` must be a model id or null"))?
+                .to_string(),
+        ),
     };
     if let Some(id) = &id
         && !installed_models(&dir).iter().any(|i| &i.manifest.id == id)
@@ -476,22 +659,41 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
     let dir = models_dir(s, C)?;
     let mut st: Settings = read_settings(&dir);
     if let Some(v) = p.get("auto") {
-        st.auto = Some(v.as_bool().ok_or_else(|| bad(C, "`auto` must be true or false"))?);
+        st.auto = Some(
+            v.as_bool()
+                .ok_or_else(|| bad(C, "`auto` must be true or false"))?,
+        );
     }
     if let Some(v) = p.get("cacheGb") {
-        let n =
-            v.as_u64().filter(|n| (1..=10_000).contains(n)).ok_or_else(|| bad(C, "`cacheGb` must be a whole number of gigabytes from 1 to 10000"))?;
+        let n = v
+            .as_u64()
+            .filter(|n| (1..=10_000).contains(n))
+            .ok_or_else(|| {
+                bad(
+                    C,
+                    "`cacheGb` must be a whole number of gigabytes from 1 to 10000",
+                )
+            })?;
         st.cache_gb = Some(n as u32);
     }
     if let Some(v) = p.get("threads") {
         st.threads = match v {
             Value::Null => None,
-            v => Some(v.as_u64().filter(|n| (1..=64).contains(n)).ok_or_else(|| bad(C, "`threads` must be from 1 to 64, or null"))? as u32),
+            v => Some(
+                v.as_u64()
+                    .filter(|n| (1..=64).contains(n))
+                    .ok_or_else(|| bad(C, "`threads` must be from 1 to 64, or null"))?
+                    as u32,
+            ),
         };
     }
     let run_on = match p.get("runOn") {
         None => None,
-        Some(v) => Some(v.as_str().and_then(RunOn::parse).ok_or_else(|| bad(C, "`runOn` must be auto, gpu or cpu"))?),
+        Some(v) => Some(
+            v.as_str()
+                .and_then(RunOn::parse)
+                .ok_or_else(|| bad(C, "`runOn` must be auto, gpu or cpu"))?,
+        ),
     };
     if let Some(r) = run_on {
         st.run_on = Some(r.name().to_string());
@@ -510,17 +712,25 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
     s.denoise_refresh_active(true);
     // a smaller limit takes effect now
     s.denoise_evict(None);
-    Ok(json!({"auto": st.auto(), "cacheGb": st.cache_bytes() >> 30, "threads": st.threads, "runOn": st.run_on().name()}))
+    Ok(
+        json!({"auto": st.auto(), "cacheGb": st.cache_bytes() >> 30, "threads": st.threads, "runOn": st.run_on().name()}),
+    )
 }
 
 fn ids_param(p: &Value) -> Option<Vec<PhotoId>> {
-    p.get("ids").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(PhotoId).collect())
+    p.get("ids")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(PhotoId).collect())
 }
 
 fn status_json(s: &Session, photo: Option<PhotoId>) -> Value {
     let (files, bytes) = s.denoise_cache_usage();
     let st = &s.denoise.settings;
-    let model = s.denoise.active.as_ref().map(|a| json!({"id": a.id, "name": a.manifest.name}));
+    let model = s
+        .denoise
+        .active
+        .as_ref()
+        .map(|a| json!({"id": a.id, "name": a.manifest.name}));
     let mut v = json!({
         "enabled": s.denoise.active.is_some(),
         "model": model,
@@ -537,7 +747,10 @@ fn status_json(s: &Session, photo: Option<PhotoId>) -> Value {
         "generation": s.denoise.generation,
     });
     if let (Some(id), Some(o)) = (photo, v.as_object_mut()) {
-        o.insert("photo".into(), serde_json::to_value(s.denoise_photo_state(id)).unwrap_or(Value::Null));
+        o.insert(
+            "photo".into(),
+            serde_json::to_value(s.denoise_photo_state(id)).unwrap_or(Value::Null),
+        );
     }
     v
 }
@@ -546,16 +759,24 @@ fn status_json(s: &Session, photo: Option<PhotoId>) -> Value {
 fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "denoise.toggle";
     let id = match p.get("id") {
-        Some(v) => PhotoId(v.as_u64().ok_or_else(|| bad(C, "`id` must be a photo id"))?),
+        Some(v) => PhotoId(
+            v.as_u64()
+                .ok_or_else(|| bad(C, "`id` must be a photo id"))?,
+        ),
         None => s.active().ok_or_else(|| bad(C, "select a raw photo"))?,
     };
     let photo = s.catalog.photo(id).ok_or_else(|| bad(C, "no such photo"))?;
     if !crate::denoise::eligible(photo) {
-        return Err(bad(C, "AI Denoise applies to raw photos developed from their sensor data"));
+        return Err(bad(
+            C,
+            "AI Denoise applies to raw photos developed from their sensor data",
+        ));
     }
     let mut d = (*s.develop_of(id).ok_or_else(|| bad(C, "no such photo"))?).clone();
     let on = match p.get("enabled") {
-        Some(v) => v.as_bool().ok_or_else(|| bad(C, "`enabled` must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad(C, "`enabled` must be true or false"))?,
         None => !d.enhance.denoise_enabled(),
     };
     if on {
@@ -564,17 +785,26 @@ fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
         }
         s.denoise_refresh_active(true);
         if s.denoise.active.is_none() {
-            return Err(bad(C, "AI Denoise needs a model: install one in Settings > AI Denoise"));
+            return Err(bad(
+                C,
+                "AI Denoise needs a model: install one in Settings > AI Denoise",
+            ));
         }
     }
     // The switch is its own setting: the Amount stays where it is (0 included) when it is flipped, so flipping compares
     // with and without. A photo that never had an Amount starts at 50 the first time.
-    let amount = if on && d.enhance.denoise_on.is_none() && d.enhance.denoise <= 0.0 { 50.0 } else { d.enhance.denoise };
+    let amount = if on && d.enhance.denoise_on.is_none() && d.enhance.denoise <= 0.0 {
+        50.0
+    } else {
+        d.enhance.denoise
+    };
     if d.enhance.denoise != amount || d.enhance.denoise_on != Some(on) {
         s.end_interaction()?;
         d.enhance.denoise = amount;
         d.enhance.denoise_on = Some(on);
-        let op = s.develop_op(id, d, "AI Denoise").ok_or_else(|| bad(C, "no such photo"))?;
+        let op = s
+            .develop_op(id, d, "AI Denoise")
+            .ok_or_else(|| bad(C, "no such photo"))?;
         s.commit("AI Denoise", op)?;
     }
     if on {
@@ -589,18 +819,40 @@ fn queue(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "denoise.queue";
     s.denoise_refresh_active(true);
     if s.denoise.active.is_none() {
-        return Err(bad(C, "no denoise model is chosen: install one first (`denoise.models.download` or `denoise.models.install`)"));
+        return Err(bad(
+            C,
+            "no denoise model is chosen: install one first (`denoise.models.download` or `denoise.models.install`)",
+        ));
     }
     if s.denoise_products_dir().is_none() {
-        return Err(bad(C, "denoise keeps its pictures in the library's folder: open a library on disk first"));
+        return Err(bad(
+            C,
+            "denoise keeps its pictures in the library's folder: open a library on disk first",
+        ));
     }
     let ids = match ids_param(p) {
         Some(ids) => ids,
         None => match str_param(p, "scope").unwrap_or("selected") {
-            "selected" => s.selection.active.iter().chain(s.selection.ids.iter()).copied().collect(),
+            "selected" => s
+                .selection
+                .active
+                .iter()
+                .chain(s.selection.ids.iter())
+                .copied()
+                .collect(),
             "visible" => s.visible_cloned().to_vec(),
-            "withAmount" => s.catalog.photos().filter(|ph| ph.develop.denoise_amount() > 0.0).map(|ph| ph.id).collect(),
-            other => return Err(bad(C, format!("unknown scope `{other}`: use selected, visible or withAmount"))),
+            "withAmount" => s
+                .catalog
+                .photos()
+                .filter(|ph| ph.develop.denoise_amount() > 0.0)
+                .map(|ph| ph.id)
+                .collect(),
+            other => {
+                return Err(bad(
+                    C,
+                    format!("unknown scope `{other}`: use selected, visible or withAmount"),
+                ));
+            }
         },
     };
     let queued = s.denoise_enqueue(&ids, false, bool_or(p, "retry", false));
@@ -619,7 +871,10 @@ fn cancel(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn status(s: &mut Session, p: &Value) -> Result<Value> {
     s.denoise_refresh_active(false);
-    Ok(status_json(s, p.get("id").and_then(Value::as_u64).map(PhotoId)))
+    Ok(status_json(
+        s,
+        p.get("id").and_then(Value::as_u64).map(PhotoId),
+    ))
 }
 
 /// `denoise.pump {pace?}`: cheap to call every frame. Takes in what the background job has finished and keeps one going.

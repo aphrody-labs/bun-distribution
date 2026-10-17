@@ -196,7 +196,8 @@ pub struct FeaturesArgs {
 /// Helper to detect if running in an elevated Windows shell.
 #[cfg(windows)]
 pub fn is_windows_elevated() -> bool {
-    Command::new("net").no_window()
+    Command::new("net")
+        .no_window()
         .arg("session")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -222,7 +223,8 @@ fn codex_config_path() -> Option<PathBuf> {
     } else {
         std::env::var("HOME").ok().map(PathBuf::from)
     };
-    home.map(|h| h.join(".codex").join("config.toml")).filter(|p| p.exists())
+    home.map(|h| h.join(".codex").join("config.toml"))
+        .filter(|p| p.exists())
 }
 
 /// Main execution entry point for `aphrody codex …`.
@@ -267,7 +269,7 @@ pub async fn run(args: CodexArgs) -> Result<()> {
                 })
                 .await
             }
-        },
+        }
     }
 }
 
@@ -333,12 +335,24 @@ async fn run_doctor(args: DoctorArgs) -> Result<()> {
     } else {
         println!("=== Aphrody Local Agent Doctor ===");
         println!("Status               : Configuration inspected; model execution not checked");
-        println!("Windows Elevated     : {}", if elevated { "Yes" } else { "No (standard user)" });
+        println!(
+            "Windows Elevated     : {}",
+            if elevated {
+                "Yes"
+            } else {
+                "No (standard user)"
+            }
+        );
         println!(
             "Config Path          : {}",
-            config_path.as_deref().map_or("Not found", |p| p.to_str().unwrap_or(""))
+            config_path
+                .as_deref()
+                .map_or("Not found", |p| p.to_str().unwrap_or(""))
         );
-        println!("Configured Model     : {}", model_found.as_deref().unwrap_or("not configured"));
+        println!(
+            "Configured Model     : {}",
+            model_found.as_deref().unwrap_or("not configured")
+        );
         println!("Configured Plugins   : {} enabled", plugins_count);
         println!("Configured MCP       : {} servers", mcp_count);
         println!("App-Server Protocol  : Pure v2 JSON-RPC (crates/contracts/app-protocol)");
@@ -379,17 +393,22 @@ async fn run_review(args: ReviewArgs) -> Result<()> {
 }
 
 async fn run_resume(_args: SessionArgs) -> Result<()> {
-    Err(miette::miette!("Session resume is not wired by this command; no session was resumed."))
+    Err(miette::miette!(
+        "Session resume is not wired by this command; no session was resumed."
+    ))
 }
 
 async fn run_fork(_args: SessionArgs) -> Result<()> {
-    Err(miette::miette!("Session fork is not wired by this command; no session was forked."))
+    Err(miette::miette!(
+        "Session fork is not wired by this command; no session was forked."
+    ))
 }
 
 async fn run_apply(args: ApplyArgs) -> Result<()> {
     if let Some(ref f) = args.file {
         println!("Applying diff from {} to working tree...", f.display());
-        let status = Command::new("git").no_window()
+        let status = Command::new("git")
+            .no_window()
             .args(["apply"])
             .arg(f)
             .status()
@@ -437,22 +456,26 @@ async fn run_mcp(action: McpSubcommand) -> Result<()> {
                 return Ok(());
             }
             println!("No MCP servers found in configuration.");
-        },
+        }
         McpSubcommand::Get { name } => {
             return Err(miette::miette!(
                 "MCP detail lookup is not wired by this compatibility command: {name}"
             ));
-        },
-        McpSubcommand::Add { name, url: _url, command: _command } => {
+        }
+        McpSubcommand::Add {
+            name,
+            url: _url,
+            command: _command,
+        } => {
             return Err(miette::miette!(
                 "MCP configuration mutation is not wired by this compatibility command; server '{name}' was not added."
             ));
-        },
+        }
         McpSubcommand::Remove { name } => {
             return Err(miette::miette!(
                 "MCP configuration mutation is not wired by this compatibility command; server '{name}' was not removed."
             ));
-        },
+        }
     }
     Ok(())
 }
@@ -475,14 +498,18 @@ async fn run_plugin(action: PluginSubcommand) -> Result<()> {
                         println!(
                             "{:<55} {}",
                             k,
-                            if enabled { "installed, enabled" } else { "installed, disabled" }
+                            if enabled {
+                                "installed, enabled"
+                            } else {
+                                "installed, disabled"
+                            }
                         );
                     }
                 }
                 return Ok(());
             }
             println!("No plugins found in configuration.");
-        },
+        }
         PluginSubcommand::Marketplace { action } => match action {
             MarketplaceSubcommand::List { json } => {
                 let config_path = codex_config_path();
@@ -502,7 +529,7 @@ async fn run_plugin(action: PluginSubcommand) -> Result<()> {
                     }
                     return Ok(());
                 }
-            },
+            }
         },
     }
     Ok(())
@@ -569,7 +596,7 @@ mod tests {
                     assert_eq!(e.prompt.as_deref(), Some("ping"));
                     assert_eq!(e.model.as_deref(), Some("gpt-6-sol"));
                     assert!(e.no_daemon);
-                },
+                }
                 _ => panic!("expected Exec subcommand"),
             },
         }
@@ -582,7 +609,7 @@ mod tests {
             TestCommands::Codex(args) => match args.action {
                 Some(CodexSubcommand::AppServer(s)) => {
                     assert_eq!(s.port, Some(8799));
-                },
+                }
                 _ => panic!("expected AppServer subcommand"),
             },
         }
@@ -595,7 +622,7 @@ mod tests {
             TestCommands::Codex(args) => match args.action {
                 Some(CodexSubcommand::Doctor(d)) => {
                     assert!(d.json);
-                },
+                }
                 _ => panic!("expected Doctor subcommand"),
             },
         }
@@ -606,7 +633,9 @@ mod tests {
         let cli_mcp = TestCli::parse_from(["test", "codex", "mcp", "list"]);
         match cli_mcp.command {
             TestCommands::Codex(args) => match args.action {
-                Some(CodexSubcommand::Mcp { action: McpSubcommand::List { json: false } }) => {},
+                Some(CodexSubcommand::Mcp {
+                    action: McpSubcommand::List { json: false },
+                }) => {}
                 _ => panic!("expected Mcp::List subcommand"),
             },
         }
@@ -616,7 +645,7 @@ mod tests {
             TestCommands::Codex(args) => match args.action {
                 Some(CodexSubcommand::Plugin {
                     action: PluginSubcommand::List { json: false },
-                }) => {},
+                }) => {}
                 _ => panic!("expected Plugin::List subcommand"),
             },
         }
@@ -640,7 +669,10 @@ mod tests {
             vec!["test", "codex", "features", "--enable", "audit-test"],
         ] {
             let TestCommands::Codex(args) = TestCli::parse_from(argv.clone()).command;
-            assert!(run(args).await.is_err(), "unsupported request must fail: {argv:?}");
+            assert!(
+                run(args).await.is_err(),
+                "unsupported request must fail: {argv:?}"
+            );
         }
     }
 }

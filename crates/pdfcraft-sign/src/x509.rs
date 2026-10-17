@@ -31,11 +31,17 @@ impl Name {
                 }
             }
         }
-        Ok(Name { attrs, raw: t.raw.to_vec() })
+        Ok(Name {
+            attrs,
+            raw: t.raw.to_vec(),
+        })
     }
 
     fn get(&self, oid: &str) -> Option<&str> {
-        self.attrs.iter().find(|(o, _)| o == oid).map(|(_, v)| v.as_str())
+        self.attrs
+            .iter()
+            .find(|(o, _)| o == oid)
+            .map(|(_, v)| v.as_str())
     }
 
     pub fn common_name(&self) -> Option<&str> {
@@ -60,7 +66,10 @@ impl Name {
 
     /// The name Acrobat shows: the common name, else the organization, else the DN.
     pub fn display_name(&self) -> String {
-        self.common_name().or(self.organization()).map(str::to_string).unwrap_or_else(|| self.display())
+        self.common_name()
+            .or(self.organization())
+            .map(str::to_string)
+            .unwrap_or_else(|| self.display())
     }
 
     /// "CN=Ada Lovelace, O=Example, E=ada@example.com"
@@ -168,8 +177,14 @@ const PROCESSED_EXTENSIONS: [&str; 11] = [
 /// Extended key usages that allow signing documents: anyExtendedKeyUsage, emailProtection,
 /// codeSigning, documentSigning (RFC 9336), Adobe Authentic Documents and Microsoft document
 /// signing.
-const DOCUMENT_SIGNING_EKUS: [&str; 6] =
-    ["2.5.29.37.0", "1.3.6.1.5.5.7.3.4", "1.3.6.1.5.5.7.3.3", "1.3.6.1.5.5.7.3.36", "1.2.840.113583.1.1.5", "1.3.6.1.4.1.311.10.3.12"];
+const DOCUMENT_SIGNING_EKUS: [&str; 6] = [
+    "2.5.29.37.0",
+    "1.3.6.1.5.5.7.3.4",
+    "1.3.6.1.5.5.7.3.3",
+    "1.3.6.1.5.5.7.3.36",
+    "1.2.840.113583.1.1.5",
+    "1.3.6.1.4.1.311.10.3.12",
+];
 
 /// The certificate extensions `Certificate::parse` reads, gathered tolerantly: an
 /// extension that does not parse leaves its field at the default instead of failing the
@@ -196,19 +211,30 @@ impl Extensions {
                 // not make a certificate look like an old v1 root (which may issue). Unparsed,
                 // it stays "not a CA".
                 self.has_basic_constraints = true;
-                let Ok(bc) = Tlv::parse_all(value.value) else { return };
+                let Ok(bc) = Tlv::parse_all(value.value) else {
+                    return;
+                };
                 let fields = bc.children().unwrap_or_default();
-                self.is_ca = fields.first().is_some_and(|b| b.tag == tag::BOOLEAN && b.value != [0]);
+                self.is_ca = fields
+                    .first()
+                    .is_some_and(|b| b.tag == tag::BOOLEAN && b.value != [0]);
                 // pathLenConstraint is the INTEGER after the optional cA BOOLEAN. One that is
                 // present but unreadable (negative, too long) allows no CA below, not any number.
-                self.path_len = fields.iter().find(|t| t.tag == tag::INTEGER).map(|t| t.u64().map_or(0, |n| u32::try_from(n).unwrap_or(u32::MAX)));
+                self.path_len = fields
+                    .iter()
+                    .find(|t| t.tag == tag::INTEGER)
+                    .map(|t| t.u64().map_or(0, |n| u32::try_from(n).unwrap_or(u32::MAX)));
             }
             "2.5.29.15" => {
                 // A keyUsage that is present restricts the key even when it doesn't parse: an
                 // unreadable one allows no usage at all, never every usage.
                 self.key_usage = Some(0);
-                let Ok(bits) = Tlv::parse_all(value.value) else { return };
-                let Some((_, b)) = bits.value.split_first() else { return };
+                let Ok(bits) = Tlv::parse_all(value.value) else {
+                    return;
+                };
+                let Some((_, b)) = bits.value.split_first() else {
+                    return;
+                };
                 // Bit 0 is the most significant bit of the first byte.
                 let mut u = 0u16;
                 for (i, byte) in b.iter().take(2).enumerate() {
@@ -228,28 +254,44 @@ impl Extensions {
             // AuthorityKeyIdentifier: the [0] keyIdentifier inside.
             "2.5.29.35" => {
                 if let Ok(aki) = Tlv::parse_all(value.value) {
-                    self.authority_key_id = aki.children().ok().and_then(|c| c.into_iter().find(|t| t.tag == tag::ctx(0))).map(|t| t.value.to_vec());
+                    self.authority_key_id = aki
+                        .children()
+                        .ok()
+                        .and_then(|c| c.into_iter().find(|t| t.tag == tag::ctx(0)))
+                        .map(|t| t.value.to_vec());
                 }
             }
             // ExtendedKeyUsage: a SEQUENCE OF OID.
             "2.5.29.37" => {
                 if let Ok(eku) = Tlv::parse_all(value.value) {
-                    self.extended_key_usage = eku.children().ok().map(|c| c.into_iter().filter_map(|t| t.oid().ok()).collect::<Vec<_>>());
+                    self.extended_key_usage = eku.children().ok().map(|c| {
+                        c.into_iter()
+                            .filter_map(|t| t.oid().ok())
+                            .collect::<Vec<_>>()
+                    });
                 }
             }
             // Authority Information Access: OCSP and CA-issuer locations.
             "1.3.6.1.5.5.7.1.1" => {
-                let Ok(aia) = Tlv::parse_all(value.value) else { return };
+                let Ok(aia) = Tlv::parse_all(value.value) else {
+                    return;
+                };
                 for access in aia.children().unwrap_or_default() {
                     let Ok(a) = access.children() else { continue };
-                    if a.len() >= 2 && a[0].oid().ok().as_deref() == Some("1.3.6.1.5.5.7.48.1") && a[1].tag == tag::ctx_prim(6) {
-                        self.ocsp_urls.push(String::from_utf8_lossy(a[1].value).into_owned());
+                    if a.len() >= 2
+                        && a[0].oid().ok().as_deref() == Some("1.3.6.1.5.5.7.48.1")
+                        && a[1].tag == tag::ctx_prim(6)
+                    {
+                        self.ocsp_urls
+                            .push(String::from_utf8_lossy(a[1].value).into_owned());
                     }
                 }
             }
             // CRL distribution points: full-name URIs.
             "2.5.29.31" => {
-                let Ok(dps) = Tlv::parse_all(value.value) else { return };
+                let Ok(dps) = Tlv::parse_all(value.value) else {
+                    return;
+                };
                 for dp in dps.children().unwrap_or_default() {
                     let Ok(fields) = dp.children() else { continue };
                     for field in fields {
@@ -268,7 +310,8 @@ impl Extensions {
                             let Ok((n, r)) = Tlv::parse(rest) else { break };
                             rest = r;
                             if n.tag == tag::ctx_prim(6) {
-                                self.crl_urls.push(String::from_utf8_lossy(n.value).into_owned());
+                                self.crl_urls
+                                    .push(String::from_utf8_lossy(n.value).into_owned());
                             }
                         }
                     }
@@ -283,21 +326,46 @@ impl Certificate {
     pub fn parse(raw: &[u8]) -> Result<Certificate, SignError> {
         let cert = Tlv::parse_all(raw)?.expect(tag::SEQUENCE, "Certificate")?;
         let parts = cert.children()?;
-        let [tbs, sig_alg, sig] = parts.as_slice() else { return Err(SignError::Malformed("Certificate".into())) };
+        let [tbs, sig_alg, sig] = parts.as_slice() else {
+            return Err(SignError::Malformed("Certificate".into()));
+        };
         let mut f = tbs.children()?.into_iter().peekable();
         // version [0] EXPLICIT INTEGER DEFAULT v1 (0); v3 is 2. Unreadable counts as v3, the
         // stricter reading (no v1-root exception in `may_issue`).
         let mut version = 0u64;
         if f.peek().is_some_and(|t| t.tag == tag::ctx(0)) {
-            version = f.next().and_then(|v| v.inner().ok()).and_then(|v| v.u64().ok()).unwrap_or(2);
+            version = f
+                .next()
+                .and_then(|v| v.inner().ok())
+                .and_then(|v| v.u64().ok())
+                .unwrap_or(2);
         }
-        let serial = f.next().ok_or_else(|| SignError::Malformed("serial".into()))?.expect(tag::INTEGER, "serial")?.value.to_vec();
+        let serial = f
+            .next()
+            .ok_or_else(|| SignError::Malformed("serial".into()))?
+            .expect(tag::INTEGER, "serial")?
+            .value
+            .to_vec();
         let _inner_alg = f.next();
-        let issuer = Name::parse(&f.next().ok_or_else(|| SignError::Malformed("issuer".into()))?)?;
-        let validity = f.next().ok_or_else(|| SignError::Malformed("validity".into()))?.children()?;
-        let [nb, na] = validity.as_slice() else { return Err(SignError::Malformed("validity".into())) };
-        let subject = Name::parse(&f.next().ok_or_else(|| SignError::Malformed("subject".into()))?)?;
-        let public_key = PublicKey::from_spki(&f.next().ok_or_else(|| SignError::Malformed("public key".into()))?)?;
+        let issuer = Name::parse(
+            &f.next()
+                .ok_or_else(|| SignError::Malformed("issuer".into()))?,
+        )?;
+        let validity = f
+            .next()
+            .ok_or_else(|| SignError::Malformed("validity".into()))?
+            .children()?;
+        let [nb, na] = validity.as_slice() else {
+            return Err(SignError::Malformed("validity".into()));
+        };
+        let subject = Name::parse(
+            &f.next()
+                .ok_or_else(|| SignError::Malformed("subject".into()))?,
+        )?;
+        let public_key = PublicKey::from_spki(
+            &f.next()
+                .ok_or_else(|| SignError::Malformed("public key".into()))?,
+        )?;
         let mut ext = Extensions::default();
         let mut unknown_critical = Vec::new();
         for t in f {
@@ -306,9 +374,15 @@ impl Certificate {
             }
             for ext_tlv in t.inner()?.children()? {
                 let e = ext_tlv.children()?;
-                let Some(o) = e.first().and_then(|o| o.oid().ok()) else { continue };
-                let Some(value) = e.last().filter(|v| v.tag == tag::OCTET_STRING) else { continue };
-                let critical = e.len() == 3 && e.get(1).is_some_and(|b| b.tag == tag::BOOLEAN && b.value != [0]);
+                let Some(o) = e.first().and_then(|o| o.oid().ok()) else {
+                    continue;
+                };
+                let Some(value) = e.last().filter(|v| v.tag == tag::OCTET_STRING) else {
+                    continue;
+                };
+                let critical = e.len() == 3
+                    && e.get(1)
+                        .is_some_and(|b| b.tag == tag::BOOLEAN && b.value != [0]);
                 if critical && !PROCESSED_EXTENSIONS.contains(&o.as_str()) {
                     unknown_critical.push(o.clone());
                 }
@@ -366,7 +440,10 @@ impl Certificate {
             Some(Detail::plain(
                 "The signer's certificate does not allow digital signatures (its key usage has neither digital signature nor non-repudiation).",
             ))
-        } else if self.extended_key_usage.as_ref().is_some_and(|e| !e.iter().any(|o| DOCUMENT_SIGNING_EKUS.contains(&o.as_str()))) {
+        } else if self.extended_key_usage.as_ref().is_some_and(|e| {
+            !e.iter()
+                .any(|o| DOCUMENT_SIGNING_EKUS.contains(&o.as_str()))
+        }) {
             Some(Detail::plain(
                 "The signer's certificate is not issued for signing documents (its extended key usage has no document-signing purpose).",
             ))
@@ -387,10 +464,21 @@ impl Certificate {
 
     /// Whether `key` verifies this certificate's signature.
     pub fn signed_by(&self, key: &PublicKey) -> bool {
-        let Ok(alg) = Tlv::parse_all(&self.sig_alg) else { return false };
+        let Ok(alg) = Tlv::parse_all(&self.sig_alg) else {
+            return false;
+        };
         match keys::signature_algorithm(&alg) {
-            Ok((scheme @ keys::Scheme::Ed25519, _)) => key.verify_message(scheme, &self.tbs, &self.signature).unwrap_or(false),
-            Ok((scheme, Some(digest))) => key.verify(scheme, digest, &digest.digest(&[&self.tbs]), &self.signature).unwrap_or(false),
+            Ok((scheme @ keys::Scheme::Ed25519, _)) => key
+                .verify_message(scheme, &self.tbs, &self.signature)
+                .unwrap_or(false),
+            Ok((scheme, Some(digest))) => key
+                .verify(
+                    scheme,
+                    digest,
+                    &digest.digest(&[&self.tbs]),
+                    &self.signature,
+                )
+                .unwrap_or(false),
             _ => false,
         }
     }
@@ -418,7 +506,12 @@ impl Certificate {
 
     /// SHA-256 fingerprint as upper-case hex pairs.
     pub fn fingerprint(&self) -> String {
-        DigestAlg::Sha256.digest(&[&self.raw]).iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(" ")
+        DigestAlg::Sha256
+            .digest(&[&self.raw])
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     pub fn serial_hex(&self) -> String {
@@ -428,10 +521,19 @@ impl Certificate {
     /// A self-signed certificate for `key`: what Acrobat's "Create a new digital ID ▸ save to
     /// file" makes. Valid from `from` for `years`; usable for signing (digital signature and
     /// non-repudiation).
-    pub fn self_signed(name: &Name, key: &PrivateKey, from: Time, years: u32, serial: &[u8]) -> Result<Certificate, SignError> {
+    pub fn self_signed(
+        name: &Name,
+        key: &PrivateKey,
+        from: Time,
+        years: u32,
+        serial: &[u8],
+    ) -> Result<Certificate, SignError> {
         let alg = key.preferred_digest();
         let sig_alg = key.signature_algorithm(alg);
-        let until = Time { year: from.year + years, ..from };
+        let until = Time {
+            year: from.year + years,
+            ..from
+        };
         let spki = key.public_key().spki();
         let ski = DigestAlg::Sha1.digest(&[&spki]);
         let ext = |o: &str, critical: bool, value: &[u8]| {
@@ -447,7 +549,14 @@ impl Certificate {
             &ext("2.5.29.15", true, &key_usage),
             &ext("2.5.29.14", false, &der::octets(&ski)),
             // extKeyUsage: emailProtection and Adobe's document signing (1.2.840.113583.1.1.5).
-            &ext("2.5.29.37", false, &der::seq(&[&der::oid("1.3.6.1.5.5.7.3.4"), &der::oid("1.2.840.113583.1.1.5")])),
+            &ext(
+                "2.5.29.37",
+                false,
+                &der::seq(&[
+                    &der::oid("1.3.6.1.5.5.7.3.4"),
+                    &der::oid("1.2.840.113583.1.1.5"),
+                ]),
+            ),
         ]);
         let tbs = der::seq(&[
             &der::explicit(0, &der::int(2)),
@@ -468,7 +577,10 @@ impl Certificate {
 /// The subject alone, to name a certificate `Certificate::parse` rejects (one with a key type
 /// PdfCraft doesn't support, say). `None` when even that can't be read.
 pub fn subject_of(raw: &[u8]) -> Option<Name> {
-    let cert = Tlv::parse_all(raw).ok()?.expect(tag::SEQUENCE, "Certificate").ok()?;
+    let cert = Tlv::parse_all(raw)
+        .ok()?
+        .expect(tag::SEQUENCE, "Certificate")
+        .ok()?;
     let tbs = cert.children().ok()?.into_iter().next()?;
     let mut f = tbs.children().ok()?.into_iter().peekable();
     if f.peek().is_some_and(|t| t.tag == tag::ctx(0)) {
@@ -483,7 +595,11 @@ pub fn subject_of(raw: &[u8]) -> Option<Name> {
 /// `pathLenConstraint` allows the CA certificates below it, and (when `at` is given) it was valid
 /// then. Stops at a self-signed certificate. Certificates embedded in a document are in `pool`
 /// too, so an ordinary end-entity certificate must never be accepted as an issuer.
-pub fn build_chain<'a>(leaf: &'a Certificate, pool: &'a [Certificate], at: Option<Time>) -> Vec<&'a Certificate> {
+pub fn build_chain<'a>(
+    leaf: &'a Certificate,
+    pool: &'a [Certificate],
+    at: Option<Time>,
+) -> Vec<&'a Certificate> {
     build_chain_noted(leaf, pool, at).0
 }
 
@@ -493,7 +609,11 @@ pub fn build_chain<'a>(leaf: &'a Certificate, pool: &'a [Certificate], at: Optio
 /// The reason is a whole sentence of ours, listed in [`WORDINGS`](crate::pdf::WORDINGS), with the two
 /// certificates' own names put in afterwards, so an interface reading in another language says it in
 /// it.
-pub fn build_chain_noted<'a>(leaf: &'a Certificate, pool: &'a [Certificate], at: Option<Time>) -> (Vec<&'a Certificate>, Option<Detail>) {
+pub fn build_chain_noted<'a>(
+    leaf: &'a Certificate,
+    pool: &'a [Certificate],
+    at: Option<Time>,
+) -> (Vec<&'a Certificate>, Option<Detail>) {
     let mut chain = vec![leaf];
     let mut refused = None;
     while chain.len() < 10 {
@@ -504,15 +624,23 @@ pub fn build_chain_noted<'a>(leaf: &'a Certificate, pool: &'a [Certificate], at:
         // CA certificates between `last` and the leaf: what a candidate's pathLenConstraint limits.
         let below = chain.len() - 1;
         let mut found = None;
-        for c in pool.iter().filter(|c| c.subject.raw == last.issuer.raw && !chain.contains(c) && last.signed_by(&c.public_key)) {
+        for c in pool.iter().filter(|c| {
+            c.subject.raw == last.issuer.raw && !chain.contains(c) && last.signed_by(&c.public_key)
+        }) {
             // Each reason is a whole sentence, not a phrase stitched into one: a language puts the
             // two names where it needs them.
             let why = if !c.may_issue() {
-                Some("The certificate of {} is not a CA certificate that may issue certificates, so it is not used to vouch for {}.")
+                Some(
+                    "The certificate of {} is not a CA certificate that may issue certificates, so it is not used to vouch for {}.",
+                )
             } else if c.path_len.is_some_and(|n| below > n as usize) {
-                Some("The certificate of {} does not allow this many CA certificates below it (path length), so it is not used to vouch for {}.")
+                Some(
+                    "The certificate of {} does not allow this many CA certificates below it (path length), so it is not used to vouch for {}.",
+                )
             } else if at.is_some_and(|t| !c.valid_at(t)) {
-                Some("The certificate of {} was not valid at the time of signing, so it is not used to vouch for {}.")
+                Some(
+                    "The certificate of {} was not valid at the time of signing, so it is not used to vouch for {}.",
+                )
             } else {
                 None
             };
@@ -521,7 +649,12 @@ pub fn build_chain_noted<'a>(leaf: &'a Certificate, pool: &'a [Certificate], at:
                     found = Some(c);
                     break;
                 }
-                Some(why) => refused = Some(Detail::of(why, Fill::Names(c.display_name(), last.display_name()))),
+                Some(why) => {
+                    refused = Some(Detail::of(
+                        why,
+                        Fill::Names(c.display_name(), last.display_name()),
+                    ))
+                }
             }
         }
         let Some(issuer) = found else { break };
@@ -545,14 +678,18 @@ pub fn load_certificates(bytes: &[u8]) -> Result<Vec<Certificate>, SignError> {
             block = Some(String::new());
         } else if line == "-----END CERTIFICATE-----" {
             if let Some(b) = block.take() {
-                out.push(Certificate::parse(&base64(&b).ok_or_else(|| SignError::Malformed("PEM base64".into()))?)?);
+                out.push(Certificate::parse(
+                    &base64(&b).ok_or_else(|| SignError::Malformed("PEM base64".into()))?,
+                )?);
             }
         } else if let Some(b) = block.as_mut() {
             b.push_str(line);
         }
     }
     if out.is_empty() {
-        return Err(SignError::Malformed("no certificate found (expected DER or PEM)".into()));
+        return Err(SignError::Malformed(
+            "no certificate found (expected DER or PEM)".into(),
+        ));
     }
     Ok(out)
 }
@@ -562,13 +699,26 @@ pub fn to_pem(cert: &Certificate) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut s = String::new();
     for c in cert.raw.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         for i in 0..4 {
-            s.push(if i <= c.len() { T[(n >> (18 - 6 * i) & 63) as usize] as char } else { '=' });
+            s.push(if i <= c.len() {
+                T[(n >> (18 - 6 * i) & 63) as usize] as char
+            } else {
+                '='
+            });
         }
     }
-    let body: Vec<String> = s.as_bytes().chunks(64).map(|l| String::from_utf8_lossy(l).into_owned()).collect();
-    format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n", body.join("\n"))
+    let body: Vec<String> = s
+        .as_bytes()
+        .chunks(64)
+        .map(|l| String::from_utf8_lossy(l).into_owned())
+        .collect();
+    format!(
+        "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",
+        body.join("\n")
+    )
 }
 
 fn base64(s: &str) -> Option<Vec<u8>> {
@@ -582,7 +732,10 @@ fn base64(s: &str) -> Option<Vec<u8>> {
             _ => return None,
         } as u32)
     };
-    let digits: Vec<u8> = s.bytes().filter(|c| !c.is_ascii_whitespace() && *c != b'=').collect();
+    let digits: Vec<u8> = s
+        .bytes()
+        .filter(|c| !c.is_ascii_whitespace() && *c != b'=')
+        .collect();
     let mut out = Vec::with_capacity(digits.len() * 3 / 4);
     for chunk in digits.chunks(4) {
         let mut n = 0u32;
@@ -606,15 +759,28 @@ mod xfa_ext_tests {
         // full-name URI. `fullName [0]` is IMPLICIT over GeneralNames, so with a single
         // GeneralName there is no inner SEQUENCE — a run of one element.
         let uri = b"http://crl.entrust.net/2048ca.crl";
-        let value = der::seq(&[&der::seq(&[&der::tlv(tag::ctx(0), &der::tlv(tag::ctx(0), &der::tlv(tag::ctx_prim(6), uri)))])]);
+        let value = der::seq(&[&der::seq(&[&der::tlv(
+            tag::ctx(0),
+            &der::tlv(tag::ctx(0), &der::tlv(tag::ctx_prim(6), uri)),
+        )])]);
         let wrapped = der::tlv(tag::OCTET_STRING, &value);
         let extn = Tlv::parse_all(&wrapped).unwrap();
         let mut ext = Extensions::default();
         ext.read("2.5.29.31", &extn);
-        assert_eq!(ext.crl_urls, vec!["http://crl.entrust.net/2048ca.crl".to_string()]);
+        assert_eq!(
+            ext.crl_urls,
+            vec!["http://crl.entrust.net/2048ca.crl".to_string()]
+        );
         // Two URIs in one full-name run.
-        let names = [der::tlv(tag::ctx_prim(6), uri), der::tlv(tag::ctx_prim(6), b"http://crl2.example/x.crl")].concat();
-        let two = der::seq(&[&der::seq(&[&der::tlv(tag::ctx(0), &der::tlv(tag::ctx(0), &names))])]);
+        let names = [
+            der::tlv(tag::ctx_prim(6), uri),
+            der::tlv(tag::ctx_prim(6), b"http://crl2.example/x.crl"),
+        ]
+        .concat();
+        let two = der::seq(&[&der::seq(&[&der::tlv(
+            tag::ctx(0),
+            &der::tlv(tag::ctx(0), &names),
+        )])]);
         let wrapped = der::tlv(tag::OCTET_STRING, &two);
         let extn = Tlv::parse_all(&wrapped).unwrap();
         let mut ext = Extensions::default();
@@ -624,10 +790,23 @@ mod xfa_ext_tests {
 
     #[test]
     fn a_malformed_extension_is_skipped_not_fatal() {
-        for garbage in [b"".as_slice(), &[0xFF, 0xFF, 0xFF], &[0x30, 0x99], b"not der"] {
+        for garbage in [
+            b"".as_slice(),
+            &[0xFF, 0xFF, 0xFF],
+            &[0x30, 0x99],
+            b"not der",
+        ] {
             let wrapped = der::tlv(tag::OCTET_STRING, garbage);
             let extn = Tlv::parse_all(&wrapped).unwrap();
-            for oid in ["2.5.29.19", "2.5.29.15", "2.5.29.14", "2.5.29.35", "2.5.29.37", "1.3.6.1.5.5.7.1.1", "2.5.29.31"] {
+            for oid in [
+                "2.5.29.19",
+                "2.5.29.15",
+                "2.5.29.14",
+                "2.5.29.35",
+                "2.5.29.37",
+                "1.3.6.1.5.5.7.1.1",
+                "2.5.29.31",
+            ] {
                 let mut ext = Extensions::default();
                 ext.read(oid, &extn); // must not panic and must leave defaults
                 assert!(ext.ocsp_urls.is_empty() && ext.crl_urls.is_empty() && !ext.is_ca);

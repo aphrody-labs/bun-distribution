@@ -306,7 +306,9 @@ impl AnimationsManifest {
     /// Vérifie les invariants de grille, ordres, durées et comptes.
     pub fn validate(&self) -> Result<(), Error> {
         if self.schema_version != 1 || self.pet.sprite_version_number != 2 {
-            return Err(Error::Invalid("version de manifest Aphrody non supportée".into()));
+            return Err(Error::Invalid(
+                "version de manifest Aphrody non supportée".into(),
+            ));
         }
         if (
             self.atlas.width,
@@ -317,7 +319,9 @@ impl AnimationsManifest {
             self.atlas.cell_height,
         ) != (1536, 2288, 8, 11, 192, 208)
         {
-            return Err(Error::Invalid("géométrie d'atlas Aphrody inattendue".into()));
+            return Err(Error::Invalid(
+                "géométrie d'atlas Aphrody inattendue".into(),
+            ));
         }
         let mut frames = 0;
         for (name, animation) in &self.animations {
@@ -330,7 +334,9 @@ impl AnimationsManifest {
                     || frame.atlas_rect != Rect::cell(frame.row, frame.column)
                     || !frame.atlas_rect.fits(self.atlas.width, self.atlas.height)
                 {
-                    return Err(Error::Invalid(format!("{name}: ordre ou rectangle incohérent")));
+                    return Err(Error::Invalid(format!(
+                        "{name}: ordre ou rectangle incohérent"
+                    )));
                 }
                 if let Some(d) = frame.duration_ms {
                     if d == 0 {
@@ -342,12 +348,16 @@ impl AnimationsManifest {
             if let Some(total) = animation.total_duration_ms
                 && duration != total
             {
-                return Err(Error::Invalid(format!("{name}: totalDurationMs incohérent")));
+                return Err(Error::Invalid(format!(
+                    "{name}: totalDurationMs incohérent"
+                )));
             }
             frames += animation.frames.len();
         }
         if frames != self.exported_frame_count || self.animations.len() != self.animation_count {
-            return Err(Error::Invalid("comptes d'animations ou de frames incohérents".into()));
+            return Err(Error::Invalid(
+                "comptes d'animations ou de frames incohérents".into(),
+            ));
         }
         Ok(())
     }
@@ -375,7 +385,9 @@ impl Pet {
         let manifest = AnimationsManifest::from_json(animations_json)?;
         validate_identity(&pet, &manifest)?;
         if sha256_hex(webp_bytes) != manifest.atlas.webp_sha256 {
-            return Err(Error::Invalid("hash WebP runtime différent du manifest".into()));
+            return Err(Error::Invalid(
+                "hash WebP runtime différent du manifest".into(),
+            ));
         }
         let mut loaded = Self::from_png(manifest, png_bytes)?;
         loaded.pet = pet;
@@ -407,7 +419,9 @@ impl Pet {
         })?;
         validate_identity(&pet, &manifest)?;
         if sha256_hex(&webp) != manifest.atlas.webp_sha256 {
-            return Err(Error::Invalid("hash WebP runtime différent du manifest".into()));
+            return Err(Error::Invalid(
+                "hash WebP runtime différent du manifest".into(),
+            ));
         }
         let mut loaded = Self::from_png(manifest, &bytes)?;
         loaded.pet = pet;
@@ -416,7 +430,9 @@ impl Pet {
     /// Construit le runtime à partir du manifest et de PNG RGBA décodé lossless.
     pub fn from_png(manifest: AnimationsManifest, png_bytes: &[u8]) -> Result<Self, Error> {
         if sha256_hex(png_bytes) != manifest.atlas.png_sha256 {
-            return Err(Error::Invalid("hash PNG atlas différent du manifest".into()));
+            return Err(Error::Invalid(
+                "hash PNG atlas différent du manifest".into(),
+            ));
         }
         let decoder = png::Decoder::new(std::io::Cursor::new(png_bytes));
         let mut reader = decoder.read_info()?;
@@ -428,7 +444,9 @@ impl Pet {
         ];
         let info = reader.next_frame(&mut buf)?;
         if info.width != manifest.atlas.width || info.height != manifest.atlas.height {
-            return Err(Error::Invalid("dimensions PNG différentes du manifest".into()));
+            return Err(Error::Invalid(
+                "dimensions PNG différentes du manifest".into(),
+            ));
         }
         let rgba = match info.color_type {
             png::ColorType::Rgba => buf[..info.buffer_size()].to_vec(),
@@ -441,7 +459,9 @@ impl Pet {
             _ => return Err(Error::Invalid("l'atlas doit être RGB ou RGBA".into())),
         };
         if sha256_hex(&rgba) != manifest.atlas.rgba_sha256 {
-            return Err(Error::Invalid("hash RGBA atlas différent du manifest".into()));
+            return Err(Error::Invalid(
+                "hash RGBA atlas différent du manifest".into(),
+            ));
         }
         let pet = PetManifest {
             id: manifest.pet.id.clone(),
@@ -450,7 +470,11 @@ impl Pet {
             description: manifest.pet.description.clone(),
             spritesheet_path: manifest.atlas.runtime_image.clone(),
         };
-        Ok(Self { pet, manifest, rgba })
+        Ok(Self {
+            pet,
+            manifest,
+            rgba,
+        })
     }
     /// Extrait une cellule sans rééchantillonnage ni conversion de couleur.
     pub fn extract(&self, frame: &Frame) -> Result<Vec<u8>, Error> {
@@ -468,16 +492,23 @@ impl Pet {
     /// Compare chaque cellule au hash, aux comptes alpha et aux bornes déclarés dans JSON.
     #[must_use]
     pub fn diagnose(&self) -> IntegrityReport {
-        let mut report = IntegrityReport { checked_frames: 0, errors: Vec::new() };
+        let mut report = IntegrityReport {
+            checked_frames: 0,
+            errors: Vec::new(),
+        };
         for animation in self.manifest.animations.values() {
             for frame in &animation.frames {
                 report.checked_frames += 1;
                 let Ok(cell) = self.extract(frame) else {
-                    report.errors.push(format!("frame {}: rectangle invalide", frame.image));
+                    report
+                        .errors
+                        .push(format!("frame {}: rectangle invalide", frame.image));
                     continue;
                 };
                 if sha256_hex(&cell) != frame.rgba_sha256 {
-                    report.errors.push(format!("frame {}: hash RGBA", frame.image));
+                    report
+                        .errors
+                        .push(format!("frame {}: hash RGBA", frame.image));
                 }
                 let mut non_transparent = 0u32;
                 let mut opaque = 0u32;
@@ -505,7 +536,9 @@ impl Pet {
                     || translucent != frame.translucent_pixels
                     || (CELL_WIDTH * CELL_HEIGHT - non_transparent) != frame.transparent_pixels
                 {
-                    report.errors.push(format!("frame {}: comptes alpha", frame.image));
+                    report
+                        .errors
+                        .push(format!("frame {}: comptes alpha", frame.image));
                 }
                 let actual = AlphaBounds {
                     x: if non_transparent == 0 { 0 } else { min_x },
@@ -514,7 +547,9 @@ impl Pet {
                     height: max_y.saturating_sub(min_y),
                 };
                 if actual != frame.alpha_bounds_in_cell {
-                    report.errors.push(format!("frame {}: bornes alpha", frame.image));
+                    report
+                        .errors
+                        .push(format!("frame {}: bornes alpha", frame.image));
                 }
             }
         }
@@ -528,12 +563,18 @@ impl Pet {
     /// Sélectionne la direction nominale la plus proche parmi les frames directionnelles.
     #[must_use]
     pub fn direction(&self, degrees: f32) -> Option<&Frame> {
-        self.animation("look-directions")?.frames.iter().min_by_key(|f| {
-            angular_distance(
-                degrees,
-                f.direction_degrees.as_deref().and_then(|x| x.parse::<f32>().ok()).unwrap_or(0.0),
-            ) as u32
-        })
+        self.animation("look-directions")?
+            .frames
+            .iter()
+            .min_by_key(|f| {
+                angular_distance(
+                    degrees,
+                    f.direction_degrees
+                        .as_deref()
+                        .and_then(|x| x.parse::<f32>().ok())
+                        .unwrap_or(0.0),
+                ) as u32
+            })
     }
 }
 
@@ -611,7 +652,10 @@ pub fn crop_rgba(src: &[u8], width: u32, height: u32, rect: Rect) -> Option<Vec<
 pub fn sha256_hex(bytes: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(bytes);
-    h.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()
+    h.finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
 }
 fn validate_identity(pet: &PetManifest, manifest: &AnimationsManifest) -> Result<(), Error> {
     if pet.id != manifest.pet.id
@@ -637,9 +681,22 @@ mod tests {
     fn grille_et_crop_sont_lossless() {
         let mut pixels = vec![0; 4 * 4 * 4];
         pixels[0..4].copy_from_slice(&[1, 2, 3, 4]);
-        let r = Rect { x: 0, y: 0, width: 1, height: 1 };
+        let r = Rect {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        };
         assert_eq!(crop_rgba(&pixels, 4, 4, r), Some(vec![1, 2, 3, 4]));
-        assert_eq!(Rect::cell(10, 7), Rect { x: 1344, y: 2080, width: 192, height: 208 });
+        assert_eq!(
+            Rect::cell(10, 7),
+            Rect {
+                x: 1344,
+                y: 2080,
+                width: 192,
+                height: 208
+            }
+        );
     }
     #[test]
     fn direction_circulaire() {

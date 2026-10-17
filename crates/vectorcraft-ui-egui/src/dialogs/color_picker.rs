@@ -17,7 +17,10 @@ use vectorcraft_engine::cmd::color_value;
 
 use super::DialogSpec;
 use super::form::PREVIEWED;
-use crate::panels::color::{GAMUT_WARNING, WEB_WARNING, gamut_fix, hex_digits, is_web_safe, parse_hex, warning_chip, web_safe};
+use crate::panels::color::{
+    GAMUT_WARNING, WEB_WARNING, gamut_fix, hex_digits, is_web_safe, parse_hex, warning_chip,
+    web_safe,
+};
 use crate::panels::{c32, color_json};
 use crate::state::Dialog;
 use crate::theme::Tokens;
@@ -53,7 +56,14 @@ pub enum Channel {
 }
 
 impl Channel {
-    pub const ALL: [Channel; 6] = [Channel::Hue, Channel::Saturation, Channel::Brightness, Channel::Red, Channel::Green, Channel::Blue];
+    pub const ALL: [Channel; 6] = [
+        Channel::Hue,
+        Channel::Saturation,
+        Channel::Brightness,
+        Channel::Red,
+        Channel::Green,
+        Channel::Blue,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -78,7 +88,10 @@ impl Channel {
         }
     }
     fn is_hsb(self) -> bool {
-        matches!(self, Channel::Hue | Channel::Saturation | Channel::Brightness)
+        matches!(
+            self,
+            Channel::Hue | Channel::Saturation | Channel::Brightness
+        )
     }
     /// Indices of (slider, field x, field y) into the channel's space: [h, s, b] or [r, g, b].
     fn axes(self) -> (usize, usize, usize) {
@@ -102,20 +115,34 @@ pub struct Picked {
 
 impl Picked {
     pub fn of(color: Color) -> Self {
-        Self { color, hsb: color.to_hsb() }
+        Self {
+            color,
+            hsb: color.to_hsb(),
+        }
     }
     fn from_hsb(hsb: [f32; 3]) -> Self {
-        Self { color: Color::from_hsb(hsb[0], hsb[1], hsb[2]), hsb }
+        Self {
+            color: Color::from_hsb(hsb[0], hsb[1], hsb[2]),
+            hsb,
+        }
     }
     /// The nearest web colour when Only Web Colors is on.
     pub fn snapped(self, web: bool) -> Self {
-        if web && !is_web_safe(&self.color) { Self::of(web_safe(&self.color)) } else { self }
+        if web && !is_web_safe(&self.color) {
+            Self::of(web_safe(&self.color))
+        } else {
+            self
+        }
     }
 }
 
 /// The slider value and the field point (x right, y down; 0..1 each) of a colour.
 pub fn field_pos(ch: Channel, p: &Picked) -> (f32, f32, f32) {
-    let v = if ch.is_hsb() { [p.hsb[0] / 360.0, p.hsb[1], p.hsb[2]] } else { p.color.to_rgb() };
+    let v = if ch.is_hsb() {
+        [p.hsb[0] / 360.0, p.hsb[1], p.hsb[2]]
+    } else {
+        p.color.to_rgb()
+    };
     let (z, x, y) = ch.axes();
     (v[z], v[x], 1.0 - v[y])
 }
@@ -128,13 +155,21 @@ pub fn field_pick(ch: Channel, z: f32, x: f32, y: f32) -> Picked {
     v[xi] = x;
     v[yi] = 1.0 - y;
     let v = v.map(|c| c.clamp(0.0, 1.0));
-    if ch.is_hsb() { Picked::from_hsb([v[0] * 360.0, v[1], v[2]]) } else { Picked::of(Color::rgb(v[0], v[1], v[2])) }
+    if ch.is_hsb() {
+        Picked::from_hsb([v[0] * 360.0, v[1], v[2]])
+    } else {
+        Picked::of(Color::rgb(v[0], v[1], v[2]))
+    }
 }
 
 /// The channel slider's track at `z`: the full spectrum for hue, else the colour with only the
 /// slider's component changing.
 pub fn slider_color(ch: Channel, z: f32, x: f32, y: f32) -> Color {
-    if ch == Channel::Hue { Color::from_hsb(z * 360.0, 1.0, 1.0) } else { field_pick(ch, z, x, y).color }
+    if ch == Channel::Hue {
+        Color::from_hsb(z * 360.0, 1.0, 1.0)
+    } else {
+        field_pick(ch, z, x, y).color
+    }
 }
 
 /// The colour the dialog holds: an edited `hex` wins over `color` (agents set either one).
@@ -142,9 +177,16 @@ fn picked(d: &Dialog) -> Picked {
     let hex = d.str("hex");
     let color = match parse_hex(&hex) {
         Some(c) if hex != d.str("__hex") => c,
-        _ => d.fields.get("color").and_then(color_value).unwrap_or(Color::WHITE),
+        _ => d
+            .fields
+            .get("color")
+            .and_then(color_value)
+            .unwrap_or(Color::WHITE),
     };
-    let hsb = d.fields.get("__hsb").and_then(|v| serde_json::from_value::<[f32; 3]>(v.clone()).ok());
+    let hsb = d
+        .fields
+        .get("__hsb")
+        .and_then(|v| serde_json::from_value::<[f32; 3]>(v.clone()).ok());
     let p = match hsb {
         Some(h) if Picked::from_hsb(h).color.to_hex() == color.to_hex() => Picked { color, hsb: h },
         _ => Picked::of(color),
@@ -165,7 +207,11 @@ fn proxy_color(app: &VectorcraftApp, stroke: bool) -> Color {
     let (f, s) = crate::panels::current_paints(app);
     match if stroke { s } else { f } {
         Paint::Solid { color, .. } => color,
-        Paint::Gradient(g) => g.gradient.stops.first().map_or(app.session.last_solid, |s| s.color),
+        Paint::Gradient(g) => g
+            .gradient
+            .stops
+            .first()
+            .map_or(app.session.last_solid, |s| s.color),
         Paint::None | Paint::Pattern { .. } => app.session.last_solid,
     }
 }
@@ -173,7 +219,10 @@ fn proxy_color(app: &VectorcraftApp, stroke: bool) -> Color {
 /// `ui.colorPicker {stroke?, color?}`: open the picker for the fill (or stroke) proxy, starting
 /// from `color` or the proxy's colour.
 pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
-    let stroke = p.get("stroke").and_then(Value::as_bool).unwrap_or(!app.session.fill_active);
+    let stroke = p
+        .get("stroke")
+        .and_then(Value::as_bool)
+        .unwrap_or(!app.session.fill_active);
     let color = match p.get("color") {
         Some(v) => color_value(v).ok_or_else(|| format!("bad color {v}"))?,
         None => proxy_color(app, stroke),
@@ -192,7 +241,11 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> bool {
     let web = d.bool("webOnly");
     let swatches = d.bool("swatches");
     let p = picked(d);
-    let original = d.fields.get("original").and_then(color_value).unwrap_or(p.color);
+    let original = d
+        .fields
+        .get("original")
+        .and_then(color_value)
+        .unwrap_or(p.color);
     let gamut = gamut_fix(app, ui.ctx(), "picker-gamut", &p.color);
     let mut pick: Option<Picked> = None;
     let mut new_channel = None;
@@ -203,12 +256,20 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         } else {
             let (z, x, y) = field_pos(channel, &p);
             let at = |x: f32, y: f32| c32(&field_pick(channel, z, x, y).snapped(web).color);
-            if let (Some((x, y)), _) = widgets::color_field(ui, "cp-field", vec2(FIELD, FIELD), (x, y), &at) {
+            if let (Some((x, y)), _) =
+                widgets::color_field(ui, "cp-field", vec2(FIELD, FIELD), (x, y), &at)
+            {
                 pick = Some(field_pick(channel, z, x, y));
             }
             ui.add_space(6.0);
-            let track = |z: f32| c32(&Picked::of(slider_color(channel, z, x, y)).snapped(web).color);
-            if let (Some(z), _) = widgets::channel_slider(ui, "cp-slider", z, vec2(22.0, FIELD), &track) {
+            let track = |z: f32| {
+                c32(&Picked::of(slider_color(channel, z, x, y))
+                    .snapped(web)
+                    .color)
+            };
+            if let (Some(z), _) =
+                widgets::channel_slider(ui, "cp-slider", z, vec2(22.0, FIELD), &track)
+            {
                 pick = Some(field_pick(channel, z, x, y));
             }
         }
@@ -231,7 +292,16 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                     }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    toggle_swatches = widgets::flat_button(ui, if swatches { tl!("Color Models") } else { tl!("Color Swatches") }, 110.0).clicked();
+                    toggle_swatches = widgets::flat_button(
+                        ui,
+                        if swatches {
+                            tl!("Color Models")
+                        } else {
+                            tl!("Color Swatches")
+                        },
+                        110.0,
+                    )
+                    .clicked();
                 });
             });
             ui.add_space(10.0);
@@ -261,12 +331,20 @@ fn body(app: &mut VectorcraftApp, ui: &mut Ui, d: &mut Dialog) -> bool {
 fn preview(app: &mut VectorcraftApp, d: &mut Dialog) {
     let (cmd, params) = paint_command(app, d);
     let first = !app.session.in_interaction();
-    let unchanged = d.fields.get(PREVIEWED) == Some(&params) || first && d.fields.get("original").and_then(color_value) == Some(picked(d).color);
-    let selected = app.session.active().is_some_and(|st| !st.selection.objects.is_empty());
+    let unchanged = d.fields.get(PREVIEWED) == Some(&params)
+        || first && d.fields.get("original").and_then(color_value) == Some(picked(d).color);
+    let selected = app
+        .session
+        .active()
+        .is_some_and(|st| !st.selection.objects.is_empty());
     if unchanged || !selected {
         return;
     }
-    let _ = app.session.begin_interaction(if d.bool("stroke") { "Stroke Color" } else { "Fill Color" });
+    let _ = app.session.begin_interaction(if d.bool("stroke") {
+        "Stroke Color"
+    } else {
+        "Fill Color"
+    });
     if let Err(e) = app.session.preview(cmd, &params) {
         app.status(e.to_string());
     }
@@ -277,11 +355,23 @@ fn preview(app: &mut VectorcraftApp, d: &mut Dialog) {
 /// document).
 fn paint_command(app: &VectorcraftApp, d: &Dialog) -> (&'static str, Value) {
     let mut c = picked(d).color;
-    if matches!(c, Color::Rgb { .. }) && app.session.active().is_some_and(|s| s.doc.color_mode == ColorMode::Cmyk) {
+    if matches!(c, Color::Rgb { .. })
+        && app
+            .session
+            .active()
+            .is_some_and(|s| s.doc.color_mode == ColorMode::Cmyk)
+    {
         let [cy, m, y, k] = c.to_cmyk_managed(cms::active().settings().intent);
         c = Color::cmyk(cy, m, y, k);
     }
-    (if d.bool("stroke") { "paint.setStroke" } else { "paint.setFill" }, json!({ "color": color_json(&c) }))
+    (
+        if d.bool("stroke") {
+            "paint.setStroke"
+        } else {
+            "paint.setFill"
+        },
+        json!({ "color": color_json(&c) }),
+    )
 }
 
 /// The New (top) and Original (bottom) chips. Returns true when Original is clicked.
@@ -292,9 +382,17 @@ fn new_original_chips(ui: &mut Ui, new: &Color, original: &Color) -> bool {
     let bottom = Rect::from_min_max(egui::pos2(r.left(), r.center().y), r.max);
     widgets::paint_chip(ui, top, &Paint::solid(*new));
     widgets::paint_chip(ui, bottom, &Paint::solid(*original));
-    ui.painter().rect_stroke(r, 0.0, egui::Stroke::new(1.0, t.border), egui::StrokeKind::Outside);
-    ui.interact(top, ui.id().with("cp-new"), Sense::hover()).on_hover_text(tl!("New"));
-    ui.interact(bottom, ui.id().with("cp-original"), Sense::click()).on_hover_text(tl!("Original: click to restore")).clicked()
+    ui.painter().rect_stroke(
+        r,
+        0.0,
+        egui::Stroke::new(1.0, t.border),
+        egui::StrokeKind::Outside,
+    );
+    ui.interact(top, ui.id().with("cp-new"), Sense::hover())
+        .on_hover_text(tl!("New"));
+    ui.interact(bottom, ui.id().with("cp-original"), Sense::click())
+        .on_hover_text(tl!("Original: click to restore"))
+        .clicked()
 }
 
 /// The HSB and RGB fields with the channel radios, hex, Lab and CMYK. Returns the edited colour
@@ -307,60 +405,78 @@ fn value_fields(ui: &mut Ui, p: &Picked, channel: Channel) -> (Option<Picked>, O
     let cmyk = p.color.to_cmyk_managed(cms.settings().intent);
     let mut edit = None;
     let mut chosen = None;
-    egui::Grid::new("cp-values").num_columns(4).spacing([6.0, 4.0]).show(ui, |ui| {
-        for i in 0..7 {
-            if let Some(&ch) = Channel::ALL.get(i) {
-                if widgets::radio(ui, ch.label(), ch == channel, true) {
-                    chosen = Some(ch);
+    egui::Grid::new("cp-values")
+        .num_columns(4)
+        .spacing([6.0, 4.0])
+        .show(ui, |ui| {
+            for i in 0..7 {
+                if let Some(&ch) = Channel::ALL.get(i) {
+                    if widgets::radio(ui, ch.label(), ch == channel, true) {
+                        chosen = Some(ch);
+                    }
+                    let (v, suffix) = match i {
+                        0 => (p.hsb[0], "°"),
+                        1 | 2 => (p.hsb[i] * 100.0, "%"),
+                        _ => (rgb[i - 3] * 255.0, ""),
+                    };
+                    if let Some(nv) =
+                        widgets::plain_field(ui, ("cp-left", i), v as f64, suffix, 0, VALUE_W)
+                    {
+                        let nv = nv as f32;
+                        edit = Some(match i {
+                            0..3 => {
+                                let mut hsb = p.hsb;
+                                hsb[i] = if i == 0 {
+                                    nv.clamp(0.0, 360.0)
+                                } else {
+                                    (nv / 100.0).clamp(0.0, 1.0)
+                                };
+                                Picked::from_hsb(hsb)
+                            }
+                            _ => {
+                                let mut c = rgb;
+                                c[i - 3] = (nv / 255.0).clamp(0.0, 1.0);
+                                Picked::of(Color::rgb(c[0], c[1], c[2]))
+                            }
+                        });
+                    }
+                } else if let Some(c) = widgets::hex_field(ui, "cp-hex", &hex_digits(&p.color))
+                    .as_deref()
+                    .and_then(parse_hex)
+                {
+                    edit = Some(Picked::of(c));
                 }
-                let (v, suffix) = match i {
-                    0 => (p.hsb[0], "°"),
-                    1 | 2 => (p.hsb[i] * 100.0, "%"),
-                    _ => (rgb[i - 3] * 255.0, ""),
+                let (label, v, suffix) = match i {
+                    0 => ("L", lab.l, ""),
+                    1 => ("a", lab.a, ""),
+                    2 => ("b", lab.b, ""),
+                    _ => (["C", "M", "Y", "K"][i - 3], cmyk[i - 3] * 100.0, "%"),
                 };
-                if let Some(nv) = widgets::plain_field(ui, ("cp-left", i), v as f64, suffix, 0, VALUE_W) {
+                ui.horizontal(|ui| {
+                    ui.add_space(12.0);
+                    ui.label(egui::RichText::new(label).size(12.5).color(t.text));
+                });
+                if let Some(nv) =
+                    widgets::plain_field(ui, ("cp-right", i), v as f64, suffix, 0, VALUE_W)
+                {
                     let nv = nv as f32;
-                    edit = Some(match i {
-                        0..3 => {
-                            let mut hsb = p.hsb;
-                            hsb[i] = if i == 0 { nv.clamp(0.0, 360.0) } else { (nv / 100.0).clamp(0.0, 1.0) };
-                            Picked::from_hsb(hsb)
-                        }
-                        _ => {
-                            let mut c = rgb;
-                            c[i - 3] = (nv / 255.0).clamp(0.0, 1.0);
-                            Picked::of(Color::rgb(c[0], c[1], c[2]))
-                        }
-                    });
+                    edit = Some(Picked::of(if i < 3 {
+                        let mut l = [lab.l, lab.a, lab.b];
+                        l[i] = if i == 0 {
+                            nv.clamp(0.0, 100.0)
+                        } else {
+                            nv.clamp(-128.0, 127.0)
+                        };
+                        cms.from_lab(Lab::new(l[0], l[1], l[2]))
+                    } else {
+                        let mut k = cmyk;
+                        k[i - 3] = (nv / 100.0).clamp(0.0, 1.0);
+                        Color::cmyk(k[0], k[1], k[2], k[3])
+                    }));
                 }
-            } else if let Some(c) = widgets::hex_field(ui, "cp-hex", &hex_digits(&p.color)).as_deref().and_then(parse_hex) {
-                edit = Some(Picked::of(c));
+                ui.end_row();
             }
-            let (label, v, suffix) = match i {
-                0 => ("L", lab.l, ""),
-                1 => ("a", lab.a, ""),
-                2 => ("b", lab.b, ""),
-                _ => (["C", "M", "Y", "K"][i - 3], cmyk[i - 3] * 100.0, "%"),
-            };
-            ui.horizontal(|ui| {
-                ui.add_space(12.0);
-                ui.label(egui::RichText::new(label).size(12.5).color(t.text));
-            });
-            if let Some(nv) = widgets::plain_field(ui, ("cp-right", i), v as f64, suffix, 0, VALUE_W) {
-                let nv = nv as f32;
-                edit = Some(Picked::of(if i < 3 {
-                    let mut l = [lab.l, lab.a, lab.b];
-                    l[i] = if i == 0 { nv.clamp(0.0, 100.0) } else { nv.clamp(-128.0, 127.0) };
-                    cms.from_lab(Lab::new(l[0], l[1], l[2]))
-                } else {
-                    let mut k = cmyk;
-                    k[i - 3] = (nv / 100.0).clamp(0.0, 1.0);
-                    Color::cmyk(k[0], k[1], k[2], k[3])
-                }));
-            }
-            ui.end_row();
-        }
-    });
+        });
     (edit, chosen)
 }
 
@@ -370,33 +486,46 @@ fn swatch_list(app: &VectorcraftApp, ui: &mut Ui, current: &Color) -> Option<Col
     let mut chosen = None;
     ui.allocate_ui(vec2(FIELD + 28.0, FIELD), |ui| {
         widgets::list_box(ui, |ui| {
-            egui::ScrollArea::vertical().id_salt("cp-swatches").max_height(FIELD).show(ui, |ui| {
-                ui.set_width(FIELD + 24.0);
-                let Some(st) = app.session.active() else {
-                    widgets::dim_label(ui, tl!("Open a document to see its swatches."));
-                    return;
-                };
-                let doc = &st.doc;
-                for s in doc.swatches.iter().chain(doc.swatch_groups.iter().flat_map(|g| g.swatches.iter())) {
-                    let Paint::Solid { color, .. } = &s.paint else { continue };
-                    let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 20.0), Sense::click());
-                    if resp.hovered() {
-                        ui.painter().rect_filled(r, 0.0, t.hover);
+            egui::ScrollArea::vertical()
+                .id_salt("cp-swatches")
+                .max_height(FIELD)
+                .show(ui, |ui| {
+                    ui.set_width(FIELD + 24.0);
+                    let Some(st) = app.session.active() else {
+                        widgets::dim_label(ui, tl!("Open a document to see its swatches."));
+                        return;
+                    };
+                    let doc = &st.doc;
+                    for s in doc
+                        .swatches
+                        .iter()
+                        .chain(doc.swatch_groups.iter().flat_map(|g| g.swatches.iter()))
+                    {
+                        let Paint::Solid { color, .. } = &s.paint else {
+                            continue;
+                        };
+                        let (r, resp) = ui
+                            .allocate_exact_size(vec2(ui.available_width(), 20.0), Sense::click());
+                        if resp.hovered() {
+                            ui.painter().rect_filled(r, 0.0, t.hover);
+                        }
+                        let chip = Rect::from_min_size(
+                            r.left_center() + vec2(4.0, -7.0),
+                            vec2(14.0, 14.0),
+                        );
+                        widgets::swatch_tile(ui, chip, &s.paint, color == current, false);
+                        ui.painter().text(
+                            egui::pos2(chip.right() + 8.0, r.center().y),
+                            egui::Align2::LEFT_CENTER,
+                            &s.name,
+                            egui::FontId::proportional(12.0),
+                            t.text,
+                        );
+                        if resp.clicked() {
+                            chosen = Some(*color);
+                        }
                     }
-                    let chip = Rect::from_min_size(r.left_center() + vec2(4.0, -7.0), vec2(14.0, 14.0));
-                    widgets::swatch_tile(ui, chip, &s.paint, color == current, false);
-                    ui.painter().text(
-                        egui::pos2(chip.right() + 8.0, r.center().y),
-                        egui::Align2::LEFT_CENTER,
-                        &s.name,
-                        egui::FontId::proportional(12.0),
-                        t.text,
-                    );
-                    if resp.clicked() {
-                        chosen = Some(*color);
-                    }
-                }
-            });
+                });
         });
     });
     chosen
@@ -417,8 +546,13 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 50}),
+        )
+        .unwrap();
         app
     }
 
@@ -430,7 +564,11 @@ mod tests {
     }
 
     fn fill_hex(app: &VectorcraftApp) -> String {
-        crate::panels::current_paints(app).0.color().unwrap().to_hex()
+        crate::panels::current_paints(app)
+            .0
+            .color()
+            .unwrap()
+            .to_hex()
     }
 
     #[test]
@@ -442,17 +580,44 @@ mod tests {
             assert_eq!(Channel::parse(ch.id()), Some(ch));
         }
         // Hue: x is saturation, y brightness (white at the top left, black along the bottom).
-        assert_eq!(field_pick(Channel::Hue, 0.0, 0.0, 0.0).color.to_hex(), "#ffffff");
-        assert_eq!(field_pick(Channel::Hue, 0.0, 1.0, 0.0).color.to_hex(), "#ff0000");
-        assert_eq!(field_pick(Channel::Hue, 0.5, 1.0, 1.0).color.to_hex(), "#000000");
+        assert_eq!(
+            field_pick(Channel::Hue, 0.0, 0.0, 0.0).color.to_hex(),
+            "#ffffff"
+        );
+        assert_eq!(
+            field_pick(Channel::Hue, 0.0, 1.0, 0.0).color.to_hex(),
+            "#ff0000"
+        );
+        assert_eq!(
+            field_pick(Channel::Hue, 0.5, 1.0, 1.0).color.to_hex(),
+            "#000000"
+        );
         // Red: the slider is red, x blue and y green (green grows upwards).
-        assert_eq!(field_pick(Channel::Red, 1.0, 1.0, 0.0).color.to_hex(), "#ffffff");
-        assert_eq!(field_pick(Channel::Red, 0.0, 1.0, 1.0).color.to_hex(), "#0000ff");
-        assert_eq!(field_pick(Channel::Green, 1.0, 0.0, 1.0).color.to_hex(), "#00ff00");
-        assert_eq!(field_pick(Channel::Blue, 0.0, 1.0, 1.0).color.to_hex(), "#ff0000");
+        assert_eq!(
+            field_pick(Channel::Red, 1.0, 1.0, 0.0).color.to_hex(),
+            "#ffffff"
+        );
+        assert_eq!(
+            field_pick(Channel::Red, 0.0, 1.0, 1.0).color.to_hex(),
+            "#0000ff"
+        );
+        assert_eq!(
+            field_pick(Channel::Green, 1.0, 0.0, 1.0).color.to_hex(),
+            "#00ff00"
+        );
+        assert_eq!(
+            field_pick(Channel::Blue, 0.0, 1.0, 1.0).color.to_hex(),
+            "#ff0000"
+        );
         // The hue slider shows the spectrum whatever the colour; the others vary one component.
-        assert_eq!(slider_color(Channel::Hue, 1.0 / 3.0, 0.0, 1.0).to_hex(), "#00ff00");
-        assert_eq!(slider_color(Channel::Saturation, 0.0, 0.0, 0.0).to_hex(), "#ffffff");
+        assert_eq!(
+            slider_color(Channel::Hue, 1.0 / 3.0, 0.0, 1.0).to_hex(),
+            "#00ff00"
+        );
+        assert_eq!(
+            slider_color(Channel::Saturation, 0.0, 0.0, 0.0).to_hex(),
+            "#ffffff"
+        );
         // A grey keeps the hue it was picked with.
         let grey = field_pick(Channel::Hue, 0.5, 0.0, 0.5);
         assert_eq!(grey.hsb[0], 180.0);
@@ -484,7 +649,10 @@ mod tests {
         let ctx = egui::Context::default();
         assert_eq!(gamut_fix(&mut app, &ctx, "picker-gamut", &blue), Some(fix));
         assert_eq!(gamut_fix(&mut app, &ctx, "picker-gamut", &blue), Some(fix));
-        assert_eq!(gamut_fix(&mut app, &ctx, "picker-gamut", &Color::rgb8(128, 128, 128)), None);
+        assert_eq!(
+            gamut_fix(&mut app, &ctx, "picker-gamut", &Color::rgb8(128, 128, 128)),
+            None
+        );
     }
 
     /// The selected art takes each colour as it is picked; OK keeps the last as one undo step and
@@ -496,9 +664,17 @@ mod tests {
         let before = undo(&app);
         app.run("ui.colorPicker", json!({})).unwrap();
         frame(&mut app);
-        assert!(!app.session.in_interaction(), "nothing previews before the colour changes");
+        assert!(
+            !app.session.in_interaction(),
+            "nothing previews before the colour changes"
+        );
         for hex in ["ff0000", "00ff00"] {
-            app.ui.dialog.as_mut().unwrap().fields.insert("hex".into(), json!(hex));
+            app.ui
+                .dialog
+                .as_mut()
+                .unwrap()
+                .fields
+                .insert("hex".into(), json!(hex));
             frame(&mut app);
             assert_eq!(fill_hex(&app), format!("#{hex}"), "live, before OK");
         }
@@ -507,7 +683,12 @@ mod tests {
         assert_eq!(undo(&app), before + 1, "one step");
         // Cancel: back to the colour it had.
         app.run("ui.colorPicker", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("hex".into(), json!("0000ff"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("hex".into(), json!("0000ff"));
         frame(&mut app);
         assert_eq!(fill_hex(&app), "#0000ff");
         super::super::cancel(&mut app);
@@ -520,12 +701,20 @@ mod tests {
         let mut app = app();
         app.run("ui.colorPicker", json!({})).unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!(super::super::DialogKind::of(&d.kind), Some(super::super::DialogKind::ColorPicker));
+        assert_eq!(
+            super::super::DialogKind::of(&d.kind),
+            Some(super::super::DialogKind::ColorPicker)
+        );
         assert_eq!(d.str("hex"), "FFFFFF", "starts from the fill");
         assert!(!d.bool("stroke"));
         frame(&mut app);
         // `ui.dialog.set {field: "hex"}` then `ui.dialog.confirm`.
-        app.ui.dialog.as_mut().unwrap().fields.insert("hex".into(), json!("00ff00"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("hex".into(), json!("00ff00"));
         frame(&mut app);
         assert_eq!(app.ui.dialog.as_ref().unwrap().str("hex"), "00FF00");
         super::super::confirm(&mut app).unwrap();
@@ -533,29 +722,62 @@ mod tests {
         assert_eq!(fill_hex(&app), "#00ff00");
         // Without a frame in between, a set hex still wins; `color` works as well.
         app.run("ui.colorPicker", json!({"stroke": true})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("hex".into(), json!("#3366CC"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("hex".into(), json!("#3366CC"));
         super::super::confirm(&mut app).unwrap();
-        assert_eq!(crate::panels::current_paints(&app).1.color().unwrap().to_hex(), "#3366cc");
+        assert_eq!(
+            crate::panels::current_paints(&app)
+                .1
+                .color()
+                .unwrap()
+                .to_hex(),
+            "#3366cc"
+        );
         // The stroke proxy is in front now: the opener follows it unless told otherwise.
         app.run("ui.colorPicker", json!({})).unwrap();
         assert!(app.ui.dialog.as_ref().unwrap().bool("stroke"));
         app.run("ui.colorPicker", json!({"stroke": false})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("color".into(), json!({"c": 0, "m": 1, "y": 1, "k": 0}));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("color".into(), json!({"c": 0, "m": 1, "y": 1, "k": 0}));
         super::super::confirm(&mut app).unwrap();
-        assert!(matches!(crate::panels::current_paints(&app).0.color(), Some(Color::Cmyk { .. })), "CMYK is kept");
+        assert!(
+            matches!(
+                crate::panels::current_paints(&app).0.color(),
+                Some(Color::Cmyk { .. })
+            ),
+            "CMYK is kept"
+        );
         assert!(app.run("ui.colorPicker", json!({"color": "nope"})).is_err());
         // Colours take every form the paint commands take (CMYK in percent too).
-        app.run("ui.colorPicker", json!({"stroke": false, "color": {"c": 0, "m": 100, "y": 100, "k": 0}})).unwrap();
+        app.run(
+            "ui.colorPicker",
+            json!({"stroke": false, "color": {"c": 0, "m": 100, "y": 100, "k": 0}}),
+        )
+        .unwrap();
         super::super::confirm(&mut app).unwrap();
-        assert_eq!(crate::panels::current_paints(&app).0.color(), Some(Color::cmyk(0.0, 1.0, 1.0, 0.0)));
+        assert_eq!(
+            crate::panels::current_paints(&app).0.color(),
+            Some(Color::cmyk(0.0, 1.0, 1.0, 0.0))
+        );
     }
 
     #[test]
     fn every_mode_draws_and_cmyk_documents_get_cmyk() {
         let mut app = app();
-        for fields in
-            [json!({"channel": "red"}), json!({"channel": "brightness", "webOnly": true}), json!({"swatches": true}), json!({"color": "#0000ff"})]
-        {
+        for fields in [
+            json!({"channel": "red"}),
+            json!({"channel": "brightness", "webOnly": true}),
+            json!({"swatches": true}),
+            json!({"color": "#0000ff"}),
+        ] {
             app.run("ui.colorPicker", json!({})).unwrap();
             let d = app.ui.dialog.as_mut().unwrap();
             for (k, v) in fields.as_object().unwrap() {
@@ -564,9 +786,14 @@ mod tests {
             frame(&mut app);
             assert!(app.ui.dialog.is_some());
         }
-        app.run("file.documentColorMode", json!({"mode": "cmyk"})).unwrap();
-        app.run("ui.colorPicker", json!({"color": "#ff0000"})).unwrap();
+        app.run("file.documentColorMode", json!({"mode": "cmyk"}))
+            .unwrap();
+        app.run("ui.colorPicker", json!({"color": "#ff0000"}))
+            .unwrap();
         super::super::confirm(&mut app).unwrap();
-        assert!(matches!(crate::panels::current_paints(&app).0.color(), Some(Color::Cmyk { .. })));
+        assert!(matches!(
+            crate::panels::current_paints(&app).0.color(),
+            Some(Color::Cmyk { .. })
+        ));
     }
 }

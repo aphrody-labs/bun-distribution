@@ -20,10 +20,16 @@ pub fn discover_voice_banks(
         let Some(rest) = path.strip_prefix(&prefix) else {
             continue;
         };
-        let Some(stem) = rest.strip_suffix(".acb").or_else(|| rest.strip_suffix(".awb")) else {
+        let Some(stem) = rest
+            .strip_suffix(".acb")
+            .or_else(|| rest.strip_suffix(".awb"))
+        else {
             continue;
         };
-        if !stem.starts_with('c') || !stem[1..].chars().all(|character| character.is_ascii_digit())
+        if !stem.starts_with('c')
+            || !stem[1..]
+                .chars()
+                .all(|character| character.is_ascii_digit())
         {
             continue;
         }
@@ -41,7 +47,11 @@ pub fn discover_voice_banks(
             acb,
         })
         .collect();
-    banks.sort_by(|a, b| b.awb_bytes.cmp(&a.awb_bytes).then_with(|| a.code.cmp(&b.code)));
+    banks.sort_by(|a, b| {
+        b.awb_bytes
+            .cmp(&a.awb_bytes)
+            .then_with(|| a.code.cmp(&b.code))
+    });
     banks
 }
 
@@ -92,8 +102,10 @@ pub fn plan_export(
             banks.len()
         ));
     }
-    let by_code: BTreeMap<_, _> =
-        identities.iter().map(|item| (item.code.as_str(), item)).collect();
+    let by_code: BTreeMap<_, _> = identities
+        .iter()
+        .map(|item| (item.code.as_str(), item))
+        .collect();
     let mut selected = Vec::new();
     let mut warnings = Vec::new();
     for requested in &options.names {
@@ -104,18 +116,24 @@ pub fn plan_export(
                 .is_some_and(|identity| fold_name(&identity.name).contains(&pattern))
         }) {
             Some(bank) => selected.push(bank.clone()),
-            None => warnings
-                .push(format!("« {requested} » — aucun personnage doublé de ce nom, ignoré")),
+            None => warnings.push(format!(
+                "« {requested} » — aucun personnage doublé de ce nom, ignoré"
+            )),
         }
     }
     for code in &options.codes {
         match banks.iter().find(|bank| &bank.code == code) {
             Some(bank) => selected.push(bank.clone()),
             None => {
-                warnings
-                    .push(format!("{code} — aucune banque de voix, textures et dialogue seuls"));
-                selected.push(VoiceBank { code: code.clone(), acb: String::new(), awb_bytes: 0 });
-            },
+                warnings.push(format!(
+                    "{code} — aucune banque de voix, textures et dialogue seuls"
+                ));
+                selected.push(VoiceBank {
+                    code: code.clone(),
+                    acb: String::new(),
+                    awb_bytes: 0,
+                });
+            }
         }
     }
     if selected.is_empty() {
@@ -124,7 +142,10 @@ pub fn plan_export(
             options.language
         ));
     }
-    Ok(ExportPlan { banks: selected, warnings })
+    Ok(ExportPlan {
+        banks: selected,
+        warnings,
+    })
 }
 
 pub fn casting_entries(
@@ -132,11 +153,17 @@ pub fn casting_entries(
     identities: impl IntoIterator<Item = CharacterIdentity>,
     options: &CastingOptions,
 ) -> Vec<CastingEntry> {
-    let identities: BTreeMap<_, _> =
-        identities.into_iter().map(|identity| (identity.code.clone(), identity)).collect();
+    let identities: BTreeMap<_, _> = identities
+        .into_iter()
+        .map(|identity| (identity.code.clone(), identity))
+        .collect();
     let search = options.search.as_deref().map(fold_name);
     let mut banks: Vec<_> = banks.into_iter().collect();
-    banks.sort_by(|a, b| b.awb_bytes.cmp(&a.awb_bytes).then_with(|| a.code.cmp(&b.code)));
+    banks.sort_by(|a, b| {
+        b.awb_bytes
+            .cmp(&a.awb_bytes)
+            .then_with(|| a.code.cmp(&b.code))
+    });
     banks
         .into_iter()
         .filter(|bank| {
@@ -206,9 +233,15 @@ pub fn assemble_name(first: &str, last: &str) -> String {
         return last.to_owned();
     }
     let first_words: Vec<_> = first.split_whitespace().map(fold_name).collect();
-    let remaining: Vec<_> =
-        last.split_whitespace().filter(|word| !first_words.contains(&fold_name(word))).collect();
-    if remaining.is_empty() { first.to_owned() } else { format!("{first} {}", remaining.join(" ")) }
+    let remaining: Vec<_> = last
+        .split_whitespace()
+        .filter(|word| !first_words.contains(&fold_name(word)))
+        .collect();
+    if remaining.is_empty() {
+        first.to_owned()
+    } else {
+        format!("{first} {}", remaining.join(" "))
+    }
 }
 
 pub fn identities_from_iecode(
@@ -244,7 +277,7 @@ pub fn capitalize_name(name: &str) -> String {
                 match chars.next() {
                     Some(first) => {
                         first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
-                    },
+                    }
                     None => String::new(),
                 }
             })
@@ -272,7 +305,7 @@ pub fn resolve_tags(text: &str, tags: &BTreeMap<String, String>) -> String {
                 output.push('<');
                 output.push_str(content);
                 output.push('>');
-            },
+            }
         }
         rest = &after[end + 1..];
     }
@@ -282,7 +315,11 @@ pub fn resolve_tags(text: &str, tags: &BTreeMap<String, String>) -> String {
 
 pub fn usable_dialogue(text: &str, tags: &BTreeMap<String, String>) -> Option<String> {
     let resolved = resolve_tags(text, tags).replace("\\n", "\n");
-    if resolved.trim().is_empty() || has_unresolved_tag(&resolved) { None } else { Some(resolved) }
+    if resolved.trim().is_empty() || has_unresolved_tag(&resolved) {
+        None
+    } else {
+        Some(resolved)
+    }
 }
 
 pub fn has_unresolved_tag(text: &str) -> bool {
@@ -325,7 +362,7 @@ pub fn dialogue_references(
                     Some(Value::Int(value)) => Some(*value as u32),
                     _ => None,
                 }
-            },
+            }
             "EVENT_COMMAND_ARGS" => {
                 if opcode == Some(DIALOGUE_OPCODE) {
                     let strings: Vec<_> = entry
@@ -343,8 +380,8 @@ pub fn dialogue_references(
                     }
                 }
                 opcode = None;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     references
@@ -395,17 +432,37 @@ mod tests {
     #[test]
     fn casting_is_ranked_then_filtered_with_folded_names() {
         let banks = [
-            VoiceBank { code: "b".into(), acb: "b.acb".into(), awb_bytes: 20 },
-            VoiceBank { code: "a".into(), acb: "a.acb".into(), awb_bytes: 10 },
+            VoiceBank {
+                code: "b".into(),
+                acb: "b.acb".into(),
+                awb_bytes: 20,
+            },
+            VoiceBank {
+                code: "a".into(),
+                acb: "a.acb".into(),
+                awb_bytes: 10,
+            },
         ];
         let identities = [
-            CharacterIdentity { code: "a".into(), name: "Éric".into(), gender: "m".into() },
-            CharacterIdentity { code: "b".into(), name: "Alice".into(), gender: "f".into() },
+            CharacterIdentity {
+                code: "a".into(),
+                name: "Éric".into(),
+                gender: "m".into(),
+            },
+            CharacterIdentity {
+                code: "b".into(),
+                name: "Alice".into(),
+                gender: "f".into(),
+            },
         ];
         let result = casting_entries(
             banks,
             identities,
-            &CastingOptions { limit: 3, search: Some("eric".into()), gender: Some("m".into()) },
+            &CastingOptions {
+                limit: 3,
+                search: Some("eric".into()),
+                gender: Some("m".into()),
+            },
         );
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].code, "a");
@@ -423,7 +480,13 @@ mod tests {
             ],
             "ja",
         );
-        assert_eq!(banks.iter().map(|bank| bank.code.as_str()).collect::<Vec<_>>(), ["c1", "c2"]);
+        assert_eq!(
+            banks
+                .iter()
+                .map(|bank| bank.code.as_str())
+                .collect::<Vec<_>>(),
+            ["c1", "c2"]
+        );
         assert_eq!(banks[0].awb_bytes, 30);
     }
 
@@ -445,7 +508,11 @@ mod tests {
         let plan = plan_export(
             &[],
             &[],
-            &ExportOptions { codes: vec!["c1".into()], names: vec![], language: "ja".into() },
+            &ExportOptions {
+                codes: vec!["c1".into()],
+                names: vec![],
+                language: "ja".into(),
+            },
         )
         .expect("explicit code remains exportable");
         assert_eq!(plan.banks[0].code, "c1");

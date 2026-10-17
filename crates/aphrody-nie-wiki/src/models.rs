@@ -76,10 +76,18 @@ pub fn character_model_page(
                 i64::from(page_size),
                 i64::try_from(offset).unwrap_or(i64::MAX)
             ],
-            |row| Ok(CharacterModelEntry { code: row.get(0)?, name: row.get(1)? }),
+            |row| {
+                Ok(CharacterModelEntry {
+                    code: row.get(0)?,
+                    name: row.get(1)?,
+                })
+            },
         )?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(CharacterModelPage { entries, total: usize::try_from(total).unwrap_or(0) })
+    Ok(CharacterModelPage {
+        entries,
+        total: usize::try_from(total).unwrap_or(0),
+    })
 }
 
 /// Resolve one exact assembly identity and its underscore-delimited variants.
@@ -147,15 +155,23 @@ mod tests {
 
     #[test]
     fn underscore_is_literal_when_resolving_identity() {
-        let identity = character_model_identity(&database(), "c010").unwrap().unwrap();
+        let identity = character_model_identity(&database(), "c010")
+            .unwrap()
+            .unwrap();
         assert_eq!(identity.variants, 2);
         assert_eq!(identity.name_fr.as_deref(), Some("Alpha"));
-        assert!(character_model_identity(&database(), "c01").unwrap().is_none());
+        assert!(
+            character_model_identity(&database(), "c01")
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
     fn serialized_fields_are_adapter_compatible() {
-        let identity = character_model_identity(&database(), "c010").unwrap().unwrap();
+        let identity = character_model_identity(&database(), "c010")
+            .unwrap()
+            .unwrap();
         let value = serde_json::to_value(identity).unwrap();
         assert_eq!(value["name_fr"], "Alpha");
         assert_eq!(value["variants"], 2);

@@ -24,8 +24,12 @@ pub(crate) struct RawStyle {
 pub(crate) fn parse(table: &[u8], fc: u32, lcb: u32) -> Result<Vec<RawStyle>, DocbinError> {
     let fc = fc as usize;
     let lcb = lcb as usize;
-    let end = fc.checked_add(lcb).ok_or_else(|| DocbinError::Malformed("STSH overflow".into()))?;
-    let stsh = table.get(fc..end).ok_or_else(|| DocbinError::Malformed("STSH outside the Table stream".into()))?;
+    let end = fc
+        .checked_add(lcb)
+        .ok_or_else(|| DocbinError::Malformed("STSH overflow".into()))?;
+    let stsh = table
+        .get(fc..end)
+        .ok_or_else(|| DocbinError::Malformed("STSH outside the Table stream".into()))?;
     if stsh.len() < 4 {
         return Ok(Vec::new());
     }
@@ -61,17 +65,32 @@ pub(crate) fn parse(table: &[u8], fc: u32, lcb: u32) -> Result<Vec<RawStyle>, Do
         // cupx(4)+istdNext(12); bchUpe(16) (= cbStd); grfstd(16). istdBase is a zero-based
         // index into the stylesheet, 0x0FFF meaning "no parent".
         let stk = (stdf.get(2).copied().unwrap_or(1) & 0x0F).max(1);
-        let w1 = stdf.get(2..4).map(|b| u16::from_le_bytes([b[0], b[1]])).unwrap_or(0xFFF1);
+        let w1 = stdf
+            .get(2..4)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .unwrap_or(0xFFF1);
         let istd_base = w1 >> 4;
-        let w2 = stdf.get(4..6).map(|b| u16::from_le_bytes([b[0], b[1]])).unwrap_or(0);
+        let w2 = stdf
+            .get(4..6)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .unwrap_or(0);
         let cupx = (w2 & 0x0F) as usize;
         let _istd_next = w2 >> 4; // next-paragraph style; unused for now
         let mut at = 2 + cb_std_base;
         // xstzName: Xst (cch u16 + UTF-16LE) + terminator u16.
         let mut name = String::new();
-        if let Some(cch) = std.get(at..at + 2).map(|b| u16::from_le_bytes([b[0], b[1]])).map(|c| (c as usize).min(256)) {
+        if let Some(cch) = std
+            .get(at..at + 2)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .map(|c| (c as usize).min(256))
+        {
             if let Some(units) = std.get(at + 2..at + 2 + cch * 2) {
-                let chars: Vec<u16> = units.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+                let chars: Vec<u16> = units
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_le_bytes(*c))
+                    .collect();
                 name = String::from_utf16_lossy(&chars);
             }
             at += 2 + cch * 2 + 2;
@@ -79,7 +98,13 @@ pub(crate) fn parse(table: &[u8], fc: u32, lcb: u32) -> Result<Vec<RawStyle>, Do
         // grLPUpxSw: cupx entries, each cbUpx u16 + data (+ pad to even).
         let mut upxs: Vec<Vec<u8>> = Vec::new();
         for _ in 0..cupx.min(3) {
-            let Some(cb) = std.get(at..at + 2).map(|b| u16::from_le_bytes([b[0], b[1]])).map(|v| v as usize) else { break };
+            let Some(cb) = std
+                .get(at..at + 2)
+                .map(|b| u16::from_le_bytes([b[0], b[1]]))
+                .map(|v| v as usize)
+            else {
+                break;
+            };
             let data = std.get(at + 2..at + 2 + cb).unwrap_or(&[]).to_vec();
             upxs.push(data);
             at += 2 + cb + (cb & 1); // padded to even; cb in the header excludes the pad
@@ -100,7 +125,13 @@ pub(crate) fn parse(table: &[u8], fc: u32, lcb: u32) -> Result<Vec<RawStyle>, Do
         {
             chpx = u.clone();
         }
-        out.push(RawStyle { stk, istd_base, name, papx, chpx });
+        out.push(RawStyle {
+            stk,
+            istd_base,
+            name,
+            papx,
+            chpx,
+        });
     }
     Ok(out)
 }
@@ -116,27 +147,51 @@ pub(crate) fn fonts(table: &[u8], fc: u32, lcb: u32) -> Vec<String> {
         Some(e) if e <= table.len() => e,
         _ => return Vec::new(),
     };
-    let Some(sttb) = table.get(fc as usize..end) else { return Vec::new() };
-    let u16at = |o: usize| -> Option<u16> { sttb.get(o..o.checked_add(2)?).map(|b| u16::from_le_bytes([b[0], b[1]])) };
-    let Some(first) = u16at(0) else { return Vec::new() };
+    let Some(sttb) = table.get(fc as usize..end) else {
+        return Vec::new();
+    };
+    let u16at = |o: usize| -> Option<u16> {
+        sttb.get(o..o.checked_add(2)?)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+    };
+    let Some(first) = u16at(0) else {
+        return Vec::new();
+    };
     // FFN: ffid(1) wWeight(2) chs(1) ixchSzAlt(1) panose(10) fs(24) = 39 bytes, then the
     // primary name, NUL-terminated, as UTF-16LE in the Word 97 files we accept (8-bit names
     // from older writers fall back to Windows-1252).
     let name_of = |ffn: &[u8]| -> String {
         let tail = ffn.get(FFN_HEADER.min(ffn.len())..).unwrap_or(&[]);
-        let units: Vec<u16> = tail.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).take_while(|&u| u != 0).take(64).collect();
+        let units: Vec<u16> = tail
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
+            .take_while(|&u| u != 0)
+            .take(64)
+            .collect();
         let s = String::from_utf16_lossy(&units);
-        if s.chars().any(|c| c as u32 > 0x7F || c.is_ascii_graphic() || c == ' ') || s.is_empty() {
+        if s.chars()
+            .any(|c| c as u32 > 0x7F || c.is_ascii_graphic() || c == ' ')
+            || s.is_empty()
+        {
             s
         } else {
             // An 8-bit name reads as garbage through UTF-16; fall back to Windows-1252.
-            tail.iter().take_while(|&&b| b != 0).take(64).map(|&b| wordcraft_doc::encoding::cp1252(b)).collect()
+            tail.iter()
+                .take_while(|&&b| b != 0)
+                .take(64)
+                .map(|&b| wordcraft_doc::encoding::cp1252(b))
+                .collect()
         }
     };
     // STTB header: [fExtend 0xFFFF] cData(2) cbExtra(2); each entry is followed by cbExtra
     // bytes (0 for font tables, but skip them if present).
-    let (extended, cdata, cb_extra, mut at) =
-        if first == 0xFFFF { (true, u16at(2).unwrap_or(0), u16at(4).unwrap_or(0), 6usize) } else { (false, first, u16at(2).unwrap_or(0), 4usize) };
+    let (extended, cdata, cb_extra, mut at) = if first == 0xFFFF {
+        (true, u16at(2).unwrap_or(0), u16at(4).unwrap_or(0), 6usize)
+    } else {
+        (false, first, u16at(2).unwrap_or(0), 4usize)
+    };
     let mut out = Vec::new();
     for _ in 0..cdata.min(1024) {
         let (len_bytes, cb) = if extended {
@@ -149,7 +204,9 @@ pub(crate) fn fonts(table: &[u8], fc: u32, lcb: u32) -> Vec<String> {
         let start = at.saturating_add(len_bytes);
         let stop = start.saturating_add(cb);
         // A record cut short by the end of the table still yields what it holds.
-        out.push(name_of(sttb.get(start..stop.min(sttb.len())).unwrap_or(&[])));
+        out.push(name_of(
+            sttb.get(start..stop.min(sttb.len())).unwrap_or(&[]),
+        ));
         at = stop.saturating_add(usize::from(cb_extra));
     }
     out

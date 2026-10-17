@@ -83,7 +83,8 @@ impl Rng {
         self.0 ^= self.0 >> 12;
         self.0 ^= self.0 << 25;
         self.0 ^= self.0 >> 27;
-        ((self.0.wrapping_mul(0x2545_f491_4f6c_dd1d) >> 40) as f32 / (1u64 << 24) as f32) * 2.0 - 1.0
+        ((self.0.wrapping_mul(0x2545_f491_4f6c_dd1d) >> 40) as f32 / (1u64 << 24) as f32) * 2.0
+            - 1.0
     }
 }
 
@@ -125,13 +126,23 @@ impl Builder {
             "Conv",
             &[src, &w, &b],
             &out,
-            &[("kernel_shape", A::Ints(&[k as i64, k as i64])), ("pads", A::Ints(&[pad; 4])), ("strides", A::Ints(&[1, 1])), ("group", A::Int(1))],
+            &[
+                ("kernel_shape", A::Ints(&[k as i64, k as i64])),
+                ("pads", A::Ints(&[pad; 4])),
+                ("strides", A::Ints(&[1, 1])),
+                ("group", A::Int(1)),
+            ],
         ));
         if !leaky {
             return out;
         }
         let act = self.name("act");
-        self.nodes.push(node("LeakyRelu", &[&out], &act, &[("alpha", A::Float(0.2))]));
+        self.nodes.push(node(
+            "LeakyRelu",
+            &[&out],
+            &act,
+            &[("alpha", A::Float(0.2))],
+        ));
         act
     }
 
@@ -141,7 +152,11 @@ impl Builder {
             "MaxPool",
             &[src],
             &out,
-            &[("kernel_shape", A::Ints(&[2, 2])), ("strides", A::Ints(&[2, 2])), ("pads", A::Ints(&[0; 4]))],
+            &[
+                ("kernel_shape", A::Ints(&[2, 2])),
+                ("strides", A::Ints(&[2, 2])),
+                ("pads", A::Ints(&[0; 4])),
+            ],
         ));
         out
     }
@@ -154,14 +169,19 @@ impl Builder {
             "ConvTranspose",
             &[src, &w, &b],
             &out,
-            &[("kernel_shape", A::Ints(&[2, 2])), ("strides", A::Ints(&[2, 2])), ("pads", A::Ints(&[0; 4]))],
+            &[
+                ("kernel_shape", A::Ints(&[2, 2])),
+                ("strides", A::Ints(&[2, 2])),
+                ("pads", A::Ints(&[0; 4])),
+            ],
         ));
         out
     }
 
     fn concat(&mut self, a: &str, b: &str) -> String {
         let out = self.name("cat");
-        self.nodes.push(node("Concat", &[a, b], &out, &[("axis", A::Int(1))]));
+        self.nodes
+            .push(node("Concat", &[a, b], &out, &[("axis", A::Int(1))]));
         out
     }
 }
@@ -171,7 +191,12 @@ impl Builder {
 /// multiple of 4). Each level is two 3 × 3 convolutions with a leaky ReLU, as in the real networks; the output is a
 /// 1 × 1 convolution to 12 channels and depth-to-space.
 pub fn unet_onnx(tile: u64, ch: u64, depth: usize, seed: u64) -> Vec<u8> {
-    let mut b = Builder { nodes: Vec::new(), inits: Vec::new(), rng: Rng(seed | 1), n: 0 };
+    let mut b = Builder {
+        nodes: Vec::new(),
+        inits: Vec::new(),
+        rng: Rng(seed | 1),
+        n: 0,
+    };
     let mut skips: Vec<(String, u64)> = Vec::new();
     let (mut cur, mut c_in, mut c) = ("data".to_string(), 4u64, ch);
     for level in 0..=depth {
@@ -194,7 +219,12 @@ pub fn unet_onnx(tile: u64, ch: u64, depth: usize, seed: u64) -> Vec<u8> {
         c = sc;
     }
     let rgb = b.conv(&cur, c, 12, 1, false);
-    b.nodes.push(node("DepthToSpace", &[&rgb], "rgb", &[("blocksize", A::Int(2)), ("mode", A::Str("CRD"))]));
+    b.nodes.push(node(
+        "DepthToSpace",
+        &[&rgb],
+        "rgb",
+        &[("blocksize", A::Int(2)), ("mode", A::Str("CRD"))],
+    ));
 
     let mut graph = Vec::new();
     for n in &b.nodes {
@@ -203,8 +233,16 @@ pub fn unet_onnx(tile: u64, ch: u64, depth: usize, seed: u64) -> Vec<u8> {
     for t in &b.inits {
         len_field(5, t, &mut graph);
     }
-    len_field(11, &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(tile), Ok(tile)]), &mut graph);
-    len_field(12, &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(2 * tile), Ok(2 * tile)]), &mut graph);
+    len_field(
+        11,
+        &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(tile), Ok(tile)]),
+        &mut graph,
+    );
+    len_field(
+        12,
+        &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(2 * tile), Ok(2 * tile)]),
+        &mut graph,
+    );
     let mut ops = Vec::new();
     len_field(1, b"", &mut ops);
     varint_field(2, 13, &mut ops);
@@ -219,11 +257,44 @@ pub fn unet_onnx(tile: u64, ch: u64, depth: usize, seed: u64) -> Vec<u8> {
 /// It averages a 3 × 3 neighborhood of the four Bayer planes and returns three identical channels.
 pub fn smoothing_onnx() -> Vec<u8> {
     let mut graph = Vec::new();
-    len_field(1, &node("Conv", &["data", "weights"], "samples", &[("kernel_shape", A::Ints(&[3, 3])), ("pads", A::Ints(&[1, 1, 1, 1]))]), &mut graph);
-    len_field(1, &node("DepthToSpace", &["samples"], "rgb", &[("blocksize", A::Int(2)), ("mode", A::Str("CRD"))]), &mut graph);
-    len_field(5, &tensor("weights", &[12, 4, 3, 3], &[1.0 / 36.0; 12 * 4 * 3 * 3]), &mut graph);
-    len_field(11, &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(64), Ok(64)]), &mut graph);
-    len_field(12, &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(128), Ok(128)]), &mut graph);
+    len_field(
+        1,
+        &node(
+            "Conv",
+            &["data", "weights"],
+            "samples",
+            &[
+                ("kernel_shape", A::Ints(&[3, 3])),
+                ("pads", A::Ints(&[1, 1, 1, 1])),
+            ],
+        ),
+        &mut graph,
+    );
+    len_field(
+        1,
+        &node(
+            "DepthToSpace",
+            &["samples"],
+            "rgb",
+            &[("blocksize", A::Int(2)), ("mode", A::Str("CRD"))],
+        ),
+        &mut graph,
+    );
+    len_field(
+        5,
+        &tensor("weights", &[12, 4, 3, 3], &[1.0 / 36.0; 12 * 4 * 3 * 3]),
+        &mut graph,
+    );
+    len_field(
+        11,
+        &value_info_bytes("data", 1, &[Ok(1), Ok(4), Ok(64), Ok(64)]),
+        &mut graph,
+    );
+    len_field(
+        12,
+        &value_info_bytes("rgb", 1, &[Ok(1), Ok(3), Ok(128), Ok(128)]),
+        &mut graph,
+    );
     let mut model = Vec::new();
     varint_field(1, 8, &mut model);
     len_field(7, &graph, &mut model);

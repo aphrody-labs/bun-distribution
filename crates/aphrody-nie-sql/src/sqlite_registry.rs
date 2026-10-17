@@ -38,9 +38,11 @@ fn migrate(connection: &mut Connection, migrations: &[Migration]) -> Result<(), 
     }
     connection.execute_batch("CREATE TABLE IF NOT EXISTS _sqlx_migrations (version BIGINT PRIMARY KEY, description TEXT NOT NULL, installed_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, success BOOLEAN NOT NULL, checksum BLOB NOT NULL, execution_time BIGINT NOT NULL);").map_err(error)?;
     let dirty: Option<i64> = connection
-        .query_row("SELECT version FROM _sqlx_migrations WHERE success = 0 LIMIT 1", [], |row| {
-            row.get(0)
-        })
+        .query_row(
+            "SELECT version FROM _sqlx_migrations WHERE success = 0 LIMIT 1",
+            [],
+            |row| row.get(0),
+        )
         .optional()
         .map_err(error)?;
     if dirty.is_some() {
@@ -48,7 +50,10 @@ fn migrate(connection: &mut Connection, migrations: &[Migration]) -> Result<(), 
     }
     let mut ordered: Vec<_> = migrations.iter().collect();
     ordered.sort_by_key(|migration| migration.version);
-    if ordered.windows(2).any(|pair| pair[0].version == pair[1].version) {
+    if ordered
+        .windows(2)
+        .any(|pair| pair[0].version == pair[1].version)
+    {
         return Err("Duplicate migration version".into());
     }
     let known: Vec<i64> = connection
@@ -58,7 +63,11 @@ fn migrate(connection: &mut Connection, migrations: &[Migration]) -> Result<(), 
         .map_err(error)?
         .collect::<Result<_, _>>()
         .map_err(error)?;
-    if known.iter().any(|version| !ordered.iter().any(|migration| migration.version == *version)) {
+    if known.iter().any(|version| {
+        !ordered
+            .iter()
+            .any(|migration| migration.version == *version)
+    }) {
         return Err("Database contains a migration unavailable to this application".into());
     }
     for migration in ordered {
@@ -103,7 +112,7 @@ fn parameters(values: Vec<Value>) -> Result<Vec<SqlValue>, String> {
                     } else {
                         SqlValue::Real(value.as_f64().ok_or("Invalid SQL numeric parameter")?)
                     }
-                },
+                }
                 Value::String(value) => SqlValue::Text(value),
                 other => SqlValue::Text(other.to_string()),
             })
@@ -143,11 +152,16 @@ impl DatabaseRegistry {
         uri: &str,
         migrations: &[Migration],
     ) -> Result<String, String> {
-        let path = uri.strip_prefix("sqlite:").ok_or("Only sqlite: databases are supported")?;
+        let path = uri
+            .strip_prefix("sqlite:")
+            .ok_or("Only sqlite: databases are supported")?;
         if path.is_empty() || path.contains('\0') {
             return Err("Invalid SQLite database path".into());
         }
-        let mut sessions = self.connections.lock().map_err(|_| "Database registry lock failed")?;
+        let mut sessions = self
+            .connections
+            .lock()
+            .map_err(|_| "Database registry lock failed")?;
         if sessions.contains_key(uri) {
             return Ok(uri.to_owned());
         }
@@ -155,8 +169,12 @@ impl DatabaseRegistry {
             .map_err(|_| "Application database directory unavailable")?;
         let mut connection = Connection::open(app_config_dir.join(path))
             .map_err(|_| "Database could not be opened")?;
-        connection.busy_timeout(Duration::from_secs(5)).map_err(error)?;
-        connection.pragma_update(None, "foreign_keys", true).map_err(error)?;
+        connection
+            .busy_timeout(Duration::from_secs(5))
+            .map_err(error)?;
+        connection
+            .pragma_update(None, "foreign_keys", true)
+            .map_err(error)?;
         migrate(&mut connection, migrations)?;
         sessions.insert(uri.to_owned(), connection);
         Ok(uri.to_owned())
@@ -168,7 +186,10 @@ impl DatabaseRegistry {
         query: &str,
         values: Vec<Value>,
     ) -> Result<ExecuteResult, String> {
-        let sessions = self.connections.lock().map_err(|_| "Database registry lock failed")?;
+        let sessions = self
+            .connections
+            .lock()
+            .map_err(|_| "Database registry lock failed")?;
         let connection = sessions.get(uri).ok_or("Database is not loaded")?;
         let parameters = parameters(values)?;
         let mut affected = 0_u64;
@@ -188,7 +209,9 @@ impl DatabaseRegistry {
                 while rows.next().map_err(error)?.is_some() {}
                 connection.changes()
             };
-            affected = affected.checked_add(changed).ok_or("SQL affected-row count overflow")?;
+            affected = affected
+                .checked_add(changed)
+                .ok_or("SQL affected-row count overflow")?;
         }
         Ok(ExecuteResult {
             rows_affected: affected,
@@ -202,14 +225,20 @@ impl DatabaseRegistry {
         query: &str,
         values: Vec<Value>,
     ) -> Result<Vec<Map<String, Value>>, String> {
-        let sessions = self.connections.lock().map_err(|_| "Database registry lock failed")?;
+        let sessions = self
+            .connections
+            .lock()
+            .map_err(|_| "Database registry lock failed")?;
         let connection = sessions.get(uri).ok_or("Database is not loaded")?;
         let mut statement = connection.prepare(query).map_err(error)?;
         let columns: Vec<_> = statement
             .columns()
             .iter()
             .map(|column| {
-                (column.name().to_owned(), column.decl_type().unwrap_or("").to_ascii_uppercase())
+                (
+                    column.name().to_owned(),
+                    column.decl_type().unwrap_or("").to_ascii_uppercase(),
+                )
             })
             .collect();
         bind(&mut statement, &parameters(values)?, &mut 0)?;
@@ -224,15 +253,15 @@ impl DatabaseRegistry {
                         if declared_type == "BOOLEAN" || declared_type == "BOOL" =>
                     {
                         Value::Bool(value != 0)
-                    },
+                    }
                     ValueRef::Integer(value) => Value::from(value),
                     ValueRef::Real(value) => Value::from(value),
                     ValueRef::Text(value) => {
                         Value::String(std::str::from_utf8(value).map_err(error)?.to_owned())
-                    },
+                    }
                     ValueRef::Blob(value) => {
                         Value::Array(value.iter().map(|byte| Value::from(*byte)).collect())
-                    },
+                    }
                 };
                 object.insert(name.clone(), value);
             }
@@ -242,7 +271,10 @@ impl DatabaseRegistry {
     }
 
     pub fn close(&self, uri: Option<&str>) -> Result<bool, String> {
-        let mut sessions = self.connections.lock().map_err(|_| "Database registry lock failed")?;
+        let mut sessions = self
+            .connections
+            .lock()
+            .map_err(|_| "Database registry lock failed")?;
         if let Some(uri) = uri {
             sessions.remove(uri).ok_or("Database is not loaded")?;
         } else {
@@ -270,27 +302,39 @@ mod tests {
     #[test]
     fn migration_preserves_sqlx_history_and_rejects_changed_sql() {
         let mut connection = Connection::open_in_memory().unwrap();
-        let migrations = [Migration { version: 1, description: "entries", sql: SCHEMA }];
+        let migrations = [Migration {
+            version: 1,
+            description: "entries",
+            sql: SCHEMA,
+        }];
         migrate(&mut connection, &migrations).unwrap();
-        connection.execute("INSERT INTO entries VALUES (1, 'user content')", []).unwrap();
+        connection
+            .execute("INSERT INTO entries VALUES (1, 'user content')", [])
+            .unwrap();
         migrate(&mut connection, &migrations).unwrap();
         assert_eq!(
             connection
-                .query_row("SELECT name FROM entries", [], |row| row.get::<_, String>(0))
+                .query_row("SELECT name FROM entries", [], |row| row
+                    .get::<_, String>(0))
                 .unwrap(),
             "user content"
         );
         assert!(
             migrate(
                 &mut connection,
-                &[Migration { version: 1, description: "entries", sql: "DROP TABLE entries" }]
+                &[Migration {
+                    version: 1,
+                    description: "entries",
+                    sql: "DROP TABLE entries"
+                }]
             )
             .unwrap_err()
             .contains("checksum")
         );
         assert_eq!(
             connection
-                .query_row("SELECT count(*) FROM _sqlx_migrations", [], |row| row.get::<_, i64>(0))
+                .query_row("SELECT count(*) FROM _sqlx_migrations", [], |row| row
+                    .get::<_, i64>(0))
                 .unwrap(),
             1
         );
@@ -300,11 +344,25 @@ mod tests {
     fn failed_or_dirty_migration_is_not_replayed() {
         let mut connection = Connection::open_in_memory().unwrap();
         assert!(migrate(&mut connection, &[Migration { version: 1, description: "invalid", sql: "CREATE TABLE temporary_change(id INTEGER); INSERT INTO missing_table VALUES (1);" }]).is_err());
-        assert!(connection.prepare("SELECT * FROM temporary_change").is_err());
-        let migrations = [Migration { version: 2, description: "entries", sql: SCHEMA }];
+        assert!(
+            connection
+                .prepare("SELECT * FROM temporary_change")
+                .is_err()
+        );
+        let migrations = [Migration {
+            version: 2,
+            description: "entries",
+            sql: SCHEMA,
+        }];
         migrate(&mut connection, &migrations).unwrap();
-        connection.execute("UPDATE _sqlx_migrations SET success=0", []).unwrap();
-        assert!(migrate(&mut connection, &migrations).unwrap_err().contains("unfinished"));
+        connection
+            .execute("UPDATE _sqlx_migrations SET success=0", [])
+            .unwrap();
+        assert!(
+            migrate(&mut connection, &migrations)
+                .unwrap_err()
+                .contains("unfinished")
+        );
     }
 
     #[test]
@@ -325,12 +383,21 @@ mod tests {
         );
         assert_eq!(
             registry
-                .select("memory", "SELECT enabled FROM entries WHERE id=$1", vec![json!(1)])
+                .select(
+                    "memory",
+                    "SELECT enabled FROM entries WHERE id=$1",
+                    vec![json!(1)]
+                )
                 .unwrap()[0]["enabled"],
             json!(true)
         );
         registry.execute("memory", "ROLLBACK", vec![]).unwrap();
-        assert!(registry.select("memory", "SELECT * FROM entries", vec![]).unwrap().is_empty());
+        assert!(
+            registry
+                .select("memory", "SELECT * FROM entries", vec![])
+                .unwrap()
+                .is_empty()
+        );
         let rows = registry
             .select(
                 "memory",

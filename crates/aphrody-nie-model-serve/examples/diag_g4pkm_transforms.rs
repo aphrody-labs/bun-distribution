@@ -44,14 +44,18 @@ fn main() -> anyhow::Result<()> {
             Err(e) => {
                 println!("ERREUR: {e}");
                 continue;
-            },
+            }
         };
 
         let g4pk = aphrody_nie_formats::g4pk::parse(&bytes)?;
 
         let g4sk_data: Option<&[u8]> = g4pk.files.iter().find_map(|f| {
             let data = bytes.get(f.offset..f.offset + f.size)?;
-            if data.starts_with(b"G4SK") { Some(data) } else { None }
+            if data.starts_with(b"G4SK") {
+                Some(data)
+            } else {
+                None
+            }
         });
 
         let Some(g4sk) = g4sk_data else {
@@ -86,9 +90,16 @@ fn main() -> anyhow::Result<()> {
             let parent = bones.bones.get(i).map(|b| b.parent_index).unwrap_or(-1);
 
             // Formule actuelle MenuLayoutExporter
-            let scale_x_json =
-                if *sprite_w > 0.0 { (sx as f64) * (1280.0 / 1920.0) / sprite_w } else { 0.0 };
-            let rendered = if *sprite_w > 0.0 { sprite_w * scale_x_json } else { 0.0 };
+            let scale_x_json = if *sprite_w > 0.0 {
+                (sx as f64) * (1280.0 / 1920.0) / sprite_w
+            } else {
+                0.0
+            };
+            let rendered = if *sprite_w > 0.0 {
+                sprite_w * scale_x_json
+            } else {
+                0.0
+            };
 
             if i == 0 || sx > 1.0 || sx.abs() < 0.01 {
                 println!(

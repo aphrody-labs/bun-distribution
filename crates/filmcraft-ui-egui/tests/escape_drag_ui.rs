@@ -21,10 +21,15 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -53,8 +58,19 @@ impl Driver {
     }
     fn rect(&mut self, id: &str) -> [f32; 4] {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == id).unwrap_or_else(|| panic!("no element {id}")).clone();
-        let r: Vec<f32> = e["rect"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap() as f32).collect();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .unwrap_or_else(|| panic!("no element {id}"))
+            .clone();
+        let r: Vec<f32> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap() as f32)
+            .collect();
         [r[0], r[1], r[2], r[3]]
     }
     fn send(&mut self, e: egui::Event) {
@@ -63,13 +79,24 @@ impl Driver {
     }
     /// A left-button drag in 12 steps, with Escape pressed half way when `escape`.
     fn drag(&mut self, from: egui::Pos2, to: egui::Pos2, escape: bool) {
-        let button = |pos, pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let button = |pos, pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
         self.send(egui::Event::PointerMoved(from));
         self.send(button(from, true));
         for k in 1..=12 {
             self.send(egui::Event::PointerMoved(from.lerp(to, k as f32 / 12.0)));
             if escape && k == 6 {
-                self.send(egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() });
+                self.send(egui::Event::Key {
+                    key: egui::Key::Escape,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: Default::default(),
+                });
             }
         }
         self.send(button(to, false));
@@ -84,11 +111,38 @@ impl Driver {
     /// The demo's Footage bin open in place in the Project panel in `view`; its items.
     fn footage_in(&mut self, view: &str) -> Vec<u64> {
         let p = &self.harness.state().session.project;
-        let bin = p.root.children.iter().find_map(|e| if let BinEntry::Bin(b) = e { (b.name == "Footage").then(|| b.clone()) } else { None }).expect("Footage");
-        let items: Vec<u64> = bin.children.iter().filter_map(|e| if let BinEntry::Item(i) = e { Some(i.0) } else { None }).collect();
+        let bin = p
+            .root
+            .children
+            .iter()
+            .find_map(|e| {
+                if let BinEntry::Bin(b) = e {
+                    (b.name == "Footage").then(|| b.clone())
+                } else {
+                    None
+                }
+            })
+            .expect("Footage");
+        let items: Vec<u64> = bin
+            .children
+            .iter()
+            .filter_map(|e| {
+                if let BinEntry::Item(i) = e {
+                    Some(i.0)
+                } else {
+                    None
+                }
+            })
+            .collect();
         self.ok("ui.panel.show", json!({"panel": "Project"}));
-        self.ok("engine.execute", json!({"command": "project.view.set", "params": {"view": view}}));
-        self.ok("ui.menu.invoke", json!({"id": "projectPanel.openBin", "params": {"bin": bin.id.0, "how": "inPlace"}}));
+        self.ok(
+            "engine.execute",
+            json!({"command": "project.view.set", "params": {"view": view}}),
+        );
+        self.ok(
+            "ui.menu.invoke",
+            json!({"id": "projectPanel.openBin", "params": {"bin": bin.id.0, "how": "inPlace"}}),
+        );
         self.frames(4);
         items
     }
@@ -101,24 +155,46 @@ fn centre(r: [f32; 4]) -> egui::Pos2 {
 #[test]
 fn escape_puts_a_moved_timeline_clip_back() {
     let mut d = Driver::demo();
-    let clip = d.harness.state().session.active_sequence().unwrap().video_tracks[0].items[0].id;
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [clip.0]}}));
+    let clip = d
+        .harness
+        .state()
+        .session
+        .active_sequence()
+        .unwrap()
+        .video_tracks[0]
+        .items[0]
+        .id;
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [clip.0]}}),
+    );
     let (before, undo) = (d.project(), d.undo_len());
     let from = centre(d.rect(&format!("timeline.clip.{}", clip.0)));
     let to = from + egui::vec2(120.0, 0.0);
     d.drag(from, to, true);
     assert_eq!(d.project(), before, "the clip stayed where it was");
     assert_eq!(d.undo_len(), undo, "nothing to undo");
-    assert!(d.harness.state().session.state.selection.contains(&clip), "the clip is still selected (with its linked audio)");
+    assert!(
+        d.harness.state().session.state.selection.contains(&clip),
+        "the clip is still selected (with its linked audio)"
+    );
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag moves the clip");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag moves the clip"
+    );
 }
 
 #[test]
 fn escape_puts_a_moved_caption_back() {
     let mut d = Driver::demo();
-    let id =
-        d.ok("engine.execute", json!({"command": "captions.add", "params": {"seconds": 2.0, "durationSeconds": 2.0}}))["caption"].as_u64().expect("caption id");
+    let id = d.ok(
+        "engine.execute",
+        json!({"command": "captions.add", "params": {"seconds": 2.0, "durationSeconds": 2.0}}),
+    )["caption"]
+        .as_u64()
+        .expect("caption id");
     d.frames(4);
     let from = centre(d.rect(&format!("timeline.caption.{id}")));
     let to = from + egui::vec2(60.0, 0.0);
@@ -127,7 +203,11 @@ fn escape_puts_a_moved_caption_back() {
     assert_eq!(d.project(), before, "the caption stayed where it was");
     assert_eq!(d.undo_len(), undo);
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag moves the caption");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag moves the caption"
+    );
 }
 
 #[test]
@@ -142,7 +222,11 @@ fn escape_drops_nothing_from_the_project_panel() {
     assert_eq!(d.project(), before, "nothing was placed on the Timeline");
     assert_eq!(d.undo_len(), undo);
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag places the clip");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag places the clip"
+    );
 }
 
 #[test]
@@ -152,7 +236,16 @@ fn escape_puts_a_freeform_card_back_and_the_next_drag_works() {
     let from = centre(d.rect(&format!("project.item.{}", items[0])));
     let to = from + egui::vec2(90.0, 60.0);
     d.drag(from, to, true);
-    let meta = |d: &Driver| d.harness.state().session.project.item(ItemId(items[0])).unwrap().metadata.contains_key(FREEFORM_POS);
+    let meta = |d: &Driver| {
+        d.harness
+            .state()
+            .session
+            .project
+            .item(ItemId(items[0]))
+            .unwrap()
+            .metadata
+            .contains_key(FREEFORM_POS)
+    };
     assert!(!meta(&d), "the card was not placed");
     d.drag(from, to, false);
     assert!(meta(&d), "after a cancel the next drag places the card");
@@ -161,8 +254,16 @@ fn escape_puts_a_freeform_card_back_and_the_next_drag_works() {
 #[test]
 fn escape_takes_back_a_value_drag_in_properties() {
     let mut d = Driver::demo();
-    let clip = d.ok("engine.execute", json!({"command": "graphics.newText", "params": {"text": "Hi"}}))["clip"].as_u64().expect("graphic clip");
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [clip]}}));
+    let clip = d.ok(
+        "engine.execute",
+        json!({"command": "graphics.newText", "params": {"text": "Hi"}}),
+    )["clip"]
+        .as_u64()
+        .expect("graphic clip");
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [clip]}}),
+    );
     d.ok("ui.panel.show", json!({"panel": "Properties"}));
     d.frames(4);
     let from = centre(d.rect("graphics.prop.scale"));
@@ -171,9 +272,16 @@ fn escape_takes_back_a_value_drag_in_properties() {
     d.drag(from, to, true);
     assert_eq!(d.project(), before, "the scale is back to what it was");
     assert_eq!(d.undo_len(), undo, "nothing to undo");
-    assert!(d.harness.state().session.history.redo.is_empty(), "nothing to redo");
+    assert!(
+        d.harness.state().session.history.redo.is_empty(),
+        "nothing to redo"
+    );
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag changes the scale");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag changes the scale"
+    );
     assert_eq!(d.undo_len(), undo + 1, "as one undo step");
 }
 
@@ -181,8 +289,16 @@ fn escape_takes_back_a_value_drag_in_properties() {
 #[test]
 fn escape_takes_back_a_color_picker_drag() {
     let mut d = Driver::demo();
-    let clip = d.ok("engine.execute", json!({"command": "graphics.newText", "params": {"text": "Hi"}}))["clip"].as_u64().expect("graphic clip");
-    d.ok("engine.execute", json!({"command": "timeline.select", "params": {"clips": [clip]}}));
+    let clip = d.ok(
+        "engine.execute",
+        json!({"command": "graphics.newText", "params": {"text": "Hi"}}),
+    )["clip"]
+        .as_u64()
+        .expect("graphic clip");
+    d.ok(
+        "engine.execute",
+        json!({"command": "timeline.select", "params": {"clips": [clip]}}),
+    );
     d.ok("ui.panel.show", json!({"panel": "Properties"}));
     d.ok("ui.set", json!({"focused": "Properties"}));
     d.ok("ui.menu.invoke", json!({"id": "window.maximizeFrame"}));
@@ -193,7 +309,10 @@ fn escape_takes_back_a_color_picker_drag() {
         if d.rect("graphics.prop.fill_color")[1] < 500.0 {
             break;
         }
-        d.ok("ui.scroll", json!({"id": "graphics.prop.scale", "dy": -200.0}));
+        d.ok(
+            "ui.scroll",
+            json!({"id": "graphics.prop.scale", "dy": -200.0}),
+        );
     }
     let picker = |d: &mut Driver| {
         d.ok("ui.click", json!({"id": "graphics.prop.fill_color"}));
@@ -206,7 +325,10 @@ fn escape_takes_back_a_color_picker_drag() {
                 .max_by(|a, b| a.area().total_cmp(&b.area()))
         });
         let r = popup.expect("the color picker opened");
-        (r.min + egui::vec2(30.0, 90.0), r.min + egui::vec2(70.0, 120.0))
+        (
+            r.min + egui::vec2(30.0, 90.0),
+            r.min + egui::vec2(70.0, 120.0),
+        )
     };
     let (before, undo) = (d.project(), d.undo_len());
     let (from, to) = picker(&mut d);
@@ -216,7 +338,11 @@ fn escape_takes_back_a_color_picker_drag() {
     d.ok("ui.key", json!({"key": "Escape"}));
     let (from, to) = picker(&mut d);
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag picks a color");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag picks a color"
+    );
 }
 
 #[test]
@@ -226,7 +352,10 @@ fn escape_puts_a_thumbnail_size_slider_back() {
     let size = |d: &Driver| d.harness.state().session.prefs.project_panel.view.icon_size;
     let start = size(&d);
     let r = d.rect("project.iconSize");
-    let (from, to) = (egui::pos2(r[0] + r[2] * 0.3, r[1] + r[3] / 2.0), egui::pos2(r[0] + r[2] * 0.9, r[1] + r[3] / 2.0));
+    let (from, to) = (
+        egui::pos2(r[0] + r[2] * 0.3, r[1] + r[3] / 2.0),
+        egui::pos2(r[0] + r[2] * 0.9, r[1] + r[3] / 2.0),
+    );
     d.drag(from, to, true);
     assert_eq!(size(&d), start, "the slider went back");
     d.drag(from, to, false);
@@ -238,14 +367,33 @@ fn escape_cancels_dragging_an_effect_onto_a_clip() {
     let mut d = Driver::demo();
     d.ok("ui.panel.show", json!({"panel": "Effects"}));
     let effects = d.ok("ui.elements", json!({"prefix": "effects.item."}));
-    let id = effects.as_array().unwrap().iter().filter_map(|e| e["id"].as_str()).find(|i| i.matches('.').count() == 2).expect("an effect").to_string();
+    let id = effects
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|e| e["id"].as_str())
+        .find(|i| i.matches('.').count() == 2)
+        .expect("an effect")
+        .to_string();
     let from = centre(d.rect(&id));
-    let clip = d.harness.state().session.active_sequence().unwrap().video_tracks[0].items[0].id;
+    let clip = d
+        .harness
+        .state()
+        .session
+        .active_sequence()
+        .unwrap()
+        .video_tracks[0]
+        .items[0]
+        .id;
     let to = centre(d.rect(&format!("timeline.clip.{}", clip.0)));
     let (before, undo) = (d.project(), d.undo_len());
     d.drag(from, to, true);
     assert_eq!(d.project(), before, "no effect was applied");
     assert_eq!(d.undo_len(), undo);
     d.drag(from, to, false);
-    assert_ne!(d.project(), before, "without Escape the same drag applies {id}");
+    assert_ne!(
+        d.project(),
+        before,
+        "without Escape the same drag applies {id}"
+    );
 }

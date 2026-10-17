@@ -11,7 +11,10 @@
 use std::sync::Arc;
 
 use egui::{Color32, Stroke, TextureHandle, pos2, vec2};
-use photocraft_algo::puppet::{ITERATIONS, PuppetDensity, PuppetMesh, PuppetMode, PuppetPin, PuppetSolver, PuppetWarp, build_mesh};
+use photocraft_algo::puppet::{
+    ITERATIONS, PuppetDensity, PuppetMesh, PuppetMode, PuppetPin, PuppetSolver, PuppetWarp,
+    build_mesh,
+};
 use photocraft_doc::{Document, LayerId};
 use photocraft_geom::Rect;
 use photocraft_raster::Surface;
@@ -65,16 +68,22 @@ impl PuppetSession {
 
     /// ⌘Z: the last pin edit undone. False when there is none.
     pub fn undo(&mut self) -> bool {
-        let Some(pins) = self.undo.pop() else { return false };
-        self.redo.push(std::mem::replace(&mut self.warp.pins, pins.clone()));
+        let Some(pins) = self.undo.pop() else {
+            return false;
+        };
+        self.redo
+            .push(std::mem::replace(&mut self.warp.pins, pins.clone()));
         self.restore(pins);
         true
     }
 
     /// ⌘⇧Z: the last undone pin edit redone. False when there is none.
     pub fn redo(&mut self) -> bool {
-        let Some(pins) = self.redo.pop() else { return false };
-        self.undo.push(std::mem::replace(&mut self.warp.pins, pins.clone()));
+        let Some(pins) = self.redo.pop() else {
+            return false;
+        };
+        self.undo
+            .push(std::mem::replace(&mut self.warp.pins, pins.clone()));
         self.restore(pins);
         true
     }
@@ -93,7 +102,12 @@ impl PuppetSession {
     }
 
     fn rebuild_mesh(&mut self) {
-        self.mesh = build_mesh(&self.surface, self.bounds, self.warp.density, self.warp.expansion);
+        self.mesh = build_mesh(
+            &self.surface,
+            self.bounds,
+            self.warp.density,
+            self.warp.expansion,
+        );
         self.rebind();
     }
 
@@ -106,7 +120,9 @@ impl PuppetSession {
             self.warp.density = density;
             self.warp.expansion = expansion;
             self.rebuild_mesh();
-            return Err("Could not use Puppet Warp: no opaque pixels at this density and expansion".into());
+            return Err(
+                "Could not use Puppet Warp: no opaque pixels at this density and expansion".into(),
+            );
         }
         Ok(())
     }
@@ -124,8 +140,15 @@ impl PuppetSession {
         let Some(solver) = &self.solver else { return };
         let dst: Vec<[f64; 2]> = self.warp.pins.iter().map(|p| p.dst).collect();
         let rot: Vec<Option<f64>> = self.warp.pins.iter().map(|p| p.rotate).collect();
-        let warm = (!exact && self.deformed.len() == self.mesh.verts.len()).then_some(self.deformed.as_slice());
-        let (v, _) = solver.solve(&dst, &rot, self.warp.mode, if exact { ITERATIONS } else { 6 }, warm);
+        let warm = (!exact && self.deformed.len() == self.mesh.verts.len())
+            .then_some(self.deformed.as_slice());
+        let (v, _) = solver.solve(
+            &dst,
+            &rot,
+            self.warp.mode,
+            if exact { ITERATIONS } else { 6 },
+            warm,
+        );
         self.deformed = v;
         let src: Vec<[f64; 2]> = self.warp.pins.iter().map(|p| p.src).collect();
         let depths: Vec<i32> = self.warp.pins.iter().map(|p| p.depth).collect();
@@ -156,7 +179,10 @@ impl PuppetSession {
             let l0 = 1.0 - l1 - l2;
             if l0 >= 0.0 && l1 >= 0.0 && l2 >= 0.0 {
                 let [ra, rb, rc] = tri.map(|i| self.mesh.verts[i]);
-                return Some([l0 * ra[0] + l1 * rb[0] + l2 * rc[0], l0 * ra[1] + l1 * rb[1] + l2 * rc[1]]);
+                return Some([
+                    l0 * ra[0] + l1 * rb[0] + l2 * rc[0],
+                    l0 * ra[1] + l1 * rb[1] + l2 * rc[1],
+                ]);
             }
         }
         None
@@ -190,7 +216,12 @@ pub fn begin(app: &mut PhotocraftApp, ctx: &egui::Context, command: &str) -> Res
         command: command.to_string(),
         surface,
         bounds,
-        warp: PuppetWarp { pins: Vec::new(), mode: PuppetMode::Normal, density: PuppetDensity::Normal, expansion: 2.0 },
+        warp: PuppetWarp {
+            pins: Vec::new(),
+            mode: PuppetMode::Normal,
+            density: PuppetDensity::Normal,
+            expansion: 2.0,
+        },
         show_mesh: true,
         selected: None,
         drag: None,
@@ -214,7 +245,9 @@ pub fn begin(app: &mut PhotocraftApp, ctx: &egui::Context, command: &str) -> Res
 }
 
 pub fn commit(app: &mut PhotocraftApp) {
-    let Some(s) = app.distort.puppet.take() else { return };
+    let Some(s) = app.distort.puppet.take() else {
+        return;
+    };
     if s.warp.is_identity() {
         return;
     }
@@ -233,7 +266,11 @@ pub fn control(app: &mut PhotocraftApp, ui: &Value) -> Result<Value, String> {
         app.distort.puppet = None;
         return Ok(json!({"cancelled": true}));
     }
-    let s = app.distort.puppet.as_mut().ok_or(tl!("Puppet Warp is not active"))?;
+    let s = app
+        .distort
+        .puppet
+        .as_mut()
+        .ok_or(tl!("Puppet Warp is not active"))?;
     if ui.get("undo").and_then(Value::as_bool) == Some(true) {
         s.undo();
         return Ok(s.describe());
@@ -268,7 +305,9 @@ pub fn control(app: &mut PhotocraftApp, ui: &Value) -> Result<Value, String> {
 
 pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) {
     let tol = crate::distort_ui::tolerance(app);
-    let Some(s) = app.distort.puppet.as_mut() else { return };
+    let Some(s) = app.distort.puppet.as_mut() else {
+        return;
+    };
     match ev {
         ToolEvent::Down { x, y, .. } => {
             let p = [x, y];
@@ -287,7 +326,12 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) {
             } else if !mods.alt
                 && let Some(src) = s.rest_of(p)
             {
-                s.warp.pins.push(PuppetPin { src, dst: p, rotate: None, depth: 0 });
+                s.warp.pins.push(PuppetPin {
+                    src,
+                    dst: p,
+                    rotate: None,
+                    depth: 0,
+                });
                 s.selected = Some(s.warp.pins.len() - 1);
                 s.drag = s.selected;
                 s.rebind();
@@ -324,8 +368,15 @@ pub fn draw(s: &PuppetSession, painter: &egui::Painter, xf: &ViewXform) {
     let mut mesh = egui::Mesh::with_texture(s.texture.id());
     let tint = Color32::from_white_alpha((s.opacity.clamp(0.0, 1.0) * 255.0) as u8);
     for (d, r) in s.deformed.iter().zip(&s.mesh.verts) {
-        let uv = pos2(((r[0] - f64::from(b.x0)) / w) as f32, ((r[1] - f64::from(b.y0)) / h) as f32);
-        mesh.vertices.push(egui::epaint::Vertex { pos: xf.to_screen(d[0] as f32, d[1] as f32), uv, color: tint });
+        let uv = pos2(
+            ((r[0] - f64::from(b.x0)) / w) as f32,
+            ((r[1] - f64::from(b.y0)) / h) as f32,
+        );
+        mesh.vertices.push(egui::epaint::Vertex {
+            pos: xf.to_screen(d[0] as f32, d[1] as f32),
+            uv,
+            color: tint,
+        });
     }
     for &t in &s.order {
         let [a, bb, c] = s.mesh.tris[t];
@@ -340,7 +391,13 @@ pub fn draw(s: &PuppetSession, painter: &egui::Painter, xf: &ViewXform) {
                 let (i, j) = (tri[k].min(tri[(k + 1) % 3]), tri[k].max(tri[(k + 1) % 3]));
                 if seen.insert((i, j)) {
                     let (p, q) = (s.deformed[i], s.deformed[j]);
-                    painter.line_segment([xf.to_screen(p[0] as f32, p[1] as f32), xf.to_screen(q[0] as f32, q[1] as f32)], line);
+                    painter.line_segment(
+                        [
+                            xf.to_screen(p[0] as f32, p[1] as f32),
+                            xf.to_screen(q[0] as f32, q[1] as f32),
+                        ],
+                        line,
+                    );
                 }
             }
         }
@@ -355,14 +412,19 @@ pub fn draw(s: &PuppetSession, painter: &egui::Painter, xf: &ViewXform) {
             if let Some(r) = p.rotate {
                 let a = (r as f32).to_radians();
                 painter.circle_stroke(c, 18.0, Stroke::new(1.0, Color32::WHITE));
-                painter.line_segment([c, c + vec2(a.cos(), a.sin()) * 18.0], Stroke::new(1.0, Color32::WHITE));
+                painter.line_segment(
+                    [c, c + vec2(a.cos(), a.sin()) * 18.0],
+                    Stroke::new(1.0, Color32::WHITE),
+                );
             }
         }
     }
 }
 
 pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
-    let Some(s) = app.distort.puppet.as_mut() else { return };
+    let Some(s) = app.distort.puppet.as_mut() else {
+        return;
+    };
     // Pin depth, rotation and Remove All Pins are undoable pin edits too.
     let pins_before = s.warp.pins.clone();
     let mut remesh = false;
@@ -374,7 +436,11 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         ui,
         "puppet-mode",
         &mut s.warp.mode,
-        &[(PuppetMode::Rigid, tl!("Rigid")), (PuppetMode::Normal, tl!("Normal")), (PuppetMode::Distort, tl!("Distort"))],
+        &[
+            (PuppetMode::Rigid, tl!("Rigid")),
+            (PuppetMode::Normal, tl!("Normal")),
+            (PuppetMode::Distort, tl!("Distort")),
+        ],
         90.0,
     );
     resolve |= mode != s.warp.mode;
@@ -384,7 +450,11 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         ui,
         "puppet-density",
         &mut s.warp.density,
-        &[(PuppetDensity::Fewer, tl!("Fewer Points")), (PuppetDensity::Normal, tl!("Normal")), (PuppetDensity::More, tl!("More Points"))],
+        &[
+            (PuppetDensity::Fewer, tl!("Fewer Points")),
+            (PuppetDensity::Normal, tl!("Normal")),
+            (PuppetDensity::More, tl!("More Points")),
+        ],
         110.0,
     );
     remesh |= density != s.warp.density;
@@ -399,18 +469,32 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     crate::widgets::vline(ui, 22.0);
     if let Some(i) = s.selected.filter(|i| *i < s.warp.pins.len()) {
         ui.label(tl!("Pin Depth:"));
-        if ui.small_button("+").on_hover_text(tl!("Bring the selected pin forward")).clicked() {
+        if ui
+            .small_button("+")
+            .on_hover_text(tl!("Bring the selected pin forward"))
+            .clicked()
+        {
             s.warp.pins[i].depth += 1;
             resolve = true;
         }
-        if ui.small_button("−").on_hover_text(tl!("Send the selected pin backward")).clicked() {
+        if ui
+            .small_button("−")
+            .on_hover_text(tl!("Send the selected pin backward"))
+            .clicked()
+        {
             s.warp.pins[i].depth -= 1;
             resolve = true;
         }
         ui.label(tl!("Rotate:"));
         let mut fixed = s.warp.pins[i].rotate.is_some();
         let was = fixed;
-        crate::widgets::dropdown(ui, "puppet-rotate", &mut fixed, &[(false, tl!("Auto")), (true, tl!("Fixed"))], 70.0);
+        crate::widgets::dropdown(
+            ui,
+            "puppet-rotate",
+            &mut fixed,
+            &[(false, tl!("Auto")), (true, tl!("Fixed"))],
+            70.0,
+        );
         if fixed != was {
             s.warp.pins[i].rotate = fixed.then_some(0.0);
             rebind = true;
@@ -440,11 +524,17 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     }
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if crate::widgets::primary_button(ui, "✓", 32.0)
-            .on_hover_text(crate::i18n::fmt(tl!("Commit Puppet Warp ({key})"), &[("key", &crate::shortcuts::pretty("Enter"))]))
+            .on_hover_text(crate::i18n::fmt(
+                tl!("Commit Puppet Warp ({key})"),
+                &[("key", &crate::shortcuts::pretty("Enter"))],
+            ))
             .clicked()
         {
             commit(app);
-        } else if crate::widgets::secondary_button(ui, "⊘", 32.0).on_hover_text(tl!("Cancel (Esc)")).clicked() {
+        } else if crate::widgets::secondary_button(ui, "⊘", 32.0)
+            .on_hover_text(tl!("Cancel (Esc)"))
+            .clicked()
+        {
             app.distort.puppet = None;
         }
     });
@@ -460,50 +550,141 @@ mod tests {
     fn pin_edits_undo_and_redo_inside_the_session() {
         let ctx = egui::Context::default();
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", json!({"width": 100, "height": 80, "depth": 8})).unwrap();
+        app.session
+            .execute("file.new", json!({"width": 100, "height": 80, "depth": 8}))
+            .unwrap();
         app.session.execute("layer.new.layer", json!({})).unwrap();
         app.session
             .edit("paint", |doc, active| {
-                doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap().fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
+                doc.layer_mut(active.unwrap())
+                    .unwrap()
+                    .surface_mut()
+                    .unwrap()
+                    .fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
                 Ok(())
             })
             .unwrap();
         app.sync_views();
-        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({})).unwrap().unwrap();
-        let ev = |app: &mut PhotocraftApp, e| crate::distort_ui::pointer(app, e, egui::Modifiers::NONE);
-        let pins = |app: &PhotocraftApp| app.distort.puppet.as_ref().unwrap().warp.pins.iter().map(|p| p.dst).collect::<Vec<_>>();
-        ev(&mut app, ToolEvent::Down { x: 25.0, y: 40.0, pressure: 1.0 });
+        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({}))
+            .unwrap()
+            .unwrap();
+        let ev =
+            |app: &mut PhotocraftApp, e| crate::distort_ui::pointer(app, e, egui::Modifiers::NONE);
+        let pins = |app: &PhotocraftApp| {
+            app.distort
+                .puppet
+                .as_ref()
+                .unwrap()
+                .warp
+                .pins
+                .iter()
+                .map(|p| p.dst)
+                .collect::<Vec<_>>()
+        };
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 25.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 25.0, y: 40.0 });
-        ev(&mut app, ToolEvent::Down { x: 75.0, y: 40.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 75.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 75.0, y: 40.0 });
         // Drag the second pin up; then a click on it that moves nothing.
-        ev(&mut app, ToolEvent::Down { x: 75.0, y: 40.0, pressure: 1.0 });
-        ev(&mut app, ToolEvent::Move { x: 75.0, y: 30.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 75.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
+        ev(
+            &mut app,
+            ToolEvent::Move {
+                x: 75.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 75.0, y: 20.0 });
-        ev(&mut app, ToolEvent::Down { x: 75.0, y: 20.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 75.0,
+                y: 20.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 75.0, y: 20.0 });
-        crate::distort_ui::pointer(&mut app, ToolEvent::Down { x: 25.0, y: 40.0, pressure: 1.0 }, egui::Modifiers { alt: true, ..Default::default() });
+        crate::distort_ui::pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 25.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+            egui::Modifiers {
+                alt: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(pins(&app), [[75.0, 20.0]]);
         // ⌘Z, through the keyboard: the removed pin comes back, then the drag is undone.
         let press = |app: &mut PhotocraftApp, modifiers: egui::Modifiers| {
-            let ev = egui::Event::Key { key: egui::Key::Z, physical_key: None, pressed: true, repeat: false, modifiers };
-            let input = egui::RawInput { events: vec![ev], ..Default::default() };
-            ctx.run_ui(input, |ui| assert!(crate::distort_ui::keys(app, ui.ctx()))).textures_delta.clear();
+            let ev = egui::Event::Key {
+                key: egui::Key::Z,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers,
+            };
+            let input = egui::RawInput {
+                events: vec![ev],
+                ..Default::default()
+            };
+            ctx.run_ui(input, |ui| assert!(crate::distort_ui::keys(app, ui.ctx())))
+                .textures_delta
+                .clear();
         };
         press(&mut app, egui::Modifiers::COMMAND);
         assert_eq!(pins(&app), [[25.0, 40.0], [75.0, 20.0]]);
         press(&mut app, egui::Modifiers::COMMAND);
-        assert_eq!(pins(&app), [[25.0, 40.0], [75.0, 40.0]], "the drag, not the click after it");
+        assert_eq!(
+            pins(&app),
+            [[25.0, 40.0], [75.0, 40.0]],
+            "the drag, not the click after it"
+        );
         // ⌘⇧Z redoes it; a new edit after an undo drops what was undone.
         press(&mut app, egui::Modifiers::COMMAND | egui::Modifiers::SHIFT);
         assert_eq!(pins(&app), [[25.0, 40.0], [75.0, 20.0]]);
         control(&mut app, &json!({"undo": true})).unwrap();
         control(&mut app, &json!({"undo": true})).unwrap();
         assert_eq!(pins(&app), [[25.0, 40.0]]);
-        ev(&mut app, ToolEvent::Down { x: 50.0, y: 40.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 50.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 50.0, y: 40.0 });
         control(&mut app, &json!({"redo": true})).unwrap();
-        assert_eq!(pins(&app), [[25.0, 40.0], [50.0, 40.0]], "nothing left to redo");
+        assert_eq!(
+            pins(&app),
+            [[25.0, 40.0], [50.0, 40.0]],
+            "nothing left to redo"
+        );
         // Undo past the first pin stops there, and the document's History is untouched.
         let past = app.session.active().unwrap().history.past_len();
         for _ in 0..5 {
@@ -517,42 +698,110 @@ mod tests {
     fn pins_drag_and_commit_through_the_engine() {
         let ctx = egui::Context::default();
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", json!({"width": 100, "height": 80, "depth": 8})).unwrap();
+        app.session
+            .execute("file.new", json!({"width": 100, "height": 80, "depth": 8}))
+            .unwrap();
         app.session.execute("layer.new.layer", json!({})).unwrap();
         app.session
             .edit("paint", |doc, active| {
-                doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap().fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
+                doc.layer_mut(active.unwrap())
+                    .unwrap()
+                    .surface_mut()
+                    .unwrap()
+                    .fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
                 Ok(())
             })
             .unwrap();
         app.sync_views();
-        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({})).unwrap().unwrap();
-        let ev = |app: &mut PhotocraftApp, e| crate::distort_ui::pointer(app, e, egui::Modifiers::NONE);
+        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({}))
+            .unwrap()
+            .unwrap();
+        let ev =
+            |app: &mut PhotocraftApp, e| crate::distort_ui::pointer(app, e, egui::Modifiers::NONE);
         // Two pins: hold the left end, drag the right end up.
-        ev(&mut app, ToolEvent::Down { x: 25.0, y: 40.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 25.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 25.0, y: 40.0 });
-        ev(&mut app, ToolEvent::Down { x: 75.0, y: 40.0, pressure: 1.0 });
-        ev(&mut app, ToolEvent::Move { x: 75.0, y: 30.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 75.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
+        ev(
+            &mut app,
+            ToolEvent::Move {
+                x: 75.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 75.0, y: 20.0 });
         let s = app.distort.puppet.as_ref().unwrap();
         assert_eq!(s.warp.pins.len(), 2);
         assert_eq!(s.warp.pins[1].dst, [75.0, 20.0]);
         // ⌥-click removes; clicking off the mesh adds nothing.
-        ev(&mut app, ToolEvent::Down { x: 5.0, y: 5.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 5.0,
+                y: 5.0,
+                pressure: 1.0,
+            },
+        );
         assert_eq!(app.distort.puppet.as_ref().unwrap().warp.pins.len(), 2);
-        crate::distort_ui::pointer(&mut app, ToolEvent::Down { x: 25.0, y: 40.0, pressure: 1.0 }, egui::Modifiers { alt: true, ..Default::default() });
+        crate::distort_ui::pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 25.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+            egui::Modifiers {
+                alt: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(app.distort.puppet.as_ref().unwrap().warp.pins.len(), 1);
-        ev(&mut app, ToolEvent::Down { x: 25.0, y: 40.0, pressure: 1.0 });
+        ev(
+            &mut app,
+            ToolEvent::Down {
+                x: 25.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+        );
         ev(&mut app, ToolEvent::Up { x: 25.0, y: 40.0 });
         control(&mut app, &json!({"mode": "rigid", "density": "more"})).unwrap();
         let expected = app.distort.puppet.as_ref().unwrap().deformed.clone();
         assert!(!expected.is_empty());
         let before = app.session.active().unwrap().history.past_len();
-        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({"ui": {"commit": true}})).unwrap().unwrap();
+        crate::distort_ui::menu(
+            &mut app,
+            &ctx,
+            "edit.puppetWarp",
+            &json!({"ui": {"commit": true}}),
+        )
+        .unwrap()
+        .unwrap();
         assert!(app.distort.puppet.is_none());
         assert_eq!(app.session.active().unwrap().history.past_len(), before + 1);
         let st = app.session.active().unwrap();
-        let b = st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap().content_bounds();
+        let b = st
+            .doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .content_bounds();
         assert!(b.y0 < 25, "the right end went up: {b:?}");
     }
 
@@ -562,22 +811,46 @@ mod tests {
         // panicked. -50 is the options bar's minimum and also empties this 20 px tall bar.
         let ctx = egui::Context::default();
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", json!({"width": 100, "height": 80, "depth": 8})).unwrap();
+        app.session
+            .execute("file.new", json!({"width": 100, "height": 80, "depth": 8}))
+            .unwrap();
         app.session.execute("layer.new.layer", json!({})).unwrap();
         app.session
             .edit("paint", |doc, active| {
-                doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap().fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
+                doc.layer_mut(active.unwrap())
+                    .unwrap()
+                    .surface_mut()
+                    .unwrap()
+                    .fill_rect(Rect::new(20, 30, 80, 50), &[1.0, 0.0, 0.0, 1.0]);
                 Ok(())
             })
             .unwrap();
         app.sync_views();
-        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({})).unwrap().unwrap();
-        crate::distort_ui::pointer(&mut app, ToolEvent::Down { x: 50.0, y: 40.0, pressure: 1.0 }, egui::Modifiers::NONE);
-        crate::distort_ui::pointer(&mut app, ToolEvent::Up { x: 50.0, y: 40.0 }, egui::Modifiers::NONE);
+        crate::distort_ui::menu(&mut app, &ctx, "edit.puppetWarp", &json!({}))
+            .unwrap()
+            .unwrap();
+        crate::distort_ui::pointer(
+            &mut app,
+            ToolEvent::Down {
+                x: 50.0,
+                y: 40.0,
+                pressure: 1.0,
+            },
+            egui::Modifiers::NONE,
+        );
+        crate::distort_ui::pointer(
+            &mut app,
+            ToolEvent::Up { x: 50.0, y: 40.0 },
+            egui::Modifiers::NONE,
+        );
         let before = app.distort.puppet.as_ref().unwrap().describe();
         for e in [-200, -50] {
             assert!(control(&mut app, &json!({"expansion": e})).is_err(), "{e}");
-            assert_eq!(app.distort.puppet.as_ref().unwrap().describe(), before, "{e}: the previous settings and mesh stay");
+            assert_eq!(
+                app.distort.puppet.as_ref().unwrap().describe(),
+                before,
+                "{e}: the previous settings and mesh stay"
+            );
         }
         // A smaller shrink still remeshes.
         let v = control(&mut app, &json!({"expansion": -2})).unwrap();

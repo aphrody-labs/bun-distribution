@@ -22,7 +22,10 @@ fn locate() -> Option<PathBuf> {
             return Some(p);
         }
     }
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent()?.parent()?.join("nie.exe");
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()?
+        .parent()?
+        .join("nie.exe");
     root.is_file().then_some(root)
 }
 
@@ -74,8 +77,14 @@ fn decoupage_total_et_reassemblage_byte_exact() {
         cover.count_by_kind(UnitKind::Function)
     );
 
-    let rebuilt = cover.assemble(|u| Some(img.bytes[u.range()].to_vec())).expect("assemblage");
-    assert_eq!(sha256_hex(&rebuilt), cover.sha256, "le fichier régénéré diverge de l'original");
+    let rebuilt = cover
+        .assemble(|u| Some(img.bytes[u.range()].to_vec()))
+        .expect("assemblage");
+    assert_eq!(
+        sha256_hex(&rebuilt),
+        cover.sha256,
+        "le fichier régénéré diverge de l'original"
+    );
 }
 
 #[test]

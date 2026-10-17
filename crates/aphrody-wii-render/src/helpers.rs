@@ -19,10 +19,10 @@ pub fn map_min_filter(filter: MinFilter) -> wgpu::FilterMode {
     match filter {
         MinFilter::Nearest | MinFilter::NearestMipmapNearest | MinFilter::NearestMipmapLinear => {
             wgpu::FilterMode::Nearest
-        },
+        }
         MinFilter::Linear | MinFilter::LinearMipmapNearest | MinFilter::LinearMipmapLinear => {
             wgpu::FilterMode::Linear
-        },
+        }
     }
 }
 

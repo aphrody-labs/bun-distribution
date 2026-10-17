@@ -35,12 +35,23 @@ type Entry = (Arc<[f32]>, [i32; 4]);
 /// A quantized box as a rectangle again.
 fn rect_of(k: [i32; 4]) -> Rect {
     let f = |v: i32| f64::from(v) / 10_000.0;
-    Rect { x0: f(k[0]), y0: f(k[1]), x1: f(k[2]), y1: f(k[3]) }
+    Rect {
+        x0: f(k[0]),
+        y0: f(k[1]),
+        x1: f(k[2]),
+        y1: f(k[3]),
+    }
 }
 
 /// A region's box as the integer key it is cached under.
 pub(crate) fn region_key(r: &Rect) -> [i32; 4] {
-    let q = |v: f64| if v.is_finite() { (v.clamp(-1e3, 1e3) * 10_000.0).round() as i32 } else { 0 };
+    let q = |v: f64| {
+        if v.is_finite() {
+            (v.clamp(-1e3, 1e3) * 10_000.0).round() as i32
+        } else {
+            0
+        }
+    };
     [q(r.x0), q(r.y0), q(r.x1), q(r.y1)]
 }
 
@@ -69,7 +80,9 @@ impl Index {
 
     /// The box to cut this face's picture from, once the scan has looked at it.
     pub fn view(&self, photo: u64, rect: &Rect) -> Option<Rect> {
-        self.entries.get(&(photo, region_key(rect))).map(|e| rect_of(e.1))
+        self.entries
+            .get(&(photo, region_key(rect)))
+            .map(|e| rect_of(e.1))
     }
 
     #[cfg(test)]
@@ -122,11 +135,15 @@ impl Index {
     }
 
     fn load(&mut self, path: &Path) {
-        let Ok(meta) = std::fs::metadata(path) else { return };
+        let Ok(meta) = std::fs::metadata(path) else {
+            return;
+        };
         if meta.len() > MAX_FILE {
             return;
         }
-        let Ok(bytes) = std::fs::read(path) else { return };
+        let Ok(bytes) = std::fs::read(path) else {
+            return;
+        };
         let Some((tag_len, rest)) = bytes
             .strip_prefix(MAGIC)
             .and_then(|r| r.split_first())
@@ -136,8 +153,15 @@ impl Index {
         else {
             return;
         };
-        let Some((tag, rest)) = rest.split_at_checked(tag_len) else { return };
-        let Some((dim, mut rest)) = rest.split_at_checked(4).map(|(d, r)| (u32::from_le_bytes([d[0], d[1], d[2], d[3]]) as usize, r)) else { return };
+        let Some((tag, rest)) = rest.split_at_checked(tag_len) else {
+            return;
+        };
+        let Some((dim, mut rest)) = rest
+            .split_at_checked(4)
+            .map(|(d, r)| (u32::from_le_bytes([d[0], d[1], d[2], d[3]]) as usize, r))
+        else {
+            return;
+        };
         if tag != self.tag.as_bytes() || dim != self.dim || dim == 0 {
             return;
         }
@@ -145,11 +169,19 @@ impl Index {
         let record = 8 + 16 + 16 + dim * 4;
         while let Some((rec, tail)) = rest.split_at_checked(record) {
             rest = tail;
-            let photo = u64::from_le_bytes([rec[0], rec[1], rec[2], rec[3], rec[4], rec[5], rec[6], rec[7]]);
-            let int = |at: usize| i32::from_le_bytes([rec[at], rec[at + 1], rec[at + 2], rec[at + 3]]);
+            let photo = u64::from_le_bytes([
+                rec[0], rec[1], rec[2], rec[3], rec[4], rec[5], rec[6], rec[7],
+            ]);
+            let int =
+                |at: usize| i32::from_le_bytes([rec[at], rec[at + 1], rec[at + 2], rec[at + 3]]);
             let key = [int(8), int(12), int(16), int(20)];
             let view = [int(24), int(28), int(32), int(36)];
-            let emb: Vec<f32> = rec[40..].as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect();
+            let emb: Vec<f32> = rec[40..]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_le_bytes(*c))
+                .collect();
             if emb.iter().all(|v| v.is_finite()) {
                 self.entries.insert((photo, key), (emb.into(), view));
             }
@@ -170,8 +202,14 @@ impl Index {
     fn record(&self, key: &Key, entry: &Entry) -> Vec<u8> {
         let mut r = Vec::with_capacity(40 + entry.0.len() * 4);
         r.extend_from_slice(&key.0.to_le_bytes());
-        key.1.iter().chain(entry.1.iter()).for_each(|k| r.extend_from_slice(&k.to_le_bytes()));
-        entry.0.iter().for_each(|v| r.extend_from_slice(&v.to_le_bytes()));
+        key.1
+            .iter()
+            .chain(entry.1.iter())
+            .for_each(|k| r.extend_from_slice(&k.to_le_bytes()));
+        entry
+            .0
+            .iter()
+            .for_each(|v| r.extend_from_slice(&v.to_le_bytes()));
         r
     }
 
@@ -275,16 +313,27 @@ impl Scanned {
     }
 
     fn load(&mut self, path: &Path) {
-        let Ok(meta) = std::fs::metadata(path) else { return };
+        let Ok(meta) = std::fs::metadata(path) else {
+            return;
+        };
         if meta.len() > SCAN_MAX_FILE {
             return;
         }
-        let Ok(bytes) = std::fs::read(path) else { return };
+        let Ok(bytes) = std::fs::read(path) else {
+            return;
+        };
         let head = Self::header();
-        let Some(rest) = bytes.strip_prefix(head.as_slice()) else { return };
+        let Some(rest) = bytes.strip_prefix(head.as_slice()) else {
+            return;
+        };
         self.file_matches = true;
         // a half-written last id (a crash while appending) is ignored
-        self.set.extend(rest.as_chunks::<8>().0.iter().map(|c| u64::from_le_bytes(*c)));
+        self.set.extend(
+            rest.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|c| u64::from_le_bytes(*c)),
+        );
     }
 
     /// Write what was added since the last save: appended when the file is this detector's, else the whole record
@@ -299,7 +348,11 @@ impl Scanned {
         }
         if self.file_matches {
             let mut f = std::fs::OpenOptions::new().append(true).open(&path)?;
-            let buf: Vec<u8> = self.unsaved.iter().flat_map(|id| id.to_le_bytes()).collect();
+            let buf: Vec<u8> = self
+                .unsaved
+                .iter()
+                .flat_map(|id| id.to_le_bytes())
+                .collect();
             f.write_all(&buf)?;
         } else {
             let mut buf = Self::header();
@@ -325,7 +378,12 @@ mod tests {
     use super::*;
 
     fn rect(x: f64) -> Rect {
-        Rect { x0: x, y0: 0.1, x1: x + 0.2, y1: 0.4 }
+        Rect {
+            x0: x,
+            y0: 0.1,
+            x1: x + 0.2,
+            y1: 0.4,
+        }
     }
 
     fn temp(name: &str) -> PathBuf {
@@ -346,8 +404,13 @@ mod tests {
         let mut b = Index::default();
         b.reset("m@abc", 3, Some(path.clone()));
         assert_eq!(b.len(), 3);
-        assert_eq!(b.get(8, &rect(0.3)).map(|e| e.to_vec()), Some(vec![0.0, 1.0, 0.25]));
-        assert!(b.contains(9, &rect(0.5)) && !b.contains(9, &rect(0.6)) && !b.contains(1, &rect(0.5)));
+        assert_eq!(
+            b.get(8, &rect(0.3)).map(|e| e.to_vec()),
+            Some(vec![0.0, 1.0, 0.25])
+        );
+        assert!(
+            b.contains(9, &rect(0.5)) && !b.contains(9, &rect(0.6)) && !b.contains(1, &rect(0.5))
+        );
         let _ = std::fs::remove_file(path);
     }
 
@@ -379,7 +442,13 @@ mod tests {
         torn.reset("n@def", 4, Some(path.clone()));
         assert_eq!(torn.len(), 0);
         // garbage of every kind is ignored
-        for junk in [Vec::new(), b"LCFE".to_vec(), b"LCFE\x01\xff\xff".to_vec(), vec![0xff; 200], b"LCFE\x02\x00\x00".to_vec()] {
+        for junk in [
+            Vec::new(),
+            b"LCFE".to_vec(),
+            b"LCFE\x01\xff\xff".to_vec(),
+            vec![0xff; 200],
+            b"LCFE\x02\x00\x00".to_vec(),
+        ] {
             std::fs::write(&path, &junk).unwrap();
             let mut j = Index::default();
             j.reset("n@def", 4, Some(path.clone()));
@@ -394,7 +463,15 @@ mod tests {
 
     #[test]
     fn non_finite_boxes_and_vectors_do_not_break_the_keys() {
-        assert_eq!(region_key(&Rect { x0: f64::NAN, y0: f64::INFINITY, x1: 1e300, y1: -1e300 }), [0, 0, 10_000_000, -10_000_000]);
+        assert_eq!(
+            region_key(&Rect {
+                x0: f64::NAN,
+                y0: f64::INFINITY,
+                x1: 1e300,
+                y1: -1e300
+            }),
+            [0, 0, 10_000_000, -10_000_000]
+        );
         let path = temp("nan");
         let _ = std::fs::remove_file(&path);
         let mut a = Index::default();

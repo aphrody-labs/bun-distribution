@@ -40,9 +40,14 @@ impl FrameTag {
         };
         if key_frame {
             let Some(c) = data.get(3..10) else {
-                return Err(Error::Invalid("key frame shorter than its 10-byte header".into()));
+                return Err(Error::Invalid(
+                    "key frame shorter than its 10-byte header".into(),
+                ));
             };
-            ensure!(c[0] == 0x9d && c[1] == 0x01 && c[2] == 0x2a, "bad key frame start code");
+            ensure!(
+                c[0] == 0x9d && c[1] == 0x01 && c[2] == 0x2a,
+                "bad key frame start code"
+            );
             let w = u16::from_le_bytes([c[3], c[4]]);
             let h = u16::from_le_bytes([c[5], c[6]]);
             tag.width = w & 0x3fff;
@@ -98,7 +103,12 @@ impl Default for EntropyContext {
         for (i, p) in mv.iter_mut().flatten().enumerate() {
             *p = DEFAULT_MV_PROBS[i];
         }
-        EntropyContext { coeff, ymode: YMODE_PROBS, uv_mode: UV_MODE_PROBS, mv }
+        EntropyContext {
+            coeff,
+            ymode: YMODE_PROBS,
+            uv_mode: UV_MODE_PROBS,
+            mv,
+        }
     }
 }
 
@@ -173,7 +183,11 @@ pub fn read_header(
         }
         if seg.update_map {
             for p in &mut seg.tree_probs {
-                *p = if d.read_flag() { d.read_literal(8) as u8 } else { crate::tables::DEFAULT_SEGMENT_PROB };
+                *p = if d.read_flag() {
+                    d.read_literal(8) as u8
+                } else {
+                    crate::tables::DEFAULT_SEGMENT_PROB
+                };
             }
         }
     }
@@ -222,7 +236,11 @@ pub fn read_header(
         h.refresh_last = d.read_flag();
     }
     // The probabilities in effect before this frame's updates come back after it.
-    *saved = if h.refresh_entropy { None } else { Some(ctx.clone()) };
+    *saved = if h.refresh_entropy {
+        None
+    } else {
+        Some(ctx.clone())
+    };
     // token_prob_update (13.4)
     let mut i = 0;
     for plane in ctx.coeff.iter_mut() {
@@ -237,7 +255,11 @@ pub fn read_header(
             }
         }
     }
-    h.skip_prob = if d.read_flag() { Some(d.read_literal(8) as u8) } else { None };
+    h.skip_prob = if d.read_flag() {
+        Some(d.read_literal(8) as u8)
+    } else {
+        None
+    };
     if !key_frame {
         h.prob_intra = d.read_literal(8) as u8;
         h.prob_last = d.read_literal(8) as u8;

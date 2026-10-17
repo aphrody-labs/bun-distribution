@@ -25,12 +25,17 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use filmcraft_project::{BinEntry, FindOp, FindQuery, FindRow, ItemId, ItemKind, MarkerKind, MediaRef, Project, SearchBin, TrackKind};
+use filmcraft_project::{
+    BinEntry, FindOp, FindQuery, FindRow, ItemId, ItemKind, MarkerKind, MediaRef, Project,
+    SearchBin, TrackKind,
+};
 use filmcraft_time::{Tick, TimeDisplay, TimeRange};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::commands::{CommandSpec, always, bad, bool_p, has_project_selection, has_seq, str_p, u64_p};
+use crate::commands::{
+    CommandSpec, always, bad, bool_p, has_project_selection, has_seq, str_p, u64_p,
+};
 use crate::{EngineError, Result, Session};
 
 type Run = fn(&mut Session, &Value) -> Result<Value>;
@@ -45,7 +50,16 @@ fn spec(
     enabled: Enabled,
     run: Run,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut, params, enabled, run, journal: true }
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal: true,
+    }
 }
 
 fn query(
@@ -57,7 +71,16 @@ fn query(
     enabled: Enabled,
     run: Run,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut, params, enabled, run, journal: false }
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal: false,
+    }
 }
 
 const FIND_PARAMS: &str = r#"{"scope":"project|timeline"?,"column":str?,"operator":"contains|matches|beginsWith|endsWith|doesNotContain"?,"text":str?,"rows":[{"column":str,"operator":str,"text":str}]?,"matchAll":bool=true,"caseSensitive":bool=false,"in":"all|clips|markers"?}"#;
@@ -74,7 +97,15 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             always,
             new_search_bin,
         ),
-        query("project.searchBinItems", "Search Bin Contents", &[], None, r#"{"bin":id}"#, always, search_bin_items),
+        query(
+            "project.searchBinItems",
+            "Search Bin Contents",
+            &[],
+            None,
+            r#"{"bin":id}"#,
+            always,
+            search_bin_items,
+        ),
         spec(
             "project.editSearchBin",
             "Edit Search Bin",
@@ -84,15 +115,69 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             always,
             edit_search_bin,
         ),
-        spec("project.deleteSearchBin", "Delete Search Bin", &[], None, r#"{"bin":id}"#, always, delete_search_bin),
-        spec("file.close", "Close", &["File"], Some("Cmd+W"), r#"{"item":id?}"#, has_seq, |s, p| s.execute("sequence.close", p.clone())),
-        spec("file.closeAllProjects", "Close All Projects", &["File"], None, r#"{"force":bool?}"#, always, |s, p| s.execute("file.closeProject", p.clone())),
-        spec("file.closeAllOtherProjects", "Close All Other Projects", &["File"], None, "{}", only_one_project, |_, _| {
-            Err(EngineError::Other("only one project is open".into()))
-        }),
-        spec("file.saveAsTemplate", "Save as Template…", &["File"], None, r#"{"name":str?,"path":str?}"#, always, save_as_template),
-        query("file.templates", "List Project Templates", &[], None, "{}", always, list_templates),
-        spec("file.newProjectFromTemplate", "New Project from Template", &[], None, r#"{"template":name|path,"name":str?}"#, always, new_from_template),
+        spec(
+            "project.deleteSearchBin",
+            "Delete Search Bin",
+            &[],
+            None,
+            r#"{"bin":id}"#,
+            always,
+            delete_search_bin,
+        ),
+        spec(
+            "file.close",
+            "Close",
+            &["File"],
+            Some("Cmd+W"),
+            r#"{"item":id?}"#,
+            has_seq,
+            |s, p| s.execute("sequence.close", p.clone()),
+        ),
+        spec(
+            "file.closeAllProjects",
+            "Close All Projects",
+            &["File"],
+            None,
+            r#"{"force":bool?}"#,
+            always,
+            |s, p| s.execute("file.closeProject", p.clone()),
+        ),
+        spec(
+            "file.closeAllOtherProjects",
+            "Close All Other Projects",
+            &["File"],
+            None,
+            "{}",
+            only_one_project,
+            |_, _| Err(EngineError::Other("only one project is open".into())),
+        ),
+        spec(
+            "file.saveAsTemplate",
+            "Save as Template…",
+            &["File"],
+            None,
+            r#"{"name":str?,"path":str?}"#,
+            always,
+            save_as_template,
+        ),
+        query(
+            "file.templates",
+            "List Project Templates",
+            &[],
+            None,
+            "{}",
+            always,
+            list_templates,
+        ),
+        spec(
+            "file.newProjectFromTemplate",
+            "New Project from Template",
+            &[],
+            None,
+            r#"{"template":name|path,"name":str?}"#,
+            always,
+            new_from_template,
+        ),
         spec(
             "file.importFromMediaBrowser",
             "Import from Media Browser",
@@ -107,21 +192,40 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
                     None => s.browser.selection.iter().map(|x| json!(x)).collect(),
                 };
                 if paths.is_empty() {
-                    return Err(bad("file.importFromMediaBrowser", "select files in the Media Browser"));
+                    return Err(bad(
+                        "file.importFromMediaBrowser",
+                        "select files in the Media Browser",
+                    ));
                 }
-                let seq = p.get("imageSequence").and_then(Value::as_bool).unwrap_or(false);
+                let seq = p
+                    .get("imageSequence")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
                 s.execute("file.import", json!({"paths": paths, "imageSequence": seq}))
             },
         ),
         // File ▸ Import with "Image Sequence" checked (the UI asks for the first frame).
-        spec("file.importImageSequence", "Import Image Sequence…", &["File"], None, r#"{"path":str,"bin":binId?}"#, always, |s, p| {
-            let path = p.get("path").and_then(Value::as_str).ok_or_else(|| bad("file.importImageSequence", "need `path` (the first numbered still)"))?;
-            let mut q = json!({"paths": [path], "imageSequence": true});
-            if let Some(b) = p.get("bin") {
-                q["bin"] = b.clone();
-            }
-            s.execute("file.import", q)
-        }),
+        spec(
+            "file.importImageSequence",
+            "Import Image Sequence…",
+            &["File"],
+            None,
+            r#"{"path":str,"bin":binId?}"#,
+            always,
+            |s, p| {
+                let path = p.get("path").and_then(Value::as_str).ok_or_else(|| {
+                    bad(
+                        "file.importImageSequence",
+                        "need `path` (the first numbered still)",
+                    )
+                })?;
+                let mut q = json!({"paths": [path], "imageSequence": true});
+                if let Some(b) = p.get("bin") {
+                    q["bin"] = b.clone();
+                }
+                s.execute("file.import", q)
+            },
+        ),
         spec(
             "file.exportSelectionProject",
             "Selection as FilmCraft Project…",
@@ -131,8 +235,24 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             has_project_selection,
             export_selection,
         ),
-        spec("file.exportAle", "Avid Log Exchange…", &["File", "Export"], None, r#"{"path":str,"items":[id]?}"#, has_loggable, export_ale),
-        query("file.mediaPropertiesFile", "File…", &["File", "Get Media File Properties for"], None, r#"{"path":str}"#, always, media_properties_file),
+        spec(
+            "file.exportAle",
+            "Avid Log Exchange…",
+            &["File", "Export"],
+            None,
+            r#"{"path":str,"items":[id]?}"#,
+            has_loggable,
+            export_ale,
+        ),
+        query(
+            "file.mediaPropertiesFile",
+            "File…",
+            &["File", "Get Media File Properties for"],
+            None,
+            r#"{"path":str}"#,
+            always,
+            media_properties_file,
+        ),
         query(
             "file.mediaProperties",
             "Selection…",
@@ -161,11 +281,43 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             project_settings_scratch,
         ),
         // ---------------- Edit ----------------
-        spec("edit.find", "Find…", &["Edit"], Some("Cmd+F"), FIND_PARAMS, always, find),
-        spec("edit.findNext", "Find Next", &["Edit"], None, "{}", has_find, find_next),
-        spec("edit.editOriginal", "Edit Original", &["Edit"], Some("Cmd+E"), r#"{"items":[id]?}"#, has_original, edit_original),
+        spec(
+            "edit.find",
+            "Find…",
+            &["Edit"],
+            Some("Cmd+F"),
+            FIND_PARAMS,
+            always,
+            find,
+        ),
+        spec(
+            "edit.findNext",
+            "Find Next",
+            &["Edit"],
+            None,
+            "{}",
+            has_find,
+            find_next,
+        ),
+        spec(
+            "edit.editOriginal",
+            "Edit Original",
+            &["Edit"],
+            Some("Cmd+E"),
+            r#"{"items":[id]?}"#,
+            has_original,
+            edit_original,
+        ),
         // Project panel context menu (not in the File menu): reveal the clip's media file.
-        query("file.reveal", "Reveal in Finder", &[], None, r#"{"items":[id]?}"#, has_file_selection, edit_original),
+        query(
+            "file.reveal",
+            "Reveal in Finder",
+            &[],
+            None,
+            r#"{"items":[id]?}"#,
+            has_file_selection,
+            edit_original,
+        ),
         // ---------------- Clip ----------------
         spec(
             "clip.editOffline",
@@ -176,12 +328,42 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             has_offline_selection,
             edit_offline,
         ),
-        query("clip.sourceSettings", "Source Settings…", &["Clip"], None, r#"{"item":id?}"#, has_media_selection, source_settings),
-        spec("clip.restoreCaptionsFromSource", "Restore Captions from Source Clip", &["Clip"], None, "{}", no_embedded_captions, |_, _| {
-            Err(EngineError::Other(NO_CAPTIONS.into()))
-        }),
-        spec("clip.updateMetadata", "Update Metadata…", &["Clip"], None, r#"{"items":[id]?}"#, has_file_selection, update_metadata),
-        query("clip.generateAudioWaveform", "Generate Audio Waveform", &["Clip"], None, r#"{"items":[id]?}"#, has_audio_selection, generate_waveform),
+        query(
+            "clip.sourceSettings",
+            "Source Settings…",
+            &["Clip"],
+            None,
+            r#"{"item":id?}"#,
+            has_media_selection,
+            source_settings,
+        ),
+        spec(
+            "clip.restoreCaptionsFromSource",
+            "Restore Captions from Source Clip",
+            &["Clip"],
+            None,
+            "{}",
+            no_embedded_captions,
+            |_, _| Err(EngineError::Other(NO_CAPTIONS.into())),
+        ),
+        spec(
+            "clip.updateMetadata",
+            "Update Metadata…",
+            &["Clip"],
+            None,
+            r#"{"items":[id]?}"#,
+            has_file_selection,
+            update_metadata,
+        ),
+        query(
+            "clip.generateAudioWaveform",
+            "Generate Audio Waveform",
+            &["Clip"],
+            None,
+            r#"{"items":[id]?}"#,
+            has_audio_selection,
+            generate_waveform,
+        ),
         spec(
             "clip.automateToSequence",
             "Automate to Sequence…",
@@ -192,7 +374,15 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             automate_to_sequence,
         ),
         // ---------------- Help ----------------
-        query("help.systemReport", "System Compatibility Report", &[], None, "{}", always, |_, _| Ok(system_report())),
+        query(
+            "help.systemReport",
+            "System Compatibility Report",
+            &[],
+            None,
+            "{}",
+            always,
+            |_, _| Ok(system_report()),
+        ),
     ]
 }
 
@@ -214,7 +404,9 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
     // Apply Default Transitions to Selection works on selected clips too (⇧D), not only on
     // selected edit points; the Trim Monitor button keeps using the same id.
     if let Some(c) = v.iter_mut().find(|c| c.id == "trim.applyDefaultTransition")
-        && let Some(i) = pool.iter().position(|c| c.id == "sequence.applyDefaultTransitionsToSelection")
+        && let Some(i) = pool
+            .iter()
+            .position(|c| c.id == "sequence.applyDefaultTransitionsToSelection")
     {
         let new = pool.remove(i);
         c.enabled = new.enabled;
@@ -226,11 +418,26 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
         c.menu = &["File", "Project Settings"];
     }
     let layout: Vec<(At, Vec<&'static str>)> = vec![
-        (At::After("file.newBinFromSelection"), vec!["file.newSearchBin"]),
+        (
+            At::After("file.newBinFromSelection"),
+            vec!["file.newSearchBin"],
+        ),
         (At::Before("file.closeProject"), vec!["file.close"]),
-        (At::After("file.closeProject"), vec!["file.closeAllProjects", "file.closeAllOtherProjects"]),
+        (
+            At::After("file.closeProject"),
+            vec!["file.closeAllProjects", "file.closeAllOtherProjects"],
+        ),
         (At::After("file.saveCopy"), vec!["file.saveAsTemplate"]),
-        (At::After("file.exportEdl"), vec!["file.exportSelectionProject", "file.exportAle", "file.exportOtio", "file.exportFcp7Xml", "file.exportFcpxml"]),
+        (
+            At::After("file.exportEdl"),
+            vec![
+                "file.exportSelectionProject",
+                "file.exportAle",
+                "file.exportOtio",
+                "file.exportFcp7Xml",
+                "file.exportFcpxml",
+            ],
+        ),
         (
             At::Before("file.projectManager"),
             vec![
@@ -241,21 +448,57 @@ pub(crate) fn apply_layout(v: &mut Vec<CommandSpec>) {
                 "project.ingestSettings",
             ],
         ),
-        (At::After("edit.deselectAll"), vec!["edit.find", "edit.findNext"]),
-        (At::After("edit.consolidateDuplicates"), vec!["edit.editOriginal"]),
-        (At::After("clip.editSubclip"), vec!["clip.editOffline", "clip.sourceSettings"]),
-        (At::After("clip.speedDuration"), vec!["clip.sceneEditDetection"]),
+        (
+            At::After("edit.deselectAll"),
+            vec!["edit.find", "edit.findNext"],
+        ),
+        (
+            At::After("edit.consolidateDuplicates"),
+            vec!["edit.editOriginal"],
+        ),
+        (
+            At::After("clip.editSubclip"),
+            vec!["clip.editOffline", "clip.sourceSettings"],
+        ),
+        (
+            At::After("clip.speedDuration"),
+            vec!["clip.sceneEditDetection"],
+        ),
         (
             At::After("clip.replaceFromBin"),
-            vec!["clip.restoreCaptionsFromSource", "clip.updateMetadata", "clip.generateAudioWaveform", "clip.automateToSequence"],
+            vec![
+                "clip.restoreCaptionsFromSource",
+                "clip.updateMetadata",
+                "clip.generateAudioWaveform",
+                "clip.automateToSequence",
+            ],
         ),
-        (At::After("sequence.applyAudioTransition"), vec!["trim.applyDefaultTransition"]),
-        (At::After("sequence.showThroughEdits"), vec!["sequence.normalizeMixTrack"]),
-        (At::After("sequence.makeSubsequence"), vec!["sequence.transcribe", "sequence.simplify"]),
-        (At::After("captions.showAll"), vec!["captions.showActiveOnly"]),
+        (
+            At::After("sequence.applyAudioTransition"),
+            vec!["trim.applyDefaultTransition"],
+        ),
+        (
+            At::After("sequence.showThroughEdits"),
+            vec!["sequence.normalizeMixTrack"],
+        ),
+        (
+            At::After("sequence.makeSubsequence"),
+            vec!["sequence.transcribe", "sequence.simplify"],
+        ),
+        (
+            At::After("captions.showAll"),
+            vec!["captions.showActiveOnly"],
+        ),
         (At::After("markers.addChapter"), vec!["markers.addFlashCue"]),
         (At::Before("file.close"), vec!["file.open"]),
-        (At::After("media.makeOffline"), vec!["file.importFromMediaBrowser", "file.import", "file.importImageSequence"]),
+        (
+            At::After("media.makeOffline"),
+            vec![
+                "file.importFromMediaBrowser",
+                "file.import",
+                "file.importImageSequence",
+            ],
+        ),
     ];
     for (at, ids) in layout {
         let mut run = Vec::new();
@@ -317,7 +560,9 @@ const SEQUENCE_MENU: [&str; 34] = [
 
 /// Put the commands `ids` (those present) in this order, at the position of the first of them.
 fn reorder(v: &mut Vec<CommandSpec>, ids: &[&str]) {
-    let Some(at) = v.iter().position(|c| ids.contains(&c.id)) else { return };
+    let Some(at) = v.iter().position(|c| ids.contains(&c.id)) else {
+        return;
+    };
     let mut run = Vec::new();
     for id in ids {
         if let Some(i) = v.iter().position(|c| c.id == *id) {
@@ -343,14 +588,22 @@ fn no_embedded_captions(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn has_find(s: &Session) -> std::result::Result<(), String> {
-    if s.state.find.is_some() { Ok(()) } else { Err("use Find… first".into()) }
+    if s.state.find.is_some() {
+        Ok(())
+    } else {
+        Err("use Find… first".into())
+    }
 }
 
 /// Project items the command works on: `items`, else the Project panel selection, else the media
 /// of the selected timeline clips.
 fn targets(s: &Session, p: &Value) -> Vec<ItemId> {
     if let Some(a) = p.get("items").and_then(Value::as_array) {
-        return a.iter().filter_map(|v| v.as_u64().map(ItemId)).filter(|i| s.project.items.contains_key(i)).collect();
+        return a
+            .iter()
+            .filter_map(|v| v.as_u64().map(ItemId))
+            .filter(|i| s.project.items.contains_key(i))
+            .collect();
     }
     if let Some(i) = u64_p(p, "item") {
         return vec![ItemId(i)];
@@ -384,10 +637,20 @@ fn file_path(m: &filmcraft_project::MediaClip) -> Option<&str> {
 }
 
 fn has_media_selection(s: &Session) -> std::result::Result<(), String> {
-    if targets(s, &Value::Null).iter().any(|i| media_of(&s.project, *i).is_some()) { Ok(()) } else { Err("select a clip".into()) }
+    if targets(s, &Value::Null)
+        .iter()
+        .any(|i| media_of(&s.project, *i).is_some())
+    {
+        Ok(())
+    } else {
+        Err("select a clip".into())
+    }
 }
 fn has_file_selection(s: &Session) -> std::result::Result<(), String> {
-    if targets(s, &Value::Null).iter().any(|i| media_of(&s.project, *i).is_some_and(|(_, m)| file_path(m).is_some())) {
+    if targets(s, &Value::Null)
+        .iter()
+        .any(|i| media_of(&s.project, *i).is_some_and(|(_, m)| file_path(m).is_some()))
+    {
         Ok(())
     } else {
         Err("select a clip with a media file".into())
@@ -397,25 +660,45 @@ fn has_original(s: &Session) -> std::result::Result<(), String> {
     has_file_selection(s)
 }
 fn has_audio_selection(s: &Session) -> std::result::Result<(), String> {
-    if targets(s, &Value::Null).iter().any(|i| media_of(&s.project, *i).is_some_and(|(_, m)| m.info.has_audio())) {
+    if targets(s, &Value::Null)
+        .iter()
+        .any(|i| media_of(&s.project, *i).is_some_and(|(_, m)| m.info.has_audio()))
+    {
         Ok(())
     } else {
         Err("select a clip with audio".into())
     }
 }
 fn is_offline(s: &Session, id: ItemId) -> bool {
-    media_of(&s.project, id).is_some_and(|(mid, m)| m.offline || s.media.offline_status(mid).is_some())
+    media_of(&s.project, id)
+        .is_some_and(|(mid, m)| m.offline || s.media.offline_status(mid).is_some())
 }
 fn has_offline_selection(s: &Session) -> std::result::Result<(), String> {
-    if targets(s, &Value::Null).iter().any(|i| is_offline(s, *i)) { Ok(()) } else { Err("select an offline clip".into()) }
+    if targets(s, &Value::Null).iter().any(|i| is_offline(s, *i)) {
+        Ok(())
+    } else {
+        Err("select an offline clip".into())
+    }
 }
 fn has_loggable(s: &Session) -> std::result::Result<(), String> {
-    if s.project.items.keys().any(|i| media_of(&s.project, *i).is_some()) { Ok(()) } else { Err("the project has no clips to log".into()) }
+    if s.project
+        .items
+        .keys()
+        .any(|i| media_of(&s.project, *i).is_some())
+    {
+        Ok(())
+    } else {
+        Err("the project has no clips to log".into())
+    }
 }
 fn can_automate(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
     has_project_selection(s)?;
-    if s.state.project_selection.iter().any(|i| s.project.item(*i).is_some_and(|it| !matches!(it.kind, ItemKind::Graphic { .. }))) {
+    if s.state.project_selection.iter().any(|i| {
+        s.project
+            .item(*i)
+            .is_some_and(|it| !matches!(it.kind, ItemKind::Graphic { .. }))
+    }) {
         Ok(())
     } else {
         Err("select clips in the Project panel".into())
@@ -430,16 +713,26 @@ fn can_automate(s: &Session) -> std::result::Result<(), String> {
 pub fn query_p(p: &Value, cmd: &str) -> Result<FindQuery> {
     let row = |v: &Value| -> Result<FindRow> {
         let op = match str_p(v, "operator").or(str_p(v, "op")) {
-            Some(o) => FindOp::from_name(o).ok_or_else(|| bad(cmd, format!("unknown operator `{o}`")))?,
+            Some(o) => {
+                FindOp::from_name(o).ok_or_else(|| bad(cmd, format!("unknown operator `{o}`")))?
+            }
             None => FindOp::Contains,
         };
-        Ok(FindRow { column: str_p(v, "column").unwrap_or("All").to_string(), op, text: str_p(v, "text").unwrap_or_default().to_string() })
+        Ok(FindRow {
+            column: str_p(v, "column").unwrap_or("All").to_string(),
+            op,
+            text: str_p(v, "text").unwrap_or_default().to_string(),
+        })
     };
     let rows = match p.get("rows").and_then(Value::as_array) {
         Some(a) => a.iter().map(row).collect::<Result<Vec<_>>>()?,
         None => vec![row(p)?],
     };
-    Ok(FindQuery { rows, match_all: bool_p(p, "matchAll").unwrap_or(true), case_sensitive: bool_p(p, "caseSensitive").unwrap_or(false) })
+    Ok(FindQuery {
+        rows,
+        match_all: bool_p(p, "matchAll").unwrap_or(true),
+        case_sensitive: bool_p(p, "caseSensitive").unwrap_or(false),
+    })
 }
 
 fn search_bin_json(p: &Project, b: &SearchBin) -> Value {
@@ -451,7 +744,13 @@ fn new_search_bin(s: &mut Session, p: &Value) -> Result<Value> {
     if q.is_empty() {
         return Err(bad("file.newSearchBin", "enter text to search for"));
     }
-    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| q.rows.iter().find(|r| !r.text.is_empty()).map(|r| r.text.clone()).unwrap_or_default());
+    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| {
+        q.rows
+            .iter()
+            .find(|r| !r.text.is_empty())
+            .map(|r| r.text.clone())
+            .unwrap_or_default()
+    });
     let b = s.edit("New Search Bin", |pr, _| {
         let id = filmcraft_project::BinId(pr.alloc_id());
         let b = SearchBin { id, name, query: q };
@@ -463,7 +762,12 @@ fn new_search_bin(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn bin_p(s: &Session, p: &Value, cmd: &str) -> Result<SearchBin> {
     let id = u64_p(p, "bin").ok_or_else(|| bad(cmd, "need `bin`"))?;
-    s.project.search_bins.iter().find(|b| b.id.0 == id).cloned().ok_or_else(|| bad(cmd, format!("no search bin {id}")))
+    s.project
+        .search_bins
+        .iter()
+        .find(|b| b.id.0 == id)
+        .cloned()
+        .ok_or_else(|| bad(cmd, format!("no search bin {id}")))
 }
 
 fn search_bin_items(s: &mut Session, p: &Value) -> Result<Value> {
@@ -473,10 +777,18 @@ fn search_bin_items(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn edit_search_bin(s: &mut Session, p: &Value) -> Result<Value> {
     let b = bin_p(s, p, "project.editSearchBin")?;
-    let q = if p.get("rows").is_some() || p.get("text").is_some() { Some(query_p(p, "project.editSearchBin")?) } else { None };
+    let q = if p.get("rows").is_some() || p.get("text").is_some() {
+        Some(query_p(p, "project.editSearchBin")?)
+    } else {
+        None
+    };
     let name = str_p(p, "name").map(str::to_string);
     let out = s.edit("Edit Search Bin", |pr, _| {
-        let x = pr.search_bins.iter_mut().find(|x| x.id == b.id).ok_or_else(|| bad("project.editSearchBin", "gone"))?;
+        let x = pr
+            .search_bins
+            .iter_mut()
+            .find(|x| x.id == b.id)
+            .ok_or_else(|| bad("project.editSearchBin", "gone"))?;
         if let Some(q) = q {
             x.query = q;
         }
@@ -517,19 +829,33 @@ enum Hit {
 }
 
 fn timeline_hits(s: &Session, f: &FindState) -> Vec<Hit> {
-    let Some(q) = s.active_sequence() else { return Vec::new() };
+    let Some(q) = s.active_sequence() else {
+        return Vec::new();
+    };
     let test = |text: &str| {
-        f.query.rows.iter().filter(|r| !r.text.is_empty()).fold(f.query.match_all, |acc, r| {
-            let (h, n) = if f.query.case_sensitive { (text.to_string(), r.text.clone()) } else { (text.to_lowercase(), r.text.to_lowercase()) };
-            let ok = match r.op {
-                FindOp::Contains => h.contains(&n),
-                FindOp::Matches => h == n,
-                FindOp::BeginsWith => h.starts_with(&n),
-                FindOp::EndsWith => h.ends_with(&n),
-                FindOp::DoesNotContain => !h.contains(&n),
-            };
-            if f.query.match_all { acc && ok } else { acc || ok }
-        })
+        f.query
+            .rows
+            .iter()
+            .filter(|r| !r.text.is_empty())
+            .fold(f.query.match_all, |acc, r| {
+                let (h, n) = if f.query.case_sensitive {
+                    (text.to_string(), r.text.clone())
+                } else {
+                    (text.to_lowercase(), r.text.to_lowercase())
+                };
+                let ok = match r.op {
+                    FindOp::Contains => h.contains(&n),
+                    FindOp::Matches => h == n,
+                    FindOp::BeginsWith => h.starts_with(&n),
+                    FindOp::EndsWith => h.ends_with(&n),
+                    FindOp::DoesNotContain => !h.contains(&n),
+                };
+                if f.query.match_all {
+                    acc && ok
+                } else {
+                    acc || ok
+                }
+            })
     };
     if f.query.is_empty() {
         return Vec::new();
@@ -538,7 +864,14 @@ fn timeline_hits(s: &Session, f: &FindState) -> Vec<Hit> {
     if f.within != "markers" {
         for t in q.all_tracks() {
             for it in &t.items {
-                let name = if it.name.is_empty() { s.project.item(it.item).map(|i| i.name.clone()).unwrap_or_default() } else { it.name.clone() };
+                let name = if it.name.is_empty() {
+                    s.project
+                        .item(it.item)
+                        .map(|i| i.name.clone())
+                        .unwrap_or_default()
+                } else {
+                    it.name.clone()
+                };
                 if test(&name) {
                     hits.push(Hit::Clip(it.id, it.start));
                 }
@@ -562,7 +895,9 @@ fn timeline_hits(s: &Session, f: &FindState) -> Vec<Hit> {
 fn show_result(s: &mut Session, f: &FindState) -> Result<Value> {
     if f.scope == "timeline" {
         let hits = timeline_hits(s, f);
-        let Some(h) = hits.get(f.index % hits.len().max(1)).cloned() else { return Err(EngineError::Other("no matches".into())) };
+        let Some(h) = hits.get(f.index % hits.len().max(1)).cloned() else {
+            return Err(EngineError::Other("no matches".into()));
+        };
         let out = match h {
             Hit::Clip(c, t) => {
                 s.state.selection = vec![c];
@@ -580,9 +915,13 @@ fn show_result(s: &mut Session, f: &FindState) -> Result<Value> {
         return Ok(out);
     }
     let items = f.query.find(&s.project);
-    let Some(id) = items.get(f.index % items.len().max(1)).copied() else { return Err(EngineError::Other("no matches".into())) };
+    let Some(id) = items.get(f.index % items.len().max(1)).copied() else {
+        return Err(EngineError::Other("no matches".into()));
+    };
     s.state.project_selection = vec![id];
-    Ok(json!({"item": id.0, "matches": items.len(), "index": f.index % items.len().max(1), "items": items.iter().map(|i| i.0).collect::<Vec<_>>()}))
+    Ok(
+        json!({"item": id.0, "matches": items.len(), "index": f.index % items.len().max(1), "items": items.iter().map(|i| i.0).collect::<Vec<_>>()}),
+    )
 }
 
 fn find(s: &mut Session, p: &Value) -> Result<Value> {
@@ -602,13 +941,22 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
     if query.is_empty() {
         return Err(bad("edit.find", "enter text to find"));
     }
-    let f = FindState { scope, query, within, index: 0 };
+    let f = FindState {
+        scope,
+        query,
+        within,
+        index: 0,
+    };
     s.state.find = Some(f.clone());
     show_result(s, &f)
 }
 
 fn find_next(s: &mut Session, _: &Value) -> Result<Value> {
-    let mut f = s.state.find.clone().ok_or_else(|| EngineError::Other("use Find… first".into()))?;
+    let mut f = s
+        .state
+        .find
+        .clone()
+        .ok_or_else(|| EngineError::Other("use Find… first".into()))?;
     f.index += 1;
     let r = show_result(s, &f);
     if let Ok(v) = &r {
@@ -624,32 +972,58 @@ fn find_next(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// Where project templates live: `<data dir>/Templates` (None without a data directory).
 pub fn templates_dir(s: &Session) -> Option<std::path::PathBuf> {
-    s.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| d.join("Templates"))
+    s.prefs_path
+        .as_ref()
+        .and_then(|p| p.parent())
+        .map(|d| d.join("Templates"))
 }
 
 fn save_as_template(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| s.project.name.clone());
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .unwrap_or_else(|| s.project.name.clone());
     let path = match str_p(p, "path") {
         Some(x) => x.to_string(),
         None => {
-            let dir = templates_dir(s).ok_or_else(|| bad("file.saveAsTemplate", "need `path` (no data directory for templates)"))?;
+            let dir = templates_dir(s).ok_or_else(|| {
+                bad(
+                    "file.saveAsTemplate",
+                    "need `path` (no data directory for templates)",
+                )
+            })?;
             let _ = std::fs::create_dir_all(&dir);
-            dir.join(format!("{}.fcproj", sanitize(&name))).to_string_lossy().to_string()
+            dir.join(format!("{}.fcproj", sanitize(&name)))
+                .to_string_lossy()
+                .to_string()
         }
     };
     let mut proj = (*s.project).clone();
     proj.name = name.clone();
     proj.root.name = name.clone();
-    s.services.write_file(&path, &filmcraft_format::encode(&proj, false)).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(&path, &filmcraft_format::encode(&proj, false))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!({"path": path, "name": name}))
 }
 
 fn sanitize(n: &str) -> String {
-    n.chars().map(|c| if c.is_alphanumeric() || " -_().".contains(c) { c } else { '_' }).collect::<String>().trim().to_string()
+    n.chars()
+        .map(|c| {
+            if c.is_alphanumeric() || " -_().".contains(c) {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>()
+        .trim()
+        .to_string()
 }
 
 fn list_templates(s: &mut Session, _: &Value) -> Result<Value> {
-    let Some(dir) = templates_dir(s) else { return Ok(json!([])) };
+    let Some(dir) = templates_dir(s) else {
+        return Ok(json!([]));
+    };
     let mut v: Vec<Value> = std::fs::read_dir(&dir)
         .map(|rd| {
             rd.flatten()
@@ -663,14 +1037,26 @@ fn list_templates(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = str_p(p, "template").ok_or_else(|| bad("file.newProjectFromTemplate", "need `template`"))?;
+    let t = str_p(p, "template")
+        .ok_or_else(|| bad("file.newProjectFromTemplate", "need `template`"))?;
     let path = if t.ends_with(".fcproj") || t.contains('/') || t.contains('\\') {
         t.to_string()
     } else {
-        templates_dir(s).map(|d| d.join(format!("{}.fcproj", sanitize(t))).to_string_lossy().to_string()).unwrap_or_else(|| t.to_string())
+        templates_dir(s)
+            .map(|d| {
+                d.join(format!("{}.fcproj", sanitize(t)))
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .unwrap_or_else(|| t.to_string())
     };
-    let bytes = s.services.read_file(&path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
-    let mut proj = filmcraft_format::decode(&bytes).map_err(|e| EngineError::Other(e.to_string()))?.project;
+    let bytes = s
+        .services
+        .read_file(&path)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let mut proj = filmcraft_format::decode(&bytes)
+        .map_err(|e| EngineError::Other(e.to_string()))?
+        .project;
     if s.is_dirty() && !bool_p(p, "force").unwrap_or(false) {
         return Err(EngineError::Other("the project has unsaved changes: save it first, or pass {\"force\": true} to discard them".into()));
     }
@@ -689,7 +1075,9 @@ fn new_from_template(s: &mut Session, p: &Value) -> Result<Value> {
     s.media.clear();
     s.revision += 1;
     s.saved_revision = s.revision;
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     if let Some(q) = s.state.active_sequence {
         s.events.push(crate::Event::OpenSequence(q));
     }
@@ -757,7 +1145,10 @@ pub fn closure(p: &Project, roots: &[ItemId]) -> BTreeSet<ItemId> {
                     todo.extend(t.items.iter().map(|i| i.item));
                 }
                 let mut ids = BTreeSet::new();
-                for v in [serde_json::to_value(&q.multicam).unwrap_or_default(), serde_json::to_value(&q.merged).unwrap_or_default()] {
+                for v in [
+                    serde_json::to_value(&q.multicam).unwrap_or_default(),
+                    serde_json::to_value(&q.merged).unwrap_or_default(),
+                ] {
                     crate::clip_ops::collect_ids(&v, &mut ids, p);
                 }
                 todo.extend(ids);
@@ -789,28 +1180,43 @@ pub fn project_subset(p: &Project, keep: &BTreeSet<ItemId>) -> Project {
 }
 
 fn export_selection(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("file.exportSelectionProject", "need `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("file.exportSelectionProject", "need `path`"))?
+        .to_string();
     let roots = match p.get("items").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(|v| v.as_u64().map(ItemId)).collect(),
         None => s.state.project_selection.clone(),
     };
     if roots.is_empty() {
-        return Err(bad("file.exportSelectionProject", "select items in the Project panel"));
+        return Err(bad(
+            "file.exportSelectionProject",
+            "select items in the Project panel",
+        ));
     }
     let keep = closure(&s.project, &roots);
     if keep.is_empty() {
-        return Err(bad("file.exportSelectionProject", "the selection has no items to export"));
+        return Err(bad(
+            "file.exportSelectionProject",
+            "the selection has no items to export",
+        ));
     }
     let mut sub = project_subset(&s.project, &keep);
-    let name = std::path::Path::new(&path).file_stem().map(|x| x.to_string_lossy().to_string()).unwrap_or_else(|| sub.name.clone());
+    let name = std::path::Path::new(&path)
+        .file_stem()
+        .map(|x| x.to_string_lossy().to_string())
+        .unwrap_or_else(|| sub.name.clone());
     sub.name = name.clone();
     sub.root.name = name;
-    s.services.write_file(&path, &filmcraft_format::encode(&sub, false)).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(&path, &filmcraft_format::encode(&sub, false))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!({"path": path, "items": keep.iter().map(|i| i.0).collect::<Vec<_>>()}))
 }
 
 fn export_ale(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("file.exportAle", "need `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("file.exportAle", "need `path`"))?
+        .to_string();
     let mut items: Vec<ItemId> = match p.get("items").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(|v| v.as_u64().map(ItemId)).collect(),
         None => s.state.project_selection.clone(),
@@ -821,9 +1227,13 @@ fn export_ale(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let doc = filmcraft_interchange::ale::export_items(&s.project, &items);
     if doc.rows.is_empty() {
-        return Err(EngineError::Other("none of the items is a clip that can be logged".into()));
+        return Err(EngineError::Other(
+            "none of the items is a clip that can be logged".into(),
+        ));
     }
-    s.services.write_file(&path, filmcraft_interchange::ale::write(&doc).as_bytes()).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(&path, filmcraft_interchange::ale::write(&doc).as_bytes())
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!({"path": path, "clips": doc.rows.len()}))
 }
 
@@ -861,8 +1271,14 @@ pub fn info_json(name: &str, path: Option<&str>, info: &filmcraft_media::MediaIn
 fn media_properties(s: &mut Session, p: &Value) -> Result<Value> {
     let mut out = Vec::new();
     for id in targets(s, p) {
-        let Some((mid, m)) = media_of(&s.project, id) else { continue };
-        let name = s.project.item(id).map(|i| i.name.clone()).unwrap_or_default();
+        let Some((mid, m)) = media_of(&s.project, id) else {
+            continue;
+        };
+        let name = s
+            .project
+            .item(id)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
         let mut v = info_json(&name, file_path(m), &m.info);
         v["item"] = json!(id.0);
         v["offline"] = json!(m.offline || s.media.offline_status(mid).is_some());
@@ -877,13 +1293,19 @@ fn media_properties(s: &mut Session, p: &Value) -> Result<Value> {
 fn media_properties_file(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("file.mediaPropertiesFile", "need `path`"))?;
     let src = s.media.open_file(path, &*s.services)?;
-    let name = std::path::Path::new(path).file_name().map(|x| x.to_string_lossy().to_string()).unwrap_or_default();
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|x| x.to_string_lossy().to_string())
+        .unwrap_or_default();
     Ok(info_json(&name, Some(path), src.info()))
 }
 
 fn pair_p(p: &Value, k: &str) -> Option<(f64, f64)> {
     let a = p.get(k)?.as_array()?;
-    Some((a.first()?.as_f64()?.clamp(0.0, 50.0), a.get(1)?.as_f64()?.clamp(0.0, 50.0)))
+    Some((
+        a.first()?.as_f64()?.clamp(0.0, 50.0),
+        a.get(1)?.as_f64()?.clamp(0.0, 50.0),
+    ))
 }
 
 pub const RENDERER_GPU: &str = "FilmCraft GPU Acceleration (wgpu)";
@@ -916,7 +1338,10 @@ fn project_settings_general(s: &mut Session, p: &Value) -> Result<Value> {
         let k = d.to_ascii_lowercase().replace([' ', '-'], "");
         st.video_display = TimeDisplay::ALL
             .into_iter()
-            .find(|x| x.label().to_ascii_lowercase().replace([' ', '-'], "") == k || format!("{x:?}").to_ascii_lowercase() == k)
+            .find(|x| {
+                x.label().to_ascii_lowercase().replace([' ', '-'], "") == k
+                    || format!("{x:?}").to_ascii_lowercase() == k
+            })
             .ok_or_else(|| bad(cmd, format!("unknown video display format `{d}`")))?;
     }
     if let Some(a) = str_p(p, "audioDisplay") {
@@ -951,8 +1376,16 @@ fn project_settings_general(s: &mut Session, p: &Value) -> Result<Value> {
 /// data directory for an unsaved project).
 pub fn scratch_paths(s: &Session) -> Value {
     let sc = &s.project.settings.scratch;
-    let project_dir = s.path.as_deref().and_then(|p| std::path::Path::new(p).parent()).map(|d| d.to_string_lossy().to_string());
-    let same = |o: &Option<String>| o.clone().or(project_dir.clone()).unwrap_or_else(|| "(data directory until the project is saved)".into());
+    let project_dir = s
+        .path
+        .as_deref()
+        .and_then(|p| std::path::Path::new(p).parent())
+        .map(|d| d.to_string_lossy().to_string());
+    let same = |o: &Option<String>| {
+        o.clone()
+            .or(project_dir.clone())
+            .unwrap_or_else(|| "(data directory until the project is saved)".into())
+    };
     json!({
         "captured": {"setting": sc.captured, "path": same(&sc.captured)},
         "videoPreviews": {"setting": sc.video_previews, "path": previews_dir(s).map(|d| d.to_string_lossy().to_string()).unwrap_or_else(|| same(&sc.video_previews))},
@@ -971,7 +1404,10 @@ pub fn previews_dir(s: &Session) -> Option<std::path::PathBuf> {
 pub fn previews_dir_for(project: &Project, path: &str) -> std::path::PathBuf {
     match &project.settings.scratch.video_previews {
         Some(d) if !d.is_empty() => {
-            let stem = std::path::Path::new(path).file_stem().map(|x| x.to_string_lossy().to_string()).unwrap_or_else(|| "Untitled".into());
+            let stem = std::path::Path::new(path)
+                .file_stem()
+                .map(|x| x.to_string_lossy().to_string())
+                .unwrap_or_else(|| "Untitled".into());
             std::path::Path::new(d).join(stem)
         }
         _ => crate::previews::dir_for_project(path),
@@ -980,15 +1416,25 @@ pub fn previews_dir_for(project: &Project, path: &str) -> std::path::PathBuf {
 
 fn project_settings_scratch(s: &mut Session, p: &Value) -> Result<Value> {
     let mut sc = s.project.settings.scratch.clone();
-    for (k, slot) in
-        [("captured", &mut sc.captured), ("videoPreviews", &mut sc.video_previews), ("audioPreviews", &mut sc.audio_previews), ("autoSave", &mut sc.auto_save)]
-    {
+    for (k, slot) in [
+        ("captured", &mut sc.captured),
+        ("videoPreviews", &mut sc.video_previews),
+        ("audioPreviews", &mut sc.audio_previews),
+        ("autoSave", &mut sc.auto_save),
+    ] {
         match p.get(k) {
             None => {}
             Some(Value::Null) => *slot = None,
-            Some(Value::String(x)) if x.is_empty() || x.eq_ignore_ascii_case("same as project") => *slot = None,
+            Some(Value::String(x)) if x.is_empty() || x.eq_ignore_ascii_case("same as project") => {
+                *slot = None
+            }
             Some(Value::String(x)) => *slot = Some(x.clone()),
-            Some(_) => return Err(bad("file.projectSettings.scratchDisks", format!("`{k}` is a folder path or null"))),
+            Some(_) => {
+                return Err(bad(
+                    "file.projectSettings.scratchDisks",
+                    format!("`{k}` is a folder path or null"),
+                ));
+            }
         }
     }
     if sc != s.project.settings.scratch {
@@ -1021,15 +1467,28 @@ fn edit_original(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Metadata fields of the Edit Offline dialog: (param, metadata key).
-pub const OFFLINE_FIELDS: [(&str, &str); 5] =
-    [("tapeName", "Tape Name"), ("description", "Description"), ("scene", "Scene"), ("shot", "Shot"), ("logNote", "Log Note")];
+pub const OFFLINE_FIELDS: [(&str, &str); 5] = [
+    ("tapeName", "Tape Name"),
+    ("description", "Description"),
+    ("scene", "Scene"),
+    ("shot", "Shot"),
+    ("logNote", "Log Note"),
+];
 
 fn edit_offline(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = targets(s, p).into_iter().find(|i| is_offline(s, *i)).ok_or_else(|| EngineError::Other("select an offline clip".into()))?;
+    let id = targets(s, p)
+        .into_iter()
+        .find(|i| is_offline(s, *i))
+        .ok_or_else(|| EngineError::Other("select an offline clip".into()))?;
     let name = str_p(p, "mediaName").map(str::to_string);
-    let fields: Vec<(&'static str, String)> = OFFLINE_FIELDS.iter().filter_map(|(k, key)| str_p(p, k).map(|v| (*key, v.to_string()))).collect();
+    let fields: Vec<(&'static str, String)> = OFFLINE_FIELDS
+        .iter()
+        .filter_map(|(k, key)| str_p(p, k).map(|v| (*key, v.to_string())))
+        .collect();
     s.edit("Edit Offline", |pr, _| {
-        let it = pr.item_mut(id).ok_or_else(|| bad("clip.editOffline", "no such item"))?;
+        let it = pr
+            .item_mut(id)
+            .ok_or_else(|| bad("clip.editOffline", "no such item"))?;
         if let Some(n) = name.filter(|n| !n.is_empty()) {
             it.name = n;
         }
@@ -1042,14 +1501,27 @@ fn edit_offline(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Ok(())
     })?;
-    let it = s.project.item(id).ok_or_else(|| bad("clip.editOffline", "no such item"))?;
+    let it = s
+        .project
+        .item(id)
+        .ok_or_else(|| bad("clip.editOffline", "no such item"))?;
     Ok(json!({"item": id.0, "name": it.name, "metadata": it.metadata}))
 }
 
 fn source_settings(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = targets(s, p).into_iter().find(|i| media_of(&s.project, *i).is_some()).ok_or_else(|| EngineError::Other("select a clip".into()))?;
-    let (_, m) = media_of(&s.project, id).ok_or_else(|| EngineError::Other("select a clip".into()))?;
-    let codec = m.info.video.as_ref().map(|v| v.codec.clone()).or_else(|| m.info.audio().map(|a| a.codec.clone())).unwrap_or_default();
+    let id = targets(s, p)
+        .into_iter()
+        .find(|i| media_of(&s.project, *i).is_some())
+        .ok_or_else(|| EngineError::Other("select a clip".into()))?;
+    let (_, m) =
+        media_of(&s.project, id).ok_or_else(|| EngineError::Other("select a clip".into()))?;
+    let codec = m
+        .info
+        .video
+        .as_ref()
+        .map(|v| v.codec.clone())
+        .or_else(|| m.info.audio().map(|a| a.codec.clone()))
+        .unwrap_or_default();
     Ok(json!({
         "item": id.0,
         "codec": codec,
@@ -1060,18 +1532,35 @@ fn source_settings(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// An XMP packet (ISO 16684-1) with the item's name and log metadata (Dublin Core and the XMP
 /// Dynamic Media schema).
 pub fn xmp_packet(it: &filmcraft_project::ProjectItem) -> String {
-    let meta = |k: &str| it.metadata.iter().find(|(x, _)| x.eq_ignore_ascii_case(k)).map(|(_, v)| xml_escape(v));
-    let mut body = format!("   <dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">{}</rdf:li></rdf:Alt></dc:title>\n", xml_escape(&it.name));
+    let meta = |k: &str| {
+        it.metadata
+            .iter()
+            .find(|(x, _)| x.eq_ignore_ascii_case(k))
+            .map(|(_, v)| xml_escape(v))
+    };
+    let mut body = format!(
+        "   <dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">{}</rdf:li></rdf:Alt></dc:title>\n",
+        xml_escape(&it.name)
+    );
     if let Some(d) = meta("Description") {
         body.push_str(&format!("   <dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">{d}</rdf:li></rdf:Alt></dc:description>\n"));
     }
-    for (k, tag) in [("Scene", "scene"), ("Shot", "shotName"), ("Log Note", "logComment"), ("Tape Name", "tapeName"), ("Comment", "comment")] {
+    for (k, tag) in [
+        ("Scene", "scene"),
+        ("Shot", "shotName"),
+        ("Log Note", "logComment"),
+        ("Tape Name", "tapeName"),
+        ("Comment", "comment"),
+    ] {
         if let Some(v) = meta(k) {
             body.push_str(&format!("   <xmpDM:{tag}>{v}</xmpDM:{tag}>\n"));
         }
@@ -1083,7 +1572,10 @@ pub fn xmp_packet(it: &filmcraft_project::ProjectItem) -> String {
 
 /// The XMP sidecar of a media file: `<dir>/<stem>.xmp`.
 pub fn sidecar_path(media: &str) -> String {
-    std::path::Path::new(media).with_extension("xmp").to_string_lossy().to_string()
+    std::path::Path::new(media)
+        .with_extension("xmp")
+        .to_string_lossy()
+        .to_string()
 }
 
 /// Clip ▸ Update Metadata…: write the items' metadata to XMP sidecars next to their media. An
@@ -1092,8 +1584,12 @@ fn update_metadata(s: &mut Session, p: &Value) -> Result<Value> {
     let mut written = Vec::new();
     let mut skipped = Vec::new();
     for id in targets(s, p) {
-        let Some(it) = s.project.item(id) else { continue };
-        let Some(path) = media_of(&s.project, id).and_then(|(_, m)| file_path(m)) else { continue };
+        let Some(it) = s.project.item(id) else {
+            continue;
+        };
+        let Some(path) = media_of(&s.project, id).and_then(|(_, m)| file_path(m)) else {
+            continue;
+        };
         let side = sidecar_path(path);
         if let Ok(old) = s.services.read_file(&side)
             && !String::from_utf8_lossy(&old).contains("xmp:CreatorTool=\"FilmCraft\"")
@@ -1113,7 +1609,14 @@ fn update_metadata(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn generate_waveform(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<u64> = targets(s, p).into_iter().filter_map(|i| media_of(&s.project, i).filter(|(_, m)| m.info.has_audio()).map(|(mid, _)| mid.0)).collect();
+    let items: Vec<u64> = targets(s, p)
+        .into_iter()
+        .filter_map(|i| {
+            media_of(&s.project, i)
+                .filter(|(_, m)| m.info.has_audio())
+                .map(|(mid, _)| mid.0)
+        })
+        .collect();
     if items.is_empty() {
         return Err(EngineError::Other("select a clip with audio".into()));
     }
@@ -1134,8 +1637,14 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
     let ordering = str_p(p, "ordering").unwrap_or("sort");
     let placement = str_p(p, "placement").unwrap_or("sequentially");
     let method = str_p(p, "method").unwrap_or("insert");
-    if !matches!(ordering, "sort" | "selection") || !matches!(placement, "sequentially" | "unnumberedMarkers") || !matches!(method, "insert" | "overwrite") {
-        return Err(bad(cmd, "ordering: sort|selection, placement: sequentially|unnumberedMarkers, method: insert|overwrite"));
+    if !matches!(ordering, "sort" | "selection")
+        || !matches!(placement, "sequentially" | "unnumberedMarkers")
+        || !matches!(method, "insert" | "overwrite")
+    {
+        return Err(bad(
+            cmd,
+            "ordering: sort|selection, placement: sequentially|unnumberedMarkers, method: insert|overwrite",
+        ));
     }
     let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let rate = q.settings.frame_rate;
@@ -1145,28 +1654,60 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.state.project_selection.clone(),
     };
     let seq_id = s.state.active_sequence.ok_or(EngineError::NoSequence)?;
-    items.retain(|i| *i != seq_id && s.project.item(*i).is_some_and(|it| !matches!(it.kind, ItemKind::Graphic { .. })));
+    items.retain(|i| {
+        *i != seq_id
+            && s.project
+                .item(*i)
+                .is_some_and(|it| !matches!(it.kind, ItemKind::Graphic { .. }))
+    });
     if ordering == "sort" {
         let mut order = Vec::new();
         s.project.root.all_items(&mut order);
         items.sort_by_key(|i| order.iter().position(|x| x == i).unwrap_or(usize::MAX));
     }
     if items.is_empty() {
-        return Err(EngineError::Other("select clips in the Project panel".into()));
+        return Err(EngineError::Other(
+            "select clips in the Project panel".into(),
+        ));
     }
     let tg = s.targeting();
-    let vdest = if bool_p(p, "ignoreVideo").unwrap_or(false) { None } else { tg.video_dest };
-    let adest = if bool_p(p, "ignoreAudio").unwrap_or(false) { None } else { tg.audio_dest };
+    let vdest = if bool_p(p, "ignoreVideo").unwrap_or(false) {
+        None
+    } else {
+        tg.video_dest
+    };
+    let adest = if bool_p(p, "ignoreAudio").unwrap_or(false) {
+        None
+    } else {
+        tg.audio_dest
+    };
     if vdest.is_none() && adest.is_none() {
-        return Err(EngineError::Other("no destination track (check source patching, or don't ignore both audio and video)".into()));
+        return Err(EngineError::Other(
+            "no destination track (check source patching, or don't ignore both audio and video)"
+                .into(),
+        ));
     }
-    let overlap = if placement == "sequentially" { rate.tick_of(u64_p(p, "overlapFrames").unwrap_or(30) as i64) } else { Tick::ZERO };
+    let overlap = if placement == "sequentially" {
+        rate.tick_of(u64_p(p, "overlapFrames").unwrap_or(30) as i64)
+    } else {
+        Tick::ZERO
+    };
     let still = u64_p(p, "stillFrames").map(|f| rate.tick_of(f as i64));
     // each item's range (In/Out marks; stills: `stillFrames` or the default still duration)
     let mut plan: Vec<(ItemId, TimeRange)> = Vec::new();
     for id in &items {
-        let Some(mut r) = crate::clip_ops::item_range(&s.project, *id, s.prefs.timeline.still_duration(s.sequence_rate())) else { continue };
-        let is_still = s.project.item(*id).and_then(|i| i.as_media()).is_some_and(|m| matches!(m.info.kind, filmcraft_media::MediaKind::Still));
+        let Some(mut r) = crate::clip_ops::item_range(
+            &s.project,
+            *id,
+            s.prefs.timeline.still_duration(s.sequence_rate()),
+        ) else {
+            continue;
+        };
+        let is_still = s
+            .project
+            .item(*id)
+            .and_then(|i| i.as_media())
+            .is_some_and(|m| matches!(m.info.kind, filmcraft_media::MediaKind::Still));
         if is_still && let Some(d) = still {
             r = TimeRange::new(r.start, d);
         }
@@ -1177,10 +1718,17 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
     // destinations. `cut_overlap[k]` is the overlap between clip k and k+1 (placement-clamped).
     let mut cut_overlap: Vec<Tick> = Vec::new();
     let starts: Vec<Tick> = if placement == "unnumberedMarkers" {
-        let mut m: Vec<Tick> = q.markers.iter().filter(|m| m.name.is_empty() && m.kind == MarkerKind::Comment).map(|m| rate.snap(m.start)).collect();
+        let mut m: Vec<Tick> = q
+            .markers
+            .iter()
+            .filter(|m| m.name.is_empty() && m.kind == MarkerKind::Comment)
+            .map(|m| rate.snap(m.start))
+            .collect();
         m.sort();
         if m.is_empty() {
-            return Err(EngineError::Other("the sequence has no unnumbered markers".into()));
+            return Err(EngineError::Other(
+                "the sequence has no unnumbered markers".into(),
+            ));
         }
         plan.truncate(m.len());
         m.truncate(plan.len());
@@ -1205,7 +1753,12 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
     // insert: open room first (sync-locked / destination tracks ripple), then overwrite into it
     if method == "insert" && placement == "sequentially" {
         let first = starts[0];
-        let end = starts.iter().zip(&plan).map(|(a, (_, r))| *a + r.duration).max().unwrap_or(first);
+        let end = starts
+            .iter()
+            .zip(&plan)
+            .map(|(a, (_, r))| *a + r.duration)
+            .max()
+            .unwrap_or(first);
         let len = end - first;
         let dests: Vec<_> = [vdest, adest].into_iter().flatten().collect();
         s.edit_sequence("Automate to Sequence", |q, ctx, _| {
@@ -1222,7 +1775,17 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
     let mut result: Result<()> = Ok(());
     for (k, ((id, r), at)) in plan.iter().zip(&starts).enumerate() {
         let insert = method == "insert" && placement == "unnumberedMarkers";
-        match crate::commands::place_item(s, *id, *r, *at, vdest, adest, insert, "Automate to Sequence", None) {
+        match crate::commands::place_item(
+            s,
+            *id,
+            *r,
+            *at,
+            vdest,
+            adest,
+            insert,
+            "Automate to Sequence",
+            None,
+        ) {
             Ok(ids) => placed.push((k, ids)),
             Err(e) => {
                 result = Err(e);
@@ -1246,10 +1809,20 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
         let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
         let default_frames = s.project.settings.default_transition_duration_frames;
         let mut edges = Vec::new();
-        for ((_, ids), ov) in placed.iter().skip(1).zip(cut_overlap.iter().chain(std::iter::repeat(&overlap))) {
-            let frames = if *ov > Tick::ZERO { rate.frame_at(*ov) } else { default_frames };
+        for ((_, ids), ov) in placed
+            .iter()
+            .skip(1)
+            .zip(cut_overlap.iter().chain(std::iter::repeat(&overlap)))
+        {
+            let frames = if *ov > Tick::ZERO {
+                rate.frame_at(*ov)
+            } else {
+                default_frames
+            };
             for c in ids {
-                let Some((tid, _)) = q.find_item(*c) else { continue };
+                let Some((tid, _)) = q.find_item(*c) else {
+                    continue;
+                };
                 let kind = q.track(tid).map(|t| t.kind);
                 let cmd = match kind {
                     Some(TrackKind::Video) if vt => "sequence.applyVideoTransition",
@@ -1260,15 +1833,25 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         for (cmd, c, frames) in edges {
-            if s.execute(cmd, json!({"clip": c.0, "edge": "in", "frames": frames})).is_ok() {
+            if s.execute(cmd, json!({"clip": c.0, "edge": "in", "frames": frames}))
+                .is_ok()
+            {
                 transitions += 1;
             }
         }
     }
     crate::clip_ops::collapse_history(s, n0, "Automate to Sequence");
-    let clips: Vec<u64> = placed.iter().flat_map(|(_, ids)| ids.iter().map(|c| c.0)).collect();
-    s.state.selection = clips.iter().map(|c| filmcraft_project::ClipId(*c)).collect();
-    Ok(json!({"placed": placed.len(), "clips": clips, "transitions": transitions, "starts": starts.iter().map(|t| t.0).collect::<Vec<_>>()}))
+    let clips: Vec<u64> = placed
+        .iter()
+        .flat_map(|(_, ids)| ids.iter().map(|c| c.0))
+        .collect();
+    s.state.selection = clips
+        .iter()
+        .map(|c| filmcraft_project::ClipId(*c))
+        .collect();
+    Ok(
+        json!({"placed": placed.len(), "clips": clips, "transitions": transitions, "starts": starts.iter().map(|t| t.0).collect::<Vec<_>>()}),
+    )
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1278,9 +1861,13 @@ fn automate_to_sequence(s: &mut Session, p: &Value) -> Result<Value> {
 /// What this build supports: OS, CPU, decoders / containers and export formats. The frontend adds
 /// the GPU adapter.
 pub fn system_report() -> Value {
-    let cpus = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
-    let formats: Vec<Value> =
-        filmcraft_export::Format::ALL.iter().map(|f| json!({"format": f.label(), "available": filmcraft_export::available(*f)})).collect();
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    let formats: Vec<Value> = filmcraft_export::Format::ALL
+        .iter()
+        .map(|f| json!({"format": f.label(), "available": filmcraft_export::available(*f)}))
+        .collect();
     json!({
         "app": format!("FilmCraft {}", env!("CARGO_PKG_VERSION")),
         "os": std::env::consts::OS,

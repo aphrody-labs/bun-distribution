@@ -39,7 +39,13 @@ impl Program {
         modules.extend(autoloads);
         let autoloads = overlays.end..modules.len();
 
-        Self { modules, symbol_maps, main, overlays, autoloads }
+        Self {
+            modules,
+            symbol_maps,
+            main,
+            overlays,
+            autoloads,
+        }
     }
 
     pub fn from_config<P: AsRef<Path>>(config_path: P, config: &Config, rom: &Rom) -> Result<Self> {
@@ -78,12 +84,14 @@ impl Program {
 
     pub fn analyze_cross_references(&mut self, options: &AnalysisOptions) -> Result<()> {
         for module_index in 0..self.modules.len() {
-            let RelocationResult { relocations, external_symbols } =
-                data::analyze_external_references(&mut AnalyzeExternalReferencesOptions {
-                    modules: &self.modules,
-                    module_index,
-                    symbol_maps: &mut self.symbol_maps,
-                })?;
+            let RelocationResult {
+                relocations,
+                external_symbols,
+            } = data::analyze_external_references(&mut AnalyzeExternalReferencesOptions {
+                modules: &self.modules,
+                module_index,
+                symbol_maps: &mut self.symbol_maps,
+            })?;
 
             let module_relocations = self.modules[module_index].relocations_mut();
             for reloc in relocations {
@@ -103,11 +111,16 @@ impl Program {
                     0 => {
                         log::error!("There should be at least one symbol candidate");
                         bail!("There should be at least one symbol candidate");
-                    },
+                    }
                     1 => {
-                        let SymbolCandidate { module_index, section_index } = symbol.candidates[0];
-                        let section_kind =
-                            self.modules[module_index].sections().get(section_index).kind();
+                        let SymbolCandidate {
+                            module_index,
+                            section_index,
+                        } = symbol.candidates[0];
+                        let section_kind = self.modules[module_index]
+                            .sections()
+                            .get(section_index)
+                            .kind();
                         let name = format!(
                             "{}{:08x}",
                             self.modules[module_index].default_data_prefix, symbol.address
@@ -115,23 +128,29 @@ impl Program {
                         let symbol_map =
                             self.symbol_maps.get_mut(self.modules[module_index].kind());
                         match section_kind {
-                            SectionKind::Code => {}, // Function symbol, already verified to exist
+                            SectionKind::Code => {} // Function symbol, already verified to exist
                             SectionKind::Data | SectionKind::Rodata => {
                                 symbol_map.add_data(Some(name), symbol.address, SymData::Any)?;
-                            },
+                            }
                             SectionKind::Bss => {
                                 symbol_map.add_bss(
                                     Some(name),
                                     symbol.address,
                                     SymBss { size: None },
                                 )?;
-                            },
+                            }
                         }
-                    },
+                    }
                     _ => {
-                        for SymbolCandidate { module_index, section_index } in symbol.candidates {
-                            let section_kind =
-                                self.modules[module_index].sections().get(section_index).kind();
+                        for SymbolCandidate {
+                            module_index,
+                            section_index,
+                        } in symbol.candidates
+                        {
+                            let section_kind = self.modules[module_index]
+                                .sections()
+                                .get(section_index)
+                                .kind();
                             let name = format!(
                                 "{}{:08x}",
                                 self.modules[module_index].default_data_prefix, symbol.address
@@ -139,24 +158,24 @@ impl Program {
                             let symbol_map =
                                 self.symbol_maps.get_mut(self.modules[module_index].kind());
                             match section_kind {
-                                SectionKind::Code => {}, // Function symbol, already verified to exist
+                                SectionKind::Code => {} // Function symbol, already verified to exist
                                 SectionKind::Data | SectionKind::Rodata => {
                                     symbol_map.add_ambiguous_data(
                                         Some(name),
                                         symbol.address,
                                         SymData::Any,
                                     )?;
-                                },
+                                }
                                 SectionKind::Bss => {
                                     symbol_map.add_ambiguous_bss(
                                         Some(name),
                                         symbol.address,
                                         SymBss { size: None },
                                     )?;
-                                },
+                                }
                             }
                         }
-                    },
+                    }
                 }
             }
         }
@@ -230,7 +249,9 @@ impl Program {
         self.symbol_maps.to_files(config, config_path)?;
         for module in &self.modules {
             let module_config = config.get_module_config_by_kind(module.kind()).unwrap();
-            module.relocations().to_file(config_path.join(&module_config.relocations))?;
+            module
+                .relocations()
+                .to_file(config_path.join(&module_config.relocations))?;
         }
 
         Ok(())

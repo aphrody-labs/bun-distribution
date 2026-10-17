@@ -9,27 +9,96 @@
 //! named after its id.
 
 /// (tools, the store they share (None: each tool's own), option keys).
-type Row = (&'static [&'static str], Option<&'static str>, &'static [&'static str]);
+type Row = (
+    &'static [&'static str],
+    Option<&'static str>,
+    &'static [&'static str],
+);
 
 /// The Liquify tools.
-pub const LIQUIFY: &[&str] = &["warp", "twirl", "pucker", "bloat", "scallop", "crystallize", "wrinkle"];
+pub const LIQUIFY: &[&str] = &[
+    "warp",
+    "twirl",
+    "pucker",
+    "bloat",
+    "scallop",
+    "crystallize",
+    "wrinkle",
+];
 
 /// The Symbolism tools.
-pub const SYMBOLISM: &[&str] =
-    &["symbolSprayer", "symbolShifter", "symbolScruncher", "symbolSizer", "symbolSpinner", "symbolStainer", "symbolScreener", "symbolStyler"];
+pub const SYMBOLISM: &[&str] = &[
+    "symbolSprayer",
+    "symbolShifter",
+    "symbolScruncher",
+    "symbolSizer",
+    "symbolSpinner",
+    "symbolStainer",
+    "symbolScreener",
+    "symbolStyler",
+];
 
 const ROWS: &[Row] = &[
     // Global Brush Dimensions.
-    (LIQUIFY, Some("liquify"), &["width", "height", "angle", "intensity", "usePressure", "showBrush"]),
-    (LIQUIFY, None, &["detail", "simplify", "simplifyOn", "rate", "complexity", "horizontal", "vertical", "affectAnchors", "affectIn", "affectOut"]),
-    (SYMBOLISM, Some("symbolism"), &["diameter", "intensity", "density"]),
+    (
+        LIQUIFY,
+        Some("liquify"),
+        &[
+            "width",
+            "height",
+            "angle",
+            "intensity",
+            "usePressure",
+            "showBrush",
+        ],
+    ),
+    (
+        LIQUIFY,
+        None,
+        &[
+            "detail",
+            "simplify",
+            "simplifyOn",
+            "rate",
+            "complexity",
+            "horizontal",
+            "vertical",
+            "affectAnchors",
+            "affectIn",
+            "affectOut",
+        ],
+    ),
+    (
+        SYMBOLISM,
+        Some("symbolism"),
+        &["diameter", "intensity", "density"],
+    ),
     (&["mirrorCut"], None, &["axis", "keep"]),
     (&["puppetWarp"], None, &["showMesh", "expand"]),
     (&["arc"], None, &["closed"]),
     (&["spiral"], None, &["decay", "segments", "clockwise"]),
-    (&["rectangularGrid"], None, &["rows", "columns", "rowSkew", "columnSkew", "frame", "fill"]),
-    (&["polarGrid"], None, &["concentric", "radial", "concentricSkew", "radialSkew", "compound", "fill"]),
-    (&["pencil", "paintbrush"], None, &["fidelity", "fill", "editWithin", "closeWithin"]),
+    (
+        &["rectangularGrid"],
+        None,
+        &["rows", "columns", "rowSkew", "columnSkew", "frame", "fill"],
+    ),
+    (
+        &["polarGrid"],
+        None,
+        &[
+            "concentric",
+            "radial",
+            "concentricSkew",
+            "radialSkew",
+            "compound",
+            "fill",
+        ],
+    ),
+    (
+        &["pencil", "paintbrush"],
+        None,
+        &["fidelity", "fill", "editWithin", "closeWithin"],
+    ),
     (&["smooth"], None, &["fidelity"]),
     (&["blobBrush", "eraser"], None, &["size"]),
     (&["polygon"], None, &["sides"]),

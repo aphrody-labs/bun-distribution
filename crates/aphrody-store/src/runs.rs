@@ -95,17 +95,25 @@ impl HomeDb {
     ) -> Result<()> {
         match (status, error) {
             (RunStatus::Running, _) => {
-                return Err(StoreError::Invalid("a finished run cannot be `running`".into()));
-            },
+                return Err(StoreError::Invalid(
+                    "a finished run cannot be `running`".into(),
+                ));
+            }
             (RunStatus::Failed, None) => {
                 return Err(StoreError::Invalid("a failed run needs an error".into()));
-            },
-            _ => {},
+            }
+            _ => {}
         }
         self.conn.execute(
             "UPDATE pipeline_runs SET status = ?2, finished_at_ms = ?3, stats_json = ?4, error = ?5
              WHERE id = ?1",
-            params![id, status.as_str(), now_ms(), serde_json::to_string(stats)?, error],
+            params![
+                id,
+                status.as_str(),
+                now_ms(),
+                serde_json::to_string(stats)?,
+                error
+            ],
         )?;
         Ok(())
     }
@@ -150,18 +158,20 @@ impl HomeDb {
                 },
             )
             .optional()?;
-        row.map(|(id, source_id, stage, status, started, finished, stats, error)| {
-            Ok(RunSummary {
-                id,
-                source_id,
-                stage,
-                status: RunStatus::parse(&status)?,
-                started_at_ms: started,
-                finished_at_ms: finished,
-                stats: serde_json::from_str(&stats)?,
-                error,
-            })
-        })
+        row.map(
+            |(id, source_id, stage, status, started, finished, stats, error)| {
+                Ok(RunSummary {
+                    id,
+                    source_id,
+                    stage,
+                    status: RunStatus::parse(&status)?,
+                    started_at_ms: started,
+                    finished_at_ms: finished,
+                    stats: serde_json::from_str(&stats)?,
+                    error,
+                })
+            },
+        )
         .transpose()
     }
 }
@@ -174,8 +184,17 @@ mod tests {
     fn a_run_is_journaled_from_start_to_finish() {
         let db = HomeDb::open_in_memory().unwrap();
         let id = db.begin_run(None, "scan").unwrap();
-        assert_eq!(db.last_run("scan").unwrap().unwrap().status, RunStatus::Running);
-        db.finish_run(id, RunStatus::Succeeded, &serde_json::json!({"files": 3}), None).unwrap();
+        assert_eq!(
+            db.last_run("scan").unwrap().unwrap().status,
+            RunStatus::Running
+        );
+        db.finish_run(
+            id,
+            RunStatus::Succeeded,
+            &serde_json::json!({"files": 3}),
+            None,
+        )
+        .unwrap();
         let run = db.last_run("scan").unwrap().unwrap();
         assert_eq!(run.status, RunStatus::Succeeded);
         assert_eq!(run.stats["files"], 3);
@@ -187,10 +206,20 @@ mod tests {
     fn failures_need_an_error_and_running_cannot_finish() {
         let db = HomeDb::open_in_memory().unwrap();
         let id = db.begin_run(None, "chunk").unwrap();
-        assert!(db.finish_run(id, RunStatus::Failed, &serde_json::json!({}), None).is_err());
-        assert!(db.finish_run(id, RunStatus::Running, &serde_json::json!({}), None).is_err());
-        db.finish_run(id, RunStatus::Failed, &serde_json::json!({}), Some("boom")).unwrap();
-        assert_eq!(db.last_run("chunk").unwrap().unwrap().error.as_deref(), Some("boom"));
+        assert!(
+            db.finish_run(id, RunStatus::Failed, &serde_json::json!({}), None)
+                .is_err()
+        );
+        assert!(
+            db.finish_run(id, RunStatus::Running, &serde_json::json!({}), None)
+                .is_err()
+        );
+        db.finish_run(id, RunStatus::Failed, &serde_json::json!({}), Some("boom"))
+            .unwrap();
+        assert_eq!(
+            db.last_run("chunk").unwrap().unwrap().error.as_deref(),
+            Some("boom")
+        );
     }
 
     #[test]
@@ -198,7 +227,10 @@ mod tests {
         let db = HomeDb::open_in_memory().unwrap();
         db.begin_run(None, "embed").unwrap();
         assert_eq!(db.interrupt_stale_runs().unwrap(), 1);
-        assert_eq!(db.last_run("embed").unwrap().unwrap().status, RunStatus::Interrupted);
+        assert_eq!(
+            db.last_run("embed").unwrap().unwrap().status,
+            RunStatus::Interrupted
+        );
         assert_eq!(db.interrupt_stale_runs().unwrap(), 0);
     }
 }

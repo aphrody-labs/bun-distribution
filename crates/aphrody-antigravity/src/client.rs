@@ -124,10 +124,10 @@ impl AntigravityClient {
                     debug!("AntigravityClient: token re-read from credential store (keyless)");
                     self.token = fresh;
                     return Ok(());
-                },
+                }
                 Err(e) => {
                     warn!(error = %e, "keyless credential-store re-read failed; trying OAuth refresh");
-                },
+                }
             }
         }
         let fresh = self.token.refresh(&self.http).await?;
@@ -159,7 +159,10 @@ impl AntigravityClient {
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(SdkError::OAuthServer { status: status.as_u16(), body });
+            return Err(SdkError::OAuthServer {
+                status: status.as_u16(),
+                body,
+            });
         }
 
         let body_text = response.text().await?;
@@ -194,7 +197,10 @@ impl AntigravityClient {
         let status = response.status();
         if !status.is_success() {
             let body_text = response.text().await.unwrap_or_default();
-            return Err(SdkError::OAuthServer { status: status.as_u16(), body: body_text });
+            return Err(SdkError::OAuthServer {
+                status: status.as_u16(),
+                body: body_text,
+            });
         }
 
         let body_text = response.text().await?;
@@ -211,7 +217,8 @@ impl AntigravityClient {
     ///
     /// Same as [`AntigravityClient::get_json`].
     pub async fn userinfo(&self) -> Result<serde_json::Value, SdkError> {
-        self.get_json(crate::endpoints::OAUTH_USERINFO_ENDPOINT).await
+        self.get_json(crate::endpoints::OAUTH_USERINFO_ENDPOINT)
+            .await
     }
 
     /// Call a Cloud Code `v1internal` method, composing the URL from a
@@ -260,9 +267,10 @@ impl AntigravityClient {
         loop {
             attempt += 1;
             match self.post_json(url, body).await {
-                Err(SdkError::OAuthServer { status: 429, body: err_body })
-                    if attempt < MAX_RETRY_ATTEMPTS =>
-                {
+                Err(SdkError::OAuthServer {
+                    status: 429,
+                    body: err_body,
+                }) if attempt < MAX_RETRY_ATTEMPTS => {
                     // Prefer the server-advertised delay; fall back to a small
                     // exponential back-off (2, 4, … s) when the body omits it.
                     let advertised = parse_retry_delay_secs(&err_body);
@@ -277,7 +285,7 @@ impl AntigravityClient {
                         "Cloud Code 429 RESOURCE_EXHAUSTED — backing off then retrying"
                     );
                     tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
-                },
+                }
                 other => return other,
             }
         }
@@ -394,8 +402,10 @@ impl AntigravityClient {
         model: &str,
         req: &GenerateContentRequest,
     ) -> Result<GenerateContentResponse, SdkError> {
-        let url =
-            format!("{}/v1beta/models/{model}:generateContent", crate::endpoints::GEMINI_API_HOST);
+        let url = format!(
+            "{}/v1beta/models/{model}:generateContent",
+            crate::endpoints::GEMINI_API_HOST
+        );
         let body = serde_json::to_value(req)?;
         let value = self.post_json(&url, &body).await?;
         Ok(serde_json::from_value(value)?)
@@ -450,8 +460,9 @@ impl AntigravityClient {
             "project": project,
             "request": req,
         });
-        let value =
-            self.cloud_code(endpoint, crate::endpoints::METHOD_GENERATE_CONTENT, &body).await?;
+        let value = self
+            .cloud_code(endpoint, crate::endpoints::METHOD_GENERATE_CONTENT, &body)
+            .await?;
         let wrapped: CloudCodeGenerateContentResponse = serde_json::from_value(value)?;
         Ok(wrapped.response)
     }
@@ -491,7 +502,10 @@ impl AntigravityClient {
         let status = response.status();
         if !status.is_success() {
             let body_text = response.text().await.unwrap_or_default();
-            return Err(SdkError::OAuthServer { status: status.as_u16(), body: body_text });
+            return Err(SdkError::OAuthServer {
+                status: status.as_u16(),
+                body: body_text,
+            });
         }
 
         let byte_stream = response.bytes_stream();
@@ -509,7 +523,9 @@ impl AntigravityClient {
     /// Any [`SdkError`] from [`load_code_assist`](Self::load_code_assist) or a
     /// response that does not parse as JSON object.
     pub async fn resolve_cloudcode_project(&self) -> Result<Option<String>, SdkError> {
-        let value = self.load_code_assist(&crate::endpoints::load_code_assist_metadata()).await?;
+        let value = self
+            .load_code_assist(&crate::endpoints::load_code_assist_metadata())
+            .await?;
         Ok(value
             .get("cloudaicompanionProject")
             .and_then(serde_json::Value::as_str)
@@ -532,7 +548,10 @@ fn parse_retry_delay_secs(body: &str) -> Option<u64> {
     let v: serde_json::Value = serde_json::from_str(body).ok()?;
 
     // 1) Structured RetryInfo.retryDelay.
-    if let Some(details) = v.pointer("/error/details").and_then(serde_json::Value::as_array) {
+    if let Some(details) = v
+        .pointer("/error/details")
+        .and_then(serde_json::Value::as_array)
+    {
         for d in details {
             let is_retry_info = d
                 .get("@type")
@@ -548,7 +567,9 @@ fn parse_retry_delay_secs(body: &str) -> Option<u64> {
     }
 
     // 2) Human message: "...reset after <N>s.".
-    let msg = v.pointer("/error/message").and_then(serde_json::Value::as_str)?;
+    let msg = v
+        .pointer("/error/message")
+        .and_then(serde_json::Value::as_str)?;
     let after = msg.split("reset after ").nth(1)?;
     let digits: String = after.chars().take_while(char::is_ascii_digit).collect();
     digits.parse::<u64>().ok()
@@ -565,7 +586,7 @@ fn parse_duration_secs_ceil(s: &str) -> Option<u64> {
             // Any non-zero fractional part rounds the second up.
             let bump = u64::from(frac.bytes().any(|b| b != b'0'));
             Some(base.saturating_add(bump))
-        },
+        }
     }
 }
 
@@ -594,7 +615,10 @@ mod retry_delay_tests {
 
     #[test]
     fn none_when_absent() {
-        assert_eq!(parse_retry_delay_secs(r#"{"error":{"code":403,"message":"nope"}}"#), None);
+        assert_eq!(
+            parse_retry_delay_secs(r#"{"error":{"code":403,"message":"nope"}}"#),
+            None
+        );
         assert_eq!(parse_retry_delay_secs("not json"), None);
     }
 }
@@ -669,11 +693,11 @@ where
                                 Err(SdkError::Stream(format!("invalid utf-8: {e}"))),
                                 (stream, buffer),
                             ));
-                        },
+                        }
                     },
                     Some(Err(e)) => {
                         return Some((Err(SdkError::Http(e)), (stream, buffer)));
-                    },
+                    }
                     None => {
                         // Flush any remaining content if it contains an event
                         let tail = std::mem::take(&mut buffer);
@@ -685,7 +709,7 @@ where
                             return Some((item, (stream, String::new())));
                         }
                         return None;
-                    },
+                    }
                 }
             }
         },

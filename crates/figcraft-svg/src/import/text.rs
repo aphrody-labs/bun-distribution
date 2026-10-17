@@ -12,7 +12,10 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use figcraft_doc::{LetterSpacing, LineHeight, Node, NodeId, NodeKind, StyleRun, TextAlignH, TextCase, TextData, TextDecoration, TextStyle};
+use figcraft_doc::{
+    LetterSpacing, LineHeight, Node, NodeId, NodeKind, StyleRun, TextAlignH, TextCase, TextData,
+    TextDecoration, TextStyle,
+};
 use figcraft_geom::{Affine, Point};
 use figcraft_text::fontdb::FontBytes;
 use usvg::{FontFamily, TextAnchor};
@@ -26,7 +29,12 @@ pub(crate) struct Fonts(HashSet<String>);
 
 impl Fonts {
     fn load() -> Self {
-        Fonts(figcraft_text::fontdb::family_names().into_iter().map(|f| f.to_lowercase()).collect())
+        Fonts(
+            figcraft_text::fontdb::family_names()
+                .into_iter()
+                .map(|f| f.to_lowercase())
+                .collect(),
+        )
     }
     fn has(&self, family: &str) -> bool {
         self.0.contains(&family.to_lowercase())
@@ -43,7 +51,9 @@ impl AsRef<[u8]> for Shared {
 
 /// Let usvg parse text: one face stands in for every family (see the module docs).
 pub(crate) fn prepare(o: &mut usvg::Options) {
-    let Some(face) = figcraft_text::fontdb::find_face("Inter", "Regular") else { return };
+    let Some(face) = figcraft_text::fontdb::find_face("Inter", "Regular") else {
+        return;
+    };
     let source = match &face.bytes {
         FontBytes::Static(b) => usvg::fontdb::Source::Binary(Arc::new(*b)),
         FontBytes::Shared(v) => usvg::fontdb::Source::Binary(Arc::new(Shared(v.clone()))),
@@ -58,10 +68,33 @@ pub(crate) fn prepare(o: &mut usvg::Options) {
 
 /// Installed stand-ins for the generic families, best first.
 fn generic(name: &str) -> Option<&'static [&'static str]> {
-    const SANS: &[&str] = &["Inter", "Helvetica", "Arial", "Segoe UI", "Roboto", "Noto Sans", "DejaVu Sans", "Liberation Sans"];
+    const SANS: &[&str] = &[
+        "Inter",
+        "Helvetica",
+        "Arial",
+        "Segoe UI",
+        "Roboto",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+    ];
     Some(match name.to_ascii_lowercase().as_str() {
-        "serif" => &["Times New Roman", "Times", "Georgia", "Noto Serif", "DejaVu Serif", "Liberation Serif"],
-        "monospace" => &["Menlo", "Consolas", "Courier New", "Noto Sans Mono", "DejaVu Sans Mono", "Liberation Mono"],
+        "serif" => &[
+            "Times New Roman",
+            "Times",
+            "Georgia",
+            "Noto Serif",
+            "DejaVu Serif",
+            "Liberation Serif",
+        ],
+        "monospace" => &[
+            "Menlo",
+            "Consolas",
+            "Courier New",
+            "Noto Sans Mono",
+            "DejaVu Sans Mono",
+            "Liberation Mono",
+        ],
         "sans-serif" | "cursive" | "fantasy" | "system-ui" => SANS,
         _ => return None,
     })
@@ -90,7 +123,10 @@ fn family(list: &[FontFamily], fonts: &Fonts) -> String {
             None => {}
         }
     }
-    list.iter().map(name).find(|n| generic(n).is_none() && !n.is_empty()).unwrap_or_else(|| TextStyle::default().font_family)
+    list.iter()
+        .map(name)
+        .find(|n| generic(n).is_none() && !n.is_empty())
+        .unwrap_or_else(|| TextStyle::default().font_family)
 }
 
 /// A style name for a CSS weight and slant ("Semi Bold Italic").
@@ -122,7 +158,11 @@ fn span_style(s: &usvg::TextSpan, scale: f64, fonts: &Fonts) -> TextStyle {
         font_size: f64::from(s.font_size().get()) * scale,
         letter_spacing: {
             let v = f64::from(s.letter_spacing()) * scale;
-            if v == 0.0 { LetterSpacing::default() } else { LetterSpacing::Pixels(v) }
+            if v == 0.0 {
+                LetterSpacing::default()
+            } else {
+                LetterSpacing::Pixels(v)
+            }
         },
         decoration: if deco.underline().is_some() {
             TextDecoration::Underline
@@ -131,7 +171,11 @@ fn span_style(s: &usvg::TextSpan, scale: f64, fonts: &Fonts) -> TextStyle {
         } else {
             TextDecoration::None
         },
-        case: if s.small_caps() { TextCase::SmallCaps } else { TextCase::Original },
+        case: if s.small_caps() {
+            TextCase::SmallCaps
+        } else {
+            TextCase::Original
+        },
         ..TextStyle::default()
     }
 }
@@ -165,8 +209,12 @@ pub(crate) fn text(cx: &mut Ctx, t: &usvg::Text, parent: NodeId, base: Affine, d
     if !finite(world) {
         return;
     }
-    let along_path = t.chunks().iter().any(|c| matches!(c.text_flow(), usvg::TextFlow::Path(_)));
-    let plain = !t.rotate().iter().any(|r| *r != 0.0) && t.writing_mode() != usvg::WritingMode::TopToBottom;
+    let along_path = t
+        .chunks()
+        .iter()
+        .any(|c| matches!(c.text_flow(), usvg::TextFlow::Path(_)));
+    let plain =
+        !t.rotate().iter().any(|r| *r != 0.0) && t.writing_mode() != usvg::WritingMode::TopToBottom;
     if along_path && plain && on_path(cx, t, world, parent) {
         return;
     }
@@ -195,14 +243,26 @@ pub(crate) fn text(cx: &mut Ctx, t: &usvg::Text, parent: NodeId, base: Affine, d
         let y = chunk.y().map_or(pen_y, f64::from) + d(t.dy());
         char_at += count;
         let ci = |b: usize| text.get(..b).map_or(count, |p| p.chars().count());
-        let spans: Vec<_> = chunk.spans().iter().map(|sp| (ci(sp.start()), ci(sp.end()), sp, span_style(sp, s, fonts))).collect();
+        let spans: Vec<_> = chunk
+            .spans()
+            .iter()
+            .map(|sp| (ci(sp.start()), ci(sp.end()), sp, span_style(sp, s, fonts)))
+            .collect();
         if spans.is_empty() {
             continue;
         }
-        let line = Line { x, y, anchor: chunk.anchor(), text: text.to_string(), spans };
+        let line = Line {
+            x,
+            y,
+            anchor: chunk.anchor(),
+            text: text.to_string(),
+            spans,
+        };
         // The next chunk without its own x continues where this one ends.
         if chunks.get(i + 1).is_some_and(|c| c.x().is_none()) {
-            let width = figcraft_text::layout(&text_data(std::slice::from_ref(&line), s), None, None).width / s;
+            let width =
+                figcraft_text::layout(&text_data(std::slice::from_ref(&line), s), None, None).width
+                    / s;
             pen_x = x + (1.0 - anchor_k(line.anchor)) * width;
         }
         pen_y = y;
@@ -214,7 +274,10 @@ pub(crate) fn text(cx: &mut Ctx, t: &usvg::Text, parent: NodeId, base: Affine, d
         if let (Some(a), Some(b)) = (lines.get(i), lines.get(i + 1)) {
             let step = b.y - a.y;
             while let (Some(prev), Some(next)) = (lines.get(j - 1), lines.get(j)) {
-                let same = next.anchor == a.anchor && (next.x - a.x).abs() < 0.01 && next.style() == a.style() && step > 0.0;
+                let same = next.anchor == a.anchor
+                    && (next.x - a.x).abs() < 0.01
+                    && next.style() == a.style()
+                    && step > 0.0;
                 if !same || (next.y - prev.y - step).abs() > 0.01 {
                     break;
                 }
@@ -231,10 +294,16 @@ pub(crate) fn text(cx: &mut Ctx, t: &usvg::Text, parent: NodeId, base: Affine, d
 /// The text of `lines` (one per line, stacked at their pitch; `s`: their scale): characters, the
 /// first span's style and a run per span, fills still to come.
 fn text_data(lines: &[Line], s: f64) -> TextData {
-    let mut td = TextData::new(lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join(
-        "
+    let mut td = TextData::new(
+        lines
+            .iter()
+            .map(|l| l.text.as_str())
+            .collect::<Vec<_>>()
+            .join(
+                "
 ",
-    ));
+            ),
+    );
     if let Some(style) = lines.first().and_then(Line::style) {
         td.style = style.clone();
     }
@@ -244,7 +313,14 @@ fn text_data(lines: &[Line], s: f64) -> TextData {
     let mut offset = 0;
     for l in lines {
         for (a, b, _, st) in &l.spans {
-            td.runs.push(StyleRun { start: offset + a, end: offset + b, style: TextStyle { line_height: td.style.line_height, ..st.clone() } });
+            td.runs.push(StyleRun {
+                start: offset + a,
+                end: offset + b,
+                style: TextStyle {
+                    line_height: td.style.line_height,
+                    ..st.clone()
+                },
+            });
         }
         offset += l.text.chars().count() + 1;
     }
@@ -255,23 +331,53 @@ fn text_data(lines: &[Line], s: f64) -> TextData {
 /// isn't one chunk on one path.
 fn on_path(cx: &mut Ctx, t: &usvg::Text, world: Affine, parent: NodeId) -> bool {
     let [chunk] = t.chunks() else { return false };
-    let usvg::TextFlow::Path(tp) = chunk.text_flow() else { return false };
+    let usvg::TextFlow::Path(tp) = chunk.text_flow() else {
+        return false;
+    };
     let path = super::to_bez(tp.path());
     let bb = figcraft_geom::Shape::bounding_box(&path);
-    let Some(len) = figcraft_geom::measure::polylines(&path).and_then(|l| l.first().map(|l| l.length())).filter(|l| *l > 1e-9) else { return false };
+    let Some(len) = figcraft_geom::measure::polylines(&path)
+        .and_then(|l| l.first().map(|l| l.length()))
+        .filter(|l| *l > 1e-9)
+    else {
+        return false;
+    };
     let fonts = cx.fonts.get_or_insert_with(Fonts::load);
     let text = chunk.text();
     let count = text.chars().count();
     let ci = |b: usize| text.get(..b).map_or(count, |p| p.chars().count());
-    let spans: Vec<_> = chunk.spans().iter().map(|sp| (ci(sp.start()), ci(sp.end()), sp, span_style(sp, 1.0, fonts))).collect();
-    let line = Line { x: 0.0, y: 0.0, anchor: chunk.anchor(), text: text.to_string(), spans };
+    let spans: Vec<_> = chunk
+        .spans()
+        .iter()
+        .map(|sp| (ci(sp.start()), ci(sp.end()), sp, span_style(sp, 1.0, fonts)))
+        .collect();
+    let line = Line {
+        x: 0.0,
+        y: 0.0,
+        anchor: chunk.anchor(),
+        text: text.to_string(),
+        spans,
+    };
     let mut td = text_data(std::slice::from_ref(&line), 1.0);
     td.align_h = align(line.anchor);
     let mut local = path.clone();
     local.apply_affine(Affine::translate((-bb.x0, -bb.y0)));
-    td.path = Some(Box::new(figcraft_doc::TextPath { start: f64::from(tp.start_offset()) / len, ..figcraft_doc::TextPath::new(&local) }));
+    td.path = Some(Box::new(figcraft_doc::TextPath {
+        start: f64::from(tp.start_offset()) / len,
+        ..figcraft_doc::TextPath::new(&local)
+    }));
     let transform = world * Affine::translate((bb.x0, bb.y0));
-    add_layer(cx, t, &[line], td, transform, (bb.width().max(1.0), bb.height().max(1.0)), world, 1.0, parent);
+    add_layer(
+        cx,
+        t,
+        &[line],
+        td,
+        transform,
+        (bb.width().max(1.0), bb.height().max(1.0)),
+        world,
+        1.0,
+        parent,
+    );
     true
 }
 
@@ -284,7 +390,15 @@ fn align(a: TextAnchor) -> TextAlignH {
 }
 
 /// The text layer for `block` (lines sharing an anchor, x and pitch).
-fn layer(cx: &mut Ctx, t: &usvg::Text, block: &[Line], m: Affine, s: f64, world: Affine, parent: NodeId) {
+fn layer(
+    cx: &mut Ctx,
+    t: &usvg::Text,
+    block: &[Line],
+    m: Affine,
+    s: f64,
+    world: Affine,
+    parent: NodeId,
+) {
     let Some(first) = block.first() else { return };
     let mut td = text_data(block, s);
     td.align_h = align(first.anchor);
@@ -292,7 +406,10 @@ fn layer(cx: &mut Ctx, t: &usvg::Text, block: &[Line], m: Affine, s: f64, world:
     let lay = figcraft_text::layout(&td, None, None);
     let (w, h) = (lay.width.ceil().max(1.0), lay.height.max(1.0));
     let baseline = lay.lines.first().map_or(0.0, |l| l.baseline);
-    let transform = m * Affine::translate((s * first.x - anchor_k(first.anchor) * w, s * first.y - baseline));
+    let transform = m * Affine::translate((
+        s * first.x - anchor_k(first.anchor) * w,
+        s * first.y - baseline,
+    ));
     add_layer(cx, t, block, td, transform, (w, h), world, s, parent);
 }
 
@@ -311,15 +428,27 @@ fn add_layer(
     parent: NodeId,
 ) {
     let Some(first) = block.first() else { return };
-    let spans: Vec<&usvg::TextSpan> = block.iter().flat_map(|l| l.spans.iter().map(|sp| sp.2)).collect();
+    let spans: Vec<&usvg::TextSpan> = block
+        .iter()
+        .flat_map(|l| l.spans.iter().map(|sp| sp.2))
+        .collect();
     if spans.iter().all(|sp| !sp.is_visible()) {
         return;
     }
-    let target = Target { to_node: transform.inverse() * world, size: (w, h) };
+    let target = Target {
+        to_node: transform.inverse() * world,
+        size: (w, h),
+    };
     let mut fills = Vec::with_capacity(spans.len());
     for sp in &spans {
-        let f: Vec<figcraft_color::Paint> =
-            if sp.is_visible() { sp.fill().and_then(|f| paint(cx, f.paint(), f.opacity().get(), target)).into_iter().collect() } else { Vec::new() };
+        let f: Vec<figcraft_color::Paint> = if sp.is_visible() {
+            sp.fill()
+                .and_then(|f| paint(cx, f.paint(), f.opacity().get(), target))
+                .into_iter()
+                .collect()
+        } else {
+            Vec::new()
+        };
         fills.push(f);
     }
     let base_fill = fills.first().cloned().unwrap_or_default();
@@ -329,12 +458,18 @@ fn add_layer(
         }
     }
     td.normalize();
-    let name = if t.id().is_empty() { first.text.chars().take(64).collect() } else { layer_name(t.id(), "Text") };
+    let name = if t.id().is_empty() {
+        first.text.chars().take(64).collect()
+    } else {
+        layer_name(t.id(), "Text")
+    };
     let mut n = Node::new(cx.doc.alloc_id(), NodeKind::Text(td), name, w, h);
     n.transform = transform;
     n.fills = base_fill;
     if let Some(st) = spans.first().and_then(|sp| sp.stroke()) {
-        n.strokes = paint(cx, st.paint(), st.opacity().get(), target).into_iter().collect();
+        n.strokes = paint(cx, st.paint(), st.opacity().get(), target)
+            .into_iter()
+            .collect();
         n.stroke = super::stroke_props(st, s);
     }
     cx.add(n, parent);

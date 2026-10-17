@@ -17,7 +17,10 @@ fn has(h: &Headless, id: &str) -> bool {
 }
 
 fn names(dir: &std::path::Path) -> Vec<std::ffi::OsString> {
-    let mut v: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+    let mut v: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
     v.sort();
     v
 }
@@ -41,12 +44,18 @@ fn open_library_on_a_lightroom_catalog_offers_its_import() {
     assert!(photos > 0);
     let picked = lr.to_string_lossy().to_string();
     let png = |img: &lightcraft_raster::Rgba8| {
-        lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(img), &lightcraft_codecs::EncodeMeta::default()).unwrap_or_default()
+        lightcraft_codecs::encode_png(
+            &lightcraft_codecs::EncodeImage::rgba8(img),
+            &lightcraft_codecs::EncodeMeta::default(),
+        )
+        .unwrap_or_default()
     };
     let services = Services {
         pick_folder: Some(Box::new(move || Some(picked.clone()))),
         png: Some(Box::new(png)),
-        write: Some(Box::new(|p: &str, b: &[u8]| std::fs::write(p, b).map_err(|e| e.to_string()))),
+        write: Some(Box::new(|p: &str, b: &[u8]| {
+            std::fs::write(p, b).map_err(|e| e.to_string())
+        })),
         ..Default::default()
     };
     let mut h = Headless::new(LightcraftApp::new(session, services), [1200.0, 800.0], 1.0);
@@ -65,7 +74,10 @@ fn open_library_on_a_lightroom_catalog_offers_its_import() {
     );
     assert!(has(&h, "button:dialogOk") && has(&h, "button:dialogCancel"));
     // the library open before is still open, and nothing was made in Lightroom's folder
-    assert_eq!(h.app.session.library.as_ref().map(|l| l.dir.clone()), Some(lib.clone()));
+    assert_eq!(
+        h.app.session.library.as_ref().map(|l| l.dir.clone()),
+        Some(lib.clone())
+    );
     assert_eq!(h.app.session.catalog.len(), photos);
     assert_eq!(names(&lr), before);
     if let Some(p) = std::env::var_os("LIGHTCRAFT_TEST_SHOTS") {
@@ -74,25 +86,40 @@ fn open_library_on_a_lightroom_catalog_offers_its_import() {
     }
 
     // Cancel: nothing happens
-    assert_eq!(h.request("ui.clickWidget", json!({"id": "button:dialogCancel"}), T)["ok"], true);
+    assert_eq!(
+        h.request("ui.clickWidget", json!({"id": "button:dialogCancel"}), T)["ok"],
+        true
+    );
     h.step();
     assert!(h.app.ui.dialog.is_none());
     assert!(h.app.lightroom.is_none() && h.app.lightroom_last.is_none());
 
     // a previews folder given by path (control channel, agents): the same offer
-    let r = h.app.run("app.openLibrary", json!({"path": lr.join("Lightroom Catalog Previews.lrdata").to_string_lossy()})).unwrap();
+    let r = h
+        .app
+        .run(
+            "app.openLibrary",
+            json!({"path": lr.join("Lightroom Catalog Previews.lrdata").to_string_lossy()}),
+        )
+        .unwrap();
     assert_eq!(r["lightroomCatalog"], json!(lrcat.to_string_lossy()), "{r}");
     h.step();
     h.step();
     // Import Lightroom Catalog…: the import of that catalog starts (no file dialog), into the
     // library open now. (This fake catalog then fails to read: only its path matters here.)
-    assert_eq!(h.request("ui.clickWidget", json!({"id": "button:dialogOk"}), T)["ok"], true);
+    assert_eq!(
+        h.request("ui.clickWidget", json!({"id": "button:dialogOk"}), T)["ok"],
+        true
+    );
     h.step();
     assert!(h.app.ui.dialog.is_none());
     h.step_until(T, |h| h.app.lightroom.is_none());
     let last = h.app.lightroom_last.clone().unwrap_or_default();
     assert_eq!(last["path"], json!(lrcat), "{last}");
-    assert_eq!(h.app.session.library.as_ref().map(|l| l.dir.clone()), Some(lib.clone()));
+    assert_eq!(
+        h.app.session.library.as_ref().map(|l| l.dir.clone()),
+        Some(lib.clone())
+    );
     assert_eq!(names(&lr), before, "the catalog is only read");
     drop(h);
     let _ = std::fs::remove_dir_all(&dir);

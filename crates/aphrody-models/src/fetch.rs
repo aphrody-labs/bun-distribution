@@ -117,13 +117,19 @@ impl Downloader {
                 url: String::from("<client>"),
                 reason: e.to_string(),
             })?;
-        Ok(Self { client, hub_token: None })
+        Ok(Self {
+            client,
+            hub_token: None,
+        })
     }
 
     /// Wrap an already-configured client (proxy, custom roots, test server).
     #[must_use]
     pub const fn with_client(client: reqwest::Client) -> Self {
-        Self { client, hub_token: None }
+        Self {
+            client,
+            hub_token: None,
+        }
     }
 
     /// Build with the caller's existing protected-store Hub credential.
@@ -192,7 +198,9 @@ impl Downloader {
             std::fs::create_dir_all(parent).map_err(|e| ModelError::io(parent.to_path_buf(), e))?;
         }
 
-        let received = self.stream_to_part(&url, &part_path, &mut on_progress).await?;
+        let received = self
+            .stream_to_part(&url, &part_path, &mut on_progress)
+            .await?;
 
         if let Some(expected) = &options.expected_sha256 {
             let expected = digest::normalize_digest(expected);
@@ -238,10 +246,10 @@ impl Downloader {
             request = request.header(reqwest::header::RANGE, format!("bytes={resume_from}-"));
         }
 
-        let response = request
-            .send()
-            .await
-            .map_err(|e| ModelError::Download { url: url.to_owned(), reason: e.to_string() })?;
+        let response = request.send().await.map_err(|e| ModelError::Download {
+            url: url.to_owned(),
+            reason: e.to_string(),
+        })?;
 
         let status = response.status();
         if !status.is_success() {
@@ -250,7 +258,10 @@ impl Downloader {
                 reason: format!(
                     "HTTP {}{}",
                     status.as_u16(),
-                    status.canonical_reason().map(|r| format!(" {r}")).unwrap_or_default()
+                    status
+                        .canonical_reason()
+                        .map(|r| format!(" {r}"))
+                        .unwrap_or_default()
                 ),
             });
         }
@@ -268,9 +279,13 @@ impl Downloader {
             written = resume_from;
         }
 
-        let total = response
-            .content_length()
-            .map(|remaining| if resuming { remaining + resume_from } else { remaining });
+        let total = response.content_length().map(|remaining| {
+            if resuming {
+                remaining + resume_from
+            } else {
+                remaining
+            }
+        });
 
         let mut file = std::fs::OpenOptions::new()
             .create(true)
@@ -282,17 +297,25 @@ impl Downloader {
 
         let mut stream = response.bytes_stream();
         while let Some(chunk) = stream.next().await {
-            let chunk = chunk
-                .map_err(|e| ModelError::Download { url: url.to_owned(), reason: e.to_string() })?;
-            file.write_all(&chunk).map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
+            let chunk = chunk.map_err(|e| ModelError::Download {
+                url: url.to_owned(),
+                reason: e.to_string(),
+            })?;
+            file.write_all(&chunk)
+                .map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
             hasher.update(&chunk);
             written = written.saturating_add(chunk.len() as u64);
-            on_progress(Progress { downloaded: written, total });
+            on_progress(Progress {
+                downloaded: written,
+                total,
+            });
         }
-        file.flush().map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
+        file.flush()
+            .map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
         // Durability: the rename that follows is atomic, but the data it
         // publishes must already be on the platter.
-        file.sync_all().map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
+        file.sync_all()
+            .map_err(|e| ModelError::io(part_path.to_path_buf(), e))?;
 
         Ok(hasher.finish_hex())
     }
@@ -305,7 +328,9 @@ fn hash_existing(path: &Path, hasher: &mut Hasher) -> Result<()> {
     let mut file = std::fs::File::open(path).map_err(|e| ModelError::io(path.to_path_buf(), e))?;
     let mut buf = vec![0_u8; 1 << 20];
     loop {
-        let n = file.read(&mut buf).map_err(|e| ModelError::io(path.to_path_buf(), e))?;
+        let n = file
+            .read(&mut buf)
+            .map_err(|e| ModelError::io(path.to_path_buf(), e))?;
         if n == 0 {
             return Ok(());
         }
@@ -324,7 +349,9 @@ fn is_hub_url(url: &str) -> bool {
 /// First candidate that carries an actual value; blank vars are ignored so an
 /// exported-but-empty `HF_TOKEN` falls through to the other spelling.
 fn first_usable_token(candidates: impl IntoIterator<Item = String>) -> Option<String> {
-    candidates.into_iter().find(|value| !value.trim().is_empty())
+    candidates
+        .into_iter()
+        .find(|value| !value.trim().is_empty())
 }
 
 /// Hugging Face access token, when the URL targets the Hub and one is set.
@@ -332,7 +359,11 @@ fn hf_token(url: &str) -> Option<String> {
     if !is_hub_url(url) {
         return None;
     }
-    first_usable_token(HF_TOKEN_VARS.iter().filter_map(|var| std::env::var(var).ok()))
+    first_usable_token(
+        HF_TOKEN_VARS
+            .iter()
+            .filter_map(|var| std::env::var(var).ok()),
+    )
 }
 
 /// Install the process-wide rustls crypto provider exactly once.
@@ -354,11 +385,39 @@ mod tests {
 
     #[test]
     fn progress_fraction_is_clamped_and_optional() {
-        assert_eq!(Progress { downloaded: 50, total: Some(200) }.fraction(), Some(0.25));
-        assert_eq!(Progress { downloaded: 300, total: Some(200) }.fraction(), Some(1.0));
-        assert_eq!(Progress { downloaded: 10, total: None }.fraction(), None);
+        assert_eq!(
+            Progress {
+                downloaded: 50,
+                total: Some(200)
+            }
+            .fraction(),
+            Some(0.25)
+        );
+        assert_eq!(
+            Progress {
+                downloaded: 300,
+                total: Some(200)
+            }
+            .fraction(),
+            Some(1.0)
+        );
+        assert_eq!(
+            Progress {
+                downloaded: 10,
+                total: None
+            }
+            .fraction(),
+            None
+        );
         // A zero total would divide by zero; it must read as "unknown".
-        assert_eq!(Progress { downloaded: 0, total: Some(0) }.fraction(), None);
+        assert_eq!(
+            Progress {
+                downloaded: 0,
+                total: Some(0)
+            }
+            .fraction(),
+            None
+        );
     }
 
     #[test]
@@ -425,8 +484,10 @@ mod tests {
 
         let downloader = Downloader::new().unwrap();
         let reference = ModelRef::parse(&format!("file:{}", external.display())).unwrap();
-        let outcome =
-            downloader.pull(&store, &reference, &PullOptions::default(), |_| {}).await.unwrap();
+        let outcome = downloader
+            .pull(&store, &reference, &PullOptions::default(), |_| {})
+            .await
+            .unwrap();
 
         assert!(matches!(outcome, PullOutcome::Adopted(_)));
         assert!(!outcome.transferred());
@@ -452,8 +513,13 @@ mod tests {
             Downloader::from_secret_store(&store, "selected").await,
             Err(crate::hub::HubError::MissingIdentity)
         ));
-        store.set("selected", SecretValue::from("hf_fixture_only")).await.unwrap();
-        let downloader = Downloader::from_secret_store(&store, "selected").await.unwrap();
+        store
+            .set("selected", SecretValue::from("hf_fixture_only"))
+            .await
+            .unwrap();
+        let downloader = Downloader::from_secret_store(&store, "selected")
+            .await
+            .unwrap();
         assert!(downloader.hub_token.is_some());
         assert!(!format!("{:?}", downloader.hub_token).contains("fixture"));
     }

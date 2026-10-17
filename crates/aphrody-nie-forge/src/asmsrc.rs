@@ -75,7 +75,10 @@ impl AsmSource {
             let part = Self::parse(&text, &f.display().to_string())?;
             for (va, insns) in part.bodies {
                 if all.bodies.insert(va, insns).is_some() {
-                    bail!("adresse {va:#x} définie dans deux fichiers de {}", dir.display());
+                    bail!(
+                        "adresse {va:#x} définie dans deux fichiers de {}",
+                        dir.display()
+                    );
                 }
             }
         }
@@ -127,7 +130,9 @@ impl AsmSource {
     pub fn emit(&self, va: u64) -> Option<Vec<u8>> {
         // Encodage conscient de l'adresse : branchements et opérandes `[rip …]`
         // sont résolus depuis la position réelle du corps.
-        self.bodies.get(&va).map(|i| aphrody_nie_asm::encode_at(i, va))
+        self.bodies
+            .get(&va)
+            .map(|i| aphrody_nie_asm::encode_at(i, va))
     }
 
     /// Nombre de corps.

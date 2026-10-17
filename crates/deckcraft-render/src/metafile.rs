@@ -10,8 +10,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use deckcraft_fonts::{FontDb, FontFace};
 use craft_metafile::{HAlign, Item, PlacedItem, Text, Tile, VAlign};
+use deckcraft_fonts::{FontDb, FontFace};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use skrifa::MetadataProvider as _;
 use vello_cpu::{Pixmap, RenderContext, Resources, peniko};
@@ -43,43 +43,87 @@ pub fn rasterize(bytes: &[u8], side: u32) -> Option<image::RgbaImage> {
     let k = side / pw.max(ph);
     let w = (pw * k).round().clamp(1.0, MAX_SIDE as f64) as u16;
     let h = (ph * k).round().clamp(1.0, MAX_SIDE as f64) as u16;
-    let pixmaps: Vec<Option<Arc<Pixmap>>> = pic.items.iter_mut().map(|it| it.take_pixels().and_then(|(w, h, px)| premul(w, h, &px))).collect();
+    let pixmaps: Vec<Option<Arc<Pixmap>>> = pic
+        .items
+        .iter_mut()
+        .map(|it| it.take_pixels().and_then(|(w, h, px)| premul(w, h, &px)))
+        .collect();
     // Pattern tiles shared by several fills are converted once.
     let mut tiles: HashMap<*const Tile, (Option<Arc<Pixmap>>, peniko::Color)> = HashMap::new();
-    let mut ctx = RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: 0, ..Default::default() });
+    let mut ctx = RenderContext::new_with(
+        w,
+        h,
+        vello_cpu::RenderSettings {
+            num_threads: 0,
+            ..Default::default()
+        },
+    );
     let r = Rect::new(0.0, 0.0, w as f64, h as f64);
     ctx.push_clip_layer(&r.to_path(0.1));
     for it in pic.place(r, [0.0; 4]) {
         match it {
-            PlacedItem::Path { path, fill, stroke, even_odd } => {
+            PlacedItem::Path {
+                path,
+                fill,
+                stroke,
+                even_odd,
+            } => {
                 if let Some(f) = fill {
                     ctx.set_paint(rgba(f));
-                    ctx.set_fill_rule(if even_odd { peniko::Fill::EvenOdd } else { peniko::Fill::NonZero });
+                    ctx.set_fill_rule(if even_odd {
+                        peniko::Fill::EvenOdd
+                    } else {
+                        peniko::Fill::NonZero
+                    });
                     ctx.fill_path(&path);
                 }
                 // GDI pens: round caps and joins; a cosmetic (zero-width) pen is one pixel.
                 if let Some((s, sw)) = stroke {
                     ctx.set_paint(rgba(s));
-                    ctx.set_stroke(kurbo::Stroke::new(sw.max(1.0)).with_caps(kurbo::Cap::Round).with_join(kurbo::Join::Round));
+                    ctx.set_stroke(
+                        kurbo::Stroke::new(sw.max(1.0))
+                            .with_caps(kurbo::Cap::Round)
+                            .with_join(kurbo::Join::Round),
+                    );
                     ctx.stroke_path(&path);
                 }
             }
             PlacedItem::Bitmap { index, rect } => {
-                let Some(Some(pm)) = pixmaps.get(index) else { continue };
+                let Some(Some(pm)) = pixmaps.get(index) else {
+                    continue;
+                };
                 let (bw, bh) = (pm.width().max(1) as f64, pm.height().max(1) as f64);
                 ctx.set_paint(vello_cpu::Image {
                     image: vello_cpu::ImageSource::Pixmap(pm.clone()),
-                    sampler: peniko::ImageSampler::default().with_quality(peniko::ImageQuality::Medium),
+                    sampler: peniko::ImageSampler::default()
+                        .with_quality(peniko::ImageQuality::Medium),
                 });
-                ctx.set_paint_transform(Affine::translate((rect.x0, rect.y0)) * Affine::scale_non_uniform(rect.width() / bw, rect.height() / bh));
+                ctx.set_paint_transform(
+                    Affine::translate((rect.x0, rect.y0))
+                        * Affine::scale_non_uniform(rect.width() / bw, rect.height() / bh),
+                );
                 ctx.fill_rect(&rect);
                 ctx.reset_paint_transform();
             }
-            PlacedItem::Pattern { index, path, even_odd, tile } => {
-                let Some(Item::Pattern { tile: t, .. }) = pic.items.get(index) else { continue };
+            PlacedItem::Pattern {
+                index,
+                path,
+                even_odd,
+                tile,
+            } => {
+                let Some(Item::Pattern { tile: t, .. }) = pic.items.get(index) else {
+                    continue;
+                };
                 let key = Arc::as_ptr(t);
-                let (pm, avg) = tiles.entry(key).or_insert_with(|| (premul(t.width, t.height, &t.rgba), average(&t.rgba))).clone();
-                ctx.set_fill_rule(if even_odd { peniko::Fill::EvenOdd } else { peniko::Fill::NonZero });
+                let (pm, avg) = tiles
+                    .entry(key)
+                    .or_insert_with(|| (premul(t.width, t.height, &t.rgba), average(&t.rgba)))
+                    .clone();
+                ctx.set_fill_rule(if even_odd {
+                    peniko::Fill::EvenOdd
+                } else {
+                    peniko::Fill::NonZero
+                });
                 let cell = tile.determinant().abs().sqrt();
                 match pm {
                     Some(pm) if cell >= MIN_CELL_PX => {
@@ -102,8 +146,14 @@ pub fn rasterize(bytes: &[u8], side: u32) -> Option<image::RgbaImage> {
                     }
                 }
             }
-            PlacedItem::Text { index, transform, clip } => {
-                let Some(Item::Text(t)) = pic.items.get(index) else { continue };
+            PlacedItem::Text {
+                index,
+                transform,
+                clip,
+            } => {
+                let Some(Item::Text(t)) = pic.items.get(index) else {
+                    continue;
+                };
                 if let Some(c) = clip {
                     ctx.push_clip_layer(&c.to_path(0.1));
                 }
@@ -146,7 +196,11 @@ struct Glyph {
 fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
     let db = FontDb::global();
     let font = &t.font;
-    let family = if font.family.trim().is_empty() { "Arial" } else { font.family.trim() };
+    let family = if font.family.trim().is_empty() {
+        "Arial"
+    } else {
+        font.family.trim()
+    };
     let (bold, italic) = (font.weight >= 600, font.italic);
     let style = match (bold, italic) {
         (true, true) => "Bold Italic",
@@ -172,11 +226,19 @@ fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
     }
     // Characters as drawn: symbol fonts (Wingdings…) map like bullets; each character takes the
     // face that has it.
-    let chars: Vec<char> = t.text.chars().map(|c| deckcraft_text::symbol_char(&face, family, c).unwrap_or(c)).collect();
+    let chars: Vec<char> = t
+        .text
+        .chars()
+        .map(|c| deckcraft_text::symbol_char(&face, family, c).unwrap_or(c))
+        .collect();
     let faces: Vec<Arc<FontFace>> = chars
         .iter()
         .map(|c| {
-            if c.is_whitespace() || c.is_control() || face.covers(*c) { face.clone() } else { db.cascade(&[*c], std::slice::from_ref(&face), style) }
+            if c.is_whitespace() || c.is_control() || face.covers(*c) {
+                face.clone()
+            } else {
+                db.cascade(&[*c], std::slice::from_ref(&face), style)
+            }
         })
         .collect();
     // Shape runs of one face; record each glyph's pen position and its character.
@@ -185,7 +247,9 @@ fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
     let mut pen = 0.0;
     let mut i = 0;
     while i < chars.len() {
-        let Some(f) = faces.get(i).cloned() else { break };
+        let Some(f) = faces.get(i).cloned() else {
+            break;
+        };
         let mut j = i + 1;
         while faces.get(j).is_some_and(|g| g.id() == f.id()) {
             j += 1;
@@ -197,7 +261,15 @@ fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
         for g in deckcraft_fonts::shape(&f, &run, &[], |c| c) {
             let ci = i + byte_char.partition_point(|b| *b < g.cluster).min(j - i - 1);
             let s = em / ku;
-            shaped.push((Glyph { face: f.clone(), gid: g.gid, x: pen + f64::from(g.x_offset) * s, y: -f64::from(g.y_offset) * s }, ci));
+            shaped.push((
+                Glyph {
+                    face: f.clone(),
+                    gid: g.gid,
+                    x: pen + f64::from(g.x_offset) * s,
+                    y: -f64::from(g.y_offset) * s,
+                },
+                ci,
+            ));
             pen += f64::from(g.x_advance) * s;
             if let Some(p) = char_pen.get_mut(ci + 1) {
                 *p = pen;
@@ -227,7 +299,10 @@ fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
         }
         width = x;
         for (g, ci) in &mut shaped {
-            let (start, pen_start) = (starts.get(*ci).copied().unwrap_or(0.0), char_pen.get(*ci).copied().unwrap_or(0.0));
+            let (start, pen_start) = (
+                starts.get(*ci).copied().unwrap_or(0.0),
+                char_pen.get(*ci).copied().unwrap_or(0.0),
+            );
             g.x = start + (g.x - pen_start);
         }
     } else if font.width > 0.0 {
@@ -268,29 +343,52 @@ fn draw_text(ctx: &mut RenderContext, t: &Text, m: Affine) {
             continue;
         }
         let s = em / g.face.upem.max(1.0);
-        let skew = if italic && !g.face.italic { Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
-        let gm = at * Affine::translate((g.x, g.y)) * Affine::scale_non_uniform(x_scale, 1.0) * skew * Affine::scale(s);
+        let skew = if italic && !g.face.italic {
+            Affine::new([1.0, 0.0, -0.2, 1.0, 0.0, 0.0])
+        } else {
+            Affine::IDENTITY
+        };
+        let gm = at
+            * Affine::translate((g.x, g.y))
+            * Affine::scale_non_uniform(x_scale, 1.0)
+            * skew
+            * Affine::scale(s);
         let p: BezPath = gm * path.as_ref().clone();
         ctx.fill_path(&p);
         if bold && g.face.weight < 600.0 {
-            ctx.set_stroke(kurbo::Stroke::new(em * 0.025 * scale_of(at)).with_join(kurbo::Join::Round));
+            ctx.set_stroke(
+                kurbo::Stroke::new(em * 0.025 * scale_of(at)).with_join(kurbo::Join::Round),
+            );
             ctx.stroke_path(&p);
         }
     }
     // Underline and strike-out: the font's own positions and thickness.
-    let metrics = face.skrifa().map(|f| f.metrics(skrifa::instance::Size::unscaled(), face.location()));
-    let deco = |on: bool, d: Option<skrifa::metrics::Decoration>, fallback: (f64, f64)| -> Option<Rect> {
-        if !on || width <= 0.0 {
-            return None;
-        }
-        let (off, th) = d.map_or(fallback, |d| (f64::from(d.offset) * k, f64::from(d.thickness) * k));
-        let th = if th > 0.0 { th } else { em / 20.0 };
-        // Offsets are y-up from the baseline; text space is y-down.
-        Some(Rect::new(0.0, -off - th / 2.0, width, -off + th / 2.0))
-    };
+    let metrics = face
+        .skrifa()
+        .map(|f| f.metrics(skrifa::instance::Size::unscaled(), face.location()));
+    let deco =
+        |on: bool, d: Option<skrifa::metrics::Decoration>, fallback: (f64, f64)| -> Option<Rect> {
+            if !on || width <= 0.0 {
+                return None;
+            }
+            let (off, th) = d.map_or(fallback, |d| {
+                (f64::from(d.offset) * k, f64::from(d.thickness) * k)
+            });
+            let th = if th > 0.0 { th } else { em / 20.0 };
+            // Offsets are y-up from the baseline; text space is y-down.
+            Some(Rect::new(0.0, -off - th / 2.0, width, -off + th / 2.0))
+        };
     let lines = [
-        deco(font.underline, metrics.as_ref().and_then(|m| m.underline), (-em * 0.1, em / 20.0)),
-        deco(font.strike, metrics.as_ref().and_then(|m| m.strikeout), (em * 0.26, em / 20.0)),
+        deco(
+            font.underline,
+            metrics.as_ref().and_then(|m| m.underline),
+            (-em * 0.1, em / 20.0),
+        ),
+        deco(
+            font.strike,
+            metrics.as_ref().and_then(|m| m.strikeout),
+            (em * 0.26, em / 20.0),
+        ),
     ];
     for r in lines.into_iter().flatten() {
         ctx.fill_path(&(at * r.to_path(0.1)));
@@ -306,7 +404,10 @@ fn scale_of(m: Affine) -> f64 {
 /// cell), in font units; the typographic ones when the font has no OS/2 table.
 fn win_metrics(face: &FontFace) -> (f64, f64) {
     use skrifa::raw::TableProvider as _;
-    let os2 = face.skrifa().and_then(|f| f.os2().ok()).map(|o| (f64::from(o.us_win_ascent()), f64::from(o.us_win_descent())));
+    let os2 = face
+        .skrifa()
+        .and_then(|f| f.os2().ok())
+        .map(|o| (f64::from(o.us_win_ascent()), f64::from(o.us_win_descent())));
     match os2 {
         Some((a, d)) if a + d > 0.0 => (a, d),
         _ => (face.ascent.max(0.0), face.descent.max(0.0)),
@@ -316,7 +417,11 @@ fn win_metrics(face: &FontFace) -> (f64, f64) {
 /// OS/2 `xAvgCharWidth` in font units (half an em without it).
 fn avg_char_width(face: &FontFace) -> f64 {
     use skrifa::raw::TableProvider as _;
-    face.skrifa().and_then(|f| f.os2().ok()).map(|o| f64::from(o.x_avg_char_width())).filter(|w| *w > 0.0).unwrap_or(face.upem * 0.5)
+    face.skrifa()
+        .and_then(|f| f.os2().ok())
+        .map(|o| f64::from(o.x_avg_char_width()))
+        .filter(|w| *w > 0.0)
+        .unwrap_or(face.upem * 0.5)
 }
 
 fn rgba(c: [u8; 4]) -> peniko::Color {
@@ -342,7 +447,12 @@ fn average(px: &[u8]) -> peniko::Color {
 
 /// Straight RGBA rows to a premultiplied pixmap.
 fn premul(w: u32, h: u32, px: &[u8]) -> Option<Arc<Pixmap>> {
-    if w == 0 || h == 0 || w > u16::MAX as u32 || h > u16::MAX as u32 || px.len() < w as usize * h as usize * 4 {
+    if w == 0
+        || h == 0
+        || w > u16::MAX as u32
+        || h > u16::MAX as u32
+        || px.len() < w as usize * h as usize * 4
+    {
         return None;
     }
     let data = px
@@ -353,7 +463,12 @@ fn premul(w: u32, h: u32, px: &[u8]) -> Option<Arc<Pixmap>> {
         .map(|p| {
             let a = p[3] as u16;
             let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
-            vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] }
+            vello_cpu::color::PremulRgba8 {
+                r: m(p[0]),
+                g: m(p[1]),
+                b: m(p[2]),
+                a: p[3],
+            }
         })
         .collect();
     Some(Arc::new(Pixmap::from_parts(data, w as u16, h as u16)))

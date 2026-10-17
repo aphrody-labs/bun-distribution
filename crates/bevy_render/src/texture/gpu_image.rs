@@ -4,7 +4,7 @@ use crate::{
     renderer::{RenderDevice, RenderQueue},
 };
 use bevy_asset::{AssetId, RenderAssetUsages};
-use bevy_ecs::system::{lifetimeless::SRes, SystemParamItem};
+use bevy_ecs::system::{SystemParamItem, lifetimeless::SRes};
 use bevy_image::{Image, ImageSampler};
 use bevy_log::warn;
 use bevy_math::{AspectRatio, UVec2};

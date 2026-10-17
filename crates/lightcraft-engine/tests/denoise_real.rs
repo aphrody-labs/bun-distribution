@@ -34,7 +34,12 @@ fn roughness(img: &lightcraft_raster::Rgba8) -> f64 {
     let (mut sum, mut n) = (0.0, 0usize);
     for y in 1..h - 1 {
         for x in 1..w - 1 {
-            sum += (4.0 * luma(x, y) - luma(x - 1, y) - luma(x + 1, y) - luma(x, y - 1) - luma(x, y + 1)).abs();
+            sum += (4.0 * luma(x, y)
+                - luma(x - 1, y)
+                - luma(x + 1, y)
+                - luma(x, y - 1)
+                - luma(x, y + 1))
+            .abs();
             n += 1;
         }
     }
@@ -47,7 +52,12 @@ fn files(dir: &Path) -> Vec<PathBuf> {
         .unwrap()
         .flatten()
         .map(|e| e.path())
-        .filter(|p| p.is_file() && only.as_deref().is_none_or(|o| p.file_name().is_some_and(|n| n.to_string_lossy() == o)))
+        .filter(|p| {
+            p.is_file()
+                && only
+                    .as_deref()
+                    .is_none_or(|o| p.file_name().is_some_and(|n| n.to_string_lossy() == o))
+        })
         .collect();
     v.sort();
     v
@@ -56,7 +66,10 @@ fn files(dir: &Path) -> Vec<PathBuf> {
 #[test]
 #[ignore = "needs the real model and raw files (see the file's header)"]
 fn the_real_model_denoises_real_raws_through_the_engine() {
-    let (Some(model), Some(raws)) = (std::env::var_os("LC_DENOISE_MODEL"), std::env::var_os("LC_DENOISE_RAW")) else {
+    let (Some(model), Some(raws)) = (
+        std::env::var_os("LC_DENOISE_MODEL"),
+        std::env::var_os("LC_DENOISE_RAW"),
+    ) else {
         panic!("set LC_DENOISE_MODEL and LC_DENOISE_RAW");
     };
     let dir = temp("e2e");
@@ -64,22 +77,46 @@ fn the_real_model_denoises_real_raws_through_the_engine() {
     s.open_library(dir.join("library"), false).unwrap();
     s.set_denoise_models_dir(Some(dir.join("models")));
     let t = Instant::now();
-    let r = s.execute("denoise.models.install", &json!({"path": model.to_string_lossy(), "acknowledged": true})).unwrap();
-    println!("installed {} in {:.1} s: self-test {}", r["installed"]["id"], t.elapsed().as_secs_f64(), r["installed"]["accepted"]["selfTest"]);
+    let r = s
+        .execute(
+            "denoise.models.install",
+            &json!({"path": model.to_string_lossy(), "acknowledged": true}),
+        )
+        .unwrap();
+    println!(
+        "installed {} in {:.1} s: self-test {}",
+        r["installed"]["id"],
+        t.elapsed().as_secs_f64(),
+        r["installed"]["accepted"]["selfTest"]
+    );
     assert_eq!(r["installed"]["id"], "rawnind-bayer");
     if let Ok(run_on) = std::env::var("LC_DENOISE_RUN_ON") {
-        s.execute("denoise.settings", &json!({"runOn": run_on})).unwrap();
+        s.execute("denoise.settings", &json!({"runOn": run_on}))
+            .unwrap();
     }
 
     for file in files(Path::new(&raws)) {
         let name = file.file_name().unwrap().to_string_lossy().into_owned();
-        let imported = s.execute("library.import", &json!({"paths": [file.to_string_lossy()]})).unwrap();
-        let Some(id) = imported["imported"].as_array().and_then(|a| a.first()).and_then(Value::as_u64) else {
+        let imported = s
+            .execute(
+                "library.import",
+                &json!({"paths": [file.to_string_lossy()]}),
+            )
+            .unwrap();
+        let Some(id) = imported["imported"]
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(Value::as_u64)
+        else {
             println!("{name}: not imported ({imported})");
             continue;
         };
         s.execute("library.select", &json!({"ids": [id]})).unwrap();
-        s.execute("develop.set", &json!({"control": "enhance.denoise", "value": 100})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "enhance.denoise", "value": 100}),
+        )
+        .unwrap();
         let photo = lightcraft_engine::catalog::PhotoId(id);
         let started = Instant::now();
         let mut state = Value::Null;
@@ -91,7 +128,11 @@ fn the_real_model_denoises_real_raws_through_the_engine() {
             }
             std::thread::sleep(Duration::from_millis(250));
         }
-        println!("{name}: {} in {:.1} s", state, started.elapsed().as_secs_f64());
+        println!(
+            "{name}: {} in {:.1} s",
+            state,
+            started.elapsed().as_secs_f64()
+        );
         if state["state"] == "failed" {
             // a file that is not a Bayer raw says why, and its export is the plain one
             assert_eq!(state["unsupported"], true, "{name}: {state}");
@@ -99,14 +140,27 @@ fn the_real_model_denoises_real_raws_through_the_engine() {
         }
         assert_eq!(state["state"], "ready", "{name}: {state}");
         let denoised = s.render_now(photo, 1600, 1600).unwrap().image;
-        s.execute("develop.set", &json!({"control": "enhance.denoise", "value": 0})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "enhance.denoise", "value": 0}),
+        )
+        .unwrap();
         let plain = s.render_now(photo, 1600, 1600).unwrap().image;
         let (a, b) = (roughness(&plain), roughness(&denoised));
-        println!("{name}: roughness at 1600 px: plain {a:.3}, denoised {b:.3} ({:+.1} %)", 100.0 * (b - a) / a);
+        println!(
+            "{name}: roughness at 1600 px: plain {a:.3}, denoised {b:.3} ({:+.1} %)",
+            100.0 * (b - a) / a
+        );
         assert!(b < a, "{name}: the denoised picture is not smoother");
         // the export is made from the same picture, without asking the queue
-        s.execute("develop.set", &json!({"control": "enhance.denoise", "value": 100})).unwrap();
-        let o = lightcraft_engine::export::ExportOptions::from_json(&json!({"format": "jpeg", "width": 1200, "height": 1200}));
+        s.execute(
+            "develop.set",
+            &json!({"control": "enhance.denoise", "value": 100}),
+        )
+        .unwrap();
+        let o = lightcraft_engine::export::ExportOptions::from_json(
+            &json!({"format": "jpeg", "width": 1200, "height": 1200}),
+        );
         let e = lightcraft_engine::export::export_photo(&mut s, photo, &o, 1).unwrap();
         assert!(e.bytes.len() > 1000);
     }

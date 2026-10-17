@@ -34,10 +34,15 @@ impl DnssecKey {
             bail!("DNSSEC key must be '<flags> <algorithm> <tag> <public key>'");
         };
         let public_key: String = parts.collect();
-        let flags: u16 = flags.parse().map_err(|_| anyhow::anyhow!("invalid flags: {flags}"))?;
-        let algorithm: u8 =
-            algorithm.parse().map_err(|_| anyhow::anyhow!("invalid algorithm: {algorithm}"))?;
-        let tag: u32 = tag.parse().map_err(|_| anyhow::anyhow!("invalid key tag: {tag}"))?;
+        let flags: u16 = flags
+            .parse()
+            .map_err(|_| anyhow::anyhow!("invalid flags: {flags}"))?;
+        let algorithm: u8 = algorithm
+            .parse()
+            .map_err(|_| anyhow::anyhow!("invalid algorithm: {algorithm}"))?;
+        let tag: u32 = tag
+            .parse()
+            .map_err(|_| anyhow::anyhow!("invalid key tag: {tag}"))?;
         if flags != 256 && flags != 257 {
             bail!("DNSSEC flags must be 256 or 257, got {flags}");
         }
@@ -48,11 +53,19 @@ impl DnssecKey {
             bail!("DNSSEC key tag out of range: {tag}");
         }
         if public_key.is_empty()
-            || !public_key.bytes().all(|b| b.is_ascii_alphanumeric() || b"+/=".contains(&b))
+            || !public_key
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"+/=".contains(&b))
         {
             bail!("DNSSEC public key must be non-empty base64");
         }
-        Ok(Self { tag, algorithm, flags, public_key, status: None })
+        Ok(Self {
+            tag,
+            algorithm,
+            flags,
+            public_key,
+            status: None,
+        })
     }
 }
 
@@ -68,7 +81,9 @@ pub fn name_server_hosts(hosts: &[String]) -> Result<Vec<String>> {
                     && label.len() <= 63
                     && !label.starts_with('-')
                     && !label.ends_with('-')
-                    && label.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+                    && label
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'-')
             });
         if !valid {
             bail!("invalid name server host: {host}");
@@ -102,7 +117,10 @@ pub struct DomainInfo {
 }
 
 fn text(raw: &Value, key: &str) -> String {
-    raw.get(key).and_then(Value::as_str).unwrap_or("?").to_string()
+    raw.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or("?")
+        .to_string()
 }
 
 impl DomainInfo {
@@ -157,10 +175,17 @@ impl<'a> DomainManager<'a> {
 
     /// DS keys the registrar currently publishes in the parent zone.
     pub async fn ds_records(&self, domain: &str) -> Result<Vec<DnssecKey>> {
-        let ids: Vec<u64> = self.client.get(&format!("/domain/{domain}/dsRecord")).await?;
+        let ids: Vec<u64> = self
+            .client
+            .get(&format!("/domain/{domain}/dsRecord"))
+            .await?;
         let mut keys = Vec::with_capacity(ids.len());
         for id in ids {
-            keys.push(self.client.get(&format!("/domain/{domain}/dsRecord/{id}")).await?);
+            keys.push(
+                self.client
+                    .get(&format!("/domain/{domain}/dsRecord/{id}"))
+                    .await?,
+            );
         }
         Ok(keys)
     }
@@ -178,7 +203,12 @@ impl<'a> DomainManager<'a> {
                 })
             })
             .collect();
-        self.client.post(&format!("/domain/{domain}/dsRecord"), Some(json!({ "keys": keys }))).await
+        self.client
+            .post(
+                &format!("/domain/{domain}/dsRecord"),
+                Some(json!({ "keys": keys })),
+            )
+            .await
     }
 
     /// Replace the registrar name servers; returns the registrar task.
@@ -194,7 +224,10 @@ impl<'a> DomainManager<'a> {
     /// Select external DNS before changing the registrar's declared name servers.
     pub async fn set_external_name_server_type(&self, domain: &str) -> Result<Value> {
         self.client
-            .put(&format!("/domain/{domain}"), Some(external_name_server_type_payload()))
+            .put(
+                &format!("/domain/{domain}"),
+                Some(external_name_server_type_payload()),
+            )
             .await
     }
 
@@ -205,25 +238,35 @@ impl<'a> DomainManager<'a> {
 
     /// Details for a registrar task associated with this domain name.
     pub async fn task(&self, domain: &str, id: u64) -> Result<Value> {
-        self.client.get(&format!("/domain/{domain}/task/{id}")).await
+        self.client
+            .get(&format!("/domain/{domain}/task/{id}"))
+            .await
     }
 
     /// Signing state of the zone hosted on OVH DNS (`enabled`, `disableInProgress`, ...).
     pub async fn hosted_dnssec(&self, zone: &str) -> Result<String> {
-        let raw: Value = self.client.get(&format!("/domain/zone/{zone}/dnssec")).await?;
+        let raw: Value = self
+            .client
+            .get(&format!("/domain/zone/{zone}/dnssec"))
+            .await?;
         Ok(text(&raw, "status"))
     }
 
     /// Stop OVH-hosted signing; OVH withdraws its DS from the parent zone first.
     pub async fn disable_hosted_dnssec(&self, zone: &str) -> Result<()> {
-        let _: Value = self.client.delete(&format!("/domain/zone/{zone}/dnssec")).await?;
+        let _: Value = self
+            .client
+            .delete(&format!("/domain/zone/{zone}/dnssec"))
+            .await?;
         Ok(())
     }
 }
 
 fn name_servers_payload(hosts: &[String]) -> Result<Value> {
-    let servers: Vec<Value> =
-        name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
+    let servers: Vec<Value> = name_server_hosts(hosts)?
+        .into_iter()
+        .map(|host| json!({ "host": host }))
+        .collect();
     Ok(json!({ "nameServer": servers }))
 }
 
@@ -251,7 +294,10 @@ mod tests {
         assert_eq!(info.domain, "example.test");
         assert_eq!(info.service_id, 75523385);
         assert!(info.auto_renew());
-        assert_eq!(info.name_servers, vec!["dns200.anycast.me", "ns200.anycast.me"]);
+        assert_eq!(
+            info.name_servers,
+            vec!["dns200.anycast.me", "ns200.anycast.me"]
+        );
         assert!(!serde_json::to_string(&info).unwrap().contains("private"));
         assert!(!DomainInfo::from_json(&json!({ "renewalState": "manual_renew" })).auto_renew());
     }
@@ -262,9 +308,13 @@ mod tests {
             .expect("key");
         assert_eq!((key.flags, key.algorithm, key.tag), (257, 13, 2371));
         assert!(!key.public_key.contains(char::is_whitespace));
-        for invalid in
-            ["257 13", "255 13 1 AA==", "257 9 1 AA==", "257 13 70000 AA==", "257 13 1 a;b"]
-        {
+        for invalid in [
+            "257 13",
+            "255 13 1 AA==",
+            "257 9 1 AA==",
+            "257 13 70000 AA==",
+            "257 13 1 a;b",
+        ] {
             assert!(DnssecKey::parse(invalid).is_err(), "{invalid}");
         }
         let listed: DnssecKey = serde_json::from_value(json!({
@@ -272,14 +322,20 @@ mod tests {
         }))
         .expect("registrar key");
         assert_eq!(listed.status.as_deref(), Some("created"));
-        assert_eq!(serde_json::to_value(&key).unwrap()["publicKey"], key.public_key.as_str());
+        assert_eq!(
+            serde_json::to_value(&key).unwrap()["publicKey"],
+            key.public_key.as_str()
+        );
     }
 
     #[test]
     fn name_servers_are_normalized_deduplicated_and_at_least_two() {
         assert_eq!(
-            name_server_hosts(&["Duke.NS.cloudflare.com.".into(), "veda.ns.cloudflare.com".into()])
-                .expect("hosts"),
+            name_server_hosts(&[
+                "Duke.NS.cloudflare.com.".into(),
+                "veda.ns.cloudflare.com".into()
+            ])
+            .expect("hosts"),
             vec!["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"]
         );
         assert!(name_server_hosts(&["a.example.com".into(), "A.example.com".into()]).is_err());
@@ -309,6 +365,9 @@ mod tests {
 
     #[test]
     fn external_dns_setup_uses_the_documented_domain_field() {
-        assert_eq!(external_name_server_type_payload(), json!({ "nameServerType": "external" }));
+        assert_eq!(
+            external_name_server_type_payload(),
+            json!({ "nameServerType": "external" })
+        );
     }
 }

@@ -67,7 +67,10 @@ impl UserProfile {
     #[must_use]
     pub fn parse(content: &str) -> Self {
         let (fm, body) = frontmatter::split(content);
-        let mut user = UserProfile { body: body.to_string(), ..UserProfile::default() };
+        let mut user = UserProfile {
+            body: body.to_string(),
+            ..UserProfile::default()
+        };
         if let Some(fm) = fm {
             for (key, val) in frontmatter::parse(fm) {
                 match (key.as_str(), val) {
@@ -75,33 +78,33 @@ impl UserProfile {
                         if !s.trim().is_empty() =>
                     {
                         user.address_as = Some(s.trim().to_string());
-                    },
+                    }
                     ("pronouns", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.pronouns = Some(s.trim().to_string());
-                    },
+                    }
                     ("timezone" | "tz", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.timezone = Some(s.trim().to_string());
-                    },
+                    }
                     ("language" | "lang", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.language = Some(s.trim().to_string());
-                    },
+                    }
                     ("preferences", FmValue::List(v)) => user.preferences = v,
                     ("preferences", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.preferences = vec![s.trim().to_string()];
-                    },
+                    }
                     ("avatar", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.avatar = Some(s.trim().to_string());
-                    },
+                    }
                     ("agent_id", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.agent_id = Some(s.trim().to_string());
-                    },
+                    }
                     ("updated_at", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.updated_at = Some(s.trim().to_string());
-                    },
+                    }
                     ("template_revision", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         user.template_revision = Some(s.trim().to_string());
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }
@@ -172,8 +175,10 @@ impl UserProfile {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
             Err(e) => return Err(HomeError::io(&path, e)),
         };
-        let pairs: Vec<(&str, Option<&str>)> =
-            fields.iter().map(|(k, v)| (k.as_str(), Some(v.as_str()))).collect();
+        let pairs: Vec<(&str, Option<&str>)> = fields
+            .iter()
+            .map(|(k, v)| (k.as_str(), Some(v.as_str())))
+            .collect();
         let updated = frontmatter::upsert_scalars(&current, &pairs);
         crate::fsutil::write_atomic(&path, updated.as_bytes())
     }
@@ -248,7 +253,10 @@ mod tests {
         assert_eq!(u.pronouns.as_deref(), Some("they/them"));
         assert_eq!(u.timezone.as_deref(), Some("Europe/Paris"));
         assert_eq!(u.language.as_deref(), Some("French"));
-        assert_eq!(u.preferences, vec!["metric units".to_string(), "no emoji".to_string()]);
+        assert_eq!(
+            u.preferences,
+            vec!["metric units".to_string(), "no emoji".to_string()]
+        );
         assert_eq!(u.body.trim(), "Notes.");
     }
 
@@ -285,13 +293,20 @@ mod tests {
         assert_eq!(u.template_revision.as_deref(), Some("sha256-v1:ab"));
         // Metadata is not prompt material.
         let d = u.render_directives();
-        assert!(!d.contains("img/me.png") && !d.contains("discord:42"), "{d}");
+        assert!(
+            !d.contains("img/me.png") && !d.contains("discord:42"),
+            "{d}"
+        );
     }
 
     #[test]
     fn write_profile_fields_round_trips_and_keeps_body() {
         let td = tempfile::tempdir().unwrap();
-        std::fs::write(td.path().join(USER_FILENAME), "---\nname: Sam\n---\n\nNotes.\n").unwrap();
+        std::fs::write(
+            td.path().join(USER_FILENAME),
+            "---\nname: Sam\n---\n\nNotes.\n",
+        )
+        .unwrap();
         let mut u = UserProfile::load(td.path()).unwrap();
         u.avatar = Some("avatar.png".into());
         u.agent_id = Some("local".into());
@@ -309,9 +324,14 @@ mod tests {
     #[test]
     fn avatar_cannot_escape_the_home_but_urls_pass() {
         let td = tempfile::tempdir().unwrap();
-        let mut u =
-            UserProfile { avatar: Some("../../outside.png".into()), ..UserProfile::default() };
-        assert!(matches!(u.write_profile_fields(td.path()), Err(HomeError::PathEscape { .. })));
+        let mut u = UserProfile {
+            avatar: Some("../../outside.png".into()),
+            ..UserProfile::default()
+        };
+        assert!(matches!(
+            u.write_profile_fields(td.path()),
+            Err(HomeError::PathEscape { .. })
+        ));
         u.avatar = Some("https://example.invalid/a.png".into());
         assert!(u.avatar_path(td.path()).unwrap().is_none());
         u.write_profile_fields(td.path()).unwrap();

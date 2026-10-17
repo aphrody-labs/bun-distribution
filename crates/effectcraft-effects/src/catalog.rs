@@ -14,7 +14,11 @@ pub const PARTIAL: &[(&str, &str)] = &[];
 /// (`value(spec id)`). After Effects shows only the controls a popup selects: Levels' channel,
 /// Hue/Saturation's Channel Control, the camera system of the card effects, and so on. Every
 /// parameter stays animatable and addressable; this is presentation only.
-pub fn param_shown(effect: &str, param: &str, value: &dyn Fn(&str) -> Option<effectcraft_keyframe::Value>) -> bool {
+pub fn param_shown(
+    effect: &str,
+    param: &str,
+    value: &dyn Fn(&str) -> Option<effectcraft_keyframe::Value>,
+) -> bool {
     let e = |id: &str| value(id).map(|v| v.as_enum()).unwrap_or(0);
     let b = |id: &str| value(id).is_some_and(|v| v.as_bool());
     match effect {
@@ -25,7 +29,15 @@ pub fn param_shown(effect: &str, param: &str, value: &dyn Fn(&str) -> Option<eff
                     return ch == i + 1;
                 }
             }
-            let master = ["inBlack", "inWhite", "gamma", "outBlack", "outWhite", "clipToOutputBlack", "clipToOutputWhite"];
+            let master = [
+                "inBlack",
+                "inWhite",
+                "gamma",
+                "outBlack",
+                "outWhite",
+                "clipToOutputBlack",
+                "clipToOutputWhite",
+            ];
             !master.contains(&param) || ch == 0
         }
         "ec.color.huesaturation" => {
@@ -44,11 +56,16 @@ pub fn param_shown(effect: &str, param: &str, value: &dyn Fn(&str) -> Option<eff
         "ec.color.selectivecolor" => match param.strip_prefix("details/") {
             Some(rest) => {
                 let g = rest.split('/').next().unwrap_or("");
-                crate::color2::SC_GROUPS.iter().position(|x| *x == g).is_none_or(|i| i == e("colors") as usize)
+                crate::color2::SC_GROUPS
+                    .iter()
+                    .position(|x| *x == g)
+                    .is_none_or(|i| i == e("colors") as usize)
             }
             None => true,
         },
-        "ec.sim.carddance" | "ec.transition.cardwipe" => crate::card3d::shown(param, &e).unwrap_or(true),
+        "ec.sim.carddance" | "ec.transition.cardwipe" => {
+            crate::card3d::shown(param, &e).unwrap_or(true)
+        }
         "ec.sim.shatter" => match param {
             "shape/customShatterMap" | "shape/whiteTilesFixed" => e("shape/pattern") == 5,
             _ => crate::card3d::shown(param, &e).unwrap_or(true),
@@ -63,10 +80,25 @@ pub fn param_shown(effect: &str, param: &str, value: &dyn Fn(&str) -> Option<eff
 /// Controls of GPU-accelerated effects that only the CPU implements: while any of them is away
 /// from its default the effect renders on the CPU. (Prefixes ending in `/` cover a whole group.)
 const CPU_ONLY_CONTROLS: &[(&str, &[&str])] = &[
-    ("ec.color.lumetri", &["highDynamicRange", "curves/rgbCurves/", "curves/hueSaturationCurves/", "hslSecondary/"]),
+    (
+        "ec.color.lumetri",
+        &[
+            "highDynamicRange",
+            "curves/rgbCurves/",
+            "curves/hueSaturationCurves/",
+            "hslSecondary/",
+        ],
+    ),
     (
         "ec.color.colorama",
-        &["inputPhase/addPhase", "outputCycle/usePresetPalette", "modify/", "pixelSelection/matchingMode", "masking/maskingMode", "masking/compositeOverLayer"],
+        &[
+            "inputPhase/addPhase",
+            "outputCycle/usePresetPalette",
+            "modify/",
+            "pixelSelection/matchingMode",
+            "masking/maskingMode",
+            "masking/compositeOverLayer",
+        ],
     ),
     (
         "ec.keying.keylight",
@@ -82,13 +114,32 @@ const CPU_ONLY_CONTROLS: &[(&str, &[&str])] = &[
             "sourceCrops/edgeColourAlpha",
         ],
     ),
-    ("ec.noise.addgrain", &["viewingMode", "preset", "color/redBalance", "color/greenBalance", "color/blueBalance", "previewRegion/"]),
-    ("ec.blur.cameralens", &["irisProperties/diffractionFringe", "blurMap/blurMapLayer"]),
+    (
+        "ec.noise.addgrain",
+        &[
+            "viewingMode",
+            "preset",
+            "color/redBalance",
+            "color/greenBalance",
+            "color/blueBalance",
+            "previewRegion/",
+        ],
+    ),
+    (
+        "ec.blur.cameralens",
+        &["irisProperties/diffractionFringe", "blurMap/blurMapLayer"],
+    ),
     ("ec.noise.removegrain", &["temporalFiltering/enabled"]),
     ("ec.distort.liquify", &["viewFreezeAreaMask", "viewMesh"]),
     ("ec.distort.ccpowerpin", &["unstretch"]),
-    ("ec.matte.refinesoft", &["reduceChatter", "useMotionBlur", "invert"]),
-    ("ec.matte.refinehard", &["reduceChatter", "useMotionBlur", "invert"]),
+    (
+        "ec.matte.refinesoft",
+        &["reduceChatter", "useMotionBlur", "invert"],
+    ),
+    (
+        "ec.matte.refinehard",
+        &["reduceChatter", "useMotionBlur", "invert"],
+    ),
 ];
 
 /// Whether the GPU kernel of effect `id` covers the instance's current settings (see
@@ -96,16 +147,34 @@ const CPU_ONLY_CONTROLS: &[(&str, &[&str])] = &[
 /// pinning).
 pub fn gpu_supported(id: &str, ctx: &crate::EffectCtx) -> bool {
     match id {
-        "ec.generate.cellpattern" if (6..=10).contains(&ctx.params.e("cellPattern")) => return false,
+        "ec.generate.cellpattern" if (6..=10).contains(&ctx.params.e("cellPattern")) => {
+            return false;
+        }
         "ec.distort.turbulentdisplace" if ctx.params.e("pinning") >= 8 => return false,
         _ => {}
     }
-    let Some((_, controls)) = CPU_ONLY_CONTROLS.iter().find(|(e, _)| *e == id) else { return true };
-    let Some(spec) = crate::find(id) else { return true };
+    let Some((_, controls)) = CPU_ONLY_CONTROLS.iter().find(|(e, _)| *e == id) else {
+        return true;
+    };
+    let Some(spec) = crate::find(id) else {
+        return true;
+    };
     spec.params
         .iter()
-        .filter(|ps| controls.iter().any(|c| if c.ends_with('/') { ps.id.starts_with(c) } else { ps.id == *c }))
-        .all(|ps| ctx.params.get(ps.id).is_none_or(|v| *v == crate::default_value(ps, ctx.layer_size)))
+        .filter(|ps| {
+            controls.iter().any(|c| {
+                if c.ends_with('/') {
+                    ps.id.starts_with(c)
+                } else {
+                    ps.id == *c
+                }
+            })
+        })
+        .all(|ps| {
+            ctx.params
+                .get(ps.id)
+                .is_none_or(|v| *v == crate::default_value(ps, ctx.layer_size))
+        })
 }
 
 /// Implementation status of effect `id` (`Implemented` or `Partial: …`).
@@ -126,7 +195,10 @@ pub fn effects_markdown() -> String {
     let params: usize = r.iter().map(|e| e.params.len()).sum();
     let gpu = r.iter().filter(|e| e.gpu).count();
     let float = r.iter().filter(|e| e.float).count();
-    let partial = r.iter().filter(|e| PARTIAL.iter().any(|(id, _)| *id == e.id)).count();
+    let partial = r
+        .iter()
+        .filter(|e| PARTIAL.iter().any(|(id, _)| *id == e.id))
+        .count();
     s.push_str(&format!(
         "EffectCraft ships {} effects with {} parameters in total, grouped into the same categories as the Effects & Presets \
          panel. Every effect is our own implementation, written from public behaviour descriptions and standard \
@@ -147,13 +219,18 @@ pub fn effects_markdown() -> String {
         if list.is_empty() {
             continue;
         }
-        s.push_str(&format!("## {cat}\n\n| Effect | Id | Params | GPU | 32 | Status |\n|---|---|---:|:-:|:-:|---|\n"));
+        s.push_str(&format!(
+            "## {cat}\n\n| Effect | Id | Params | GPU | 32 | Status |\n|---|---|---:|:-:|:-:|---|\n"
+        ));
         for e in list {
             s.push_str(&format!(
                 "| {} | `{}` | {} | {} | {} | {} |\n",
                 e.name.replace('|', "\\|"),
                 e.id,
-                e.params.iter().filter(|p| !matches!(p.ui, effectcraft_project::ParamUi::Hidden)).count(),
+                e.params
+                    .iter()
+                    .filter(|p| !matches!(p.ui, effectcraft_project::ParamUi::Hidden))
+                    .count(),
                 if e.gpu { "GPU" } else { "" },
                 if e.float { "32" } else { "" },
                 status(e.id).replace('|', "\\|"),
@@ -175,8 +252,13 @@ mod tests {
             return;
         }
         // A Windows checkout may use CRLF; catalog content must still match exactly.
-        let have = std::fs::read_to_string(path).unwrap_or_default().replace("\r\n", "\n");
-        assert!(have == want, "docs/effects.md is stale: UPDATE_DOCS=1 cargo test -p effectcraft-effects --lib effects_doc_is_current");
+        let have = std::fs::read_to_string(path)
+            .unwrap_or_default()
+            .replace("\r\n", "\n");
+        assert!(
+            have == want,
+            "docs/effects.md is stale: UPDATE_DOCS=1 cargo test -p effectcraft-effects --lib effects_doc_is_current"
+        );
     }
 
     #[test]
@@ -184,8 +266,11 @@ mod tests {
         use effectcraft_keyframe::Value;
         let ctx_with = |id: &str, set: &[(&str, Value)]| {
             let s = crate::find(id).unwrap();
-            let mut values: std::collections::HashMap<String, Value> =
-                s.params.iter().map(|p| (p.id.to_string(), crate::default_value(p, [64.0, 64.0]))).collect();
+            let mut values: std::collections::HashMap<String, Value> = s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), crate::default_value(p, [64.0, 64.0])))
+                .collect();
             for (k, v) in set {
                 values.insert(k.to_string(), v.clone());
             }
@@ -193,25 +278,56 @@ mod tests {
         };
         let ok = |id: &str, set: &[(&str, Value)]| {
             let params = ctx_with(id, set);
-            let ctx = crate::EffectCtx { params: &params, time: 0.0, layer_size: [64.0, 64.0], seed: 0, adjustment: false, env: Default::default() };
+            let ctx = crate::EffectCtx {
+                params: &params,
+                time: 0.0,
+                layer_size: [64.0, 64.0],
+                seed: 0,
+                adjustment: false,
+                env: Default::default(),
+            };
             super::gpu_supported(id, &ctx)
         };
         assert!(ok("ec.color.lumetri", &[]));
-        assert!(!ok("ec.color.lumetri", &[("hslSecondary/correction/saturation", Value::Scalar(50.0))]));
+        assert!(!ok(
+            "ec.color.lumetri",
+            &[("hslSecondary/correction/saturation", Value::Scalar(50.0))]
+        ));
         assert!(!ok("ec.noise.addgrain", &[("preset", Value::Enum(2))]));
-        assert!(ok("ec.generate.cellpattern", &[("cellPattern", Value::Enum(3))]));
-        assert!(!ok("ec.generate.cellpattern", &[("cellPattern", Value::Enum(9))]));
-        assert!(!ok("ec.distort.turbulentdisplace", &[("pinning", Value::Enum(9))]));
+        assert!(ok(
+            "ec.generate.cellpattern",
+            &[("cellPattern", Value::Enum(3))]
+        ));
+        assert!(!ok(
+            "ec.generate.cellpattern",
+            &[("cellPattern", Value::Enum(9))]
+        ));
+        assert!(!ok(
+            "ec.distort.turbulentdisplace",
+            &[("pinning", Value::Enum(9))]
+        ));
         assert!(ok("ec.distort.ccpowerpin", &[]));
-        assert!(!ok("ec.distort.ccpowerpin", &[("unstretch", Value::Bool(true))]));
+        assert!(!ok(
+            "ec.distort.ccpowerpin",
+            &[("unstretch", Value::Bool(true))]
+        ));
         assert!(ok("ec.blur.gaussian", &[]));
     }
 
     #[test]
     fn popups_choose_the_shown_controls() {
         use effectcraft_keyframe::Value;
-        let with = |pairs: &'static [(&'static str, u32)]| move |id: &str| pairs.iter().find(|(k, _)| *k == id).map(|(_, v)| Value::Enum(*v));
-        let shown = |e: &str, p: &str, pairs: &'static [(&'static str, u32)]| super::param_shown(e, p, &with(pairs));
+        let with = |pairs: &'static [(&'static str, u32)]| {
+            move |id: &str| {
+                pairs
+                    .iter()
+                    .find(|(k, _)| *k == id)
+                    .map(|(_, v)| Value::Enum(*v))
+            }
+        };
+        let shown = |e: &str, p: &str, pairs: &'static [(&'static str, u32)]| {
+            super::param_shown(e, p, &with(pairs))
+        };
         // Levels: RGB shows the master controls only; Red shows the red ones.
         assert!(shown("ec.color.levels", "inBlack", &[]));
         assert!(!shown("ec.color.levels", "redInBlack", &[]));
@@ -220,16 +336,32 @@ mod tests {
         assert!(shown("ec.color.levels", "channel", &[("channel", 1)]));
         // Hue/Saturation: Master or one colour range.
         assert!(shown("ec.color.huesaturation", "hue", &[]));
-        assert!(shown("ec.color.huesaturation", "bluesHue", &[("channelControl", 5)]));
-        assert!(!shown("ec.color.huesaturation", "redsHue", &[("channelControl", 5)]));
+        assert!(shown(
+            "ec.color.huesaturation",
+            "bluesHue",
+            &[("channelControl", 5)]
+        ));
+        assert!(!shown(
+            "ec.color.huesaturation",
+            "redsHue",
+            &[("channelControl", 5)]
+        ));
         // Card effects: the camera system's group.
         assert!(shown("ec.sim.carddance", "cameraPosition", &[]));
         assert!(!shown("ec.sim.carddance", "cornerPins", &[]));
-        assert!(shown("ec.transition.cardwipe", "cornerPins/upperLeftCorner", &[("cameraSystem", 1)]));
+        assert!(shown(
+            "ec.transition.cardwipe",
+            "cornerPins/upperLeftCorner",
+            &[("cameraSystem", 1)]
+        ));
         assert!(!shown("ec.sim.shatter", "shape/customShatterMap", &[]));
         // Selective Color: the chosen range's Details group.
         assert!(shown("ec.color.selectivecolor", "details/reds", &[]));
-        assert!(!shown("ec.color.selectivecolor", "details/blues/bluesCyan", &[]));
+        assert!(!shown(
+            "ec.color.selectivecolor",
+            "details/blues/bluesCyan",
+            &[]
+        ));
         assert!(shown("ec.color.selectivecolor", "details", &[]));
         // Everything else is always shown.
         assert!(shown("ec.blur.gaussian", "blurriness", &[]));
@@ -238,7 +370,10 @@ mod tests {
     #[test]
     fn partial_notes_name_registered_effects() {
         for (id, note) in super::PARTIAL {
-            assert!(crate::find(id).is_some(), "PARTIAL names unknown effect {id}");
+            assert!(
+                crate::find(id).is_some(),
+                "PARTIAL names unknown effect {id}"
+            );
             assert!(!note.trim().is_empty());
         }
     }

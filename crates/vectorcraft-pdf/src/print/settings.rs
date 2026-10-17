@@ -244,7 +244,10 @@ impl Default for PrintSettings {
             margin: 0.0,
             marks: MarkSettings::default(),
             // The document's bleed (Document Setup) unless other values are given.
-            bleed: BleedSettings { use_document: true, ..Default::default() },
+            bleed: BleedSettings {
+                use_document: true,
+                ..Default::default()
+            },
             output: PrintOutput::default(),
             graphics: PrintGraphics::default(),
             color: PrintColor::default(),
@@ -274,7 +277,10 @@ pub struct PrintScale {
 
 impl Default for PrintScale {
     fn default() -> Self {
-        Self { width: 100.0, height: 100.0 }
+        Self {
+            width: 100.0,
+            height: 100.0,
+        }
     }
 }
 
@@ -309,7 +315,12 @@ pub struct InkSettings {
 
 impl Default for InkSettings {
     fn default() -> Self {
-        Self { name: String::new(), print: true, frequency: None, angle: None }
+        Self {
+            name: String::new(),
+            print: true,
+            frequency: None,
+            angle: None,
+        }
     }
 }
 
@@ -353,7 +364,11 @@ pub struct PrintGraphics {
 
 impl Default for PrintGraphics {
     fn default() -> Self {
-        Self { auto_flatness: true, flatness: 1.0, fonts: FontDownload::Subset }
+        Self {
+            auto_flatness: true,
+            flatness: 1.0,
+            fonts: FontDownload::Subset,
+        }
     }
 }
 
@@ -373,7 +388,11 @@ pub struct PrintColor {
 
 impl Default for PrintColor {
     fn default() -> Self {
-        Self { intent: Intent::RelativeColorimetric, preserve_numbers: true, profile: String::new() }
+        Self {
+            intent: Intent::RelativeColorimetric,
+            preserve_numbers: true,
+            profile: String::new(),
+        }
     }
 }
 
@@ -434,21 +453,48 @@ impl PrintSettings {
         within("scale.height", self.scale.height, 1.0, 1000.0, "%")?;
         within("overlap", self.overlap, 0.0, 720.0, " pt")?;
         within("margin", self.margin, 0.0, 144.0, " pt")?;
-        within("tileOrigin.x", self.tile_origin.x, -14_400.0, 14_400.0, " pt")?;
-        within("tileOrigin.y", self.tile_origin.y, -14_400.0, 14_400.0, " pt")?;
+        within(
+            "tileOrigin.x",
+            self.tile_origin.x,
+            -14_400.0,
+            14_400.0,
+            " pt",
+        )?;
+        within(
+            "tileOrigin.y",
+            self.tile_origin.y,
+            -14_400.0,
+            14_400.0,
+            " pt",
+        )?;
         self.marks.check()?;
         self.bleed.check()?;
         within("graphics.flatness", self.graphics.flatness, 0.2, 100.0, "")?;
         let profile = self.color.profile.trim();
-        if !profile.is_empty() && cms::profile(profile).is_none_or(|p| p.kind == ProfileKind::Gray) {
-            return Err(PdfError::BadSetting(format!("color.profile: no RGB or CMYK profile is called “{profile}”")));
+        if !profile.is_empty() && cms::profile(profile).is_none_or(|p| p.kind == ProfileKind::Gray)
+        {
+            return Err(PdfError::BadSetting(format!(
+                "color.profile: no RGB or CMYK profile is called “{profile}”"
+            )));
         }
         for ink in &self.output.inks {
             if let Some(f) = ink.frequency {
-                within(&format!("output.inks[{}].frequency", ink.name), f, 1.0, 1000.0, " lpi")?;
+                within(
+                    &format!("output.inks[{}].frequency", ink.name),
+                    f,
+                    1.0,
+                    1000.0,
+                    " lpi",
+                )?;
             }
             if let Some(a) = ink.angle {
-                within(&format!("output.inks[{}].angle", ink.name), a, -360.0, 360.0, "°")?;
+                within(
+                    &format!("output.inks[{}].angle", ink.name),
+                    a,
+                    -360.0,
+                    360.0,
+                    "°",
+                )?;
             }
         }
         Ok(())

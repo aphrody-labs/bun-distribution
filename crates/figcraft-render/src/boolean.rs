@@ -26,7 +26,11 @@ pub(crate) struct PathCache {
 
 impl PathCache {
     pub(crate) fn new(cap: usize) -> Self {
-        Self { map: HashMap::new(), tick: 0, cap: cap.max(2) }
+        Self {
+            map: HashMap::new(),
+            tick: 0,
+            cap: cap.max(2),
+        }
     }
 
     pub(crate) fn get(&mut self, key: u64) -> Option<Arc<BezPath>> {
@@ -76,7 +80,8 @@ pub fn boolean_steps() -> u64 {
 /// unused), reusing the longest cached prefix. Invalid geometry gives an empty path.
 pub fn fold_cached(operands: &[(BezPath, BoolOp)]) -> BezPath {
     if operands.len() < 2 {
-        return figcraft_pathops::boolean_ops(operands.iter().map(|(p, op)| (p, *op))).unwrap_or_default();
+        return figcraft_pathops::boolean_ops(operands.iter().map(|(p, op)| (p, *op)))
+            .unwrap_or_default();
     }
     // keys[i]: the fold of operands 0..=i.
     let mut h = DefaultHasher::new();
@@ -94,7 +99,11 @@ pub fn fold_cached(operands: &[(BezPath, BoolOp)]) -> BezPath {
         .collect();
     let hit = {
         let mut c = locked(cache());
-        keys.iter().enumerate().skip(1).rev().find_map(|(i, k)| c.get(*k).map(|p| (i, p)))
+        keys.iter()
+            .enumerate()
+            .skip(1)
+            .rev()
+            .find_map(|(i, k)| c.get(*k).map(|p| (i, p)))
     };
     let (start, mut acc) = match hit {
         Some((i, p)) if i + 1 == operands.len() => return (*p).clone(),

@@ -6,12 +6,24 @@ const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 pub fn base64_encode(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
-        let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+        let b = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
         let n = (b[0] as u32) << 16 | (b[1] as u32) << 8 | b[2] as u32;
         out.push(ALPHABET[(n >> 18) as usize & 63] as char);
         out.push(ALPHABET[(n >> 12) as usize & 63] as char);
-        out.push(if chunk.len() > 1 { ALPHABET[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if chunk.len() > 2 { ALPHABET[n as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            ALPHABET[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            ALPHABET[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -42,8 +54,15 @@ mod tests {
 
     #[test]
     fn rfc4648_vectors() {
-        for (i, o) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")]
-        {
+        for (i, o) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
             assert_eq!(base64_encode(i.as_bytes()), o);
         }
         assert_eq!(base64_encode(&[0xff, 0xfe, 0xfd]), "//79");
@@ -51,9 +70,14 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        let data: Vec<u8> = (0..=255u8).chain((0..100).map(|i| (i * 37) as u8)).collect();
+        let data: Vec<u8> = (0..=255u8)
+            .chain((0..100).map(|i| (i * 37) as u8))
+            .collect();
         for n in 0..data.len() {
-            assert_eq!(base64_decode(&base64_encode(&data[..n])).unwrap(), &data[..n]);
+            assert_eq!(
+                base64_decode(&base64_encode(&data[..n])).unwrap(),
+                &data[..n]
+            );
         }
         assert!(base64_decode("not base64!").is_none());
     }

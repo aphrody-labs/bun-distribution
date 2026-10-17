@@ -15,13 +15,19 @@ pub struct ToolResult {
 
 impl ToolResult {
     pub fn text(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: false }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: false,
+        }
     }
     pub fn json(v: &Value) -> Self {
         Self::text(serde_json::to_string_pretty(v).unwrap_or_default())
     }
     pub fn error(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: true }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: true,
+        }
     }
     pub fn to_value(&self) -> Value {
         json!({"content": self.content, "isError": self.is_error})
@@ -60,7 +66,10 @@ fn obj(props: Value, required: &[&str]) -> Value {
 
 /// The extension of each format Save writes, in [`SAVE_FORMATS`] order.
 fn save_extensions() -> Vec<&'static str> {
-    SAVE_FORMATS.iter().filter_map(|id| format(id)?.extensions.first().copied()).collect()
+    SAVE_FORMATS
+        .iter()
+        .filter_map(|id| format(id)?.extensions.first().copied())
+        .collect()
 }
 
 fn tool(name: &str, title: &str, desc: &str, schema: Value, read_only: bool) -> Value {
@@ -83,14 +92,20 @@ pub fn tool_definitions() -> Vec<Value> {
             "command_list",
             "List commands",
             "Discover command ids, labels, parameter descriptions and enabled state. Returns an array.",
-            obj(json!({"filter": string("Case-insensitive id, label or menu substring"), "enabled_only": {"type":"boolean"}}), &[]),
+            obj(
+                json!({"filter": string("Case-insensitive id, label or menu substring"), "enabled_only": {"type":"boolean"}}),
+                &[],
+            ),
             true,
         ),
         tool(
             "command_run",
             "Run a command",
             "Run an engine command by id with its JSON params. Command parameters follow the registry's descriptions.",
-            obj(json!({"id": string("Command id"), "params": {"type":"object"}}), &["id"]),
+            obj(
+                json!({"id": string("Command id"), "params": {"type":"object"}}),
+                &["id"],
+            ),
             false,
         ),
         tool(
@@ -107,7 +122,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "doc_inspect",
             "Inspect document",
             "Summary of the active document, including artboards, layer tree, selection and history.",
-            obj(json!({"depth":{"type":"integer", "minimum":0},"childLimit":{"type":"integer", "minimum":0}}), &[]),
+            obj(
+                json!({"depth":{"type":"integer", "minimum":0},"childLimit":{"type":"integer", "minimum":0}}),
+                &[],
+            ),
             true,
         ),
         tool(
@@ -120,7 +138,13 @@ pub fn tool_definitions() -> Vec<Value> {
             ),
             true,
         ),
-        tool("ui_inspect", "Inspect the interface", "Inspect the connected desktop interface; returns a tool error in headless mode.", empty(), true),
+        tool(
+            "ui_inspect",
+            "Inspect the interface",
+            "Inspect the connected desktop interface; returns a tool error in headless mode.",
+            empty(),
+            true,
+        ),
         tool(
             "ui_screenshot",
             "Capture the interface",
@@ -284,14 +308,20 @@ pub fn tool_definitions() -> Vec<Value> {
             "invoke_menu",
             "Invoke menu",
             "Invoke a menu item by its command id (same ids as list_commands, including UI-only commands like view.zoomIn or window.* in the desktop app).",
-            obj(json!({"command": string("Menu command id"), "params": {"type": "object"}}), &["command"]),
+            obj(
+                json!({"command": string("Menu command id"), "params": {"type": "object"}}),
+                &["command"],
+            ),
             false,
         ),
         tool(
             "open_panel",
             "Open panel",
             "Open a panel in the desktop app's dock by id (layers, swatches, stroke, align, pathfinder, transform, …; case-insensitive, display labels like \"Layers\" work too). Desktop app only.",
-            obj(json!({"panel": string("Panel id or display label")}), &["panel"]),
+            obj(
+                json!({"panel": string("Panel id or display label")}),
+                &["panel"],
+            ),
             false,
         ),
         tool(
@@ -326,7 +356,10 @@ pub fn tool_definitions() -> Vec<Value> {
                 "Save the active document with the engine's document.save: by default to its own file in its own format (native .vectorcraft unless it was opened from or saved as SVG, PDF or a restorable .ai). With `path`, the extension picks the format: .{}. Other formats are exports (see export). The reply's `format` says what was written and `warnings` what that format loses.",
                 save_extensions().join(", .")
             ),
-            obj(json!({"path": string("Destination; its extension picks the format (default: the document's own file)")}), &[]),
+            obj(
+                json!({"path": string("Destination; its extension picks the format (default: the document's own file)")}),
+                &[],
+            ),
             false,
         ),
         tool(
@@ -456,8 +489,20 @@ pub fn tool_definitions() -> Vec<Value> {
             ),
             false,
         ),
-        tool("undo", "Undo", "Undo the last change (Edit → Undo).", empty(), false),
-        tool("redo", "Redo", "Redo the last undone change (Edit → Redo).", empty(), false),
+        tool(
+            "undo",
+            "Undo",
+            "Undo the last change (Edit → Undo).",
+            empty(),
+            false,
+        ),
+        tool(
+            "redo",
+            "Redo",
+            "Redo the last undone change (Edit → Redo).",
+            empty(),
+            false,
+        ),
     ]
 }
 
@@ -466,7 +511,10 @@ pub fn tool_definitions() -> Vec<Value> {
 type Args = Map<String, Value>;
 
 fn req_str<'a>(a: &'a Args, k: &str) -> Result<&'a str, String> {
-    a.get(k).and_then(Value::as_str).filter(|s| !s.is_empty()).ok_or_else(|| format!("missing string argument `{k}`"))
+    a.get(k)
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| format!("missing string argument `{k}`"))
 }
 
 fn exec(b: &mut dyn Backend, cmd: &str, params: Value) -> Result<Value, String> {
@@ -489,7 +537,13 @@ fn paint_params(v: &Value) -> Result<Value, String> {
         Value::Null => json!({"none": true}),
         Value::String(s) if s.eq_ignore_ascii_case("none") => json!({"none": true}),
         Value::String(_) | Value::Array(_) => json!({"color": v}),
-        Value::Object(o) if ["color", "none", "swatch", "gradient"].iter().any(|k| o.contains_key(*k)) => v.clone(),
+        Value::Object(o)
+            if ["color", "none", "swatch", "gradient"]
+                .iter()
+                .any(|k| o.contains_key(*k)) =>
+        {
+            v.clone()
+        }
         Value::Object(_) => json!({"color": v}),
         other => return Err(format!("unsupported paint value {other}")),
     })
@@ -528,12 +582,22 @@ fn draw_path(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     if let Some(d) = a.get("d").and_then(Value::as_str) {
         p["d"] = json!(d);
     } else {
-        let pts = a.get("points").and_then(Value::as_array).ok_or("give `points` or `d`")?;
+        let pts = a
+            .get("points")
+            .and_then(Value::as_array)
+            .ok_or("give `points` or `d`")?;
         let mut anchors = vec![];
         for (i, pt) in pts.iter().enumerate() {
             let anchor = match pt {
-                Value::Array(xy) if xy.len() >= 2 && xy[0].is_number() && xy[1].is_number() => json!({"x": xy[0], "y": xy[1]}),
-                Value::Object(o) if o.get("x").is_some_and(Value::is_number) && o.get("y").is_some_and(Value::is_number) => pt.clone(),
+                Value::Array(xy) if xy.len() >= 2 && xy[0].is_number() && xy[1].is_number() => {
+                    json!({"x": xy[0], "y": xy[1]})
+                }
+                Value::Object(o)
+                    if o.get("x").is_some_and(Value::is_number)
+                        && o.get("y").is_some_and(Value::is_number) =>
+                {
+                    pt.clone()
+                }
                 _ => return Err(format!("point {i} must be [x,y] or {{x,y,…}}")),
             };
             anchors.push(anchor);
@@ -557,7 +621,11 @@ fn draw_shape(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
         "polygon" => "shape.polygon",
         "star" => "shape.star",
         "line" => "shape.line",
-        other => return Err(format!("unknown shape `{other}` (rectangle, ellipse, polygon, star, line)")),
+        other => {
+            return Err(format!(
+                "unknown shape `{other}` (rectangle, ellipse, polygon, star, line)"
+            ));
+        }
     };
     let mut p = a.clone();
     for k in ["shape", "fill", "stroke", "strokeWidth"] {
@@ -577,7 +645,10 @@ fn select_ids(b: &mut dyn Backend, a: &Args) -> Result<(), String> {
 }
 
 fn add_text(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
-    let text = a.get("text").and_then(Value::as_str).ok_or("missing string argument `text`")?;
+    let text = a
+        .get("text")
+        .and_then(Value::as_str)
+        .ok_or("missing string argument `text`")?;
     let mut style = json!({});
     for k in ["size", "font", "color"] {
         if let Some(v) = a.get(k) {
@@ -591,8 +662,14 @@ fn add_text(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
         }
         exec(b, "text.createInPath", p)?
     } else {
-        let x = a.get("x").and_then(Value::as_f64).ok_or("give `x` and `y` (or a `path`)")?;
-        let y = a.get("y").and_then(Value::as_f64).ok_or("give `x` and `y` (or a `path`)")?;
+        let x = a
+            .get("x")
+            .and_then(Value::as_f64)
+            .ok_or("give `x` and `y` (or a `path`)")?;
+        let y = a
+            .get("y")
+            .and_then(Value::as_f64)
+            .ok_or("give `x` and `y` (or a `path`)")?;
         let mut p = json!({"x": x, "y": y, "text": text});
         for (k, v) in style.as_object().into_iter().flatten() {
             p[k.as_str()] = v.clone();
@@ -613,7 +690,12 @@ fn add_text(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     let mut made = json!({"id": r.get("id")});
     // A path effect is applied after the text is made: ask again how it fits then.
     let overflow = match r.get("id").filter(|_| a.get("pathEffect").is_some()) {
-        Some(id) => exec(b, "document.node", json!({"id": id, "summary": true}))?.get("overflow").and_then(Value::as_bool) == Some(true),
+        Some(id) => {
+            exec(b, "document.node", json!({"id": id, "summary": true}))?
+                .get("overflow")
+                .and_then(Value::as_bool)
+                == Some(true)
+        }
         None => r.get("overflow").is_some(),
     };
     if overflow {
@@ -636,7 +718,11 @@ fn transform(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
     let mut done = vec![];
     if a.contains_key("dx") || a.contains_key("dy") {
         let num = |k: &str| a.get(k).and_then(Value::as_f64).unwrap_or(0.0);
-        exec(b, "object.move", json!({"dx": num("dx"), "dy": num("dy"), "copy": copy.replace(false)}))?;
+        exec(
+            b,
+            "object.move",
+            json!({"dx": num("dx"), "dy": num("dy"), "copy": copy.replace(false)}),
+        )?;
         done.push("move");
     }
     if let Some(r) = a.get("rotate").and_then(Value::as_f64) {
@@ -644,9 +730,16 @@ fn transform(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
         done.push("rotate");
     }
     let s = a.get("scale").and_then(Value::as_f64);
-    let (sx, sy) = (a.get("scaleX").and_then(Value::as_f64).or(s), a.get("scaleY").and_then(Value::as_f64).or(s));
+    let (sx, sy) = (
+        a.get("scaleX").and_then(Value::as_f64).or(s),
+        a.get("scaleY").and_then(Value::as_f64).or(s),
+    );
     if sx.is_some() || sy.is_some() {
-        exec(b, "object.scale", with(json!({"sx": sx.unwrap_or(100.0), "sy": sy.unwrap_or(100.0)})))?;
+        exec(
+            b,
+            "object.scale",
+            with(json!({"sx": sx.unwrap_or(100.0), "sy": sy.unwrap_or(100.0)})),
+        )?;
         done.push("scale");
     }
     if let Some(axis) = a.get("reflect").and_then(Value::as_str) {
@@ -658,7 +751,9 @@ fn transform(b: &mut dyn Backend, a: &Args) -> Result<Value, String> {
         done.push("shear");
     }
     if done.is_empty() {
-        return Err("give at least one of dx/dy, rotate, scale/scaleX/scaleY, reflect, shear".into());
+        return Err(
+            "give at least one of dx/dy, rotate, scale/scaleX/scaleY, reflect, shear".into(),
+        );
     }
     Ok(json!({"applied": done}))
 }
@@ -684,7 +779,9 @@ fn screenshot(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
         b.call("ui.render", p)?
     };
     let png = match r.get("pngBase64").and_then(Value::as_str) {
-        Some(b64) => vectorcraft_format::base64_decode(b64).ok_or("the backend returned bad base64")?,
+        Some(b64) => {
+            vectorcraft_format::base64_decode(b64).ok_or("the backend returned bad base64")?
+        }
         // An app from before `data` wrote the file without sending the image: read it back
         // (loopback: the same machine).
         None => match path {
@@ -703,12 +800,18 @@ fn screenshot(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
 
 /// The window of an app from before `ui.screenshot {data}`, captured through a temporary file.
 fn old_window_capture(b: &mut dyn Backend) -> Result<ToolResult, String> {
-    let tmp = std::env::temp_dir().join(format!("vectorcraft-window-{}.png", std::process::id())).to_string_lossy().to_string();
+    let tmp = std::env::temp_dir()
+        .join(format!("vectorcraft-window-{}.png", std::process::id()))
+        .to_string_lossy()
+        .to_string();
     let r = b.call("ui.screenshot", json!({"path": tmp}))?;
     let png = std::fs::read(&tmp).map_err(|e| format!("read {tmp}: {e}"))?;
     // Best effort: a temporary file left behind is harmless.
     std::fs::remove_file(&tmp).ok();
-    Ok(image_result(&png, json!({"window": true, "width": r.get("width"), "height": r.get("height"), "path": Value::Null})))
+    Ok(image_result(
+        &png,
+        json!({"window": true, "width": r.get("width"), "height": r.get("height"), "path": Value::Null}),
+    ))
 }
 
 fn image_result(png: &[u8], info: Value) -> ToolResult {
@@ -722,19 +825,36 @@ fn image_result(png: &[u8], info: Value) -> ToolResult {
 }
 
 fn filter_commands(all: Value, a: &Args) -> Value {
-    let needle = a.get("filter").and_then(Value::as_str).map(str::to_lowercase).filter(|s| !s.is_empty());
-    let enabled_only = a.get("enabledOnly").and_then(Value::as_bool).unwrap_or(false);
+    let needle = a
+        .get("filter")
+        .and_then(Value::as_str)
+        .map(str::to_lowercase)
+        .filter(|s| !s.is_empty());
+    let enabled_only = a
+        .get("enabledOnly")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let Value::Array(list) = all else { return all };
     let hit = |c: &Value| {
         if enabled_only && c.get("enabled").and_then(Value::as_bool) == Some(false) {
             return false;
         }
         let Some(n) = &needle else { return true };
-        let field = |k: &str| c.get(k).and_then(Value::as_str).unwrap_or("").to_lowercase();
+        let field = |k: &str| {
+            c.get(k)
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_lowercase()
+        };
         let menu = c
             .get("menu")
             .and_then(Value::as_array)
-            .map(|m| m.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(" "))
+            .map(|m| {
+                m.iter()
+                    .filter_map(Value::as_str)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
             .unwrap_or_default()
             .to_lowercase();
         field("id").contains(n) || field("label").contains(n) || menu.contains(n)
@@ -762,19 +882,33 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
             j(json!({"count": list.as_array().map_or(0, Vec::len), "commands": list}))
         }
         "command_run" | "run_command" | "invoke_menu" => {
-            let cmd = req_str(a, if name == "command_run" { "id" } else { "command" })?;
+            let cmd = req_str(
+                a,
+                if name == "command_run" {
+                    "id"
+                } else {
+                    "command"
+                },
+            )?;
             let params = match a.get("params") {
                 None | Some(Value::Null) => json!({}),
                 Some(v @ Value::Object(_)) => v.clone(),
                 Some(_) => return Err("`params` must be an object".into()),
             };
-            let method = if name == "invoke_menu" && b.has_ui() { "ui.menu.invoke" } else { "engine.execute" };
+            let method = if name == "invoke_menu" && b.has_ui() {
+                "ui.menu.invoke"
+            } else {
+                "engine.execute"
+            };
             j(b.call(method, json!({"command": cmd, "params": params}))?)
         }
         "doc_inspect" | "inspect_document" => {
             // Only the slicing options reach the command, which validates them.
-            let slice: Map<String, Value> =
-                a.iter().filter(|(k, _)| matches!(k.as_str(), "depth" | "childLimit")).map(|(k, v)| (k.clone(), v.clone())).collect();
+            let slice: Map<String, Value> = a
+                .iter()
+                .filter(|(k, _)| matches!(k.as_str(), "depth" | "childLimit"))
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
             j(b.call("document.inspect", Value::Object(slice))?)
         }
         "ui_inspect" | "inspect_ui" => {
@@ -783,13 +917,21 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
         }
         "select_tool" => j(b.call("ui.tool.select", json!({"tool": req_str(a, "tool")?}))?),
         "pointer_gesture" => {
-            let events = a.get("events").and_then(Value::as_array).filter(|e| !e.is_empty()).ok_or("`events` must be a non-empty array")?;
+            let events = a
+                .get("events")
+                .and_then(Value::as_array)
+                .filter(|e| !e.is_empty())
+                .ok_or("`events` must be a non-empty array")?;
             for (i, e) in events.iter().enumerate() {
                 let kind = e.get("kind").and_then(Value::as_str).unwrap_or("");
                 if crate::headless::pointer_kind(kind).is_none() {
-                    return Err(format!("event {i}: unknown kind `{kind}` (down, drag, up, move, doubleclick)"));
+                    return Err(format!(
+                        "event {i}: unknown kind `{kind}` (down, drag, up, move, doubleclick)"
+                    ));
                 }
-                if !e.get("x").is_some_and(Value::is_number) || !e.get("y").is_some_and(Value::is_number) {
+                if !e.get("x").is_some_and(Value::is_number)
+                    || !e.get("y").is_some_and(Value::is_number)
+                {
                     return Err(format!("event {i}: numeric `x` and `y` required"));
                 }
             }
@@ -813,7 +955,10 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
         "draw_path" => j(draw_path(b, a)?),
         "draw_shape" => j(draw_shape(b, a)?),
         "set_paint" => {
-            if !["fill", "stroke", "strokeWidth"].iter().any(|k| a.contains_key(*k)) {
+            if !["fill", "stroke", "strokeWidth"]
+                .iter()
+                .any(|k| a.contains_key(*k))
+            {
                 return Err("give at least one of `fill`, `stroke`, `strokeWidth`".into());
             }
             let ids = a.get("ids").cloned();
@@ -838,22 +983,43 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
         }
         "screenshot" => screenshot(b, a),
         "open_file" => j(b.call("app.open", json!({"path": req_str(a, "path")?}))?),
-        "save_file" => j(b.call("app.save", json!({"path": a.get("path").and_then(Value::as_str)}))?),
+        "save_file" => j(b.call(
+            "app.save",
+            json!({"path": a.get("path").and_then(Value::as_str)}),
+        )?),
         "export" => {
             // One params object for every backend; the named arguments win over `options` (a named
             // artboard or range replaces every artboard choice in `options`).
-            let mut params = a.get("options").and_then(Value::as_object).cloned().unwrap_or_default();
-            if ["artboard", "range"].iter().any(|k| a.get(*k).is_some_and(|v| !v.is_null())) {
+            let mut params = a
+                .get("options")
+                .and_then(Value::as_object)
+                .cloned()
+                .unwrap_or_default();
+            if ["artboard", "range"]
+                .iter()
+                .any(|k| a.get(*k).is_some_and(|v| !v.is_null()))
+            {
                 for k in ARTBOARD_PARAMS {
                     params.remove(k);
                 }
             }
-            for k in ["path", "format", "scale", "artboard", "range", "outlineText"] {
+            for k in [
+                "path",
+                "format",
+                "scale",
+                "artboard",
+                "range",
+                "outlineText",
+            ] {
                 if let Some(v) = a.get(k).filter(|v| !v.is_null()) {
                     params.insert(k.into(), v.clone());
                 }
             }
-            let cmd = if a.get("selection").and_then(Value::as_bool) == Some(true) { "document.exportSelection" } else { "document.export" };
+            let cmd = if a.get("selection").and_then(Value::as_bool) == Some(true) {
+                "document.exportSelection"
+            } else {
+                "document.export"
+            };
             j(exec(b, cmd, Value::Object(params))?)
         }
         "add_text" => j(add_text(b, a)?),
@@ -862,7 +1028,8 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
                 let all = exec(b, "effect.list", json!({}))?;
                 return j(json!({"catalog": all.get("catalog")}));
             };
-            let mut p = json!({"effect": effect, "params": a.get("params").cloned().unwrap_or(json!({}))});
+            let mut p =
+                json!({"effect": effect, "params": a.get("params").cloned().unwrap_or(json!({}))});
             if let Some(ids) = a.get("ids") {
                 p["ids"] = ids.clone();
             }
@@ -870,7 +1037,11 @@ fn dispatch(b: &mut dyn Backend, name: &str, a: &Args) -> Result<ToolResult, Str
         }
         "pathfinder" => {
             select_ids(b, a)?;
-            j(exec(b, &format!("object.pathfinder.{}", req_str(a, "operation")?), json!({}))?)
+            j(exec(
+                b,
+                &format!("object.pathfinder.{}", req_str(a, "operation")?),
+                json!({}),
+            )?)
         }
         "transform" => j(transform(b, a)?),
         "create_graph" => {
@@ -911,12 +1082,17 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
     match vectorcraft_engine::guard::catch_panic(|| dispatch(b, name, a)) {
         Ok(Ok(r)) => r,
         Ok(Err(e)) => ToolResult::error(format!("{name}: {e}")),
-        Err(e) => ToolResult::error(format!("internal error in `{name}`: {e} (please report this bug)")),
+        Err(e) => ToolResult::error(format!(
+            "internal error in `{name}`: {e} (please report this bug)"
+        )),
     }
 }
 
 fn command_batch(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
-    let steps = a.get("steps").and_then(Value::as_array).ok_or("`steps` must be an array")?;
+    let steps = a
+        .get("steps")
+        .and_then(Value::as_array)
+        .ok_or("`steps` must be an array")?;
     let stop = match a.get("stop_on_error") {
         None => true,
         Some(v) => v.as_bool().ok_or("`stop_on_error` must be a boolean")?,
@@ -927,7 +1103,10 @@ fn command_batch(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
     };
     if atomic {
         let label = a.get("label").cloned().unwrap_or(Value::Null);
-        b.call("engine.execute", json!({"command":"edit.undoGroup.begin","params":{"label":label}}))?;
+        b.call(
+            "engine.execute",
+            json!({"command":"edit.undoGroup.begin","params":{"label":label}}),
+        )?;
     } else if a.get("label").is_some() {
         return Err("`label` names the undo step of an atomic batch: give atomic:true too".into());
     }
@@ -967,7 +1146,10 @@ fn command_batch(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
     }
     // The steps that ran stay, as one undo step.
     if atomic {
-        b.call("engine.execute", json!({"command":"edit.undoGroup.end","params":{}}))?;
+        b.call(
+            "engine.execute",
+            json!({"command":"edit.undoGroup.end","params":{}}),
+        )?;
     }
     let mut r = ToolResult::json(&json!({"completed":completed,"failed":failed,"results":results}));
     r.is_error = failed > 0;
@@ -977,17 +1159,31 @@ fn command_batch(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
 fn render_preview(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
     let max = match a.get("max_side") {
         None => 1024,
-        Some(v) => v.as_u64().filter(|v| (1..=4096).contains(v)).ok_or("`max_side` must be an integer in 1..4096")?,
+        Some(v) => v
+            .as_u64()
+            .filter(|v| (1..=4096).contains(v))
+            .ok_or("`max_side` must be an integer in 1..4096")?,
     };
     let index = match a.get("artboard") {
         None => 0,
-        Some(v) => v.as_u64().ok_or("`artboard` must be a 0-based artboard index")?,
+        Some(v) => v
+            .as_u64()
+            .ok_or("`artboard` must be a 0-based artboard index")?,
     };
     let doc = b.call("document.inspect", json!({"depth":0}))?;
-    let board =
-        doc.get("artboards").and_then(Value::as_array).and_then(|v| v.get(usize::try_from(index).ok()?)).ok_or(format!("no artboard {index}"))?;
-    let width = board.get("width").and_then(Value::as_f64).ok_or("artboard has no width")?;
-    let height = board.get("height").and_then(Value::as_f64).ok_or("artboard has no height")?;
+    let board = doc
+        .get("artboards")
+        .and_then(Value::as_array)
+        .and_then(|v| v.get(usize::try_from(index).ok()?))
+        .ok_or(format!("no artboard {index}"))?;
+    let width = board
+        .get("width")
+        .and_then(Value::as_f64)
+        .ok_or("artboard has no width")?;
+    let height = board
+        .get("height")
+        .and_then(Value::as_f64)
+        .ok_or("artboard has no height")?;
     if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
         return Err("invalid artboard dimensions".into());
     }
@@ -998,11 +1194,19 @@ fn render_preview(b: &mut dyn Backend, a: &Args) -> Result<ToolResult, String> {
         return Err("artboard is too large for a bounded preview".into());
     }
     let r = b.call("ui.render", json!({"scale":scale, "artboard": index}))?;
-    let encoded = r.get("pngBase64").and_then(Value::as_str).ok_or("renderer returned no image")?;
+    let encoded = r
+        .get("pngBase64")
+        .and_then(Value::as_str)
+        .ok_or("renderer returned no image")?;
     let png = vectorcraft_format::base64_decode(encoded).ok_or("renderer returned bad base64")?;
-    let img = image::load_from_memory_with_format(&png, image::ImageFormat::Png).map_err(|e| format!("read preview: {e}"))?;
+    let img = image::load_from_memory_with_format(&png, image::ImageFormat::Png)
+        .map_err(|e| format!("read preview: {e}"))?;
     let img = img.thumbnail(max as u32, max as u32);
     let mut out = std::io::Cursor::new(Vec::new());
-    img.write_to(&mut out, image::ImageFormat::Png).map_err(|e| format!("encode preview: {e}"))?;
-    Ok(image_result(out.get_ref(), json!({"width":img.width(),"height":img.height()})))
+    img.write_to(&mut out, image::ImageFormat::Png)
+        .map_err(|e| format!("encode preview: {e}"))?;
+    Ok(image_result(
+        out.get_ref(),
+        json!({"width":img.width(),"height":img.height()}),
+    ))
 }

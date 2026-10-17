@@ -313,7 +313,11 @@ impl Event {
 
     #[cfg(test)]
     pub(super) fn register_host_waiter(&self, waiter: &Arc<HostMultiWaitSignal>) {
-        let mut waiters = self.host_waiters.get_or_init(Mutex::default).lock().unwrap();
+        let mut waiters = self
+            .host_waiters
+            .get_or_init(Mutex::default)
+            .lock()
+            .unwrap();
         waiters.retain(|waiter| waiter.strong_count() != 0);
         waiters.push(Arc::downgrade(waiter));
     }

@@ -111,8 +111,12 @@ impl<'a> Overlay<'a> {
         data: T,
         options: OverlayOptions,
     ) -> Result<Self, OverlayError> {
-        let OverlayOptions { originally_compressed, originally_signed, info, dsprot_state } =
-            options;
+        let OverlayOptions {
+            originally_compressed,
+            originally_signed,
+            info,
+            dsprot_state,
+        } = options;
         let data = data.into();
 
         Ok(Self {
@@ -326,7 +330,10 @@ impl<'a> Overlay<'a> {
             OverlayCompressionSnafu {}.fail()?;
         }
 
-        Ok(HmacSha1Signature::from_hmac_sha1(hmac_sha1, self.data.as_ref()))
+        Ok(HmacSha1Signature::from_hmac_sha1(
+            hmac_sha1,
+            self.data.as_ref(),
+        ))
     }
 
     /// Returns the signature of this [`Overlay`], if it exists.
@@ -380,7 +387,9 @@ impl<'a> Overlay<'a> {
             let base_address = self.base_address();
             let result = dsprot_info.decrypt(self.data.to_mut(), base_address, options)?;
             self.dsprot_state = DsProtState::Unencrypted(result);
-            let DsProtState::Unencrypted(result) = &self.dsprot_state else { unreachable!() };
+            let DsProtState::Unencrypted(result) = &self.dsprot_state else {
+                unreachable!()
+            };
             Ok(Some(result))
         }
     }

@@ -142,7 +142,10 @@ pub fn run(db: &aphrody_nie_index::Db, vfs: &Vfs, with_textures: bool) -> Result
 
     let conn = db.conn();
     conn.execute_batch("BEGIN")?;
-    let mut sink = Sink { conn, stats: Stats::default() };
+    let mut sink = Sink {
+        conn,
+        stats: Stats::default(),
+    };
 
     for path in &cfgs {
         let Ok(bytes) = vfs.read(path) else {
@@ -156,7 +159,10 @@ pub fn run(db: &aphrody_nie_index::Db, vfs: &Vfs, with_textures: bool) -> Result
         sink.stats.screens += 1;
 
         // Nav-hash d'écran : le stem du fichier (`main_menu` pour `main_menu_setting.cfg.bin`).
-        if let Some(stem) = path.rsplit('/').next().and_then(|f| f.strip_suffix("_setting.cfg.bin"))
+        if let Some(stem) = path
+            .rsplit('/')
+            .next()
+            .and_then(|f| f.strip_suffix("_setting.cfg.bin"))
         {
             sink.add("menu_screen", stem)?;
         }
@@ -241,10 +247,11 @@ pub fn run(db: &aphrody_nie_index::Db, vfs: &Vfs, with_textures: bool) -> Result
 
     let mut stats = sink.stats;
     conn.execute_batch("COMMIT")?;
-    stats.inserted =
-        conn.query_row("SELECT COUNT(*) FROM hash_name WHERE source = ?1", [SOURCE], |r| {
-            r.get::<_, i64>(0)
-        })? as usize;
+    stats.inserted = conn.query_row(
+        "SELECT COUNT(*) FROM hash_name WHERE source = ?1",
+        [SOURCE],
+        |r| r.get::<_, i64>(0),
+    )? as usize;
     Ok(stats)
 }
 

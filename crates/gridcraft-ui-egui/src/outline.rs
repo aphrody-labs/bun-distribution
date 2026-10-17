@@ -29,7 +29,10 @@ pub struct Axis {
 
 impl Axis {
     pub fn new(lines: &BTreeMap<u32, LineInfo>) -> Axis {
-        Axis { levels: outline::max_level(lines), groups: outline::groups(lines) }
+        Axis {
+            levels: outline::max_level(lines),
+            groups: outline::groups(lines),
+        }
     }
 }
 
@@ -41,7 +44,11 @@ pub fn lane(zoom: f32) -> f32 {
 /// Thickness of the band for an outline `levels` deep: a lane per level plus one for the level
 /// button that shows everything. No outline, no band.
 pub fn band(levels: u8, zoom: f32) -> f32 {
-    if levels == 0 { 0.0 } else { (levels as f32 + 1.0) * lane(zoom) + 3.0 }
+    if levels == 0 {
+        0.0
+    } else {
+        (levels as f32 + 1.0) * lane(zoom) + 3.0
+    }
 }
 
 /// What a button does.
@@ -57,13 +64,30 @@ impl Action {
     /// The command (and its parameters) the button runs.
     pub fn command(&self) -> (&'static str, Json) {
         match *self {
-            Action::Level { rows, level } => ("data.showLevels", json!({ if rows { "rows" } else { "cols" }: level })),
+            Action::Level { rows, level } => (
+                "data.showLevels",
+                json!({ if rows { "rows" } else { "cols" }: level }),
+            ),
             Action::Toggle { rows, group } => {
-                let id = if group.collapsed { "data.showDetail" } else { "data.hideDetail" };
-                let (key, lines) = if rows {
-                    ("rows", format!("{}:{}", group.start as u64 + 1, group.end as u64 + 1))
+                let id = if group.collapsed {
+                    "data.showDetail"
                 } else {
-                    ("cols", format!("{}:{}", col_to_letters(group.start), col_to_letters(group.end)))
+                    "data.hideDetail"
+                };
+                let (key, lines) = if rows {
+                    (
+                        "rows",
+                        format!("{}:{}", group.start as u64 + 1, group.end as u64 + 1),
+                    )
+                } else {
+                    (
+                        "cols",
+                        format!(
+                            "{}:{}",
+                            col_to_letters(group.start),
+                            col_to_letters(group.end)
+                        ),
+                    )
                 };
                 (id, json!({ key: lines, "level": group.level }))
             }
@@ -73,7 +97,9 @@ impl Action {
     pub fn label(&self) -> String {
         match *self {
             Action::Level { level, .. } => level.to_string(),
-            Action::Toggle { group, .. } => if group.collapsed { "+" } else { "\u{2212}" }.to_string(),
+            Action::Toggle { group, .. } => {
+                if group.collapsed { "+" } else { "\u{2212}" }.to_string()
+            }
         }
     }
 }
@@ -127,10 +153,19 @@ struct Dir<'a> {
 impl Dir<'_> {
     /// Where the line starts on screen, and its size.
     fn start(&self, line: u32) -> f32 {
-        if self.rows { self.geo.y(self.sh, line) } else { self.geo.x(self.sh, line) }
+        if self.rows {
+            self.geo.y(self.sh, line)
+        } else {
+            self.geo.x(self.sh, line)
+        }
     }
     fn size(&self, line: u32) -> f32 {
-        self.geo.z * if self.rows { self.sh.row_height(line) } else { self.sh.col_width(line) }
+        self.geo.z
+            * if self.rows {
+                self.sh.row_height(line)
+            } else {
+                self.sh.col_width(line)
+            }
     }
     fn lane(&self, step: f32, k: u8) -> f32 {
         self.lane0 + (k as f32 - 0.5) * step
@@ -138,19 +173,33 @@ impl Dir<'_> {
     /// The visible extent of a line along: clipped to its pane, `None` when hidden or off screen.
     fn visible(&self, line: u32) -> Option<(f32, f32)> {
         let (a, size) = (self.start(line), self.size(line));
-        let top = if line >= self.frozen { self.split } else { self.lo };
+        let top = if line >= self.frozen {
+            self.split
+        } else {
+            self.lo
+        };
         let (a0, a1) = (a.max(top), (a + size).min(self.hi));
         (size > 0.0 && a1 > a0).then_some((a0, a1))
     }
     /// The first on-screen line in `start..=end`: the frozen ones first, then the scrolling ones from the line
     /// at the pane's edge, so a long group is not scanned from its far-off start.
     fn first_visible(&self, start: u32, end: u32) -> Option<(u32, (f32, f32))> {
-        let at = if self.rows { self.geo.row_at(self.sh, self.split) } else { self.geo.col_at(self.sh, self.split) };
+        let at = if self.rows {
+            self.geo.row_at(self.sh, self.split)
+        } else {
+            self.geo.col_at(self.sh, self.split)
+        };
         let scrolled = start.max(self.frozen).max(at);
-        (start..self.frozen.min(end.saturating_add(1))).chain(scrolled..=end).find_map(|l| self.visible(l).map(|v| (l, v)))
+        (start..self.frozen.min(end.saturating_add(1)))
+            .chain(scrolled..=end)
+            .find_map(|l| self.visible(l).map(|v| (l, v)))
     }
     fn point(&self, along: f32, across: f32) -> Pos2 {
-        if self.rows { pos2(across, along) } else { pos2(along, across) }
+        if self.rows {
+            pos2(across, along)
+        } else {
+            pos2(along, across)
+        }
     }
     fn rect(&self, along: f32, across: f32, side: f32) -> Rect {
         Rect::from_center_size(self.point(along, across), vec2(side, side))
@@ -163,8 +212,16 @@ pub fn layout(geo: &Geo, sh: &Sheet) -> Layout {
     let zoom = (geo.z / DISPLAY_SCALE).max(0.1);
     let step = lane(zoom);
     let side = (step - 4.0).max(7.0);
-    let corner_h = if geo.header_h > 0.0 { geo.header_h } else { geo.band_h };
-    let corner_w = if geo.header_w > 0.0 { geo.header_w } else { geo.band_w };
+    let corner_h = if geo.header_h > 0.0 {
+        geo.header_h
+    } else {
+        geo.band_h
+    };
+    let corner_w = if geo.header_w > 0.0 {
+        geo.header_w
+    } else {
+        geo.band_w
+    };
     let rows = Dir {
         rows: true,
         geo,
@@ -192,21 +249,38 @@ pub fn layout(geo: &Geo, sh: &Sheet) -> Layout {
             continue;
         }
         for k in 1..=axis.levels + 1 {
-            out.buttons.push(Button { rect: dir.rect(dir.level_along, dir.lane(step, k), side), action: Action::Level { rows: dir.rows, level: k } });
+            out.buttons.push(Button {
+                rect: dir.rect(dir.level_along, dir.lane(step, k), side),
+                action: Action::Level {
+                    rows: dir.rows,
+                    level: k,
+                },
+            });
         }
         for grp in &axis.groups {
             let across = dir.lane(step, grp.level);
             // The button on the summary line, if that line is on screen.
-            let button = dir.visible(grp.summary()).map(|(a0, a1)| (a0 + a1) / 2.0).filter(|_| grp.summary() > grp.end);
+            let button = dir
+                .visible(grp.summary())
+                .map(|(a0, a1)| (a0 + a1) / 2.0)
+                .filter(|_| grp.summary() > grp.end);
             if let Some(mid) = button {
-                out.buttons.push(Button { rect: dir.rect(mid, across, side), action: Action::Toggle { rows: dir.rows, group: *grp } });
+                out.buttons.push(Button {
+                    rect: dir.rect(mid, across, side),
+                    action: Action::Toggle {
+                        rows: dir.rows,
+                        group: *grp,
+                    },
+                });
             }
             if grp.collapsed {
                 continue;
             }
             // The bracket, over the part of the detail that is on screen.
             let first = dir.first_visible(grp.start, grp.end);
-            let Some((first_line, (a0, _))) = first else { continue };
+            let Some((first_line, (a0, _))) = first else {
+                continue;
+            };
             let a1 = match button {
                 Some(mid) => mid - side / 2.0,
                 None => dir.start(grp.summary()).min(dir.hi),
@@ -215,8 +289,16 @@ pub fn layout(geo: &Geo, sh: &Sheet) -> Layout {
                 continue;
             }
             let start_shown = first_line == grp.start && (a0 - dir.start(grp.start)).abs() < 0.5;
-            let tick = start_shown.then(|| [dir.point(a0 + 0.5, across), dir.point(a0 + 0.5, across + side / 2.0)]);
-            out.brackets.push(Bracket { line: [dir.point(a0 + 0.5, across), dir.point(a1, across)], tick });
+            let tick = start_shown.then(|| {
+                [
+                    dir.point(a0 + 0.5, across),
+                    dir.point(a0 + 0.5, across + side / 2.0),
+                ]
+            });
+            out.brackets.push(Bracket {
+                line: [dir.point(a0 + 0.5, across), dir.point(a1, across)],
+                tick,
+            });
         }
     }
     out
@@ -228,7 +310,11 @@ pub fn hit(geo: &Geo, sh: &Sheet, p: Pos2) -> Option<Action> {
     if !rows.contains(p) && !cols.contains(p) {
         return None;
     }
-    layout(geo, sh).buttons.into_iter().find(|b| b.rect.expand(1.5).contains(p)).map(|b| b.action)
+    layout(geo, sh)
+        .buttons
+        .into_iter()
+        .find(|b| b.rect.expand(1.5).contains(p))
+        .map(|b| b.action)
 }
 
 /// Paints the bands (in logical coordinates, before the grid is mirrored for right-to-left).
@@ -243,10 +329,22 @@ pub fn paint(p: &Painter, geo: &Geo, sh: &Sheet, t: &Tokens) {
         }
     }
     if geo.band_w > 0.0 {
-        p.line_segment([pos2(rows.right() - 0.5, rows.top()), pos2(rows.right() - 0.5, rows.bottom())], Stroke::new(1.0, t.header_line));
+        p.line_segment(
+            [
+                pos2(rows.right() - 0.5, rows.top()),
+                pos2(rows.right() - 0.5, rows.bottom()),
+            ],
+            Stroke::new(1.0, t.header_line),
+        );
     }
     if geo.band_h > 0.0 {
-        p.line_segment([pos2(cols.left(), cols.bottom() - 0.5), pos2(cols.right(), cols.bottom() - 0.5)], Stroke::new(1.0, t.header_line));
+        p.line_segment(
+            [
+                pos2(cols.left(), cols.bottom() - 0.5),
+                pos2(cols.right(), cols.bottom() - 0.5),
+            ],
+            Stroke::new(1.0, t.header_line),
+        );
     }
     let l = layout(geo, sh);
     let ink = Stroke::new(1.0, t.header_text);
@@ -254,7 +352,11 @@ pub fn paint(p: &Painter, geo: &Geo, sh: &Sheet, t: &Tokens) {
     let row_clip = Rect::from_min_max(pos2(rows.left(), geo.cells.top()), rows.max);
     let col_clip = Rect::from_min_max(pos2(geo.cells.left(), cols.top()), cols.max);
     for b in &l.brackets {
-        let clip = if b.line[0].x == b.line[1].x { row_clip } else { col_clip };
+        let clip = if b.line[0].x == b.line[1].x {
+            row_clip
+        } else {
+            col_clip
+        };
         let pc = p.with_clip_rect(clip);
         pc.line_segment(b.line, ink);
         if let Some(tick) = b.tick {
@@ -271,7 +373,13 @@ pub fn paint(p: &Painter, geo: &Geo, sh: &Sheet, t: &Tokens) {
         let pc = p.with_clip_rect(clip);
         pc.rect_filled(b.rect, 1.0, t.header_bg);
         pc.rect_stroke(b.rect, 1.0, ink, StrokeKind::Inside);
-        pc.text(b.rect.center(), Align2::CENTER_CENTER, b.action.label(), font.clone(), t.header_text);
+        pc.text(
+            b.rect.center(),
+            Align2::CENTER_CENTER,
+            b.action.label(),
+            font.clone(),
+            t.header_text,
+        );
     }
 }
 
@@ -293,7 +401,11 @@ mod tests {
     }
 
     fn geo(sh: &Sheet) -> Geo {
-        Geo::new(sh, Rect::from_min_size(pos2(0.0, 0.0), vec2(1000.0, 700.0)), vec2(0.0, 0.0))
+        Geo::new(
+            sh,
+            Rect::from_min_size(pos2(0.0, 0.0), vec2(1000.0, 700.0)),
+            vec2(0.0, 0.0),
+        )
     }
 
     #[test]
@@ -314,15 +426,35 @@ mod tests {
                 map.entry(i).or_default().outline = 1;
             }
             for line in [0u32, 4095, 4096, 4200, 4970] {
-                let scroll = if rows { vec2(0.0, sh.row_top(line) as f32) } else { vec2(sh.col_left(line) as f32, 0.0) };
-                let g = Geo::new(&sh, Rect::from_min_size(pos2(0.0, 0.0), vec2(800.0, 600.0)), scroll);
+                let scroll = if rows {
+                    vec2(0.0, sh.row_top(line) as f32)
+                } else {
+                    vec2(sh.col_left(line) as f32, 0.0)
+                };
+                let g = Geo::new(
+                    &sh,
+                    Rect::from_min_size(pos2(0.0, 0.0), vec2(800.0, 600.0)),
+                    scroll,
+                );
                 let l = layout(&g, &sh);
                 assert_eq!(l.brackets.len(), 1, "rows={rows} line={line}");
-                assert_eq!(l.brackets[0].tick.is_some(), line == 0, "rows={rows} line={line}");
+                assert_eq!(
+                    l.brackets[0].tick.is_some(),
+                    line == 0,
+                    "rows={rows} line={line}"
+                );
             }
             // Past the group's summary line nothing is left to bracket.
-            let scroll = if rows { vec2(0.0, sh.row_top(5100) as f32) } else { vec2(sh.col_left(5100) as f32, 0.0) };
-            let g = Geo::new(&sh, Rect::from_min_size(pos2(0.0, 0.0), vec2(800.0, 600.0)), scroll);
+            let scroll = if rows {
+                vec2(0.0, sh.row_top(5100) as f32)
+            } else {
+                vec2(sh.col_left(5100) as f32, 0.0)
+            };
+            let g = Geo::new(
+                &sh,
+                Rect::from_min_size(pos2(0.0, 0.0), vec2(800.0, 600.0)),
+                scroll,
+            );
             assert!(layout(&g, &sh).brackets.is_empty(), "rows={rows}");
         }
     }
@@ -346,32 +478,89 @@ mod tests {
         let sh = sheet();
         let g = geo(&sh);
         let l = layout(&g, &sh);
-        let levels: Vec<_> =
-            l.buttons.iter().filter_map(|b| if let Action::Level { rows, level } = b.action { Some((rows, level)) } else { None }).collect();
-        assert_eq!(levels, [(true, 1), (true, 2), (true, 3), (false, 1), (false, 2)]);
+        let levels: Vec<_> = l
+            .buttons
+            .iter()
+            .filter_map(|b| {
+                if let Action::Level { rows, level } = b.action {
+                    Some((rows, level))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(
+            levels,
+            [(true, 1), (true, 2), (true, 3), (false, 1), (false, 2)]
+        );
         // Row level buttons: side by side in the row band, level with the column headers.
-        let row1 = l.buttons.iter().find(|b| b.action == Action::Level { rows: true, level: 1 }).unwrap().rect;
-        let row2 = l.buttons.iter().find(|b| b.action == Action::Level { rows: true, level: 2 }).unwrap().rect;
+        let row1 = l
+            .buttons
+            .iter()
+            .find(|b| {
+                b.action
+                    == Action::Level {
+                        rows: true,
+                        level: 1,
+                    }
+            })
+            .unwrap()
+            .rect;
+        let row2 = l
+            .buttons
+            .iter()
+            .find(|b| {
+                b.action
+                    == Action::Level {
+                        rows: true,
+                        level: 2,
+                    }
+            })
+            .unwrap()
+            .rect;
         assert!(row1.right() < row2.left() && (row1.center().y - row2.center().y).abs() < 0.01);
-        assert!(row1.center().y > g.head_top() && row1.center().y < g.cells.top() && row2.right() <= g.head_left());
+        assert!(
+            row1.center().y > g.head_top()
+                && row1.center().y < g.cells.top()
+                && row2.right() <= g.head_left()
+        );
         // The level-1 row group's − is on row 9 (index 8) in lane 1; the inner group's on row 8.
         let toggle = |rows: bool, level: u8| {
             l.buttons.iter().find(|b| matches!(b.action, Action::Toggle { rows: r, group } if r == rows && group.level == level)).unwrap()
         };
         let outer = toggle(true, 1);
-        assert!(g.cell_rect(&sh, CellRef::new(8, 0)).y_range().contains(outer.rect.center().y));
+        assert!(
+            g.cell_rect(&sh, CellRef::new(8, 0))
+                .y_range()
+                .contains(outer.rect.center().y)
+        );
         assert!((outer.rect.center().x - row1.center().x).abs() < 0.01);
         let inner = toggle(true, 2);
-        assert!(g.cell_rect(&sh, CellRef::new(7, 0)).y_range().contains(inner.rect.center().y));
+        assert!(
+            g.cell_rect(&sh, CellRef::new(7, 0))
+                .y_range()
+                .contains(inner.rect.center().y)
+        );
         assert!((inner.rect.center().x - row2.center().x).abs() < 0.01);
         // Column group C:E: its − is above column F.
         let col = toggle(false, 1);
-        assert!(g.cell_rect(&sh, CellRef::new(0, 5)).x_range().contains(col.rect.center().x));
+        assert!(
+            g.cell_rect(&sh, CellRef::new(0, 5))
+                .x_range()
+                .contains(col.rect.center().x)
+        );
         assert!(col.rect.bottom() <= g.head_top());
         // Brackets: one per expanded group, from the first detail line to its button.
         assert_eq!(l.brackets.len(), 3);
-        let b = l.brackets.iter().find(|b| (b.line[0].x - outer.rect.center().x).abs() < 0.01).unwrap();
-        assert!((b.line[0].y - g.y(&sh, 4)).abs() < 1.0 && (b.line[1].y - outer.rect.top()).abs() < 0.01);
+        let b = l
+            .brackets
+            .iter()
+            .find(|b| (b.line[0].x - outer.rect.center().x).abs() < 0.01)
+            .unwrap();
+        assert!(
+            (b.line[0].y - g.y(&sh, 4)).abs() < 1.0
+                && (b.line[1].y - outer.rect.top()).abs() < 0.01
+        );
         assert!(b.tick.is_some());
         assert_eq!(outer.action.label(), "\u{2212}");
     }
@@ -384,12 +573,23 @@ mod tests {
         }
         let g = geo(&sh);
         let l = layout(&g, &sh);
-        let outer = l.buttons.iter().find(|b| matches!(b.action, Action::Toggle { rows: true, group } if group.level == 1)).unwrap();
+        let outer = l
+            .buttons
+            .iter()
+            .find(|b| matches!(b.action, Action::Toggle { rows: true, group } if group.level == 1))
+            .unwrap();
         assert_eq!(outer.action.label(), "+");
         // The inner group's summary row is hidden with the rest: no button for it.
-        assert!(!l.buttons.iter().any(|b| matches!(b.action, Action::Toggle { rows: true, group } if group.level == 2)));
+        assert!(
+            !l.buttons.iter().any(
+                |b| matches!(b.action, Action::Toggle { rows: true, group } if group.level == 2)
+            )
+        );
         assert_eq!(l.brackets.len(), 1); // only the columns' bracket
-        assert_eq!(outer.action.command(), ("data.showDetail", json!({"rows": "5:8", "level": 1})));
+        assert_eq!(
+            outer.action.command(),
+            ("data.showDetail", json!({"rows": "5:8", "level": 1}))
+        );
     }
 
     #[test]
@@ -401,11 +601,35 @@ mod tests {
             assert_eq!(hit(&g, &sh, b.rect.center()), Some(b.action));
         }
         assert_eq!(hit(&g, &sh, g.cells.center()), None);
-        assert_eq!(hit(&g, &sh, pos2(g.rect.left() + 1.0, g.cells.bottom() - 2.0)), None);
-        let col = l.buttons.iter().find(|b| matches!(b.action, Action::Toggle { rows: false, .. })).unwrap();
-        assert_eq!(col.action.command(), ("data.hideDetail", json!({"cols": "C:E", "level": 1})));
-        assert_eq!(Action::Level { rows: true, level: 2 }.command(), ("data.showLevels", json!({"rows": 2})));
-        assert_eq!(Action::Level { rows: false, level: 1 }.command(), ("data.showLevels", json!({"cols": 1})));
+        assert_eq!(
+            hit(&g, &sh, pos2(g.rect.left() + 1.0, g.cells.bottom() - 2.0)),
+            None
+        );
+        let col = l
+            .buttons
+            .iter()
+            .find(|b| matches!(b.action, Action::Toggle { rows: false, .. }))
+            .unwrap();
+        assert_eq!(
+            col.action.command(),
+            ("data.hideDetail", json!({"cols": "C:E", "level": 1}))
+        );
+        assert_eq!(
+            Action::Level {
+                rows: true,
+                level: 2
+            }
+            .command(),
+            ("data.showLevels", json!({"rows": 2}))
+        );
+        assert_eq!(
+            Action::Level {
+                rows: false,
+                level: 1
+            }
+            .command(),
+            ("data.showLevels", json!({"cols": 1}))
+        );
     }
 
     #[test]
@@ -416,14 +640,28 @@ mod tests {
         for r in 19..=21 {
             sh.rows.entry(r).or_default().outline = 1;
         }
-        let g = Geo::new(&sh, Rect::from_min_size(pos2(0.0, 0.0), vec2(1000.0, 700.0)), vec2(0.0, 14.0 * sh.default_row_height));
+        let g = Geo::new(
+            &sh,
+            Rect::from_min_size(pos2(0.0, 0.0), vec2(1000.0, 700.0)),
+            vec2(0.0, 14.0 * sh.default_row_height),
+        );
         let l = layout(&g, &sh);
         let split = g.cells.top() + g.frozen_h;
         let low = |grp: &OutlineGroup| grp.start == 19;
-        assert!(!l.buttons.iter().any(|b| matches!(b.action, Action::Toggle { group, .. } if low(&group))));
-        for b in l.buttons.iter().filter(|b| matches!(b.action, Action::Toggle { rows: true, group } if group.start >= 10)) {
+        assert!(
+            !l.buttons
+                .iter()
+                .any(|b| matches!(b.action, Action::Toggle { group, .. } if low(&group)))
+        );
+        for b in l.buttons.iter().filter(
+            |b| matches!(b.action, Action::Toggle { rows: true, group } if group.start >= 10),
+        ) {
             assert!(b.rect.center().y >= split);
         }
-        assert!(l.buttons.iter().any(|b| matches!(b.action, Action::Toggle { rows: true, group } if group.start == 4)));
+        assert!(
+            l.buttons.iter().any(
+                |b| matches!(b.action, Action::Toggle { rows: true, group } if group.start == 4)
+            )
+        );
     }
 }

@@ -37,9 +37,16 @@ type Entry = (String, Vec<u8>);
 /// desktop file systems do); the name is taken.
 pub(crate) fn free_name(name: &str, taken: &mut HashSet<String>) -> String {
     let p = Path::new(name);
-    let stem = p.file_stem().map_or_else(|| name.to_string(), |s| s.to_string_lossy().into_owned());
-    let ext = p.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
-    let out = unique_name(&stem, |s| taken.contains(&format!("{s}{ext}").to_lowercase())) + &ext;
+    let stem = p
+        .file_stem()
+        .map_or_else(|| name.to_string(), |s| s.to_string_lossy().into_owned());
+    let ext = p
+        .extension()
+        .map(|e| format!(".{}", e.to_string_lossy()))
+        .unwrap_or_default();
+    let out = unique_name(&stem, |s| {
+        taken.contains(&format!("{s}{ext}").to_lowercase())
+    }) + &ext;
     taken.insert(out.to_lowercase());
     out
 }
@@ -57,10 +64,14 @@ fn font_ext(bytes: &[u8]) -> &'static str {
 /// with the extension the font's `data` calls for ([`font_ext`]) when that name has no font
 /// extension; without a file, `family-style` with that extension.
 fn packaged_name(path: Option<&Path>, family: &str, style: &str, data: &[u8]) -> String {
-    match path.and_then(Path::file_name).map(|n| n.to_string_lossy().into_owned()) {
+    match path
+        .and_then(Path::file_name)
+        .map(|n| n.to_string_lossy().into_owned())
+    {
         Some(name) if vectorcraft_text::is_font_file(Path::new(&name)) => name,
         Some(name) => format!("{name}.{}", font_ext(data)),
-        None => format!("{family}-{style}.{}", font_ext(data)).replace(|c: char| !(c.is_alphanumeric() || "-_.".contains(c)), ""),
+        None => format!("{family}-{style}.{}", font_ext(data))
+            .replace(|c: char| !(c.is_alphanumeric() || "-_.".contains(c)), ""),
     }
 }
 
@@ -95,10 +106,22 @@ fn relative_in_package(document: &str, asset: &str) -> String {
 }
 
 fn safe_asset_name(name: &str) -> String {
-    let name: String =
-        name.chars().map(|c| if c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') { '_' } else { c }).collect();
+    let name: String = name
+        .chars()
+        .map(|c| {
+            if c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
     let name = name.trim().trim_matches('.');
-    if name.is_empty() { "asset".into() } else { name.into() }
+    if name.is_empty() {
+        "asset".into()
+    } else {
+        name.into()
+    }
 }
 
 /// Collect dependencies depth-first so nested VectorCraft files are rewritten before
@@ -148,10 +171,17 @@ impl<'a> Collector<'a> {
         self.warnings.push(message);
     }
 
-    fn collect(&mut self, doc: &mut Document, source: &str, destination: &str, depth: usize) -> Result<()> {
+    fn collect(
+        &mut self,
+        doc: &mut Document,
+        source: &str,
+        destination: &str,
+        depth: usize,
+    ) -> Result<()> {
         // The caller checks cycles and depth before descending; active documents have
         // a destination reserved so back-links can point at their single packaged copy.
-        self.visiting.insert(source.to_string(), destination.to_string());
+        self.visiting
+            .insert(source.to_string(), destination.to_string());
         // This document's section comes before those of the documents it places.
         let section = self.sections.len();
         self.sections.push(vec![]);
@@ -180,7 +210,14 @@ impl<'a> Collector<'a> {
                     // cyclic reference cannot have a final content hash until both files
                     // have been written, so leave its size/hash unspecified, not stale.
                     self.warn(&mut lines, format!("{}: circular placed-document link to {ancestor}; stopped following the cycle", file.path));
-                    local.insert(file.path.clone(), Copied { name: ancestor, size: None, hash: None });
+                    local.insert(
+                        file.path.clone(),
+                        Copied {
+                            name: ancestor,
+                            size: None,
+                            hash: None,
+                        },
+                    );
                     continue;
                 }
                 if let Some(existing) = self.copies.get(found_path) {
@@ -188,16 +225,33 @@ impl<'a> Collector<'a> {
                     continue;
                 }
                 let Some(mut bytes) = file.bytes else {
-                    lines.push(format!("{}: not found ({}), not copied", file.name, file.path));
-                    self.missing.push(if depth == 0 { file.name.clone() } else { format!("{} ({source})", file.name) });
+                    lines.push(format!(
+                        "{}: not found ({}), not copied",
+                        file.name, file.path
+                    ));
+                    self.missing.push(if depth == 0 {
+                        file.name.clone()
+                    } else {
+                        format!("{} ({source})", file.name)
+                    });
                     continue;
                 };
                 if self.copies.len() >= 10_000 {
-                    return Err(bad(C, "more than 10000 linked files: package dependencies in smaller parts"));
+                    return Err(bad(
+                        C,
+                        "more than 10000 linked files: package dependencies in smaller parts",
+                    ));
                 }
                 let dir = if self.opts.links_folder { "Links/" } else { "" };
                 let name = safe_asset_name(&file.name);
-                let unique = free_name(&name, if self.opts.links_folder { &mut self.link_names } else { &mut self.taken });
+                let unique = free_name(
+                    &name,
+                    if self.opts.links_folder {
+                        &mut self.link_names
+                    } else {
+                        &mut self.taken
+                    },
+                );
                 let destination_file = format!("{dir}{unique}");
                 if placed.contains(&file.path) {
                     if depth >= vectorcraft_doc::placed_document::MAX_DEPTH {
@@ -239,7 +293,11 @@ impl<'a> Collector<'a> {
                         }
                     }
                 }
-                let copy = Copied { name: destination_file.clone(), size: Some(bytes.len() as u64), hash: Some(hash_bytes(&bytes)) };
+                let copy = Copied {
+                    name: destination_file.clone(),
+                    size: Some(bytes.len() as u64),
+                    hash: Some(hash_bytes(&bytes)),
+                };
                 self.copies.insert(found_path.to_string(), copy.clone());
                 local.insert(file.path.clone(), copy);
                 lines.push(format!("{} → {destination_file}", file.path));
@@ -257,10 +315,18 @@ impl<'a> Collector<'a> {
                 let resolved = db
                     .resolve(&family, &style)
                     .filter(|(_, m)| *m != vectorcraft_text::FontMatch::Missing)
-                    .map(|(f, m)| (db.face_version(&family, &style, version.as_deref()).unwrap_or(f), m));
+                    .map(|(f, m)| {
+                        (
+                            db.face_version(&family, &style, version.as_deref())
+                                .unwrap_or(f),
+                            m,
+                        )
+                    });
                 // A style the family lacks is shown in its closest style, whose file is copied.
                 let shown = match &resolved {
-                    Some((f, vectorcraft_text::FontMatch::Style)) => format!(" (shown in {} {})", f.family, f.style),
+                    Some((f, vectorcraft_text::FontMatch::Style)) => {
+                        format!(" (shown in {} {})", f.family, f.style)
+                    }
                     _ => String::new(),
                 };
                 let reason = match resolved {
@@ -289,7 +355,10 @@ impl<'a> Collector<'a> {
             doc.update_links(|link: &mut LinkInfo| {
                 if let Some(copy) = local.get(&link.path) {
                     let relative = relative_in_package(destination, &copy.name);
-                    link.path = self.root.as_ref().map_or_else(|| copy.name.clone(), |r| r.join(&copy.name).to_string_lossy().into_owned());
+                    link.path = self.root.as_ref().map_or_else(
+                        || copy.name.clone(),
+                        |r| r.join(&copy.name).to_string_lossy().into_owned(),
+                    );
                     link.relative = Some(relative);
                     link.size = copy.size;
                     link.hash = copy.hash.clone();
@@ -313,22 +382,38 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
         copy_fonts: bool_or(p, "copyFonts", true),
         report: bool_or(p, "report", true),
     };
-    let doc_path = s.doc()?.path.clone().ok_or_else(|| bad(C, "save the document first: Package collects a saved document"))?;
-    let stem = Path::new(&doc_path).file_stem().map_or_else(|| "Untitled".into(), |s| s.to_string_lossy().into_owned());
+    let doc_path = s.doc()?.path.clone().ok_or_else(|| {
+        bad(
+            C,
+            "save the document first: Package collects a saved document",
+        )
+    })?;
+    let stem = Path::new(&doc_path)
+        .file_stem()
+        .map_or_else(|| "Untitled".into(), |s| s.to_string_lossy().into_owned());
     let name = str_param(p, "name").map_or_else(|| format!("{stem} Folder"), str::to_string);
-    if name.trim().is_empty() || name == "." || name == ".." || name.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|']) {
+    if name.trim().is_empty()
+        || name == "."
+        || name == ".."
+        || name.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
+    {
         return Err(bad(C, format!("`{name}` can't name a folder")));
     }
     let folder = str_param(p, "folder");
     let root = folder.map(|f| Path::new(f).join(&name));
-    let info = if o.report { Some(super::docinfo::report(s, false)?) } else { None };
+    let info = if o.report {
+        Some(super::docinfo::report(s, false)?)
+    } else {
+        None
+    };
     let st = s.doc()?;
     let mut doc = (*st.doc).clone();
     let doc_name = format!("{stem}.{}", vectorcraft_format::EXTENSION);
     // Prepare original links for the destination *before* rebasing copied links.
     // Recalculating afterward would overwrite the portable relative paths.
     if let Some(root) = &root
-        && let Some(d) = super::links::with_relative_paths(&doc, &root.join(&doc_name).to_string_lossy())
+        && let Some(d) =
+            super::links::with_relative_paths(&doc, &root.join(&doc_name).to_string_lossy())
     {
         doc = d;
     }
@@ -367,7 +452,10 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
             out["folder"] = json!(root.to_string_lossy());
         }
         None => {
-            let named: Vec<(String, &[u8])> = entries.iter().map(|(rel, b)| (format!("{name}/{rel}"), b.as_slice())).collect();
+            let named: Vec<(String, &[u8])> = entries
+                .iter()
+                .map(|(rel, b)| (format!("{name}/{rel}"), b.as_slice()))
+                .collect();
             let zip = zip(&named)?;
             out["name"] = json!(format!("{name}.zip"));
             out["bytes"] = json!(zip.len());
@@ -381,7 +469,9 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The MS-DOS time and date a zip entry records: now (UTC), else 1980-01-01.
 fn dos_time() -> (u16, u16) {
-    let Some(t) = vectorcraft_doc::metadata::now_unix() else { return (0, 0x21) };
+    let Some(t) = vectorcraft_doc::metadata::now_unix() else {
+        return (0, 0x21);
+    };
     let [y, mo, d, h, mi, s] = vectorcraft_doc::metadata::civil(t);
     let date = (((y - 1980).clamp(0, 127) << 9) | (mo << 5) | d) as u16;
     (((h << 11) | (mi << 5) | (s / 2)) as u16, date)
@@ -397,16 +487,36 @@ pub(crate) fn zip(files: &[(String, &[u8])]) -> Result<Vec<u8>> {
     for (name, bytes) in files {
         let mut crc = flate2::Crc::new();
         crc.update(bytes);
-        let mut enc = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+        let mut enc =
+            flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
         enc.write_all(bytes).map_err(io)?;
         let deflated = enc.finish().map_err(io)?;
-        let (method, data): (u16, &[u8]) = if deflated.len() < bytes.len() { (8, &deflated) } else { (0, bytes) };
+        let (method, data): (u16, &[u8]) = if deflated.len() < bytes.len() {
+            (8, &deflated)
+        } else {
+            (0, bytes)
+        };
         let offset = u32::try_from(out.len()).map_err(|_| too_big())?;
-        let (packed, size) = (u32::try_from(data.len()).map_err(|_| too_big())?, u32::try_from(bytes.len()).map_err(|_| too_big())?);
+        let (packed, size) = (
+            u32::try_from(data.len()).map_err(|_| too_big())?,
+            u32::try_from(bytes.len()).map_err(|_| too_big())?,
+        );
         let name_len = u16::try_from(name.len()).map_err(|_| too_big())?;
         // Version 2.0, UTF-8 names, method, time, date, CRC-32, sizes, name length, no extra field.
-        let common = [&20u16.to_le_bytes()[..], &0x0800u16.to_le_bytes(), &method.to_le_bytes(), &time.to_le_bytes(), &date.to_le_bytes()].concat();
-        let sums = [crc.sum().to_le_bytes(), packed.to_le_bytes(), size.to_le_bytes()].concat();
+        let common = [
+            &20u16.to_le_bytes()[..],
+            &0x0800u16.to_le_bytes(),
+            &method.to_le_bytes(),
+            &time.to_le_bytes(),
+            &date.to_le_bytes(),
+        ]
+        .concat();
+        let sums = [
+            crc.sum().to_le_bytes(),
+            packed.to_le_bytes(),
+            size.to_le_bytes(),
+        ]
+        .concat();
         out.extend_from_slice(&0x0403_4b50u32.to_le_bytes());
         out.extend_from_slice(&common);
         out.extend_from_slice(&sums);
@@ -425,7 +535,10 @@ pub(crate) fn zip(files: &[(String, &[u8])]) -> Result<Vec<u8>> {
         central.extend_from_slice(name.as_bytes());
     }
     let count = u16::try_from(files.len()).map_err(|_| too_big())?;
-    let (start, len) = (u32::try_from(out.len()).map_err(|_| too_big())?, u32::try_from(central.len()).map_err(|_| too_big())?);
+    let (start, len) = (
+        u32::try_from(out.len()).map_err(|_| too_big())?,
+        u32::try_from(central.len()).map_err(|_| too_big())?,
+    );
     out.extend_from_slice(&central);
     out.extend_from_slice(&0x0605_4b50u32.to_le_bytes());
     out.extend_from_slice(&[0; 4]);
@@ -445,10 +558,19 @@ mod tests {
     /// packaged with the extension its data calls for.
     #[test]
     fn packaged_fonts_have_a_font_extension() {
-        let (otf, ttc, ttf) = (b"OTTO....".as_slice(), b"ttcf....".as_slice(), b"\0\x01\0\0....".as_slice());
-        let name = |path: Option<&str>, data: &[u8]| packaged_name(path.map(Path::new), "Some Family", "Bold", data);
+        let (otf, ttc, ttf) = (
+            b"OTTO....".as_slice(),
+            b"ttcf....".as_slice(),
+            b"\0\x01\0\0....".as_slice(),
+        );
+        let name = |path: Option<&str>, data: &[u8]| {
+            packaged_name(path.map(Path::new), "Some Family", "Bold", data)
+        };
         assert_eq!(name(Some("/fonts/A8F3C2"), otf), "A8F3C2.otf");
-        assert_eq!(name(Some("/fonts/Shared Fonts.dat"), ttc), "Shared Fonts.dat.ttc");
+        assert_eq!(
+            name(Some("/fonts/Shared Fonts.dat"), ttc),
+            "Shared Fonts.dat.ttc"
+        );
         assert_eq!(name(Some("/fonts/Kept.TTF"), otf), "Kept.TTF");
         assert_eq!(name(Some("/fonts/Kept.otc"), ttc), "Kept.otc");
         assert_eq!(name(None, ttf), "SomeFamily-Bold.ttf");

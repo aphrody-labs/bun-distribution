@@ -76,7 +76,9 @@ fn from_flo(paths: &[SimpleBezierPath]) -> PathData {
         }
         // The last curve comes back to the start: fold its end into the first anchor.
         if anchors.len() > 2
-            && anchors.last().is_some_and(|l| l.p.distance(anchors[0].p) < 1e-6)
+            && anchors
+                .last()
+                .is_some_and(|l| l.p.distance(anchors[0].p) < 1e-6)
             && let Some(last) = anchors.pop()
         {
             anchors[0].h_in = last.h_in;
@@ -94,12 +96,20 @@ fn from_flo(paths: &[SimpleBezierPath]) -> PathData {
 
 /// Combine `shapes` (back to front, all in one coordinate space). `None` when nothing is left.
 pub fn combine(op: Op, shapes: &[PathData]) -> Option<PathData> {
-    let flo: Vec<Vec<SimpleBezierPath>> = shapes.iter().map(to_flo).filter(|p| !p.is_empty()).collect();
+    let flo: Vec<Vec<SimpleBezierPath>> = shapes
+        .iter()
+        .map(to_flo)
+        .filter(|p| !p.is_empty())
+        .collect();
     let (first, rest) = flo.split_first()?;
     let union = |v: &[Vec<SimpleBezierPath>]| -> Vec<SimpleBezierPath> {
         let mut acc: Vec<SimpleBezierPath> = Vec::new();
         for p in v {
-            acc = if acc.is_empty() { p.clone() } else { path_add(&acc, p, ACCURACY) };
+            acc = if acc.is_empty() {
+                p.clone()
+            } else {
+                path_add(&acc, p, ACCURACY)
+            };
         }
         acc
     };
@@ -107,12 +117,20 @@ pub fn combine(op: Op, shapes: &[PathData]) -> Option<PathData> {
         Op::Add => union(&flo),
         Op::Subtract => {
             let cut = union(rest);
-            if cut.is_empty() { first.clone() } else { path_sub(first, &cut, ACCURACY) }
+            if cut.is_empty() {
+                first.clone()
+            } else {
+                path_sub(first, &cut, ACCURACY)
+            }
         }
         Op::MinusBack => {
             let (front, backs) = flo.split_last()?;
             let cut = union(backs);
-            if cut.is_empty() { front.clone() } else { path_sub(front, &cut, ACCURACY) }
+            if cut.is_empty() {
+                front.clone()
+            } else {
+                path_sub(front, &cut, ACCURACY)
+            }
         }
         Op::Intersect => {
             let mut acc = first.clone();
@@ -174,8 +192,14 @@ mod tests {
         let b = shapes::ellipse(Rect::new(60.0, 0.0, 160.0, 100.0));
         let add = combine(Op::Add, &[a, b]).unwrap();
         assert_eq!(add.subpaths.len(), 1);
-        assert!(add.anchors().any(|(_, _, a)| a.has_in() || a.has_out()), "curved anchors");
+        assert!(
+            add.anchors().any(|(_, _, a)| a.has_in() || a.has_out()),
+            "curved anchors"
+        );
         let bb = add.bounds().unwrap();
-        assert!((bb.x0 - 0.0).abs() < 0.5 && (bb.x1 - 160.0).abs() < 0.5, "{bb:?}");
+        assert!(
+            (bb.x0 - 0.0).abs() < 0.5 && (bb.x1 - 160.0).abs() < 0.5,
+            "{bb:?}"
+        );
     }
 }

@@ -78,11 +78,38 @@ pub fn demosaic(n: &Normalized, method: Method) -> Rgb32f {
         return Rgb32f::new(w, h);
     }
     match (&n.cfa, n.cpp) {
-        (_, 3) => Rgb32f { width: w, height: h, data: n.data.as_chunks::<3>().0.iter().map(|c| [c[0], c[1], c[2]]).collect() },
-        (_, cpp) if cpp != 1 => Rgb32f { width: w, height: h, data: n.data.chunks_exact(cpp).map(|c| [c[0], c[1], c[2]]).collect() },
-        (None, _) => Rgb32f { width: w, height: h, data: n.data.iter().map(|&v| [v; 3]).collect() },
+        (_, 3) => Rgb32f {
+            width: w,
+            height: h,
+            data: n
+                .data
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1], c[2]])
+                .collect(),
+        },
+        (_, cpp) if cpp != 1 => Rgb32f {
+            width: w,
+            height: h,
+            data: n
+                .data
+                .chunks_exact(cpp)
+                .map(|c| [c[0], c[1], c[2]])
+                .collect(),
+        },
+        (None, _) => Rgb32f {
+            width: w,
+            height: h,
+            data: n.data.iter().map(|&v| [v; 3]).collect(),
+        },
         (Some(cfa), _) => {
-            let m = Mosaic { w, h, data: &n.data, cfa };
+            let m = Mosaic {
+                w,
+                h,
+                data: &n.data,
+                cfa,
+            };
             if !cfa.is_bayer() {
                 return match method {
                     Method::Bilinear => bilinear::bilinear(&m),
@@ -103,8 +130,17 @@ pub fn demosaic(n: &Normalized, method: Method) -> Rgb32f {
 
 /// Build a mosaic from an RGB image by sampling each pixel's CFA colour (for tests and synthetic data).
 pub fn mosaic_from_rgb(img: &Rgb32f, cfa: &Cfa) -> Normalized {
-    let data = (0..img.height).flat_map(|y| (0..img.width).map(move |x| (x, y))).map(|(x, y)| img.get(x, y)[cfa.color_at(x, y) as usize]).collect();
-    Normalized { width: img.width, height: img.height, cpp: 1, data, cfa: Some(cfa.clone()) }
+    let data = (0..img.height)
+        .flat_map(|y| (0..img.width).map(move |x| (x, y)))
+        .map(|(x, y)| img.get(x, y)[cfa.color_at(x, y) as usize])
+        .collect();
+    Normalized {
+        width: img.width,
+        height: img.height,
+        cpp: 1,
+        data,
+        cfa: Some(cfa.clone()),
+    }
 }
 
 /// Peak signal-to-noise ratio (dB, peak 1.0) between two images over an interior region (`border` pixels excluded).
@@ -133,7 +169,11 @@ mod tests {
     fn smooth_scene(w: usize, h: usize) -> Rgb32f {
         Rgb32f::from_fn(w, h, |x, y| {
             let (fx, fy) = (x as f32 / w as f32, y as f32 / h as f32);
-            [0.2 + 0.6 * fx * fy, 0.3 + 0.4 * (fx * 3.0).sin().abs() * 0.5 + 0.2 * fy, 0.1 + 0.5 * (1.0 - fx) * (0.5 + 0.5 * (fy * 5.0).cos())]
+            [
+                0.2 + 0.6 * fx * fy,
+                0.3 + 0.4 * (fx * 3.0).sin().abs() * 0.5 + 0.2 * fy,
+                0.1 + 0.5 * (1.0 - fx) * (0.5 + 0.5 * (fy * 5.0).cos()),
+            ]
         })
     }
 
@@ -152,7 +192,11 @@ mod tests {
             } else {
                 0.35 + 0.1 * ((fx * 0.7).sin() * (fy * 0.9).cos())
             };
-            let tint = [0.9 + 0.1 * (fx / w as f32), 0.8, 0.55 + 0.3 * (fy / h as f32)];
+            let tint = [
+                0.9 + 0.1 * (fx / w as f32),
+                0.8,
+                0.55 + 0.3 * (fy / h as f32),
+            ];
             [lum * tint[0], lum * tint[1], lum * tint[2]]
         })
     }
@@ -175,8 +219,14 @@ mod tests {
                 }
             }
         }
-        let out = run(&Rgb32f::filled(19, 14, [0.3, 0.55, 0.8]), &Cfa::xtrans(), Method::Ahd);
-        assert!(out.data.iter().all(|p| (p[0] - 0.3).abs() < 1e-5 && (p[1] - 0.55).abs() < 1e-5 && (p[2] - 0.8).abs() < 1e-5));
+        let out = run(
+            &Rgb32f::filled(19, 14, [0.3, 0.55, 0.8]),
+            &Cfa::xtrans(),
+            Method::Ahd,
+        );
+        assert!(out.data.iter().all(|p| (p[0] - 0.3).abs() < 1e-5
+            && (p[1] - 0.55).abs() < 1e-5
+            && (p[2] - 0.8).abs() < 1e-5));
     }
 
     #[test]
@@ -200,17 +250,33 @@ mod tests {
         let edgy = edgy_scene(96, 80);
         let cfa = Cfa::bayer("RGGB").unwrap();
         let p = |img: &Rgb32f, m| psnr(img, &run(img, &cfa, m), 4);
-        let (sb, sp, sa) = (p(&smooth, Method::Bilinear), p(&smooth, Method::Ppg), p(&smooth, Method::Ahd));
-        assert!(sb > 38.0 && sp > 38.0 && sa > 38.0, "smooth: bilinear {sb:.1} ppg {sp:.1} ahd {sa:.1}");
-        let (eb, ep, ea) = (p(&edgy, Method::Bilinear), p(&edgy, Method::Ppg), p(&edgy, Method::Ahd));
-        eprintln!("smooth: bilinear {sb:.1} ppg {sp:.1} ahd {sa:.1}; edgy: bilinear {eb:.1} ppg {ep:.1} ahd {ea:.1}");
+        let (sb, sp, sa) = (
+            p(&smooth, Method::Bilinear),
+            p(&smooth, Method::Ppg),
+            p(&smooth, Method::Ahd),
+        );
+        assert!(
+            sb > 38.0 && sp > 38.0 && sa > 38.0,
+            "smooth: bilinear {sb:.1} ppg {sp:.1} ahd {sa:.1}"
+        );
+        let (eb, ep, ea) = (
+            p(&edgy, Method::Bilinear),
+            p(&edgy, Method::Ppg),
+            p(&edgy, Method::Ahd),
+        );
+        eprintln!(
+            "smooth: bilinear {sb:.1} ppg {sp:.1} ahd {sa:.1}; edgy: bilinear {eb:.1} ppg {ep:.1} ahd {ea:.1}"
+        );
         assert!(eb > 20.0, "edgy bilinear {eb:.1}");
         assert!(ep > eb + 6.0, "ppg {ep:.1} vs bilinear {eb:.1}");
         assert!(ea > eb + 6.0, "ahd {ea:.1} vs bilinear {eb:.1}");
         let xt = Cfa::xtrans();
         let xp = psnr(&edgy, &run(&edgy, &xt, Method::Ahd), 6);
         let xb = psnr(&edgy, &run(&edgy, &xt, Method::Bilinear), 6);
-        assert!(xp > 20.0 && xp >= xb - 0.5, "xtrans directional {xp:.1} bilinear {xb:.1}");
+        assert!(
+            xp > 20.0 && xp >= xb - 0.5,
+            "xtrans directional {xp:.1} bilinear {xb:.1}"
+        );
     }
 
     #[test]
@@ -224,9 +290,21 @@ mod tests {
                 assert!(out.data.iter().all(|p| p.iter().all(|v| v.is_finite())));
             }
         }
-        let n = Normalized { width: 2, height: 1, cpp: 1, data: vec![0.2, 0.4], cfa: None };
+        let n = Normalized {
+            width: 2,
+            height: 1,
+            cpp: 1,
+            data: vec![0.2, 0.4],
+            cfa: None,
+        };
         assert_eq!(demosaic(&n, Method::Ahd).data, vec![[0.2; 3], [0.4; 3]]);
-        let n = Normalized { width: 1, height: 1, cpp: 3, data: vec![0.1, 0.2, 0.3], cfa: None };
+        let n = Normalized {
+            width: 1,
+            height: 1,
+            cpp: 3,
+            data: vec![0.1, 0.2, 0.3],
+            cfa: None,
+        };
         assert_eq!(demosaic(&n, Method::Ahd).data, vec![[0.1, 0.2, 0.3]]);
     }
 
@@ -240,10 +318,20 @@ mod tests {
             if (8..12).contains(&x) && (6..10).contains(&y) {
                 *v = f32::NAN;
             } else if i % 7 == 0 {
-                *v = if i % 2 == 0 { f32::INFINITY } else { f32::NEG_INFINITY };
+                *v = if i % 2 == 0 {
+                    f32::INFINITY
+                } else {
+                    f32::NEG_INFINITY
+                };
             }
         }
-        let all_nan = Normalized { width: 9, height: 7, cpp: 1, data: vec![f32::NAN; 63], cfa: Some(cfa) };
+        let all_nan = Normalized {
+            width: 9,
+            height: 7,
+            cpp: 1,
+            data: vec![f32::NAN; 63],
+            cfa: Some(cfa),
+        };
         for n in [&patchy, &all_nan] {
             for m in [Method::Bilinear, Method::Ppg, Method::Ahd] {
                 let out = demosaic(n, m);
@@ -251,11 +339,26 @@ mod tests {
             }
         }
         // without NaN bounds it is the `f32::clamp` it replaced, bit for bit (finite results stay identical)
-        let vals = [f32::NEG_INFINITY, -3e38, -2.5, -0.0, 0.0, 1e-40, 0.5, 1.0, 3e38, f32::INFINITY];
+        let vals = [
+            f32::NEG_INFINITY,
+            -3e38,
+            -2.5,
+            -0.0,
+            0.0,
+            1e-40,
+            0.5,
+            1.0,
+            3e38,
+            f32::INFINITY,
+        ];
         for v in vals {
             for a in vals {
                 for b in vals {
-                    assert_eq!(clamp_between(v, a, b).to_bits(), v.clamp(a.min(b), a.max(b)).to_bits(), "{v} {a} {b}");
+                    assert_eq!(
+                        clamp_between(v, a, b).to_bits(),
+                        v.clamp(a.min(b), a.max(b)).to_bits(),
+                        "{v} {a} {b}"
+                    );
                 }
             }
         }
@@ -282,11 +385,18 @@ mod tests {
             let t = std::time::Instant::now();
             let _ = demosaic(&n, m);
             let s = t.elapsed().as_secs_f64();
-            println!("{m:?}: {:.1} MP/s ({:.0} ms for 24 MP)", (w * h) as f64 / 1e6 / s, s * 1e3);
+            println!(
+                "{m:?}: {:.1} MP/s ({:.0} ms for 24 MP)",
+                (w * h) as f64 / 1e6 / s,
+                s * 1e3
+            );
         }
         let n = mosaic_from_rgb(&img, &Cfa::xtrans());
         let t = std::time::Instant::now();
         let _ = demosaic(&n, Method::Ahd);
-        println!("X-Trans directional: {:.1} MP/s", (w * h) as f64 / 1e6 / t.elapsed().as_secs_f64());
+        println!(
+            "X-Trans directional: {:.1} MP/s",
+            (w * h) as f64 / 1e6 / t.elapsed().as_secs_f64()
+        );
     }
 }

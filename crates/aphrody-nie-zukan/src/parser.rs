@@ -35,15 +35,15 @@ fn ruby_text(el: scraper::ElementRef<'_>) -> String {
                 if !s.is_empty() {
                     parts.push(s.to_owned());
                 }
-            },
+            }
             Node::Element(_) => {
                 let child_ref = scraper::ElementRef::wrap(child).unwrap();
                 // On ignore les <rt> (ruby pronunciation)
                 if !rt_sel.matches(&child_ref) {
                     parts.push(ruby_text(child_ref));
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     parts.join("").trim().to_owned()
@@ -112,7 +112,7 @@ pub fn parse_chara_list(html: &str) -> Result<(Vec<CharaListEntry>, u32)> {
             Err(e) => {
                 warn!(i, error = %e, q = %q_model, "décodage q model_view échoué");
                 continue;
-            },
+            }
         };
 
         if game_id.is_empty() {
@@ -121,10 +121,18 @@ pub fn parse_chara_list(html: &str) -> Result<(Vec<CharaListEntry>, u32)> {
         }
 
         // Nom
-        let name =
-            if i < names.len() { extract_name_from_ruby_span(names[i]) } else { String::new() };
+        let name = if i < names.len() {
+            extract_name_from_ruby_span(names[i])
+        } else {
+            String::new()
+        };
 
-        entries.push(CharaListEntry { game_id, q_param, q_model, name });
+        entries.push(CharaListEntry {
+            game_id,
+            q_param,
+            q_model,
+            name,
+        });
     }
 
     // Pagination : trouver le numéro de la dernière page
@@ -135,7 +143,11 @@ pub fn parse_chara_list(html: &str) -> Result<(Vec<CharaListEntry>, u32)> {
 
 /// Extrait le paramètre `q=` d'un href.
 fn extract_q_from_href(href: &str) -> String {
-    if let Some(pos) = href.find("?q=") { href[pos + 3..].to_owned() } else { String::new() }
+    if let Some(pos) = href.find("?q=") {
+        href[pos + 3..].to_owned()
+    } else {
+        String::new()
+    }
 }
 
 /// Extrait `character_id` d'un JSON `{"character_id":["c01000010"]}`.
@@ -158,7 +170,9 @@ fn extract_last_page(html: &str) -> u32 {
     let mut search = html;
     while let Some(pos) = search.find(prefix) {
         let rest = &search[pos + prefix.len()..];
-        let end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
+        let end = rest
+            .find(|c: char| !c.is_ascii_digit())
+            .unwrap_or(rest.len());
         if !rest[..end].is_empty()
             && let Ok(n) = rest[..end].parse::<u32>()
         {
@@ -212,8 +226,11 @@ fn parse_chara_param_item(
 ) -> Result<Option<ZukanChara>> {
     // Nom : dans `.nameBox .name`
     let name_sel = sel(".nameBox .name");
-    let name =
-        item.select(&name_sel).next().map(|el| extract_name_from_ruby_span(el)).unwrap_or_default();
+    let name = item
+        .select(&name_sel)
+        .next()
+        .map(|el| extract_name_from_ruby_span(el))
+        .unwrap_or_default();
 
     if name.is_empty() {
         return Ok(None);
@@ -221,11 +238,18 @@ fn parse_chara_param_item(
 
     // Nickname : dans `.name .nickname`
     let nick_sel = sel(".name .nickname");
-    let nickname = item.select(&nick_sel).next().map(|el| extract_name_from_ruby_span(el));
+    let nickname = item
+        .select(&nick_sel)
+        .next()
+        .map(|el| extract_name_from_ruby_span(el));
 
     // Image URL : src de l'img dans .detailBox .lBox figure
     let img_sel = sel(".detailBox .lBox figure img");
-    let image_url = item.select(&img_sel).next().and_then(|el| el.attr("src")).map(str::to_owned);
+    let image_url = item
+        .select(&img_sel)
+        .next()
+        .and_then(|el| el.attr("src"))
+        .map(str::to_owned);
 
     let image_hash = image_url.as_ref().and_then(|url| extract_cdn_hash(url));
 
@@ -239,12 +263,19 @@ fn parse_chara_param_item(
 
     // Œuvre d'origine : `.appearedWorks dd`
     let appeared_sel = sel(".appearedWorks dd");
-    let game_appearance =
-        item.select(&appeared_sel).next().map(|el| text_of(el)).filter(|s| !s.is_empty());
+    let game_appearance = item
+        .select(&appeared_sel)
+        .next()
+        .map(|el| text_of(el))
+        .filter(|s| !s.is_empty());
 
     // Acquisition : `.getTxt dd`
     let get_sel = sel(".getTxt dd");
-    let acquisition = item.select(&get_sel).next().map(|el| text_of(el)).filter(|s| !s.is_empty());
+    let acquisition = item
+        .select(&get_sel)
+        .next()
+        .map(|el| text_of(el))
+        .filter(|s| !s.is_empty());
 
     // Stats : tableau dans `.param li dl`
     let stats = parse_stats_from_item(item);
@@ -263,28 +294,44 @@ fn parse_chara_param_item(
     for dl in item.select(&param_li_sel) {
         let dt_sel = sel("dt");
         let dd_sel = sel("dd p, dd");
-        let key = dl.select(&dt_sel).next().map(|el| text_of(el)).unwrap_or_default();
-        let val = dl.select(&dd_sel).next().map(|el| text_of(el)).unwrap_or_default();
+        let key = dl
+            .select(&dt_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
+        let val = dl
+            .select(&dd_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
         match key.as_str() {
             "ポジション" | "Position" => position = Some(val),
             "属性" | "Attribute" | "Élément" | "Element" => element = Some(val),
-            _ => {},
+            _ => {}
         }
     }
 
     for dl in item.select(&basic_sel) {
         let dt_sel = sel("dt");
         let dd_sel = sel("dd");
-        let key = dl.select(&dt_sel).next().map(|el| text_of(el)).unwrap_or_default();
-        let val = dl.select(&dd_sel).next().map(|el| text_of(el)).unwrap_or_default();
+        let key = dl
+            .select(&dt_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
+        let val = dl
+            .select(&dd_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
         match key.as_str() {
             "年代区分" | "Age Group" | "Groupe d'âge" => age_group = Some(val),
             "学年" | "Grade" | "Niveau" => school_year = Some(val),
             "性別" | "Gender" | "Genre" => gender = Some(val),
             "キャラカテゴリ" | "Character Category" | "Catégorie" => {
                 chara_category = Some(val);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -320,8 +367,16 @@ fn parse_stats_from_item(item: &scraper::ElementRef<'_>) -> StatCurves {
     for li in item.select(&param_li_sel) {
         let dt_sel = sel("dl dt");
         let td_sel = sel("dl dd table tbody tr td");
-        let key = li.select(&dt_sel).next().map(|el| text_of(el)).unwrap_or_default();
-        let val_str = li.select(&td_sel).next().map(|el| text_of(el)).unwrap_or_default();
+        let key = li
+            .select(&dt_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
+        let val_str = li
+            .select(&td_sel)
+            .next()
+            .map(|el| text_of(el))
+            .unwrap_or_default();
         let val: u32 = val_str.parse().unwrap_or(0);
         if val == 0 && val_str.is_empty() {
             continue;
@@ -335,7 +390,7 @@ fn parse_stats_from_item(item: &scraper::ElementRef<'_>) -> StatCurves {
             "フィジカル" | "Physical" | "Physique" => block.physical = val,
             "アジリティ" | "Agility" | "Agilité" => block.agility = val,
             "インテリジェンス" | "Intelligence" => block.intelligence = val,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -351,8 +406,11 @@ fn parse_stats_from_item(item: &scraper::ElementRef<'_>) -> StatCurves {
 fn parse_single_chara_param(doc: &Html, game_id: &str, lang: Lang) -> Result<Option<ZukanChara>> {
     // Vérifier qu'il y a bien un nom avant de tenter
     let name_sel = sel(".nameBox .name");
-    let name =
-        doc.select(&name_sel).next().map(|el| extract_name_from_ruby_span(el)).unwrap_or_default();
+    let name = doc
+        .select(&name_sel)
+        .next()
+        .map(|el| extract_name_from_ruby_span(el))
+        .unwrap_or_default();
 
     if name.is_empty() {
         return Ok(None);
@@ -411,23 +469,37 @@ pub fn parse_skill_list(html: &str, lang: Lang, page: u32) -> Result<Vec<ZukanSk
 
         // Description
         let desc_sel = sel(".description");
-        let description =
-            item.select(&desc_sel).next().map(|el| text_of(el)).filter(|s| !s.is_empty());
+        let description = item
+            .select(&desc_sel)
+            .next()
+            .map(|el| text_of(el))
+            .filter(|s| !s.is_empty());
 
         // Catégorie : dans le bouton `.btnMovie`
         let cat_sel = sel(".btnMovie");
-        let category = item.select(&cat_sel).next().map(|el| text_of(el)).filter(|s| !s.is_empty());
+        let category = item
+            .select(&cat_sel)
+            .next()
+            .map(|el| text_of(el))
+            .filter(|s| !s.is_empty());
 
         // Vidéo + poster : `data-movie-url` et `data-poster-url` sur le lien
         let video_a_sel = sel("a[data-movie-url]");
         let video_el = item.select(&video_a_sel).next();
-        let video_url = video_el.and_then(|el| el.attr("data-movie-url")).map(str::to_owned);
-        let poster_url = video_el.and_then(|el| el.attr("data-poster-url")).map(str::to_owned);
+        let video_url = video_el
+            .and_then(|el| el.attr("data-movie-url"))
+            .map(str::to_owned);
+        let poster_url = video_el
+            .and_then(|el| el.attr("data-poster-url"))
+            .map(str::to_owned);
 
         // Thumbnail : `<img>` dans la figure
         let thumb_sel = sel("figure img");
-        let thumbnail_url =
-            item.select(&thumb_sel).next().and_then(|el| el.attr("src")).map(str::to_owned);
+        let thumbnail_url = item
+            .select(&thumb_sel)
+            .next()
+            .and_then(|el| el.attr("src"))
+            .map(str::to_owned);
 
         results.push(ZukanSkill {
             name,
@@ -480,8 +552,11 @@ pub fn parse_item_list(
 
         // Image
         let img_sel = sel("figure img");
-        let image_url =
-            item.select(&img_sel).next().and_then(|el| el.attr("src")).map(str::to_owned);
+        let image_url = item
+            .select(&img_sel)
+            .next()
+            .and_then(|el| el.attr("src"))
+            .map(str::to_owned);
 
         let image_hash = image_url.as_ref().and_then(|url| extract_cdn_hash(url));
 

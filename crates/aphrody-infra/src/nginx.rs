@@ -54,7 +54,11 @@ pub struct UpstreamBlock {
 impl UpstreamBlock {
     #[must_use]
     pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into(), targets: Vec::new(), keepalive: None }
+        Self {
+            name: name.into(),
+            targets: Vec::new(),
+            keepalive: None,
+        }
     }
 
     #[must_use]
@@ -106,9 +110,14 @@ impl LocationBlock {
         };
         self.proxy_pass = Some(pass);
         self.headers.push(("Host".into(), "$host".into()));
-        self.headers.push(("X-Real-IP".into(), "$remote_addr".into()));
-        self.headers.push(("X-Forwarded-For".into(), "$proxy_add_x_forwarded_for".into()));
-        self.headers.push(("X-Forwarded-Proto".into(), "$scheme".into()));
+        self.headers
+            .push(("X-Real-IP".into(), "$remote_addr".into()));
+        self.headers.push((
+            "X-Forwarded-For".into(),
+            "$proxy_add_x_forwarded_for".into(),
+        ));
+        self.headers
+            .push(("X-Forwarded-Proto".into(), "$scheme".into()));
         self
     }
 }
@@ -277,7 +286,10 @@ impl NginxConfig {
             let path = pid_file.unwrap_or(default_pid_path);
 
             let raw_pid = std::fs::read_to_string(path).map_err(|e| {
-                format!("failed to read Nginx master PID from {}: {e}", path.display())
+                format!(
+                    "failed to read Nginx master PID from {}: {e}",
+                    path.display()
+                )
             })?;
 
             let pid: i32 = raw_pid
@@ -286,7 +298,10 @@ impl NginxConfig {
                 .map_err(|e| format!("invalid PID format in {}: {e}", path.display()))?;
 
             if pid <= 0 {
-                return Err(format!("Nginx master PID must be positive in {}", path.display()));
+                return Err(format!(
+                    "Nginx master PID must be positive in {}",
+                    path.display()
+                ));
             }
             let pid = rustix::process::Pid::from_raw(pid)
                 .ok_or_else(|| "Nginx master PID must be positive".to_string())?;
@@ -344,16 +359,20 @@ pub fn letsencrypt_fixtures(conf: &str) -> Vec<TlsFixture> {
                 continue;
             };
             let value = value.trim_matches(['"', '\'']);
-            let Some(relative) = value.strip_prefix(LETSENCRYPT) else { continue };
+            let Some(relative) = value.strip_prefix(LETSENCRYPT) else {
+                continue;
+            };
             if relative.contains('$')
-                || relative.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+                || relative
+                    .split('/')
+                    .any(|part| part.is_empty() || part == "." || part == "..")
             {
                 continue;
             }
             let fixture = match directive {
                 "ssl_certificate" | "ssl_trusted_certificate" => {
                     TlsFixture::Certificate(relative.to_owned())
-                },
+                }
                 "ssl_certificate_key" => TlsFixture::Key(relative.to_owned()),
                 "ssl_dhparam" => TlsFixture::DhParams(relative.to_owned()),
                 "include" => TlsFixture::Include(relative.to_owned()),
@@ -377,7 +396,9 @@ pub fn letsencrypt_stand_ins(fixtures: &[TlsFixture]) -> Result<Vec<(String, Str
     for fixture in fixtures {
         let (relative, content) = match fixture {
             TlsFixture::Certificate(relative) | TlsFixture::Key(relative) => {
-                let directory = relative.rsplit_once('/').map_or("", |(directory, _)| directory);
+                let directory = relative
+                    .rsplit_once('/')
+                    .map_or("", |(directory, _)| directory);
                 if !pairs.contains_key(directory) {
                     let name = directory.rsplit('/').next().filter(|name| !name.is_empty());
                     let name = name.unwrap_or("localhost").to_owned();
@@ -389,9 +410,13 @@ pub fn letsencrypt_stand_ins(fixtures: &[TlsFixture]) -> Result<Vec<(String, Str
                     );
                 }
                 let (certificate, key) = &pairs[directory];
-                let content = if matches!(fixture, TlsFixture::Key(_)) { key } else { certificate };
+                let content = if matches!(fixture, TlsFixture::Key(_)) {
+                    key
+                } else {
+                    certificate
+                };
                 (relative, content.clone())
-            },
+            }
             TlsFixture::DhParams(relative) => (relative, FFDHE2048_PEM.to_owned()),
             TlsFixture::Include(relative) => (relative, "# syntax check only\n".to_owned()),
         };
@@ -420,7 +445,9 @@ pub fn nginx_includes(conf: &str) -> Vec<String> {
                 None => value,
             };
             if relative.contains(['*', '?', '[', '$'])
-                || relative.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+                || relative
+                    .split('/')
+                    .any(|part| part.is_empty() || part == "." || part == "..")
             {
                 continue;
             }
@@ -483,13 +510,19 @@ fn check_files(
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .ok_or_else(|| format!("{}: pas un fichier", candidate.display()))?;
-    let name = if name.ends_with(".conf") { name } else { format!("{name}.conf") };
+    let name = if name.ends_with(".conf") {
+        name
+    } else {
+        format!("{name}.conf")
+    };
     let mut fixtures = letsencrypt_fixtures(&conf);
     let mut pending = nginx_includes(&conf);
     let mut files = vec![(format!("etc/nginx/conf.d/{name}"), conf.into_bytes(), 0o644)];
     let mut seen = std::collections::BTreeSet::new();
     while let Some(relative) = pending.pop() {
-        let Some(path) = nginx_root.map(|root| root.join(&relative)) else { continue };
+        let Some(path) = nginx_root.map(|root| root.join(&relative)) else {
+            continue;
+        };
         if !seen.insert(relative.clone()) || !path.is_file() {
             continue;
         }
@@ -503,7 +536,11 @@ fn check_files(
         files.push((format!("etc/nginx/{relative}"), text.into_bytes(), 0o644));
     }
     for (relative, content) in letsencrypt_stand_ins(&fixtures)? {
-        files.push((format!("etc/letsencrypt/{relative}"), content.into_bytes(), 0o600));
+        files.push((
+            format!("etc/letsencrypt/{relative}"),
+            content.into_bytes(),
+            0o600,
+        ));
     }
     Ok(files)
 }
@@ -529,8 +566,12 @@ pub fn test_in_container(candidate: &Path, image: &str) -> Result<String, String
         .map_err(|error| format!("docker introuvable : {error}"))?;
     let mut stdin = child.stdin.take().ok_or("stdin de docker indisponible")?;
     let writer = std::thread::spawn(move || stdin.write_all(&archive));
-    let output = child.wait_with_output().map_err(|error| format!("docker : {error}"))?;
-    let written = writer.join().map_err(|_| "écriture de l'archive interrompue".to_owned())?;
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("docker : {error}"))?;
+    let written = writer
+        .join()
+        .map_err(|_| "écriture de l'archive interrompue".to_owned())?;
     let report = String::from_utf8_lossy(&output.stderr).trim().to_owned();
     if output.status.success() {
         written.map_err(|error| format!("archive : {error}"))?;
@@ -576,7 +617,9 @@ mod tests {
         let config = NginxConfig::new()
             .with_upstream(
                 UpstreamBlock::new("rg_api_upstream")
-                    .with_target(UpstreamTarget::UnixSocket("/run/aphrody/rg-api.sock".to_string()))
+                    .with_target(UpstreamTarget::UnixSocket(
+                        "/run/aphrody/rg-api.sock".to_string(),
+                    ))
                     .with_keepalive(32),
             )
             .with_server(
@@ -617,19 +660,34 @@ mod tests {
         use base64::Engine as _;
         let conf = "ssl_certificate /etc/letsencrypt/live/aphrody.com/fullchain.pem;\nssl_certificate_key /etc/letsencrypt/live/aphrody.com/privkey.pem;\nssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;\ninclude /etc/letsencrypt/options-ssl-nginx.conf;\n";
         let stand_ins = letsencrypt_stand_ins(&letsencrypt_fixtures(conf)).unwrap();
-        let read =
-            |relative: &str| stand_ins.iter().find(|(path, _)| path == relative).unwrap().1.clone();
+        let read = |relative: &str| {
+            stand_ins
+                .iter()
+                .find(|(path, _)| path == relative)
+                .unwrap()
+                .1
+                .clone()
+        };
         let certificate = read("live/aphrody.com/fullchain.pem");
         let key = read("live/aphrody.com/privkey.pem");
         let decode = |pem: &str| {
-            let body: String = pem.lines().filter(|line| !line.starts_with("-----")).collect();
-            base64::engine::general_purpose::STANDARD.decode(body).unwrap()
+            let body: String = pem
+                .lines()
+                .filter(|line| !line.starts_with("-----"))
+                .collect();
+            base64::engine::general_purpose::STANDARD
+                .decode(body)
+                .unwrap()
         };
         assert!(certificate.starts_with("-----BEGIN CERTIFICATE-----"));
         // The certificate embeds the key's SubjectPublicKeyInfo: nginx accepts the pair.
         let spki =
             rcgen::PublicKeyData::subject_public_key_info(&rcgen::KeyPair::from_pem(&key).unwrap());
-        assert!(decode(&certificate).windows(spki.len()).any(|window| window == spki));
+        assert!(
+            decode(&certificate)
+                .windows(spki.len())
+                .any(|window| window == spki)
+        );
         assert_eq!(read("options-ssl-nginx.conf"), "# syntax check only\n");
         let der = decode(&read("ssl-dhparams.pem"));
         // SEQUENCE { INTEGER p (2048 bits), INTEGER g = 2 }
@@ -683,7 +741,11 @@ mod tests {
                 ("etc/nginx/conf.d/site.conf".to_owned(), false, 0o644),
                 ("etc/nginx/snippets/a.inc".to_owned(), false, 0o644),
                 ("etc/nginx/snippets/b.inc".to_owned(), false, 0o644),
-                ("etc/letsencrypt/live/x.org/fullchain.pem".to_owned(), false, 0o600),
+                (
+                    "etc/letsencrypt/live/x.org/fullchain.pem".to_owned(),
+                    false,
+                    0o600
+                ),
             ]
         );
     }
@@ -698,9 +760,16 @@ mod tests {
         assert!(report.contains("test is successful"), "{report}");
         let broken = tempfile::tempdir().unwrap();
         let path = broken.path().join("broken.conf");
-        std::fs::write(&path, "server { listen 80; location / { bogus_directive on; } }\n")
-            .unwrap();
-        assert!(test_in_container(&path, "nginx:alpine").unwrap_err().contains("bogus_directive"));
+        std::fs::write(
+            &path,
+            "server { listen 80; location / { bogus_directive on; } }\n",
+        )
+        .unwrap();
+        assert!(
+            test_in_container(&path, "nginx:alpine")
+                .unwrap_err()
+                .contains("bogus_directive")
+        );
     }
 
     #[test]

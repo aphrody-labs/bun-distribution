@@ -16,13 +16,16 @@ pub(crate) fn filled<T: Clone>(len: usize, value: T, purpose: &str) -> Result<Ve
 
 /// Reserve a vector for a known number of operation results.
 pub(crate) fn capacity<T>(len: usize, purpose: &str) -> Result<Vec<T>> {
-    let bytes = len.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| error(purpose, "requested size overflowed"))?;
+    let bytes = len
+        .checked_mul(std::mem::size_of::<T>())
+        .ok_or_else(|| error(purpose, "requested size overflowed"))?;
     #[cfg(test)]
     if FAIL_NEXT.with(|flag| flag.replace(false)) {
         return Err(error(purpose, "not enough memory"));
     }
     let mut out = Vec::new();
-    out.try_reserve_exact(len).map_err(|_| error(purpose, &format!("not enough memory for {bytes} bytes")))?;
+    out.try_reserve_exact(len)
+        .map_err(|_| error(purpose, &format!("not enough memory for {bytes} bytes")))?;
     Ok(out)
 }
 
@@ -38,7 +41,11 @@ pub(crate) fn checkpoint(purpose: &str) -> Result<()> {
 }
 
 /// Copy a region into an explicitly reserved buffer.
-pub(crate) fn read_region(surface: &photocraft_raster::Surface, area: photocraft_geom::Rect, purpose: &str) -> Result<Vec<f32>> {
+pub(crate) fn read_region(
+    surface: &photocraft_raster::Surface,
+    area: photocraft_geom::Rect,
+    purpose: &str,
+) -> Result<Vec<f32>> {
     let len = (area.width() as usize)
         .checked_mul(area.height() as usize)
         .and_then(|n| n.checked_mul(surface.channels()))
@@ -49,7 +56,9 @@ pub(crate) fn read_region(surface: &photocraft_raster::Surface, area: photocraft
 }
 
 pub(crate) fn error(purpose: &str, detail: &str) -> EngineError {
-    EngineError::Other(format!("not enough memory for {purpose} ({detail}); the document was not changed"))
+    EngineError::Other(format!(
+        "not enough memory for {purpose} ({detail}); the document was not changed"
+    ))
 }
 
 #[cfg(test)]
@@ -65,6 +74,10 @@ mod tests {
     fn allocation_failure_is_reported_without_panicking() {
         fail_next_for_test();
         let result = filled::<u8>(16, 0, "test image");
-        assert!(result.as_ref().is_err_and(|e| e.to_string().contains("not enough memory for test image")));
+        assert!(
+            result
+                .as_ref()
+                .is_err_and(|e| e.to_string().contains("not enough memory for test image"))
+        );
     }
 }

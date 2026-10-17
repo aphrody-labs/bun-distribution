@@ -125,35 +125,75 @@ pub fn tick(state: MatchState, ctx: MatchContext) -> Tick {
     use MatchState as S;
     match state {
         // Fallthrough case 0 → 1 (pas de break L84).
-        S::Init => Tick { next: S::WaitTimer, immediate: false },
-        // Branche match normal (5) vs entraînement (2) selon le flag 0x4.
-        S::WaitTimer => Tick {
-            next: if ctx.is_training { S::ResultUi } else { S::Transition },
+        S::Init => Tick {
+            next: S::WaitTimer,
             immediate: false,
         },
-        S::ResultUi => Tick { next: S::WaitAnim, immediate: false },
-        S::CheckTelop => Tick { next: S::ResultUi, immediate: false },
-        S::WaitAnim => Tick { next: S::Transition, immediate: false },
+        // Branche match normal (5) vs entraînement (2) selon le flag 0x4.
+        S::WaitTimer => Tick {
+            next: if ctx.is_training {
+                S::ResultUi
+            } else {
+                S::Transition
+            },
+            immediate: false,
+        },
+        S::ResultUi => Tick {
+            next: S::WaitAnim,
+            immediate: false,
+        },
+        S::CheckTelop => Tick {
+            next: S::ResultUi,
+            immediate: false,
+        },
+        S::WaitAnim => Tick {
+            next: S::Transition,
+            immediate: false,
+        },
         S::Transition => {
             if !ctx.is_training {
                 // Match normal : fade standard → état 6.
-                Tick { next: S::Fade, immediate: false }
+                Tick {
+                    next: S::Fade,
+                    immediate: false,
+                }
             } else if ctx.end_counter == 2 {
                 // Complétion : charge le résultat final, transition immédiate.
-                Tick { next: S::LoadNext, immediate: true }
+                Tick {
+                    next: S::LoadNext,
+                    immediate: true,
+                }
             } else {
                 // end_counter 0 ou 1 : restart/retry → fade.
-                Tick { next: S::Fade, immediate: false }
+                Tick {
+                    next: S::Fade,
+                    immediate: false,
+                }
             }
-        },
+        }
         // Fallthrough case 6 → 7 (L263).
-        S::Fade => Tick { next: S::Cleanup, immediate: false },
+        S::Fade => Tick {
+            next: S::Cleanup,
+            immediate: false,
+        },
         // Case 7 : lit le score puis passe en 8.
-        S::Cleanup => Tick { next: S::PostMatch, immediate: false },
-        S::PostMatch => Tick { next: S::FadeOut, immediate: false },
-        S::FadeOut => Tick { next: S::LoadNext, immediate: false },
+        S::Cleanup => Tick {
+            next: S::PostMatch,
+            immediate: false,
+        },
+        S::PostMatch => Tick {
+            next: S::FadeOut,
+            immediate: false,
+        },
+        S::FadeOut => Tick {
+            next: S::LoadNext,
+            immediate: false,
+        },
         // Case 10 : return 1 (transition immédiate vers scène suivante).
-        S::LoadNext => Tick { next: S::LoadNext, immediate: true },
+        S::LoadNext => Tick {
+            next: S::LoadNext,
+            immediate: true,
+        },
     }
 }
 
@@ -196,11 +236,17 @@ mod tests {
     /// Golden : depuis Init, la FSM traverse 0→1 puis branche 5 (normal).
     #[test]
     fn golden_sequence_normal_match() {
-        let normal = MatchContext { is_training: false, end_counter: 0 };
+        let normal = MatchContext {
+            is_training: false,
+            end_counter: 0,
+        };
         // Init → WaitTimer (fallthrough 0→1).
         assert_eq!(tick(MatchState::Init, normal).next, MatchState::WaitTimer);
         // WaitTimer → Transition (5) en match normal.
-        assert_eq!(tick(MatchState::WaitTimer, normal).next, MatchState::Transition);
+        assert_eq!(
+            tick(MatchState::WaitTimer, normal).next,
+            MatchState::Transition
+        );
         // Transition → Fade (6) en match normal.
         let t = tick(MatchState::Transition, normal);
         assert_eq!(t.next, MatchState::Fade);
@@ -208,22 +254,34 @@ mod tests {
         // Fade → Cleanup (fallthrough 6→7).
         assert_eq!(tick(MatchState::Fade, normal).next, MatchState::Cleanup);
         // Cleanup → PostMatch (7→8).
-        assert_eq!(tick(MatchState::Cleanup, normal).next, MatchState::PostMatch);
+        assert_eq!(
+            tick(MatchState::Cleanup, normal).next,
+            MatchState::PostMatch
+        );
     }
 
     /// Golden : entraînement → WaitTimer branche 2 (ResultUi).
     #[test]
     fn golden_sequence_training_branches_to_2() {
-        let training = MatchContext { is_training: true, end_counter: 0 };
+        let training = MatchContext {
+            is_training: true,
+            end_counter: 0,
+        };
         assert_eq!(tick(MatchState::Init, training).next, MatchState::WaitTimer);
         // WaitTimer → ResultUi (2) en entraînement.
-        assert_eq!(tick(MatchState::WaitTimer, training).next, MatchState::ResultUi);
+        assert_eq!(
+            tick(MatchState::WaitTimer, training).next,
+            MatchState::ResultUi
+        );
     }
 
     /// Case 5 entraînement avec end_counter==2 → transition immédiate vers LoadNext.
     #[test]
     fn training_completion_immediate_transition() {
-        let complete = MatchContext { is_training: true, end_counter: 2 };
+        let complete = MatchContext {
+            is_training: true,
+            end_counter: 2,
+        };
         let t = tick(MatchState::Transition, complete);
         assert_eq!(t.next, MatchState::LoadNext);
         assert!(t.immediate, "complétion = return 1 (transition immédiate)");
@@ -233,7 +291,10 @@ mod tests {
     #[test]
     fn training_restart_goes_to_fade() {
         for ec in [0, 1] {
-            let ctx = MatchContext { is_training: true, end_counter: ec };
+            let ctx = MatchContext {
+                is_training: true,
+                end_counter: ec,
+            };
             let t = tick(MatchState::Transition, ctx);
             assert_eq!(t.next, MatchState::Fade);
             assert!(!t.immediate);

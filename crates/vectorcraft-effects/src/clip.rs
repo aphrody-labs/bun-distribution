@@ -13,14 +13,23 @@ pub fn clip_outline(clip: &Node) -> Option<(BezPath, FillRule)> {
 
 /// Text as one path of its glyph outlines, in document space.
 fn outline_text(n: &Node) -> Option<Node> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     let mut bp = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).to_bezpath();
     bp.apply_affine(t.xf);
-    Some(Node::path(n.id, PathData::from_bezpath(&bp), Appearance::default()))
+    Some(Node::path(
+        n.id,
+        PathData::from_bezpath(&bp),
+        Appearance::default(),
+    ))
 }
 
 fn unite(shapes: &[(BezPath, FillRule)]) -> BezPath {
-    let paths: Vec<(PathData, FillRule)> = shapes.iter().map(|(bp, r)| (PathData::from_bezpath(bp), *r)).collect();
+    let paths: Vec<(PathData, FillRule)> = shapes
+        .iter()
+        .map(|(bp, r)| (PathData::from_bezpath(bp), *r))
+        .collect();
     let refs: Vec<(&PathData, FillRule)> = paths.iter().map(|(p, r)| (p, *r)).collect();
     vectorcraft_pathops::unite_all(&refs).to_bezpath()
 }

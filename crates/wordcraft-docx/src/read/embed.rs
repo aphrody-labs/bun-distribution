@@ -15,7 +15,8 @@ use wordcraft_doc::graphic::{Embedded, EmbeddedRef};
 
 use super::Reader;
 use crate::package::{
-    CUSTOM_XML_ROOTS, ContentTypes, MAX_EMBEDDED_PARTS, MAX_EMBEDDED_RELS, MAX_EMBEDDED_XML, Rel, Rels, manifest_field_ok, rel_is, rt,
+    CUSTOM_XML_ROOTS, ContentTypes, MAX_EMBEDDED_PARTS, MAX_EMBEDDED_RELS, MAX_EMBEDDED_XML, Rel,
+    Rels, manifest_field_ok, rel_is, rt,
 };
 use crate::xml::{El, MAX_DEPTH, NAMESPACES, esc};
 
@@ -28,11 +29,25 @@ impl Reader<'_> {
     pub(super) fn keep_custom_xml(&mut self, package: &Rels, document: &Rels) {
         let mut roots = String::new();
         for (owner, rels) in [("P", package), ("D", document)] {
-            for rel in rels.list.iter().filter(|r| !r.external && rel_is(&r.kind, rt::CUSTOM_XML)).take(MAX_EMBEDDED_RELS) {
-                if ![&rel.kind, &rel.target].iter().all(|s| manifest_field_ok(s)) {
+            for rel in rels
+                .list
+                .iter()
+                .filter(|r| !r.external && rel_is(&r.kind, rt::CUSTOM_XML))
+                .take(MAX_EMBEDDED_RELS)
+            {
+                if ![&rel.kind, &rel.target]
+                    .iter()
+                    .all(|s| manifest_field_ok(s))
+                {
                     continue;
                 }
-                if !self.doc.sources.is_empty() && self.xml(&rel.target).ok().flatten().is_some_and(|r| r.local() == "Sources") {
+                if !self.doc.sources.is_empty()
+                    && self
+                        .xml(&rel.target)
+                        .ok()
+                        .flatten()
+                        .is_some_and(|r| r.local() == "Sources")
+                {
                     continue;
                 }
                 if self.keep_part_tree(&rel.target) {
@@ -41,7 +56,9 @@ impl Reader<'_> {
             }
         }
         if !roots.is_empty() {
-            self.doc.passthrough.insert(CUSTOM_XML_ROOTS.into(), Arc::new(roots.into_bytes()));
+            self.doc
+                .passthrough
+                .insert(CUSTOM_XML_ROOTS.into(), Arc::new(roots.into_bytes()));
         }
     }
 
@@ -50,7 +67,12 @@ impl Reader<'_> {
     /// by id although its markup doesn't (a SmartArt drawing, named in the diagram's data part).
     /// `None` when it can't be written back faithfully: a relationship it uses is missing, a part
     /// is missing, or it's too big.
-    pub(super) fn keep_embedded(&mut self, el: &El, rels: &Rels, extra: &[String]) -> Option<Arc<Embedded>> {
+    pub(super) fn keep_embedded(
+        &mut self,
+        el: &El,
+        rels: &Rels,
+        extra: &[String],
+    ) -> Option<Arc<Embedded>> {
         let mut ids = Vec::new();
         rel_ids(el, &mut ids, 0)?;
         let mut refs = Vec::new();
@@ -59,13 +81,23 @@ impl Reader<'_> {
             if !rel.external && !self.keep_part_tree(&rel.target) {
                 return None;
             }
-            refs.push(EmbeddedRef { id: id.clone(), kind: rel.kind.clone(), target: rel.target.clone(), external: rel.external });
+            refs.push(EmbeddedRef {
+                id: id.clone(),
+                kind: rel.kind.clone(),
+                target: rel.target.clone(),
+                external: rel.external,
+            });
         }
         for id in extra.iter().filter(|id| !ids.contains(id)) {
             if let Some(rel) = rels.by_id(id).filter(|r| !r.external)
                 && self.keep_part_tree(&rel.target)
             {
-                refs.push(EmbeddedRef { id: id.clone(), kind: rel.kind.clone(), target: rel.target.clone(), external: false });
+                refs.push(EmbeddedRef {
+                    id: id.clone(),
+                    kind: rel.kind.clone(),
+                    target: rel.target.clone(),
+                    external: false,
+                });
             }
         }
         let xml = standalone_xml(el)?;
@@ -86,10 +118,16 @@ impl Reader<'_> {
             let mut kept: Vec<Rel> = Vec::new();
             for r in self.pkg.rels(&part).list {
                 if kept.len() >= MAX_EMBEDDED_RELS {
-                    log::warn!("docx: part {part} has more than {MAX_EMBEDDED_RELS} relationships; the rest are dropped");
+                    log::warn!(
+                        "docx: part {part} has more than {MAX_EMBEDDED_RELS} relationships; the rest are dropped"
+                    );
                     break;
                 }
-                if ![&r.id, &r.kind, &r.target].iter().all(|f| manifest_field_ok(f)) || kept.iter().any(|k| k.id == r.id) {
+                if ![&r.id, &r.kind, &r.target]
+                    .iter()
+                    .all(|f| manifest_field_ok(f))
+                    || kept.iter().any(|k| k.id == r.id)
+                {
                     continue;
                 }
                 if !r.external && !self.embedded.parts.contains_key(&r.target) {
@@ -110,12 +148,18 @@ impl Reader<'_> {
     /// Keep one part's bytes and content type (not its relationships).
     fn keep_part(&mut self, part: &str) -> bool {
         let lower = part.to_ascii_lowercase();
-        if !manifest_field_ok(part) || lower.ends_with(".rels") || lower == "[content_types].xml" || part.eq_ignore_ascii_case(&self.main) {
+        if !manifest_field_ok(part)
+            || lower.ends_with(".rels")
+            || lower == "[content_types].xml"
+            || part.eq_ignore_ascii_case(&self.main)
+        {
             log::warn!("docx: not carrying part {part:?} for an embedded object");
             return false;
         }
         if self.embedded.parts.len() >= MAX_EMBEDDED_PARTS {
-            log::warn!("docx: more than {MAX_EMBEDDED_PARTS} parts for embedded objects; the rest are dropped");
+            log::warn!(
+                "docx: more than {MAX_EMBEDDED_PARTS} parts for embedded objects; the rest are dropped"
+            );
             return false;
         }
         let Some(bytes) = self.pkg.get(part) else {
@@ -123,10 +167,27 @@ impl Reader<'_> {
             return false;
         };
         let pkg = self.pkg;
-        let ct = self.content_types.get_or_insert_with(|| ContentTypes::read(pkg)).of(part).unwrap_or("application/octet-stream");
-        let content_type = if manifest_field_ok(ct) { ct.to_string() } else { "application/octet-stream".to_string() };
-        self.doc.passthrough.entry(part.to_string()).or_insert_with(|| Arc::new(bytes.to_vec()));
-        self.embedded.parts.insert(part.to_string(), crate::package::EmbeddedPart { content_type, rels: Vec::new() });
+        let ct = self
+            .content_types
+            .get_or_insert_with(|| ContentTypes::read(pkg))
+            .of(part)
+            .unwrap_or("application/octet-stream");
+        let content_type = if manifest_field_ok(ct) {
+            ct.to_string()
+        } else {
+            "application/octet-stream".to_string()
+        };
+        self.doc
+            .passthrough
+            .entry(part.to_string())
+            .or_insert_with(|| Arc::new(bytes.to_vec()));
+        self.embedded.parts.insert(
+            part.to_string(),
+            crate::package::EmbeddedPart {
+                content_type,
+                rels: Vec::new(),
+            },
+        );
         true
     }
 }

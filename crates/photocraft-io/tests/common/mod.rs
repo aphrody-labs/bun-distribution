@@ -24,9 +24,14 @@ pub fn pattern(fmt: PixelFormat, r: Rect, seed: u32, alpha: bool) -> Surface {
         for x in r.x0..r.x1 {
             for c in 0..n {
                 let v = if c == n - 1 && fmt.alpha {
-                    if alpha { (i64::from(x + y) * 37 + i64::from(seed)).rem_euclid(256) } else { 255 }
+                    if alpha {
+                        (i64::from(x + y) * 37 + i64::from(seed)).rem_euclid(256)
+                    } else {
+                        255
+                    }
                 } else {
-                    (i64::from(x * 13 + y * 7) + i64::from(seed) * 31 + c as i64 * 50).rem_euclid(256)
+                    (i64::from(x * 13 + y * 7) + i64::from(seed) * 31 + c as i64 * 50)
+                        .rem_euclid(256)
                 };
                 vals.push(v as f32 / 255.0);
             }
@@ -40,7 +45,9 @@ pub fn pattern(fmt: PixelFormat, r: Rect, seed: u32, alpha: bool) -> Surface {
 pub fn mask_surface(sample: SampleType, r: Rect, default: f32, seed: u32) -> Surface {
     let fmt = PixelFormat::new(ColorMode::Grayscale, sample, false);
     let mut s = Surface::with_default(fmt, &[default]);
-    let vals: Vec<f32> = (0..r.width() * r.height()).map(|i| ((i * 29 + seed) % 256) as f32 / 255.0).collect();
+    let vals: Vec<f32> = (0..r.width() * r.height())
+        .map(|i| ((i * 29 + seed) % 256) as f32 / 255.0)
+        .collect();
     s.write_region(r, &vals);
     s.prune();
     s
@@ -48,7 +55,11 @@ pub fn mask_surface(sample: SampleType, r: Rect, default: f32, seed: u32) -> Sur
 
 pub fn fill_color(mode: ColorMode) -> Color {
     match mode {
-        ColorMode::Cmyk => Color { mode: ColorMode::Cmyk, c: [0.2, 0.4, 0.6, 0.1], alpha: 1.0 },
+        ColorMode::Cmyk => Color {
+            mode: ColorMode::Cmyk,
+            c: [0.2, 0.4, 0.6, 0.1],
+            alpha: 1.0,
+        },
         ColorMode::Grayscale => Color::gray(0.25),
         _ => Color::rgb(1.0, 0.5, 0.25),
     }
@@ -66,8 +77,22 @@ pub struct Features {
 }
 
 impl Features {
-    pub const ALL: Features = Features { groups: true, masks: true, adjustments: true, fills: true, all_blends: true, extras: true };
-    pub const PIXELS: Features = Features { groups: true, masks: true, adjustments: false, fills: false, all_blends: true, extras: false };
+    pub const ALL: Features = Features {
+        groups: true,
+        masks: true,
+        adjustments: true,
+        fills: true,
+        all_blends: true,
+        extras: true,
+    };
+    pub const PIXELS: Features = Features {
+        groups: true,
+        masks: true,
+        adjustments: false,
+        fills: false,
+        all_blends: true,
+        extras: false,
+    };
 }
 
 pub fn raster(name: &str, fmt: PixelFormat, r: Rect, seed: u32, alpha: bool) -> Layer {
@@ -103,17 +128,29 @@ pub fn gen_doc(mode: ColorMode, depth: SampleType, f: Features) -> Document {
     clipped.blend = BlendMode::Screen;
     d.layers.push(clipped);
 
-    d.layers.push(Layer::new("Empty", LayerContent::Raster(Surface::new(fmt))));
+    d.layers
+        .push(Layer::new("Empty", LayerContent::Raster(Surface::new(fmt))));
 
     if f.masks {
         let mut m = raster("Masked", fmt, Rect::new(2, 2, 14, 12), 5, true);
-        m.mask = Some(LayerMask { surface: mask_surface(depth, Rect::new(4, 4, 10, 9), 1.0, 1), enabled: true, linked: true, density: 1.0, feather: 0.0 });
+        m.mask = Some(LayerMask {
+            surface: mask_surface(depth, Rect::new(4, 4, 10, 9), 1.0, 1),
+            enabled: true,
+            linked: true,
+            density: 1.0,
+            feather: 0.0,
+        });
         m.advanced.layer_mask_hides_effects = true;
         m.advanced.vector_mask_hides_effects = true;
         d.layers.push(m);
         let mut m2 = raster("Masked2", fmt, Rect::new(-2, 1, 6, 5), 6, true);
-        m2.mask =
-            Some(LayerMask { surface: mask_surface(depth, Rect::new(-1, 0, 3, 4), 0.0, 2), enabled: false, linked: false, density: g(128), feather: 2.5 });
+        m2.mask = Some(LayerMask {
+            surface: mask_surface(depth, Rect::new(-1, 0, 3, 4), 0.0, 2),
+            enabled: false,
+            linked: false,
+            density: g(128),
+            feather: 2.5,
+        });
         d.layers.push(m2);
     }
 
@@ -141,7 +178,13 @@ pub fn gen_doc(mode: ColorMode, depth: SampleType, f: Features) -> Document {
             if *m == BlendMode::Dissolve {
                 continue; // random, excluded from composite comparisons
             }
-            let mut l = raster(&format!("blend {}", m.label()), fmt, Rect::from_xywh(i as i32 % 20, i as i32 % 12, 3, 2), 10 + i as u32, true);
+            let mut l = raster(
+                &format!("blend {}", m.label()),
+                fmt,
+                Rect::from_xywh(i as i32 % 20, i as i32 % 12, 3, 2),
+                10 + i as u32,
+                true,
+            );
             l.blend = *m;
             d.layers.push(l);
         }
@@ -152,38 +195,125 @@ pub fn gen_doc(mode: ColorMode, depth: SampleType, f: Features) -> Document {
             Adjustment::Invert,
             Adjustment::Threshold { level: g(100) },
             Adjustment::Posterize { levels: 5 },
-            Adjustment::BrightnessContrast { brightness: 20.0, contrast: -10.0, legacy: false },
-            Adjustment::HueSaturation { hue: 30.0, saturation: -20.0, lightness: 5.0, colorize: false, ranges: photocraft_doc::adjust::HueRange::defaults() },
-            Adjustment::Exposure { exposure: 0.5, offset: 0.0, gamma: 1.0 },
+            Adjustment::BrightnessContrast {
+                brightness: 20.0,
+                contrast: -10.0,
+                legacy: false,
+            },
+            Adjustment::HueSaturation {
+                hue: 30.0,
+                saturation: -20.0,
+                lightness: 5.0,
+                colorize: false,
+                ranges: photocraft_doc::adjust::HueRange::defaults(),
+            },
+            Adjustment::Exposure {
+                exposure: 0.5,
+                offset: 0.0,
+                gamma: 1.0,
+            },
             Adjustment::Levels {
-                master: LevelsChannel { in_black: g(10), in_white: g(240), gamma: 1.2, out_black: 0.0, out_white: 1.0 },
+                master: LevelsChannel {
+                    in_black: g(10),
+                    in_white: g(240),
+                    gamma: 1.2,
+                    out_black: 0.0,
+                    out_white: 1.0,
+                },
                 per_channel: Default::default(),
                 space: tone_space(mode),
                 black: Default::default(),
             },
             Adjustment::Curves {
-                master: vec![CurvePoint { input: 0.0, output: 0.0 }, CurvePoint { input: g(128), output: g(150) }, CurvePoint { input: 1.0, output: 1.0 }],
+                master: vec![
+                    CurvePoint {
+                        input: 0.0,
+                        output: 0.0,
+                    },
+                    CurvePoint {
+                        input: g(128),
+                        output: g(150),
+                    },
+                    CurvePoint {
+                        input: 1.0,
+                        output: 1.0,
+                    },
+                ],
                 per_channel: [
-                    vec![CurvePoint { input: 0.0, output: 0.0 }, CurvePoint { input: 1.0, output: 1.0 }],
-                    vec![CurvePoint { input: 0.0, output: 0.0 }, CurvePoint { input: 1.0, output: 1.0 }],
-                    vec![CurvePoint { input: 0.0, output: 0.0 }, CurvePoint { input: 1.0, output: 1.0 }],
+                    vec![
+                        CurvePoint {
+                            input: 0.0,
+                            output: 0.0,
+                        },
+                        CurvePoint {
+                            input: 1.0,
+                            output: 1.0,
+                        },
+                    ],
+                    vec![
+                        CurvePoint {
+                            input: 0.0,
+                            output: 0.0,
+                        },
+                        CurvePoint {
+                            input: 1.0,
+                            output: 1.0,
+                        },
+                    ],
+                    vec![
+                        CurvePoint {
+                            input: 0.0,
+                            output: 0.0,
+                        },
+                        CurvePoint {
+                            input: 1.0,
+                            output: 1.0,
+                        },
+                    ],
                 ],
                 space: tone_space(mode),
                 black: Vec::new(),
                 pencil: false,
             },
-            Adjustment::Unsupported { psd_key: "selc".into(), raw: vec![0, 1, 0, 0] },
+            Adjustment::Unsupported {
+                psd_key: "selc".into(),
+                raw: vec![0, 1, 0, 0],
+            },
         ];
         // Colour adjustments (Photoshop offers them for colour documents only: they would tint
         // a grayscale composite).
         let colour = vec![
-            Adjustment::Vibrance { vibrance: 40.0, saturation: -10.0 },
-            Adjustment::ColorBalance { shadows: [10.0, 0.0, -5.0], midtones: [0.0, 20.0, 0.0], highlights: [-30.0, 0.0, 15.0], preserve_luminosity: true },
-            Adjustment::BlackWhite { weights: [50.0, 60.0, 40.0, 60.0, 20.0, 70.0], tint: Some([1.0, 0.8, 0.6]) },
-            Adjustment::PhotoFilter { color: [1.0, f32::from(32768u16) / 65535.0, 0.0], density: 0.25, preserve_luminosity: false },
-            Adjustment::ChannelMixer { matrix: [[0.8, 0.2, 0.0, 0.0], [0.0, 1.0, 0.0, 0.1], [0.1, 0.0, 0.9, 0.0]], monochrome: false },
+            Adjustment::Vibrance {
+                vibrance: 40.0,
+                saturation: -10.0,
+            },
+            Adjustment::ColorBalance {
+                shadows: [10.0, 0.0, -5.0],
+                midtones: [0.0, 20.0, 0.0],
+                highlights: [-30.0, 0.0, 15.0],
+                preserve_luminosity: true,
+            },
+            Adjustment::BlackWhite {
+                weights: [50.0, 60.0, 40.0, 60.0, 20.0, 70.0],
+                tint: Some([1.0, 0.8, 0.6]),
+            },
+            Adjustment::PhotoFilter {
+                color: [1.0, f32::from(32768u16) / 65535.0, 0.0],
+                density: 0.25,
+                preserve_luminosity: false,
+            },
+            Adjustment::ChannelMixer {
+                matrix: [
+                    [0.8, 0.2, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.1],
+                    [0.1, 0.0, 0.9, 0.0],
+                ],
+                monochrome: false,
+            },
         ];
-        let adjs = adjs.into_iter().chain(colour.into_iter().filter(|_| mode != ColorMode::Grayscale));
+        let adjs = adjs
+            .into_iter()
+            .chain(colour.into_iter().filter(|_| mode != ColorMode::Grayscale));
         for (i, a) in adjs.enumerate() {
             let mut l = Layer::new(format!("adj {i}"), LayerContent::Adjustment(a));
             l.opacity = g(if i % 2 == 0 { 255 } else { 128 });
@@ -192,7 +322,10 @@ pub fn gen_doc(mode: ColorMode, depth: SampleType, f: Features) -> Document {
     }
 
     if f.fills {
-        let mut solid = Layer::new("Solid fill", LayerContent::Fill(Fill::Solid(fill_color(mode))));
+        let mut solid = Layer::new(
+            "Solid fill",
+            LayerContent::Fill(Fill::Solid(fill_color(mode))),
+        );
         solid.opacity = g(64);
         d.layers.push(solid);
     }
@@ -202,10 +335,15 @@ pub fn gen_doc(mode: ColorMode, depth: SampleType, f: Features) -> Document {
         d.icc_profile = Some(Arc::new(vec![1, 2, 3, 4]));
         d.metadata.xmp = Some("<x:xmpmeta/>".into());
         d.metadata.exif = Some(Arc::new(b"MM\0*\0\0\0\x08".to_vec()));
-        d.metadata.psd_resources.push((4000, String::new(), Arc::new(vec![9, 9, 9])));
+        d.metadata
+            .psd_resources
+            .push((4000, String::new(), Arc::new(vec![9, 9, 9])));
         d.guides.horizontal.push(5.5);
         d.guides.vertical.push(12.0);
-        d.channels.push(AlphaChannel::new("Selection", mask_surface(depth, d.bounds(), 0.0, 3)));
+        d.channels.push(AlphaChannel::new(
+            "Selection",
+            mask_surface(depth, d.bounds(), 0.0, 3),
+        ));
     }
     d
 }
@@ -223,14 +361,20 @@ fn surface_eq(a: &Surface, b: &Surface, ctx: &str) {
     let r = a.content_bounds().union(&b.content_bounds());
     assert_eq!(a.content_bounds(), b.content_bounds(), "{ctx}: bounds");
     if !r.is_empty() {
-        assert!(a.to_interleaved(r) == b.to_interleaved(r), "{ctx}: pixels differ");
+        assert!(
+            a.to_interleaved(r) == b.to_interleaved(r),
+            "{ctx}: pixels differ"
+        );
     }
 }
 
 fn color_close(a: &Color, b: &Color, ctx: &str) {
     assert_eq!(a.mode, b.mode, "{ctx}: color mode");
     for i in 0..4 {
-        assert!((a.c[i] - b.c[i]).abs() < 1e-4, "{ctx}: color {a:?} vs {b:?}");
+        assert!(
+            (a.c[i] - b.c[i]).abs() < 1e-4,
+            "{ctx}: color {a:?} vs {b:?}"
+        );
     }
 }
 
@@ -245,15 +389,25 @@ pub fn assert_layers_eq(a: &Layer, b: &Layer, path: &str) {
     assert_eq!(a.clipped, b.clipped, "{ctx}: clipped");
     assert_eq!(a.label, b.label, "{ctx}: label");
     assert_eq!(a.advanced, b.advanced, "{ctx}: advanced blending");
-    assert_eq!(a.excluded_channels, b.excluded_channels, "{ctx}: channel restrictions");
+    assert_eq!(
+        a.excluded_channels, b.excluded_channels,
+        "{ctx}: channel restrictions"
+    );
     assert_eq!(a.blend_if, b.blend_if, "{ctx}: blend if");
     assert_eq!(a.effects.psd_raw, b.effects.psd_raw, "{ctx}: effects raw");
-    assert_eq!(a.effects.enabled, b.effects.enabled, "{ctx}: effects enabled");
+    assert_eq!(
+        a.effects.enabled, b.effects.enabled,
+        "{ctx}: effects enabled"
+    );
     if a.psd_id.is_some() {
         assert_eq!(a.psd_id, b.psd_id, "{ctx}: psd id");
     }
     for blk in &a.psd_blocks {
-        assert!(b.psd_blocks.contains(blk), "{ctx}: preserved block {:?} missing", String::from_utf8_lossy(&blk.0));
+        assert!(
+            b.psd_blocks.contains(blk),
+            "{ctx}: preserved block {:?} missing",
+            String::from_utf8_lossy(&blk.0)
+        );
     }
     if let Some(fc) = &a.fill_cache {
         let other = b.fill_cache.as_ref().expect("fill cache kept");
@@ -279,8 +433,12 @@ pub fn assert_layers_eq(a: &Layer, b: &Layer, path: &str) {
                 assert_layers_eq(p, q, &ctx);
             }
         }
-        (LayerContent::Adjustment(x), LayerContent::Adjustment(y)) => assert_eq!(x, y, "{ctx}: adjustment"),
-        (LayerContent::Fill(Fill::Solid(x)), LayerContent::Fill(Fill::Solid(y))) => color_close(x, y, &ctx),
+        (LayerContent::Adjustment(x), LayerContent::Adjustment(y)) => {
+            assert_eq!(x, y, "{ctx}: adjustment")
+        }
+        (LayerContent::Fill(Fill::Solid(x)), LayerContent::Fill(Fill::Solid(y))) => {
+            color_close(x, y, &ctx)
+        }
         (LayerContent::Fill(x), LayerContent::Fill(y)) => assert_eq!(x, y, "{ctx}: fill"),
         (LayerContent::Text(x), LayerContent::Text(y)) => {
             assert_eq!(x.text, y.text, "{ctx}: text");
@@ -324,7 +482,11 @@ pub fn max_diff(a: &[[f32; 4]], b: &[[f32; 4]]) -> f32 {
             continue;
         }
         for c in 0..4 {
-            let (x, y) = if c < 3 { (p[c] * p[3], q[c] * q[3]) } else { (p[c], q[c]) };
+            let (x, y) = if c < 3 {
+                (p[c] * p[3], q[c] * q[3])
+            } else {
+                (p[c], q[c])
+            };
             m = m.max((x - y).abs());
         }
     }
@@ -359,24 +521,38 @@ pub fn strict_block_errors(bytes: &[u8]) -> Vec<String> {
     let v = file.header.version;
     let mut errs = Vec::new();
     if !file.layer_mask_trailing.is_empty() {
-        errs.push(format!("{} unparsed bytes at the end of the layer and mask section", file.layer_mask_trailing.len()));
+        errs.push(format!(
+            "{} unparsed bytes at the end of the layer and mask section",
+            file.layer_mask_trailing.len()
+        ));
     }
     if let Some(li) = &file.layer_info {
         let body = li.unpadded_len(v).unwrap_or(1);
         let pad = li.padding.as_ref().map_or(body % 2, |p| p.len() as u64);
         // In a global `Lr16`/`Lr32` block the padding to 4 follows the block, outside its length.
         let after = match &file.layer_info_placement {
-            photocraft_psd::LayerInfoPlacement::GlobalBlock { padding, .. } => padding.as_ref().map_or((4 - (body + pad) % 4) % 4, |p| p.len() as u64),
+            photocraft_psd::LayerInfoPlacement::GlobalBlock { padding, .. } => padding
+                .as_ref()
+                .map_or((4 - (body + pad) % 4) % 4, |p| p.len() as u64),
             photocraft_psd::LayerInfoPlacement::Section => 0,
         };
         if (body + pad + after) % 4 != 0 {
-            errs.push(format!("layer info: {body} bytes + {pad} padding is not a multiple of 4"));
+            errs.push(format!(
+                "layer info: {body} bytes + {pad} padding is not a multiple of 4"
+            ));
         }
     }
     for b in &file.global_blocks {
-        let pad = b.padding.as_ref().map_or((4 - b.data.len() % 4) % 4, Vec::len);
+        let pad = b
+            .padding
+            .as_ref()
+            .map_or((4 - b.data.len() % 4) % 4, Vec::len);
         if (b.data.len() + pad) % 4 != 0 {
-            errs.push(format!("global {}: {} data bytes + {pad} padding is not a multiple of 4", b.key_str(), b.data.len()));
+            errs.push(format!(
+                "global {}: {} data bytes + {pad} padding is not a multiple of 4",
+                b.key_str(),
+                b.data.len()
+            ));
         }
         if let Err(e) = b.check_structure() {
             errs.push(format!("global {}: {e}", b.key_str()));
@@ -385,7 +561,11 @@ pub fn strict_block_errors(bytes: &[u8]) -> Vec<String> {
     for (i, l) in file.layers().iter().enumerate() {
         for b in &l.blocks {
             if b.data.len() % 2 != 0 || b.padding.as_ref().is_some_and(|p| !p.is_empty()) {
-                errs.push(format!("layer {i} {}: {} data bytes with padding outside the length", b.key_str(), b.data.len()));
+                errs.push(format!(
+                    "layer {i} {}: {} data bytes with padding outside the length",
+                    b.key_str(),
+                    b.data.len()
+                ));
             }
             if let Err(e) = b.check_structure() {
                 errs.push(format!("layer {i} {}: {e}", b.key_str()));

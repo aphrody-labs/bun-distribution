@@ -39,11 +39,20 @@ pub struct Form {
 
 impl Form {
     fn new(id: Option<String>, name: &str, description: &str) -> Self {
-        Self { id, name: name.to_string(), description: description.to_string(), branch: false, focus: true }
+        Self {
+            id,
+            name: name.to_string(),
+            description: description.to_string(),
+            branch: false,
+            focus: true,
+        }
     }
 
     fn branch() -> Self {
-        Self { branch: true, ..Self::new(None, "", "") }
+        Self {
+            branch: true,
+            ..Self::new(None, "", "")
+        }
     }
 }
 
@@ -115,20 +124,54 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
 
     // Header: title, save, close.
     let (head, _) = ui.allocate_exact_size(vec2(w, 48.0), Sense::hover());
-    ui.painter().text(pos2(head.min.x + 16.0, head.center().y), Align2::LEFT_CENTER, tr("Version history"), semibold(13.0), t.text);
-    let mut bar =
-        ui.new_child(egui::UiBuilder::new().max_rect(head.shrink2(vec2(12.0, 12.0))).layout(egui::Layout::right_to_left(egui::Align::Center)));
-    if icons::button(&mut bar, Icon::Close, 24.0, false, tr("Close version history")).clicked() {
+    ui.painter().text(
+        pos2(head.min.x + 16.0, head.center().y),
+        Align2::LEFT_CENTER,
+        tr("Version history"),
+        semibold(13.0),
+        t.text,
+    );
+    let mut bar = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(head.shrink2(vec2(12.0, 12.0)))
+            .layout(egui::Layout::right_to_left(egui::Align::Center)),
+    );
+    if icons::button(
+        &mut bar,
+        Icon::Close,
+        24.0,
+        false,
+        tr("Close version history"),
+    )
+    .clicked()
+    {
         action = Some(Action::Close);
     }
-    let new_open = app.ui.versions.form.as_ref().is_some_and(|f| f.id.is_none() && !f.branch);
-    let tip = trf("Save version  {key}", &[("key", &crate::toolbar::pretty_shortcut("Alt+Cmd+S"))]);
+    let new_open = app
+        .ui
+        .versions
+        .form
+        .as_ref()
+        .is_some_and(|f| f.id.is_none() && !f.branch);
+    let tip = trf(
+        "Save version  {key}",
+        &[("key", &crate::toolbar::pretty_shortcut("Alt+Cmd+S"))],
+    );
     if icons::button(&mut bar, Icon::Plus, 24.0, new_open, &tip).clicked() {
         action = Some(Action::New);
     }
-    ui.painter().line_segment([head.left_bottom(), head.right_bottom()], Stroke::new(1.0, t.border));
+    ui.painter().line_segment(
+        [head.left_bottom(), head.right_bottom()],
+        Stroke::new(1.0, t.border),
+    );
 
-    if let Some(f) = app.ui.versions.form.as_mut().filter(|f| f.id.is_none() && !f.branch) {
+    if let Some(f) = app
+        .ui
+        .versions
+        .form
+        .as_mut()
+        .filter(|f| f.id.is_none() && !f.branch)
+    {
         ui.add_space(12.0);
         if let Some(a) = form(ui, f, tr("Save"), 16.0) {
             action = Some(a);
@@ -144,17 +187,37 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
             ds.versions
                 .iter()
                 .rev()
-                .map(|v| Row { id: v.id.clone(), name: v.name.clone(), description: v.description.clone(), time: v.time, auto: v.auto })
+                .map(|v| Row {
+                    id: v.id.clone(),
+                    name: v.name.clone(),
+                    description: v.description.clone(),
+                    time: v.time,
+                    auto: v.auto,
+                })
                 .collect()
         })
         .unwrap_or_default();
-    let previewing = app.session.ds().ok().and_then(|ds| ds.preview.as_ref().map(|p| p.id.clone()));
+    let previewing = app
+        .session
+        .ds()
+        .ok()
+        .and_then(|ds| ds.preview.as_ref().map(|p| p.id.clone()));
     // The branches of the file shown, or of the file a branch tab belongs to.
     let branches: Vec<BranchRow> = app
         .session
         .docs
         .get(figcraft_engine::branches::file_tab(&app.session))
-        .map(|m| m.branches.iter().map(|b| BranchRow { id: b.id.clone(), name: b.name.clone(), time: b.time, state: b.state }).collect())
+        .map(|m| {
+            m.branches
+                .iter()
+                .map(|b| BranchRow {
+                    id: b.id.clone(),
+                    name: b.name.clone(),
+                    time: b.time,
+                    state: b.state,
+                })
+                .collect()
+        })
         .unwrap_or_default();
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         if widgets::section_header(ui, tr("Branches"), &[(Icon::Plus, tr("Create branch"))], false).is_some() {
@@ -241,7 +304,12 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
 
 fn act(app: &mut FigApp, a: Action, rows: &[Row]) {
     let st = &mut app.ui.versions;
-    let name_of = |id: &str| rows.iter().find(|r| r.id == id).map(|r| r.name.clone()).unwrap_or_default();
+    let name_of = |id: &str| {
+        rows.iter()
+            .find(|r| r.id == id)
+            .map(|r| r.name.clone())
+            .unwrap_or_default()
+    };
     match a {
         Action::Close => {
             *st = VersionUi::default();
@@ -260,11 +328,23 @@ fn act(app: &mut FigApp, a: Action, rows: &[Row]) {
         }
         Action::New => {
             st.confirm_delete = None;
-            st.form = if st.form.as_ref().is_some_and(|f| f.id.is_none() && !f.branch) { None } else { Some(Form::new(None, "", "")) };
+            st.form = if st
+                .form
+                .as_ref()
+                .is_some_and(|f| f.id.is_none() && !f.branch)
+            {
+                None
+            } else {
+                Some(Form::new(None, "", ""))
+            };
         }
         Action::NewBranch => {
             st.confirm_delete = None;
-            st.form = if st.form.as_ref().is_some_and(|f| f.branch) { None } else { Some(Form::branch()) };
+            st.form = if st.form.as_ref().is_some_and(|f| f.branch) {
+                None
+            } else {
+                Some(Form::branch())
+            };
         }
         Action::OpenBranch(id) => {
             app.run("branch.open", json!({"id": id}));
@@ -279,7 +359,10 @@ fn act(app: &mut FigApp, a: Action, rows: &[Row]) {
         Action::CancelDelete => st.confirm_delete = None,
         Action::Edit(id) => {
             st.confirm_delete = None;
-            st.form = rows.iter().find(|r| r.id == id).map(|r| Form::new(Some(id.clone()), &r.name, &r.description));
+            st.form = rows
+                .iter()
+                .find(|r| r.id == id)
+                .map(|r| Form::new(Some(id.clone()), &r.name, &r.description));
         }
         Action::AskDelete(id) => {
             st.form = None;
@@ -289,8 +372,14 @@ fn act(app: &mut FigApp, a: Action, rows: &[Row]) {
             let Some(f) = st.form.take() else { return };
             let (cmd, params) = match &f.id {
                 _ if f.branch => ("branch.create", json!({"name": f.name.trim()})),
-                Some(id) => ("version.rename", json!({"id": id, "name": f.name.trim(), "description": f.description.trim()})),
-                None => ("file.saveVersion", json!({"name": f.name.trim(), "description": f.description.trim()})),
+                Some(id) => (
+                    "version.rename",
+                    json!({"id": id, "name": f.name.trim(), "description": f.description.trim()}),
+                ),
+                None => (
+                    "file.saveVersion",
+                    json!({"name": f.name.trim(), "description": f.description.trim()}),
+                ),
             };
             if app.run(cmd, params).is_none() {
                 app.ui.versions.form = Some(f);
@@ -307,7 +396,10 @@ fn act(app: &mut FigApp, a: Action, rows: &[Row]) {
         }
         Action::Duplicate(id) => {
             if app.run("version.duplicate", json!({"id": id})).is_some() {
-                app.toast(trf("Opened “{name}” in a new tab", &[("name", &name_of(&id))]));
+                app.toast(trf(
+                    "Opened “{name}” in a new tab",
+                    &[("name", &name_of(&id))],
+                ));
             }
         }
     }
@@ -318,16 +410,31 @@ fn form(ui: &mut Ui, f: &mut Form, submit: &str, indent: f32) -> Option<Action> 
     let t = Tokens::get(ui.ctx());
     let mut out = None;
     let field = |ui: &mut Ui, add: &mut dyn FnMut(&mut Ui) -> egui::Response| {
-        egui::Frame::NONE.fill(t.field).corner_radius(CornerRadius::same(5)).inner_margin(egui::Margin::symmetric(8, 5)).show(ui, add).inner
+        egui::Frame::NONE
+            .fill(t.field)
+            .corner_radius(CornerRadius::same(5))
+            .inner_margin(egui::Margin::symmetric(8, 5))
+            .show(ui, add)
+            .inner
     };
     ui.horizontal(|ui| {
         ui.add_space(indent);
         ui.vertical(|ui| {
             ui.set_width(ui.available_width() - 16.0);
             let w = ui.available_width() - 16.0;
-            let hint = if f.branch { tr("Branch name") } else { tr("Title") };
+            let hint = if f.branch {
+                tr("Branch name")
+            } else {
+                tr("Title")
+            };
             let title = field(ui, &mut |ui| {
-                ui.add(egui::TextEdit::singleline(&mut f.name).hint_text(hint).font(regular(11.0)).frame(egui::Frame::NONE).desired_width(w))
+                ui.add(
+                    egui::TextEdit::singleline(&mut f.name)
+                        .hint_text(hint)
+                        .font(regular(11.0))
+                        .frame(egui::Frame::NONE)
+                        .desired_width(w),
+                )
             });
             crate::a11y::text(&title, hint, &f.name);
             if std::mem::take(&mut f.focus) {
@@ -349,13 +456,24 @@ fn form(ui: &mut Ui, f: &mut Form, submit: &str, indent: f32) -> Option<Action> 
                 })
             };
             let (enter, cmd_enter, esc) = ui.input(|i| {
-                (i.key_pressed(egui::Key::Enter), i.key_pressed(egui::Key::Enter) && i.modifiers.command, i.key_pressed(egui::Key::Escape))
+                (
+                    i.key_pressed(egui::Key::Enter),
+                    i.key_pressed(egui::Key::Enter) && i.modifiers.command,
+                    i.key_pressed(egui::Key::Escape),
+                )
             });
             let editing_existing = f.id.is_some();
             let can_submit = !editing_existing || !f.name.trim().is_empty();
-            if esc && (title.has_focus() || title.lost_focus() || desc.has_focus() || desc.lost_focus()) {
+            if esc
+                && (title.has_focus()
+                    || title.lost_focus()
+                    || desc.has_focus()
+                    || desc.lost_focus())
+            {
                 out = Some(Action::CancelForm);
-            } else if can_submit && ((title.lost_focus() && enter) || (desc.has_focus() && cmd_enter)) {
+            } else if can_submit
+                && ((title.lost_focus() && enter) || (desc.has_focus() && cmd_enter))
+            {
                 out = Some(Action::Submit);
             }
             ui.add_space(8.0);
@@ -393,13 +511,23 @@ fn current_row(ui: &mut Ui, more: bool, active: bool) -> bool {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::click());
     if active {
-        ui.painter().rect_filled(r, CornerRadius::ZERO, t.selected_row);
+        ui.painter()
+            .rect_filled(r, CornerRadius::ZERO, t.selected_row);
     } else if resp.hovered() {
         ui.painter().rect_filled(r, CornerRadius::ZERO, t.hover);
     }
     timeline(ui, r, r.center().y, false, more, true);
-    ui.painter().text(pos2(r.min.x + TEXT_X, r.center().y), Align2::LEFT_CENTER, tr("Current version"), semibold(11.0), t.text);
-    !active && resp.on_hover_text(tr("Back to the current version")).clicked()
+    ui.painter().text(
+        pos2(r.min.x + TEXT_X, r.center().y),
+        Align2::LEFT_CENTER,
+        tr("Current version"),
+        semibold(11.0),
+        t.text,
+    );
+    !active
+        && resp
+            .on_hover_text(tr("Back to the current version"))
+            .clicked()
 }
 
 fn version_row(ui: &mut Ui, row: &Row, last: bool, previewing: bool) -> Option<Action> {
@@ -408,7 +536,8 @@ fn version_row(ui: &mut Ui, row: &Row, last: bool, previewing: bool) -> Option<A
     let text_w = (w - TEXT_X - 36.0).max(40.0);
     // Up to three lines of description, then an ellipsis.
     let desc = (!row.description.is_empty()).then(|| {
-        let mut job = egui::text::LayoutJob::simple(row.description.clone(), regular(11.0), t.text, text_w);
+        let mut job =
+            egui::text::LayoutJob::simple(row.description.clone(), regular(11.0), t.text, text_w);
         job.wrap.max_rows = 3;
         ui.painter().layout_job(job)
     });
@@ -416,16 +545,32 @@ fn version_row(ui: &mut Ui, row: &Row, last: bool, previewing: bool) -> Option<A
     let (r, resp) = ui.allocate_exact_size(vec2(w, 50.0 + desc_h), Sense::click());
     let hovered = ui.rect_contains_pointer(r);
     if previewing {
-        ui.painter().rect_filled(r, CornerRadius::ZERO, t.selected_row);
+        ui.painter()
+            .rect_filled(r, CornerRadius::ZERO, t.selected_row);
     } else if hovered {
         ui.painter().rect_filled(r, CornerRadius::ZERO, t.hover);
     }
     let name_y = r.min.y + 17.0;
     timeline(ui, r, name_y, true, !last, false);
-    let clip = Rect::from_min_max(pos2(r.min.x + TEXT_X, r.min.y), pos2(r.min.x + TEXT_X + text_w, r.max.y));
+    let clip = Rect::from_min_max(
+        pos2(r.min.x + TEXT_X, r.min.y),
+        pos2(r.min.x + TEXT_X + text_w, r.max.y),
+    );
     let p = ui.painter().with_clip_rect(clip);
-    p.text(pos2(clip.min.x, name_y), Align2::LEFT_CENTER, &row.name, semibold(11.0), t.text);
-    p.text(pos2(clip.min.x, name_y + 16.0), Align2::LEFT_CENTER, crate::comments::ago_long(row.time), regular(11.0), t.text_secondary);
+    p.text(
+        pos2(clip.min.x, name_y),
+        Align2::LEFT_CENTER,
+        &row.name,
+        semibold(11.0),
+        t.text,
+    );
+    p.text(
+        pos2(clip.min.x, name_y + 16.0),
+        Align2::LEFT_CENTER,
+        crate::comments::ago_long(row.time),
+        regular(11.0),
+        t.text_secondary,
+    );
     if let Some(g) = desc {
         p.galley(pos2(clip.min.x, name_y + 26.0), g, t.text);
     }
@@ -436,7 +581,8 @@ fn version_row(ui: &mut Ui, row: &Row, last: bool, previewing: bool) -> Option<A
     let menu_open = egui::Popup::is_id_open(ui.ctx(), egui::Popup::default_response_id(&more));
     if hovered || menu_open {
         if more.hovered() || menu_open {
-            ui.painter().rect_filled(br, CornerRadius::same(5), t.pressed);
+            ui.painter()
+                .rect_filled(br, CornerRadius::same(5), t.pressed);
         }
         icons::paint(ui.painter(), br.shrink(5.0), Icon::Dots, t.icon);
     }
@@ -482,22 +628,38 @@ fn branch_row(ui: &mut Ui, b: &BranchRow) -> Option<Action> {
     };
     let clip = Rect::from_min_max(pos2(r.min.x + 16.0, r.min.y), pos2(r.max.x - 40.0, r.max.y));
     let p = ui.painter().with_clip_rect(clip);
-    p.text(pos2(clip.min.x, r.min.y + 15.0), Align2::LEFT_CENTER, &b.name, semibold(11.0), if active { t.text } else { t.text_secondary });
+    p.text(
+        pos2(clip.min.x, r.min.y + 15.0),
+        Align2::LEFT_CENTER,
+        &b.name,
+        semibold(11.0),
+        if active { t.text } else { t.text_secondary },
+    );
     let sub = format!("{state} · {}", crate::comments::ago_long(b.time));
-    p.text(pos2(clip.min.x, r.min.y + 31.0), Align2::LEFT_CENTER, sub, regular(11.0), t.text_secondary);
+    p.text(
+        pos2(clip.min.x, r.min.y + 31.0),
+        Align2::LEFT_CENTER,
+        sub,
+        regular(11.0),
+        t.text_secondary,
+    );
     let mut out = None;
     let br = Rect::from_center_size(pos2(r.max.x - 22.0, r.min.y + 15.0), vec2(24.0, 24.0));
     let more = ui.interact(br, Id::new(("branch_more", &b.id)), Sense::click());
     let menu_open = egui::Popup::is_id_open(ui.ctx(), egui::Popup::default_response_id(&more));
     if hovered || menu_open {
         if more.hovered() || menu_open {
-            ui.painter().rect_filled(br, CornerRadius::same(5), t.pressed);
+            ui.painter()
+                .rect_filled(br, CornerRadius::same(5), t.pressed);
         }
         icons::paint(ui.painter(), br.shrink(5.0), Icon::Dots, t.icon);
     }
     let more = more.tip(tr("More"));
     let mut menu = |ui: &mut Ui| {
-        let mut items = vec![(tr("Open"), Action::OpenBranch(b.id.clone())), (tr("Review and merge"), Action::ReviewBranch(b.id.clone()))];
+        let mut items = vec![
+            (tr("Open"), Action::OpenBranch(b.id.clone())),
+            (tr("Review and merge"), Action::ReviewBranch(b.id.clone())),
+        ];
         if active {
             items.push((tr("Archive"), Action::ArchiveBranch(b.id.clone())));
         }
@@ -518,16 +680,33 @@ fn branch_row(ui: &mut Ui, b: &BranchRow) -> Option<Action> {
 
 /// While a version is shown: a banner over the canvas naming it, with Restore and Back.
 pub fn preview_banner(app: &mut FigApp, ctx: &egui::Context, canvas: Rect) {
-    let Some((id, name, time)) = app.session.ds().ok().and_then(|ds| ds.preview.as_ref().map(|p| (p.id.clone(), p.name.clone(), p.time))) else {
+    let Some((id, name, time)) = app.session.ds().ok().and_then(|ds| {
+        ds.preview
+            .as_ref()
+            .map(|p| (p.id.clone(), p.name.clone(), p.time))
+    }) else {
         return;
     };
     let t = Tokens::get(ctx);
     let action = widgets::canvas_banner(ctx, Id::new("version_preview_banner"), canvas, |ui| {
         let mut action = None;
-        icons::paint(ui.painter(), Rect::from_center_size(ui.cursor().min + vec2(7.0, 12.0), vec2(14.0, 14.0)), Icon::Clock, t.icon_secondary);
+        icons::paint(
+            ui.painter(),
+            Rect::from_center_size(ui.cursor().min + vec2(7.0, 12.0), vec2(14.0, 14.0)),
+            Icon::Clock,
+            t.icon_secondary,
+        );
         ui.add_space(20.0);
-        ui.label(egui::RichText::new(trf("Viewing “{name}”", &[("name", &name)])).font(semibold(11.0)).color(t.text));
-        ui.label(egui::RichText::new(crate::comments::ago_long(time)).font(regular(11.0)).color(t.text_secondary));
+        ui.label(
+            egui::RichText::new(trf("Viewing “{name}”", &[("name", &name)]))
+                .font(semibold(11.0))
+                .color(t.text),
+        );
+        ui.label(
+            egui::RichText::new(crate::comments::ago_long(time))
+                .font(regular(11.0))
+                .color(t.text_secondary),
+        );
         ui.add_space(4.0);
         if widgets::button(ui, tr("Back to current"), false, true).clicked() {
             action = Some(false);
@@ -558,20 +737,48 @@ fn autosave_group(ui: &mut Ui, n: usize, open: bool, last: bool) -> bool {
         ui.painter().rect_filled(r, CornerRadius::ZERO, t.hover);
     }
     timeline(ui, r, r.center().y, true, !last, false);
-    let chevron = Rect::from_center_size(pos2(r.min.x + TEXT_X + 6.0, r.center().y), vec2(12.0, 12.0));
-    icons::paint(ui.painter(), chevron, if open { Icon::Chevron } else { Icon::ChevronRight }, t.icon_secondary);
+    let chevron =
+        Rect::from_center_size(pos2(r.min.x + TEXT_X + 6.0, r.center().y), vec2(12.0, 12.0));
+    icons::paint(
+        ui.painter(),
+        chevron,
+        if open {
+            Icon::Chevron
+        } else {
+            Icon::ChevronRight
+        },
+        t.icon_secondary,
+    );
     let label = trn("{n} autosave versions", n, &[]);
-    ui.painter().text(pos2(chevron.max.x + 6.0, r.center().y), Align2::LEFT_CENTER, label, regular(11.0), t.text_secondary);
-    resp.on_hover_text(if open { tr("Fold autosaves") } else { tr("Show autosaves") }).clicked()
+    ui.painter().text(
+        pos2(chevron.max.x + 6.0, r.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        regular(11.0),
+        t.text_secondary,
+    );
+    resp.on_hover_text(if open {
+        tr("Fold autosaves")
+    } else {
+        tr("Show autosaves")
+    })
+    .clicked()
 }
 
 /// A row holding a form (rename, delete confirmation), with the timeline running past it.
-fn inline_row(ui: &mut Ui, last: bool, add: impl FnOnce(&mut Ui) -> Option<Action>) -> Option<Action> {
+fn inline_row(
+    ui: &mut Ui,
+    last: bool,
+    add: impl FnOnce(&mut Ui) -> Option<Action>,
+) -> Option<Action> {
     let top = ui.cursor().min.y;
     ui.add_space(8.0);
     let a = add(ui);
     ui.add_space(8.0);
-    let r = Rect::from_min_max(pos2(ui.min_rect().min.x, top), pos2(ui.min_rect().max.x, ui.cursor().min.y));
+    let r = Rect::from_min_max(
+        pos2(ui.min_rect().min.x, top),
+        pos2(ui.min_rect().max.x, ui.cursor().min.y),
+    );
     timeline(ui, r, top + 20.0, true, !last, false);
     a
 }
@@ -579,16 +786,34 @@ fn inline_row(ui: &mut Ui, last: bool, add: impl FnOnce(&mut Ui) -> Option<Actio
 fn confirm_row(ui: &mut Ui, row: &Row) -> Option<Action> {
     let t = Tokens::get(ui.ctx());
     let mut out = None;
-    egui::Frame::NONE.inner_margin(egui::Margin { left: TEXT_X as i8, right: 16, top: 4, bottom: 0 }).show(ui, |ui| {
-        ui.add(
-            egui::Label::new(
-                egui::RichText::new(trf("Delete “{name}”? This can't be undone.", &[("name", &row.name)])).font(regular(11.0)).color(t.text),
-            )
-            .wrap(),
-        );
-        ui.add_space(8.0);
-        out = buttons(ui, tr("Delete"), true).map(|delete| if delete { Action::Delete(row.id.clone()) } else { Action::CancelDelete });
-    });
+    egui::Frame::NONE
+        .inner_margin(egui::Margin {
+            left: TEXT_X as i8,
+            right: 16,
+            top: 4,
+            bottom: 0,
+        })
+        .show(ui, |ui| {
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(trf(
+                        "Delete “{name}”? This can't be undone.",
+                        &[("name", &row.name)],
+                    ))
+                    .font(regular(11.0))
+                    .color(t.text),
+                )
+                .wrap(),
+            );
+            ui.add_space(8.0);
+            out = buttons(ui, tr("Delete"), true).map(|delete| {
+                if delete {
+                    Action::Delete(row.id.clone())
+                } else {
+                    Action::CancelDelete
+                }
+            });
+        });
     out
 }
 
@@ -596,11 +821,19 @@ fn confirm_row(ui: &mut Ui, row: &Row) -> Option<Action> {
 /// Cancel.
 fn buttons(ui: &mut Ui, primary: &str, enabled: bool) -> Option<bool> {
     let size = vec2(ui.available_width(), widgets::FIELD_H);
-    ui.allocate_ui_with_layout(size, egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        ui.spacing_mut().item_spacing.x = 8.0;
-        let ok = widgets::button(ui, primary, true, enabled).clicked();
-        let cancel = widgets::button(ui, tr("Cancel"), false, true).clicked();
-        if ok { Some(true) } else { cancel.then_some(false) }
-    })
+    ui.allocate_ui_with_layout(
+        size,
+        egui::Layout::right_to_left(egui::Align::Center),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            let ok = widgets::button(ui, primary, true, enabled).clicked();
+            let cancel = widgets::button(ui, tr("Cancel"), false, true).clicked();
+            if ok {
+                Some(true)
+            } else {
+                cancel.then_some(false)
+            }
+        },
+    )
     .inner
 }

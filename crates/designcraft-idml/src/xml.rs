@@ -22,7 +22,11 @@ pub struct El {
 
 impl El {
     pub fn new(name: &str) -> Self {
-        El { name: name.into(), attrs: Vec::new(), children: Vec::new() }
+        El {
+            name: name.into(),
+            attrs: Vec::new(),
+            children: Vec::new(),
+        }
     }
 
     // ---------- building ----------
@@ -57,7 +61,10 @@ impl El {
         self.name.rsplit(':').next().unwrap_or(&self.name)
     }
     pub fn get(&self, k: &str) -> Option<&str> {
-        self.attrs.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str())
+        self.attrs
+            .iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.as_str())
     }
     pub fn elements(&self) -> impl Iterator<Item = &El> {
         self.children.iter().filter_map(|n| match n {
@@ -202,7 +209,9 @@ pub fn parse(bytes: &[u8]) -> Result<El, String> {
     let mut buf = Vec::new();
     let pos = |r: &quick_xml::Reader<&[u8]>| r.buffer_position();
     loop {
-        let ev = r.read_event_into(&mut buf).map_err(|e| format!("XML error at {}: {e}", pos(&r)))?;
+        let ev = r
+            .read_event_into(&mut buf)
+            .map_err(|e| format!("XML error at {}: {e}", pos(&r)))?;
         match ev {
             Event::Start(e) => {
                 let el = start_el(&e)?;
@@ -283,7 +292,10 @@ fn start_el(e: &quick_xml::events::BytesStart) -> Result<El, String> {
     for a in e.attributes().with_checks(false) {
         let a = a.map_err(|e| e.to_string())?;
         let k = String::from_utf8_lossy(a.key.as_ref()).to_string();
-        let v = a.unescape_value().map(|v| v.to_string()).unwrap_or_else(|_| String::from_utf8_lossy(&a.value).to_string());
+        let v = a
+            .unescape_value()
+            .map(|v| v.to_string())
+            .unwrap_or_else(|_| String::from_utf8_lossy(&a.value).to_string());
         el.attrs.push((k, v));
     }
     Ok(el)
@@ -295,7 +307,9 @@ mod tests {
 
     #[test]
     fn roundtrip_text_pi_and_entities() {
-        let root = El::new("Root").attr("A", "x\"<&\t").child(El::new("Content").text("a\tb & <c>"));
+        let root = El::new("Root")
+            .attr("A", "x\"<&\t")
+            .child(El::new("Content").text("a\tb & <c>"));
         let mut c = El::new("Content");
         c.children.push(Node::Text("Page ".into()));
         c.children.push(Node::Pi("ACE".into(), "18".into()));
@@ -310,7 +324,8 @@ mod tests {
 
     #[test]
     fn properties_form() {
-        let x = br#"<A PointSize="9"><Properties><Leading type="unit">14</Leading></Properties></A>"#;
+        let x =
+            br#"<A PointSize="9"><Properties><Leading type="unit">14</Leading></Properties></A>"#;
         let e = parse(x).unwrap();
         assert_eq!(e.num("PointSize"), Some(9.0));
         assert_eq!(e.num("Leading"), Some(14.0));

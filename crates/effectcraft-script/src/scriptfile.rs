@@ -16,18 +16,31 @@ pub(crate) const MAX_FILE_BYTES: usize = 16 << 20;
 /// The folder of the script file `name` runs from: `None` for the Script Console and for scripts
 /// run by name or from code, which have no file.
 pub(crate) fn script_dir(s: &Session, name: &str) -> Option<PathBuf> {
-    let parent = Path::new(name).parent().filter(|p| !p.as_os_str().is_empty())?;
-    s.services.exists(name).then(|| normalize(&parent.to_string_lossy()))
+    let parent = Path::new(name)
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())?;
+    s.services
+        .exists(name)
+        .then(|| normalize(&parent.to_string_lossy()))
 }
 
 /// Resolve `name`: absolute paths as they are; relative ones against `dir` (the loading script's
 /// folder), then each of `search`. The first existing file wins; when none exists, the first
 /// candidate, so the read error names it.
-pub(crate) fn resolve(s: &Session, name: &str, dir: Option<&Path>, search: &[PathBuf]) -> Result<PathBuf, String> {
+pub(crate) fn resolve(
+    s: &Session,
+    name: &str,
+    dir: Option<&Path>,
+    search: &[PathBuf],
+) -> Result<PathBuf, String> {
     if Path::new(name).is_absolute() {
         return Ok(normalize(name));
     }
-    let candidates: Vec<PathBuf> = dir.into_iter().chain(search.iter().map(PathBuf::as_path)).map(|d| normalize(&d.join(name).to_string_lossy())).collect();
+    let candidates: Vec<PathBuf> = dir
+        .into_iter()
+        .chain(search.iter().map(PathBuf::as_path))
+        .map(|d| normalize(&d.join(name).to_string_lossy()))
+        .collect();
     candidates
         .iter()
         .find(|c| s.services.exists(&c.to_string_lossy()))
@@ -43,20 +56,36 @@ pub(crate) fn check_read(s: &Session, path: &Path, root: Option<&Path>) -> Resul
         return Ok(());
     }
     let project = project_dir(s).map(|d| normalize(&d));
-    if root.into_iter().chain(project.as_deref()).any(|d| path.starts_with(d)) {
+    if root
+        .into_iter()
+        .chain(project.as_deref())
+        .any(|d| path.starts_with(d))
+    {
         return Ok(());
     }
-    Err(format!("Unable to read {}: scripts can only load files from their own or the project's folder unless {GATE} is on", path.display()))
+    Err(format!(
+        "Unable to read {}: scripts can only load files from their own or the project's folder unless {GATE} is on",
+        path.display()
+    ))
 }
 
 /// Read a script file as text (a UTF-8 byte order mark dropped), refusing files over
 /// [`MAX_FILE_BYTES`].
 pub(crate) fn read(s: &Session, path: &Path) -> Result<String, String> {
-    let too_big = || format!("Unable to read {}: script files are limited to {} MiB", path.display(), MAX_FILE_BYTES >> 20);
+    let too_big = || {
+        format!(
+            "Unable to read {}: script files are limited to {} MiB",
+            path.display(),
+            MAX_FILE_BYTES >> 20
+        )
+    };
     if std::fs::metadata(path).is_ok_and(|m| m.len() > MAX_FILE_BYTES as u64) {
         return Err(too_big());
     }
-    let bytes = s.services.read_file(&path.to_string_lossy()).map_err(|e| format!("Unable to read {}: {e}", path.display()))?;
+    let bytes = s
+        .services
+        .read_file(&path.to_string_lossy())
+        .map_err(|e| format!("Unable to read {}: {e}", path.display()))?;
     if bytes.len() > MAX_FILE_BYTES {
         return Err(too_big());
     }

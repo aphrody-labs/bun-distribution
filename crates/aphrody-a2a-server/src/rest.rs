@@ -47,7 +47,9 @@ pub struct RestState<H: RequestHandler> {
 
 impl<H: RequestHandler> Clone for RestState<H> {
     fn clone(&self) -> Self {
-        RestState { handler: self.handler.clone() }
+        RestState {
+            handler: self.handler.clone(),
+        }
     }
 }
 
@@ -55,17 +57,32 @@ impl<H: RequestHandler> Clone for RestState<H> {
 pub fn rest_router<H: RequestHandler>(handler: Arc<H>) -> axum::Router {
     let state = RestState { handler };
     axum::Router::new()
-        .route(REST_SEND_MESSAGE_PATH, axum::routing::post(handle_send_message::<H>))
-        .route(REST_SEND_MESSAGE_LEGACY_PATH, axum::routing::post(handle_send_message::<H>))
-        .route(REST_STREAM_MESSAGE_PATH, axum::routing::post(handle_stream_message::<H>))
-        .route(REST_STREAM_MESSAGE_LEGACY_PATH, axum::routing::post(handle_stream_message::<H>))
+        .route(
+            REST_SEND_MESSAGE_PATH,
+            axum::routing::post(handle_send_message::<H>),
+        )
+        .route(
+            REST_SEND_MESSAGE_LEGACY_PATH,
+            axum::routing::post(handle_send_message::<H>),
+        )
+        .route(
+            REST_STREAM_MESSAGE_PATH,
+            axum::routing::post(handle_stream_message::<H>),
+        )
+        .route(
+            REST_STREAM_MESSAGE_LEGACY_PATH,
+            axum::routing::post(handle_stream_message::<H>),
+        )
         .route(
             "/tasks/{id}",
             axum::routing::get(handle_get_task_or_subscribe::<H>)
                 .post(handle_post_task_action::<H>),
         )
         .route("/tasks", axum::routing::get(handle_list_tasks::<H>))
-        .route("/tasks/{id}/cancel", axum::routing::post(handle_cancel_task_legacy::<H>))
+        .route(
+            "/tasks/{id}/cancel",
+            axum::routing::post(handle_cancel_task_legacy::<H>),
+        )
         .route(
             "/tasks/{id}/subscribe",
             axum::routing::get(handle_subscribe_to_task_legacy::<H>)
@@ -140,7 +157,11 @@ async fn handle_get_task_inner<H: RequestHandler>(
     query: GetTaskQuery,
 ) -> axum::response::Response {
     let params = ServiceParams::new();
-    let req = GetTaskRequest { id, history_length: query.history_length, tenant: None };
+    let req = GetTaskRequest {
+        id,
+        history_length: query.history_length,
+        tenant: None,
+    };
     match state.handler.get_task(&params, req).await {
         Ok(task) => protojson_json_response(&task),
         Err(e) => rest_error_response(e),
@@ -208,7 +229,11 @@ async fn handle_cancel_task_inner<H: RequestHandler>(
     id: String,
 ) -> axum::response::Response {
     let params = ServiceParams::new();
-    let req = CancelTaskRequest { id, metadata: None, tenant: None };
+    let req = CancelTaskRequest {
+        id,
+        metadata: None,
+        tenant: None,
+    };
     match state.handler.cancel_task(&params, req).await {
         Ok(task) => protojson_json_response(&task),
         Err(e) => rest_error_response(e),
@@ -285,7 +310,11 @@ async fn handle_get_push_config<H: RequestHandler>(
     Path((id, config_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     let params = ServiceParams::new();
-    let req = GetTaskPushNotificationConfigRequest { task_id: id, id: config_id, tenant: None };
+    let req = GetTaskPushNotificationConfigRequest {
+        task_id: id,
+        id: config_id,
+        tenant: None,
+    };
     match state.handler.get_push_config(&params, req).await {
         Ok(resp) => protojson_json_response(&resp),
         Err(e) => rest_error_response(e),
@@ -315,7 +344,11 @@ async fn handle_delete_push_config<H: RequestHandler>(
     Path((id, config_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     let params = ServiceParams::new();
-    let req = DeleteTaskPushNotificationConfigRequest { task_id: id, id: config_id, tenant: None };
+    let req = DeleteTaskPushNotificationConfigRequest {
+        task_id: id,
+        id: config_id,
+        tenant: None,
+    };
     match state.handler.delete_push_config(&params, req).await {
         Ok(()) => StatusCode::OK.into_response(),
         Err(e) => rest_error_response(e),
@@ -374,7 +407,10 @@ fn parse_create_push_config_request(
 }
 
 fn rest_payload_error_response(error: impl std::fmt::Display) -> axum::response::Response {
-    let violation = FieldViolation { field: String::new(), description: error.to_string() };
+    let violation = FieldViolation {
+        field: String::new(),
+        description: error.to_string(),
+    };
     rest_error_response(
         A2AError::invalid_params("invalid request body")
             .with_details(vec![TypedDetail::bad_request(vec![violation])]),
@@ -406,7 +442,11 @@ fn rest_error_response(err: A2AError) -> axum::response::Response {
         }
     }
 
-    details.push(TypedDetail::error_info(reason, errordetails::PROTOCOL_DOMAIN, Some(metadata)));
+    details.push(TypedDetail::error_info(
+        reason,
+        errordetails::PROTOCOL_DOMAIN,
+        Some(metadata),
+    ));
 
     let body = RestErrorEnvelope {
         error: RestErrorStatus {
@@ -471,7 +511,9 @@ mod tests {
                 history: None,
                 metadata: None,
             };
-            Box::pin(futures::stream::once(async move { Ok(StreamResponse::Task(task)) }))
+            Box::pin(futures::stream::once(async move {
+                Ok(StreamResponse::Task(task))
+            }))
         }
 
         fn cancel(
@@ -481,17 +523,26 @@ mod tests {
             let task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
             };
-            Box::pin(futures::stream::once(async move { Ok(StreamResponse::Task(task)) }))
+            Box::pin(futures::stream::once(async move {
+                Ok(StreamResponse::Task(task))
+            }))
         }
     }
 
     fn make_app() -> axum::Router {
-        let handler = Arc::new(DefaultRequestHandler::new(EchoExecutor, InMemoryTaskStore::new()));
+        let handler = Arc::new(DefaultRequestHandler::new(
+            EchoExecutor,
+            InMemoryTaskStore::new(),
+        ));
         rest_router(handler)
     }
 
@@ -547,8 +598,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_task_not_found() {
         let app = make_app();
-        let req =
-            Request::builder().uri("/tasks/nonexistent").method("GET").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/tasks/nonexistent")
+            .method("GET")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }
@@ -556,7 +610,11 @@ mod tests {
     #[tokio::test]
     async fn test_list_tasks_empty() {
         let app = make_app();
-        let req = Request::builder().uri("/tasks").method("GET").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/tasks")
+            .method("GET")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body = resp.into_body().collect().await.unwrap().to_bytes();
@@ -738,12 +796,18 @@ mod tests {
 
         let body = resp.into_body().collect().await.unwrap().to_bytes();
         let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(payload["error"]["message"].as_str().unwrap(), "invalid request body");
+        assert_eq!(
+            payload["error"]["message"].as_str().unwrap(),
+            "invalid request body"
+        );
         let details = payload["error"]["details"].as_array().unwrap();
         // BadRequest detail + ErrorInfo
         assert_eq!(details.len(), 2);
         assert_eq!(details[0]["@type"], errordetails::BAD_REQUEST_TYPE);
-        assert_eq!(details[0]["fieldViolations"][0]["description"], "missing field 'parts'");
+        assert_eq!(
+            details[0]["fieldViolations"][0]["description"],
+            "missing field 'parts'"
+        );
         assert_eq!(details[1]["@type"], errordetails::ERROR_INFO_TYPE);
         assert_eq!(details[1]["reason"], "INVALID_PARAMS");
     }

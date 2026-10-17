@@ -11,7 +11,7 @@ use std::{
 
 use aphrody_rag::home::{HomeLayout, HomeScope};
 use aphrody_web_crawl::{
-    AddRequest, CrawlOptions, CrawlTransport, Frontier, FrontierOptions, BunBrowserTransport,
+    AddRequest, BunBrowserTransport, CrawlOptions, CrawlTransport, Frontier, FrontierOptions,
 };
 use clap::Args;
 use miette::{IntoDiagnostic, miette};

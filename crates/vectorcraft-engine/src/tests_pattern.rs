@@ -10,7 +10,8 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     s
 }
 
@@ -19,7 +20,13 @@ fn id_of(v: &Value) -> NodeId {
 }
 
 fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64) -> NodeId {
-    id_of(&s.execute("shape.rectangle", &json!({"x": x, "y": y, "width": w, "height": h})).unwrap())
+    id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": y, "width": w, "height": h}),
+        )
+        .unwrap(),
+    )
 }
 
 fn node(s: &Session, id: NodeId) -> Node {
@@ -27,7 +34,11 @@ fn node(s: &Session, id: NodeId) -> Node {
 }
 
 fn sel(s: &mut Session, ids: &[NodeId]) {
-    s.execute("select.set", &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()})).unwrap();
+    s.execute(
+        "select.set",
+        &json!({"ids": ids.iter().map(|i| i.0).collect::<Vec<_>>()}),
+    )
+    .unwrap();
 }
 
 fn doc(s: &Session) -> &vectorcraft_doc::Document {
@@ -37,10 +48,16 @@ fn doc(s: &Session) -> &vectorcraft_doc::Document {
 /// A red 10×10 square made into pattern "Dots" (editing finished).
 fn make_dots(s: &mut Session) -> NodeId {
     let r = rect(s, 0.0, 0.0, 10.0, 10.0);
-    s.execute("paint.setFill", &json!({"ids": [r.0], "color": "#ff0000"})).unwrap();
-    s.execute("paint.setStroke", &json!({"ids": [r.0], "none": true})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [r.0], "color": "#ff0000"}))
+        .unwrap();
+    s.execute("paint.setStroke", &json!({"ids": [r.0], "none": true}))
+        .unwrap();
     sel(s, &[r]);
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
     r
 }
@@ -61,9 +78,15 @@ fn make_creates_definition_swatch_and_edit_mode() {
     let d = doc(&s);
     let def = d.pattern("New Pattern 1").unwrap();
     assert_eq!(def.tile, Rect::new(0.0, 0.0, 10.0, 10.0));
-    assert!(d.swatch("New Pattern 1").is_some_and(|sw| matches!(sw.paint, Paint::Pattern { .. })));
+    assert!(
+        d.swatch("New Pattern 1")
+            .is_some_and(|sw| matches!(sw.paint, Paint::Pattern { .. }))
+    );
     let pe = d.pattern_edit.as_ref().unwrap();
-    assert_eq!(d.node(pe.layer).unwrap().name.as_deref(), Some(PATTERN_EDIT_LAYER));
+    assert_eq!(
+        d.node(pe.layer).unwrap().name.as_deref(),
+        Some(PATTERN_EDIT_LAYER)
+    );
     assert_eq!(d.node(pe.layer).unwrap().children().unwrap().len(), 1);
     // The original art stays in the document; new art goes into the edit layer.
     assert!(d.node(r).is_some());
@@ -75,14 +98,19 @@ fn done_saves_edited_art_and_leaves_mode() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    s.execute("object.pattern.make", &json!({"name": "P"})).unwrap();
+    s.execute("object.pattern.make", &json!({"name": "P"}))
+        .unwrap();
     // Draw another shape inside the pattern.
     rect(&mut s, 2.0, 2.0, 3.0, 3.0);
     s.execute("object.pattern.done", &json!({})).unwrap();
     let d = doc(&s);
     assert!(d.pattern_edit.is_none());
     assert_eq!(d.pattern("P").unwrap().art.len(), 2);
-    assert!(d.layers.iter().all(|l| l.name.as_deref() != Some(PATTERN_EDIT_LAYER)));
+    assert!(
+        d.layers
+            .iter()
+            .all(|l| l.name.as_deref() != Some(PATTERN_EDIT_LAYER))
+    );
     assert!(s.doc().unwrap().isolation.is_none());
 }
 
@@ -91,7 +119,8 @@ fn cancel_new_pattern_removes_it() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    s.execute("object.pattern.make", &json!({"name": "P"})).unwrap();
+    s.execute("object.pattern.make", &json!({"name": "P"}))
+        .unwrap();
     s.execute("object.pattern.cancel", &json!({})).unwrap();
     assert!(doc(&s).pattern("P").is_none());
     assert!(doc(&s).swatch("P").is_none());
@@ -102,9 +131,17 @@ fn cancel_new_pattern_removes_it() {
 fn edit_then_cancel_restores_definition() {
     let mut s = session();
     make_dots(&mut s);
-    s.execute("object.pattern.edit", &json!({"name": "Dots"})).unwrap();
-    s.execute("pattern.options", &json!({"tileType": "hexByRow", "width": 40})).unwrap();
-    assert_eq!(doc(&s).pattern("Dots").unwrap().tile_type, TileType::HexByRow);
+    s.execute("object.pattern.edit", &json!({"name": "Dots"}))
+        .unwrap();
+    s.execute(
+        "pattern.options",
+        &json!({"tileType": "hexByRow", "width": 40}),
+    )
+    .unwrap();
+    assert_eq!(
+        doc(&s).pattern("Dots").unwrap().tile_type,
+        TileType::HexByRow
+    );
     s.execute("object.pattern.cancel", &json!({})).unwrap();
     let def = doc(&s).pattern("Dots").unwrap();
     assert_eq!(def.tile_type, TileType::Grid);
@@ -116,13 +153,17 @@ fn edit_defaults_to_selected_objects_pattern() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     sel(&mut s, &[big]);
     let v = s.execute("object.pattern.edit", &json!({})).unwrap();
     assert_eq!(v["name"], "Dots");
     assert!(doc(&s).pattern_edit.is_some());
     // Edit again while editing is refused.
-    assert!(s.execute("object.pattern.edit", &json!({"name": "Dots"})).is_err());
+    assert!(
+        s.execute("object.pattern.edit", &json!({"name": "Dots"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -130,18 +171,27 @@ fn set_fill_with_pattern_swatch() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
-    assert!(matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Dots"));
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
+    assert!(
+        matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Dots")
+    );
 }
 
 #[test]
 fn set_fill_with_pattern_name_without_swatch() {
     let mut s = session();
     make_dots(&mut s);
-    Arc::make_mut(&mut s.doc_mut().unwrap().doc).swatches.retain(|sw| sw.name != "Dots");
+    Arc::make_mut(&mut s.doc_mut().unwrap().doc)
+        .swatches
+        .retain(|sw| sw.name != "Dots");
     let big = rect(&mut s, 100.0, 100.0, 100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
-    assert!(matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { .. }));
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
+    assert!(matches!(
+        node(&s, big).appearance.fill_paint(),
+        Paint::Pattern { .. }
+    ));
 }
 
 #[test]
@@ -159,11 +209,28 @@ fn options_set_tile_type_spacing_and_overlap() {
     assert_eq!(def.copies, 7);
     assert_eq!(def.dim_copies, 40.0);
     // Size tile to art with spacing.
-    s.execute("pattern.options", &json!({"name": "Dots", "sizeTileToArt": true, "hSpacing": 4, "vSpacing": 6})).unwrap();
+    s.execute(
+        "pattern.options",
+        &json!({"name": "Dots", "sizeTileToArt": true, "hSpacing": 4, "vSpacing": 6}),
+    )
+    .unwrap();
     let def = doc(&s).pattern("Dots").unwrap();
-    assert!((def.tile.width() - 14.0).abs() < 1e-6 && (def.tile.height() - 16.0).abs() < 1e-6, "{:?}", def.tile);
-    assert!(s.execute("pattern.options", &json!({"name": "Dots", "tileType": "zigzag"})).is_err());
-    assert!(s.execute("pattern.options", &json!({"name": "Dots", "width": -1})).is_err());
+    assert!(
+        (def.tile.width() - 14.0).abs() < 1e-6 && (def.tile.height() - 16.0).abs() < 1e-6,
+        "{:?}",
+        def.tile
+    );
+    assert!(
+        s.execute(
+            "pattern.options",
+            &json!({"name": "Dots", "tileType": "zigzag"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute("pattern.options", &json!({"name": "Dots", "width": -1}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -171,11 +238,18 @@ fn options_rename_updates_swatch_and_paints() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
-    s.execute("pattern.options", &json!({"name": "Dots", "newName": "Spots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
+    s.execute(
+        "pattern.options",
+        &json!({"name": "Dots", "newName": "Spots"}),
+    )
+    .unwrap();
     assert!(doc(&s).pattern("Spots").is_some() && doc(&s).pattern("Dots").is_none());
     assert!(doc(&s).swatch("Spots").is_some());
-    assert!(matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Spots"));
+    assert!(
+        matches!(node(&s, big).appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Spots")
+    );
 }
 
 #[test]
@@ -183,12 +257,18 @@ fn delete_pattern_unpaints_objects() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
-    let v = s.execute("pattern.delete", &json!({"name": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
+    let v = s
+        .execute("pattern.delete", &json!({"name": "Dots"}))
+        .unwrap();
     assert_eq!(v["unpainted"], 1);
     assert!(doc(&s).pattern("Dots").is_none() && doc(&s).swatch("Dots").is_none());
     assert!(node(&s, big).appearance.fill_paint().is_none());
-    assert!(s.execute("pattern.delete", &json!({"name": "Dots"})).is_err());
+    assert!(
+        s.execute("pattern.delete", &json!({"name": "Dots"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -196,12 +276,19 @@ fn transform_patterns_only_moves_placement() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     let before = node(&s, big).geometric_bounds();
-    s.execute("pattern.transform", &json!({"ids": [big.0], "matrix": [2, 0, 0, 2, 5, 0]})).unwrap();
+    s.execute(
+        "pattern.transform",
+        &json!({"ids": [big.0], "matrix": [2, 0, 0, 2, 5, 0]}),
+    )
+    .unwrap();
     let n = node(&s, big);
     assert_eq!(n.geometric_bounds(), before);
-    let Paint::Pattern { xf, .. } = n.appearance.fill_paint() else { panic!() };
+    let Paint::Pattern { xf, .. } = n.appearance.fill_paint() else {
+        panic!()
+    };
     assert_eq!(xf.as_coeffs(), [2.0, 0.0, 0.0, 2.0, 5.0, 0.0]);
 }
 
@@ -213,19 +300,38 @@ fn transforms_without_transform_objects_move_only_the_pattern() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     s.execute("select.set", &json!({"ids": [big.0]})).unwrap();
     let before = node(&s, big).geometric_bounds();
     let tiles = |s: &Session| {
         let n = node(s, big);
-        let Paint::Pattern { xf, .. } = n.appearance.fill_paint() else { panic!() };
+        let Paint::Pattern { xf, .. } = n.appearance.fill_paint() else {
+            panic!()
+        };
         xf.as_coeffs()
     };
     for (cmd, p, want) in [
-        ("object.move", json!({"dx": 5, "dy": 0}), [1.0, 0.0, 0.0, 1.0, 5.0, 0.0]),
-        ("object.transformAgain", json!({}), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0]),
-        ("object.reflect", json!({"axis": "vertical", "origin": [0, 0]}), [-1.0, 0.0, 0.0, 1.0, -10.0, 0.0]),
-        ("object.transformEach", json!({"moveH": 10, "reference": 0}), [-1.0, 0.0, 0.0, 1.0, 0.0, 0.0]),
+        (
+            "object.move",
+            json!({"dx": 5, "dy": 0}),
+            [1.0, 0.0, 0.0, 1.0, 5.0, 0.0],
+        ),
+        (
+            "object.transformAgain",
+            json!({}),
+            [1.0, 0.0, 0.0, 1.0, 10.0, 0.0],
+        ),
+        (
+            "object.reflect",
+            json!({"axis": "vertical", "origin": [0, 0]}),
+            [-1.0, 0.0, 0.0, 1.0, -10.0, 0.0],
+        ),
+        (
+            "object.transformEach",
+            json!({"moveH": 10, "reference": 0}),
+            [-1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        ),
     ] {
         // Transform Again repeats the move as it was made, options included.
         if cmd != "object.transformAgain" {
@@ -233,7 +339,11 @@ fn transforms_without_transform_objects_move_only_the_pattern() {
             off["objects"] = json!(false);
             off["patterns"] = json!(false);
             s.execute(cmd, &off).unwrap();
-            assert_eq!(node(&s, big).geometric_bounds(), before, "{cmd}: neither transforms");
+            assert_eq!(
+                node(&s, big).geometric_bounds(),
+                before,
+                "{cmd}: neither transforms"
+            );
             off["patterns"] = json!(true);
             s.execute(cmd, &off).unwrap();
         } else {
@@ -253,15 +363,20 @@ fn list_reports_patterns_and_edit_state() {
     assert_eq!(v["patterns"][0]["tileType"], "grid");
     assert_eq!(v["patterns"][0]["width"], 20.0);
     assert!(v["editing"].is_null());
-    s.execute("object.pattern.edit", &json!({"name": "Dots"})).unwrap();
-    assert_eq!(s.execute("pattern.list", &json!({})).unwrap()["editing"]["name"], "Dots");
+    s.execute("object.pattern.edit", &json!({"name": "Dots"}))
+        .unwrap();
+    assert_eq!(
+        s.execute("pattern.list", &json!({})).unwrap()["editing"]["name"],
+        "Dots"
+    );
 }
 
 #[test]
 fn save_a_copy_while_editing() {
     let mut s = session();
     make_dots(&mut s);
-    s.execute("object.pattern.edit", &json!({"name": "Dots"})).unwrap();
+    s.execute("object.pattern.edit", &json!({"name": "Dots"}))
+        .unwrap();
     let v = s.execute("object.pattern.saveCopy", &json!({})).unwrap();
     assert_eq!(v["name"], "Dots copy");
     assert!(doc(&s).pattern("Dots copy").is_some());
@@ -272,7 +387,8 @@ fn undo_make_pattern() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    s.execute("object.pattern.make", &json!({"name": "P"})).unwrap();
+    s.execute("object.pattern.make", &json!({"name": "P"}))
+        .unwrap();
     s.execute("edit.undo", &json!({})).unwrap();
     assert!(doc(&s).pattern("P").is_none() && doc(&s).pattern_edit.is_none());
 }
@@ -283,7 +399,8 @@ fn hit_testing_in_edit_mode_only_reaches_tile_layer() {
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     let other = rect(&mut s, 200.0, 200.0, 50.0, 50.0);
     sel(&mut s, &[r]);
-    s.execute("object.pattern.make", &json!({"name": "P"})).unwrap();
+    s.execute("object.pattern.make", &json!({"name": "P"}))
+        .unwrap();
     let d = doc(&s);
     let opt = vectorcraft_doc::hit::HitOptions::default();
     assert!(vectorcraft_doc::hit::hit_test(d, Point::new(220.0, 220.0), opt).is_none());
@@ -297,15 +414,26 @@ fn save_load_roundtrip_keeps_patterns_and_repeats() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     let r = rect(&mut s, 300.0, 50.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    s.execute("object.repeat.radial", &json!({"instances": 6})).unwrap();
+    s.execute("object.repeat.radial", &json!({"instances": 6}))
+        .unwrap();
     let bytes = vectorcraft_format::save(doc(&s), false);
     let back = vectorcraft_format::load(&bytes).unwrap();
     assert_eq!(back.patterns, doc(&s).patterns);
-    assert_eq!(back.node(big).unwrap().appearance.fill_paint(), node(&s, big).appearance.fill_paint());
-    assert!(back.layers[0].children().unwrap().iter().any(|n| matches!(n.kind, NodeKind::Repeat(_))));
+    assert_eq!(
+        back.node(big).unwrap().appearance.fill_paint(),
+        node(&s, big).appearance.fill_paint()
+    );
+    assert!(
+        back.layers[0]
+            .children()
+            .unwrap()
+            .iter()
+            .any(|n| matches!(n.kind, NodeKind::Repeat(_)))
+    );
 }
 
 #[test]
@@ -313,12 +441,16 @@ fn svg_export_writes_pattern_def() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     let svg = vectorcraft_svg::export(doc(&s), &vectorcraft_svg::ExportOptions::default());
     assert!(svg.contains("<pattern id=\"pattern-1\""), "{svg}");
     assert!(svg.contains("patternUnits=\"userSpaceOnUse\""));
     assert!(svg.contains("width=\"20\" height=\"20\""));
-    assert!(svg.contains("fill=\"url(#pattern-1)\"") || svg.contains("fill:url(#pattern-1)"), "{svg}");
+    assert!(
+        svg.contains("fill=\"url(#pattern-1)\"") || svg.contains("fill:url(#pattern-1)"),
+        "{svg}"
+    );
     // The tile art is inside the pattern.
     let start = svg.find("<pattern").unwrap();
     let end = svg.find("</pattern>").unwrap();
@@ -330,9 +462,14 @@ fn pdf_export_expands_pattern_fills() {
     let mut s = session();
     make_dots(&mut s);
     let big = rect(&mut s, 100.0, 100.0, 50.0, 50.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     let rep = vectorcraft_pdf::export_with_report(doc(&s), &Default::default()).unwrap();
-    assert!(rep.warnings.iter().all(|w| !w.contains("pattern")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings.iter().all(|w| !w.contains("pattern")),
+        "{:?}",
+        rep.warnings
+    );
     assert!(rep.bytes.len() > 500);
 }
 
@@ -343,11 +480,26 @@ fn radial_repeat_wraps_selection() {
     let mut s = session();
     let r = rect(&mut s, 195.0, 95.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.radial", &json!({"instances": 8, "radius": 50})).unwrap();
+    let v = s
+        .execute(
+            "object.repeat.radial",
+            &json!({"instances": 8, "radius": 50}),
+        )
+        .unwrap();
     let n = node(&s, id_of(&v));
-    let NodeKind::Repeat(spec) = &n.kind else { panic!("{:?}", n.kind) };
+    let NodeKind::Repeat(spec) = &n.kind else {
+        panic!("{:?}", n.kind)
+    };
     assert_eq!(spec.source.len(), 1);
-    let RepeatKind::Radial { instances, radius, center, .. } = spec.kind else { panic!() };
+    let RepeatKind::Radial {
+        instances,
+        radius,
+        center,
+        ..
+    } = spec.kind
+    else {
+        panic!()
+    };
     assert_eq!((instances, radius), (8, 50.0));
     assert!(close(center, Point::new(200.0, 150.0)));
     assert_eq!(spec.transforms().len(), 8);
@@ -359,8 +511,15 @@ fn radial_instance_transforms_rotate_around_center() {
     let mut s = session();
     let r = rect(&mut s, 195.0, 95.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.radial", &json!({"instances": 4, "radius": 50})).unwrap();
-    let NodeKind::Repeat(spec) = node(&s, id_of(&v)).kind else { panic!() };
+    let v = s
+        .execute(
+            "object.repeat.radial",
+            &json!({"instances": 4, "radius": 50}),
+        )
+        .unwrap();
+    let NodeKind::Repeat(spec) = node(&s, id_of(&v)).kind else {
+        panic!()
+    };
     let t = spec.transforms();
     let c = Point::new(200.0, 100.0);
     assert!(close(t[0] * c, Point::new(200.0, 100.0)));
@@ -374,7 +533,9 @@ fn expand_yields_n_copies() {
     let mut s = session();
     let r = rect(&mut s, 195.0, 95.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.radial", &json!({"instances": 5})).unwrap();
+    let v = s
+        .execute("object.repeat.radial", &json!({"instances": 5}))
+        .unwrap();
     let id = id_of(&v);
     s.execute("object.repeat.expand", &json!({})).unwrap();
     let g = node(&s, id);
@@ -395,12 +556,32 @@ fn grid_repeat_and_options() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.grid", &json!({"hSpacing": 5, "vSpacing": 5})).unwrap();
+    let v = s
+        .execute("object.repeat.grid", &json!({"hSpacing": 5, "vSpacing": 5}))
+        .unwrap();
     let id = id_of(&v);
-    assert_eq!(node(&s, id).geometric_bounds(), Some(Rect::new(0.0, 0.0, 40.0, 40.0)));
-    s.execute("object.repeat.options", &json!({"rows": 2, "cols": 4, "flipCols": true, "gridType": "brickByRow"})).unwrap();
-    let NodeKind::Repeat(spec) = node(&s, id).kind else { panic!() };
-    let RepeatKind::Grid { rows, cols, flip_cols, grid_type, .. } = spec.kind else { panic!() };
+    assert_eq!(
+        node(&s, id).geometric_bounds(),
+        Some(Rect::new(0.0, 0.0, 40.0, 40.0))
+    );
+    s.execute(
+        "object.repeat.options",
+        &json!({"rows": 2, "cols": 4, "flipCols": true, "gridType": "brickByRow"}),
+    )
+    .unwrap();
+    let NodeKind::Repeat(spec) = node(&s, id).kind else {
+        panic!()
+    };
+    let RepeatKind::Grid {
+        rows,
+        cols,
+        flip_cols,
+        grid_type,
+        ..
+    } = spec.kind
+    else {
+        panic!()
+    };
     assert_eq!((rows, cols, flip_cols), (2, 4, true));
     assert_eq!(grid_type, TileType::BrickByRow { offset: 0.5 });
     assert_eq!(spec.expand().len(), 8);
@@ -411,11 +592,14 @@ fn mirror_repeat_reflects() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.mirror", &json!({"offset": 5})).unwrap();
+    let v = s
+        .execute("object.repeat.mirror", &json!({"offset": 5}))
+        .unwrap();
     let n = node(&s, id_of(&v));
     let b = n.geometric_bounds().unwrap();
     assert!((b.x1 - 30.0).abs() < 1e-9 && b.x0.abs() < 1e-9, "{b:?}");
-    s.execute("object.repeat.options", &json!({"angle": 0})).unwrap();
+    s.execute("object.repeat.options", &json!({"angle": 0}))
+        .unwrap();
     let b = node(&s, id_of(&v)).geometric_bounds().unwrap();
     assert!((b.width() - 10.0).abs() < 1e-9, "{b:?}");
 }
@@ -429,7 +613,9 @@ fn switching_repeat_kind_keeps_source() {
     let id = id_of(&v);
     let v2 = s.execute("object.repeat.grid", &json!({})).unwrap();
     assert_eq!(id_of(&v2), id);
-    let NodeKind::Repeat(spec) = node(&s, id).kind else { panic!() };
+    let NodeKind::Repeat(spec) = node(&s, id).kind else {
+        panic!()
+    };
     assert!(matches!(spec.kind, RepeatKind::Grid { .. }));
     assert_eq!(spec.source[0].id, r);
 }
@@ -444,7 +630,10 @@ fn release_restores_source() {
     assert!(doc(&s).layers[0].children().unwrap().len() == 1);
     let v = s.execute("object.repeat.release", &json!({})).unwrap();
     assert_eq!(v["ids"], json!([a.0, b.0]));
-    assert_eq!(node(&s, a).geometric_bounds(), Some(Rect::new(0.0, 0.0, 10.0, 10.0)));
+    assert_eq!(
+        node(&s, a).geometric_bounds(),
+        Some(Rect::new(0.0, 0.0, 10.0, 10.0))
+    );
     assert!(s.execute("object.repeat.release", &json!({})).is_err());
 }
 
@@ -453,12 +642,24 @@ fn repeat_moves_with_transform() {
     let mut s = session();
     let r = rect(&mut s, 195.0, 95.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    let v = s.execute("object.repeat.radial", &json!({"instances": 4, "radius": 50})).unwrap();
+    let v = s
+        .execute(
+            "object.repeat.radial",
+            &json!({"instances": 4, "radius": 50}),
+        )
+        .unwrap();
     let id = id_of(&v);
     let before = node(&s, id).geometric_bounds().unwrap();
-    s.execute("object.transform", &json!({"ids": [id.0], "matrix": [1, 0, 0, 1, 10, 20]})).unwrap();
+    s.execute(
+        "object.transform",
+        &json!({"ids": [id.0], "matrix": [1, 0, 0, 1, 10, 20]}),
+    )
+    .unwrap();
     let after = node(&s, id).geometric_bounds().unwrap();
-    assert!(after.x0 > before.x0 && after.y0 > before.y0, "{before:?} {after:?}");
+    assert!(
+        after.x0 > before.x0 && after.y0 > before.y0,
+        "{before:?} {after:?}"
+    );
 }
 
 #[test]
@@ -466,7 +667,11 @@ fn repeat_hit_test_uses_instances() {
     let mut s = session();
     let r = rect(&mut s, 195.0, 95.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    s.execute("object.repeat.radial", &json!({"instances": 4, "radius": 50})).unwrap();
+    s.execute(
+        "object.repeat.radial",
+        &json!({"instances": 4, "radius": 50}),
+    )
+    .unwrap();
     let d = doc(&s);
     let opt = vectorcraft_doc::hit::HitOptions::default();
     assert!(vectorcraft_doc::hit::hit_test(d, Point::new(250.0, 150.0), opt).is_some());
@@ -479,8 +684,15 @@ fn repeat_commands_validate() {
     let mut s = session();
     let r = rect(&mut s, 0.0, 0.0, 10.0, 10.0);
     sel(&mut s, &[r]);
-    assert!(s.execute("object.repeat.radial", &json!({"instances": 0})).is_err());
-    assert!(s.execute("object.repeat.options", &json!({"instances": 4})).is_err(), "no repeat selected");
+    assert!(
+        s.execute("object.repeat.radial", &json!({"instances": 0}))
+            .is_err()
+    );
+    assert!(
+        s.execute("object.repeat.options", &json!({"instances": 4}))
+            .is_err(),
+        "no repeat selected"
+    );
     s.execute("select.none", &json!({})).ok();
     assert!(s.execute("object.pattern.make", &json!({})).is_err());
 }

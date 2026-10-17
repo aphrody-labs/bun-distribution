@@ -53,16 +53,27 @@ impl Tool for MeasureTool {
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
-        let Some((a, b)) = self.line else { return vec![] };
+        let Some((a, b)) = self.line else {
+            return vec![];
+        };
         if a == b {
             return vec![];
         }
         let (dist, ang, dx, dy) = measure(a, b);
         vec![
-            Overlay::Line { a, b, color: CYAN, dashed: false },
+            Overlay::Line {
+                a,
+                b,
+                color: CYAN,
+                dashed: false,
+            },
             Overlay::Measure {
                 p: b + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
-                text: format!("D: {}\nAngle: {ang:.1}°\n{}", cx.len(dist), cx.offset_label(dx, dy)),
+                text: format!(
+                    "D: {}\nAngle: {ang:.1}°\n{}",
+                    cx.len(dist),
+                    cx.offset_label(dx, dy)
+                ),
             },
         ]
     }
@@ -96,9 +107,18 @@ mod tests {
         let mut cx = cx(&d, &s, &p);
         cx.smart_guides = false;
         let mut t = MeasureTool::default();
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0)).is_empty());
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 40.0, -30.0)).is_empty());
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 40.0, -30.0)).is_empty());
+        assert!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0))
+                .is_empty()
+        );
+        assert!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 40.0, -30.0))
+                .is_empty()
+        );
+        assert!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 40.0, -30.0))
+                .is_empty()
+        );
         let o = t.options();
         assert!((o["distance"].as_f64().unwrap() - 50.0).abs() < 1e-9);
         assert!((o["angle"].as_f64().unwrap() - 53.130102).abs() < 1e-4);

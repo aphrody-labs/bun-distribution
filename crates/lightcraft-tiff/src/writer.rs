@@ -11,9 +11,16 @@ use std::collections::BTreeMap;
 #[derive(Clone, Debug, PartialEq)]
 pub enum ImageData {
     /// Strips (each already compressed as the IFD's `Compression` says). Sets `RowsPerStrip`.
-    Strips { rows_per_strip: u32, strips: Vec<Vec<u8>> },
+    Strips {
+        rows_per_strip: u32,
+        strips: Vec<Vec<u8>>,
+    },
     /// Tiles in row-major tile order. Sets `TileWidth` / `TileLength`.
-    Tiles { tile_width: u32, tile_height: u32, tiles: Vec<Vec<u8>> },
+    Tiles {
+        tile_width: u32,
+        tile_height: u32,
+        tiles: Vec<Vec<u8>>,
+    },
 }
 
 /// An IFD to be written.
@@ -103,7 +110,10 @@ impl TiffWriter {
         if self.bigtiff {
             self.order.put_u64(&mut tmp, v);
         } else {
-            self.order.put_u32(&mut tmp, u32::try_from(v).map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))?);
+            self.order.put_u32(
+                &mut tmp,
+                u32::try_from(v).map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))?,
+            );
         }
         buf[pos..pos + tmp.len()].copy_from_slice(&tmp);
         Ok(())
@@ -114,7 +124,12 @@ impl TiffWriter {
             Ok(Value::Long8(v))
         } else {
             Ok(Value::Long(
-                v.into_iter().map(|x| u32::try_from(x).map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))).collect::<Result<_>>()?,
+                v.into_iter()
+                    .map(|x| {
+                        u32::try_from(x)
+                            .map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))
+                    })
+                    .collect::<Result<_>>()?,
             ))
         }
     }
@@ -128,11 +143,18 @@ impl TiffWriter {
         let mut entries = ifd.entries.clone();
         if let Some(img) = &ifd.image {
             let chunks = match img {
-                ImageData::Strips { rows_per_strip, strips } => {
+                ImageData::Strips {
+                    rows_per_strip,
+                    strips,
+                } => {
                     entries.insert(tags::ROWS_PER_STRIP, Value::Long(vec![*rows_per_strip]));
                     strips
                 }
-                ImageData::Tiles { tile_width, tile_height, tiles } => {
+                ImageData::Tiles {
+                    tile_width,
+                    tile_height,
+                    tiles,
+                } => {
                     entries.insert(tags::TILE_WIDTH, Value::Long(vec![*tile_width]));
                     entries.insert(tags::TILE_LENGTH, Value::Long(vec![*tile_height]));
                     tiles
@@ -166,7 +188,8 @@ impl TiffWriter {
         }
         let inline = if self.bigtiff { 8 } else { 4 };
         // out-of-line values
-        let mut encoded: Vec<(u16, &Value, Vec<u8>, Option<u64>)> = Vec::with_capacity(entries.len());
+        let mut encoded: Vec<(u16, &Value, Vec<u8>, Option<u64>)> =
+            Vec::with_capacity(entries.len());
         for (&tag, v) in &entries {
             let bytes = encode(o, v);
             let pos = if bytes.len() > inline {
@@ -187,7 +210,11 @@ impl TiffWriter {
         if self.bigtiff {
             o.put_u64(buf, encoded.len() as u64);
         } else {
-            o.put_u16(buf, u16::try_from(encoded.len()).map_err(|_| TiffError::Limit("more than 65535 entries"))?);
+            o.put_u16(
+                buf,
+                u16::try_from(encoded.len())
+                    .map_err(|_| TiffError::Limit("more than 65535 entries"))?,
+            );
         }
         for (tag, v, bytes, pos) in &encoded {
             o.put_u16(buf, *tag);
@@ -195,14 +222,21 @@ impl TiffWriter {
             if self.bigtiff {
                 o.put_u64(buf, v.count() as u64);
             } else {
-                o.put_u32(buf, u32::try_from(v.count()).map_err(|_| TiffError::Limit("value count"))?);
+                o.put_u32(
+                    buf,
+                    u32::try_from(v.count()).map_err(|_| TiffError::Limit("value count"))?,
+                );
             }
             match pos {
                 Some(p) => {
                     if self.bigtiff {
                         o.put_u64(buf, *p);
                     } else {
-                        o.put_u32(buf, u32::try_from(*p).map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))?);
+                        o.put_u32(
+                            buf,
+                            u32::try_from(*p)
+                                .map_err(|_| TiffError::Limit("classic TIFF larger than 4 GiB"))?,
+                        );
                     }
                 }
                 None => {
@@ -265,7 +299,10 @@ pub fn rational(v: f64) -> (u32, u32) {
     for d in [1u32, 10, 100, 1000, 10_000, 100_000, 1_000_000] {
         let n = v * d as f64;
         if n > u32::MAX as f64 {
-            return ((v * (d / 10).max(1) as f64).round().min(u32::MAX as f64) as u32, (d / 10).max(1));
+            return (
+                (v * (d / 10).max(1) as f64).round().min(u32::MAX as f64) as u32,
+                (d / 10).max(1),
+            );
         }
         if (n - n.round()).abs() < 1e-9 * d as f64 || d == 1_000_000 {
             return (n.round() as u32, d);
@@ -283,7 +320,12 @@ pub fn srational(v: f64) -> (i32, i32) {
         let n = v * d as f64;
         if n.abs() > i32::MAX as f64 {
             let d = (d / 10).max(1);
-            return ((v * d as f64).round().clamp(i32::MIN as f64, i32::MAX as f64) as i32, d);
+            return (
+                (v * d as f64)
+                    .round()
+                    .clamp(i32::MIN as f64, i32::MAX as f64) as i32,
+                d,
+            );
         }
         if (n - n.round()).abs() < 1e-9 * d as f64 || d == 1_000_000 {
             return (n.round() as i32, d);

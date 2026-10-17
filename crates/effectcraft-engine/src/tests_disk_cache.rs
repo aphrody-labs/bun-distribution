@@ -7,24 +7,47 @@ use crate::Session;
 use crate::render::RenderOpts;
 
 fn folder(name: &str) -> String {
-    let d = std::env::temp_dir().join(format!("effectcraft-session-disk-{name}-{}", std::process::id()));
+    let d = std::env::temp_dir().join(format!(
+        "effectcraft-session-disk-{name}-{}",
+        std::process::id()
+    ));
     let _ = std::fs::remove_dir_all(&d);
     d.to_string_lossy().to_string()
 }
 
 fn session(dir: &str) -> Session {
     let mut s = Session::default();
-    s.execute_checked("prefs.set", json!({"values": {"disk.diskCacheFolder": dir, "disk.diskCacheEnabled": true}})).unwrap();
+    s.execute_checked(
+        "prefs.set",
+        json!({"values": {"disk.diskCacheFolder": dir, "disk.diskCacheEnabled": true}}),
+    )
+    .unwrap();
     // Write every layer buffer, however quick to render.
     s.disk_cache.as_ref().unwrap().set_min_layer_ms(0);
     s
 }
 
 fn project(s: &mut Session) -> effectcraft_project::ItemId {
-    s.execute("comp.new", json!({"name": "D", "width": 160, "height": 90, "frameRate": 30, "duration": 1})).unwrap();
-    s.execute("layer.newSolid", json!({"color": "#3080ff", "width": 80, "height": 40})).unwrap();
-    s.execute("effect.apply", json!({"layer": "#1", "effect": "Gaussian Blur"})).unwrap();
-    s.execute("prop.set", json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 12})).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "D", "width": 160, "height": 90, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"color": "#3080ff", "width": 80, "height": 40}),
+    )
+    .unwrap();
+    s.execute(
+        "effect.apply",
+        json!({"layer": "#1", "effect": "Gaussian Blur"}),
+    )
+    .unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 12}),
+    )
+    .unwrap();
     s.active_comp_id().unwrap()
 }
 
@@ -57,21 +80,33 @@ fn disk_cache_settings_persistence_and_invalidation() {
     assert_eq!(again.data, first.data, "disk-cached pixels are exact");
     // An edit changes the keys: a miss, and new entries.
     let hits = dc2.stats().hits;
-    s2.execute("prop.set", json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 20})).unwrap();
+    s2.execute(
+        "prop.set",
+        json!({"layer": "#1", "path": "effects/#1/blurriness", "value": 20}),
+    )
+    .unwrap();
     let edited = s2.render(cid, t, RenderOpts::default());
     assert_ne!(edited.data, first.data);
     assert_eq!(dc2.stats().hits, hits);
     dc2.flush();
     assert!(dc2.stats().entries > written);
     // Purge ▸ All Disk Cache empties it; memory purge leaves the disk alone.
-    let r = s2.execute_checked("edit.purge", json!({"what": "memory"})).unwrap();
+    let r = s2
+        .execute_checked("edit.purge", json!({"what": "memory"}))
+        .unwrap();
     assert_eq!(r["diskEntries"], json!(0));
     assert!(dc2.stats().entries > 0);
-    let r = s2.execute_checked("edit.purge", json!({"what": "disk"})).unwrap();
+    let r = s2
+        .execute_checked("edit.purge", json!({"what": "disk"}))
+        .unwrap();
     assert!(r["diskEntries"].as_u64().unwrap() > 0);
     assert_eq!(dc2.stats().entries, 0);
     // Disabling detaches it.
-    s2.execute_checked("prefs.set", json!({"key": "disk.diskCacheEnabled", "value": false})).unwrap();
+    s2.execute_checked(
+        "prefs.set",
+        json!({"key": "disk.diskCacheEnabled", "value": false}),
+    )
+    .unwrap();
     assert!(s2.disk_cache.is_none());
     assert!(s2.layer_cache.disk().is_none());
 }
@@ -104,7 +139,12 @@ fn footage_changes_change_the_salt() {
             layer: None,
             ..Default::default()
         };
-        p.add_item("f.png", effectcraft_color::Label::Lavender, None, effectcraft_project::ItemKind::Footage(f));
+        p.add_item(
+            "f.png",
+            effectcraft_color::Label::Lavender,
+            None,
+            effectcraft_project::ItemKind::Footage(f),
+        );
         Ok(())
     })
     .unwrap();
@@ -114,22 +154,50 @@ fn footage_changes_change_the_salt() {
     assert_ne!(a, b);
     let cid = project(&mut s);
     let k1 = effectcraft_render::disk_cache::comp_content_key(&s.project, cid);
-    s.execute("prop.set", json!({"layer": "#1", "path": "transform/opacity", "value": 50})).unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": "#1", "path": "transform/opacity", "value": 50}),
+    )
+    .unwrap();
     let k2 = effectcraft_render::disk_cache::comp_content_key(&s.project, cid);
     assert_ne!(k1, k2);
     // Switches that don't change pixels (Audio, Lock, Shy, Hide Shy Layers) don't change it (#103).
     for sw in ["audio", "lock", "shy"] {
-        s.execute("layer.setSwitch", json!({"layers": ["#1"], "switch": sw, "value": sw != "audio"})).unwrap();
+        s.execute(
+            "layer.setSwitch",
+            json!({"layers": ["#1"], "switch": sw, "value": sw != "audio"}),
+        )
+        .unwrap();
     }
-    s.execute("comp.setSwitch", json!({"switch": "hideShy", "value": true})).unwrap();
-    assert_eq!(effectcraft_render::disk_cache::comp_content_key(&s.project, cid), k2);
+    s.execute(
+        "comp.setSwitch",
+        json!({"switch": "hideShy", "value": true}),
+    )
+    .unwrap();
+    assert_eq!(
+        effectcraft_render::disk_cache::comp_content_key(&s.project, cid),
+        k2
+    );
     // Unrelated comps do not change it.
-    s.execute("comp.new", json!({"name": "Other", "width": 10, "height": 10, "frameRate": 30, "duration": 1})).unwrap();
-    assert_eq!(effectcraft_render::disk_cache::comp_content_key(&s.project, cid), k2);
+    s.execute(
+        "comp.new",
+        json!({"name": "Other", "width": 10, "height": 10, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
+    assert_eq!(
+        effectcraft_render::disk_cache::comp_content_key(&s.project, cid),
+        k2
+    );
     // A proxy, and its Use Proxy switch, change the pixels.
     let set_proxy = |s: &mut Session, enabled: bool| {
-        let it = std::sync::Arc::make_mut(&mut s.project).items.get_mut(&cid).unwrap();
-        it.proxy = Some(Box::new(effectcraft_project::Proxy { footage: effectcraft_project::Footage::default(), enabled }));
+        let it = std::sync::Arc::make_mut(&mut s.project)
+            .items
+            .get_mut(&cid)
+            .unwrap();
+        it.proxy = Some(Box::new(effectcraft_project::Proxy {
+            footage: effectcraft_project::Footage::default(),
+            enabled,
+        }));
         effectcraft_render::disk_cache::comp_content_key(&s.project, cid)
     };
     let k3 = set_proxy(&mut s, true);

@@ -68,7 +68,8 @@ pub async fn ingest_web_document(
     let operation = async {
         let tx = client.transaction().await?;
         let lock_key = format!("{CORPUS}:{url}");
-        tx.query_one("SELECT pg_advisory_xact_lock(hashtext($1))", &[&lock_key]).await?;
+        tx.query_one("SELECT pg_advisory_xact_lock(hashtext($1))", &[&lock_key])
+            .await?;
         let existing = tx
             .query_opt(
                 "SELECT id::text, content::text FROM aphrody_rag_documents WHERE corpus = \
@@ -108,7 +109,13 @@ pub async fn ingest_web_document(
         .await
         .map_err(|_| "RAG PostgreSQL unavailable")?
         .map_err(|_| "RAG PostgreSQL unavailable")?;
-    Ok(PgWebIngestResult { document_id, corpus: CORPUS, created, unchanged, retrieval: "lexical" })
+    Ok(PgWebIngestResult {
+        document_id,
+        corpus: CORPUS,
+        created,
+        unchanged,
+        retrieval: "lexical",
+    })
 }
 
 /// Filter parameters for searching the Shenron Dragon Ball corpus in PostgreSQL.
@@ -186,7 +193,11 @@ pub async fn search_shenron_documents(
             let content: String = row.try_get(3).unwrap_or_default();
             let mut chars = content.chars();
             let snippet: String = chars.by_ref().take(240).collect();
-            let snippet = if chars.next().is_some() { format!("{snippet}...") } else { snippet };
+            let snippet = if chars.next().is_some() {
+                format!("{snippet}...")
+            } else {
+                snippet
+            };
             json!({
                 "sourceId": row.try_get::<_, Option<String>>(0).ok().flatten(),
                 "title": row.try_get::<_, Option<String>>(1).ok().flatten(),
@@ -237,10 +248,18 @@ pub async fn search_documents(
     let results = rows
         .iter()
         .map(|row| {
-            let content = row.try_get::<_, Option<String>>(3).ok().flatten().unwrap_or_default();
+            let content = row
+                .try_get::<_, Option<String>>(3)
+                .ok()
+                .flatten()
+                .unwrap_or_default();
             let mut chars = content.chars();
             let snippet = chars.by_ref().take(180).collect::<String>();
-            let snippet = if chars.next().is_some() { format!("{snippet}...") } else { snippet };
+            let snippet = if chars.next().is_some() {
+                format!("{snippet}...")
+            } else {
+                snippet
+            };
             json!({
                 "title": row.try_get::<_, Option<String>>(0).ok().flatten(),
                 "url": row.try_get::<_, Option<String>>(1).ok().flatten(),
@@ -264,8 +283,12 @@ pub async fn search_documents(
 pub async fn stats(database_url: &str) -> Result<Value, &'static str> {
     let client = connect(database_url).await?;
     let (documents, chunks) = tokio::time::timeout(DB_TIMEOUT, async {
-        let documents = client.query_one("SELECT count(*) FROM aphrody_rag_documents", &[]).await?;
-        let chunks = client.query_one("SELECT count(*) FROM aphrody_rag_chunks", &[]).await?;
+        let documents = client
+            .query_one("SELECT count(*) FROM aphrody_rag_documents", &[])
+            .await?;
+        let chunks = client
+            .query_one("SELECT count(*) FROM aphrody_rag_chunks", &[])
+            .await?;
         Ok::<_, tokio_postgres::Error>((documents.get::<_, i64>(0), chunks.get::<_, i64>(0)))
     })
     .await
@@ -293,17 +316,24 @@ mod tests {
             document_title("intro\n# Actual title\nbody", "https://example.com"),
             "Actual title"
         );
-        assert_eq!(document_title("plain body", "https://example.com"), "https://example.com");
+        assert_eq!(
+            document_title("plain body", "https://example.com"),
+            "https://example.com"
+        );
     }
 
     #[tokio::test]
     async fn invalid_input_never_connects_to_postgres() {
         assert_eq!(
-            ingest_web_document("", "file:///tmp/a", "content", false).await.unwrap_err(),
+            ingest_web_document("", "file:///tmp/a", "content", false)
+                .await
+                .unwrap_err(),
             "invalid web document URL"
         );
         assert_eq!(
-            ingest_web_document("", "https://example.com", " ", false).await.unwrap_err(),
+            ingest_web_document("", "https://example.com", " ", false)
+                .await
+                .unwrap_err(),
             "invalid web document content"
         );
     }

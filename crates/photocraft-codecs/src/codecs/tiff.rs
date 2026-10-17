@@ -73,25 +73,46 @@ pub fn photoshop_tags(b: &[u8]) -> PhotoshopTags<'_> {
         let u16_at = |o: u64| -> Option<u16> {
             let o = usize::try_from(o).ok()?;
             let s = b.get(o..o.checked_add(2)?)?;
-            Some(if le { u16::from_le_bytes([s[0], s[1]]) } else { u16::from_be_bytes([s[0], s[1]]) })
+            Some(if le {
+                u16::from_le_bytes([s[0], s[1]])
+            } else {
+                u16::from_be_bytes([s[0], s[1]])
+            })
         };
         let u32_at = |o: u64| -> Option<u32> {
             let o = usize::try_from(o).ok()?;
             let s: [u8; 4] = b.get(o..o.checked_add(4)?)?.try_into().ok()?;
-            Some(if le { u32::from_le_bytes(s) } else { u32::from_be_bytes(s) })
+            Some(if le {
+                u32::from_le_bytes(s)
+            } else {
+                u32::from_be_bytes(s)
+            })
         };
         let u64_at = |o: u64| -> Option<u64> {
             let o = usize::try_from(o).ok()?;
             let s: [u8; 8] = b.get(o..o.checked_add(8)?)?.try_into().ok()?;
-            Some(if le { u64::from_le_bytes(s) } else { u64::from_be_bytes(s) })
+            Some(if le {
+                u64::from_le_bytes(s)
+            } else {
+                u64::from_be_bytes(s)
+            })
         };
         let (big, ifd) = match u16_at(2)? {
             42 => (false, u64::from(u32_at(4)?)),
             43 => (true, u64_at(8)?),
             _ => return None,
         };
-        let n = if big { u64_at(ifd)? } else { u64::from(u16_at(ifd)?) }.min(4096);
-        let (entry, first, inline) = if big { (20u64, ifd.checked_add(8)?, 8u64) } else { (12, ifd.checked_add(2)?, 4) };
+        let n = if big {
+            u64_at(ifd)?
+        } else {
+            u64::from(u16_at(ifd)?)
+        }
+        .min(4096);
+        let (entry, first, inline) = if big {
+            (20u64, ifd.checked_add(8)?, 8u64)
+        } else {
+            (12, ifd.checked_add(2)?, 4)
+        };
         let mut resources = None;
         let mut layers = None;
         for i in 0..n {
@@ -104,7 +125,11 @@ pub fn photoshop_tags(b: &[u8]) -> PhotoshopTags<'_> {
             if !matches!(u16_at(e + 2)?, 1 | 2 | 6 | 7) {
                 continue;
             }
-            let count = if big { u64_at(e + 4)? } else { u64::from(u32_at(e + 4)?) };
+            let count = if big {
+                u64_at(e + 4)?
+            } else {
+                u64::from(u32_at(e + 4)?)
+            };
             let value_at = e + if big { 12 } else { 8 };
             let start = if count <= inline {
                 value_at
@@ -170,11 +195,19 @@ fn camera_raw(b: &[u8]) -> bool {
     };
     let u16_at = |o: usize| {
         let s = b.get(o..o.checked_add(2)?)?;
-        Some(if le { u16::from_le_bytes([s[0], s[1]]) } else { u16::from_be_bytes([s[0], s[1]]) })
+        Some(if le {
+            u16::from_le_bytes([s[0], s[1]])
+        } else {
+            u16::from_be_bytes([s[0], s[1]])
+        })
     };
     let u32_at = |o: usize| {
         let s: [u8; 4] = b.get(o..o.checked_add(4)?)?.try_into().ok()?;
-        Some(if le { u32::from_le_bytes(s) } else { u32::from_be_bytes(s) })
+        Some(if le {
+            u32::from_le_bytes(s)
+        } else {
+            u32::from_be_bytes(s)
+        })
     };
     // CR2: "CR" and major version 2 right after the TIFF header.
     if b.get(8..11) == Some(b"CR\x02") {
@@ -203,7 +236,9 @@ fn camera_raw(b: &[u8]) -> bool {
             };
             match tag {
                 TAG_DNG_VERSION => return true,
-                TAG_PHOTOMETRIC if matches!(value(e), Some(PHOTOMETRIC_CFA | PHOTOMETRIC_LINEAR_RAW)) => {
+                TAG_PHOTOMETRIC
+                    if matches!(value(e), Some(PHOTOMETRIC_CFA | PHOTOMETRIC_LINEAR_RAW)) =>
+                {
                     return true;
                 }
                 TAG_SUB_IFDS if count == 1 => queue.extend(value(e)),
@@ -217,7 +252,8 @@ fn camera_raw(b: &[u8]) -> bool {
                 _ => {}
             }
         }
-        if let Some(next) = u32_at(ifd.saturating_add(2 + 12 * usize::from(n))).filter(|&o| o != 0) {
+        if let Some(next) = u32_at(ifd.saturating_add(2 + 12 * usize::from(n))).filter(|&o| o != 0)
+        {
             queue.push(next);
         }
     }
@@ -232,26 +268,43 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
 /// Decodes page `page` of [`ifd::tiff_info`]'s list (`None`: the default page). The image
 /// carries the page's metadata, a [`DecodeWarning::MorePages`] when the file holds more
 /// full-resolution pages, and a [`DecodeWarning::Truncated`] when image data is cut off.
-pub(crate) fn decode_page(bytes: &[u8], page: Option<usize>, limits: &Limits) -> Result<Image, CodecError> {
+pub(crate) fn decode_page(
+    bytes: &[u8],
+    page: Option<usize>,
+    limits: &Limits,
+) -> Result<Image, CodecError> {
     if camera_raw(bytes) {
-        return Err(CodecError::unsupported(F, "camera raw files (such as CR2, NEF, ARW or DNG) are not flat images; decode them with photocraft-raw"));
+        return Err(CodecError::unsupported(
+            F,
+            "camera raw files (such as CR2, NEF, ARW or DNG) are not flat images; decode them with photocraft-raw",
+        ));
     }
     let file = File::parse(bytes).ok_or_else(|| err("not a TIFF or BigTIFF header"))?;
     let info = ifd::info_of(&file)?;
     let index = match page {
         Some(i) => i,
-        None => info.default_page().ok_or_else(|| err("no image directory"))?,
+        None => info
+            .default_page()
+            .ok_or_else(|| err("no image directory"))?,
     };
-    let p = info
-        .pages
-        .get(index)
-        .ok_or_else(|| CodecError::InvalidImage(format!("TIFF page {index} does not exist (the file has {} directories)", info.pages.len())))?;
-    let dir = file.ifd(p.ifd_offset).ok_or_else(|| err("image directory cut off"))?;
+    let p = info.pages.get(index).ok_or_else(|| {
+        CodecError::InvalidImage(format!(
+            "TIFF page {index} does not exist (the file has {} directories)",
+            info.pages.len()
+        ))
+    })?;
+    let dir = file
+        .ifd(p.ifd_offset)
+        .ok_or_else(|| err("image directory cut off"))?;
     let mut img = decode_ifd(&file, &dir, limits)?;
     img.meta = metadata(&file, &dir, &mut img.icc);
     let pages = info.page_count();
     if pages > 1 {
-        img.warnings.push(DecodeWarning::MorePages { total: info.complete.then_some(u32::try_from(pages).unwrap_or(u32::MAX)) });
+        img.warnings.push(DecodeWarning::MorePages {
+            total: info
+                .complete
+                .then_some(u32::try_from(pages).unwrap_or(u32::MAX)),
+        });
     }
     Ok(img)
 }
@@ -259,23 +312,38 @@ pub(crate) fn decode_page(bytes: &[u8], page: Option<usize>, limits: &Limits) ->
 /// The Orientation (1–8) of page `page` (`None`: the default page); 1 when absent, malformed
 /// or out of range. Classic TIFF and BigTIFF.
 pub(crate) fn orientation(bytes: &[u8], page: Option<usize>) -> u16 {
-    let Some(file) = File::parse(bytes) else { return 1 };
-    let Ok(info) = ifd::info_of(&file) else { return 1 };
-    page.or_else(|| info.default_page()).and_then(|i| info.pages.get(i)).and_then(|p| file.ifd(p.ifd_offset)).map_or(1, |d| ifd::orientation_of(&file, &d))
+    let Some(file) = File::parse(bytes) else {
+        return 1;
+    };
+    let Ok(info) = ifd::info_of(&file) else {
+        return 1;
+    };
+    page.or_else(|| info.default_page())
+        .and_then(|i| info.pages.get(i))
+        .and_then(|p| file.ifd(p.ifd_offset))
+        .map_or(1, |d| ifd::orientation_of(&file, &d))
 }
 
 /// The page's metadata; the ICC profile goes to `icc`.
 fn metadata(f: &File<'_>, dir: &Ifd, icc: &mut Option<Vec<u8>>) -> Metadata {
-    *icc = f.tag_bytes(dir, Tag::IccProfile.to_u16()).filter(|b| !b.is_empty()).map(<[u8]>::to_vec);
+    *icc = f
+        .tag_bytes(dir, Tag::IccProfile.to_u16())
+        .filter(|b| !b.is_empty())
+        .map(<[u8]>::to_vec);
     let text = |tag: u16| {
         let b = f.tag_bytes(dir, tag)?;
         let s = std::str::from_utf8(b).ok()?.trim_end_matches('\0');
         (!s.is_empty()).then(|| s.to_owned())
     };
-    let mut meta = Metadata { xmp: text(TAG_XMP), ..Default::default() };
+    let mut meta = Metadata {
+        xmp: text(TAG_XMP),
+        ..Default::default()
+    };
     let unit = f.tag_uint(dir, Tag::ResolutionUnit.to_u16()).unwrap_or(2);
-    if let (Some(x), Some(y)) = (f.tag_f64(dir, Tag::XResolution.to_u16()), f.tag_f64(dir, Tag::YResolution.to_u16()))
-        && x > 0.0
+    if let (Some(x), Some(y)) = (
+        f.tag_f64(dir, Tag::XResolution.to_u16()),
+        f.tag_f64(dir, Tag::YResolution.to_u16()),
+    ) && x > 0.0
         && y > 0.0
         && x.is_finite()
         && y.is_finite()
@@ -293,8 +361,14 @@ fn metadata(f: &File<'_>, dir: &Ifd, icc: &mut Option<Vec<u8>>) -> Metadata {
     }
     // Photoshop keeps a layered TIFF's layers and resources in IFD0, where `photoshop_tags`
     // reads them; any other page reads its own directory's copies.
-    let (resources, layers) =
-        if dir.at == f.first_ifd { photoshop_tags(f.b) } else { (f.tag_bytes(dir, TAG_PHOTOSHOP), f.tag_bytes(dir, TAG_IMAGE_SOURCE_DATA)) };
+    let (resources, layers) = if dir.at == f.first_ifd {
+        photoshop_tags(f.b)
+    } else {
+        (
+            f.tag_bytes(dir, TAG_PHOTOSHOP),
+            f.tag_bytes(dir, TAG_IMAGE_SOURCE_DATA),
+        )
+    };
     meta.photoshop_resources = resources.map(<[u8]>::to_vec);
     meta.photoshop_layers = layers.map(<[u8]>::to_vec);
     meta
@@ -317,16 +391,23 @@ struct Patched<'a> {
 
 impl Read for Patched<'_> {
     fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
-        let Some(src) = usize::try_from(self.pos).ok().and_then(|p| self.b.get(p..)) else { return Ok(0) };
+        let Some(src) = usize::try_from(self.pos).ok().and_then(|p| self.b.get(p..)) else {
+            return Ok(0);
+        };
         let n = out.len().min(src.len());
-        let (Some(o), Some(s)) = (out.get_mut(..n), src.get(..n)) else { return Ok(0) };
+        let (Some(o), Some(s)) = (out.get_mut(..n), src.get(..n)) else {
+            return Ok(0);
+        };
         o.copy_from_slice(s);
         let end = self.pos.saturating_add(n as u64);
         for (at, bytes) in self.patches {
             let lo = (*at).max(self.pos);
             let hi = at.saturating_add(bytes.len() as u64).min(end);
             for i in lo..hi {
-                let (Ok(oi), Ok(pi)) = (usize::try_from(i - self.pos), usize::try_from(i - at)) else { continue };
+                let (Ok(oi), Ok(pi)) = (usize::try_from(i - self.pos), usize::try_from(i - at))
+                else {
+                    continue;
+                };
                 if let (Some(d), Some(&v)) = (o.get_mut(oi), bytes.get(pi)) {
                     *d = v;
                 }
@@ -344,7 +425,8 @@ impl Seek for Patched<'_> {
             SeekFrom::End(d) => (self.b.len() as u64).checked_add_signed(d),
             SeekFrom::Current(d) => self.pos.checked_add_signed(d),
         };
-        let new = new.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "seek out of range"))?;
+        let new =
+            new.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "seek out of range"))?;
         self.pos = new;
         Ok(new)
     }
@@ -423,7 +505,11 @@ impl Layout {
     }
     /// The decoded sample (chunky) or file plane (planar) of output channel `k`.
     fn source_sample(&self, k: usize) -> usize {
-        if self.out_layout.has_alpha() && k + 1 == self.out_channels() { self.alpha_sample } else { k }
+        if self.out_layout.has_alpha() && k + 1 == self.out_channels() {
+            self.alpha_sample
+        } else {
+            k
+        }
     }
     fn out_row(&self) -> usize {
         self.w * self.out_channels() * self.out.bytes()
@@ -434,7 +520,10 @@ impl Layout {
     }
     /// Chunk rows are output rows: copied without conversion.
     fn copyable(&self) -> bool {
-        !self.planar && self.palette.is_none() && self.src.is_identity() && self.chunk_spp == self.out_channels()
+        !self.planar
+            && self.palette.is_none()
+            && self.src.is_identity()
+            && self.chunk_spp == self.out_channels()
     }
 }
 
@@ -447,36 +536,67 @@ fn is_eof(e: &tiff::TiffError) -> bool {
 fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecError> {
     // The values the `tiff` crate reads must exist: a count past the end of the file is
     // neither allocated nor read.
-    if let Some(e) = dir.entries.iter().find(|e| ifd::STRUCTURAL_TAGS.contains(&e.tag) && f.data(e).is_none()) {
-        return Err(err(format!("tag {} points past the end of the file", e.tag)));
+    if let Some(e) = dir
+        .entries
+        .iter()
+        .find(|e| ifd::STRUCTURAL_TAGS.contains(&e.tag) && f.data(e).is_none())
+    {
+        return Err(err(format!(
+            "tag {} points past the end of the file",
+            e.tag
+        )));
     }
-    let need = |tag: u16, name: &str| f.tag_uint(dir, tag).ok_or_else(|| err(format!("missing or unreadable {name}")));
-    let w = u32::try_from(need(ifd::TAG_WIDTH, "ImageWidth")?).map_err(|_| err("ImageWidth out of range"))?;
-    let h = u32::try_from(need(ifd::TAG_HEIGHT, "ImageLength")?).map_err(|_| err("ImageLength out of range"))?;
+    let need = |tag: u16, name: &str| {
+        f.tag_uint(dir, tag)
+            .ok_or_else(|| err(format!("missing or unreadable {name}")))
+    };
+    let w = u32::try_from(need(ifd::TAG_WIDTH, "ImageWidth")?)
+        .map_err(|_| err("ImageWidth out of range"))?;
+    let h = u32::try_from(need(ifd::TAG_HEIGHT, "ImageLength")?)
+        .map_err(|_| err("ImageLength out of range"))?;
     if w == 0 || h == 0 {
-        return Err(CodecError::InvalidImage(format!("zero-sized image {w}x{h}")));
+        return Err(CodecError::InvalidImage(format!(
+            "zero-sized image {w}x{h}"
+        )));
     }
     let spp = f.tag_uint(dir, ifd::TAG_SAMPLES).unwrap_or(1);
     if spp == 0 || spp > 64 {
-        return Err(CodecError::unsupported(F, format!("{spp} samples per pixel")));
+        return Err(CodecError::unsupported(
+            F,
+            format!("{spp} samples per pixel"),
+        ));
     }
-    let bits_all = f.tag_uints(dir, ifd::TAG_BITS, spp).unwrap_or_else(|| vec![1]);
+    let bits_all = f
+        .tag_uints(dir, ifd::TAG_BITS, spp)
+        .unwrap_or_else(|| vec![1]);
     let bits = bits_all.first().copied().unwrap_or(1);
     if bits_all.iter().any(|&b| b != bits) {
-        return Err(CodecError::unsupported(F, format!("mixed bits per sample {bits_all:?}")));
+        return Err(CodecError::unsupported(
+            F,
+            format!("mixed bits per sample {bits_all:?}"),
+        ));
     }
     let format = f.tag_uint(dir, ifd::TAG_SAMPLE_FORMAT).unwrap_or(1);
     let photometric_entry = dir.get(ifd::TAG_PHOTOMETRIC).copied();
-    let photometric = f.tag_uint(dir, ifd::TAG_PHOTOMETRIC).ok_or_else(|| CodecError::unsupported(F, "missing PhotometricInterpretation"))?;
+    let photometric = f
+        .tag_uint(dir, ifd::TAG_PHOTOMETRIC)
+        .ok_or_else(|| CodecError::unsupported(F, "missing PhotometricInterpretation"))?;
     let planar = f.tag_uint(dir, ifd::TAG_PLANAR) == Some(2);
-    let extra = f.tag_uints(dir, ifd::TAG_EXTRA_SAMPLES, 64).unwrap_or_default();
+    let extra = f
+        .tag_uints(dir, ifd::TAG_EXTRA_SAMPLES, 64)
+        .unwrap_or_default();
     let tiled = dir.get(ifd::TAG_TILE_OFFSETS).is_some();
     let (cw, ch) = if tiled {
         let tw = need(ifd::TAG_TILE_WIDTH, "TileWidth")?;
         let tl = need(ifd::TAG_TILE_LENGTH, "TileLength")?;
         (tw, tl)
     } else {
-        (u64::from(w), f.tag_uint(dir, ifd::TAG_ROWS_PER_STRIP).unwrap_or(u64::from(h)).min(u64::from(h)))
+        (
+            u64::from(w),
+            f.tag_uint(dir, ifd::TAG_ROWS_PER_STRIP)
+                .unwrap_or(u64::from(h))
+                .min(u64::from(h)),
+        )
     };
     if cw == 0 || ch == 0 {
         return Err(err("zero tile or strip size"));
@@ -491,9 +611,14 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
         .filter(|&n| n <= u64::from(u32::MAX))
         .ok_or_else(|| err("too many strips or tiles"))?;
     let (offsets_tag, counts_tag) = if tiled { (324, 325) } else { (273, 279) };
-    let counts = (dir.get(offsets_tag).map(|e| e.count), dir.get(counts_tag).map(|e| e.count));
+    let counts = (
+        dir.get(offsets_tag).map(|e| e.count),
+        dir.get(counts_tag).map(|e| e.count),
+    );
     if counts != (Some(expected), Some(expected)) {
-        return Err(err(format!("{expected} strips or tiles expected, the tables list {counts:?}")));
+        return Err(err(format!(
+            "{expected} strips or tiles expected, the tables list {counts:?}"
+        )));
     }
     let src = match (format, bits) {
         (1, 1 | 2 | 4) => Src::Bits(bits as u8),
@@ -505,7 +630,12 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
         (3, 32) => Src::F32,
         (3, 64) => Src::F64,
         (2, _) => return Err(CodecError::unsupported(F, "signed integer samples")),
-        _ => return Err(CodecError::unsupported(F, format!("{bits}-bit samples (sample format {format})"))),
+        _ => {
+            return Err(CodecError::unsupported(
+                F,
+                format!("{bits}-bit samples (sample format {format})"),
+            ));
+        }
     };
 
     // WhiteIsZero and palette images are handed to the `tiff` crate as BlackIsZero: it then
@@ -514,12 +644,20 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
     let invert = photometric == 0;
     let palette = if photometric == 3 {
         if spp != 1 || !matches!(src, Src::Bits(_) | Src::U8 | Src::U16) {
-            return Err(CodecError::unsupported(F, format!("palette image with {spp} samples of {bits} bits")));
+            return Err(CodecError::unsupported(
+                F,
+                format!("palette image with {spp} samples of {bits} bits"),
+            ));
         }
         let n = 1u64 << bits;
-        let map = dir.get(ifd::TAG_COLOR_MAP).filter(|e| e.ty == 3 && e.count == 3 * n).ok_or_else(|| err("palette image without a valid ColorMap"))?;
+        let map = dir
+            .get(ifd::TAG_COLOR_MAP)
+            .filter(|e| e.ty == 3 && e.count == 3 * n)
+            .ok_or_else(|| err("palette image without a valid ColorMap"))?;
         let at = |i: u64| f.uint(map, i).and_then(|v| u16::try_from(v).ok());
-        let table: Option<Vec<[u16; 3]>> = (0..n).map(|i| Some([at(i)?, at(n + i)?, at(2 * n + i)?])).collect();
+        let table: Option<Vec<[u16; 3]>> = (0..n)
+            .map(|i| Some([at(i)?, at(n + i)?, at(2 * n + i)?]))
+            .collect();
         Some(table.ok_or_else(|| err("palette ColorMap cut off"))?)
     } else {
         None
@@ -533,12 +671,24 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
         5 => 4,
         _ => 1,
     };
-    let alpha_at = extra.iter().position(|&e| e == 1 || e == 2).filter(|&a| (color + a as u64) < spp);
-    let all_samples = palette.is_none() && matches!(photometric, 2 | 5) && alpha_at.is_some_and(|a| a > 0);
+    let alpha_at = extra
+        .iter()
+        .position(|&e| e == 1 || e == 2)
+        .filter(|&a| (color + a as u64) < spp);
+    let all_samples =
+        palette.is_none() && matches!(photometric, 2 | 5) && alpha_at.is_some_and(|a| a > 0);
     let mut patches: Vec<(u64, Vec<u8>)> = Vec::new();
     let encode_u = |v: u64, len: usize| -> Vec<u8> {
-        let b = if f.le { v.to_le_bytes() } else { v.to_be_bytes() };
-        if f.le { b.get(..len).map(<[u8]>::to_vec).unwrap_or_default() } else { b.get(8 - len..).map(<[u8]>::to_vec).unwrap_or_default() }
+        let b = if f.le {
+            v.to_le_bytes()
+        } else {
+            v.to_be_bytes()
+        };
+        if f.le {
+            b.get(..len).map(<[u8]>::to_vec).unwrap_or_default()
+        } else {
+            b.get(8 - len..).map(<[u8]>::to_vec).unwrap_or_default()
+        }
     };
     if f.big {
         patches.push((8, encode_u(dir.at, 8)));
@@ -566,9 +716,19 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
         l.intermediate_buffer_size = f.b.len().max(1);
         l
     };
-    let open = || Decoder::new(Patched { b: f.b, patches: &patches, pos: 0 }).map(|d| d.with_limits(tl.clone())).map_err(map_err);
+    let open = || {
+        Decoder::new(Patched {
+            b: f.b,
+            patches: &patches,
+            pos: 0,
+        })
+        .map(|d| d.with_limits(tl.clone()))
+        .map_err(map_err)
+    };
     let mut dec = open()?;
-    if dec.dimensions().map_err(map_err)? != (w, h) || (dec.get_chunk_type() == ChunkType::Tile) != tiled {
+    if dec.dimensions().map_err(map_err)? != (w, h)
+        || (dec.get_chunk_type() == ChunkType::Tile) != tiled
+    {
         return Err(err("inconsistent image directory"));
     }
     let ct = dec.colortype().map_err(map_err)?;
@@ -576,12 +736,22 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
     let (out_layout, chunk_spp) = match ct {
         _ if palette.is_some() => (ChannelLayout::Rgb, 1),
         tiff::ColorType::Gray(_) => (ChannelLayout::Gray, 1),
-        tiff::ColorType::Multiband { num_samples, .. } if all_samples => {
-            (if photometric == 2 { ChannelLayout::Rgba } else { ChannelLayout::CmykA }, usize::from(num_samples))
-        }
-        tiff::ColorType::Multiband { num_samples, .. } if photometric <= 1 => {
-            (if gray_alpha { ChannelLayout::GrayA } else { ChannelLayout::Gray }, usize::from(num_samples))
-        }
+        tiff::ColorType::Multiband { num_samples, .. } if all_samples => (
+            if photometric == 2 {
+                ChannelLayout::Rgba
+            } else {
+                ChannelLayout::CmykA
+            },
+            usize::from(num_samples),
+        ),
+        tiff::ColorType::Multiband { num_samples, .. } if photometric <= 1 => (
+            if gray_alpha {
+                ChannelLayout::GrayA
+            } else {
+                ChannelLayout::Gray
+            },
+            usize::from(num_samples),
+        ),
         tiff::ColorType::RGB(_) => (ChannelLayout::Rgb, 3),
         tiff::ColorType::RGBA(_) => (ChannelLayout::Rgba, 4),
         tiff::ColorType::CMYK(_) => (ChannelLayout::Cmyk, 4),
@@ -591,13 +761,20 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
     let chunk_spp = if planar { 1 } else { chunk_spp };
     // The sample (chunky) or plane (planar) that holds the alpha: the colour samples come first.
     let alpha_sample = out_layout.color_channels() + alpha_at.unwrap_or(0);
-    if out_layout.has_alpha() && (alpha_sample as u64 >= spp || (!planar && alpha_sample >= chunk_spp)) {
+    if out_layout.has_alpha()
+        && (alpha_sample as u64 >= spp || (!planar && alpha_sample >= chunk_spp))
+    {
         return Err(err("the alpha sample is past the samples of a pixel"));
     }
     if matches!(src, Src::Bits(_)) && (out_layout.channels() > 1 || spp != 1) && palette.is_none() {
-        return Err(CodecError::unsupported(F, format!("{bits}-bit samples with {spp} samples per pixel")));
+        return Err(CodecError::unsupported(
+            F,
+            format!("{bits}-bit samples with {spp} samples per pixel"),
+        ));
     }
-    if (!planar && palette.is_none() && chunk_spp < out_layout.channels()) || (planar && out_layout.channels() as u64 > spp) {
+    if (!planar && palette.is_none() && chunk_spp < out_layout.channels())
+        || (planar && out_layout.channels() as u64 > spp)
+    {
         return Err(err("fewer samples than the colour type needs"));
     }
     let out = match (&palette, src) {
@@ -610,23 +787,44 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
     // times (Deflate at most ~1032:1, LZW ~2730:1, PackBits 128:1), so a file far too small for
     // its declared size is refused before the image is allocated. Uncompressed data may be up
     // to three quarters missing (that decodes with a `Truncated` warning).
-    let stored = u64::from(w).saturating_mul(u64::from(h)).saturating_mul(spp).saturating_mul(bits).div_ceil(8);
+    let stored = u64::from(w)
+        .saturating_mul(u64::from(h))
+        .saturating_mul(spp)
+        .saturating_mul(bits)
+        .div_ceil(8);
     let ratio: u64 = match f.tag_uint(dir, ifd::TAG_COMPRESSION).unwrap_or(1) {
         1 => 4,
         32773 => 130,
         _ => 4096,
     };
-    if stored > (f.b.len() as u64).saturating_mul(ratio).saturating_add(1 << 20) {
-        return Err(err(format!("a {} byte file cannot hold a {w}x{h} image", f.b.len())));
+    if stored
+        > (f.b.len() as u64)
+            .saturating_mul(ratio)
+            .saturating_add(1 << 20)
+    {
+        return Err(err(format!(
+            "a {} byte file cannot hold a {w}x{h} image",
+            f.b.len()
+        )));
     }
 
     let (wu, hu) = (w as usize, h as usize);
-    let (cw, ch) = (usize::try_from(cw).map_err(|_| err("tile too wide"))?, usize::try_from(ch).map_err(|_| err("tile too tall"))?);
+    let (cw, ch) = (
+        usize::try_from(cw).map_err(|_| err("tile too wide"))?,
+        usize::try_from(ch).map_err(|_| err("tile too tall"))?,
+    );
     let across = wu.div_ceil(cw);
     let down = hu.div_ceil(ch);
-    let chunks_per_plane = across.checked_mul(down).ok_or_else(|| err("too many tiles"))?;
+    let chunks_per_plane = across
+        .checked_mul(down)
+        .ok_or_else(|| err("too many tiles"))?;
     let planes_in_file = if planar { spp as usize } else { 1 };
-    let total = if tiled { dec.tile_count() } else { dec.strip_count() }.map_err(map_err)?;
+    let total = if tiled {
+        dec.tile_count()
+    } else {
+        dec.strip_count()
+    }
+    .map_err(map_err)?;
     if Some(total as usize) != chunks_per_plane.checked_mul(planes_in_file) {
         return Err(err("strip or tile count does not match the image size"));
     }
@@ -639,7 +837,10 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
         .and_then(|px| px.checked_mul(chunk_spp))
         .and_then(|s| s.checked_mul(src.bytes()))
         .ok_or_else(|| CodecError::LimitExceeded("tile size".into()))?;
-    let scratch_cap = chunk_bytes.saturating_mul(2).max(64 << 20).min(limits.alloc_usize());
+    let scratch_cap = chunk_bytes
+        .saturating_mul(2)
+        .max(64 << 20)
+        .min(limits.alloc_usize());
     let lay = Layout {
         w: wu,
         src,
@@ -660,13 +861,19 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
 
     // The output, allocated once and fallibly.
     let out_row = lay.out_row();
-    let len = out_row.checked_mul(hu).ok_or_else(|| CodecError::LimitExceeded("image size".into()))?;
+    let len = out_row
+        .checked_mul(hu)
+        .ok_or_else(|| CodecError::LimitExceeded("image size".into()))?;
     let mut data = zeroed(len)?;
-    let band_bytes = out_row.checked_mul(ch.min(hu)).ok_or_else(|| CodecError::LimitExceeded("band size".into()))?;
+    let band_bytes = out_row
+        .checked_mul(ch.min(hu))
+        .ok_or_else(|| CodecError::LimitExceeded("band size".into()))?;
 
     let tally = decode_bands(&lay, &mut data, band_bytes, &mut dec, &open)?;
     if tally.decoded == 0 && tally.missing > 0 {
-        return Err(err("the image data is missing (cut off or past the end of the file)"));
+        return Err(err(
+            "the image data is missing (cut off or past the end of the file)",
+        ));
     }
     let mut img = Image::from_raw(w, h, out_layout, out, data)?;
     if tally.missing > 0 {
@@ -680,7 +887,9 @@ fn decode_ifd(f: &File<'_>, dir: &Ifd, limits: &Limits) -> Result<Image, CodecEr
 /// all cores.
 fn zeroed(len: usize) -> Result<Vec<u8>, CodecError> {
     let mut v = Vec::new();
-    v.try_reserve_exact(len).map_err(|_| CodecError::LimitExceeded(format!("cannot allocate {len} bytes for the image")))?;
+    v.try_reserve_exact(len).map_err(|_| {
+        CodecError::LimitExceeded(format!("cannot allocate {len} bytes for the image"))
+    })?;
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
@@ -702,14 +911,23 @@ struct Tally {
 impl std::ops::Add for Tally {
     type Output = Tally;
     fn add(self, o: Tally) -> Tally {
-        Tally { decoded: self.decoded + o.decoded, missing: self.missing + o.missing }
+        Tally {
+            decoded: self.decoded + o.decoded,
+            missing: self.missing + o.missing,
+        }
     }
 }
 
 /// Decodes every band into `data`, in parallel on native targets (one decoder and scratch
 /// buffer per worker).
 #[cfg(not(target_arch = "wasm32"))]
-fn decode_bands<'a, O>(lay: &Layout, data: &mut [u8], band_bytes: usize, _first: &mut Decoder<Patched<'a>>, open: &O) -> Result<Tally, CodecError>
+fn decode_bands<'a, O>(
+    lay: &Layout,
+    data: &mut [u8],
+    band_bytes: usize,
+    _first: &mut Decoder<Patched<'a>>,
+    open: &O,
+) -> Result<Tally, CodecError>
 where
     O: Fn() -> Result<Decoder<Patched<'a>>, CodecError> + Sync,
 {
@@ -728,7 +946,13 @@ where
 
 /// Decodes every band into `data`, one after the other.
 #[cfg(target_arch = "wasm32")]
-fn decode_bands<'a, O>(lay: &Layout, data: &mut [u8], band_bytes: usize, first: &mut Decoder<Patched<'a>>, _open: &O) -> Result<Tally, CodecError>
+fn decode_bands<'a, O>(
+    lay: &Layout,
+    data: &mut [u8],
+    band_bytes: usize,
+    first: &mut Decoder<Patched<'a>>,
+    _open: &O,
+) -> Result<Tally, CodecError>
 where
     O: Fn() -> Result<Decoder<Patched<'a>>, CodecError> + Sync,
 {
@@ -741,7 +965,13 @@ where
 }
 
 /// Decodes band `b` (one strip, or one row of tiles, in every plane) into its output rows.
-fn decode_band(lay: &Layout, dec: &mut Decoder<Patched<'_>>, scratch: &mut Vec<u8>, b: usize, band: &mut [u8]) -> Result<Tally, CodecError> {
+fn decode_band(
+    lay: &Layout,
+    dec: &mut Decoder<Patched<'_>>,
+    scratch: &mut Vec<u8>,
+    b: usize,
+    band: &mut [u8],
+) -> Result<Tally, CodecError> {
     let out_row = lay.out_row();
     let rows = band.len() / out_row.max(1);
     let px = lay.out_channels() * lay.out.bytes();
@@ -756,7 +986,10 @@ fn decode_band(lay: &Layout, dec: &mut Decoder<Patched<'_>>, scratch: &mut Vec<u
                 .and_then(|c| u32::try_from(c).ok())
                 .ok_or_else(|| err("chunk index out of range"))?;
             let pref = dec.image_chunk_buffer_layout(chunk).map_err(map_err)?;
-            let stride = pref.row_stride.map(|s| s.get()).ok_or_else(|| err("empty chunk row"))?;
+            let stride = pref
+                .row_stride
+                .map(|s| s.get())
+                .ok_or_else(|| err("empty chunk row"))?;
             // In place: the strip's decoded bytes are exactly its output rows.
             if lay.direct() && pref.len == band.len() && stride == out_row {
                 match dec.read_chunk_bytes(chunk, band) {
@@ -767,12 +1000,17 @@ fn decode_band(lay: &Layout, dec: &mut Decoder<Patched<'_>>, scratch: &mut Vec<u
                 continue;
             }
             if pref.len > lay.scratch_cap {
-                return Err(CodecError::LimitExceeded(format!("a {} byte strip or tile", pref.len)));
+                return Err(CodecError::LimitExceeded(format!(
+                    "a {} byte strip or tile",
+                    pref.len
+                )));
             }
             if scratch.len() < pref.len {
                 scratch.resize(pref.len, 0);
             }
-            let buf = scratch.get_mut(..pref.len).ok_or_else(|| err("scratch buffer"))?;
+            let buf = scratch
+                .get_mut(..pref.len)
+                .ok_or_else(|| err("scratch buffer"))?;
             match dec.read_chunk_bytes(chunk, buf) {
                 Ok(()) => tally.decoded += 1,
                 Err(e) if is_eof(&e) => {
@@ -783,8 +1021,14 @@ fn decode_band(lay: &Layout, dec: &mut Decoder<Patched<'_>>, scratch: &mut Vec<u
             }
             let x0 = col * lay.cw;
             let n = lay.cw.min(lay.w.saturating_sub(x0));
-            for (src_row, dst_row) in buf.chunks_exact(stride).zip(band.chunks_exact_mut(out_row)).take(rows) {
-                let Some(dst) = dst_row.get_mut(x0 * px..(x0 + n) * px) else { continue };
+            for (src_row, dst_row) in buf
+                .chunks_exact(stride)
+                .zip(band.chunks_exact_mut(out_row))
+                .take(rows)
+            {
+                let Some(dst) = dst_row.get_mut(x0 * px..(x0 + n) * px) else {
+                    continue;
+                };
                 convert_row(lay, src_row, dst, n, plane);
             }
         }
@@ -821,7 +1065,17 @@ fn convert_row(lay: &Layout, src: &[u8], dst: &mut [u8], n: usize, plane: usize)
         transfer(lay.src, src, 1, 0, dst, lay.out, och, plane, n);
     } else {
         for k in 0..och {
-            transfer(lay.src, src, lay.chunk_spp, lay.source_sample(k), dst, lay.out, och, k, n);
+            transfer(
+                lay.src,
+                src,
+                lay.chunk_spp,
+                lay.source_sample(k),
+                dst,
+                lay.out,
+                och,
+                k,
+                n,
+            );
         }
     }
 }
@@ -836,7 +1090,10 @@ fn sample_index(src: Src, row: &[u8], i: usize) -> usize {
             usize::from((byte >> (8 - bits - bit % 8)) & ((1u8 << bits) - 1))
         }
         Src::U8 => row.get(i).copied().map_or(0, usize::from),
-        Src::U16 => row.get(i * 2..i * 2 + 2).and_then(|s| s.try_into().ok()).map_or(0, |s| usize::from(u16::from_ne_bytes(s))),
+        Src::U16 => row
+            .get(i * 2..i * 2 + 2)
+            .and_then(|s| s.try_into().ok())
+            .map_or(0, |s| usize::from(u16::from_ne_bytes(s))),
         _ => 0,
     }
 }
@@ -844,7 +1101,17 @@ fn sample_index(src: Src, row: &[u8], i: usize) -> usize {
 /// Copies sample `si` of each of `n` decoded pixels (`sspp` samples each) to output channel
 /// `di` (`dch` channels), converting the sample type.
 #[allow(clippy::too_many_arguments)]
-fn transfer(src: Src, row: &[u8], sspp: usize, si: usize, dst: &mut [u8], out: SampleType, dch: usize, di: usize, n: usize) {
+fn transfer(
+    src: Src,
+    row: &[u8],
+    sspp: usize,
+    si: usize,
+    dst: &mut [u8],
+    out: SampleType,
+    dch: usize,
+    di: usize,
+    n: usize,
+) {
     let ob = out.bytes();
     if let Src::Bits(bits) = src {
         let max = (1u32 << bits) - 1;
@@ -859,18 +1126,39 @@ fn transfer(src: Src, row: &[u8], sspp: usize, si: usize, dst: &mut [u8], out: S
     if src.is_identity() {
         // Same sample type: a strided copy.
         if sb == 1 {
-            for (d, s) in dst.iter_mut().skip(di).step_by(dch).zip(row.iter().skip(si).step_by(sspp)).take(n) {
+            for (d, s) in dst
+                .iter_mut()
+                .skip(di)
+                .step_by(dch)
+                .zip(row.iter().skip(si).step_by(sspp))
+                .take(n)
+            {
                 *d = *s;
             }
         } else {
-            for (d, s) in dst.chunks_exact_mut(ob).skip(di).step_by(dch).zip(row.chunks_exact(sb).skip(si).step_by(sspp)).take(n) {
+            for (d, s) in dst
+                .chunks_exact_mut(ob)
+                .skip(di)
+                .step_by(dch)
+                .zip(row.chunks_exact(sb).skip(si).step_by(sspp))
+                .take(n)
+            {
                 d.copy_from_slice(s);
             }
         }
         return;
     }
-    for (s, d) in row.chunks_exact(sspp * sb).zip(dst.chunks_exact_mut(dch * ob)).take(n) {
-        let (Some(s), Some(d)) = (s.get(si * sb..(si + 1) * sb), d.get_mut(di * ob..(di + 1) * ob)) else { continue };
+    for (s, d) in row
+        .chunks_exact(sspp * sb)
+        .zip(dst.chunks_exact_mut(dch * ob))
+        .take(n)
+    {
+        let (Some(s), Some(d)) = (
+            s.get(si * sb..(si + 1) * sb),
+            d.get_mut(di * ob..(di + 1) * ob),
+        ) else {
+            continue;
+        };
         match src {
             Src::U32 => {
                 let v = s.try_into().map_or(0, u32::from_ne_bytes);
@@ -909,12 +1197,19 @@ fn finish_band(lay: &Layout, band: &mut [u8]) {
                 if lay.premultiplied {
                     let a = u32::from(p.get(ch - 1).copied().unwrap_or(255));
                     for c in p.iter_mut().take(color) {
-                        *c = (u32::from(*c) * 255 + a / 2).checked_div(a).unwrap_or(0).min(255) as u8;
+                        *c = (u32::from(*c) * 255 + a / 2)
+                            .checked_div(a)
+                            .unwrap_or(0)
+                            .min(255) as u8;
                     }
                 }
             }
             SampleType::U16 => {
-                let get = |p: &[u8], i: usize| p.get(i * 2..i * 2 + 2).and_then(|s| s.try_into().ok()).map_or(0, u16::from_ne_bytes);
+                let get = |p: &[u8], i: usize| {
+                    p.get(i * 2..i * 2 + 2)
+                        .and_then(|s| s.try_into().ok())
+                        .map_or(0, u16::from_ne_bytes)
+                };
                 let a = u32::from(get(p, ch - 1));
                 for i in 0..color {
                     let mut v = u32::from(get(p, i));
@@ -932,9 +1227,13 @@ fn finish_band(lay: &Layout, band: &mut [u8]) {
             SampleType::F16 | SampleType::F32 => {
                 let get = |p: &[u8], i: usize| -> f32 {
                     if ob == 2 {
-                        p.get(i * 2..i * 2 + 2).and_then(|s| s.try_into().ok()).map_or(0.0, |s| f16::from_bits(u16::from_ne_bytes(s)).to_f32())
+                        p.get(i * 2..i * 2 + 2)
+                            .and_then(|s| s.try_into().ok())
+                            .map_or(0.0, |s| f16::from_bits(u16::from_ne_bytes(s)).to_f32())
                     } else {
-                        p.get(i * 4..i * 4 + 4).and_then(|s| s.try_into().ok()).map_or(0.0, f32::from_ne_bytes)
+                        p.get(i * 4..i * 4 + 4)
+                            .and_then(|s| s.try_into().ok())
+                            .map_or(0.0, f32::from_ne_bytes)
                     }
                 };
                 let a = get(p, ch - 1);
@@ -1008,11 +1307,46 @@ macro_rules! custom_colortype {
 }
 
 use PhotometricInterpretation as PI;
-custom_colortype!(GrayA8, u8, PI::BlackIsZero, &[8, 8], &[SampleFormat::Uint; 2], int);
-custom_colortype!(GrayA16, u16, PI::BlackIsZero, &[16, 16], &[SampleFormat::Uint; 2], int);
-custom_colortype!(GrayA32F, f32, PI::BlackIsZero, &[32, 32], &[SampleFormat::IEEEFP; 2], float);
-custom_colortype!(CmykA16, u16, PI::CMYK, &[16; 5], &[SampleFormat::Uint; 5], int);
-custom_colortype!(CmykA32F, f32, PI::CMYK, &[32; 5], &[SampleFormat::IEEEFP; 5], float);
+custom_colortype!(
+    GrayA8,
+    u8,
+    PI::BlackIsZero,
+    &[8, 8],
+    &[SampleFormat::Uint; 2],
+    int
+);
+custom_colortype!(
+    GrayA16,
+    u16,
+    PI::BlackIsZero,
+    &[16, 16],
+    &[SampleFormat::Uint; 2],
+    int
+);
+custom_colortype!(
+    GrayA32F,
+    f32,
+    PI::BlackIsZero,
+    &[32, 32],
+    &[SampleFormat::IEEEFP; 2],
+    float
+);
+custom_colortype!(
+    CmykA16,
+    u16,
+    PI::CMYK,
+    &[16; 5],
+    &[SampleFormat::Uint; 5],
+    int
+);
+custom_colortype!(
+    CmykA32F,
+    f32,
+    PI::CMYK,
+    &[32; 5],
+    &[SampleFormat::IEEEFP; 5],
+    float
+);
 
 struct TagSet<'a> {
     icc: Option<&'a [u8]>,
@@ -1026,7 +1360,13 @@ struct TagSet<'a> {
 
 /// Writes one image directory. (The `tiff` encoder only compresses through `write_data`, which
 /// takes every sample at once.)
-fn write_one<C, K>(enc: &mut TiffEncoder<&mut Cursor<Vec<u8>>, K>, w: u32, h: u32, data: &[C::Inner], tags: &TagSet<'_>) -> tiff::TiffResult<()>
+fn write_one<C, K>(
+    enc: &mut TiffEncoder<&mut Cursor<Vec<u8>>, K>,
+    w: u32,
+    h: u32,
+    data: &[C::Inner],
+    tags: &TagSet<'_>,
+) -> tiff::TiffResult<()>
 where
     C: TiffColorType,
     [C::Inner]: TiffValue,
@@ -1035,8 +1375,14 @@ where
     let mut im = enc.new_image::<C>(w, h)?;
     if let Some((x, y)) = tags.dpi {
         im.resolution_unit(ResolutionUnit::Inch);
-        im.x_resolution(Rational { n: (x * 1000.0).round() as u32, d: 1000 });
-        im.y_resolution(Rational { n: (y * 1000.0).round() as u32, d: 1000 });
+        im.x_resolution(Rational {
+            n: (x * 1000.0).round() as u32,
+            d: 1000,
+        });
+        im.y_resolution(Rational {
+            n: (y * 1000.0).round() as u32,
+            d: 1000,
+        });
     }
     let d = im.encoder();
     if tags.alpha {
@@ -1062,7 +1408,11 @@ where
 }
 
 /// Writes the image with the colour type matching its layout and sample type.
-fn write_image<K: TiffKind>(enc: &mut TiffEncoder<&mut Cursor<Vec<u8>>, K>, img: &Image, tags: &TagSet<'_>) -> tiff::TiffResult<()> {
+fn write_image<K: TiffKind>(
+    enc: &mut TiffEncoder<&mut Cursor<Vec<u8>>, K>,
+    img: &Image,
+    tags: &TagSet<'_>,
+) -> tiff::TiffResult<()> {
     use ChannelLayout as L;
     use SampleType as S;
     let (w, h) = img.dimensions();
@@ -1088,7 +1438,11 @@ fn write_image<K: TiffKind>(enc: &mut TiffEncoder<&mut Cursor<Vec<u8>>, K>, img:
         (L::CmykA, S::U8) => write_one::<colortype::CMYKA8, K>(enc, w, h, d8, tags),
         (L::CmykA, S::U16) => write_one::<CmykA16, K>(enc, w, h, &u16s(), tags),
         (L::CmykA, S::F32) => write_one::<CmykA32F, K>(enc, w, h, &f32s(), tags),
-        (l, s) => Err(io::Error::new(io::ErrorKind::InvalidInput, format!("unsupported {l:?} {s:?}")).into()),
+        (l, s) => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("unsupported {l:?} {s:?}"),
+        )
+        .into()),
     }
 }
 
@@ -1098,11 +1452,24 @@ const CLASSIC_LIMIT: u64 = u32::MAX as u64;
 /// An upper estimate of the file size: the uncompressed samples plus every tag payload plus
 /// room for the directory and strip tables.
 fn estimated_size(img: &Image, tags: &TagSet<'_>) -> u64 {
-    let payloads = [tags.icc, tags.xmp, tags.photoshop_resources, tags.photoshop_layers].iter().flatten().map(|p| p.len() as u64).sum::<u64>();
+    let payloads = [
+        tags.icc,
+        tags.xmp,
+        tags.photoshop_resources,
+        tags.photoshop_layers,
+    ]
+    .iter()
+    .flatten()
+    .map(|p| p.len() as u64)
+    .sum::<u64>();
     let text = tags.text.iter().map(|(_, s)| s.len() as u64).sum::<u64>();
     // Strip tables: one offset and one count per strip of about 1 MB.
     let tables = (img.data().len() as u64 / (1 << 20) + 1) * 16;
-    (img.data().len() as u64).saturating_add(payloads).saturating_add(text).saturating_add(tables).saturating_add(1 << 20)
+    (img.data().len() as u64)
+        .saturating_add(payloads)
+        .saturating_add(text)
+        .saturating_add(tables)
+        .saturating_add(1 << 20)
 }
 
 pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Vec<u8>, CodecError> {
@@ -1110,10 +1477,16 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
     let compression = match opts.tiff_compression {
         TiffCompression::None => tiff::encoder::Compression::Uncompressed,
         TiffCompression::Lzw => tiff::encoder::Compression::Lzw,
-        TiffCompression::Deflate => tiff::encoder::Compression::Deflate(tiff::encoder::DeflateLevel::Balanced),
+        TiffCompression::Deflate => {
+            tiff::encoder::Compression::Deflate(tiff::encoder::DeflateLevel::Balanced)
+        }
         TiffCompression::PackBits => tiff::encoder::Compression::Packbits,
     };
-    let predictor = if !img.sample_type().is_float() && matches!(opts.tiff_compression, TiffCompression::Lzw | TiffCompression::Deflate) {
+    let predictor = if !img.sample_type().is_float()
+        && matches!(
+            opts.tiff_compression,
+            TiffCompression::Lzw | TiffCompression::Deflate
+        ) {
         tiff::encoder::Predictor::Horizontal
     } else {
         tiff::encoder::Predictor::None
@@ -1122,23 +1495,51 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
         img.meta
             .text
             .iter()
-            .filter_map(|(k, v)| TEXT_TAGS.iter().find(|(_, key)| key.eq_ignore_ascii_case(k)).map(|(t, _)| (*t, v.as_str())))
+            .filter_map(|(k, v)| {
+                TEXT_TAGS
+                    .iter()
+                    .find(|(_, key)| key.eq_ignore_ascii_case(k))
+                    .map(|(t, _)| (*t, v.as_str()))
+            })
             .filter(|(_, v)| v.is_ascii() && !v.contains('\0'))
             .collect()
     } else {
         Vec::new()
     };
     // TIFF writes no Orientation tag (= 1): keep the XMP from contradicting it.
-    let xmp = if opts.embed_metadata { img.meta.xmp.as_deref().map(|x| crate::resolution::export_xmp(x, img.meta.dpi)) } else { None };
+    let xmp = if opts.embed_metadata {
+        img.meta
+            .xmp
+            .as_deref()
+            .map(|x| crate::resolution::export_xmp(x, img.meta.dpi))
+    } else {
+        None
+    };
     let tags = TagSet {
-        icc: if opts.embed_icc { img.icc.as_deref() } else { None },
+        icc: if opts.embed_icc {
+            img.icc.as_deref()
+        } else {
+            None
+        },
         xmp: xmp.as_deref().map(str::as_bytes),
-        dpi: if opts.embed_metadata { img.meta.dpi.filter(|d| d.0 > 0.0 && d.1 > 0.0) } else { None },
+        dpi: if opts.embed_metadata {
+            img.meta.dpi.filter(|d| d.0 > 0.0 && d.1 > 0.0)
+        } else {
+            None
+        },
         text,
         alpha: img.layout().has_alpha(),
         // Document content, not metadata: written whenever present.
-        photoshop_resources: img.meta.photoshop_resources.as_deref().filter(|r| !r.is_empty()),
-        photoshop_layers: img.meta.photoshop_layers.as_deref().filter(|l| !l.is_empty()),
+        photoshop_resources: img
+            .meta
+            .photoshop_resources
+            .as_deref()
+            .filter(|r| !r.is_empty()),
+        photoshop_layers: img
+            .meta
+            .photoshop_layers
+            .as_deref()
+            .filter(|l| !l.is_empty()),
     };
 
     // BigTIFF when asked, or when the file could pass the 4 GiB a classic TIFF can address. A
@@ -1147,10 +1548,14 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
     let write = |big: bool| -> tiff::TiffResult<Vec<u8>> {
         let mut cursor = Cursor::new(Vec::new());
         if big {
-            let mut enc = TiffEncoder::new_big(&mut cursor)?.with_compression(compression).with_predictor(predictor);
+            let mut enc = TiffEncoder::new_big(&mut cursor)?
+                .with_compression(compression)
+                .with_predictor(predictor);
             write_image::<TiffKindBig>(&mut enc, &img, &tags)?;
         } else {
-            let mut enc = TiffEncoder::new(&mut cursor)?.with_compression(compression).with_predictor(predictor);
+            let mut enc = TiffEncoder::new(&mut cursor)?
+                .with_compression(compression)
+                .with_predictor(predictor);
             write_image::<TiffKindStandard>(&mut enc, &img, &tags)?;
         }
         Ok(cursor.into_inner())
@@ -1158,7 +1563,9 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
     let big = opts.tiff_bigtiff || estimated_size(&img, &tags) > CLASSIC_LIMIT;
     match write(big) {
         Ok(v) => Ok(v),
-        Err(tiff::TiffError::IntSizeError) if !big => write(true).map_err(|e| CodecError::encode(F, e)),
+        Err(tiff::TiffError::IntSizeError) if !big => {
+            write(true).map_err(|e| CodecError::encode(F, e))
+        }
         Err(e) => Err(CodecError::encode(F, e)),
     }
 }

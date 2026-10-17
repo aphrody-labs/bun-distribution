@@ -33,7 +33,13 @@ pub enum Mode {
 
 impl Mode {
     /// The panel menu's modes, in order.
-    pub const ALL: [Mode; 5] = [Mode::Grayscale, Mode::Rgb, Mode::Hsb, Mode::Cmyk, Mode::WebSafe];
+    pub const ALL: [Mode; 5] = [
+        Mode::Grayscale,
+        Mode::Rgb,
+        Mode::Hsb,
+        Mode::Cmyk,
+        Mode::WebSafe,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -65,7 +71,11 @@ impl Mode {
     }
     /// Minimum of each displayed component (0 but for Lab's a and b).
     pub fn min(self, i: usize) -> f32 {
-        if self == Mode::Lab && i > 0 { -128.0 } else { 0.0 }
+        if self == Mode::Lab && i > 0 {
+            -128.0
+        } else {
+            0.0
+        }
     }
     /// Slider position (0..1) of component `i` at value `v`.
     pub fn unit(self, i: usize, v: f32) -> f32 {
@@ -110,7 +120,11 @@ pub fn components(mode: Mode, c: &Color) -> Vec<f32> {
             };
             vec![k * 100.0]
         }
-        Mode::Rgb | Mode::WebSafe => c.to_rgb().iter().map(|v| (v * 255.0).clamp(0.0, 255.0)).collect(),
+        Mode::Rgb | Mode::WebSafe => c
+            .to_rgb()
+            .iter()
+            .map(|v| (v * 255.0).clamp(0.0, 255.0))
+            .collect(),
         Mode::Hsb => {
             let [h, s, b] = c.to_hsb();
             vec![h, s * 100.0, b * 100.0]
@@ -128,16 +142,28 @@ pub fn from_components(mode: Mode, v: &[f32]) -> Color {
     let g = |i: usize| v.get(i).copied().unwrap_or(0.0);
     match mode {
         Mode::Grayscale => Color::gray((g(0) / 100.0).clamp(0.0, 1.0)),
-        Mode::Rgb => Color::rgb((g(0) / 255.0).clamp(0.0, 1.0), (g(1) / 255.0).clamp(0.0, 1.0), (g(2) / 255.0).clamp(0.0, 1.0)),
+        Mode::Rgb => Color::rgb(
+            (g(0) / 255.0).clamp(0.0, 1.0),
+            (g(1) / 255.0).clamp(0.0, 1.0),
+            (g(2) / 255.0).clamp(0.0, 1.0),
+        ),
         Mode::WebSafe => web_safe(&Color::rgb(g(0) / 255.0, g(1) / 255.0, g(2) / 255.0)),
-        Mode::Hsb => Color::from_hsb(g(0).rem_euclid(360.0), (g(1) / 100.0).clamp(0.0, 1.0), (g(2) / 100.0).clamp(0.0, 1.0)),
+        Mode::Hsb => Color::from_hsb(
+            g(0).rem_euclid(360.0),
+            (g(1) / 100.0).clamp(0.0, 1.0),
+            (g(2) / 100.0).clamp(0.0, 1.0),
+        ),
         Mode::Cmyk => Color::cmyk(
             (g(0) / 100.0).clamp(0.0, 1.0),
             (g(1) / 100.0).clamp(0.0, 1.0),
             (g(2) / 100.0).clamp(0.0, 1.0),
             (g(3) / 100.0).clamp(0.0, 1.0),
         ),
-        Mode::Lab => Color::lab(g(0).clamp(0.0, 100.0), g(1).clamp(-128.0, 127.0), g(2).clamp(-128.0, 127.0)),
+        Mode::Lab => Color::lab(
+            g(0).clamp(0.0, 100.0),
+            g(1).clamp(-128.0, 127.0),
+            g(2).clamp(-128.0, 127.0),
+        ),
     }
 }
 
@@ -160,7 +186,11 @@ pub fn track_color(mode: Mode, comps: &[f32], i: usize, t: f32) -> Color {
         v[i] = mode.min(i) + t * (mode.max(i) - mode.min(i));
     }
     // HSB hue track at full saturation/brightness reads better when S or B are 0.
-    let m = if mode == Mode::WebSafe { Mode::Rgb } else { mode };
+    let m = if mode == Mode::WebSafe {
+        Mode::Rgb
+    } else {
+        mode
+    };
     from_components(m, &v)
 }
 
@@ -173,7 +203,11 @@ pub fn spectrum_at(mode: Mode, x: f32, y: f32) -> Color {
         return Color::gray(x);
     }
     let h = x * 360.0;
-    let c = if y < 0.5 { Color::from_hsb(h, y * 2.0, 1.0) } else { Color::from_hsb(h, 1.0, 1.0 - (y - 0.5) * 2.0) };
+    let c = if y < 0.5 {
+        Color::from_hsb(h, y * 2.0, 1.0)
+    } else {
+        Color::from_hsb(h, 1.0, 1.0 - (y - 0.5) * 2.0)
+    };
     match mode {
         Mode::Cmyk => {
             let [c0, m, yy, k] = c.to_cmyk();
@@ -224,18 +258,34 @@ pub(crate) fn warning_chip(ui: &mut Ui, (icon, warning): (&str, &str), fix: &Col
 /// The printable colour closest to `c` (its working-CMYK reproduction, back in RGB) when `c` is out
 /// of the CMYK gamut, through `color.convert`.
 pub(crate) fn in_gamut(app: &mut VectorcraftApp, c: &Color) -> Option<Color> {
-    let r = app.run("color.convert", json!({"color": color_json(c), "to": "cmyk"})).ok()?;
+    let r = app
+        .run(
+            "color.convert",
+            json!({"color": color_json(c), "to": "cmyk"}),
+        )
+        .ok()?;
     if !r["outOfGamut"].as_bool()? {
         return None;
     }
     let v = |r: &serde_json::Value, i: usize| r["values"][i].as_f64();
     let ink = json!({"c": v(&r, 0)?, "m": v(&r, 1)?, "y": v(&r, 2)?, "k": v(&r, 3)?});
-    let rgb = app.run("color.convert", json!({"color": ink, "to": "rgb"})).ok()?;
-    Some(Color::rgb(v(&rgb, 0)? as f32, v(&rgb, 1)? as f32, v(&rgb, 2)? as f32))
+    let rgb = app
+        .run("color.convert", json!({"color": ink, "to": "rgb"}))
+        .ok()?;
+    Some(Color::rgb(
+        v(&rgb, 0)? as f32,
+        v(&rgb, 1)? as f32,
+        v(&rgb, 2)? as f32,
+    ))
 }
 
 /// [`in_gamut`], cached under `key` for the last colour asked (panels ask every frame).
-pub(crate) fn gamut_fix(app: &mut VectorcraftApp, ctx: &egui::Context, key: &str, c: &Color) -> Option<Color> {
+pub(crate) fn gamut_fix(
+    app: &mut VectorcraftApp,
+    ctx: &egui::Context,
+    key: &str,
+    c: &Color,
+) -> Option<Color> {
     match pstate::<Option<(Color, Option<Color>)>>(ctx, key) {
         Some((k, fix)) if k == *c => fix,
         _ => {
@@ -292,9 +342,17 @@ pub fn convert_to(mode: Mode, c: &Color) -> Color {
 pub fn tandem(mode: Mode, comps: &[f32], i: usize, v: f32) -> Vec<f32> {
     let old = comps.get(i).copied().unwrap_or(0.0);
     if old <= 0.0 {
-        return comps.iter().enumerate().map(|(j, c)| (c + v - old).clamp(0.0, mode.max(j))).collect();
+        return comps
+            .iter()
+            .enumerate()
+            .map(|(j, c)| (c + v - old).clamp(0.0, mode.max(j)))
+            .collect();
     }
-    let f = comps.iter().enumerate().filter(|(_, c)| **c > 0.0).fold((v / old).max(0.0), |f, (j, c)| f.min(mode.max(j) / c));
+    let f = comps
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| **c > 0.0)
+        .fold((v / old).max(0.0), |f, (j, c)| f.min(mode.max(j) / c));
     comps.iter().map(|c| c * f).collect()
 }
 
@@ -318,7 +376,12 @@ impl Tint {
         let name = link?;
         let d = &app.session.active()?.doc;
         let spot = d.swatch(name)?.spot;
-        Some(Self { swatch: name.to_string(), spot, tint, base: d.global_color(name)? })
+        Some(Self {
+            swatch: name.to_string(),
+            spot,
+            tint,
+            base: d.global_color(name)?,
+        })
     }
 }
 
@@ -326,8 +389,16 @@ impl Tint {
 /// the global swatch it is a tint of), or a selected freeform point.
 enum Target {
     Paint(Option<Color>, Option<Tint>),
-    Stop { paint: Paint, index: usize, color: Color, tint: Option<Tint> },
-    Point { index: usize, color: Color },
+    Stop {
+        paint: Paint,
+        index: usize,
+        color: Color,
+        tint: Option<Tint>,
+    },
+    Point {
+        index: usize,
+        color: Color,
+    },
 }
 
 impl Target {
@@ -355,15 +426,37 @@ fn target(app: &VectorcraftApp, ui: &Ui) -> Target {
         Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => {
             // Like stops: without a selected point, the first.
             let f = super::gradient::shown_points(g);
-            let index = app.session.selected_freeform_point().filter(|i| *i < f.points.len()).unwrap_or(0);
-            Target::Point { index, color: f.points.get(index).map_or(Color::BLACK, |p| p.color) }
+            let index = app
+                .session
+                .selected_freeform_point()
+                .filter(|i| *i < f.points.len())
+                .unwrap_or(0);
+            Target::Point {
+                index,
+                color: f.points.get(index).map_or(Color::BLACK, |p| p.color),
+            }
         }
         Paint::Gradient(g) => {
-            let i = app.session.selected_stop().unwrap_or(0).min(g.gradient.stops.len().saturating_sub(1));
-            let (color, tint) = g.gradient.stops.get(i).map_or((Color::BLACK, None), |s| (s.color, Tint::of(app, s.swatch.as_deref(), s.tint)));
-            Target::Stop { paint: p.clone(), index: i, color, tint }
+            let i = app
+                .session
+                .selected_stop()
+                .unwrap_or(0)
+                .min(g.gradient.stops.len().saturating_sub(1));
+            let (color, tint) = g.gradient.stops.get(i).map_or((Color::BLACK, None), |s| {
+                (s.color, Tint::of(app, s.swatch.as_deref(), s.tint))
+            });
+            Target::Stop {
+                paint: p.clone(),
+                index: i,
+                color,
+                tint,
+            }
         }
-        Paint::Solid { color, swatch, tint } => Target::Paint(Some(*color), Tint::of(app, swatch.as_deref(), *tint)),
+        Paint::Solid {
+            color,
+            swatch,
+            tint,
+        } => Target::Paint(Some(*color), Tint::of(app, swatch.as_deref(), *tint)),
         _ => Target::Paint(None, None),
     }
 }
@@ -372,7 +465,11 @@ fn target(app: &VectorcraftApp, ui: &Ui) -> Target {
 /// colour, keeping the active proxy in front.
 fn apply(app: &mut VectorcraftApp, tgt: &Target, c: Color, phase: Live, behind: bool) {
     match tgt {
-        Target::Stop { paint: Paint::Gradient(g), index, .. } if !behind => {
+        Target::Stop {
+            paint: Paint::Gradient(g),
+            index,
+            ..
+        } if !behind => {
             let mut stops = g.gradient.stops.clone();
             if let Some(s) = stops.get_mut(*index) {
                 s.set_color(c, None);
@@ -386,7 +483,13 @@ fn apply(app: &mut VectorcraftApp, tgt: &Target, c: Color, phase: Live, behind: 
         _ => {
             let cmd = super::proxy_cmd(app, behind);
             // The panel's sliders work in the model picked there, even in a CMYK document.
-            live_run(app, "Color", cmd, json!({"color": color_json(&c), "focus": !behind, "keepModel": true}), phase);
+            live_run(
+                app,
+                "Color",
+                cmd,
+                json!({"color": color_json(&c), "focus": !behind, "keepModel": true}),
+                phase,
+            );
         }
     }
 }
@@ -394,7 +497,11 @@ fn apply(app: &mut VectorcraftApp, tgt: &Target, c: Color, phase: Live, behind: 
 /// Set the target's tint of its swatch to `t` (0..1), keeping the link (the T slider).
 fn apply_tint(app: &mut VectorcraftApp, tgt: &Target, tint: &Tint, t: f32, phase: Live) {
     match tgt {
-        Target::Stop { paint: Paint::Gradient(g), index, .. } => {
+        Target::Stop {
+            paint: Paint::Gradient(g),
+            index,
+            ..
+        } => {
             let mut stops = g.gradient.stops.clone();
             if let Some(s) = stops.get_mut(*index) {
                 s.set_color(tint.base.tinted(t), Some((tint.swatch.clone(), t)));
@@ -403,7 +510,13 @@ fn apply_tint(app: &mut VectorcraftApp, tgt: &Target, tint: &Tint, t: f32, phase
         }
         _ => {
             let cmd = super::proxy_cmd(app, false);
-            live_run(app, "Color", cmd, json!({"swatch": tint.swatch, "tint": t * 100.0}), phase);
+            live_run(
+                app,
+                "Color",
+                cmd,
+                json!({"swatch": tint.swatch, "tint": t * 100.0}),
+                phase,
+            );
         }
     }
 }
@@ -431,10 +544,21 @@ fn tint_rows(ui: &mut Ui, tint: &Tint, slider_w: f32, field_w: f32) -> Option<(f
         ui.label(egui::RichText::new(&tint.swatch).size(12.5).color(t.text));
     });
     ui.horizontal(|ui| {
-        ui.add_sized(vec2(12.0, 22.0), egui::Label::new(egui::RichText::new("T").size(12.5).color(t.text)));
+        ui.add_sized(
+            vec2(12.0, 22.0),
+            egui::Label::new(egui::RichText::new("T").size(12.5).color(t.text)),
+        );
         let track = |x: f32| to32(&tint.base.tinted(x));
-        let (nv, phase) = widgets::color_slider(ui, ("color-slider", "tint"), tint.tint, slider_w, &track);
-        let field = widgets::plain_field(ui, ("color-field", "tint"), (tint.tint * 100.0).round() as f64, "%", 0, field_w);
+        let (nv, phase) =
+            widgets::color_slider(ui, ("color-slider", "tint"), tint.tint, slider_w, &track);
+        let field = widgets::plain_field(
+            ui,
+            ("color-field", "tint"),
+            (tint.tint * 100.0).round() as f64,
+            "%",
+            0,
+            field_w,
+        );
         match (nv, field) {
             (Some(v), _) => Some(((v * 100.0).round() / 100.0, phase)),
             (None, Some(v)) => Some(((v as f32 / 100.0).clamp(0.0, 1.0), Live::Released)),
@@ -456,16 +580,31 @@ fn spectrum(ui: &mut Ui, mode: Mode, size: egui::Vec2) -> Option<SpectrumHit> {
     let t = Tokens::get(ui.ctx());
     let (r, _) = ui.allocate_exact_size(size, Sense::hover());
     let resp = ui.interact(r, ui.id().with("color-spectrum"), Sense::click_and_drag());
-    ui.painter().add(widgets::color_mesh(r, (72, 12), &|x, y| to32(&spectrum_at(mode, x, y))));
-    ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, t.border), StrokeKind::Outside);
+    ui.painter().add(widgets::color_mesh(r, (72, 12), &|x, y| {
+        to32(&spectrum_at(mode, x, y))
+    }));
+    ui.painter()
+        .rect_stroke(r, 0.0, Stroke::new(1.0, t.border), StrokeKind::Outside);
     if let Some(p) = resp.hover_pos() {
-        ui.painter().rect_stroke(Rect::from_center_size(p, vec2(5.0, 5.0)), 0.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Middle);
+        ui.painter().rect_stroke(
+            Rect::from_center_size(p, vec2(5.0, 5.0)),
+            0.0,
+            Stroke::new(1.0, Color32::WHITE),
+            StrokeKind::Middle,
+        );
     }
     if resp.clicked() && ui.input(|i| i.modifiers.shift) {
         return Some(SpectrumHit::Cycle);
     }
     let (p, phase) = widgets::pointer_phase(&resp)?;
-    Some(SpectrumHit::Pick(spectrum_at(mode, (p.x - r.left()) / r.width(), (p.y - r.top()) / r.height()), phase))
+    Some(SpectrumHit::Pick(
+        spectrum_at(
+            mode,
+            (p.x - r.left()) / r.width(),
+            (p.y - r.top()) / r.height(),
+        ),
+        phase,
+    ))
 }
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
@@ -491,7 +630,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     }
     // Keep the displayed components while the colour is unchanged (hue survives S = 0 etc.).
     let key = color.map(|c| (c.to_hex(), mode as u8));
-    let comps: Vec<f32> = match (color, pstate::<Option<((String, u8), Vec<f32>)>>(ui.ctx(), "color-comps")) {
+    let comps: Vec<f32> = match (
+        color,
+        pstate::<Option<((String, u8), Vec<f32>)>>(ui.ctx(), "color-comps"),
+    ) {
         (Some(_), Some((k, v))) if Some(&k) == key.as_ref() => v,
         (Some(c), _) => components(mode, &c),
         (None, _) => vec![0.0; mode.labels().len()],
@@ -505,15 +647,25 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let mut tinted: Option<(f32, Live)> = None;
     // The warnings the mode shows: out of gamut in RGB and HSB, out of web colours but in Web Safe
     // RGB and Grayscale.
-    let (shows_gamut, shows_web) = (matches!(mode, Mode::Rgb | Mode::Hsb), !matches!(mode, Mode::WebSafe | Mode::Grayscale));
-    let gamut = color.filter(|_| shows_gamut).and_then(|c| gamut_fix(app, ui.ctx(), "color-gamut", &c));
+    let (shows_gamut, shows_web) = (
+        matches!(mode, Mode::Rgb | Mode::Hsb),
+        !matches!(mode, Mode::WebSafe | Mode::Grayscale),
+    );
+    let gamut = color
+        .filter(|_| shows_gamut)
+        .and_then(|c| gamut_fix(app, ui.ctx(), "color-gamut", &c));
     ui.horizontal(|ui| {
         // Left column: proxy, out-of-gamut and out-of-web warnings.
         ui.vertical(|ui| {
             ui.set_width(44.0);
             super::proxy(app, ui, 40.0);
-            let web = color.filter(|c| shows_web && !is_web_safe(c)).map(|c| web_safe(&c));
-            let warnings: Vec<_> = [(GAMUT_WARNING, gamut), (WEB_WARNING, web)].into_iter().filter_map(|(w, fix)| Some((w, fix?))).collect();
+            let web = color
+                .filter(|c| shows_web && !is_web_safe(c))
+                .map(|c| web_safe(&c));
+            let warnings: Vec<_> = [(GAMUT_WARNING, gamut), (WEB_WARNING, web)]
+                .into_iter()
+                .filter_map(|(w, fix)| Some((w, fix?)))
+                .collect();
             for (warning, fix) in &warnings {
                 ui.add_space(6.0);
                 if warning_chip(ui, *warning, fix) {
@@ -543,12 +695,21 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             let enabled = color.is_some();
             for (i, lbl) in mode.labels().iter().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.add_sized(vec2(12.0, 22.0), egui::Label::new(egui::RichText::new(*lbl).size(12.5).color(t.text)));
+                    ui.add_sized(
+                        vec2(12.0, 22.0),
+                        egui::Label::new(egui::RichText::new(*lbl).size(12.5).color(t.text)),
+                    );
                     let v = comps.get(i).copied().unwrap_or(0.0);
                     let track = |x: f32| to32(&track_color(mode, &comps, i, x));
                     let grey = |_x: f32| t.input;
                     let (nv, phase) = if enabled {
-                        widgets::color_slider(ui, ("color-slider", i), mode.unit(i, v), slider_w, &track)
+                        widgets::color_slider(
+                            ui,
+                            ("color-slider", i),
+                            mode.unit(i, v),
+                            slider_w,
+                            &track,
+                        )
                     } else {
                         widgets::color_slider(ui, ("color-slider", i), 0.0, slider_w, &grey)
                     };
@@ -565,8 +726,14 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                         };
                         new = Some((from_components(mode, &c2), phase, c2));
                     }
-                    if let Some(fv) = widgets::plain_field(ui, ("color-field", i), v as f64, mode.suffix(i), 0, field_w)
-                        && enabled
+                    if let Some(fv) = widgets::plain_field(
+                        ui,
+                        ("color-field", i),
+                        v as f64,
+                        mode.suffix(i),
+                        0,
+                        field_w,
+                    ) && enabled
                     {
                         let mut c2 = comps.clone();
                         c2[i] = (fv as f32).clamp(mode.min(i), mode.max(i));
@@ -592,7 +759,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     // None / Black / White chips and the hex field.
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
-        for (p, tip) in [(Paint::None, tl!("None")), (Paint::solid(Color::BLACK), tl!("Black")), (Paint::solid(Color::WHITE), tl!("White"))] {
+        for (p, tip) in [
+            (Paint::None, tl!("None")),
+            (Paint::solid(Color::BLACK), tl!("Black")),
+            (Paint::solid(Color::WHITE), tl!("White")),
+        ] {
             let (r, resp) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::click());
             widgets::swatch_tile(ui, r, &p, false, resp.hovered());
             if resp.on_hover_text(tip).clicked() {
@@ -606,7 +777,10 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         if matches!(mode, Mode::Rgb | Mode::WebSafe | Mode::Hsb) {
             ui.add_space((ui.available_width() - 96.0).max(4.0));
             let hex = color.map(|c| hex_digits(&c)).unwrap_or_default();
-            if let Some(c) = widgets::hex_field(ui, "hex", &hex).as_deref().and_then(parse_hex) {
+            if let Some(c) = widgets::hex_field(ui, "hex", &hex)
+                .as_deref()
+                .and_then(parse_hex)
+            {
                 new = Some((c, Live::Released, components(mode, &c)));
             }
         }
@@ -632,7 +806,16 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let hidden: bool = pstate(ui.ctx(), "color-hide-options");
-    if menu_item(ui, if hidden { tl!("Show Options") } else { tl!("Hide Options") }, true, false) {
+    if menu_item(
+        ui,
+        if hidden {
+            tl!("Show Options")
+        } else {
+            tl!("Hide Options")
+        },
+        true,
+        false,
+    ) {
         set_pstate(ui.ctx(), "color-hide-options", !hidden);
     }
     ui.separator();
@@ -650,12 +833,22 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     // its colour model); a gradient stop is recoloured in place.
     let recolor = color.is_some() || super::active_mixed(app, ui.ctx());
     for (label, cmd, f) in [
-        (tl!("Invert"), "paint.invert", Color::invert_keep_model as fn(&Color) -> Color),
-        (tl!("Complement"), "paint.complement", Color::complement_keep_model),
+        (
+            tl!("Invert"),
+            "paint.invert",
+            Color::invert_keep_model as fn(&Color) -> Color,
+        ),
+        (
+            tl!("Complement"),
+            "paint.complement",
+            Color::complement_keep_model,
+        ),
     ] {
         if menu_item(ui, label, recolor, false) {
             match (&tgt, color) {
-                (Target::Stop { .. } | Target::Point { .. }, Some(c)) => apply(app, &tgt, f(&c), Live::Released, false),
+                (Target::Stop { .. } | Target::Point { .. }, Some(c)) => {
+                    apply(app, &tgt, f(&c), Live::Released, false)
+                }
                 _ => {
                     app.run(cmd, json!({})).ok();
                 }
@@ -687,14 +880,24 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 50}),
+        )
+        .unwrap();
         app
     }
 
     /// Run the panel for one frame with `events` and `modifiers`; returns the spectrum's rect (when
     /// the options are shown) and the panel's height.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>, modifiers: egui::Modifiers) -> (Option<Rect>, f32) {
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+    ) -> (Option<Rect>, f32) {
         frame_with(app, ctx, events, modifiers, "color-spectrum")
     }
 
@@ -707,22 +910,47 @@ mod tests {
         id: impl std::hash::Hash + std::fmt::Debug,
     ) -> (Option<Rect>, f32) {
         let mut out = (None, 0.0);
-        let events = std::iter::once(egui::Event::ModifiersChanged(modifiers)).chain(events).collect();
-        let input = egui::RawInput { events, ..Default::default() };
+        let events = std::iter::once(egui::Event::ModifiersChanged(modifiers))
+            .chain(events)
+            .collect();
+        let input = egui::RawInput {
+            events,
+            ..Default::default()
+        };
         let mut full = ctx.run_ui(input, |ui| {
             show(app, ui);
-            out = (ctx.read_response(ui.id().with(&id)).map(|r| r.rect), ui.min_rect().height());
+            out = (
+                ctx.read_response(ui.id().with(&id)).map(|r| r.rect),
+                ui.min_rect().height(),
+            );
         });
         full.textures_delta.clear();
         out
     }
 
     /// Click the spectrum at (x, y) (0..1 each) with `modifiers` held.
-    fn click_spectrum(app: &mut VectorcraftApp, ctx: &egui::Context, (x, y): (f32, f32), modifiers: egui::Modifiers) {
-        let r = frame(app, ctx, vec![], modifiers).0.expect("the spectrum is drawn");
+    fn click_spectrum(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        (x, y): (f32, f32),
+        modifiers: egui::Modifiers,
+    ) {
+        let r = frame(app, ctx, vec![], modifiers)
+            .0
+            .expect("the spectrum is drawn");
         let pos = egui::pos2(r.left() + x * r.width(), r.top() + y * r.height());
-        let button = |pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers };
-        frame(app, ctx, vec![egui::Event::PointerMoved(pos), button(true)], modifiers);
+        let button = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers,
+        };
+        frame(
+            app,
+            ctx,
+            vec![egui::Event::PointerMoved(pos), button(true)],
+            modifiers,
+        );
         frame(app, ctx, vec![button(false)], modifiers);
         frame(app, ctx, vec![], egui::Modifiers::NONE);
     }
@@ -731,26 +959,54 @@ mod tests {
     fn a_recent_colour_recolours_the_selected_gradient_stop() {
         // #835: it replaced the whole gradient with the colour.
         let mut app = app();
-        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#ff0000"}))
+            .unwrap();
         let stops = json!([{"offset": 0, "color": "#ffffff"}, {"offset": 1, "color": "#000000"}]);
-        app.run("paint.setFill", json!({"gradient": {"stops": stops, "start": [10, 35], "end": [60, 35]}})).unwrap();
+        app.run(
+            "paint.setFill",
+            json!({"gradient": {"stops": stops, "start": [10, 35], "end": [60, 35]}}),
+        )
+        .unwrap();
         app.select_tool("gradient");
         app.run("gradient.selectStop", json!({"index": 1})).unwrap();
-        let red = app.session.recent_colors.iter().position(|c| c.to_hex() == "#ff0000").expect("red is a recent colour");
+        let red = app
+            .session
+            .recent_colors
+            .iter()
+            .position(|c| c.to_hex() == "#ff0000")
+            .expect("red is a recent colour");
         let ctx = egui::Context::default();
         let none = egui::Modifiers::NONE;
-        let chip = frame_with(&mut app, &ctx, vec![], none, ("recent", red)).0.expect("the chip is drawn").center();
-        let button = |pressed| egui::Event::PointerButton { pos: chip, button: egui::PointerButton::Primary, pressed, modifiers: none };
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(chip), button(true)], none);
+        let chip = frame_with(&mut app, &ctx, vec![], none, ("recent", red))
+            .0
+            .expect("the chip is drawn")
+            .center();
+        let button = |pressed| egui::Event::PointerButton {
+            pos: chip,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: none,
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(chip), button(true)],
+            none,
+        );
         frame(&mut app, &ctx, vec![button(false)], none);
-        let Paint::Gradient(g) = crate::panels::current_paints(&app).0 else { panic!("still a gradient") };
+        let Paint::Gradient(g) = crate::panels::current_paints(&app).0 else {
+            panic!("still a gradient")
+        };
         let hex: Vec<String> = g.gradient.stops.iter().map(|s| s.color.to_hex()).collect();
         assert_eq!(hex, ["#ffffff", "#ff0000"]);
     }
 
     fn paints_hex(app: &VectorcraftApp) -> (String, String) {
         let (f, s) = crate::panels::current_paints(app);
-        (f.color().map(|c| c.to_hex()).unwrap_or_default(), s.color().map(|c| c.to_hex()).unwrap_or_default())
+        (
+            f.color().map(|c| c.to_hex()).unwrap_or_default(),
+            s.color().map(|c| c.to_hex()).unwrap_or_default(),
+        )
     }
 
     #[test]
@@ -770,19 +1026,40 @@ mod tests {
         assert!(heights.windows(2).all(|w| w[0] == w[1]), "{heights:?}");
         // Drag along the spectrum's top edge (pale colours, some out of gamut), stopping at each
         // point: the colour holds while the pointer does.
-        let r = frame(&mut app, &ctx, vec![], none).0.expect("the spectrum is drawn");
+        let r = frame(&mut app, &ctx, vec![], none)
+            .0
+            .expect("the spectrum is drawn");
         let at = |x: f32| egui::pos2(r.left() + x * r.width(), r.top() + 2.0);
-        let button = |pressed| egui::Event::PointerButton { pos: at(0.02), button: egui::PointerButton::Primary, pressed, modifiers: none };
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at(0.02)), button(true)], none);
+        let button = |pressed| egui::Event::PointerButton {
+            pos: at(0.02),
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: none,
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(at(0.02)), button(true)],
+            none,
+        );
         for i in 1..20 {
-            frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at(i as f32 * 0.05))], none);
+            frame(
+                &mut app,
+                &ctx,
+                vec![egui::Event::PointerMoved(at(i as f32 * 0.05))],
+                none,
+            );
             let fills: Vec<String> = (0..3)
                 .map(|_| {
                     frame(&mut app, &ctx, vec![], none);
                     paints_hex(&app).0
                 })
                 .collect();
-            assert!(fills.windows(2).all(|w| w[0] == w[1]), "at {}: {fills:?}", i as f32 * 0.05);
+            assert!(
+                fills.windows(2).all(|w| w[0] == w[1]),
+                "at {}: {fills:?}",
+                i as f32 * 0.05
+            );
         }
         frame(&mut app, &ctx, vec![button(false)], none);
     }
@@ -797,8 +1074,16 @@ mod tests {
         let t = tandem(Mode::Cmyk, &[10.0, 40.0, 20.0, 5.0], 1, 20.0);
         assert_eq!(t, vec![5.0, 20.0, 10.0, 2.5]);
         // From 0 the others move by the same amount.
-        assert_eq!(tandem(Mode::Rgb, &[0.0, 50.0, 250.0], 0, 10.0), vec![10.0, 60.0, 255.0]);
-        assert!(Mode::Rgb.tandem() && Mode::Cmyk.tandem() && !Mode::Hsb.tandem() && !Mode::Grayscale.tandem());
+        assert_eq!(
+            tandem(Mode::Rgb, &[0.0, 50.0, 250.0], 0, 10.0),
+            vec![10.0, 60.0, 255.0]
+        );
+        assert!(
+            Mode::Rgb.tandem()
+                && Mode::Cmyk.tandem()
+                && !Mode::Hsb.tandem()
+                && !Mode::Grayscale.tandem()
+        );
     }
 
     #[test]
@@ -806,9 +1091,16 @@ mod tests {
         let cmyk = Color::cmyk(0.1, 0.2, 0.3, 0.4);
         let rgb = Color::rgb(0.2, 0.4, 0.6);
         assert_eq!(display_mode(Some(Mode::Rgb), Some(&cmyk)), Mode::Cmyk);
-        assert_eq!(display_mode(Some(Mode::Hsb), Some(&rgb)), Mode::Hsb, "HSB is remembered for RGB colours");
+        assert_eq!(
+            display_mode(Some(Mode::Hsb), Some(&rgb)),
+            Mode::Hsb,
+            "HSB is remembered for RGB colours"
+        );
         assert_eq!(display_mode(Some(Mode::Cmyk), Some(&rgb)), Mode::Rgb);
-        assert_eq!(display_mode(Some(Mode::Rgb), Some(&Color::gray(0.5))), Mode::Grayscale);
+        assert_eq!(
+            display_mode(Some(Mode::Rgb), Some(&Color::gray(0.5))),
+            Mode::Grayscale
+        );
         assert_eq!(display_mode(Some(Mode::Cmyk), None), Mode::Cmyk);
         assert_eq!(convert_to(Mode::Hsb, &rgb), rgb);
         assert!(matches!(convert_to(Mode::Cmyk, &rgb), Color::Cmyk { .. }));
@@ -819,10 +1111,17 @@ mod tests {
         let mut app = app();
         let ctx = egui::Context::default();
         set_pstate(&ctx, "color-mode", Some(Mode::Rgb));
-        app.run("paint.setFill", json!({"color": {"c": 0.1, "m": 0.2, "y": 0.3, "k": 0.4}})).unwrap();
+        app.run(
+            "paint.setFill",
+            json!({"color": {"c": 0.1, "m": 0.2, "y": 0.3, "k": 0.4}}),
+        )
+        .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
         let _ = ctx.run_ui(Default::default(), |ui| {
-            let mode = display_mode(pstate(ui.ctx(), "color-mode"), target(&app, ui).color().as_ref());
+            let mode = display_mode(
+                pstate(ui.ctx(), "color-mode"),
+                target(&app, ui).color().as_ref(),
+            );
             assert_eq!(mode.labels(), ["C", "M", "Y", "K"]);
         });
     }
@@ -835,19 +1134,50 @@ mod tests {
         assert!(!Mode::ALL.contains(&Mode::Lab), "not a panel menu mode");
         assert_eq!(components(Mode::Lab, &lab), vec![50.0, -20.0, 30.0]);
         assert_eq!(from_components(Mode::Lab, &[50.0, -20.0, 30.0]), lab);
-        assert_eq!(from_components(Mode::Lab, &[150.0, -300.0, 300.0]), Color::lab(100.0, -128.0, 127.0), "clamped");
-        assert_eq!((Mode::Lab.unit(1, -128.0), Mode::Lab.unit(2, 127.0), Mode::Lab.unit(0, 50.0)), (0.0, 1.0, 0.5));
-        assert_eq!((Mode::Lab.value_at(1, 0.0), Mode::Lab.value_at(0, 1.0)), (-128.0, 100.0));
-        assert_eq!((Mode::Rgb.value_at(0, 0.5), Mode::WebSafe.value_at(0, 0.45)), (128.0, 102.0), "other modes as before");
-        assert_eq!(track_color(Mode::Lab, &[50.0, -20.0, 30.0], 1, 0.0), Color::lab(50.0, -128.0, 30.0));
-        assert_eq!(convert_to(Mode::Lab, &Color::rgb(1.0, 0.0, 0.0)).model(), vectorcraft_color::cms::Model::Lab);
+        assert_eq!(
+            from_components(Mode::Lab, &[150.0, -300.0, 300.0]),
+            Color::lab(100.0, -128.0, 127.0),
+            "clamped"
+        );
+        assert_eq!(
+            (
+                Mode::Lab.unit(1, -128.0),
+                Mode::Lab.unit(2, 127.0),
+                Mode::Lab.unit(0, 50.0)
+            ),
+            (0.0, 1.0, 0.5)
+        );
+        assert_eq!(
+            (Mode::Lab.value_at(1, 0.0), Mode::Lab.value_at(0, 1.0)),
+            (-128.0, 100.0)
+        );
+        assert_eq!(
+            (Mode::Rgb.value_at(0, 0.5), Mode::WebSafe.value_at(0, 0.45)),
+            (128.0, 102.0),
+            "other modes as before"
+        );
+        assert_eq!(
+            track_color(Mode::Lab, &[50.0, -20.0, 30.0], 1, 0.0),
+            Color::lab(50.0, -128.0, 30.0)
+        );
+        assert_eq!(
+            convert_to(Mode::Lab, &Color::rgb(1.0, 0.0, 0.0)).model(),
+            vectorcraft_color::cms::Model::Lab
+        );
         // In the panel: a Lab fill shows L, a, b.
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": {"l": 50, "a": -20, "b": 30}})).unwrap();
+        app.run(
+            "paint.setFill",
+            json!({"color": {"l": 50, "a": -20, "b": 30}}),
+        )
+        .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
         let _ = ctx.run_ui(Default::default(), |ui| {
-            let mode = display_mode(pstate(ui.ctx(), "color-mode"), target(&app, ui).color().as_ref());
+            let mode = display_mode(
+                pstate(ui.ctx(), "color-mode"),
+                target(&app, ui).color().as_ref(),
+            );
             assert_eq!(mode.labels(), ["L", "a", "b"]);
         });
     }
@@ -856,25 +1186,42 @@ mod tests {
     fn pure_blue_is_out_of_gamut_in_rgb() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": "#0000ff"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#0000ff"}))
+            .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
-        let (of, fix) = pstate::<Option<(Color, Option<Color>)>>(&ctx, "color-gamut").expect("RGB mode checks the gamut");
+        let (of, fix) = pstate::<Option<(Color, Option<Color>)>>(&ctx, "color-gamut")
+            .expect("RGB mode checks the gamut");
         assert_eq!(of.to_hex(), "#0000ff");
         assert!(fix.is_some_and(|f| !f.out_of_gamut()));
-        app.run("paint.setFill", json!({"color": "#808080"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#808080"}))
+            .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
-        assert_eq!(pstate::<Option<(Color, Option<Color>)>>(&ctx, "color-gamut").unwrap().1, None);
+        assert_eq!(
+            pstate::<Option<(Color, Option<Color>)>>(&ctx, "color-gamut")
+                .unwrap()
+                .1,
+            None
+        );
     }
 
     #[test]
     fn alt_click_on_the_spectrum_paints_the_stroke() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": "#123456"})).unwrap();
-        app.run("paint.setStroke", json!({"color": "#000000", "focus": false})).unwrap();
+        app.run("paint.setFill", json!({"color": "#123456"}))
+            .unwrap();
+        app.run(
+            "paint.setStroke",
+            json!({"color": "#000000", "focus": false}),
+        )
+        .unwrap();
         assert!(app.session.fill_active);
         click_spectrum(&mut app, &ctx, (0.0, 0.5), egui::Modifiers::ALT);
-        assert_eq!(paints_hex(&app), ("#123456".into(), "#ff0000".into()), "the stroke changes");
+        assert_eq!(
+            paints_hex(&app),
+            ("#123456".into(), "#ff0000".into()),
+            "the stroke changes"
+        );
         assert!(app.session.fill_active, "the fill stays in front");
         // A plain click paints the fill.
         click_spectrum(&mut app, &ctx, (0.0, 0.5), egui::Modifiers::NONE);
@@ -885,13 +1232,20 @@ mod tests {
     fn shift_click_on_the_spectrum_cycles_modes() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("paint.setFill", json!({"color": "#336699"})).unwrap();
+        app.run("paint.setFill", json!({"color": "#336699"}))
+            .unwrap();
         click_spectrum(&mut app, &ctx, (0.5, 0.5), egui::Modifiers::SHIFT);
         assert_eq!(pstate::<Option<Mode>>(&ctx, "color-mode"), Some(Mode::Hsb));
         assert_eq!(paints_hex(&app).0, "#336699", "HSB keeps the RGB colour");
         click_spectrum(&mut app, &ctx, (0.5, 0.5), egui::Modifiers::SHIFT);
         assert_eq!(pstate::<Option<Mode>>(&ctx, "color-mode"), Some(Mode::Cmyk));
-        assert!(matches!(crate::panels::current_paints(&app).0.color(), Some(Color::Cmyk { .. })), "CMYK converts the colour");
+        assert!(
+            matches!(
+                crate::panels::current_paints(&app).0.color(),
+                Some(Color::Cmyk { .. })
+            ),
+            "CMYK converts the colour"
+        );
     }
 
     #[test]
@@ -900,24 +1254,49 @@ mod tests {
         let ctx = egui::Context::default();
         // One frame of the proxy alone; returns the stroke square's rect.
         let run = |app: &mut VectorcraftApp, time: f64, events: Vec<egui::Event>| {
-            let input = egui::RawInput { time: Some(time), events, ..Default::default() };
+            let input = egui::RawInput {
+                time: Some(time),
+                events,
+                ..Default::default()
+            };
             let mut rect = None;
             let mut out = ctx.run_ui(input, |ui| {
                 crate::panels::proxy(app, ui, 40.0);
-                rect = ctx.read_response(ui.id().with("stroke-proxy")).map(|r| r.rect);
+                rect = ctx
+                    .read_response(ui.id().with("stroke-proxy"))
+                    .map(|r| r.rect);
             });
             out.textures_delta.clear();
             rect
         };
-        let pos = run(&mut app, 0.0, vec![]).expect("the stroke square is drawn").right_bottom() - vec2(3.0, 3.0);
-        let button = |pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE };
-        run(&mut app, 0.1, vec![egui::Event::PointerMoved(pos), button(true)]);
+        let pos = run(&mut app, 0.0, vec![])
+            .expect("the stroke square is drawn")
+            .right_bottom()
+            - vec2(3.0, 3.0);
+        let button = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        run(
+            &mut app,
+            0.1,
+            vec![egui::Event::PointerMoved(pos), button(true)],
+        );
         run(&mut app, 0.15, vec![button(false)]);
-        assert!(!app.session.fill_active, "a click brings the stroke to the front");
+        assert!(
+            !app.session.fill_active,
+            "a click brings the stroke to the front"
+        );
         assert!(app.ui.dialog.is_none());
         run(&mut app, 0.2, vec![button(true)]);
         run(&mut app, 0.25, vec![button(false)]);
-        let d = app.ui.dialog.as_ref().expect("a double-click opens the Color Picker");
+        let d = app
+            .ui
+            .dialog
+            .as_ref()
+            .expect("a double-click opens the Color Picker");
         assert_eq!(d.kind, "colorPicker");
         assert!(d.bool("stroke"));
     }
@@ -926,26 +1305,44 @@ mod tests {
     fn a_global_colour_shows_tint_mode_and_the_t_slider_sets_its_tint() {
         let mut app = app();
         let ctx = egui::Context::default();
-        app.run("swatch.new", json!({"name": "Ink", "color": {"c": 0, "m": 1, "y": 0, "k": 0}, "spot": true})).unwrap();
-        app.run("paint.setFill", json!({"swatch": "Ink", "tint": 50})).unwrap();
+        app.run(
+            "swatch.new",
+            json!({"name": "Ink", "color": {"c": 0, "m": 1, "y": 0, "k": 0}, "spot": true}),
+        )
+        .unwrap();
+        app.run("paint.setFill", json!({"swatch": "Ink", "tint": 50}))
+            .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
         let _ = ctx.run_ui(Default::default(), |ui| {
             let tgt = target(&app, ui);
             let t = tgt.tint().expect("Tint mode");
-            assert_eq!((t.swatch.as_str(), t.spot, t.tint, t.base), ("Ink", true, 0.5, Color::cmyk(0.0, 1.0, 0.0, 0.0)));
+            assert_eq!(
+                (t.swatch.as_str(), t.spot, t.tint, t.base),
+                ("Ink", true, 0.5, Color::cmyk(0.0, 1.0, 0.0, 0.0))
+            );
         });
         // The chip's name and the T row are drawn; a click on the slider's right part raises the
         // tint and keeps the link.
         let texts = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
             fn walk(s: &egui::Shape, out: &mut Vec<(String, egui::Pos2)>) {
                 match s {
-                    egui::Shape::Text(t) => out.push((t.galley.text().to_string(), t.pos + t.galley.rect.center().to_vec2())),
+                    egui::Shape::Text(t) => out.push((
+                        t.galley.text().to_string(),
+                        t.pos + t.galley.rect.center().to_vec2(),
+                    )),
                     egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
                     _ => {}
                 }
             }
             let screen = Rect::from_min_size(egui::Pos2::ZERO, vec2(260.0, 600.0));
-            let mut out = ctx.run_ui(egui::RawInput { events, screen_rect: Some(screen), ..Default::default() }, |ui| show(app, ui));
+            let mut out = ctx.run_ui(
+                egui::RawInput {
+                    events,
+                    screen_rect: Some(screen),
+                    ..Default::default()
+                },
+                |ui| show(app, ui),
+            );
             out.textures_delta.clear();
             let mut v = vec![];
             out.shapes.iter().for_each(|c| walk(&c.shape, &mut v));
@@ -954,12 +1351,22 @@ mod tests {
         let drawn = texts(&mut app, vec![]);
         let at = |label: &str| drawn.iter().find(|(t, _)| t == label).map(|(_, p)| *p);
         assert!(at("Ink").is_some(), "the swatch's name: {drawn:?}");
-        let (t_label, field) = (at("T").expect("the T row"), at("50%").expect("the tint field"));
+        let (t_label, field) = (
+            at("T").expect("the T row"),
+            at("50%").expect("the tint field"),
+        );
         let pos = egui::pos2(field.x - 40.0, t_label.y);
-        let button = |pressed| egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE };
+        let button = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
         texts(&mut app, vec![egui::Event::PointerMoved(pos), button(true)]);
         texts(&mut app, vec![button(false)]);
-        let Paint::Solid { swatch, tint, .. } = crate::panels::current_paints(&app).0 else { panic!() };
+        let Paint::Solid { swatch, tint, .. } = crate::panels::current_paints(&app).0 else {
+            panic!()
+        };
         assert_eq!(swatch.as_deref(), Some("Ink"));
         assert!(tint > 0.6 && tint < 1.0, "{tint}");
         // Picking a mode makes it a process colour.
@@ -967,7 +1374,10 @@ mod tests {
             let tgt = target(&app, ui);
             set_mode(&mut app, ui.ctx(), &tgt, Mode::Cmyk);
         });
-        assert!(matches!(crate::panels::current_paints(&app).0, Paint::Solid { swatch: None, .. }));
+        assert!(matches!(
+            crate::panels::current_paints(&app).0,
+            Paint::Solid { swatch: None, .. }
+        ));
     }
 
     #[test]
@@ -985,22 +1395,40 @@ mod tests {
     fn a_mixed_selection_has_no_colour_to_edit() {
         let mut app = app();
         let ctx = egui::Context::default();
-        let b = app.run("shape.rectangle", json!({"x": 80, "y": 10, "width": 50, "height": 50})).unwrap()["id"].clone();
+        let b = app
+            .run(
+                "shape.rectangle",
+                json!({"x": 80, "y": 10, "width": 50, "height": 50}),
+            )
+            .unwrap()["id"]
+            .clone();
         app.run("select.all", json!({})).unwrap();
-        app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
-        app.run("paint.setFill", json!({"color": "#00ff00", "ids": [b]})).unwrap();
+        app.run("paint.setFill", json!({"color": "#ff0000"}))
+            .unwrap();
+        app.run("paint.setFill", json!({"color": "#00ff00", "ids": [b]}))
+            .unwrap();
         frame(&mut app, &ctx, vec![], egui::Modifiers::NONE);
         assert_eq!(crate::panels::mixed_paints(&app, &ctx), (true, false));
-        let _ = ctx.run_ui(Default::default(), |ui| assert_eq!(target(&app, ui).color(), None));
-        app.run("paint.setFill", json!({"color": "#0000ff"})).unwrap();
-        assert_eq!(crate::panels::mixed_paints(&app, &ctx), (false, false), "a new revision recomputes it");
+        let _ = ctx.run_ui(Default::default(), |ui| {
+            assert_eq!(target(&app, ui).color(), None)
+        });
+        app.run("paint.setFill", json!({"color": "#0000ff"}))
+            .unwrap();
+        assert_eq!(
+            crate::panels::mixed_paints(&app, &ctx),
+            (false, false),
+            "a new revision recomputes it"
+        );
     }
 
     #[test]
     fn rgb_roundtrip() {
         let c = Color::rgb8(230, 120, 40);
         let v = components(Mode::Rgb, &c);
-        assert_eq!(v.iter().map(|x| x.round() as i32).collect::<Vec<_>>(), vec![230, 120, 40]);
+        assert_eq!(
+            v.iter().map(|x| x.round() as i32).collect::<Vec<_>>(),
+            vec![230, 120, 40]
+        );
         assert_eq!(from_components(Mode::Rgb, &v).to_hex(), c.to_hex());
     }
 
@@ -1034,7 +1462,10 @@ mod tests {
         assert_eq!(w.to_hex(), "#ff6633");
         assert!(is_web_safe(&w));
         assert!(!is_web_safe(&c));
-        assert_eq!(from_components(Mode::WebSafe, &[230.0, 120.0, 40.0]).to_hex(), "#ff6633");
+        assert_eq!(
+            from_components(Mode::WebSafe, &[230.0, 120.0, 40.0]).to_hex(),
+            "#ff6633"
+        );
     }
 
     #[test]

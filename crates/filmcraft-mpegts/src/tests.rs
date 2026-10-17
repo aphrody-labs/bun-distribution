@@ -6,10 +6,22 @@ use super::*;
 
 fn ts_bytes(prefix: u8, v: i64) -> [u8; 5] {
     let v = v & ((1 << 33) - 1);
-    [(prefix << 4) | (((v >> 30) & 7) as u8) << 1 | 1, (v >> 22) as u8, (((v >> 15) & 0x7F) as u8) << 1 | 1, (v >> 7) as u8, ((v & 0x7F) as u8) << 1 | 1]
+    [
+        (prefix << 4) | (((v >> 30) & 7) as u8) << 1 | 1,
+        (v >> 22) as u8,
+        (((v >> 15) & 0x7F) as u8) << 1 | 1,
+        (v >> 7) as u8,
+        ((v & 0x7F) as u8) << 1 | 1,
+    ]
 }
 
-fn pes(stream_id: u8, pts: Option<i64>, dts: Option<i64>, payload: &[u8], bounded: bool) -> Vec<u8> {
+fn pes(
+    stream_id: u8,
+    pts: Option<i64>,
+    dts: Option<i64>,
+    payload: &[u8],
+    bounded: bool,
+) -> Vec<u8> {
     let mut h = Vec::new();
     match (pts, dts) {
         (Some(p), Some(d)) => {
@@ -24,8 +36,22 @@ fn pes(stream_id: u8, pts: Option<i64>, dts: Option<i64>, payload: &[u8], bounde
         (Some(_), None) => 0x80,
         _ => 0,
     };
-    let len = if bounded { 3 + h.len() + payload.len() } else { 0 };
-    let mut v = vec![0, 0, 1, stream_id, (len >> 8) as u8, len as u8, 0x80, flags, h.len() as u8];
+    let len = if bounded {
+        3 + h.len() + payload.len()
+    } else {
+        0
+    };
+    let mut v = vec![
+        0,
+        0,
+        1,
+        stream_id,
+        (len >> 8) as u8,
+        len as u8,
+        0x80,
+        flags,
+        h.len() as u8,
+    ];
     v.extend(h);
     v.extend_from_slice(payload);
     v
@@ -40,7 +66,11 @@ struct TsMux {
 
 impl TsMux {
     fn new(m2ts: bool) -> Self {
-        Self { out: Vec::new(), cc: Default::default(), m2ts }
+        Self {
+            out: Vec::new(),
+            cc: Default::default(),
+            m2ts,
+        }
     }
     fn packet(&mut self, pid: u16, pusi: bool, payload: &[u8]) -> usize {
         let cc = self.cc.entry(pid).or_insert(0);
@@ -104,12 +134,23 @@ impl TsMux {
 fn mpeg2_frame(coding_type: u8, tref: u16, fields: bool, filler: usize) -> Vec<u8> {
     let mut v = Vec::new();
     if coding_type == 1 {
-        v.extend([0, 0, 1, 0xB3, 0x14, 0x00, 0xF0, 0x13, 0xFF, 0xFF, 0xE0, 0x18]);
+        v.extend([
+            0, 0, 1, 0xB3, 0x14, 0x00, 0xF0, 0x13, 0xFF, 0xFF, 0xE0, 0x18,
+        ]);
         v.extend([0, 0, 1, 0xB8, 0, 8, 0, 0x40]);
     }
     let pics: &[u8] = if fields { &[1, 2] } else { &[3] };
     for &s in pics {
-        v.extend([0, 0, 1, 0x00, (tref >> 2) as u8, ((tref & 3) << 6) as u8 | coding_type << 3, 0xFF, 0xF8]);
+        v.extend([
+            0,
+            0,
+            1,
+            0x00,
+            (tref >> 2) as u8,
+            ((tref & 3) << 6) as u8 | coding_type << 3,
+            0xFF,
+            0xF8,
+        ]);
         v.extend([0, 0, 1, 0xB5, 0x8F, 0xFF, 0xF0 | s, 0x80, 0x80]);
         v.extend([0, 0, 1, 0x01]);
         v.extend((0..filler).map(|i| (i % 200) as u8 | 0x10));
@@ -130,7 +171,12 @@ fn transport_stream_units_round_trip() {
         let mut mux = TsMux::new(m2ts);
         mux.psi(&[(0x02, 0x1011), (0x03, 0x1100)]);
         // decode order I0 P3 B1 B2 with PTS = display time, DTS on anchors
-        let frames = [(1u8, 0u16, false), (2, 3, false), (3, 1, true), (3, 2, false)];
+        let frames = [
+            (1u8, 0u16, false),
+            (2, 3, false),
+            (3, 1, true),
+            (3, 2, false),
+        ];
         let mut expect_video = Vec::new();
         for (k, &(t, tref, fields)) in frames.iter().enumerate() {
             let f = mpeg2_frame(t, tref, fields, 300 + 97 * k);
@@ -140,11 +186,20 @@ fn transport_stream_units_round_trip() {
             expect_video.push((f, pts, t));
             // two audio frames per PES, the second without its own timestamp
             let a: Vec<u8> = [mp2_frame(2 * k as u8), mp2_frame(2 * k as u8 + 1)].concat();
-            mux.pes(0x1100, &pes(0xC0, Some(90_000 + 2160 * 2 * k as i64), None, &a, true));
+            mux.pes(
+                0x1100,
+                &pes(0xC0, Some(90_000 + 2160 * 2 * k as i64), None, &a, true),
+            );
         }
         let data = mux.out;
         let f = open(&data).unwrap();
-        assert_eq!(f.format, Format::Ts { packet_size: if m2ts { 192 } else { 188 }, sync_offset: if m2ts { 4 } else { 0 } });
+        assert_eq!(
+            f.format,
+            Format::Ts {
+                packet_size: if m2ts { 192 } else { 188 },
+                sync_offset: if m2ts { 4 } else { 0 }
+            }
+        );
         assert!(f.warnings.is_empty(), "{:?}", f.warnings);
         assert_eq!(f.program, Some(1));
         let v = f.find(Kind::Video, |_| true).unwrap();
@@ -159,7 +214,11 @@ fn transport_stream_units_round_trip() {
             assert_eq!(u.disposable, *t == 3);
             assert_eq!(u.picture.unwrap().coding_type, *t);
         }
-        assert_eq!(s.units[2].picture.unwrap().structure, 1, "field pair in one unit");
+        assert_eq!(
+            s.units[2].picture.unwrap().structure,
+            1,
+            "field pair in one unit"
+        );
         assert!(s.units[0].picture.unwrap().sequence_header && s.units[0].picture.unwrap().gop);
         let a = f.find(Kind::Audio, |c| *c == Codec::MpegAudio).unwrap();
         let s = &f.streams[a];
@@ -174,7 +233,9 @@ fn transport_stream_units_round_trip() {
 #[test]
 fn program_stream_units_round_trip() {
     // packs of ≤ 2048 bytes: frames are split across PES packets
-    let frames: Vec<Vec<u8>> = (0..5).map(|k| mpeg2_frame(if k == 0 { 1 } else { 2 }, k as u16, k == 3, 2500 + 300 * k)).collect();
+    let frames: Vec<Vec<u8>> = (0..5)
+        .map(|k| mpeg2_frame(if k == 0 { 1 } else { 2 }, k as u16, k == 3, 2500 + 300 * k))
+        .collect();
     let es: Vec<u8> = frames.concat();
     let mut starts = Vec::new();
     let mut acc = 0;
@@ -190,7 +251,13 @@ fn program_stream_units_round_trip() {
         let n = (es.len() - p).min(2000);
         // a timestamp when a frame starts in this packet
         let k = starts.iter().position(|&s| s >= p && s < p + n);
-        out.extend(pes(0xE0, k.map(|k| 3600 * k as i64), None, &es[p..p + n], true));
+        out.extend(pes(
+            0xE0,
+            k.map(|k| 3600 * k as i64),
+            None,
+            &es[p..p + n],
+            true,
+        ));
         p += n;
         // AC-3 in private stream 1 (sub-stream 0x80, 4-byte header), 448 kb/s frames
         let mut ac3 = vec![0x80, 1, 0, 1, 0x0B, 0x77, 0, 0, 30, 0x40];
@@ -208,7 +275,13 @@ fn program_stream_units_round_trip() {
         assert_eq!(f.streams[v].units[i].pts, Some(3600 * i as i64));
     }
     let a = f.find(Kind::Audio, |c| *c == Codec::Ac3).unwrap();
-    assert_eq!(f.streams[a].id, StreamId::Ps { stream_id: 0xBD, sub_id: Some(0x80) });
+    assert_eq!(
+        f.streams[a].id,
+        StreamId::Ps {
+            stream_id: 0xBD,
+            sub_id: Some(0x80)
+        }
+    );
     assert_eq!(f.streams[a].units.len(), a_count(&out));
     let u0 = f.read_unit(&out, a, 0).unwrap();
     assert_eq!(&u0[..2], &[0x0B, 0x77]);
@@ -221,14 +294,26 @@ fn a_count(ps: &[u8]) -> usize {
 
 #[test]
 fn sniffing() {
-    assert_eq!(sniff(&[0, 0, 1, 0xBA, 0x44]), Some(Format::Ps { mpeg1: false }));
-    assert_eq!(sniff(&[0, 0, 1, 0xBA, 0x21]), Some(Format::Ps { mpeg1: true }));
+    assert_eq!(
+        sniff(&[0, 0, 1, 0xBA, 0x44]),
+        Some(Format::Ps { mpeg1: false })
+    );
+    assert_eq!(
+        sniff(&[0, 0, 1, 0xBA, 0x21]),
+        Some(Format::Ps { mpeg1: true })
+    );
     assert_eq!(sniff(&[0, 0, 1, 0xB3, 0x44]), None);
     let mut ts = vec![0u8; 188 * 6];
     for k in 0..6 {
         ts[k * 188] = 0x47;
     }
-    assert!(matches!(sniff(&ts), Some(Format::Ts { packet_size: 188, .. })));
+    assert!(matches!(
+        sniff(&ts),
+        Some(Format::Ts {
+            packet_size: 188,
+            ..
+        })
+    ));
 }
 
 #[test]
@@ -236,17 +321,38 @@ fn truncation_and_mutation_never_panic() {
     let mut mux = TsMux::new(false);
     mux.psi(&[(0x02, 0x1011), (0x0F, 0x1100), (0x1B, 0x1200)]);
     for k in 0..6u16 {
-        mux.pes(0x1011, &pes(0xE0, Some(3600 * k as i64), None, &mpeg2_frame(if k == 0 { 1 } else { 3 }, k, k % 2 == 1, 400), false));
+        mux.pes(
+            0x1011,
+            &pes(
+                0xE0,
+                Some(3600 * k as i64),
+                None,
+                &mpeg2_frame(if k == 0 { 1 } else { 3 }, k, k % 2 == 1, 400),
+                false,
+            ),
+        );
         let mut adts = vec![0xFF, 0xF1, 0x50, 0x80, 0x0C, 0x9F, 0xFC];
         adts.extend([0x21u8; 93]);
         mux.pes(0x1100, &pes(0xC0, Some(1920 * k as i64), None, &adts, true));
-        mux.pes(0x1200, &pes(0xE1, Some(3600 * k as i64), None, &[0, 0, 0, 1, 0x09, 0xF0, 0, 0, 1, 0x65, 0x88, 1, 2, 3], false));
+        mux.pes(
+            0x1200,
+            &pes(
+                0xE1,
+                Some(3600 * k as i64),
+                None,
+                &[0, 0, 0, 1, 0x09, 0xF0, 0, 0, 1, 0x65, 0x88, 1, 2, 3],
+                false,
+            ),
+        );
     }
     let data = mux.out;
     let full = open(&data).unwrap();
     assert_eq!(full.streams.len(), 3);
     assert_eq!(full.streams[1].units.len(), 6, "ADTS frames");
-    assert!(full.streams[2].units.iter().all(|u| u.key), "IDR access units");
+    assert!(
+        full.streams[2].units.iter().all(|u| u.key),
+        "IDR access units"
+    );
     for cut in (0..data.len()).step_by(37) {
         if let Ok(f) = open(&data[..cut].to_vec()) {
             for (s, st) in f.streams.iter().enumerate() {
@@ -300,7 +406,9 @@ fn program_stream_cut_inside_a_pack_header_never_panics() {
 
 #[test]
 fn program_stream_truncation_at_every_length_never_panics() {
-    let frames: Vec<Vec<u8>> = (0..3).map(|k| mpeg2_frame(if k == 0 { 1 } else { 2 }, k as u16, false, 300)).collect();
+    let frames: Vec<Vec<u8>> = (0..3)
+        .map(|k| mpeg2_frame(if k == 0 { 1 } else { 2 }, k as u16, false, 300))
+        .collect();
     let es: Vec<u8> = frames.concat();
     for mpeg1 in [false, true] {
         let mut out = Vec::new();
@@ -313,7 +421,10 @@ fn program_stream_truncation_at_every_length_never_panics() {
             out.extend(pes(0xE0, Some(3600 * k as i64), None, chunk, true));
         }
         out.extend([0, 0, 1, 0xB9]);
-        assert!(open(&out).is_ok(), "the untruncated stream opens (mpeg1: {mpeg1})");
+        assert!(
+            open(&out).is_ok(),
+            "the untruncated stream opens (mpeg1: {mpeg1})"
+        );
         for cut in 0..=out.len() {
             open_and_read_all(&out[..cut]);
         }
@@ -365,7 +476,13 @@ fn non_pes_payload_is_dropped_until_the_next_unit_start() {
 fn adaptation_field_only_unit_start_keeps_the_pes_in_progress() {
     let mut mux = TsMux::new(false);
     mux.psi(&[(0x03, 0x1100)]);
-    let data = pes(0xC0, Some(9000), None, &[mp2_frame(0), mp2_frame(1)].concat(), true);
+    let data = pes(
+        0xC0,
+        Some(9000),
+        None,
+        &[mp2_frame(0), mp2_frame(1)].concat(),
+        true,
+    );
     mux.packet(0x1100, true, &data[..184]);
     // PUSI set, adaptation field only (no payload)
     let cc = mux.cc.get(&0x1100).copied().unwrap_or(0);
@@ -385,13 +502,25 @@ fn adaptation_field_only_unit_start_keeps_the_pes_in_progress() {
 #[test]
 fn oversized_unit_is_refused_without_reserving_it() {
     let f = File {
-        format: Format::Ts { packet_size: 188, sync_offset: 0 },
+        format: Format::Ts {
+            packet_size: 188,
+            sync_offset: 0,
+        },
         streams: vec![Stream {
             id: StreamId::Pid(0x100),
             stream_type: 0x1B,
             codec: Codec::H264,
             language: None,
-            units: vec![Unit { pts: None, dts: None, key: true, disposable: false, size: u32::MAX, pos: 0, offset: 0, picture: None }],
+            units: vec![Unit {
+                pts: None,
+                dts: None,
+                key: true,
+                disposable: false,
+                size: u32::MAX,
+                pos: 0,
+                offset: 0,
+                picture: None,
+            }],
             lpcm: None,
             pes_packets: 0,
             skipped_bytes: 0,
@@ -400,7 +529,10 @@ fn oversized_unit_is_refused_without_reserving_it() {
         pcr_range: None,
         warnings: Vec::new(),
     };
-    assert!(matches!(f.read_unit(&Vec::<u8>::new(), 0, 0), Err(Error::Invalid(_))));
+    assert!(matches!(
+        f.read_unit(&Vec::<u8>::new(), 0, 0),
+        Err(Error::Invalid(_))
+    ));
 }
 
 /// A `ByteSource` that counts the bytes requested through `read_at`.
@@ -428,12 +560,27 @@ fn bad_adaptation_fields_do_not_amplify_reads() {
         data.extend([0x47, 0x11, 0x00, 0x30]);
         data.extend(std::iter::repeat_n(0xFF, 184));
     }
-    let src = Counting { data: &data, read: Default::default() };
+    let src = Counting {
+        data: &data,
+        read: Default::default(),
+    };
     let f = open(&src).unwrap();
-    assert!(f.warnings.iter().any(|w| w.contains("adaptation field")), "{:?}", f.warnings);
-    assert!(!f.warnings.iter().any(|w| w.contains("lost packet sync")), "{:?}", f.warnings);
+    assert!(
+        f.warnings.iter().any(|w| w.contains("adaptation field")),
+        "{:?}",
+        f.warnings
+    );
+    assert!(
+        !f.warnings.iter().any(|w| w.contains("lost packet sync")),
+        "{:?}",
+        f.warnings
+    );
     let read = src.read.get();
-    assert!(read <= 4 * data.len() as u64, "read {read} bytes of a {}-byte file", data.len());
+    assert!(
+        read <= 4 * data.len() as u64,
+        "read {read} bytes of a {}-byte file",
+        data.len()
+    );
 }
 
 #[test]
@@ -444,14 +591,27 @@ fn garbage_without_sync_does_not_amplify_reads() {
         data.extend([0x47]);
         data.extend(std::iter::repeat_n(0x11, 188));
     }
-    let head: Vec<u8> = (0..188 * 8).map(|i| if i % 188 == 0 { 0x47 } else { 0 }).collect();
+    let head: Vec<u8> = (0..188 * 8)
+        .map(|i| if i % 188 == 0 { 0x47 } else { 0 })
+        .collect();
     let mut all = head;
     all.extend(data);
-    let src = Counting { data: &all, read: Default::default() };
+    let src = Counting {
+        data: &all,
+        read: Default::default(),
+    };
     let f = open(&src).unwrap();
-    assert!(f.warnings.iter().any(|w| w.contains("lost packet sync")), "{:?}", f.warnings);
+    assert!(
+        f.warnings.iter().any(|w| w.contains("lost packet sync")),
+        "{:?}",
+        f.warnings
+    );
     let read = src.read.get();
-    assert!(read <= 4 * all.len() as u64, "read {read} bytes of a {}-byte file", all.len());
+    assert!(
+        read <= 4 * all.len() as u64,
+        "read {read} bytes of a {}-byte file",
+        all.len()
+    );
 }
 
 #[test]
@@ -461,7 +621,14 @@ fn transport_stream_resyncs_after_garbage() {
         let ps = if m2ts { 192 } else { 188 };
         // garbage in front of the stream (shorter than 8 packets) and, at a few places around the
         // first block boundary, between two frames; lengths that are not a multiple of the packet
-        for (delta, glen) in [(0usize, 100usize), (1, 37), (2, 188), (3, 301), (5, 5), (8, 1000)] {
+        for (delta, glen) in [
+            (0usize, 100usize),
+            (1, 37),
+            (2, 188),
+            (3, 301),
+            (5, 5),
+            (8, 1000),
+        ] {
             let edge = (BLOCK_PACKETS - delta) * ps;
             let mut mux = TsMux::new(m2ts);
             mux.out.extend([0x11, 0x47, 0x22]); // garbage prefix with a lone 0x47
@@ -479,20 +646,43 @@ fn transport_stream_resyncs_after_garbage() {
                     mux.out.extend(g);
                     placed = true;
                 }
-                let f = mpeg2_frame(if k == 0 { 1 } else { 2 }, (k % 1000) as u16, false, 40 + k % 300);
-                mux.pes(0x1011, &pes(0xE0, Some(90_000 + 3600 * k as i64), None, &f, false));
+                let f = mpeg2_frame(
+                    if k == 0 { 1 } else { 2 },
+                    (k % 1000) as u16,
+                    false,
+                    40 + k % 300,
+                );
+                mux.pes(
+                    0x1011,
+                    &pes(0xE0, Some(90_000 + 3600 * k as i64), None, &f, false),
+                );
                 expect.push(f);
                 k += 1;
             }
-            assert!(mux.out.len() > (BLOCK_PACKETS + 4) * ps, "stream must cross a block boundary");
+            assert!(
+                mux.out.len() > (BLOCK_PACKETS + 4) * ps,
+                "stream must cross a block boundary"
+            );
             let data = mux.out;
             let f = open(&data).unwrap();
-            assert!(f.warnings.iter().any(|w| w.contains("lost packet sync")), "{:?}", f.warnings);
+            assert!(
+                f.warnings.iter().any(|w| w.contains("lost packet sync")),
+                "{:?}",
+                f.warnings
+            );
             let v = f.find(Kind::Video, |_| true).unwrap();
             let s = &f.streams[v];
-            assert_eq!(s.units.len(), expect.len(), "m2ts {m2ts} delta {delta} glen {glen}");
+            assert_eq!(
+                s.units.len(),
+                expect.len(),
+                "m2ts {m2ts} delta {delta} glen {glen}"
+            );
             for (i, fr) in expect.iter().enumerate() {
-                assert_eq!(&f.read_unit(&data, v, i).unwrap(), fr, "unit {i} (m2ts {m2ts} delta {delta} glen {glen})");
+                assert_eq!(
+                    &f.read_unit(&data, v, i).unwrap(),
+                    fr,
+                    "unit {i} (m2ts {m2ts} delta {delta} glen {glen})"
+                );
                 assert_eq!(s.units[i].pts, Some(90_000 + 3600 * i as i64));
             }
         }

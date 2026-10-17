@@ -357,7 +357,8 @@ impl IUserShimScopedObject {
     }
 
     fn open_save_data(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let _uid = RequestParser::new(ctx).pop_raw::<crate::hle::service::acc::profile_manager::Uid>();
+        let _uid =
+            RequestParser::new(ctx).pop_raw::<crate::hle::service::acc::profile_manager::Uid>();
         log::warn!("IUserShimScopedObject::OpenSaveData stubbed");
         let handle = SaveDataHandle::default();
         let mut rb = ResponseBuilder::new(ctx, 4, 0, 0);
@@ -427,9 +428,7 @@ struct IUserService {
 impl IUserService {
     fn new() -> Self {
         Self {
-            handlers: build_handler_map(&[
-                (0, Some(Self::cmd0), "Cmd0"),
-            ]),
+            handlers: build_handler_map(&[(0, Some(Self::cmd0), "Cmd0")]),
             handlers_tipc: BTreeMap::new(),
         }
     }
@@ -540,9 +539,7 @@ struct ISystemService {
 impl ISystemService {
     fn new() -> Self {
         Self {
-            handlers: build_handler_map(&[
-                (0, Some(Self::cmd0), "Cmd0"),
-            ]),
+            handlers: build_handler_map(&[(0, Some(Self::cmd0), "Cmd0")]),
             handlers_tipc: BTreeMap::new(),
         }
     }
@@ -618,20 +615,24 @@ pub fn loop_process(system: crate::core::SystemRef) {
         );
         // Eden FirmwareManager::GetFirmwareVersion wraps this system-aware
         // reader. The context-free legacy helper would always report18.0.0.
-        use crate::hle::service::set::system_settings_server::get_firmware_version_impl_for_system;
         use crate::hle::service::set::settings_types::GetFirmwareVersionType;
-        let firmware = get_firmware_version_impl_for_system(
-            system.get(), GetFirmwareVersionType::Version2,
-        ).unwrap_or_default();
+        use crate::hle::service::set::system_settings_server::get_firmware_version_impl_for_system;
+        let firmware =
+            get_firmware_version_impl_for_system(system.get(), GetFirmwareVersionType::Version2)
+                .unwrap_or_default();
         if firmware.major >= 23 {
             server_manager.register_named_service(
                 "stpl:u",
-                Box::new(|| -> SessionRequestHandlerPtr { std::sync::Arc::new(IUserService::new()) }),
+                Box::new(|| -> SessionRequestHandlerPtr {
+                    std::sync::Arc::new(IUserService::new())
+                }),
                 4,
             );
             server_manager.register_named_service(
                 "stpl:sys",
-                Box::new(|| -> SessionRequestHandlerPtr { std::sync::Arc::new(ISystemService::new()) }),
+                Box::new(|| -> SessionRequestHandlerPtr {
+                    std::sync::Arc::new(ISystemService::new())
+                }),
                 4,
             );
         }
@@ -648,17 +649,32 @@ mod tests {
     fn streamplay_tables_and_reply_payloads_match_upstream() {
         let user = IUserShimScopedObject::new();
         let system = ISystemShimScopedObject::new();
-        assert_eq!(user.handlers().keys().copied().collect::<Vec<_>>(), (450..=457).collect::<Vec<_>>());
-        assert_eq!(system.handlers().keys().copied().collect::<Vec<_>>(), [106,107,108,207,208,209,210,211,212]);
+        assert_eq!(
+            user.handlers().keys().copied().collect::<Vec<_>>(),
+            (450..=457).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            system.handlers().keys().copied().collect::<Vec<_>>(),
+            [106, 107, 108, 207, 208, 209, 210, 211, 212]
+        );
         assert_eq!(std::mem::size_of::<SaveDataHandle>(), 8);
         assert_eq!(std::mem::align_of::<SaveDataHandle>(), 8);
         assert_eq!(std::mem::offset_of!(SaveDataHandle, unk0), 0);
         for (service, cases) in [
-            (&user as &dyn ServiceFramework, &[(452, 0x20b, 2), (454, 0x20b, 1), (455, 0, 0)][..]),
-            (&system as &dyn ServiceFramework, &[(108, 0x20b, 0), (208, 0x20b, 8)][..]),
+            (
+                &user as &dyn ServiceFramework,
+                &[(452, 0x20b, 2), (454, 0x20b, 1), (455, 0, 0)][..],
+            ),
+            (
+                &system as &dyn ServiceFramework,
+                &[(108, 0x20b, 0), (208, 0x20b, 8)][..],
+            ),
         ] {
             for (&id, info) in service.handlers() {
-                assert_eq!(info.handler_callback.is_some(), cases.iter().any(|c| c.0 == id));
+                assert_eq!(
+                    info.handler_callback.is_some(),
+                    cases.iter().any(|c| c.0 == id)
+                );
             }
             for &(command, result, output_words) in cases {
                 let mut ctx = HLERequestContext::new();
@@ -675,8 +691,14 @@ mod tests {
         use crate::hle::service::hle_ipc::SessionRequestManager;
         use std::sync::{Arc, Mutex};
         for (service, expected) in [
-            (Arc::new(IUserService::new()) as SessionRequestHandlerPtr, "IUserShimScopedObject"),
-            (Arc::new(ISystemService::new()) as SessionRequestHandlerPtr, "ISystemShimScopedObject"),
+            (
+                Arc::new(IUserService::new()) as SessionRequestHandlerPtr,
+                "IUserShimScopedObject",
+            ),
+            (
+                Arc::new(ISystemService::new()) as SessionRequestHandlerPtr,
+                "ISystemShimScopedObject",
+            ),
         ] {
             let manager = Arc::new(Mutex::new(SessionRequestManager::new()));
             manager.lock().unwrap().set_session_handler(service.clone());

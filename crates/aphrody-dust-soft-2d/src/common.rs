@@ -1,6 +1,6 @@
 pub use aphrody_dust_soft_2d_base::*;
 
-use aphrody_dust_core::gpu::{Scanline, engine_2d::Role};
+use aphrody_dust_core::gpu::{engine_2d::Role, Scanline};
 use core::marker::PhantomData;
 use render::{bgs, effects};
 
@@ -21,13 +21,13 @@ pub struct FnPtrs<
 }
 
 impl<
-    R: Role,
-    B: Buffers,
-    D: RenderingData,
-    V: Vram<R, BG_VRAM_LEN, OBJ_VRAM_LEN>,
-    const BG_VRAM_LEN: usize,
-    const OBJ_VRAM_LEN: usize,
-> FnPtrs<R, B, D, V, BG_VRAM_LEN, OBJ_VRAM_LEN>
+        R: Role,
+        B: Buffers,
+        D: RenderingData,
+        V: Vram<R, BG_VRAM_LEN, OBJ_VRAM_LEN>,
+        const BG_VRAM_LEN: usize,
+        const OBJ_VRAM_LEN: usize,
+    > FnPtrs<R, B, D, V, BG_VRAM_LEN, OBJ_VRAM_LEN>
 {
     #[allow(unused_labels)]
     pub fn new() -> Self {

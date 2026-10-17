@@ -50,9 +50,12 @@ fn rdbn_to_iecode(data: &[u8]) -> Option<Value> {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
     let path = vfs
         .iter()
         .map(|(p, _)| p.to_string())
@@ -105,6 +108,9 @@ fn main() {
     assert_eq!(m0.movie_path, "common/movie/yw-y1_evop_0010.usm");
     assert_eq!(m0.bgm_name.to_hex(), "0xC1EEF2A7");
     assert_eq!(m0.fede_in_time, 1.0);
-    assert!(db.videos[0].caption.is_none(), "captionId 0 → pas de légende");
+    assert!(
+        db.videos[0].caption.is_none(),
+        "captionId 0 → pas de légende"
+    );
     eprintln!("✓ END-TO-END OK : aphrody_nie_data::video_waza décode le vrai event_movie_config");
 }

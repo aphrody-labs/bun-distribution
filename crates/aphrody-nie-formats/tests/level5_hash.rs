@@ -96,12 +96,17 @@ fn les_noms_proviennent_bien_des_fichiers_du_jeu() {
     use aphrody_nie_formats::vfs::Vfs;
     use std::path::Path;
 
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let data_dir = Path::new(&dir).join("data");
 
     let mut vfs = Vfs::new();
     if vfs.init(&data_dir).is_err() {
-        eprintln!("skip level5_hash golden : jeu absent à {}", data_dir.display());
+        eprintln!(
+            "skip level5_hash golden : jeu absent à {}",
+            data_dir.display()
+        );
         return;
     }
 
@@ -132,7 +137,11 @@ fn les_noms_proviennent_bien_des_fichiers_du_jeu() {
                 data.windows(nom.len()).any(|f| f == nom.as_bytes()),
                 "{nom} absent de {chemin}"
             );
-            assert_eq!(crc32(nom.as_bytes()), *hash, "hash de {nom} (relu depuis {chemin})");
+            assert_eq!(
+                crc32(nom.as_bytes()),
+                *hash,
+                "hash de {nom} (relu depuis {chemin})"
+            );
         }
         eprintln!("{chemin} : {} noms retrouvés", paires.len());
     }

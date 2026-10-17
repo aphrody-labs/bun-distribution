@@ -7,17 +7,17 @@ use crate::tags::common::TagDetails;
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListTagsQueryParams {
-  pub cursor: Option<String>,
-  pub limit: Option<u32>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct ListTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// The logged-in user's (live) tags, newest first.
-  pub tags: Vec<TagDetails>,
+    /// The logged-in user's (live) tags, newest first.
+    pub tags: Vec<TagDetails>,
 
-  /// Present when there may be more results; pass back as `cursor`.
-  pub maybe_cursor: Option<String>,
+    /// Present when there may be more results; pass back as `cursor`.
+    pub maybe_cursor: Option<String>,
 }

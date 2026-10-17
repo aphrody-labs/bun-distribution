@@ -10,8 +10,12 @@ use std::sync::Arc;
 use kurbo::{Affine, BezPath, Point, Rect, Vec2};
 use vectorcraft_affinity::model::{self as af, Align as AfAlign, Blend, Kind, Pixels};
 use vectorcraft_affinity::paint::{self as ap, Cap, GradientKind as AfKind, Join};
-use vectorcraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::appearance::{Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeAlign, StrokeLayer};
+use vectorcraft_color::{
+    BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint,
+};
+use vectorcraft_doc::appearance::{
+    Appearance, AppearanceItem, Dash, FillLayer, LineCap, LineJoin, StrokeAlign, StrokeLayer,
+};
 use vectorcraft_doc::geom::{FillRule, PathData, shapes};
 use vectorcraft_doc::text::{CharStyle, Justify, TextKind, TextObject, TextRun};
 use vectorcraft_doc::{Artboard, Document, ImageObject, LayerColor, Node, NodeKind, OpacityMask};
@@ -30,22 +34,47 @@ pub(super) struct Imported {
 pub(super) fn import(name: &str, bytes: &[u8]) -> Result<Imported> {
     match vectorcraft_affinity::read(bytes, vectorcraft_affinity::Limits::default()) {
         Ok(d) => {
-            let mut b = Builder { doc: Document::new(0.0, 0.0), warnings: Vec::new(), k: 72.0 / d.dpi, layer: 0 };
+            let mut b = Builder {
+                doc: Document::new(0.0, 0.0),
+                warnings: Vec::new(),
+                k: 72.0 / d.dpi,
+                layer: 0,
+            };
             b.document(&d)?;
-            let mut warnings = d.warnings.iter().map(|w| format!("Affinity: not imported or approximated: {w}.")).collect::<Vec<_>>();
+            let mut warnings = d
+                .warnings
+                .iter()
+                .map(|w| format!("Affinity: not imported or approximated: {w}."))
+                .collect::<Vec<_>>();
             warnings.extend(b.warnings.iter().map(|w| format!("Affinity: {w}.")));
-            Ok(Imported { doc: b.doc, warnings, preview_only: false })
+            Ok(Imported {
+                doc: b.doc,
+                warnings,
+                preview_only: false,
+            })
         }
         Err(native) => {
             let (doc, w) = preview(name, bytes, &native)?;
-            Ok(Imported { doc, warnings: vec![w], preview_only: true })
+            Ok(Imported {
+                doc,
+                warnings: vec![w],
+                preview_only: true,
+            })
         }
     }
 }
 
 /// The embedded preview, for files whose native document can't be read.
-fn preview(name: &str, bytes: &[u8], native: &vectorcraft_affinity::Error) -> Result<(Document, String)> {
-    let p = vectorcraft_affinity::preview(bytes).map_err(|e| err(format!("{native}; its embedded preview can't be read either ({e})")))?;
+fn preview(
+    name: &str,
+    bytes: &[u8],
+    native: &vectorcraft_affinity::Error,
+) -> Result<(Document, String)> {
+    let p = vectorcraft_affinity::preview(bytes).map_err(|e| {
+        err(format!(
+            "{native}; its embedded preview can't be read either ({e})"
+        ))
+    })?;
     // `raster_doc` normally probes PNG dimensions and keeps its encoded bytes. Verify this
     // untrusted preview's complete pixels first, so corrupt data cannot create a blank image.
     let mut reader = image::ImageReader::with_format(Cursor::new(p.png), image::ImageFormat::Png);
@@ -95,14 +124,20 @@ impl Builder {
         let mut artboards = Vec::new();
         let mut x = 0.0;
         for (i, spread) in d.spreads.iter().enumerate() {
-            let shift = if i == 0 { 0.0 } else { x - spread.bounds.x0 * self.k };
+            let shift = if i == 0 {
+                0.0
+            } else {
+                x - spread.bounds.x0 * self.k
+            };
             let to_doc = Affine::translate((shift, 0.0)) * Affine::scale(self.k);
             let before = artboards.len();
             let mut loose: Vec<Arc<Node>> = Vec::new();
             for n in &spread.nodes {
                 let top = match &n.kind {
                     Kind::Layer => self.node(n, to_doc, &mut artboards, true),
-                    Kind::Artboard { .. } => self.node(n, to_doc, &mut artboards, true).map(|art| self.layer_of(&n.name, art, n.visible, n.locked)),
+                    Kind::Artboard { .. } => self
+                        .node(n, to_doc, &mut artboards, true)
+                        .map(|art| self.layer_of(&n.name, art, n.visible, n.locked)),
                     _ => {
                         if let Some(art) = self.node(n, to_doc, &mut artboards, false) {
                             loose.push(art);
@@ -120,9 +155,21 @@ impl Builder {
             }
             // Without artboards, each page (or the spread) becomes one.
             if artboards.len() == before {
-                let rects = if spread.pages.is_empty() { vec![spread.bounds] } else { spread.pages.clone() };
+                let rects = if spread.pages.is_empty() {
+                    vec![spread.bounds]
+                } else {
+                    spread.pages.clone()
+                };
                 for r in rects {
-                    let name = format!("{} {}", if d.spreads.len() > 1 || spread.pages.len() > 1 { "Page" } else { "Artboard" }, artboards.len() + 1);
+                    let name = format!(
+                        "{} {}",
+                        if d.spreads.len() > 1 || spread.pages.len() > 1 {
+                            "Page"
+                        } else {
+                            "Artboard"
+                        },
+                        artboards.len() + 1
+                    );
                     artboards.push((name, to_doc.transform_rect_bbox(rect_of(r))));
                 }
             }
@@ -135,7 +182,13 @@ impl Builder {
             .into_iter()
             .enumerate()
             .filter(|(_, (_, r))| r.width() > 0.0 && r.height() > 0.0)
-            .map(|(i, (name, rect))| Artboard { id: i as u32 + 1, name, rect, show_center_mark: false, show_cross_hairs: false })
+            .map(|(i, (name, rect))| Artboard {
+                id: i as u32 + 1,
+                name,
+                rect,
+                show_center_mark: false,
+                show_cross_hairs: false,
+            })
             .collect();
         if self.doc.artboards.is_empty() {
             return Err(err("the Affinity document has no page with a size"));
@@ -152,7 +205,9 @@ impl Builder {
     fn layer_with(&mut self, name: Option<&str>, children: Vec<Arc<Node>>) -> Arc<Node> {
         let id = self.doc.alloc_id();
         self.layer = self.layer.wrapping_add(1);
-        let label = name.map(str::to_string).unwrap_or_else(|| format!("Layer {}", self.layer));
+        let label = name
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Layer {}", self.layer));
         let mut n = Node::layer(id, &label, LayerColor::Preset(self.layer % 9));
         if let Some(c) = n.children_mut() {
             *c = children;
@@ -162,7 +217,11 @@ impl Builder {
 
     /// An artboard at the top level becomes a layer of its name holding its clip group.
     fn layer_of(&mut self, name: &str, art: Arc<Node>, visible: bool, locked: bool) -> Arc<Node> {
-        let mut l = (*self.layer_with(Some(if name.is_empty() { "Artboard" } else { name }), vec![art])).clone();
+        let mut l = (*self.layer_with(
+            Some(if name.is_empty() { "Artboard" } else { name }),
+            vec![art],
+        ))
+        .clone();
         l.visible = visible;
         l.locked = locked;
         Arc::new(l)
@@ -205,19 +264,37 @@ impl Builder {
 
     /// One Affinity node (and its subtree) as VectorCraft art; `to_doc` maps document pixels to
     /// points. `layer_level`: the node is directly in a spread or a layer, so a layer stays a layer.
-    fn node(&mut self, n: &af::Node, to_doc: Affine, boards: &mut Vec<(String, Rect)>, layer_level: bool) -> Option<Arc<Node>> {
+    fn node(
+        &mut self,
+        n: &af::Node,
+        to_doc: Affine,
+        boards: &mut Vec<(String, Rect)>,
+        layer_level: bool,
+    ) -> Option<Arc<Node>> {
         // Register before descending so nested artboards keep their document order.
         if let Kind::Artboard { rect, .. } = &n.kind {
             boards.push((
-                if n.name.is_empty() { format!("Artboard {}", boards.len() + 1) } else { n.name.clone() },
+                if n.name.is_empty() {
+                    format!("Artboard {}", boards.len() + 1)
+                } else {
+                    n.name.clone()
+                },
                 to_doc.transform_rect_bbox(rect_of(*rect)),
             ));
         }
         let child_level = matches!(n.kind, Kind::Layer) && layer_level;
-        let children: Vec<Arc<Node>> = n.children.iter().filter_map(|c| self.node(c, to_doc, boards, child_level)).collect();
+        let children: Vec<Arc<Node>> = n
+            .children
+            .iter()
+            .filter_map(|c| self.node(c, to_doc, boards, child_level))
+            .collect();
         let mut out = match &n.kind {
             Kind::Layer if layer_level => {
-                let mut l = (*self.layer_with(Some(if n.name.is_empty() { "Layer" } else { &n.name }), children)).clone();
+                let mut l = (*self.layer_with(
+                    Some(if n.name.is_empty() { "Layer" } else { &n.name }),
+                    children,
+                ))
+                .clone();
                 l.visible = n.visible;
                 l.locked = n.locked;
                 l.opacity = n.opacity as f32;
@@ -225,35 +302,84 @@ impl Builder {
                 l
             }
             Kind::Layer | Kind::Group => {
-                let mut g = self.base(n, NodeKind::Group { children, clip: false });
+                let mut g = self.base(
+                    n,
+                    NodeKind::Group {
+                        children,
+                        clip: false,
+                    },
+                );
                 // Affinity groups isolate their blending unless they pass through.
                 g.isolate = n.blend != Blend::PassThrough;
                 g
             }
-            Kind::Shape { path, fills, strokes, even_odd } => {
+            Kind::Shape {
+                path,
+                fills,
+                strokes,
+                even_odd,
+            } => {
                 let data = self.path(path, to_doc);
-                let rule = if *even_odd { FillRule::EvenOdd } else { FillRule::NonZero };
+                let rule = if *even_odd {
+                    FillRule::EvenOdd
+                } else {
+                    FillRule::NonZero
+                };
                 let appearance = self.appearance(fills, strokes, to_doc);
                 if children.is_empty() {
-                    let mut p = self.base(n, NodeKind::Path { path: data, rule, live: None, clipping: false, guide: false });
+                    let mut p = self.base(
+                        n,
+                        NodeKind::Path {
+                            path: data,
+                            rule,
+                            live: None,
+                            clipping: false,
+                            guide: false,
+                        },
+                    );
                     p.appearance = appearance.into();
                     p
                 } else {
                     // A shape clips its children: VectorCraft's clipping path keeps its paint, its
                     // fill behind the clipped art and its stroke over it, as Affinity draws it.
-                    let mut clip = Node::new(self.doc.alloc_id(), NodeKind::Path { path: data, rule, live: None, clipping: true, guide: false });
+                    let mut clip = Node::new(
+                        self.doc.alloc_id(),
+                        NodeKind::Path {
+                            path: data,
+                            rule,
+                            live: None,
+                            clipping: true,
+                            guide: false,
+                        },
+                    );
                     clip.appearance = appearance.into();
                     let mut kids = vec![Arc::new(clip)];
                     kids.extend(children);
-                    self.base(n, NodeKind::Group { children: kids, clip: true })
+                    self.base(
+                        n,
+                        NodeKind::Group {
+                            children: kids,
+                            clip: true,
+                        },
+                    )
                 }
             }
-            Kind::Artboard { path, even_odd, background, strokes, .. } => {
+            Kind::Artboard {
+                path,
+                even_odd,
+                background,
+                strokes,
+                ..
+            } => {
                 let mut clip = Node::new(
                     self.doc.alloc_id(),
                     NodeKind::Path {
                         path: self.path(path, to_doc),
-                        rule: if *even_odd { FillRule::EvenOdd } else { FillRule::NonZero },
+                        rule: if *even_odd {
+                            FillRule::EvenOdd
+                        } else {
+                            FillRule::NonZero
+                        },
                         live: None,
                         clipping: true,
                         guide: false,
@@ -262,8 +388,18 @@ impl Builder {
                 clip.appearance = self.appearance(background, strokes, to_doc).into();
                 let mut kids = vec![Arc::new(clip)];
                 kids.extend(children);
-                let mut g = self.base(n, NodeKind::Group { children: kids, clip: true });
-                g.name = Some(if n.name.is_empty() { "Artboard".into() } else { n.name.clone() });
+                let mut g = self.base(
+                    n,
+                    NodeKind::Group {
+                        children: kids,
+                        clip: true,
+                    },
+                );
+                g.name = Some(if n.name.is_empty() {
+                    "Artboard".into()
+                } else {
+                    n.name.clone()
+                });
                 g
             }
             Kind::Text(t) => {
@@ -279,10 +415,22 @@ impl Builder {
             Kind::Image(img) => match self.image(img, to_doc) {
                 Some(kind) => self.base(n, kind),
                 None if children.is_empty() => return None,
-                None => self.base(n, NodeKind::Group { children, clip: false }),
+                None => self.base(
+                    n,
+                    NodeKind::Group {
+                        children,
+                        clip: false,
+                    },
+                ),
             },
             Kind::Unsupported if children.is_empty() => return None,
-            Kind::Unsupported => self.base(n, NodeKind::Group { children, clip: false }),
+            Kind::Unsupported => self.base(
+                n,
+                NodeKind::Group {
+                    children,
+                    clip: false,
+                },
+            ),
         };
         if let Some(img) = &n.pixel_mask {
             // A pixel mask: its grey levels show (white) or hide (black) the node, and nothing
@@ -296,12 +444,25 @@ impl Builder {
             // A vector mask: the node shows only inside it.
             let clip = Node::new(
                 self.doc.alloc_id(),
-                NodeKind::Path { path: self.path(mask, to_doc), rule: FillRule::NonZero, live: None, clipping: true, guide: false },
+                NodeKind::Path {
+                    path: self.path(mask, to_doc),
+                    rule: FillRule::NonZero,
+                    live: None,
+                    clipping: true,
+                    guide: false,
+                },
             );
-            let (opacity, blend, visible, name) = (out.opacity, out.blend, out.visible, out.name.clone());
+            let (opacity, blend, visible, name) =
+                (out.opacity, out.blend, out.visible, out.name.clone());
             out.opacity = 1.0;
             out.blend = BlendMode::Normal;
-            let mut g = Node::new(self.doc.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(out)], clip: true });
+            let mut g = Node::new(
+                self.doc.alloc_id(),
+                NodeKind::Group {
+                    children: vec![Arc::new(clip), Arc::new(out)],
+                    clip: true,
+                },
+            );
             (g.opacity, g.blend, g.visible, g.name) = (opacity, blend, visible, name);
             out = g;
         }
@@ -330,10 +491,32 @@ impl Builder {
     fn color(c: ap::Color) -> (Color, f32) {
         let f = |v: f64| v.clamp(0.0, 1.0) as f32;
         match c {
-            ap::Color::Rgb { r, g, b, a } => (Color::Rgb { r: f(r), g: f(g), b: f(b) }, f(a)),
-            ap::Color::Cmyk { c, m, y, k, a } => (Color::Cmyk { c: f(c), m: f(m), y: f(y), k: f(k) }, f(a)),
+            ap::Color::Rgb { r, g, b, a } => (
+                Color::Rgb {
+                    r: f(r),
+                    g: f(g),
+                    b: f(b),
+                },
+                f(a),
+            ),
+            ap::Color::Cmyk { c, m, y, k, a } => (
+                Color::Cmyk {
+                    c: f(c),
+                    m: f(m),
+                    y: f(y),
+                    k: f(k),
+                },
+                f(a),
+            ),
             ap::Color::Gray { v, a } => (Color::Gray { k: 1.0 - f(v) }, f(a)),
-            ap::Color::Lab { l, a, b, alpha } => (Color::Lab { l: l as f32, a: a as f32, b: b as f32 }, f(alpha)),
+            ap::Color::Lab { l, a, b, alpha } => (
+                Color::Lab {
+                    l: l as f32,
+                    a: a as f32,
+                    b: b as f32,
+                },
+                f(alpha),
+            ),
         }
     }
 
@@ -358,7 +541,11 @@ impl Builder {
                     })
                     .collect();
                 let m = to_doc * affine(g.transform);
-                let (o, x, y) = (m * Point::ZERO, m * Point::new(1.0, 0.0), m * Point::new(0.0, 1.0));
+                let (o, x, y) = (
+                    m * Point::ZERO,
+                    m * Point::new(1.0, 0.0),
+                    m * Point::new(0.0, 1.0),
+                );
                 let kind = match g.kind {
                     AfKind::Linear => GradientKind::Linear,
                     AfKind::Radial => GradientKind::Radial,
@@ -368,11 +555,27 @@ impl Builder {
                     }
                 };
                 let (u, v): (Vec2, Vec2) = (x - o, y - o);
-                if kind == GradientKind::Radial && u.hypot() > 0.0 && (u.dot(v) / (u.hypot() * v.hypot().max(1e-12))).abs() > 0.01 {
+                if kind == GradientKind::Radial
+                    && u.hypot() > 0.0
+                    && (u.dot(v) / (u.hypot() * v.hypot().max(1e-12))).abs() > 0.01
+                {
                     self.warn("skewed elliptical gradients import as upright ellipses");
                 }
-                let aspect = if u.hypot() > 0.0 { (v.hypot() / u.hypot()).clamp(0.01, 100.0) } else { 1.0 };
-                let geom = GradientGeom { start: o, end: x, aspect: if kind == GradientKind::Radial { aspect } else { 1.0 }, focal: None };
+                let aspect = if u.hypot() > 0.0 {
+                    (v.hypot() / u.hypot()).clamp(0.01, 100.0)
+                } else {
+                    1.0
+                };
+                let geom = GradientGeom {
+                    start: o,
+                    end: x,
+                    aspect: if kind == GradientKind::Radial {
+                        aspect
+                    } else {
+                        1.0
+                    },
+                    focal: None,
+                };
                 let mut gp = GradientPaint::new(Gradient { kind, stops });
                 gp.angle = (-(u.y)).atan2(u.x).to_degrees();
                 gp.geom = Some(geom);
@@ -381,7 +584,12 @@ impl Builder {
         }
     }
 
-    fn appearance(&mut self, fills: &[ap::Paint], strokes: &[ap::Stroke], to_doc: Affine) -> Appearance {
+    fn appearance(
+        &mut self,
+        fills: &[ap::Paint],
+        strokes: &[ap::Stroke],
+        to_doc: Affine,
+    ) -> Appearance {
         let mut items = Vec::new();
         let mut above = Vec::new();
         for f in fills {
@@ -392,7 +600,9 @@ impl Builder {
             }
         }
         for s in strokes {
-            let Some((paint, opacity)) = self.paint(&s.paint, to_doc) else { continue };
+            let Some((paint, opacity)) = self.paint(&s.paint, to_doc) else {
+                continue;
+            };
             let mut l = StrokeLayer::new(paint, s.width * self.k);
             l.opacity = opacity;
             l.cap = match s.cap {
@@ -423,7 +633,10 @@ impl Builder {
             }
         }
         items.extend(above);
-        Appearance { items, ..Appearance::default() }
+        Appearance {
+            items,
+            ..Appearance::default()
+        }
     }
 
     fn text(&mut self, t: &af::Text, to_doc: Affine) -> TextObject {
@@ -453,14 +666,19 @@ impl Builder {
                 }
                 // A family/weight pair cannot identify width variants such as Arial Narrow.
                 // Resolve a known PostScript identity to the exact installed family and style.
-                if let Some((family, face_style)) = vectorcraft_text::FontDb::global().by_postscript_name(&r.postscript) {
+                if let Some((family, face_style)) =
+                    vectorcraft_text::FontDb::global().by_postscript_name(&r.postscript)
+                {
                     style.font_family = family;
                     style.font_style = face_style;
                 } else {
                     style.font_style = font_style(r.weight, r.italic);
                 }
                 style.features = r.features.clone();
-                if r.features.iter().any(|feature| !vectorcraft_text::OtFeatures::known_tag(feature)) {
+                if r.features
+                    .iter()
+                    .any(|feature| !vectorcraft_text::OtFeatures::known_tag(feature))
+                {
                     self.warn("unsupported text OpenType features (retained but not rendered)");
                 }
                 style.all_caps = r.all_caps;
@@ -487,10 +705,14 @@ impl Builder {
             AfAlign::Justify => Justify::JustifyLeft,
         };
         if let Some(f) = t.frame {
-            obj.kind = TextKind::Area { frame: shapes::rectangle(Rect::new(0.0, 0.0, (f.x1 - f.x0) * k, (f.y1 - f.y0) * k)) };
+            obj.kind = TextKind::Area {
+                frame: shapes::rectangle(Rect::new(0.0, 0.0, (f.x1 - f.x0) * k, (f.y1 - f.y0) * k)),
+            };
             // Affinity shows a line in a frame shorter than it (#1423); here none of it would draw.
             if vectorcraft_text::fit_first_line(vectorcraft_text::FontDb::global(), &mut obj) {
-                self.warn("text frames too short for their first line (made taller so the line shows)");
+                self.warn(
+                    "text frames too short for their first line (made taller so the line shows)",
+                );
             }
         }
         obj
@@ -502,7 +724,8 @@ impl Builder {
             Pixels::Rgba8(rgba) => {
                 let buf = image::RgbaImage::from_raw(img.width, img.height, rgba.clone())?;
                 let mut png = Vec::new();
-                buf.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+                buf.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+                    .ok()?;
                 png
             }
         };
@@ -518,7 +741,14 @@ impl Builder {
         let sy = img.height as f64 / f64::from(r.height.max(1));
         let xf = to_doc * affine(img.transform) * Affine::scale_non_uniform(sx, sy);
         self.doc.images.entry(r.key.clone()).or_insert(r.blob);
-        Some(NodeKind::Image(Box::new(ImageObject { key: r.key, width: r.width, height: r.height, xf, link: None, placement: Default::default() })))
+        Some(NodeKind::Image(Box::new(ImageObject {
+            key: r.key,
+            width: r.width,
+            height: r.height,
+            xf,
+            link: None,
+            placement: Default::default(),
+        })))
     }
 }
 

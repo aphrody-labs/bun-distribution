@@ -9,12 +9,14 @@ use super::*;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 200}))
+        .unwrap();
     s
 }
 
 fn run(s: &mut Session, id: &str, p: Value) -> Value {
-    s.execute(id, &p).unwrap_or_else(|e| panic!("{id} {p}: {e}"))
+    s.execute(id, &p)
+        .unwrap_or_else(|e| panic!("{id} {p}: {e}"))
 }
 
 fn node(s: &Session, id: NodeId) -> Node {
@@ -27,8 +29,16 @@ fn id_of(v: &Value) -> NodeId {
 
 /// A selected group of two 40×40 squares at (20, 20) and (100, 20) → (group, [members]).
 fn group(s: &mut Session) -> (NodeId, [NodeId; 2]) {
-    let a = id_of(&run(s, "shape.rectangle", json!({"x": 20, "y": 20, "width": 40, "height": 40})));
-    let b = id_of(&run(s, "shape.rectangle", json!({"x": 100, "y": 20, "width": 40, "height": 40})));
+    let a = id_of(&run(
+        s,
+        "shape.rectangle",
+        json!({"x": 20, "y": 20, "width": 40, "height": 40}),
+    ));
+    let b = id_of(&run(
+        s,
+        "shape.rectangle",
+        json!({"x": 100, "y": 20, "width": 40, "height": 40}),
+    ));
     run(s, "select.set", json!({"ids": [a.0, b.0]}));
     run(s, "paint.setFill", json!({"color": "#ff0000"}));
     (id_of(&run(s, "object.group", json!({}))), [a, b])
@@ -36,8 +46,13 @@ fn group(s: &mut Session) -> (NodeId, [NodeId; 2]) {
 
 fn pixel(s: &Session, x: u32, y: u32) -> [u8; 4] {
     let doc = s.doc().unwrap().doc.clone();
-    let opts = vectorcraft_render::RenderOptions { background: Some([255, 255, 255, 255]), ..Default::default() };
-    vectorcraft_render::Renderer::new().render(&doc, 200, 200, vectorcraft_geom::Affine::IDENTITY, &opts).pixel(x, y)
+    let opts = vectorcraft_render::RenderOptions {
+        background: Some([255, 255, 255, 255]),
+        ..Default::default()
+    };
+    vectorcraft_render::Renderer::new()
+        .render(&doc, 200, 200, vectorcraft_geom::Affine::IDENTITY, &opts)
+        .pixel(x, y)
 }
 
 const GREEN: [u8; 4] = [0, 255, 0, 255];
@@ -48,25 +63,55 @@ fn a_group_fill_paints_both_members_and_the_contents_slot_moves() {
     let mut s = session();
     let (g, [a, _]) = group(&mut s);
     run(&mut s, "appearance.addFill", json!({}));
-    run(&mut s, "paint.setFill", json!({"color": "#00ff00", "item": 0}));
+    run(
+        &mut s,
+        "paint.setFill",
+        json!({"color": "#00ff00", "item": 0}),
+    );
     let n = node(&s, g);
-    assert_eq!((n.appearance.items.len(), n.appearance.contents_at()), (1, 0));
+    assert_eq!(
+        (n.appearance.items.len(), n.appearance.contents_at()),
+        (1, 0)
+    );
     // The members keep their own fill; the group's paints over both of them.
-    assert_eq!(node(&s, a).appearance.fill_paint(), Paint::solid(Color::from_hex("#ff0000").unwrap()));
-    assert_eq!((pixel(&s, 40, 40), pixel(&s, 120, 40), pixel(&s, 80, 40)), (GREEN, GREEN, [255; 4]));
+    assert_eq!(
+        node(&s, a).appearance.fill_paint(),
+        Paint::solid(Color::from_hex("#ff0000").unwrap())
+    );
+    assert_eq!(
+        (pixel(&s, 40, 40), pixel(&s, 120, 40), pixel(&s, 80, 40)),
+        (GREEN, GREEN, [255; 4])
+    );
     // Contents above the fill: the members show again; one undo step brings it back.
-    assert_eq!(run(&mut s, "appearance.moveItem", json!({"from": "contents", "to": 1}))["contents"], 1);
-    assert_eq!((node(&s, g).appearance.contents_index, pixel(&s, 40, 40)), (Some(1), RED));
+    assert_eq!(
+        run(
+            &mut s,
+            "appearance.moveItem",
+            json!({"from": "contents", "to": 1})
+        )["contents"],
+        1
+    );
+    assert_eq!(
+        (node(&s, g).appearance.contents_index, pixel(&s, 40, 40)),
+        (Some(1), RED)
+    );
     run(&mut s, "edit.undo", json!({}));
     assert_eq!(pixel(&s, 40, 40), GREEN);
     // A stroke dragged under the contents in one step with `contents`.
     run(&mut s, "appearance.addStroke", json!({}));
-    run(&mut s, "appearance.moveItem", json!({"from": 1, "to": 0, "contents": 1}));
+    run(
+        &mut s,
+        "appearance.moveItem",
+        json!({"from": 1, "to": 0, "contents": 1}),
+    );
     let ap = node(&s, g).appearance;
     assert!(!ap.items[0].is_fill() && ap.contents_at() == 1, "{ap:?}");
     // Paths have no Contents row.
     run(&mut s, "select.set", json!({"ids": [a.0]}));
-    assert!(s.execute("appearance.moveItem", &json!({"from": "contents", "to": 1})).is_err());
+    assert!(
+        s.execute("appearance.moveItem", &json!({"from": "contents", "to": 1}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -74,18 +119,51 @@ fn appearance_commands_target_the_object_or_its_contents() {
     let mut s = session();
     let (g, [a, b]) = group(&mut s);
     let before = node(&s, a).appearance.items.len();
-    run(&mut s, "appearance.addStroke", json!({"target": "contents"}));
-    assert_eq!((node(&s, a).appearance.items.len(), node(&s, b).appearance.items.len()), (before + 1, before + 1));
+    run(
+        &mut s,
+        "appearance.addStroke",
+        json!({"target": "contents"}),
+    );
+    assert_eq!(
+        (
+            node(&s, a).appearance.items.len(),
+            node(&s, b).appearance.items.len()
+        ),
+        (before + 1, before + 1)
+    );
     assert!(node(&s, g).appearance.items.is_empty());
-    run(&mut s, "effect.apply", json!({"effect": "stylize.dropShadow", "target": "contents"}));
-    assert_eq!((node(&s, a).appearance.effects.len(), node(&s, g).appearance.effects.len()), (1, 0));
-    run(&mut s, "effect.apply", json!({"effect": "stylize.dropShadow"}));
+    run(
+        &mut s,
+        "effect.apply",
+        json!({"effect": "stylize.dropShadow", "target": "contents"}),
+    );
+    assert_eq!(
+        (
+            node(&s, a).appearance.effects.len(),
+            node(&s, g).appearance.effects.len()
+        ),
+        (1, 0)
+    );
+    run(
+        &mut s,
+        "effect.apply",
+        json!({"effect": "stylize.dropShadow"}),
+    );
     assert_eq!(node(&s, g).appearance.effects.len(), 1);
-    assert!(s.execute("appearance.addFill", &json!({"target": "inside"})).is_err());
+    assert!(
+        s.execute("appearance.addFill", &json!({"target": "inside"}))
+            .is_err()
+    );
     // Target Contents selects the members (what double-clicking the Contents row does).
-    assert_eq!(run(&mut s, "appearance.targetContents", json!({}))["ids"], json!([a.0, b.0]));
+    assert_eq!(
+        run(&mut s, "appearance.targetContents", json!({}))["ids"],
+        json!([a.0, b.0])
+    );
     assert_eq!(s.doc().unwrap().selection.objects, vec![a, b]);
-    assert!(s.execute("appearance.targetContents", &json!({})).is_err(), "paths have no members");
+    assert!(
+        s.execute("appearance.targetContents", &json!({})).is_err(),
+        "paths have no members"
+    );
 }
 
 #[test]
@@ -94,16 +172,26 @@ fn effects_and_fills_apply_to_layers_by_id() {
     let (g, _) = group(&mut s);
     let layer = s.doc().unwrap().doc.layers[0].id;
     run(&mut s, "select.none", json!({}));
-    let r = run(&mut s, "effect.apply", json!({"effect": "stylize.dropShadow", "ids": [layer.0]}));
+    let r = run(
+        &mut s,
+        "effect.apply",
+        json!({"effect": "stylize.dropShadow", "ids": [layer.0]}),
+    );
     assert_eq!(r["ids"], json!([layer.0]));
     run(&mut s, "appearance.addFill", json!({"ids": [layer.0]}));
     let l = node(&s, layer);
-    assert_eq!((l.appearance.effects.len(), l.appearance.items.len()), (1, 1));
+    assert_eq!(
+        (l.appearance.effects.len(), l.appearance.items.len()),
+        (1, 1)
+    );
     assert!(node(&s, g).appearance.effects.is_empty());
     // Two undo steps take both off again.
     run(&mut s, "edit.undo", json!({}));
     run(&mut s, "edit.undo", json!({}));
-    assert_eq!(node(&s, layer).appearance, vectorcraft_doc::Appearance::default());
+    assert_eq!(
+        node(&s, layer).appearance,
+        vectorcraft_doc::Appearance::default()
+    );
     // Nothing selected and no ids: an error, not a silent no-op.
     assert!(s.execute("appearance.addFill", &json!({})).is_err());
 }
@@ -111,14 +199,24 @@ fn effects_and_fills_apply_to_layers_by_id() {
 #[test]
 fn type_fills_go_above_or_below_the_characters() {
     let mut s = session();
-    let t = id_of(&run(&mut s, "text.create", json!({"x": 20, "y": 100, "text": "Hi"})));
+    let t = id_of(&run(
+        &mut s,
+        "text.create",
+        json!({"x": 20, "y": 100, "text": "Hi"}),
+    ));
     run(&mut s, "select.set", json!({"ids": [t.0]}));
     // A new fill on type copies its characters' fill (it has none of its own).
     run(&mut s, "appearance.addFill", json!({}));
     let n = node(&s, t);
-    let NodeKind::Text(tx) = &n.kind else { panic!("type") };
+    let NodeKind::Text(tx) = &n.kind else {
+        panic!("type")
+    };
     assert_eq!(n.appearance.fill_paint(), tx.runs[0].style.fill);
-    run(&mut s, "appearance.moveItem", json!({"from": "contents", "to": 1}));
+    run(
+        &mut s,
+        "appearance.moveItem",
+        json!({"from": "contents", "to": 1}),
+    );
     assert_eq!(node(&s, t).appearance.contents_at(), 1);
 }
 
@@ -128,11 +226,22 @@ fn group_appearance_round_trips_and_expands() {
     let (g, _) = group(&mut s);
     run(&mut s, "appearance.addFill", json!({}));
     run(&mut s, "appearance.addStroke", json!({}));
-    run(&mut s, "appearance.moveItem", json!({"from": "contents", "to": 1}));
-    run(&mut s, "effect.apply", json!({"effect": "distort.transform", "params": {"moveV": 50}}));
+    run(
+        &mut s,
+        "appearance.moveItem",
+        json!({"from": "contents", "to": 1}),
+    );
+    run(
+        &mut s,
+        "effect.apply",
+        json!({"effect": "distort.transform", "params": {"moveV": 50}}),
+    );
     let doc = s.doc().unwrap().doc.clone();
     let back = vectorcraft_format::load(&vectorcraft_format::save(&doc, false)).unwrap();
-    assert_eq!(back.node(g).unwrap().appearance, doc.node(g).unwrap().appearance);
+    assert_eq!(
+        back.node(g).unwrap().appearance,
+        doc.node(g).unwrap().appearance
+    );
     assert_eq!(back.node(g).unwrap().appearance.contents_index, Some(1));
     // Expand Appearance: the fill and stroke become paths below and above the moved members.
     run(&mut s, "effect.expandAppearance", json!({}));

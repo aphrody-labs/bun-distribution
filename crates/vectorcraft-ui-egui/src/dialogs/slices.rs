@@ -22,11 +22,21 @@ pub const OPTIONS: &str = "sliceOptions";
 /// The dialog kind of Divide Slices.
 pub const DIVIDE: &str = "divideSlices";
 
-pub(super) const OPTIONS_SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Slice Options").into(), body: options_body, confirm: options_confirm, min_width: 380.0, ..DialogSpec::FORM };
+pub(super) const OPTIONS_SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Slice Options").into(),
+    body: options_body,
+    confirm: options_confirm,
+    min_width: 380.0,
+    ..DialogSpec::FORM
+};
 
-pub(super) const DIVIDE_SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Divide Slices").into(), body: divide_body, confirm: divide_confirm, min_width: 320.0, ..DialogSpec::FORM };
+pub(super) const DIVIDE_SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Divide Slices").into(),
+    body: divide_body,
+    confirm: divide_confirm,
+    min_width: 320.0,
+    ..DialogSpec::FORM
+};
 
 /// Label column and field widths of the dialogs.
 const LABEL_W: f32 = 110.0;
@@ -34,18 +44,29 @@ const FIELD_W: f32 = 220.0;
 
 /// Open Slice Options on the selected slices' options (those of the first one).
 pub fn open_options(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let v = app.session.execute("object.slice.options", &json!({})).map_err(|e| e.to_string())?;
+    let v = app
+        .session
+        .execute("object.slice.options", &json!({}))
+        .map_err(|e| e.to_string())?;
     let mut fields: Map<String, Value> = v.as_object().cloned().unwrap_or_default();
     let html = fields.remove("htmlText").unwrap_or(json!(false));
     fields.insert("__html".into(), html);
-    app.ui.dialog = Some(Dialog { kind: OPTIONS.into(), fields });
+    app.ui.dialog = Some(Dialog {
+        kind: OPTIONS.into(),
+        fields,
+    });
     Ok(Value::Null)
 }
 
 /// Open Divide Slices: two rows and two columns, the sizes halving the first selected slice.
 pub fn open_divide(app: &mut VectorcraftApp) -> Result<Value, String> {
     let st = app.session.active().ok_or("no document open")?;
-    let first = st.selection.slices.iter().chain(&st.selection.objects).find_map(|id| st.doc.slice_bounds(*id));
+    let first = st
+        .selection
+        .slices
+        .iter()
+        .chain(&st.selection.objects)
+        .find_map(|id| st.doc.slice_bounds(*id));
     let (w, h) = first.map_or((50.0, 50.0), |r| (r.width() / 2.0, r.height() / 2.0));
     app.ui.dialog = Some(Dialog::new(
         DIVIDE,
@@ -55,20 +76,39 @@ pub fn open_divide(app: &mut VectorcraftApp) -> Result<Value, String> {
 }
 
 /// `(value, label)` pairs of a keyed enum's values.
-fn pairs<T: Copy>(all: &[T], key: fn(T) -> &'static str, label: fn(T) -> &'static str) -> Vec<(&'static str, &'static str)> {
+fn pairs<T: Copy>(
+    all: &[T],
+    key: fn(T) -> &'static str,
+    label: fn(T) -> &'static str,
+) -> Vec<(&'static str, &'static str)> {
     all.iter().map(|v| (key(*v), label(*v))).collect()
 }
 
 fn options_body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    let kinds: Vec<_> = SliceKind::ALL.iter().filter(|k| **k != SliceKind::HtmlText || d.bool("__html")).copied().collect();
-    form::choice(ui, d, "kind", tl!("Slice Type:"), (LABEL_W, FIELD_W), &pairs(&kinds, SliceKind::key, SliceKind::label));
+    let kinds: Vec<_> = SliceKind::ALL
+        .iter()
+        .filter(|k| **k != SliceKind::HtmlText || d.bool("__html"))
+        .copied()
+        .collect();
+    form::choice(
+        ui,
+        d,
+        "kind",
+        tl!("Slice Type:"),
+        (LABEL_W, FIELD_W),
+        &pairs(&kinds, SliceKind::key, SliceKind::label),
+    );
     ui.add_space(6.0);
     let kind = SliceKind::parse(&d.str("kind")).unwrap_or_default();
     match kind {
         SliceKind::Image => {
-            for (key, label) in
-                [("name", tl!("Name:")), ("url", tl!("URL:")), ("target", tl!("Target:")), ("message", tl!("Message:")), ("alt", tl!("Alt:"))]
-            {
+            for (key, label) in [
+                ("name", tl!("Name:")),
+                ("url", tl!("URL:")),
+                ("target", tl!("Target:")),
+                ("message", tl!("Message:")),
+                ("alt", tl!("Alt:")),
+            ] {
                 widgets::label_row(ui, label, LABEL_W, |ui| {
                     form::text(ui, d, key, FIELD_W - 12.0);
                 });
@@ -84,8 +124,22 @@ fn options_body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bo
     }
     if kind != SliceKind::Image {
         ui.add_space(6.0);
-        form::choice(ui, d, "hAlign", tl!("Horizontal:"), (LABEL_W, FIELD_W), &pairs(CellAlign::ALL, CellAlign::key, CellAlign::label));
-        form::choice(ui, d, "vAlign", tl!("Vertical:"), (LABEL_W, FIELD_W), &pairs(CellVAlign::ALL, CellVAlign::key, CellVAlign::label));
+        form::choice(
+            ui,
+            d,
+            "hAlign",
+            tl!("Horizontal:"),
+            (LABEL_W, FIELD_W),
+            &pairs(CellAlign::ALL, CellAlign::key, CellAlign::label),
+        );
+        form::choice(
+            ui,
+            d,
+            "vAlign",
+            tl!("Vertical:"),
+            (LABEL_W, FIELD_W),
+            &pairs(CellVAlign::ALL, CellVAlign::key, CellVAlign::label),
+        );
     }
     ui.add_space(6.0);
     background_row(ui, d);
@@ -118,20 +172,34 @@ fn background_row(ui: &mut egui::Ui, d: &mut Dialog) {
             let [r, g, b, _] = c.to_rgba8(1.0);
             let mut rgb = [r, g, b];
             if ui.color_edit_button_srgb(&mut rgb).changed() {
-                d.fields.insert("background".into(), json!(Color::rgb8(rgb[0], rgb[1], rgb[2]).to_hex()));
+                d.fields.insert(
+                    "background".into(),
+                    json!(Color::rgb8(rgb[0], rgb[1], rgb[2]).to_hex()),
+                );
             }
         }
     });
 }
 
 fn options_confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    let p: Map<String, Value> = d.fields.iter().filter(|(k, _)| !k.starts_with("__")).map(|(k, v)| (k.clone(), v.clone())).collect();
+    let p: Map<String, Value> = d
+        .fields
+        .iter()
+        .filter(|(k, _)| !k.starts_with("__"))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
     run_and_close(app, "object.slice.options", Value::Object(p))
 }
 
 /// One direction of Divide Slices: the checkbox, then "N slices …, evenly spaced" or "N pt per
 /// slice".
-fn divide_section(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, keys: [&str; 4], labels: [&str; 2]) {
+fn divide_section(
+    app: &VectorcraftApp,
+    ui: &mut egui::Ui,
+    d: &mut Dialog,
+    keys: [&str; 4],
+    labels: [&str; 2],
+) {
     let [on, count, mode, size] = keys;
     if widgets::check(ui, labels[0], d.bool(on), true) {
         d.fields.insert(on.into(), json!(!d.bool(on)));
@@ -144,8 +212,11 @@ fn divide_section(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, keys:
                 if widgets::radio(ui, "", !by_size, enabled) {
                     d.fields.insert(mode.into(), json!("count"));
                 }
-                if let Some(n) = widgets::plain_field(ui, ("divide", count), d.f64(count, 2.0), "", 0, 50.0) {
-                    d.fields.insert(count.into(), json!(n.round().max(1.0) as u64));
+                if let Some(n) =
+                    widgets::plain_field(ui, ("divide", count), d.f64(count, 2.0), "", 0, 50.0)
+                {
+                    d.fields
+                        .insert(count.into(), json!(n.round().max(1.0) as u64));
                 }
                 widgets::dim_label(ui, labels[1]);
             });
@@ -161,21 +232,36 @@ fn divide_section(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, keys:
 }
 
 fn divide_body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    divide_section(app, ui, d, ["divideRows", "rows", "rowMode", "rowHeight"], [tl!("Divide Horizontally Into"), tl!("slices down, evenly spaced")]);
+    divide_section(
+        app,
+        ui,
+        d,
+        ["divideRows", "rows", "rowMode", "rowHeight"],
+        [
+            tl!("Divide Horizontally Into"),
+            tl!("slices down, evenly spaced"),
+        ],
+    );
     ui.add_space(8.0);
     divide_section(
         app,
         ui,
         d,
         ["divideColumns", "columns", "columnMode", "columnWidth"],
-        [tl!("Divide Vertically Into"), tl!("slices across, evenly spaced")],
+        [
+            tl!("Divide Vertically Into"),
+            tl!("slices across, evenly spaced"),
+        ],
     );
     false
 }
 
 fn divide_confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let mut p = json!({});
-    for [on, count, mode, size] in [["divideRows", "rows", "rowMode", "rowHeight"], ["divideColumns", "columns", "columnMode", "columnWidth"]] {
+    for [on, count, mode, size] in [
+        ["divideRows", "rows", "rowMode", "rowHeight"],
+        ["divideColumns", "columns", "columnMode", "columnWidth"],
+    ] {
         if !d.bool(on) {
             continue;
         }
@@ -198,9 +284,17 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         app.session.paint.stroke = vectorcraft_color::Paint::None;
-        let id = app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 60, "height": 40})).unwrap()["id"].as_u64().unwrap();
+        let id = app
+            .run(
+                "shape.rectangle",
+                json!({"x": 0, "y": 0, "width": 60, "height": 40}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         app.run("object.slice.make", json!({"ids": [id]})).unwrap();
         app
     }
@@ -234,14 +328,26 @@ mod tests {
         super::super::confirm(&mut app).unwrap();
         assert!(app.ui.dialog.is_none());
         let l = app.run("slice.list", json!({})).unwrap();
-        let own = l["slices"].as_array().unwrap().iter().find(|s| s["source"] == "object").unwrap().clone();
+        let own = l["slices"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["source"] == "object")
+            .unwrap()
+            .clone();
         assert_eq!(own["options"]["kind"], "noImage");
         assert_eq!(own["options"]["text"], "Hello <i>cell</i>");
         assert_eq!(own["options"]["background"], "#00ff00");
         // One undo step.
         app.run("edit.undo", json!({})).unwrap();
         let l = app.run("slice.list", json!({})).unwrap();
-        assert!(l["slices"].as_array().unwrap().iter().any(|s| s["options"]["kind"] == "image" && s["source"] == "object"));
+        assert!(
+            l["slices"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|s| s["options"]["kind"] == "image" && s["source"] == "object")
+        );
     }
 
     #[test]
@@ -249,7 +355,10 @@ mod tests {
         let mut app = app();
         app.run("object.slice.divide", json!({})).unwrap();
         assert_eq!(app.ui.dialog.as_ref().unwrap().kind, DIVIDE);
-        assert_eq!(app.ui.dialog.as_ref().unwrap().f64("columnWidth", 0.0), 30.0);
+        assert_eq!(
+            app.ui.dialog.as_ref().unwrap().f64("columnWidth", 0.0),
+            30.0
+        );
         draw(&mut app);
         set(&mut app, "columns", json!(3));
         set(&mut app, "rowMode", json!("size"));

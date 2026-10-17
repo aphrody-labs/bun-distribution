@@ -146,7 +146,7 @@ pub fn rarity_to_growth_rank(code: i64) -> i64 {
             } else {
                 5
             }
-        },
+        }
     }
 }
 
@@ -162,7 +162,11 @@ fn lerp(start: i64, end: i64, t: f64) -> i64 {
 #[must_use]
 fn libm_floor(v: f64) -> f64 {
     let truncated = v as i64 as f64;
-    if v < 0.0 && (v - truncated).abs() > f64::EPSILON { truncated - 1.0 } else { truncated }
+    if v < 0.0 && (v - truncated).abs() > f64::EPSILON {
+        truncated - 1.0
+    } else {
+        truncated
+    }
 }
 
 /// Calcule une stat individuelle à un niveau donné. Source : `calculateSingleStat` (l.131-148).
@@ -216,7 +220,10 @@ pub fn find_lv1_entry<'a>(
             return f;
         }
     }
-    tables.lv1.iter().find(|e| e.main_position == p.main_position)
+    tables
+        .lv1
+        .iter()
+        .find(|e| e.main_position == p.main_position)
 }
 
 /// Lookup Lv30 avec chaîne de fallback (pattern≥2→0, subPosition→0, charaRank→0).
@@ -269,7 +276,10 @@ pub fn find_lv30_entry<'a>(
             return f;
         }
     }
-    tables.lv30.iter().find(|e| e.main_position == p.main_position)
+    tables
+        .lv30
+        .iter()
+        .find(|e| e.main_position == p.main_position)
 }
 
 /// Lookup Main avec chaîne de fallback (pattern≥2→0, charaRank→0). Source : `findMainEntry` (l.244-284).
@@ -303,18 +313,24 @@ pub fn find_main_entry<'a>(
             return f;
         }
     }
-    tables.main.iter().find(|e| e.main_position == p.main_position)
+    tables
+        .main
+        .iter()
+        .find(|e| e.main_position == p.main_position)
 }
 
 /// Calcule le bloc de stats complet à un niveau. Source : `calculateStats` (l.290-340).
 /// Renvoie `StatBlock` à 0 si les tables ne contiennent pas l'entrée (comme le défaut TS).
 #[must_use]
 pub fn calculate_stats(tables: &GrowthTables, p: &CharacterGrowthParams, level: i64) -> StatBlock {
-    let (lv1, lv30, main) =
-        match (find_lv1_entry(tables, p), find_lv30_entry(tables, p), find_main_entry(tables, p)) {
-            (Some(a), Some(b), Some(c)) => (a, b, c),
-            _ => return StatBlock::default(),
-        };
+    let (lv1, lv30, main) = match (
+        find_lv1_entry(tables, p),
+        find_lv30_entry(tables, p),
+        find_main_entry(tables, p),
+    ) {
+        (Some(a), Some(b), Some(c)) => (a, b, c),
+        _ => return StatBlock::default(),
+    };
 
     StatBlock {
         kc: calculate_single_stat(level, lv1.kc_1, lv30.kc_30, main.kc_50, main.kc_99),

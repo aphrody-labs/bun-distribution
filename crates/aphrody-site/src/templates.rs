@@ -85,7 +85,9 @@ fn read_bounded(path: &Path, maximum: usize) -> io::Result<Option<String>> {
     if bytes.len() > maximum {
         return Ok(None);
     }
-    Ok(Some(String::from_utf8(bytes).map_err(|_| invalid("template text is not UTF-8"))?))
+    Ok(Some(
+        String::from_utf8(bytes).map_err(|_| invalid("template text is not UTF-8"))?,
+    ))
 }
 
 fn language(name: &str) -> Option<&'static str> {
@@ -128,7 +130,9 @@ fn read_files(root: &Path, directory: &Path, budget: &mut Budget) -> io::Result<
             let entry_path = entry.path();
             let path = checked_path(
                 root,
-                entry_path.strip_prefix(root).map_err(|_| invalid("invalid template root"))?,
+                entry_path
+                    .strip_prefix(root)
+                    .map_err(|_| invalid("invalid template root"))?,
             )?;
             let kind = fs::symlink_metadata(&path)?.file_type();
             if kind.is_dir() {
@@ -153,8 +157,9 @@ fn read_files(root: &Path, directory: &Path, budget: &mut Budget) -> io::Result<
             if budget.bytes > MAX_CATALOG_BYTES {
                 return Err(invalid("template catalog size limit exceeded"));
             }
-            let relative =
-                path.strip_prefix(directory).map_err(|_| invalid("invalid template file"))?;
+            let relative = path
+                .strip_prefix(directory)
+                .map_err(|_| invalid("invalid template file"))?;
             let relative = relative
                 .to_str()
                 .ok_or_else(|| invalid("template path is not UTF-8"))?
@@ -185,12 +190,19 @@ pub fn load_templates(root: &Path) -> io::Result<Vec<TemplateDefinition>> {
     let Some(table) = stack.get("template") else {
         return Ok(Vec::new());
     };
-    let table = table.as_table().ok_or_else(|| invalid("template catalog must be a table"))?;
+    let table = table
+        .as_table()
+        .ok_or_else(|| invalid("template catalog must be a table"))?;
     let mut templates = Vec::new();
-    let mut budget = Budget { entries: 0, bytes: 0 };
+    let mut budget = Budget {
+        entries: 0,
+        bytes: 0,
+    };
     for (id, value) in table {
-        let template: StackTemplate =
-            value.clone().try_into().map_err(|_| invalid("invalid template declaration"))?;
+        let template: StackTemplate = value
+            .clone()
+            .try_into()
+            .map_err(|_| invalid("invalid template declaration"))?;
         let relative = Path::new(&template.path);
         if !relative.starts_with("m3/templates") {
             return Err(invalid("template outside m3/templates denied"));
@@ -242,9 +254,18 @@ mod tests {
             root.path().join("m3/templates/stack.toml"),
             "[template.base]\npath='m3/templates/base'\ndescription='Base server'\nrequired=true\ndependencies={a='1'}\ndev_dependencies={a='2',b='3'}\n[template.hono]\npath='m3/templates/hono'\nexclusive='framework'\n[template.web]\npath='m3/templates/web'\ncurated='default'\n",
         )?;
-        fs::write(root.path().join("m3/templates/base/src/server.ts"), "export {};\n")?;
-        fs::write(root.path().join("m3/templates/base/Dockerfile"), "FROM scratch\n")?;
-        fs::write(root.path().join("m3/templates/base/big.json"), vec![b'x'; MAX_FILE_BYTES + 1])?;
+        fs::write(
+            root.path().join("m3/templates/base/src/server.ts"),
+            "export {};\n",
+        )?;
+        fs::write(
+            root.path().join("m3/templates/base/Dockerfile"),
+            "FROM scratch\n",
+        )?;
+        fs::write(
+            root.path().join("m3/templates/base/big.json"),
+            vec![b'x'; MAX_FILE_BYTES + 1],
+        )?;
         fs::write(root.path().join("m3/templates/base/logo.png"), b"binary")?;
         Ok(root)
     }
@@ -258,14 +279,24 @@ mod tests {
             ["base", "hono", "web"]
         );
         assert_eq!(templates[0].cli_command, "just yolo::create ../my-app");
-        assert_eq!(templates[1].cli_command, "just yolo::create ../my-app --framework hono");
-        assert_eq!(templates[2].cli_command, "just yolo::create ../my-app --with web");
+        assert_eq!(
+            templates[1].cli_command,
+            "just yolo::create ../my-app --framework hono"
+        );
+        assert_eq!(
+            templates[2].cli_command,
+            "just yolo::create ../my-app --with web"
+        );
         assert_eq!(templates[0].dependencies["a"], "2");
         assert_eq!(templates[0].tags, ["required"]);
         assert_eq!(templates[1].tags, ["exclusive: framework"]);
         assert_eq!(templates[2].tags, ["default"]);
         assert_eq!(
-            templates[0].files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+            templates[0]
+                .files
+                .iter()
+                .map(|f| f.path.as_str())
+                .collect::<Vec<_>>(),
             ["Dockerfile", "src/server.ts"]
         );
         assert_eq!(templates[0].files[1].language, "typescript");
@@ -279,7 +310,12 @@ mod tests {
     #[test]
     fn traversal_and_external_template_paths_are_rejected() -> io::Result<()> {
         let root = fixture()?;
-        for path in ["m3/templates/../secret", "../secret", "/secret", "crates/ai"] {
+        for path in [
+            "m3/templates/../secret",
+            "../secret",
+            "/secret",
+            "crates/ai",
+        ] {
             fs::write(
                 root.path().join("m3/templates/stack.toml"),
                 format!("[template.bad]\npath='{path}'\n"),

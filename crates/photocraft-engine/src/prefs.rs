@@ -166,14 +166,20 @@ impl Unit {
     /// finite number followed by a known unit.
     pub fn parse_length(text: &str) -> Option<(f64, Option<Unit>)> {
         let t = text.trim();
-        let end = t.find(|c: char| !(c.is_ascii_digit() || matches!(c, '.' | ',' | '-' | '+'))).unwrap_or(t.len());
+        let end = t
+            .find(|c: char| !(c.is_ascii_digit() || matches!(c, '.' | ',' | '-' | '+')))
+            .unwrap_or(t.len());
         let (number, suffix) = t.split_at(end);
         let v: f64 = number.trim().replace(',', ".").parse().ok()?;
         if !v.is_finite() {
             return None;
         }
         let suffix = suffix.trim();
-        let unit = if suffix.is_empty() { None } else { Some(Unit::from_suffix(suffix)?) };
+        let unit = if suffix.is_empty() {
+            None
+        } else {
+            Some(Unit::from_suffix(suffix)?)
+        };
         Some((v, unit))
     }
     /// The unit a typed suffix names, in any case: `px`, `in` or `"`, `cm`, `mm`, `pt`, `pc` or
@@ -414,8 +420,11 @@ impl PressureCurve {
     pub const MAX_POINTS: usize = 16;
 
     pub fn new(points: &[[f32; 2]]) -> Self {
-        let mut pts: Vec<[f32; 2]> =
-            points.iter().filter(|p| p[0].is_finite() && p[1].is_finite()).map(|p| [p[0].clamp(0.0, 1.0), p[1].clamp(0.0, 1.0)]).collect();
+        let mut pts: Vec<[f32; 2]> = points
+            .iter()
+            .filter(|p| p[0].is_finite() && p[1].is_finite())
+            .map(|p| [p[0].clamp(0.0, 1.0), p[1].clamp(0.0, 1.0)])
+            .collect();
         pts.sort_by(|a, b| a[0].total_cmp(&b[0]));
         pts.dedup_by(|b, a| {
             // Same input: keep the later point's output.
@@ -437,12 +446,18 @@ impl PressureCurve {
         // Fritsch–Carlson tangents: secant averages, zero at flat steps, limited so the cubic
         // never overshoots (which keeps it monotone).
         let n = xs.len();
-        let d: Vec<f32> = (0..n - 1).map(|k| (ys[k + 1] - ys[k]) / (xs[k + 1] - xs[k])).collect();
+        let d: Vec<f32> = (0..n - 1)
+            .map(|k| (ys[k + 1] - ys[k]) / (xs[k + 1] - xs[k]))
+            .collect();
         let mut ms = vec![0.0f32; n];
         ms[0] = d[0];
         ms[n - 1] = d[n - 2];
         for k in 1..n - 1 {
-            ms[k] = if d[k - 1] * d[k] <= 0.0 { 0.0 } else { (d[k - 1] + d[k]) / 2.0 };
+            ms[k] = if d[k - 1] * d[k] <= 0.0 {
+                0.0
+            } else {
+                (d[k - 1] + d[k]) / 2.0
+            };
         }
         for k in 0..n - 1 {
             if d[k] == 0.0 {
@@ -465,23 +480,37 @@ impl PressureCurve {
     pub fn eval(&self, x: f32) -> f32 {
         let x = if x.is_nan() { 0.0 } else { x.clamp(0.0, 1.0) };
         let n = self.xs.len();
-        let (Some(&x0), Some(&xn)) = (self.xs.first(), self.xs.last()) else { return x };
+        let (Some(&x0), Some(&xn)) = (self.xs.first(), self.xs.last()) else {
+            return x;
+        };
         if x <= x0 {
             return self.ys.first().copied().unwrap_or(x);
         }
         if x >= xn {
             return self.ys.last().copied().unwrap_or(x);
         }
-        let k = self.xs.partition_point(|&v| v <= x).saturating_sub(1).min(n.saturating_sub(2));
-        let (Some(&xa), Some(&xb), Some(&ya), Some(&yb), Some(&ma), Some(&mb)) =
-            (self.xs.get(k), self.xs.get(k + 1), self.ys.get(k), self.ys.get(k + 1), self.ms.get(k), self.ms.get(k + 1))
-        else {
+        let k = self
+            .xs
+            .partition_point(|&v| v <= x)
+            .saturating_sub(1)
+            .min(n.saturating_sub(2));
+        let (Some(&xa), Some(&xb), Some(&ya), Some(&yb), Some(&ma), Some(&mb)) = (
+            self.xs.get(k),
+            self.xs.get(k + 1),
+            self.ys.get(k),
+            self.ys.get(k + 1),
+            self.ms.get(k),
+            self.ms.get(k + 1),
+        ) else {
             return x;
         };
         let h = xb - xa;
         let t = (x - xa) / h;
         let (t2, t3) = (t * t, t * t * t);
-        let y = (2.0 * t3 - 3.0 * t2 + 1.0) * ya + (t3 - 2.0 * t2 + t) * h * ma + (-2.0 * t3 + 3.0 * t2) * yb + (t3 - t2) * h * mb;
+        let y = (2.0 * t3 - 3.0 * t2 + 1.0) * ya
+            + (t3 - 2.0 * t2 + t) * h * ma
+            + (-2.0 * t3 + 3.0 * t2) * yb
+            + (t3 - t2) * h * mb;
         y.clamp(ya.min(yb), ya.max(yb))
     }
 
@@ -503,7 +532,12 @@ pub struct HistoryLog {
 
 impl Default for HistoryLog {
     fn default() -> Self {
-        Self { enabled: false, destination: LogDestination::Metadata, file_path: String::new(), detail: LogDetail::Concise }
+        Self {
+            enabled: false,
+            destination: LogDestination::Metadata,
+            file_path: String::new(),
+            detail: LogDetail::Concise,
+        }
     }
 }
 
@@ -608,7 +642,13 @@ pub struct Performance {
 impl Performance {
     /// Resolve old preferences without allowing legacy flags to override an explicit mode.
     pub fn effective_rendering_mode(&self) -> RenderingMode {
-        self.rendering_mode.unwrap_or_else(|| if !self.use_gpu || self.gpu_backend == GpuBackend::Cpu { RenderingMode::Cpu } else { RenderingMode::Auto })
+        self.rendering_mode.unwrap_or_else(|| {
+            if !self.use_gpu || self.gpu_backend == GpuBackend::Cpu {
+                RenderingMode::Cpu
+            } else {
+                RenderingMode::Auto
+            }
+        })
     }
 
     /// Pixel memory a document and its History may hold (Memory Usage), in bytes: beyond it
@@ -652,7 +692,12 @@ pub struct ScratchDisks {
 
 impl Default for ScratchDisks {
     fn default() -> Self {
-        Self { disks: vec![ScratchDisk { path: "(system temp)".into(), enabled: true }] }
+        Self {
+            disks: vec![ScratchDisk {
+                path: "(system temp)".into(),
+                enabled: true,
+            }],
+        }
     }
 }
 
@@ -726,7 +771,10 @@ impl TransparencyAndGamut {
             CheckerColors::Green => [[255, 255, 255], [204, 255, 204]],
             CheckerColors::Blue => [[255, 255, 255], [204, 229, 255]],
             CheckerColors::Purple => [[255, 255, 255], [229, 204, 255]],
-            CheckerColors::Custom => [parse_hex(&self.custom_light).unwrap_or([255; 3]), parse_hex(&self.custom_dark).unwrap_or([204; 3])],
+            CheckerColors::Custom => [
+                parse_hex(&self.custom_light).unwrap_or([255; 3]),
+                parse_hex(&self.custom_dark).unwrap_or([204; 3]),
+            ],
         }
     }
 }
@@ -781,7 +829,9 @@ pub fn fmt_decimals(v: f64, decimals: usize) -> String {
 impl UnitsAndRulers {
     /// Format a length in document pixels in the ruler unit, e.g. `"2.5 in"`.
     pub fn format(&self, px: f64, dpi: f64, extent: f64) -> String {
-        let v = self.rulers.from_px(px, dpi, extent, self.point_size.per_inch());
+        let v = self
+            .rulers
+            .from_px(px, dpi, extent, self.point_size.per_inch());
         fmt_decimals(v, self.rulers.decimals())
     }
 }
@@ -822,7 +872,9 @@ impl Default for GuidesGridAndSlices {
 impl GuidesGridAndSlices {
     /// Major gridline spacing in document pixels.
     pub fn major_px(&self, dpi: f64, extent: f64, ppi: f64) -> f64 {
-        self.grid_unit.to_px(self.gridline_every.max(1e-3), dpi, extent, ppi).max(1e-3)
+        self.grid_unit
+            .to_px(self.gridline_every.max(1e-3), dpi, extent, ppi)
+            .max(1e-3)
     }
 }
 
@@ -897,7 +949,12 @@ pub struct EnhancedControls {
 
 impl Default for EnhancedControls {
     fn default() -> Self {
-        Self { scrubby_slider_acceleration: true, touch_gestures: true, zoom_with_trackpad_pinch: true, rotate_view_with_trackpad: false }
+        Self {
+            scrubby_slider_acceleration: true,
+            touch_gestures: true,
+            zoom_with_trackpad_pinch: true,
+            rotate_view_with_trackpad: false,
+        }
     }
 }
 
@@ -941,7 +998,10 @@ pub struct Integrations {
 
 impl Default for Integrations {
     fn default() -> Self {
-        Self { allow_agent_control: true, control_port: 0 }
+        Self {
+            allow_agent_control: true,
+            control_port: 0,
+        }
     }
 }
 
@@ -1081,7 +1141,8 @@ pub const HIDDEN_UNTIL_IMPLEMENTED: &[&str] = &[
 
 /// Is the preference at `path` (`"section.key"`) hidden from the Preferences dialog?
 pub fn is_hidden(path: &str) -> bool {
-    HIDDEN_UNTIL_IMPLEMENTED.contains(&path) || (!cfg!(target_os = "linux") && LINUX_ONLY.contains(&path))
+    HIDDEN_UNTIL_IMPLEMENTED.contains(&path)
+        || (!cfg!(target_os = "linux") && LINUX_ONLY.contains(&path))
 }
 
 /// Preferences that only do something on Linux; the dialog doesn't show them elsewhere. They
@@ -1133,7 +1194,9 @@ pub fn range(path: &str) -> Option<(f64, f64)> {
     Some(match path {
         "fileHandling.autosaveMinutes" => (1.0, 240.0),
         "fileHandling.recentFileCount" => (0.0, 100.0),
-        "fileHandling.rasterizeSvgGroupsDeeperThan" => (0.0, photocraft_doc::MAX_GROUP_DEPTH as f64),
+        "fileHandling.rasterizeSvgGroupsDeeperThan" => {
+            (0.0, photocraft_doc::MAX_GROUP_DEPTH as f64)
+        }
         "interface.notificationDurationSeconds" => (1.0, 120.0),
         "export.jpegQuality" | "export.webpQuality" => (1.0, 100.0),
         "performance.memoryUsageMb" => (256.0, 1_048_576.0),
@@ -1143,7 +1206,9 @@ pub fn range(path: &str) -> Option<(f64, f64)> {
         "performance.effectCacheMb" => (16.0, 65536.0),
         "transparencyAndGamut.gamutWarningOpacity" => (1.0, 100.0),
         "unitsAndRulers.columnWidth" | "unitsAndRulers.gutter" => (0.0, 10_000.0),
-        "unitsAndRulers.printResolution" | "unitsAndRulers.screenResolution" | "rawDefaults.resolution" => (1.0, 10_000.0),
+        "unitsAndRulers.printResolution"
+        | "unitsAndRulers.screenResolution"
+        | "rawDefaults.resolution" => (1.0, 10_000.0),
         "guidesGridAndSlices.gridlineEvery" => (0.001, 10_000.0),
         "guidesGridAndSlices.subdivisions" => (1.0, 100.0),
         "type.recentFonts" => (0.0, 50.0),
@@ -1208,19 +1273,30 @@ fn set_path(root: &mut Value, path: &str, value: Value) -> std::result::Result<(
     if let Some((map, id)) = keyed(path) {
         let mut cur = &mut *root;
         for k in map.split('.') {
-            cur = cur.get_mut(k).ok_or_else(|| format!("unknown preference `{path}`"))?;
+            cur = cur
+                .get_mut(k)
+                .ok_or_else(|| format!("unknown preference `{path}`"))?;
         }
-        cur.as_object_mut().ok_or_else(|| format!("`{map}` is not a map"))?.insert(id.to_string(), value);
+        cur.as_object_mut()
+            .ok_or_else(|| format!("`{map}` is not a map"))?
+            .insert(id.to_string(), value);
         return Ok(());
     }
     let keys: Vec<&str> = path.split('.').filter(|k| !k.is_empty()).collect();
-    let Some((last, parents)) = keys.split_last() else { return Err("empty path".into()) };
+    let Some((last, parents)) = keys.split_last() else {
+        return Err("empty path".into());
+    };
     let mut cur = root;
     for k in parents {
-        cur = cur.get_mut(*k).ok_or_else(|| format!("unknown preference `{path}`"))?;
+        cur = cur
+            .get_mut(*k)
+            .ok_or_else(|| format!("unknown preference `{path}`"))?;
     }
-    let free_map = matches!(parents.first(), Some(&"shortcuts")) || (parents.len() == 2 && parents[0] == "menus" && parents[1] == "colors");
-    let obj = cur.as_object_mut().ok_or_else(|| format!("`{path}` is not inside a section"))?;
+    let free_map = matches!(parents.first(), Some(&"shortcuts"))
+        || (parents.len() == 2 && parents[0] == "menus" && parents[1] == "colors");
+    let obj = cur
+        .as_object_mut()
+        .ok_or_else(|| format!("`{path}` is not inside a section"))?;
     if !obj.contains_key(*last) && !free_map {
         return Err(format!("unknown preference `{path}`"));
     }
@@ -1231,13 +1307,18 @@ fn set_path(root: &mut Value, path: &str, value: Value) -> std::result::Result<(
 /// Validate one value for `path` before it is stored (choices, ranges, colours).
 fn check_value(path: &str, v: &Value) -> std::result::Result<(), String> {
     if path == "interface.favoriteThemes" {
-        let items = v.as_array().ok_or("`interface.favoriteThemes` must be a list of theme ids")?;
+        let items = v
+            .as_array()
+            .ok_or("`interface.favoriteThemes` must be a list of theme ids")?;
         if items.len() > Theme::NAMES.len() {
             return Err("`interface.favoriteThemes` contains too many themes".into());
         }
         let mut seen = Vec::with_capacity(items.len());
         for item in items {
-            let theme = item.as_str().and_then(Theme::parse).ok_or_else(|| format!("unknown favorite theme `{item}`"))?;
+            let theme = item
+                .as_str()
+                .and_then(Theme::parse)
+                .ok_or_else(|| format!("unknown favorite theme `{item}`"))?;
             if seen.contains(&theme) {
                 return Err(format!("duplicate favorite theme `{}`", theme.name()));
             }
@@ -1248,19 +1329,33 @@ fn check_value(path: &str, v: &Value) -> std::result::Result<(), String> {
         return Ok(()); // Legacy policy, resolved from useGpu and gpuBackend.
     }
     if let Some(c) = choices(path) {
-        let s = v.as_str().ok_or_else(|| format!("`{path}` must be one of {}", c.join("|")))?;
+        let s = v
+            .as_str()
+            .ok_or_else(|| format!("`{path}` must be one of {}", c.join("|")))?;
         if !c.contains(&s) {
-            return Err(format!("`{path}` must be one of {} (got `{s}`)", c.join("|")));
+            return Err(format!(
+                "`{path}` must be one of {} (got `{s}`)",
+                c.join("|")
+            ));
         }
     }
     if path == "interface.language" {
-        let ok = v.as_str().is_some_and(|s| !s.is_empty() && s.len() <= 16 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'));
+        let ok = v.as_str().is_some_and(|s| {
+            !s.is_empty()
+                && s.len() <= 16
+                && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        });
         if !ok {
-            return Err("`interface.language` must be `auto` or a language code such as `en` or `ja`".into());
+            return Err(
+                "`interface.language` must be `auto` or a language code such as `en` or `ja`"
+                    .into(),
+            );
         }
     }
     if let Some((lo, hi)) = range(path) {
-        let x = v.as_f64().ok_or_else(|| format!("`{path}` must be a number"))?;
+        let x = v
+            .as_f64()
+            .ok_or_else(|| format!("`{path}` must be a number"))?;
         if !(lo..=hi).contains(&x) {
             return Err(format!("`{path}` must be within {lo}..{hi} (got {x})"));
         }
@@ -1269,21 +1364,37 @@ fn check_value(path: &str, v: &Value) -> std::result::Result<(), String> {
         return Err(format!("`{path}` must be a #rrggbb colour"));
     }
     if path == "tools.pressureCurve" {
-        let pts = v.as_array().ok_or("`tools.pressureCurve` must be a list of [input, output] points")?;
+        let pts = v
+            .as_array()
+            .ok_or("`tools.pressureCurve` must be a list of [input, output] points")?;
         if !(2..=PressureCurve::MAX_POINTS).contains(&pts.len()) {
-            return Err(format!("`tools.pressureCurve` needs 2..={} points (got {})", PressureCurve::MAX_POINTS, pts.len()));
+            return Err(format!(
+                "`tools.pressureCurve` needs 2..={} points (got {})",
+                PressureCurve::MAX_POINTS,
+                pts.len()
+            ));
         }
         for p in pts {
-            let ok = p.as_array().is_some_and(|a| a.len() == 2 && a.iter().all(|x| x.as_f64().is_some_and(|x| (0.0..=1.0).contains(&x))));
+            let ok = p.as_array().is_some_and(|a| {
+                a.len() == 2
+                    && a.iter()
+                        .all(|x| x.as_f64().is_some_and(|x| (0.0..=1.0).contains(&x)))
+            });
             if !ok {
-                return Err(format!("`tools.pressureCurve` points are [input, output] pairs within 0..1 (got {p})"));
+                return Err(format!(
+                    "`tools.pressureCurve` points are [input, output] pairs within 0..1 (got {p})"
+                ));
             }
         }
     }
     if let Some(sc) = path.strip_prefix("shortcuts.") {
-        let s = v.as_str().ok_or_else(|| format!("shortcut for `{sc}` must be a string"))?;
+        let s = v
+            .as_str()
+            .ok_or_else(|| format!("shortcut for `{sc}` must be a string"))?;
         if !s.is_empty() && normalize_shortcut(s).is_none() {
-            return Err(format!("`{s}` is not a valid shortcut (e.g. Cmd+Shift+N, F7)"));
+            return Err(format!(
+                "`{s}` is not a valid shortcut (e.g. Cmd+Shift+N, F7)"
+            ));
         }
     }
     Ok(())
@@ -1304,7 +1415,9 @@ impl Preferences {
     pub fn set(&mut self, path: &str, value: Value) -> std::result::Result<(), String> {
         let value = match (path.strip_prefix("shortcuts."), &value) {
             // Normalise shortcut spelling so conflicts compare equal.
-            (Some(_), Value::String(s)) if !s.is_empty() => Value::String(normalize_shortcut(s).ok_or_else(|| format!("`{s}` is not a valid shortcut"))?),
+            (Some(_), Value::String(s)) if !s.is_empty() => Value::String(
+                normalize_shortcut(s).ok_or_else(|| format!("`{s}` is not a valid shortcut"))?,
+            ),
             (Some(_), Value::Null) => {
                 // null = back to the default.
                 let id = &path["shortcuts.".len()..];
@@ -1316,7 +1429,8 @@ impl Preferences {
         check_value(path, &value)?;
         let mut root = self.to_json();
         set_path(&mut root, path, value)?;
-        *self = serde_json::from_value(root).map_err(|e| format!("invalid value for `{path}`: {e}"))?;
+        *self =
+            serde_json::from_value(root).map_err(|e| format!("invalid value for `{path}`: {e}"))?;
         Ok(())
     }
 
@@ -1338,7 +1452,9 @@ impl Preferences {
             }
             _ => {}
         }
-        let def = Preferences::default().get(path).ok_or_else(|| format!("unknown preference `{path}`"))?;
+        let def = Preferences::default()
+            .get(path)
+            .ok_or_else(|| format!("unknown preference `{path}`"))?;
         if path == "shortcuts" {
             self.shortcuts.clear();
             return Ok(());
@@ -1371,7 +1487,11 @@ pub fn normalize_shortcut(s: &str) -> Option<String> {
     let (mut cmd, mut ctrl, mut alt, mut shift) = (false, false, false, false);
     let mut key: Option<String> = None;
     // A trailing "+" key is spelled "Cmd++".
-    let (body, plus_key) = if s.ends_with("++") || s == "+" { (s.trim_end_matches('+'), true) } else { (s, false) };
+    let (body, plus_key) = if s.ends_with("++") || s == "+" {
+        (s.trim_end_matches('+'), true)
+    } else {
+        (s, false)
+    };
     for part in body.split('+').filter(|p| !p.is_empty()) {
         match part.to_ascii_lowercase().as_str() {
             "cmd" | "command" | "⌘" | "meta" | "super" => cmd = true,
@@ -1382,7 +1502,11 @@ pub fn normalize_shortcut(s: &str) -> Option<String> {
                 if key.is_some() {
                     return None;
                 }
-                let k = if part.chars().count() == 1 { part.to_uppercase() } else { capitalize(part) };
+                let k = if part.chars().count() == 1 {
+                    part.to_uppercase()
+                } else {
+                    capitalize(part)
+                };
                 key = Some(k);
             }
         }
@@ -1421,7 +1545,10 @@ fn capitalize(s: &str) -> String {
         Some(f) if f.is_ascii_alphabetic() => {
             let rest: String = c.collect();
             // Function keys stay upper-case (F1…F24); named keys are Title case.
-            if f.eq_ignore_ascii_case(&'f') && rest.chars().all(|c| c.is_ascii_digit()) && !rest.is_empty() {
+            if f.eq_ignore_ascii_case(&'f')
+                && rest.chars().all(|c| c.is_ascii_digit())
+                && !rest.is_empty()
+            {
                 format!("F{rest}")
             } else {
                 format!("{}{}", f.to_ascii_uppercase(), rest.to_ascii_lowercase())
@@ -1439,18 +1566,31 @@ fn capitalize(s: &str) -> String {
 /// The erase key keeps the Brush or Pencil and makes its strokes erase (Photoshop's `~`).
 pub const TEMPORARY_TOOLS: &[(&str, &str, &str)] = &[
     ("tools.temporary.hand", "Hand Tool (hold)", "Space"),
-    ("tools.temporary.zoomIn", "Zoom In (hold, drag to scrub)", "Cmd+Space"),
+    (
+        "tools.temporary.zoomIn",
+        "Zoom In (hold, drag to scrub)",
+        "Cmd+Space",
+    ),
     ("tools.temporary.zoomOut", "Zoom Out (hold)", "Alt+Space"),
-    ("tools.temporary.erase", "Erase with Brush or Pencil (hold)", "`"),
+    (
+        "tools.temporary.erase",
+        "Erase with Brush or Pencil (hold)",
+        "`",
+    ),
 ];
 
 /// Every bindable id with its default: commands, then the temporary tools.
 fn bindable() -> impl Iterator<Item = (&'static str, Option<&'static str>)> {
-    crate::command_specs().iter().map(|c| (c.id, c.shortcut)).chain(TEMPORARY_TOOLS.iter().map(|t| (t.0, Some(t.2))))
+    crate::command_specs()
+        .iter()
+        .map(|c| (c.id, c.shortcut))
+        .chain(TEMPORARY_TOOLS.iter().map(|t| (t.0, Some(t.2))))
 }
 
 /// Shortcuts bound to more than one command: (shortcut, ids). `bindings` are (id, shortcut).
-pub fn conflicts<'a>(bindings: impl IntoIterator<Item = (&'a str, &'a str)>) -> Vec<(String, Vec<String>)> {
+pub fn conflicts<'a>(
+    bindings: impl IntoIterator<Item = (&'a str, &'a str)>,
+) -> Vec<(String, Vec<String>)> {
     let mut by: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (id, sc) in bindings {
         if let Some(n) = normalize_shortcut(sc) {
@@ -1510,7 +1650,9 @@ impl Session {
         }
         photocraft_compose::set_effect_cache_budget(budget << 20);
         // Without waiting for the system font scan: this runs on the UI thread at launch.
-        photocraft_text::set_shared_missing_glyph_protection(self.prefs().type_.missing_glyph_protection());
+        photocraft_text::set_shared_missing_glyph_protection(
+            self.prefs().type_.missing_glyph_protection(),
+        );
         crate::plugin_cmds::sync_prefs(self);
     }
 
@@ -1523,7 +1665,10 @@ impl Session {
     pub fn prefs_value(&self) -> Value {
         let mut v = self.prefs().to_json();
         if let Value::Object(m) = &mut v {
-            m.insert("colorSettings".into(), serde_json::to_value(&self.color.settings).unwrap_or(Value::Null));
+            m.insert(
+                "colorSettings".into(),
+                serde_json::to_value(&self.color.settings).unwrap_or(Value::Null),
+            );
             m.insert("version".into(), json!(1));
             m.insert("presets".into(), self.presets.to_json(self));
         }
@@ -1538,22 +1683,34 @@ impl Session {
         // appearance instead of silently switching established users to Auto.
         if let Some(interface) = v.get_mut("interface").and_then(Value::as_object_mut)
             && !interface.contains_key("appearanceMode")
-            && let Some(theme) = interface.get("theme").and_then(Value::as_str).and_then(Theme::parse)
+            && let Some(theme) = interface
+                .get("theme")
+                .and_then(Value::as_str)
+                .and_then(Theme::parse)
         {
             let (mode, slot) = match theme {
-                Theme::Pro | Theme::ProMedium | Theme::Studio | Theme::SolarizedDark | Theme::AdwaitaDark | Theme::BreezeDark | Theme::SoftDark => {
-                    ("dark", "darkTheme")
-                }
-                Theme::StudioLight | Theme::ProLightGray | Theme::ProLight | Theme::Classic | Theme::Adwaita | Theme::BreezeLight | Theme::SoftLight => {
-                    ("light", "lightTheme")
-                }
+                Theme::Pro
+                | Theme::ProMedium
+                | Theme::Studio
+                | Theme::SolarizedDark
+                | Theme::AdwaitaDark
+                | Theme::BreezeDark
+                | Theme::SoftDark => ("dark", "darkTheme"),
+                Theme::StudioLight
+                | Theme::ProLightGray
+                | Theme::ProLight
+                | Theme::Classic
+                | Theme::Adwaita
+                | Theme::BreezeLight
+                | Theme::SoftLight => ("light", "lightTheme"),
             };
             interface.insert("appearanceMode".into(), json!(mode));
             interface.insert(slot.into(), json!(theme.name()));
         }
         let color = v.as_object_mut().and_then(|m| m.remove("colorSettings"));
         let presets = v.as_object_mut().and_then(|m| m.remove("presets"));
-        let prefs: Preferences = serde_json::from_value(v).map_err(|e| format!("preferences: {e}"))?;
+        let prefs: Preferences =
+            serde_json::from_value(v).map_err(|e| format!("preferences: {e}"))?;
         if let Some(c) = color {
             self.color.settings = serde_json::from_value(c).unwrap_or_default();
             photocraft_compose::psblend::set_text_gamma(self.color.settings.blend_text_gamma);
@@ -1570,7 +1727,10 @@ impl Session {
     fn prefs_view(&self) -> Value {
         let mut v = self.prefs().to_json();
         if let Value::Object(m) = &mut v {
-            m.insert("colorSettings".into(), serde_json::to_value(&self.color.settings).unwrap_or(Value::Null));
+            m.insert(
+                "colorSettings".into(),
+                serde_json::to_value(&self.color.settings).unwrap_or(Value::Null),
+            );
         }
         v
     }
@@ -1578,7 +1738,12 @@ impl Session {
     /// Set one dotted path, routing `colorSettings.*` to the colour state.
     /// Batches defer colour validation until their complete candidate is staged. Returns
     /// whether colour settings were touched, including whole-section/root-object updates.
-    fn set_pref(&mut self, path: &str, value: Value, validate_color: bool) -> std::result::Result<bool, String> {
+    fn set_pref(
+        &mut self,
+        path: &str,
+        value: Value,
+        validate_color: bool,
+    ) -> std::result::Result<bool, String> {
         if let Some(rest) = path.strip_prefix("colorSettings") {
             let mut cur = serde_json::to_value(&self.color.settings).map_err(|e| e.to_string())?;
             let rest = rest.trim_start_matches('.');
@@ -1587,7 +1752,8 @@ impl Session {
             } else {
                 set_path(&mut cur, rest, value)?;
             }
-            let next = serde_json::from_value(cur).map_err(|e| format!("invalid value for `{path}`: {e}"))?;
+            let next = serde_json::from_value(cur)
+                .map_err(|e| format!("invalid value for `{path}`: {e}"))?;
             if validate_color {
                 crate::color_cmds::validate_settings(&next)?;
             }
@@ -1597,16 +1763,29 @@ impl Session {
         }
         let mut next = self.prefs().clone();
         let mut color_changed = false;
-        if path.is_empty() || SECTIONS.iter().any(|(id, _)| *id == path) || matches!(path, "shortcuts" | "menus" | "toolbar") {
+        if path.is_empty()
+            || SECTIONS.iter().any(|(id, _)| *id == path)
+            || matches!(path, "shortcuts" | "menus" | "toolbar")
+        {
             // Whole section (or everything): merge the object key by key so each value is checked.
-            let obj = value.as_object().ok_or_else(|| format!("`{path}` needs an object"))?;
+            let obj = value
+                .as_object()
+                .ok_or_else(|| format!("`{path}` needs an object"))?;
             for (k, v) in obj {
-                let p = if path.is_empty() { k.clone() } else { format!("{path}.{k}") };
+                let p = if path.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{path}.{k}")
+                };
                 if path.is_empty() && k == "colorSettings" {
                     color_changed |= self.set_pref("colorSettings", v.clone(), validate_color)?;
                     continue;
                 }
-                if v.is_object() && !p.starts_with("shortcuts") && !p.ends_with(".colors") && next.get(&p).is_some_and(|c| c.is_object()) {
+                if v.is_object()
+                    && !p.starts_with("shortcuts")
+                    && !p.ends_with(".colors")
+                    && next.get(&p).is_some_and(|c| c.is_object())
+                {
                     for (k2, v2) in v.as_object().into_iter().flatten() {
                         next.set(&format!("{p}.{k2}"), v2.clone())?;
                     }
@@ -1691,26 +1870,39 @@ fn always(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn prefs_get(s: &mut Session, p: &Value) -> Result<Value> {
     let path = p.get("path").and_then(Value::as_str).unwrap_or("");
     let v = s.prefs_view();
-    get_path(&v, path).cloned().ok_or_else(|| bad("prefs.get", format!("unknown preference `{path}`")))
+    get_path(&v, path)
+        .cloned()
+        .ok_or_else(|| bad("prefs.get", format!("unknown preference `{path}`")))
 }
 
 fn prefs_set(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "prefs.set";
     let mut changes: Vec<(String, Value)> = Vec::new();
     if let Some(path) = p.get("path").and_then(Value::as_str) {
-        changes.push((path.to_string(), p.get("value").cloned().ok_or_else(|| bad(cmd, "missing `value`"))?));
+        changes.push((
+            path.to_string(),
+            p.get("value")
+                .cloned()
+                .ok_or_else(|| bad(cmd, "missing `value`"))?,
+        ));
     }
     if let Some(m) = p.get("values").and_then(Value::as_object) {
         changes.extend(m.iter().map(|(k, v)| (k.clone(), v.clone())));
     }
     if changes.is_empty() {
-        return Err(bad(cmd, "give `path` and `value`, or `values: {path: value, …}`"));
+        return Err(bad(
+            cmd,
+            "give `path` and `value`, or `values: {path: value, …}`",
+        ));
     }
     // All or nothing: validate against a scratch copy first.
     let (saved_prefs, saved_color) = (s.prefs().clone(), s.color.settings.clone());
@@ -1734,25 +1926,41 @@ fn prefs_set(s: &mut Session, p: &Value) -> Result<Value> {
     photocraft_compose::psblend::set_text_gamma(s.color.settings.blend_text_gamma);
     s.apply_prefs();
     let view = s.prefs_view();
-    let out: Map<String, Value> = changes.iter().map(|(k, _)| (k.clone(), get_path(&view, k).cloned().unwrap_or(Value::Null))).collect();
+    let out: Map<String, Value> = changes
+        .iter()
+        .map(|(k, _)| {
+            (
+                k.clone(),
+                get_path(&view, k).cloned().unwrap_or(Value::Null),
+            )
+        })
+        .collect();
     Ok(Value::Object(out))
 }
 
 fn prefs_reset(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = p.get("path").or_else(|| p.get("section")).and_then(Value::as_str);
+    let path = p
+        .get("path")
+        .or_else(|| p.get("section"))
+        .and_then(Value::as_str);
     match path {
         Some("colorSettings") => s.color.settings = Default::default(),
         // One colour setting: `Preferences` has no `colorSettings`, so take the default
         // from `ColorSettings` and route it like `prefs.set` does.
         Some(path) if path.starts_with("colorSettings.") => {
-            let defaults = serde_json::to_value(crate::color_cmds::ColorSettings::default()).map_err(|e| bad("prefs.reset", e.to_string()))?;
+            let defaults = serde_json::to_value(crate::color_cmds::ColorSettings::default())
+                .map_err(|e| bad("prefs.reset", e.to_string()))?;
             let key = path.strip_prefix("colorSettings.").unwrap_or(path);
-            let def = get_path(&defaults, key).cloned().ok_or_else(|| bad("prefs.reset", format!("unknown preference `{path}`")))?;
-            s.set_pref(path, def, true).map_err(|e| bad("prefs.reset", e))?;
+            let def = get_path(&defaults, key)
+                .cloned()
+                .ok_or_else(|| bad("prefs.reset", format!("unknown preference `{path}`")))?;
+            s.set_pref(path, def, true)
+                .map_err(|e| bad("prefs.reset", e))?;
         }
         None => {
             s.color.settings = Default::default();
-            s.edit_prefs(|p| p.reset(None)).map_err(|e| bad("prefs.reset", e))?;
+            s.edit_prefs(|p| p.reset(None))
+                .map_err(|e| bad("prefs.reset", e))?;
         }
         Some(path) => {
             let mut next = s.prefs().clone();
@@ -1773,8 +1981,15 @@ fn prefs_reset(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// `edit.preferences.<section>`: the section's values (the GUI opens the dialog on it instead).
 fn preferences_section(s: &mut Session, p: &Value) -> Result<Value> {
-    let section = p.get("__section").and_then(Value::as_str).unwrap_or("general").to_string();
-    let title = SECTIONS.iter().find(|(id, _)| *id == section).map_or("General", |(_, t)| *t);
+    let section = p
+        .get("__section")
+        .and_then(Value::as_str)
+        .unwrap_or("general")
+        .to_string();
+    let title = SECTIONS
+        .iter()
+        .find(|(id, _)| *id == section)
+        .map_or("General", |(_, t)| *t);
     let values = s.prefs().get(&section).unwrap_or(Value::Null);
     Ok(json!({"section": section, "title": title, "values": values}))
 }
@@ -1800,15 +2015,33 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
     let mut import = None;
     let p = match p.get("importKys") {
         Some(xml) => {
-            let xml = xml.as_str().ok_or_else(|| bad(cmd, "`importKys` is the text of a .kys file"))?;
+            let xml = xml
+                .as_str()
+                .ok_or_else(|| bad(cmd, "`importKys` is the text of a .kys file"))?;
             let set = crate::kys::parse(xml).map_err(|e| bad(cmd, e))?;
             let plan = crate::kys::plan(crate::kys::command_candidates(), &set);
             let mut merged = serde_json::Map::new();
             for (id, sc) in &plan.set {
-                let default = crate::command_specs().iter().find(|c| c.id == id).and_then(|c| c.shortcut).and_then(normalize_shortcut);
-                merged.insert(id.clone(), if default.as_deref() == Some(sc.as_str()) { Value::Null } else { json!(sc) });
+                let default = crate::command_specs()
+                    .iter()
+                    .find(|c| c.id == id)
+                    .and_then(|c| c.shortcut)
+                    .and_then(normalize_shortcut);
+                merged.insert(
+                    id.clone(),
+                    if default.as_deref() == Some(sc.as_str()) {
+                        Value::Null
+                    } else {
+                        json!(sc)
+                    },
+                );
             }
-            merged.extend(p.get("set").and_then(Value::as_object).cloned().unwrap_or_default());
+            merged.extend(
+                p.get("set")
+                    .and_then(Value::as_object)
+                    .cloned()
+                    .unwrap_or_default(),
+            );
             import = Some(json!({
                 "name": set.name,
                 "imported": plan.set.len(),
@@ -1828,15 +2061,26 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(m) = p.get("set").and_then(Value::as_object) {
         let mut next = s.prefs().clone();
         for (id, v) in m {
-            if !bindable().any(|(b, _)| b == id) && !p.get("allowUnknown").and_then(Value::as_bool).unwrap_or(false) {
+            if !bindable().any(|(b, _)| b == id)
+                && !p
+                    .get("allowUnknown")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false)
+            {
                 return Err(bad(cmd, format!("unknown command `{id}`")));
             }
-            next.set(&format!("shortcuts.{id}"), v.clone()).map_err(|e| bad(cmd, e))?;
+            next.set(&format!("shortcuts.{id}"), v.clone())
+                .map_err(|e| bad(cmd, e))?;
         }
         // Like Photoshop, a shortcut moved to a new command is taken away from the old one.
-        if p.get("removeConflicts").and_then(Value::as_bool).unwrap_or(true) {
+        if p.get("removeConflicts")
+            .and_then(Value::as_bool)
+            .unwrap_or(true)
+        {
             for (id, v) in m {
-                let Some(sc) = v.as_str().and_then(normalize_shortcut) else { continue };
+                let Some(sc) = v.as_str().and_then(normalize_shortcut) else {
+                    continue;
+                };
                 for (c, def) in bindable() {
                     // Never strip a command that this same call is assigning:
                     // two entries for one key are a clash inside the call, which
@@ -1845,7 +2089,12 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
                     if c == id || m.contains_key(c) {
                         continue;
                     }
-                    if next.shortcut(c, def).and_then(normalize_shortcut).as_deref() == Some(sc.as_str()) {
+                    if next
+                        .shortcut(c, def)
+                        .and_then(normalize_shortcut)
+                        .as_deref()
+                        == Some(sc.as_str())
+                    {
                         next.shortcuts.insert(c.to_string(), String::new());
                     }
                 }
@@ -1854,8 +2103,13 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
         s.edit_prefs(|p| *p = next);
     }
     let prefs = s.prefs();
-    let filter = p.get("filter").and_then(Value::as_str).map(str::to_ascii_lowercase);
-    let temporary = TEMPORARY_TOOLS.iter().map(|t| (t.0, t.1, &["Tools", "Temporary"][..], Some(t.2), true));
+    let filter = p
+        .get("filter")
+        .and_then(Value::as_str)
+        .map(str::to_ascii_lowercase);
+    let temporary = TEMPORARY_TOOLS
+        .iter()
+        .map(|t| (t.0, t.1, &["Tools", "Temporary"][..], Some(t.2), true));
     let list: Vec<Value> = crate::command_specs()
         .iter()
         .map(|c| (c.id, c.label, c.menu, c.shortcut, false))
@@ -1870,8 +2124,13 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
             v
         })
         .collect();
-    let bindings: Vec<(&str, &str)> = bindable().filter_map(|(id, def)| Some((id, prefs.shortcut(id, def)?))).collect();
-    let conflicts: Vec<Value> = conflicts(bindings).into_iter().map(|(sc, ids)| json!({"shortcut": sc, "commands": ids})).collect();
+    let bindings: Vec<(&str, &str)> = bindable()
+        .filter_map(|(id, def)| Some((id, prefs.shortcut(id, def)?)))
+        .collect();
+    let conflicts: Vec<Value> = conflicts(bindings)
+        .into_iter()
+        .map(|(sc, ids)| json!({"shortcut": sc, "commands": ids}))
+        .collect();
     let mut out = json!({"overrides": prefs.shortcuts, "commands": list, "conflicts": conflicts});
     if let Some(import) = import {
         out["import"] = import;
@@ -1882,13 +2141,26 @@ fn keyboard_shortcuts(s: &mut Session, p: &Value) -> Result<Value> {
 /// Edit › Menus: hide/show items and give them colours.
 fn menus(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = |k: &str| -> Vec<String> {
-        p.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default()
+        p.get(k)
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default()
     };
-    const COLORS: [&str; 8] = ["none", "red", "orange", "yellow", "green", "blue", "violet", "gray"];
+    const COLORS: [&str; 8] = [
+        "none", "red", "orange", "yellow", "green", "blue", "violet", "gray",
+    ];
     if let Some(m) = p.get("color").and_then(Value::as_object) {
         for v in m.values() {
             if let Some(c) = v.as_str().filter(|c| !COLORS.contains(c)) {
-                return Err(bad("edit.menus", format!("unknown colour `{c}` ({})", COLORS.join("|"))));
+                return Err(bad(
+                    "edit.menus",
+                    format!("unknown colour `{c}` ({})", COLORS.join("|")),
+                ));
             }
         }
     }
@@ -1921,7 +2193,14 @@ fn menus(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Edit › Toolbar: hide tools and reorder the toolbar.
 fn toolbar(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids = |k: &str| -> Option<Vec<String>> { p.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()) };
+    let ids = |k: &str| -> Option<Vec<String>> {
+        p.get(k).and_then(Value::as_array).map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+    };
     s.edit_prefs(|pr| {
         if p.get("reset").and_then(Value::as_bool) == Some(true) {
             pr.toolbar = ToolbarCustomization::default();
@@ -1976,7 +2255,15 @@ pub fn specs() -> Vec<CommandSpec> {
             prefs_set,
             false
         ),
-        spec!("prefs.reset", "Reset Preferences", [], None, r##"{"path":"section|section.key"?=everything}"##, prefs_reset, false),
+        spec!(
+            "prefs.reset",
+            "Reset Preferences",
+            [],
+            None,
+            r##"{"path":"section|section.key"?=everything}"##,
+            prefs_reset,
+            false
+        ),
         // Photoshop: ⌘K opens Preferences › General (⌘, is Layer › Hide Layers).
         section!("edit.preferences.general", "General…", Some("Cmd+K")),
         section!("edit.preferences.interface", "Interface…"),
@@ -1988,9 +2275,15 @@ pub fn specs() -> Vec<CommandSpec> {
         section!("edit.preferences.performance", "Performance…"),
         section!("edit.preferences.scratchDisks", "Scratch Disks…"),
         section!("edit.preferences.cursors", "Cursors…"),
-        section!("edit.preferences.transparencyAndGamut", "Transparency & Gamut…"),
+        section!(
+            "edit.preferences.transparencyAndGamut",
+            "Transparency & Gamut…"
+        ),
         section!("edit.preferences.unitsAndRulers", "Units & Rulers…"),
-        section!("edit.preferences.guidesGridAndSlices", "Guides, Grid & Slices…"),
+        section!(
+            "edit.preferences.guidesGridAndSlices",
+            "Guides, Grid & Slices…"
+        ),
         section!("edit.preferences.plugIns", "Plug-ins…"),
         section!("edit.preferences.type", "Type…"),
         section!("edit.preferences.enhancedControls", "Enhanced Controls…"),
@@ -2014,7 +2307,15 @@ pub fn specs() -> Vec<CommandSpec> {
             menus,
             true
         ),
-        spec!("edit.toolbar", "Toolbar…", ["Edit"], None, r##"{"hidden":["<tool>",…]?,"order":["<tool>",…]?,"reset":bool=false}"##, toolbar, true),
+        spec!(
+            "edit.toolbar",
+            "Toolbar…",
+            ["Edit"],
+            None,
+            r##"{"hidden":["<tool>",…]?,"order":["<tool>",…]?,"reset":bool=false}"##,
+            toolbar,
+            true
+        ),
     ]
 }
 

@@ -60,7 +60,11 @@ fn main() {
     }
 
     let pct = |a: u64, b: u64| {
-        if b == 0 { 0.0 } else { a as f64 * 100.0 / b as f64 }
+        if b == 0 {
+            0.0
+        } else {
+            a as f64 * 100.0 / b as f64
+        }
     };
     println!("primitives        {}", modele.primitives.len());
     println!("sommets           {sommets}");

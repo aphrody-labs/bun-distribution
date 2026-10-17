@@ -77,7 +77,11 @@ fn charger_personnages(vfs: &Vfs, textes: &BTreeMap<u32, String>) -> BTreeMap<u3
     let mut map = BTreeMap::new();
     for b in parse_all_chara_base(&json) {
         let prenom = textes.get(&b.name_hash.0).cloned().unwrap_or_default();
-        let nom = b.last_name_hash.and_then(|h| textes.get(&h.0)).cloned().unwrap_or_default();
+        let nom = b
+            .last_name_hash
+            .and_then(|h| textes.get(&h.0))
+            .cloned()
+            .unwrap_or_default();
         // `name_hash` porte souvent déjà le nom complet (« Hohira Ayumu ») : ne préfixer par le
         // nom de famille que s'il n'y est pas déjà, sinon on obtient « Hohira Hohira Ayumu ».
         let affiche = match (nom.is_empty(), prenom.is_empty()) {
@@ -86,7 +90,7 @@ fn charger_personnages(vfs: &Vfs, textes: &BTreeMap<u32, String>) -> BTreeMap<u3
             (false, true) => format!("{nom} ({})", b.internal_code),
             (false, false) if prenom.contains(nom.as_str()) => {
                 format!("{prenom} ({})", b.internal_code)
-            },
+            }
             (false, false) => format!("{nom} {prenom} ({})", b.internal_code),
         };
         map.insert(b.chara_id.0, affiche);
@@ -158,14 +162,17 @@ fn rendre(
             if d.story_threshold.is_none() && d.required_events.is_empty() {
                 return format!("\"{c}\"");
             }
-            let evs: Vec<String> =
-                d.required_events.iter().map(|e| format!("{}≥{}", e.crc_hex(), e.count)).collect();
+            let evs: Vec<String> = d
+                .required_events
+                .iter()
+                .map(|e| format!("{}≥{}", e.crc_hex(), e.count))
+                .collect();
             match d.story_threshold {
                 Some(s) if evs.is_empty() => format!("story≥{s}"),
                 Some(s) => format!("story≥{s} & [{}]", evs.join(" & ")),
                 None => format!("[{}]", evs.join(" & ")),
             }
-        },
+        }
         RdbnValue::ShortTuple(t) => format!("({}, {})", t[0], t[1]),
         RdbnValue::Blob(b) => format!("<{} octets>", b.len()),
         RdbnValue::Invalid => String::from("<invalide>"),
@@ -194,7 +201,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
 
     let textes = charger_textes(&vfs, &langue);
@@ -220,9 +227,10 @@ fn main() {
         .flat_map(|l| l.rows.iter())
         .flat_map(|r| r.fields.iter())
         .find_map(|(_, v)| match v {
-            RdbnValue::Condition(c) => {
-                decode_unlock_condition(c).required_events.first().map(|e| e.crc)
-            },
+            RdbnValue::Condition(c) => decode_unlock_condition(c)
+                .required_events
+                .first()
+                .map(|e| e.crc),
             _ => None,
         });
     // Repli : un mod peut avoir neutralisé la condition d'extend_story (c'est exactement ce que
@@ -256,7 +264,7 @@ fn main() {
                 std::process::exit(1);
             };
             (p, "déduit du corpus (extend_story n'a plus de condition)")
-        },
+        }
     };
     println!("pivot    0x{pivot:08X} ({origine})");
 
@@ -373,7 +381,10 @@ fn main() {
     // ── Regroupement par (fichier, liste) ─────────────────────────────────────────────────
     let mut groupes: BTreeMap<(String, String), Vec<&Ligne>> = BTreeMap::new();
     for l in &lignes {
-        groupes.entry((l.fichier.clone(), l.liste.clone())).or_default().push(l);
+        groupes
+            .entry((l.fichier.clone(), l.liste.clone()))
+            .or_default()
+            .push(l);
     }
 
     let _ = std::fs::create_dir_all(&out);
@@ -404,11 +415,23 @@ fn main() {
             ls.len()
         ));
         for l in ls.iter().take(max) {
-            let corps: Vec<String> = l.champs.iter().map(|(k, v)| format!("`{k}` = {v}")).collect();
-            md.push_str(&format!("- **[{}]** _{}_ · {}\n", l.index, l.voie, corps.join(" · ")));
+            let corps: Vec<String> = l
+                .champs
+                .iter()
+                .map(|(k, v)| format!("`{k}` = {v}"))
+                .collect();
+            md.push_str(&format!(
+                "- **[{}]** _{}_ · {}\n",
+                l.index,
+                l.voie,
+                corps.join(" · ")
+            ));
         }
         if ls.len() > max {
-            md.push_str(&format!("- … {} entrée(s) de plus (voir le JSON)\n", ls.len() - max));
+            md.push_str(&format!(
+                "- … {} entrée(s) de plus (voir le JSON)\n",
+                ls.len() - max
+            ));
         }
         md.push('\n');
     }
@@ -433,8 +456,10 @@ fn main() {
 
     let p_json = format!("{out}/postgame_lignes.json");
     let p_md = format!("{out}/POSTGAME.md");
-    if let Err(e) = std::fs::write(&p_json, serde_json::to_vec_pretty(&doc).expect("sérialisation"))
-    {
+    if let Err(e) = std::fs::write(
+        &p_json,
+        serde_json::to_vec_pretty(&doc).expect("sérialisation"),
+    ) {
         eprintln!("écriture {p_json} : {e}");
     }
     if let Err(e) = std::fs::write(&p_md, md) {

@@ -6,12 +6,22 @@ use crate::*;
 
 fn add(c: &mut Catalog, name: &str, parent: Option<AlbumId>, folder: bool) -> AlbumId {
     let id = c.alloc_album_id();
-    c.apply(Op::AddAlbum { album: Album { parent, folder, ..Album::new(id, name) } }).unwrap();
+    c.apply(Op::AddAlbum {
+        album: Album {
+            parent,
+            folder,
+            ..Album::new(id, name)
+        },
+    })
+    .unwrap();
     id
 }
 
 fn names(c: &Catalog, parent: Option<AlbumId>) -> Vec<String> {
-    c.album_children(parent).iter().map(|a| a.name.clone()).collect()
+    c.album_children(parent)
+        .iter()
+        .map(|a| a.name.clone())
+        .collect()
 }
 
 fn place(c: &mut Catalog, id: AlbumId, order: Option<u32>) {
@@ -63,14 +73,23 @@ fn the_children_map_matches_the_children_of_each_folder() {
     let mut c = Catalog::new();
     let f = add(&mut c, "F", None, true);
     let g = add(&mut c, "G", Some(f), true);
-    for (name, parent) in [("b", None), ("a", None), ("y", Some(f)), ("x", Some(f)), ("q", Some(g))] {
+    for (name, parent) in [
+        ("b", None),
+        ("a", None),
+        ("y", Some(f)),
+        ("x", Some(f)),
+        ("q", Some(g)),
+    ] {
         add(&mut c, name, parent, false);
     }
     let x = c.albums().find(|a| a.name == "x").unwrap().id;
     place(&mut c, x, Some(7));
     let map = c.album_children_by_parent();
     for parent in [None, Some(f), Some(g)] {
-        let from_map: Vec<AlbumId> = map.get(&parent).map(|v| v.iter().map(|a| a.id).collect()).unwrap_or_default();
+        let from_map: Vec<AlbumId> = map
+            .get(&parent)
+            .map(|v| v.iter().map(|a| a.id).collect())
+            .unwrap_or_default();
         let direct: Vec<AlbumId> = c.album_children(parent).iter().map(|a| a.id).collect();
         assert_eq!(from_map, direct, "{parent:?}");
     }
@@ -83,11 +102,23 @@ fn a_place_can_be_set_cleared_and_undone() {
     let mut c = Catalog::new();
     let a = add(&mut c, "A", None, false);
     add(&mut c, "B", None, false);
-    let inv = c.apply(Op::SetAlbumOrder { id: a, order: Some(5) }).unwrap();
+    let inv = c
+        .apply(Op::SetAlbumOrder {
+            id: a,
+            order: Some(5),
+        })
+        .unwrap();
     assert_eq!(c.album(a).unwrap().order, Some(5));
     c.apply(inv).unwrap();
     assert_eq!(c.album(a).unwrap().order, None);
-    assert!(c.apply(Op::SetAlbumOrder { id: AlbumId(999), order: Some(1) }).is_err(), "no such album");
+    assert!(
+        c.apply(Op::SetAlbumOrder {
+            id: AlbumId(999),
+            order: Some(1)
+        })
+        .is_err(),
+        "no such album"
+    );
 }
 
 /// Moving to another folder drops the album's place there (it belonged to the old neighbours),
@@ -99,12 +130,27 @@ fn moving_drops_the_place_and_undo_restores_it() {
     let to = add(&mut c, "To", None, true);
     let a = add(&mut c, "A", Some(from), false);
     place(&mut c, a, Some(3));
-    let inv = c.apply(Op::MoveAlbum { id: a, parent: Some(to) }).unwrap();
-    assert_eq!((c.album(a).unwrap().parent, c.album(a).unwrap().order), (Some(to), None));
+    let inv = c
+        .apply(Op::MoveAlbum {
+            id: a,
+            parent: Some(to),
+        })
+        .unwrap();
+    assert_eq!(
+        (c.album(a).unwrap().parent, c.album(a).unwrap().order),
+        (Some(to), None)
+    );
     c.apply(inv).unwrap();
-    assert_eq!((c.album(a).unwrap().parent, c.album(a).unwrap().order), (Some(from), Some(3)));
+    assert_eq!(
+        (c.album(a).unwrap().parent, c.album(a).unwrap().order),
+        (Some(from), Some(3))
+    );
     // "moving" to where it already is changes nothing
-    c.apply(Op::MoveAlbum { id: a, parent: Some(from) }).unwrap();
+    c.apply(Op::MoveAlbum {
+        id: a,
+        parent: Some(from),
+    })
+    .unwrap();
     assert_eq!(c.album(a).unwrap().order, Some(3));
 }
 

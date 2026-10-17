@@ -125,7 +125,11 @@ impl TerminalCommand for MigrateCommand {
                 diff.from.as_str(),
                 diff.to.as_str(),
                 diff.agent_id,
-                if diff.dry_run { "(dry-run)" } else { "(applied)" },
+                if diff.dry_run {
+                    "(dry-run)"
+                } else {
+                    "(applied)"
+                },
             );
             println!("  source   : {} records", diff.source_count);
             println!("  target   : {} records before", diff.target_count_before);
@@ -165,32 +169,36 @@ async fn build_provider(
         MemoryProviderArg::Mem0 => {
             let p = Mem0Provider::from_env().map_err(|e| miette::miette!("mem0: {e}"))?;
             Ok(Box::new(p))
-        },
+        }
         MemoryProviderArg::Honcho => {
             let p = HonchoProvider::from_env().map_err(|e| miette::miette!("honcho: {e}"))?;
             Ok(Box::new(p))
-        },
+        }
         MemoryProviderArg::SqliteLocal => {
-            let path = sqlite_path.map(Path::to_path_buf).unwrap_or_else(default_sqlite_path);
+            let path = sqlite_path
+                .map(Path::to_path_buf)
+                .unwrap_or_else(default_sqlite_path);
             // Ensure parent dir exists so `~/.aphrody/memory.sqlite` works
             // on a fresh install without `mkdir -p` first.
             if let Some(parent) = path.parent()
                 && !parent.as_os_str().is_empty()
             {
-                std::fs::create_dir_all(parent).into_diagnostic().wrap_err_with(|| {
-                    format!("failed to create parent dir {}", parent.display())
-                })?;
+                std::fs::create_dir_all(parent)
+                    .into_diagnostic()
+                    .wrap_err_with(|| {
+                        format!("failed to create parent dir {}", parent.display())
+                    })?;
             }
             let p = SqliteLocalProvider::open(&path)
                 .map_err(|e| miette::miette!("sqlite_local: {e} (path={})", path.display()))?;
             Ok(Box::new(p))
-        },
+        }
         MemoryProviderArg::LanceDb => {
             let _ = (lancedb_path, lancedb_ndims);
             Err(miette::miette!(
                 "the LanceDB memory provider was removed; use sqlite_local, mem0 or honcho"
             ))
-        },
+        }
     }
 }
 
@@ -285,7 +293,10 @@ fn open_local(
         Some(path) => path,
         None => profile_sqlite_path(overrides)?,
     };
-    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
         std::fs::create_dir_all(parent)
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to create {}", parent.display()))?;
@@ -304,9 +315,12 @@ fn open_local(
 }
 
 fn print_json(value: &serde_json::Value, pretty: bool) -> miette::Result<()> {
-    let text =
-        if pretty { serde_json::to_string_pretty(value) } else { serde_json::to_string(value) }
-            .into_diagnostic()?;
+    let text = if pretty {
+        serde_json::to_string_pretty(value)
+    } else {
+        serde_json::to_string(value)
+    }
+    .into_diagnostic()?;
     println!("{text}");
     Ok(())
 }
@@ -319,7 +333,13 @@ pub(crate) async fn execute_local(
     use aphrody_memory::local_ops;
     let fail = |e: aphrody_memory::ProviderMemoryError| miette::miette!("memory: {e}");
     match action {
-        LocalMemoryAction::Write { store, content, tags, metadata, id } => {
+        LocalMemoryAction::Write {
+            store,
+            content,
+            tags,
+            metadata,
+            id,
+        } => {
             let content = if content == "-" {
                 std::io::read_to_string(std::io::stdin()).into_diagnostic()?
             } else {
@@ -335,31 +355,45 @@ pub(crate) async fn execute_local(
                 .await
                 .map_err(fail)?;
             print_json(&serde_json::json!({ "id": id }), store.pretty)
-        },
-        LocalMemoryAction::Recall { store, query, tags, limit } => {
+        }
+        LocalMemoryAction::Recall {
+            store,
+            query,
+            tags,
+            limit,
+        } => {
             let provider = open_local(store.db, overrides)?;
             let records = local_ops::recall(&provider, &store.agent_id, &query, tags, limit)
                 .await
                 .map_err(fail)?;
             print_json(&serde_json::json!({ "records": records }), store.pretty)
-        },
+        }
         LocalMemoryAction::List { store, tags, limit } => {
             let provider = open_local(store.db, overrides)?;
-            let records =
-                local_ops::list(&provider, &store.agent_id, tags, limit).await.map_err(fail)?;
+            let records = local_ops::list(&provider, &store.agent_id, tags, limit)
+                .await
+                .map_err(fail)?;
             print_json(&serde_json::json!({ "records": records }), store.pretty)
-        },
-        LocalMemoryAction::Delete { db, id, agent_id, pretty } => {
+        }
+        LocalMemoryAction::Delete {
+            db,
+            id,
+            agent_id,
+            pretty,
+        } => {
             let provider = open_local(db, overrides)?;
-            let deleted =
-                local_ops::delete(&provider, &id, agent_id.as_deref()).await.map_err(fail)?;
+            let deleted = local_ops::delete(&provider, &id, agent_id.as_deref())
+                .await
+                .map_err(fail)?;
             print_json(&serde_json::json!({ "deleted": deleted }), pretty)
-        },
+        }
         LocalMemoryAction::Clear { store } => {
             let provider = open_local(store.db, overrides)?;
-            let deleted = local_ops::clear(&provider, &store.agent_id).await.map_err(fail)?;
+            let deleted = local_ops::clear(&provider, &store.agent_id)
+                .await
+                .map_err(fail)?;
             print_json(&serde_json::json!({ "deleted": deleted }), store.pretty)
-        },
+        }
     }
 }
 
@@ -377,7 +411,9 @@ pub(crate) fn profile_sqlite_path(overrides: &CliOverrides) -> miette::Result<Pa
     let mut overrides = overrides.clone();
     overrides.profile = aphrody_config::profile::select_profile(
         overrides.profile.as_deref(),
-        std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE).ok().as_deref(),
+        std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE)
+            .ok()
+            .as_deref(),
     );
     let config = crate::profile::load_config(&overrides)?;
     if config.active_profile.is_none() {
@@ -386,12 +422,15 @@ pub(crate) fn profile_sqlite_path(overrides: &CliOverrides) -> miette::Result<Pa
     let root = crate::profile::profile_state_root(&config)?;
     let services = aphrody_agent_home::ProfileServiceContext::from_config(root, &config)
         .map_err(|error| miette::miette!("memory profile: {error}"))?;
-    services.local_memory_path().map(Path::to_path_buf).ok_or_else(|| {
-        miette::miette!(
-            "memory profile: database.cache=sqlite_wal is required for local memory with \
+    services
+        .local_memory_path()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| {
+            miette::miette!(
+                "memory profile: database.cache=sqlite_wal is required for local memory with \
              PostgreSQL"
-        )
-    })
+            )
+        })
 }
 
 #[cfg(test)]
@@ -401,7 +440,10 @@ mod tests {
     #[test]
     fn default_sqlite_path_under_home_when_available() {
         let p = default_sqlite_path();
-        assert_eq!(p.file_name().and_then(|s| s.to_str()), Some("memory.sqlite"));
+        assert_eq!(
+            p.file_name().and_then(|s| s.to_str()),
+            Some("memory.sqlite")
+        );
     }
 
     fn make_cmd(

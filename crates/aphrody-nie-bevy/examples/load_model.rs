@@ -38,7 +38,10 @@ fn main() -> ExitCode {
     let root = resolve_game_dir();
     let mut vfs = Vfs::new();
     if vfs.init(root.join("data")).is_err() {
-        eprintln!("SKIP: no game VFS under {} (set NIE_GAME_DIR)", root.display());
+        eprintln!(
+            "SKIP: no game VFS under {} (set NIE_GAME_DIR)",
+            root.display()
+        );
         return ExitCode::SUCCESS;
     }
     let vfs = Arc::new(vfs);
@@ -48,7 +51,10 @@ fn main() -> ExitCode {
     register_vfs_source(&mut app, Arc::clone(&vfs));
     app.add_plugins((
         TaskPoolPlugin::default(),
-        AssetPlugin { meta_check: AssetMetaCheck::Never, ..Default::default() },
+        AssetPlugin {
+            meta_check: AssetMetaCheck::Never,
+            ..Default::default()
+        },
         NieAssetPlugin,
     ));
 
@@ -66,7 +72,7 @@ fn main() -> ExitCode {
             match state {
                 LoadState::Loaded => break Ok(()),
                 LoadState::Failed(error) => break Err(error.to_string()),
-                LoadState::NotLoaded | LoadState::Loading => {},
+                LoadState::NotLoaded | LoadState::Loading => {}
             }
             if updates >= MAX_UPDATES || started.elapsed() > MAX_WALL {
                 break Err(format!("still loading after {updates} updates"));
@@ -82,7 +88,11 @@ fn main() -> ExitCode {
                     eprintln!("{candidate}: Loaded but absent from Assets<NieModel>");
                     return ExitCode::FAILURE;
                 };
-                let resolved = model.meshes.iter().filter(|h| meshes.get(*h).is_some()).count();
+                let resolved = model
+                    .meshes
+                    .iter()
+                    .filter(|h| meshes.get(*h).is_some())
+                    .count();
                 println!(
                     "{candidate}: {} submeshes, {resolved} meshes resolved, vertices {:?}, {updates} updates in {:.0?}",
                     model.submesh_count,
@@ -93,10 +103,10 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
                 loaded_any = true;
-            },
+            }
             Err(reason) => {
                 println!("{candidate}: refused — {reason}");
-            },
+            }
         }
     }
 

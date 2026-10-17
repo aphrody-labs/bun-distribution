@@ -1,8 +1,7 @@
 use crate::{
-    impl_componentwise_vector_space,
-    okcolor_convert::{okhsl_to_oklab, oklab_to_okhsl},
     Alpha, ColorToComponents, Gray, Hsla, Hsva, Hue, Hwba, Laba, Lcha, LinearRgba, Luminance, Mix,
-    Oklaba, Oklcha, Saturation, Srgba, StandardColor, Xyza,
+    Oklaba, Oklcha, Saturation, Srgba, StandardColor, Xyza, impl_componentwise_vector_space,
+    okcolor_convert::{okhsl_to_oklab, oklab_to_okhsl},
 };
 use bevy_math::{Vec3, Vec4};
 #[cfg(feature = "bevy_reflect")]

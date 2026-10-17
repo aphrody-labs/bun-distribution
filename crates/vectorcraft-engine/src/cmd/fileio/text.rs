@@ -19,10 +19,18 @@ const ENCODING: FormatOption = FormatOption {
     default: "\"utf8\"",
     description: "utf8 (no byte order mark) or utf16 (little-endian, with a byte order mark)",
 };
-const LINE_ENDINGS: FormatOption =
-    FormatOption { name: "lineEndings", ty: "string", default: "\"lf\"", description: "lf (macOS, Linux) or crlf (Windows)" };
-const SELECTION_ONLY: FormatOption =
-    FormatOption { name: "selectionOnly", ty: "boolean", default: "false", description: "only the selected type objects (document.export)" };
+const LINE_ENDINGS: FormatOption = FormatOption {
+    name: "lineEndings",
+    ty: "string",
+    default: "\"lf\"",
+    description: "lf (macOS, Linux) or crlf (Windows)",
+};
+const SELECTION_ONLY: FormatOption = FormatOption {
+    name: "selectionOnly",
+    ty: "boolean",
+    default: "false",
+    description: "only the selected type objects (document.export)",
+};
 
 /// The options `document.formats` lists for text.
 pub(super) const OPTIONS: &[FormatOption] = &[ENCODING, LINE_ENDINGS, SELECTION_ONLY];
@@ -36,8 +44,17 @@ struct TextOptions {
 
 /// The text file of `doc` with the text options of `p`.
 pub(super) fn encode(doc: &Document, p: &Value) -> Result<Vec<u8>> {
-    let o = if p.is_object() { TextOptions::deserialize(p).map_err(|e| bad(C, format!("Text options: {e}")))? } else { TextOptions::default() };
-    let eol = match o.line_endings.as_deref().map(str::to_ascii_lowercase).as_deref() {
+    let o = if p.is_object() {
+        TextOptions::deserialize(p).map_err(|e| bad(C, format!("Text options: {e}")))?
+    } else {
+        TextOptions::default()
+    };
+    let eol = match o
+        .line_endings
+        .as_deref()
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         None | Some("lf") => "\n",
         Some("crlf") => "\r\n",
         Some(other) => return Err(bad(C, format!("lineEndings `{other}`: lf or crlf"))),
@@ -51,10 +68,24 @@ pub(super) fn encode(doc: &Document, p: &Value) -> Result<Vec<u8>> {
             text.push_str(eol);
         }
     }
-    match o.encoding.as_deref().map(|e| e.to_ascii_lowercase().replace(['-', '_'], "")).as_deref() {
+    match o
+        .encoding
+        .as_deref()
+        .map(|e| e.to_ascii_lowercase().replace(['-', '_'], ""))
+        .as_deref()
+    {
         None | Some("utf8") => Ok(text.into_bytes()),
-        Some("utf16" | "utf16le" | "unicode") => Ok([0xFF, 0xFE].into_iter().chain(text.encode_utf16().flat_map(u16::to_le_bytes)).collect()),
-        Some(_) => Err(bad(C, format!("encoding `{}`: utf8 or utf16", o.encoding.unwrap_or_default()))),
+        Some("utf16" | "utf16le" | "unicode") => Ok([0xFF, 0xFE]
+            .into_iter()
+            .chain(text.encode_utf16().flat_map(u16::to_le_bytes))
+            .collect()),
+        Some(_) => Err(bad(
+            C,
+            format!(
+                "encoding `{}`: utf8 or utf16",
+                o.encoding.unwrap_or_default()
+            ),
+        )),
     }
 }
 
@@ -80,10 +111,13 @@ fn collect(doc: &Document, n: &Node, done: &mut HashSet<NodeId>, out: &mut Vec<S
         match doc.text_threads.iter().find(|th| th.contains(&n.id)) {
             Some(thread) => {
                 done.extend(thread.iter().copied());
-                let frames = thread.iter().filter_map(|id| doc.node(*id)).filter_map(|f| match &f.kind {
-                    NodeKind::Text(t) => Some(t.plain_text()),
-                    _ => None,
-                });
+                let frames = thread
+                    .iter()
+                    .filter_map(|id| doc.node(*id))
+                    .filter_map(|f| match &f.kind {
+                        NodeKind::Text(t) => Some(t.plain_text()),
+                        _ => None,
+                    });
                 out.push(frames.collect());
             }
             None => out.push(t.plain_text()),

@@ -211,7 +211,9 @@ impl GraphicsProcessor {
             cur_bump_imask: 0,
             cur_zmode: Default::default(),
             cur_pe_control: Default::default(),
-            cur_blend_mode: BlendMode::from_raw(0).with_color_update(true).with_alpha_update(true),
+            cur_blend_mode: BlendMode::from_raw(0)
+                .with_color_update(true)
+                .with_alpha_update(true),
             cur_alpha_compare: Default::default(),
             cur_viewport: Default::default(),
             cur_scissor: Default::default(),
@@ -275,8 +277,12 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         return;
     }
 
-    let Some(bytes_per_row) =
-        sys.gx.xfb_regions.values().max_by_key(|r| r.copy_seq).map(|r| r.stride as u64)
+    let Some(bytes_per_row) = sys
+        .gx
+        .xfb_regions
+        .values()
+        .max_by_key(|r| r.copy_seq)
+        .map(|r| r.stride as u64)
     else {
         return;
     };
@@ -330,7 +336,9 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     }
 
     let seq = sys.gx.xfb_present_seq;
-    sys.gx.xfb_regions.retain(|_, r| seq - r.seen_present_seq <= XFB_REGION_MAX_AGE_PRESENTS);
+    sys.gx
+        .xfb_regions
+        .retain(|_, r| seq - r.seen_present_seq <= XFB_REGION_MAX_AGE_PRESENTS);
 
     let build_parts = |base_addr: u32| -> Vec<(u64, u64, XfbPart)> {
         let mut parts = Vec::with_capacity(sys.gx.xfb_regions.len());
@@ -366,7 +374,11 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
             parts.push((
                 region.first_seq,
                 region.copy_seq,
-                XfbPart { id: addr, offset_x, offset_y },
+                XfbPart {
+                    id: addr,
+                    offset_x,
+                    offset_y,
+                },
             ));
         }
 
@@ -395,7 +407,10 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         let Some(closer_copy_seq) = parts.last().map(|(_, copy_seq, _)| *copy_seq) else {
             continue;
         };
-        if parts.iter().any(|(_, copy_seq, _)| *copy_seq > closer_copy_seq) {
+        if parts
+            .iter()
+            .any(|(_, copy_seq, _)| *copy_seq > closer_copy_seq)
+        {
             continue;
         }
         if closer_copy_seq <= sys.gx.xfb_last_emit_gen {
@@ -451,7 +466,15 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
                 .map(|(&addr, region)| (region.first_seq, region.copy_seq, addr));
 
             let (first_seq, copy_seq, id) = containing.unwrap_or((0, 0, frame_base));
-            p.push((first_seq, copy_seq, XfbPart { id, offset_x: 0, offset_y: 0 }));
+            p.push((
+                first_seq,
+                copy_seq,
+                XfbPart {
+                    id,
+                    offset_x: 0,
+                    offset_y: 0,
+                },
+            ));
         }
         p
     } else {
@@ -464,7 +487,10 @@ pub fn present_xfb<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     }
 
     let closer_copy_seq = parts.last().map(|(_, copy_seq, _)| *copy_seq).unwrap_or(0);
-    if parts.iter().any(|(_, copy_seq, _)| *copy_seq > closer_copy_seq) {
+    if parts
+        .iter()
+        .any(|(_, copy_seq, _)| *copy_seq > closer_copy_seq)
+    {
         return;
     }
 
@@ -506,7 +532,11 @@ fn present_raw_xfb<const SYSTEM: SystemId>(
         pixels[i * 2 + 1] = to_bgra(y1, cb, cr);
     }
 
-    sys.render_sink.exec(GxAction::PresentRawXfb { width, height, pixels });
+    sys.render_sink.exec(GxAction::PresentRawXfb {
+        width,
+        height,
+        pixels,
+    });
 }
 
 impl<const SYSTEM: SystemId> System<SYSTEM> {

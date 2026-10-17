@@ -24,7 +24,10 @@ fn get<'a>(file: &'a File, d: &'a Dict, long: &str, short: &str) -> Option<&'a O
 fn filters(file: &File, d: &Dict) -> Vec<String> {
     match get(file, d, "Filter", "F").map(|f| file.resolve(f)) {
         Some(Obj::Name(n)) => vec![n.clone()],
-        Some(Obj::Array(a)) => a.iter().filter_map(|f| file.resolve(f).name().map(str::to_string)).collect(),
+        Some(Obj::Array(a)) => a
+            .iter()
+            .filter_map(|f| file.resolve(f).name().map(str::to_string))
+            .collect(),
         _ => vec![],
     }
 }
@@ -64,7 +67,17 @@ pub(crate) fn expand_inline(d: &Dict) -> Dict {
         };
         let v = match v {
             Obj::Name(n) => Obj::Name(name(n)),
-            Obj::Array(a) => Obj::Array(a.iter().map(|x| if let Obj::Name(n) = x { Obj::Name(name(n)) } else { x.clone() }).collect()),
+            Obj::Array(a) => Obj::Array(
+                a.iter()
+                    .map(|x| {
+                        if let Obj::Name(n) = x {
+                            Obj::Name(name(n))
+                        } else {
+                            x.clone()
+                        }
+                    })
+                    .collect(),
+            ),
             other => other.clone(),
         };
         out.insert(key.to_string(), v);
@@ -80,8 +93,18 @@ pub(crate) fn inline_len(file: &File, d: &Dict, res: Option<&Dict>) -> Option<us
     let w = file.get_num(d, "Width")? as usize;
     let h = file.get_num(d, "Height")? as usize;
     let mask = matches!(file.get(d, "ImageMask"), Some(Obj::Bool(true)));
-    let bpc = if mask { 1 } else { file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize };
-    let n = if mask { 1 } else { file.get(d, "ColorSpace").map(|c| color_space(file, c, res).components()).unwrap_or(1) };
+    let bpc = if mask {
+        1
+    } else {
+        file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize
+    };
+    let n = if mask {
+        1
+    } else {
+        file.get(d, "ColorSpace")
+            .map(|c| color_space(file, c, res).components())
+            .unwrap_or(1)
+    };
     Some((w * n * bpc).div_ceil(8) * h)
 }
 
@@ -93,7 +116,10 @@ fn samples(file: &File, d: &Dict, raw: &[u8]) -> Result<(Vec<u8>, Option<usize>)
         Some("DCTDecode" | "DCT") => {
             let mut d2 = d.clone();
             d2.remove("F");
-            let rest: Vec<Obj> = fs[..fs.len() - 1].iter().map(|n| Obj::Name(n.clone())).collect();
+            let rest: Vec<Obj> = fs[..fs.len() - 1]
+                .iter()
+                .map(|n| Obj::Name(n.clone()))
+                .collect();
             d2.insert("Filter".into(), Obj::Array(rest));
             d2.remove("DecodeParms");
             d2.remove("DP");
@@ -101,7 +127,9 @@ fn samples(file: &File, d: &Dict, raw: &[u8]) -> Result<(Vec<u8>, Option<usize>)
             jpeg_decode(&jpeg).map(|(b, n)| (b, Some(n)))
         }
         Some(f @ ("JPXDecode" | "JBIG2Decode")) => Err(format!("image ({f})")),
-        _ => decode_stream(file, d, raw).map(|b| (b, None)).ok_or_else(|| "image (filters)".to_string()),
+        _ => decode_stream(file, d, raw)
+            .map(|b| (b, None))
+            .ok_or_else(|| "image (filters)".to_string()),
     }
 }
 
@@ -110,14 +138,22 @@ fn jpeg_decode(data: &[u8]) -> Result<(Vec<u8>, usize), String> {
     use zune_jpeg::zune_core::colorspace::ColorSpace;
     use zune_jpeg::zune_core::options::DecoderOptions;
     let mut probe = JpegDecoder::new(std::io::Cursor::new(data));
-    probe.decode_headers().map_err(|_| "image (JPEG)".to_string())?;
-    let n = probe.input_colorspace().map(|c| c.num_components()).unwrap_or(3);
+    probe
+        .decode_headers()
+        .map_err(|_| "image (JPEG)".to_string())?;
+    let n = probe
+        .input_colorspace()
+        .map(|c| c.num_components())
+        .unwrap_or(3);
     let out = match n {
         1 => ColorSpace::Luma,
         4 => ColorSpace::CMYK,
         _ => ColorSpace::RGB,
     };
-    let opts = DecoderOptions::default().jpeg_set_out_colorspace(out).set_max_width(MAX_SIDE).set_max_height(MAX_SIDE);
+    let opts = DecoderOptions::default()
+        .jpeg_set_out_colorspace(out)
+        .set_max_width(MAX_SIDE)
+        .set_max_height(MAX_SIDE);
     let mut dec = JpegDecoder::new_with_options(std::io::Cursor::new(data), opts);
     let mut px = dec.decode().map_err(|_| "image (JPEG)".to_string())?;
     // Adobe CMYK JPEGs (an APP14 "Adobe" marker) store inverted values.
@@ -134,11 +170,16 @@ fn unpack(data: &[u8], w: usize, h: usize, n: usize, bpc: usize) -> Vec<u16> {
     let row_bytes = (w * n * bpc).div_ceil(8);
     let mut out = Vec::with_capacity(w * h * n);
     for y in 0..h {
-        let row = data.get(y * row_bytes..((y + 1) * row_bytes).min(data.len())).unwrap_or(&[]);
+        let row = data
+            .get(y * row_bytes..((y + 1) * row_bytes).min(data.len()))
+            .unwrap_or(&[]);
         for i in 0..w * n {
             let v = match bpc {
                 8 => row.get(i).copied().unwrap_or(0) as u16,
-                16 => u16::from_be_bytes([row.get(2 * i).copied().unwrap_or(0), row.get(2 * i + 1).copied().unwrap_or(0)]),
+                16 => u16::from_be_bytes([
+                    row.get(2 * i).copied().unwrap_or(0),
+                    row.get(2 * i + 1).copied().unwrap_or(0),
+                ]),
                 1 | 2 | 4 => {
                     let bit = i * bpc;
                     let byte = row.get(bit / 8).copied().unwrap_or(0);
@@ -170,7 +211,9 @@ fn resample(m: &[u8], mw: usize, mh: usize, w: usize, h: usize) -> Vec<u8> {
 
 /// A stencil or soft mask stream as 8-bit coverage.
 fn mask_image(file: &File, o: &Obj, soft: bool) -> Option<(Vec<u8>, usize, usize)> {
-    let Obj::Stream(d, raw) = file.resolve(o) else { return None };
+    let Obj::Stream(d, raw) = file.resolve(o) else {
+        return None;
+    };
     let w = file.get_num(d, "Width")? as usize;
     let h = file.get_num(d, "Height")? as usize;
     if w == 0 || h == 0 || w > MAX_SIDE || h > MAX_SIDE {
@@ -178,11 +221,25 @@ fn mask_image(file: &File, o: &Obj, soft: bool) -> Option<(Vec<u8>, usize, usize
     }
     let (data, jpeg_n) = samples(file, d, raw).ok()?;
     if jpeg_n.is_some() {
-        return Some((data.into_iter().step_by(jpeg_n.unwrap_or(1)).take(w * h).collect(), w, h));
+        return Some((
+            data.into_iter()
+                .step_by(jpeg_n.unwrap_or(1))
+                .take(w * h)
+                .collect(),
+            w,
+            h,
+        ));
     }
-    let bpc = if soft { file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize } else { 1 };
+    let bpc = if soft {
+        file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize
+    } else {
+        1
+    };
     let max = ((1u32 << bpc) - 1).max(1) as f64;
-    let dec = file.get(d, "Decode").map(|x| file.nums(x)).filter(|v| v.len() >= 2);
+    let dec = file
+        .get(d, "Decode")
+        .map(|x| file.nums(x))
+        .filter(|v| v.len() >= 2);
     let v = unpack(&data, w, h, 1, bpc);
     let out = v
         .into_iter()
@@ -201,7 +258,13 @@ fn mask_image(file: &File, o: &Obj, soft: bool) -> Option<(Vec<u8>, usize, usize
 }
 
 /// Decode an image. `fill` is the current fill colour (stencil masks paint with it).
-pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill: [f64; 3]) -> Result<Decoded, String> {
+pub(crate) fn decode(
+    file: &File,
+    d: &Dict,
+    raw: &[u8],
+    res: Option<&Dict>,
+    fill: [f64; 3],
+) -> Result<Decoded, String> {
     let w = file.get_num(d, "Width").unwrap_or(0.0) as usize;
     let h = file.get_num(d, "Height").unwrap_or(0.0) as usize;
     if w == 0 || h == 0 || w > MAX_SIDE || h > MAX_SIDE || w * h > 64 << 20 {
@@ -209,17 +272,28 @@ pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill
     }
     let stencil = matches!(file.get(d, "ImageMask"), Some(Obj::Bool(true)));
     let (data, jpeg_n) = samples(file, d, raw)?;
-    let decode_arr = file.get(d, "Decode").map(|x| file.nums(x)).unwrap_or_default();
+    let decode_arr = file
+        .get(d, "Decode")
+        .map(|x| file.nums(x))
+        .unwrap_or_default();
     let mut rgba = vec![0u8; w * h * 4];
     if stencil {
         let v = unpack(&data, w, h, 1, 1);
-        let paint_on = if decode_arr.first().copied().unwrap_or(0.0) > 0.5 { 1 } else { 0 };
+        let paint_on = if decode_arr.first().copied().unwrap_or(0.0) > 0.5 {
+            1
+        } else {
+            0
+        };
         let c = fill.map(|x| (x.clamp(0.0, 1.0) * 255.0).round() as u8);
         for (i, s) in v.into_iter().enumerate() {
             rgba[i * 4..i * 4 + 3].copy_from_slice(&c);
             rgba[i * 4 + 3] = if s == paint_on { 255 } else { 0 };
         }
-        return Ok(Decoded { width: w as u32, height: h as u32, rgba });
+        return Ok(Decoded {
+            width: w as u32,
+            height: h as u32,
+            rgba,
+        });
     }
     let cs = match file.get(d, "ColorSpace") {
         Some(c) => color_space(file, c, res),
@@ -231,7 +305,11 @@ pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill
         Some(n) => n,
         None => cs.components().max(1),
     };
-    let bpc = if jpeg_n.is_some() { 8 } else { file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize };
+    let bpc = if jpeg_n.is_some() {
+        8
+    } else {
+        file.get_num(d, "BitsPerComponent").unwrap_or(8.0) as usize
+    };
     if !matches!(bpc, 1 | 2 | 4 | 8 | 16) {
         return Err(format!("image ({bpc} bits per component)"));
     }
@@ -251,7 +329,9 @@ pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill
     let mut comp = vec![0.0f64; n];
     // Indexed images: one colour per palette entry.
     let palette: Option<Vec<[f64; 3]>> = match &cs {
-        Cs::Indexed { hival, .. } if n == 1 => Some((0..=*hival).map(|i| cs.to_rgb(&[i as f64])).collect()),
+        Cs::Indexed { hival, .. } if n == 1 => {
+            Some((0..=*hival).map(|i| cs.to_rgb(&[i as f64])).collect())
+        }
         _ => None,
     };
     for i in 0..w * h {
@@ -260,7 +340,12 @@ pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill
             let (a, b) = ranges[0];
             let idx = (a + s * (b - a)).round().clamp(0.0, (pal.len() - 1) as f64) as usize;
             let c = pal[idx];
-            rgba[i * 4..i * 4 + 4].copy_from_slice(&[(c[0] * 255.0).round() as u8, (c[1] * 255.0).round() as u8, (c[2] * 255.0).round() as u8, 255]);
+            rgba[i * 4..i * 4 + 4].copy_from_slice(&[
+                (c[0] * 255.0).round() as u8,
+                (c[1] * 255.0).round() as u8,
+                (c[2] * 255.0).round() as u8,
+                255,
+            ]);
             continue;
         }
         for k in 0..n {
@@ -306,5 +391,9 @@ pub(crate) fn decode(file: &File, d: &Dict, raw: &[u8], res: Option<&Dict>, fill
             rgba[i * 4 + 3] = ((rgba[i * 4 + 3] as u32 * a as u32) / 255) as u8;
         }
     }
-    Ok(Decoded { width: w as u32, height: h as u32, rgba })
+    Ok(Decoded {
+        width: w as u32,
+        height: h as u32,
+        rgba,
+    })
 }

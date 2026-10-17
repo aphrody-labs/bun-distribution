@@ -20,7 +20,9 @@ pub struct WiiMachine {
 impl WiiMachine {
     pub fn wii_dol(bytes: &[u8]) -> Result<Self, String> {
         let wii = Wii::with_dol(bytes).map_err(|e| format!("Wii DOL: {e:?}"))?;
-        Ok(Self { console: Console::Wii(Box::new(wii)) })
+        Ok(Self {
+            console: Console::Wii(Box::new(wii)),
+        })
     }
 
     pub fn gamecube_dol(bytes: &[u8]) -> Result<Self, String> {
@@ -28,7 +30,9 @@ impl WiiMachine {
             return Err("GameCube DOL: shorter than its 256-byte header".into());
         }
         let dol = image::dol::Dol::parse(bytes.to_vec());
-        Ok(Self { console: Console::GameCube(Box::new(GameCube::with_image(&dol))) })
+        Ok(Self {
+            console: Console::GameCube(Box::new(GameCube::with_image(&dol))),
+        })
     }
 }
 

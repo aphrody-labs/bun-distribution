@@ -49,16 +49,20 @@ pub fn detect_wine_runtime() -> WineRuntimeInfo {
     }
 
     // Proton tools of every local Steam install and library (bun-steam discovery).
-    let roots: Vec<PathBuf> =
-        bun_steam::find_steam_installations().into_iter().map(|i| i.root_path).collect();
+    let roots: Vec<PathBuf> = bun_steam::find_steam_installations()
+        .into_iter()
+        .map(|i| i.root_path)
+        .collect();
     let mut libraries = roots.clone();
     for root in &roots {
         if let Ok(found) = bun_steam::scan_steam_libraries(root) {
             libraries.extend(found.into_iter().map(|library| library.path));
         }
     }
-    let tool_dirs: Vec<PathBuf> =
-        roots.iter().flat_map(|root| bun_steam::proton::compat_tool_dirs(root)).collect();
+    let tool_dirs: Vec<PathBuf> = roots
+        .iter()
+        .flat_map(|root| bun_steam::proton::compat_tool_dirs(root))
+        .collect();
     if let Some(tool) = bun_steam::proton::discover_compat_tools(&tool_dirs, &libraries)
         .into_iter()
         .find(|tool| tool.path.join("proton").is_file())
@@ -92,7 +96,9 @@ pub async fn execute_binary(
     let mut cmd = if cfg!(windows) {
         tokio::process::Command::new(executable).no_window()
     } else if runtime.kind == "proton" {
-        let proton_path = runtime.path.ok_or_else(|| "Proton path not available".to_owned())?;
+        let proton_path = runtime
+            .path
+            .ok_or_else(|| "Proton path not available".to_owned())?;
         let mut c = tokio::process::Command::new(proton_path).no_window();
         c.arg("run").arg(executable);
         c
@@ -102,7 +108,7 @@ pub async fn execute_binary(
         c
     } else {
         return Err(
-            "Neither native Windows nor Wine/Proton runtime is available on this host".to_owned()
+            "Neither native Windows nor Wine/Proton runtime is available on this host".to_owned(),
         );
     };
 
@@ -119,8 +125,10 @@ pub async fn execute_binary(
         cmd.env(k, v);
     }
 
-    let output =
-        cmd.output().await.map_err(|e| format!("execution error for `{executable}`: {e}"))?;
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("execution error for `{executable}`: {e}"))?;
 
     Ok(ExecResult {
         exit_code: output.status.code().unwrap_or(-1),

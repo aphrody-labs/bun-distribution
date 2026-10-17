@@ -25,8 +25,14 @@ pub(crate) const CALL_INSTR_FUNCTIONS: u8 = 6;
 
 const SHORT_DRIVER_NAME: [u8; 4] = *b"DUST";
 const DRIVER_NAME: &[u8] = b"Dust DLDI driver";
-static DRIVER_CODE: [u32; 6] =
-    [CALL_INSTR, CALL_INSTR | 1, CALL_INSTR | 2, CALL_INSTR | 3, CALL_INSTR | 4, CALL_INSTR | 5];
+static DRIVER_CODE: [u32; 6] = [
+    CALL_INSTR,
+    CALL_INSTR | 1,
+    CALL_INSTR | 2,
+    CALL_INSTR | 3,
+    CALL_INSTR | 4,
+    CALL_INSTR | 5,
+];
 const TOTAL_DRIVER_LEN: usize = 0x98;
 
 const SCAN_BLOCK_SIZE: usize = 0x400;
@@ -110,7 +116,10 @@ impl Dldi {
             dldi_area.write_le(offset, *word);
         }
 
-        Some(Dldi { provider, buffer: zeroed_box() })
+        Some(Dldi {
+            provider,
+            buffer: zeroed_box(),
+        })
     }
 
     pub fn into_provider(self) -> Box<dyn Provider> {
@@ -157,7 +166,7 @@ pub(crate) fn handle_call_instr_function<E: Engine, const ARM9: bool>(
                         dst_addr += 0x200;
                     }
                     true
-                },
+                }
                 3 => {
                     let [start_sector, sectors, mut src_addr] = r0_2;
                     for sector in start_sector..start_sector + sectors {
@@ -188,7 +197,7 @@ pub(crate) fn handle_call_instr_function<E: Engine, const ARM9: bool>(
                         }
                     }
                     true
-                },
+                }
                 _ => false,
             }
         };

@@ -96,7 +96,9 @@ impl AuditReport {
     /// Whether anything blocking was found.
     #[must_use]
     pub fn has_blocking(&self) -> bool {
-        self.flagged.iter().any(|p| p.findings.iter().any(Finding::is_blocking))
+        self.flagged
+            .iter()
+            .any(|p| p.findings.iter().any(Finding::is_blocking))
     }
 
     /// Total findings across every page.
@@ -116,7 +118,9 @@ pub fn audit_text(text: &str) -> Vec<Finding> {
 
     for token in ["<|endofassistant|>", "<|im_end|>", "<|end|>", "<|eot_id|>"] {
         if text.contains(token) {
-            findings.push(Finding::ControlToken { token: token.to_owned() });
+            findings.push(Finding::ControlToken {
+                token: token.to_owned(),
+            });
         }
     }
 
@@ -139,7 +143,9 @@ pub fn audit_text(text: &str) -> Vec<Finding> {
     for line in text.lines() {
         let trimmed = line.trim();
         if crate::doctags::strip_watermarks(trimmed).is_empty() && !trimmed.is_empty() {
-            findings.push(Finding::Watermark { line: trimmed.to_owned() });
+            findings.push(Finding::Watermark {
+                line: trimmed.to_owned(),
+            });
         }
     }
 
@@ -196,7 +202,10 @@ fn longest_run(text: &str) -> Option<(String, usize)> {
     let mut best: Option<(String, usize, usize)> = None;
     let mut consider = |segment: &[char], repeats: usize| {
         let span = segment.len() * repeats;
-        if best.as_ref().is_none_or(|(_, _, best_span)| span > *best_span) {
+        if best
+            .as_ref()
+            .is_none_or(|(_, _, best_span)| span > *best_span)
+        {
             best = Some((segment.iter().collect(), repeats, span));
         }
     };
@@ -214,7 +223,10 @@ fn longest_run(text: &str) -> Option<(String, usize)> {
                 repeats += 1;
                 next += len;
             }
-            let distinct = segment.iter().collect::<std::collections::HashSet<_>>().len();
+            let distinct = segment
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len();
             let threshold = if len == 1 { 40 } else { 3 };
             if repeats >= threshold && (len == 1 || distinct >= 2) {
                 consider(segment, repeats);
@@ -312,9 +324,13 @@ mod tests {
     #[test]
     fn a_stuck_generation_is_caught_with_its_word_and_count() {
         let findings = audit_text("bon début ふるさ ふるさ ふるさ ふるさ ふるさ ふるさ ふるさ");
-        let loop_finding =
-            findings.iter().find(|f| matches!(f, Finding::Loop { .. })).expect("no loop found");
-        let Finding::Loop { word, repeats } = loop_finding else { unreachable!() };
+        let loop_finding = findings
+            .iter()
+            .find(|f| matches!(f, Finding::Loop { .. }))
+            .expect("no loop found");
+        let Finding::Loop { word, repeats } = loop_finding else {
+            unreachable!()
+        };
         // The repeating unit is "ふるさ " (the trailing space belongs to the
         // repeated pattern too) — what matters is the word is in it and the
         // count clears any reasonable bar.
@@ -333,9 +349,13 @@ mod tests {
         // 2-character unit gets grouped into a >=4-character segment.
         let text = "可…".repeat(50);
         let findings = audit_text(&text);
-        let loop_finding =
-            findings.iter().find(|f| matches!(f, Finding::Loop { .. })).expect("no loop found");
-        let Finding::Loop { word, repeats } = loop_finding else { unreachable!() };
+        let loop_finding = findings
+            .iter()
+            .find(|f| matches!(f, Finding::Loop { .. }))
+            .expect("no loop found");
+        let Finding::Loop { word, repeats } = loop_finding else {
+            unreachable!()
+        };
         assert!(word.contains('可'), "{word}");
         // Whatever segment length won, it must cover most of the 100-char
         // input — a real stuck generation, not a short coincidental echo.
@@ -348,9 +368,17 @@ mod tests {
         // Answer-sheet boxes and rating stars are layout, not corruption —
         // shenron's own BOUCLE rule carries the same exemption.
         let boxes = "　".repeat(30);
-        assert!(!audit_text(&boxes).iter().any(|f| matches!(f, Finding::Loop { .. })));
+        assert!(
+            !audit_text(&boxes)
+                .iter()
+                .any(|f| matches!(f, Finding::Loop { .. }))
+        );
         let stars = "★".repeat(30);
-        assert!(!audit_text(&stars).iter().any(|f| matches!(f, Finding::Loop { .. })));
+        assert!(
+            !audit_text(&stars)
+                .iter()
+                .any(|f| matches!(f, Finding::Loop { .. }))
+        );
     }
 
     #[test]
@@ -381,27 +409,40 @@ mod tests {
     #[test]
     fn a_very_long_single_character_run_is_still_a_loop() {
         let text = "あ".repeat(50);
-        assert!(audit_text(&text).iter().any(|f| matches!(f, Finding::Loop { .. })));
+        assert!(
+            audit_text(&text)
+                .iter()
+                .any(|f| matches!(f, Finding::Loop { .. }))
+        );
     }
 
     #[test]
     fn ordinary_repetition_is_not_a_loop() {
         // A table with a repeated value is normal text.
         let text = "Nom Goku Nom Vegeta Nom Piccolo Nom Krilin Nom Yamcha Nom Tenshinhan";
-        assert!(!audit_text(text).iter().any(|f| matches!(f, Finding::Loop { .. })));
+        assert!(
+            !audit_text(text)
+                .iter()
+                .any(|f| matches!(f, Finding::Loop { .. }))
+        );
     }
 
     #[test]
     fn surviving_markup_is_reported() {
         let findings = audit_text("<td>cellule</td>");
-        assert!(findings.iter().any(|f| matches!(f, Finding::Markup { .. })), "{findings:?}");
+        assert!(
+            findings.iter().any(|f| matches!(f, Finding::Markup { .. })),
+            "{findings:?}"
+        );
     }
 
     #[test]
     fn arithmetic_is_not_markup() {
         // `5 < 10 > 3` must not be read as a tag.
         assert!(
-            !audit_text("5 < 10 > 3 toujours").iter().any(|f| matches!(f, Finding::Markup { .. }))
+            !audit_text("5 < 10 > 3 toujours")
+                .iter()
+                .any(|f| matches!(f, Finding::Markup { .. }))
         );
     }
 
@@ -434,7 +475,11 @@ mod tests {
     #[test]
     fn an_arabic_fragment_mid_japanese_is_caught() {
         let findings = audit_text("ふふわふすすいすماん まん と満足度120%超大作");
-        assert!(findings.iter().any(|f| matches!(f, Finding::ForeignScript { .. })));
+        assert!(
+            findings
+                .iter()
+                .any(|f| matches!(f, Finding::ForeignScript { .. }))
+        );
     }
 
     #[test]

@@ -142,7 +142,10 @@ impl CoordProxy {
     /// yet exist. Missing files surface as empty streams at request time.
     #[must_use]
     pub fn new(jsonl_path: PathBuf) -> Self {
-        Self { jsonl_path, tail_interval: DEFAULT_TAIL_INTERVAL }
+        Self {
+            jsonl_path,
+            tail_interval: DEFAULT_TAIL_INTERVAL,
+        }
     }
 
     /// Override the tail-mode polling interval.
@@ -179,7 +182,11 @@ impl CoordProxy {
             CoordResponseKind::Snapshot => Box::pin(self.snapshot_stream().await?),
             CoordResponseKind::Sse => Box::pin(self.sse_snapshot_stream().await?),
         };
-        Ok(HttpResponse { status: 200, content_type: kind.content_type(), body })
+        Ok(HttpResponse {
+            status: 200,
+            content_type: kind.content_type(),
+            body,
+        })
     }
 
     /// One-shot snapshot: reads the file once and emits each non-empty
@@ -229,14 +236,24 @@ impl CoordProxy {
     /// first `.next().await` is reliably observed.
     pub async fn tail_stream(&self) -> BoxStream<'static, Result<String, CoordError>> {
         let offset = seed_offset(&self.jsonl_path).await;
-        Box::pin(tail_impl(self.jsonl_path.clone(), self.tail_interval, false, offset))
+        Box::pin(tail_impl(
+            self.jsonl_path.clone(),
+            self.tail_interval,
+            false,
+            offset,
+        ))
     }
 
     /// Like [`Self::tail_stream`] but each emitted item is already
     /// wrapped in the SSE `data: <line>\n\n` envelope.
     pub async fn tail_stream_sse(&self) -> BoxStream<'static, Result<String, CoordError>> {
         let offset = seed_offset(&self.jsonl_path).await;
-        Box::pin(tail_impl(self.jsonl_path.clone(), self.tail_interval, true, offset))
+        Box::pin(tail_impl(
+            self.jsonl_path.clone(),
+            self.tail_interval,
+            true,
+            offset,
+        ))
     }
 }
 
@@ -311,21 +328,31 @@ fn tail_impl(
     sse: bool,
     initial_offset: Option<u64>,
 ) -> impl Stream<Item = Result<String, CoordError>> + Send + 'static {
-    let init = TailState { path, interval, sse, offset: initial_offset, pending: VecDeque::new() };
+    let init = TailState {
+        path,
+        interval,
+        sse,
+        offset: initial_offset,
+        pending: VecDeque::new(),
+    };
 
     stream::unfold(Some(init), |maybe_state| async move {
         let mut state = maybe_state?;
         loop {
             // 1) Drain any buffered lines from a previous read.
             if let Some(line) = state.pending.pop_front() {
-                let item = if state.sse { encode_sse(&line) } else { format!("{line}\n") };
+                let item = if state.sse {
+                    encode_sse(&line)
+                } else {
+                    format!("{line}\n")
+                };
                 return Some((Ok(item), Some(state)));
             }
 
             // 2) Attempt to read new bytes from the file.
             match poll_new_lines(&mut state).await {
                 // New lines are pending: loop back to drain them.
-                Ok(true) => {},
+                Ok(true) => {}
                 // Nothing new: sleep and poll again.
                 Ok(false) => time::sleep(state.interval).await,
                 // Surface the error and terminate the stream.
@@ -424,7 +451,10 @@ mod tests {
 
     #[test]
     fn from_accept_defaults_to_snapshot() {
-        assert_eq!(CoordResponseKind::from_accept(None), CoordResponseKind::Snapshot);
+        assert_eq!(
+            CoordResponseKind::from_accept(None),
+            CoordResponseKind::Snapshot
+        );
         assert_eq!(
             CoordResponseKind::from_accept(Some("application/json")),
             CoordResponseKind::Snapshot,
@@ -433,7 +463,10 @@ mod tests {
 
     #[test]
     fn content_type_matches_kind() {
-        assert_eq!(CoordResponseKind::Snapshot.content_type(), NDJSON_CONTENT_TYPE);
+        assert_eq!(
+            CoordResponseKind::Snapshot.content_type(),
+            NDJSON_CONTENT_TYPE
+        );
         assert_eq!(CoordResponseKind::Sse.content_type(), SSE_CONTENT_TYPE);
     }
 
@@ -451,7 +484,9 @@ mod tests {
     async fn poll_holds_back_partial_line_until_terminated() {
         let dir = tempfile::tempdir().expect("tempdir");
         let path = dir.path().join("inbox.jsonl");
-        tokio::fs::write(&path, "{\"a\":1}\n{\"b\":").await.expect("write");
+        tokio::fs::write(&path, "{\"a\":1}\n{\"b\":")
+            .await
+            .expect("write");
 
         let mut state = state_for(path.clone(), Some(0));
         assert!(poll_new_lines(&mut state).await.expect("poll #1"));
@@ -462,8 +497,14 @@ mod tests {
         assert!(!poll_new_lines(&mut state).await.expect("poll #2"));
         assert_eq!(state.offset, Some(8));
 
-        let mut f = tokio::fs::OpenOptions::new().append(true).open(&path).await.expect("open");
-        tokio::io::AsyncWriteExt::write_all(&mut f, b"2}\r\n").await.expect("append");
+        let mut f = tokio::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .await
+            .expect("open");
+        tokio::io::AsyncWriteExt::write_all(&mut f, b"2}\r\n")
+            .await
+            .expect("append");
         drop(f);
 
         assert!(poll_new_lines(&mut state).await.expect("poll #3"));

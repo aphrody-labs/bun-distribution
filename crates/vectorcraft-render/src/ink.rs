@@ -71,7 +71,13 @@ impl Ink {
             Ink::Display | Ink::RichBlack => [r, g, b, a],
             _ => {
                 let lab = lab::srgb_to_lab([r, g, b].map(|v| v as f32 / 255.0));
-                let [r, g, b] = self.plane(inks(&Color::Lab { l: lab.l, a: lab.a, b: lab.b })).map(q);
+                let [r, g, b] = self
+                    .plane(inks(&Color::Lab {
+                        l: lab.l,
+                        a: lab.a,
+                        b: lab.b,
+                    }))
+                    .map(q);
                 [r, g, b, a]
             }
         }
@@ -99,7 +105,10 @@ pub(crate) fn blends_in_cmyk(doc: &Document, opts: &RenderOptions) -> bool {
         && opts.proof.as_ref().is_none_or(|p| p.separations.is_none())
         && (doc.layers.iter().any(|l| l.shows_transparency())
             || doc.symbols.iter().any(|s| s.art.shows_transparency())
-            || doc.patterns.iter().any(|p| p.art.iter().any(|a| a.shows_transparency())))
+            || doc
+                .patterns
+                .iter()
+                .any(|p| p.art.iter().any(|a| a.shows_transparency())))
 }
 
 /// The inks of `c` in the working CMYK space: CMYK as it is, grey as black ink, RGB and Lab
@@ -118,7 +127,9 @@ fn inks(c: &Color) -> [f32; 4] {
             seen.clear();
             *owner = Some(cms.clone());
         }
-        *seen.entry(key).or_insert_with(|| cms.to_cmyk(c, cms.settings().intent))
+        *seen
+            .entry(key)
+            .or_insert_with(|| cms.to_cmyk(c, cms.settings().intent))
     })
 }
 
@@ -181,7 +192,9 @@ fn cached<T>(slot: &Cached<T>, build: impl FnOnce(&Cms) -> T) -> (Arc<T>, u64) {
 /// shows it keeps its exact screen colour.
 pub(crate) fn compose(cmy: &[u8], k: &[u8], opts: &RenderOptions) -> Vec<u8> {
     let (lut, _) = cached(&DISPLAY, InkLut::build);
-    let bg = opts.background.map(|b| (Ink::Cmy.fixed8(b), Ink::K.fixed8(b), b));
+    let bg = opts
+        .background
+        .map(|b| (Ink::Cmy.fixed8(b), Ink::K.fixed8(b), b));
     let mut out = Vec::with_capacity(cmy.len());
     // Runs of one colour convert once.
     let mut last: Option<([u8; 8], [u8; 4])> = None;
@@ -192,10 +205,20 @@ pub(crate) fn compose(cmy: &[u8], k: &[u8], opts: &RenderOptions) -> Vec<u8> {
             (Some((k0, v)), _) if *k0 == key => *v,
             (_, Some((bc, bk, b))) if p == bc && q == bk => *b,
             _ => {
-                let un = |v: u8, a: u8| if a == 0 { 1.0 } else { (v as f32 / a as f32).min(1.0) };
+                let un = |v: u8, a: u8| {
+                    if a == 0 {
+                        1.0
+                    } else {
+                        (v as f32 / a as f32).min(1.0)
+                    }
+                };
                 let a = p[3];
                 let inks = planes_cmyk([un(p[0], a), un(p[1], a), un(p[2], a)], un(q[0], q[3]));
-                let rgb = if opts.rich_black && is_pure_black(inks) { [0.0; 3] } else { lut.apply(inks) };
+                let rgb = if opts.rich_black && is_pure_black(inks) {
+                    [0.0; 3]
+                } else {
+                    lut.apply(inks)
+                };
                 let pm = |v: f32| (v.clamp(0.0, 1.0) * a as f32).round() as u8;
                 let v = [pm(rgb[0]), pm(rgb[1]), pm(rgb[2]), a];
                 last = Some((key, v));
@@ -215,13 +238,23 @@ pub(crate) fn amounts(cmy: &[u8], k: &[u8]) -> Vec<u8> {
         .0
         .iter()
         .zip(k.as_chunks::<4>().0)
-        .flat_map(|(p, q)| [p[3].saturating_sub(p[0]), p[3].saturating_sub(p[1]), p[3].saturating_sub(p[2]), q[3].saturating_sub(q[0])])
+        .flat_map(|(p, q)| {
+            [
+                p[3].saturating_sub(p[0]),
+                p[3].saturating_sub(p[1]),
+                p[3].saturating_sub(p[2]),
+                q[3].saturating_sub(q[0]),
+            ]
+        })
         .collect()
 }
 
 /// Ink amounts `inks` shown through `lut` (opaque).
 fn inks_pixmap(inks: &Inks, lut: &InkLut) -> Option<Pixmap> {
-    let (w, h) = (u16::try_from(inks.width).ok()?, u16::try_from(inks.height).ok()?);
+    let (w, h) = (
+        u16::try_from(inks.width).ok()?,
+        u16::try_from(inks.height).ok()?,
+    );
     // Runs of one colour convert once.
     let mut last: Option<([u8; 4], PremulRgba8)> = None;
     let data = inks
@@ -254,15 +287,26 @@ pub(crate) fn cmyk_pixmap(blob: &ImageBlob, lut: &InkLut) -> Option<Pixmap> {
 
 /// Image pixels `pm` (cached as `key`, from `blob` when it is a document's image as it is) as
 /// painted with `ink`, cached with the images, and their key.
-pub(crate) fn ink_image(key: &ImageKey, pm: &Arc<Pixmap>, ink: Ink, blob: Option<&ImageBlob>, touch: bool) -> (ImageKey, Arc<Pixmap>) {
+pub(crate) fn ink_image(
+    key: &ImageKey,
+    pm: &Arc<Pixmap>,
+    ink: Ink,
+    blob: Option<&ImageBlob>,
+    touch: bool,
+) -> (ImageKey, Arc<Pixmap>) {
     if matches!(ink, Ink::Display | Ink::RichBlack) {
         return (key.clone(), pm.clone());
     }
     let (luts, generation) = cached(&SEPARATE, |cms| {
         let intent = cms.settings().intent;
-        [Ink::Cmy, Ink::K].map(|ink| ProofLut::build(|rgb| ink.plane(cms.srgb_to_cmyk(rgb, intent))))
+        [Ink::Cmy, Ink::K]
+            .map(|ink| ProofLut::build(|rgb| ink.plane(cms.srgb_to_cmyk(rgb, intent))))
     });
-    let plane_key = |plane: Ink| ImageKey { ink: plane, luts: (key.luts.0, generation), ..key.clone() };
+    let plane_key = |plane: Ink| ImageKey {
+        ink: plane,
+        luts: (key.luts.0, generation),
+        ..key.clone()
+    };
     let want = plane_key(ink);
     let hit = {
         let mut s = images::store();
@@ -274,7 +318,10 @@ pub(crate) fn ink_image(key: &ImageKey, pm: &Arc<Pixmap>, ink: Ink, blob: Option
     // CMYK images (shown through the display table) paint their own inks; the others are separated.
     let size = (pm.width() as u32, pm.height() as u32);
     let cmyk = key.luts.0 != 0 && key.adjust.is_none() && !key.grey;
-    let inks = blob.filter(|_| cmyk).and_then(ImageBlob::cmyk).filter(|i| (i.width, i.height) == size);
+    let inks = blob
+        .filter(|_| cmyk)
+        .and_then(ImageBlob::cmyk)
+        .filter(|i| (i.width, i.height) == size);
     let planes = [Ink::Cmy, Ink::K].map(|plane| {
         let mut out = Pixmap::new(pm.width(), pm.height());
         if let Some(inks) = &inks {
@@ -291,7 +338,9 @@ pub(crate) fn ink_image(key: &ImageKey, pm: &Arc<Pixmap>, ink: Ink, blob: Option
                 continue;
             }
             let un = |v: u8| (v as f32 / a as f32).min(1.0);
-            let [r, g, b] = lut.apply([un(s.r), un(s.g), un(s.b)]).map(|v| (v.clamp(0.0, 1.0) * a as f32).round() as u8);
+            let [r, g, b] = lut
+                .apply([un(s.r), un(s.g), un(s.b)])
+                .map(|v| (v.clamp(0.0, 1.0) * a as f32).round() as u8);
             *o = PremulRgba8 { r, g, b, a };
         }
         Arc::new(out)
@@ -315,7 +364,12 @@ mod tests {
         // Between the grid points (where interpolation errs most) and on them.
         for i in 0..=20 {
             for j in 0..=20 {
-                let inks = [i as f32 / 20.0, j as f32 / 20.0, ((i * 7 + j * 3) % 21) as f32 / 20.0, ((i + j * 5) % 21) as f32 / 20.0];
+                let inks = [
+                    i as f32 / 20.0,
+                    j as f32 / 20.0,
+                    ((i * 7 + j * 3) % 21) as f32 / 20.0,
+                    ((i + j * 5) % 21) as f32 / 20.0,
+                ];
                 let (a, b) = (lut.apply(inks), cms.cmyk_to_srgb(inks, false));
                 worst = worst.max((0..3).map(|c| (a[c] - b[c]).abs()).fold(0.0, f32::max));
             }
@@ -334,25 +388,48 @@ mod tests {
 
         let ink = [0u8, 102, 255, 25];
         let mut d = Document::new_with_mode(20.0, 10.0, ColorMode::Cmyk);
-        d.images.insert("img".into(), ImageBlob::cmyk_tiff(&Inks::new(2, 2, ink.repeat(4)).unwrap()).unwrap());
+        d.images.insert(
+            "img".into(),
+            ImageBlob::cmyk_tiff(&Inks::new(2, 2, ink.repeat(4)).unwrap()).unwrap(),
+        );
         let l = d.layers[0].id;
-        let im = ImageObject { key: "img".into(), width: 2, height: 2, xf: Affine::scale(5.0), link: None, placement: Default::default() };
+        let im = ImageObject {
+            key: "img".into(),
+            width: 2,
+            height: 2,
+            xf: Affine::scale(5.0),
+            link: None,
+            placement: Default::default(),
+        };
         let n = Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)));
         d.insert(Some(l), 0, n).unwrap();
         // The same inks as a fill beside it.
         let fill = Color::cmyk(0.0, 0.4, 1.0, 25.0 / 255.0);
-        let n =
-            Node::path(d.alloc_id(), shapes::rectangle(Rect::new(10.0, 0.0, 20.0, 10.0)), Appearance::basic(Paint::solid(fill), Paint::None, 0.0));
+        let n = Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(10.0, 0.0, 20.0, 10.0)),
+            Appearance::basic(Paint::solid(fill), Paint::None, 0.0),
+        );
         d.insert(Some(l), 1, n).unwrap();
         let mut r = Renderer::new();
         let region = Rect::new(0.0, 0.0, 20.0, 10.0);
         let shown = r.render_region(&d, region, 1.0, true).pixels;
         let at = |px: &[u8], x: usize| px[(5 * 20 + x) * 4..][..4].to_vec();
         let (image, fill) = (at(&shown, 5), at(&shown, 15));
-        assert!(image.iter().zip(&fill).all(|(a, b)| a.abs_diff(*b) <= 2), "{image:?} vs {fill:?}");
+        assert!(
+            image.iter().zip(&fill).all(|(a, b)| a.abs_diff(*b) <= 2),
+            "{image:?} vs {fill:?}"
+        );
         // CMYK exports draw ink amounts: the image's own.
         let inks = r.render_region_inks(&d, region, 1.0, &RenderOptions::default());
-        assert!(at(&inks, 5).iter().zip(ink).all(|(a, b)| a.abs_diff(b) <= 1), "{:?}", at(&inks, 5));
+        assert!(
+            at(&inks, 5)
+                .iter()
+                .zip(ink)
+                .all(|(a, b)| a.abs_diff(b) <= 1),
+            "{:?}",
+            at(&inks, 5)
+        );
     }
 
     #[test]
@@ -362,6 +439,9 @@ mod tests {
         assert_eq!(Ink::K.fixed8([255; 4]), [255; 4]);
         assert_eq!(Ink::Display.fixed8([12, 34, 56, 78]), [12, 34, 56, 78]);
         assert_eq!(Ink::K.rgb(&Color::gray(0.25)), [0.75; 3]);
-        assert_eq!(Ink::Cmy.rgb(&Color::cmyk(0.1, 0.2, 0.3, 0.4)), [0.9, 0.8, 0.7]);
+        assert_eq!(
+            Ink::Cmy.rgb(&Color::cmyk(0.1, 0.2, 0.3, 0.4)),
+            [0.9, 0.8, 0.7]
+        );
     }
 }

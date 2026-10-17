@@ -35,23 +35,99 @@ pub fn is_layer(e: &EffectInstance) -> bool {
     is_layer_id(&e.effect)
 }
 
-fn p(id: &'static str, label: &'static str, kind: ParamKind, default: ParamValue, animatable: bool, group: &'static str) -> ParamDef {
-    ParamDef { id, label, kind, default, animatable, group: if group.is_empty() { None } else { Some(group) } }
+fn p(
+    id: &'static str,
+    label: &'static str,
+    kind: ParamKind,
+    default: ParamValue,
+    animatable: bool,
+    group: &'static str,
+) -> ParamDef {
+    ParamDef {
+        id,
+        label,
+        kind,
+        default,
+        animatable,
+        group: if group.is_empty() { None } else { Some(group) },
+    }
 }
-fn fl(id: &'static str, label: &'static str, def: f64, (min, max): (f64, f64), (smin, smax): (f64, f64), unit: &'static str, group: &'static str) -> ParamDef {
-    p(id, label, ParamKind::Float { min, max, soft_min: smin, soft_max: smax, unit, decimals: 1 }, ParamValue::Float(def), true, group)
+fn fl(
+    id: &'static str,
+    label: &'static str,
+    def: f64,
+    (min, max): (f64, f64),
+    (smin, smax): (f64, f64),
+    unit: &'static str,
+    group: &'static str,
+) -> ParamDef {
+    p(
+        id,
+        label,
+        ParamKind::Float {
+            min,
+            max,
+            soft_min: smin,
+            soft_max: smax,
+            unit,
+            decimals: 1,
+        },
+        ParamValue::Float(def),
+        true,
+        group,
+    )
 }
 fn bo(id: &'static str, label: &'static str, v: bool, group: &'static str) -> ParamDef {
-    p(id, label, ParamKind::Bool, ParamValue::Bool(v), false, group)
+    p(
+        id,
+        label,
+        ParamKind::Bool,
+        ParamValue::Bool(v),
+        false,
+        group,
+    )
 }
 fn co(id: &'static str, label: &'static str, c: [f32; 4], group: &'static str) -> ParamDef {
-    p(id, label, ParamKind::Color, ParamValue::Color(c), true, group)
+    p(
+        id,
+        label,
+        ParamKind::Color,
+        ParamValue::Color(c),
+        true,
+        group,
+    )
 }
-fn chc(id: &'static str, label: &'static str, opts: &'static [&'static str], def: u32, group: &'static str) -> ParamDef {
-    p(id, label, ParamKind::Choice(opts), ParamValue::Choice(def), false, group)
+fn chc(
+    id: &'static str,
+    label: &'static str,
+    opts: &'static [&'static str],
+    def: u32,
+    group: &'static str,
+) -> ParamDef {
+    p(
+        id,
+        label,
+        ParamKind::Choice(opts),
+        ParamValue::Choice(def),
+        false,
+        group,
+    )
 }
-fn tx(id: &'static str, label: &'static str, def: &str, animatable: bool, group: &'static str) -> ParamDef {
-    p(id, label, ParamKind::Text, ParamValue::Text(def.into()), animatable, group)
+fn tx(
+    id: &'static str,
+    label: &'static str,
+    def: &str,
+    animatable: bool,
+    group: &'static str,
+) -> ParamDef {
+    p(
+        id,
+        label,
+        ParamKind::Text,
+        ParamValue::Text(def.into()),
+        animatable,
+        group,
+    )
 }
 
 fn appearance() -> Vec<ParamDef> {
@@ -62,47 +138,193 @@ fn appearance() -> Vec<ParamDef> {
         chc("fill_kind", "Fill Type", FILL_KIND_OPTS, 0, A),
         co("gradient_start", "Gradient Start", [1.0, 1.0, 1.0, 1.0], A),
         co("gradient_end", "Gradient End", [0.15, 0.15, 0.15, 1.0], A),
-        p("gradient_angle", "Gradient Angle", ParamKind::Angle, ParamValue::Float(0.0), true, A),
+        p(
+            "gradient_angle",
+            "Gradient Angle",
+            ParamKind::Angle,
+            ParamValue::Float(0.0),
+            true,
+            A,
+        ),
         bo("stroke", "Stroke", false, A),
         co("stroke_color", "Stroke Color", [0.0, 0.0, 0.0, 1.0], A),
-        fl("stroke_width", "Stroke Width", 4.0, (0.0, 1000.0), (0.0, 100.0), "", A),
+        fl(
+            "stroke_width",
+            "Stroke Width",
+            4.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
         chc("stroke_type", "Stroke Type", STROKE_OPTS, 0, A),
         bo("stroke2", "Stroke 2", false, A),
         co("stroke2_color", "Stroke 2 Color", [1.0, 0.85, 0.2, 1.0], A),
-        fl("stroke2_width", "Stroke 2 Width", 10.0, (0.0, 1000.0), (0.0, 100.0), "", A),
+        fl(
+            "stroke2_width",
+            "Stroke 2 Width",
+            10.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
         chc("stroke2_type", "Stroke 2 Type", STROKE_OPTS, 0, A),
         bo("background", "Background", false, A),
-        co("background_color", "Background Color", [0.0, 0.0, 0.0, 1.0], A),
-        fl("background_opacity", "Background Opacity", 75.0, (0.0, 100.0), (0.0, 100.0), "%", A),
-        fl("background_size", "Background Size", 12.0, (0.0, 1000.0), (0.0, 100.0), "", A),
-        fl("background_radius", "Background Corner Radius", 0.0, (0.0, 1000.0), (0.0, 100.0), "", A),
+        co(
+            "background_color",
+            "Background Color",
+            [0.0, 0.0, 0.0, 1.0],
+            A,
+        ),
+        fl(
+            "background_opacity",
+            "Background Opacity",
+            75.0,
+            (0.0, 100.0),
+            (0.0, 100.0),
+            "%",
+            A,
+        ),
+        fl(
+            "background_size",
+            "Background Size",
+            12.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
+        fl(
+            "background_radius",
+            "Background Corner Radius",
+            0.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
         bo("shadow", "Shadow", false, A),
         co("shadow_color", "Shadow Color", [0.0, 0.0, 0.0, 1.0], A),
-        fl("shadow_opacity", "Shadow Opacity", 75.0, (0.0, 100.0), (0.0, 100.0), "%", A),
-        p("shadow_angle", "Shadow Angle", ParamKind::Angle, ParamValue::Float(135.0), true, A),
-        fl("shadow_distance", "Shadow Distance", 10.0, (0.0, 1000.0), (0.0, 100.0), "", A),
-        fl("shadow_size", "Shadow Size", 0.0, (0.0, 1000.0), (0.0, 100.0), "", A),
-        fl("shadow_blur", "Shadow Blur", 40.0, (0.0, 1000.0), (0.0, 200.0), "", A),
+        fl(
+            "shadow_opacity",
+            "Shadow Opacity",
+            75.0,
+            (0.0, 100.0),
+            (0.0, 100.0),
+            "%",
+            A,
+        ),
+        p(
+            "shadow_angle",
+            "Shadow Angle",
+            ParamKind::Angle,
+            ParamValue::Float(135.0),
+            true,
+            A,
+        ),
+        fl(
+            "shadow_distance",
+            "Shadow Distance",
+            10.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
+        fl(
+            "shadow_size",
+            "Shadow Size",
+            0.0,
+            (0.0, 1000.0),
+            (0.0, 100.0),
+            "",
+            A,
+        ),
+        fl(
+            "shadow_blur",
+            "Shadow Blur",
+            40.0,
+            (0.0, 1000.0),
+            (0.0, 200.0),
+            "",
+            A,
+        ),
     ]
 }
 
 fn transform() -> Vec<ParamDef> {
     const T: &str = "Transform";
     vec![
-        p("position", "Position", ParamKind::Point, ParamValue::Vec2(Vec2::new(f64::NAN, f64::NAN)), true, T),
-        p("anchor", "Anchor Point", ParamKind::Point, ParamValue::Vec2(Vec2::new(0.0, 0.0)), true, T),
-        fl("scale", "Scale", 100.0, (0.0, 100_000.0), (0.0, 400.0), "%", T),
-        fl("scale_width", "Scale Width", 100.0, (0.0, 100_000.0), (0.0, 400.0), "%", T),
+        p(
+            "position",
+            "Position",
+            ParamKind::Point,
+            ParamValue::Vec2(Vec2::new(f64::NAN, f64::NAN)),
+            true,
+            T,
+        ),
+        p(
+            "anchor",
+            "Anchor Point",
+            ParamKind::Point,
+            ParamValue::Vec2(Vec2::new(0.0, 0.0)),
+            true,
+            T,
+        ),
+        fl(
+            "scale",
+            "Scale",
+            100.0,
+            (0.0, 100_000.0),
+            (0.0, 400.0),
+            "%",
+            T,
+        ),
+        fl(
+            "scale_width",
+            "Scale Width",
+            100.0,
+            (0.0, 100_000.0),
+            (0.0, 400.0),
+            "%",
+            T,
+        ),
         bo("uniform_scale", "Uniform Scale", true, T),
-        p("rotation", "Rotation", ParamKind::Angle, ParamValue::Float(0.0), true, T),
-        fl("opacity", "Opacity", 100.0, (0.0, 100.0), (0.0, 100.0), "%", T),
+        p(
+            "rotation",
+            "Rotation",
+            ParamKind::Angle,
+            ParamValue::Float(0.0),
+            true,
+            T,
+        ),
+        fl(
+            "opacity",
+            "Opacity",
+            100.0,
+            (0.0, 100.0),
+            (0.0, 100.0),
+            "%",
+            T,
+        ),
     ]
 }
 
 fn layer_def(id: &'static str, name: &'static str, mut params: Vec<ParamDef>) -> EffectDef {
     params.extend(appearance());
     params.extend(transform());
-    EffectDef { id, name, kind: EffectKind::Video, category: &[], params, intrinsic: false, accelerated: true, float32: true, yuv: false }
+    EffectDef {
+        id,
+        name,
+        kind: EffectKind::Video,
+        category: &[],
+        params,
+        intrinsic: false,
+        accelerated: true,
+        float32: true,
+        yuv: false,
+    }
 }
 
 /// Definitions of the two layer kinds (appended to the effect registry; not in the Effects panel).
@@ -118,19 +340,67 @@ pub(crate) fn layer_defs() -> Vec<EffectDef> {
                 tx("text", "Source Text", "", true, ""),
                 tx("font", "Font", "Inter", false, X),
                 tx("font_style", "Font Style", "Regular", false, X),
-                fl("size", "Font Size", 100.0, (1.0, 2000.0), (6.0, 400.0), "", X),
+                fl(
+                    "size",
+                    "Font Size",
+                    100.0,
+                    (1.0, 2000.0),
+                    (6.0, 400.0),
+                    "",
+                    X,
+                ),
                 chc("align", "Alignment", ALIGN_OPTS, 0, X),
-                fl("tracking", "Tracking", 0.0, (-1000.0, 10_000.0), (-200.0, 1000.0), "", X),
+                fl(
+                    "tracking",
+                    "Tracking",
+                    0.0,
+                    (-1000.0, 10_000.0),
+                    (-200.0, 1000.0),
+                    "",
+                    X,
+                ),
                 bo("kerning", "Metrics Kerning", true, X),
                 bo("ligatures", "Ligatures", true, X),
-                fl("leading", "Leading", 0.0, (-5000.0, 5000.0), (-100.0, 400.0), "", X),
-                fl("baseline_shift", "Baseline Shift", 0.0, (-5000.0, 5000.0), (-100.0, 100.0), "", X),
+                fl(
+                    "leading",
+                    "Leading",
+                    0.0,
+                    (-5000.0, 5000.0),
+                    (-100.0, 400.0),
+                    "",
+                    X,
+                ),
+                fl(
+                    "baseline_shift",
+                    "Baseline Shift",
+                    0.0,
+                    (-5000.0, 5000.0),
+                    (-100.0, 100.0),
+                    "",
+                    X,
+                ),
                 bo("faux_bold", "Faux Bold", false, X),
                 bo("faux_italic", "Faux Italic", false, X),
                 chc("caps", "Capitalisation", CAPS_OPTS, 0, X),
                 bo("underline", "Underline", false, X),
-                fl("box_width", "Text Box Width", 0.0, (0.0, 100_000.0), (0.0, 3840.0), "", X),
-                fl("box_height", "Text Box Height", 0.0, (0.0, 100_000.0), (0.0, 2160.0), "", X),
+                fl(
+                    "box_width",
+                    "Text Box Width",
+                    0.0,
+                    (0.0, 100_000.0),
+                    (0.0, 3840.0),
+                    "",
+                    X,
+                ),
+                fl(
+                    "box_height",
+                    "Text Box Height",
+                    0.0,
+                    (0.0, 100_000.0),
+                    (0.0, 2160.0),
+                    "",
+                    X,
+                ),
                 bo("vertical", "Vertical Text", false, X),
             ],
         ),
@@ -140,10 +410,40 @@ pub(crate) fn layer_defs() -> Vec<EffectDef> {
             vec![
                 tx("name", "Layer Name", "", false, ""),
                 chc("shape", "Shape", SHAPE_OPTS, 0, S),
-                p("size", "Size", ParamKind::Point, ParamValue::Vec2(Vec2::new(400.0, 200.0)), true, S),
-                fl("sides", "Polygon Sides", 6.0, (3.0, 64.0), (3.0, 16.0), "", S),
-                fl("corner_radius", "Corner Radius", 0.0, (0.0, 10_000.0), (0.0, 200.0), "", S),
-                p("points", "Path Points", ParamKind::Curve { hue: false }, ParamValue::Curve(vec![]), false, S),
+                p(
+                    "size",
+                    "Size",
+                    ParamKind::Point,
+                    ParamValue::Vec2(Vec2::new(400.0, 200.0)),
+                    true,
+                    S,
+                ),
+                fl(
+                    "sides",
+                    "Polygon Sides",
+                    6.0,
+                    (3.0, 64.0),
+                    (3.0, 16.0),
+                    "",
+                    S,
+                ),
+                fl(
+                    "corner_radius",
+                    "Corner Radius",
+                    0.0,
+                    (0.0, 10_000.0),
+                    (0.0, 200.0),
+                    "",
+                    S,
+                ),
+                p(
+                    "points",
+                    "Path Points",
+                    ParamKind::Curve { hue: false },
+                    ParamValue::Curve(vec![]),
+                    false,
+                    S,
+                ),
             ],
         ),
     ]
@@ -254,7 +554,10 @@ pub struct LayerSpec {
 fn val(e: &EffectInstance, id: &str, t: Tick) -> ParamValue {
     match e.params.get(id) {
         Some(p) => p.value_at(t),
-        None => crate::effect::find_effect(&e.effect).and_then(|d| d.param(id)).map(|d| d.default.clone()).unwrap_or(ParamValue::Float(0.0)),
+        None => crate::effect::find_effect(&e.effect)
+            .and_then(|d| d.param(id))
+            .map(|d| d.default.clone())
+            .unwrap_or(ParamValue::Float(0.0)),
     }
 }
 fn ff(e: &EffectInstance, id: &str, t: Tick) -> f32 {
@@ -317,13 +620,19 @@ pub fn eval_layer(e: &EffectInstance, t: Tick, frame: (u32, u32)) -> Option<Laye
                 size: (sz.x.max(0.0) as f32, sz.y.max(0.0) as f32),
                 sides: ff(e, "sides", t).round().clamp(3.0, 64.0) as u32,
                 corner_radius: ff(e, "corner_radius", t).max(0.0),
-                points: val(e, "points", t).as_curve().map(<[_]>::to_vec).unwrap_or_default(),
+                points: val(e, "points", t)
+                    .as_curve()
+                    .map(<[_]>::to_vec)
+                    .unwrap_or_default(),
             })
         }
         _ => return None,
     };
     let mut strokes = Vec::new();
-    for (on, c, w, k) in [("stroke", "stroke_color", "stroke_width", "stroke_type"), ("stroke2", "stroke2_color", "stroke2_width", "stroke2_type")] {
+    for (on, c, w, k) in [
+        ("stroke", "stroke_color", "stroke_width", "stroke_type"),
+        ("stroke2", "stroke2_color", "stroke2_width", "stroke2_type"),
+    ] {
         if bb(e, on, t) && ff(e, w, t) > 0.0 {
             strokes.push((cc(e, c, t), ff(e, w, t), ch(e, k, t)));
         }
@@ -331,7 +640,11 @@ pub fn eval_layer(e: &EffectInstance, t: Tick, frame: (u32, u32)) -> Option<Laye
     let background = bb(e, "background", t).then(|| {
         let mut c = cc(e, "background_color", t);
         c[3] *= (ff(e, "background_opacity", t) / 100.0).clamp(0.0, 1.0);
-        (c, ff(e, "background_size", t).max(0.0), ff(e, "background_radius", t).max(0.0))
+        (
+            c,
+            ff(e, "background_size", t).max(0.0),
+            ff(e, "background_radius", t).max(0.0),
+        )
     });
     let shadow = bb(e, "shadow", t).then(|| {
         let mut c = cc(e, "shadow_color", t);
@@ -339,17 +652,34 @@ pub fn eval_layer(e: &EffectInstance, t: Tick, frame: (u32, u32)) -> Option<Laye
         // Premiere: 135° casts the shadow down and to the right.
         let a = (ff(e, "shadow_angle", t) - 90.0).to_radians();
         let d = ff(e, "shadow_distance", t);
-        Shadow { color: c, offset: (a.cos() * d, a.sin() * d), size: ff(e, "shadow_size", t).max(0.0), blur: ff(e, "shadow_blur", t).max(0.0) }
+        Shadow {
+            color: c,
+            offset: (a.cos() * d, a.sin() * d),
+            size: ff(e, "shadow_size", t).max(0.0),
+            blur: ff(e, "shadow_blur", t).max(0.0),
+        }
     });
     let pos = vv(e, "position", t);
-    let position = if pos.x.is_nan() || pos.y.is_nan() { Vec2::new(frame.0 as f64 / 2.0, frame.1 as f64 / 2.0) } else { pos };
+    let position = if pos.x.is_nan() || pos.y.is_nan() {
+        Vec2::new(frame.0 as f64 / 2.0, frame.1 as f64 / 2.0)
+    } else {
+        pos
+    };
     let s = ff(e, "scale", t) as f64 / 100.0;
-    let sw = if bb(e, "uniform_scale", t) { s } else { ff(e, "scale_width", t) as f64 / 100.0 };
+    let sw = if bb(e, "uniform_scale", t) {
+        s
+    } else {
+        ff(e, "scale_width", t) as f64 / 100.0
+    };
     Some(LayerSpec {
         name: ss(e, "name", t),
         enabled: e.enabled,
         uid: e.layer.as_ref().map_or(0, |x| x.uid),
-        pin: e.layer.as_ref().and_then(|x| x.pin.clone()).filter(|p| p.any()),
+        pin: e
+            .layer
+            .as_ref()
+            .and_then(|x| x.pin.clone())
+            .filter(|p| p.any()),
         content,
         appearance: Appearance {
             fill: bb(e, "fill", t).then(|| cc(e, "fill_color", t)),
@@ -373,13 +703,23 @@ pub fn eval_layer(e: &EffectInstance, t: Tick, frame: (u32, u32)) -> Option<Laye
 }
 
 /// Character-offset style runs → byte ranges of `text` (clamped; empty runs dropped).
-pub fn byte_runs(text: &str, runs: &[crate::graphic_design::StyleRun]) -> Vec<(std::ops::Range<usize>, crate::graphic_design::CharStyle)> {
+pub fn byte_runs(
+    text: &str,
+    runs: &[crate::graphic_design::StyleRun],
+) -> Vec<(std::ops::Range<usize>, crate::graphic_design::CharStyle)> {
     if runs.is_empty() {
         return Vec::new();
     }
-    let offs: Vec<usize> = text.char_indices().map(|(b, _)| b).chain(std::iter::once(text.len())).collect();
+    let offs: Vec<usize> = text
+        .char_indices()
+        .map(|(b, _)| b)
+        .chain(std::iter::once(text.len()))
+        .collect();
     let at = |c: usize| offs[c.min(offs.len() - 1)];
-    runs.iter().map(|r| (at(r.start)..at(r.end), r.style.clone())).filter(|(r, s)| r.start < r.end && !s.is_empty()).collect()
+    runs.iter()
+        .map(|r| (at(r.start)..at(r.end), r.style.clone()))
+        .filter(|(r, s)| r.start < r.end && !s.is_empty())
+        .collect()
 }
 
 /// Character count of a text layer's source text at time `t` (for style-run commands).
@@ -394,15 +734,17 @@ fn set(e: &mut EffectInstance, id: &str, v: ParamValue) {
 /// A fresh instance of a built-in layer effect (bare, with no parameters, if it were ever
 /// missing from the registry; `set` adds the ones the constructors fill in).
 fn layer_instance(id: &str) -> EffectInstance {
-    crate::effect::find_effect(id).map(crate::effect::EffectDef::instance).unwrap_or_else(|| EffectInstance {
-        effect: id.to_string(),
-        enabled: true,
-        params: Default::default(),
-        masks: Vec::new(),
-        post_fader: false,
-        essential: false,
-        layer: None,
-    })
+    crate::effect::find_effect(id)
+        .map(crate::effect::EffectDef::instance)
+        .unwrap_or_else(|| EffectInstance {
+            effect: id.to_string(),
+            enabled: true,
+            params: Default::default(),
+            masks: Vec::new(),
+            post_fader: false,
+            essential: false,
+            layer: None,
+        })
 }
 
 /// A new text layer at `position` (graphic canvas pixels).
@@ -424,8 +766,20 @@ pub fn new_vertical_text_layer(text: &str, position: Vec2, size: f64) -> EffectI
 /// Reset a layer's parameters to their defaults, keeping its content (name, text, shape kind,
 /// geometry and path) — Graphics ▸ Reset All Parameters.
 pub fn reset_layer_params(e: &mut EffectInstance) {
-    const KEEP: &[&str] = &["name", "text", "shape", "size", "sides", "points", "vertical", "box_width", "box_height"];
-    let Some(def) = crate::effect::find_effect(&e.effect) else { return };
+    const KEEP: &[&str] = &[
+        "name",
+        "text",
+        "shape",
+        "size",
+        "sides",
+        "points",
+        "vertical",
+        "box_width",
+        "box_height",
+    ];
+    let Some(def) = crate::effect::find_effect(&e.effect) else {
+        return;
+    };
     let mut fresh = def.instance();
     for k in KEEP {
         if let Some(p) = e.params.remove(*k) {
@@ -436,14 +790,23 @@ pub fn reset_layer_params(e: &mut EffectInstance) {
 }
 
 /// A new shape layer centred at `position`.
-pub fn new_shape_layer(shape: u32, position: Vec2, size: Vec2, points: Vec<[f32; 2]>) -> EffectInstance {
+pub fn new_shape_layer(
+    shape: u32,
+    position: Vec2,
+    size: Vec2,
+    points: Vec<[f32; 2]>,
+) -> EffectInstance {
     let mut e = layer_instance(SHAPE_LAYER);
     set(&mut e, "shape", ParamValue::Choice(shape.min(3)));
     set(&mut e, "position", ParamValue::Vec2(position));
     set(&mut e, "size", ParamValue::Vec2(size));
     set(&mut e, "points", ParamValue::Curve(points));
     // shapes default to a red fill (Premiere's new-shape default is a coloured fill)
-    set(&mut e, "fill_color", ParamValue::Color([0.85, 0.2, 0.25, 1.0]));
+    set(
+        &mut e,
+        "fill_color",
+        ParamValue::Color([0.85, 0.2, 0.25, 1.0]),
+    );
     e
 }
 
@@ -456,7 +819,11 @@ pub fn layer_display_name(e: &EffectInstance, index: usize) -> String {
     if e.effect == TEXT_LAYER {
         let t = ss(e, "text", Tick::ZERO);
         let first = t.lines().next().unwrap_or("").trim().to_string();
-        if first.is_empty() { "Text".into() } else { first.chars().take(40).collect() }
+        if first.is_empty() {
+            "Text".into()
+        } else {
+            first.chars().take(40).collect()
+        }
     } else {
         format!("Shape {:02}", index + 1)
     }
@@ -464,7 +831,12 @@ pub fn layer_display_name(e: &EffectInstance, index: usize) -> String {
 
 /// Indices (into `effects`) of the graphic layers, in paint order.
 pub fn layer_indices(effects: &[EffectInstance]) -> Vec<usize> {
-    effects.iter().enumerate().filter(|(_, e)| is_layer(e)).map(|(i, _)| i).collect()
+    effects
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| is_layer(e))
+        .map(|(i, _)| i)
+        .collect()
 }
 
 #[cfg(test)]
@@ -479,7 +851,9 @@ mod tests {
         let back: EffectInstance = serde_json::from_str(&json).unwrap();
         assert_eq!(back, e);
         let s = eval_layer(&back, Tick::ZERO, (1920, 1080)).unwrap();
-        let LayerContent::Text(t) = &s.content else { panic!() };
+        let LayerContent::Text(t) = &s.content else {
+            panic!()
+        };
         assert_eq!(t.text, "Hello");
         assert_eq!(t.size, 72.0);
         assert_eq!(t.font, "Inter");
@@ -491,7 +865,11 @@ mod tests {
         e.params.get_mut("gradient_start").unwrap().value = ParamValue::Color([1.0, 0.0, 0.0, 1.0]);
         e.params.get_mut("gradient_end").unwrap().value = ParamValue::Color([0.0, 0.0, 1.0, 1.0]);
         e.params.get_mut("gradient_angle").unwrap().value = ParamValue::Float(90.0);
-        let g = eval_layer(&e, Tick::ZERO, (1920, 1080)).unwrap().appearance.gradient.expect("linear fill");
+        let g = eval_layer(&e, Tick::ZERO, (1920, 1080))
+            .unwrap()
+            .appearance
+            .gradient
+            .expect("linear fill");
         assert_eq!(g.start, [1.0, 0.0, 0.0, 1.0]);
         assert_eq!(g.end, [0.0, 0.0, 1.0, 1.0]);
         assert_eq!(g.angle, 90.0);
@@ -506,7 +884,11 @@ mod tests {
         let s = eval_layer(&e, Tick::ZERO, (1920, 1080)).unwrap();
         assert_eq!(s.transform.position, Vec2::new(960.0, 540.0));
         let sh = s.appearance.shadow.unwrap();
-        assert!(sh.offset.0 > 5.0 && sh.offset.1 > 5.0, "135° casts down-right: {:?}", sh.offset);
+        assert!(
+            sh.offset.0 > 5.0 && sh.offset.1 > 5.0,
+            "135° casts down-right: {:?}",
+            sh.offset
+        );
         assert_eq!(layer_display_name(&e, 2), "Shape 03");
     }
 

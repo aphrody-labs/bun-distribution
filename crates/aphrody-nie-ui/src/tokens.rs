@@ -35,7 +35,10 @@ impl RawToken {
 macro_rules! raw_token {
     ($doc:literal, $ident:ident, $name:literal, $value:literal) => {
         #[doc = $doc]
-        pub const $ident: RawToken = RawToken { name: $name, value: $value };
+        pub const $ident: RawToken = RawToken {
+            name: $name,
+            value: $value,
+        };
     };
 }
 
@@ -46,7 +49,12 @@ raw_token!(
     "jeu-biseau",
     "14px"
 );
-raw_token!("Le rayon de bordure par défaut. Valeur CSS `4px`.", RADIUS, "jeu-rayon", "4px");
+raw_token!(
+    "Le rayon de bordure par défaut. Valeur CSS `4px`.",
+    RADIUS,
+    "jeu-rayon",
+    "4px"
+);
 raw_token!(
     "L'épaisseur de bordure par défaut. Valeur CSS `2px`.",
     BORDER_WIDTH,
@@ -55,11 +63,36 @@ raw_token!(
 );
 
 // --- Rythme --------------------------------------------------------------------------------
-raw_token!("L'espacement le plus fin. Valeur CSS `4px`.", SPACE_XS, "jeu-espace-xs", "4px");
-raw_token!("Un petit espacement. Valeur CSS `8px`.", SPACE_S, "jeu-espace-s", "8px");
-raw_token!("L'espacement de référence. Valeur CSS `16px`.", SPACE_M, "jeu-espace-m", "16px");
-raw_token!("Un grand espacement. Valeur CSS `24px`.", SPACE_L, "jeu-espace-l", "24px");
-raw_token!("Le plus grand espacement. Valeur CSS `40px`.", SPACE_XL, "jeu-espace-xl", "40px");
+raw_token!(
+    "L'espacement le plus fin. Valeur CSS `4px`.",
+    SPACE_XS,
+    "jeu-espace-xs",
+    "4px"
+);
+raw_token!(
+    "Un petit espacement. Valeur CSS `8px`.",
+    SPACE_S,
+    "jeu-espace-s",
+    "8px"
+);
+raw_token!(
+    "L'espacement de référence. Valeur CSS `16px`.",
+    SPACE_M,
+    "jeu-espace-m",
+    "16px"
+);
+raw_token!(
+    "Un grand espacement. Valeur CSS `24px`.",
+    SPACE_L,
+    "jeu-espace-l",
+    "24px"
+);
+raw_token!(
+    "Le plus grand espacement. Valeur CSS `40px`.",
+    SPACE_XL,
+    "jeu-espace-xl",
+    "40px"
+);
 
 // --- Mouvement : court et net, comme le jeu -------------------------------------------------
 raw_token!(
@@ -82,7 +115,12 @@ raw_token!(
 );
 
 // --- Typographie -----------------------------------------------------------------------------
-raw_token!("La graisse des titres. Valeur CSS `800`.", TITLE_WEIGHT, "jeu-titre-poids", "800");
+raw_token!(
+    "La graisse des titres. Valeur CSS `800`.",
+    TITLE_WEIGHT,
+    "jeu-titre-poids",
+    "800"
+);
 raw_token!(
     "L'espacement des lettres d'un titre. Valeur CSS `0.02em`.",
     TITLE_TRACKING,

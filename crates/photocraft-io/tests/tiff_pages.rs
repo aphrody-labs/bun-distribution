@@ -25,7 +25,9 @@ fn tiff(big: bool, pages: &[(u32, u32, u8, u32, u16)]) -> Vec<u8> {
         }
         let ifd_at = f.len() as u64;
         let width = if big { 8 } else { 4 };
-        let put = |f: &mut Vec<u8>, at: usize, v: u64| f[at..at + width].copy_from_slice(&v.to_le_bytes()[..width]);
+        let put = |f: &mut Vec<u8>, at: usize, v: u64| {
+            f[at..at + width].copy_from_slice(&v.to_le_bytes()[..width])
+        };
         put(&mut f, next_field, ifd_at);
         let entries: [(u16, u16, u64); 11] = [
             (254, 4, u64::from(kind)),
@@ -68,13 +70,30 @@ fn the_first_full_resolution_page_opens_and_any_page_on_request() {
         // A thumbnail, then two pages.
         let bytes = tiff(big, &[(2, 2, 9, 1, 1), (6, 4, 50, 0, 1), (3, 5, 90, 2, 1)]);
         let r = photocraft_io::import("pages.tif", &bytes).unwrap();
-        assert_eq!((r.document.size.width, r.document.size.height), (6, 4), "big {big}");
-        assert!(r.warnings.iter().any(|w| w == "only the first of 2 pages was imported"), "{:?}", r.warnings);
+        assert_eq!(
+            (r.document.size.width, r.document.size.height),
+            (6, 4),
+            "big {big}"
+        );
+        assert!(
+            r.warnings
+                .iter()
+                .any(|w| w == "only the first of 2 pages was imported"),
+            "{:?}",
+            r.warnings
+        );
         let info = photocraft_codecs::tiff_info(&bytes).unwrap();
-        assert_eq!((info.pages.len(), info.default_page(), info.big_tiff), (3, Some(1), big));
+        assert_eq!(
+            (info.pages.len(), info.default_page(), info.big_tiff),
+            (3, Some(1), big)
+        );
         for (page, size) in [(0, (2, 2)), (1, (6, 4)), (2, (3, 5))] {
             let r = photocraft_io::import_tiff_page("pages.tif", &bytes, Some(page)).unwrap();
-            assert_eq!((r.document.size.width, r.document.size.height), size, "page {page} big {big}");
+            assert_eq!(
+                (r.document.size.width, r.document.size.height),
+                size,
+                "page {page} big {big}"
+            );
         }
         assert!(photocraft_io::import_tiff_page("pages.tif", &bytes, Some(3)).is_err());
     }
@@ -86,8 +105,16 @@ fn bigtiff_orientation_is_applied_on_open() {
     for big in [false, true] {
         let bytes = tiff(big, &[(6, 4, 50, 0, 6)]);
         let r = photocraft_io::import("turned.tif", &bytes).unwrap();
-        assert_eq!((r.document.size.width, r.document.size.height), (4, 6), "big {big}");
+        assert_eq!(
+            (r.document.size.width, r.document.size.height),
+            (4, 6),
+            "big {big}"
+        );
         let r = photocraft_io::import_tiff_page("turned.tif", &bytes, Some(0)).unwrap();
-        assert_eq!((r.document.size.width, r.document.size.height), (4, 6), "big {big}");
+        assert_eq!(
+            (r.document.size.width, r.document.size.height),
+            (4, 6),
+            "big {big}"
+        );
     }
 }

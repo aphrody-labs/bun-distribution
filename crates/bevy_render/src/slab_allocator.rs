@@ -3,7 +3,7 @@
 use alloc::borrow::Cow;
 use bevy_derive::{Deref, DerefMut};
 use bevy_log::error;
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use core::{
     cmp::Ordering,
     fmt::{self, Debug, Display, Formatter},

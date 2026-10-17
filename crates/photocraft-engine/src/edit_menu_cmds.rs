@@ -51,7 +51,15 @@ fn fadeable(id: &str) -> bool {
     id.starts_with("filter.")
         || id.starts_with("image.adjustments.")
         || id.starts_with("paint.")
-        || matches!(id, "edit.fill" | "edit.stroke" | "edit.contentAwareFill" | "image.autoTone" | "image.autoContrast" | "image.autoColor")
+        || matches!(
+            id,
+            "edit.fill"
+                | "edit.stroke"
+                | "edit.contentAwareFill"
+                | "image.autoTone"
+                | "image.autoContrast"
+                | "image.autoColor"
+        )
 }
 
 /// Called after every successful command: remember a fadeable result.
@@ -63,32 +71,48 @@ pub(crate) fn after_command(s: &mut Session, id: &str) {
     let Some(layer) = st.active_layer else { return };
     let label = st.history.undo_label().unwrap_or(id).to_string();
     let mask = st.doc.layer(layer).is_some_and(|l| l.mask.is_some())
-        && st.history.state(st.history.past_len().wrapping_sub(1)).is_some_and(|prev| {
-            // The mask changed and the pixels didn't: the command painted the mask.
-            let now = st.doc.layer(layer);
-            let was = prev.layer(layer);
-            let surf_eq = |a: Option<&Surface>, b: Option<&Surface>| match (a, b) {
-                (Some(a), Some(b)) => crate_fingerprint(a) == crate_fingerprint(b),
-                (None, None) => true,
-                _ => false,
-            };
-            surf_eq(now.and_then(|l| l.surface()), was.and_then(|l| l.surface()))
-                && !surf_eq(now.and_then(|l| l.mask.as_ref().map(|m| &m.surface)), was.and_then(|l| l.mask.as_ref().map(|m| &m.surface)))
-        });
-    s.edit_state.fade = Some(FadeSource { doc: st.doc.id, revision: st.revision, layer, mask, label });
+        && st
+            .history
+            .state(st.history.past_len().wrapping_sub(1))
+            .is_some_and(|prev| {
+                // The mask changed and the pixels didn't: the command painted the mask.
+                let now = st.doc.layer(layer);
+                let was = prev.layer(layer);
+                let surf_eq = |a: Option<&Surface>, b: Option<&Surface>| match (a, b) {
+                    (Some(a), Some(b)) => crate_fingerprint(a) == crate_fingerprint(b),
+                    (None, None) => true,
+                    _ => false,
+                };
+                surf_eq(now.and_then(|l| l.surface()), was.and_then(|l| l.surface()))
+                    && !surf_eq(
+                        now.and_then(|l| l.mask.as_ref().map(|m| &m.surface)),
+                        was.and_then(|l| l.mask.as_ref().map(|m| &m.surface)),
+                    )
+            });
+    s.edit_state.fade = Some(FadeSource {
+        doc: st.doc.id,
+        revision: st.revision,
+        layer,
+        mask,
+        label,
+    });
 }
 
 /// Tile identity of a surface (pointer equality of its COW tiles).
 fn crate_fingerprint(s: &Surface) -> u64 {
     s.tiles().fold(s.tile_count() as u64, |h, (c, t)| {
-        (h ^ std::sync::Arc::as_ptr(t) as usize as u64 ^ ((c.tx as u64) << 32 | c.ty as u32 as u64)).wrapping_mul(0x100_0000_01b3)
+        (h ^ std::sync::Arc::as_ptr(t) as usize as u64 ^ ((c.tx as u64) << 32 | c.ty as u32 as u64))
+            .wrapping_mul(0x100_0000_01b3)
     })
 }
 
 // ------------------------------------------------------------------ helpers
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn f32_or(p: &Value, k: &str, d: f32) -> f32 {
@@ -112,7 +136,11 @@ fn pixel_layer(s: &Session) -> std::result::Result<LayerId, String> {
     let id = d.active_layer.ok_or("no active layer")?;
     let l = d.doc.layer(id).ok_or("no active layer")?;
     if !matches!(l.content, LayerContent::Raster(_)) {
-        return Err(format!("active layer is {} {} layer, not a pixel layer", l.content.article(), l.content.kind_name()));
+        return Err(format!(
+            "active layer is {} {} layer, not a pixel layer",
+            l.content.article(),
+            l.content.kind_name()
+        ));
     }
     let locks = d.doc.effective_locks(id);
     if locks.all || locks.pixels {
@@ -125,9 +153,13 @@ fn writable_surface(doc: &mut Document, id: LayerId) -> Result<&mut Surface> {
     let locks = doc.effective_locks(id);
     let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
     if locks.all || locks.pixels {
-        return Err(EngineError::Other(format!("Could not complete your request because the layer \"{}\" is locked", l.name)));
+        return Err(EngineError::Other(format!(
+            "Could not complete your request because the layer \"{}\" is locked",
+            l.name
+        )));
     }
-    l.surface_mut().ok_or_else(|| EngineError::Other("not a pixel layer".into()))
+    l.surface_mut()
+        .ok_or_else(|| EngineError::Other("not a pixel layer".into()))
 }
 
 // ------------------------------------------------------------------ Fade
@@ -136,7 +168,9 @@ fn can_fade(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
     let f = s.edit_state.fade.as_ref().ok_or("nothing to fade")?;
     if f.doc != st.doc.id || f.revision != st.revision || !st.history.can_undo() {
-        return Err("Fade is only available right after a filter, adjustment or painting step".into());
+        return Err(
+            "Fade is only available right after a filter, adjustment or painting step".into(),
+        );
     }
     if st.doc.layer(f.layer).is_none() {
         return Err("the faded layer no longer exists".into());
@@ -146,12 +180,22 @@ fn can_fade(s: &Session) -> std::result::Result<(), String> {
 
 fn surface_of(doc: &Document, id: LayerId, mask: bool) -> Option<&Surface> {
     let l = doc.layer(id)?;
-    if mask { l.mask.as_ref().map(|m| &m.surface) } else { l.surface() }
+    if mask {
+        l.mask.as_ref().map(|m| &m.surface)
+    } else {
+        l.surface()
+    }
 }
 
 /// Blend `after` back towards `before` over `area`: `before + opacity × (B(before, after) − before)`
 /// with blend mode `mode` (premultiplied, so alpha changes fade too).
-pub fn fade_surface(before: &Surface, after: &mut Surface, area: Rect, mode: BlendMode, opacity: f32) {
+pub fn fade_surface(
+    before: &Surface,
+    after: &mut Surface,
+    area: Rect,
+    mode: BlendMode,
+    opacity: f32,
+) {
     let fmt = after.format();
     let n = fmt.channels();
     if area.is_empty() || n == 0 {
@@ -197,21 +241,40 @@ pub fn fade_surface(before: &Surface, after: &mut Surface, area: Rect, mode: Ble
 
 fn fade(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "edit.fade";
-    let src = s.edit_state.fade.clone().ok_or_else(|| bad(cmd, "nothing to fade"))?;
+    let src = s
+        .edit_state
+        .fade
+        .clone()
+        .ok_or_else(|| bad(cmd, "nothing to fade"))?;
     let opacity = f32_or(p, "opacity", 100.0).clamp(0.0, 100.0) / 100.0;
-    let mode = blend_from_str(str_or(p, "mode", "normal")).ok_or_else(|| bad(cmd, "unknown blend mode"))?;
+    let mode = blend_from_str(str_or(p, "mode", "normal"))
+        .ok_or_else(|| bad(cmd, "unknown blend mode"))?;
     let st = s.active().ok_or(EngineError::NoDocument)?;
-    let prev = st.history.state(st.history.past_len() - 1).ok_or_else(|| bad(cmd, "no previous state"))?;
-    let before = surface_of(&prev, src.layer, src.mask).cloned().ok_or_else(|| EngineError::Other("the layer did not exist before this step".into()))?;
+    let prev = st
+        .history
+        .state(st.history.past_len() - 1)
+        .ok_or_else(|| bad(cmd, "no previous state"))?;
+    let before = surface_of(&prev, src.layer, src.mask)
+        .cloned()
+        .ok_or_else(|| EngineError::Other("the layer did not exist before this step".into()))?;
     let now = surface_of(&st.doc, src.layer, src.mask).ok_or(EngineError::NoLayer(src.layer))?;
     if now.format() != before.format() {
-        return Err(EngineError::Other("can't fade a step that changed the layer's pixel format".into()));
+        return Err(EngineError::Other(
+            "can't fade a step that changed the layer's pixel format".into(),
+        ));
     }
     let area = before.content_bounds().union(&now.content_bounds());
     let label = format!("Fade {}", src.label);
     s.edit(&label, |doc, _| {
-        let l = doc.layer_mut(src.layer).ok_or(EngineError::NoLayer(src.layer))?;
-        let surf = if src.mask { l.mask.as_mut().map(|m| &mut m.surface) } else { l.surface_mut() }.ok_or(EngineError::NoLayer(src.layer))?;
+        let l = doc
+            .layer_mut(src.layer)
+            .ok_or(EngineError::NoLayer(src.layer))?;
+        let surf = if src.mask {
+            l.mask.as_mut().map(|m| &mut m.surface)
+        } else {
+            l.surface_mut()
+        }
+        .ok_or(EngineError::NoLayer(src.layer))?;
         fade_surface(&before, surf, area, mode, opacity);
         surf.prune();
         Ok(())
@@ -222,12 +285,18 @@ fn fade(s: &mut Session, p: &Value) -> Result<Value> {
 // ------------------------------------------------------------------ Purge
 
 fn history_bytes(s: &Session, all: bool) -> usize {
-    let docs: Vec<&crate::DocState> = if all { s.documents().iter().collect() } else { s.active().into_iter().collect() };
+    let docs: Vec<&crate::DocState> = if all {
+        s.documents().iter().collect()
+    } else {
+        s.active().into_iter().collect()
+    };
     docs.iter().map(|d| d.history.unique_bytes(&d.doc)).sum()
 }
 
 fn clip_bytes(s: &Session) -> usize {
-    s.clipboard.as_ref().map_or(0, |c| c.surface.tiles().map(|(_, t)| t.bytes().len()).sum())
+    s.clipboard
+        .as_ref()
+        .map_or(0, |c| c.surface.tiles().map(|(_, t)| t.bytes().len()).sum())
 }
 
 fn purge(s: &mut Session, what: &str) -> Result<Value> {
@@ -241,7 +310,8 @@ fn purge(s: &mut Session, what: &str) -> Result<Value> {
         freed += before.saturating_sub(history_bytes(s, false));
         items.push("undo");
     }
-    if matches!(what, "clipboard" | "all") && (s.clipboard.is_some() || s.style_clipboard.is_some()) {
+    if matches!(what, "clipboard" | "all") && (s.clipboard.is_some() || s.style_clipboard.is_some())
+    {
         freed += clip_bytes(s);
         s.clipboard = None;
         s.style_clipboard = None;
@@ -249,7 +319,10 @@ fn purge(s: &mut Session, what: &str) -> Result<Value> {
     }
     if matches!(what, "histories" | "all") {
         let b = history_bytes(s, true);
-        if s.documents().iter().any(|d| d.history.can_undo() || d.history.can_redo()) {
+        if s.documents()
+            .iter()
+            .any(|d| d.history.can_undo() || d.history.can_redo())
+        {
             for st in &mut s.docs {
                 st.history.clear();
                 st.coalesce = None;
@@ -276,27 +349,50 @@ fn purge(s: &mut Session, what: &str) -> Result<Value> {
         }
     }
     s.edit_state.fade = None;
-    let msg = if items.is_empty() { "nothing to purge".to_string() } else { format!("purged {}", items.join(", ")) };
+    let msg = if items.is_empty() {
+        "nothing to purge".to_string()
+    } else {
+        format!("purged {}", items.join(", "))
+    };
     Ok(json!({"purged": items, "bytes": freed, "message": msg}))
 }
 
 fn can_purge_undo(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.history.can_undo()).map(|_| ()).ok_or_else(|| "nothing to purge".into())
+    s.active()
+        .filter(|d| d.history.can_undo())
+        .map(|_| ())
+        .ok_or_else(|| "nothing to purge".into())
 }
 fn can_purge_clipboard(s: &Session) -> std::result::Result<(), String> {
-    if s.clipboard.is_some() || s.style_clipboard.is_some() { Ok(()) } else { Err("the clipboard is empty".into()) }
+    if s.clipboard.is_some() || s.style_clipboard.is_some() {
+        Ok(())
+    } else {
+        Err("the clipboard is empty".into())
+    }
 }
 fn can_purge_histories(s: &Session) -> std::result::Result<(), String> {
-    if s.documents().iter().any(|d| d.history.can_undo() || d.history.can_redo()) { Ok(()) } else { Err("no history to purge".into()) }
+    if s.documents()
+        .iter()
+        .any(|d| d.history.can_undo() || d.history.can_redo())
+    {
+        Ok(())
+    } else {
+        Err("no history to purge".into())
+    }
 }
 fn can_purge_all(s: &Session) -> std::result::Result<(), String> {
-    can_purge_histories(s).or_else(|_| can_purge_clipboard(s)).or_else(|_| {
-        if photocraft_compose::effect_cache_bytes() > 0 || photocraft_compose::masks::cache_bytes() > 0 || crate::smart_cmds::stack_cache_bytes() > 0 {
-            Ok(())
-        } else {
-            Err("nothing to purge".into())
-        }
-    })
+    can_purge_histories(s)
+        .or_else(|_| can_purge_clipboard(s))
+        .or_else(|_| {
+            if photocraft_compose::effect_cache_bytes() > 0
+                || photocraft_compose::masks::cache_bytes() > 0
+                || crate::smart_cmds::stack_cache_bytes() > 0
+            {
+                Ok(())
+            } else {
+                Err("nothing to purge".into())
+            }
+        })
 }
 
 // ------------------------------------------------------------------ Content-Aware Fill
@@ -304,7 +400,11 @@ fn can_purge_all(s: &Session) -> std::result::Result<(), String> {
 fn can_caf(s: &Session) -> std::result::Result<(), String> {
     pixel_layer(s)?;
     let d = s.active().ok_or("no document open")?;
-    if d.doc.selection.as_ref().is_none_or(|m| m.content_bounds().is_empty()) {
+    if d.doc
+        .selection
+        .as_ref()
+        .is_none_or(|m| m.content_bounds().is_empty())
+    {
         return Err("make a selection around what to remove".into());
     }
     Ok(())
@@ -314,7 +414,11 @@ fn can_caf(s: &Session) -> std::result::Result<(), String> {
 fn channel_mask<'a>(doc: &'a Document, v: &Value) -> Option<&'a Surface> {
     match v {
         Value::Number(n) => doc.channels.get(n.as_u64()? as usize).map(|c| &c.surface),
-        Value::String(name) => doc.channels.iter().find(|c| c.name == *name).map(|c| &c.surface),
+        Value::String(name) => doc
+            .channels
+            .iter()
+            .find(|c| c.name == *name)
+            .map(|c| &c.surface),
         _ => None,
     }
 }
@@ -323,7 +427,10 @@ fn channel_mask<'a>(doc: &'a Document, v: &Value) -> Option<&'a Surface> {
 /// the additions saturate too — `area: [1e30, 0, 1e30, 10]` is a whole-canvas window, not an
 /// overflow (it panicked in debug builds before the `saturating_add`).
 fn rect_param(p: &Value, key: &str, cmd: &str) -> Result<Rect> {
-    let a = p.get(key).and_then(Value::as_array).ok_or_else(|| bad(cmd, format!("`{key}` must be [x, y, w, h]")))?;
+    let a = p
+        .get(key)
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, format!("`{key}` must be [x, y, w, h]")))?;
     let n = |i: usize| {
         a.get(i)
             .and_then(Value::as_f64)
@@ -332,7 +439,12 @@ fn rect_param(p: &Value, key: &str, cmd: &str) -> Result<Rect> {
             .ok_or_else(|| bad(cmd, format!("`{key}` must be four finite numbers")))
     };
     let (x, y, w, h) = (n(0)?, n(1)?, n(2)?, n(3)?);
-    Ok(Rect::new(x, y, x.saturating_add(w.max(0)), y.saturating_add(h.max(0))))
+    Ok(Rect::new(
+        x,
+        y,
+        x.saturating_add(w.max(0)),
+        y.saturating_add(h.max(0)),
+    ))
 }
 
 fn content_aware_fill(s: &mut Session, p: &Value) -> Result<Value> {
@@ -343,22 +455,44 @@ fn content_aware_fill(s: &mut Session, p: &Value) -> Result<Value> {
 /// context menu. Content-Aware Fill into the layer, no dialog, sampling as Edit › Fill does (the
 /// whole window, measured on Photoshop 25.4) with the default colour adaptation.
 fn delete_and_fill(s: &mut Session, _: &Value) -> Result<Value> {
-    content_aware_fill_as(s, &json!({"sampling": "rectangular"}), "edit.deleteAndFillSelection", "Delete and Fill Selection")
+    content_aware_fill_as(
+        s,
+        &json!({"sampling": "rectangular"}),
+        "edit.deleteAndFillSelection",
+        "Delete and Fill Selection",
+    )
 }
 
-fn content_aware_fill_as(s: &mut Session, p: &Value, cmd: &'static str, label: &'static str) -> Result<Value> {
-    use photocraft_algo::content_aware::{FillOptions, auto_sampling_with, color_level, fill_owned, rotation_level};
+fn content_aware_fill_as(
+    s: &mut Session,
+    p: &Value,
+    cmd: &'static str,
+    label: &'static str,
+) -> Result<Value> {
+    use photocraft_algo::content_aware::{
+        FillOptions, auto_sampling_with, color_level, fill_owned, rotation_level,
+    };
     let id = pixel_layer(s).map_err(EngineError::Other)?;
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let doc = st.doc.clone();
-    let sel = doc.selection.clone().ok_or_else(|| bad(cmd, "no selection"))?;
+    let sel = doc
+        .selection
+        .clone()
+        .ok_or_else(|| bad(cmd, "no selection"))?;
     let hb = sel.content_bounds().intersect(&doc.bounds());
     if hb.is_empty() {
         return Err(bad(cmd, "the selection is outside the canvas"));
     }
     let sampling = str_or(p, "sampling", "auto").to_string();
-    let custom_mask: Option<Surface> = p.get("channel").and_then(|v| channel_mask(&doc, v)).cloned();
-    let custom_rect = if p.get("area").is_some() { Some(rect_param(p, "area", cmd)?) } else { None };
+    let custom_mask: Option<Surface> = p
+        .get("channel")
+        .and_then(|v| channel_mask(&doc, v))
+        .cloned();
+    let custom_rect = if p.get("area").is_some() {
+        Some(rect_param(p, "area", cmd)?)
+    } else {
+        None
+    };
     // Photoshop's window (`content_aware::sampling_window`) for Auto and Rectangular; `margin`
     // asks for a rectangle that far around the selection instead.
     let window = match sampling.as_str() {
@@ -389,7 +523,10 @@ fn content_aware_fill_as(s: &mut Session, p: &Value, cmd: &'static str, label: &
     if !matches!(output.as_str(), "current" | "new" | "duplicate") {
         return Err(bad(cmd, "`output` must be current|new|duplicate"));
     }
-    let surf = doc.layer(id).and_then(|l| l.surface()).ok_or(EngineError::NoLayer(id))?;
+    let surf = doc
+        .layer(id)
+        .and_then(|l| l.surface())
+        .ok_or(EngineError::NoLayer(id))?;
     let fmt = surf.format();
     // Photoshop's Sample All Layers checkbox is off unless the caller asks. When the active
     // layer has no pixels in the window there is nothing to sample, so that case uses the
@@ -413,12 +550,21 @@ fn content_aware_fill_as(s: &mut Session, p: &Value, cmd: &'static str, label: &
             use crate::fill_cmds::{read_window, read_window_cover, read_window_mask};
             ctx.progress(0.0, label);
             let cancel = || ctx.cancelled();
-            let surf = doc.layer(id).and_then(|l| l.surface()).ok_or(EngineError::NoLayer(id))?;
+            let surf = doc
+                .layer(id)
+                .and_then(|l| l.surface())
+                .ok_or(EngineError::NoLayer(id))?;
             let img = if sample_all {
                 if cancel() {
                     return Err(EngineError::Cancelled);
                 }
-                let region = crate::retouch_cmds::composite_region(&doc, None, crate::retouch_cmds::SampleLayers::All, window, fmt);
+                let region = crate::retouch_cmds::composite_region(
+                    &doc,
+                    None,
+                    crate::retouch_cmds::SampleLayers::All,
+                    window,
+                    fmt,
+                );
                 if cancel() {
                     return Err(EngineError::Cancelled);
                 }
@@ -428,26 +574,54 @@ fn content_aware_fill_as(s: &mut Session, p: &Value, cmd: &'static str, label: &
             };
             let hole = read_window_cover(&sel, window, &cancel).ok_or(EngineError::Cancelled)?;
             let mut source = match (sampling.as_str(), custom_rect, custom_mask.as_ref()) {
-                ("custom", Some(r), _) => (0..w * h).into_par_iter().map(|i| r.contains(window.x0 + (i % w) as i32, window.y0 + (i / w) as i32)).collect(),
-                ("custom", None, Some(m)) => read_window_mask(m, window, &cancel).ok_or(EngineError::Cancelled)?.par_iter().map(|v| *v > 0.5).collect(),
+                ("custom", Some(r), _) => (0..w * h)
+                    .into_par_iter()
+                    .map(|i| r.contains(window.x0 + (i % w) as i32, window.y0 + (i / w) as i32))
+                    .collect(),
+                ("custom", None, Some(m)) => read_window_mask(m, window, &cancel)
+                    .ok_or(EngineError::Cancelled)?
+                    .par_iter()
+                    .map(|v| *v > 0.5)
+                    .collect(),
                 _ => vec![true; w * h],
             };
             ctx.check()?;
             // Auto: only what looks like the selection's surroundings.
             if sampling == "auto" {
-                source = auto_sampling_with(w, h, n, &img, &hole, &photocraft_raster::Interrupt::cancel_only(&cancel)).map_err(|_| EngineError::Cancelled)?;
+                source = auto_sampling_with(
+                    w,
+                    h,
+                    n,
+                    &img,
+                    &hole,
+                    &photocraft_raster::Interrupt::cancel_only(&cancel),
+                )
+                .map_err(|_| EngineError::Cancelled)?;
             }
             ctx.check()?;
             // The fill changes only the selected pixels: keep the original and the coverage over
             // their bounds for the apply step, and fill the window's pixels themselves.
             let (bx0, by0, bx1, by1) = mask_bounds(w, h, &hole);
-            let original: Vec<f32> = (by0..by1).flat_map(|y| img[(y * w + bx0) * n..(y * w + bx1) * n].iter().copied()).collect();
+            let original: Vec<f32> = (by0..by1)
+                .flat_map(|y| img[(y * w + bx0) * n..(y * w + bx1) * n].iter().copied())
+                .collect();
             let at = |x: usize, y: usize| (window.x0 + x as i32, window.y0 + y as i32);
             let ((x0, y0), (x1, y1)) = (at(bx0, by0), at(bx1, by1));
-            let cover = read_window_mask(&sel, Rect::new(x0, y0, x1, y1), &cancel).ok_or(EngineError::Cancelled)?;
+            let cover = read_window_mask(&sel, Rect::new(x0, y0, x1, y1), &cancel)
+                .ok_or(EngineError::Cancelled)?;
             let n_hole = cover.iter().filter(|c| **c > 0.0).count();
-            let filled = ctx.stage(0.05, 1.0, label, |ctl| fill_owned(w, h, n, img, &hole, &source, &opts, ctl)).map_err(|_| EngineError::Cancelled)?;
-            Ok(FilledWindow { filled, bounds: (bx0, by0, bx1, by1), original, cover, n_hole })
+            let filled = ctx
+                .stage(0.05, 1.0, label, |ctl| {
+                    fill_owned(w, h, n, img, &hole, &source, &opts, ctl)
+                })
+                .map_err(|_| EngineError::Cancelled)?;
+            Ok(FilledWindow {
+                filled,
+                bounds: (bx0, by0, bx1, by1),
+                original,
+                cover,
+                n_hole,
+            })
         },
         move |s, done| apply_content_aware_fill(s, label, id, &output, fmt, window, done),
     )
@@ -466,7 +640,12 @@ struct FilledWindow {
 
 /// `f(window index, index over the bounds, coverage)` for each selected pixel of a
 /// [`FilledWindow`] (`w` wide).
-fn each_selected(w: usize, (bx0, by0, bx1, by1): (usize, usize, usize, usize), cover: &[f32], mut f: impl FnMut(usize, usize, f32)) {
+fn each_selected(
+    w: usize,
+    (bx0, by0, bx1, by1): (usize, usize, usize, usize),
+    cover: &[f32],
+    mut f: impl FnMut(usize, usize, f32),
+) {
     let bw = bx1.saturating_sub(bx0);
     for y in by0..by1 {
         for x in bx0..bx1 {
@@ -486,12 +665,22 @@ fn mask_bounds(w: usize, h: usize, m: &[bool]) -> (usize, usize, usize, usize) {
     if w == 0 {
         return (0, 0, 0, 0);
     }
-    let rows: Vec<Option<(usize, usize)>> =
-        m.par_chunks(w).take(h).map(|row| Some((row.iter().position(|v| *v)?, row.iter().rposition(|v| *v)? + 1))).collect();
+    let rows: Vec<Option<(usize, usize)>> = m
+        .par_chunks(w)
+        .take(h)
+        .map(|row| {
+            Some((
+                row.iter().position(|v| *v)?,
+                row.iter().rposition(|v| *v)? + 1,
+            ))
+        })
+        .collect();
     let mut b: Option<(usize, usize, usize, usize)> = None;
     for (y, span) in rows.into_iter().enumerate() {
         if let Some((x0, x1)) = span {
-            b = Some(b.map_or((x0, y, x1, y + 1), |(bx0, by0, bx1, _)| (bx0.min(x0), by0, bx1.max(x1), y + 1)));
+            b = Some(b.map_or((x0, y, x1, y + 1), |(bx0, by0, bx1, _)| {
+                (bx0.min(x0), by0, bx1.max(x1), y + 1)
+            }));
         }
     }
     b.unwrap_or((0, 0, 0, 0))
@@ -499,14 +688,31 @@ fn mask_bounds(w: usize, h: usize, m: &[bool]) -> (usize, usize, usize, usize) {
 
 /// Write a Content-Aware Fill result (the job's apply step): into the layer, a new layer or a
 /// duplicate, as one undo step.
-fn apply_content_aware_fill(s: &mut Session, label: &str, id: LayerId, output: &str, fmt: PixelFormat, window: Rect, done: FilledWindow) -> Result<Value> {
+fn apply_content_aware_fill(
+    s: &mut Session,
+    label: &str,
+    id: LayerId,
+    output: &str,
+    fmt: PixelFormat,
+    window: Rect,
+    done: FilledWindow,
+) -> Result<Value> {
     let n = fmt.channels();
     let (w, h) = (window.width() as usize, window.height() as usize);
-    let FilledWindow { mut filled, bounds, original, cover, n_hole } = done;
+    let FilledWindow {
+        mut filled,
+        bounds,
+        original,
+        cover,
+        n_hole,
+    } = done;
     let layer = s.edit(label, |doc, active| {
         let target = match output {
             "new" => {
-                let mut l = Layer::raster(doc.next_layer_name("Content-Aware Fill"), PixelFormat { alpha: true, ..fmt });
+                let mut l = Layer::raster(
+                    doc.next_layer_name("Content-Aware Fill"),
+                    PixelFormat { alpha: true, ..fmt },
+                );
                 let mut px = vec![0.0f32; w * h * n.max(1)];
                 let lf = l.surface().map(|s| s.format()).unwrap_or(fmt);
                 let ln = lf.channels();
@@ -545,7 +751,9 @@ fn apply_content_aware_fill(s: &mut Session, label: &str, id: LayerId, output: &
         surf.write_region(window, &filled);
         Ok(target)
     })?;
-    Ok(json!({"layer": layer.0, "filled": n_hole, "window": [window.x0, window.y0, window.width(), window.height()]}))
+    Ok(
+        json!({"layer": layer.0, "filled": n_hole, "window": [window.x0, window.y0, window.width(), window.height()]}),
+    )
 }
 
 // ------------------------------------------------------------------ Content-Aware Scale
@@ -572,17 +780,25 @@ fn cas_plan(s: &Session, p: &Value) -> Result<CasPlan> {
     let id = pixel_layer(s).map_err(EngineError::Other)?;
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let doc = st.doc.clone();
-    let surf = doc.layer(id).and_then(|l| l.surface()).ok_or(EngineError::NoLayer(id))?;
+    let surf = doc
+        .layer(id)
+        .and_then(|l| l.surface())
+        .ok_or(EngineError::NoLayer(id))?;
     let region = match &doc.selection {
         Some(sel) => sel.content_bounds().intersect(&doc.bounds()),
         None => surf.content_bounds(),
     };
     if region.is_empty() {
-        return Err(EngineError::Other("nothing to scale: the layer is empty".into()));
+        return Err(EngineError::Other(
+            "nothing to scale: the layer is empty".into(),
+        ));
     }
     let (w, h) = (region.width() as usize, region.height() as usize);
     let dim = |k: &str, pct: &str, cur: usize| -> Result<u32> {
-        let v = match (p.get(k).and_then(Value::as_f64), p.get(pct).and_then(Value::as_f64)) {
+        let v = match (
+            p.get(k).and_then(Value::as_f64),
+            p.get(pct).and_then(Value::as_f64),
+        ) {
             (Some(px), _) => px,
             (None, Some(pc)) => cur as f64 * pc / 100.0,
             (None, None) => cur as f64,
@@ -597,20 +813,41 @@ fn cas_plan(s: &Session, p: &Value) -> Result<CasPlan> {
         match p.get(k).filter(|v| !v.is_null()) {
             None => Ok(cur),
             Some(v) => match v.as_f64() {
-                Some(x) if (-CAS_POSITION_LIMIT..=CAS_POSITION_LIMIT).contains(&x) => Ok(x.round() as i32),
-                _ => Err(bad(cmd, format!("`{k}` must be a number of px within ±300000"))),
+                Some(x) if (-CAS_POSITION_LIMIT..=CAS_POSITION_LIMIT).contains(&x) => {
+                    Ok(x.round() as i32)
+                }
+                _ => Err(bad(
+                    cmd,
+                    format!("`{k}` must be a number of px within ±300000"),
+                )),
             },
         }
     };
     let dst = Rect::from_xywh(at("x", region.x0)?, at("y", region.y0)?, nw, nh);
     let amount = f32_or(p, "amount", 100.0).clamp(0.0, 100.0) / 100.0;
     // Protection: an alpha channel and/or skin tones.
-    let protect = match p.get("protect").filter(|v| !v.is_null() && v.as_str() != Some("none")) {
-        Some(v) => Some(channel_mask(&doc, v).cloned().ok_or_else(|| bad(cmd, "`protect` must name an alpha channel (index or name) or \"none\""))?),
+    let protect = match p
+        .get("protect")
+        .filter(|v| !v.is_null() && v.as_str() != Some("none"))
+    {
+        Some(v) => Some(channel_mask(&doc, v).cloned().ok_or_else(|| {
+            bad(
+                cmd,
+                "`protect` must name an alpha channel (index or name) or \"none\"",
+            )
+        })?),
         None => None,
     };
     let skin_tones = bool_or(p, "protectSkinTones", false);
-    Ok(CasPlan { doc, layer: id, region, dst, amount: if amount.is_finite() { amount } else { 1.0 }, protect, skin_tones })
+    Ok(CasPlan {
+        doc,
+        layer: id,
+        region,
+        dst,
+        amount: if amount.is_finite() { amount } else { 1.0 },
+        protect,
+        skin_tones,
+    })
 }
 
 /// The scaled pixels: `img` (`w`×`h`, `fmt`) seam-carved to `nw`×`nh` where the protection
@@ -631,7 +868,10 @@ fn cas_pixels(
     use photocraft_algo::seam::{carve_with, resize_bilinear, skin_mask};
     let n = fmt.channels();
     if skin_tones {
-        let rgba: Vec<f32> = img.chunks_exact(n).flat_map(|px| to_rgba(&fmt, px)).collect();
+        let rgba: Vec<f32> = img
+            .chunks_exact(n)
+            .flat_map(|px| to_rgba(&fmt, px))
+            .collect();
         let skin = skin_mask(w, h, 4, &rgba);
         protect = Some(match protect {
             Some(pm) => pm.iter().zip(&skin).map(|(a, b)| a.max(*b)).collect(),
@@ -640,20 +880,39 @@ fn cas_pixels(
     }
     ctx.check()?;
     let carved = if amount > 0.0 {
-        ctx.stage(0.05, 0.95, label, |ctl| carve_with(w, h, n, img, protect.as_deref(), nw, nh, ctl)).map_err(|_| EngineError::Cancelled)?
+        ctx.stage(0.05, 0.95, label, |ctl| {
+            carve_with(w, h, n, img, protect.as_deref(), nw, nh, ctl)
+        })
+        .map_err(|_| EngineError::Cancelled)?
     } else {
         Vec::new()
     };
-    let plain = if amount < 1.0 { resize_bilinear(w, h, n, img, nw, nh) } else { Vec::new() };
+    let plain = if amount < 1.0 {
+        resize_bilinear(w, h, n, img, nw, nh)
+    } else {
+        Vec::new()
+    };
     Ok(match (carved.is_empty(), plain.is_empty()) {
         (false, true) => carved,
         (true, false) => plain,
-        _ => carved.iter().zip(&plain).map(|(c, l)| l + (c - l) * amount).collect::<Vec<f32>>(),
+        _ => carved
+            .iter()
+            .zip(&plain)
+            .map(|(c, l)| l + (c - l) * amount)
+            .collect::<Vec<f32>>(),
     })
 }
 
 fn content_aware_scale(s: &mut Session, p: &Value) -> Result<Value> {
-    let CasPlan { doc, layer: id, region, dst, amount, protect: protect_mask, skin_tones } = cas_plan(s, p)?;
+    let CasPlan {
+        doc,
+        layer: id,
+        region,
+        dst,
+        amount,
+        protect: protect_mask,
+        skin_tones,
+    } = cas_plan(s, p)?;
     let (w, h) = (region.width() as usize, region.height() as usize);
     let (nw, nh) = (dst.width() as usize, dst.height() as usize);
     let label = "Content-Aware Scale";
@@ -665,11 +924,29 @@ fn content_aware_scale(s: &mut Session, p: &Value) -> Result<Value> {
         true,
         move |ctx| {
             ctx.progress(0.0, label);
-            let surf = doc.layer(id).and_then(|l| l.surface()).ok_or(EngineError::NoLayer(id))?;
+            let surf = doc
+                .layer(id)
+                .and_then(|l| l.surface())
+                .ok_or(EngineError::NoLayer(id))?;
             let img = surf.read_region(region);
-            let protect: Option<Vec<f32>> =
-                protect_mask.map(|m| (0..w * h).map(|i| m.sample_channel(region.x0 + (i % w) as i32, region.y0 + (i / w) as i32, 0)).collect());
-            cas_pixels(ctx, label, &img, (w, h), surf.format(), protect, skin_tones, (nw, nh), amount)
+            let protect: Option<Vec<f32>> = protect_mask.map(|m| {
+                (0..w * h)
+                    .map(|i| {
+                        m.sample_channel(region.x0 + (i % w) as i32, region.y0 + (i / w) as i32, 0)
+                    })
+                    .collect()
+            });
+            cas_pixels(
+                ctx,
+                label,
+                &img,
+                (w, h),
+                surf.format(),
+                protect,
+                skin_tones,
+                (nw, nh),
+                amount,
+            )
         },
         move |s, out| {
             s.edit(label, |doc, _| {
@@ -696,7 +973,10 @@ pub struct ContentAwareScalePreview {
 impl ContentAwareScalePreview {
     /// `p` takes `edit.contentAwareScale`'s params; the same ones fail the same way.
     pub fn new(s: &Session, p: &Value, max_side: u32) -> Result<Self> {
-        Ok(Self { plan: cas_plan(s, p)?, max_side: max_side.max(1) })
+        Ok(Self {
+            plan: cas_plan(s, p)?,
+            max_side: max_side.max(1),
+        })
     }
 
     /// The area scaled, in document px.
@@ -722,26 +1002,60 @@ impl ContentAwareScalePreview {
     /// The scaled pixels at the reduced size ([`size`](Self::size)), in the layer's format, as a
     /// surface with its corner at the origin. Checks `ctx` for cancellation before every seam.
     pub fn run(&self, ctx: &crate::jobs::JobCtx) -> Result<Surface> {
-        let CasPlan { doc, layer, region, dst: _, amount, protect, skin_tones } = &self.plan;
-        let surf = doc.layer(*layer).and_then(|l| l.surface()).ok_or(EngineError::NoLayer(*layer))?;
+        let CasPlan {
+            doc,
+            layer,
+            region,
+            dst: _,
+            amount,
+            protect,
+            skin_tones,
+        } = &self.plan;
+        let surf = doc
+            .layer(*layer)
+            .and_then(|l| l.surface())
+            .ok_or(EngineError::NoLayer(*layer))?;
         let fmt = surf.format();
         let n = fmt.channels();
         let (w, h) = (region.width(), region.height());
         let [pw, ph, pnw, pnh] = self.reduced();
         // Nearest samples of the area (and of the protecting channel) at the reduced size.
-        let src_x: Vec<i32> = (0..pw).map(|i| region.x0 + (((i as f64 + 0.5) * f64::from(w) / pw as f64) as i32).min(w as i32 - 1)).collect();
-        let src_y = |j: usize| region.y0 + (((j as f64 + 0.5) * f64::from(h) / ph as f64) as i32).min(h as i32 - 1);
+        let src_x: Vec<i32> = (0..pw)
+            .map(|i| {
+                region.x0 + (((i as f64 + 0.5) * f64::from(w) / pw as f64) as i32).min(w as i32 - 1)
+            })
+            .collect();
+        let src_y = |j: usize| {
+            region.y0 + (((j as f64 + 0.5) * f64::from(h) / ph as f64) as i32).min(h as i32 - 1)
+        };
         let mut img = Vec::with_capacity(pw * ph * n);
         for j in 0..ph {
             ctx.check()?;
             let row = surf.read_region(Rect::from_xywh(region.x0, src_y(j), w, 1));
             for &x in &src_x {
                 let at = (x - region.x0) as usize * n;
-                img.extend_from_slice(row.get(at..at + n).ok_or_else(|| EngineError::Other("preview read out of bounds".into()))?);
+                img.extend_from_slice(
+                    row.get(at..at + n)
+                        .ok_or_else(|| EngineError::Other("preview read out of bounds".into()))?,
+                );
             }
         }
-        let protect = protect.as_ref().map(|m| (0..pw * ph).map(|i| m.sample_channel(src_x[i % pw], src_y(i / pw), 0)).collect());
-        let out = cas_pixels(ctx, "Content-Aware Scale", &img, (pw, ph), fmt, protect, *skin_tones, (pnw, pnh), *amount)?;
+        let protect = protect.as_ref().map(|m| {
+            (0..pw * ph)
+                .map(|i| m.sample_channel(src_x[i % pw], src_y(i / pw), 0))
+                .collect()
+        });
+        let out = cas_pixels(
+            ctx,
+            "Content-Aware Scale",
+            &img,
+            (pw, ph),
+            fmt,
+            protect,
+            *skin_tones,
+            (pnw, pnh),
+            *amount,
+        )?;
         let mut s = Surface::new(fmt);
         s.write_region(Rect::from_xywh(0, 0, pnw as u32, pnh as u32), &out);
         Ok(s)
@@ -751,10 +1065,21 @@ impl ContentAwareScalePreview {
 // ------------------------------------------------------------------ Define Brush / Custom Shape
 
 fn define_brush_preset(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = match p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()) {
+    let name = match p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+    {
         Some(n) => n.to_string(),
         None => {
-            let n = s.tools.presets.iter().filter(|b| b.name.starts_with("Sampled Brush")).count() + 1;
+            let n = s
+                .tools
+                .presets
+                .iter()
+                .filter(|b| b.name.starts_with("Sampled Brush"))
+                .count()
+                + 1;
             format!("Sampled Brush {n}")
         }
     };
@@ -763,11 +1088,22 @@ fn define_brush_preset(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The path Define Custom Shape uses: `"work"`, a saved path name, else the work path, the
 /// active shape layer, the active layer's vector mask, or the last saved path.
-pub(crate) fn current_path(doc: &Document, active: Option<LayerId>, spec: Option<&str>) -> Option<Path> {
+pub(crate) fn current_path(
+    doc: &Document,
+    active: Option<LayerId>,
+    spec: Option<&str>,
+) -> Option<Path> {
     let ok = |p: &Path| !p.subpaths.is_empty();
     match spec {
         Some("work") => return doc.work_path.clone().filter(ok),
-        Some(name) => return doc.paths.iter().find(|n| n.name == name).map(|n| n.path.clone()).filter(ok),
+        Some(name) => {
+            return doc
+                .paths
+                .iter()
+                .find(|n| n.name == name)
+                .map(|n| n.path.clone())
+                .filter(ok);
+        }
         None => {}
     }
     if let Some(p) = doc.work_path.clone().filter(ok) {
@@ -788,12 +1124,19 @@ pub(crate) fn current_path(doc: &Document, active: Option<LayerId>, spec: Option
 
 fn can_define_shape(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    current_path(&d.doc, d.active_layer, None).map(|_| ()).ok_or_else(|| "select a path or shape layer first".into())
+    current_path(&d.doc, d.active_layer, None)
+        .map(|_| ())
+        .ok_or_else(|| "select a path or shape layer first".into())
 }
 
 fn define_custom_shape(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
-    let path = current_path(&st.doc, st.active_layer, p.get("path").and_then(Value::as_str)).ok_or_else(|| bad("edit.defineCustomShape", "no such path"))?;
+    let path = current_path(
+        &st.doc,
+        st.active_layer,
+        p.get("path").and_then(Value::as_str),
+    )
+    .ok_or_else(|| bad("edit.defineCustomShape", "no such path"))?;
     let name = p
         .get("name")
         .and_then(Value::as_str)
@@ -804,7 +1147,10 @@ fn define_custom_shape(s: &mut Session, p: &Value) -> Result<Value> {
     let shapes = &mut s.edit_state.custom_shapes;
     match shapes.iter_mut().find(|c| c.name == name) {
         Some(c) => c.path = path,
-        None => shapes.push(CustomShape { name: name.clone(), path }),
+        None => shapes.push(CustomShape {
+            name: name.clone(),
+            path,
+        }),
     }
     Ok(json!({"name": name, "count": shapes.len()}))
 }
@@ -816,7 +1162,13 @@ pub fn find_matches(text: &str, find: &str, case: bool, whole: bool) -> Vec<(usi
     if find.is_empty() {
         return Vec::new();
     }
-    let norm = |c: char| -> String { if case { c.to_string() } else { c.to_lowercase().collect() } };
+    let norm = |c: char| -> String {
+        if case {
+            c.to_string()
+        } else {
+            c.to_lowercase().collect()
+        }
+    };
     let needle: String = find.chars().map(norm).collect();
     let mut out = Vec::new();
     let mut at = 0;
@@ -848,8 +1200,13 @@ pub fn find_matches(text: &str, find: &str, case: bool, whole: bool) -> Vec<(usi
 
 fn type_layers(doc: &Document, forward: bool) -> Vec<LayerId> {
     // Layers panel order: top first.
-    let mut ids: Vec<LayerId> =
-        doc.walk().into_iter().rev().filter(|(p, _, l)| matches!(l.content, LayerContent::Text(_)) && !doc.locks_at(p).all).map(|(_, _, l)| l.id).collect();
+    let mut ids: Vec<LayerId> = doc
+        .walk()
+        .into_iter()
+        .rev()
+        .filter(|(p, _, l)| matches!(l.content, LayerContent::Text(_)) && !doc.locks_at(p).all)
+        .map(|(_, _, l)| l.id)
+        .collect();
     if !forward {
         ids.reverse();
     }
@@ -858,15 +1215,28 @@ fn type_layers(doc: &Document, forward: bool) -> Vec<LayerId> {
 
 fn has_type_layer(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    if type_layers(&d.doc, true).is_empty() { Err("the document has no type layers".into()) } else { Ok(()) }
+    if type_layers(&d.doc, true).is_empty() {
+        Err("the document has no type layers".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "edit.findAndReplaceText";
-    let find = p.get("find").and_then(Value::as_str).filter(|f| !f.is_empty()).ok_or_else(|| bad(cmd, "missing `find`"))?.to_string();
+    let find = p
+        .get("find")
+        .and_then(Value::as_str)
+        .filter(|f| !f.is_empty())
+        .ok_or_else(|| bad(cmd, "missing `find`"))?
+        .to_string();
     let replace = str_or(p, "replace", "").to_string();
-    let (case, whole, forward, all_layers) =
-        (bool_or(p, "caseSensitive", false), bool_or(p, "wholeWord", false), bool_or(p, "forward", true), bool_or(p, "allLayers", true));
+    let (case, whole, forward, all_layers) = (
+        bool_or(p, "caseSensitive", false),
+        bool_or(p, "wholeWord", false),
+        bool_or(p, "forward", true),
+        bool_or(p, "allLayers", true),
+    );
     let action = str_or(p, "action", "changeAll").to_string();
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let mut layers = type_layers(&st.doc, forward);
@@ -883,8 +1253,13 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
     match action.as_str() {
         "changeAll" => {
             let doc = st.doc.clone();
-            let plan: Vec<(LayerId, Vec<(usize, usize)>)> =
-                layers.iter().filter_map(|id| Some((*id, find_matches(&text_of(&doc, *id)?, &find, case, whole)))).filter(|(_, m)| !m.is_empty()).collect();
+            let plan: Vec<(LayerId, Vec<(usize, usize)>)> = layers
+                .iter()
+                .filter_map(|id| {
+                    Some((*id, find_matches(&text_of(&doc, *id)?, &find, case, whole)))
+                })
+                .filter(|(_, m)| !m.is_empty())
+                .collect();
             let count: usize = plan.iter().map(|(_, m)| m.len()).sum();
             if count == 0 {
                 return Ok(json!({"count": 0, "layers": 0}));
@@ -892,7 +1267,8 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
             s.edit("Replace All Text", |doc, _| {
                 let snapshot = doc.clone();
                 for (id, matches) in &plan {
-                    if let Some(LayerContent::Text(t)) = doc.layer_mut(*id).map(|l| &mut l.content) {
+                    if let Some(LayerContent::Text(t)) = doc.layer_mut(*id).map(|l| &mut l.content)
+                    {
                         for (a, b) in matches.iter().rev() {
                             crate::type_cmds::replace_text(t, *a, *b, &replace);
                         }
@@ -910,7 +1286,8 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
             let mut changed = None;
             if action != "find"
                 && let Some((id, a, b)) = cursor
-                && text_of(&doc, id).is_some_and(|t| find_matches(&t, &find, case, whole).contains(&(a, b)))
+                && text_of(&doc, id)
+                    .is_some_and(|t| find_matches(&t, &find, case, whole).contains(&(a, b)))
             {
                 crate::type_cmds::check_text_unlocked(&doc, id)?;
                 s.edit("Replace Text", |doc, _| {
@@ -934,11 +1311,17 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
             // Find the next match after the cursor (wrapping through the layers).
             let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
             let cursor = s.edit_state.find_cursor;
-            let start = cursor.and_then(|(id, _, _)| layers.iter().position(|l| *l == id)).unwrap_or(0);
+            let start = cursor
+                .and_then(|(id, _, _)| layers.iter().position(|l| *l == id))
+                .unwrap_or(0);
             for k in 0..=layers.len() {
                 // `allLayers: false` with a non-type layer active leaves no layers to search (#703).
-                let Some(&id) = layers.get((start + k) % layers.len().max(1)) else { break };
-                let Some(text) = text_of(&doc, id) else { continue };
+                let Some(&id) = layers.get((start + k) % layers.len().max(1)) else {
+                    break;
+                };
+                let Some(text) = text_of(&doc, id) else {
+                    continue;
+                };
                 let ms = find_matches(&text, &find, case, whole);
                 let hit = match (k, cursor) {
                     (0, Some((cid, a, b))) if cid == id => {
@@ -965,9 +1348,14 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
             s.edit_state.find_cursor = None;
-            Ok(json!({"found": null, "changed": changed.map(|(l, a, b)| json!({"layer": l.0, "start": a, "end": b}))}))
+            Ok(
+                json!({"found": null, "changed": changed.map(|(l, a, b)| json!({"layer": l.0, "start": a, "end": b}))}),
+            )
         }
-        other => Err(bad(cmd, format!("unknown action `{other}` (find|change|changeFind|changeAll)"))),
+        other => Err(bad(
+            cmd,
+            format!("unknown action `{other}` (find|change|changeFind|changeAll)"),
+        )),
     }
 }
 
@@ -979,19 +1367,41 @@ const PRESET_KINDS: [&str; 3] = ["brushes", "customShapes", "patterns"];
 fn preset_names(s: &Session, kind: &str) -> Option<Vec<String>> {
     Some(match kind {
         "brushes" => s.tools.presets.iter().map(|b| b.name.clone()).collect(),
-        "customShapes" => s.edit_state.custom_shapes.iter().map(|c| c.name.clone()).collect(),
+        "customShapes" => s
+            .edit_state
+            .custom_shapes
+            .iter()
+            .map(|c| c.name.clone())
+            .collect(),
         "patterns" => s.patterns.items.iter().map(|p| p.name.clone()).collect(),
         _ => return None,
     })
 }
 
 fn preset_index(s: &Session, kind: &str, p: &Value) -> Result<usize> {
-    let names = preset_names(s, kind).ok_or_else(|| bad("edit.presets.presetManager", format!("unknown preset kind `{kind}` ({})", PRESET_KINDS.join("|"))))?;
+    let names = preset_names(s, kind).ok_or_else(|| {
+        bad(
+            "edit.presets.presetManager",
+            format!("unknown preset kind `{kind}` ({})", PRESET_KINDS.join("|")),
+        )
+    })?;
     if let Some(i) = p.get("index").and_then(Value::as_u64) {
-        return if (i as usize) < names.len() { Ok(i as usize) } else { Err(bad("edit.presets.presetManager", format!("no preset {i}"))) };
+        return if (i as usize) < names.len() {
+            Ok(i as usize)
+        } else {
+            Err(bad("edit.presets.presetManager", format!("no preset {i}")))
+        };
     }
-    let name = p.get("name").and_then(Value::as_str).ok_or_else(|| bad("edit.presets.presetManager", "give `index` or `name`"))?;
-    names.iter().position(|n| n == name).ok_or_else(|| bad("edit.presets.presetManager", format!("no preset named `{name}`")))
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("edit.presets.presetManager", "give `index` or `name`"))?;
+    names.iter().position(|n| n == name).ok_or_else(|| {
+        bad(
+            "edit.presets.presetManager",
+            format!("no preset named `{name}`"),
+        )
+    })
 }
 
 fn preset_manager(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1004,16 +1414,31 @@ fn preset_manager(s: &mut Session, p: &Value) -> Result<Value> {
         };
         let mut out = serde_json::Map::new();
         for k in kinds {
-            out.insert(k.to_string(), json!(preset_names(s, k).ok_or_else(|| bad(cmd, format!("unknown preset kind `{k}`")))?));
+            out.insert(
+                k.to_string(),
+                json!(
+                    preset_names(s, k)
+                        .ok_or_else(|| bad(cmd, format!("unknown preset kind `{k}`")))?
+                ),
+            );
         }
         return Ok(Value::Object(out));
     }
-    let kind = p.get("kind").and_then(Value::as_str).ok_or_else(|| bad(cmd, "missing `kind`"))?.to_string();
+    let kind = p
+        .get("kind")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(cmd, "missing `kind`"))?
+        .to_string();
     let i = preset_index(s, &kind, p)?;
     match action {
         "rename" => {
-            let new =
-                p.get("newName").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "missing `newName`"))?.to_string();
+            let new = p
+                .get("newName")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|n| !n.is_empty())
+                .ok_or_else(|| bad(cmd, "missing `newName`"))?
+                .to_string();
             match kind.as_str() {
                 "brushes" => {
                     // A renamed built-in is the user's preset now (and persists as one).
@@ -1031,14 +1456,22 @@ fn preset_manager(s: &mut Session, p: &Value) -> Result<Value> {
             _ => drop(s.edit_state.custom_shapes.remove(i)),
         },
         "move" => {
-            let to = p.get("to").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "missing `to`"))? as usize;
+            let to = p
+                .get("to")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| bad(cmd, "missing `to`"))? as usize;
             match kind.as_str() {
                 "brushes" => crate::move_item(&mut s.tools.presets, i, to),
                 "patterns" => crate::move_item(&mut s.patterns.items, i, to),
                 _ => crate::move_item(&mut s.edit_state.custom_shapes, i, to),
             };
         }
-        other => return Err(bad(cmd, format!("unknown action `{other}` (list|rename|delete|move)"))),
+        other => {
+            return Err(bad(
+                cmd,
+                format!("unknown action `{other}` (list|rename|delete|move)"),
+            ));
+        }
     }
     if kind == "brushes" {
         s.brush_presets_changed();
@@ -1063,8 +1496,18 @@ fn export_import(s: &mut Session, p: &Value) -> Result<Value> {
     let kinds: Vec<String> = p
         .get("kinds")
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect())
-        .unwrap_or_else(|| ["brushes", "customShapes"].iter().map(|k| k.to_string()).collect());
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_else(|| {
+            ["brushes", "customShapes"]
+                .iter()
+                .map(|k| k.to_string())
+                .collect()
+        });
     let want = |k: &str| kinds.iter().any(|x| x == k);
     match str_or(p, "action", "export") {
         "export" => {
@@ -1072,29 +1515,49 @@ fn export_import(s: &mut Session, p: &Value) -> Result<Value> {
                 format: PRESET_FORMAT.into(),
                 version: 1,
                 brushes: if want("brushes") {
-                    let mut out: Vec<photocraft_paint::BrushPreset> =
-                        s.tools.presets.iter().filter(|b| !b.builtin || bool_or(p, "includeBuiltins", false)).cloned().collect();
+                    let mut out: Vec<photocraft_paint::BrushPreset> = s
+                        .tools
+                        .presets
+                        .iter()
+                        .filter(|b| !b.builtin || bool_or(p, "includeBuiltins", false))
+                        .cloned()
+                        .collect();
                     // The file embeds every bitmap: load the tips the preset store keeps (#1843).
                     for b in &mut out {
-                        s.load_brush_tips(&mut b.brush).map_err(|e| bad(cmd, format!("brush preset `{}`: {e}", b.name)))?;
+                        s.load_brush_tips(&mut b.brush)
+                            .map_err(|e| bad(cmd, format!("brush preset `{}`: {e}", b.name)))?;
                     }
                     out
                 } else {
                     Vec::new()
                 },
-                custom_shapes: if want("customShapes") { s.edit_state.custom_shapes.clone() } else { Vec::new() },
+                custom_shapes: if want("customShapes") {
+                    s.edit_state.custom_shapes.clone()
+                } else {
+                    Vec::new()
+                },
             };
-            Ok(json!({"data": file, "brushes": file.brushes.len(), "customShapes": file.custom_shapes.len()}))
+            Ok(
+                json!({"data": file, "brushes": file.brushes.len(), "customShapes": file.custom_shapes.len()}),
+            )
         }
         "import" => {
-            let data = p.get("data").cloned().ok_or_else(|| bad(cmd, "missing `data` (an exported preset file)"))?;
+            let data = p
+                .get("data")
+                .cloned()
+                .ok_or_else(|| bad(cmd, "missing `data` (an exported preset file)"))?;
             let data = match data {
-                Value::String(text) => serde_json::from_str(&text).map_err(|e| bad(cmd, format!("not a preset file: {e}")))?,
+                Value::String(text) => serde_json::from_str(&text)
+                    .map_err(|e| bad(cmd, format!("not a preset file: {e}")))?,
                 v => v,
             };
-            let file: PresetFile = serde_json::from_value(data).map_err(|e| bad(cmd, format!("not a preset file: {e}")))?;
+            let file: PresetFile = serde_json::from_value(data)
+                .map_err(|e| bad(cmd, format!("not a preset file: {e}")))?;
             if file.format != PRESET_FORMAT {
-                return Err(bad(cmd, format!("not a preset file (format `{}`)", file.format)));
+                return Err(bad(
+                    cmd,
+                    format!("not a preset file (format `{}`)", file.format),
+                ));
             }
             let (mut nb, mut ns) = (0, 0);
             if want("brushes") {
@@ -1102,7 +1565,8 @@ fn export_import(s: &mut Session, p: &Value) -> Result<Value> {
                     // Nested folders as the commands bound them (a hand-edited file can't build an
                     // absurd tree).
                     b.folder.retain(|f| !f.trim().is_empty());
-                    b.folder.truncate(crate::brush_preset_cmds::MAX_FOLDER_DEPTH);
+                    b.folder
+                        .truncate(crate::brush_preset_cmds::MAX_FOLDER_DEPTH);
                     match s.tools.presets.iter_mut().find(|x| x.name == b.name) {
                         Some(x) => *x = b,
                         None => s.tools.presets.push(b),
@@ -1113,7 +1577,12 @@ fn export_import(s: &mut Session, p: &Value) -> Result<Value> {
             }
             if want("customShapes") {
                 for c in file.custom_shapes {
-                    match s.edit_state.custom_shapes.iter_mut().find(|x| x.name == c.name) {
+                    match s
+                        .edit_state
+                        .custom_shapes
+                        .iter_mut()
+                        .find(|x| x.name == c.name)
+                    {
                         Some(x) => *x = c,
                         None => s.edit_state.custom_shapes.push(c),
                     }
@@ -1122,7 +1591,10 @@ fn export_import(s: &mut Session, p: &Value) -> Result<Value> {
             }
             Ok(json!({"brushes": nb, "customShapes": ns}))
         }
-        other => Err(bad(cmd, format!("unknown action `{other}` (export|import)"))),
+        other => Err(bad(
+            cmd,
+            format!("unknown action `{other}` (export|import)"),
+        )),
     }
 }
 
@@ -1145,13 +1617,53 @@ pub fn specs() -> Vec<CommandSpec> {
             can_fade,
             fade
         ),
-        spec!("edit.purge.undo", "Undo", ["Edit", "Purge"], None, "{}", can_purge_undo, |s, _| purge(s, "undo")),
-        spec!("edit.purge.clipboard", "Clipboard", ["Edit", "Purge"], None, "{}", can_purge_clipboard, |s, _| purge(s, "clipboard")),
-        spec!("edit.purge.histories", "Histories", ["Edit", "Purge"], None, "{}", can_purge_histories, |s, _| purge(s, "histories")),
-        spec!("edit.purge.videoCache", "Video Cache", ["Edit", "Purge"], None, "{}", always, |_, _| Ok(
-            json!({"purged": [], "bytes": 0, "message": "nothing to purge (no video layers)"})
-        )),
-        spec!("edit.purge.all", "All", ["Edit", "Purge"], None, "{}", can_purge_all, |s, _| purge(s, "all")),
+        spec!(
+            "edit.purge.undo",
+            "Undo",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            can_purge_undo,
+            |s, _| purge(s, "undo")
+        ),
+        spec!(
+            "edit.purge.clipboard",
+            "Clipboard",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            can_purge_clipboard,
+            |s, _| purge(s, "clipboard")
+        ),
+        spec!(
+            "edit.purge.histories",
+            "Histories",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            can_purge_histories,
+            |s, _| purge(s, "histories")
+        ),
+        spec!(
+            "edit.purge.videoCache",
+            "Video Cache",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            always,
+            |_, _| Ok(
+                json!({"purged": [], "bytes": 0, "message": "nothing to purge (no video layers)"})
+            )
+        ),
+        spec!(
+            "edit.purge.all",
+            "All",
+            ["Edit", "Purge"],
+            None,
+            "{}",
+            can_purge_all,
+            |s, _| purge(s, "all")
+        ),
         spec!(
             "edit.contentAwareFill",
             "Content-Aware Fill…",
@@ -1161,7 +1673,15 @@ pub fn specs() -> Vec<CommandSpec> {
             can_caf,
             content_aware_fill
         ),
-        spec!("edit.deleteAndFillSelection", "Delete and Fill Selection", [], None, "{}", can_caf, delete_and_fill),
+        spec!(
+            "edit.deleteAndFillSelection",
+            "Delete and Fill Selection",
+            [],
+            None,
+            "{}",
+            can_caf,
+            delete_and_fill
+        ),
         spec!(
             "edit.contentAwareScale",
             "Content-Aware Scale",
@@ -1177,7 +1697,11 @@ pub fn specs() -> Vec<CommandSpec> {
             ["Edit"],
             None,
             r##"{"name":text}"##,
-            |s| if s.is_enabled("brush.defineFromSelection") { Ok(()) } else { Err("select pixels to define a brush from".into()) },
+            |s| if s.is_enabled("brush.defineFromSelection") {
+                Ok(())
+            } else {
+                Err("select pixels to define a brush from".into())
+            },
             define_brush_preset
         ),
         spec!(

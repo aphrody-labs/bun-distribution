@@ -36,7 +36,11 @@ use aphrody_nie_explore::menu_modes::{ModeDef, matches_stem};
 /// utilitaires qui ne sont pas des tuiles de mode. Plusieurs résultats signalent au contraire
 /// un recouvrement éditorial qui doit rester visible dans l'audit.
 fn classify_screen(stem: &str) -> Vec<&'static str> {
-    MODES.iter().filter(|def| matches_stem(def, stem)).map(|def| def.slug).collect()
+    MODES
+        .iter()
+        .filter(|def| matches_stem(def, stem))
+        .map(|def| def.slug)
+        .collect()
 }
 
 /// Audite le rattachement de chaque définition `*_menu_setting.cfg.bin` du VFS aux modes.
@@ -53,12 +57,17 @@ pub fn menu_coverage_json(vfs: &Vfs) -> Json {
         {
             continue;
         }
-        let Some(stem) =
-            path.rsplit('/').next().and_then(|file| file.strip_suffix("_setting.cfg.bin"))
+        let Some(stem) = path
+            .rsplit('/')
+            .next()
+            .and_then(|file| file.strip_suffix("_setting.cfg.bin"))
         else {
             continue;
         };
-        screens.entry(stem.to_string()).or_default().push(path.to_string());
+        screens
+            .entry(stem.to_string())
+            .or_default()
+            .push(path.to_string());
     }
 
     let mut mode_counts: BTreeMap<&str, usize> = MODES.iter().map(|def| (def.slug, 0)).collect();
@@ -83,7 +92,9 @@ pub fn menu_coverage_json(vfs: &Vfs) -> Json {
         } else {
             classified += 1;
             for mode in &modes {
-                *mode_counts.get_mut(mode).expect("classify_screen only returns MODES slugs") += 1;
+                *mode_counts
+                    .get_mut(mode)
+                    .expect("classify_screen only returns MODES slugs") += 1;
             }
             if modes.len() > 1 {
                 overlapping.push(serde_json::json!({
@@ -202,13 +213,21 @@ pub fn collect(vfs: &Vfs, def: &ModeDef) -> ModeFacts {
     let paths = MenuPaths::from_paths(vfs.iter().map(|(path, _)| path));
     let shared = collect_mode(vfs, &paths, def, &BTreeMap::new());
     ModeFacts {
-        screens: shared.screens.into_iter().map(|screen| (screen.screen, screen.cfg)).collect(),
+        screens: shared
+            .screens
+            .into_iter()
+            .map(|screen| (screen.screen, screen.cfg))
+            .collect(),
         layers: shared.layers,
         objbins: shared.objbins,
         g4pkm: shared.g4pkm,
         g4tx: shared.g4tx,
         components: shared.components.into_keys().collect(),
-        lua: shared.scripts.into_iter().map(|script| script.path).collect(),
+        lua: shared
+            .scripts
+            .into_iter()
+            .map(|script| script.path)
+            .collect(),
         focus: shared.focus,
         text_slots: shared.text_slots,
     }
@@ -244,8 +263,10 @@ fn charger_handlers_funclua() -> BTreeMap<u32, u64> {
     };
     for (k, v) in brut {
         let (Some(id), Some(va)) = (
-            k.strip_prefix("0x").and_then(|h| u32::from_str_radix(h, 16).ok()),
-            v.strip_prefix("0x").and_then(|h| u64::from_str_radix(h, 16).ok()),
+            k.strip_prefix("0x")
+                .and_then(|h| u32::from_str_radix(h, 16).ok()),
+            v.strip_prefix("0x")
+                .and_then(|h| u64::from_str_radix(h, 16).ok()),
         ) else {
             continue;
         };
@@ -391,9 +412,10 @@ pub fn contenu_json(vfs: &Vfs, def: &ModeDef, exe: Option<&std::path::Path>) -> 
         })
         .collect();
 
-    let messages = def
-        .key_pattern
-        .map_or_else(|| serde_json::json!({}), |motif| messages_du_mode(vfs, motif, exe));
+    let messages = def.key_pattern.map_or_else(
+        || serde_json::json!({}),
+        |motif| messages_du_mode(vfs, motif, exe),
+    );
 
     Ok(serde_json::json!({
         "slug": def.slug,
@@ -412,13 +434,19 @@ pub fn contenu_json(vfs: &Vfs, def: &ModeDef, exe: Option<&std::path::Path>) -> 
 /// dossier de locale, qui est celle des atlas non localisés.
 fn chemins_locale(path: &str) -> Vec<String> {
     let prefixe = |p: &str| {
-        if p.starts_with("data/") { p.to_string() } else { format!("data/{p}") }
+        if p.starts_with("data/") {
+            p.to_string()
+        } else {
+            format!("data/{p}")
+        }
     };
     if !path.contains("<LG>") {
         return vec![prefixe(path)];
     }
-    let mut v: Vec<String> =
-        ["fr", "en", "ja"].iter().map(|l| prefixe(&path.replace("<LG>", l))).collect();
+    let mut v: Vec<String> = ["fr", "en", "ja"]
+        .iter()
+        .map(|l| prefixe(&path.replace("<LG>", l)))
+        .collect();
     v.push(prefixe(&path.replace("<LG>/", "")));
     v
 }
@@ -561,7 +589,10 @@ fn messages_du_mode(vfs: &Vfs, motif: &str, exe: Option<&std::path::Path>) -> Js
             let court = table.rsplit('/').next().unwrap_or(&table).to_string();
             for cle in &cles {
                 if let Some(t) = index.get(&cfgbin::crc32(cle.as_bytes())) {
-                    par_cle.insert(cle.clone(), serde_json::json!({ "texte": t, "table": court }));
+                    par_cle.insert(
+                        cle.clone(),
+                        serde_json::json!({ "texte": t, "table": court }),
+                    );
                 }
             }
         }
@@ -630,8 +661,10 @@ pub fn index(db: &aphrody_nie_index::Db, vfs: &Vfs) -> Result<(usize, usize, usi
     conn.execute_batch("BEGIN")?;
 
     // Libellés officiels : le nom que le JEU affiche, dans les trois locales.
-    let textes: Vec<(&str, BTreeMap<u32, String>)> =
-        LOCALES.iter().map(|lg| (*lg, charger_menu_text(vfs, lg))).collect();
+    let textes: Vec<(&str, BTreeMap<u32, String>)> = LOCALES
+        .iter()
+        .map(|lg| (*lg, charger_menu_text(vfs, lg)))
+        .collect();
     let libelle = |lg: &str, h: Option<u32>| -> Option<String> {
         let h = h?;
         textes.iter().find(|(l, _)| *l == lg)?.1.get(&h).cloned()
@@ -670,7 +703,9 @@ pub fn index(db: &aphrody_nie_index::Db, vfs: &Vfs) -> Result<(usize, usize, usi
             ],
         )?;
         let mode_id: i64 =
-            conn.query_row("SELECT id FROM mode WHERE slug=?1", [def.slug], |r| r.get(0))?;
+            conn.query_row("SELECT id FROM mode WHERE slug=?1", [def.slug], |r| {
+                r.get(0)
+            })?;
 
         // Réindexation exacte : les ensembles d'un écran peuvent diminuer après une mise à
         // jour du VFS. `INSERT OR IGNORE` seul conservait alors des assets fantômes dans SQLite,
@@ -775,14 +810,18 @@ pub fn export_json(db: &aphrody_nie_index::Db) -> Result<serde_json::Value> {
         let mut screens_v = Vec::new();
         let mut s = conn
             .prepare("SELECT screen, cfg_path FROM mode_screen WHERE mode_id=?1 ORDER BY screen")?;
-        for r in s.query_map([id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))? {
+        for r in s.query_map([id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })? {
             let (screen, cfg) = r?;
             screens_v.push(serde_json::json!({ "screen": screen, "cfg": cfg }));
         }
         let mut assets = serde_json::Map::new();
         let mut a =
             conn.prepare("SELECT kind, path FROM mode_asset WHERE mode_id=?1 ORDER BY kind, path")?;
-        for r in a.query_map([id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))? {
+        for r in a.query_map([id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })? {
             let (kind, path) = r?;
             assets
                 .entry(kind)
@@ -846,7 +885,10 @@ mod tests {
     #[test]
     fn coverage_uses_the_same_prefixes_as_mode_index() {
         assert_eq!(classify_screen("chara_edit_top"), vec!["chara_edit"]);
-        assert_eq!(classify_screen("victory_road_top_menu"), vec!["victory_road"]);
+        assert_eq!(
+            classify_screen("victory_road_top_menu"),
+            vec!["victory_road"]
+        );
         assert_eq!(MODES.iter().filter(|def| def.official).count(), 5);
     }
 }

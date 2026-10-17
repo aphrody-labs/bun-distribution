@@ -183,8 +183,9 @@ struct RawDocument {
 
 fn raw_entry_into_transport(entry: RawEntry, name: &str) -> McpTransportConfig {
     match entry.transport_type.as_str() {
-        "http" => {
-            McpTransportConfig::Http { url: entry.url.unwrap_or_default(), headers: entry.headers }
+        "http" => McpTransportConfig::Http {
+            url: entry.url.unwrap_or_default(),
+            headers: entry.headers,
         },
         "streamable-http" => McpTransportConfig::StreamableHttp {
             url: entry.url.unwrap_or_default(),
@@ -212,8 +213,10 @@ fn raw_entry_into_transport(entry: RawEntry, name: &str) -> McpTransportConfig {
 ///
 /// Returns [`ConfigError::Parse`] with `path == ""` if the JSON is invalid.
 pub fn parse_mcp_config(json: &str) -> Result<McpConfig, ConfigError> {
-    let raw: RawDocument = serde_json::from_str(json)
-        .map_err(|source| ConfigError::Parse { path: PathBuf::new(), source })?;
+    let raw: RawDocument = serde_json::from_str(json).map_err(|source| ConfigError::Parse {
+        path: PathBuf::new(),
+        source,
+    })?;
     let mut servers = Vec::with_capacity(raw.servers.len());
     for (name, entry) in raw.servers {
         let transport = raw_entry_into_transport(entry, &name);
@@ -257,7 +260,13 @@ fn candidate_paths() -> Vec<PathBuf> {
     if let Some(home) = dirs::home_dir() {
         out.push(home.join(".config").join("aphrody").join("mcp.json"));
         out.push(home.join(".gemini").join("config").join("mcp_config.json"));
-        out.push(home.join(".gemini").join("config").join("plugins").join("aphrody").join("mcp_config.json"));
+        out.push(
+            home.join(".gemini")
+                .join("config")
+                .join("plugins")
+                .join("aphrody")
+                .join("mcp_config.json"),
+        );
     }
     // Fallback for in-tree development.
     out.push(PathBuf::from(".mcp.json"));
@@ -277,10 +286,14 @@ pub fn load_mcp_config(path: &Path) -> Result<McpConfig, ConfigError> {
     if !path.exists() {
         return Ok(McpConfig::default());
     }
-    let text = fs::read_to_string(path)
-        .map_err(|source| ConfigError::Io { path: path.to_path_buf(), source })?;
-    let raw: RawDocument = serde_json::from_str(&text)
-        .map_err(|source| ConfigError::Parse { path: path.to_path_buf(), source })?;
+    let text = fs::read_to_string(path).map_err(|source| ConfigError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    let raw: RawDocument = serde_json::from_str(&text).map_err(|source| ConfigError::Parse {
+        path: path.to_path_buf(),
+        source,
+    })?;
     let mut servers = Vec::with_capacity(raw.servers.len());
     for (name, entry) in raw.servers {
         let transport = raw_entry_into_transport(entry, &name);
@@ -330,14 +343,17 @@ mod tests {
                 assert_eq!(command, "bxc");
                 assert_eq!(args, &vec!["serve".to_owned(), "--stdio".to_owned()]);
                 assert_eq!(env.get("BXC_LOG").map(String::as_str), Some("info"));
-            },
+            }
             other => panic!("expected stdio, got {other:?}"),
         }
         match &cfg.servers[2].transport {
             McpTransportConfig::Http { url, headers } => {
                 assert_eq!(url, "https://mcp.supabase.com/");
-                assert_eq!(headers.get("Authorization").map(String::as_str), Some("Bearer x"));
-            },
+                assert_eq!(
+                    headers.get("Authorization").map(String::as_str),
+                    Some("Bearer x")
+                );
+            }
             other => panic!("expected http, got {other:?}"),
         }
     }
@@ -353,7 +369,10 @@ mod tests {
         // Claude Desktop omits the `type` field for stdio entries.
         let json = r#"{ "mcpServers": { "x": { "command": "echo", "args": ["hi"] } } }"#;
         let cfg = parse_mcp_config(json).expect("ok");
-        assert!(matches!(cfg.servers[0].transport, McpTransportConfig::Stdio { .. }));
+        assert!(matches!(
+            cfg.servers[0].transport,
+            McpTransportConfig::Stdio { .. }
+        ));
     }
 
     #[test]
@@ -363,7 +382,7 @@ mod tests {
         match &cfg.servers[0].transport {
             McpTransportConfig::StreamableHttp { url, .. } => {
                 assert_eq!(url, "https://x.example/");
-            },
+            }
             other => panic!("expected streamable-http, got {other:?}"),
         }
     }
@@ -378,8 +397,11 @@ mod tests {
     fn load_parses_real_file() {
         let dir = tempfile::tempdir().expect("tempdir");
         let path = dir.path().join("mcp.json");
-        std::fs::write(&path, r#"{ "mcpServers": { "z": { "command": "/bin/true" } } }"#)
-            .expect("write");
+        std::fs::write(
+            &path,
+            r#"{ "mcpServers": { "z": { "command": "/bin/true" } } }"#,
+        )
+        .expect("write");
         let cfg = load_mcp_config(&path).expect("ok");
         assert_eq!(cfg.servers.len(), 1);
         assert_eq!(cfg.servers[0].name, "z");

@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use effectcraft_keyframe::Value;
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project, Solid};
+use effectcraft_project::{
+    Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project, Solid,
+};
 use effectcraft_time::{FrameRate, Tick};
 
 use crate::audio::{comp_has_audio, footage_peaks, mix_comp, peak_summary};
@@ -18,13 +20,24 @@ impl FootageSource for Signal {
     fn frame(&self, _: ItemId, _: &Footage, _: Tick) -> Option<Arc<Image>> {
         None
     }
-    fn audio(&self, _: ItemId, _: &Footage, start: Tick, frames: usize, rate: u32) -> Option<Vec<f32>> {
+    fn audio(
+        &self,
+        _: ItemId,
+        _: &Footage,
+        start: Tick,
+        frames: usize,
+        rate: u32,
+    ) -> Option<Vec<f32>> {
         let t0 = start.seconds();
         Some(
             (0..frames)
                 .flat_map(|i| {
                     let t = t0 + i as f64 / rate as f64;
-                    let (l, r) = if (0.0..2.0).contains(&t) { (self.0)(t) } else { (0.0, 0.0) };
+                    let (l, r) = if (0.0..2.0).contains(&t) {
+                        (self.0)(t)
+                    } else {
+                        (0.0, 0.0)
+                    };
                     [l, r]
                 })
                 .collect(),
@@ -60,17 +73,35 @@ fn comp_with(id: Option<&str>, vals: &[(&str, Value)], solid: bool) -> (Project,
     let mut p = Project::default();
     let comp = Comp::new(64, 64, FrameRate::new(25, 1), Tick::from_seconds_f64(2.0));
     let src = if solid {
-        let sid = p.add_item("S", effectcraft_color::Label::Red, None, ItemKind::Solid(Solid { color: [1.0; 3], width: 64, height: 64, pixel_aspect: 1.0 }));
+        let sid = p.add_item(
+            "S",
+            effectcraft_color::Label::Red,
+            None,
+            ItemKind::Solid(Solid {
+                color: [1.0; 3],
+                width: 64,
+                height: 64,
+                pixel_aspect: 1.0,
+            }),
+        );
         LayerSource::Solid { item: sid }
     } else {
-        LayerSource::Footage { item: p.add_item("x.wav", effectcraft_color::Label::SeaFoam, None, ItemKind::Footage(audio_footage())) }
+        LayerSource::Footage {
+            item: p.add_item(
+                "x.wav",
+                effectcraft_color::Label::SeaFoam,
+                None,
+                ItemKind::Footage(audio_footage()),
+            ),
+        }
     };
     let mut l = build::layer(&mut p, &comp, "a", src, (64, 64), None);
     l.out_point = Tick::from_seconds_f64(1.0);
     if let Some(id) = id {
         let spec = effectcraft_effects::find(id).unwrap();
         let mut next = p.next_id;
-        let mut g = effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 64.0]);
+        let mut g =
+            effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 64.0]);
         p.next_id = next;
         for (k, v) in vals {
             g.prop_mut(k).unwrap_or_else(|| panic!("{k}")).value = v.clone();
@@ -79,7 +110,12 @@ fn comp_with(id: Option<&str>, vals: &[(&str, Value)], solid: bool) -> (Project,
     }
     let mut comp = comp;
     comp.layers = vec![l];
-    let cid = p.add_item("C", effectcraft_color::Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "C",
+        effectcraft_color::Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     (p, cid)
 }
 
@@ -102,7 +138,11 @@ fn backwards_reverses_the_layer_span() {
     // Comp time t plays source time ≈ 1 − t.
     for i in [0usize, 2000, 4000, 7999] {
         let t = i as f64 / SR as f64;
-        assert!((m[i * 2] as f64 - (1.0 - t)).abs() < 2.0 / SR as f64, "i={i}: {}", m[i * 2]);
+        assert!(
+            (m[i * 2] as f64 - (1.0 - t)).abs() < 2.0 / SR as f64,
+            "i={i}: {}",
+            m[i * 2]
+        );
     }
     let (p, cid) = comp_with(None, &[], false);
     let m = mix(&p, &Signal(ramp), cid, 0.0, SR as usize);
@@ -115,7 +155,10 @@ fn high_low_pass_attenuates() {
         let v = (2.0 * std::f64::consts::PI * 3000.0 * t).sin() as f32;
         (v, v)
     }
-    let vals = [("filterOptions", Value::Enum(1)), ("cutoffFrequency", Value::Scalar(200.0))];
+    let vals = [
+        ("filterOptions", Value::Enum(1)),
+        ("cutoffFrequency", Value::Scalar(200.0)),
+    ];
     let (p, cid) = comp_with(Some("ec.audio.highlowpass"), &vals, false);
     let r = rms(&mix(&p, &Signal(hi), cid, 0.5, 800));
     assert!(r < 0.02, "{r}");
@@ -127,9 +170,16 @@ fn high_low_pass_attenuates() {
 #[test]
 fn delay_offsets_across_blocks() {
     fn click(t: f64) -> (f32, f32) {
-        if (t * SR as f64).round() as i64 == 2000 { (1.0, 1.0) } else { (0.0, 0.0) }
+        if (t * SR as f64).round() as i64 == 2000 {
+            (1.0, 1.0)
+        } else {
+            (0.0, 0.0)
+        }
     }
-    let vals = [("delayTime", Value::Scalar(100.0)), ("feedback", Value::Scalar(0.0))];
+    let vals = [
+        ("delayTime", Value::Scalar(100.0)),
+        ("feedback", Value::Scalar(0.0)),
+    ];
     let (p, cid) = comp_with(Some("ec.audio.delay"), &vals, false);
     // The block starts after the click (0.25 s): the echo at 0.35 s still comes from pre-roll.
     let m = mix(&p, &Signal(click), cid, 0.3, 800);
@@ -143,9 +193,18 @@ fn stereo_mixer_pans() {
     fn left(_: f64) -> (f32, f32) {
         (0.5, 0.0)
     }
-    let (p, cid) = comp_with(Some("ec.audio.stereomixer"), &[("leftPan", Value::Scalar(100.0))], false);
+    let (p, cid) = comp_with(
+        Some("ec.audio.stereomixer"),
+        &[("leftPan", Value::Scalar(100.0))],
+        false,
+    );
     let m = mix(&p, &Signal(left), cid, 0.2, 10);
-    assert!(m.chunks(2).all(|f| f[0].abs() < 1e-6 && (f[1] - 0.5).abs() < 1e-6), "{:?}", &m[..4]);
+    assert!(
+        m.chunks(2)
+            .all(|f| f[0].abs() < 1e-6 && (f[1] - 0.5).abs() < 1e-6),
+        "{:?}",
+        &m[..4]
+    );
 }
 
 #[test]
@@ -158,7 +217,10 @@ fn tone_makes_a_solid_audible_at_its_frequency() {
     assert!(comp_has_audio(&p, cid));
     let m = mix(&p, &Signal(ramp), cid, 0.0, SR as usize);
     let left: Vec<f32> = m.iter().step_by(2).copied().collect();
-    let ups = left.windows(2).filter(|w| w[0] <= 0.0 && w[1] > 0.0).count();
+    let ups = left
+        .windows(2)
+        .filter(|w| w[0] <= 0.0 && w[1] > 0.0)
+        .count();
     assert!((ups as i64 - 500).abs() <= 1, "{ups}");
     // The out point (1 s) silences it.
     let after = mix(&p, &Signal(ramp), cid, 1.0, 100);
@@ -197,20 +259,32 @@ fn blocks_match_one_long_mix() {
         for k in 0..5 {
             blocks.extend(mix(&p, &Signal(noise), cid, 0.2 + k as f64 * 0.04, 320));
         }
-        let worst = long.iter().zip(&blocks).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+        let worst = long
+            .iter()
+            .zip(&blocks)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f32, f32::max);
         assert!(worst < 2e-3, "{id}: {worst}");
     }
 }
 
 #[test]
 fn peak_summary_bins() {
-    let s: Vec<f32> = (0..10).flat_map(|i| [i as f32 * 0.1, -(i as f32) * 0.1]).collect();
+    let s: Vec<f32> = (0..10)
+        .flat_map(|i| [i as f32 * 0.1, -(i as f32) * 0.1])
+        .collect();
     let p = peak_summary(&s, 4);
     assert_eq!(p.len(), 3);
     assert!(p[0][0].abs() < 1e-6 && (p[0][1] - 0.3).abs() < 1e-6);
     assert!((p[1][2] + 0.7).abs() < 1e-6 && (p[1][3] + 0.4).abs() < 1e-6);
     let f = audio_footage();
-    let peaks = footage_peaks(&Signal(ramp), ItemId(1), &f, Tick::from_seconds_f64(2.0), 100);
+    let peaks = footage_peaks(
+        &Signal(ramp),
+        ItemId(1),
+        &f,
+        Tick::from_seconds_f64(2.0),
+        100,
+    );
     assert_eq!(peaks.len(), 200);
     assert!((peaks[150][1] - 1.51).abs() < 0.01, "{:?}", peaks[150]);
 }
@@ -220,24 +294,63 @@ fn peak_summary_bins() {
 #[test]
 fn audio_spectrum_follows_time_through_the_layer_cache() {
     fn late_tone(t: f64) -> (f32, f32) {
-        let v = if t < 0.5 { 0.0 } else { (2.0 * std::f64::consts::PI * 1000.0 * t).sin() as f32 };
+        let v = if t < 0.5 {
+            0.0
+        } else {
+            (2.0 * std::f64::consts::PI * 1000.0 * t).sin() as f32
+        };
         (v, v)
     }
     let mut p = Project::default();
     let comp = Comp::new(64, 64, FrameRate::new(25, 1), Tick::from_seconds_f64(2.0));
-    let audio = p.add_item("x.wav", effectcraft_color::Label::SeaFoam, None, ItemKind::Footage(audio_footage()));
-    let a = build::layer(&mut p, &comp, "a", LayerSource::Footage { item: audio }, (64, 64), None);
-    let sid = p.add_item("S", effectcraft_color::Label::Red, None, ItemKind::Solid(Solid { color: [0.0; 3], width: 64, height: 64, pixel_aspect: 1.0 }));
-    let mut s = build::layer(&mut p, &comp, "s", LayerSource::Solid { item: sid }, (64, 64), None);
+    let audio = p.add_item(
+        "x.wav",
+        effectcraft_color::Label::SeaFoam,
+        None,
+        ItemKind::Footage(audio_footage()),
+    );
+    let a = build::layer(
+        &mut p,
+        &comp,
+        "a",
+        LayerSource::Footage { item: audio },
+        (64, 64),
+        None,
+    );
+    let sid = p.add_item(
+        "S",
+        effectcraft_color::Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [0.0; 3],
+            width: 64,
+            height: 64,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut s = build::layer(
+        &mut p,
+        &comp,
+        "s",
+        LayerSource::Solid { item: sid },
+        (64, 64),
+        None,
+    );
     let spec = effectcraft_effects::find("ec.generate.audiospectrum").unwrap();
     let mut next = p.next_id;
-    let mut g = effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 64.0]);
+    let mut g =
+        effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, [64.0, 64.0]);
     p.next_id = next;
     g.prop_mut("audioLayer").unwrap().value = Value::Layer(Some(a.id.0));
     s.props.sub_mut("effects").unwrap().children.push(g.into());
     let mut comp = comp;
     comp.layers = vec![s, a];
-    let cid = p.add_item("C", effectcraft_color::Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    let cid = p.add_item(
+        "C",
+        effectcraft_color::Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
 
     let src = Signal(late_tone);
     let render = |t: f64, cache: Option<&crate::LayerCache>| {
@@ -245,11 +358,27 @@ fn audio_spectrum_follows_time_through_the_layer_cache() {
         r.cache = cache;
         r.comp_frame(cid, Tick::from_seconds_f64(t))
     };
-    let lit = |img: &Image| img.data.iter().filter(|px| px[0] + px[1] + px[2] > 0.1).count();
+    let lit = |img: &Image| {
+        img.data
+            .iter()
+            .filter(|px| px[0] + px[1] + px[2] > 0.1)
+            .count()
+    };
     let cache = crate::LayerCache::default();
     let silent = render(0.0, Some(&cache));
     let cached = render(0.8, Some(&cache));
     let fresh = render(0.8, None);
-    assert!(lit(&fresh) > lit(&silent), "the tone draws more than the baseline: {} vs {}", lit(&fresh), lit(&silent));
-    assert_eq!(cached.data, fresh.data, "cached {} px, uncached {} px", lit(&cached), lit(&fresh));
+    assert!(
+        lit(&fresh) > lit(&silent),
+        "the tone draws more than the baseline: {} vs {}",
+        lit(&fresh),
+        lit(&silent)
+    );
+    assert_eq!(
+        cached.data,
+        fresh.data,
+        "cached {} px, uncached {} px",
+        lit(&cached),
+        lit(&fresh)
+    );
 }

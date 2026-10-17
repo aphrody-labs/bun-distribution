@@ -51,7 +51,14 @@
 //! skip readback entirely with [`Gpu::render_display`], which leaves an RGBA8 texture for
 //! egui-wgpu to draw.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod adv3d;
 mod bokeh;
@@ -130,12 +137,20 @@ impl Gpu {
     }
 
     /// On an existing device (the desktop app shares egui-wgpu's).
-    pub fn new(adapter: &wgpu::Adapter, device: wgpu::Device, queue: wgpu::Queue) -> Result<Gpu, String> {
+    pub fn new(
+        adapter: &wgpu::Adapter,
+        device: wgpu::Device,
+        queue: wgpu::Queue,
+    ) -> Result<Gpu, String> {
         GpuContext::new(adapter, device, queue).map(Gpu::from_context)
     }
 
     pub fn from_context(ctx: GpuContext) -> Gpu {
-        Gpu { ctx: Arc::new(ctx), auto: Default::default(), declined: Default::default() }
+        Gpu {
+            ctx: Arc::new(ctx),
+            auto: Default::default(),
+            declined: Default::default(),
+        }
     }
 
     /// A device of its own without blocking, with deferred readbacks (a browser worker, see
@@ -149,7 +164,9 @@ impl Gpu {
     /// [`Gpu::request_deferred`] blocking (tests of the browser worker's path, natively).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn headless_deferred() -> Option<Gpu> {
-        pollster::block_on(Gpu::request_deferred()).map_err(|e| log::info!("gpu: {e}")).ok()
+        pollster::block_on(Gpu::request_deferred())
+            .map_err(|e| log::info!("gpu: {e}"))
+            .ok()
     }
 
     /// The deferred readback state, when readbacks are deferred.
@@ -173,7 +190,11 @@ impl Gpu {
     /// `{passes, readbacks, inFlight}` of deferred rendering (diagnostics).
     pub fn deferred_stats(&self) -> Option<(u64, u64, usize)> {
         let d = self.ctx.deferred()?;
-        Some((d.passes.load(std::sync::atomic::Ordering::Relaxed), d.readbacks.load(std::sync::atomic::Ordering::Relaxed), d.in_flight()))
+        Some((
+            d.passes.load(std::sync::atomic::Ordering::Relaxed),
+            d.readbacks.load(std::sync::atomic::Ordering::Relaxed),
+            d.in_flight(),
+        ))
     }
 
     pub fn context(&self) -> &GpuContext {
@@ -187,15 +208,25 @@ impl Gpu {
     /// Render a top-level comp frame and leave it on the GPU as a display texture (no
     /// readback unless a CPU fallback step needs one). `None` = render on the CPU.
     pub fn render_display(&self, r: &Renderer, comp: ItemId, t: Tick) -> Option<DisplayFrame> {
-        self.ctx.check_health().map_err(|e| log::error!("gpu display: {e}")).ok()?;
+        self.ctx
+            .check_health()
+            .map_err(|e| log::error!("gpu display: {e}"))
+            .ok()?;
         let mut e = Enc::new(&self.ctx);
         let img = walk::render(&mut e, r, comp, t)?;
         let texture = e.display(&img);
         e.submit();
         // Reject failures observed during rendering/submission before publishing the frame.
         // A later device fault still requires the presentation host's lifecycle handling.
-        self.ctx.check_health().map_err(|e| log::error!("gpu display: {e}")).ok()?;
-        Some(DisplayFrame { texture, width: img.width, height: img.height })
+        self.ctx
+            .check_health()
+            .map_err(|e| log::error!("gpu display: {e}"))
+            .ok()?;
+        Some(DisplayFrame {
+            texture,
+            width: img.width,
+            height: img.height,
+        })
     }
 
     /// Read a display frame back as premultiplied RGBA8 (Info panel sampling, eyedroppers).
@@ -205,7 +236,11 @@ impl Gpu {
 
     /// [`Gpu::read_display`] without blocking (the browser's main thread): `done` gets the bytes
     /// once the GPU has them.
-    pub fn read_display_async(&self, f: &DisplayFrame, done: impl FnOnce(Option<Vec<u8>>) + wgpu::WasmNotSend + 'static) {
+    pub fn read_display_async(
+        &self,
+        f: &DisplayFrame,
+        done: impl FnOnce(Option<Vec<u8>>) + wgpu::WasmNotSend + 'static,
+    ) {
         if let Err(e) = self.ctx.check_health() {
             log::error!("gpu display readback: {e}");
             crate::readback::reject(done, e);
@@ -231,7 +266,13 @@ impl Gpu {
     /// [`Gpu::render`] with deferred readbacks: the frame's readback is keyed by comp, time and
     /// render options; until it arrives (or while layer steps still miss) the pass gets a
     /// placeholder.
-    fn render_deferred(&self, d: &Arc<deferred::Deferred>, r: &Renderer, comp: ItemId, t: Tick) -> Option<Image> {
+    fn render_deferred(
+        &self,
+        d: &Arc<deferred::Deferred>,
+        r: &Renderer,
+        comp: ItemId,
+        t: Tick,
+    ) -> Option<Image> {
         let mut k = deferred::Key::new(2);
         k.u64(comp.0);
         k.u64(t.0 as u64);
@@ -274,8 +315,14 @@ impl Gpu {
         self.ctx.check_health()?;
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let oom = self.ctx.device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
-            let internal = self.ctx.device.push_error_scope(wgpu::ErrorFilter::Internal);
+            let oom = self
+                .ctx
+                .device
+                .push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+            let internal = self
+                .ctx
+                .device
+                .push_error_scope(wgpu::ErrorFilter::Internal);
             let out = f();
             let internal = pollster::block_on(internal.pop());
             let oom = pollster::block_on(oom.pop());
@@ -308,7 +355,10 @@ impl Gpu {
 
     /// Wait for submitted GPU work with the readback deadline (benchmarks).
     pub fn wait(&self) {
-        let _ = self.ctx.poll_readbacks(wgpu::PollType::Wait { submission_index: None, timeout: Some(crate::readback::TIMEOUT) });
+        let _ = self.ctx.poll_readbacks(wgpu::PollType::Wait {
+            submission_index: None,
+            timeout: Some(crate::readback::TIMEOUT),
+        });
     }
 }
 
@@ -325,7 +375,11 @@ impl Accelerator for Gpu {
             // warning (the log keeps only the last few hundred, for the System Report), then at
             // debug level.
             let reason = self.decline_reason();
-            let first = self.declined.lock().map(|mut seen| seen.len() < 256 && seen.insert((comp.0, reason.clone()))).unwrap_or(false);
+            let first = self
+                .declined
+                .lock()
+                .map(|mut seen| seen.len() < 256 && seen.insert((comp.0, reason.clone())))
+                .unwrap_or(false);
             if first {
                 log::warn!(target: "effectcraft_gpu", "GPU declined the frame at {:.3} s, the CPU renders it: {reason}", t.seconds());
             } else {
@@ -344,19 +398,27 @@ impl Accelerator for Gpu {
         effects::run_chain(&mut Enc::new(&self.ctx), chain, buf, levels)
     }
 
-    fn raster_3d(&self, scene: &effectcraft_render::three_d::adv::Scene) -> Option<effectcraft_render::three_d::adv::Target> {
+    fn raster_3d(
+        &self,
+        scene: &effectcraft_render::three_d::adv::Scene,
+    ) -> Option<effectcraft_render::three_d::adv::Target> {
         self.ctx.check_health().ok()?;
         adv3d::render(&self.ctx, scene)
     }
 
-    fn render_3d(&self, run: &effectcraft_render::three_d::adv::Prepared) -> Option<effectcraft_render::three_d::adv::Rendered> {
+    fn render_3d(
+        &self,
+        run: &effectcraft_render::three_d::adv::Prepared,
+    ) -> Option<effectcraft_render::three_d::adv::Rendered> {
         self.ctx.check_health().ok()?;
         adv3d::render_prepared(&self.ctx, run)
     }
 
     fn particles(&self) -> Option<&dyn effectcraft_effects::psim::ParticleSim> {
         self.ctx.check_health().ok()?;
-        self.ctx.can_readback().then_some(self as &dyn effectcraft_effects::psim::ParticleSim)
+        self.ctx
+            .can_readback()
+            .then_some(self as &dyn effectcraft_effects::psim::ParticleSim)
     }
 
     fn auto_pick(&self) -> Option<&effectcraft_render::AutoPick> {
@@ -388,14 +450,20 @@ impl Accelerator for Gpu {
         // Natively the device delivers the readbacks when polled: wait for them here.
         #[cfg(not(target_arch = "wasm32"))]
         if d.in_flight() > 0 {
-            let _ = self.ctx.poll_readbacks(wgpu::PollType::Wait { submission_index: None, timeout: Some(crate::readback::TIMEOUT) });
+            let _ = self.ctx.poll_readbacks(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(crate::readback::TIMEOUT),
+            });
         }
         Some(Box::pin(async move { d.settled().await }))
     }
 }
 
 impl effectcraft_effects::psim::ParticleSim for Gpu {
-    fn simulate(&self, req: &effectcraft_effects::psim::SimRequest) -> Option<Vec<effectcraft_effects::psim::SimParticle>> {
+    fn simulate(
+        &self,
+        req: &effectcraft_effects::psim::SimRequest,
+    ) -> Option<Vec<effectcraft_effects::psim::SimParticle>> {
         self.ctx.check_health().ok()?;
         particles::simulate(&self.ctx, req)
     }

@@ -41,10 +41,16 @@ const CASE: Case<'static> = Case {
 fn run(c: &Case<'_>) -> Vec<(f64, f64, f64, f64)> {
     let mut d = Document::new("t");
     let page = d.first_page().unwrap();
-    let f = d.create(page, NodeKind::Frame, "F", 0.0, 0.0, c.size.0, c.size.1).unwrap();
+    let f = d
+        .create(page, NodeKind::Frame, "F", 0.0, 0.0, c.size.0, c.size.1)
+        .unwrap();
     let n = d.get_mut(f).unwrap();
     n.layout = Some(AutoLayout {
-        mode: if c.vertical { LayoutMode::Vertical } else { LayoutMode::Horizontal },
+        mode: if c.vertical {
+            LayoutMode::Vertical
+        } else {
+            LayoutMode::Horizontal
+        },
         wrap: true,
         gap: 10.0,
         cross_gap: c.cross_gap,
@@ -54,16 +60,26 @@ fn run(c: &Case<'_>) -> Vec<(f64, f64, f64, f64)> {
         ..AutoLayout::default()
     });
     if c.hug_cross {
-        *(if c.vertical { &mut n.child_layout.sizing_h } else { &mut n.child_layout.sizing_v }) = Sizing::Hug;
+        *(if c.vertical {
+            &mut n.child_layout.sizing_h
+        } else {
+            &mut n.child_layout.sizing_v
+        }) = Sizing::Hug;
     }
     let kids: Vec<NodeId> = c
         .kids
         .iter()
         .map(|(w, h)| {
-            let k = d.create(f, NodeKind::Rectangle, "K", 0.0, 0.0, *w, *h).unwrap();
+            let k = d
+                .create(f, NodeKind::Rectangle, "K", 0.0, 0.0, *w, *h)
+                .unwrap();
             if c.fill {
                 let cl = &mut d.get_mut(k).unwrap().child_layout;
-                *(if c.vertical { &mut cl.sizing_h } else { &mut cl.sizing_v }) = Sizing::Fill;
+                *(if c.vertical {
+                    &mut cl.sizing_h
+                } else {
+                    &mut cl.sizing_v
+                }) = Sizing::Fill;
             }
             k
         })
@@ -83,30 +99,54 @@ fn wrapped_lines_across_the_flow() {
     // Unless a case says otherwise: a 100 × 100 frame, three 40 × 20 children, gap 10, so two
     // rows (40 + 10 + 40 = 90 fits, the third wraps) of 20 each, 5 apart: 45 of 100, 55 free.
     let cases = [
-        Case { rule: "packed at the start", want: &[(0.0, 0.0, 40.0, 20.0), (50.0, 0.0, 40.0, 20.0), (0.0, 25.0, 40.0, 20.0)], ..CASE },
+        Case {
+            rule: "packed at the start",
+            want: &[
+                (0.0, 0.0, 40.0, 20.0),
+                (50.0, 0.0, 40.0, 20.0),
+                (0.0, 25.0, 40.0, 20.0),
+            ],
+            ..CASE
+        },
         Case {
             rule: "packed in the centre: 55 / 2 above",
             cross: Center,
-            want: &[(0.0, 27.5, 40.0, 20.0), (50.0, 27.5, 40.0, 20.0), (0.0, 52.5, 40.0, 20.0)],
+            want: &[
+                (0.0, 27.5, 40.0, 20.0),
+                (50.0, 27.5, 40.0, 20.0),
+                (0.0, 52.5, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "packed at the end: 55 above",
             cross: Max,
-            want: &[(0.0, 55.0, 40.0, 20.0), (50.0, 55.0, 40.0, 20.0), (0.0, 80.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 55.0, 40.0, 20.0),
+                (50.0, 55.0, 40.0, 20.0),
+                (0.0, 80.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "space between: the gap value gives way, 100 - 40 between two rows",
             content: Between,
-            want: &[(0.0, 0.0, 40.0, 20.0), (50.0, 0.0, 40.0, 20.0), (0.0, 80.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 0.0, 40.0, 20.0),
+                (50.0, 0.0, 40.0, 20.0),
+                (0.0, 80.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "space between three rows: (100 - 60) / 2 = 20 between",
             size: (50.0, 100.0),
             content: Between,
-            want: &[(0.0, 0.0, 40.0, 20.0), (0.0, 40.0, 40.0, 20.0), (0.0, 80.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 0.0, 40.0, 20.0),
+                (0.0, 40.0, 40.0, 20.0),
+                (0.0, 80.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
@@ -114,14 +154,22 @@ fn wrapped_lines_across_the_flow() {
             content: Between,
             cross: Center,
             kids: &[(40.0, 20.0), (40.0, 40.0), (40.0, 20.0)],
-            want: &[(0.0, 10.0, 40.0, 20.0), (50.0, 0.0, 40.0, 40.0), (0.0, 80.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 10.0, 40.0, 20.0),
+                (50.0, 0.0, 40.0, 40.0),
+                (0.0, 80.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "space between inside padding: inner height 80, 40 between",
             pad: [10.0, 0.0, 10.0, 0.0],
             content: Between,
-            want: &[(0.0, 10.0, 40.0, 20.0), (50.0, 10.0, 40.0, 20.0), (0.0, 70.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 10.0, 40.0, 20.0),
+                (50.0, 10.0, 40.0, 20.0),
+                (0.0, 70.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
@@ -129,7 +177,11 @@ fn wrapped_lines_across_the_flow() {
             size: (100.0, 30.0),
             content: Between,
             cross: Center,
-            want: &[(0.0, -5.0, 40.0, 20.0), (50.0, -5.0, 40.0, 20.0), (0.0, 15.0, 40.0, 20.0)],
+            want: &[
+                (0.0, -5.0, 40.0, 20.0),
+                (50.0, -5.0, 40.0, 20.0),
+                (0.0, 15.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
@@ -137,20 +189,32 @@ fn wrapped_lines_across_the_flow() {
             size: (200.0, 100.0),
             content: Between,
             cross: Max,
-            want: &[(0.0, 80.0, 40.0, 20.0), (50.0, 80.0, 40.0, 20.0), (100.0, 80.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 80.0, 40.0, 20.0),
+                (50.0, 80.0, 40.0, 20.0),
+                (100.0, 80.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "space between in a frame hugging its height: nothing to share, rows stay 5 apart",
             hug_cross: true,
             content: Between,
-            want: &[(0.0, 0.0, 40.0, 20.0), (50.0, 0.0, 40.0, 20.0), (0.0, 25.0, 40.0, 20.0)],
+            want: &[
+                (0.0, 0.0, 40.0, 20.0),
+                (50.0, 0.0, 40.0, 20.0),
+                (0.0, 25.0, 40.0, 20.0),
+            ],
             ..CASE
         },
         Case {
             rule: "rows of nothing but fill children stretch: (100 - 5) / 2 = 47.5 each",
             fill: true,
-            want: &[(0.0, 0.0, 40.0, 47.5), (50.0, 0.0, 40.0, 47.5), (0.0, 52.5, 40.0, 47.5)],
+            want: &[
+                (0.0, 0.0, 40.0, 47.5),
+                (50.0, 0.0, 40.0, 47.5),
+                (0.0, 52.5, 40.0, 47.5),
+            ],
             ..CASE
         },
         Case {
@@ -158,7 +222,11 @@ fn wrapped_lines_across_the_flow() {
             vertical: true,
             cross: Center,
             kids: &[(20.0, 40.0), (20.0, 40.0), (20.0, 40.0)],
-            want: &[(27.5, 0.0, 20.0, 40.0), (27.5, 50.0, 20.0, 40.0), (52.5, 0.0, 20.0, 40.0)],
+            want: &[
+                (27.5, 0.0, 20.0, 40.0),
+                (27.5, 50.0, 20.0, 40.0),
+                (52.5, 0.0, 20.0, 40.0),
+            ],
             ..CASE
         },
         Case {
@@ -166,7 +234,11 @@ fn wrapped_lines_across_the_flow() {
             vertical: true,
             content: Between,
             kids: &[(20.0, 40.0), (20.0, 40.0), (20.0, 40.0)],
-            want: &[(0.0, 0.0, 20.0, 40.0), (0.0, 50.0, 20.0, 40.0), (80.0, 0.0, 20.0, 40.0)],
+            want: &[
+                (0.0, 0.0, 20.0, 40.0),
+                (0.0, 50.0, 20.0, 40.0),
+                (80.0, 0.0, 20.0, 40.0),
+            ],
             ..CASE
         },
     ];
@@ -174,7 +246,9 @@ fn wrapped_lines_across_the_flow() {
         let got = run(c);
         assert_eq!(got.len(), c.want.len(), "{}", c.rule);
         for (i, (g, w)) in got.iter().zip(c.want).enumerate() {
-            let close = [(g.0, w.0), (g.1, w.1), (g.2, w.2), (g.3, w.3)].iter().all(|(a, b)| (a - b).abs() < 1e-6);
+            let close = [(g.0, w.0), (g.1, w.1), (g.2, w.2), (g.3, w.3)]
+                .iter()
+                .all(|(a, b)| (a - b).abs() < 1e-6);
             assert!(close, "{}: child {i} is {g:?}, want {w:?}", c.rule);
         }
     }
@@ -182,13 +256,34 @@ fn wrapped_lines_across_the_flow() {
 
 #[test]
 fn a_wrapping_frame_without_children_lays_out() {
-    assert!(run(&Case { kids: &[], content: Between, ..CASE }).is_empty());
+    assert!(
+        run(&Case {
+            kids: &[],
+            content: Between,
+            ..CASE
+        })
+        .is_empty()
+    );
 }
 
 #[test]
 fn non_finite_and_tiny_frames_place_finitely() {
-    for (w, h, gap) in [(0.0, 0.0, 5.0), (100.0, 1e-9, f64::NAN), (1e12, 1e12, f64::INFINITY), (50.0, 100.0, -1e9)] {
-        let got = run(&Case { size: (w, h), cross_gap: gap, content: Between, cross: Center, ..CASE });
-        assert!(got.iter().all(|r| r.0.is_finite() && r.1.is_finite()), "{w} × {h}, gap {gap}: {got:?}");
+    for (w, h, gap) in [
+        (0.0, 0.0, 5.0),
+        (100.0, 1e-9, f64::NAN),
+        (1e12, 1e12, f64::INFINITY),
+        (50.0, 100.0, -1e9),
+    ] {
+        let got = run(&Case {
+            size: (w, h),
+            cross_gap: gap,
+            content: Between,
+            cross: Center,
+            ..CASE
+        });
+        assert!(
+            got.iter().all(|r| r.0.is_finite() && r.1.is_finite()),
+            "{w} × {h}, gap {gap}: {got:?}"
+        );
     }
 }

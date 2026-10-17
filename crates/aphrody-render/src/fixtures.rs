@@ -35,13 +35,20 @@ pub fn dashboard_scene(width: u32, height: u32, element_count: usize) -> Scene {
                 corners: Corners::uniform(12.0),
                 fill: Paint::Role(Role::SurfaceContainer),
                 elevation: 1 + (placed % 3) as u8,
-                outline: Some(Outline { color: Paint::Role(Role::OutlineVariant), width: 1.0 }),
+                outline: Some(Outline {
+                    color: Paint::Role(Role::OutlineVariant),
+                    width: 1.0,
+                }),
             });
             nodes.push(Node::StateLayer {
                 rect,
                 corners: Corners::uniform(12.0),
                 content: Paint::Role(Role::OnSurface),
-                state: if placed % 2 == 0 { StateKind::Hover } else { StateKind::Focus },
+                state: if placed % 2 == 0 {
+                    StateKind::Hover
+                } else {
+                    StateKind::Focus
+                },
             });
             nodes.push(Node::Icon {
                 rect: Rect::new(x + 8.0, y + 8.0, 24.0, 24.0),
@@ -87,7 +94,11 @@ fn material(base: Role, metallic: f32, roughness: f32) -> Material {
 }
 
 fn at(translation: [f32; 3], rotation_deg: [f32; 3], scale: [f32; 3]) -> Transform {
-    Transform { translation, rotation_deg, scale }
+    Transform {
+        translation,
+        rotation_deg,
+        scale,
+    }
 }
 
 fn m3_lights() -> Vec<Light> {
@@ -99,7 +110,12 @@ fn m3_lights() -> Vec<Light> {
         },
         Light::Directional {
             direction: [-0.4, -1.0, -0.6],
-            color: Paint::Fixed(Rgba8 { r: 255, g: 255, b: 255, a: 255 }),
+            color: Paint::Fixed(Rgba8 {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 255,
+            }),
             intensity: 2.6,
             cast_shadow: true,
         },
@@ -169,11 +185,18 @@ pub fn showcase_scene3d(width: u32, height: u32) -> Scene3d {
     let floor = Node3d::Mesh {
         transform: at([0.0, -1.0, 0.0], [-90.0, 0.0, 0.0], [1.0; 3]),
         geometry: Geometry::Plane { size: [40.0, 40.0] },
-        material: Material { cast_shadow: false, ..material(Role::SurfaceContainerLow, 0.0, 0.9) },
+        material: Material {
+            cast_shadow: false,
+            ..material(Role::SurfaceContainerLow, 0.0, 0.9)
+        },
     };
     let glass = Node3d::Mesh {
         transform: at([1.3, -0.35, 1.3], [0.0, -25.0, 0.0], [1.0; 3]),
-        geometry: Geometry::RoundedBox { size: [0.9, 1.1, 0.04], radius: 0.02, segments: 2 },
+        geometry: Geometry::RoundedBox {
+            size: [0.9, 1.1, 0.04],
+            radius: 0.02,
+            segments: 2,
+        },
         material: Material {
             opacity: 0.45,
             double_sided: true,
@@ -193,7 +216,11 @@ pub fn showcase_scene3d(width: u32, height: u32) -> Scene3d {
             eye: [0.0, 0.6, 4.6],
             target: [0.0, -0.1, 0.0],
             up: [0.0, 1.0, 0.0],
-            projection: Projection::Perspective { fov_y_deg: 45.0, near: 0.1, far: 50.0 },
+            projection: Projection::Perspective {
+                fov_y_deg: 45.0,
+                near: 0.1,
+                far: 50.0,
+            },
         },
         lights: m3_lights(),
         shadows: ShadowSettings::default(),
@@ -217,7 +244,11 @@ pub fn instanced_grid_scene3d(width: u32, height: u32, count: usize) -> Scene3d 
         ];
         let (geometry, role) = if i % 2 == 0 {
             (
-                Geometry::Sphere { radius: spacing * 0.4, width_segments: 16, height_segments: 12 },
+                Geometry::Sphere {
+                    radius: spacing * 0.4,
+                    width_segments: 16,
+                    height_segments: 12,
+                },
                 Role::Primary,
             )
         } else {
@@ -249,11 +280,18 @@ pub fn instanced_grid_scene3d(width: u32, height: u32, count: usize) -> Scene3d 
             eye: [0.0, 0.0, 6.0],
             target: [0.0; 3],
             up: [0.0, 1.0, 0.0],
-            projection: Projection::Perspective { fov_y_deg: 45.0, near: 0.1, far: 50.0 },
+            projection: Projection::Perspective {
+                fov_y_deg: 45.0,
+                near: 0.1,
+                far: 50.0,
+            },
         },
         lights: m3_lights(),
         shadows: ShadowSettings::default(),
-        nodes: vec![Node3d::Group { transform: Transform::IDENTITY, children: nodes }],
+        nodes: vec![Node3d::Group {
+            transform: Transform::IDENTITY,
+            children: nodes,
+        }],
     }
 }
 
@@ -264,15 +302,23 @@ mod tests {
     #[test]
     fn dashboard_scene_places_all_elements() {
         let scene = dashboard_scene(1920, 1080, 500);
-        let surfaces = scene.nodes.iter().filter(|n| matches!(n, Node::Surface { .. })).count();
+        let surfaces = scene
+            .nodes
+            .iter()
+            .filter(|n| matches!(n, Node::Surface { .. }))
+            .count();
         assert_eq!(surfaces, 500);
     }
 
     #[test]
     fn scene3d_fixtures_prepare_and_batch() {
-        let showcase = showcase_scene3d(320, 200).prepare().expect("valid showcase");
+        let showcase = showcase_scene3d(320, 200)
+            .prepare()
+            .expect("valid showcase");
         assert_eq!(showcase.instances.len(), 6);
-        let grid = instanced_grid_scene3d(640, 360, 400).prepare().expect("valid grid");
+        let grid = instanced_grid_scene3d(640, 360, 400)
+            .prepare()
+            .expect("valid grid");
         assert_eq!(grid.instances.len(), 400);
         assert_eq!(grid.meshes.len(), 2);
         assert_eq!(grid.batches.len(), 2);

@@ -9,10 +9,10 @@ use crate::game::catalog::get_dragon_ball_catalog;
 use crate::game::formats::{
     bac::BacFile, bdm::BdmFile, cus::CusFile, emb_archive::EmbArchive, msg::MsgFile, pup::PupFile,
 };
-use aphrody_nie_formats::cpk::{CpkEntry, CpkReader};
 use crate::game::live::aob::AobPattern;
 use crate::game::text::extract_msg_text;
 use crate::game::world::xenoverse3::xenoverse3_prototype_map;
+use aphrody_nie_formats::cpk::{CpkEntry, CpkReader};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -130,7 +130,9 @@ pub fn wasm_identify_format(bytes: &[u8], file_name: &str) -> Result<JsValue, Js
 #[wasm_bindgen]
 pub fn wasm_summarize(bytes: &[u8], file_name: &str) -> Result<JsValue, JsValue> {
     let value = api::summarize(bytes, file_name).map_err(to_js_err)?;
-    value.serialize(&serde_wasm_bindgen::Serializer::json_compatible()).map_err(to_js_err)
+    value
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
 }
 
 /// Decode an HCA/ADX/AWB/ACB buffer to WAV images (one `Uint8Array` per subsong). Requires the
@@ -139,16 +141,27 @@ pub fn wasm_summarize(bytes: &[u8], file_name: &str) -> Result<JsValue, JsValue>
 #[wasm_bindgen]
 pub fn wasm_audio_to_wav(bytes: &[u8]) -> Result<js_sys::Array, JsValue> {
     let waves = api::audio_to_wav(bytes).map_err(to_js_err)?;
-    Ok(waves.iter().map(|wave| js_sys::Uint8Array::from(wave.as_slice())).collect())
+    Ok(waves
+        .iter()
+        .map(|wave| js_sys::Uint8Array::from(wave.as_slice()))
+        .collect())
 }
 
 /// Range-read CPK index. `read(offset, len)` is a synchronous JS callback returning a
 /// `Uint8Array` of exactly `len` bytes; only the header and table of contents are fetched.
 /// `query` is `ext:emb`, a `*`/`?` glob, an exact path, or empty for every entry.
 #[wasm_bindgen]
-pub fn wasm_cpk_find(read: &js_sys::Function, label: &str, query: &str) -> Result<JsValue, JsValue> {
+pub fn wasm_cpk_find(
+    read: &js_sys::Function,
+    label: &str,
+    query: &str,
+) -> Result<JsValue, JsValue> {
     let index = api::CpkIndex::open(label, label, js_reader(read)).map_err(to_js_err)?;
-    let rows = if query.is_empty() { index.list() } else { index.find(query) };
+    let rows = if query.is_empty() {
+        index.list()
+    } else {
+        index.find(query)
+    };
     serde_wasm_bindgen::to_value(&rows).map_err(to_js_err)
 }
 
@@ -173,7 +186,11 @@ fn js_reader(
     move |offset, size| {
         let short = || aphrody_nie_formats::FormatError::TooShort { got: 0, need: size };
         let value = read
-            .call2(&JsValue::NULL, &JsValue::from_f64(offset as f64), &JsValue::from_f64(size as f64))
+            .call2(
+                &JsValue::NULL,
+                &JsValue::from_f64(offset as f64),
+                &JsValue::from_f64(size as f64),
+            )
             .map_err(|_| short())?;
         Ok(js_sys::Uint8Array::new(&value).to_vec())
     }
@@ -195,7 +212,9 @@ pub fn wasm_model_json(
     esk: Option<Vec<u8>>,
 ) -> Result<JsValue, JsValue> {
     let value = api::model_json(name, emd, emb.as_deref(), esk.as_deref()).map_err(to_js_err)?;
-    value.serialize(&serde_wasm_bindgen::Serializer::json_compatible()).map_err(to_js_err)
+    value
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(to_js_err)
 }
 
 /// Same model as binary glTF.
@@ -216,14 +235,20 @@ pub fn wasm_usm_to_video(bytes: &[u8]) -> Result<js_sys::Object, JsValue> {
     let (out, extension) = api::usm_to_video(bytes).map_err(to_js_err)?;
     let object = js_sys::Object::new();
     js_sys::Reflect::set(&object, &"extension".into(), &extension.into())?;
-    js_sys::Reflect::set(&object, &"bytes".into(), &js_sys::Uint8Array::from(out.as_slice()))?;
+    js_sys::Reflect::set(
+        &object,
+        &"bytes".into(),
+        &js_sys::Uint8Array::from(out.as_slice()),
+    )?;
     Ok(object)
 }
 
 /// Validate an sfnt/WOFF font and return it unchanged (Iggy bundles are refused).
 #[wasm_bindgen]
 pub fn wasm_font_to_sfnt(bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
-    api::font_to_sfnt(bytes).map(|(out, _)| out).map_err(to_js_err)
+    api::font_to_sfnt(bytes)
+        .map(|(out, _)| out)
+        .map_err(to_js_err)
 }
 
 /// Scan a buffer for an Array-of-Bytes (AOB) pattern with wildcards (e.g. "48 89 5C 24 ??").

@@ -7,17 +7,17 @@ use bevy_asset::{
 use bevy_ecs::entity::Entity;
 use bevy_platform::collections::HashSet;
 use bevy_reflect::{
+    PartialReflect, ReflectFromReflect, TypeRegistry,
     serde::{
         ReflectDeserializer, TypeRegistrationDeserializer, TypedReflectDeserializer,
         TypedReflectSerializer,
     },
-    PartialReflect, ReflectFromReflect, TypeRegistry,
 };
 use core::fmt::Formatter;
 use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{DeserializeSeed, Error, MapAccess, SeqAccess, Visitor},
     ser::{SerializeMap, SerializeStruct},
-    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 /// Name of the serialized world struct type.
@@ -548,8 +548,8 @@ impl<'a, 'de> Visitor<'de> for WorldMapVisitor<'a> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        serde::{DynamicWorldSerializer, WorldDeserializer},
         DynamicWorld, DynamicWorldBuilder,
+        serde::{DynamicWorldSerializer, WorldDeserializer},
     };
     use bevy_asset::{Asset, AssetPath, Handle, LoadFromPath, ReflectAsset, UntypedHandle};
     use bevy_ecs::{
@@ -562,7 +562,7 @@ mod tests {
     use bevy_reflect::{Reflect, ReflectDeserialize, ReflectSerialize};
     use core::any::TypeId;
     use ron;
-    use serde::{de::DeserializeSeed, Deserialize, Serialize};
+    use serde::{Deserialize, Serialize, de::DeserializeSeed};
     use std::io::BufReader;
     use uuid::Uuid;
 
@@ -586,7 +586,7 @@ mod tests {
 
     // De/serialize as hex.
     mod qux {
-        use serde::{de::Error, Deserialize, Deserializer, Serializer};
+        use serde::{Deserialize, Deserializer, Serializer, de::Error};
 
         pub fn serialize<S>(value: &u32, serializer: S) -> Result<S::Ok, S::Error>
         where
@@ -855,10 +855,12 @@ mod tests {
             .unwrap();
 
         assert_eq!(foo, bar_to_foo.0);
-        assert!(dst_world
-            .query_filtered::<&MyEntityRef, With<Foo>>()
-            .iter(&dst_world)
-            .all(|r| world.get_entity(r.0).is_err()));
+        assert!(
+            dst_world
+                .query_filtered::<&MyEntityRef, With<Foo>>()
+                .iter(&dst_world)
+                .all(|r| world.get_entity(r.0).is_err())
+        );
     }
 
     #[test]

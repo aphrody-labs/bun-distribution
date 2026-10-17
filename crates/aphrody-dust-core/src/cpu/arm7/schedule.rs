@@ -90,8 +90,11 @@ impl Schedule {
 
     #[inline]
     pub(in crate::cpu) fn handle_pending_events<E: Engine>(emu: &mut Emu<E>) {
-        while let Some((event, time)) =
-            emu.arm7.schedule.schedule.pop_pending_event(emu.arm7.schedule.cur_time)
+        while let Some((event, time)) = emu
+            .arm7
+            .schedule
+            .schedule
+            .pop_pending_event(emu.arm7.schedule.cur_time)
         {
             match event {
                 Event::Shutdown => return,
@@ -149,7 +152,8 @@ impl cpu::Schedule for Schedule {
 
     #[inline]
     fn set_timer_event(&mut self, i: timers::Index) {
-        self.schedule.set_event(Self::timer_event_slot(i), Event::Timer(i));
+        self.schedule
+            .set_event(Self::timer_event_slot(i), Event::Timer(i));
     }
 
     #[inline]

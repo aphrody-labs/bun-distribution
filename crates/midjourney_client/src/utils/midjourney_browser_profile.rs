@@ -17,5 +17,5 @@ pub const MIDJOURNEY_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 
 /// Safari fingerprint + the exact [`MIDJOURNEY_USER_AGENT`], to stay consistent
 /// with the login webview that captured the cookies.
 pub fn midjourney_browser_profile() -> BrowserProfile {
-  BrowserProfile::safari_macos_with_user_agent(MIDJOURNEY_USER_AGENT)
+    BrowserProfile::safari_macos_with_user_agent(MIDJOURNEY_USER_AGENT)
 }

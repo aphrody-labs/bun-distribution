@@ -35,7 +35,10 @@ pub enum DelinksParseError {
     #[snafu(transparent)]
     SectionParse { source: SectionParseError },
     #[snafu(display("{context}: {error}"))]
-    Sections { context: ParseContext, error: Box<SectionsError> },
+    Sections {
+        context: ParseContext,
+        error: Box<SectionsError>,
+    },
     #[snafu(transparent)]
     DelinkFileParse { source: DelinkFileParseError },
 }
@@ -50,7 +53,12 @@ pub enum DelinksWriteError {
 
 impl Delinks {
     pub fn new(sections: Sections, files: Vec<DelinkFile>, module_kind: ModuleKind) -> Self {
-        Self { sections, global_categories: Categories::new(), files, module_kind }
+        Self {
+            sections,
+            global_categories: Categories::new(),
+            files,
+            module_kind,
+        }
     }
 
     pub fn from_file<P: AsRef<Path>>(
@@ -59,7 +67,10 @@ impl Delinks {
     ) -> Result<Self, DelinksParseError> {
         let path = path.as_ref();
 
-        let mut context = ParseContext { file_path: path.to_str().unwrap().to_string(), row: 0 };
+        let mut context = ParseContext {
+            file_path: path.to_str().unwrap().to_string(),
+            row: 0,
+        };
         let mut lines = CommentedLine::read(path)?.peekable();
 
         let mut sections: Sections = Sections::new();
@@ -84,9 +95,13 @@ impl Delinks {
                 global_categories.extend(new_categories);
             } else {
                 let section = Section::parse(&line, &context)?;
-                sections
-                    .add(section)
-                    .map_err(|error| SectionsSnafu { context: context.clone(), error }.build())?;
+                sections.add(section).map_err(|error| {
+                    SectionsSnafu {
+                        context: context.clone(),
+                        error,
+                    }
+                    .build()
+                })?;
             }
         }
 
@@ -107,7 +122,12 @@ impl Delinks {
             }
         }
 
-        Ok(Self { sections, global_categories, module_kind, files })
+        Ok(Self {
+            sections,
+            global_categories,
+            module_kind,
+            files,
+        })
     }
 
     fn try_parse_delink_file(
@@ -175,13 +195,19 @@ pub struct DelinkFile {
 #[snafu(module)]
 pub enum DelinkFileParseError {
     #[snafu(display("{context}: expected file path to end with ':':\n{backtrace}"))]
-    MissingColon { context: ParseContext, backtrace: Backtrace },
+    MissingColon {
+        context: ParseContext,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     Io { source: io::Error },
     #[snafu(transparent)]
     SectionInheritParse { source: SectionInheritParseError },
     #[snafu(display("{context}: {error}"))]
-    Sections { context: ParseContext, error: Box<SectionsError> },
+    Sections {
+        context: ParseContext,
+        error: Box<SectionsError>,
+    },
 }
 
 pub struct DelinkFileOptions {
@@ -230,7 +256,10 @@ impl DelinkFile {
             .trim()
             .strip_suffix(':')
             .ok_or_else(|| {
-                delink_file_parse_error::MissingColonSnafu { context: context.clone() }.build()
+                delink_file_parse_error::MissingColonSnafu {
+                    context: context.clone(),
+                }
+                .build()
             })?
             .to_string();
 
@@ -261,8 +290,11 @@ impl DelinkFile {
                 let section =
                     Section::parse_inherit(&line, context, inherit_sections, module_kind)?;
                 sections.add(section).map_err(|error| {
-                    delink_file_parse_error::SectionsSnafu { context: context.clone(), error }
-                        .build()
+                    delink_file_parse_error::SectionsSnafu {
+                        context: context.clone(),
+                        error,
+                    }
+                    .build()
                 })?;
             }
         }
@@ -280,8 +312,11 @@ impl DelinkFile {
 
     pub fn split_file_ext(&self) -> (String, &str) {
         let (name, ext) = self.name.rsplit_once('.').unwrap_or((&self.name, ""));
-        let name =
-            if let Some(id) = self.gap_id { format!("{name}_{id}") } else { name.to_string() };
+        let name = if let Some(id) = self.gap_id {
+            format!("{name}_{id}")
+        } else {
+            name.to_string()
+        };
         (name, ext)
     }
 
@@ -354,14 +389,23 @@ pub struct Categories {
 
 impl Categories {
     pub fn new() -> Self {
-        Self { categories: Vec::new(), comments: Comments::new() }
+        Self {
+            categories: Vec::new(),
+            comments: Comments::new(),
+        }
     }
 
     pub fn try_parse(line: &CommentedLine) -> Option<Self> {
         let list = line.text.trim().strip_prefix("categories:")?;
-        let categories =
-            list.trim().split(',').map(|category| category.trim().to_string()).collect();
-        Some(Self { categories, comments: line.comments.clone() })
+        let categories = list
+            .trim()
+            .split(',')
+            .map(|category| category.trim().to_string())
+            .collect();
+        Some(Self {
+            categories,
+            comments: line.comments.clone(),
+        })
     }
 
     pub fn extend(&mut self, other: Categories) {

@@ -8,7 +8,14 @@ use crate::tools::{PointerEvent, PointerKind};
 use crate::{EngineError, Session};
 
 fn rect(s: &mut Session, x: f64) -> figcraft_doc::NodeId {
-    id_of(&s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 10, "height": 10})).unwrap()["id"]).unwrap()
+    id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap()
 }
 
 fn count(s: &Session) -> usize {
@@ -19,9 +26,11 @@ fn count(s: &Session) -> usize {
 fn setup() -> (Session, figcraft_doc::NodeId) {
     let mut s = Session::new();
     rect(&mut s, 0.0);
-    s.execute("file.saveVersion", &json!({"name": "One"})).unwrap();
+    s.execute("file.saveVersion", &json!({"name": "One"}))
+        .unwrap();
     rect(&mut s, 20.0);
-    s.execute("file.saveVersion", &json!({"name": "Two"})).unwrap();
+    s.execute("file.saveVersion", &json!({"name": "Two"}))
+        .unwrap();
     let r = rect(&mut s, 40.0);
     s.execute("select.set", &json!({"ids": [r]})).unwrap();
     (s, r)
@@ -40,11 +49,20 @@ fn preview_shows_the_version_read_only_and_goes_back() {
     assert_eq!(l[0]["previewing"], true);
     assert!(l[1].get("previewing").is_none());
     // Edits are refused and leave it as it was; so do undo and gestures.
-    let err = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5})).unwrap_err();
+    let err = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+        )
+        .unwrap_err();
     assert!(matches!(err, EngineError::Disabled(..)), "{err:?}");
     assert_eq!(count(&s), three - 2);
     assert!(s.execute("edit.undo", &json!({})).is_err());
-    assert_eq!(s.ds().unwrap().history.undo.len(), undo_depth, "history untouched");
+    assert_eq!(
+        s.ds().unwrap().history.undo.len(),
+        undo_depth,
+        "history untouched"
+    );
     assert!(s.begin_interaction("Move").is_err());
     let _ = s.pointer(&PointerEvent::at(PointerKind::Down, 5.0, 5.0, 1.0));
     let _ = s.pointer(&PointerEvent::at(PointerKind::Move, 50.0, 50.0, 1.0));
@@ -53,10 +71,16 @@ fn preview_shows_the_version_read_only_and_goes_back() {
     // Switching to another version, then back to the current one.
     s.execute("version.preview", &json!({"index": 1})).unwrap();
     assert_eq!(count(&s), three - 1);
-    assert_eq!(s.execute("version.exitPreview", &json!({})).unwrap()["ended"], true);
+    assert_eq!(
+        s.execute("version.exitPreview", &json!({})).unwrap()["ended"],
+        true
+    );
     assert_eq!(count(&s), three);
     assert_eq!(s.selection(), vec![r], "selection comes back");
-    assert_eq!(s.execute("version.exitPreview", &json!({})).unwrap()["ended"], false);
+    assert_eq!(
+        s.execute("version.exitPreview", &json!({})).unwrap()["ended"],
+        false
+    );
     // Editing works again.
     rect(&mut s, 60.0);
     assert_eq!(count(&s), three + 1);
@@ -71,7 +95,11 @@ fn restore_from_a_preview_is_one_undo_step() {
     assert!(s.ds().unwrap().preview.is_none());
     assert_eq!(count(&s), three - 2);
     s.execute("edit.undo", &json!({})).unwrap();
-    assert_eq!(count(&s), three, "undo goes back to the document, not the preview");
+    assert_eq!(
+        count(&s),
+        three,
+        "undo goes back to the document, not the preview"
+    );
 }
 
 #[test]
@@ -83,7 +111,10 @@ fn preview_keeps_the_unsaved_state_and_saving_saves_the_document() {
     let three = count(&s);
     s.execute("file.save", &json!({"path": path})).unwrap();
     s.execute("version.preview", &json!({"index": 0})).unwrap();
-    assert!(!s.ds().unwrap().is_dirty(), "looking at a version isn't a change");
+    assert!(
+        !s.ds().unwrap().is_dirty(),
+        "looking at a version isn't a change"
+    );
     // Saving ends the preview and saves the document itself.
     s.execute("file.save", &json!({})).unwrap();
     assert!(s.ds().unwrap().preview.is_none());

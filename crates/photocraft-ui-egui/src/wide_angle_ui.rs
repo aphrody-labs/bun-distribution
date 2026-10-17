@@ -8,7 +8,9 @@
 //! Control channel: `ui.menu.invoke {"id":"filter.adaptiveWideAngle","params":{"ui":{"set":{…},
 //! "add":{"a":[x,y],"b":[x,y],"orientation":"…"}, "remove":i, "commit":true | "cancel":true}}}`.
 
-use egui::{Align2, Color32, FontId, Pos2, Rect as ERect, Sense, Stroke, TextureHandle, pos2, vec2};
+use egui::{
+    Align2, Color32, FontId, Pos2, Rect as ERect, Sense, Stroke, TextureHandle, pos2, vec2,
+};
 use photocraft_algo::transform::Interp;
 use photocraft_algo::wideangle::{self, Camera, Constraint, Orientation, WideAngle, WideModel};
 use photocraft_color::PixelFormat;
@@ -48,7 +50,12 @@ pub struct WideAngleDialog {
 fn tex_image(s: &Surface, w: usize, h: usize) -> egui::ColorImage {
     let mut row = vec![[0u8; 4]; w * h];
     s.read_rgba8_into(Rect::new(0, 0, w as i32, h as i32), &mut row);
-    egui::ColorImage::new([w, h], row.iter().map(|p| Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3])).collect())
+    egui::ColorImage::new(
+        [w, h],
+        row.iter()
+            .map(|p| Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
+            .collect(),
+    )
 }
 
 impl WideAngleDialog {
@@ -63,7 +70,11 @@ impl WideAngleDialog {
         p.constraints = p
             .constraints
             .iter()
-            .map(|c| Constraint { a: [(c.a[0] - fx) * k, (c.a[1] - fy) * k], b: [(c.b[0] - fx) * k, (c.b[1] - fy) * k], orientation: c.orientation })
+            .map(|c| Constraint {
+                a: [(c.a[0] - fx) * k, (c.a[1] - fy) * k],
+                b: [(c.b[0] - fx) * k, (c.b[1] - fy) * k],
+                orientation: c.orientation,
+            })
             .collect();
         p
     }
@@ -74,14 +85,26 @@ impl WideAngleDialog {
         let p = self.proxy_params();
         let mesh = wideangle::solve(&p, pf);
         self.residual = mesh.residual / self.scale;
-        let out = photocraft_algo::warp::warp_triangles(&self.proxy, pf, &mesh.verts, &mesh.triangles(), Interp::Bilinear);
+        let out = photocraft_algo::warp::warp_triangles(
+            &self.proxy,
+            pf,
+            &mesh.verts,
+            &mesh.triangles(),
+            Interp::Bilinear,
+        );
         let img = tex_image(&out, self.pw, self.ph);
         match &mut self.out_tex {
             Some(t) => t.set(img, egui::TextureOptions::LINEAR),
-            None => self.out_tex = Some(ctx.load_texture("awa-out", img, egui::TextureOptions::LINEAR)),
+            None => {
+                self.out_tex = Some(ctx.load_texture("awa-out", img, egui::TextureOptions::LINEAR))
+            }
         }
         if self.src_tex.is_none() {
-            self.src_tex = Some(ctx.load_texture("awa-src", tex_image(&self.proxy, self.pw, self.ph), egui::TextureOptions::LINEAR));
+            self.src_tex = Some(ctx.load_texture(
+                "awa-src",
+                tex_image(&self.proxy, self.pw, self.ph),
+                egui::TextureOptions::LINEAR,
+            ));
         }
         self.render_ms = crate::gpu_canvas::now_ms() - t0;
         self.dirty = false;
@@ -102,11 +125,17 @@ impl WideAngleDialog {
 }
 
 pub fn open(app: &mut PhotocraftApp, ctx: &egui::Context) -> Result<(), String> {
-    photocraft_engine::commands::find("filter.adaptiveWideAngle").map(|c| (c.enabled)(&app.session)).unwrap_or(Err("unknown command".into()))?;
+    photocraft_engine::commands::find("filter.adaptiveWideAngle")
+        .map(|c| (c.enabled)(&app.session))
+        .unwrap_or(Err("unknown command".into()))?;
     let (layer, surf, _) = crate::distort_ui::active_pixels(app)?;
     let st = app.session.active().ok_or("no document")?;
     let frame = st.doc.bounds();
-    let name = st.doc.layer(layer).map(|l| l.name.clone()).unwrap_or_default();
+    let name = st
+        .doc
+        .layer(layer)
+        .map(|l| l.name.clone())
+        .unwrap_or_default();
     let (w, h) = (frame.width() as usize, frame.height() as usize);
     let k = w.max(h).div_ceil(PROXY_SIDE).max(1);
     let (pw, ph) = (w.div_ceil(k), h.div_ceil(k));
@@ -124,10 +153,23 @@ pub fn open(app: &mut PhotocraftApp, ctx: &egui::Context) -> Result<(), String> 
         (frame.x0 as f64 / k as f64) as i32 + pw as i32,
         (frame.y0 as f64 / k as f64) as i32 + ph as i32,
     );
-    px.write_region(Rect::new(0, 0, pw as i32, ph as i32), &proxy.read_region(src_r));
+    px.write_region(
+        Rect::new(0, 0, pw as i32, ph as i32),
+        &proxy.read_region(src_r),
+    );
     // EXIF focal length / crop factor, as the engine would resolve them.
-    let info = st.doc.metadata.exif.as_ref().map(|e| photocraft_algo::exif::read(e));
-    let params = photocraft_engine::lens_cmds::wide_params("filter.adaptiveWideAngle", &json!({}), info.as_ref()).unwrap_or_default();
+    let info = st
+        .doc
+        .metadata
+        .exif
+        .as_ref()
+        .map(|e| photocraft_algo::exif::read(e));
+    let params = photocraft_engine::lens_cmds::wide_params(
+        "filter.adaptiveWideAngle",
+        &json!({}),
+        info.as_ref(),
+    )
+    .unwrap_or_default();
     let mut d = WideAngleDialog {
         layer,
         layer_name: name,
@@ -159,12 +201,22 @@ fn parse_orientation(s: &str) -> Orientation {
     }
 }
 
-pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn menu(
+    app: &mut PhotocraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     if id != "filter.adaptiveWideAngle" {
         return None;
     }
     if params.as_object().is_none_or(|o| o.is_empty()) {
-        return Some(open(app, ctx).map(|_| app.wide_angle.as_ref().map(|d| d.describe()).unwrap_or(Value::Null)));
+        return Some(open(app, ctx).map(|_| {
+            app.wide_angle
+                .as_ref()
+                .map(|d| d.describe())
+                .unwrap_or(Value::Null)
+        }));
     }
     let ui = params.get("ui")?;
     if app.wide_angle.is_none()
@@ -187,9 +239,21 @@ pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Val
         d.dirty = true;
     }
     if let Some(a) = ui.get("add") {
-        let pt = |k: &str| -> Option<[f64; 2]> { Some([a.get(k)?.get(0)?.as_f64()?, a.get(k)?.get(1)?.as_f64()?]) };
-        let (Some(pa), Some(pb)) = (pt("a"), pt("b")) else { return Some(Err("`add` needs a and b points".into())) };
-        d.params.constraints.push(Constraint { a: pa, b: pb, orientation: parse_orientation(a.get("orientation").and_then(Value::as_str).unwrap_or("free")) });
+        let pt = |k: &str| -> Option<[f64; 2]> {
+            Some([a.get(k)?.get(0)?.as_f64()?, a.get(k)?.get(1)?.as_f64()?])
+        };
+        let (Some(pa), Some(pb)) = (pt("a"), pt("b")) else {
+            return Some(Err("`add` needs a and b points".into()));
+        };
+        d.params.constraints.push(Constraint {
+            a: pa,
+            b: pb,
+            orientation: parse_orientation(
+                a.get("orientation")
+                    .and_then(Value::as_str)
+                    .unwrap_or("free"),
+            ),
+        });
         d.dirty = true;
     }
     if let Some(i) = ui.get("remove").and_then(Value::as_u64)
@@ -209,11 +273,18 @@ pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Val
     if ui.get("commit").and_then(Value::as_bool) == Some(true) {
         return Some(commit(app));
     }
-    Some(Ok(app.wide_angle.as_ref().map(|d| d.describe()).unwrap_or(Value::Null)))
+    Some(Ok(app
+        .wide_angle
+        .as_ref()
+        .map(|d| d.describe())
+        .unwrap_or(Value::Null)))
 }
 
 fn commit(app: &mut PhotocraftApp) -> Result<Value, String> {
-    let d = app.wide_angle.take().ok_or(tl!("Adaptive Wide Angle isn't open"))?;
+    let d = app
+        .wide_angle
+        .take()
+        .ok_or(tl!("Adaptive Wide Angle isn't open"))?;
     app.run("filter.adaptiveWideAngle", d.command_params())
 }
 
@@ -434,10 +505,13 @@ mod tests {
     fn dialog_adds_constraints_and_commits() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
-        app.run("file.new", json!({"width": 160, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 160, "height": 100}))
+            .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         app.run("edit.fill", json!({"color": "#808080"})).unwrap();
-        let r = menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({})).unwrap().unwrap();
+        let r = menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({}))
+            .unwrap()
+            .unwrap();
         assert_eq!(r["proxy"], json!([160, 100]));
         let r = menu(
             &mut app,
@@ -449,12 +523,37 @@ mod tests {
         .unwrap();
         assert_eq!(r["params"]["constraints"].as_array().unwrap().len(), 1);
         assert!(r["residual"].as_f64().unwrap() < 3.0, "{r}");
-        let r = menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({"ui": {"commit": true}})).unwrap().unwrap();
+        let r = menu(
+            &mut app,
+            &ctx,
+            "filter.adaptiveWideAngle",
+            &json!({"ui": {"commit": true}}),
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r["model"], "fisheye");
         assert!(app.wide_angle.is_none());
-        menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({})).unwrap().unwrap();
-        assert!(menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({"ui": {"add": {"a": [1, 1]}}})).unwrap().is_err());
-        menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({"ui": {"cancel": true}})).unwrap().unwrap();
+        menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({}))
+            .unwrap()
+            .unwrap();
+        assert!(
+            menu(
+                &mut app,
+                &ctx,
+                "filter.adaptiveWideAngle",
+                &json!({"ui": {"add": {"a": [1, 1]}}})
+            )
+            .unwrap()
+            .is_err()
+        );
+        menu(
+            &mut app,
+            &ctx,
+            "filter.adaptiveWideAngle",
+            &json!({"ui": {"cancel": true}}),
+        )
+        .unwrap()
+        .unwrap();
         assert!(app.wide_angle.is_none());
     }
 
@@ -462,18 +561,44 @@ mod tests {
     fn command_z_steps_the_dialog_not_the_document() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
-        app.run("file.new", json!({"width": 160, "height": 100})).unwrap();
+        app.run("file.new", json!({"width": 160, "height": 100}))
+            .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         app.run("edit.fill", json!({"color": "#808080"})).unwrap();
         let steps = app.session.active().unwrap().history.past_len();
-        menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({})).unwrap().unwrap();
+        menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({}))
+            .unwrap()
+            .unwrap();
         for y in [20, 60] {
-            menu(&mut app, &ctx, "filter.adaptiveWideAngle", &json!({"ui": {"add": {"a": [20, y], "b": [140, y]}}})).unwrap().unwrap();
+            menu(
+                &mut app,
+                &ctx,
+                "filter.adaptiveWideAngle",
+                &json!({"ui": {"add": {"a": [20, y], "b": [140, y]}}}),
+            )
+            .unwrap()
+            .unwrap();
         }
         crate::edit_history::tests::press_z(&mut app, &ctx, egui::Modifiers::COMMAND);
-        assert_eq!(app.wide_angle.as_ref().unwrap().params.constraints.len(), 1, "⌘Z removes the last constraint");
-        assert_eq!(app.session.active().unwrap().history.past_len(), steps, "the document beneath is untouched");
-        crate::edit_history::tests::press_z(&mut app, &ctx, egui::Modifiers::COMMAND | egui::Modifiers::SHIFT);
-        assert_eq!(app.wide_angle.as_ref().unwrap().params.constraints.len(), 2, "⇧⌘Z puts it back");
+        assert_eq!(
+            app.wide_angle.as_ref().unwrap().params.constraints.len(),
+            1,
+            "⌘Z removes the last constraint"
+        );
+        assert_eq!(
+            app.session.active().unwrap().history.past_len(),
+            steps,
+            "the document beneath is untouched"
+        );
+        crate::edit_history::tests::press_z(
+            &mut app,
+            &ctx,
+            egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+        );
+        assert_eq!(
+            app.wide_angle.as_ref().unwrap().params.constraints.len(),
+            2,
+            "⇧⌘Z puts it back"
+        );
     }
 }

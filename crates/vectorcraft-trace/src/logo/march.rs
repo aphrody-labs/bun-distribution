@@ -14,11 +14,19 @@ fn edge_point(f: &[f32], w: usize, id: usize) -> Point {
     let at = |xx: usize, yy: usize| f64::from(f.get(yy * w + xx).copied().unwrap_or(0.0));
     if id.is_multiple_of(2) {
         let (a, b) = (at(x, y), at(x + 1, y));
-        let t = if (a - b).abs() < 1e-12 { 0.5 } else { (a / (a - b)).clamp(0.0, 1.0) };
+        let t = if (a - b).abs() < 1e-12 {
+            0.5
+        } else {
+            (a / (a - b)).clamp(0.0, 1.0)
+        };
         Point::new(x as f64 + t, y as f64)
     } else {
         let (a, b) = (at(x, y), at(x, y + 1));
-        let t = if (a - b).abs() < 1e-12 { 0.5 } else { (a / (a - b)).clamp(0.0, 1.0) };
+        let t = if (a - b).abs() < 1e-12 {
+            0.5
+        } else {
+            (a / (a - b)).clamp(0.0, 1.0)
+        };
         Point::new(x as f64, y as f64 + t)
     }
 }
@@ -34,7 +42,10 @@ pub(crate) fn contours(f: &[f32], w: usize, h: usize) -> Vec<Vec<Point>> {
         for x in 0..w - 1 {
             let v = |xx: usize, yy: usize| f.get(yy * w + xx).copied().unwrap_or(-1.0);
             let (tl, tr, br, bl) = (v(x, y), v(x + 1, y), v(x + 1, y + 1), v(x, y + 1));
-            let case = usize::from(tl > 0.0) | usize::from(tr > 0.0) << 1 | usize::from(br > 0.0) << 2 | usize::from(bl > 0.0) << 3;
+            let case = usize::from(tl > 0.0)
+                | usize::from(tr > 0.0) << 1
+                | usize::from(br > 0.0) << 2
+                | usize::from(bl > 0.0) << 3;
             if case == 0 || case == 15 {
                 continue;
             }
@@ -107,7 +118,10 @@ pub(crate) fn area2(p: &[Point]) -> f64 {
     let n = p.len();
     (0..n)
         .map(|i| {
-            let (a, b) = (p.get(i).copied().unwrap_or_default(), p.get((i + 1) % n).copied().unwrap_or_default());
+            let (a, b) = (
+                p.get(i).copied().unwrap_or_default(),
+                p.get((i + 1) % n).copied().unwrap_or_default(),
+            );
             a.x * b.y - b.x * a.y
         })
         .sum()
@@ -119,7 +133,9 @@ mod tests {
 
     /// `f` = positive inside a disc of radius `r` at `(cx, cy)`, on a padded grid.
     fn disc(w: usize, h: usize, cx: f64, cy: f64, r: f64) -> Vec<f32> {
-        (0..w * h).map(|i| (r - ((i % w) as f64 - cx).hypot((i / w) as f64 - cy)) as f32).collect()
+        (0..w * h)
+            .map(|i| (r - ((i % w) as f64 - cx).hypot((i / w) as f64 - cy)) as f32)
+            .collect()
     }
 
     #[test]
@@ -128,7 +144,10 @@ mod tests {
         let loops = contours(&f, 40, 40);
         assert_eq!(loops.len(), 1);
         let a = area2(&loops[0]).abs() / 2.0;
-        assert!((a - std::f64::consts::PI * 81.0).abs() / (std::f64::consts::PI * 81.0) < 0.01, "area {a}");
+        assert!(
+            (a - std::f64::consts::PI * 81.0).abs() / (std::f64::consts::PI * 81.0) < 0.01,
+            "area {a}"
+        );
         // Every vertex is on the circle to well under a hundredth of a cell.
         for p in &loops[0] {
             assert!(((p.x - 20.0).hypot(p.y - 20.0) - 9.0).abs() < 0.05);
@@ -148,7 +167,10 @@ mod tests {
         assert_eq!(loops.len(), 2);
         let mut a: Vec<f64> = loops.iter().map(|l| area2(l)).collect();
         a.sort_by(f64::total_cmp);
-        assert!(a[0] < 0.0 && a[1] > 0.0, "outer and hole must differ in sign: {a:?}");
+        assert!(
+            a[0] < 0.0 && a[1] > 0.0,
+            "outer and hole must differ in sign: {a:?}"
+        );
         // The outer loop is the bigger one and has the negative area; the hole is positive.
         assert!(a[0].abs() > a[1].abs());
     }
@@ -166,7 +188,9 @@ mod tests {
     #[test]
     fn saddles_and_degenerate_grids_do_not_panic() {
         // A checkerboard is all saddles.
-        let f: Vec<f32> = (0..64).map(|i| if (i % 8 + i / 8) % 2 == 0 { 1.0 } else { -1.0 }).collect();
+        let f: Vec<f32> = (0..64)
+            .map(|i| if (i % 8 + i / 8) % 2 == 0 { 1.0 } else { -1.0 })
+            .collect();
         let _ = contours(&f, 8, 8);
         assert!(contours(&[], 0, 0).is_empty());
         assert!(contours(&[1.0], 1, 1).is_empty());

@@ -36,7 +36,9 @@ pub fn literal(kind: VariableType, v: &Value) -> Option<VariableValue> {
 /// string variables; other mismatches don't fit.
 fn fit(kind: VariableType, v: VariableValue) -> Option<VariableValue> {
     match (kind, v) {
-        (VariableType::String, v @ (VariableValue::Number(_) | VariableValue::Boolean(_))) => Some(VariableValue::String(v.display())),
+        (VariableType::String, v @ (VariableValue::Number(_) | VariableValue::Boolean(_))) => {
+            Some(VariableValue::String(v.display()))
+        }
         (k, v) if v.type_of() == Some(k) => Some(v),
         _ => None,
     }
@@ -44,15 +46,27 @@ fn fit(kind: VariableType, v: VariableValue) -> Option<VariableValue> {
 
 /// Set `variable` to `value`, or to `expr` evaluated in the modes of `node` (the layer whose
 /// interaction runs), in every mode, and re-apply bindings. False when nothing could be set.
-pub fn set_variable(doc: &mut Document, node: NodeId, variable: &str, value: &Value, expr: Option<&Expr>) -> bool {
-    let Some(var) = doc.variables.get(variable) else { return false };
+pub fn set_variable(
+    doc: &mut Document,
+    node: NodeId,
+    variable: &str,
+    value: &Value,
+    expr: Option<&Expr>,
+) -> bool {
+    let Some(var) = doc.variables.get(variable) else {
+        return false;
+    };
     let (id, kind) = (var.id.clone(), var.kind);
     let v = match expr {
-        Some(e) => e.eval(&doc.variables, &doc.modes_for(node)).and_then(|v| fit(kind, v)),
+        Some(e) => e
+            .eval(&doc.variables, &doc.modes_for(node))
+            .and_then(|v| fit(kind, v)),
         None => literal(kind, value),
     };
     let Some(v) = v else { return false };
-    let Some(slot) = doc.variables.variables.iter_mut().find(|x| x.id == id) else { return false };
+    let Some(slot) = doc.variables.variables.iter_mut().find(|x| x.id == id) else {
+        return false;
+    };
     for val in slot.values.values_mut() {
         *val = v.clone();
     }
@@ -65,15 +79,25 @@ pub fn set_variable(doc: &mut Document, node: NodeId, variable: &str, value: &Va
 /// on the page's top-level frames that chose another mode of it (modes chosen deeper inside still
 /// win), then re-apply bindings. False for an unknown collection or mode.
 pub fn set_mode(doc: &mut Document, frame: NodeId, collection: &str, mode: &str) -> bool {
-    let Some(c) = doc.variables.collection(collection) else { return false };
+    let Some(c) = doc.variables.collection(collection) else {
+        return false;
+    };
     let Some(mode) = c.find_mode(mode).map(|m| m.id.clone()) else {
         return false;
     };
     let cid = c.id.clone();
-    let Some(page) = doc.page_of(frame) else { return false };
+    let Some(page) = doc.page_of(frame) else {
+        return false;
+    };
     let mut targets: Vec<NodeId> = doc
         .node(page)
-        .map(|p| p.children.iter().copied().filter(|t| doc.node(*t).is_some_and(|n| n.var_modes.contains_key(&cid))).collect())
+        .map(|p| {
+            p.children
+                .iter()
+                .copied()
+                .filter(|t| doc.node(*t).is_some_and(|n| n.var_modes.contains_key(&cid)))
+                .collect()
+        })
         .unwrap_or_default();
     targets.push(page);
     for id in targets {
@@ -89,24 +113,37 @@ pub fn set_mode(doc: &mut Document, frame: NodeId, collection: &str, mode: &str)
 /// The actions of the branch of a conditional action that runs, with variables resolved in the
 /// modes of `node`.
 pub fn branch(doc: &Document, node: NodeId, blocks: &[ConditionalBlock]) -> Vec<Action> {
-    ConditionalBlock::choose(blocks, &doc.variables, &doc.modes_for(node)).map(<[Action]>::to_vec).unwrap_or_default()
+    ConditionalBlock::choose(blocks, &doc.variables, &doc.modes_for(node))
+        .map(<[Action]>::to_vec)
+        .unwrap_or_default()
 }
 
 /// The frame "Navigate to" `dest` shows: the top-level frame holding it; for a section, the frame
 /// in it shown last (`visited`: section → frame, see [`remember_sections`]), else its first frame
 /// in reading order. `None` when there's nothing to show.
-pub fn navigate_target(doc: &Document, dest: NodeId, visited: &HashMap<NodeId, NodeId>) -> Option<NodeId> {
+pub fn navigate_target(
+    doc: &Document,
+    dest: NodeId,
+    visited: &HashMap<NodeId, NodeId>,
+) -> Option<NodeId> {
     let n = doc.node(dest)?;
     if !matches!(n.kind, NodeKind::Section { .. }) {
         return Some(doc.top_level_frame(dest).unwrap_or(dest));
     }
-    visited.get(&dest).copied().filter(|f| doc.contains(*f) && doc.is_ancestor(dest, *f)).or_else(|| doc.frames_in(dest).first().copied())
+    visited
+        .get(&dest)
+        .copied()
+        .filter(|f| doc.contains(*f) && doc.is_ancestor(dest, *f))
+        .or_else(|| doc.frames_in(dest).first().copied())
 }
 
 /// Record `frame` as the frame shown last in each section around it.
 pub fn remember_sections(doc: &Document, frame: NodeId, visited: &mut HashMap<NodeId, NodeId>) {
     for a in doc.ancestors(frame) {
-        if doc.node(a).is_some_and(|n| matches!(n.kind, NodeKind::Section { .. })) {
+        if doc
+            .node(a)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Section { .. }))
+        {
             visited.insert(a, frame);
         }
     }
@@ -121,15 +158,29 @@ pub fn play_interactions(doc: &mut Document) {
     let plays: Vec<(NodeId, Vec<Interaction>)> = doc
         .nodes()
         .filter_map(|n| {
-            let NodeKind::Instance { component, .. } = &n.kind else { return None };
+            let NodeKind::Instance { component, .. } = &n.kind else {
+                return None;
+            };
             let main = doc.node(*component)?;
-            let variants = crate::components::variant_set(doc, *component).and_then(|s| doc.node(s)).map_or(vec![*component], |s| s.children.clone());
-            let copied = |it: &Interaction| variants.iter().filter_map(|v| doc.node(*v)).any(|v| v.interactions.contains(it));
+            let variants = crate::components::variant_set(doc, *component)
+                .and_then(|s| doc.node(s))
+                .map_or(vec![*component], |s| s.children.clone());
+            let copied = |it: &Interaction| {
+                variants
+                    .iter()
+                    .filter_map(|v| doc.node(*v))
+                    .any(|v| v.interactions.contains(it))
+            };
             let own: Vec<&Interaction> = n.interactions.iter().filter(|it| !copied(it)).collect();
             let plays: Vec<Interaction> = own
                 .iter()
                 .map(|it| (*it).clone())
-                .chain(main.interactions.iter().filter(|it| own.iter().all(|o| o.trigger != it.trigger)).cloned())
+                .chain(
+                    main.interactions
+                        .iter()
+                        .filter(|it| own.iter().all(|o| o.trigger != it.trigger))
+                        .cloned(),
+                )
                 .collect();
             (plays != n.interactions).then_some((n.id, plays))
         })
@@ -147,10 +198,15 @@ pub fn play_interactions(doc: &mut Document) {
 pub fn change_to_target(doc: &Document, node: NodeId, dest: NodeId) -> Option<NodeId> {
     let set = crate::components::variant_set(doc, dest);
     let in_set = |id: &NodeId| match doc.node(*id).map(|n| &n.kind) {
-        Some(NodeKind::Instance { component, .. }) => set.is_some() && crate::components::variant_set(doc, *component) == set,
+        Some(NodeKind::Instance { component, .. }) => {
+            set.is_some() && crate::components::variant_set(doc, *component) == set
+        }
         _ => false,
     };
-    std::iter::once(node).chain(doc.ancestors(node)).find(in_set).or_else(|| crate::components::owning_instance(doc, node))
+    std::iter::once(node)
+        .chain(doc.ancestors(node))
+        .find(in_set)
+        .or_else(|| crate::components::owning_instance(doc, node))
 }
 
 /// The hotspots of the screen `root` (a presented frame or overlay): its visible layers with

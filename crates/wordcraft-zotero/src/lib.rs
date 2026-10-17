@@ -13,7 +13,14 @@
 //! `ZOTERO_PREF_1…n`.
 //!
 //! Written from Zotero's public protocol documentation; no Zotero plugin code is used.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod bridge;
 pub mod client;

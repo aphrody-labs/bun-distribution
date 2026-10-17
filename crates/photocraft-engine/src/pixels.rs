@@ -8,7 +8,11 @@ use photocraft_raster::{Surface, to_rgba};
 /// Composite `layers` inside their visible composite bounds (effects included) and write the result directly into a
 /// tiled surface. Large merges used to hold both a full-canvas RGBA buffer and a second converted
 /// float buffer at once; banded rendering keeps only one compositor band plus the destination.
-pub fn composite_layers(solo: &Document, format: photocraft_color::PixelFormat, background: Option<[f32; 3]>) -> Surface {
+pub fn composite_layers(
+    solo: &Document,
+    format: photocraft_color::PixelFormat,
+    background: Option<[f32; 3]>,
+) -> Surface {
     let canvas = solo.bounds();
     let area = solo
         .layers
@@ -33,7 +37,12 @@ pub fn composite_layers(solo: &Document, format: photocraft_color::PixelFormat, 
 /// selection; `mode` is the document's, for the tone transfer (e.g. Exposure in Grayscale).
 /// Works tile by tile in parallel, so a large layer needs one tile's buffers per thread rather
 /// than four full-layer copies, and the result is the same as one pass over the whole region.
-pub fn adjust_surface(s: &mut Surface, adj: &Adjustment, selection: Option<&Surface>, mode: photocraft_color::ColorMode) {
+pub fn adjust_surface(
+    s: &mut Surface,
+    adj: &Adjustment,
+    selection: Option<&Surface>,
+    mode: photocraft_color::ColorMode,
+) {
     use rayon::prelude::*;
     let r = s.content_bounds();
     if r.is_empty() {
@@ -79,7 +88,16 @@ pub fn adjust_mask(s: &mut Surface, adj: &Adjustment, selection: Option<&Surface
     }
     let fmt = s.format();
     let unit = Rect::from_xywh(0, 0, 1, 1);
-    let mut out = Surface::with_default(fmt, &adjusted(&Surface::with_default(fmt, &s.default_pixel()), unit, adj, None, mode));
+    let mut out = Surface::with_default(
+        fmt,
+        &adjusted(
+            &Surface::with_default(fmt, &s.default_pixel()),
+            unit,
+            adj,
+            None,
+            mode,
+        ),
+    );
     let r = s.tile_bounds();
     if !r.is_empty() {
         out.write_region(r, &adjusted(s, r, adj, None, mode));
@@ -89,26 +107,52 @@ pub fn adjust_mask(s: &mut Surface, adj: &Adjustment, selection: Option<&Surface
 }
 
 /// `s`'s pixels over `r` (untouched ones included) with `adj` applied through the selection, encoded.
-fn adjusted(s: &Surface, r: Rect, adj: &Adjustment, selection: Option<&Surface>, mode: photocraft_color::ColorMode) -> Vec<f32> {
+fn adjusted(
+    s: &Surface,
+    r: Rect,
+    adj: &Adjustment,
+    selection: Option<&Surface>,
+    mode: photocraft_color::ColorMode,
+) -> Vec<f32> {
     let fmt = s.format();
-    if fmt.mode == mode && matches!(mode, photocraft_color::ColorMode::Lab | photocraft_color::ColorMode::Cmyk) && adjust::stored_channel_adjustment(adj) {
+    if fmt.mode == mode
+        && matches!(
+            mode,
+            photocraft_color::ColorMode::Lab | photocraft_color::ColorMode::Cmyk
+        )
+        && adjust::stored_channel_adjustment(adj)
+    {
         return adjusted_channels(s, r, adj, selection);
     }
     let n = fmt.channels();
     let raw = s.read_region(r);
-    let mut buf = Buffer { rect: r, px: raw.chunks_exact(n).map(|p| to_rgba(&fmt, p)).collect() };
+    let mut buf = Buffer {
+        rect: r,
+        px: raw.chunks_exact(n).map(|p| to_rgba(&fmt, p)).collect(),
+    };
     let orig = buf.clone();
     // 32-bit documents get the float behaviour of an adjustment layer there (Levels doesn't clip);
     // integer depths keep the unrounded, clipped curves.
     let depth = (fmt.sample == photocraft_color::SampleType::F32).then_some(fmt.sample);
-    adjust::apply_in(adj, &mut buf, adjust::Transfer::for_document(mode, fmt.sample), depth, mode);
+    adjust::apply_in(
+        adj,
+        &mut buf,
+        adjust::Transfer::for_document(mode, fmt.sample),
+        depth,
+        mode,
+    );
     mix_through_selection(&fmt, r, &orig.px, &buf.px, selection)
 }
 
 /// [`adjusted`] for an adjustment Photoshop applies to a Lab or CMYK layer's own channels
 /// (`adjust::stored_channels`): exact on the stored values, with no trip through RGB, and mixed
 /// through the selection on those values (alpha untouched).
-fn adjusted_channels(s: &Surface, r: Rect, adj: &Adjustment, selection: Option<&Surface>) -> Vec<f32> {
+fn adjusted_channels(
+    s: &Surface,
+    r: Rect,
+    adj: &Adjustment,
+    selection: Option<&Surface>,
+) -> Vec<f32> {
     let fmt = s.format();
     let (n, colors) = (fmt.channels(), fmt.mode.color_channels());
     let mut raw = s.read_region(r);
@@ -124,9 +168,13 @@ fn adjusted_channels(s: &Surface, r: Rect, adj: &Adjustment, selection: Option<&
             }
             let p = to_rgba(&fmt, px);
             let gray = photocraft_color::convert::rgb_to_gray([p[0], p[1], p[2]]);
-            let Some(ch) = px.get_mut(..colors) else { continue };
+            let Some(ch) = px.get_mut(..colors) else {
+                continue;
+            };
             let mut out = [0.0f32; 4];
-            let Some(out) = out.get_mut(..colors) else { continue };
+            let Some(out) = out.get_mut(..colors) else {
+                continue;
+            };
             out.copy_from_slice(ch);
             adjust::stored_channels(adj, fmt.mode, Some(fmt.sample), out, gray);
             for (v, o) in ch.iter_mut().zip(out.iter()) {
@@ -168,16 +216,30 @@ pub(crate) fn mix_through_selection(
 /// Fill (respecting selection coverage) with a straight RGBA colour.
 /// Works tile by tile in parallel on the encoded pixels; a fully selected tile of an opaque fill
 /// that may set alpha becomes one shared solid tile.
-pub(crate) fn try_fill_surface(s: &mut Surface, area: Rect, color: [f32; 4], selection: Option<&Surface>, lock_transparency: bool) -> crate::Result<()> {
+pub(crate) fn try_fill_surface(
+    s: &mut Surface,
+    area: Rect,
+    color: [f32; 4],
+    selection: Option<&Surface>,
+    lock_transparency: bool,
+) -> crate::Result<()> {
     let fmt = s.format();
     // Coverage 1 of an opaque colour replaces the colour (and the alpha, unless it is kept).
-    let opaque = color[3] == 1.0 && (!lock_transparency || !fmt.alpha) && selection.is_none_or(|m| m.format().sample != photocraft_color::SampleType::F32);
+    let opaque = color[3] == 1.0
+        && (!lock_transparency || !fmt.alpha)
+        && selection.is_none_or(|m| m.format().sample != photocraft_color::SampleType::F32);
     let solid = opaque.then(|| {
         let mut enc = [0.0f32; 8];
-        let n = photocraft_raster::from_rgba_into(&fmt, [color[0], color[1], color[2], 1.0], &mut enc);
+        let n =
+            photocraft_raster::from_rgba_into(&fmt, [color[0], color[1], color[2], 1.0], &mut enc);
         s.solid_tile(enc.get(..n).unwrap_or(&[]))
     });
-    let whole = |full: bool| solid.as_ref().filter(|_| full).map(|t| TileEdit::Put(t.clone()));
+    let whole = |full: bool| {
+        solid
+            .as_ref()
+            .filter(|_| full)
+            .map(|t| TileEdit::Put(t.clone()))
+    };
     edit_tiles(s, area, selection, "filling pixels", whole, |k, px| {
         if k <= 0.0 {
             return false;
@@ -188,7 +250,13 @@ pub(crate) fn try_fill_surface(s: &mut Surface, area: Rect, color: [f32; 4], sel
 }
 
 /// One pixel of [`try_fill_surface`]: `color` over `px` (encoded) at coverage `k`.
-fn fill_pixel(fmt: &photocraft_color::PixelFormat, px: &mut [f32], color: [f32; 4], k: f32, lock_transparency: bool) {
+fn fill_pixel(
+    fmt: &photocraft_color::PixelFormat,
+    px: &mut [f32],
+    color: [f32; 4],
+    k: f32,
+    lock_transparency: bool,
+) {
     let d = to_rgba(fmt, px);
     let sa = color[3] * k;
     let oa = sa + d[3] * (1.0 - sa);
@@ -210,7 +278,11 @@ fn fill_pixel(fmt: &photocraft_color::PixelFormat, px: &mut [f32], color: [f32; 
 /// Clear pixels (make transparent) within the selection.
 /// Works tile by tile in parallel on the encoded pixels; a fully selected tile is dropped (it
 /// would only hold empty pixels), and tiles the selection leaves alone stay shared with history.
-pub(crate) fn try_clear_surface(s: &mut Surface, area: Rect, selection: Option<&Surface>) -> crate::Result<()> {
+pub(crate) fn try_clear_surface(
+    s: &mut Surface,
+    area: Rect,
+    selection: Option<&Surface>,
+) -> crate::Result<()> {
     let fmt = s.format();
     let n = fmt.channels();
     if !fmt.alpha {
@@ -220,7 +292,9 @@ pub(crate) fn try_clear_surface(s: &mut Surface, area: Rect, selection: Option<&
     let empty_default = s.default_bytes().iter().all(|&b| b == 0);
     let whole = |full: bool| (full && empty_default).then_some(TileEdit::Drop);
     edit_tiles(s, area, selection, "erasing pixels", whole, |k, px| {
-        let Some(a) = px.get_mut(n - 1) else { return false };
+        let Some(a) = px.get_mut(n - 1) else {
+            return false;
+        };
         *a *= 1.0 - k;
         // Fully cleared pixels become the empty pixel, so bounds and tile pruning see them as gone.
         if *a <= 0.0 {
@@ -259,53 +333,71 @@ fn edit_tiles(
     use std::sync::Arc;
     let fmt = s.format();
     let (n, bpp) = (fmt.channels(), fmt.bytes_per_pixel());
-    let oom = |e| crate::EngineError::Other(format!("not enough memory while {purpose} ({e}); the document was not changed"));
+    let oom = |e| {
+        crate::EngineError::Other(format!(
+            "not enough memory while {purpose} ({e}); the document was not changed"
+        ))
+    };
     let mut coords = crate::allocation::capacity(area.tiles().count(), purpose)?;
     coords.extend(area.tiles());
     // Untouched pixels read as the default where the surface has no tile.
-    let blank = if coords.iter().any(|&tc| s.tile(tc).is_none()) { Some(s.try_default_tile().map_err(oom)?) } else { None };
+    let blank = if coords.iter().any(|&tc| s.tile(tc).is_none()) {
+        Some(s.try_default_tile().map_err(oom)?)
+    } else {
+        None
+    };
     let surf = &*s;
     let edits = coords
         .into_par_iter()
-        .map(|tc| -> crate::Result<Option<(photocraft_geom::TileCoord, Option<Arc<Tile>>)>> {
-            let tr = tc.rect().intersect(&area);
-            let mask = selection.map(|m| crate::fill_cmds::Mask::of(m, tc));
-            let full = tr == tc.rect() && mask.as_ref().is_none_or(|m| m.full(tr));
-            let current = surf.tile(tc);
-            match whole(full) {
-                Some(TileEdit::Put(t)) => return Ok(Some((tc, Some(t)))),
-                Some(TileEdit::Drop) => return Ok(current.map(|_| (tc, None))),
-                None => {}
-            }
-            let Some(src) = current.map(|t| &**t).or(blank.as_ref()) else { return Ok(None) };
-            let mut out: Option<Tile> = None;
-            let (mut px, mut enc) = ([0.0f32; 8], [0u8; 32]);
-            let (Some(px), Some(enc)) = (px.get_mut(..n), enc.get_mut(..bpp)) else { return Ok(None) };
-            for y in tr.y0..tr.y1 {
-                let row = (y - tc.ty * TILE_SIZE) as usize * TILE_SIZE as usize;
-                for x in tr.x0..tr.x1 {
-                    let i = (row + (x - tc.tx * TILE_SIZE) as usize) * bpp;
-                    let Some(old) = src.bytes().get(i..i + bpp) else { continue };
-                    for (c, v) in px.iter_mut().enumerate() {
-                        *v = photocraft_color::read_sample(old, fmt.sample, c);
-                    }
-                    if !pixel(mask.as_ref().map_or(1.0, |m| m.at(x, y)), px) {
-                        continue;
-                    }
-                    photocraft_raster::encode_pixel(&fmt, px, enc);
-                    if enc == old {
-                        continue;
-                    }
-                    if out.is_none() {
-                        out = Some(src.try_clone().map_err(oom)?);
-                    }
-                    if let Some(dst) = out.as_mut().and_then(|t| t.bytes_mut().get_mut(i..i + bpp)) {
-                        dst.copy_from_slice(enc);
+        .map(
+            |tc| -> crate::Result<Option<(photocraft_geom::TileCoord, Option<Arc<Tile>>)>> {
+                let tr = tc.rect().intersect(&area);
+                let mask = selection.map(|m| crate::fill_cmds::Mask::of(m, tc));
+                let full = tr == tc.rect() && mask.as_ref().is_none_or(|m| m.full(tr));
+                let current = surf.tile(tc);
+                match whole(full) {
+                    Some(TileEdit::Put(t)) => return Ok(Some((tc, Some(t)))),
+                    Some(TileEdit::Drop) => return Ok(current.map(|_| (tc, None))),
+                    None => {}
+                }
+                let Some(src) = current.map(|t| &**t).or(blank.as_ref()) else {
+                    return Ok(None);
+                };
+                let mut out: Option<Tile> = None;
+                let (mut px, mut enc) = ([0.0f32; 8], [0u8; 32]);
+                let (Some(px), Some(enc)) = (px.get_mut(..n), enc.get_mut(..bpp)) else {
+                    return Ok(None);
+                };
+                for y in tr.y0..tr.y1 {
+                    let row = (y - tc.ty * TILE_SIZE) as usize * TILE_SIZE as usize;
+                    for x in tr.x0..tr.x1 {
+                        let i = (row + (x - tc.tx * TILE_SIZE) as usize) * bpp;
+                        let Some(old) = src.bytes().get(i..i + bpp) else {
+                            continue;
+                        };
+                        for (c, v) in px.iter_mut().enumerate() {
+                            *v = photocraft_color::read_sample(old, fmt.sample, c);
+                        }
+                        if !pixel(mask.as_ref().map_or(1.0, |m| m.at(x, y)), px) {
+                            continue;
+                        }
+                        photocraft_raster::encode_pixel(&fmt, px, enc);
+                        if enc == old {
+                            continue;
+                        }
+                        if out.is_none() {
+                            out = Some(src.try_clone().map_err(oom)?);
+                        }
+                        if let Some(dst) =
+                            out.as_mut().and_then(|t| t.bytes_mut().get_mut(i..i + bpp))
+                        {
+                            dst.copy_from_slice(enc);
+                        }
                     }
                 }
-            }
-            Ok(out.map(|t| (tc, Some(Arc::new(t)))))
-        })
+                Ok(out.map(|t| (tc, Some(Arc::new(t)))))
+            },
+        )
         .collect::<crate::Result<Vec<_>>>()?;
     for (tc, tile) in edits.into_iter().flatten() {
         match tile {

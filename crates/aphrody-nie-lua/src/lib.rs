@@ -129,7 +129,11 @@ pub fn crc32(data: &[u8]) -> u32 {
     for &byte in data {
         crc ^= u32::from(byte);
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
         }
     }
     !crc
@@ -164,7 +168,11 @@ pub fn load_bytecode(lua: &mlua::Lua, data: &[u8], name: &str) -> Result<mlua::F
     // Valider avec le décodeur partagé avant le chargement VM : le runtime live et `lua-audit`
     // doivent parler du même chunk, y compris pour les includes imbriqués.
     validate_bytecode(data)?;
-    let func = lua.load(data).set_name(name).set_mode(mlua::ChunkMode::Binary).into_function()?;
+    let func = lua
+        .load(data)
+        .set_name(name)
+        .set_mode(mlua::ChunkMode::Binary)
+        .into_function()?;
     Ok(func)
 }
 
@@ -211,18 +219,22 @@ where
                         *trace.borrow_mut().entry(name.clone()).or_default() +=
                             chunk.main.total_instructions();
                     }
-                },
+                }
                 Err(error) => {
                     return Err(mlua::Error::RuntimeError(format!(
                         "décodage de l'include {name} : {error}"
                     )));
-                },
+                }
             }
             mlua::ChunkMode::Binary
         } else {
             mlua::ChunkMode::Text
         };
-        let func = lua.load(&bytes).set_name(format!("@{name}")).set_mode(mode).into_function()?;
+        let func = lua
+            .load(&bytes)
+            .set_name(format!("@{name}"))
+            .set_mode(mode)
+            .into_function()?;
         func.call::<mlua::MultiValue>(())
     })?;
     lua.globals().set("INCLUDE", f)?;
@@ -289,10 +301,16 @@ fn script_version_key(path: &str) -> Vec<u64> {
     let Some((_, tail)) = without_ext.rsplit_once('_') else {
         return Vec::new();
     };
-    if tail.is_empty() || !tail.bytes().all(|byte| byte.is_ascii_digit() || byte == b'.') {
+    if tail.is_empty()
+        || !tail
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || byte == b'.')
+    {
         return Vec::new();
     }
-    tail.split('.').map(|part| part.parse::<u64>().unwrap_or(0)).collect()
+    tail.split('.')
+        .map(|part| part.parse::<u64>().unwrap_or(0))
+        .collect()
 }
 
 #[cfg(feature = "vm")]
@@ -304,7 +322,10 @@ fn script_version_key(path: &str) -> Vec<u64> {
 #[cfg(feature = "vm")]
 pub fn index_script_paths<'a, I>(
     paths: I,
-) -> (std::collections::HashMap<String, String>, std::collections::HashMap<String, String>)
+) -> (
+    std::collections::HashMap<String, String>,
+    std::collections::HashMap<String, String>,
+)
 where
     I: IntoIterator<Item = &'a str>,
 {
@@ -318,8 +339,12 @@ where
         let Some(base) = path.rsplit('/').next().filter(|b| b.ends_with(".lua.bin")) else {
             continue;
         };
-        by_name.entry(path.to_ascii_lowercase()).or_insert_with(|| path.clone());
-        by_name.entry(base.to_ascii_lowercase()).or_insert_with(|| path.clone());
+        by_name
+            .entry(path.to_ascii_lowercase())
+            .or_insert_with(|| path.clone());
+        by_name
+            .entry(base.to_ascii_lowercase())
+            .or_insert_with(|| path.clone());
         by_logical
             .entry(script_logical_base(base))
             // Comparaison numérique : l'ordre ASCII (`10` < `9`) ne doit jamais choisir une
@@ -410,7 +435,10 @@ mod tests {
         let v: i64 = lua.load("local a=2 return a*21").eval().expect("eval");
         assert_eq!(v, 42);
         // bit32 = bibliothèque spécifique à Lua 5.2 (absente en 5.1/5.3) → confirme la version.
-        let b: i64 = lua.load("return bit32.band(0xF0, 0x3C)").eval().expect("bit32");
+        let b: i64 = lua
+            .load("return bit32.band(0xF0, 0x3C)")
+            .eval()
+            .expect("bit32");
         assert_eq!(b, 0x30);
     }
 
@@ -428,7 +456,10 @@ mod tests {
     fn include_logical_base_strips_lua_prefix() {
         assert_eq!(include_logical_base("LUA_MAIN_MENU_INC"), "main_menu_inc");
         assert_eq!(include_logical_base("LUA_PROG_BASE"), "prog_base");
-        assert_eq!(include_logical_base("LUA_SOCCER_TOP_MENU_INC"), "soccer_top_menu_inc");
+        assert_eq!(
+            include_logical_base("LUA_SOCCER_TOP_MENU_INC"),
+            "soccer_top_menu_inc"
+        );
         // Sans préfixe : simple minuscule.
         assert_eq!(include_logical_base("menu_def"), "menu_def");
     }
@@ -436,22 +467,37 @@ mod tests {
     /// La base logique d'un basename retire l'extension `.lua.bin` et le suffixe de version.
     #[test]
     fn script_logical_base_strips_version_suffix() {
-        assert_eq!(script_logical_base("main_menu_inc_3.00.01.00.lua.bin"), "main_menu_inc");
-        assert_eq!(script_logical_base("prog_base_0.00.00.00.lua.bin"), "prog_base");
+        assert_eq!(
+            script_logical_base("main_menu_inc_3.00.01.00.lua.bin"),
+            "main_menu_inc"
+        );
+        assert_eq!(
+            script_logical_base("prog_base_0.00.00.00.lua.bin"),
+            "prog_base"
+        );
         assert_eq!(
             script_logical_base("soccer_top_menu_inc_1.04.19.01.lua.bin"),
             "soccer_top_menu_inc"
         );
         // Sans suffixe de version : inchangé.
-        assert_eq!(script_logical_base("equip_medalset_inc.lua.bin"), "equip_medalset_inc");
+        assert_eq!(
+            script_logical_base("equip_medalset_inc.lua.bin"),
+            "equip_medalset_inc"
+        );
         // Boucle d'INCLUDE résout le logique du moteur vers le fichier réel.
         assert_eq!(
             script_logical_base("main_menu_inc_3.00.01.00.lua.bin"),
             include_logical_base("LUA_MAIN_MENU_INC")
         );
         // Écrans avec numéro de version dans le nom d'écran (ex. title_menu_2).
-        assert_eq!(script_logical_base("title_menu_2_7.01.12.00.lua.bin"), "title_menu_2");
-        assert_eq!(script_logical_base("title_menu_0.06.41.lua.bin"), "title_menu");
+        assert_eq!(
+            script_logical_base("title_menu_2_7.01.12.00.lua.bin"),
+            "title_menu_2"
+        );
+        assert_eq!(
+            script_logical_base("title_menu_0.06.41.lua.bin"),
+            "title_menu"
+        );
     }
 
     #[test]
@@ -479,7 +525,10 @@ mod tests {
             Some(&expected_title_2)
         );
         let expected_title = paths[3].to_string();
-        assert_eq!(resolve_script_path("title_menu", &by_name, &by_logical), Some(&expected_title));
+        assert_eq!(
+            resolve_script_path("title_menu", &by_name, &by_logical),
+            Some(&expected_title)
+        );
         assert_eq!(
             resolve_script_path(
                 "common/script/lua/menu/main_menu_inc_3.00.01.00.lua.bin",
@@ -504,14 +553,20 @@ mod tests {
             by_logical.get("foo").map(String::as_str),
             Some("data/lua/foo_10.00.00.lua.bin")
         );
-        assert_eq!(by_logical.get("bar").map(String::as_str), Some("data/lua/bar_1.10.lua.bin"));
+        assert_eq!(
+            by_logical.get("bar").map(String::as_str),
+            Some("data/lua/bar_1.10.lua.bin")
+        );
     }
 
     #[test]
     fn le_chargement_live_valide_le_chunk_et_ses_includes() {
         let lua = new_vm();
         let malformed = vec![0x1B, b'L', b'u', b'a', 0x52, 0x00];
-        assert!(matches!(load_bytecode(&lua, &malformed, "principal"), Err(LuaError::Decode(_))));
+        assert!(matches!(
+            load_bytecode(&lua, &malformed, "principal"),
+            Err(LuaError::Decode(_))
+        ));
 
         install_include(&lua, move |name| (name == "BAD").then(|| malformed.clone()))
             .expect("install include");
@@ -527,7 +582,9 @@ mod tests {
     /// exécuter la logique réelle du jeu. Gated sur l'install Steam.
     #[test]
     fn loads_real_game_lua_bytecode() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip loads_real_game_lua_bytecode : jeu absent");
@@ -538,7 +595,10 @@ mod tests {
             eprintln!("skip : vfs.init KO");
             return;
         }
-        let Some(path) = vfs.iter().map(|(p, _)| p.to_string()).find(|p| p.ends_with(".lua.bin"))
+        let Some(path) = vfs
+            .iter()
+            .map(|(p, _)| p.to_string())
+            .find(|p| p.ends_with(".lua.bin"))
         else {
             eprintln!("skip : aucun .lua.bin");
             return;
@@ -565,7 +625,9 @@ mod tests {
     /// (fonctions du moteur C++ que les scripts appellent) à implémenter pour les faire tourner.
     #[test]
     fn discover_host_api_of_real_menus() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip discover_host_api_of_real_menus : jeu absent");
@@ -594,7 +656,7 @@ mod tests {
                 Ok(names) => {
                     eprintln!("\n{path}\n  → {} globals hôtes : {:?}", names.len(), names);
                     union.extend(names);
-                },
+                }
                 Err(e) => eprintln!("{path} : {e}"),
             }
         }
@@ -604,7 +666,10 @@ mod tests {
             union.len(),
             union
         );
-        assert!(!union.is_empty(), "les scripts doivent référencer des fonctions hôtes");
+        assert!(
+            !union.is_empty(),
+            "les scripts doivent référencer des fonctions hôtes"
+        );
     }
 
     /// **Milestone moteur** : exécute la vraie logique Lua de menus avec le host complet
@@ -622,7 +687,9 @@ mod tests {
         use crate::menu_host::{install_menu_host, run_menu};
         use std::rc::Rc;
 
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip run_menu_with_menu_host : jeu absent");
@@ -654,7 +721,10 @@ mod tests {
             return;
         }
 
-        eprintln!("\n=== run_menu_with_menu_host : {} scripts ===\n", scripts.len());
+        eprintln!(
+            "\n=== run_menu_with_menu_host : {} scripts ===\n",
+            scripts.len()
+        );
 
         let mut found_populated = false;
         let mut total_unknown_cmds: std::collections::BTreeMap<u32, usize> =
@@ -684,7 +754,7 @@ mod tests {
                 Err(e) => {
                     eprintln!("{path}: install_menu_host KO: {e}");
                     continue;
-                },
+                }
             };
 
             // Détermine un layerId plausible : on essaie 0 (iecode utilise general_win
@@ -719,7 +789,10 @@ mod tests {
             }
             if n_layers > 0 || n_objects > 0 {
                 found_populated = true;
-                eprintln!("  *** PEUPLÉ *** layers: {:?}", st.layers.keys().collect::<Vec<_>>());
+                eprintln!(
+                    "  *** PEUPLÉ *** layers: {:?}",
+                    st.layers.keys().collect::<Vec<_>>()
+                );
                 for (lid, layer) in &st.layers {
                     eprintln!(
                         "    layer 0x{lid:08X}: visible={} enabled={} focus={:?} objects={}",
@@ -809,7 +882,10 @@ mod tests {
                 "loading_menu_trial doit créer ≥1 layer dans le MenuState"
             );
             let total_objects: usize = st.layers.values().map(|l| l.objects.len()).sum();
-            assert!(total_objects > 0, "loading_menu_trial doit créer ≥1 objet dans le MenuState");
+            assert!(
+                total_objects > 0,
+                "loading_menu_trial doit créer ≥1 objet dans le MenuState"
+            );
             assert!(
                 !st.known_cmd_log.is_empty(),
                 "loading_menu_trial doit avoir appelé ≥1 commande hôte connue"
@@ -845,11 +921,16 @@ mod tests {
             LAYER_GROUPE
         );
 
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
         if vfs.init(&data_dir).is_err() {
-            eprintln!("skip golden_scenario_savedata : jeu absent à {}", data_dir.display());
+            eprintln!(
+                "skip golden_scenario_savedata : jeu absent à {}",
+                data_dir.display()
+            );
             return;
         }
 
@@ -870,7 +951,9 @@ mod tests {
             if let Some(b) = p.rsplit('/').next()
                 && b.ends_with(".lua.bin")
             {
-                by_base.entry(b.to_ascii_lowercase()).or_insert_with(|| p.to_string());
+                by_base
+                    .entry(b.to_ascii_lowercase())
+                    .or_insert_with(|| p.to_string());
             }
         }
         let vfs = Rc::new(vfs);
@@ -914,7 +997,9 @@ mod tests {
         // Les deux commandes que le C# attendait de ce scénario sont bien émises — l'une nommée
         // (reversée), l'autre par son id (pas encore reversée).
         assert!(
-            st.known_cmd_log.iter().any(|(n, _)| n == "SetObjectVisible"),
+            st.known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "SetObjectVisible"),
             "0x{CMD_SET_OBJECT_VISIBLE:08X} SetObjectVisible doit être émis par ce scénario"
         );
         assert!(
@@ -935,7 +1020,9 @@ mod tests {
     fn run_menu_with_real_include() {
         use std::cell::RefCell;
         use std::rc::Rc;
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip run_menu_with_real_include : jeu absent");
@@ -969,7 +1056,9 @@ mod tests {
             install_include(&lua, move |name| {
                 let found = resolve_script_path(name, &by_name, &by_logical)
                     .and_then(|path| vfs.read(path).ok());
-                requested.borrow_mut().push((name.to_string(), found.is_some()));
+                requested
+                    .borrow_mut()
+                    .push((name.to_string(), found.is_some()));
                 found
             })
             .expect("install INCLUDE");
@@ -987,14 +1076,20 @@ mod tests {
         let run = func.call::<()>(());
         eprintln!("\nscript={top}\n exécution : {run:?}");
         // Jalon : le bytecode RÉEL du jeu s'EXÉCUTE dans la VM (au-delà du simple chargement).
-        assert!(run.is_ok(), "le script du jeu doit s'exécuter sans erreur VM : {run:?}");
+        assert!(
+            run.is_ok(),
+            "le script du jeu doit s'exécuter sans erreur VM : {run:?}"
+        );
         eprintln!(" includes demandés :");
         for (n, ok) in requested.borrow().iter() {
             eprintln!("   - {n}  [{}]", if *ok { "résolu" } else { "INTROUVABLE" });
         }
         let seen: mlua::Table = lua.globals().get("_HOST_SEEN").unwrap();
-        let mut deeper: Vec<String> =
-            seen.pairs::<String, i64>().filter_map(Result::ok).map(|(k, _)| k).collect();
+        let mut deeper: Vec<String> = seen
+            .pairs::<String, i64>()
+            .filter_map(Result::ok)
+            .map(|(k, _)| k)
+            .collect();
         deeper.sort();
         eprintln!(" API hôte profonde ({}) : {:?}", deeper.len(), deeper);
     }

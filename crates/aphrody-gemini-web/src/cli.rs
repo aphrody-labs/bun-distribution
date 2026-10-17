@@ -13,7 +13,7 @@ use std::{
 };
 
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::{GeminiModel, GeminiWebClient};
 
@@ -38,7 +38,7 @@ async fn answer(request: Request) -> Value {
         Ok(client) => client,
         Err(error) => {
             return json!({"error": format!("Failed to execute Gemini request: {error}")});
-        },
+        }
     };
     let header = model_header(request.model);
     match client.ask(&request.prompt, header.as_deref()).await {
@@ -55,7 +55,10 @@ async fn answer(request: Request) -> Value {
 /// Read one request from stdin, answer it, write one JSON line to stdout.
 async fn run() {
     let mut input = Vec::new();
-    let response = match std::io::stdin().take(1024 * 1024 + 1).read_to_end(&mut input) {
+    let response = match std::io::stdin()
+        .take(1024 * 1024 + 1)
+        .read_to_end(&mut input)
+    {
         Ok(_) if input.len() <= 1024 * 1024 => match serde_json::from_slice::<Request>(&input) {
             Ok(request) => answer(request).await,
             Err(_) => json!({"error": "invalid Gemini request JSON"}),
@@ -71,12 +74,15 @@ async fn run() {
 /// code. The arguments are ignored: the request comes from stdin.
 #[must_use]
 pub fn cli_main(_args: Vec<OsString>) -> i32 {
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-gemini-web: runtime: {error}");
             return 1;
-        },
+        }
     };
     runtime.block_on(run());
     0
@@ -89,7 +95,10 @@ mod tests {
 
     #[test]
     fn expands_known_model_and_preserves_custom_header() {
-        assert_eq!(model_header(Some("flash".into())), Some(GeminiModel::Flash.header()));
+        assert_eq!(
+            model_header(Some("flash".into())),
+            Some(GeminiModel::Flash.header())
+        );
         assert_eq!(model_header(Some("custom".into())), Some("custom".into()));
         assert_eq!(model_header(None), None);
     }

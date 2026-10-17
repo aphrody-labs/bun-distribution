@@ -3,7 +3,9 @@ use serde_json::json;
 
 fn session() -> Session {
     let mut session = Session::new();
-    session.execute("file.new", json!({"width": 32, "height": 24})).unwrap();
+    session
+        .execute("file.new", json!({"width": 32, "height": 24}))
+        .unwrap();
     session
 }
 
@@ -21,7 +23,10 @@ fn subtract_and_intersect_never_create_a_selection_from_none() {
                     }),
                 )
                 .unwrap();
-            assert!(session.active().unwrap().doc.selection.is_none(), "mode={mode}, feather={feather}");
+            assert!(
+                session.active().unwrap().doc.selection.is_none(),
+                "mode={mode}, feather={feather}"
+            );
         }
     }
 }
@@ -46,7 +51,12 @@ fn replace_and_add_still_create_selections_from_none() {
 #[test]
 fn intersect_with_an_existing_selection_keeps_the_overlap() {
     let mut session = session();
-    session.execute("select.rect", json!({"x": 4, "y": 5, "width": 12, "height": 10})).unwrap();
+    session
+        .execute(
+            "select.rect",
+            json!({"x": 4, "y": 5, "width": 12, "height": 10}),
+        )
+        .unwrap();
     session
         .execute(
             "select.rect",
@@ -68,7 +78,12 @@ fn intersect_with_an_existing_selection_keeps_the_overlap() {
 fn subtracting_from_an_existing_selection_preserves_other_pixels_and_history() {
     for feather in [0.0, 2.0] {
         let mut session = session();
-        session.execute("select.rect", json!({"x": 4, "y": 5, "width": 12, "height": 10})).unwrap();
+        session
+            .execute(
+                "select.rect",
+                json!({"x": 4, "y": 5, "width": 12, "height": 10}),
+            )
+            .unwrap();
         session
             .execute(
                 "select.rect",
@@ -79,7 +94,14 @@ fn subtracting_from_an_existing_selection_preserves_other_pixels_and_history() {
             .unwrap();
         let coverage = |session: &Session, x, y| {
             let mut pixel = [0.0];
-            session.active().unwrap().doc.selection.as_ref().unwrap().read_pixel(x, y, &mut pixel);
+            session
+                .active()
+                .unwrap()
+                .doc
+                .selection
+                .as_ref()
+                .unwrap()
+                .read_pixel(x, y, &mut pixel);
             pixel[0]
         };
         let remaining = coverage(&session, 4, 5);

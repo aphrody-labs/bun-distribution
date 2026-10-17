@@ -20,6 +20,10 @@ impl WiFi {
         bb_regs[0x5D] = 0x01;
         bb_regs[0x64] = 0xFF; // ???
 
-        WiFi { mmio, ram: zeroed_box(), bb_regs }
+        WiFi {
+            mmio,
+            ram: zeroed_box(),
+            bb_regs,
+        }
     }
 }

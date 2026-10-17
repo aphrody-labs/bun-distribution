@@ -44,8 +44,14 @@ fn text_case(q: &str, expect: &[&str]) -> GoldCase {
 
 #[test]
 fn normalize_url_strips_origin_and_trailing_slash() {
-    assert_eq!(normalize_url("https://www.dragonballfr.com/wiki/Freezer/"), "/wiki/freezer");
-    assert_eq!(normalize_url("https://dragonballfr.com/wiki/Freezer"), "/wiki/freezer");
+    assert_eq!(
+        normalize_url("https://www.dragonballfr.com/wiki/Freezer/"),
+        "/wiki/freezer"
+    );
+    assert_eq!(
+        normalize_url("https://dragonballfr.com/wiki/Freezer"),
+        "/wiki/freezer"
+    );
     assert_eq!(normalize_url("/wiki/Freezer"), "/wiki/freezer");
 }
 
@@ -59,11 +65,20 @@ fn normalize_url_keeps_slash_before_query_or_hash() {
 
 #[test]
 fn matches_expected_url_boundary_rejects_prefix_collision() {
-    assert!(!matches_expected_url("/wiki/freezer-futur", "/wiki/freezer"));
+    assert!(!matches_expected_url(
+        "/wiki/freezer-futur",
+        "/wiki/freezer"
+    ));
     assert!(matches_expected_url("/wiki/freezer", "/wiki/freezer"));
-    assert!(matches_expected_url("/wiki/freezer/forme-finale", "/wiki/freezer"));
+    assert!(matches_expected_url(
+        "/wiki/freezer/forme-finale",
+        "/wiki/freezer"
+    ));
     assert!(matches_expected_url("/wiki/freezer#bio", "/wiki/freezer"));
-    assert!(matches_expected_url("/wiki/freezer?tab=bio", "/wiki/freezer"));
+    assert!(matches_expected_url(
+        "/wiki/freezer?tab=bio",
+        "/wiki/freezer"
+    ));
 }
 
 #[test]
@@ -85,7 +100,11 @@ fn is_hit_url_case_ignores_expect_field() {
 #[test]
 fn is_hit_falls_back_to_text_when_no_url_case() {
     let c = text_case("what is a zeni", &["zeni"]);
-    let h = hit("Currency", "/wiki/monnaie", "The zeni is the currency of Earth.");
+    let h = hit(
+        "Currency",
+        "/wiki/monnaie",
+        "The zeni is the currency of Earth.",
+    );
     assert!(is_hit(&h, &c));
     let miss = hit("Unrelated", "/wiki/x", "nothing here");
     assert!(!is_hit(&miss, &c));
@@ -107,14 +126,20 @@ fn is_hit_expect_title_matches_case_insensitively() {
 #[test]
 fn first_hit_rank_zero_when_absent() {
     let c = url_case("q", &["/wiki/freezer"]);
-    let results = vec![hit("Goku", "/wiki/goku", ""), hit("Vegeta", "/wiki/vegeta", "")];
+    let results = vec![
+        hit("Goku", "/wiki/goku", ""),
+        hit("Vegeta", "/wiki/vegeta", ""),
+    ];
     assert_eq!(first_hit_rank(&results, &c), 0);
 }
 
 #[test]
 fn first_hit_rank_is_one_based() {
     let c = url_case("q", &["/wiki/freezer"]);
-    let results = vec![hit("Goku", "/wiki/goku", ""), hit("Freezer", "/wiki/freezer", "")];
+    let results = vec![
+        hit("Goku", "/wiki/goku", ""),
+        hit("Freezer", "/wiki/freezer", ""),
+    ];
     assert_eq!(first_hit_rank(&results, &c), 2);
 }
 
@@ -142,8 +167,10 @@ fn ndcg_two_hits_not_at_top_is_less_than_one() {
     // hits found are already optimally placed among themselves (see the doc
     // comment on `ndcg_at_k`), not that a single earlier hit would be better.
     let c = url_case("q", &["/wiki/freezer", "/wiki/freezer-hell"]);
-    let results =
-        vec![hit("Freezer", "/wiki/freezer", ""), hit("Freezer Hell", "/wiki/freezer-hell", "")];
+    let results = vec![
+        hit("Freezer", "/wiki/freezer", ""),
+        hit("Freezer Hell", "/wiki/freezer-hell", ""),
+    ];
     assert!((ndcg_at_k(&results, &c, 10) - 1.0).abs() < 1e-9);
 }
 
@@ -152,7 +179,10 @@ fn ndcg_hit_at_rank_two_only_is_less_than_one() {
     // Only rank 2 is a hit: dcg = 1/log2(3) ≈ 0.6309; idcg (hits=1) = 1/log2(2) = 1.
     // ndcg = 0.6309/1 ≈ 0.6309.
     let c = url_case("q", &["/wiki/freezer"]);
-    let results = vec![hit("Goku", "/wiki/goku", ""), hit("Freezer", "/wiki/freezer", "")];
+    let results = vec![
+        hit("Goku", "/wiki/goku", ""),
+        hit("Freezer", "/wiki/freezer", ""),
+    ];
     let n = ndcg_at_k(&results, &c, 10);
     let expected = (1.0 / (3.0_f64).log2()) / 1.0;
     assert!((n - expected).abs() < 1e-9, "{n} vs {expected}");
@@ -199,7 +229,11 @@ fn aggregate_by_tag_groups_untagged_cases() {
     a.rank = 1;
     a.ndcg = 1.0;
     let mut b = run_case(
-        GoldCase { q: "b".to_string(), expect_url: vec!["/b".to_string()], ..Default::default() },
+        GoldCase {
+            q: "b".to_string(),
+            expect_url: vec!["/b".to_string()],
+            ..Default::default()
+        },
         &[],
         "lexical",
         0,
@@ -309,7 +343,11 @@ fn gold_file_parses_when_present() {
     }
     let text = std::fs::read_to_string(path).expect("read shenron gold file");
     let cases = parse_gold(&text);
-    assert_eq!(cases.len(), 172, "shenron's gold file was 172 cases as read on 2026-09-19");
+    assert_eq!(
+        cases.len(),
+        172,
+        "shenron's gold file was 172 cases as read on 2026-09-19"
+    );
 }
 
 // --- RetrievedHit round-trips shenron's real production hit shape ----------

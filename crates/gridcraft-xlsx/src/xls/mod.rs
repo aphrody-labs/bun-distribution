@@ -17,7 +17,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use gridcraft_core::{CellRef, DateSystem, MAX_COLS, MAX_ROWS, RangeRef, Value};
-use gridcraft_model::{CalcMode, CalcSettings, Cell, DefinedName, Formula, LineInfo, NumFmt, Sheet, Style, StyleId, Visibility, Workbook};
+use gridcraft_model::{
+    CalcMode, CalcSettings, Cell, DefinedName, Formula, LineInfo, NumFmt, Sheet, Style, StyleId,
+    Visibility, Workbook,
+};
 
 use crate::cfb::Compound;
 use crate::tables::{builtin_format, col_width_to_px, pt_to_px};
@@ -46,13 +49,14 @@ pub(crate) fn invalid(msg: impl Into<String>) -> IoError {
 }
 
 /// The message for an encrypted workbook (a FilePass record).
-const ENCRYPTED: &str =
-    "this .xls workbook is password-protected (encrypted). GridCraft can't open encrypted .xls files; remove the password in Excel and try again.";
+const ENCRYPTED: &str = "this .xls workbook is password-protected (encrypted). GridCraft can't open encrypted .xls files; remove the password in Excel and try again.";
 
 /// Whether the bytes are a compound file holding an Excel workbook stream (BIFF8 `Workbook`
 /// or BIFF5 `Book`).
 pub(crate) fn is_xls(bytes: &[u8]) -> bool {
-    let Ok(cf) = Compound::open(bytes) else { return false };
+    let Ok(cf) = Compound::open(bytes) else {
+        return false;
+    };
     cf.has_root_stream("Workbook") || cf.has_root_stream("Book")
 }
 
@@ -65,7 +69,12 @@ pub(crate) struct Budget {
 
 impl Default for Budget {
     fn default() -> Self {
-        Budget { cells: 0, text: 0, records: 0, max_records: MAX_RECORDS }
+        Budget {
+            cells: 0,
+            text: 0,
+            records: 0,
+            max_records: MAX_RECORDS,
+        }
     }
 }
 
@@ -73,7 +82,10 @@ impl Budget {
     /// A budget with a smaller record allowance (tests).
     #[cfg(test)]
     pub(crate) fn with_max_records(max_records: usize) -> Self {
-        Budget { max_records, ..Budget::default() }
+        Budget {
+            max_records,
+            ..Budget::default()
+        }
     }
     fn record(&mut self) -> Result<(), IoError> {
         self.records = self.records.saturating_add(1);
@@ -133,15 +145,22 @@ pub fn read_xls(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
 }
 
 /// [`read_xls`] with an explicit resource budget.
-pub(crate) fn read_xls_with(bytes: &[u8], mut budget: Budget) -> Result<(Workbook, ReadReport), IoError> {
+pub(crate) fn read_xls_with(
+    bytes: &[u8],
+    mut budget: Budget,
+) -> Result<(Workbook, ReadReport), IoError> {
     let cf = Compound::open(bytes).map_err(invalid)?;
     let stream = match cf.root_stream("Workbook").map_err(invalid)? {
         Some(s) => s,
         None => {
             if cf.has_root_stream("Book") {
-                return Err(invalid("Excel 5.0/95 workbooks (BIFF5) are not supported; save the file as .xlsx in Excel and try again."));
+                return Err(invalid(
+                    "Excel 5.0/95 workbooks (BIFF5) are not supported; save the file as .xlsx in Excel and try again.",
+                ));
             }
-            return Err(invalid("the file has no Workbook stream, so it is not an Excel workbook"));
+            return Err(invalid(
+                "the file has no Workbook stream, so it is not an Excel workbook",
+            ));
         }
     };
     let mut report = ReadReport::default();
@@ -149,17 +168,29 @@ pub(crate) fn read_xls_with(bytes: &[u8], mut budget: Budget) -> Result<(Workboo
 
     let mut wb = Workbook::new();
     wb.sheets.clear();
-    wb.date_system = if g.date1904 { DateSystem::D1904 } else { DateSystem::D1900 };
+    wb.date_system = if g.date1904 {
+        DateSystem::D1904
+    } else {
+        DateSystem::D1900
+    };
     // One model style per XF: only the number format is imported.
     let styles: Vec<StyleId> = g
         .xf_formats
         .iter()
         .map(|ifmt| {
-            let code = g.formats.get(ifmt).map(String::as_str).or_else(|| builtin_format(u32::from(*ifmt))).unwrap_or("General");
+            let code = g
+                .formats
+                .get(ifmt)
+                .map(String::as_str)
+                .or_else(|| builtin_format(u32::from(*ifmt)))
+                .unwrap_or("General");
             if code.eq_ignore_ascii_case("General") {
                 StyleId::DEFAULT
             } else {
-                wb.styles.intern(Style { num_fmt: NumFmt::new(code), ..Style::default() })
+                wb.styles.intern(Style {
+                    num_fmt: NumFmt::new(code),
+                    ..Style::default()
+                })
             }
         })
         .collect();
@@ -177,7 +208,9 @@ pub(crate) fn read_xls_with(bytes: &[u8], mut budget: Budget) -> Result<(Workboo
             continue;
         }
         wb.check_sheet_name(&bs.name, None).map_err(invalid)?;
-        let Some((mut sheet, calc)) = worksheet(&stream, bs, &g, &styles, &mut budget, &mut report)? else {
+        let Some((mut sheet, calc)) =
+            worksheet(&stream, bs, &g, &styles, &mut budget, &mut report)?
+        else {
             report.warn("Dialog sheets and unreadable sheets were skipped.");
             model_index.push(None);
             continue;
@@ -195,7 +228,11 @@ pub(crate) fn read_xls_with(bytes: &[u8], mut budget: Budget) -> Result<(Workboo
     }
     wb.calc.precision_as_displayed = g.precision_as_displayed;
     defined_names(&g, &model_index, &mut wb, &mut report);
-    wb.active_sheet = wb.sheets.iter().position(|s| s.visibility == Visibility::Visible).unwrap_or(0);
+    wb.active_sheet = wb
+        .sheets
+        .iter()
+        .position(|s| s.visibility == Visibility::Visible)
+        .unwrap_or(0);
     // The overview comes first.
     report.warnings.insert(
         0,
@@ -212,9 +249,15 @@ fn bof(rec: &Record<'_>) -> Result<(u16, u16), IoError> {
     Ok((c.u16()?, c.u16()?))
 }
 
-fn globals(stream: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Result<Globals, IoError> {
+fn globals(
+    stream: &[u8],
+    budget: &mut Budget,
+    report: &mut ReadReport,
+) -> Result<Globals, IoError> {
     let mut recs = Records::new(stream, 0);
-    let first = recs.next_record()?.ok_or_else(|| invalid("empty Workbook stream"))?;
+    let first = recs
+        .next_record()?
+        .ok_or_else(|| invalid("empty Workbook stream"))?;
     let (vers, dt) = bof(&first)?;
     if vers != BIFF8 {
         return Err(invalid(if vers == 0x0500 {
@@ -224,7 +267,9 @@ fn globals(stream: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Resul
         }));
     }
     if dt != 0x0005 {
-        return Err(invalid("the Workbook stream does not start with the workbook globals"));
+        return Err(invalid(
+            "the Workbook stream does not start with the workbook globals",
+        ));
     }
     let mut g = Globals::default();
     let mut offsets = std::collections::HashSet::new();
@@ -251,7 +296,12 @@ fn globals(stream: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Resul
                     _ => Visibility::VeryHidden,
                 };
                 g.links.sheets.push(name.clone());
-                g.sheets.push(BoundSheet { pos, name, visibility, kind });
+                g.sheets.push(BoundSheet {
+                    pos,
+                    name,
+                    visibility,
+                    kind,
+                });
             }
             0x0022 => g.date1904 = c.u16()? == 1,
             0x000E => g.precision_as_displayed = c.u16()? == 0,
@@ -279,7 +329,11 @@ fn globals(stream: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Resul
             0x01AE => {
                 let _ctab = c.u16()?;
                 let cch = c.u16()?;
-                g.links.books.push(SupBook { internal: cch == 0x0401, addin: cch == 0x3A01, names: vec![] });
+                g.links.books.push(SupBook {
+                    internal: cch == 0x0401,
+                    addin: cch == 0x3A01,
+                    names: vec![],
+                });
             }
             0x0023 => {
                 // ExternName: flags, then an AddinUdf or ExternDocName body; both start with
@@ -314,7 +368,14 @@ fn globals(stream: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Resul
         }
     }
     // The same test `defined_names` applies, before any cell formula is decoded.
-    let skipped = g.names.iter().map(|l| !l.rgce.is_empty() && decode(&l.rgce, &l.rgcb, CellRef::new(0, 0), Mode::Name, &g.links).is_err()).collect();
+    let skipped = g
+        .names
+        .iter()
+        .map(|l| {
+            !l.rgce.is_empty()
+                && decode(&l.rgce, &l.rgcb, CellRef::new(0, 0), Mode::Name, &g.links).is_err()
+        })
+        .collect();
     g.links.skipped = skipped;
     Ok(g)
 }
@@ -351,14 +412,27 @@ fn label(c: &mut Cursor<'_, '_>) -> Result<Lbl, IoError> {
     let (name, builtin) = if builtin {
         let code = raw.chars().next().map_or(0, |ch| ch as u32);
         let code = u8::try_from(code).unwrap_or(u8::MAX);
-        (BUILTIN_NAMES.get(usize::from(code)).map_or_else(|| raw.clone(), |n| (*n).to_string()), Some(code))
+        (
+            BUILTIN_NAMES
+                .get(usize::from(code))
+                .map_or_else(|| raw.clone(), |n| (*n).to_string()),
+            Some(code),
+        )
     } else {
         (raw, None)
     };
     let rest = c.rest();
     let rgce = rest.get(..cce).unwrap_or(&rest).to_vec();
     let rgcb = rest.get(cce..).unwrap_or(&[]).to_vec();
-    Ok(Lbl { name, builtin, hidden: flags & 1 != 0, macro_name: flags & 0x000A != 0, itab, rgce, rgcb })
+    Ok(Lbl {
+        name,
+        builtin,
+        hidden: flags & 1 != 0,
+        macro_name: flags & 0x000A != 0,
+        itab,
+        rgce,
+        rgcb,
+    })
 }
 
 fn shared_strings(c: &mut Cursor<'_, '_>, budget: &mut Budget) -> Result<Vec<Arc<str>>, IoError> {
@@ -398,7 +472,10 @@ fn parsed(c: &mut Cursor<'_, '_>) -> Result<Parsed, IoError> {
     if cce > rest.len() {
         return Err(invalid("formula runs past the end of its record"));
     }
-    Ok(Parsed { rgce: rest.get(..cce).unwrap_or(&[]).to_vec(), rgcb: rest.get(cce..).unwrap_or(&[]).to_vec() })
+    Ok(Parsed {
+        rgce: rest.get(..cce).unwrap_or(&[]).to_vec(),
+        rgcb: rest.get(cce..).unwrap_or(&[]).to_vec(),
+    })
 }
 
 struct SheetState<'g> {
@@ -426,7 +503,10 @@ impl SheetState<'_> {
     }
 
     fn style(&self, ixfe: u16) -> StyleId {
-        self.styles.get(usize::from(ixfe)).copied().unwrap_or(StyleId::DEFAULT)
+        self.styles
+            .get(usize::from(ixfe))
+            .copied()
+            .unwrap_or(StyleId::DEFAULT)
     }
 
     fn pos(&mut self, row: u16, col: u16) -> Option<CellRef> {
@@ -438,14 +518,30 @@ impl SheetState<'_> {
         Some(CellRef::new(r, c))
     }
 
-    fn put(&mut self, budget: &mut Budget, row: u16, col: u16, ixfe: u16, value: Value) -> Result<Option<CellRef>, IoError> {
-        let Some(pos) = self.pos(row, col) else { return Ok(None) };
+    fn put(
+        &mut self,
+        budget: &mut Budget,
+        row: u16,
+        col: u16,
+        ixfe: u16,
+        value: Value,
+    ) -> Result<Option<CellRef>, IoError> {
+        let Some(pos) = self.pos(row, col) else {
+            return Ok(None);
+        };
         let style = self.style(ixfe);
         if value.is_empty() && style == StyleId::DEFAULT {
             return Ok(Some(pos));
         }
         budget.cell()?;
-        self.sheet.cells.set(pos, Cell { value, formula: None, style });
+        self.sheet.cells.set(
+            pos,
+            Cell {
+                value,
+                formula: None,
+                style,
+            },
+        );
         Ok(Some(pos))
     }
 
@@ -463,7 +559,14 @@ impl SheetState<'_> {
                 if let Some(cell) = self.sheet.cells.get_mut(pos) {
                     cell.formula = Some(Arc::new(f));
                 } else {
-                    self.sheet.cells.set(pos, Cell { value: Value::Empty, formula: Some(Arc::new(f)), style: StyleId::DEFAULT });
+                    self.sheet.cells.set(
+                        pos,
+                        Cell {
+                            value: Value::Empty,
+                            formula: Some(Arc::new(f)),
+                            style: StyleId::DEFAULT,
+                        },
+                    );
                 }
             }
             Err(Unsupported(why)) => self.unsupported(why),
@@ -473,7 +576,11 @@ impl SheetState<'_> {
 
 /// RK number ([MS-XLS] 2.5.217): a 30-bit integer or the top of an IEEE double, maybe ×100.
 fn rk(v: u32) -> Value {
-    let n = if v & 2 != 0 { f64::from((v as i32) >> 2) } else { f64::from_bits(u64::from(v & !3) << 32) };
+    let n = if v & 2 != 0 {
+        f64::from((v as i32) >> 2)
+    } else {
+        f64::from_bits(u64::from(v & !3) << 32)
+    };
     Value::number(if v & 1 != 0 { n / 100.0 } else { n })
 }
 
@@ -486,10 +593,15 @@ fn worksheet(
     report: &mut ReadReport,
 ) -> Result<Option<(Sheet, CalcSettings)>, IoError> {
     if bs.pos >= stream.len() {
-        return Err(invalid(format!("sheet '{}' points outside the Workbook stream", bs.name)));
+        return Err(invalid(format!(
+            "sheet '{}' points outside the Workbook stream",
+            bs.name
+        )));
     }
     let mut recs = Records::new(stream, bs.pos);
-    let first = recs.next_record()?.ok_or_else(|| invalid("missing sheet substream"))?;
+    let first = recs
+        .next_record()?
+        .ok_or_else(|| invalid("missing sheet substream"))?;
     let (vers, dt) = bof(&first)?;
     if vers != BIFF8 || dt != 0x0010 {
         return Ok(None);
@@ -529,7 +641,10 @@ fn worksheet(
         sheet_record(&rec, &mut st, budget, report)?;
     }
     // Shared and array formulas: their definitions follow the first cell that uses them.
-    let (arrays, shared) = (std::mem::take(&mut st.arrays), std::mem::take(&mut st.shared));
+    let (arrays, shared) = (
+        std::mem::take(&mut st.arrays),
+        std::mem::take(&mut st.shared),
+    );
     let pending = std::mem::take(&mut st.pending);
     for p in &pending {
         if let Some((range, f)) = arrays.get(&p.anchor) {
@@ -546,22 +661,44 @@ fn worksheet(
     // .xlsx is read, so that the formula fills its range on recalculation. If the formula itself
     // couldn't be imported, they keep their values.
     for p in &pending {
-        let filled = st.sheet.cell(p.anchor).and_then(|c| c.formula.as_ref()).and_then(|f| f.array).is_some_and(|r| r.contains(p.pos));
+        let filled = st
+            .sheet
+            .cell(p.anchor)
+            .and_then(|c| c.formula.as_ref())
+            .and_then(|f| f.array)
+            .is_some_and(|r| r.contains(p.pos));
         if p.pos != p.anchor && filled {
             let style = st.sheet.style_id(p.pos);
-            st.sheet.cells.set(p.pos, Cell { value: Value::Empty, formula: None, style });
+            st.sheet.cells.set(
+                p.pos,
+                Cell {
+                    value: Value::Empty,
+                    formula: None,
+                    style,
+                },
+            );
         }
     }
     if st.dropped > 0 {
-        report.warn(format!("{} cells outside the grid were skipped.", st.dropped));
+        report.warn(format!(
+            "{} cells outside the grid were skipped.",
+            st.dropped
+        ));
     }
     for why in &st.unsupported {
-        report.warn(format!("Some formulas use {why}; their saved results were kept as values."));
+        report.warn(format!(
+            "Some formulas use {why}; their saved results were kept as values."
+        ));
     }
     Ok(Some((st.sheet, st.calc)))
 }
 
-fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, report: &mut ReadReport) -> Result<(), IoError> {
+fn sheet_record(
+    rec: &Record<'_>,
+    st: &mut SheetState<'_>,
+    budget: &mut Budget,
+    report: &mut ReadReport,
+) -> Result<(), IoError> {
     let mut c = Cursor::new(&rec.parts);
     // A formula's string result is the String record right after it (shared/array records may sit between).
     if !matches!(rec.id, 0x0207 | 0x04BC | 0x0221 | 0x0236) {
@@ -596,7 +733,9 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
                 Some(s) => {
                     st.put(budget, r, col, x, Value::Text(s.clone()))?;
                 }
-                None => report.warn("Some cells refer to missing shared strings and were left empty."),
+                None => {
+                    report.warn("Some cells refer to missing shared strings and were left empty.")
+                }
             }
         }
         0x0204 => {
@@ -608,7 +747,11 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
         0x0205 => {
             let (r, col, x) = (c.u16()?, c.u16()?, c.u16()?);
             let (v, is_err) = (c.u8()?, c.u8()?);
-            let v = if is_err != 0 { Value::Error(cell_error(v)) } else { Value::Bool(v != 0) };
+            let v = if is_err != 0 {
+                Value::Error(cell_error(v))
+            } else {
+                Value::Bool(v != 0)
+            };
             st.put(budget, r, col, x, v)?;
         }
         0x0201 => {
@@ -633,7 +776,14 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
                 if let Some(cell) = st.sheet.cells.get_mut(pos) {
                     cell.value = Value::from(s);
                 } else {
-                    st.sheet.cells.set(pos, Cell { value: Value::from(s), formula: None, style });
+                    st.sheet.cells.set(
+                        pos,
+                        Cell {
+                            value: Value::from(s),
+                            formula: None,
+                            style,
+                        },
+                    );
                 }
             }
         }
@@ -650,7 +800,10 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
             let (c0, c1) = (c.u8()?, c.u8()?);
             c.skip(6)?;
             let f = parsed(&mut c)?;
-            let range = RangeRef::new(CellRef::new(u32::from(r0), u32::from(c0)), CellRef::new(u32::from(r1.max(r0)), u32::from(c1.max(c0))));
+            let range = RangeRef::new(
+                CellRef::new(u32::from(r0), u32::from(c0)),
+                CellRef::new(u32::from(r1.max(r0)), u32::from(c1.max(c0))),
+            );
             if let Some(at) = st.last_formula {
                 st.arrays.insert(at, (range, f));
             }
@@ -676,7 +829,10 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
                 if st.sheet.merges.len() >= MAX_MERGES {
                     return Err(IoError::TooLarge("XLS: too many merged ranges".into()));
                 }
-                let range = RangeRef::new(CellRef::new(u32::from(r0), u32::from(c0)), CellRef::new(u32::from(r1), u32::from(c1)));
+                let range = RangeRef::new(
+                    CellRef::new(u32::from(r0), u32::from(c0)),
+                    CellRef::new(u32::from(r1), u32::from(c1)),
+                );
                 if !range.is_single() {
                     st.sheet.merges.push(range);
                 }
@@ -715,7 +871,11 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
             let height = c.u16()?;
             c.skip(4)?;
             let flags = c.u32()?;
-            let mut info = LineInfo { custom: flags & 0x40 != 0, hidden: flags & 0x20 != 0, ..LineInfo::default() };
+            let mut info = LineInfo {
+                custom: flags & 0x40 != 0,
+                hidden: flags & 0x20 != 0,
+                ..LineInfo::default()
+            };
             let px = pt_to_px(f64::from(height & 0x7FFF) / 20.0);
             if info.custom || (px - st.sheet.default_row_height).abs() > 0.5 {
                 info.size = Some(px);
@@ -744,13 +904,19 @@ fn sheet_record(rec: &Record<'_>, st: &mut SheetState<'_>, budget: &mut Budget, 
         0x01B0 | 0x0879 => report.warn("Conditional formatting in .xls files is not imported yet."),
         0x01B2 => report.warn("Data validation in .xls files is not imported yet."),
         0x01B8 => report.warn("Hyperlinks in .xls files are not imported yet."),
-        0x00B0 => report.warn("PivotTables in .xls files are not imported yet; their values were kept."),
+        0x00B0 => {
+            report.warn("PivotTables in .xls files are not imported yet; their values were kept.")
+        }
         _ => {}
     }
     Ok(())
 }
 
-fn formula_cell(c: &mut Cursor<'_, '_>, st: &mut SheetState<'_>, budget: &mut Budget) -> Result<(), IoError> {
+fn formula_cell(
+    c: &mut Cursor<'_, '_>,
+    st: &mut SheetState<'_>,
+    budget: &mut Budget,
+) -> Result<(), IoError> {
     let (r, col, x) = (c.u16()?, c.u16()?, c.u16()?);
     let mut val = [0u8; 8];
     for b in val.iter_mut() {
@@ -775,10 +941,19 @@ fn formula_cell(c: &mut Cursor<'_, '_>, st: &mut SheetState<'_>, budget: &mut Bu
     } else {
         Value::number(f64::from_le_bytes(val))
     };
-    let Some(pos) = st.pos(r, col) else { return Ok(()) };
+    let Some(pos) = st.pos(r, col) else {
+        return Ok(());
+    };
     budget.cell()?;
     let style = st.style(x);
-    st.sheet.cells.set(pos, Cell { value, formula: None, style });
+    st.sheet.cells.set(
+        pos,
+        Cell {
+            value,
+            formula: None,
+            style,
+        },
+    );
     st.last_formula = Some(pos);
     if string_result {
         st.pending_string = Some((pos, style));
@@ -786,7 +961,10 @@ fn formula_cell(c: &mut Cursor<'_, '_>, st: &mut SheetState<'_>, budget: &mut Bu
     // PtgExp: part of a shared or array formula anchored at another cell.
     if f.rgce.len() == 5 && f.rgce.first() == Some(&0x01) {
         let get = |i: usize| f.rgce.get(i).copied().unwrap_or(0);
-        let anchor = CellRef::new(u32::from(u16::from_le_bytes([get(1), get(2)])), u32::from(u16::from_le_bytes([get(3), get(4)])));
+        let anchor = CellRef::new(
+            u32::from(u16::from_le_bytes([get(1), get(2)])),
+            u32::from(u16::from_le_bytes([get(3), get(4)])),
+        );
         st.pending.push(Pending { pos, anchor });
         return Ok(());
     }
@@ -794,16 +972,33 @@ fn formula_cell(c: &mut Cursor<'_, '_>, st: &mut SheetState<'_>, budget: &mut Bu
     Ok(())
 }
 
-fn defined_names(g: &Globals, model_index: &[Option<usize>], wb: &mut Workbook, report: &mut ReadReport) {
+fn defined_names(
+    g: &Globals,
+    model_index: &[Option<usize>],
+    wb: &mut Workbook,
+    report: &mut ReadReport,
+) {
     let scope_of = |itab: u16| -> Option<Option<usize>> {
         if itab == 0 {
             return Some(None);
         }
-        model_index.get(usize::from(itab) - 1).copied().flatten().map(Some)
+        model_index
+            .get(usize::from(itab) - 1)
+            .copied()
+            .flatten()
+            .map(Some)
     };
     for lbl in &g.names {
-        let Some(scope) = scope_of(lbl.itab) else { continue };
-        let text = match decode(&lbl.rgce, &lbl.rgcb, CellRef::new(0, 0), Mode::Name, &g.links) {
+        let Some(scope) = scope_of(lbl.itab) else {
+            continue;
+        };
+        let text = match decode(
+            &lbl.rgce,
+            &lbl.rgcb,
+            CellRef::new(0, 0),
+            Mode::Name,
+            &g.links,
+        ) {
             Ok(e) => gridcraft_formula::print(&e),
             Err(_) if lbl.rgce.is_empty() => continue,
             Err(Unsupported(why)) => {
@@ -814,7 +1009,9 @@ fn defined_names(g: &Globals, model_index: &[Option<usize>], wb: &mut Workbook, 
         match lbl.builtin {
             Some(6 | 7) => {
                 let Some(si) = scope else { continue };
-                let Some(sheet) = wb.sheet_mut(si) else { continue };
+                let Some(sheet) = wb.sheet_mut(si) else {
+                    continue;
+                };
                 if lbl.builtin == Some(6) {
                     sheet.print.print_area = crate::read::parse_print_area(&text);
                 } else {
@@ -825,7 +1022,13 @@ fn defined_names(g: &Globals, model_index: &[Option<usize>], wb: &mut Workbook, 
             }
             Some(_) => {}
             None if lbl.macro_name => report.warn("Macro names were skipped."),
-            None => wb.names.push(DefinedName { name: lbl.name.clone(), scope, formula: text, comment: String::new(), hidden: lbl.hidden }),
+            None => wb.names.push(DefinedName {
+                name: lbl.name.clone(),
+                scope,
+                formula: text,
+                comment: String::new(),
+                hidden: lbl.hidden,
+            }),
         }
     }
 }

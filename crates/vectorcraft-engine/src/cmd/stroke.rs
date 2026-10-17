@@ -3,7 +3,10 @@
 
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{ArrowAlign, Arrowhead, CharStyle, Dash, LineCap, LineJoin, Node, NodeKind, SavedProfile, StrokeLayer, Unit, WidthProfile};
+use vectorcraft_doc::{
+    ArrowAlign, Arrowhead, CharStyle, Dash, LineCap, LineJoin, Node, NodeKind, SavedProfile,
+    StrokeLayer, Unit, WidthProfile,
+};
 
 use super::appearance::{ItemTarget, edit_items, item_target};
 use super::paint::painted;
@@ -86,11 +89,23 @@ pub(crate) struct StrokeChange {
 
 /// The value param `key` names in `table` (see [`crate::inspect::CAPS`]); `None` when absent.
 fn named<T: Copy>(table: &[(T, &str)], p: &Value, key: &str, cmd: &str) -> Result<Option<T>> {
-    let Some(s) = str_param(p, key) else { return Ok(None) };
-    let s = if key == "cap" && s == "projecting" { "square" } else { s };
+    let Some(s) = str_param(p, key) else {
+        return Ok(None);
+    };
+    let s = if key == "cap" && s == "projecting" {
+        "square"
+    } else {
+        s
+    };
     match table.iter().find(|(_, n)| *n == s) {
         Some((v, _)) => Ok(Some(*v)),
-        None => Err(bad(cmd, format!("{key} must be {}, got {s}", table.iter().map(|(_, n)| *n).collect::<Vec<_>>().join("|")))),
+        None => Err(bad(
+            cmd,
+            format!(
+                "{key} must be {}, got {s}",
+                table.iter().map(|(_, n)| *n).collect::<Vec<_>>().join("|")
+            ),
+        )),
     }
 }
 
@@ -102,11 +117,22 @@ impl StrokeChange {
             Some(Value::Null) => Some(None),
             Some(Value::Array(a)) => {
                 // Do not silently omit malformed segments and change the user's dash pattern.
-                let values: Vec<f64> =
-                    a.iter().map(|v| v.as_f64().ok_or_else(|| bad(cmd, format!("dash lengths must be numbers, got {v}")))).collect::<Result<_>>()?;
+                let values: Vec<f64> = a
+                    .iter()
+                    .map(|v| {
+                        v.as_f64().ok_or_else(|| {
+                            bad(cmd, format!("dash lengths must be numbers, got {v}"))
+                        })
+                    })
+                    .collect::<Result<_>>()?;
                 Some(Some(values).filter(|d| !d.is_empty()))
             }
-            Some(v) => return Err(bad(cmd, format!("dash must be a list of lengths or null, got {v}"))),
+            Some(v) => {
+                return Err(bad(
+                    cmd,
+                    format!("dash must be a list of lengths or null, got {v}"),
+                ));
+            }
         };
         Ok(Self {
             weight: num("weight").map(|w| w.clamp(0.0, 1000.0)),
@@ -144,7 +170,10 @@ impl StrokeChange {
         }
         if let Some(pattern) = &self.dash {
             // A new pattern keeps the offset and alignment of the one it replaces.
-            st.dash = pattern.clone().map(|pattern| Dash { pattern, ..st.dash.take().unwrap_or_default() });
+            st.dash = pattern.clone().map(|pattern| Dash {
+                pattern,
+                ..st.dash.take().unwrap_or_default()
+            });
         }
         if let Some(d) = st.dash.as_mut() {
             if let Some(o) = self.dash_offset {
@@ -178,14 +207,21 @@ fn stroke_set(s: &mut Session, p: &Value) -> Result<Value> {
     if item == ItemTarget::Top {
         // Images and symbol instances take no stroke from the panel.
         let d = &s.doc()?.doc;
-        ids.retain(|id| !matches!(d.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_) | NodeKind::SymbolInstance { .. })));
+        ids.retain(|id| {
+            !matches!(
+                d.node(*id).map(|n| &n.kind),
+                Some(NodeKind::Image(_) | NodeKind::SymbolInstance { .. })
+            )
+        });
     }
     let arrow = |k: &str| -> Result<Option<Option<Arrowhead>>> {
         match p.get(k) {
             None => Ok(None),
             Some(Value::Null) => Ok(Some(None)),
             Some(Value::String(n)) if n == "none" => Ok(Some(None)),
-            Some(v) => serde_json::from_value::<Arrowhead>(v.clone()).map(|a| Some(Some(a))).map_err(|_| bad(C, format!("unknown arrowhead {v}"))),
+            Some(v) => serde_json::from_value::<Arrowhead>(v.clone())
+                .map(|a| Some(Some(a)))
+                .map_err(|_| bad(C, format!("unknown arrowhead {v}"))),
         }
     };
     let (sa, ea) = (arrow("startArrow")?, arrow("endArrow")?);
@@ -198,7 +234,12 @@ fn stroke_set(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let profile = match str_param(p, "profile") {
         None => None,
-        Some(id) => Some(s.resolve_profile(id).ok_or_else(|| bad(C, format!("unknown profile {id} (see stroke.widthProfile.list)")))?),
+        Some(id) => Some(s.resolve_profile(id).ok_or_else(|| {
+            bad(
+                C,
+                format!("unknown profile {id} (see stroke.widthProfile.list)"),
+            )
+        })?),
     };
     let set = |st: &mut StrokeLayer| {
         change.apply(st);
@@ -222,7 +263,9 @@ fn stroke_set(s: &mut Session, p: &Value) -> Result<Value> {
         if index.is_none()
             && let NodeKind::Text(t) = &mut n.kind
         {
-            t.runs.iter_mut().for_each(|r| change.apply_char(&mut r.style));
+            t.runs
+                .iter_mut()
+                .for_each(|r| change.apply_char(&mut r.style));
             return Ok(());
         }
         if index.is_none() && n.appearance.stroke().is_none() {
@@ -257,7 +300,9 @@ impl Session {
     /// ([`Session::new_art_stroke`]). None without a document or the selection's stroke.
     pub fn shown_stroke(&self) -> Option<StrokeLayer> {
         let st = self.active()?;
-        let Some(first) = st.selection.objects.first() else { return Some(self.new_art_stroke()) };
+        let Some(first) = st.selection.objects.first() else {
+            return Some(self.new_art_stroke());
+        };
         let first = st.doc.node(*first)?;
         if let Some(i) = first.appearance.item_of_kind(self.appearance_item(), false) {
             return first.appearance.stroke_at(Some(i)).cloned();
@@ -293,8 +338,14 @@ impl DocState {
                 }
             }
         }
-        let Some((first, rest)) = strokes.split_first() else { return StrokeMixed { can_align, ..Default::default() } };
-        let differs = |same: fn(&StrokeLayer, &StrokeLayer) -> bool| rest.iter().any(|s| !same(first, s));
+        let Some((first, rest)) = strokes.split_first() else {
+            return StrokeMixed {
+                can_align,
+                ..Default::default()
+            };
+        };
+        let differs =
+            |same: fn(&StrokeLayer, &StrokeLayer) -> bool| rest.iter().any(|s| !same(first, s));
         StrokeMixed {
             weight: differs(|a, b| a.width == b.width),
             cap: differs(|a, b| a.cap == b.cap),
@@ -319,8 +370,15 @@ fn encloses(n: &Node) -> bool {
 /// Mirror a width profile along the path (t → 1 − t; the two sides of a discontinuous point swap
 /// too) or across it (swap left/right widths).
 pub(crate) fn flip_profile(p: &WidthProfile, along: bool) -> WidthProfile {
-    let mut pts: Vec<(f64, f64, f64)> =
-        if along { p.points.iter().rev().map(|&(t, l, r)| (1.0 - t, l, r)).collect() } else { p.points.iter().map(|&(t, l, r)| (t, r, l)).collect() };
+    let mut pts: Vec<(f64, f64, f64)> = if along {
+        p.points
+            .iter()
+            .rev()
+            .map(|&(t, l, r)| (1.0 - t, l, r))
+            .collect()
+    } else {
+        p.points.iter().map(|&(t, l, r)| (t, r, l)).collect()
+    };
     pts.sort_by(|a, b| a.0.total_cmp(&b.0));
     WidthProfile { points: pts }
 }
@@ -330,9 +388,15 @@ fn stroke_advanced(s: &mut Session, p: &Value) -> Result<Value> {
     let scale = match p.get("arrowScale") {
         None => None,
         Some(v) => {
-            let a = v.as_array().filter(|a| a.len() == 2).ok_or_else(|| bad(C, "arrowScale must be [start, end]"))?;
+            let a = v
+                .as_array()
+                .filter(|a| a.len() == 2)
+                .ok_or_else(|| bad(C, "arrowScale must be [start, end]"))?;
             let f = |i: usize| a[i].as_f64().map(|x| x.clamp(1.0, 1000.0));
-            Some((f(0).ok_or_else(|| bad(C, "bad arrowScale"))?, f(1).ok_or_else(|| bad(C, "bad arrowScale"))?))
+            Some((
+                f(0).ok_or_else(|| bad(C, "bad arrowScale"))?,
+                f(1).ok_or_else(|| bad(C, "bad arrowScale"))?,
+            ))
         }
     };
     let flip = match str_param(p, "flipProfile") {
@@ -373,7 +437,9 @@ fn stroke_advanced(s: &mut Session, p: &Value) -> Result<Value> {
         arrows_and_profile(st);
     }
     edit_items(s, &ids, item, C, "Stroke", false, |n, index| {
-        let Some(st) = n.appearance.stroke_at_mut(index) else { return Ok(()) };
+        let Some(st) = n.appearance.stroke_at_mut(index) else {
+            return Ok(());
+        };
         arrows_and_profile(st);
         if let Some(b) = &brush {
             st.brush = b.clone();
@@ -406,9 +472,18 @@ impl ProfileEntry<'_> {
 impl Session {
     /// The Profile list: the built-in profiles, then the saved ones.
     pub fn profile_entries(&self) -> impl Iterator<Item = ProfileEntry<'_>> {
-        let built_in = WidthProfile::PRESETS.iter().map(|p| ProfileEntry { id: p.id, label: p.label, points: p.points, built_in: true });
-        let saved =
-            self.prefs.width_profiles.iter().map(|p| ProfileEntry { id: &p.name, label: &p.name, points: &p.profile.points, built_in: false });
+        let built_in = WidthProfile::PRESETS.iter().map(|p| ProfileEntry {
+            id: p.id,
+            label: p.label,
+            points: p.points,
+            built_in: true,
+        });
+        let saved = self.prefs.width_profiles.iter().map(|p| ProfileEntry {
+            id: &p.name,
+            label: &p.name,
+            points: &p.profile.points,
+            built_in: false,
+        });
         built_in.chain(saved)
     }
 
@@ -421,24 +496,36 @@ impl Session {
     /// stroke), else a built-in's id or a saved profile's name; `None` when nothing is called `key`.
     pub fn resolve_profile(&self, key: &str) -> Option<Option<WidthProfile>> {
         let e = self.profile_entries().find(|e| e.id == key)?;
-        Some((!e.matches(None)).then(|| WidthProfile { points: e.points.to_vec() }))
+        Some((!e.matches(None)).then(|| WidthProfile {
+            points: e.points.to_vec(),
+        }))
     }
 
     /// The name Add to Profiles suggests: the first free "Width Profile N".
     pub fn next_profile_name(&self) -> String {
-        (1..).map(|n| format!("Width Profile {n}")).find(|n| !self.profile_name_taken(n)).unwrap_or_default()
+        (1..)
+            .map(|n| format!("Width Profile {n}"))
+            .find(|n| !self.profile_name_taken(n))
+            .unwrap_or_default()
     }
 
     /// Does a listed profile have `name` as its id or label (ignoring case)?
     fn profile_name_taken(&self, name: &str) -> bool {
-        self.profile_entries().any(|e| e.id.eq_ignore_ascii_case(name) || e.label.eq_ignore_ascii_case(name))
+        self.profile_entries()
+            .any(|e| e.id.eq_ignore_ascii_case(name) || e.label.eq_ignore_ascii_case(name))
     }
 
     /// The variable width Add to Profiles saves: the shown stroke's profile, when it isn't listed.
     fn profile_to_add(&self) -> std::result::Result<WidthProfile, String> {
-        let p = self.shown_stroke().and_then(|s| s.profile).ok_or("select a stroke with a variable width")?;
+        let p = self
+            .shown_stroke()
+            .and_then(|s| s.profile)
+            .ok_or("select a stroke with a variable width")?;
         match self.profile_entry(Some(&p)) {
-            Some(e) => Err(format!("the selected stroke's profile is already listed as {}", e.label)),
+            Some(e) => Err(format!(
+                "the selected stroke's profile is already listed as {}",
+                e.label
+            )),
             None => Ok(p),
         }
     }
@@ -450,7 +537,11 @@ fn can_add_profile(s: &Session) -> std::result::Result<(), String> {
 }
 
 fn has_saved_profiles(s: &Session) -> std::result::Result<(), String> {
-    if s.prefs.width_profiles.is_empty() { Err("no saved profiles".into()) } else { Ok(()) }
+    if s.prefs.width_profiles.is_empty() {
+        Err("no saved profiles".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn profile_add(s: &mut Session, p: &Value) -> Result<Value> {
@@ -459,10 +550,15 @@ fn profile_add(s: &mut Session, p: &Value) -> Result<Value> {
     let name = match str_param(p, "name").map(str::trim) {
         None => s.next_profile_name(),
         Some("") => return Err(bad(C, "the name is empty")),
-        Some(n) if s.profile_name_taken(n) => return Err(bad(C, format!("a profile is already called {n}"))),
+        Some(n) if s.profile_name_taken(n) => {
+            return Err(bad(C, format!("a profile is already called {n}")));
+        }
         Some(n) => n.to_string(),
     };
-    s.prefs.width_profiles.push(SavedProfile { name: name.clone(), profile });
+    s.prefs.width_profiles.push(SavedProfile {
+        name: name.clone(),
+        profile,
+    });
     Ok(json!({ "name": name }))
 }
 
@@ -473,13 +569,23 @@ fn profile_delete(s: &mut Session, p: &Value) -> Result<Value> {
         None => {
             let shown = s.shown_stroke().and_then(|st| st.profile);
             let entry = shown.as_ref().and_then(|p| s.profile_entry(Some(p)));
-            entry.map(|e| e.id.to_string()).ok_or_else(|| bad(C, "give a name, or select a stroke with a saved profile"))?
+            entry
+                .map(|e| e.id.to_string())
+                .ok_or_else(|| bad(C, "give a name, or select a stroke with a saved profile"))?
         }
     };
-    if WidthProfile::PRESETS.iter().any(|b| b.id == name || b.label == name) {
+    if WidthProfile::PRESETS
+        .iter()
+        .any(|b| b.id == name || b.label == name)
+    {
         return Err(bad(C, format!("{name} is built in and can't be deleted")));
     }
-    let i = s.prefs.width_profiles.iter().position(|sp| sp.name == name).ok_or_else(|| bad(C, format!("no saved profile called {name}")))?;
+    let i = s
+        .prefs
+        .width_profiles
+        .iter()
+        .position(|sp| sp.name == name)
+        .ok_or_else(|| bad(C, format!("no saved profile called {name}")))?;
     s.prefs.width_profiles.remove(i);
     Ok(json!({ "deleted": name }))
 }
@@ -494,6 +600,10 @@ fn profile_list(s: &mut Session, _: &Value) -> Result<Value> {
         .profile_entries()
         .map(|e| json!({"id": e.id, "label": e.label, "builtIn": e.built_in, "points": e.points.iter().map(|&(t, l, r)| [t, l, r]).collect::<Vec<_>>()}))
         .collect();
-    let current = s.shown_stroke().map(|st| s.profile_entry(st.profile.as_ref()).map_or("custom", |e| e.id).to_string());
+    let current = s.shown_stroke().map(|st| {
+        s.profile_entry(st.profile.as_ref())
+            .map_or("custom", |e| e.id)
+            .to_string()
+    });
     Ok(json!({ "profiles": profiles, "current": current }))
 }

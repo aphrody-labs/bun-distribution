@@ -9,7 +9,12 @@ use crate::state::CropOverlay;
 /// asymmetric guides (triangle, spiral): bit 0 across, bit 1 down.
 pub fn paths(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Vec<(f32, f32)>> {
     let (w, h) = (w.max(1e-3), h.max(1e-3));
-    let lines = |fracs: &[f32]| fracs.iter().flat_map(|&f| [vec![(f, 0.0), (f, 1.0)], vec![(0.0, f), (1.0, f)]]).collect();
+    let lines = |fracs: &[f32]| {
+        fracs
+            .iter()
+            .flat_map(|&f| [vec![(f, 0.0), (f, 1.0)], vec![(0.0, f), (1.0, f)]])
+            .collect()
+    };
     let out: Vec<Vec<(f32, f32)>> = match kind {
         CropOverlay::None => vec![],
         CropOverlay::Thirds => lines(&[1.0 / 3.0, 2.0 / 3.0]),
@@ -33,14 +38,21 @@ pub fn paths(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Vec<(f32, f32
                 let t = px * dx + py * dy;
                 (t * dx / w, t * dy / h)
             };
-            vec![vec![(0.0, 0.0), (1.0, 1.0)], vec![(1.0, 0.0), foot(w, 0.0)], vec![(0.0, 1.0), foot(0.0, h)]]
+            vec![
+                vec![(0.0, 0.0), (1.0, 1.0)],
+                vec![(1.0, 0.0), foot(w, 0.0)],
+                vec![(0.0, 1.0), foot(0.0, h)],
+            ]
         }
         CropOverlay::Spiral => spiral(w, h),
     };
     let (fu, fv) = (orient & 1 == 1, orient & 2 == 2);
     let flip = |(u, v): (f32, f32)| (if fu { 1.0 - u } else { u }, if fv { 1.0 - v } else { v });
     match kind {
-        CropOverlay::Triangle | CropOverlay::Spiral => out.into_iter().map(|l| l.into_iter().map(flip).collect()).collect(),
+        CropOverlay::Triangle | CropOverlay::Spiral => out
+            .into_iter()
+            .map(|l| l.into_iter().map(flip).collect())
+            .collect(),
         _ => out,
     }
 }
@@ -70,7 +82,13 @@ fn spiral(w: f32, h: f32) -> Vec<Vec<(f32, f32)>> {
             let a = (a0 + 90.0 * i as f32 / 12.0).to_radians();
             curve.push((cx + s * a.cos(), cy + s * a.sin()));
         }
-        squares.push(vec![(sx, sy), (sx + s, sy), (sx + s, sy + s), (sx, sy + s), (sx, sy)]);
+        squares.push(vec![
+            (sx, sy),
+            (sx + s, sy),
+            (sx + s, sy + s),
+            (sx, sy + s),
+            (sx, sy),
+        ]);
         match k % 4 {
             0 => {
                 x += s;
@@ -84,9 +102,18 @@ fn spiral(w: f32, h: f32) -> Vec<Vec<(f32, f32)>> {
             _ => ch -= s,
         }
     }
-    let norm = |(px, py): (f32, f32)| if portrait { (py / rh, px / rw) } else { (px / rw, py / rh) };
+    let norm = |(px, py): (f32, f32)| {
+        if portrait {
+            (py / rh, px / rw)
+        } else {
+            (px / rw, py / rh)
+        }
+    };
     squares.push(curve);
-    squares.into_iter().map(|l| l.into_iter().map(norm).collect()).collect()
+    squares
+        .into_iter()
+        .map(|l| l.into_iter().map(norm).collect())
+        .collect()
 }
 
 #[cfg(test)]
@@ -94,12 +121,22 @@ mod tests {
     use super::*;
 
     fn in_unit(paths: &[Vec<(f32, f32)>]) -> bool {
-        paths.iter().flatten().all(|&(u, v)| (-1e-4..=1.0001).contains(&u) && (-1e-4..=1.0001).contains(&v))
+        paths
+            .iter()
+            .flatten()
+            .all(|&(u, v)| (-1e-4..=1.0001).contains(&u) && (-1e-4..=1.0001).contains(&v))
     }
 
     #[test]
     fn every_overlay_stays_inside_the_crop() {
-        for kind in [CropOverlay::Thirds, CropOverlay::Grid, CropOverlay::Golden, CropOverlay::Diagonal, CropOverlay::Triangle, CropOverlay::Spiral] {
+        for kind in [
+            CropOverlay::Thirds,
+            CropOverlay::Grid,
+            CropOverlay::Golden,
+            CropOverlay::Diagonal,
+            CropOverlay::Triangle,
+            CropOverlay::Spiral,
+        ] {
             for (w, h) in [(3.0, 2.0), (2.0, 3.0), (1.0, 1.0), (16.0, 9.0)] {
                 for o in 0..4 {
                     let p = paths(kind, o, w, h);
@@ -115,7 +152,10 @@ mod tests {
         let (w, h) = (3.0, 2.0);
         for l in paths(CropOverlay::Diagonal, 0, w, h) {
             let (a, b) = (l[0], l[1]);
-            assert!((((b.0 - a.0) * w).abs() - ((b.1 - a.1) * h).abs()).abs() < 1e-4, "{l:?}");
+            assert!(
+                (((b.0 - a.0) * w).abs() - ((b.1 - a.1) * h).abs()).abs() < 1e-4,
+                "{l:?}"
+            );
         }
         let t = paths(CropOverlay::Triangle, 0, w, h);
         for l in &t[1..] {
@@ -125,7 +165,10 @@ mod tests {
             assert!(dot.abs() < 1e-3, "{l:?}");
         }
         // orientation mirrors the triangle
-        assert_eq!(paths(CropOverlay::Triangle, 1, w, h)[0], vec![(1.0, 0.0), (0.0, 1.0)]);
+        assert_eq!(
+            paths(CropOverlay::Triangle, 1, w, h)[0],
+            vec![(1.0, 0.0), (0.0, 1.0)]
+        );
     }
 
     #[test]

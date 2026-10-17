@@ -107,8 +107,8 @@ use smallvec::SmallVec;
 #[cfg(feature = "bevy_reflect")]
 use {
     crate::reflect::{ReflectComponent, ReflectResource},
-    bevy_reflect::std_traits::ReflectDefault,
     bevy_reflect::Reflect,
+    bevy_reflect::std_traits::ReflectDefault,
 };
 
 /// A marker component for disabled entities.

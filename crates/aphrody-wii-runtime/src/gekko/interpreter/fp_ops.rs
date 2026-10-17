@@ -54,7 +54,7 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_MFFSX => {
             ctx.gekko.write_fpr(
                 instr.rd(),
@@ -63,14 +63,14 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_MTFSB0X => {
             ctx.gekko.fpscr = Fpscr::from(ctx.gekko.fpscr.raw() & !(1 << (31 - instr.crbd())));
             ctx.gekko.recompute_fpscr_summary();
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_MTFSB1X => {
             let bit = 1 << (31 - instr.crbd());
             let mut fpscr = ctx.gekko.fpscr.raw();
@@ -82,7 +82,7 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_MTFSFIX => {
             let crfd = instr.crfd();
             let imm = (instr.0 >> 12) & 0xF;
@@ -93,58 +93,66 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_MCRFS => {
             let src_field = instr.crfs();
             let shift = (7 - src_field) * 4;
             let fpscr_nibble = (ctx.gekko.fpscr.raw() >> shift) & 0xF;
-            ctx.gekko.cr.set_field(instr.crfd(), ConditionField::from(fpscr_nibble as u8));
+            ctx.gekko
+                .cr
+                .set_field(instr.crfd(), ConditionField::from(fpscr_nibble as u8));
             let clear_mask = (0xF << shift) & (FPSCR_FX | FPSCR_ANY_X);
             ctx.gekko.fpscr = Fpscr::from(ctx.gekko.fpscr.raw() & !clear_mask);
             ctx.gekko.recompute_fpscr_summary();
-        },
+        }
         OP_FMRX => {
-            ctx.gekko.write_fpr(instr.rd(), ctx.gekko.read_fpr(instr.rb()));
+            ctx.gekko
+                .write_fpr(instr.rd(), ctx.gekko.read_fpr(instr.rb()));
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FNEGX => {
-            ctx.gekko.write_fpr(instr.rd(), -ctx.gekko.read_fpr(instr.rb()));
+            ctx.gekko
+                .write_fpr(instr.rd(), -ctx.gekko.read_fpr(instr.rb()));
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FABSX => {
-            ctx.gekko.write_fpr(instr.rd(), ctx.gekko.read_fpr(instr.rb()).abs());
+            ctx.gekko
+                .write_fpr(instr.rd(), ctx.gekko.read_fpr(instr.rb()).abs());
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FNABSX => {
-            ctx.gekko.write_fpr(instr.rd(), -ctx.gekko.read_fpr(instr.rb()).abs());
+            ctx.gekko
+                .write_fpr(instr.rd(), -ctx.gekko.read_fpr(instr.rb()).abs());
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FRSPX => {
             let val = ctx.gekko.read_fpr(instr.rb()) as f32 as f64;
             fp_write_single(ctx, &instr, val);
-        },
+        }
         OP_FCTIWX => {
             let res = ctx.gekko.read_fpr(instr.rb()).round() as i32;
-            ctx.gekko.write_fpr(instr.rd(), f64::from_bits(res as u32 as u64));
+            ctx.gekko
+                .write_fpr(instr.rd(), f64::from_bits(res as u32 as u64));
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FCTIWZX => {
             let res = ctx.gekko.read_fpr(instr.rb()) as i32;
-            ctx.gekko.write_fpr(instr.rd(), f64::from_bits(res as u32 as u64));
+            ctx.gekko
+                .write_fpr(instr.rd(), f64::from_bits(res as u32 as u64));
             if instr.rc() {
                 ctx.gekko.update_cr1();
             }
-        },
+        }
         OP_FCMPU | OP_FCMPO => {
             let fa = ctx.gekko.read_fpr(instr.ra());
             let fb = ctx.gekko.read_fpr(instr.rb());
@@ -158,47 +166,57 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
                 ConditionField::new().with_eq(true)
             };
             ctx.gekko.cr.set_field(instr.crfd(), cf);
-        },
-        OP_FADDX => {
-            fp_write(ctx, &instr, ctx.gekko.read_fpr(instr.ra()) + ctx.gekko.read_fpr(instr.rb()))
-        },
-        OP_FSUBX => {
-            fp_write(ctx, &instr, ctx.gekko.read_fpr(instr.ra()) - ctx.gekko.read_fpr(instr.rb()))
-        },
-        OP_FMULX => {
-            fp_write(ctx, &instr, ctx.gekko.read_fpr(instr.ra()) * ctx.gekko.read_fpr(instr.fc()))
-        },
-        OP_FDIVX => {
-            fp_write(ctx, &instr, ctx.gekko.read_fpr(instr.ra()) / ctx.gekko.read_fpr(instr.rb()))
-        },
+        }
+        OP_FADDX => fp_write(
+            ctx,
+            &instr,
+            ctx.gekko.read_fpr(instr.ra()) + ctx.gekko.read_fpr(instr.rb()),
+        ),
+        OP_FSUBX => fp_write(
+            ctx,
+            &instr,
+            ctx.gekko.read_fpr(instr.ra()) - ctx.gekko.read_fpr(instr.rb()),
+        ),
+        OP_FMULX => fp_write(
+            ctx,
+            &instr,
+            ctx.gekko.read_fpr(instr.ra()) * ctx.gekko.read_fpr(instr.fc()),
+        ),
+        OP_FDIVX => fp_write(
+            ctx,
+            &instr,
+            ctx.gekko.read_fpr(instr.ra()) / ctx.gekko.read_fpr(instr.rb()),
+        ),
         OP_FMADDX => fp_write(
             ctx,
             &instr,
-            ctx.gekko
-                .read_fpr(instr.ra())
-                .mul_add(ctx.gekko.read_fpr(instr.fc()), ctx.gekko.read_fpr(instr.rb())),
+            ctx.gekko.read_fpr(instr.ra()).mul_add(
+                ctx.gekko.read_fpr(instr.fc()),
+                ctx.gekko.read_fpr(instr.rb()),
+            ),
         ),
         OP_FMSUBX => fp_write(
             ctx,
             &instr,
-            ctx.gekko
-                .read_fpr(instr.ra())
-                .mul_add(ctx.gekko.read_fpr(instr.fc()), -ctx.gekko.read_fpr(instr.rb())),
+            ctx.gekko.read_fpr(instr.ra()).mul_add(
+                ctx.gekko.read_fpr(instr.fc()),
+                -ctx.gekko.read_fpr(instr.rb()),
+            ),
         ),
         OP_FNMADDX => {
-            let t = ctx
-                .gekko
-                .read_fpr(instr.ra())
-                .mul_add(ctx.gekko.read_fpr(instr.fc()), ctx.gekko.read_fpr(instr.rb()));
+            let t = ctx.gekko.read_fpr(instr.ra()).mul_add(
+                ctx.gekko.read_fpr(instr.fc()),
+                ctx.gekko.read_fpr(instr.rb()),
+            );
             fp_write(ctx, &instr, super::neg_unless_nan(t));
-        },
+        }
         OP_FNMSUBX => {
-            let t = ctx
-                .gekko
-                .read_fpr(instr.ra())
-                .mul_add(ctx.gekko.read_fpr(instr.fc()), -ctx.gekko.read_fpr(instr.rb()));
+            let t = ctx.gekko.read_fpr(instr.ra()).mul_add(
+                ctx.gekko.read_fpr(instr.fc()),
+                -ctx.gekko.read_fpr(instr.rb()),
+            );
             fp_write(ctx, &instr, super::neg_unless_nan(t));
-        },
+        }
         OP_FADDSX => fp_write_single(
             ctx,
             &instr,
@@ -242,28 +260,32 @@ pub fn fp_ops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, i
                 ctx.gekko.read_fpr(instr.rb()),
             ) as f32 as f64;
             fp_write_single(ctx, &instr, super::neg_unless_nan(t));
-        },
+        }
         OP_FNMSUBSX => {
             let t = ctx.gekko.read_fpr(instr.ra()).mul_add(
                 super::round_frc(ctx.gekko.read_fpr(instr.fc())),
                 -ctx.gekko.read_fpr(instr.rb()),
             ) as f32 as f64;
             fp_write_single(ctx, &instr, super::neg_unless_nan(t));
-        },
+        }
         OP_FSQRTX => fp_write(ctx, &instr, ctx.gekko.read_fpr(instr.rb()).sqrt()),
-        OP_FSQRTSX => {
-            fp_write_single(ctx, &instr, (ctx.gekko.read_fpr(instr.rb()).sqrt()) as f32 as f64)
-        },
-        OP_FRESX => {
-            fp_write_single(ctx, &instr, (1.0f32 / ctx.gekko.read_fpr(instr.rb()) as f32) as f64)
-        },
+        OP_FSQRTSX => fp_write_single(
+            ctx,
+            &instr,
+            (ctx.gekko.read_fpr(instr.rb()).sqrt()) as f32 as f64,
+        ),
+        OP_FRESX => fp_write_single(
+            ctx,
+            &instr,
+            (1.0f32 / ctx.gekko.read_fpr(instr.rb()) as f32) as f64,
+        ),
         OP_FRSQRTEX => fp_write(ctx, &instr, 1.0 / ctx.gekko.read_fpr(instr.rb()).sqrt()),
         OP_FSELX => {
             let fa = ctx.gekko.read_fpr(instr.ra());
             let fb = ctx.gekko.read_fpr(instr.rb());
             let fc = ctx.gekko.read_fpr(instr.fc());
             fp_write(ctx, &instr, if fa >= 0.0 { fc } else { fb });
-        },
+        }
 
         _ => todo!("FP instruction with OP = {OP:#x}"),
     }

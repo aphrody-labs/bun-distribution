@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Bounded shell execution and computer-use reporting for Discord.
 
-use aphrody_proc::NoWindow as _;
 use anyhow::{Context, Result};
+use aphrody_proc::NoWindow as _;
 use std::time::Instant;
 use tokio::process::Command;
 
@@ -42,7 +42,12 @@ pub async fn run_bounded_shell(command_line: &str) -> Result<ShellExecutionResul
     cmd.kill_on_drop(true);
     let output = tokio::time::timeout(SHELL_TIMEOUT, cmd.output())
         .await
-        .map_err(|_| anyhow::anyhow!("shell command timed out after {}s: {command_line}", SHELL_TIMEOUT.as_secs()))?
+        .map_err(|_| {
+            anyhow::anyhow!(
+                "shell command timed out after {}s: {command_line}",
+                SHELL_TIMEOUT.as_secs()
+            )
+        })?
         .with_context(|| format!("Failed to execute shell command: {command_line}"))?;
 
     let duration_ms = start.elapsed().as_millis();
@@ -64,7 +69,11 @@ pub async fn run_bounded_shell(command_line: &str) -> Result<ShellExecutionResul
 
 /// Formats a shell execution result into a Discord Embed.
 pub fn build_shell_embed(res: &ShellExecutionResult) -> Embed {
-    let status_emoji = if res.success { "🟢 SUCCESS" } else { "🔴 FAILED" };
+    let status_emoji = if res.success {
+        "🟢 SUCCESS"
+    } else {
+        "🔴 FAILED"
+    };
     let color = if res.success { 0x22C55E } else { 0xEF4444 };
 
     let mut fields = Vec::new();
@@ -106,10 +115,7 @@ pub fn build_shell_embed(res: &ShellExecutionResult) -> Embed {
     }
 
     Embed {
-        title: Some(format!(
-            "Shell: `{}`",
-            clip(&res.command, 80)
-        )),
+        title: Some(format!("Shell: `{}`", clip(&res.command, 80))),
         description: None,
         color: Some(color),
         fields,

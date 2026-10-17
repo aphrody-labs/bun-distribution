@@ -9,7 +9,11 @@ use aphrody_embed::native::{
 fn default_embedder(threads: usize, batch_size: usize) -> Option<aphrody_embed::native::Embedder> {
     common::embedder(
         DEFAULT_MODEL_ID,
-        EmbedOptions { threads, batch_size, ..EmbedOptions::default() },
+        EmbedOptions {
+            threads,
+            batch_size,
+            ..EmbedOptions::default()
+        },
     )
 }
 
@@ -18,29 +22,55 @@ fn synonyms_beat_unrelated_words() {
     let Some(embedder) = default_embedder(4, 0) else {
         return;
     };
-    let v = embedder.embed_batch(&["car", "automobile", "banana"], TextKind::Passage).unwrap();
+    let v = embedder
+        .embed_batch(&["car", "automobile", "banana"], TextKind::Passage)
+        .unwrap();
     let synonym = cosine(&v[0], &v[1]);
     let unrelated = cosine(&v[0], &v[2]);
     println!("cos(car, automobile) = {synonym:.4}, cos(car, banana) = {unrelated:.4}");
-    assert!(synonym > unrelated + 0.2, "synonym {synonym} vs unrelated {unrelated}");
+    assert!(
+        synonym > unrelated + 0.2,
+        "synonym {synonym} vs unrelated {unrelated}"
+    );
 }
 
 const PARAPHRASES: [(&str, &str); 10] = [
-    ("How do I reset my password?", "I forgot my password, how can I change it?"),
-    ("The stock market fell sharply today.", "Share prices dropped a lot on the exchange today."),
-    ("She is cooking pasta for dinner.", "For her evening meal she is making spaghetti."),
+    (
+        "How do I reset my password?",
+        "I forgot my password, how can I change it?",
+    ),
+    (
+        "The stock market fell sharply today.",
+        "Share prices dropped a lot on the exchange today.",
+    ),
+    (
+        "She is cooking pasta for dinner.",
+        "For her evening meal she is making spaghetti.",
+    ),
     (
         "The train to Paris was delayed by two hours.",
         "Our Paris-bound train arrived two hours late.",
     ),
-    ("This laptop has a very long battery life.", "The notebook's battery lasts for many hours."),
-    ("Heavy rain is expected tomorrow morning.", "The forecast says it will pour early tomorrow."),
-    ("The football team won the championship.", "The soccer club took the league title."),
+    (
+        "This laptop has a very long battery life.",
+        "The notebook's battery lasts for many hours.",
+    ),
+    (
+        "Heavy rain is expected tomorrow morning.",
+        "The forecast says it will pour early tomorrow.",
+    ),
+    (
+        "The football team won the championship.",
+        "The soccer club took the league title.",
+    ),
     (
         "Please install the latest security update.",
         "Apply the newest security patch to your system.",
     ),
-    ("The museum opens at nine on weekdays.", "On weekdays the gallery opens its doors at 9 am."),
+    (
+        "The museum opens at nine on weekdays.",
+        "On weekdays the gallery opens its doors at 9 am.",
+    ),
     (
         "Crawlers download web pages to build an index.",
         "A web spider fetches pages so they can be indexed.",
@@ -70,7 +100,10 @@ fn paraphrases_beat_random_pairs() {
             let cross = cosine(&a[i], other);
             random_sum += cross;
             random_count += 1;
-            assert!(own > cross, "pair {i} ({own}) should beat mismatched pair {i}/{j} ({cross})");
+            assert!(
+                own > cross,
+                "pair {i} ({own}) should beat mismatched pair {i}/{j} ({cross})"
+            );
         }
     }
     let paraphrase_mean = paraphrase_sum / a.len() as f32;
@@ -107,9 +140,18 @@ fn batching_sorting_and_threading_do_not_change_results() {
         assert_eq!(batched[i].len(), 384);
     }
     let tokens = parallel.count_tokens(&refs, TextKind::Passage).unwrap();
-    assert_eq!(tokens[1], parallel.max_seq_len(), "long text must be truncated");
+    assert_eq!(
+        tokens[1],
+        parallel.max_seq_len(),
+        "long text must be truncated"
+    );
     assert_eq!(tokens[3], 2, "empty text is [CLS] [SEP]");
-    assert!(parallel.embed_batch(&[], TextKind::Query).unwrap().is_empty());
+    assert!(
+        parallel
+            .embed_batch(&[], TextKind::Query)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -117,7 +159,9 @@ fn int8_storage_keeps_ranking_quality() {
     let Some(embedder) = default_embedder(4, 0) else {
         return;
     };
-    let v = embedder.embed_batch(&["car", "automobile", "banana"], TextKind::Passage).unwrap();
+    let v = embedder
+        .embed_batch(&["car", "automobile", "banana"], TextKind::Passage)
+        .unwrap();
     for vector in &v {
         let (q, scale) = quantize_i8(vector);
         assert!(cosine(vector, &dequantize_i8(&q, scale)) > 0.999);
@@ -176,7 +220,10 @@ fn query_and_passage_prefixes_are_applied() {
         let query = embedder.embed_batch(&text, TextKind::Query).unwrap();
         let passage = embedder.embed_batch(&text, TextKind::Passage).unwrap();
         let cos = cosine(&query[0], &passage[0]);
-        assert!(cos < 0.9999 && cos > 0.5, "{id}: query/passage cosine {cos}");
+        assert!(
+            cos < 0.9999 && cos > 0.5,
+            "{id}: query/passage cosine {cos}"
+        );
     }
 }
 

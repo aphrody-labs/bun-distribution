@@ -21,15 +21,22 @@ fn show(v: &RdbnValue) -> String {
 }
 
 fn main() {
-    let prefix = std::env::args().nth(1).expect("usage: probe_rdbn <filename_prefix>");
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let prefix = std::env::args()
+        .nth(1)
+        .expect("usage: probe_rdbn <filename_prefix>");
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
     let path = vfs
         .iter()
         .map(|(p, _)| p.to_string())
         .filter(|p| {
-            p.rsplit('/').next().is_some_and(|b| b.starts_with(&prefix) && b.ends_with(".cfg.bin"))
+            p.rsplit('/')
+                .next()
+                .is_some_and(|b| b.starts_with(&prefix) && b.ends_with(".cfg.bin"))
         })
         .min()
         .unwrap_or_else(|| panic!("{prefix} introuvable dans le VFS"));
@@ -41,14 +48,22 @@ fn main() {
     }
     let rdbn = cfgbin::parse(&bytes).expect("parse");
     for l in cfgbin::read_values(&rdbn, &bytes) {
-        eprintln!("\n=== list '{}' type '{}' rows={} ===", l.name, l.type_name, l.rows.len());
+        eprintln!(
+            "\n=== list '{}' type '{}' rows={} ===",
+            l.name,
+            l.type_name,
+            l.rows.len()
+        );
         if let Some(first) = l.rows.first() {
             let fields: Vec<&str> = first.fields.iter().map(|(n, _)| n.as_str()).collect();
             eprintln!("fields: {}", fields.join(", "));
         }
         for (i, row) in l.rows.iter().take(2).enumerate() {
-            let kv: Vec<String> =
-                row.fields.iter().map(|(n, v)| format!("{n}={}", show(v))).collect();
+            let kv: Vec<String> = row
+                .fields
+                .iter()
+                .map(|(n, v)| format!("{n}={}", show(v)))
+                .collect();
             eprintln!("  row{i}: {}", kv.join("  "));
         }
     }

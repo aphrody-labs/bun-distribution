@@ -44,7 +44,10 @@ fn next_generation() -> u64 {
 
 impl PresetList {
     pub fn new(items: Vec<Preset>) -> PresetList {
-        PresetList { items, generation: next_generation() }
+        PresetList {
+            items,
+            generation: next_generation(),
+        }
     }
 
     /// Changes whenever the list may have changed.
@@ -106,19 +109,39 @@ pub fn slug(s: &str) -> String {
 
 /// Serialise presets as a `.lcpreset` file (favourite/built-in flags are not exported).
 pub fn to_lcpreset(presets: &[Preset]) -> String {
-    let presets = presets.iter().map(|p| Preset { favorite: false, builtin: false, ..p.clone() }).collect();
-    serde_json::to_string_pretty(&PresetFile { format: LCPRESET_FORMAT.into(), version: 1, presets }).unwrap_or_default()
+    let presets = presets
+        .iter()
+        .map(|p| Preset {
+            favorite: false,
+            builtin: false,
+            ..p.clone()
+        })
+        .collect();
+    serde_json::to_string_pretty(&PresetFile {
+        format: LCPRESET_FORMAT.into(),
+        version: 1,
+        presets,
+    })
+    .unwrap_or_default()
 }
 
 /// Read a preset file by name: `.lcpreset` (a [`PresetFile`], a bare preset object or an array of
 /// presets) or `.xmp` (a `crs:` preset).
 pub fn parse_preset_file(name: &str, bytes: &[u8]) -> Result<Vec<Preset>, String> {
-    let stem = Path::new(name).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Preset".into());
-    let ext = Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let stem = Path::new(name)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Preset".into());
+    let ext = Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
     let text = String::from_utf8_lossy(bytes);
     let text = text.trim_start_matches('\u{feff}');
     if ext == "xmp" || (ext != LCPRESET_EXT && text.trim_start().starts_with('<')) {
-        return crate::crs::preset_from_xmp(text, &stem).map(|p| vec![p]).ok_or_else(|| "no develop settings in this XMP file".into());
+        return crate::crs::preset_from_xmp(text, &stem)
+            .map(|p| vec![p])
+            .ok_or_else(|| "no develop settings in this XMP file".into());
     }
     let v: Value = serde_json::from_str(text).map_err(|e| format!("not a preset file: {e}"))?;
     let list = match &v {
@@ -154,8 +177,12 @@ pub fn parse_preset_file(name: &str, bytes: &[u8]) -> Result<Vec<Preset>, String
 /// (`.lcpreset`, `.xmp`).
 pub fn expand_preset_paths(paths: &[String]) -> Vec<String> {
     let preset_file = |p: &Path| {
-        let ext = p.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-        ext == LCPRESET_EXT || ["xmp", "lrtemplate", "zip", "lmp", "mplumpack"].contains(&ext.as_str())
+        let ext = p
+            .extension()
+            .map(|e| e.to_string_lossy().to_ascii_lowercase())
+            .unwrap_or_default();
+        ext == LCPRESET_EXT
+            || ["xmp", "lrtemplate", "zip", "lmp", "mplumpack"].contains(&ext.as_str())
     };
     let mut out = Vec::new();
     for p in paths {
@@ -179,12 +206,21 @@ impl Session {
         let mut ids: HashSet<String> = self.presets.iter().map(|q| q.id.clone()).collect();
         let mut by_name: HashMap<(String, String), Vec<usize>> = HashMap::new();
         for (i, q) in self.presets.iter().enumerate() {
-            by_name.entry((q.name.clone(), q.group.clone())).or_default().push(i);
+            by_name
+                .entry((q.name.clone(), q.group.clone()))
+                .or_default()
+                .push(i);
         }
         let mut added = Vec::new();
         for mut p in presets {
             let key = (p.name.clone(), p.group.clone());
-            let same = by_name.get(&key).is_some_and(|ix| ix.iter().any(|&i| self.presets.get(i).is_some_and(|q| q.settings == p.settings)));
+            let same = by_name.get(&key).is_some_and(|ix| {
+                ix.iter().any(|&i| {
+                    self.presets
+                        .get(i)
+                        .is_some_and(|q| q.settings == p.settings)
+                })
+            });
             if same {
                 continue;
             }
@@ -209,7 +245,14 @@ impl Session {
 }
 
 fn p(group: &str, id: &str, name: &str, settings: serde_json::Value) -> Preset {
-    Preset { id: format!("lc.{id}"), name: name.into(), group: group.into(), settings, favorite: false, builtin: true }
+    Preset {
+        id: format!("lc.{id}"),
+        name: name.into(),
+        group: group.into(),
+        settings,
+        favorite: false,
+        builtin: true,
+    }
 }
 
 pub fn builtin() -> Vec<Preset> {
@@ -268,7 +311,12 @@ pub fn builtin() -> Vec<Preset> {
             "High Contrast B&W",
             json!({"treatment": "bw", "light": {"contrast": 45.0, "whites": 20.0, "blacks": -25.0}, "effects": {"clarity": 20.0}, "bw_mix": {"blue": -30.0, "red": 15.0}}),
         ),
-        p("B&W", "bw-soft", "Soft B&W", json!({"treatment": "bw", "light": {"contrast": -15.0, "shadows": 25.0}, "curve": {"shadows": 15.0}})),
+        p(
+            "B&W",
+            "bw-soft",
+            "Soft B&W",
+            json!({"treatment": "bw", "light": {"contrast": -15.0, "shadows": 25.0}, "curve": {"shadows": 15.0}}),
+        ),
         p(
             "B&W",
             "bw-selenium",
@@ -474,28 +522,116 @@ pub struct ProfileInfo {
 
 /// Our base profiles (rendering looks). Implemented in the pipeline.
 pub const PROFILES: &[ProfileInfo] = &[
-    ProfileInfo { id: "lc.color", name: "Color", group: "Basic" },
-    ProfileInfo { id: "lc.neutral", name: "Neutral", group: "Basic" },
-    ProfileInfo { id: "lc.vivid", name: "Vivid", group: "Basic" },
-    ProfileInfo { id: "lc.landscape", name: "Landscape", group: "Basic" },
-    ProfileInfo { id: "lc.portrait", name: "Portrait", group: "Basic" },
-    ProfileInfo { id: "lc.mono", name: "Monochrome", group: "Basic" },
-    ProfileInfo { id: "lc.film.warm-print", name: "Warm Print", group: "Film" },
-    ProfileInfo { id: "lc.film.cool-fade", name: "Cool Fade", group: "Film" },
-    ProfileInfo { id: "lc.film.golden-hour", name: "Golden Hour", group: "Film" },
-    ProfileInfo { id: "lc.film.faded-slide", name: "Faded Slide", group: "Film" },
-    ProfileInfo { id: "lc.cine.teal-amber", name: "Teal & Amber", group: "Cinematic" },
-    ProfileInfo { id: "lc.cine.night-blue", name: "Night Blue", group: "Cinematic" },
-    ProfileInfo { id: "lc.cine.desert-heat", name: "Desert Heat", group: "Cinematic" },
-    ProfileInfo { id: "lc.cine.neon-dusk", name: "Neon Dusk", group: "Cinematic" },
-    ProfileInfo { id: "lc.muted.matte-soft", name: "Matte Soft", group: "Muted" },
-    ProfileInfo { id: "lc.muted.bleached", name: "Bleached", group: "Muted" },
-    ProfileInfo { id: "lc.muted.pastel-haze", name: "Pastel Haze", group: "Muted" },
-    ProfileInfo { id: "lc.muted.quiet-green", name: "Quiet Green", group: "Muted" },
-    ProfileInfo { id: "lc.bw.mono-rich", name: "Mono Rich", group: "B&W" },
-    ProfileInfo { id: "lc.bw.red-filter", name: "Mono Red Filter", group: "B&W" },
-    ProfileInfo { id: "lc.bw.soft", name: "Mono Soft", group: "B&W" },
-    ProfileInfo { id: "lc.bw.sepia", name: "Sepia Tone", group: "B&W" },
+    ProfileInfo {
+        id: "lc.color",
+        name: "Color",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.neutral",
+        name: "Neutral",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.vivid",
+        name: "Vivid",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.landscape",
+        name: "Landscape",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.portrait",
+        name: "Portrait",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.mono",
+        name: "Monochrome",
+        group: "Basic",
+    },
+    ProfileInfo {
+        id: "lc.film.warm-print",
+        name: "Warm Print",
+        group: "Film",
+    },
+    ProfileInfo {
+        id: "lc.film.cool-fade",
+        name: "Cool Fade",
+        group: "Film",
+    },
+    ProfileInfo {
+        id: "lc.film.golden-hour",
+        name: "Golden Hour",
+        group: "Film",
+    },
+    ProfileInfo {
+        id: "lc.film.faded-slide",
+        name: "Faded Slide",
+        group: "Film",
+    },
+    ProfileInfo {
+        id: "lc.cine.teal-amber",
+        name: "Teal & Amber",
+        group: "Cinematic",
+    },
+    ProfileInfo {
+        id: "lc.cine.night-blue",
+        name: "Night Blue",
+        group: "Cinematic",
+    },
+    ProfileInfo {
+        id: "lc.cine.desert-heat",
+        name: "Desert Heat",
+        group: "Cinematic",
+    },
+    ProfileInfo {
+        id: "lc.cine.neon-dusk",
+        name: "Neon Dusk",
+        group: "Cinematic",
+    },
+    ProfileInfo {
+        id: "lc.muted.matte-soft",
+        name: "Matte Soft",
+        group: "Muted",
+    },
+    ProfileInfo {
+        id: "lc.muted.bleached",
+        name: "Bleached",
+        group: "Muted",
+    },
+    ProfileInfo {
+        id: "lc.muted.pastel-haze",
+        name: "Pastel Haze",
+        group: "Muted",
+    },
+    ProfileInfo {
+        id: "lc.muted.quiet-green",
+        name: "Quiet Green",
+        group: "Muted",
+    },
+    ProfileInfo {
+        id: "lc.bw.mono-rich",
+        name: "Mono Rich",
+        group: "B&W",
+    },
+    ProfileInfo {
+        id: "lc.bw.red-filter",
+        name: "Mono Red Filter",
+        group: "B&W",
+    },
+    ProfileInfo {
+        id: "lc.bw.soft",
+        name: "Mono Soft",
+        group: "B&W",
+    },
+    ProfileInfo {
+        id: "lc.bw.sepia",
+        name: "Sepia Tone",
+        group: "B&W",
+    },
 ];
 
 /// Profile groups in menu/browser order.
@@ -523,7 +659,10 @@ impl Session {
         if let Some(p) = profile(id) {
             return Some((p.name, p.group));
         }
-        self.lut_profiles.iter().find(|p| p.id == id).map(|p| (p.name.as_str(), p.group.as_str()))
+        self.lut_profiles
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| (p.name.as_str(), p.group.as_str()))
     }
 
     /// Remember `id` as the most recently applied profile.
@@ -535,21 +674,25 @@ impl Session {
 
     /// The profile menu: favourites, recent, then every group (`profiles.menu`).
     pub fn profile_menu(&self) -> Value {
-        let item =
-            |p: &ProfileInfo| json!({"id": p.id, "name": p.name, "group": p.group, "favorite": self.profile_favorites.iter().any(|f| f == p.id)});
+        let item = |p: &ProfileInfo| json!({"id": p.id, "name": p.name, "group": p.group, "favorite": self.profile_favorites.iter().any(|f| f == p.id)});
         let lut_item = |id: &str| {
             self.lut_profiles
                 .iter()
                 .find(|p| p.id == id)
                 .map(|p| json!({"id": p.id, "name": p.name, "group": p.group, "favorite": self.profile_favorites.contains(&p.id), "imported": true}))
         };
-        let list = |ids: &[String]| ids.iter().filter_map(|id| profile(id).map(item).or_else(|| lut_item(id))).collect::<Vec<_>>();
+        let list = |ids: &[String]| {
+            ids.iter()
+                .filter_map(|id| profile(id).map(item).or_else(|| lut_item(id)))
+                .collect::<Vec<_>>()
+        };
         let mut groups: Vec<Value> = profile_groups()
             .into_iter()
             .map(|g| json!({"name": g, "profiles": PROFILES.iter().filter(|p| p.group == g).map(item).collect::<Vec<_>>()}))
             .collect();
         // imported LUT profiles, by their groups
-        let mut lut_groups: Vec<&str> = self.lut_profiles.iter().map(|p| p.group.as_str()).collect();
+        let mut lut_groups: Vec<&str> =
+            self.lut_profiles.iter().map(|p| p.group.as_str()).collect();
         lut_groups.sort_unstable();
         lut_groups.dedup();
         for g in lut_groups {
@@ -590,22 +733,40 @@ mod tests {
         let mut ids = std::collections::HashSet::new();
         for p in PROFILES {
             assert!(ids.insert(p.id), "{}", p.id);
-            assert!(p.id == "lc.color" || looks.contains(&p.id), "{} has no look", p.id);
+            assert!(
+                p.id == "lc.color" || looks.contains(&p.id),
+                "{} has no look",
+                p.id
+            );
         }
         assert!(PROFILES.len() >= 22);
-        assert_eq!(profile_groups(), ["Basic", "Film", "Cinematic", "Muted", "B&W"]);
+        assert_eq!(
+            profile_groups(),
+            ["Basic", "Film", "Cinematic", "Muted", "B&W"]
+        );
     }
 
     #[test]
     fn creative_profiles_render_without_moving_the_sliders() {
         let mut s = Session::with_demo();
         let id = s.active().unwrap();
-        s.execute("develop.set", &json!({"control": "light.exposure", "value": 0.4})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "light.exposure", "value": 0.4}),
+        )
+        .unwrap();
         let before = s.develop_of(id).unwrap();
         let plain = s.render_now(id, 96, 96).unwrap().image;
-        s.execute("develop.profile", &json!({"id": "lc.cine.teal-amber", "amount": 150})).unwrap();
+        s.execute(
+            "develop.profile",
+            &json!({"id": "lc.cine.teal-amber", "amount": 150}),
+        )
+        .unwrap();
         let after = s.develop_of(id).unwrap();
-        assert_eq!((after.profile.id.as_str(), after.profile.amount), ("lc.cine.teal-amber", 150.0));
+        assert_eq!(
+            (after.profile.id.as_str(), after.profile.amount),
+            ("lc.cine.teal-amber", 150.0)
+        );
         let mut same = (*after).clone();
         same.profile = before.profile.clone();
         assert_eq!(same, *before, "only the profile changed");
@@ -631,33 +792,68 @@ mod tests {
     fn lcpreset_export_import_roundtrip_keeps_groups() {
         let d = dir("rt");
         let mut s = Session::with_demo();
-        s.execute("develop.set", &json!({"control": "light.exposure", "value": 0.6})).unwrap();
-        s.execute("preset.create", &json!({"name": "Bright", "group": "Travel"})).unwrap();
-        s.execute("develop.set", &json!({"control": "effects.clarity", "value": 30})).unwrap();
-        s.execute("preset.create", &json!({"name": "Crisp", "group": "Street"})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "light.exposure", "value": 0.6}),
+        )
+        .unwrap();
+        s.execute(
+            "preset.create",
+            &json!({"name": "Bright", "group": "Travel"}),
+        )
+        .unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "effects.clarity", "value": 30}),
+        )
+        .unwrap();
+        s.execute(
+            "preset.create",
+            &json!({"name": "Crisp", "group": "Street"}),
+        )
+        .unwrap();
         let mine: Vec<Preset> = s.presets.iter().filter(|p| !p.builtin).cloned().collect();
         assert_eq!(mine.len(), 2);
         let path = d.join("mine");
-        let r = s.execute("preset.export", &json!({"path": path.to_string_lossy()})).unwrap();
+        let r = s
+            .execute("preset.export", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert_eq!(r["count"], 2);
         let file = d.join("mine.lcpreset");
         assert!(file.is_file());
         let one = d.join("travel.lcpreset");
-        s.execute("preset.export", &json!({"path": one.to_string_lossy(), "group": "Travel"})).unwrap();
-        assert!(s.execute("preset.export", &json!({"path": one.to_string_lossy(), "group": "Nope"})).is_err());
+        s.execute(
+            "preset.export",
+            &json!({"path": one.to_string_lossy(), "group": "Travel"}),
+        )
+        .unwrap();
+        assert!(
+            s.execute(
+                "preset.export",
+                &json!({"path": one.to_string_lossy(), "group": "Nope"})
+            )
+            .is_err()
+        );
 
         // a fresh session imports both files from the folder; the duplicate is skipped
         let mut t = Session::new();
-        let r = t.execute("preset.import", &json!({"paths": [d.to_string_lossy()]})).unwrap();
+        let r = t
+            .execute("preset.import", &json!({"paths": [d.to_string_lossy()]}))
+            .unwrap();
         assert_eq!(r["imported"].as_array().unwrap().len(), 2, "{r}");
         assert_eq!(r["skipped"], 1, "{r}");
         for p in &mine {
             let q = t.presets.iter().find(|q| q.name == p.name).unwrap();
-            assert_eq!((&q.group, &q.settings, q.builtin), (&p.group, &p.settings, false));
+            assert_eq!(
+                (&q.group, &q.settings, q.builtin),
+                (&p.group, &p.settings, false)
+            );
         }
         // importing into the session that has them: everything is skipped, nothing duplicated
         let n = s.presets.len();
-        let r = s.execute("preset.import", &json!({"paths": [file.to_string_lossy()]})).unwrap();
+        let r = s
+            .execute("preset.import", &json!({"paths": [file.to_string_lossy()]}))
+            .unwrap();
         assert_eq!((r["skipped"].as_u64(), s.presets.len()), (Some(2), n));
         let _ = std::fs::remove_dir_all(&d);
     }
@@ -670,15 +866,28 @@ mod tests {
         clash.settings = json!({"light": {"exposure": 1.0}});
         std::fs::write(d.join("a.lcpreset"), serde_json::to_string(&clash).unwrap()).unwrap();
         std::fs::write(d.join("b.lcpreset"), "{not json").unwrap();
-        std::fs::write(d.join("c.lcpreset"), r#"{"format": "other", "version": 1, "presets": []}"#).unwrap();
+        std::fs::write(
+            d.join("c.lcpreset"),
+            r#"{"format": "other", "version": 1, "presets": []}"#,
+        )
+        .unwrap();
         std::fs::write(d.join("notes.txt"), "ignored inside folders").unwrap();
         let mut s = Session::new();
-        let r = s.execute("preset.import", &json!({"paths": [d.to_string_lossy()]})).unwrap();
+        let r = s
+            .execute("preset.import", &json!({"paths": [d.to_string_lossy()]}))
+            .unwrap();
         assert_eq!(r["failed"].as_array().unwrap().len(), 2, "{r}");
         let id = r["imported"][0]["id"].as_str().unwrap();
         assert_ne!(id, builtin.id);
         assert!(id.starts_with("user."));
-        assert!(s.presets.iter().find(|p| p.id == builtin.id).unwrap().builtin, "built-in untouched");
+        assert!(
+            s.presets
+                .iter()
+                .find(|p| p.id == builtin.id)
+                .unwrap()
+                .builtin,
+            "built-in untouched"
+        );
         let _ = std::fs::remove_dir_all(&d);
     }
 
@@ -693,13 +902,24 @@ mod tests {
           </rdf:Description></rdf:RDF></x:xmpmeta>"#;
         std::fs::write(d.join("Soft Lift.xmp"), x).unwrap();
         let mut s = Session::with_demo();
-        let r = s.execute("preset.import", &json!({"paths": [d.join("Soft Lift.xmp").to_string_lossy()]})).unwrap();
+        let r = s
+            .execute(
+                "preset.import",
+                &json!({"paths": [d.join("Soft Lift.xmp").to_string_lossy()]}),
+            )
+            .unwrap();
         let id = r["imported"][0]["id"].as_str().unwrap().to_string();
-        assert_eq!(r["imported"][0]["name"], "Soft Lift", "file name when crs:Name is missing");
+        assert_eq!(
+            r["imported"][0]["name"], "Soft Lift",
+            "file name when crs:Name is missing"
+        );
         assert_eq!(r["imported"][0]["group"], "Test Group");
         s.execute("preset.apply", &json!({"id": id})).unwrap();
         let dv = s.develop_of(s.active().unwrap()).unwrap();
-        assert_eq!((dv.light.exposure, dv.light.shadows, dv.grain.amount), (0.3, 20.0, 12.0));
+        assert_eq!(
+            (dv.light.exposure, dv.light.shadows, dv.grain.amount),
+            (0.3, 20.0, 12.0)
+        );
         let _ = std::fs::remove_dir_all(&d);
     }
 }

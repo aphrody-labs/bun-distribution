@@ -79,7 +79,9 @@ pub fn parse(text: &str) -> Result<Document> {
     let mut seen_cue = false;
     for b in blocks {
         let first = b[0].trim();
-        if !first.contains("-->") && (first == "NOTE" || first.starts_with("NOTE ") || first.starts_with("NOTE\t")) {
+        if !first.contains("-->")
+            && (first == "NOTE" || first.starts_with("NOTE ") || first.starts_with("NOTE\t"))
+        {
             doc.blocks.push(b.join("\n"));
             continue;
         }
@@ -87,23 +89,42 @@ pub fn parse(text: &str) -> Result<Document> {
             doc.blocks.push(b.join("\n"));
             continue;
         }
-        let (id, timing_idx) = if b[0].contains("-->") { (None, 0) } else { (Some(b[0].trim().to_string()), 1) };
+        let (id, timing_idx) = if b[0].contains("-->") {
+            (None, 0)
+        } else {
+            (Some(b[0].trim().to_string()), 1)
+        };
         let Some(timing) = b.get(timing_idx) else {
             doc.warnings.push(format!("ignored block \"{first}\""));
             continue;
         };
         let Some((start, end, settings)) = parse_timing_line(timing) else {
-            doc.warnings.push(format!("bad timing line \"{}\"", timing.trim()));
+            doc.warnings
+                .push(format!("bad timing line \"{}\"", timing.trim()));
             continue;
         };
         seen_cue = true;
         if end <= start {
-            doc.warnings.push(format!("cue at {} has end before start; skipped", format_clock(start, '.')));
+            doc.warnings.push(format!(
+                "cue at {} has end before start; skipped",
+                format_clock(start, '.')
+            ));
             continue;
         }
-        let raw = b[timing_idx + 1..].iter().map(|l| l.trim_end()).collect::<Vec<_>>().join("\n");
+        let raw = b[timing_idx + 1..]
+            .iter()
+            .map(|l| l.trim_end())
+            .collect::<Vec<_>>()
+            .join("\n");
         let (speaker, text) = split_voice(&raw);
-        doc.cues.push(Cue { start, end, text, speaker, id, settings: settings.to_string() });
+        doc.cues.push(Cue {
+            start,
+            end,
+            text,
+            speaker,
+            id,
+            settings: settings.to_string(),
+        });
     }
     if !has_sig && doc.cues.is_empty() && !text.trim().is_empty() {
         return Err(Error::NotFormat("WebVTT"));
@@ -121,11 +142,19 @@ pub fn write(doc: &Document) -> String {
         }
     }
     for c in &doc.cues {
-        if let Some(id) = c.id.as_deref().map(str::trim).filter(|i| !i.is_empty() && !i.contains("-->")) {
+        if let Some(id) =
+            c.id.as_deref()
+                .map(str::trim)
+                .filter(|i| !i.is_empty() && !i.contains("-->"))
+        {
             out.push_str(id);
             out.push('\n');
         }
-        out.push_str(&format!("{} --> {}", format_clock(c.start, '.'), format_clock(c.end, '.')));
+        out.push_str(&format!(
+            "{} --> {}",
+            format_clock(c.start, '.'),
+            format_clock(c.end, '.')
+        ));
         if !c.settings.trim().is_empty() {
             out.push(' ');
             out.push_str(c.settings.trim());
@@ -155,7 +184,13 @@ mod tests {
     #[test]
     fn parse_sample() {
         let d = parse(SAMPLE).unwrap();
-        assert_eq!(d.blocks, vec!["STYLE\n::cue { color: yellow }".to_string(), "NOTE a comment\nspanning lines".to_string()]);
+        assert_eq!(
+            d.blocks,
+            vec![
+                "STYLE\n::cue { color: yellow }".to_string(),
+                "NOTE a comment\nspanning lines".to_string()
+            ]
+        );
         assert_eq!(d.cues.len(), 2);
         let c = &d.cues[0];
         assert_eq!(c.id.as_deref(), Some("intro"));
@@ -172,8 +207,14 @@ mod tests {
 
     #[test]
     fn voices() {
-        assert_eq!(split_voice("<v Bob>hi</v>"), (Some("Bob".into()), "hi".into()));
-        assert_eq!(split_voice("<v Bob>hi</v> <v Ann>yo</v>"), (None, "<v Bob>hi</v> <v Ann>yo</v>".into()));
+        assert_eq!(
+            split_voice("<v Bob>hi</v>"),
+            (Some("Bob".into()), "hi".into())
+        );
+        assert_eq!(
+            split_voice("<v Bob>hi</v> <v Ann>yo</v>"),
+            (None, "<v Bob>hi</v> <v Ann>yo</v>".into())
+        );
         assert_eq!(split_voice("<vx>hi"), (None, "<vx>hi".into()));
     }
 

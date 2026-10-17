@@ -23,23 +23,23 @@ use bevy_ecs::error::BevyError;
 use bevy_tasks::BoxedFuture;
 
 use crate::{
+    Asset, AssetApp, AssetLoader, AssetMode, AssetPath, AssetPlugin, LoadContext,
+    WriteDefaultMetaError,
     io::{
-        memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
         AssetReader, AssetReaderError, AssetSourceBuilder, AssetSourceBuilders, AssetSourceEvent,
         AssetSourceId, AssetWatcher, PathStream, Reader,
+        memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
     },
     processor::{
         AssetProcessor, GetProcessorError, LoadTransformAndSave, LogEntry, Process, ProcessContext,
         ProcessError, ProcessorState, ProcessorTransactionLog, ProcessorTransactionLogFactory,
     },
-    saver::{tests::CoolTextSaver, AssetSaver},
+    saver::{AssetSaver, tests::CoolTextSaver},
     tests::{
-        read_asset_as_string, read_meta_as_string, run_app_until, serialize_as_cool_text, CoolText,
-        CoolTextLoader, CoolTextRon, SubText,
+        CoolText, CoolTextLoader, CoolTextRon, SubText, read_asset_as_string, read_meta_as_string,
+        run_app_until, serialize_as_cool_text,
     },
     transformer::{AssetTransformer, TransformedAsset},
-    Asset, AssetApp, AssetLoader, AssetMode, AssetPath, AssetPlugin, LoadContext,
-    WriteDefaultMetaError,
 };
 
 #[derive(TypePath)]

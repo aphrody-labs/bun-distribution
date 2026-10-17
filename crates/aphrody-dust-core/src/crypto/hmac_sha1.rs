@@ -15,9 +15,18 @@ impl HmacSha1 {
     pub fn new(key: [u8; 64]) -> Self {
         let mut inner_pad = [0x36; 64];
         let mut outer_pad = [0x5c; 64];
-        inner_pad.iter_mut().zip(key.iter()).for_each(|(i, k)| *i ^= *k);
-        outer_pad.iter_mut().zip(key.iter()).for_each(|(o, k)| *o ^= *k);
-        Self { inner_pad, outer_pad }
+        inner_pad
+            .iter_mut()
+            .zip(key.iter())
+            .for_each(|(i, k)| *i ^= *k);
+        outer_pad
+            .iter_mut()
+            .zip(key.iter())
+            .for_each(|(o, k)| *o ^= *k);
+        Self {
+            inner_pad,
+            outer_pad,
+        }
     }
 
     /// Computes the HMAC-SHA1 hash of the given data using the key.
@@ -53,7 +62,10 @@ impl TryFrom<&[u8]> for HmacSha1 {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         if value.len() != 64 {
-            return InvalidKeyLengthSnafu { length: value.len() }.fail();
+            return InvalidKeyLengthSnafu {
+                length: value.len(),
+            }
+            .fail();
         }
         let mut key = [0; 64];
         key.copy_from_slice(value);

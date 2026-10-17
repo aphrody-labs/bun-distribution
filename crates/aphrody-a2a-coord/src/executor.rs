@@ -23,7 +23,9 @@ pub(crate) fn failed_task(mut task: Task, reason: &'static str) -> Task {
         state: TaskState::Failed,
         message: Some(Message::new(
             Role::Agent,
-            vec![Part::text(format!("Native peer execution failed ({reason})."))],
+            vec![Part::text(format!(
+                "Native peer execution failed ({reason})."
+            ))],
         )),
         timestamp: Some(chrono::Utc::now()),
     };
@@ -50,7 +52,7 @@ pub(crate) fn configured_default_peer(value: Option<&str>) -> Result<PeerId, Pee
         None => Ok(PeerId::Grok),
         Some(value) => {
             PeerId::parse(value.trim()).ok_or_else(|| PeerError::UnknownPeer(value.to_owned()))
-        },
+        }
     }
 }
 
@@ -95,7 +97,12 @@ impl CoordPeerExecutor {
         dry_run: bool,
     ) -> Self {
         let invoker = PeerInvoker::new(&repo_root).with_dry_run(dry_run);
-        Self { manifest: Arc::new(manifest), invoker, mailbox, default_peer: PeerId::Grok }
+        Self {
+            manifest: Arc::new(manifest),
+            invoker,
+            mailbox,
+            default_peer: PeerId::Grok,
+        }
     }
 
     #[must_use]
@@ -182,7 +189,11 @@ impl AgentExecutor for CoordPeerExecutor {
         let working = Task {
             id: task_id.clone(),
             context_id: context_id.clone(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: user_message.clone().map(|message| vec![message]),
             metadata: Some(HashMap::from([(
@@ -192,83 +203,92 @@ impl AgentExecutor for CoordPeerExecutor {
         };
         let failure_snapshot = working.clone();
 
-        Box::pin(stream::once(async move { Ok(StreamResponse::Task(working)) }).chain(
-            stream::once(async move {
-                let result = match invocation_result(
-                    tokio::task::spawn_blocking(move || invoker.invoke_prompt(peer, &prompt)).await,
-                ) {
-                    Ok(result) => result,
-                    Err(reason) => {
-                        return Ok(StreamResponse::Task(failed_task(failure_snapshot, reason)));
-                    },
-                };
+        Box::pin(
+            stream::once(async move { Ok(StreamResponse::Task(working)) }).chain(stream::once(
+                async move {
+                    let result = match invocation_result(
+                        tokio::task::spawn_blocking(move || invoker.invoke_prompt(peer, &prompt))
+                            .await,
+                    ) {
+                        Ok(result) => result,
+                        Err(reason) => {
+                            return Ok(StreamResponse::Task(failed_task(failure_snapshot, reason)));
+                        }
+                    };
 
-                let summary = format!(
-                    "peer={} exit={:?} stdout_bytes={}",
-                    result.peer.short(),
-                    result.exit_code,
-                    result.stdout.len()
-                );
-                let mailbox = Mailbox::new(coord_dir);
-                let _ = mailbox.append(
-                    peer.short(),
-                    &Envelope::new(
-                        manifest_id,
-                        format!("{}@aphrody-code/{}", peer.short(), peer.short()),
-                        EnvelopeKind::Fact,
-                        format!("a2a task {task_id} done"),
-                        summary.clone(),
-                    ),
-                );
-
-                let artifact = Artifact {
-                    artifact_id: aphrody_a2a::new_artifact_id(),
-                    name: Some(format!("{}-output", peer.short())),
-                    description: Some("Native peer CLI stdout".to_owned()),
-                    parts: vec![Part::text(&result.stdout).with_media_type("text/plain")],
-                    metadata: Some(HashMap::from([
-                        ("stderr".to_owned(), Value::String(result.stderr)),
-                        ("exit_code".to_owned(), Value::from(result.exit_code)),
-                    ])),
-                    extensions: None,
-                };
-
-                let state = if result.exit_code == Some(0) {
-                    TaskState::Completed
-                } else {
-                    TaskState::Failed
-                };
-
-                let agent_note = Message::new(
-                    Role::Agent,
-                    vec![Part::text(format!(
-                        "Invoked {} (exit {:?}). See artifact for stdout.",
+                    let summary = format!(
+                        "peer={} exit={:?} stdout_bytes={}",
+                        result.peer.short(),
+                        result.exit_code,
+                        result.stdout.len()
+                    );
+                    let mailbox = Mailbox::new(coord_dir);
+                    let _ = mailbox.append(
                         peer.short(),
-                        result.exit_code
-                    ))],
-                );
+                        &Envelope::new(
+                            manifest_id,
+                            format!("{}@aphrody-code/{}", peer.short(), peer.short()),
+                            EnvelopeKind::Fact,
+                            format!("a2a task {task_id} done"),
+                            summary.clone(),
+                        ),
+                    );
 
-                let task = Task {
-                    id: task_id,
-                    context_id,
-                    status: TaskStatus { state, message: Some(agent_note), timestamp: None },
-                    artifacts: Some(vec![artifact]),
-                    history: user_message.map(|m| vec![m]),
-                    metadata: Some(HashMap::from([(
-                        "aphrody_peer".to_owned(),
-                        Value::String(peer.short().to_owned()),
-                    )])),
-                };
+                    let artifact = Artifact {
+                        artifact_id: aphrody_a2a::new_artifact_id(),
+                        name: Some(format!("{}-output", peer.short())),
+                        description: Some("Native peer CLI stdout".to_owned()),
+                        parts: vec![Part::text(&result.stdout).with_media_type("text/plain")],
+                        metadata: Some(HashMap::from([
+                            ("stderr".to_owned(), Value::String(result.stderr)),
+                            ("exit_code".to_owned(), Value::from(result.exit_code)),
+                        ])),
+                        extensions: None,
+                    };
 
-                Ok(StreamResponse::Task(task))
-            }),
-        ))
+                    let state = if result.exit_code == Some(0) {
+                        TaskState::Completed
+                    } else {
+                        TaskState::Failed
+                    };
+
+                    let agent_note = Message::new(
+                        Role::Agent,
+                        vec![Part::text(format!(
+                            "Invoked {} (exit {:?}). See artifact for stdout.",
+                            peer.short(),
+                            result.exit_code
+                        ))],
+                    );
+
+                    let task = Task {
+                        id: task_id,
+                        context_id,
+                        status: TaskStatus {
+                            state,
+                            message: Some(agent_note),
+                            timestamp: None,
+                        },
+                        artifacts: Some(vec![artifact]),
+                        history: user_message.map(|m| vec![m]),
+                        metadata: Some(HashMap::from([(
+                            "aphrody_peer".to_owned(),
+                            Value::String(peer.short().to_owned()),
+                        )])),
+                    };
+
+                    Ok(StreamResponse::Task(task))
+                },
+            )),
+        )
     }
 
     fn cancel(&self, ctx: ExecutorContext) -> BoxStream<'static, Result<StreamResponse, A2AError>> {
         // A blocking native launcher has no process cancellation contract yet.
         // Refuse rather than persisting Canceled while the peer keeps editing.
-        Box::pin(stream::once(async move { Err(A2AError::task_not_cancelable(&ctx.task_id)) }))
+        Box::pin(stream::once(async move {
+            Err(A2AError::task_not_cancelable(&ctx.task_id))
+        }))
     }
 }
 
@@ -287,7 +307,10 @@ mod tests {
         let executor = CoordPeerExecutor::new(manifest, root.path().to_path_buf(), true)
             .with_default_peer(PeerId::Codex);
         let mut events = executor.execute(ExecutorContext {
-            message: Some(Message::new(Role::User, vec![Part::text("acknowledge probe")])),
+            message: Some(Message::new(
+                Role::User,
+                vec![Part::text("acknowledge probe")],
+            )),
             task_id: "ack-task".to_owned(),
             stored_task: None,
             context_id: "ack-context".to_owned(),
@@ -308,9 +331,18 @@ mod tests {
     #[test]
     fn configured_provider_is_explicit_and_invalid_names_fail() {
         assert_eq!(configured_default_peer(None).unwrap(), PeerId::Grok);
-        assert_eq!(configured_default_peer(Some("codex")).unwrap(), PeerId::Codex);
-        assert_eq!(configured_default_peer(Some(" claude-code ")).unwrap(), PeerId::Claude);
-        assert_eq!(configured_default_peer(Some("antigravity")).unwrap(), PeerId::Agy);
+        assert_eq!(
+            configured_default_peer(Some("codex")).unwrap(),
+            PeerId::Codex
+        );
+        assert_eq!(
+            configured_default_peer(Some(" claude-code ")).unwrap(),
+            PeerId::Claude
+        );
+        assert_eq!(
+            configured_default_peer(Some("antigravity")).unwrap(),
+            PeerId::Agy
+        );
         assert!(configured_default_peer(Some("")).is_err());
         assert!(configured_default_peer(Some("absent-provider")).is_err());
     }
@@ -321,8 +353,14 @@ mod tests {
             panic!("private-launcher-detail");
         })
         .await;
-        assert_eq!(invocation_result(result).unwrap_err(), "launcher task failed");
+        assert_eq!(
+            invocation_result(result).unwrap_err(),
+            "launcher task failed"
+        );
         let error = PeerError::InvalidDomain("private-domain-detail".to_owned());
-        assert_eq!(invocation_result(Ok(Err(error))).unwrap_err(), "invalid domain configuration");
+        assert_eq!(
+            invocation_result(Ok(Err(error))).unwrap_err(),
+            "invalid domain configuration"
+        );
     }
 }

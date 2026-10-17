@@ -39,22 +39,44 @@ impl Document {
     /// are outside this text-only proposal.
     pub fn autotag_preview(&self, page: usize) -> Result<Preview, String> {
         if self.info.pages.get(page).is_none() {
-            return Err(format!("page {} is outside the document", page.saturating_add(1)));
+            return Err(format!(
+                "page {} is outside the document",
+                page.saturating_add(1)
+            ));
         }
         let editor = self.editor.as_ref().ok_or("the document can't be read")?;
-        let existing_structure = editor.cos.root().is_some_and(|r| editor.cos.get(r).as_dict().is_some_and(|d| d.contains(b"StructTreeRoot")));
+        let existing_structure = editor.cos.root().is_some_and(|r| {
+            editor
+                .cos
+                .get(r)
+                .as_dict()
+                .is_some_and(|d| d.contains(b"StructTreeRoot"))
+        });
         let blocks = pdfcraft_edit::text_blocks(&editor.cos, page).map_err(|e| e.to_string())?;
         if blocks.len() > MAX_BLOCKS {
-            return Err(format!("page {} has too many text blocks to preview (maximum {MAX_BLOCKS})", page.saturating_add(1)));
+            return Err(format!(
+                "page {} has too many text blocks to preview (maximum {MAX_BLOCKS})",
+                page.saturating_add(1)
+            ));
         }
-        let mut sizes: Vec<f64> = blocks.iter().map(|b| b.size).filter(|s| s.is_finite() && *s > 0.0).collect();
+        let mut sizes: Vec<f64> = blocks
+            .iter()
+            .map(|b| b.size)
+            .filter(|s| s.is_finite() && *s > 0.0)
+            .collect();
         sizes.sort_by(f64::total_cmp);
-        let body_size = sizes.get(sizes.len().saturating_sub(1) / 2).copied().unwrap_or(12.0);
+        let body_size = sizes
+            .get(sizes.len().saturating_sub(1) / 2)
+            .copied()
+            .unwrap_or(12.0);
         let mut unclassified_text_blocks = 0;
         let candidates = blocks
             .into_iter()
             .filter(|b| {
-                let valid = !b.text.trim().is_empty() && b.rect.iter().all(|v| v.is_finite()) && b.size.is_finite() && b.size > 0.0;
+                let valid = !b.text.trim().is_empty()
+                    && b.rect.iter().all(|v| v.is_finite())
+                    && b.size.is_finite()
+                    && b.size > 0.0;
                 if !valid {
                     unclassified_text_blocks += 1;
                 }
@@ -81,6 +103,11 @@ impl Document {
                 }
             })
             .collect();
-        Ok(Preview { candidates, unclassified_images: self.page_images(page).len(), unclassified_text_blocks, existing_structure })
+        Ok(Preview {
+            candidates,
+            unclassified_images: self.page_images(page).len(),
+            unclassified_text_blocks,
+            existing_structure,
+        })
     }
 }

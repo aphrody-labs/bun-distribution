@@ -399,19 +399,21 @@ impl Audio {
 
             #[cfg(not(feature = "xq-audio"))]
             {
-                [(0, emu.audio.control.l_output_src()), (1, emu.audio.control.r_output_src())].map(
-                    |(i, src)| {
-                        let sample = match src {
-                            0 => mixer_output[i],
-                            1 => channel_1_panned_output[i],
-                            2 => channel_3_panned_output[i],
-                            _ => channel_1_panned_output[i] + channel_3_panned_output[i],
-                        };
-                        (((sample * emu.audio.master_volume as RawMixerInterpSample) >> 21)
-                            + emu.audio.bias as RawMixerInterpSample)
-                            .clamp(0, 0x3FF) as OutputSample
-                    },
-                )
+                [
+                    (0, emu.audio.control.l_output_src()),
+                    (1, emu.audio.control.r_output_src()),
+                ]
+                .map(|(i, src)| {
+                    let sample = match src {
+                        0 => mixer_output[i],
+                        1 => channel_1_panned_output[i],
+                        2 => channel_3_panned_output[i],
+                        _ => channel_1_panned_output[i] + channel_3_panned_output[i],
+                    };
+                    (((sample * emu.audio.master_volume as RawMixerInterpSample) >> 21)
+                        + emu.audio.bias as RawMixerInterpSample)
+                        .clamp(0, 0x3FF) as OutputSample
+                })
             }
         } else {
             #[cfg(not(feature = "xq-audio"))]
@@ -423,7 +425,9 @@ impl Audio {
         {
             emu.audio.sample_chunk.push(output);
             if emu.audio.sample_chunk.len() >= emu.audio.sample_chunk_size as usize {
-                emu.audio.backend.handle_sample_chunk(&mut emu.audio.sample_chunk);
+                emu.audio
+                    .backend
+                    .handle_sample_chunk(&mut emu.audio.sample_chunk);
             }
         }
         let cur_time = emu.arm7.schedule.cur_time();
@@ -517,24 +521,28 @@ impl Audio {
             let volume_factor = emu.audio.master_volume as InterpSample * (1.0 / 128.0);
             let bias = emu.audio.bias as InterpSample * (1.0 / 512.0);
 
-            [(0, emu.audio.control.l_output_src()), (1, emu.audio.control.r_output_src())].map(
-                |(i, src)| {
-                    let sample = match src {
-                        0 => mixer_output[i],
-                        1 => channel_1_panned_output[i],
-                        2 => channel_3_panned_output[i],
-                        _ => channel_1_panned_output[i] + channel_3_panned_output[i],
-                    };
-                    ((sample * volume_factor + bias).clamp(0.0, 2.0) - 1.0) as OutputSample
-                },
-            )
+            [
+                (0, emu.audio.control.l_output_src()),
+                (1, emu.audio.control.r_output_src()),
+            ]
+            .map(|(i, src)| {
+                let sample = match src {
+                    0 => mixer_output[i],
+                    1 => channel_1_panned_output[i],
+                    2 => channel_3_panned_output[i],
+                    _ => channel_1_panned_output[i] + channel_3_panned_output[i],
+                };
+                ((sample * volume_factor + bias).clamp(0.0, 2.0) - 1.0) as OutputSample
+            })
         } else {
             [0.0; 2]
         };
 
         emu.audio.sample_chunk.push(output);
         if emu.audio.sample_chunk.len() >= emu.audio.sample_chunk_size as usize {
-            emu.audio.backend.handle_sample_chunk(&mut emu.audio.sample_chunk);
+            emu.audio
+                .backend
+                .handle_sample_chunk(&mut emu.audio.sample_chunk);
         }
 
         if let Some(custom_sample_rate) = emu.audio.custom_sample_rate {

@@ -1,11 +1,11 @@
 use crate::{
+    ExtractedAtmosphere, GpuAtmosphereSettings, GpuLights, LightMeta, ViewLightsUniformOffset,
     resources::{
         AtmosphereSampler, AtmosphereTextures, AtmosphereTransform, AtmosphereTransforms,
         AtmosphereTransformsOffset, GpuAtmosphere,
     },
-    ExtractedAtmosphere, GpuAtmosphereSettings, GpuLights, LightMeta, ViewLightsUniformOffset,
 };
-use bevy_asset::{load_embedded_asset, AssetServer, Assets, Handle, RenderAssetUsages};
+use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages, load_embedded_asset};
 use bevy_ecs::{
     component::Component,
     entity::Entity,
@@ -22,6 +22,7 @@ use bevy_light::{
 };
 use bevy_math::{Quat, UVec2};
 use bevy_render::{
+    RenderApp,
     diagnostic::RecordDiagnostics,
     extract_component::{ComponentUniforms, DynamicUniformIndex, ExtractComponent},
     render_asset::RenderAssets,
@@ -29,7 +30,6 @@ use bevy_render::{
     renderer::{RenderContext, RenderDevice, ViewQuery},
     texture::{CachedTexture, GpuImage},
     view::{ViewUniform, ViewUniformOffset, ViewUniforms},
-    RenderApp,
 };
 use bevy_utils::default;
 use tracing::warn;

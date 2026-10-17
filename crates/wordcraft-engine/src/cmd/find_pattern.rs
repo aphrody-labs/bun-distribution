@@ -109,8 +109,18 @@ fn code_char(n: u32) -> Option<char> {
 /// Read a numeric code after `^` (`13`, `0151`, `u8212`) starting at `chars[i]`; returns the
 /// character and how many characters it took.
 fn numeric_code(chars: &[char], i: usize) -> Option<(char, usize)> {
-    let (start, max) = if chars.get(i) == Some(&'u') { (i + 1, 5) } else { (i, 4) };
-    let digits: String = chars.get(start..).unwrap_or(&[]).iter().take(max).take_while(|c| c.is_ascii_digit()).collect();
+    let (start, max) = if chars.get(i) == Some(&'u') {
+        (i + 1, 5)
+    } else {
+        (i, 4)
+    };
+    let digits: String = chars
+        .get(start..)
+        .unwrap_or(&[])
+        .iter()
+        .take(max)
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
     if digits.is_empty() {
         return None;
     }
@@ -129,7 +139,9 @@ fn lit(c: char) -> String {
 /// Translate Word's Find what text.
 pub fn compile(query: &str, o: &Opts) -> Result<Compiled, String> {
     if query.chars().count() > MAX_PATTERN {
-        return Err(format!("the Find what text is longer than {MAX_PATTERN} characters"));
+        return Err(format!(
+            "the Find what text is longer than {MAX_PATTERN} characters"
+        ));
     }
     let (pat, spans) = if o.regex {
         (query.to_string(), false)
@@ -155,7 +167,11 @@ pub fn compile(query: &str, o: &Opts) -> Result<Compiled, String> {
     };
     // Word's wildcard search always matches case.
     let case_insensitive = !o.match_case && !(o.wildcards && !o.regex);
-    Ok(Compiled { pattern: pat, case_insensitive, spans_paras: spans })
+    Ok(Compiled {
+        pattern: pat,
+        case_insensitive,
+        spans_paras: spans,
+    })
 }
 
 /// Normal search: literal text with `^` codes, optionally skipping punctuation and white space.
@@ -198,7 +214,11 @@ fn special(query: &str, o: &Opts) -> (String, bool) {
 }
 
 fn is_punct(c: char) -> bool {
-    c.is_ascii_punctuation() || matches!(c, '\u{2010}'..='\u{2027}' | '\u{00A1}' | '\u{00BF}' | '\u{00AB}' | '\u{00BB}')
+    c.is_ascii_punctuation()
+        || matches!(
+            c,
+            '\u{2010}'..='\u{2027}' | '\u{00A1}' | '\u{00BF}' | '\u{00AB}' | '\u{00BB}'
+        )
 }
 
 fn is_space(c: char) -> bool {
@@ -224,18 +244,28 @@ fn wildcards(query: &str) -> Result<(String, bool), String> {
             '>' => out.push_str(r"\b{end}"),
             '(' | ')' => out.push(c),
             '{' => {
-                let end = chars.get(i..).and_then(|r| r.iter().position(|c| *c == '}')).ok_or("a { needs a closing }")?;
+                let end = chars
+                    .get(i..)
+                    .and_then(|r| r.iter().position(|c| *c == '}'))
+                    .ok_or("a { needs a closing }")?;
                 let body: String = chars.get(i..i + end).unwrap_or(&[]).iter().collect();
                 out.push_str(&count(&body)?);
                 i += end + 1;
             }
             '[' => {
-                let end = chars.get(i..).and_then(|r| r.iter().position(|c| *c == ']')).ok_or("a [ needs a closing ]")?;
+                let end = chars
+                    .get(i..)
+                    .and_then(|r| r.iter().position(|c| *c == ']'))
+                    .ok_or("a [ needs a closing ]")?;
                 out.push_str(&class(chars.get(i..i + end).unwrap_or(&[]))?);
                 i += end + 1;
             }
             '\\' => match chars.get(i) {
-                Some(d) if d.is_ascii_digit() => return Err("back-references (\\1) work in Replace with, not in Find what".into()),
+                Some(d) if d.is_ascii_digit() => {
+                    return Err(
+                        "back-references (\\1) work in Replace with, not in Find what".into(),
+                    );
+                }
                 Some(&n) => {
                     out.push_str(&lit(n));
                     i += 1;
@@ -403,7 +433,12 @@ fn as_inserted(s: &str) -> String {
 }
 
 /// Fill in Replace with text for one match: `found` is the matched text, `group(n)` a group's.
-pub fn expand(pieces: &[Piece], found: &str, group: &dyn Fn(usize) -> Option<String>, clip: &str) -> String {
+pub fn expand(
+    pieces: &[Piece],
+    found: &str,
+    group: &dyn Fn(usize) -> Option<String>,
+    clip: &str,
+) -> String {
     let mut out = String::new();
     for p in pieces {
         match p {

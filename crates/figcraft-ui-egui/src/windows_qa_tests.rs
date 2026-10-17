@@ -12,15 +12,35 @@ use crate::layers_drag_tests::Ui;
 
 fn press(u: &mut Ui, key: Key, modifiers: Modifiers) {
     u.frame(vec![
-        Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers },
-        Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: false,
+            repeat: false,
+            modifiers,
+        },
     ]);
 }
 
 /// A 40×30 rectangle, selected.
 fn setup() -> (Ui, NodeId) {
     let mut s = Session::new();
-    let a = NodeId(s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 40, "height": 30})).unwrap()["id"].as_u64().unwrap());
+    let a = NodeId(
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 40, "height": 30}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     s.execute("select.set", &json!({"ids": [a]})).unwrap();
     let mut u = Ui::new(s);
     u.frame(vec![]);
@@ -38,7 +58,10 @@ fn tab_to(u: &mut Ui, name: &str) -> Rect {
     for _ in 0..200 {
         if focused_name(&u.ctx) == name {
             let id = u.ctx.memory(|m| m.focused()).unwrap();
-            return u.ctx.viewport(|v| v.prev_pass.widgets.get(id).map(|w| w.rect)).unwrap();
+            return u
+                .ctx
+                .viewport(|v| v.prev_pass.widgets.get(id).map(|w| w.rect))
+                .unwrap();
         }
         press(u, Key::Tab, Modifiers::NONE);
     }
@@ -70,7 +93,11 @@ fn a_scrubbed_field_keeps_its_value_when_the_pointer_lets_go() {
     for k in 1..=10 {
         u.frame(vec![Event::PointerMoved(from + vec2(4.0 * k as f32, 0.0))]);
     }
-    assert_eq!(width(&u, a).0, 80.0, "40 points to the right while dragging");
+    assert_eq!(
+        width(&u, a).0,
+        80.0,
+        "40 points to the right while dragging"
+    );
     u.button(from + vec2(40.0, 0.0), false);
     u.frame(vec![]);
     assert_eq!(width(&u, a).0, 80.0, "kept after the release");
@@ -86,7 +113,14 @@ fn escape_closes_preferences_without_deselecting() {
     u.frame(vec![]);
     press(&mut u, Key::Escape, Modifiers::NONE);
     assert!(!u.app.ui.preferences, "Escape closes the dialog");
-    assert_eq!(u.app.session.selection(), vec![a], "and leaves the selection alone");
+    assert_eq!(
+        u.app.session.selection(),
+        vec![a],
+        "and leaves the selection alone"
+    );
     press(&mut u, Key::Escape, Modifiers::NONE);
-    assert!(u.app.session.selection().is_empty(), "the next Escape reaches the canvas");
+    assert!(
+        u.app.session.selection().is_empty(),
+        "the next Escape reaches the canvas"
+    );
 }

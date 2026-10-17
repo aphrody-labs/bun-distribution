@@ -10,7 +10,9 @@ use crate::VectorcraftApp;
 use crate::widgets::{self, menu_item};
 
 fn options(app: &mut VectorcraftApp) -> Value {
-    app.session.execute("magicWand.options", &json!({})).unwrap_or_default()
+    app.session
+        .execute("magicWand.options", &json!({}))
+        .unwrap_or_default()
 }
 
 /// A tolerance: a plain number with a suffix, or a stroke weight (in the Stroke unit).
@@ -21,7 +23,14 @@ enum Tol {
 }
 
 /// One row: checkbox + tolerance field.
-fn row(app: &mut VectorcraftApp, ui: &mut Ui, o: &Value, label: &str, flag: &str, tol: Option<(&str, Tol, f64)>) {
+fn row(
+    app: &mut VectorcraftApp,
+    ui: &mut Ui,
+    o: &Value,
+    label: &str,
+    flag: &str,
+    tol: Option<(&str, Tol, f64)>,
+) {
     let on = o[flag].as_bool().unwrap_or(false);
     ui.horizontal(|ui| {
         ui.set_min_height(26.0);
@@ -34,11 +43,31 @@ fn row(app: &mut VectorcraftApp, ui: &mut Ui, o: &Value, label: &str, flag: &str
                 ui.add_enabled_ui(on, |ui| {
                     let v = o[key].as_f64().unwrap_or(0.0);
                     let n = match kind {
-                        Tol::Plain(suffix) => widgets::spin_plain(ui, ("wand", key), v, suffix, 0, 64.0, 1.0, 0.0, &[]),
-                        Tol::Weight => widgets::spin_field(ui, ("wand", key), Some(v), stroke_unit, 64.0, 1.0, 0.0, &[]),
+                        Tol::Plain(suffix) => widgets::spin_plain(
+                            ui,
+                            ("wand", key),
+                            v,
+                            suffix,
+                            0,
+                            64.0,
+                            1.0,
+                            0.0,
+                            &[],
+                        ),
+                        Tol::Weight => widgets::spin_field(
+                            ui,
+                            ("wand", key),
+                            Some(v),
+                            stroke_unit,
+                            64.0,
+                            1.0,
+                            0.0,
+                            &[],
+                        ),
                     };
                     if let Some(n) = n {
-                        app.run("magicWand.set", json!({ key: n.clamp(0.0, max) })).ok();
+                        app.run("magicWand.set", json!({ key: n.clamp(0.0, max) }))
+                            .ok();
                     }
                 });
                 widgets::dim_label(ui, tl!("Tolerance:"));
@@ -49,23 +78,59 @@ fn row(app: &mut VectorcraftApp, ui: &mut Ui, o: &Value, label: &str, flag: &str
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let o = options(app);
-    row(app, ui, &o, tl!("Fill Color"), "fillColor", Some(("fillTolerance", Tol::Plain(""), 255.0)));
+    row(
+        app,
+        ui,
+        &o,
+        tl!("Fill Color"),
+        "fillColor",
+        Some(("fillTolerance", Tol::Plain(""), 255.0)),
+    );
     if !pstate::<bool>(ui.ctx(), "wand-hide-stroke") {
         widgets::divider(ui);
-        row(app, ui, &o, tl!("Stroke Color"), "strokeColor", Some(("strokeTolerance", Tol::Plain(""), 255.0)));
-        row(app, ui, &o, tl!("Stroke Weight"), "strokeWeight", Some(("weightTolerance", Tol::Weight, 1000.0)));
+        row(
+            app,
+            ui,
+            &o,
+            tl!("Stroke Color"),
+            "strokeColor",
+            Some(("strokeTolerance", Tol::Plain(""), 255.0)),
+        );
+        row(
+            app,
+            ui,
+            &o,
+            tl!("Stroke Weight"),
+            "strokeWeight",
+            Some(("weightTolerance", Tol::Weight, 1000.0)),
+        );
     }
     if !pstate::<bool>(ui.ctx(), "wand-hide-transparency") {
         widgets::divider(ui);
-        row(app, ui, &o, tl!("Opacity"), "opacity", Some(("opacityTolerance", Tol::Plain("%"), 100.0)));
+        row(
+            app,
+            ui,
+            &o,
+            tl!("Opacity"),
+            "opacity",
+            Some(("opacityTolerance", Tol::Plain("%"), 100.0)),
+        );
         row(app, ui, &o, tl!("Blending Mode"), "blendingMode", None);
     }
 }
 
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
-    for (label, key) in [(tl!("Stroke Options"), "wand-hide-stroke"), (tl!("Transparency Options"), "wand-hide-transparency")] {
+    for (label, key) in [
+        (tl!("Stroke Options"), "wand-hide-stroke"),
+        (tl!("Transparency Options"), "wand-hide-transparency"),
+    ] {
         let hidden: bool = pstate(ui.ctx(), key);
-        if menu_item(ui, &format!("{} {label}", if hidden { tl!("Show") } else { tl!("Hide") }), true, false) {
+        if menu_item(
+            ui,
+            &format!("{} {label}", if hidden { tl!("Show") } else { tl!("Hide") }),
+            true,
+            false,
+        ) {
             set_pstate(ui.ctx(), key, !hidden);
         }
     }
@@ -82,8 +147,15 @@ mod tests {
     #[test]
     fn panel_and_menu_draw_headless() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 100, "height": 100})).unwrap();
-        app.session.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+        app.session
+            .execute("file.new", &json!({"width": 100, "height": 100}))
+            .unwrap();
+        app.session
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap();
         for _ in 0..2 {
             let ctx = egui::Context::default();
             let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {

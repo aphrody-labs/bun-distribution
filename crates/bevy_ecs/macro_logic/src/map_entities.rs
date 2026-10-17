@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
-    parse::Parse, spanned::Spanned, Data, DataEnum, DataStruct, Expr, ExprPath, Ident, Member,
-    Path, Token,
+    Data, DataEnum, DataStruct, Expr, ExprPath, Ident, Member, Path, Token, parse::Parse,
+    spanned::Spanned,
 };
 
 use crate::component::relationship_field;

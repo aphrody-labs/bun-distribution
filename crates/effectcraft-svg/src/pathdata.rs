@@ -12,7 +12,9 @@ struct Lex<'a> {
 
 impl Lex<'_> {
     fn skip_sep(&mut self) {
-        while self.i < self.b.len() && (self.b[self.i].is_ascii_whitespace() || self.b[self.i] == b',') {
+        while self.i < self.b.len()
+            && (self.b[self.i].is_ascii_whitespace() || self.b[self.i] == b',')
+        {
             self.i += 1;
         }
     }
@@ -28,7 +30,9 @@ impl Lex<'_> {
     }
     fn at_number(&mut self) -> bool {
         self.skip_sep();
-        self.b.get(self.i).is_some_and(|c| c.is_ascii_digit() || matches!(c, b'-' | b'+' | b'.'))
+        self.b
+            .get(self.i)
+            .is_some_and(|c| c.is_ascii_digit() || matches!(c, b'-' | b'+' | b'.'))
     }
     fn number(&mut self) -> Option<f64> {
         self.skip_sep();
@@ -83,7 +87,10 @@ impl Lex<'_> {
 
 /// All numbers in a list (`points`, `viewBox`, transform arguments).
 pub fn numbers(s: &str) -> Vec<f64> {
-    let mut l = Lex { b: s.as_bytes(), i: 0 };
+    let mut l = Lex {
+        b: s.as_bytes(),
+        i: 0,
+    };
     let mut v = vec![];
     while l.at_number() {
         match l.number() {
@@ -96,7 +103,10 @@ pub fn numbers(s: &str) -> Vec<f64> {
 
 /// Parse path data into a kurbo path.
 pub fn parse_path_data(d: &str) -> BezPath {
-    let mut l = Lex { b: d.as_bytes(), i: 0 };
+    let mut l = Lex {
+        b: d.as_bytes(),
+        i: 0,
+    };
     let mut p = BezPath::new();
     let mut cur = Point::ZERO;
     let mut start = Point::ZERO;
@@ -121,7 +131,8 @@ pub fn parse_path_data(d: &str) -> BezPath {
         };
         let rel = c.is_ascii_lowercase();
         let base = if rel { cur.to_vec2() } else { Vec2::ZERO };
-        let pt = |l: &mut Lex| -> Option<Point> { Some(Point::new(l.number()?, l.number()?) + base) };
+        let pt =
+            |l: &mut Lex| -> Option<Point> { Some(Point::new(l.number()?, l.number()?) + base) };
         let ok = (|| -> Option<()> {
             match c.to_ascii_uppercase() {
                 b'M' => {
@@ -144,9 +155,27 @@ pub fn parse_path_data(d: &str) -> BezPath {
                     // A segment without a preceding moveto starts at the current point.
                     p.move_to(cur);
                     open = true;
-                    return segment(&mut l, c, base, &mut p, &mut cur, &mut last_cubic, &mut last_quad);
+                    return segment(
+                        &mut l,
+                        c,
+                        base,
+                        &mut p,
+                        &mut cur,
+                        &mut last_cubic,
+                        &mut last_quad,
+                    );
                 }
-                _ => return segment(&mut l, c, base, &mut p, &mut cur, &mut last_cubic, &mut last_quad),
+                _ => {
+                    return segment(
+                        &mut l,
+                        c,
+                        base,
+                        &mut p,
+                        &mut cur,
+                        &mut last_cubic,
+                        &mut last_quad,
+                    );
+                }
             }
             Some(())
         })();
@@ -164,7 +193,15 @@ pub fn parse_path_data(d: &str) -> BezPath {
     strip_trailing_moves(p)
 }
 
-fn segment(l: &mut Lex, c: u8, base: Vec2, p: &mut BezPath, cur: &mut Point, last_cubic: &mut Option<Point>, last_quad: &mut Option<Point>) -> Option<()> {
+fn segment(
+    l: &mut Lex,
+    c: u8,
+    base: Vec2,
+    p: &mut BezPath,
+    cur: &mut Point,
+    last_cubic: &mut Option<Point>,
+    last_quad: &mut Option<Point>,
+) -> Option<()> {
     let num = |l: &mut Lex| l.number();
     let pt = |l: &mut Lex| -> Option<Point> { Some(Point::new(l.number()?, l.number()?) + base) };
     match c.to_ascii_uppercase() {
@@ -225,7 +262,14 @@ fn segment(l: &mut Lex, c: u8, base: Vec2, p: &mut BezPath, cur: &mut Point, las
             let large = l.flag()?;
             let sweep = l.flag()?;
             let e = pt(l)?;
-            let arc = SvgArc { from: *cur, to: e, radii: Vec2::new(rx, ry), x_rotation: rot.to_radians(), large_arc: large, sweep };
+            let arc = SvgArc {
+                from: *cur,
+                to: e,
+                radii: Vec2::new(rx, ry),
+                x_rotation: rot.to_radians(),
+                large_arc: large,
+                sweep,
+            };
             match kurbo::Arc::from_svg_arc(&arc) {
                 Some(a) => a.to_cubic_beziers(0.1, |c1, c2, end| p.curve_to(c1, c2, end)),
                 None => p.line_to(e),
@@ -246,7 +290,9 @@ fn strip_trailing_moves(p: BezPath) -> BezPath {
     let mut out = BezPath::new();
     for (i, e) in els.iter().enumerate() {
         if let PathEl::MoveTo(_) = e {
-            let next_is_seg = els.get(i + 1).is_some_and(|n| !matches!(n, PathEl::MoveTo(_)));
+            let next_is_seg = els
+                .get(i + 1)
+                .is_some_and(|n| !matches!(n, PathEl::MoveTo(_)));
             if !next_is_seg {
                 continue;
             }
@@ -263,7 +309,9 @@ mod tests {
 
     #[test]
     fn commands() {
-        let p = parse_path_data("M10,10 L20,10 h10 v10 H10 z m5 5 l1-1.5.5.5e1 C 0 0 1 1 2 2 s3 3 4 4 Q1 1 2 2 t3 3 A5 5 0 0 1 20 20 a5 5 0 1010 0");
+        let p = parse_path_data(
+            "M10,10 L20,10 h10 v10 H10 z m5 5 l1-1.5.5.5e1 C 0 0 1 1 2 2 s3 3 4 4 Q1 1 2 2 t3 3 A5 5 0 0 1 20 20 a5 5 0 1010 0",
+        );
         let els = p.elements();
         assert_eq!(els[0], PathEl::MoveTo(Point::new(10.0, 10.0)));
         assert_eq!(els[2], PathEl::LineTo(Point::new(30.0, 10.0)));
@@ -274,7 +322,12 @@ mod tests {
         // "l1-1.5.5.5e1": two implicit linetos (1,-1.5) then (.5,5).
         assert!(els.contains(&PathEl::LineTo(Point::new(16.0, 13.5))));
         assert!(els.contains(&PathEl::LineTo(Point::new(16.5, 18.5))));
-        assert!(els.iter().filter(|e| matches!(e, PathEl::CurveTo(..))).count() >= 4);
+        assert!(
+            els.iter()
+                .filter(|e| matches!(e, PathEl::CurveTo(..)))
+                .count()
+                >= 4
+        );
     }
 
     #[test]

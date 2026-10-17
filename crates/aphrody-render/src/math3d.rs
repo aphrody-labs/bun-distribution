@@ -95,7 +95,11 @@ impl Vec3 {
     #[must_use]
     pub fn normalize_or(self, fallback: Self) -> Self {
         let len = self.length();
-        if len > 1e-12 && len.is_finite() { self.scale(1.0 / len) } else { fallback }
+        if len > 1e-12 && len.is_finite() {
+            self.scale(1.0 / len)
+        } else {
+            fallback
+        }
     }
 
     /// Linear interpolation `self + (o - self) * t`.
@@ -225,7 +229,9 @@ impl Mat4 {
             rotation_deg.y.to_radians(),
             rotation_deg.z.to_radians(),
         );
-        Self::translation(translation).mul(&r).mul(&Self::scaling(scale))
+        Self::translation(translation)
+            .mul(&r)
+            .mul(&Self::scaling(scale))
     }
 
     /// Right-handed view matrix looking from `eye` towards `target`.
@@ -235,7 +241,11 @@ impl Mat4 {
         let mut s = f.cross(up);
         if s.length() < 1e-6 {
             // `up` is parallel to the view direction: pick any orthogonal axis.
-            s = f.cross(if f.y.abs() < 0.99 { Vec3::Y } else { Vec3::new(1.0, 0.0, 0.0) });
+            s = f.cross(if f.y.abs() < 0.99 {
+                Vec3::Y
+            } else {
+                Vec3::new(1.0, 0.0, 0.0)
+            });
         }
         let s = s.normalize_or(Vec3::new(1.0, 0.0, 0.0));
         let u = s.cross(f);
@@ -298,7 +308,12 @@ impl Mat4 {
                 [2.0 * rl, 0.0, 0.0, 0.0],
                 [0.0, 2.0 * tb, 0.0, 0.0],
                 [0.0, 0.0, range, 0.0],
-                [-(right + left) * rl, -(top + bottom) * tb, range * near, 1.0],
+                [
+                    -(right + left) * rl,
+                    -(top + bottom) * tb,
+                    range * near,
+                    1.0,
+                ],
             ],
         }
     }
@@ -354,14 +369,22 @@ pub fn mul_normal(m: &[[f32; 3]; 3], n: Vec3) -> Vec3 {
 /// sRGB electro-optical transfer: encoded `[0, 1]` to linear light.
 #[must_use]
 pub fn srgb_to_linear(c: f32) -> f32 {
-    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 /// Inverse sRGB transfer: linear light to encoded `[0, 1]`.
 #[must_use]
 pub fn linear_to_srgb(c: f32) -> f32 {
     let c = c.clamp(0.0, 1.0);
-    if c <= 0.003_130_8 { c * 12.92 } else { 1.055 * c.powf(1.0 / 2.4) - 0.055 }
+    if c <= 0.003_130_8 {
+        c * 12.92
+    } else {
+        1.055 * c.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 #[cfg(test)]
@@ -391,9 +414,18 @@ mod tests {
     #[test]
     fn orthographic_maps_near_and_far_to_unit_depth_range() {
         let proj = Mat4::orthographic(4.0, 1.0, 0.1, 10.0);
-        assert!(approx(proj.transform_point4(Vec3::new(0.0, 0.0, -0.1))[2], 0.0));
-        assert!(approx(proj.transform_point4(Vec3::new(0.0, 0.0, -10.0))[2], 1.0));
-        assert!(approx(proj.transform_point4(Vec3::new(0.0, 2.0, -1.0))[1], 1.0));
+        assert!(approx(
+            proj.transform_point4(Vec3::new(0.0, 0.0, -0.1))[2],
+            0.0
+        ));
+        assert!(approx(
+            proj.transform_point4(Vec3::new(0.0, 0.0, -10.0))[2],
+            1.0
+        ));
+        assert!(approx(
+            proj.transform_point4(Vec3::new(0.0, 2.0, -1.0))[1],
+            1.0
+        ));
     }
 
     #[test]
@@ -419,7 +451,11 @@ mod tests {
 
     #[test]
     fn normal_matrix_keeps_normals_perpendicular_under_non_uniform_scale() {
-        let m = Mat4::from_trs(Vec3::ZERO, Vec3::new(0.0, 0.0, 30.0), Vec3::new(3.0, 1.0, 1.0));
+        let m = Mat4::from_trs(
+            Vec3::ZERO,
+            Vec3::new(0.0, 0.0, 30.0),
+            Vec3::new(3.0, 1.0, 1.0),
+        );
         let tangent = m.transform_vector(Vec3::new(1.0, -1.0, 0.0));
         let normal = mul_normal(&m.normal_matrix(), Vec3::new(1.0, 1.0, 0.0));
         assert!(approx(tangent.dot(normal), 0.0));

@@ -3,12 +3,17 @@ use craft_ui::printing::Labels;
 pub use craft_ui::printing::{Discover, Duplex, Feedback, Printer, Settings, State};
 
 /// Native submission adds WordCraft's PDF-page collation setting to the shared spooler settings.
-pub type Submit = Box<dyn Fn(Vec<u8>, Settings, bool) -> std::sync::mpsc::Receiver<Result<String, String>>>;
+pub type Submit =
+    Box<dyn Fn(Vec<u8>, Settings, bool) -> std::sync::mpsc::Receiver<Result<String, String>>>;
 
 /// Metadata for the app-owned commands. Inspecting it never discovers printers or submits.
 pub fn commands(app: &crate::WordApp) -> Vec<serde_json::Value> {
     use serde_json::json;
-    let enabled = if app.services.print_native.is_some() { app.printing.ready() } else { app.services.print.is_some() };
+    let enabled = if app.services.print_native.is_some() {
+        app.printing.ready()
+    } else {
+        app.services.print.is_some()
+    };
     let submit_params = "range?: all|current|selection|custom; pages?: string (1-3,5); parity?: all|odd|even; copies?: integer 1..999; collate?: bool. Native uses the selected printer, duplex and grayscale from ui.printSettings; omitted copies/collation use current settings. Browser printing opens its dialog. Submits only when explicitly executed.";
     vec![
         json!({"id":"ui.printSettings", "label":"Print settings", "location":"File › Print", "shortcut":null,
@@ -19,7 +24,12 @@ pub fn commands(app: &crate::WordApp) -> Vec<serde_json::Value> {
     ]
 }
 
-pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate: impl Fn(&str) -> String) {
+pub fn show(
+    state: &mut State,
+    ui: &mut egui::Ui,
+    discover: &Discover,
+    translate: impl Fn(&str) -> String,
+) {
     let labels = Labels {
         printer: &translate("Printer"),
         select_printer: &translate("Select a printer"),
@@ -32,7 +42,12 @@ pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate
         short_edge: &translate("Two-sided: short edge"),
         grayscale: &translate("Grayscale"),
     };
-    state.show(ui, egui::Id::new("wordcraft_print_settings"), discover, &labels);
+    state.show(
+        ui,
+        egui::Id::new("wordcraft_print_settings"),
+        discover,
+        &labels,
+    );
     if let Some(message) = &state.message {
         ui.label(feedback(message, translate));
     }
@@ -40,25 +55,45 @@ pub fn show(state: &mut State, ui: &mut egui::Ui, discover: &Discover, translate
 
 /// Read print settings/status, or validate an explicit update before changing anything.
 /// `refresh: true` starts discovery only; this command never submits a job or opens a dialog.
-pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<&Discover>) -> Result<serde_json::Value, String> {
+pub fn settings(
+    state: &mut State,
+    params: &serde_json::Value,
+    discover: Option<&Discover>,
+) -> Result<serde_json::Value, String> {
     use serde_json::{Value, json};
-    let object = params.as_object().ok_or("print settings must be an object")?;
-    if object.keys().any(|key| !["printer", "copies", "duplex", "grayscale", "refresh"].contains(&key.as_str())) {
-        return Err("unknown print setting; use printer, copies, duplex, grayscale or refresh".into());
+    let object = params
+        .as_object()
+        .ok_or("print settings must be an object")?;
+    if object
+        .keys()
+        .any(|key| !["printer", "copies", "duplex", "grayscale", "refresh"].contains(&key.as_str()))
+    {
+        return Err(
+            "unknown print setting; use printer, copies, duplex, grayscale or refresh".into(),
+        );
     }
     if state.busy() && !object.is_empty() {
         return Err("wait for the active print submission before changing settings".into());
     }
     let mut next = state.settings.clone();
     if let Some(value) = object.get("printer") {
-        let printer = value.as_str().ok_or("printer must be a name from the discovered list")?;
-        if !state.printers.iter().any(|available| available.name == printer) {
+        let printer = value
+            .as_str()
+            .ok_or("printer must be a name from the discovered list")?;
+        if !state
+            .printers
+            .iter()
+            .any(|available| available.name == printer)
+        {
             return Err("printer must be a name from the discovered list".into());
         }
         next.printer = printer.to_owned();
     }
     if let Some(value) = object.get("copies") {
-        let copies = value.as_u64().filter(|copies| (1..=999).contains(copies)).ok_or("copies must be an integer from 1 to 999")?;
+        let copies = value
+            .as_u64()
+            .filter(|copies| (1..=999).contains(copies))
+            .ok_or("copies must be an integer from 1 to 999")?;
         next.copies = copies as u32;
     }
     if let Some(value) = object.get("duplex") {
@@ -74,7 +109,11 @@ pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<
     if let Some(value) = object.get("grayscale") {
         next.grayscale = value.as_bool().ok_or("grayscale must be a boolean")?;
     }
-    let refresh = object.get("refresh").map(|value| value.as_bool().ok_or("refresh must be a boolean")).transpose()?.unwrap_or(false);
+    let refresh = object
+        .get("refresh")
+        .map(|value| value.as_bool().ok_or("refresh must be a boolean"))
+        .transpose()?
+        .unwrap_or(false);
     if refresh {
         let discover = discover.ok_or("native printer discovery is unavailable here")?;
         if !state.refresh(discover) {
@@ -104,21 +143,32 @@ pub fn settings(state: &mut State, params: &serde_json::Value, discover: Option<
 pub fn feedback(message: &Feedback, translate: impl Fn(&str) -> String) -> String {
     match message {
         Feedback::FindingPrinters => translate("Finding printers…"),
-        Feedback::NoPrinters => translate("No printers found. Configure a system printer or export a PDF."),
+        Feedback::NoPrinters => {
+            translate("No printers found. Configure a system printer or export a PDF.")
+        }
         Feedback::DiscoveryFailed => translate("Printer discovery failed."),
         Feedback::Submitting => translate("Submitting print job…"),
-        Feedback::Submitted(receipt) if receipt.trim().is_empty() => translate("Print job submitted."),
-        Feedback::Submitted(receipt) => translate("Print job submitted: {receipt}").replace("{receipt}", receipt),
+        Feedback::Submitted(receipt) if receipt.trim().is_empty() => {
+            translate("Print job submitted.")
+        }
+        Feedback::Submitted(receipt) => {
+            translate("Print job submitted: {receipt}").replace("{receipt}", receipt)
+        }
         Feedback::Failed(error) => translate("Print failed: {error}").replace("{error}", error),
         Feedback::WorkerStopped => translate("Print failed: the printing worker stopped."),
     }
 }
 
 /// Build the upstream page-range/markup PDF and hand it to the chosen host print flow.
-pub fn submit(app: &mut crate::WordApp, params: &serde_json::Value) -> Result<serde_json::Value, String> {
+pub fn submit(
+    app: &mut crate::WordApp,
+    params: &serde_json::Value,
+) -> Result<serde_json::Value, String> {
     use serde_json::json;
     if app.services.print.is_none() && app.services.print_native.is_none() {
-        return Err("printing to the system print dialog isn't available here; export a PDF instead".into());
+        return Err(
+            "printing to the system print dialog isn't available here; export a PDF instead".into(),
+        );
     }
     let native = app.services.print_native.is_some();
     if native && !app.printing.ready() {
@@ -126,11 +176,21 @@ pub fn submit(app: &mut crate::WordApp, params: &serde_json::Value) -> Result<se
     }
     let mut pdf_params = params.clone();
     let mut settings = app.printing.settings.clone();
-    let collate = params.get("collate").map(|value| value.as_bool().ok_or("collate must be a boolean")).transpose()?.unwrap_or(app.ui.print.collate);
+    let collate = params
+        .get("collate")
+        .map(|value| value.as_bool().ok_or("collate must be a boolean"))
+        .transpose()?
+        .unwrap_or(app.ui.print.collate);
     if native {
-        let object = pdf_params.as_object_mut().ok_or("print settings must be an object")?;
+        let object = pdf_params
+            .as_object_mut()
+            .ok_or("print settings must be an object")?;
         if let Some(copies) = object.get("copies") {
-            settings.copies = copies.as_u64().filter(|copies| (1..=999).contains(copies)).ok_or("copies must be an integer from 1 to 999")? as u32;
+            settings.copies = copies
+                .as_u64()
+                .filter(|copies| (1..=999).contains(copies))
+                .ok_or("copies must be an integer from 1 to 999")?
+                as u32;
         }
         // Copies/collation belong to the spooler. Baking them into the PDF would multiply
         // the copies twice, and duplex could put the end of one copy behind the next.
@@ -141,18 +201,32 @@ pub fn submit(app: &mut crate::WordApp, params: &serde_json::Value) -> Result<se
     {
         log::warn!("updating fields before printing: {error}");
     }
-    let colour = if app.ui.print_backgrounds { None } else { app.session.doc.settings.page_color.take() };
-    let pdf = app.session.print_pdf(&pdf_params).map_err(|error| error.to_string());
+    let colour = if app.ui.print_backgrounds {
+        None
+    } else {
+        app.session.doc.settings.page_color.take()
+    };
+    let pdf = app
+        .session
+        .print_pdf(&pdf_params)
+        .map_err(|error| error.to_string());
     if colour.is_some() {
         app.session.doc.settings.page_color = colour;
     }
     let result = pdf.and_then(|(bytes, plan)| {
-        if native && plan.chosen.checked_mul(settings.copies as usize).is_none_or(|pages| pages > wordcraft_engine::print::MAX_PRINT_PAGES) {
+        if native
+            && plan
+                .chosen
+                .checked_mul(settings.copies as usize)
+                .is_none_or(|pages| pages > wordcraft_engine::print::MAX_PRINT_PAGES)
+        {
             return Err("the selected pages and copies exceed the print-job page limit".into());
         }
         let len = bytes.len();
         if let Some(submit) = &app.services.print_native {
-            app.printing.begin(submit(bytes, settings, collate)).map_err(|_| "A print job is already being submitted.".to_owned())?;
+            app.printing
+                .begin(submit(bytes, settings, collate))
+                .map_err(|_| "A print job is already being submitted.".to_owned())?;
             app.print_feedback_seen = None;
         } else if let Some(print) = &app.services.print {
             print(&bytes)?;
@@ -161,7 +235,11 @@ pub fn submit(app: &mut crate::WordApp, params: &serde_json::Value) -> Result<se
     });
     match result {
         Ok(len) => {
-            app.status(if native { tl!("Submitting print job…") } else { tl!("Opening print dialog…") });
+            app.status(if native {
+                tl!("Submitting print job…")
+            } else {
+                tl!("Opening print dialog…")
+            });
             Ok(json!({"printing": true, "bytes": len, "pending": native}))
         }
         Err(error) => {

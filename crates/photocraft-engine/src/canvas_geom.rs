@@ -23,15 +23,34 @@ fn map_pt(a: &Affine, p: [f64; 2]) -> [f64; 2] {
 /// Bounding box `[x0, y0, x1, y1]` of the four mapped corners of `[x0, y0, x1, y1]`.
 fn map_box(a: &Affine, b: [f64; 4]) -> [f64; 4] {
     let c = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]].map(|p| map_pt(a, p));
-    c.iter().fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |r, p| [r[0].min(p[0]), r[1].min(p[1]), r[2].max(p[0]), r[3].max(p[1])])
+    c.iter()
+        .fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |r, p| {
+            [
+                r[0].min(p[0]),
+                r[1].min(p[1]),
+                r[2].max(p[0]),
+                r[3].max(p[1]),
+            ]
+        })
 }
 
 fn map_rect(a: &Affine, r: Rect) -> Rect {
     if r.is_empty() {
         return r;
     }
-    let b = map_box(a, [f64::from(r.x0), f64::from(r.y0), f64::from(r.x1), f64::from(r.y1)]);
-    let i = |v: f64| v.round().clamp(f64::from(i32::MIN / 2), f64::from(i32::MAX / 2)) as i32;
+    let b = map_box(
+        a,
+        [
+            f64::from(r.x0),
+            f64::from(r.y0),
+            f64::from(r.x1),
+            f64::from(r.y1),
+        ],
+    );
+    let i = |v: f64| {
+        v.round()
+            .clamp(f64::from(i32::MIN / 2), f64::from(i32::MAX / 2)) as i32
+    };
     Rect::new(i(b[0]), i(b[1]), i(b[2]), i(b[3]))
 }
 
@@ -46,7 +65,11 @@ fn map_angle(a: &Affine, deg: f32) -> f32 {
     }
     let out = (-ny).atan2(nx).to_degrees();
     // Keep whole-degree angles whole (90° turns and flips are exact up to rounding noise).
-    let out = if (out - out.round()).abs() < 1e-6 { out.round() } else { out };
+    let out = if (out - out.round()).abs() < 1e-6 {
+        out.round()
+    } else {
+        out
+    };
     // (−180°, 180°]: −0 from atan2 would otherwise give −180°.
     (if out <= -180.0 { out + 360.0 } else { out }) as f32
 }
@@ -57,7 +80,10 @@ fn map_fill(a: &Affine, f: &mut Fill) {
         // The centre offset (a fraction of the frame) turns with the canvas: exact for 90° turns
         // and flips, where the frame's sides swap with the axes.
         let (ox, oy) = (f64::from(offset.0), f64::from(offset.1));
-        *offset = ((a.m[0] * ox + a.m[2] * oy) as f32, (a.m[1] * ox + a.m[3] * oy) as f32);
+        *offset = (
+            (a.m[0] * ox + a.m[2] * oy) as f32,
+            (a.m[1] * ox + a.m[3] * oy) as f32,
+        );
     }
 }
 
@@ -66,9 +92,15 @@ fn retag_text(dpi: f32, t: &mut TextLayer) {
     if t.psd_raw.is_none() {
         return;
     }
-    let mut eng = photocraft_text::shared().lock().unwrap_or_else(|e| e.into_inner());
+    let mut eng = photocraft_text::shared()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let layout = eng.layout(t, dpi);
-    t.psd_raw = Some(Arc::new(photocraft_text::psd::build_tysh(t, dpi, layout.bounds())));
+    t.psd_raw = Some(Arc::new(photocraft_text::psd::build_tysh(
+        t,
+        dpi,
+        layout.bounds(),
+    )));
 }
 
 /// Applies `a` to one layer's (and its children's) non-pixel geometry. With `content` false only
@@ -187,7 +219,9 @@ pub(crate) fn refresh(doc: &mut Document, what: Refresh) {
             match &mut l.content {
                 LayerContent::Group(g) => rec(snapshot, &mut g.children, what),
                 LayerContent::Shape(sh) => crate::vector_cmds::refresh_shape(snapshot, sh),
-                LayerContent::Text(t) if what == Refresh::All => crate::type_cmds::refresh(snapshot, t),
+                LayerContent::Text(t) if what == Refresh::All => {
+                    crate::type_cmds::refresh(snapshot, t)
+                }
                 LayerContent::Smart(_) if what == Refresh::All => {
                     let _ = crate::smart_cmds::refresh_layer(snapshot, l);
                 }

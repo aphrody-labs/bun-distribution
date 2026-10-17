@@ -150,7 +150,9 @@ fn imm32_of(i: &iced_x86::Instruction) -> Option<i32> {
 /// **troisième** position, pas en deuxième.
 fn imm32_at(i: &iced_x86::Instruction, op: u32) -> Option<i32> {
     let v = i.try_immediate(op).ok()? as i64;
-    i32::try_from(v).ok().or_else(|| u32::try_from(v).ok().map(|x| x as i32))
+    i32::try_from(v)
+        .ok()
+        .or_else(|| u32::try_from(v).ok().map(|x| x as i32))
 }
 
 /// Groupe ALU correspondant au mnémonique.
@@ -411,7 +413,10 @@ fn cond_of(m: Mnemonic) -> Option<Cond> {
 /// `Immediate32`/`Immediate32to64` (forme `81`) : c'est exactement le choix que
 /// la source doit conserver pour redonner les octets de MSVC.
 fn imm_is_wide(i: &iced_x86::Instruction) -> bool {
-    matches!(i.op_kind(1), OpKind::Immediate32 | OpKind::Immediate32to64 | OpKind::Immediate16)
+    matches!(
+        i.op_kind(1),
+        OpKind::Immediate32 | OpKind::Immediate32to64 | OpKind::Immediate16
+    )
 }
 
 /// Forme `bt`/`bts`/`btr`/`btc`, registre ou immédiat.
@@ -433,7 +438,11 @@ fn bit_insn(i: &iced_x86::Instruction, op: BitOp) -> Option<Insn> {
 /// fait partie des octets a reproduire.
 fn un_maybe_locked(i: &iced_x86::Instruction, op: UnOp) -> Option<Insn> {
     let (size, rm) = (rm_size(i, 0)?, rm_of(i, 0)?);
-    Some(if i.has_lock_prefix() { Insn::LockUn(op, size, rm) } else { Insn::Un(op, size, rm) })
+    Some(if i.has_lock_prefix() {
+        Insn::LockUn(op, size, rm)
+    } else {
+        Insn::Un(op, size, rm)
+    })
 }
 
 /// Vrai si les octets bruts d'une instruction portent un préfixe **REX.W**.
@@ -446,7 +455,10 @@ fn un_maybe_locked(i: &iced_x86::Instruction, op: UnOp) -> Option<Insn> {
 fn rex_prefix(raw: &[u8]) -> Option<u8> {
     let mut k = 0usize;
     while let Some(&b) = raw.get(k) {
-        if matches!(b, 0xF0 | 0xF2 | 0xF3 | 0x2E | 0x36 | 0x3E | 0x26 | 0x64 | 0x65 | 0x66 | 0x67) {
+        if matches!(
+            b,
+            0xF0 | 0xF2 | 0xF3 | 0x2E | 0x36 | 0x3E | 0x26 | 0x64 | 0x65 | 0x66 | 0x67
+        ) {
             k += 1;
             continue;
         }
@@ -463,8 +475,10 @@ fn has_rex_w(raw: &[u8]) -> bool {
 fn opcode_of(raw: &[u8]) -> Option<u8> {
     let mut k = 0usize;
     while let Some(&b) = raw.get(k) {
-        if matches!(b, 0xF0 | 0xF2 | 0xF3 | 0x2E | 0x36 | 0x3E | 0x26 | 0x64 | 0x65 | 0x66 | 0x67)
-            || (0x40..=0x4F).contains(&b)
+        if matches!(
+            b,
+            0xF0 | 0xF2 | 0xF3 | 0x2E | 0x36 | 0x3E | 0x26 | 0x64 | 0x65 | 0x66 | 0x67
+        ) || (0x40..=0x4F).contains(&b)
         {
             k += 1;
             continue;
@@ -482,7 +496,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
     if let Some(op) = cvt_of(i.mnemonic()) {
         return if i.op_register(0).is_xmm() {
             let sz = rm_size(i, 1)?;
-            Some(Insn::CvtToXmm(op, xmm_of(i.op_register(0))?, rm_of(i, 1)?, sz))
+            Some(Insn::CvtToXmm(
+                op,
+                xmm_of(i.op_register(0))?,
+                rm_of(i, 1)?,
+                sz,
+            ))
         } else {
             let (r, sz) = reg_of(i.op_register(0))?;
             let src = match i.op_kind(1) {
@@ -526,7 +545,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
     // `bsf`/`bsr` et `lock xadd`.
     if matches!(i.mnemonic(), Mnemonic::Bsf | Mnemonic::Bsr) {
         let (r, sz) = reg_of(i.op_register(0))?;
-        return Some(Insn::BitScan(i.mnemonic() == Mnemonic::Bsr, sz, r, rm_of(i, 1)?));
+        return Some(Insn::BitScan(
+            i.mnemonic() == Mnemonic::Bsr,
+            sz,
+            r,
+            rm_of(i, 1)?,
+        ));
     }
     if i.mnemonic() == Mnemonic::Xadd && i.has_lock_prefix() && i.op_kind(0) == OpKind::Memory {
         let (r, sz) = reg_of(i.op_register(1))?;
@@ -541,7 +565,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             || (i.op_count() > 2 && i.op2_register().is_ymm());
         if is_256 {
             let (dst, src1, src2, imm) = if op.is_store() {
-                (ymm_of(i.op_register(1))?, Ymm(0), YmmRm::M(mem_of(i)?), None)
+                (
+                    ymm_of(i.op_register(1))?,
+                    Ymm(0),
+                    YmmRm::M(mem_of(i)?),
+                    None,
+                )
             } else if op.has_imm() {
                 let src = match i.op_kind(1) {
                     OpKind::Register => YmmRm::Y(ymm_of(i.op_register(1))?),
@@ -555,7 +584,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                     OpKind::Memory => YmmRm::M(mem_of(i)?),
                     _ => return None,
                 };
-                (ymm_of(i.op_register(0))?, ymm_of(i.op_register(1))?, src, None)
+                (
+                    ymm_of(i.op_register(0))?,
+                    ymm_of(i.op_register(1))?,
+                    src,
+                    None,
+                )
             } else {
                 let src = match i.op_kind(1) {
                     OpKind::Register => YmmRm::Y(ymm_of(i.op_register(1))?),
@@ -567,7 +601,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             return Some(Insn::Vex256(op, dst, src1, src2, imm));
         }
         let (dst, src1, src2, imm) = if op.is_store() {
-            (xmm_of(i.op_register(1))?, Xmm(0), XmmRm::M(mem_of(i)?), None)
+            (
+                xmm_of(i.op_register(1))?,
+                Xmm(0),
+                XmmRm::M(mem_of(i)?),
+                None,
+            )
         } else if op.has_imm() {
             let src = match i.op_kind(1) {
                 OpKind::Register => XmmRm::X(xmm_of(i.op_register(1))?),
@@ -581,7 +620,12 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 OpKind::Memory => XmmRm::M(mem_of(i)?),
                 _ => return None,
             };
-            (xmm_of(i.op_register(0))?, xmm_of(i.op_register(1))?, src, None)
+            (
+                xmm_of(i.op_register(0))?,
+                xmm_of(i.op_register(1))?,
+                src,
+                None,
+            )
         } else {
             let src = match i.op_kind(1) {
                 OpKind::Register => XmmRm::X(xmm_of(i.op_register(1))?),
@@ -598,10 +642,10 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
         let op = match i.mnemonic() {
             Mnemonic::Stosb | Mnemonic::Stosw | Mnemonic::Stosd | Mnemonic::Stosq => {
                 aphrody_nie_asm::RepOp::Stos
-            },
+            }
             Mnemonic::Movsb | Mnemonic::Movsw | Mnemonic::Movsd | Mnemonic::Movsq => {
                 aphrody_nie_asm::RepOp::Movs
-            },
+            }
             _ => return None,
         };
         let sz = match i.mnemonic() {
@@ -653,11 +697,19 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
         && i.op_kind(0) == OpKind::Register
         && i.op_kind(1) == OpKind::Immediate8
     {
-        return Some(Insn::SseShift(op, xmm_of(i.op_register(0))?, i.immediate8()));
+        return Some(Insn::SseShift(
+            op,
+            xmm_of(i.op_register(0))?,
+            i.immediate8(),
+        ));
     }
     // Masque de signes vers un registre general.
     if let Some(op) = sse_mask_of(i.mnemonic()) {
-        return Some(Insn::SseMovmsk(op, reg_of(i.op_register(0))?.0, xmm_of(i.op_register(1))?));
+        return Some(Insn::SseMovmsk(
+            op,
+            reg_of(i.op_register(0))?.0,
+            xmm_of(i.op_register(1))?,
+        ));
     }
     // `extractps r32, xmm, imm8` : destination registre general, distincte des
     // formes `SseI` dont la destination est toujours un XMM.
@@ -670,7 +722,11 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
         if size != Size::D {
             return None;
         }
-        return Some(Insn::Extractps(dst, xmm_of(i.op_register(1))?, i.immediate8()));
+        return Some(Insn::Extractps(
+            dst,
+            xmm_of(i.op_register(1))?,
+            i.immediate8(),
+        ));
     }
     // SSE à immédiat (`shufps xmm0, xmm1, 0x4e`).
     if let Some(op) = sse_of(i.mnemonic())
@@ -681,20 +737,29 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             OpKind::Memory => XmmRm::M(mem_of(i)?),
             _ => return None,
         };
-        return Some(Insn::SseI(op, xmm_of(i.op_register(0))?, src, i.immediate8()));
+        return Some(Insn::SseI(
+            op,
+            xmm_of(i.op_register(0))?,
+            src,
+            i.immediate8(),
+        ));
     }
     // SSE : `xmm ← xmm/m` ou `[mem] ← xmm`.
     if let Some(op) = sse_of(i.mnemonic()) {
         return match (i.op_kind(0), i.op_kind(1)) {
-            (OpKind::Register, OpKind::Register) => {
-                Some(Insn::Sse(op, xmm_of(i.op_register(0))?, XmmRm::X(xmm_of(i.op_register(1))?)))
-            },
-            (OpKind::Register, OpKind::Memory) => {
-                Some(Insn::Sse(op, xmm_of(i.op_register(0))?, XmmRm::M(mem_of(i)?)))
-            },
+            (OpKind::Register, OpKind::Register) => Some(Insn::Sse(
+                op,
+                xmm_of(i.op_register(0))?,
+                XmmRm::X(xmm_of(i.op_register(1))?),
+            )),
+            (OpKind::Register, OpKind::Memory) => Some(Insn::Sse(
+                op,
+                xmm_of(i.op_register(0))?,
+                XmmRm::M(mem_of(i)?),
+            )),
             (OpKind::Memory, OpKind::Register) => {
                 Some(Insn::SseStore(op, mem_of(i)?, xmm_of(i.op_register(1))?))
-            },
+            }
             _ => None,
         };
     }
@@ -715,22 +780,26 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 } else {
                     Insn::AluRR(op, sa, a, b)
                 })
-            },
+            }
             (OpKind::Register, OpKind::Memory) => {
                 let (a, sa) = reg_of(i.op_register(0))?;
                 Some(Insn::AluRM(op, sa, a, mem_of(i)?))
-            },
+            }
             (OpKind::Memory, OpKind::Register) => {
                 let (b, sb) = reg_of(i.op_register(1))?;
                 Some(Insn::AluMR(op, sb, mem_of(i)?, b))
-            },
+            }
             (OpKind::Register, _) => {
                 let (a, sa) = reg_of(i.op_register(0))?;
                 Some(Insn::AluRI(op, sa, a, imm32_of(i)?, imm_is_wide(i)))
-            },
-            (OpKind::Memory, _) => {
-                Some(Insn::AluI(op, mem_size(i)?, Rm::M(mem_of(i)?), imm32_of(i)?, imm_is_wide(i)))
-            },
+            }
+            (OpKind::Memory, _) => Some(Insn::AluI(
+                op,
+                mem_size(i)?,
+                Rm::M(mem_of(i)?),
+                imm32_of(i)?,
+                imm_is_wide(i),
+            )),
             _ => None,
         };
     }
@@ -766,7 +835,7 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
         )),
         Mnemonic::Call if i.op_kind(0) == OpKind::NearBranch64 => {
             Some(Insn::Call(i.near_branch_target()))
-        },
+        }
         Mnemonic::Jmp => match i.op_kind(0) {
             OpKind::NearBranch64 => Some(Insn::Jmp(i.near_branch_target(), i.len() <= 2)),
             // MSVC emet un REX.W superflu sur les branchements indirects, deja
@@ -784,7 +853,7 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             let (a, sa) = reg_of(i.op_register(0))?;
             let (b, sb) = reg_of(i.op_register(1))?;
             (sa == sb).then_some(Insn::TestRR(sa, a, b))
-        },
+        }
         Mnemonic::Shl | Mnemonic::Shr | Mnemonic::Sar | Mnemonic::Rol | Mnemonic::Ror
             if i.op_kind(1) == OpKind::Immediate8 =>
         {
@@ -808,7 +877,7 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 (false, Rm::R(r)) => Some(Insn::Shift(op, sz, r, i.immediate8())),
                 (false, Rm::M(_)) => None,
             }
-        },
+        }
         Mnemonic::Cwde => Some(Insn::NoOperand(NoOp::Cwde)),
         Mnemonic::Cdqe => Some(Insn::NoOperand(NoOp::Cdqe)),
         Mnemonic::Cdq => Some(Insn::NoOperand(NoOp::Cdq)),
@@ -830,29 +899,45 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             };
             (i.op_register(1) == Register::CL).then_some(())?;
             Some(Insn::ShiftCl(op, rm_size(i, 0)?, rm_of(i, 0)?))
-        },
+        }
         Mnemonic::Movzx => {
             let (dst, dsz) = reg_of(i.op_register(0))?;
             Some(Insn::MovzxRm(rm_size(i, 1)?, dsz, dst, rm_of(i, 1)?))
-        },
+        }
         Mnemonic::Movsxd => Some(Insn::MovsxdRm(reg_of(i.op_register(0))?.0, rm_of(i, 1)?)),
         Mnemonic::Mul => Some(Insn::Un(UnOp::Mul, rm_size(i, 0)?, rm_of(i, 0)?)),
         Mnemonic::Div => Some(Insn::Un(UnOp::Div, rm_size(i, 0)?, rm_of(i, 0)?)),
         Mnemonic::Idiv => Some(Insn::Un(UnOp::Idiv, rm_size(i, 0)?, rm_of(i, 0)?)),
         Mnemonic::Movd => {
             if i.op_register(0).is_xmm() {
-                Some(Insn::MovdToXmm(xmm_of(i.op_register(0))?, rm_of(i, 1)?, Size::D))
+                Some(Insn::MovdToXmm(
+                    xmm_of(i.op_register(0))?,
+                    rm_of(i, 1)?,
+                    Size::D,
+                ))
             } else {
-                Some(Insn::MovdToRm(rm_of(i, 0)?, xmm_of(i.op_register(1))?, Size::D))
+                Some(Insn::MovdToRm(
+                    rm_of(i, 0)?,
+                    xmm_of(i.op_register(1))?,
+                    Size::D,
+                ))
             }
-        },
+        }
         Mnemonic::Movq if i.op_register(0).is_xmm() != i.op_register(1).is_xmm() => {
             if i.op_register(0).is_xmm() {
-                Some(Insn::MovdToXmm(xmm_of(i.op_register(0))?, rm_of(i, 1)?, Size::Q))
+                Some(Insn::MovdToXmm(
+                    xmm_of(i.op_register(0))?,
+                    rm_of(i, 1)?,
+                    Size::Q,
+                ))
             } else {
-                Some(Insn::MovdToRm(rm_of(i, 0)?, xmm_of(i.op_register(1))?, Size::Q))
+                Some(Insn::MovdToRm(
+                    rm_of(i, 0)?,
+                    xmm_of(i.op_register(1))?,
+                    Size::Q,
+                ))
             }
-        },
+        }
         Mnemonic::Inc => Some(un_maybe_locked(i, UnOp::Inc)?),
         Mnemonic::Lea => {
             let (r, sz) = reg_of(i.op_register(0))?;
@@ -861,7 +946,7 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 Size::D => Some(Insn::LeaD(r, mem_of(i)?)),
                 _ => None,
             }
-        },
+        }
         // Appels et sauts indirects : `call qword [rip …]` (imports), `jmp [rax]` (vtables).
         Mnemonic::Call => Some(Insn::Un(UnOp::CallInd, Size::D, rm_of(i, 0)?)),
         Mnemonic::Dec => Some(un_maybe_locked(i, UnOp::Dec)?),
@@ -871,24 +956,24 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             OpKind::Register => {
                 let (r, rsz) = reg_of(i.op_register(1))?;
                 Some(Insn::Test(rsz, rm_of(i, 0)?, r))
-            },
+            }
             _ => Some(Insn::TestI(rm_size(i, 0)?, rm_of(i, 0)?, imm32_of(i)?)),
         },
         Mnemonic::Imul if i.op_count() == 1 => {
             Some(Insn::Un(UnOp::Imul1, rm_size(i, 0)?, rm_of(i, 0)?))
-        },
+        }
         Mnemonic::Imul if i.op_count() == 2 => {
             let (r, sz) = reg_of(i.op_register(0))?;
             Some(Insn::Imul(sz, r, rm_of(i, 1)?))
-        },
+        }
         Mnemonic::Imul if i.op_count() == 3 => {
             let (r, sz) = reg_of(i.op_register(0))?;
             Some(Insn::ImulI(sz, r, rm_of(i, 1)?, imm32_at(i, 2)?))
-        },
+        }
         Mnemonic::Movsx => {
             let (r, dsz) = reg_of(i.op_register(0))?;
             Some(Insn::MovsxRm(rm_size(i, 1)?, dsz, r, rm_of(i, 1)?))
-        },
+        }
         // `mov al, [adresse absolue]` : ni base ni index, l'adresse est en clair.
         Mnemonic::Mov
             if i.memory_base() == Register::None
@@ -900,19 +985,27 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 && (i.op_kind(0) == OpKind::Memory || i.op_kind(1) == OpKind::Memory) =>
         {
             let store = i.op_kind(0) == OpKind::Memory;
-            let acc = if store { i.op_register(1) } else { i.op_register(0) };
+            let acc = if store {
+                i.op_register(1)
+            } else {
+                i.op_register(0)
+            };
             (acc.full_register() == Register::RAX).then_some(())?;
-            Some(Insn::MovMoffs(reg_of(acc)?.1, i.memory_displacement64(), store))
-        },
+            Some(Insn::MovMoffs(
+                reg_of(acc)?.1,
+                i.memory_displacement64(),
+                store,
+            ))
+        }
         Mnemonic::Mov => match (i.op_kind(0), i.op_kind(1)) {
             (OpKind::Memory, OpKind::Register) => {
                 let (r, sz) = reg_of(i.op_register(1))?;
                 Some(Insn::Store(sz, mem_of(i)?, r))
-            },
+            }
             (OpKind::Register, OpKind::Memory) => {
                 let (r, sz) = reg_of(i.op_register(0))?;
                 Some(Insn::Load(sz, r, mem_of(i)?))
-            },
+            }
             (OpKind::Register, OpKind::Register) => {
                 let (a, sa) = reg_of(i.op_register(0))?;
                 let (b, sb) = reg_of(i.op_register(1))?;
@@ -922,28 +1015,30 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
                 let mr = if sa == Size::B { 0x88 } else { 0x89 };
                 let force_rex =
                     sa == Size::D && rex_prefix(raw) == Some(0x40) && a.num() < 8 && b.num() < 8;
-                Some(if (i.op_code().op_code() == mr, force_rex) == (true, true) {
-                    Insn::MovRRmRex(a, b)
-                } else if i.op_code().op_code() == mr {
-                    Insn::MovRRm(sa, a, b)
-                } else if force_rex {
-                    Insn::MovRRRex(a, b)
-                } else {
-                    Insn::MovRR(sa, a, b)
-                })
-            },
+                Some(
+                    if (i.op_code().op_code() == mr, force_rex) == (true, true) {
+                        Insn::MovRRmRex(a, b)
+                    } else if i.op_code().op_code() == mr {
+                        Insn::MovRRm(sa, a, b)
+                    } else if force_rex {
+                        Insn::MovRRRex(a, b)
+                    } else {
+                        Insn::MovRR(sa, a, b)
+                    },
+                )
+            }
             (OpKind::Register, OpKind::Immediate8) => {
                 let (r, sz) = reg_of(i.op_register(0))?;
                 (sz == Size::B).then_some(Insn::MovRegImm8(r, i.immediate8()))
-            },
+            }
             (OpKind::Register, OpKind::Immediate32) => {
                 let (r, sz) = reg_of(i.op_register(0))?;
                 (sz == Size::D).then_some(Insn::MovRegImm32(r, i.immediate32()))
-            },
+            }
             (OpKind::Register, OpKind::Immediate64) => {
                 let (r, sz) = reg_of(i.op_register(0))?;
                 (sz == Size::Q).then_some(Insn::MovRegImm64(r, i.immediate64()))
-            },
+            }
             // `mov qword ptr [rsp+28h], 0` : iced classe l'immédiat en
             // `Immediate32to64` (étendu en signe), pas `Immediate32`. L'oublier
             // laissait 6,6 Mo de `.text` hors du dialecte.
@@ -957,7 +1052,7 @@ fn insn_of(i: &iced_x86::Instruction, raw: &[u8]) -> Option<Insn> {
             (OpKind::Register, OpKind::Immediate32to64) => {
                 let (r, sz) = reg_of(i.op_register(0))?;
                 (sz == Size::Q).then_some(Insn::MovI(sz, Rm::R(r), imm32_of(i).unwrap_or_default()))
-            },
+            }
             _ => None,
         },
         _ => None,
@@ -1061,7 +1156,11 @@ pub fn lift_body_text(bytes: &[u8], va: u64) -> Result<LiftedBody, Blockage> {
     if bytes.len() > MAX_LIFT_BODY_BYTES {
         return Err(Blockage {
             cause: "limit:bytes".into(),
-            sample: format!("{} bytes exceeds the {} byte limit", bytes.len(), MAX_LIFT_BODY_BYTES),
+            sample: format!(
+                "{} bytes exceeds the {} byte limit",
+                bytes.len(),
+                MAX_LIFT_BODY_BYTES
+            ),
         });
     }
     let last_offset = bytes.len().saturating_sub(1) as u64;
@@ -1089,8 +1188,10 @@ pub fn lift_body_text(bytes: &[u8], va: u64) -> Result<LiftedBody, Blockage> {
     }
 
     let instructions = lift_body(bytes, va).ok_or_else(|| {
-        blocking_detail(bytes, va)
-            .unwrap_or_else(|| Blockage { cause: "unknown".into(), sample: String::new() })
+        blocking_detail(bytes, va).unwrap_or_else(|| Blockage {
+            cause: "unknown".into(),
+            sample: String::new(),
+        })
     })?;
     debug_assert_eq!(instructions.len(), instruction_count);
     Ok(LiftedBody {
@@ -1106,7 +1207,10 @@ pub fn blocking_detail(bytes: &[u8], va: u64) -> Option<Blockage> {
     use iced_x86::{Formatter, IntelFormatter};
 
     if bytes.is_empty() {
-        return Some(Blockage { cause: "vide".into(), sample: String::new() });
+        return Some(Blockage {
+            cause: "vide".into(),
+            sample: String::new(),
+        });
     }
     let mut fmt = IntelFormatter::new();
     let mut show = |i: &iced_x86::Instruction| {
@@ -1136,18 +1240,24 @@ pub fn blocking_detail(bytes: &[u8], va: u64) -> Option<Blockage> {
             });
         }
         consumed += i.len();
-        match bytes.get(consumed - i.len()..consumed).and_then(|raw| insn_of(&i, raw)) {
+        match bytes
+            .get(consumed - i.len()..consumed)
+            .and_then(|raw| insn_of(&i, raw))
+        {
             Some(x) => out.push(x),
             None => {
                 return Some(Blockage {
                     cause: format!("{:?}", i.mnemonic()).to_lowercase(),
                     sample: format!("{} @ {:#x}", show(&i), i.ip()),
                 });
-            },
+            }
         }
     }
     if consumed != bytes.len() {
-        return Some(Blockage { cause: "tronque".into(), sample: String::new() });
+        return Some(Blockage {
+            cause: "tronque".into(),
+            sample: String::new(),
+        });
     }
     // Toutes les instructions sont traduites : c'est le ré-encodage qui diverge.
     // On isole l'instruction fautive en comparant octet par octet.
@@ -1176,7 +1286,10 @@ pub fn blocking_detail(bytes: &[u8], va: u64) -> Option<Blockage> {
         }
         off += i.len();
     }
-    Some(Blockage { cause: "encodage".into(), sample: String::new() })
+    Some(Blockage {
+        cause: "encodage".into(),
+        sample: String::new(),
+    })
 }
 
 #[cfg(test)]
@@ -1199,11 +1312,20 @@ mod tests {
         assert_eq!(blocking_reason(&[0x40, 0x8B, 0xCE, 0xC3], 0x140_0000), None);
         assert_eq!(blocking_reason(&[0x40, 0x89, 0xF1, 0xC3], 0x140_0000), None);
         // `movss xmm0, [rcx] ; ret` : desormais DANS le dialecte.
-        assert_eq!(blocking_reason(&[0xF3, 0x0F, 0x10, 0x01, 0xC3], 0x140_0000), None);
+        assert_eq!(
+            blocking_reason(&[0xF3, 0x0F, 0x10, 0x01, 0xC3], 0x140_0000),
+            None
+        );
         // `cvttss2si eax, xmm0 ; ret` : desormais dans le dialecte.
-        assert_eq!(blocking_reason(&[0xF3, 0x0F, 0x2C, 0xC0, 0xC3], 0x140_0000), None);
+        assert_eq!(
+            blocking_reason(&[0xF3, 0x0F, 0x2C, 0xC0, 0xC3], 0x140_0000),
+            None
+        );
         // SSE2 entier (`paddw xmm0, xmm1`) : desormais dans le dialecte.
-        assert_eq!(blocking_reason(&[0x66, 0x0F, 0xFD, 0xC1, 0xC3], 0x140_0000), None);
+        assert_eq!(
+            blocking_reason(&[0x66, 0x0F, 0xFD, 0xC1, 0xC3], 0x140_0000),
+            None
+        );
         // `aesenc xmm0, xmm1` : toujours hors dialecte.
         assert_eq!(
             blocking_reason(&[0x66, 0x0F, 0x38, 0xDC, 0xC1, 0xC3], 0x140_0000).as_deref(),
@@ -1235,7 +1357,10 @@ mod tests {
     #[test]
     fn bounded_text_lift_rejects_resource_and_address_overflow() {
         let too_many_bytes = vec![0x90; MAX_LIFT_BODY_BYTES + 1];
-        assert_eq!(lift_body_text(&too_many_bytes, 0).unwrap_err().cause, "limit:bytes");
+        assert_eq!(
+            lift_body_text(&too_many_bytes, 0).unwrap_err().cause,
+            "limit:bytes"
+        );
 
         let too_many_instructions = vec![0x90; MAX_LIFT_BODY_INSTRUCTIONS + 1];
         assert_eq!(
@@ -1243,7 +1368,10 @@ mod tests {
             "limit:instructions"
         );
 
-        assert_eq!(lift_body_text(&[0x90, 0xC3], u64::MAX).unwrap_err().cause, "address-overflow");
+        assert_eq!(
+            lift_body_text(&[0x90, 0xC3], u64::MAX).unwrap_err().cause,
+            "address-overflow"
+        );
     }
 
     /// Corps réels de `nie.exe` : relevés puis ré-encodés à l'identique.
@@ -1257,7 +1385,10 @@ mod tests {
             (&[0x48, 0x89, 0x11, 0x48, 0x8B, 0xC1, 0xC3], 0x1_4028_7b00),
             (&[0x48, 0x8D, 0x41, 0x08, 0xC3], 0x1_401b_8020),
             (&[0xB8, 0x0D, 0x8A, 0xEC, 0xEF, 0xC3], 0x1_4111_94b0),
-            (&[0x8B, 0x02, 0x89, 0x01, 0x48, 0x8B, 0xC1, 0xC3], 0x1_4004_eab0),
+            (
+                &[0x8B, 0x02, 0x89, 0x01, 0x48, 0x8B, 0xC1, 0xC3],
+                0x1_4004_eab0,
+            ),
         ];
         for (bytes, va) in cases {
             let insns = lift_body(bytes, va)
@@ -1265,7 +1396,11 @@ mod tests {
             assert_eq!(aphrody_nie_asm::encode_at(&insns, va), bytes);
             let line = aphrody_nie_asm::to_line(&insns);
             let back = aphrody_nie_asm::parse_line(&line).expect("relecture");
-            assert_eq!(aphrody_nie_asm::encode_at(&back, va), bytes, "aller-retour de `{line}`");
+            assert_eq!(
+                aphrody_nie_asm::encode_at(&back, va),
+                bytes,
+                "aller-retour de `{line}`"
+            );
         }
     }
 
@@ -1370,7 +1505,12 @@ pub fn blockers(cover: &aphrody_nie_pe::Cover, bytes: &[u8], max_len: usize) -> 
     }
     let mut out: Vec<BlockerTally> = by_cause
         .into_iter()
-        .map(|(cause, (units, bytes, sample))| BlockerTally { cause, units, bytes, sample })
+        .map(|(cause, (units, bytes, sample))| BlockerTally {
+            cause,
+            units,
+            bytes,
+            sample,
+        })
         .collect();
     out.sort_by_key(|b| std::cmp::Reverse(b.bytes));
     out
@@ -1402,8 +1542,17 @@ mod disp32_diag2 {
         let bytes = [0x48u8, 0x8b, 0x8a, 0x30, 0x00, 0x00, 0x00];
         let mut d = Decoder::with_ip(64, &bytes, 0x140000000, DecoderOptions::NONE);
         let i = d.decode();
-        eprintln!("mnemonic={:?} op0={:?} op1={:?}", i.mnemonic(), i.op_kind(0), i.op_kind(1));
-        eprintln!("memory_displ_size={} disp={}", i.memory_displ_size(), i.memory_displacement64());
+        eprintln!(
+            "mnemonic={:?} op0={:?} op1={:?}",
+            i.mnemonic(),
+            i.op_kind(0),
+            i.op_kind(1)
+        );
+        eprintln!(
+            "memory_displ_size={} disp={}",
+            i.memory_displ_size(),
+            i.memory_displacement64()
+        );
         let ins = insn_of(&i, &bytes);
         eprintln!("insn_of = {ins:?}");
         if let Some(ins) = ins {

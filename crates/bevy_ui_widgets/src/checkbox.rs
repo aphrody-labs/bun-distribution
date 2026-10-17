@@ -10,8 +10,8 @@ use bevy_ecs::{
     reflect::{ReflectComponent, ReflectEvent},
     system::{Commands, Query},
 };
-use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input::ButtonState;
+use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::{FocusCause, FocusedInput, InputFocus, InputFocusVisible};
 use bevy_picking::events::{
     PointerCancel, PointerClick, PointerDragEnd, PointerPress, PointerRelease,
@@ -289,11 +289,11 @@ pub fn checkbox_self_update(value_change: On<ValueChange<bool>>, mut commands: C
 mod tests {
     use super::*;
     use bevy_ecs::hierarchy::ChildOf;
-    use bevy_input::keyboard::Key;
     use bevy_input::InputPlugin;
+    use bevy_input::keyboard::Key;
     use bevy_input_focus::{
-        tab_navigation::{TabIndex, TabNavigationPlugin},
         InputDispatchPlugin, InputFocusPlugin,
+        tab_navigation::{TabIndex, TabNavigationPlugin},
     };
     use bevy_math::Vec2;
     use bevy_picking::{backend::HitData, pointer::PointerButton};

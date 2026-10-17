@@ -121,7 +121,7 @@ impl Regs {
                 Bank::System => {
                     self.r13_14_sys[0] = self.cur[13];
                     self.r13_14_sys[1] = self.cur[14];
-                },
+                }
                 Bank::Fiq => {
                     self.r8_14_fiq[0] = self.cur[8];
                     self.r8_14_fiq[1] = self.cur[9];
@@ -135,29 +135,29 @@ impl Regs {
                     self.cur[10] = self.r8_12_other[2];
                     self.cur[11] = self.r8_12_other[3];
                     self.cur[12] = self.r8_12_other[4];
-                },
+                }
                 Bank::Irq => {
                     self.r13_14_irq[0] = self.cur[13];
                     self.r13_14_irq[1] = self.cur[14];
-                },
+                }
                 Bank::Supervisor => {
                     self.r13_14_svc[0] = self.cur[13];
                     self.r13_14_svc[1] = self.cur[14];
-                },
+                }
                 Bank::Abort => {
                     self.r13_14_abt[0] = self.cur[13];
                     self.r13_14_abt[1] = self.cur[14];
-                },
+                }
                 Bank::Undefined => {
                     self.r13_14_und[0] = self.cur[13];
                     self.r13_14_und[1] = self.cur[14];
-                },
+                }
             }
             match new_reg_bank {
                 Bank::System => {
                     self.cur[13] = self.r13_14_sys[0];
                     self.cur[14] = self.r13_14_sys[1];
-                },
+                }
                 Bank::Fiq => {
                     self.r8_12_other[0] = self.cur[8];
                     self.r8_12_other[1] = self.cur[9];
@@ -171,23 +171,23 @@ impl Regs {
                     self.cur[12] = self.r8_14_fiq[4];
                     self.cur[13] = self.r8_14_fiq[5];
                     self.cur[14] = self.r8_14_fiq[6];
-                },
+                }
                 Bank::Irq => {
                     self.cur[13] = self.r13_14_irq[0];
                     self.cur[14] = self.r13_14_irq[1];
-                },
+                }
                 Bank::Supervisor => {
                     self.cur[13] = self.r13_14_svc[0];
                     self.cur[14] = self.r13_14_svc[1];
-                },
+                }
                 Bank::Abort => {
                     self.cur[13] = self.r13_14_abt[0];
                     self.cur[14] = self.r13_14_abt[1];
-                },
+                }
                 Bank::Undefined => {
                     self.cur[13] = self.r13_14_und[0];
                     self.cur[14] = self.r13_14_und[1];
-                },
+                }
             }
         }
 
@@ -203,40 +203,40 @@ impl Regs {
 
         if prev_spsr_bank != new_spsr_bank {
             match prev_spsr_bank {
-                Bank::System => {},
+                Bank::System => {}
                 Bank::Fiq => {
                     self.spsr_fiq = self.spsr;
-                },
+                }
                 Bank::Irq => {
                     self.spsr_irq = self.spsr;
-                },
+                }
                 Bank::Supervisor => {
                     self.spsr_svc = self.spsr;
-                },
+                }
                 Bank::Abort => {
                     self.spsr_abt = self.spsr;
-                },
+                }
                 Bank::Undefined => {
                     self.spsr_und = self.spsr;
-                },
+                }
             }
             match new_spsr_bank {
-                Bank::System => {},
+                Bank::System => {}
                 Bank::Fiq => {
                     self.spsr = self.spsr_fiq;
-                },
+                }
                 Bank::Irq => {
                     self.spsr = self.spsr_irq;
-                },
+                }
                 Bank::Supervisor => {
                     self.spsr = self.spsr_svc;
-                },
+                }
                 Bank::Abort => {
                     self.spsr = self.spsr_abt;
-                },
+                }
                 Bank::Undefined => {
                     self.spsr = self.spsr_und;
-                },
+                }
             }
         }
     }

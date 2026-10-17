@@ -16,7 +16,10 @@
 pub fn sd_rounded_box(px: f32, py: f32, hw: f32, hh: f32, corners: (f32, f32, f32, f32)) -> f32 {
     let (tl, tr, br, bl) = corners;
     // Select the radius for the quadrant `(px, py)` falls in.
-    let (rx, ry) = (if px > 0.0 { 1.0 } else { -1.0 }, if py > 0.0 { 1.0 } else { -1.0 });
+    let (rx, ry) = (
+        if px > 0.0 { 1.0 } else { -1.0 },
+        if py > 0.0 { 1.0 } else { -1.0 },
+    );
     let radius = match (rx > 0.0, ry > 0.0) {
         (true, true) => br,
         (true, false) => tr,
@@ -85,7 +88,7 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
                 Token::Num(n) => {
                     i += 1;
                     n
-                },
+                }
                 Token::Cmd(_) => break,
             }
         }};
@@ -96,7 +99,7 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
             Token::Cmd(c) => {
                 command = c;
                 i += 1;
-            },
+            }
             Token::Num(_) => {
                 // Repeated arguments reuse the previous command letter,
                 // except that a repeated M/m implicitly becomes L/l.
@@ -105,7 +108,7 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
                 } else if command == 'm' {
                     command = 'l';
                 }
-            },
+            }
         }
         match command {
             'M' | 'm' => {
@@ -114,47 +117,67 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
                 if !current.is_empty() {
                     subpaths.push(std::mem::take(&mut current));
                 }
-                cursor = if command == 'm' { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                cursor = if command == 'm' {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 start = cursor;
                 current.push(cursor);
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             'L' | 'l' => {
                 let x = next_f!();
                 let y = next_f!();
-                cursor = if command == 'l' { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                cursor = if command == 'l' {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 current.push(cursor);
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             'H' | 'h' => {
                 let x = next_f!();
                 cursor.0 = if command == 'h' { cursor.0 + x } else { x };
                 current.push(cursor);
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             'V' | 'v' => {
                 let y = next_f!();
                 cursor.1 = if command == 'v' { cursor.1 + y } else { y };
                 current.push(cursor);
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             'C' | 'c' => {
                 let (x1, y1) = (next_f!(), next_f!());
                 let (x2, y2) = (next_f!(), next_f!());
                 let (x, y) = (next_f!(), next_f!());
                 let rel = command == 'c';
-                let p1 = if rel { (cursor.0 + x1, cursor.1 + y1) } else { (x1, y1) };
-                let p2 = if rel { (cursor.0 + x2, cursor.1 + y2) } else { (x2, y2) };
-                let p3 = if rel { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                let p1 = if rel {
+                    (cursor.0 + x1, cursor.1 + y1)
+                } else {
+                    (x1, y1)
+                };
+                let p2 = if rel {
+                    (cursor.0 + x2, cursor.1 + y2)
+                } else {
+                    (x2, y2)
+                };
+                let p3 = if rel {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 flatten_cubic(cursor, p1, p2, p3, &mut current);
                 last_cubic_ctrl = Some(p2);
                 last_quad_ctrl = None;
                 cursor = p3;
-            },
+            }
             'S' | 's' => {
                 let (x2, y2) = (next_f!(), next_f!());
                 let (x, y) = (next_f!(), next_f!());
@@ -162,36 +185,56 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
                 let p1 = last_cubic_ctrl
                     .map(|(cx, cy)| (2.0 * cursor.0 - cx, 2.0 * cursor.1 - cy))
                     .unwrap_or(cursor);
-                let p2 = if rel { (cursor.0 + x2, cursor.1 + y2) } else { (x2, y2) };
-                let p3 = if rel { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                let p2 = if rel {
+                    (cursor.0 + x2, cursor.1 + y2)
+                } else {
+                    (x2, y2)
+                };
+                let p3 = if rel {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 flatten_cubic(cursor, p1, p2, p3, &mut current);
                 last_cubic_ctrl = Some(p2);
                 last_quad_ctrl = None;
                 cursor = p3;
-            },
+            }
             'Q' | 'q' => {
                 let (x1, y1) = (next_f!(), next_f!());
                 let (x, y) = (next_f!(), next_f!());
                 let rel = command == 'q';
-                let p1 = if rel { (cursor.0 + x1, cursor.1 + y1) } else { (x1, y1) };
-                let p3 = if rel { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                let p1 = if rel {
+                    (cursor.0 + x1, cursor.1 + y1)
+                } else {
+                    (x1, y1)
+                };
+                let p3 = if rel {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 flatten_quad(cursor, p1, p3, &mut current);
                 last_quad_ctrl = Some(p1);
                 last_cubic_ctrl = None;
                 cursor = p3;
-            },
+            }
             'T' | 't' => {
                 let (x, y) = (next_f!(), next_f!());
                 let rel = command == 't';
                 let p1 = last_quad_ctrl
                     .map(|(cx, cy)| (2.0 * cursor.0 - cx, 2.0 * cursor.1 - cy))
                     .unwrap_or(cursor);
-                let p3 = if rel { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                let p3 = if rel {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 flatten_quad(cursor, p1, p3, &mut current);
                 last_quad_ctrl = Some(p1);
                 last_cubic_ctrl = None;
                 cursor = p3;
-            },
+            }
             'A' | 'a' => {
                 let rx = next_f!();
                 let ry = next_f!();
@@ -201,19 +244,23 @@ pub fn parse_svg_path(d: &str) -> Vec<Polyline> {
                 let x = next_f!();
                 let y = next_f!();
                 let rel = command == 'a';
-                let end = if rel { (cursor.0 + x, cursor.1 + y) } else { (x, y) };
+                let end = if rel {
+                    (cursor.0 + x, cursor.1 + y)
+                } else {
+                    (x, y)
+                };
                 flatten_arc(cursor, end, rx, ry, rot, large_arc, sweep, &mut current);
                 cursor = end;
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             'Z' | 'z' => {
                 cursor = start;
                 current.push(cursor);
                 subpaths.push(std::mem::take(&mut current));
                 last_cubic_ctrl = None;
                 last_quad_ctrl = None;
-            },
+            }
             _ => break,
         }
     }
@@ -344,7 +391,11 @@ fn flatten_arc(
     let sign = if large_arc == sweep { -1.0 } else { 1.0 };
     let num = (rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p).max(0.0);
     let den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
-    let coef = if den > 0.0 { sign * (num / den).sqrt() } else { 0.0 };
+    let coef = if den > 0.0 {
+        sign * (num / den).sqrt()
+    } else {
+        0.0
+    };
     let cxp = coef * (rx * y1p) / ry;
     let cyp = -coef * (ry * x1p) / rx;
 
@@ -361,7 +412,12 @@ fn flatten_arc(
         a
     };
     let theta1 = angle(1.0, 0.0, (x1p - cxp) / rx, (y1p - cyp) / ry);
-    let mut delta = angle((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+    let mut delta = angle(
+        (x1p - cxp) / rx,
+        (y1p - cyp) / ry,
+        (-x1p - cxp) / rx,
+        (-y1p - cyp) / ry,
+    );
     if !sweep && delta > 0.0 {
         delta -= std::f32::consts::TAU;
     } else if sweep && delta < 0.0 {

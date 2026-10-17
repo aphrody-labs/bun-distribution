@@ -17,7 +17,11 @@ fn visible(fx: &[Effect]) -> bool {
 }
 
 pub fn has_revolve(n: &Node) -> bool {
-    visible(&n.appearance.effects) || n.appearance.items.iter().any(|i| i.visible() && visible(i.effects()))
+    visible(&n.appearance.effects)
+        || n.appearance
+            .items
+            .iter()
+            .any(|i| i.visible() && visible(i.effects()))
 }
 
 /// Shared document-parameter conversion for rendering and interactive preview guides.
@@ -25,7 +29,11 @@ pub fn revolve_options(p: &Value) -> Revolve {
     Revolve {
         angle: num(p, "angle", 360.0),
         offset: num(p, "offset", 0.0),
-        edge: if text(p, "edge", "left") == "right" { Edge::Right } else { Edge::Left },
+        edge: if text(p, "edge", "left") == "right" {
+            Edge::Right
+        } else {
+            Edge::Left
+        },
         rotation_x: num(p, "rotationX", 0.0),
         rotation_y: num(p, "rotationY", 0.0),
         rotation_z: num(p, "rotationZ", 0.0),
@@ -43,11 +51,15 @@ pub fn revolve_options(p: &Value) -> Revolve {
 /// by the evaluator; unsupported source kinds remain unchanged when rendered.
 pub fn validate_revolve(n: &Node, p: &Value) -> Result<(), String> {
     let path = profile(n).ok_or("Revolve currently requires a path or compound path. Select a profile drawn with the Pen tool.")?;
-    let b = path.bounds().ok_or("Revolve requires a profile with at least two anchors")?;
+    let b = path
+        .bounds()
+        .ok_or("Revolve requires a profile with at least two anchors")?;
     if !path.subpaths.iter().any(|sp| sp.anchors.len() >= 2) {
         return Err("Revolve requires at least two anchors".into());
     }
-    if p.get("edge").is_some_and(|v| v.as_str() != Some("left") && v.as_str() != Some("right")) {
+    if p.get("edge")
+        .is_some_and(|v| v.as_str() != Some("left") && v.as_str() != Some("right"))
+    {
         return Err("Revolve edge must be left or right".into());
     }
     vectorcraft_three_d::revolve(&path, b, revolve_options(p)).map(|_| ())
@@ -55,10 +67,19 @@ pub fn validate_revolve(n: &Node, p: &Value) -> Result<(), String> {
 
 fn profile(n: &Node) -> Option<PathData> {
     match &n.kind {
-        NodeKind::Path { path, guide: false, clipping: false, .. } => Some(path.clone()),
-        NodeKind::Compound { children, .. } => {
-            Some(PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect()))
-        }
+        NodeKind::Path {
+            path,
+            guide: false,
+            clipping: false,
+            ..
+        } => Some(path.clone()),
+        NodeKind::Compound { children, .. } => Some(PathData::new(
+            children
+                .iter()
+                .filter_map(|c| c.path_data())
+                .flat_map(|p| p.subpaths.iter().cloned())
+                .collect(),
+        )),
         _ => None,
     }
 }
@@ -80,7 +101,12 @@ fn surface(
     let b = path.bounds()?;
     // A loaded file or a profile edited past the limits keeps drawing its source path instead
     // of crashing the frame. Commands validate the same evaluator and report its errors.
-    let faces = vectorcraft_three_d::revolve(path, b, revolve_options(&merged_params(REVOLVE, &fx.params))).ok()?;
+    let faces = vectorcraft_three_d::revolve(
+        path,
+        b,
+        revolve_options(&merged_params(REVOLVE, &fx.params)),
+    )
+    .ok()?;
     // Visibility is an expansion option, never a change to live geometry or export baking.
     // Keep all faces for paints whose coverage we cannot prove opaque. A bounded visibility
     // failure also retains the complete surface rather than losing any of the user's art.
@@ -93,7 +119,14 @@ fn surface(
     .then(|| vectorcraft_three_d::visible_faces(&faces).ok())
     .flatten();
     let faces = visible.unwrap_or_else(|| {
-        faces.into_iter().map(|f| vectorcraft_three_d::VisibleFace { path: f.path(), brightness: f.brightness, depth: f.depth }).collect()
+        faces
+            .into_iter()
+            .map(|f| vectorcraft_three_d::VisibleFace {
+                path: f.path(),
+                brightness: f.brightness,
+                depth: f.depth,
+            })
+            .collect()
     });
     let children = faces
         .into_iter()
@@ -117,13 +150,22 @@ fn surface(
             let items = items
                 .into_iter()
                 .flat_map(|item| {
-                    let AppearanceItem::Fill(fill) = &item else { return vec![item] };
+                    let AppearanceItem::Fill(fill) = &item else {
+                        return vec![item];
+                    };
                     let mut edge = StrokeLayer::new(fill.paint.clone(), 0.75);
                     edge.opacity = fill.opacity;
                     vec![item, AppearanceItem::Stroke(edge)]
                 })
                 .collect();
-            Arc::new(Node::path(n.id, face.path, Appearance { items, ..Default::default() }))
+            Arc::new(Node::path(
+                n.id,
+                face.path,
+                Appearance {
+                    items,
+                    ..Default::default()
+                },
+            ))
         })
         .collect();
     let mut group = Node::group(n.id, children);
@@ -158,7 +200,12 @@ fn art(n: &Node, expand: bool) -> Option<Node> {
     let ctx = GeomContext::of(n);
     let mut children = vec![];
     let mut remaining = n.appearance.effects.clone();
-    if let Some(index) = n.appearance.effects.iter().position(|e| e.visible && e.id == REVOLVE) {
+    if let Some(index) = n
+        .appearance
+        .effects
+        .iter()
+        .position(|e| e.visible && e.id == REVOLVE)
+    {
         let fx = n.appearance.effects.get(index)?;
         let path = geometry(&path, n.appearance.effects.get(..index)?, &ctx);
         // An object's surface uses its top visible fill, falling back to its stroke.
@@ -170,8 +217,16 @@ fn art(n: &Node, expand: bool) -> Option<Node> {
             .find(|i| matches!(i, AppearanceItem::Fill(_)) && crate::paints(i))
             .or_else(|| n.appearance.items.iter().rev().find(|i| crate::paints(i)))?;
         let (paint, opacity, blend) = paint_of(item);
-        let expand = expand && !n.appearance.effects.iter().skip(index + 1).any(|e| e.visible && is_geometry(&e.id));
-        children.push(Arc::new(surface(n, &path, fx, paint, opacity, blend, expand)?));
+        let expand = expand
+            && !n
+                .appearance
+                .effects
+                .iter()
+                .skip(index + 1)
+                .any(|e| e.visible && is_geometry(&e.id));
+        children.push(Arc::new(surface(
+            n, &path, fx, paint, opacity, blend, expand,
+        )?));
         // Later geometry acts on the projected art as a whole through container evaluation.
         remaining = n
             .appearance
@@ -185,22 +240,51 @@ fn art(n: &Node, expand: bool) -> Option<Node> {
         let path = geometry(&path, &n.appearance.effects, &ctx);
         remaining.retain(|e| !is_geometry(&e.id));
         for item in n.appearance.items.iter().filter(|i| crate::paints(i)) {
-            if let Some(index) = item.effects().iter().position(|e| e.visible && e.id == REVOLVE) {
+            if let Some(index) = item
+                .effects()
+                .iter()
+                .position(|e| e.visible && e.id == REVOLVE)
+            {
                 let fx = item.effects().get(index)?;
                 let p = geometry(&path, item.effects().get(..index)?, &ctx.item(item));
                 let (paint, opacity, blend) = paint_of(item);
-                let expand = expand && !item.effects().iter().skip(index + 1).any(|e| e.visible && is_geometry(&e.id));
+                let expand = expand
+                    && !item
+                        .effects()
+                        .iter()
+                        .skip(index + 1)
+                        .any(|e| e.visible && is_geometry(&e.id));
                 let mut art = surface(n, &p, fx, paint, opacity, blend, expand)?;
-                art.appearance.effects = item.effects().iter().skip(index + 1).filter(|e| e.id != REVOLVE).cloned().collect();
+                art.appearance.effects = item
+                    .effects()
+                    .iter()
+                    .skip(index + 1)
+                    .filter(|e| e.id != REVOLVE)
+                    .cloned()
+                    .collect();
                 children.push(Arc::new(art));
             } else {
-                children.push(Arc::new(Node::path(n.id, path.clone(), Appearance { items: vec![item.clone()], ..Default::default() })));
+                children.push(Arc::new(Node::path(
+                    n.id,
+                    path.clone(),
+                    Appearance {
+                        items: vec![item.clone()],
+                        ..Default::default()
+                    },
+                )));
             }
         }
     }
     let mut art = n.clone();
-    art.kind = NodeKind::Group { children, clip: false };
-    art.appearance = Appearance { effects: remaining, ..Default::default() }.into();
+    art.kind = NodeKind::Group {
+        children,
+        clip: false,
+    };
+    art.appearance = Appearance {
+        effects: remaining,
+        ..Default::default()
+    }
+    .into();
     Some(art)
 }
 
@@ -216,7 +300,11 @@ mod tests {
         b.line_to((130.0, 60.0));
         b.line_to((130.0, 140.0));
         b.line_to((100.0, 160.0));
-        Node::path(NodeId(1), PathData::from_bezpath(&b), Appearance::basic(Paint::solid(Color::rgb(0.8, 0.2, 0.1)), Paint::None, 0.0))
+        Node::path(
+            NodeId(1),
+            PathData::from_bezpath(&b),
+            Appearance::basic(Paint::solid(Color::rgb(0.8, 0.2, 0.1)), Paint::None, 0.0),
+        )
     }
     fn fx() -> Effect {
         crate::new_effect(REVOLVE, &json!({})).unwrap()
@@ -248,7 +336,13 @@ mod tests {
         assert_eq!(a.opacity, 0.6);
         let surface = &a.children().unwrap()[0];
         assert_eq!(surface.opacity, 0.4);
-        assert!(surface.children().unwrap().iter().all(|c| c.opacity == 1.0 && !has_revolve(c)));
+        assert!(
+            surface
+                .children()
+                .unwrap()
+                .iter()
+                .all(|c| c.opacity == 1.0 && !has_revolve(c))
+        );
     }
     #[test]
     fn export_bakes_faces_with_unique_ids_and_no_revolve_effects() {
@@ -256,7 +350,10 @@ mod tests {
         let mut n = profile_node();
         n.id = d.alloc_id();
         n.appearance.effects.push(fx());
-        let mut stroke = |_: &mut Document, _: &PathData, _: vectorcraft_geom::FillRule, _: &vectorcraft_doc::StrokeLayer| None;
+        let mut stroke = |_: &mut Document,
+                          _: &PathData,
+                          _: vectorcraft_geom::FillRule,
+                          _: &vectorcraft_doc::StrokeLayer| None;
         let art = crate::expand_leaf(&mut d, &n, &mut stroke).unwrap();
         let mut ids = std::collections::HashSet::new();
         fn visit(n: &Node, ids: &mut std::collections::HashSet<NodeId>) {
@@ -278,10 +375,21 @@ mod tests {
         let live = revolve_art(&n).unwrap();
         let expanded = expand_revolve_art(&n).unwrap();
         let count = |n: &Node| n.children().unwrap()[0].children().unwrap().len();
-        assert!(count(&expanded) < count(&live) * 3 / 4, "hidden back surfaces are removed");
-        assert_eq!(crate::bake_appearance(&n), Some(live.clone()), "other baking retains the full surface");
+        assert!(
+            count(&expanded) < count(&live) * 3 / 4,
+            "hidden back surfaces are removed"
+        );
+        assert_eq!(
+            crate::bake_appearance(&n),
+            Some(live.clone()),
+            "other baking retains the full surface"
+        );
         n.appearance.effects[0].params["expandVisibleOnly"] = json!(false);
-        assert_eq!(revolve_art(&n), Some(live.clone()), "the live view ignores the expansion setting");
+        assert_eq!(
+            revolve_art(&n),
+            Some(live.clone()),
+            "the live view ignores the expansion setting"
+        );
         assert_eq!(expand_revolve_art(&n), Some(live));
         assert_eq!(n.path_data(), Some(&source));
         n.appearance.effects[0].params["expandVisibleOnly"] = json!(true);
@@ -289,7 +397,10 @@ mod tests {
         // Per-item Revolve uses the same option, without trimming another item's artwork.
         let effect = n.appearance.effects.remove(0);
         n.appearance.items[0].effects_mut().push(effect);
-        assert_eq!(expand_revolve_art(&n).unwrap().children().unwrap()[0], expanded.children().unwrap()[0]);
+        assert_eq!(
+            expand_revolve_art(&n).unwrap().children().unwrap()[0],
+            expanded.children().unwrap()[0]
+        );
     }
 
     #[test]
@@ -306,13 +417,23 @@ mod tests {
                     }
                 }
                 2 => sample.blend = vectorcraft_doc::color::BlendMode::Multiply,
-                _ => sample.appearance.effects.push(crate::new_effect("distort.twist", &json!({"angle":45})).unwrap()),
+                _ => sample
+                    .appearance
+                    .effects
+                    .push(crate::new_effect("distort.twist", &json!({"angle":45})).unwrap()),
             }
-            assert_eq!(expand_revolve_art(&sample), revolve_art(&sample), "preserve surface for case {change}");
+            assert_eq!(
+                expand_revolve_art(&sample),
+                revolve_art(&sample),
+                "preserve surface for case {change}"
+            );
         }
         let mut sample = n;
         if let AppearanceItem::Fill(f) = &mut sample.appearance.items[0] {
-            f.paint = Paint::Pattern { pattern: "unknown transparency".into(), xf: Affine::IDENTITY };
+            f.paint = Paint::Pattern {
+                pattern: "unknown transparency".into(),
+                xf: Affine::IDENTITY,
+            };
         }
         assert_eq!(expand_revolve_art(&sample), revolve_art(&sample));
     }

@@ -64,7 +64,10 @@ fn shadow_highlight(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let pr = ctx.params;
     let src = e.download(&b.img)?;
     let (s_amt, h_amt) = effectcraft_effects::shadow_highlight_amounts(ctx, &src);
-    let (bc, wc) = (pr.f("moreOptions/blackClip").clamp(0.0, 49.0) / 100.0, pr.f("moreOptions/whiteClip").clamp(0.0, 49.0) / 100.0);
+    let (bc, wc) = (
+        pr.f("moreOptions/blackClip").clamp(0.0, 49.0) / 100.0,
+        pr.f("moreOptions/whiteClip").clamp(0.0, 49.0) / 100.0,
+    );
     let clip0 = (bc > 0.0 || wc > 0.0).then(|| effectcraft_effects::luma_clip_points(&src, bc, wc));
     let s_r = pr.f("moreOptions/shadowRadius").max(0.0) * b.scale / 2.0;
     let h_r = pr.f("moreOptions/highlightRadius").max(0.0) * b.scale / 2.0;
@@ -72,12 +75,20 @@ fn shadow_highlight(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let luma = e.image(w, h);
     e.pixels("fxt_point", &op(19), &b.img, None, &luma, None);
     let base_s = gaussian_blur(e, &luma, s_r, s_r, true);
-    let base_h = if (h_r - s_r).abs() < 1e-9 { base_s.clone() } else { gaussian_blur(e, &luma, h_r, h_r, true) };
+    let base_h = if (h_r - s_r).abs() < 1e-9 {
+        base_s.clone()
+    } else {
+        gaussian_blur(e, &luma, h_r, h_r, true)
+    };
     let bases = e.image(w, h);
     e.pixels("fxt_point", &op(21), &base_s, Some(&base_h), &bases, None);
     let mut p = op(20);
-    p.f[0] =
-        [s_amt, h_amt, (pr.f("moreOptions/shadowTonalWidth") as f32 / 100.0).max(0.01), (pr.f("moreOptions/highlightTonalWidth") as f32 / 100.0).max(0.01)];
+    p.f[0] = [
+        s_amt,
+        h_amt,
+        (pr.f("moreOptions/shadowTonalWidth") as f32 / 100.0).max(0.01),
+        (pr.f("moreOptions/highlightTonalWidth") as f32 / 100.0).max(0.01),
+    ];
     p.f[1] = [
         pr.f("moreOptions/colorCorrection") as f32 / 100.0,
         pr.f("moreOptions/midtoneContrast") as f32 / 100.0,
@@ -86,7 +97,9 @@ fn shadow_highlight(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     ];
     let out = e.scratch(w, h);
     e.pixels("fxt_point", &p, &b.img, Some(&bases), &out, None);
-    let Some((lo0, hi0)) = clip0 else { return Some(GBuf { img: out, ..b }) };
+    let Some((lo0, hi0)) = clip0 else {
+        return Some(GBuf { img: out, ..b });
+    };
     let adjusted = e.download(&out)?;
     let (lo1, hi1) = effectcraft_effects::luma_clip_points(&adjusted, bc, wc);
     if (lo0, hi0) == (lo1, hi1) || hi1 - lo1 <= 1e-3 {
@@ -124,8 +137,18 @@ pub(crate) fn hue_saturation(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GB
     let g = |k: &str| pr.f(k) as f32;
     let mut p = Params::default();
     p.u[0] = [14, pr.b("colorize") as u32, (data.len() / 7) as u32, 0];
-    p.f[0] = [g("hue") / 360.0, g("saturation") / 100.0, g("lightness") / 100.0, 0.0];
-    p.f[1] = [g("colorizeHue") / 360.0, g("colorizeSaturation") / 100.0, g("colorizeLightness") / 100.0, 0.0];
+    p.f[0] = [
+        g("hue") / 360.0,
+        g("saturation") / 100.0,
+        g("lightness") / 100.0,
+        0.0,
+    ];
+    p.f[1] = [
+        g("colorizeHue") / 360.0,
+        g("colorizeSaturation") / 100.0,
+        g("colorizeLightness") / 100.0,
+        0.0,
+    ];
     run(e, &p, b, Some(data))
 }
 
@@ -165,7 +188,11 @@ fn run(e: &mut Enc, p: &Params, b: GBuf, data: Option<Vec<f32>>) -> Option<GBuf>
 
 /// color3::parse_map.
 fn parse_map(s: &str) -> Vec<f32> {
-    let vals: Vec<f32> = s.split(|ch: char| ch == ',' || ch.is_whitespace()).filter(|t| !t.is_empty()).filter_map(|t| t.parse::<f32>().ok()).collect();
+    let vals: Vec<f32> = s
+        .split(|ch: char| ch == ',' || ch.is_whitespace())
+        .filter(|t| !t.is_empty())
+        .filter_map(|t| t.parse::<f32>().ok())
+        .collect();
     if vals.len() < 2 {
         return (0..256).map(|i| i as f32 / 255.0).collect();
     }
@@ -182,11 +209,41 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     match id {
         "ec.color.levelsic" => {
             const IDS: [[&str; 5]; 5] = [
-                ["rgb/rgbInBlack", "rgb/rgbInWhite", "rgb/rgbGamma", "rgb/rgbOutBlack", "rgb/rgbOutWhite"],
-                ["red/redInBlack", "red/redInWhite", "red/redGamma", "red/redOutBlack", "red/redOutWhite"],
-                ["green/greenInBlack", "green/greenInWhite", "green/greenGamma", "green/greenOutBlack", "green/greenOutWhite"],
-                ["blue/blueInBlack", "blue/blueInWhite", "blue/blueGamma", "blue/blueOutBlack", "blue/blueOutWhite"],
-                ["alpha/alphaInBlack", "alpha/alphaInWhite", "alpha/alphaGamma", "alpha/alphaOutBlack", "alpha/alphaOutWhite"],
+                [
+                    "rgb/rgbInBlack",
+                    "rgb/rgbInWhite",
+                    "rgb/rgbGamma",
+                    "rgb/rgbOutBlack",
+                    "rgb/rgbOutWhite",
+                ],
+                [
+                    "red/redInBlack",
+                    "red/redInWhite",
+                    "red/redGamma",
+                    "red/redOutBlack",
+                    "red/redOutWhite",
+                ],
+                [
+                    "green/greenInBlack",
+                    "green/greenInWhite",
+                    "green/greenGamma",
+                    "green/greenOutBlack",
+                    "green/greenOutWhite",
+                ],
+                [
+                    "blue/blueInBlack",
+                    "blue/blueInWhite",
+                    "blue/blueGamma",
+                    "blue/blueOutBlack",
+                    "blue/blueOutWhite",
+                ],
+                [
+                    "alpha/alphaInBlack",
+                    "alpha/alphaInWhite",
+                    "alpha/alphaGamma",
+                    "alpha/alphaOutBlack",
+                    "alpha/alphaOutWhite",
+                ],
             ];
             let lv: Vec<[f32; 5]> = IDS.iter().map(|ids| ids.map(f)).collect();
             let ident = |l: &[f32; 5]| *l == [0.0, 1.0, 1.0, 0.0, 1.0];
@@ -203,7 +260,14 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             data = Some(d);
         }
         "ec.color.gammapedestalgain" => {
-            let ch = |n: &str| [f(&format!("{n}Gamma")).max(0.01), f(&format!("{n}Pedestal")), f(&format!("{n}Gain")), 0.0];
+            let ch = |n: &str| {
+                [
+                    f(&format!("{n}Gamma")).max(0.01),
+                    f(&format!("{n}Pedestal")),
+                    f(&format!("{n}Gain")),
+                    0.0,
+                ]
+            };
             p.u[0][0] = 2;
             p.f[0] = ch("red");
             p.f[1] = ch("green");
@@ -213,7 +277,9 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         "ec.color.photofilter" => {
             let fi = pr.e("filter");
             let c = match effectcraft_effects::PHOTO_FILTERS.get(fi as usize) {
-                Some((_, rgb)) if fi != effectcraft_effects::PHOTO_FILTER_CUSTOM => rgb.map(|v| v as f32 / 255.0),
+                Some((_, rgb)) if fi != effectcraft_effects::PHOTO_FILTER_CUSTOM => {
+                    rgb.map(|v| v as f32 / 255.0)
+                }
                 _ => {
                     let c = pr.color("color");
                     [c[0], c[1], c[2]]
@@ -235,7 +301,12 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.u[0] = [4, flags, 0, 0];
             p.f[0] = [fh, fs, fl, f("softness") / 100.0];
             p.f[1] = [th, ts, tl, 0.0];
-            p.f[2] = [f("toleranceGroup/hue") / 100.0, f("toleranceGroup/lightness") / 100.0, f("toleranceGroup/saturation") / 100.0, 0.0];
+            p.f[2] = [
+                f("toleranceGroup/hue") / 100.0,
+                f("toleranceGroup/lightness") / 100.0,
+                f("toleranceGroup/saturation") / 100.0,
+                0.0,
+            ];
         }
         "ec.color.leavecolor" => {
             let amt = f("amount") / 100.0;
@@ -249,15 +320,29 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         }
         "ec.color.changecolor" => {
             let view_mask = pr.e("view") == 1;
-            let (dh, dl, ds) = (f("hueTransform") / 360.0, f("lightnessTransform") / 100.0, f("saturationTransform") / 100.0);
+            let (dh, dl, ds) = (
+                f("hueTransform") / 360.0,
+                f("lightnessTransform") / 100.0,
+                f("saturationTransform") / 100.0,
+            );
             if !view_mask && dh == 0.0 && dl == 0.0 && ds == 0.0 {
                 return Some(b);
             }
             let k = pr.color("colorToChange");
-            p.u[0] = [6, pr.e("matchColors"), view_mask as u32 | (pr.b("invertColorCorrectionMask") as u32) << 1, 0];
+            p.u[0] = [
+                6,
+                pr.e("matchColors"),
+                view_mask as u32 | (pr.b("invertColorCorrectionMask") as u32) << 1,
+                0,
+            ];
             p.f[0] = [k[0], k[1], k[2], rgb_to_hsl(k[0], k[1], k[2]).0];
             p.f[1] = [dh, dl, ds, 0.0];
-            p.f[2] = [f("matchingTolerance") / 100.0, f("matchingSoftness") / 100.0, 0.0, 0.0];
+            p.f[2] = [
+                f("matchingTolerance") / 100.0,
+                f("matchingSoftness") / 100.0,
+                0.0,
+                0.0,
+            ];
         }
         "ec.color.broadcast" => {
             let pal = pr.e("locale") == 1;
@@ -266,7 +351,11 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.f[0][0] = (f("maxSignal") - setup) / span;
         }
         "ec.color.colorbalancehls" => {
-            let (dh, dl, ds) = (f("hue") / 360.0, f("lightness") / 100.0, f("saturation") / 100.0);
+            let (dh, dl, ds) = (
+                f("hue") / 360.0,
+                f("lightness") / 100.0,
+                f("saturation") / 100.0,
+            );
             if dh == 0.0 && dl == 0.0 && ds == 0.0 {
                 return Some(b);
             }
@@ -277,7 +366,13 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             let g = |id: &str| rgb(pr.color(id));
             let stops = match pr.e("tones") {
                 0 => vec![g("shadows"), g("highlights")],
-                2 => vec![g("shadows"), g("darktones"), g("midtones"), g("brights"), g("highlights")],
+                2 => vec![
+                    g("shadows"),
+                    g("darktones"),
+                    g("midtones"),
+                    g("brights"),
+                    g("highlights"),
+                ],
                 _ => vec![g("shadows"), g("midtones"), g("highlights")],
             };
             p.u[0] = [9, stops.len() as u32 - 1, 0, 0];
@@ -287,7 +382,8 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             }
         }
         "ec.color.cccoloroffset" => {
-            let offs = ["redPhase", "greenPhase", "bluePhase"].map(|id| (pr.f(id) / 360.0).rem_euclid(1.0) as f32);
+            let offs = ["redPhase", "greenPhase", "bluePhase"]
+                .map(|id| (pr.f(id) / 360.0).rem_euclid(1.0) as f32);
             if offs.iter().all(|o| *o == 0.0) {
                 return Some(b);
             }
@@ -297,7 +393,10 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         "ec.color.cckernel" => {
             let k = ["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9"].map(f);
             let (scale, offset) = (f("scale"), f("offset"));
-            let identity = k.iter().enumerate().all(|(i, v)| if i == 4 { *v == 1.0 } else { *v == 0.0 });
+            let identity = k
+                .iter()
+                .enumerate()
+                .all(|(i, v)| if i == 4 { *v == 1.0 } else { *v == 0.0 });
             if identity && scale == 1.0 && offset == 0.0 {
                 return Some(b);
             }
@@ -315,7 +414,8 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         "ec.color.videolimiter" => {
             const CLIP_LEVELS: [f32; 5] = [0.9, 0.95, 1.0, 1.05, 1.09];
             let level = CLIP_LEVELS[(pr.e("clipLevel") as usize).min(4)];
-            let comp = [0.0, 0.03, 0.05, 0.1, 0.2][(pr.e("compressionBeforeClipping") as usize).min(4)];
+            let comp =
+                [0.0, 0.03, 0.05, 0.1, 0.2][(pr.e("compressionBeforeClipping") as usize).min(4)];
             p.u[0] = [13, pr.e("clipMethod"), pr.b("gamutWarning") as u32, 0];
             p.f[0] = [level, level * (1.0 - comp), 0.0, 0.0];
             p.f[1] = rgb(pr.color("gamutWarningColor"));
@@ -326,8 +426,14 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 return Some(b);
             }
             let img = e.download(&b.img)?;
-            let cpu = effectcraft_effects::Buf { img, offset: b.offset, scale: b.scale };
-            let Some(maps) = effectcraft_effects::color_stabilizer_maps(ctx, &cpu) else { return Some(b) };
+            let cpu = effectcraft_effects::Buf {
+                img,
+                offset: b.offset,
+                scale: b.scale,
+            };
+            let Some(maps) = effectcraft_effects::color_stabilizer_maps(ctx, &cpu) else {
+                return Some(b);
+            };
             let mut d = vec![];
             for m in &maps {
                 d.push(m.len() as f32);
@@ -340,16 +446,28 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             data = Some(d);
         }
         "ec.color.cccolorneutralizer" => {
-            let pairs = [("shadowsUnbalance", "shadowsBalance"), ("midtonesUnbalance", "midtonesBalance"), ("highlightsUnbalance", "highlightsBalance")];
+            let pairs = [
+                ("shadowsUnbalance", "shadowsBalance"),
+                ("midtonesUnbalance", "midtonesBalance"),
+                ("highlightsUnbalance", "highlightsBalance"),
+            ];
             for (i, (u, bal)) in pairs.iter().enumerate() {
                 let (u, v) = (pr.color(u), pr.color(bal));
                 p.f[i] = [v[0] - u[0], v[1] - u[1], v[2] - u[2], 0.0];
             }
             p.u[0][0] = 23;
-            p.f[3] = [f("pinning") / 100.0, f("blendWOriginal") / 100.0, f("contrast") / 100.0, 0.0];
+            p.f[3] = [
+                f("pinning") / 100.0,
+                f("blendWOriginal") / 100.0,
+                f("contrast") / 100.0,
+                0.0,
+            ];
             p.f[4] = [f("darks") / 100.0, f("brights") / 100.0, 0.0, 0.0];
         }
-        "ec.color.autolevels" | "ec.color.autocontrast" | "ec.color.autocolor" | "ec.color.equalize" => {
+        "ec.color.autolevels"
+        | "ec.color.autocontrast"
+        | "ec.color.autocolor"
+        | "ec.color.equalize" => {
             // The histograms are measured on the CPU.
             let img = e.download(&b.img)?;
             if id == "ec.color.equalize" {
@@ -372,7 +490,12 @@ fn point(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 p.u[0][0] = 16;
                 p.f[0] = [ranges[0].0, ranges[1].0, ranges[2].0, 0.0];
                 p.f[1] = [ranges[0].1, ranges[1].1, ranges[2].1, 0.0];
-                p.f[2] = [gam[0], gam[1], gam[2], (pr.f("blend") / 100.0).clamp(0.0, 1.0) as f32];
+                p.f[2] = [
+                    gam[0],
+                    gam[1],
+                    gam[2],
+                    (pr.f("blend") / 100.0).clamp(0.0, 1.0) as f32,
+                ];
             }
         }
         _ => return None,

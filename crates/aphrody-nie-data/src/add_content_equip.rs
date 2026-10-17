@@ -38,6 +38,9 @@ impl AocEquipConfigInfo {
 /// Parse `add_content_equip_config.cfg.bin.json` → la liste des équipements DLC.
 #[must_use]
 pub fn parse_add_content_equip_config(root: &Value) -> Vec<AocEquipConfigInfo> {
-    list_values(root, "m_aocEquipConfigInfo")
-        .map_or_else(Vec::new, |vs| vs.iter().filter_map(AocEquipConfigInfo::from_value).collect())
+    list_values(root, "m_aocEquipConfigInfo").map_or_else(Vec::new, |vs| {
+        vs.iter()
+            .filter_map(AocEquipConfigInfo::from_value)
+            .collect()
+    })
 }

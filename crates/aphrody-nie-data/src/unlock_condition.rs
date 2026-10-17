@@ -176,8 +176,11 @@ fn tokenize_leaves(buf: &[u8]) -> Vec<Leaf> {
             if let Some(c) = current.take() {
                 leaves.push(c);
             }
-            current =
-                Some(Leaf { ns: read_be_u32(buf, i + 1).unwrap_or(0), value: None, compare: None });
+            current = Some(Leaf {
+                ns: read_be_u32(buf, i + 1).unwrap_or(0),
+                value: None,
+                compare: None,
+            });
             i += 5;
             continue;
         }
@@ -262,7 +265,14 @@ pub fn decode_unlock_condition_bytes(buf: &[u8], raw: String) -> UnlockCondition
 
     let story_episode = story_threshold.and_then(story_threshold_to_episode);
 
-    UnlockCondition { kind, op, story_threshold, story_episode, required_events, raw }
+    UnlockCondition {
+        kind,
+        op,
+        story_threshold,
+        story_episode,
+        required_events,
+        raw,
+    }
 }
 
 /// Décode une condition de déblocage encodée en base64 (port de `decodeUnlockCondition`).
@@ -302,7 +312,11 @@ pub fn crc32_str(s: &str) -> u32 {
     for &byte in s.as_bytes() {
         crc ^= u32::from(byte);
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ POLY } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ POLY
+            } else {
+                crc >> 1
+            };
         }
     }
     !crc

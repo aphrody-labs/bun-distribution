@@ -131,7 +131,10 @@ mod tests {
         for w in ["coraçao", "saude", "xqzv", ""] {
             assert!(is_correct_with(&none, w), "{w}");
         }
-        assert!(install_dictionary("FLAG long\n", "1\nkot\n").is_err(), "unsupported files are refused");
+        assert!(
+            install_dictionary("FLAG long\n", "1\nkot\n").is_err(),
+            "unsupported files are refused"
+        );
     }
 
     #[test]
@@ -179,7 +182,16 @@ mod tests {
     #[test]
     fn misspellings_are_flagged() {
         test_dict::install();
-        for w in ["coraçao", "saude", "trbalho", "excrever", "prsidente", "frequencia", "amnha", "cantaando"] {
+        for w in [
+            "coraçao",
+            "saude",
+            "trbalho",
+            "excrever",
+            "prsidente",
+            "frequencia",
+            "amnha",
+            "cantaando",
+        ] {
             assert!(!is_correct(w), "{w}");
         }
     }
@@ -188,7 +200,9 @@ mod tests {
     fn forbidden_words_are_rejected() {
         test_dict::install();
         // `frequencia/F` is listed with FORBIDDENWORD: the old spelling, never correct.
-        assert!(!is_correct("frequencia") && !is_correct("Frequencia") && !is_correct("FREQUENCIA"));
+        assert!(
+            !is_correct("frequencia") && !is_correct("Frequencia") && !is_correct("FREQUENCIA")
+        );
         assert!(is_correct("frequência"));
     }
 

@@ -67,7 +67,15 @@ impl SettingsGroup {
     pub fn default_copy() -> Vec<SettingsGroup> {
         SettingsGroup::ALL
             .into_iter()
-            .filter(|g| !matches!(g, SettingsGroup::Crop | SettingsGroup::Masks | SettingsGroup::Spots | SettingsGroup::RedEye))
+            .filter(|g| {
+                !matches!(
+                    g,
+                    SettingsGroup::Crop
+                        | SettingsGroup::Masks
+                        | SettingsGroup::Spots
+                        | SettingsGroup::RedEye
+                )
+            })
             .collect()
     }
 
@@ -170,7 +178,9 @@ fn scale_patch(base: &Value, patch: &Value, t: f64) -> Value {
         // not deserialize as an integer, and the whole preset would silently not apply.
         (Value::Number(b), Value::Number(p)) if b.is_f64() || p.is_f64() => {
             let (b, p) = (b.as_f64().unwrap_or(0.0), p.as_f64().unwrap_or(0.0));
-            serde_json::Number::from_f64(b + (p - b) * t).map(Value::Number).unwrap_or(Value::Null)
+            serde_json::Number::from_f64(b + (p - b) * t)
+                .map(Value::Number)
+                .unwrap_or(Value::Null)
         }
         (b, p) => {
             if t >= 0.5 {
@@ -186,7 +196,11 @@ fn scale_patch(base: &Value, patch: &Value, t: f64) -> Value {
 /// through the control specs.
 pub fn apply_partial(s: &DevelopSettings, partial: &Value, amount: f64) -> DevelopSettings {
     let base = s.to_json();
-    let patch = if (amount - 1.0).abs() < 1e-9 { partial.clone() } else { scale_patch(&base, partial, amount) };
+    let patch = if (amount - 1.0).abs() < 1e-9 {
+        partial.clone()
+    } else {
+        scale_patch(&base, partial, amount)
+    };
     // (a white balance without a scale keeps its old meaning: `DevelopSettings::merged`)
     let mut out = s.merged(&patch).unwrap_or_else(|_| s.clone());
     for c in crate::controls::CONTROLS {
@@ -212,13 +226,31 @@ pub struct Preset {
 }
 
 impl Preset {
-    pub fn from_settings(id: &str, name: &str, group: &str, s: &DevelopSettings, groups: &[SettingsGroup]) -> Preset {
-        Preset { id: id.into(), name: name.into(), group: group.into(), settings: extract_groups(s, groups), favorite: false, builtin: false }
+    pub fn from_settings(
+        id: &str,
+        name: &str,
+        group: &str,
+        s: &DevelopSettings,
+        groups: &[SettingsGroup],
+    ) -> Preset {
+        Preset {
+            id: id.into(),
+            name: name.into(),
+            group: group.into(),
+            settings: extract_groups(s, groups),
+            favorite: false,
+            builtin: false,
+        }
     }
     /// Apply at `amount` (1.0 = 100 %). Masks in the preset are added to the photo's own (ones it
     /// already has are skipped), their effect scaled by the amount.
     pub fn apply(&self, s: &DevelopSettings, amount: f64) -> DevelopSettings {
-        let Some(masks) = self.settings.get("masks").and_then(Value::as_array).filter(|m| !m.is_empty()) else {
+        let Some(masks) = self
+            .settings
+            .get("masks")
+            .and_then(Value::as_array)
+            .filter(|m| !m.is_empty())
+        else {
             return apply_partial(s, &self.settings, amount);
         };
         let mut rest = self.settings.clone();
@@ -228,8 +260,14 @@ impl Preset {
         let mut out = apply_partial(s, &rest, amount);
         let mut next = out.masks.iter().map(|m| m.id).max().unwrap_or(0);
         for m in masks {
-            let Ok(mut m) = serde_json::from_value::<crate::Mask>(m.clone()) else { continue };
-            if out.masks.iter().any(|q| q.name == m.name && q.components == m.components) {
+            let Ok(mut m) = serde_json::from_value::<crate::Mask>(m.clone()) else {
+                continue;
+            };
+            if out
+                .masks
+                .iter()
+                .any(|q| q.name == m.name && q.components == m.components)
+            {
                 continue;
             }
             next += 1;
@@ -283,12 +321,23 @@ mod tests {
         a.grain.amount = 40.0;
         a.grain.seed = 12345;
         let p = Preset::from_settings("p", "P", "User", &a, &SettingsGroup::default_copy());
-        assert!(p.settings.pointer("/grain/seed").is_some_and(Value::is_u64), "the default copy groups include the grain seed");
+        assert!(
+            p.settings.pointer("/grain/seed").is_some_and(Value::is_u64),
+            "the default copy groups include the grain seed"
+        );
         let base = DevelopSettings::default();
         for (amount, seed) in [(0.3, 0), (0.5, 12345), (1.5, 12345), (2.0, 12345)] {
             let out = p.apply(&base, amount);
-            assert!((out.light.exposure - amount.min(5.0)).abs() < 1e-9, "{amount}: exposure {}", out.light.exposure);
-            assert!((out.grain.amount - (40.0 * amount).min(100.0)).abs() < 1e-9, "{amount}: grain {}", out.grain.amount);
+            assert!(
+                (out.light.exposure - amount.min(5.0)).abs() < 1e-9,
+                "{amount}: exposure {}",
+                out.light.exposure
+            );
+            assert!(
+                (out.grain.amount - (40.0 * amount).min(100.0)).abs() < 1e-9,
+                "{amount}: grain {}",
+                out.grain.amount
+            );
             assert_eq!(out.grain.seed, seed, "{amount}: seed");
         }
     }

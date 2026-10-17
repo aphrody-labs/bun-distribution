@@ -19,7 +19,11 @@ pub struct User {
 
 impl User {
     pub fn authenticated(name: impl Into<String>) -> Self {
-        User { name: name.into(), authenticated: true, attributes: HashMap::new() }
+        User {
+            name: name.into(),
+            authenticated: true,
+            attributes: HashMap::new(),
+        }
     }
 }
 
@@ -33,7 +37,12 @@ pub struct CallContext {
 
 impl CallContext {
     pub fn new(method: impl Into<String>, params: ServiceParams) -> Self {
-        CallContext { method: method.into(), service_params: params, tenant: None, user: None }
+        CallContext {
+            method: method.into(),
+            service_params: params,
+            tenant: None,
+            user: None,
+        }
     }
 }
 
@@ -63,7 +72,10 @@ pub struct InterceptedHandler<H> {
 
 impl<H> InterceptedHandler<H> {
     pub fn new(handler: H) -> Self {
-        InterceptedHandler { handler, interceptors: Vec::new() }
+        InterceptedHandler {
+            handler,
+            interceptors: Vec::new(),
+        }
     }
 
     pub fn with_interceptor(mut self, interceptor: impl CallInterceptor) -> Self {
@@ -155,8 +167,10 @@ mod tests {
     #[tokio::test]
     async fn test_logging_interceptor_before() {
         let interceptor = LoggingInterceptor;
-        let mut ctx =
-            CallContext::new(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, ServiceParams::new());
+        let mut ctx = CallContext::new(
+            aphrody_a2a::jsonrpc::methods::SEND_MESSAGE,
+            ServiceParams::new(),
+        );
         let result = interceptor.before(&mut ctx, &Value::Null).await;
         assert!(result.is_ok());
     }
@@ -164,8 +178,10 @@ mod tests {
     #[tokio::test]
     async fn test_logging_interceptor_after_ok() {
         let interceptor = LoggingInterceptor;
-        let ctx =
-            CallContext::new(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, ServiceParams::new());
+        let ctx = CallContext::new(
+            aphrody_a2a::jsonrpc::methods::SEND_MESSAGE,
+            ServiceParams::new(),
+        );
         let result = interceptor.after(&ctx, &Ok(Value::Null)).await;
         assert!(result.is_ok());
     }
@@ -173,8 +189,10 @@ mod tests {
     #[tokio::test]
     async fn test_logging_interceptor_after_err() {
         let interceptor = LoggingInterceptor;
-        let ctx =
-            CallContext::new(aphrody_a2a::jsonrpc::methods::SEND_MESSAGE, ServiceParams::new());
+        let ctx = CallContext::new(
+            aphrody_a2a::jsonrpc::methods::SEND_MESSAGE,
+            ServiceParams::new(),
+        );
         let err: Result<Value, A2AError> = Err(A2AError::internal("boom"));
         let result = interceptor.after(&ctx, &err).await;
         assert!(result.is_ok());

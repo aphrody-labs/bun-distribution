@@ -14,19 +14,33 @@ fn left_top() -> egui::Id {
 
 /// The Color tab of `kind`, alone in a 300 pt wide panel, starting from a red foreground.
 fn color_tab(kind: ThemeKind) -> egui_kittest::Harness<'static, PhotocraftApp> {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.session.tools.foreground = [1.0, 0.0, 0.0, 1.0];
-    let tab = Group::Color.tabs(Tokens::for_kind(kind).pro).iter().position(|name| *name == "Color").unwrap();
-    let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(300.0, 400.0)).build_ui_state(
-        move |ui, app: &mut PhotocraftApp| {
-            if ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                let origin = ui.cursor().min;
-                ui.data_mut(|d| d.insert_temp(left_top(), Rect::from_min_size(origin, egui::Vec2::ZERO)));
-                crate::panels::dock_body(app, ui, Group::Color, tab);
-            }
-        },
-        app,
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
     );
+    app.session.tools.foreground = [1.0, 0.0, 0.0, 1.0];
+    let tab = Group::Color
+        .tabs(Tokens::for_kind(kind).pro)
+        .iter()
+        .position(|name| *name == "Color")
+        .unwrap();
+    let mut h = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(300.0, 400.0))
+        .build_ui_state(
+            move |ui, app: &mut PhotocraftApp| {
+                if ui.ctx().fonts(|f| {
+                    f.families()
+                        .contains(&egui::FontFamily::Name("medium".into()))
+                }) {
+                    let origin = ui.cursor().min;
+                    ui.data_mut(|d| {
+                        d.insert_temp(left_top(), Rect::from_min_size(origin, egui::Vec2::ZERO))
+                    });
+                    crate::panels::dock_body(app, ui, Group::Color, tab);
+                }
+            },
+            app,
+        );
     PhotocraftApp::setup_context(&h.ctx, kind);
     h.run_steps(3);
     h
@@ -47,9 +61,15 @@ fn every_theme_shows_the_spectrum_field() {
         h.drop_at(p);
         h.run_steps(2);
         let [r, g, b, _] = h.state().session.tools.foreground;
-        assert!((r - g).abs() < 0.02 && (g - b).abs() < 0.02 && (0.3..0.7).contains(&r), "{kind:?}: the field picks a mid grey, got {r} {g} {b}");
+        assert!(
+            (r - g).abs() < 0.02 && (g - b).abs() < 0.02 && (0.3..0.7).contains(&r),
+            "{kind:?}: the field picks a mid grey, got {r} {g} {b}"
+        );
         if !Tokens::for_kind(kind).pro {
-            assert!(h.query_by_label("Saturation").is_some(), "{kind:?}: the sliders stay under the field");
+            assert!(
+                h.query_by_label("Saturation").is_some(),
+                "{kind:?}: the sliders stay under the field"
+            );
         }
     }
 }

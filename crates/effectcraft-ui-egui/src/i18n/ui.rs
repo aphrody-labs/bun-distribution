@@ -60,7 +60,10 @@ fn catalog(language: &str) -> Option<&'static Index> {
 
 /// Translate one interface string: the current language's row for `text`, or `text` itself.
 pub(crate) fn tr(text: &str) -> &str {
-    catalog(current()).and_then(|c| c.get(text)).copied().unwrap_or(text)
+    catalog(current())
+        .and_then(|c| c.get(text))
+        .copied()
+        .unwrap_or(text)
 }
 
 /// Translate an interface string that carries values: each `{}` takes the next argument. A missing
@@ -110,15 +113,24 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Add Mirror", "ミラーを追加"),
     ("Add Selected As", "選択項目を次の形式で追加"),
     ("Add a comment", "コメントを追加"),
-    ("Add a shape, fill, stroke or path operation", "シェイプ、塗り、線、またはパス操作を追加"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "シェイプ、塗り、線、またはパス操作を追加",
+    ),
     ("Add to Composition", "コンポジションに追加"),
     ("Add to Favorites", "お気に入りに追加"),
     ("Add:", "追加:"),
     ("Adjust Exposure (stops)", "露出を調整（段単位）"),
-    ("Adjust composition duration to the time span of the selected layers", "コンポジションのデュレーションを、選択したレイヤーの時間範囲に合わせる"),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "コンポジションのデュレーションを、選択したレイヤーの時間範囲に合わせる",
+    ),
     ("Advanced 3D", "アドバンスド3D"),
     ("Align Layers to:", "レイヤーの整列基準:"),
-    ("All six face cameras turn together; the scene is not changed.", "6つの面のカメラがすべて一緒に回転します。シーンは変更されません。"),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "6つの面のカメラがすべて一緒に回転します。シーンは変更されません。",
+    ),
     ("Anchor:", "アンカー:"),
     ("Aperture", "絞り"),
     ("Apply Dimensions:", "適用する次元:"),
@@ -151,17 +163,38 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Classic 3D", "クラシック3D"),
     ("Clear", "消去"),
     ("Clear list", "リストを消去"),
-    ("Click a key to see its commands.", "キーをクリックすると、割り当てられたコマンドが表示されます。"),
+    (
+        "Click a key to see its commands.",
+        "キーをクリックすると、割り当てられたコマンドが表示されます。",
+    ),
     (
         "Click above the bar to add an opacity stop, below it to add a color stop.",
         "バーの上をクリックすると不透明度の分岐点、下をクリックするとカラーの分岐点を追加します。",
     ),
-    ("Click adds a point (½ height = no change)", "クリックでポイントを追加（高さの½＝変化なし）"),
-    ("Click adds a point; drag one off to remove", "クリックでポイントを追加、外へドラッグで削除"),
-    ("Click to make this viewer active", "クリックしてこのビューアーをアクティブ化"),
-    ("Click to reveal the expression in the timeline", "クリックしてタイムラインでエクスプレッションを表示"),
-    ("Click to show the active composition here", "クリックしてアクティブなコンポジションをここに表示"),
-    ("Click, then click in the Composition panel", "クリックしてから、コンポジションパネル内をクリック"),
+    (
+        "Click adds a point (½ height = no change)",
+        "クリックでポイントを追加（高さの½＝変化なし）",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "クリックでポイントを追加、外へドラッグで削除",
+    ),
+    (
+        "Click to make this viewer active",
+        "クリックしてこのビューアーをアクティブ化",
+    ),
+    (
+        "Click to reveal the expression in the timeline",
+        "クリックしてタイムラインでエクスプレッションを表示",
+    ),
+    (
+        "Click to show the active composition here",
+        "クリックしてアクティブなコンポジションをここに表示",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "クリックしてから、コンポジションパネル内をクリック",
+    ),
     ("Clone Options", "クローンオプション"),
     ("Clone Source Overlay:", "クローンソースのオーバーレイ:"),
     ("Close", "閉じる"),
@@ -175,15 +208,27 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Comment:", "コメント:"),
     ("Community", "コミュニティ"),
     ("Composition", "コンポジション"),
-    ("Composition Mini-Flowchart", "コンポジションミニフローチャート"),
+    (
+        "Composition Mini-Flowchart",
+        "コンポジションミニフローチャート",
+    ),
     ("Composition Name:", "コンポジション名:"),
-    ("Composition Settings ▸ 3D Renderer", "コンポジション設定 ▸ 3Dレンダラー"),
+    (
+        "Composition Settings ▸ 3D Renderer",
+        "コンポジション設定 ▸ 3Dレンダラー",
+    ),
     ("Composition Settings…", "コンポジション設定…"),
-    ("Composition marker bin: drag a marker to the time ruler", "コンポジションマーカーのビン：マーカーをタイムルーラーへドラッグ"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "コンポジションマーカーのビン：マーカーをタイムルーラーへドラッグ",
+    ),
     ("Cone Angle", "円錐の角度"),
     ("Cone Feather", "円錐の境界のぼかし"),
     ("Constrain Proportions", "縦横比を固定"),
-    ("Continuous (Lock Outgoing to Incoming)", "連続（出る速度を入る速度に固定）"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "連続（出る速度を入る速度に固定）",
+    ),
     ("Cue Point", "キューポイント"),
     ("Current Render", "現在のレンダリング"),
     ("Darker", "暗く"),
@@ -192,16 +237,28 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Defaults", "初期設定"),
     ("Delete", "削除"),
     ("Delete Selected Points", "選択したポイントを削除"),
-    ("Delete selected project items", "選択したプロジェクト項目を削除"),
+    (
+        "Delete selected project items",
+        "選択したプロジェクト項目を削除",
+    ),
     ("Delete this template", "このテンプレートを削除"),
     ("Depth of Field", "被写界深度"),
     ("Discord", "Discord"),
     ("Distribute Layers:", "レイヤーの分布:"),
     ("Don't Recover", "復元しない"),
     ("Don't Save", "保存しない"),
-    ("Double-click a layer to open it in the Layer panel", "レイヤーをダブルクリックしてレイヤーパネルで開く"),
-    ("Double-click footage in the Project panel to open it here", "プロジェクトパネルのフッテージをダブルクリックしてここで開く"),
-    ("Double-click to edit the comment", "ダブルクリックしてコメントを編集"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "レイヤーをダブルクリックしてレイヤーパネルで開く",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "プロジェクトパネルのフッテージをダブルクリックしてここで開く",
+    ),
+    (
+        "Double-click to edit the comment",
+        "ダブルクリックしてコメントを編集",
+    ),
     ("Download", "ダウンロード"),
     (
         "Drag properties here from the timeline,\nor use Animation > Add Property to Essential Graphics.",
@@ -216,8 +273,14 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Edit Gradient…", "グラデーションを編集…"),
     ("Edit Target: {}", "編集対象：{}"),
     ("Edit in the Timeline", "タイムラインで編集"),
-    ("EffectCraft didn't quit normally last time.", "EffectCraftは前回正常に終了しませんでした。"),
-    ("Effects & Presets options", "エフェクト＆プリセットのオプション"),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "EffectCraftは前回正常に終了しませんでした。",
+    ),
+    (
+        "Effects & Presets options",
+        "エフェクト＆プリセットのオプション",
+    ),
     ("Effects: {}", "エフェクト：{}"),
     ("Empty folder", "空のフォルダー"),
     ("Enable Depth of Field", "被写界深度を有効化"),
@@ -228,9 +291,15 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Export Template…", "テンプレートを書き出し…"),
     ("Export...", "書き出し..."),
     ("Expression Language Menu", "エクスプレッション言語メニュー"),
-    ("Expression pick whip: drag onto a property", "エクスプレッションのピックウィップ：プロパティへドラッグ"),
+    (
+        "Expression pick whip: drag onto a property",
+        "エクスプレッションのピックウィップ：プロパティへドラッグ",
+    ),
     ("Expression:", "エクスプレッション:"),
-    ("Eyedropper: click, then click in the Composition panel", "スポイト：クリックしてから、コンポジションパネル内をクリック"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "スポイト：クリックしてから、コンポジションパネル内をクリック",
+    ),
     ("Falloff", "減衰"),
     ("Falloff Distance", "減衰距離"),
     ("Favorites", "お気に入り"),
@@ -240,13 +309,19 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Finished", "完了"),
     ("Flowchart: {}", "フローチャート：{}"),
     ("Focus Distance", "フォーカス距離"),
-    ("Follow Feature Rotation and Scale", "特徴の回転とスケールに追従"),
+    (
+        "Follow Feature Rotation and Scale",
+        "特徴の回転とスケールに追従",
+    ),
     ("Footage: {}", "フッテージ：{}"),
     ("Format: {}", "形式：{}"),
     ("Frame Aspect Ratio: {}", "フレームアスペクト比：{}"),
     ("Frame Blending: {}", "フレームブレンド：{}"),
     ("Frame Rate:", "フレームレート:"),
-    ("Frame Render Time  {}ms", "フレームのレンダリング時間  {}ms"),
+    (
+        "Frame Render Time  {}ms",
+        "フレームのレンダリング時間  {}ms",
+    ),
     ("Frame Target:", "フレームターゲット:"),
     ("Grab bag", "いろいろ"),
     ("Gradient Editor", "グラデーションエディター"),
@@ -260,14 +335,20 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Home", "ホーム"),
     ("If Confidence is Below", "信頼度が次の値未満の場合"),
     ("Import", "読み込み"),
-    ("Import and Add to Composition", "読み込んでコンポジションに追加"),
+    (
+        "Import and Add to Composition",
+        "読み込んでコンポジションに追加",
+    ),
     ("Import...", "読み込み..."),
     ("Imported media", "読み込んだメディア"),
     ("Influence:", "影響:"),
     ("Install from File…", "ファイルからインストール…"),
     ("Intensity", "強度"),
     ("Inverted", "反転"),
-    ("Join the ArtCraft community on Discord", "DiscordでArtCraftコミュニティに参加"),
+    (
+        "Join the ArtCraft community on Discord",
+        "DiscordでArtCraftコミュニティに参加",
+    ),
     ("Key: {}", "キー：{}"),
     ("LEARN", "学習"),
     ("Label", "ラベル"),
@@ -280,7 +361,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Layer:", "レイヤー:"),
     ("Layer: {}", "レイヤー：{}"),
     ("Learn", "学習"),
-    ("Leave all attributes in \"{}\"", "すべての属性を「{}」に残す"),
+    (
+        "Leave all attributes in \"{}\"",
+        "すべての属性を「{}」に残す",
+    ),
     ("Licence: {}", "ライセンス：{}"),
     ("Ligatures", "合字"),
     ("Light Type", "ライトの種類"),
@@ -292,7 +376,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Locked: {} — {}", "ロック済み：{} — {}"),
     ("Log:", "ログ:"),
     ("Loop (Trace Path)", "ループ（パスをトレース）"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT OR Apache-2.0 • フォント：Inter、JetBrains Mono (OFL)"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT OR Apache-2.0 • フォント：Inter、JetBrains Mono (OFL)",
+    ),
     ("Magnification ratio popup", "拡大率のポップアップ"),
     ("Make Comp Size", "コンポジションサイズにする"),
     ("Masks", "マスク"),
@@ -300,7 +387,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Media Replacement", "メディアの置き換え"),
     ("Mesh:", "メッシュ:"),
     ("Diameter:", "直径:"),
-    ("Method Used: {}    Average Error: {} pixels", "使用した手法：{}    平均誤差：{}ピクセル"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "使用した手法：{}    平均誤差：{}ピクセル",
+    ),
     ("Models folder: {}", "モデルフォルダー：{}"),
     ("Modifiers:", "修飾キー:"),
     ("More", "その他"),
@@ -308,7 +398,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("More tutorials", "ほかのチュートリアル"),
     ("Motion Blur", "モーションブラー"),
     ("Motion Blur: {}", "モーションブラー：{}"),
-    ("Motion Sketch: drag to record", "モーションスケッチ：ドラッグして記録"),
+    (
+        "Motion Sketch: drag to record",
+        "モーションスケッチ：ドラッグして記録",
+    ),
     ("Move Down", "下へ移動"),
     ("Move Up", "上へ移動"),
     ("Move to Project Root", "プロジェクトのルートへ移動"),
@@ -319,32 +412,71 @@ const JAPANESE: &[(&str, &str)] = &[
     ("New Comp from Selection", "選択範囲から新規コンポジション"),
     ("New Duration:", "新しいデュレーション:"),
     ("New composition name:", "新規コンポジション名:"),
-    ("New from Render Queue item:", "レンダーキュー項目から新規作成:"),
+    (
+        "New from Render Queue item:",
+        "レンダーキュー項目から新規作成:",
+    ),
     ("New from Template", "テンプレートから新規作成"),
     ("Next", "次へ"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "お疲れさまでした。ホーム画面の「学習」タブで別のチュートリアルを選んでください。"),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "お疲れさまでした。ホーム画面の「学習」タブで別のチュートリアルを選んでください。",
+    ),
     (
         "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
         "VR環境はまだありません。次のメニューで作成してください：コンポジション ▸ VR ▸ VR環境を作成…",
     ),
-    ("No audio layer selected", "オーディオレイヤーが選択されていません"),
-    ("No background jobs running", "実行中のバックグラウンドジョブはありません"),
-    ("No composition markers", "コンポジションマーカーはありません"),
-    ("No contributor data was built into this copy.", "このビルドにはコントリビューターのデータが含まれていません。"),
-    ("No device list from this host; the system default output is used.", "このホストからはデバイス一覧を取得できないため、システムの既定の出力を使用します。"),
+    (
+        "No audio layer selected",
+        "オーディオレイヤーが選択されていません",
+    ),
+    (
+        "No background jobs running",
+        "実行中のバックグラウンドジョブはありません",
+    ),
+    (
+        "No composition markers",
+        "コンポジションマーカーはありません",
+    ),
+    (
+        "No contributor data was built into this copy.",
+        "このビルドにはコントリビューターのデータが含まれていません。",
+    ),
+    (
+        "No device list from this host; the system default output is used.",
+        "このホストからはデバイス一覧を取得できないため、システムの既定の出力を使用します。",
+    ),
     ("No layer selected", "レイヤーが選択されていません"),
-    ("No matching effects or presets", "一致するエフェクトまたはプリセットはありません"),
+    (
+        "No matching effects or presets",
+        "一致するエフェクトまたはプリセットはありません",
+    ),
     ("No matching fonts", "一致するフォントはありません"),
     ("Variable fonts only", "可変フォントのみ"),
-    ("No model credits were built into this copy.", "このビルドにはモデルのクレジットが含まれていません。"),
-    ("No nested compositions", "ネストされたコンポジションはありません"),
+    (
+        "No model credits were built into this copy.",
+        "このビルドにはモデルのクレジットが含まれていません。",
+    ),
+    (
+        "No nested compositions",
+        "ネストされたコンポジションはありません",
+    ),
     ("No shortcut", "ショートカットなし"),
-    ("No unlocked layer selected", "ロックされていないレイヤーが選択されていません"),
+    (
+        "No unlocked layer selected",
+        "ロックされていないレイヤーが選択されていません",
+    ),
     ("No video", "ビデオなし"),
     ("None", "なし"),
-    ("Not applied: tick it in the list to add it.", "未適用：リストでチェックを入れると追加されます。"),
+    (
+        "Not applied: tick it in the list to add it.",
+        "未適用：リストでチェックを入れると追加されます。",
+    ),
     ("Not assigned", "未割り当て"),
-    ("Note: Shadows are only cast from layers with Cast Shadows enabled.", "注意：シャドウは「シャドウを投影」が有効なレイヤーからのみ投影されます。"),
+    (
+        "Note: Shadows are only cast from layers with Cast Shadows enabled.",
+        "注意：シャドウは「シャドウを投影」が有効なレイヤーからのみ投影されます。",
+    ),
     ("Notify", "通知"),
     ("OK", "OK"),
     ("Offset:", "オフセット:"),
@@ -352,22 +484,40 @@ const JAPANESE: &[(&str, &str)] = &[
     ("One-Node Camera", "1ノードカメラ"),
     ("Opacity:", "不透明度:"),
     ("Open Composition", "コンポジションを開く"),
-    ("Open Last Saved Project", "最後に保存したプロジェクトを開く"),
+    (
+        "Open Last Saved Project",
+        "最後に保存したプロジェクトを開く",
+    ),
     ("Open New Composition", "新規コンポジションを開く"),
     ("Open Output", "出力を開く"),
-    ("Open a composition to build Essential Graphics", "エッセンシャルグラフィックスを作成するには、コンポジションを開いてください"),
-    ("Open a composition to see its scopes", "コンポジションを開くとスコープが表示されます"),
-    ("Open a composition to track motion.", "モーションをトラックするには、コンポジションを開いてください。"),
+    (
+        "Open a composition to build Essential Graphics",
+        "エッセンシャルグラフィックスを作成するには、コンポジションを開いてください",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "コンポジションを開くとスコープが表示されます",
+    ),
+    (
+        "Open a composition to track motion.",
+        "モーションをトラックするには、コンポジションを開いてください。",
+    ),
     ("Opus Tuning: {}", "Opusチューニング：{}"),
     ("Original Duration:", "元のデュレーション:"),
     ("Output Cycle: {}", "出力サイクル：{}"),
     ("Output To:", "出力先:"),
     ("Parameter Name:", "パラメーター名:"),
-    ("Parent pick whip: drag onto a layer", "親ピックウィップ：レイヤー上にドラッグ"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "親ピックウィップ：レイヤー上にドラッグ",
+    ),
     ("Pixel Aspect Ratio:", "ピクセルアスペクト比:"),
     ("Playing on Video Preview", "ビデオプレビューで再生中"),
     ("Post-Render Action: {}", "レンダリング後の処理：{}"),
-    ("Preserve frame rate when nested or in render queue", "ネスト時またはレンダーキュー内でフレームレートを保持"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "ネスト時またはレンダーキュー内でフレームレートを保持",
+    ),
     ("Preserve resolution when nested", "ネスト時に解像度を保持"),
     ("Preset", "プリセット"),
     ("Preset:", "プリセット:"),
@@ -382,7 +532,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ),
     ("Project: {}", "プロジェクト：{}"),
     ("Projects", "プロジェクト"),
-    ("Property pick whip: drag onto a property", "プロパティピックウィップ：プロパティ上にドラッグ"),
+    (
+        "Property pick whip: drag onto a property",
+        "プロパティピックウィップ：プロパティ上にドラッグ",
+    ),
     ("Protected Region", "保護領域"),
     ("Proxy Use: {}", "プロキシの使用：{}"),
     ("Push All to Comp", "すべてをコンポジションに反映"),
@@ -392,7 +545,10 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Recording", "記録中"),
     ("Remove", "削除"),
     ("Rename", "名前を変更"),
-    ("Render: {} ms  •  UI {} fps{}", "レンダリング：{} ms  •  UI {} fps{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "レンダリング：{} ms  •  UI {} fps{}",
+    ),
     ("Renderer:", "レンダラー:"),
     ("Request Persistent Storage", "永続ストレージを要求"),
     ("Reset", "リセット"),
@@ -400,39 +556,69 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Reset Preset", "プリセットをリセット"),
     ("Reset to Default", "初期設定にリセット"),
     ("Reset to Saved Layout", "保存したレイアウトにリセット"),
-    ("Resolution/Down Sample Factor Popup", "解像度/ダウンサンプル係数のポップアップ"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "解像度/ダウンサンプル係数のポップアップ",
+    ),
     ("Restore Panel Size", "パネルのサイズを元に戻す"),
     ("Reverse the order", "順序を逆にする"),
     ("Revert All", "すべて元に戻す"),
     ("Roman Hanging Punctuation", "欧文句読点のぶら下がり"),
     ("Roving:", "ロービング:"),
-    ("Ruler zero point (drag to move, double-click to reset)", "定規の原点（ドラッグで移動、ダブルクリックでリセット）"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "定規の原点（ドラッグで移動、ダブルクリックでリセット）",
+    ),
     ("Rulers", "定規"),
     ("Run", "実行"),
     ("Sample Format: {}", "サンプル形式：{}"),
     ("Samples Per Frame:", "フレームあたりのサンプル数:"),
     ("Save from #{}", "#{}から保存"),
     ("Saved {}", "保存日時：{}"),
-    ("Script… (⌘/Ctrl+Enter runs)", "スクリプト…（⌘/Ctrl+Enterで実行）"),
-    ("Search commands or shortcuts", "コマンドまたはショートカットを検索"),
+    (
+        "Script… (⌘/Ctrl+Enter runs)",
+        "スクリプト…（⌘/Ctrl+Enterで実行）",
+    ),
+    (
+        "Search commands or shortcuts",
+        "コマンドまたはショートカットを検索",
+    ),
     ("Select", "選択"),
-    ("Select a command to change its shortcut.", "ショートカットを変更するコマンドを選択してください。"),
-    ("Select a layer to see its effects", "レイヤーを選択するとエフェクトが表示されます"),
-    ("Select a layer to see its properties", "レイヤーを選択するとプロパティが表示されます"),
+    (
+        "Select a command to change its shortcut.",
+        "ショートカットを変更するコマンドを選択してください。",
+    ),
+    (
+        "Select a layer to see its effects",
+        "レイヤーを選択するとエフェクトが表示されます",
+    ),
+    (
+        "Select a layer to see its properties",
+        "レイヤーを選択するとプロパティが表示されます",
+    ),
     ("({}) Selected Objects", "({}) 個の選択されたオブジェクト"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "マスクまたはシェイプパスのあるレイヤー（またはパスプロパティ）か、パペットピンを選択してください。",
     ),
     ("Select a text layer", "テキストレイヤーを選択してください"),
-    ("Select an item in the Project panel", "プロジェクトパネルで項目を選択してください"),
-    ("Select animated properties to show them in the Graph Editor", "アニメーションのあるプロパティを選択すると、グラフエディターに表示されます"),
+    (
+        "Select an item in the Project panel",
+        "プロジェクトパネルで項目を選択してください",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "アニメーションのあるプロパティを選択すると、グラフエディターに表示されます",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "リーダーピンを選択してから、追従させるピン（髪、布、しっぽなど）をShift+クリック",
     ),
     ("Set Ground Plane and Origin", "地面と原点を設定"),
-    ("Set Paint Colors to Black and White (D)", "ペイントカラーを黒と白に設定(D)"),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "ペイントカラーを黒と白に設定(D)",
+    ),
     ("Settings", "設定"),
     ("Settings Name:", "設定名:"),
     ("Shadow Darkness", "シャドウの暗さ"),
@@ -472,12 +658,27 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Template name", "テンプレート名"),
     ("Template: {}\n{}", "テンプレート：{}\n{}"),
     ("Temporal Interpolation:", "時間補間法:"),
-    ("The Media Browser is not available here (use File ▸ Import)", "ここではメディアブラウザーを使用できません（「ファイル ▸ 読み込み」を使ってください）"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "赤・緑・青・アルファとして表示するOpenEXRレイヤー"),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "ここではメディアブラウザーを使用できません（「ファイル ▸ 読み込み」を使ってください）",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "赤・緑・青・アルファとして表示するOpenEXRレイヤー",
+    ),
     ("The render queue is empty.", "レンダーキューは空です。"),
-    ("These adjacent keyframes cannot interpolate because their stop counts differ.", "これらの隣接するキーフレームは分岐点の数が異なるため、補間できません。"),
-    ("This ScriptUI panel has closed", "このScriptUIパネルは閉じられました"),
-    ("This change will create a new solid for this layer.", "この変更により、このレイヤー用に新しい平面が作成されます。"),
+    (
+        "These adjacent keyframes cannot interpolate because their stop counts differ.",
+        "これらの隣接するキーフレームは分岐点の数が異なるため、補間できません。",
+    ),
+    (
+        "This ScriptUI panel has closed",
+        "このScriptUIパネルは閉じられました",
+    ),
+    (
+        "This change will create a new solid for this layer.",
+        "この変更により、このレイヤー用に新しい平面が作成されます。",
+    ),
     ("Time", "時間"),
     ("Time Stretch…", "時間伸縮…"),
     ("Time:", "時間:"),
@@ -495,11 +696,17 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Tutorial complete", "チュートリアル完了"),
     ("Two-Node Camera", "2ノードカメラ"),
     ("Type", "種類"),
-    ("Type a command or effect…", "コマンドまたはエフェクトを入力…"),
+    (
+        "Type a command or effect…",
+        "コマンドまたはエフェクトを入力…",
+    ),
     ("URL:", "URL:"),
     ("Undock Panel", "パネルのドッキングを解除"),
     ("Move Panel to New Window", "新規ウィンドウにパネルを移動"),
-    ("Move Panel to Main Window", "メインウィンドウにパネルを移動"),
+    (
+        "Move Panel to Main Window",
+        "メインウィンドウにパネルを移動",
+    ),
     ("Unlink {}", "{}のリンクを解除"),
     (
         "Use this option to place the currently selected layers together into a new intermediate composition.",
@@ -513,16 +720,31 @@ const JAPANESE: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "EffectCraftへようこそ"),
     ("Width:", "幅:"),
     ("You can undo this.", "この操作は取り消せます。"),
-    ("Your changes will be lost if you don't save them.", "保存しないと、変更内容は失われます。"),
+    (
+        "Your changes will be lost if you don't save them.",
+        "保存しないと、変更内容は失われます。",
+    ),
     ("Zoom", "ズーム"),
     ("built-in", "組み込み"),
     ("frames per second", "フレーム/秒"),
     ("template name", "テンプレート名"),
-    ("{} contributors · {} commits", "コントリビューター{}人 · コミット{}件"),
-    ("{} x {}, {}MB per 8bpc frame", "{} x {}、8bpcフレームあたり{}MB"),
+    (
+        "{} contributors · {} commits",
+        "コントリビューター{}人 · コミット{}件",
+    ),
+    (
+        "{} x {}, {}MB per 8bpc frame",
+        "{} x {}、8bpcフレームあたり{}MB",
+    ),
     ("{} — coming soon", "{} — 近日対応予定"),
-    ("{} — double-click to open, {}-click to reveal", "{} — ダブルクリックで開く、{}+クリックで場所を表示"),
-    ("⌘/Ctrl-drag a pin to record its motion", "⌘/Ctrl+ドラッグでピンの動きを記録"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{} — ダブルクリックで開く、{}+クリックで場所を表示",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "⌘/Ctrl+ドラッグでピンの動きを記録",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {}は次のコマンドで使用中:"),
 ];
@@ -555,15 +777,24 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Add Mirror", "添加镜像"),
     ("Add Selected As", "将所选项目添加为"),
     ("Add a comment", "添加注释"),
-    ("Add a shape, fill, stroke or path operation", "添加形状、填充、描边或路径操作"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "添加形状、填充、描边或路径操作",
+    ),
     ("Add to Composition", "添加到合成"),
     ("Add to Favorites", "添加到收藏夹"),
     ("Add:", "添加："),
     ("Adjust Exposure (stops)", "调整曝光（光圈级数）"),
-    ("Adjust composition duration to the time span of the selected layers", "将合成时长调整为所选图层的时间范围"),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "将合成时长调整为所选图层的时间范围",
+    ),
     ("Advanced 3D", "高级 3D"),
     ("Align Layers to:", "将图层对齐到："),
-    ("All six face cameras turn together; the scene is not changed.", "六个面摄像机一起旋转；场景不会改变。"),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "六个面摄像机一起旋转；场景不会改变。",
+    ),
     ("Anchor:", "定位点："),
     ("Aperture", "光圈"),
     ("Appearance Mode", "外观模式"),
@@ -588,7 +819,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Cancel", "取消"),
     ("Casts Shadows", "投射阴影"),
     ("Change Renderer…", "更改渲染器…"),
-    ("Changing a shortcut creates a custom preset; the default stays as it is.", "修改快捷键会创建自定义预设；默认预设保持不变。"),
+    (
+        "Changing a shortcut creates a custom preset; the default stays as it is.",
+        "修改快捷键会创建自定义预设；默认预设保持不变。",
+    ),
     ("Channel", "通道"),
     ("Channel:", "通道："),
     ("Chapter:", "章节："),
@@ -596,14 +830,35 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Classic 3D", "经典 3D"),
     ("Clear", "清除"),
     ("Clear list", "清空列表"),
-    ("Click a key to see its commands.", "单击某个按键以查看其命令。"),
-    ("Click above the bar to add an opacity stop, below it to add a color stop.", "点击渐变条上方添加不透明度色标，点击下方添加颜色色标。"),
-    ("Click adds a point (½ height = no change)", "单击可添加点（上下滑动高度的一半 = 无变化）"),
-    ("Click adds a point; drag one off to remove", "单击可添加点；拖出一个即可删除"),
+    (
+        "Click a key to see its commands.",
+        "单击某个按键以查看其命令。",
+    ),
+    (
+        "Click above the bar to add an opacity stop, below it to add a color stop.",
+        "点击渐变条上方添加不透明度色标，点击下方添加颜色色标。",
+    ),
+    (
+        "Click adds a point (½ height = no change)",
+        "单击可添加点（上下滑动高度的一半 = 无变化）",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "单击可添加点；拖出一个即可删除",
+    ),
     ("Click to make this viewer active", "单击可激活此视图"),
-    ("Click to reveal the expression in the timeline", "单击可在时间轴中显示表达式"),
-    ("Click to show the active composition here", "单击可在此显示当前合成"),
-    ("Click, then click in the Composition panel", "单击后，在合成面板中单击"),
+    (
+        "Click to reveal the expression in the timeline",
+        "单击可在时间轴中显示表达式",
+    ),
+    (
+        "Click to show the active composition here",
+        "单击可在此显示当前合成",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "单击后，在合成面板中单击",
+    ),
     ("Clone Options", "克隆选项"),
     ("Clone Source Overlay:", "克隆源叠加："),
     ("Close", "关闭"),
@@ -621,11 +876,17 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Composition Name:", "合成名称："),
     ("Composition Settings ▸ 3D Renderer", "合成设置 ▸ 3D 渲染器"),
     ("Composition Settings…", "合成设置…"),
-    ("Composition marker bin: drag a marker to the time ruler", "合成标记箱：将标记拖到时间标尺上"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "合成标记箱：将标记拖到时间标尺上",
+    ),
     ("Cone Angle", "圆锥角"),
     ("Cone Feather", "圆锥羽化"),
     ("Constrain Proportions", "约束比例"),
-    ("Continuous (Lock Outgoing to Incoming)", "连续（将出点锁定到入点）"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "连续（将出点锁定到入点）",
+    ),
     ("Cue Point", "提示点"),
     ("Current Render", "当前渲染"),
     ("Dark", "深色"),
@@ -643,8 +904,14 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Distribute Layers:", "分布图层："),
     ("Don't Recover", "不恢复"),
     ("Don't Save", "不保存"),
-    ("Double-click a layer to open it in the Layer panel", "双击图层可在图层面板中打开"),
-    ("Double-click footage in the Project panel to open it here", "双击项目面板中的素材可在此处打开"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "双击图层可在图层面板中打开",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "双击项目面板中的素材可在此处打开",
+    ),
     ("Double-click to edit the comment", "双击可编辑注释"),
     ("Download", "下载"),
     (
@@ -660,7 +927,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Edit Gradient…", "编辑渐变…"),
     ("Edit Target: {}", "编辑目标：{}"),
     ("Edit in the Timeline", "在时间轴中编辑"),
-    ("EffectCraft didn't quit normally last time.", "EffectCraft 上次未正常退出。"),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "EffectCraft 上次未正常退出。",
+    ),
     ("Effects & Presets options", "效果和预设选项"),
     ("Effects: {}", "效果：{}"),
     ("Empty folder", "空文件夹"),
@@ -672,9 +942,15 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Export Template…", "导出模板…"),
     ("Export...", "导出..."),
     ("Expression Language Menu", "表达式语言菜单"),
-    ("Expression pick whip: drag onto a property", "表达式拾取器：拖到属性上"),
+    (
+        "Expression pick whip: drag onto a property",
+        "表达式拾取器：拖到属性上",
+    ),
     ("Expression:", "表达式："),
-    ("Eyedropper: click, then click in the Composition panel", "吸管：单击后，在合成面板中单击"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "吸管：单击后，在合成面板中单击",
+    ),
     ("Falloff", "衰减"),
     ("Falloff Distance", "衰减距离"),
     ("Favorites", "收藏"),
@@ -712,7 +988,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Install from File…", "从文件安装…"),
     ("Intensity", "强度"),
     ("Inverted", "反转"),
-    ("Join the ArtCraft community on Discord", "加入 ArtCraft 的 Discord 社区"),
+    (
+        "Join the ArtCraft community on Discord",
+        "加入 ArtCraft 的 Discord 社区",
+    ),
     ("Key: {}", "按键：{}"),
     ("LEARN", "学习"),
     ("Label", "标签"),
@@ -739,7 +1018,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Locked: {} — {}", "已锁定：{} — {}"),
     ("Log:", "日志："),
     ("Loop (Trace Path)", "循环（跟踪路径）"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT 或 Apache-2.0 • 字体：Inter、JetBrains Mono（OFL）"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT 或 Apache-2.0 • 字体：Inter、JetBrains Mono（OFL）",
+    ),
     ("Magnification ratio popup", "放大倍率弹出菜单"),
     ("Make Comp Size", "设为合成长宽"),
     ("Masks", "蒙版"),
@@ -747,7 +1029,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Media Replacement", "媒体替换"),
     ("Mesh:", "网格："),
     ("Diameter:", "直径："),
-    ("Method Used: {}    Average Error: {} pixels", "使用方法：{}    平均误差：{} 像素"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "使用方法：{}    平均误差：{} 像素",
+    ),
     ("Models folder: {}", "模型文件夹：{}"),
     ("Modifiers:", "修饰键："),
     ("More", "更多"),
@@ -769,26 +1054,47 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("New from Render Queue item:", "由渲染队列项新建："),
     ("New from Template", "从模板新建"),
     ("Next", "下一个"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "干得漂亮。请在主页面的“学习”选项卡中选择另一个教程。"),
-    ("No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…", "还没有 VR 环境。请用 合成 ▸ VR ▸ 创建 VR 环境… 新建一个。"),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "干得漂亮。请在主页面的“学习”选项卡中选择另一个教程。",
+    ),
+    (
+        "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
+        "还没有 VR 环境。请用 合成 ▸ VR ▸ 创建 VR 环境… 新建一个。",
+    ),
     ("No audio layer selected", "未选择音频图层"),
     ("No background jobs running", "没有正在运行的后台任务"),
     ("No composition markers", "没有合成标记"),
-    ("No contributor data was built into this copy.", "此副本未内置贡献者数据。"),
-    ("No device list from this host; the system default output is used.", "此主机无法获取设备列表；将使用系统默认输出。"),
+    (
+        "No contributor data was built into this copy.",
+        "此副本未内置贡献者数据。",
+    ),
+    (
+        "No device list from this host; the system default output is used.",
+        "此主机无法获取设备列表；将使用系统默认输出。",
+    ),
     ("No layer selected", "未选择图层"),
     ("No matching effects or presets", "没有匹配的效果或预设"),
     ("No matching fonts", "没有匹配的字体"),
     ("Variable fonts only", "仅可变字体"),
-    ("No model credits were built into this copy.", "此副本未内置模型致谢。"),
+    (
+        "No model credits were built into this copy.",
+        "此副本未内置模型致谢。",
+    ),
     ("No nested compositions", "没有嵌套合成"),
     ("No shortcut", "无快捷键"),
     ("No unlocked layer selected", "未选择已解锁的图层"),
     ("No video", "无视频"),
     ("None", "无"),
-    ("Not applied: tick it in the list to add it.", "未应用：在列表中勾选即可添加。"),
+    (
+        "Not applied: tick it in the list to add it.",
+        "未应用：在列表中勾选即可添加。",
+    ),
     ("Not assigned", "未分配"),
-    ("Note: Shadows are only cast from layers with Cast Shadows enabled.", "注意：只有启用了“投射阴影”的图层才会投射阴影。"),
+    (
+        "Note: Shadows are only cast from layers with Cast Shadows enabled.",
+        "注意：只有启用了“投射阴影”的图层才会投射阴影。",
+    ),
     ("Notify", "通知"),
     ("OK", "确定"),
     ("Offset:", "偏移："),
@@ -799,20 +1105,35 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Open Last Saved Project", "打开上次保存的项目"),
     ("Open New Composition", "打开新建合成"),
     ("Open Output", "打开输出"),
-    ("Open a composition to build Essential Graphics", "打开一个合成以构建基本图形"),
-    ("Open a composition to see its scopes", "打开一个合成以查看其示波器"),
-    ("Open a composition to track motion.", "打开一个合成以跟踪运动。"),
+    (
+        "Open a composition to build Essential Graphics",
+        "打开一个合成以构建基本图形",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "打开一个合成以查看其示波器",
+    ),
+    (
+        "Open a composition to track motion.",
+        "打开一个合成以跟踪运动。",
+    ),
     ("Opus Tuning: {}", "Opus 调优：{}"),
     ("Original Duration:", "原始持续时间："),
     ("Output Cycle: {}", "输出循环：{}"),
     ("Output To:", "输出到："),
     ("Overlay", "叠加"),
     ("Parameter Name:", "参数名称："),
-    ("Parent pick whip: drag onto a layer", "父级拾取器：拖到图层上"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "父级拾取器：拖到图层上",
+    ),
     ("Pixel Aspect Ratio:", "像素长宽比："),
     ("Playing on Video Preview", "在视频预览中播放"),
     ("Post-Render Action: {}", "渲染后动作：{}"),
-    ("Preserve frame rate when nested or in render queue", "嵌套或在渲染队列中时保留帧速率"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "嵌套或在渲染队列中时保留帧速率",
+    ),
     ("Preserve resolution when nested", "嵌套时保留分辨率"),
     ("Preset", "预设"),
     ("Preset:", "预设："),
@@ -827,7 +1148,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ),
     ("Project: {}", "项目：{}"),
     ("Projects", "项目"),
-    ("Property pick whip: drag onto a property", "属性拾取器：拖到属性上"),
+    (
+        "Property pick whip: drag onto a property",
+        "属性拾取器：拖到属性上",
+    ),
     ("Protected Region", "受保护区域"),
     ("Proxy Use: {}", "代理使用：{}"),
     ("Push All to Comp", "全部推送到合成"),
@@ -838,7 +1162,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Recording", "录制中"),
     ("Remove", "移除"),
     ("Rename", "重命名"),
-    ("Render: {} ms  •  UI {} fps{}", "渲染：{} 毫秒  •  界面 {} fps{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "渲染：{} 毫秒  •  界面 {} fps{}",
+    ),
     ("Renderer:", "渲染器："),
     ("Request Persistent Storage", "请求持久化存储"),
     ("Reset", "重置"),
@@ -846,13 +1173,19 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Reset Preset", "重置预设"),
     ("Reset to Default", "重置为默认"),
     ("Reset to Saved Layout", "重置为已保存的布局"),
-    ("Resolution/Down Sample Factor Popup", "分辨率/向下采样系数弹出菜单"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "分辨率/向下采样系数弹出菜单",
+    ),
     ("Restore Panel Size", "恢复面板大小"),
     ("Reverse the order", "反转顺序"),
     ("Revert All", "全部还原"),
     ("Roman Hanging Punctuation", "西文悬挂标点"),
     ("Roving:", "游动："),
-    ("Ruler zero point (drag to move, double-click to reset)", "标尺零点（拖动可移动，双击可重置）"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "标尺零点（拖动可移动，双击可重置）",
+    ),
     ("Rulers", "标尺"),
     ("Run", "运行"),
     ("Sample Format: {}", "采样格式：{}"),
@@ -862,23 +1195,38 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Script… (⌘/Ctrl+Enter runs)", "脚本…（⌘/Ctrl+Enter 运行）"),
     ("Search commands or shortcuts", "搜索命令或快捷键"),
     ("Select", "选择"),
-    ("Select a command to change its shortcut.", "选择一条命令以更改其快捷键。"),
+    (
+        "Select a command to change its shortcut.",
+        "选择一条命令以更改其快捷键。",
+    ),
     ("Select a layer to see its effects", "选择图层以查看其效果"),
-    ("Select a layer to see its properties", "选择图层以查看其属性"),
+    (
+        "Select a layer to see its properties",
+        "选择图层以查看其属性",
+    ),
     ("({}) Selected Objects", "({}) 个选定对象"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "请选择带蒙版或形状路径（或路径属性）的图层，或带有人偶定位点的图层。",
     ),
     ("Select a text layer", "选择文字图层"),
-    ("Select an item in the Project panel", "在项目面板中选择一个项"),
-    ("Select animated properties to show them in the Graph Editor", "选择已制作动画的属性以在图表编辑器中显示"),
+    (
+        "Select an item in the Project panel",
+        "在项目面板中选择一个项",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "选择已制作动画的属性以在图表编辑器中显示",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "先选择引导定位点，再按住 Shift 单击应跟随它的定位点（头发、布料、尾巴）",
     ),
     ("Set Ground Plane and Origin", "设置地平面和原点"),
-    ("Set Paint Colors to Black and White (D)", "将绘画颜色设为黑白（D）"),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "将绘画颜色设为黑白（D）",
+    ),
     ("Settings", "设置"),
     ("Settings Name:", "设置名称："),
     ("Shadow Darkness", "阴影暗度"),
@@ -920,12 +1268,24 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Template name", "模板名称"),
     ("Template: {}\n{}", "模板：{}\n{}"),
     ("Temporal Interpolation:", "时间插值："),
-    ("The Media Browser is not available here (use File ▸ Import)", "此处不支持媒体浏览器（请使用 文件 ▸ 导入）"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "以红、绿、蓝和 Alpha 显示的 OpenEXR 图层"),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "此处不支持媒体浏览器（请使用 文件 ▸ 导入）",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "以红、绿、蓝和 Alpha 显示的 OpenEXR 图层",
+    ),
     ("The render queue is empty.", "渲染队列为空。"),
-    ("These adjacent keyframes cannot interpolate because their stop counts differ.", "这些相邻关键帧的色标数量不同，无法插值。"),
+    (
+        "These adjacent keyframes cannot interpolate because their stop counts differ.",
+        "这些相邻关键帧的色标数量不同，无法插值。",
+    ),
     ("This ScriptUI panel has closed", "此 ScriptUI 面板已关闭"),
-    ("This change will create a new solid for this layer.", "此更改将为该图层创建新的纯色。"),
+    (
+        "This change will create a new solid for this layer.",
+        "此更改将为该图层创建新的纯色。",
+    ),
     ("Time", "时间"),
     ("Time Stretch…", "时间伸缩…"),
     ("Time:", "时间："),
@@ -934,7 +1294,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Title/action safe", "字幕/动作安全框"),
     ("Toggle Switches / Modes", "切换开关/模式"),
     ("Track Name:", "跟踪名称："),
-    ("Trained models are available in the desktop app; the browser uses the classic engine.", "训练好的模型仅在桌面应用中可用；浏览器版使用经典引擎。"),
+    (
+        "Trained models are available in the desktop app; the browser uses the classic engine.",
+        "训练好的模型仅在桌面应用中可用；浏览器版使用经典引擎。",
+    ),
     ("Transform", "变换"),
     ("Transparency grid", "透明网格"),
     ("Tutorial complete", "教程完成"),
@@ -959,7 +1322,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "欢迎使用 EffectCraft"),
     ("Width:", "宽度："),
     ("You can undo this.", "您可以撤销此操作。"),
-    ("Your changes will be lost if you don't save them.", "如果不存储，你的更改将会丢失。"),
+    (
+        "Your changes will be lost if you don't save them.",
+        "如果不存储，你的更改将会丢失。",
+    ),
     ("Zoom", "缩放"),
     ("built-in", "内置"),
     ("frames per second", "帧/秒"),
@@ -967,15 +1333,24 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("{} contributors · {} commits", "{} 位贡献者 · {} 次提交"),
     ("{} x {}, {}MB per 8bpc frame", "{} x {}，每 8bpc 帧 {}MB"),
     ("{} — coming soon", "{} — 即将推出"),
-    ("{} — double-click to open, {}-click to reveal", "{} — 双击打开，{}-单击可显示位置"),
-    ("⌘/Ctrl-drag a pin to record its motion", "⌘/Ctrl 拖动定位点可记录其运动"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{} — 双击打开，{}-单击可显示位置",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "⌘/Ctrl 拖动定位点可记录其运动",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {} 已被以下项目使用："),
     // Strings a panel used to hand to a helper as a bare literal: the helper draws them (the
     // viewer's toolbar tooltips and popup items, the solid dialog's checkbox), so the lookup has
     // to reach the catalog from inside the helper. Kept at the end so the catalogs stay parallel.
     ("3D Reference Axes", "3D 参考轴"),
-    ("Affect all layers that use this solid", "影响使用该纯色的所有图层"),
+    (
+        "Affect all layers that use this solid",
+        "影响使用该纯色的所有图层",
+    ),
     ("Choose grid and guide options", "选择网格和参考线选项"),
     ("Colorize", "着色"),
     ("Custom", "自定义"),
@@ -989,11 +1364,17 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Quarter", "四分之一"),
     ("Region of Interest", "目标区域"),
     ("Reset Exposure", "重置曝光"),
-    ("Show Channel and Color Management Settings", "显示通道和色彩管理设置"),
+    (
+        "Show Channel and Color Management Settings",
+        "显示通道和色彩管理设置",
+    ),
     ("Show Snapshot (hold)", "显示快照（按住）"),
     ("Take Snapshot", "拍摄快照"),
     ("Third", "三分之一"),
-    ("Toggle Mask and Shape Path Visibility", "切换蒙版与形状路径可见性"),
+    (
+        "Toggle Mask and Shape Path Visibility",
+        "切换蒙版与形状路径可见性",
+    ),
     ("Toggle Transparency Grid", "切换透明网格"),
     // Technical terms and proper nouns: the project settings, the import and export forms, the
     // viewer's channel and Fast Previews popups, the keyframe dialogs and the About window. The
@@ -1010,10 +1391,16 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Draft", "草图"),
     ("Enable Per-character 3D", "启用逐字 3D 化"),
     ("Fast Draft", "快速草图"),
-    ("Fast Previews (Draft 3D, Faster Effects)", "快速预览（3D 草图、更快效果）"),
+    (
+        "Fast Previews (Draft 3D, Faster Effects)",
+        "快速预览（3D 草图、更快效果）",
+    ),
     ("Green", "绿色"),
     ("Import Image Sequence", "导入图像序列"),
-    ("Import PDF / Illustrator File", "导入 PDF / Illustrator 文件"),
+    (
+        "Import PDF / Illustrator File",
+        "导入 PDF / Illustrator 文件",
+    ),
     ("Import Photoshop File", "导入 Photoshop 文件"),
     ("Interpret Unlabeled Alpha As", "将未标记的 Alpha 解释为"),
     ("Join the ArtCraft Discord", "加入 ArtCraft Discord"),
@@ -1026,7 +1413,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("RGB Straight", "RGB 直接"),
     ("Red", "红色"),
     ("Tone map", "色调映射"),
-    ("Use In-Window Menu Bar on macOS", "在 macOS 上使用窗口内菜单栏"),
+    (
+        "Use In-Window Menu Bar on macOS",
+        "在 macOS 上使用窗口内菜单栏",
+    ),
     ("Wireframe", "线框"),
     ("sRGB IEC61966-2.1 (default)", "sRGB IEC61966-2.1（默认）"),
     // The Home screen (#574).
@@ -1035,7 +1425,10 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("Templates", "模板"),
     ("EffectCraft home page", "EffectCraft 主页"),
     ("EffectCraft on GitHub", "GitHub 上的 EffectCraft"),
-    ("Motion graphics and visual effects · version {}", "动态图形和视觉效果 · 版本 {}"),
+    (
+        "Motion graphics and visual effects · version {}",
+        "动态图形和视觉效果 · 版本 {}",
+    ),
     ("New Composition", "新建合成"),
     ("Open Demo Project", "打开示例项目"),
     ("Import Footage…", "导入素材…"),
@@ -1044,9 +1437,18 @@ const SIMPLIFIED_CHINESE: &[(&str, &str)] = &[
     ("OPENED", "打开时间"),
     ("SIZE", "大小"),
     ("KIND", "类型"),
-    ("Your recent files will show here", "你最近使用的文件会显示在这里"),
-    ("Create a new project, or open the demo project to look around.", "新建一个项目，或打开示例项目先熟悉一下界面。"),
-    ("No recent files match the filter", "没有与筛选条件匹配的最近文件"),
+    (
+        "Your recent files will show here",
+        "你最近使用的文件会显示在这里",
+    ),
+    (
+        "Create a new project, or open the demo project to look around.",
+        "新建一个项目，或打开示例项目先熟悉一下界面。",
+    ),
+    (
+        "No recent files match the filter",
+        "没有与筛选条件匹配的最近文件",
+    ),
     ("Try another name or folder.", "请尝试其他名称或文件夹。"),
     ("Just now", "刚刚"),
     ("Yesterday", "昨天"),
@@ -1090,15 +1492,24 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Add Mirror", "添加鏡像"),
     ("Add Selected As", "將所選專案添加為"),
     ("Add a comment", "添加註解"),
-    ("Add a shape, fill, stroke or path operation", "添加形狀、填滿、筆畫或路徑操作"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "添加形狀、填滿、筆畫或路徑操作",
+    ),
     ("Add to Composition", "添加到合成"),
     ("Add to Favorites", "添加到收藏夾"),
     ("Add:", "添加："),
     ("Adjust Exposure (stops)", "調整曝光（光圈級數）"),
-    ("Adjust composition duration to the time span of the selected layers", "將合成時長調整為所選圖層的時間範圍"),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "將合成時長調整為所選圖層的時間範圍",
+    ),
     ("Advanced 3D", "高級 3D"),
     ("Align Layers to:", "將圖層對齊到："),
-    ("All six face cameras turn together; the scene is not changed.", "六個面攝影機一起旋轉；場景不會改變。"),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "六個面攝影機一起旋轉；場景不會改變。",
+    ),
     ("Anchor:", "釘選點："),
     ("Aperture", "光圈"),
     ("Appearance Mode", "外觀模式"),
@@ -1123,7 +1534,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Cancel", "取消"),
     ("Casts Shadows", "投射陰影"),
     ("Change Renderer…", "更改算圖引擎…"),
-    ("Changing a shortcut creates a custom preset; the default stays as it is.", "修改快速鍵會創建自定義預設集；預設預設集保持不變。"),
+    (
+        "Changing a shortcut creates a custom preset; the default stays as it is.",
+        "修改快速鍵會創建自定義預設集；預設預設集保持不變。",
+    ),
     ("Channel", "色版"),
     ("Channel:", "通道："),
     ("Chapter:", "章節："),
@@ -1131,14 +1545,35 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Classic 3D", "經典 3D"),
     ("Clear", "清除"),
     ("Clear list", "清空清單"),
-    ("Click a key to see its commands.", "按一下某個按鍵以查看其命令。"),
-    ("Click above the bar to add an opacity stop, below it to add a color stop.", "按一下漸變條上方以新增不透明度色標，按一下下方以新增顏色色標。"),
-    ("Click adds a point (½ height = no change)", "按一下可添加點（上下滑動高度的一半 = 無變化）"),
-    ("Click adds a point; drag one off to remove", "按一下可添加點；拖出一個即可刪除"),
+    (
+        "Click a key to see its commands.",
+        "按一下某個按鍵以查看其命令。",
+    ),
+    (
+        "Click above the bar to add an opacity stop, below it to add a color stop.",
+        "按一下漸變條上方以新增不透明度色標，按一下下方以新增顏色色標。",
+    ),
+    (
+        "Click adds a point (½ height = no change)",
+        "按一下可添加點（上下滑動高度的一半 = 無變化）",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "按一下可添加點；拖出一個即可刪除",
+    ),
     ("Click to make this viewer active", "按一下可激活此檢視"),
-    ("Click to reveal the expression in the timeline", "按一下可在時間軸中顯示表達式"),
-    ("Click to show the active composition here", "按一下可在此顯示目前合成"),
-    ("Click, then click in the Composition panel", "按一下後，在合成面板中按一下"),
+    (
+        "Click to reveal the expression in the timeline",
+        "按一下可在時間軸中顯示表達式",
+    ),
+    (
+        "Click to show the active composition here",
+        "按一下可在此顯示目前合成",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "按一下後，在合成面板中按一下",
+    ),
     ("Clone Options", "仿製選項"),
     ("Clone Source Overlay:", "仿製源疊加："),
     ("Close", "關閉"),
@@ -1154,13 +1589,22 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Composition", "合成"),
     ("Composition Mini-Flowchart", "合成微型流程圖"),
     ("Composition Name:", "合成名稱："),
-    ("Composition Settings ▸ 3D Renderer", "合成設置 ▸ 3D 算圖引擎"),
+    (
+        "Composition Settings ▸ 3D Renderer",
+        "合成設置 ▸ 3D 算圖引擎",
+    ),
     ("Composition Settings…", "合成設置…"),
-    ("Composition marker bin: drag a marker to the time ruler", "合成標記箱：將標記拖到時間標尺上"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "合成標記箱：將標記拖到時間標尺上",
+    ),
     ("Cone Angle", "圓錐角"),
     ("Cone Feather", "圓錐羽化"),
     ("Constrain Proportions", "約束比例"),
-    ("Continuous (Lock Outgoing to Incoming)", "連續（將出點鎖定到入點）"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "連續（將出點鎖定到入點）",
+    ),
     ("Cue Point", "提示點"),
     ("Current Render", "目前算圖"),
     ("Dark", "深色"),
@@ -1178,8 +1622,14 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Distribute Layers:", "分佈圖層："),
     ("Don't Recover", "不恢復"),
     ("Don't Save", "不儲存"),
-    ("Double-click a layer to open it in the Layer panel", "連按兩下圖層可在圖層面板中開啟"),
-    ("Double-click footage in the Project panel to open it here", "連按兩下專案面板中的素材可在此處開啟"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "連按兩下圖層可在圖層面板中開啟",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "連按兩下專案面板中的素材可在此處開啟",
+    ),
     ("Double-click to edit the comment", "連按兩下可編輯註解"),
     ("Download", "下載"),
     (
@@ -1195,7 +1645,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Edit Gradient…", "編輯漸變…"),
     ("Edit Target: {}", "編輯目標：{}"),
     ("Edit in the Timeline", "在時間軸中編輯"),
-    ("EffectCraft didn't quit normally last time.", "EffectCraft 上次未正常結束。"),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "EffectCraft 上次未正常結束。",
+    ),
     ("Effects & Presets options", "效果和預設集選項"),
     ("Effects: {}", "效果：{}"),
     ("Empty folder", "空資料夾"),
@@ -1207,9 +1660,15 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Export Template…", "匯出範本…"),
     ("Export...", "匯出..."),
     ("Expression Language Menu", "表達式語言選單"),
-    ("Expression pick whip: drag onto a property", "表達式拾取線：拖到屬性上"),
+    (
+        "Expression pick whip: drag onto a property",
+        "表達式拾取線：拖到屬性上",
+    ),
     ("Expression:", "表達式："),
-    ("Eyedropper: click, then click in the Composition panel", "吸管：按一下後，在合成面板中按一下"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "吸管：按一下後，在合成面板中按一下",
+    ),
     ("Falloff", "衰減"),
     ("Falloff Distance", "衰減距離"),
     ("Favorites", "收藏"),
@@ -1247,7 +1706,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Install from File…", "從文件安裝…"),
     ("Intensity", "強度"),
     ("Inverted", "反轉"),
-    ("Join the ArtCraft community on Discord", "加入 ArtCraft 的 Discord 社區"),
+    (
+        "Join the ArtCraft community on Discord",
+        "加入 ArtCraft 的 Discord 社區",
+    ),
     ("Key: {}", "按鍵：{}"),
     ("LEARN", "學習"),
     ("Label", "標籤"),
@@ -1274,7 +1736,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Locked: {} — {}", "已鎖定：{} — {}"),
     ("Log:", "日志："),
     ("Loop (Trace Path)", "循環（追蹤路徑）"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT 或 Apache-2.0 • 字型：Inter、JetBrains Mono（OFL）"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT 或 Apache-2.0 • 字型：Inter、JetBrains Mono（OFL）",
+    ),
     ("Magnification ratio popup", "放大倍率快顯選單"),
     ("Make Comp Size", "設為合成長寬"),
     ("Masks", "遮色片"),
@@ -1282,7 +1747,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Media Replacement", "媒體替換"),
     ("Mesh:", "格點："),
     ("Diameter:", "直徑："),
-    ("Method Used: {}    Average Error: {} pixels", "使用方法：{}    平均誤差：{} 像素"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "使用方法：{}    平均誤差：{} 像素",
+    ),
     ("Models folder: {}", "模型資料夾：{}"),
     ("Modifiers:", "修飾鍵："),
     ("More", "更多"),
@@ -1304,26 +1772,47 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("New from Render Queue item:", "由算圖佇列項新建："),
     ("New from Template", "從範本新建"),
     ("Next", "下一個"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "干得漂亮。請在主頁面的“學習”索引標籤中選取另一個教學。"),
-    ("No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…", "還沒有 VR 環境。請用 合成 ▸ VR ▸ 創建 VR 環境… 新建一個。"),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "干得漂亮。請在主頁面的“學習”索引標籤中選取另一個教學。",
+    ),
+    (
+        "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
+        "還沒有 VR 環境。請用 合成 ▸ VR ▸ 創建 VR 環境… 新建一個。",
+    ),
     ("No audio layer selected", "未選取音訊圖層"),
     ("No background jobs running", "沒有正在執行的後台任務"),
     ("No composition markers", "沒有合成標記"),
-    ("No contributor data was built into this copy.", "此副本未內置貢獻者數據。"),
-    ("No device list from this host; the system default output is used.", "此主機無法獲取設備清單；將使用系統預設輸出。"),
+    (
+        "No contributor data was built into this copy.",
+        "此副本未內置貢獻者數據。",
+    ),
+    (
+        "No device list from this host; the system default output is used.",
+        "此主機無法獲取設備清單；將使用系統預設輸出。",
+    ),
     ("No layer selected", "未選取圖層"),
     ("No matching effects or presets", "沒有匹配的效果或預設集"),
     ("No matching fonts", "沒有符合的字體"),
     ("Variable fonts only", "僅可變字型"),
-    ("No model credits were built into this copy.", "此副本未內置模型致謝。"),
+    (
+        "No model credits were built into this copy.",
+        "此副本未內置模型致謝。",
+    ),
     ("No nested compositions", "沒有嵌套合成"),
     ("No shortcut", "無快速鍵"),
     ("No unlocked layer selected", "未選取已解鎖的圖層"),
     ("No video", "無視訊"),
     ("None", "無"),
-    ("Not applied: tick it in the list to add it.", "未應用：在清單中勾選即可添加。"),
+    (
+        "Not applied: tick it in the list to add it.",
+        "未應用：在清單中勾選即可添加。",
+    ),
     ("Not assigned", "未分配"),
-    ("Note: Shadows are only cast from layers with Cast Shadows enabled.", "注意：只有啟用了“投射陰影”的圖層才會投射陰影。"),
+    (
+        "Note: Shadows are only cast from layers with Cast Shadows enabled.",
+        "注意：只有啟用了“投射陰影”的圖層才會投射陰影。",
+    ),
     ("Notify", "通知"),
     ("OK", "確定"),
     ("Offset:", "偏移："),
@@ -1334,20 +1823,35 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Open Last Saved Project", "開啟上次儲存的專案"),
     ("Open New Composition", "開啟新建合成"),
     ("Open Output", "開啟輸出"),
-    ("Open a composition to build Essential Graphics", "開啟一個合成以構建基本圖形"),
-    ("Open a composition to see its scopes", "開啟一個合成以查看其示波器"),
-    ("Open a composition to track motion.", "開啟一個合成以追蹤運動。"),
+    (
+        "Open a composition to build Essential Graphics",
+        "開啟一個合成以構建基本圖形",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "開啟一個合成以查看其示波器",
+    ),
+    (
+        "Open a composition to track motion.",
+        "開啟一個合成以追蹤運動。",
+    ),
     ("Opus Tuning: {}", "Opus 調優：{}"),
     ("Original Duration:", "原始持續時間："),
     ("Output Cycle: {}", "輸出循環：{}"),
     ("Output To:", "輸出到："),
     ("Overlay", "疊加"),
     ("Parameter Name:", "參數名稱："),
-    ("Parent pick whip: drag onto a layer", "上層拾取線：拖到圖層上"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "上層拾取線：拖到圖層上",
+    ),
     ("Pixel Aspect Ratio:", "像素長寬比例："),
     ("Playing on Video Preview", "在視訊預覽中播放"),
     ("Post-Render Action: {}", "算圖後動作：{}"),
-    ("Preserve frame rate when nested or in render queue", "嵌套或在算圖佇列中時保留影格速率"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "嵌套或在算圖佇列中時保留影格速率",
+    ),
     ("Preserve resolution when nested", "嵌套時保留分辨率"),
     ("Preset", "預設集"),
     ("Preset:", "預設集："),
@@ -1362,7 +1866,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ),
     ("Project: {}", "專案：{}"),
     ("Projects", "專案"),
-    ("Property pick whip: drag onto a property", "屬性拾取線：拖到屬性上"),
+    (
+        "Property pick whip: drag onto a property",
+        "屬性拾取線：拖到屬性上",
+    ),
     ("Protected Region", "受保護區域"),
     ("Proxy Use: {}", "代理使用：{}"),
     ("Push All to Comp", "全部推送到合成"),
@@ -1373,7 +1880,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Recording", "錄製中"),
     ("Remove", "移除"),
     ("Rename", "重命名"),
-    ("Render: {} ms  •  UI {} fps{}", "算圖：{} 毫秒  •  介面 {} fps{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "算圖：{} 毫秒  •  介面 {} fps{}",
+    ),
     ("Renderer:", "算圖引擎："),
     ("Request Persistent Storage", "要求持久化儲存"),
     ("Reset", "重置"),
@@ -1381,39 +1891,63 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Reset Preset", "重置預設集"),
     ("Reset to Default", "重置為預設"),
     ("Reset to Saved Layout", "重置為已儲存的布局"),
-    ("Resolution/Down Sample Factor Popup", "分辨率/向下取樣係數快顯選單"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "分辨率/向下取樣係數快顯選單",
+    ),
     ("Restore Panel Size", "恢復面板大小"),
     ("Reverse the order", "反轉順序"),
     ("Revert All", "全部還原"),
     ("Roman Hanging Punctuation", "西文懸掛標點"),
     ("Roving:", "游動："),
-    ("Ruler zero point (drag to move, double-click to reset)", "標尺零點（拖曳可移動，連按兩下可重置）"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "標尺零點（拖曳可移動，連按兩下可重置）",
+    ),
     ("Rulers", "標尺"),
     ("Run", "執行"),
     ("Sample Format: {}", "取樣格式：{}"),
     ("Samples Per Frame:", "每個影格取樣數："),
     ("Save from #{}", "從 #{} 儲存"),
     ("Saved {}", "已儲存 {}"),
-    ("Script… (⌘/Ctrl+Enter runs)", "指令碼…（⌘/Ctrl+Enter 執行）"),
+    (
+        "Script… (⌘/Ctrl+Enter runs)",
+        "指令碼…（⌘/Ctrl+Enter 執行）",
+    ),
     ("Search commands or shortcuts", "搜尋命令或快速鍵"),
     ("Select", "選取"),
-    ("Select a command to change its shortcut.", "選取一條命令以更改其快速鍵。"),
+    (
+        "Select a command to change its shortcut.",
+        "選取一條命令以更改其快速鍵。",
+    ),
     ("Select a layer to see its effects", "選取圖層以查看其效果"),
-    ("Select a layer to see its properties", "選取圖層以查看其屬性"),
+    (
+        "Select a layer to see its properties",
+        "選取圖層以查看其屬性",
+    ),
     ("({}) Selected Objects", "({}) 個選取的物件"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "請選取帶遮色片或形狀路徑（或路徑屬性）的圖層，或帶有人偶釘選點的圖層。",
     ),
     ("Select a text layer", "選取文字圖層"),
-    ("Select an item in the Project panel", "在專案面板中選取一個項"),
-    ("Select animated properties to show them in the Graph Editor", "選取已制作動畫的屬性以在圖表編輯器中顯示"),
+    (
+        "Select an item in the Project panel",
+        "在專案面板中選取一個項",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "選取已制作動畫的屬性以在圖表編輯器中顯示",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "先選取引導釘選點，再按住 Shift 按一下應跟隨它的釘選點（頭發、布料、尾巴）",
     ),
     ("Set Ground Plane and Origin", "設置地平面和原點"),
-    ("Set Paint Colors to Black and White (D)", "將繪畫顏色設為黑白（D）"),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "將繪畫顏色設為黑白（D）",
+    ),
     ("Settings", "設置"),
     ("Settings Name:", "設置名稱："),
     ("Shadow Darkness", "陰影暗度"),
@@ -1455,12 +1989,24 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Template name", "範本名稱"),
     ("Template: {}\n{}", "範本：{}\n{}"),
     ("Temporal Interpolation:", "時間插值："),
-    ("The Media Browser is not available here (use File ▸ Import)", "此處不支援媒體瀏覽器（請使用 文件 ▸ 匯入）"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "以紅、綠、藍和 Alpha 顯示的 OpenEXR 圖層"),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "此處不支援媒體瀏覽器（請使用 文件 ▸ 匯入）",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "以紅、綠、藍和 Alpha 顯示的 OpenEXR 圖層",
+    ),
     ("The render queue is empty.", "算圖佇列為空。"),
-    ("These adjacent keyframes cannot interpolate because their stop counts differ.", "這些相鄰關鍵影格的色標數量不同，無法內插。"),
+    (
+        "These adjacent keyframes cannot interpolate because their stop counts differ.",
+        "這些相鄰關鍵影格的色標數量不同，無法內插。",
+    ),
     ("This ScriptUI panel has closed", "此 ScriptUI 面板已關閉"),
-    ("This change will create a new solid for this layer.", "此更改將為該圖層創建新的純色。"),
+    (
+        "This change will create a new solid for this layer.",
+        "此更改將為該圖層創建新的純色。",
+    ),
     ("Time", "時間"),
     ("Time Stretch…", "時間伸縮…"),
     ("Time:", "時間："),
@@ -1469,7 +2015,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Title/action safe", "字幕/動作安全框"),
     ("Toggle Switches / Modes", "切換開關/模式"),
     ("Track Name:", "追蹤名稱："),
-    ("Trained models are available in the desktop app; the browser uses the classic engine.", "訓練好的模型僅在桌面應用中可用；瀏覽器版使用經典引擎。"),
+    (
+        "Trained models are available in the desktop app; the browser uses the classic engine.",
+        "訓練好的模型僅在桌面應用中可用；瀏覽器版使用經典引擎。",
+    ),
     ("Transform", "變換"),
     ("Transparency grid", "透明格點"),
     ("Tutorial complete", "教學完成"),
@@ -1494,7 +2043,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "歡迎使用 EffectCraft"),
     ("Width:", "寬度："),
     ("You can undo this.", "您可以復原此操作。"),
-    ("Your changes will be lost if you don't save them.", "如果不儲存，你的更改將會丟失。"),
+    (
+        "Your changes will be lost if you don't save them.",
+        "如果不儲存，你的更改將會丟失。",
+    ),
     ("Zoom", "縮放"),
     ("built-in", "內建"),
     ("frames per second", "影格/秒"),
@@ -1502,15 +2054,27 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("{} contributors · {} commits", "{} 位貢獻者 · {} 次提交"),
     ("{} x {}, {}MB per 8bpc frame", "{} x {}，每 8bpc 幀 {}MB"),
     ("{} — coming soon", "{} — 即將推出"),
-    ("{} — double-click to open, {}-click to reveal", "{} — 連按兩下開啟，{}-按一下可顯示位置"),
-    ("⌘/Ctrl-drag a pin to record its motion", "⌘/Ctrl 拖曳釘選點可記錄其運動"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{} — 連按兩下開啟，{}-按一下可顯示位置",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "⌘/Ctrl 拖曳釘選點可記錄其運動",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {} 已被以下專案使用："),
     // The same rows as the Simplified catalog (the tests require both lists to match). The
     // Traditional wording is the translator's call and is left as the English source for now.
     ("3D Reference Axes", "3D Reference Axes"),
-    ("Affect all layers that use this solid", "Affect all layers that use this solid"),
-    ("Choose grid and guide options", "Choose grid and guide options"),
+    (
+        "Affect all layers that use this solid",
+        "Affect all layers that use this solid",
+    ),
+    (
+        "Choose grid and guide options",
+        "Choose grid and guide options",
+    ),
     ("Colorize", "Colorize"),
     ("Custom", "Custom"),
     ("Custom...", "Custom..."),
@@ -1518,16 +2082,25 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Fit up to 100%", "Fit up to 100%"),
     ("Full", "Full"),
     ("Half", "Half"),
-    ("Only this layer uses this solid.", "Only this layer uses this solid."),
+    (
+        "Only this layer uses this solid.",
+        "Only this layer uses this solid.",
+    ),
     ("Proportional Grid", "Proportional Grid"),
     ("Quarter", "Quarter"),
     ("Region of Interest", "Region of Interest"),
     ("Reset Exposure", "Reset Exposure"),
-    ("Show Channel and Color Management Settings", "Show Channel and Color Management Settings"),
+    (
+        "Show Channel and Color Management Settings",
+        "Show Channel and Color Management Settings",
+    ),
     ("Show Snapshot (hold)", "Show Snapshot (hold)"),
     ("Take Snapshot", "Take Snapshot"),
     ("Third", "Third"),
-    ("Toggle Mask and Shape Path Visibility", "Toggle Mask and Shape Path Visibility"),
+    (
+        "Toggle Mask and Shape Path Visibility",
+        "Toggle Mask and Shape Path Visibility",
+    ),
     ("Toggle Transparency Grid", "Toggle Transparency Grid"),
     ("16 bits per channel", "16 bits per channel"),
     ("32 bits per channel (float)", "32 bits per channel (float)"),
@@ -1540,14 +2113,26 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Draft", "Draft"),
     ("Enable Per-character 3D", "Enable Per-character 3D"),
     ("Fast Draft", "Fast Draft"),
-    ("Fast Previews (Draft 3D, Faster Effects)", "Fast Previews (Draft 3D, Faster Effects)"),
+    (
+        "Fast Previews (Draft 3D, Faster Effects)",
+        "Fast Previews (Draft 3D, Faster Effects)",
+    ),
     ("Green", "綠色"),
     ("Import Image Sequence", "Import Image Sequence"),
-    ("Import PDF / Illustrator File", "Import PDF / Illustrator File"),
+    (
+        "Import PDF / Illustrator File",
+        "Import PDF / Illustrator File",
+    ),
     ("Import Photoshop File", "Import Photoshop File"),
-    ("Interpret Unlabeled Alpha As", "Interpret Unlabeled Alpha As"),
+    (
+        "Interpret Unlabeled Alpha As",
+        "Interpret Unlabeled Alpha As",
+    ),
     ("Join the ArtCraft Discord", "加入 ArtCraft Discord"),
-    ("Mercury GPU Acceleration ({})", "Mercury GPU Acceleration ({})"),
+    (
+        "Mercury GPU Acceleration ({})",
+        "Mercury GPU Acceleration ({})",
+    ),
     ("Mercury Software Only", "Mercury Software Only"),
     ("OCIO (built-in ACES config)", "OCIO (built-in ACES config)"),
     ("Off (Final Quality)", "Off (Final Quality)"),
@@ -1556,7 +2141,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("RGB Straight", "RGB Straight"),
     ("Red", "紅色"),
     ("Tone map", "Tone map"),
-    ("Use In-Window Menu Bar on macOS", "Use In-Window Menu Bar on macOS"),
+    (
+        "Use In-Window Menu Bar on macOS",
+        "Use In-Window Menu Bar on macOS",
+    ),
     ("Wireframe", "Wireframe"),
     ("sRGB IEC61966-2.1 (default)", "sRGB IEC61966-2.1 (default)"),
     // The Home screen (#574).
@@ -1565,7 +2153,10 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("Templates", "範本"),
     ("EffectCraft home page", "EffectCraft 首頁"),
     ("EffectCraft on GitHub", "GitHub 上的 EffectCraft"),
-    ("Motion graphics and visual effects · version {}", "動態圖形與視覺效果 · 版本 {}"),
+    (
+        "Motion graphics and visual effects · version {}",
+        "動態圖形與視覺效果 · 版本 {}",
+    ),
     ("New Composition", "新增合成"),
     ("Open Demo Project", "開啟範例專案"),
     ("Import Footage…", "匯入素材…"),
@@ -1574,9 +2165,18 @@ const TRADITIONAL_CHINESE: &[(&str, &str)] = &[
     ("OPENED", "開啟時間"),
     ("SIZE", "大小"),
     ("KIND", "類型"),
-    ("Your recent files will show here", "你最近使用的檔案會顯示在這裡"),
-    ("Create a new project, or open the demo project to look around.", "新增一個專案，或開啟範例專案先熟悉一下介面。"),
-    ("No recent files match the filter", "沒有符合篩選條件的最近檔案"),
+    (
+        "Your recent files will show here",
+        "你最近使用的檔案會顯示在這裡",
+    ),
+    (
+        "Create a new project, or open the demo project to look around.",
+        "新增一個專案，或開啟範例專案先熟悉一下介面。",
+    ),
+    (
+        "No recent files match the filter",
+        "沒有符合篩選條件的最近檔案",
+    ),
     ("Try another name or folder.", "請嘗試其他名稱或資料夾。"),
     ("Just now", "剛剛"),
     ("Yesterday", "昨天"),
@@ -1613,7 +2213,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Active", "Активна"),
     ("Active Camera", "Активна камера"),
     ("Alpha", "Альфа"),
-    ("Adapt Feature On Every Frame", "Адаптувати ознаку в кожному кадрі"),
+    (
+        "Adapt Feature On Every Frame",
+        "Адаптувати ознаку в кожному кадрі",
+    ),
     ("Adaptive Sample Limit:", "Межа адаптивних вибірок:"),
     ("Add Animator", "Додати аніматор"),
     ("Add Comment", "Додати коментар"),
@@ -1622,15 +2225,27 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Add Mirror", "Додати дзеркало"),
     ("Add Selected As", "Додати виділене як"),
     ("Add a comment", "Додати коментар"),
-    ("Add a shape, fill, stroke or path operation", "Додати фігуру, заливку, обведення або операцію з контуром"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "Додати фігуру, заливку, обведення або операцію з контуром",
+    ),
     ("Add to Composition", "Додати до композиції"),
     ("Add to Favorites", "Додати до обраного"),
     ("Add:", "Додати:"),
-    ("Adjust Exposure (stops)", "Налаштувати експозицію (ступені)"),
-    ("Adjust composition duration to the time span of the selected layers", "Припасувати тривалість композиції до часового діапазону виділених шарів"),
+    (
+        "Adjust Exposure (stops)",
+        "Налаштувати експозицію (ступені)",
+    ),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "Припасувати тривалість композиції до часового діапазону виділених шарів",
+    ),
     ("Advanced 3D", "Розширений 3D"),
     ("Align Layers to:", "Вирівняти шари відносно:"),
-    ("All six face cameras turn together; the scene is not changed.", "Усі шість камер граней повертаються разом; сцена залишається без змін."),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "Усі шість камер граней повертаються разом; сцена залишається без змін.",
+    ),
     ("Anchor:", "Опорна точка:"),
     ("Aperture", "Діафрагма"),
     ("Appearance Mode", "Режим оформлення"),
@@ -1666,17 +2281,38 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Classic 3D", "Класичний 3D"),
     ("Clear", "Очистити"),
     ("Clear list", "Очистити список"),
-    ("Click a key to see its commands.", "Клацніть клавішу, щоб переглянути її команди."),
+    (
+        "Click a key to see its commands.",
+        "Клацніть клавішу, щоб переглянути її команди.",
+    ),
     (
         "Click above the bar to add an opacity stop, below it to add a color stop.",
         "Клацніть над смугою, щоб додати точку непрозорості, під нею — щоб додати точку кольору.",
     ),
-    ("Click adds a point (½ height = no change)", "Клацніть, щоб додати точку (½ висоти = без змін)"),
-    ("Click adds a point; drag one off to remove", "Клацніть, щоб додати точку; перетягніть її за межі, щоб вилучити"),
-    ("Click to make this viewer active", "Клацніть, щоб зробити цю область перегляду активною"),
-    ("Click to reveal the expression in the timeline", "Клацніть, щоб показати вираз на шкалі часу"),
-    ("Click to show the active composition here", "Клацніть, щоб показати тут активну композицію"),
-    ("Click, then click in the Composition panel", "Клацніть тут, а потім на панелі «Композиція»"),
+    (
+        "Click adds a point (½ height = no change)",
+        "Клацніть, щоб додати точку (½ висоти = без змін)",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "Клацніть, щоб додати точку; перетягніть її за межі, щоб вилучити",
+    ),
+    (
+        "Click to make this viewer active",
+        "Клацніть, щоб зробити цю область перегляду активною",
+    ),
+    (
+        "Click to reveal the expression in the timeline",
+        "Клацніть, щоб показати вираз на шкалі часу",
+    ),
+    (
+        "Click to show the active composition here",
+        "Клацніть, щоб показати тут активну композицію",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "Клацніть тут, а потім на панелі «Композиція»",
+    ),
     ("Clone Options", "Параметри клонування"),
     ("Clone Source Overlay:", "Накладання джерела клонування:"),
     ("Close", "Закрити"),
@@ -1692,13 +2328,22 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Composition", "Композиція"),
     ("Composition Mini-Flowchart", "Мініблок-схема композиції"),
     ("Composition Name:", "Назва композиції:"),
-    ("Composition Settings ▸ 3D Renderer", "Налаштування композиції ▸ Рушій 3D-рендерингу"),
+    (
+        "Composition Settings ▸ 3D Renderer",
+        "Налаштування композиції ▸ Рушій 3D-рендерингу",
+    ),
     ("Composition Settings…", "Налаштування композиції…"),
-    ("Composition marker bin: drag a marker to the time ruler", "Список маркерів композиції: перетягніть маркер на часову лінійку"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "Список маркерів композиції: перетягніть маркер на часову лінійку",
+    ),
     ("Cone Angle", "Кут конуса"),
     ("Cone Feather", "Розтушовування конуса"),
     ("Constrain Proportions", "Зберігати пропорції"),
-    ("Continuous (Lock Outgoing to Incoming)", "Безперервна (прирівняти вихідну швидкість до вхідної)"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "Безперервна (прирівняти вихідну швидкість до вхідної)",
+    ),
     ("Cue Point", "Сигнальна точка"),
     ("Current Render", "Поточний рендеринг"),
     ("Dark", "Темне"),
@@ -1709,31 +2354,52 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Defaults", "Стандартні значення"),
     ("Delete", "Видалити"),
     ("Delete Selected Points", "Видалити виділені точки"),
-    ("Delete selected project items", "Видалити виділені елементи проєкту"),
+    (
+        "Delete selected project items",
+        "Видалити виділені елементи проєкту",
+    ),
     ("Delete this template", "Видалити цей шаблон"),
     ("Depth of Field", "Глибина різкості"),
     ("Discord", "Discord"),
     ("Distribute Layers:", "Розподілити шари:"),
     ("Don't Recover", "Не відновлювати"),
     ("Don't Save", "Не зберігати"),
-    ("Double-click a layer to open it in the Layer panel", "Двічі клацніть шар, щоб відкрити його на панелі «Шар»"),
-    ("Double-click footage in the Project panel to open it here", "Двічі клацніть матеріал на панелі «Проєкт», щоб відкрити його тут"),
-    ("Double-click to edit the comment", "Двічі клацніть, щоб змінити коментар"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "Двічі клацніть шар, щоб відкрити його на панелі «Шар»",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "Двічі клацніть матеріал на панелі «Проєкт», щоб відкрити його тут",
+    ),
+    (
+        "Double-click to edit the comment",
+        "Двічі клацніть, щоб змінити коментар",
+    ),
     ("Download", "Завантажити"),
     (
         "Drag properties here from the timeline,\nor use Animation > Add Property to Essential Graphics.",
         "Перетягніть сюди властивості зі шкали часу,\nабо скористайтеся командою «Анімація > Додати властивість до основної графіки».",
     ),
     ("Drag to change", "Перетягніть, щоб змінити"),
-    ("Drag to create a guide", "Перетягніть, щоб створити напрямну"),
-    ("Drag to slip the source", "Перетягніть, щоб зсунути матеріал у межах шару"),
+    (
+        "Drag to create a guide",
+        "Перетягніть, щоб створити напрямну",
+    ),
+    (
+        "Drag to slip the source",
+        "Перетягніть, щоб зсунути матеріал у межах шару",
+    ),
     ("Drop Frame", "Пропуск номерів"),
     ("Duplicate", "Дублювати"),
     ("Duration:", "Тривалість:"),
     ("Edit Gradient…", "Редагувати градієнт…"),
     ("Edit Target: {}", "Ціль редагування: {}"),
     ("Edit in the Timeline", "Редагувати на шкалі часу"),
-    ("EffectCraft didn't quit normally last time.", "Минулого разу EffectCraft завершив роботу некоректно."),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "Минулого разу EffectCraft завершив роботу некоректно.",
+    ),
     ("Effects & Presets options", "Параметри ефектів і наборів"),
     ("Effects: {}", "Ефекти: {}"),
     ("Empty folder", "Порожня тека"),
@@ -1745,9 +2411,15 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Export Template…", "Експортувати шаблон…"),
     ("Export...", "Експорт..."),
     ("Expression Language Menu", "Меню мови виразів"),
-    ("Expression pick whip: drag onto a property", "Зв’язування виразу: перетягніть на властивість"),
+    (
+        "Expression pick whip: drag onto a property",
+        "Зв’язування виразу: перетягніть на властивість",
+    ),
     ("Expression:", "Вираз:"),
-    ("Eyedropper: click, then click in the Composition panel", "Піпетка: клацніть тут, а потім на панелі «Композиція»"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "Піпетка: клацніть тут, а потім на панелі «Композиція»",
+    ),
     ("Falloff", "Згасання"),
     ("Falloff Distance", "Відстань згасання"),
     ("Favorites", "Обране"),
@@ -1757,7 +2429,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Finished", "Завершено"),
     ("Flowchart: {}", "Блок-схема: {}"),
     ("Focus Distance", "Відстань фокусування"),
-    ("Follow Feature Rotation and Scale", "Враховувати обертання та масштаб ознаки"),
+    (
+        "Follow Feature Rotation and Scale",
+        "Враховувати обертання та масштаб ознаки",
+    ),
     ("Footage: {}", "Матеріал: {}"),
     ("Format: {}", "Формат: {}"),
     ("Frame Aspect Ratio: {}", "Пропорції кадру: {}"),
@@ -1778,14 +2453,20 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Home", "Головна"),
     ("If Confidence is Below", "Якщо достовірність нижча за"),
     ("Import", "Імпортувати"),
-    ("Import and Add to Composition", "Імпортувати та додати до композиції"),
+    (
+        "Import and Add to Composition",
+        "Імпортувати та додати до композиції",
+    ),
     ("Import...", "Імпорт..."),
     ("Imported media", "Імпортовані матеріали"),
     ("Influence:", "Вплив:"),
     ("Install from File…", "Встановити з файлу…"),
     ("Intensity", "Інтенсивність"),
     ("Inverted", "Інвертовано"),
-    ("Join the ArtCraft community on Discord", "Приєднайтеся до спільноти ArtCraft у Discord"),
+    (
+        "Join the ArtCraft community on Discord",
+        "Приєднайтеся до спільноти ArtCraft у Discord",
+    ),
     ("Key: {}", "Клавіша: {}"),
     ("LEARN", "НАВЧАННЯ"),
     ("Label", "Мітка"),
@@ -1798,7 +2479,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Layer:", "Шар:"),
     ("Layer: {}", "Шар: {}"),
     ("Learn", "Навчання"),
-    ("Leave all attributes in \"{}\"", "Залишити всі атрибути в «{}»"),
+    (
+        "Leave all attributes in \"{}\"",
+        "Залишити всі атрибути в «{}»",
+    ),
     ("Licence: {}", "Ліцензія: {}"),
     ("Ligatures", "Лігатури"),
     ("Light", "Світле"),
@@ -1807,12 +2491,18 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Lighter", "Світліше"),
     ("Link Selected Property", "Зв’язати виділену властивість"),
     ("Location:", "Розташування:"),
-    ("Lock Aspect Ratio to {}", "Зафіксувати співвідношення сторін на {}"),
+    (
+        "Lock Aspect Ratio to {}",
+        "Зафіксувати співвідношення сторін на {}",
+    ),
     ("Lock to Zoom", "Прив’язати до масштабу"),
     ("Locked: {} — {}", "Заблоковано: {} — {}"),
     ("Log:", "Журнал:"),
     ("Loop (Trace Path)", "Цикл (уздовж контуру)"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT OR Apache-2.0 • Шрифти: Inter, JetBrains Mono (OFL)"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT OR Apache-2.0 • Шрифти: Inter, JetBrains Mono (OFL)",
+    ),
     ("Magnification ratio popup", "Меню коефіцієнта збільшення"),
     ("Make Comp Size", "За розміром композиції"),
     ("Masks", "Маски"),
@@ -1820,7 +2510,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Media Replacement", "Заміна матеріалу"),
     ("Mesh:", "Сітка:"),
     ("Diameter:", "Діаметр:"),
-    ("Method Used: {}    Average Error: {} pixels", "Використаний метод: {}    Середня похибка: {} пікселів"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "Використаний метод: {}    Середня похибка: {} пікселів",
+    ),
     ("Models folder: {}", "Тека моделей: {}"),
     ("Modifiers:", "Модифікатори:"),
     ("More", "Більше"),
@@ -1828,7 +2521,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("More tutorials", "Інші уроки"),
     ("Motion Blur", "Розмиття руху"),
     ("Motion Blur: {}", "Розмиття руху: {}"),
-    ("Motion Sketch: drag to record", "Ескіз руху: перетягніть, щоб записати"),
+    (
+        "Motion Sketch: drag to record",
+        "Ескіз руху: перетягніть, щоб записати",
+    ),
     ("Move Down", "Перемістити вниз"),
     ("Move Up", "Перемістити вгору"),
     ("Move to Project Root", "Перемістити до кореня проєкту"),
@@ -1839,35 +2535,62 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("New Comp from Selection", "Нова композиція з виділеного"),
     ("New Duration:", "Нова тривалість:"),
     ("New composition name:", "Назва нової композиції:"),
-    ("New from Render Queue item:", "Створити з елемента черги рендерингу:"),
+    (
+        "New from Render Queue item:",
+        "Створити з елемента черги рендерингу:",
+    ),
     ("New from Template", "Створити із шаблону"),
     ("Next", "Далі"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "Гарна робота. Виберіть інший урок на вкладці «Навчання» головного екрана."),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "Гарна робота. Виберіть інший урок на вкладці «Навчання» головного екрана.",
+    ),
     (
         "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
         "Середовищ VR ще немає. Створіть одне через «Композиція ▸ VR ▸ Створити середовище VR…».",
     ),
     ("No audio layer selected", "Аудіошар не виділено"),
-    ("No background jobs running", "Немає активних фонових завдань"),
+    (
+        "No background jobs running",
+        "Немає активних фонових завдань",
+    ),
     ("No composition markers", "Немає маркерів композиції"),
-    ("No contributor data was built into this copy.", "Ця копія не містить даних про учасників."),
+    (
+        "No contributor data was built into this copy.",
+        "Ця копія не містить даних про учасників.",
+    ),
     (
         "No device list from this host; the system default output is used.",
         "Цей пристрій не надає списку пристроїв; використовується стандартний вихід системи.",
     ),
     ("No layer selected", "Шар не виділено"),
-    ("No matching effects or presets", "Не знайдено відповідних ефектів або наборів"),
+    (
+        "No matching effects or presets",
+        "Не знайдено відповідних ефектів або наборів",
+    ),
     ("No matching fonts", "Не знайдено відповідних шрифтів"),
     ("Variable fonts only", "Лише змінні шрифти"),
-    ("No model credits were built into this copy.", "Ця копія не містить відомостей про моделі."),
+    (
+        "No model credits were built into this copy.",
+        "Ця копія не містить відомостей про моделі.",
+    ),
     ("No nested compositions", "Немає вкладених композицій"),
     ("No shortcut", "Немає клавіатурного скорочення"),
-    ("No unlocked layer selected", "Не виділено жодного розблокованого шару"),
+    (
+        "No unlocked layer selected",
+        "Не виділено жодного розблокованого шару",
+    ),
     ("No video", "Немає відео"),
     ("None", "Немає"),
-    ("Not applied: tick it in the list to add it.", "Не застосовано: позначте в списку, щоб додати."),
+    (
+        "Not applied: tick it in the list to add it.",
+        "Не застосовано: позначте в списку, щоб додати.",
+    ),
     ("Not assigned", "Не призначено"),
-    ("Note: Shadows are only cast from layers with Cast Shadows enabled.", "Примітка: тіні відкидають лише шари з увімкненим параметром «Відкидати тіні»."),
+    (
+        "Note: Shadows are only cast from layers with Cast Shadows enabled.",
+        "Примітка: тіні відкидають лише шари з увімкненим параметром «Відкидати тіні».",
+    ),
     ("Notify", "Сповістити"),
     ("OK", "Гаразд"),
     ("Offset:", "Зсув:"),
@@ -1875,24 +2598,45 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("One-Node Camera", "Одновузлова камера"),
     ("Opacity:", "Непрозорість:"),
     ("Open Composition", "Відкрити композицію"),
-    ("Open Last Saved Project", "Відкрити останній збережений проєкт"),
+    (
+        "Open Last Saved Project",
+        "Відкрити останній збережений проєкт",
+    ),
     ("Open New Composition", "Відкрити нову композицію"),
     ("Open Output", "Відкрити результат"),
-    ("Open a composition to build Essential Graphics", "Відкрийте композицію, щоб створити основну графіку"),
-    ("Open a composition to see its scopes", "Відкрийте композицію, щоб переглянути колірні діаграми"),
-    ("Open a composition to track motion.", "Відкрийте композицію, щоб відстежувати рух."),
+    (
+        "Open a composition to build Essential Graphics",
+        "Відкрийте композицію, щоб створити основну графіку",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "Відкрийте композицію, щоб переглянути колірні діаграми",
+    ),
+    (
+        "Open a composition to track motion.",
+        "Відкрийте композицію, щоб відстежувати рух.",
+    ),
     ("Opus Tuning: {}", "Налаштування Opus: {}"),
     ("Original Duration:", "Початкова тривалість:"),
     ("Output Cycle: {}", "Цикл виводу: {}"),
     ("Output To:", "Вивести до:"),
     ("Overlay", "Накладання"),
     ("Parameter Name:", "Назва параметра:"),
-    ("Parent pick whip: drag onto a layer", "Зв’язування батьківського шару: перетягніть на шар"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "Зв’язування батьківського шару: перетягніть на шар",
+    ),
     ("Pixel Aspect Ratio:", "Пропорції пікселя:"),
     ("Playing on Video Preview", "Відтворення на відеоперегляді"),
     ("Post-Render Action: {}", "Дія після рендерингу: {}"),
-    ("Preserve frame rate when nested or in render queue", "Зберігати частоту кадрів у вкладених композиціях або черзі рендерингу"),
-    ("Preserve resolution when nested", "Зберігати роздільність у вкладених композиціях"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "Зберігати частоту кадрів у вкладених композиціях або черзі рендерингу",
+    ),
+    (
+        "Preserve resolution when nested",
+        "Зберігати роздільність у вкладених композиціях",
+    ),
     ("Preset", "Набір"),
     ("Preset:", "Набір:"),
     ("Presets", "Набори"),
@@ -1906,7 +2650,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ),
     ("Project: {}", "Проєкт: {}"),
     ("Projects", "Проєкти"),
-    ("Property pick whip: drag onto a property", "Зв’язування властивості: перетягніть на властивість"),
+    (
+        "Property pick whip: drag onto a property",
+        "Зв’язування властивості: перетягніть на властивість",
+    ),
     ("Protected Region", "Захищена область"),
     ("Proxy Use: {}", "Використання проксі: {}"),
     ("Push All to Comp", "Застосувати все до композиції"),
@@ -1916,7 +2663,10 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Recording", "Запис"),
     ("Remove", "Вилучити"),
     ("Rename", "Перейменувати"),
-    ("Render: {} ms  •  UI {} fps{}", "Рендеринг: {} мс  •  Інтерфейс {} кадр/с{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "Рендеринг: {} мс  •  Інтерфейс {} кадр/с{}",
+    ),
     ("Renderer:", "Рушій рендерингу:"),
     ("Request Persistent Storage", "Запросити постійне сховище"),
     ("Reset", "Скинути"),
@@ -1924,39 +2674,75 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Reset Preset", "Скинути набір"),
     ("Reset to Default", "Відновити стандартні значення"),
     ("Reset to Saved Layout", "Відновити збережене компонування"),
-    ("Resolution/Down Sample Factor Popup", "Меню роздільності та коефіцієнта зменшення"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "Меню роздільності та коефіцієнта зменшення",
+    ),
     ("Restore Panel Size", "Відновити розмір панелі"),
     ("Reverse the order", "Обернути порядок"),
     ("Revert All", "Відновити все"),
-    ("Roman Hanging Punctuation", "Висячі латинські розділові знаки"),
+    (
+        "Roman Hanging Punctuation",
+        "Висячі латинські розділові знаки",
+    ),
     ("Roving:", "Автоматичний час:"),
-    ("Ruler zero point (drag to move, double-click to reset)", "Початок лінійки (перетягніть, щоб перемістити; двічі клацніть, щоб скинути)"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "Початок лінійки (перетягніть, щоб перемістити; двічі клацніть, щоб скинути)",
+    ),
     ("Rulers", "Лінійки"),
     ("Run", "Виконати"),
     ("Sample Format: {}", "Формат вибірок: {}"),
     ("Samples Per Frame:", "Вибірок на кадр:"),
     ("Save from #{}", "Зберегти з #{}"),
     ("Saved {}", "Збережено {}"),
-    ("Script… (⌘/Ctrl+Enter runs)", "Скрипт… (⌘/Ctrl+Enter запускає)"),
-    ("Search commands or shortcuts", "Пошук команд або клавіатурних скорочень"),
+    (
+        "Script… (⌘/Ctrl+Enter runs)",
+        "Скрипт… (⌘/Ctrl+Enter запускає)",
+    ),
+    (
+        "Search commands or shortcuts",
+        "Пошук команд або клавіатурних скорочень",
+    ),
     ("Select", "Виділити"),
-    ("Select a command to change its shortcut.", "Виберіть команду, щоб змінити її клавіатурне скорочення."),
-    ("Select a layer to see its effects", "Виділіть шар, щоб переглянути його ефекти"),
-    ("Select a layer to see its properties", "Виділіть шар, щоб переглянути його властивості"),
+    (
+        "Select a command to change its shortcut.",
+        "Виберіть команду, щоб змінити її клавіатурне скорочення.",
+    ),
+    (
+        "Select a layer to see its effects",
+        "Виділіть шар, щоб переглянути його ефекти",
+    ),
+    (
+        "Select a layer to see its properties",
+        "Виділіть шар, щоб переглянути його властивості",
+    ),
     ("({}) Selected Objects", "Вибрано об’єктів: ({})"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "Виділіть шар із маскою або контуром фігури (або властивість контуру) чи опорні точки деформації.",
     ),
     ("Select a text layer", "Виділіть текстовий шар"),
-    ("Select an item in the Project panel", "Виділіть елемент на панелі «Проєкт»"),
-    ("Select animated properties to show them in the Graph Editor", "Виділіть анімовані властивості, щоб показати їх у редакторі графіків"),
+    (
+        "Select an item in the Project panel",
+        "Виділіть елемент на панелі «Проєкт»",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "Виділіть анімовані властивості, щоб показати їх у редакторі графіків",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "Виділіть провідну опорну точку, а потім клацніть із Shift точки, які мають рухатися за нею (волосся, тканина, хвости)",
     ),
-    ("Set Ground Plane and Origin", "Задати площину землі та початок координат"),
-    ("Set Paint Colors to Black and White (D)", "Задати чорний і білий кольори малювання (D)"),
+    (
+        "Set Ground Plane and Origin",
+        "Задати площину землі та початок координат",
+    ),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "Задати чорний і білий кольори малювання (D)",
+    ),
     ("Settings", "Налаштування"),
     ("Settings Name:", "Назва налаштувань:"),
     ("Shadow Darkness", "Темнота тіні"),
@@ -1991,22 +2777,37 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Stretch Factor:", "Коефіцієнт розтягнення:"),
     ("Stylistic Sets", "Стилістичні набори"),
     ("Subpixel Positioning", "Субпіксельне позиціювання"),
-    ("Swap Paint Colors (X)", "Поміняти місцями кольори малювання (X)"),
+    (
+        "Swap Paint Colors (X)",
+        "Поміняти місцями кольори малювання (X)",
+    ),
     ("Sync with System", "Синхронізувати з системою"),
     ("System Default", "Стандартне системне"),
     ("Table", "Таблиця"),
     ("Template name", "Назва шаблону"),
     ("Template: {}\n{}", "Шаблон: {}\n{}"),
     ("Temporal Interpolation:", "Часова інтерполяція:"),
-    ("The Media Browser is not available here (use File ▸ Import)", "Браузер матеріалів тут недоступний (скористайтеся меню «Файл ▸ Імпорт»)"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "Шар OpenEXR, показаний у червоному, зеленому, синьому та альфа-каналі"),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "Браузер матеріалів тут недоступний (скористайтеся меню «Файл ▸ Імпорт»)",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "Шар OpenEXR, показаний у червоному, зеленому, синьому та альфа-каналі",
+    ),
     ("The render queue is empty.", "Черга рендерингу порожня."),
     (
         "These adjacent keyframes cannot interpolate because their stop counts differ.",
         "Ці сусідні ключові кадри не можуть інтерполюватися, бо кількість точок у них різна.",
     ),
-    ("This ScriptUI panel has closed", "Цю панель ScriptUI закрито"),
-    ("This change will create a new solid for this layer.", "Ця зміна створить новий матеріал суцільного кольору для цього шару."),
+    (
+        "This ScriptUI panel has closed",
+        "Цю панель ScriptUI закрито",
+    ),
+    (
+        "This change will create a new solid for this layer.",
+        "Ця зміна створить новий матеріал суцільного кольору для цього шару.",
+    ),
     ("Time", "Час"),
     ("Time Stretch…", "Розтягнення часу…"),
     ("Time:", "Час:"),
@@ -2028,8 +2829,14 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("URL:", "URL:"),
     ("Undock Panel", "Від’єднати панель"),
     ("Unfreeze", "Розморозити"),
-    ("Move Panel to New Window", "Перемістити панель у нове вікно"),
-    ("Move Panel to Main Window", "Перемістити панель у головне вікно"),
+    (
+        "Move Panel to New Window",
+        "Перемістити панель у нове вікно",
+    ),
+    (
+        "Move Panel to Main Window",
+        "Перемістити панель у головне вікно",
+    ),
     ("Unlink {}", "Від’єднати {}"),
     (
         "Use this option to place the currently selected layers together into a new intermediate composition.",
@@ -2043,24 +2850,45 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "Ласкаво просимо до EffectCraft"),
     ("Width:", "Ширина:"),
     ("You can undo this.", "Це можна скасувати."),
-    ("Your changes will be lost if you don't save them.", "Якщо не зберегти зміни, їх буде втрачено."),
+    (
+        "Your changes will be lost if you don't save them.",
+        "Якщо не зберегти зміни, їх буде втрачено.",
+    ),
     ("Zoom", "Масштаб"),
     ("built-in", "вбудований"),
     ("frames per second", "кадрів за секунду"),
     ("template name", "назва шаблону"),
-    ("{} contributors · {} commits", "Учасники: {} · Фіксації змін: {}"),
-    ("{} x {}, {}MB per 8bpc frame", "{} x {}, {} МБ на кадр 8bpc"),
+    (
+        "{} contributors · {} commits",
+        "Учасники: {} · Фіксації змін: {}",
+    ),
+    (
+        "{} x {}, {}MB per 8bpc frame",
+        "{} x {}, {} МБ на кадр 8bpc",
+    ),
     ("{} — coming soon", "{} — незабаром"),
-    ("{} — double-click to open, {}-click to reveal", "{} — двічі клацніть, щоб відкрити; клацніть із {}, щоб показати розташування"),
-    ("⌘/Ctrl-drag a pin to record its motion", "Перетягніть опорну точку з ⌘/Ctrl, щоб записати її рух"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{} — двічі клацніть, щоб відкрити; клацніть із {}, щоб показати розташування",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "Перетягніть опорну точку з ⌘/Ctrl, щоб записати її рух",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {} використовується в:"),
     // Strings a panel used to hand to a helper as a bare literal: the helper draws them (the
     // viewer's toolbar tooltips and popup items, the solid dialog's checkbox), so the lookup has
     // to reach the catalog from inside the helper. Kept at the end so the catalogs stay parallel.
     ("3D Reference Axes", "Опорні осі 3D"),
-    ("Affect all layers that use this solid", "Застосувати до всіх шарів, що використовують цей суцільний колір"),
-    ("Choose grid and guide options", "Вибрати параметри сітки та напрямних"),
+    (
+        "Affect all layers that use this solid",
+        "Застосувати до всіх шарів, що використовують цей суцільний колір",
+    ),
+    (
+        "Choose grid and guide options",
+        "Вибрати параметри сітки та напрямних",
+    ),
     ("Colorize", "Розфарбувати"),
     ("Custom", "Власна"),
     ("Custom...", "Власна..."),
@@ -2068,58 +2896,103 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("Fit up to 100%", "Підігнати (макс. 100%)"),
     ("Full", "Повна"),
     ("Half", "Половина"),
-    ("Only this layer uses this solid.", "Цей суцільний колір використовує лише цей шар."),
+    (
+        "Only this layer uses this solid.",
+        "Цей суцільний колір використовує лише цей шар.",
+    ),
     ("Proportional Grid", "Пропорційна сітка"),
     ("Quarter", "Чверть"),
     ("Region of Interest", "Область інтересу"),
     ("Reset Exposure", "Скинути експозицію"),
-    ("Show Channel and Color Management Settings", "Показати канал і параметри керування кольором"),
+    (
+        "Show Channel and Color Management Settings",
+        "Показати канал і параметри керування кольором",
+    ),
     ("Show Snapshot (hold)", "Показати знімок (утримуйте)"),
     ("Take Snapshot", "Зробити знімок"),
     ("Third", "Третина"),
-    ("Toggle Mask and Shape Path Visibility", "Перемкнути видимість контурів масок і фігур"),
+    (
+        "Toggle Mask and Shape Path Visibility",
+        "Перемкнути видимість контурів масок і фігур",
+    ),
     ("Toggle Transparency Grid", "Перемкнути сітку прозорості"),
     // Technical terms and proper nouns: the project settings, the import and export forms, the
     // viewer's channel and Fast Previews popups, the keyframe dialogs and the About window. The
     // terms that read the same in Ukrainian (Display P3, HDTV (Rec. 709), RGB, H.264, ProRes…)
     // need no row: a missing row falls back to the English source, which is the decision.
     ("16 bits per channel", "16 бітів на канал"),
-    ("32 bits per channel (float)", "32 біти на канал (з плаваючою комою)"),
+    (
+        "32 bits per channel (float)",
+        "32 біти на канал (з плаваючою комою)",
+    ),
     ("8 bits per channel", "8 бітів на канал"),
     ("Adaptive Resolution", "Адаптивна роздільність"),
     ("Adobe-style built-in", "Вбудований у стилі Adobe"),
     ("Blue", "Синій"),
     ("Current Settings", "Поточні налаштування"),
-    ("Disable Per-character 3D", "Вимкнути 3D для кожного символу"),
+    (
+        "Disable Per-character 3D",
+        "Вимкнути 3D для кожного символу",
+    ),
     ("Draft", "Чорнова"),
-    ("Enable Per-character 3D", "Увімкнути 3D для кожного символу"),
+    (
+        "Enable Per-character 3D",
+        "Увімкнути 3D для кожного символу",
+    ),
     ("Fast Draft", "Швидка чорнова"),
-    ("Fast Previews (Draft 3D, Faster Effects)", "Швидкий перегляд (чорновий 3D, швидші ефекти)"),
+    (
+        "Fast Previews (Draft 3D, Faster Effects)",
+        "Швидкий перегляд (чорновий 3D, швидші ефекти)",
+    ),
     ("Green", "Зелений"),
     ("Import Image Sequence", "Імпорт послідовності зображень"),
-    ("Import PDF / Illustrator File", "Імпорт файлу PDF / Illustrator"),
+    (
+        "Import PDF / Illustrator File",
+        "Імпорт файлу PDF / Illustrator",
+    ),
     ("Import Photoshop File", "Імпорт файлу Photoshop"),
-    ("Interpret Unlabeled Alpha As", "Інтерпретувати непозначену альфу як"),
-    ("Join the ArtCraft Discord", "Приєднатися до Discord ArtCraft"),
-    ("Mercury GPU Acceleration ({})", "Прискорення Mercury GPU ({})"),
+    (
+        "Interpret Unlabeled Alpha As",
+        "Інтерпретувати непозначену альфу як",
+    ),
+    (
+        "Join the ArtCraft Discord",
+        "Приєднатися до Discord ArtCraft",
+    ),
+    (
+        "Mercury GPU Acceleration ({})",
+        "Прискорення Mercury GPU ({})",
+    ),
     ("Mercury Software Only", "Лише програмний Mercury"),
-    ("OCIO (built-in ACES config)", "OCIO (вбудована конфігурація ACES)"),
+    (
+        "OCIO (built-in ACES config)",
+        "OCIO (вбудована конфігурація ACES)",
+    ),
     ("Off (Final Quality)", "Вимкнено (остаточна якість)"),
     ("OpenGL (compatibility)", "OpenGL (сумісність)"),
     ("Opus Bitrate: {} kbps", "Бітрейт Opus: {} кбіт/с"),
     ("RGB Straight", "RGB (прямий)"),
     ("Red", "Червоний"),
     ("Tone map", "Тональне відображення"),
-    ("Use In-Window Menu Bar on macOS", "Використовувати смугу меню у вікні на macOS"),
+    (
+        "Use In-Window Menu Bar on macOS",
+        "Використовувати смугу меню у вікні на macOS",
+    ),
     ("Wireframe", "Каркас"),
-    ("sRGB IEC61966-2.1 (default)", "sRGB IEC61966-2.1 (стандартний)"),
+    (
+        "sRGB IEC61966-2.1 (default)",
+        "sRGB IEC61966-2.1 (стандартний)",
+    ),
     // The Home screen (#574).
     ("New Project", "Новий проєкт"),
     ("Open Project…", "Відкрити проєкт…"),
     ("Templates", "Шаблони"),
     ("EffectCraft home page", "Домашня сторінка EffectCraft"),
     ("EffectCraft on GitHub", "EffectCraft на GitHub"),
-    ("Motion graphics and visual effects · version {}", "Анімована графіка та візуальні ефекти · версія {}"),
+    (
+        "Motion graphics and visual effects · version {}",
+        "Анімована графіка та візуальні ефекти · версія {}",
+    ),
     ("New Composition", "Нова композиція"),
     ("Open Demo Project", "Відкрити демонстраційний проєкт"),
     ("Import Footage…", "Імпортувати матеріал…"),
@@ -2128,10 +3001,22 @@ const UKRAINIAN: &[(&str, &str)] = &[
     ("OPENED", "ВІДКРИТО"),
     ("SIZE", "РОЗМІР"),
     ("KIND", "ТИП"),
-    ("Your recent files will show here", "Тут з’являться ваші нещодавні файли"),
-    ("Create a new project, or open the demo project to look around.", "Створіть новий проєкт або відкрийте демонстраційний, щоб ознайомитися з програмою."),
-    ("No recent files match the filter", "Немає нещодавніх файлів, що відповідають фільтру"),
-    ("Try another name or folder.", "Спробуйте іншу назву або теку."),
+    (
+        "Your recent files will show here",
+        "Тут з’являться ваші нещодавні файли",
+    ),
+    (
+        "Create a new project, or open the demo project to look around.",
+        "Створіть новий проєкт або відкрийте демонстраційний, щоб ознайомитися з програмою.",
+    ),
+    (
+        "No recent files match the filter",
+        "Немає нещодавніх файлів, що відповідають фільтру",
+    ),
+    (
+        "Try another name or folder.",
+        "Спробуйте іншу назву або теку.",
+    ),
     ("Just now", "Щойно"),
     ("Yesterday", "Учора"),
     // `format_ago` picks between one and many, while Ukrainian declines the noun for 1, for 2–4
@@ -2163,7 +3048,10 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("About EffectCraft", "Sobre o EffectCraft"),
     ("About...", "Sobre..."),
     ("Active Camera", "Câmera ativa"),
-    ("Adapt Feature On Every Frame", "Adaptar o recurso em cada quadro"),
+    (
+        "Adapt Feature On Every Frame",
+        "Adaptar o recurso em cada quadro",
+    ),
     ("Adaptive Sample Limit:", "Limite de amostras adaptativas:"),
     ("Add Animator", "Adicionar animador"),
     ("Add Comment", "Adicionar comentário"),
@@ -2172,15 +3060,24 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Add Mirror", "Adicionar espelho"),
     ("Add Selected As", "Adicionar selecionados como"),
     ("Add a comment", "Adicionar um comentário"),
-    ("Add a shape, fill, stroke or path operation", "Adicionar uma forma, preenchimento, traço ou operação de caminho"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "Adicionar uma forma, preenchimento, traço ou operação de caminho",
+    ),
     ("Add to Composition", "Adicionar à composição"),
     ("Add to Favorites", "Adicionar aos favoritos"),
     ("Add:", "Adicionar:"),
     ("Adjust Exposure (stops)", "Ajustar exposição (stops)"),
-    ("Adjust composition duration to the time span of the selected layers", "Ajustar a duração da composição ao intervalo de tempo das camadas selecionadas"),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "Ajustar a duração da composição ao intervalo de tempo das camadas selecionadas",
+    ),
     ("Advanced 3D", "3D avançado"),
     ("Align Layers to:", "Alinhar camadas a:"),
-    ("All six face cameras turn together; the scene is not changed.", "As seis câmeras das faces giram juntas; a cena não é alterada."),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "As seis câmeras das faces giram juntas; a cena não é alterada.",
+    ),
     ("Anchor:", "Âncora:"),
     ("Aperture", "Abertura"),
     ("Apply Dimensions:", "Aplicar dimensões:"),
@@ -2213,13 +3110,34 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Classic 3D", "3D clássico"),
     ("Clear", "Limpar"),
     ("Clear list", "Limpar lista"),
-    ("Click a key to see its commands.", "Clique em uma tecla para ver seus comandos."),
-    ("Click adds a point (½ height = no change)", "Clique adiciona um ponto (½ altura = sem alteração)"),
-    ("Click adds a point; drag one off to remove", "Clique adiciona um ponto; arraste um para fora para remover"),
-    ("Click to make this viewer active", "Clique para tornar este visualizador ativo"),
-    ("Click to reveal the expression in the timeline", "Clique para revelar a expressão na linha do tempo"),
-    ("Click to show the active composition here", "Clique para mostrar a composição ativa aqui"),
-    ("Click, then click in the Composition panel", "Clique e depois clique no painel Composição"),
+    (
+        "Click a key to see its commands.",
+        "Clique em uma tecla para ver seus comandos.",
+    ),
+    (
+        "Click adds a point (½ height = no change)",
+        "Clique adiciona um ponto (½ altura = sem alteração)",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "Clique adiciona um ponto; arraste um para fora para remover",
+    ),
+    (
+        "Click to make this viewer active",
+        "Clique para tornar este visualizador ativo",
+    ),
+    (
+        "Click to reveal the expression in the timeline",
+        "Clique para revelar a expressão na linha do tempo",
+    ),
+    (
+        "Click to show the active composition here",
+        "Clique para mostrar a composição ativa aqui",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "Clique e depois clique no painel Composição",
+    ),
     ("Clone Options", "Opções de clone"),
     ("Clone Source Overlay:", "Sobreposição da origem do clone:"),
     ("Close", "Fechar"),
@@ -2235,13 +3153,22 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Composition", "Composição"),
     ("Composition Mini-Flowchart", "Minifluxograma da composição"),
     ("Composition Name:", "Nome da composição:"),
-    ("Composition Settings ▸ 3D Renderer", "Configurações da composição ▸ Renderizador 3D"),
+    (
+        "Composition Settings ▸ 3D Renderer",
+        "Configurações da composição ▸ Renderizador 3D",
+    ),
     ("Composition Settings…", "Configurações da composição…"),
-    ("Composition marker bin: drag a marker to the time ruler", "Compartimento de marcadores da composição: arraste um marcador para a régua de tempo"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "Compartimento de marcadores da composição: arraste um marcador para a régua de tempo",
+    ),
     ("Cone Angle", "Ângulo do cone"),
     ("Cone Feather", "Suavização do cone"),
     ("Constrain Proportions", "Restringir proporções"),
-    ("Continuous (Lock Outgoing to Incoming)", "Contínuo (travar saída na entrada)"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "Contínuo (travar saída na entrada)",
+    ),
     ("Cue Point", "Ponto de cue"),
     ("Current Render", "Renderização atual"),
     ("Darker", "Mais escuro"),
@@ -2250,16 +3177,28 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Defaults", "Padrões"),
     ("Delete", "Excluir"),
     ("Delete Selected Points", "Excluir pontos selecionados"),
-    ("Delete selected project items", "Excluir itens de projeto selecionados"),
+    (
+        "Delete selected project items",
+        "Excluir itens de projeto selecionados",
+    ),
     ("Delete this template", "Excluir este modelo"),
     ("Depth of Field", "Profundidade de campo"),
     ("Discord", "Discord"),
     ("Distribute Layers:", "Distribuir camadas:"),
     ("Don't Recover", "Não recuperar"),
     ("Don't Save", "Não salvar"),
-    ("Double-click a layer to open it in the Layer panel", "Clique duas vezes em uma camada para abri-la no painel Camada"),
-    ("Double-click footage in the Project panel to open it here", "Clique duas vezes em uma mídia no painel Projeto para abri-la aqui"),
-    ("Double-click to edit the comment", "Clique duas vezes para editar o comentário"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "Clique duas vezes em uma camada para abri-la no painel Camada",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "Clique duas vezes em uma mídia no painel Projeto para abri-la aqui",
+    ),
+    (
+        "Double-click to edit the comment",
+        "Clique duas vezes para editar o comentário",
+    ),
     ("Download", "Baixar"),
     (
         "Drag properties here from the timeline,\nor use Animation > Add Property to Essential Graphics.",
@@ -2274,8 +3213,14 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Edit Gradient…", "Editar gradiente…"),
     ("Edit Target: {}", "Editar destino: {}"),
     ("Edit in the Timeline", "Editar na linha do tempo"),
-    ("EffectCraft didn't quit normally last time.", "O EffectCraft não foi encerrado normalmente da última vez."),
-    ("Effects & Presets options", "Opções de Efeitos e predefinições"),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "O EffectCraft não foi encerrado normalmente da última vez.",
+    ),
+    (
+        "Effects & Presets options",
+        "Opções de Efeitos e predefinições",
+    ),
     ("Effects: {}", "Efeitos: {}"),
     ("Empty folder", "Pasta vazia"),
     ("Enable Depth of Field", "Ativar profundidade de campo"),
@@ -2286,9 +3231,15 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Export Template…", "Exportar modelo…"),
     ("Export...", "Exportar..."),
     ("Expression Language Menu", "Menu de linguagem de expressão"),
-    ("Expression pick whip: drag onto a property", "Pick whip de expressão: arraste até uma propriedade"),
+    (
+        "Expression pick whip: drag onto a property",
+        "Pick whip de expressão: arraste até uma propriedade",
+    ),
     ("Expression:", "Expressão:"),
-    ("Eyedropper: click, then click in the Composition panel", "Conta-gotas: clique e depois clique no painel Composição"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "Conta-gotas: clique e depois clique no painel Composição",
+    ),
     ("Falloff", "Atenuação"),
     ("Falloff Distance", "Distância de atenuação"),
     ("Favorites", "Favoritos"),
@@ -2298,13 +3249,19 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Finished", "Concluído"),
     ("Flowchart: {}", "Fluxograma: {}"),
     ("Focus Distance", "Distância de foco"),
-    ("Follow Feature Rotation and Scale", "Acompanhar rotação e escala do recurso"),
+    (
+        "Follow Feature Rotation and Scale",
+        "Acompanhar rotação e escala do recurso",
+    ),
     ("Footage: {}", "Mídia: {}"),
     ("Format: {}", "Formato: {}"),
     ("Frame Aspect Ratio: {}", "Proporção do quadro: {}"),
     ("Frame Blending: {}", "Mesclagem de quadros: {}"),
     ("Frame Rate:", "Taxa de quadros:"),
-    ("Frame Render Time  {}ms", "Tempo de renderização do quadro  {}ms"),
+    (
+        "Frame Render Time  {}ms",
+        "Tempo de renderização do quadro  {}ms",
+    ),
     ("Frame Target:", "Destino do quadro:"),
     ("Grab bag", "Lista"),
     ("Grid", "Grade"),
@@ -2317,14 +3274,20 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Home", "Início"),
     ("If Confidence is Below", "Se a confiança for inferior a"),
     ("Import", "Importar"),
-    ("Import and Add to Composition", "Importar e adicionar à composição"),
+    (
+        "Import and Add to Composition",
+        "Importar e adicionar à composição",
+    ),
     ("Import...", "Importar..."),
     ("Imported media", "Mídia importada"),
     ("Influence:", "Influência:"),
     ("Install from File…", "Instalar a partir de arquivo…"),
     ("Intensity", "Intensidade"),
     ("Inverted", "Invertido"),
-    ("Join the ArtCraft community on Discord", "Entre na comunidade ArtCraft no Discord"),
+    (
+        "Join the ArtCraft community on Discord",
+        "Entre na comunidade ArtCraft no Discord",
+    ),
     ("Key: {}", "Tecla: {}"),
     ("LEARN", "APRENDER"),
     ("Label", "Rótulo"),
@@ -2337,7 +3300,10 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Layer:", "Camada:"),
     ("Layer: {}", "Camada: {}"),
     ("Learn", "Aprender"),
-    ("Leave all attributes in \"{}\"", "Manter todos os atributos em \"{}\""),
+    (
+        "Leave all attributes in \"{}\"",
+        "Manter todos os atributos em \"{}\"",
+    ),
     ("Licence: {}", "Licença: {}"),
     ("Ligatures", "Ligaduras"),
     ("Light Type", "Tipo de luz"),
@@ -2348,15 +3314,24 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Locked: {} — {}", "Travado: {} / {}"),
     ("Log:", "Registro:"),
     ("Loop (Trace Path)", "Laço (traçar caminho)"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT OU Apache-2.0 • Fontes: Inter, JetBrains Mono (OFL)"),
-    ("Magnification ratio popup", "Menu de proporção de ampliação"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT OU Apache-2.0 • Fontes: Inter, JetBrains Mono (OFL)",
+    ),
+    (
+        "Magnification ratio popup",
+        "Menu de proporção de ampliação",
+    ),
     ("Make Comp Size", "Ajustar ao tamanho da composição"),
     ("Masks", "Máscaras"),
     ("Maximize Panel", "Maximizar painel"),
     ("Media Replacement", "Substituição de mídia"),
     ("Mesh:", "Malha:"),
     ("Diameter:", "Diâmetro:"),
-    ("Method Used: {}    Average Error: {} pixels", "Método usado: {}    Erro médio: {} pixels"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "Método usado: {}    Erro médio: {} pixels",
+    ),
     ("Models folder: {}", "Pasta de modelos: {}"),
     ("Modifiers:", "Modificadores:"),
     ("More", "Mais"),
@@ -2364,7 +3339,10 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("More tutorials", "Mais tutoriais"),
     ("Motion Blur", "Desfoque de movimento"),
     ("Motion Blur: {}", "Desfoque de movimento: {}"),
-    ("Motion Sketch: drag to record", "Motion Sketch: arraste para gravar"),
+    (
+        "Motion Sketch: drag to record",
+        "Motion Sketch: arraste para gravar",
+    ),
     ("Move Down", "Mover para baixo"),
     ("Move Up", "Mover para cima"),
     ("Move to Project Root", "Mover para a raiz do projeto"),
@@ -2372,32 +3350,65 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Name:", "Nome:"),
     ("Navigation", "Navegação"),
     ("New", "Novo"),
-    ("New Comp from Selection", "Nova composição a partir da seleção"),
+    (
+        "New Comp from Selection",
+        "Nova composição a partir da seleção",
+    ),
     ("New Duration:", "Nova duração:"),
     ("New composition name:", "Nome da nova composição:"),
-    ("New from Render Queue item:", "Novo a partir do item da fila de renderização:"),
+    (
+        "New from Render Queue item:",
+        "Novo a partir do item da fila de renderização:",
+    ),
     ("New from Template", "Novo a partir de modelo"),
     ("Next", "Próximo"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "Bom trabalho. Escolha outro tutorial na guia Aprender da tela Início."),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "Bom trabalho. Escolha outro tutorial na guia Aprender da tela Início.",
+    ),
     (
         "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
         "Nenhum ambiente de RV ainda. Crie um com Composição ▸ RV ▸ Criar ambiente de RV…",
     ),
-    ("No audio layer selected", "Nenhuma camada de áudio selecionada"),
-    ("No background jobs running", "Nenhuma tarefa em segundo plano em execução"),
+    (
+        "No audio layer selected",
+        "Nenhuma camada de áudio selecionada",
+    ),
+    (
+        "No background jobs running",
+        "Nenhuma tarefa em segundo plano em execução",
+    ),
     ("No composition markers", "Nenhum marcador de composição"),
-    ("No contributor data was built into this copy.", "Nenhum dado de colaboradores foi incluído nesta cópia."),
-    ("No device list from this host; the system default output is used.", "Este host não forneceu lista de dispositivos; a saída padrão do sistema é usada."),
+    (
+        "No contributor data was built into this copy.",
+        "Nenhum dado de colaboradores foi incluído nesta cópia.",
+    ),
+    (
+        "No device list from this host; the system default output is used.",
+        "Este host não forneceu lista de dispositivos; a saída padrão do sistema é usada.",
+    ),
     ("No layer selected", "Nenhuma camada selecionada"),
-    ("No matching effects or presets", "Nenhum efeito ou predefinição correspondente"),
+    (
+        "No matching effects or presets",
+        "Nenhum efeito ou predefinição correspondente",
+    ),
     ("No matching fonts", "Nenhuma fonte correspondente"),
-    ("No model credits were built into this copy.", "Nenhum crédito de modelos foi incluído nesta cópia."),
+    (
+        "No model credits were built into this copy.",
+        "Nenhum crédito de modelos foi incluído nesta cópia.",
+    ),
     ("No nested compositions", "Nenhuma composição aninhada"),
     ("No shortcut", "Sem atalho"),
-    ("No unlocked layer selected", "Nenhuma camada desbloqueada selecionada"),
+    (
+        "No unlocked layer selected",
+        "Nenhuma camada desbloqueada selecionada",
+    ),
     ("No video", "Sem vídeo"),
     ("None", "Nenhum"),
-    ("Not applied: tick it in the list to add it.", "Não aplicado: marque-o na lista para adicioná-lo."),
+    (
+        "Not applied: tick it in the list to add it.",
+        "Não aplicado: marque-o na lista para adicioná-lo.",
+    ),
     ("Not assigned", "Não atribuído"),
     (
         "Note: Shadows are only cast from layers with Cast Shadows enabled.",
@@ -2413,20 +3424,41 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Open Last Saved Project", "Abrir último projeto salvo"),
     ("Open New Composition", "Abrir nova composição"),
     ("Open Output", "Abrir saída"),
-    ("Open a composition to build Essential Graphics", "Abra uma composição para criar Gráficos essenciais"),
-    ("Open a composition to see its scopes", "Abra uma composição para ver seus scopes"),
-    ("Open a composition to track motion.", "Abra uma composição para rastrear movimento."),
+    (
+        "Open a composition to build Essential Graphics",
+        "Abra uma composição para criar Gráficos essenciais",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "Abra uma composição para ver seus scopes",
+    ),
+    (
+        "Open a composition to track motion.",
+        "Abra uma composição para rastrear movimento.",
+    ),
     ("Opus Tuning: {}", "Ajuste do Opus: {}"),
     ("Original Duration:", "Duração original:"),
     ("Output Cycle: {}", "Ciclo de saída: {}"),
     ("Output To:", "Saída para:"),
     ("Parameter Name:", "Nome do parâmetro:"),
-    ("Parent pick whip: drag onto a layer", "Pick whip de pai: arraste até uma camada"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "Pick whip de pai: arraste até uma camada",
+    ),
     ("Pixel Aspect Ratio:", "Proporção de pixel:"),
-    ("Playing on Video Preview", "Reproduzindo na visualização de vídeo"),
+    (
+        "Playing on Video Preview",
+        "Reproduzindo na visualização de vídeo",
+    ),
     ("Post-Render Action: {}", "Ação pós-renderização: {}"),
-    ("Preserve frame rate when nested or in render queue", "Preservar a taxa de quadros quando aninhada ou na fila de renderização"),
-    ("Preserve resolution when nested", "Preservar a resolução quando aninhada"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "Preservar a taxa de quadros quando aninhada ou na fila de renderização",
+    ),
+    (
+        "Preserve resolution when nested",
+        "Preservar a resolução quando aninhada",
+    ),
     ("Preset", "Predefinição"),
     ("Preset:", "Predefinição:"),
     ("Presets", "Predefinições"),
@@ -2440,7 +3472,10 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ),
     ("Project: {}", "Projeto: {}"),
     ("Projects", "Projetos"),
-    ("Property pick whip: drag onto a property", "Pick whip de propriedade: arraste até uma propriedade"),
+    (
+        "Property pick whip: drag onto a property",
+        "Pick whip de propriedade: arraste até uma propriedade",
+    ),
     ("Protected Region", "Região protegida"),
     ("Proxy Use: {}", "Uso de proxy: {}"),
     ("Push All to Comp", "Enviar tudo para a composição"),
@@ -2450,47 +3485,86 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Recording", "Gravando"),
     ("Remove", "Remover"),
     ("Rename", "Renomear"),
-    ("Render: {} ms  •  UI {} fps{}", "Renderização: {} ms  •  IU {} fps{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "Renderização: {} ms  •  IU {} fps{}",
+    ),
     ("Renderer:", "Renderizador:"),
-    ("Request Persistent Storage", "Solicitar armazenamento persistente"),
+    (
+        "Request Persistent Storage",
+        "Solicitar armazenamento persistente",
+    ),
     ("Reset", "Redefinir"),
     ("Reset Labels", "Redefinir rótulos"),
     ("Reset Preset", "Redefinir predefinição"),
     ("Reset to Default", "Redefinir para o padrão"),
     ("Reset to Saved Layout", "Redefinir para o layout salvo"),
-    ("Resolution/Down Sample Factor Popup", "Menu de resolução/fator de redução de amostragem"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "Menu de resolução/fator de redução de amostragem",
+    ),
     ("Restore Panel Size", "Restaurar tamanho do painel"),
     ("Reverse the order", "Inverter a ordem"),
     ("Revert All", "Reverter tudo"),
     ("Roman Hanging Punctuation", "Pontuação romana suspensa"),
     ("Roving:", "Roving:"),
-    ("Ruler zero point (drag to move, double-click to reset)", "Ponto zero da régua (arraste para mover, clique duas vezes para redefinir)"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "Ponto zero da régua (arraste para mover, clique duas vezes para redefinir)",
+    ),
     ("Rulers", "Réguas"),
     ("Run", "Executar"),
     ("Sample Format: {}", "Formato da amostra: {}"),
     ("Samples Per Frame:", "Amostras por quadro:"),
     ("Save from #{}", "Salvar a partir de #{}"),
     ("Saved {}", "{} salvo"),
-    ("Script… (⌘/Ctrl+Enter runs)", "Script… (⌘/Ctrl+Enter executa)"),
-    ("Search commands or shortcuts", "Pesquisar comandos ou atalhos"),
+    (
+        "Script… (⌘/Ctrl+Enter runs)",
+        "Script… (⌘/Ctrl+Enter executa)",
+    ),
+    (
+        "Search commands or shortcuts",
+        "Pesquisar comandos ou atalhos",
+    ),
     ("Select", "Selecionar"),
-    ("Select a command to change its shortcut.", "Selecione um comando para alterar seu atalho."),
-    ("Select a layer to see its effects", "Selecione uma camada para ver seus efeitos"),
-    ("Select a layer to see its properties", "Selecione uma camada para ver suas propriedades"),
+    (
+        "Select a command to change its shortcut.",
+        "Selecione um comando para alterar seu atalho.",
+    ),
+    (
+        "Select a layer to see its effects",
+        "Selecione uma camada para ver seus efeitos",
+    ),
+    (
+        "Select a layer to see its properties",
+        "Selecione uma camada para ver suas propriedades",
+    ),
     ("({}) Selected Objects", "({}) objetos selecionados"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "Selecione uma camada com máscara ou caminho de forma (ou a propriedade de caminho), ou pinos de Puppet.",
     ),
     ("Select a text layer", "Selecione uma camada de texto"),
-    ("Select an item in the Project panel", "Selecione um item no painel Projeto"),
-    ("Select animated properties to show them in the Graph Editor", "Selecione propriedades animadas para exibi-las no Editor de gráficos"),
+    (
+        "Select an item in the Project panel",
+        "Selecione um item no painel Projeto",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "Selecione propriedades animadas para exibi-las no Editor de gráficos",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "Selecione o pino líder e depois Shift+clique nos pinos que devem segui-lo (cabelo, tecido, caudas)",
     ),
-    ("Set Ground Plane and Origin", "Definir plano do solo e origem"),
-    ("Set Paint Colors to Black and White (D)", "Definir cores de pintura como preto e branco (D)"),
+    (
+        "Set Ground Plane and Origin",
+        "Definir plano do solo e origem",
+    ),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "Definir cores de pintura como preto e branco (D)",
+    ),
     ("Settings", "Configurações"),
     ("Settings Name:", "Nome das configurações:"),
     ("Shadow Darkness", "Escuridão da sombra"),
@@ -2509,7 +3583,10 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Snapping", "Ajuste magnético"),
     ("Snapping options", "Opções de ajuste magnético"),
     ("Snapshot", "Instantâneo"),
-    ("Solo Supported Properties", "Solo de propriedades suportadas"),
+    (
+        "Solo Supported Properties",
+        "Solo de propriedades suportadas",
+    ),
     ("Solo Switches: {}", "Chaves de solo: {}"),
     ("Sort", "Ordenar"),
     ("Spacing:", "Espaçamento:"),
@@ -2530,11 +3607,26 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Template name", "Nome do modelo"),
     ("Template: {}\n{}", "Modelo: {}\n{}"),
     ("Temporal Interpolation:", "Interpolação temporal:"),
-    ("The Media Browser is not available here (use File ▸ Import)", "O Media Browser não está disponível aqui (use Arquivo ▸ Importar)"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "A camada OpenEXR exibida em vermelho, verde, azul e alfa"),
-    ("The render queue is empty.", "A fila de renderização está vazia."),
-    ("This ScriptUI panel has closed", "Este painel ScriptUI foi fechado"),
-    ("This change will create a new solid for this layer.", "Esta alteração criará um novo sólido para esta camada."),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "O Media Browser não está disponível aqui (use Arquivo ▸ Importar)",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "A camada OpenEXR exibida em vermelho, verde, azul e alfa",
+    ),
+    (
+        "The render queue is empty.",
+        "A fila de renderização está vazia.",
+    ),
+    (
+        "This ScriptUI panel has closed",
+        "Este painel ScriptUI foi fechado",
+    ),
+    (
+        "This change will create a new solid for this layer.",
+        "Esta alteração criará um novo sólido para esta camada.",
+    ),
     ("Time", "Tempo"),
     ("Time Stretch…", "Esticamento de tempo…"),
     ("Time:", "Tempo:"),
@@ -2568,16 +3660,31 @@ const PORTUGUESE: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "Boas-vindas ao EffectCraft"),
     ("Width:", "Largura:"),
     ("You can undo this.", "Você pode desfazer isto."),
-    ("Your changes will be lost if you don't save them.", "Suas alterações serão perdidas se você não as salvar."),
+    (
+        "Your changes will be lost if you don't save them.",
+        "Suas alterações serão perdidas se você não as salvar.",
+    ),
     ("Zoom", "Zoom"),
     ("built-in", "integrado"),
     ("frames per second", "quadros por segundo"),
     ("template name", "nome do modelo"),
-    ("{} contributors · {} commits", "{} colaboradores · {} commits"),
-    ("{} x {}, {}MB per 8bpc frame", "{} x {}, {}MB por quadro de 8 bpc"),
+    (
+        "{} contributors · {} commits",
+        "{} colaboradores · {} commits",
+    ),
+    (
+        "{} x {}, {}MB per 8bpc frame",
+        "{} x {}, {}MB por quadro de 8 bpc",
+    ),
     ("{} — coming soon", "{} em breve"),
-    ("{} — double-click to open, {}-click to reveal", "{}: clique duas vezes para abrir, {}+clique para revelar"),
-    ("⌘/Ctrl-drag a pin to record its motion", "⌘/Ctrl+arraste um pino para gravar seu movimento"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{}: clique duas vezes para abrir, {}+clique para revelar",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "⌘/Ctrl+arraste um pino para gravar seu movimento",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {} é usado por:"),
 ];
@@ -2599,7 +3706,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Active", "Aktivní"),
     ("Active Camera", "Aktivní kamera"),
     ("Alpha", "Alfa"),
-    ("Adapt Feature On Every Frame", "Přizpůsobovat sledovaný prvek v každém snímku"),
+    (
+        "Adapt Feature On Every Frame",
+        "Přizpůsobovat sledovaný prvek v každém snímku",
+    ),
     ("Adaptive Sample Limit:", "Limit adaptivního vzorkování:"),
     ("Add Animator", "Přidat animátor"),
     ("Add Comment", "Přidat komentář"),
@@ -2608,15 +3718,27 @@ const CZECH: &[(&str, &str)] = &[
     ("Add Mirror", "Přidat zrcadlo"),
     ("Add Selected As", "Přidat vybrané jako"),
     ("Add a comment", "Přidat komentář"),
-    ("Add a shape, fill, stroke or path operation", "Přidat tvar, výplň, tah nebo operaci s cestou"),
+    (
+        "Add a shape, fill, stroke or path operation",
+        "Přidat tvar, výplň, tah nebo operaci s cestou",
+    ),
     ("Add to Composition", "Přidat do kompozice"),
     ("Add to Favorites", "Přidat do oblíbených"),
     ("Add:", "Přidat:"),
-    ("Adjust Exposure (stops)", "Upravit expozici (v expozičních stupních)"),
-    ("Adjust composition duration to the time span of the selected layers", "Přizpůsobit délku kompozice časovému rozsahu vybraných vrstev"),
+    (
+        "Adjust Exposure (stops)",
+        "Upravit expozici (v expozičních stupních)",
+    ),
+    (
+        "Adjust composition duration to the time span of the selected layers",
+        "Přizpůsobit délku kompozice časovému rozsahu vybraných vrstev",
+    ),
     ("Advanced 3D", "Pokročilé 3D"),
     ("Align Layers to:", "Zarovnat vrstvy k:"),
-    ("All six face cameras turn together; the scene is not changed.", "Všech šest kamer snímajících stěny se otáčí společně; scéna se nemění."),
+    (
+        "All six face cameras turn together; the scene is not changed.",
+        "Všech šest kamer snímajících stěny se otáčí společně; scéna se nemění.",
+    ),
     ("Anchor:", "Kotevní bod:"),
     ("Aperture", "Clona"),
     ("Appearance Mode", "Režim vzhledu"),
@@ -2652,13 +3774,34 @@ const CZECH: &[(&str, &str)] = &[
     ("Classic 3D", "Klasické 3D"),
     ("Clear", "Vymazat"),
     ("Clear list", "Vymazat seznam"),
-    ("Click a key to see its commands.", "Kliknutím na klávesu zobrazíte její příkazy."),
-    ("Click adds a point (½ height = no change)", "Kliknutím přidáte bod (½ výšky = beze změny)"),
-    ("Click adds a point; drag one off to remove", "Kliknutím přidáte bod; přetažením mimo jej odstraníte"),
-    ("Click to make this viewer active", "Kliknutím aktivujete tento prohlížeč"),
-    ("Click to reveal the expression in the timeline", "Kliknutím zobrazíte výraz na časové ose"),
-    ("Click to show the active composition here", "Kliknutím zde zobrazíte aktivní kompozici"),
-    ("Click, then click in the Composition panel", "Klikněte sem a poté do panelu Kompozice"),
+    (
+        "Click a key to see its commands.",
+        "Kliknutím na klávesu zobrazíte její příkazy.",
+    ),
+    (
+        "Click adds a point (½ height = no change)",
+        "Kliknutím přidáte bod (½ výšky = beze změny)",
+    ),
+    (
+        "Click adds a point; drag one off to remove",
+        "Kliknutím přidáte bod; přetažením mimo jej odstraníte",
+    ),
+    (
+        "Click to make this viewer active",
+        "Kliknutím aktivujete tento prohlížeč",
+    ),
+    (
+        "Click to reveal the expression in the timeline",
+        "Kliknutím zobrazíte výraz na časové ose",
+    ),
+    (
+        "Click to show the active composition here",
+        "Kliknutím zde zobrazíte aktivní kompozici",
+    ),
+    (
+        "Click, then click in the Composition panel",
+        "Klikněte sem a poté do panelu Kompozice",
+    ),
     ("Clone Options", "Možnosti klonování"),
     ("Clone Source Overlay:", "Překrytí zdroje klonování:"),
     ("Close", "Zavřít"),
@@ -2672,15 +3815,27 @@ const CZECH: &[(&str, &str)] = &[
     ("Comment:", "Komentář:"),
     ("Community", "Komunita"),
     ("Composition", "Kompozice"),
-    ("Composition Mini-Flowchart", "Malý vývojový diagram kompozice"),
+    (
+        "Composition Mini-Flowchart",
+        "Malý vývojový diagram kompozice",
+    ),
     ("Composition Name:", "Název kompozice:"),
-    ("Composition Settings ▸ 3D Renderer", "Nastavení kompozice ▸ 3D vykreslovací modul"),
+    (
+        "Composition Settings ▸ 3D Renderer",
+        "Nastavení kompozice ▸ 3D vykreslovací modul",
+    ),
     ("Composition Settings…", "Nastavení kompozice…"),
-    ("Composition marker bin: drag a marker to the time ruler", "Zásobník značek kompozice: přetáhněte značku na časové pravítko"),
+    (
+        "Composition marker bin: drag a marker to the time ruler",
+        "Zásobník značek kompozice: přetáhněte značku na časové pravítko",
+    ),
     ("Cone Angle", "Úhel kužele"),
     ("Cone Feather", "Prolnutí okrajů kužele"),
     ("Constrain Proportions", "Zachovat proporce"),
-    ("Continuous (Lock Outgoing to Incoming)", "Spojitá (svázat výstupní tečnu se vstupní)"),
+    (
+        "Continuous (Lock Outgoing to Incoming)",
+        "Spojitá (svázat výstupní tečnu se vstupní)",
+    ),
     ("Cue Point", "Bod události"),
     ("Current Render", "Aktuální vykreslování"),
     ("Dark", "Tmavý"),
@@ -2691,16 +3846,28 @@ const CZECH: &[(&str, &str)] = &[
     ("Defaults", "Výchozí hodnoty"),
     ("Delete", "Odstranit"),
     ("Delete Selected Points", "Odstranit vybrané body"),
-    ("Delete selected project items", "Odstranit vybrané položky projektu"),
+    (
+        "Delete selected project items",
+        "Odstranit vybrané položky projektu",
+    ),
     ("Delete this template", "Odstranit tuto šablonu"),
     ("Depth of Field", "Hloubka ostrosti"),
     ("Discord", "Discord"),
     ("Distribute Layers:", "Rozmístit vrstvy:"),
     ("Don't Recover", "Neobnovovat"),
     ("Don't Save", "Neukládat"),
-    ("Double-click a layer to open it in the Layer panel", "Dvojklikem otevřete vrstvu v panelu Vrstva"),
-    ("Double-click footage in the Project panel to open it here", "Dvojklikem na záznam v panelu Projekt jej otevřete zde"),
-    ("Double-click to edit the comment", "Dvojklikem upravíte komentář"),
+    (
+        "Double-click a layer to open it in the Layer panel",
+        "Dvojklikem otevřete vrstvu v panelu Vrstva",
+    ),
+    (
+        "Double-click footage in the Project panel to open it here",
+        "Dvojklikem na záznam v panelu Projekt jej otevřete zde",
+    ),
+    (
+        "Double-click to edit the comment",
+        "Dvojklikem upravíte komentář",
+    ),
     ("Download", "Stáhnout"),
     (
         "Drag properties here from the timeline,\nor use Animation > Add Property to Essential Graphics.",
@@ -2715,8 +3882,14 @@ const CZECH: &[(&str, &str)] = &[
     ("Edit Gradient…", "Upravit přechod…"),
     ("Edit Target: {}", "Upravit cíl: {}"),
     ("Edit in the Timeline", "Upravit na časové ose"),
-    ("EffectCraft didn't quit normally last time.", "EffectCraft nebyl při posledním použití ukončen běžným způsobem."),
-    ("Effects & Presets options", "Možnosti efektů a přednastavení"),
+    (
+        "EffectCraft didn't quit normally last time.",
+        "EffectCraft nebyl při posledním použití ukončen běžným způsobem.",
+    ),
+    (
+        "Effects & Presets options",
+        "Možnosti efektů a přednastavení",
+    ),
     ("Effects: {}", "Efekty: {}"),
     ("Empty folder", "Prázdná složka"),
     ("Enable Depth of Field", "Povolit hloubku ostrosti"),
@@ -2727,9 +3900,15 @@ const CZECH: &[(&str, &str)] = &[
     ("Export Template…", "Exportovat šablonu…"),
     ("Export...", "Exportovat…"),
     ("Expression Language Menu", "Nabídka jazyka výrazů"),
-    ("Expression pick whip: drag onto a property", "Propojovací nástroj výrazů: přetáhněte na vlastnost"),
+    (
+        "Expression pick whip: drag onto a property",
+        "Propojovací nástroj výrazů: přetáhněte na vlastnost",
+    ),
     ("Expression:", "Výraz:"),
-    ("Eyedropper: click, then click in the Composition panel", "Kapátko: klikněte sem a poté do panelu Kompozice"),
+    (
+        "Eyedropper: click, then click in the Composition panel",
+        "Kapátko: klikněte sem a poté do panelu Kompozice",
+    ),
     ("Falloff", "Útlum"),
     ("Falloff Distance", "Vzdálenost útlumu"),
     ("Favorites", "Oblíbené"),
@@ -2739,7 +3918,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Finished", "Dokončeno"),
     ("Flowchart: {}", "Vývojový diagram: {}"),
     ("Focus Distance", "Vzdálenost zaostření"),
-    ("Follow Feature Rotation and Scale", "Sledovat otočení a měřítko prvku"),
+    (
+        "Follow Feature Rotation and Scale",
+        "Sledovat otočení a měřítko prvku",
+    ),
     ("Footage: {}", "Záznam: {}"),
     ("Format: {}", "Formát: {}"),
     ("Frame Aspect Ratio: {}", "Poměr stran snímku: {}"),
@@ -2759,14 +3941,20 @@ const CZECH: &[(&str, &str)] = &[
     ("Home", "Domů"),
     ("If Confidence is Below", "Pokud je spolehlivost nižší než"),
     ("Import", "Importovat"),
-    ("Import and Add to Composition", "Importovat a přidat do kompozice"),
+    (
+        "Import and Add to Composition",
+        "Importovat a přidat do kompozice",
+    ),
     ("Import...", "Importovat…"),
     ("Imported media", "Importovaná média"),
     ("Influence:", "Vliv:"),
     ("Install from File…", "Nainstalovat ze souboru…"),
     ("Intensity", "Intenzita"),
     ("Inverted", "Invertovaná"),
-    ("Join the ArtCraft community on Discord", "Připojit se ke komunitě ArtCraft na Discordu"),
+    (
+        "Join the ArtCraft community on Discord",
+        "Připojit se ke komunitě ArtCraft na Discordu",
+    ),
     ("Key: {}", "Klávesa: {}"),
     ("LEARN", "VÝUKA"),
     ("Label", "Štítek"),
@@ -2779,7 +3967,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Layer:", "Vrstva:"),
     ("Layer: {}", "Vrstva: {}"),
     ("Learn", "Výuka"),
-    ("Leave all attributes in \"{}\"", "Ponechat všechny atributy v „{}“"),
+    (
+        "Leave all attributes in \"{}\"",
+        "Ponechat všechny atributy v „{}“",
+    ),
     ("Licence: {}", "Licence: {}"),
     ("Ligatures", "Ligatury"),
     ("Light", "Světlý"),
@@ -2792,7 +3983,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Locked: {} — {}", "Zamknuto: {} — {}"),
     ("Log:", "Protokol:"),
     ("Loop (Trace Path)", "Smyčka (sledovat cestu)"),
-    ("MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)", "MIT OR Apache-2.0 • Písma: Inter, JetBrains Mono (OFL)"),
+    (
+        "MIT OR Apache-2.0 • Fonts: Inter, JetBrains Mono (OFL)",
+        "MIT OR Apache-2.0 • Písma: Inter, JetBrains Mono (OFL)",
+    ),
     ("Magnification ratio popup", "Nabídka míry přiblížení"),
     ("Make Comp Size", "Nastavit velikost kompozice"),
     ("Masks", "Masky"),
@@ -2800,7 +3994,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Media Replacement", "Nahrazení médií"),
     ("Mesh:", "Síť:"),
     ("Diameter:", "Průměr:"),
-    ("Method Used: {}    Average Error: {} pixels", "Použitá metoda: {}    Průměrná chyba: {} px"),
+    (
+        "Method Used: {}    Average Error: {} pixels",
+        "Použitá metoda: {}    Průměrná chyba: {} px",
+    ),
     ("Models folder: {}", "Složka modelů: {}"),
     ("Modifiers:", "Modifikátory:"),
     ("More", "Další"),
@@ -2808,7 +4005,10 @@ const CZECH: &[(&str, &str)] = &[
     ("More tutorials", "Další výukové lekce"),
     ("Motion Blur", "Rozostření pohybem"),
     ("Motion Blur: {}", "Rozostření pohybem: {}"),
-    ("Motion Sketch: drag to record", "Náčrt pohybu: tažením zaznamenáte pohyb"),
+    (
+        "Motion Sketch: drag to record",
+        "Náčrt pohybu: tažením zaznamenáte pohyb",
+    ),
     ("Move Down", "Posunout dolů"),
     ("Move Up", "Posunout nahoru"),
     ("Move to Project Root", "Přesunout do kořene projektu"),
@@ -2819,10 +4019,16 @@ const CZECH: &[(&str, &str)] = &[
     ("New Comp from Selection", "Nová kompozice z výběru"),
     ("New Duration:", "Nová délka trvání:"),
     ("New composition name:", "Název nové kompozice:"),
-    ("New from Render Queue item:", "Nová šablona z položky fronty vykreslování:"),
+    (
+        "New from Render Queue item:",
+        "Nová šablona z položky fronty vykreslování:",
+    ),
     ("New from Template", "Nový ze šablony"),
     ("Next", "Další"),
-    ("Nice work. Pick another tutorial on the Home screen's Learn tab.", "Hotovo. Vyberte si další lekci na kartě Výuka na domovské obrazovce."),
+    (
+        "Nice work. Pick another tutorial on the Home screen's Learn tab.",
+        "Hotovo. Vyberte si další lekci na kartě Výuka na domovské obrazovce.",
+    ),
     (
         "No VR environments yet. Create one with Composition ▸ VR ▸ Create VR Environment…",
         "Zatím nejsou žádná prostředí VR. Vytvořte je přes Kompozice ▸ VR ▸ Vytvořit prostředí VR…",
@@ -2830,20 +4036,41 @@ const CZECH: &[(&str, &str)] = &[
     ("No audio layer selected", "Není vybrána zvuková vrstva"),
     ("No background jobs running", "Na pozadí neběží žádné úlohy"),
     ("No composition markers", "Kompozice nemá žádné značky"),
-    ("No contributor data was built into this copy.", "Tato sestava neobsahuje údaje o přispěvatelích."),
-    ("No device list from this host; the system default output is used.", "Hostitel neposkytuje seznam zařízení; používá se výchozí systémový výstup."),
+    (
+        "No contributor data was built into this copy.",
+        "Tato sestava neobsahuje údaje o přispěvatelích.",
+    ),
+    (
+        "No device list from this host; the system default output is used.",
+        "Hostitel neposkytuje seznam zařízení; používá se výchozí systémový výstup.",
+    ),
     ("No layer selected", "Není vybrána vrstva"),
-    ("No matching effects or presets", "Žádné odpovídající efekty ani přednastavení"),
+    (
+        "No matching effects or presets",
+        "Žádné odpovídající efekty ani přednastavení",
+    ),
     ("No matching fonts", "Žádná odpovídající písma"),
-    ("No model credits were built into this copy.", "Tato sestava neobsahuje údaje o použitých modelech."),
+    (
+        "No model credits were built into this copy.",
+        "Tato sestava neobsahuje údaje o použitých modelech.",
+    ),
     ("No nested compositions", "Žádné vnořené kompozice"),
     ("No shortcut", "Bez zkratky"),
-    ("No unlocked layer selected", "Není vybrána odemknutá vrstva"),
+    (
+        "No unlocked layer selected",
+        "Není vybrána odemknutá vrstva",
+    ),
     ("No video", "Žádné video"),
     ("None", "Žádné"),
-    ("Not applied: tick it in the list to add it.", "Nepoužito: pro přidání položku zaškrtněte v seznamu."),
+    (
+        "Not applied: tick it in the list to add it.",
+        "Nepoužito: pro přidání položku zaškrtněte v seznamu.",
+    ),
     ("Not assigned", "Nepřiřazeno"),
-    ("Note: Shadows are only cast from layers with Cast Shadows enabled.", "Poznámka: Stíny vrhají pouze vrstvy s povolenou volbou Vrhat stíny."),
+    (
+        "Note: Shadows are only cast from layers with Cast Shadows enabled.",
+        "Poznámka: Stíny vrhají pouze vrstvy s povolenou volbou Vrhat stíny.",
+    ),
     ("Notify", "Upozornit"),
     ("OK", "OK"),
     ("Offset:", "Posun:"),
@@ -2851,24 +4078,45 @@ const CZECH: &[(&str, &str)] = &[
     ("One-Node Camera", "Jednouzlová kamera"),
     ("Opacity:", "Krytí:"),
     ("Open Composition", "Otevřít kompozici"),
-    ("Open Last Saved Project", "Otevřít poslední uložený projekt"),
+    (
+        "Open Last Saved Project",
+        "Otevřít poslední uložený projekt",
+    ),
     ("Open New Composition", "Otevřít novou kompozici"),
     ("Open Output", "Otevřít výstup"),
-    ("Open a composition to build Essential Graphics", "Otevřete kompozici pro sestavení základní grafiky"),
-    ("Open a composition to see its scopes", "Otevřete kompozici pro zobrazení měřicích přístrojů"),
-    ("Open a composition to track motion.", "Otevřete kompozici pro sledování pohybu."),
+    (
+        "Open a composition to build Essential Graphics",
+        "Otevřete kompozici pro sestavení základní grafiky",
+    ),
+    (
+        "Open a composition to see its scopes",
+        "Otevřete kompozici pro zobrazení měřicích přístrojů",
+    ),
+    (
+        "Open a composition to track motion.",
+        "Otevřete kompozici pro sledování pohybu.",
+    ),
     ("Opus Tuning: {}", "Ladění Opus: {}"),
     ("Original Duration:", "Původní délka trvání:"),
     ("Output Cycle: {}", "Cyklus výstupu: {}"),
     ("Output To:", "Výstup do:"),
     ("Overlay", "Překrytí"),
     ("Parameter Name:", "Název parametru:"),
-    ("Parent pick whip: drag onto a layer", "Propojovací nástroj nadřazené vrstvy: přetáhněte na vrstvu"),
+    (
+        "Parent pick whip: drag onto a layer",
+        "Propojovací nástroj nadřazené vrstvy: přetáhněte na vrstvu",
+    ),
     ("Pixel Aspect Ratio:", "Poměr stran pixelů:"),
     ("Playing on Video Preview", "Přehrávání ve videonáhledu"),
     ("Post-Render Action: {}", "Akce po vykreslení: {}"),
-    ("Preserve frame rate when nested or in render queue", "Zachovat snímkovou frekvenci při vnoření nebo ve frontě vykreslování"),
-    ("Preserve resolution when nested", "Zachovat rozlišení při vnoření"),
+    (
+        "Preserve frame rate when nested or in render queue",
+        "Zachovat snímkovou frekvenci při vnoření nebo ve frontě vykreslování",
+    ),
+    (
+        "Preserve resolution when nested",
+        "Zachovat rozlišení při vnoření",
+    ),
     ("Preset", "Přednastavení"),
     ("Preset:", "Přednastavení:"),
     ("Presets", "Přednastavení"),
@@ -2882,7 +4130,10 @@ const CZECH: &[(&str, &str)] = &[
     ),
     ("Project: {}", "Projekt: {}"),
     ("Projects", "Projekty"),
-    ("Property pick whip: drag onto a property", "Propojovací nástroj vlastností: přetáhněte na vlastnost"),
+    (
+        "Property pick whip: drag onto a property",
+        "Propojovací nástroj vlastností: přetáhněte na vlastnost",
+    ),
     ("Protected Region", "Chráněná oblast"),
     ("Proxy Use: {}", "Použití zástupných souborů: {}"),
     ("Push All to Comp", "Přenést vše do kompozice"),
@@ -2893,7 +4144,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Recording", "Záznam pohybu"),
     ("Remove", "Odstranit"),
     ("Rename", "Přejmenovat"),
-    ("Render: {} ms  •  UI {} fps{}", "Vykreslení: {} ms  •  UI {} fps{}"),
+    (
+        "Render: {} ms  •  UI {} fps{}",
+        "Vykreslení: {} ms  •  UI {} fps{}",
+    ),
     ("Renderer:", "Vykreslovací modul:"),
     ("Request Persistent Storage", "Požádat o trvalé úložiště"),
     ("Reset", "Obnovit"),
@@ -2901,39 +4155,75 @@ const CZECH: &[(&str, &str)] = &[
     ("Reset Preset", "Obnovit přednastavení"),
     ("Reset to Default", "Obnovit výchozí hodnoty"),
     ("Reset to Saved Layout", "Obnovit uložené rozložení"),
-    ("Resolution/Down Sample Factor Popup", "Nabídka rozlišení a míry podvzorkování"),
+    (
+        "Resolution/Down Sample Factor Popup",
+        "Nabídka rozlišení a míry podvzorkování",
+    ),
     ("Restore Panel Size", "Obnovit velikost panelu"),
     ("Reverse the order", "Obrátit pořadí"),
     ("Revert All", "Vrátit všechny změny"),
-    ("Roman Hanging Punctuation", "Předsazená interpunkce latinky"),
+    (
+        "Roman Hanging Punctuation",
+        "Předsazená interpunkce latinky",
+    ),
     ("Roving:", "Plovoucí v čase:"),
-    ("Ruler zero point (drag to move, double-click to reset)", "Nulový bod pravítka (tažením posunete, dvojklikem obnovíte)"),
+    (
+        "Ruler zero point (drag to move, double-click to reset)",
+        "Nulový bod pravítka (tažením posunete, dvojklikem obnovíte)",
+    ),
     ("Rulers", "Pravítka"),
     ("Run", "Spustit"),
     ("Sample Format: {}", "Formát vzorků: {}"),
     ("Samples Per Frame:", "Vzorků na snímek:"),
     ("Save from #{}", "Uložit z #{}"),
     ("Saved {}", "Uloženo {}"),
-    ("Script… (⌘/Ctrl+Enter runs)", "Skript… (⌘/Ctrl+Enter spustí)"),
-    ("Search commands or shortcuts", "Hledat příkazy nebo zkratky"),
+    (
+        "Script… (⌘/Ctrl+Enter runs)",
+        "Skript… (⌘/Ctrl+Enter spustí)",
+    ),
+    (
+        "Search commands or shortcuts",
+        "Hledat příkazy nebo zkratky",
+    ),
     ("Select", "Vybrat"),
-    ("Select a command to change its shortcut.", "Vyberte příkaz pro změnu jeho zkratky."),
-    ("Select a layer to see its effects", "Vyberte vrstvu pro zobrazení jejích efektů"),
-    ("Select a layer to see its properties", "Vyberte vrstvu pro zobrazení jejích vlastností"),
+    (
+        "Select a command to change its shortcut.",
+        "Vyberte příkaz pro změnu jeho zkratky.",
+    ),
+    (
+        "Select a layer to see its effects",
+        "Vyberte vrstvu pro zobrazení jejích efektů",
+    ),
+    (
+        "Select a layer to see its properties",
+        "Vyberte vrstvu pro zobrazení jejích vlastností",
+    ),
     ("({}) Selected Objects", "Vybrané objekty ({})"),
     (
         "Select a layer with a mask or shape path (or the path property), or Puppet pins.",
         "Vyberte vrstvu s cestou masky či tvaru (nebo vlastnost cesty), případně čepy nástroje Loutka.",
     ),
     ("Select a text layer", "Vyberte textovou vrstvu"),
-    ("Select an item in the Project panel", "Vyberte položku v panelu Projekt"),
-    ("Select animated properties to show them in the Graph Editor", "Vyberte animované vlastnosti pro zobrazení v editoru grafů"),
+    (
+        "Select an item in the Project panel",
+        "Vyberte položku v panelu Projekt",
+    ),
+    (
+        "Select animated properties to show them in the Graph Editor",
+        "Vyberte animované vlastnosti pro zobrazení v editoru grafů",
+    ),
     (
         "Select the leader pin, then Shift-click the pins that should trail it (hair, cloth, tails)",
         "Vyberte řídicí čep a potom se Shiftem klikněte na čepy, které jej mají následovat (vlasy, látka, ocasy)",
     ),
-    ("Set Ground Plane and Origin", "Nastavit základní rovinu a počátek"),
-    ("Set Paint Colors to Black and White (D)", "Nastavit barvy malování na černou a bílou (D)"),
+    (
+        "Set Ground Plane and Origin",
+        "Nastavit základní rovinu a počátek",
+    ),
+    (
+        "Set Paint Colors to Black and White (D)",
+        "Nastavit barvy malování na černou a bílou (D)",
+    ),
     ("Settings", "Nastavení"),
     ("Settings Name:", "Název nastavení:"),
     ("Shadow Darkness", "Tmavost stínu"),
@@ -2952,7 +4242,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Snapping", "Přichytávání"),
     ("Snapping options", "Možnosti přichytávání"),
     ("Snapshot", "Snímek náhledu"),
-    ("Solo Supported Properties", "Zobrazit pouze podporované vlastnosti"),
+    (
+        "Solo Supported Properties",
+        "Zobrazit pouze podporované vlastnosti",
+    ),
     ("Solo Switches: {}", "Přepínače sólo: {}"),
     ("Sort", "Seřadit"),
     ("Spacing:", "Rozestupy:"),
@@ -2975,11 +4268,26 @@ const CZECH: &[(&str, &str)] = &[
     ("Template name", "Název šablony"),
     ("Template: {}\n{}", "Šablona: {}\n{}"),
     ("Temporal Interpolation:", "Časová interpolace:"),
-    ("The Media Browser is not available here (use File ▸ Import)", "Prohlížeč médií zde není k dispozici (použijte Soubor ▸ Importovat)"),
-    ("The OpenEXR layer shown in red, green, blue and alpha", "Vrstva OpenEXR zobrazená v červeném, zeleném, modrém a alfa kanálu"),
-    ("The render queue is empty.", "Fronta vykreslování je prázdná."),
-    ("This ScriptUI panel has closed", "Tento panel ScriptUI byl zavřen"),
-    ("This change will create a new solid for this layer.", "Tato změna vytvoří pro tuto vrstvu novou plnou vrstvu."),
+    (
+        "The Media Browser is not available here (use File ▸ Import)",
+        "Prohlížeč médií zde není k dispozici (použijte Soubor ▸ Importovat)",
+    ),
+    (
+        "The OpenEXR layer shown in red, green, blue and alpha",
+        "Vrstva OpenEXR zobrazená v červeném, zeleném, modrém a alfa kanálu",
+    ),
+    (
+        "The render queue is empty.",
+        "Fronta vykreslování je prázdná.",
+    ),
+    (
+        "This ScriptUI panel has closed",
+        "Tento panel ScriptUI byl zavřen",
+    ),
+    (
+        "This change will create a new solid for this layer.",
+        "Tato změna vytvoří pro tuto vrstvu novou plnou vrstvu.",
+    ),
     ("Time", "Čas"),
     ("Time Stretch…", "Roztažení času…"),
     ("Time:", "Čas:"),
@@ -3014,21 +4322,42 @@ const CZECH: &[(&str, &str)] = &[
     ("Welcome to EffectCraft", "Vítejte v EffectCraft"),
     ("Width:", "Šířka:"),
     ("You can undo this.", "Tuto akci lze vrátit zpět."),
-    ("Your changes will be lost if you don't save them.", "Pokud změny neuložíte, budou ztraceny."),
+    (
+        "Your changes will be lost if you don't save them.",
+        "Pokud změny neuložíte, budou ztraceny.",
+    ),
     ("Zoom", "Přiblížení"),
     ("built-in", "vestavěné"),
     ("frames per second", "snímků za sekundu"),
     ("template name", "název šablony"),
-    ("{} contributors · {} commits", "{} přispěvatelů · {} commitů"),
-    ("{} x {}, {}MB per 8bpc frame", "{} x {}, {}MB na snímek s 8bpc"),
+    (
+        "{} contributors · {} commits",
+        "{} přispěvatelů · {} commitů",
+    ),
+    (
+        "{} x {}, {}MB per 8bpc frame",
+        "{} x {}, {}MB na snímek s 8bpc",
+    ),
     ("{} — coming soon", "{} — již brzy"),
-    ("{} — double-click to open, {}-click to reveal", "{} — dvojklikem otevřete, kliknutím s {} zobrazíte umístění"),
-    ("⌘/Ctrl-drag a pin to record its motion", "Tažením čepu s ⌘/Ctrl zaznamenáte jeho pohyb"),
+    (
+        "{} — double-click to open, {}-click to reveal",
+        "{} — dvojklikem otevřete, kliknutím s {} zobrazíte umístění",
+    ),
+    (
+        "⌘/Ctrl-drag a pin to record its motion",
+        "Tažením čepu s ⌘/Ctrl zaznamenáte jeho pohyb",
+    ),
     ("▣ {}", "▣ {}"),
     ("⚠ {} is used by:", "⚠ {} používají:"),
     ("3D Reference Axes", "Referenční osy 3D"),
-    ("Affect all layers that use this solid", "Ovlivnit všechny vrstvy používající tuto plnou vrstvu"),
-    ("Choose grid and guide options", "Vybrat možnosti mřížky a vodítek"),
+    (
+        "Affect all layers that use this solid",
+        "Ovlivnit všechny vrstvy používající tuto plnou vrstvu",
+    ),
+    (
+        "Choose grid and guide options",
+        "Vybrat možnosti mřížky a vodítek",
+    ),
     ("Colorize", "Kolorovat"),
     ("Custom", "Vlastní"),
     ("Custom...", "Vlastní…"),
@@ -3036,45 +4365,84 @@ const CZECH: &[(&str, &str)] = &[
     ("Fit up to 100%", "Přizpůsobit nejvýše do 100 %"),
     ("Full", "Plné"),
     ("Half", "Poloviční"),
-    ("Only this layer uses this solid.", "Tuto plnou vrstvu používá pouze tato vrstva."),
+    (
+        "Only this layer uses this solid.",
+        "Tuto plnou vrstvu používá pouze tato vrstva.",
+    ),
     ("Proportional Grid", "Proporcionální mřížka"),
     ("Quarter", "Čtvrtinové"),
     ("Region of Interest", "Oblast zájmu"),
     ("Reset Exposure", "Obnovit expozici"),
-    ("Show Channel and Color Management Settings", "Zobrazit nastavení kanálů a správy barev"),
+    (
+        "Show Channel and Color Management Settings",
+        "Zobrazit nastavení kanálů a správy barev",
+    ),
     ("Show Snapshot (hold)", "Zobrazit snímek náhledu (podržet)"),
     ("Take Snapshot", "Pořídit snímek náhledu"),
     ("Third", "Třetinové"),
-    ("Toggle Mask and Shape Path Visibility", "Přepnout viditelnost cest masek a tvarů"),
+    (
+        "Toggle Mask and Shape Path Visibility",
+        "Přepnout viditelnost cest masek a tvarů",
+    ),
     ("Toggle Transparency Grid", "Přepnout mřížku průhlednosti"),
     ("16 bits per channel", "16 bitů na kanál"),
-    ("32 bits per channel (float)", "32 bitů na kanál (plovoucí čárka)"),
+    (
+        "32 bits per channel (float)",
+        "32 bitů na kanál (plovoucí čárka)",
+    ),
     ("8 bits per channel", "8 bitů na kanál"),
     ("Adaptive Resolution", "Adaptivní rozlišení"),
     ("Adobe-style built-in", "Vestavěné ve stylu Adobe"),
     ("Blue", "Modrý"),
     ("Current Settings", "Aktuální nastavení"),
-    ("Disable Per-character 3D", "Zakázat 3D pro jednotlivé znaky"),
+    (
+        "Disable Per-character 3D",
+        "Zakázat 3D pro jednotlivé znaky",
+    ),
     ("Draft", "Pracovní"),
     ("Enable Per-character 3D", "Povolit 3D pro jednotlivé znaky"),
     ("Fast Draft", "Rychlé pracovní"),
-    ("Fast Previews (Draft 3D, Faster Effects)", "Rychlé náhledy (pracovní 3D, rychlejší efekty)"),
+    (
+        "Fast Previews (Draft 3D, Faster Effects)",
+        "Rychlé náhledy (pracovní 3D, rychlejší efekty)",
+    ),
     ("Green", "Zelený"),
     ("Import Image Sequence", "Importovat sekvenci obrázků"),
-    ("Import PDF / Illustrator File", "Importovat soubor PDF / Illustrator"),
+    (
+        "Import PDF / Illustrator File",
+        "Importovat soubor PDF / Illustrator",
+    ),
     ("Import Photoshop File", "Importovat soubor Photoshop"),
-    ("Interpret Unlabeled Alpha As", "Interpretovat neoznačenou alfu jako"),
-    ("Join the ArtCraft Discord", "Připojit se na Discord ArtCraft"),
-    ("Mercury GPU Acceleration ({})", "GPU akcelerace Mercury ({})"),
-    ("Mercury Software Only", "Pouze softwarové zpracování Mercury"),
-    ("OCIO (built-in ACES config)", "OCIO (vestavěná konfigurace ACES)"),
+    (
+        "Interpret Unlabeled Alpha As",
+        "Interpretovat neoznačenou alfu jako",
+    ),
+    (
+        "Join the ArtCraft Discord",
+        "Připojit se na Discord ArtCraft",
+    ),
+    (
+        "Mercury GPU Acceleration ({})",
+        "GPU akcelerace Mercury ({})",
+    ),
+    (
+        "Mercury Software Only",
+        "Pouze softwarové zpracování Mercury",
+    ),
+    (
+        "OCIO (built-in ACES config)",
+        "OCIO (vestavěná konfigurace ACES)",
+    ),
     ("Off (Final Quality)", "Vypnuto (finální kvalita)"),
     ("OpenGL (compatibility)", "OpenGL (kompatibilita)"),
     ("Opus Bitrate: {} kbps", "Datový tok Opus: {} kbps"),
     ("RGB Straight", "RGB bez přednásobení"),
     ("Red", "Červený"),
     ("Tone map", "Mapování tónů"),
-    ("Use In-Window Menu Bar on macOS", "Použít nabídku v okně na macOS"),
+    (
+        "Use In-Window Menu Bar on macOS",
+        "Použít nabídku v okně na macOS",
+    ),
     ("Wireframe", "Drátový model"),
     ("sRGB IEC61966-2.1 (default)", "sRGB IEC61966-2.1 (výchozí)"),
     ("New Project", "Nový projekt"),
@@ -3082,7 +4450,10 @@ const CZECH: &[(&str, &str)] = &[
     ("Templates", "Šablony"),
     ("EffectCraft home page", "Domovská stránka EffectCraft"),
     ("EffectCraft on GitHub", "EffectCraft na GitHubu"),
-    ("Motion graphics and visual effects · version {}", "Pohyblivá grafika a vizuální efekty · verze {}"),
+    (
+        "Motion graphics and visual effects · version {}",
+        "Pohyblivá grafika a vizuální efekty · verze {}",
+    ),
     ("New Composition", "Nová kompozice"),
     ("Open Demo Project", "Otevřít ukázkový projekt"),
     ("Import Footage…", "Importovat záznam…"),
@@ -3091,10 +4462,22 @@ const CZECH: &[(&str, &str)] = &[
     ("OPENED", "OTEVŘENO"),
     ("SIZE", "VELIKOST"),
     ("KIND", "DRUH"),
-    ("Your recent files will show here", "Zde se zobrazí vaše nedávné soubory"),
-    ("Create a new project, or open the demo project to look around.", "Vytvořte nový projekt nebo otevřete ukázkový projekt a prozkoumejte aplikaci."),
-    ("No recent files match the filter", "Filtru neodpovídají žádné nedávné soubory"),
-    ("Try another name or folder.", "Zkuste jiný název nebo složku."),
+    (
+        "Your recent files will show here",
+        "Zde se zobrazí vaše nedávné soubory",
+    ),
+    (
+        "Create a new project, or open the demo project to look around.",
+        "Vytvořte nový projekt nebo otevřete ukázkový projekt a prozkoumejte aplikaci.",
+    ),
+    (
+        "No recent files match the filter",
+        "Filtru neodpovídají žádné nedávné soubory",
+    ),
+    (
+        "Try another name or folder.",
+        "Zkuste jiný název nebo složku.",
+    ),
     ("Just now", "Právě teď"),
     ("Yesterday", "Včera"),
     ("{} minute ago", "Před {} minutou"),
@@ -3107,7 +4490,10 @@ const CZECH: &[(&str, &str)] = &[
     ("After Effects project", "Projekt After Effects"),
     ("Lottie animation", "Animace Lottie"),
     ("Project", "Projekt"),
-    ("Click above the bar to add an opacity stop, below it to add a color stop.", "Kliknutím nad pruh přidáte bod krytí, kliknutím pod něj bod barvy."),
+    (
+        "Click above the bar to add an opacity stop, below it to add a color stop.",
+        "Kliknutím nad pruh přidáte bod krytí, kliknutím pod něj bod barvy.",
+    ),
     ("Gradient Editor", "Editor přechodu"),
     ("Location:", "Umístění:"),
     (
@@ -3129,60 +4515,162 @@ mod tests {
         ("header.rs", include_str!("../header.rs")),
         ("menus.rs", include_str!("../menus.rs")),
         ("widgets.rs", include_str!("../widgets.rs")),
-        ("panels/anim_tools.rs", include_str!("../panels/anim_tools.rs")),
-        ("panels/camera_tracker_ui.rs", include_str!("../panels/camera_tracker_ui.rs")),
-        ("panels/comp_settings.rs", include_str!("../panels/comp_settings.rs")),
-        ("panels/content_fill_panel.rs", include_str!("../panels/content_fill_panel.rs")),
-        ("panels/delete_items.rs", include_str!("../panels/delete_items.rs")),
-        ("panels/gradient_editor.rs", include_str!("../panels/gradient_editor.rs")),
+        (
+            "panels/anim_tools.rs",
+            include_str!("../panels/anim_tools.rs"),
+        ),
+        (
+            "panels/camera_tracker_ui.rs",
+            include_str!("../panels/camera_tracker_ui.rs"),
+        ),
+        (
+            "panels/comp_settings.rs",
+            include_str!("../panels/comp_settings.rs"),
+        ),
+        (
+            "panels/content_fill_panel.rs",
+            include_str!("../panels/content_fill_panel.rs"),
+        ),
+        (
+            "panels/delete_items.rs",
+            include_str!("../panels/delete_items.rs"),
+        ),
+        (
+            "panels/gradient_editor.rs",
+            include_str!("../panels/gradient_editor.rs"),
+        ),
         ("panels/dialogs.rs", include_str!("../panels/dialogs.rs")),
-        ("panels/dialogs_3d.rs", include_str!("../panels/dialogs_3d.rs")),
-        ("panels/effect_controls.rs", include_str!("../panels/effect_controls.rs")),
-        ("panels/effects_presets.rs", include_str!("../panels/effects_presets.rs")),
-        ("panels/essential.rs", include_str!("../panels/essential.rs")),
+        (
+            "panels/dialogs_3d.rs",
+            include_str!("../panels/dialogs_3d.rs"),
+        ),
+        (
+            "panels/effect_controls.rs",
+            include_str!("../panels/effect_controls.rs"),
+        ),
+        (
+            "panels/effects_presets.rs",
+            include_str!("../panels/effects_presets.rs"),
+        ),
+        (
+            "panels/essential.rs",
+            include_str!("../panels/essential.rs"),
+        ),
         ("panels/expr_bar.rs", include_str!("../panels/expr_bar.rs")),
-        ("panels/flowchart.rs", include_str!("../panels/flowchart.rs")),
-        ("panels/footage_panel.rs", include_str!("../panels/footage_panel.rs")),
+        (
+            "panels/flowchart.rs",
+            include_str!("../panels/flowchart.rs"),
+        ),
+        (
+            "panels/footage_panel.rs",
+            include_str!("../panels/footage_panel.rs"),
+        ),
         ("panels/forms.rs", include_str!("../panels/forms.rs")),
-        ("panels/fx_editors.rs", include_str!("../panels/fx_editors.rs")),
+        (
+            "panels/fx_editors.rs",
+            include_str!("../panels/fx_editors.rs"),
+        ),
         ("panels/graph.rs", include_str!("../panels/graph.rs")),
         ("panels/home.rs", include_str!("../panels/home.rs")),
         ("panels/info.rs", include_str!("../panels/info.rs")),
-        ("panels/key_dialogs.rs", include_str!("../panels/key_dialogs.rs")),
-        ("panels/layer_panel.rs", include_str!("../panels/layer_panel.rs")),
-        ("panels/layer_styles_dialog.rs", include_str!("../panels/layer_styles_dialog.rs")),
+        (
+            "panels/key_dialogs.rs",
+            include_str!("../panels/key_dialogs.rs"),
+        ),
+        (
+            "panels/layer_panel.rs",
+            include_str!("../panels/layer_panel.rs"),
+        ),
+        (
+            "panels/layer_styles_dialog.rs",
+            include_str!("../panels/layer_styles_dialog.rs"),
+        ),
         ("panels/learn.rs", include_str!("../panels/learn.rs")),
-        ("panels/markers_ui.rs", include_str!("../panels/markers_ui.rs")),
-        ("panels/media_panels.rs", include_str!("../panels/media_panels.rs")),
+        (
+            "panels/markers_ui.rs",
+            include_str!("../panels/markers_ui.rs"),
+        ),
+        (
+            "panels/media_panels.rs",
+            include_str!("../panels/media_panels.rs"),
+        ),
         ("panels/misc.rs", include_str!("../panels/misc.rs")),
         ("panels/mod.rs", include_str!("../panels/mod.rs")),
-        ("panels/paint_panels.rs", include_str!("../panels/paint_panels.rs")),
-        ("panels/path_vr_panels.rs", include_str!("../panels/path_vr_panels.rs")),
+        (
+            "panels/paint_panels.rs",
+            include_str!("../panels/paint_panels.rs"),
+        ),
+        (
+            "panels/path_vr_panels.rs",
+            include_str!("../panels/path_vr_panels.rs"),
+        ),
         ("panels/precomp.rs", include_str!("../panels/precomp.rs")),
         ("panels/project.rs", include_str!("../panels/project.rs")),
-        ("panels/properties.rs", include_str!("../panels/properties.rs")),
-        ("panels/roto_tool.rs", include_str!("../panels/roto_tool.rs")),
-        ("panels/render_queue.rs", include_str!("../panels/render_queue.rs")),
-        ("panels/rq_templates.rs", include_str!("../panels/rq_templates.rs")),
-        ("panels/scopes_panel.rs", include_str!("../panels/scopes_panel.rs")),
-        ("panels/script_console.rs", include_str!("../panels/script_console.rs")),
-        ("panels/scriptui_view.rs", include_str!("../panels/scriptui_view.rs")),
+        (
+            "panels/properties.rs",
+            include_str!("../panels/properties.rs"),
+        ),
+        (
+            "panels/roto_tool.rs",
+            include_str!("../panels/roto_tool.rs"),
+        ),
+        (
+            "panels/render_queue.rs",
+            include_str!("../panels/render_queue.rs"),
+        ),
+        (
+            "panels/rq_templates.rs",
+            include_str!("../panels/rq_templates.rs"),
+        ),
+        (
+            "panels/scopes_panel.rs",
+            include_str!("../panels/scopes_panel.rs"),
+        ),
+        (
+            "panels/script_console.rs",
+            include_str!("../panels/script_console.rs"),
+        ),
+        (
+            "panels/scriptui_view.rs",
+            include_str!("../panels/scriptui_view.rs"),
+        ),
         ("panels/settings.rs", include_str!("../panels/settings.rs")),
-        ("panels/shortcut_editor.rs", include_str!("../panels/shortcut_editor.rs")),
-        ("panels/templates.rs", include_str!("../panels/templates.rs")),
-        ("panels/text_panels.rs", include_str!("../panels/text_panels.rs")),
+        (
+            "panels/shortcut_editor.rs",
+            include_str!("../panels/shortcut_editor.rs"),
+        ),
+        (
+            "panels/templates.rs",
+            include_str!("../panels/templates.rs"),
+        ),
+        (
+            "panels/text_panels.rs",
+            include_str!("../panels/text_panels.rs"),
+        ),
         ("panels/timeline.rs", include_str!("../panels/timeline.rs")),
         ("panels/tracker.rs", include_str!("../panels/tracker.rs")),
         ("panels/unsaved.rs", include_str!("../panels/unsaved.rs")),
         ("panels/viewer.rs", include_str!("../panels/viewer.rs")),
-        ("panels/viewer_tools.rs", include_str!("../panels/viewer_tools.rs")),
+        (
+            "panels/viewer_tools.rs",
+            include_str!("../panels/viewer_tools.rs"),
+        ),
         ("panels/viewers.rs", include_str!("../panels/viewers.rs")),
         // Text the interface draws but does not own: the settings pages and the viewer's channel
         // and Fast Previews lists come from the engine as data, so their source strings live here.
         // Both files pass the literal scan below unchanged (they hold no drawn literals).
-        ("engine settings pages", include_str!("../../../effectcraft-engine/src/prefs.rs")),
-        ("engine viewer channels", include_str!("../../../effectcraft-engine/src/viewer.rs")),
-        ("engine viewer commands", include_str!("../../../effectcraft-engine/src/commands/viewer_cmds.rs")),
+        (
+            "engine settings pages",
+            include_str!("../../../effectcraft-engine/src/prefs.rs"),
+        ),
+        (
+            "engine viewer channels",
+            include_str!("../../../effectcraft-engine/src/viewer.rs"),
+        ),
+        (
+            "engine viewer commands",
+            include_str!("../../../effectcraft-engine/src/commands/viewer_cmds.rs"),
+        ),
     ];
 
     /// Call shapes that hand a string literal straight to the user.
@@ -3207,7 +4695,9 @@ mod tests {
     ];
 
     /// Literals that stay as they are: a unit or a separator reads the same in every language.
-    const UNITS: &[&str] = &[" px", "%", "·", "s", "ms", "°", "fps", " bpc", " mm", " s", " %", " pixels"];
+    const UNITS: &[&str] = &[
+        " px", "%", "·", "s", "ms", "°", "fps", " bpc", " mm", " s", " %", " pixels",
+    ];
 
     fn catalogs() -> Vec<(&'static str, &'static str)> {
         JAPANESE
@@ -3227,15 +4717,33 @@ mod tests {
         assert_eq!(tr("Composition Name:"), "Název kompozice:");
         assert_eq!(tr("Cancel"), "Zrušit");
         assert_eq!(tr("my layer.mp4"), "my layer.mp4");
-        assert_eq!(tr_args("Proxy Use: {}", &[&"Best"]), "Použití zástupných souborů: Best");
-        assert_eq!(tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]), "Krok 1 z 3: Colour");
-        assert_eq!(tr_args("Template: {}\n{}", &[&"Title", &"My description"]), "Šablona: Title\nMy description");
-        assert_eq!(tr_args("Leave all attributes in \"{}\"", &[&"File Čeština"]), "Ponechat všechny atributy v „File Čeština“");
         assert_eq!(
-            tr_args("{} — double-click to open, {}-click to reveal", &[&"File.ecproj", &"Alt"]),
+            tr_args("Proxy Use: {}", &[&"Best"]),
+            "Použití zástupných souborů: Best"
+        );
+        assert_eq!(
+            tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]),
+            "Krok 1 z 3: Colour"
+        );
+        assert_eq!(
+            tr_args("Template: {}\n{}", &[&"Title", &"My description"]),
+            "Šablona: Title\nMy description"
+        );
+        assert_eq!(
+            tr_args("Leave all attributes in \"{}\"", &[&"File Čeština"]),
+            "Ponechat všechny atributy v „File Čeština“"
+        );
+        assert_eq!(
+            tr_args(
+                "{} — double-click to open, {}-click to reveal",
+                &[&"File.ecproj", &"Alt"]
+            ),
             "File.ecproj — dvojklikem otevřete, kliknutím s Alt zobrazíte umístění"
         );
-        assert_eq!(tr_args("Proxy Use: {}", &[]), "Použití zástupných souborů: ");
+        assert_eq!(
+            tr_args("Proxy Use: {}", &[]),
+            "Použití zástupných souborů: "
+        );
         set_current("en");
         assert_eq!(tr("Composition Name:"), "Composition Name:");
     }
@@ -3246,11 +4754,26 @@ mod tests {
     fn catalogs_are_unique_and_keep_the_english_shape() {
         let hans: Vec<&str> = SIMPLIFIED_CHINESE.iter().map(|(en, _)| *en).collect();
         let hant: Vec<&str> = TRADITIONAL_CHINESE.iter().map(|(en, _)| *en).collect();
-        assert_eq!(hans, hant, "the two Chinese catalogs list different source strings");
+        assert_eq!(
+            hans, hant,
+            "the two Chinese catalogs list different source strings"
+        );
         // Japanese, Ukrainian and Czech may lag the Chinese catalogs: a missing row falls back to English.
-        for (name, cat) in [("Japanese", JAPANESE), ("Ukrainian", UKRAINIAN), ("Brazilian Portuguese", PORTUGUESE), ("Czech", CZECH)] {
-            let extra: Vec<&str> = cat.iter().map(|(en, _)| *en).filter(|en| !hans.contains(en)).collect();
-            assert!(extra.is_empty(), "the {name} catalog lists source strings the Chinese ones don't: {extra:?}");
+        for (name, cat) in [
+            ("Japanese", JAPANESE),
+            ("Ukrainian", UKRAINIAN),
+            ("Brazilian Portuguese", PORTUGUESE),
+            ("Czech", CZECH),
+        ] {
+            let extra: Vec<&str> = cat
+                .iter()
+                .map(|(en, _)| *en)
+                .filter(|en| !hans.contains(en))
+                .collect();
+            assert!(
+                extra.is_empty(),
+                "the {name} catalog lists source strings the Chinese ones don't: {extra:?}"
+            );
         }
         let mut sorted = hans.clone();
         sorted.sort_unstable();
@@ -3258,9 +4781,19 @@ mod tests {
         sorted.dedup();
         assert_eq!(listed, sorted.len(), "a source string is listed twice");
         for (en, translated) in catalogs() {
-            assert!(!en.is_empty() && !translated.is_empty(), "empty row for {en:?}");
-            assert!(en.contains("{}") || !en.contains('{'), "{en:?} has a placeholder but no `{{}}`");
-            assert_eq!(en.matches("{}").count(), translated.matches("{}").count(), "{en:?} and {translated:?} carry a different number of values");
+            assert!(
+                !en.is_empty() && !translated.is_empty(),
+                "empty row for {en:?}"
+            );
+            assert!(
+                en.contains("{}") || !en.contains('{'),
+                "{en:?} has a placeholder but no `{{}}`"
+            );
+            assert_eq!(
+                en.matches("{}").count(),
+                translated.matches("{}").count(),
+                "{en:?} and {translated:?} carry a different number of values"
+            );
         }
     }
 
@@ -3286,9 +4819,18 @@ mod tests {
         assert_eq!(tr("Composition Name:"), "Назва композиції:");
         assert_eq!(tr("Cancel"), "Скасувати");
         assert_eq!(tr("my layer.mp4"), "my layer.mp4");
-        assert_eq!(tr_args("Proxy Use: {}", &[&"Best"]), "Використання проксі: Best");
-        assert_eq!(tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]), "Крок 1 з 3: Colour");
-        assert_eq!(tr_args("Template: {}\n{}", &[&"Title", &"My description"]), "Шаблон: Title\nMy description");
+        assert_eq!(
+            tr_args("Proxy Use: {}", &[&"Best"]),
+            "Використання проксі: Best"
+        );
+        assert_eq!(
+            tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]),
+            "Крок 1 з 3: Colour"
+        );
+        assert_eq!(
+            tr_args("Template: {}\n{}", &[&"Title", &"My description"]),
+            "Шаблон: Title\nMy description"
+        );
         set_current("en");
         assert_eq!(tr("Composition Name:"), "Composition Name:");
     }
@@ -3300,7 +4842,10 @@ mod tests {
         assert_eq!(tr("Composition Name:"), "Nome da composição:");
         assert_eq!(tr("Cancel"), "Cancelar");
         assert_eq!(tr("my layer.mp4"), "my layer.mp4");
-        assert_eq!(tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]), "Etapa 1 de 3: Colour");
+        assert_eq!(
+            tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]),
+            "Etapa 1 de 3: Colour"
+        );
         assert_eq!(tr("   OK   "), "   OK   ");
         set_current("en");
         assert_eq!(tr("Cancel"), "Cancel");
@@ -3311,7 +4856,10 @@ mod tests {
     fn tr_args_fills_values_in_order() {
         set_current("zh-hans");
         assert_eq!(tr_args("Proxy Use: {}", &[&"Best"]), "代理使用：Best");
-        assert_eq!(tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]), "第 1 步，共 3 步：Colour");
+        assert_eq!(
+            tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]),
+            "第 1 步，共 3 步：Colour"
+        );
         assert_eq!(tr_args("Proxy Use: {}", &[]), "代理使用：");
         set_current("en");
         assert_eq!(tr_args("Proxy Use: {}", &[&"Best"]), "Proxy Use: Best");
@@ -3325,7 +4873,10 @@ mod tests {
         assert_eq!(tr("Composition Name:"), "コンポジション名:");
         assert_eq!(tr("my layer.mp4"), "my layer.mp4");
         assert_eq!(tr_args("Proxy Use: {}", &[&"Best"]), "プロキシの使用：Best");
-        assert_eq!(tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]), "ステップ1/3：Colour");
+        assert_eq!(
+            tr_args("Step {} of {}: {}", &[&1, &3, &"Colour"]),
+            "ステップ1/3：Colour"
+        );
         set_current("en");
     }
 
@@ -3340,7 +4891,9 @@ mod tests {
             let formatted = format!("tr_args({en:?}");
             let bare = format!("{en:?}");
             assert!(
-                CONVERTED.iter().any(|(_, src)| src.contains(&plain) || src.contains(&formatted) || src.contains(&bare)),
+                CONVERTED.iter().any(|(_, src)| src.contains(&plain)
+                    || src.contains(&formatted)
+                    || src.contains(&bare)),
                 "{en:?} is in the catalog but no converted panel asks for it"
             );
         }
@@ -3360,7 +4913,11 @@ mod tests {
                     let line = &rest[..rest.find('\n').unwrap_or(rest.len())];
                     if let Some(q) = line.find('"') {
                         let before = line[..q].trim_end();
-                        assert!(before.ends_with("tr("), "{path}: the `{marker}` label `{}` is not in the catalog", &line[q..]);
+                        assert!(
+                            before.ends_with("tr("),
+                            "{path}: the `{marker}` label `{}` is not in the catalog",
+                            &line[q..]
+                        );
                     }
                     from = at + marker.len();
                 }

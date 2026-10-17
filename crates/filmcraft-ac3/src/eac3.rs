@@ -92,7 +92,12 @@ pub(crate) fn parse_header(b: &[u8], bsid: u8) -> Result<Header> {
     let fscod = r.read(2) as usize;
     let (sample_rate, blocks) = match RATES.get(fscod) {
         Some(&rate) => (rate, BLOCKS[r.read(2) as usize & 3]),
-        None => (*REDUCED_RATES.get(r.read(2) as usize).ok_or(Error::Invalid("reserved fscod2"))?, 6),
+        None => (
+            *REDUCED_RATES
+                .get(r.read(2) as usize)
+                .ok_or(Error::Invalid("reserved fscod2"))?,
+            6,
+        ),
     };
     let acmod = r.read(3) as u8;
     let lfeon = r.bit();
@@ -106,7 +111,17 @@ pub(crate) fn parse_header(b: &[u8], bsid: u8) -> Result<Header> {
     // frame bits per second of audio
     let bits = frame_bytes as u64 * 8 * u64::from(sample_rate) / (256 * u64::from(blocks));
     let bitrate_kbps = u32::try_from(bits / 1000).unwrap_or(u32::MAX);
-    Ok(Header { sample_rate, bitrate_kbps, frame_bytes, bsid, acmod, lfeon, blocks, strmtyp, substreamid })
+    Ok(Header {
+        sample_rate,
+        bitrate_kbps,
+        frame_bytes,
+        bsid,
+        acmod,
+        lfeon,
+        blocks,
+        strmtyp,
+        substreamid,
+    })
 }
 
 /// What the audio frame and blocks need from the bit stream information.
@@ -234,7 +249,11 @@ pub(crate) fn read_bsi(r: &mut Bits) -> Result<Bsi> {
         let l = r.read(6) as usize;
         r.skip((l + 1) * 8); // addbsi
     }
-    Ok(Bsi { strmtyp, fscod: rate_code, numblkscod })
+    Ok(Bsi {
+        strmtyp,
+        fscod: rate_code,
+        numblkscod,
+    })
 }
 
 /// The audio frame (§E2.2.3) and the state that runs from block to block within a syncframe.
@@ -265,10 +284,21 @@ pub(crate) struct FrameInfo {
 
 impl FrameInfo {
     /// Read the audio frame. `words` is the syncframe size in 16-bit words.
-    pub(crate) fn read(r: &mut Bits, bsi: &Bsi, acmod: usize, lfeon: bool, nblocks: usize, words: usize) -> Result<FrameInfo> {
+    pub(crate) fn read(
+        r: &mut Bits,
+        bsi: &Bsi,
+        acmod: usize,
+        lfeon: bool,
+        nblocks: usize,
+        words: usize,
+    ) -> Result<FrameInfo> {
         let nf = NFCHANS[acmod & 7];
         let six = bsi.numblkscod == 3;
-        let (expstre, ahte) = if six { (r.bit(), r.bit()) } else { (true, false) };
+        let (expstre, ahte) = if six {
+            (r.bit(), r.bit())
+        } else {
+            (true, false)
+        };
         let snroffststr = r.read(2) as u8;
         if snroffststr == 3 {
             return Err(Error::Invalid("reserved SNR offset strategy"));
@@ -302,7 +332,11 @@ impl FrameInfo {
             e.cplinu[0] = r.bit();
             for blk in 1..nblocks {
                 e.cplstre[blk] = r.bit();
-                e.cplinu[blk] = if e.cplstre[blk] { r.bit() } else { e.cplinu[blk - 1] };
+                e.cplinu[blk] = if e.cplstre[blk] {
+                    r.bit()
+                } else {
+                    e.cplinu[blk - 1]
+                };
             }
         }
         if expstre {
@@ -336,9 +370,15 @@ impl FrameInfo {
         }
         if ahte {
             // AHT flags exist for channels whose exponents are sent once in the frame (§E3.4.2)
-            let unsupported = || Err(Error::Unsupported("E-AC-3 adaptive hybrid transform".into()));
+            let unsupported = || {
+                Err(Error::Unsupported(
+                    "E-AC-3 adaptive hybrid transform".into(),
+                ))
+            };
             let ncplblks = e.cplinu.iter().filter(|&&c| c).count();
-            let ncplregs = (0..6).filter(|&b| e.cplstre[b] || e.cplexpstr[b] != 0).count();
+            let ncplregs = (0..6)
+                .filter(|&b| e.cplstre[b] || e.cplexpstr[b] != 0)
+                .count();
             if ncplblks == 6 && ncplregs == 1 && r.bit() {
                 return unsupported();
             }
@@ -437,7 +477,11 @@ impl Spx {
                 self.strtf = r.read(2) as usize;
                 self.begf = r.read(3) as usize;
                 let endf = r.read(3) as usize;
-                self.begin = if self.begf < 6 { self.begf + 2 } else { self.begf * 2 - 3 };
+                self.begin = if self.begf < 6 {
+                    self.begf + 2
+                } else {
+                    self.begf * 2 - 3
+                };
                 self.end = if endf < 3 { endf + 5 } else { endf * 2 + 3 };
                 if r.bit() {
                     for b in self.begin + 1..self.end {
@@ -448,7 +492,9 @@ impl Spx {
                     return Err(Error::Invalid("spectral extension ends before it begins"));
                 }
                 if self.strtf >= self.begin {
-                    return Err(Error::Invalid("spectral extension copies from above its start"));
+                    return Err(Error::Invalid(
+                        "spectral extension copies from above its start",
+                    ));
                 }
                 self.nbands = 1;
                 self.sizes = [0; 17];
@@ -501,7 +547,13 @@ impl Spx {
     /// Synthesize the extension region of one channel's coefficients (§E3.6.4): translate the
     /// low band up, notch-filter the borders when attenuation is on, blend with `noise` (zero
     /// mean, unit variance) scaled to the band's energy, and scale by the coordinates.
-    pub(crate) fn synthesize(&self, ch: usize, atten: Option<usize>, tc: &mut [f32; 256], mut noise: impl FnMut() -> f32) {
+    pub(crate) fn synthesize(
+        &self,
+        ch: usize,
+        atten: Option<usize>,
+        tc: &mut [f32; 256],
+        mut noise: impl FnMut() -> f32,
+    ) {
         let copystart = spx_band_bin(self.strtf);
         let copyend = self.begin_bin();
         let sizes = &self.sizes[..self.nbands];
@@ -583,7 +635,10 @@ mod tests {
         ];
         for (code, want) in rows {
             for (i, w) in want.into_iter().enumerate() {
-                assert!((f64::from(spx_atten(code, i)) - w).abs() < 1e-7, "{code} {i}");
+                assert!(
+                    (f64::from(spx_atten(code, i)) - w).abs() < 1e-7,
+                    "{code} {i}"
+                );
             }
         }
     }
@@ -591,8 +646,21 @@ mod tests {
     #[test]
     fn default_band_structures() {
         assert_eq!(DEFAULT_CPLBNDSTRC.iter().filter(|&&b| b).count(), 8);
-        assert!(DEFAULT_CPLBNDSTRC[8] && !DEFAULT_CPLBNDSTRC[9] && !DEFAULT_CPLBNDSTRC[12] && DEFAULT_CPLBNDSTRC[17]);
-        assert_eq!(DEFAULT_SPXBNDSTRC.iter().enumerate().filter(|(_, b)| **b).map(|(i, _)| i).collect::<Vec<_>>(), vec![8, 10, 12, 14, 16]);
+        assert!(
+            DEFAULT_CPLBNDSTRC[8]
+                && !DEFAULT_CPLBNDSTRC[9]
+                && !DEFAULT_CPLBNDSTRC[12]
+                && DEFAULT_CPLBNDSTRC[17]
+        );
+        assert_eq!(
+            DEFAULT_SPXBNDSTRC
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| **b)
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>(),
+            vec![8, 10, 12, 14, 16]
+        );
         // every frame-based strategy sends new exponents in block 0
         assert!(FRAME_EXPSTR.iter().all(|s| s[0] != 0));
     }

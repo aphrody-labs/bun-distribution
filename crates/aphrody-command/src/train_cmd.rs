@@ -9,9 +9,8 @@ use std::{
 };
 
 use aphrody_train::{
-    PromoteCriteria, PromoteVerdict, Registry, TrainKind, evaluate_candidate,
-    register_promoted_model, TrainingJob, acquire_training_lease, find_python_train_project,
-    run_training_job,
+    PromoteCriteria, PromoteVerdict, Registry, TrainKind, TrainingJob, acquire_training_lease,
+    evaluate_candidate, find_python_train_project, register_promoted_model, run_training_job,
 };
 use clap::{Args, Subcommand, ValueEnum};
 use miette::{IntoDiagnostic, Result};
@@ -183,7 +182,12 @@ async fn promote(req: PromoteRequest<'_>) -> Result<()> {
         "artifact": req.artifact.display().to_string(),
     });
     match &verdict {
-        PromoteVerdict::Promoted { model_id, delta_recall_at_5, sha256, .. } => {
+        PromoteVerdict::Promoted {
+            model_id,
+            delta_recall_at_5,
+            sha256,
+            ..
+        } => {
             let store = aphrody_models::ModelStore::open()
                 .map_err(|e| miette::miette!("open model store: {e}"))?;
             let installed = register_promoted_model(&store, req.artifact)
@@ -193,13 +197,17 @@ async fn promote(req: PromoteRequest<'_>) -> Result<()> {
             summary["delta_recall_at_5"] = (*delta_recall_at_5).into();
             summary["sha256"] = sha256.clone().into();
             summary["installed"] = format!("{installed:?}").into();
-        },
-        PromoteVerdict::Rejected { reason, delta_recall_at_5, max_regression_observed } => {
+        }
+        PromoteVerdict::Rejected {
+            reason,
+            delta_recall_at_5,
+            max_regression_observed,
+        } => {
             summary["verdict"] = "rejected".into();
             summary["reason"] = reason.clone().into();
             summary["delta_recall_at_5"] = (*delta_recall_at_5).into();
             summary["max_regression_observed"] = (*max_regression_observed).into();
-        },
+        }
     }
 
     if let Some(artifact_id) = req.artifact_id {
@@ -225,7 +233,10 @@ async fn promote(req: PromoteRequest<'_>) -> Result<()> {
         summary["promotion_id"] = promotion_id.into();
     }
 
-    println!("{}", serde_json::to_string_pretty(&summary).into_diagnostic()?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&summary).into_diagnostic()?
+    );
     if verdict.is_promoted() {
         Ok(())
     } else {
@@ -266,13 +277,19 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             .ok_or_else(|| {
                 miette::miette!("APHRODY_TRAINING_DATABASE_URL is not set; nothing to migrate")
             })?;
-        let applied: Vec<String> =
-            report.applied.iter().map(|(v, name)| format!("{v:04}_{name}")).collect();
+        let applied: Vec<String> = report
+            .applied
+            .iter()
+            .map(|(v, name)| format!("{v:04}_{name}"))
+            .collect();
         let summary = serde_json::json!({
             "applied": applied,
             "already_applied": report.already_applied,
         });
-        println!("{}", serde_json::to_string_pretty(&summary).into_diagnostic()?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&summary).into_diagnostic()?
+        );
         return Ok(());
     }
     let state_dir = aphrody_models::paths::state_dir().into_diagnostic()?;
@@ -285,8 +302,9 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             let is_locked = gpu_lock.exists();
             let repo_root = std::env::current_dir().into_diagnostic()?;
             let py_root = find_python_train_project(&repo_root);
-            let py_train_exists =
-                py_root.join("packages/ai/py/aphrody-train/pyproject.toml").is_file();
+            let py_train_exists = py_root
+                .join("packages/ai/py/aphrody-train/pyproject.toml")
+                .is_file();
 
             let status = serde_json::json!({
                 "gpu_lock_active": is_locked,
@@ -295,8 +313,11 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
                 "python_workspace": py_root.display().to_string(),
                 "state_dir": state_dir.display().to_string(),
             });
-            println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
-        },
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&status).into_diagnostic()?
+            );
+        }
         TrainAction::Lease { seconds } => {
             println!("Acquiring exclusive GPU training lease...");
             let lease = acquire_training_lease(
@@ -309,8 +330,17 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             tokio::time::sleep(tokio::time::Duration::from_secs(seconds)).await;
             drop(lease);
             println!("GPU lease released.");
-        },
-        TrainAction::Run { kind, id, steps, allow_cpu, out_dir, input, gold, base_model } => {
+        }
+        TrainAction::Run {
+            kind,
+            id,
+            steps,
+            allow_cpu,
+            out_dir,
+            input,
+            gold,
+            base_model,
+        } => {
             let job_id = id.unwrap_or_else(|| format!("train-{}", chrono::Utc::now().timestamp()));
             let out = out_dir.unwrap_or_else(|| state_dir.join("train").join(&job_id));
             std::fs::create_dir_all(&out).into_diagnostic()?;
@@ -343,11 +373,11 @@ pub(crate) async fn run(args: TrainArgs) -> Result<()> {
             for (name, path, sha256) in &outcome.artifacts {
                 println!("  - {name}: {} (sha256: {})", path.display(), sha256);
             }
-        },
+        }
         TrainAction::Promote { .. } => unreachable!("promotion was refused before state access"),
         TrainAction::RegistryMigrate => {
             unreachable!("registry migration returned before state access")
-        },
+        }
     }
     Ok(())
 }
@@ -387,8 +417,14 @@ mod tests {
                 Some(expected.as_path())
             );
         }
-        assert_eq!(default_dbfr_input(JobKind::Lora, Some("dbfr"), state.path()), None);
-        assert_eq!(default_dbfr_input(JobKind::Embed, Some("aphrody"), state.path()), None);
+        assert_eq!(
+            default_dbfr_input(JobKind::Lora, Some("dbfr"), state.path()),
+            None
+        );
+        assert_eq!(
+            default_dbfr_input(JobKind::Embed, Some("aphrody"), state.path()),
+            None
+        );
         assert_eq!(default_dbfr_input(JobKind::Embed, None, state.path()), None);
     }
 }

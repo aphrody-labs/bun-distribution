@@ -7,7 +7,17 @@
 //!
 //! Time passed to a source is **media time** (0 = first frame of the media), in ticks.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod animated;
 pub mod cache;
@@ -102,7 +112,11 @@ pub struct MediaInfo {
     /// [`MediaSource::audio`] reads; the others are read with [`MediaSource::audio_stream`].
     /// Project files written before multi-stream support hold a single `audio` object (or
     /// `null`): both still load.
-    #[serde(default, alias = "audio", deserialize_with = "deserialize_audio_streams")]
+    #[serde(
+        default,
+        alias = "audio",
+        deserialize_with = "deserialize_audio_streams"
+    )]
     pub audio_streams: Vec<AudioStreamInfo>,
     pub container: String,
     /// Timecode of the first frame (in frames at `video.frame_rate`), if the file carries one.
@@ -111,7 +125,9 @@ pub struct MediaInfo {
 }
 
 /// Reads `audio_streams` from a list, or from the single optional stream older project files wrote.
-fn deserialize_audio_streams<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Vec<AudioStreamInfo>, D::Error> {
+fn deserialize_audio_streams<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Vec<AudioStreamInfo>, D::Error> {
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum Streams {
@@ -126,7 +142,10 @@ fn deserialize_audio_streams<'de, D: serde::Deserializer<'de>>(d: D) -> std::res
 
 impl MediaInfo {
     pub fn frame_rate(&self) -> FrameRate {
-        self.video.as_ref().map(|v| v.frame_rate).unwrap_or_default()
+        self.video
+            .as_ref()
+            .map(|v| v.frame_rate)
+            .unwrap_or_default()
     }
     pub fn has_video(&self) -> bool {
         self.video.is_some()
@@ -164,23 +183,44 @@ pub trait MediaSource: Send + Sync {
     /// Like [`audio`](Self::audio) for audio stream `stream` (an index into
     /// [`MediaInfo::audio_streams`]). Sources with a single audio stream need not override this:
     /// stream 0 is `audio`, any other index is [`MediaError::NoStream`].
-    fn audio_stream(&self, stream: usize, start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer> {
-        if stream == 0 { self.audio(start, frames, sample_rate) } else { Err(MediaError::NoStream("audio")) }
+    fn audio_stream(
+        &self,
+        stream: usize,
+        start: i64,
+        frames: usize,
+        sample_rate: u32,
+    ) -> Result<AudioBuffer> {
+        if stream == 0 {
+            self.audio(start, frames, sample_rate)
+        } else {
+            Err(MediaError::NoStream("audio"))
+        }
     }
 }
 
 pub type SharedSource = Arc<dyn MediaSource>;
 
 /// File extensions we recognise at import (the media browser filters on these).
-pub const STILL_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "tga", "dpx", "exr", "hdr", "dng"];
-pub const AUDIO_EXTENSIONS: &[&str] = &["wav", "wave", "bwf", "aif", "aiff", "mp3", "mp2", "m4a", "aac", "flac", "ogg", "opus"];
+pub const STILL_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "tga", "dpx", "exr", "hdr", "dng",
+];
+pub const AUDIO_EXTENSIONS: &[&str] = &[
+    "wav", "wave", "bwf", "aif", "aiff", "mp3", "mp2", "m4a", "aac", "flac", "ogg", "opus",
+];
 pub const VIDEO_EXTENSIONS: &[&str] = &[
-    "mp4", "m4v", "mov", "mkv", "webm", "avi", "mxf", "mts", "m2ts", "m2t", "ts", "mpg", "mpeg", "vob", "mod", "tod", "m2v", "m1v", "mpv", "3gp", "y4m", "apv",
+    "mp4", "m4v", "mov", "mkv", "webm", "avi", "mxf", "mts", "m2ts", "m2t", "ts", "mpg", "mpeg",
+    "vob", "mod", "tod", "m2v", "m1v", "mpv", "3gp", "y4m", "apv",
 ];
 
 pub fn is_importable(path: &Path) -> bool {
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
-    STILL_EXTENSIONS.contains(&ext.as_str()) || AUDIO_EXTENSIONS.contains(&ext.as_str()) || VIDEO_EXTENSIONS.contains(&ext.as_str())
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    STILL_EXTENSIONS.contains(&ext.as_str())
+        || AUDIO_EXTENSIONS.contains(&ext.as_str())
+        || VIDEO_EXTENSIONS.contains(&ext.as_str())
 }
 
 /// A pluggable opener (containers/codecs register themselves here from higher-level crates).
@@ -210,14 +250,20 @@ pub fn open_bytes(name: &str, bytes: Arc<[u8]>, extra: &[Opener]) -> Result<Shar
     if still::sniff(name, &bytes) {
         return Ok(Arc::new(still::StillSource::decode(name, &bytes)?));
     }
-    Err(MediaError::Unsupported(format!("{name}: unrecognised format")))
+    Err(MediaError::Unsupported(format!(
+        "{name}: unrecognised format"
+    )))
 }
 
 /// Open a file from disk (native only).
 #[cfg(not(target_arch = "wasm32"))]
 pub fn open_path(path: &Path, extra: &[Opener]) -> Result<SharedSource> {
-    let bytes = std::fs::read(path).map_err(|e| MediaError::Io(format!("{}: {e}", path.display())))?;
-    let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let bytes =
+        std::fs::read(path).map_err(|e| MediaError::Io(format!("{}: {e}", path.display())))?;
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
     open_bytes(&name, bytes.into(), extra)
 }
 
@@ -231,9 +277,16 @@ impl MediaSource for OfflineSource {
         &self.info
     }
     fn video_frame(&self, req: FrameRequest) -> Result<Arc<VideoFrame>> {
-        let v = self.info.video.as_ref().ok_or(MediaError::NoStream("video"))?;
+        let v = self
+            .info
+            .video
+            .as_ref()
+            .ok_or(MediaError::NoStream("video"))?;
         let s = req.scale.clamp(0.02, 1.0);
-        let (w, h) = (((v.width as f32 * s) as u32).max(2), ((v.height as f32 * s) as u32).max(2));
+        let (w, h) = (
+            ((v.width as f32 * s) as u32).max(2),
+            ((v.height as f32 * s) as u32).max(2),
+        );
         let mut px = vec![0u8; (w * h * 4) as usize];
         for p in px.as_chunks_mut::<4>().0 {
             p.copy_from_slice(&[140, 16, 16, 255]);
@@ -241,7 +294,11 @@ impl MediaSource for OfflineSource {
         Ok(Arc::new(VideoFrame::rgba8(w, h, px).with_pts(req.time)))
     }
     fn audio(&self, _start: i64, frames: usize, sample_rate: u32) -> Result<AudioBuffer> {
-        Ok(AudioBuffer::silence(sample_rate, self.info.audio().map_or(2, |a| a.channels as usize), frames))
+        Ok(AudioBuffer::silence(
+            sample_rate,
+            self.info.audio().map_or(2, |a| a.channels as usize),
+            frames,
+        ))
     }
 }
 
@@ -252,7 +309,15 @@ mod importable_tests {
 
     #[test]
     fn camera_extensions_match_regardless_of_case() {
-        for name in ["clip.mov", "clip.MOV", "clip.Mov", "shot.MP4", "IMG_0001.JPG", "sound.WAV", "take.M2TS"] {
+        for name in [
+            "clip.mov",
+            "clip.MOV",
+            "clip.Mov",
+            "shot.MP4",
+            "IMG_0001.JPG",
+            "sound.WAV",
+            "take.M2TS",
+        ] {
             assert!(is_importable(Path::new(name)), "{name}");
         }
         assert!(!is_importable(Path::new("notes.txt")));

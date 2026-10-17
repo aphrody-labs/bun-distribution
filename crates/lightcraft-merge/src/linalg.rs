@@ -26,7 +26,8 @@ pub fn transpose3(a: &M3) -> M3 {
 }
 
 pub fn det3(a: &M3) -> f64 {
-    a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+    a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+        - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
         + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0])
 }
 
@@ -35,7 +36,8 @@ pub fn inv3(a: &M3) -> Option<M3> {
     if d.abs() < 1e-300 || !d.is_finite() {
         return None;
     }
-    let c = |r0: usize, c0: usize, r1: usize, c1: usize| a[r0][c0] * a[r1][c1] - a[r0][c1] * a[r1][c0];
+    let c =
+        |r0: usize, c0: usize, r1: usize, c1: usize| a[r0][c0] * a[r1][c1] - a[r0][c1] * a[r1][c0];
     Some([
         [c(1, 1, 2, 2) / d, -c(0, 1, 2, 2) / d, c(0, 1, 1, 2) / d],
         [-c(1, 0, 2, 2) / d, c(0, 0, 2, 2) / d, -c(0, 0, 1, 2) / d],
@@ -48,7 +50,11 @@ pub fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
 }
 
 pub fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 
 pub fn norm(a: [f64; 3]) -> f64 {
@@ -71,9 +77,21 @@ pub fn rodrigues(w: [f64; 3]) -> M3 {
     let (s, c) = th.sin_cos();
     let v = 1.0 - c;
     [
-        [c + k[0] * k[0] * v, k[0] * k[1] * v - k[2] * s, k[0] * k[2] * v + k[1] * s],
-        [k[1] * k[0] * v + k[2] * s, c + k[1] * k[1] * v, k[1] * k[2] * v - k[0] * s],
-        [k[2] * k[0] * v - k[1] * s, k[2] * k[1] * v + k[0] * s, c + k[2] * k[2] * v],
+        [
+            c + k[0] * k[0] * v,
+            k[0] * k[1] * v - k[2] * s,
+            k[0] * k[2] * v + k[1] * s,
+        ],
+        [
+            k[1] * k[0] * v + k[2] * s,
+            c + k[1] * k[1] * v,
+            k[1] * k[2] * v - k[0] * s,
+        ],
+        [
+            k[2] * k[0] * v - k[1] * s,
+            k[2] * k[1] * v + k[0] * s,
+            c + k[2] * k[2] * v,
+        ],
     ]
 }
 
@@ -87,8 +105,11 @@ pub fn rotation_vector(r: &M3) -> [f64; 3] {
     }
     if (std::f64::consts::PI - th).abs() < 1e-6 {
         // axis from the largest diagonal element of (R + I) / 2
-        let b = [0, 1, 2].map(|i| [0, 1, 2].map(|j| (r[i][j] + if i == j { 1.0 } else { 0.0 }) / 2.0));
-        let i = (0..3).max_by(|&x, &y| b[x][x].total_cmp(&b[y][y])).unwrap_or(0);
+        let b =
+            [0, 1, 2].map(|i| [0, 1, 2].map(|j| (r[i][j] + if i == j { 1.0 } else { 0.0 }) / 2.0));
+        let i = (0..3)
+            .max_by(|&x, &y| b[x][x].total_cmp(&b[y][y]))
+            .unwrap_or(0);
         let axis = normalize(b[i]);
         return axis.map(|v| v * th);
     }
@@ -122,7 +143,8 @@ pub fn orthonormalize(m: &M3) -> M3 {
 /// Solve `a · x = b` (`a` is `n × n`, row-major) by Gaussian elimination with partial pivoting.
 pub fn solve(mut a: Vec<f64>, mut b: Vec<f64>, n: usize) -> Option<Vec<f64>> {
     for col in 0..n {
-        let piv = (col..n).max_by(|&i, &j| a[i * n + col].abs().total_cmp(&a[j * n + col].abs()))?;
+        let piv =
+            (col..n).max_by(|&i, &j| a[i * n + col].abs().total_cmp(&a[j * n + col].abs()))?;
         let pv = a[piv * n + col];
         if pv.abs() < 1e-300 || !pv.is_finite() {
             return None;
@@ -160,8 +182,14 @@ pub fn sym_eigen(a: &[f64], n: usize) -> (Vec<f64>, Vec<Vec<f64>>) {
         v[i * n + i] = 1.0;
     }
     for _sweep in 0..100 {
-        let off: f64 = (0..n).flat_map(|i| (0..n).filter(move |&j| j != i).map(move |j| (i, j))).map(|(i, j)| m[i * n + j] * m[i * n + j]).sum();
-        let scale: f64 = (0..n).map(|i| m[i * n + i] * m[i * n + i]).sum::<f64>().max(1e-300);
+        let off: f64 = (0..n)
+            .flat_map(|i| (0..n).filter(move |&j| j != i).map(move |j| (i, j)))
+            .map(|(i, j)| m[i * n + j] * m[i * n + j])
+            .sum();
+        let scale: f64 = (0..n)
+            .map(|i| m[i * n + i] * m[i * n + i])
+            .sum::<f64>()
+            .max(1e-300);
         if off <= 1e-24 * scale {
             break;
         }
@@ -197,7 +225,10 @@ pub fn sym_eigen(a: &[f64], n: usize) -> (Vec<f64>, Vec<Vec<f64>>) {
     let mut idx: Vec<usize> = (0..n).collect();
     idx.sort_by(|&a, &b| m[a * n + a].total_cmp(&m[b * n + b]));
     let vals = idx.iter().map(|&i| m[i * n + i]).collect();
-    let vecs = idx.iter().map(|&i| (0..n).map(|k| v[k * n + i]).collect()).collect();
+    let vecs = idx
+        .iter()
+        .map(|&i| (0..n).map(|k| v[k * n + i]).collect())
+        .collect();
     (vals, vecs)
 }
 
@@ -207,7 +238,12 @@ mod tests {
 
     #[test]
     fn rodrigues_round_trip() {
-        for w in [[0.1, -0.2, 0.3], [0.0, 0.0, 0.0], [1.5, 0.2, -0.7], [0.0, 3.0, 0.0]] {
+        for w in [
+            [0.1, -0.2, 0.3],
+            [0.0, 0.0, 0.0],
+            [1.5, 0.2, -0.7],
+            [0.0, 3.0, 0.0],
+        ] {
             let r = rodrigues(w);
             assert!((det3(&r) - 1.0).abs() < 1e-9);
             let back = rotation_vector(&r);

@@ -11,35 +11,35 @@ use crate::generate::generate_splat::splat_generation_cost_estimate::SplatGenera
 
 #[derive(Debug)]
 pub enum SplatGenerationPlan {
-  ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini),
-  ArtcraftMarble0p1Plus(PlanArtcraftMarble0p1Plus),
+    ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini),
+    ArtcraftMarble0p1Plus(PlanArtcraftMarble0p1Plus),
 }
 
 impl SplatGenerationPlan {
-  pub async fn generate_splat(
-    &self,
-    client: &RouterClient,
-  ) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
-    match self {
-      SplatGenerationPlan::ArtcraftMarble0p1Mini(plan) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        execute_artcraft_marble_0p1_mini(plan, artcraft_client).await
-      }
-      SplatGenerationPlan::ArtcraftMarble0p1Plus(plan) => {
-        let artcraft_client = client.get_artcraft_client_ref()?;
-        execute_artcraft_marble_0p1_plus(plan, artcraft_client).await
-      }
+    pub async fn generate_splat(
+        &self,
+        client: &RouterClient,
+    ) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
+        match self {
+            SplatGenerationPlan::ArtcraftMarble0p1Mini(plan) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                execute_artcraft_marble_0p1_mini(plan, artcraft_client).await
+            }
+            SplatGenerationPlan::ArtcraftMarble0p1Plus(plan) => {
+                let artcraft_client = client.get_artcraft_client_ref()?;
+                execute_artcraft_marble_0p1_plus(plan, artcraft_client).await
+            }
+        }
     }
-  }
 
-  pub fn estimate_costs(&self) -> SplatGenerationCostEstimate {
-    match self {
-      SplatGenerationPlan::ArtcraftMarble0p1Mini(plan) => {
-        estimate_splat_cost_artcraft_marble_0p1_mini(plan)
-      }
-      SplatGenerationPlan::ArtcraftMarble0p1Plus(plan) => {
-        estimate_splat_cost_artcraft_marble_0p1_plus(plan)
-      }
+    pub fn estimate_costs(&self) -> SplatGenerationCostEstimate {
+        match self {
+            SplatGenerationPlan::ArtcraftMarble0p1Mini(plan) => {
+                estimate_splat_cost_artcraft_marble_0p1_mini(plan)
+            }
+            SplatGenerationPlan::ArtcraftMarble0p1Plus(plan) => {
+                estimate_splat_cost_artcraft_marble_0p1_plus(plan)
+            }
+        }
     }
-  }
 }

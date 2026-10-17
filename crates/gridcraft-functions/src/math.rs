@@ -7,7 +7,8 @@ use gridcraft_core::{Array, CellError, Value};
 
 use crate::criteria::Criterion;
 use crate::util::{
-    A, MAX_CELLS, R, S, array_val, as_array, check_size, has, num, num_val, numbers, opt_num, round_half_away, text, text_val, to_sig_digits,
+    A, MAX_CELLS, R, S, array_val, as_array, check_size, has, num, num_val, numbers, opt_num,
+    round_half_away, text, text_val, to_sig_digits,
 };
 use crate::{Arg, Ctx, FnSpec, VAR};
 
@@ -40,11 +41,19 @@ fn unary(a: &[Arg], f: impl Fn(f64) -> R<f64>) -> R<Value> {
 }
 
 fn trig_arg(x: f64) -> R<f64> {
-    if x.abs() >= TRIG_LIMIT { Err(CellError::Num) } else { Ok(x) }
+    if x.abs() >= TRIG_LIMIT {
+        Err(CellError::Num)
+    } else {
+        Ok(x)
+    }
 }
 
 fn nonzero(x: f64) -> R<f64> {
-    if x == 0.0 { Err(CellError::Div0) } else { Ok(x) }
+    if x == 0.0 {
+        Err(CellError::Div0)
+    } else {
+        Ok(x)
+    }
 }
 
 /// Removes binary noise before ceil/floor (e.g. 2.0000000000000004 → 2).
@@ -121,8 +130,13 @@ fn product(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 /// argument holding text (a literal or a single-cell reference) is `#VALUE!` (observed:
 /// `SUMPRODUCT(G1330:G1330,I1330:I1330)` with G1330 = the text "4" is `#VALUE!`).
 fn sumproduct(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    let arrays: Vec<_> = a.iter().map(|x| (as_array(&x.value), !matches!(x.value, Value::Array(_)))).collect();
-    let Some((first, _)) = arrays.first() else { return Err(CellError::Value) };
+    let arrays: Vec<_> = a
+        .iter()
+        .map(|x| (as_array(&x.value), !matches!(x.value, Value::Array(_))))
+        .collect();
+    let Some((first, _)) = arrays.first() else {
+        return Err(CellError::Value);
+    };
     let (rows, cols) = (first.rows, first.cols);
     if arrays.iter().any(|(x, _)| x.rows != rows || x.cols != cols) {
         return Err(CellError::Value);
@@ -226,7 +240,11 @@ fn floor(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let x = num(a, 0)?;
     let s = num(a, 1)?;
     if s == 0.0 {
-        return if x == 0.0 { Ok(Value::Number(0.0)) } else { Err(CellError::Div0) };
+        return if x == 0.0 {
+            Ok(Value::Number(0.0))
+        } else {
+            Err(CellError::Div0)
+        };
     }
     if x == 0.0 {
         return Ok(Value::Number(0.0));
@@ -339,10 +357,22 @@ fn sign(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     })
 }
 fn sqrt(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x < 0.0 { Err(CellError::Num) } else { Ok(x.sqrt()) })
+    unary(a, |x| {
+        if x < 0.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.sqrt())
+        }
+    })
 }
 fn sqrtpi(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x < 0.0 { Err(CellError::Num) } else { Ok((x * PI).sqrt()) })
+    unary(a, |x| {
+        if x < 0.0 {
+            Err(CellError::Num)
+        } else {
+            Ok((x * PI).sqrt())
+        }
+    })
 }
 
 fn power_of(x: f64, y: f64) -> R<f64> {
@@ -359,7 +389,11 @@ fn power_of(x: f64, y: f64) -> R<f64> {
         return Err(CellError::Num);
     }
     let r = x.powf(y);
-    if r.is_finite() { Ok(r) } else { Err(CellError::Num) }
+    if r.is_finite() {
+        Ok(r)
+    } else {
+        Err(CellError::Num)
+    }
 }
 fn power(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     num_val(power_of(num(a, 0)?, num(a, 1)?)?)
@@ -368,10 +402,22 @@ fn exp(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(x.exp()))
 }
 fn ln(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x <= 0.0 { Err(CellError::Num) } else { Ok(x.ln()) })
+    unary(a, |x| {
+        if x <= 0.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.ln())
+        }
+    })
 }
 fn log10(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x <= 0.0 { Err(CellError::Num) } else { Ok(x.log10()) })
+    unary(a, |x| {
+        if x <= 0.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.log10())
+        }
+    })
 }
 fn log(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let x = num(a, 0)?;
@@ -454,8 +500,15 @@ fn combin_of(n: f64, k: f64) -> R<f64> {
     }
     let k = k.min(n - k);
     if k > 1e7 {
-        let r = (crate::special::ln_gamma(n + 1.0) - crate::special::ln_gamma(k + 1.0) - crate::special::ln_gamma(n - k + 1.0)).exp();
-        return if r.is_finite() { Ok(r) } else { Err(CellError::Num) };
+        let r = (crate::special::ln_gamma(n + 1.0)
+            - crate::special::ln_gamma(k + 1.0)
+            - crate::special::ln_gamma(n - k + 1.0))
+        .exp();
+        return if r.is_finite() {
+            Ok(r)
+        } else {
+            Err(CellError::Num)
+        };
     }
     let mut r = 1.0f64;
     let mut i = 1.0;
@@ -510,7 +563,11 @@ fn integer_args(a: &[Arg]) -> R<Vec<u64>> {
     v.iter()
         .map(|x| {
             let t = x.trunc();
-            if !(0.0..9.007_199_254_740_992e15).contains(&t) { Err(CellError::Num) } else { Ok(t as u64) }
+            if !(0.0..9.007_199_254_740_992e15).contains(&t) {
+                Err(CellError::Num)
+            } else {
+                Ok(t as u64)
+            }
         })
         .collect()
 }
@@ -573,10 +630,22 @@ fn tan(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(trig_arg(x)?.tan()))
 }
 fn asin(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x.abs() > 1.0 { Err(CellError::Num) } else { Ok(x.asin()) })
+    unary(a, |x| {
+        if x.abs() > 1.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.asin())
+        }
+    })
 }
 fn acos(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x.abs() > 1.0 { Err(CellError::Num) } else { Ok(x.acos()) })
+    unary(a, |x| {
+        if x.abs() > 1.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.acos())
+        }
+    })
 }
 fn atan(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(x.atan()))
@@ -601,10 +670,22 @@ fn asinh(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(x.asinh()))
 }
 fn acosh(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x < 1.0 { Err(CellError::Num) } else { Ok(x.acosh()) })
+    unary(a, |x| {
+        if x < 1.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.acosh())
+        }
+    })
 }
 fn atanh(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x.abs() >= 1.0 { Err(CellError::Num) } else { Ok(x.atanh()) })
+    unary(a, |x| {
+        if x.abs() >= 1.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(x.atanh())
+        }
+    })
 }
 fn cot(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(1.0 / nonzero(trig_arg(x)?)?.tan()))
@@ -628,7 +709,13 @@ fn acot(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(PI / 2.0 - x.atan()))
 }
 fn acoth(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
-    unary(a, |x| if x.abs() <= 1.0 { Err(CellError::Num) } else { Ok(0.5 * ((x + 1.0) / (x - 1.0)).ln()) })
+    unary(a, |x| {
+        if x.abs() <= 1.0 {
+            Err(CellError::Num)
+        } else {
+            Ok(0.5 * ((x + 1.0) / (x - 1.0)).ln())
+        }
+    })
 }
 fn degrees(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     unary(a, |x| Ok(x * 180.0 / PI))
@@ -640,14 +727,25 @@ fn radians(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 // ---------------------------------------------------------------------------------------------
 // Number systems
 
-const NUMERALS: [(char, u32); 7] = [('I', 1), ('V', 5), ('X', 10), ('L', 50), ('C', 100), ('D', 500), ('M', 1000)];
+const NUMERALS: [(char, u32); 7] = [
+    ('I', 1),
+    ('V', 5),
+    ('X', 10),
+    ('L', 50),
+    ('C', 100),
+    ('D', 500),
+    ('M', 1000),
+];
 
 /// Tokens (text, value) for a ROMAN form, largest value first. Form 0 is classic; each higher
 /// form widens one of two limits on the subtracted numeral's ratio to the larger one, alternating:
 /// the limit for I/X/C (10, 10, 100, 100, 1000) and for V/L (none, 20, 20, 200, 200). So form 2
 /// allows IC and XM but not VD, and form 3 adds VD and VM but not ID.
 fn roman_tokens(form: u32) -> Vec<(String, u32)> {
-    let (pow10_max, five_max) = [(10, 0), (10, 20), (100, 20), (100, 200), (1000, 200)].get(form as usize).copied().unwrap_or((10, 0));
+    let (pow10_max, five_max) = [(10, 0), (10, 20), (100, 20), (100, 200), (1000, 200)]
+        .get(form as usize)
+        .copied()
+        .unwrap_or((10, 0));
     let mut toks: Vec<(String, u32)> = NUMERALS.iter().map(|(c, v)| (c.to_string(), *v)).collect();
     for (i, (sc, sv)) in NUMERALS.iter().enumerate() {
         for (lc, lv) in NUMERALS.iter().skip(i + 1) {
@@ -681,7 +779,9 @@ fn roman(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let mut rem = n as u32;
     let mut out = String::new();
     while rem > 0 {
-        let Some((t, v)) = toks.iter().find(|(_, v)| *v <= rem) else { break };
+        let Some((t, v)) = toks.iter().find(|(_, v)| *v <= rem) else {
+            break;
+        };
         out.push_str(t);
         rem -= v;
     }
@@ -701,7 +801,9 @@ fn arabic(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let mut vals = Vec::new();
     for ch in body.chars() {
         let u = ch.to_ascii_uppercase();
-        let Some((_, v)) = NUMERALS.iter().find(|(c, _)| *c == u) else { return Err(CellError::Value) };
+        let Some((_, v)) = NUMERALS.iter().find(|(c, _)| *c == u) else {
+            return Err(CellError::Value);
+        };
         vals.push(*v as i64);
     }
     let mut total = 0i64;
@@ -719,7 +821,10 @@ fn base(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let n = num(a, 0)?.trunc();
     let radix = num(a, 1)?.trunc();
     let min_len = opt_num(a, 2, 0.0)?.trunc();
-    if !(0.0..9.007_199_254_740_992e15).contains(&n) || !(2.0..=36.0).contains(&radix) || !(0.0..=255.0).contains(&min_len) {
+    if !(0.0..9.007_199_254_740_992e15).contains(&n)
+        || !(2.0..=36.0).contains(&radix)
+        || !(0.0..=255.0).contains(&min_len)
+    {
         return Err(CellError::Num);
     }
     let radix = radix as u64;
@@ -727,7 +832,11 @@ fn base(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let mut digits = Vec::new();
     loop {
         let d = (v % radix) as u32;
-        digits.push(char::from_digit(d, radix as u32).unwrap_or('0').to_ascii_uppercase());
+        digits.push(
+            char::from_digit(d, radix as u32)
+                .unwrap_or('0')
+                .to_ascii_uppercase(),
+        );
         v /= radix;
         if v == 0 {
             break;
@@ -748,7 +857,9 @@ fn decimal(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let radix = radix as u32;
     let mut total = 0f64;
     for ch in s.trim().chars() {
-        let Some(d) = ch.to_digit(radix) else { return Err(CellError::Num) };
+        let Some(d) = ch.to_digit(radix) else {
+            return Err(CellError::Num);
+        };
         total = total * radix as f64 + d as f64;
     }
     if total >= 9.007_199_254_740_992e15 {
@@ -775,7 +886,16 @@ fn matrix(v: &Value) -> R<(usize, usize, Vec<f64>)> {
 }
 
 fn to_value_array(rows: usize, cols: usize, data: Vec<f64>) -> R<Value> {
-    let vals = data.into_iter().map(|x| if x.is_finite() { Value::Number(x) } else { Value::Error(CellError::Num) }).collect();
+    let vals = data
+        .into_iter()
+        .map(|x| {
+            if x.is_finite() {
+                Value::Number(x)
+            } else {
+                Value::Error(CellError::Num)
+            }
+        })
+        .collect();
     array_val(rows, cols, vals)
 }
 
@@ -785,7 +905,8 @@ fn mmult(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     if ac != br {
         return Err(CellError::Value);
     }
-    if ar.saturating_mul(bc) > MAX_CELLS || ar.saturating_mul(bc).saturating_mul(ac) > 2_000_000_000 {
+    if ar.saturating_mul(bc) > MAX_CELLS || ar.saturating_mul(bc).saturating_mul(ac) > 2_000_000_000
+    {
         return Err(CellError::Num);
     }
     let mut out = vec![0.0; ar * bc];
@@ -860,7 +981,11 @@ fn mdeterm(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (n, m) = square(a)?;
     let d = determinant(n, m);
     // Tidy results that should be integers (e.g. 0.9999999999999998 → 1).
-    num_val(if d.abs() > 1e-300 { to_sig_digits(d, 15) } else { d })
+    num_val(if d.abs() > 1e-300 {
+        to_sig_digits(d, 15)
+    } else {
+        d
+    })
 }
 
 fn minverse(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -920,7 +1045,10 @@ fn minverse(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
             }
         }
     }
-    let inv = inv.into_iter().map(|x| if x.abs() < 1e-15 { 0.0 } else { x }).collect();
+    let inv = inv
+        .into_iter()
+        .map(|x| if x.abs() < 1e-15 { 0.0 } else { x })
+        .collect();
     to_value_array(n, n, inv)
 }
 
@@ -965,13 +1093,19 @@ fn criteria_mask(a: &[Arg], first_pair: usize, rows: usize, cols: usize) -> R<Ve
     let single_pair = rest.len() == 2;
     let mut mask = vec![true; rows.saturating_mul(cols)];
     for pair in rest.chunks(2) {
-        let (Some(range), Some(crit)) = (pair.first(), pair.get(1)) else { return Err(CellError::Value) };
+        let (Some(range), Some(crit)) = (pair.first(), pair.get(1)) else {
+            return Err(CellError::Value);
+        };
         let r = as_array(&range.value);
         if r.rows != rows || r.cols != cols {
             return Err(CellError::Value);
         }
         let scalar = crit.value.scalar();
-        let c = if single_pair { Criterion::parse_arg(&scalar)? } else { Criterion::parse_arg_truncated(&scalar) };
+        let c = if single_pair {
+            Criterion::parse_arg(&scalar)?
+        } else {
+            Criterion::parse_arg_truncated(&scalar)
+        };
         for (m, v) in mask.iter_mut().zip(r.iter()) {
             if *m && !c.matches(v) {
                 *m = false;
@@ -1041,7 +1175,11 @@ fn countif(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 fn if_numbers(a: &[Arg]) -> R<Vec<f64>> {
     let range = as_array(&crate::util::arg(a, 0)?.value);
     let c = Criterion::parse_arg(&crate::util::arg(a, 1)?.value.scalar())?;
-    let sum_range = if has(a, 2) { Some(as_array(&crate::util::arg(a, 2)?.value)) } else { None };
+    let sum_range = if has(a, 2) {
+        Some(as_array(&crate::util::arg(a, 2)?.value))
+    } else {
+        None
+    };
     let mut out = Vec::new();
     for r in 0..range.rows {
         for col in 0..range.cols {
@@ -1078,7 +1216,16 @@ fn averageif(a: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 pub(crate) fn specs() -> Vec<FnSpec> {
     vec![
-        f!("SUM", 1, VAR, MathTrig, A, "SUM(number1, [number2], ...)", "Adds all the numbers in the arguments.", sum),
+        f!(
+            "SUM",
+            1,
+            VAR,
+            MathTrig,
+            A,
+            "SUM(number1, [number2], ...)",
+            "Adds all the numbers in the arguments.",
+            sum
+        ),
         f!(
             "PERCENTOF",
             2,
@@ -1089,7 +1236,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "The sum of a subset as a fraction of the sum of all the values.",
             percentof
         ),
-        f!("SUMSQ", 1, VAR, MathTrig, A, "SUMSQ(number1, [number2], ...)", "Adds the squares of the numbers.", sumsq),
+        f!(
+            "SUMSQ",
+            1,
+            VAR,
+            MathTrig,
+            A,
+            "SUMSQ(number1, [number2], ...)",
+            "Adds the squares of the numbers.",
+            sumsq
+        ),
         f!(
             "SUMPRODUCT",
             1,
@@ -1100,15 +1256,96 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Multiplies matching elements of equally sized arrays and adds the products.",
             sumproduct
         ),
-        f!("SUMX2MY2", 2, 2, MathTrig, A, "SUMX2MY2(array_x, array_y)", "Sums the differences of squares of matching elements.", sumx2my2),
-        f!("SUMX2PY2", 2, 2, MathTrig, A, "SUMX2PY2(array_x, array_y)", "Sums the sums of squares of matching elements.", sumx2py2),
-        f!("SUMXMY2", 2, 2, MathTrig, A, "SUMXMY2(array_x, array_y)", "Sums the squared differences of matching elements.", sumxmy2),
-        f!("PRODUCT", 1, VAR, MathTrig, A, "PRODUCT(number1, [number2], ...)", "Multiplies all the numbers in the arguments.", product),
-        f!("ROUND", 2, 2, MathTrig, S, "ROUND(number, num_digits)", "Rounds a number to a given number of digits, halves away from zero.", round),
-        f!("ROUNDUP", 2, 2, MathTrig, S, "ROUNDUP(number, num_digits)", "Rounds a number away from zero to a given number of digits.", roundup),
-        f!("ROUNDDOWN", 2, 2, MathTrig, S, "ROUNDDOWN(number, num_digits)", "Rounds a number toward zero to a given number of digits.", rounddown),
-        f!("MROUND", 2, 2, MathTrig, S, "MROUND(number, multiple)", "Rounds a number to the nearest multiple.", mround),
-        f!("CEILING", 2, 2, Compatibility, S, "CEILING(number, significance)", "Rounds a number up to a multiple of significance.", ceiling),
+        f!(
+            "SUMX2MY2",
+            2,
+            2,
+            MathTrig,
+            A,
+            "SUMX2MY2(array_x, array_y)",
+            "Sums the differences of squares of matching elements.",
+            sumx2my2
+        ),
+        f!(
+            "SUMX2PY2",
+            2,
+            2,
+            MathTrig,
+            A,
+            "SUMX2PY2(array_x, array_y)",
+            "Sums the sums of squares of matching elements.",
+            sumx2py2
+        ),
+        f!(
+            "SUMXMY2",
+            2,
+            2,
+            MathTrig,
+            A,
+            "SUMXMY2(array_x, array_y)",
+            "Sums the squared differences of matching elements.",
+            sumxmy2
+        ),
+        f!(
+            "PRODUCT",
+            1,
+            VAR,
+            MathTrig,
+            A,
+            "PRODUCT(number1, [number2], ...)",
+            "Multiplies all the numbers in the arguments.",
+            product
+        ),
+        f!(
+            "ROUND",
+            2,
+            2,
+            MathTrig,
+            S,
+            "ROUND(number, num_digits)",
+            "Rounds a number to a given number of digits, halves away from zero.",
+            round
+        ),
+        f!(
+            "ROUNDUP",
+            2,
+            2,
+            MathTrig,
+            S,
+            "ROUNDUP(number, num_digits)",
+            "Rounds a number away from zero to a given number of digits.",
+            roundup
+        ),
+        f!(
+            "ROUNDDOWN",
+            2,
+            2,
+            MathTrig,
+            S,
+            "ROUNDDOWN(number, num_digits)",
+            "Rounds a number toward zero to a given number of digits.",
+            rounddown
+        ),
+        f!(
+            "MROUND",
+            2,
+            2,
+            MathTrig,
+            S,
+            "MROUND(number, multiple)",
+            "Rounds a number to the nearest multiple.",
+            mround
+        ),
+        f!(
+            "CEILING",
+            2,
+            2,
+            Compatibility,
+            S,
+            "CEILING(number, significance)",
+            "Rounds a number up to a multiple of significance.",
+            ceiling
+        ),
         f!(
             "CEILING.MATH",
             1,
@@ -1139,7 +1376,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Rounds a number toward positive infinity to a multiple.",
             ceiling_precise
         ),
-        f!("FLOOR", 2, 2, Compatibility, S, "FLOOR(number, significance)", "Rounds a number down to a multiple of significance.", floor),
+        f!(
+            "FLOOR",
+            2,
+            2,
+            Compatibility,
+            S,
+            "FLOOR(number, significance)",
+            "Rounds a number down to a multiple of significance.",
+            floor
+        ),
         f!(
             "FLOOR.MATH",
             1,
@@ -1160,27 +1406,198 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Rounds a number toward negative infinity to a multiple.",
             floor_precise
         ),
-        f!("INT", 1, 1, MathTrig, S, "INT(number)", "Rounds a number down to the nearest integer.", int_fn),
-        f!("TRUNC", 1, 2, MathTrig, S, "TRUNC(number, [num_digits])", "Cuts off the fractional part of a number at the given digits.", trunc),
-        f!("MOD", 2, 2, MathTrig, S, "MOD(number, divisor)", "Remainder of a division, with the sign of the divisor.", mod_fn),
-        f!("QUOTIENT", 2, 2, MathTrig, S, "QUOTIENT(numerator, denominator)", "Integer part of a division.", quotient),
-        f!("ABS", 1, 1, MathTrig, S, "ABS(number)", "Absolute value of a number.", abs),
-        f!("SIGN", 1, 1, MathTrig, S, "SIGN(number)", "1 for positive, -1 for negative and 0 for zero.", sign),
-        f!("SQRT", 1, 1, MathTrig, S, "SQRT(number)", "Positive square root.", sqrt),
-        f!("SQRTPI", 1, 1, MathTrig, S, "SQRTPI(number)", "Square root of the number times pi.", sqrtpi),
-        f!("POWER", 2, 2, MathTrig, S, "POWER(number, power)", "Raises a number to a power.", power),
-        f!("EXP", 1, 1, MathTrig, S, "EXP(number)", "e raised to the given power.", exp),
-        f!("LN", 1, 1, MathTrig, S, "LN(number)", "Natural logarithm.", ln),
-        f!("LOG", 1, 2, MathTrig, S, "LOG(number, [base])", "Logarithm to the given base (10 by default).", log),
-        f!("LOG10", 1, 1, MathTrig, S, "LOG10(number)", "Base-10 logarithm.", log10),
-        f!("PI", 0, 0, MathTrig, S, "PI()", "The constant pi to 15 digits.", pi),
+        f!(
+            "INT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "INT(number)",
+            "Rounds a number down to the nearest integer.",
+            int_fn
+        ),
+        f!(
+            "TRUNC",
+            1,
+            2,
+            MathTrig,
+            S,
+            "TRUNC(number, [num_digits])",
+            "Cuts off the fractional part of a number at the given digits.",
+            trunc
+        ),
+        f!(
+            "MOD",
+            2,
+            2,
+            MathTrig,
+            S,
+            "MOD(number, divisor)",
+            "Remainder of a division, with the sign of the divisor.",
+            mod_fn
+        ),
+        f!(
+            "QUOTIENT",
+            2,
+            2,
+            MathTrig,
+            S,
+            "QUOTIENT(numerator, denominator)",
+            "Integer part of a division.",
+            quotient
+        ),
+        f!(
+            "ABS",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ABS(number)",
+            "Absolute value of a number.",
+            abs
+        ),
+        f!(
+            "SIGN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SIGN(number)",
+            "1 for positive, -1 for negative and 0 for zero.",
+            sign
+        ),
+        f!(
+            "SQRT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SQRT(number)",
+            "Positive square root.",
+            sqrt
+        ),
+        f!(
+            "SQRTPI",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SQRTPI(number)",
+            "Square root of the number times pi.",
+            sqrtpi
+        ),
+        f!(
+            "POWER",
+            2,
+            2,
+            MathTrig,
+            S,
+            "POWER(number, power)",
+            "Raises a number to a power.",
+            power
+        ),
+        f!(
+            "EXP",
+            1,
+            1,
+            MathTrig,
+            S,
+            "EXP(number)",
+            "e raised to the given power.",
+            exp
+        ),
+        f!(
+            "LN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "LN(number)",
+            "Natural logarithm.",
+            ln
+        ),
+        f!(
+            "LOG",
+            1,
+            2,
+            MathTrig,
+            S,
+            "LOG(number, [base])",
+            "Logarithm to the given base (10 by default).",
+            log
+        ),
+        f!(
+            "LOG10",
+            1,
+            1,
+            MathTrig,
+            S,
+            "LOG10(number)",
+            "Base-10 logarithm.",
+            log10
+        ),
+        f!(
+            "PI",
+            0,
+            0,
+            MathTrig,
+            S,
+            "PI()",
+            "The constant pi to 15 digits.",
+            pi
+        ),
         f!(volatile; "RAND", 0, 0, MathTrig, S, "RAND()", "A random number between 0 and 1, recalculated every time.", rand),
         f!(volatile; "RANDBETWEEN", 2, 2, MathTrig, S, "RANDBETWEEN(bottom, top)", "A random integer between two bounds, inclusive.", randbetween),
-        f!("FACT", 1, 1, MathTrig, S, "FACT(number)", "Factorial of a number.", fact),
-        f!("FACTDOUBLE", 1, 1, MathTrig, S, "FACTDOUBLE(number)", "Double factorial of a number.", factdouble),
-        f!("COMBIN", 2, 2, MathTrig, S, "COMBIN(number, number_chosen)", "Number of combinations without repetition.", combin),
-        f!("COMBINA", 2, 2, MathTrig, S, "COMBINA(number, number_chosen)", "Number of combinations with repetition.", combina),
-        f!("PERMUT", 2, 2, Statistical, S, "PERMUT(number, number_chosen)", "Number of ordered selections without repetition.", permut),
+        f!(
+            "FACT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "FACT(number)",
+            "Factorial of a number.",
+            fact
+        ),
+        f!(
+            "FACTDOUBLE",
+            1,
+            1,
+            MathTrig,
+            S,
+            "FACTDOUBLE(number)",
+            "Double factorial of a number.",
+            factdouble
+        ),
+        f!(
+            "COMBIN",
+            2,
+            2,
+            MathTrig,
+            S,
+            "COMBIN(number, number_chosen)",
+            "Number of combinations without repetition.",
+            combin
+        ),
+        f!(
+            "COMBINA",
+            2,
+            2,
+            MathTrig,
+            S,
+            "COMBINA(number, number_chosen)",
+            "Number of combinations with repetition.",
+            combina
+        ),
+        f!(
+            "PERMUT",
+            2,
+            2,
+            Statistical,
+            S,
+            "PERMUT(number, number_chosen)",
+            "Number of ordered selections without repetition.",
+            permut
+        ),
         f!(
             "PERMUTATIONA",
             2,
@@ -1191,42 +1608,366 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Number of ordered selections with repetition.",
             permutationa
         ),
-        f!("GCD", 1, VAR, MathTrig, A, "GCD(number1, [number2], ...)", "Greatest common divisor of integers.", gcd),
-        f!("LCM", 1, VAR, MathTrig, A, "LCM(number1, [number2], ...)", "Least common multiple of integers.", lcm),
-        f!("EVEN", 1, 1, MathTrig, S, "EVEN(number)", "Rounds away from zero to the nearest even integer.", even),
-        f!("ODD", 1, 1, MathTrig, S, "ODD(number)", "Rounds away from zero to the nearest odd integer.", odd),
-        f!("SIN", 1, 1, MathTrig, S, "SIN(number)", "Sine of an angle in radians.", sin),
-        f!("COS", 1, 1, MathTrig, S, "COS(number)", "Cosine of an angle in radians.", cos),
-        f!("TAN", 1, 1, MathTrig, S, "TAN(number)", "Tangent of an angle in radians.", tan),
-        f!("ASIN", 1, 1, MathTrig, S, "ASIN(number)", "Arcsine in radians.", asin),
-        f!("ACOS", 1, 1, MathTrig, S, "ACOS(number)", "Arccosine in radians.", acos),
-        f!("ATAN", 1, 1, MathTrig, S, "ATAN(number)", "Arctangent in radians.", atan),
-        f!("ATAN2", 2, 2, MathTrig, S, "ATAN2(x_num, y_num)", "Angle of the point (x, y) from the x-axis in radians.", atan2),
-        f!("SINH", 1, 1, MathTrig, S, "SINH(number)", "Hyperbolic sine.", sinh),
-        f!("COSH", 1, 1, MathTrig, S, "COSH(number)", "Hyperbolic cosine.", cosh),
-        f!("TANH", 1, 1, MathTrig, S, "TANH(number)", "Hyperbolic tangent.", tanh),
-        f!("ASINH", 1, 1, MathTrig, S, "ASINH(number)", "Inverse hyperbolic sine.", asinh),
-        f!("ACOSH", 1, 1, MathTrig, S, "ACOSH(number)", "Inverse hyperbolic cosine.", acosh),
-        f!("ATANH", 1, 1, MathTrig, S, "ATANH(number)", "Inverse hyperbolic tangent.", atanh),
-        f!("COT", 1, 1, MathTrig, S, "COT(number)", "Cotangent of an angle in radians.", cot),
-        f!("COTH", 1, 1, MathTrig, S, "COTH(number)", "Hyperbolic cotangent.", coth),
-        f!("CSC", 1, 1, MathTrig, S, "CSC(number)", "Cosecant of an angle in radians.", csc),
-        f!("CSCH", 1, 1, MathTrig, S, "CSCH(number)", "Hyperbolic cosecant.", csch),
-        f!("SEC", 1, 1, MathTrig, S, "SEC(number)", "Secant of an angle in radians.", sec),
-        f!("SECH", 1, 1, MathTrig, S, "SECH(number)", "Hyperbolic secant.", sech),
-        f!("ACOT", 1, 1, MathTrig, S, "ACOT(number)", "Arccotangent in radians (0 to pi).", acot),
-        f!("ACOTH", 1, 1, MathTrig, S, "ACOTH(number)", "Inverse hyperbolic cotangent.", acoth),
-        f!("DEGREES", 1, 1, MathTrig, S, "DEGREES(angle)", "Converts radians to degrees.", degrees),
-        f!("RADIANS", 1, 1, MathTrig, S, "RADIANS(angle)", "Converts degrees to radians.", radians),
-        f!("ROMAN", 1, 2, MathTrig, S, "ROMAN(number, [form])", "Converts a number to Roman numerals in one of five styles.", roman),
-        f!("ARABIC", 1, 1, MathTrig, S, "ARABIC(text)", "Converts Roman numerals to a number.", arabic),
-        f!("BASE", 2, 3, MathTrig, S, "BASE(number, radix, [min_length])", "Writes a number in another base, padded with zeros.", base),
-        f!("DECIMAL", 2, 2, MathTrig, S, "DECIMAL(text, radix)", "Reads text in a given base as a number.", decimal),
-        f!("MMULT", 2, 2, MathTrig, A, "MMULT(array1, array2)", "Matrix product of two arrays.", mmult),
-        f!("MDETERM", 1, 1, MathTrig, A, "MDETERM(array)", "Determinant of a square matrix.", mdeterm),
-        f!("MINVERSE", 1, 1, MathTrig, A, "MINVERSE(array)", "Inverse of a square matrix.", minverse),
-        f!("MUNIT", 1, 1, MathTrig, S, "MUNIT(dimension)", "Identity matrix of the given size.", munit),
-        f!("SERIESSUM", 4, 4, MathTrig, &[true, true, true, false], "SERIESSUM(x, n, m, coefficients)", "Sum of a power series.", seriessum),
+        f!(
+            "GCD",
+            1,
+            VAR,
+            MathTrig,
+            A,
+            "GCD(number1, [number2], ...)",
+            "Greatest common divisor of integers.",
+            gcd
+        ),
+        f!(
+            "LCM",
+            1,
+            VAR,
+            MathTrig,
+            A,
+            "LCM(number1, [number2], ...)",
+            "Least common multiple of integers.",
+            lcm
+        ),
+        f!(
+            "EVEN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "EVEN(number)",
+            "Rounds away from zero to the nearest even integer.",
+            even
+        ),
+        f!(
+            "ODD",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ODD(number)",
+            "Rounds away from zero to the nearest odd integer.",
+            odd
+        ),
+        f!(
+            "SIN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SIN(number)",
+            "Sine of an angle in radians.",
+            sin
+        ),
+        f!(
+            "COS",
+            1,
+            1,
+            MathTrig,
+            S,
+            "COS(number)",
+            "Cosine of an angle in radians.",
+            cos
+        ),
+        f!(
+            "TAN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "TAN(number)",
+            "Tangent of an angle in radians.",
+            tan
+        ),
+        f!(
+            "ASIN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ASIN(number)",
+            "Arcsine in radians.",
+            asin
+        ),
+        f!(
+            "ACOS",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ACOS(number)",
+            "Arccosine in radians.",
+            acos
+        ),
+        f!(
+            "ATAN",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ATAN(number)",
+            "Arctangent in radians.",
+            atan
+        ),
+        f!(
+            "ATAN2",
+            2,
+            2,
+            MathTrig,
+            S,
+            "ATAN2(x_num, y_num)",
+            "Angle of the point (x, y) from the x-axis in radians.",
+            atan2
+        ),
+        f!(
+            "SINH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SINH(number)",
+            "Hyperbolic sine.",
+            sinh
+        ),
+        f!(
+            "COSH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "COSH(number)",
+            "Hyperbolic cosine.",
+            cosh
+        ),
+        f!(
+            "TANH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "TANH(number)",
+            "Hyperbolic tangent.",
+            tanh
+        ),
+        f!(
+            "ASINH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ASINH(number)",
+            "Inverse hyperbolic sine.",
+            asinh
+        ),
+        f!(
+            "ACOSH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ACOSH(number)",
+            "Inverse hyperbolic cosine.",
+            acosh
+        ),
+        f!(
+            "ATANH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ATANH(number)",
+            "Inverse hyperbolic tangent.",
+            atanh
+        ),
+        f!(
+            "COT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "COT(number)",
+            "Cotangent of an angle in radians.",
+            cot
+        ),
+        f!(
+            "COTH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "COTH(number)",
+            "Hyperbolic cotangent.",
+            coth
+        ),
+        f!(
+            "CSC",
+            1,
+            1,
+            MathTrig,
+            S,
+            "CSC(number)",
+            "Cosecant of an angle in radians.",
+            csc
+        ),
+        f!(
+            "CSCH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "CSCH(number)",
+            "Hyperbolic cosecant.",
+            csch
+        ),
+        f!(
+            "SEC",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SEC(number)",
+            "Secant of an angle in radians.",
+            sec
+        ),
+        f!(
+            "SECH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "SECH(number)",
+            "Hyperbolic secant.",
+            sech
+        ),
+        f!(
+            "ACOT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ACOT(number)",
+            "Arccotangent in radians (0 to pi).",
+            acot
+        ),
+        f!(
+            "ACOTH",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ACOTH(number)",
+            "Inverse hyperbolic cotangent.",
+            acoth
+        ),
+        f!(
+            "DEGREES",
+            1,
+            1,
+            MathTrig,
+            S,
+            "DEGREES(angle)",
+            "Converts radians to degrees.",
+            degrees
+        ),
+        f!(
+            "RADIANS",
+            1,
+            1,
+            MathTrig,
+            S,
+            "RADIANS(angle)",
+            "Converts degrees to radians.",
+            radians
+        ),
+        f!(
+            "ROMAN",
+            1,
+            2,
+            MathTrig,
+            S,
+            "ROMAN(number, [form])",
+            "Converts a number to Roman numerals in one of five styles.",
+            roman
+        ),
+        f!(
+            "ARABIC",
+            1,
+            1,
+            MathTrig,
+            S,
+            "ARABIC(text)",
+            "Converts Roman numerals to a number.",
+            arabic
+        ),
+        f!(
+            "BASE",
+            2,
+            3,
+            MathTrig,
+            S,
+            "BASE(number, radix, [min_length])",
+            "Writes a number in another base, padded with zeros.",
+            base
+        ),
+        f!(
+            "DECIMAL",
+            2,
+            2,
+            MathTrig,
+            S,
+            "DECIMAL(text, radix)",
+            "Reads text in a given base as a number.",
+            decimal
+        ),
+        f!(
+            "MMULT",
+            2,
+            2,
+            MathTrig,
+            A,
+            "MMULT(array1, array2)",
+            "Matrix product of two arrays.",
+            mmult
+        ),
+        f!(
+            "MDETERM",
+            1,
+            1,
+            MathTrig,
+            A,
+            "MDETERM(array)",
+            "Determinant of a square matrix.",
+            mdeterm
+        ),
+        f!(
+            "MINVERSE",
+            1,
+            1,
+            MathTrig,
+            A,
+            "MINVERSE(array)",
+            "Inverse of a square matrix.",
+            minverse
+        ),
+        f!(
+            "MUNIT",
+            1,
+            1,
+            MathTrig,
+            S,
+            "MUNIT(dimension)",
+            "Identity matrix of the given size.",
+            munit
+        ),
+        f!(
+            "SERIESSUM",
+            4,
+            4,
+            MathTrig,
+            &[true, true, true, false],
+            "SERIESSUM(x, n, m, coefficients)",
+            "Sum of a power series.",
+            seriessum
+        ),
         f!(
             "MULTINOMIAL",
             1,
@@ -1237,7 +1978,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Ratio of the factorial of a sum to the product of factorials.",
             multinomial
         ),
-        f!("SUMIF", 2, 3, MathTrig, IF2, "SUMIF(range, criteria, [sum_range])", "Adds the cells that meet a condition.", sumif),
+        f!(
+            "SUMIF",
+            2,
+            3,
+            MathTrig,
+            IF2,
+            "SUMIF(range, criteria, [sum_range])",
+            "Adds the cells that meet a condition.",
+            sumif
+        ),
         f!(
             "SUMIFS",
             3,
@@ -1248,7 +1998,16 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Adds the cells that meet every condition.",
             sumifs
         ),
-        f!("COUNTIF", 2, 2, Statistical, NUM_RANGE_REV, "COUNTIF(range, criteria)", "Counts the cells that meet a condition.", countif),
+        f!(
+            "COUNTIF",
+            2,
+            2,
+            Statistical,
+            NUM_RANGE_REV,
+            "COUNTIF(range, criteria)",
+            "Counts the cells that meet a condition.",
+            countif
+        ),
         f!(
             "COUNTIFS",
             2,
@@ -1320,32 +2079,79 @@ mod tests {
     #[test]
     fn percentof() {
         // SUM(subset) / SUM(all): text, booleans and blanks inside ranges are skipped like SUM.
-        let all = arr(vec![vec![nv(10.0)], vec![nv(30.0)], vec![tv("x")], vec![Value::Empty], vec![nv(60.0)]]);
+        let all = arr(vec![
+            vec![nv(10.0)],
+            vec![nv(30.0)],
+            vec![tv("x")],
+            vec![Value::Empty],
+            vec![nv(60.0)],
+        ]);
         let part = arr(vec![vec![nv(10.0)], vec![nv(30.0)]]);
         close(ev("PERCENTOF", vec![rf(part), rf(all.clone())]), 0.4);
         close(ev("PERCENTOF", vec![n(25.0), n(200.0)]), 0.125);
-        is_err(ev("PERCENTOF", vec![n(1.0), rf(arr(vec![vec![nv(5.0), nv(-5.0)]]))]), Div0);
-        is_err(ev("PERCENTOF", vec![rf(arr(vec![vec![Value::Error(NA)]])), rf(all)]), NA);
+        is_err(
+            ev(
+                "PERCENTOF",
+                vec![n(1.0), rf(arr(vec![vec![nv(5.0), nv(-5.0)]]))],
+            ),
+            Div0,
+        );
+        is_err(
+            ev(
+                "PERCENTOF",
+                vec![rf(arr(vec![vec![Value::Error(NA)]])), rf(all)],
+            ),
+            NA,
+        );
         is_err(ev("PERCENTOF", vec![t("abc"), n(1.0)]), CellError::Value);
     }
 
     #[test]
     fn sums() {
         close(ev("SUM", vec![n(1.0), n(2.0), t("3"), b(true)]), 7.0);
-        let r = arr(vec![vec![nv(1.0), tv("x"), Value::Bool(true), Value::Empty, nv(4.0)]]);
+        let r = arr(vec![vec![
+            nv(1.0),
+            tv("x"),
+            Value::Bool(true),
+            Value::Empty,
+            nv(4.0),
+        ]]);
         close(ev("SUM", vec![rf(r.clone())]), 5.0);
         is_err(ev("SUM", vec![t("abc")]), CellError::Value);
-        is_err(ev("SUM", vec![rf(arr(vec![vec![nv(1.0), Value::Error(Div0)]]))]), Div0);
+        is_err(
+            ev(
+                "SUM",
+                vec![rf(arr(vec![vec![nv(1.0), Value::Error(Div0)]]))],
+            ),
+            Div0,
+        );
         close(ev("SUM", vec![rf(tv("abc"))]), 0.0);
         close(ev("SUMSQ", vec![n(3.0), n(4.0)]), 25.0);
         close(ev("PRODUCT", vec![rf(r), n(2.0)]), 8.0);
         close(ev("PRODUCT", vec![rf(arr(vec![vec![tv("a")]]))]), 0.0);
-        let a1 = arr(vec![vec![nv(3.0), nv(4.0)], vec![nv(8.0), nv(6.0)], vec![nv(1.0), nv(9.0)]]);
-        let a2 = arr(vec![vec![nv(2.0), nv(7.0)], vec![nv(6.0), nv(7.0)], vec![nv(5.0), nv(3.0)]]);
+        let a1 = arr(vec![
+            vec![nv(3.0), nv(4.0)],
+            vec![nv(8.0), nv(6.0)],
+            vec![nv(1.0), nv(9.0)],
+        ]);
+        let a2 = arr(vec![
+            vec![nv(2.0), nv(7.0)],
+            vec![nv(6.0), nv(7.0)],
+            vec![nv(5.0), nv(3.0)],
+        ]);
         close(ev("SUMPRODUCT", vec![rf(a1.clone()), rf(a2)]), 156.0);
         close(ev("SUMPRODUCT", vec![rf(a1.clone())]), 31.0);
-        is_err(ev("SUMPRODUCT", vec![rf(a1), rf(row(&[1.0, 2.0]))]), CellError::Value);
-        close(ev("SUMPRODUCT", vec![av(row(&[1.0, 2.0])), av(arr(vec![vec![tv("x"), nv(3.0)]]))]), 6.0);
+        is_err(
+            ev("SUMPRODUCT", vec![rf(a1), rf(row(&[1.0, 2.0]))]),
+            CellError::Value,
+        );
+        close(
+            ev(
+                "SUMPRODUCT",
+                vec![av(row(&[1.0, 2.0])), av(arr(vec![vec![tv("x"), nv(3.0)]]))],
+            ),
+            6.0,
+        );
         let x = row(&[2.0, 3.0, 9.0, 1.0, 8.0, 7.0, 5.0]);
         let y = row(&[6.0, 5.0, 11.0, 7.0, 5.0, 4.0, 4.0]);
         close(ev("SUMX2MY2", vec![av(x.clone()), av(y.clone())]), -55.0);
@@ -1360,11 +2166,20 @@ mod tests {
     fn sumproduct_scalar_arguments() {
         let cases: Vec<(Vec<crate::Arg>, Result<f64, CellError>)> = vec![
             (vec![n(3.0), rf(nv(534.0)), rf(nv(1.1))], Ok(1762.2)),
-            (vec![rf(nv(1.1)), n(3.0), rf(nv(534.0)), rf(nv(1.1))], Ok(1938.42)),
-            (vec![n(2.0), rf(col(&[1.00001, 2.99999]))], Err(CellError::Value)),
+            (
+                vec![rf(nv(1.1)), n(3.0), rf(nv(534.0)), rf(nv(1.1))],
+                Ok(1938.42),
+            ),
+            (
+                vec![n(2.0), rf(col(&[1.00001, 2.99999]))],
+                Err(CellError::Value),
+            ),
             (vec![rf(tv("4")), rf(nv(2.0))], Err(CellError::Value)),
             (vec![t("4"), n(2.0)], Err(CellError::Value)),
-            (vec![rf(nv(3.0)), rf(Value::Error(CellError::Ref))], Err(CellError::Ref)),
+            (
+                vec![rf(nv(3.0)), rf(Value::Error(CellError::Ref))],
+                Err(CellError::Ref),
+            ),
             (vec![av(arr(vec![vec![tv("4")]])), n(2.0)], Ok(0.0)),
         ];
         for (args, want) in cases {
@@ -1393,7 +2208,10 @@ mod tests {
                 close(ev2("TRUNC", x, digits), 0.0);
             }
         }
-        assert!(matches!(ev2("ROUNDUP", 1234.0, -309.0), Value::Error(CellError::Num)));
+        assert!(matches!(
+            ev2("ROUNDUP", 1234.0, -309.0),
+            Value::Error(CellError::Num)
+        ));
         close(ev2("ROUNDUP", 0.1 + 0.2, 1.0), 0.3);
         close(ev2("TRUNC", 8.987, 2.0), 8.98);
         close(ev1("TRUNC", -8.9), -8.0);
@@ -1585,7 +2403,11 @@ mod tests {
             let m = "M".repeat(thousands);
             for (h, hundreds) in HUNDREDS.iter().enumerate() {
                 if h != 4 && h != 9 {
-                    cases.push((thousands * 1000 + h * 100 + 99, 2.0, format!("{m}{hundreds}IC")));
+                    cases.push((
+                        thousands * 1000 + h * 100 + 99,
+                        2.0,
+                        format!("{m}{hundreds}IC"),
+                    ));
                 }
             }
             for (o, ones) in ONES.iter().enumerate() {
@@ -1615,11 +2437,24 @@ mod tests {
     fn matrices() {
         let a = arr(vec![vec![nv(1.0), nv(2.0)], vec![nv(3.0), nv(4.0)]]);
         let b2 = arr(vec![vec![nv(5.0), nv(6.0)], vec![nv(7.0), nv(8.0)]]);
-        assert_eq!(rows_of(&ev("MMULT", vec![av(a.clone()), av(b2)])), vec![vec![nv(19.0), nv(22.0)], vec![nv(43.0), nv(50.0)]]);
-        is_err(ev("MMULT", vec![av(a.clone()), av(row(&[1.0, 2.0]))]), CellError::Value);
-        is_err(ev("MMULT", vec![av(arr(vec![vec![tv("x")]])), av(row(&[1.0]))]), CellError::Value);
+        assert_eq!(
+            rows_of(&ev("MMULT", vec![av(a.clone()), av(b2)])),
+            vec![vec![nv(19.0), nv(22.0)], vec![nv(43.0), nv(50.0)]]
+        );
+        is_err(
+            ev("MMULT", vec![av(a.clone()), av(row(&[1.0, 2.0]))]),
+            CellError::Value,
+        );
+        is_err(
+            ev("MMULT", vec![av(arr(vec![vec![tv("x")]])), av(row(&[1.0]))]),
+            CellError::Value,
+        );
         close(ev("MDETERM", vec![av(a.clone())]), -2.0);
-        let m3 = arr(vec![vec![nv(3.0), nv(6.0), nv(1.0)], vec![nv(1.0), nv(1.0), nv(0.0)], vec![nv(3.0), nv(10.0), nv(2.0)]]);
+        let m3 = arr(vec![
+            vec![nv(3.0), nv(6.0), nv(1.0)],
+            vec![nv(1.0), nv(1.0), nv(0.0)],
+            vec![nv(3.0), nv(10.0), nv(2.0)],
+        ]);
         close(ev("MDETERM", vec![av(m3)]), 1.0);
         let m4 = arr(vec![
             vec![nv(1.0), nv(3.0), nv(8.0), nv(5.0)],
@@ -1629,18 +2464,40 @@ mod tests {
         ]);
         close(ev("MDETERM", vec![av(m4)]), 88.0);
         is_err(ev("MDETERM", vec![av(row(&[1.0, 2.0]))]), CellError::Value);
-        let inv = ev("MINVERSE", vec![av(arr(vec![vec![nv(4.0), nv(-1.0)], vec![nv(2.0), nv(0.0)]]))]);
+        let inv = ev(
+            "MINVERSE",
+            vec![av(arr(vec![
+                vec![nv(4.0), nv(-1.0)],
+                vec![nv(2.0), nv(0.0)],
+            ]))],
+        );
         let r = rows_of(&inv);
         close(r[0][0].clone(), 0.0);
         close(r[0][1].clone(), 0.5);
         close(r[1][0].clone(), -1.0);
         close(r[1][1].clone(), 2.0);
-        is_err(ev("MINVERSE", vec![av(arr(vec![vec![nv(1.0), nv(2.0)], vec![nv(2.0), nv(4.0)]]))]), Num);
-        assert_eq!(rows_of(&ev1("MUNIT", 2.0)), vec![vec![nv(1.0), nv(0.0)], vec![nv(0.0), nv(1.0)]]);
+        is_err(
+            ev(
+                "MINVERSE",
+                vec![av(arr(vec![
+                    vec![nv(1.0), nv(2.0)],
+                    vec![nv(2.0), nv(4.0)],
+                ]))],
+            ),
+            Num,
+        );
+        assert_eq!(
+            rows_of(&ev1("MUNIT", 2.0)),
+            vec![vec![nv(1.0), nv(0.0)], vec![nv(0.0), nv(1.0)]]
+        );
         is_err(ev1("MUNIT", 0.0), CellError::Value);
         is_err(ev1("MUNIT", 1e6), Num);
         let coeffs = row(&[1.0, -0.5, 1.0 / 24.0, -1.0 / 720.0]);
-        close_tol(ev("SERIESSUM", vec![n(PI / 4.0), n(0.0), n(2.0), av(coeffs)]), 0.707_103_214_823, 1e-9);
+        close_tol(
+            ev("SERIESSUM", vec![n(PI / 4.0), n(0.0), n(2.0), av(coeffs)]),
+            0.707_103_214_823,
+            1e-9,
+        );
     }
 
     #[test]
@@ -1655,7 +2512,9 @@ mod tests {
         }
         let spec = crate::lookup("RANDBETWEEN").unwrap();
         for _ in 0..50 {
-            let x = crate::call(spec, &[n(1.0), n(6.0)], &mut ctx).as_f64().unwrap();
+            let x = crate::call(spec, &[n(1.0), n(6.0)], &mut ctx)
+                .as_f64()
+                .unwrap();
             assert!((1.0..=6.0).contains(&x) && x.fract() == 0.0);
         }
         is_err(ev2("RANDBETWEEN", 5.0, 1.0), Num);
@@ -1663,14 +2522,29 @@ mod tests {
 
     #[test]
     fn lifting() {
-        assert_eq!(rows_of(&ev("ABS", vec![av(row(&[-1.0, 2.0, -3.0]))])), vec![vec![nv(1.0), nv(2.0), nv(3.0)]]);
+        assert_eq!(
+            rows_of(&ev("ABS", vec![av(row(&[-1.0, 2.0, -3.0]))])),
+            vec![vec![nv(1.0), nv(2.0), nv(3.0)]]
+        );
         let v = ev("POWER", vec![av(col(&[1.0, 2.0])), av(row(&[2.0, 3.0]))]);
-        assert_eq!(rows_of(&v), vec![vec![nv(1.0), nv(1.0)], vec![nv(4.0), nv(8.0)]]);
-        close(ev("ROUND", vec![av(arr(vec![vec![nv(1.25)]])), n(1.0)]), 1.3);
+        assert_eq!(
+            rows_of(&v),
+            vec![vec![nv(1.0), nv(1.0)], vec![nv(4.0), nv(8.0)]]
+        );
+        close(
+            ev("ROUND", vec![av(arr(vec![vec![nv(1.25)]])), n(1.0)]),
+            1.3,
+        );
     }
 
     fn data() -> (Value, Value) {
-        let names = arr(vec![vec![tv("apple")], vec![tv("banana")], vec![tv("Apple")], vec![Value::Empty], vec![tv("cherry")]]);
+        let names = arr(vec![
+            vec![tv("apple")],
+            vec![tv("banana")],
+            vec![tv("Apple")],
+            vec![Value::Empty],
+            vec![tv("cherry")],
+        ]);
         let qty = col(&[10.0, 20.0, 30.0, 40.0, 50.0]);
         (names, qty)
     }
@@ -1684,22 +2558,98 @@ mod tests {
         close(ev("COUNTIF", vec![rf(names.clone()), t("")]), 1.0);
         close(ev("COUNTIF", vec![rf(qty.clone()), t(">20")]), 3.0);
         close(ev("COUNTIF", vec![rf(qty.clone()), n(30.0)]), 1.0);
-        let multi = ev("COUNTIF", vec![rf(names.clone()), av(arr(vec![vec![tv("apple"), tv("cherry")]]))]);
+        let multi = ev(
+            "COUNTIF",
+            vec![
+                rf(names.clone()),
+                av(arr(vec![vec![tv("apple"), tv("cherry")]])),
+            ],
+        );
         assert_eq!(rows_of(&multi), vec![vec![nv(2.0), nv(1.0)]]);
-        close(ev("SUMIF", vec![rf(names.clone()), t("apple"), rf(qty.clone())]), 40.0);
+        close(
+            ev(
+                "SUMIF",
+                vec![rf(names.clone()), t("apple"), rf(qty.clone())],
+            ),
+            40.0,
+        );
         close(ev("SUMIF", vec![rf(qty.clone()), t(">=30")]), 120.0);
-        close(ev("SUMIF", vec![rf(names.clone()), t("?????"), rf(col(&[1.0]))]), 1.0);
+        close(
+            ev(
+                "SUMIF",
+                vec![rf(names.clone()), t("?????"), rf(col(&[1.0]))],
+            ),
+            1.0,
+        );
         close(ev("AVERAGEIF", vec![rf(qty.clone()), t(">20")]), 40.0);
         is_err(ev("AVERAGEIF", vec![rf(qty.clone()), t(">100")]), Div0);
-        close(ev("SUMIFS", vec![rf(qty.clone()), rf(names.clone()), t("apple"), rf(qty.clone()), t(">15")]), 30.0);
-        close(ev("COUNTIFS", vec![rf(names.clone()), t("*a*"), rf(qty.clone()), t("<25")]), 2.0);
-        close(ev("AVERAGEIFS", vec![rf(qty.clone()), rf(names.clone()), t("<>banana")]), 32.5);
-        close(ev("MAXIFS", vec![rf(qty.clone()), rf(names.clone()), t("apple")]), 30.0);
-        close(ev("MINIFS", vec![rf(qty.clone()), rf(names.clone()), t("apple")]), 10.0);
-        close(ev("MAXIFS", vec![rf(qty.clone()), rf(names.clone()), t("zzz")]), 0.0);
-        is_err(ev("SUMIFS", vec![rf(qty.clone()), rf(row(&[1.0, 2.0])), t("1")]), CellError::Value);
-        is_err(ev("COUNTIFS", vec![rf(qty.clone()), t(">1"), rf(qty)]), CellError::Value);
-        is_err(ev("SUMIF", vec![rf(col(&[1.0, 2.0])), t(">0"), rf(arr(vec![vec![Value::Error(NA)], vec![nv(1.0)]]))]), NA);
+        close(
+            ev(
+                "SUMIFS",
+                vec![
+                    rf(qty.clone()),
+                    rf(names.clone()),
+                    t("apple"),
+                    rf(qty.clone()),
+                    t(">15"),
+                ],
+            ),
+            30.0,
+        );
+        close(
+            ev(
+                "COUNTIFS",
+                vec![rf(names.clone()), t("*a*"), rf(qty.clone()), t("<25")],
+            ),
+            2.0,
+        );
+        close(
+            ev(
+                "AVERAGEIFS",
+                vec![rf(qty.clone()), rf(names.clone()), t("<>banana")],
+            ),
+            32.5,
+        );
+        close(
+            ev(
+                "MAXIFS",
+                vec![rf(qty.clone()), rf(names.clone()), t("apple")],
+            ),
+            30.0,
+        );
+        close(
+            ev(
+                "MINIFS",
+                vec![rf(qty.clone()), rf(names.clone()), t("apple")],
+            ),
+            10.0,
+        );
+        close(
+            ev("MAXIFS", vec![rf(qty.clone()), rf(names.clone()), t("zzz")]),
+            0.0,
+        );
+        is_err(
+            ev(
+                "SUMIFS",
+                vec![rf(qty.clone()), rf(row(&[1.0, 2.0])), t("1")],
+            ),
+            CellError::Value,
+        );
+        is_err(
+            ev("COUNTIFS", vec![rf(qty.clone()), t(">1"), rf(qty)]),
+            CellError::Value,
+        );
+        is_err(
+            ev(
+                "SUMIF",
+                vec![
+                    rf(col(&[1.0, 2.0])),
+                    t(">0"),
+                    rf(arr(vec![vec![Value::Error(NA)], vec![nv(1.0)]])),
+                ],
+            ),
+            NA,
+        );
     }
 
     #[test]
@@ -1709,18 +2659,84 @@ mod tests {
         let cells = arr(vec![vec![tv(&ok)], vec![tv(&long)]]);
         let qty = col(&[1.0, 2.0]);
         close(ev("COUNTIF", vec![rf(cells.clone()), t(&ok)]), 1.0);
-        is_err(ev("COUNTIF", vec![rf(cells.clone()), t(&long)]), CellError::Value);
-        close(ev("SUMIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&ok)]), 1.0);
-        is_err(ev("SUMIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&long)]), CellError::Value);
-        is_err(ev("COUNTIFS", vec![rf(cells.clone()), t(&long)]), CellError::Value);
+        is_err(
+            ev("COUNTIF", vec![rf(cells.clone()), t(&long)]),
+            CellError::Value,
+        );
+        close(
+            ev("SUMIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&ok)]),
+            1.0,
+        );
+        is_err(
+            ev("SUMIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&long)]),
+            CellError::Value,
+        );
+        is_err(
+            ev("COUNTIFS", vec![rf(cells.clone()), t(&long)]),
+            CellError::Value,
+        );
         // With two or more pairs Excel matches the first 255 characters: the 255-character cell
         // (quantity 1), not the 256-character one (quantity 2). Checked on Excel 2016 and 365.
         let over = format!("{ok}y");
-        close(ev("COUNTIFS", vec![rf(cells.clone()), t(&long), rf(qty.clone()), t(">0")]), 1.0);
-        close(ev("SUMIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&long), rf(qty.clone()), t(">0")]), 1.0);
-        close(ev("SUMIFS", vec![rf(qty.clone()), rf(qty.clone()), t(">0"), rf(cells.clone()), t(&over)]), 1.0);
-        close(ev("AVERAGEIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&long), rf(qty.clone()), t(">0")]), 1.0);
-        close(ev("MAXIFS", vec![rf(qty.clone()), rf(cells.clone()), t(&"x".repeat(300)), rf(qty), t(">0")]), 1.0);
+        close(
+            ev(
+                "COUNTIFS",
+                vec![rf(cells.clone()), t(&long), rf(qty.clone()), t(">0")],
+            ),
+            1.0,
+        );
+        close(
+            ev(
+                "SUMIFS",
+                vec![
+                    rf(qty.clone()),
+                    rf(cells.clone()),
+                    t(&long),
+                    rf(qty.clone()),
+                    t(">0"),
+                ],
+            ),
+            1.0,
+        );
+        close(
+            ev(
+                "SUMIFS",
+                vec![
+                    rf(qty.clone()),
+                    rf(qty.clone()),
+                    t(">0"),
+                    rf(cells.clone()),
+                    t(&over),
+                ],
+            ),
+            1.0,
+        );
+        close(
+            ev(
+                "AVERAGEIFS",
+                vec![
+                    rf(qty.clone()),
+                    rf(cells.clone()),
+                    t(&long),
+                    rf(qty.clone()),
+                    t(">0"),
+                ],
+            ),
+            1.0,
+        );
+        close(
+            ev(
+                "MAXIFS",
+                vec![
+                    rf(qty.clone()),
+                    rf(cells.clone()),
+                    t(&"x".repeat(300)),
+                    rf(qty),
+                    t(">0"),
+                ],
+            ),
+            1.0,
+        );
     }
 
     #[test]
@@ -1728,17 +2744,39 @@ mod tests {
         // The tester's sheet, identical on Excel 2016 and Microsoft 365: A1:A6 hold these
         // strings, B is the row number, and each row uses its own string as the criterion.
         let e = "😀";
-        let strings =
-            [e.repeat(127), e.repeat(128), format!("{}{e}", "a".repeat(254)), format!("{}{e}", "a".repeat(253)), e.repeat(200), "я".repeat(256)];
+        let strings = [
+            e.repeat(127),
+            e.repeat(128),
+            format!("{}{e}", "a".repeat(254)),
+            format!("{}{e}", "a".repeat(253)),
+            e.repeat(200),
+            "я".repeat(256),
+        ];
         let cells = arr(strings.iter().map(|s| vec![tv(s)]).collect());
         let rows = col(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
         // COUNTIF, SUMIF, COUNTIFS with one pair, SUMIFS with a second pair `B,">0"`.
-        let expected: [Option<[f64; 4]>; 6] = [Some([1.0, 1.0, 1.0, 1.0]), None, None, Some([1.0, 4.0, 1.0, 4.0]), None, None];
+        let expected: [Option<[f64; 4]>; 6] = [
+            Some([1.0, 1.0, 1.0, 1.0]),
+            None,
+            None,
+            Some([1.0, 4.0, 1.0, 4.0]),
+            None,
+            None,
+        ];
         for (s, want) in strings.iter().zip(expected) {
             let countif = ev("COUNTIF", vec![rf(cells.clone()), t(s)]);
             let sumif = ev("SUMIF", vec![rf(cells.clone()), t(s), rf(rows.clone())]);
             let countifs = ev("COUNTIFS", vec![rf(cells.clone()), t(s)]);
-            let sumifs = ev("SUMIFS", vec![rf(rows.clone()), rf(cells.clone()), t(s), rf(rows.clone()), t(">0")]);
+            let sumifs = ev(
+                "SUMIFS",
+                vec![
+                    rf(rows.clone()),
+                    rf(cells.clone()),
+                    t(s),
+                    rf(rows.clone()),
+                    t(">0"),
+                ],
+            );
             match want {
                 Some([a, b, c, d]) => {
                     close(countif, a);
@@ -1761,9 +2799,25 @@ mod tests {
     #[test]
     fn criteria_cut_inside_a_surrogate_pair() {
         let e = "😀";
-        let cells = arr(vec![vec![tv(&e.repeat(127))], vec![tv(&e.repeat(128))], vec![tv("zzz")], vec![Value::Empty]]);
+        let cells = arr(vec![
+            vec![tv(&e.repeat(127))],
+            vec![tv(&e.repeat(128))],
+            vec![tv("zzz")],
+            vec![Value::Empty],
+        ]);
         let rows = col(&[1.0, 2.0, 3.0, 4.0]);
-        let sumifs = |crit: String| ev("SUMIFS", vec![rf(rows.clone()), rf(cells.clone()), t(&crit), rf(rows.clone()), t(">0")]);
+        let sumifs = |crit: String| {
+            ev(
+                "SUMIFS",
+                vec![
+                    rf(rows.clone()),
+                    rf(cells.clone()),
+                    t(&crit),
+                    rf(rows.clone()),
+                    t(">0"),
+                ],
+            )
+        };
         // "=" + 😀×128 is 257 units: the cut after 255 keeps "=" and 127 whole emoji.
         close(sumifs(format!("={}", e.repeat(128))), 1.0);
         // With a two-unit prefix the cut keeps 126 emoji and half of the 127th. Such a criterion

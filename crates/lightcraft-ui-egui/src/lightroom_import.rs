@@ -59,8 +59,19 @@ impl LightroomTask {
             Kind::Inspect => "Reading Lightroom catalog",
             Kind::Import => "Importing Lightroom catalog",
         };
-        let guard = s.activity.start("lightroom", label, Cancel::Flag(cancel.clone()));
-        let task = Self { kind, path, cancel, progress, rx, phase: Phase::Reading, cancelled: false, guard };
+        let guard = s
+            .activity
+            .start("lightroom", label, Cancel::Flag(cancel.clone()));
+        let task = Self {
+            kind,
+            path,
+            cancel,
+            progress,
+            rx,
+            phase: Phase::Reading,
+            cancelled: false,
+            guard,
+        };
         task.refresh();
         task
     }
@@ -79,9 +90,15 @@ impl LightroomTask {
         let (step, done, total) = self.progress.step();
         let detail = match (self.phase, self.kind, step) {
             (Phase::Reading, Kind::Inspect, _) => "",
-            (Phase::Reading, Kind::Import, LightroomStep::Catalog) => crate::i18n::tr("Reading Lightroom catalog…"),
-            (Phase::Reading, Kind::Import, LightroomStep::ReadPhotos) => crate::i18n::tr("Reading photos…"),
-            (Phase::Reading, Kind::Import, LightroomStep::AddPhotos) => crate::i18n::tr("Adding photos…"),
+            (Phase::Reading, Kind::Import, LightroomStep::Catalog) => {
+                crate::i18n::tr("Reading Lightroom catalog…")
+            }
+            (Phase::Reading, Kind::Import, LightroomStep::ReadPhotos) => {
+                crate::i18n::tr("Reading photos…")
+            }
+            (Phase::Reading, Kind::Import, LightroomStep::AddPhotos) => {
+                crate::i18n::tr("Adding photos…")
+            }
             (Phase::Committing, ..) => crate::i18n::tr("Adding Lightroom photos…"),
             (Phase::Finalizing, ..) => crate::i18n::tr("Saving Lightroom import index…"),
         };
@@ -168,7 +185,12 @@ fn spawn_inspect(
         .name("lc-lightroom-inspect".into())
         .spawn(move || {
             let result = lightcraft_engine::guard::catch("Lightroom inspect", || {
-                lightcraft_engine::lightroom_catalog::read_with_progress(&path, &cancel, &progress.catalog_total, &progress.catalog_done)
+                lightcraft_engine::lightroom_catalog::read_with_progress(
+                    &path,
+                    &cancel,
+                    &progress.catalog_total,
+                    &progress.catalog_done,
+                )
             })
             .and_then(|r| r.map(inspect_report));
             let _ = tx.send(Message::Inspected(result));
@@ -189,8 +211,11 @@ fn spawn_prepare(
         .name("lc-lightroom-import".into())
         .spawn(move || {
             let result =
-                lightcraft_engine::guard::catch("Lightroom import", || job.prepare(&cancel)).and_then(|r| r.map(Box::new).map_err(|e| e.to_string()));
-            if let Err(mpsc::SendError(Message::Prepared(Ok(prepared)))) = tx.send(Message::Prepared(result)) {
+                lightcraft_engine::guard::catch("Lightroom import", || job.prepare(&cancel))
+                    .and_then(|r| r.map(Box::new).map_err(|e| e.to_string()));
+            if let Err(mpsc::SendError(Message::Prepared(Ok(prepared)))) =
+                tx.send(Message::Prepared(result))
+            {
                 // The owner dropped the task (for example while closing): staged copies/moves
                 // must be put back even though no UI receiver remains to accept the result.
                 prepared.rollback();
@@ -210,8 +235,10 @@ fn spawn_finalize(
     std::thread::Builder::new()
         .name("lc-lightroom-finalize".into())
         .spawn(move || {
-            let result = lightcraft_engine::guard::catch("Lightroom archive finalization", || finalization.finish())
-                .and_then(|r| r.map_err(|e| e.to_string()));
+            let result = lightcraft_engine::guard::catch("Lightroom archive finalization", || {
+                finalization.finish()
+            })
+            .and_then(|r| r.map_err(|e| e.to_string()));
             let _ = tx.send(Message::Finalized(result));
             ctx.request_repaint();
         })
@@ -245,14 +272,34 @@ fn terminal(app: &mut LightcraftApp, ctx: &egui::Context, task: &LightroomTask, 
         o.entry("path").or_insert_with(|| json!(task.path));
     }
     let message = if let Some(e) = value.get("error").and_then(Value::as_str) {
-        let warning = value.get("indexWarning").and_then(Value::as_str).map_or(String::new(), |w| format!("; index warning: {w}"));
+        let warning = value
+            .get("indexWarning")
+            .and_then(Value::as_str)
+            .map_or(String::new(), |w| format!("; index warning: {w}"));
         if matches!(kind, Kind::Inspect) {
-            crate::i18n::tr_format!("Lightroom inspection failed: {e}{warning}", e = e, warning = warning)
+            crate::i18n::tr_format!(
+                "Lightroom inspection failed: {e}{warning}",
+                e = e,
+                warning = warning
+            )
         } else {
-            crate::i18n::tr_format!("Lightroom import failed: {e}{warning}", e = e, warning = warning)
+            crate::i18n::tr_format!(
+                "Lightroom import failed: {e}{warning}",
+                e = e,
+                warning = warning
+            )
         }
-    } else if value.get("cancelled").and_then(Value::as_bool).unwrap_or(false) {
-        crate::i18n::tr(if matches!(kind, Kind::Inspect) { "Lightroom inspection cancelled" } else { "Lightroom import cancelled" }).into()
+    } else if value
+        .get("cancelled")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
+        crate::i18n::tr(if matches!(kind, Kind::Inspect) {
+            "Lightroom inspection cancelled"
+        } else {
+            "Lightroom import cancelled"
+        })
+        .into()
     } else if matches!(kind, Kind::Inspect) {
         let photos = value["photos"].as_u64().unwrap_or(0);
         let collections = value["collections"].as_u64().unwrap_or(0);
@@ -275,9 +322,16 @@ fn terminal(app: &mut LightcraftApp, ctx: &egui::Context, task: &LightroomTask, 
                 warning = warning
             )
         } else if failed == 0 {
-            crate::i18n::tr_format!("Lightroom import complete: {imported} photos added", imported = imported)
+            crate::i18n::tr_format!(
+                "Lightroom import complete: {imported} photos added",
+                imported = imported
+            )
         } else {
-            crate::i18n::tr_format!("Lightroom import complete: {imported} photos added, {failed} failed", imported = imported, failed = failed)
+            crate::i18n::tr_format!(
+                "Lightroom import complete: {imported} photos added, {failed} failed",
+                imported = imported,
+                failed = failed
+            )
         }
     };
     app.lightroom_last = Some(value);
@@ -286,32 +340,71 @@ fn terminal(app: &mut LightcraftApp, ctx: &egui::Context, task: &LightroomTask, 
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn start_inspect(app: &mut LightcraftApp, path: PathBuf, ctx: &egui::Context) -> Result<Value, String> {
+fn start_inspect(
+    app: &mut LightcraftApp,
+    path: PathBuf,
+    ctx: &egui::Context,
+) -> Result<Value, String> {
     busy(app)?;
     let cancel = Arc::new(AtomicBool::new(false));
     let progress = LightroomProgress::default();
     let (tx, rx) = mpsc::channel();
-    spawn_inspect(path.clone(), cancel.clone(), progress.clone(), tx, ctx.clone())?;
+    spawn_inspect(
+        path.clone(),
+        cancel.clone(),
+        progress.clone(),
+        tx,
+        ctx.clone(),
+    )?;
     app.lightroom_last = None;
-    app.lightroom = Some(LightroomTask::new(&app.session, Kind::Inspect, path.clone(), cancel, progress, rx));
+    app.lightroom = Some(LightroomTask::new(
+        &app.session,
+        Kind::Inspect,
+        path.clone(),
+        cancel,
+        progress,
+        rx,
+    ));
     Ok(json!({"running": true, "kind": "inspect", "path": path}))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn start_import(app: &mut LightcraftApp, path: PathBuf, update_existing: bool, ctx: &egui::Context) -> Result<Value, String> {
+fn start_import(
+    app: &mut LightcraftApp,
+    path: PathBuf,
+    update_existing: bool,
+    ctx: &egui::Context,
+) -> Result<Value, String> {
     busy(app)?;
-    let job = lightcraft_engine::lightroom_job::LightroomJob::new(&mut app.session, path.clone(), update_existing).map_err(|e| e.to_string())?;
+    let job = lightcraft_engine::lightroom_job::LightroomJob::new(
+        &mut app.session,
+        path.clone(),
+        update_existing,
+    )
+    .map_err(|e| e.to_string())?;
     let cancel = Arc::new(AtomicBool::new(false));
     let progress = job.progress();
     let (tx, rx) = mpsc::channel();
     spawn_prepare(job, cancel.clone(), tx, ctx.clone())?;
     app.lightroom_last = None;
-    app.lightroom = Some(LightroomTask::new(&app.session, Kind::Import, path.clone(), cancel, progress, rx));
+    app.lightroom = Some(LightroomTask::new(
+        &app.session,
+        Kind::Import,
+        path.clone(),
+        cancel,
+        progress,
+        rx,
+    ));
     Ok(json!({"running": true, "kind": "import", "path": path}))
 }
 
 /// Run Lightroom UI commands before the generic engine dispatcher.
-pub fn command(app: &mut LightcraftApp, id: &str, p: &Value, ctx: &egui::Context) -> Result<Value, String> {
+pub fn command(
+    app: &mut LightcraftApp,
+    id: &str,
+    p: &Value,
+    ctx: &egui::Context,
+) -> Result<Value, String> {
     #[cfg(target_arch = "wasm32")]
     {
         let _ = (app, id, p, ctx);
@@ -331,13 +424,27 @@ pub fn command(app: &mut LightcraftApp, id: &str, p: &Value, ctx: &egui::Context
             if wait && app.lightroom.is_some() {
                 return wait_for(app, ctx, std::time::Duration::from_secs(600));
             }
-            return Ok(app.lightroom.as_ref().map(LightroomTask::status).or_else(|| app.lightroom_last.clone()).unwrap_or(Value::Null));
+            return Ok(app
+                .lightroom
+                .as_ref()
+                .map(LightroomTask::status)
+                .or_else(|| app.lightroom_last.clone())
+                .unwrap_or(Value::Null));
         }
-        let Some(path) = path else { return Err("missing `path`".into()) };
+        let Some(path) = path else {
+            return Err("missing `path`".into());
+        };
         let result = if id == "library.inspectLightroom" {
             start_inspect(app, path, ctx)
         } else {
-            start_import(app, path, p.get("updateExisting").and_then(Value::as_bool).unwrap_or(false), ctx)
+            start_import(
+                app,
+                path,
+                p.get("updateExisting")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+                ctx,
+            )
         }?;
         if wait {
             return wait_for(app, ctx, std::time::Duration::from_secs(600));
@@ -348,7 +455,9 @@ pub fn command(app: &mut LightcraftApp, id: &str, p: &Value, ctx: &egui::Context
 
 /// Poll owner-thread work, commit a prepared import, and finish its archive index.
 pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
-    let Some(mut task) = app.lightroom.take() else { return };
+    let Some(mut task) = app.lightroom.take() else {
+        return;
+    };
     let message = match task.rx.try_recv() {
         Ok(m) => m,
         Err(mpsc::TryRecvError::Empty) => {
@@ -357,7 +466,12 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
             return;
         }
         Err(mpsc::TryRecvError::Disconnected) => {
-            terminal(app, ctx, &task, json!({"error": "Lightroom worker stopped unexpectedly"}));
+            terminal(
+                app,
+                ctx,
+                &task,
+                json!({"error": "Lightroom worker stopped unexpectedly"}),
+            );
             return;
         }
     };
@@ -365,7 +479,9 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
         Message::Inspected(result) => match result {
             Ok(report) if !task.cancel.load(Ordering::Relaxed) => terminal(app, ctx, &task, report),
             Ok(_) => terminal(app, ctx, &task, json!({"cancelled": true})),
-            Err(e) if task.cancel.load(Ordering::Relaxed) || e.contains("cancelled") => terminal(app, ctx, &task, json!({"cancelled": true})),
+            Err(e) if task.cancel.load(Ordering::Relaxed) || e.contains("cancelled") => {
+                terminal(app, ctx, &task, json!({"cancelled": true}))
+            }
             Err(e) => terminal(app, ctx, &task, json!({"error": e})),
         },
         Message::Prepared(result) => {
@@ -380,7 +496,10 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
                     return;
                 }
             };
-            if task.cancel.load(Ordering::Relaxed) || prepared.is_cancelled() || !prepared.token().matches(&app.session) {
+            if task.cancel.load(Ordering::Relaxed)
+                || prepared.is_cancelled()
+                || !prepared.token().matches(&app.session)
+            {
                 prepared.rollback();
                 terminal(
                     app,
@@ -408,7 +527,12 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
             let (tx, rx) = mpsc::channel();
             let commit_error = committed.as_ref().err().map(ToString::to_string);
             let Some(finalization) = finalization else {
-                terminal(app, ctx, &task, json!({"error": commit_error.clone().unwrap_or_else(|| "Lightroom import did not commit".into())}));
+                terminal(
+                    app,
+                    ctx,
+                    &task,
+                    json!({"error": commit_error.clone().unwrap_or_else(|| "Lightroom import did not commit".into())}),
+                );
                 return;
             };
             if let Err(e) = spawn_finalize(finalization, tx, ctx.clone()) {
@@ -433,7 +557,12 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
             let report = pending.get("report").cloned().unwrap_or(Value::Null);
             match result {
                 Ok(()) if pending.get("error").is_none() => terminal(app, ctx, &task, report),
-                Ok(()) => terminal(app, ctx, &task, json!({"report": report, "error": pending["error"].clone()})),
+                Ok(()) => terminal(
+                    app,
+                    ctx,
+                    &task,
+                    json!({"report": report, "error": pending["error"].clone()}),
+                ),
                 Err(e) => {
                     let mut value = json!({"report": report, "indexWarning": e});
                     if let Some(error) = pending.get("error") {
@@ -449,7 +578,11 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
 
 /// Wait for a task in control/headless mode while still applying owner-thread completion.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn wait_for(app: &mut LightcraftApp, ctx: &egui::Context, timeout: std::time::Duration) -> Result<Value, String> {
+pub fn wait_for(
+    app: &mut LightcraftApp,
+    ctx: &egui::Context,
+    timeout: std::time::Duration,
+) -> Result<Value, String> {
     let start = std::time::Instant::now();
     while app.lightroom.is_some() {
         tick(app, ctx);
@@ -462,7 +595,11 @@ pub fn wait_for(app: &mut LightcraftApp, ctx: &egui::Context, timeout: std::time
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn wait_for(_app: &mut LightcraftApp, _ctx: &egui::Context, _timeout: std::time::Duration) -> Result<Value, String> {
+pub fn wait_for(
+    _app: &mut LightcraftApp,
+    _ctx: &egui::Context,
+    _timeout: std::time::Duration,
+) -> Result<Value, String> {
     unsupported_wasm()
 }
 
@@ -472,15 +609,38 @@ mod tests {
     use lightcraft_engine::lightroom_catalog::CatalogImport;
 
     /// A task as `start_import` makes it, fed by a channel the test holds instead of a worker.
-    fn fake_import(h: &crate::headless::Headless) -> (LightroomTask, mpsc::Sender<Message>, Arc<AtomicBool>, LightroomProgress) {
+    fn fake_import(
+        h: &crate::headless::Headless,
+    ) -> (
+        LightroomTask,
+        mpsc::Sender<Message>,
+        Arc<AtomicBool>,
+        LightroomProgress,
+    ) {
         let (tx, rx) = mpsc::channel();
-        let (cancel, progress) = (Arc::new(AtomicBool::new(false)), LightroomProgress::default());
-        let task = LightroomTask::new(&h.app.session, Kind::Import, "fixture.lrcat".into(), cancel.clone(), progress.clone(), rx);
+        let (cancel, progress) = (
+            Arc::new(AtomicBool::new(false)),
+            LightroomProgress::default(),
+        );
+        let task = LightroomTask::new(
+            &h.app.session,
+            Kind::Import,
+            "fixture.lrcat".into(),
+            cancel.clone(),
+            progress.clone(),
+            rx,
+        );
         (task, tx, cancel, progress)
     }
 
     fn demo() -> crate::headless::Headless {
-        let app = crate::LightcraftApp::new(lightcraft_engine::Session::with_demo(), crate::Services { png: None, ..Default::default() });
+        let app = crate::LightcraftApp::new(
+            lightcraft_engine::Session::with_demo(),
+            crate::Services {
+                png: None,
+                ..Default::default()
+            },
+        );
         let mut h = crate::headless::Headless::new(app, [1200.0, 800.0], 1.0);
         // no render left running at exit (see tests_activity::demo)
         h.settle(std::time::Duration::from_secs(20));
@@ -497,18 +657,27 @@ mod tests {
         h.step();
         let rows = h.app.session.activity.list();
         assert_eq!(rows.len(), 1);
-        assert_eq!((rows[0].kind, rows[0].label.as_str()), ("lightroom", "Importing Lightroom catalog"));
+        assert_eq!(
+            (rows[0].kind, rows[0].label.as_str()),
+            ("lightroom", "Importing Lightroom catalog")
+        );
         assert_eq!((rows[0].done, rows[0].total), (3, 10));
         assert!(rows[0].cancellable, "reading the catalog can stop");
         h.app.lightroom.as_mut().unwrap().enter(Phase::Committing);
         let row = h.app.session.activity.list().remove(0);
-        assert!(!row.cancellable, "once photos are being added it runs to the end");
+        assert!(
+            !row.cancellable,
+            "once photos are being added it runs to the end"
+        );
         assert!(h.app.session.activity.cancel(row.id).is_err());
         assert!(!cancel.load(Ordering::Relaxed));
         tx.send(Message::Finalized(Ok(()))).unwrap();
         h.step();
         assert!(h.app.lightroom.is_none());
-        assert!(h.app.session.activity.list().is_empty(), "the row goes with the task");
+        assert!(
+            h.app.session.activity.list().is_empty(),
+            "the row goes with the task"
+        );
     }
 
     #[test]
@@ -519,11 +688,17 @@ mod tests {
         h.step();
         let id = h.app.session.activity.list()[0].id;
         h.app.session.activity.cancel(id).unwrap();
-        assert!(cancel.load(Ordering::Relaxed), "the worker sees the stack's ✕");
+        assert!(
+            cancel.load(Ordering::Relaxed),
+            "the worker sees the stack's ✕"
+        );
         tx.send(Message::Prepared(Err("cancelled".into()))).unwrap();
         h.step();
         assert!(h.app.lightroom.is_none());
-        assert_eq!(h.app.lightroom_last, Some(serde_json::json!({"cancelled": true, "path": "fixture.lrcat"})));
+        assert_eq!(
+            h.app.lightroom_last,
+            Some(serde_json::json!({"cancelled": true, "path": "fixture.lrcat"}))
+        );
         assert!(h.app.session.activity.list().is_empty());
     }
 

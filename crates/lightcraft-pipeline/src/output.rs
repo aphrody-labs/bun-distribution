@@ -80,7 +80,13 @@ impl OutputTrc {
 }
 
 impl OutputSpace {
-    pub const ALL: [OutputSpace; 5] = [OutputSpace::Srgb, OutputSpace::DisplayP3, OutputSpace::AdobeRgb, OutputSpace::ProPhoto, OutputSpace::Rec2020];
+    pub const ALL: [OutputSpace; 5] = [
+        OutputSpace::Srgb,
+        OutputSpace::DisplayP3,
+        OutputSpace::AdobeRgb,
+        OutputSpace::ProPhoto,
+        OutputSpace::Rec2020,
+    ];
 
     pub fn rgb_space(self) -> RgbSpace {
         match self {
@@ -113,11 +119,17 @@ impl OutputSpace {
     }
 
     pub fn parse(s: &str) -> Option<OutputSpace> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
         Some(match k.as_str() {
             "srgb" => OutputSpace::Srgb,
             "displayp3" | "p3" => OutputSpace::DisplayP3,
-            "adobergb" | "adobergb1998" | "adobergb1998compatible" | "widegamutrgb" => OutputSpace::AdobeRgb,
+            "adobergb" | "adobergb1998" | "adobergb1998compatible" | "widegamutrgb" => {
+                OutputSpace::AdobeRgb
+            }
             "prophoto" | "prophotorgb" | "rommrgb" => OutputSpace::ProPhoto,
             "rec2020" | "bt2020" | "itur2020" => OutputSpace::Rec2020,
             _ => return None,
@@ -160,11 +172,21 @@ impl DisplaySpace {
     pub fn new(to_working: Mat3, id: u64) -> Option<DisplaySpace> {
         let from = to_working.inverse()?;
         let luma = REC2020.to_xyz().mul(&to_working).0[1];
-        let all = to_working.0.iter().chain(from.0.iter()).flatten().chain(luma.iter());
+        let all = to_working
+            .0
+            .iter()
+            .chain(from.0.iter())
+            .flatten()
+            .chain(luma.iter());
         if all.clone().any(|v| !v.is_finite()) || (luma.iter().sum::<f64>() - 1.0).abs() > 1e-3 {
             return None;
         }
-        Some(DisplaySpace { from_working: from.to_f32(), to_working: to_working.to_f32(), luma: luma.map(|v| v as f32), id })
+        Some(DisplaySpace {
+            from_working: from.to_f32(),
+            to_working: to_working.to_f32(),
+            luma: luma.map(|v| v as f32),
+            id,
+        })
     }
 
     /// A display that is exactly `space`'s primaries (tests, and the sRGB identity).
@@ -218,7 +240,9 @@ pub const PROOF_GAMUT_TOLERANCE: f32 = 0.02;
 impl ProofLut {
     /// `None` unless `data` holds `n³` finite entries with `2 ≤ n ≤ 129`.
     pub fn new(n: usize, data: Vec<[f32; 4]>) -> Option<ProofLut> {
-        let ok = (2..=129).contains(&n) && data.len() == n * n * n && data.iter().flatten().all(|v| v.is_finite());
+        let ok = (2..=129).contains(&n)
+            && data.len() == n * n * n
+            && data.iter().flatten().all(|v| v.is_finite());
         ok.then_some(ProofLut { n, data })
     }
 
@@ -227,11 +251,17 @@ impl ProofLut {
         let m = (self.n - 1) as f32;
         let f = rgb.map(|v| lightcraft_color::transfer::linear_to_srgb(v.clamp(0.0, 1.0)) * m);
         let i0 = f.map(|v| (v.floor() as usize).min(self.n - 2));
-        let t = [f[0] - i0[0] as f32, f[1] - i0[1] as f32, f[2] - i0[2] as f32];
+        let t = [
+            f[0] - i0[0] as f32,
+            f[1] - i0[1] as f32,
+            f[2] - i0[2] as f32,
+        ];
         let mut acc = [0.0f32; 4];
         for corner in 0..8usize {
             let b = [corner >> 2 & 1, corner >> 1 & 1, corner & 1];
-            let w: f32 = (0..3).map(|k| if b[k] == 1 { t[k] } else { 1.0 - t[k] }).product();
+            let w: f32 = (0..3)
+                .map(|k| if b[k] == 1 { t[k] } else { 1.0 - t[k] })
+                .product();
             let idx = ((i0[0] + b[0]) * self.n + i0[1] + b[1]) * self.n + i0[2] + b[2];
             if let Some(e) = self.data.get(idx) {
                 for k in 0..4 {
@@ -244,14 +274,17 @@ impl ProofLut {
 }
 
 /// Proof tables by id (a few: the profiles a session proofs against).
-static PROOF_PROFILES: std::sync::Mutex<Vec<(u64, std::sync::Arc<ProofLut>)>> = std::sync::Mutex::new(Vec::new());
+static PROOF_PROFILES: std::sync::Mutex<Vec<(u64, std::sync::Arc<ProofLut>)>> =
+    std::sync::Mutex::new(Vec::new());
 const PROOF_PROFILES_KEPT: usize = 8;
 
 /// Make `lut` available to renders as [`Proof::profile`] `id` (any nonzero number that identifies
 /// the profile and its options, e.g. a hash). Returns `id` (`1` for `0`).
 pub fn register_proof_profile(id: u64, lut: ProofLut) -> u64 {
     let id = id.max(1);
-    let mut v = PROOF_PROFILES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut v = PROOF_PROFILES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     v.retain(|(k, _)| *k != id);
     v.push((id, std::sync::Arc::new(lut)));
     let extra = v.len().saturating_sub(PROOF_PROFILES_KEPT);
@@ -264,7 +297,9 @@ pub fn proof_profile(id: u64) -> Option<std::sync::Arc<ProofLut>> {
     if id == 0 {
         return None;
     }
-    let v = PROOF_PROFILES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let v = PROOF_PROFILES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     v.iter().find(|(k, _)| *k == id).map(|(_, l)| l.clone())
 }
 
@@ -287,7 +322,10 @@ pub struct ProofParams {
 
 impl Proof {
     pub fn key(self) -> u64 {
-        ((self.space as u64 + 1) | (self.dest_warning as u64) << 8 | (self.display_warning as u64) << 9) ^ self.profile.rotate_left(16)
+        ((self.space as u64 + 1)
+            | (self.dest_warning as u64) << 8
+            | (self.display_warning as u64) << 9)
+            ^ self.profile.rotate_left(16)
     }
 
     pub fn params(self, out: OutputSpace) -> ProofParams {
@@ -305,7 +343,10 @@ impl Proof {
     /// what *this* display can't show.
     pub fn params_display(self, d: &DisplaySpace) -> ProofParams {
         let proof_to_working = self.space.rgb_space().to_space(&REC2020).to_f32();
-        ProofParams { proof_to_out: mul33(&d.from_working, &proof_to_working), ..self.params(OutputSpace::Srgb) }
+        ProofParams {
+            proof_to_out: mul33(&d.from_working, &proof_to_working),
+            ..self.params(OutputSpace::Srgb)
+        }
     }
 }
 
@@ -353,12 +394,16 @@ impl DeepImage {
         match &self.samples {
             DeepSamples::U16(v) => {
                 for (p, c) in out.data.iter_mut().zip(v.as_chunks::<3>().0) {
-                    *p = [c[0], c[1], c[2]].map(|x| ((x as u32 * 255 + 32767) / 65535) as u8).into_rgba();
+                    *p = [c[0], c[1], c[2]]
+                        .map(|x| ((x as u32 * 255 + 32767) / 65535) as u8)
+                        .into_rgba();
                 }
             }
             DeepSamples::F32(v) => {
                 for (p, c) in out.data.iter_mut().zip(v.as_chunks::<3>().0) {
-                    *p = [c[0], c[1], c[2]].map(|x| (trc.encode(x) * 255.0 + 0.5) as u8).into_rgba();
+                    *p = [c[0], c[1], c[2]]
+                        .map(|x| (trc.encode(x) * 255.0 + 0.5) as u8)
+                        .into_rgba();
                 }
             }
         }

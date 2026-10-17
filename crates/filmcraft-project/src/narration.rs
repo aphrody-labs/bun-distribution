@@ -27,7 +27,13 @@ pub enum VocalPitch {
 }
 
 impl VocalPitch {
-    pub const ALL: [VocalPitch; 5] = [VocalPitch::ExtraLow, VocalPitch::Low, VocalPitch::Default, VocalPitch::High, VocalPitch::ExtraHigh];
+    pub const ALL: [VocalPitch; 5] = [
+        VocalPitch::ExtraLow,
+        VocalPitch::Low,
+        VocalPitch::Default,
+        VocalPitch::High,
+        VocalPitch::ExtraHigh,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -52,7 +58,9 @@ impl VocalPitch {
 
     pub fn from_id(s: &str) -> Option<VocalPitch> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        Self::ALL.into_iter().find(|p| p.id().to_ascii_lowercase() == n)
+        Self::ALL
+            .into_iter()
+            .find(|p| p.id().to_ascii_lowercase() == n)
     }
 
     /// Pitch shift in semitones.
@@ -90,7 +98,10 @@ impl Narration {
     /// Check values read from a project file or a command.
     pub fn check(&self) -> Result<(), String> {
         if self.text.len() > MAX_TEXT_BYTES {
-            return Err(format!("the script is longer than {} KB", MAX_TEXT_BYTES / 1024));
+            return Err(format!(
+                "the script is longer than {} KB",
+                MAX_TEXT_BYTES / 1024
+            ));
         }
         if !(MIN_PACE..=MAX_PACE).contains(&self.pace) {
             return Err(format!("pace must be between {MIN_PACE} and {MAX_PACE}"));
@@ -130,7 +141,10 @@ mod tests {
         for p in VocalPitch::ALL {
             assert_eq!(VocalPitch::from_id(p.id()), Some(p));
         }
-        assert_eq!(VocalPitch::from_id("Extra High"), Some(VocalPitch::ExtraHigh));
+        assert_eq!(
+            VocalPitch::from_id("Extra High"),
+            Some(VocalPitch::ExtraHigh)
+        );
         assert_eq!(VocalPitch::from_id("loud"), None);
     }
 

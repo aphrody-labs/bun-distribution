@@ -9,11 +9,22 @@ use crate::keymap::{Context, GESTURES, Group, KEYS, Mods, Platform, display, loo
 
 #[test]
 fn f6_and_shift_f6_cycle_the_regions_on_every_platform_and_while_editing_text() {
-    let shift = Mods { shift: true, ..Mods::default() };
+    let shift = Mods {
+        shift: true,
+        ..Mods::default()
+    };
     for p in [Platform::Mac, Platform::Other] {
         for c in [Context::Canvas, Context::Text] {
-            assert_eq!(lookup(p, c, "F6", Mods::default()).map(|b| b.id), Some("view.nextRegion"), "{p:?} {c:?}");
-            assert_eq!(lookup(p, c, "F6", shift).map(|b| b.id), Some("view.previousRegion"), "{p:?} {c:?}");
+            assert_eq!(
+                lookup(p, c, "F6", Mods::default()).map(|b| b.id),
+                Some("view.nextRegion"),
+                "{p:?} {c:?}"
+            );
+            assert_eq!(
+                lookup(p, c, "F6", shift).map(|b| b.id),
+                Some("view.previousRegion"),
+                "{p:?} {c:?}"
+            );
         }
     }
     assert_eq!(display("F6", Platform::Other), "F6");
@@ -25,7 +36,11 @@ fn f6_and_shift_f6_cycle_the_regions_on_every_platform_and_while_editing_text() 
         assert_eq!(b.group, Group::View);
         assert!(b.title().starts_with("Focus the"), "{}", b.title());
     }
-    assert!(GESTURES.iter().any(|g| g.0 == Group::View && g.3.contains("Tab")));
+    assert!(
+        GESTURES
+            .iter()
+            .any(|g| g.0 == Group::View && g.3.contains("Tab"))
+    );
 }
 
 #[test]
@@ -34,7 +49,11 @@ fn region_commands_ask_the_ui_to_move_the_keyboard() {
     for (cmd, step) in [("view.nextRegion", 1), ("view.previousRegion", -1)] {
         s.ui_requests.clear();
         s.execute(cmd, &json!({})).unwrap();
-        let r = s.ui_requests.iter().find(|r| r.kind == "focus.region").unwrap_or_else(|| panic!("{cmd}"));
+        let r = s
+            .ui_requests
+            .iter()
+            .find(|r| r.kind == "focus.region")
+            .unwrap_or_else(|| panic!("{cmd}"));
         assert_eq!(r.data["step"], step, "{cmd}");
         // Nothing to undo: the document didn't change.
         assert!(!s.ds().unwrap().is_dirty());
@@ -45,9 +64,16 @@ fn region_commands_ask_the_ui_to_move_the_keyboard() {
 fn reduce_motion_is_a_preference_that_persists() {
     let mut s = Session::new();
     assert!(!s.prefs.reduce_motion);
-    assert_eq!(s.execute("pref.reduceMotion", &json!({})).unwrap()["on"], true);
+    assert_eq!(
+        s.execute("pref.reduceMotion", &json!({})).unwrap()["on"],
+        true
+    );
     assert!(s.prefs.reduce_motion);
-    assert_eq!(s.execute("pref.reduceMotion", &json!({"on": false})).unwrap()["on"], false);
+    assert_eq!(
+        s.execute("pref.reduceMotion", &json!({"on": false}))
+            .unwrap()["on"],
+        false
+    );
     s.prefs.reduce_motion = true;
     // Saved with the other preferences; older settings files without it read as off.
     let v = serde_json::to_value(&s.prefs).unwrap();

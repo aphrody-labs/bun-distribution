@@ -33,7 +33,9 @@ pub fn hex_lower(bytes: &[u8]) -> String {
 /// Temp sibling of `path`, named so the revision walk ignores it (`.tmp`
 /// suffix) and two writers never collide.
 fn temp_sibling(path: &Path) -> PathBuf {
-    let name = path.file_name().map_or_else(|| "file".into(), |n| n.to_string_lossy().into_owned());
+    let name = path
+        .file_name()
+        .map_or_else(|| "file".into(), |n| n.to_string_lossy().into_owned());
     path.with_file_name(format!(".{name}.{}.tmp", crate::time::file_stamp()))
 }
 
@@ -74,9 +76,12 @@ pub fn write_atomic_with_mtime(
     modified: SystemTime,
 ) -> Result<(), HomeError> {
     write_atomic(path, bytes)?;
-    let file =
-        std::fs::OpenOptions::new().write(true).open(path).map_err(|e| HomeError::io(path, e))?;
-    file.set_modified(modified).map_err(|e| HomeError::io(path, e))
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .open(path)
+        .map_err(|e| HomeError::io(path, e))?;
+    file.set_modified(modified)
+        .map_err(|e| HomeError::io(path, e))
 }
 
 /// Read a file's modification time.
@@ -84,7 +89,9 @@ pub fn write_atomic_with_mtime(
 /// # Errors
 /// [`HomeError::Io`] when the metadata cannot be read.
 pub fn modified(path: &Path) -> Result<SystemTime, HomeError> {
-    std::fs::metadata(path).and_then(|m| m.modified()).map_err(|e| HomeError::io(path, e))
+    std::fs::metadata(path)
+        .and_then(|m| m.modified())
+        .map_err(|e| HomeError::io(path, e))
 }
 
 #[cfg(test)]

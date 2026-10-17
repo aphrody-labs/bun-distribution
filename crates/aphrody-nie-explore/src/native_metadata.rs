@@ -20,7 +20,9 @@ fn utf_metadata(bytes: &[u8], depth: usize, budget: &mut usize) -> Result<Value,
         .iter()
         .try_fold(0usize, |count, row| count.checked_add(row.len()))
         .ok_or("Native table cell count overflow")?;
-    *budget = budget.checked_sub(count).ok_or("Native table metadata exceeds its cell budget")?;
+    *budget = budget
+        .checked_sub(count)
+        .ok_or("Native table metadata exceeds its cell budget")?;
     let mut rows = Vec::with_capacity(table.rows.len());
     for row in &table.rows {
         let mut values = Vec::with_capacity(row.len());
@@ -34,14 +36,16 @@ fn utf_metadata(bytes: &[u8], depth: usize, budget: &mut usize) -> Result<Value,
                         json!({ "type": "binary", "byteLength": blob.len(),
                             "nestedTable": blob.starts_with(b"@UTF"), "payloadIncluded": false })
                     }
-                },
+                }
                 scalar => serde_json::to_value(scalar).map_err(|error| error.to_string())?,
             });
         }
         rows.push(values);
     }
-    Ok(json!({ "name": table.name, "columns": table.columns, "rows": rows,
-        "rowCount": table.rows.len(), "columnCount": table.columns.len() }))
+    Ok(
+        json!({ "name": table.name, "columns": table.columns, "rows": rows,
+        "rowCount": table.rows.len(), "columnCount": table.columns.len() }),
+    )
 }
 
 /// Inspect ACB cues, AFS2 entry tables, generic UTF/ACF tables or named USM metadata.
@@ -70,7 +74,11 @@ pub fn inspect(original_path: &str, bytes: &[u8]) -> Result<Value, String> {
             // Preserve its decoded table instead of turning missing cue resolution into
             // an assertion that the entire native container is unreadable.
             let cues = crate::native_audio::bank_cues(original_path, bytes).ok();
-            let cue_resolution = if cues.is_some() { "resolved" } else { "unavailable" };
+            let cue_resolution = if cues.is_some() {
+                "resolved"
+            } else {
+                "unavailable"
+            };
             return Ok(json!({ "format": "acb", "table": table, "cues": cues,
                 "cueResolution": cue_resolution,
                 "waveformsDecoded": false, "complexSynthExecutionSupported": false }));

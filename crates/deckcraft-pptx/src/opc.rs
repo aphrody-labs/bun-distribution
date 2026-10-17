@@ -27,7 +27,8 @@ pub const NS_A14: &str = "http://schemas.microsoft.com/office/drawing/2010/main"
 
 pub const RT_BASE: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/";
 pub const RT_MEDIA: &str = "http://schemas.microsoft.com/office/2007/relationships/media";
-pub const RT_CORE: &str = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
+pub const RT_CORE: &str =
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
 
 /// The files of a package, keyed by normalised part name (no leading slash, lowercase).
 pub struct Package {
@@ -36,9 +37,13 @@ pub struct Package {
 
 impl Package {
     pub fn open(bytes: &[u8]) -> Result<Self, PptxError> {
-        let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| PptxError::NotPptx(format!("{e}")))?;
+        let mut zip = zip::ZipArchive::new(Cursor::new(bytes))
+            .map_err(|e| PptxError::NotPptx(format!("{e}")))?;
         if zip.len() > MAX_ENTRIES {
-            return Err(PptxError::NotPptx(format!("too many entries ({})", zip.len())));
+            return Err(PptxError::NotPptx(format!(
+                "too many entries ({})",
+                zip.len()
+            )));
         }
         let mut parts = HashMap::new();
         let mut total: u64 = 0;
@@ -98,14 +103,31 @@ impl Package {
     /// Relationships of a part (`ppt/slides/slide1.xml` → `ppt/slides/_rels/slide1.xml.rels`).
     pub fn rels(&self, part: &str) -> Rels {
         let rp = rels_path(part);
-        let Some(doc) = self.xml(&rp) else { return Rels::default() };
+        let Some(doc) = self.xml(&rp) else {
+            return Rels::default();
+        };
         let base = dir_of(part);
         let mut out = Rels::default();
         for r in doc.root.children_named("Relationship") {
-            let (Some(id), Some(ty), Some(target)) = (r.attr("Id"), r.attr("Type"), r.attr("Target")) else { continue };
-            let external = r.attr("TargetMode").is_some_and(|m| m.eq_ignore_ascii_case("external"));
-            let target = if external { target.to_string() } else { resolve(&base, target) };
-            out.items.push(Rel { id: id.to_string(), kind: ty.rsplit('/').next().unwrap_or(ty).to_string(), target, external });
+            let (Some(id), Some(ty), Some(target)) =
+                (r.attr("Id"), r.attr("Type"), r.attr("Target"))
+            else {
+                continue;
+            };
+            let external = r
+                .attr("TargetMode")
+                .is_some_and(|m| m.eq_ignore_ascii_case("external"));
+            let target = if external {
+                target.to_string()
+            } else {
+                resolve(&base, target)
+            };
+            out.items.push(Rel {
+                id: id.to_string(),
+                kind: ty.rsplit('/').next().unwrap_or(ty).to_string(),
+                target,
+                external,
+            });
         }
         out
     }
@@ -114,14 +136,19 @@ impl Package {
         let doc = self.xml("[Content_Types].xml")?;
         let p = format!("/{}", norm(part));
         for o in doc.root.children_named("Override") {
-            if o.attr("PartName").is_some_and(|n| n.to_ascii_lowercase() == p) {
+            if o.attr("PartName")
+                .is_some_and(|n| n.to_ascii_lowercase() == p)
+            {
                 return o.attr("ContentType").map(String::from);
             }
         }
         let ext = part.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
         doc.root
             .children_named("Default")
-            .find(|d| d.attr("Extension").is_some_and(|e| e.eq_ignore_ascii_case(&ext)))
+            .find(|d| {
+                d.attr("Extension")
+                    .is_some_and(|e| e.eq_ignore_ascii_case(&ext))
+            })
             .and_then(|d| d.attr("ContentType").map(String::from))
     }
     pub fn original_name(&self, name: &str) -> Option<&str> {
@@ -160,7 +187,9 @@ impl Rels {
 }
 
 pub fn norm(name: &str) -> String {
-    name.trim_start_matches('/').replace('\\', "/").to_ascii_lowercase()
+    name.trim_start_matches('/')
+        .replace('\\', "/")
+        .to_ascii_lowercase()
 }
 
 pub fn dir_of(part: &str) -> String {
@@ -179,7 +208,11 @@ pub fn rels_path(part: &str) -> String {
     let p = part.trim_start_matches('/');
     let dir = dir_of(p);
     let file = file_of(p);
-    if dir.is_empty() { format!("_rels/{file}.rels") } else { format!("{dir}/_rels/{file}.rels") }
+    if dir.is_empty() {
+        format!("_rels/{file}.rels")
+    } else {
+        format!("{dir}/_rels/{file}.rels")
+    }
 }
 
 fn percent_decode(s: &str) -> String {
@@ -189,7 +222,10 @@ fn percent_decode(s: &str) -> String {
     while i < b.len() {
         let c = b.get(i).copied().unwrap_or(0);
         if c == b'%'
-            && let Some(h) = b.get(i + 1..i + 3).and_then(|h| std::str::from_utf8(h).ok()).and_then(|h| u8::from_str_radix(h, 16).ok())
+            && let Some(h) = b
+                .get(i + 1..i + 3)
+                .and_then(|h| std::str::from_utf8(h).ok())
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
         {
             out.push(h);
             i += 3;
@@ -205,7 +241,11 @@ fn percent_decode(s: &str) -> String {
 pub fn resolve(base: &str, target: &str) -> String {
     let target = percent_decode(target);
     let target = target.split('#').next().unwrap_or("");
-    let mut segs: Vec<&str> = if target.starts_with('/') { vec![] } else { base.split('/').filter(|s| !s.is_empty()).collect() };
+    let mut segs: Vec<&str> = if target.starts_with('/') {
+        vec![]
+    } else {
+        base.split('/').filter(|s| !s.is_empty()).collect()
+    };
     for s in target.split('/') {
         match s {
             "" | "." => {}
@@ -249,24 +289,44 @@ pub struct RelsOut {
 impl RelsOut {
     /// Add (or reuse) a relationship; `kind` is a full type URI or a suffix of the standard base.
     pub fn add(&mut self, kind: &str, target: &str, external: bool) -> String {
-        let ty = if kind.starts_with("http") { kind.to_string() } else { format!("{RT_BASE}{kind}") };
-        if let Some((id, ..)) = self.items.iter().find(|(_, t, tg, e)| *t == ty && tg == target && *e == external) {
+        let ty = if kind.starts_with("http") {
+            kind.to_string()
+        } else {
+            format!("{RT_BASE}{kind}")
+        };
+        if let Some((id, ..)) = self
+            .items
+            .iter()
+            .find(|(_, t, tg, e)| *t == ty && tg == target && *e == external)
+        {
             return id.clone();
         }
         let id = format!("rId{}", self.items.len() + 1);
-        self.items.push((id.clone(), ty, target.to_string(), external));
+        self.items
+            .push((id.clone(), ty, target.to_string(), external));
         id
     }
     /// Always add a new relationship even if an identical one exists.
     pub fn add_new(&mut self, kind: &str, target: &str, external: bool) -> String {
-        let ty = if kind.starts_with("http") { kind.to_string() } else { format!("{RT_BASE}{kind}") };
+        let ty = if kind.starts_with("http") {
+            kind.to_string()
+        } else {
+            format!("{RT_BASE}{kind}")
+        };
         let id = format!("rId{}", self.items.len() + 1);
-        self.items.push((id.clone(), ty, target.to_string(), external));
+        self.items
+            .push((id.clone(), ty, target.to_string(), external));
         id
     }
     pub fn to_xml(&self) -> Vec<u8> {
         let mut w = W::new();
-        w.open("Relationships", A::new().a("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships"));
+        w.open(
+            "Relationships",
+            A::new().a(
+                "xmlns",
+                "http://schemas.openxmlformats.org/package/2006/relationships",
+            ),
+        );
         for (id, ty, target, ext) in &self.items {
             let mut a = A::new().a("Id", id).a("Type", ty).a("Target", target);
             if *ext {
@@ -291,7 +351,10 @@ impl Default for PackageOut {
         PackageOut {
             files: vec![],
             defaults: vec![
-                ("rels".into(), "application/vnd.openxmlformats-package.relationships+xml".into()),
+                (
+                    "rels".into(),
+                    "application/vnd.openxmlformats-package.relationships+xml".into(),
+                ),
                 ("xml".into(), "application/xml".into()),
             ],
             overrides: vec![],
@@ -302,7 +365,8 @@ impl Default for PackageOut {
 impl PackageOut {
     /// Add an XML part with its content type override.
     pub fn xml_part(&mut self, name: &str, content_type: &str, data: Vec<u8>) {
-        self.overrides.push((format!("/{name}"), content_type.to_string()));
+        self.overrides
+            .push((format!("/{name}"), content_type.to_string()));
         self.files.push((name.to_string(), data, true));
     }
     pub fn rels(&mut self, part: &str, rels: &RelsOut) {
@@ -313,17 +377,32 @@ impl PackageOut {
     }
     /// Add a binary part; its extension gets a Default content type.
     pub fn binary(&mut self, name: &str, content_type: &str, data: Vec<u8>) {
-        let ext = name.rsplit('.').next().unwrap_or("bin").to_ascii_lowercase();
+        let ext = name
+            .rsplit('.')
+            .next()
+            .unwrap_or("bin")
+            .to_ascii_lowercase();
         if !self.defaults.iter().any(|(e, _)| *e == ext) {
             self.defaults.push((ext, content_type.to_string()));
-        } else if !self.defaults.iter().any(|(e, c)| *e == ext && c == content_type) {
-            self.overrides.push((format!("/{name}"), content_type.to_string()));
+        } else if !self
+            .defaults
+            .iter()
+            .any(|(e, c)| *e == ext && c == content_type)
+        {
+            self.overrides
+                .push((format!("/{name}"), content_type.to_string()));
         }
         self.files.push((name.to_string(), data, false));
     }
     pub fn finish(self) -> Result<Vec<u8>, PptxError> {
         let mut ct = W::new();
-        ct.open("Types", A::new().a("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types"));
+        ct.open(
+            "Types",
+            A::new().a(
+                "xmlns",
+                "http://schemas.openxmlformats.org/package/2006/content-types",
+            ),
+        );
         for (e, c) in &self.defaults {
             ct.empty("Default", A::new().a("Extension", e).a("ContentType", c));
         }
@@ -332,10 +411,13 @@ impl PackageOut {
         }
         ct.close("Types");
         let mut zw = zip::ZipWriter::new(Cursor::new(Vec::new()));
-        let deflate = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-        let stored = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        let deflate = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        let stored = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
         let err = |e: &dyn std::fmt::Display| PptxError::Write(e.to_string());
-        zw.start_file("[Content_Types].xml", deflate).map_err(|e| err(&e))?;
+        zw.start_file("[Content_Types].xml", deflate)
+            .map_err(|e| err(&e))?;
         zw.write_all(&ct.finish()).map_err(|e| err(&e))?;
         for (name, data, compress) in &self.files {
             let large = data.len() as u64 >= u32::MAX as u64 / 2;
@@ -354,14 +436,35 @@ mod tests {
 
     #[test]
     fn path_resolution() {
-        assert_eq!(resolve("ppt/slides", "../media/image1.png"), "ppt/media/image1.png");
+        assert_eq!(
+            resolve("ppt/slides", "../media/image1.png"),
+            "ppt/media/image1.png"
+        );
         assert_eq!(resolve("ppt", "slides/slide1.xml"), "ppt/slides/slide1.xml");
-        assert_eq!(resolve("ppt/slides", "/ppt/media/a%20b.png"), "ppt/media/a b.png");
+        assert_eq!(
+            resolve("ppt/slides", "/ppt/media/a%20b.png"),
+            "ppt/media/a b.png"
+        );
         assert_eq!(resolve("", "../../../x.xml"), "x.xml");
-        assert_eq!(rels_path("ppt/presentation.xml"), "ppt/_rels/presentation.xml.rels");
-        assert_eq!(rels_path("[Content_Types].xml"), "_rels/[Content_Types].xml.rels");
-        assert_eq!(relative("ppt/slides/slide1.xml", "ppt/media/image1.png"), "../media/image1.png");
-        assert_eq!(relative("ppt/presentation.xml", "ppt/slides/slide1.xml"), "slides/slide1.xml");
-        assert_eq!(relative("ppt/slides/slide1.xml", "ppt/slides/slide2.xml"), "slide2.xml");
+        assert_eq!(
+            rels_path("ppt/presentation.xml"),
+            "ppt/_rels/presentation.xml.rels"
+        );
+        assert_eq!(
+            rels_path("[Content_Types].xml"),
+            "_rels/[Content_Types].xml.rels"
+        );
+        assert_eq!(
+            relative("ppt/slides/slide1.xml", "ppt/media/image1.png"),
+            "../media/image1.png"
+        );
+        assert_eq!(
+            relative("ppt/presentation.xml", "ppt/slides/slide1.xml"),
+            "slides/slide1.xml"
+        );
+        assert_eq!(
+            relative("ppt/slides/slide1.xml", "ppt/slides/slide2.xml"),
+            "slide2.xml"
+        );
     }
 }

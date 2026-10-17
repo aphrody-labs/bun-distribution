@@ -4,7 +4,14 @@
 //! [`import`] reads a package leniently (unknown parts are skipped, malformed parts are logged and
 //! ignored, every size and depth is bounded) into the DeckCraft model; [`export`] writes a valid
 //! package that PowerPoint opens without repair.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod custgeom;
@@ -41,7 +48,9 @@ pub fn sniff(bytes: &[u8]) -> bool {
     if !bytes.starts_with(b"PK") {
         return false;
     }
-    zip::ZipArchive::new(std::io::Cursor::new(bytes)).map(|z| z.index_for_name("[Content_Types].xml").is_some()).unwrap_or(false)
+    zip::ZipArchive::new(std::io::Cursor::new(bytes))
+        .map(|z| z.index_for_name("[Content_Types].xml").is_some())
+        .unwrap_or(false)
 }
 
 /// Read a `.pptx` / `.potx` / `.ppsx` package.
@@ -56,7 +65,10 @@ pub fn export(p: &Presentation) -> Result<Vec<u8>, PptxError> {
 
 /// Content type for a file name's extension.
 pub(crate) fn mime_for(name: &str) -> &'static str {
-    let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+    let ext = name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .unwrap_or_default();
     match ext.as_str() {
         "png" => "image/png",
         "jpg" | "jpeg" | "jpe" => "image/jpeg",

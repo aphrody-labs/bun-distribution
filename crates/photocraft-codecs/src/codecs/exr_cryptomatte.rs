@@ -43,13 +43,22 @@ pub(crate) fn split_stream(channel: &str) -> Option<StreamChannel> {
         "alpha" | "a" => (true, 1),
         _ => return None,
     };
-    let digits = stream.chars().rev().take_while(|c| c.is_ascii_digit()).count();
+    let digits = stream
+        .chars()
+        .rev()
+        .take_while(|c| c.is_ascii_digit())
+        .count();
     if digits == 0 || digits == stream.len() {
         return None;
     }
     let split = stream.len() - digits;
     let index = stream[split..].parse().ok()?;
-    Some(StreamChannel { stream: stream.to_string(), index, coverage, rank })
+    Some(StreamChannel {
+        stream: stream.to_string(),
+        index,
+        coverage,
+        rank,
+    })
 }
 
 /// MurmurHash3, x86-32 bit variant, seed 0 (public-domain algorithm, Austin Appleby).
@@ -84,7 +93,11 @@ fn murmur3_32(data: &[u8]) -> u32 {
 pub fn cryptomatte_id(name: &str) -> f32 {
     let bits = murmur3_32(name.as_bytes());
     let exp = (bits >> 23) & 0xff;
-    let bits = if exp == 0 || exp == 255 { bits ^ (1 << 23) } else { bits };
+    let bits = if exp == 0 || exp == 255 {
+        bits ^ (1 << 23)
+    } else {
+        bits
+    };
     f32::from_bits(bits)
 }
 
@@ -101,8 +114,13 @@ pub fn cryptomatte_preview_color(id: f32) -> [f32; 3] {
 }
 
 /// The `cryptomatte/<key>/<field>` text attribute of a header, if present.
-fn attribute(other: &std::collections::HashMap<exr::meta::attribute::Text, AttributeValue>, key: &str, field: &str) -> Option<String> {
-    let full = exr::meta::attribute::Text::new_or_none(format!("cryptomatte/{key}/{field}").as_str())?;
+fn attribute(
+    other: &std::collections::HashMap<exr::meta::attribute::Text, AttributeValue>,
+    key: &str,
+    field: &str,
+) -> Option<String> {
+    let full =
+        exr::meta::attribute::Text::new_or_none(format!("cryptomatte/{key}/{field}").as_str())?;
     match other.get(&full)? {
         AttributeValue::Text(t) => Some(t.to_string()),
         _ => None,
@@ -113,12 +131,18 @@ fn attribute(other: &std::collections::HashMap<exr::meta::attribute::Text, Attri
 /// pairs. Entries that are not strings of up to eight hex digits are skipped, like the
 /// reference readers tolerate a partially broken manifest; a broken document yields none.
 fn parse_manifest(json: &str) -> Vec<(f32, String)> {
-    let Ok(value) = serde_json::from_str::<serde_json::Value>(json) else { return Vec::new() };
-    let Some(map) = value.as_object() else { return Vec::new() };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(json) else {
+        return Vec::new();
+    };
+    let Some(map) = value.as_object() else {
+        return Vec::new();
+    };
     let mut out = Vec::with_capacity(map.len().min(1 << 20));
     for (name, hex) in map {
         let Some(hex) = hex.as_str() else { continue };
-        let Some(bits) = u32::from_str_radix(hex.trim_start_matches("0x"), 16).ok() else { continue };
+        let Some(bits) = u32::from_str_radix(hex.trim_start_matches("0x"), 16).ok() else {
+            continue;
+        };
         out.push((f32::from_bits(bits), name.clone()));
     }
     out
@@ -138,7 +162,9 @@ fn layer_streams(header: &exr::meta::header::Header, name: &str) -> Vec<String> 
             let s = split_stream(&c.name.to_string())?;
             (!s.coverage).then_some((s.index, s.stream))
         })
-        .filter(|(_, stream)| normalize(stream.trim_end_matches(|c: char| c.is_ascii_digit())) == want)
+        .filter(|(_, stream)| {
+            normalize(stream.trim_end_matches(|c: char| c.is_ascii_digit())) == want
+        })
         .collect();
     found.sort();
     found.dedup();
@@ -148,16 +174,22 @@ fn layer_streams(header: &exr::meta::header::Header, name: &str) -> Vec<String> 
 /// Lists every Cryptomatte layer of the file from the headers alone: what a Cryptomatte
 /// picker offers. The embedded manifest (capped, JSON) is parsed into (ID, name) pairs.
 pub(crate) fn layers(bytes: &[u8], limits: &Limits) -> Result<Vec<CryptomatteLayer>, CodecError> {
-    let meta = MetaData::read_from_buffered(Cursor::new(bytes), false).map_err(|e| CodecError::malformed(F, e))?;
+    let meta = MetaData::read_from_buffered(Cursor::new(bytes), false)
+        .map_err(|e| CodecError::malformed(F, e))?;
     // Manifests can be large; bound the embedded text before parsing anything.
     const MANIFEST_CAP: usize = 16 << 20;
     let mut out = Vec::new();
     for (part, header) in meta.headers.iter().enumerate() {
         let size = header.layer_size;
-        let (w, h) = (u32::try_from(size.0).unwrap_or(u32::MAX), u32::try_from(size.1).unwrap_or(u32::MAX));
+        let (w, h) = (
+            u32::try_from(size.0).unwrap_or(u32::MAX),
+            u32::try_from(size.1).unwrap_or(u32::MAX),
+        );
         limits.check_bytes(w, h, 8)?;
         for key in cryptomatte_keys(&header.own_attributes.other) {
-            let Some(name) = attribute(&header.own_attributes.other, &key, "name") else { continue };
+            let Some(name) = attribute(&header.own_attributes.other, &key, "name") else {
+                continue;
+            };
             let channels = layer_streams(header, name.as_str());
             if channels.is_empty() {
                 continue;
@@ -182,12 +214,21 @@ pub(crate) fn layers(bytes: &[u8], limits: &Limits) -> Result<Vec<CryptomatteLay
 }
 
 /// Every `cryptomatte/<key>/` key of a header, in file order, without duplicates.
-fn cryptomatte_keys(other: &std::collections::HashMap<exr::meta::attribute::Text, exr::meta::attribute::AttributeValue>) -> Vec<String> {
+fn cryptomatte_keys(
+    other: &std::collections::HashMap<
+        exr::meta::attribute::Text,
+        exr::meta::attribute::AttributeValue,
+    >,
+) -> Vec<String> {
     let mut keys = Vec::new();
     for name in other.keys() {
         let full = name.to_string();
-        let Some(rest) = full.strip_prefix("cryptomatte/") else { continue };
-        let Some((key, _field)) = rest.split_once('/') else { continue };
+        let Some(rest) = full.strip_prefix("cryptomatte/") else {
+            continue;
+        };
+        let Some((key, _field)) = rest.split_once('/') else {
+            continue;
+        };
         if !key.is_empty() && !keys.iter().any(|k| k == key) {
             keys.push(key.to_string());
         }
@@ -199,26 +240,45 @@ fn cryptomatte_keys(other: &std::collections::HashMap<exr::meta::attribute::Text
 /// [`CryptomatteLayer::name`]): per pixel its (ID, coverage) pairs, coverage above zero,
 /// sorted by descending coverage. Refuses files that also contain deep parts, like the
 /// other flat part decoders.
-pub(crate) fn decode(bytes: &[u8], layer_name: &str, limits: &Limits) -> Result<CryptomatteBuffer, CodecError> {
+pub(crate) fn decode(
+    bytes: &[u8],
+    layer_name: &str,
+    limits: &Limits,
+) -> Result<CryptomatteBuffer, CodecError> {
     let found = layers(bytes, limits)?;
     let layer = found
         .iter()
         .find(|l| l.name.eq_ignore_ascii_case(layer_name))
-        .ok_or_else(|| CodecError::unsupported(F, format!("no Cryptomatte layer named {layer_name}")))?;
+        .ok_or_else(|| {
+            CodecError::unsupported(F, format!("no Cryptomatte layer named {layer_name}"))
+        })?;
     // Also caps all parts' declared sizes together, like every other flat decode.
     let meta = super::exr::read_meta(bytes, limits)?;
     if meta.requirements.has_deep_data {
-        return Err(CodecError::unsupported(F, "this file has deep parts; Cryptomatte decoding stays with flat files"));
+        return Err(CodecError::unsupported(
+            F,
+            "this file has deep parts; Cryptomatte decoding stays with flat files",
+        ));
     }
-    let header = meta.headers.get(layer.part).ok_or_else(|| CodecError::malformed(F, "the Cryptomatte part is missing"))?;
+    let header = meta
+        .headers
+        .get(layer.part)
+        .ok_or_else(|| CodecError::malformed(F, "the Cryptomatte part is missing"))?;
     let size = header.layer_size;
     let (w, h) = (size.0, size.1);
-    let npx = w.checked_mul(h).ok_or_else(|| CodecError::malformed(F, "the layer is too large"))?;
+    let npx = w
+        .checked_mul(h)
+        .ok_or_else(|| CodecError::malformed(F, "the layer is too large"))?;
     let too_large = || CodecError::malformed(F, "the layer is too large");
-    let (w32, h32) = (u32::try_from(w).map_err(|_| too_large())?, u32::try_from(h).map_err(|_| too_large())?);
+    let (w32, h32) = (
+        u32::try_from(w).map_err(|_| too_large())?,
+        u32::try_from(h).map_err(|_| too_large())?,
+    );
     // Each pixel also gets a pair list, so count its header with the channel samples (four
     // f32 channels per set: two ranks of ID and coverage).
-    let per_pixel = (layer.channels.len().max(1) as u64).saturating_mul(16).saturating_add(std::mem::size_of::<Vec<(f32, f32)>>() as u64);
+    let per_pixel = (layer.channels.len().max(1) as u64)
+        .saturating_mul(16)
+        .saturating_add(std::mem::size_of::<Vec<(f32, f32)>>() as u64);
     limits.check_bytes(w32, h32, per_pixel)?;
 
     let ex_layer = super::exr::read_layer(bytes, layer.part)?;
@@ -228,26 +288,50 @@ pub(crate) fn decode(bytes: &[u8], layer_name: &str, limits: &Limits) -> Result<
     let mut ids: Vec<Vec<f32>> = vec![Vec::new(); ranks];
     let mut coverages: Vec<Vec<f32>> = vec![Vec::new(); ranks];
     for c in &ex_layer.channel_data.list {
-        let Some(stream) = split_stream(&c.name.to_string()) else { continue };
-        let Some(slot) = layer.channels.iter().position(|s| *s == stream.stream) else { continue };
+        let Some(stream) = split_stream(&c.name.to_string()) else {
+            continue;
+        };
+        let Some(slot) = layer.channels.iter().position(|s| *s == stream.stream) else {
+            continue;
+        };
         let values: Vec<f32> = c.sample_data.values_as_f32().collect();
         if values.len() != npx {
-            return Err(CodecError::malformed(F, "a Cryptomatte channel is smaller than its layer"));
+            return Err(CodecError::malformed(
+                F,
+                "a Cryptomatte channel is smaller than its layer",
+            ));
         }
-        let bucket = if stream.coverage { &mut coverages } else { &mut ids };
-        let Some(dst) = slot.checked_mul(2).and_then(|r| r.checked_add(stream.rank)).and_then(|r| bucket.get_mut(r)) else { continue };
+        let bucket = if stream.coverage {
+            &mut coverages
+        } else {
+            &mut ids
+        };
+        let Some(dst) = slot
+            .checked_mul(2)
+            .and_then(|r| r.checked_add(stream.rank))
+            .and_then(|r| bucket.get_mut(r))
+        else {
+            continue;
+        };
         *dst = values;
     }
 
     let mut pixels = vec![Vec::new(); npx];
     for (p, out) in pixels.iter_mut().enumerate() {
         for (id, cov) in ids.iter().zip(&coverages) {
-            let (id, cov) = (id.get(p).copied().unwrap_or(0.0), cov.get(p).copied().unwrap_or(0.0));
+            let (id, cov) = (
+                id.get(p).copied().unwrap_or(0.0),
+                cov.get(p).copied().unwrap_or(0.0),
+            );
             if cov > 0.0 && id.is_finite() {
                 out.push((id, cov));
             }
         }
         out.sort_by(|a, b| b.1.total_cmp(&a.1));
     }
-    Ok(CryptomatteBuffer { width: w32, height: h32, pixels })
+    Ok(CryptomatteBuffer {
+        width: w32,
+        height: h32,
+        pixels,
+    })
 }

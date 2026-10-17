@@ -90,13 +90,26 @@ impl Backend for DummyBackend {
     }
 
     fn get_time(&mut self) -> Time {
-        Time { hour: 9, minute: 27, second: 45 }
+        Time {
+            hour: 9,
+            minute: 27,
+            second: 45,
+        }
     }
 
     fn get_date_time(&mut self) -> (Date, Time) {
         (
-            Date { years_since_2000: 22, month: 1, day: 26, days_from_sunday: 3 },
-            Time { hour: 9, minute: 27, second: 45 },
+            Date {
+                years_since_2000: 22,
+                month: 1,
+                day: 26,
+                days_from_sunday: 3,
+            },
+            Time {
+                hour: 9,
+                minute: 27,
+                second: 45,
+            },
         )
     }
 
@@ -311,13 +324,13 @@ impl Rtc {
                     self.status1.0 &= !0xB0;
                     return value;
                 }
-            },
+            }
 
             RegIndex::STATUS2 => {
                 if self.data_pos == 1 {
                     return self.status2.0;
                 }
-            },
+            }
 
             RegIndex::DATE_TIME => {
                 if self.data_pos <= 7 {
@@ -328,7 +341,7 @@ impl Rtc {
                     }
                     return self.latched_date_time[(self.data_pos - 1) as usize];
                 }
-            },
+            }
 
             RegIndex::TIME => {
                 if self.data_pos <= 3 {
@@ -338,7 +351,7 @@ impl Rtc {
                     }
                     return self.latched_date_time[(self.data_pos + 3) as usize];
                 }
-            },
+            }
 
             RegIndex::INT1 => {
                 if self.status2.int1_mode() == 4 && self.data_pos <= 3 {
@@ -346,25 +359,25 @@ impl Rtc {
                 } else if self.data_pos == 1 {
                     return self.int1[2];
                 }
-            },
+            }
 
             RegIndex::INT2 => {
                 if self.data_pos <= 3 {
                     return self.int2[(self.data_pos - 1) as usize];
                 }
-            },
+            }
 
             RegIndex::ADJUST => {
                 if self.data_pos == 1 {
                     return self.clock_adjust;
                 }
-            },
+            }
 
             RegIndex::FREE => {
                 if self.data_pos == 1 {
                     return self.free_reg;
                 }
-            },
+            }
 
             _ => unreachable!(),
         }
@@ -409,13 +422,13 @@ impl Rtc {
                 if self.data_pos == 1 {
                     return self.write_status1(Status1(value));
                 }
-            },
+            }
 
             RegIndex::STATUS2 => {
                 if self.data_pos == 1 {
                     return self.write_status2(Status2(value));
                 }
-            },
+            }
 
             RegIndex::DATE_TIME => {
                 self.date_written = true;
@@ -425,7 +438,7 @@ impl Rtc {
                     return self.latched_date_time[self.last_date_time_write_index as usize] =
                         value;
                 }
-            },
+            }
 
             RegIndex::TIME => {
                 self.time_written = true;
@@ -434,7 +447,7 @@ impl Rtc {
                     return self.latched_date_time[self.last_date_time_write_index as usize] =
                         value;
                 }
-            },
+            }
 
             RegIndex::INT1 => {
                 if self.status2.int1_mode() == 4 {
@@ -442,12 +455,12 @@ impl Rtc {
                         1 => return self.int1[0] = value & 0x87,
                         2 => return self.int1[1] = value,
                         3 => return self.int1[2] = value,
-                        _ => {},
+                        _ => {}
                     }
                 } else if self.data_pos == 1 {
                     return self.int1[2] = value;
                 }
-            },
+            }
 
             RegIndex::INT2 => {
                 if self.data_pos <= 3 {
@@ -455,22 +468,22 @@ impl Rtc {
                         1 => return self.int2[0] = value & 0x87,
                         2 => return self.int2[1] = value,
                         3 => return self.int2[2] = value,
-                        _ => {},
+                        _ => {}
                     }
                 }
-            },
+            }
 
             RegIndex::ADJUST => {
                 if self.data_pos == 1 {
                     return self.clock_adjust = value;
                 }
-            },
+            }
 
             RegIndex::FREE => {
                 if self.data_pos == 1 {
                     return self.free_reg = value;
                 }
-            },
+            }
 
             _ => unreachable!(),
         }
@@ -526,7 +539,10 @@ impl Rtc {
                 }
             }
         }
-        self.control.0 =
-            if value.data_write() { value.0 } else { (self.control.0 & 1) | (value.0 & 0xFFFE) };
+        self.control.0 = if value.data_write() {
+            value.0
+        } else {
+            (self.control.0 & 1) | (value.0 & 0xFFFE)
+        };
     }
 }

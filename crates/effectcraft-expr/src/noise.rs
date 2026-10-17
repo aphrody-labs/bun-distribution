@@ -13,7 +13,9 @@ pub fn hash64(mut x: u64) -> u64 {
 
 /// Combine several seeds into one.
 pub fn mix(parts: &[u64]) -> u64 {
-    parts.iter().fold(0x2545_f491_4f6c_dd1d, |h, p| hash64(h ^ hash64(*p)))
+    parts
+        .iter()
+        .fold(0x2545_f491_4f6c_dd1d, |h, p| hash64(h ^ hash64(*p)))
 }
 
 /// Uniform in `[0, 1)`.
@@ -50,7 +52,14 @@ pub fn noise3(x: f64, y: f64, z: f64) -> f64 {
     let (fx, fy, fz) = (x.floor(), y.floor(), z.floor());
     let (u, v, w) = (fade(x - fx), fade(y - fy), fade(z - fz));
     let (ix, iy, iz) = (fx as i64, fy as i64, fz as i64);
-    let g = |dx: i64, dy: i64, dz: i64| unit(mix(&[ix.wrapping_add(dx) as u64, iy.wrapping_add(dy) as u64, iz.wrapping_add(dz) as u64])) * 2.0 - 1.0;
+    let g = |dx: i64, dy: i64, dz: i64| {
+        unit(mix(&[
+            ix.wrapping_add(dx) as u64,
+            iy.wrapping_add(dy) as u64,
+            iz.wrapping_add(dz) as u64,
+        ])) * 2.0
+            - 1.0
+    };
     let l = |a: f64, b: f64, t: f64| a + (b - a) * t;
     let x00 = l(g(0, 0, 0), g(1, 0, 0), u);
     let x10 = l(g(0, 1, 0), g(1, 1, 0), u);
@@ -61,8 +70,20 @@ pub fn noise3(x: f64, y: f64, z: f64) -> f64 {
 
 /// Per-dimension wiggle offsets: `Σ amp·mult^k · noise(freq·2^k·t)` over `octaves`.
 /// With one octave every offset lies in `[-amp, amp]`.
-pub fn wiggle(seed: u64, dims: usize, freq: f64, amp: f64, octaves: f64, amp_mult: f64, t: f64) -> Vec<f64> {
-    let octaves = if octaves.is_finite() { octaves.clamp(1.0, 16.0) as usize } else { 1 };
+pub fn wiggle(
+    seed: u64,
+    dims: usize,
+    freq: f64,
+    amp: f64,
+    octaves: f64,
+    amp_mult: f64,
+    t: f64,
+) -> Vec<f64> {
+    let octaves = if octaves.is_finite() {
+        octaves.clamp(1.0, 16.0) as usize
+    } else {
+        1
+    };
     (0..dims)
         .map(|d| {
             let mut a = amp;

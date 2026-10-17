@@ -7,18 +7,18 @@ use crate::mcp_sessions::common::McpSessionInfo;
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListMcpSessionsQueryParams {
-  /// Page size. Defaults server-side if omitted.
-  pub limit: Option<u32>,
+    /// Page size. Defaults server-side if omitted.
+    pub limit: Option<u32>,
 
-  /// Number of rows to skip. Defaults to 0.
-  pub offset: Option<u32>,
+    /// Number of rows to skip. Defaults to 0.
+    pub offset: Option<u32>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct ListMcpSessionsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// The user's MCP sessions (including terminated ones), newest first. The secret
-  /// `private_session_token` is never listed.
-  pub mcp_sessions: Vec<McpSessionInfo>,
+    /// The user's MCP sessions (including terminated ones), newest first. The secret
+    /// `private_session_token` is never listed.
+    pub mcp_sessions: Vec<McpSessionInfo>,
 }

@@ -62,7 +62,15 @@ fn invite() -> Invite {
 
 fn start(sock: Script, t0: Instant) -> (Driver<Script>, Inbox) {
     let inbox = Inbox::new(Arc::new(|| {}));
-    (Driver::start(sock, GuestConfig::new(invite(), "Ada".into()), inbox.clone(), t0), inbox)
+    (
+        Driver::start(
+            sock,
+            GuestConfig::new(invite(), "Ada".into()),
+            inbox.clone(),
+            t0,
+        ),
+        inbox,
+    )
 }
 
 fn shared() -> Document {
@@ -74,9 +82,20 @@ fn shared() -> Document {
 /// The welcome a session server sends Ada, encoded.
 fn welcome() -> Vec<u8> {
     let mut server = Server::new(shared(), TOKEN, Limits::default());
-    let ClientMsg::Hello(h) = Client::hello(FILE, TOKEN, "Ada", "") else { panic!("no hello") };
+    let ClientMsg::Hello(h) = Client::hello(FILE, TOKEN, "Ada", "") else {
+        panic!("no hello")
+    };
     let (_, outs) = server.join(h).unwrap();
-    let w = outs.into_iter().find_map(|o| if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o { Some(w) } else { None }).unwrap();
+    let w = outs
+        .into_iter()
+        .find_map(|o| {
+            if let Outgoing::To(_, w @ ServerMsg::Welcome { .. }) = o {
+                Some(w)
+            } else {
+                None
+            }
+        })
+        .unwrap();
     message::encode(&w).unwrap()
 }
 
@@ -85,11 +104,23 @@ fn encode(m: &ServerMsg) -> Vec<u8> {
 }
 
 fn statuses(events: &[Event]) -> Vec<Status> {
-    events.iter().filter_map(|e| if let Event::Status(s) = e { Some(s.clone()) } else { None }).collect()
+    events
+        .iter()
+        .filter_map(|e| {
+            if let Event::Status(s) = e {
+                Some(s.clone())
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 fn cursor(x: f64) -> Presence {
-    Presence { cursor: Some((NodeId(1), x, 0.0)), ..Presence::default() }
+    Presence {
+        cursor: Some((NodeId(1), x, 0.0)),
+        ..Presence::default()
+    }
 }
 
 fn ms(n: u64) -> Duration {
@@ -100,13 +131,22 @@ fn ms(n: u64) -> Duration {
 fn hello_then_the_welcome_releases_presence() {
     let t0 = Instant::now();
     let (mut d, inbox) = start(Script::default(), t0);
-    assert_eq!(d.sock.opened, vec!["ws://127.0.0.1:47900/"], "the token isn't in the URL");
+    assert_eq!(
+        d.sock.opened,
+        vec!["ws://127.0.0.1:47900/"],
+        "the token isn't in the URL"
+    );
     assert_eq!(statuses(&inbox.drain()), vec![Status::Connecting]);
     // Nothing is due but giving up on a connection that never opens.
     assert_eq!(d.deadline(), Some(t0 + Duration::from_secs(5)));
     d.opened(t0 + ms(10));
-    let [ClientMsg::Hello(h)] = d.sock.sent.as_slice() else { panic!("{:?}", d.sock.sent) };
-    assert_eq!((h.file.as_str(), h.token.as_str(), h.name.as_str()), (FILE, TOKEN, "Ada"));
+    let [ClientMsg::Hello(h)] = d.sock.sent.as_slice() else {
+        panic!("{:?}", d.sock.sent)
+    };
+    assert_eq!(
+        (h.file.as_str(), h.token.as_str(), h.name.as_str()),
+        (FILE, TOKEN, "Ada")
+    );
     assert_eq!(h.resume, None, "a new participant");
     // Before the welcome: presence is held (latest wins); changes were made for no connection the
     // server knows, so they're dropped (the sync client sends again what the server didn't get).
@@ -116,9 +156,17 @@ fn hello_then_the_welcome_releases_presence() {
     d.send(ClientMsg::Ack { seq: 2 }, t0 + ms(23));
     assert_eq!(d.sock.sent.len(), 1);
     d.message(&welcome(), t0 + ms(30));
-    assert_eq!(d.sock.sent[1..], [ClientMsg::Presence(cursor(2.0))], "the latest presence; no stale changes");
+    assert_eq!(
+        d.sock.sent[1..],
+        [ClientMsg::Presence(cursor(2.0))],
+        "the latest presence; no stale changes"
+    );
     d.send(ClientMsg::Ack { seq: 3 }, t0 + ms(31));
-    assert_eq!(d.sock.sent.last(), Some(&ClientMsg::Ack { seq: 3 }), "welcomed: changes go out");
+    assert_eq!(
+        d.sock.sent.last(),
+        Some(&ClientMsg::Ack { seq: 3 }),
+        "welcomed: changes go out"
+    );
     let events = inbox.drain();
     assert!(
         matches!(events.as_slice(), [Event::Welcome { info, peers }, Event::Sync(ServerMsg::Welcome { .. })] if !info.network && peers.is_empty())
@@ -158,7 +206,17 @@ fn a_silent_host_counts_as_dropped_and_the_client_reconnects() {
     let (mut d, inbox) = start(Script::default(), t0);
     d.opened(t0);
     d.message(&welcome(), t0);
-    let first_id = inbox.drain().iter().find_map(|e| if let Event::Welcome { info, .. } = e { Some(info.me) } else { None }).unwrap();
+    let first_id = inbox
+        .drain()
+        .iter()
+        .find_map(|e| {
+            if let Event::Welcome { info, .. } = e {
+                Some(info.me)
+            } else {
+                None
+            }
+        })
+        .unwrap();
     // Pings go out, nothing comes back for 45 s.
     for s in [15, 30] {
         d.tick(t0 + Duration::from_secs(s));
@@ -168,7 +226,10 @@ fn a_silent_host_counts_as_dropped_and_the_client_reconnects() {
     assert_eq!(d.deadline(), Some(silent));
     d.tick(silent);
     assert_eq!(d.sock.closes, 1);
-    assert_eq!(statuses(&inbox.drain()), vec![Status::Reconnecting { attempt: 1 }]);
+    assert_eq!(
+        statuses(&inbox.drain()),
+        vec![Status::Reconnecting { attempt: 1 }]
+    );
     // Changes made while disconnected are dropped (the next welcome starts over); presence waits.
     d.send(ClientMsg::Ack { seq: 9 }, silent);
     d.presence(cursor(7.0), silent);
@@ -178,13 +239,31 @@ fn a_silent_host_counts_as_dropped_and_the_client_reconnects() {
     assert_eq!(d.sock.opened.len(), 2);
     d.opened(again);
     // Back as the same client, from the last sequence number it got.
-    let Some(ClientMsg::Hello(h)) = d.sock.sent.last() else { panic!("no hello") };
+    let Some(ClientMsg::Hello(h)) = d.sock.sent.last() else {
+        panic!("no hello")
+    };
     let r = h.resume.expect("resumes");
     assert_eq!((r.client_id, r.seq), (first_id, 0));
     d.message(&welcome(), again);
-    assert_eq!(d.sock.sent.iter().filter(|m| matches!(m, ClientMsg::Ack { seq: 9 })).count(), 0);
-    assert_eq!(d.sock.sent.last(), Some(&ClientMsg::Presence(cursor(7.0))), "your presence once you're back");
-    assert!(inbox.drain().iter().any(|e| matches!(e, Event::Welcome { .. })));
+    assert_eq!(
+        d.sock
+            .sent
+            .iter()
+            .filter(|m| matches!(m, ClientMsg::Ack { seq: 9 }))
+            .count(),
+        0
+    );
+    assert_eq!(
+        d.sock.sent.last(),
+        Some(&ClientMsg::Presence(cursor(7.0))),
+        "your presence once you're back"
+    );
+    assert!(
+        inbox
+            .drain()
+            .iter()
+            .any(|e| matches!(e, Event::Welcome { .. }))
+    );
 }
 
 #[test]
@@ -205,10 +284,18 @@ fn reconnects_back_off_then_give_up() {
         d.closed(1006, "", now);
     }
     let secs: Vec<f64> = pauses.iter().map(Duration::as_secs_f64).collect();
-    assert_eq!(secs, [0.5, 1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]);
+    assert_eq!(
+        secs,
+        [
+            0.5, 1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0
+        ]
+    );
     let st = statuses(&inbox.drain());
     assert_eq!(st.len(), 14, "connecting, 12 reconnects, then failed");
-    assert!(matches!(st.last(), Some(Status::Failed { reason }) if reason.starts_with("Lost the connection to the host")), "{st:?}");
+    assert!(
+        matches!(st.last(), Some(Status::Failed { reason }) if reason.starts_with("Lost the connection to the host")),
+        "{st:?}"
+    );
     assert_eq!(d.deadline(), None);
 }
 
@@ -228,11 +315,21 @@ fn a_first_join_that_cant_reach_the_host_fails_at_once() {
     let (mut d, inbox) = start(Script::default(), t0);
     d.tick(t0 + Duration::from_secs(5));
     assert!(d.done());
-    assert!(matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.contains("no answer")));
+    assert!(
+        matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.contains("no answer"))
+    );
     // The browser refuses to open the URL at all.
-    let (d, inbox) = start(Script { refuse: true, ..Script::default() }, t0);
+    let (d, inbox) = start(
+        Script {
+            refuse: true,
+            ..Script::default()
+        },
+        t0,
+    );
     assert!(d.done());
-    assert!(matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.contains("SecurityError")));
+    assert!(
+        matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.contains("SecurityError"))
+    );
 }
 
 #[test]
@@ -240,16 +337,28 @@ fn refusals_and_the_end_of_the_session_are_final() {
     let t0 = Instant::now();
     let (mut d, inbox) = start(Script::default(), t0);
     d.opened(t0);
-    d.message(&encode(&ServerMsg::Refused { reason: "wrong token".into() }), t0);
+    d.message(
+        &encode(&ServerMsg::Refused {
+            reason: "wrong token".into(),
+        }),
+        t0,
+    );
     assert!(d.done() && d.sock.closes == 1);
-    assert!(matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason == "The host refused: wrong token"));
+    assert!(
+        matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason == "The host refused: wrong token")
+    );
     // A close frame saying the host went away: the session ended.
     let (mut d, inbox) = start(Script::default(), t0);
     d.opened(t0);
     d.message(&welcome(), t0);
     d.closed(1001, "", t0);
     assert!(d.done());
-    assert!(inbox.drain().iter().any(|e| matches!(e, Event::Ended { reason } if reason == ENDED)));
+    assert!(
+        inbox
+            .drain()
+            .iter()
+            .any(|e| matches!(e, Event::Ended { reason } if reason == ENDED))
+    );
     // Garbage and text frames are refusals too.
     for text in [false, true] {
         let (mut d, inbox) = start(Script::default(), t0);
@@ -260,7 +369,9 @@ fn refusals_and_the_end_of_the_session_are_final() {
             d.message(&[0xFF, 1, 2, 3], t0);
         }
         assert!(d.done());
-        assert!(matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.starts_with("The host refused")));
+        assert!(
+            matches!(statuses(&inbox.drain()).last(), Some(Status::Failed { reason }) if reason.starts_with("The host refused"))
+        );
     }
 }
 
@@ -292,7 +403,10 @@ fn a_broken_send_reconnects() {
     inbox.drain();
     d.sock.broken = true;
     d.send(ClientMsg::Ping, t0);
-    assert_eq!(statuses(&inbox.drain()), vec![Status::Reconnecting { attempt: 1 }]);
+    assert_eq!(
+        statuses(&inbox.drain()),
+        vec![Status::Reconnecting { attempt: 1 }]
+    );
 }
 
 /// A blocking tungstenite socket standing in for the browser's: events are read by [`pump`].
@@ -307,13 +421,18 @@ impl Socket for Loopback {
         let host = url.trim_start_matches("ws://").trim_end_matches('/');
         let stream = TcpStream::connect(host).map_err(|e| e.to_string())?;
         let (ws, _) = tungstenite::client(url, stream).map_err(|e| e.to_string())?;
-        ws.get_ref().set_read_timeout(Some(ms(5))).map_err(|e| e.to_string())?;
+        ws.get_ref()
+            .set_read_timeout(Some(ms(5)))
+            .map_err(|e| e.to_string())?;
         self.ws = Some(ws);
         self.just_opened = true;
         Ok(())
     }
     fn send(&mut self, bytes: &[u8]) -> bool {
-        self.ws.as_mut().is_some_and(|ws| ws.send(Message::Binary(Bytes::copy_from_slice(bytes))).is_ok())
+        self.ws.as_mut().is_some_and(|ws| {
+            ws.send(Message::Binary(Bytes::copy_from_slice(bytes)))
+                .is_ok()
+        })
     }
     fn close(&mut self) {
         if let Some(mut ws) = self.ws.take() {
@@ -333,11 +452,20 @@ fn pump(d: &mut Driver<Loopback>) {
         match ws.read() {
             Ok(Message::Binary(b)) => d.message(&b, now),
             Ok(Message::Close(f)) => {
-                let (code, reason) = f.map_or((1005, String::new()), |f| (f.code.into(), f.reason.to_string()));
+                let (code, reason) = f.map_or((1005, String::new()), |f| {
+                    (f.code.into(), f.reason.to_string())
+                });
                 d.closed(code, &reason, now);
             }
             Ok(_) => {}
-            Err(tungstenite::Error::Io(e)) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => break,
+            Err(tungstenite::Error::Io(e))
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                break;
+            }
             Err(_) => d.closed(1006, "", now),
         }
     }
@@ -365,50 +493,92 @@ fn joins_a_real_host_and_edits_with_it() {
     .unwrap();
     let invite = Invite::new(host.addr().to_string(), FILE, TOKEN);
     let inbox = Inbox::new(Arc::new(|| {}));
-    let mut d = Driver::start(Loopback::default(), GuestConfig::new(invite, "Ada".into()), inbox.clone(), Instant::now());
+    let mut d = Driver::start(
+        Loopback::default(),
+        GuestConfig::new(invite, "Ada".into()),
+        inbox.clone(),
+        Instant::now(),
+    );
     let mut events = Vec::new();
-    let wait = |d: &mut Driver<Loopback>, events: &mut Vec<Event>, what: &str, f: &dyn Fn(&[Event]) -> bool| {
+    let wait = |d: &mut Driver<Loopback>,
+                events: &mut Vec<Event>,
+                what: &str,
+                f: &dyn Fn(&[Event]) -> bool| {
         let start = Instant::now();
         while !f(events) {
-            assert!(start.elapsed() < Duration::from_secs(10), "timed out waiting for {what}: {events:#?}");
+            assert!(
+                start.elapsed() < Duration::from_secs(10),
+                "timed out waiting for {what}: {events:#?}"
+            );
             pump(d);
             events.extend(inbox.drain());
         }
     };
-    wait(&mut d, &mut events, "the welcome", &|e| e.iter().any(|e| matches!(e, Event::Sync(ServerMsg::Welcome { .. }))));
-    let Some(Event::Sync(w)) = events.iter().find(|e| matches!(e, Event::Sync(ServerMsg::Welcome { .. }))).cloned() else { panic!("no welcome") };
+    wait(&mut d, &mut events, "the welcome", &|e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Sync(ServerMsg::Welcome { .. })))
+    });
+    let Some(Event::Sync(w)) = events
+        .iter()
+        .find(|e| matches!(e, Event::Sync(ServerMsg::Welcome { .. })))
+        .cloned()
+    else {
+        panic!("no welcome")
+    };
     let mut client = Client::join(w).unwrap();
     // Ada adds a page; the host's server accepts it and confirms it to her.
     let mut doc = client.document().clone();
     let page = doc.add_page("From the browser");
     let batch = client.edit(&doc).unwrap().unwrap();
     d.send(batch, Instant::now());
-    wait(&mut d, &mut events, "the confirmation", &|e| e.iter().any(|e| matches!(e, Event::Sync(ServerMsg::Changes { .. }))));
+    wait(&mut d, &mut events, "the confirmation", &|e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Sync(ServerMsg::Changes { .. })))
+    });
     // The host's own window (a client of its server) gets the page too.
     let host_events: Vec<Event> = {
         let start = Instant::now();
         let mut got = Vec::new();
-        while !got.iter().any(|e| matches!(e, Event::Sync(ServerMsg::Changes { .. }))) {
-            assert!(start.elapsed() < Duration::from_secs(10), "the host never got the change: {got:#?}");
+        while !got
+            .iter()
+            .any(|e| matches!(e, Event::Sync(ServerMsg::Changes { .. })))
+        {
+            assert!(
+                start.elapsed() < Duration::from_secs(10),
+                "the host never got the change: {got:#?}"
+            );
             pump(&mut d);
             got.extend(host_probe.drain());
         }
         got
     };
-    assert!(host_events.iter().any(|e| matches!(e, Event::PeerJoined(p) if p.name == "Ada")));
+    assert!(
+        host_events
+            .iter()
+            .any(|e| matches!(e, Event::PeerJoined(p) if p.name == "Ada"))
+    );
     // Presence reaches the host.
     d.presence(cursor(42.0), Instant::now());
     let start = Instant::now();
     loop {
         pump(&mut d);
-        if host_probe.drain().iter().any(|e| matches!(e, Event::Presence(_, p) if *p == cursor(42.0))) {
+        if host_probe
+            .drain()
+            .iter()
+            .any(|e| matches!(e, Event::Presence(_, p) if *p == cursor(42.0)))
+        {
             break;
         }
-        assert!(start.elapsed() < Duration::from_secs(10), "presence never arrived");
+        assert!(
+            start.elapsed() < Duration::from_secs(10),
+            "presence never arrived"
+        );
     }
     // The host stops: the browser hears the session ended.
     host.stop();
-    wait(&mut d, &mut events, "the end", &|e| e.iter().any(|e| matches!(e, Event::Ended { .. })));
+    wait(&mut d, &mut events, "the end", &|e| {
+        e.iter().any(|e| matches!(e, Event::Ended { .. }))
+    });
     assert!(d.done());
     assert!(doc.contains(page));
 }

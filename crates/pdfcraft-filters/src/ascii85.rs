@@ -16,7 +16,10 @@ fn push(out: &mut Vec<u8>, bytes: &[u8], max: usize) -> Result<(), Failure> {
 }
 
 pub(crate) fn decode(data: &[u8], max: usize) -> Step {
-    let start = data.iter().position(|&b| !is_pdf_whitespace(b)).unwrap_or(data.len());
+    let start = data
+        .iter()
+        .position(|&b| !is_pdf_whitespace(b))
+        .unwrap_or(data.len());
     let body = data[start..].strip_prefix(b"<~").unwrap_or(&data[start..]);
     let mut out = Vec::with_capacity((body.len() / 5 * 4 + 4).min(max));
     let mut acc: u64 = 0;
@@ -28,7 +31,11 @@ pub(crate) fn decode(data: &[u8], max: usize) -> Step {
                 n += 1;
                 if n == 5 {
                     let Ok(v) = u32::try_from(acc) else {
-                        return Err(Failure::corrupt(NAME, format!("group ending at {i} exceeds 2^32"), out));
+                        return Err(Failure::corrupt(
+                            NAME,
+                            format!("group ending at {i} exceeds 2^32"),
+                            out,
+                        ));
                     };
                     push(&mut out, &v.to_be_bytes(), max)?;
                     acc = 0;
@@ -36,16 +43,34 @@ pub(crate) fn decode(data: &[u8], max: usize) -> Step {
                 }
             }
             b'z' if n == 0 => push(&mut out, &[0; 4], max)?,
-            b'z' => return Err(Failure::corrupt(NAME, format!("'z' inside a group at {i}"), out)),
+            b'z' => {
+                return Err(Failure::corrupt(
+                    NAME,
+                    format!("'z' inside a group at {i}"),
+                    out,
+                ));
+            }
             // `~` starts the EOD marker; tolerate it without the following `>`.
             b'~' => break,
             b if is_pdf_whitespace(b) => {}
-            b => return Err(Failure::corrupt(NAME, format!("invalid character 0x{b:02x} at {i}"), out)),
+            b => {
+                return Err(Failure::corrupt(
+                    NAME,
+                    format!("invalid character 0x{b:02x} at {i}"),
+                    out,
+                ));
+            }
         }
     }
     match n {
         0 => {}
-        1 => return Err(Failure::corrupt(NAME, "final group has a single character", out)),
+        1 => {
+            return Err(Failure::corrupt(
+                NAME,
+                "final group has a single character",
+                out,
+            ));
+        }
         _ => {
             // Pad with `u` (84) to a full group and keep n − 1 bytes.
             for _ in n..5 {
@@ -141,8 +166,14 @@ mod tests {
 
     #[test]
     fn limit() {
-        assert!(matches!(decode(b"zz", 7).map_err(|f| f.error), Err(FilterError::LimitExceeded(7))));
-        assert!(matches!(decode(b"z9`", 4).map_err(|f| f.error), Err(FilterError::LimitExceeded(4))));
+        assert!(matches!(
+            decode(b"zz", 7).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(7))
+        ));
+        assert!(matches!(
+            decode(b"z9`", 4).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(4))
+        ));
         assert_eq!(decode(b"zz", 8).ok().unwrap().len(), 8);
     }
 

@@ -31,7 +31,17 @@
 //! # Ok::<(), filmcraft_aac::Error>(())
 //! ```
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod config;
 mod decoder;
@@ -43,7 +53,9 @@ mod mdct;
 mod tables;
 mod tns;
 
-pub use config::{AdtsHeader, AudioSpecificConfig, ElementType, ProgramConfig, config_layout, split_adts};
+pub use config::{
+    AdtsHeader, AudioSpecificConfig, ElementType, ProgramConfig, config_layout, split_adts,
+};
 pub use decoder::Decoder;
 pub use encoder::{BitrateMode, Encoder, EncoderConfig, EncoderStats};
 pub use mdct::WindowShape;

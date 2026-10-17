@@ -63,7 +63,10 @@ impl CharacterMoveset {
 
     /// Returns all moves that are safe on block (block advantage >= -2).
     pub fn safe_on_block_moves(&self) -> Vec<&MoveFrameData> {
-        self.moves.iter().filter(|m| m.block_advantage >= -2).collect()
+        self.moves
+            .iter()
+            .filter(|m| m.block_advantage >= -2)
+            .collect()
     }
 }
 
@@ -77,7 +80,10 @@ fn calculate_move_frame_data(m: &BacMove, bdm: Option<&BdmFile>) -> MoveFrameDat
 
     let active_frames = if let Some(first_hit) = m.hitboxes.first() {
         let last_hit = m.hitboxes.last().unwrap_or(first_hit);
-        last_hit.end_frame.saturating_sub(first_hit.start_frame).max(1)
+        last_hit
+            .end_frame
+            .saturating_sub(first_hit.start_frame)
+            .max(1)
     } else {
         0
     };
@@ -85,7 +91,11 @@ fn calculate_move_frame_data(m: &BacMove, bdm: Option<&BdmFile>) -> MoveFrameDat
     if let Some(bdm_file) = bdm {
         for hit in &m.hitboxes {
             total_dmg += hit.damage;
-            if let Some(entry) = bdm_file.entries.iter().find(|e| e.id == hit.bdm_entry_id as u32) {
+            if let Some(entry) = bdm_file
+                .entries
+                .iter()
+                .find(|e| e.id == hit.bdm_entry_id as u32)
+            {
                 total_dmg = total_dmg.max(entry.base_damage);
                 total_stm += entry.stamina_damage;
                 max_hitstun = max_hitstun.max(entry.hitstun_frames);

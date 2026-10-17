@@ -94,12 +94,16 @@ mod tests {
         keys.key[3] = 0x80;
         let modifier = KeyboardModifier { raw: 2 };
         device.activation.activate();
-        common::settings::values_mut().keyboard_enabled.set_value(false);
+        common::settings::values_mut()
+            .keyboard_enabled
+            .set_value(false);
         device.on_update(&mut memory, &keys, &modifier);
         let disabled = memory.keyboard_lifo.read_current_entry().state;
         assert_eq!(disabled.attribute.raw, 0);
         assert_eq!(disabled.key.key, [0; 32]);
-        common::settings::values_mut().keyboard_enabled.set_value(true);
+        common::settings::values_mut()
+            .keyboard_enabled
+            .set_value(true);
         device.on_update(&mut memory, &keys, &modifier);
         let enabled = memory.keyboard_lifo.read_current_entry().state;
         assert_eq!(enabled.attribute.raw, 1);
@@ -107,8 +111,14 @@ mod tests {
         assert_eq!(enabled.modifier.raw, 2);
         assert_eq!(enabled.sampling_number, disabled.sampling_number + 1);
         // Upstream retains next_state's keys/modifiers when disabled again.
-        common::settings::values_mut().keyboard_enabled.set_value(false);
-        device.on_update(&mut memory, &KeyboardKey::default(), &KeyboardModifier::default());
+        common::settings::values_mut()
+            .keyboard_enabled
+            .set_value(false);
+        device.on_update(
+            &mut memory,
+            &KeyboardKey::default(),
+            &KeyboardModifier::default(),
+        );
         let retained = memory.keyboard_lifo.read_current_entry().state;
         assert_eq!(retained.key.key, keys.key);
         assert_eq!(retained.modifier.raw, 2);

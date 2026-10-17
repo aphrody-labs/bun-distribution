@@ -31,7 +31,9 @@ pub fn needs_outline(n: &Node) -> bool {
 }
 
 /// The glyph outlines of type `t` in text space: one path per run, and all of them as one.
-pub(crate) fn glyph_outlines(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::BezPath>, kurbo::BezPath) {
+pub(crate) fn glyph_outlines(
+    t: &vectorcraft_doc::TextObject,
+) -> (Vec<kurbo::BezPath>, kurbo::BezPath) {
     let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
     let mut runs = vec![kurbo::BezPath::new(); t.runs.len()];
     let mut all = kurbo::BezPath::new();
@@ -48,7 +50,9 @@ pub(crate) fn glyph_outlines(t: &vectorcraft_doc::TextObject) -> (Vec<kurbo::Bez
 /// and (when the object has its own fills/strokes) the whole outline with the object's items below
 /// the characters under them and the others over them, as the renderer paints them.
 pub fn outline_text(n: &Node) -> Option<Node> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     let (runs, all) = glyph_outlines(t);
     let path = |bp: &kurbo::BezPath| PathData::from_bezpath(bp).transformed(t.xf);
     let mut children: Vec<Arc<Node>> = runs
@@ -59,7 +63,16 @@ pub fn outline_text(n: &Node) -> Option<Node> {
         .collect();
     if !n.appearance.items.is_empty() && !all.elements().is_empty() {
         let (below, above) = n.appearance.split_contents();
-        let glyphs = |items: &[AppearanceItem]| Arc::new(Node::path(n.id, path(&all), Appearance { items: items.to_vec(), ..Default::default() }));
+        let glyphs = |items: &[AppearanceItem]| {
+            Arc::new(Node::path(
+                n.id,
+                path(&all),
+                Appearance {
+                    items: items.to_vec(),
+                    ..Default::default()
+                },
+            ))
+        };
         if !below.is_empty() {
             children.insert(0, glyphs(below));
         }
@@ -136,13 +149,20 @@ pub(crate) fn as_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     let fx = geometry_effects(n);
     let mut art = match &n.kind {
         NodeKind::Image(im) => {
-            let frame = shapes::rectangle(Rect::new(0.0, 0.0, im.width as f64, im.height as f64)).transformed(im.xf);
+            let frame = shapes::rectangle(Rect::new(0.0, 0.0, im.width as f64, im.height as f64))
+                .transformed(im.xf);
             let mut clip = Node::path(n.id, frame, Appearance::default());
             if let NodeKind::Path { clipping, .. } = &mut clip.kind {
                 *clipping = true;
             }
             let image = Node::new(n.id, n.kind.clone());
-            Node::new(n.id, NodeKind::Group { children: vec![Arc::new(clip), Arc::new(image)], clip: true })
+            Node::new(
+                n.id,
+                NodeKind::Group {
+                    children: vec![Arc::new(clip), Arc::new(image)],
+                    clip: true,
+                },
+            )
         }
         _ => outline_art(n, symbol_art)?,
     };
@@ -160,7 +180,13 @@ pub(crate) fn as_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
     // One element: its pieces never knock each other out.
     out.knockout = vectorcraft_doc::Knockout::Off;
     out.extras_mut().mask = n.extras().mask.clone();
-    out.appearance.effects = n.appearance.effects.iter().filter(|e| !is_geometry(&e.id)).cloned().collect();
+    out.appearance.effects = n
+        .appearance
+        .effects
+        .iter()
+        .filter(|e| !is_geometry(&e.id))
+        .cloned()
+        .collect();
     Some(out)
 }
 
@@ -168,11 +194,15 @@ pub(crate) fn as_art(n: &Node, symbol_art: Option<&Node>) -> Option<Node> {
 /// finely enough to follow it.
 fn project_leaves(art: &mut Node, h: &vectorcraft_geom::Homography) {
     let f = |p: vectorcraft_geom::Point| h.apply(p).unwrap_or(p);
-    let piece = art.geometric_bounds().map_or(1.0, |b| (b.width().max(b.height()) / 64.0).max(0.25));
-    let project = |path: &mut PathData| *path = vectorcraft_doc::live::map_nonlinear(path, piece, f);
+    let piece = art
+        .geometric_bounds()
+        .map_or(1.0, |b| (b.width().max(b.height()) / 64.0).max(0.25));
+    let project =
+        |path: &mut PathData| *path = vectorcraft_doc::live::map_nonlinear(path, piece, f);
     for_each_leaf(art, &mut |leaf| {
         leaf.pin_gradients();
-        leaf.appearance.warp_gradients(&|p| h.affine_at(p).unwrap_or(vectorcraft_geom::Affine::IDENTITY));
+        leaf.appearance
+            .warp_gradients(&|p| h.affine_at(p).unwrap_or(vectorcraft_geom::Affine::IDENTITY));
         match &mut leaf.kind {
             NodeKind::Path { path, live, .. } => {
                 project(path);
@@ -193,7 +223,11 @@ fn project_leaves(art: &mut Node, h: &vectorcraft_geom::Homography) {
 
 /// The visible geometry effects of `n`'s own effect list, in order.
 pub(crate) fn geometry_effects(n: &Node) -> Vec<&Effect> {
-    n.appearance.effects.iter().filter(|e| e.visible && is_geometry(&e.id)).collect()
+    n.appearance
+        .effects
+        .iter()
+        .filter(|e| e.visible && is_geometry(&e.id))
+        .collect()
 }
 
 /// Apply `fx` to every path under `art` as one piece: each effect takes the whole art's bounds as
@@ -201,11 +235,24 @@ pub(crate) fn geometry_effects(n: &Node) -> Vec<&Effect> {
 pub(crate) fn reshape_leaves(art: &mut Node, fx: &[&Effect]) {
     let seed = art.id.0;
     for e in fx {
-        let Some(bounds) = art.geometric_bounds() else { break };
+        let Some(bounds) = art.geometric_bounds() else {
+            break;
+        };
         let params = merged_params(&e.id, &e.params);
         for_each_leaf(art, &mut |leaf| {
-            let Some((path, rule)) = leaf_geometry(leaf) else { return };
-            let out = apply_one(&e.id, &params, &path, bounds, &GeomContext { seed, ..GeomContext::of(leaf) });
+            let Some((path, rule)) = leaf_geometry(leaf) else {
+                return;
+            };
+            let out = apply_one(
+                &e.id,
+                &params,
+                &path,
+                bounds,
+                &GeomContext {
+                    seed,
+                    ..GeomContext::of(leaf)
+                },
+            );
             set_geometry(leaf, out, rule);
         });
     }
@@ -236,9 +283,16 @@ fn for_each_leaf(n: &mut Node, f: &mut dyn FnMut(&mut Node)) {
 pub(crate) fn leaf_geometry(n: &Node) -> Option<(PathData, FillRule)> {
     match &n.kind {
         NodeKind::Path { path, rule, .. } => Some((path.clone(), *rule)),
-        NodeKind::Compound { children, rule } => {
-            Some((PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect()), *rule))
-        }
+        NodeKind::Compound { children, rule } => Some((
+            PathData::new(
+                children
+                    .iter()
+                    .filter_map(|c| c.path_data())
+                    .flat_map(|p| p.subpaths.iter().cloned())
+                    .collect(),
+            ),
+            *rule,
+        )),
         _ => None,
     }
 }
@@ -248,9 +302,19 @@ fn set_geometry(n: &mut Node, path: PathData, rule: FillRule) {
     let clipping = matches!(n.kind, NodeKind::Path { clipping: true, .. });
     n.kind = if path.subpaths.len() > 1 {
         let id = n.id;
-        let children = path.subpaths.into_iter().map(|sp| Arc::new(Node::path(id, PathData::single(sp), Appearance::default()))).collect();
+        let children = path
+            .subpaths
+            .into_iter()
+            .map(|sp| Arc::new(Node::path(id, PathData::single(sp), Appearance::default())))
+            .collect();
         NodeKind::Compound { children, rule }
     } else {
-        NodeKind::Path { path, rule, live: None, clipping, guide: false }
+        NodeKind::Path {
+            path,
+            rule,
+            live: None,
+            clipping,
+            guide: false,
+        }
     };
 }

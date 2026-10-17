@@ -3,7 +3,7 @@
 use crate::simplex_stroke_font::*;
 use crate::{gizmos::GizmoBuffer, prelude::GizmoConfigGroup};
 use bevy_color::Color;
-use bevy_math::{vec2, Isometry2d, Isometry3d, Vec2};
+use bevy_math::{Isometry2d, Isometry3d, Vec2, vec2};
 use core::ops::Range;
 
 /// A stroke font containing glyphs for the 95 printable ASCII codes.
@@ -128,53 +128,55 @@ impl<'a> StrokeTextLayout<'a> {
         let mut current_x = 0.0_f32;
         let mut current_color = Color::WHITE;
 
-        core::iter::from_fn(move || loop {
-            for stroke_index in current_strokes.by_ref() {
-                let stroke = self.font.strokes[stroke_index].clone();
-                if stroke.len() < 2 {
+        core::iter::from_fn(move || {
+            loop {
+                for stroke_index in current_strokes.by_ref() {
+                    let stroke = self.font.strokes[stroke_index].clone();
+                    if stroke.len() < 2 {
+                        continue;
+                    }
+
+                    // If this stroke is a closed loop, append one extra point to add a join at the seam.
+                    let join = (self.font.positions[stroke.start]
+                        == self.font.positions[stroke.end - 1])
+                        .then_some(stroke.start + 1);
+
+                    let color = current_color;
+                    return Some((
+                        color,
+                        stroke.chain(join).map(move |index| {
+                            let [p, q] = self.font.positions[index];
+                            Vec2::new(
+                                current_x + self.scale * p as f32,
+                                y - self.scale * (self.font.cap_height - q as f32),
+                            )
+                        }),
+                    ));
+                }
+
+                let (c, char_color) = chars.next()?;
+
+                if c == '\n' {
+                    x = 0.0;
+                    y -= self.line_height;
                     continue;
                 }
 
-                // If this stroke is a closed loop, append one extra point to add a join at the seam.
-                let join = (self.font.positions[stroke.start]
-                    == self.font.positions[stroke.end - 1])
-                    .then_some(stroke.start + 1);
+                if c == '\t' {
+                    x = next_tab_stop(x, self.tab_advance);
+                    continue;
+                }
 
-                let color = current_color;
-                return Some((
-                    color,
-                    stroke.chain(join).map(move |index| {
-                        let [p, q] = self.font.positions[index];
-                        Vec2::new(
-                            current_x + self.scale * p as f32,
-                            y - self.scale * (self.font.cap_height - q as f32),
-                        )
-                    }),
-                ));
+                let Some((advance, strokes)) = self.font.get_glyph(c) else {
+                    x += self.space_advance;
+                    continue;
+                };
+                current_color = char_color;
+                current_strokes = strokes;
+                current_x = x;
+
+                x += advance as f32 * self.scale;
             }
-
-            let (c, char_color) = chars.next()?;
-
-            if c == '\n' {
-                x = 0.0;
-                y -= self.line_height;
-                continue;
-            }
-
-            if c == '\t' {
-                x = next_tab_stop(x, self.tab_advance);
-                continue;
-            }
-
-            let Some((advance, strokes)) = self.font.get_glyph(c) else {
-                x += self.space_advance;
-                continue;
-            };
-            current_color = char_color;
-            current_strokes = strokes;
-            current_x = x;
-
-            x += advance as f32 * self.scale;
         })
     }
 }

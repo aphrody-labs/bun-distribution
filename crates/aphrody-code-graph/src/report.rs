@@ -42,7 +42,10 @@ impl Graph {
         let _ = writeln!(
             out,
             "- Built at commit: {}",
-            self.meta.built_at_commit.as_deref().unwrap_or("unknown (not a Git checkout)")
+            self.meta
+                .built_at_commit
+                .as_deref()
+                .unwrap_or("unknown (not a Git checkout)")
         );
         let _ = writeln!(
             out,
@@ -84,7 +87,9 @@ impl Graph {
                 out,
                 "- {} ({degree} edges){}",
                 n.label,
-                n.file.as_ref().map_or_else(String::new, |f| format!(" - {f}"))
+                n.file
+                    .as_ref()
+                    .map_or_else(String::new, |f| format!(" - {f}"))
             );
         }
         let _ = writeln!(out, "\n## Communities");
@@ -108,7 +113,11 @@ impl Graph {
         }
         let mut ranked: Vec<(&str, usize, usize)> =
             files.into_iter().map(|(f, (n, d))| (f, n, d)).collect();
-        ranked.sort_by(|a, b| b.2.cmp(&a.2).then_with(|| b.1.cmp(&a.1)).then_with(|| a.0.cmp(b.0)));
+        ranked.sort_by(|a, b| {
+            b.2.cmp(&a.2)
+                .then_with(|| b.1.cmp(&a.1))
+                .then_with(|| a.0.cmp(b.0))
+        });
         ranked.truncate(top);
         ranked
     }
@@ -118,7 +127,9 @@ impl Graph {
         let mut packages: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
         let mut files_seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
         for n in &self.nodes {
-            let Some(file) = n.file.as_deref() else { continue };
+            let Some(file) = n.file.as_deref() else {
+                continue;
+            };
             let new_file = usize::from(files_seen.insert(file));
             if let Some(lang) = n.lang.as_deref() {
                 let entry = languages.entry(lang).or_default();
@@ -148,12 +159,16 @@ impl Graph {
         }
         let mut deps: BTreeMap<(&str, &str), usize> = BTreeMap::new();
         for e in &self.edges {
-            if !matches!(e.relation.as_str(), "calls" | "imports" | "imports_from" | "references") {
+            if !matches!(
+                e.relation.as_str(),
+                "calls" | "imports" | "imports_from" | "references"
+            ) {
                 continue;
             }
-            if let (Some(a), Some(b)) =
-                (self.nodes[e.src].package.as_deref(), self.nodes[e.dst].package.as_deref())
-                && a != b
+            if let (Some(a), Some(b)) = (
+                self.nodes[e.src].package.as_deref(),
+                self.nodes[e.dst].package.as_deref(),
+            ) && a != b
             {
                 *deps.entry((a, b)).or_insert(0) += 1;
             }
@@ -186,7 +201,10 @@ mod tests {
         assert!(r.contains("- .upsert_doc() (3 edges)"));
         assert!(r.contains("- calls: 2"));
         assert!(r.contains("Built at commit: unknown"));
-        assert!(r.contains("## Top files\n- store.rs: 3 nodes, 7 edges"), "{r}");
+        assert!(
+            r.contains("## Top files\n- store.rs: 3 nodes, 7 edges"),
+            "{r}"
+        );
     }
 
     #[test]
@@ -200,7 +218,10 @@ mod tests {
         g.meta.built_at_commit = Some("abc123".into());
         let r = g.report("sample", 5);
         assert!(r.contains("Built at commit: abc123"));
-        assert!(r.contains("## Packages (3)\n- rag: 1 files, 3 nodes"), "{r}");
+        assert!(
+            r.contains("## Packages (3)\n- rag: 1 files, 3 nodes"),
+            "{r}"
+        );
         assert!(r.contains("- rag -> sql: 1 edges"), "{r}");
     }
 }

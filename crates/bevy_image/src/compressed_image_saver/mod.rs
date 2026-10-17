@@ -18,9 +18,9 @@ use crate::compressed_image_saver::universal::CompressedImageSaverUniversal;
 use crate::{Image, ImageLoader, ImageLoaderSettings};
 
 use bevy_asset::{
+    AssetPath,
     io::Writer,
     saver::{AssetSaver, SavedAsset},
-    AssetPath,
 };
 use bevy_reflect::TypePath;
 use serde::{Deserialize, Serialize};

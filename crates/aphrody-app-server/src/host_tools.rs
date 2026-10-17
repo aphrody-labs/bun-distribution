@@ -140,8 +140,11 @@ impl HostTools {
     }
 
     pub(crate) fn view(&self) -> Result<Value, AppServerError> {
-        let specs: Vec<_> =
-            self.executors()?.into_iter().map(|tool| tool.definition().clone()).collect();
+        let specs: Vec<_> = self
+            .executors()?
+            .into_iter()
+            .map(|tool| tool.definition().clone())
+            .collect();
         Ok(json!({"tools":self.declarations,"toolSpecs":specs}))
     }
 
@@ -164,7 +167,9 @@ impl HostTools {
 
     pub(crate) fn respond(&self, request_id: &str, value: &Value) -> Result<(), AppServerError> {
         if value.to_string().len() > 1_048_576 {
-            return Err(AppServerError::InvalidRequest("host tool result exceeds 1 MiB".into()));
+            return Err(AppServerError::InvalidRequest(
+                "host tool result exceeds 1 MiB".into(),
+            ));
         }
         let permission = self
             .state
@@ -184,7 +189,7 @@ impl HostTools {
                     return Err(AppServerError::InvalidRequest(
                         "permission decision must be allow or deny".into(),
                     ));
-                },
+                }
             }
         } else {
             serde_json::from_value(json!({
@@ -209,9 +214,14 @@ impl HostTools {
     }
 
     pub(crate) fn cancel_all(&self) {
-        let mut state = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         for (request_id, pending) in std::mem::take(&mut state.pending) {
-            let _ = pending.sender.send(ToolOutput::error("host call cancelled"));
+            let _ = pending
+                .sender
+                .send(ToolOutput::error("host call cancelled"));
             state.notices.push_back(json!({"jsonrpc":"2.0","method":"tool/cancelled","params":{"threadId":self.thread_id,"requestId":request_id}}));
         }
     }
@@ -221,12 +231,18 @@ fn wire_name(name: &str) -> String {
     if name.len() <= 58 && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_') {
         return format!("host__{name}");
     }
-    let hash = name
-        .bytes()
-        .fold(0xcbf29ce484222325_u64, |hash, b| (hash ^ u64::from(b)).wrapping_mul(0x100000001b3));
+    let hash = name.bytes().fold(0xcbf29ce484222325_u64, |hash, b| {
+        (hash ^ u64::from(b)).wrapping_mul(0x100000001b3)
+    });
     let stem: String = name
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .take(40)
         .collect();
     format!("host__{stem}_{hash:016x}")
@@ -238,7 +254,11 @@ struct PendingGuard {
 }
 impl Drop for PendingGuard {
     fn drop(&mut self) {
-        let mut state = self.tools.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self
+            .tools
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.pending.remove(&self.request_id).is_some() {
             state.notices.push_back(json!({"jsonrpc":"2.0","method":"tool/cancelled","params":{"threadId":self.tools.thread_id,"requestId":self.request_id}}));
         }
@@ -256,15 +276,23 @@ impl HostExecutor {
         let request_id = format!("host-{}", Event::new(EventMsg::TurnStarted).id);
         let (sender, receiver) = oneshot::channel();
         {
-            let mut state =
-                self.tools.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut state = self
+                .tools
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if state.pending.len() >= 64 || state.notices.len() >= 128 {
                 return ToolOutput::error("host callback queue is full");
             }
-            state.pending.insert(request_id.clone(), Pending { sender, permission });
+            state
+                .pending
+                .insert(request_id.clone(), Pending { sender, permission });
             state.notices.push_back(json!({"jsonrpc":"2.0","id":request_id,"method":method,"params":{"threadId":self.tools.thread_id,"requestId":request_id,"name":self.declaration.name,"arguments":arguments}}));
         }
-        let _guard = PendingGuard { tools: self.tools.clone(), request_id };
+        let _guard = PendingGuard {
+            tools: self.tools.clone(),
+            request_id,
+        };
         match tokio::time::timeout(Duration::from_secs(120), receiver).await {
             Ok(Ok(output)) => output,
             Ok(Err(_)) => ToolOutput::error("host disconnected"),
@@ -287,12 +315,16 @@ impl ToolExecutor for HostExecutor {
             }
         })?;
         if !validator.is_valid(&arguments) {
-            return Ok(ToolOutput::error("host arguments do not match declared JSON Schema"));
+            return Ok(ToolOutput::error(
+                "host arguments do not match declared JSON Schema",
+            ));
         }
         if !self.tools.host_owns_gate
             && !matches!(self.declaration.capability, Some(Capability::Read))
         {
-            let approval = self.exchange("permission/request", arguments.clone(), true).await;
+            let approval = self
+                .exchange("permission/request", arguments.clone(), true)
+                .await;
             if approval.is_error {
                 return Ok(approval);
             }
@@ -348,8 +380,13 @@ mod tests {
         tokio::task::yield_now().await;
         let notice = tools.drain().remove(0);
         assert_eq!(notice["method"], "permission/request");
-        tools.respond(notice["id"].as_str().unwrap(), &json!({"decision":"deny"})).unwrap();
+        tools
+            .respond(notice["id"].as_str().unwrap(), &json!({"decision":"deny"}))
+            .unwrap();
         assert!(task.await.unwrap().is_error);
-        assert!(tools.drain().is_empty(), "denied actuator must not be called");
+        assert!(
+            tools.drain().is_empty(),
+            "denied actuator must not be called"
+        );
     }
 }

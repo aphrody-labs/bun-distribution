@@ -188,11 +188,17 @@ pub fn parse(data: &[u8]) -> Result<MevbinDocument, FormatError> {
 
     // Clôt la dernière motion en cours.
     if have_motion {
-        motions
-            .push(MevbinMotion { hash: current_hash, events: current_events.unwrap_or_default() });
+        motions.push(MevbinMotion {
+            hash: current_hash,
+            events: current_events.unwrap_or_default(),
+        });
     }
 
-    Ok(MevbinDocument { motions, header_motion_count, header_event_count })
+    Ok(MevbinDocument {
+        motions,
+        header_motion_count,
+        header_event_count,
+    })
 }
 
 // ── Helpers internes ──────────────────────────────────────────────────────────
@@ -209,9 +215,13 @@ fn build_event(vars: &[Value]) -> MevbinEvent {
         Some(v) => {
             let is_float = matches!(v, Value::Float(_));
             let raw = val_as_uint(v);
-            let fval = if is_float { val_as_float_direct(v) } else { 0.0 };
+            let fval = if is_float {
+                val_as_float_direct(v)
+            } else {
+                0.0
+            };
             (raw, is_float, fval)
-        },
+        }
         None => (0u32, false, 0.0f32),
     };
 
@@ -220,9 +230,13 @@ fn build_event(vars: &[Value]) -> MevbinEvent {
         Some(v) => {
             let is_float = matches!(v, Value::Float(_));
             let raw = val_as_uint(v);
-            let fval = if is_float { val_as_float_direct(v) } else { 0.0 };
+            let fval = if is_float {
+                val_as_float_direct(v)
+            } else {
+                0.0
+            };
             (raw, is_float, fval)
-        },
+        }
         None => (0u32, false, 0.0f32),
     };
 
@@ -300,7 +314,9 @@ mod tests {
     /// `Decode_RealSample_HeaderCountsMatchParsed`.
     #[test]
     fn real_file_golden() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
 
         let mut vfs = crate::vfs::Vfs::new();
@@ -316,8 +332,11 @@ mod tests {
         // exact). Le parseur est donc CORRECT (177 motions parsées) — l'invariant fort header==parsé
         // ne tient juste pas universellement (donnée jeu, pas un bug de parse ; vérifié par dump des
         // records). Le tri ancre le golden sur le 1ᵉʳ fichier conforme (`_animal/an000100_p010`).
-        let mut mevbins: alloc::vec::Vec<alloc::string::String> =
-            vfs.iter().map(|(k, _)| k.to_string()).filter(|k| k.ends_with(".mevbin")).collect();
+        let mut mevbins: alloc::vec::Vec<alloc::string::String> = vfs
+            .iter()
+            .map(|(k, _)| k.to_string())
+            .filter(|k| k.ends_with(".mevbin"))
+            .collect();
         mevbins.sort_unstable();
         let mevbin_path = mevbins.into_iter().next();
 
@@ -382,14 +401,20 @@ mod tests {
         // val_as_uint : Float → bits du f32 réinterprétés en u32
         let f = 1.0f32;
         assert_eq!(val_as_uint(&Value::Float(f)), f.to_bits());
-        assert_eq!(val_as_uint(&Value::String(alloc::string::String::new())), 0u32);
+        assert_eq!(
+            val_as_uint(&Value::String(alloc::string::String::new())),
+            0u32
+        );
 
         // val_as_float : Float → valeur directe
         assert_eq!(val_as_float(&Value::Float(2.5)), 2.5f32);
         // val_as_float : Int → bits réinterprétés (BitConverter.Int32BitsToSingle)
         let bits = 1.5f32.to_bits() as i32;
         assert_eq!(val_as_float(&Value::Int(bits)), 1.5f32);
-        assert_eq!(val_as_float(&Value::String(alloc::string::String::new())), 0.0f32);
+        assert_eq!(
+            val_as_float(&Value::String(alloc::string::String::new())),
+            0.0f32
+        );
 
         // val_as_float_direct : seul Float renvoie une valeur non nulle
         assert_eq!(val_as_float_direct(&Value::Float(7.0)), 7.0f32);

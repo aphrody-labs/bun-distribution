@@ -72,10 +72,33 @@ impl CropHandle {
 /// - the edges opposite the handle stay where they were (a move keeps the size);
 /// - with `aspect`, the frame keeps that shape on every handle (when `start` had it);
 /// - the drag stops at the image edge instead of pushing the frame around, and slides along it.
-pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: Point, w: f64, h: f64, aspect: Option<f64>) -> CropGeometry {
+pub fn drag_crop(
+    start: CropGeometry,
+    handle: CropHandle,
+    grab: Point,
+    pointer: Point,
+    w: f64,
+    h: f64,
+    aspect: Option<f64>,
+) -> CropGeometry {
     let sane = |v: f64| v.is_finite();
     let r0 = start.rect;
-    if ![w, h, grab.x, grab.y, pointer.x, pointer.y, start.angle, r0.x0, r0.y0, r0.x1, r0.y1].iter().copied().all(sane)
+    if ![
+        w,
+        h,
+        grab.x,
+        grab.y,
+        pointer.x,
+        pointer.y,
+        start.angle,
+        r0.x0,
+        r0.y0,
+        r0.x1,
+        r0.y1,
+    ]
+    .iter()
+    .copied()
+    .all(sane)
         || w <= 0.0
         || h <= 0.0
         || r0.is_empty()
@@ -88,11 +111,19 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
     if base.angle == 0.0 {
         // absorb the 1e-6 tolerance of `is_within_image` so the exact test below accepts the start
         let r = base.rect;
-        base.rect = Rect::new(r.x0.clamp(0.0, 1.0), r.y0.clamp(0.0, 1.0), r.x1.clamp(0.0, 1.0), r.y1.clamp(0.0, 1.0));
+        base.rect = Rect::new(
+            r.x0.clamp(0.0, 1.0),
+            r.y0.clamp(0.0, 1.0),
+            r.x1.clamp(0.0, 1.0),
+            r.y1.clamp(0.0, 1.0),
+        );
     }
     let sr = base.rect_px(w, h);
     // Moving further than twice the image never matters; clamping keeps the searches well-conditioned.
-    let (dx, dy) = (((pointer.x - grab.x) * w).clamp(-2.0 * w, 2.0 * w), ((pointer.y - grab.y) * h).clamp(-2.0 * h, 2.0 * h));
+    let (dx, dy) = (
+        ((pointer.x - grab.x) * w).clamp(-2.0 * w, 2.0 * w),
+        ((pointer.y - grab.y) * h).clamp(-2.0 * h, 2.0 * h),
+    );
     // Ratios beyond 20:1 make even the minimum frame larger than the image; treat them as 20:1.
     let aspect = aspect.map(|a| a.clamp(1.0 / MAX_RATIO, MAX_RATIO));
     // Unrotated, the frame must be exactly inside the image (`is_within_image` tolerates 1e-6, which
@@ -101,7 +132,11 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
         if base.angle == 0.0 {
             r.x0 >= 0.0 && r.y0 >= 0.0 && r.x1 <= w && r.y1 <= h
         } else {
-            CropGeometry { rect: r.scale(1.0 / w, 1.0 / h), angle: base.angle }.is_within_image(w, h)
+            CropGeometry {
+                rect: r.scale(1.0 / w, 1.0 / h),
+                angle: base.angle,
+            }
+            .is_within_image(w, h)
         }
     };
     let min_side = MIN_CROP_FRACTION * w.min(h);
@@ -109,7 +144,9 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
     let out = match (handle, aspect) {
         (CropHandle::Move, _) => {
             let slide = |cur: Rect, ax: f64, ay: f64| {
-                let t = bisect(0.0, 1.0, |t| feasible(cur.translate(crate::Vec2::new(ax * t, ay * t))));
+                let t = bisect(0.0, 1.0, |t| {
+                    feasible(cur.translate(crate::Vec2::new(ax * t, ay * t)))
+                });
                 cur.translate(crate::Vec2::new(ax * t, ay * t))
             };
             let cur = slide(sr, dx, 0.0);
@@ -120,10 +157,26 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
             let grow = |cur: Rect, tx: f64, ty: f64| {
                 // `tx`/`ty`: how far the moving edges would go; interpolate towards it
                 let target = Rect::new(
-                    if mx0 { (cur.x0 + tx).min(cur.x1 - min_side) } else { cur.x0 },
-                    if my0 { (cur.y0 + ty).min(cur.y1 - min_side) } else { cur.y0 },
-                    if mx1 { (cur.x1 + tx).max(cur.x0 + min_side) } else { cur.x1 },
-                    if my1 { (cur.y1 + ty).max(cur.y0 + min_side) } else { cur.y1 },
+                    if mx0 {
+                        (cur.x0 + tx).min(cur.x1 - min_side)
+                    } else {
+                        cur.x0
+                    },
+                    if my0 {
+                        (cur.y0 + ty).min(cur.y1 - min_side)
+                    } else {
+                        cur.y0
+                    },
+                    if mx1 {
+                        (cur.x1 + tx).max(cur.x0 + min_side)
+                    } else {
+                        cur.x1
+                    },
+                    if my1 {
+                        (cur.y1 + ty).max(cur.y0 + min_side)
+                    } else {
+                        cur.y1
+                    },
                 );
                 let at = |t: f64| lerp_rect(cur, target, t);
                 at(bisect(0.0, 1.0, |t| feasible(at(t))))
@@ -139,26 +192,52 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
             // keeps it, shifted by `o` along the anchored edge (edge handles only).
             let (target_w, build): (f64, Box<dyn Fn(f64, f64) -> Rect>) = match hd {
                 CropHandle::Top | CropHandle::Bottom => {
-                    let (ay, sy, edge) = if my0 { (sr.y1, -1.0, sr.y0) } else { (sr.y0, 1.0, sr.y1) };
+                    let (ay, sy, edge) = if my0 {
+                        (sr.y1, -1.0, sr.y0)
+                    } else {
+                        (sr.y0, 1.0, sr.y1)
+                    };
                     let nh = (sy * (edge + dy - ay)).max(min_h);
                     (nh * a, Box::new(move |nw, o| vband(c.x + o, ay, sy, nw, a)))
                 }
                 CropHandle::Left | CropHandle::Right => {
-                    let (ax, sx, edge) = if mx0 { (sr.x1, -1.0, sr.x0) } else { (sr.x0, 1.0, sr.x1) };
+                    let (ax, sx, edge) = if mx0 {
+                        (sr.x1, -1.0, sr.x0)
+                    } else {
+                        (sr.x0, 1.0, sr.x1)
+                    };
                     let nw = (sx * (edge + dx - ax)).max(min_w);
                     (nw, Box::new(move |nw, o| hband(ax, sx, c.y + o, nw, a)))
                 }
                 _ => {
-                    let (ax, sx, ex) = if mx0 { (sr.x1, -1.0, sr.x0) } else { (sr.x0, 1.0, sr.x1) };
-                    let (ay, sy, ey) = if my0 { (sr.y1, -1.0, sr.y0) } else { (sr.y0, 1.0, sr.y1) };
+                    let (ax, sx, ex) = if mx0 {
+                        (sr.x1, -1.0, sr.x0)
+                    } else {
+                        (sr.x0, 1.0, sr.x1)
+                    };
+                    let (ay, sy, ey) = if my0 {
+                        (sr.y1, -1.0, sr.y0)
+                    } else {
+                        (sr.y0, 1.0, sr.y1)
+                    };
                     let (wx, wy) = (sx * (ex + dx - ax), sy * (ey + dy - ay));
                     let nw = ((wx + wy * a) / 2.0).max(min_w);
-                    (nw, Box::new(move |nw, _| corner_rect(ax, sx, ay, sy, nw, a)))
+                    (
+                        nw,
+                        Box::new(move |nw, _| corner_rect(ax, sx, ay, sy, nw, a)),
+                    )
                 }
             };
             let target_w = target_w.min(2.0 * w.max(h * a));
-            let slides = matches!(hd, CropHandle::Top | CropHandle::Bottom | CropHandle::Left | CropHandle::Right);
-            let extent = if matches!(hd, CropHandle::Top | CropHandle::Bottom) { w } else { h };
+            let slides = matches!(
+                hd,
+                CropHandle::Top | CropHandle::Bottom | CropHandle::Left | CropHandle::Right
+            );
+            let extent = if matches!(hd, CropHandle::Top | CropHandle::Bottom) {
+                w
+            } else {
+                h
+            };
             // Frame of width `n`, centred on the anchored edge if it fits, else slid the least distance.
             let place = |n: f64| -> Option<Rect> {
                 let at = |o: f64| build(n, o);
@@ -199,7 +278,17 @@ pub fn drag_crop(start: CropGeometry, handle: CropHandle, grab: Point, pointer: 
         }
     };
     let rect = out.scale(1.0 / w, 1.0 / h);
-    if [rect.x0, rect.y0, rect.x1, rect.y1].iter().all(|v| v.is_finite()) { CropGeometry { rect, angle: base.angle } } else { start }
+    if [rect.x0, rect.y0, rect.x1, rect.y1]
+        .iter()
+        .all(|v| v.is_finite())
+    {
+        CropGeometry {
+            rect,
+            angle: base.angle,
+        }
+    } else {
+        start
+    }
 }
 
 /// Which sides a handle moves: (left, right, top, bottom).
@@ -227,13 +316,19 @@ fn corner_rect(ax: f64, sx: f64, ay: f64, sy: f64, nw: f64, a: f64) -> Rect {
 /// Frame whose top/bottom edge (at `ay`, growing in direction `sy`) is anchored, centred on `cx`.
 fn vband(cx: f64, ay: f64, sy: f64, nw: f64, a: f64) -> Rect {
     let nh = nw / a;
-    Rect::from_points(Point::new(cx - nw / 2.0, ay), Point::new(cx + nw / 2.0, ay + sy * nh))
+    Rect::from_points(
+        Point::new(cx - nw / 2.0, ay),
+        Point::new(cx + nw / 2.0, ay + sy * nh),
+    )
 }
 
 /// Frame whose left/right edge (at `ax`, growing in direction `sx`) is anchored, centred on `cy`.
 fn hband(ax: f64, sx: f64, cy: f64, nw: f64, a: f64) -> Rect {
     let nh = nw / a;
-    Rect::from_points(Point::new(ax, cy - nh / 2.0), Point::new(ax + sx * nw, cy + nh / 2.0))
+    Rect::from_points(
+        Point::new(ax, cy - nh / 2.0),
+        Point::new(ax + sx * nw, cy + nh / 2.0),
+    )
 }
 
 /// Largest `t` in `[lo, hi]` for which `ok` holds, given that it holds at `lo` and the set of good
@@ -268,12 +363,21 @@ mod tests {
     const EPS: f64 = 1e-6;
 
     fn geo(x0: f64, y0: f64, x1: f64, y1: f64) -> CropGeometry {
-        CropGeometry { rect: Rect::new(x0, y0, x1, y1), angle: 0.0 }
+        CropGeometry {
+            rect: Rect::new(x0, y0, x1, y1),
+            angle: 0.0,
+        }
     }
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)
     }
-    fn drag(g: CropGeometry, hd: CropHandle, from: Point, to: Point, aspect: Option<f64>) -> CropGeometry {
+    fn drag(
+        g: CropGeometry,
+        hd: CropHandle,
+        from: Point,
+        to: Point,
+        aspect: Option<f64>,
+    ) -> CropGeometry {
         drag_crop(g, hd, from, to, W, H, aspect)
     }
     fn px_aspect(g: &CropGeometry) -> f64 {
@@ -287,7 +391,13 @@ mod tests {
     //   Scenario: a free corner drag inside the image
     #[test]
     fn given_free_crop_when_corner_dragged_inside_then_corner_follows_and_opposite_corner_stays() {
-        let g = drag(geo(0.2, 0.2, 0.8, 0.8), BottomRight, p(0.8, 0.8), p(0.9, 0.7), None);
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.8),
+            BottomRight,
+            p(0.8, 0.8),
+            p(0.9, 0.7),
+            None,
+        );
         assert!(near(g.rect.x0, 0.2) && near(g.rect.y0, 0.2));
         assert!(near(g.rect.x1, 0.9) && near(g.rect.y1, 0.7));
     }
@@ -295,37 +405,81 @@ mod tests {
     //   Scenario: dragging past the right edge (the weird behaviour of issue 295)
     #[test]
     fn given_corner_dragged_past_image_edge_then_it_stops_at_the_edge_and_anchor_stays() {
-        let g = drag(geo(0.2, 0.2, 0.8, 0.8), BottomRight, p(0.8, 0.8), p(1.3, 0.7), None);
-        assert!(near(g.rect.x0, 0.2) && near(g.rect.y0, 0.2), "anchor moved: {:?}", g.rect);
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.8),
+            BottomRight,
+            p(0.8, 0.8),
+            p(1.3, 0.7),
+            None,
+        );
+        assert!(
+            near(g.rect.x0, 0.2) && near(g.rect.y0, 0.2),
+            "anchor moved: {:?}",
+            g.rect
+        );
         assert!(near(g.rect.x1, 1.0), "stops at the edge: {:?}", g.rect);
-        assert!(near(g.rect.y1, 0.7), "other axis still follows the pointer: {:?}", g.rect);
+        assert!(
+            near(g.rect.y1, 0.7),
+            "other axis still follows the pointer: {:?}",
+            g.rect
+        );
     }
 
     #[test]
     fn given_locked_aspect_when_corner_dragged_past_edge_then_ratio_and_anchor_hold() {
         let a = 1.5;
-        let g = drag(geo(0.2, 0.2, 0.8, 0.2 + 0.6 * W / H / a), BottomRight, p(0.8, 0.6), p(1.4, 0.9), Some(a));
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.2 + 0.6 * W / H / a),
+            BottomRight,
+            p(0.8, 0.6),
+            p(1.4, 0.9),
+            Some(a),
+        );
         assert!(near(g.rect.x0, 0.2) && near(g.rect.y0, 0.2), "{:?}", g.rect);
         assert!(near(px_aspect(&g), a), "{}", px_aspect(&g));
         assert!(g.rect.x1 <= 1.0 + EPS && g.rect.y1 <= 1.0 + EPS);
-        assert!(g.rect.x1 > 0.95 || g.rect.y1 > 0.95, "grows until it touches an edge: {:?}", g.rect);
+        assert!(
+            g.rect.x1 > 0.95 || g.rect.y1 > 0.95,
+            "grows until it touches an edge: {:?}",
+            g.rect
+        );
     }
 
     #[test]
     fn given_locked_aspect_when_edge_dragged_then_ratio_holds_and_frame_grows_about_its_midline() {
         let a = 2.0;
         let start = geo(0.3, 0.3, 0.7, 0.3 + 0.4 * W / H / a);
-        let g = drag(start, Bottom, p(0.5, start.rect.y1), p(0.5, start.rect.y1 + 0.1), Some(a));
+        let g = drag(
+            start,
+            Bottom,
+            p(0.5, start.rect.y1),
+            p(0.5, start.rect.y1 + 0.1),
+            Some(a),
+        );
         assert!(near(g.rect.y0, start.rect.y0), "opposite edge stays");
-        assert!(near(g.rect.center().x, start.rect.center().x), "grows symmetrically sideways");
+        assert!(
+            near(g.rect.center().x, start.rect.center().x),
+            "grows symmetrically sideways"
+        );
         assert!(near(px_aspect(&g), a));
         assert!(g.rect.height() > start.rect.height());
     }
 
     #[test]
     fn given_free_crop_when_edge_dragged_then_only_that_edge_moves() {
-        let g = drag(geo(0.2, 0.2, 0.8, 0.8), Left, p(0.2, 0.5), p(0.1, 0.9), None);
-        assert!(near(g.rect.x0, 0.1) && near(g.rect.y0, 0.2) && near(g.rect.x1, 0.8) && near(g.rect.y1, 0.8));
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.8),
+            Left,
+            p(0.2, 0.5),
+            p(0.1, 0.9),
+            None,
+        );
+        assert!(
+            near(g.rect.x0, 0.1)
+                && near(g.rect.y0, 0.2)
+                && near(g.rect.x1, 0.8)
+                && near(g.rect.y1, 0.8)
+        );
     }
 
     #[test]
@@ -333,13 +487,27 @@ mod tests {
         let start = geo(0.5, 0.25, 0.9, 0.65);
         let g = drag(start, Move, p(0.7, 0.45), p(1.3, 0.55), None);
         assert!(near(g.rect.width(), 0.4) && near(g.rect.height(), 0.4));
-        assert!(near(g.rect.x1, 1.0), "flush with the right edge: {:?}", g.rect);
-        assert!(near(g.rect.y0, 0.35), "still follows the pointer vertically: {:?}", g.rect);
+        assert!(
+            near(g.rect.x1, 1.0),
+            "flush with the right edge: {:?}",
+            g.rect
+        );
+        assert!(
+            near(g.rect.y0, 0.35),
+            "still follows the pointer vertically: {:?}",
+            g.rect
+        );
     }
 
     #[test]
     fn given_edge_dragged_across_the_opposite_edge_then_crop_keeps_a_minimum_size() {
-        let g = drag(geo(0.2, 0.2, 0.8, 0.8), Right, p(0.8, 0.5), p(-0.5, 0.5), None);
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.8),
+            Right,
+            p(0.8, 0.5),
+            p(-0.5, 0.5),
+            None,
+        );
         assert!(g.rect.width() * W >= MIN_CROP_FRACTION * H - EPS && g.rect.x1 > g.rect.x0);
         assert!(near(g.rect.x0, 0.2));
     }
@@ -348,7 +516,17 @@ mod tests {
     fn given_straightened_image_when_dragged_outside_then_crop_stays_inside_the_rotated_image() {
         let start = crate::crop_fit_angle(W, H, 12.0, Some(1.5));
         let c = start.rect.center();
-        for hd in [TopLeft, TopRight, BottomRight, BottomLeft, Top, Right, Bottom, Left, Move] {
+        for hd in [
+            TopLeft,
+            TopRight,
+            BottomRight,
+            BottomLeft,
+            Top,
+            Right,
+            Bottom,
+            Left,
+            Move,
+        ] {
             for aspect in [None, Some(1.5)] {
                 let g = drag(start, hd, c, p(3.0, -3.0), aspect);
                 assert!(g.is_within_image(W, H), "{hd:?} {aspect:?}: {:?}", g.rect);
@@ -363,25 +541,40 @@ mod tests {
         for bad in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
             assert_eq!(drag(s, BottomRight, p(0.8, 0.8), p(bad, 0.5), None), s);
         }
-        assert_eq!(drag_crop(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), 0.0, 400.0, None), s);
-        assert_eq!(drag(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), Some(f64::NAN)), s);
-        assert_eq!(drag(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), Some(-1.0)), s);
+        assert_eq!(
+            drag_crop(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), 0.0, 400.0, None),
+            s
+        );
+        assert_eq!(
+            drag(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), Some(f64::NAN)),
+            s
+        );
+        assert_eq!(
+            drag(s, BottomRight, p(0.8, 0.8), p(0.9, 0.9), Some(-1.0)),
+            s
+        );
     }
 
     //   Scenario: a locked edge drag when the frame already touches the image edge (review finding)
     #[test]
-    fn given_locked_frame_flush_with_the_top_when_right_edge_dragged_out_then_it_grows_sliding_down() {
+    fn given_locked_frame_flush_with_the_top_when_right_edge_dragged_out_then_it_grows_sliding_down()
+     {
         let a = 1.5;
         let start = geo(0.2, 0.0, 0.5, 0.3 * W / H * 0.0 + 0.3 * W / (a * H));
         let g = drag(start, Right, p(0.5, 0.2), p(0.9, 0.2), Some(a));
         assert!(near(g.rect.x0, 0.2), "anchor edge stays: {:?}", g.rect);
-        assert!(g.rect.width() > start.rect.width() + 0.05, "it must grow: {:?}", g.rect);
+        assert!(
+            g.rect.width() > start.rect.width() + 0.05,
+            "it must grow: {:?}",
+            g.rect
+        );
         assert!(near(px_aspect(&g), a));
         assert!(g.is_within_image(W, H));
     }
 
     #[test]
-    fn given_full_fit_straightened_crop_when_locked_edge_dragged_then_it_still_respects_the_image() {
+    fn given_full_fit_straightened_crop_when_locked_edge_dragged_then_it_still_respects_the_image()
+    {
         let start = crate::crop_fit_angle(W, H, 20.0, Some(1.5));
         let g = drag(start, Right, p(0.9, 0.5), p(1.5, 0.5), Some(1.5));
         assert!(g.is_within_image(W, H) && near(px_aspect(&g), 1.5));
@@ -407,8 +600,18 @@ mod tests {
 
     #[test]
     fn given_an_unrotated_image_then_results_never_leave_the_unit_square() {
-        let g = drag(geo(0.2, 0.2, 0.8, 0.8), BottomRight, p(0.8, 0.8), p(5.0, 5.0), None);
-        assert!(g.rect.x1 <= 1.0 && g.rect.y1 <= 1.0 && g.rect.x0 >= 0.0 && g.rect.y0 >= 0.0, "{:?}", g.rect);
+        let g = drag(
+            geo(0.2, 0.2, 0.8, 0.8),
+            BottomRight,
+            p(0.8, 0.8),
+            p(5.0, 5.0),
+            None,
+        );
+        assert!(
+            g.rect.x1 <= 1.0 && g.rect.y1 <= 1.0 && g.rect.x0 >= 0.0 && g.rect.y0 >= 0.0,
+            "{:?}",
+            g.rect
+        );
     }
 
     #[test]

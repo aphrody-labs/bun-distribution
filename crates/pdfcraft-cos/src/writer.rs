@@ -62,7 +62,11 @@ fn write_real(r: f64, out: &mut Vec<u8>) {
 fn write_name(n: &[u8], out: &mut Vec<u8>) {
     out.push(b'/');
     for &b in n {
-        let regular = (b'!'..=b'~').contains(&b) && !matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%' | b'#');
+        let regular = (b'!'..=b'~').contains(&b)
+            && !matches!(
+                b,
+                b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%' | b'#'
+            );
         if regular {
             out.push(b);
         } else {
@@ -72,7 +76,11 @@ fn write_name(n: &[u8], out: &mut Vec<u8>) {
 }
 
 fn write_string(s: &PdfString, out: &mut Vec<u8>) {
-    let binary = s.bytes.iter().filter(|b| !(b' '..=b'~').contains(*b) && !matches!(b, b'\n' | b'\r' | b'\t')).count();
+    let binary = s
+        .bytes
+        .iter()
+        .filter(|b| !(b' '..=b'~').contains(*b) && !matches!(b, b'\n' | b'\r' | b'\t'))
+        .count();
     if s.hex || binary * 4 > s.bytes.len().max(1) {
         out.push(b'<');
         for b in &s.bytes {
@@ -123,9 +131,17 @@ fn write_stream(s: &Stream, out: &mut Vec<u8>) {
 
 /// The object as written: encrypted with its (output) number when the document is encrypted,
 /// except the `/Encrypt` dictionary itself (`source_num` is its number in the source document).
-fn prepared<'a>(doc: &Document, source_num: u32, num: u32, generation: u16, o: &'a Object) -> Cow<'a, Object> {
+fn prepared<'a>(
+    doc: &Document,
+    source_num: u32,
+    num: u32,
+    generation: u16,
+    o: &'a Object,
+) -> Cow<'a, Object> {
     match doc.output_security() {
-        (Some(h), encrypt_num) if Some(source_num) != encrypt_num => Cow::Owned(crate::security::transform(h, o, num, generation, false)),
+        (Some(h), encrypt_num) if Some(source_num) != encrypt_num => {
+            Cow::Owned(crate::security::transform(h, o, num, generation, false))
+        }
         _ => Cow::Borrowed(o),
     }
 }
@@ -150,7 +166,11 @@ pub struct SaveOptions {
 
 impl Default for SaveOptions {
     fn default() -> Self {
-        Self { mod_date: None, id_seed: 0x5052_494E_5443_5241, object_streams: true }
+        Self {
+            mod_date: None,
+            id_seed: 0x5052_494E_5443_5241,
+            object_streams: true,
+        }
     }
 }
 
@@ -199,7 +219,12 @@ pub fn write_incremental(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, 
         match obj {
             Some(o) => {
                 offsets.insert(num, (base + out.len() as u64, generation, true));
-                write_indirect(num, generation, &prepared(&doc, num, num, generation, &o), &mut out);
+                write_indirect(
+                    num,
+                    generation,
+                    &prepared(&doc, num, num, generation, &o),
+                    &mut out,
+                );
             }
             None => {
                 offsets.insert(num, (0, generation, false));
@@ -217,7 +242,19 @@ pub fn write_incremental(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, 
     }
     let size = doc.next_num().max(trailer.int(b"Size").unwrap_or(0) as u32);
     if as_stream {
-        let rows = offsets.iter().map(|(n, (o, g, used))| (*n, if *used { Row::InFile(*o, *g) } else { Row::Free(*g) })).collect();
+        let rows = offsets
+            .iter()
+            .map(|(n, (o, g, used))| {
+                (
+                    *n,
+                    if *used {
+                        Row::InFile(*o, *g)
+                    } else {
+                        Row::Free(*g)
+                    },
+                )
+            })
+            .collect();
         write_xref_stream(&mut out, base, &mut trailer, rows, size);
     } else {
         trailer.set(b"Size".to_vec(), Object::Int(size as i64));
@@ -251,7 +288,8 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
     // Record the type while traversing so classifying packed objects needs no second parse.
     let mut order: Vec<(ObjRef, bool)> = Vec::new();
     let mut queue: VecDeque<ObjRef> = VecDeque::new();
-    let visit_refs = |o: &Object, queue: &mut VecDeque<ObjRef>| collect_refs(o, &mut |r| queue.push_back(r));
+    let visit_refs =
+        |o: &Object, queue: &mut VecDeque<ObjRef>| collect_refs(o, &mut |r| queue.push_back(r));
     for key in [&b"Root"[..], b"Info", b"Encrypt"] {
         if let Some(r) = trailer_in.reference(key) {
             queue.push_back(r);
@@ -269,15 +307,25 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
         order.push((r, matches!(*o, Object::Stream(_))));
         visit_refs(&o, &mut queue);
     }
-    let version = reader.document.version().chars().take(3).collect::<String>();
-    let version = if opts.object_streams && version.as_str() < "1.5" { "1.5".to_string() } else { version };
+    let version = reader
+        .document
+        .version()
+        .chars()
+        .take(3)
+        .collect::<String>();
+    let version = if opts.object_streams && version.as_str() < "1.5" {
+        "1.5".to_string()
+    } else {
+        version
+    };
     let mut out = Vec::new();
     let _ = writeln!(out, "%PDF-{version}");
     // A binary comment (raw high bytes) marks the file as binary for transfer tools.
     out.extend_from_slice(&[b'%', 0xE2, 0xE3, 0xCF, 0xD3, b'\n']);
     // The /Encrypt dictionary and everything it references (e.g. indirect /CF crypt-filter
     // dictionaries) are needed before anything can be decrypted: never inside object streams.
-    let mut encryption_objects: std::collections::HashSet<ObjRef> = std::collections::HashSet::new();
+    let mut encryption_objects: std::collections::HashSet<ObjRef> =
+        std::collections::HashSet::new();
     let mut pending: Vec<ObjRef> = trailer_in.reference(b"Encrypt").into_iter().collect();
     while let Some(r) = pending.pop() {
         if encryption_objects.insert(r) {
@@ -288,20 +336,32 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
     // damaged and could not be repaired", before it even asks for the password), while other
     // readers accept it. qpdf keeps the catalog out of object streams too. Verified with
     // Acrobat DC on macOS (#774).
-    let root_outside = if reader.document.output_security().0.is_some() { trailer_in.reference(b"Root") } else { None };
+    let root_outside = if reader.document.output_security().0.is_some() {
+        trailer_in.reference(b"Root")
+    } else {
+        None
+    };
     let mut rows: BTreeMap<u32, Row> = BTreeMap::new();
     // Keep only references, not renamed copies of the entire object graph. Standalone
     // objects still precede object streams, preserving the established output order.
     let mut packed: Vec<(u32, ObjRef)> = Vec::new();
     for (i, (r, is_stream)) in order.iter().enumerate() {
         let num = output_number(i)?;
-        let in_stream = opts.object_streams && !is_stream && !encryption_objects.contains(r) && root_outside != Some(*r);
+        let in_stream = opts.object_streams
+            && !is_stream
+            && !encryption_objects.contains(r)
+            && root_outside != Some(*r);
         if in_stream {
             packed.push((num, *r));
         } else {
             let o = renumber(&*reread(&mut reader, *r, *is_stream)?, &map);
             rows.insert(num, Row::InFile(out.len() as u64, 0));
-            write_indirect(num, 0, &prepared(&reader.document, r.num, num, 0, &o), &mut out);
+            write_indirect(
+                num,
+                0,
+                &prepared(&reader.document, r.num, num, 0, &o),
+                &mut out,
+            );
         }
     }
     // Object streams take the numbers after the last object. Their contents are not encrypted
@@ -310,8 +370,18 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
     let mut batch = ObjectStreamBatch::default();
     for (num, reference) in packed {
         let mut encoded = Vec::new();
-        serialize(&renumber(&*reread(&mut reader, reference, false)?, &map), &mut encoded);
-        if batch.count > 0 && batch.body.len().saturating_add(encoded.len()).saturating_add(1) > OBJSTM_BYTES {
+        serialize(
+            &renumber(&*reread(&mut reader, reference, false)?, &map),
+            &mut encoded,
+        );
+        if batch.count > 0
+            && batch
+                .body
+                .len()
+                .saturating_add(encoded.len())
+                .saturating_add(1)
+                > OBJSTM_BYTES
+        {
             batch.flush(&reader.document, &mut next, &mut rows, &mut out)?;
         }
         let _ = write!(batch.header, "{} {} ", num, batch.body.len());
@@ -344,8 +414,16 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
         write_xref_stream(&mut out, 0, &mut trailer, rows, next);
     } else {
         trailer.set(b"Size".to_vec(), Object::Int(next as i64));
-        let offsets: BTreeMap<u32, (u64, u16, bool)> =
-            rows.iter().filter_map(|(n, r)| if let Row::InFile(o, g) = r { Some((*n, (*o, *g, true))) } else { None }).collect();
+        let offsets: BTreeMap<u32, (u64, u16, bool)> = rows
+            .iter()
+            .filter_map(|(n, r)| {
+                if let Row::InFile(o, g) = r {
+                    Some((*n, (*o, *g, true)))
+                } else {
+                    None
+                }
+            })
+            .collect();
         let xref_at = out.len();
         write_xref_table(&mut out, &offsets, true);
         out.extend_from_slice(b"trailer\n");
@@ -361,10 +439,20 @@ pub fn write_full(doc: &Document, opts: &SaveOptions) -> Result<Vec<u8>, CosErro
 /// Object `r` read again for writing. The traversal read it once and only kept its number, so
 /// a second read that fails, finds nothing or finds a different kind of object must fail the
 /// save rather than write `null` in its place.
-fn reread(reader: &mut ObjectReader, r: ObjRef, is_stream: bool) -> Result<std::sync::Arc<Object>, CosError> {
+fn reread(
+    reader: &mut ObjectReader,
+    r: ObjRef,
+    is_stream: bool,
+) -> Result<std::sync::Arc<Object>, CosError> {
     let o = reader.try_get(r)?;
     if matches!(*o, Object::Null) || matches!(*o, Object::Stream(_)) != is_stream {
-        return Err(CosError::Syntax { offset: 0, detail: format!("object {} read differently while saving; nothing was written", r.num) });
+        return Err(CosError::Syntax {
+            offset: 0,
+            detail: format!(
+                "object {} read differently while saving; nothing was written",
+                r.num
+            ),
+        });
     }
     Ok(o)
 }
@@ -377,14 +465,27 @@ struct ObjectStreamBatch {
 }
 
 impl ObjectStreamBatch {
-    fn flush(&mut self, doc: &Document, next: &mut u32, rows: &mut BTreeMap<u32, Row>, out: &mut Vec<u8>) -> Result<(), CosError> {
+    fn flush(
+        &mut self,
+        doc: &Document,
+        next: &mut u32,
+        rows: &mut BTreeMap<u32, Row>,
+        out: &mut Vec<u8>,
+    ) -> Result<(), CosError> {
         if self.count == 0 {
             return Ok(());
         }
-        let following = next.checked_add(1).ok_or_else(|| CosError::Syntax { offset: 0, detail: "too many objects to save".into() })?;
+        let following = next.checked_add(1).ok_or_else(|| CosError::Syntax {
+            offset: 0,
+            detail: "too many objects to save".into(),
+        })?;
         // Release capacity after each batch too: an unusually large object must not leave
         // a large scratch buffer alive for the rest of the save.
-        let Self { mut header, body, count } = std::mem::take(self);
+        let Self {
+            mut header,
+            body,
+            count,
+        } = std::mem::take(self);
         let first = header.len();
         header.extend_from_slice(&body);
         drop(body);
@@ -401,7 +502,13 @@ impl ObjectStreamBatch {
 }
 
 fn output_number(index: usize) -> Result<u32, CosError> {
-    u32::try_from(index).ok().and_then(|n| n.checked_add(1)).ok_or_else(|| CosError::Syntax { offset: 0, detail: "too many objects to save".into() })
+    u32::try_from(index)
+        .ok()
+        .and_then(|n| n.checked_add(1))
+        .ok_or_else(|| CosError::Syntax {
+            offset: 0,
+            detail: "too many objects to save".into(),
+        })
 }
 
 fn collect_refs(o: &Object, f: &mut impl FnMut(ObjRef)) {
@@ -416,16 +523,34 @@ fn collect_refs(o: &Object, f: &mut impl FnMut(ObjRef)) {
 
 fn renumber(o: &Object, map: &HashMap<ObjRef, u32>) -> Object {
     match o {
-        Object::Ref(r) => map.get(r).map(|n| Object::Ref(ObjRef::new(*n, 0))).unwrap_or(Object::Null),
+        Object::Ref(r) => map
+            .get(r)
+            .map(|n| Object::Ref(ObjRef::new(*n, 0)))
+            .unwrap_or(Object::Null),
         Object::Array(a) => Object::Array(a.iter().map(|x| renumber(x, map)).collect()),
-        Object::Dict(d) => Object::Dict(d.iter().map(|(k, v)| (k.clone(), renumber(v, map))).collect()),
-        Object::Stream(s) => Object::Stream(Stream { dict: s.dict.iter().map(|(k, v)| (k.clone(), renumber(v, map))).collect(), raw: s.raw.clone() }),
+        Object::Dict(d) => Object::Dict(
+            d.iter()
+                .map(|(k, v)| (k.clone(), renumber(v, map)))
+                .collect(),
+        ),
+        Object::Stream(s) => Object::Stream(Stream {
+            dict: s
+                .dict
+                .iter()
+                .map(|(k, v)| (k.clone(), renumber(v, map)))
+                .collect(),
+            raw: s.raw.clone(),
+        }),
         other => other.clone(),
     }
 }
 
 /// Classic xref table with one subsection per run of consecutive numbers (§7.5.4).
-fn write_xref_table(out: &mut Vec<u8>, offsets: &BTreeMap<u32, (u64, u16, bool)>, include_zero: bool) {
+fn write_xref_table(
+    out: &mut Vec<u8>,
+    offsets: &BTreeMap<u32, (u64, u16, bool)>,
+    include_zero: bool,
+) {
     out.extend_from_slice(b"xref\n");
     let mut all: Vec<(u32, (u64, u16, bool))> = offsets.iter().map(|(k, v)| (*k, *v)).collect();
     if include_zero {
@@ -449,7 +574,13 @@ fn write_xref_table(out: &mut Vec<u8>, offsets: &BTreeMap<u32, (u64, u16, bool)>
         }
         let _ = writeln!(out, "{} {}", start, j - i + 1);
         for (_, (off, generation, used)) in &all[i..=j] {
-            let _ = writeln!(out, "{:010} {:05} {} ", off, generation, if *used { 'n' } else { 'f' });
+            let _ = writeln!(
+                out,
+                "{:010} {:05} {} ",
+                off,
+                generation,
+                if *used { 'n' } else { 'f' }
+            );
         }
         i = j + 1;
     }
@@ -458,7 +589,13 @@ fn write_xref_table(out: &mut Vec<u8>, offsets: &BTreeMap<u32, (u64, u16, bool)>
 /// A cross-reference stream section (§7.5.8) that takes object number `num`, ending the file.
 /// `out` holds the file from byte offset `base` on. Rows are Flate-compressed with the PNG Up
 /// predictor, and field widths fit the largest value.
-fn write_xref_stream(out: &mut Vec<u8>, base: u64, trailer: &mut Dict, mut rows: BTreeMap<u32, Row>, num: u32) {
+fn write_xref_stream(
+    out: &mut Vec<u8>,
+    base: u64,
+    trailer: &mut Dict,
+    mut rows: BTreeMap<u32, Row>,
+    num: u32,
+) {
     let xref_at = base + out.len() as u64;
     rows.insert(num, Row::InFile(xref_at, 0));
     if trailer.get(b"Prev").is_none() {
@@ -470,14 +607,20 @@ fn write_xref_stream(out: &mut Vec<u8>, base: u64, trailer: &mut Dict, mut rows:
         Row::InStream(s, i) => (2, u64::from(s), u64::from(i)),
     };
     let width = |v: u64| ((64 - v.leading_zeros()).div_ceil(8)).max(1) as usize;
-    let (w2, w3) = rows.values().map(fields).fold((1, 1), |(a, b), (_, x, y)| (width(x).max(a), width(y).max(b)));
+    let (w2, w3) = rows.values().map(fields).fold((1, 1), |(a, b), (_, x, y)| {
+        (width(x).max(a), width(y).max(b))
+    });
     let cols = 1 + w2 + w3;
     let mut index = Vec::new();
     let mut numbers = rows.keys().copied().peekable();
     while let Some(start) = numbers.next() {
         let mut last = start;
         let mut count = 1i64;
-        while numbers.peek().copied().is_some_and(|next| last.checked_add(1) == Some(next)) {
+        while numbers
+            .peek()
+            .copied()
+            .is_some_and(|next| last.checked_add(1) == Some(next))
+        {
             if let Some(next) = numbers.next() {
                 last = next;
                 count += 1;
@@ -494,7 +637,9 @@ fn write_xref_stream(out: &mut Vec<u8>, base: u64, trailer: &mut Dict, mut rows:
         let (t, a, b) = fields(r);
         let a = a.to_be_bytes();
         let b = b.to_be_bytes();
-        let fields = std::iter::once(t as u8).chain(a.into_iter().skip(8 - w2)).chain(b.into_iter().skip(8 - w3));
+        let fields = std::iter::once(t as u8)
+            .chain(a.into_iter().skip(8 - w2))
+            .chain(b.into_iter().skip(8 - w3));
         data.push(2); // PNG "Up"
         for (value, previous) in fields.zip(&mut prev) {
             data.push(value.wrapping_sub(*previous));
@@ -504,13 +649,22 @@ fn write_xref_stream(out: &mut Vec<u8>, base: u64, trailer: &mut Dict, mut rows:
     let mut d = trailer.clone();
     d.set(b"Type".to_vec(), Object::name("XRef"));
     d.set(b"Size".to_vec(), Object::Int(num as i64 + 1));
-    d.set(b"W".to_vec(), Object::Array(vec![Object::Int(1), Object::Int(w2 as i64), Object::Int(w3 as i64)]));
+    d.set(
+        b"W".to_vec(),
+        Object::Array(vec![
+            Object::Int(1),
+            Object::Int(w2 as i64),
+            Object::Int(w3 as i64),
+        ]),
+    );
     d.set(b"Index".to_vec(), Object::Array(index));
     let mut stream = Stream::flate(d, &data);
     let mut parms = Dict::new();
     parms.set(b"Predictor".to_vec(), Object::Int(12));
     parms.set(b"Columns".to_vec(), Object::Int(cols as i64));
-    stream.dict.set(b"DecodeParms".to_vec(), Object::Dict(parms));
+    stream
+        .dict
+        .set(b"DecodeParms".to_vec(), Object::Dict(parms));
     write_indirect(num, 0, &Object::Stream(stream), out);
     let _ = write!(out, "startxref\n{xref_at}\n%%EOF\n");
     trailer.set(b"Size".to_vec(), Object::Int(num as i64 + 1));
@@ -539,14 +693,25 @@ fn ensure_id(trailer: &mut Dict, opts: &SaveOptions, content: &[u8]) {
     }
     // FNV-1a over a sample of the content and the seed: stable, dependency-free.
     let mut h: u64 = 0xcbf2_9ce4_8422_2325 ^ opts.id_seed;
-    for b in content.iter().step_by((content.len() / 4096).max(1)).chain(content.iter().rev().take(64)) {
+    for b in content
+        .iter()
+        .step_by((content.len() / 4096).max(1))
+        .chain(content.iter().rev().take(64))
+    {
         h ^= *b as u64;
         h = h.wrapping_mul(0x0100_0000_01b3);
     }
     let mut id = Vec::with_capacity(16);
     id.extend_from_slice(&h.to_be_bytes());
-    id.extend_from_slice(&h.rotate_left(29).wrapping_mul(0x9E37_79B9_7F4A_7C15).to_be_bytes());
-    let s = Object::String(PdfString { bytes: id, hex: true });
+    id.extend_from_slice(
+        &h.rotate_left(29)
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+            .to_be_bytes(),
+    );
+    let s = Object::String(PdfString {
+        bytes: id,
+        hex: true,
+    });
     trailer.set(b"ID".to_vec(), Object::Array(vec![s.clone(), s]));
 }
 
@@ -565,7 +730,12 @@ pub fn pdf_date(unix_secs: i64) -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    format!("D:{y:04}{m:02}{d:02}{:02}{:02}{:02}Z", secs / 3600, secs / 60 % 60, secs % 60)
+    format!(
+        "D:{y:04}{m:02}{d:02}{:02}{:02}{:02}Z",
+        secs / 3600,
+        secs / 60 % 60,
+        secs % 60
+    )
 }
 
 #[cfg(test)]
@@ -587,41 +757,95 @@ mod tests {
         let dict = doc.add(Object::Dict(Dict::new()));
         let mut reader = doc.object_reader();
         assert!(reread(&mut reader, dict, false).is_ok());
-        assert!(reread(&mut reader, dict, true).is_err(), "a dictionary where a stream was traversed");
-        assert!(reread(&mut reader, ObjRef::new(9999, 0), false).is_err(), "nothing where an object was traversed");
+        assert!(
+            reread(&mut reader, dict, true).is_err(),
+            "a dictionary where a stream was traversed"
+        );
+        assert!(
+            reread(&mut reader, ObjRef::new(9999, 0), false).is_err(),
+            "nothing where an object was traversed"
+        );
     }
 
     #[test]
     fn xref_predictor_rows_preserve_variable_width_fields_and_sparse_runs() {
-        for offset in [0, 255, 256, 65535, 65536, u32::MAX as u64, u32::MAX as u64 + 1, u64::MAX] {
+        for offset in [
+            0,
+            255,
+            256,
+            65535,
+            65536,
+            u32::MAX as u64,
+            u32::MAX as u64 + 1,
+            u64::MAX,
+        ] {
             for index in [0, 255, 256, u32::MAX] {
                 for incremental in [false, true] {
                     let mut trailer = Dict::new();
                     if incremental {
                         trailer.set(b"Prev".to_vec(), Object::Int(17));
                     }
-                    let rows = BTreeMap::from([(1, Row::InFile(offset, 32768)), (2, Row::Free(65535)), (4, Row::InStream(65536, index))]);
+                    let rows = BTreeMap::from([
+                        (1, Row::InFile(offset, 32768)),
+                        (2, Row::Free(65535)),
+                        (4, Row::InStream(65536, index)),
+                    ]);
                     let mut bytes = Vec::new();
                     write_xref_stream(&mut bytes, 0, &mut trailer, rows, 5);
                     let (_, object) = crate::parser::parse_indirect(&bytes, 0, &|_| None).unwrap();
-                    let Object::Stream(stream) = object else { panic!("xref stream") };
-                    let widths: Vec<_> = stream.dict.get(b"W").unwrap().as_array().unwrap().iter().map(|o| o.as_int().unwrap() as usize).collect();
+                    let Object::Stream(stream) = object else {
+                        panic!("xref stream")
+                    };
+                    let widths: Vec<_> = stream
+                        .dict
+                        .get(b"W")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|o| o.as_int().unwrap() as usize)
+                        .collect();
                     assert_eq!(widths[0], 1);
                     assert!((3..=8).contains(&widths[1]));
                     assert!((2..=4).contains(&widths[2]));
-                    let runs: Vec<_> = stream.dict.get(b"Index").unwrap().as_array().unwrap().iter().map(|o| o.as_int().unwrap()).collect();
-                    assert_eq!(runs, if incremental { vec![1, 2, 4, 2] } else { vec![0, 3, 4, 2] });
-                    let mut expected = vec![(1, offset, 32768), (0, 0, 65535), (2, 65536, u64::from(index)), (1, 0, 0)];
+                    let runs: Vec<_> = stream
+                        .dict
+                        .get(b"Index")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|o| o.as_int().unwrap())
+                        .collect();
+                    assert_eq!(
+                        runs,
+                        if incremental {
+                            vec![1, 2, 4, 2]
+                        } else {
+                            vec![0, 3, 4, 2]
+                        }
+                    );
+                    let mut expected = vec![
+                        (1, offset, 32768),
+                        (0, 0, 65535),
+                        (2, 65536, u64::from(index)),
+                        (1, 0, 0),
+                    ];
                     if !incremental {
                         expected.insert(0, (0, 0, 65535));
                     }
                     let decoded = stream.decoded().unwrap();
                     let columns: usize = widths.iter().sum();
                     assert_eq!(decoded.len(), columns * expected.len());
-                    for (row, (kind, first, second)) in decoded.chunks_exact(columns).zip(expected) {
+                    for (row, (kind, first, second)) in decoded.chunks_exact(columns).zip(expected)
+                    {
                         let values: Vec<_> = [0..1, 1..1 + widths[1], 1 + widths[1]..columns]
                             .into_iter()
-                            .map(|range| row[range].iter().fold(0u64, |value, byte| value * 256 + u64::from(*byte)))
+                            .map(|range| {
+                                row[range]
+                                    .iter()
+                                    .fold(0u64, |value, byte| value * 256 + u64::from(*byte))
+                            })
                             .collect();
                         assert_eq!(values, vec![kind, first, second]);
                     }
@@ -632,10 +856,21 @@ mod tests {
 
     #[test]
     fn reals_keep_full_precision_without_exponents() {
-        for r in [0.1, -0.000_000_123_456_789, 1e-12, 123_456.789_012_345, 1.0 / 3.0, -2.5e7 + 0.25] {
+        for r in [
+            0.1,
+            -0.000_000_123_456_789,
+            1e-12,
+            123_456.789_012_345,
+            1.0 / 3.0,
+            -2.5e7 + 0.25,
+        ] {
             let mut out = Vec::new();
             serialize(&Object::Real(r), &mut out);
-            assert!(!out.contains(&b'e') && !out.contains(&b'E'), "{}", String::from_utf8_lossy(&out));
+            assert!(
+                !out.contains(&b'e') && !out.contains(&b'E'),
+                "{}",
+                String::from_utf8_lossy(&out)
+            );
             assert_eq!(roundtrip(&Object::Real(r)), Object::Real(r));
         }
     }

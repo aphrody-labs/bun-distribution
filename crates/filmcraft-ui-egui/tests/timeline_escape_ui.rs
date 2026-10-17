@@ -21,11 +21,19 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
-        session.execute("sequence.snap", json!({"on": false})).expect("snapping off");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
+        session
+            .execute("sequence.snap", json!({"on": false}))
+            .expect("snapping off");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_step_dt(1.0 / 60.0).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_step_dt(1.0 / 60.0)
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d.ok("ui.elements", json!({"prefix": "timeline.clip."}));
@@ -61,7 +69,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn app(&self) -> &FilmcraftApp {
@@ -74,19 +85,42 @@ impl Driver {
     }
 
     fn escape(&mut self) {
-        self.send(egui::Event::Key { key: egui::Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() });
+        self.send(egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Default::default(),
+        });
     }
 
     fn rect(&mut self, id: &str) -> [f64; 4] {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == id).unwrap_or_else(|| panic!("no element {id}")).clone();
-        let r: Vec<f64> = e["rect"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .unwrap_or_else(|| panic!("no element {id}"))
+            .clone();
+        let r: Vec<f64> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect();
         [r[0], r[1], r[2], r[3]]
     }
 
     fn v1_clip(&self, name: &str) -> u64 {
         let seq = self.app().session.active_sequence().expect("sequence");
-        seq.video_tracks[0].items.iter().find(|i| i.name == name).unwrap_or_else(|| panic!("no {name} on V1")).id.0
+        seq.video_tracks[0]
+            .items
+            .iter()
+            .find(|i| i.name == name)
+            .unwrap_or_else(|| panic!("no {name} on V1"))
+            .id
+            .0
     }
 
     fn span(&self, clip: u64) -> (i64, i64) {
@@ -101,7 +135,13 @@ impl Driver {
         let f = |v: &Value, k: &str| v[k].as_f64().expect("number") as f32;
         let id = format!("timeline.clip.{clip}");
         let els = self.ok("ui.elements", json!({"prefix": id}));
-        let el = els.as_array().expect("elements").iter().find(|e| e["id"] == id.as_str()).unwrap_or_else(|| panic!("no {id}: {els}")).clone();
+        let el = els
+            .as_array()
+            .expect("elements")
+            .iter()
+            .find(|e| e["id"] == id.as_str())
+            .unwrap_or_else(|| panic!("no {id}: {els}"))
+            .clone();
         let top = el["rect"][1].as_f64().expect("rect") as f32;
         (f(&i, "x") - 2.0, f(&o, "x") + 2.0, top + 8.0)
     }
@@ -117,22 +157,38 @@ fn escape_cancels_clip_move_drag() {
     let to = pos2(from.x + 120.0, from.y);
 
     d.send(egui::Event::PointerMoved(from));
-    d.send(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     for i in 1..=10 {
         d.send(egui::Event::PointerMoved(from.lerp(to, i as f32 / 10.0)));
     }
-    assert!(matches!(d.app().tl.drag, Some(Drag::Move { .. })), "drag is active");
+    assert!(
+        matches!(d.app().tl.drag, Some(Drag::Move { .. })),
+        "drag is active"
+    );
 
     d.escape();
     assert!(d.app().tl.drag.is_none(), "Escape cleared the drag state");
 
-    d.send(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     d.frames(2);
 
     let q_after = d.app().session.active_sequence().unwrap().clone();
     let item_after = q_after.find_item(v2.id).unwrap().1;
     assert_eq!(item_after.start, v2.start, "clip position is unchanged");
-    assert_eq!(item_after.duration, v2.duration, "clip duration is unchanged");
+    assert_eq!(
+        item_after.duration, v2.duration,
+        "clip duration is unchanged"
+    );
 }
 
 #[test]
@@ -145,19 +201,36 @@ fn escape_cancels_clip_trim_drag() {
     let to = pos2(from.x - 40.0, from.y);
 
     d.send(egui::Event::PointerMoved(from));
-    d.send(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     for i in 1..=10 {
         d.send(egui::Event::PointerMoved(from.lerp(to, i as f32 / 10.0)));
     }
-    assert!(matches!(d.app().tl.drag, Some(Drag::Trim { .. })), "trim drag is active");
+    assert!(
+        matches!(d.app().tl.drag, Some(Drag::Trim { .. })),
+        "trim drag is active"
+    );
 
     d.escape();
     assert!(d.app().tl.drag.is_none(), "Escape cleared the trim drag");
 
-    d.send(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     d.frames(2);
 
-    assert_eq!(d.span(clip), (s0, e0), "clip bounds are unchanged after cancel");
+    assert_eq!(
+        d.span(clip),
+        (s0, e0),
+        "clip bounds are unchanged after cancel"
+    );
 }
 
 #[test]
@@ -169,21 +242,46 @@ fn escape_cancels_ruler_scrub_and_restores_playhead() {
     let to = pos2(from.x + 100.0, from.y);
 
     d.send(egui::Event::PointerMoved(from));
-    d.send(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     for i in 1..=10 {
         d.send(egui::Event::PointerMoved(from.lerp(to, i as f32 / 10.0)));
     }
-    assert!(matches!(d.app().tl.drag, Some(Drag::Scrub { .. })), "ruler scrub is active");
-    assert_ne!(d.app().session.playhead(), initial_playhead, "playhead scrubbed to a new position");
+    assert!(
+        matches!(d.app().tl.drag, Some(Drag::Scrub { .. })),
+        "ruler scrub is active"
+    );
+    assert_ne!(
+        d.app().session.playhead(),
+        initial_playhead,
+        "playhead scrubbed to a new position"
+    );
 
     d.escape();
     assert!(d.app().tl.drag.is_none(), "Escape cleared the scrub state");
-    assert_eq!(d.app().session.playhead(), initial_playhead, "Escape restored the playhead to initial time");
+    assert_eq!(
+        d.app().session.playhead(),
+        initial_playhead,
+        "Escape restored the playhead to initial time"
+    );
 
-    d.send(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     d.frames(2);
 
-    assert_eq!(d.app().session.playhead(), initial_playhead, "playhead remains at initial time after release");
+    assert_eq!(
+        d.app().session.playhead(),
+        initial_playhead,
+        "playhead remains at initial time after release"
+    );
 }
 
 #[test]
@@ -199,17 +297,34 @@ fn escape_cancels_marquee_selection() {
     let to = pos2(from.x + 200.0, from.y - 50.0);
 
     d.send(egui::Event::PointerMoved(from));
-    d.send(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     for i in 1..=10 {
         d.send(egui::Event::PointerMoved(from.lerp(to, i as f32 / 10.0)));
     }
-    assert!(matches!(d.app().tl.drag, Some(Drag::Marquee { .. })), "marquee is active");
+    assert!(
+        matches!(d.app().tl.drag, Some(Drag::Marquee { .. })),
+        "marquee is active"
+    );
 
     d.escape();
     assert!(d.app().tl.drag.is_none(), "Escape cleared the marquee");
 
-    d.send(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    d.send(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     d.frames(2);
 
-    assert_eq!(d.app().session.state.selection, vec![v2.id], "original selection is preserved");
+    assert_eq!(
+        d.app().session.state.selection,
+        vec![v2.id],
+        "original selection is preserved"
+    );
 }

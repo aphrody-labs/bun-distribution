@@ -30,7 +30,12 @@ pub enum PaintKind {
 }
 
 impl PaintKind {
-    pub const ALL: [PaintKind; 4] = [PaintKind::None, PaintKind::Solid, PaintKind::Linear, PaintKind::Radial];
+    pub const ALL: [PaintKind; 4] = [
+        PaintKind::None,
+        PaintKind::Solid,
+        PaintKind::Linear,
+        PaintKind::Radial,
+    ];
 
     /// The `fillType` / `strokeType` value.
     pub fn id(self) -> &'static str {
@@ -54,8 +59,14 @@ impl PaintKind {
 
     /// An id or label, in any case and spacing (`radial`, `Radial Gradient`).
     pub fn from_name(s: &str) -> Option<PaintKind> {
-        let k: String = s.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase();
-        PaintKind::ALL.into_iter().find(|m| m.id() == k || m.label().replace(' ', "").to_ascii_lowercase() == k)
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        PaintKind::ALL
+            .into_iter()
+            .find(|m| m.id() == k || m.label().replace(' ', "").to_ascii_lowercase() == k)
     }
 }
 
@@ -72,7 +83,12 @@ pub struct ToolPaint {
 
 impl Default for ToolPaint {
     fn default() -> Self {
-        ToolPaint { kind: PaintKind::Solid, color: [1.0, 1.0, 1.0], blend: BlendMode::Normal, opacity: 100.0 }
+        ToolPaint {
+            kind: PaintKind::Solid,
+            color: [1.0, 1.0, 1.0],
+            blend: BlendMode::Normal,
+            opacity: 100.0,
+        }
     }
 }
 
@@ -90,7 +106,15 @@ pub struct ShapeTool {
 
 impl Default for ShapeTool {
     fn default() -> Self {
-        ShapeTool { creates_mask: false, fill: ToolPaint { color: [0.25, 0.55, 1.0], ..ToolPaint::default() }, stroke: ToolPaint::default(), stroke_width: 0.0 }
+        ShapeTool {
+            creates_mask: false,
+            fill: ToolPaint {
+                color: [0.25, 0.55, 1.0],
+                ..ToolPaint::default()
+            },
+            stroke: ToolPaint::default(),
+            stroke_width: 0.0,
+        }
     }
 }
 
@@ -105,31 +129,55 @@ pub(crate) fn paint_p(p: &Value, base: &ShapeTool, cmd: &str) -> Result<ShapeToo
             None => {}
             Some(Value::Null | Value::Bool(false)) => paint.kind = PaintKind::None,
             Some(_) => {
-                paint.color = color_p(p, key).ok_or_else(|| bad(cmd, format!("`{key}`: a colour [r, g, b] or #hex, or false for none")))?;
+                paint.color = color_p(p, key).ok_or_else(|| {
+                    bad(
+                        cmd,
+                        format!("`{key}`: a colour [r, g, b] or #hex, or false for none"),
+                    )
+                })?;
                 if paint.kind == PaintKind::None {
                     paint.kind = PaintKind::Solid;
                 }
             }
         }
         if let Some(v) = p.get(format!("{key}Type").as_str()) {
-            paint.kind = v.as_str().and_then(PaintKind::from_name).ok_or_else(|| bad(cmd, format!("`{key}Type`: none|solid|linear|radial")))?;
+            paint.kind = v
+                .as_str()
+                .and_then(PaintKind::from_name)
+                .ok_or_else(|| bad(cmd, format!("`{key}Type`: none|solid|linear|radial")))?;
         }
         if let Some(v) = p.get(format!("{key}Blend").as_str()) {
-            paint.blend = v.as_str().and_then(BlendMode::from_name).ok_or_else(|| bad(cmd, format!("`{key}Blend`: a blend mode name (normal, multiply…)")))?;
+            paint.blend = v.as_str().and_then(BlendMode::from_name).ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("`{key}Blend`: a blend mode name (normal, multiply…)"),
+                )
+            })?;
         }
         if let Some(v) = p.get(format!("{key}Opacity").as_str()) {
-            paint.opacity = v.as_f64().filter(|v| v.is_finite()).ok_or_else(|| bad(cmd, format!("`{key}Opacity`: a percentage")))?.clamp(0.0, 100.0);
+            paint.opacity = v
+                .as_f64()
+                .filter(|v| v.is_finite())
+                .ok_or_else(|| bad(cmd, format!("`{key}Opacity`: a percentage")))?
+                .clamp(0.0, 100.0);
         }
     }
     if let Some(v) = p.get("strokeWidth") {
-        o.stroke_width = v.as_f64().filter(|v| v.is_finite()).ok_or_else(|| bad(cmd, "`strokeWidth`: pixels"))?.max(0.0);
+        o.stroke_width = v
+            .as_f64()
+            .filter(|v| v.is_finite())
+            .ok_or_else(|| bad(cmd, "`strokeWidth`: pixels"))?
+            .max(0.0);
     }
     Ok(o)
 }
 
 /// A Fill or Stroke item with the paint's blend mode and opacity.
 fn blended(mut g: PropGroup, paint: &ToolPaint) -> PropGroup {
-    let blend = BlendMode::ALL.iter().position(|m| *m == paint.blend).unwrap_or(0) as u32;
+    let blend = BlendMode::ALL
+        .iter()
+        .position(|m| *m == paint.blend)
+        .unwrap_or(0) as u32;
     if let Some(pr) = g.get_mut("blend") {
         pr.value = KV::Enum(blend);
     }
@@ -144,7 +192,11 @@ fn blended(mut g: PropGroup, paint: &ToolPaint) -> PropGroup {
 pub(crate) fn gradient_ends(radial: bool, bounds: [f64; 4]) -> ([f64; 2], [f64; 2]) {
     let [x, y, w, h] = bounds;
     let mid = [x + w / 2.0, y + h / 2.0];
-    if radial { (mid, [mid[0] + w.max(h).max(2.0) / 2.0, mid[1]]) } else { ([x, mid[1]], [x + w.max(1.0), mid[1]]) }
+    if radial {
+        (mid, [mid[0] + w.max(h).max(2.0) / 2.0, mid[1]])
+    } else {
+        ([x, mid[1]], [x + w.max(1.0), mid[1]])
+    }
 }
 
 /// The Stroke and Fill a new shape gets from `paint`; gradients run across `bounds` (`[x, y, w,
@@ -159,7 +211,14 @@ pub(crate) fn paint_items(ids: &mut Ids, paint: &ShapeTool, bounds: [f64; 4]) ->
         PaintKind::Solid => Some(build::shape_stroke(ids, rgba(s.color), width)),
         k => {
             let (a, b) = ends(k == PaintKind::Radial);
-            Some(build::shape_gradient_stroke(ids, k == PaintKind::Radial, a, b, Gradient::default(), width))
+            Some(build::shape_gradient_stroke(
+                ids,
+                k == PaintKind::Radial,
+                a,
+                b,
+                Gradient::default(),
+                width,
+            ))
         }
     };
     items.extend(stroke.map(|g| blended(g, s)));
@@ -169,7 +228,13 @@ pub(crate) fn paint_items(ids: &mut Ids, paint: &ShapeTool, bounds: [f64; 4]) ->
         PaintKind::Solid => Some(build::shape_fill(ids, rgba(f.color))),
         k => {
             let (a, b) = ends(k == PaintKind::Radial);
-            Some(build::shape_gradient_fill(ids, k == PaintKind::Radial, a, b, Gradient::default()))
+            Some(build::shape_gradient_fill(
+                ids,
+                k == PaintKind::Radial,
+                a,
+                b,
+                Gradient::default(),
+            ))
         }
     };
     items.extend(fill.map(|g| blended(g, f)));
@@ -196,18 +261,33 @@ fn polystar_of(kind: &str, size: [f64; 2]) -> Option<(bool, f64, f64, f64)> {
 
 /// A new shape group for a shape tool `kind` of `size`, centred on the group's origin, painted
 /// with `paint` ("Rectangle 1", "Ellipse 1" or "Polystar 1"). None for another kind.
-pub(crate) fn shape_group(ids: &mut Ids, kind: &str, size: [f64; 2], paint: &ShapeTool) -> Option<PropGroup> {
+pub(crate) fn shape_group(
+    ids: &mut Ids,
+    kind: &str,
+    size: [f64; 2],
+    paint: &ShapeTool,
+) -> Option<PropGroup> {
     let (path, gname) = match kind {
         "rect" | "rectangle" => (build::shape_rect(ids, size, [0.0, 0.0], 0.0), "Rectangle 1"),
-        "rounded" | "roundedRect" => (build::shape_rect(ids, size, [0.0, 0.0], roundness(size)), "Rectangle 1"),
+        "rounded" | "roundedRect" => (
+            build::shape_rect(ids, size, [0.0, 0.0], roundness(size)),
+            "Rectangle 1",
+        ),
         "ellipse" => (build::shape_ellipse(ids, size, [0.0, 0.0]), "Ellipse 1"),
         k => {
             let (star, points, outer, inner) = polystar_of(k, size)?;
-            (build::shape_star(ids, star, points, [0.0, 0.0], outer, inner), "Polystar 1")
+            (
+                build::shape_star(ids, star, points, [0.0, 0.0], outer, inner),
+                "Polystar 1",
+            )
         }
     };
     let mut items = vec![path];
-    items.extend(paint_items(ids, paint, [-size[0] / 2.0, -size[1] / 2.0, size[0], size[1]]));
+    items.extend(paint_items(
+        ids,
+        paint,
+        [-size[0] / 2.0, -size[1] / 2.0, size[0], size[1]],
+    ));
     Some(build::shape_group(ids, gname, items))
 }
 
@@ -230,17 +310,30 @@ pub fn mask_path(kind: &str, centre: [f64; 2], size: [f64; 2]) -> Option<ShapePa
 /// The layer a shape tool draws into when no `layer` is given: the first selected unlocked shape
 /// layer, else none (a new shape layer).
 pub fn selected_shape_target(s: &Session, comp: &Comp) -> Option<LayerId> {
-    s.state.selected_layers.iter().copied().find(|l| comp.layer(*l).is_some_and(|l| matches!(l.source, LayerSource::Shape) && !l.switches.locked))
+    s.state.selected_layers.iter().copied().find(|l| {
+        comp.layer(*l)
+            .is_some_and(|l| matches!(l.source, LayerSource::Shape) && !l.switches.locked)
+    })
 }
 
 /// The shape layer a shape tool or the Pen draws into: `layer` (which must be a shape layer),
 /// else the first selected unlocked shape layer, else none (a new shape layer).
-pub(crate) fn draw_target(s: &Session, comp: &Comp, p: &Value, cmd: &str) -> Result<Option<LayerId>> {
+pub(crate) fn draw_target(
+    s: &Session,
+    comp: &Comp,
+    p: &Value,
+    cmd: &str,
+) -> Result<Option<LayerId>> {
     let target = match p.get("layer") {
-        Some(l) => Some(super::resolve_layer(comp, l).ok_or_else(|| bad(cmd, format!("no layer {l}")))?),
+        Some(l) => {
+            Some(super::resolve_layer(comp, l).ok_or_else(|| bad(cmd, format!("no layer {l}")))?)
+        }
         None => selected_shape_target(s, comp),
     };
-    if target.and_then(|l| comp.layer(l)).is_some_and(|l| !matches!(l.source, LayerSource::Shape)) {
+    if target
+        .and_then(|l| comp.layer(l))
+        .is_some_and(|l| !matches!(l.source, LayerSource::Shape))
+    {
         return Err(bad(cmd, "the layer is not a shape layer"));
     }
     Ok(target)
@@ -256,9 +349,22 @@ pub(crate) fn new_shape_layer(
     name: Option<&str>,
     position: Option<[f64; 2]>,
 ) -> Result<LayerId> {
-    let count = comp.layers.iter().filter(|l| matches!(l.source, LayerSource::Shape)).count();
-    let name = name.map(str::to_string).unwrap_or_else(|| format!("Shape Layer {}", count + 1));
-    let mut l = build::layer(proj, comp, &name, LayerSource::Shape, (comp.width, comp.height), None);
+    let count = comp
+        .layers
+        .iter()
+        .filter(|l| matches!(l.source, LayerSource::Shape))
+        .count();
+    let name = name
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("Shape Layer {}", count + 1));
+    let mut l = build::layer(
+        proj,
+        comp,
+        &name,
+        LayerSource::Shape,
+        (comp.width, comp.height),
+        None,
+    );
     place(&mut l, position);
     insert_layer(proj, st, cid, l)
 }
@@ -273,7 +379,10 @@ pub(crate) fn add_to_contents(
     position: [f64; 2],
     cmd: &str,
 ) -> Result<effectcraft_project::Uid> {
-    let contents = layer_mut(proj, cid, lid)?.props.sub_mut("contents").ok_or_else(|| bad(cmd, "the layer has no contents"))?;
+    let contents = layer_mut(proj, cid, lid)?
+        .props
+        .sub_mut("contents")
+        .ok_or_else(|| bad(cmd, "the layer has no contents"))?;
     g.name = super::effect::unique_name(contents, &g.name);
     if let Some(pr) = g.sub_mut("transform").and_then(|t| t.get_mut("position")) {
         pr.value = KV::Vec2(position);
@@ -301,11 +410,16 @@ fn new_shape(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let kind = str_p(p, "kind").unwrap_or("rect");
     if !KINDS.contains(&kind) {
-        return Err(bad(c, format!("unknown kind `{kind}`; one of: {}", KINDS.join(", "))));
+        return Err(bad(
+            c,
+            format!("unknown kind `{kind}`; one of: {}", KINDS.join(", ")),
+        ));
     }
     let size = match p.get("size") {
         None => [200.0, 200.0],
-        Some(_) => pair_p(p, "size").filter(|s| s.iter().all(|v| *v >= 0.0)).ok_or_else(|| bad(c, "size: [w, h], not negative"))?,
+        Some(_) => pair_p(p, "size")
+            .filter(|s| s.iter().all(|v| *v >= 0.0))
+            .ok_or_else(|| bad(c, "size: [w, h], not negative"))?,
     };
     let pos = position_p(p, c)?.unwrap_or([comp.width as f64 / 2.0, comp.height as f64 / 2.0]);
     let paint = paint_p(p, &s.state.shape_tool, c)?;
@@ -315,9 +429,19 @@ fn new_shape(s: &mut Session, p: &Value) -> Result<Value> {
     let (centre, size) = match target.and_then(|l| comp.layer(l)) {
         Some(l) if str_p(p, "space") != Some("layer") => {
             let ctx = effectcraft_render::EvalCtx::new(&s.project, cid, &comp, s.time_of(cid));
-            let inv = ctx.layer_to_comp(l).0.inverse().ok_or_else(|| bad(c, "the layer is scaled to nothing"))?;
+            let inv = ctx
+                .layer_to_comp(l)
+                .0
+                .inverse()
+                .ok_or_else(|| bad(c, "the layer is scaled to nothing"))?;
             let q = inv.apply(vec2(pos[0], pos[1]));
-            ([q.x, q.y], [inv.apply_vec(vec2(size[0], 0.0)).length(), inv.apply_vec(vec2(0.0, size[1])).length()])
+            (
+                [q.x, q.y],
+                [
+                    inv.apply_vec(vec2(size[0], 0.0)).length(),
+                    inv.apply_vec(vec2(0.0, size[1])).length(),
+                ],
+            )
         }
         Some(_) => (pos, size),
         None => ([0.0, 0.0], size),
@@ -336,7 +460,8 @@ fn new_shape(s: &mut Session, p: &Value) -> Result<Value> {
             None => new_shape_layer(proj, st, &comp, cid, name, Some(pos))?,
         };
         let mut next = proj.next_id;
-        let g = shape_group(&mut Ids(&mut next), kind, size, &paint).ok_or_else(|| bad(c, "unknown kind"))?;
+        let g = shape_group(&mut Ids(&mut next), kind, size, &paint)
+            .ok_or_else(|| bad(c, "unknown kind"))?;
         proj.next_id = next;
         let group = add_to_contents(proj, cid, lid, g, centre, c)?;
         st.selected_layers = vec![lid];
@@ -349,7 +474,11 @@ fn new_shape(s: &mut Session, p: &Value) -> Result<Value> {
 /// Mask (`createsMask`) and the Fill and Stroke new shapes get (the keys of [`paint_p`]);
 /// `reset` restores the defaults first. Reports the options.
 fn tool_options(s: &mut Session, p: &Value) -> Result<Value> {
-    let base = if b_p(p, "reset") == Some(true) { ShapeTool::default() } else { s.state.shape_tool.clone() };
+    let base = if b_p(p, "reset") == Some(true) {
+        ShapeTool::default()
+    } else {
+        s.state.shape_tool.clone()
+    };
     let mut o = paint_p(p, &base, "shape.toolOptions")?;
     if let Some(m) = b_p(p, "createsMask") {
         o.creates_mask = m;

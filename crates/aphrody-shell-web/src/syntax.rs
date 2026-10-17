@@ -33,12 +33,12 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, String> {
                 let escaped = chars.next().ok_or("trailing escape")?;
                 word.push(Atom::Literal(escaped, false));
                 started = true;
-            },
+            }
             '\'' | '"' if quote == Some(ch) => quote = None,
             '\'' | '"' if quote.is_none() => {
                 quote = Some(ch);
                 started = true;
-            },
+            }
             '$' if quote != Some('\'') => {
                 let name = if chars.peek() == Some(&'{') {
                     chars.next();
@@ -71,37 +71,37 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, String> {
                     word.push(Atom::Variable(name, quote.is_none()));
                 }
                 started = true;
-            },
+            }
             c if c.is_whitespace() && quote.is_none() => {
                 flush(&mut tokens, &mut word, &mut started);
-            },
+            }
             '|' | '&' | '<' | '>' if quote.is_none() => {
                 flush(&mut tokens, &mut word, &mut started);
                 let token = match (ch, chars.peek().copied()) {
                     ('|', Some('|')) => {
                         chars.next();
                         Token::Or
-                    },
+                    }
                     ('|', _) => Token::Pipe,
                     ('&', Some('&')) => {
                         chars.next();
                         Token::And
-                    },
+                    }
                     ('&', _) => return Err("unsupported operator &".into()),
                     ('<', _) => Token::Read,
                     ('>', Some('>')) => {
                         chars.next();
                         Token::Append
-                    },
+                    }
                     ('>', _) => Token::Write,
                     _ => unreachable!(),
                 };
                 tokens.push(token);
-            },
+            }
             _ => {
                 word.push(Atom::Literal(ch, quote.is_none()));
                 started = true;
-            },
+            }
         }
     }
     if quote.is_some() {
@@ -125,9 +125,15 @@ mod tests {
     #[test]
     fn operators_only_outside_quotes() {
         let tokens = tokenize("echo 'a|b' \"c>d\" | cat && echo ok > out").unwrap();
-        assert_eq!(tokens.iter().filter(|t| matches!(t, Token::Pipe)).count(), 1);
+        assert_eq!(
+            tokens.iter().filter(|t| matches!(t, Token::Pipe)).count(),
+            1
+        );
         assert_eq!(tokens.iter().filter(|t| matches!(t, Token::And)).count(), 1);
-        assert_eq!(tokens.iter().filter(|t| matches!(t, Token::Write)).count(), 1);
+        assert_eq!(
+            tokens.iter().filter(|t| matches!(t, Token::Write)).count(),
+            1
+        );
         assert_eq!(tokens.len(), 10);
     }
 

@@ -57,7 +57,10 @@ fn tokenize(s: &str) -> Vec<Tok> {
                     break;
                 }
             }
-            let text: String = cs.get(start..i).map(|s| s.iter().collect()).unwrap_or_default();
+            let text: String = cs
+                .get(start..i)
+                .map(|s| s.iter().collect())
+                .unwrap_or_default();
             match text.parse::<f64>() {
                 Ok(v) if v.is_finite() => out.push(Tok::Num(v)),
                 _ => out.push(Tok::Cmd('?')),
@@ -99,7 +102,9 @@ impl MotionPath {
                         continue;
                     }
                     'E' | 'e' => break,
-                    'M' | 'm' | 'L' | 'l' | 'C' | 'c' | 'Q' | 'q' | 'H' | 'h' | 'V' | 'v' => continue,
+                    'M' | 'm' | 'L' | 'l' | 'C' | 'c' | 'Q' | 'q' | 'H' | 'h' | 'V' | 'v' => {
+                        continue;
+                    }
                     _ => break,
                 }
             }
@@ -143,7 +148,11 @@ impl MotionPath {
                     if pts.is_empty() {
                         push(&mut pts, cur);
                     }
-                    cur = if cmd.eq_ignore_ascii_case(&'H') { (base.0 + v[0], cur.1) } else { (cur.0, base.1 + v[0]) };
+                    cur = if cmd.eq_ignore_ascii_case(&'H') {
+                        (base.0 + v[0], cur.1)
+                    } else {
+                        (cur.0, base.1 + v[0])
+                    };
                     push(&mut pts, cur);
                 }
                 'C' => {
@@ -161,7 +170,13 @@ impl MotionPath {
                         let b = 3.0 * u * u * t;
                         let c = 3.0 * u * t * t;
                         let d = t * t * t;
-                        push(&mut pts, (a * p0.0 + b * p1.0 + c * p2.0 + d * p3.0, a * p0.1 + b * p1.1 + c * p2.1 + d * p3.1));
+                        push(
+                            &mut pts,
+                            (
+                                a * p0.0 + b * p1.0 + c * p2.0 + d * p3.0,
+                                a * p0.1 + b * p1.1 + c * p2.1 + d * p3.1,
+                            ),
+                        );
                     }
                     cur = p3;
                 }
@@ -175,7 +190,13 @@ impl MotionPath {
                     for k in 1..=CURVE_STEPS {
                         let t = k as f64 / CURVE_STEPS as f64;
                         let u = 1.0 - t;
-                        push(&mut pts, (u * u * p0.0 + 2.0 * u * t * p1.0 + t * t * p2.0, u * u * p0.1 + 2.0 * u * t * p1.1 + t * t * p2.1));
+                        push(
+                            &mut pts,
+                            (
+                                u * u * p0.0 + 2.0 * u * t * p1.0 + t * t * p2.0,
+                                u * u * p0.1 + 2.0 * u * t * p1.1 + t * t * p2.1,
+                            ),
+                        );
                     }
                     cur = p2;
                 }
@@ -217,7 +238,12 @@ impl MotionPath {
         if i == 0 {
             return first;
         }
-        let (Some(a), Some(b), Some(ca), Some(cb)) = (self.points.get(i - 1), self.points.get(i), self.cum.get(i - 1), self.cum.get(i)) else {
+        let (Some(a), Some(b), Some(ca), Some(cb)) = (
+            self.points.get(i - 1),
+            self.points.get(i),
+            self.cum.get(i - 1),
+            self.cum.get(i),
+        ) else {
             return self.points.last().copied().unwrap_or(first);
         };
         let seg = cb - ca;
@@ -234,7 +260,12 @@ fn polygon(n: usize, r: f64, rot0: f64) -> String {
     let start = (c.0 + r * a0.cos(), c.1 + r * a0.sin());
     for k in 1..=n {
         let a = a0 + std::f64::consts::TAU * k as f64 / n as f64;
-        let _ = write!(s, " L {:.4} {:.4}", c.0 + r * a.cos() - start.0, c.1 + r * a.sin() - start.1);
+        let _ = write!(
+            s,
+            " L {:.4} {:.4}",
+            c.0 + r * a.cos() - start.0,
+            c.1 + r * a.sin() - start.1
+        );
     }
     s.push_str(" E");
     s
@@ -249,7 +280,17 @@ pub fn default_path(effect: &str, option: &str) -> String {
         _ => (1.0, 1.0, false),
     };
     // Base paths go down; `swap` turns them to the horizontal.
-    let tr = |pts: &[(f64, f64)]| -> Vec<(f64, f64)> { pts.iter().map(|&(x, y)| if swap { (y * sx, x * sy) } else { (x * sx, y * sy) }).collect() };
+    let tr = |pts: &[(f64, f64)]| -> Vec<(f64, f64)> {
+        pts.iter()
+            .map(|&(x, y)| {
+                if swap {
+                    (y * sx, x * sy)
+                } else {
+                    (x * sx, y * sy)
+                }
+            })
+            .collect()
+    };
     let fmt = |head: &str, pts: Vec<(f64, f64)>| {
         let mut s = String::from(head);
         for (x, y) in pts {

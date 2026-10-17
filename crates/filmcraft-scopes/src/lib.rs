@@ -20,7 +20,17 @@
 //! `[-0.1, 1.1]` without (values outside are dropped). With 256 rows over `[0, 1]`, an 8-bit code
 //! value `c` lands exactly on row `c`.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod paint;
 pub mod summary;
@@ -56,7 +66,13 @@ pub enum ScopeKind {
 }
 
 impl ScopeKind {
-    pub const ALL: [ScopeKind; 5] = [ScopeKind::VectorscopeYuv, ScopeKind::VectorscopeHls, ScopeKind::Histogram, ScopeKind::Parade, ScopeKind::Waveform];
+    pub const ALL: [ScopeKind; 5] = [
+        ScopeKind::VectorscopeYuv,
+        ScopeKind::VectorscopeHls,
+        ScopeKind::Histogram,
+        ScopeKind::Parade,
+        ScopeKind::Waveform,
+    ];
     /// Stable id (`"vectorscopeYuv"`…), as in JSON.
     pub fn name(self) -> &'static str {
         match self {
@@ -85,12 +101,17 @@ impl ScopeKind {
         if n == "hls" {
             return Some(ScopeKind::VectorscopeHls);
         }
-        Self::ALL.into_iter().find(|k| norm(k.name()) == n || norm(k.label()) == n)
+        Self::ALL
+            .into_iter()
+            .find(|k| norm(k.name()) == n || norm(k.label()) == n)
     }
 }
 
 fn norm(s: &str) -> String {
-    s.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase()
+    s.chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase()
 }
 
 /// Waveform Type.
@@ -105,7 +126,12 @@ pub enum WaveformType {
 }
 
 impl WaveformType {
-    pub const ALL: [WaveformType; 4] = [WaveformType::Rgb, WaveformType::Luma, WaveformType::Yc, WaveformType::YcNoChroma];
+    pub const ALL: [WaveformType; 4] = [
+        WaveformType::Rgb,
+        WaveformType::Luma,
+        WaveformType::Yc,
+        WaveformType::YcNoChroma,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             WaveformType::Rgb => "RGB",
@@ -116,7 +142,9 @@ impl WaveformType {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         let n = norm(s);
-        Self::ALL.into_iter().find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
+        Self::ALL
+            .into_iter()
+            .find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
     }
 }
 
@@ -141,7 +169,9 @@ impl ParadeType {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         let n = norm(s);
-        Self::ALL.into_iter().find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
+        Self::ALL
+            .into_iter()
+            .find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
     }
 }
 
@@ -158,7 +188,12 @@ pub enum ColorSpace {
 }
 
 impl ColorSpace {
-    pub const ALL: [ColorSpace; 4] = [ColorSpace::Auto, ColorSpace::Rec601, ColorSpace::Rec709, ColorSpace::Rec2100];
+    pub const ALL: [ColorSpace; 4] = [
+        ColorSpace::Auto,
+        ColorSpace::Rec601,
+        ColorSpace::Rec709,
+        ColorSpace::Rec2100,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ColorSpace::Auto => "Automatic",
@@ -184,7 +219,11 @@ impl ColorSpace {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         let n = norm(s);
-        Self::ALL.into_iter().find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n || norm(k.label()).trim_start_matches("rec") == n)
+        Self::ALL.into_iter().find(|k| {
+            norm(k.label()) == n
+                || norm(&format!("{k:?}")) == n
+                || norm(k.label()).trim_start_matches("rec") == n
+        })
     }
 }
 
@@ -212,7 +251,9 @@ impl Scale {
     }
     pub fn from_name(s: &str) -> Option<Self> {
         let n = norm(s);
-        Self::ALL.into_iter().find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
+        Self::ALL
+            .into_iter()
+            .find(|k| norm(k.label()) == n || norm(&format!("{k:?}")) == n)
     }
 }
 
@@ -284,7 +325,12 @@ pub struct Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Params { matrix: Matrix::Bt709, clamp: true, rows: 256, vector_size: 255 }
+        Params {
+            matrix: Matrix::Bt709,
+            clamp: true,
+            rows: 256,
+            vector_size: 255,
+        }
     }
 }
 
@@ -306,7 +352,10 @@ pub struct Signal {
 }
 
 fn steps(w: usize, h: usize, max_w: usize, max_h: usize) -> (usize, usize) {
-    (w.div_ceil(max_w.max(1)).max(1), h.div_ceil(max_h.max(1)).max(1))
+    (
+        w.div_ceil(max_w.max(1)).max(1),
+        h.div_ceil(max_h.max(1)).max(1),
+    )
 }
 
 impl Signal {
@@ -334,7 +383,14 @@ impl Signal {
     }
 
     /// From RGBA f32 pixels through `map` (e.g. linear light → PQ code values), decimated.
-    pub fn from_rgba_f32_with(w: usize, h: usize, px: &[f32], max_w: usize, max_h: usize, map: impl Fn([f32; 4]) -> [f32; 3]) -> Signal {
+    pub fn from_rgba_f32_with(
+        w: usize,
+        h: usize,
+        px: &[f32],
+        max_w: usize,
+        max_h: usize,
+        map: impl Fn([f32; 4]) -> [f32; 3],
+    ) -> Signal {
         if w == 0 || h == 0 || px.len() < w * h * 4 {
             return Signal::default();
         }
@@ -363,7 +419,11 @@ impl Signal {
 
     /// Every sample through `f` (e.g. SDR code values → PQ for the HDR scale).
     pub fn map(&self, f: impl Fn([f32; 3]) -> [f32; 3]) -> Signal {
-        Signal { w: self.w, h: self.h, rgb: self.rgb.iter().map(|c| f(*c)).collect() }
+        Signal {
+            w: self.w,
+            h: self.h,
+            rgb: self.rgb.iter().map(|c| f(*c)).collect(),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -378,13 +438,20 @@ impl Signal {
 /// HDR scopes: 0..1 on the axis is 0..10 000 cd/m².
 pub fn linear_to_pq([r, g, b, a]: [f32; 4]) -> [f32; 3] {
     let a = if a > 1e-6 { a } else { 1.0 };
-    let f = |v: f32| filmcraft_color::pq_inverse_eotf(((v / a).max(0.0) * filmcraft_color::REFERENCE_WHITE_NITS as f32 / 10_000.0).clamp(0.0, 1.0));
+    let f = |v: f32| {
+        filmcraft_color::pq_inverse_eotf(
+            ((v / a).max(0.0) * filmcraft_color::REFERENCE_WHITE_NITS as f32 / 10_000.0)
+                .clamp(0.0, 1.0),
+        )
+    };
     [f(r), f(g), f(b)]
 }
 
 /// An SDR code value (BT.1886, 100 cd/m² white) on the PQ axis (the HDR scale of an SDR frame).
 pub fn sdr_to_pq(v: f32) -> f32 {
-    filmcraft_color::pq_inverse_eotf((v.clamp(0.0, 1.0).powf(2.4) * 100.0 / 10_000.0).clamp(0.0, 1.0))
+    filmcraft_color::pq_inverse_eotf(
+        (v.clamp(0.0, 1.0).powf(2.4) * 100.0 / 10_000.0).clamp(0.0, 1.0),
+    )
 }
 
 /// cd/m² → height on the PQ axis (0..1).
@@ -405,7 +472,12 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(name: &'static str, cols: usize, rows: usize) -> Grid {
-        Grid { name, cols, rows, data: vec![0; cols * rows] }
+        Grid {
+            name,
+            cols,
+            rows,
+            data: vec![0; cols * rows],
+        }
     }
     pub fn at(&self, col: usize, row: usize) -> u32 {
         self.data[row * self.cols + col]
@@ -455,7 +527,12 @@ pub fn row_of(v: f32, lo: f32, hi: f32, rows: usize) -> Option<usize> {
 /// Up to 4 (trace, value) pairs per sample.
 type Hits = ([(u8, f32); 4], usize);
 
-fn build(s: &Signal, p: &Params, names: &[&'static str], sample: impl Fn([f32; 3]) -> Hits) -> Waveform {
+fn build(
+    s: &Signal,
+    p: &Params,
+    names: &[&'static str],
+    sample: impl Fn([f32; 3]) -> Hits,
+) -> Waveform {
     let (lo, hi) = p.range();
     let rows = p.rows.max(2);
     let mut traces: Vec<Grid> = names.iter().map(|n| Grid::new(n, s.w, rows)).collect();
@@ -475,7 +552,12 @@ fn build(s: &Signal, p: &Params, names: &[&'static str], sample: impl Fn([f32; 3
             }
         }
     }
-    Waveform { lo, hi, per_column: s.h, traces }
+    Waveform {
+        lo,
+        hi,
+        per_column: s.h,
+        traces,
+    }
 }
 
 /// The waveform of a signal.
@@ -483,13 +565,22 @@ pub fn waveform(s: &Signal, kind: WaveformType, p: &Params) -> Waveform {
     let m = p.matrix;
     let z = (0u8, 0.0f32);
     match kind {
-        WaveformType::Rgb => build(s, p, &["R", "G", "B"], |[r, g, b]| ([(0, r), (1, g), (2, b), z], 3)),
-        WaveformType::Luma => build(s, p, &["Y"], |[r, g, b]| ([(0, rgb_to_ycbcr(r, g, b, m)[0]), z, z, z], 1)),
-        WaveformType::YcNoChroma => build(s, p, &["Y"], |[r, g, b]| ([(0, rgb_to_ycbcr(r, g, b, m)[0]), z, z, z], 1)),
+        WaveformType::Rgb => build(s, p, &["R", "G", "B"], |[r, g, b]| {
+            ([(0, r), (1, g), (2, b), z], 3)
+        }),
+        WaveformType::Luma => build(s, p, &["Y"], |[r, g, b]| {
+            ([(0, rgb_to_ycbcr(r, g, b, m)[0]), z, z, z], 1)
+        }),
+        WaveformType::YcNoChroma => build(s, p, &["Y"], |[r, g, b]| {
+            ([(0, rgb_to_ycbcr(r, g, b, m)[0]), z, z, z], 1)
+        }),
         WaveformType::Yc => build(s, p, &["Y", "C"], |[r, g, b]| {
             let [y, cb, cr] = rgb_to_ycbcr(r, g, b, m);
             let c = (cb * cb + cr * cr).sqrt();
-            ([(0, y), (1, y + c), (1, y - c), z], if c > 1e-6 { 3 } else { 2 })
+            (
+                [(0, y), (1, y + c), (1, y - c), z],
+                if c > 1e-6 { 3 } else { 2 },
+            )
         }),
     }
 }
@@ -499,8 +590,15 @@ pub fn parade(s: &Signal, kind: ParadeType, p: &Params) -> Waveform {
     let m = p.matrix;
     let z = (0u8, 0.0f32);
     match kind {
-        ParadeType::Rgb => build(s, p, &["R", "G", "B"], |[r, g, b]| ([(0, r), (1, g), (2, b), z], 3)),
-        ParadeType::RgbWhite => build(s, p, &["R", "G", "B", "Y"], |[r, g, b]| ([(0, r), (1, g), (2, b), (3, rgb_to_ycbcr(r, g, b, m)[0])], 4)),
+        ParadeType::Rgb => build(s, p, &["R", "G", "B"], |[r, g, b]| {
+            ([(0, r), (1, g), (2, b), z], 3)
+        }),
+        ParadeType::RgbWhite => build(s, p, &["R", "G", "B", "Y"], |[r, g, b]| {
+            (
+                [(0, r), (1, g), (2, b), (3, rgb_to_ycbcr(r, g, b, m)[0])],
+                4,
+            )
+        }),
         ParadeType::Yuv => build(s, p, &["Y", "Cb", "Cr"], |[r, g, b]| {
             let [y, cb, cr] = rgb_to_ycbcr(r, g, b, m);
             ([(0, y), (1, cb + 0.5), (2, cr + 0.5), z], 3)
@@ -529,11 +627,23 @@ pub const BINS: usize = 256;
 /// Bin of a value (None when outside 0..1).
 #[inline]
 pub fn bin_of(v: f32) -> Option<usize> {
-    if (0.0..=1.0 + 1e-6).contains(&v) { Some(((v * 255.0).round() as usize).min(BINS - 1)) } else { None }
+    if (0.0..=1.0 + 1e-6).contains(&v) {
+        Some(((v * 255.0).round() as usize).min(BINS - 1))
+    } else {
+        None
+    }
 }
 
 pub fn histogram(s: &Signal, p: &Params) -> Histogram {
-    let mut h = Histogram { r: vec![0; BINS], g: vec![0; BINS], b: vec![0; BINS], y: vec![0; BINS], samples: s.len() as u32, below: [0; 4], above: [0; 4] };
+    let mut h = Histogram {
+        r: vec![0; BINS],
+        g: vec![0; BINS],
+        b: vec![0; BINS],
+        y: vec![0; BINS],
+        samples: s.len() as u32,
+        below: [0; 4],
+        above: [0; 4],
+    };
     for &[r, g, b] in &s.rgb {
         let y = rgb_to_ycbcr(r, g, b, p.matrix)[0];
         for (i, v) in [r, g, b, y].into_iter().enumerate() {
@@ -590,7 +700,13 @@ pub fn cell_of(cb: f32, cr: f32, size: usize, extent: f32) -> Option<(usize, usi
 
 impl Vectorscope {
     fn new(size: usize) -> Self {
-        Vectorscope { size, extent: VECTOR_EXTENT, data: vec![0; size * size], samples: 0, mean: [0.0; 2] }
+        Vectorscope {
+            size,
+            extent: VECTOR_EXTENT,
+            data: vec![0; size * size],
+            samples: 0,
+            mean: [0.0; 2],
+        }
     }
     pub fn at(&self, x: usize, y: usize) -> u32 {
         self.data[y * self.size + x]
@@ -601,7 +717,10 @@ impl Vectorscope {
     /// (Cb, Cr) at the centre of a cell.
     pub fn point(&self, x: usize, y: usize) -> [f32; 2] {
         let n = (self.size - 1) as f32;
-        [(x as f32 / n - 0.5) * 2.0 * self.extent, (0.5 - y as f32 / n) * 2.0 * self.extent]
+        [
+            (x as f32 / n - 0.5) * 2.0 * self.extent,
+            (0.5 - y as f32 / n) * 2.0 * self.extent,
+        ]
     }
     fn plot(&mut self, cb: f32, cr: f32, sum: &mut [f64; 2]) {
         if let Some((x, y)) = self.cell(cb, cr) {
@@ -613,7 +732,10 @@ impl Vectorscope {
     }
     fn finish(mut self, sum: [f64; 2]) -> Self {
         if self.samples > 0 {
-            self.mean = [(sum[0] / self.samples as f64) as f32, (sum[1] / self.samples as f64) as f32];
+            self.mean = [
+                (sum[0] / self.samples as f64) as f32,
+                (sum[1] / self.samples as f64) as f32,
+            ];
         }
         self
     }
@@ -624,7 +746,11 @@ pub fn vectorscope_yuv(s: &Signal, p: &Params) -> Vectorscope {
     let mut v = Vectorscope::new(p.vector_size.max(2));
     let mut sum = [0f64; 2];
     for &c in &s.rgb {
-        let [r, g, b] = if p.clamp { c.map(|x| x.clamp(0.0, 1.0)) } else { c };
+        let [r, g, b] = if p.clamp {
+            c.map(|x| x.clamp(0.0, 1.0))
+        } else {
+            c
+        };
         let [_, cb, cr] = rgb_to_ycbcr(r, g, b, p.matrix);
         v.plot(cb, cr, &mut sum);
     }
@@ -662,7 +788,10 @@ pub fn vectorscope_hls(s: &Signal, p: &Params) -> Vectorscope {
     let mut sum = [0f64; 2];
     // hue → unit direction, tabulated at 0.1° (trigonometry per sample is the slow part)
     let red = red_angle(p.matrix);
-    let dirs: Vec<[f32; 2]> = (0..=3600).map(|i| (red + i as f32 / 10.0).to_radians()).map(|a| [a.cos(), a.sin()]).collect();
+    let dirs: Vec<[f32; 2]> = (0..=3600)
+        .map(|i| (red + i as f32 / 10.0).to_radians())
+        .map(|a| [a.cos(), a.sin()])
+        .collect();
     for &c in &s.rgb {
         let [r, g, b] = c.map(|x| x.clamp(0.0, 1.0));
         let [h, sat, _] = filmcraft_color::rgb_to_hsl(r, g, b);
@@ -689,7 +818,14 @@ pub fn targets(m: Matrix, amplitude: f32) -> [Target; 6] {
         let [_, cb, cr] = rgb_to_ycbcr(rgb[0], rgb[1], rgb[2], m);
         Target { name, rgb, cb, cr }
     };
-    [t("R", [a, 0.0, 0.0]), t("Mg", [a, 0.0, a]), t("B", [0.0, 0.0, a]), t("Cy", [0.0, a, a]), t("G", [0.0, a, 0.0]), t("Yl", [a, a, 0.0])]
+    [
+        t("R", [a, 0.0, 0.0]),
+        t("Mg", [a, 0.0, a]),
+        t("B", [0.0, 0.0, a]),
+        t("Cy", [0.0, a, a]),
+        t("G", [0.0, a, 0.0]),
+        t("Yl", [a, a, 0.0]),
+    ]
 }
 
 /// Hue labels of the HLS vectorscope at radius 0.5: (name, Cb, Cr).
@@ -699,7 +835,14 @@ pub fn hls_targets(m: Matrix) -> [(&'static str, f32, f32); 6] {
         let a = (red + h).to_radians();
         (name, 0.5 * a.cos(), 0.5 * a.sin())
     };
-    [at("R", 0.0), at("Yl", 60.0), at("G", 120.0), at("Cy", 180.0), at("B", 240.0), at("Mg", 300.0)]
+    [
+        at("R", 0.0),
+        at("Yl", 60.0),
+        at("G", 120.0),
+        at("Cy", 180.0),
+        at("B", 240.0),
+        at("Mg", 300.0),
+    ]
 }
 
 // ------------------------------------------------------------------------------------ all scopes
@@ -714,7 +857,13 @@ pub enum Computed {
 }
 
 /// Compute one scope.
-pub fn compute(kind: ScopeKind, s: &Signal, p: &Params, waveform_type: WaveformType, parade_type: ParadeType) -> Computed {
+pub fn compute(
+    kind: ScopeKind,
+    s: &Signal,
+    p: &Params,
+    waveform_type: WaveformType,
+    parade_type: ParadeType,
+) -> Computed {
     match kind {
         ScopeKind::Waveform => Computed::Waveform(waveform(s, waveform_type, p)),
         ScopeKind::Parade => Computed::Parade(parade(s, parade_type, p)),

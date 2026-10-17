@@ -240,7 +240,9 @@ fn echapper_url(u: &str) -> String {
 
 /// Échappe le texte inséré dans un nœud XML.
 fn echapper_xml(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// Échappe une chaîne JSON.
@@ -263,8 +265,16 @@ fn base64(entree: &[u8]) -> String {
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
         s.push(T[(n >> 18) as usize & 63] as char);
         s.push(T[(n >> 12) as usize & 63] as char);
-        s.push(if c.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
-        s.push(if c.len() > 2 { T[n as usize & 63] as char } else { '=' });
+        s.push(if c.len() > 1 {
+            T[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        s.push(if c.len() > 2 {
+            T[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     s
 }
@@ -327,7 +337,10 @@ mod tests {
         let css = atlas_exemple().vers_css_mode("a.webp", ModeCss::Masque);
         assert!(css.contains("background-color: currentColor;"), "{css}");
         assert!(css.contains("mask-image: url(\"a.webp\")"));
-        assert!(css.contains("-webkit-mask-image: url(\"a.webp\")"), "préfixe WebKit requis");
+        assert!(
+            css.contains("-webkit-mask-image: url(\"a.webp\")"),
+            "préfixe WebKit requis"
+        );
         assert!(css.contains("mask-size: 512px 256px;"));
         assert!(
             css.contains(
@@ -337,14 +350,20 @@ mod tests {
             "{css}"
         );
         // En mode masque, aucune image de fond : la couleur seule remplit la silhouette.
-        assert!(!css.contains("background-image"), "le mode masque ne pose pas d'image de fond");
+        assert!(
+            !css.contains("background-image"),
+            "le mode masque ne pose pas d'image de fond"
+        );
     }
 
     #[test]
     fn le_svg_est_autonome_et_declare_un_symbole_par_region() {
         let svg = atlas_exemple().vers_svg("data:image/png;base64,AAAA");
         assert!(svg.starts_with("<svg xmlns="));
-        assert!(svg.contains("href=\"data:image/png;base64,AAAA\""), "atlas embarqué");
+        assert!(
+            svg.contains("href=\"data:image/png;base64,AAAA\""),
+            "atlas embarqué"
+        );
         assert!(svg.contains("<symbol id=\"nie-gtxt_rarity01_05\" viewBox=\"128 64 96 32\""));
         assert_eq!(svg.matches("<symbol").count(), 2, "un symbole par région");
         assert!(svg.ends_with("</svg>\n"));

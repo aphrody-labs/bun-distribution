@@ -7,20 +7,20 @@ use crate::moderation::user_referrals::list_global_user_referrals::UserReferralR
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListUserReferralsForUserQueryParams {
-  pub cursor: Option<String>,
-  pub limit: Option<u32>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct ListUserReferralsForUserPathInfo {
-  pub username: String,
+    pub username: String,
 }
 
 // --- Response ---
 
 #[derive(Serialize, ToSchema)]
 pub struct ListUserReferralsForUserSuccessResponse {
-  pub success: bool,
-  pub referrals: Vec<UserReferralResponse>,
-  pub maybe_cursor: Option<String>,
+    pub success: bool,
+    pub referrals: Vec<UserReferralResponse>,
+    pub maybe_cursor: Option<String>,
 }

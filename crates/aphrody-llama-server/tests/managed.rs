@@ -50,7 +50,10 @@ fn write_test_gguf(path: &Path) {
 fn managed(root: &Path) -> ManagedLlamaServer {
     let supervisor = Supervisor::new(
         StateDirs::new(root),
-        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+        DaemonCommand {
+            program: PathBuf::from(DAEMON),
+            args: Vec::new(),
+        },
     );
     ManagedLlamaServer::new(FAKE_SERVER, supervisor)
 }
@@ -76,24 +79,68 @@ async fn launches_embedding_and_reranking_endpoints_then_stops_cleanly() {
         .expect("embedding endpoint");
     assert!(embedding.model.already_present);
     assert_eq!(embedding.model.primary_path, model);
-    assert_eq!(embedding.endpoint.state.role, ManagedCategory::Embedding.role());
-    let props = embedding.endpoint.client().props().await.expect("embedding props");
-    let args: Vec<&str> =
-        props["args"].as_array().expect("args").iter().filter_map(|arg| arg.as_str()).collect();
+    assert_eq!(
+        embedding.endpoint.state.role,
+        ManagedCategory::Embedding.role()
+    );
+    let props = embedding
+        .endpoint
+        .client()
+        .props()
+        .await
+        .expect("embedding props");
+    let args: Vec<&str> = props["args"]
+        .as_array()
+        .expect("args")
+        .iter()
+        .filter_map(|arg| arg.as_str())
+        .collect();
     assert!(args.contains(&"--embeddings"), "{args:?}");
 
     let reranking = managed
         .ensure(&request(ManagedCategory::Reranking, &model, &store_root))
         .await
         .expect("reranking endpoint");
-    assert_eq!(reranking.endpoint.state.role, ManagedCategory::Reranking.role());
-    let props = reranking.endpoint.client().props().await.expect("reranking props");
-    let args: Vec<&str> =
-        props["args"].as_array().expect("args").iter().filter_map(|arg| arg.as_str()).collect();
+    assert_eq!(
+        reranking.endpoint.state.role,
+        ManagedCategory::Reranking.role()
+    );
+    let props = reranking
+        .endpoint
+        .client()
+        .props()
+        .await
+        .expect("reranking props");
+    let args: Vec<&str> = props["args"]
+        .as_array()
+        .expect("args")
+        .iter()
+        .filter_map(|arg| arg.as_str())
+        .collect();
     assert!(args.contains(&"--reranking"), "{args:?}");
 
-    assert!(managed.stop(ManagedCategory::Embedding).await.expect("stop embedding"));
-    assert!(managed.stop(ManagedCategory::Reranking).await.expect("stop reranking"));
-    assert!(managed.supervisor().status(ManagedCategory::Embedding.role()).is_none());
-    assert!(managed.supervisor().status(ManagedCategory::Reranking.role()).is_none());
+    assert!(
+        managed
+            .stop(ManagedCategory::Embedding)
+            .await
+            .expect("stop embedding")
+    );
+    assert!(
+        managed
+            .stop(ManagedCategory::Reranking)
+            .await
+            .expect("stop reranking")
+    );
+    assert!(
+        managed
+            .supervisor()
+            .status(ManagedCategory::Embedding.role())
+            .is_none()
+    );
+    assert!(
+        managed
+            .supervisor()
+            .status(ManagedCategory::Reranking.role())
+            .is_none()
+    );
 }

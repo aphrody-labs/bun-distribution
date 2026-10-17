@@ -6,14 +6,14 @@
 //!
 //! INativeHandleHolder: provides a native handle (KReadableEvent) to callers.
 
-use std::collections::BTreeMap;
-use std::sync::Arc;
 use crate::hle::result::{ResultCode, RESULT_SUCCESS};
 use crate::hle::service::hle_ipc::{HLERequestContext, SessionRequestHandler};
 use crate::hle::service::ipc_helpers::ResponseBuilder;
 use crate::hle::service::kernel_helpers::ServiceContext;
 use crate::hle::service::os::event::Event;
 use crate::hle::service::service::{build_handler_map, FunctionInfo, ServiceFramework};
+use std::collections::BTreeMap;
+use std::sync::Arc;
 
 /// IPC command table for INativeHandleHolder.
 ///
@@ -34,7 +34,11 @@ impl INativeHandleHolder {
         Self {
             service_context,
             event,
-            handlers: build_handler_map(&[(0, Some(Self::get_native_handle_handler), "GetNativeHandle")]),
+            handlers: build_handler_map(&[(
+                0,
+                Some(Self::get_native_handle_handler),
+                "GetNativeHandle",
+            )]),
             handlers_tipc: BTreeMap::new(),
         }
     }
@@ -50,7 +54,9 @@ impl INativeHandleHolder {
 
     fn get_native_handle_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
         let service = this.as_any().downcast_ref::<Self>().unwrap();
-        let object_id = service.get_native_handle().and_then(|event| event.copy_object_id(ctx));
+        let object_id = service
+            .get_native_handle()
+            .and_then(|event| event.copy_object_id(ctx));
         let mut rb = ResponseBuilder::new(ctx, 2, 1, 0);
         rb.push_result(RESULT_SUCCESS);
         // Upstream returns a null copy object if event allocation failed.
@@ -66,17 +72,27 @@ impl Drop for INativeHandleHolder {
 }
 
 impl SessionRequestHandler for INativeHandleHolder {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, ctx: &mut HLERequestContext) -> ResultCode {
         self.handle_sync_request_impl(ctx)
     }
-    fn service_name(&self) -> &str { "INativeHandleHolder" }
+    fn service_name(&self) -> &str {
+        "INativeHandleHolder"
+    }
 }
 
 impl ServiceFramework for INativeHandleHolder {
-    fn get_service_name(&self) -> &str { self.service_name() }
-    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> { &self.handlers }
-    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> { &self.handlers_tipc }
+    fn get_service_name(&self) -> &str {
+        self.service_name()
+    }
+    fn handlers(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers
+    }
+    fn handlers_tipc(&self) -> &BTreeMap<u32, FunctionInfo> {
+        &self.handlers_tipc
+    }
 }
 
 #[cfg(test)]
@@ -96,15 +112,32 @@ mod tests {
         thread.lock().unwrap().parent = Some(Arc::downgrade(&process));
         let readable = Arc::new(Mutex::new(KReadableEvent::new()));
         readable.lock().unwrap().initialize(0x100, 0x101);
-        process.lock().unwrap().register_readable_event_object(0x101, readable.clone());
-        holder.service_context.get_event(holder.event).unwrap()
+        process
+            .lock()
+            .unwrap()
+            .register_readable_event_object(0x101, readable.clone());
+        holder
+            .service_context
+            .get_event(holder.event)
+            .unwrap()
             .attach_kernel_event(readable.clone(), process.clone());
         let mut ctx = HLERequestContext::new_with_thread(thread, 0);
         holder.handlers()[&0].handler_callback.unwrap()(&holder, &mut ctx);
         assert_eq!(ctx.outgoing_copy_objects.len(), 1);
-        assert!(matches!(ctx.outgoing_copy_objects[0], KAutoObjectRef::ObjectId(0x101)));
-        assert!(process.lock().unwrap().get_readable_event_by_object_id(0x101).is_some());
-        assert!(readable.lock().unwrap().is_signaled.load(std::sync::atomic::Ordering::Relaxed));
+        assert!(matches!(
+            ctx.outgoing_copy_objects[0],
+            KAutoObjectRef::ObjectId(0x101)
+        ));
+        assert!(process
+            .lock()
+            .unwrap()
+            .get_readable_event_by_object_id(0x101)
+            .is_some());
+        assert!(readable
+            .lock()
+            .unwrap()
+            .is_signaled
+            .load(std::sync::atomic::Ordering::Relaxed));
     }
 
     #[test]

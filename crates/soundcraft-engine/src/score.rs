@@ -30,22 +30,46 @@ const COMPOSER_KEY: &str = "score.composer=";
 
 impl ScoreSetup {
     pub fn from_session(s: &Session) -> Self {
-        let text = |key: &str| s.edit.flags.iter().find_map(|f| f.strip_prefix(key)).map(str::to_string);
+        let text = |key: &str| {
+            s.edit
+                .flags
+                .iter()
+                .find_map(|f| f.strip_prefix(key))
+                .map(str::to_string)
+        };
         let bars = s.edit.value("score.bars_per_system", 4.0);
         Self {
             title: text(TITLE_KEY).unwrap_or_else(|| s.name.clone()),
             composer: text(COMPOSER_KEY).unwrap_or_default(),
-            bars_per_system: if bars.is_finite() { bars.clamp(1.0, 16.0) as u32 } else { 4 },
+            bars_per_system: if bars.is_finite() {
+                bars.clamp(1.0, 16.0) as u32
+            } else {
+                4
+            },
             show_track_names: !s.edit.flag("score.hide_names"),
         }
     }
 
     pub fn store(&self, s: &mut Session) {
-        s.edit.flags.retain(|f| !f.starts_with(TITLE_KEY) && !f.starts_with(COMPOSER_KEY));
-        let clean = |t: &str| t.chars().filter(|c| !c.is_control()).take(200).collect::<String>();
-        s.edit.flags.insert(format!("{TITLE_KEY}{}", clean(&self.title)));
-        s.edit.flags.insert(format!("{COMPOSER_KEY}{}", clean(&self.composer)));
-        s.edit.values.insert("score.bars_per_system".into(), f64::from(self.bars_per_system.clamp(1, 16)));
+        s.edit
+            .flags
+            .retain(|f| !f.starts_with(TITLE_KEY) && !f.starts_with(COMPOSER_KEY));
+        let clean = |t: &str| {
+            t.chars()
+                .filter(|c| !c.is_control())
+                .take(200)
+                .collect::<String>()
+        };
+        s.edit
+            .flags
+            .insert(format!("{TITLE_KEY}{}", clean(&self.title)));
+        s.edit
+            .flags
+            .insert(format!("{COMPOSER_KEY}{}", clean(&self.composer)));
+        s.edit.values.insert(
+            "score.bars_per_system".into(),
+            f64::from(self.bars_per_system.clamp(1, 16)),
+        );
         s.edit.set_flag("score.hide_names", !self.show_track_names);
     }
 }
@@ -81,17 +105,23 @@ pub fn layout(s: &Session, tracks: &[TrackId]) -> Vec<Part> {
     let sr = s.sample_rate;
     let mut raw: Vec<(String, Vec<(i64, i64, u8)>)> = Vec::new();
     for t in &s.tracks {
-        if !matches!(t.kind, TrackKind::Midi | TrackKind::Instrument) || (!tracks.is_empty() && !tracks.contains(&t.id)) {
+        if !matches!(t.kind, TrackKind::Midi | TrackKind::Instrument)
+            || (!tracks.is_empty() && !tracks.contains(&t.id))
+        {
             continue;
         }
         let mut notes = Vec::new();
         for c in t.clips() {
-            let ClipContent::Midi { sequence } = &c.content else { continue };
+            let ClipContent::Midi { sequence } = &c.content else {
+                continue;
+            };
             if c.muted {
                 continue;
             }
             let base = s.tempo.samples_to_ticks(c.start, sr);
-            let end = s.tempo.samples_to_ticks(c.start.saturating_add(c.length), sr);
+            let end = s
+                .tempo
+                .samples_to_ticks(c.start.saturating_add(c.length), sr);
             for n in &sequence.notes {
                 let st = base.saturating_add(n.start);
                 if st < base || st >= end || n.length <= 0 {
@@ -104,12 +134,24 @@ pub fn layout(s: &Session, tracks: &[TrackId]) -> Vec<Part> {
         }
         raw.push((t.name.clone(), notes));
     }
-    let last = raw.iter().flat_map(|(_, n)| n.iter().map(|x| x.1)).max().unwrap_or(0);
+    let last = raw
+        .iter()
+        .flat_map(|(_, n)| n.iter().map(|x| x.1))
+        .max()
+        .unwrap_or(0);
     let bars = measure_grid(s, last);
     raw.into_iter()
         .map(|(name, notes)| {
-            let avg = if notes.is_empty() { 60.0 } else { notes.iter().map(|n| f64::from(n.2)).sum::<f64>() / notes.len() as f64 };
-            Part { name, bass: avg < 57.0, measures: fill(&bars, &notes) }
+            let avg = if notes.is_empty() {
+                60.0
+            } else {
+                notes.iter().map(|n| f64::from(n.2)).sum::<f64>() / notes.len() as f64
+            };
+            Part {
+                name,
+                bass: avg < 57.0,
+                measures: fill(&bars, &notes),
+            }
         })
         .collect()
 }
@@ -143,7 +185,11 @@ fn measure_grid(s: &Session, end_unit: i64) -> Vec<(i64, i64, u32, u32)> {
 fn split_units(mut units: i64) -> Vec<u32> {
     let mut out = Vec::new();
     while units > 0 {
-        let v = VALUES.iter().copied().find(|v| i64::from(*v) <= units).unwrap_or(1);
+        let v = VALUES
+            .iter()
+            .copied()
+            .find(|v| i64::from(*v) <= units)
+            .unwrap_or(1);
         out.push(v);
         units -= i64::from(v);
     }
@@ -152,7 +198,8 @@ fn split_units(mut units: i64) -> Vec<u32> {
 
 fn fill(bars: &[(i64, i64, u32, u32)], notes: &[(i64, i64, u8)]) -> Vec<Measure> {
     // Onsets → chords, each held until its longest note ends or the next onset.
-    let mut onsets: std::collections::BTreeMap<i64, (i64, Vec<u8>)> = std::collections::BTreeMap::new();
+    let mut onsets: std::collections::BTreeMap<i64, (i64, Vec<u8>)> =
+        std::collections::BTreeMap::new();
     for (a, b, p) in notes {
         let e = onsets.entry(*a).or_insert((*b, Vec::new()));
         e.0 = e.0.max(*b);
@@ -172,7 +219,12 @@ fn fill(bars: &[(i64, i64, u32, u32)], notes: &[(i64, i64, u8)]) -> Vec<Measure>
         let me = ms + ml;
         let mut items = Vec::new();
         let mut cursor = *ms;
-        let emit = |from: i64, to: i64, pitches: &[u8], tied_in: bool, tied_out: bool, items: &mut Vec<Item>| {
+        let emit = |from: i64,
+                    to: i64,
+                    pitches: &[u8],
+                    tied_in: bool,
+                    tied_out: bool,
+                    items: &mut Vec<Item>| {
             let parts = split_units(to - from);
             let n = parts.len();
             for (k, u) in parts.into_iter().enumerate() {
@@ -200,21 +252,40 @@ fn fill(bars: &[(i64, i64, u32, u32)], notes: &[(i64, i64, u8)]) -> Vec<Measure>
         if cursor < me {
             emit(cursor, me, &[], false, false, &mut items);
         }
-        measures.push(Measure { numerator: *num, denominator: *den, items });
+        measures.push(Measure {
+            numerator: *num,
+            denominator: *den,
+            items,
+        });
     }
     measures
 }
 
 /// (step, alter, octave) spelled with sharps.
 fn spell(pitch: u8) -> (char, i32, i32) {
-    const STEPS: [(char, i32); 12] =
-        [('C', 0), ('C', 1), ('D', 0), ('D', 1), ('E', 0), ('F', 0), ('F', 1), ('G', 0), ('G', 1), ('A', 0), ('A', 1), ('B', 0)];
+    const STEPS: [(char, i32); 12] = [
+        ('C', 0),
+        ('C', 1),
+        ('D', 0),
+        ('D', 1),
+        ('E', 0),
+        ('F', 0),
+        ('F', 1),
+        ('G', 0),
+        ('G', 1),
+        ('A', 0),
+        ('A', 1),
+        ('B', 0),
+    ];
     let (step, alter) = STEPS[usize::from(pitch % 12)];
     (step, alter, i32::from(pitch / 12) - 1)
 }
 
 fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 fn note_type(units: u32) -> (&'static str, bool) {
@@ -236,14 +307,27 @@ pub fn musicxml(parts: &[Part], setup: &ScoreSetup) -> String {
     x.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
     x.push_str("<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 4.0 Partwise//EN\" \"http://www.musicxml.org/dtds/partwise.dtd\">\n");
     x.push_str("<score-partwise version=\"4.0\">\n");
-    let _ = writeln!(x, "  <work><work-title>{}</work-title></work>", xml_escape(&setup.title));
+    let _ = writeln!(
+        x,
+        "  <work><work-title>{}</work-title></work>",
+        xml_escape(&setup.title)
+    );
     x.push_str("  <identification>\n");
     if !setup.composer.is_empty() {
-        let _ = writeln!(x, "    <creator type=\"composer\">{}</creator>", xml_escape(&setup.composer));
+        let _ = writeln!(
+            x,
+            "    <creator type=\"composer\">{}</creator>",
+            xml_escape(&setup.composer)
+        );
     }
     x.push_str("    <encoding><software>SoundCraft</software></encoding>\n  </identification>\n  <part-list>\n");
     for (i, p) in parts.iter().enumerate() {
-        let _ = writeln!(x, "    <score-part id=\"P{}\"><part-name>{}</part-name></score-part>", i + 1, xml_escape(&p.name));
+        let _ = writeln!(
+            x,
+            "    <score-part id=\"P{}\"><part-name>{}</part-name></score-part>",
+            i + 1,
+            xml_escape(&p.name)
+        );
     }
     x.push_str("  </part-list>\n");
     for (i, p) in parts.iter().enumerate() {
@@ -256,9 +340,17 @@ pub fn musicxml(parts: &[Part], setup: &ScoreSetup) -> String {
                 if mi == 0 {
                     x.push_str("<divisions>4</divisions><key><fifths>0</fifths></key>");
                 }
-                let _ = write!(x, "<time><beats>{}</beats><beat-type>{}</beat-type></time>", m.numerator, m.denominator);
+                let _ = write!(
+                    x,
+                    "<time><beats>{}</beats><beat-type>{}</beat-type></time>",
+                    m.numerator, m.denominator
+                );
                 if mi == 0 {
-                    x.push_str(if p.bass { "<clef><sign>F</sign><line>4</line></clef>" } else { "<clef><sign>G</sign><line>2</line></clef>" });
+                    x.push_str(if p.bass {
+                        "<clef><sign>F</sign><line>4</line></clef>"
+                    } else {
+                        "<clef><sign>G</sign><line>2</line></clef>"
+                    });
                 }
                 x.push_str("</attributes>\n");
                 meter = (m.numerator, m.denominator);
@@ -284,7 +376,11 @@ pub fn musicxml(parts: &[Part], setup: &ScoreSetup) -> String {
                     if alter != 0 {
                         let _ = write!(x, "<alter>{alter}</alter>");
                     }
-                    let _ = write!(x, "<octave>{octave}</octave></pitch><duration>{}</duration>", it.units);
+                    let _ = write!(
+                        x,
+                        "<octave>{octave}</octave></pitch><duration>{}</duration>",
+                        it.units
+                    );
                     if it.tie_stop {
                         x.push_str("<tie type=\"stop\"/>");
                     }
@@ -344,12 +440,24 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
     let top = 110.0;
     let h = top + systems as f64 * sys_h + MARGIN;
     let mut o = String::new();
-    let _ =
-        writeln!(o, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{W}\" height=\"{h:.0}\" viewBox=\"0 0 {W} {h:.0}\" font-family=\"serif\">");
+    let _ = writeln!(
+        o,
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{W}\" height=\"{h:.0}\" viewBox=\"0 0 {W} {h:.0}\" font-family=\"serif\">"
+    );
     let _ = writeln!(o, "<rect width=\"100%\" height=\"100%\" fill=\"white\"/>");
-    let _ = writeln!(o, "<text x=\"{}\" y=\"56\" font-size=\"24\" text-anchor=\"middle\">{}</text>", W / 2.0, xml_escape(&setup.title));
+    let _ = writeln!(
+        o,
+        "<text x=\"{}\" y=\"56\" font-size=\"24\" text-anchor=\"middle\">{}</text>",
+        W / 2.0,
+        xml_escape(&setup.title)
+    );
     if !setup.composer.is_empty() {
-        let _ = writeln!(o, "<text x=\"{}\" y=\"84\" font-size=\"13\" text-anchor=\"end\">{}</text>", W - MARGIN, xml_escape(&setup.composer));
+        let _ = writeln!(
+            o,
+            "<text x=\"{}\" y=\"84\" font-size=\"13\" text-anchor=\"end\">{}</text>",
+            W - MARGIN,
+            xml_escape(&setup.composer)
+        );
     }
     let bar_w = (staff_x1 - staff_x0) / per as f64;
     for sys in 0..systems {
@@ -358,7 +466,12 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
             let y0 = y_sys + pi as f64 * STAFF_GAP; // top line
             let bottom = y0 + 4.0 * SP;
             if setup.show_track_names && sys == 0 {
-                let _ = writeln!(o, "<text x=\"{MARGIN}\" y=\"{:.1}\" font-size=\"11\">{}</text>", y0 + 2.0 * SP + 4.0, xml_escape(&p.name));
+                let _ = writeln!(
+                    o,
+                    "<text x=\"{MARGIN}\" y=\"{:.1}\" font-size=\"11\">{}</text>",
+                    y0 + 2.0 * SP + 4.0,
+                    xml_escape(&p.name)
+                );
             }
             for l in 0..5 {
                 let y = y0 + f64::from(l) * SP;
@@ -385,9 +498,17 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
                     x0 + bar_w,
                     x0 + bar_w
                 );
-                let Some(m) = p.measures.get(mi) else { continue };
+                let Some(m) = p.measures.get(mi) else {
+                    continue;
+                };
                 if pi == 0 {
-                    let _ = writeln!(o, "<text x=\"{:.1}\" y=\"{:.1}\" font-size=\"9\">{}</text>", x0 + 2.0, y0 - 8.0, mi + 1);
+                    let _ = writeln!(
+                        o,
+                        "<text x=\"{:.1}\" y=\"{:.1}\" font-size=\"9\">{}</text>",
+                        x0 + 2.0,
+                        y0 - 8.0,
+                        mi + 1
+                    );
                 }
                 let total: u32 = m.items.iter().map(|i| i.units).sum::<u32>().max(1);
                 let mut acc = 0u32;
@@ -398,11 +519,20 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
                     if it.pitches.is_empty() {
                         rest(&mut o, x, y0, SP, it.units);
                         if dot {
-                            let _ = writeln!(o, "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"1.3\"/>", x + 7.0, y0 + 1.5 * SP);
+                            let _ = writeln!(
+                                o,
+                                "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"1.3\"/>",
+                                x + 7.0,
+                                y0 + 1.5 * SP
+                            );
                         }
                         continue;
                     }
-                    let steps: Vec<i32> = it.pitches.iter().map(|p2| staff_step(*p2, p.bass)).collect();
+                    let steps: Vec<i32> = it
+                        .pitches
+                        .iter()
+                        .map(|p2| staff_step(*p2, p.bass))
+                        .collect();
                     let filled = it.units < 8;
                     for (pitch, st) in it.pitches.iter().zip(&steps) {
                         let y = bottom - f64::from(*st) * SP / 2.0;
@@ -424,19 +554,40 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
                             "<ellipse cx=\"{x:.1}\" cy=\"{y:.1}\" rx=\"4.6\" ry=\"3.3\" transform=\"rotate(-20 {x:.1} {y:.1})\" fill=\"{fill}\" stroke=\"black\" stroke-width=\"1.1\"/>"
                         );
                         if spell(*pitch).1 != 0 {
-                            let _ = writeln!(o, "<text x=\"{:.1}\" y=\"{:.1}\" font-size=\"12\">♯</text>", x - 14.0, y + 4.0);
+                            let _ = writeln!(
+                                o,
+                                "<text x=\"{:.1}\" y=\"{:.1}\" font-size=\"12\">♯</text>",
+                                x - 14.0,
+                                y + 4.0
+                            );
                         }
                         if dot {
-                            let _ = writeln!(o, "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"1.3\"/>", x + 8.0, y - 1.5);
+                            let _ = writeln!(
+                                o,
+                                "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"1.3\"/>",
+                                x + 8.0,
+                                y - 1.5
+                            );
                         }
                     }
                     if it.units < 16 {
-                        let (lo, hi) = (steps.iter().copied().min().unwrap_or(4), steps.iter().copied().max().unwrap_or(4));
+                        let (lo, hi) = (
+                            steps.iter().copied().min().unwrap_or(4),
+                            steps.iter().copied().max().unwrap_or(4),
+                        );
                         let up = (lo + hi) < 8;
                         let (sx, y_from, y_to) = if up {
-                            (x + 4.3, bottom - f64::from(lo) * SP / 2.0, bottom - f64::from(hi) * SP / 2.0 - 3.5 * SP)
+                            (
+                                x + 4.3,
+                                bottom - f64::from(lo) * SP / 2.0,
+                                bottom - f64::from(hi) * SP / 2.0 - 3.5 * SP,
+                            )
                         } else {
-                            (x - 4.3, bottom - f64::from(hi) * SP / 2.0, bottom - f64::from(lo) * SP / 2.0 + 3.5 * SP)
+                            (
+                                x - 4.3,
+                                bottom - f64::from(hi) * SP / 2.0,
+                                bottom - f64::from(lo) * SP / 2.0 + 3.5 * SP,
+                            )
                         };
                         let _ = writeln!(
                             o,
@@ -459,7 +610,11 @@ pub fn svg(parts: &[Part], setup: &ScoreSetup) -> String {
                     }
                     if it.tie_start {
                         let y = bottom - f64::from(steps[0]) * SP / 2.0 + 6.0;
-                        let _ = writeln!(o, "<path d=\"M{:.1} {y:.1} q 8 5 16 0\" fill=\"none\" stroke=\"black\" stroke-width=\"0.9\"/>", x + 3.0);
+                        let _ = writeln!(
+                            o,
+                            "<path d=\"M{:.1} {y:.1} q 8 5 16 0\" fill=\"none\" stroke=\"black\" stroke-width=\"0.9\"/>",
+                            x + 3.0
+                        );
                     }
                 }
             }
@@ -481,10 +636,22 @@ fn rest(o: &mut String, x: f64, y0: f64, sp: f64, units: u32) {
     let mid = y0 + 2.0 * sp;
     match units {
         16 => {
-            let _ = writeln!(o, "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"9\" height=\"{:.1}\"/>", x - 4.5, y0 + sp, sp / 2.0);
+            let _ = writeln!(
+                o,
+                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"9\" height=\"{:.1}\"/>",
+                x - 4.5,
+                y0 + sp,
+                sp / 2.0
+            );
         }
         8 | 12 => {
-            let _ = writeln!(o, "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"9\" height=\"{:.1}\"/>", x - 4.5, mid - sp / 2.0, sp / 2.0);
+            let _ = writeln!(
+                o,
+                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"9\" height=\"{:.1}\"/>",
+                x - 4.5,
+                mid - sp / 2.0,
+                sp / 2.0
+            );
         }
         4 | 6 => {
             let _ = writeln!(
@@ -495,7 +662,12 @@ fn rest(o: &mut String, x: f64, y0: f64, sp: f64, units: u32) {
             );
         }
         _ => {
-            let _ = writeln!(o, "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2\"/>", x - 2.0, mid - 3.0);
+            let _ = writeln!(
+                o,
+                "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2\"/>",
+                x - 2.0,
+                mid - 3.0
+            );
             let _ = writeln!(
                 o,
                 "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"black\" stroke-width=\"1.2\"/>",
@@ -505,7 +677,12 @@ fn rest(o: &mut String, x: f64, y0: f64, sp: f64, units: u32) {
                 mid + 7.0
             );
             if units == 1 {
-                let _ = writeln!(o, "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2\"/>", x - 3.5, mid + 2.0);
+                let _ = writeln!(
+                    o,
+                    "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2\"/>",
+                    x - 3.5,
+                    mid + 2.0
+                );
             }
         }
     }
@@ -553,8 +730,15 @@ mod tests {
         assert!(!parts.is_empty(), "demo has MIDI tracks");
         let setup = ScoreSetup::from_session(e.session());
         let x = musicxml(&parts, &setup);
-        assert!(x.contains("<score-partwise") && x.contains("<pitch>") && x.trim_end().ends_with("</score-partwise>"));
-        assert_eq!(x.matches("<measure ").count(), x.matches("</measure>").count());
+        assert!(
+            x.contains("<score-partwise")
+                && x.contains("<pitch>")
+                && x.trim_end().ends_with("</score-partwise>")
+        );
+        assert_eq!(
+            x.matches("<measure ").count(),
+            x.matches("</measure>").count()
+        );
         let s = svg(&parts, &setup);
         assert!(s.starts_with("<svg") && s.contains("<ellipse"));
     }

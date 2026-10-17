@@ -30,7 +30,11 @@ impl SystemSubsystem for AdminSubsystem {
             .map(|entry| {
                 ToolDefinition::new(
                     &entry.tool.name,
-                    entry.tool.description.as_deref().unwrap_or("WinClean Windows operation."),
+                    entry
+                        .tool
+                        .description
+                        .as_deref()
+                        .unwrap_or("WinClean Windows operation."),
                     entry.tool.input_schema.clone(),
                 )
             })
@@ -62,14 +66,14 @@ fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
     aphrody_winclean::dispatch::call_rust(tool, arguments).map_err(|error| match error {
         aphrody_winclean::SubsystemError::UnknownTool(message) => {
             SubsystemError::UnknownTool(message)
-        },
+        }
         aphrody_winclean::SubsystemError::InvalidArguments(message) => {
             SubsystemError::InvalidArguments(message)
-        },
+        }
         aphrody_winclean::SubsystemError::Failed(message) => SubsystemError::Failed(message),
         aphrody_winclean::SubsystemError::Unavailable(message) => {
             SubsystemError::Unavailable(message)
-        },
+        }
     })
 }
 
@@ -118,7 +122,11 @@ mod tests {
         assert_eq!(tools.len(), aphrody_winclean::TOOL_NAMES.len());
         let names: std::collections::BTreeSet<_> =
             tools.iter().map(|tool| tool.name.as_str()).collect();
-        assert_eq!(names.len(), tools.len(), "kernel catalog contains duplicate tool names");
+        assert_eq!(
+            names.len(),
+            tools.len(),
+            "kernel catalog contains duplicate tool names"
+        );
         assert!(
             aphrody_winclean::registry::registrations()
                 .iter()
@@ -173,8 +181,11 @@ mod tests {
     fn multi_hash_is_served_by_the_rust_owner() {
         let path = std::env::temp_dir().join(format!("aphrody-hash-{}.bin", std::process::id()));
         std::fs::write(&path, b"abc").expect("write hash fixture");
-        let result = call_rust("binary_hash_multi", json!({ "path": path.to_string_lossy() }))
-            .expect("Rust hash handler succeeds");
+        let result = call_rust(
+            "binary_hash_multi",
+            json!({ "path": path.to_string_lossy() }),
+        )
+        .expect("Rust hash handler succeeds");
         std::fs::remove_file(&path).expect("remove hash fixture");
         assert_eq!(result["size"], 3);
         assert_eq!(result["md5"], "900150983cd24fb0d6963f7d28e17f72");
@@ -190,7 +201,9 @@ mod tests {
         let path = std::env::temp_dir().join(format!("aphrody-strings-{}.bin", std::process::id()));
         std::fs::write(
             &path,
-            [b'a', b'b', b'c', b'd', 0, 0, b'R', 0, b'u', 0, b's', 0, b't', 0, 0, 0],
+            [
+                b'a', b'b', b'c', b'd', 0, 0, b'R', 0, b'u', 0, b's', 0, b't', 0, 0, 0,
+            ],
         )
         .expect("write strings fixture");
         let result = call_rust(
@@ -215,7 +228,10 @@ mod tests {
             json!({ "inputPath": input.to_string_lossy(), "outputPath": output.to_string_lossy(), "keyHex": "A5 5A" }),
         )
         .expect("Rust xor handler succeeds");
-        assert_eq!(std::fs::read(&output).expect("read xor output"), [0xB5, 0x7A, 0x95]);
+        assert_eq!(
+            std::fs::read(&output).expect("read xor output"),
+            [0xB5, 0x7A, 0x95]
+        );
         assert_eq!(result["keyLen"], 2);
         std::fs::remove_file(&input).expect("remove xor input");
         std::fs::remove_file(&output).expect("remove xor output");
@@ -265,11 +281,18 @@ mod tests {
     fn pe_header_is_served_by_the_rust_owner() {
         let fixture = pe_fixture();
         let input = fixture.path();
-        let result =
-            call_rust("binary_parse_pe_header", json!({ "path": input.to_string_lossy() }))
-                .expect("Rust PE header handler succeeds");
+        let result = call_rust(
+            "binary_parse_pe_header",
+            json!({ "path": input.to_string_lossy() }),
+        )
+        .expect("Rust PE header handler succeeds");
         assert_eq!(result["success"], true);
-        assert!(!result["sections"].as_array().expect("sections array").is_empty());
+        assert!(
+            !result["sections"]
+                .as_array()
+                .expect("sections array")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -279,7 +302,11 @@ mod tests {
         let result = call_rust("analyze_pe", json!({ "path": input.to_string_lossy() }))
             .expect("Rust PE analysis handler succeeds");
         assert_eq!(result["success"], true);
-        assert!(result["sections"].as_array().is_some_and(|rows| !rows.is_empty()));
+        assert!(
+            result["sections"]
+                .as_array()
+                .is_some_and(|rows| !rows.is_empty())
+        );
         assert!(result["extracted_strings"].is_array());
     }
 
@@ -306,10 +333,16 @@ mod tests {
         std::fs::create_dir_all(&root).expect("create filesystem fixture");
         let file = root.join("sample.txt");
         let path = file.to_string_lossy().to_string();
-        let written =
-            call_rust("write_file", json!({ "path": path, "content": "one\ntwo\nthree" }))
-                .expect("Rust write handler succeeds");
-        assert!(written.as_str().is_some_and(|value| value.contains("Wrote 13 chars")));
+        let written = call_rust(
+            "write_file",
+            json!({ "path": path, "content": "one\ntwo\nthree" }),
+        )
+        .expect("Rust write handler succeeds");
+        assert!(
+            written
+                .as_str()
+                .is_some_and(|value| value.contains("Wrote 13 chars"))
+        );
         let read = call_rust(
             "read_file",
             json!({ "path": file.to_string_lossy(), "offset": 1, "limit": 1 }),
@@ -339,17 +372,29 @@ mod tests {
             json!({ "path": file.to_string_lossy(), "destination": copy.to_string_lossy() }),
         )
         .expect("Rust copy handler succeeds");
-        assert!(copied.as_str().is_some_and(|value| value.contains("Copied file")));
+        assert!(
+            copied
+                .as_str()
+                .is_some_and(|value| value.contains("Copied file"))
+        );
         let moved = root.join("moved.txt");
         let moved_result = call_rust(
             "move_path",
             json!({ "path": copy.to_string_lossy(), "destination": moved.to_string_lossy() }),
         )
         .expect("Rust move handler succeeds");
-        assert!(moved_result.as_str().is_some_and(|value| value.contains("Moved file")));
+        assert!(
+            moved_result
+                .as_str()
+                .is_some_and(|value| value.contains("Moved file"))
+        );
         let deleted = call_rust("delete_path", json!({ "path": moved.to_string_lossy() }))
             .expect("Rust delete handler succeeds");
-        assert!(deleted.as_str().is_some_and(|value| value.contains("Deleted file")));
+        assert!(
+            deleted
+                .as_str()
+                .is_some_and(|value| value.contains("Deleted file"))
+        );
         std::fs::remove_dir_all(&root).expect("remove filesystem fixture");
     }
 
@@ -371,15 +416,25 @@ mod tests {
             disks["Disks"].as_array().map(|rows| rows.len() as u64)
         );
         let os = call_rust("get_os_info", json!({})).expect("OS inventory succeeds");
-        assert!(os["OsArchitecture"].as_str().is_some_and(|value| !value.is_empty()));
+        assert!(
+            os["OsArchitecture"]
+                .as_str()
+                .is_some_and(|value| !value.is_empty())
+        );
         let profile =
             call_rust("get_system_profile", json!({})).expect("profile inventory succeeds");
-        assert!(profile["status"].as_str().is_some_and(|value| value.contains("Rust")));
+        assert!(
+            profile["status"]
+                .as_str()
+                .is_some_and(|value| value.contains("Rust"))
+        );
         let networks =
             call_rust("get_network_adapters", json!({})).expect("network inventory succeeds");
         assert_eq!(
             networks["Count"].as_u64(),
-            networks["Adapters"].as_array().map(|rows| rows.len() as u64)
+            networks["Adapters"]
+                .as_array()
+                .map(|rows| rows.len() as u64)
         );
         let tcp = call_rust("list_tcp_connections", json!({})).expect("TCP inventory succeeds");
         assert_eq!(
@@ -398,11 +453,17 @@ mod tests {
         assert!(processes["Count"].as_u64().unwrap_or(0) <= 5);
         assert_eq!(
             processes["Count"].as_u64(),
-            processes["Processes"].as_array().map(|rows| rows.len() as u64)
+            processes["Processes"]
+                .as_array()
+                .map(|rows| rows.len() as u64)
         );
         let missing = call_rust("kill_process", json!({ "pid": 4_294_967_000_u64 }))
             .expect("kill validation succeeds");
-        assert!(missing.as_str().is_some_and(|value| value.contains("No process")));
+        assert!(
+            missing
+                .as_str()
+                .is_some_and(|value| value.contains("No process"))
+        );
         let waited = call_rust("wait", json!({ "seconds": 1 })).expect("wait succeeds");
         assert_eq!(waited.as_str(), Some("Waited 1 second(s)."));
     }
@@ -411,7 +472,10 @@ mod tests {
     #[test]
     fn windows_inventory_tools_report_platform_unavailability() {
         for tool in ["list_power_plans", "list_services", "list_scheduled_tasks"] {
-            assert!(matches!(call_rust(tool, json!({})), Err(SubsystemError::Failed(_))));
+            assert!(matches!(
+                call_rust(tool, json!({})),
+                Err(SubsystemError::Failed(_))
+            ));
         }
     }
 
@@ -432,7 +496,9 @@ mod tests {
         let services = call_rust("list_services", json!({})).expect("service inventory succeeds");
         assert_eq!(
             services["Count"].as_u64(),
-            services["Services"].as_array().map(|rows| rows.len() as u64)
+            services["Services"]
+                .as_array()
+                .map(|rows| rows.len() as u64)
         );
         assert!(call_rust("start_service", json!({ "name": "bad;service" })).is_err());
         let tasks = call_rust("list_scheduled_tasks", json!({ "folder": "\\" }))
@@ -461,8 +527,11 @@ mod tests {
         );
         assert!(call_rust("delete_registry_entry", json!({ "path": "bad\\path" })).is_err());
         assert!(
-            call_rust("wsl_list_processes", json!({ "distribution": "bad\"distribution" }))
-                .is_err()
+            call_rust(
+                "wsl_list_processes",
+                json!({ "distribution": "bad\"distribution" })
+            )
+            .is_err()
         );
         assert!(
             call_rust(
@@ -488,7 +557,11 @@ mod tests {
             json!({ "target": executable.to_string_lossy(), "args": "--exact aphrody-launch-no-such-test --quiet" }),
         )
         .expect("launch handler succeeds");
-        assert!(launched.as_str().is_some_and(|value| value.contains("Launched")));
+        assert!(
+            launched
+                .as_str()
+                .is_some_and(|value| value.contains("Launched"))
+        );
         let uri = call_rust("launch_app", json!({ "target": "ms-settings:" }));
         assert!(uri.is_err());
     }
@@ -510,9 +583,11 @@ mod tests {
     fn golang_scan_is_served_by_the_rust_owner() {
         let input = std::env::temp_dir().join(format!("aphrody-go-{}.bin", std::process::id()));
         std::fs::write(&input, b"not a Go binary").expect("write Go fixture");
-        let result =
-            call_rust("golang_scan", json!({ "path": input.to_string_lossy(), "maxSymbols": 20 }))
-                .expect("Rust Go handler succeeds");
+        let result = call_rust(
+            "golang_scan",
+            json!({ "path": input.to_string_lossy(), "maxSymbols": 20 }),
+        )
+        .expect("Rust Go handler succeeds");
         std::fs::remove_file(&input).expect("remove Go fixture");
         assert_eq!(result["success"], true);
         assert_eq!(result["isGolang"], false);

@@ -36,7 +36,11 @@ fn newline_and_wrap() {
     t.auto_resize = figcraft_doc::TextAutoResize::Height;
     let l = layout(&t, Some(60.0), None);
     assert!(l.lines.len() >= 3, "{}", l.lines.len());
-    assert!(l.lines.iter().all(|ln| ln.width <= 60.0 + 1e-6 || ln.glyph_end - ln.glyph_start <= 1));
+    assert!(
+        l.lines
+            .iter()
+            .all(|ln| ln.width <= 60.0 + 1e-6 || ln.glyph_end - ln.glyph_start <= 1)
+    );
     // Auto width ignores the box.
     t.auto_resize = figcraft_doc::TextAutoResize::WidthAndHeight;
     assert_eq!(layout(&t, Some(60.0), None).lines.len(), 2);
@@ -71,7 +75,11 @@ fn empty_and_hostile_inputs() {
     t.style.font_size = f64::NAN;
     t.characters = "x".into();
     let _ = layout(&t, Some(f64::NAN), Some(-1.0));
-    t.runs.push(figcraft_doc::StyleRun { start: 5, end: 2, style: Default::default() });
+    t.runs.push(figcraft_doc::StyleRun {
+        start: 5,
+        end: 2,
+        style: Default::default(),
+    });
     let _ = layout(&t, None, None);
     let mut emoji = TextData::new("a😀b 漢字 ß");
     emoji.style.case = figcraft_doc::TextCase::Upper;
@@ -107,7 +115,10 @@ fn inter() -> Option<std::sync::Arc<Face>> {
     if !have_fonts() {
         return None;
     }
-    db().write().unwrap().find("Inter", "Regular").filter(|f| f.family == "Inter")
+    db().write()
+        .unwrap()
+        .find("Inter", "Regular")
+        .filter(|f| f.family == "Inter")
 }
 
 #[test]
@@ -122,14 +133,21 @@ fn opentype_features_change_shaping() {
     if face.has_feature(b"tnum") {
         t.features.insert("tnum".into(), true);
         let tab = layout(&t, None, None);
-        assert!((tab.width - base.width).abs() > 0.01, "tnum should change digit widths");
+        assert!(
+            (tab.width - base.width).abs() > 0.01,
+            "tnum should change digit widths"
+        );
         t.features.clear();
     }
     if face.has_feature(b"zero") {
         t.features.insert("zero".into(), true);
         let z = layout(&t, None, None);
         let zero_gid = |l: &TextLayout| l.glyphs.iter().find(|g| g.char_start == 5).map(|g| g.gid);
-        assert_ne!(zero_gid(&z), zero_gid(&base), "zero should pick the slashed zero");
+        assert_ne!(
+            zero_gid(&z),
+            zero_gid(&base),
+            "zero should pick the slashed zero"
+        );
     }
     // Invalid tags are ignored, never a crash.
     t.features.insert("bogus-tag".into(), true);
@@ -145,7 +163,13 @@ fn small_caps_native_or_synthesised() {
     let orig = layout(&t, None, None);
     t.style.case = figcraft_doc::TextCase::SmallCaps;
     let sc = layout(&t, None, None);
-    let b = |l: &TextLayout| l.glyphs.iter().find(|g| g.char_start == 1).cloned().unwrap();
+    let b = |l: &TextLayout| {
+        l.glyphs
+            .iter()
+            .find(|g| g.char_start == 1)
+            .cloned()
+            .unwrap()
+    };
     let (ob, sb) = (b(&orig), b(&sc));
     assert_ne!(ob.gid, sb.gid, "the lower-case b becomes a small capital");
     if !face.has_feature(b"smcp") {
@@ -154,7 +178,10 @@ fn small_caps_native_or_synthesised() {
         assert!(sb.size < 20.0);
     }
     // Upper-case letters are untouched.
-    assert_eq!(sc.glyphs.iter().find(|g| g.char_start == 0).unwrap().gid, face.glyph_for('A'));
+    assert_eq!(
+        sc.glyphs.iter().find(|g| g.char_start == 0).unwrap().gid,
+        face.glyph_for('A')
+    );
 }
 
 #[test]
@@ -166,7 +193,11 @@ fn title_case_across_runs() {
     t.restyle(0, 3, |s| s.font_style = "Bold".into());
     let l = layout(&t, None, None);
     let gid_at = |i: usize| l.glyphs.iter().find(|g| g.char_start == i).map(|g| g.gid);
-    assert_eq!(gid_at(3), Some(face.glyph_for('l')), "mid-word char after a run boundary stays lower-case");
+    assert_eq!(
+        gid_at(3),
+        Some(face.glyph_for('l')),
+        "mid-word char after a run boundary stays lower-case"
+    );
     assert_eq!(gid_at(6), Some(face.glyph_for('W')));
 }
 
@@ -183,25 +214,41 @@ fn lists_hang_and_number() {
     assert!(l.lines.len() >= 3);
     let first_text = |li: usize| {
         let ln = &l.lines[li];
-        l.glyphs[ln.glyph_start..ln.glyph_end].iter().find(|g| g.char_end > g.char_start).map(|g| g.x).unwrap()
+        l.glyphs[ln.glyph_start..ln.glyph_end]
+            .iter()
+            .find(|g| g.char_end > g.char_start)
+            .map(|g| g.x)
+            .unwrap()
     };
     // Wrapped lines hang at the same x as the first line's text (paragraph indent is ignored in lists).
     assert!((first_text(0) - first_text(1)).abs() < 0.01);
     assert!(first_text(0) > 0.0);
     // The bullet sits left of the text, and carets never land on it.
     let ln = &l.lines[0];
-    let marker = l.glyphs[ln.glyph_start..ln.glyph_end].iter().find(|g| g.char_end == g.char_start).unwrap();
+    let marker = l.glyphs[ln.glyph_start..ln.glyph_end]
+        .iter()
+        .find(|g| g.char_end == g.char_start)
+        .unwrap();
     assert!(marker.x < first_text(0));
     assert!(l.caret(0).0 >= first_text(0) - 0.01);
 
     // Numbered: ten paragraphs, the text column clears "10.".
-    let mut n = TextData::new((1..=10).map(|i| format!("p{i}")).collect::<Vec<_>>().join("\n"));
+    let mut n = TextData::new(
+        (1..=10)
+            .map(|i| format!("p{i}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
     n.list = figcraft_doc::ListStyle::Numbered;
     let l = layout(&n, None, None);
     assert_eq!(l.lines.len(), 10);
     let last = &l.lines[9];
     let gl = &l.glyphs[last.glyph_start..last.glyph_end];
-    let marker_end = gl.iter().filter(|g| g.char_end == g.char_start).map(|g| g.x + g.advance).fold(0.0, f64::max);
+    let marker_end = gl
+        .iter()
+        .filter(|g| g.char_end == g.char_start)
+        .map(|g| g.x + g.advance)
+        .fold(0.0, f64::max);
     let text_x = gl.iter().find(|g| g.char_end > g.char_start).unwrap().x;
     assert!(marker_end < text_x, "{marker_end} < {text_x}");
 }
@@ -245,7 +292,13 @@ fn vertical_alignment_in_fixed_box() {
     let mut t = TextData::new("Hi");
     t.auto_resize = figcraft_doc::TextAutoResize::None;
     t.align_v = figcraft_doc::TextAlignV::Bottom;
-    let mut n = figcraft_doc::Node::new(figcraft_doc::NodeId(1), figcraft_doc::NodeKind::Text(t.clone()), "t", 100.0, 100.0);
+    let mut n = figcraft_doc::Node::new(
+        figcraft_doc::NodeId(1),
+        figcraft_doc::NodeKind::Text(t.clone()),
+        "t",
+        100.0,
+        100.0,
+    );
     let (l, dy) = layout_node(&n).unwrap();
     assert!((dy + l.height - 100.0).abs() < 1e-6);
     t.align_v = figcraft_doc::TextAlignV::Middle;
@@ -264,10 +317,20 @@ fn variable_face() -> Option<std::sync::Arc<Face>> {
         return None;
     }
     scan_system_fonts();
-    ["Inter", "Bahnschrift", "Segoe UI Variable", "Roboto Flex", "Noto Sans", "Cantarell", "Source Sans 3", "Open Sans", "Roboto"]
-        .into_iter()
-        .filter_map(|fam| find_face(fam, "Regular").filter(|f| f.family.eq_ignore_ascii_case(fam)))
-        .find(|f| f.axis("wght").is_some_and(|a| a.max - a.min >= 200.0))
+    [
+        "Inter",
+        "Bahnschrift",
+        "Segoe UI Variable",
+        "Roboto Flex",
+        "Noto Sans",
+        "Cantarell",
+        "Source Sans 3",
+        "Open Sans",
+        "Roboto",
+    ]
+    .into_iter()
+    .filter_map(|fam| find_face(fam, "Regular").filter(|f| f.family.eq_ignore_ascii_case(fam)))
+    .find(|f| f.axis("wght").is_some_and(|a| a.max - a.min >= 200.0))
 }
 
 #[test]
@@ -286,10 +349,26 @@ fn variable_font_axes_change_shaping_and_outlines() {
     let light = layout(&t, None, None);
     t.style.variations.insert("wght".into(), wght.max);
     let heavy = layout(&t, None, None);
-    assert!(heavy.glyphs.iter().filter(|g| g.face.id == face.id).all(|g| !g.coords.is_empty()), "glyphs carry the instance");
+    assert!(
+        heavy
+            .glyphs
+            .iter()
+            .filter(|g| g.face.id == face.id)
+            .all(|g| !g.coords.is_empty()),
+        "glyphs carry the instance"
+    );
     let first = |l: &TextLayout| l.glyphs.first().map(|g| g.path().elements().to_vec());
-    assert_ne!(first(&light), first(&heavy), "the weight axis changes the outlines");
-    assert!(heavy.width >= light.width, "heavier is not narrower: {} < {}", heavy.width, light.width);
+    assert_ne!(
+        first(&light),
+        first(&heavy),
+        "the weight axis changes the outlines"
+    );
+    assert!(
+        heavy.width >= light.width,
+        "heavier is not narrower: {} < {}",
+        heavy.width,
+        light.width
+    );
     // Values clamp to the axis; unknown axes and junk are ignored.
     t.style.variations.insert("wght".into(), 1e9);
     t.style.variations.insert("ZZZZ".into(), 5.0);
@@ -303,14 +382,20 @@ fn variable_font_axes_change_shaping_and_outlines() {
     t.style.variations.clear();
     t.style.font_style = "Bold".into();
     let v = face.axis_values(&t.style);
-    let want = face.instance("Bold").and_then(|i| i.coords.get(wi).copied()).unwrap_or_else(|| wght.clamp(700.0));
+    let want = face
+        .instance("Bold")
+        .and_then(|i| i.coords.get(wi).copied())
+        .unwrap_or_else(|| wght.clamp(700.0));
     assert_eq!(v.get(wi).copied(), Some(want));
     // Named instances are offered as styles.
     if face.instances.len() > 1 {
         assert!(family_styles(&face.family).len() >= 2);
     }
     // The default instance needs no coordinates.
-    assert!(face.coords(&face.axes.iter().map(|a| a.default).collect::<Vec<_>>()).is_empty());
+    assert!(
+        face.coords(&face.axes.iter().map(|a| a.default).collect::<Vec<_>>())
+            .is_empty()
+    );
 }
 
 #[test]
@@ -318,7 +403,9 @@ fn static_fonts_have_no_axes() {
     if !have_fonts() {
         return;
     }
-    let Some(face) = db().write().unwrap().default_face() else { return };
+    let Some(face) = db().write().unwrap().default_face() else {
+        return;
+    };
     if face.is_variable() {
         return;
     }
@@ -330,9 +417,15 @@ fn static_fonts_have_no_axes() {
 
 #[test]
 fn bidi_visual_order_follows_levels() {
-    assert_eq!(crate::layout::visual_order(&[0, 0, 1, 1, 1, 0]), vec![0, 1, 4, 3, 2, 5]);
+    assert_eq!(
+        crate::layout::visual_order(&[0, 0, 1, 1, 1, 0]),
+        vec![0, 1, 4, 3, 2, 5]
+    );
     // A left-to-right run inside a right-to-left paragraph keeps its order.
-    assert_eq!(crate::layout::visual_order(&[1, 1, 2, 2, 1]), vec![4, 2, 3, 1, 0]);
+    assert_eq!(
+        crate::layout::visual_order(&[1, 1, 2, 2, 1]),
+        vec![4, 2, 3, 1, 0]
+    );
     assert_eq!(crate::layout::visual_order(&[0, 0, 0]), vec![0, 1, 2]);
     assert!(crate::layout::visual_order(&[]).is_empty());
     // Plain left-to-right text skips the analysis.
@@ -346,7 +439,11 @@ fn bidi_visual_order_follows_levels() {
 
 /// The x of the glyph for char `i`.
 fn glyph_x(l: &TextLayout, i: usize) -> f64 {
-    l.glyphs.iter().find(|g| g.char_start == i && g.char_end > i).map(|g| g.x).unwrap()
+    l.glyphs
+        .iter()
+        .find(|g| g.char_start == i && g.char_end > i)
+        .map(|g| g.x)
+        .unwrap()
 }
 
 #[test]
@@ -375,14 +472,20 @@ fn bidi_runs_lay_out_right_to_left() {
     assert!(glyph_x(&l, 0) > glyph_x(&l, 2));
     // The caret starts at the right and ends at the left; clicks map back.
     let right = l.glyphs.iter().map(|g| g.x + g.advance).fold(0.0, f64::max);
-    assert!((l.caret(0).0 - right).abs() < 1e-6, "{} vs {right}", l.caret(0).0);
+    assert!(
+        (l.caret(0).0 - right).abs() < 1e-6,
+        "{} vs {right}",
+        l.caret(0).0
+    );
     assert!(l.caret(7).0 < glyph_x(&l, 2));
     assert_eq!(l.hit(right + 50.0, 5.0), 0);
     assert_eq!(l.hit(-50.0, 5.0), 4, "left of the English run: before 'a'");
     // Selecting the Hebrew word highlights its glyphs only.
     let r = l.selection_rects(0, 3);
     assert_eq!(r.len(), 1);
-    assert!(r[0].x0 >= glyph_x(&l, 2) - 1e-6 && r[0].x1 <= right + 1e-6 && r[0].x0 > glyph_x(&l, 6));
+    assert!(
+        r[0].x0 >= glyph_x(&l, 2) - 1e-6 && r[0].x1 <= right + 1e-6 && r[0].x0 > glyph_x(&l, 6)
+    );
 }
 
 #[test]
@@ -391,15 +494,22 @@ fn arrows_move_visually_through_right_to_left_runs() {
         eprintln!("no fonts; skipping");
         return;
     }
-    for text in ["abc \u{5D0}\u{5D1}\u{5D2} def", "\u{5D0}\u{5D1}\u{5D2} abc \u{5D3}\u{5D4}"] {
+    for text in [
+        "abc \u{5D0}\u{5D1}\u{5D2} def",
+        "\u{5D0}\u{5D1}\u{5D2} abc \u{5D3}\u{5D4}",
+    ] {
         let l = layout(&TextData::new(text), None, None);
         let n = text.chars().count();
         // Start at the visual left edge and step right until the caret stops moving right.
-        let mut i = (0..=n).min_by(|a, b| l.caret(*a).0.total_cmp(&l.caret(*b).0)).unwrap();
+        let mut i = (0..=n)
+            .min_by(|a, b| l.caret(*a).0.total_cmp(&l.caret(*b).0))
+            .unwrap();
         let mut xs = vec![l.caret(i).0];
         let mut seen = vec![i];
         for _ in 0..(2 * n) {
-            let Some(j) = l.visual_step(i, true) else { panic!("bidi line steps visually") };
+            let Some(j) = l.visual_step(i, true) else {
+                panic!("bidi line steps visually")
+            };
             if j > n || l.caret(j.min(n)).0 <= *xs.last().unwrap() {
                 break;
             }
@@ -414,5 +524,9 @@ fn arrows_move_visually_through_right_to_left_runs() {
         assert!(l.caret(back).0 < l.caret(i).0);
     }
     // Plain left-to-right lines step by char (the caller's default).
-    assert!(layout(&TextData::new("plain"), None, None).visual_step(1, true).is_none());
+    assert!(
+        layout(&TextData::new("plain"), None, None)
+            .visual_step(1, true)
+            .is_none()
+    );
 }

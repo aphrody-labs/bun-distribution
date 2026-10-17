@@ -13,19 +13,28 @@ static GPU_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn device() -> Option<(wgpu::Adapter, wgpu::Device, wgpu::Queue)> {
     let instance = wgpu::Instance::default();
-    let adapter = match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())) {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("skipping device-loss tests: no adapter ({e})");
-            return None;
-        }
-    };
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())).ok()?;
+    let adapter =
+        match pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
+        {
+            Ok(a) => a,
+            Err(e) => {
+                eprintln!("skipping device-loss tests: no adapter ({e})");
+                return None;
+            }
+        };
+    let (device, queue) =
+        pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())).ok()?;
     Some((adapter, device, queue))
 }
 
 fn doc() -> Document {
-    let mut d = Document::with_background("t", Size::new(600, 400), ColorMode::Rgb, SampleType::U8, Color::rgba(0.9, 0.9, 0.9, 1.0));
+    let mut d = Document::with_background(
+        "t",
+        Size::new(600, 400),
+        ColorMode::Rgb,
+        SampleType::U8,
+        Color::rgba(0.9, 0.9, 0.9, 1.0),
+    );
     let mut s = Surface::new(d.pixel_format());
     s.fill_rect(Rect::new(20, 20, 500, 300), &[0.8, 0.1, 0.1, 0.7]);
     d.layers.push(Layer::new("red", LayerContent::Raster(s)));
@@ -34,9 +43,17 @@ fn doc() -> Document {
 
 #[test]
 fn injected_fault_skips_the_gpu() {
-    let _lock = GPU_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some((adapter, device, queue)) = device() else { return };
-    let Ok(mut comp) = Compositor::try_new_with_format(&device, Compositor::preferred_acc_format(&adapter)) else { return };
+    let _lock = GPU_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let Some((adapter, device, queue)) = device() else {
+        return;
+    };
+    let Ok(mut comp) =
+        Compositor::try_new_with_format(&device, Compositor::preferred_acc_format(&adapter))
+    else {
+        return;
+    };
     let health = DeviceHealth::watch(&device);
     comp.set_health(health.clone());
     let d = doc();
@@ -49,9 +66,17 @@ fn injected_fault_skips_the_gpu() {
 
 #[test]
 fn destroyed_device_returns_an_error_not_a_panic() {
-    let _lock = GPU_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some((adapter, device, queue)) = device() else { return };
-    let Ok(mut comp) = Compositor::try_new_with_format(&device, Compositor::preferred_acc_format(&adapter)) else { return };
+    let _lock = GPU_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let Some((adapter, device, queue)) = device() else {
+        return;
+    };
+    let Ok(mut comp) =
+        Compositor::try_new_with_format(&device, Compositor::preferred_acc_format(&adapter))
+    else {
+        return;
+    };
     let health = DeviceHealth::watch(&device);
     comp.set_health(health.clone());
     let d = doc();
@@ -70,8 +95,12 @@ fn destroyed_device_returns_an_error_not_a_panic() {
 
 #[test]
 fn health_wait_on_a_destroyed_device_is_safe() {
-    let _lock = GPU_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some((_adapter, device, _queue)) = device() else { return };
+    let _lock = GPU_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let Some((_adapter, device, _queue)) = device() else {
+        return;
+    };
     let health = DeviceHealth::watch(&device);
     assert!(health.wait(&device, None));
     device.destroy();

@@ -50,7 +50,13 @@ static SHELL_FN: LazyLock<Regex> =
 static JSON_KEY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^\s*"([^"]+)"\s*:"#).unwrap());
 
 fn first_capture(re: &Regex, line: &str) -> Option<Option<String>> {
-    re.captures(line).map(|c| c.iter().skip(1).flatten().next().map(|m| m.as_str().to_string()))
+    re.captures(line).map(|c| {
+        c.iter()
+            .skip(1)
+            .flatten()
+            .next()
+            .map(|m| m.as_str().to_string())
+    })
 }
 
 fn leading_ws(line: &str) -> usize {
@@ -152,20 +158,30 @@ impl Chunker for StructuralChunker {
             Language::Python => (indent_based(&lines, &PY_DECL), ChunkKind::Code),
             Language::Yaml => (indent_based(&lines, &YAML_KEY), ChunkKind::Config),
             Language::Toml => (indent_based(&lines, &TOML_TABLE), ChunkKind::Config),
-            Language::Go => (brace_based(&lines, &GO_DECL, 0, &['{'], &['}']), ChunkKind::Code),
-            Language::Java | Language::CSharp | Language::Kotlin => {
-                (brace_based(&lines, &JVM_DECL, 0, &['{'], &['}']), ChunkKind::Code)
-            },
-            Language::C | Language::Cpp => {
-                (brace_based(&lines, &C_DECL, 0, &['{'], &['}']), ChunkKind::Code)
-            },
-            Language::Swift => {
-                (brace_based(&lines, &SWIFT_DECL, 0, &['{'], &['}']), ChunkKind::Code)
-            },
-            Language::Shell => (brace_based(&lines, &SHELL_FN, 0, &['{'], &['}']), ChunkKind::Code),
-            Language::Json => {
-                (brace_based(&lines, &JSON_KEY, 1, &['{', '['], &['}', ']']), ChunkKind::Config)
-            },
+            Language::Go => (
+                brace_based(&lines, &GO_DECL, 0, &['{'], &['}']),
+                ChunkKind::Code,
+            ),
+            Language::Java | Language::CSharp | Language::Kotlin => (
+                brace_based(&lines, &JVM_DECL, 0, &['{'], &['}']),
+                ChunkKind::Code,
+            ),
+            Language::C | Language::Cpp => (
+                brace_based(&lines, &C_DECL, 0, &['{'], &['}']),
+                ChunkKind::Code,
+            ),
+            Language::Swift => (
+                brace_based(&lines, &SWIFT_DECL, 0, &['{'], &['}']),
+                ChunkKind::Code,
+            ),
+            Language::Shell => (
+                brace_based(&lines, &SHELL_FN, 0, &['{'], &['}']),
+                ChunkKind::Code,
+            ),
+            Language::Json => (
+                brace_based(&lines, &JSON_KEY, 1, &['{', '['], &['}', ']']),
+                ChunkKind::Config,
+            ),
             _ => (Vec::new(), ChunkKind::Code),
         };
 
@@ -203,7 +219,14 @@ impl Chunker for StructuralChunker {
                 continue;
             }
             if measure(&text, opts.length_unit) <= opts.max_chars {
-                out.push(Chunk::new(ord, kind, name.clone(), start_line, end_line, text));
+                out.push(Chunk::new(
+                    ord,
+                    kind,
+                    name.clone(),
+                    start_line,
+                    end_line,
+                    text,
+                ));
                 ord += 1;
             } else {
                 let unit_lines: Vec<&str> = text.split('\n').collect();

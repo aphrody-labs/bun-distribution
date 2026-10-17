@@ -33,7 +33,10 @@ impl Peaks {
     /// Build the overview of `samples` (one channel). NaN samples are ignored.
     pub fn build(samples: &[f32]) -> Peaks {
         let mut levels = Vec::new();
-        let level0: Vec<(f32, f32)> = samples.chunks(BLOCK).map(|c| finish(c.iter().fold(EMPTY, |acc, &s| merge(acc, (s, s))))).collect();
+        let level0: Vec<(f32, f32)> = samples
+            .chunks(BLOCK)
+            .map(|c| finish(c.iter().fold(EMPTY, |acc, &s| merge(acc, (s, s)))))
+            .collect();
         if level0.is_empty() {
             return Peaks { len: 0, levels };
         }
@@ -42,10 +45,16 @@ impl Peaks {
             if last.len() <= 1 {
                 break;
             }
-            let next: Vec<(f32, f32)> = last.chunks(FANOUT).map(|c| c.iter().fold(EMPTY, |acc, &b| merge(acc, b))).collect();
+            let next: Vec<(f32, f32)> = last
+                .chunks(FANOUT)
+                .map(|c| c.iter().fold(EMPTY, |acc, &b| merge(acc, b)))
+                .collect();
             levels.push(next);
         }
-        Peaks { len: samples.len(), levels }
+        Peaks {
+            len: samples.len(),
+            levels,
+        }
     }
 
     /// Number of samples the overview was built from.
@@ -72,7 +81,9 @@ impl Peaks {
         let mut acc = EMPTY;
         let mut lvl = 0usize;
         while lo < hi {
-            let Some(level) = self.levels.get(lvl) else { break };
+            let Some(level) = self.levels.get(lvl) else {
+                break;
+            };
             let has_parent = lvl + 1 < self.levels.len();
             if !has_parent || hi - lo < 2 * FANOUT {
                 for b in level.get(lo..hi.min(level.len())).unwrap_or_default() {
@@ -126,18 +137,33 @@ mod tests {
 
     fn brute(samples: &[f32], start: usize, end: usize) -> (f32, f32) {
         let s = &samples[start..end];
-        (s.iter().copied().fold(f32::INFINITY, f32::min), s.iter().copied().fold(f32::NEG_INFINITY, f32::max))
+        (
+            s.iter().copied().fold(f32::INFINITY, f32::min),
+            s.iter().copied().fold(f32::NEG_INFINITY, f32::max),
+        )
     }
 
     fn signal(n: usize) -> Vec<f32> {
-        (0..n).map(|i| ((i as f32 * 0.037).sin() * (i as f32 * 0.0011).cos()) + if i % 997 == 0 { 0.5 } else { 0.0 }).collect()
+        (0..n)
+            .map(|i| {
+                ((i as f32 * 0.037).sin() * (i as f32 * 0.0011).cos())
+                    + if i % 997 == 0 { 0.5 } else { 0.0 }
+            })
+            .collect()
     }
 
     #[test]
     fn aligned_ranges_are_exact() {
         let x = signal(100_003);
         let p = Peaks::build(&x);
-        for &(a, b) in &[(0, 32), (0, 100_003), (32, 64_000), (3200, 3232), (96, 99_968), (64, 100_003)] {
+        for &(a, b) in &[
+            (0, 32),
+            (0, 100_003),
+            (32, 64_000),
+            (3200, 3232),
+            (96, 99_968),
+            (64, 100_003),
+        ] {
             assert_eq!(p.minmax(a, b), brute(&x, a, b), "range {a}..{b}");
         }
     }
@@ -148,14 +174,25 @@ mod tests {
         let p = Peaks::build(&x);
         let mut seed = 12345u64;
         for _ in 0..2000 {
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let a = (seed >> 33) as usize % 50_000;
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             let b = a + 1 + (seed >> 33) as usize % (50_000 - a);
             let got = p.minmax(a, b);
             let truth = brute(&x, a, b);
-            assert!(got.0 <= truth.0 && got.1 >= truth.1, "{a}..{b}: {got:?} vs {truth:?}");
-            let cover = brute(&x, a / BLOCK * BLOCK, (b.div_ceil(BLOCK) * BLOCK).min(x.len()));
+            assert!(
+                got.0 <= truth.0 && got.1 >= truth.1,
+                "{a}..{b}: {got:?} vs {truth:?}"
+            );
+            let cover = brute(
+                &x,
+                a / BLOCK * BLOCK,
+                (b.div_ceil(BLOCK) * BLOCK).min(x.len()),
+            );
             assert_eq!(got, cover, "{a}..{b}");
         }
     }
@@ -186,7 +223,11 @@ mod tests {
             let truth = brute(&x, c * 100, c * 100 + 100);
             assert!(lo <= truth.0 && hi >= truth.1);
         }
-        let all = cols.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |a, &c| (a.0.min(c.0), a.1.max(c.1)));
+        let all = cols
+            .iter()
+            .fold((f32::INFINITY, f32::NEG_INFINITY), |a, &c| {
+                (a.0.min(c.0), a.1.max(c.1))
+            });
         assert_eq!(all, brute(&x, 0, 10_000));
         // Past the end of the data.
         let cols = p.columns(9_000.0, 11_000.0, 2);

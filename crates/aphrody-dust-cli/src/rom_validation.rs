@@ -7,7 +7,12 @@ pub fn validate_regions(rom: &raw::Rom<'_>) -> Result<()> {
     if let Err(regions) = inspection.validate_regions() {
         let details = regions
             .iter()
-            .map(|region| format!("{:?} ({:#x}+{:#x})", region.kind, region.offset, region.size))
+            .map(|region| {
+                format!(
+                    "{:?} ({:#x}+{:#x})",
+                    region.kind, region.offset, region.size
+                )
+            })
             .collect::<Vec<_>>()
             .join(", ");
         bail!("ROM header declares invalid regions: {details}");

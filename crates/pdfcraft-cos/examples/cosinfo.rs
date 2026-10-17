@@ -9,7 +9,9 @@ fn show(o: &pdfcraft_cos::Object) -> String {
 
 fn main() {
     let mut args = std::env::args().skip(1);
-    let path = args.next().expect("usage: cosinfo <file.pdf> [password] [obj…]");
+    let path = args
+        .next()
+        .expect("usage: cosinfo <file.pdf> [password] [obj…]");
     let password = args.next().filter(|p| !p.is_empty());
     let objs: Vec<u32> = args.filter_map(|a| a.parse().ok()).collect();
     let bytes = std::sync::Arc::new(std::fs::read(&path).expect("readable"));
@@ -19,9 +21,17 @@ fn main() {
             for r in doc.repair_log() {
                 println!("repair: {r}");
             }
-            println!("trailer {}", show(&pdfcraft_cos::Object::Dict(doc.trailer().clone())));
+            println!(
+                "trailer {}",
+                show(&pdfcraft_cos::Object::Dict(doc.trailer().clone()))
+            );
             if let Some(s) = doc.security() {
-                println!("security: auth {:?}, key {} bytes, {:?}", s.auth(), s.file_key().len(), s.permissions());
+                println!(
+                    "security: auth {:?}, key {} bytes, {:?}",
+                    s.auth(),
+                    s.file_key().len(),
+                    s.permissions()
+                );
             }
             if let Some(r) = doc.root() {
                 println!("catalog {}", show(&doc.get(r)));

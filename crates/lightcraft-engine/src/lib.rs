@@ -74,7 +74,10 @@ use lightcraft_develop::DevelopSettings;
 pub use media::{RenderJob, SourceLevel};
 use serde_json::Value;
 pub use view::{Browse, FilterChip, LibrarySource, Selection, SelectionState, filter_chips};
-pub use {lightcraft_catalog as catalog, lightcraft_develop as develop, lightcraft_gpu as gpu, lightcraft_pipeline as pipeline};
+pub use {
+    lightcraft_catalog as catalog, lightcraft_develop as develop, lightcraft_gpu as gpu,
+    lightcraft_pipeline as pipeline,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
@@ -97,7 +100,10 @@ pub enum EngineError {
     /// LightCraft library (issue #891): nothing was created or opened. `catalog`: the `.lrcat`
     /// to import with `library.importLightroom`, when one was found.
     #[error("{} is a Lightroom Classic catalog, not a LightCraft library; import it into a LightCraft library with File ▸ Import Lightroom Catalog…{}", path.display(), catalog.as_ref().map_or(String::new(), |c| format!(" ({})", c.display())))]
-    LightroomCatalog { path: std::path::PathBuf, catalog: Option<std::path::PathBuf> },
+    LightroomCatalog {
+        path: std::path::PathBuf,
+        catalog: Option<std::path::PathBuf>,
+    },
     #[error("{0}")]
     Other(String),
 }
@@ -150,7 +156,10 @@ pub struct FolderMove {
 
 impl FolderMove {
     fn reversed(&self) -> Self {
-        Self { from: self.to.clone(), to: self.from.clone() }
+        Self {
+            from: self.to.clone(),
+            to: self.from.clone(),
+        }
     }
 }
 
@@ -417,22 +426,34 @@ impl Session {
         }
         let empty = Value::Object(Default::default());
         let params = if params.is_null() { &empty } else { params };
-        self.run_command(id, spec.journal.then_some(params), |s| (spec.run)(s, params))
+        self.run_command(id, spec.journal.then_some(params), |s| {
+            (spec.run)(s, params)
+        })
     }
 
     /// Run `f` as command `id` with what [`Session::execute`] does around every command: the
     /// panic guard, auto versions, XMP sidecar auto-write and the durable save (a failed save is
     /// `NotSaved`). Not journaled. The app's import task commits its batches this way.
-    pub fn execute_fn(&mut self, id: &str, f: impl FnOnce(&mut Session) -> Result<Value>) -> Result<Value> {
+    pub fn execute_fn(
+        &mut self,
+        id: &str,
+        f: impl FnOnce(&mut Session) -> Result<Value>,
+    ) -> Result<Value> {
         self.run_command(id, None, f)
     }
 
-    fn run_command(&mut self, id: &str, journal: Option<&Value>, f: impl FnOnce(&mut Session) -> Result<Value>) -> Result<Value> {
+    fn run_command(
+        &mut self,
+        id: &str,
+        journal: Option<&Value>,
+        f: impl FnOnce(&mut Session) -> Result<Value>,
+    ) -> Result<Value> {
         let log_start = self.pending_log.len();
         let was_active = self.active();
         self.depth += 1;
         // last-resort guard: a panic in a command is that command's error, not a crash
-        let r = guard::catch(&format!("`{id}`"), || f(self)).unwrap_or_else(|e| Err(EngineError::Other(e)));
+        let r = guard::catch(&format!("`{id}`"), || f(self))
+            .unwrap_or_else(|e| Err(EngineError::Other(e)));
         self.depth -= 1;
         if self.depth == 0 && was_active.is_some() && self.active() != was_active {
             self.previous_active = was_active;
@@ -451,7 +472,12 @@ impl Session {
         }
         if self.depth == 0 {
             let skip = std::mem::take(&mut self.skip_auto_write);
-            if r.is_ok() && !skip && self.xmp.auto_write && self.interaction.is_none() && self.pending_log.len() > log_start {
+            if r.is_ok()
+                && !skip
+                && self.xmp.auto_write
+                && self.interaction.is_none()
+                && self.pending_log.len() > log_start
+            {
                 self.auto_write_sidecars_since(log_start);
             }
         }
@@ -483,14 +509,22 @@ impl Session {
         let fwd = op.clone();
         let inv = self.apply_catalog(op)?;
         self.pending_log.push(fwd);
-        self.undo.push(UndoEntry { label: label.to_string(), op: inv, folder: None, retry_inverse: Vec::new(), retry_sidecars: Vec::new() });
+        self.undo.push(UndoEntry {
+            label: label.to_string(),
+            op: inv,
+            folder: None,
+            retry_inverse: Vec::new(),
+            retry_sidecars: Vec::new(),
+        });
         self.commits = self.commits.wrapping_add(1);
         if self.undo.len() > 1000 {
             let mut dropped = self.undo.remove(0);
-            self.pending_sidecar_repairs.append(&mut dropped.retry_sidecars);
+            self.pending_sidecar_repairs
+                .append(&mut dropped.retry_sidecars);
         }
         for mut dropped in self.redo.drain(..) {
-            self.pending_sidecar_repairs.append(&mut dropped.retry_sidecars);
+            self.pending_sidecar_repairs
+                .append(&mut dropped.retry_sidecars);
         }
         Ok(())
     }
@@ -500,7 +534,10 @@ impl Session {
         let mut pending = vec![&op];
         while let Some(op) = pending.pop() {
             match op {
-                Op::SetFile { id, .. } | Op::Relink { id, .. } | Op::SetContent { id, .. } | Op::RemovePhoto { id } => self.media.forget(*id),
+                Op::SetFile { id, .. }
+                | Op::Relink { id, .. }
+                | Op::SetContent { id, .. }
+                | Op::RemovePhoto { id } => self.media.forget(*id),
                 Op::AddPhoto { photo } => self.media.forget(photo.id),
                 Op::Batch { ops } => pending.extend(ops),
                 _ => {}
@@ -511,7 +548,12 @@ impl Session {
 
     /// [`Session::commit`] for an op that goes with a folder already renamed on disk; the undo
     /// step renames it back (`folder` is the undo direction: current place → old place).
-    pub(crate) fn commit_with_folder(&mut self, label: &str, op: Op, folder: FolderMove) -> Result<()> {
+    pub(crate) fn commit_with_folder(
+        &mut self,
+        label: &str,
+        op: Op,
+        folder: FolderMove,
+    ) -> Result<()> {
         self.commit(label, op)?;
         if let Some(e) = self.undo.last_mut() {
             e.folder = Some(folder);
@@ -544,14 +586,24 @@ impl Session {
     /// differ from its latest version; at most [`AUTO_VERSIONS`] auto versions, oldest dropped).
     /// Saved with the library but not an undo step.
     pub fn auto_version(&mut self, id: PhotoId) {
-        let Some(p) = self.catalog.photo(id) else { return };
-        if !p.is_edited() || p.versions.last().is_some_and(|v| *v.settings == *p.develop) || self.interaction.is_some() {
+        let Some(p) = self.catalog.photo(id) else {
+            return;
+        };
+        if !p.is_edited()
+            || p.versions.last().is_some_and(|v| *v.settings == *p.develop)
+            || self.interaction.is_some()
+        {
             return;
         }
         let mut versions = p.versions.clone();
         let created = (self.clock)();
         let name = lightcraft_catalog::dates::display_time(&created);
-        versions.push(lightcraft_catalog::Version { name, created, settings: p.develop.clone(), auto: true });
+        versions.push(lightcraft_catalog::Version {
+            name,
+            created,
+            settings: p.develop.clone(),
+            auto: true,
+        });
         let autos = versions.iter().filter(|v| v.auto).count();
         if autos > AUTO_VERSIONS
             && let Some(i) = versions.iter().position(|v| v.auto)
@@ -576,9 +628,13 @@ impl Session {
         if n < 2 || n > self.undo.len() {
             return;
         }
-        let Some(entries) = self.undo.get(self.undo.len() - n..) else { return };
+        let Some(entries) = self.undo.get(self.undo.len() - n..) else {
+            return;
+        };
         // Folder moves and partially applied file steps stay on their own.
-        if entries.iter().any(|e| e.folder.is_some() || !e.retry_inverse.is_empty() || !e.retry_sidecars.is_empty()) {
+        if entries.iter().any(|e| {
+            e.folder.is_some() || !e.retry_inverse.is_empty() || !e.retry_sidecars.is_empty()
+        }) {
             return;
         }
         let tail = self.undo.split_off(self.undo.len() - n);
@@ -603,7 +659,10 @@ impl Session {
     }
 
     pub(crate) fn undo_step_with(&mut self, fs: &dyn rename::MoveFs) -> Result<String> {
-        let mut e = self.undo.pop().ok_or_else(|| EngineError::Other("nothing to undo".into()))?;
+        let mut e = self
+            .undo
+            .pop()
+            .ok_or_else(|| EngineError::Other("nothing to undo".into()))?;
         let redo = match self.apply_with_files(&mut e, fs) {
             Ok(r) => r,
             Err(err) => {
@@ -628,7 +687,10 @@ impl Session {
     }
 
     pub(crate) fn redo_step_with(&mut self, fs: &dyn rename::MoveFs) -> Result<String> {
-        let mut e = self.redo.pop().ok_or_else(|| EngineError::Other("nothing to redo".into()))?;
+        let mut e = self
+            .redo
+            .pop()
+            .ok_or_else(|| EngineError::Other("nothing to redo".into()))?;
         let undo = match self.apply_with_files(&mut e, fs) {
             Ok(r) => r,
             Err(err) => {
@@ -653,12 +715,17 @@ impl Session {
     /// screen (issue #293). It joins the selection if it isn't in it; nothing changes for steps
     /// that touch several photos, albums or files, or for a photo not in the current view.
     fn show_undone(&mut self, op: &Op) {
-        let Some(id) = single_photo(op, 0) else { return };
+        let Some(id) = single_photo(op, 0) else {
+            return;
+        };
         if self.selection.active == Some(id) || !self.visible().contains(&id) {
             return;
         }
         if !self.selection.contains(id) {
-            self.selection = Selection { ids: vec![id], active: Some(id) };
+            self.selection = Selection {
+                ids: vec![id],
+                active: Some(id),
+            };
         } else {
             self.selection.active = Some(id);
         }
@@ -673,17 +740,24 @@ impl Session {
     fn apply_with_files(&mut self, entry: &mut UndoEntry, fs: &dyn rename::MoveFs) -> Result<Op> {
         // The entry is detached from self.undo/self.redo: include it before any global
         // repair can retire, then retry revalidates it before moving its own packets.
-        rename::validate_sidecars(fs, &entry.retry_sidecars).map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
+        rename::validate_sidecars(fs, &entry.retry_sidecars)
+            .map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
         // Repair discarded file steps before another path change can stale their exact paths.
         // Unrelated metadata history must remain usable while a sidecar is still unwritable.
-        if entry.folder.is_some() || !entry.retry_sidecars.is_empty() || !self.file_moves(&entry.op).is_empty() {
-            self.repair_sidecars_with(fs).map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
+        if entry.folder.is_some()
+            || !entry.retry_sidecars.is_empty()
+            || !self.file_moves(&entry.op).is_empty()
+        {
+            self.repair_sidecars_with(fs)
+                .map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
         }
-        rename::retry_sidecars(fs, &mut entry.retry_sidecars).map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
+        rename::retry_sidecars(fs, &mut entry.retry_sidecars)
+            .map_err(|e| EngineError::Other(format!("can't move the files back: {e}")))?;
         let op = &entry.op;
         let folder = entry.folder.as_ref();
         if let Some(f) = folder {
-            cmd::browse::folder_on_disk(&f.from, &f.to).map_err(|e| EngineError::Other(format!("can't move the folder back: {e}")))?;
+            cmd::browse::folder_on_disk(&f.from, &f.to)
+                .map_err(|e| EngineError::Other(format!("can't move the folder back: {e}")))?;
         }
         let undo_folder = || {
             if let Some(f) = folder {
@@ -701,7 +775,9 @@ impl Session {
             // now, so the opposite history direction still restores the entire original step.
             inverses.append(&mut entry.retry_inverse);
             entry.retry_inverse = inverses;
-            return Err(EngineError::Other(format!("can't move the files back: {message}")));
+            return Err(EngineError::Other(format!(
+                "can't move the files back: {message}"
+            )));
         }
         match self.apply_catalog(op.clone()) {
             Ok(inv) => {
@@ -720,10 +796,17 @@ impl Session {
                 }
             }
             Err(e) => {
-                let back: Vec<(String, String)> = moves.iter().rev().map(|(a, b)| (b.clone(), a.clone())).collect();
+                let back: Vec<(String, String)> = moves
+                    .iter()
+                    .rev()
+                    .map(|(a, b)| (b.clone(), a.clone()))
+                    .collect();
                 if let Err(mut be) = rename::move_all(fs, &back) {
                     entry.retry_sidecars.append(&mut be.pending_sidecars);
-                    return Err(EngineError::Other(format!("{e}; the files could not all be moved back: {}", be.message)));
+                    return Err(EngineError::Other(format!(
+                        "{e}; the files could not all be moved back: {}",
+                        be.message
+                    )));
                 }
                 undo_folder();
                 Err(e)
@@ -740,7 +823,9 @@ impl Session {
 
     /// The photo being edited (the active photo).
     pub fn active(&self) -> Option<PhotoId> {
-        self.selection.active.filter(|id| self.catalog.photo(*id).is_some())
+        self.selection
+            .active
+            .filter(|id| self.catalog.photo(*id).is_some())
     }
 
     pub fn develop_of(&self, id: PhotoId) -> Option<Arc<DevelopSettings>> {
@@ -749,17 +834,34 @@ impl Session {
 
     /// Change a photo's develop settings. During an interaction the change is previewed without an
     /// undo step; otherwise it is committed with a history entry.
-    pub fn set_develop(&mut self, id: PhotoId, settings: DevelopSettings, label: &str) -> Result<()> {
+    pub fn set_develop(
+        &mut self,
+        id: PhotoId,
+        settings: DevelopSettings,
+        label: &str,
+    ) -> Result<()> {
         let now = (self.clock)();
         let settings = Arc::new(settings);
         if let Some(i) = &self.interaction
             && i.photo == id
         {
-            return self.apply_silent(Op::SetDevelop { id, settings, label: label.into(), edited: Some(now) });
+            return self.apply_silent(Op::SetDevelop {
+                id,
+                settings,
+                label: label.into(),
+                edited: Some(now),
+            });
         }
-        let mut ops = vec![self.develop_op(id, (*settings).clone(), label).ok_or(lightcraft_catalog::CatalogError::NoPhoto(id))?];
+        let mut ops = vec![
+            self.develop_op(id, (*settings).clone(), label)
+                .ok_or(lightcraft_catalog::CatalogError::NoPhoto(id))?,
+        ];
         ops.extend(self.auto_sync_ops(id, &settings, label));
-        let op = if ops.len() == 1 { ops.remove(0) } else { Op::Batch { ops } };
+        let op = if ops.len() == 1 {
+            ops.remove(0)
+        } else {
+            Op::Batch { ops }
+        };
         self.commit(label, op)
     }
 
@@ -776,8 +878,12 @@ impl Session {
         {
             return Vec::new();
         }
-        let Some(old) = self.develop_of(id) else { return Vec::new() };
-        let Some(mut delta) = json_delta(&old.to_json(), &new.to_json()) else { return Vec::new() };
+        let Some(old) = self.develop_of(id) else {
+            return Vec::new();
+        };
+        let Some(mut delta) = json_delta(&old.to_json(), &new.to_json()) else {
+            return Vec::new();
+        };
         if let Some(o) = delta.as_object_mut() {
             for k in ["spots", "red_eye", "version", "process"] {
                 o.remove(k);
@@ -793,7 +899,9 @@ impl Session {
             .filter_map(|x| self.develop_of(*x).map(|d| (*x, d)))
             .filter_map(|(x, d)| {
                 let synced = lightcraft_develop::apply_partial(&d, &delta, 1.0);
-                (synced != *d).then(|| self.develop_op(x, synced, label)).flatten()
+                (synced != *d)
+                    .then(|| self.develop_op(x, synced, label))
+                    .flatten()
             })
             .collect()
     }
@@ -802,9 +910,20 @@ impl Session {
     pub fn develop_op(&self, id: PhotoId, settings: DevelopSettings, label: &str) -> Option<Op> {
         self.catalog.photo(id)?;
         let settings = Arc::new(settings);
-        let step = lightcraft_catalog::HistoryStep { label: label.into(), settings: settings.clone() };
+        let step = lightcraft_catalog::HistoryStep {
+            label: label.into(),
+            settings: settings.clone(),
+        };
         Some(Op::Batch {
-            ops: vec![Op::SetDevelop { id, settings, label: label.into(), edited: Some((self.clock)()) }, Op::PushHistory { id, step }],
+            ops: vec![
+                Op::SetDevelop {
+                    id,
+                    settings,
+                    label: label.into(),
+                    edited: Some((self.clock)()),
+                },
+                Op::PushHistory { id, step },
+            ],
         })
     }
 
@@ -812,27 +931,47 @@ impl Session {
         if self.interaction.is_some() {
             self.end_interaction()?;
         }
-        let id = self.active().ok_or_else(|| EngineError::Other("no active photo".into()))?;
+        let id = self
+            .active()
+            .ok_or_else(|| EngineError::Other("no active photo".into()))?;
         let original = self.develop_of(id).unwrap_or_default();
-        self.interaction = Some(Interaction { label: label.into(), photo: id, original });
+        self.interaction = Some(Interaction {
+            label: label.into(),
+            photo: id,
+            original,
+        });
         Ok(())
     }
 
     /// Commit the interaction as one undo step (no-op if nothing changed).
     pub fn end_interaction(&mut self) -> Result<()> {
-        let Some(i) = self.interaction.take() else { return Ok(()) };
-        let Some(cur) = self.develop_of(i.photo) else { return Ok(()) };
+        let Some(i) = self.interaction.take() else {
+            return Ok(());
+        };
+        let Some(cur) = self.develop_of(i.photo) else {
+            return Ok(());
+        };
         if *cur == *i.original {
             return Ok(());
         }
         // Restore the original silently, then commit the final value as one step.
-        self.apply_silent(Op::SetDevelop { id: i.photo, settings: i.original.clone(), label: i.label.clone(), edited: None })?;
+        self.apply_silent(Op::SetDevelop {
+            id: i.photo,
+            settings: i.original.clone(),
+            label: i.label.clone(),
+            edited: None,
+        })?;
         self.set_develop(i.photo, (*cur).clone(), &i.label)
     }
 
     pub fn cancel_interaction(&mut self) -> Result<()> {
         if let Some(i) = self.interaction.take() {
-            self.apply_silent(Op::SetDevelop { id: i.photo, settings: i.original, label: i.label, edited: None })?;
+            self.apply_silent(Op::SetDevelop {
+                id: i.photo,
+                settings: i.original,
+                label: i.label,
+                edited: None,
+            })?;
         }
         Ok(())
     }
@@ -841,11 +980,17 @@ impl Session {
 
     /// Photos shown in the grid/filmstrip for the current source, filter and sort.
     pub fn visible(&mut self) -> &[PhotoId] {
-        let mut key =
-            (self.catalog.revision, format!("{:?}|{:?}|{:?}|{:?}|{:?}", self.source, self.filter, self.sort, self.browse, self.library_folder));
+        let mut key = (
+            self.catalog.revision,
+            format!(
+                "{:?}|{:?}|{:?}|{:?}|{:?}",
+                self.source, self.filter, self.sort, self.browse, self.library_folder
+            ),
+        );
         if self.source == LibrarySource::Missing && self.media.availability.is_background() {
             // the view fills in as the background checks find files gone
-            key.1.push_str(&format!("|{}", self.media.availability.generation()));
+            key.1
+                .push_str(&format!("|{}", self.media.availability.generation()));
         }
         if self.visible_key.as_ref() != Some(&key) {
             // "in the last N days" rules count back from the session's clock
@@ -862,7 +1007,10 @@ impl Session {
                 f.library_folder = Some(self.library_folder.clone().unwrap_or_else(|| ".".into()));
             }
             let mut visible = self.catalog.query(&f, &self.sort);
-            if visible.is_empty() && self.source == LibrarySource::LibraryFolder && !self.folder_holds_photos() {
+            if visible.is_empty()
+                && self.source == LibrarySource::LibraryFolder
+                && !self.folder_holds_photos()
+            {
                 // the shown folder lost its last photo (deleted, moved, removed): everything, not
                 // an empty grid under the name of a folder that is gone from the sidebar
                 self.source = LibrarySource::All;
@@ -887,7 +1035,11 @@ impl Session {
                 // a batch stays in file order (name, then id)
                 let cat = &self.catalog;
                 visible.sort_by(|a, b| {
-                    let key = |id: &PhotoId| cat.photo(*id).map(|p| p.imported.clone()).unwrap_or_default();
+                    let key = |id: &PhotoId| {
+                        cat.photo(*id)
+                            .map(|p| p.imported.clone())
+                            .unwrap_or_default()
+                    };
                     let name = |id: &PhotoId| cat.photo(*id).map(|p| p.file_name.as_str());
                     let by_name = match (name(a), name(b)) {
                         (Some(x), Some(y)) => lightcraft_catalog::query::cmp_name(x, y),
@@ -914,7 +1066,10 @@ impl Session {
     /// Whether the library still holds a photo imported from the folder a `LibraryFolder` source
     /// shows.
     fn folder_holds_photos(&self) -> bool {
-        let f = Filter { library_folder: self.library_folder.clone(), ..Default::default() };
+        let f = Filter {
+            library_folder: self.library_folder.clone(),
+            ..Default::default()
+        };
         self.library_folder.is_some() && !self.catalog.query(&f, &Sort::default()).is_empty()
     }
 
@@ -924,7 +1079,13 @@ impl Session {
         if self.source == LibrarySource::Missing {
             return None;
         }
-        let key = (self.catalog.revision, format!("{:?}|{:?}|{:?}", self.source, self.browse, self.library_folder));
+        let key = (
+            self.catalog.revision,
+            format!(
+                "{:?}|{:?}|{:?}",
+                self.source, self.browse, self.library_folder
+            ),
+        );
         if self.total.as_ref().map(|t| &t.0) != Some(&key) {
             let mut f = self.source.to_filter(&Filter::default(), &self.catalog);
             if self.source == LibrarySource::Folder {
@@ -961,7 +1122,11 @@ impl Session {
         if let Some(id) = p.get("id").and_then(Value::as_u64) {
             return vec![PhotoId(id)];
         }
-        if self.selection.ids.is_empty() { self.selection.active.into_iter().collect() } else { self.selection.ids.clone() }
+        if self.selection.ids.is_empty() {
+            self.selection.active.into_iter().collect()
+        } else {
+            self.selection.ids.clone()
+        }
     }
 }
 
@@ -972,8 +1137,12 @@ pub const AUTO_VERSIONS: usize = 20;
 pub fn json_delta(old: &Value, new: &Value) -> Option<Value> {
     match (old, new) {
         (Value::Object(a), Value::Object(b)) => {
-            let m: serde_json::Map<String, Value> =
-                b.iter().filter_map(|(k, nv)| json_delta(a.get(k).unwrap_or(&Value::Null), nv).map(|d| (k.clone(), d))).collect();
+            let m: serde_json::Map<String, Value> = b
+                .iter()
+                .filter_map(|(k, nv)| {
+                    json_delta(a.get(k).unwrap_or(&Value::Null), nv).map(|d| (k.clone(), d))
+                })
+                .collect();
             (!m.is_empty()).then_some(Value::Object(m))
         }
         (a, b) if a == b => None,

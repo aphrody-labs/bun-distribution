@@ -5,7 +5,14 @@
 //! standard definitions of the "classic" photographic modes; they are applied to un-premultiplied
 //! colour and composited with Porter-Duff source-over on premultiplied pixels.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod blend;
 pub mod icc;
@@ -42,7 +49,10 @@ impl Rgba {
         let p = |i: usize| u8::from_str_radix(s.get(i..i + 2)?, 16).ok();
         match s.len() {
             6 => Some(Rgba::from_u8(p(0)?, p(2)?, p(4)?)),
-            8 => Some(Rgba { a: p(6)? as f32 / 255.0, ..Rgba::from_u8(p(0)?, p(2)?, p(4)?) }),
+            8 => Some(Rgba {
+                a: p(6)? as f32 / 255.0,
+                ..Rgba::from_u8(p(0)?, p(2)?, p(4)?)
+            }),
             _ => None,
         }
     }
@@ -60,7 +70,12 @@ impl Rgba {
         rgba(a[0], a[1], a[2], a[3])
     }
     pub fn lerp(&self, o: &Rgba, t: f32) -> Rgba {
-        rgba(self.r + (o.r - self.r) * t, self.g + (o.g - self.g) * t, self.b + (o.b - self.b) * t, self.a + (o.a - self.a) * t)
+        rgba(
+            self.r + (o.r - self.r) * t,
+            self.g + (o.g - self.g) * t,
+            self.b + (o.b - self.b) * t,
+            self.a + (o.a - self.a) * t,
+        )
     }
     pub fn to_u8(&self) -> [u8; 4] {
         let c = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
@@ -70,11 +85,19 @@ impl Rgba {
 
 /// sRGB electro-optical transfer: encoded → linear.
 pub fn srgb_to_linear(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 /// Linear → sRGB encoded.
 pub fn linear_to_srgb(v: f32) -> f32 {
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.max(0.0).powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.max(0.0).powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// Rec. 709 luma weights (AE's luminance for luma mattes/keys).
@@ -91,7 +114,11 @@ pub fn rgb_to_hsl(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
         return (0.0, 0.0, l);
     }
     let d = max - min;
-    let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
     let h = if max == r {
         ((g - b) / d + if g < b { 6.0 } else { 0.0 }) / 6.0
     } else if max == g {
@@ -106,7 +133,11 @@ pub fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (f32, f32, f32) {
     if s <= 0.0 {
         return (l, l, l);
     }
-    let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
     let p = 2.0 * l - q;
     let f = |mut t: f32| {
         t = t.rem_euclid(1.0);
@@ -222,7 +253,9 @@ impl Label {
         }
     }
     pub fn from_name(s: &str) -> Option<Label> {
-        Label::ALL.into_iter().find(|l| l.name().eq_ignore_ascii_case(s) || format!("{l:?}").eq_ignore_ascii_case(s))
+        Label::ALL
+            .into_iter()
+            .find(|l| l.name().eq_ignore_ascii_case(s) || format!("{l:?}").eq_ignore_ascii_case(s))
     }
     /// sRGB 8-bit colour.
     pub fn rgb(self) -> [u8; 3] {
@@ -262,7 +295,12 @@ mod tests {
 
     #[test]
     fn hsl_roundtrip() {
-        for (r, g, b) in [(0.2, 0.4, 0.9), (1.0, 0.0, 0.0), (0.5, 0.5, 0.5), (0.9, 0.8, 0.1)] {
+        for (r, g, b) in [
+            (0.2, 0.4, 0.9),
+            (1.0, 0.0, 0.0),
+            (0.5, 0.5, 0.5),
+            (0.9, 0.8, 0.1),
+        ] {
             let (h, s, l) = rgb_to_hsl(r, g, b);
             let (r2, g2, b2) = hsl_to_rgb(h, s, l);
             assert!((r - r2).abs() < 1e-5 && (g - g2).abs() < 1e-5 && (b - b2).abs() < 1e-5);

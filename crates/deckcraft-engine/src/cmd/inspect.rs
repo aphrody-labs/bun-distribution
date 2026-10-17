@@ -47,13 +47,23 @@ fn document(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 pub fn shape_summary(ctx: Option<&Ctx>, sh: &Shape, depth: usize) -> Value {
-    let x = ctx.map(|c| resolve::xfrm(c, sh)).or(sh.xfrm).unwrap_or_default();
+    let x = ctx
+        .map(|c| resolve::xfrm(c, sh))
+        .or(sh.xfrm)
+        .unwrap_or_default();
     let fill = ctx.map(|c| {
         let (f, ph) = resolve::fill(c, sh);
         match f {
-            Some(deckcraft_model::Fill::Solid { color }) => json!(format!("#{}", c.color(&color, ph).hex())),
+            Some(deckcraft_model::Fill::Solid { color }) => {
+                json!(format!("#{}", c.color(&color, ph).hex()))
+            }
             Some(deckcraft_model::Fill::None) | None => json!("none"),
-            Some(other) => json!(serde_json::to_value(&other).ok().and_then(|v| v.get("kind").cloned()).unwrap_or_default()),
+            Some(other) => json!(
+                serde_json::to_value(&other)
+                    .ok()
+                    .and_then(|v| v.get("kind").cloned())
+                    .unwrap_or_default()
+            ),
         }
     });
     let mut v = json!({
@@ -94,7 +104,15 @@ pub fn shape_summary(ctx: Option<&Ctx>, sh: &Shape, depth: usize) -> Value {
                 o.insert("chart".into(), json!({"type": c.kind.label(), "title": c.title, "categories": c.categories, "series": c.series.iter().map(|s| json!({"name": s.name, "values": s.values})).collect::<Vec<_>>()}));
             }
             ShapeKind::Group { children, .. } if depth < 8 => {
-                o.insert("children".into(), Value::Array(children.iter().map(|c| shape_summary(None, c, depth + 1)).collect()));
+                o.insert(
+                    "children".into(),
+                    Value::Array(
+                        children
+                            .iter()
+                            .map(|c| shape_summary(None, c, depth + 1))
+                            .collect(),
+                    ),
+                );
             }
             ShapeKind::Media(m) => {
                 o.insert("media".into(), json!({"id": m.media, "video": m.video, "autoplay": m.autoplay, "loop": m.loop_play}));
@@ -112,13 +130,28 @@ fn round(v: f64) -> f64 {
 fn slide(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let i = usize_param(p, "index").unwrap_or(st.selection.slide);
-    let sl = st.doc.slides.get(i).ok_or_else(|| bad("slide.inspect", format!("no slide {i}")))?;
+    let sl = st
+        .doc
+        .slides
+        .get(i)
+        .ok_or_else(|| bad("slide.inspect", format!("no slide {i}")))?;
     let ctx = Ctx::for_slide(&st.doc, sl);
-    let shapes: Vec<Value> = sl.shapes.iter().map(|sh| shape_summary(ctx.as_ref(), sh, 0)).collect();
-    let bg = ctx.as_ref().map(|c| match resolve::background(c, Some(sl)) {
-        (deckcraft_model::Fill::Solid { color }, ph) => json!(format!("#{}", c.color(&color, ph).hex())),
-        (f, _) => serde_json::to_value(&f).ok().and_then(|v| v.get("kind").cloned()).unwrap_or_default(),
-    });
+    let shapes: Vec<Value> = sl
+        .shapes
+        .iter()
+        .map(|sh| shape_summary(ctx.as_ref(), sh, 0))
+        .collect();
+    let bg = ctx
+        .as_ref()
+        .map(|c| match resolve::background(c, Some(sl)) {
+            (deckcraft_model::Fill::Solid { color }, ph) => {
+                json!(format!("#{}", c.color(&color, ph).hex()))
+            }
+            (f, _) => serde_json::to_value(&f)
+                .ok()
+                .and_then(|v| v.get("kind").cloned())
+                .unwrap_or_default(),
+        });
     Ok(json!({
         "index": i,
         "id": sl.id,
@@ -136,8 +169,12 @@ fn slide(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn shape(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let id = id_param(p, "id").or_else(|| st.selection.shapes.first().copied()).ok_or_else(|| bad("shape.inspect", "missing `id`"))?;
-    let sh = st.shape(id).ok_or_else(|| bad("shape.inspect", format!("no shape {id}")))?;
+    let id = id_param(p, "id")
+        .or_else(|| st.selection.shapes.first().copied())
+        .ok_or_else(|| bad("shape.inspect", "missing `id`"))?;
+    let sh = st
+        .shape(id)
+        .ok_or_else(|| bad("shape.inspect", format!("no shape {id}")))?;
     let x = xfrm_of(&st.doc, &st.selection, sh);
     Ok(json!({"shape": serde_json::to_value(sh).unwrap_or_default(), "box": x}))
 }
@@ -147,7 +184,11 @@ fn commands(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(Value::Array(
         s.commands()
             .into_iter()
-            .filter(|c| f.is_empty() || c.id.to_ascii_lowercase().contains(&f) || c.label.to_ascii_lowercase().contains(&f))
+            .filter(|c| {
+                f.is_empty()
+                    || c.id.to_ascii_lowercase().contains(&f)
+                    || c.label.to_ascii_lowercase().contains(&f)
+            })
             .map(|c| serde_json::to_value(c).unwrap_or_default())
             .collect(),
     ))

@@ -84,7 +84,9 @@ pub fn parse_dotenv(contents: &str) -> Vec<(String, String)> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        let Some((key, value)) = line.split_once('=') else { continue };
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
         let key = key.trim();
         if key.is_empty() {
             continue;
@@ -130,7 +132,7 @@ fn unescape_double(s: &str) -> String {
                 Some(other) => {
                     out.push('\\');
                     out.push(other);
-                },
+                }
                 None => out.push('\\'),
             }
         } else {
@@ -183,12 +185,19 @@ mod tests {
 
     #[test]
     fn explicit_parent_domain_routing_survives_project_dotenv() {
-        for key in ["APHRODY_HOME", "APHRODY_WORKSPACE", "APHRODY_PROFILE", "APHRODY_AGENT_DOMAIN"]
-        {
+        for key in [
+            "APHRODY_HOME",
+            "APHRODY_WORKSPACE",
+            "APHRODY_PROFILE",
+            "APHRODY_AGENT_DOMAIN",
+        ] {
             assert!(preserve_parent_routing(key, true));
             assert!(!preserve_parent_routing(key, false));
         }
-        assert!(!preserve_parent_routing("UNRELATED_REFERENCE_SETTING", true));
+        assert!(!preserve_parent_routing(
+            "UNRELATED_REFERENCE_SETTING",
+            true
+        ));
     }
 
     #[test]
@@ -208,7 +217,10 @@ ESCAPED=\"a\\nb\"
         assert_eq!(map.get("FOO").map(String::as_str), Some("bar"));
         assert_eq!(map.get("EMPTY").map(String::as_str), Some(""));
         assert_eq!(map.get("QUOTED").map(String::as_str), Some("hello world"));
-        assert_eq!(map.get("SINGLE").map(String::as_str), Some("raw $unexpanded"));
+        assert_eq!(
+            map.get("SINGLE").map(String::as_str),
+            Some("raw $unexpanded")
+        );
         assert_eq!(map.get("INLINE").map(String::as_str), Some("value"));
         assert_eq!(map.get("ESCAPED").map(String::as_str), Some("a\nb"));
     }
@@ -261,7 +273,10 @@ ESCAPED=\"a\\nb\"
 
         let loaded = load_environment(Some(tmp.path())).expect("loaded");
         assert_eq!(loaded, env_path);
-        assert_eq!(std::env::var("APHRODY_A2A_TEST_ENV_VAR").as_deref(), Ok("loaded"));
+        assert_eq!(
+            std::env::var("APHRODY_A2A_TEST_ENV_VAR").as_deref(),
+            Ok("loaded")
+        );
         // SAFETY: see load_environment for rationale.
         unsafe {
             std::env::remove_var("APHRODY_A2A_TEST_ENV_VAR");

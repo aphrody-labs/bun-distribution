@@ -30,8 +30,18 @@ pub struct SendParams {
 impl SendParams {
     #[must_use]
     pub fn to_envelope(&self) -> Envelope {
-        let topic = if self.yolo { "a2a.message.send.yolo" } else { "a2a.message.send" };
-        Envelope::new(&self.source_agent, &self.target, EnvelopeKind::Ask, topic, &self.instruction)
+        let topic = if self.yolo {
+            "a2a.message.send.yolo"
+        } else {
+            "a2a.message.send"
+        };
+        Envelope::new(
+            &self.source_agent,
+            &self.target,
+            EnvelopeKind::Ask,
+            topic,
+            &self.instruction,
+        )
     }
 }
 
@@ -64,8 +74,13 @@ pub fn handle_request(mailbox: &Mailbox, self_id: &str, req: &Value) -> Value {
     if let Err(e) = mailbox.append(short, &ask) {
         return rpc_error(id, -32603, e.to_string());
     }
-    let mut ack =
-        Envelope::new(self_id, &params.source_agent, EnvelopeKind::Ack, "a2a.ack", "queued");
+    let mut ack = Envelope::new(
+        self_id,
+        &params.source_agent,
+        EnvelopeKind::Ack,
+        "a2a.ack",
+        "queued",
+    );
     ack.re = Some(ask.id.clone());
     json!({ "jsonrpc": "2.0", "id": id, "result": { "status": "queued", "envelope": ask, "ack": ack } })
 }
@@ -80,7 +95,10 @@ struct BridgeState {
 pub fn a2a_router(mailbox: Mailbox, self_id: impl Into<String>) -> Router {
     Router::new()
         .route(A2A_PATH, post(serve_a2a))
-        .with_state(BridgeState { mailbox, self_id: self_id.into() })
+        .with_state(BridgeState {
+            mailbox,
+            self_id: self_id.into(),
+        })
 }
 
 async fn serve_a2a(State(s): State<BridgeState>, Json(req): Json<Value>) -> Json<Value> {
@@ -120,11 +138,13 @@ pub async fn send(
                 .json::<Value>()
                 .await?;
             Ok(resp)
-        },
+        }
         _ => {
             let env = params.to_envelope();
             mailbox.ensure_dir()?;
-            let path = mailbox.coord_dir.join(format!("outbox-to-{}.jsonl", peer.id));
+            let path = mailbox
+                .coord_dir
+                .join(format!("outbox-to-{}.jsonl", peer.id));
             let line = serde_json::to_string(&env).map_err(MailboxError::from)?;
             use std::io::Write as _;
             let mut f = std::fs::OpenOptions::new()
@@ -134,7 +154,7 @@ pub async fn send(
                 .map_err(MailboxError::from)?;
             writeln!(f, "{line}").map_err(MailboxError::from)?;
             Ok(json!({ "status": "queued_file", "envelope": env }))
-        },
+        }
     }
 }
 

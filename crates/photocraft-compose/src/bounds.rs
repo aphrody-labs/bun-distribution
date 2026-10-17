@@ -31,7 +31,12 @@ fn next_sweep(survivors: usize) -> usize {
 
 fn cache() -> &'static Mutex<Cache> {
     static C: std::sync::OnceLock<Mutex<Cache>> = std::sync::OnceLock::new();
-    C.get_or_init(|| Mutex::new(Cache { entries: HashMap::new(), sweep_at: MIN_SWEEP }))
+    C.get_or_init(|| {
+        Mutex::new(Cache {
+            entries: HashMap::new(),
+            sweep_at: MIN_SWEEP,
+        })
+    })
 }
 
 /// `Surface::content_bounds`, cached per tile.
@@ -50,18 +55,34 @@ pub fn content_bounds(s: &Surface) -> Rect {
     let mut out = Rect::EMPTY;
     for (coord, t) in s.tiles() {
         let key = Arc::as_ptr(t) as usize;
-        let hit = c.entries.get(&key).filter(|e| e.tile.upgrade().is_some_and(|u| Arc::ptr_eq(&u, t)) && *e.default == *dp).map(|e| e.bounds);
+        let hit = c
+            .entries
+            .get(&key)
+            .filter(|e| e.tile.upgrade().is_some_and(|u| Arc::ptr_eq(&u, t)) && *e.default == *dp)
+            .map(|e| e.bounds);
         let b = match hit {
             Some(b) => b,
             None => {
                 let b = t.content_bounds(&dp);
-                c.entries.insert(key, Entry { tile: Arc::downgrade(t), default: dp.clone().into_boxed_slice(), bounds: b });
+                c.entries.insert(
+                    key,
+                    Entry {
+                        tile: Arc::downgrade(t),
+                        default: dp.clone().into_boxed_slice(),
+                        bounds: b,
+                    },
+                );
                 b
             }
         };
         if let Some((x0, y0, x1, y1)) = b {
             let o = coord.rect();
-            let r = Rect::new(o.x0 + x0 as i32, o.y0 + y0 as i32, o.x0 + x1 as i32, o.y0 + y1 as i32);
+            let r = Rect::new(
+                o.x0 + x0 as i32,
+                o.y0 + y0 as i32,
+                o.x0 + x1 as i32,
+                o.y0 + y1 as i32,
+            );
             out = if out.is_empty() { r } else { out.union(&r) };
         }
     }

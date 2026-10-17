@@ -50,10 +50,22 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 /// Open Graph Data for the selected graph.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     // The query fails without a graph selected, with the engine's own message.
-    let v = app.session.execute("graph.setData", &json!({})).map_err(|e| e.to_string())?;
-    let graph = app.session.active().and_then(|st| st.selection.objects.iter().find_map(|id| graph_of(&st.doc, *id)).map(|id| (st, id)));
+    let v = app
+        .session
+        .execute("graph.setData", &json!({}))
+        .map_err(|e| e.to_string())?;
+    let graph = app.session.active().and_then(|st| {
+        st.selection
+            .objects
+            .iter()
+            .find_map(|id| graph_of(&st.doc, *id))
+            .map(|id| (st, id))
+    });
     let scatter = graph.is_some_and(|(st, id)| {
-        st.doc.node(id).and_then(|n| n.extras().graph.as_deref()).is_some_and(|g| g.kind == vectorcraft_doc::GraphKind::Scatter)
+        st.doc
+            .node(id)
+            .and_then(|n| n.extras().graph.as_deref())
+            .is_some_and(|g| g.kind == vectorcraft_doc::GraphKind::Scatter)
     });
     let id = graph.map(|(_, id)| id.0);
     let grid = grid_from_data(&v);
@@ -66,7 +78,10 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
 }
 
 /// The graph `id` belongs to (itself, or the graph its parts are in).
-fn graph_of(doc: &vectorcraft_doc::Document, id: vectorcraft_doc::NodeId) -> Option<vectorcraft_doc::NodeId> {
+fn graph_of(
+    doc: &vectorcraft_doc::Document,
+    id: vectorcraft_doc::NodeId,
+) -> Option<vectorcraft_doc::NodeId> {
     let mut cur = Some(id);
     while let Some(c) = cur {
         if doc.node(c).is_some_and(|n| n.extras().graph.is_some()) {
@@ -88,15 +103,34 @@ type Action = fn(&mut VectorcraftApp, &mut Dialog) -> Result<(), String>;
 /// label then values below (the label column is there, blank, when the graph has no labels).
 pub(crate) fn grid_from_data(v: &Value) -> Grid {
     let strings = |k: &str| -> Vec<String> {
-        v[k].as_array().map(|a| a.iter().map(|s| s.as_str().unwrap_or_default().to_string()).collect()).unwrap_or_default()
+        v[k].as_array()
+            .map(|a| {
+                a.iter()
+                    .map(|s| s.as_str().unwrap_or_default().to_string())
+                    .collect()
+            })
+            .unwrap_or_default()
     };
     let (series, categories) = (strings("series"), strings("categories"));
-    let rows: Vec<Vec<Value>> =
-        v["rows"].as_array().map(|a| a.iter().map(|r| r.as_array().cloned().unwrap_or_default()).collect()).unwrap_or_default();
+    let rows: Vec<Vec<Value>> = v["rows"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .map(|r| r.as_array().cloned().unwrap_or_default())
+                .collect()
+        })
+        .unwrap_or_default();
     let mut grid: Grid = vec![std::iter::once(String::new()).chain(series).collect()];
     for (c, row) in rows.iter().enumerate() {
         let label = categories.get(c).cloned().unwrap_or_default();
-        grid.push(std::iter::once(label).chain(row.iter().map(|x| x.as_f64().map(|f| f.to_string()).unwrap_or_default())).collect());
+        grid.push(
+            std::iter::once(label)
+                .chain(
+                    row.iter()
+                        .map(|x| x.as_f64().map(|f| f.to_string()).unwrap_or_default()),
+                )
+                .collect(),
+        );
     }
     grid
 }
@@ -106,12 +140,25 @@ pub(crate) fn grid_from_data(v: &Value) -> Grid {
 /// columns past the data.
 pub(crate) fn data_from_grid(grid: &Grid) -> Value {
     let filled = |s: &String| !s.trim().is_empty();
-    let rows = grid.iter().rposition(|r| r.iter().any(filled)).map_or(1, |i| i + 1).max(1);
-    let cols = grid.iter().take(rows).filter_map(|r| r.iter().rposition(filled)).max().map_or(1, |i| i + 1).max(1);
+    let rows = grid
+        .iter()
+        .rposition(|r| r.iter().any(filled))
+        .map_or(1, |i| i + 1)
+        .max(1);
+    let cols = grid
+        .iter()
+        .take(rows)
+        .filter_map(|r| r.iter().rposition(filled))
+        .max()
+        .map_or(1, |i| i + 1)
+        .max(1);
     let label = |s: &str| {
         let s = s.trim();
         // A label typed in straight quotes (as the CSV form takes a number as a label) is the text inside.
-        s.strip_prefix('"').and_then(|t| t.strip_suffix('"')).unwrap_or(s).to_string()
+        s.strip_prefix('"')
+            .and_then(|t| t.strip_suffix('"'))
+            .unwrap_or(s)
+            .to_string()
     };
     // Series labels up to the last one given (none when all are blank).
     let mut series: Vec<String> = (1..cols).map(|c| label(&cell(grid, 0, c))).collect();
@@ -127,7 +174,11 @@ pub(crate) fn data_from_grid(grid: &Grid) -> Value {
             (1..cols)
                 .map(|c| {
                     let t = cell(grid, r, c);
-                    t.trim().parse::<f64>().ok().filter(|v| v.is_finite() && !t.trim().starts_with('"')).map_or(Value::Null, |v| json!(v))
+                    t.trim()
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite() && !t.trim().starts_with('"'))
+                        .map_or(Value::Null, |v| json!(v))
                 })
                 .collect()
         })
@@ -140,14 +191,34 @@ pub(crate) fn data_from_grid(grid: &Grid) -> Value {
 /// most a graph's rows and columns.
 pub(crate) fn grid_from_text(text: &str) -> Grid {
     let sep = if text.contains('\t') { '\t' } else { ',' };
-    text.lines().take(MAX_ROWS).map(|l| l.trim_end_matches('\r').split(sep).take(MAX_COLS).map(|c| clean(c.trim())).collect()).collect()
+    text.lines()
+        .take(MAX_ROWS)
+        .map(|l| {
+            l.trim_end_matches('\r')
+                .split(sep)
+                .take(MAX_COLS)
+                .map(|c| clean(c.trim()))
+                .collect()
+        })
+        .collect()
 }
 
 /// A text file's bytes as text: UTF-16 with its byte-order mark (spreadsheets' "Unicode Text"),
 /// else UTF-8 without one.
 pub(crate) fn decode(bytes: &[u8]) -> String {
     let utf16 = |rest: &[u8], le: bool| {
-        let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|p| if le { u16::from_le_bytes(*p) } else { u16::from_be_bytes(*p) }).collect();
+        let units: Vec<u16> = rest
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|p| {
+                if le {
+                    u16::from_le_bytes(*p)
+                } else {
+                    u16::from_be_bytes(*p)
+                }
+            })
+            .collect();
         String::from_utf16_lossy(&units)
     };
     match bytes {
@@ -160,16 +231,33 @@ pub(crate) fn decode(bytes: &[u8]) -> String {
 
 /// A cell's text: one line (tabs and line breaks become spaces), at most MAX_CELL characters.
 fn clean(s: &str) -> String {
-    s.chars().map(|c| if matches!(c, '\t' | '\r' | '\n') { ' ' } else { c }).take(MAX_CELL).collect()
+    s.chars()
+        .map(|c| {
+            if matches!(c, '\t' | '\r' | '\n') {
+                ' '
+            } else {
+                c
+            }
+        })
+        .take(MAX_CELL)
+        .collect()
 }
 
 fn cell(grid: &Grid, r: usize, c: usize) -> String {
-    grid.get(r).and_then(|row| row.get(c)).cloned().unwrap_or_default()
+    grid.get(r)
+        .and_then(|row| row.get(c))
+        .cloned()
+        .unwrap_or_default()
 }
 
 /// Cell `(r, c)` of the dialog's sheet, read in place.
 fn cell_at(d: &Dialog, r: usize, c: usize) -> &str {
-    d.fields.get("grid").and_then(|g| g.get(r)).and_then(|row| row.get(c)).and_then(Value::as_str).unwrap_or_default()
+    d.fields
+        .get("grid")
+        .and_then(|g| g.get(r))
+        .and_then(|row| row.get(c))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
 }
 
 /// Set cell `(r, c)` of the dialog's sheet in place, growing it as needed (within the sheet's size).
@@ -178,11 +266,15 @@ fn set_cell_at(d: &mut Dialog, r: usize, c: usize, text: &str) {
         return;
     }
     let grid = d.fields.entry("grid").or_insert_with(|| json!([]));
-    let Some(rows) = grid.as_array_mut() else { return };
+    let Some(rows) = grid.as_array_mut() else {
+        return;
+    };
     if rows.len() <= r {
         rows.resize(r + 1, json!([]));
     }
-    let Some(row) = rows.get_mut(r).and_then(Value::as_array_mut) else { return };
+    let Some(row) = rows.get_mut(r).and_then(Value::as_array_mut) else {
+        return;
+    };
     if row.len() <= c {
         row.resize(c + 1, json!(""));
     }
@@ -194,7 +286,13 @@ fn set_cell_at(d: &mut Dialog, r: usize, c: usize, text: &str) {
 /// Transpose row/column: the sheet's rows become its columns.
 pub(crate) fn transpose(grid: &Grid) -> Grid {
     let cols = grid.iter().map(Vec::len).max().unwrap_or(0);
-    (0..cols).map(|c| grid.iter().map(|r| r.get(c).cloned().unwrap_or_default()).collect()).collect()
+    (0..cols)
+        .map(|c| {
+            grid.iter()
+                .map(|r| r.get(c).cloned().unwrap_or_default())
+                .collect()
+        })
+        .collect()
 }
 
 /// Switch x/y: each scatter series' y and x columns (1 and 2, 3 and 4…) trade places, labels too; a
@@ -218,16 +316,34 @@ pub(crate) fn switch_xy(grid: &Grid) -> Grid {
 
 /// How many rows of the dialog's sheet hold data (below the labels' row), read in place.
 fn data_rows(d: &Dialog) -> usize {
-    let filled = |r: &Value| r.as_array().is_some_and(|r| r.iter().any(|c| c.as_str().is_some_and(|c| !c.trim().is_empty())));
-    d.fields.get("grid").and_then(Value::as_array).and_then(|g| g.iter().rposition(filled)).unwrap_or(0)
+    let filled = |r: &Value| {
+        r.as_array().is_some_and(|r| {
+            r.iter()
+                .any(|c| c.as_str().is_some_and(|c| !c.trim().is_empty()))
+        })
+    };
+    d.fields
+        .get("grid")
+        .and_then(Value::as_array)
+        .and_then(|g| g.iter().rposition(filled))
+        .unwrap_or(0)
 }
 
 /// How big the sheet is drawn: the data, a spare row and column, and at least MIN_ROWS × MIN_COLS.
 fn extent(d: &Dialog, sel: (usize, usize)) -> (usize, usize) {
     let rows = d.fields.get("grid").and_then(Value::as_array);
     let n = rows.map_or(0, Vec::len);
-    let w = rows.into_iter().flatten().filter_map(Value::as_array).map(Vec::len).max().unwrap_or(0);
-    ((n + 1).max(MIN_ROWS).max(sel.0 + 2).min(MAX_ROWS), (w + 1).max(MIN_COLS).max(sel.1 + 2).min(MAX_COLS))
+    let w = rows
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_array)
+        .map(Vec::len)
+        .max()
+        .unwrap_or(0);
+    (
+        (n + 1).max(MIN_ROWS).max(sel.0 + 2).min(MAX_ROWS),
+        (w + 1).max(MIN_COLS).max(sel.1 + 2).min(MAX_COLS),
+    )
 }
 
 /// A key that moves the picked cell.
@@ -254,17 +370,29 @@ pub(crate) fn step(sel: (usize, usize), m: Move) -> (usize, usize) {
 /// typed (the number Apply sends is as typed either way).
 pub(crate) fn shown(text: &str, decimals: Option<u64>) -> String {
     match (decimals, text.trim().parse::<f64>()) {
-        (Some(d), Ok(v)) if v.is_finite() && !text.trim().starts_with('"') => format!("{v:.*}", d.min(MAX_DECIMALS) as usize),
+        (Some(d), Ok(v)) if v.is_finite() && !text.trim().starts_with('"') => {
+            format!("{v:.*}", d.min(MAX_DECIMALS) as usize)
+        }
         _ => text.to_string(),
     }
 }
 
 fn grid(d: &Dialog) -> Grid {
-    d.fields.get("grid").and_then(|g| serde_json::from_value(g.clone()).ok()).unwrap_or_default()
+    d.fields
+        .get("grid")
+        .and_then(|g| serde_json::from_value(g.clone()).ok())
+        .unwrap_or_default()
 }
 
 fn sel(d: &Dialog) -> (usize, usize) {
-    let get = |i: usize| d.fields.get("sel").and_then(|s| s.get(i)).and_then(Value::as_u64).and_then(|v| usize::try_from(v).ok()).unwrap_or(0);
+    let get = |i: usize| {
+        d.fields
+            .get("sel")
+            .and_then(|s| s.get(i))
+            .and_then(Value::as_u64)
+            .and_then(|v| usize::try_from(v).ok())
+            .unwrap_or(0)
+    };
     (get(0).min(MAX_ROWS - 1), get(1).min(MAX_COLS - 1))
 }
 
@@ -320,17 +448,25 @@ fn apply(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 /// Revert: the graph's data again.
 fn revert(app: &mut VectorcraftApp, d: &mut Dialog) -> Result<(), String> {
     let id = d.fields.get("__graph").cloned().unwrap_or(Value::Null);
-    let v = app.session.execute("graph.setData", &json!({ "id": id })).map_err(|e| e.to_string())?;
+    let v = app
+        .session
+        .execute("graph.setData", &json!({ "id": id }))
+        .map_err(|e| e.to_string())?;
     replace_grid(d, grid_from_data(&v));
     Ok(())
 }
 
 /// Import Data: a tab-separated text file's rows into the sheet.
 fn import(app: &mut VectorcraftApp, d: &mut Dialog) -> Result<(), String> {
-    let pick = crate::FilePick { filters: vec![("Text", &["txt", "tsv", "csv"])], ..Default::default() };
+    let pick = crate::FilePick {
+        filters: vec![("Text", &["txt", "tsv", "csv"])],
+        ..Default::default()
+    };
     let path = crate::picks::open(app, &pick).ok_or("cancelled")?;
     // The button is off where files can't be read.
-    let Some(read) = app.services.read.as_ref() else { return Ok(()) };
+    let Some(read) = app.services.read.as_ref() else {
+        return Ok(());
+    };
     let bytes = read(&path)?;
     replace_grid(d, grid_from_text(&decode(&bytes)));
     Ok(())
@@ -352,7 +488,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             (egui::Modifiers::NONE, egui::Key::ArrowRight, Move::Right),
             (egui::Modifiers::NONE, egui::Key::ArrowLeft, Move::Left),
         ];
-        let moved = keys.iter().find(|(m, k, _)| ui.input_mut(|i| i.consume_key(*m, *k))).map(|(_, _, mv)| *mv);
+        let moved = keys
+            .iter()
+            .find(|(m, k, _)| ui.input_mut(|i| i.consume_key(*m, *k)))
+            .map(|(_, _, mv)| *mv);
         if let Some(m) = moved {
             pick(d, step(sel(d), m));
             ui.memory_mut(|mem| {
@@ -362,7 +501,9 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
         // A pasted block (a spreadsheet's cells) fills the sheet instead of the entry box.
         let block = ui.input_mut(|i| {
-            let k = i.events.iter().position(|e| matches!(e, egui::Event::Paste(s) if s.contains('\t') || s.contains('\n')))?;
+            let k = i.events.iter().position(
+                |e| matches!(e, egui::Event::Paste(s) if s.contains('\t') || s.contains('\n')),
+            )?;
             match i.events.remove(k) {
                 egui::Event::Paste(s) => Some(s),
                 _ => None,
@@ -377,21 +518,43 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         let mut text = d.str("entry");
         // The entry box has the keys when the window opens, so Enter moves down instead of applying.
         widgets::take_dialog_focus(ui, entry_id, &text);
-        let r = ui.add(egui::TextEdit::singleline(&mut text).id(entry_id).desired_width(260.0));
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut text)
+                .id(entry_id)
+                .desired_width(260.0),
+        );
         if r.changed() {
             d.fields.insert("entry".into(), json!(clean(&text)));
         }
         ui.add_space(8.0);
         let can_read = app.services.read.is_some();
-        if ui.add_enabled_ui(can_read, |ui| widgets::flat_button(ui, tl!("Import Data…"), 96.0)).inner.clicked() {
+        if ui
+            .add_enabled_ui(can_read, |ui| {
+                widgets::flat_button(ui, tl!("Import Data…"), 96.0)
+            })
+            .inner
+            .clicked()
+        {
             action = Some(|app, d| crate::picks::in_dialog(app, d, import));
         }
         // Transposed, the categories become series: at most as many as a graph has.
-        if ui.add_enabled_ui(data_rows(d) <= MAX_GRAPH_SERIES, |ui| widgets::flat_button(ui, tl!("Transpose"), 80.0)).inner.clicked() {
+        if ui
+            .add_enabled_ui(data_rows(d) <= MAX_GRAPH_SERIES, |ui| {
+                widgets::flat_button(ui, tl!("Transpose"), 80.0)
+            })
+            .inner
+            .clicked()
+        {
             commit(d);
             replace_grid(d, transpose(&grid(d)));
         }
-        if ui.add_enabled_ui(d.bool("__scatter"), |ui| widgets::flat_button(ui, tl!("Switch x/y"), 80.0)).inner.clicked() {
+        if ui
+            .add_enabled_ui(d.bool("__scatter"), |ui| {
+                widgets::flat_button(ui, tl!("Switch x/y"), 80.0)
+            })
+            .inner
+            .clicked()
+        {
             commit(d);
             replace_grid(d, switch_xy(&grid(d)));
         }
@@ -408,14 +571,20 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             dec = on.then_some(2);
         }
         let mut n = dec.unwrap_or(2);
-        if ui.add_enabled(on, egui::DragValue::new(&mut n).range(0..=MAX_DECIMALS)).changed() {
+        if ui
+            .add_enabled(on, egui::DragValue::new(&mut n).range(0..=MAX_DECIMALS))
+            .changed()
+        {
             dec = Some(n);
         }
         d.fields.insert("decimals".into(), json!(dec));
         ui.add_space(12.0);
         widgets::dim_label(ui, tl!("Column Width:"));
         let mut w = d.fields.get("width").and_then(Value::as_u64).unwrap_or(7);
-        if ui.add(egui::DragValue::new(&mut w).range(0..=MAX_WIDTH)).changed() {
+        if ui
+            .add(egui::DragValue::new(&mut w).range(0..=MAX_WIDTH))
+            .changed()
+        {
             d.fields.insert("width".into(), json!(w));
         }
     });
@@ -423,28 +592,52 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let at = sel(d);
     let (rows, cols) = extent(d, at);
     let decimals = d.fields.get("decimals").and_then(Value::as_u64);
-    let w = (d.fields.get("width").and_then(Value::as_u64).unwrap_or(7).min(MAX_WIDTH) as f32 * 7.0 + 10.0).max(12.0);
+    let w = (d
+        .fields
+        .get("width")
+        .and_then(Value::as_u64)
+        .unwrap_or(7)
+        .min(MAX_WIDTH) as f32
+        * 7.0
+        + 10.0)
+        .max(12.0);
     let mut clicked = None;
     widgets::list_box(ui, |ui| {
         // Only the cells in view are drawn: a graph's sheet can be 10,001 × 257.
-        egui::ScrollArea::both().id_salt("graph-data-sheet").max_height(280.0).auto_shrink([false, false]).show_viewport(ui, |ui, view| {
-            let (cw, ch) = (w + 1.0, ROW_H);
-            ui.set_min_size(egui::vec2(cols as f32 * cw, rows as f32 * ch));
-            let origin = ui.max_rect().min;
-            let span = |lo: f32, hi: f32, size: f32, n: usize| ((lo / size).floor().max(0.0) as usize, ((hi / size).ceil().max(0.0) as usize).min(n));
-            let (r0, r1) = span(view.min.y, view.max.y, ch, rows);
-            let (c0, c1) = span(view.min.x, view.max.x, cw, cols);
-            for r in r0..r1 {
-                for c in c0..c1 {
-                    let rect = egui::Rect::from_min_size(origin + egui::vec2(c as f32 * cw, r as f32 * ch), egui::vec2(w, ch - 1.0));
-                    let text = shown(cell_at(d, r, c), decimals);
-                    let b = egui::Button::selectable((r, c) == at, egui::RichText::new(text).monospace()).truncate();
-                    if ui.put(rect, b).clicked() && (r, c) != (0, 0) {
-                        clicked = Some((r, c));
+        egui::ScrollArea::both()
+            .id_salt("graph-data-sheet")
+            .max_height(280.0)
+            .auto_shrink([false, false])
+            .show_viewport(ui, |ui, view| {
+                let (cw, ch) = (w + 1.0, ROW_H);
+                ui.set_min_size(egui::vec2(cols as f32 * cw, rows as f32 * ch));
+                let origin = ui.max_rect().min;
+                let span = |lo: f32, hi: f32, size: f32, n: usize| {
+                    (
+                        (lo / size).floor().max(0.0) as usize,
+                        ((hi / size).ceil().max(0.0) as usize).min(n),
+                    )
+                };
+                let (r0, r1) = span(view.min.y, view.max.y, ch, rows);
+                let (c0, c1) = span(view.min.x, view.max.x, cw, cols);
+                for r in r0..r1 {
+                    for c in c0..c1 {
+                        let rect = egui::Rect::from_min_size(
+                            origin + egui::vec2(c as f32 * cw, r as f32 * ch),
+                            egui::vec2(w, ch - 1.0),
+                        );
+                        let text = shown(cell_at(d, r, c), decimals);
+                        let b = egui::Button::selectable(
+                            (r, c) == at,
+                            egui::RichText::new(text).monospace(),
+                        )
+                        .truncate();
+                        if ui.put(rect, b).clicked() && (r, c) != (0, 0) {
+                            clicked = Some((r, c));
+                        }
                     }
                 }
-            }
-        });
+            });
     });
     if let Some(to) = clicked {
         pick(d, to);
@@ -466,19 +659,30 @@ mod tests {
     use super::*;
 
     fn g(rows: &[&[&str]]) -> Grid {
-        rows.iter().map(|r| r.iter().map(|c| c.to_string()).collect()).collect()
+        rows.iter()
+            .map(|r| r.iter().map(|c| c.to_string()).collect())
+            .collect()
     }
 
     fn app_with(csv: &str, ty: &str) -> (VectorcraftApp, u64) {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        let id =
-            app.run("graph.create", json!({"type": ty, "x": 0, "y": 0, "width": 200, "height": 150, "csv": csv})).unwrap()["id"].as_u64().unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        let id = app
+            .run(
+                "graph.create",
+                json!({"type": ty, "x": 0, "y": 0, "width": 200, "height": 150, "csv": csv}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         (app, id)
     }
 
     fn data(app: &mut VectorcraftApp, id: u64) -> Value {
-        app.session.execute("graph.setData", &json!({"id": id})).unwrap()
+        app.session
+            .execute("graph.setData", &json!({"id": id}))
+            .unwrap()
     }
 
     #[test]
@@ -501,12 +705,30 @@ mod tests {
     #[test]
     fn the_sheet_holds_labels_in_the_first_row_and_column() {
         let (mut app, id) = app_with("1,2\n3,4", "column");
-        assert_eq!(grid_from_data(&data(&mut app, id)), g(&[&[""], &["", "1", "2"], &["", "3", "4"]]));
-        let p = data_from_grid(&g(&[&["", "a", "", ""], &["Q1", "1", "", ""], &["\"2013\"", "x", "2"], &[], &[""]]));
-        assert_eq!(p, json!({"series": ["a"], "categories": ["Q1", "2013"], "rows": [[1.0, null], [null, 2.0]]}));
-        assert_eq!(grid_from_text("\tA, B\tC\r\nx\t1\t2\n"), g(&[&["", "A, B", "C"], &["x", "1", "2"]]));
+        assert_eq!(
+            grid_from_data(&data(&mut app, id)),
+            g(&[&[""], &["", "1", "2"], &["", "3", "4"]])
+        );
+        let p = data_from_grid(&g(&[
+            &["", "a", "", ""],
+            &["Q1", "1", "", ""],
+            &["\"2013\"", "x", "2"],
+            &[],
+            &[""],
+        ]));
+        assert_eq!(
+            p,
+            json!({"series": ["a"], "categories": ["Q1", "2013"], "rows": [[1.0, null], [null, 2.0]]})
+        );
+        assert_eq!(
+            grid_from_text("\tA, B\tC\r\nx\t1\t2\n"),
+            g(&[&["", "A, B", "C"], &["x", "1", "2"]])
+        );
         assert_eq!(decode(b"\xEF\xBB\xBFa\tb"), "a\tb");
-        let utf16: Vec<u8> = [0xFF, 0xFE].into_iter().chain("a\tb".encode_utf16().flat_map(u16::to_le_bytes)).collect();
+        let utf16: Vec<u8> = [0xFF, 0xFE]
+            .into_iter()
+            .chain("a\tb".encode_utf16().flat_map(u16::to_le_bytes))
+            .collect();
         assert_eq!(decode(&utf16), "a\tb");
         let wide = vec!["x"; 400].join("\t");
         assert_eq!(grid_from_text(&wide)[0].len(), MAX_COLS);
@@ -514,10 +736,17 @@ mod tests {
 
     #[test]
     fn transpose_switch_and_moves() {
-        assert_eq!(transpose(&g(&[&["", "a", "b"], &["Q1", "1", "2"]])), g(&[&["", "Q1"], &["a", "1"], &["b", "2"]]));
+        assert_eq!(
+            transpose(&g(&[&["", "a", "b"], &["Q1", "1", "2"]])),
+            g(&[&["", "Q1"], &["a", "1"], &["b", "2"]])
+        );
         assert_eq!(step((0, 1), Move::Right), (0, 2));
         assert_eq!(step((0, 1), Move::Down), (1, 1));
-        assert_eq!(step((1, 0), Move::Up), (1, 0), "the top-left cell stays blank");
+        assert_eq!(
+            step((1, 0), Move::Up),
+            (1, 0),
+            "the top-left cell stays blank"
+        );
         assert_eq!(step((MAX_ROWS - 1, 1), Move::Down), (MAX_ROWS - 1, 1));
         assert_eq!(shown("3.14159", Some(2)), "3.14");
         assert_eq!(shown("3.14159", None), "3.14159");
@@ -530,7 +759,9 @@ mod tests {
         apply(&mut app, &d).unwrap();
         let sheet = data(&mut app, id);
         let (mut other, oid) = app_with("y1,x1,y2,x2\n1,10,2,20\n3,30,4,40", "scatter");
-        other.run("graph.setData", json!({"id": oid, "switchXY": true})).unwrap();
+        other
+            .run("graph.setData", json!({"id": oid, "switchXY": true}))
+            .unwrap();
         assert_eq!(sheet, data(&mut other, oid));
     }
 
@@ -549,12 +780,19 @@ mod tests {
         app.ui.dialog = Some(d.clone());
         apply(&mut app, &d).unwrap();
         assert_eq!(data(&mut app, id)["rows"], json!([[1.0, 5.0], [7.0, null]]));
-        assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(KIND), "Apply leaves the window open");
+        assert_eq!(
+            app.ui.dialog.as_ref().map(|d| d.kind.as_str()),
+            Some(KIND),
+            "Apply leaves the window open"
+        );
         // A pasted block fills the cells from the picked one.
         let mut d = app.ui.dialog.take().unwrap();
         pick(&mut d, (1, 1));
         paste_block(&mut d, "8\t9\n10\t11\n");
-        assert_eq!((cell_at(&d, 1, 1), cell_at(&d, 2, 2), d.str("entry")), ("8", "11", "8".to_string()));
+        assert_eq!(
+            (cell_at(&d, 1, 1), cell_at(&d, 2, 2), d.str("entry")),
+            ("8", "11", "8".to_string())
+        );
         // Revert reads the graph again; the tool's Graph Data after drawing opens the same sheet.
         replace_grid(&mut d, vec![]);
         revert(&mut app, &mut d).unwrap();
@@ -570,10 +808,22 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let frame = |app: &mut VectorcraftApp, events: Vec<egui::Event>| {
-            let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| super::super::show(app, ui.ctx()));
+            let mut out = ctx.run_ui(
+                egui::RawInput {
+                    events,
+                    ..Default::default()
+                },
+                |ui| super::super::show(app, ui.ctx()),
+            );
             out.textures_delta.clear();
         };
-        let key = |k: egui::Key, m: egui::Modifiers| egui::Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers: m };
+        let key = |k: egui::Key, m: egui::Modifiers| egui::Event::Key {
+            key: k,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: m,
+        };
         let none = egui::Modifiers::NONE;
         // The window opening gives the entry box the keys.
         frame(&mut app, vec![]);
@@ -582,32 +832,57 @@ mod tests {
         frame(&mut app, vec![key(egui::Key::Tab, none)]);
         let d = app.ui.dialog.as_ref().unwrap();
         assert_eq!(sel(d), (0, 2), "Tab: right");
-        assert!(cell_at(d, 0, 1).ends_with('9'), "the typed text went into the cell it left: {}", cell_at(d, 0, 1));
+        assert!(
+            cell_at(d, 0, 1).ends_with('9'),
+            "the typed text went into the cell it left: {}",
+            cell_at(d, 0, 1)
+        );
         // Still the entry's keys after a Tab: Enter moves down rather than applying.
         frame(&mut app, vec![key(egui::Key::Enter, none)]);
         assert_eq!(sel(app.ui.dialog.as_ref().unwrap()), (1, 2), "Enter: down");
-        assert_eq!(data(&mut app, id)["series"], json!(["a", "b"]), "not applied");
+        assert_eq!(
+            data(&mut app, id)["series"],
+            json!(["a", "b"]),
+            "not applied"
+        );
         frame(&mut app, vec![key(egui::Key::Tab, egui::Modifiers::SHIFT)]);
-        assert_eq!(sel(app.ui.dialog.as_ref().unwrap()), (1, 1), "Shift+Tab: left");
+        assert_eq!(
+            sel(app.ui.dialog.as_ref().unwrap()),
+            (1, 1),
+            "Shift+Tab: left"
+        );
         frame(&mut app, vec![key(egui::Key::ArrowUp, none)]);
         assert_eq!(sel(app.ui.dialog.as_ref().unwrap()), (0, 1), "Up");
     }
 
     #[test]
     fn a_full_size_sheet_draws_only_what_is_in_view() {
-        let rows: Vec<Vec<f64>> = (0..MAX_GRAPH_CATEGORIES).map(|i| vec![i as f64; 256]).collect();
+        let rows: Vec<Vec<f64>> = (0..MAX_GRAPH_CATEGORIES)
+            .map(|i| vec![i as f64; 256])
+            .collect();
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
-        app.run("graph.create", json!({"type": "column", "x": 0, "y": 0, "width": 200, "height": 150, "rows": rows})).unwrap();
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
+        app.run(
+            "graph.create",
+            json!({"type": "column", "x": 0, "y": 0, "width": 200, "height": 150, "rows": rows}),
+        )
+        .unwrap();
         open(&mut app).unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let t = std::time::Instant::now();
         for _ in 0..3 {
-            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| super::super::show(&mut app, ui.ctx()));
+            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+                super::super::show(&mut app, ui.ctx())
+            });
             out.textures_delta.clear();
         }
-        assert!(t.elapsed() < std::time::Duration::from_secs(20), "{:?}", t.elapsed());
+        assert!(
+            t.elapsed() < std::time::Duration::from_secs(20),
+            "{:?}",
+            t.elapsed()
+        );
         assert_eq!(app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some(KIND));
     }
 }

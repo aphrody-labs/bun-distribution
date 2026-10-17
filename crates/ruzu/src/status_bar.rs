@@ -202,9 +202,8 @@ impl StatusBar {
     /// `renderer_status_button` in `BootGame`/`OnEmulationStopped`.
     pub fn set_emulation_running(&self, running: bool) {
         self.emulation_running.set(running);
-        self.renderer.set_sensitive(
-            !running && !crate::uisettings::with(|values| values.has_broken_vulkan),
-        );
+        self.renderer
+            .set_sensitive(!running && !crate::uisettings::with(|values| values.has_broken_vulkan));
     }
 
     /// GTK counterpart of `Qt::CustomContextMenu` on each status button.
@@ -254,7 +253,14 @@ impl StatusBar {
         }
 
         if crate::util::inline_menu::enabled() {
-            crate::util::inline_menu::show_context_menu(anchor, "status", menu.upcast_ref(), action_group.upcast_ref(), x, y);
+            crate::util::inline_menu::show_context_menu(
+                anchor,
+                "status",
+                menu.upcast_ref(),
+                action_group.upcast_ref(),
+                x,
+                y,
+            );
             return;
         }
         let popover = gtk::PopoverMenu::from_model(Option::<&gio::Menu>::None);
@@ -898,19 +904,37 @@ mod tests {
         let calls = dock_calls.clone();
         bar.connect_docked_mode_toggle(move || calls.set(calls.get() + 1));
         let mode = *settings::values().use_docked_mode.get_value();
-        app.lookup_action("toggle_docked_mode").unwrap().activate(None);
+        app.lookup_action("toggle_docked_mode")
+            .unwrap()
+            .activate(None);
         assert_eq!(dock_calls.get(), 1);
         // No direct setting mutation: MainWindow owns the full HID transition.
         assert_eq!(*settings::values().use_docked_mode.get_value(), mode);
-        settings::values_mut().gpu_accuracy.set_value(GpuAccuracy::High);
-        app.lookup_action("toggle_gpu_accuracy").unwrap().activate(None);
-        assert_eq!(*settings::values().gpu_accuracy.get_value(), GpuAccuracy::Low);
+        settings::values_mut()
+            .gpu_accuracy
+            .set_value(GpuAccuracy::High);
+        app.lookup_action("toggle_gpu_accuracy")
+            .unwrap()
+            .activate(None);
+        assert_eq!(
+            *settings::values().gpu_accuracy.get_value(),
+            GpuAccuracy::Low
+        );
         assert_eq!(applied.get(), 1);
-        app.lookup_action("toggle_gpu_accuracy").unwrap().activate(None);
-        assert_eq!(*settings::values().gpu_accuracy.get_value(), GpuAccuracy::High);
+        app.lookup_action("toggle_gpu_accuracy")
+            .unwrap()
+            .activate(None);
+        assert_eq!(
+            *settings::values().gpu_accuracy.get_value(),
+            GpuAccuracy::High
+        );
         assert_eq!(applied.get(), 2);
-        settings::values_mut().scaling_filter.set_value(ScalingFilter::SgsrEdge);
-        app.lookup_action("toggle_adapting_filter").unwrap().activate(None);
+        settings::values_mut()
+            .scaling_filter
+            .set_value(ScalingFilter::SgsrEdge);
+        app.lookup_action("toggle_adapting_filter")
+            .unwrap()
+            .activate(None);
         assert_eq!(*settings::values().scaling_filter.get_value() as u32, 0);
         assert_eq!(applied.get(), 2);
         *settings::values_mut() = original;
@@ -922,7 +946,9 @@ mod tests {
         gtk::init().expect("GTK display required");
         crate::uisettings::with_mut(|values| values.has_broken_vulkan = true);
         settings::set_configuring_global(true);
-        settings::values_mut().renderer_backend.set_value(RendererBackend::Vulkan);
+        settings::values_mut()
+            .renderer_backend
+            .set_value(RendererBackend::Vulkan);
         let bar = StatusBar::new();
         assert!(!bar.renderer.is_sensitive());
         assert!(bar.renderer_context_actions().is_empty());
@@ -1039,11 +1065,23 @@ mod tests {
         assert_eq!(format_shaders_building(3), "Building: 3 shaders");
         assert_eq!(format_resolution_scale(1.0), "Scale: 1x");
         assert_eq!(format_resolution_scale(1.5), "Scale: 1.5x");
-        assert_eq!(format_game_fps(59.4, false, SpeedMode::Standard), "Game: 59 FPS");
-        assert_eq!(format_game_fps(59.5, true, SpeedMode::Standard), "Game: 60 FPS (Unlocked)");
+        assert_eq!(
+            format_game_fps(59.4, false, SpeedMode::Standard),
+            "Game: 59 FPS"
+        );
+        assert_eq!(
+            format_game_fps(59.5, true, SpeedMode::Standard),
+            "Game: 60 FPS (Unlocked)"
+        );
         for unlocked in [false, true] {
-            assert_eq!(format_game_fps(60.0, unlocked, SpeedMode::Turbo), "Game: 60 FPS (Turbo)");
-            assert_eq!(format_game_fps(30.0, unlocked, SpeedMode::Slow), "Game: 30 FPS (Slow)");
+            assert_eq!(
+                format_game_fps(60.0, unlocked, SpeedMode::Turbo),
+                "Game: 60 FPS (Turbo)"
+            );
+            assert_eq!(
+                format_game_fps(30.0, unlocked, SpeedMode::Slow),
+                "Game: 30 FPS (Slow)"
+            );
         }
         assert_eq!(format_frame_time(1.0 / 60.0), "Frame: 16.67 ms");
     }

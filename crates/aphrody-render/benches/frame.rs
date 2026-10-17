@@ -35,7 +35,9 @@ fn bench_cpu_3d(c: &mut Criterion) {
     c.bench_function("cpu3d_render_1080p_showcase_msaa4", |b| {
         b.iter(|| render_prepared(std::hint::black_box(&prepared)));
     });
-    let grid = instanced_grid_scene3d(1920, 1080, 1024).prepare().expect("valid grid");
+    let grid = instanced_grid_scene3d(1920, 1080, 1024)
+        .prepare()
+        .expect("valid grid");
     c.bench_function("cpu3d_render_1080p_grid_1024", |b| {
         b.iter(|| render_prepared(std::hint::black_box(&grid)));
     });
@@ -48,11 +50,14 @@ fn bench_gpu(c: &mut Criterion) {
     let scene = dashboard_scene(1920, 1080, 500);
     match render_scene_gpu(&scene) {
         Ok(frame) => {
-            eprintln!("gpu adapter: {} ({})", frame.adapter.name, frame.adapter.backend);
+            eprintln!(
+                "gpu adapter: {} ({})",
+                frame.adapter.name, frame.adapter.backend
+            );
             c.bench_function("gpu_render_1080p_dashboard_500", |b| {
                 b.iter(|| render_scene_gpu(std::hint::black_box(&scene)).expect("gpu render"));
             });
-        },
+        }
         Err(err) => eprintln!("skipping 2D gpu benchmark: {err}"),
     }
 
@@ -61,16 +66,26 @@ fn bench_gpu(c: &mut Criterion) {
         Err(err) => {
             eprintln!("skipping 3D gpu benchmarks: {err}");
             return;
-        },
+        }
     };
     let showcase = showcase_scene3d(1920, 1080);
     let prepared = showcase.prepare().expect("valid showcase");
     c.bench_function("gpu3d_render_1080p_showcase_msaa4", |b| {
-        b.iter(|| renderer.render_prepared(std::hint::black_box(&prepared)).expect("render"));
+        b.iter(|| {
+            renderer
+                .render_prepared(std::hint::black_box(&prepared))
+                .expect("render")
+        });
     });
-    let grid = instanced_grid_scene3d(1920, 1080, 1024).prepare().expect("valid grid");
+    let grid = instanced_grid_scene3d(1920, 1080, 1024)
+        .prepare()
+        .expect("valid grid");
     c.bench_function("gpu3d_render_1080p_grid_1024", |b| {
-        b.iter(|| renderer.render_prepared(std::hint::black_box(&grid)).expect("render"));
+        b.iter(|| {
+            renderer
+                .render_prepared(std::hint::black_box(&grid))
+                .expect("render")
+        });
     });
 }
 

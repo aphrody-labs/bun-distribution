@@ -1,8 +1,13 @@
-const PITCH_CLASSES: [&str; 12] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const PITCH_CLASSES: [&str; 12] = [
+    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+];
 
 /// Note name using the Pro Tools convention where middle C (60) is "C3" (so 0 is "C-2").
 pub fn note_name(pitch: u8) -> String {
-    let class = PITCH_CLASSES.get(usize::from(pitch % 12)).copied().unwrap_or("?");
+    let class = PITCH_CLASSES
+        .get(usize::from(pitch % 12))
+        .copied()
+        .unwrap_or("?");
     let octave = i32::from(pitch / 12) - 2;
     format!("{class}{octave}")
 }
@@ -197,7 +202,10 @@ const GM_PROGRAMS: [&str; 128] = [
 /// General MIDI (level 1) instrument name for a 0-based program number. Values above 127
 /// return `"Unknown"`.
 pub fn gm_program_name(program: u8) -> &'static str {
-    GM_PROGRAMS.get(usize::from(program)).copied().unwrap_or("Unknown")
+    GM_PROGRAMS
+        .get(usize::from(program))
+        .copied()
+        .unwrap_or("Unknown")
 }
 
 #[cfg(test)]

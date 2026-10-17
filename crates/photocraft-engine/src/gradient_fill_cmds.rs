@@ -33,20 +33,37 @@ const MAX_COORD: f32 = 1.0e7;
 const SCALE_RANGE: (f32, f32) = (0.1, 1.5);
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn num(p: &Value, k: &str) -> Option<f32> {
-    p.get(k).and_then(Value::as_f64).map(|v| v as f32).filter(|v| v.is_finite())
+    p.get(k)
+        .and_then(Value::as_f64)
+        .map(|v| v as f32)
+        .filter(|v| v.is_finite())
 }
 
 fn point(cmd: &str, p: &Value, k: &str) -> Result<Option<[f32; 2]>> {
     let Some(v) = p.get(k) else { return Ok(None) };
-    let a = v.as_array().filter(|a| a.len() == 2).ok_or_else(|| bad(cmd, format!("`{k}` is [x, y]")))?;
-    let c = |i: usize| a.get(i).and_then(Value::as_f64).map(|v| v as f32).filter(|v| v.is_finite() && v.abs() <= MAX_COORD);
+    let a = v
+        .as_array()
+        .filter(|a| a.len() == 2)
+        .ok_or_else(|| bad(cmd, format!("`{k}` is [x, y]")))?;
+    let c = |i: usize| {
+        a.get(i)
+            .and_then(Value::as_f64)
+            .map(|v| v as f32)
+            .filter(|v| v.is_finite() && v.abs() <= MAX_COORD)
+    };
     match (c(0), c(1)) {
         (Some(x), Some(y)) => Ok(Some([x, y])),
-        _ => Err(bad(cmd, format!("`{k}` needs finite coordinates within ±{MAX_COORD}"))),
+        _ => Err(bad(
+            cmd,
+            format!("`{k}` needs finite coordinates within ±{MAX_COORD}"),
+        )),
     }
 }
 
@@ -59,7 +76,10 @@ fn style_param(cmd: &str, p: &Value) -> Result<Option<GradientStyle>> {
             "angle" => Ok(Some(GradientStyle::Angle)),
             "reflected" => Ok(Some(GradientStyle::Reflected)),
             "diamond" => Ok(Some(GradientStyle::Diamond)),
-            o => Err(bad(cmd, format!("unknown style `{o}` (linear|radial|angle|reflected|diamond)"))),
+            o => Err(bad(
+                cmd,
+                format!("unknown style `{o}` (linear|radial|angle|reflected|diamond)"),
+            )),
         },
         Some(_) => Err(bad(cmd, "`style` is a string")),
     }
@@ -83,7 +103,11 @@ fn parse_color(v: &Value, fg: [f32; 4], bg: [f32; 4]) -> Option<Color> {
         Value::String(s) if s == "background" => bg,
         Value::String(s) => {
             let h = s.trim_start_matches('#');
-            let b = |i: usize| h.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).map(|v| f32::from(v) / 255.0);
+            let b = |i: usize| {
+                h.get(i..i + 2)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map(|v| f32::from(v) / 255.0)
+            };
             match h.len() {
                 6 => [b(0)?, b(2)?, b(4)?, 1.0],
                 8 => [b(0)?, b(2)?, b(4)?, b(6)?],
@@ -91,7 +115,12 @@ fn parse_color(v: &Value, fg: [f32; 4], bg: [f32; 4]) -> Option<Color> {
             }
         }
         Value::Array(a) if (3..=4).contains(&a.len()) => {
-            let f = |i: usize| a.get(i).and_then(Value::as_f64).map(|v| v as f32).filter(|v| v.is_finite());
+            let f = |i: usize| {
+                a.get(i)
+                    .and_then(Value::as_f64)
+                    .map(|v| v as f32)
+                    .filter(|v| v.is_finite())
+            };
             [f(0)?, f(1)?, f(2)?, if a.len() == 4 { f(3)? } else { 1.0 }]
         }
         _ => return None,
@@ -106,7 +135,13 @@ fn hex(c: &Color) -> String {
     if c.alpha >= 1.0 {
         format!("#{:02x}{:02x}{:02x}", q(rgb[0]), q(rgb[1]), q(rgb[2]))
     } else {
-        format!("#{:02x}{:02x}{:02x}{:02x}", q(rgb[0]), q(rgb[1]), q(rgb[2]), q(c.alpha))
+        format!(
+            "#{:02x}{:02x}{:02x}{:02x}",
+            q(rgb[0]),
+            q(rgb[1]),
+            q(rgb[2]),
+            q(c.alpha)
+        )
     }
 }
 
@@ -120,7 +155,12 @@ fn preset_param(s: &Session, p: &Value, cmd: &str) -> Result<GradientPreset> {
             .flat_map(|g| g.items.iter())
             .find(|g| g.name.eq_ignore_ascii_case(name))
             .cloned()
-            .ok_or_else(|| bad(cmd, format!("no gradient preset \"{name}\" (see gradient.presets.list)")))?
+            .ok_or_else(|| {
+                bad(
+                    cmd,
+                    format!("no gradient preset \"{name}\" (see gradient.presets.list)"),
+                )
+            })?
             .with_transparency(p, cmd);
     }
     if p.get("stops").is_some() {
@@ -134,19 +174,30 @@ fn gradient_of(s: &Session, id: LayerId, cmd: &str) -> Result<(Fill, Rect)> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let l = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?;
     match &l.content {
-        LayerContent::Fill(f @ Fill::Gradient { .. }) => Ok((f.clone(), photocraft_compose::fill_frame(l, d.doc.bounds()))),
-        _ => Err(bad(cmd, format!("layer \"{}\" is not a gradient fill layer", l.name))),
+        LayerContent::Fill(f @ Fill::Gradient { .. }) => {
+            Ok((f.clone(), photocraft_compose::fill_frame(l, d.doc.bounds())))
+        }
+        _ => Err(bad(
+            cmd,
+            format!("layer \"{}\" is not a gradient fill layer", l.name),
+        )),
     }
 }
 
 /// Whether the active layer is a gradient fill layer (the commands' `enabled`).
 pub fn has_gradient_fill(s: &Session) -> std::result::Result<(), String> {
     let l = crate::active_layer_of(s)?;
-    if matches!(l.content, LayerContent::Fill(Fill::Gradient { .. })) { Ok(()) } else { Err("the active layer is not a gradient fill layer".into()) }
+    if matches!(l.content, LayerContent::Fill(Fill::Gradient { .. })) {
+        Ok(())
+    } else {
+        Err("the active layer is not a gradient fill layer".into())
+    }
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn clamp_scale(v: f32) -> f32 {
@@ -163,40 +214,84 @@ fn frame_with_align(layer: &Layer, f: &Fill, canvas: Rect) -> Rect {
 /// Applies `gradient.fill.set` params to a gradient fill (`layer` gives its frame; `fg`/`bg`
 /// resolve stop colours). Pure, so the canvas previews a handle drag with exactly what the
 /// command will commit.
-pub fn apply_set(layer: &Layer, f: &Fill, canvas: Rect, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fill> {
+pub fn apply_set(
+    layer: &Layer,
+    f: &Fill,
+    canvas: Rect,
+    p: &Value,
+    fg: [f32; 4],
+    bg: [f32; 4],
+) -> Result<Fill> {
     const CMD: &str = SET;
     let mut out = f.clone();
-    let Fill::Gradient { stops, angle, scale, style, reverse, opacity_stops, midpoints, offset, dither, align } = &mut out else {
+    let Fill::Gradient {
+        stops,
+        angle,
+        scale,
+        style,
+        reverse,
+        opacity_stops,
+        midpoints,
+        offset,
+        dither,
+        align,
+    } = &mut out
+    else {
         return Err(bad(CMD, "not a gradient fill"));
     };
     let old_frame = frame_with_align(layer, f, canvas);
     let old_handles = gf::handles(*style, *angle, *scale, *offset, old_frame);
     if let Some(v) = p.get("align") {
-        *align = v.as_bool().ok_or_else(|| bad(CMD, "`align` is a boolean"))?;
+        *align = v
+            .as_bool()
+            .ok_or_else(|| bad(CMD, "`align` is a boolean"))?;
     }
     let new_style = style_param(CMD, p)?;
-    let explicit_geometry = ["angle", "scale", "offset"].iter().any(|k| p.get(*k).is_some());
+    let explicit_geometry = ["angle", "scale", "offset"]
+        .iter()
+        .any(|k| p.get(*k).is_some());
     if let Some(a) = p.get("angle") {
-        *angle = a.as_f64().map(|v| v as f32).filter(|v| v.is_finite()).ok_or_else(|| bad(CMD, "`angle` is a number (degrees)"))?.rem_euclid(360.0);
+        *angle = a
+            .as_f64()
+            .map(|v| v as f32)
+            .filter(|v| v.is_finite())
+            .ok_or_else(|| bad(CMD, "`angle` is a number (degrees)"))?
+            .rem_euclid(360.0);
         if *angle > 180.0 {
             *angle -= 360.0;
         }
     }
     if p.get("scale").is_some() {
-        let v = num(p, "scale").filter(|v| *v > 0.0).ok_or_else(|| bad(CMD, "`scale` is a positive percentage"))?;
+        let v = num(p, "scale")
+            .filter(|v| *v > 0.0)
+            .ok_or_else(|| bad(CMD, "`scale` is a positive percentage"))?;
         *scale = clamp_scale(v / 100.0);
     }
     if let Some(o) = p.get("offset") {
-        let a = o.as_array().filter(|a| a.len() == 2).ok_or_else(|| bad(CMD, "`offset` is [x%, y%]"))?;
-        let c = |i: usize| a.get(i).and_then(Value::as_f64).map(|v| v as f32).filter(|v| v.is_finite() && v.abs() <= 1.0e5);
-        let (Some(x), Some(y)) = (c(0), c(1)) else { return Err(bad(CMD, "`offset` needs finite percentages")) };
+        let a = o
+            .as_array()
+            .filter(|a| a.len() == 2)
+            .ok_or_else(|| bad(CMD, "`offset` is [x%, y%]"))?;
+        let c = |i: usize| {
+            a.get(i)
+                .and_then(Value::as_f64)
+                .map(|v| v as f32)
+                .filter(|v| v.is_finite() && v.abs() <= 1.0e5)
+        };
+        let (Some(x), Some(y)) = (c(0), c(1)) else {
+            return Err(bad(CMD, "`offset` needs finite percentages"));
+        };
         *offset = (x / 100.0, y / 100.0);
     }
     if let Some(v) = p.get("reverse") {
-        *reverse = v.as_bool().ok_or_else(|| bad(CMD, "`reverse` is a boolean"))?;
+        *reverse = v
+            .as_bool()
+            .ok_or_else(|| bad(CMD, "`reverse` is a boolean"))?;
     }
     if let Some(v) = p.get("dither") {
-        *dither = v.as_bool().ok_or_else(|| bad(CMD, "`dither` is a boolean"))?;
+        *dither = v
+            .as_bool()
+            .ok_or_else(|| bad(CMD, "`dither` is a boolean"))?;
     }
     let from = point(CMD, p, "from")?;
     let to = point(CMD, p, "to")?;
@@ -221,7 +316,11 @@ pub fn apply_set(layer: &Layer, f: &Fill, canvas: Rect, p: &Value, fg: [f32; 4],
         *style = ns;
     }
     if from.is_some() || to.is_some() || (style_changed && !explicit_geometry) {
-        let cur = if from.is_some() || to.is_some() { gf::handles(*style, *angle, *scale, *offset, frame) } else { old_handles };
+        let cur = if from.is_some() || to.is_some() {
+            gf::handles(*style, *angle, *scale, *offset, frame)
+        } else {
+            old_handles
+        };
         let (f0, t0) = (from.unwrap_or(cur.0), to.unwrap_or(cur.1));
         let (a, s, o) = gf::from_handles(*style, f0, t0, frame, *angle);
         (*angle, *scale, *offset) = (a, clamp_scale(s), o);
@@ -243,15 +342,30 @@ pub fn apply_set(layer: &Layer, f: &Fill, canvas: Rect, p: &Value, fg: [f32; 4],
         }
     }
     if let Some(v) = p.get("stops") {
-        let arr = v.as_array().ok_or_else(|| bad(CMD, "`stops` is [[location, colour], …]"))?;
+        let arr = v
+            .as_array()
+            .ok_or_else(|| bad(CMD, "`stops` is [[location, colour], …]"))?;
         let mut new = Vec::with_capacity(arr.len());
         for s in arr {
-            let pair = s.as_array().filter(|a| a.len() == 2).ok_or_else(|| bad(CMD, "a stop is [location 0..1, colour]"))?;
-            let t = pair.first().and_then(Value::as_f64).map(|v| v as f32).filter(|v| v.is_finite()).ok_or_else(|| bad(CMD, "stop location is a number"))?;
+            let pair = s
+                .as_array()
+                .filter(|a| a.len() == 2)
+                .ok_or_else(|| bad(CMD, "a stop is [location 0..1, colour]"))?;
+            let t = pair
+                .first()
+                .and_then(Value::as_f64)
+                .map(|v| v as f32)
+                .filter(|v| v.is_finite())
+                .ok_or_else(|| bad(CMD, "stop location is a number"))?;
             let c = pair
                 .get(1)
                 .and_then(|c| parse_color(c, fg, bg))
-                .ok_or_else(|| bad(CMD, "stop colour is \"#rrggbb\", [r,g,b,a], \"foreground\" or \"background\""))?;
+                .ok_or_else(|| {
+                    bad(
+                        CMD,
+                        "stop colour is \"#rrggbb\", [r,g,b,a], \"foreground\" or \"background\"",
+                    )
+                })?;
             new.push((t.clamp(0.0, 1.0), c));
         }
         if new.len() < 2 {
@@ -270,11 +384,28 @@ pub fn apply_set(layer: &Layer, f: &Fill, canvas: Rect, p: &Value, fg: [f32; 4],
         *opacity_stops = new;
     }
     if let Some(v) = p.get("midpoints") {
-        let arr = v.as_array().ok_or_else(|| bad(CMD, "`midpoints` is [0..1, …] (one per segment)"))?;
-        let mids: Option<Vec<f32>> = arr.iter().map(|m| m.as_f64().map(|v| v as f32).filter(|v| v.is_finite()).map(|v| v.clamp(0.05, 0.95))).collect();
+        let arr = v
+            .as_array()
+            .ok_or_else(|| bad(CMD, "`midpoints` is [0..1, …] (one per segment)"))?;
+        let mids: Option<Vec<f32>> = arr
+            .iter()
+            .map(|m| {
+                m.as_f64()
+                    .map(|v| v as f32)
+                    .filter(|v| v.is_finite())
+                    .map(|v| v.clamp(0.05, 0.95))
+            })
+            .collect();
         let mids = mids.ok_or_else(|| bad(CMD, "midpoints are numbers"))?;
         if mids.len() > stops.len().saturating_sub(1) {
-            return Err(bad(CMD, format!("{} midpoints for {} segments", mids.len(), stops.len().saturating_sub(1))));
+            return Err(bad(
+                CMD,
+                format!(
+                    "{} midpoints for {} segments",
+                    mids.len(),
+                    stops.len().saturating_sub(1)
+                ),
+            ));
         }
         *midpoints = mids;
     }
@@ -296,16 +427,32 @@ pub fn new_layer(s: &Session, doc: &Document, p: &Value) -> Result<Layer> {
     let opacity = num(p, "opacity").unwrap_or(100.0).clamp(0.0, 100.0) / 100.0;
     let blend = match p.get("mode").and_then(Value::as_str) {
         None | Some("") => photocraft_color::BlendMode::Normal,
-        Some(m) => blend_from_str(m).ok_or_else(|| bad(CMD, format!("unknown blend mode `{m}`")))?,
+        Some(m) => {
+            blend_from_str(m).ok_or_else(|| bad(CMD, format!("unknown blend mode `{m}`")))?
+        }
     };
     let canvas = doc.bounds();
     if canvas.is_empty() {
         return Err(bad(CMD, "the document is empty"));
     }
     let (angle, scale, offset) = gf::from_handles(style, from, to, canvas, 0.0);
-    let fill = Fill::Gradient { stops, angle, scale: clamp_scale(scale), style, reverse, opacity_stops, midpoints: Vec::new(), offset, dither, align: false }
-        .in_mode(doc.mode);
-    let mut l = Layer::new(doc.next_layer_name("Gradient Fill"), LayerContent::Fill(fill));
+    let fill = Fill::Gradient {
+        stops,
+        angle,
+        scale: clamp_scale(scale),
+        style,
+        reverse,
+        opacity_stops,
+        midpoints: Vec::new(),
+        offset,
+        dither,
+        align: false,
+    }
+    .in_mode(doc.mode);
+    let mut l = Layer::new(
+        doc.next_layer_name("Gradient Fill"),
+        LayerContent::Fill(fill),
+    );
     l.opacity = opacity;
     l.blend = blend;
     l.mask = crate::commands::selection_mask(doc)?;
@@ -331,7 +478,10 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let (fg, bg) = (s.tools.foreground, s.tools.background);
     let (layer, canvas) = {
         let d = s.active().ok_or(EngineError::NoDocument)?;
-        (d.doc.layer(id).cloned().ok_or(EngineError::NoLayer(id))?, d.doc.bounds())
+        (
+            d.doc.layer(id).cloned().ok_or(EngineError::NoLayer(id))?,
+            d.doc.bounds(),
+        )
     };
     let new = apply_set(&layer, &fill, canvas, p, fg, bg)?;
     if new != fill {
@@ -355,7 +505,11 @@ fn replace_fill(s: &mut Session, id: LayerId, label: &str, new: Fill) -> Result<
 
 /// Sorted colour stops paired with the midpoint of the segment that follows each.
 fn paired(stops: &[(f32, Color)], mids: &[f32]) -> Vec<(f32, Color, f32)> {
-    let mut v: Vec<(f32, Color, f32)> = stops.iter().enumerate().map(|(i, (t, c))| (*t, *c, mids.get(i).copied().unwrap_or(0.5))).collect();
+    let mut v: Vec<(f32, Color, f32)> = stops
+        .iter()
+        .enumerate()
+        .map(|(i, (t, c))| (*t, *c, mids.get(i).copied().unwrap_or(0.5)))
+        .collect();
     v.sort_by(|a, b| a.0.total_cmp(&b.0));
     v
 }
@@ -365,7 +519,11 @@ fn unpair(v: Vec<(f32, Color, f32)>) -> (Vec<(f32, Color)>, Vec<f32>) {
     v.sort_by(|a, b| a.0.total_cmp(&b.0));
     let n = v.len();
     let mids: Vec<f32> = v.iter().take(n.saturating_sub(1)).map(|s| s.2).collect();
-    let mids = if mids.iter().all(|m| (m - 0.5).abs() < 1e-6) { Vec::new() } else { mids };
+    let mids = if mids.iter().all(|m| (m - 0.5).abs() < 1e-6) {
+        Vec::new()
+    } else {
+        mids
+    };
     (v.into_iter().map(|(t, c, _)| (t, c)).collect(), mids)
 }
 
@@ -373,8 +531,21 @@ fn unpair(v: Vec<(f32, Color, f32)>) -> (Vec<(f32, Color)>, Vec<f32>) {
 pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fill> {
     const CMD: &str = STOP;
     let mut out = f.clone();
-    let Fill::Gradient { stops, opacity_stops, midpoints, .. } = &mut out else { return Err(bad(CMD, "not a gradient fill")) };
-    let action = p.get("action").and_then(Value::as_str).ok_or_else(|| bad(CMD, "missing `action` (add|move|delete|color|opacity|midpoint)"))?;
+    let Fill::Gradient {
+        stops,
+        opacity_stops,
+        midpoints,
+        ..
+    } = &mut out
+    else {
+        return Err(bad(CMD, "not a gradient fill"));
+    };
+    let action = p.get("action").and_then(Value::as_str).ok_or_else(|| {
+        bad(
+            CMD,
+            "missing `action` (add|move|delete|color|opacity|midpoint)",
+        )
+    })?;
     let opacity_kind = match p.get("kind").and_then(Value::as_str).unwrap_or("color") {
         "color" => false,
         "opacity" => true,
@@ -384,14 +555,21 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
     // "colour stop" or "segment") before any arithmetic on it: an index is untrusted and can be as
     // large as the integer type, so `i + 1` on it would overflow (#958).
     let index = |len: usize, what: &str| -> Result<usize> {
-        let i =
-            p.get("index").and_then(Value::as_u64).and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad(CMD, "missing `index` (a stop number from 0)"))?;
+        let i = p
+            .get("index")
+            .and_then(Value::as_u64)
+            .and_then(|v| usize::try_from(v).ok())
+            .ok_or_else(|| bad(CMD, "missing `index` (a stop number from 0)"))?;
         if i >= len {
             return Err(bad(CMD, format!("no {what} {i} (there are {len})")));
         }
         Ok(i)
     };
-    let location = || num(p, "location").map(|v| v.clamp(0.0, 1.0)).ok_or_else(|| bad(CMD, "missing `location` (0..1)"));
+    let location = || {
+        num(p, "location")
+            .map(|v| v.clamp(0.0, 1.0))
+            .ok_or_else(|| bad(CMD, "missing `location` (0..1)"))
+    };
     let ramp = gf::Ramp::new(f).ok_or_else(|| bad(CMD, "not a gradient fill"))?;
     if opacity_kind {
         // Opacity stops: an empty list means "opaque" (two 100 % stops when first edited).
@@ -400,17 +578,26 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
             os = vec![(0.0, 1.0), (1.0, 1.0)];
         }
         os.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let opacity = || num(p, "opacity").map(|v| (v / 100.0).clamp(0.0, 1.0)).ok_or_else(|| bad(CMD, "missing `opacity` (0..100)"));
+        let opacity = || {
+            num(p, "opacity")
+                .map(|v| (v / 100.0).clamp(0.0, 1.0))
+                .ok_or_else(|| bad(CMD, "missing `opacity` (0..100)"))
+        };
         match action {
             "add" => {
                 let t = location()?;
-                let a = num(p, "opacity").map_or_else(|| ramp.sample(t)[3] / ramp_color_alpha(f, t), |v| (v / 100.0).clamp(0.0, 1.0));
+                let a = num(p, "opacity").map_or_else(
+                    || ramp.sample(t)[3] / ramp_color_alpha(f, t),
+                    |v| (v / 100.0).clamp(0.0, 1.0),
+                );
                 os.push((t, a.clamp(0.0, 1.0)));
             }
             "move" => {
                 let i = index(os.len(), "opacity stop")?;
                 let t = location()?;
-                os.get_mut(i).ok_or_else(|| bad(CMD, format!("no opacity stop {i}")))?.0 = t;
+                os.get_mut(i)
+                    .ok_or_else(|| bad(CMD, format!("no opacity stop {i}")))?
+                    .0 = t;
             }
             "delete" => {
                 let i = index(os.len(), "opacity stop")?;
@@ -422,9 +609,16 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
             "opacity" => {
                 let i = index(os.len(), "opacity stop")?;
                 let a = opacity()?;
-                os.get_mut(i).ok_or_else(|| bad(CMD, format!("no opacity stop {i}")))?.1 = a;
+                os.get_mut(i)
+                    .ok_or_else(|| bad(CMD, format!("no opacity stop {i}")))?
+                    .1 = a;
             }
-            o => return Err(bad(CMD, format!("unknown action `{o}` for opacity stops (add|move|delete|opacity)"))),
+            o => {
+                return Err(bad(
+                    CMD,
+                    format!("unknown action `{o}` for opacity stops (add|move|delete|opacity)"),
+                ));
+            }
         }
         os.sort_by(|a, b| a.0.total_cmp(&b.0));
         if os.len() > 1024 {
@@ -457,7 +651,9 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
         "move" => {
             let i = index(v.len(), "colour stop")?;
             let t = location()?;
-            v.get_mut(i).ok_or_else(|| bad(CMD, format!("no colour stop {i}")))?.0 = t;
+            v.get_mut(i)
+                .ok_or_else(|| bad(CMD, format!("no colour stop {i}")))?
+                .0 = t;
         }
         "delete" => {
             let i = index(v.len(), "colour stop")?;
@@ -468,16 +664,30 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
         }
         "color" => {
             let i = index(v.len(), "colour stop")?;
-            let c = p.get("color").and_then(|c| parse_color(c, fg, bg)).ok_or_else(|| bad(CMD, "missing or bad `color`"))?;
-            v.get_mut(i).ok_or_else(|| bad(CMD, format!("no colour stop {i}")))?.1 = c;
+            let c = p
+                .get("color")
+                .and_then(|c| parse_color(c, fg, bg))
+                .ok_or_else(|| bad(CMD, "missing or bad `color`"))?;
+            v.get_mut(i)
+                .ok_or_else(|| bad(CMD, format!("no colour stop {i}")))?
+                .1 = c;
         }
         "midpoint" => {
             // Segment `i` runs from stop `i` to stop `i + 1`, so there is one fewer than stops.
             let i = index(v.len().saturating_sub(1), "segment")?;
-            let m = num(p, "location").ok_or_else(|| bad(CMD, "missing `location` (0..1 of the segment)"))?.clamp(0.05, 0.95);
-            v.get_mut(i).ok_or_else(|| bad(CMD, format!("no segment {i}")))?.2 = m;
+            let m = num(p, "location")
+                .ok_or_else(|| bad(CMD, "missing `location` (0..1 of the segment)"))?
+                .clamp(0.05, 0.95);
+            v.get_mut(i)
+                .ok_or_else(|| bad(CMD, format!("no segment {i}")))?
+                .2 = m;
         }
-        o => return Err(bad(CMD, format!("unknown action `{o}` (add|move|delete|color|midpoint)"))),
+        o => {
+            return Err(bad(
+                CMD,
+                format!("unknown action `{o}` (add|move|delete|color|midpoint)"),
+            ));
+        }
     }
     let (st, mids) = unpair(v);
     *stops = st;
@@ -487,7 +697,12 @@ pub fn apply_stop(f: &Fill, p: &Value, fg: [f32; 4], bg: [f32; 4]) -> Result<Fil
 
 /// The colour stops' own alpha at `t` (without the opacity stops).
 fn ramp_color_alpha(f: &Fill, t: f32) -> f32 {
-    let Fill::Gradient { stops, midpoints, .. } = f else { return 1.0 };
+    let Fill::Gradient {
+        stops, midpoints, ..
+    } = f
+    else {
+        return 1.0;
+    };
     let bare = Fill::Gradient {
         stops: stops.clone(),
         angle: 0.0,
@@ -500,7 +715,9 @@ fn ramp_color_alpha(f: &Fill, t: f32) -> f32 {
         dither: false,
         align: true,
     };
-    gf::Ramp::new(&bare).map_or(1.0, |r| r.sample(t)[3]).max(1e-6)
+    gf::Ramp::new(&bare)
+        .map_or(1.0, |r| r.sample(t)[3])
+        .max(1e-6)
 }
 
 fn stop(s: &mut Session, p: &Value) -> Result<Value> {
@@ -515,7 +732,21 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A gradient fill layer's settings as JSON (`gradient.fill.get`).
 pub fn describe_fill(f: &Fill, frame: Rect) -> Value {
-    let Fill::Gradient { stops, angle, scale, style, reverse, opacity_stops, midpoints, offset, dither, align } = f else { return Value::Null };
+    let Fill::Gradient {
+        stops,
+        angle,
+        scale,
+        style,
+        reverse,
+        opacity_stops,
+        midpoints,
+        offset,
+        dither,
+        align,
+    } = f
+    else {
+        return Value::Null;
+    };
     let (from, to) = gf::handles(*style, *angle, *scale, *offset, frame);
     json!({
         "style": style_name(*style),

@@ -30,14 +30,19 @@ pub struct Pending {
 }
 impl Drop for Pending {
     fn drop(&mut self) {
-        self.cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
 }
 pub type Service = Box<dyn FnMut(&Context) -> Pending>;
 pub const MAX_PIXELS: usize = 64 * 1024 * 1024;
 impl ScreenImage {
     pub fn validate(&self) -> Result<(), String> {
-        let count = self.width.checked_mul(self.height).filter(|&n| n > 0 && n <= MAX_PIXELS).ok_or("Screen image is too large or empty")?;
+        let count = self
+            .width
+            .checked_mul(self.height)
+            .filter(|&n| n > 0 && n <= MAX_PIXELS)
+            .ok_or("Screen image is too large or empty")?;
         if count.checked_mul(4) != Some(self.rgba.len())
             || !self.position.is_finite()
             || !self.size.is_finite()
@@ -63,21 +68,40 @@ impl ScreenImage {
             return None;
         }
         let p = (pos - rect.min) / rect.size();
-        Some((((p.x * self.width as f32) as usize).min(self.width.saturating_sub(1)), ((p.y * self.height as f32) as usize).min(self.height.saturating_sub(1))))
+        Some((
+            ((p.x * self.width as f32) as usize).min(self.width.saturating_sub(1)),
+            ((p.y * self.height as f32) as usize).min(self.height.saturating_sub(1)),
+        ))
     }
     fn conversion(&self) -> Result<Option<Arc<photocraft_cms::Transform>>, String> {
-        let Some(bytes) = &self.profile else { return Ok(None) };
+        let Some(bytes) = &self.profile else {
+            return Ok(None);
+        };
         let source = photocraft_cms::Profile::parse(bytes).map_err(|e| e.to_string())?;
         if source.color_space != photocraft_cms::ColorSpace::Rgb {
             return Err("Screen profile must describe RGB pixels".into());
         }
-        photocraft_cms::Transform::new(&source, photocraft_cms::Builtin::Srgb.profile(), photocraft_cms::Intent::RelativeColorimetric, true)
-            .map(|t| Some(Arc::new(t)))
-            .map_err(|e| e.to_string())
+        photocraft_cms::Transform::new(
+            &source,
+            photocraft_cms::Builtin::Srgb.profile(),
+            photocraft_cms::Intent::RelativeColorimetric,
+            true,
+        )
+        .map(|t| Some(Arc::new(t)))
+        .map_err(|e| e.to_string())
     }
-    fn sample(&self, x: usize, y: usize, conversion: Option<&photocraft_cms::Transform>) -> Result<[f32; 3], String> {
+    fn sample(
+        &self,
+        x: usize,
+        y: usize,
+        conversion: Option<&photocraft_cms::Transform>,
+    ) -> Result<[f32; 3], String> {
         let p = self.pixel(x, y).ok_or("Screen pixel is out of bounds")?;
-        let mut rgb = [f32::from(p.r()) / 255.0, f32::from(p.g()) / 255.0, f32::from(p.b()) / 255.0];
+        let mut rgb = [
+            f32::from(p.r()) / 255.0,
+            f32::from(p.g()) / 255.0,
+            f32::from(p.b()) / 255.0,
+        ];
         if let Some(t) = conversion {
             t.apply(&mut rgb, 3);
         }
@@ -90,7 +114,11 @@ struct Snapshot {
     texture: egui::TextureHandle,
     conversion: Option<Arc<photocraft_cms::Transform>>,
 }
-type Target = (Option<photocraft_doc::DocId>, Option<photocraft_doc::LayerId>, Option<u64>);
+type Target = (
+    Option<photocraft_doc::DocId>,
+    Option<photocraft_doc::LayerId>,
+    Option<u64>,
+);
 #[derive(Default)]
 struct Runtime {
     request: Option<Id>,
@@ -122,27 +150,58 @@ fn lock(r: &Shared) -> std::sync::MutexGuard<'_, Runtime> {
 pub fn take(ctx: &Context, id: Id) -> Option<[f32; 3]> {
     let r = runtime(ctx);
     let mut s = lock(&r);
-    if s.completed.as_ref().is_some_and(|(owner, _)| *owner == id) { s.completed.take().map(|(_, rgb)| rgb) } else { None }
+    if s.completed.as_ref().is_some_and(|(owner, _)| *owner == id) {
+        s.completed.take().map(|(_, rgb)| rgb)
+    } else {
+        None
+    }
 }
 /// Same action for full dialogs and compact swatches. Cancellation returns no change.
 pub fn button(ui: &mut egui::Ui, id: Id) -> Option<[f32; 3]> {
     let r = runtime(ui.ctx());
-    let available = ui.ctx().data(|d| d.get_temp::<bool>(Id::new("screen-color-picker-available"))).unwrap_or(false);
+    let available = ui
+        .ctx()
+        .data(|d| d.get_temp::<bool>(Id::new("screen-color-picker-available")))
+        .unwrap_or(false);
     let mut state = lock(&r);
-    let result = if state.completed.as_ref().is_some_and(|(owner, _)| *owner == id) { state.completed.take().map(|(_, rgb)| rgb) } else { None };
+    let result = if state
+        .completed
+        .as_ref()
+        .is_some_and(|(owner, _)| *owner == id)
+    {
+        state.completed.take().map(|(_, rgb)| rgb)
+    } else {
+        None
+    };
     let busy = state.owner.is_some() || state.request.is_some();
-    if ui.add_enabled(available && !busy, egui::Button::new(tl!("Pick screen color"))).on_hover_text(tl!("Sample a pixel anywhere on the screen")).clicked() {
+    if ui
+        .add_enabled(
+            available && !busy,
+            egui::Button::new(tl!("Pick screen color")),
+        )
+        .on_hover_text(tl!("Sample a pixel anywhere on the screen"))
+        .clicked()
+    {
         state.request = Some(id);
         ui.ctx().request_repaint();
     }
     result
 }
 fn target(app: &PhotocraftApp) -> Target {
-    (app.session.active().map(|s| s.doc.id), app.session.active().and_then(|s| s.active_layer), app.ui.dialogs.last().map(|d| d.id))
+    (
+        app.session.active().map(|s| s.doc.id),
+        app.session.active().and_then(|s| s.active_layer),
+        app.ui.dialogs.last().map(|d| d.id),
+    )
 }
 /// Poll before shortcuts. A changed editing target invalidates a pending pick.
 pub fn tick(app: &mut PhotocraftApp, ctx: &Context) -> bool {
-    ctx.data_mut(|d| d.insert_temp(Id::new("screen-color-picker-available"), app.services.screen_pick.is_some()));
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            Id::new("screen-color-picker-available"),
+            app.services.screen_pick.is_some(),
+        )
+    });
     let r = runtime(ctx);
     let mut s = lock(&r);
     if s.completed.is_some() && s.target != Some(target(app)) {
@@ -173,13 +232,19 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &Context) -> bool {
                 }
                 Ok(Ok(Capture::Images(images))) => {
                     s.pending = None;
-                    let total = images.iter().try_fold(0usize, |n, i| n.checked_add(i.width.checked_mul(i.height)?));
-                    let valid =
-                        !images.is_empty() && images.len() <= 16 && total.is_some_and(|n| n <= MAX_PIXELS) && images.iter().all(|i| i.validate().is_ok());
+                    let total = images
+                        .iter()
+                        .try_fold(0usize, |n, i| n.checked_add(i.width.checked_mul(i.height)?));
+                    let valid = !images.is_empty()
+                        && images.len() <= 16
+                        && total.is_some_and(|n| n <= MAX_PIXELS)
+                        && images.iter().all(|i| i.validate().is_ok());
                     if valid {
                         let max = ctx.input(|i| i.max_texture_side);
                         if images.iter().any(|i| i.width > max || i.height > max) {
-                            s.answer = Some(Err("This display exceeds the GPU's screen picker texture limit".into()));
+                            s.answer = Some(Err(
+                                "This display exceeds the GPU's screen picker texture limit".into(),
+                            ));
                         } else {
                             s.images = images
                                 .into_iter()
@@ -187,10 +252,17 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &Context) -> bool {
                                     let conversion = i.conversion()?;
                                     let texture = ctx.load_texture(
                                         "screen-color-snapshot",
-                                        egui::ColorImage::from_rgba_unmultiplied([i.width, i.height], &i.rgba),
+                                        egui::ColorImage::from_rgba_unmultiplied(
+                                            [i.width, i.height],
+                                            &i.rgba,
+                                        ),
                                         TextureOptions::NEAREST,
                                     );
-                                    Ok(Snapshot { image: Arc::new(i), texture, conversion })
+                                    Ok(Snapshot {
+                                        image: Arc::new(i),
+                                        texture,
+                                        conversion,
+                                    })
                                 })
                                 .collect::<Result<Vec<_>, String>>()
                                 .unwrap_or_else(|e| {
@@ -217,11 +289,16 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &Context) -> bool {
             let owner = s.owner.take();
             s.pending = None;
             for n in 0..s.images.len() {
-                ctx.send_viewport_cmd_to(egui::ViewportId::from_hash_of(("screen-color", s.generation, n)), egui::ViewportCommand::Close);
+                ctx.send_viewport_cmd_to(
+                    egui::ViewportId::from_hash_of(("screen-color", s.generation, n)),
+                    egui::ViewportCommand::Close,
+                );
             }
             s.images.clear();
             match answer {
-                Ok(Some(rgb)) if rgb.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) => s.completed = owner.map(|id| (id, rgb)),
+                Ok(Some(rgb)) if rgb.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) => {
+                    s.completed = owner.map(|id| (id, rgb))
+                }
                 Err(e) => {
                     app.ui.status = e;
                     app.ui.status_error = true;
@@ -278,7 +355,11 @@ pub fn show(ctx: &Context) {
     let generation = s.generation;
     drop(s);
     for (n, snapshot) in images.into_iter().enumerate() {
-        let Snapshot { image, texture, conversion } = snapshot;
+        let Snapshot {
+            image,
+            texture,
+            conversion,
+        } = snapshot;
         let shared = r.clone();
         let vid = egui::ViewportId::from_hash_of(("screen-color", generation, n));
         let builder = viewport_builder(ctx, &image);
@@ -296,13 +377,20 @@ pub fn show(ctx: &Context) {
             frame(ui, &shared, &image, &texture, conversion.as_deref());
             // Showing a new native viewport before this frame is painted can briefly cover
             // the screen with the window's default white clear color.
-            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Visible(true));
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::Visible(true));
             // Once per picker window (`show` runs every frame, so a local flag would resend it):
             // raise it, and take the keyboard so Esc reaches the picker: a window shown later
             // isn't always given focus by the OS, and the picker covers the screen (#4291).
             let raised = Id::new(("screen-picker-raised", ui.ctx().viewport_id()));
-            if !ui.ctx().data_mut(|d| std::mem::replace(d.get_temp_mut_or_default::<bool>(raised), true)) {
-                ui.ctx().send_viewport_cmd(egui::ViewportCommand::WindowLevel(egui::WindowLevel::AlwaysOnTop));
+            if !ui
+                .ctx()
+                .data_mut(|d| std::mem::replace(d.get_temp_mut_or_default::<bool>(raised), true))
+            {
+                ui.ctx()
+                    .send_viewport_cmd(egui::ViewportCommand::WindowLevel(
+                        egui::WindowLevel::AlwaysOnTop,
+                    ));
                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Focus);
             }
         });
@@ -316,87 +404,169 @@ type Answer = Result<Option<[f32; 3]>, String>;
 /// and stays on top, so every way out must work (#4291): Esc, closing the window, a right-click,
 /// and a left click (or a press and release that moved) anywhere, which picks the pixel under
 /// it, or cancels when there's none to sample. Nothing it gets leaves the user stuck in it.
-fn frame(ui: &mut egui::Ui, shared: &Shared, image: &ScreenImage, texture: &egui::TextureHandle, conversion: Option<&photocraft_cms::Transform>) {
+fn frame(
+    ui: &mut egui::Ui,
+    shared: &Shared,
+    image: &ScreenImage,
+    texture: &egui::TextureHandle,
+    conversion: Option<&photocraft_cms::Transform>,
+) {
     let ctx = ui.ctx().clone();
     let answer = |a: Answer| {
         lock(shared).answer = Some(a);
         ctx.request_repaint_of(egui::ViewportId::ROOT);
     };
-    if ctx.input(|i| i.viewport().close_requested() || i.key_pressed(egui::Key::Escape) || i.pointer.secondary_released()) {
+    if ctx.input(|i| {
+        i.viewport().close_requested()
+            || i.key_pressed(egui::Key::Escape)
+            || i.pointer.secondary_released()
+    }) {
         answer(Ok(None));
         return;
     }
-    egui::CentralPanel::default().frame(egui::Frame::NONE).show(ui, |ui| {
-        let rect = ui.max_rect();
-        ui.painter().image(texture.id(), rect, Rect::from_min_max(Pos2::ZERO, egui::pos2(1.0, 1.0)), Color32::WHITE);
-        let response = ui.interact(rect, ui.id().with("screen-sample"), Sense::click_and_drag());
-        ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
-        let released = response.clicked() || response.drag_stopped();
-        let pixel = ui.ctx().pointer_latest_pos().and_then(|pos| Some((pos, image.at(rect, pos)?)));
-        let Some((pos, (x, y))) = pixel else {
-            // No pixel under the pointer to sample: a click still ends the picker.
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE)
+        .show(ui, |ui| {
+            let rect = ui.max_rect();
+            ui.painter().image(
+                texture.id(),
+                rect,
+                Rect::from_min_max(Pos2::ZERO, egui::pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
+            let response =
+                ui.interact(rect, ui.id().with("screen-sample"), Sense::click_and_drag());
+            ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
+            let released = response.clicked() || response.drag_stopped();
+            let pixel = ui
+                .ctx()
+                .pointer_latest_pos()
+                .and_then(|pos| Some((pos, image.at(rect, pos)?)));
+            let Some((pos, (x, y))) = pixel else {
+                // No pixel under the pointer to sample: a click still ends the picker.
+                if released {
+                    answer(Ok(None));
+                }
+                return;
+            };
+            let zoom = {
+                let delta = ui.input(|i| {
+                    i.raw
+                        .events
+                        .iter()
+                        .filter_map(|e| match e {
+                            egui::Event::MouseWheel { delta, .. } => Some(delta.y),
+                            _ => None,
+                        })
+                        .sum::<f32>()
+                });
+                let mut s = lock(shared);
+                if delta > 0.0 {
+                    s.zoom = (s.zoom + 2).min(24);
+                }
+                if delta < 0.0 {
+                    s.zoom = s.zoom.saturating_sub(2).max(4);
+                }
+                s.zoom
+            };
+            let picked = image.sample(x, y, conversion);
+            loupe(
+                ui,
+                image,
+                rect,
+                pos,
+                (x, y),
+                zoom,
+                picked.as_ref().ok().copied(),
+            );
             if released {
-                answer(Ok(None));
+                answer(picked.map(Some));
             }
-            return;
-        };
-        let zoom = {
-            let delta = ui.input(|i| {
-                i.raw
-                    .events
-                    .iter()
-                    .filter_map(|e| match e {
-                        egui::Event::MouseWheel { delta, .. } => Some(delta.y),
-                        _ => None,
-                    })
-                    .sum::<f32>()
-            });
-            let mut s = lock(shared);
-            if delta > 0.0 {
-                s.zoom = (s.zoom + 2).min(24);
-            }
-            if delta < 0.0 {
-                s.zoom = s.zoom.saturating_sub(2).max(4);
-            }
-            s.zoom
-        };
-        let picked = image.sample(x, y, conversion);
-        loupe(ui, image, rect, pos, (x, y), zoom, picked.as_ref().ok().copied());
-        if released {
-            answer(picked.map(Some));
-        }
-    });
+        });
 }
-fn loupe(ui: &egui::Ui, image: &ScreenImage, screen: Rect, pos: Pos2, pixel: (usize, usize), zoom: usize, rgb: Option<[f32; 3]>) {
+fn loupe(
+    ui: &egui::Ui,
+    image: &ScreenImage,
+    screen: Rect,
+    pos: Pos2,
+    pixel: (usize, usize),
+    zoom: usize,
+    rgb: Option<[f32; 3]>,
+) {
     let (x, y) = pixel;
     let t = crate::theme::Tokens::get(ui.ctx());
     // The label describes physical pixel magnification, including Retina and UI zoom.
     let cell = zoom as f32 / ui.ctx().pixels_per_point();
     let p = ui.painter();
     let pixel = image.pixel(x, y).unwrap_or(Color32::BLACK);
-    let color = rgb.map(crate::color_picker_ui::hex).unwrap_or_else(|| format!("#{:02x}{:02x}{:02x}", pixel.r(), pixel.g(), pixel.b()));
-    let label = p.layout_no_wrap(format!("{}   {}×", color.to_uppercase(), zoom), egui::FontId::monospace(12.0), t.text);
-    let hint = p.layout_no_wrap(tl!("Click to pick · Esc to cancel").to_owned(), egui::FontId::proportional(11.0), t.text);
-    let wheel = p.layout_no_wrap(tl!("Scroll to zoom").to_owned(), egui::FontId::proportional(11.0), t.text);
-    let width = (11.0 * cell + 12.0).max(label.size().x + 16.0).max(hint.size().x + 16.0).max(wheel.size().x + 16.0);
+    let color = rgb
+        .map(crate::color_picker_ui::hex)
+        .unwrap_or_else(|| format!("#{:02x}{:02x}{:02x}", pixel.r(), pixel.g(), pixel.b()));
+    let label = p.layout_no_wrap(
+        format!("{}   {}×", color.to_uppercase(), zoom),
+        egui::FontId::monospace(12.0),
+        t.text,
+    );
+    let hint = p.layout_no_wrap(
+        tl!("Click to pick · Esc to cancel").to_owned(),
+        egui::FontId::proportional(11.0),
+        t.text,
+    );
+    let wheel = p.layout_no_wrap(
+        tl!("Scroll to zoom").to_owned(),
+        egui::FontId::proportional(11.0),
+        t.text,
+    );
+    let width = (11.0 * cell + 12.0)
+        .max(label.size().x + 16.0)
+        .max(hint.size().x + 16.0)
+        .max(wheel.size().x + 16.0);
     let size = vec2(width, 11.0 * cell + 76.0);
     let desired = pos + vec2(24.0, 24.0);
-    let at = egui::pos2(desired.x.min(screen.right() - size.x).max(screen.left()), desired.y.min(screen.bottom() - size.y).max(screen.top()));
+    let at = egui::pos2(
+        desired.x.min(screen.right() - size.x).max(screen.left()),
+        desired.y.min(screen.bottom() - size.y).max(screen.top()),
+    );
     let area = Rect::from_min_size(at, size);
     p.rect_filled(area, t.radius, t.card);
-    p.rect_stroke(area, t.radius, Stroke::new(1.0, t.field_border), StrokeKind::Inside);
+    p.rect_stroke(
+        area,
+        t.radius,
+        Stroke::new(1.0, t.field_border),
+        StrokeKind::Inside,
+    );
     let origin = at + vec2((width - 11.0 * cell) / 2.0, 6.0);
     for row in 0..11usize {
         for col in 0..11usize {
             let px = x.checked_add(col).and_then(|v| v.checked_sub(5));
             let py = y.checked_add(row).and_then(|v| v.checked_sub(5));
-            let color = px.zip(py).and_then(|(x, y)| image.pixel(x, y)).unwrap_or(t.canvas);
-            p.rect_filled(Rect::from_min_size(origin + vec2(col as f32 * cell, row as f32 * cell), vec2(cell, cell)), 0.0, color);
+            let color = px
+                .zip(py)
+                .and_then(|(x, y)| image.pixel(x, y))
+                .unwrap_or(t.canvas);
+            p.rect_filled(
+                Rect::from_min_size(
+                    origin + vec2(col as f32 * cell, row as f32 * cell),
+                    vec2(cell, cell),
+                ),
+                0.0,
+                color,
+            );
         }
     }
     let center = Rect::from_min_size(origin + vec2(5.0 * cell, 5.0 * cell), vec2(cell, cell));
-    p.rect_stroke(center.expand(1.0), 0.0, Stroke::new(1.0, Color32::BLACK), StrokeKind::Inside);
-    p.rect_stroke(center, 0.0, Stroke::new(1.0, Color32::WHITE), StrokeKind::Inside);
+    p.rect_stroke(
+        center.expand(1.0),
+        0.0,
+        Stroke::new(1.0, Color32::BLACK),
+        StrokeKind::Inside,
+    );
+    p.rect_stroke(
+        center,
+        0.0,
+        Stroke::new(1.0, Color32::WHITE),
+        StrokeKind::Inside,
+    );
     let footer = at + vec2(8.0, 11.0 * cell + 14.0);
     p.galley(footer, label, t.text);
     p.galley(footer + vec2(0.0, 20.0), hint, t.text);
@@ -439,7 +609,10 @@ mod tests {
         let scaled = Rect::from_min_size(Pos2::ZERO, vec2(4.0, 2.0));
         assert_eq!(i.at(scaled, egui::pos2(2.5, 1.0)), Some((1, 0)));
         assert_eq!(i.pixel(2, 0), None);
-        assert_eq!(i.sample(1, 0, i.conversion().unwrap().as_deref()).unwrap(), [0.0, 128.0 / 255.0, 1.0]);
+        assert_eq!(
+            i.sample(1, 0, i.conversion().unwrap().as_deref()).unwrap(),
+            [0.0, 128.0 / 255.0, 1.0]
+        );
     }
     #[test]
     fn malformed_images_and_non_rgb_profiles_fail_before_sampling() {
@@ -454,7 +627,13 @@ mod tests {
         i.size.x = f32::NAN;
         assert!(i.validate().is_err());
         let mut i = image();
-        i.profile = Some(photocraft_cms::Builtin::LabD50.profile().to_bytes().as_ref().clone());
+        i.profile = Some(
+            photocraft_cms::Builtin::LabD50
+                .profile()
+                .to_bytes()
+                .as_ref()
+                .clone(),
+        );
         assert!(i.conversion().is_err());
     }
     /// The picker window's frame over [`image`] (red | azure) filling a 200 × 100 window, with its
@@ -464,12 +643,18 @@ mod tests {
         let inner = shared.clone();
         let texture: std::cell::OnceCell<egui::TextureHandle> = std::cell::OnceCell::new();
         let image = image();
-        let mut h = egui_kittest::Harness::builder().with_size(vec2(200.0, 100.0)).build_ui(move |ui| {
-            let tex = texture.get_or_init(|| {
-                ui.ctx().load_texture("test-snapshot", egui::ColorImage::new([2, 1], vec![Color32::RED, Color32::BLUE]), TextureOptions::NEAREST)
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(vec2(200.0, 100.0))
+            .build_ui(move |ui| {
+                let tex = texture.get_or_init(|| {
+                    ui.ctx().load_texture(
+                        "test-snapshot",
+                        egui::ColorImage::new([2, 1], vec![Color32::RED, Color32::BLUE]),
+                        TextureOptions::NEAREST,
+                    )
+                });
+                frame(ui, &inner, &image, tex, None);
             });
-            frame(ui, &inner, &image, tex, None);
-        });
         h.run();
         act(&mut h);
         h.run();
@@ -482,7 +667,11 @@ mod tests {
     fn every_way_out_of_the_picker_ends_it() {
         let left = egui::pos2(40.0, 50.0);
         let right = egui::pos2(160.0, 50.0);
-        assert_eq!(picker_answer(|h| h.hover_at(left)), None, "hovering alone keeps it open");
+        assert_eq!(
+            picker_answer(|h| h.hover_at(left)),
+            None,
+            "hovering alone keeps it open"
+        );
         assert_eq!(
             picker_answer(|h| {
                 h.hover_at(left);
@@ -509,26 +698,54 @@ mod tests {
             picker_answer(|h| {
                 h.hover_at(left);
                 h.run();
-                h.event(egui::Event::PointerButton { pos: left, button: egui::PointerButton::Secondary, pressed: true, modifiers: Default::default() });
+                h.event(egui::Event::PointerButton {
+                    pos: left,
+                    button: egui::PointerButton::Secondary,
+                    pressed: true,
+                    modifiers: Default::default(),
+                });
                 h.run();
-                h.event(egui::Event::PointerButton { pos: left, button: egui::PointerButton::Secondary, pressed: false, modifiers: Default::default() });
+                h.event(egui::Event::PointerButton {
+                    pos: left,
+                    button: egui::PointerButton::Secondary,
+                    pressed: false,
+                    modifiers: Default::default(),
+                });
             }),
             Some(Ok(None)),
             "a right-click cancels"
         );
-        assert_eq!(picker_answer(|h| h.key_press(egui::Key::Escape)), Some(Ok(None)), "Esc cancels");
+        assert_eq!(
+            picker_answer(|h| h.key_press(egui::Key::Escape)),
+            Some(Ok(None)),
+            "Esc cancels"
+        );
     }
     fn app() -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", serde_json::json!({"width":8,"height":8})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", serde_json::json!({"width":8,"height":8}))
+            .unwrap();
         app
     }
-    fn queued(app: &mut PhotocraftApp, ctx: &Context) -> (Id, std::sync::mpsc::Sender<Result<Capture, String>>, Arc<std::sync::atomic::AtomicBool>) {
+    fn queued(
+        app: &mut PhotocraftApp,
+        ctx: &Context,
+    ) -> (
+        Id,
+        std::sync::mpsc::Sender<Result<Capture, String>>,
+        Arc<std::sync::atomic::AtomicBool>,
+    ) {
         let (tx, rx) = std::sync::mpsc::channel();
         let cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let stop = cancelled.clone();
         let mut receiver = Some(rx);
-        app.services.screen_pick = Some(Box::new(move |_| Pending { receiver: receiver.take().unwrap(), cancelled: stop.clone() }));
+        app.services.screen_pick = Some(Box::new(move |_| Pending {
+            receiver: receiver.take().unwrap(),
+            cancelled: stop.clone(),
+        }));
         let owner = Id::new("test-destination");
         lock(&runtime(ctx)).request = Some(owner);
         assert!(tick(app, ctx));
@@ -551,7 +768,8 @@ mod tests {
         let ctx = Context::default();
         let (id, tx, _) = queued(&mut app, &ctx);
         tx.send(Ok(Capture::Color(Some([1.0, 0.0, 0.0])))).unwrap();
-        app.run("file.new", serde_json::json!({"width":8,"height":8})).unwrap();
+        app.run("file.new", serde_json::json!({"width":8,"height":8}))
+            .unwrap();
         assert!(!tick(&mut app, &ctx));
         assert_eq!(take(&ctx, id), None);
         let (id, tx, _) = queued(&mut app, &ctx);
@@ -572,7 +790,8 @@ mod tests {
         assert!(app.ui.status_error);
         assert_eq!(take(&ctx, id), None);
         let (id, tx, _) = queued(&mut app, &ctx);
-        tx.send(Ok(Capture::Color(Some([f32::NAN, 0.0, 1.0])))).unwrap();
+        tx.send(Ok(Capture::Color(Some([f32::NAN, 0.0, 1.0]))))
+            .unwrap();
         assert!(!tick(&mut app, &ctx));
         assert_eq!(take(&ctx, id), None);
         assert_eq!(app.session.tools.foreground, foreground);

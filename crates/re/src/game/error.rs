@@ -22,7 +22,10 @@ pub enum ReError {
     UnsupportedVersion { version: u32 },
 
     #[error("Parsing error in {context}: {details}")]
-    ParseError { context: &'static str, details: String },
+    ParseError {
+        context: &'static str,
+        details: String,
+    },
 
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),

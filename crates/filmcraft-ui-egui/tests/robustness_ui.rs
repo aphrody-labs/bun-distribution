@@ -27,10 +27,15 @@ impl Driver {
     fn demo() -> Self {
         filmcraft_ui_egui::crash::install(None);
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -90,14 +95,24 @@ fn frame_worker_survives_a_panicking_job_and_keeps_rendering() {
     // more faults than there are workers: before the fix every worker died and nothing rendered
     filmcraft_ui_egui::frames::inject_job_panics(workers + 2);
     for t in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0] {
-        d.ok("engine.execute", json!({"command": "playhead.set", "params": {"seconds": t}}));
+        d.ok(
+            "engine.execute",
+            json!({"command": "playhead.set", "params": {"seconds": t}}),
+        );
         d.settle();
     }
     let st = d.frame_stats();
     assert_eq!(st["failedJobs"].as_u64(), Some(workers as u64 + 2), "{st}");
     let done_after_faults = st["jobs"].as_u64().unwrap_or(0);
-    assert!(done_after_faults > jobs_before, "workers still finish jobs after the panics: {st}");
-    assert_eq!(d.harness.state().frames.queue_len(), 0, "no job stuck in the queue");
+    assert!(
+        done_after_faults > jobs_before,
+        "workers still finish jobs after the panics: {st}"
+    );
+    assert_eq!(
+        d.harness.state().frames.queue_len(),
+        0,
+        "no job stuck in the queue"
+    );
 }
 
 #[test]
@@ -109,7 +124,10 @@ fn a_ui_panic_shows_an_error_window_and_the_app_keeps_running() {
     let msg = d.harness.state().ui_error.clone().expect("error recorded");
     assert!(msg.contains("injected UI fault"), "{msg}");
     // the session survived: commands still run and the error window is on screen
-    d.ok("engine.execute", json!({"command": "playhead.set", "params": {"seconds": 2.0}}));
+    d.ok(
+        "engine.execute",
+        json!({"command": "playhead.set", "params": {"seconds": 2.0}}),
+    );
     let els = d.ok("ui.elements", json!({"prefix": "error."}));
     assert!(els.to_string().contains("error.dismiss"), "{els}");
     d.ok("ui.click", json!({"id": "error.dismiss"}));
@@ -117,7 +135,10 @@ fn a_ui_panic_shows_an_error_window_and_the_app_keeps_running() {
     assert!(d.harness.state().ui_error.is_none());
     // and the UI keeps drawing normally afterwards
     let els = d.ok("ui.elements", json!({"prefix": "timeline."}));
-    assert!(els.as_array().is_some_and(|a| !a.is_empty()) || els.is_object(), "{els}");
+    assert!(
+        els.as_array().is_some_and(|a| !a.is_empty()) || els.is_object(),
+        "{els}"
+    );
 }
 
 /// Tiny windows and squeezed panels: dock splits under 40 points used to panic in
@@ -128,15 +149,31 @@ fn tiny_windows_and_squeezed_panels_do_not_panic() {
     filmcraft_ui_egui::crash::install(None);
     for (w, h) in [(120.0, 80.0), (300.0, 200.0), (60.0, 40.0), (900.0, 560.0)] {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let app = FilmcraftApp::new(session);
-        let mut harness = Harness::builder().with_size(egui::vec2(w, h)).with_max_steps(10_000).build_eframe(move |_cc| app);
-        for ws in ["Editing", "Color", "Audio", "Effects", "Captions and Graphics", "Assembly"] {
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(w, h))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
+        for ws in [
+            "Editing",
+            "Color",
+            "Audio",
+            "Effects",
+            "Captions and Graphics",
+            "Assembly",
+        ] {
             harness.state_mut().set_workspace(ws);
             for _ in 0..3 {
                 harness.step();
             }
         }
-        assert!(harness.state().ui_error.is_none(), "{w}x{h}: {:?}", harness.state().ui_error);
+        assert!(
+            harness.state().ui_error.is_none(),
+            "{w}x{h}: {:?}",
+            harness.state().ui_error
+        );
     }
 }

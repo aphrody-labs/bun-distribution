@@ -41,11 +41,17 @@ struct Walker<'a> {
 
 /// The headings, in document order. Headings without text or a page are left out.
 pub fn headings(doc: &Document) -> Vec<Heading> {
-    let Some(root) = tree_root(doc) else { return Vec::new() };
+    let Some(root) = tree_root(doc) else {
+        return Vec::new();
+    };
     let pages = pdfcraft_model::pages(doc);
     let mut w = Walker {
         doc,
-        role_map: root.get(b"RoleMap").map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default(),
+        role_map: root
+            .get(b"RoleMap")
+            .map(|o| doc.resolve(o))
+            .and_then(|o| o.as_dict().cloned())
+            .unwrap_or_default(),
         pages: &pages,
         page_index: pages.iter().enumerate().map(|(i, p)| (p.obj, i)).collect(),
         seen: HashSet::new(),
@@ -63,7 +69,10 @@ impl Walker<'_> {
     /// Whether `k` may be visited (bounded depth and size, each object once).
     fn enter(&mut self, k: &Object, depth: usize) -> bool {
         self.visits += 1;
-        depth <= MAX_DEPTH && self.visits <= MAX_VISITS && self.out.len() < MAX_HEADINGS && !matches!(k, Object::Ref(r) if !self.seen.insert(*r))
+        depth <= MAX_DEPTH
+            && self.visits <= MAX_VISITS
+            && self.out.len() < MAX_HEADINGS
+            && !matches!(k, Object::Ref(r) if !self.seen.insert(*r))
     }
 
     fn element_of(&self, k: &Object) -> Option<(Option<ObjRef>, Dict)> {
@@ -83,9 +92,14 @@ impl Walker<'_> {
             a.iter().for_each(|x| self.walk(x, pg, sections, depth + 1));
             return;
         }
-        let Some((obj, d)) = self.element_of(k) else { return };
+        let Some((obj, d)) = self.element_of(k) else {
+            return;
+        };
         let pg = d.get(b"Pg").and_then(Object::as_ref).or(pg);
-        let ty = d.name(b"S").map(|s| standard(self.doc, &self.role_map, s)).unwrap_or_default();
+        let ty = d
+            .name(b"S")
+            .map(|s| standard(self.doc, &self.role_map, s))
+            .unwrap_or_default();
         let level = match ty.as_slice() {
             [b'H', n @ b'1'..=b'6'] => Some(n - b'0'),
             b"H" => Some(sections.max(1)),
@@ -95,14 +109,24 @@ impl Walker<'_> {
             self.heading(obj, &d, pg, level, depth);
             return;
         }
-        let sections = if matches!(ty.as_slice(), b"Sect" | b"Part" | b"Art") { sections.saturating_add(1) } else { sections };
+        let sections = if matches!(ty.as_slice(), b"Sect" | b"Part" | b"Art") {
+            sections.saturating_add(1)
+        } else {
+            sections
+        };
         if let Some(kids) = d.get(b"K") {
             self.walk(kids, pg, sections, depth + 1);
         }
     }
 
     /// The marked content under `k`: (page, MCID) pairs in order.
-    fn marks(&mut self, k: &Object, pg: Option<ObjRef>, depth: usize, out: &mut Vec<(Option<ObjRef>, i64)>) {
+    fn marks(
+        &mut self,
+        k: &Object,
+        pg: Option<ObjRef>,
+        depth: usize,
+        out: &mut Vec<(Option<ObjRef>, i64)>,
+    ) {
         if !self.enter(k, depth) {
             return;
         }
@@ -118,27 +142,63 @@ impl Walker<'_> {
                 if let Some((_, d)) = self.element_of(k)
                     && let Some(kids) = d.get(b"K")
                 {
-                    self.marks(kids, d.get(b"Pg").and_then(Object::as_ref).or(pg), depth + 1, out);
+                    self.marks(
+                        kids,
+                        d.get(b"Pg").and_then(Object::as_ref).or(pg),
+                        depth + 1,
+                        out,
+                    );
                 }
             }
         }
     }
 
-    fn heading(&mut self, obj: Option<ObjRef>, d: &Dict, pg: Option<ObjRef>, level: u8, depth: usize) {
+    fn heading(
+        &mut self,
+        obj: Option<ObjRef>,
+        d: &Dict,
+        pg: Option<ObjRef>,
+        level: u8,
+        depth: usize,
+    ) {
         let mut marks = Vec::new();
         if let Some(kids) = d.get(b"K") {
             self.marks(kids, pg, depth + 1, &mut marks);
         }
-        let Some(page) = pg.or_else(|| marks.iter().find_map(|m| m.0)).and_then(|p| self.page_index.get(&p).copied()) else { return };
+        let Some(page) = pg
+            .or_else(|| marks.iter().find_map(|m| m.0))
+            .and_then(|p| self.page_index.get(&p).copied())
+        else {
+            return;
+        };
         let doc = self.doc;
-        let attr = |key: &[u8]| d.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_string().map(|s| s.to_text())).filter(|t| !t.trim().is_empty());
+        let attr = |key: &[u8]| {
+            d.get(key)
+                .map(|o| doc.resolve(o))
+                .and_then(|o| o.as_string().map(|s| s.to_text()))
+                .filter(|t| !t.trim().is_empty())
+        };
         let title = match attr(b"ActualText") {
             Some(t) => Some(t),
-            None => self.marked_text(&marks, page).or_else(|| attr(b"Alt")).or_else(|| attr(b"T")),
+            None => self
+                .marked_text(&marks, page)
+                .or_else(|| attr(b"Alt"))
+                .or_else(|| attr(b"T")),
         };
         let Some(title) = title else { return };
-        let title: String = title.split_whitespace().collect::<Vec<_>>().join(" ").chars().take(MAX_TITLE).collect();
-        self.out.push(Heading { obj, level, title, page });
+        let title: String = title
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .take(MAX_TITLE)
+            .collect();
+        self.out.push(Heading {
+            obj,
+            level,
+            title,
+            page,
+        });
     }
 
     /// The text the marked content shows (`page`: where marks without a page of their own are).
@@ -151,7 +211,9 @@ impl Walker<'_> {
             if gathered >= MAX_TITLE * 4 {
                 break;
             }
-            let page = p.and_then(|p| self.page_index.get(&p).copied()).unwrap_or(page);
+            let page = p
+                .and_then(|p| self.page_index.get(&p).copied())
+                .unwrap_or(page);
             if let Some(text) = self.texts_of(page).get(id) {
                 gathered = gathered.saturating_add(text.len()).saturating_add(1);
                 parts.push(text.clone());
@@ -162,12 +224,20 @@ impl Walker<'_> {
 
     fn texts_of(&mut self, page: usize) -> &HashMap<i64, String> {
         let (doc, pages) = (self.doc, self.pages);
-        self.texts.entry(page).or_insert_with(|| pages.get(page).map(|p| mcid_texts(doc, &p.dict)).unwrap_or_default())
+        self.texts.entry(page).or_insert_with(|| {
+            pages
+                .get(page)
+                .map(|p| mcid_texts(doc, &p.dict))
+                .unwrap_or_default()
+        })
     }
 }
 
 fn sub(doc: &Document, d: &Dict, key: &[u8]) -> Dict {
-    d.get(key).map(|x| doc.resolve(x)).and_then(|x| x.as_dict().cloned()).unwrap_or_default()
+    d.get(key)
+        .map(|x| doc.resolve(x))
+        .and_then(|x| x.as_dict().cloned())
+        .unwrap_or_default()
 }
 
 /// The text each marked-content id shows on a page (text drawn directly in the page content).
@@ -184,9 +254,10 @@ fn mcid_texts(doc: &Document, page: &Dict) -> HashMap<i64, String> {
             b"BMC" => stack.push(None),
             b"BDC" => stack.push(match op.operands.get(1) {
                 Some(Object::Dict(d)) => d.get(b"MCID").and_then(Object::as_int),
-                Some(Object::Name(n)) => {
-                    props.get(n).map(|x| doc.resolve(x)).and_then(|x| x.as_dict().and_then(|d| d.get(b"MCID").and_then(Object::as_int)))
-                }
+                Some(Object::Name(n)) => props.get(n).map(|x| doc.resolve(x)).and_then(|x| {
+                    x.as_dict()
+                        .and_then(|d| d.get(b"MCID").and_then(Object::as_int))
+                }),
                 _ => None,
             }),
             b"EMC" => {
@@ -196,14 +267,19 @@ fn mcid_texts(doc: &Document, page: &Dict) -> HashMap<i64, String> {
                 font = op.name(0).map(<[u8]>::to_vec);
                 if let Some(name) = op.name(0)
                     && !metrics.contains_key(name)
-                    && let Some(f) = fonts.get(name).map(|f| doc.resolve(f)).and_then(|f| f.as_dict().cloned())
+                    && let Some(f) = fonts
+                        .get(name)
+                        .map(|f| doc.resolve(f))
+                        .and_then(|f| f.as_dict().cloned())
                 {
                     metrics.insert(name.to_vec(), Metrics::from_dict(doc, &f));
                 }
             }
             _ => {}
         }
-        let (Some(id), Some(m)) = (id, font.as_ref().and_then(|f| metrics.get(f))) else { continue };
+        let (Some(id), Some(m)) = (id, font.as_ref().and_then(|f| metrics.get(f))) else {
+            continue;
+        };
         let text = out.entry(id).or_default();
         if text.len() >= MAX_TITLE * 4 {
             continue;
@@ -218,7 +294,13 @@ fn mcid_texts(doc: &Document, page: &Dict) -> HashMap<i64, String> {
                 }
             }
             b"TJ" => {
-                for item in op.operands.first().and_then(Object::as_array).into_iter().flatten() {
+                for item in op
+                    .operands
+                    .first()
+                    .and_then(Object::as_array)
+                    .into_iter()
+                    .flatten()
+                {
                     match item {
                         Object::String(s) => text.push_str(&m.decode(&s.bytes)),
                         n if n.as_f64().is_some_and(|n| n < -200.0) => text.push(' '),

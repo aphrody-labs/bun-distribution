@@ -6,7 +6,10 @@ use std::collections::HashMap;
 use std::mem::ManuallyDrop;
 
 use boa_engine::object::builtins::JsArray;
-use boa_engine::{Context, JsNativeError, JsObject, JsResult, JsString, JsValue, NativeFunction, Script, Source, js_string};
+use boa_engine::{
+    Context, JsNativeError, JsObject, JsResult, JsString, JsValue, NativeFunction, Script, Source,
+    js_string,
+};
 use effectcraft_keyframe::Value;
 
 use crate::host::{Key, Req, Resp, secs};
@@ -116,7 +119,11 @@ fn num(args: &[JsValue], i: usize, ctx: &mut Context) -> JsResult<f64> {
 }
 fn id(args: &[JsValue], i: usize, ctx: &mut Context) -> JsResult<u64> {
     let v = num(args, i, ctx)?;
-    Ok(if v.is_finite() && v >= 0.0 { v as u64 } else { u64::MAX })
+    Ok(if v.is_finite() && v >= 0.0 {
+        v as u64
+    } else {
+        u64::MAX
+    })
 }
 fn string(args: &[JsValue], i: usize, ctx: &mut Context) -> JsResult<String> {
     Ok(arg(args, i).to_string(ctx)?.to_std_string_escaped())
@@ -146,12 +153,31 @@ fn to_js(r: &Resp, ctx: &mut Context) -> JsValue {
 fn native_host(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let op = num(args, 0, ctx)? as i64;
     let req = match op {
-        0 => Req::CompInfo { comp: id(args, 1, ctx)? },
-        1 => Req::CompByName { name: string(args, 1, ctx)? },
-        2 => Req::LayerLookup { comp: id(args, 1, ctx)?, key: key(args, 2, ctx)? },
-        3 => Req::LayerInfo { comp: id(args, 1, ctx)?, layer: id(args, 2, ctx)? },
-        4 => Req::Child { comp: id(args, 1, ctx)?, layer: id(args, 2, ctx)?, group: string(args, 3, ctx)?, key: key(args, 4, ctx)? },
-        5 => Req::PropInfo { comp: id(args, 1, ctx)?, layer: id(args, 2, ctx)?, path: string(args, 3, ctx)? },
+        0 => Req::CompInfo {
+            comp: id(args, 1, ctx)?,
+        },
+        1 => Req::CompByName {
+            name: string(args, 1, ctx)?,
+        },
+        2 => Req::LayerLookup {
+            comp: id(args, 1, ctx)?,
+            key: key(args, 2, ctx)?,
+        },
+        3 => Req::LayerInfo {
+            comp: id(args, 1, ctx)?,
+            layer: id(args, 2, ctx)?,
+        },
+        4 => Req::Child {
+            comp: id(args, 1, ctx)?,
+            layer: id(args, 2, ctx)?,
+            group: string(args, 3, ctx)?,
+            key: key(args, 4, ctx)?,
+        },
+        5 => Req::PropInfo {
+            comp: id(args, 1, ctx)?,
+            layer: id(args, 2, ctx)?,
+            path: string(args, 3, ctx)?,
+        },
         6 => Req::Value {
             comp: id(args, 1, ctx)?,
             layer: id(args, 2, ctx)?,
@@ -159,11 +185,23 @@ fn native_host(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             t: secs(num(args, 4, ctx)?),
             pre: arg(args, 5).to_boolean(),
         },
-        7 => Req::Xform { comp: id(args, 1, ctx)?, layer: id(args, 2, ctx)?, t: secs(num(args, 3, ctx)?) },
-        8 => Req::SourceRect { comp: id(args, 1, ctx)?, layer: id(args, 2, ctx)?, t: secs(num(args, 3, ctx)?), extents: arg(args, 4).to_boolean() },
+        7 => Req::Xform {
+            comp: id(args, 1, ctx)?,
+            layer: id(args, 2, ctx)?,
+            t: secs(num(args, 3, ctx)?),
+        },
+        8 => Req::SourceRect {
+            comp: id(args, 1, ctx)?,
+            layer: id(args, 2, ctx)?,
+            t: secs(num(args, 3, ctx)?),
+            extents: arg(args, 4).to_boolean(),
+        },
         9 => {
             let l = num(args, 2, ctx)?;
-            Req::Markers { comp: id(args, 1, ctx)?, layer: (l >= 0.0).then_some(l as u64) }
+            Req::Markers {
+                comp: id(args, 1, ctx)?,
+                layer: (l >= 0.0).then_some(l as u64),
+            }
         }
         10 => Req::Doc {
             comp: id(args, 1, ctx)?,
@@ -172,8 +210,12 @@ fn native_host(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             t: secs(num(args, 4, ctx)?),
             pre: arg(args, 5).to_boolean(),
         },
-        11 => Req::Footage { name: string(args, 1, ctx)? },
-        12 => Req::FootageData { name: string(args, 1, ctx)? },
+        11 => Req::Footage {
+            name: string(args, 1, ctx)?,
+        },
+        12 => Req::FootageData {
+            name: string(args, 1, ctx)?,
+        },
         13 => Req::Sample {
             comp: id(args, 1, ctx)?,
             layer: id(args, 2, ctx)?,
@@ -185,7 +227,11 @@ fn native_host(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             t: secs(num(args, 8, ctx)?),
         },
         14 => Req::Project,
-        _ => return Err(JsNativeError::typ().with_message("unknown host request").into()),
+        _ => {
+            return Err(JsNativeError::typ()
+                .with_message("unknown host request")
+                .into());
+        }
     };
     let found = FRAMES.with(|f| {
         let mut f = f.borrow_mut();
@@ -219,14 +265,24 @@ fn native_wiggle(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<J
 
 /// `__noise(x, y, z)`.
 fn native_noise(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
-    Ok(JsValue::from(noise::noise3(num(args, 0, ctx)?, num(args, 1, ctx)?, num(args, 2, ctx)?)))
+    Ok(JsValue::from(noise::noise3(
+        num(args, 0, ctx)?,
+        num(args, 1, ctx)?,
+        num(args, 2, ctx)?,
+    )))
 }
 
 /// `__rnd(layerIndex, uid, userSeed, timeless, time, counter)`.
 fn native_random(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let timeless = arg(args, 3).to_boolean();
     let t = if timeless { 0.0 } else { num(args, 4, ctx)? };
-    let parts = [num(args, 0, ctx)?.to_bits(), num(args, 1, ctx)?.to_bits(), num(args, 2, ctx)?.to_bits(), t.to_bits(), num(args, 5, ctx)?.to_bits()];
+    let parts = [
+        num(args, 0, ctx)?.to_bits(),
+        num(args, 1, ctx)?.to_bits(),
+        num(args, 2, ctx)?.to_bits(),
+        t.to_bits(),
+        num(args, 5, ctx)?.to_bits(),
+    ];
     Ok(JsValue::from(noise::unit(noise::mix(&parts))))
 }
 
@@ -236,23 +292,38 @@ impl Runtime {
         let limits = ctx.runtime_limits_mut();
         limits.set_loop_iteration_limit(LOOP_LIMIT);
         limits.set_recursion_limit(400);
-        let natives: [(JsString, usize, fn(&JsValue, &[JsValue], &mut Context) -> JsResult<JsValue>); 4] = [
+        let natives: [(
+            JsString,
+            usize,
+            fn(&JsValue, &[JsValue], &mut Context) -> JsResult<JsValue>,
+        ); 4] = [
             (js_string!("__h"), 6, native_host),
             (js_string!("__wig"), 8, native_wiggle),
             (js_string!("__noise"), 3, native_noise),
             (js_string!("__rnd"), 6, native_random),
         ];
         for (name, len, f) in natives {
-            ctx.register_global_callable(name, len, NativeFunction::from_fn_ptr(f)).map_err(|e| e.to_string())?;
+            ctx.register_global_callable(name, len, NativeFunction::from_fn_ptr(f))
+                .map_err(|e| e.to_string())?;
         }
-        ctx.eval(Source::from_bytes(PRELUDE)).map_err(|e| format!("expression prelude: {e}"))?;
+        ctx.eval(Source::from_bytes(PRELUDE))
+            .map_err(|e| format!("expression prelude: {e}"))?;
         let global = ctx.global_object();
         let func = |name: JsString, ctx: &mut Context| -> Result<JsObject, String> {
-            global.get(name, ctx).ok().and_then(|v| v.as_object()).ok_or_else(|| "expression prelude: missing function".to_string())
+            global
+                .get(name, ctx)
+                .ok()
+                .and_then(|v| v.as_object())
+                .ok_or_else(|| "expression prelude: missing function".to_string())
         };
         let begin = func(js_string!("__begin"), &mut ctx)?;
         let finish = func(js_string!("__finish"), &mut ctx)?;
-        Ok(Runtime { ctx, scripts: HashMap::new(), begin, finish })
+        Ok(Runtime {
+            ctx,
+            scripts: HashMap::new(),
+            begin,
+            finish,
+        })
     }
 
     fn script(&mut self, text: &str) -> Result<Script, String> {
@@ -267,8 +338,12 @@ impl Runtime {
         // frame: boa leaves the stack of the inner frames behind when an exception leaves the
         // script from a nested call (every host request does), and the thread's runtime would
         // fail every expression with "reached the maximum stack size" after a few hundred.
-        let src = format!("try{{{}\n}}catch(__e){{throw __e}}", crate::rewrite::rewrite(text));
-        let s = Script::parse(Source::from_bytes(src.as_bytes()), None, &mut self.ctx).map_err(|e| format_error(&e.to_string(), line_count(text)));
+        let src = format!(
+            "try{{{}\n}}catch(__e){{throw __e}}",
+            crate::rewrite::rewrite(text)
+        );
+        let s = Script::parse(Source::from_bytes(src.as_bytes()), None, &mut self.ctx)
+            .map_err(|e| format_error(&e.to_string(), line_count(text)));
         self.scripts.insert(text.to_string(), s.clone());
         s
     }
@@ -290,7 +365,15 @@ impl Runtime {
             JsValue::from(b.frame_duration),
             JsValue::from(b.text_sel[0]),
             JsValue::from(b.text_sel[1]),
-            to_js(&crate::host::Resp::List(b.selector.iter().map(|x| crate::host::Resp::Num(*x)).collect()), ctx),
+            to_js(
+                &crate::host::Resp::List(
+                    b.selector
+                        .iter()
+                        .map(|x| crate::host::Resp::Num(*x))
+                        .collect(),
+                ),
+                ctx,
+            ),
         ];
         if let Err(e) = self.begin.call(&JsValue::undefined(), &args, ctx) {
             return Run::Done(Err(format_error(&e.to_string(), line_count(text))));
@@ -351,7 +434,9 @@ fn max_time() -> std::time::Duration {
 pub fn out_of_time() -> bool {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        STARTED.with(|s| s.get()).is_some_and(|t| t.elapsed() > max_time())
+        STARTED
+            .with(|s| s.get())
+            .is_some_and(|t| t.elapsed() > max_time())
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -389,29 +474,52 @@ fn detach(v: &JsValue, ctx: &mut Context, depth: usize) -> Result<Out, String> {
         }
         if o.get(js_string!("__style"), ctx).map_err(err)?.to_boolean() {
             let j = o.get(js_string!("__json"), ctx).map_err(err)?;
-            return Ok(Out::Style(j.as_string().map(|s| s.to_std_string_escaped()).unwrap_or_default()));
+            return Ok(Out::Style(
+                j.as_string()
+                    .map(|s| s.to_std_string_escaped())
+                    .unwrap_or_default(),
+            ));
         }
         if o.get(js_string!("__path"), ctx).map_err(err)?.to_boolean() {
             let pts = |name: JsString, ctx: &mut Context| -> Result<Vec<[f64; 2]>, String> {
                 let v = o.get(name, ctx).map_err(err)?;
                 Ok(match detach(&v, ctx, depth + 1)? {
-                    Out::Arr(items) => items.iter().map(|p| out_vec(p, 2)).map(|c| [c[0], c[1]]).collect(),
+                    Out::Arr(items) => items
+                        .iter()
+                        .map(|p| out_vec(p, 2))
+                        .map(|c| [c[0], c[1]])
+                        .collect(),
                     _ => vec![],
                 })
             };
             let points = pts(js_string!("__pts"), ctx)?;
             let ins = pts(js_string!("__in"), ctx)?;
             let outs = pts(js_string!("__out"), ctx)?;
-            let closed = o.get(js_string!("__closed"), ctx).map_err(err)?.to_boolean();
-            return Ok(Out::Path { points, ins, outs, closed });
+            let closed = o
+                .get(js_string!("__closed"), ctx)
+                .map_err(err)?
+                .to_boolean();
+            return Ok(Out::Path {
+                points,
+                ins,
+                outs,
+                closed,
+            });
         }
     }
-    Ok(Out::Object(v.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_default()))
+    Ok(Out::Object(
+        v.to_string(ctx)
+            .map(|s| s.to_std_string_escaped())
+            .unwrap_or_default(),
+    ))
 }
 
 fn out_vec(o: &Out, n: usize) -> Vec<f64> {
     let mut v = match o {
-        Out::Arr(items) => items.iter().map(|i| if let Out::Num(x) = i { *x } else { f64::NAN }).collect(),
+        Out::Arr(items) => items
+            .iter()
+            .map(|i| if let Out::Num(x) = i { *x } else { f64::NAN })
+            .collect(),
         Out::Num(x) => vec![*x],
         _ => vec![],
     };
@@ -449,9 +557,17 @@ fn line_count(text: &str) -> usize {
 /// entry, else the first `:line:col` position.
 fn find_line(msg: &str) -> Option<usize> {
     if let Some(i) = msg.find("at line ") {
-        return msg[i + 8..].split(|c: char| !c.is_ascii_digit()).next()?.parse().ok();
+        return msg[i + 8..]
+            .split(|c: char| !c.is_ascii_digit())
+            .next()?
+            .parse()
+            .ok();
     }
-    if let Some(l) = msg.lines().find(|l| l.trim_start().starts_with("at <main>")).and_then(position_line) {
+    if let Some(l) = msg
+        .lines()
+        .find(|l| l.trim_start().starts_with("at <main>"))
+        .and_then(position_line)
+    {
         return Some(l);
     }
     position_line(msg)
@@ -523,12 +639,20 @@ pub fn check(text: &str) -> Result<(), String> {
 
 /// Convert a script result to the property's value kind.
 pub fn to_value(out: &Out, current: &Value) -> Result<Value, String> {
-    let finite = |x: f64| if x.is_finite() { Ok(x) } else { Err("Error: expression result is not a finite number".to_string()) };
+    let finite = |x: f64| {
+        if x.is_finite() {
+            Ok(x)
+        } else {
+            Err("Error: expression result is not a finite number".to_string())
+        }
+    };
     let numeric = |o: &Out| -> Option<f64> {
         match o {
             Out::Num(x) => Some(*x),
             Out::Bool(b) => Some(if *b { 1.0 } else { 0.0 }),
-            Out::Arr(a) => a.first().and_then(|x| if let Out::Num(x) = x { Some(*x) } else { None }),
+            Out::Arr(a) => a
+                .first()
+                .and_then(|x| if let Out::Num(x) = x { Some(*x) } else { None }),
             _ => None,
         }
     };
@@ -544,12 +668,23 @@ pub fn to_value(out: &Out, current: &Value) -> Result<Value, String> {
             Out::Str(s) => s.clone(),
             Out::Num(x) => js_number(*x),
             Out::Bool(b) => b.to_string(),
-            Out::Arr(a) => a.iter().map(|x| if let Out::Num(n) = x { js_number(*n) } else { String::new() }).collect::<Vec<_>>().join(","),
+            Out::Arr(a) => a
+                .iter()
+                .map(|x| {
+                    if let Out::Num(n) = x {
+                        js_number(*n)
+                    } else {
+                        String::new()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(","),
             Out::Undefined | Out::Null => String::new(),
             Out::Path { .. } => "[object Path]".into(),
-            Out::Style(j) => {
-                serde_json::from_str::<serde_json::Value>(j).ok().map(|v| styled_doc(&v, &effectcraft_keyframe::TextDoc::default()).text).unwrap_or_default()
-            }
+            Out::Style(j) => serde_json::from_str::<serde_json::Value>(j)
+                .ok()
+                .map(|v| styled_doc(&v, &effectcraft_keyframe::TextDoc::default()).text)
+                .unwrap_or_default(),
             Out::Object(s) => s.clone(),
         }
     };
@@ -557,22 +692,36 @@ pub fn to_value(out: &Out, current: &Value) -> Result<Value, String> {
         return Err("Error: expression result is undefined".into());
     }
     Ok(match current {
-        Value::Scalar(_) => Value::Scalar(finite(numeric(out).ok_or_else(|| "Error: expression result must be a number".to_string())?)?),
+        Value::Scalar(_) => {
+            Value::Scalar(finite(numeric(out).ok_or_else(|| {
+                "Error: expression result must be a number".to_string()
+            })?)?)
+        }
         Value::Vec2(_) | Value::Vec3(_) | Value::Color(_) => {
             let Out::Arr(items) = out else {
-                return Err(format!("Error: expression result must be of dimension {}, not 1", current.dims()));
+                return Err(format!(
+                    "Error: expression result must be of dimension {}, not 1",
+                    current.dims()
+                ));
             };
             let mut c = current.components();
             for (i, x) in items.iter().enumerate().take(c.len()) {
-                c[i] = finite(numeric(x).ok_or_else(|| "Error: expression result array must contain numbers".to_string())?)?;
+                c[i] = finite(numeric(x).ok_or_else(|| {
+                    "Error: expression result array must contain numbers".to_string()
+                })?)?;
             }
             current.with_components(&c)
         }
         Value::Bool(_) => Value::Bool(truthy(out)),
-        Value::Enum(_) => Value::Enum((finite(numeric(out).unwrap_or(1.0))? - 1.0).round().max(0.0) as u32),
+        Value::Enum(_) => Value::Enum(
+            (finite(numeric(out).unwrap_or(1.0))? - 1.0)
+                .round()
+                .max(0.0) as u32,
+        ),
         Value::Text(doc) => match out {
             Out::Style(j) => {
-                let v: serde_json::Value = serde_json::from_str(j).map_err(|e| format!("Error: bad text style: {e}"))?;
+                let v: serde_json::Value =
+                    serde_json::from_str(j).map_err(|e| format!("Error: bad text style: {e}"))?;
                 Value::Text(Box::new(styled_doc(&v, doc)))
             }
             _ => {
@@ -583,10 +732,21 @@ pub fn to_value(out: &Out, current: &Value) -> Result<Value, String> {
         },
         Value::Str(_) => Value::Str(text(out)),
         Value::Path(_) => match out {
-            Out::Path { points, ins, outs, closed } => {
+            Out::Path {
+                points,
+                ins,
+                outs,
+                closed,
+            } => {
                 // A vertex that isn't a number (`[[0, 0], [[1, 2], 0]]`) comes through as NaN, which
                 // the rasterizer must never see.
-                if points.iter().chain(ins).chain(outs).flatten().any(|c| !c.is_finite()) {
+                if points
+                    .iter()
+                    .chain(ins)
+                    .chain(outs)
+                    .flatten()
+                    .any(|c| !c.is_finite())
+                {
                     return Err("Error: path points must be finite numbers".into());
                 }
                 let n = points.len();
@@ -612,13 +772,25 @@ pub fn to_value(out: &Out, current: &Value) -> Result<Value, String> {
 /// Apply a returned text style (`{doc, ops}`) to the property's own document `own`: the style's
 /// source document (another layer's, or this one's) gives the formatting, then the setter calls
 /// apply in order. Without `setText` the text stays `own`'s.
-pub fn styled_doc(v: &serde_json::Value, own: &effectcraft_keyframe::TextDoc) -> effectcraft_keyframe::TextDoc {
+pub fn styled_doc(
+    v: &serde_json::Value,
+    own: &effectcraft_keyframe::TextDoc,
+) -> effectcraft_keyframe::TextDoc {
     use effectcraft_keyframe::TextDoc;
     let mut d = own.clone();
-    if let Some(src) = v.get("doc").filter(|s| !s.is_null()).and_then(|s| serde_json::from_value::<TextDoc>(s.clone()).ok()) {
+    if let Some(src) = v
+        .get("doc")
+        .filter(|s| !s.is_null())
+        .and_then(|s| serde_json::from_value::<TextDoc>(s.clone()).ok())
+    {
         if src.text == own.text {
             // The same text (this layer's own style, or an identical one): every run carries over.
-            d = TextDoc { box_size: own.box_size, box_pos: own.box_pos, vertical: own.vertical, ..src };
+            d = TextDoc {
+                box_size: own.box_size,
+                box_pos: own.box_pos,
+                vertical: own.vertical,
+                ..src
+            };
         } else {
             let first = src.style_at(0);
             d.runs.clear();
@@ -628,15 +800,26 @@ pub fn styled_doc(v: &serde_json::Value, own: &effectcraft_keyframe::TextDoc) ->
             d.stroke_over_fill = src.stroke_over_fill;
         }
     }
-    for op in v.get("ops").and_then(|o| o.as_array()).into_iter().flatten() {
-        let Some(key) = op.get(0).and_then(|k| k.as_str()) else { continue };
+    for op in v
+        .get("ops")
+        .and_then(|o| o.as_array())
+        .into_iter()
+        .flatten()
+    {
+        let Some(key) = op.get(0).and_then(|k| k.as_str()) else {
+            continue;
+        };
         let val = op.get(1).cloned().unwrap_or_default();
         let start = op.get(2).and_then(|x| x.as_i64()).unwrap_or(-1);
         let count = op.get(3).and_then(|x| x.as_i64()).unwrap_or(-1);
         let n = d.char_len();
         let range = (start >= 0).then(|| {
             let a = (start as usize).min(n);
-            a..if count < 0 { n } else { (a + count as usize).min(n) }
+            a..if count < 0 {
+                n
+            } else {
+                (a + count as usize).min(n)
+            }
         });
         if key == "text" {
             let s = val.as_str().unwrap_or_default();
@@ -653,5 +836,9 @@ pub fn styled_doc(v: &serde_json::Value, own: &effectcraft_keyframe::TextDoc) ->
 
 /// Number → string like JS (`3`, not `3.0`).
 fn js_number(x: f64) -> String {
-    if x.is_finite() && x == x.trunc() && x.abs() < 1e21 { format!("{}", x as i64) } else { format!("{x}") }
+    if x.is_finite() && x == x.trunc() && x.abs() < 1e21 {
+        format!("{}", x as i64)
+    } else {
+        format!("{x}")
+    }
 }

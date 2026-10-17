@@ -36,7 +36,14 @@
 //!   basic feather, EPS/PDF/AI placed graphics (imported as images when the data is available),
 //!   clipping paths, compound-path fill rules.
 //! - Unknown elements are ignored; nothing is preserved opaquely for round-trip yet.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod arabic;
 mod cjk;
@@ -71,8 +78,12 @@ pub type Result<T> = std::result::Result<T, IdmlError>;
 /// Does `bytes` look like an IDML package (a ZIP whose first, stored entry is the IDML `mimetype`)?
 pub fn is_idml(bytes: &[u8]) -> bool {
     bytes.starts_with(b"PK\x03\x04") && bytes.get(30..38) == Some(b"mimetype") && {
-        let extra = bytes.get(28..30).map_or(0, |e| u16::from_le_bytes([e[0], e[1]]) as usize);
-        bytes.get(38 + extra..).is_some_and(|rest| rest.starts_with(MIMETYPE.as_bytes()))
+        let extra = bytes
+            .get(28..30)
+            .map_or(0, |e| u16::from_le_bytes([e[0], e[1]]) as usize);
+        bytes
+            .get(38 + extra..)
+            .is_some_and(|rest| rest.starts_with(MIMETYPE.as_bytes()))
     }
 }
 
@@ -85,11 +96,21 @@ pub(crate) fn base64_encode(data: &[u8]) -> String {
         if i > 0 && i % 19 == 0 {
             out.push('\n');
         }
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         out.push(B64[(n >> 18) as usize & 63] as char);
         out.push(B64[(n >> 12) as usize & 63] as char);
-        out.push(if c.len() > 1 { B64[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if c.len() > 2 { B64[n as usize & 63] as char } else { '=' });
+        out.push(if c.len() > 1 {
+            B64[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if c.len() > 2 {
+            B64[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -120,7 +141,10 @@ pub(crate) fn base64_decode(s: &str) -> Vec<u8> {
 
 /// Sniff an image's MIME type and pixel size from its header (PNG, JPEG, GIF, WebP, TIFF).
 pub(crate) fn sniff_image(b: &[u8]) -> (Option<&'static str>, Option<(u32, u32)>) {
-    let be32 = |i: usize| b.get(i..i + 4).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]));
+    let be32 = |i: usize| {
+        b.get(i..i + 4)
+            .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
+    };
     if b.starts_with(b"\x89PNG\r\n\x1a\n") {
         return (Some("image/png"), be32(16).zip(be32(20)));
     }
@@ -143,7 +167,13 @@ pub(crate) fn sniff_image(b: &[u8]) -> (Option<&'static str>, Option<(u32, u32)>
         return (Some("image/jpeg"), None);
     }
     if b.starts_with(b"GIF8") && b.len() >= 10 {
-        return (Some("image/gif"), Some((u16::from_le_bytes([b[6], b[7]]) as u32, u16::from_le_bytes([b[8], b[9]]) as u32)));
+        return (
+            Some("image/gif"),
+            Some((
+                u16::from_le_bytes([b[6], b[7]]) as u32,
+                u16::from_le_bytes([b[8], b[9]]) as u32,
+            )),
+        );
     }
     if b.starts_with(b"RIFF") && b.get(8..12) == Some(b"WEBP") {
         return (Some("image/webp"), None);

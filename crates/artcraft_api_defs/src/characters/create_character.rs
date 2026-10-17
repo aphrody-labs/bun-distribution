@@ -8,25 +8,25 @@ use tokens::tokens::media_files::MediaFileToken;
 /// Request body for creating a character.
 #[derive(Deserialize, ToSchema)]
 pub struct CreateCharacterRequest {
-  /// Idempotency token to prevent duplicate requests.
-  pub uuid_idempotency_token: String,
+    /// Idempotency token to prevent duplicate requests.
+    pub uuid_idempotency_token: String,
 
-  /// The model to create the character for.
-  pub model: CommonModelType,
+    /// The model to create the character for.
+    pub model: CommonModelType,
 
-  /// The reference image media file token.
-  pub image_media_token: MediaFileToken,
+    /// The reference image media file token.
+    pub image_media_token: MediaFileToken,
 
-  /// Name of the character.
-  pub character_name: String,
+    /// Name of the character.
+    pub character_name: String,
 
-  /// Description of the character.
-  pub character_description: Option<String>,
+    /// Description of the character.
+    pub character_description: Option<String>,
 }
 
 /// Response body for creating a character.
 #[derive(Serialize, ToSchema)]
 pub struct CreateCharacterResponse {
-  pub success: bool,
-  pub inference_job_token: InferenceJobToken,
+    pub success: bool,
+    pub inference_job_token: InferenceJobToken,
 }

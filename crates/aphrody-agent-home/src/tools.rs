@@ -28,19 +28,22 @@ impl ToolsDoc {
     #[must_use]
     pub fn parse(content: &str) -> Self {
         let (fm, body) = frontmatter::split(content);
-        let mut doc = ToolsDoc { body: body.to_string(), ..ToolsDoc::default() };
+        let mut doc = ToolsDoc {
+            body: body.to_string(),
+            ..ToolsDoc::default()
+        };
         if let Some(fm) = fm {
             for (key, val) in frontmatter::parse(fm) {
                 match (key.as_str(), val) {
                     ("tools", FmValue::List(v)) => doc.tools = v,
                     ("tools", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         doc.tools = vec![s.trim().to_string()];
-                    },
+                    }
                     ("conventions" | "rules", FmValue::List(v)) => doc.conventions = v,
                     ("conventions" | "rules", FmValue::Scalar(s)) if !s.trim().is_empty() => {
                         doc.conventions = vec![s.trim().to_string()];
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
         }
@@ -81,7 +84,10 @@ mod tests {
         let src = "---\ntools: [read, write, bash]\nconventions:\n  - prefer Read over cat\n- \
                    absolute paths only\n---\nDetail.\n";
         let d = ToolsDoc::parse(src);
-        assert_eq!(d.tools, vec!["read".to_string(), "write".to_string(), "bash".to_string()]);
+        assert_eq!(
+            d.tools,
+            vec!["read".to_string(), "write".to_string(), "bash".to_string()]
+        );
         assert_eq!(d.conventions.len(), 2);
         assert_eq!(d.body.trim(), "Detail.");
     }

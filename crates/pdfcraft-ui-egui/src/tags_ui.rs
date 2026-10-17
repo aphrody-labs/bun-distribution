@@ -47,18 +47,33 @@ impl Draft {
         let mut add = |property, prior: Option<&str>, next: &str| {
             let value = (!next.is_empty()).then(|| next.to_owned());
             if prior != value.as_deref() {
-                edits.push(Edit::SetTagProperty { object: tag.object, property, value });
+                edits.push(Edit::SetTagProperty {
+                    object: tag.object,
+                    property,
+                    value,
+                });
             }
         };
         add(TagProperty::Type, Some(&tag.kind), &self.kind);
         add(TagProperty::Title, tag.title.as_deref(), &self.title);
-        add(TagProperty::ActualText, tag.actual_text.as_deref(), &self.actual_text);
+        add(
+            TagProperty::ActualText,
+            tag.actual_text.as_deref(),
+            &self.actual_text,
+        );
         add(TagProperty::AlternateText, tag.alt.as_deref(), &self.alt);
-        add(TagProperty::Language, tag.language.as_deref(), &self.language);
+        add(
+            TagProperty::Language,
+            tag.language.as_deref(),
+            &self.language,
+        );
         match edits.len() {
             0 => None,
             1 => edits.pop(),
-            _ => Some(Edit::Batch { label: "Change tag properties".into(), edits }),
+            _ => Some(Edit::Batch {
+                label: "Change tag properties".into(),
+                edits,
+            }),
         }
     }
 }
@@ -80,7 +95,9 @@ impl State {
 
     /// Select a checker finding's tag without discarding an unfinished edit.
     pub(crate) fn select(&mut self, doc: DocId, tags: &[TagInfo], object: ObjRef) -> bool {
-        let Some(tag) = tags.iter().find(|tag| tag.object == object) else { return false };
+        let Some(tag) = tags.iter().find(|tag| tag.object == object) else {
+            return false;
+        };
         if self.doc == Some(doc)
             && self
                 .selected
@@ -102,7 +119,14 @@ impl State {
 }
 
 /// The chosen page and an edit to apply after the panel releases its document borrow.
-pub(crate) fn panel(ui: &mut Ui, t: &Tokens, doc: DocId, tags: &[TagInfo], state: &mut State, can_edit: bool) -> (Option<usize>, Option<Edit>) {
+pub(crate) fn panel(
+    ui: &mut Ui,
+    t: &Tokens,
+    doc: DocId,
+    tags: &[TagInfo],
+    state: &mut State,
+    can_edit: bool,
+) -> (Option<usize>, Option<Edit>) {
     if state.doc != Some(doc) {
         state.doc = Some(doc);
         state.selected = None;
@@ -114,61 +138,109 @@ pub(crate) fn panel(ui: &mut Ui, t: &Tokens, doc: DocId, tags: &[TagInfo], state
         ui.label(tl!("This document has no editable structure tags."));
         return (None, None);
     }
-    if state.selected.is_none_or(|r| !tags.iter().any(|t| t.object == r)) {
+    if state
+        .selected
+        .is_none_or(|r| !tags.iter().any(|t| t.object == r))
+    {
         state.selected = Some(tags[0].object);
         state.draft = Draft::from_tag(&tags[0]);
     }
     let search_label = ui.label(tl!("Find a tag"));
-    ui.add(egui::TextEdit::singleline(&mut state.query).hint_text(tl!("Find a tag"))).labelled_by(search_label.id);
+    ui.add(egui::TextEdit::singleline(&mut state.query).hint_text(tl!("Find a tag")))
+        .labelled_by(search_label.id);
     ui.add_space(4.0);
     let query = state.query.to_lowercase();
     let matching = visible_tags(tags, &query, &state.collapsed);
     let parents: HashSet<ObjRef> = tags.iter().filter_map(|tag| tag.parent).collect();
-    let dirty = state.selected.and_then(|r| tags.iter().find(|t| t.object == r)).is_some_and(|tag| state.draft.edit(tag).is_some());
-    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} tags"), &[("n", &matching.len().to_string())])).small().color(t.text_muted));
+    let dirty = state
+        .selected
+        .and_then(|r| tags.iter().find(|t| t.object == r))
+        .is_some_and(|tag| state.draft.edit(tag).is_some());
+    ui.label(
+        egui::RichText::new(crate::i18n::fmt(
+            tl!("{n} tags"),
+            &[("n", &matching.len().to_string())],
+        ))
+        .small()
+        .color(t.text_muted),
+    );
     let mut page = None;
-    egui::ScrollArea::vertical().max_height(100.0).show_rows(ui, 26.0, matching.len(), |ui, range| {
-        for tag in &matching[range] {
-            let title = tag.title.as_deref().filter(|s| !s.is_empty()).unwrap_or(&tag.kind);
-            let label = format!("{title} · {}", tag.object.num);
-            ui.horizontal(|ui| {
-                ui.add_space((tag.depth.min(8) as f32) * 12.0);
-                if parents.contains(&tag.object) && query.is_empty() {
-                    let closed = state.collapsed.contains(&tag.object);
-                    if icons::button(
-                        ui,
-                        if closed { "chevron-right" } else { "chevron-down" },
-                        18.0,
-                        false,
-                        if closed { tl!("Expand tag") } else { tl!("Collapse tag") },
-                    )
-                    .clicked()
-                    {
-                        if closed {
-                            state.collapsed.remove(&tag.object);
-                        } else {
-                            state.collapsed.insert(tag.object);
+    egui::ScrollArea::vertical().max_height(100.0).show_rows(
+        ui,
+        26.0,
+        matching.len(),
+        |ui, range| {
+            for tag in &matching[range] {
+                let title = tag
+                    .title
+                    .as_deref()
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or(&tag.kind);
+                let label = format!("{title} · {}", tag.object.num);
+                ui.horizontal(|ui| {
+                    ui.add_space((tag.depth.min(8) as f32) * 12.0);
+                    if parents.contains(&tag.object) && query.is_empty() {
+                        let closed = state.collapsed.contains(&tag.object);
+                        if icons::button(
+                            ui,
+                            if closed {
+                                "chevron-right"
+                            } else {
+                                "chevron-down"
+                            },
+                            18.0,
+                            false,
+                            if closed {
+                                tl!("Expand tag")
+                            } else {
+                                tl!("Collapse tag")
+                            },
+                        )
+                        .clicked()
+                        {
+                            if closed {
+                                state.collapsed.remove(&tag.object);
+                            } else {
+                                state.collapsed.insert(tag.object);
+                            }
                         }
+                    } else {
+                        ui.add_space(18.0);
                     }
-                } else {
-                    ui.add_space(18.0);
-                }
-                if ui
-                    .add_enabled(!dirty || state.selected == Some(tag.object), egui::Button::selectable(state.selected == Some(tag.object), label))
-                    .clicked()
-                {
-                    state.selected = Some(tag.object);
-                    state.draft = Draft::from_tag(tag);
-                    page = tag.page;
-                }
-            });
-        }
-    });
+                    if ui
+                        .add_enabled(
+                            !dirty || state.selected == Some(tag.object),
+                            egui::Button::selectable(state.selected == Some(tag.object), label),
+                        )
+                        .clicked()
+                    {
+                        state.selected = Some(tag.object);
+                        state.draft = Draft::from_tag(tag);
+                        page = tag.page;
+                    }
+                });
+            }
+        },
+    );
     ui.separator();
-    let Some(tag) = state.selected.and_then(|r| tags.iter().find(|t| t.object == r)) else { return (page, None) };
-    ui.label(egui::RichText::new(format!("{} {} R", tag.object.num, tag.object.generation)).small().color(t.text_faint));
+    let Some(tag) = state
+        .selected
+        .and_then(|r| tags.iter().find(|t| t.object == r))
+    else {
+        return (page, None);
+    };
+    ui.label(
+        egui::RichText::new(format!("{} {} R", tag.object.num, tag.object.generation))
+            .small()
+            .color(t.text_faint),
+    );
     if let Some(p) = tag.page
-        && ui.button(crate::i18n::fmt(tl!("Go to page {p}"), &[("p", &(p + 1).to_string())])).clicked()
+        && ui
+            .button(crate::i18n::fmt(
+                tl!("Go to page {p}"),
+                &[("p", &(p + 1).to_string())],
+            ))
+            .clicked()
     {
         page = Some(p);
     }
@@ -181,36 +253,79 @@ pub(crate) fn panel(ui: &mut Ui, t: &Tokens, doc: DocId, tags: &[TagInfo], state
     });
     let edit = state.draft.edit(tag);
     let mut save = false;
-    let siblings: Vec<&TagInfo> = tag.parent.map(|parent| tags.iter().filter(|other| other.parent == Some(parent)).collect()).unwrap_or_default();
-    let position = siblings.iter().position(|sibling| sibling.object == tag.object);
-    let before = position.and_then(|position| position.checked_sub(1)).map(|position| siblings[position]);
-    let after = position.and_then(|position| siblings.get(position + 1)).copied();
+    let siblings: Vec<&TagInfo> = tag
+        .parent
+        .map(|parent| {
+            tags.iter()
+                .filter(|other| other.parent == Some(parent))
+                .collect()
+        })
+        .unwrap_or_default();
+    let position = siblings
+        .iter()
+        .position(|sibling| sibling.object == tag.object);
+    let before = position
+        .and_then(|position| position.checked_sub(1))
+        .map(|position| siblings[position]);
+    let after = position
+        .and_then(|position| siblings.get(position + 1))
+        .copied();
     ui.horizontal(|ui| {
-        save = ui.add_enabled(can_edit && !state.draft.kind.is_empty() && edit.is_some(), egui::Button::new(tl!("Save tag properties"))).clicked();
-        if ui.add_enabled(dirty, egui::Button::new(tl!("Revert changes"))).clicked() {
+        save = ui
+            .add_enabled(
+                can_edit && !state.draft.kind.is_empty() && edit.is_some(),
+                egui::Button::new(tl!("Save tag properties")),
+            )
+            .clicked();
+        if ui
+            .add_enabled(dirty, egui::Button::new(tl!("Revert changes")))
+            .clicked()
+        {
             state.draft = Draft::from_tag(tag);
         }
     });
     let (mut earlier, mut later) = (false, false);
     ui.horizontal(|ui| {
-        earlier = ui.add_enabled(can_edit && !dirty && before.is_some(), egui::Button::new(tl!("Move tag earlier"))).clicked();
-        later = ui.add_enabled(can_edit && !dirty && after.is_some(), egui::Button::new(tl!("Move tag later"))).clicked();
+        earlier = ui
+            .add_enabled(
+                can_edit && !dirty && before.is_some(),
+                egui::Button::new(tl!("Move tag earlier")),
+            )
+            .clicked();
+        later = ui
+            .add_enabled(
+                can_edit && !dirty && after.is_some(),
+                egui::Button::new(tl!("Move tag later")),
+            )
+            .clicked();
     });
     (
         page,
         if save {
             edit
         } else if earlier {
-            before.map(|anchor| Edit::MoveTag { object: tag.object, anchor: anchor.object, placement: TagPlacement::Before })
+            before.map(|anchor| Edit::MoveTag {
+                object: tag.object,
+                anchor: anchor.object,
+                placement: TagPlacement::Before,
+            })
         } else if later {
-            after.map(|anchor| Edit::MoveTag { object: tag.object, anchor: anchor.object, placement: TagPlacement::After })
+            after.map(|anchor| Edit::MoveTag {
+                object: tag.object,
+                anchor: anchor.object,
+                placement: TagPlacement::After,
+            })
         } else {
             None
         },
     )
 }
 
-fn visible_tags<'a>(tags: &'a [TagInfo], query: &str, collapsed: &BTreeSet<ObjRef>) -> Vec<&'a TagInfo> {
+fn visible_tags<'a>(
+    tags: &'a [TagInfo],
+    query: &str,
+    collapsed: &BTreeSet<ObjRef>,
+) -> Vec<&'a TagInfo> {
     if query.is_empty() {
         let mut hidden_after: Option<usize> = None;
         return tags
@@ -226,23 +341,37 @@ fn visible_tags<'a>(tags: &'a [TagInfo], query: &str, collapsed: &BTreeSet<ObjRe
     }
     let by_object: HashMap<ObjRef, &TagInfo> = tags.iter().map(|tag| (tag.object, tag)).collect();
     let mut show = HashSet::new();
-    for tag in
-        tags.iter().filter(|tag| tag.kind.to_lowercase().contains(query) || tag.title.as_ref().is_some_and(|v| v.to_lowercase().contains(query)))
-    {
+    for tag in tags.iter().filter(|tag| {
+        tag.kind.to_lowercase().contains(query)
+            || tag
+                .title
+                .as_ref()
+                .is_some_and(|v| v.to_lowercase().contains(query))
+    }) {
         let mut next = Some(tag.object);
         for _ in 0..=256 {
-            let Some(object) = next.filter(|o| show.insert(*o)) else { break };
+            let Some(object) = next.filter(|o| show.insert(*o)) else {
+                break;
+            };
             next = by_object.get(&object).and_then(|t| t.parent);
         }
     }
-    tags.iter().filter(|tag| show.contains(&tag.object)).collect()
+    tags.iter()
+        .filter(|tag| show.contains(&tag.object))
+        .collect()
 }
 
 fn field(ui: &mut Ui, label: &str, value: &mut String, multiline: bool) {
     let l = ui.label(label);
     if multiline {
-        ui.add(widgets::block(value).desired_rows(2).desired_width(f32::INFINITY)).labelled_by(l.id);
+        ui.add(
+            widgets::block(value)
+                .desired_rows(2)
+                .desired_width(f32::INFINITY),
+        )
+        .labelled_by(l.id);
     } else {
-        ui.add(egui::TextEdit::singleline(value).desired_width(f32::INFINITY)).labelled_by(l.id);
+        ui.add(egui::TextEdit::singleline(value).desired_width(f32::INFINITY))
+            .labelled_by(l.id);
     }
 }

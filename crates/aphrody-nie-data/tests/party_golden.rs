@@ -302,8 +302,16 @@ fn party_departure_entree_1() {
 fn specify_party_comptes() {
     let cfg = parse_specify_party(&fixture_specify_party());
     // fixture : 2 SpecifyPartyCharaData + 2 SpecifyPartyData
-    assert_eq!(cfg.chara_list.len(), 2, "chara_list: 2 entrées dans la fixture");
-    assert_eq!(cfg.party_list.len(), 2, "party_list: 2 entrées dans la fixture");
+    assert_eq!(
+        cfg.chara_list.len(),
+        2,
+        "chara_list: 2 entrées dans la fixture"
+    );
+    assert_eq!(
+        cfg.party_list.len(),
+        2,
+        "party_list: 2 entrées dans la fixture"
+    );
 }
 
 #[test]
@@ -355,7 +363,10 @@ fn specify_party_chara_ref_of() {
     let party = &cfg.party_list[0];
     let membres = cfg.chara_ref_of(party);
     assert_eq!(membres.len(), 1, "chara_ref_of(party[0]) → 1 membre");
-    assert_eq!(membres[0].param_id, PARAM_ID_0, "membre[0].param_id = 0xC19FE60C");
+    assert_eq!(
+        membres[0].param_id, PARAM_ID_0,
+        "membre[0].param_id = 0xC19FE60C"
+    );
 }
 
 #[test]
@@ -363,7 +374,10 @@ fn specify_party_find_party() {
     let cfg = parse_specify_party(&fixture_specify_party());
     // find_party(0xA8052252) doit retrouver l'entrée 0
     let found = cfg.find_party(PARTY_ID_0);
-    assert!(found.is_some(), "find_party(0xA8052252) doit trouver party[0]");
+    assert!(
+        found.is_some(),
+        "find_party(0xA8052252) doit trouver party[0]"
+    );
     assert_eq!(found.unwrap().chara_count, 1);
     // hash absent → None
     assert!(cfg.find_party(HashId(0xDEADBEEF)).is_none());

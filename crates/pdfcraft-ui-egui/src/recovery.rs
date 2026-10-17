@@ -48,13 +48,19 @@ impl RecoveryStore {
         if let Some(dir) = crate::portable::data_dir() {
             return Some(dir.join("Recovery"));
         }
-        let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
+        let env = |k: &str| {
+            std::env::var_os(k)
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from)
+        };
         if cfg!(target_os = "macos") {
             env("HOME").map(|h| h.join("Library/Application Support/PdfCraft/Recovery"))
         } else if cfg!(windows) {
             env("LOCALAPPDATA").map(|d| d.join("PdfCraft").join("Recovery"))
         } else {
-            env("XDG_DATA_HOME").or_else(|| env("HOME").map(|h| h.join(".local/share"))).map(|d| d.join("pdfcraft/recovery"))
+            env("XDG_DATA_HOME")
+                .or_else(|| env("HOME").map(|h| h.join(".local/share")))
+                .map(|d| d.join("pdfcraft/recovery"))
         }
     }
 
@@ -66,9 +72,18 @@ impl RecoveryStore {
     /// a listed entry always has complete bytes.
     pub fn write(&self, meta: &RecoveryMeta, bytes: &[u8]) -> std::io::Result<()> {
         std::fs::create_dir_all(&self.dir)?;
-        crate::editing::write_atomically(&self.dir.join(format!("{}.pdf", meta.key)).to_string_lossy(), bytes)?;
+        crate::editing::write_atomically(
+            &self.dir.join(format!("{}.pdf", meta.key)).to_string_lossy(),
+            bytes,
+        )?;
         let json = serde_json::to_vec_pretty(meta).map_err(std::io::Error::other)?;
-        crate::editing::write_atomically(&self.dir.join(format!("{}.json", meta.key)).to_string_lossy(), &json)
+        crate::editing::write_atomically(
+            &self
+                .dir
+                .join(format!("{}.json", meta.key))
+                .to_string_lossy(),
+            &json,
+        )
     }
 
     pub fn remove(&self, key: &str) {
@@ -78,19 +93,39 @@ impl RecoveryStore {
 
     /// Snapshots, newest first. Listing never removes files; missing metadata uses the file name.
     pub fn list(&self) -> Vec<RecoveryMeta> {
-        let Ok(dir) = std::fs::read_dir(&self.dir) else { return Vec::new() };
+        let Ok(dir) = std::fs::read_dir(&self.dir) else {
+            return Vec::new();
+        };
         let mut out = Vec::new();
         for entry in dir.flatten() {
             let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("pdf") || !entry.file_type().is_ok_and(|t| t.is_file()) {
+            if path.extension().and_then(|e| e.to_str()) != Some("pdf")
+                || !entry.file_type().is_ok_and(|t| t.is_file())
+            {
                 continue;
             }
-            let Some(key) = path.file_stem().and_then(|s| s.to_str()) else { continue };
+            let Some(key) = path.file_stem().and_then(|s| s.to_str()) else {
+                continue;
+            };
             let meta = std::fs::read(path.with_extension("json"))
-                .and_then(|b| serde_json::from_slice::<RecoveryMeta>(&b).map_err(std::io::Error::other))
-                .and_then(|m| if m.key == key { Ok(m) } else { Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "snapshot key mismatch")) });
+                .and_then(|b| {
+                    serde_json::from_slice::<RecoveryMeta>(&b).map_err(std::io::Error::other)
+                })
+                .and_then(|m| {
+                    if m.key == key {
+                        Ok(m)
+                    } else {
+                        Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "snapshot key mismatch",
+                        ))
+                    }
+                });
             out.push(meta.unwrap_or_else(|e| {
-                log::warn!("recovering snapshot without metadata: {}: {e}", path.display());
+                log::warn!(
+                    "recovering snapshot without metadata: {}: {e}",
+                    path.display()
+                );
                 let saved_at = entry
                     .metadata()
                     .and_then(|m| m.modified())
@@ -115,7 +150,10 @@ impl RecoveryStore {
     /// recovered without metadata), so damaged metadata doesn't stay behind. The PDF is untouched.
     pub fn repair_meta(&self, meta: &RecoveryMeta) {
         let path = self.dir.join(format!("{}.json", meta.key));
-        let readable = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice::<RecoveryMeta>(&b).ok()).is_some_and(|m| m.key == meta.key);
+        let readable = std::fs::read(&path)
+            .ok()
+            .and_then(|b| serde_json::from_slice::<RecoveryMeta>(&b).ok())
+            .is_some_and(|m| m.key == meta.key);
         if readable {
             return;
         }
@@ -136,7 +174,9 @@ impl RecoveryStore {
         for m in self.list() {
             self.remove(&m.key);
         }
-        let Ok(dir) = std::fs::read_dir(&self.dir) else { return };
+        let Ok(dir) = std::fs::read_dir(&self.dir) else {
+            return;
+        };
         for entry in dir.flatten() {
             let path = entry.path();
             // Only sidecars whose PDF is gone: they hold no document content.
@@ -151,7 +191,10 @@ impl RecoveryStore {
 }
 
 fn now_secs() -> u64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 impl PdfCraftApp {
@@ -166,10 +209,22 @@ impl PdfCraftApp {
 
     /// Write snapshots of documents changed since the last autosave (called periodically).
     pub fn autosave_now(&mut self) {
-        let Some(store) = self.recovery.clone() else { return };
+        let Some(store) = self.recovery.clone() else {
+            return;
+        };
         for snap in self.session.autosave_snapshots() {
-            let key = self.recovery_keys.entry(snap.doc).or_insert_with(|| format!("{}-{}-{}", now_secs(), std::process::id(), snap.doc.0)).clone();
-            let meta = RecoveryMeta { key, name: snap.name, path: snap.path, saved_at: now_secs(), encrypted: snap.encrypted };
+            let key = self
+                .recovery_keys
+                .entry(snap.doc)
+                .or_insert_with(|| format!("{}-{}-{}", now_secs(), std::process::id(), snap.doc.0))
+                .clone();
+            let meta = RecoveryMeta {
+                key,
+                name: snap.name,
+                path: snap.path,
+                saved_at: now_secs(),
+                encrypted: snap.encrypted,
+            };
             if let Err(e) = store.write(&meta, &snap.bytes) {
                 log::warn!("autosave failed: {e}");
             }
@@ -196,9 +251,13 @@ impl PdfCraftApp {
 
     /// Reopen recovered documents (`keys`), as unsaved changes at their original paths.
     pub fn recover(&mut self, keys: &[String]) {
-        let Some(store) = self.recovery.clone() else { return };
+        let Some(store) = self.recovery.clone() else {
+            return;
+        };
         for key in keys {
-            let Some(meta) = self.recoverable.iter().find(|m| &m.key == key).cloned() else { continue };
+            let Some(meta) = self.recoverable.iter().find(|m| &m.key == key).cloned() else {
+                continue;
+            };
             #[cfg(not(target_arch = "wasm32"))]
             if self.ctx.is_some() && !self.run_inline {
                 self.startup_superseded = true;
@@ -214,14 +273,20 @@ impl PdfCraftApp {
                     then: None,
                 });
                 if let Err(error) = result {
-                    self.notify_fmt("Couldn't recover {name}: {e}", &[("name", &meta.name), ("e", &error)]);
+                    self.notify_fmt(
+                        "Couldn't recover {name}: {e}",
+                        &[("name", &meta.name), ("e", &error)],
+                    );
                 }
                 continue;
             }
             let bytes = match store.read(key) {
                 Ok(b) => b,
                 Err(e) => {
-                    self.notify_fmt("Couldn't recover {name}: {e}", &[("name", &meta.name), ("e", &e.to_string())]);
+                    self.notify_fmt(
+                        "Couldn't recover {name}: {e}",
+                        &[("name", &meta.name), ("e", &e.to_string())],
+                    );
                     continue;
                 }
             };
@@ -235,7 +300,10 @@ impl PdfCraftApp {
                         prompt.recovered = Some(meta.clone());
                     }
                 }
-                Err(e) => self.notify_fmt("Couldn't recover {name}: {e}", &[("name", &meta.name), ("e", &e.to_string())]),
+                Err(e) => self.notify_fmt(
+                    "Couldn't recover {name}: {e}",
+                    &[("name", &meta.name), ("e", &e.to_string())],
+                ),
             }
         }
         self.recoverable.retain(|m| !keys.contains(&m.key));
@@ -243,7 +311,9 @@ impl PdfCraftApp {
 
     /// The most recently opened tab came from `meta`: keep its recovery entry and path.
     pub(crate) fn finish_recovery(&mut self, meta: &RecoveryMeta) {
-        let Some(id) = self.views.last().map(|v| v.id) else { return };
+        let Some(id) = self.views.last().map(|v| v.id) else {
+            return;
+        };
         self.session.mark_recovered(id, meta.path.clone());
         self.recovery_keys.insert(id, meta.key.clone());
         // A snapshot recovered without readable metadata gets a fresh sidecar now, so the

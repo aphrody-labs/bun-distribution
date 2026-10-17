@@ -25,7 +25,12 @@ pub enum BevelStyle {
 }
 
 impl BevelStyle {
-    pub const ALL: [BevelStyle; 4] = [BevelStyle::None, BevelStyle::Angular, BevelStyle::Concave, BevelStyle::Convex];
+    pub const ALL: [BevelStyle; 4] = [
+        BevelStyle::None,
+        BevelStyle::Angular,
+        BevelStyle::Concave,
+        BevelStyle::Convex,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             BevelStyle::None => "None",
@@ -71,7 +76,12 @@ pub struct ExtrudeParams {
 
 impl Default for ExtrudeParams {
     fn default() -> Self {
-        ExtrudeParams { bevel: BevelStyle::None, bevel_depth: 2.0, hole_bevel: 1.0, depth: 50.0 }
+        ExtrudeParams {
+            bevel: BevelStyle::None,
+            bevel_depth: 2.0,
+            hole_bevel: 1.0,
+            depth: 50.0,
+        }
     }
 }
 
@@ -88,7 +98,9 @@ fn point_in(p: P, c: &[P]) -> bool {
     let mut j = n - 1;
     for i in 0..n {
         let (a, b) = (c[i], c[j]);
-        if (a[1] > p[1]) != (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0] {
+        if (a[1] > p[1]) != (b[1] > p[1])
+            && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
             inside = !inside;
         }
         j = i;
@@ -116,7 +128,9 @@ pub fn group_contours(contours: Vec<Vec<P>>) -> Vec<Outline> {
     let parents: Vec<Vec<usize>> = (0..n)
         .map(|i| {
             let probe = cs[i][0];
-            (0..n).filter(|&j| j != i && area[j] > area[i] && point_in(probe, &cs[j])).collect()
+            (0..n)
+                .filter(|&j| j != i && area[j] > area[i] && point_in(probe, &cs[j]))
+                .collect()
         })
         .collect();
     let mut outlines: Vec<Outline> = vec![];
@@ -127,8 +141,14 @@ pub fn group_contours(contours: Vec<Vec<P>>) -> Vec<Outline> {
         let depth = parents[i].len();
         if depth.is_multiple_of(2) {
             slot[i] = outlines.len();
-            outlines.push(Outline { outer: cs[i].clone(), holes: vec![] });
-        } else if let Some(&p) = parents[i].iter().filter(|&&j| parents[j].len() == depth - 1).min_by(|&&a, &&b| area[a].total_cmp(&area[b]))
+            outlines.push(Outline {
+                outer: cs[i].clone(),
+                holes: vec![],
+            });
+        } else if let Some(&p) = parents[i]
+            .iter()
+            .filter(|&&j| parents[j].len() == depth - 1)
+            .min_by(|&&a, &&b| area[a].total_cmp(&area[b]))
             && slot[p] != usize::MAX
         {
             outlines[slot[p]].holes.push(cs[i].clone());
@@ -179,7 +199,13 @@ fn contour(mut pts: Vec<P>, outer: bool, bevel: f64) -> Contour {
         };
         smooth[i] = d > 0.82; // < ~35° turn
     }
-    Contour { pts, edge_n, miter, smooth, bevel }
+    Contour {
+        pts,
+        edge_n,
+        miter,
+        smooth,
+        bevel,
+    }
 }
 
 /// Rings of a contour: (inset, z) from the front cap to the back cap.
@@ -198,7 +224,11 @@ fn rings(style: BevelStyle, bevel: f64, depth: f64) -> Vec<(f64, f64)> {
     let mut out = front.clone();
     let back: Vec<(f64, f64)> = front.iter().rev().map(|&(i, z)| (i, depth - z)).collect();
     // Skip a duplicate ring where the walls have zero height (bevel = depth / 2).
-    let start = if (back[0].1 - out[out.len() - 1].1).abs() < 1e-9 { 1 } else { 0 };
+    let start = if (back[0].1 - out[out.len() - 1].1).abs() < 1e-9 {
+        1
+    } else {
+        0
+    };
     out.extend_from_slice(&back[start..]);
     out
 }
@@ -227,7 +257,10 @@ impl Surface {
 
 /// Build the extruded mesh of outlines (one primitive, material 0).
 pub fn extrude(outlines: &[Outline], p: &ExtrudeParams) -> Primitive {
-    build(outlines, p, false).into_iter().next().unwrap_or_default()
+    build(outlines, p, false)
+        .into_iter()
+        .next()
+        .unwrap_or_default()
 }
 
 /// [`extrude`] split by surface: one primitive (material 0) per [`Surface`], in
@@ -239,28 +272,48 @@ pub fn extrude_surfaces(outlines: &[Outline], p: &ExtrudeParams) -> [Primitive; 
 
 /// The extruded mesh in one primitive (`split` false) or one per [`Surface`].
 fn build(outlines: &[Outline], p: &ExtrudeParams, split: bool) -> Vec<Primitive> {
-    let mut prims = vec![Primitive { material: Some(0), ..Default::default() }; if split { 4 } else { 1 }];
+    let mut prims = vec![
+        Primitive {
+            material: Some(0),
+            ..Default::default()
+        };
+        if split { 4 } else { 1 }
+    ];
     let slot = |s: Surface| if split { s.index() } else { 0 };
     let depth = p.depth.max(1e-3);
     let push = |prim: &mut Primitive, pos: [f64; 3], n: [f64; 3]| -> u32 {
-        prim.positions.push([pos[0] as f32, pos[1] as f32, pos[2] as f32]);
+        prim.positions
+            .push([pos[0] as f32, pos[1] as f32, pos[2] as f32]);
         let l = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt().max(1e-12);
-        prim.normals.push([(n[0] / l) as f32, (n[1] / l) as f32, (n[2] / l) as f32]);
+        prim.normals
+            .push([(n[0] / l) as f32, (n[1] / l) as f32, (n[2] / l) as f32]);
         prim.uvs.push([0.0, 0.0]);
         (prim.positions.len() - 1) as u32
     };
     for o in outlines {
         let mut cs = vec![contour(o.outer.clone(), true, p.bevel_depth)];
         for h in &o.holes {
-            cs.push(contour(h.clone(), false, p.bevel_depth * p.hole_bevel.clamp(0.0, 1.0)));
+            cs.push(contour(
+                h.clone(),
+                false,
+                p.bevel_depth * p.hole_bevel.clamp(0.0, 1.0),
+            ));
         }
         // Positions per contour per ring.
         let mut ring_pos: Vec<Vec<Vec<[f64; 3]>>> = vec![];
         let mut ring_par: Vec<Vec<(f64, f64)>> = vec![];
         for c in &cs {
             let rs = rings(p.bevel, c.bevel, depth);
-            let pos: Vec<Vec<[f64; 3]>> =
-                rs.iter().map(|&(inset, z)| c.pts.iter().zip(&c.miter).map(|(q, m)| [q[0] - m[0] * inset, q[1] - m[1] * inset, z]).collect()).collect();
+            let pos: Vec<Vec<[f64; 3]>> = rs
+                .iter()
+                .map(|&(inset, z)| {
+                    c.pts
+                        .iter()
+                        .zip(&c.miter)
+                        .map(|(q, m)| [q[0] - m[0] * inset, q[1] - m[1] * inset, z])
+                        .collect()
+                })
+                .collect();
             ring_pos.push(pos);
             ring_par.push(rs);
         }
@@ -283,7 +336,12 @@ fn build(outlines: &[Outline], p: &ExtrudeParams, split: bool) -> Vec<Primitive>
                 // Curved bevels: average with the neighbouring bevel segments at shared rings.
                 let blend = |k2: Option<usize>, base: (f64, f64)| -> (f64, f64) {
                     match k2 {
-                        Some(k2) if curved && !is_wall && k2 < rs.len() - 1 && (rs[k2].0 - rs[k2 + 1].0).abs() >= 1e-12 => {
+                        Some(k2)
+                            if curved
+                                && !is_wall
+                                && k2 < rs.len() - 1
+                                && (rs[k2].0 - rs[k2 + 1].0).abs() >= 1e-12 =>
+                        {
                             let o = seg_n(k2);
                             (base.0 + o.0, base.1 + o.1)
                         }
@@ -306,7 +364,13 @@ fn build(outlines: &[Outline], p: &ExtrudeParams, split: bool) -> Vec<Primitive>
                     };
                     let (ni, nj) = (vn(i), vn(j));
                     let nrm = |xy: P, pr: (f64, f64)| [xy[0] * pr.0, xy[1] * pr.0, pr.1];
-                    let Some(prim) = prims.get_mut(slot(if is_wall { Surface::Side } else { Surface::Bevel })) else { continue };
+                    let Some(prim) = prims.get_mut(slot(if is_wall {
+                        Surface::Side
+                    } else {
+                        Surface::Bevel
+                    })) else {
+                        continue;
+                    };
                     let ai = push(prim, ring_pos[ci][k][i], nrm(ni, pa));
                     let aj = push(prim, ring_pos[ci][k][j], nrm(nj, pa));
                     let bj = push(prim, ring_pos[ci][k + 1][j], nrm(nj, pb));
@@ -318,11 +382,20 @@ fn build(outlines: &[Outline], p: &ExtrudeParams, split: bool) -> Vec<Primitive>
         // Caps: triangulate in x/y (counter-clockwise → +z normal: the back cap; the front cap
         // is reversed to face the camera).
         let outer2: Vec<P> = ring_pos[0][0].iter().map(|q| [q[0], q[1]]).collect();
-        let holes2: Vec<Vec<P>> = ring_pos[1..].iter().map(|r| r[0].iter().map(|q| [q[0], q[1]]).collect()).collect();
+        let holes2: Vec<Vec<P>> = ring_pos[1..]
+            .iter()
+            .map(|r| r[0].iter().map(|q| [q[0], q[1]]).collect())
+            .collect();
         let tris = triangulate(&outer2, &holes2);
-        let flat: Vec<(usize, usize)> = (0..cs.len()).flat_map(|ci| (0..cs[ci].pts.len()).map(move |i| (ci, i))).collect();
+        let flat: Vec<(usize, usize)> = (0..cs.len())
+            .flat_map(|ci| (0..cs[ci].pts.len()).map(move |i| (ci, i)))
+            .collect();
         for (front, nz) in [(true, -1.0), (false, 1.0)] {
-            let Some(prim) = prims.get_mut(slot(if front { Surface::Front } else { Surface::Back })) else { continue };
+            let Some(prim) =
+                prims.get_mut(slot(if front { Surface::Front } else { Surface::Back }))
+            else {
+                continue;
+            };
             let base = prim.positions.len() as u32;
             for &(ci, i) in &flat {
                 let r = if front { 0 } else { ring_pos[ci].len() - 1 };
@@ -330,7 +403,11 @@ fn build(outlines: &[Outline], p: &ExtrudeParams, split: bool) -> Vec<Primitive>
             }
             for t in &tris {
                 let (a, b, c) = (base + t[0] as u32, base + t[1] as u32, base + t[2] as u32);
-                if front { prim.indices.extend([a, c, b]) } else { prim.indices.extend([a, b, c]) }
+                if front {
+                    prim.indices.extend([a, c, b])
+                } else {
+                    prim.indices.extend([a, b, c])
+                }
             }
         }
     }
@@ -351,7 +428,11 @@ pub fn extrude_stacked(outlines: &[Outline], p: &ExtrudeParams, level: usize) ->
 }
 
 /// [`extrude_surfaces`] at stacking level `level` (see [`extrude_stacked`]).
-pub fn extrude_surfaces_stacked(outlines: &[Outline], p: &ExtrudeParams, level: usize) -> [Primitive; 4] {
+pub fn extrude_surfaces_stacked(
+    outlines: &[Outline],
+    p: &ExtrudeParams,
+    level: usize,
+) -> [Primitive; 4] {
     let mut prims = extrude_surfaces(outlines, p);
     for prim in &mut prims {
         stack(prim, level);

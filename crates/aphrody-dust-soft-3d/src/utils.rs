@@ -2,15 +2,18 @@ use aphrody_dust_core::gpu::engine_3d::{
     InterpColor, PolyVertIndex, PolyVertsLen, Polygon, ScreenVertex, TexCoords, VertexAddr,
 };
 use core::simd::{
-    Select,
     cmp::{SimdPartialEq, SimdPartialOrd},
     i32x2, i64x2,
     num::{SimdInt, SimdUint},
-    u32x4, u64x4,
+    u32x4, u64x4, Select,
 };
 
 pub fn clip_x_range((start, end): (u16, u16)) -> (u8, u8) {
-    if start > 255 { (255, 0) } else { (start as u8, end.min(255) as u8) }
+    if start > 255 {
+        (255, 0)
+    } else {
+        (start as u8, end.min(255) as u8)
+    }
 }
 
 #[inline]
@@ -21,7 +24,12 @@ pub fn expand_depth(depth: u16) -> u32 {
 
 #[inline]
 pub fn decode_rgb5(color: u16, alpha: u16) -> InterpColor {
-    InterpColor::from_array([color & 0x1F, (color >> 5) & 0x1F, (color >> 10) & 0x1F, alpha])
+    InterpColor::from_array([
+        color & 0x1F,
+        (color >> 5) & 0x1F,
+        (color >> 10) & 0x1F,
+        alpha,
+    ])
 }
 
 #[inline]
@@ -34,7 +42,9 @@ pub fn rgb5_to_rgb6_shift(color: InterpColor) -> InterpColor {
 #[inline]
 pub fn rgb5_to_rgb6(color: InterpColor) -> InterpColor {
     let mut result = (color << 1)
-        + color.simd_ne(InterpColor::splat(0)).select(InterpColor::splat(1), InterpColor::splat(0));
+        + color
+            .simd_ne(InterpColor::splat(0))
+            .select(InterpColor::splat(1), InterpColor::splat(0));
     result[3] = color[3];
     result
 }
@@ -48,7 +58,10 @@ mod tests {
         for value in 0..32 {
             let color = InterpColor::from_array([value, value, value, 17]);
             let expected = if value == 0 { 0 } else { value * 2 + 1 };
-            assert_eq!(rgb5_to_rgb6(color).to_array(), [expected, expected, expected, 17]);
+            assert_eq!(
+                rgb5_to_rgb6(color).to_array(),
+                [expected, expected, expected, 17]
+            );
         }
     }
 }
@@ -56,12 +69,20 @@ mod tests {
 #[inline]
 pub fn inc_poly_vert_index(i: PolyVertIndex, verts: PolyVertsLen) -> PolyVertIndex {
     let new = i.get() + 1;
-    if new == verts.get() { PolyVertIndex::new(0) } else { PolyVertIndex::new(new) }
+    if new == verts.get() {
+        PolyVertIndex::new(0)
+    } else {
+        PolyVertIndex::new(new)
+    }
 }
 
 #[inline]
 pub fn dec_poly_vert_index(i: PolyVertIndex, verts: PolyVertsLen) -> PolyVertIndex {
-    if i.get() == 0 { PolyVertIndex::new(verts.get() - 1) } else { PolyVertIndex::new(i.get() - 1) }
+    if i.get() == 0 {
+        PolyVertIndex::new(verts.get() - 1)
+    } else {
+        PolyVertIndex::new(i.get() - 1)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -199,8 +220,11 @@ impl Edge {
 
     pub fn line_x_range(&self, y: u8) -> (u16, u16) {
         let line_x_disp = self.x_incr * (y - self.a_y) as u32;
-        let start_frac_x =
-            if self.is_negative { self.x_ref - line_x_disp } else { self.x_ref + line_x_disp };
+        let start_frac_x = if self.is_negative {
+            self.x_ref - line_x_disp
+        } else {
+            self.x_ref + line_x_disp
+        };
         let start_x = (start_frac_x >> 18) as u16;
         if self.is_x_major {
             if self.is_negative {
@@ -212,7 +236,10 @@ impl Edge {
                     start_x,
                 )
             } else {
-                (start_x, (((start_frac_x & !0x1FF) + self.x_incr) >> 18) as u16 - 1)
+                (
+                    start_x,
+                    (((start_frac_x & !0x1FF) + self.x_incr) >> 18) as u16 - 1,
+                )
             }
         } else {
             (start_x, start_x)
@@ -223,7 +250,11 @@ impl Edge {
         self.interp_data.set_x(
             if self.is_x_major {
                 let rel = x - self.interp_ref;
-                if self.is_negative { self.interp_len - rel } else { rel }
+                if self.is_negative {
+                    self.interp_len - rel
+                } else {
+                    rel
+                }
             } else {
                 y as u16 - self.interp_ref
             },
@@ -299,11 +330,24 @@ impl<const EDGE: bool> InterpLineData<EDGE> {
             (a_w, a_w, b_w)
         };
 
-        InterpLineData { force_linear, p_w0_numer, p_w0_denom, p_w1_denom }
+        InterpLineData {
+            force_linear,
+            p_w0_numer,
+            p_w0_denom,
+            p_w1_denom,
+        }
     }
 
     pub fn set_x(&self, x: u16, len: u16) -> InterpData<EDGE> {
-        let l_factor = (x, len, if len == 0 { 0 } else { (1 << LINEAR_PRECISION) / len as u32 });
+        let l_factor = (
+            x,
+            len,
+            if len == 0 {
+                0
+            } else {
+                (1 << LINEAR_PRECISION) / len as u32
+            },
+        );
         let p_factor = {
             let numer = (x as u32 * self.p_w0_numer as u32) << Self::PERSP_PRECISION;
             let denom =
@@ -315,7 +359,11 @@ impl<const EDGE: bool> InterpLineData<EDGE> {
                 (numer / denom) as u16
             }
         };
-        InterpData { l_factor, p_factor, force_linear: self.force_linear }
+        InterpData {
+            l_factor,
+            p_factor,
+            force_linear: self.force_linear,
+        }
     }
 }
 
@@ -349,8 +397,10 @@ impl<const EDGE: bool> InterpData<EDGE> {
             let min = lower.select(a, b);
             let diff = lower.select(b, a) - min;
             let factor = self.p_factor as u32;
-            let factor = lower
-                .select(u32x4::splat(factor), u32x4::splat((1 << Self::PERSP_PRECISION) - factor));
+            let factor = lower.select(
+                u32x4::splat(factor),
+                u32x4::splat((1 << Self::PERSP_PRECISION) - factor),
+            );
             (min + ((diff * factor) >> Self::PERSP_PRECISION as u32)).cast()
         }
     }
@@ -375,8 +425,10 @@ impl<const EDGE: bool> InterpData<EDGE> {
             let min = lower.select(a, b);
             let diff = lower.select(b, a) - min;
             let factor = self.p_factor as i32;
-            let factor = lower
-                .select(i32x2::splat(factor), i32x2::splat((1 << Self::PERSP_PRECISION) - factor));
+            let factor = lower.select(
+                i32x2::splat(factor),
+                i32x2::splat((1 << Self::PERSP_PRECISION) - factor),
+            );
             (min + ((diff * factor) >> Self::PERSP_PRECISION as i32)).cast()
         }
     }

@@ -52,7 +52,10 @@ mod tests {
         let sub = CompatSubsystem::new();
         assert_eq!(sub.name(), "compat");
 
-        let status = sub.call("compat_runtimes_status", json!({})).await.expect("status");
+        let status = sub
+            .call("compat_runtimes_status", json!({}))
+            .await
+            .expect("status");
         assert!(status.get("wine_proton").is_some());
         assert!(status.get("dotnet").is_some());
         assert!(status.get("pwsh").is_some());

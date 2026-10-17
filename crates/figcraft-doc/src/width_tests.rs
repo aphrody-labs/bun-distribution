@@ -51,7 +51,12 @@ fn sanitizes_hostile_points() {
     .sanitized();
     assert_eq!(
         p.points,
-        vec![WidthPoint::new(0.0, WidthProfile::MAX_SCALE), WidthPoint::new(0.5, 0.5), WidthPoint::new(0.5, 0.7), WidthPoint::new(1.0, 0.0)]
+        vec![
+            WidthPoint::new(0.0, WidthProfile::MAX_SCALE),
+            WidthPoint::new(0.5, 0.5),
+            WidthPoint::new(0.5, 0.7),
+            WidthPoint::new(1.0, 0.0)
+        ]
     );
     // Coincident points don't divide by zero.
     assert!(p.scale_at(0.5).is_finite());
@@ -73,7 +78,11 @@ fn edits_keep_points_in_order() {
     assert_eq!(p.points[1], WidthPoint::new(0.3, 0.0));
     assert!(!p.set_point(9, Some(0.5), None));
     let i = p.insert(f64::NAN, f64::NAN);
-    assert_eq!(p.points[i], WidthPoint::new(0.0, 1.0), "junk lands at the start at full width");
+    assert_eq!(
+        p.points[i],
+        WidthPoint::new(0.0, 1.0),
+        "junk lands at the start at full width"
+    );
 }
 
 #[test]
@@ -86,7 +95,10 @@ fn presets_round_trip() {
             assert!(prof.points.windows(2).all(|w| w[0].t <= w[1].t));
         }
     }
-    assert_eq!(WidthPreset::from_id("Taper both ends"), Some(WidthPreset::Taper));
+    assert_eq!(
+        WidthPreset::from_id("Taper both ends"),
+        Some(WidthPreset::Taper)
+    );
     assert_eq!(WidthPreset::from_id("nope"), None);
     assert_eq!(WidthProfile::new([(0.0, 1.0), (0.3, 2.0)]).preset(), None);
 }
@@ -98,11 +110,18 @@ fn older_strokes_load_and_uniform_strokes_save_as_before() {
     assert_eq!(old.max_weight(), 3.0);
     let json = serde_json::to_string(&StrokeProps::default()).unwrap();
     assert!(!json.contains("width_profile"), "{json}");
-    let s = StrokeProps { weight: 2.0, width_profile: WidthPreset::Taper.profile(), ..Default::default() };
+    let s = StrokeProps {
+        weight: 2.0,
+        width_profile: WidthPreset::Taper.profile(),
+        ..Default::default()
+    };
     let back: StrokeProps = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
     assert_eq!(back, s);
     assert_eq!(back.max_weight(), 2.0);
     // A profile without points is no profile.
-    let empty = StrokeProps { width_profile: Some(WidthProfile::default()), ..Default::default() };
+    let empty = StrokeProps {
+        width_profile: Some(WidthProfile::default()),
+        ..Default::default()
+    };
     assert!(empty.profile().is_none());
 }

@@ -24,7 +24,11 @@ pub enum LinkTimeConstParseError {
         __DTCM_LO, __ITCM_HI, __CODE_HI, __OVERLAY_COUNT, ARM9_CTOR_START, __exception_table_start__, __exception_table_end__:
         {backtrace}"
     ))]
-    UnknownKind { context: ParseContext, value: String, backtrace: Backtrace },
+    UnknownKind {
+        context: ParseContext,
+        value: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl LinkTimeConst {

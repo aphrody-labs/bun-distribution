@@ -13,7 +13,17 @@
 //!   under any affine transform.
 //! - [`mask`]: strokes (outer/centre/inner via a Euclidean distance transform), blur, offsets.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod fonts;
 pub mod layout;
@@ -23,7 +33,10 @@ pub mod render;
 pub mod sfnt;
 
 pub use fonts::{FaceId, Resolved, families, resolve};
-pub use layout::{Align, Caps, Glyph, Layout, Line, ParagraphStyle, StyleRun, TextStyle, layout, layout_rich, measure};
+pub use layout::{
+    Align, Caps, Glyph, Layout, Line, ParagraphStyle, StyleRun, TextStyle, layout, layout_rich,
+    measure,
+};
 pub use mask::StrokeKind;
 pub use raster::{Mask, Path, Xform};
 
@@ -35,9 +48,17 @@ mod perf {
     /// 24 fps). Cold = first time (shaping + glyph rasterisation); warm = cached.
     #[test]
     fn three_line_title_is_fast() {
-        let text = "FILMCRAFT PRESENTS\nA Night Drive Through the City\nDirected by Nobody in Particular";
-        let st = TextStyle { size: 96.0, style: "Bold".into(), ..Default::default() };
-        let ps = ParagraphStyle { align: Align::Center, ..Default::default() };
+        let text =
+            "FILMCRAFT PRESENTS\nA Night Drive Through the City\nDirected by Nobody in Particular";
+        let st = TextStyle {
+            size: 96.0,
+            style: "Bold".into(),
+            ..Default::default()
+        };
+        let ps = ParagraphStyle {
+            align: Align::Center,
+            ..Default::default()
+        };
         let t0 = std::time::Instant::now();
         let l = layout::layout_uncached(text, &st, &ps);
         let (m, _, _) = render::rasterize(&l, &render::at(960.0, 400.0));
@@ -48,7 +69,10 @@ mod perf {
         let (m2, _, _) = render::rasterize(&l2, &render::at(960.0, 400.0));
         let warm = t1.elapsed();
         assert_eq!(m.a.len(), m2.a.len());
-        eprintln!("3-line 1080p title: cold {cold:?}, warm {warm:?} (mask {}x{})", m.w, m.h);
+        eprintln!(
+            "3-line 1080p title: cold {cold:?}, warm {warm:?} (mask {}x{})",
+            m.w, m.h
+        );
         // generous bound for debug builds on busy CI machines
         assert!(warm.as_millis() < 40, "warm {warm:?}");
     }

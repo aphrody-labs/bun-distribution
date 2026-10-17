@@ -8,8 +8,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::framebuffer_config::FramebufferConfig;
-use ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId;
 pub use ruzu_core::frontend::framebuffer_layout::FramebufferLayout;
+use ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId;
 
 /// Context used by renderers that do not require a host graphics context.
 ///
@@ -260,14 +260,20 @@ mod tests {
         );
 
         assert!(renderer.is_screenshot_pending());
-        assert_eq!(renderer.settings.screenshot_layer_stack, LayerStackId::Screenshot);
+        assert_eq!(
+            renderer.settings.screenshot_layer_stack,
+            LayerStackId::Screenshot
+        );
         renderer.request_screenshot(
             std::ptr::null_mut(),
             Box::new(|_| panic!("duplicate request must be rejected")),
             FramebufferLayout::default(),
             LayerStackId::LastFrame,
         );
-        assert_eq!(renderer.settings.screenshot_layer_stack, LayerStackId::Screenshot);
+        assert_eq!(
+            renderer.settings.screenshot_layer_stack,
+            LayerStackId::Screenshot
+        );
         assert_eq!(
             renderer.settings.screenshot_bits,
             (&mut pixel as *mut u32).cast()

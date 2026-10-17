@@ -35,7 +35,8 @@ fn save(img: &image::DynamicImage, dst: &Path) -> Result<()> {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("création {}", parent.display()))?;
     }
-    img.save(dst).with_context(|| format!("écriture {}", dst.display()))
+    img.save(dst)
+        .with_context(|| format!("écriture {}", dst.display()))
 }
 
 /// Traduit le nom d'un filtre en [`FilterType`].
@@ -48,7 +49,7 @@ fn filter_of(name: &str) -> Result<FilterType> {
         "lanczos3" | "lanczos" => FilterType::Lanczos3,
         other => {
             bail!("filtre inconnu « {other} » (nearest|triangle|catmullrom|gaussian|lanczos3)")
-        },
+        }
     })
 }
 
@@ -81,11 +82,16 @@ pub fn info(src: &Path) -> Result<()> {
         .with_guessed_format()
         .with_context(|| format!("format indéterminé : {}", src.display()))?;
     let format = reader.format();
-    let img = reader.decode().with_context(|| format!("décodage {}", src.display()))?;
+    let img = reader
+        .decode()
+        .with_context(|| format!("décodage {}", src.display()))?;
     let (w, h) = img.dimensions();
     let taille = std::fs::metadata(src).map(|m| m.len()).unwrap_or(0);
     println!("  fichier   {}", src.display());
-    println!("  format    {}", format.map_or("inconnu", |f| f.extensions_str()[0]));
+    println!(
+        "  format    {}",
+        format.map_or("inconnu", |f| f.extensions_str()[0])
+    );
     println!("  dimensions {w}x{h}");
     println!("  couleur   {:?}", img.color());
     println!("  octets    {taille}");
@@ -106,12 +112,14 @@ pub fn resize(
     let (tw, th) = match (width, height) {
         (Some(w), Some(h)) => (w, h),
         // Une seule dimension : l'autre suit le ratio, en arrondissant au plus proche.
-        (Some(w), None) => {
-            (w, ((u64::from(h0) * u64::from(w)) as f64 / f64::from(w0)).round() as u32)
-        },
-        (None, Some(h)) => {
-            (((u64::from(w0) * u64::from(h)) as f64 / f64::from(h0)).round() as u32, h)
-        },
+        (Some(w), None) => (
+            w,
+            ((u64::from(h0) * u64::from(w)) as f64 / f64::from(w0)).round() as u32,
+        ),
+        (None, Some(h)) => (
+            ((u64::from(w0) * u64::from(h)) as f64 / f64::from(h0)).round() as u32,
+            h,
+        ),
         (None, None) => bail!("préciser au moins --width ou --height"),
     };
     if tw == 0 || th == 0 {
@@ -119,10 +127,17 @@ pub fn resize(
     }
     let f = filter_of(filter)?;
     // `resize_exact` déforme ; `resize` inscrit dans la boîte en gardant le ratio.
-    let out = if exact { img.resize_exact(tw, th, f) } else { img.resize(tw, th, f) };
+    let out = if exact {
+        img.resize_exact(tw, th, f)
+    } else {
+        img.resize(tw, th, f)
+    };
     let (fw, fh) = out.dimensions();
     save(&out, dst)?;
-    println!("resize {w0}x{h0} -> {fw}x{fh} ({filter}) -> {}", dst.display());
+    println!(
+        "resize {w0}x{h0} -> {fw}x{fh} ({filter}) -> {}",
+        dst.display()
+    );
     Ok(())
 }
 
@@ -194,16 +209,21 @@ pub fn planche(
         cases.push(aphrody_nie_formats::image_out::CasePlanche {
             // Le nom du fichier fait le nom de la case : c'est ce que l'appelant reconnaîtra
             // dans le manifeste, et il l'a déjà choisi en nommant ses fichiers.
-            nom: src
-                .file_stem()
-                .map_or_else(|| "sans-nom".to_string(), |s| s.to_string_lossy().into_owned()),
+            nom: src.file_stem().map_or_else(
+                || "sans-nom".to_string(),
+                |s| s.to_string_lossy().into_owned(),
+            ),
             largeur: w,
             hauteur: h,
             rgba: img.into_raw(),
         });
     }
 
-    let colonnes = if colonnes == 0 { cases.len() as u32 } else { colonnes };
+    let colonnes = if colonnes == 0 {
+        cases.len() as u32
+    } else {
+        colonnes
+    };
     let p =
         aphrody_nie_formats::image_out::composer_planche(&cases, colonnes, marge, gouttiere, fond);
 
@@ -333,13 +353,39 @@ pub fn run(op: &Op) -> Result<()> {
     match op {
         Op::Info { src } => info(src),
         Op::Recolor { src, out, filtre } => recolor(src, out, filtre),
-        Op::Resize { src, out, width, height, filter, exact } => {
-            resize(src, out, *width, *height, filter, *exact)
-        },
-        Op::Crop { src, out, x, y, w, h } => crop(src, out, *x, *y, *w, *h),
+        Op::Resize {
+            src,
+            out,
+            width,
+            height,
+            filter,
+            exact,
+        } => resize(src, out, *width, *height, filter, *exact),
+        Op::Crop {
+            src,
+            out,
+            x,
+            y,
+            w,
+            h,
+        } => crop(src, out, *x, *y, *w, *h),
         Op::Convert { src, out } => convert(src, out),
-        Op::Composite { base, overlay, out, x, y } => composite(base, overlay, out, *x, *y),
-        Op::Planche { srcs, out, manifeste, colonnes, marge, gouttiere, fond } => planche(
+        Op::Composite {
+            base,
+            overlay,
+            out,
+            x,
+            y,
+        } => composite(base, overlay, out, *x, *y),
+        Op::Planche {
+            srcs,
+            out,
+            manifeste,
+            colonnes,
+            marge,
+            gouttiere,
+            fond,
+        } => planche(
             srcs,
             out,
             manifeste.as_deref(),
@@ -348,9 +394,21 @@ pub fn run(op: &Op) -> Result<()> {
             *gouttiere,
             couleur_hex(fond)?,
         ),
-        Op::Diff { rendu, reference, roi, out, downscale_ref, amplification } => {
-            diff(rendu, reference, roi.as_deref(), out.as_deref(), *downscale_ref, *amplification)
-        },
+        Op::Diff {
+            rendu,
+            reference,
+            roi,
+            out,
+            downscale_ref,
+            amplification,
+        } => diff(
+            rendu,
+            reference,
+            roi.as_deref(),
+            out.as_deref(),
+            *downscale_ref,
+            *amplification,
+        ),
     }
 }
 
@@ -375,9 +433,16 @@ fn charger_rois(chemin: &Path) -> Result<Vec<Roi>> {
             let kind = match e.kind.as_deref().unwrap_or("nommee") {
                 "dynamique" => RoiKind::Dynamique,
                 "nommee" | "nommée" => RoiKind::Nommee,
-                autre => bail!("kind inconnu « {autre} » (dynamique|nommee) pour « {} »", e.nom),
+                autre => bail!(
+                    "kind inconnu « {autre} » (dynamique|nommee) pour « {} »",
+                    e.nom
+                ),
             };
-            Ok(Roi { nom: e.nom, rect: (e.rect[0], e.rect[1], e.rect[2], e.rect[3]), kind })
+            Ok(Roi {
+                nom: e.nom,
+                rect: (e.rect[0], e.rect[1], e.rect[2], e.rect[3]),
+                kind,
+            })
         })
         .collect()
 }
@@ -432,7 +497,11 @@ pub fn diff(
     };
     let rapport = imgmetric::comparer(aw, ah, &a, &bpix, &rois);
 
-    println!("{} vs {}  ({aw}×{ah})", rendu.display(), reference.display());
+    println!(
+        "{} vs {}  ({aw}×{ah})",
+        rendu.display(),
+        reference.display()
+    );
     println!("{}", ligne_score(&rapport.global));
     for r in &rapport.regions {
         println!("{}", ligne_score(r));
@@ -466,7 +535,10 @@ pub fn diff(
     ecrire_png(&dir.join("heatmap.png"), hw, hh, &heat)?;
     let delta = imgmetric::delta_rgba(aw, ah, &a, &bpix, &rois, amplification);
     ecrire_png(&dir.join("delta.png"), aw, ah, &delta)?;
-    println!("  écrits : {}/rapport.json · heatmap.png · delta.png", dir.display());
+    println!(
+        "  écrits : {}/rapport.json · heatmap.png · delta.png",
+        dir.display()
+    );
     Ok(())
 }
 

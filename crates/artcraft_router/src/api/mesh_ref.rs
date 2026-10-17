@@ -6,6 +6,6 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MeshRef {
-  MediaFileToken(MediaFileToken),
-  Url(String),
+    MediaFileToken(MediaFileToken),
+    Url(String),
 }

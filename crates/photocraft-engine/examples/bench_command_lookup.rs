@@ -15,7 +15,11 @@ fn main() {
             for _ in 0..100 {
                 for id in &ids {
                     let id = black_box(*id);
-                    black_box(if indexed { commands::find(id) } else { specs.iter().find(|s| s.id == id) });
+                    black_box(if indexed {
+                        commands::find(id)
+                    } else {
+                        specs.iter().find(|s| s.id == id)
+                    });
                 }
             }
             samples.push(t.elapsed().as_secs_f64() * 10.0);

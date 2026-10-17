@@ -44,10 +44,12 @@ pub fn host_systemd_root() -> PathBuf {
 
 /// `$APHRODY_ROOT/infra/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
-    let root = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).unwrap_or_else(|| {
-        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
-        PathBuf::from(home.unwrap_or_default()).join("src/aphrody")
-    });
+    let root = std::env::var_os("APHRODY_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
+            PathBuf::from(home.unwrap_or_default()).join("src/aphrody")
+        });
     root.join("infra/config/host")
 }
 
@@ -56,13 +58,17 @@ fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
         let (_, suffix) = instance.split_once('.')?;
         Some(format!("{name}@.{suffix}"))
     });
-    std::fs::read_dir(systemd_root).into_iter().flatten().flatten().any(|owner| {
-        owner.path().join(unit).is_file()
-            || owner.path().join(format!("{unit}.example")).is_file()
-            || instance_template
-                .as_ref()
-                .is_some_and(|template| owner.path().join(template).is_file())
-    })
+    std::fs::read_dir(systemd_root)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .any(|owner| {
+            owner.path().join(unit).is_file()
+                || owner.path().join(format!("{unit}.example")).is_file()
+                || instance_template
+                    .as_ref()
+                    .is_some_and(|template| owner.path().join(template).is_file())
+        })
 }
 
 /// Source validation only. Package-owned units still require independent
@@ -97,7 +103,10 @@ pub fn run(root: &Path) -> Result<Report> {
     let topology = load(root, "infra/config/production-topology.json")?;
     let contract = load_local_ai(root)?;
     let pipeline = load_pipeline_config(root)?;
-    let mut report = check(&catalog, &load(root, "infra/config/host/nginx/routes.json")?);
+    let mut report = check(
+        &catalog,
+        &load(root, "infra/config/host/nginx/routes.json")?,
+    );
     report.merge(check_topology_ports(&catalog, &topology));
     report.merge(check_local_ai(&catalog, &topology, &contract));
     report.errors.extend(check_pipeline(&pipeline));
@@ -129,12 +138,17 @@ impl<'a> RepositoryRegistry<'a> {
             .iter()
             .filter_map(|repository| {
                 let id = str_field(repository, "id")?;
-                let successors =
-                    entries(repository, "replacedBy").iter().filter_map(Value::as_str).collect();
+                let successors = entries(repository, "replacedBy")
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .collect();
                 Some((id, successors))
             })
             .collect();
-        Self { live: ids("repositories").into_iter().collect(), retired }
+        Self {
+            live: ids("repositories").into_iter().collect(),
+            retired,
+        }
     }
 
     /// `None` when `repo` is a live repository, else the error to report.
@@ -167,14 +181,16 @@ pub fn check_repositories(
     let registry = RepositoryRegistry::from_training(training);
     let mut report = Report::default();
     if registry.live.is_empty() {
-        report.errors.push("stack-training: repositories is empty".to_owned());
+        report
+            .errors
+            .push("stack-training: repositories is empty".to_owned());
         return report;
     }
     for retired in registry.retired.keys() {
         if registry.live.contains(retired) {
-            report
-                .errors
-                .push(format!("stack-training: {retired} is listed as both live and retired"));
+            report.errors.push(format!(
+                "stack-training: {retired} is listed as both live and retired"
+            ));
         }
     }
     for (retired, successors) in &registry.retired {
@@ -193,21 +209,32 @@ pub fn check_repositories(
             named.push((format!("service {id}: sourceRepo"), repo));
         }
     }
-    if let Some(roots) = catalog.pointer("/policies/applicationRoots").and_then(Value::as_object) {
+    if let Some(roots) = catalog
+        .pointer("/policies/applicationRoots")
+        .and_then(Value::as_object)
+    {
         for repo in roots.keys() {
             named.push(("policies.applicationRoots".to_owned(), repo.as_str()));
         }
     }
-    if let Some(repo) =
-        contract.model_authority.as_ref().and_then(|authority| str_field(authority, "sourceRepo"))
+    if let Some(repo) = contract
+        .model_authority
+        .as_ref()
+        .and_then(|authority| str_field(authority, "sourceRepo"))
     {
         named.push(("local-ai: modelAuthority.sourceRepo".to_owned(), repo));
     }
     for (id, binary) in &contract.binaries {
-        named.push((format!("local-ai: binary {id}: sourceRepo"), binary.source_repo.as_str()));
+        named.push((
+            format!("local-ai: binary {id}: sourceRepo"),
+            binary.source_repo.as_str(),
+        ));
     }
     for (id, service) in &contract.managed_services {
-        let repo = service.owner.split_once('/').map_or(service.owner.as_str(), |(repo, _)| repo);
+        let repo = service
+            .owner
+            .split_once('/')
+            .map_or(service.owner.as_str(), |(repo, _)| repo);
         named.push((format!("local-ai: managed service {id}: owner"), repo));
     }
     for consumer in contract.consumers.keys() {
@@ -253,7 +280,10 @@ fn str_field<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
 }
 
 fn entries<'a>(value: &'a Value, key: &str) -> &'a [Value] {
-    value.get(key).and_then(Value::as_array).map_or(&[], Vec::as_slice)
+    value
+        .get(key)
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
 }
 
 /// An absent or malformed host cannot establish independent listener ownership.
@@ -294,15 +324,19 @@ fn check_service_port<'a>(
     let Some(value) = service.get("port") else {
         return;
     };
-    let Some(port) = value.as_u64().and_then(|p| u16::try_from(p).ok()).filter(|p| *p != 0) else {
+    let Some(port) = value
+        .as_u64()
+        .and_then(|p| u16::try_from(p).ok())
+        .filter(|p| *p != 0)
+    else {
         report.errors.push(format!("{id}: invalid port ({value})"));
         return;
     };
     match str_field(service, "health").and_then(host_port) {
-        Some((_, health)) if health != port => {
-            report.errors.push(format!("{id}: port {port} differs from health port {health}"))
-        },
-        Some(_) => {},
+        Some((_, health)) if health != port => report.errors.push(format!(
+            "{id}: port {port} differs from health port {health}"
+        )),
+        Some(_) => {}
         None => claim_port(report, ports, id, service, port),
     }
 }
@@ -321,21 +355,23 @@ fn check_retirement(report: &mut Report, label: &str, value: &Value) {
     match status {
         None => {
             if let Some(retired_at) = retired_at {
-                report
-                    .errors
-                    .push(format!("{label}: retiredAt {retired_at} without status retired"));
+                report.errors.push(format!(
+                    "{label}: retiredAt {retired_at} without status retired"
+                ));
             }
-        },
+        }
         Some("retired") => match retired_at {
-            None => report.errors.push(format!("{label}: status retired requires retiredAt")),
-            Some(date) if !is_plausible_date(date) => {
-                report.errors.push(format!("{label}: retiredAt {date} is not a YYYY-MM-DD date"))
-            },
-            Some(_) => {},
+            None => report
+                .errors
+                .push(format!("{label}: status retired requires retiredAt")),
+            Some(date) if !is_plausible_date(date) => report.errors.push(format!(
+                "{label}: retiredAt {date} is not a YYYY-MM-DD date"
+            )),
+            Some(_) => {}
         },
-        Some(other) => {
-            report.errors.push(format!("{label}: unknown status {other} (only retired is defined)"))
-        },
+        Some(other) => report.errors.push(format!(
+            "{label}: unknown status {other} (only retired is defined)"
+        )),
     }
 }
 
@@ -357,17 +393,21 @@ fn check_service_capabilities(report: &mut Report, id: &str, service: &Value) {
         return;
     };
     let Some(list) = value.as_array() else {
-        report.errors.push(format!("{id}: capabilities must be an array"));
+        report
+            .errors
+            .push(format!("{id}: capabilities must be an array"));
         return;
     };
     let mut seen = BTreeSet::new();
     for capability in list {
         match capability.as_str().filter(|c| !c.trim().is_empty()) {
-            Some(c) if !seen.insert(c) => {
-                report.errors.push(format!("{id}: duplicate capability {c}"))
-            },
-            Some(_) => {},
-            None => report.errors.push(format!("{id}: invalid capability ({capability})")),
+            Some(c) if !seen.insert(c) => report
+                .errors
+                .push(format!("{id}: duplicate capability {c}")),
+            Some(_) => {}
+            None => report
+                .errors
+                .push(format!("{id}: invalid capability ({capability})")),
         }
     }
 }
@@ -396,7 +436,12 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
     let hosts: Vec<(BTreeSet<u64>, BTreeSet<u64>)> = topology
         .get("hosts")
         .and_then(Value::as_object)
-        .map(|hosts| hosts.keys().filter_map(|host| topology_ports(topology, host)).collect())
+        .map(|hosts| {
+            hosts
+                .keys()
+                .filter_map(|host| topology_ports(topology, host))
+                .collect()
+        })
         .unwrap_or_default();
     for service in entries(catalog, "services") {
         if is_retired_value(service) {
@@ -410,26 +455,33 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
             Some(_) => match service_host(service) {
                 Some(host) => Some(host),
                 None => {
-                    report
-                        .errors
-                        .push(format!("{id}: host must be a nonempty name without whitespace"));
+                    report.errors.push(format!(
+                        "{id}: host must be a nonempty name without whitespace"
+                    ));
                     continue;
-                },
+                }
             },
         };
         let internal = match declared_host {
             Some(host) => match topology_ports(topology, host) {
                 Some((internal, _)) => internal,
                 None => {
-                    report.errors.push(format!("{id}: unknown topology host {host}"));
+                    report
+                        .errors
+                        .push(format!("{id}: unknown topology host {host}"));
                     continue;
-                },
+                }
             },
-            None => hosts.iter().flat_map(|(internal, _)| internal.iter().copied()).collect(),
+            None => hosts
+                .iter()
+                .flat_map(|(internal, _)| internal.iter().copied())
+                .collect(),
         };
         let Some(port) = service.get("port").and_then(Value::as_u64) else {
             if str_field(service, "publicProxy") == Some("direct-rust") {
-                report.errors.push(format!("{id}: direct-rust ingress requires an explicit port"));
+                report.errors.push(format!(
+                    "{id}: direct-rust ingress requires an explicit port"
+                ));
             }
             continue;
         };
@@ -444,19 +496,22 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
                 continue;
             }
             let Some(host) = declared_host else {
-                report.errors.push(format!("{id}: direct-rust ingress requires an explicit host"));
+                report.errors.push(format!(
+                    "{id}: direct-rust ingress requires an explicit host"
+                ));
                 continue;
             };
             if !matches!(port, 80 | 443) {
-                report
-                    .errors
-                    .push(format!("{id}: direct-rust ingress only permits port 80 or 443"));
+                report.errors.push(format!(
+                    "{id}: direct-rust ingress only permits port 80 or 443"
+                ));
                 continue;
             }
             // Host existence was checked above. Allocation on another host
             // never authorizes exposure here, even for the same public port.
-            let public =
-                topology_ports(topology, host).map(|(_, public)| public).unwrap_or_default();
+            let public = topology_ports(topology, host)
+                .map(|(_, public)| public)
+                .unwrap_or_default();
             if !public.contains(&port) || internal.contains(&port) {
                 report.errors.push(format!(
                     "{id}: direct-rust port {port} must be publicPorts and not internalOnly on host {host}"
@@ -465,7 +520,9 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
             continue;
         }
         if hosts.iter().any(|(_, public)| public.contains(&port)) {
-            report.errors.push(format!("{id}: port {port} is a public topology port"));
+            report
+                .errors
+                .push(format!("{id}: port {port} is a public topology port"));
         } else if !internal.contains(&port) {
             let scope = declared_host.map_or(String::new(), |host| format!(" on host {host}"));
             report.errors.push(format!(
@@ -495,17 +552,23 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         if let Some(unit) = str_field(service, "unit")
             && !units.insert(unit)
         {
-            report.errors.push(format!("unit systemd partagée: {unit} ({id})"));
+            report
+                .errors
+                .push(format!("unit systemd partagée: {unit} ({id})"));
         }
         if let Some(health) = str_field(service, "health") {
             match host_port(health) {
                 Some((host, port)) => {
                     if !is_private(host) {
-                        report.errors.push(format!("{id}: health hors loopback/privé ({health})"));
+                        report
+                            .errors
+                            .push(format!("{id}: health hors loopback/privé ({health})"));
                     }
                     claim_port(&mut report, &mut ports, id, service, port);
-                },
-                None => report.errors.push(format!("{id}: health sans host:port ({health})")),
+                }
+                None => report
+                    .errors
+                    .push(format!("{id}: health sans host:port ({health})")),
             }
         }
         check_service_port(&mut report, &mut ports, id, service);
@@ -514,13 +577,17 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         if let Some(source) = service.get("unitSource")
             && !matches!(source.as_str(), Some("repository" | "system-package"))
         {
-            report.errors.push(format!("{id}: unitSource doit être repository ou system-package"));
+            report.errors.push(format!(
+                "{id}: unitSource doit être repository ou system-package"
+            ));
         }
         if let Some(additional) = service.get("additionalUpstreams") {
             if let Some(addresses) = additional.as_array() {
                 for address in addresses {
                     let Some(address) = address.as_str() else {
-                        report.errors.push(format!("{id}: additionalUpstreams invalide"));
+                        report
+                            .errors
+                            .push(format!("{id}: additionalUpstreams invalide"));
                         continue;
                     };
                     match host_port(address) {
@@ -531,14 +598,16 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
                                 ));
                             }
                             claim_port(&mut report, &mut ports, id, service, port);
-                        },
-                        None => report
-                            .errors
-                            .push(format!("{id}: additionalUpstreams sans host:port ({address})")),
+                        }
+                        None => report.errors.push(format!(
+                            "{id}: additionalUpstreams sans host:port ({address})"
+                        )),
                     }
                 }
             } else {
-                report.errors.push(format!("{id}: additionalUpstreams doit être un tableau"));
+                report
+                    .errors
+                    .push(format!("{id}: additionalUpstreams doit être un tableau"));
             }
         }
     }
@@ -548,10 +617,14 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
     report.routes = public_routes.len() + internal_routes.len();
     let mut hosts = BTreeSet::new();
     let mut routed_public = BTreeSet::new();
-    for (route, public) in
-        public_routes.iter().map(|r| (r, true)).chain(internal_routes.iter().map(|r| (r, false)))
+    for (route, public) in public_routes
+        .iter()
+        .map(|r| (r, true))
+        .chain(internal_routes.iter().map(|r| (r, false)))
     {
-        let label = str_field(route, "host").or_else(|| str_field(route, "service")).unwrap_or("?");
+        let label = str_field(route, "host")
+            .or_else(|| str_field(route, "service"))
+            .unwrap_or("?");
         if public
             && let Some(host) = str_field(route, "host")
             && !hosts.insert(host)
@@ -563,7 +636,9 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
             continue;
         };
         let Some(service) = by_id.get(service_id) else {
-            report.errors.push(format!("route {label} vers service inconnu: {service_id}"));
+            report
+                .errors
+                .push(format!("route {label} vers service inconnu: {service_id}"));
             continue;
         };
         // `static:<dir>`: nginx serves the files itself, there is no origin to probe or to keep on loopback.
@@ -572,7 +647,9 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
             None
         } else {
             let Some(origin) = str_field(route, "upstream").and_then(host_port) else {
-                report.errors.push(format!("route {label}: upstream sans host:port"));
+                report
+                    .errors
+                    .push(format!("route {label}: upstream sans host:port"));
                 continue;
             };
             Some(origin)
@@ -580,7 +657,9 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         if let Some((host, _)) = origin
             && !is_private(host)
         {
-            report.errors.push(format!("route {label}: upstream {host} hors loopback/privé"));
+            report.errors.push(format!(
+                "route {label}: upstream {host} hors loopback/privé"
+            ));
         }
         check_retirement(&mut report, &format!("route {label}"), route);
         if is_retired_value(service) != is_retired_value(route) {
@@ -589,10 +668,17 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
             ));
         }
         if let Some((_, port)) = origin {
-            let health_port = str_field(service, "health").and_then(host_port).map(|(_, p)| p);
-            let additional_port = entries(service, "additionalUpstreams").iter().any(|address| {
-                address.as_str().and_then(host_port).is_some_and(|(_, p)| p == port)
-            });
+            let health_port = str_field(service, "health")
+                .and_then(host_port)
+                .map(|(_, p)| p);
+            let additional_port = entries(service, "additionalUpstreams")
+                .iter()
+                .any(|address| {
+                    address
+                        .as_str()
+                        .and_then(host_port)
+                        .is_some_and(|(_, p)| p == port)
+                });
             if health_port.is_some_and(|p| p != port) && !additional_port {
                 report.errors.push(format!(
                     "route {label}: port {port} ≠ port health de {service_id} ({})",
@@ -602,12 +688,17 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         }
         if public {
             routed_public.insert(service_id);
-            let declared_public = service.get("public").and_then(Value::as_bool).unwrap_or(false);
+            let declared_public = service
+                .get("public")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
             if !declared_public {
                 let message =
                     format!("route publique {label} vers {service_id} marqué public:false");
                 if route.get("paths").is_some() {
-                    report.warnings.push(format!("{message} (restreinte par paths)"));
+                    report
+                        .warnings
+                        .push(format!("{message} (restreinte par paths)"));
                 } else {
                     report.errors.push(message);
                 }
@@ -618,7 +709,9 @@ pub fn check(catalog: &Value, routes: &Value) -> Report {
         if service.get("public").and_then(Value::as_bool) == Some(true)
             && !routed_public.contains(id)
         {
-            report.warnings.push(format!("{id} public:true sans route nginx publique"));
+            report
+                .warnings
+                .push(format!("{id} public:true sans route nginx publique"));
         }
     }
     report
@@ -646,7 +739,9 @@ fn is_env_name(name: &str) -> bool {
 /// `(host, port, path)` of an `http(s)://host:port[/path]` URL; `path` has no
 /// leading or trailing slash.
 fn split_url(url: &str) -> Option<(&str, u16, &str)> {
-    let rest = url.strip_prefix("http://").or_else(|| url.strip_prefix("https://"))?;
+    let rest = url
+        .strip_prefix("http://")
+        .or_else(|| url.strip_prefix("https://"))?;
     let (authority, path) = rest.split_once('/').unwrap_or((rest, ""));
     let (host, port) = authority.rsplit_once(':')?;
     Some((host, port.parse().ok()?, path.trim_end_matches('/')))
@@ -673,10 +768,23 @@ fn catalog_view(catalog: &Value) -> CatalogView<'_> {
                 .get("port")
                 .and_then(Value::as_u64)
                 .and_then(|p| u16::try_from(p).ok())
-                .or_else(|| str_field(service, "health").and_then(host_port).map(|(_, p)| p));
-            let capabilities =
-                entries(service, "capabilities").iter().filter_map(Value::as_str).collect();
-            Some((id, CatalogEntry { port, capabilities, retired: is_retired_value(service) }))
+                .or_else(|| {
+                    str_field(service, "health")
+                        .and_then(host_port)
+                        .map(|(_, p)| p)
+                });
+            let capabilities = entries(service, "capabilities")
+                .iter()
+                .filter_map(Value::as_str)
+                .collect();
+            Some((
+                id,
+                CatalogEntry {
+                    port,
+                    capabilities,
+                    retired: is_retired_value(service),
+                },
+            ))
         })
         .collect()
 }
@@ -695,11 +803,14 @@ fn check_local_ai_env<'a>(
     for (owner, env) in contract.env_entries() {
         let name = env.canonical.as_str();
         if !(name.starts_with("APHRODY_") && is_env_name(name)) {
-            errors
-                .push(format!("local-ai: {owner}: canonical {name} must match APHRODY_[A-Z0-9_]+"));
+            errors.push(format!(
+                "local-ai: {owner}: canonical {name} must match APHRODY_[A-Z0-9_]+"
+            ));
         }
         if let Some((other, _)) = canonical.insert(name, (owner, env)) {
-            errors.push(format!("local-ai: canonical {name} declared by {other} and {owner}"));
+            errors.push(format!(
+                "local-ai: canonical {name} declared by {other} and {owner}"
+            ));
         }
         if !ENV_KINDS.contains(&env.kind.as_str()) {
             errors.push(format!("local-ai: {name}: unknown kind {}", env.kind));
@@ -708,8 +819,8 @@ fn check_local_ai_env<'a>(
             ("url", None) => errors.push(format!("local-ai: {name}: url requires a form")),
             ("url", Some(form)) if !forms.contains_key(form) => {
                 errors.push(format!("local-ai: {name}: unknown url form {form}"));
-            },
-            ("url", Some(_)) | (_, None) => {},
+            }
+            ("url", Some(_)) | (_, None) => {}
             (_, Some(_)) => errors.push(format!("local-ai: {name}: form is only for url")),
         }
         if env.kind != "url" && !env.alias_forms.is_empty() {
@@ -734,17 +845,18 @@ fn check_local_ai_env<'a>(
                 errors.push(format!("local-ai: {name}: invalid alias {alias}"));
             }
             if canonical.contains_key(alias) {
-                errors
-                    .push(format!("local-ai: alias {alias} of {name} is itself a canonical name"));
+                errors.push(format!(
+                    "local-ai: alias {alias} of {name} is itself a canonical name"
+                ));
             }
             match aliases.insert(alias, name) {
                 Some(other) if other == name => {
                     errors.push(format!("local-ai: alias {alias} listed twice for {name}"));
-                },
-                Some(other) => {
-                    errors.push(format!("local-ai: alias {alias} shared by {other} and {name}"))
-                },
-                None => {},
+                }
+                Some(other) => errors.push(format!(
+                    "local-ai: alias {alias} shared by {other} and {name}"
+                )),
+                None => {}
             }
         }
     }
@@ -774,7 +886,11 @@ fn check_local_ai_endpoint(
                 )),
             },
         }
-        if !endpoint.base_path.as_deref().is_some_and(|path| path.starts_with('/')) {
+        if !endpoint
+            .base_path
+            .as_deref()
+            .is_some_and(|path| path.starts_with('/'))
+        {
             errors.push(format!("local-ai: {id}: basePath must start with /"));
         }
         if endpoint.binary.is_some() {
@@ -782,27 +898,28 @@ fn check_local_ai_endpoint(
         }
         let own_url = endpoint.env.iter().any(|env| env.kind == "url");
         match endpoint.base_url_from.as_deref() {
-            Some(_) if own_url => {
-                errors.push(format!("local-ai: {id}: declares both a url env and baseUrlFrom"))
-            },
+            Some(_) if own_url => errors.push(format!(
+                "local-ai: {id}: declares both a url env and baseUrlFrom"
+            )),
             Some(from) => match contract.capabilities.get(from) {
                 Some(source)
                     if source.env.iter().any(|env| env.kind == "url")
-                        && source.service == endpoint.service => {},
+                        && source.service == endpoint.service => {}
                 Some(_) => errors.push(format!(
                     "local-ai: {id}: baseUrlFrom {from} has no url env on the same service"
                 )),
-                None => errors
-                    .push(format!("local-ai: {id}: baseUrlFrom names unknown capability {from}")),
+                None => errors.push(format!(
+                    "local-ai: {id}: baseUrlFrom names unknown capability {from}"
+                )),
             },
             None if !own_url => {
                 errors.push(format!("local-ai: {id}: needs a url env or baseUrlFrom"))
-            },
-            None => {},
+            }
+            None => {}
         }
     } else if PROCESS_PROTOCOLS.contains(&protocol) {
         match endpoint.binary.as_deref() {
-            Some(binary) if contract.binaries.contains_key(binary) => {},
+            Some(binary) if contract.binaries.contains_key(binary) => {}
             Some(binary) => errors.push(format!("local-ai: {id}: unknown binary {binary}")),
             None => errors.push(format!("local-ai: {id}: {protocol} requires a binary")),
         }
@@ -825,23 +942,28 @@ fn check_local_ai_endpoint(
     }
     for operation in &endpoint.operations {
         if !operation.starts_with('/') {
-            errors.push(format!("local-ai: {id}: operation {operation} must start with /"));
+            errors.push(format!(
+                "local-ai: {id}: operation {operation} must start with /"
+            ));
         }
     }
     if capability {
         match endpoint.default_model.as_deref() {
             Some(model) if model.trim().is_empty() => {
                 errors.push(format!("local-ai: {id}: empty defaultModel"));
-            },
-            None if endpoint.local != Some(false) => errors
-                .push(format!("local-ai: {id}: defaultModel is required unless local is false")),
-            _ => {},
+            }
+            None if endpoint.local != Some(false) => errors.push(format!(
+                "local-ai: {id}: defaultModel is required unless local is false"
+            )),
+            _ => {}
         }
     }
     if endpoint.env.iter().any(|env| env.kind == "dimensions")
         && !endpoint.dimensions.is_some_and(|d| d > 0)
     {
-        errors.push(format!("local-ai: {id}: a dimensions env requires dimensions"));
+        errors.push(format!(
+            "local-ai: {id}: a dimensions env requires dimensions"
+        ));
     }
 }
 
@@ -859,12 +981,15 @@ fn check_binding_url(
     ports: &(BTreeSet<u64>, BTreeSet<u64>),
 ) {
     let Some((host, port, path)) = split_url(value) else {
-        errors.push(format!("{label}: {name}={value} is not http(s)://host:port"));
+        errors.push(format!(
+            "{label}: {name}={value} is not http(s)://host:port"
+        ));
         return;
     };
     if !is_private(host) {
-        errors
-            .push(format!("{label}: {name} host {host} is not loopback/private (public-ai-port)"));
+        errors.push(format!(
+            "{label}: {name} host {host} is not loopback/private (public-ai-port)"
+        ));
     }
     if service_port != Some(port) {
         errors.push(format!(
@@ -878,15 +1003,19 @@ fn check_binding_url(
             "{label}: {name} port {port} is not internalOnly on the topology host (public-ai-port)"
         ));
     }
-    let base_path = endpoint.base_path.as_deref().unwrap_or_default().trim_matches('/');
+    let base_path = endpoint
+        .base_path
+        .as_deref()
+        .unwrap_or_default()
+        .trim_matches('/');
     match env.form.as_deref() {
-        Some("base") if path != base_path => {
-            errors.push(format!("{label}: {name} path /{path} differs from basePath /{base_path}"))
-        },
+        Some("base") if path != base_path => errors.push(format!(
+            "{label}: {name} path /{path} differs from basePath /{base_path}"
+        )),
         Some("origin") if !path.is_empty() => {
             errors.push(format!("{label}: {name} must be an origin (no path)"));
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -988,18 +1117,24 @@ fn check_static_target(
         }
     }
     for id in contract.gateways.keys().chain(contract.capabilities.keys()) {
-        match (target.bindings.contains_key(id), target.unavailable.contains_key(id)) {
-            (true, true) => errors
-                .push(format!("local-ai: target {target_id}: {id} is both bound and unavailable")),
+        match (
+            target.bindings.contains_key(id),
+            target.unavailable.contains_key(id),
+        ) {
+            (true, true) => errors.push(format!(
+                "local-ai: target {target_id}: {id} is both bound and unavailable"
+            )),
             (false, false) => errors.push(format!(
                 "local-ai: target {target_id}: {id} is neither bound nor unavailable"
             )),
-            _ => {},
+            _ => {}
         }
     }
     for id in target.unavailable.keys() {
         if contract.endpoint(id).is_none() {
-            errors.push(format!("local-ai: target {target_id}: unavailable names unknown {id}"));
+            errors.push(format!(
+                "local-ai: target {target_id}: unavailable names unknown {id}"
+            ));
         }
     }
 }
@@ -1012,7 +1147,10 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
     let mut errors = Vec::new();
     let services = catalog_view(catalog);
     if contract.schema_version != 1 {
-        errors.push(format!("local-ai: unsupported schemaVersion {}", contract.schema_version));
+        errors.push(format!(
+            "local-ai: unsupported schemaVersion {}",
+            contract.schema_version
+        ));
     }
     let mut forbidden = BTreeSet::new();
     for rule in &contract.forbidden {
@@ -1032,18 +1170,24 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
         .unwrap_or_default();
     for (id, managed) in &contract.managed_services {
         if services.contains_key(id.as_str()) {
-            errors.push(format!("local-ai: managed service {id} shadows a catalog service"));
+            errors.push(format!(
+                "local-ai: managed service {id} shadows a catalog service"
+            ));
         }
         for host in &managed.hosts {
             if !hosts.contains(host.as_str()) {
-                errors
-                    .push(format!("local-ai: managed service {id}: unknown topology host {host}"));
+                errors.push(format!(
+                    "local-ai: managed service {id}: unknown topology host {host}"
+                ));
             }
         }
     }
     let mut ids = BTreeSet::new();
-    for id in
-        contract.binaries.keys().chain(contract.gateways.keys()).chain(contract.capabilities.keys())
+    for id in contract
+        .binaries
+        .keys()
+        .chain(contract.gateways.keys())
+        .chain(contract.capabilities.keys())
     {
         if !ids.insert(id.as_str()) {
             errors.push(format!(
@@ -1064,7 +1208,7 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
                 "local-ai: index {id}: service {} does not declare capability embed",
                 index.service
             )),
-            Some(_) => {},
+            Some(_) => {}
             None => errors.push(format!(
                 "local-ai: index {id}: service {} is not in infra/config/service-catalog.json",
                 index.service
@@ -1074,10 +1218,14 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
             || index.model.trim().is_empty()
             || index.served_model.trim().is_empty()
         {
-            errors.push(format!("local-ai: index {id}: model and dimensions are required"));
+            errors.push(format!(
+                "local-ai: index {id}: model and dimensions are required"
+            ));
         }
         if index.rule != "never-mix-spaces" {
-            errors.push(format!("local-ai: index {id}: rule must be never-mix-spaces"));
+            errors.push(format!(
+                "local-ai: index {id}: rule must be never-mix-spaces"
+            ));
         }
         if let Some(gateway) = &index.read_through
             && !contract.gateways.contains_key(gateway)
@@ -1098,16 +1246,20 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
                 Some(managed) if !managed.hosts.contains(target_id) => errors.push(format!(
                     "local-ai: target {target_id}: managed service {service} does not run there"
                 )),
-                Some(_) => {},
-                None if services.contains_key(service.as_str()) => {},
-                None => {
-                    errors.push(format!("local-ai: target {target_id}: unknown service {service}"))
-                },
+                Some(_) => {}
+                None if services.contains_key(service.as_str()) => {}
+                None => errors.push(format!(
+                    "local-ai: target {target_id}: unknown service {service}"
+                )),
             }
         }
         match target.resolution.as_str() {
             "runtime" => {
-                if target.resolver.as_deref().is_none_or(|r| r.trim().is_empty()) {
+                if target
+                    .resolver
+                    .as_deref()
+                    .is_none_or(|r| r.trim().is_empty())
+                {
                     errors.push(format!(
                         "local-ai: target {target_id}: runtime resolution requires a resolver"
                     ));
@@ -1117,7 +1269,7 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
                         "local-ai: target {target_id}: runtime targets carry no static bindings (hard-coded-dynamic-port)"
                     ));
                 }
-            },
+            }
             "static" => check_static_target(
                 &mut errors,
                 contract,
@@ -1127,9 +1279,9 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
                 target,
                 &ports,
             ),
-            other => {
-                errors.push(format!("local-ai: target {target_id}: unknown resolution {other}"))
-            },
+            other => errors.push(format!(
+                "local-ai: target {target_id}: unknown resolution {other}"
+            )),
         }
     }
     for (consumer, spec) in &contract.consumers {
@@ -1140,7 +1292,9 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
         }
         for index in &spec.indexes {
             if !contract.indexes.contains_key(index) {
-                errors.push(format!("local-ai: consumer {consumer} uses unknown index {index}"));
+                errors.push(format!(
+                    "local-ai: consumer {consumer} uses unknown index {index}"
+                ));
             }
         }
         for name in &spec.reads_today {
@@ -1151,7 +1305,11 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
             }
         }
     }
-    Report { errors, local_ai_env: canonical.len(), ..Report::default() }
+    Report {
+        errors,
+        local_ai_env: canonical.len(),
+        ..Report::default()
+    }
 }
 
 #[cfg(test)]
@@ -1182,8 +1340,12 @@ mod tests {
         assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
         raw["services"][0]["unitSource"] = json!("repository");
         fs::create_dir_all(root.path().join("systemd/aphrody")).expect("fixture systemd directory");
-        fs::write(root.path().join("systemd/aphrody/redis-server.service.example"), "[Service]\n")
-            .expect("fixture unit template");
+        fs::write(
+            root.path()
+                .join("systemd/aphrody/redis-server.service.example"),
+            "[Service]\n",
+        )
+        .expect("fixture unit template");
         assert!(check_unit_templates(&root.path().join("systemd"), &load_catalog(&raw)).is_empty());
     }
 
@@ -1212,7 +1374,12 @@ mod tests {
         let unknown = json!({ "routes": [
             { "host": "a.example.com", "service": "nope", "upstream": "static:/home/ubuntu/apps/a" }
         ] });
-        assert!(check(&static_catalog(), &unknown).errors.iter().any(|e| e.contains("inconnu")));
+        assert!(
+            check(&static_catalog(), &unknown)
+                .errors
+                .iter()
+                .any(|e| e.contains("inconnu"))
+        );
         let retired_route = json!({ "routes": [
             { "host": "a.example.com", "service": "creator", "upstream": "static:/home/ubuntu/apps/a",
               "status": "retired", "retiredAt": "2026-10-01" }
@@ -1227,11 +1394,21 @@ mod tests {
         let bare = json!({ "routes": [
             { "host": "a.example.com", "service": "creator", "upstream": "/home/ubuntu/apps/a" }
         ] });
-        assert!(check(&static_catalog(), &bare).errors.iter().any(|e| e.contains("host:port")));
+        assert!(
+            check(&static_catalog(), &bare)
+                .errors
+                .iter()
+                .any(|e| e.contains("host:port"))
+        );
         let public_ip = json!({ "routes": [
             { "host": "a.example.com", "service": "site", "upstream": "8.8.8.8:80" }
         ] });
-        assert!(check(&static_catalog(), &public_ip).errors.iter().any(|e| e.contains("hors")));
+        assert!(
+            check(&static_catalog(), &public_ip)
+                .errors
+                .iter()
+                .any(|e| e.contains("hors"))
+        );
     }
 
     #[test]
@@ -1249,7 +1426,12 @@ mod tests {
     #[test]
     fn unknown_unit_source_is_not_a_template_exemption() {
         let raw = json!({ "services": [{ "id": "redis", "unitSource": "external" }] });
-        assert!(check(&raw, &json!({})).errors.iter().any(|error| error.contains("unitSource")));
+        assert!(
+            check(&raw, &json!({}))
+                .errors
+                .iter()
+                .any(|error| error.contains("unitSource"))
+        );
         assert!(
             serde_json::from_value::<crate::catalog::CatalogService>(json!({
                 "id": "redis", "kind": "cache", "runtime": "redis", "unit": "redis-server.service",
@@ -1317,14 +1499,22 @@ mod tests {
         let wrong = json!({ "routes": [
             { "host": "b.com", "service": "bot", "upstream": "127.0.0.1:4003" }
         ]});
-        assert!(check(&catalog, &wrong).errors.iter().any(|e| e.contains("port 4003")));
+        assert!(
+            check(&catalog, &wrong)
+                .errors
+                .iter()
+                .any(|e| e.contains("port 4003"))
+        );
         let collision = json!({ "services": [
             { "id": "bot", "unit": "bot.service", "health": "http://127.0.0.1:4000/health",
               "additionalUpstreams": ["127.0.0.1:5000"] },
             { "id": "other", "unit": "other.service", "health": "http://127.0.0.1:5000/health" }
         ]});
         assert!(
-            check(&collision, &json!({})).errors.iter().any(|e| e.contains("port 5000 partagé"))
+            check(&collision, &json!({}))
+                .errors
+                .iter()
+                .any(|e| e.contains("port 5000 partagé"))
         );
     }
 
@@ -1346,7 +1536,7 @@ mod tests {
             2 => {
                 service["health"] = json!(format!("http://127.0.0.1:{primary}/health"));
                 service["additionalUpstreams"] = json!(["127.0.0.1:8793"]);
-            },
+            }
             _ => unreachable!("fixture listener kind"),
         }
         service
@@ -1361,7 +1551,10 @@ mod tests {
                     listener("dbfr-listener", json!("dbfr"), second, 8084)
                 ] });
                 let errors = check(&catalog, &json!({})).errors;
-                assert!(errors.is_empty(), "listener kinds {first}/{second}: {errors:?}");
+                assert!(
+                    errors.is_empty(),
+                    "listener kinds {first}/{second}: {errors:?}"
+                );
             }
         }
     }
@@ -1375,7 +1568,11 @@ mod tests {
                     listener("second", json!("vps"), second, 8084)
                 ] });
                 let errors = check(&catalog, &json!({})).errors;
-                assert_eq!(errors.len(), 1, "listener kinds {first}/{second}: {errors:?}");
+                assert_eq!(
+                    errors.len(),
+                    1,
+                    "listener kinds {first}/{second}: {errors:?}"
+                );
                 assert_error(&errors, "port 8793 partagé par first et second");
             }
         }
@@ -1387,9 +1584,17 @@ mod tests {
             for unscoped_first in [false, true] {
                 let unknown = listener("unknown", unknown.clone(), 0, 8083);
                 let known = listener("known", json!("dbfr"), 1, 8084);
-                let services =
-                    if unscoped_first { vec![unknown, known] } else { vec![known, unknown] };
-                assert_eq!(check(&json!({ "services": services }), &json!({})).errors.len(), 1);
+                let services = if unscoped_first {
+                    vec![unknown, known]
+                } else {
+                    vec![known, unknown]
+                };
+                assert_eq!(
+                    check(&json!({ "services": services }), &json!({}))
+                        .errors
+                        .len(),
+                    1
+                );
             }
         }
         let catalog = json!({ "services": [
@@ -1508,7 +1713,10 @@ mod tests {
             } else {
                 "infra/config"
             };
-            fs::copy(source.join(directory).join(file), selected.path().join(directory).join(file))
+            fs::copy(
+                source.join(directory).join(file),
+                selected.path().join(directory).join(file),
+            )
             .expect("source catalog fixture");
         }
         fs::write(
@@ -1523,15 +1731,22 @@ mod tests {
         .unwrap();
         let report = run(selected.path()).expect("selected snapshot catalogs");
         assert_eq!(report.routes, 1);
-        assert!(report.errors.iter().any(|error| error.contains("snapshot-fixture-only")));
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|error| error.contains("snapshot-fixture-only"))
+        );
     }
 
     #[test]
     fn repository_local_ai_contract_pins_v1_env_names() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let contract = load_local_ai(&root).unwrap();
-        let names: BTreeSet<&str> =
-            contract.env_entries().map(|(_, env)| env.canonical.as_str()).collect();
+        let names: BTreeSet<&str> = contract
+            .env_entries()
+            .map(|(_, env)| env.canonical.as_str())
+            .collect();
         let v1: BTreeSet<&str> = [
             "APHRODY_BIN",
             "APHRODY_AI_MCP_BIN",
@@ -1556,7 +1771,11 @@ mod tests {
         assert_eq!(names, v1);
         let index = &contract.indexes["shenron-rag"];
         assert_eq!(
-            (index.served_model.as_str(), index.dimensions, index.service.as_str()),
+            (
+                index.served_model.as_str(),
+                index.dimensions,
+                index.service.as_str()
+            ),
             ("Xenova/multilingual-e5-small", 384, "aphrody-shenron-embed")
         );
     }
@@ -1651,7 +1870,10 @@ mod tests {
 
     #[track_caller]
     fn assert_error(errors: &[String], needle: &str) {
-        assert!(errors.iter().any(|e| e.contains(needle)), "`{needle}` not in {errors:#?}");
+        assert!(
+            errors.iter().any(|e| e.contains(needle)),
+            "`{needle}` not in {errors:#?}"
+        );
     }
 
     #[test]
@@ -1663,8 +1885,18 @@ mod tests {
 
     #[test]
     fn local_ai_detects_unknown_services_and_non_ai_backends() {
-        let contract = set(ai_contract(), "/capabilities/chat", "service", json!("ghost"));
-        let contract = set(contract, "/targets/vps/bindings/embed", "service", json!("assets"));
+        let contract = set(
+            ai_contract(),
+            "/capabilities/chat",
+            "service",
+            json!("ghost"),
+        );
+        let contract = set(
+            contract,
+            "/targets/vps/bindings/embed",
+            "service",
+            json!("assets"),
+        );
         let errors = ai_report(contract).errors;
         assert_error(&errors, "chat: unknown service ghost");
         assert_error(&errors, "service assets does not declare capability embed");
@@ -1688,7 +1920,10 @@ mod tests {
         let contract: LocalAiContract =
             serde_json::from_value(retired_target_contract).expect("contract parses");
         let errors = check_local_ai(&catalog, &ai_topology(), &contract).errors;
-        assert!(!errors.iter().any(|e| e.contains("is retired but target")), "{errors:#?}");
+        assert!(
+            !errors.iter().any(|e| e.contains("is retired but target")),
+            "{errors:#?}"
+        );
     }
 
     #[test]
@@ -1710,7 +1945,10 @@ mod tests {
             "APHRODY_AI_EMBED_BASE_URL",
             json!("http://127.0.0.1:8794"),
         );
-        assert_error(&ai_report(contract).errors, "path / differs from basePath /v1");
+        assert_error(
+            &ai_report(contract).errors,
+            "path / differs from basePath /v1",
+        );
     }
 
     #[test]
@@ -1728,7 +1966,10 @@ mod tests {
             json!(["APHRODY_LOCAL_MODEL_URL", "APHRODY_AI_EMBED_BASE_URL"]),
         );
         let errors = ai_report(contract).errors;
-        assert_error(&errors, "canonical APHRODY_AI_CHAT_MODEL declared by chat and code");
+        assert_error(
+            &errors,
+            "canonical APHRODY_AI_CHAT_MODEL declared by chat and code",
+        );
         assert_error(&errors, "alias APHRODY_LLM_MODEL listed twice");
         assert_error(
             &errors,
@@ -1760,8 +2001,14 @@ mod tests {
             }),
         );
         let errors = ai_report(contract).errors;
-        assert_error(&errors, "model must be Xenova/e5 for index rag (mix-embedding-spaces)");
-        assert_error(&errors, "dimensions must be 384 for index rag (mix-embedding-spaces)");
+        assert_error(
+            &errors,
+            "model must be Xenova/e5 for index rag (mix-embedding-spaces)",
+        );
+        assert_error(
+            &errors,
+            "dimensions must be 384 for index rag (mix-embedding-spaces)",
+        );
     }
 
     #[test]
@@ -1786,12 +2033,23 @@ mod tests {
     #[test]
     fn local_ai_requires_full_coverage_known_consumer_names_and_declared_rules() {
         let mut contract = ai_contract();
-        contract["targets"]["vps"]["unavailable"].as_object_mut().unwrap().remove("stt");
-        let contract = set(contract, "/consumers/shenron", "readsToday", json!(["OPENAI_API_KEY"]));
+        contract["targets"]["vps"]["unavailable"]
+            .as_object_mut()
+            .unwrap()
+            .remove("stt");
+        let contract = set(
+            contract,
+            "/consumers/shenron",
+            "readsToday",
+            json!(["OPENAI_API_KEY"]),
+        );
         let contract = set(contract, "", "forbidden", json!([]));
         let errors = ai_report(contract).errors;
         assert_error(&errors, "target vps: stt is neither bound nor unavailable");
-        assert_error(&errors, "reads OPENAI_API_KEY, which is neither canonical nor an alias");
+        assert_error(
+            &errors,
+            "reads OPENAI_API_KEY, which is neither canonical nor an alias",
+        );
         assert_error(&errors, "forbidden must declare mix-embedding-spaces");
     }
 
@@ -1847,8 +2105,14 @@ mod tests {
         ] });
         let errors = check_topology_ports(&catalog, &topology).errors;
         assert_eq!(errors.len(), 2, "{errors:#?}");
-        assert_error(&errors, "active-wrong-host: port 8793 is not internalOnly on host vps");
-        assert_error(&errors, "stopped-but-not-retired: port 8798 is not internalOnly on host vps");
+        assert_error(
+            &errors,
+            "active-wrong-host: port 8793 is not internalOnly on host vps",
+        );
+        assert_error(
+            &errors,
+            "stopped-but-not-retired: port 8798 is not internalOnly on host vps",
+        );
     }
 
     #[test]
@@ -1864,7 +2128,10 @@ mod tests {
         ] });
         let errors = check_topology_ports(&catalog, &topology).errors;
         assert_eq!(errors.len(), 1, "{errors:?}");
-        assert_error(&errors, "wrong-host: port 8793 is not internalOnly on host dbfr");
+        assert_error(
+            &errors,
+            "wrong-host: port 8793 is not internalOnly on host dbfr",
+        );
     }
 
     #[test]
@@ -2023,19 +2290,29 @@ mod tests {
             json!("aphrody"),
         ))
         .expect("contract parses");
-        let errors =
-            check_repositories(&training(), &catalog, &contract, &pipeline(&["aphrody", "ghost"]))
-                .errors;
+        let errors = check_repositories(
+            &training(),
+            &catalog,
+            &contract,
+            &pipeline(&["aphrody", "ghost"]),
+        )
+        .errors;
         assert_error(
             &errors,
             "service site: sourceRepo: repository aphrody is retired (replaced by aphrody-ai, aphrody-web)",
         );
-        assert_error(&errors, "policies.applicationRoots: unknown repository aphrody-os");
+        assert_error(
+            &errors,
+            "policies.applicationRoots: unknown repository aphrody-os",
+        );
         assert_error(
             &errors,
             "local-ai: binary aphrody: sourceRepo: repository aphrody is retired",
         );
-        assert_error(&errors, "pipeline: stage lint: repository aphrody is retired");
+        assert_error(
+            &errors,
+            "pipeline: stage lint: repository aphrody is retired",
+        );
         assert_error(&errors, "pipeline: stage lint: unknown repository ghost");
     }
 
@@ -2047,7 +2324,10 @@ mod tests {
         });
         let errors = check_repositories(&training, &json!({}), &contract(), &pipeline(&[])).errors;
         assert_error(&errors, "aphrody is listed as both live and retired");
-        assert_error(&errors, "aphrody is replaced by unknown repository aphrody-ai");
+        assert_error(
+            &errors,
+            "aphrody is replaced by unknown repository aphrody-ai",
+        );
         let empty = check_repositories(&json!({}), &json!({}), &contract(), &pipeline(&[])).errors;
         assert_error(&empty, "stack-training: repositories is empty");
     }

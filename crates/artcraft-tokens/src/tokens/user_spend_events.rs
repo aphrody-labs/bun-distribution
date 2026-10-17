@@ -14,4 +14,9 @@ pub struct UserSpendEventToken(pub String);
 
 impl_string_token!(UserSpendEventToken);
 impl_mysql_token_from_row!(UserSpendEventToken);
-impl_crockford_generator!(UserSpendEventToken, 32usize, TokenPrefix::UserSpendEvent, CrockfordLower);
+impl_crockford_generator!(
+    UserSpendEventToken,
+    32usize,
+    TokenPrefix::UserSpendEvent,
+    CrockfordLower
+);

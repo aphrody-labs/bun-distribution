@@ -41,7 +41,10 @@ pub(crate) fn parse_with_units(text: &str, units: Option<Units>) -> Option<f64> 
         return None;
     }
     let normalized = text.replace('−', "-");
-    let mut parser = Parser { rest: &normalized, units };
+    let mut parser = Parser {
+        rest: &normalized,
+        units,
+    };
     let value = parser.expression(0, 0)?;
     parser.space();
     (parser.rest.is_empty() && value.is_finite()).then_some(value)
@@ -130,7 +133,11 @@ impl Parser<'_> {
             let accepted = ch.is_ascii_digit()
                 || ch == '.'
                 || (!exponent && matches!(ch, 'e' | 'E'))
-                || (matches!(ch, '+' | '-') && self.rest.get(..offset).is_some_and(|s| s.ends_with(['e', 'E'])));
+                || (matches!(ch, '+' | '-')
+                    && self
+                        .rest
+                        .get(..offset)
+                        .is_some_and(|s| s.ends_with(['e', 'E'])));
             if !accepted {
                 break;
             }
@@ -148,26 +155,47 @@ impl Parser<'_> {
     /// The unit after a number, if any, converting `value` into the field's unit.
     fn unit(&mut self, value: f64, units: Units) -> Option<f64> {
         let rest = self.rest.trim_start();
-        let typed = UNIT_NAMES.iter().find(|(name, _)| rest.starts_with(name)).filter(|(name, _)| {
-            // `%` followed by an operand is the remainder operator (`10%3`), not percent.
-            *name != "%" || rest.get(1..).map(str::trim_start).and_then(|r| r.chars().next()).is_none_or(|c| matches!(c, ')' | '+' | '-' | '*' | '/' | '^'))
-        });
+        let typed = UNIT_NAMES
+            .iter()
+            .find(|(name, _)| rest.starts_with(name))
+            .filter(|(name, _)| {
+                // `%` followed by an operand is the remainder operator (`10%3`), not percent.
+                *name != "%"
+                    || rest
+                        .get(1..)
+                        .map(str::trim_start)
+                        .and_then(|r| r.chars().next())
+                        .is_none_or(|c| matches!(c, ')' | '+' | '-' | '*' | '/' | '^'))
+            });
         let Some(&(name, typed)) = typed else {
             // The field's own suffix (`45°`), when it is no operator or number of its own.
             let own = units.suffix;
-            let operand = |c: char| c.is_ascii_digit() || matches!(c, '.' | '(' | ')' | '+' | '-' | '*' | '/' | '%' | '^');
+            let operand = |c: char| {
+                c.is_ascii_digit()
+                    || matches!(c, '.' | '(' | ')' | '+' | '-' | '*' | '/' | '%' | '^')
+            };
             if !own.is_empty() && !own.starts_with(operand) && rest.starts_with(own) {
                 self.rest = rest.get(own.len()..)?;
             }
             return Some(value);
         };
         self.rest = rest.get(name.len()..)?;
-        let dpi = if units.dpi.is_finite() && units.dpi > 0.0 { units.dpi } else { 72.0 };
-        let ppi = if units.ppi.is_finite() && units.ppi > 0.0 { units.ppi } else { 72.0 };
+        let dpi = if units.dpi.is_finite() && units.dpi > 0.0 {
+            units.dpi
+        } else {
+            72.0
+        };
+        let ppi = if units.ppi.is_finite() && units.ppi > 0.0 {
+            units.ppi
+        } else {
+            72.0
+        };
         match units.unit {
             Some(field) if field == typed => Some(value),
             // Lengths convert through pixels; a percentage has no length to convert against.
-            Some(field) if field != Unit::Percent && typed != Unit::Percent => Some(field.from_px(typed.to_px(value, dpi, 1.0, ppi), dpi, 1.0, ppi)),
+            Some(field) if field != Unit::Percent && typed != Unit::Percent => {
+                Some(field.from_px(typed.to_px(value, dpi, 1.0, ppi), dpi, 1.0, ppi))
+            }
             _ => None,
         }
     }
@@ -197,7 +225,22 @@ mod tests {
     }
     #[test]
     fn rejects_invalid_and_hostile_input() {
-        for text in ["", "1/0", "0/0", "1%0", "NaN", "inf", "1e999", "2+", "(2*3", "2 3", "pi junk", "sqrt(4)", "2^(1e300)", "你好"] {
+        for text in [
+            "",
+            "1/0",
+            "0/0",
+            "1%0",
+            "NaN",
+            "inf",
+            "1e999",
+            "2+",
+            "(2*3",
+            "2 3",
+            "pi junk",
+            "sqrt(4)",
+            "2^(1e300)",
+            "你好",
+        ] {
             assert_eq!(parse(text), None, "{text}");
         }
         assert_eq!(parse(&"(".repeat(1000)), None);
@@ -206,10 +249,30 @@ mod tests {
     #[test]
     fn units_convert_into_the_field_unit_and_bad_input_is_rejected() {
         use super::{Unit, Units, parse_with_units};
-        let px = Units { unit: Some(Unit::Pixels), suffix: "px", dpi: 300.0, ppi: 72.0 };
-        let pt = Units { unit: Some(Unit::Points), suffix: "pt", dpi: 144.0, ppi: 72.0 };
-        let pct = Units { unit: Some(Unit::Percent), suffix: "%", dpi: 72.0, ppi: 72.0 };
-        let deg = Units { unit: None, suffix: "°", dpi: 72.0, ppi: 72.0 };
+        let px = Units {
+            unit: Some(Unit::Pixels),
+            suffix: "px",
+            dpi: 300.0,
+            ppi: 72.0,
+        };
+        let pt = Units {
+            unit: Some(Unit::Points),
+            suffix: "pt",
+            dpi: 144.0,
+            ppi: 72.0,
+        };
+        let pct = Units {
+            unit: Some(Unit::Percent),
+            suffix: "%",
+            dpi: 72.0,
+            ppi: 72.0,
+        };
+        let deg = Units {
+            unit: None,
+            suffix: "°",
+            dpi: 72.0,
+            ppi: 72.0,
+        };
         for (text, units, want) in [
             ("1in", px, 300.0),
             ("2.54cm", px, 300.0),
@@ -230,10 +293,21 @@ mod tests {
             ("45°*2", deg, 90.0),
         ] {
             let got = parse_with_units(text, Some(units));
-            assert!(got.is_some_and(|v| (v - want).abs() < 1e-9), "{text}: {got:?}, want {want}");
+            assert!(
+                got.is_some_and(|v| (v - want).abs() < 1e-9),
+                "{text}: {got:?}, want {want}"
+            );
         }
-        let nan_dpi = Units { dpi: f64::NAN, ppi: 0.0, ..px };
-        assert_eq!(parse_with_units("1in", Some(nan_dpi)), Some(72.0), "a bad resolution falls back to 72");
+        let nan_dpi = Units {
+            dpi: f64::NAN,
+            ppi: 0.0,
+            ..px
+        };
+        assert_eq!(
+            parse_with_units("1in", Some(nan_dpi)),
+            Some(72.0),
+            "a bad resolution falls back to 72"
+        );
         for (text, units) in [
             ("", px),
             ("1/0", px),
@@ -253,7 +327,11 @@ mod tests {
         ] {
             assert_eq!(parse_with_units(text, Some(units)), None, "{text}");
         }
-        assert_eq!(parse("1in"), None, "without a field unit, unit names stay invalid");
+        assert_eq!(
+            parse("1in"),
+            None,
+            "without a field unit, unit names stay invalid"
+        );
     }
 }
 
@@ -264,12 +342,19 @@ mod widget_tests {
     fn typed_expression_commits_clamps_and_rejects_invalid() {
         let mut h = Harness::builder().build_ui_state(
             |ui, value| {
-                ui.add(egui::DragValue::new(value).range(0.0..=1000.0).custom_parser(super::parse));
+                ui.add(
+                    egui::DragValue::new(value)
+                        .range(0.0..=1000.0)
+                        .custom_parser(super::parse),
+                );
             },
             100.0_f64,
         );
         for (text, expected) in [("1920/2", 960.0), ("2000*2", 1000.0), ("1/0", 1000.0)] {
-            let center = h.get_by_role(egui::accesskit::Role::SpinButton).rect().center();
+            let center = h
+                .get_by_role(egui::accesskit::Role::SpinButton)
+                .rect()
+                .center();
             h.hover_at(center);
             h.run_steps(1);
             h.drag_at(center);

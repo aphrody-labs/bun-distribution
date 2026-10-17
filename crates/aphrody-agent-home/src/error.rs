@@ -102,6 +102,9 @@ impl HomeError {
     /// Build an [`HomeError::Io`] from a path + error pair. Keeps call sites
     /// terse (`map_err(|e| HomeError::io(path, e))`).
     pub(crate) fn io(path: impl Into<PathBuf>, source: std::io::Error) -> Self {
-        Self::Io { path: path.into(), source }
+        Self::Io {
+            path: path.into(),
+            source,
+        }
     }
 }

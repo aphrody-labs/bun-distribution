@@ -1,8 +1,8 @@
 use super::{
+    BlasManager, RaytracingMesh3d, RaytracingSceneBindings,
     allocator::{IndexAllocator, RetainedBindingArray},
     assets::AssetState,
     lights::{GpuLightSource, LightSourceId, LightState},
-    BlasManager, RaytracingMesh3d, RaytracingSceneBindings,
 };
 use bevy_asset::AssetId;
 use bevy_ecs::{

@@ -4,10 +4,10 @@
 //! as opposed to an entire struct or enum. An example of such an attribute is
 //! the derive helper attribute for `Reflect`, which looks like: `#[reflect(ignore)]`.
 
-use crate::{custom_attributes::CustomAttributes, REFLECT_ATTRIBUTE_NAME};
+use crate::{REFLECT_ATTRIBUTE_NAME, custom_attributes::CustomAttributes};
 use bevy_macro_utils::terminated_parser;
 use quote::ToTokens;
-use syn::{parse::ParseStream, Attribute, LitStr, Meta, Token, Type};
+use syn::{Attribute, LitStr, Meta, Token, Type, parse::ParseStream};
 
 mod kw {
     syn::custom_keyword!(ignore);

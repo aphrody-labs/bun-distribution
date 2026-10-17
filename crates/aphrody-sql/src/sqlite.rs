@@ -140,7 +140,9 @@ pub fn open(path: impl AsRef<Path>, policy: OpenPolicy) -> Result<Connection> {
     }
     if policy.create_parent_dirs
         && !policy.read_only
-        && let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty())
+        && let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
     {
         std::fs::create_dir_all(parent)?;
     }
@@ -167,7 +169,14 @@ pub fn open_in_memory(policy: OpenPolicy) -> Result<Connection> {
         register_vec_extension()?;
     }
     let conn = Connection::open_in_memory()?;
-    apply_policy(&conn, &OpenPolicy { wal: false, optimize_on_open: false, ..policy })?;
+    apply_policy(
+        &conn,
+        &OpenPolicy {
+            wal: false,
+            optimize_on_open: false,
+            ..policy
+        },
+    )?;
     Ok(conn)
 }
 
@@ -188,7 +197,10 @@ pub fn apply_policy(conn: &Connection, policy: &OpenPolicy) -> Result<()> {
             tracing::warn!(journal_mode = %mode, "SQLite refused WAL mode");
         }
     }
-    conn.execute_batch(&format!("PRAGMA synchronous = {};", policy.synchronous.as_sql()))?;
+    conn.execute_batch(&format!(
+        "PRAGMA synchronous = {};",
+        policy.synchronous.as_sql()
+    ))?;
     if policy.foreign_keys {
         conn.execute_batch("PRAGMA foreign_keys = ON;")?;
     }
@@ -199,9 +211,10 @@ pub fn apply_policy(conn: &Connection, policy: &OpenPolicy) -> Result<()> {
         conn.execute_batch("PRAGMA optimize=0x10002;")?;
     }
     if policy.vec {
-        conn.query_row("SELECT vec_version()", [], |row| row.get::<_, String>(0)).map_err(|e| {
-            SqlError::Extension(format!("sqlite-vec is not loaded on this connection: {e}"))
-        })?;
+        conn.query_row("SELECT vec_version()", [], |row| row.get::<_, String>(0))
+            .map_err(|e| {
+                SqlError::Extension(format!("sqlite-vec is not loaded on this connection: {e}"))
+            })?;
     }
     Ok(())
 }
@@ -228,7 +241,10 @@ pub fn vacuum_into(conn: &Connection, backup_path: impl AsRef<Path>) -> Result<(
     if backup.exists() {
         return Err(SqlError::BackupExists(backup.display().to_string()));
     }
-    if let Some(parent) = backup.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+    if let Some(parent) = backup
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
         std::fs::create_dir_all(parent)?;
     }
     let mut partial = backup.as_os_str().to_owned();
@@ -269,13 +285,15 @@ pub struct Checkpoint {
 ///
 /// [`SqlError::Sqlite`].
 pub fn checkpoint_truncate(conn: &Connection) -> Result<Checkpoint> {
-    Ok(conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
-        Ok(Checkpoint {
-            busy: row.get::<_, i64>(0)? != 0,
-            log_frames: row.get(1)?,
-            checkpointed_frames: row.get(2)?,
-        })
-    })?)
+    Ok(
+        conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+            Ok(Checkpoint {
+                busy: row.get::<_, i64>(0)? != 0,
+                log_frames: row.get(1)?,
+                checkpointed_frames: row.get(2)?,
+            })
+        })?,
+    )
 }
 
 /// Register sqlite-vec (`vec0`, `vec_version()`, ...) as a SQLite auto
@@ -329,14 +347,21 @@ mod tests {
     use super::*;
 
     fn pragma_i64(conn: &Connection, name: &str) -> i64 {
-        conn.pragma_query_value(None, name, |row| row.get(0)).unwrap()
+        conn.pragma_query_value(None, name, |row| row.get(0))
+            .unwrap()
     }
 
     #[test]
     fn file_policy_applies_every_pragma() {
         let dir = tempfile::tempdir().unwrap();
-        let conn = open(dir.path().join("nested/db.sqlite"), OpenPolicy::read_write()).unwrap();
-        let mode: String = conn.pragma_query_value(None, "journal_mode", |r| r.get(0)).unwrap();
+        let conn = open(
+            dir.path().join("nested/db.sqlite"),
+            OpenPolicy::read_write(),
+        )
+        .unwrap();
+        let mode: String = conn
+            .pragma_query_value(None, "journal_mode", |r| r.get(0))
+            .unwrap();
         assert_eq!(mode, "wal");
         assert_eq!(pragma_i64(&conn, "foreign_keys"), 1);
         assert_eq!(pragma_i64(&conn, "busy_timeout"), 5000);
@@ -356,15 +381,21 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("db.sqlite");
         let writer = open(&path, OpenPolicy::read_write()).unwrap();
-        writer.execute_batch("CREATE TABLE t(a INTEGER); INSERT INTO t VALUES (1);").unwrap();
+        writer
+            .execute_batch("CREATE TABLE t(a INTEGER); INSERT INTO t VALUES (1);")
+            .unwrap();
         let reader = open(&path, OpenPolicy::read_only()).unwrap();
         assert_eq!(
-            reader.query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0)).unwrap(),
+            reader
+                .query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
             1
         );
         writer.execute("INSERT INTO t VALUES (2)", []).unwrap();
         assert_eq!(
-            reader.query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0)).unwrap(),
+            reader
+                .query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
             2
         );
         assert!(reader.execute("INSERT INTO t VALUES (3)", []).is_err());
@@ -383,24 +414,30 @@ mod tests {
     fn vacuum_into_writes_a_consistent_copy_and_refuses_overwrite() {
         let dir = tempfile::tempdir().unwrap();
         let conn = open(dir.path().join("db.sqlite"), OpenPolicy::read_write()).unwrap();
-        conn.execute_batch("CREATE TABLE t(a TEXT); INSERT INTO t VALUES ('x'), ('y');").unwrap();
+        conn.execute_batch("CREATE TABLE t(a TEXT); INSERT INTO t VALUES ('x'), ('y');")
+            .unwrap();
         let backup = dir.path().join("backups/2026-10-01/db.sqlite");
         vacuum_into(&conn, &backup).unwrap();
         assert!(backup.is_file());
         assert!(!backup.with_extension("sqlite.partial").exists());
         let copy = Connection::open(&backup).unwrap();
         assert_eq!(
-            copy.query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0)).unwrap(),
+            copy.query_row("SELECT count(*) FROM t", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
             2
         );
-        assert!(matches!(vacuum_into(&conn, &backup), Err(SqlError::BackupExists(_))));
+        assert!(matches!(
+            vacuum_into(&conn, &backup),
+            Err(SqlError::BackupExists(_))
+        ));
     }
 
     #[test]
     fn checkpoint_truncate_reports_wal_state() {
         let dir = tempfile::tempdir().unwrap();
         let conn = open(dir.path().join("db.sqlite"), OpenPolicy::read_write()).unwrap();
-        conn.execute_batch("CREATE TABLE t(a); INSERT INTO t VALUES (1);").unwrap();
+        conn.execute_batch("CREATE TABLE t(a); INSERT INTO t VALUES (1);")
+            .unwrap();
         let checkpoint = checkpoint_truncate(&conn).unwrap();
         assert!(!checkpoint.busy);
         let memory = open_in_memory(OpenPolicy::read_write()).unwrap();

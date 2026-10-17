@@ -25,7 +25,11 @@ pub enum EssenceKey {
 
 impl EssenceKey {
     pub fn media(item: ItemId, stream: usize) -> Self {
-        if stream == 0 { Self::Media(item) } else { Self::MediaStream { item, stream } }
+        if stream == 0 {
+            Self::Media(item)
+        } else {
+            Self::MediaStream { item, stream }
+        }
     }
 }
 
@@ -105,7 +109,9 @@ pub struct MediaOptions {
 impl MediaOptions {
     /// Essence for `key` (and `channel` when broken out).
     pub fn essence_for(&self, key: EssenceKey, channel: Option<u32>) -> Option<&AudioEssence> {
-        self.essence.iter().find(|e| e.key == key && (e.channel == channel || e.channel.is_none()))
+        self.essence
+            .iter()
+            .find(|e| e.key == key && (e.channel == channel || e.channel.is_none()))
     }
 }
 
@@ -146,7 +152,14 @@ const MAX_NESTING: usize = 16;
 /// The audio ranges the audio tracks of `sequence` reference, in a stable order.
 pub fn audio_needs(project: &Project, sequence: ItemId, opts: &NeedOptions) -> Vec<AudioNeed> {
     let mut by_item: BTreeMap<EssenceKey, AudioNeed> = BTreeMap::new();
-    collect_needs(project, sequence, opts, &mut Vec::new(), &mut BTreeSet::new(), &mut by_item);
+    collect_needs(
+        project,
+        sequence,
+        opts,
+        &mut Vec::new(),
+        &mut BTreeSet::new(),
+        &mut by_item,
+    );
     by_item.into_values().collect()
 }
 
@@ -158,7 +171,9 @@ fn collect_needs(
     done: &mut BTreeSet<ItemId>,
     by_item: &mut BTreeMap<EssenceKey, AudioNeed>,
 ) {
-    let Some(seq) = project.sequence(sequence) else { return };
+    let Some(seq) = project.sequence(sequence) else {
+        return;
+    };
     // a nest's needs do not depend on the clip that uses it: each sequence is listed once, so a
     // crafted project with many clips of the same nest on every level cannot multiply the work
     // (a sequence cannot be inside itself, but a damaged project may claim so)
@@ -169,12 +184,18 @@ fn collect_needs(
     for t in seq.tracks(TrackKind::Audio) {
         for c in &t.items {
             let item = crate::common::base_item(project, c.item);
-            let (lo, hi) = if c.speed < 0.0 || c.reverse { (c.source_out(), c.source_in) } else { (c.source_in, c.source_out()) };
+            let (lo, hi) = if c.speed < 0.0 || c.reverse {
+                (c.source_out(), c.source_in)
+            } else {
+                (c.source_in, c.source_out())
+            };
             let (lo, hi) = (lo.min(hi), lo.max(hi));
             let (mut start, mut end) = ((lo - opts.handles).max(Tick::ZERO), hi + opts.handles);
             match project.item(item).map(|i| &i.kind) {
                 Some(ItemKind::Media(m)) => {
-                    let Some(a) = m.info.audio_streams.get(c.audio_stream) else { continue };
+                    let Some(a) = m.info.audio_streams.get(c.audio_stream) else {
+                        continue;
+                    };
                     let path = match &m.media {
                         MediaRef::File { path } => Some(path.clone()),
                         MediaRef::Generator(_) => None,
@@ -187,7 +208,11 @@ fn collect_needs(
                         start = Tick::ZERO;
                         end = dur.max(end);
                     }
-                    let key = if opts.per_clip { EssenceKey::Clip(c.id) } else { EssenceKey::media(item, c.audio_stream) };
+                    let key = if opts.per_clip {
+                        EssenceKey::Clip(c.id)
+                    } else {
+                        EssenceKey::media(item, c.audio_stream)
+                    };
                     let e = by_item.entry(key).or_insert_with(|| AudioNeed {
                         key,
                         item,
@@ -218,7 +243,16 @@ fn collect_needs(
                         let key = EssenceKey::Clip(c.id);
                         by_item.insert(
                             key,
-                            AudioNeed { key, item, audio_stream: 0, path: None, start, end, channels, sample_rate: nested.settings.sample_rate.max(1) },
+                            AudioNeed {
+                                key,
+                                item,
+                                audio_stream: 0,
+                                path: None,
+                                start,
+                                end,
+                                channels,
+                                sample_rate: nested.settings.sample_rate.max(1),
+                            },
                         );
                     }
                 },

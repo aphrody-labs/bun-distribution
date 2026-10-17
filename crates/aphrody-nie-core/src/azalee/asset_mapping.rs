@@ -54,7 +54,10 @@ pub fn aura_icon_reference(asset_code: &str) -> Option<AuraIconReference> {
     };
     let digits = digits_after_three_byte_prefix(&lower, prefix)?;
     let family = family_number(&digits)?;
-    Some(AuraIconReference { folder, base_code: format!("{output_prefix}{family:06}") })
+    Some(AuraIconReference {
+        folder,
+        base_code: format!("{output_prefix}{family:06}"),
+    })
 }
 
 /// Produit le basename du télop d'aura, sans consulter l'index des fichiers.
@@ -177,16 +180,28 @@ mod tests {
             Some((AuraIconFolder::AuraSoul, "a000020".to_owned()))
         );
         assert_eq!(aura_icon_reference("was00020"), None);
-        assert_eq!(aura_icon_reference("wks02060_st0901").unwrap().base_code, "k002060");
+        assert_eq!(
+            aura_icon_reference("wks02060_st0901").unwrap().base_code,
+            "k002060"
+        );
     }
 
     #[test]
     fn maps_aura_telops_and_rejects_miximax() {
         assert_eq!(aura_telop_code("wks00020").as_deref(), Some("k000020"));
         assert_eq!(aura_telop_code("was00240_b1").as_deref(), Some("a000240"));
-        assert_eq!(aura_telop_code("wap00010").as_deref(), Some("aura_power_wap00010"));
-        assert_eq!(aura_telop_code("mode_change_fire").as_deref(), Some("mode_change_fire"));
-        assert_eq!(aura_telop_code("some_awakening_01").as_deref(), Some("aura_power01"));
+        assert_eq!(
+            aura_telop_code("wap00010").as_deref(),
+            Some("aura_power_wap00010")
+        );
+        assert_eq!(
+            aura_telop_code("mode_change_fire").as_deref(),
+            Some("mode_change_fire")
+        );
+        assert_eq!(
+            aura_telop_code("some_awakening_01").as_deref(),
+            Some("aura_power01")
+        );
         assert_eq!(aura_telop_code("wmm00100"), None);
     }
 
@@ -200,9 +215,15 @@ mod tests {
             .as_deref(),
             Some("k000010")
         );
-        assert_eq!(extract_keshin_model_code([Some("xk000010")]), Some("k000010".to_owned()));
+        assert_eq!(
+            extract_keshin_model_code([Some("xk000010")]),
+            Some("k000010".to_owned())
+        );
         assert_eq!(extract_keshin_model_code([Some("k0000100")]), None);
-        assert_eq!(extract_keshin_model_code([None, Some("k000010")]), Some("k000010".to_owned()));
+        assert_eq!(
+            extract_keshin_model_code([None, Some("k000010")]),
+            Some("k000010".to_owned())
+        );
     }
 
     #[test]

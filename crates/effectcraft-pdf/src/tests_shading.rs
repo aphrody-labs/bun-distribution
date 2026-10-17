@@ -31,7 +31,11 @@ fn close(a: [f32; 4], b: [f32; 3], tol: f32) -> bool {
 }
 
 fn sh_page(shading: &str, data: Vec<u8>) -> Doc {
-    let bytes = page_pdf("/Sh sh", "/Shading << /Sh 10 0 R >>", vec![(10, shading.into(), Some(data))]);
+    let bytes = page_pdf(
+        "/Sh sh",
+        "/Shading << /Sh 10 0 R >>",
+        vec![(10, shading.into(), Some(data))],
+    );
     let doc = parse(&bytes).unwrap();
     assert!(doc.skipped.is_empty(), "{:?}", doc.skipped);
     doc
@@ -47,15 +51,28 @@ fn free_form_triangle_mesh_with_edge_flags() {
     m.flag(1).pt(80, 80).c(&[255, 255, 255]);
     // Flag 2 off the shared edge (a, c): (80,20) (80,80) → (140,20) black.
     m.flag(2).pt(140, 20).c(&[0, 0, 0]);
-    let doc = sh_page(&format!("<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"), m.0);
+    let doc = sh_page(
+        &format!(
+            "<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"
+        ),
+        m.0,
+    );
     let img = render(&doc);
     let at = |x: i64, y: i64| img.get(x, 99 - y);
     assert!(close(at(21, 21), [1.0, 0.0, 0.0], 0.06), "{:?}", at(21, 21));
     // Centroid of the first triangle: the average of its colours.
-    assert!(close(at(40, 40), [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], 0.04), "{:?}", at(40, 40));
+    assert!(
+        close(at(40, 40), [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], 0.04),
+        "{:?}",
+        at(40, 40)
+    );
     assert!(close(at(79, 79), [1.0, 1.0, 1.0], 0.06), "{:?}", at(79, 79));
     // Third triangle (a = (80,20) green, c = (80,80) white, (140,20) black).
-    assert!(close(at(135, 22), [0.0, 0.0, 0.0], 0.1), "{:?}", at(135, 22));
+    assert!(
+        close(at(135, 22), [0.0, 0.0, 0.0], 0.1),
+        "{:?}",
+        at(135, 22)
+    );
     // Outside the mesh: nothing.
     assert_eq!(at(10, 50)[3], 0.0);
     assert_eq!(at(150, 90)[3], 0.0);
@@ -82,7 +99,10 @@ fn lattice_mesh_with_a_function() {
     for x in [20i64, 60, 100, 140, 180] {
         let want = (x as f32 + 0.5 - 10.0) / 180.0;
         let p = at(x, 50);
-        assert!(p[3] > 0.99 && (p[0] - want).abs() < 0.03 && (p[1] - p[0]).abs() < 0.01, "x {x}: {p:?} want {want}");
+        assert!(
+            p[3] > 0.99 && (p[0] - want).abs() < 0.03 && (p[1] - p[0]).abs() < 0.01,
+            "x {x}: {p:?} want {want}"
+        );
     }
     assert_eq!(at(5, 50)[3], 0.0);
 }
@@ -90,7 +110,8 @@ fn lattice_mesh_with_a_function() {
 /// A straight-sided rectangle as the 12 boundary points from `(x0, y0)` up the left side,
 /// along the top, down the right side and back along the bottom.
 fn rect_loop(x0: u16, y0: u16, x1: u16, y1: u16) -> Vec<(u16, u16)> {
-    let lerp = |a: u16, b: u16, k: u16| ((a as u32 * (3 - k as u32) + b as u32 * k as u32) / 3) as u16;
+    let lerp =
+        |a: u16, b: u16, k: u16| ((a as u32 * (3 - k as u32) + b as u32 * k as u32) / 3) as u16;
     let mut v = vec![];
     for k in 0..3 {
         v.push((x0, lerp(y0, y1, k)));
@@ -122,13 +143,25 @@ fn patch_doc(tensor: bool) -> Doc {
             m.pt(x, y);
         }
     }
-    m.c(&[255, 0, 0]).c(&[0, 255, 0]).c(&[0, 0, 255]).c(&[0, 0, 0]);
+    m.c(&[255, 0, 0])
+        .c(&[0, 255, 0])
+        .c(&[0, 0, 255])
+        .c(&[0, 0, 0]);
     // Patch 2 (flag 2): shares patch 1's third side (140,80) → (140,20); then (180,20) white,
     // (180,80) red.
     m.flag(2);
     // The 8 new points: from (140,20) along the bottom to (180,20), up to (180,80), back
     // along the top towards (140,80).
-    let new_pts = [(153, 20), (167, 20), (180, 20), (180, 40), (180, 60), (180, 80), (167, 80), (153, 80)];
+    let new_pts = [
+        (153, 20),
+        (167, 20),
+        (180, 20),
+        (180, 40),
+        (180, 60),
+        (180, 80),
+        (167, 80),
+        (153, 80),
+    ];
     for (x, y) in new_pts {
         m.pt(x, y);
     }
@@ -139,7 +172,12 @@ fn patch_doc(tensor: bool) -> Doc {
     }
     m.c(&[255, 255, 255]).c(&[255, 0, 0]);
     let ty = if tensor { 7 } else { 6 };
-    sh_page(&format!("<< /ShadingType {ty} /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"), m.0)
+    sh_page(
+        &format!(
+            "<< /ShadingType {ty} /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"
+        ),
+        m.0,
+    )
 }
 
 #[test]
@@ -149,15 +187,43 @@ fn coons_and_tensor_patch_meshes() {
         let img = render(&doc);
         let at = |x: i64, y: i64| img.get(x, 99 - y);
         let k = if tensor { "tensor" } else { "coons" };
-        assert!(close(at(100, 20), [1.0, 0.0, 0.0], 0.08), "{k} {:?}", at(100, 20));
-        assert!(close(at(100, 79), [0.0, 1.0, 0.0], 0.08), "{k} {:?}", at(100, 79));
-        assert!(close(at(139, 79), [0.0, 0.0, 1.0], 0.08), "{k} {:?}", at(139, 79));
+        assert!(
+            close(at(100, 20), [1.0, 0.0, 0.0], 0.08),
+            "{k} {:?}",
+            at(100, 20)
+        );
+        assert!(
+            close(at(100, 79), [0.0, 1.0, 0.0], 0.08),
+            "{k} {:?}",
+            at(100, 79)
+        );
+        assert!(
+            close(at(139, 79), [0.0, 0.0, 1.0], 0.08),
+            "{k} {:?}",
+            at(139, 79)
+        );
         // Patch centre: the average of the corners.
-        assert!(close(at(120, 50), [0.25, 0.25, 0.25], 0.04), "{k} {:?}", at(120, 50));
+        assert!(
+            close(at(120, 50), [0.25, 0.25, 0.25], 0.04),
+            "{k} {:?}",
+            at(120, 50)
+        );
         // Patch 2 inherits blue / black on its shared side.
-        assert!(close(at(179, 20), [1.0, 1.0, 1.0], 0.08), "{k} {:?}", at(179, 20));
-        assert!(close(at(179, 79), [1.0, 0.0, 0.0], 0.08), "{k} {:?}", at(179, 79));
-        assert!(close(at(141, 22), [0.0, 0.0, 0.0], 0.1), "{k} {:?}", at(141, 22));
+        assert!(
+            close(at(179, 20), [1.0, 1.0, 1.0], 0.08),
+            "{k} {:?}",
+            at(179, 20)
+        );
+        assert!(
+            close(at(179, 79), [1.0, 0.0, 0.0], 0.08),
+            "{k} {:?}",
+            at(179, 79)
+        );
+        assert!(
+            close(at(141, 22), [0.0, 0.0, 0.0], 0.1),
+            "{k} {:?}",
+            at(141, 22)
+        );
         assert_eq!(at(90, 50)[3], 0.0);
         assert_eq!(at(190, 50)[3], 0.0);
     }
@@ -168,12 +234,33 @@ fn curved_coons_patch_follows_its_boundary() {
     // A patch whose top side bulges up to y = 95 between x 40 and 60.
     let mut m = Mesh::default();
     m.flag(0);
-    let pts = [(20, 20), (20, 40), (20, 60), (20, 80), (40, 107), (60, 107), (80, 80), (80, 60), (80, 40), (80, 20), (60, 20), (40, 20)];
+    let pts = [
+        (20, 20),
+        (20, 40),
+        (20, 60),
+        (20, 80),
+        (40, 107),
+        (60, 107),
+        (80, 80),
+        (80, 60),
+        (80, 40),
+        (80, 20),
+        (60, 20),
+        (40, 20),
+    ];
     for (x, y) in pts {
         m.pt(x, y);
     }
-    m.c(&[255, 0, 0]).c(&[255, 0, 0]).c(&[255, 0, 0]).c(&[255, 0, 0]);
-    let doc = sh_page(&format!("<< /ShadingType 6 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"), m.0);
+    m.c(&[255, 0, 0])
+        .c(&[255, 0, 0])
+        .c(&[255, 0, 0])
+        .c(&[255, 0, 0]);
+    let doc = sh_page(
+        &format!(
+            "<< /ShadingType 6 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"
+        ),
+        m.0,
+    );
     let img = render(&doc);
     let at = |x: i64, y: i64| img.get(x, 99 - y);
     // The top curve peaks at 80 + 0.75·27 ≈ 100 at x = 50.
@@ -207,9 +294,21 @@ fn function_based_shadings_calculator_and_sampled() {
     // Only the domain is painted.
     assert_eq!(at(50, 75)[3], 0.0);
     // Sampled 2-in function, bilinear: red (0,0), green (1,0), blue (0,1), white (1,1).
-    assert!(close(at(150, 75), [0.5, 0.5, 0.5], 0.03), "{:?}", at(150, 75));
-    assert!(close(at(100, 50), [1.0, 0.0, 0.0], 0.04), "{:?}", at(100, 50));
-    assert!(close(at(199, 99), [1.0, 1.0, 1.0], 0.04), "{:?}", at(199, 99));
+    assert!(
+        close(at(150, 75), [0.5, 0.5, 0.5], 0.03),
+        "{:?}",
+        at(150, 75)
+    );
+    assert!(
+        close(at(100, 50), [1.0, 0.0, 0.0], 0.04),
+        "{:?}",
+        at(100, 50)
+    );
+    assert!(
+        close(at(199, 99), [1.0, 1.0, 1.0], 0.04),
+        "{:?}",
+        at(199, 99)
+    );
 }
 
 #[test]
@@ -220,9 +319,19 @@ fn mesh_shading_pattern_fills_a_path() {
     m.flag(0).pt(0, 200).c(&[255, 0, 0]);
     let objs: Objs = vec![
         (10, "<< /PatternType 2 /Shading 11 0 R >>".into(), None),
-        (11, format!("<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"), Some(m.0)),
+        (
+            11,
+            format!(
+                "<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8 {RGB_DECODE} >>"
+            ),
+            Some(m.0),
+        ),
     ];
-    let bytes = page_pdf("/Pattern cs /P scn 10 10 30 30 re f", "/Pattern << /P 10 0 R >>", objs);
+    let bytes = page_pdf(
+        "/Pattern cs /P scn 10 10 30 30 re f",
+        "/Pattern << /P 10 0 R >>",
+        objs,
+    );
     let doc = parse(&bytes).unwrap();
     assert!(doc.skipped.is_empty(), "{:?}", doc.skipped);
     let img = render(&doc);
@@ -237,7 +346,13 @@ fn mesh_shading_pattern_fills_a_path() {
 fn corrupt_mesh_data_draws_what_parses() {
     // Truncated and garbage vertex data never panic.
     for ty in [4, 5, 6, 7] {
-        for data in [vec![], vec![0u8; 3], vec![0xFF; 7], (0..=255u8).collect::<Vec<u8>>(), vec![3u8; 200]] {
+        for data in [
+            vec![],
+            vec![0u8; 3],
+            vec![0xFF; 7],
+            (0..=255u8).collect::<Vec<u8>>(),
+            vec![3u8; 200],
+        ] {
             let bytes = page_pdf(
                 "/Sh sh /Pattern cs /P scn 0 0 50 50 re f",
                 "/Shading << /Sh 10 0 R >> /Pattern << /P << /PatternType 2 /Shading 10 0 R >> >>",
@@ -257,8 +372,16 @@ fn corrupt_mesh_data_draws_what_parses() {
     let bytes = page_pdf(
         "/Sh sh",
         "/Shading << /Sh 10 0 R >>",
-        vec![(10, "<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 7 >>".into(), Some(vec![0; 16]))],
+        vec![(
+            10,
+            "<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 7 >>".into(),
+            Some(vec![0; 16]),
+        )],
     );
     let doc = parse(&bytes).unwrap();
-    assert!(doc.skipped.iter().any(|s| s.contains("layout")), "{:?}", doc.skipped);
+    assert!(
+        doc.skipped.iter().any(|s| s.contains("layout")),
+        "{:?}",
+        doc.skipped
+    );
 }

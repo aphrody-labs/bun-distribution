@@ -21,7 +21,13 @@ pub struct ProtectDraft {
 
 impl Default for ProtectDraft {
     fn default() -> Self {
-        Self { viewing: true, password: String::new(), confirm: String::new(), advanced: false, protection: Protection::default() }
+        Self {
+            viewing: true,
+            password: String::new(),
+            confirm: String::new(),
+            advanced: false,
+            protection: Protection::default(),
+        }
     }
 }
 
@@ -32,7 +38,9 @@ impl ProtectDraft {
             Some("Type a password.")
         } else if self.password != self.confirm {
             Some("The passwords don't match.")
-        } else if self.protection.algorithm != pdfcraft_engine::Algorithm::Aes256 && !self.password.chars().all(|c| (' '..='~').contains(&c)) {
+        } else if self.protection.algorithm != pdfcraft_engine::Algorithm::Aes256
+            && !self.password.chars().all(|c| (' '..='~').contains(&c))
+        {
             Some("This compatibility level supports only plain ASCII passwords.")
         } else {
             None
@@ -82,11 +90,20 @@ fn radio(ui: &mut egui::Ui, t: &Tokens, on: bool, label: &str) -> egui::Response
         ui.painter().circle_filled(c, 8.0, t.accent);
         ui.painter().circle_filled(c, 3.0, Color32::WHITE);
     } else {
-        ui.painter().circle_stroke(c, 7.5, egui::Stroke::new(1.5, t.text_muted));
+        ui.painter()
+            .circle_stroke(c, 7.5, egui::Stroke::new(1.5, t.text_muted));
     }
-    ui.painter().text(egui::pos2(rect.left() + 26.0, rect.center().y), egui::Align2::LEFT_CENTER, tl!(label), theme::regular(14.0), t.text);
+    ui.painter().text(
+        egui::pos2(rect.left() + 26.0, rect.center().y),
+        egui::Align2::LEFT_CENTER,
+        tl!(label),
+        theme::regular(14.0),
+        t.text,
+    );
     let info = tl!(label).to_string();
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::RadioButton, true, on, info.clone()));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::RadioButton, true, on, info.clone())
+    });
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
@@ -109,13 +126,23 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (boo
     ui.add_space(10.0);
     let field = |ui: &mut egui::Ui, label: &str, text: &mut String, id: &str| {
         let l = ui.label(tl!(label));
-        ui.add(crate::widgets::line(text).password(true).desired_width(290.0).id_salt(id)).labelled_by(l.id)
+        ui.add(
+            crate::widgets::line(text)
+                .password(true)
+                .desired_width(290.0)
+                .id_salt(id),
+        )
+        .labelled_by(l.id)
     };
     let r = field(ui, "Type Password", &mut d.password, "protect-pw");
     if r.changed() || !d.password.is_empty() {
         let (s, c) = strength(&d.password);
         if !d.password.is_empty() {
-            ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Strength: {s}"), &[("s", tl!(s))])).font(theme::medium(11.5)).color(c));
+            ui.label(
+                egui::RichText::new(crate::i18n::fmt(tl!("Strength: {s}"), &[("s", tl!(s))]))
+                    .font(theme::medium(11.5))
+                    .color(c),
+            );
         }
     }
     ui.add_space(6.0);
@@ -125,7 +152,11 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (boo
     if ui
         .add(
             egui::Button::new(
-                egui::RichText::new(crate::i18n::fmt(tl!("Advanced Options {chevron}"), &[("chevron", chevron)])).font(theme::semibold(13.0)),
+                egui::RichText::new(crate::i18n::fmt(
+                    tl!("Advanced Options {chevron}"),
+                    &[("chevron", chevron)],
+                ))
+                .font(theme::semibold(13.0)),
             )
             .frame(false),
         )
@@ -198,9 +229,16 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (boo
         }
     }
     ui.add_space(8.0);
-    if let Some(problem) = d.problem().filter(|_| !d.password.is_empty() || !d.confirm.is_empty()) {
+    if let Some(problem) = d
+        .problem()
+        .filter(|_| !d.password.is_empty() || !d.confirm.is_empty())
+    {
         // problem() stays English (tested); only the display translates.
-        ui.label(egui::RichText::new(tl!(problem)).color(t.text_muted).font(theme::regular(12.0)));
+        ui.label(
+            egui::RichText::new(tl!(problem))
+                .color(t.text_muted)
+                .font(theme::regular(12.0)),
+        );
     }
     ui.label(
         egui::RichText::new(if d.viewing {
@@ -215,7 +253,11 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> (boo
     let (mut apply, mut cancel) = (false, false);
     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
         let ok = d.problem().is_none();
-        if ui.add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("Apply"), true)).inner.clicked() {
+        if ui
+            .add_enabled_ui(ok, |ui| widgets::pill_button(ui, tl!("Apply"), true))
+            .inner
+            .clicked()
+        {
             apply = true;
         }
         if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
@@ -239,12 +281,18 @@ mod tests {
         d.confirm = "abc".into();
         assert_eq!(d.problem(), None);
         match d.edit() {
-            Edit::Protect(p) => assert_eq!((p.open_password.as_deref(), p.permissions_password), (Some("abc"), None)),
+            Edit::Protect(p) => assert_eq!(
+                (p.open_password.as_deref(), p.permissions_password),
+                (Some("abc"), None)
+            ),
             other => panic!("{other:?}"),
         }
         d.viewing = false;
         match d.edit() {
-            Edit::Protect(p) => assert_eq!((p.open_password, p.permissions_password.as_deref()), (None, Some("abc"))),
+            Edit::Protect(p) => assert_eq!(
+                (p.open_password, p.permissions_password.as_deref()),
+                (None, Some("abc"))
+            ),
             other => panic!("{other:?}"),
         }
         assert_eq!(strength("abc").0, "Weak");

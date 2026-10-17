@@ -106,7 +106,9 @@ pub(crate) struct Splitter {
 
 /// AC-3 frame sizes in 16-bit words for 48 / 44.1 / 32 kHz (A/52 Table 5.18), by
 /// frmsizecod / 2; 44.1 kHz adds a word for odd frmsizecod.
-const AC3_KBPS: [u32; 19] = [32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640];
+const AC3_KBPS: [u32; 19] = [
+    32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640,
+];
 
 pub(crate) fn ac3_frame_bytes(fscod: u8, frmsizecod: u8) -> Option<usize> {
     let kbps = *AC3_KBPS.get((frmsizecod / 2) as usize)?;
@@ -120,11 +122,19 @@ pub(crate) fn ac3_frame_bytes(fscod: u8, frmsizecod: u8) -> Option<usize> {
 }
 
 const MPA_KBPS: [[u16; 15]; 5] = [
-    [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448], // MPEG-1 layer I
-    [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],    // MPEG-1 layer II
-    [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],     // MPEG-1 layer III
-    [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256],    // MPEG-2/2.5 layer I
-    [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],         // MPEG-2/2.5 layers II, III
+    [
+        0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448,
+    ], // MPEG-1 layer I
+    [
+        0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,
+    ], // MPEG-1 layer II
+    [
+        0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320,
+    ], // MPEG-1 layer III
+    [
+        0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256,
+    ], // MPEG-2/2.5 layer I
+    [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160], // MPEG-2/2.5 layers II, III
 ];
 
 /// MPEG audio frame header (ISO/IEC 11172-3 §2.4.2.3, 13818-3 LSF): (frame bytes, sample rate,
@@ -175,7 +185,10 @@ pub struct FrameInfo {
     pub variant: u8,
 }
 
-const ADTS_RATES: [u32; 13] = [96_000, 88_200, 64_000, 48_000, 44_100, 32_000, 24_000, 22_050, 16_000, 12_000, 11_025, 8_000, 7_350];
+const ADTS_RATES: [u32; 13] = [
+    96_000, 88_200, 64_000, 48_000, 44_100, 32_000, 24_000, 22_050, 16_000, 12_000, 11_025, 8_000,
+    7_350,
+];
 
 /// Bytes of the audio frame whose header starts `b` (MPEG audio, ADTS, LATM, AC-3, E-AC-3), or
 /// `None` without a valid header there. For containers that store frames in chunks that need not
@@ -196,7 +209,12 @@ pub fn frame_info(codec: &Codec, b: &[u8]) -> Option<FrameInfo> {
         Codec::MpegAudio => {
             let (_, sample_rate, samples) = mpa_header(b)?;
             let layer = 4 - ((b[1] >> 1) & 3);
-            Some(FrameInfo { sample_rate, channels: if b[3] >> 6 == 3 { 1 } else { 2 }, samples, variant: layer })
+            Some(FrameInfo {
+                sample_rate,
+                channels: if b[3] >> 6 == 3 { 1 } else { 2 },
+                samples,
+                variant: layer,
+            })
         }
         Codec::AacAdts => {
             frame_len(AudioSync::Adts, b)?;
@@ -223,12 +241,23 @@ pub fn frame_info(codec: &Codec, b: &[u8]) -> Option<FrameInfo> {
                 let fscod = b[4] >> 6;
                 let (rate, blocks) = if fscod == 3 {
                     // fscod2 3 is reserved (no sample rate)
-                    (*[24_000, 22_050, 16_000].get(((b[4] >> 4) & 3) as usize)?, 6)
+                    (
+                        *[24_000, 22_050, 16_000].get(((b[4] >> 4) & 3) as usize)?,
+                        6,
+                    )
                 } else {
-                    ([48_000, 44_100, 32_000][fscod as usize], [1, 2, 3, 6][((b[4] >> 4) & 3) as usize])
+                    (
+                        [48_000, 44_100, 32_000][fscod as usize],
+                        [1, 2, 3, 6][((b[4] >> 4) & 3) as usize],
+                    )
                 };
                 let acmod = (b[4] >> 1) & 7;
-                return Some(FrameInfo { sample_rate: rate, channels: AC3_CHANNELS[acmod as usize] + (b[4] & 1) as u32, samples: 256 * blocks, variant: bsid });
+                return Some(FrameInfo {
+                    sample_rate: rate,
+                    channels: AC3_CHANNELS[acmod as usize] + (b[4] & 1) as u32,
+                    samples: 256 * blocks,
+                    variant: bsid,
+                });
             }
             let fscod = b[4] >> 6;
             let rate = *[48_000u32, 44_100, 32_000].get(fscod as usize)?;
@@ -247,7 +276,12 @@ pub fn frame_info(codec: &Codec, b: &[u8]) -> Option<FrameInfo> {
             }
             let word = u16::from_be_bytes([b6, *b.get(7)?]);
             let lfe = (word >> (15 - bit)) & 1;
-            Some(FrameInfo { sample_rate: rate, channels: AC3_CHANNELS[acmod as usize] + lfe as u32, samples: 1536, variant: bsid })
+            Some(FrameInfo {
+                sample_rate: rate,
+                channels: AC3_CHANNELS[acmod as usize] + lfe as u32,
+                samples: 1536,
+                variant: bsid,
+            })
         }
         _ => None,
     }
@@ -257,7 +291,9 @@ pub fn frame_info(codec: &Codec, b: &[u8]) -> Option<FrameInfo> {
 /// substream 0: a dependent substream (strmtyp 1) or another program (A/52 §E2.3.1.1-2).
 fn eac3_joins_unit(b: &[u8]) -> bool {
     match b.get(2..6) {
-        Some(&[b2, _, _, b5]) => (11..=16).contains(&(b5 >> 3)) && (b2 >> 6 == 1 || (b2 >> 3) & 7 != 0),
+        Some(&[b2, _, _, b5]) => {
+            (11..=16).contains(&(b5 >> 3)) && (b2 >> 6 == 1 || (b2 >> 3) & 7 != 0)
+        }
         _ => false,
     }
 }
@@ -339,7 +375,12 @@ impl Splitter {
 
     /// A PES packet starts (its payload follows in the next chunks).
     pub fn pes_start(&mut self, pts: Option<i64>, dts: Option<i64>) {
-        self.pes.push_back(PesMark { es_start: self.es_pos, pts, dts, used: false });
+        self.pes.push_back(PesMark {
+            es_start: self.es_pos,
+            pts,
+            dts,
+            used: false,
+        });
         while self.pes.len() > 64 {
             self.pes.pop_front();
         }
@@ -359,7 +400,17 @@ impl Splitter {
         let at = self.es_pos;
         self.close(at);
         // the chunk of this position arrives with the next feed: resolved there
-        let mut o = Open { start: at, pos: u64::MAX, offset: 0, pts: None, dts: None, key: false, disposable: false, vcl: false, picture: None };
+        let mut o = Open {
+            start: at,
+            pos: u64::MAX,
+            offset: 0,
+            pts: None,
+            dts: None,
+            key: false,
+            disposable: false,
+            vcl: false,
+            picture: None,
+        };
         if let Some((pts, dts)) = self.timestamps_at(at) {
             o.pts = pts;
             o.dts = dts;
@@ -397,7 +448,16 @@ impl Splitter {
             return;
         }
         let size = (end - o.start).min(u32::MAX as u64) as u32;
-        self.units.push(Unit { pts: o.pts, dts: o.dts, key: o.key, disposable: o.disposable, size, pos: o.pos, offset: o.offset, picture: o.picture });
+        self.units.push(Unit {
+            pts: o.pts,
+            dts: o.dts,
+            key: o.key,
+            disposable: o.disposable,
+            size,
+            pos: o.pos,
+            offset: o.offset,
+            picture: o.picture,
+        });
     }
 
     /// Payload bytes of one chunk (`pos`: where the reader restarts to find them).
@@ -408,7 +468,10 @@ impl Splitter {
         // PES-delimited modes resolve a unit's position from `pos` right here and never look a
         // chunk up again, so remembering chunks there would only grow without bound (NAL streams
         // keep theirs: an access unit can start inside a PES; `keep_from` prunes them)
-        if matches!(self.mode, Mode::MpegVideo | Mode::Audio(_) | Mode::Nal { .. }) {
+        if matches!(
+            self.mode,
+            Mode::MpegVideo | Mode::Audio(_) | Mode::Nal { .. }
+        ) {
             self.chunks.push_back((pos, self.es_pos));
         }
         if let Some(o) = self.open.as_mut()
@@ -427,7 +490,10 @@ impl Splitter {
             Mode::Audio(sync) => self.scan_audio(start, data, sync),
         }
         // forget chunks no pending position can refer to
-        let keep_from = self.buf_start.min(self.pending.map_or(u64::MAX, |p| p.unit_start.min(p.at))).min(self.header_start.unwrap_or(u64::MAX));
+        let keep_from = self
+            .buf_start
+            .min(self.pending.map_or(u64::MAX, |p| p.unit_start.min(p.at)))
+            .min(self.header_start.unwrap_or(u64::MAX));
         while self.chunks.len() > 2 && self.chunks[1].1 <= keep_from {
             self.chunks.pop_front();
         }
@@ -493,7 +559,11 @@ impl Splitter {
             {
                 o.key |= key;
                 // disposable while every slice is non-reference
-                o.disposable = if o.vcl { o.disposable && non_ref } else { non_ref };
+                o.disposable = if o.vcl {
+                    o.disposable && non_ref
+                } else {
+                    non_ref
+                };
                 o.vcl = true;
             }
             i = k + 3;
@@ -521,7 +591,13 @@ impl Splitter {
             }
             let at = self.buf_start + k as u64;
             let code = self.buf[k + 3];
-            let p = [self.buf[k + 4], self.buf[k + 5], self.buf[k + 6], self.buf[k + 7], self.buf[k + 8]];
+            let p = [
+                self.buf[k + 4],
+                self.buf[k + 5],
+                self.buf[k + 6],
+                self.buf[k + 7],
+                self.buf[k + 8],
+            ];
             match code {
                 0xB3 => {
                     self.settle_pending();
@@ -549,7 +625,11 @@ impl Splitter {
                     let unit_start = self.header_start.take().unwrap_or(at);
                     self.seq_in_unit = false;
                     self.gop = None;
-                    self.pending = Some(PendingPicture { unit_start, at, info });
+                    self.pending = Some(PendingPicture {
+                        unit_start,
+                        at,
+                        info,
+                    });
                 }
                 0xB5 if p[0] >> 4 == 8 => {
                     if let Some(pp) = self.pending.as_mut() {
@@ -570,7 +650,9 @@ impl Splitter {
 
     /// A picture's structure is known: start a unit, or join a first field.
     fn settle_pending(&mut self) {
-        let Some(pp) = self.pending.take() else { return };
+        let Some(pp) = self.pending.take() else {
+            return;
+        };
         let s = pp.info.structure;
         if let Some(first) = self.open_field
             && s != 3
@@ -625,10 +707,23 @@ impl Splitter {
                 Some(len) if self.next_frame == Some(at) || self.confirmed(sync, i, len) => {
                     // an E-AC-3 dependent substream or further program joins the access unit of
                     // the independent substream 0 before it, as in MP4 and Matroska
-                    if !(sync == AudioSync::Ac3 && self.open.is_some() && eac3_joins_unit(&self.buf[i..])) {
+                    if !(sync == AudioSync::Ac3
+                        && self.open.is_some()
+                        && eac3_joins_unit(&self.buf[i..]))
+                    {
                         self.close(at);
                         let (pos, offset) = self.locate(at).unwrap_or((u64::MAX, 0));
-                        let mut o = Open { start: at, pos, offset, pts: None, dts: None, key: true, disposable: false, vcl: false, picture: None };
+                        let mut o = Open {
+                            start: at,
+                            pos,
+                            offset,
+                            pts: None,
+                            dts: None,
+                            key: true,
+                            disposable: false,
+                            vcl: false,
+                            picture: None,
+                        };
                         if let Some((pts, dts)) = self.timestamps_at(at) {
                             o.pts = pts;
                             o.dts = dts;
@@ -646,9 +741,14 @@ impl Splitter {
                     // lost sync: look for the next header from the following byte
                     self.next_frame = None;
                     self.skipped += 1;
-                    let next = self.buf[i + 1..]
-                        .iter()
-                        .position(|&b| matches!((sync, b), (AudioSync::Ac3, 0x0B) | (AudioSync::Loas, 0x56) | (AudioSync::Mpa | AudioSync::Adts, 0xFF)));
+                    let next = self.buf[i + 1..].iter().position(|&b| {
+                        matches!(
+                            (sync, b),
+                            (AudioSync::Ac3, 0x0B)
+                                | (AudioSync::Loas, 0x56)
+                                | (AudioSync::Mpa | AudioSync::Adts, 0xFF)
+                        )
+                    });
                     match next {
                         Some(d) => {
                             self.skipped += d as u64;
@@ -700,10 +800,19 @@ mod tests {
     #[test]
     fn audio_frame_sizes() {
         // MPEG-1 layer II 48 kHz 192 kb/s: 576 bytes; layer III 44.1 kHz 128 kb/s with padding: 418
-        assert_eq!(mpa_header(&[0xFF, 0xFD, 0xA4, 0x00]), Some((576, 48_000, 1152)));
-        assert_eq!(mpa_header(&[0xFF, 0xFB, 0x92, 0x00]), Some((418, 44_100, 1152)));
+        assert_eq!(
+            mpa_header(&[0xFF, 0xFD, 0xA4, 0x00]),
+            Some((576, 48_000, 1152))
+        );
+        assert_eq!(
+            mpa_header(&[0xFF, 0xFB, 0x92, 0x00]),
+            Some((418, 44_100, 1152))
+        );
         // MPEG-2 layer III 24 kHz 64 kb/s: 192 bytes, 576 samples
-        assert_eq!(mpa_header(&[0xFF, 0xF3, 0x84, 0x00]), Some((192, 24_000, 576)));
+        assert_eq!(
+            mpa_header(&[0xFF, 0xF3, 0x84, 0x00]),
+            Some((192, 24_000, 576))
+        );
         // AC-3 448 kb/s at 48 kHz = 1792 bytes; 44.1 kHz 192 kb/s odd code = 836 bytes
         assert_eq!(ac3_frame_bytes(0, 30), Some(1792));
         assert_eq!(ac3_frame_bytes(1, 21), Some(836));
@@ -723,7 +832,10 @@ mod tests {
         let mut s = Splitter::new(&Codec::Eac3);
         s.feed(0, &es);
         s.finish();
-        assert_eq!(s.units.iter().map(|u| u.size).collect::<Vec<_>>(), vec![32, 32]);
+        assert_eq!(
+            s.units.iter().map(|u| u.size).collect::<Vec<_>>(),
+            vec![32, 32]
+        );
         assert_eq!(frame_info(&Codec::Eac3, &es).map(|f| f.samples), Some(1536));
         // AC-3 frames are never joined
         assert!(!eac3_joins_unit(&[0x0B, 0x77, 0x40, 0, 0, 8 << 3]));
@@ -732,8 +844,14 @@ mod tests {
     #[test]
     fn ac3_header_prefix_of_six_bytes_is_not_indexed_out_of_bounds() {
         // exactly the six bytes frame_len() guarantees: byte 6 (acmod) is missing
-        assert_eq!(frame_info(&Codec::Ac3, &[0x0B, 0x77, 0, 0, 0x1E, 0x40]), None);
-        assert_eq!(frame_info(&Codec::Ac3, &[0x0B, 0x77, 0, 0, 0x1E, 0x40, 0]), None);
+        assert_eq!(
+            frame_info(&Codec::Ac3, &[0x0B, 0x77, 0, 0, 0x1E, 0x40]),
+            None
+        );
+        assert_eq!(
+            frame_info(&Codec::Ac3, &[0x0B, 0x77, 0, 0, 0x1E, 0x40, 0]),
+            None
+        );
     }
 
     #[test]
@@ -743,7 +861,10 @@ mod tests {
         f.resize(16, 0);
         assert_eq!(frame_info(&Codec::Eac3, &f), None);
         f[4] = 0xE0; // fscod2 2: 16 kHz
-        assert_eq!(frame_info(&Codec::Eac3, &f).map(|i| i.sample_rate), Some(16_000));
+        assert_eq!(
+            frame_info(&Codec::Eac3, &f).map(|i| i.sample_rate),
+            Some(16_000)
+        );
     }
 
     #[test]
@@ -752,7 +873,11 @@ mod tests {
         let mut s = Splitter::new(&Codec::Eac3);
         s.feed(0, &es);
         s.finish();
-        assert!(s.units.is_empty(), "{} units from 40000 noise bytes", s.units.len());
+        assert!(
+            s.units.is_empty(),
+            "{} units from 40000 noise bytes",
+            s.units.len()
+        );
     }
 
     #[test]
@@ -764,9 +889,19 @@ mod tests {
                 s.feed(k * 188, &[0x11; 184]);
             }
             s.finish();
-            assert!(s.chunks.len() <= 2, "{codec:?}: {} chunks retained", s.chunks.len());
+            assert!(
+                s.chunks.len() <= 2,
+                "{codec:?}: {} chunks retained",
+                s.chunks.len()
+            );
             assert_eq!(s.units.len(), 5000, "{codec:?}");
-            assert!(s.units.iter().enumerate().all(|(k, u)| u.pos == k as u64 * 188 && u.offset == 0), "{codec:?}");
+            assert!(
+                s.units
+                    .iter()
+                    .enumerate()
+                    .all(|(k, u)| u.pos == k as u64 * 188 && u.offset == 0),
+                "{codec:?}"
+            );
         }
     }
 

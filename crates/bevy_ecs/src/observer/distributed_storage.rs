@@ -19,8 +19,9 @@ use crate::{
     event::{EventKey, EventPattern},
     lifecycle::{ComponentHook, HookContext},
     observer::{
+        ObserverRunner,
         condition::{ObserverCondition, ObserverWithCondition, ObserverWithConditionMarker},
-        observer_system_runner, ObserverRunner,
+        observer_system_runner,
     },
     prelude::*,
     system::{IntoObserverSystem, ObserverSystem},

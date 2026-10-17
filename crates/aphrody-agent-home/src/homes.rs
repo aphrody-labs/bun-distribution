@@ -96,10 +96,18 @@ impl HomesRoot {
         };
         let state_buf = state.to_path_buf();
         if let Some(v) = env.filter(|v| !v.trim().is_empty()) {
-            return Self { state: state_buf, path: pick(v), source: HomesRootSource::Env };
+            return Self {
+                state: state_buf,
+                path: pick(v),
+                source: HomesRootSource::Env,
+            };
         }
         if let Some(v) = config.filter(|v| !v.trim().is_empty()) {
-            return Self { state: state_buf, path: pick(v), source: HomesRootSource::Config };
+            return Self {
+                state: state_buf,
+                path: pick(v),
+                source: HomesRootSource::Config,
+            };
         }
         Self {
             path: state.join(DEFAULT_HOMES_DIRNAME),
@@ -111,8 +119,16 @@ impl HomesRoot {
     /// Use an explicit root (relative values join the state directory).
     #[must_use]
     pub fn explicit(state: &Path, path: &Path) -> Self {
-        let path = if path.is_absolute() { path.to_path_buf() } else { state.join(path) };
-        Self { state: state.to_path_buf(), path, source: HomesRootSource::Explicit }
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            state.join(path)
+        };
+        Self {
+            state: state.to_path_buf(),
+            path,
+            source: HomesRootSource::Explicit,
+        }
     }
 
     /// Resolve inside an explicit state directory from the process environment
@@ -221,7 +237,11 @@ impl HomesRoot {
             };
             for entry in entries {
                 let entry = entry.map_err(|e| HomeError::io(dir, e))?;
-                if !entry.file_type().map_err(|e| HomeError::io(entry.path(), e))?.is_dir() {
+                if !entry
+                    .file_type()
+                    .map_err(|e| HomeError::io(entry.path(), e))?
+                    .is_dir()
+                {
                     continue;
                 }
                 let raw = entry.file_name().to_string_lossy().into_owned();
@@ -238,7 +258,11 @@ impl HomesRoot {
                 if legacy && out.iter().any(|h: &HomeEntry| h.name == name) {
                     continue;
                 }
-                out.push(HomeEntry { name, path: entry.path(), legacy });
+                out.push(HomeEntry {
+                    name,
+                    path: entry.path(),
+                    legacy,
+                });
             }
         }
         out.sort_by(|a, b| a.name.cmp(&b.name).then(a.legacy.cmp(&b.legacy)));
@@ -256,7 +280,10 @@ mod tests {
         let root = HomesRoot::resolve_with(state.path(), None, None);
         assert_eq!(root.path, state.path().join("workspaces"));
         assert_eq!(root.source, HomesRootSource::Default);
-        assert_eq!(root.agent_home("Bot 1").unwrap(), state.path().join("workspace-bot-1"));
+        assert_eq!(
+            root.agent_home("Bot 1").unwrap(),
+            state.path().join("workspace-bot-1")
+        );
         assert_eq!(root.home("dbfr"), state.path().join("workspaces/dbfr"));
         std::fs::create_dir_all(state.path().join("workspace-dbfr")).unwrap();
         assert_eq!(root.home("dbfr"), state.path().join("workspace-dbfr"));
@@ -275,18 +302,30 @@ mod tests {
         // Configured roots put agent homes inside the root, never legacy paths.
         std::fs::create_dir_all(state.path().join("workspace-x")).unwrap();
         assert_eq!(root.home("x"), state.path().join("users/x"));
-        assert_eq!(root.agent_home("discord:42").unwrap(), state.path().join("users/discord-42"));
+        assert_eq!(
+            root.agent_home("discord:42").unwrap(),
+            state.path().join("users/discord-42")
+        );
         assert!(root.agent_home("::").is_none());
     }
 
     #[test]
     fn config_toml_supplies_the_root() {
         let state = tempfile::tempdir().unwrap();
-        std::fs::write(state.path().join("config.toml"), "[agent_home]\nhomes_dir = \"people\"\n")
-            .unwrap();
-        assert_eq!(configured_homes_dir(state.path()).unwrap().as_deref(), Some("people"));
+        std::fs::write(
+            state.path().join("config.toml"),
+            "[agent_home]\nhomes_dir = \"people\"\n",
+        )
+        .unwrap();
+        assert_eq!(
+            configured_homes_dir(state.path()).unwrap().as_deref(),
+            Some("people")
+        );
         std::fs::write(state.path().join("config.toml"), "not = [valid").unwrap();
-        assert!(matches!(configured_homes_dir(state.path()), Err(HomeError::Config(_))));
+        assert!(matches!(
+            configured_homes_dir(state.path()),
+            Err(HomeError::Config(_))
+        ));
         let lenient = HomesRoot::resolve_in_lenient(state.path());
         assert!(lenient.path.ends_with("workspaces") || lenient.source == HomesRootSource::Env);
     }
@@ -294,13 +333,25 @@ mod tests {
     #[test]
     fn list_merges_canonical_and_legacy_homes() {
         let state = tempfile::tempdir().unwrap();
-        for d in ["workspaces/aphrody", "workspaces/.hidden", "workspace-dbfr", "workspace-aphrody"]
-        {
+        for d in [
+            "workspaces/aphrody",
+            "workspaces/.hidden",
+            "workspace-dbfr",
+            "workspace-aphrody",
+        ] {
             std::fs::create_dir_all(state.path().join(d)).unwrap();
         }
         let root = HomesRoot::resolve_with(state.path(), None, None);
-        let names: Vec<_> = root.list().unwrap().into_iter().map(|h| (h.name, h.legacy)).collect();
-        assert_eq!(names, [("aphrody".to_string(), false), ("dbfr".to_string(), true)]);
+        let names: Vec<_> = root
+            .list()
+            .unwrap()
+            .into_iter()
+            .map(|h| (h.name, h.legacy))
+            .collect();
+        assert_eq!(
+            names,
+            [("aphrody".to_string(), false), ("dbfr".to_string(), true)]
+        );
         assert!(root.new_home_path("..").is_err());
     }
 }

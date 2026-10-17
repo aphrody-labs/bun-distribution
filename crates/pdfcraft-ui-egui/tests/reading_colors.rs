@@ -32,7 +32,13 @@ fn pdf() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -55,20 +61,24 @@ fn combo(h: &mut Harness<'static, PdfCraftApp>) {
     // The preferences dialog grew taller than the window, which leaves this combo below the
     // fold where a click lands outside the dialog and dismisses it; scroll it into view and
     // let the scroll settle before clicking.
-    h.get_by(|n| n.role() == Role::ComboBox && n.value().is_some_and(|v| v == "Off")).scroll_to_me();
+    h.get_by(|n| n.role() == Role::ComboBox && n.value().is_some_and(|v| v == "Off"))
+        .scroll_to_me();
     h.run_steps(4);
-    h.get_by(|n| n.role() == Role::ComboBox && n.value().is_some_and(|v| v == "Off")).click();
+    h.get_by(|n| n.role() == Role::ComboBox && n.value().is_some_and(|v| v == "Off"))
+        .click();
 }
 
 #[test]
 fn reading_colours_preference_round_trips() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, pdf()).expect("opens");
-        app.set_option("dialog", "preferences").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, pdf()).expect("opens");
+            app.set_option("dialog", "preferences").unwrap();
+            app
+        });
     h.run_steps(4);
     assert_eq!(h.state().reading_colors, ReadingColors::default());
     // Switch the preset to white-on-black in the dialog's Reading colours combo. The open
@@ -80,7 +90,10 @@ fn reading_colours_preference_round_trips() {
     assert_eq!(h.state().reading_colors, ReadingColors::WHITE_ON_BLACK);
     // The preference is app-wide: the already open document follows it too.
     let id = h.state().views[0].id;
-    assert_eq!(h.state().session.reading_colors(id), Some(ReadingColors::WHITE_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(id),
+        Some(ReadingColors::WHITE_ON_BLACK)
+    );
     // Closing the dialog keeps everything.
     h.state_mut().set_option("dialog", "none").unwrap();
     h.run_steps(1);
@@ -102,56 +115,88 @@ fn reading_colours_preference_round_trips() {
 
 #[test]
 fn reading_colours_seed_on_open() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.reading_colors = ReadingColors::WHITE_ON_BLACK;
-        app.open_bytes("doc.pdf", None, pdf()).expect("opens");
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.reading_colors = ReadingColors::WHITE_ON_BLACK;
+            app.open_bytes("doc.pdf", None, pdf()).expect("opens");
+            app
+        });
     h.run_steps(4);
     // The document opened with the preference already applied.
     let id = h.state().views[0].id;
-    assert_eq!(h.state().session.reading_colors(id), Some(ReadingColors::WHITE_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(id),
+        Some(ReadingColors::WHITE_ON_BLACK)
+    );
     // Changing the preference applies it to the open document as well.
-    h.state_mut().set_reading_colors(ReadingColors::YELLOW_ON_BLACK);
+    h.state_mut()
+        .set_reading_colors(ReadingColors::YELLOW_ON_BLACK);
     h.run_steps(1);
-    assert_eq!(h.state().session.reading_colors(id), Some(ReadingColors::YELLOW_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(id),
+        Some(ReadingColors::YELLOW_ON_BLACK)
+    );
 
     // Revisions and the signed version open through their own session calls, bypassing the
     // ordinary open: they seed the new document the same way. A second revision comes from an
     // incremental save.
     {
         let s = &mut h.state_mut().session;
-        s.apply(id, pdfcraft_engine::Edit::SetInfo { key: "Title".into(), value: "Second".into() }).unwrap();
+        s.apply(
+            id,
+            pdfcraft_engine::Edit::SetInfo {
+                key: "Title".into(),
+                value: "Second".into(),
+            },
+        )
+        .unwrap();
         let saved = s.save_bytes(id).unwrap();
         s.mark_saved(id, saved, None).unwrap();
     }
     h.state_mut().open_revision(1);
     let revision = h.state().views.last().unwrap().id;
     assert_ne!(revision, id);
-    assert_eq!(h.state().session.reading_colors(revision), Some(ReadingColors::YELLOW_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(revision),
+        Some(ReadingColors::YELLOW_ON_BLACK)
+    );
     let len = h.state().session.get(id).unwrap().bytes.len();
     h.state_mut().view_signed_version(len);
     let signed = h.state().views.last().unwrap().id;
     assert_ne!(signed, id);
-    assert_eq!(h.state().session.reading_colors(signed), Some(ReadingColors::YELLOW_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(signed),
+        Some(ReadingColors::YELLOW_ON_BLACK)
+    );
 
     // Created documents open through their own session calls too — a comment summary via
     // `open_created`, an image import via `open_created_bytes` — and seed the same way.
     h.state_mut().summarize_comments();
     let summary = h.state().views.last().unwrap().id;
     assert_ne!(summary, signed);
-    assert_eq!(h.state().session.reading_colors(summary), Some(ReadingColors::YELLOW_ON_BLACK));
-    h.state_mut().create_from_images(vec![("scan.png".into(), png())]);
+    assert_eq!(
+        h.state().session.reading_colors(summary),
+        Some(ReadingColors::YELLOW_ON_BLACK)
+    );
+    h.state_mut()
+        .create_from_images(vec![("scan.png".into(), png())]);
     let created = h.state().views.last().unwrap().id;
     assert_ne!(created, summary);
-    assert_eq!(h.state().session.reading_colors(created), Some(ReadingColors::YELLOW_ON_BLACK));
+    assert_eq!(
+        h.state().session.reading_colors(created),
+        Some(ReadingColors::YELLOW_ON_BLACK)
+    );
 
     // And back off, for every open document.
     h.state_mut().set_reading_colors(ReadingColors::default());
     h.run_steps(1);
     for view in &h.state().views {
-        assert_eq!(h.state().session.reading_colors(view.id), Some(ReadingColors::default()));
+        assert_eq!(
+            h.state().session.reading_colors(view.id),
+            Some(ReadingColors::default())
+        );
     }
 }

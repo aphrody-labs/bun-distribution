@@ -34,7 +34,7 @@ async fn transcribes_real_speech_with_timed_segments() {
         Err(err) => {
             eprintln!("skipped: whisper.cpp backend unavailable on this machine: {err}");
             return;
-        },
+        }
     };
     eprintln!("binary  {} ({})", binary.path().display(), binary.label());
     eprintln!("weights {}", weights.display());
@@ -51,13 +51,22 @@ async fn transcribes_real_speech_with_timed_segments() {
         .expect("transcription must succeed once binary and weights are both present");
 
     eprintln!("transcript: {}", transcript.text);
-    assert!(!transcript.text.trim().is_empty(), "speech must not transcribe to nothing");
-    assert!(!transcript.segments.is_empty(), "a non-empty transcript must carry its segments");
+    assert!(
+        !transcript.text.trim().is_empty(),
+        "speech must not transcribe to nothing"
+    );
+    assert!(
+        !transcript.segments.is_empty(),
+        "a non-empty transcript must carry its segments"
+    );
 
     // Timestamps must advance: a backend that returns every segment at 0.0 is
     // the failure mode a text-only assertion would not see.
     let last = transcript.segments.last().expect("checked non-empty above");
-    assert!(last.end > 0.0, "segment end offsets must be populated, got {last:?}");
+    assert!(
+        last.end > 0.0,
+        "segment end offsets must be populated, got {last:?}"
+    );
     for pair in transcript.segments.windows(2) {
         assert!(
             pair[1].start >= pair[0].start,
@@ -66,5 +75,8 @@ async fn transcribes_real_speech_with_timed_segments() {
             pair[1]
         );
     }
-    assert!(transcript.duration_s.unwrap_or(0.0) > 0.0, "the transcript must report a duration");
+    assert!(
+        transcript.duration_s.unwrap_or(0.0) > 0.0,
+        "the transcript must report a duration"
+    );
 }

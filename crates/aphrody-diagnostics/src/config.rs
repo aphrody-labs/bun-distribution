@@ -13,7 +13,9 @@ use serde_json::Value;
 pub fn apply_environment_profile(mut overrides: CliOverrides) -> CliOverrides {
     overrides.profile = aphrody_config::profile::select_profile(
         overrides.profile.as_deref(),
-        std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE).ok().as_deref(),
+        std::env::var(aphrody_config::profile::ENV_APHRODY_PROFILE)
+            .ok()
+            .as_deref(),
     );
     overrides
 }
@@ -22,7 +24,6 @@ pub fn profile_workspace(config: &Config) -> miette::Result<PathBuf> {
     aphrody_agent_home::paths::resolve_workspace(config.active_profile.as_deref(), None)
         .map_err(|error| miette::miette!("exec: {error}"))
 }
-
 
 pub fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
     let overrides = apply_environment_profile(overrides.clone());
@@ -41,16 +42,18 @@ pub fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
         aphrody_config::resolve(layers.clone(), &overrides, "llama", &BTreeMap::new())
             .map_err(|error| miette::miette!("exec: {error}"))?;
     if initial.compat.read_codex_home {
-        let codex_home = std::env::var_os("CODEX_HOME").map(PathBuf::from).or_else(|| {
-            std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
-                .map(|path| PathBuf::from(path).join(".codex"))
-        });
+        let codex_home = std::env::var_os("CODEX_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
+                    .map(|path| PathBuf::from(path).join(".codex"))
+            });
         if let Some(path) = codex_home
             && let Some(layer) = aphrody_config::load_codex_compat_layer(&path.join("config.toml"))
                 .map_err(|error| miette::miette!("exec: {error}"))?
-            {
-                layers.insert(1, layer);
-            }
+        {
+            layers.insert(1, layer);
+        }
     }
     let (config, warnings) = aphrody_config::resolve(layers, &overrides, "llama", &BTreeMap::new())
         .map_err(|error| miette::miette!("exec: {error}"))?;
@@ -59,7 +62,6 @@ pub fn load_config(overrides: &CliOverrides) -> miette::Result<Config> {
     }
     Ok(config)
 }
-
 
 /// Whether an Antigravity token is readable on this host. Decides the default provider.
 fn is_antigravity_available() -> bool {
@@ -97,10 +99,17 @@ pub fn resolve_config(
         config_overrides: config_overrides.to_vec(),
         ..CliOverrides::default()
     };
-    let default_provider = if is_antigravity_available() { "antigravity" } else { "llama" };
+    let default_provider = if is_antigravity_available() {
+        "antigravity"
+    } else {
+        "llama"
+    };
     let (config, warnings) = resolve(layers, &overrides, default_provider, &BTreeMap::new())
         .map_err(|e| miette::miette!("Failed to resolve configuration: {e}"))?;
-    Ok((config, warnings.into_iter().map(|w| w.to_string()).collect()))
+    Ok((
+        config,
+        warnings.into_iter().map(|w| w.to_string()).collect(),
+    ))
 }
 
 /// The resolved configuration as JSON; warnings go to stderr.

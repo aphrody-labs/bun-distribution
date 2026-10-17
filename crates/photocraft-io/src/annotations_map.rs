@@ -43,7 +43,8 @@ impl<'a> Reader<'a> {
         self.take(2).map(|b| u16::from_be_bytes([b[0], b[1]]))
     }
     fn u32(&mut self) -> Option<u32> {
-        self.take(4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+        self.take(4)
+            .map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]))
     }
     fn i32(&mut self) -> Option<i32> {
         self.u32().map(|v| v as i32)
@@ -59,7 +60,17 @@ impl<'a> Reader<'a> {
 }
 
 fn pascal(out: &mut Vec<u8>, s: &str) {
-    let bytes: Vec<u8> = s.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).take(255).collect();
+    let bytes: Vec<u8> = s
+        .chars()
+        .map(|c| {
+            if (c as u32) < 256 {
+                c as u32 as u8
+            } else {
+                b'?'
+            }
+        })
+        .take(255)
+        .collect();
     out.push(bytes.len() as u8);
     out.extend_from_slice(&bytes);
     if (bytes.len() + 1) % 2 == 1 {
@@ -76,7 +87,11 @@ fn color_from(space: u16, c: [u16; 4]) -> Color {
             let (h, s, v) = (f(c[0]) * 6.0, f(c[1]), f(c[2]));
             let i = (h.floor() as i32).rem_euclid(6);
             let fr = h - h.floor();
-            let (p, q, t) = (v * (1.0 - s), v * (1.0 - s * fr), v * (1.0 - s * (1.0 - fr)));
+            let (p, q, t) = (
+                v * (1.0 - s),
+                v * (1.0 - s * fr),
+                v * (1.0 - s * (1.0 - fr)),
+            );
             let (r, g, b) = match i {
                 0 => (v, t, p),
                 1 => (q, v, p),
@@ -90,7 +105,11 @@ fn color_from(space: u16, c: [u16; 4]) -> Color {
         // CMYK (inverted: 0 = 100 % ink), naive.
         2 => {
             let k = 1.0 - f(c[3]);
-            Color::rgb(f(c[0]) * (1.0 - k), f(c[1]) * (1.0 - k), f(c[2]) * (1.0 - k))
+            Color::rgb(
+                f(c[0]) * (1.0 - k),
+                f(c[1]) * (1.0 - k),
+                f(c[2]) * (1.0 - k),
+            )
         }
         // Grayscale 0–10000.
         8 => {
@@ -103,12 +122,19 @@ fn color_from(space: u16, c: [u16; 4]) -> Color {
 
 fn decode_text(data: &[u8]) -> String {
     let s = if data.len() >= 2 && data[0] == 0xFE && data[1] == 0xFF {
-        let units: Vec<u16> = data[2..].as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+        let units: Vec<u16> = data[2..]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+            .collect();
         String::from_utf16_lossy(&units)
     } else {
         data.iter().map(|&c| c as char).collect()
     };
-    s.trim_end_matches('\0').replace("\r\n", "\n").replace('\r', "\n")
+    s.trim_end_matches('\0')
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
 }
 
 fn encode_text(s: &str) -> Vec<u8> {
@@ -164,7 +190,12 @@ fn parse_entries(data: &[u8]) -> Option<Vec<Entry>> {
             color: color_from(space, c),
             text,
             position: [f64::from(icon[1]), f64::from(icon[0])],
-            popup: [f64::from(popup[1]), f64::from(popup[0]), f64::from(popup[3]), f64::from(popup[2])],
+            popup: [
+                f64::from(popup[1]),
+                f64::from(popup[0]),
+                f64::from(popup[3]),
+                f64::from(popup[2]),
+            ],
             open,
             modified,
         }));
@@ -175,7 +206,18 @@ fn parse_entries(data: &[u8]) -> Option<Vec<Entry>> {
 
 /// Notes in an `Anno` block (None when it doesn't parse).
 pub fn parse_anno(data: &[u8]) -> Option<Vec<Note>> {
-    Some(parse_entries(data)?.into_iter().filter_map(|e| if let Entry::Text(n) = e { Some(n) } else { None }).collect())
+    Some(
+        parse_entries(data)?
+            .into_iter()
+            .filter_map(|e| {
+                if let Entry::Text(n) = e {
+                    Some(n)
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    )
 }
 
 fn write_note(n: &Note) -> Vec<u8> {
@@ -191,7 +233,16 @@ fn write_note(n: &Note) -> Vec<u8> {
     for v in [y, x, y.saturating_add(20), x.saturating_add(16)] {
         b.extend_from_slice(&v.to_be_bytes());
     }
-    let pp = if n.popup == [0.0; 4] { [n.position[0] + 20.0, n.position[1] + 20.0, n.position[0] + 260.0, n.position[1] + 160.0] } else { n.popup };
+    let pp = if n.popup == [0.0; 4] {
+        [
+            n.position[0] + 20.0,
+            n.position[1] + 20.0,
+            n.position[0] + 260.0,
+            n.position[1] + 160.0,
+        ]
+    } else {
+        n.popup
+    };
     for v in [pp[1], pp[0], pp[3], pp[2]] {
         b.extend_from_slice(&(v.round() as i32).to_be_bytes());
     }
@@ -231,22 +282,44 @@ pub fn write_anno(notes: &[Note], raw_extra: &[Vec<u8>]) -> Vec<u8> {
 
 /// The document's notes from its raw global blocks (empty when there is no `Anno` block).
 pub fn notes_from_blocks(doc: &Document) -> Vec<Note> {
-    doc.metadata.psd_global_blocks.iter().find(|(_, k, _)| *k == ANNO).and_then(|(_, _, d)| parse_anno(d)).unwrap_or_default()
+    doc.metadata
+        .psd_global_blocks
+        .iter()
+        .find(|(_, k, _)| *k == ANNO)
+        .and_then(|(_, _, d)| parse_anno(d))
+        .unwrap_or_default()
 }
 
 /// Whether the document holds an `Anno` block that doesn't parse (its notes can't be shown).
 pub fn anno_unreadable(doc: &Document) -> bool {
-    doc.metadata.psd_global_blocks.iter().find(|(_, k, _)| *k == ANNO).is_some_and(|(_, _, d)| parse_entries(d).is_none())
+    doc.metadata
+        .psd_global_blocks
+        .iter()
+        .find(|(_, k, _)| *k == ANNO)
+        .is_some_and(|(_, _, d)| parse_entries(d).is_none())
 }
 
 /// Global blocks to write: the raw `Anno` block while it still describes `doc.notes` (or doesn't
 /// parse and no note was added), else a regenerated one in its place (appended when new, dropped
 /// when the last note is deleted).
-pub fn export_blocks(doc: &Document, mut blocks: Vec<photocraft_doc::PsdGlobalBlock>) -> Vec<photocraft_doc::PsdGlobalBlock> {
+pub fn export_blocks(
+    doc: &Document,
+    mut blocks: Vec<photocraft_doc::PsdGlobalBlock>,
+) -> Vec<photocraft_doc::PsdGlobalBlock> {
     let at = blocks.iter().position(|(_, k, _)| *k == ANNO);
     let raw = at.map(|i| blocks[i].2.clone());
     let entries = raw.as_deref().and_then(|d| parse_entries(d));
-    let parsed: Option<Vec<Note>> = entries.as_ref().map(|e| e.iter().filter_map(|e| if let Entry::Text(n) = e { Some(n.clone()) } else { None }).collect());
+    let parsed: Option<Vec<Note>> = entries.as_ref().map(|e| {
+        e.iter()
+            .filter_map(|e| {
+                if let Entry::Text(n) = e {
+                    Some(n.clone())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    });
     // Compare in stored precision (colours are 16-bit, positions whole pixels, empty popups get a
     // default rectangle).
     let want = parse_anno(&write_anno(&doc.notes, &[]));
@@ -254,16 +327,30 @@ pub fn export_blocks(doc: &Document, mut blocks: Vec<photocraft_doc::PsdGlobalBl
         a.len() == b.len()
             && a.iter().zip(b).all(|(x, y)| {
                 let (cx, cy) = (x.color.to_rgb(), y.color.to_rgb());
-                Note { color: y.color, ..x.clone() } == *y && cx.iter().zip(cy).all(|(p, q)| (p - q).abs() < 1.0 / 512.0)
+                Note {
+                    color: y.color,
+                    ..x.clone()
+                } == *y
+                    && cx.iter().zip(cy).all(|(p, q)| (p - q).abs() < 1.0 / 512.0)
             })
     };
     // With no notes, a block we can't read is kept as is: it isn't "the last note deleted", and
     // dropping it would delete the annotations it holds (issue #944).
-    if parsed.as_deref().zip(want.as_deref()).is_some_and(|(p, w)| same(p, w)) || (entries.is_none() && doc.notes.is_empty()) {
+    if parsed
+        .as_deref()
+        .zip(want.as_deref())
+        .is_some_and(|(p, w)| same(p, w))
+        || (entries.is_none() && doc.notes.is_empty())
+    {
         return blocks;
     }
-    let extra: Vec<Vec<u8>> = entries.unwrap_or_default().into_iter().filter_map(|e| if let Entry::Raw(r) = e { Some(r) } else { None }).collect();
-    let fresh = (!doc.notes.is_empty() || !extra.is_empty()).then(|| Arc::new(write_anno(&doc.notes, &extra)));
+    let extra: Vec<Vec<u8>> = entries
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|e| if let Entry::Raw(r) = e { Some(r) } else { None })
+        .collect();
+    let fresh = (!doc.notes.is_empty() || !extra.is_empty())
+        .then(|| Arc::new(write_anno(&doc.notes, &extra)));
     match (at, fresh) {
         (Some(i), Some(f)) => blocks[i].2 = f,
         (Some(i), None) => {
@@ -288,7 +375,13 @@ fn num(v: &Value) -> Option<f64> {
 fn find<'a>(d: &'a Descriptor, keys: &[&str]) -> Option<&'a Value> {
     keys.iter().find_map(|k| d.get(k)).or_else(|| {
         // The scale may be nested one object deep (`measurementScale` object).
-        d.items.iter().find_map(|(_, v)| if let Value::Descriptor(o) = v { keys.iter().find_map(|k| o.get(k)) } else { None })
+        d.items.iter().find_map(|(_, v)| {
+            if let Value::Descriptor(o) = v {
+                keys.iter().find_map(|k| o.get(k))
+            } else {
+                None
+            }
+        })
     })
 }
 
@@ -301,7 +394,11 @@ pub fn scale_from_resource(data: &[u8]) -> Option<MeasurementScale> {
         Some(Value::Text(t)) => t.to_string_lossy(),
         _ => "pixels".into(),
     };
-    Some(MeasurementScale { pixel_length, logical_length, units })
+    Some(MeasurementScale {
+        pixel_length,
+        logical_length,
+        units,
+    })
 }
 
 /// Resource 1074 data for a scale.
@@ -309,7 +406,10 @@ pub fn write_scale_resource(s: &MeasurementScale) -> Vec<u8> {
     let d = Descriptor::new("null")
         .with("pixelLength", Value::Double(s.pixel_length))
         .with("logicalLength", Value::Double(s.logical_length))
-        .with("logicalUnits", Value::Text(photocraft_psd::descriptor::UnicodeString::new(&s.units)));
+        .with(
+            "logicalUnits",
+            Value::Text(photocraft_psd::descriptor::UnicodeString::new(&s.units)),
+        );
     let mut v = VersionedDescriptor::new(d).to_bytes();
     if v.len() % 2 == 1 {
         v.push(0);
@@ -319,7 +419,11 @@ pub fn write_scale_resource(s: &MeasurementScale) -> Vec<u8> {
 
 /// The measurement scale a document's preserved resource 1074 holds (the default when absent).
 pub fn raw_scale(doc: &Document) -> Option<MeasurementScale> {
-    let raw = doc.metadata.psd_resources.iter().find(|(id, _, _)| *id == MEASUREMENT_SCALE)?;
+    let raw = doc
+        .metadata
+        .psd_resources
+        .iter()
+        .find(|(id, _, _)| *id == MEASUREMENT_SCALE)?;
     scale_from_resource(&raw.2)
 }
 
@@ -334,7 +438,11 @@ pub fn keep_raw_scale(doc: &Document) -> bool {
 
 /// Resource 1074 to write when the preserved one can't be used (None = write nothing).
 pub fn fresh_scale_resource(doc: &Document) -> Option<Vec<u8>> {
-    let has_raw = doc.metadata.psd_resources.iter().any(|(id, _, _)| *id == MEASUREMENT_SCALE);
+    let has_raw = doc
+        .metadata
+        .psd_resources
+        .iter()
+        .any(|(id, _, _)| *id == MEASUREMENT_SCALE);
     if has_raw && keep_raw_scale(doc) {
         return None;
     }
@@ -357,7 +465,10 @@ mod tests {
     use super::*;
 
     #[cfg(feature = "corpus")]
-    const SAMPLE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../corpus/psd/ag-psd/read-write/annotations/src.psd");
+    const SAMPLE: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../corpus/psd/ag-psd/read-write/annotations/src.psd"
+    );
 
     #[cfg(feature = "corpus")]
     fn anno_of(bytes: &[u8]) -> Option<Vec<u8>> {
@@ -369,12 +480,16 @@ mod tests {
     #[cfg(feature = "corpus")]
     #[test]
     fn parses_and_rewrites_the_sample_byte_exact() {
-        let file = std::fs::read(SAMPLE).unwrap_or_else(|e| panic!("{SAMPLE}: {e}: run `cargo xtask corpus --all`"));
+        let file = std::fs::read(SAMPLE)
+            .unwrap_or_else(|e| panic!("{SAMPLE}: {e}: run `cargo xtask corpus --all`"));
         let raw = anno_of(&file).unwrap();
         let notes = parse_anno(&raw).unwrap();
         assert_eq!(notes.len(), 2);
         assert_eq!(notes[0].author, "someone");
-        assert_eq!(notes[0].text, "Example annotation\nis here\n\n~ annotator\n");
+        assert_eq!(
+            notes[0].text,
+            "Example annotation\nis here\n\n~ annotator\n"
+        );
         assert_eq!(notes[0].position, [42.0, 28.0]);
         assert_eq!(notes[0].popup, [92.0, 74.0, 332.0, 214.0]);
         assert_eq!(notes[0].modified, "D:20210521231029+01'00'");
@@ -394,9 +509,19 @@ mod tests {
 
     #[test]
     fn export_blocks_keeps_replaces_and_drops() {
-        let mut d = Document::new("n", photocraft_doc::Size::new(10, 10), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::U8);
+        let mut d = Document::new(
+            "n",
+            photocraft_doc::Size::new(10, 10),
+            photocraft_doc::ColorMode::Rgb,
+            photocraft_doc::SampleType::U8,
+        );
         assert!(export_blocks(&d, vec![]).is_empty());
-        d.notes.push(Note { text: "héllo ✓".into(), author: "me".into(), position: [3.0, 4.0], ..Default::default() });
+        d.notes.push(Note {
+            text: "héllo ✓".into(),
+            author: "me".into(),
+            position: [3.0, 4.0],
+            ..Default::default()
+        });
         let out = export_blocks(&d, vec![]);
         assert_eq!(out.len(), 1);
         assert_eq!(parse_anno(&out[0].2).unwrap()[0].text, "héllo ✓");
@@ -411,15 +536,24 @@ mod tests {
     /// Issue #944: an `Anno` block that doesn't parse was taken for "no notes" and dropped on save.
     #[test]
     fn export_blocks_keeps_an_unreadable_block() {
-        let mut d = Document::new("n", photocraft_doc::Size::new(10, 10), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::U8);
-        let bad: Vec<photocraft_doc::PsdGlobalBlock> = vec![(*b"8BIM", ANNO, Arc::new(vec![0, 2, 0, 1, 0, 0, 0, 9]))];
+        let mut d = Document::new(
+            "n",
+            photocraft_doc::Size::new(10, 10),
+            photocraft_doc::ColorMode::Rgb,
+            photocraft_doc::SampleType::U8,
+        );
+        let bad: Vec<photocraft_doc::PsdGlobalBlock> =
+            vec![(*b"8BIM", ANNO, Arc::new(vec![0, 2, 0, 1, 0, 0, 0, 9]))];
         d.metadata.psd_global_blocks = bad.clone();
         assert!(anno_unreadable(&d) && notes_from_blocks(&d).is_empty());
         let out = export_blocks(&d, bad.clone());
         assert_eq!(out.len(), 1);
         assert!(Arc::ptr_eq(&out[0].2, &bad[0].2));
         // A note added by the user still writes a fresh block in its place.
-        d.notes.push(Note { text: "new".into(), ..Default::default() });
+        d.notes.push(Note {
+            text: "new".into(),
+            ..Default::default()
+        });
         let out = export_blocks(&d, bad);
         assert_eq!(parse_anno(&out[0].2).unwrap()[0].text, "new");
         // A readable block is not reported.
@@ -439,24 +573,48 @@ mod tests {
                 assert!(parse_entries(&b).is_none(), "len {len} {kind:?}");
             }
         }
-        let hostile = [0, 2, 0, 1, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, b's', b'n', b'd', b'A'];
+        let hostile = [
+            0, 2, 0, 1, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0, b's', b'n', b'd', b'A',
+        ];
         assert!(parse_anno(&hostile).is_none());
     }
 
     #[test]
     fn scale_resource_roundtrip_and_keep_rules() {
-        let s = MeasurementScale { pixel_length: 150.0, logical_length: 2.0, units: "mm".into() };
-        assert_eq!(scale_from_resource(&write_scale_resource(&s)), Some(s.clone()));
-        let mut d = Document::new("n", photocraft_doc::Size::new(10, 10), photocraft_doc::ColorMode::Rgb, photocraft_doc::SampleType::U8);
+        let s = MeasurementScale {
+            pixel_length: 150.0,
+            logical_length: 2.0,
+            units: "mm".into(),
+        };
+        assert_eq!(
+            scale_from_resource(&write_scale_resource(&s)),
+            Some(s.clone())
+        );
+        let mut d = Document::new(
+            "n",
+            photocraft_doc::Size::new(10, 10),
+            photocraft_doc::ColorMode::Rgb,
+            photocraft_doc::SampleType::U8,
+        );
         assert!(fresh_scale_resource(&d).is_none());
         // An unparseable resource stays while the scale is untouched.
-        d.metadata.psd_resources.push((MEASUREMENT_SCALE, String::new(), Arc::new(vec![0, 0, 0, 16, 1])));
+        d.metadata.psd_resources.push((
+            MEASUREMENT_SCALE,
+            String::new(),
+            Arc::new(vec![0, 0, 0, 16, 1]),
+        ));
         assert!(keep_resource(&d, MEASUREMENT_SCALE) && fresh_scale_resource(&d).is_none());
         d.measurement.scale = s.clone();
         assert!(!keep_resource(&d, MEASUREMENT_SCALE));
-        assert_eq!(scale_from_resource(&fresh_scale_resource(&d).unwrap()), Some(s));
+        assert_eq!(
+            scale_from_resource(&fresh_scale_resource(&d).unwrap()),
+            Some(s)
+        );
         assert!(keep_resource(&d, COUNT_INFO));
-        d.measurement.count_groups.push(photocraft_doc::CountGroup { points: vec![[1.0, 1.0]], ..Default::default() });
+        d.measurement.count_groups.push(photocraft_doc::CountGroup {
+            points: vec![[1.0, 1.0]],
+            ..Default::default()
+        });
         assert!(!keep_resource(&d, COUNT_INFO));
     }
 }

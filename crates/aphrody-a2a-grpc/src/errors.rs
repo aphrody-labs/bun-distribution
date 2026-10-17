@@ -49,10 +49,22 @@ mod tests {
     fn test_a2a_error_to_status_mapping() {
         let cases = [
             (error_code::TASK_NOT_FOUND, tonic::Code::NotFound),
-            (error_code::TASK_NOT_CANCELABLE, tonic::Code::FailedPrecondition),
-            (error_code::PUSH_NOTIFICATION_NOT_SUPPORTED, tonic::Code::FailedPrecondition),
-            (error_code::UNSUPPORTED_OPERATION, tonic::Code::FailedPrecondition),
-            (error_code::CONTENT_TYPE_NOT_SUPPORTED, tonic::Code::InvalidArgument),
+            (
+                error_code::TASK_NOT_CANCELABLE,
+                tonic::Code::FailedPrecondition,
+            ),
+            (
+                error_code::PUSH_NOTIFICATION_NOT_SUPPORTED,
+                tonic::Code::FailedPrecondition,
+            ),
+            (
+                error_code::UNSUPPORTED_OPERATION,
+                tonic::Code::FailedPrecondition,
+            ),
+            (
+                error_code::CONTENT_TYPE_NOT_SUPPORTED,
+                tonic::Code::InvalidArgument,
+            ),
             (error_code::INVALID_AGENT_RESPONSE, tonic::Code::Internal),
             (error_code::INTERNAL_ERROR, tonic::Code::Internal),
             (error_code::PARSE_ERROR, tonic::Code::InvalidArgument),
@@ -64,7 +76,11 @@ mod tests {
         for (code, expected_grpc) in cases {
             let err = A2AError::new(code, "test");
             let status = a2a_error_to_status(&err);
-            assert_eq!(status.code(), expected_grpc, "code {code} should map to {expected_grpc:?}");
+            assert_eq!(
+                status.code(),
+                expected_grpc,
+                "code {code} should map to {expected_grpc:?}"
+            );
         }
     }
 
@@ -72,7 +88,10 @@ mod tests {
     fn test_status_to_a2a_error_mapping() {
         let cases = [
             (tonic::Code::NotFound, error_code::TASK_NOT_FOUND),
-            (tonic::Code::FailedPrecondition, error_code::TASK_NOT_CANCELABLE),
+            (
+                tonic::Code::FailedPrecondition,
+                error_code::TASK_NOT_CANCELABLE,
+            ),
             (tonic::Code::Unimplemented, error_code::METHOD_NOT_FOUND),
             (tonic::Code::InvalidArgument, error_code::INVALID_PARAMS),
             (tonic::Code::Internal, error_code::INTERNAL_ERROR),
@@ -81,7 +100,10 @@ mod tests {
         for (grpc_code, expected_a2a) in cases {
             let status = tonic::Status::new(grpc_code, "test");
             let err = status_to_a2a_error(&status);
-            assert_eq!(err.code, expected_a2a, "{grpc_code:?} should map to {expected_a2a}");
+            assert_eq!(
+                err.code, expected_a2a,
+                "{grpc_code:?} should map to {expected_a2a}"
+            );
         }
     }
 
@@ -95,9 +117,18 @@ mod tests {
     #[test]
     fn test_additional_a2a_error_to_status_mappings() {
         let cases = [
-            (error_code::EXTENDED_CARD_NOT_CONFIGURED, tonic::Code::FailedPrecondition),
-            (error_code::EXTENSION_SUPPORT_REQUIRED, tonic::Code::FailedPrecondition),
-            (error_code::VERSION_NOT_SUPPORTED, tonic::Code::FailedPrecondition),
+            (
+                error_code::EXTENDED_CARD_NOT_CONFIGURED,
+                tonic::Code::FailedPrecondition,
+            ),
+            (
+                error_code::EXTENSION_SUPPORT_REQUIRED,
+                tonic::Code::FailedPrecondition,
+            ),
+            (
+                error_code::VERSION_NOT_SUPPORTED,
+                tonic::Code::FailedPrecondition,
+            ),
         ];
 
         for (code, expected_grpc) in cases {

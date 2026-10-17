@@ -46,7 +46,10 @@ impl NetState {
     /// Returns true if the state machine is transitioning towards a connection.
     #[must_use]
     pub const fn is_connecting(&self) -> bool {
-        matches!(self, Self::Login | Self::InitNet | Self::RecruitClient | Self::JoinSession)
+        matches!(
+            self,
+            Self::Login | Self::InitNet | Self::RecruitClient | Self::JoinSession
+        )
     }
 }
 
@@ -170,23 +173,23 @@ impl GameNetRankMatchmakeStateMachine {
         match self.state {
             MatchmakeState::Init => {
                 self.state = MatchmakeState::CheckInternetConnection;
-            },
+            }
             MatchmakeState::CheckInternetConnection => {
                 self.state = MatchmakeState::WaitHttpLogin;
-            },
+            }
             MatchmakeState::WaitHttpLogin => {
                 self.state = MatchmakeState::WaitAPI;
-            },
+            }
             MatchmakeState::WaitAPI => {
                 self.state = MatchmakeState::Search;
-            },
+            }
             MatchmakeState::Search | MatchmakeState::WaitMatching => {
                 self.elapsed_seconds += dt;
                 // Level-5 rating window escalation: expand every 5 seconds up to ±350.
                 let expansions = (self.elapsed_seconds / self.window_expand_interval_sec) as u32;
                 self.rating_window = (50 + expansions * 50).min(350);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -310,8 +313,11 @@ impl GameNetTournamentStateMachine {
 
     /// Votes on rematch.
     pub fn vote_rematch(&mut self, p1_vote: bool, p2_vote: bool) {
-        self.rematch_judge =
-            if p1_vote && p2_vote { RematchJudge::Agreed } else { RematchJudge::Declined };
+        self.rematch_judge = if p1_vote && p2_vote {
+            RematchJudge::Agreed
+        } else {
+            RematchJudge::Declined
+        };
     }
 }
 

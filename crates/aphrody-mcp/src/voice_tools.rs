@@ -91,8 +91,10 @@ pub(crate) struct VoiceSynthesizeRequest {
 
     /// Provider-specific voice identifier (ElevenLabs `voice_id`).
     /// Defaults to the public "Bella" voice when omitted.
-    #[schemars(description = "Provider voice id (ElevenLabs voice_id). Defaults to Bella \
-                              (EXAVITQu4vr4xnSDxMaL) when omitted.")]
+    #[schemars(
+        description = "Provider voice id (ElevenLabs voice_id). Defaults to Bella \
+                              (EXAVITQu4vr4xnSDxMaL) when omitted."
+    )]
     pub voice: Option<String>,
 
     /// Desired audio container/codec. Currently only `"mp3"` / `"audio/mpeg"`
@@ -108,8 +110,10 @@ pub(crate) struct VoiceSynthesizeRequest {
 pub(crate) struct VoiceTranscribeRequest {
     /// Standard base64 (`+`/`/` alphabet, `=` padding) of the audio bytes.
     /// Max 8 MiB after decode.
-    #[schemars(description = "Base64-encoded audio payload (standard alphabet, padded). Max 8 \
-                              MiB after decode.")]
+    #[schemars(
+        description = "Base64-encoded audio payload (standard alphabet, padded). Max 8 \
+                              MiB after decode."
+    )]
     pub audio_base64: String,
 
     /// MIME type of the encoded audio (e.g. `audio/wav`, `audio/mpeg`).
@@ -136,9 +140,9 @@ fn error_envelope(code: &str, reason: impl Into<String>) -> String {
 fn normalize_format(raw: Option<&str>) -> Result<&'static str, String> {
     match raw.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
         None | Some("") | Some("mp3") | Some("audio/mpeg") | Some("mpeg") => Ok(DEFAULT_TTS_MIME),
-        Some(other) => {
-            Err(format!("unsupported format {other:?}; only \"mp3\" / \"audio/mpeg\" is wired"))
-        },
+        Some(other) => Err(format!(
+            "unsupported format {other:?}; only \"mp3\" / \"audio/mpeg\" is wired"
+        )),
     }
 }
 
@@ -150,7 +154,11 @@ fn normalize_format(raw: Option<&str>) -> Result<&'static str, String> {
 /// matching the dispatch convention used by every other `#[tool]` in
 /// [`crate`].
 pub(crate) async fn synthesize(req: VoiceSynthesizeRequest) -> String {
-    let VoiceSynthesizeRequest { text, voice, format } = req;
+    let VoiceSynthesizeRequest {
+        text,
+        voice,
+        format,
+    } = req;
 
     let trimmed = text.trim();
     if trimmed.is_empty() {
@@ -174,12 +182,15 @@ pub(crate) async fn synthesize(req: VoiceSynthesizeRequest) -> String {
                 "VOICE_MISSING_CREDENTIAL",
                 "ELEVENLABS_API_KEY env var is not set; cannot reach the ElevenLabs TTS endpoint",
             );
-        },
+        }
     };
 
     let voice_id = voice.as_deref().unwrap_or(DEFAULT_VOICE_ID);
     if voice_id.trim().is_empty() {
-        return error_envelope("VOICE_BAD_REQUEST", "voice id must be non-empty when provided");
+        return error_envelope(
+            "VOICE_BAD_REQUEST",
+            "voice id must be non-empty when provided",
+        );
     }
 
     let provider = aphrody_voice::elevenlabs::ElevenLabsProvider::new(api_key);
@@ -190,7 +201,7 @@ pub(crate) async fn synthesize(req: VoiceSynthesizeRequest) -> String {
             Ok(bytes) => bytes,
             Err(err) => {
                 return error_envelope("VOICE_PROVIDER_ERROR", format!("ElevenLabs: {err}"));
-            },
+            }
         };
     let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
 
@@ -212,7 +223,11 @@ pub(crate) async fn synthesize(req: VoiceSynthesizeRequest) -> String {
 /// falls back to the REST Whisper API on
 /// [`aphrody_voice::stt::SttError::NotImplemented`] or any provider error.
 pub(crate) async fn transcribe(req: VoiceTranscribeRequest) -> String {
-    let VoiceTranscribeRequest { audio_base64, mime_type, language } = req;
+    let VoiceTranscribeRequest {
+        audio_base64,
+        mime_type,
+        language,
+    } = req;
 
     let audio = match base64::engine::general_purpose::STANDARD.decode(audio_base64.as_bytes()) {
         Ok(bytes) => bytes,
@@ -221,10 +236,13 @@ pub(crate) async fn transcribe(req: VoiceTranscribeRequest) -> String {
                 "VOICE_BAD_REQUEST",
                 format!("audio_base64 decode failed: {err}"),
             );
-        },
+        }
     };
     if audio.is_empty() {
-        return error_envelope("VOICE_BAD_REQUEST", "audio payload is empty after base64 decode");
+        return error_envelope(
+            "VOICE_BAD_REQUEST",
+            "audio payload is empty after base64 decode",
+        );
     }
     if audio.len() > MAX_AUDIO_BYTES {
         return error_envelope(
@@ -257,13 +275,13 @@ pub(crate) async fn transcribe(req: VoiceTranscribeRequest) -> String {
                     "backend": "local_whisper",
                     "mime_type": mime,
                 }));
-            },
+            }
             Err(aphrody_voice::stt::SttError::NotImplemented { .. }) => {
                 // Fallthrough to REST fallback.
-            },
+            }
             Err(err) => {
                 return error_envelope("VOICE_PROVIDER_ERROR", format!("local_whisper: {err}"));
-            },
+            }
         }
     }
 
@@ -278,14 +296,14 @@ pub(crate) async fn transcribe(req: VoiceTranscribeRequest) -> String {
                      and REST fallback failed: {err}"
                 ),
             );
-        },
+        }
     };
     let transcript =
         match aphrody_voice::stt::SttProvider::transcribe(&provider, &audio, opts).await {
             Ok(t) => t,
             Err(err) => {
                 return error_envelope("VOICE_PROVIDER_ERROR", format!("whisper_api: {err}"));
-            },
+            }
         };
 
     pretty(&json!({
@@ -345,9 +363,18 @@ mod tests {
         // names (text/voice/format) so MCP clients can introspect the tool.
         let schema = rmcp::schemars::schema_for!(VoiceSynthesizeRequest);
         let schema_json = serde_json::to_string(&schema).expect("schema serialise");
-        assert!(schema_json.contains("\"text\""), "schema missing `text`: {schema_json}");
-        assert!(schema_json.contains("\"voice\""), "schema missing `voice`: {schema_json}");
-        assert!(schema_json.contains("\"format\""), "schema missing `format`: {schema_json}");
+        assert!(
+            schema_json.contains("\"text\""),
+            "schema missing `text`: {schema_json}"
+        );
+        assert!(
+            schema_json.contains("\"voice\""),
+            "schema missing `voice`: {schema_json}"
+        );
+        assert!(
+            schema_json.contains("\"format\""),
+            "schema missing `format`: {schema_json}"
+        );
     }
 
     #[test]
@@ -393,12 +420,22 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn voice_dispatch_returns_structured_error_when_missing_text() {
-        let req = VoiceSynthesizeRequest { text: "   ".to_owned(), voice: None, format: None };
+        let req = VoiceSynthesizeRequest {
+            text: "   ".to_owned(),
+            voice: None,
+            format: None,
+        };
         let out = synthesize(req).await;
         let value: serde_json::Value = serde_json::from_str(&out).expect("parse error envelope");
-        assert_eq!(value.get("error").and_then(|v| v.as_str()), Some("VOICE_BAD_REQUEST"));
+        assert_eq!(
+            value.get("error").and_then(|v| v.as_str()),
+            Some("VOICE_BAD_REQUEST")
+        );
         assert!(
-            value.get("reason").and_then(|v| v.as_str()).is_some_and(|s| s.contains("non-empty")),
+            value
+                .get("reason")
+                .and_then(|v| v.as_str())
+                .is_some_and(|s| s.contains("non-empty")),
             "unexpected reason: {value}"
         );
     }
@@ -412,16 +449,25 @@ mod tests {
         };
         let out = transcribe(req).await;
         let value: serde_json::Value = serde_json::from_str(&out).expect("parse error envelope");
-        assert_eq!(value.get("error").and_then(|v| v.as_str()), Some("VOICE_BAD_REQUEST"));
+        assert_eq!(
+            value.get("error").and_then(|v| v.as_str()),
+            Some("VOICE_BAD_REQUEST")
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]
     async fn voice_transcribe_rejects_empty_payload() {
-        let req =
-            VoiceTranscribeRequest { audio_base64: String::new(), mime_type: None, language: None };
+        let req = VoiceTranscribeRequest {
+            audio_base64: String::new(),
+            mime_type: None,
+            language: None,
+        };
         let out = transcribe(req).await;
         let value: serde_json::Value = serde_json::from_str(&out).expect("parse error envelope");
-        assert_eq!(value.get("error").and_then(|v| v.as_str()), Some("VOICE_BAD_REQUEST"));
+        assert_eq!(
+            value.get("error").and_then(|v| v.as_str()),
+            Some("VOICE_BAD_REQUEST")
+        );
     }
 
     #[test]
@@ -447,7 +493,13 @@ mod tests {
         // present (callers read the key) but explicitly null (never a number).
         let body =
             json!({ "confidence": serde_json::Value::Null, "confidence_note": CONFIDENCE_NOTE });
-        assert!(body.get("confidence").is_some(), "the key must stay present");
-        assert!(body["confidence"].is_null(), "confidence must never be a number: {body}");
+        assert!(
+            body.get("confidence").is_some(),
+            "the key must stay present"
+        );
+        assert!(
+            body["confidence"].is_null(),
+            "confidence must never be a number: {body}"
+        );
     }
 }

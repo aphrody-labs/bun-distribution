@@ -75,14 +75,22 @@ mod tests {
             {"text": middle, "start": clip.source_in.0 + 100, "end": clip.source_in.0 + 200},
             {"text": "hello", "start": clip.source_in.0 + 200, "end": clip.source_in.0 + 300}]})
         };
-        s.execute("transcript.set", json!({"item": clip.item.0, "transcript": transcript("hello")})).unwrap();
+        s.execute(
+            "transcript.set",
+            json!({"item": clip.item.0, "transcript": transcript("hello")}),
+        )
+        .unwrap();
         let mut cache = TranscriptCache::default();
         let first = cache.content(&s);
         assert_eq!(&*cache.highlights("hello hello"), &[true, true, true]);
         assert_eq!(&*cache.highlights("missing"), &[false, false, false]);
         s.set_playhead(Tick(150));
         assert!(Arc::ptr_eq(&first, &cache.content(&s)));
-        s.execute("transcript.set", json!({"item": clip.item.0, "transcript": transcript("world")})).unwrap();
+        s.execute(
+            "transcript.set",
+            json!({"item": clip.item.0, "transcript": transcript("world")}),
+        )
+        .unwrap();
         assert_eq!(cache.content(&s).words[1].text, "world");
         assert_eq!(&*cache.highlights("hello hello"), &[false, false, false]);
         s.undo();

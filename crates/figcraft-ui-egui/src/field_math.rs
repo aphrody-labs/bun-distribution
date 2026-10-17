@@ -96,13 +96,20 @@ impl Parser<'_> {
             return self.eat(')').then_some(v);
         }
         let mut digits = String::new();
-        while let Some(c) = self.chars.next_if(|c| c.is_ascii_digit() || matches!(c, '.' | ',')) {
+        while let Some(c) = self
+            .chars
+            .next_if(|c| c.is_ascii_digit() || matches!(c, '.' | ','))
+        {
             // A decimal comma is a decimal point.
             digits.push(if c == ',' { '.' } else { c });
         }
         let v = digits.parse::<f64>().ok().filter(|v| v.is_finite())?;
         // The unit: letters (px, pt, ms, x), a degree sign, and a percent sign where that is one.
-        while self.chars.next_if(|c| c.is_ascii_alphabetic() || *c == '°' || (*c == '%' && self.percent_unit)).is_some() {}
+        while self
+            .chars
+            .next_if(|c| c.is_ascii_alphabetic() || *c == '°' || (*c == '%' && self.percent_unit))
+            .is_some()
+        {}
         Some(v)
     }
 
@@ -127,7 +134,10 @@ pub fn parse(text: &str, percent_unit: bool) -> Option<Typed> {
         Some(c @ ('+' | '*' | '/')) => (Some(c), body.get(c.len_utf8()..).unwrap_or("")),
         _ => (None, body),
     };
-    let mut p = Parser { chars: rest.chars().peekable(), percent_unit };
+    let mut p = Parser {
+        chars: rest.chars().peekable(),
+        percent_unit,
+    };
     let v = p.sum(0).filter(|_| p.end())?;
     let rel = match (percent.is_some(), lead) {
         (false, None) => return Some(Typed::Value(v)),
@@ -159,5 +169,9 @@ pub fn eval(text: &str, cur: Option<f64>) -> Option<f64> {
 /// (0.1 + 0.2).
 pub fn stepped(from: f64, steps: f64, step: f64) -> f64 {
     let v = from + steps * step;
-    if v.is_finite() { (v * 1e6).round() / 1e6 } else { from }
+    if v.is_finite() {
+        (v * 1e6).round() / 1e6
+    } else {
+        from
+    }
 }

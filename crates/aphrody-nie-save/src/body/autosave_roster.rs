@@ -149,14 +149,16 @@ impl CharaId {
             return None;
         }
 
-        let parsed =
-            if let Some(hex) = value.strip_prefix("0x").or_else(|| value.strip_prefix("0X")) {
-                u32::from_str_radix(hex, 16).ok()?
-            } else if value.len() == 8 && value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-                u32::from_str_radix(value, 16).ok()?
-            } else {
-                value.parse::<u32>().ok()?
-            };
+        let parsed = if let Some(hex) = value
+            .strip_prefix("0x")
+            .or_else(|| value.strip_prefix("0X"))
+        {
+            u32::from_str_radix(hex, 16).ok()?
+        } else if value.len() == 8 && value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            u32::from_str_radix(value, 16).ok()?
+        } else {
+            value.parse::<u32>().ok()?
+        };
 
         Some(Self(parsed))
     }
@@ -242,7 +244,11 @@ pub fn parse_autosave_roster(body: &[u8]) -> Result<AutosaveRoster, SaveError> {
     let scalars = parse_scalars(body);
     let (owned, roster_slots) = parse_roster(body)?;
 
-    Ok(AutosaveRoster { scalars, owned, roster_slots })
+    Ok(AutosaveRoster {
+        scalars,
+        owned,
+        roster_slots,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -298,7 +304,9 @@ fn parse_roster(body: &[u8]) -> Result<(alloc::vec::Vec<CharaId>, usize), SaveEr
     let inner_start = nested_offset + inner_skip;
 
     if inner_start > body.len() {
-        return Err(SaveError::Corrupt("blob 0x0510 tronqué avant le flux TLV interne"));
+        return Err(SaveError::Corrupt(
+            "blob 0x0510 tronqué avant le flux TLV interne",
+        ));
     }
 
     let inner_area = &body[inner_start..];
@@ -553,10 +561,19 @@ mod tests {
     #[test]
     fn external_character_ids_follow_the_save_surface_contract() {
         let expected = CharaId(0xF5E1_E7CD);
-        for raw in ["0xF5E1E7CD", "0xf5e1e7cd", "F5E1E7CD", "4125222861", " 0xF5E1E7CD "] {
+        for raw in [
+            "0xF5E1E7CD",
+            "0xf5e1e7cd",
+            "F5E1E7CD",
+            "4125222861",
+            " 0xF5E1E7CD ",
+        ] {
             assert_eq!(CharaId::parse_external(raw), Some(expected), "{raw}");
         }
-        assert_eq!(CharaId::parse_external("12345678"), Some(CharaId(0x1234_5678)));
+        assert_eq!(
+            CharaId::parse_external("12345678"),
+            Some(CharaId(0x1234_5678))
+        );
         assert_eq!(CharaId::parse_external("1234567"), Some(CharaId(1_234_567)));
 
         for raw in ["", " ", "mark-evans", "0xZZZZ", "-1", "4294967296"] {
@@ -634,8 +651,9 @@ mod tests {
         }
 
         let container = read_save(path).expect("lecture de la save réelle");
-        let autosave_blob =
-            container.blob_by_subtype(BlobSubtype::Autosave).expect("blob Autosave absent");
+        let autosave_blob = container
+            .blob_by_subtype(BlobSubtype::Autosave)
+            .expect("blob Autosave absent");
 
         let roster = parse_autosave_roster(&autosave_blob.body)
             .expect("parse_autosave_roster échoué sur save réelle");
@@ -651,7 +669,11 @@ mod tests {
         assert_eq!(s.playtime_secs, 323895, "playtime");
 
         // Roster : au moins 4000 personnages possédés (save avancée), max 6000
-        assert!(roster.owned.len() >= 4000, "roster trop petit: {}", roster.owned.len());
+        assert!(
+            roster.owned.len() >= 4000,
+            "roster trop petit: {}",
+            roster.owned.len()
+        );
         assert_eq!(roster.roster_slots, ROSTER_SLOT_COUNT);
 
         // Validation croisée : les ids parsés sont des u32 non-nuls

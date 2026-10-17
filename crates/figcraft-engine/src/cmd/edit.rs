@@ -12,8 +12,12 @@ use crate::{EngineError, Result, Session, bad, spec};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("edit.undo", "Undo", "{}", false, |s, _| Ok(json!({"undone": s.undo()?}))),
-        spec!("edit.redo", "Redo", "{}", false, |s, _| Ok(json!({"redone": s.redo()?}))),
+        spec!("edit.undo", "Undo", "{}", false, |s, _| Ok(
+            json!({"undone": s.undo()?})
+        )),
+        spec!("edit.redo", "Redo", "{}", false, |s, _| Ok(
+            json!({"redone": s.redo()?})
+        )),
         spec!("edit.delete", "Delete", "{ids?}", true, delete),
         spec!(
             "edit.duplicate",
@@ -24,11 +28,41 @@ pub fn specs() -> Vec<CommandSpec> {
         ),
         spec!("edit.copy", "Copy", "{ids?}", false, copy),
         spec!("edit.cut", "Cut", "{ids?}", true, cut),
-        spec!("edit.paste", "Paste", "{parent?, x?, y? (page coordinates of the pasted top-left)}", true, paste),
-        spec!("edit.pasteOver", "Paste over selection", "{}", true, paste_over),
-        spec!("edit.pasteReplace", "Paste to replace", "{ids?}", true, paste_replace),
-        spec!("edit.copyProperties", "Copy properties", "{id?}", false, copy_props),
-        spec!("edit.pasteProperties", "Paste properties", "{ids?}", true, paste_props),
+        spec!(
+            "edit.paste",
+            "Paste",
+            "{parent?, x?, y? (page coordinates of the pasted top-left)}",
+            true,
+            paste
+        ),
+        spec!(
+            "edit.pasteOver",
+            "Paste over selection",
+            "{}",
+            true,
+            paste_over
+        ),
+        spec!(
+            "edit.pasteReplace",
+            "Paste to replace",
+            "{ids?}",
+            true,
+            paste_replace
+        ),
+        spec!(
+            "edit.copyProperties",
+            "Copy properties",
+            "{id?}",
+            false,
+            copy_props
+        ),
+        spec!(
+            "edit.pasteProperties",
+            "Paste properties",
+            "{ids?}",
+            true,
+            paste_props
+        ),
         spec!(
             "edit.findReplace",
             "Find and replace",
@@ -36,20 +70,35 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             find_replace
         ),
-        spec!("edit.setDefaultProperties", "Set default properties", "{id?}", false, |s, p| {
-            let id = targets(s, p).first().copied().ok_or_else(|| bad("edit.setDefaultProperties", "select a layer"))?;
-            let v = copy_props_of(s.doc()?, id);
-            s.clipboard.props = Some(v);
-            ok()
-        }),
-        spec!("select.set", "Select", "{ids: [..]}  (replace the selection)", false, |s, p| {
-            let ids = match get(p, "ids") {
-                Some(Value::Array(a)) => a.iter().filter_map(id_of).collect(),
-                _ => id(p, "id").into_iter().collect(),
-            };
-            select_and_page(s, ids)?;
-            Ok(json!({"selection": s.selection()}))
-        }),
+        spec!(
+            "edit.setDefaultProperties",
+            "Set default properties",
+            "{id?}",
+            false,
+            |s, p| {
+                let id = targets(s, p)
+                    .first()
+                    .copied()
+                    .ok_or_else(|| bad("edit.setDefaultProperties", "select a layer"))?;
+                let v = copy_props_of(s.doc()?, id);
+                s.clipboard.props = Some(v);
+                ok()
+            }
+        ),
+        spec!(
+            "select.set",
+            "Select",
+            "{ids: [..]}  (replace the selection)",
+            false,
+            |s, p| {
+                let ids = match get(p, "ids") {
+                    Some(Value::Array(a)) => a.iter().filter_map(id_of).collect(),
+                    _ => id(p, "id").into_iter().collect(),
+                };
+                select_and_page(s, ids)?;
+                Ok(json!({"selection": s.selection()}))
+            }
+        ),
         spec!("select.add", "Add to selection", "{ids}", false, |s, p| {
             let mut sel = s.selection();
             for i in targets_param(p) {
@@ -60,12 +109,22 @@ pub fn specs() -> Vec<CommandSpec> {
             s.set_selection(sel);
             Ok(json!({"selection": s.selection()}))
         }),
-        spec!("select.remove", "Remove from selection", "{ids}", false, |s, p| {
-            let rm = targets_param(p);
-            let sel: Vec<NodeId> = s.selection().into_iter().filter(|i| !rm.contains(i)).collect();
-            s.set_selection(sel);
-            Ok(json!({"selection": s.selection()}))
-        }),
+        spec!(
+            "select.remove",
+            "Remove from selection",
+            "{ids}",
+            false,
+            |s, p| {
+                let rm = targets_param(p);
+                let sel: Vec<NodeId> = s
+                    .selection()
+                    .into_iter()
+                    .filter(|i| !rm.contains(i))
+                    .collect();
+                s.set_selection(sel);
+                Ok(json!({"selection": s.selection()}))
+            }
+        ),
         spec!(
             "select.layersAt",
             "Layers at a point",
@@ -82,7 +141,13 @@ pub fn specs() -> Vec<CommandSpec> {
             }
             ok()
         }),
-        spec!("select.inverse", "Select inverse", "{}", false, select_inverse),
+        spec!(
+            "select.inverse",
+            "Select inverse",
+            "{}",
+            false,
+            select_inverse
+        ),
         spec!(
             "select.area",
             "Select area",
@@ -90,47 +155,122 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             select_area
         ),
-        spec!("select.children", "Select children", "{}", false, select_children),
+        spec!(
+            "select.children",
+            "Select children",
+            "{}",
+            false,
+            select_children
+        ),
         spec!("select.parent", "Select parent", "{}", false, select_parent),
-        spec!("select.next", "Select next sibling", "{}", false, |s, _| select_sibling(s, 1)),
-        spec!("select.previous", "Select previous sibling", "{}", false, |s, _| select_sibling(s, -1)),
-        spec!("select.matching", "Select matching layers", "{}", false, select_matching),
-        spec!("select.sameFill", "Select same fill", "{}", false, |s, _| select_same(s, |a, b| a.fills == b.fills && !a.fills.is_empty())),
-        spec!("select.sameStroke", "Select same stroke", "{}", false, |s, _| select_same(s, |a, b| a.strokes == b.strokes
-            && a.stroke == b.stroke
-            && !a.strokes.is_empty())),
-        spec!("select.sameEffect", "Select same effect", "{}", false, |s, _| select_same(s, |a, b| a.effects == b.effects && !a.effects.is_empty())),
-        spec!("select.sameText", "Select same text properties", "{}", false, |s, _| {
-            select_same(s, |a, b| matches!((&a.kind, &b.kind), (NodeKind::Text(x), NodeKind::Text(y)) if x.style == y.style))
+        spec!("select.next", "Select next sibling", "{}", false, |s, _| {
+            select_sibling(s, 1)
         }),
-        spec!("select.sameFont", "Select same font", "{}", false, |s, _| {
-            select_same(
-                s,
-                |a, b| matches!((&a.kind, &b.kind), (NodeKind::Text(x), NodeKind::Text(y)) if x.style.font_family == y.style.font_family && x.style.font_style == y.style.font_style),
-            )
-        }),
-        spec!("select.sameInstance", "Select same instance", "{}", false, |s, _| {
-            select_same(
-                s,
-                |a, b| matches!((&a.kind, &b.kind), (NodeKind::Instance { component: x, .. }, NodeKind::Instance { component: y, .. }) if x == y),
-            )
-        }),
-        spec!("select.sameProperties", "Select same properties", "{}", false, |s, _| {
-            select_same(s, |a, b| {
-                a.kind.type_name() == b.kind.type_name()
-                    && a.fills == b.fills
-                    && a.strokes == b.strokes
-                    && a.effects == b.effects
-                    && a.corners == b.corners
-            })
-        }),
-        spec!("select.byName", "Select layers by name", "{query, page? (default current; \"all\" for every page)}", false, |s, p| {
-            let q = req_string("select.byName", p, "query")?;
-            let page = if string(p, "page").as_deref() == Some("all") { None } else { Some(s.page()?) };
-            let ids = s.doc()?.find_by_name(&q, page);
-            select_and_page(s, ids.clone())?;
-            Ok(json!({"selection": ids}))
-        }),
+        spec!(
+            "select.previous",
+            "Select previous sibling",
+            "{}",
+            false,
+            |s, _| select_sibling(s, -1)
+        ),
+        spec!(
+            "select.matching",
+            "Select matching layers",
+            "{}",
+            false,
+            select_matching
+        ),
+        spec!(
+            "select.sameFill",
+            "Select same fill",
+            "{}",
+            false,
+            |s, _| select_same(s, |a, b| a.fills == b.fills && !a.fills.is_empty())
+        ),
+        spec!(
+            "select.sameStroke",
+            "Select same stroke",
+            "{}",
+            false,
+            |s, _| select_same(s, |a, b| a.strokes == b.strokes
+                && a.stroke == b.stroke
+                && !a.strokes.is_empty())
+        ),
+        spec!(
+            "select.sameEffect",
+            "Select same effect",
+            "{}",
+            false,
+            |s, _| select_same(s, |a, b| a.effects == b.effects && !a.effects.is_empty())
+        ),
+        spec!(
+            "select.sameText",
+            "Select same text properties",
+            "{}",
+            false,
+            |s, _| {
+                select_same(
+                    s,
+                    |a, b| matches!((&a.kind, &b.kind), (NodeKind::Text(x), NodeKind::Text(y)) if x.style == y.style),
+                )
+            }
+        ),
+        spec!(
+            "select.sameFont",
+            "Select same font",
+            "{}",
+            false,
+            |s, _| {
+                select_same(
+                    s,
+                    |a, b| matches!((&a.kind, &b.kind), (NodeKind::Text(x), NodeKind::Text(y)) if x.style.font_family == y.style.font_family && x.style.font_style == y.style.font_style),
+                )
+            }
+        ),
+        spec!(
+            "select.sameInstance",
+            "Select same instance",
+            "{}",
+            false,
+            |s, _| {
+                select_same(
+                    s,
+                    |a, b| matches!((&a.kind, &b.kind), (NodeKind::Instance { component: x, .. }, NodeKind::Instance { component: y, .. }) if x == y),
+                )
+            }
+        ),
+        spec!(
+            "select.sameProperties",
+            "Select same properties",
+            "{}",
+            false,
+            |s, _| {
+                select_same(s, |a, b| {
+                    a.kind.type_name() == b.kind.type_name()
+                        && a.fills == b.fills
+                        && a.strokes == b.strokes
+                        && a.effects == b.effects
+                        && a.corners == b.corners
+                })
+            }
+        ),
+        spec!(
+            "select.byName",
+            "Select layers by name",
+            "{query, page? (default current; \"all\" for every page)}",
+            false,
+            |s, p| {
+                let q = req_string("select.byName", p, "query")?;
+                let page = if string(p, "page").as_deref() == Some("all") {
+                    None
+                } else {
+                    Some(s.page()?)
+                };
+                let ids = s.doc()?.find_by_name(&q, page);
+                select_and_page(s, ids.clone())?;
+                Ok(json!({"selection": ids}))
+            }
+        ),
         spec!(
             "transform.nudge",
             "Nudge",
@@ -145,19 +285,25 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             nudge_size
         ),
-        spec!("object.rename", "Rename", "{ids?, name?} (without a name: rename the layer inline in the layers panel)", true, |s, p| {
-            let ids = req_targets("object.rename", s, p)?;
-            if p.get("name").is_none() {
-                s.request_ui("layers.rename", json!({"ids": ids}));
-                return ok();
+        spec!(
+            "object.rename",
+            "Rename",
+            "{ids?, name?} (without a name: rename the layer inline in the layers panel)",
+            true,
+            |s, p| {
+                let ids = req_targets("object.rename", s, p)?;
+                if p.get("name").is_none() {
+                    s.request_ui("layers.rename", json!({"ids": ids}));
+                    return ok();
+                }
+                let name = req_string("object.rename", p, "name")?;
+                let doc = s.doc_mut()?;
+                for i in ids {
+                    doc.get_mut(i)?.name = name.clone();
+                }
+                ok()
             }
-            let name = req_string("object.rename", p, "name")?;
-            let doc = s.doc_mut()?;
-            for i in ids {
-                doc.get_mut(i)?.name = name.clone();
-            }
-            ok()
-        }),
+        ),
         spec!(
             "object.batchRename",
             "Batch rename",
@@ -165,9 +311,27 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             batch_rename
         ),
-        spec!("object.toggleVisible", "Show/Hide selection", "{ids?, visible?}", true, |s, p| toggle(s, p, "visible")),
-        spec!("object.toggleLock", "Lock/Unlock selection", "{ids?, locked?}", true, |s, p| toggle(s, p, "locked")),
-        spec!("object.hideOthers", "Hide other layers", "{}", true, hide_others),
+        spec!(
+            "object.toggleVisible",
+            "Show/Hide selection",
+            "{ids?, visible?}",
+            true,
+            |s, p| toggle(s, p, "visible")
+        ),
+        spec!(
+            "object.toggleLock",
+            "Lock/Unlock selection",
+            "{ids?, locked?}",
+            true,
+            |s, p| toggle(s, p, "locked")
+        ),
+        spec!(
+            "object.hideOthers",
+            "Hide other layers",
+            "{}",
+            true,
+            hide_others
+        ),
         spec!(
             "object.opacityKeys",
             "Opacity from number keys",
@@ -175,47 +339,119 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             opacity_keys
         ),
-        spec!("object.removeFill", "Remove fill", "{ids?}", true, |s, p| {
-            for i in req_targets("object.removeFill", s, p)? {
-                s.doc_mut()?.get_mut(i)?.fills.clear();
+        spec!(
+            "object.removeFill",
+            "Remove fill",
+            "{ids?}",
+            true,
+            |s, p| {
+                for i in req_targets("object.removeFill", s, p)? {
+                    s.doc_mut()?.get_mut(i)?.fills.clear();
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("object.removeStroke", "Remove stroke", "{ids?}", true, |s, p| {
-            for i in req_targets("object.removeStroke", s, p)? {
-                s.doc_mut()?.get_mut(i)?.strokes.clear();
+        ),
+        spec!(
+            "object.removeStroke",
+            "Remove stroke",
+            "{ids?}",
+            true,
+            |s, p| {
+                for i in req_targets("object.removeStroke", s, p)? {
+                    s.doc_mut()?.get_mut(i)?.strokes.clear();
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("object.swapFillStroke", "Swap fill and stroke", "{ids?}", true, |s, p| {
-            for i in req_targets("object.swapFillStroke", s, p)? {
-                let n = s.doc_mut()?.get_mut(i)?;
-                std::mem::swap(&mut n.fills, &mut n.strokes);
+        ),
+        spec!(
+            "object.swapFillStroke",
+            "Swap fill and stroke",
+            "{ids?}",
+            true,
+            |s, p| {
+                for i in req_targets("object.swapFillStroke", s, p)? {
+                    let n = s.doc_mut()?.get_mut(i)?;
+                    std::mem::swap(&mut n.fills, &mut n.strokes);
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("layers.collapseAll", "Collapse layers", "{}", false, |s, _| {
-            s.request_ui("layers.collapseAll", json!({}));
-            ok()
-        }),
+        ),
+        spec!(
+            "layers.collapseAll",
+            "Collapse layers",
+            "{}",
+            false,
+            |s, _| {
+                s.request_ui("layers.collapseAll", json!({}));
+                ok()
+            }
+        ),
         spec!("node.set", "Set properties", super::props::KEYS, true, set),
         spec!("node.get", "Get layer", "{id}", false, |s, p| {
             let i = req_id("node.get", p, "id")?;
             Ok(crate::inspect::node_json(s.doc()?, i, 1))
         }),
-        spec!("node.reparent", "Move layer into", "{ids?, parent, index?}", true, reparent),
-        spec!("node.reorder", "Reorder layer", "{id, index}", true, |s, p| {
-            let i = req_id("node.reorder", p, "id")?;
-            let idx = req_num("node.reorder", p, "index")?.max(0.0) as usize;
-            s.doc_mut()?.reorder(i, idx)?;
-            ok()
-        }),
-        spec!("fill.add", "Add fill", "{ids?, paint? (default #D9D9D9 or white for frames)}", true, |s, p| paint_list(s, p, true, true)),
-        spec!("stroke.add", "Add stroke", "{ids?, paint? (default black)}", true, |s, p| paint_list(s, p, false, true)),
-        spec!("fill.remove", "Remove fill", "{ids?, index}", true, |s, p| paint_list(s, p, true, false)),
-        spec!("stroke.remove", "Remove stroke", "{ids?, index}", true, |s, p| paint_list(s, p, false, false)),
-        spec!("fill.set", "Set fill", "{ids?, index?, paint | color, opacity?, visible?, blend?}", true, |s, p| paint_set(s, p, true)),
-        spec!("stroke.set", "Set stroke", "{ids?, index?, paint | color, opacity?, visible?, blend?}", true, |s, p| paint_set(s, p, false)),
+        spec!(
+            "node.reparent",
+            "Move layer into",
+            "{ids?, parent, index?}",
+            true,
+            reparent
+        ),
+        spec!(
+            "node.reorder",
+            "Reorder layer",
+            "{id, index}",
+            true,
+            |s, p| {
+                let i = req_id("node.reorder", p, "id")?;
+                let idx = req_num("node.reorder", p, "index")?.max(0.0) as usize;
+                s.doc_mut()?.reorder(i, idx)?;
+                ok()
+            }
+        ),
+        spec!(
+            "fill.add",
+            "Add fill",
+            "{ids?, paint? (default #D9D9D9 or white for frames)}",
+            true,
+            |s, p| paint_list(s, p, true, true)
+        ),
+        spec!(
+            "stroke.add",
+            "Add stroke",
+            "{ids?, paint? (default black)}",
+            true,
+            |s, p| paint_list(s, p, false, true)
+        ),
+        spec!(
+            "fill.remove",
+            "Remove fill",
+            "{ids?, index}",
+            true,
+            |s, p| paint_list(s, p, true, false)
+        ),
+        spec!(
+            "stroke.remove",
+            "Remove stroke",
+            "{ids?, index}",
+            true,
+            |s, p| paint_list(s, p, false, false)
+        ),
+        spec!(
+            "fill.set",
+            "Set fill",
+            "{ids?, index?, paint | color, opacity?, visible?, blend?}",
+            true,
+            |s, p| paint_set(s, p, true)
+        ),
+        spec!(
+            "stroke.set",
+            "Set stroke",
+            "{ids?, index?, paint | color, opacity?, visible?, blend?}",
+            true,
+            |s, p| paint_set(s, p, false)
+        ),
         spec!(
             "fill.pattern",
             "Pattern fill",
@@ -244,39 +480,72 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             effect_add
         ),
-        spec!("effect.remove", "Remove effect", "{ids?, index}", true, |s, p| {
-            let i = req_index("effect.remove", p, "index")?;
-            for id in req_targets("effect.remove", s, p)? {
-                // Its bindings go with it; later effects' move down one.
-                super::lists::remove_item(s.doc_mut()?.get_mut(id)?, super::lists::BoundList::Effects, i);
-            }
-            ok()
-        }),
-        spec!("effect.set", "Set effect", "{ids?, index, effect {..}}", true, |s, p| {
-            let i = req_num("effect.set", p, "index")? as usize;
-            let e: Effect = parse("effect.set", p, "effect")?.ok_or_else(|| bad("effect.set", "`effect` required"))?;
-            for id in req_targets("effect.set", s, p)? {
-                let n = s.doc_mut()?.get_mut(id)?;
-                if let Some(slot) = n.effects.get_mut(i) {
-                    *slot = e.clone();
+        spec!(
+            "effect.remove",
+            "Remove effect",
+            "{ids?, index}",
+            true,
+            |s, p| {
+                let i = req_index("effect.remove", p, "index")?;
+                for id in req_targets("effect.remove", s, p)? {
+                    // Its bindings go with it; later effects' move down one.
+                    super::lists::remove_item(
+                        s.doc_mut()?.get_mut(id)?,
+                        super::lists::BoundList::Effects,
+                        i,
+                    );
                 }
+                ok()
             }
-            ok()
-        }),
-        spec!("grid.add", "Add layout grid", "{ids?, grid? {kind: grid|columns|rows, ..}}", true, |s, p| {
-            let g: LayoutGrid = parse("grid.add", p, "grid")?.unwrap_or_default();
-            for id in req_targets("grid.add", s, p)? {
-                s.doc_mut()?.get_mut(id)?.grids.push(g.clone());
+        ),
+        spec!(
+            "effect.set",
+            "Set effect",
+            "{ids?, index, effect {..}}",
+            true,
+            |s, p| {
+                let i = req_num("effect.set", p, "index")? as usize;
+                let e: Effect = parse("effect.set", p, "effect")?
+                    .ok_or_else(|| bad("effect.set", "`effect` required"))?;
+                for id in req_targets("effect.set", s, p)? {
+                    let n = s.doc_mut()?.get_mut(id)?;
+                    if let Some(slot) = n.effects.get_mut(i) {
+                        *slot = e.clone();
+                    }
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("grid.remove", "Remove layout grid", "{ids?, index}", true, |s, p| {
-            let i = req_index("grid.remove", p, "index")?;
-            for id in req_targets("grid.remove", s, p)? {
-                super::lists::remove_item(s.doc_mut()?.get_mut(id)?, super::lists::BoundList::Grids, i);
+        ),
+        spec!(
+            "grid.add",
+            "Add layout grid",
+            "{ids?, grid? {kind: grid|columns|rows, ..}}",
+            true,
+            |s, p| {
+                let g: LayoutGrid = parse("grid.add", p, "grid")?.unwrap_or_default();
+                for id in req_targets("grid.add", s, p)? {
+                    s.doc_mut()?.get_mut(id)?.grids.push(g.clone());
+                }
+                ok()
             }
-            ok()
-        }),
+        ),
+        spec!(
+            "grid.remove",
+            "Remove layout grid",
+            "{ids?, index}",
+            true,
+            |s, p| {
+                let i = req_index("grid.remove", p, "index")?;
+                for id in req_targets("grid.remove", s, p)? {
+                    super::lists::remove_item(
+                        s.doc_mut()?.get_mut(id)?,
+                        super::lists::BoundList::Grids,
+                        i,
+                    );
+                }
+                ok()
+            }
+        ),
         spec!(
             "export.add",
             "Add export setting",
@@ -286,10 +555,14 @@ pub fn specs() -> Vec<CommandSpec> {
                 let cmd = "export.add";
                 let setting = get(p, "setting").filter(|v| !v.is_null());
                 // Check the setting once before touching any layer.
-                let given = setting.map(|v| super::file::export_setting(cmd, ExportSetting::default(), v)).transpose()?;
+                let given = setting
+                    .map(|v| super::file::export_setting(cmd, ExportSetting::default(), v))
+                    .transpose()?;
                 for id in req_targets(cmd, s, p)? {
                     let n = s.doc_mut()?.get_mut(id)?;
-                    let e = given.clone().unwrap_or_else(|| ExportSetting::next_after(n.exports.last()));
+                    let e = given
+                        .clone()
+                        .unwrap_or_else(|| ExportSetting::next_after(n.exports.last()));
                     n.exports.push(e);
                 }
                 ok()
@@ -313,35 +586,58 @@ pub fn specs() -> Vec<CommandSpec> {
                 ok()
             }
         ),
-        spec!("export.remove", "Remove export setting", "{ids?, index}", true, |s, p| {
-            let i = req_num("export.remove", p, "index")? as usize;
-            for id in req_targets("export.remove", s, p)? {
-                let n = s.doc_mut()?.get_mut(id)?;
-                if i < n.exports.len() {
-                    n.exports.remove(i);
-                }
-            }
-            ok()
-        }),
-        spec!("command.batch", "Run several commands", "{label?, commands: [{command, params}]} (one undo step)", false, |s, p| {
-            let label = string(p, "label").unwrap_or_else(|| "Batch".into());
-            let cmds: Vec<(String, Value)> = match get(p, "commands") {
-                Some(Value::Array(a)) => {
-                    let mut out = Vec::new();
-                    for (i, c) in a.iter().enumerate() {
-                        let cmd =
-                            c.get("command").and_then(Value::as_str).ok_or_else(|| bad("command.batch", format!("step {i} has no `command`")))?;
-                        out.push((cmd.to_string(), c.get("params").cloned().unwrap_or(json!({}))));
+        spec!(
+            "export.remove",
+            "Remove export setting",
+            "{ids?, index}",
+            true,
+            |s, p| {
+                let i = req_num("export.remove", p, "index")? as usize;
+                for id in req_targets("export.remove", s, p)? {
+                    let n = s.doc_mut()?.get_mut(id)?;
+                    if i < n.exports.len() {
+                        n.exports.remove(i);
                     }
-                    out
                 }
-                _ => return Err(bad("command.batch", "`commands` must be an array")),
-            };
-            Ok(Value::Array(s.batch(&label, &cmds)?))
-        }),
+                ok()
+            }
+        ),
+        spec!(
+            "command.batch",
+            "Run several commands",
+            "{label?, commands: [{command, params}]} (one undo step)",
+            false,
+            |s, p| {
+                let label = string(p, "label").unwrap_or_else(|| "Batch".into());
+                let cmds: Vec<(String, Value)> = match get(p, "commands") {
+                    Some(Value::Array(a)) => {
+                        let mut out = Vec::new();
+                        for (i, c) in a.iter().enumerate() {
+                            let cmd =
+                                c.get("command").and_then(Value::as_str).ok_or_else(|| {
+                                    bad("command.batch", format!("step {i} has no `command`"))
+                                })?;
+                            out.push((
+                                cmd.to_string(),
+                                c.get("params").cloned().unwrap_or(json!({})),
+                            ));
+                        }
+                        out
+                    }
+                    _ => return Err(bad("command.batch", "`commands` must be an array")),
+                };
+                Ok(Value::Array(s.batch(&label, &cmds)?))
+            }
+        ),
         spec!("edit.repeat", "Repeat last command", "{}", true, |s, _| {
-            let Some((id, p)) = s.last_command.clone() else { return Err(EngineError::Disabled("edit.repeat".into(), "nothing to repeat".into())) };
-            let spec = crate::find_command(&id).ok_or_else(|| EngineError::UnknownCommand(id.clone()))?;
+            let Some((id, p)) = s.last_command.clone() else {
+                return Err(EngineError::Disabled(
+                    "edit.repeat".into(),
+                    "nothing to repeat".into(),
+                ));
+            };
+            let spec =
+                crate::find_command(&id).ok_or_else(|| EngineError::UnknownCommand(id.clone()))?;
             (spec.run)(s, &p)
         }),
     ]
@@ -368,7 +664,10 @@ pub fn select_and_page(s: &mut Session, ids: Vec<NodeId>) -> Result<()> {
     {
         // Library copies live outside the pages.
         if !doc.pages.contains(&pg) {
-            return Err(EngineError::Disabled("select".into(), format!("{first} isn't on a page (it is a library component)")));
+            return Err(EngineError::Disabled(
+                "select".into(),
+                format!("{first} isn't on a page (it is a library component)"),
+            ));
         }
         s.ds_mut()?.page = pg;
     }
@@ -379,13 +678,23 @@ pub fn select_and_page(s: &mut Session, ids: Vec<NodeId>) -> Result<()> {
 /// Top-level selection: drop ids whose ancestor is also selected.
 pub fn roots(doc: &Document, ids: &[NodeId]) -> Vec<NodeId> {
     let set: BTreeSet<NodeId> = ids.iter().copied().collect();
-    ids.iter().copied().filter(|i| !doc.ancestors(*i).iter().any(|a| set.contains(a))).collect()
+    ids.iter()
+        .copied()
+        .filter(|i| !doc.ancestors(*i).iter().any(|a| set.contains(a)))
+        .collect()
 }
 
 /// Ids sorted in document (z) order.
 pub fn z_sorted(doc: &Document, ids: &[NodeId]) -> Vec<NodeId> {
-    let Some(page) = ids.first().and_then(|i| doc.page_of(*i)) else { return ids.to_vec() };
-    let order: BTreeMap<NodeId, usize> = doc.subtree(page).into_iter().enumerate().map(|(i, id)| (id, i)).collect();
+    let Some(page) = ids.first().and_then(|i| doc.page_of(*i)) else {
+        return ids.to_vec();
+    };
+    let order: BTreeMap<NodeId, usize> = doc
+        .subtree(page)
+        .into_iter()
+        .enumerate()
+        .map(|(i, id)| (id, i))
+        .collect();
     let mut v = ids.to_vec();
     v.sort_by_key(|i| order.get(i).copied().unwrap_or(usize::MAX));
     v
@@ -418,7 +727,9 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     let mut out = Vec::new();
     for i in ids {
         let n = doc.get(i)?;
-        let parent = n.parent.ok_or_else(|| bad("edit.duplicate", "pages are duplicated with page.duplicate"))?;
+        let parent = n
+            .parent
+            .ok_or_else(|| bad("edit.duplicate", "pages are duplicated with page.duplicate"))?;
         let top_frame = doc.node(parent).is_some_and(Node::is_page) && n.kind.is_frame_like();
         let idx = doc.index_in_parent(i).map(|x| x + 1);
         let w = n.width;
@@ -459,7 +770,11 @@ pub fn copy_to_clipboard(s: &mut Session, ids: &[NodeId]) -> Result<()> {
     let mut images = BTreeMap::new();
     for i in &ids {
         let world = doc.world_transform(*i);
-        let mut sub: Vec<Node> = doc.subtree(*i).into_iter().filter_map(|x| doc.node(x).cloned()).collect();
+        let mut sub: Vec<Node> = doc
+            .subtree(*i)
+            .into_iter()
+            .filter_map(|x| doc.node(x).cloned())
+            .collect();
         // Store the root's transform in page space so pastes land where it was.
         if let Some(r) = sub.first_mut() {
             r.transform = world;
@@ -504,10 +819,16 @@ fn cut(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn paste_into(s: &mut Session, parent: NodeId, at: Option<(f64, f64)>) -> Result<Vec<NodeId>> {
     let clip = s.clipboard.clone();
     if clip.nodes.is_empty() {
-        return Err(EngineError::Disabled("edit.paste".into(), "the clipboard is empty".into()));
+        return Err(EngineError::Disabled(
+            "edit.paste".into(),
+            "the clipboard is empty".into(),
+        ));
     }
     // From another file: its instances follow the mains this file can have.
-    let foreign = clip.source.as_ref().filter(|_| s.ds().is_ok_and(|d| d.uid != clip.source_doc));
+    let foreign = clip
+        .source
+        .as_ref()
+        .filter(|_| s.ds().is_ok_and(|d| d.uid != clip.source_doc));
     let doc = s.doc_mut()?;
     for (k, v) in &clip.images {
         doc.images.entry(k.clone()).or_insert_with(|| v.clone());
@@ -526,8 +847,14 @@ pub fn paste_into(s: &mut Session, parent: NodeId, at: Option<(f64, f64)>) -> Re
             map.insert(n.id, doc.alloc_id());
         }
         let mut nodes = nodes.clone();
-        let section = nodes.first().is_some_and(|r| matches!(r.kind, NodeKind::Section { .. }));
-        let into = if section && !doc.takes_sections(parent) { page } else { parent };
+        let section = nodes
+            .first()
+            .is_some_and(|r| matches!(r.kind, NodeKind::Section { .. }));
+        let into = if section && !doc.takes_sections(parent) {
+            page
+        } else {
+            parent
+        };
         if let Some(r) = nodes.first_mut() {
             r.transform = doc.world_transform(into).inverse() * shift * r.transform;
         }
@@ -547,9 +874,12 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
     let sel = s.selection();
     let doc = s.doc()?;
     let target = id(p, "parent").or_else(|| {
-        sel.first()
-            .copied()
-            .filter(|i| sel.len() == 1 && doc.node(*i).is_some_and(|n| n.kind.is_frame_like() && !matches!(n.kind, NodeKind::Instance { .. })))
+        sel.first().copied().filter(|i| {
+            sel.len() == 1
+                && doc.node(*i).is_some_and(|n| {
+                    n.kind.is_frame_like() && !matches!(n.kind, NodeKind::Instance { .. })
+                })
+        })
     });
     let parent = target.unwrap_or(page);
     let at = match (num(p, "x"), num(p, "y")) {
@@ -560,8 +890,16 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
                 (Some(t), Some(b)) => {
                     let tb = doc.world_bounds(t);
                     match tb {
-                        Some(tb) if tb.contains(b.origin()) && tb.contains(figcraft_geom::Point::new(b.x1, b.y1)) => None,
-                        Some(tb) => Some((tb.center().x - b.width() / 2.0, tb.center().y - b.height() / 2.0)),
+                        Some(tb)
+                            if tb.contains(b.origin())
+                                && tb.contains(figcraft_geom::Point::new(b.x1, b.y1)) =>
+                        {
+                            None
+                        }
+                        Some(tb) => Some((
+                            tb.center().x - b.width() / 2.0,
+                            tb.center().y - b.height() / 2.0,
+                        )),
                         None => None,
                     }
                 }
@@ -569,8 +907,17 @@ fn paste(s: &mut Session, p: &Value) -> Result<Value> {
                     // Off-screen originals paste at the viewport centre.
                     let v = &s.ds()?.view;
                     let (ox, oy) = v.origin();
-                    let vr = figcraft_geom::Rect::new(ox, oy, ox + v.vw / v.zoom.max(1e-9), oy + v.vh / v.zoom.max(1e-9));
-                    if vr.intersect(b).is_zero_area() { Some((v.cx - b.width() / 2.0, v.cy - b.height() / 2.0)) } else { None }
+                    let vr = figcraft_geom::Rect::new(
+                        ox,
+                        oy,
+                        ox + v.vw / v.zoom.max(1e-9),
+                        oy + v.vh / v.zoom.max(1e-9),
+                    );
+                    if vr.intersect(b).is_zero_area() {
+                        Some((v.cx - b.width() / 2.0, v.cy - b.height() / 2.0))
+                    } else {
+                        None
+                    }
                 }
                 _ => None,
             }
@@ -603,7 +950,9 @@ fn paste_replace(s: &mut Session, p: &Value) -> Result<Value> {
     for t in targets {
         let doc = s.doc()?;
         let Some(n) = doc.node(t) else { continue };
-        let parent = n.parent.ok_or_else(|| bad("edit.pasteReplace", "can't replace a page"))?;
+        let parent = n
+            .parent
+            .ok_or_else(|| bad("edit.pasteReplace", "can't replace a page"))?;
         let idx = doc.index_in_parent(t);
         let at = doc.world_bounds(t).map(|b| (b.x0, b.y0));
         let ids = paste_into(s, parent, at)?;
@@ -621,7 +970,9 @@ fn paste_replace(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn copy_props_of(doc: &Document, id: NodeId) -> Value {
-    let Some(n) = doc.node(id) else { return Value::Null };
+    let Some(n) = doc.node(id) else {
+        return Value::Null;
+    };
     let mut v = json!({
         "fills": n.fills, "strokes": n.strokes, "strokeWeight": n.stroke.weight, "strokeAlign": n.stroke.align,
         "effects": n.effects, "opacity": n.opacity, "blend": n.blend, "cornerRadius": n.corners.radii,
@@ -639,14 +990,19 @@ fn copy_props_of(doc: &Document, id: NodeId) -> Value {
 }
 
 fn copy_props(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = targets(s, p).first().copied().ok_or_else(|| bad("edit.copyProperties", "select one layer"))?;
+    let id = targets(s, p)
+        .first()
+        .copied()
+        .ok_or_else(|| bad("edit.copyProperties", "select one layer"))?;
     let v = copy_props_of(s.doc()?, id);
     s.clipboard.props = Some(v.clone());
     Ok(v)
 }
 
 fn paste_props(s: &mut Session, p: &Value) -> Result<Value> {
-    let props = s.clipboard.props.clone().ok_or_else(|| EngineError::Disabled("edit.pasteProperties".into(), "no copied properties".into()))?;
+    let props = s.clipboard.props.clone().ok_or_else(|| {
+        EngineError::Disabled("edit.pasteProperties".into(), "no copied properties".into())
+    })?;
     let ids = req_targets("edit.pasteProperties", s, p)?;
     let doc = s.doc_mut()?;
     for i in ids {
@@ -665,15 +1021,27 @@ fn paste_props(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn layers_at(s: &mut Session, p: &Value) -> Result<Value> {
-    let (x, y) = (req_num("select.layersAt", p, "x")?, req_num("select.layersAt", p, "y")?);
+    let (x, y) = (
+        req_num("select.layersAt", p, "x")?,
+        req_num("select.layersAt", p, "y")?,
+    );
     let doc = s.doc()?;
     let zoom = s.ds()?.view.zoom.max(1e-6);
     let sel = s.selection();
     let result = crate::booleans::result_outline(doc, &sel);
-    let layers: Vec<Value> = figcraft_doc::geometry::layers_at(doc, s.page()?, figcraft_geom::Point::new(x, y), 2.0 / zoom, Some(&result))
-        .into_iter()
-        .filter_map(|(id, depth)| doc.node(id).map(|n| json!({"id": id, "name": n.name, "type": n.kind.type_name(), "depth": depth})))
-        .collect();
+    let layers: Vec<Value> = figcraft_doc::geometry::layers_at(
+        doc,
+        s.page()?,
+        figcraft_geom::Point::new(x, y),
+        2.0 / zoom,
+        Some(&result),
+    )
+    .into_iter()
+    .filter_map(|(id, depth)| {
+        doc.node(id)
+            .map(|n| json!({"id": id, "name": n.name, "type": n.kind.type_name(), "depth": depth}))
+    })
+    .collect();
     Ok(json!({"layers": layers}))
 }
 
@@ -681,8 +1049,18 @@ fn select_all(s: &mut Session, _p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let sel = s.selection();
     // Select all siblings of the current selection, else the page's top level.
-    let parent = sel.first().and_then(|i| doc.node(*i)).and_then(|n| n.parent).unwrap_or(s.page()?);
-    let ids: Vec<NodeId> = doc.get(parent)?.children.iter().copied().filter(|c| doc.node(*c).is_some_and(|n| n.visible && !n.locked)).collect();
+    let parent = sel
+        .first()
+        .and_then(|i| doc.node(*i))
+        .and_then(|n| n.parent)
+        .unwrap_or(s.page()?);
+    let ids: Vec<NodeId> = doc
+        .get(parent)?
+        .children
+        .iter()
+        .copied()
+        .filter(|c| doc.node(*c).is_some_and(|n| n.visible && !n.locked))
+        .collect();
     s.set_selection(ids.clone());
     Ok(json!({"selection": ids}))
 }
@@ -691,9 +1069,18 @@ fn select_all(s: &mut Session, _p: &Value) -> Result<Value> {
 fn select_inverse(s: &mut Session, _p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let sel = s.selection();
-    let parent = sel.first().and_then(|i| doc.node(*i)).and_then(|n| n.parent).unwrap_or(s.page()?);
-    let ids: Vec<NodeId> =
-        doc.get(parent)?.children.iter().copied().filter(|c| !sel.contains(c) && doc.node(*c).is_some_and(|n| n.visible && !n.locked)).collect();
+    let parent = sel
+        .first()
+        .and_then(|i| doc.node(*i))
+        .and_then(|n| n.parent)
+        .unwrap_or(s.page()?);
+    let ids: Vec<NodeId> = doc
+        .get(parent)?
+        .children
+        .iter()
+        .copied()
+        .filter(|c| !sel.contains(c) && doc.node(*c).is_some_and(|n| n.visible && !n.locked))
+        .collect();
     s.set_selection(ids.clone());
     Ok(json!({"selection": ids}))
 }
@@ -707,7 +1094,9 @@ fn select_area(s: &mut Session, p: &Value) -> Result<Value> {
         return ok();
     }
     let [x, y, w, h] = keys.map(|k| num(p, k));
-    let (Some(x), Some(y), Some(w), Some(h)) = (x, y, w, h) else { return Err(bad(cmd, "pass x, y, width and height (numbers)")) };
+    let (Some(x), Some(y), Some(w), Some(h)) = (x, y, w, h) else {
+        return Err(bad(cmd, "pass x, y, width and height (numbers)"));
+    };
     if ![x, y, w, h].iter().all(|v| v.is_finite() && v.abs() < 1e9) {
         return Err(bad(cmd, "the box is out of range"));
     }
@@ -762,7 +1151,10 @@ fn select_sibling(s: &mut Session, dir: i64) -> Result<Value> {
         s.set_selection(first.into_iter().collect());
         return Ok(json!({"selection": s.selection()}));
     };
-    let parent = doc.get(cur)?.parent.ok_or_else(|| bad("select.next", "no parent"))?;
+    let parent = doc
+        .get(cur)?
+        .parent
+        .ok_or_else(|| bad("select.next", "no parent"))?;
     let kids = &doc.get(parent)?.children;
     let idx = kids.iter().position(|c| *c == cur).unwrap_or(0) as i64;
     let n = kids.len() as i64;
@@ -776,11 +1168,19 @@ fn select_sibling(s: &mut Session, dir: i64) -> Result<Value> {
 fn select_matching(s: &mut Session, _p: &Value) -> Result<Value> {
     let doc = s.doc()?;
     let sel = s.selection();
-    let Some(first) = sel.first().and_then(|i| doc.node(*i)) else { return Ok(json!({"selection": []})) };
+    let Some(first) = sel.first().and_then(|i| doc.node(*i)) else {
+        return Ok(json!({"selection": []}));
+    };
     let (name, ty) = (first.name.clone(), first.kind.type_name());
     let page = s.page()?;
-    let ids: Vec<NodeId> =
-        doc.subtree(page).into_iter().filter(|i| doc.node(*i).is_some_and(|n| n.name == name && n.kind.type_name() == ty)).collect();
+    let ids: Vec<NodeId> = doc
+        .subtree(page)
+        .into_iter()
+        .filter(|i| {
+            doc.node(*i)
+                .is_some_and(|n| n.name == name && n.kind.type_name() == ty)
+        })
+        .collect();
     s.set_selection(ids.clone());
     Ok(json!({"selection": ids}))
 }
@@ -788,9 +1188,15 @@ fn select_matching(s: &mut Session, _p: &Value) -> Result<Value> {
 fn select_same(s: &mut Session, same: impl Fn(&Node, &Node) -> bool) -> Result<Value> {
     let doc = s.doc()?;
     let sel = s.selection();
-    let Some(first) = sel.first().and_then(|i| doc.node(*i)).cloned() else { return Ok(json!({"selection": []})) };
+    let Some(first) = sel.first().and_then(|i| doc.node(*i)).cloned() else {
+        return Ok(json!({"selection": []}));
+    };
     let page = s.page()?;
-    let ids: Vec<NodeId> = doc.subtree(page).into_iter().filter(|i| *i != page && doc.node(*i).is_some_and(|n| same(&first, n))).collect();
+    let ids: Vec<NodeId> = doc
+        .subtree(page)
+        .into_iter()
+        .filter(|i| *i != page && doc.node(*i).is_some_and(|n| same(&first, n)))
+        .collect();
     s.set_selection(ids.clone());
     Ok(json!({"selection": ids}))
 }
@@ -814,7 +1220,8 @@ pub fn opacity_from_digits(digits: &str) -> Option<f32> {
 
 fn opacity_keys(s: &mut Session, p: &Value) -> Result<Value> {
     let digits = req_string("object.opacityKeys", p, "digits")?;
-    let o = opacity_from_digits(&digits).ok_or_else(|| bad("object.opacityKeys", "`digits` must be one or two digits"))?;
+    let o = opacity_from_digits(&digits)
+        .ok_or_else(|| bad("object.opacityKeys", "`digits` must be one or two digits"))?;
     for i in req_targets("object.opacityKeys", s, p)? {
         s.doc_mut()?.get_mut(i)?.opacity = o;
     }
@@ -823,7 +1230,11 @@ fn opacity_keys(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
     let big = boolean(p, "big").unwrap_or(false);
-    let k = if big { s.prefs.nudge_big } else { s.prefs.nudge_small };
+    let k = if big {
+        s.prefs.nudge_big
+    } else {
+        s.prefs.nudge_small
+    };
     let (ux, uy) = (num_or(p, "dx", 0.0), num_or(p, "dy", 0.0));
     let (dx, dy) = (ux * k, uy * k);
     let ids = req_targets("transform.nudge", s, p)?;
@@ -861,12 +1272,18 @@ fn nudge(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn nudge_size(s: &mut Session, p: &Value) -> Result<Value> {
     let big = boolean(p, "big").unwrap_or(false);
-    let k = if big { s.prefs.nudge_big } else { s.prefs.nudge_small };
+    let k = if big {
+        s.prefs.nudge_big
+    } else {
+        s.prefs.nudge_small
+    };
     let (dw, dh) = (num_or(p, "dw", 0.0) * k, num_or(p, "dh", 0.0) * k);
     let ids = req_targets("transform.nudgeSize", s, p)?;
     let ids = roots(s.doc()?, &ids);
     for i in ids {
-        let Some((w, h)) = s.doc()?.node(i).map(|n| (n.width, n.height)) else { continue };
+        let Some((w, h)) = s.doc()?.node(i).map(|n| (n.width, n.height)) else {
+            continue;
+        };
         let mut q = serde_json::Map::new();
         q.insert("ids".into(), json!([i]));
         // Only the axis that changes becomes fixed.
@@ -931,9 +1348,14 @@ fn batch_rename(s: &mut Session, p: &Value) -> Result<Value> {
     let find = string(p, "find");
     let replace = string(p, "replace").unwrap_or_default();
     let pattern = string(p, "name");
-    let rename =
-        crate::rename::BatchRename::new(find.as_deref(), boolean(p, "regex").unwrap_or(false), &replace, pattern.as_deref(), num(p, "start"))
-            .map_err(|e| bad(cmd, e))?;
+    let rename = crate::rename::BatchRename::new(
+        find.as_deref(),
+        boolean(p, "regex").unwrap_or(false),
+        &replace,
+        pattern.as_deref(),
+        num(p, "start"),
+    )
+    .map_err(|e| bad(cmd, e))?;
     let doc = s.doc_mut()?;
     let names = rename.plan(doc, &ids);
     for (i, name) in &names {
@@ -955,7 +1377,8 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
     let lower = find.to_lowercase();
     for i in doc.subtree(page) {
         let Some(n) = doc.node(i) else { continue };
-        let text_hit = matches!(&n.kind, NodeKind::Text(t) if t.characters.to_lowercase().contains(&lower));
+        let text_hit =
+            matches!(&n.kind, NodeKind::Text(t) if t.characters.to_lowercase().contains(&lower));
         let name_hit = names && n.name.to_lowercase().contains(&lower);
         if !(text_hit || name_hit) || n.is_page() {
             continue;
@@ -970,7 +1393,11 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
                 // Replace occurrence by occurrence so styles shift correctly.
                 let mut guard = 0;
                 while let Some(pos) = t.characters.find(find.as_str()) {
-                    let start = t.characters.get(..pos).map(|x| x.chars().count()).unwrap_or(0);
+                    let start = t
+                        .characters
+                        .get(..pos)
+                        .map(|x| x.chars().count())
+                        .unwrap_or(0);
                     let len = find.chars().count();
                     t.replace_range(start, start + len, r);
                     guard += 1;
@@ -1005,8 +1432,12 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     // A new rotation for the selection turns it about its moved rotation origin: each layer's
     // point under the origin stays put.
     let ds = s.ds()?;
-    let pivot =
-        ds.moved_origin().filter(|_| props.contains_key("rotation") && !props.contains_key("x") && !props.contains_key("y") && ds.selection == ids);
+    let pivot = ds.moved_origin().filter(|_| {
+        props.contains_key("rotation")
+            && !props.contains_key("x")
+            && !props.contains_key("y")
+            && ds.selection == ids
+    });
     let pinned: Vec<(NodeId, figcraft_geom::Point)> = match pivot {
         Some(o) => roots(&ds.doc, &ids)
             .into_iter()
@@ -1035,7 +1466,10 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
 /// record the override).
 fn width_profile(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "stroke.widthProfile";
-    let v = get(p, "preset").or_else(|| get(p, "points")).cloned().unwrap_or(Value::Null);
+    let v = get(p, "preset")
+        .or_else(|| get(p, "points"))
+        .cloned()
+        .unwrap_or(Value::Null);
     let ids = req_targets(cmd, s, p)?;
     let props = serde_json::Map::from_iter([("widthProfile".to_string(), v)]);
     let doc = s.doc_mut()?;
@@ -1047,14 +1481,19 @@ fn width_profile(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn stroke_brush(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "stroke.brush";
-    let v = if get(p, "preset").is_none_or(Value::is_null) { Value::Null } else { p.clone() };
+    let v = if get(p, "preset").is_none_or(Value::is_null) {
+        Value::Null
+    } else {
+        p.clone()
+    };
     let brush = super::props::brush_of(&v).ok_or_else(|| bad(cmd, super::props::BRUSH_HELP))?;
     let ids = req_targets(cmd, s, p)?;
     let doc = s.doc_mut()?;
     for i in ids {
         let n = doc.get_mut(i)?;
         if brush.is_some() && n.strokes.is_empty() {
-            n.strokes.push(figcraft_color::Paint::solid(figcraft_color::Color::BLACK));
+            n.strokes
+                .push(figcraft_color::Paint::solid(figcraft_color::Color::BLACK));
         }
         n.stroke.brush = brush.clone();
     }
@@ -1069,7 +1508,15 @@ fn reparent(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = z_sorted(doc, &roots(doc, &ids));
     // The layers land together under the first sibling at or above `index` that stays put (none: on
     // top), wherever they came from.
-    let above = index.and_then(|at| doc.get(parent).ok()?.children.iter().skip(at).find(|c| !ids.contains(c)).copied());
+    let above = index.and_then(|at| {
+        doc.get(parent)
+            .ok()?
+            .children
+            .iter()
+            .skip(at)
+            .find(|c| !ids.contains(c))
+            .copied()
+    });
     for i in &ids {
         // Counted with the layer still in place, as `reparent` expects.
         let at = above.and_then(|a| doc.node(parent)?.children.iter().position(|c| *c == a));
@@ -1081,7 +1528,11 @@ fn reparent(s: &mut Session, p: &Value) -> Result<Value> {
 fn paint_list(s: &mut Session, p: &Value, fills: bool, add: bool) -> Result<Value> {
     let cmd = if fills { "fill" } else { "stroke" };
     let ids = req_targets(cmd, s, p)?;
-    let index = if add || get(p, "index").is_none() { None } else { Some(req_index(cmd, p, "index")?) };
+    let index = if add || get(p, "index").is_none() {
+        None
+    } else {
+        Some(req_index(cmd, p, "index")?)
+    };
     let doc = s.doc_mut()?;
     for i in ids {
         let n = doc.get_mut(i)?;
@@ -1090,7 +1541,9 @@ fn paint_list(s: &mut Session, p: &Value, fills: bool, add: bool) -> Result<Valu
         if add {
             let paint = match get(p, "paint").or_else(|| get(p, "color")) {
                 Some(v) => paint_of(v).ok_or_else(|| bad(cmd, "invalid paint"))?,
-                None if fills && frameish => figcraft_color::Paint::solid(figcraft_color::Color::WHITE),
+                None if fills && frameish => {
+                    figcraft_color::Paint::solid(figcraft_color::Color::WHITE)
+                }
                 None if fills => figcraft_color::Paint::solid(figcraft_color::Color::DEFAULT_SHAPE),
                 None => figcraft_color::Paint::solid(figcraft_color::Color::BLACK),
             };
@@ -1098,7 +1551,15 @@ fn paint_list(s: &mut Session, p: &Value, fills: bool, add: bool) -> Result<Valu
         } else {
             let idx = index.unwrap_or(list.len().saturating_sub(1));
             // The paint's colour binding goes with it; later paints' move down one.
-            super::lists::remove_item(n, if fills { super::lists::BoundList::Fills } else { super::lists::BoundList::Strokes }, idx);
+            super::lists::remove_item(
+                n,
+                if fills {
+                    super::lists::BoundList::Fills
+                } else {
+                    super::lists::BoundList::Strokes
+                },
+                idx,
+            );
         }
     }
     ok()
@@ -1119,15 +1580,23 @@ fn paint_set(s: &mut Session, p: &Value, fills: bool) -> Result<Value> {
         let list = if fills { &mut n.fills } else { &mut n.strokes };
         let at = idx.unwrap_or(list.len().saturating_sub(1));
         if list.is_empty() {
-            list.push(figcraft_color::Paint::solid(if fills { figcraft_color::Color::DEFAULT_SHAPE } else { figcraft_color::Color::BLACK }));
+            list.push(figcraft_color::Paint::solid(if fills {
+                figcraft_color::Color::DEFAULT_SHAPE
+            } else {
+                figcraft_color::Color::BLACK
+            }));
         }
-        let Some(slot) = list.get_mut(at) else { return Err(bad(cmd, format!("no paint at index {at}"))) };
+        let Some(slot) = list.get_mut(at) else {
+            return Err(bad(cmd, format!("no paint at index {at}")));
+        };
         let old = slot.clone();
         if let Some(np) = &new_paint {
             *slot = np.clone();
         }
         if let Some(c) = col {
-            slot.kind = figcraft_color::PaintKind::Solid { color: c.with_alpha(1.0) };
+            slot.kind = figcraft_color::PaintKind::Solid {
+                color: c.with_alpha(1.0),
+            };
             if c.a < 1.0 {
                 slot.opacity = c.a;
             }
@@ -1158,28 +1627,42 @@ fn pattern_fill(s: &mut Session, p: &Value) -> Result<Value> {
     if !doc.node(src).is_some_and(|n| !n.is_page()) {
         return Err(bad(CMD, "`source` must be a layer"));
     }
-    if req_targets(CMD, s, p)?.iter().any(|t| doc.is_ancestor(*t, src)) {
-        return Err(bad(CMD, "a layer can't be filled with itself or a layer inside it"));
+    if req_targets(CMD, s, p)?
+        .iter()
+        .any(|t| doc.is_ancestor(*t, src))
+    {
+        return Err(bad(
+            CMD,
+            "a layer can't be filled with itself or a layer inside it",
+        ));
     }
     let mut pt = figcraft_color::PatternPaint::new(src.0);
     pt.tile = parse(CMD, p, "tile")?.unwrap_or_default();
     pt.align = parse(CMD, p, "align")?.unwrap_or_default();
     pt.spacing = parse(CMD, p, "spacing")?.unwrap_or_default();
     let (lo, hi) = figcraft_color::PatternPaint::SCALE_RANGE;
-    pt.scale = num(p, "scale").filter(|v| v.is_finite()).unwrap_or(1.0).clamp(lo, hi);
+    pt.scale = num(p, "scale")
+        .filter(|v| v.is_finite())
+        .unwrap_or(1.0)
+        .clamp(lo, hi);
     let mut q = if p.is_object() { p.clone() } else { json!({}) };
-    q["paint"] =
-        serde_json::to_value(figcraft_color::Paint { kind: figcraft_color::PaintKind::Pattern(pt), ..figcraft_color::Paint::pattern(src.0) })
-            .map_err(|e| bad(CMD, e.to_string()))?;
+    q["paint"] = serde_json::to_value(figcraft_color::Paint {
+        kind: figcraft_color::PaintKind::Pattern(pt),
+        ..figcraft_color::Paint::pattern(src.0)
+    })
+    .map_err(|e| bad(CMD, e.to_string()))?;
     paint_set(s, &q, true)
 }
 
 fn effect_add(s: &mut Session, p: &Value) -> Result<Value> {
     let e: Effect = match get(p, "effect") {
-        Some(v) => serde_json::from_value(v.clone()).map_err(|e| bad("effect.add", e.to_string()))?,
+        Some(v) => {
+            serde_json::from_value(v.clone()).map_err(|e| bad("effect.add", e.to_string()))?
+        }
         None => {
             let ty = string(p, "type").unwrap_or_else(|| "dropShadow".into());
-            Effect::of_type(&ty).ok_or_else(|| bad("effect.add", format!("unknown effect type `{ty}`")))?
+            Effect::of_type(&ty)
+                .ok_or_else(|| bad("effect.add", format!("unknown effect type `{ty}`")))?
         }
     };
     for i in req_targets("effect.add", s, p)? {

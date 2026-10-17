@@ -23,10 +23,10 @@
 
 use core::f32::consts::{PI, TAU};
 
-use crate::{ops, Dir2, Dir3, Dir3A, Quat, Rot2, Vec2, Vec3};
+use crate::{Dir2, Dir3, Dir3A, Quat, Rot2, Vec2, Vec3, ops};
 use rand::{
-    distr::{Distribution, StandardUniform},
     RngExt,
+    distr::{Distribution, StandardUniform},
 };
 
 /// Ergonomics trait for a type with a [`StandardUniform`] distribution, allowing values to be generated

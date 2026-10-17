@@ -1,6 +1,9 @@
 use lightcraft_tiff::image::{Layout, chunk_bytes};
 use lightcraft_tiff::writer::{rational, srational};
-use lightcraft_tiff::{ByteOrder, FieldType, IfdBuilder, ImageData, ParseOptions, Tiff, TiffError, TiffWriter, Value, parse_ifd_at, tags};
+use lightcraft_tiff::{
+    ByteOrder, FieldType, IfdBuilder, ImageData, ParseOptions, Tiff, TiffError, TiffWriter, Value,
+    parse_ifd_at, tags,
+};
 use proptest::prelude::*;
 
 const ORDERS: [ByteOrder; 2] = [ByteOrder::Little, ByteOrder::Big];
@@ -26,7 +29,11 @@ fn all_values() -> Vec<(u16, Value)> {
 }
 
 fn big_values() -> Vec<(u16, Value)> {
-    vec![(1020, Value::Long8(vec![1 << 40, 3])), (1021, Value::SLong8(vec![-(1 << 50)])), (1022, Value::Ifd8(vec![0]))]
+    vec![
+        (1020, Value::Long8(vec![1 << 40, 3])),
+        (1021, Value::SLong8(vec![-(1 << 50)])),
+        (1022, Value::Ifd8(vec![0])),
+    ]
 }
 
 #[test]
@@ -48,8 +55,15 @@ fn all_field_types_roundtrip_every_variant() {
             assert_eq!(t.bigtiff, big);
             assert_eq!(Tiff::sniff(&bytes), Some((order, big)));
             let ifd0 = &t.ifds[0];
-            for (tag, v) in all_values().into_iter().chain(if big { big_values() } else { vec![] }) {
-                assert_eq!(ifd0.value(tag), Some(&v), "tag {tag} order {order:?} big {big}");
+            for (tag, v) in all_values()
+                .into_iter()
+                .chain(if big { big_values() } else { vec![] })
+            {
+                assert_eq!(
+                    ifd0.value(tag),
+                    Some(&v),
+                    "tag {tag} order {order:?} big {big}"
+                );
             }
         }
     }
@@ -103,7 +117,9 @@ fn chain_subifds_and_pointer_ifds() {
             ifd0.add_sub_ifd(IfdBuilder::new().with(tags::IMAGE_WIDTH, Value::Short(vec![3])));
             let ifd1 = IfdBuilder::new().with(tags::IMAGE_WIDTH, Value::Short(vec![160]));
             let ifd2 = IfdBuilder::new().with(tags::IMAGE_WIDTH, Value::Short(vec![80]));
-            let bytes = TiffWriter::new(order, big).write(&[ifd0, ifd1, ifd2]).unwrap();
+            let bytes = TiffWriter::new(order, big)
+                .write(&[ifd0, ifd1, ifd2])
+                .unwrap();
             let t = Tiff::parse(&bytes).unwrap();
             assert_eq!(t.ifds.len(), 3);
             assert_eq!(t.ifds[1].u32(tags::IMAGE_WIDTH), Some(160));
@@ -115,8 +131,14 @@ fn chain_subifds_and_pointer_ifds() {
             assert_eq!(i0.sub_ifds[1].u32(tags::IMAGE_WIDTH), Some(3));
             let exif = t.exif().unwrap();
             assert_eq!(exif.f64(tags::F_NUMBER), Some(5.6));
-            assert_eq!(exif.interop.as_ref().unwrap().string(1).as_deref(), Some("R98"));
-            assert_eq!(t.gps().unwrap().string(tags::GPS_LATITUDE_REF).as_deref(), Some("N"));
+            assert_eq!(
+                exif.interop.as_ref().unwrap().string(1).as_deref(),
+                Some("R98")
+            );
+            assert_eq!(
+                t.gps().unwrap().string(tags::GPS_LATITUDE_REF).as_deref(),
+                Some("N")
+            );
             // IFD0, sub0, sub0.sub, sub1, exif, interop, gps, ifd1, ifd2
             assert_eq!(t.all_ifds().len(), 9);
         }
@@ -138,10 +160,15 @@ fn strips_layout_and_bytes() {
     ifd.set(tags::IMAGE_LENGTH, Value::Long(vec![h as u32]));
     ifd.set(tags::BITS_PER_SAMPLE, Value::Short(vec![8]));
     ifd.set(tags::COMPRESSION, Value::Short(vec![1]));
-    ifd.set_image(ImageData::Strips { rows_per_strip: rps as u32, strips });
+    ifd.set_image(ImageData::Strips {
+        rows_per_strip: rps as u32,
+        strips,
+    });
     for order in ORDERS {
         for big in [false, true] {
-            let bytes = TiffWriter::new(order, big).write(std::slice::from_ref(&ifd)).unwrap();
+            let bytes = TiffWriter::new(order, big)
+                .write(std::slice::from_ref(&ifd))
+                .unwrap();
             let t = Tiff::parse(&bytes).unwrap();
             let info = t.ifds[0].image().unwrap();
             assert_eq!(info.layout, Layout::Strips { rows_per_strip: 3 });
@@ -181,8 +208,14 @@ fn tiles_layout_and_bytes() {
     let mut ifd = IfdBuilder::new();
     ifd.set(tags::IMAGE_WIDTH, Value::Short(vec![w as u16]));
     ifd.set(tags::IMAGE_LENGTH, Value::Short(vec![h as u16]));
-    ifd.set_image(ImageData::Tiles { tile_width: tw as u32, tile_height: th as u32, tiles });
-    let bytes = TiffWriter::new(ByteOrder::Big, false).write(&[ifd]).unwrap();
+    ifd.set_image(ImageData::Tiles {
+        tile_width: tw as u32,
+        tile_height: th as u32,
+        tiles,
+    });
+    let bytes = TiffWriter::new(ByteOrder::Big, false)
+        .write(&[ifd])
+        .unwrap();
     let t = Tiff::parse(&bytes).unwrap();
     let info = t.ifds[0].image().unwrap();
     assert_eq!(info.grid(), (2, 2));
@@ -208,7 +241,10 @@ fn missing_byte_counts_are_inferred() {
     let mut ifd = IfdBuilder::new();
     ifd.set(tags::IMAGE_WIDTH, Value::Long(vec![4]));
     ifd.set(tags::IMAGE_LENGTH, Value::Long(vec![2]));
-    ifd.set_image(ImageData::Strips { rows_per_strip: 1, strips: vec![vec![1; 4], vec![2; 4]] });
+    ifd.set_image(ImageData::Strips {
+        rows_per_strip: 1,
+        strips: vec![vec![1; 4], vec![2; 4]],
+    });
     let bytes = TiffWriter::default().write(&[ifd]).unwrap();
     let t = Tiff::parse(&bytes).unwrap();
     let mut info = t.ifds[0].image().unwrap();
@@ -256,7 +292,10 @@ fn out_of_range_entries_are_skipped() {
     // point tag 1's value offset past EOF
     let ifd_off = t.ifds[0].offset as usize;
     let field = ifd_off + 2 + 8;
-    assert_eq!(u32::from_le_bytes(bytes[field..field + 4].try_into().unwrap()) as u64, e.offset);
+    assert_eq!(
+        u32::from_le_bytes(bytes[field..field + 4].try_into().unwrap()) as u64,
+        e.offset
+    );
     bytes[field..field + 4].copy_from_slice(&0xffff_fff0u32.to_le_bytes());
     let t = Tiff::parse(&bytes).unwrap();
     assert!(t.ifds[0].get(1).is_none());
@@ -283,7 +322,10 @@ fn value_budget_limits_allocation() {
         file.extend_from_slice(&blob.to_le_bytes());
     }
     file.extend_from_slice(&0u32.to_le_bytes());
-    let opts = ParseOptions { value_budget: Some(10_000), ..Default::default() };
+    let opts = ParseOptions {
+        value_budget: Some(10_000),
+        ..Default::default()
+    };
     let t = Tiff::parse_with(&file, &opts).unwrap();
     assert_eq!(t.ifds[0].entries.len(), 10);
     let t = Tiff::parse(&file).unwrap();
@@ -326,15 +368,26 @@ fn rationals() {
 fn sample_file() -> Vec<u8> {
     let mut exif = IfdBuilder::new();
     exif.set(tags::F_NUMBER, Value::Rational(vec![(4, 1)]));
-    exif.set(tags::MAKER_NOTE, Value::Undefined(b"Nikon\0\x02\x10\0\0II*\0\x08\0\0\0\x01\0\x01\0\x03\0\x01\0\0\0\x05\0\0\0\0\0\0\0".to_vec()));
+    exif.set(
+        tags::MAKER_NOTE,
+        Value::Undefined(
+            b"Nikon\0\x02\x10\0\0II*\0\x08\0\0\0\x01\0\x01\0\x03\0\x01\0\0\0\x05\0\0\0\0\0\0\0"
+                .to_vec(),
+        ),
+    );
     let mut ifd0 = IfdBuilder::new();
     ifd0.set(tags::IMAGE_WIDTH, Value::Long(vec![8]));
     ifd0.set(tags::IMAGE_LENGTH, Value::Long(vec![4]));
     ifd0.set(tags::MAKE, Value::Ascii("NIKON".into()));
     ifd0.set_child(tags::EXIF_IFD, exif);
-    ifd0.set_image(ImageData::Strips { rows_per_strip: 2, strips: vec![vec![1; 16], vec![2; 16]] });
+    ifd0.set_image(ImageData::Strips {
+        rows_per_strip: 2,
+        strips: vec![vec![1; 16], vec![2; 16]],
+    });
     ifd0.add_sub_ifd(IfdBuilder::new().with(tags::IMAGE_WIDTH, Value::Long(vec![2])));
-    TiffWriter::default().write(&[ifd0, IfdBuilder::new().with(1, Value::Short(vec![1]))]).unwrap()
+    TiffWriter::default()
+        .write(&[ifd0, IfdBuilder::new().with(1, Value::Short(vec![1]))])
+        .unwrap()
 }
 
 fn exercise(t: &Tiff, data: &[u8]) {
@@ -350,7 +403,13 @@ fn exercise(t: &Tiff, data: &[u8]) {
         }
     }
     if let Some(e) = t.exif().and_then(|x| x.get(tags::MAKER_NOTE)) {
-        let _ = lightcraft_tiff::makernote::parse_makernote(data, e.offset, e.count() as u64, t.order, "NIKON");
+        let _ = lightcraft_tiff::makernote::parse_makernote(
+            data,
+            e.offset,
+            e.count() as u64,
+            t.order,
+            "NIKON",
+        );
     }
 }
 

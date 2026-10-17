@@ -25,12 +25,26 @@ fn sample_deck_round_trips() {
     for (a, b) in p.slides.iter().zip(q.slides.iter()) {
         assert_eq!(a.title(), b.title());
         assert_eq!(a.notes_text(), b.notes_text());
-        assert_eq!(a.shapes.len(), b.shapes.len(), "shape count on slide '{}'", a.title());
+        assert_eq!(
+            a.shapes.len(),
+            b.shapes.len(),
+            "shape count on slide '{}'",
+            a.title()
+        );
         for (sa, sb) in a.shapes.iter().zip(b.shapes.iter()) {
             assert_eq!(sa.kind_name(), sb.kind_name(), "{}", sa.name);
-            assert_eq!(sa.text.as_ref().map(|t| t.text()), sb.text.as_ref().map(|t| t.text()), "{}", sa.name);
+            assert_eq!(
+                sa.text.as_ref().map(|t| t.text()),
+                sb.text.as_ref().map(|t| t.text()),
+                "{}",
+                sa.name
+            );
             if let (Some(x), Some(y)) = (sa.xfrm, sb.xfrm) {
-                assert!((x.x - y.x).abs() < 0.01 && (x.w - y.w).abs() < 0.01, "{}: {x:?} vs {y:?}", sa.name);
+                assert!(
+                    (x.x - y.x).abs() < 0.01 && (x.w - y.w).abs() < 0.01,
+                    "{}: {x:?} vs {y:?}",
+                    sa.name
+                );
             }
             if let (ShapeKind::Table(ta), ShapeKind::Table(tb)) = (&sa.kind, &sb.kind) {
                 assert_eq!(ta.style, tb.style);
@@ -46,12 +60,34 @@ fn sample_deck_round_trips() {
                 }
             }
         }
-        assert_eq!(a.transition.as_ref().map(|t| (&t.kind, &t.option)), b.transition.as_ref().map(|t| (&t.kind, &t.option)));
-        assert_eq!(a.animations.len(), b.animations.len(), "animations on '{}'", a.title());
+        assert_eq!(
+            a.transition.as_ref().map(|t| (&t.kind, &t.option)),
+            b.transition.as_ref().map(|t| (&t.kind, &t.option))
+        );
+        assert_eq!(
+            a.animations.len(),
+            b.animations.len(),
+            "animations on '{}'",
+            a.title()
+        );
         for (x, y) in a.animations.iter().zip(b.animations.iter()) {
             assert_eq!(
-                (&x.effect, x.class, x.start, x.duration_ms, x.delay_ms, x.text_build),
-                (&y.effect, y.class, y.start, y.duration_ms, y.delay_ms, y.text_build)
+                (
+                    &x.effect,
+                    x.class,
+                    x.start,
+                    x.duration_ms,
+                    x.delay_ms,
+                    x.text_build
+                ),
+                (
+                    &y.effect,
+                    y.class,
+                    y.start,
+                    y.duration_ms,
+                    y.delay_ms,
+                    y.text_build
+                )
             );
             assert_eq!(x.shape, y.shape);
         }
@@ -70,18 +106,36 @@ fn sample_deck_round_trips() {
 /// Reads any file named by `DECKCRAFT_PPTX_IN` (for checking decks made by other applications).
 #[test]
 fn external_file_imports() {
-    let Ok(path) = std::env::var("DECKCRAFT_PPTX_IN") else { return };
+    let Ok(path) = std::env::var("DECKCRAFT_PPTX_IN") else {
+        return;
+    };
     let bytes = std::fs::read(&path).expect("read");
     let p = deckcraft_pptx::import(&bytes).expect("import");
-    println!("{path}: {} slides, {} masters, {} layouts", p.slides.len(), p.masters.len(), p.masters.iter().map(|m| m.layouts.len()).sum::<usize>());
+    println!(
+        "{path}: {} slides, {} masters, {} layouts",
+        p.slides.len(),
+        p.masters.len(),
+        p.masters.iter().map(|m| m.layouts.len()).sum::<usize>()
+    );
     for (i, s) in p.slides.iter().enumerate() {
         let kinds: Vec<&str> = s.shapes.iter().map(|s| s.kind_name()).collect();
-        println!("  slide {}: title {:?} shapes {:?} layout {:?}", i + 1, s.title(), kinds, p.layout(s.layout).map(|(_, l)| l.name.clone()));
+        println!(
+            "  slide {}: title {:?} shapes {:?} layout {:?}",
+            i + 1,
+            s.title(),
+            kinds,
+            p.layout(s.layout).map(|(_, l)| l.name.clone())
+        );
     }
     assert!(p.validate().is_empty());
-    let again = deckcraft_pptx::import(&deckcraft_pptx::export(&p).expect("export")).expect("reimport");
+    let again =
+        deckcraft_pptx::import(&deckcraft_pptx::export(&p).expect("export")).expect("reimport");
     assert_eq!(again.slides.len(), p.slides.len());
     if let Ok(dir) = std::env::var("DECKCRAFT_PPTX_OUT") {
-        std::fs::write(format!("{dir}/reexport.pptx"), deckcraft_pptx::export(&p).expect("export")).expect("write");
+        std::fs::write(
+            format!("{dir}/reexport.pptx"),
+            deckcraft_pptx::export(&p).expect("export"),
+        )
+        .expect("write");
     }
 }

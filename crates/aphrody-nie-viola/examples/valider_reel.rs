@@ -22,13 +22,20 @@ fn main() -> Result<(), String> {
     let racine = aphrody_nie_formats::vfs::resolve_game_dir();
     let data = racine.join("data");
     if !aphrody_nie_formats::vfs::donnees_disponibles(&data) {
-        return Err(format!("jeu introuvable sous {} — rien à valider", racine.display()));
+        return Err(format!(
+            "jeu introuvable sous {} — rien à valider",
+            racine.display()
+        ));
     }
     println!("jeu : {}", racine.display());
 
     let mut vfs = Vfs::new();
     vfs.init(&data).map_err(|e| e.to_string())?;
-    println!("VFS : {} fichiers, {} packs\n", vfs.asset_count(), vfs.cpk_count());
+    println!(
+        "VFS : {} fichiers, {} packs\n",
+        vfs.asset_count(),
+        vfs.cpk_count()
+    );
 
     let tmp = std::env::temp_dir().join("nie-viola-validation");
     std::fs::remove_dir_all(&tmp).ok();
@@ -89,7 +96,11 @@ fn main() -> Result<(), String> {
         if obtenu != attendu {
             divergents += 1;
             if divergents <= 3 {
-                println!("    divergent : {chemin} ({} vs {} octets)", obtenu.len(), attendu.len());
+                println!(
+                    "    divergent : {chemin} ({} vs {} octets)",
+                    obtenu.len(),
+                    attendu.len()
+                );
             }
         }
     }
@@ -103,7 +114,10 @@ fn main() -> Result<(), String> {
     // Reprise : un second dump ne doit RIEN réécrire.
     let r2 = dump_all(&vfs, &sortie, &options, &annuler, &|_| {})?;
     if r2.extraits == 0 && r2.packs_repris > 0 {
-        println!("    OK — reprise : 2ᵉ passage, {} packs sautés, 0 réécriture", r2.packs_repris);
+        println!(
+            "    OK — reprise : 2ᵉ passage, {} packs sautés, 0 réécriture",
+            r2.packs_repris
+        );
     } else {
         println!("    ECHEC — reprise inopérante ({} réécrits)", r2.extraits);
         echecs += 1;
@@ -128,7 +142,12 @@ fn main() -> Result<(), String> {
     std::fs::write(&chemin_mod, &modifie).map_err(|e| e.to_string())?;
 
     let sortie_pack = tmp.join("pack");
-    let pr = pack_mod(&data.join("cpk_list.cfg.bin"), &mod_dir, &sortie_pack, Platform::Pc)?;
+    let pr = pack_mod(
+        &data.join("cpk_list.cfg.bin"),
+        &mod_dir,
+        &sortie_pack,
+        Platform::Pc,
+    )?;
     println!(
         "\n[3] pack : {} mis à jour, {} ajoutés, {} copiés, {} entrées, {} déjà loose",
         pr.mis_a_jour, pr.ajoutes, pr.copies, pr.total, pr.loose_avant
@@ -158,7 +177,10 @@ fn main() -> Result<(), String> {
             let pack_vide = matches!(&enfant.variables[3], aphrody_nie_formats::cfgbin::Value::String(s) if s.is_empty());
             let taille_ok = matches!(&enfant.variables[4], aphrody_nie_formats::cfgbin::Value::Int(n) if *n as usize == modifie.len());
             if pack_vide && taille_ok {
-                println!("    OK — {cible} : pack vidé, taille {} inscrite", modifie.len());
+                println!(
+                    "    OK — {cible} : pack vidé, taille {} inscrite",
+                    modifie.len()
+                );
             } else {
                 println!("    ECHEC — pack_vide={pack_vide}, taille_ok={taille_ok}");
                 echecs += 1;
@@ -277,7 +299,11 @@ fn main() -> Result<(), String> {
         .map(|e| e.path())
         .find(|p| p.extension().is_some_and(|x| x == "cpk"))
         .ok_or("aucun .cpk trouvé")?;
-    let nom = pack.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let nom = pack
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
     let cle = CriwareKey::DuNom(nom.clone());
     let a = tmp.join("crypto/a.bin");
     let b = tmp.join("crypto/b.bin");
@@ -296,7 +322,15 @@ fn main() -> Result<(), String> {
     std::fs::remove_dir_all(&tmp).ok();
     println!(
         "\n═══ {} ═══",
-        if echecs == 0 { "TOUT VERT".to_string() } else { format!("{echecs} ECHEC(S)") }
+        if echecs == 0 {
+            "TOUT VERT".to_string()
+        } else {
+            format!("{echecs} ECHEC(S)")
+        }
     );
-    if echecs > 0 { Err(format!("{echecs} validation(s) en échec")) } else { Ok(()) }
+    if echecs > 0 {
+        Err(format!("{echecs} validation(s) en échec"))
+    } else {
+        Ok(())
+    }
 }

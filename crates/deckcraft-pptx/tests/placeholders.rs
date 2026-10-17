@@ -30,10 +30,17 @@ fn a_placeholder_without_geometry_takes_its_layouts() {
     let mut p = defaults::new_presentation(None);
     let layout = p.slides[0].layout;
     let m = std::sync::Arc::make_mut(&mut p.masters[0]);
-    let l = m.layouts.iter_mut().find(|l| l.id == layout).expect("layout");
+    let l = m
+        .layouts
+        .iter_mut()
+        .find(|l| l.id == layout)
+        .expect("layout");
     for s in &mut l.shapes {
         if s.ph.is_some() {
-            s.geom = Geom::Preset { name: "ellipse".into(), adj: vec![] };
+            s.geom = Geom::Preset {
+                name: "ellipse".into(),
+                adj: vec![],
+            };
         }
     }
     let bytes = deckcraft_pptx::export(&p).expect("export");
@@ -41,24 +48,46 @@ fn a_placeholder_without_geometry_takes_its_layouts() {
     let bare = edit_slides(&bytes, |s| {
         let mut s = s;
         while let Some(i) = s.find("<a:prstGeom") {
-            let Some(j) = s[i..].find("</a:prstGeom>").map(|j| j + i + "</a:prstGeom>".len()) else { break };
+            let Some(j) = s[i..]
+                .find("</a:prstGeom>")
+                .map(|j| j + i + "</a:prstGeom>".len())
+            else {
+                break;
+            };
             s.replace_range(i..j, "");
         }
         s
     });
     let q = deckcraft_pptx::import(&bare).expect("import");
-    let phs: Vec<_> = q.slides[0].shapes.iter().filter(|s| s.ph.is_some()).collect();
+    let phs: Vec<_> = q.slides[0]
+        .shapes
+        .iter()
+        .filter(|s| s.ph.is_some())
+        .collect();
     assert!(!phs.is_empty());
     for s in phs {
-        assert!(matches!(&s.geom, Geom::Preset { name, .. } if name == "ellipse"), "{:?}", s.geom);
+        assert!(
+            matches!(&s.geom, Geom::Preset { name, .. } if name == "ellipse"),
+            "{:?}",
+            s.geom
+        );
     }
     // A placeholder with its own geometry keeps it.
     let first = p.slides[0].id;
     for s in &mut p.slide_mut(first).expect("slide").shapes {
         if s.ph.is_some() {
-            s.geom = Geom::Preset { name: "triangle".into(), adj: vec![] };
+            s.geom = Geom::Preset {
+                name: "triangle".into(),
+                adj: vec![],
+            };
         }
     }
     let q = deckcraft_pptx::import(&deckcraft_pptx::export(&p).expect("export")).expect("import");
-    assert!(q.slides[0].shapes.iter().filter(|s| s.ph.is_some()).all(|s| matches!(&s.geom, Geom::Preset { name, .. } if name == "triangle")));
+    assert!(
+        q.slides[0]
+            .shapes
+            .iter()
+            .filter(|s| s.ph.is_some())
+            .all(|s| matches!(&s.geom, Geom::Preset { name, .. } if name == "triangle"))
+    );
 }

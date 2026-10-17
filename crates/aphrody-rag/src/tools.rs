@@ -82,7 +82,10 @@ impl RagSearchTool {
         )
         .with_exposure(ToolExposure::Direct);
 
-        Self { definition, searcher }
+        Self {
+            definition,
+            searcher,
+        }
     }
 }
 
@@ -93,12 +96,13 @@ impl ToolExecutor for RagSearchTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let query = arguments.get("query").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let query = arguments
+            .get("query")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "rag_search".to_string(),
                 message: "missing required argument `query` (string)".to_string(),
-            }
-        })?;
+            })?;
 
         let limit = arguments
             .get("limit")
@@ -116,10 +120,15 @@ impl ToolExecutor for RagSearchTool {
             })
             .unwrap_or(SearchMode::Hybrid);
 
-        let path_prefix =
-            arguments.get("path_prefix").and_then(JsonValue::as_str).map(|s| s.to_string());
+        let path_prefix = arguments
+            .get("path_prefix")
+            .and_then(JsonValue::as_str)
+            .map(|s| s.to_string());
 
-        let rerank = arguments.get("rerank").and_then(JsonValue::as_bool).unwrap_or(true);
+        let rerank = arguments
+            .get("rerank")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(true);
 
         let opts = SearchOptions {
             limit,
@@ -130,9 +139,14 @@ impl ToolExecutor for RagSearchTool {
             rrf_k: 60.0,
         };
 
-        let result = self.searcher.search(query, &opts).await.map_err(|err| {
-            ToolError::Execution { tool: "rag_search".to_string(), message: err.to_string() }
-        })?;
+        let result =
+            self.searcher
+                .search(query, &opts)
+                .await
+                .map_err(|err| ToolError::Execution {
+                    tool: "rag_search".to_string(),
+                    message: err.to_string(),
+                })?;
 
         if result.hits.is_empty() {
             return Ok(ToolOutput::ok(format!(
@@ -166,7 +180,10 @@ impl ToolExecutor for RagSearchTool {
                 hit.chunk.end_line,
                 symbol_hdr
             ));
-            out.push_str(&format!("*Channel: {} | Score: {:.4}*\n\n", hit.channel, hit.score));
+            out.push_str(&format!(
+                "*Channel: {} | Score: {:.4}*\n\n",
+                hit.channel, hit.score
+            ));
             out.push_str("```\n");
             out.push_str(&hit.chunk.content);
             if !hit.chunk.content.ends_with('\n') {
@@ -244,7 +261,10 @@ impl RagContextTool {
         )
         .with_exposure(ToolExposure::Direct);
 
-        Self { definition, searcher }
+        Self {
+            definition,
+            searcher,
+        }
     }
 }
 
@@ -255,12 +275,13 @@ impl ToolExecutor for RagContextTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let query = arguments.get("query").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let query = arguments
+            .get("query")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "rag_context".to_string(),
                 message: "missing required argument `query` (string)".to_string(),
-            }
-        })?;
+            })?;
 
         let token_budget = arguments
             .get("token_budget")
@@ -268,8 +289,10 @@ impl ToolExecutor for RagContextTool {
             .map(|n| n as usize)
             .unwrap_or(2000);
 
-        let path_prefix =
-            arguments.get("path_prefix").and_then(JsonValue::as_str).map(|s| s.to_string());
+        let path_prefix = arguments
+            .get("path_prefix")
+            .and_then(JsonValue::as_str)
+            .map(|s| s.to_string());
 
         let mode = arguments
             .get("mode")
@@ -280,19 +303,33 @@ impl ToolExecutor for RagContextTool {
                 _ => SearchMode::Hybrid,
             })
             .unwrap_or(SearchMode::Hybrid);
-        let rerank = arguments.get("rerank").and_then(JsonValue::as_bool).unwrap_or(true);
+        let rerank = arguments
+            .get("rerank")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(true);
         let rerank_top_n = arguments
             .get("rerank_top_n")
             .and_then(JsonValue::as_u64)
             .map(|value| value.clamp(1, 100) as usize)
             .unwrap_or(15);
 
-        let opts =
-            SearchOptions { limit: 15, mode, rerank, rerank_top_n, path_prefix, rrf_k: 60.0 };
+        let opts = SearchOptions {
+            limit: 15,
+            mode,
+            rerank,
+            rerank_top_n,
+            path_prefix,
+            rrf_k: 60.0,
+        };
 
-        let result = self.searcher.search(query, &opts).await.map_err(|err| {
-            ToolError::Execution { tool: "rag_context".to_string(), message: err.to_string() }
-        })?;
+        let result =
+            self.searcher
+                .search(query, &opts)
+                .await
+                .map_err(|err| ToolError::Execution {
+                    tool: "rag_context".to_string(),
+                    message: err.to_string(),
+                })?;
 
         let mut accumulated_tokens = 0usize;
         let mut context_block = String::new();
@@ -328,7 +365,10 @@ impl ToolExecutor for RagContextTool {
 
 /// Keep indexed text as data, including literal context delimiters in sources.
 fn escape_context(text: &str) -> String {
-    text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// Register both `rag_search` and `rag_context` tools into an agent's [`ToolRegistry`].
@@ -378,9 +418,11 @@ fn web_api_config(
     configured_url: Option<String>,
     configured_token: Option<String>,
 ) -> Result<WebApiConfig, String> {
-    let token = configured_token.filter(|token| !token.trim().is_empty()).ok_or_else(|| {
-        format!("{WEB_API_TOKEN_ENV} is required to ingest through Aphrody OS Web API")
-    })?;
+    let token = configured_token
+        .filter(|token| !token.trim().is_empty())
+        .ok_or_else(|| {
+            format!("{WEB_API_TOKEN_ENV} is required to ingest through Aphrody OS Web API")
+        })?;
     let base_url = reqwest::Url::parse(configured_url.as_deref().unwrap_or(WEB_API_DEFAULT_URL))
         .map_err(|_| format!("{WEB_API_URL_ENV} must be a loopback HTTP origin"))?;
     let loopback = base_url
@@ -431,11 +473,16 @@ async fn fetch_os_web_markdown(
         .await
         .map_err(|_| "Aphrody OS Web API request failed".to_string())?;
     if !response.status().is_success() {
-        return Err(format!("Aphrody OS Web API returned HTTP {}", response.status()));
+        return Err(format!(
+            "Aphrody OS Web API returned HTTP {}",
+            response.status()
+        ));
     }
     let mut body = Vec::new();
-    while let Some(chunk) =
-        response.chunk().await.map_err(|_| "Aphrody OS Web API response failed".to_string())?
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|_| "Aphrody OS Web API response failed".to_string())?
     {
         if chunk.len() > WEB_API_MAX_RESPONSE_BYTES.saturating_sub(body.len()) {
             return Err("Aphrody OS Web API page exceeds response limit".to_string());
@@ -460,8 +507,10 @@ pub async fn scrape_web_markdown(
     force: bool,
     budget: Duration,
 ) -> Result<String, String> {
-    let config =
-        web_api_config(std::env::var(WEB_API_URL_ENV).ok(), std::env::var(WEB_API_TOKEN_ENV).ok())?;
+    let config = web_api_config(
+        std::env::var(WEB_API_URL_ENV).ok(),
+        std::env::var(WEB_API_TOKEN_ENV).ok(),
+    )?;
     fetch_os_web_markdown(config, url, force, budget).await
 }
 
@@ -506,7 +555,11 @@ impl WebIngestTool {
             schema,
         );
 
-        Self { definition, indexer, budget: Duration::from_secs(90) }
+        Self {
+            definition,
+            indexer,
+            budget: Duration::from_secs(90),
+        }
     }
 }
 
@@ -517,13 +570,17 @@ impl ToolExecutor for WebIngestTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let url = arguments.get("url").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let url = arguments
+            .get("url")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "web_ingest".to_string(),
                 message: "`url` is required".to_string(),
-            }
-        })?;
-        let force = arguments.get("force").and_then(JsonValue::as_bool).unwrap_or(false);
+            })?;
+        let force = arguments
+            .get("force")
+            .and_then(JsonValue::as_bool)
+            .unwrap_or(false);
         let markdown = match scrape_web_markdown(url, force, self.budget).await {
             Ok(markdown) => markdown,
             Err(error) => return Ok(ToolOutput::error(format!("web_ingest: {error}"))),
@@ -532,10 +589,19 @@ impl ToolExecutor for WebIngestTool {
         let size = i64::try_from(markdown.len()).unwrap_or(i64::MAX);
         let now_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |elapsed| i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX));
-        let opts = IndexOptions { force_reindex: force, ..IndexOptions::default() };
+            .map_or(0, |elapsed| {
+                i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX)
+            });
+        let opts = IndexOptions {
+            force_reindex: force,
+            ..IndexOptions::default()
+        };
 
-        match self.indexer.index_document(url, &markdown, size, now_ms, &opts).await {
+        match self
+            .indexer
+            .index_document(url, &markdown, size, now_ms, &opts)
+            .await
+        {
             Ok(Some((chunks, vectors))) => Ok(ToolOutput::ok(format!(
                 "Indexed {url}: {chunks} chunk(s), {vectors} vector(s), {size} byte(s) of \
                  markdown."
@@ -543,7 +609,9 @@ impl ToolExecutor for WebIngestTool {
             Ok(None) => Ok(ToolOutput::ok(format!(
                 "{url} is already indexed with identical content; pass force=true to re-index."
             ))),
-            Err(error) => Ok(ToolOutput::error(format!("web_ingest: indexing failed: {error}"))),
+            Err(error) => Ok(ToolOutput::error(format!(
+                "web_ingest: indexing failed: {error}"
+            ))),
         }
     }
 }
@@ -562,9 +630,11 @@ mod web_api_tests {
     fn web_api_requires_token_for_every_store_and_rejects_non_loopback() {
         assert!(web_api_config(None, None).is_err());
         assert!(web_api_config(Some("http://127.0.0.1:3007".into()), None).is_err());
-        for url in
-            ["http://example.com:3007", "https://127.0.0.1:3007", "http://127.0.0.1:3007/path"]
-        {
+        for url in [
+            "http://example.com:3007",
+            "https://127.0.0.1:3007",
+            "http://127.0.0.1:3007/path",
+        ] {
             assert!(web_api_config(Some(url.into()), Some("secret".into())).is_err());
         }
     }
@@ -581,7 +651,11 @@ mod web_api_tests {
             assert!(request.starts_with(
                 "GET /api/v1/page?url=https%3A%2F%2Fexample.com%2Farticle&force=true HTTP/1.1"
             ));
-            assert!(request.to_ascii_lowercase().contains("authorization: bearer test-token\r\n"));
+            assert!(
+                request
+                    .to_ascii_lowercase()
+                    .contains("authorization: bearer test-token\r\n")
+            );
             let reply = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \
                  {}\r\nConnection: close\r\n\r\n{body}",

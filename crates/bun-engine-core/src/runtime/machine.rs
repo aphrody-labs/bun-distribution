@@ -87,7 +87,11 @@ pub struct MachineOptions {
 
 impl Default for MachineOptions {
     fn default() -> Self {
-        Self { spawn_view: true, exit_on_stop: true, paused: false }
+        Self {
+            spawn_view: true,
+            exit_on_stop: true,
+            paused: false,
+        }
     }
 }
 
@@ -96,7 +100,11 @@ pub struct MachineRuntimePlugin;
 
 impl Plugin for MachineRuntimePlugin {
     fn build(&self, app: &mut App) {
-        let mode = app.world().get_resource::<EngineMode>().copied().unwrap_or(EngineMode::Windowed);
+        let mode = app
+            .world()
+            .get_resource::<EngineMode>()
+            .copied()
+            .unwrap_or(EngineMode::Windowed);
         app.init_resource::<EngineInput>()
             .init_resource::<EngineExit>()
             .add_message::<SaveState>()
@@ -104,15 +112,21 @@ impl Plugin for MachineRuntimePlugin {
             .add_message::<MachineStateResult>()
             .add_message::<MachineEvent>()
             .add_systems(Update, save_load.run_if(resource_exists::<MachineStatus>))
-            .add_systems(Last, write_out_on_exit.run_if(resource_exists::<MachineStatus>));
+            .add_systems(
+                Last,
+                write_out_on_exit.run_if(resource_exists::<MachineStatus>),
+            );
         let schedule = match mode {
             EngineMode::Windowed => FixedUpdate.intern(),
             EngineMode::Headless => Update.intern(),
         };
-        app.configure_sets(schedule, EngineSystems::Machine).add_systems(
-            schedule,
-            run_machine.in_set(EngineSystems::Machine).run_if(resource_exists::<MachineStatus>),
-        );
+        app.configure_sets(schedule, EngineSystems::Machine)
+            .add_systems(
+                schedule,
+                run_machine
+                    .in_set(EngineSystems::Machine)
+                    .run_if(resource_exists::<MachineStatus>),
+            );
         #[cfg(feature = "render")]
         if mode == EngineMode::Windowed {
             view::register(app);
@@ -134,8 +148,13 @@ pub struct MachinePlugin {
 }
 
 impl MachinePlugin {
-    pub fn new(factory: impl FnOnce() -> Result<Box<dyn Machine>, String> + Send + 'static) -> Self {
-        Self { factory: Mutex::new(Some(Box::new(factory))), options: MachineOptions::default() }
+    pub fn new(
+        factory: impl FnOnce() -> Result<Box<dyn Machine>, String> + Send + 'static,
+    ) -> Self {
+        Self {
+            factory: Mutex::new(Some(Box::new(factory))),
+            options: MachineOptions::default(),
+        }
     }
 
     pub fn without_view(mut self) -> Self {
@@ -146,7 +165,9 @@ impl MachinePlugin {
 
 impl Plugin for MachinePlugin {
     fn build(&self, app: &mut App) {
-        let Some(factory) = self.factory.lock().unwrap().take() else { return };
+        let Some(factory) = self.factory.lock().unwrap().take() else {
+            return;
+        };
         match factory() {
             Ok(machine) => {
                 ensure_runtime(app);
@@ -155,9 +176,12 @@ impl Plugin for MachinePlugin {
             Err(e) => {
                 app.init_resource::<EngineExit>();
                 app.world_mut().resource_mut::<EngineExit>().fail(e);
-                app.add_systems(crate::bevy::app::Startup, |mut exit: MessageWriter<AppExit>| {
-                    exit.write(AppExit::error());
-                });
+                app.add_systems(
+                    crate::bevy::app::Startup,
+                    |mut exit: MessageWriter<AppExit>| {
+                        exit.write(AppExit::error());
+                    },
+                );
             }
         }
     }
@@ -179,13 +203,20 @@ pub trait MachineAppExt {
 impl MachineAppExt for App {
     fn insert_machine(&mut self, machine: Box<dyn Machine>) -> &mut Self {
         ensure_runtime(self);
-        self.world_mut().insert_machine_with(machine, MachineOptions::default());
+        self.world_mut()
+            .insert_machine_with(machine, MachineOptions::default());
         self
     }
 
     fn insert_machine_without_view(&mut self, machine: Box<dyn Machine>) -> &mut Self {
         ensure_runtime(self);
-        self.world_mut().insert_machine_with(machine, MachineOptions { spawn_view: false, ..Default::default() });
+        self.world_mut().insert_machine_with(
+            machine,
+            MachineOptions {
+                spawn_view: false,
+                ..Default::default()
+            },
+        );
         self
     }
 }
@@ -201,7 +232,10 @@ pub trait MachineWorldExt {
 impl MachineWorldExt for World {
     fn insert_machine_with(&mut self, machine: Box<dyn Machine>, options: MachineOptions) {
         self.remove_machine();
-        let mode = self.get_resource::<EngineMode>().copied().unwrap_or(EngineMode::Windowed);
+        let mode = self
+            .get_resource::<EngineMode>()
+            .copied()
+            .unwrap_or(EngineMode::Windowed);
         let refresh = machine.refresh_rate().clamp(1.0, 1000.0);
         let name = machine.name();
         if mode == EngineMode::Windowed {
@@ -255,8 +289,16 @@ pub struct InsertMachine {
 
 impl InsertMachine {
     /// Defaults for hosts: the app keeps running when the machine shuts down.
-    pub fn new(factory: impl FnOnce() -> Result<Box<dyn Machine>, String> + Send + 'static) -> Self {
-        Self { factory: Box::new(factory), options: MachineOptions { exit_on_stop: false, ..Default::default() } }
+    pub fn new(
+        factory: impl FnOnce() -> Result<Box<dyn Machine>, String> + Send + 'static,
+    ) -> Self {
+        Self {
+            factory: Box::new(factory),
+            options: MachineOptions {
+                exit_on_stop: false,
+                ..Default::default()
+            },
+        }
     }
 
     pub fn with_options(mut self, options: MachineOptions) -> Self {
@@ -334,7 +376,10 @@ fn run_machine(
     if let Some(audio) = audio {
         audio.drain_from(machine);
     }
-    if status.frame_limit.is_some_and(|limit| status.frames >= limit) {
+    if status
+        .frame_limit
+        .is_some_and(|limit| status.frames >= limit)
+    {
         status.stopped = true;
         exit.write(AppExit::Success);
     }
@@ -412,7 +457,10 @@ pub fn compose_rgba(screens: &[Screen], size: (u32, u32), out: &mut Vec<u8>) {
 pub fn stacked_size(screens: &[Screen]) -> ((u32, u32), u32) {
     let width = screens.iter().map(|s| s.width).max().unwrap_or(256) as u32;
     let height = screens.iter().map(|s| s.height).sum::<usize>().max(1) as u32;
-    ((width.max(1), height), screens.first().map_or(0, |s| s.height as u32))
+    (
+        (width.max(1), height),
+        screens.first().map_or(0, |s| s.height as u32),
+    )
 }
 
 #[cfg(feature = "render")]
@@ -462,14 +510,25 @@ pub mod view {
                     .run_if(resource_exists::<MachineScreen>)
                     .run_if(resource_exists::<MachineStatus>),
             )
-            .add_systems(PreUpdate, touch.after(EngineSystems::Input).run_if(resource_exists::<MachineScreen>));
+            .add_systems(
+                PreUpdate,
+                touch
+                    .after(EngineSystems::Input)
+                    .run_if(resource_exists::<MachineScreen>),
+            );
     }
 
     pub(super) fn install(world: &mut World, first: &[crate::machine::Screen], spawn_view: bool) {
-        let Some(mut images) = world.get_resource_mut::<Assets<Image>>() else { return };
+        let Some(mut images) = world.get_resource_mut::<Assets<Image>>() else {
+            return;
+        };
         let ((w, h), first_height) = stacked_size(first);
         let mut image = Image::new_fill(
-            Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+            Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
             TextureDimension::D2,
             &[0, 0, 0, 255],
             TextureFormat::Rgba8UnormSrgb,
@@ -477,7 +536,13 @@ pub mod view {
         );
         image.sampler = ImageSampler::nearest();
         let handle = images.add(image);
-        world.insert_resource(MachineScreen { image: handle, size: UVec2::new(w, h), first_height, spawn_view, presented: u64::MAX });
+        world.insert_resource(MachineScreen {
+            image: handle,
+            size: UVec2::new(w, h),
+            first_height,
+            spawn_view,
+            presented: u64::MAX,
+        });
     }
 
     pub(super) fn uninstall(world: &mut World) {
@@ -486,7 +551,10 @@ pub mod view {
         {
             images.remove(&screen.image);
         }
-        let views: Vec<Entity> = world.query_filtered::<Entity, With<MachineView>>().iter(world).collect();
+        let views: Vec<Entity> = world
+            .query_filtered::<Entity, With<MachineView>>()
+            .iter(world)
+            .collect();
         for entity in views {
             world.despawn(entity);
         }
@@ -506,7 +574,10 @@ pub mod view {
         let size = screen.size.as_vec2();
         for mut projection in &mut cameras {
             *projection = Projection::Orthographic(OrthographicProjection {
-                scaling_mode: ScalingMode::AutoMin { min_width: size.x, min_height: size.y },
+                scaling_mode: ScalingMode::AutoMin {
+                    min_width: size.x,
+                    min_height: size.y,
+                },
                 ..OrthographicProjection::default_2d()
             });
         }
@@ -519,7 +590,14 @@ pub mod view {
                 }
             }
         }
-        commands.spawn((Sprite { image: screen.image.clone(), custom_size: Some(size), ..Default::default() }, MachineView));
+        commands.spawn((
+            Sprite {
+                image: screen.image.clone(),
+                custom_size: Some(size),
+                ..Default::default()
+            },
+            MachineView,
+        ));
     }
 
     /// `PostUpdate`: upload the screens when a new frame completed.
@@ -576,7 +654,13 @@ pub mod view {
     pub fn capture_rgb(slot: &MachineSlot, screen: &MachineScreen) -> (u32, u32, Vec<u8>) {
         let mut rgba = Vec::new();
         compose_rgba(&slot.0.screens(), (screen.size.x, screen.size.y), &mut rgba);
-        (screen.size.x, screen.size.y, rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect())
+        (
+            screen.size.x,
+            screen.size.y,
+            rgba.chunks_exact(4)
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect(),
+        )
     }
 }
 

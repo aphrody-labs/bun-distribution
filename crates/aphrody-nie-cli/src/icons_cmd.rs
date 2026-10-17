@@ -36,7 +36,7 @@ fn charger_map(chemin: &Path) -> BTreeMap<String, String> {
             Err(e) => {
                 eprintln!("  ({} illisible : {e} — reparti de zéro)", chemin.display());
                 BTreeMap::new()
-            },
+            }
         },
         Err(_) => BTreeMap::new(),
     }
@@ -113,22 +113,36 @@ pub fn run(cmd: &IconsCmd, game_dir: &Path) -> Result<()> {
 
     match cmd {
         IconsCmd::Index { prefix, skip, out } => {
-            let skip: Vec<String> =
-                skip.split(',').filter(|s| !s.is_empty()).map(str::to_string).collect();
+            let skip: Vec<String> = skip
+                .split(',')
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect();
             let index = icon_index(&vfs, prefix, &skip);
-            let doc: BTreeMap<&String, serde_json::Value> =
-                index.icons.iter().map(|(name, icon)| (name, icon_json(name, icon))).collect();
+            let doc: BTreeMap<&String, serde_json::Value> = index
+                .icons
+                .iter()
+                .map(|(name, icon)| (name, icon_json(name, icon)))
+                .collect();
             if let Some(parent) = out.parent() {
                 std::fs::create_dir_all(parent).ok();
             }
             std::fs::write(out, serde_json::to_vec_pretty(&doc)?)
                 .with_context(|| format!("écriture {}", out.display()))?;
             println!("indexé {} icônes → {}", index.icons.len(), out.display());
-        },
+        }
 
-        IconsCmd::Dict { prefix, skip, out_dir, dry_run } => {
-            let skip: Vec<String> =
-                skip.split(',').filter(|s| !s.is_empty()).map(str::to_string).collect();
+        IconsCmd::Dict {
+            prefix,
+            skip,
+            out_dir,
+            dry_run,
+        } => {
+            let skip: Vec<String> = skip
+                .split(',')
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect();
             let index = icon_index(&vfs, prefix, &skip);
 
             let chemin_crc = out_dir.join("menu-crc32-dictionary.json");
@@ -144,10 +158,10 @@ pub fn run(cmd: &IconsCmd, game_dir: &Path) -> Result<()> {
                 let cle = format!("0x{:08X}", cfgbin::crc32(nom.as_bytes()));
                 match crc.get(&cle) {
                     Some(deja) if deja != nom => collisions += 1,
-                    Some(_) => {},
+                    Some(_) => {}
                     None => {
                         crc.insert(cle, nom.clone());
-                    },
+                    }
                 }
                 reg.entry(nom.clone()).or_insert_with(|| ic.atlas.clone());
             }
@@ -172,8 +186,12 @@ pub fn run(cmd: &IconsCmd, game_dir: &Path) -> Result<()> {
                 .with_context(|| format!("écriture {}", chemin_crc.display()))?;
             std::fs::write(&chemin_reg, serde_json::to_vec_pretty(&reg)?)
                 .with_context(|| format!("écriture {}", chemin_reg.display()))?;
-            println!("  écrits : {} · {}", chemin_crc.display(), chemin_reg.display());
-        },
+            println!(
+                "  écrits : {} · {}",
+                chemin_crc.display(),
+                chemin_reg.display()
+            );
+        }
 
         IconsCmd::Extract { prefix, limit } => {
             let index = icon_index(&vfs, prefix, &[]);
@@ -193,8 +211,12 @@ pub fn run(cmd: &IconsCmd, game_dir: &Path) -> Result<()> {
                     continue;
                 };
                 // À côté de l'atlas dans le dump, là où le CDN sert `/dx11/…` en statique.
-                let dossier = game_dir
-                    .join(Path::new(&ic.atlas).parent().and_then(Path::to_str).unwrap_or("data"));
+                let dossier = game_dir.join(
+                    Path::new(&ic.atlas)
+                        .parent()
+                        .and_then(Path::to_str)
+                        .unwrap_or("data"),
+                );
                 if std::fs::create_dir_all(&dossier).is_err() {
                     echecs += 1;
                     continue;
@@ -205,8 +227,11 @@ pub fn run(cmd: &IconsCmd, game_dir: &Path) -> Result<()> {
                     echecs += 1;
                 }
             }
-            println!("{ecrits} PNG écrits, {echecs} échec(s) — {} indexées", index.icons.len());
-        },
+            println!(
+                "{ecrits} PNG écrits, {echecs} échec(s) — {} indexées",
+                index.icons.len()
+            );
+        }
     }
     Ok(())
 }
@@ -222,7 +247,12 @@ mod tests {
             name: "ds01001".to_owned(),
             atlas: "data/dx11/menu/200_icon/20_icon_deco/icon_deco.g4tx".to_owned(),
             texture: "icon_deco".to_owned(),
-            rect: Some(IconRect { x: 8, y: 9, w: 80, h: 81 }),
+            rect: Some(IconRect {
+                x: 8,
+                y: 9,
+                w: 80,
+                h: 81,
+            }),
             width: 80,
             height: 81,
         };

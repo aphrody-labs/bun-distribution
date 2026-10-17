@@ -135,7 +135,10 @@ fn router_with_shenron_readiness(enabled: bool) -> Router {
         .route("/healthz", get(health_handler))
         .route("/api/v1/models", get(models_handler))
         .route("/v1/models", get(openai_models_handler))
-        .route("/v1/chat/completions", post(openai_chat_completions_handler))
+        .route(
+            "/v1/chat/completions",
+            post(openai_chat_completions_handler),
+        )
         .route("/api/v1/aphrody/status", get(aphrody_status_handler))
         .route("/api/v1/rag/query", get(rag_query_handler))
         .route("/api/v1/rag/stats", get(rag_stats_handler));
@@ -145,7 +148,10 @@ fn router_with_shenron_readiness(enabled: bool) -> Router {
         .route("/api/v1/shenron/rag/stats", get(shenron_rag_stats))
         .route("/api/v1/shenron/health", get(shenron_health))
         .route("/api/v1/shenron/rag/ingest", post(shenron_rag_ingest))
-        .route("/api/v1/shenron/rag/sync/finish", post(shenron_rag_sync_finish))
+        .route(
+            "/api/v1/shenron/rag/sync/finish",
+            post(shenron_rag_sync_finish),
+        )
         .route("/api/v1/shenron/llm/chat", post(shenron_llm_chat))
         .route("/api/v1/shenron/embed", post(shenron_embed))
         .route(
@@ -163,7 +169,11 @@ fn router_with_shenron_readiness(enabled: bool) -> Router {
 }
 
 fn shenron_auth(headers: &HeaderMap) -> Option<Response> {
-    gateway_auth(headers, aphrody_config::ai_env::HTTP_TOKEN.resolve().as_deref(), true)
+    gateway_auth(
+        headers,
+        aphrody_config::ai_env::HTTP_TOKEN.resolve().as_deref(),
+        true,
+    )
 }
 
 /// A credentialed upstream cannot be exposed through an anonymous REST route.
@@ -195,9 +205,10 @@ fn gateway_auth(headers: &HeaderMap, expected: Option<&str>, required: bool) -> 
 fn shenron_error(status: StatusCode, message: &str) -> Response {
     let mut response =
         aphrody_http_error::error_response(status, status.as_u16().to_string(), message, None);
-    response
-        .headers_mut()
-        .insert(header::CACHE_CONTROL, axum::http::HeaderValue::from_static("no-store"));
+    response.headers_mut().insert(
+        header::CACHE_CONTROL,
+        axum::http::HeaderValue::from_static("no-store"),
+    );
     response
 }
 
@@ -340,7 +351,10 @@ async fn shenron_rag_stats(headers: HeaderMap) -> Response {
     )
     .await;
     let Ok(Ok(stats)) = stats else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG statistics unavailable");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "RAG statistics unavailable",
+        );
     };
     response(
         json!({
@@ -384,7 +398,10 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     let retrieval_limit = limit.max(40);
     let lang = params.lang.as_deref().filter(|value| !value.is_empty());
     let kind = params.kind.as_deref().filter(|value| !value.is_empty());
-    let origin_source_id = params.source_id.as_deref().filter(|value| !value.is_empty());
+    let origin_source_id = params
+        .source_id
+        .as_deref()
+        .filter(|value| !value.is_empty());
     let entity = params.entity.as_deref().filter(|value| !value.is_empty());
     #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     let cache = aphrody_rag::redis_cache::RedisRagCache::from_url(
@@ -399,7 +416,10 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
         && let Ok(payload) = serde_json::from_str::<Value>(&cached)
     {
         let mut result = response(payload, "no-store");
-        result.headers_mut().insert("x-shenron-rag-cache", header::HeaderValue::from_static("hit"));
+        result.headers_mut().insert(
+            "x-shenron-rag-cache",
+            header::HeaderValue::from_static("hit"),
+        );
         return result;
     }
     let sql = "SELECT entity_id::text, title::text, url::text, content::text, LEAST(1.0::float8, \
@@ -470,8 +490,13 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
             ) pre ORDER BY (CASE WHEN kind='manga_page' OR url='' THEN entity_id ELSE url END), score DESC
         ) ranked ORDER BY score DESC LIMIT $1
     "#;
-    let rows =
-        tokio::time::timeout(if use_fts { Duration::from_secs(8) } else { DB_TIMEOUT }, async {
+    let rows = tokio::time::timeout(
+        if use_fts {
+            Duration::from_secs(8)
+        } else {
+            DB_TIMEOUT
+        },
+        async {
             if use_fts {
                 client
                     .query(
@@ -506,8 +531,9 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
                     )
                     .await
             }
-        })
-        .await;
+        },
+    )
+    .await;
     let Ok(Ok(rows)) = rows else {
         return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG search unavailable");
     };
@@ -515,7 +541,12 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     let vector_rows = crate::shenron_vector::search(
         &client,
         &query,
-        crate::shenron_vector::Filters { lang, kind, origin_source_id, entity },
+        crate::shenron_vector::Filters {
+            lang,
+            kind,
+            origin_source_id,
+            entity,
+        },
         retrieval_limit,
     )
     .await;
@@ -530,10 +561,11 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
         }
         let mut ranked = fused.into_values().collect::<Vec<_>>();
         ranked.sort_by(|left, right| {
-            right
-                .1
-                .total_cmp(&left.1)
-                .then_with(|| left.0["sourceId"].as_str().cmp(&right.0["sourceId"].as_str()))
+            right.1.total_cmp(&left.1).then_with(|| {
+                left.0["sourceId"]
+                    .as_str()
+                    .cmp(&right.0["sourceId"].as_str())
+            })
         });
         let max_score = ranked.first().map_or(1.0, |item| item.1);
         let mut seen_urls = HashSet::new();
@@ -558,10 +590,15 @@ async fn shenron_rag_search_core(params: ShenronSearchQuery) -> Response {
     let payload = json!({ "results": results, "mode": mode });
     #[cfg(any(feature = "gateway-cache", feature = "rag"))]
     if let Some(cache_query) = &cache_query {
-        let _ = cache.cache_rag_result(cache_query, "retrieval", &payload.to_string()).await;
+        let _ = cache
+            .cache_rag_result(cache_query, "retrieval", &payload.to_string())
+            .await;
     }
     let mut result = response(payload, "no-store");
-    result.headers_mut().insert("x-shenron-rag-cache", header::HeaderValue::from_static("miss"));
+    result.headers_mut().insert(
+        "x-shenron-rag-cache",
+        header::HeaderValue::from_static("miss"),
+    );
     result
 }
 
@@ -601,7 +638,9 @@ async fn shenron_cache_query(
 }
 
 fn shenron_row_value(row: &tokio_postgres::Row) -> Value {
-    let corpus = row.try_get::<_, String>(10).unwrap_or_else(|_| "shenron".to_owned());
+    let corpus = row
+        .try_get::<_, String>(10)
+        .unwrap_or_else(|_| "shenron".to_owned());
     let id = row.try_get::<_, String>(9).unwrap_or_default();
     let source_id = row
         .try_get::<_, Option<String>>(0)
@@ -615,7 +654,11 @@ fn shenron_row_value(row: &tokio_postgres::Row) -> Value {
         .flatten()
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| source_id.clone());
-    let content = row.try_get::<_, Option<String>>(3).ok().flatten().unwrap_or_default();
+    let content = row
+        .try_get::<_, Option<String>>(3)
+        .ok()
+        .flatten()
+        .unwrap_or_default();
     let (snippet, _) = bounded_chars(&content, 300);
     let (full_content, content_truncated) = bounded_chars(&content, MAX_SEARCH_CONTENT_CHARS);
     json!({
@@ -640,11 +683,20 @@ fn bounded_chars(content: &str, max_chars: usize) -> (String, bool) {
 }
 
 fn like_pattern(value: &str) -> String {
-    format!("%{}%", value.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_"))
+    format!(
+        "%{}%",
+        value
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    )
 }
 
 fn search_term_patterns(query: &str) -> Vec<String> {
-    search_terms(query).iter().map(|term| like_pattern(term)).collect()
+    search_terms(query)
+        .iter()
+        .map(|term| like_pattern(term))
+        .collect()
 }
 
 fn search_terms(query: &str) -> Vec<String> {
@@ -654,7 +706,10 @@ fn search_terms(query: &str) -> Vec<String> {
         "which", "with",
     ];
     let mut terms = Vec::new();
-    for word in query.to_lowercase().split(|character: char| !character.is_alphanumeric()) {
+    for word in query
+        .to_lowercase()
+        .split(|character: char| !character.is_alphanumeric())
+    {
         if word.is_empty() || STOPWORDS.contains(&word) {
             continue;
         }
@@ -759,7 +814,8 @@ fn shenron_rank_terms(query: &str) -> Vec<String> {
     let cjk_tokens = terms
         .iter()
         .filter(|term| {
-            term.chars().any(|ch| matches!(ch as u32, 0x3040..=0x30ff | 0x3400..=0x9fff))
+            term.chars()
+                .any(|ch| matches!(ch as u32, 0x3040..=0x30ff | 0x3400..=0x9fff))
         })
         .cloned()
         .collect::<Vec<_>>();
@@ -813,7 +869,10 @@ fn shenron_rank_terms(query: &str) -> Vec<String> {
 
 fn shenron_intent(query: &str) -> &'static str {
     let text = shenron_fold(query);
-    let has = |word: &str| text.split(|ch: char| !ch.is_alphanumeric()).any(|part| part == word);
+    let has = |word: &str| {
+        text.split(|ch: char| !ch.is_alphanumeric())
+            .any(|part| part == word)
+    };
     if has("planche") {
         return "manga_page";
     }
@@ -833,7 +892,9 @@ fn shenron_intent(query: &str) -> &'static str {
     {
         return "location";
     }
-    if ["annee", "chronologie", "naissance"].iter().any(|word| has(word))
+    if ["annee", "chronologie", "naissance"]
+        .iter()
+        .any(|word| has(word))
         || text.contains("guerre entre")
     {
         return "timeline_event";
@@ -847,7 +908,10 @@ fn shenron_intent(query: &str) -> &'static str {
     if has("planete") || has("planet") {
         return "planet";
     }
-    if ["race", "saiyans", "namekiens", "metamorans"].iter().any(|word| has(word)) {
+    if ["race", "saiyans", "namekiens", "metamorans"]
+        .iter()
+        .any(|word| has(word))
+    {
         return "race";
     }
     if text.contains("qui est")
@@ -860,9 +924,16 @@ fn shenron_intent(query: &str) -> &'static str {
     if has("saga") || has("arc") {
         return "saga";
     }
-    if ["technique", "kamehameha", "kienzan", "masenko", "kikoho", "makankosappo"]
-        .iter()
-        .any(|word| has(word))
+    if [
+        "technique",
+        "kamehameha",
+        "kienzan",
+        "masenko",
+        "kikoho",
+        "makankosappo",
+    ]
+    .iter()
+    .any(|word| has(word))
         || text.contains("genki")
         || text.contains("kaioken")
         || text.contains("kaio ken")
@@ -878,10 +949,16 @@ fn shenron_intent(query: &str) -> &'static str {
     if has("combat") || has("contre") || has("vs") || has("fight") {
         return "battle";
     }
-    if ["objet", "radar", "epee", "potara", "sword"].iter().any(|word| has(word)) {
+    if ["objet", "radar", "epee", "potara", "sword"]
+        .iter()
+        .any(|word| has(word))
+    {
         return "item";
     }
-    if ["lieu", "palais", "sanctuaire", "house", "chamber"].iter().any(|word| has(word)) {
+    if ["lieu", "palais", "sanctuaire", "house", "chamber"]
+        .iter()
+        .any(|word| has(word))
+    {
         return "location";
     }
     ""
@@ -922,14 +999,32 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
         || doc.content.trim().is_empty()
         || doc.content.len() > MAX_INGEST_BYTES
         || doc.url.len() > 2048
-        || doc.kind.as_ref().is_some_and(|kind| kind.is_empty() || kind.len() > 64)
-        || doc.lang.as_ref().is_some_and(|lang| lang.is_empty() || lang.len() > 32)
-        || doc.origin_source_id.as_ref().is_some_and(|value| value.is_empty() || value.len() > 256)
-        || doc.entity.as_ref().is_some_and(|value| value.is_empty() || value.len() > 256)
-        || doc.sync_generation.as_ref().is_some_and(|value| !valid_sync_generation(value))
+        || doc
+            .kind
+            .as_ref()
+            .is_some_and(|kind| kind.is_empty() || kind.len() > 64)
+        || doc
+            .lang
+            .as_ref()
+            .is_some_and(|lang| lang.is_empty() || lang.len() > 32)
+        || doc
+            .origin_source_id
+            .as_ref()
+            .is_some_and(|value| value.is_empty() || value.len() > 256)
+        || doc
+            .entity
+            .as_ref()
+            .is_some_and(|value| value.is_empty() || value.len() > 256)
+        || doc
+            .sync_generation
+            .as_ref()
+            .is_some_and(|value| !valid_sync_generation(value))
         || (doc.sync_generation.is_some() && doc.origin_source_id.is_none())
     {
-        return shenron_error(StatusCode::BAD_REQUEST, "Invalid sourceId, title, url or content");
+        return shenron_error(
+            StatusCode::BAD_REQUEST,
+            "Invalid sourceId, title, url or content",
+        );
     }
     let Ok(url) = reqwest::Url::parse(&doc.url) else {
         return shenron_error(StatusCode::BAD_REQUEST, "url must be an absolute HTTP URL");
@@ -943,7 +1038,11 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
     let metadata = shenron_document_metadata(&doc);
     let operation = async {
         let tx = client.transaction().await?;
-        tx.query_one("SELECT pg_advisory_xact_lock(hashtext($1))", &[&doc.source_id]).await?;
+        tx.query_one(
+            "SELECT pg_advisory_xact_lock(hashtext($1))",
+            &[&doc.source_id],
+        )
+        .await?;
         let old = tx
             .query_opt(
                 "SELECT id::text FROM aphrody_rag_documents WHERE corpus = 'shenron' AND \
@@ -951,9 +1050,10 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
                 &[&doc.source_id],
             )
             .await?;
-        let (id, created) = if let Some(row) = old {
-            let id: String = row.get(0);
-            tx.execute(
+        let (id, created) =
+            if let Some(row) = old {
+                let id: String = row.get(0);
+                tx.execute(
                 "UPDATE aphrody_rag_documents SET title = $2, url = $3, content = $4, metadata = \
                  COALESCE(metadata, '{}'::jsonb) || $5::jsonb, updated_at = CASE WHEN title IS \
                  DISTINCT FROM $2 OR content IS DISTINCT FROM $4 THEN now() ELSE updated_at END \
@@ -961,17 +1061,17 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
                 &[&id, &doc.title, &doc.url, &doc.content, &metadata],
             )
             .await?;
-            (id, false)
-        } else {
-            let row = tx
+                (id, false)
+            } else {
+                let row = tx
                 .query_one(
                     "INSERT INTO aphrody_rag_documents (corpus, entity_id, title, url, content, \
                      metadata) VALUES ('shenron', $1, $2, $3, $4, $5::jsonb) RETURNING id::text",
                     &[&doc.source_id, &doc.title, &doc.url, &doc.content, &metadata],
                 )
                 .await?;
-            (row.get::<_, String>(0), true)
-        };
+                (row.get::<_, String>(0), true)
+            };
         tx.commit().await?;
         Ok::<_, tokio_postgres::Error>((id, created))
     };
@@ -990,14 +1090,18 @@ async fn shenron_rag_ingest_core(doc: ShenronDocument) -> Response {
                 );
             }
             (
-                if created { StatusCode::CREATED } else { StatusCode::OK },
+                if created {
+                    StatusCode::CREATED
+                } else {
+                    StatusCode::OK
+                },
                 [(header::CACHE_CONTROL, "no-store")],
                 Json(json!({"id": id, "sourceId": doc.source_id, "indexed": true,
                     "vectorIndexed": vector_indexed,
                     "retrieval": if vector_indexed { "hybrid" } else { "lexical" }})),
             )
                 .into_response()
-        },
+        }
         _ => shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG ingestion unavailable"),
     }
 }
@@ -1026,7 +1130,11 @@ fn shenron_document_metadata(doc: &ShenronDocument) -> Value {
 fn valid_sync_generation(value: &str) -> bool {
     value.len() == 36
         && value.bytes().enumerate().all(|(index, byte)| {
-            if matches!(index, 8 | 13 | 18 | 23) { byte == b'-' } else { byte.is_ascii_hexdigit() }
+            if matches!(index, 8 | 13 | 18 | 23) {
+                byte == b'-'
+            } else {
+                byte.is_ascii_hexdigit()
+            }
         })
 }
 
@@ -1049,8 +1157,11 @@ async fn shenron_rag_sync_finish(
     };
     let operation = async {
         let tx = client.transaction().await?;
-        tx.query_one("SELECT pg_advisory_xact_lock(hashtext($1))", &[&request.origin_source_id])
-            .await?;
+        tx.query_one(
+            "SELECT pg_advisory_xact_lock(hashtext($1))",
+            &[&request.origin_source_id],
+        )
+        .await?;
         let row = tx
             .query_one(
                 "SELECT count(*) FROM aphrody_rag_documents WHERE corpus = 'shenron' AND \
@@ -1076,16 +1187,20 @@ async fn shenron_rag_sync_finish(
         Ok((active, Some(retired)))
     };
     match tokio::time::timeout(DB_WRITE_TIMEOUT, operation).await {
-        Ok(Ok((active, Some(retired)))) => {
-            response(json!({"status":"complete", "active":active, "retired":retired}), "no-store")
-        },
+        Ok(Ok((active, Some(retired)))) => response(
+            json!({"status":"complete", "active":active, "retired":retired}),
+            "no-store",
+        ),
         Ok(Ok((active, None))) => (
             StatusCode::CONFLICT,
             [(header::CACHE_CONTROL, "no-store")],
             Json(json!({"error":"RAG sync count mismatch", "active":active})),
         )
             .into_response(),
-        _ => shenron_error(StatusCode::SERVICE_UNAVAILABLE, "RAG sync finish unavailable"),
+        _ => shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "RAG sync finish unavailable",
+        ),
     }
 }
 
@@ -1102,8 +1217,14 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
     }
     if request.texts.is_empty()
         || request.texts.len() > 16
-        || request.texts.iter().any(|text| text.trim().is_empty() || text.len() > 8192)
-        || request.kind.as_deref().is_some_and(|kind| !matches!(kind, "query" | "passage"))
+        || request
+            .texts
+            .iter()
+            .any(|text| text.trim().is_empty() || text.len() > 8192)
+        || request
+            .kind
+            .as_deref()
+            .is_some_and(|kind| !matches!(kind, "query" | "passage"))
     {
         return shenron_error(StatusCode::BAD_REQUEST, "Invalid embedding request");
     }
@@ -1111,7 +1232,10 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
         .resolve()
         .filter(|model| !model.trim().is_empty() && model.len() <= 128)
     else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Embedding model is not configured");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Embedding model is not configured",
+        );
     };
     // The embed capability's own base URL, else the chat base URL a shared
     // instance may also serve embeddings from. No literal port is guessed
@@ -1127,10 +1251,16 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
         );
     };
     let Ok(mut url) = reqwest::Url::parse(&base) else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Embedding endpoint is invalid");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Embedding endpoint is invalid",
+        );
     };
     if !matches!(url.scheme(), "http" | "https") {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Embedding endpoint is invalid");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Embedding endpoint is invalid",
+        );
     }
     url.set_path(&format!("{}/embeddings", url.path().trim_end_matches('/')));
     let inputs = if model == "Xenova/multilingual-e5-small" {
@@ -1138,7 +1268,11 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
             Some("passage") => "passage: ",
             _ => "query: ",
         };
-        request.texts.iter().map(|text| format!("{prefix}{}", text.trim())).collect::<Vec<_>>()
+        request
+            .texts
+            .iter()
+            .map(|text| format!("{prefix}{}", text.trim()))
+            .collect::<Vec<_>>()
     } else {
         request.texts.clone()
     };
@@ -1152,13 +1286,22 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
         return shenron_error(StatusCode::BAD_GATEWAY, "Embedding backend unavailable");
     };
     if !upstream.status().is_success() {
-        return shenron_error(StatusCode::BAD_GATEWAY, "Embedding backend rejected request");
+        return shenron_error(
+            StatusCode::BAD_GATEWAY,
+            "Embedding backend rejected request",
+        );
     }
     let Ok(payload) = upstream.json::<Value>().await else {
-        return shenron_error(StatusCode::BAD_GATEWAY, "Embedding backend returned invalid JSON");
+        return shenron_error(
+            StatusCode::BAD_GATEWAY,
+            "Embedding backend returned invalid JSON",
+        );
     };
     let Some(data) = payload.get("data").and_then(Value::as_array) else {
-        return shenron_error(StatusCode::BAD_GATEWAY, "Embedding backend returned no vectors");
+        return shenron_error(
+            StatusCode::BAD_GATEWAY,
+            "Embedding backend returned no vectors",
+        );
     };
     let mut vectors: Vec<Option<Vec<f64>>> = vec![None; data.len()];
     if vectors.len() != request.texts.len() {
@@ -1168,8 +1311,10 @@ async fn shenron_embed(headers: HeaderMap, Json(request): Json<ShenronEmbedReque
         );
     }
     for (position, item) in data.iter().enumerate() {
-        let index =
-            item.get("index").and_then(Value::as_u64).map_or(position, |index| index as usize);
+        let index = item
+            .get("index")
+            .and_then(Value::as_u64)
+            .map_or(position, |index| index as usize);
         let Some(vector) = item.get("embedding").and_then(Value::as_array) else {
             return shenron_error(
                 StatusCode::BAD_GATEWAY,
@@ -1217,7 +1362,9 @@ async fn shenron_llm_chat_core(request: ChatRequest) -> Response {
         return shenron_error(StatusCode::BAD_REQUEST, "Invalid chat messages");
     }
     let fallback = crate::shenron_llm_backend::fallback_wanted(
-        std::env::var("APHRODY_SHENRON_LLM_FALLBACK").ok().as_deref(),
+        std::env::var("APHRODY_SHENRON_LLM_FALLBACK")
+            .ok()
+            .as_deref(),
     );
     #[cfg(not(target_arch = "wasm32"))]
     if crate::shenron_gemini_web::is_selected(request.model.as_deref())
@@ -1238,7 +1385,7 @@ async fn shenron_llm_chat_core(request: ChatRequest) -> Response {
             }
             let _ = fallback;
             shenron_error(status, &message)
-        },
+        }
     }
 }
 
@@ -1266,7 +1413,7 @@ async fn gemini_web_chat(
                 payload["fallback"] = Value::Bool(true);
             }
             response(payload, "no-store")
-        },
+        }
         Err(message) => shenron_error(StatusCode::BAD_GATEWAY, message),
     }
 }
@@ -1291,25 +1438,31 @@ async fn shenron_llm_local(request: &ChatRequest) -> Result<Value, (StatusCode, 
                     .or_else(|| aphrody_config::ai_env::CHAT_MODEL.resolve())
                     .unwrap_or_else(|| "local".to_owned());
                 (url, model)
-            },
+            }
             backend::BackendChoice::Managed => {
                 let (url, served) = backend::resolve_managed().await.map_err(|error| {
                     tracing::warn!(%error, "managed llama backend unavailable");
-                    (StatusCode::SERVICE_UNAVAILABLE, "LLM backend unavailable".to_owned())
+                    (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "LLM backend unavailable".to_owned(),
+                    )
                 })?;
                 (url, request.model.clone().unwrap_or(served))
-            },
+            }
             backend::BackendChoice::Unavailable => {
                 return Err((
                     StatusCode::SERVICE_UNAVAILABLE,
                     "LLM endpoint is not configured".into(),
                 ));
-            },
+            }
         };
     if model.trim().is_empty() || model.len() > 128 {
         return Err((StatusCode::BAD_REQUEST, "Invalid model".into()));
     }
-    url.set_path(&format!("{}/chat/completions", url.path().trim_end_matches('/')));
+    url.set_path(&format!(
+        "{}/chat/completions",
+        url.path().trim_end_matches('/')
+    ));
     let messages = request
         .messages
         .iter()
@@ -1319,8 +1472,14 @@ async fn shenron_llm_local(request: &ChatRequest) -> Result<Value, (StatusCode, 
     let payload = backend::post_chat_json_with_retry(&url, &body, Duration::from_secs(90))
         .await
         .map_err(|failure| failure.describe("LLM"))?;
-    let Some(answer) = payload.pointer("/choices/0/message/content").and_then(Value::as_str) else {
-        return Err((StatusCode::BAD_GATEWAY, "LLM backend returned no answer".into()));
+    let Some(answer) = payload
+        .pointer("/choices/0/message/content")
+        .and_then(Value::as_str)
+    else {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "LLM backend returned no answer".into(),
+        ));
     };
     let mut out = json!({
         "answer": answer,
@@ -1368,17 +1527,25 @@ async fn shenron_vision_structured(
 async fn shenron_vision_structured_core(request: VisionRequest) -> Response {
     if request.image_base64.is_empty()
         || request.image_base64.len() > 24 * 1024 * 1024
-        || !matches!(request.image_mime.as_str(), "image/jpeg" | "image/png" | "image/webp")
+        || !matches!(
+            request.image_mime.as_str(),
+            "image/jpeg" | "image/png" | "image/webp"
+        )
         || request.prompt.is_empty()
         || request.prompt.len() > 64 * 1024
     {
         return shenron_error(StatusCode::BAD_REQUEST, "Invalid vision request");
     }
     let configured = aphrody_config::ai_env::VISION_MODEL.resolve();
-    let Some(model) =
-        request.model.or(configured).filter(|model| !model.trim().is_empty() && model.len() <= 128)
+    let Some(model) = request
+        .model
+        .or(configured)
+        .filter(|model| !model.trim().is_empty() && model.len() <= 128)
     else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Vision model is not configured");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Vision model is not configured",
+        );
     };
     let reasoning_effort = request.reasoning_effort.unwrap_or_else(|| "low".to_owned());
     if !matches!(reasoning_effort.as_str(), "low" | "medium" | "high") {
@@ -1405,8 +1572,11 @@ async fn shenron_vision_structured_core(request: VisionRequest) -> Response {
             Err(message) => return shenron_error(StatusCode::BAD_GATEWAY, message),
         };
         let raw = raw.trim();
-        let raw =
-            raw.strip_prefix("```json").or_else(|| raw.strip_prefix("```")).unwrap_or(raw).trim();
+        let raw = raw
+            .strip_prefix("```json")
+            .or_else(|| raw.strip_prefix("```"))
+            .unwrap_or(raw)
+            .trim();
         let raw = raw.strip_suffix("```").unwrap_or(raw).trim();
         let Ok(result) = serde_json::from_str::<Value>(raw) else {
             return shenron_error(
@@ -1430,16 +1600,31 @@ async fn shenron_vision_structured_core(request: VisionRequest) -> Response {
         .resolve()
         .or_else(|| aphrody_config::ai_env::CHAT_BASE_URL.resolve())
     else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Vision endpoint is not configured");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Vision endpoint is not configured",
+        );
     };
     let Ok(mut url) = reqwest::Url::parse(&base) else {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Vision endpoint is invalid");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Vision endpoint is invalid",
+        );
     };
     if !matches!(url.scheme(), "http" | "https") {
-        return shenron_error(StatusCode::SERVICE_UNAVAILABLE, "Vision endpoint is invalid");
+        return shenron_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Vision endpoint is invalid",
+        );
     }
-    url.set_path(&format!("{}/chat/completions", url.path().trim_end_matches('/')));
-    let data_uri = format!("data:{};base64,{}", request.image_mime, request.image_base64);
+    url.set_path(&format!(
+        "{}/chat/completions",
+        url.path().trim_end_matches('/')
+    ));
+    let data_uri = format!(
+        "data:{};base64,{}",
+        request.image_mime, request.image_base64
+    );
     let payload = json!({
         "model": model,
         "reasoning_effort": reasoning_effort,
@@ -1460,9 +1645,12 @@ async fn shenron_vision_structured_core(request: VisionRequest) -> Response {
         Err(failure) => {
             let (status, message) = failure.describe("Vision");
             return shenron_error(status, &message);
-        },
+        }
     };
-    let Some(content) = value.pointer("/choices/0/message/content").and_then(Value::as_str) else {
+    let Some(content) = value
+        .pointer("/choices/0/message/content")
+        .and_then(Value::as_str)
+    else {
         return shenron_error(StatusCode::BAD_GATEWAY, "Vision backend returned no answer");
     };
     let Ok(result) = serde_json::from_str::<Value>(content) else {
@@ -1495,7 +1683,10 @@ async fn shenron_ocr_core(request: OcrRequest) -> Response {
         return shenron_error(StatusCode::BAD_REQUEST, "Invalid image_base64");
     }
     if request.include_geometry == Some(true) && request.engine.as_deref() != Some("ppocr") {
-        return shenron_error(StatusCode::BAD_REQUEST, "Geometry requires the ppocr engine");
+        return shenron_error(
+            StatusCode::BAD_REQUEST,
+            "Geometry requires the ppocr engine",
+        );
     }
     #[cfg(not(target_arch = "wasm32"))]
     if request.engine.as_deref() == Some("gemini-web") {
@@ -1524,7 +1715,9 @@ async fn shenron_ocr_core(request: OcrRequest) -> Response {
         #[cfg(feature = "ocr")]
         let findings = aphrody_ocr_core::audit::audit_text(text);
         #[cfg(feature = "ocr")]
-        let suspect = findings.iter().any(aphrody_ocr_core::audit::Finding::is_blocking);
+        let suspect = findings
+            .iter()
+            .any(aphrody_ocr_core::audit::Finding::is_blocking);
         #[cfg(not(feature = "ocr"))]
         let (findings, suspect) = (Vec::<String>::new(), false);
         return response(
@@ -1567,7 +1760,12 @@ async fn shenron_ocr_core(request: OcrRequest) -> Response {
     }
     #[cfg(not(feature = "ocr"))]
     {
-        let _ = (request.language, request.engine, request.model, request.include_geometry);
+        let _ = (
+            request.language,
+            request.engine,
+            request.model,
+            request.include_geometry,
+        );
         shenron_error(StatusCode::SERVICE_UNAVAILABLE, "OCR feature is disabled")
     }
 }
@@ -1579,7 +1777,9 @@ fn shenron_ocr_payload(
     include_geometry: bool,
 ) -> Value {
     let text = result.get("markdown").and_then(Value::as_str).unwrap_or("");
-    let language = requested_language.filter(|value| !value.is_empty()).unwrap_or("auto");
+    let language = requested_language
+        .filter(|value| !value.is_empty())
+        .unwrap_or("auto");
     let blocks = if include_geometry {
         result
             .get("raw")
@@ -1657,7 +1857,10 @@ pub(crate) async fn mcp_shenron_ocr(request: OcrRequest) -> String {
 }
 
 async fn health_handler() -> Response {
-    response(json!({ "status": "ok", "service": "aphrody-ai-http" }), "no-store")
+    response(
+        json!({ "status": "ok", "service": "aphrody-ai-http" }),
+        "no-store",
+    )
 }
 
 fn response(payload: Value, cache_control: &'static str) -> Response {
@@ -1703,7 +1906,7 @@ async fn models_handler() -> Response {
                 }),
                 "no-store",
             )
-        },
+        }
         _ => response(
             json!({
                 "status": "unavailable",
@@ -1808,7 +2011,10 @@ async fn forward_openai_chat(
     payload: Value,
     token: Option<&str>,
 ) -> Response {
-    url.set_path(&format!("{}/chat/completions", url.path().trim_end_matches('/')));
+    url.set_path(&format!(
+        "{}/chat/completions",
+        url.path().trim_end_matches('/')
+    ));
     let upstream =
         crate::shenron_llm_backend::request_with_token(reqwest::Method::POST, url, token)
             .timeout(Duration::from_secs(120))
@@ -1822,19 +2028,21 @@ async fn forward_openai_chat(
             let headers = resp.headers().clone();
             let mut response = Response::new(Body::from_stream(resp.bytes_stream()));
             *response.status_mut() = status;
-            response
-                .headers_mut()
-                .insert(header::CACHE_CONTROL, axum::http::HeaderValue::from_static("no-store"));
-            response
-                .headers_mut()
-                .insert("x-accel-buffering", axum::http::HeaderValue::from_static("no"));
+            response.headers_mut().insert(
+                header::CACHE_CONTROL,
+                axum::http::HeaderValue::from_static("no-store"),
+            );
+            response.headers_mut().insert(
+                "x-accel-buffering",
+                axum::http::HeaderValue::from_static("no"),
+            );
             for name in [header::CONTENT_TYPE, header::RETRY_AFTER] {
                 if let Some(value) = headers.get(&name) {
                     response.headers_mut().insert(name, value.clone());
                 }
             }
             response
-        },
+        }
         Err(_) => (
             StatusCode::BAD_GATEWAY,
             [(header::CACHE_CONTROL, "no-store")],
@@ -1897,7 +2105,10 @@ async fn aphrody_status_handler() -> Response {
 async fn connect_db() -> Option<Client> {
     let url = aphrody_sql::DatabaseEnv::new("APHRODY_MCP").runtime()?.url;
     let pool = aphrody_sql::shared_pool(url.expose()).ok()?;
-    tokio::time::timeout(DB_TIMEOUT, pool.get()).await.ok()?.ok()
+    tokio::time::timeout(DB_TIMEOUT, pool.get())
+        .await
+        .ok()?
+        .ok()
 }
 
 async fn rag_query_handler(Query(params): Query<RagQuery>) -> Response {
@@ -1932,10 +2143,18 @@ async fn rag_query_handler(Query(params): Query<RagQuery>) -> Response {
     let results: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let content = row.try_get::<_, Option<String>>(3).ok().flatten().unwrap_or_default();
+            let content = row
+                .try_get::<_, Option<String>>(3)
+                .ok()
+                .flatten()
+                .unwrap_or_default();
             let mut chars = content.chars();
             let snippet = chars.by_ref().take(180).collect::<String>();
-            let snippet = if chars.next().is_some() { format!("{snippet}...") } else { snippet };
+            let snippet = if chars.next().is_some() {
+                format!("{snippet}...")
+            } else {
+                snippet
+            };
             json!({
                 "title": row.try_get::<_, Option<String>>(0).ok().flatten(),
                 "url": row.try_get::<_, Option<String>>(1).ok().flatten(),
@@ -1983,7 +2202,10 @@ async fn rag_stats_handler() -> Response {
 }
 
 async fn count_rows(client: &Client, sql: &'static str) -> Option<i64> {
-    let row = tokio::time::timeout(DB_TIMEOUT, client.query_one(sql, &[])).await.ok()?.ok()?;
+    let row = tokio::time::timeout(DB_TIMEOUT, client.query_one(sql, &[]))
+        .await
+        .ok()?
+        .ok()?;
     row.try_get(0).ok()
 }
 
@@ -2000,7 +2222,11 @@ fn stats_response(documents: Option<i64>, chunks: Option<i64>) -> Response {
             "cache": null,
             "corpora": null
         }),
-        if active { "public, max-age=300" } else { "no-store" },
+        if active {
+            "public, max-age=300"
+        } else {
+            "no-store"
+        },
     )
 }
 
@@ -2018,7 +2244,9 @@ mod tests {
             StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
-            gateway_auth(&headers, Some("gateway-fixture"), true).unwrap().status(),
+            gateway_auth(&headers, Some("gateway-fixture"), true)
+                .unwrap()
+                .status(),
             StatusCode::UNAUTHORIZED
         );
         headers.insert(
@@ -2026,7 +2254,9 @@ mod tests {
             axum::http::HeaderValue::from_static("Bearer upstream-fixture"),
         );
         assert_eq!(
-            gateway_auth(&headers, Some("gateway-fixture"), true).unwrap().status(),
+            gateway_auth(&headers, Some("gateway-fixture"), true)
+                .unwrap()
+                .status(),
             StatusCode::UNAUTHORIZED
         );
         headers.insert(
@@ -2036,7 +2266,9 @@ mod tests {
         assert!(gateway_auth(&headers, Some("gateway-fixture"), true).is_none());
         assert!(gateway_auth(&HeaderMap::new(), None, false).is_none());
         assert_eq!(
-            gateway_auth(&HeaderMap::new(), Some("gateway-fixture"), false).unwrap().status(),
+            gateway_auth(&HeaderMap::new(), Some("gateway-fixture"), false)
+                .unwrap()
+                .status(),
             StatusCode::UNAUTHORIZED
         );
     }
@@ -2085,7 +2317,10 @@ mod tests {
             Some("chat-only-fixture"),
         )).await.expect("the proxy must return before generation ends");
         assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(response.headers()[header::CONTENT_TYPE], "text/event-stream");
+        assert_eq!(
+            response.headers()[header::CONTENT_TYPE],
+            "text/event-stream"
+        );
         assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
         assert_eq!(response.headers()["x-accel-buffering"], "no");
         assert!(!response.headers().contains_key(header::SET_COOKIE));
@@ -2139,8 +2374,15 @@ mod tests {
 
     #[test]
     fn shenron_readiness_requires_exact_explicit_configuration() {
-        for value in [None, Some(""), Some("0"), Some("true"), Some("yes"), Some(" 1"), Some("1 ")]
-        {
+        for value in [
+            None,
+            Some(""),
+            Some("0"),
+            Some("true"),
+            Some("yes"),
+            Some(" 1"),
+            Some("1 "),
+        ] {
             assert!(!shenron_ready(value), "unexpected readiness: {value:?}");
         }
         assert!(shenron_ready(Some("1")));
@@ -2175,16 +2417,33 @@ mod tests {
                 .await
                 .unwrap();
             assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE, "{path}");
-            assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store", "{path}");
-            assert!(response.text().await.unwrap().contains(SHENRON_QUARANTINE), "{path}");
+            assert_eq!(
+                response.headers()[header::CACHE_CONTROL],
+                "no-store",
+                "{path}"
+            );
+            assert!(
+                response.text().await.unwrap().contains(SHENRON_QUARANTINE),
+                "{path}"
+            );
         }
-        let health = client.get(format!("http://{address}/healthz")).send().await.unwrap();
+        let health = client
+            .get(format!("http://{address}/healthz"))
+            .send()
+            .await
+            .unwrap();
         assert_eq!(health.status(), StatusCode::OK);
         assert_eq!(health.json::<Value>().await.unwrap()["status"], "ok");
-        let query =
-            client.get(format!("http://{address}/api/v1/rag/query?q=")).send().await.unwrap();
+        let query = client
+            .get(format!("http://{address}/api/v1/rag/query?q="))
+            .send()
+            .await
+            .unwrap();
         assert_eq!(query.status(), StatusCode::OK);
-        assert_eq!(query.json::<Value>().await.unwrap()["status"], "query_required");
+        assert_eq!(
+            query.json::<Value>().await.unwrap()["status"],
+            "query_required"
+        );
         server.abort();
     }
 
@@ -2200,8 +2459,11 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move { axum::serve(listener, app).await });
-        let response =
-            reqwest::Client::new().get(format!("http://{address}/probe")).send().await.unwrap();
+        let response = reqwest::Client::new()
+            .get(format!("http://{address}/probe"))
+            .send()
+            .await
+            .unwrap();
         assert_eq!(response.status(), StatusCode::ACCEPTED);
         server.abort();
     }
@@ -2214,22 +2476,35 @@ mod tests {
         let server = tokio::spawn(async move { axum::serve(listener, router()).await });
         let client = reqwest::Client::new();
 
-        let health = client.get(format!("http://{address}/healthz")).send().await.unwrap();
+        let health = client
+            .get(format!("http://{address}/healthz"))
+            .send()
+            .await
+            .unwrap();
         assert!(health.status().is_success());
         assert_eq!(health.json::<Value>().await.unwrap()["status"], "ok");
 
-        let query =
-            client.get(format!("http://{address}/api/v1/rag/query?q=")).send().await.unwrap();
+        let query = client
+            .get(format!("http://{address}/api/v1/rag/query?q="))
+            .send()
+            .await
+            .unwrap();
         assert!(query.status().is_success());
-        assert_eq!(query.json::<Value>().await.unwrap()["status"], "query_required");
+        assert_eq!(
+            query.json::<Value>().await.unwrap()["status"],
+            "query_required"
+        );
 
         server.abort();
     }
 
     #[tokio::test]
     async fn empty_query_never_needs_database() {
-        let response =
-            rag_query_handler(Query(RagQuery { q: Some("   ".into()), limit: Some(50) })).await;
+        let response = rag_query_handler(Query(RagQuery {
+            q: Some("   ".into()),
+            limit: Some(50),
+        }))
+        .await;
         let body = to_bytes(response.into_body(), 4096).await.unwrap();
         let result: Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(result["status"], "query_required");
@@ -2253,10 +2528,17 @@ mod tests {
         let address = listener.local_addr().unwrap();
         let server = tokio::spawn(async move { axum::serve(listener, router()).await });
         let client = reqwest::Client::new();
-        for path in ["health", "rag/search?q=Goku", "rag/stats", "rag/document?sourceId=shenron:1"]
-        {
-            let result =
-                client.get(format!("http://{address}/api/v1/shenron/{path}")).send().await.unwrap();
+        for path in [
+            "health",
+            "rag/search?q=Goku",
+            "rag/stats",
+            "rag/document?sourceId=shenron:1",
+        ] {
+            let result = client
+                .get(format!("http://{address}/api/v1/shenron/{path}"))
+                .send()
+                .await
+                .unwrap();
             assert!(matches!(
                 result.status(),
                 StatusCode::UNAUTHORIZED | StatusCode::SERVICE_UNAVAILABLE
@@ -2267,7 +2549,10 @@ mod tests {
                 "rag/ingest",
                 json!({"sourceId":"x","title":"x","url":"https://example.org","content":"x"}),
             ),
-            ("llm/chat", json!({"messages":[{"role":"user","content":"x"}]})),
+            (
+                "llm/chat",
+                json!({"messages":[{"role":"user","content":"x"}]}),
+            ),
             ("embed", json!({"texts":["Goku"],"kind":"query"})),
             (
                 "rag/sync/finish",
@@ -2312,7 +2597,12 @@ mod tests {
         let search: ShenronSearchQuery = serde_json::from_value(json!({"q": ""})).unwrap();
         let search_result: Value =
             serde_json::from_str(&mcp_shenron_rag_search(search).await).unwrap();
-        assert!(search_result["error"]["message"].as_str().unwrap().contains("q must contain"));
+        assert!(
+            search_result["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("q must contain")
+        );
 
         let ingest: ShenronDocument = serde_json::from_value(json!({
             "sourceId": "shenron:42", "title": "Goku", "url": "not-a-url", "content": "text"
@@ -2320,7 +2610,12 @@ mod tests {
         .unwrap();
         let ingest_result: Value =
             serde_json::from_str(&mcp_shenron_rag_ingest(ingest).await).unwrap();
-        assert!(ingest_result["error"]["message"].as_str().unwrap().contains("absolute HTTP URL"));
+        assert!(
+            ingest_result["error"]["message"]
+                .as_str()
+                .unwrap()
+                .contains("absolute HTTP URL")
+        );
 
         let chat: ChatRequest = serde_json::from_value(json!({"messages": []})).unwrap();
         let chat_result: Value = serde_json::from_str(&mcp_shenron_llm_chat(chat).await).unwrap();
@@ -2369,7 +2664,11 @@ mod tests {
         assert_eq!(patterns, ["%goku%", "%devient%", "%super%", "%saiyan%"]);
         let title = "Goku et la transformation";
         let content = "Une forme puissante apparaît. Il devient Super Saiyan plus tard.";
-        assert!(!format!("{title} {content}").to_lowercase().contains("goku devient super saiyan"));
+        assert!(
+            !format!("{title} {content}")
+                .to_lowercase()
+                .contains("goku devient super saiyan")
+        );
         assert!(patterns.iter().all(|pattern| {
             let term = pattern.trim_matches('%');
             title.to_lowercase().contains(term) || content.to_lowercase().contains(term)
@@ -2378,8 +2677,14 @@ mod tests {
 
     #[test]
     fn shenron_rank_terms_expand_common_translations_without_generic_words() {
-        assert_eq!(shenron_rank_terms("What is the Spirit Bomb?"), ["spirit", "bomb", "genkidama"]);
-        assert_eq!(shenron_rank_terms("Qui est Granolah ?"), ["granolah", "granola"]);
+        assert_eq!(
+            shenron_rank_terms("What is the Spirit Bomb?"),
+            ["spirit", "bomb", "genkidama"]
+        );
+        assert_eq!(
+            shenron_rank_terms("Qui est Granolah ?"),
+            ["granolah", "granola"]
+        );
         assert_eq!(shenron_rank_terms("Qui est Goku ?"), ["goku"]);
     }
 
@@ -2387,7 +2692,10 @@ mod tests {
     fn shenron_intent_and_source_hints_route_subjects() {
         assert_eq!(shenron_intent("Quel vœu a ramené Piccolo ?"), "wish");
         assert_eq!(shenron_intent("Qui est Bardock ?"), "character");
-        assert_eq!(shenron_source_hint("Combien vaut un zeni en yens ?"), "/wiki/canon");
+        assert_eq!(
+            shenron_source_hint("Combien vaut un zeni en yens ?"),
+            "/wiki/canon"
+        );
         assert_eq!(shenron_source_hint("Qui est Bardock ?"), "");
     }
 

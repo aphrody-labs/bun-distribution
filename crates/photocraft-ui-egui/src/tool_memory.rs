@@ -14,18 +14,30 @@ use crate::state::ToolOptions;
 
 /// The options that differ from the defaults, as JSON (`Null` when none do).
 fn changed(o: &ToolOptions) -> Value {
-    let (Ok(Value::Object(now)), Ok(Value::Object(def))) = (serde_json::to_value(o), serde_json::to_value(ToolOptions::default())) else {
+    let (Ok(Value::Object(now)), Ok(Value::Object(def))) = (
+        serde_json::to_value(o),
+        serde_json::to_value(ToolOptions::default()),
+    ) else {
         return Value::Null;
     };
-    let diff: Map<String, Value> = now.into_iter().filter(|(k, v)| def.get(k) != Some(v)).collect();
-    if diff.is_empty() { Value::Null } else { Value::Object(diff) }
+    let diff: Map<String, Value> = now
+        .into_iter()
+        .filter(|(k, v)| def.get(k) != Some(v))
+        .collect();
+    if diff.is_empty() {
+        Value::Null
+    } else {
+        Value::Object(diff)
+    }
 }
 
 /// Remember the tool options in the preferences once the user lets go of the pointer. Cheap
 /// when nothing changed: one struct compare per frame. Run every frame, so options set by the
 /// control channel or a tool preset are remembered too.
 pub fn persist(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    if ctx.input(|i| i.pointer.any_down()) || app.prefs_rt.tool_options.as_ref() == Some(&app.ui.tool_options) {
+    if ctx.input(|i| i.pointer.any_down())
+        || app.prefs_rt.tool_options.as_ref() == Some(&app.ui.tool_options)
+    {
         return;
     }
     app.prefs_rt.tool_options = Some(app.ui.tool_options.clone());
@@ -42,7 +54,9 @@ pub fn restore(app: &mut PhotocraftApp) {
         && let Ok(Value::Object(mut cur)) = serde_json::to_value(&app.ui.tool_options)
     {
         for (k, v) in saved {
-            let Some(old) = cur.get(k).cloned() else { continue };
+            let Some(old) = cur.get(k).cloned() else {
+                continue;
+            };
             cur.insert(k.clone(), v.clone());
             if !reads_back(&cur, k) {
                 log::warn!("Preferences: ignoring the remembered tool option `{k}`: {v}");
@@ -53,7 +67,9 @@ pub fn restore(app: &mut PhotocraftApp) {
             app.ui.tool_options = o;
         }
     } else if !saved.is_null() {
-        log::warn!("Preferences: the remembered tool options are not an object; using the defaults");
+        log::warn!(
+            "Preferences: the remembered tool options are not an object; using the defaults"
+        );
     }
     app.prefs_rt.tool_options = Some(app.ui.tool_options.clone());
 }
@@ -61,9 +77,14 @@ pub fn restore(app: &mut PhotocraftApp) {
 /// Does `opts` deserialize, with field `k` coming back as a value? A number out of an `f32`'s
 /// range reads as infinity, which writes back as `null`.
 fn reads_back(opts: &Map<String, Value>, k: &str) -> bool {
-    let Ok(o) = serde_json::from_value::<ToolOptions>(Value::Object(opts.clone())) else { return false };
-    let Ok(Value::Object(back)) = serde_json::to_value(&o) else { return false };
-    back.get(k).is_some_and(|v| nulls(v) <= opts.get(k).map_or(0, nulls))
+    let Ok(o) = serde_json::from_value::<ToolOptions>(Value::Object(opts.clone())) else {
+        return false;
+    };
+    let Ok(Value::Object(back)) = serde_json::to_value(&o) else {
+        return false;
+    };
+    back.get(k)
+        .is_some_and(|v| nulls(v) <= opts.get(k).map_or(0, nulls))
 }
 
 fn nulls(v: &Value) -> usize {

@@ -117,15 +117,26 @@ pub struct CudaJob<'a> {
 /// Compiles and runs a CUDA job on device 0 and returns the array afterwards.
 pub fn run_cuda(job: CudaJob<'_>) -> Result<Vec<f32>, HubError> {
     if job.data.is_empty() || job.data.len() > MAX_JOB_ELEMENTS {
-        return Err(HubError::InvalidJob(format!("data must hold 1..={MAX_JOB_ELEMENTS} floats")));
+        return Err(HubError::InvalidJob(format!(
+            "data must hold 1..={MAX_JOB_ELEMENTS} floats"
+        )));
     }
     let n = u32::try_from(job.data.len())
         .map_err(|_| HubError::InvalidJob("data is too large".into()))?;
-    let block = if job.block_size == 0 { 256 } else { job.block_size };
+    let block = if job.block_size == 0 {
+        256
+    } else {
+        job.block_size
+    };
     if !(1..=1024).contains(&block) {
         return Err(HubError::InvalidJob("blockSize must be 1..=1024".into()));
     }
-    if job.kernel.is_empty() || !job.kernel.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+    if job.kernel.is_empty()
+        || !job
+            .kernel
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
         return Err(HubError::InvalidJob("kernel must be a C identifier".into()));
     }
     let ctx = context()?;

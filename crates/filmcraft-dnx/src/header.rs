@@ -84,9 +84,21 @@ impl FrameHeader {
         }
         let info = cid_info(self.cid)?;
         Some(match info.kind {
-            Kind::Hd { frame_size, interlaced, .. } => {
-                let f = if self.alpha { frame_size + frame_size / 2 } else { frame_size };
-                if interlaced && !self.frame_encoding { f / 2 } else { f }
+            Kind::Hd {
+                frame_size,
+                interlaced,
+                ..
+            } => {
+                let f = if self.alpha {
+                    frame_size + frame_size / 2
+                } else {
+                    frame_size
+                };
+                if interlaced && !self.frame_encoding {
+                    f / 2
+                } else {
+                    f
+                }
             }
             Kind::Ri { c0 } => ri_frame_size(self.width, self.lines, c0, self.alpha),
         })
@@ -112,7 +124,11 @@ pub fn parse(d: &[u8]) -> Result<FrameHeader> {
         return Err(Error::Invalid("unknown header version"));
     }
     if header_size < 0x280 || header_size as usize > d.len() {
-        return Err(if header_size as usize > d.len() { Error::Truncated } else { Error::Invalid("header size") });
+        return Err(if header_size as usize > d.len() {
+            Error::Truncated
+        } else {
+            Error::Invalid("header size")
+        });
     }
     let cid = be32(d, 0x28);
     let info = cid_info(cid).ok_or(Error::UnknownCid(cid))?;
@@ -152,12 +168,18 @@ pub fn parse(d: &[u8]) -> Result<FrameHeader> {
         2 => ColorVolume::Bt2020Cl,
         _ => ColorVolume::OutOfBand,
     };
-    let timecode = if d[0x30] & 0x80 != 0 { d.get(0x31..).and_then(|t| t.first_chunk::<8>()).copied() } else { None };
+    let timecode = if d[0x30] & 0x80 != 0 {
+        d.get(0x31..).and_then(|t| t.first_chunk::<8>()).copied()
+    } else {
+        None
+    };
     let mb_rows = be16(d, 0x16C);
     if width == 0 || lines == 0 || width > 16384 || lines > 16384 {
         return Err(Error::Invalid("raster size"));
     }
-    if let Kind::Hd { width: w, depth, .. } = info.kind
+    if let Kind::Hd {
+        width: w, depth, ..
+    } = info.kind
         && (w as u32 != width || depth != bit_depth)
     {
         return Err(Error::Invalid("raster does not match the compression ID"));
@@ -173,7 +195,9 @@ pub fn parse(d: &[u8]) -> Result<FrameHeader> {
         return Err(Error::Invalid("macroblock scan line count"));
     }
     if mb_rows != lines.div_ceil(16) {
-        return Err(Error::Invalid("macroblock scan lines do not match the raster"));
+        return Err(Error::Invalid(
+            "macroblock scan lines do not match the raster",
+        ));
     }
     Ok(FrameHeader {
         header_size,
@@ -203,7 +227,11 @@ pub fn parse(d: &[u8]) -> Result<FrameHeader> {
 /// Header size for a raster of `lines` lines (§7.2: 640 bytes up to 1088 lines, plus 4 bytes
 /// per further 16 lines).
 pub fn header_size_for(lines: u32) -> u32 {
-    if lines <= 1088 { 0x280 } else { 0x280 + 4 * (lines - 1088).div_ceil(16) }
+    if lines <= 1088 {
+        0x280
+    } else {
+        0x280 + 4 * (lines - 1088).div_ceil(16)
+    }
 }
 
 /// Write a header (without scan indices) for `h` into a zeroed buffer of `h.header_size` bytes.
@@ -218,7 +246,8 @@ pub fn write(h: &FrameHeader) -> Vec<u8> {
             FieldCode::Field2 => 3,
         };
     d[6] = 0x80 | (h.macf as u8) << 5 | (h.crc as u8) << 4;
-    d[7] = 0xA0 | (h.premultiplied_alpha as u8) << 2 | (h.lossless_alpha as u8) << 1 | h.alpha as u8;
+    d[7] =
+        0xA0 | (h.premultiplied_alpha as u8) << 2 | (h.lossless_alpha as u8) << 1 | h.alpha as u8;
     d[0x18..0x1A].copy_from_slice(&(h.lines as u16).to_be_bytes());
     d[0x1A..0x1C].copy_from_slice(&(h.width as u16).to_be_bytes());
     d[0x1C] = ((h.par.0 >> 8) as u8 & 3) << 2 | ((h.par.1 >> 8) as u8 & 3);

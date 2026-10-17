@@ -1105,15 +1105,30 @@ mod tests {
             let after = address_space.code.write_u32(inst::ret_lr()).unwrap();
             let entry = unsafe { address_space.code().code_base_ptr().add(entry_offset) };
             let mut block = fake_block(entry, 4);
-            block.relocations.push(Relocation { code_offset: 0, target });
-            address_space.record_emitted_block(LocationDescriptor::new(0x1000), block).unwrap();
-            assert_eq!(read_instruction(&address_space, entry_offset),
-                inst::bl_imm(callback as isize - entry as isize), "{target:?}");
-            assert_eq!(read_instruction(&address_space, before), inst::ret_lr(), "{target:?}");
-            assert_eq!(read_instruction(&address_space, after), inst::ret_lr(), "{target:?}");
+            block.relocations.push(Relocation {
+                code_offset: 0,
+                target,
+            });
+            address_space
+                .record_emitted_block(LocationDescriptor::new(0x1000), block)
+                .unwrap();
+            assert_eq!(
+                read_instruction(&address_space, entry_offset),
+                inst::bl_imm(callback as isize - entry as isize),
+                "{target:?}"
+            );
+            assert_eq!(
+                read_instruction(&address_space, before),
+                inst::ret_lr(),
+                "{target:?}"
+            );
+            assert_eq!(
+                read_instruction(&address_space, after),
+                inst::ret_lr(),
+                "{target:?}"
+            );
         }
     }
-
 
     #[test]
     fn branch_block_relocation_patches_when_target_is_available() {

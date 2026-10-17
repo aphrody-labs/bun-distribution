@@ -22,7 +22,11 @@ impl<T: Transport> A2AClient<T> {
     pub fn new(transport: T) -> Self {
         let mut default_params = ServiceParams::new();
         default_params.insert(SVC_PARAM_VERSION.to_string(), vec![VERSION.to_string()]);
-        A2AClient { transport, interceptors: Vec::new(), default_params }
+        A2AClient {
+            transport,
+            interceptors: Vec::new(),
+            default_params,
+        }
     }
 
     pub fn with_interceptors(mut self, interceptors: Vec<Arc<dyn CallInterceptor>>) -> Self {
@@ -83,7 +87,8 @@ impl<T: Transport> A2AClient<T> {
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
         let params = self.apply_before(methods::SEND_STREAMING_MESSAGE).await?;
         let result = self.transport.send_streaming_message(&params, req).await;
-        self.finish_call(methods::SEND_STREAMING_MESSAGE, result).await
+        self.finish_call(methods::SEND_STREAMING_MESSAGE, result)
+            .await
     }
 
     pub async fn get_task(&self, req: &GetTaskRequest) -> Result<Task, A2AError> {
@@ -155,7 +160,8 @@ impl<T: Transport> A2AClient<T> {
     ) -> Result<AgentCard, A2AError> {
         let params = self.apply_before(methods::GET_EXTENDED_AGENT_CARD).await?;
         let result = self.transport.get_extended_agent_card(&params, req).await;
-        self.finish_call(methods::GET_EXTENDED_AGENT_CARD, result).await
+        self.finish_call(methods::GET_EXTENDED_AGENT_CARD, result)
+            .await
     }
 
     pub async fn destroy(&self) -> Result<(), A2AError> {
@@ -181,8 +187,12 @@ impl<T: Transport> SendMessageExt for A2AClient<T> {
         text: impl Into<String> + Send,
     ) -> Result<SendMessageResponse, A2AError> {
         let msg = Message::new(Role::User, vec![Part::text(text)]);
-        let req =
-            SendMessageRequest { message: msg, configuration: None, metadata: None, tenant: None };
+        let req = SendMessageRequest {
+            message: msg,
+            configuration: None,
+            metadata: None,
+            tenant: None,
+        };
         self.send_message(&req).await
     }
 }
@@ -210,11 +220,20 @@ mod tests {
     impl MockTransport {
         fn new() -> (Self, Arc<MockTransportState>) {
             let state = Arc::new(MockTransportState::default());
-            (MockTransport { state: state.clone() }, state)
+            (
+                MockTransport {
+                    state: state.clone(),
+                },
+                state,
+            )
         }
 
         fn record(&self, method: &str, params: &ServiceParams) {
-            self.state.calls.lock().unwrap().push((method.to_string(), params.clone()));
+            self.state
+                .calls
+                .lock()
+                .unwrap()
+                .push((method.to_string(), params.clone()));
         }
     }
 
@@ -237,7 +256,11 @@ mod tests {
             Ok(SendMessageResponse::Task(Task {
                 id: "t1".into(),
                 context_id: "c1".into(),
-                status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Completed,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -251,16 +274,18 @@ mod tests {
         ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
             self.record(methods::SEND_STREAMING_MESSAGE, params);
             Ok(Box::pin(stream::once(async {
-                Ok(StreamResponse::StatusUpdate(aphrody_a2a::event::TaskStatusUpdateEvent {
-                    task_id: "t1".into(),
-                    context_id: "c1".into(),
-                    status: TaskStatus {
-                        state: TaskState::Working,
-                        message: None,
-                        timestamp: None,
+                Ok(StreamResponse::StatusUpdate(
+                    aphrody_a2a::event::TaskStatusUpdateEvent {
+                        task_id: "t1".into(),
+                        context_id: "c1".into(),
+                        status: TaskStatus {
+                            state: TaskState::Working,
+                            message: None,
+                            timestamp: None,
+                        },
+                        metadata: None,
                     },
-                    metadata: None,
-                }))
+                ))
             })))
         }
 
@@ -273,7 +298,11 @@ mod tests {
             Ok(Task {
                 id: req.id.clone(),
                 context_id: "c1".into(),
-                status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Completed,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -303,7 +332,11 @@ mod tests {
             Ok(Task {
                 id: req.id.clone(),
                 context_id: "c1".into(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -350,7 +383,10 @@ mod tests {
             _req: &ListTaskPushNotificationConfigsRequest,
         ) -> Result<ListTaskPushNotificationConfigsResponse, A2AError> {
             self.record(methods::LIST_PUSH_CONFIGS, params);
-            Ok(ListTaskPushNotificationConfigsResponse { configs: vec![], next_page_token: None })
+            Ok(ListTaskPushNotificationConfigsResponse {
+                configs: vec![],
+                next_page_token: None,
+            })
         }
 
         async fn delete_push_config(
@@ -405,8 +441,14 @@ mod tests {
     #[cfg_attr(target_family = "wasm", async_trait(?Send))]
     impl CallInterceptor for RecordingInterceptor {
         async fn before(&self, _method: &str, params: &mut ServiceParams) -> Result<(), A2AError> {
-            self.events.lock().unwrap().push(format!("before:{}", self.name));
-            params.entry("X-Interceptor".to_string()).or_default().push(self.name.to_string());
+            self.events
+                .lock()
+                .unwrap()
+                .push(format!("before:{}", self.name));
+            params
+                .entry("X-Interceptor".to_string())
+                .or_default()
+                .push(self.name.to_string());
             Ok(())
         }
 
@@ -416,7 +458,10 @@ mod tests {
             result: &Result<(), A2AError>,
         ) -> Result<(), A2AError> {
             let status = if result.is_ok() { "ok" } else { "err" };
-            self.events.lock().unwrap().push(format!("after:{}:{status}", self.name));
+            self.events
+                .lock()
+                .unwrap()
+                .push(format!("after:{}:{status}", self.name));
             Ok(())
         }
     }
@@ -458,8 +503,14 @@ mod tests {
         let (transport, state) = MockTransport::new();
         let events = Arc::new(Mutex::new(Vec::new()));
         let client = A2AClient::new(transport).with_interceptors(vec![
-            Arc::new(RecordingInterceptor { name: "first", events: events.clone() }),
-            Arc::new(RecordingInterceptor { name: "second", events: events.clone() }),
+            Arc::new(RecordingInterceptor {
+                name: "first",
+                events: events.clone(),
+            }),
+            Arc::new(RecordingInterceptor {
+                name: "second",
+                events: events.clone(),
+            }),
         ]);
 
         let req = SendMessageRequest {
@@ -512,7 +563,10 @@ mod tests {
         assert_eq!(err.message, "boom");
 
         let events = events.lock().unwrap().clone();
-        assert_eq!(events, vec!["before:only".to_string(), "after:only:err".to_string(),]);
+        assert_eq!(
+            events,
+            vec!["before:only".to_string(), "after:only:err".to_string(),]
+        );
     }
 
     #[tokio::test]
@@ -533,7 +587,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_task() {
         let client = make_client();
-        let req = GetTaskRequest { id: "t1".into(), history_length: None, tenant: None };
+        let req = GetTaskRequest {
+            id: "t1".into(),
+            history_length: None,
+            tenant: None,
+        };
         let task = client.get_task(&req).await.unwrap();
         assert_eq!(task.id, "t1");
     }
@@ -558,7 +616,11 @@ mod tests {
     #[tokio::test]
     async fn test_cancel_task() {
         let client = make_client();
-        let req = CancelTaskRequest { id: "t1".into(), metadata: None, tenant: None };
+        let req = CancelTaskRequest {
+            id: "t1".into(),
+            metadata: None,
+            tenant: None,
+        };
         let task = client.cancel_task(&req).await.unwrap();
         assert_eq!(task.status.state, TaskState::Canceled);
     }
@@ -566,7 +628,10 @@ mod tests {
     #[tokio::test]
     async fn test_subscribe_to_task() {
         let client = make_client();
-        let req = SubscribeToTaskRequest { id: "t1".into(), tenant: None };
+        let req = SubscribeToTaskRequest {
+            id: "t1".into(),
+            tenant: None,
+        };
         let _stream = client.subscribe_to_task(&req).await.unwrap();
     }
 

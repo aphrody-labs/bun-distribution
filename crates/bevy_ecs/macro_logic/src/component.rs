@@ -1,19 +1,18 @@
 use bevy_macro_utils::fq_std::{FQDefault, FQOption, FQSend, FQSync};
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use std::collections::HashSet;
 use syn::{
-    braced, parenthesized,
+    Data, DataStruct, DeriveInput, Expr, ExprCall, ExprPath, Field, Fields, Ident, LitStr, Member,
+    Path, Result, Token, Type, Visibility, braced, parenthesized,
     parse::Parse,
     parse_quote,
     punctuated::Punctuated,
     spanned::Spanned,
     token::{Brace, Comma, Paren},
-    Data, DataStruct, DeriveInput, Expr, ExprCall, ExprPath, Field, Fields, Ident, LitStr, Member,
-    Path, Result, Token, Type, Visibility,
 };
 
-use crate::map_entities::{map_entities, MapEntitiesAttributeKind};
+use crate::map_entities::{MapEntitiesAttributeKind, map_entities};
 
 /// Whether the derive macro may contain a `component(storage = "…")` attribute.
 pub enum StorageAttribute {
@@ -476,7 +475,10 @@ impl DeriveComponent {
         let field = relationship_field(fields, "RelationshipTarget", struct_token.span())?;
 
         if field.vis != Visibility::Inherited {
-            return Err(syn::Error::new(field.span(), "The collection in RelationshipTarget must be private to prevent users from directly mutating it, which could invalidate the correctness of relationships."));
+            return Err(syn::Error::new(
+                field.span(),
+                "The collection in RelationshipTarget must be private to prevent users from directly mutating it, which could invalidate the correctness of relationships.",
+            ));
         }
         let collection = &field.ty;
         let relationship_member = field.ident.clone().map_or(Member::from(0), Member::Named);

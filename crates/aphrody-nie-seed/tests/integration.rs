@@ -59,8 +59,16 @@ fn ingest_all_reel() {
         "attendu >= 1234 classes RTTI, obtenu {}",
         stats.rtti_classes
     );
-    assert!(stats.formats >= 24, "attendu >= 24 formats, obtenu {}", stats.formats);
-    assert!(stats.hash_names > 0, "aucun hash inagle inséré — vérifier {}", INAGLE_DIR);
+    assert!(
+        stats.formats >= 24,
+        "attendu >= 24 formats, obtenu {}",
+        stats.formats
+    );
+    assert!(
+        stats.hash_names > 0,
+        "aucun hash inagle inséré — vérifier {}",
+        INAGLE_DIR
+    );
 }
 
 /// Test d'ingestion RTTI seule contre le fichier réel.
@@ -76,7 +84,10 @@ fn ingest_rtti_reel() {
     let count = rtti_classes::ingest_rtti_classes(&mut db, bin, path).expect("ingest_rtti");
 
     println!("Classes RTTI insérées : {count}");
-    assert_eq!(count, 1234, "le fichier doit contenir exactement 1234 classes");
+    assert_eq!(
+        count, 1234,
+        "le fichier doit contenir exactement 1234 classes"
+    );
 
     // Vérifier quelques classes connues.
     for cls in &["BallComponent", "CCamera", "SoccerValidConditionManager"] {
@@ -114,7 +125,11 @@ fn ingest_inagle_reel() {
 
     // Comptes attendus : ≥ 6090 chara + 1668 items + 208 teams + 70 tactics
     // + 9 auras + 56 souls + ~182 quests avec noms = > 8000.
-    assert!(count > 7000, "attendu > 7000 hash inagle, obtenu {count} — vérifier {}", INAGLE_DIR);
+    assert!(
+        count > 7000,
+        "attendu > 7000 hash inagle, obtenu {count} — vérifier {}",
+        INAGLE_DIR
+    );
 
     // Vérifier Mark Evans (hash connu).
     let mark: Option<String> = db

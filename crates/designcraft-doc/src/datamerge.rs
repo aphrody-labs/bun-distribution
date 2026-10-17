@@ -150,8 +150,14 @@ impl PlaceholderRole {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum PlaceholderAnchor {
-    Text { story: StoryId, start: usize, end: usize },
-    Item { id: ItemId },
+    Text {
+        story: StoryId,
+        start: usize,
+        end: usize,
+    },
+    Item {
+        id: ItemId,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

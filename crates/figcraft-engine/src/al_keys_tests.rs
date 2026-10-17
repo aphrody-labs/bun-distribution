@@ -11,7 +11,11 @@ fn id(v: Value) -> NodeId {
 }
 
 fn rect(s: &mut Session, parent: NodeId, w: f64, h: f64) -> NodeId {
-    id(s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": w, "height": h, "parent": parent})).unwrap())
+    id(s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": w, "height": h, "parent": parent}),
+    )
+    .unwrap())
 }
 
 /// A fixed-size auto layout frame (`layout`: horizontal|vertical|grid), no padding, gap 10.
@@ -21,12 +25,17 @@ fn al(s: &mut Session, parent: Option<NodeId>, layout: &str, w: f64, h: f64) -> 
         p["parent"] = json!(parent);
     }
     let f = id(s.execute("frame.create", &p).unwrap());
-    set(s, f, json!({"layout": layout, "gap": 10, "crossGap": 10, "padding": 0}));
+    set(
+        s,
+        f,
+        json!({"layout": layout, "gap": 10, "crossGap": 10, "padding": 0}),
+    );
     f
 }
 
 fn set(s: &mut Session, node: NodeId, props: Value) {
-    s.execute("node.set", &json!({"id": node, "props": props})).unwrap();
+    s.execute("node.set", &json!({"id": node, "props": props}))
+        .unwrap();
 }
 
 fn kids(s: &Session, node: NodeId) -> Vec<NodeId> {
@@ -34,7 +43,8 @@ fn kids(s: &Session, node: NodeId) -> Vec<NodeId> {
 }
 
 fn arrow(s: &mut Session, ids: &[NodeId], dx: i32, dy: i32) {
-    s.execute("transform.nudge", &json!({"ids": ids, "dx": dx, "dy": dy})).unwrap();
+    s.execute("transform.nudge", &json!({"ids": ids, "dx": dx, "dy": dy}))
+        .unwrap();
 }
 
 fn parent(s: &Session, node: NodeId) -> NodeId {
@@ -71,7 +81,11 @@ fn along_the_flow_skips_hidden_and_absolute_siblings() {
     arrow(&mut s, &[c1], 0, -1);
     assert_eq!(kids(&s, col), vec![c1, c0]);
     arrow(&mut s, &[c1], 1, 0);
-    assert_eq!(kids(&s, col), vec![c1, c0], "Right does nothing in a lone column");
+    assert_eq!(
+        kids(&s, col),
+        vec![c1, c0],
+        "Right does nothing in a lone column"
+    );
 }
 
 #[test]
@@ -98,7 +112,11 @@ fn wrapped_rows_move_up_and_down_a_row() {
     let before = kids(&s, row);
     let third = before[2];
     arrow(&mut s, &[third], 1, 0);
-    assert_eq!(y(&s, third), 30.0, "the last of a row steps into the next one");
+    assert_eq!(
+        y(&s, third),
+        30.0,
+        "the last of a row steps into the next one"
+    );
 }
 
 #[test]
@@ -112,11 +130,23 @@ fn grid_arrows_move_between_cells() {
     assert_eq!(kids(&s, g), vec![b, a, c, d]);
     s.undo().unwrap();
     arrow(&mut s, &[a], 0, 1);
-    assert_eq!(kids(&s, g), vec![b, c, a, d], "Down: the cell below (A lands at column 0, row 1)");
+    assert_eq!(
+        kids(&s, g),
+        vec![b, c, a, d],
+        "Down: the cell below (A lands at column 0, row 1)"
+    );
     let cell = |s: &Session, n: NodeId| {
         let doc = s.doc().unwrap();
-        let (cells, _) = figcraft_layout::grid_place(doc, doc.node(g).unwrap().layout.as_ref().unwrap(), &kids(s, g));
-        cells.iter().find(|x| x.id == n).map(|x| (x.column, x.row)).unwrap()
+        let (cells, _) = figcraft_layout::grid_place(
+            doc,
+            doc.node(g).unwrap().layout.as_ref().unwrap(),
+            &kids(s, g),
+        );
+        cells
+            .iter()
+            .find(|x| x.id == n)
+            .map(|x| (x.column, x.row))
+            .unwrap()
     };
     assert_eq!(cell(&s, a), (0, 1));
     // Past the grid's edge: nothing.
@@ -172,7 +202,11 @@ fn arrows_cross_into_neighbouring_nested_frames() {
     arrow(&mut s, &[ak[1]], 1, 0);
     assert_eq!(kids(&s, b), vec![ak[1], bk[0], bk[1]]);
     arrow(&mut s, &[ak[1]], -1, 0);
-    assert_eq!(kids(&s, a), vec![ak[0], ak[1]], "back at the end of the first row");
+    assert_eq!(
+        kids(&s, a),
+        vec![ak[0], ak[1]],
+        "back at the end of the first row"
+    );
     // A neighbour without auto layout, or an instance, takes nothing.
     set(&mut s, b, json!({"layout": "none"}));
     arrow(&mut s, &[ak[1]], 1, 0);
@@ -182,9 +216,23 @@ fn arrows_cross_into_neighbouring_nested_frames() {
 #[test]
 fn plain_frames_and_instances_keep_their_rules() {
     let mut s = Session::new();
-    let f = id(s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 200})).unwrap());
-    let r = id(s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 20, "height": 20, "parent": f})).unwrap());
-    s.execute("transform.nudge", &json!({"ids": [r], "dx": 1, "dy": -1, "big": true})).unwrap();
+    let f = id(s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+        )
+        .unwrap());
+    let r = id(s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 10, "y": 10, "width": 20, "height": 20, "parent": f}),
+        )
+        .unwrap());
+    s.execute(
+        "transform.nudge",
+        &json!({"ids": [r], "dx": 1, "dy": -1, "big": true}),
+    )
+    .unwrap();
     let b = s.doc().unwrap().world_bounds(r).unwrap();
     assert_eq!((b.x0, b.y0), (20.0, 0.0));
     // An instance's auto layout children can't be reordered (only its main's can).
@@ -192,8 +240,21 @@ fn plain_frames_and_instances_keep_their_rules() {
     for _ in 0..2 {
         rect(&mut s, main, 20.0, 20.0);
     }
-    let comp = id(s.execute("component.create", &json!({"ids": [main]})).unwrap());
-    let inst = id(s.execute("instance.create", &json!({"component": comp, "x": 0, "y": 300})).unwrap());
+    let comp = id(s
+        .execute("component.create", &json!({"ids": [main]}))
+        .unwrap());
+    let inst = id(s
+        .execute(
+            "instance.create",
+            &json!({"component": comp, "x": 0, "y": 300}),
+        )
+        .unwrap());
     let first = kids(&s, inst)[0];
-    assert!(s.execute("transform.nudge", &json!({"ids": [first], "dx": 1, "dy": 0})).is_err());
+    assert!(
+        s.execute(
+            "transform.nudge",
+            &json!({"ids": [first], "dx": 1, "dy": 0})
+        )
+        .is_err()
+    );
 }

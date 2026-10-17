@@ -3,7 +3,14 @@
 //!
 //! The UI is thin: it reads engine state and acts through [`SheetApp::run`] (engine commands by
 //! id). Everything it can do is also reachable over the control channel ([`control`]).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod backstage;
@@ -84,7 +91,11 @@ pub const INTERFACE_SCALE_MAX: u16 = 200;
 /// A requested interface size, rounded and clamped to the supported range; `None` when it isn't
 /// a finite number.
 pub fn clamp_interface_scale(percent: f64) -> Option<u16> {
-    percent.is_finite().then(|| percent.round().clamp(INTERFACE_SCALE_MIN as f64, INTERFACE_SCALE_MAX as f64) as u16)
+    percent.is_finite().then(|| {
+        percent
+            .round()
+            .clamp(INTERFACE_SCALE_MIN as f64, INTERFACE_SCALE_MAX as f64) as u16
+    })
 }
 
 fn lenient_interface_scale<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u16, D::Error> {
@@ -333,7 +344,11 @@ impl SheetApp {
             names.push(d.wb.theme.major_font.clone());
             names.push(d.wb.theme.minor_font.clone());
             // Text boxes and shapes name their own typefaces.
-            names.extend(d.wb.sheets.iter().flat_map(|sh| sh.shapes.iter().filter_map(|s| s.format.font.clone())));
+            names.extend(
+                d.wb.sheets
+                    .iter()
+                    .flat_map(|sh| sh.shapes.iter().filter_map(|s| s.format.font.clone())),
+            );
         }
         names
     }
@@ -345,7 +360,11 @@ impl SheetApp {
         // that GridCraft's copy is newer while that text is still there.
         if matches!(id, "edit.copy" | "edit.cut") && r.is_ok() {
             self.clipboard_text_at_copy = self.system_clipboard_text();
-            self.cut_text = if id == "edit.cut" { self.clipboard_text_at_copy.clone() } else { None };
+            self.cut_text = if id == "edit.cut" {
+                self.clipboard_text_at_copy.clone()
+            } else {
+                None
+            };
         }
         r
     }
@@ -385,7 +404,10 @@ impl SheetApp {
         // The new chart is selected, as after inserting any object, so Delete removes it, not its data.
         if id == "insert.chart"
             && let Ok(r) = &r
-            && let Some(chart) = r.get("chart").and_then(Json::as_u64).and_then(|id| u32::try_from(id).ok())
+            && let Some(chart) = r
+                .get("chart")
+                .and_then(Json::as_u64)
+                .and_then(|id| u32::try_from(id).ok())
         {
             self.selected_chart = Some(chart);
         }
@@ -401,11 +423,14 @@ impl SheetApp {
     /// their existing internal clipboard behavior and do not write to the host clipboard.
     pub fn copy_to_clipboard(&mut self, ctx: &egui::Context, command: &str) {
         // Only ask the engine for HTML when the host can publish it.
-        let result = match self.run_command(command, json!({"html": self.services.copy_html.is_some()})) {
-            Ok(result) => result,
-            Err(e) => return self.alert(e),
+        let result =
+            match self.run_command(command, json!({"html": self.services.copy_html.is_some()})) {
+                Ok(result) => result,
+                Err(e) => return self.alert(e),
+            };
+        let Some(text) = result.get("text").and_then(Json::as_str) else {
+            return;
         };
-        let Some(text) = result.get("text").and_then(Json::as_str) else { return };
         // The system clipboard gets this copy, so its text decides what Paste pastes.
         self.clipboard_text_at_copy = None;
         self.cut_text = (command == "edit.cut").then(|| text.replace("\r\n", "\n"));
@@ -448,7 +473,12 @@ impl SheetApp {
     /// without publishing, GridCraft's own clipboard is pasted.
     pub fn paste_from_clipboard(&mut self) {
         match self.system_clipboard_text() {
-            Some(text) if self.session.clipboard.is_none() || self.clipboard_text_at_copy.as_ref() != Some(&text) => self.paste_external(text),
+            Some(text)
+                if self.session.clipboard.is_none()
+                    || self.clipboard_text_at_copy.as_ref() != Some(&text) =>
+            {
+                self.paste_external(text)
+            }
             _ => self.run_or_alert("edit.paste", json!({})),
         }
     }
@@ -456,14 +486,21 @@ impl SheetApp {
     /// The system clipboard's plain text, with the line endings of egui's `Event::Paste` text.
     /// `None` when it holds no text or the host can't read it.
     fn system_clipboard_text(&mut self) -> Option<String> {
-        self.services.paste_text.as_mut().and_then(|read| read()).filter(|t| !t.is_empty()).map(|t| t.replace("\r\n", "\n"))
+        self.services
+            .paste_text
+            .as_mut()
+            .and_then(|read| read())
+            .filter(|t| !t.is_empty())
+            .map(|t| t.replace("\r\n", "\n"))
     }
 
     /// Whether two clipboard texts are the same copy: trailing line breaks don't count, as in the
     /// engine's `edit.paste`, and CRLF matches LF (egui's `Event::Paste` text may keep the host's).
     fn same_clipboard_text(a: Option<&str>, b: Option<&str>) -> bool {
         fn chars(t: &str) -> impl Iterator<Item = char> + '_ {
-            t.trim_end_matches(['\r', '\n']).chars().filter(|c| *c != '\r')
+            t.trim_end_matches(['\r', '\n'])
+                .chars()
+                .filter(|c| *c != '\r')
         }
         match (a, b) {
             (Some(a), Some(b)) => chars(a).eq(chars(b)),
@@ -477,10 +514,22 @@ impl SheetApp {
             return;
         }
         if let Some(dl) = &self.services.download
-            && let Some(b) = result.get("base64").and_then(Json::as_str).and_then(gridcraft_engine::io::base64_decode)
+            && let Some(b) = result
+                .get("base64")
+                .and_then(Json::as_str)
+                .and_then(gridcraft_engine::io::base64_decode)
         {
-            let title = self.session.active().map(|d| d.display_title()).unwrap_or_else(|| "Book1".into());
-            dl(&std::path::Path::new(&title).with_extension("pdf").to_string_lossy(), &b);
+            let title = self
+                .session
+                .active()
+                .map(|d| d.display_title())
+                .unwrap_or_else(|| "Book1".into());
+            dl(
+                &std::path::Path::new(&title)
+                    .with_extension("pdf")
+                    .to_string_lossy(),
+                &b,
+            );
         }
     }
 
@@ -502,7 +551,13 @@ impl SheetApp {
         }
         // Menu-style Export as PDF with no file named: ask where to save, like Save As does.
         // Programmatic callers use `run` and keep getting the PDF bytes back.
-        if id == "file.exportPdf" && self.services.pick_save.is_some() && params.get("path").and_then(Json::as_str).is_none_or(str::is_empty) {
+        if id == "file.exportPdf"
+            && self.services.pick_save.is_some()
+            && params
+                .get("path")
+                .and_then(Json::as_str)
+                .is_none_or(str::is_empty)
+        {
             return self.export_pdf_with_picker(params);
         }
         if let Err(e) = self.run(id, params) {
@@ -516,12 +571,27 @@ impl SheetApp {
         if !self.commit_edit(0, 0, false, false) {
             return;
         }
-        let title = self.session.active().map(|d| d.display_title()).unwrap_or_else(|| "Book1".into());
-        let stem = std::path::Path::new(&title).file_stem().and_then(|s| s.to_str()).unwrap_or("Book1").to_string();
-        let Some(pick) = &self.services.pick_save else { return };
-        let Some(path) = pick(&format!("{stem}.pdf")) else { return };
+        let title = self
+            .session
+            .active()
+            .map(|d| d.display_title())
+            .unwrap_or_else(|| "Book1".into());
+        let stem = std::path::Path::new(&title)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("Book1")
+            .to_string();
+        let Some(pick) = &self.services.pick_save else {
+            return;
+        };
+        let Some(path) = pick(&format!("{stem}.pdf")) else {
+            return;
+        };
         // The picker may suggest a workbook extension; the export writes a PDF.
-        let path = std::path::Path::new(&path).with_extension("pdf").to_string_lossy().into_owned();
+        let path = std::path::Path::new(&path)
+            .with_extension("pdf")
+            .to_string_lossy()
+            .into_owned();
         match &mut params {
             Json::Object(map) => {
                 map.insert("path".into(), Json::String(path));
@@ -556,11 +626,17 @@ impl SheetApp {
             return Err("Select an available printer in File > Print before submitting.".into());
         }
         let pdf = self.run("file.print", params)?;
-        let encoded = pdf.get("base64").and_then(Json::as_str).ok_or("The print command did not produce a PDF.")?;
-        let bytes = gridcraft_engine::io::base64_decode(encoded).ok_or("Couldn't decode the generated PDF.")?;
+        let encoded = pdf
+            .get("base64")
+            .and_then(Json::as_str)
+            .ok_or("The print command did not produce a PDF.")?;
+        let bytes = gridcraft_engine::io::base64_decode(encoded)
+            .ok_or("Couldn't decode the generated PDF.")?;
         let len = bytes.len();
         if let Some(submit) = &self.services.print_native {
-            self.printing.begin(submit(bytes, self.printing.settings.clone())).map_err(|_| "A print job is already being submitted.".to_owned())?;
+            self.printing
+                .begin(submit(bytes, self.printing.settings.clone()))
+                .map_err(|_| "A print job is already being submitted.".to_owned())?;
             self.print_feedback_seen = None;
         } else if let Some(print) = &self.services.print {
             print(&bytes);
@@ -573,10 +649,16 @@ impl SheetApp {
     /// UI-only commands (dialogs, view toggles that aren't saved in the file).
     fn run_ui_command(&mut self, id: &str, p: &Json) -> Option<Result<Json, String>> {
         let r = match id {
-            "ui.printSettings" => printing::settings(&mut self.printing, p, self.services.printers.as_ref()),
+            "ui.printSettings" => {
+                printing::settings(&mut self.printing, p, self.services.printers.as_ref())
+            }
             "ui.printSubmit" => self.submit_print(p.clone()),
             "ui.ribbonTab" => {
-                self.ui.ribbon_tab = p.get("tab").and_then(Json::as_str).unwrap_or("Home").to_string();
+                self.ui.ribbon_tab = p
+                    .get("tab")
+                    .and_then(Json::as_str)
+                    .unwrap_or("Home")
+                    .to_string();
                 Ok(Json::Null)
             }
             "view.collapseRibbon" => {
@@ -584,7 +666,11 @@ impl SheetApp {
                 Ok(Json::Null)
             }
             "view.darkMode" => {
-                let current = if self.ui.system_theme { self.effective_dark } else { self.ui.dark };
+                let current = if self.ui.system_theme {
+                    self.effective_dark
+                } else {
+                    self.ui.dark
+                };
                 self.ui.dark = p.get("on").and_then(Json::as_bool).unwrap_or(!current);
                 self.ui.system_theme = false;
                 Ok(json!({"on": self.ui.dark}))
@@ -601,11 +687,17 @@ impl SheetApp {
                 Ok(json!({"mode": self.ui.theme_mode()}))
             }
             "view.animations" => {
-                self.ui.animations = p.get("on").and_then(Json::as_bool).unwrap_or(!self.ui.animations);
+                self.ui.animations = p
+                    .get("on")
+                    .and_then(Json::as_bool)
+                    .unwrap_or(!self.ui.animations);
                 Ok(json!({"on": self.ui.animations}))
             }
             "options.autoComplete" => {
-                self.ui.autocomplete = p.get("on").and_then(Json::as_bool).unwrap_or(!self.ui.autocomplete);
+                self.ui.autocomplete = p
+                    .get("on")
+                    .and_then(Json::as_bool)
+                    .unwrap_or(!self.ui.autocomplete);
                 Ok(json!({"on": self.ui.autocomplete}))
             }
             "view.interfaceScale" => {
@@ -620,18 +712,26 @@ impl SheetApp {
                         self.ui.interface_scale = v;
                         Ok(json!({"percent": v}))
                     }
-                    None => Err(format!("missing `percent` ({INTERFACE_SCALE_MIN}–{INTERFACE_SCALE_MAX}, or \"auto\")")),
+                    None => Err(format!(
+                        "missing `percent` ({INTERFACE_SCALE_MIN}–{INTERFACE_SCALE_MAX}, or \"auto\")"
+                    )),
                 }
             }
             "app.language.set" => {
                 // `{"language": "ja"}`; `code` is accepted as an alias.
-                let code = p.get("language").or_else(|| p.get("code")).and_then(Json::as_str).unwrap_or("");
+                let code = p
+                    .get("language")
+                    .or_else(|| p.get("code"))
+                    .and_then(Json::as_str)
+                    .unwrap_or("");
                 match i18n::Language::parse(code) {
                     Some(l) => {
                         self.ui.language = l;
                         Ok(json!({"language": l}))
                     }
-                    None => Err(format!("unknown language {code:?} (use \"en\", \"es\", \"zh\", \"ja\", \"ko\", \"ru\", \"pt\" or \"cs\")")),
+                    None => Err(format!(
+                        "unknown language {code:?} (use \"en\", \"es\", \"zh\", \"ja\", \"ko\", \"ru\", \"pt\" or \"cs\")"
+                    )),
                 }
             }
             "app.language.english" => {
@@ -694,7 +794,14 @@ impl SheetApp {
                     let text = text.map(|text| {
                         self.session
                             .active()
-                            .map(|d| formula_locale::display_template(&text, self.ui.language.formula_locale(), &d.wb, d.wb.active_sheet))
+                            .map(|d| {
+                                formula_locale::display_template(
+                                    &text,
+                                    self.ui.language.formula_locale(),
+                                    &d.wb,
+                                    d.wb.active_sheet,
+                                )
+                            })
                             .unwrap_or(text)
                     });
                     self.begin_edit(text, false);
@@ -724,25 +831,44 @@ impl SheetApp {
                 }
             }
             "saveAs" => {
-                let suggested = self.session.active().map(|d| d.display_title()).unwrap_or_else(|| "Book1".into());
+                let suggested = self
+                    .session
+                    .active()
+                    .map(|d| d.display_title())
+                    .unwrap_or_else(|| "Book1".into());
                 if let Some(pick) = &self.services.pick_save {
                     if let Some(path) = pick(&suggested) {
-                        let path = if std::path::Path::new(&path).extension().is_none() { format!("{path}.xlsx") } else { path };
+                        let path = if std::path::Path::new(&path).extension().is_none() {
+                            format!("{path}.xlsx")
+                        } else {
+                            path
+                        };
                         self.run_or_alert("file.save", json!({"path": path}));
                     }
                 } else if self.services.download.is_some()
                     && let Ok(r) = self.run("file.saveBytes", json!({"format": "xlsx"}))
                     && let Some(dl) = &self.services.download
-                    && let Some(b) = r.get("base64").and_then(Json::as_str).and_then(gridcraft_engine::io::base64_decode)
+                    && let Some(b) = r
+                        .get("base64")
+                        .and_then(Json::as_str)
+                        .and_then(gridcraft_engine::io::base64_decode)
                 {
-                    let name = r.get("name").and_then(Json::as_str).unwrap_or("Book.xlsx").to_string();
+                    let name = r
+                        .get("name")
+                        .and_then(Json::as_str)
+                        .unwrap_or("Book.xlsx")
+                        .to_string();
                     dl(&name, &b);
                 }
             }
             // File › Options (`file.options`) and the File tab itself open the Backstage view.
             "options" => self.open_backstage(backstage::Page::Options),
             "backstage" => {
-                let page = params.get("page").and_then(Json::as_str).and_then(backstage::Page::parse).unwrap_or(backstage::Page::Home);
+                let page = params
+                    .get("page")
+                    .and_then(Json::as_str)
+                    .and_then(backstage::Page::parse)
+                    .unwrap_or(backstage::Page::Home);
                 self.open_backstage(page);
             }
             other => self.dialog = dialogs::Dialog::open(self, other, params),
@@ -765,7 +891,9 @@ impl SheetApp {
         match self.run("file.open", json!({"path": path})) {
             Ok(r) => self.after_open(Some(path), &r),
             // A password-protected workbook: ask for the password; the dialog opens it.
-            Err(e) if e.contains(gridcraft_engine::io::PASSWORD_REQUIRED) => self.open_dialog("openPassword", json!({"path": path})),
+            Err(e) if e.contains(gridcraft_engine::io::PASSWORD_REQUIRED) => {
+                self.open_dialog("openPassword", json!({"path": path}))
+            }
             Err(e) => self.message = Some(("GridCraft".into(), clean_error(&e))),
         }
         self.after_engine();
@@ -798,7 +926,11 @@ impl SheetApp {
             self.notice = None;
             return;
         }
-        let vba: Vec<&str> = msgs.iter().copied().filter(|m| m.to_lowercase().contains("macro") || m.contains("VBA")).collect();
+        let vba: Vec<&str> = msgs
+            .iter()
+            .copied()
+            .filter(|m| m.to_lowercase().contains("macro") || m.contains("VBA"))
+            .collect();
         if !vba.is_empty() {
             self.notice = Some(Notice {
                 text: "This workbook contains VBA macros. GridCraft keeps them intact when you save, but does not run them.".into(),
@@ -809,9 +941,17 @@ impl SheetApp {
             let text = if msgs.len() == 1 {
                 msgs[0].to_string()
             } else {
-                format!("{} items in this file were handled differently. First: {}", msgs.len(), msgs[0])
+                format!(
+                    "{} items in this file were handled differently. First: {}",
+                    msgs.len(),
+                    msgs[0]
+                )
             };
-            self.notice = Some(Notice { text, kind: NoticeKind::Info, action: None });
+            self.notice = Some(Notice {
+                text,
+                kind: NoticeKind::Info,
+                action: None,
+            });
         }
     }
 
@@ -820,7 +960,9 @@ impl SheetApp {
     }
 
     pub fn view(&self) -> SheetView {
-        self.view_key().and_then(|k| self.views.get(&k).copied()).unwrap_or_else(|| self.saved_view())
+        self.view_key()
+            .and_then(|k| self.views.get(&k).copied())
+            .unwrap_or_else(|| self.saved_view())
     }
 
     pub fn view_mut(&mut self) -> Option<&mut SheetView> {
@@ -831,7 +973,9 @@ impl SheetApp {
 
     /// The view a sheet opens with: scrolled to the file's saved first visible cell (`topLeftCell`).
     fn saved_view(&self) -> SheetView {
-        let Some(sh) = self.session.active().and_then(|d| d.wb.active()) else { return SheetView::default() };
+        let Some(sh) = self.session.active().and_then(|d| d.wb.active()) else {
+            return SheetView::default();
+        };
         if sh.view != gridcraft_engine::model::SheetViewMode::Normal {
             return SheetView::default();
         }
@@ -839,17 +983,23 @@ impl SheetApp {
         let top = sh.view_top_left;
         let y = sh.row_top(top.row.max(fr)) - sh.row_top(fr);
         let x = sh.col_left(top.col.max(fc)) - sh.col_left(fc);
-        SheetView { scroll: egui::vec2(x.max(0.0) as f32, y.max(0.0) as f32) }
+        SheetView {
+            scroll: egui::vec2(x.max(0.0) as f32, y.max(0.0) as f32),
+        }
     }
 
     /// Hands the active document's scroll positions (first visible cell per sheet) and active
     /// cell to the engine so a save writes them (`sheetView topLeftCell`). Normal view only:
     /// Page Layout view scrolls over pages, not cells.
     pub fn store_view_state(&mut self) {
-        let Some(d) = self.session.active_mut() else { return };
+        let Some(d) = self.session.active_mut() else {
+            return;
+        };
         let mut tops = Vec::new();
         for (&(uid, si), v) in &self.views {
-            let Some(sh) = d.wb.sheets.get(si).filter(|sh| uid == d.uid && sh.view == gridcraft_engine::model::SheetViewMode::Normal) else {
+            let Some(sh) = d.wb.sheets.get(si).filter(|sh| {
+                uid == d.uid && sh.view == gridcraft_engine::model::SheetViewMode::Normal
+            }) else {
                 continue;
             };
             let (fr, fc) = sh.freeze.unwrap_or((0, 0));
@@ -867,9 +1017,14 @@ impl SheetApp {
             self.message = Some(("Text Box".into(), clean_error(&e)));
             return;
         }
-        let Some(d) = self.session.active() else { return };
+        let Some(d) = self.session.active() else {
+            return;
+        };
         let Some(sh) = d.wb.active() else { return };
-        let at = sh.merge_at(d.selection.active).map(|m| m.start).unwrap_or(d.selection.active);
+        let at = sh
+            .merge_at(d.selection.active)
+            .map(|m| m.start)
+            .unwrap_or(d.selection.active);
         // A picture has no editable scalar text. Selecting it, F2, or clicking
         // the formula bar must not turn its fallback value into a text edit.
         // Typing still starts an intentional replacement.
@@ -881,7 +1036,9 @@ impl SheetApp {
             String::new()
         } else {
             match sh.cell(at) {
-                Some(c) if c.formula.is_some() => formula_locale::display(&c.input_text(), locale, &d.wb, d.wb.active_sheet),
+                Some(c) if c.formula.is_some() => {
+                    formula_locale::display(&c.input_text(), locale, &d.wb, d.wb.active_sheet)
+                }
                 _ => gridcraft_engine::display::edit_text(&d.wb, sh, at),
             }
         };
@@ -895,18 +1052,28 @@ impl SheetApp {
             ed.completion = editor::column_completion(sh, at, &ed.text);
         }
         self.editor = Some(ed);
-        self.session.mode = if replace { gridcraft_engine::Mode::Enter } else { gridcraft_engine::Mode::Edit };
+        self.session.mode = if replace {
+            gridcraft_engine::Mode::Enter
+        } else {
+            gridcraft_engine::Mode::Edit
+        };
     }
 
     /// Commits the edit; `then` moves the selection (dr, dc) afterwards.
     pub fn commit_edit(&mut self, dr: i64, dc: i64, array: bool, fill_selection: bool) -> bool {
-        let Some(ed) = self.editor.take() else { return true };
+        let Some(ed) = self.editor.take() else {
+            return true;
+        };
         self.session.mode = gridcraft_engine::Mode::Ready;
         let text = match &ed.completion {
             Some(full) if full.to_lowercase().starts_with(&ed.text.to_lowercase()) => full.clone(),
             _ => ed.text.clone(),
         };
-        let text = match self.session.active().map(|d| formula_locale::canonical(&text, ed.locale, &d.wb, ed.sheet, ed.cell)) {
+        let text = match self
+            .session
+            .active()
+            .map(|d| formula_locale::canonical(&text, ed.locale, &d.wb, ed.sheet, ed.cell))
+        {
             Some(Ok(text)) => text,
             Some(Err(error)) => {
                 self.message = Some(("GridCraft".into(), error.to_string()));
@@ -918,10 +1085,15 @@ impl SheetApp {
         };
         // Data validation.
         if let Some(d) = self.session.active()
-            && let Some((dv, msg)) = gridcraft_engine::cmd::data::check_validation(&d.wb, ed.sheet, ed.cell, &text)
+            && let Some((dv, msg)) =
+                gridcraft_engine::cmd::data::check_validation(&d.wb, ed.sheet, ed.cell, &text)
         {
             if dv.error_style == gridcraft_engine::model::ErrorStyle::Stop {
-                let title = if dv.error_title.is_empty() { "GridCraft".to_string() } else { dv.error_title.clone() };
+                let title = if dv.error_title.is_empty() {
+                    "GridCraft".to_string()
+                } else {
+                    dv.error_title.clone()
+                };
                 self.message = Some((title, msg));
                 self.editor = Some(ed);
                 self.session.mode = gridcraft_engine::Mode::Edit;
@@ -932,7 +1104,10 @@ impl SheetApp {
         let r = if fill_selection {
             self.session.run("range.fill", json!({"input": text}))
         } else {
-            self.session.run("cell.set", json!({"cell": ed.cell.a1(), "input": text, "array": array}))
+            self.session.run(
+                "cell.set",
+                json!({"cell": ed.cell.a1(), "input": text, "array": array}),
+            )
         };
         match r {
             Ok(_) => {
@@ -958,12 +1133,19 @@ impl SheetApp {
 
     /// Enter/Tab move inside a multi-cell selection, otherwise to the next cell.
     pub fn move_after_enter(&mut self, dr: i64, dc: i64) {
-        let multi = self.session.active().is_some_and(|d| !d.selection.is_single_cell());
+        let multi = self
+            .session
+            .active()
+            .is_some_and(|d| !d.selection.is_single_cell());
         if multi {
             let fwd = dr > 0 || dc > 0;
-            let _ = self.session.run("selection.next", json!({"forward": fwd, "byRow": dc != 0}));
+            let _ = self
+                .session
+                .run("selection.next", json!({"forward": fwd, "byRow": dc != 0}));
         } else {
-            let _ = self.session.run("selection.move", json!({"dr": dr, "dc": dc}));
+            let _ = self
+                .session
+                .run("selection.move", json!({"dr": dr, "dc": dc}));
         }
         self.grid.ensure_visible = true;
     }
@@ -975,8 +1157,11 @@ impl SheetApp {
             return;
         }
         self.print_feedback_seen = self.printing.message.clone();
-        let Some(message @ (printing::Feedback::Submitted(_) | printing::Feedback::Failed(_) | printing::Feedback::WorkerStopped)) =
-            self.printing.message.clone()
+        let Some(
+            message @ (printing::Feedback::Submitted(_)
+            | printing::Feedback::Failed(_)
+            | printing::Feedback::WorkerStopped),
+        ) = self.printing.message.clone()
         else {
             return;
         };
@@ -993,7 +1178,10 @@ impl SheetApp {
         // A keytip control request lives one frame: the ribbon consumes it during `ui`, and
         // anything that never reached a control (collapsed ribbon, tab switch) is dropped.
         self.ui.keytip_invoke = None;
-        if self.fonts_han.is_some_and(|han| han != theme::HanOrder::of(self.ui.language)) {
+        if self
+            .fonts_han
+            .is_some_and(|han| han != theme::HanOrder::of(self.ui.language))
+        {
             self.fonts_ready = false;
             self.fonts_set = false;
         }
@@ -1017,7 +1205,11 @@ impl SheetApp {
             // Bind the workbook's installed fonts once the background scan has finished. Adding
             // fonts re-applies the font set, which egui activates at the next pass, so skip this
             // frame's paint (same one-frame cost as startup). Only when the workbook changed.
-            let seen = self.session.active().map(|d| (d.uid, d.revision)).unwrap_or((0, 0));
+            let seen = self
+                .session
+                .active()
+                .map(|d| (d.uid, d.revision))
+                .unwrap_or((0, 0));
             if seen != self.fonts_seen {
                 let used = self.used_fonts();
                 self.fonts_seen = seen;
@@ -1034,7 +1226,15 @@ impl SheetApp {
         }
         let preference = match (
             self.ui.system_theme,
-            ctx.system_theme().or_else(|| self.desktop_dark.map(|d| if d { egui::Theme::Dark } else { egui::Theme::Light })),
+            ctx.system_theme().or_else(|| {
+                self.desktop_dark.map(|d| {
+                    if d {
+                        egui::Theme::Dark
+                    } else {
+                        egui::Theme::Light
+                    }
+                })
+            }),
         ) {
             (true, Some(egui::Theme::Dark)) => egui::ThemePreference::Dark,
             (true, Some(egui::Theme::Light)) => egui::ThemePreference::Light,
@@ -1061,7 +1261,9 @@ impl SheetApp {
             .services
             .inbox
             .as_ref()
-            .map(|i| std::mem::take(&mut *i.lock().unwrap_or_else(std::sync::PoisonError::into_inner)))
+            .map(|i| {
+                std::mem::take(&mut *i.lock().unwrap_or_else(std::sync::PoisonError::into_inner))
+            })
             .unwrap_or_default();
         for (name, bytes) in arrived {
             let b64 = gridcraft_engine::io::base64_encode(&bytes);
@@ -1122,11 +1324,13 @@ impl SheetApp {
             tabs::sheet_tabs(self, ui);
             pivot_pane::show(self, ui);
             panes::show(self, ui);
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.grid_bg)).show(ui, |ui| {
-                let g0 = now_ms();
-                grid::show(self, ui);
-                self.perf.grid_ms = now_ms() - g0;
-            });
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(t.grid_bg))
+                .show(ui, |ui| {
+                    let g0 = now_ms();
+                    grid::show(self, ui);
+                    self.perf.grid_ms = now_ms() - g0;
+                });
         }
         dialogs::show(self, &ctx);
         widgets::message_box(self, &ctx);
@@ -1150,7 +1354,9 @@ impl SheetApp {
             && self.editor.is_none()
             && self.text_box_editor.is_none()
             && now - self.grid.last_autosave > 2000.0
-            && self.session.active().is_some_and(|d| d.is_dirty() && d.path.as_deref().is_some_and(|p| p.ends_with(".xlsx")))
+            && self.session.active().is_some_and(|d| {
+                d.is_dirty() && d.path.as_deref().is_some_and(|p| p.ends_with(".xlsx"))
+            })
         {
             self.grid.last_autosave = now;
             self.store_view_state();
@@ -1158,7 +1364,11 @@ impl SheetApp {
         }
         // Window title.
         if let Some(d) = self.session.active() {
-            let title = format!("{}{}", d.display_title(), if d.is_dirty() { " — Edited" } else { "" });
+            let title = format!(
+                "{}{}",
+                d.display_title(),
+                if d.is_dirty() { " — Edited" } else { "" }
+            );
             if self.grid.last_title.as_deref() != Some(title.as_str()) {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
                 self.grid.last_title = Some(title);
@@ -1180,7 +1390,10 @@ impl SheetApp {
             && self.grid.renaming_tab.is_none()
             && (before.is_some() || !egui::Popup::is_any_open(ctx));
         let actions = self.keytips.process(ctx, enabled);
-        if before.is_some() && before.as_deref() != self.keytips.prefix() && !ctx.input(|i| i.pointer.any_pressed()) {
+        if before.is_some()
+            && before.as_deref() != self.keytips.prefix()
+            && !ctx.input(|i| i.pointer.any_pressed())
+        {
             // Leave pointer cancellation to the popup so clicking a menu item still works.
             egui::Popup::close_all(ctx);
         }
@@ -1190,7 +1403,9 @@ impl SheetApp {
                     self.run_or_alert("ui.ribbonTab", json!({"tab": tab}));
                     self.ui.ribbon_collapsed = false;
                 }
-                keytips::Action::Command(id @ ("edit.copy" | "edit.cut")) => self.copy_to_clipboard(ctx, id),
+                keytips::Action::Command(id @ ("edit.copy" | "edit.cut")) => {
+                    self.copy_to_clipboard(ctx, id)
+                }
                 keytips::Action::Command("edit.paste") => self.paste_from_clipboard(),
                 keytips::Action::Command(id) => self.run_or_alert(id, json!({})),
                 keytips::Action::Dialog(name) => self.open_dialog(name, json!({})),
@@ -1211,7 +1426,9 @@ impl SheetApp {
 
     /// Current selection's top-left cell text as A1 (for the Name Box).
     pub fn name_box_text(&self) -> String {
-        let Some(d) = self.session.active() else { return String::new() };
+        let Some(d) = self.session.active() else {
+            return String::new();
+        };
         let sel = &d.selection;
         let cur = sel.current();
         // A named range that exactly matches shows its name.
@@ -1223,7 +1440,11 @@ impl SheetApp {
                     Some((s, b)) => (Some(s.trim_matches('\'').to_string()), b.to_string()),
                     None => (None, target.clone()),
                 };
-                if sheet.as_deref().is_none_or(|s| s.eq_ignore_ascii_case(&sh.name)) && RangeRef::parse(&body) == Some(cur) {
+                if sheet
+                    .as_deref()
+                    .is_none_or(|s| s.eq_ignore_ascii_case(&sh.name))
+                    && RangeRef::parse(&body) == Some(cur)
+                {
                     return n.name.clone();
                 }
             }
@@ -1248,7 +1469,10 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs_f64() * 1000.0)
+            .unwrap_or(0.0)
     }
     #[cfg(target_arch = "wasm32")]
     {

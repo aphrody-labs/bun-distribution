@@ -69,7 +69,14 @@ impl GlyphCache {
         }
         let g = Arc::new(build(cs, ft));
         self.elements += g.elements;
-        self.map.insert(key, Entry { _story: cs.clone(), glyphs: g.clone(), stamp });
+        self.map.insert(
+            key,
+            Entry {
+                _story: cs.clone(),
+                glyphs: g.clone(),
+                stamp,
+            },
+        );
         if self.elements > MAX_ELEMENTS {
             self.evict();
         }
@@ -79,7 +86,11 @@ impl GlyphCache {
     /// Drop least recently used entries (never the ones used by the current render) until the
     /// cache is at half its budget.
     fn evict(&mut self) {
-        let mut stamps: Vec<(u64, usize, (usize, ItemId))> = self.map.iter().map(|(k, e)| (e.stamp, e.glyphs.elements, *k)).collect();
+        let mut stamps: Vec<(u64, usize, (usize, ItemId))> = self
+            .map
+            .iter()
+            .map(|(k, e)| (e.stamp, e.glyphs.elements, *k))
+            .collect();
         stamps.sort_unstable_by_key(|s| s.0);
         for (stamp, n, k) in stamps {
             if self.elements <= MAX_ELEMENTS / 2 || stamp >= self.clock {
@@ -125,9 +136,16 @@ fn build_line(db: &FontDb, cs: &ComposedStory, l: &Line, vertical: bool) -> Line
             continue;
         }
         let style = &cs.styles[g.style as usize];
-        for (on, rule, bars) in [(style.underline, &style.underline_rule, &mut underlines), (style.strikethrough, &style.strike_rule, &mut strikes)] {
+        for (on, rule, bars) in [
+            (style.underline, &style.underline_rule, &mut underlines),
+            (style.strikethrough, &style.strike_rule, &mut strikes),
+        ] {
             if on {
-                let r = rule.rect(g.x, g.x + g.adv, designcraft_compose::rule_baseline(style, l, g));
+                let r = rule.rect(
+                    g.x,
+                    g.x + g.adv,
+                    designcraft_compose::rule_baseline(style, l, g),
+                );
                 // One bar per stretch, as the PDF export draws them: a bar per glyph left
                 // anti-aliased seams between the letters.
                 match bars.last_mut() {
@@ -148,8 +166,14 @@ fn build_line(db: &FontDb, cs: &ComposedStory, l: &Line, vertical: bool) -> Line
         if outline.elements().is_empty() {
             continue;
         }
-        let skew = if style.skew != 0.0 { Affine::new([1.0, 0.0, -style.skew.to_radians().tan(), 1.0, 0.0, 0.0]) } else { Affine::IDENTITY };
-        let mut a = Affine::translate((g.x, l.baseline + g.y)) * skew * Affine::scale_non_uniform(g.sx, g.sy);
+        let skew = if style.skew != 0.0 {
+            Affine::new([1.0, 0.0, -style.skew.to_radians().tan(), 1.0, 0.0, 0.0])
+        } else {
+            Affine::IDENTITY
+        };
+        let mut a = Affine::translate((g.x, l.baseline + g.y))
+            * skew
+            * Affine::scale_non_uniform(g.sx, g.sy);
         if vertical && let Some(turn) = g.vertical_xf(l.baseline) {
             // Upright in vertical text.
             a = turn * a;
@@ -170,19 +194,37 @@ fn build_line(db: &FontDb, cs: &ComposedStory, l: &Line, vertical: bool) -> Line
     let mut bounds = None;
     for (si, bp) in &runs {
         let st = &cs.styles[*si as usize];
-        let sw = if st.stroke != designcraft_color::swatch::NONE { st.stroke_weight } else { 0.0 };
+        let sw = if st.stroke != designcraft_color::swatch::NONE {
+            st.stroke_weight
+        } else {
+            0.0
+        };
         bounds = union(bounds, bp.bounding_box().inflate(sw, sw));
     }
     for (_, _, r) in underlines.iter().chain(&strikes) {
         bounds = union(bounds, *r);
     }
-    LineGlyphs { bounds, runs, underlines, strikes, glyphs }
+    LineGlyphs {
+        bounds,
+        runs,
+        underlines,
+        strikes,
+        glyphs,
+    }
 }
 
 fn build(cs: &ComposedStory, ft: &FrameText) -> FrameGlyphs {
     let db = FontDb::global();
-    let lines: Vec<LineGlyphs> = ft.lines.iter().map(|l| build_line(db, cs, l, ft.vertical)).collect();
-    let elements = lines.iter().flat_map(|l| &l.runs).map(|(_, bp)| bp.elements().len()).sum();
+    let lines: Vec<LineGlyphs> = ft
+        .lines
+        .iter()
+        .map(|l| build_line(db, cs, l, ft.vertical))
+        .collect();
+    let elements = lines
+        .iter()
+        .flat_map(|l| &l.runs)
+        .map(|(_, bp)| bp.elements().len())
+        .sum();
     FrameGlyphs { lines, elements }
 }
 
@@ -190,13 +232,29 @@ fn build(cs: &ComposedStory, ft: &FrameText) -> FrameGlyphs {
 fn line_box(l: &Line) -> Option<Rect> {
     let first = l.glyphs.first()?;
     let x0 = l.glyphs.iter().map(|g| g.x).fold(first.x, f64::min);
-    let x1 = l.glyphs.iter().map(|g| g.x + g.adv.max(0.0)).fold(l.end_x, f64::max);
+    let x1 = l
+        .glyphs
+        .iter()
+        .map(|g| g.x + g.adv.max(0.0))
+        .fold(l.end_x, f64::max);
     let pad = l.ascent.max(1.0);
-    Some(Rect::new(x0 - pad, l.baseline - l.ascent - pad, x1 + pad, l.baseline + l.descent.max(0.0) + pad))
+    Some(Rect::new(
+        x0 - pad,
+        l.baseline - l.ascent - pad,
+        x1 + pad,
+        l.baseline + l.descent.max(0.0) + pad,
+    ))
 }
 
 impl Renderer {
-    pub(crate) fn draw_text(&mut self, ctx: &mut RenderContext, f: &Frame, cs: &Arc<ComposedStory>, ft: &FrameText, xf: Affine) {
+    pub(crate) fn draw_text(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        cs: &Arc<ComposedStory>,
+        ft: &FrameText,
+        xf: Affine,
+    ) {
         let doc = f.doc;
         let m = f.view * xf;
         // Visible area in frame space.
@@ -223,8 +281,19 @@ impl Renderer {
             ctx.set_transform(m);
             ctx.set_paint(peniko::Color::from_rgb8(255, 166, 214));
             for l in &ft.lines {
-                for g in l.glyphs.iter().filter(|g| g.adv > 0.0 && cs.styles.get(g.style as usize).is_some_and(|s| s.missing_font)) {
-                    ctx.fill_rect(&kurbo::Rect::new(g.x, l.baseline - l.ascent, g.x + g.adv, l.baseline + l.descent));
+                for g in l.glyphs.iter().filter(|g| {
+                    g.adv > 0.0
+                        && cs
+                            .styles
+                            .get(g.style as usize)
+                            .is_some_and(|s| s.missing_font)
+                }) {
+                    ctx.fill_rect(&kurbo::Rect::new(
+                        g.x,
+                        l.baseline - l.ascent,
+                        g.x + g.adv,
+                        l.baseline + l.descent,
+                    ));
                 }
             }
         }
@@ -232,23 +301,48 @@ impl Renderer {
             ctx.set_transform(m);
             ctx.set_paint(peniko::Color::from_rgb8(255, 236, 120));
             for l in ft.lines.iter().filter(|l| l.keep_violation) {
-                ctx.fill_rect(&kurbo::Rect::new(l.x0, l.baseline - l.ascent, l.x1, l.baseline + l.descent));
+                ctx.fill_rect(&kurbo::Rect::new(
+                    l.x0,
+                    l.baseline - l.ascent,
+                    l.x1,
+                    l.baseline + l.descent,
+                ));
             }
         }
         if f.opts.highlight_hj && ft.lines.iter().any(|l| l.hj > 0) {
             ctx.set_transform(m);
             for l in ft.lines.iter().filter(|l| l.hj > 0) {
                 let shade = [0u8, 0xF6, 0xEA, 0xD8][l.hj.min(3) as usize];
-                ctx.set_paint(peniko::Color::from_rgb8(255, shade, [0u8, 0xB0, 0x70, 0x30][l.hj.min(3) as usize]));
-                ctx.fill_rect(&kurbo::Rect::new(l.x0, l.baseline - l.ascent, l.end_x.max(l.x0 + 1.0), l.baseline + l.descent));
+                ctx.set_paint(peniko::Color::from_rgb8(
+                    255,
+                    shade,
+                    [0u8, 0xB0, 0x70, 0x30][l.hj.min(3) as usize],
+                ));
+                ctx.fill_rect(&kurbo::Rect::new(
+                    l.x0,
+                    l.baseline - l.ascent,
+                    l.end_x.max(l.x0 + 1.0),
+                    l.baseline + l.descent,
+                ));
             }
         }
         if f.opts.highlight_custom_tracking && cs.styles.iter().any(|s| s.custom_tracking) {
             ctx.set_transform(m);
             ctx.set_paint(peniko::Color::from_rgb8(176, 236, 176));
             for l in &ft.lines {
-                for g in l.glyphs.iter().filter(|g| g.adv > 0.0 && cs.styles.get(g.style as usize).is_some_and(|s| s.custom_tracking)) {
-                    ctx.fill_rect(&kurbo::Rect::new(g.x, l.baseline - l.ascent, g.x + g.adv, l.baseline + l.descent));
+                for g in l.glyphs.iter().filter(|g| {
+                    g.adv > 0.0
+                        && cs
+                            .styles
+                            .get(g.style as usize)
+                            .is_some_and(|s| s.custom_tracking)
+                }) {
+                    ctx.fill_rect(&kurbo::Rect::new(
+                        g.x,
+                        l.baseline - l.ascent,
+                        g.x + g.adv,
+                        l.baseline + l.descent,
+                    ));
                 }
             }
         }
@@ -256,7 +350,11 @@ impl Renderer {
             ctx.set_transform(m);
             let px = 1.0 / m.determinant().abs().sqrt().max(1e-9);
             for l in &ft.lines {
-                let tag_of = |g: &designcraft_compose::PlacedGlyph| cs.styles.get(g.style as usize).and_then(|s| s.xml_tag.clone());
+                let tag_of = |g: &designcraft_compose::PlacedGlyph| {
+                    cs.styles
+                        .get(g.style as usize)
+                        .and_then(|s| s.xml_tag.clone())
+                };
                 let gs: Vec<_> = l.glyphs.iter().filter(|g| g.len > 0).collect();
                 let mut i = 0;
                 while i < gs.len() {
@@ -268,7 +366,13 @@ impl Renderer {
                     while j < gs.len() && tag_of(gs[j]).as_deref() == Some(tag.as_str()) {
                         j += 1;
                     }
-                    let c = f.doc.xml.tags.iter().find(|t| t.name == tag).map_or([100, 100, 220], |t| t.color);
+                    let c = f
+                        .doc
+                        .xml
+                        .tags
+                        .iter()
+                        .find(|t| t.name == tag)
+                        .map_or([100, 100, 220], |t| t.color);
                     ctx.set_paint(peniko::Color::from_rgb8(c[0], c[1], c[2]));
                     let (x0, x1) = (gs[i].x, gs[j - 1].x + gs[j - 1].adv);
                     let (top, bot) = (l.baseline - l.ascent, l.baseline + l.descent);
@@ -288,9 +392,16 @@ impl Renderer {
         if f.opts.change_markup && cs.styles.iter().any(|s| s.inserted) {
             ctx.set_transform(m);
             for l in &ft.lines {
-                for g in l.glyphs.iter().filter(|g| g.adv > 0.0 && cs.styles.get(g.style as usize).is_some_and(|s| s.inserted)) {
+                for g in l.glyphs.iter().filter(|g| {
+                    g.adv > 0.0 && cs.styles.get(g.style as usize).is_some_and(|s| s.inserted)
+                }) {
                     ctx.set_paint(peniko::Color::from_rgba8(120, 190, 255, 110));
-                    ctx.fill_rect(&kurbo::Rect::new(g.x, l.baseline - l.ascent, g.x + g.adv, l.baseline + l.descent));
+                    ctx.fill_rect(&kurbo::Rect::new(
+                        g.x,
+                        l.baseline - l.ascent,
+                        g.x + g.adv,
+                        l.baseline + l.descent,
+                    ));
                 }
             }
         }
@@ -301,7 +412,11 @@ impl Renderer {
             ctx.set_transform(m);
             ctx.set_paint(peniko::Color::from_rgb8(232, 160, 32));
             for l in &ft.lines {
-                for g in l.glyphs.iter().filter(|g| st.text.get(g.byte..).is_some_and(|t| t.starts_with(designcraft_doc::NOTE_MARK))) {
+                for g in l.glyphs.iter().filter(|g| {
+                    st.text
+                        .get(g.byte..)
+                        .is_some_and(|t| t.starts_with(designcraft_doc::NOTE_MARK))
+                }) {
                     let h = l.ascent.max(4.0);
                     let mut p = BezPath::new();
                     p.move_to((g.x - h * 0.25, l.baseline - h));
@@ -309,17 +424,33 @@ impl Renderer {
                     p.line_to((g.x, l.baseline - h * 0.55));
                     p.close_path();
                     ctx.fill_path(&p);
-                    ctx.fill_rect(&kurbo::Rect::new(g.x - h * 0.03, l.baseline - h * 0.6, g.x + h * 0.03, l.baseline + l.descent * 0.5));
+                    ctx.fill_rect(&kurbo::Rect::new(
+                        g.x - h * 0.03,
+                        l.baseline - h * 0.6,
+                        g.x + h * 0.03,
+                        l.baseline + l.descent * 0.5,
+                    ));
                 }
             }
         }
-        if f.opts.condition_indicators && !f.doc.conditions.is_empty() && cs.styles.iter().any(|s| s.condition.is_some()) {
+        if f.opts.condition_indicators
+            && !f.doc.conditions.is_empty()
+            && cs.styles.iter().any(|s| s.condition.is_some())
+        {
             ctx.set_transform(m);
             let px = 1.0 / m.determinant().abs().sqrt().max(1e-9);
             for l in &ft.lines {
                 for g in l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0) {
-                    let Some(name) = cs.styles.get(g.style as usize).and_then(|s| s.condition.as_deref()) else { continue };
-                    let Some(c) = f.doc.conditions.iter().find(|c| c.name == name) else { continue };
+                    let Some(name) = cs
+                        .styles
+                        .get(g.style as usize)
+                        .and_then(|s| s.condition.as_deref())
+                    else {
+                        continue;
+                    };
+                    let Some(c) = f.doc.conditions.iter().find(|c| c.name == name) else {
+                        continue;
+                    };
                     ctx.set_paint(peniko::Color::from_rgb8(c.color[0], c.color[1], c.color[2]));
                     let y = l.baseline + l.descent * 0.6;
                     ctx.fill_rect(&kurbo::Rect::new(g.x, y, g.x + g.adv, y + 2.0 * px));
@@ -354,7 +485,8 @@ impl Renderer {
             let mut fill_of = |si: u32| -> Option<peniko::Color> {
                 *fills[si as usize].get_or_insert_with(|| {
                     let st = &cs.styles[si as usize];
-                    doc.resolve_color(&st.fill, st.fill_tint).map(|c| color_of(&c, 1.0))
+                    doc.resolve_color(&st.fill, st.fill_tint)
+                        .map(|c| color_of(&c, 1.0))
                 })
             };
             shown.retain(|&i| fg.lines[i].bounds.is_some_and(|b| rect_overlaps(b, vis)));
@@ -378,7 +510,10 @@ impl Renderer {
                         if op {
                             ctx.push_layer(
                                 None,
-                                Some(vello_cpu::peniko::BlendMode::new(vello_cpu::peniko::Mix::Multiply, vello_cpu::peniko::Compose::SrcOver)),
+                                Some(vello_cpu::peniko::BlendMode::new(
+                                    vello_cpu::peniko::Mix::Multiply,
+                                    vello_cpu::peniko::Compose::SrcOver,
+                                )),
                                 None,
                                 None,
                                 None,
@@ -415,7 +550,13 @@ impl Renderer {
         }
         for n in &ft.notes {
             if let Some(nft) = n.text.frames.first() {
-                self.draw_text(ctx, f, &n.text, nft, xf * Affine::translate(n.origin.to_vec2()));
+                self.draw_text(
+                    ctx,
+                    f,
+                    &n.text,
+                    nft,
+                    xf * Affine::translate(n.origin.to_vec2()),
+                );
             }
         }
         // Anchored objects ride on their lines.
@@ -424,7 +565,13 @@ impl Renderer {
         {
             for o in &ft.objects {
                 if let Some(obj) = st.objects.get(o.index) {
-                    self.draw_item(ctx, f, &obj.item, xf * Affine::translate(o.origin.to_vec2()), None);
+                    self.draw_item(
+                        ctx,
+                        f,
+                        &obj.item,
+                        xf * Affine::translate(o.origin.to_vec2()),
+                        None,
+                    );
                 }
             }
         }
@@ -455,12 +602,20 @@ impl Renderer {
                     ctx.set_transform(f.view * xf);
                     ctx.pop_layer();
                 } else if let Some(cft) = c.text.frames.first() {
-                    self.draw_text(ctx, f, &c.text, cft, xf * Affine::translate(c.origin.to_vec2()));
+                    self.draw_text(
+                        ctx,
+                        f,
+                        &c.text,
+                        cft,
+                        xf * Affine::translate(c.origin.to_vec2()),
+                    );
                 }
             }
             ctx.set_transform(f.view * xf);
             for s in &t.strokes {
-                let Some(col) = doc.resolve_color(&s.stroke.color, s.stroke.tint) else { continue };
+                let Some(col) = doc.resolve_color(&s.stroke.color, s.stroke.tint) else {
+                    continue;
+                };
                 ctx.set_paint(color_of(&col, 1.0));
                 ctx.set_stroke(cell_stroke(&s.stroke));
                 ctx.stroke_path(&kurbo::Line::new(s.a, s.b).to_path(0.1));
@@ -473,10 +628,12 @@ impl Renderer {
 fn cell_stroke(s: &designcraft_doc::CellStroke) -> kurbo::Stroke {
     let st = kurbo::Stroke::new(s.weight).with_caps(kurbo::Cap::Square);
     match &s.kind {
-        designcraft_doc::StrokeType::Dashed { pattern } if !pattern.is_empty() => {
-            st.with_caps(kurbo::Cap::Butt).with_dashes(0.0, pattern.iter().copied())
-        }
-        designcraft_doc::StrokeType::Dotted => st.with_dashes(0.0, [0.0, s.weight * 2.0]).with_caps(kurbo::Cap::Round),
+        designcraft_doc::StrokeType::Dashed { pattern } if !pattern.is_empty() => st
+            .with_caps(kurbo::Cap::Butt)
+            .with_dashes(0.0, pattern.iter().copied()),
+        designcraft_doc::StrokeType::Dotted => st
+            .with_dashes(0.0, [0.0, s.weight * 2.0])
+            .with_caps(kurbo::Cap::Round),
         _ => st,
     }
 }

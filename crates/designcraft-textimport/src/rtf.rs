@@ -68,7 +68,10 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
         return Err(ImportError::Corrupt("not an RTF file".into()));
     }
     let mut st = Story::new(StoryId(0));
-    let mut stack: Vec<State> = vec![State { uc: 1, ..Default::default() }];
+    let mut stack: Vec<State> = vec![State {
+        uc: 1,
+        ..Default::default()
+    }];
     let mut pending = 0usize; // characters still to skip after \uN
     let mut units = crate::Utf16Units::default();
     let mut buf = String::new();
@@ -174,7 +177,9 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
                     if let Some(s) = stack.last_mut() {
                         s.skip = true;
                     }
-                    if word == "pict" && !warnings.iter().any(|w: &String| w.starts_with("Pictures")) {
+                    if word == "pict"
+                        && !warnings.iter().any(|w: &String| w.starts_with("Pictures"))
+                    {
                         warnings.push("Pictures in the RTF file were not imported.".into());
                     }
                     continue;
@@ -259,16 +264,26 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
     }
     // A page or column break ends its paragraph.
     st.end_paragraphs_at_breaks();
-    Ok(Imported { story: st, para_styles: vec![], char_styles: vec![], warnings })
+    Ok(Imported {
+        story: st,
+        para_styles: vec![],
+        char_styles: vec![],
+        warnings,
+    })
 }
 
 /// Windows-1252 byte → char.
 fn cp1252(b: u8) -> char {
     const HI: [u16; 32] = [
-        0x20AC, 0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x8D, 0x017D, 0x8F, 0x90, 0x2018,
-        0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014, 0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x9D, 0x017E, 0x0178,
+        0x20AC, 0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160,
+        0x2039, 0x0152, 0x8D, 0x017D, 0x8F, 0x90, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013,
+        0x2014, 0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x9D, 0x017E, 0x0178,
     ];
-    if (0x80..0xA0).contains(&b) { char::from_u32(HI[(b - 0x80) as usize] as u32).unwrap_or('?') } else { b as char }
+    if (0x80..0xA0).contains(&b) {
+        char::from_u32(HI[(b - 0x80) as usize] as u32).unwrap_or('?')
+    } else {
+        b as char
+    }
 }
 
 #[cfg(test)]
@@ -277,18 +292,33 @@ mod tests {
 
     #[test]
     fn imports_rtf_text_and_formatting() {
-        let rtf = br"{\rtf1\ansi{\fonttbl{\f0 Times;}}{\colortbl;\red0\green0\blue0;}{\*\generator Test;}
+        let rtf =
+            br"{\rtf1\ansi{\fonttbl{\f0 Times;}}{\colortbl;\red0\green0\blue0;}{\*\generator Test;}
 \f0\fs24 Hello {\b bold} and {\i italic\i0  plain}\par
 Caf\'e9 \u8364? price\tab tab\line next\par
 }";
         let i = import(rtf).unwrap();
         let st = &i.story;
         st.check().unwrap();
-        assert_eq!(st.text, "Hello bold and italic plain\nCafé € price\ttab\u{2028}next");
+        assert_eq!(
+            st.text,
+            "Hello bold and italic plain\nCafé € price\ttab\u{2028}next"
+        );
         let at = st.text.find("bold").unwrap();
         assert_eq!(st.format_after(at).over.font_style.as_deref(), Some("Bold"));
-        assert_eq!(st.format_after(st.text.find("italic").unwrap()).over.font_style.as_deref(), Some("Italic"));
-        assert_eq!(st.format_after(st.text.find("plain").unwrap()).over.font_style, None);
+        assert_eq!(
+            st.format_after(st.text.find("italic").unwrap())
+                .over
+                .font_style
+                .as_deref(),
+            Some("Italic")
+        );
+        assert_eq!(
+            st.format_after(st.text.find("plain").unwrap())
+                .over
+                .font_style,
+            None
+        );
         assert_eq!(st.format_after(0).over.size, Some(12.0));
         assert!(!st.text.contains("Times"), "font table skipped");
     }
@@ -303,8 +333,17 @@ Caf\'e9 \u8364? price\tab tab\line next\par
         let mut st = Story::new(StoryId(1));
         st.insert(0, "x \u{1F600} \u{20BB7}\u{7530} y");
         let doc = designcraft_doc::Document::new(&designcraft_doc::build::NewDocument::default());
-        assert_eq!(import(crate::export::rtf(&doc, &st).as_bytes()).unwrap().story.text, st.text);
+        assert_eq!(
+            import(crate::export::rtf(&doc, &st).as_bytes())
+                .unwrap()
+                .story
+                .text,
+            st.text
+        );
         // Half a pair is not a character: it is still left out.
-        assert_eq!(import(br"{\rtf1 A\u-10179?B\u-8704?C}").unwrap().story.text, "ABC");
+        assert_eq!(
+            import(br"{\rtf1 A\u-10179?B\u-8704?C}").unwrap().story.text,
+            "ABC"
+        );
     }
 }

@@ -21,7 +21,8 @@
 //! `tauri::Builder::default().plugin(aphrody_tauri_3d::init())`, grant
 //! `"aphrody-3d:default"`, make the webview transparent and the page background transparent.
 
-#[cfg(windows)] mod dcomp;
+#[cfg(windows)]
+mod dcomp;
 pub mod layer;
 
 use std::{collections::HashMap, path::Path, sync::Mutex};
@@ -53,7 +54,10 @@ impl Layers {
         label: &str,
         f: impl FnOnce(&mut NativeLayer) -> Result<T, String>,
     ) -> Result<T, String> {
-        let mut layers = self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut layers = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let layer = layers
             .get_mut(label)
             .ok_or_else(|| format!("no native 3D layer on window `{label}`; call attach first"))?;
@@ -71,7 +75,10 @@ pub fn attach_window<R: Runtime>(window: &Window<R>) -> Result<LayerInfo, String
     let layers = window.state::<Layers>();
     let label = window.label().to_string();
     {
-        let mut map = layers.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut map = layers
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if !map.contains_key(&label) {
             map.insert(label.clone(), NativeLayer::attach(window)?);
         }
@@ -116,7 +123,9 @@ pub fn load_path<R: Runtime>(
     path: &Path,
     options: &ModelOptions,
 ) -> Result<(), String> {
-    let is_scene = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("json"));
+    let is_scene = path
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("json"));
     let (scene, framing) = if is_scene {
         let scene: Scene3d =
             serde_json::from_slice(&std::fs::read(path).map_err(|e| e.to_string())?)
@@ -163,7 +172,11 @@ fn attach<R: Runtime>(window: Window<R>) -> Result<LayerInfo, String> {
 /// Drop the calling window's layer.
 #[tauri::command]
 fn detach<R: Runtime>(window: Window<R>, layers: State<'_, Layers>) {
-    layers.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(window.label());
+    layers
+        .0
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .remove(window.label());
 }
 
 /// Replace the scene (its camera is used until the next `orbit`).
@@ -243,8 +256,13 @@ fn orbit<R: Runtime>(
 /// Report the calling window's layer.
 #[tauri::command]
 fn info<R: Runtime>(window: Window<R>, layers: State<'_, Layers>) -> Result<LayerInfo, String> {
-    let map = layers.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    map.get(window.label()).map(NativeLayer::info).ok_or_else(|| "no native 3D layer".into())
+    let map = layers
+        .0
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    map.get(window.label())
+        .map(NativeLayer::info)
+        .ok_or_else(|| "no native 3D layer".into())
 }
 
 /// The plugin.
@@ -265,7 +283,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             Ok(())
         })
         .on_event(|app, event| {
-            let RunEvent::WindowEvent { label, event, .. } = event else { return };
+            let RunEvent::WindowEvent { label, event, .. } = event else {
+                return;
+            };
             let layers = app.state::<Layers>();
             let resize = |w: u32, h: u32| {
                 let _ = layers.with(label, |layer| {
@@ -277,15 +297,15 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 WindowEvent::Resized(size) => resize(size.width, size.height),
                 WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                     resize(new_inner_size.width, new_inner_size.height);
-                },
+                }
                 WindowEvent::Destroyed => {
                     layers
                         .0
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
                         .remove(label);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         })
         .build()

@@ -9,7 +9,12 @@ fn decode(b: &[u8], utf8: bool) -> String {
     match std::str::from_utf8(b) {
         Ok(s) => s.trim_end_matches('\0').trim().to_string(),
         Err(_) if utf8 => String::from_utf8_lossy(b).trim().to_string(),
-        Err(_) => b.iter().map(|&c| c as char).collect::<String>().trim().to_string(),
+        Err(_) => b
+            .iter()
+            .map(|&c| c as char)
+            .collect::<String>()
+            .trim()
+            .to_string(),
     }
 }
 
@@ -34,10 +39,14 @@ pub fn parse_iptc(b: &[u8]) -> Metadata {
             if n == 0 || n > 4 || at + n > b.len() {
                 break;
             }
-            size = b[at..at + n].iter().fold(0usize, |a, &c| (a << 8) | c as usize);
+            size = b[at..at + n]
+                .iter()
+                .fold(0usize, |a, &c| (a << 8) | c as usize);
             at += n;
         }
-        let Some(data) = b.get(at..at.saturating_add(size)) else { break };
+        let Some(data) = b.get(at..at.saturating_add(size)) else {
+            break;
+        };
         match (rec, ds) {
             (1, 90) => utf8 = data == b"\x1b%G",
             (2, 5) => m.title = Some(decode(data, utf8)).filter(|s| !s.is_empty()),
@@ -58,7 +67,9 @@ pub fn parse_iptc(b: &[u8]) -> Metadata {
     }
     if let Some(d) = date.filter(|d| d.len() == 8 && d.bytes().all(|c| c.is_ascii_digit())) {
         let mut s = format!("{}-{}-{}", &d[..4], &d[4..6], &d[6..8]);
-        if let Some(t) = time.filter(|t| t.is_ascii() && t.len() >= 6 && t[..6].bytes().all(|c| c.is_ascii_digit())) {
+        if let Some(t) = time
+            .filter(|t| t.is_ascii() && t.len() >= 6 && t[..6].bytes().all(|c| c.is_ascii_digit()))
+        {
             s += &format!("T{}:{}:{}", &t[..2], &t[2..4], &t[4..6]);
             if t.len() >= 11 {
                 s += &format!("{}:{}", &t[6..9], &t[9..11]);
@@ -103,7 +114,10 @@ pub(crate) mod tests {
         assert_eq!(m.artist.as_deref(), Some("Photographer"));
         assert_eq!(m.copyright.as_deref(), Some("CC0"));
         assert_eq!(m.caption.as_deref(), Some("A caption"));
-        assert_eq!(m.capture_time.unwrap().to_iso(), "2021-03-04T10:11:12+01:00");
+        assert_eq!(
+            m.capture_time.unwrap().to_iso(),
+            "2021-03-04T10:11:12+01:00"
+        );
     }
 
     #[test]

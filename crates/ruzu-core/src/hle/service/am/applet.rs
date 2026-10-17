@@ -389,7 +389,9 @@ impl Applet {
         ctx: &HLERequestContext,
     ) -> Option<u64> {
         Self::ensure_persistent_readable_event_object_id(
-            ctx, &mut self.notification_storage_channel_event, false,
+            ctx,
+            &mut self.notification_storage_channel_event,
+            false,
         )
     }
 
@@ -460,7 +462,8 @@ impl Applet {
     /// Port of Applet::SetInteractibleLocked
     pub fn set_interactible_locked(&mut self, pad_interactible: bool, touch_interactible: bool) {
         if self.is_pad_interactible == pad_interactible
-            && self.is_touch_interactible == touch_interactible {
+            && self.is_touch_interactible == touch_interactible
+        {
             return;
         }
         self.is_pad_interactible = pad_interactible;

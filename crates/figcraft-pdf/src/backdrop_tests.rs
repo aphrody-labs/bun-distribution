@@ -16,17 +16,26 @@ fn solid(d: &mut Document, id: NodeId, hex: &str) {
 pub(crate) fn scene(effect: EffectKind) -> (Document, NodeId, NodeId) {
     let mut d = Document::new("pdf backdrop");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "Frame", 0.0, 0.0, 240.0, 160.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "Frame", 0.0, 0.0, 240.0, 160.0)
+        .unwrap();
     solid(&mut d, f, "E03030");
     d.get_mut(f).unwrap().clip = true;
     for (i, x) in [30.0, 90.0, 150.0].into_iter().enumerate() {
-        let s = d.create(f, NodeKind::Rectangle, "Stripe", x, 0.0, 30.0, 160.0).unwrap();
+        let s = d
+            .create(f, NodeKind::Rectangle, "Stripe", x, 0.0, 30.0, 160.0)
+            .unwrap();
         solid(&mut d, s, if i % 2 == 0 { "2040E0" } else { "20C060" });
     }
-    let pane = d.create(f, NodeKind::Rectangle, "Pane", 80.0, 40.0, 120.0, 80.0).unwrap();
+    let pane = d
+        .create(f, NodeKind::Rectangle, "Pane", 80.0, 40.0, 120.0, 80.0)
+        .unwrap();
     let n = d.get_mut(pane).unwrap();
     n.fills = vec![];
-    n.effects = vec![Effect { kind: effect, visible: true }];
+    n.effects = vec![Effect {
+        kind: effect,
+        visible: true,
+    }];
     (d, f, pane)
 }
 
@@ -47,7 +56,10 @@ pub(crate) fn pdf_vs_png(d: &Document, frame: NodeId, pane: NodeId) -> u8 {
     for y in (inside.y0 * k) as u32..(inside.y1 * k) as u32 {
         for x in (inside.x0 * k) as u32..(inside.x1 * k) as u32 {
             // Pixel (x, y) of the PNG (origin at the frame's corner) in the backdrop image.
-            let (bx, by) = (x - (view.origin.0 * k).round() as u32, y - (view.origin.1 * k).round() as u32);
+            let (bx, by) = (
+                x - (view.origin.0 * k).round() as u32,
+                y - (view.origin.1 * k).round() as u32,
+            );
             let i = ((y * png.width() + x) * 4) as usize;
             let j = ((by * pix.width() + bx) * 4) as usize;
             for c in 0..4 {
@@ -60,7 +72,9 @@ pub(crate) fn pdf_vs_png(d: &Document, frame: NodeId, pane: NodeId) -> u8 {
 
 #[test]
 fn pdf_background_blur_matches_the_png() {
-    let (d, f, pane) = scene(EffectKind::BackgroundBlur(figcraft_doc::Blur::uniform(12.0)));
+    let (d, f, pane) = scene(EffectKind::BackgroundBlur(figcraft_doc::Blur::uniform(
+        12.0,
+    )));
     let diff = pdf_vs_png(&d, f, pane);
     assert!(diff <= 3, "{diff}");
 }
@@ -76,9 +90,13 @@ fn pdf_glass_matches_the_png() {
 fn pdf_places_the_backdrop_image() {
     let images = |d: &Document, f: NodeId| {
         let pdf = crate::export_pdf(d, &[f], &PdfOptions::default()).unwrap();
-        String::from_utf8_lossy(&pdf).matches("/Subtype/Image").count()
+        String::from_utf8_lossy(&pdf)
+            .matches("/Subtype/Image")
+            .count()
     };
-    let (mut d, f, pane) = scene(EffectKind::BackgroundBlur(figcraft_doc::Blur::uniform(12.0)));
+    let (mut d, f, pane) = scene(EffectKind::BackgroundBlur(figcraft_doc::Blur::uniform(
+        12.0,
+    )));
     let with = images(&d, f);
     d.get_mut(pane).unwrap().effects.clear();
     let without = images(&d, f);

@@ -38,11 +38,36 @@ fn local(kind: Arrowhead, w: f64) -> Option<(BezPath, bool, f64)> {
     };
     Some(match kind {
         Arrowhead::None => return None,
-        Arrowhead::Triangle => (poly(&[(0.0, 0.0), (-4.5 * k, 2.0 * k), (-4.5 * k, -2.0 * k)]), false, 4.0 * k),
-        Arrowhead::TriangleWide => (poly(&[(0.0, 0.0), (-4.5 * k, 3.2 * k), (-4.5 * k, -3.2 * k)]), false, 4.0 * k),
-        Arrowhead::Simple => (open(&[(-4.0 * k, 2.5 * k), (-0.5 * k, 0.0), (-4.0 * k, -2.5 * k)]), true, 0.5 * k),
-        Arrowhead::SimpleWide => (open(&[(-3.0 * k, 3.6 * k), (-0.5 * k, 0.0), (-3.0 * k, -3.6 * k)]), true, 0.5 * k),
-        Arrowhead::Barbed => (poly(&[(0.0, 0.0), (-5.0 * k, 2.6 * k), (-3.4 * k, 0.0), (-5.0 * k, -2.6 * k)]), false, 3.4 * k),
+        Arrowhead::Triangle => (
+            poly(&[(0.0, 0.0), (-4.5 * k, 2.0 * k), (-4.5 * k, -2.0 * k)]),
+            false,
+            4.0 * k,
+        ),
+        Arrowhead::TriangleWide => (
+            poly(&[(0.0, 0.0), (-4.5 * k, 3.2 * k), (-4.5 * k, -3.2 * k)]),
+            false,
+            4.0 * k,
+        ),
+        Arrowhead::Simple => (
+            open(&[(-4.0 * k, 2.5 * k), (-0.5 * k, 0.0), (-4.0 * k, -2.5 * k)]),
+            true,
+            0.5 * k,
+        ),
+        Arrowhead::SimpleWide => (
+            open(&[(-3.0 * k, 3.6 * k), (-0.5 * k, 0.0), (-3.0 * k, -3.6 * k)]),
+            true,
+            0.5 * k,
+        ),
+        Arrowhead::Barbed => (
+            poly(&[
+                (0.0, 0.0),
+                (-5.0 * k, 2.6 * k),
+                (-3.4 * k, 0.0),
+                (-5.0 * k, -2.6 * k),
+            ]),
+            false,
+            3.4 * k,
+        ),
         Arrowhead::Curved => {
             let mut p = BezPath::new();
             p.move_to((0.0, 0.0));
@@ -63,15 +88,32 @@ fn local(kind: Arrowhead, w: f64) -> Option<(BezPath, bool, f64)> {
         Arrowhead::Square | Arrowhead::SquareSolid => {
             let h = 2.0 * k;
             let outline = kind == Arrowhead::Square;
-            (poly(&[(-h, -h), (h, -h), (h, h), (-h, h)]), outline, if outline { h } else { 0.0 })
+            (
+                poly(&[(-h, -h), (h, -h), (h, h), (-h, h)]),
+                outline,
+                if outline { h } else { 0.0 },
+            )
         }
-        Arrowhead::Bar => (poly(&[(-0.5 * k, -3.0 * k), (0.5 * k, -3.0 * k), (0.5 * k, 3.0 * k), (-0.5 * k, 3.0 * k)]), false, 0.0),
+        Arrowhead::Bar => (
+            poly(&[
+                (-0.5 * k, -3.0 * k),
+                (0.5 * k, -3.0 * k),
+                (0.5 * k, 3.0 * k),
+                (-0.5 * k, 3.0 * k),
+            ]),
+            false,
+            0.0,
+        ),
     })
 }
 
 /// The path end: its point and the outward direction (unit).
 fn end_of(seg: &PathSeg, at_start: bool) -> (Point, Vec2) {
-    let (t, p) = if at_start { (0.0, seg.start()) } else { (1.0, seg.end()) };
+    let (t, p) = if at_start {
+        (0.0, seg.start())
+    } else {
+        (1.0, seg.end())
+    };
     let mut d = match seg {
         PathSeg::Line(l) => l.p1 - l.p0,
         PathSeg::Quad(q) => q.deriv().eval(t).to_vec2(),
@@ -81,7 +123,14 @@ fn end_of(seg: &PathSeg, at_start: bool) -> (Point, Vec2) {
         d = seg.end() - seg.start();
     }
     let d = if at_start { -d } else { d };
-    (p, if d.hypot() < 1e-12 { Vec2::new(1.0, 0.0) } else { d.normalize() })
+    (
+        p,
+        if d.hypot() < 1e-12 {
+            Vec2::new(1.0, 0.0)
+        } else {
+            d.normalize()
+        },
+    )
 }
 
 /// Shorten a segment by `by` (arc length) at its start or end.
@@ -113,11 +162,16 @@ pub fn apply(bp: &BezPath, st: &Stroke, closed: bool) -> Option<(BezPath, Vec<Ar
     let mut heads = Vec::new();
     let last = segs.len() - 1;
     for (kind, at_start) in [(st.start, true), (st.end, false)] {
-        let Some((shape, outlined, pull)) = local(kind, st.weight) else { continue };
+        let Some((shape, outlined, pull)) = local(kind, st.weight) else {
+            continue;
+        };
         let i = if at_start { 0 } else { last };
         let (tip, dir) = end_of(&segs[i], at_start);
         let xf = Affine::translate(tip.to_vec2()) * Affine::rotate(dir.y.atan2(dir.x));
-        heads.push(ArrowShape { path: xf * shape, outline: outlined.then_some(st.weight.max(0.5) * 0.9) });
+        heads.push(ArrowShape {
+            path: xf * shape,
+            outline: outlined.then_some(st.weight.max(0.5) * 0.9),
+        });
         segs[i] = trim(segs[i], pull, at_start);
     }
     let mut out = BezPath::new();
@@ -144,7 +198,12 @@ mod tests {
         let mut bp = BezPath::new();
         bp.move_to((0.0, 0.0));
         bp.line_to((100.0, 0.0));
-        let st = Stroke { weight: 2.0, start: Arrowhead::Circle, end: Arrowhead::Triangle, ..Stroke::default() };
+        let st = Stroke {
+            weight: 2.0,
+            start: Arrowhead::Circle,
+            end: Arrowhead::Triangle,
+            ..Stroke::default()
+        };
         let (line, heads) = apply(&bp, &st, false).unwrap();
         assert_eq!(heads.len(), 2);
         // The triangle's tip is the path end; its body lies before it.
@@ -156,7 +215,10 @@ mod tests {
         assert!((cb.center().x).abs() < 1e-6, "{cb:?}");
         assert!(heads[0].outline.is_some());
         let lb = kurbo::Shape::bounding_box(&line);
-        assert!((lb.x0 - 4.4).abs() < 1e-3 && (lb.x1 - 92.0).abs() < 1e-3, "{lb:?}");
+        assert!(
+            (lb.x0 - 4.4).abs() < 1e-3 && (lb.x1 - 92.0).abs() < 1e-3,
+            "{lb:?}"
+        );
         // Closed paths and plain strokes are left alone.
         assert!(apply(&bp, &st, true).is_none());
         assert!(apply(&bp, &Stroke::default(), false).is_none());
@@ -167,7 +229,11 @@ mod tests {
         let mut bp = BezPath::new();
         bp.move_to((0.0, 0.0));
         bp.curve_to((50.0, 0.0), (100.0, 50.0), (100.0, 100.0));
-        let st = Stroke { weight: 1.0, end: Arrowhead::Bar, ..Stroke::default() };
+        let st = Stroke {
+            weight: 1.0,
+            end: Arrowhead::Bar,
+            ..Stroke::default()
+        };
         let (_, heads) = apply(&bp, &st, false).unwrap();
         // Ends heading straight down: the bar lies across, horizontally.
         let b = kurbo::Shape::bounding_box(&heads[0].path);

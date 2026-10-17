@@ -17,21 +17,46 @@ fn setup() -> (Project, ItemId, Comp) {
     // Exact float maths; 8/16 bpc quantisation has its own tests (tests_color).
     p.settings.bit_depth = effectcraft_project::BitDepth::Bpc32;
     let comp = Comp::new(W, H, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let cid = p.add_item(
+        "Comp",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     (p, cid, comp)
 }
 
 /// A 3D solid of `w`×`h` centred at `pos`.
 fn solid3(p: &mut Project, comp: &Comp, color: [f32; 3], w: u32, h: u32, pos: [f64; 3]) -> Layer {
-    let sid = p.add_item("Solid", Label::Red, None, ItemKind::Solid(Solid { color, width: w, height: h, pixel_aspect: 1.0 }));
-    let mut l = build::layer(p, comp, "Solid", LayerSource::Solid { item: sid }, (w, h), None);
+    let sid = p.add_item(
+        "Solid",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color,
+            width: w,
+            height: h,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut l = build::layer(
+        p,
+        comp,
+        "Solid",
+        LayerSource::Solid { item: sid },
+        (w, h),
+        None,
+    );
     l.switches.three_d = true;
     set(&mut l, "transform/position", Value::Vec3(pos));
     l
 }
 
 fn set(l: &mut Layer, path: &str, v: Value) {
-    l.props.prop_mut(path).unwrap_or_else(|| panic!("no {path}")).value = v;
+    l.props
+        .prop_mut(path)
+        .unwrap_or_else(|| panic!("no {path}"))
+        .value = v;
 }
 
 fn push(p: &mut Project, cid: ItemId, l: Layer) {
@@ -70,7 +95,14 @@ fn z0_plane_matches_2d() {
 fn farther_layers_project_smaller() {
     let (mut p, cid, comp) = setup();
     // At z = zoom the plane is twice as far from the eye: half size around the comp centre.
-    let l = solid3(&mut p, &comp, [0.0, 1.0, 0.0], 80, 40, [100.0, 50.0, zoom()]);
+    let l = solid3(
+        &mut p,
+        &comp,
+        [0.0, 1.0, 0.0],
+        80,
+        40,
+        [100.0, 50.0, zoom()],
+    );
     push(&mut p, cid, l);
     let img = render(&p, cid);
     // 40×20 centred on (100, 50): x 80..120, y 40..60.
@@ -87,9 +119,17 @@ fn projection_math_matches_camera_state() {
     let p = pr.apply(vec3(100.0, 200.0, 0.0));
     assert!((p.x - 100.0).abs() < 1e-6 && (p.y - 200.0).abs() < 1e-6);
     // A point at depth 2·zoom maps halfway to the centre.
-    let q = cam.project(1920.0, 1080.0, vec3(0.0, 0.0, cam.zoom)).unwrap();
-    assert!((q.x - 480.0).abs() < 1e-6 && (q.y - 270.0).abs() < 1e-6, "{q:?}");
-    assert!(cam.project(1920.0, 1080.0, vec3(960.0, 540.0, -cam.zoom - 10.0)).is_none());
+    let q = cam
+        .project(1920.0, 1080.0, vec3(0.0, 0.0, cam.zoom))
+        .unwrap();
+    assert!(
+        (q.x - 480.0).abs() < 1e-6 && (q.y - 270.0).abs() < 1e-6,
+        "{q:?}"
+    );
+    assert!(
+        cam.project(1920.0, 1080.0, vec3(960.0, 540.0, -cam.zoom - 10.0))
+            .is_none()
+    );
 }
 
 #[test]
@@ -102,14 +142,30 @@ fn y_rotation_foreshortens_with_correct_perspective() {
     // cos 60° = 0.5: roughly half as wide; the near edge (right, z<0) is taller than the far edge.
     assert!(img.get(100, 50)[3] > 0.99);
     assert!(img.get(140, 50)[3] < 0.01);
-    let col_h = |x: u32| (0..H).filter(|&y| img.get(x as i64, y as i64)[3] > 0.5).count();
-    assert!(col_h(122) > col_h(78), "near edge {} vs far edge {}", col_h(122), col_h(78));
+    let col_h = |x: u32| {
+        (0..H)
+            .filter(|&y| img.get(x as i64, y as i64)[3] > 0.5)
+            .count()
+    };
+    assert!(
+        col_h(122) > col_h(78),
+        "near edge {} vs far edge {}",
+        col_h(122),
+        col_h(78)
+    );
 }
 
 #[test]
 fn layer_behind_camera_is_clipped() {
     let (mut p, cid, comp) = setup();
-    let l = solid3(&mut p, &comp, [1.0, 0.0, 0.0], 200, 100, [100.0, 50.0, -zoom() - 50.0]);
+    let l = solid3(
+        &mut p,
+        &comp,
+        [1.0, 0.0, 0.0],
+        200,
+        100,
+        [100.0, 50.0, -zoom() - 50.0],
+    );
     push(&mut p, cid, l);
     let img = render(&p, cid);
     assert!(img.data.iter().all(|px| px[3] == 0.0));
@@ -120,7 +176,14 @@ fn layer_behind_camera_is_clipped() {
 #[test]
 fn nearer_layer_wins_regardless_of_stack_order() {
     let (mut p, cid, comp) = setup();
-    let far = solid3(&mut p, &comp, [1.0, 0.0, 0.0], 600, 300, [100.0, 50.0, 200.0]);
+    let far = solid3(
+        &mut p,
+        &comp,
+        [1.0, 0.0, 0.0],
+        600,
+        300,
+        [100.0, 50.0, 200.0],
+    );
     let near = solid3(&mut p, &comp, [0.0, 1.0, 0.0], 40, 40, [100.0, 50.0, 0.0]);
     // Far layer is on top of the stack.
     push(&mut p, cid, far);
@@ -151,17 +214,46 @@ fn intersecting_planes_split_per_pixel() {
     push(&mut p, cid, tilted);
     push(&mut p, cid, flat);
     let img = render(&p, cid);
-    assert_eq!(img.get(125, 50), [0.0, 1.0, 0.0, 1.0], "right: tilted plane in front");
-    assert_eq!(img.get(75, 50), [1.0, 0.0, 0.0, 1.0], "left: flat plane in front");
+    assert_eq!(
+        img.get(125, 50),
+        [0.0, 1.0, 0.0, 1.0],
+        "right: tilted plane in front"
+    );
+    assert_eq!(
+        img.get(75, 50),
+        [1.0, 0.0, 0.0, 1.0],
+        "left: flat plane in front"
+    );
 }
 
 #[test]
 fn two_d_layer_breaks_3d_group() {
     let (mut p, cid, comp) = setup();
     let far_top = solid3(&mut p, &comp, [1.0, 0.0, 0.0], 60, 60, [100.0, 50.0, 300.0]);
-    let sid = p.add_item("S2", Label::Red, None, ItemKind::Solid(Solid { color: [0.0, 0.0, 1.0], width: 20, height: 100, pixel_aspect: 1.0 }));
-    let mut two_d = build::layer(&mut p, &comp, "2D", LayerSource::Solid { item: sid }, (20, 100), None);
-    set(&mut two_d, "transform/position", Value::Vec3([100.0, 50.0, 0.0]));
+    let sid = p.add_item(
+        "S2",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [0.0, 0.0, 1.0],
+            width: 20,
+            height: 100,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut two_d = build::layer(
+        &mut p,
+        &comp,
+        "2D",
+        LayerSource::Solid { item: sid },
+        (20, 100),
+        None,
+    );
+    set(
+        &mut two_d,
+        "transform/position",
+        Value::Vec3([100.0, 50.0, 0.0]),
+    );
     let near_bottom = solid3(&mut p, &comp, [0.0, 1.0, 0.0], 200, 100, [100.0, 50.0, 0.0]);
     // Stack: far 3D (top), 2D, near 3D (bottom). The far layer is a separate group above the
     // 2D layer, so it draws over everything even though it is farther away.
@@ -198,7 +290,10 @@ fn head_on_point_light_scales_by_diffuse() {
     let img = render(&p, cid);
     let c = img.get(100, 50);
     // Diffuse 50% · N·L = 1 · intensity 100%.
-    assert!(close(c[0], 0.5, 1e-3) && close(c[1], 0.4, 1e-3) && close(c[2], 0.3, 1e-3), "{c:?}");
+    assert!(
+        close(c[0], 0.5, 1e-3) && close(c[1], 0.4, 1e-3) && close(c[2], 0.3, 1e-3),
+        "{c:?}"
+    );
     // Off-axis pixels are lit at a grazing angle → darker.
     assert!(img.get(2, 2)[0] < c[0]);
 }
@@ -239,7 +334,11 @@ fn light_behind_layer_needs_transmission() {
     assert!(render(&p, cid).get(100, 50)[0] < 1e-4);
     // 100% transmission passes the light through the layer.
     let c = p.comp_mut(cid).unwrap();
-    set(&mut c.layers[1], "materialOptions/lightTransmission", Value::Scalar(100.0));
+    set(
+        &mut c.layers[1],
+        "materialOptions/lightTransmission",
+        Value::Scalar(100.0),
+    );
     let v = render(&p, cid).get(100, 50)[0];
     assert!(close(v, 0.5, 1e-3), "{v}");
 }
@@ -275,10 +374,18 @@ fn spot_cone_limits_light() {
 
 #[test]
 fn falloff_inverse_square_clamped() {
-    let mut ls = LightState::from_layer(&crate::EvalCtx::new(&Project::default(), ItemId(0), &Comp::new(W, H, FrameRate::FPS_30, Tick::ZERO), Tick::ZERO), &{
-        let (mut p, _, comp) = setup();
-        light(&mut p, &comp, LightKind::Point, [0.0, 0.0, 0.0])
-    })
+    let mut ls = LightState::from_layer(
+        &crate::EvalCtx::new(
+            &Project::default(),
+            ItemId(0),
+            &Comp::new(W, H, FrameRate::FPS_30, Tick::ZERO),
+            Tick::ZERO,
+        ),
+        &{
+            let (mut p, _, comp) = setup();
+            light(&mut p, &comp, LightKind::Point, [0.0, 0.0, 0.0])
+        },
+    )
     .unwrap();
     ls.falloff = 2;
     ls.radius = 100.0;
@@ -295,7 +402,14 @@ fn falloff_inverse_square_clamped() {
 #[test]
 fn caster_shadows_receiver() {
     let (mut p, cid, comp) = setup();
-    let mut recv = solid3(&mut p, &comp, [1.0, 1.0, 1.0], 200, 100, [100.0, 50.0, 100.0]);
+    let mut recv = solid3(
+        &mut p,
+        &comp,
+        [1.0, 1.0, 1.0],
+        200,
+        100,
+        [100.0, 50.0, 100.0],
+    );
     no_specular(&mut recv);
     let mut caster = solid3(&mut p, &comp, [1.0, 1.0, 1.0], 20, 20, [60.0, 50.0, 0.0]);
     no_specular(&mut caster);
@@ -313,19 +427,37 @@ fn caster_shadows_receiver() {
     // Light from the left (direction (300, 0, 500)): the shadow shifts +60 px at the receiver's
     // depth, to world x 110..130 → screen ≈ 107..122.
     let c = p.comp_mut(cid).unwrap();
-    set(&mut c.layers[0], "transform/position", Value::Vec3([100.0 - 300.0, 50.0, -500.0]));
+    set(
+        &mut c.layers[0],
+        "transform/position",
+        Value::Vec3([100.0 - 300.0, 50.0, -500.0]),
+    );
     let img = render(&p, cid);
     let lit = img.get(150, 50)[0];
     let expect = 0.5 * (500.0 / (300.0f64 * 300.0 + 500.0 * 500.0).sqrt()) as f32;
     assert!(close(lit, expect, 1e-3), "lit {lit} vs {expect}");
-    assert!(img.get(115, 50)[0] < 1e-3, "shadowed {:?}", img.get(115, 50));
-    assert!(close(img.get(60, 50)[0], expect, 1e-3), "caster itself is lit");
+    assert!(
+        img.get(115, 50)[0] < 1e-3,
+        "shadowed {:?}",
+        img.get(115, 50)
+    );
+    assert!(
+        close(img.get(60, 50)[0], expect, 1e-3),
+        "caster itself is lit"
+    );
 }
 
 #[test]
 fn shadow_darkness_and_accepts_off() {
     let (mut p, cid, comp) = setup();
-    let mut recv = solid3(&mut p, &comp, [1.0, 1.0, 1.0], 400, 200, [100.0, 50.0, 100.0]);
+    let mut recv = solid3(
+        &mut p,
+        &comp,
+        [1.0, 1.0, 1.0],
+        400,
+        200,
+        [100.0, 50.0, 100.0],
+    );
     no_specular(&mut recv);
     let mut caster = solid3(&mut p, &comp, [1.0, 1.0, 1.0], 400, 200, [100.0, 50.0, 0.0]);
     set(&mut caster, "materialOptions/castsShadows", Value::Enum(2)); // Only: invisible caster
@@ -339,7 +471,11 @@ fn shadow_darkness_and_accepts_off() {
     let v = render(&p, cid).get(100, 50)[0];
     assert!(close(v, 0.25, 1e-3), "half-dark shadow: {v}");
     let c = p.comp_mut(cid).unwrap();
-    set(&mut c.layers[2], "materialOptions/acceptsShadows", Value::Enum(0));
+    set(
+        &mut c.layers[2],
+        "materialOptions/acceptsShadows",
+        Value::Enum(0),
+    );
     let v = render(&p, cid).get(100, 50)[0];
     assert!(close(v, 0.5, 1e-3), "no shadow accepted: {v}");
 }
@@ -354,7 +490,10 @@ fn camera(p: &mut Project, comp: &Comp) -> Layer {
 fn default_camera_layer_matches_comp_camera() {
     let (mut p, cid, comp) = setup();
     let cam = camera(&mut p, &comp);
-    assert_eq!(cam.props.prop("cameraOptions/zoom").unwrap().value.as_f64(), zoom());
+    assert_eq!(
+        cam.props.prop("cameraOptions/zoom").unwrap().value.as_f64(),
+        zoom()
+    );
     let s = solid3(&mut p, &comp, [1.0, 0.0, 0.0], 40, 20, [50.0, 30.0, 0.0]);
     push(&mut p, cid, s.clone());
     let a = render(&p, cid);
@@ -369,7 +508,11 @@ fn two_node_camera_looks_at_poi() {
     let mut cam = camera(&mut p, &comp);
     // Look at a layer far to the right: it lands in the middle of the frame.
     set(&mut cam, "transform/poi", Value::Vec3([600.0, 50.0, 0.0]));
-    set(&mut cam, "transform/position", Value::Vec3([600.0, 50.0, -zoom()]));
+    set(
+        &mut cam,
+        "transform/position",
+        Value::Vec3([600.0, 50.0, -zoom()]),
+    );
     let s = solid3(&mut p, &comp, [0.0, 0.0, 1.0], 20, 20, [600.0, 50.0, 0.0]);
     push(&mut p, cid, cam);
     push(&mut p, cid, s);
@@ -383,9 +526,17 @@ fn one_node_camera_uses_orientation() {
     let (mut p, cid, comp) = setup();
     let mut cam = camera(&mut p, &comp);
     cam.auto_orient = effectcraft_project::AutoOrient::Off;
-    set(&mut cam, "transform/position", Value::Vec3([100.0, 50.0, 0.0]));
+    set(
+        &mut cam,
+        "transform/position",
+        Value::Vec3([100.0, 50.0, 0.0]),
+    );
     // Turn to look along +x.
-    set(&mut cam, "transform/orientation", Value::Vec3(orientation_for(vec3(1.0, 0.0, 0.0))));
+    set(
+        &mut cam,
+        "transform/orientation",
+        Value::Vec3(orientation_for(vec3(1.0, 0.0, 0.0))),
+    );
     let mut s = solid3(&mut p, &comp, [1.0, 1.0, 0.0], 40, 40, [400.0, 50.0, 0.0]);
     set(&mut s, "transform/rotationY", Value::Scalar(90.0));
     push(&mut p, cid, cam);
@@ -396,7 +547,12 @@ fn one_node_camera_uses_orientation() {
 
 #[test]
 fn orientation_for_round_trips() {
-    for d in [vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(-0.3, 0.4, 0.8), vec3(0.2, -0.9, -0.1)] {
+    for d in [
+        vec3(1.0, 0.0, 0.0),
+        vec3(0.0, 0.0, 1.0),
+        vec3(-0.3, 0.4, 0.8),
+        vec3(0.2, -0.9, -0.1),
+    ] {
         let o = orientation_for(d);
         let f = effectcraft_geom::Mat4::orientation(Vec3::from(o)).apply_vec(vec3(0.0, 0.0, 1.0));
         assert!((f - d.normalize()).length() < 1e-9, "{d:?} → {o:?} → {f:?}");
@@ -416,7 +572,11 @@ fn depth_of_field_blurs_out_of_focus_layers() {
     let a = render(&p, cid);
     assert!(a.get(71, 50)[3] > 0.99 && a.get(69, 50)[3] < 0.01);
     let c = p.comp_mut(cid).unwrap();
-    set(&mut c.layers[0], "cameraOptions/focusDistance", Value::Scalar(zoom() * 0.5));
+    set(
+        &mut c.layers[0],
+        "cameraOptions/focusDistance",
+        Value::Scalar(zoom() * 0.5),
+    );
     let b = render(&p, cid);
     let e = b.get(70, 50)[3];
     assert!(e > 0.1 && e < 0.9, "soft edge {e}");
@@ -425,7 +585,9 @@ fn depth_of_field_blurs_out_of_focus_layers() {
 
 /// Pixels in column `x` whose alpha is strictly between 0.05 and 0.95.
 fn soft_px(img: &effectcraft_raster::Image, x: i64) -> usize {
-    (0..img.height as i64).filter(|&y| (0.05..0.95).contains(&img.get(x, y)[3])).count()
+    (0..img.height as i64)
+        .filter(|&y| (0.05..0.95).contains(&img.get(x, y)[3]))
+        .count()
 }
 
 #[test]
@@ -445,7 +607,11 @@ fn tilted_layer_blurs_progressively_with_depth() {
     let xs: Vec<i64> = (0..W as i64).filter(|&x| img.get(x, 50)[3] > 0.5).collect();
     let (x0, x1) = (xs[0], *xs.last().unwrap());
     let at = |f: f64| x0 + ((x1 - x0) as f64 * f) as i64;
-    let (centre, left, right) = (soft_px(&img, 100), soft_px(&img, at(0.1)), soft_px(&img, at(0.9)));
+    let (centre, left, right) = (
+        soft_px(&img, 100),
+        soft_px(&img, at(0.1)),
+        soft_px(&img, at(0.9)),
+    );
     assert!(centre <= 2, "centre {centre}");
     assert!(left >= 4 && right >= 4, "ends {left} {right}");
 }
@@ -458,10 +624,18 @@ fn iris_shape_and_highlights_shape_the_bokeh() {
         let mut cam = camera(&mut p, &comp);
         set(&mut cam, "cameraOptions/dof", Value::Bool(true));
         set(&mut cam, "cameraOptions/aperture", Value::Scalar(120.0));
-        set(&mut cam, "cameraOptions/focusDistance", Value::Scalar(zoom() * 0.5));
+        set(
+            &mut cam,
+            "cameraOptions/focusDistance",
+            Value::Scalar(zoom() * 0.5),
+        );
         set(&mut cam, "cameraOptions/irisShape", Value::Enum(shape));
         set(&mut cam, "cameraOptions/highlightGain", Value::Scalar(gain));
-        set(&mut cam, "cameraOptions/highlightThreshold", Value::Scalar(200.0));
+        set(
+            &mut cam,
+            "cameraOptions/highlightThreshold",
+            Value::Scalar(200.0),
+        );
         let s = solid3(&mut p, &comp, [1.0, 1.0, 1.0], 2, 2, [100.0, 50.0, 0.0]);
         push(&mut p, cid, cam);
         push(&mut p, cid, s);
@@ -469,15 +643,34 @@ fn iris_shape_and_highlights_shape_the_bokeh() {
     };
     let area = |img: &effectcraft_raster::Image| img.data.iter().filter(|q| q[3] > 1e-4).count();
     let (tri, dec, rect) = (spot(1, 0.0), spot(8, 0.0), spot(0, 0.0));
-    assert!(area(&tri) * 3 < area(&dec) * 2, "triangle {} vs decagon {}", area(&tri), area(&dec));
+    assert!(
+        area(&tri) * 3 < area(&dec) * 2,
+        "triangle {} vs decagon {}",
+        area(&tri),
+        area(&dec)
+    );
     // Fast Rectangle: a box.
-    let (x0, x1) = (0..W as i64).filter(|&x| rect.get(x, 50)[3] > 1e-4).fold((i64::MAX, 0), |(a, b), x| (a.min(x), b.max(x)));
-    let y_extent = (0..H as i64).filter(|&y| rect.get(100, y)[3] > 1e-4).count() as i64;
-    assert!(((x1 - x0 + 1) - y_extent).abs() <= 2, "square box {} vs {}", x1 - x0 + 1, y_extent);
+    let (x0, x1) = (0..W as i64)
+        .filter(|&x| rect.get(x, 50)[3] > 1e-4)
+        .fold((i64::MAX, 0), |(a, b), x| (a.min(x), b.max(x)));
+    let y_extent = (0..H as i64)
+        .filter(|&y| rect.get(100, y)[3] > 1e-4)
+        .count() as i64;
+    assert!(
+        ((x1 - x0 + 1) - y_extent).abs() <= 2,
+        "square box {} vs {}",
+        x1 - x0 + 1,
+        y_extent
+    );
     // Highlight Gain brightens the blurred highlight.
     let lit = spot(8, 100.0);
     let sum = |img: &effectcraft_raster::Image| img.data.iter().map(|q| q[0]).sum::<f32>();
-    assert!(sum(&lit) > sum(&dec) * 1.5, "{} vs {}", sum(&lit), sum(&dec));
+    assert!(
+        sum(&lit) > sum(&dec) * 1.5,
+        "{} vs {}",
+        sum(&lit),
+        sum(&dec)
+    );
 }
 
 // ---------------------------------------------------------------- views
@@ -496,12 +689,22 @@ fn front_view_is_orthographic() {
     let (mut p, cid, comp) = setup();
     // In an orthographic view depth doesn't change size.
     let a = solid3(&mut p, &comp, [1.0, 0.0, 0.0], 40, 40, [60.0, 50.0, 0.0]);
-    let b = solid3(&mut p, &comp, [0.0, 1.0, 0.0], 40, 40, [140.0, 50.0, 1000.0]);
+    let b = solid3(
+        &mut p,
+        &comp,
+        [0.0, 1.0, 0.0],
+        40,
+        40,
+        [140.0, 50.0, 1000.0],
+    );
     push(&mut p, cid, a);
     push(&mut p, cid, b);
     let mut vc = default_view_cam(View3D::Front, W as f64, H as f64);
     vc.zoom = 1.0;
-    let opts = RenderOpts { view: Some(vc.state()), ..Default::default() };
+    let opts = RenderOpts {
+        view: Some(vc.state()),
+        ..Default::default()
+    };
     let img = Renderer::new(&p, &NoFootage, opts).comp_frame(cid, Tick::ZERO);
     assert!(img.get(41, 50)[0] > 0.99 && img.get(39, 50)[3] < 0.01);
     assert!(img.get(121, 50)[1] > 0.99 && img.get(159, 50)[1] > 0.99 && img.get(161, 50)[3] < 0.01);
@@ -517,7 +720,10 @@ fn top_view_sees_planes_edge_on() {
     push(&mut p, cid, b);
     let mut vc = default_view_cam(View3D::Top, W as f64, H as f64);
     vc.zoom = 1.0;
-    let opts = RenderOpts { view: Some(vc.state()), ..Default::default() };
+    let opts = RenderOpts {
+        view: Some(vc.state()),
+        ..Default::default()
+    };
     let img = Renderer::new(&p, &NoFootage, opts).comp_frame(cid, Tick::ZERO);
     // From the top, the X-rotated plane is a 100×100 square; the upright one is a line.
     assert!(img.get(100, 30)[1] > 0.99 && img.get(100, 70)[1] > 0.99);

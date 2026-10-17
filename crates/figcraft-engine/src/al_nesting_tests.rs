@@ -29,7 +29,8 @@ fn frame(s: &mut Session, parent: Option<NodeId>, x: f64, y: f64, w: f64, h: f64
 }
 
 fn set(s: &mut Session, node: NodeId, props: Value) {
-    s.execute("node.set", &json!({"id": node, "props": props})).unwrap();
+    s.execute("node.set", &json!({"id": node, "props": props}))
+        .unwrap();
 }
 
 fn bounds(s: &Session, node: NodeId) -> Rect {
@@ -62,7 +63,8 @@ fn ev(kind: PointerKind, p: Point) -> PointerEvent {
 /// overlay, then releases with [`release`]).
 fn drag_to(s: &mut Session, from: Point, to: Point) {
     s.pointer(&ev(PointerKind::Down, from)).unwrap();
-    s.pointer(&ev(PointerKind::Move, from.lerp(to, 0.5))).unwrap();
+    s.pointer(&ev(PointerKind::Move, from.lerp(to, 0.5)))
+        .unwrap();
     s.pointer(&ev(PointerKind::Move, to)).unwrap();
 }
 
@@ -93,12 +95,31 @@ fn nest(s: &mut Session) -> Nest {
     let inner = frame(s, Some(outer), 0.0, 100.0, 200.0, 60.0);
     let x = rect(s, Some(inner), 0.0, 0.0, 50.0, 50.0);
     let y = rect(s, Some(inner), 60.0, 0.0, 50.0, 50.0);
-    s.execute("layout.add", &json!({"ids": [inner], "direction": "horizontal"})).unwrap();
+    s.execute(
+        "layout.add",
+        &json!({"ids": [inner], "direction": "horizontal"}),
+    )
+    .unwrap();
     set(s, inner, json!({"padding": 10, "gap": 10}));
-    s.execute("layout.add", &json!({"ids": [outer], "direction": "vertical"})).unwrap();
-    set(s, outer, json!({"padding": 10, "gap": 10, "sizingH": "fixed", "width": 300}));
+    s.execute(
+        "layout.add",
+        &json!({"ids": [outer], "direction": "vertical"}),
+    )
+    .unwrap();
+    set(
+        s,
+        outer,
+        json!({"padding": 10, "gap": 10, "sizingH": "fixed", "width": 300}),
+    );
     s.execute("select.none", &json!({})).unwrap();
-    Nest { outer, a, b, inner, x, y }
+    Nest {
+        outer,
+        a,
+        b,
+        inner,
+        x,
+        y,
+    }
 }
 
 #[test]
@@ -112,9 +133,16 @@ fn drag_into_a_nested_auto_layout_frame_takes_the_slot_there() {
     let from = bounds(&s, n.a).center();
     drag_to(&mut s, from, to);
     let ov = &s.tool.overlay;
-    assert_eq!(ov.drop_target, Some(n.inner), "the receiving frame is outlined");
+    assert_eq!(
+        ov.drop_target,
+        Some(n.inner),
+        "the receiving frame is outlined"
+    );
     let line = ov.insert_line.expect("insertion line");
-    assert!(line[0] == line[2] && line[0] < bounds(&s, n.y).x0, "a vertical line before y: {line:?}");
+    assert!(
+        line[0] == line[2] && line[0] < bounds(&s, n.y).x0,
+        "a vertical line before y: {line:?}"
+    );
     // The preview shows a in its slot already; the line marks it there, mid-gap (gap 10).
     assert_eq!(line[0], bounds(&s, n.a).x0 - 5.0);
     assert!(ov.guides.is_empty());
@@ -125,7 +153,10 @@ fn drag_into_a_nested_auto_layout_frame_takes_the_slot_there() {
     // Laid out in the row: x, then a, then y.
     assert!(bounds(&s, n.a).x0 > bounds(&s, n.x).x1 && bounds(&s, n.y).x0 > bounds(&s, n.a).x1);
     let ov = &s.tool.overlay;
-    assert!(ov.insert_line.is_none() && ov.drop_target.is_none(), "the overlay clears on release");
+    assert!(
+        ov.insert_line.is_none() && ov.drop_target.is_none(),
+        "the overlay clears on release"
+    );
     // One undo step puts everything back.
     assert_eq!(s.ds().unwrap().history.undo.len(), undo_depth + 1);
     s.undo().unwrap();
@@ -144,7 +175,10 @@ fn drag_out_of_a_nested_frame_into_its_parent_layout() {
     drag_to(&mut s, from, to);
     assert_eq!(s.tool.overlay.drop_target, Some(n.outer));
     let line = s.tool.overlay.insert_line.expect("insertion line");
-    assert!(line[1] == line[3], "a horizontal line in a column: {line:?}");
+    assert!(
+        line[1] == line[3],
+        "a horizontal line in a column: {line:?}"
+    );
     release(&mut s, to);
     assert_eq!(kids(&s, n.outer), vec![n.a, n.x, n.b, n.inner]);
     assert_eq!(kids(&s, n.inner), vec![n.y]);
@@ -168,14 +202,23 @@ fn the_dragged_frame_never_receives_itself_and_plain_frames_in_a_flow_are_items(
     assert_eq!(kids(&s, n.inner), vec![n.x, n.y]);
     // A list of plain cards: dropping onto a card inserts next to it rather than into it.
     let list = frame(&mut s, None, 500.0, 0.0, 200.0, 400.0);
-    let cards: Vec<NodeId> = (0..3).map(|i| frame(&mut s, Some(list), 0.0, i as f64 * 70.0, 150.0, 60.0)).collect();
-    s.execute("layout.add", &json!({"ids": [list], "direction": "vertical"})).unwrap();
+    let cards: Vec<NodeId> = (0..3)
+        .map(|i| frame(&mut s, Some(list), 0.0, i as f64 * 70.0, 150.0, 60.0))
+        .collect();
+    s.execute(
+        "layout.add",
+        &json!({"ids": [list], "direction": "vertical"}),
+    )
+    .unwrap();
     s.execute("select.none", &json!({})).unwrap();
     let card0 = bounds(&s, cards[0]);
     let grab = Point::new(bounds(&s, cards[2]).x0 + 3.0, bounds(&s, cards[2]).y0 + 3.0);
     let to = Point::new(card0.center().x, card0.y0 + 5.0);
     drag_to(&mut s, grab, to);
-    assert_eq!(s.tool.overlay.drop_target, None, "reordering in its own list");
+    assert_eq!(
+        s.tool.overlay.drop_target, None,
+        "reordering in its own list"
+    );
     assert!(s.tool.overlay.insert_line.is_some());
     release(&mut s, to);
     assert_eq!(kids(&s, list), vec![cards[2], cards[0], cards[1]]);
@@ -186,7 +229,11 @@ fn the_dragged_frame_never_receives_itself_and_plain_frames_in_a_flow_are_items(
     s.ds_mut().unwrap().view.snap_objects = false;
     select(&mut s, dot);
     let start = bounds(&s, dot);
-    drag(&mut s, start.center(), start.center() + figcraft_geom::Vec2::new(30.0, 5.0));
+    drag(
+        &mut s,
+        start.center(),
+        start.center() + figcraft_geom::Vec2::new(30.0, 5.0),
+    );
     assert_eq!(parent(&s, dot), card);
     assert_eq!(bounds(&s, dot).x0, start.x0 + 30.0);
     let below = bounds(&s, cards[1]);
@@ -201,15 +248,21 @@ fn slots_skip_children_that_ignore_auto_layout() {
     let row = frame(&mut s, None, 0.0, 0.0, 400.0, 100.0);
     let a = rect(&mut s, Some(row), 0.0, 0.0, 50.0, 50.0);
     let b = rect(&mut s, Some(row), 60.0, 0.0, 50.0, 50.0);
-    s.execute("layout.add", &json!({"ids": [row], "direction": "horizontal"})).unwrap();
+    s.execute(
+        "layout.add",
+        &json!({"ids": [row], "direction": "horizontal"}),
+    )
+    .unwrap();
     set(&mut s, row, json!({"sizingH": "fixed", "width": 400}));
     // A badge pinned at the far right, first in the layer order.
     let badge = rect(&mut s, Some(row), 350.0, 0.0, 20.0, 20.0);
     set(&mut s, badge, json!({"absolute": true}));
-    s.execute("node.reorder", &json!({"id": badge, "index": 0})).unwrap();
+    s.execute("node.reorder", &json!({"id": badge, "index": 0}))
+        .unwrap();
     let hidden = rect(&mut s, Some(row), 0.0, 0.0, 20.0, 20.0);
     set(&mut s, hidden, json!({"visible": false}));
-    s.execute("node.reorder", &json!({"id": hidden, "index": 0})).unwrap();
+    s.execute("node.reorder", &json!({"id": hidden, "index": 0}))
+        .unwrap();
     s.execute("select.none", &json!({})).unwrap();
     assert_eq!(kids(&s, row), vec![hidden, badge, a, b]);
     // b goes before a: the line sits at a's left edge, not at the badge or the hidden layer.
@@ -221,7 +274,10 @@ fn slots_skip_children_that_ignore_auto_layout() {
     // b now sits where a started; the line is mid-gap before it (gap 10).
     assert!((line[0] - (a_left - 5.0)).abs() < 1e-9, "{line:?}");
     release(&mut s, to);
-    let order: Vec<NodeId> = kids(&s, row).into_iter().filter(|k| *k == a || *k == b).collect();
+    let order: Vec<NodeId> = kids(&s, row)
+        .into_iter()
+        .filter(|k| *k == a || *k == b)
+        .collect();
     assert_eq!(order, vec![b, a]);
 }
 
@@ -243,7 +299,10 @@ fn drag_out_of_auto_layout_to_the_canvas_or_a_plain_frame() {
     let page = s.page().unwrap();
     assert_eq!(parent(&s, n.a), page);
     let b = bounds(&s, n.a);
-    assert_eq!((b.x0, b.y0), (start.x0 + to.x - from.x, start.y0 + to.y - from.y));
+    assert_eq!(
+        (b.x0, b.y0),
+        (start.x0 + to.x - from.x, start.y0 + to.y - from.y)
+    );
     // It filled the column; out of auto layout that becomes its fixed width.
     assert_eq!(sizing(&s, n.a), (Sizing::Fixed, Sizing::Fixed));
     assert_eq!(b.width(), start.width());
@@ -256,7 +315,10 @@ fn drag_out_of_auto_layout_to_the_canvas_or_a_plain_frame() {
     release(&mut s, to);
     assert_eq!(parent(&s, n.x), plain);
     let b = bounds(&s, n.x);
-    assert_eq!((b.x0, b.y0), (start.x0 + to.x - from.x, start.y0 + to.y - from.y));
+    assert_eq!(
+        (b.x0, b.y0),
+        (start.x0 + to.x - from.x, start.y0 + to.y - from.y)
+    );
     assert_eq!(kids(&s, n.inner), vec![n.y]);
     s.undo().unwrap();
     assert_eq!(kids(&s, n.inner), vec![n.x, n.y], "one undo step");
@@ -287,7 +349,11 @@ fn fill_and_hug_stay_coherent() {
     set(&mut s, n.x, json!({"sizingH": "fill"}));
     assert_eq!(sizing(&s, n.inner).0, Sizing::Fixed);
     assert_eq!(bounds(&s, n.inner).width(), w);
-    assert_eq!(bounds(&s, n.x).width(), 50.0, "it fills what its content left");
+    assert_eq!(
+        bounds(&s, n.x).width(),
+        50.0,
+        "it fills what its content left"
+    );
     // Back to hug: the child that filled it becomes fixed at its size.
     set(&mut s, n.inner, json!({"sizingH": "hug"}));
     assert_eq!(sizing(&s, n.x).0, Sizing::Fixed);
@@ -296,11 +362,18 @@ fn fill_and_hug_stay_coherent() {
     // own fill in the column is kept.
     set(&mut s, n.y, json!({"sizingV": "fill"}));
     set(&mut s, n.inner, json!({"sizingH": "fill"}));
-    s.execute("layout.remove", &json!({"ids": [n.inner]})).unwrap();
+    s.execute("layout.remove", &json!({"ids": [n.inner]}))
+        .unwrap();
     assert_eq!(sizing(&s, n.y), (Sizing::Fixed, Sizing::Fixed));
     assert_eq!(sizing(&s, n.inner), (Sizing::Fill, Sizing::Fixed));
     // Fill without an auto layout parent is refused.
-    assert!(s.execute("node.set", &json!({"id": n.y, "props": {"sizingH": "fill"}})).is_err());
+    assert!(
+        s.execute(
+            "node.set",
+            &json!({"id": n.y, "props": {"sizingH": "fill"}})
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -310,11 +383,22 @@ fn fill_text_in_a_hugging_card_sets_the_height_in_one_step() {
     let t = id(s
         .execute("text.create", &json!({"text": "A fairly long line of text that has to wrap inside the card", "x": 0, "y": 0, "parent": card}))
         .unwrap());
-    s.execute("layout.add", &json!({"ids": [card], "direction": "vertical"})).unwrap();
-    set(&mut s, card, json!({"padding": 10, "sizingH": "fixed", "width": 160}));
+    s.execute(
+        "layout.add",
+        &json!({"ids": [card], "direction": "vertical"}),
+    )
+    .unwrap();
+    set(
+        &mut s,
+        card,
+        json!({"padding": 10, "sizingH": "fixed", "width": 160}),
+    );
     set(&mut s, t, json!({"sizingH": "fill"}));
     let (tb, cb) = (bounds(&s, t), bounds(&s, card));
     assert_eq!(tb.width(), 140.0);
     // Whatever the fonts, the card hugs the wrapped text exactly.
-    assert!((cb.height() - (tb.height() + 20.0)).abs() < 1e-6, "card {cb:?} text {tb:?}");
+    assert!(
+        (cb.height() - (tb.height() + 20.0)).abs() < 1e-6,
+        "card {cb:?} text {tb:?}"
+    );
 }

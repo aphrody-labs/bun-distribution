@@ -29,9 +29,11 @@ pub async fn run_web_pipeline(args: Vec<String>) -> miette::Result<serde_json::V
         WebAction::DragonBall { action } => dragon_ball::run(action).await,
         WebAction::CrawlIndex(args) => {
             serde_json::to_value(crawl_index::run(args).await?).into_diagnostic()
-        },
+        }
         WebAction::DesignSync(args) => design_sync::run(args).await,
-        _ => Err(miette!("Web pipeline accepts dragon-ball, crawl-index and design-sync actions")),
+        _ => Err(miette!(
+            "Web pipeline accepts dragon-ball, crawl-index and design-sync actions"
+        )),
     }
 }
 
@@ -493,7 +495,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     status["status"].as_str().unwrap_or("unknown")
                 );
             }
-        },
+        }
         WebAction::Capabilities { json } => {
             let capabilities = [
                 "http-fetch",
@@ -532,7 +534,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     println!("{capability}");
                 }
             }
-        },
+        }
         WebAction::Fetch { url, profile, json } => {
             let mut request = aphrody_web_service::fetch::Request::new(url);
             if let Some(name) = profile {
@@ -540,7 +542,9 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     .ok_or_else(|| miette!("unknown Web profile: {name}"))?;
                 request = request.with_profile(selected);
             }
-            let result = aphrody_web_service::fetch::fetch(&request).await.into_diagnostic()?;
+            let result = aphrody_web_service::fetch::fetch(&request)
+                .await
+                .into_diagnostic()?;
             if result.body.trim().is_empty() {
                 eprintln!(
                     "{}",
@@ -555,11 +559,14 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 return Err(miette!("fetch produced no content"));
             }
             if json {
-                println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&result).into_diagnostic()?
+                );
             } else {
                 println!("{}", result.to_report());
             }
-        },
+        }
         WebAction::Search {
             query,
             num,
@@ -609,7 +616,10 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 value.as_object_mut().map(|value| value.remove("jsonLd"));
                 print_web_json(&value)?;
             } else if markdown {
-                println!("# Search: {query}\n\n## Results ({})\n", result.content.organic.len());
+                println!(
+                    "# Search: {query}\n\n## Results ({})\n",
+                    result.content.organic.len()
+                );
                 if let Some(corrected) = &result.content.corrected_query {
                     println!("> Showing results for **{corrected}**\n");
                 }
@@ -681,8 +691,13 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             if result.content.organic.is_empty() {
                 return Err(miette!("Google Search returned no organic results"));
             }
-        },
-        WebAction::Recon { url, profile, json, output } => {
+        }
+        WebAction::Recon {
+            url,
+            profile,
+            json,
+            output,
+        } => {
             let page = fetch_web_page(&url, &profile).await?;
             let dom = ParsedPage::parse(&page.html);
             let extracted = aphrody_web_extract::extract_main(&page.html, Some(&page.final_url));
@@ -729,10 +744,19 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             } else {
                 println!("{rendered}");
             }
-        },
-        WebAction::Scrape { url, selector, profile, max, markdown, html } => {
+        }
+        WebAction::Scrape {
+            url,
+            selector,
+            profile,
+            max,
+            markdown,
+            html,
+        } => {
             if !markdown && !html && selector.is_none() {
-                return Err(miette!("scrape requires a CSS selector, --markdown, or --html"));
+                return Err(miette!(
+                    "scrape requires a CSS selector, --markdown, or --html"
+                ));
             }
             let page = fetch_web_page(&url, &profile).await?;
             if html {
@@ -781,7 +805,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                     "profileObtained": page.profile_obtained
                 })
             );
-        },
+        }
         WebAction::Extract { url, profile, json } => {
             let page = fetch_web_page(&url, &profile).await?;
             let extracted = aphrody_web_extract::extract_main(&page.html, Some(&page.final_url));
@@ -793,7 +817,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             } else {
                 println!("{}", extracted.markdown);
             }
-        },
+        }
         WebAction::Detect { url, json } => {
             let report = aphrody_web_detect::detect_url(&url)
                 .await
@@ -814,22 +838,35 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 println!("Challenge: {:?}", report.challenge);
                 println!("Suggested profile: {:?}", report.strategy.profile);
             }
-        },
-        WebAction::Gemini { prompt, model, language, cookies, json } => {
+        }
+        WebAction::Gemini {
+            prompt,
+            model,
+            language,
+            cookies,
+            json,
+        } => {
             use aphrody_google::gemini_web::GeminiWebClient;
             let cookie_path = cookies.or_else(default_gemini_cookie_path);
             let client = if let Some(path) = cookie_path {
-                GeminiWebClient::from_cookie_file(path, &language).await.into_diagnostic()?
+                GeminiWebClient::from_cookie_file(path, &language)
+                    .await
+                    .into_diagnostic()?
             } else {
-                GeminiWebClient::from_default_cookie_file(&language).await.into_diagnostic()?
+                GeminiWebClient::from_default_cookie_file(&language)
+                    .await
+                    .into_diagnostic()?
             };
-            let reply = client.ask(&prompt.join(" "), model.as_deref()).await.into_diagnostic()?;
+            let reply = client
+                .ask(&prompt.join(" "), model.as_deref())
+                .await
+                .into_diagnostic()?;
             if json {
                 print_web_json(&serde_json::to_value(reply).into_diagnostic()?)?;
             } else {
                 println!("{}", reply.text);
             }
-        },
+        }
         WebAction::X { cookie, action } => handle_web_x(cookie, action).await?,
         WebAction::Media { action } => handle_web_media(action).await?,
         WebAction::Browser { action } => handle_web_browser(action).await?,
@@ -874,15 +911,15 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 json,
             })
             .await?;
-        },
+        }
         WebAction::CrawlIndex(args) => {
             let report = crawl_index::run(args).await?;
             print_web_json(&serde_json::to_value(&report).into_diagnostic()?)?;
-        },
+        }
         WebAction::DragonBall { action } => {
             let report = dragon_ball::run(action).await?;
             print_web_json(&report)?;
-        },
+        }
         WebAction::Mediawiki {
             api_url,
             article_path,
@@ -904,7 +941,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 request_interval: Duration::from_millis(request_interval_ms),
             })
             .await?;
-        },
+        }
         WebAction::Mirror {
             url,
             output_dir,
@@ -934,11 +971,23 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 json,
             )
             .await?;
-        },
-        WebAction::WikiSearch { api_url, query, limit, json } => {
+        }
+        WebAction::WikiSearch {
+            api_url,
+            query,
+            limit,
+            json,
+        } => {
             handle_web_wiki_search(api_url, query.join(" "), limit, json).await?;
-        },
-        WebAction::WikiPage { url, api_url, markdown, include_content, no_images, json } => {
+        }
+        WebAction::WikiPage {
+            url,
+            api_url,
+            markdown,
+            include_content,
+            no_images,
+            json,
+        } => {
             let options = aphrody_web_crawl::MediaWikiOptions::new(
                 reqwest::Url::parse(&api_url).into_diagnostic()?,
             );
@@ -966,7 +1015,7 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 .map_err(|error| miette!("MediaWiki page failed: {error}"))?;
                 print_web_json(&serde_json::to_value(dossier).into_diagnostic()?)?;
             }
-        },
+        }
         WebAction::Frames { action } => handle_web_frames(action).await?,
     }
     Ok(())
@@ -1010,7 +1059,9 @@ async fn handle_web_mirror(
     json: bool,
 ) -> miette::Result<()> {
     if max_pages == 0 || max_pages > 10_000 || max_assets > 20_000 {
-        return Err(miette!("--max-pages must be 1..=10000 and --max-assets must be <= 20000"));
+        return Err(miette!(
+            "--max-pages must be 1..=10000 and --max-assets must be <= 20000"
+        ));
     }
     if concurrency == 0 || concurrency > 64 {
         return Err(miette!("--concurrency must be 1..=64"));
@@ -1033,7 +1084,7 @@ async fn handle_web_mirror(
     options.request_delay = Duration::from_millis(delay_ms);
     options.allowed_domains = allowed_domains;
     match resolve_cdns.trim().to_ascii_lowercase().as_str() {
-        "" | "false" | "0" => {},
+        "" | "false" | "0" => {}
         "true" | "1" => options.resolve_cdns = true,
         hosts => {
             options.cdn_domains = hosts
@@ -1042,7 +1093,7 @@ async fn handle_web_mirror(
                 .filter(|host| !host.is_empty())
                 .map(str::to_owned)
                 .collect();
-        },
+        }
     }
     let report = aphrody_web_crawl::mirror_site(&client, &options)
         .await
@@ -1086,7 +1137,7 @@ async fn handle_web_frames(action: WebFramesAction) -> miette::Result<()> {
                 .transpose()
                 .into_diagnostic()?;
             serde_json::to_value(client.vector_file(path, at_ms).into_diagnostic()?)
-        },
+        }
         WebFramesAction::Search {
             path,
             local: _,
@@ -1111,23 +1162,42 @@ async fn handle_web_frames(action: WebFramesAction) -> miette::Result<()> {
             };
             serde_json::to_value(
                 client
-                    .search_file(path, at_ms, FramesSearchOptions { mode, limit, anilist_id })
+                    .search_file(
+                        path,
+                        at_ms,
+                        FramesSearchOptions {
+                            mode,
+                            limit,
+                            anilist_id,
+                        },
+                    )
                     .await
                     .into_diagnostic()?,
             )
-        },
+        }
         WebFramesAction::Stats { json: _ } => {
             serde_json::to_value(client.stats().into_diagnostic()?)
-        },
+        }
         WebFramesAction::List { filter, json: _ } => {
             serde_json::to_value(client.list(filter.as_deref()).into_diagnostic()?)
-        },
+        }
         WebFramesAction::Quota { json: _ } => {
             serde_json::to_value(client.quota().await.into_diagnostic()?)
-        },
-        WebFramesAction::Index { path, title, season, episode, fps, force, json: _ } => {
+        }
+        WebFramesAction::Index {
+            path,
+            title,
+            season,
+            episode,
+            fps,
+            force,
+            json: _,
+        } => {
             let title = title.unwrap_or_else(|| {
-                path.file_stem().unwrap_or_default().to_string_lossy().into_owned()
+                path.file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .into_owned()
             });
             let meta = MediaMeta {
                 source: path.to_string_lossy().into_owned(),
@@ -1139,7 +1209,7 @@ async fn handle_web_frames(action: WebFramesAction) -> miette::Result<()> {
             };
             let frames = client.index(&path, meta, fps, force).into_diagnostic()?;
             Ok(serde_json::json!({ "frames": frames, "path": client.index_path() }))
-        },
+        }
     }
     .into_diagnostic()?;
     print_web_json(&value)
@@ -1205,7 +1275,9 @@ struct ParsedPage {
 impl ParsedPage {
     fn parse(html: &str) -> Self {
         let clean = html.replace('\0', "");
-        Self { tree: obscura_dom::parse_html(&clean) }
+        Self {
+            tree: obscura_dom::parse_html(&clean),
+        }
     }
 
     fn count(&self, selector: &str) -> miette::Result<usize> {
@@ -1214,7 +1286,11 @@ impl ParsedPage {
 
     /// Text content of every element matching `selector`.
     fn texts(&self, selector: &str) -> miette::Result<Vec<String>> {
-        Ok(self.matches(selector)?.into_iter().map(|id| self.tree.text_content(id)).collect())
+        Ok(self
+            .matches(selector)?
+            .into_iter()
+            .map(|id| self.tree.text_content(id))
+            .collect())
     }
 
     fn matches(&self, selector: &str) -> miette::Result<Vec<obscura_dom::NodeId>> {
@@ -1266,7 +1342,10 @@ async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
         });
     }
     obscura_net::ensure_rustls_crypto_provider();
-    let response = obscura_net::BunBrowserHttpClient::new().fetch(&url).await.into_diagnostic()?;
+    let response = obscura_net::BunBrowserHttpClient::new()
+        .fetch(&url)
+        .await
+        .into_diagnostic()?;
     if response.status >= 400 {
         return Err(miette!("HTTP {} for {}", response.status, response.url));
     }
@@ -1278,7 +1357,10 @@ async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
     }
     let html = response.text();
     if html.trim().is_empty() {
-        return Err(miette!("web request produced no HTML content for {}", response.url));
+        return Err(miette!(
+            "web request produced no HTML content for {}",
+            response.url
+        ));
     }
     Ok(WebPage {
         html,
@@ -1297,28 +1379,43 @@ async fn handle_web_x(cookie: Option<String>, action: WebXAction) -> miette::Res
     };
     let client = aphrody_x::XClient::new(session).into_diagnostic()?;
     let result = match action {
-        WebXAction::Profile { handle } => {
-            serde_json::to_value(client.user_by_screen_name(&handle).await.into_diagnostic()?)
-                .into_diagnostic()?
-        },
+        WebXAction::Profile { handle } => serde_json::to_value(
+            client
+                .user_by_screen_name(&handle)
+                .await
+                .into_diagnostic()?,
+        )
+        .into_diagnostic()?,
         WebXAction::Tweets { handle, count } => {
-            let user = client.user_by_screen_name(&handle).await.into_diagnostic()?;
+            let user = client
+                .user_by_screen_name(&handle)
+                .await
+                .into_diagnostic()?;
             serde_json::to_value(
-                client.user_tweets(&user.id, count, None, 1).await.into_diagnostic()?,
+                client
+                    .user_tweets(&user.id, count, None, 1)
+                    .await
+                    .into_diagnostic()?,
             )
             .into_diagnostic()?
-        },
+        }
         WebXAction::Search { query, count } => serde_json::to_value(
-            client.search(&query.join(" "), count, None, "Latest", 1).await.into_diagnostic()?,
+            client
+                .search(&query.join(" "), count, None, "Latest", 1)
+                .await
+                .into_diagnostic()?,
         )
         .into_diagnostic()?,
         WebXAction::News { count } => serde_json::to_value(
-            client.get_news(count, &aphrody_x::NewsOptions::default()).await.into_diagnostic()?,
+            client
+                .get_news(count, &aphrody_x::NewsOptions::default())
+                .await
+                .into_diagnostic()?,
         )
         .into_diagnostic()?,
         WebXAction::Whoami => {
             serde_json::to_value(client.whoami().await.into_diagnostic()?).into_diagnostic()?
-        },
+        }
     };
     print_web_json(&result)
 }
@@ -1349,7 +1446,10 @@ impl aphrody_web_extract::media::MediaTransport for WebMediaTransport {
                 headers.insert("Referer".to_owned(), referer);
             }
         }
-        let response = client.fetch(&url).await.map_err(|error| error.to_string())?;
+        let response = client
+            .fetch(&url)
+            .await
+            .map_err(|error| error.to_string())?;
         if response.body.len() > 8 * 1024 * 1024 {
             return Err("media response exceeds 8 MiB extraction limit".to_owned());
         }
@@ -1364,7 +1464,12 @@ impl aphrody_web_extract::media::MediaTransport for WebMediaTransport {
 async fn handle_web_media(action: WebMediaAction) -> miette::Result<()> {
     let transport = WebMediaTransport;
     match action {
-        WebMediaAction::Resolve { url, referer, variants, timeout_ms } => {
+        WebMediaAction::Resolve {
+            url,
+            referer,
+            variants,
+            timeout_ms,
+        } => {
             let mut options = aphrody_web_extract::media::ResolveOptions::new(&transport);
             options.referer = referer.as_deref();
             options.enumerate_variants = variants;
@@ -1374,8 +1479,12 @@ async fn handle_web_media(action: WebMediaAction) -> miette::Result<()> {
             if let Some(error) = result.error {
                 return Err(miette!("media resolution: {error}"));
             }
-        },
-        WebMediaAction::Variants { url, referer, timeout_ms } => {
+        }
+        WebMediaAction::Variants {
+            url,
+            referer,
+            timeout_ms,
+        } => {
             let mut options = aphrody_web_extract::media::ResolveOptions::new(&transport);
             options.referer = referer.as_deref();
             options.timeout_ms = Some(timeout_ms);
@@ -1384,7 +1493,7 @@ async fn handle_web_media(action: WebMediaAction) -> miette::Result<()> {
             if variants.is_empty() {
                 return Err(miette!("no HLS variants found at {url}"));
             }
-        },
+        }
     }
     Ok(())
 }
@@ -1411,7 +1520,7 @@ async fn handle_web_browser(action: WebBrowserAction) -> miette::Result<()> {
             } else {
                 println!("{snapshot}");
             }
-        },
+        }
     }
     Ok(())
 }
@@ -1439,25 +1548,35 @@ struct WebCrawlRequest {
 
 async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
     use aphrody_web_crawl::{
-        AddRequest, CrawlOptions, Frontier, FrontierOptions, BunBrowserTransport,
+        AddRequest, BunBrowserTransport, CrawlOptions, Frontier, FrontierOptions,
     };
     use regex::Regex;
 
     if request.max_requests == 0 || request.concurrency == 0 || request.max_per_host == 0 {
-        return Err(miette!("--max-requests, --concurrency and --max-per-host must be positive"));
+        return Err(miette!(
+            "--max-requests, --concurrency and --max-per-host must be positive"
+        ));
     }
     if request.per_host_delay < 0 {
         return Err(miette!("--per-host-delay must be nonnegative"));
     }
-    for pattern in request.include_url_regex.iter().chain(&request.exclude_url_regex) {
+    for pattern in request
+        .include_url_regex
+        .iter()
+        .chain(&request.exclude_url_regex)
+    {
         Regex::new(pattern)
             .map_err(|error| miette!("invalid crawl URL regex {pattern:?}: {error}"))?;
     }
     if request.sitemaps && request.max_sitemaps == 0 {
-        return Err(miette!("--max-sitemaps must be positive when --sitemaps is enabled"));
+        return Err(miette!(
+            "--max-sitemaps must be positive when --sitemaps is enabled"
+        ));
     }
     if request.revisit && request.sqlite.is_none() {
-        return Err(miette!("--revisit requires --sqlite to retain crawl history"));
+        return Err(miette!(
+            "--revisit requires --sqlite to retain crawl history"
+        ));
     }
     let mut allowed_domains = request.allowed_domains;
     if allowed_domains.is_empty() {
@@ -1466,7 +1585,9 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
             if !matches!(parsed.scheme(), "http" | "https") {
                 return Err(miette!("crawl seeds must use HTTP or HTTPS: {url}"));
             }
-            let domain = parsed.host_str().ok_or_else(|| miette!("seed has no host: {url}"))?;
+            let domain = parsed
+                .host_str()
+                .ok_or_else(|| miette!("seed has no host: {url}"))?;
             if !allowed_domains.iter().any(|known| known == domain) {
                 allowed_domains.push(domain.to_owned());
             }
@@ -1491,7 +1612,9 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
         Frontier::memory(frontier_options).into_diagnostic()?
     };
     for url in &request.urls {
-        frontier.enqueue(AddRequest::seed(url), now_ms).into_diagnostic()?;
+        frontier
+            .enqueue(AddRequest::seed(url), now_ms)
+            .into_diagnostic()?;
     }
     let options = CrawlOptions {
         max_depth: request.max_depth,
@@ -1507,10 +1630,12 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
         ..CrawlOptions::default()
     };
     obscura_net::ensure_rustls_crypto_provider();
-    let transport =
-        BunBrowserTransport::scoped(obscura_net::BunBrowserHttpClient::new(), &options.allowed_domains)
-            .await
-            .map_err(|error| miette!("crawl transport scope: {error}"))?;
+    let transport = BunBrowserTransport::scoped(
+        obscura_net::BunBrowserHttpClient::new(),
+        &options.allowed_domains,
+    )
+    .await
+    .map_err(|error| miette!("crawl transport scope: {error}"))?;
     let report = if request.daemon {
         let daemon_opts = aphrody_web_crawl::CrawlDaemonOptions {
             base: options,
@@ -1518,14 +1643,9 @@ async fn handle_web_crawl(request: WebCrawlRequest) -> miette::Result<()> {
             maintenance_interval_ms: 10_000,
             max_iterations: None,
         };
-        aphrody_web_crawl::crawl_daemon(
-            &mut frontier,
-            &transport,
-            &daemon_opts,
-            None,
-        )
-        .await
-        .into_diagnostic()?
+        aphrody_web_crawl::crawl_daemon(&mut frontier, &transport, &daemon_opts, None)
+            .await
+            .into_diagnostic()?
     } else {
         aphrody_web_crawl::crawl_bounded(&mut frontier, &transport, &options)
             .await
@@ -1621,12 +1741,18 @@ mod web_cli_tests {
             "1",
             "--json",
         ];
-        let report = run_web_pipeline(args.into_iter().map(str::to_owned).collect()).await.unwrap();
+        let report = run_web_pipeline(args.into_iter().map(str::to_owned).collect())
+            .await
+            .unwrap();
         assert_eq!(report["mode"], "plan");
         assert_eq!(report["profile"], "shenron");
         assert_eq!(report["targets"].as_array().unwrap().len(), 1);
         assert_eq!(std::fs::read_dir(state.path()).unwrap().count(), 0);
-        assert!(run_web_pipeline(vec!["status".into(), "--json".into()]).await.is_err());
+        assert!(
+            run_web_pipeline(vec!["status".into(), "--json".into()])
+                .await
+                .is_err()
+        );
     }
 
     #[test]
@@ -1675,23 +1801,38 @@ mod web_cli_tests {
                 .expect("media flags parse");
         assert!(matches!(
             media.action,
-            WebAction::Media { action: WebMediaAction::Variants { .. } }
+            WebAction::Media {
+                action: WebMediaAction::Variants { .. }
+            }
         ));
         let x = Probe::try_parse_from(["web", "x", "search", "rust", "--count", "5"])
             .expect("X flags parse");
         assert!(matches!(
             x.action,
-            WebAction::X { action: WebXAction::Search { count: 5, .. }, .. }
+            WebAction::X {
+                action: WebXAction::Search { count: 5, .. },
+                ..
+            }
         ));
-        let browser =
-            Probe::try_parse_from(["web", "browser", "snapshot", "https://example.com", "--json"])
-                .expect("browser flags parse");
+        let browser = Probe::try_parse_from([
+            "web",
+            "browser",
+            "snapshot",
+            "https://example.com",
+            "--json",
+        ])
+        .expect("browser flags parse");
         assert!(matches!(
             browser.action,
-            WebAction::Browser { action: WebBrowserAction::Snapshot { json: true, .. } }
+            WebAction::Browser {
+                action: WebBrowserAction::Snapshot { json: true, .. }
+            }
         ));
         let detect = Probe::try_parse_from(["web", "detect", "https://example.com", "--json"])
             .expect("detect flags parse");
-        assert!(matches!(detect.action, WebAction::Detect { json: true, .. }));
+        assert!(matches!(
+            detect.action,
+            WebAction::Detect { json: true, .. }
+        ));
     }
 }

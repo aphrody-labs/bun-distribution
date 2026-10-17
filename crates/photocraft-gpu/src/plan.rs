@@ -17,7 +17,10 @@ use photocraft_color::BlendMode;
 use photocraft_compose::adjust::{self, Transfer};
 use photocraft_compose::effects::has_effects;
 use photocraft_doc::adjust::{ToneSpace, lut3d_len};
-use photocraft_doc::{Adjustment, Document, Effect, Fill, FxPaint, GlobalLight, Glow, Gradient, Layer, LayerContent, LayerId, Pattern, StrokePosition};
+use photocraft_doc::{
+    Adjustment, Document, Effect, Fill, FxPaint, GlobalLight, Glow, Gradient, Layer, LayerContent,
+    LayerId, Pattern, StrokePosition,
+};
 use photocraft_geom::Rect;
 use photocraft_raster::Surface;
 
@@ -335,8 +338,16 @@ pub fn plan(doc: &Document) -> Result<Plan<'_>, Unsupported> {
     let root = p.clear();
     // Start at the topmost layer that hides everything beneath it (an opaque fill layer): the
     // layers below can't change the result, so they cost no passes or uploads.
-    let start = doc.layers.iter().rposition(|l| photocraft_compose::occludes_below(l, doc.mode)).unwrap_or(0);
-    let root = p.stack_inner(doc.layers.get(start..).unwrap_or(&doc.layers), root, Some(start))?;
+    let start = doc
+        .layers
+        .iter()
+        .rposition(|l| photocraft_compose::occludes_below(l, doc.mode))
+        .unwrap_or(0);
+    let root = p.stack_inner(
+        doc.layers.get(start..).unwrap_or(&doc.layers),
+        root,
+        Some(start),
+    )?;
     Ok(p.finish(root))
 }
 
@@ -409,12 +420,21 @@ fn blend_if_params(bi: &photocraft_doc::BlendIf) -> [[f32; 4]; 4] {
             f[i + 1] = f32::from(r.white[0]) * 256.0 + f32::from(r.white[1]);
         }
     }
-    [[f[0], f[1], f[2], f[3]], [f[4], f[5], f[6], f[7]], [f[8], f[9], f[10], f[11]], [f[12], f[13], f[14], f[15]]]
+    [
+        [f[0], f[1], f[2], f[3]],
+        [f[4], f[5], f[6], f[7]],
+        [f[8], f[9], f[10], f[11]],
+        [f[12], f[13], f[14], f[15]],
+    ]
 }
 
 /// `F_TEXT_GAMMA` for type layers while text gamma blending is on; the gamma goes in `p4.w`.
 fn gamma_flag(layer: &Layer) -> u32 {
-    if photocraft_compose::text_gamma(layer) != 1.0 { F_TEXT_GAMMA } else { 0 }
+    if photocraft_compose::text_gamma(layer) != 1.0 {
+        F_TEXT_GAMMA
+    } else {
+        0
+    }
 }
 
 /// `FxInit` kinds: A at `opacity` × alpha; an opaque copy of A; A's colour with alpha `opacity`
@@ -437,11 +457,24 @@ pub const SHAPE_MAP: usize = usize::MAX;
 
 impl<'a> Planner<'a> {
     fn new(cx: DocCtx<'a>) -> Self {
-        Planner { passes: Vec::new(), free: Vec::new(), refs: Vec::new(), cx, fx: Vec::new(), checkpoints: Vec::new() }
+        Planner {
+            passes: Vec::new(),
+            free: Vec::new(),
+            refs: Vec::new(),
+            cx,
+            fx: Vec::new(),
+            checkpoints: Vec::new(),
+        }
     }
 
     fn finish(self, root: Slot) -> Plan<'a> {
-        Plan { passes: self.passes, slots: self.refs.len() as u32, root, fx: self.fx, checkpoints: self.checkpoints }
+        Plan {
+            passes: self.passes,
+            slots: self.refs.len() as u32,
+            root,
+            fx: self.fx,
+            checkpoints: self.checkpoints,
+        }
     }
 
     fn alloc(&mut self) -> Slot {
@@ -489,7 +522,12 @@ impl<'a> Planner<'a> {
         self.stack_inner(layers, backdrop, None)
     }
 
-    fn stack_inner(&mut self, layers: &'a [Layer], mut backdrop: Slot, root_start: Option<usize>) -> Result<Slot, Unsupported> {
+    fn stack_inner(
+        &mut self,
+        layers: &'a [Layer],
+        mut backdrop: Slot,
+        root_start: Option<usize>,
+    ) -> Result<Slot, Unsupported> {
         let mut i = 0;
         while i < layers.len() {
             let base = &layers[i];
@@ -500,7 +538,10 @@ impl<'a> Planner<'a> {
             let clipped = &layers[i + 1..j];
             if base.visible {
                 backdrop = self.layer(base, clipped, backdrop)?;
-                if let (LayerContent::Adjustment(_), Some(q)) = (&base.content, photocraft_compose::adjustment_quantum(self.cx.depth)) {
+                if let (LayerContent::Adjustment(_), Some(q)) = (
+                    &base.content,
+                    photocraft_compose::adjustment_quantum(self.cx.depth),
+                ) {
                     // compose: adjustment results are rounded to the document's depth.
                     let mut p = Pass::new(Kernel::Lerp, 0);
                     p.a = Some(backdrop);
@@ -511,9 +552,18 @@ impl<'a> Planner<'a> {
             }
             i = j.max(i + 1);
             if let Some(start) = root_start
-                && self.refs.iter().enumerate().all(|(slot, &refs)| refs == u32::from(slot == backdrop as usize))
+                && self
+                    .refs
+                    .iter()
+                    .enumerate()
+                    .all(|(slot, &refs)| refs == u32::from(slot == backdrop as usize))
             {
-                self.checkpoints.push(Checkpoint { layer_start: start, layer_end: start.saturating_add(i), pass_end: self.passes.len(), slot: backdrop });
+                self.checkpoints.push(Checkpoint {
+                    layer_start: start,
+                    layer_end: start.saturating_add(i),
+                    pass_end: self.passes.len(),
+                    slot: backdrop,
+                });
             }
         }
         Ok(backdrop)
@@ -522,7 +572,12 @@ impl<'a> Planner<'a> {
     fn mask_use(&self, layer: &'a Layer) -> Option<MaskUse<'a>> {
         if let Some(c) = photocraft_compose::masks::combined_mask(layer, self.cx.canvas) {
             let default = c.default_pixel().first().copied().unwrap_or(1.0);
-            return Some(MaskUse { layer: layer.id, surface: SurfaceRef::Derived(std::sync::Arc::new(c)), density: 1.0, default });
+            return Some(MaskUse {
+                layer: layer.id,
+                surface: SurfaceRef::Derived(std::sync::Arc::new(c)),
+                density: 1.0,
+                default,
+            });
         }
         let m = layer.mask.as_ref()?;
         if !m.enabled {
@@ -540,7 +595,12 @@ impl<'a> Planner<'a> {
     /// `before` (the backdrop without it) where the layer's Blend If ranges hide it. "This Layer"
     /// is the layer's own content with its masks; an adjustment layer is judged by its result.
     /// Consumes both slots.
-    fn blend_if(&mut self, layer: &'a Layer, before: Slot, after: Slot) -> Result<Slot, Unsupported> {
+    fn blend_if(
+        &mut self,
+        layer: &'a Layer,
+        before: Slot,
+        after: Slot,
+    ) -> Result<Slot, Unsupported> {
         let own = match layer.content {
             LayerContent::Adjustment(_) => None,
             _ => Some(self.content(layer)?),
@@ -552,13 +612,23 @@ impl<'a> Planner<'a> {
         p.flags = F_BLEND_IF;
         p.params = blend_if_params(&layer.blend_if);
         let one_channel = self.cx.mode != photocraft_color::ColorMode::Rgb;
-        p.extra = [f32::from(u8::from(one_channel)), f32::from(u8::from(own.is_none())), 0.0, 0.0];
+        p.extra = [
+            f32::from(u8::from(one_channel)),
+            f32::from(u8::from(own.is_none())),
+            0.0,
+            0.0,
+        ];
         Ok(self.emit(p))
     }
 
     /// Channel restrictions and Blend If around `draw`, which composites `layer` onto `backdrop`
     /// (`compose::composite_layer` / `composite_atop`: both are relative to the same backdrop).
-    fn restricted(&mut self, layer: &'a Layer, backdrop: Slot, draw: impl FnOnce(&mut Self, Slot) -> Result<Slot, Unsupported>) -> Result<Slot, Unsupported> {
+    fn restricted(
+        &mut self,
+        layer: &'a Layer,
+        backdrop: Slot,
+        draw: impl FnOnce(&mut Self, Slot) -> Result<Slot, Unsupported>,
+    ) -> Result<Slot, Unsupported> {
         let w = photocraft_compose::channel_weights(layer, self.cx.mode);
         let blend_if = photocraft_compose::blend_if_active(layer, self.cx.mode);
         if w.is_none() && !blend_if {
@@ -567,7 +637,11 @@ impl<'a> Planner<'a> {
         let before = self.retain(backdrop);
         let mut after = draw(self, backdrop)?;
         if let Some(w) = w {
-            let b = if blend_if { self.retain(before) } else { before };
+            let b = if blend_if {
+                self.retain(before)
+            } else {
+                before
+            };
             after = self.restore_channels(b, after, w);
         }
         if blend_if {
@@ -582,13 +656,21 @@ impl<'a> Planner<'a> {
     /// Photoshop's defaults pass this check for free.
     fn check_advanced(&self, layer: &Layer, clipped: &[Layer]) -> Result<(), Unsupported> {
         if photocraft_compose::advanced_active(layer, clipped) {
-            return Err(Unsupported(format!("Advanced Blending on `{}` (composited on the CPU)", layer.name)));
+            return Err(Unsupported(format!(
+                "Advanced Blending on `{}` (composited on the CPU)",
+                layer.name
+            )));
         }
         Ok(())
     }
 
     /// composite_layer, honouring the layer's channel restrictions.
-    fn layer(&mut self, layer: &'a Layer, clipped: &'a [Layer], backdrop: Slot) -> Result<Slot, Unsupported> {
+    fn layer(
+        &mut self,
+        layer: &'a Layer,
+        clipped: &'a [Layer],
+        backdrop: Slot,
+    ) -> Result<Slot, Unsupported> {
         self.check_advanced(layer, clipped)?;
         self.restricted(layer, backdrop, |s, b| s.layer_any(layer, clipped, b))
     }
@@ -604,7 +686,12 @@ impl<'a> Planner<'a> {
         self.emit(p)
     }
 
-    fn layer_any(&mut self, layer: &'a Layer, clipped: &'a [Layer], backdrop: Slot) -> Result<Slot, Unsupported> {
+    fn layer_any(
+        &mut self,
+        layer: &'a Layer,
+        clipped: &'a [Layer],
+        backdrop: Slot,
+    ) -> Result<Slot, Unsupported> {
         match layer.artboard() {
             Some(ab) => self.artboard(layer, ab, clipped, backdrop),
             None => self.layer_plain(layer, clipped, backdrop),
@@ -613,7 +700,13 @@ impl<'a> Planner<'a> {
 
     /// compose::composite_artboard: the board's background and the group composited over the
     /// backdrop, kept only inside the board (contents and effects outside it are clipped away).
-    fn artboard(&mut self, layer: &'a Layer, ab: &photocraft_doc::Artboard, clipped: &'a [Layer], backdrop: Slot) -> Result<Slot, Unsupported> {
+    fn artboard(
+        &mut self,
+        layer: &'a Layer,
+        ab: &photocraft_doc::Artboard,
+        clipped: &'a [Layer],
+        backdrop: Slot,
+    ) -> Result<Slot, Unsupported> {
         let board = ab.rect.intersect(&self.cx.canvas);
         if board.is_empty() {
             return Ok(backdrop);
@@ -648,7 +741,12 @@ impl<'a> Planner<'a> {
         Ok(dst)
     }
 
-    fn layer_plain(&mut self, layer: &'a Layer, clipped: &'a [Layer], backdrop: Slot) -> Result<Slot, Unsupported> {
+    fn layer_plain(
+        &mut self,
+        layer: &'a Layer,
+        clipped: &'a [Layer],
+        backdrop: Slot,
+    ) -> Result<Slot, Unsupported> {
         let opacity = layer.opacity * layer.fill_opacity;
         let visible_clipped: Vec<&'a Layer> = clipped.iter().filter(|c| c.visible).collect();
 
@@ -720,7 +818,8 @@ impl<'a> Planner<'a> {
 
         if let LayerContent::Shape(sh) = &layer.content
             && !visible_clipped.is_empty()
-            && let Some((fill, stroke)) = photocraft_compose::shape_split::split(sh, self.cx.canvas, self.cx.depth)
+            && let Some((fill, stroke)) =
+                photocraft_compose::shape_split::split(sh, self.cx.canvas, self.cx.depth)
         {
             // The vector stroke goes above the clipped layers: the fill is the clipping base,
             // the stroke is laid over the clipped result, then the masks apply to both
@@ -774,7 +873,11 @@ impl<'a> Planner<'a> {
             }
         }
         let mut p = Pass::new(Kernel::Blend, 0);
-        p.a = Some(if clip.is_some() { self.retain(backdrop) } else { backdrop });
+        p.a = Some(if clip.is_some() {
+            self.retain(backdrop)
+        } else {
+            backdrop
+        });
         p.b = Some(content);
         p.mode = layer.blend;
         p.opacity = layer.opacity;
@@ -794,7 +897,8 @@ impl<'a> Planner<'a> {
     fn local_clip(&self, layer: &Layer) -> Option<Rect> {
         let canvas = self.cx.canvas;
         let b = bounds::composite_bounds(layer, canvas)?;
-        (b.width() as u64 * b.height() as u64 * 2 <= canvas.width() as u64 * canvas.height() as u64).then_some(b)
+        (b.width() as u64 * b.height() as u64 * 2 <= canvas.width() as u64 * canvas.height() as u64)
+            .then_some(b)
     }
 
     /// Copy `merged` into `backdrop` over `clip` (in place when nothing else holds the backdrop);
@@ -823,7 +927,11 @@ impl<'a> Planner<'a> {
         let mut p = Pass::new(Kernel::Content, 0);
         p.color = photocraft_raster::to_rgba(&surface.format(), &surface.default_pixel());
         if surface.tile_count() > 0 {
-            p.tex = Some(TexUse { layer: layer.id, role, surface: SurfaceRef::Derived(std::sync::Arc::new(surface)) });
+            p.tex = Some(TexUse {
+                layer: layer.id,
+                role,
+                surface: SurfaceRef::Derived(std::sync::Arc::new(surface)),
+            });
         }
         self.emit(p)
     }
@@ -843,17 +951,46 @@ impl<'a> Planner<'a> {
                 Ok(s)
             }
             // Adjustments are handled by the caller and never get here.
-            LayerContent::Adjustment(_) => Err(Unsupported("adjustment layer reached the content planner".into())),
-            LayerContent::Fill(f @ Fill::Pattern { name, scale, id, angle, link, phase }) if layer.fill_cache.as_ref().is_none_or(|c| c.fill != *f) => {
+            LayerContent::Adjustment(_) => Err(Unsupported(
+                "adjustment layer reached the content planner".into(),
+            )),
+            LayerContent::Fill(
+                f @ Fill::Pattern {
+                    name,
+                    scale,
+                    id,
+                    angle,
+                    link,
+                    phase,
+                },
+            ) if layer.fill_cache.as_ref().is_none_or(|c| c.fill != *f) => {
                 // compose::render_fill: the pattern tiled from the layer's frame (transparent
                 // when missing), then the layer's masks.
                 let empty = self.clear();
-                let Some(pat) = photocraft_doc::pattern::find(self.cx.patterns, id, name).filter(|p| p.is_paintable()) else { return Ok(empty) };
+                let Some(pat) = photocraft_doc::pattern::find(self.cx.patterns, id, name)
+                    .filter(|p| p.is_paintable())
+                else {
+                    return Ok(empty);
+                };
                 let frame = photocraft_compose::fill_frame(layer, self.cx.canvas);
-                let anchor = if frame.is_empty() { (0.0, 0.0) } else { (f64::from(frame.x0), f64::from(frame.y0)) };
+                let anchor = if frame.is_empty() {
+                    (0.0, 0.0)
+                } else {
+                    (f64::from(frame.x0), f64::from(frame.y0))
+                };
                 let paint = Paint::Pattern(pat, placement(anchor, *link, *phase, *scale, *angle));
                 let canvas = self.cx.canvas;
-                let s = self.paint(empty, empty, Cov::One, &paint, BlendMode::Normal, 1.0, 0, canvas, canvas);
+                let s = self.paint(
+                    empty,
+                    empty,
+                    Cov::One,
+                    &paint,
+                    BlendMode::Normal,
+                    1.0,
+                    0,
+                    canvas,
+                    canvas,
+                );
                 if layer.mask.is_some() || layer.vector_mask.is_some() {
                     let mut p = Pass::new(Kernel::Mask, 0);
                     p.a = Some(s);
@@ -876,7 +1013,11 @@ impl<'a> Planner<'a> {
         match &layer.content {
             LayerContent::Fill(f) => match &layer.fill_cache {
                 Some(c) if c.fill == *f => self.surface_tex(&mut p, layer.id, &c.surface),
-                _ => self.fill(&mut p, f, photocraft_compose::fill_frame(layer, self.cx.canvas))?,
+                _ => self.fill(
+                    &mut p,
+                    f,
+                    photocraft_compose::fill_frame(layer, self.cx.canvas),
+                )?,
             },
             _ => {
                 if let Some(s) = layer.surface() {
@@ -891,29 +1032,62 @@ impl<'a> Planner<'a> {
         let dp = s.default_pixel();
         p.color = photocraft_raster::to_rgba(&s.format(), &dp);
         if s.tile_count() > 0 {
-            p.tex = Some(TexUse { layer: id, role: Role::Content, surface: SurfaceRef::Doc(s) });
+            p.tex = Some(TexUse {
+                layer: id,
+                role: Role::Content,
+                surface: SurfaceRef::Doc(s),
+            });
         }
     }
 
-    fn fill(&self, p: &mut Pass<'a>, f: &Fill, frame: photocraft_geom::Rect) -> Result<(), Unsupported> {
+    fn fill(
+        &self,
+        p: &mut Pass<'a>,
+        f: &Fill,
+        frame: photocraft_geom::Rect,
+    ) -> Result<(), Unsupported> {
         // The RGB shader cannot interpolate or dither native ink channels.
         if self.cx.mode == photocraft_color::ColorMode::Cmyk && !matches!(f, Fill::Pattern { .. }) {
-            return Err(Unsupported("native CMYK fill (composited on the CPU)".into()));
+            return Err(Unsupported(
+                "native CMYK fill (composited on the CPU)".into(),
+            ));
         }
         match f {
             Fill::Solid(c) => {
                 let rgb = c.to_rgb();
                 p.color = [rgb[0], rgb[1], rgb[2], c.alpha];
             }
-            Fill::Gradient { stops, opacity_stops, angle, scale, style, reverse, offset, dither, .. } => {
+            Fill::Gradient {
+                stops,
+                opacity_stops,
+                angle,
+                scale,
+                style,
+                reverse,
+                offset,
+                dither,
+                ..
+            } => {
                 check_gradient_stops(stops)?;
                 check_gradient_stops(opacity_stops)?;
                 p.gradient = true;
                 // compose::render_fill: whole-pixel end points (fill_layout).
-                let (angle, scale, offset) = photocraft_compose::fill_layout::gradient_layout(*style, *angle, *scale, *offset, frame);
-                p.params[0] = [angle, scale, if *reverse { 1.0 } else { 0.0 }, style_index(*style)];
+                let (angle, scale, offset) = photocraft_compose::fill_layout::gradient_layout(
+                    *style, *angle, *scale, *offset, frame,
+                );
+                p.params[0] = [
+                    angle,
+                    scale,
+                    if *reverse { 1.0 } else { 0.0 },
+                    style_index(*style),
+                ];
                 let c = frame;
-                p.params[1] = [c.x0 as f32, c.y0 as f32, c.width() as f32, c.height() as f32];
+                p.params[1] = [
+                    c.x0 as f32,
+                    c.y0 as f32,
+                    c.width() as f32,
+                    c.height() as f32,
+                ];
                 // p2.xy: centre offset; p2.z: the depth's levels a dithered pixel is rounded to
                 // (0: float, compose::gradient_fill::render_quantized); p2.w: dither (the shared
                 // position hash, see the shader).
@@ -922,7 +1096,9 @@ impl<'a> Planner<'a> {
                 let ramp = photocraft_compose::gradient_fill::Ramp::new(f);
                 let mut rows = vec![[0.0f32; 4096]; 4];
                 for k in 0..4096 {
-                    let v = ramp.as_ref().map_or([0.0; 4], |r| r.sample(k as f32 / 4095.0));
+                    let v = ramp
+                        .as_ref()
+                        .map_or([0.0; 4], |r| r.sample(k as f32 / 4095.0));
                     for (ch, row) in rows.iter_mut().enumerate() {
                         row[k] = v[ch];
                     }
@@ -972,7 +1148,10 @@ impl<'a> Planner<'a> {
     /// adjust::apply_with on a slot (consumes it).
     fn adjust(&mut self, adj: &Adjustment, src: Slot) -> Result<Slot, Unsupported> {
         if !adjustment_on_gpu(adj, self.cx.mode) {
-            return Err(Unsupported(format!("{} on CMYK/Lab channels (evaluated on the CPU)", adj.label())));
+            return Err(Unsupported(format!(
+                "{} on CMYK/Lab channels (evaluated on the CPU)",
+                adj.label()
+            )));
         }
         if let Adjustment::GradientMap { stops, .. } = adj {
             check_gradient_stops(stops)?;
@@ -989,15 +1168,28 @@ impl<'a> Planner<'a> {
     /// `composite_with_effects` (atop = false) or the clipped-layer variant of `composite_atop`
     /// (atop = true: effects over the base treated as opaque, keeping the base's alpha).
     /// Consumes `backdrop`.
-    fn effects(&mut self, layer: &'a Layer, clipped: &[&'a Layer], backdrop: Slot, atop: bool) -> Result<Slot, Unsupported> {
+    fn effects(
+        &mut self,
+        layer: &'a Layer,
+        clipped: &[&'a Layer],
+        backdrop: Slot,
+        atop: bool,
+    ) -> Result<Slot, Unsupported> {
         let canvas = self.cx.canvas;
         let region = bounds::effect_region(layer, canvas);
-        let sb = photocraft_compose::paint_bounds(layer).unwrap_or_else(|| bounds::layer_bounds(layer, canvas));
-        let clip = if bounds::transparent_outside(layer) { region } else { canvas };
+        let sb = photocraft_compose::paint_bounds(layer)
+            .unwrap_or_else(|| bounds::layer_bounds(layer, canvas));
+        let clip = if bounds::transparent_outside(layer) {
+            region
+        } else {
+            canvas
+        };
         // A stroked shape's vector stroke goes above its clipped layers and interior effects
         // (compose::split_parts): the fill and the stroke unmasked, the masks applied after.
         let split = match &layer.content {
-            LayerContent::Shape(sh) if sh.stroke.is_some() => photocraft_compose::shape_split::split(sh, canvas, self.cx.depth),
+            LayerContent::Shape(sh) if sh.stroke.is_some() => {
+                photocraft_compose::shape_split::split(sh, canvas, self.cx.depth)
+            }
             _ => None,
         };
         let (mut content, vstroke) = match split {
@@ -1008,7 +1200,12 @@ impl<'a> Planner<'a> {
             }
             None => (self.content(layer)?, None),
         };
-        for p in self.passes.iter_mut().rev().take(if vstroke.is_some() { 2 } else { 1 }) {
+        for p in self
+            .passes
+            .iter_mut()
+            .rev()
+            .take(if vstroke.is_some() { 2 } else { 1 })
+        {
             if !matches!(layer.content, LayerContent::Group(_)) {
                 p.clip = Some(clip);
             }
@@ -1017,7 +1214,11 @@ impl<'a> Planner<'a> {
             content = self.atop(c, content)?;
         }
         let fx = self.fx.len();
-        self.fx.push(FxLayer { layer, region, bounds: sb });
+        self.fx.push(FxLayer {
+            layer,
+            region,
+            bounds: sb,
+        });
         let outline = photocraft_compose::effect_outline(layer).is_some();
         let relative = outline || vstroke.is_some();
         // `content` becomes the effect shape (B of every effect pass); `lay_src` the layer's colour.
@@ -1049,7 +1250,11 @@ impl<'a> Planner<'a> {
             let mut p = Pass::new(Kernel::FxInit, 0);
             p.a = Some(content);
             p.adjust_kind = INIT_OUTLINE;
-            p.map = Some(MapRef { fx, item: SHAPE_MAP, map: 0 });
+            p.map = Some(MapRef {
+                fx,
+                item: SHAPE_MAP,
+                map: 0,
+            });
             p.clip = Some(clip);
             content = self.emit(p);
         }
@@ -1074,7 +1279,10 @@ impl<'a> Planner<'a> {
             }
         }
         // Linked patterns tile from the effects reference point (else the layer's top-left).
-        let anchor = layer.effects.reference.unwrap_or((f64::from(sb.x0), f64::from(sb.y0)));
+        let anchor = layer
+            .effects
+            .reference
+            .unwrap_or((f64::from(sb.x0), f64::from(sb.y0)));
         let vector_shape = matches!(layer.content, LayerContent::Shape(_)) && !outline;
         let map = |item: usize, map: usize| MapRef { fx, item, map };
         let rev: Vec<(usize, &'a Effect)> = items.iter().copied().enumerate().rev().collect();
@@ -1120,7 +1328,18 @@ impl<'a> Planner<'a> {
                 // Match CPU exterior knockout: a see-through fill must not reveal the
                 // glow through its own shape. The shader applies m × (1 − alpha × k).
                 let see_through = 1.0 - layer.fill_opacity.clamp(0.0, 1.0);
-                w = self.paint_k(w, content, Cov::Map(map(i, 0), 0.0), &paint, g.common.blend, g.common.opacity, F_KNOCKOUT, clip, sb, see_through);
+                w = self.paint_k(
+                    w,
+                    content,
+                    Cov::Map(map(i, 0), 0.0),
+                    &paint,
+                    g.common.blend,
+                    g.common.opacity,
+                    F_KNOCKOUT,
+                    clip,
+                    sb,
+                    see_through,
+                );
             }
         }
 
@@ -1146,37 +1365,109 @@ impl<'a> Planner<'a> {
             l = self.emit(p);
         }
         for &(_, e) in &rev {
-            if let Effect::PatternOverlay { common, name, id, scale, angle, link, phase } = e
-                && let Some(pat) = photocraft_doc::pattern::find(self.cx.patterns, id, name).filter(|p| p.is_paintable())
+            if let Effect::PatternOverlay {
+                common,
+                name,
+                id,
+                scale,
+                angle,
+                link,
+                phase,
+            } = e
+                && let Some(pat) = photocraft_doc::pattern::find(self.cx.patterns, id, name)
+                    .filter(|p| p.is_paintable())
             {
                 let paint = Paint::Pattern(pat, placement(anchor, *link, *phase, *scale, *angle));
-                l = self.paint(l, content, Cov::One, &paint, common.blend, common.opacity, F_GATE, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::One,
+                    &paint,
+                    common.blend,
+                    common.opacity,
+                    F_GATE,
+                    clip,
+                    sb,
+                );
             }
         }
         for &(_, e) in &rev {
-            if let Effect::GradientOverlay { common, gradient, .. } = e {
-                l = self.paint(l, content, Cov::One, &Paint::Gradient(gradient), common.blend, common.opacity, F_GATE, clip, sb);
+            if let Effect::GradientOverlay {
+                common, gradient, ..
+            } = e
+            {
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::One,
+                    &Paint::Gradient(gradient),
+                    common.blend,
+                    common.opacity,
+                    F_GATE,
+                    clip,
+                    sb,
+                );
             }
         }
         for &(_, e) in &rev {
             if let Effect::ColorOverlay { common, color } = e {
-                l = self.paint(l, content, Cov::One, &Paint::Color(color.to_rgb()), common.blend, common.opacity, F_GATE, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::One,
+                    &Paint::Color(color.to_rgb()),
+                    common.blend,
+                    common.opacity,
+                    F_GATE,
+                    clip,
+                    sb,
+                );
             }
         }
         for &(i, e) in &rev {
             if let Effect::Satin(s) = e {
-                l = self.paint(l, content, Cov::Map(map(i, 0), 0.0), &Paint::Color(s.color.to_rgb()), s.common.blend, s.common.opacity, F_REL, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::Map(map(i, 0), 0.0),
+                    &Paint::Color(s.color.to_rgb()),
+                    s.common.blend,
+                    s.common.opacity,
+                    F_REL,
+                    clip,
+                    sb,
+                );
             }
         }
         for &(i, e) in &rev {
             if let Effect::InnerGlow(g) = e {
                 let paint = self.glow_paint(g, anchor);
-                l = self.paint(l, content, Cov::Map(map(i, 0), 0.0), &paint, g.common.blend, g.common.opacity, F_REL, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::Map(map(i, 0), 0.0),
+                    &paint,
+                    g.common.blend,
+                    g.common.opacity,
+                    F_REL,
+                    clip,
+                    sb,
+                );
             }
         }
         for &(i, e) in &rev {
             if let Effect::InnerShadow(s) = e {
-                l = self.paint(l, content, Cov::Map(map(i, 0), 0.0), &Paint::Color(s.color.to_rgb()), s.common.blend, s.common.opacity, F_REL, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::Map(map(i, 0), 0.0),
+                    &Paint::Color(s.color.to_rgb()),
+                    s.common.blend,
+                    s.common.opacity,
+                    F_REL,
+                    clip,
+                    sb,
+                );
             }
         }
         if let Some(s) = vstroke {
@@ -1209,7 +1500,8 @@ impl<'a> Planner<'a> {
                 }
             }
         }
-        let bevel_paint = |b: &photocraft_doc::Bevel| photocraft_compose::effects::bevel_geom(b).paint;
+        let bevel_paint =
+            |b: &photocraft_doc::Bevel| photocraft_compose::effects::bevel_geom(b).paint;
         for &(i, e) in &rev {
             if let Effect::BevelEmboss(b) = e
                 && bevel_paint(b) == photocraft_compose::effects::BevelPaint::Inner
@@ -1225,7 +1517,17 @@ impl<'a> Planner<'a> {
                     clip,
                     sb,
                 );
-                l = self.paint(l, content, Cov::Map(map(i, 1), 0.0), &Paint::Color(b.shadow_color.to_rgb()), b.shadow.blend, b.shadow.opacity, F_REL, clip, sb);
+                l = self.paint(
+                    l,
+                    content,
+                    Cov::Map(map(i, 1), 0.0),
+                    &Paint::Color(b.shadow_color.to_rgb()),
+                    b.shadow.blend,
+                    b.shadow.opacity,
+                    F_REL,
+                    clip,
+                    sb,
+                );
             }
         }
         // The shape's own alpha.
@@ -1238,7 +1540,13 @@ impl<'a> Planner<'a> {
             .iter()
             .copied()
             .enumerate()
-            .filter_map(|(i, e)| if let Effect::Stroke(st) = e { Some((i, st)) } else { None })
+            .filter_map(|(i, e)| {
+                if let Effect::Stroke(st) = e {
+                    Some((i, st))
+                } else {
+                    None
+                }
+            })
             .filter(|(_, st)| stroke_widths(st).1 > 0.0)
             .collect();
         if !outs.is_empty() {
@@ -1251,7 +1559,10 @@ impl<'a> Planner<'a> {
             }
             for (n, &(i, st)) in outs.iter().enumerate() {
                 let paint = self.fx_paint(&st.paint, anchor);
-                let flags = F_STROKE_OUT | if vector_shape { F_VECTOR } else { 0 } | if outline { F_OUTLINE } else { 0 } | if n == 0 { F_FIRST } else { 0 };
+                let flags = F_STROKE_OUT
+                    | if vector_shape { F_VECTOR } else { 0 }
+                    | if outline { F_OUTLINE } else { 0 }
+                    | if n == 0 { F_FIRST } else { 0 };
                 // Share × blended colour, then coverage (both read the coverage so far).
                 let mut p = self.fx_pass_kernel(
                     Kernel::FxStroke,
@@ -1273,7 +1584,17 @@ impl<'a> Planner<'a> {
                 p.c = cover.map(|c| self.retain(c));
                 p.d = acc;
                 let a = self.emit(p);
-                let mut p = self.fx_pass_kernel(Kernel::FxStroke, w, content, &Paint::Color([0.0; 3]), BlendMode::Normal, st.common.opacity, flags, clip, sb);
+                let mut p = self.fx_pass_kernel(
+                    Kernel::FxStroke,
+                    w,
+                    content,
+                    &Paint::Color([0.0; 3]),
+                    BlendMode::Normal,
+                    st.common.opacity,
+                    flags,
+                    clip,
+                    sb,
+                );
                 p.adjust_kind = 1;
                 p.map = Some(map(i, 0));
                 p.c = cover;
@@ -1303,14 +1624,34 @@ impl<'a> Planner<'a> {
                     clip,
                     sb,
                 );
-                w = self.paint(w, content, Cov::Map(map(i, k + 1), 0.0), &Paint::Color(b.shadow_color.to_rgb()), b.shadow.blend, b.shadow.opacity, 0, clip, sb);
+                w = self.paint(
+                    w,
+                    content,
+                    Cov::Map(map(i, k + 1), 0.0),
+                    &Paint::Color(b.shadow_color.to_rgb()),
+                    b.shadow.blend,
+                    b.shadow.opacity,
+                    0,
+                    clip,
+                    sb,
+                );
             }
         }
 
-        let mode = if premerge || layer.blend == BlendMode::PassThrough { BlendMode::Normal } else { layer.blend };
+        let mode = if premerge || layer.blend == BlendMode::PassThrough {
+            BlendMode::Normal
+        } else {
+            layer.blend
+        };
         let late: Vec<(usize, &'a photocraft_doc::Bevel)> = rev
             .iter()
-            .filter_map(|&(i, e)| if let Effect::BevelEmboss(b) = e { Some((i, b)) } else { None })
+            .filter_map(|&(i, e)| {
+                if let Effect::BevelEmboss(b) = e {
+                    Some((i, b))
+                } else {
+                    None
+                }
+            })
             .filter(|(_, b)| bevel_paint(b) == photocraft_compose::effects::BevelPaint::Both)
             .collect();
         let merged = if late.is_empty() {
@@ -1338,8 +1679,21 @@ impl<'a> Planner<'a> {
             p.clip = Some(clip);
             let mut m = self.emit(p);
             for (i, b) in late {
-                for (k, color, fxc) in [(0, &b.highlight_color, &b.highlight), (1, &b.shadow_color, &b.shadow)] {
-                    m = self.paint(m, content, Cov::Map(map(i, k), 0.0), &Paint::Color(color.to_rgb()), fxc.blend, fxc.opacity, 0, clip, sb);
+                for (k, color, fxc) in [
+                    (0, &b.highlight_color, &b.highlight),
+                    (1, &b.shadow_color, &b.shadow),
+                ] {
+                    m = self.paint(
+                        m,
+                        content,
+                        Cov::Map(map(i, k), 0.0),
+                        &Paint::Color(color.to_rgb()),
+                        fxc.blend,
+                        fxc.opacity,
+                        0,
+                        clip,
+                        sb,
+                    );
                 }
             }
             let mut p = Pass::new(Kernel::FxMerge, 0);
@@ -1362,16 +1716,25 @@ impl<'a> Planner<'a> {
         match p {
             FxPaint::Color(c) => Paint::Color(c.to_rgb()),
             FxPaint::Gradient(g) => Paint::Gradient(g),
-            FxPaint::Pattern { name, id, scale } => match photocraft_doc::pattern::find(self.cx.patterns, id, name).filter(|p| p.is_paintable()) {
-                Some(pat) => Paint::Pattern(pat, placement(anchor, true, (0.0, 0.0), *scale, 0.0)),
-                None => Paint::None,
-            },
+            FxPaint::Pattern { name, id, scale } => {
+                match photocraft_doc::pattern::find(self.cx.patterns, id, name)
+                    .filter(|p| p.is_paintable())
+                {
+                    Some(pat) => {
+                        Paint::Pattern(pat, placement(anchor, true, (0.0, 0.0), *scale, 0.0))
+                    }
+                    None => Paint::None,
+                }
+            }
         }
     }
 
     fn glow_paint(&self, g: &'a Glow, anchor: (f64, f64)) -> Paint<'a> {
         match &g.paint {
-            FxPaint::Gradient(gradient) => Paint::GlowGradient(gradient, photocraft_compose::effects::glow_gradient_gain(g.range)),
+            FxPaint::Gradient(gradient) => Paint::GlowGradient(
+                gradient,
+                photocraft_compose::effects::glow_gradient_gain(g.range),
+            ),
             p => self.fx_paint(p, anchor),
         }
     }
@@ -1379,8 +1742,28 @@ impl<'a> Planner<'a> {
     /// An effect pass reading `dst` (A, retained) and the layer `content` (B, retained) with its
     /// paint set up.
     #[allow(clippy::too_many_arguments)]
-    fn fx_pass(&mut self, dst: Slot, content: Slot, paint: &Paint<'a>, blend: BlendMode, opacity: f32, flags: u32, clip: Rect, sb: Rect) -> Pass<'a> {
-        self.fx_pass_kernel(Kernel::FxPaint, dst, content, paint, blend, opacity, flags, clip, sb)
+    fn fx_pass(
+        &mut self,
+        dst: Slot,
+        content: Slot,
+        paint: &Paint<'a>,
+        blend: BlendMode,
+        opacity: f32,
+        flags: u32,
+        clip: Rect,
+        sb: Rect,
+    ) -> Pass<'a> {
+        self.fx_pass_kernel(
+            Kernel::FxPaint,
+            dst,
+            content,
+            paint,
+            blend,
+            opacity,
+            flags,
+            clip,
+            sb,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1408,9 +1791,21 @@ impl<'a> Planner<'a> {
             Paint::Color(c) => p.color = [c[0], c[1], c[2], 1.0],
             Paint::Gradient(g) => {
                 // effects::paint_fx: whole-pixel end points (fill_layout::gradient_layout).
-                let (angle, scale, offset) = photocraft_compose::fill_layout::gradient_layout(g.style, g.angle, g.scale, g.offset, sb);
-                p.params[0] = [angle, scale, if g.reverse { 1.0 } else { 0.0 }, style_index(g.style)];
-                p.params[1] = [sb.x0 as f32, sb.y0 as f32, sb.width() as f32, sb.height() as f32];
+                let (angle, scale, offset) = photocraft_compose::fill_layout::gradient_layout(
+                    g.style, g.angle, g.scale, g.offset, sb,
+                );
+                p.params[0] = [
+                    angle,
+                    scale,
+                    if g.reverse { 1.0 } else { 0.0 },
+                    style_index(g.style),
+                ];
+                p.params[1] = [
+                    sb.x0 as f32,
+                    sb.y0 as f32,
+                    sb.width() as f32,
+                    sb.height() as f32,
+                ];
                 p.params[2][0] = offset.0;
                 p.params[2][1] = offset.1;
                 p.params[2][2] = 1.0;
@@ -1424,8 +1819,18 @@ impl<'a> Planner<'a> {
             }
             Paint::Pattern(pat, pl) => {
                 p.params[2][2] = 2.0;
-                p.params[3] = [pl.origin.0 as f32, pl.origin.1 as f32, pl.cs.0 as f32, pl.cs.1 as f32];
-                p.extra = [pl.inv_scale as f32, pat.width as f32, pat.height as f32, 0.0];
+                p.params[3] = [
+                    pl.origin.0 as f32,
+                    pl.origin.1 as f32,
+                    pl.cs.0 as f32,
+                    pl.cs.1 as f32,
+                ];
+                p.extra = [
+                    pl.inv_scale as f32,
+                    pat.width as f32,
+                    pat.height as f32,
+                    0.0,
+                ];
                 p.pattern = Some(pat);
             }
         }
@@ -1434,8 +1839,21 @@ impl<'a> Planner<'a> {
 
     /// One effect paint into `dst` (consumed); reads the layer's alpha from `content` (kept).
     #[allow(clippy::too_many_arguments)]
-    fn paint(&mut self, dst: Slot, content: Slot, cov: Cov, paint: &Paint<'a>, blend: BlendMode, opacity: f32, flags: u32, clip: Rect, sb: Rect) -> Slot {
-        self.paint_k(dst, content, cov, paint, blend, opacity, flags, clip, sb, 1.0)
+    fn paint(
+        &mut self,
+        dst: Slot,
+        content: Slot,
+        cov: Cov,
+        paint: &Paint<'a>,
+        blend: BlendMode,
+        opacity: f32,
+        flags: u32,
+        clip: Rect,
+        sb: Rect,
+    ) -> Slot {
+        self.paint_k(
+            dst, content, cov, paint, blend, opacity, flags, clip, sb, 1.0,
+        )
     }
 
     /// [`Self::paint`] with the knockout strength (`F_KNOCKOUT`: coverage × (1 − alpha × k)).
@@ -1491,13 +1909,27 @@ struct Placement {
 }
 
 /// `Placement::anchored`: linked patterns tile from `anchor` (the effects reference point).
-fn placement(anchor: (f64, f64), link: bool, phase: (f32, f32), scale: f32, angle: f32) -> Placement {
+fn placement(
+    anchor: (f64, f64),
+    link: bool,
+    phase: (f32, f32),
+    scale: f32,
+    angle: f32,
+) -> Placement {
     let base = if link { anchor } else { (0.0, 0.0) };
     let origin = (base.0 + f64::from(phase.0), base.1 + f64::from(phase.1));
     let s = f64::from(scale);
-    let inv_scale = if s.is_finite() && s > 1e-3 { 1.0 / s } else { 1.0 };
+    let inv_scale = if s.is_finite() && s > 1e-3 {
+        1.0 / s
+    } else {
+        1.0
+    };
     let a = f64::from(angle).to_radians();
-    Placement { origin, cs: (a.cos(), a.sin()), inv_scale }
+    Placement {
+        origin,
+        cs: (a.cos(), a.sin()),
+        inv_scale,
+    }
 }
 
 /// (inside width, outside width) of a stroke.
@@ -1530,7 +1962,11 @@ fn sample_stops4(stops: &[(f32, [f32; 4])], t: f32) -> [f32; 4] {
             for w in stops.windows(2) {
                 let (a, b) = (&w[0], &w[1]);
                 if t <= b.0 {
-                    let k = if b.0 > a.0 { (t - a.0) / (b.0 - a.0) } else { 0.0 };
+                    let k = if b.0 > a.0 {
+                        (t - a.0) / (b.0 - a.0)
+                    } else {
+                        0.0
+                    };
                     return std::array::from_fn(|i| a.1[i] + (b.1[i] - a.1[i]) * k);
                 }
             }
@@ -1568,8 +2004,16 @@ fn to_row(t: &[f32]) -> [f32; 4096] {
 /// and a CMYK document on its inks (`cmyk_channel_adjustment`), which only the CPU does.
 pub fn adjustment_on_gpu(adj: &Adjustment, mode: photocraft_color::ColorMode) -> bool {
     use photocraft_compose::adjust::{cmyk_channel_adjustment, lab_channel_adjustment};
-    let tone_in_space =
-        matches!(adj, Adjustment::Levels { space: ToneSpace::Cmyk | ToneSpace::Lab, .. } | Adjustment::Curves { space: ToneSpace::Cmyk | ToneSpace::Lab, .. });
+    let tone_in_space = matches!(
+        adj,
+        Adjustment::Levels {
+            space: ToneSpace::Cmyk | ToneSpace::Lab,
+            ..
+        } | Adjustment::Curves {
+            space: ToneSpace::Cmyk | ToneSpace::Lab,
+            ..
+        }
+    );
     let own_channels = match mode {
         photocraft_color::ColorMode::Lab => lab_channel_adjustment(adj),
         photocraft_color::ColorMode::Cmyk => cmyk_channel_adjustment(adj),
@@ -1587,7 +2031,11 @@ fn transfer_exponent(t: Transfer) -> f32 {
 }
 
 /// Adjustment → (kernel kind, parameters, LUT rows). Kinds are the `switch` in `adjust()`.
-pub fn adjustment_program(adj: &Adjustment, transfer: Transfer, depth: photocraft_color::SampleType) -> Program {
+pub fn adjustment_program(
+    adj: &Adjustment,
+    transfer: Transfer,
+    depth: photocraft_color::SampleType,
+) -> Program {
     let mut p = [[0.0f32; 4]; 4];
     match adj {
         Adjustment::Invert => (1, p, None),
@@ -1599,55 +2047,136 @@ pub fn adjustment_program(adj: &Adjustment, transfer: Transfer, depth: photocraf
             p[0][0] = (*levels).clamp(2, 255) as f32;
             (3, p, None)
         }
-        Adjustment::BrightnessContrast { brightness, contrast, legacy: true } => {
+        Adjustment::BrightnessContrast {
+            brightness,
+            contrast,
+            legacy: true,
+        } => {
             let c = contrast.clamp(-100.0, 99.0);
-            let k = if c >= 0.0 { 1.0 / (1.0 - c / 100.0) } else { 1.0 + c / 100.0 };
+            let k = if c >= 0.0 {
+                1.0 / (1.0 - c / 100.0)
+            } else {
+                1.0 + c / 100.0
+            };
             // Brightness before contrast when it is raised, after it when lowered (compose::adjust).
-            let (pre, post) = if c >= 0.0 { (brightness / 255.0, 0.0) } else { (0.0, brightness / 255.0) };
+            let (pre, post) = if c >= 0.0 {
+                (brightness / 255.0, 0.0)
+            } else {
+                (0.0, brightness / 255.0)
+            };
             p[0] = [pre, k, photocraft_compose::adjust::LEGACY_PIVOT, post];
             (4, p, None)
         }
-        Adjustment::BrightnessContrast { brightness, contrast, .. } => {
+        Adjustment::BrightnessContrast {
+            brightness,
+            contrast,
+            ..
+        } => {
             // Modern B/C: the shader rebuilds the curves from raw slider values (see compose.wgsl
             // `mbright`/`mcontrast`, mirroring compose::adjust::modern_brightness/modern_contrast).
             p[0] = [*brightness, *contrast, 0.0, 0.0];
             (5, p, None)
         }
-        Adjustment::Exposure { exposure, offset, gamma } => {
-            p[0] = [2f32.powf(*exposure), *offset, gamma.max(0.01), transfer_exponent(transfer.for_exposure())];
+        Adjustment::Exposure {
+            exposure,
+            offset,
+            gamma,
+        } => {
+            p[0] = [
+                2f32.powf(*exposure),
+                *offset,
+                gamma.max(0.01),
+                transfer_exponent(transfer.for_exposure()),
+            ];
             (6, p, None)
         }
-        Adjustment::Levels { master, per_channel, space: ToneSpace::Rgb, .. } if depth == photocraft_color::SampleType::F32 => {
+        Adjustment::Levels {
+            master,
+            per_channel,
+            space: ToneSpace::Rgb,
+            ..
+        } if depth == photocraft_color::SampleType::F32 => {
             // Twenty coefficients exceed the sixteen uniform parameters. Store four records
             // in LUT row 0, read texel-exact by the analytic float Levels kernel.
             let mut row = [0.0f32; 4096];
             for (i, ch) in std::iter::once(master).chain(per_channel).enumerate() {
-                let coefficients = [ch.in_black, ch.in_white, ch.gamma.max(0.01), ch.out_black, ch.out_white];
+                let coefficients = [
+                    ch.in_black,
+                    ch.in_white,
+                    ch.gamma.max(0.01),
+                    ch.out_black,
+                    ch.out_white,
+                ];
                 row[i * 5..i * 5 + 5].copy_from_slice(&coefficients);
             }
             (17, p, Some(vec![row]))
         }
         // RGB space only (see `adjustment_on_gpu`); the rows are the CPU's channel∘master LUTs.
         Adjustment::Levels { .. } | Adjustment::Curves { .. } => {
-            for (v, identity) in p[0].iter_mut().zip(adjust::float_tone_identity(adj, Some(depth))) {
+            for (v, identity) in p[0]
+                .iter_mut()
+                .zip(adjust::float_tone_identity(adj, Some(depth)))
+            {
                 *v = if identity { 1.0 } else { 0.0 };
             }
-            (7, p, Some(adjust::tone_luts_depth(adj, Some(depth)).iter().take(3).map(|t| to_row(t)).collect()))
+            (
+                7,
+                p,
+                Some(
+                    adjust::tone_luts_depth(adj, Some(depth))
+                        .iter()
+                        .take(3)
+                        .map(|t| to_row(t))
+                        .collect(),
+                ),
+            )
         }
-        Adjustment::HueSaturation { hue, saturation, lightness, colorize, ranges } => {
-            p[0] = [*hue, saturation / 100.0, lightness / 100.0, if *colorize { 1.0 } else { 0.0 }];
+        Adjustment::HueSaturation {
+            hue,
+            saturation,
+            lightness,
+            colorize,
+            ranges,
+        } => {
+            p[0] = [
+                *hue,
+                saturation / 100.0,
+                lightness / 100.0,
+                if *colorize { 1.0 } else { 0.0 },
+            ];
             if !*colorize && ranges.iter().any(|r| !r.is_neutral()) {
                 // Range edits: hue-indexed rows (shift, saturation, lightness), as on the CPU.
                 p[1][0] = 1.0;
-                (8, p, Some(adjust::hue_range_tables(ranges).iter().map(|t| to_row(t)).collect()))
+                (
+                    8,
+                    p,
+                    Some(
+                        adjust::hue_range_tables(ranges)
+                            .iter()
+                            .map(|t| to_row(t))
+                            .collect(),
+                    ),
+                )
             } else {
                 (8, p, None)
             }
         }
-        Adjustment::Vibrance { vibrance, saturation } => {
+        Adjustment::Vibrance {
+            vibrance,
+            saturation,
+        } => {
             // compose::adjust::vibrance_px; 32-bit samples aren't clipped at 1.
-            let hi = if depth == photocraft_color::SampleType::F32 { f32::MAX } else { 1.0 };
-            p[0] = [vibrance / 100.0, saturation / 100.0, transfer_exponent(transfer), hi];
+            let hi = if depth == photocraft_color::SampleType::F32 {
+                f32::MAX
+            } else {
+                1.0
+            };
+            p[0] = [
+                vibrance / 100.0,
+                saturation / 100.0,
+                transfer_exponent(transfer),
+                hi,
+            ];
             let b = adjust::VIBRANCE_BOOST;
             p[1] = [b[0], b[1], b[2], b[3]];
             p[2] = [b[4], b[5], b[6], 0.0];
@@ -1660,37 +2189,87 @@ pub fn adjustment_program(adj: &Adjustment, transfer: Transfer, depth: photocraf
             p[3][0] = if *monochrome { 1.0 } else { 0.0 };
             (10, p, None)
         }
-        Adjustment::PhotoFilter { color, density, preserve_luminosity } => {
+        Adjustment::PhotoFilter {
+            color,
+            density,
+            preserve_luminosity,
+        } => {
             // compose::adjust: the linear-light matrix, then SetLum on the encoded values (8/16-bit).
             let linear_doc = depth == photocraft_color::SampleType::F32;
-            let m = adjust::photo_filter_matrix(*color, *density, *preserve_luminosity && linear_doc);
+            let m =
+                adjust::photo_filter_matrix(*color, *density, *preserve_luminosity && linear_doc);
             for (row, m) in p.iter_mut().zip(m) {
                 *row = [m[0], m[1], m[2], 0.0];
             }
-            p[3] = [if *preserve_luminosity && !linear_doc { 1.0 } else { 0.0 }, transfer_exponent(transfer), 0.0, 0.0];
+            p[3] = [
+                if *preserve_luminosity && !linear_doc {
+                    1.0
+                } else {
+                    0.0
+                },
+                transfer_exponent(transfer),
+                0.0,
+                0.0,
+            ];
             (11, p, None)
         }
         Adjustment::BlackWhite { weights, tint } => {
             p[0] = [weights[0], weights[1], weights[2], weights[3]];
-            p[1] = [weights[4], weights[5], if tint.is_some() { 1.0 } else { 0.0 }, 0.0];
+            p[1] = [
+                weights[4],
+                weights[5],
+                if tint.is_some() { 1.0 } else { 0.0 },
+                0.0,
+            ];
             if let Some(t) = tint {
                 p[2] = [t[0], t[1], t[2], 0.0];
             }
             (12, p, None)
         }
-        Adjustment::GradientMap { stops, reverse, dither } => {
+        Adjustment::GradientMap {
+            stops,
+            reverse,
+            dither,
+        } => {
             p[0][0] = if *reverse { 1.0 } else { 0.0 };
             p[0][1] = if *dither { 1.0 } else { 0.0 };
-            let s4: Vec<(f32, [f32; 4])> = stops.iter().map(|(t, c)| (*t, [c[0], c[1], c[2], 1.0])).collect();
-            let rows = lut_rows(|r, t| if s4.is_empty() { t } else { sample_stops4(&s4, t)[r] }, 3);
+            let s4: Vec<(f32, [f32; 4])> = stops
+                .iter()
+                .map(|(t, c)| (*t, [c[0], c[1], c[2], 1.0]))
+                .collect();
+            let rows = lut_rows(
+                |r, t| {
+                    if s4.is_empty() {
+                        t
+                    } else {
+                        sample_stops4(&s4, t)[r]
+                    }
+                },
+                3,
+            );
             (13, p, Some(rows))
         }
-        Adjustment::ColorBalance { shadows, midtones, highlights, preserve_luminosity } => {
+        Adjustment::ColorBalance {
+            shadows,
+            midtones,
+            highlights,
+            preserve_luminosity,
+        } => {
             // Per-channel curves (compose::adjust::color_balance_channel), through the Levels kernel.
             let tones = [*shadows, *midtones, *highlights];
-            (7, p, Some(lut_rows(|ch, v| adjust::color_balance_channel(tones, *preserve_luminosity, ch, v), 3)))
+            (
+                7,
+                p,
+                Some(lut_rows(
+                    |ch, v| adjust::color_balance_channel(tones, *preserve_luminosity, ch, v),
+                    3,
+                )),
+            )
         }
-        Adjustment::SelectiveColor { relative, adjustments } => {
+        Adjustment::SelectiveColor {
+            relative,
+            adjustments,
+        } => {
             // 9 ranges × CMYK don't fit the 16 params: they go in LUT row 0 (read texel-exact).
             p[0][0] = if *relative { 1.0 } else { 0.0 };
             let mut row = [0.0f32; 4096];
@@ -1699,7 +2278,13 @@ pub fn adjustment_program(adj: &Adjustment, transfer: Transfer, depth: photocraf
             }
             (15, p, Some(vec![row]))
         }
-        Adjustment::ColorLookup { lut: Some(table), size, tetrahedral, dither, .. } if lut3d_len(*size).is_some_and(|len| table.len() >= len) => {
+        Adjustment::ColorLookup {
+            lut: Some(table),
+            size,
+            tetrahedral,
+            dither,
+            ..
+        } if lut3d_len(*size).is_some_and(|len| table.len() >= len) => {
             // The flattened table (n³ RGB triplets) spans as many 4096-wide rows as it needs.
             let n = *size as usize;
             let rows = lut3d_len(*size)
@@ -1712,7 +2297,12 @@ pub fn adjustment_program(adj: &Adjustment, transfer: Transfer, depth: photocraf
                     row
                 })
                 .collect();
-            p[0] = [n as f32, if *tetrahedral { 1.0 } else { 0.0 }, if *dither { 1.0 } else { 0.0 }, 0.0];
+            p[0] = [
+                n as f32,
+                if *tetrahedral { 1.0 } else { 0.0 },
+                if *dither { 1.0 } else { 0.0 },
+                0.0,
+            ];
             (16, p, Some(rows))
         }
         // Identity on the CPU too (not evaluated there).
@@ -1740,8 +2330,13 @@ fn check_gradient_stops<T>(stops: &[(f32, T)]) -> Result<(), Unsupported> {
     let mut positions: Vec<f32> = stops.iter().map(|s| s.0).collect();
     positions.sort_by(f32::total_cmp);
     // A 4096-entry LUT cannot keep two stops that fall in the same entry apart (#3053).
-    if positions.windows(2).any(|w| (w[1] - w[0]).abs() < 1.0 / 4095.0) {
-        return Err(Unsupported("coincident gradient stops (composited on the CPU)".into()));
+    if positions
+        .windows(2)
+        .any(|w| (w[1] - w[0]).abs() < 1.0 / 4095.0)
+    {
+        return Err(Unsupported(
+            "coincident gradient stops (composited on the CPU)".into(),
+        ));
     }
     Ok(())
 }
@@ -1804,8 +2399,16 @@ mod tests {
             Adjustment::Invert,
             Adjustment::Posterize { levels: 4 },
             Adjustment::Threshold { level: 0.5 },
-            Adjustment::BrightnessContrast { brightness: 10.0, contrast: 5.0, legacy: false },
-            Adjustment::GradientMap { stops: vec![(0.0, [0.0; 3]), (1.0, [1.0; 3])], reverse: false, dither: false },
+            Adjustment::BrightnessContrast {
+                brightness: 10.0,
+                contrast: 5.0,
+                legacy: false,
+            },
+            Adjustment::GradientMap {
+                stops: vec![(0.0, [0.0; 3]), (1.0, [1.0; 3])],
+                reverse: false,
+                dither: false,
+            },
         ];
         for adj in &lab_rules {
             assert!(!adjustment_on_gpu(adj, ColorMode::Lab), "{adj:?}");
@@ -1813,25 +2416,57 @@ mod tests {
                 assert!(adjustment_on_gpu(adj, mode), "{adj:?} in {mode:?}");
             }
             // CMYK documents invert, posterize and threshold their inks, on the CPU.
-            let inks = matches!(adj, Adjustment::Invert | Adjustment::Posterize { .. } | Adjustment::Threshold { .. });
-            assert_eq!(adjustment_on_gpu(adj, ColorMode::Cmyk), !inks, "{adj:?} in CMYK");
+            let inks = matches!(
+                adj,
+                Adjustment::Invert | Adjustment::Posterize { .. } | Adjustment::Threshold { .. }
+            );
+            assert_eq!(
+                adjustment_on_gpu(adj, ColorMode::Cmyk),
+                !inks,
+                "{adj:?} in CMYK"
+            );
         }
         // Screen-colour adjustments stay on the GPU in Lab documents.
-        assert!(adjustment_on_gpu(&Adjustment::Exposure { exposure: 1.0, offset: 0.0, gamma: 1.0 }, ColorMode::Lab));
+        assert!(adjustment_on_gpu(
+            &Adjustment::Exposure {
+                exposure: 1.0,
+                offset: 0.0,
+                gamma: 1.0
+            },
+            ColorMode::Lab
+        ));
     }
 
     #[test]
     fn native_cmyk_fills_fall_back_only_without_a_valid_cache() {
         use photocraft_doc::{FillCache, GradientStyle};
         for depth in photocraft_color::SampleType::ALL {
-            for fill in [Fill::Solid(Color::WHITE), Fill::gradient(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], 0.0, 1.0, GradientStyle::Linear, false)] {
-                let mut doc = Document::new("CMYK", photocraft_geom::Size::new(3, 2), photocraft_color::ColorMode::Cmyk, depth);
-                doc.layers.push(Layer::new("Fill", LayerContent::Fill(fill.clone())));
+            for fill in [
+                Fill::Solid(Color::WHITE),
+                Fill::gradient(
+                    vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+                    0.0,
+                    1.0,
+                    GradientStyle::Linear,
+                    false,
+                ),
+            ] {
+                let mut doc = Document::new(
+                    "CMYK",
+                    photocraft_geom::Size::new(3, 2),
+                    photocraft_color::ColorMode::Cmyk,
+                    depth,
+                );
+                doc.layers
+                    .push(Layer::new("Fill", LayerContent::Fill(fill.clone())));
                 assert!(plan(&doc).unwrap_err().0.contains("native CMYK fill"));
                 doc.layers[0].visible = false;
                 assert!(plan(&doc).is_ok());
                 doc.layers[0].visible = true;
-                doc.layers[0].fill_cache = Some(FillCache { fill, surface: photocraft_raster::Surface::new(doc.pixel_format()) });
+                doc.layers[0].fill_cache = Some(FillCache {
+                    fill,
+                    surface: photocraft_raster::Surface::new(doc.pixel_format()),
+                });
                 assert!(plan(&doc).is_ok());
                 doc.layers[0].fill_cache.as_mut().unwrap().fill = Fill::Solid(Color::TRANSPARENT);
                 assert!(plan(&doc).is_err());
@@ -1845,9 +2480,18 @@ mod tests {
         use photocraft_doc::{Contour, FxCommon, GlowSource, GlowTechnique};
 
         for fill in [0.0, 0.4, 1.0] {
-            let mut d = Document::with_background("glow", Size::new(64, 64), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+            let mut d = Document::with_background(
+                "glow",
+                Size::new(64, 64),
+                ColorMode::Rgb,
+                SampleType::U8,
+                Color::WHITE,
+            );
             let mut layer = Layer::raster("frame", d.pixel_format());
-            layer.surface_mut().unwrap().fill_rect(Rect::new(16, 16, 48, 48), &[1.0, 0.0, 0.0, 1.0]);
+            layer
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(16, 16, 48, 48), &[1.0, 0.0, 0.0, 1.0]);
             layer.fill_opacity = fill;
             layer.effects.items.push(Effect::OuterGlow(Glow {
                 common: FxCommon::new(BlendMode::Normal, 1.0),
@@ -1868,7 +2512,11 @@ mod tests {
                 .passes
                 .iter()
                 .find(|pass| {
-                    pass.kernel == Kernel::FxPaint && pass.flags & F_KNOCKOUT != 0 && pass.color[0] > 0.9 && pass.color[1] > 0.9 && pass.color[2] < 0.1
+                    pass.kernel == Kernel::FxPaint
+                        && pass.flags & F_KNOCKOUT != 0
+                        && pass.color[0] > 0.9
+                        && pass.color[1] > 0.9
+                        && pass.color[2] < 0.1
                 })
                 .expect("outer glow paint pass");
             assert!((glow.extra[3] - (1.0 - fill)).abs() < 1e-6, "fill {fill}");
@@ -1878,7 +2526,13 @@ mod tests {
     #[test]
     fn color_lookup_with_an_overflowing_stored_size_uploads_no_table() {
         for size in [1 << 22, u32::MAX] {
-            let a = Adjustment::ColorLookup { name: "x".into(), lut: Some(std::sync::Arc::new(vec![0.5; 24])), size, tetrahedral: false, dither: false };
+            let a = Adjustment::ColorLookup {
+                name: "x".into(),
+                lut: Some(std::sync::Arc::new(vec![0.5; 24])),
+                size,
+                tetrahedral: false,
+                dither: false,
+            };
             let (kind, _, rows) = adjustment_program(&a, Transfer::Srgb, SampleType::U8);
             assert_eq!((kind, rows.is_none()), (0, true), "size {size}");
         }
@@ -1887,25 +2541,50 @@ mod tests {
     #[test]
     fn root_checkpoints_have_only_one_live_input_and_keep_clips_whole() {
         for mode in [BlendMode::Normal, BlendMode::PassThrough] {
-            let mut d = Document::with_background("t", Size::new(32, 24), ColorMode::Rgb, SampleType::U8, Color::WHITE);
-            let mut clip = Layer::new("clip", LayerContent::Fill(Fill::Solid(Color::rgba(0.2, 0.3, 0.7, 0.4))));
+            let mut d = Document::with_background(
+                "t",
+                Size::new(32, 24),
+                ColorMode::Rgb,
+                SampleType::U8,
+                Color::WHITE,
+            );
+            let mut clip = Layer::new(
+                "clip",
+                LayerContent::Fill(Fill::Solid(Color::rgba(0.2, 0.3, 0.7, 0.4))),
+            );
             clip.clipped = true;
             let mut group = Layer::group(
                 "group",
                 vec![
-                    Layer::new("fill", LayerContent::Fill(Fill::Solid(Color::rgba(0.9, 0.1, 0.3, 0.6)))),
+                    Layer::new(
+                        "fill",
+                        LayerContent::Fill(Fill::Solid(Color::rgba(0.9, 0.1, 0.3, 0.6))),
+                    ),
                     Layer::new("invert", LayerContent::Adjustment(Adjustment::Invert)),
                 ],
             );
             group.blend = mode;
-            d.layers.extend([group, clip, Layer::new("top", LayerContent::Adjustment(Adjustment::Invert))]);
+            d.layers.extend([
+                group,
+                clip,
+                Layer::new("top", LayerContent::Adjustment(Adjustment::Invert)),
+            ]);
             let plan = plan(&d).unwrap();
-            assert_eq!(plan.checkpoints.iter().map(|c| c.layer_end).collect::<Vec<_>>(), vec![1, 3, 4]);
+            assert_eq!(
+                plan.checkpoints
+                    .iter()
+                    .map(|c| c.layer_end)
+                    .collect::<Vec<_>>(),
+                vec![1, 3, 4]
+            );
             for checkpoint in &plan.checkpoints {
                 let mut written = std::collections::HashSet::from([checkpoint.slot]);
                 for pass in &plan.passes[checkpoint.pass_end..] {
                     for input in [pass.a, pass.b, pass.c, pass.d].into_iter().flatten() {
-                        assert!(written.contains(&input), "a suffix must not need another saved slot: {checkpoint:?}");
+                        assert!(
+                            written.contains(&input),
+                            "a suffix must not need another saved slot: {checkpoint:?}"
+                        );
                     }
                     written.insert(pass.dst);
                 }
@@ -1916,15 +2595,24 @@ mod tests {
 
     #[test]
     fn slots_are_recycled() {
-        let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let mut d = Document::with_background(
+            "t",
+            Size::new(8, 8),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         for i in 0..10 {
-            d.layers.push(Layer::raster(format!("l{i}"), d.pixel_format()));
+            d.layers
+                .push(Layer::raster(format!("l{i}"), d.pixel_format()));
         }
         let p = plan(&d).unwrap();
         // Empty layers draw nothing.
         assert_eq!(p.passes.len(), 1 + 2);
         for (i, l) in d.layers.iter_mut().skip(1).enumerate() {
-            l.surface_mut().unwrap().fill_rect(Rect::new(i as i32 % 4, 0, 4, 8), &[0.0, 0.0, 1.0, 1.0]);
+            l.surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(i as i32 % 4, 0, 4, 8), &[0.0, 0.0, 1.0, 1.0]);
         }
         let p = plan(&d).unwrap();
         assert!(p.slots <= 3, "{} slots", p.slots);
@@ -1934,36 +2622,76 @@ mod tests {
 
     #[test]
     fn small_layers_composite_only_over_their_bounds() {
-        let mut d = Document::with_background("t", Size::new(64, 64), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let mut d = Document::with_background(
+            "t",
+            Size::new(64, 64),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         let mut l = Layer::raster("small", d.pixel_format());
-        l.surface_mut().unwrap().fill_rect(Rect::new(10, 12, 20, 30), &[1.0, 0.0, 0.0, 1.0]);
+        l.surface_mut()
+            .unwrap()
+            .fill_rect(Rect::new(10, 12, 20, 30), &[1.0, 0.0, 0.0, 1.0]);
         let mut group = Layer::group("g", vec![l]);
         group.blend = BlendMode::Normal;
         d.layers.push(group);
         let p = plan(&d).unwrap();
         let r = Rect::new(10, 12, 20, 30);
         // The group's content, its blend and the copy back are all limited to the layer.
-        assert!(p.passes.iter().filter(|p| matches!(p.kernel, Kernel::Content | Kernel::Blend)).skip(2).all(|p| p.clip == Some(r)), "{:?}", p.passes);
+        assert!(
+            p.passes
+                .iter()
+                .filter(|p| matches!(p.kernel, Kernel::Content | Kernel::Blend))
+                .skip(2)
+                .all(|p| p.clip == Some(r)),
+            "{:?}",
+            p.passes
+        );
         let last = p.passes.last().unwrap();
-        assert_eq!((last.kernel, last.dst, last.clip), (Kernel::CopyRect, p.root, Some(r)));
+        assert_eq!(
+            (last.kernel, last.dst, last.clip),
+            (Kernel::CopyRect, p.root, Some(r))
+        );
         // A layer that covers most of the canvas composites everywhere.
-        d.layers[1].children_mut().unwrap()[0].surface_mut().unwrap().fill_rect(Rect::new(0, 0, 60, 60), &[1.0, 0.0, 0.0, 1.0]);
+        d.layers[1].children_mut().unwrap()[0]
+            .surface_mut()
+            .unwrap()
+            .fill_rect(Rect::new(0, 0, 60, 60), &[1.0, 0.0, 0.0, 1.0]);
         let p = plan(&d).unwrap();
         assert!(p.passes.iter().all(|p| p.clip.is_none()));
     }
 
     #[test]
     fn effects_are_planned_in_place() {
-        let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let mut d = Document::with_background(
+            "t",
+            Size::new(8, 8),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         let mut l = Layer::raster("fx", d.pixel_format());
-        l.surface_mut().unwrap().fill_rect(Rect::new(2, 2, 5, 5), &[1.0, 0.0, 0.0, 1.0]);
-        l.effects.items.push(photocraft_doc::Effect::ColorOverlay { common: photocraft_doc::FxCommon::new(BlendMode::Normal, 1.0), color: Color::WHITE });
-        l.effects.items.push(photocraft_doc::Effect::default_drop_shadow());
+        l.surface_mut()
+            .unwrap()
+            .fill_rect(Rect::new(2, 2, 5, 5), &[1.0, 0.0, 0.0, 1.0]);
+        l.effects.items.push(photocraft_doc::Effect::ColorOverlay {
+            common: photocraft_doc::FxCommon::new(BlendMode::Normal, 1.0),
+            color: Color::WHITE,
+        });
+        l.effects
+            .items
+            .push(photocraft_doc::Effect::default_drop_shadow());
         d.layers.push(l);
         let p = plan(&d).unwrap();
         assert_eq!(p.fx.len(), 1);
         let m = photocraft_compose::effects::margin(&d.layers[1]);
-        assert_eq!(p.fx[0].region, Rect::new(2, 2, 5, 5).inflate(m).intersect(&d.bounds().inflate(m)));
+        assert_eq!(
+            p.fx[0].region,
+            Rect::new(2, 2, 5, 5)
+                .inflate(m)
+                .intersect(&d.bounds().inflate(m))
+        );
         // The effect result lands back in the backdrop slot.
         let last = p.passes.last().unwrap();
         assert_eq!(last.kernel, Kernel::CopyRect);
@@ -1973,12 +2701,28 @@ mod tests {
 
     #[test]
     fn opaque_fill_layers_skip_what_they_cover() {
-        let opaque = || Fill::gradient(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], 30.0, 1.0, photocraft_doc::GradientStyle::Linear, false);
-        let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let opaque = || {
+            Fill::gradient(
+                vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+                30.0,
+                1.0,
+                photocraft_doc::GradientStyle::Linear,
+                false,
+            )
+        };
+        let mut d = Document::with_background(
+            "t",
+            Size::new(8, 8),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         for i in 0..4 {
             // Small painted layers (empty ones plan no passes at all).
             let mut l = Layer::raster(format!("l{i}"), d.pixel_format());
-            l.surface_mut().unwrap().fill_rect(Rect::new(i, i, i + 2, i + 2), &[0.0, 0.0, 1.0, 1.0]);
+            l.surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(i, i, i + 2, i + 2), &[0.0, 0.0, 1.0, 1.0]);
             d.layers.push(l);
         }
         d.layers.push(Layer::new("g", LayerContent::Fill(opaque())));
@@ -2006,23 +2750,61 @@ mod tests {
         for (k, f) in see_through.iter().enumerate() {
             let mut d2 = d.clone();
             f(&mut d2.layers[5]);
-            assert!(plan(&d2).unwrap().passes.len() > skipped, "case {k}: the layers below are planned");
-            assert!(!photocraft_compose::occludes_below(&d2.layers[5], ColorMode::Rgb), "case {k}");
+            assert!(
+                plan(&d2).unwrap().passes.len() > skipped,
+                "case {k}: the layers below are planned"
+            );
+            assert!(
+                !photocraft_compose::occludes_below(&d2.layers[5], ColorMode::Rgb),
+                "case {k}"
+            );
         }
         let mut translucent = d.clone();
-        translucent.layers[5].content = LayerContent::Fill(Fill::Solid(Color::rgba(1.0, 0.0, 0.0, 0.5)));
-        assert!(!photocraft_compose::occludes_below(&translucent.layers[5], ColorMode::Rgb));
-        assert!(photocraft_compose::occludes_below(&d.layers[5], ColorMode::Rgb));
+        translucent.layers[5].content =
+            LayerContent::Fill(Fill::Solid(Color::rgba(1.0, 0.0, 0.0, 0.5)));
+        assert!(!photocraft_compose::occludes_below(
+            &translucent.layers[5],
+            ColorMode::Rgb
+        ));
+        assert!(photocraft_compose::occludes_below(
+            &d.layers[5],
+            ColorMode::Rgb
+        ));
     }
 
     #[test]
     fn blend_if_plans_on_the_gpu() {
-        let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let mut d = Document::with_background(
+            "t",
+            Size::new(8, 8),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         let mut l = Layer::raster("bi", d.pixel_format());
-        l.surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(0, 0, 4, 4), &[1.0, 0.0, 0.0, 1.0]);
-        l.blend_if.set(0, [photocraft_doc::BlendRange { black: [40, 40], white: [255, 255] }, photocraft_doc::BlendRange::FULL]);
+        l.surface_mut().unwrap().fill_rect(
+            photocraft_geom::Rect::new(0, 0, 4, 4),
+            &[1.0, 0.0, 0.0, 1.0],
+        );
+        l.blend_if.set(
+            0,
+            [
+                photocraft_doc::BlendRange {
+                    black: [40, 40],
+                    white: [255, 255],
+                },
+                photocraft_doc::BlendRange::FULL,
+            ],
+        );
         d.layers.push(l.clone());
-        let blend_if = |d: &Document| plan(d).unwrap().passes.iter().filter(|p| p.flags & F_BLEND_IF != 0).count();
+        let blend_if = |d: &Document| {
+            plan(d)
+                .unwrap()
+                .passes
+                .iter()
+                .filter(|p| p.flags & F_BLEND_IF != 0)
+                .count()
+        };
         assert_eq!(blend_if(&d), 1);
         // Clipped layers too.
         l.clipped = true;
@@ -2037,19 +2819,48 @@ mod tests {
     #[test]
     fn blend_if_params_pack_every_range_exactly() {
         let mut bi = photocraft_doc::BlendIf::default();
-        bi.set(3, [photocraft_doc::BlendRange { black: [255, 255], white: [0, 1] }, photocraft_doc::BlendRange { black: [12, 200], white: [201, 254] }]);
+        bi.set(
+            3,
+            [
+                photocraft_doc::BlendRange {
+                    black: [255, 255],
+                    white: [0, 1],
+                },
+                photocraft_doc::BlendRange {
+                    black: [12, 200],
+                    white: [201, 254],
+                },
+            ],
+        );
         let f: Vec<f32> = blend_if_params(&bi).iter().flatten().copied().collect();
         // Entry 3 (B), this layer then underlying; unset entries are full ranges.
-        assert_eq!(&f[12..16], &[255.0 * 256.0 + 255.0, 1.0, 12.0 * 256.0 + 200.0, 201.0 * 256.0 + 254.0]);
+        assert_eq!(
+            &f[12..16],
+            &[
+                255.0 * 256.0 + 255.0,
+                1.0,
+                12.0 * 256.0 + 200.0,
+                201.0 * 256.0 + 254.0
+            ]
+        );
         assert_eq!(&f[0..2], &[0.0, 255.0 * 256.0 + 255.0]);
     }
 
     #[test]
     fn advanced_blending_falls_back_to_the_cpu() {
         use photocraft_doc::Knockout;
-        let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let mut d = Document::with_background(
+            "t",
+            Size::new(8, 8),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         let mut l = Layer::raster("ko", d.pixel_format());
-        l.surface_mut().unwrap().fill_rect(photocraft_geom::Rect::new(0, 0, 4, 4), &[1.0, 0.0, 0.0, 1.0]);
+        l.surface_mut().unwrap().fill_rect(
+            photocraft_geom::Rect::new(0, 0, 4, 4),
+            &[1.0, 0.0, 0.0, 1.0],
+        );
         d.layers.push(l.clone());
         assert!(plan(&d).is_ok(), "defaults stay on the GPU");
         // Switches with nothing to act on (no effects, no clipped layers) stay on the GPU too.

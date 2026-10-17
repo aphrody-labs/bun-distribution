@@ -176,13 +176,13 @@ impl Flash {
                     // Write enable
                     self.status.set_write_enabled(true);
                     0xFF // High-Z
-                },
+                }
 
                 0x04 => {
                     // Write disable
                     self.status.set_write_enabled(false);
                     0xFF // High-Z
-                },
+                }
 
                 0x9F => {
                     // Read ID
@@ -190,15 +190,15 @@ impl Flash {
                         0 => {
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         1..=19 => {
                             let result = self.id[(self.cur_command_pos - 1) as usize];
                             self.cur_command_pos += 1;
                             result
-                        },
+                        }
                         _ => self.id[19],
                     }
-                },
+                }
 
                 0x05 => {
                     // Read status register
@@ -208,7 +208,7 @@ impl Flash {
                     } else {
                         self.status.0
                     }
-                },
+                }
 
                 0x03 => {
                     // Read
@@ -217,21 +217,21 @@ impl Flash {
                             self.cur_addr = 0;
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         1..=3 => {
                             self.cur_addr =
                                 ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         _ => {
                             let result =
                                 unsafe { self.contents.read_unchecked(self.cur_addr as usize) };
                             self.cur_addr = self.cur_addr.wrapping_add(1) & self.contents_len_mask;
                             result
-                        },
+                        }
                     }
-                },
+                }
 
                 0x0B => {
                     // Read at higher speed
@@ -240,25 +240,25 @@ impl Flash {
                             self.cur_addr = 0;
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         1..=3 => {
                             self.cur_addr =
                                 ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         4 => {
                             self.cur_command_pos += 1;
                             0xFF // High-Z
-                        },
+                        }
                         _ => {
                             let result =
                                 unsafe { self.contents.read_unchecked(self.cur_addr as usize) };
                             self.cur_addr = self.cur_addr.wrapping_add(1) & self.contents_len_mask;
                             result
-                        },
+                        }
                     }
-                },
+                }
 
                 0x0A => {
                     // Write
@@ -269,12 +269,12 @@ impl Flash {
                                 self.write_buffer_end = 0;
                                 self.write_buffer_len = 0;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             1..=3 => {
                                 self.cur_addr =
                                     ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             _ => {
                                 self.write_buffer[self.write_buffer_end as usize] = value;
                                 self.write_buffer_end = self.write_buffer_end.wrapping_add(1);
@@ -307,11 +307,11 @@ impl Flash {
                                     }
                                     self.contents_dirty = true;
                                 }
-                            },
+                            }
                         }
                     }
                     0xFF // High-Z
-                },
+                }
 
                 0x02 => {
                     // Program
@@ -322,12 +322,12 @@ impl Flash {
                                 self.write_buffer_end = 0;
                                 self.write_buffer_len = 0;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             1..=3 => {
                                 self.cur_addr =
                                     ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             _ => {
                                 self.write_buffer[self.write_buffer_end as usize] = value;
                                 self.write_buffer_end = self.write_buffer_end.wrapping_add(1);
@@ -355,11 +355,11 @@ impl Flash {
                                     }
                                     self.contents_dirty = true;
                                 }
-                            },
+                            }
                         }
                     }
                     0xFF // High-Z
-                },
+                }
 
                 0xDB => {
                     // Erase page (256 B)
@@ -367,12 +367,12 @@ impl Flash {
                         match self.cur_command_pos {
                             0 => {
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             1..=3 => {
                                 self.cur_addr =
                                     ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             _ => {
                                 self.cur_addr &= !0xFF;
                                 if last {
@@ -386,11 +386,11 @@ impl Flash {
                                     }
                                     self.contents_dirty = true;
                                 }
-                            },
+                            }
                         }
                     }
                     0xFF // High-Z
-                },
+                }
 
                 0xD8 => {
                     // Erase sector (64 KiB)
@@ -398,12 +398,12 @@ impl Flash {
                         match self.cur_command_pos {
                             0 => {
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             1..=3 => {
                                 self.cur_addr =
                                     ((self.cur_addr << 8) | value as u32) & self.contents_len_mask;
                                 self.cur_command_pos += 1;
-                            },
+                            }
                             _ => {
                                 self.cur_addr &= !0xFFFF;
                                 if last {
@@ -417,11 +417,11 @@ impl Flash {
                                     }
                                     self.contents_dirty = true;
                                 }
-                            },
+                            }
                         }
                     }
                     0xFF // High-Z
-                },
+                }
 
                 0xC7 => {
                     // Erase entire chip
@@ -430,13 +430,13 @@ impl Flash {
                         self.contents_dirty = true;
                     }
                     0xFF // High-Z
-                },
+                }
 
                 0xB9 => {
                     // Power down
                     self.powered_down = true;
                     0xFF // High-Z
-                },
+                }
 
                 _ => {
                     if first {
@@ -444,7 +444,7 @@ impl Flash {
                         slog::warn!(self.logger, "Unrecognized command: {:#X}", self.cur_command);
                     }
                     0xFF // High-Z
-                },
+                }
             }
         }
     }

@@ -114,7 +114,11 @@ impl Banner {
 
         if let Some(keyframes) = &self.keyframes {
             if keyframes.len() > 64 {
-                TooManyKeyframesSnafu { max: 64usize, actual: keyframes.len() }.fail()?;
+                TooManyKeyframesSnafu {
+                    max: 64usize,
+                    actual: keyframes.len(),
+                }
+                .fail()?;
             }
 
             let animation = banner.animation_mut().unwrap();
@@ -223,8 +227,14 @@ impl BannerImages {
         let bitmap_image = ImageReader::open(path.join(&self.bitmap_path))?.decode()?;
         if bitmap_image.width() != 32 || bitmap_image.height() != 32 {
             return WrongSizeSnafu {
-                expected: ImageSize { width: 32, height: 32 },
-                actual: ImageSize { width: bitmap_image.width(), height: bitmap_image.height() },
+                expected: ImageSize {
+                    width: 32,
+                    height: 32,
+                },
+                actual: ImageSize {
+                    width: bitmap_image.width(),
+                    height: bitmap_image.height(),
+                },
             }
             .fail();
         }
@@ -232,8 +242,14 @@ impl BannerImages {
         let palette_image = ImageReader::open(path.join(&self.palette_path))?.decode()?;
         if palette_image.width() != 16 || palette_image.height() != 1 {
             return WrongSizeSnafu {
-                expected: ImageSize { width: 16, height: 1 },
-                actual: ImageSize { width: palette_image.width(), height: palette_image.height() },
+                expected: ImageSize {
+                    width: 16,
+                    height: 1,
+                },
+                actual: ImageSize {
+                    width: palette_image.width(),
+                    height: palette_image.height(),
+                },
             }
             .fail();
         }
@@ -244,10 +260,16 @@ impl BannerImages {
             let index = if alpha == 0 {
                 0
             } else {
-                let Some(index) =
-                    palette_image.pixels().find_map(|(i, _, c)| (color == c).then_some(i))
+                let Some(index) = palette_image
+                    .pixels()
+                    .find_map(|(i, _, c)| (color == c).then_some(i))
                 else {
-                    return InvalidPixelSnafu { bitmap: path.join(&self.bitmap_path), x, y }.fail();
+                    return InvalidPixelSnafu {
+                        bitmap: path.join(&self.bitmap_path),
+                        x,
+                        y,
+                    }
+                    .fail();
                 };
                 index
             };

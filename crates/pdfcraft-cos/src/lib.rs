@@ -11,7 +11,14 @@
 //! Not yet: streaming very large files within a memory budget (`ByteSource`,
 //! `core.lazy-loading`), and linearized output (`core.linearization`, M11). See the README.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod bytes;
 mod document;
@@ -26,7 +33,8 @@ pub use document::{Document, Revision, SourceIdentity, XrefEntry};
 pub use object::{Dict, MAX_DECODED, Name, ObjRef, Object, PdfString, Stream};
 pub use parser::{Lexer, is_whitespace, parse_indirect};
 pub use pdfcraft_crypt::{
-    Algorithm, Auth, Method as CryptMethod, NewEncryption, Permissions, SecurityHandler, effective_password, pdfdoc_byte, pdfdoc_char,
+    Algorithm, Auth, Method as CryptMethod, NewEncryption, Permissions, SecurityHandler,
+    effective_password, pdfdoc_byte, pdfdoc_char,
 };
 pub use writer::{SaveOptions, pdf_date, serialize, write_full, write_incremental};
 

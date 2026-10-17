@@ -96,28 +96,54 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub fn has_active(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no photo selected".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no photo selected".into())
 }
 pub fn has_selection(s: &Session) -> std::result::Result<(), String> {
-    if s.selection.ids.is_empty() && s.selection.active.is_none() { Err("no photos selected".into()) } else { Ok(()) }
+    if s.selection.ids.is_empty() && s.selection.active.is_none() {
+        Err("no photos selected".into())
+    } else {
+        Ok(())
+    }
 }
 /// Albums hold library photos: a selection of only browsed (Local) photos has nothing an album
 /// can take (issue #684; Add to My Photos first).
 pub fn has_library_selection(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if s.targets(&serde_json::Value::Null).iter().any(|id| s.catalog.photo(*id).is_none_or(|p| !p.local)) { Ok(()) } else { Err(LOCAL_ONLY.into()) }
+    if s.targets(&serde_json::Value::Null)
+        .iter()
+        .any(|id| s.catalog.photo(*id).is_none_or(|p| !p.local))
+    {
+        Ok(())
+    } else {
+        Err(LOCAL_ONLY.into())
+    }
 }
 /// Why an album command refused a Local-only selection.
-pub const LOCAL_ONLY: &str = "only Local photos: albums hold library photos (Add to My Photos first)";
+pub const LOCAL_ONLY: &str =
+    "only Local photos: albums hold library photos (Add to My Photos first)";
 pub fn can_undo(s: &Session) -> std::result::Result<(), String> {
-    if s.undo.is_empty() { Err("nothing to undo".into()) } else { Ok(()) }
+    if s.undo.is_empty() {
+        Err("nothing to undo".into())
+    } else {
+        Ok(())
+    }
 }
 pub fn can_redo(s: &Session) -> std::result::Result<(), String> {
-    if s.redo.is_empty() { Err("nothing to redo".into()) } else { Ok(()) }
+    if s.redo.is_empty() {
+        Err("nothing to redo".into())
+    } else {
+        Ok(())
+    }
 }
 pub fn has_clipboard(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
-    if s.clipboard.is_none() { Err("no settings copied".into()) } else { Ok(()) }
+    if s.clipboard.is_none() {
+        Err("no settings copied".into())
+    } else {
+        Ok(())
+    }
 }
 
 macro_rules! cmd {
@@ -178,14 +204,21 @@ pub fn find_command(id: &str) -> Option<&'static CommandSpec> {
 
 /// The call names its target photos (`ids` or `id`, not null) instead of using the selection.
 pub(crate) fn names_photos(p: &Value) -> bool {
-    ["ids", "id"].iter().any(|k| p.get(k).is_some_and(|v| !v.is_null()))
+    ["ids", "id"]
+        .iter()
+        .any(|k| p.get(k).is_some_and(|v| !v.is_null()))
 }
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 pub(crate) fn f64_req(p: &Value, key: &str, cmd: &str) -> Result<f64> {
-    p.get(key).and_then(Value::as_f64).ok_or_else(|| bad(cmd, format!("missing number `{key}`")))
+    p.get(key)
+        .and_then(Value::as_f64)
+        .ok_or_else(|| bad(cmd, format!("missing number `{key}`")))
 }
 pub(crate) fn f64_or(p: &Value, key: &str, d: f64) -> f64 {
     p.get(key).and_then(Value::as_f64).unwrap_or(d)
@@ -201,5 +234,8 @@ pub(crate) fn ok() -> Result<Value> {
 }
 pub(crate) fn point(p: &Value, key: &str) -> Option<lightcraft_geom::Point> {
     let a = p.get(key)?.as_array()?;
-    Some(lightcraft_geom::Point::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?))
+    Some(lightcraft_geom::Point::new(
+        a.first()?.as_f64()?,
+        a.get(1)?.as_f64()?,
+    ))
 }

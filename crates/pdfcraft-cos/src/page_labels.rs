@@ -73,16 +73,29 @@ mod tests {
     fn bounded_page_labels_follow_pdf_numbering() {
         assert_eq!(roman(4, MAX_LABEL_BYTES).as_deref(), Some("iv"));
         assert_eq!(roman(1994, MAX_LABEL_BYTES).as_deref(), Some("mcmxciv"));
-        for (n, expected) in [(0, "a"), (1, "a"), (26, "z"), (27, "aa"), (52, "zz"), (53, "aaa")] {
+        for (n, expected) in [
+            (0, "a"),
+            (1, "a"),
+            (26, "z"),
+            (27, "aa"),
+            (52, "zz"),
+            (53, "aaa"),
+        ] {
             assert_eq!(alpha(n, MAX_LABEL_BYTES).as_deref(), Some(expected));
         }
     }
 
     #[test]
     fn bounded_page_labels_check_lengths_before_repeating() {
-        assert_eq!(roman(1_024_000, MAX_LABEL_BYTES).unwrap().len(), MAX_LABEL_BYTES);
+        assert_eq!(
+            roman(1_024_000, MAX_LABEL_BYTES).unwrap().len(),
+            MAX_LABEL_BYTES
+        );
         assert!(roman(1_024_001, MAX_LABEL_BYTES).is_none());
-        assert_eq!(alpha(26 * 1024, MAX_LABEL_BYTES).unwrap().len(), MAX_LABEL_BYTES);
+        assert_eq!(
+            alpha(26 * 1024, MAX_LABEL_BYTES).unwrap().len(),
+            MAX_LABEL_BYTES
+        );
         assert!(alpha(26 * 1024 + 1, MAX_LABEL_BYTES).is_none());
         assert_eq!(roman(4, 2).as_deref(), Some("iv"));
         assert!(roman(4, 1).is_none());

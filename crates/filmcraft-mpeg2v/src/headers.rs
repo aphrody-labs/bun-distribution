@@ -50,12 +50,14 @@ pub const DEFAULT_INTRA: [u8; 64] = [
 /// Scan index → raster position: zigzag (scan 0) and alternate (scan 1), H.262 Figure 7-2/7-3.
 pub const SCAN: [[u8; 64]; 2] = [
     [
-        0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36,
-        29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
+        0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27,
+        20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
+        58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
     ],
     [
-        0, 8, 16, 24, 1, 9, 2, 10, 17, 25, 32, 40, 48, 56, 57, 49, 41, 33, 26, 18, 3, 11, 4, 12, 19, 27, 34, 42, 50, 58, 35, 43, 51, 59, 20, 28, 5, 13, 6, 14,
-        21, 29, 36, 44, 52, 60, 37, 45, 53, 61, 22, 30, 7, 15, 23, 31, 38, 46, 54, 62, 39, 47, 55, 63,
+        0, 8, 16, 24, 1, 9, 2, 10, 17, 25, 32, 40, 48, 56, 57, 49, 41, 33, 26, 18, 3, 11, 4, 12,
+        19, 27, 34, 42, 50, 58, 35, 43, 51, 59, 20, 28, 5, 13, 6, 14, 21, 29, 36, 44, 52, 60, 37,
+        45, 53, 61, 22, 30, 7, 15, 23, 31, 38, 46, 54, 62, 39, 47, 55, 63,
     ],
 ];
 
@@ -236,21 +238,36 @@ impl Extension {
             }
             2 => {
                 let video_format = b.read(3) as u8;
-                let colour = b.bit().then(|| (b.read(8) as u8, b.read(8) as u8, b.read(8) as u8));
+                let colour = b
+                    .bit()
+                    .then(|| (b.read(8) as u8, b.read(8) as u8, b.read(8) as u8));
                 let display_horizontal_size = b.read(14) as u16;
                 b.skip(1);
                 let display_vertical_size = b.read(14) as u16;
-                Extension::Display(DisplayExtension { video_format, colour, display_horizontal_size, display_vertical_size })
+                Extension::Display(DisplayExtension {
+                    video_format,
+                    colour,
+                    display_horizontal_size,
+                    display_vertical_size,
+                })
             }
             3 => {
                 let intra = b.bit().then(|| read_matrix(&mut b));
                 let non_intra = b.bit().then(|| read_matrix(&mut b));
                 let chroma_intra = b.bit().then(|| read_matrix(&mut b));
                 let chroma_non_intra = b.bit().then(|| read_matrix(&mut b));
-                Extension::QuantMatrix(Box::new(QuantMatrixExtension { intra, non_intra, chroma_intra, chroma_non_intra }))
+                Extension::QuantMatrix(Box::new(QuantMatrixExtension {
+                    intra,
+                    non_intra,
+                    chroma_intra,
+                    chroma_non_intra,
+                }))
             }
             8 => {
-                let f_code = [[b.read(4) as u8, b.read(4) as u8], [b.read(4) as u8, b.read(4) as u8]];
+                let f_code = [
+                    [b.read(4) as u8, b.read(4) as u8],
+                    [b.read(4) as u8, b.read(4) as u8],
+                ];
                 let intra_dc_precision = b.read(2) as u8;
                 let picture_structure = b.read(2) as u8;
                 let top_field_first = b.bit();
@@ -315,7 +332,15 @@ impl GopHeader {
         let pictures = b.read(6) as u8;
         let closed_gop = b.bit();
         let broken_link = b.bit();
-        Ok(Self { drop_frame, hours, minutes, seconds, pictures, closed_gop, broken_link })
+        Ok(Self {
+            drop_frame,
+            hours,
+            minutes,
+            seconds,
+            pictures,
+            closed_gop,
+            broken_link,
+        })
     }
 }
 
@@ -362,7 +387,12 @@ impl PictureHeader {
             t => return Err(Error::Invalid(format!("picture_coding_type {t}"))),
         };
         let vbv_delay = b.read(16) as u16;
-        let (mut full_pel_forward_vector, mut forward_f_code, mut full_pel_backward_vector, mut backward_f_code) = (false, 7, false, 7);
+        let (
+            mut full_pel_forward_vector,
+            mut forward_f_code,
+            mut full_pel_backward_vector,
+            mut backward_f_code,
+        ) = (false, 7, false, 7);
         if matches!(coding_type, PictureType::P | PictureType::B) {
             full_pel_forward_vector = b.bit();
             forward_f_code = b.read(3) as u8;
@@ -371,7 +401,15 @@ impl PictureHeader {
             full_pel_backward_vector = b.bit();
             backward_f_code = b.read(3) as u8;
         }
-        Ok(Self { temporal_reference, coding_type, vbv_delay, full_pel_forward_vector, forward_f_code, full_pel_backward_vector, backward_f_code })
+        Ok(Self {
+            temporal_reference,
+            coding_type,
+            vbv_delay,
+            full_pel_forward_vector,
+            forward_f_code,
+            full_pel_backward_vector,
+            backward_f_code,
+        })
     }
 }
 
@@ -442,10 +480,14 @@ mod tests {
             }
         }
         // Figure 7-3 row 0 of the alternate scan: 0 4 6 20 22 36 38 52
-        let inv: Vec<usize> = (0..8).map(|u| SCAN[1].iter().position(|&p| p as usize == u).unwrap()).collect();
+        let inv: Vec<usize> = (0..8)
+            .map(|u| SCAN[1].iter().position(|&p| p as usize == u).unwrap())
+            .collect();
         assert_eq!(inv, vec![0, 4, 6, 20, 22, 36, 38, 52]);
         // Figure 7-2 row 0 of the zigzag scan: 0 1 5 6 14 15 27 28
-        let inv: Vec<usize> = (0..8).map(|u| SCAN[0].iter().position(|&p| p as usize == u).unwrap()).collect();
+        let inv: Vec<usize> = (0..8)
+            .map(|u| SCAN[0].iter().position(|&p| p as usize == u).unwrap())
+            .collect();
         assert_eq!(inv, vec![0, 1, 5, 6, 14, 15, 27, 28]);
     }
 

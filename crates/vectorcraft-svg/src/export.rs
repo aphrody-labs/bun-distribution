@@ -6,7 +6,8 @@ use std::sync::Arc;
 
 use vectorcraft_color::{BlendMode, GradientKind, GradientPaint, Paint};
 use vectorcraft_doc::{
-    AppearanceItem, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, StrokeAlign, StrokeLayer, TextKind, TextObject,
+    AppearanceItem, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, StrokeAlign,
+    StrokeLayer, TextKind, TextObject,
 };
 use vectorcraft_doc::{CharStyle, ImageBlob, Justify};
 use vectorcraft_effects::stroke::{self, Written, WrittenShape};
@@ -15,8 +16,8 @@ use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect};
 use vectorcraft_text::{FontDb, FontFace};
 
 use crate::{
-    EDITING_NS, Encoding, ExportOptions, ImageMode, LinkedImage, ObjectIds, Output, Profile, Styling, base64_encode, body_hash, fmt_num, fnv1a,
-    xml_escape,
+    EDITING_NS, Encoding, ExportOptions, ImageMode, LinkedImage, ObjectIds, Output, Profile,
+    Styling, base64_encode, body_hash, fmt_num, fnv1a, xml_escape,
 };
 
 use crate::css::{self, Props, blend_css, css_string, font_descriptor};
@@ -97,17 +98,27 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
     let mut out = String::new();
     // A file in neither UTF-8 nor UTF-16 must name its encoding.
     if !opts.minify || encoding == Encoding::Latin1 {
-        out.push_str(&format!("<?xml version=\"1.0\" encoding=\"{}\"?>{nl}", encoding.xml_name()));
+        out.push_str(&format!(
+            "<?xml version=\"1.0\" encoding=\"{}\"?>{nl}",
+            encoding.xml_name()
+        ));
     }
     if opts.styling == Styling::StyleEntities && !w.classes.is_empty() {
         out.push_str("<!DOCTYPE svg [");
         for (i, c) in w.classes.iter().enumerate() {
-            out.push_str(&format!("{nl}{}<!ENTITY st{} \"{}\">", w.indent(1), i + 1, entity_value(c)));
+            out.push_str(&format!(
+                "{nl}{}<!ENTITY st{} \"{}\">",
+                w.indent(1),
+                i + 1,
+                entity_value(c)
+            ));
         }
         out.push_str(&format!("{nl}]>{nl}"));
     }
     let (ww, hh) = (w.num(rect.width()), w.num(rect.height()));
-    out.push_str("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"");
+    out.push_str(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"",
+    );
     if w.tiny() {
         out.push_str(" version=\"1.2\" baseProfile=\"tiny\"");
     }
@@ -123,7 +134,12 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
         if css || !fonts.is_empty() {
             out.push_str(&w.indent(2));
             out.push_str("<style>");
-            let classes = w.classes.iter().enumerate().filter(|_| css).map(|(i, c)| format!(".{id_prefix}cls-{}{{{c}}}", i + 1));
+            let classes = w
+                .classes
+                .iter()
+                .enumerate()
+                .filter(|_| css)
+                .map(|(i, c)| format!(".{id_prefix}cls-{}{{{c}}}", i + 1));
             for rule in classes.chain(fonts) {
                 out.push_str(&format!("{nl}{}{}", w.indent(3), xml_escape(&rule)));
             }
@@ -140,7 +156,10 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
     // File Info's description.
     if !doc.metadata.description.trim().is_empty() {
         out.push_str(&w.indent(1));
-        out.push_str(&format!("<desc>{}</desc>{nl}", xml_escape(&doc.metadata.description)));
+        out.push_str(&format!(
+            "<desc>{}</desc>{nl}",
+            xml_escape(&doc.metadata.description)
+        ));
     }
     let latin1 = encoding == Encoding::Latin1;
     if latin1 {
@@ -148,7 +167,9 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
         latin1_refs(&mut w.body);
     }
     // The editing data carries a hash of the markup around its `<metadata>`.
-    let native = native.filter(|_| opts.preserve_editing).map(|bytes| (bytes, body_hash(&[&out, &w.body, "</svg>", nl])));
+    let native = native
+        .filter(|_| opts.preserve_editing)
+        .map(|bytes| (bytes, body_hash(&[&out, &w.body, "</svg>", nl])));
     let mut meta = String::new();
     w.metadata(&mut meta, native);
     if latin1 {
@@ -158,12 +179,20 @@ fn write(doc: &Document, opts: &ExportOptions, native: Option<&[u8]>, id_prefix:
     out.push_str(&w.body);
     out.push_str("</svg>");
     out.push_str(nl);
-    Output { svg: out, linked: w.linked, warnings: w.warnings, encoding }
+    Output {
+        svg: out,
+        linked: w.linked,
+        warnings: w.warnings,
+        encoding,
+    }
 }
 
 /// XML 1.0 literal attribute whitespace is normalized to spaces; references retain the value.
 fn xml_attr_escape(s: &str) -> String {
-    xml_escape(s).replace('\t', "&#9;").replace('\n', "&#10;").replace('\r', "&#13;")
+    xml_escape(s)
+        .replace('\t', "&#9;")
+        .replace('\n', "&#10;")
+        .replace('\r', "&#13;")
 }
 
 fn valid_xml_value(s: &str) -> bool {
@@ -208,7 +237,13 @@ fn unicode_range(chars: &BTreeSet<char>) -> String {
             _ => runs.push((c, c)),
         }
     }
-    let one = |(a, b): (u32, u32)| if a == b { format!("U+{a:X}") } else { format!("U+{a:X}-{b:X}") };
+    let one = |(a, b): (u32, u32)| {
+        if a == b {
+            format!("U+{a:X}")
+        } else {
+            format!("U+{a:X}-{b:X}")
+        }
+    };
     runs.into_iter().map(one).collect::<Vec<_>>().join(",")
 }
 
@@ -233,12 +268,16 @@ fn entity_value(decl: &str) -> String {
 /// CMYK TIFF) as PNG.
 fn web_image(b: &ImageBlob) -> std::borrow::Cow<'_, ImageBlob> {
     use std::borrow::Cow;
-    if matches!(b.mime.as_str(), "image/png" | "image/jpeg" | "image/jpg" | "image/gif" | "image/webp" | "image/svg+xml") {
+    if matches!(
+        b.mime.as_str(),
+        "image/png" | "image/jpeg" | "image/jpg" | "image/gif" | "image/webp" | "image/svg+xml"
+    ) {
         return Cow::Borrowed(b);
     }
     let png = image::load_from_memory(&b.bytes).ok().and_then(|img| {
         let mut out = Vec::new();
-        img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).ok()?;
+        img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+            .ok()?;
         Some(out)
     });
     png.map_or(Cow::Borrowed(b), |png| Cow::Owned(ImageBlob::png(png)))
@@ -249,7 +288,10 @@ fn image_ext(mime: &str) -> &str {
     match mime {
         "image/jpeg" => "jpg",
         "image/svg+xml" => "svg",
-        m => m.strip_prefix("image/").filter(|e| !e.is_empty() && e.chars().all(|c| c.is_ascii_alphanumeric())).unwrap_or("bin"),
+        m => m
+            .strip_prefix("image/")
+            .filter(|e| !e.is_empty() && e.chars().all(|c| c.is_ascii_alphanumeric()))
+            .unwrap_or("bin"),
     }
 }
 
@@ -346,11 +388,19 @@ enum StrokePlan {
 const MAX_SYMBOL_NEST: u32 = 8;
 
 impl Reuse {
-    const NONE: Self = Self { moves: false, turns: false, scales: false };
+    const NONE: Self = Self {
+        moves: false,
+        turns: false,
+        scales: false,
+    };
 
     /// What a def of symbol art `art` stands for.
     pub(crate) fn of(doc: &Document, art: &Node) -> Self {
-        let mut r = Self { moves: true, turns: true, scales: true };
+        let mut r = Self {
+            moves: true,
+            turns: true,
+            scales: true,
+        };
         r.scan(doc, art, 0);
         r
     }
@@ -360,12 +410,17 @@ impl Reuse {
         let pattern = |p: &Paint| matches!(p, Paint::Pattern { .. });
         let text_patterns = matches!(&n.kind, NodeKind::Text(t) if t.runs.iter().any(|r| pattern(&r.style.fill) || pattern(&r.style.stroke)));
         let unlinked_mask = n.extras().mask.as_ref().is_some_and(|m| !m.linked);
-        if depth > MAX_SYMBOL_NEST || text_patterns || unlinked_mask || vectorcraft_doc::pattern::uses_pattern(n, None) {
+        if depth > MAX_SYMBOL_NEST
+            || text_patterns
+            || unlinked_mask
+            || vectorcraft_doc::pattern::uses_pattern(n, None)
+        {
             *self = Self::NONE;
             return;
         }
         let effects = |fx: &[vectorcraft_doc::Effect]| fx.iter().any(|e| e.visible);
-        if effects(&n.appearance.effects) || n.appearance.items.iter().any(|i| effects(i.effects())) {
+        if effects(&n.appearance.effects) || n.appearance.items.iter().any(|i| effects(i.effects()))
+        {
             (self.turns, self.scales) = (false, false);
         }
         for i in &n.appearance.items {
@@ -380,9 +435,11 @@ impl Reuse {
             }
         }
         match &n.kind {
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_) => {
-                (self.turns, self.scales) = (false, false)
-            }
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_)
+            | NodeKind::PlacedDocument(_) => (self.turns, self.scales) = (false, false),
             NodeKind::SymbolInstance { symbol, .. } => {
                 if let Some(s) = doc.symbols.iter().find(|s| s.name == *symbol) {
                     self.scan(doc, &s.art, depth + 1);
@@ -405,7 +462,9 @@ impl Reuse {
         if (a - 1.0).abs() < EPS && b.abs() < EPS && c.abs() < EPS && (d - 1.0).abs() < EPS {
             return self.moves;
         }
-        let rigid = (a * a + b * b - 1.0).abs() < EPS && (c * c + d * d - 1.0).abs() < EPS && (a * c + b * d).abs() < EPS;
+        let rigid = (a * a + b * b - 1.0).abs() < EPS
+            && (c * c + d * d - 1.0).abs() < EPS
+            && (a * c + b * d).abs() < EPS;
         if rigid { self.turns } else { self.scales }
     }
 }
@@ -434,11 +493,29 @@ fn pin_to_page(n: &mut Node, m: Affine) {
 fn dublin_core(doc: &Document) -> Vec<(&'static str, String)> {
     let info = &doc.metadata;
     let mut terms = vec![("format", "image/svg+xml".to_string())];
-    let created = info.created.map(vectorcraft_doc::metadata::iso8601).unwrap_or_default();
-    let fields = [("title", doc.title.as_str()), ("creator", info.author.as_str()), ("description", info.description.as_str())];
-    let rights = [("rights", info.copyright_notice.as_str()), ("rights", info.copyright_url.as_str()), ("date", created.as_str())];
+    let created = info
+        .created
+        .map(vectorcraft_doc::metadata::iso8601)
+        .unwrap_or_default();
+    let fields = [
+        ("title", doc.title.as_str()),
+        ("creator", info.author.as_str()),
+        ("description", info.description.as_str()),
+    ];
+    let rights = [
+        ("rights", info.copyright_notice.as_str()),
+        ("rights", info.copyright_url.as_str()),
+        ("date", created.as_str()),
+    ];
     let keywords = info.keywords.iter().map(|k| ("subject", k.as_str()));
-    terms.extend(fields.into_iter().chain(keywords).chain(rights).filter(|(_, v)| !v.trim().is_empty()).map(|(k, v)| (k, v.to_string())));
+    terms.extend(
+        fields
+            .into_iter()
+            .chain(keywords)
+            .chain(rights)
+            .filter(|(_, v)| !v.trim().is_empty())
+            .map(|(k, v)| (k, v.to_string())),
+    );
     terms
 }
 
@@ -455,7 +532,17 @@ pub(crate) const MASK_FLAGS: &str = "data-vectorcraft-mask";
 
 /// Turn an object name into a valid, readable XML id.
 pub(crate) fn sanitize_id(name: &str) -> String {
-    let mut s: String = name.trim().chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' { c } else { '_' }).collect();
+    let mut s: String = name
+        .trim()
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     if s.is_empty() || !s.starts_with(|c: char| c.is_alphabetic() || c == '_') {
         s.insert(0, '_');
     }
@@ -471,7 +558,11 @@ impl Writer<'_> {
         fmt_num(v, self.opts.decimals)
     }
     fn indent(&self, depth: usize) -> String {
-        if self.opts.minify { String::new() } else { "  ".repeat(depth) }
+        if self.opts.minify {
+            String::new()
+        } else {
+            "  ".repeat(depth)
+        }
     }
     fn line(&mut self, s: &str) {
         let ind = self.indent(self.depth);
@@ -506,15 +597,30 @@ impl Writer<'_> {
         let mut seen: HashMap<(String, u32, u32), usize> = HashMap::new();
         art.walk(&mut |c| {
             if let NodeKind::Image(im) = &c.kind {
-                *seen.entry((im.key.clone(), im.width, im.height)).or_default() += 1;
+                *seen
+                    .entry((im.key.clone(), im.width, im.height))
+                    .or_default() += 1;
             }
         });
-        let mut repeated: Vec<_> = seen.into_iter().filter(|(k, n)| *n > 1 && !self.shared_images.contains_key(k)).map(|(k, _)| k).collect();
+        let mut repeated: Vec<_> = seen
+            .into_iter()
+            .filter(|(k, n)| *n > 1 && !self.shared_images.contains_key(k))
+            .map(|(k, _)| k)
+            .collect();
         repeated.sort();
         for (key, width, height) in repeated {
             let link = self.linked_of(art, &key);
-            let im = vectorcraft_doc::ImageObject { key: key.clone(), width, height, xf: Affine::IDENTITY, link, placement: Default::default() };
-            let Some(href) = self.image_href(&im) else { continue };
+            let im = vectorcraft_doc::ImageObject {
+                key: key.clone(),
+                width,
+                height,
+                xf: Affine::IDENTITY,
+                link,
+                placement: Default::default(),
+            };
+            let Some(href) = self.image_href(&im) else {
+                continue;
+            };
             let id = self.fresh_id("image");
             self.def(
                 0,
@@ -588,7 +694,10 @@ impl Writer<'_> {
         if self.anonymous {
             return String::new();
         }
-        let mut out = self.names.get(&n.id).map_or_else(String::new, |id| format!(" id=\"{}\"", xml_escape(id)));
+        let mut out = self
+            .names
+            .get(&n.id)
+            .map_or_else(String::new, |id| format!(" id=\"{}\"", xml_escape(id)));
         if let (Some(id), Some(name)) = (self.names.get(&n.id), n.name.as_deref())
             && name != id
         {
@@ -603,13 +712,20 @@ impl Writer<'_> {
             out.push_str(&format!(" {}=\"sublayer\"", crate::import::SUBLAYER));
         }
         let mut keys = HashSet::new();
-        for (k, v) in n.extras().attrs.as_deref().map_or(&[][..], |a| a.data.as_slice()) {
+        for (k, v) in n
+            .extras()
+            .attrs
+            .as_deref()
+            .map_or(&[][..], |a| a.data.as_slice())
+        {
             // Ours (`name`, `vc-…`) are written by the export itself.
             if k == "name" || k.starts_with("vc-") {
                 continue;
             }
             if k.is_empty() || !k.chars().all(xml_name_char) || !valid_xml_value(v) {
-                self.warn("Data attributes with invalid XML names or characters were left out of SVG");
+                self.warn(
+                    "Data attributes with invalid XML names or characters were left out of SVG",
+                );
                 continue;
             }
             // Native data is an ordered list. Keep the first valid value of each key.
@@ -624,7 +740,15 @@ impl Writer<'_> {
     }
     fn matrix(&self, m: Affine) -> String {
         let c = m.as_coeffs();
-        format!("matrix({} {} {} {} {} {})", self.num(c[0]), self.num(c[1]), self.num(c[2]), self.num(c[3]), self.num(c[4]), self.num(c[5]))
+        format!(
+            "matrix({} {} {} {} {} {})",
+            self.num(c[0]),
+            self.num(c[1]),
+            self.num(c[2]),
+            self.num(c[3]),
+            self.num(c[4]),
+            self.num(c[5])
+        )
     }
 
     /// Style properties as attributes, an inline style, or a CSS class, per the styling option.
@@ -633,24 +757,40 @@ impl Writer<'_> {
             return String::new();
         }
         // SVG Tiny has presentation attributes alone.
-        let styling = if self.tiny() { Styling::PresentationAttributes } else { self.opts.styling };
+        let styling = if self.tiny() {
+            Styling::PresentationAttributes
+        } else {
+            self.opts.styling
+        };
         match styling {
             Styling::PresentationAttributes => {
                 // CSS-only properties go in a style attribute (SVG Tiny has none: left out).
-                let (style, attrs): (Vec<_>, Vec<_>) =
-                    props.iter().partition(|(k, _)| matches!(*k, "mix-blend-mode" | "isolation" | "font-feature-settings" | "font-kerning"));
-                let mut s: String = attrs.iter().map(|(k, v)| format!(" {k}=\"{}\"", xml_escape(v))).collect();
+                let (style, attrs): (Vec<_>, Vec<_>) = props.iter().partition(|(k, _)| {
+                    matches!(
+                        *k,
+                        "mix-blend-mode" | "isolation" | "font-feature-settings" | "font-kerning"
+                    )
+                });
+                let mut s: String = attrs
+                    .iter()
+                    .map(|(k, v)| format!(" {k}=\"{}\"", xml_escape(v)))
+                    .collect();
                 if !style.is_empty() {
                     if self.tiny() {
                         self.warn("SVG Tiny 1.2 has no style sheets: blend modes, isolation and font features are left out");
                     } else {
-                        s.push_str(&format!(" style=\"{}\"", xml_escape(&css::declarations(style))));
+                        s.push_str(&format!(
+                            " style=\"{}\"",
+                            xml_escape(&css::declarations(style))
+                        ));
                     }
                 }
                 s
             }
             Styling::InlineStyle => format!(" style=\"{}\"", xml_escape(&css::declarations(props))),
-            Styling::StyleEntities => format!(" style=\"&st{};\"", self.class(css::declarations(props))),
+            Styling::StyleEntities => {
+                format!(" style=\"&st{};\"", self.class(css::declarations(props)))
+            }
             Styling::InternalCss => {
                 let i = self.class(css::declarations(props));
                 format!(" class=\"{}cls-{i}\"", self.id_prefix)
@@ -684,7 +824,10 @@ impl Writer<'_> {
         };
         line(1, "<metadata>");
         if self.opts.metadata {
-            line(2, "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">");
+            line(
+                2,
+                "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">",
+            );
             line(3, "<rdf:Description rdf:about=\"\">");
             for (term, value) in dublin_core(self.doc) {
                 line(4, &format!("<dc:{term}>{}</dc:{term}>", xml_escape(&value)));
@@ -758,7 +901,10 @@ impl Writer<'_> {
                 None => "none".into(),
             },
             Paint::Solid { color, .. } => color.to_hex(),
-            Paint::Gradient(g) => format!("url(#{})", self.gradient_def(g, bounds.unwrap_or(Rect::new(0.0, 0.0, 1.0, 1.0)))),
+            Paint::Gradient(g) => format!(
+                "url(#{})",
+                self.gradient_def(g, bounds.unwrap_or(Rect::new(0.0, 0.0, 1.0, 1.0)))
+            ),
         }
     }
 
@@ -778,7 +924,8 @@ impl Writer<'_> {
         let id = self.fresh_id("pattern");
         self.patterns.insert(key, id.clone());
         let (pw, ph) = def.period();
-        let (saved_body, saved_xf, saved_depth) = (std::mem::take(&mut self.body), self.xf, self.depth);
+        let (saved_body, saved_xf, saved_depth) =
+            (std::mem::take(&mut self.body), self.xf, self.depth);
         self.depth = 3;
         self.pattern_nest += 1;
         for o in def.offsets_covering(Rect::new(0.0, 0.0, pw, ph)) {
@@ -822,28 +969,56 @@ impl Writer<'_> {
                 let r = self.num((e - s).hypot());
                 let attrs = if (geom.aspect - 1.0).abs() < 1e-9 {
                     let f = geom.focal.map(|f| focal(self, f)).unwrap_or_default();
-                    format!(" cx=\"{}\" cy=\"{}\" r=\"{r}\"{f}", self.num(s.x), self.num(s.y))
+                    format!(
+                        " cx=\"{}\" cy=\"{}\" r=\"{r}\"{f}",
+                        self.num(s.x),
+                        self.num(s.y)
+                    )
                 } else {
                     let v = e - s;
-                    let m = Affine::translate(s.to_vec2()) * Affine::rotate(v.y.atan2(v.x)) * Affine::scale_non_uniform(1.0, geom.aspect);
-                    let f = geom.focal.map(|f| focal(self, m.inverse() * f)).unwrap_or_default();
-                    format!(" cx=\"0\" cy=\"0\" r=\"{r}\"{f} gradientTransform=\"{}\"", self.matrix(m))
+                    let m = Affine::translate(s.to_vec2())
+                        * Affine::rotate(v.y.atan2(v.x))
+                        * Affine::scale_non_uniform(1.0, geom.aspect);
+                    let f = geom
+                        .focal
+                        .map(|f| focal(self, m.inverse() * f))
+                        .unwrap_or_default();
+                    format!(
+                        " cx=\"0\" cy=\"0\" r=\"{r}\"{f} gradientTransform=\"{}\"",
+                        self.matrix(m)
+                    )
                 };
                 ("radialGradient", "radial-gradient", attrs)
             }
             GradientKind::Linear | GradientKind::Freeform => (
                 "linearGradient",
                 "linear-gradient",
-                format!(" x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\"", self.num(s.x), self.num(s.y), self.num(e.x), self.num(e.y)),
+                format!(
+                    " x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\"",
+                    self.num(s.x),
+                    self.num(s.y),
+                    self.num(e.x),
+                    self.num(e.y)
+                ),
             ),
         };
         let stops: Vec<String> = g
             .gradient
             .expanded()
             .map(|(offset, c, o, mid)| {
-                let op = if o < 1.0 { format!(" stop-opacity=\"{}\"", fmt_num(o as f64, 3)) } else { String::new() };
-                let mid = mid.map(|m| format!(" data-vc-midpoint=\"{}\"", fmt_num(m as f64, 4))).unwrap_or_default();
-                format!("<stop offset=\"{}\" stop-color=\"{}\"{op}{mid}/>", fmt_num(offset as f64, 4), c.to_hex())
+                let op = if o < 1.0 {
+                    format!(" stop-opacity=\"{}\"", fmt_num(o as f64, 3))
+                } else {
+                    String::new()
+                };
+                let mid = mid
+                    .map(|m| format!(" data-vc-midpoint=\"{}\"", fmt_num(m as f64, 4)))
+                    .unwrap_or_default();
+                format!(
+                    "<stop offset=\"{}\" stop-color=\"{}\"{op}{mid}/>",
+                    fmt_num(offset as f64, 4),
+                    c.to_hex()
+                )
             })
             .collect();
         let key = format!("{tag}{attrs}{}", stops.concat());
@@ -855,7 +1030,10 @@ impl Writer<'_> {
             None => self.fresh_id(prefix),
         };
         self.gradients.insert(key, id.clone());
-        self.def(1, &format!("<{tag} id=\"{id}\"{attrs} gradientUnits=\"userSpaceOnUse\">"));
+        self.def(
+            1,
+            &format!("<{tag} id=\"{id}\"{attrs} gradientUnits=\"userSpaceOnUse\">"),
+        );
         for stop in &stops {
             self.def(2, stop);
         }
@@ -900,7 +1078,14 @@ impl Writer<'_> {
         if let Some(d) = &s.dash
             && d.is_dashed()
         {
-            p.push(("stroke-dasharray", d.pattern.iter().map(|v| self.num(*v)).collect::<Vec<_>>().join(" ")));
+            p.push((
+                "stroke-dasharray",
+                d.pattern
+                    .iter()
+                    .map(|v| self.num(*v))
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ));
             if d.offset != 0.0 {
                 p.push(("stroke-dashoffset", self.num(d.offset)));
             }
@@ -909,14 +1094,25 @@ impl Writer<'_> {
 
     /// How stroke `st` is written (`bp`: the shape in document space, built on first use from
     /// `paths`): its brush art, or a plain stroke or filled outlines matching the canvas.
-    fn stroke_plan(&mut self, st: &StrokeLayer, bp: &mut Option<BezPath>, paths: &[&PathData]) -> StrokePlan {
+    fn stroke_plan(
+        &mut self,
+        st: &StrokeLayer,
+        bp: &mut Option<BezPath>,
+        paths: &[&PathData],
+    ) -> StrokePlan {
         if stroke::is_plain(st) {
             return StrokePlan::Written(stroke::for_writer(&BezPath::new(), st));
         }
         let bp = bp.get_or_insert_with(|| doc_path(paths));
         let doc = self.doc;
-        let brushes = self.brushes.get_or_insert_with(|| vectorcraft_brush::library(doc));
-        match st.brush.as_deref().and_then(|name| brushes.iter().find(|b| b.name == name)) {
+        let brushes = self
+            .brushes
+            .get_or_insert_with(|| vectorcraft_brush::library(doc));
+        match st
+            .brush
+            .as_deref()
+            .and_then(|name| brushes.iter().find(|b| b.name == name))
+        {
             Some(b) => StrokePlan::Brush(vectorcraft_brush::stroke_pieces(b, bp, st)),
             None => StrokePlan::Written(stroke::for_writer(bp, st)),
         }
@@ -924,12 +1120,22 @@ impl Writer<'_> {
 
     /// The `clip-path` (inside) or `mask` (outside) attribute that keeps an aligned stroke on its
     /// side of the shape `d`; `reach` (document space) is what the stroke covers.
-    fn side_attr(&mut self, side: Option<StrokeAlign>, d: &str, rule: FillRule, reach: Rect) -> String {
+    fn side_attr(
+        &mut self,
+        side: Option<StrokeAlign>,
+        d: &str,
+        rule: FillRule,
+        reach: Rect,
+    ) -> String {
         match side {
             None | Some(StrokeAlign::Center) => String::new(),
             Some(StrokeAlign::Inside) => {
                 let cid = self.fresh_id("clip-path");
-                let r = if rule == FillRule::EvenOdd { " clip-rule=\"evenodd\"" } else { "" };
+                let r = if rule == FillRule::EvenOdd {
+                    " clip-rule=\"evenodd\""
+                } else {
+                    ""
+                };
                 self.def(1, &format!("<clipPath id=\"{cid}\">"));
                 self.def(2, &format!("<path d=\"{d}\"{r}/>"));
                 self.def(1, "</clipPath>");
@@ -939,19 +1145,43 @@ impl Writer<'_> {
                 // No masks: clipped by everything around the shape instead.
                 let cid = self.fresh_id("clip-path");
                 let b = self.xf.transform_rect_bbox(reach).inflate(1.0, 1.0);
-                let (x0, y0, x1, y1) = (self.num(b.x0), self.num(b.y0), self.num(b.x1), self.num(b.y1));
+                let (x0, y0, x1, y1) = (
+                    self.num(b.x0),
+                    self.num(b.y0),
+                    self.num(b.x1),
+                    self.num(b.y1),
+                );
                 self.def(1, &format!("<clipPath id=\"{cid}\">"));
-                self.def(2, &format!("<path d=\"M{x0} {y0} H{x1} V{y1} H{x0} Z {d}\" clip-rule=\"evenodd\"/>"));
+                self.def(
+                    2,
+                    &format!(
+                        "<path d=\"M{x0} {y0} H{x1} V{y1} H{x0} Z {d}\" clip-rule=\"evenodd\"/>"
+                    ),
+                );
                 self.def(1, "</clipPath>");
                 format!(" clip-path=\"url(#{cid})\"")
             }
             Some(StrokeAlign::Outside) => {
                 let mid = self.fresh_id("mask");
                 let b = self.xf.transform_rect_bbox(reach).inflate(1.0, 1.0);
-                let (x, y, w, h) = (self.num(b.x0), self.num(b.y0), self.num(b.width()), self.num(b.height()));
-                let fr = if rule == FillRule::EvenOdd { " fill-rule=\"evenodd\"" } else { "" };
+                let (x, y, w, h) = (
+                    self.num(b.x0),
+                    self.num(b.y0),
+                    self.num(b.width()),
+                    self.num(b.height()),
+                );
+                let fr = if rule == FillRule::EvenOdd {
+                    " fill-rule=\"evenodd\""
+                } else {
+                    ""
+                };
                 self.def(1, &format!("<mask id=\"{mid}\" {MASK} x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\">"));
-                self.def(2, &format!("<rect x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" fill=\"#fff\"/>"));
+                self.def(
+                    2,
+                    &format!(
+                        "<rect x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" fill=\"#fff\"/>"
+                    ),
+                );
                 self.def(2, &format!("<path d=\"{d}\" fill=\"#000\"{fr}/>"));
                 self.def(1, "</mask>");
                 format!(" mask=\"url(#{mid})\"")
@@ -961,7 +1191,14 @@ impl Writer<'_> {
 
     /// Paint a shape (`d`) with a node's appearance stack. `paths` is the same shape in document
     /// space, for strokes that aren't plain (it may be empty when all are).
-    fn shape(&mut self, n: &Node, d: &str, paths: &[&PathData], rule: FillRule, bounds: Option<Rect>) {
+    fn shape(
+        &mut self,
+        n: &Node,
+        d: &str,
+        paths: &[&PathData],
+        rule: FillRule,
+        bounds: Option<Rect>,
+    ) {
         let id = self.id_attr(n);
         let items: Vec<&AppearanceItem> = n
             .appearance
@@ -980,7 +1217,10 @@ impl Writer<'_> {
                 AppearanceItem::Fill(_) => None,
             })
             .collect();
-        let fills = items.iter().filter(|i| matches!(i, AppearanceItem::Fill(_))).count();
+        let fills = items
+            .iter()
+            .filter(|i| matches!(i, AppearanceItem::Fill(_)))
+            .count();
         let strokes = items.len() - fills;
         // A stroke's paint box is the bounds grown by half its weight, as on the canvas.
         let paint_bounds = |s: &StrokeLayer| bounds.map(|b| s.paint_bounds(b));
@@ -989,10 +1229,24 @@ impl Writer<'_> {
             && !items.iter().any(|i| has_raster(i.effects()))
             && items.iter().all(|i| i.blend() == BlendMode::Normal)
             && !items.iter().any(|i| freeform(i.paint()).is_some())
-            && plans.iter().flatten().all(|p| matches!(p, StrokePlan::Written(Written { shape: WrittenShape::Stroke { .. }, side: None })));
+            && plans.iter().flatten().all(|p| {
+                matches!(
+                    p,
+                    StrokePlan::Written(Written {
+                        shape: WrittenShape::Stroke { .. },
+                        side: None
+                    })
+                )
+            });
         if simple {
             let mut p = Props::new();
-            match items.iter().find_map(|i| if let AppearanceItem::Fill(f) = i { Some(f) } else { None }) {
+            match items.iter().find_map(|i| {
+                if let AppearanceItem::Fill(f) = i {
+                    Some(f)
+                } else {
+                    None
+                }
+            }) {
                 Some(f) => self.fill_props(f, rule, bounds, &mut p),
                 None => {
                     p.push(("fill", "none".into()));
@@ -1001,7 +1255,13 @@ impl Writer<'_> {
                     }
                 }
             }
-            if let Some(s) = items.iter().find_map(|i| if let AppearanceItem::Stroke(s) = i { Some(s) } else { None }) {
+            if let Some(s) = items.iter().find_map(|i| {
+                if let AppearanceItem::Stroke(s) = i {
+                    Some(s)
+                } else {
+                    None
+                }
+            }) {
                 self.stroke_props(s, s.width, paint_bounds(s), &mut p);
                 if matches!(items.first(), Some(AppearanceItem::Stroke(_))) && fills == 1 {
                     p.push(("paint-order", "stroke".into()));
@@ -1021,9 +1281,12 @@ impl Writer<'_> {
             let mut p = Props::new();
             match (it, plan) {
                 (AppearanceItem::Fill(f), _) => {
-                    let blend = (f.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(f.blend).to_string()));
+                    let blend = (f.blend != BlendMode::Normal)
+                        .then(|| ("mix-blend-mode", blend_css(f.blend).to_string()));
                     if let (Some(g), Some(b)) = (freeform(&f.paint), bounds) {
-                        p.extend((f.opacity < 1.0).then(|| ("opacity", fmt_num(f.opacity as f64, 3))));
+                        p.extend(
+                            (f.opacity < 1.0).then(|| ("opacity", fmt_num(f.opacity as f64, 3))),
+                        );
                         p.extend(blend);
                         self.raster_paint(g, b, &[d.to_string()], rule, &p, "");
                     } else {
@@ -1051,9 +1314,12 @@ impl Writer<'_> {
                     self.line("</g>");
                 }
                 (AppearanceItem::Stroke(s), Some(StrokePlan::Written(w))) => {
-                    let side = self.side_attr(w.side, d, rule, w.reach(s, bounds.unwrap_or_default()));
-                    let blend = (s.blend != BlendMode::Normal).then(|| ("mix-blend-mode", blend_css(s.blend).to_string()));
-                    let opacity = (s.opacity < 1.0).then(|| ("opacity", fmt_num(s.opacity as f64, 3)));
+                    let side =
+                        self.side_attr(w.side, d, rule, w.reach(s, bounds.unwrap_or_default()));
+                    let blend = (s.blend != BlendMode::Normal)
+                        .then(|| ("mix-blend-mode", blend_css(s.blend).to_string()));
+                    let opacity =
+                        (s.opacity < 1.0).then(|| ("opacity", fmt_num(s.opacity as f64, 3)));
                     match (&w.shape, freeform(&s.paint).zip(paint_bounds(s))) {
                         (WrittenShape::Stroke { width }, Some((g, b))) => {
                             // The stroke's outline clips the gradient's image.
@@ -1064,8 +1330,13 @@ impl Writer<'_> {
                             p.extend(blend);
                             self.raster_paint(g, b, &[clip], FillRule::NonZero, &p, &side);
                         }
-                        (WrittenShape::Fill(outlines), Some((g, b))) if s.path_gradient().is_none() => {
-                            let clip: Vec<String> = outlines.iter().map(|o| self.path_d(&PathData::from_bezpath(o), self.xf)).collect();
+                        (WrittenShape::Fill(outlines), Some((g, b)))
+                            if s.path_gradient().is_none() =>
+                        {
+                            let clip: Vec<String> = outlines
+                                .iter()
+                                .map(|o| self.path_d(&PathData::from_bezpath(o), self.xf))
+                                .collect();
                             p.extend(opacity);
                             p.extend(blend);
                             self.raster_paint(g, b, &clip, FillRule::NonZero, &p, &side);
@@ -1079,7 +1350,10 @@ impl Writer<'_> {
                         }
                         (WrittenShape::Fill(outlines), _) if s.path_gradient().is_some() => {
                             // A gradient along or across the stroke: slices clipped to its outlines.
-                            if let Some(ws) = bp.as_ref().and_then(|bp| stroke::written_slices(bp, rule, s, outlines)) {
+                            if let Some(ws) = bp
+                                .as_ref()
+                                .and_then(|bp| stroke::written_slices(bp, rule, s, outlines))
+                            {
                                 p.extend(opacity);
                                 p.extend(blend);
                                 self.sliced(&ws, &p, &side);
@@ -1087,7 +1361,10 @@ impl Writer<'_> {
                         }
                         (WrittenShape::Fill(outlines), _) => {
                             let paint = self.paint(&s.paint, paint_bounds(s));
-                            let ds: Vec<String> = outlines.iter().map(|o| self.path_d(&PathData::from_bezpath(o), self.xf)).collect();
+                            let ds: Vec<String> = outlines
+                                .iter()
+                                .map(|o| self.path_d(&PathData::from_bezpath(o), self.xf))
+                                .collect();
                             let opacity = (s.opacity < 1.0).then(|| fmt_num(s.opacity as f64, 3));
                             if let [one] = &ds[..] {
                                 p.push(("fill", paint));
@@ -1174,8 +1451,15 @@ impl Writer<'_> {
             fid
         });
         // The mask's options, so import restores them (and its art without backdrop and filter).
-        let flags: Vec<&str> = [(!m.clip).then_some("noclip"), m.invert.then_some("invert")].into_iter().flatten().collect();
-        let data = if flags.is_empty() { String::new() } else { format!(" {MASK_FLAGS}=\"{}\"", flags.join(" ")) };
+        let flags: Vec<&str> = [(!m.clip).then_some("noclip"), m.invert.then_some("invert")]
+            .into_iter()
+            .flatten()
+            .collect();
+        let data = if flags.is_empty() {
+            String::new()
+        } else {
+            format!(" {MASK_FLAGS}=\"{}\"", flags.join(" "))
+        };
         self.def(1, &format!("<mask id=\"{mid}\" {MASK} {BIG}{data}>"));
         if let Some(fid) = &inv {
             self.def(1, &format!("<g filter=\"url(#{fid})\">"));
@@ -1246,7 +1530,9 @@ impl Writer<'_> {
             }
             return;
         }
-        let Some((first, rest)) = elements.split_first() else { return };
+        let Some((first, rest)) = elements.split_first() else {
+            return;
+        };
         for c in rest.iter().rev() {
             let mid = self.knockout_mask(c);
             self.line(&format!("<g mask=\"url(#{mid})\">"));
@@ -1267,7 +1553,10 @@ impl Writer<'_> {
             Some(f) => f.clone(),
             None => {
                 let f = self.fresh_id("knockout-shape");
-                self.def(1, &format!("<filter id=\"{f}\" filterUnits=\"userSpaceOnUse\" {BIG}>"));
+                self.def(
+                    1,
+                    &format!("<filter id=\"{f}\" filterUnits=\"userSpaceOnUse\" {BIG}>"),
+                );
                 self.def(2, "<feColorMatrix type=\"matrix\" values=\"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0\"/>");
                 self.def(1, "</filter>");
                 self.knockout_filter = Some(f.clone());
@@ -1327,7 +1616,15 @@ impl Writer<'_> {
         }
         match &n.kind {
             NodeKind::Layer { template: true, .. } => {}
-            NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
+            NodeKind::Layer {
+                children,
+                clip: false,
+                ..
+            }
+            | NodeKind::Group {
+                children,
+                clip: false,
+            } => {
                 let id = self.id_attr(n);
                 let a = self.attrs(&self.group_props(n));
                 self.line(&format!("<g{id}{a}>"));
@@ -1336,15 +1633,29 @@ impl Writer<'_> {
                 self.depth -= 1;
                 self.line("</g>");
             }
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => {
-                let Some((clip, rest)) = children.split_first() else { return };
+            NodeKind::Group {
+                children,
+                clip: true,
+            }
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } => {
+                let Some((clip, rest)) = children.split_first() else {
+                    return;
+                };
                 let cid = self.fresh_id("clip-path");
                 self.def(1, &format!("<clipPath id=\"{cid}\">"));
                 // The region every output clips to; with nothing to clip by, an empty clip path
                 // hides the clipped art.
                 if let Some((bp, rule)) = vectorcraft_effects::clip_outline(clip) {
                     let d = self.path_d(&PathData::from_bezpath(&bp), self.xf);
-                    let r = if rule == FillRule::EvenOdd { " clip-rule=\"evenodd\"" } else { "" };
+                    let r = if rule == FillRule::EvenOdd {
+                        " clip-rule=\"evenodd\""
+                    } else {
+                        ""
+                    };
                     self.def(2, &format!("<path d=\"{d}\"{r}/>"));
                 }
                 self.def(1, "</clipPath>");
@@ -1386,7 +1697,12 @@ impl Writer<'_> {
                 self.shape(n, &d, &[path], *rule, n.geometric_bounds());
             }
             NodeKind::Compound { children, rule } => {
-                let paths: Vec<&PathData> = children.iter().filter(|c| c.visible).filter_map(|c| c.path_data()).filter(|p| !p.is_empty()).collect();
+                let paths: Vec<&PathData> = children
+                    .iter()
+                    .filter(|c| c.visible)
+                    .filter_map(|c| c.path_data())
+                    .filter(|p| !p.is_empty())
+                    .collect();
                 if paths.is_empty() {
                     return;
                 }
@@ -1398,12 +1714,19 @@ impl Writer<'_> {
                 let id = self.id_attr(n);
                 let m = self.matrix(self.xf * im.xf);
                 let a = self.attrs(&css::transparency(n));
-                if let Some(shared) = self.shared_images.get(&(im.key.clone(), im.width, im.height)) {
+                if let Some(shared) = self
+                    .shared_images
+                    .get(&(im.key.clone(), im.width, im.height))
+                {
                     let shared = shared.clone();
-                    self.line(&format!("<use{id} transform=\"{m}\"{a} xlink:href=\"#{shared}\"/>"));
+                    self.line(&format!(
+                        "<use{id} transform=\"{m}\"{a} xlink:href=\"#{shared}\"/>"
+                    ));
                     return;
                 }
-                let Some(href) = self.image_href(im) else { return };
+                let Some(href) = self.image_href(im) else {
+                    return;
+                };
                 self.line(&format!(
                     "<image{id} width=\"{}\" height=\"{}\" transform=\"{m}\" preserveAspectRatio=\"none\"{a} xlink:href=\"{}\"/>",
                     im.width,
@@ -1413,7 +1736,9 @@ impl Writer<'_> {
             }
             NodeKind::SymbolInstance { symbol, xf } => {
                 let doc = self.doc;
-                let Some(sym) = doc.symbols.iter().find(|s| s.name == *symbol) else { return };
+                let Some(sym) = doc.symbols.iter().find(|s| s.name == *symbol) else {
+                    return;
+                };
                 if self.symbol_nest > MAX_SYMBOL_NEST {
                     return;
                 }
@@ -1421,7 +1746,11 @@ impl Writer<'_> {
                 let a = self.attrs(&css::transparency(n));
                 if let Some(def) = self.symbol_use(sym, n, *xf) {
                     let m = self.xf * *xf;
-                    let tr = if m == Affine::IDENTITY { String::new() } else { format!(" transform=\"{}\"", self.matrix(m)) };
+                    let tr = if m == Affine::IDENTITY {
+                        String::new()
+                    } else {
+                        format!(" transform=\"{}\"", self.matrix(m))
+                    };
                     self.line(&format!("<use{id} xlink:href=\"#{def}\"{tr}{a}/>"));
                     return;
                 }
@@ -1448,7 +1777,11 @@ impl Writer<'_> {
                 (self.xf, self.instance_xf) = saved;
             }
             // Live blends/envelopes/meshes export their evaluated (expanded) form.
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_) => {
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_)
+            | NodeKind::PlacedDocument(_) => {
                 let g = vectorcraft_effects::expand_live_deep(Some(self.doc), n);
                 self.share_images(&g);
                 self.node_body(&g);
@@ -1465,7 +1798,10 @@ impl Writer<'_> {
         }
         let name = format!("{}.{}", b.content_key(), image_ext(&b.mime));
         if !self.linked.iter().any(|l| l.name == name) {
-            self.linked.push(LinkedImage { name: name.clone(), bytes: b.bytes.clone() });
+            self.linked.push(LinkedImage {
+                name: name.clone(),
+                bytes: b.bytes.clone(),
+            });
         }
         name
     }
@@ -1475,22 +1811,42 @@ impl Writer<'_> {
     /// sampled as the canvas samples it (at twice the box's size in points) and clipped to
     /// `clip` (outlines in user space filled by `rule`), in a group with `props` and the `side`
     /// attribute. Nothing is written for an empty box.
-    fn raster_paint(&mut self, g: &GradientPaint, bounds: Rect, clip: &[String], rule: FillRule, props: &Props, side: &str) {
+    fn raster_paint(
+        &mut self,
+        g: &GradientPaint,
+        bounds: Rect,
+        clip: &[String],
+        rule: FillRule,
+        props: &Props,
+        side: &str,
+    ) {
         use vectorcraft_color::freeform::{grid_size, painted_box, spread_scale};
         let Some(b) = painted_box(bounds) else { return };
         let (cols, rows) = grid_size(b, 2.0 * b.width().max(b.height()));
         let field = g.freeform_on(b).field(spread_scale(b));
         let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-        let rgba: Vec<u8> = field.grid(b, cols, rows).flat_map(|([r, g, bl], a)| [q(r), q(g), q(bl), q(a)]).collect();
+        let rgba: Vec<u8> = field
+            .grid(b, cols, rows)
+            .flat_map(|([r, g, bl], a)| [q(r), q(g), q(bl), q(a)])
+            .collect();
         let mut png = Vec::new();
-        let Some(img) = image::RgbaImage::from_raw(u32::from(cols), u32::from(rows), rgba) else { return };
-        if img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).is_err() {
+        let Some(img) = image::RgbaImage::from_raw(u32::from(cols), u32::from(rows), rgba) else {
+            return;
+        };
+        if img
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .is_err()
+        {
             return;
         }
         self.warn("freeform gradients are written as images clipped to their shapes");
         let href = self.blob_href(&ImageBlob::new("image/png", png));
         let cid = self.fresh_id("clip-path");
-        let r = if rule == FillRule::EvenOdd { " clip-rule=\"evenodd\"" } else { "" };
+        let r = if rule == FillRule::EvenOdd {
+            " clip-rule=\"evenodd\""
+        } else {
+            ""
+        };
         self.def(1, &format!("<clipPath id=\"{cid}\">"));
         for d in clip {
             self.def(2, &format!("<path d=\"{d}\"{r}/>"));
@@ -1506,8 +1862,17 @@ impl Writer<'_> {
             self.line(&format!("<g clip-path=\"url(#{cid})\"{a}>"));
         }
         self.depth += 1;
-        let (x, y, w, h) = (self.num(b.x0), self.num(b.y0), self.num(b.width()), self.num(b.height()));
-        let tr = if self.xf == Affine::IDENTITY { String::new() } else { format!(" transform=\"{}\"", self.matrix(self.xf)) };
+        let (x, y, w, h) = (
+            self.num(b.x0),
+            self.num(b.y0),
+            self.num(b.width()),
+            self.num(b.height()),
+        );
+        let tr = if self.xf == Affine::IDENTITY {
+            String::new()
+        } else {
+            format!(" transform=\"{}\"", self.matrix(self.xf))
+        };
         self.line(&format!(
             "<image x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\"{tr} preserveAspectRatio=\"none\" xlink:href=\"{}\"/>",
             xml_escape(&href)
@@ -1523,14 +1888,20 @@ impl Writer<'_> {
     /// The id of the `<symbol>` def instance `inst` (transform `xf`) can `<use>`, written on first
     /// use. `None` when the instance needs its own copy of the art: stained by its fill, or moved
     /// by a transform under which the def would not look as the canvas paints it ([`Reuse`]).
-    fn symbol_use(&mut self, sym: &vectorcraft_doc::Symbol, inst: &Node, xf: Affine) -> Option<String> {
+    fn symbol_use(
+        &mut self,
+        sym: &vectorcraft_doc::Symbol,
+        inst: &Node,
+        xf: Affine,
+    ) -> Option<String> {
         // SVG Tiny has no `<symbol>`.
         if self.tiny() || vectorcraft_brush::stain(inst).is_some() {
             return None;
         }
         if !self.symbols.contains_key(&sym.name) {
             let reuse = Reuse::of(self.doc, &sym.art);
-            self.symbols.insert(sym.name.clone(), SymbolDef { id: None, reuse });
+            self.symbols
+                .insert(sym.name.clone(), SymbolDef { id: None, reuse });
         }
         let def = self.symbols.get(&sym.name)?;
         if !def.reuse.allows(xf) {
@@ -1542,12 +1913,24 @@ impl Writer<'_> {
         // The art in symbol space, as its own picture: no knockout around it, and no object ids
         // (every instance shows it).
         let id = self.unique_id(&sanitize_id(&sym.name));
-        let saved = (self.xf, self.instance_xf, std::mem::take(&mut self.knockout), std::mem::take(&mut self.names), self.anonymous);
+        let saved = (
+            self.xf,
+            self.instance_xf,
+            std::mem::take(&mut self.knockout),
+            std::mem::take(&mut self.names),
+            self.anonymous,
+        );
         (self.xf, self.instance_xf, self.anonymous) = (Affine::IDENTITY, Affine::IDENTITY, false);
         self.symbol_nest += 1;
         let art = self.detached(3, |w| w.node(&sym.art));
         self.symbol_nest -= 1;
-        (self.xf, self.instance_xf, self.knockout, self.names, self.anonymous) = saved;
+        (
+            self.xf,
+            self.instance_xf,
+            self.knockout,
+            self.names,
+            self.anonymous,
+        ) = saved;
         // The symbol's name, when the id had to differ from it, comes back on import.
         let name = if id == sym.name {
             String::new()
@@ -1557,7 +1940,10 @@ impl Writer<'_> {
             self.warn("Symbol names containing invalid XML characters were left out of SVG name attributes");
             String::new()
         };
-        self.def(1, &format!("<symbol id=\"{id}\"{name} overflow=\"visible\">"));
+        self.def(
+            1,
+            &format!("<symbol id=\"{id}\"{name} overflow=\"visible\">"),
+        );
         self.defs.push_str(&art);
         self.def(1, "</symbol>");
         if let Some(def) = self.symbols.get_mut(&sym.name) {
@@ -1572,7 +1958,10 @@ impl Writer<'_> {
     /// such objects into images first).
     fn filtered(&mut self, n: &Node) {
         let mut inner = n.clone();
-        inner.appearance.effects.retain(|e| !vectorcraft_effects::is_raster(&e.id));
+        inner
+            .appearance
+            .effects
+            .retain(|e| !vectorcraft_effects::is_raster(&e.id));
         let opened = self.open_filters(n, &n.appearance.effects);
         self.node_body(&inner);
         self.close_filters(opened);
@@ -1585,12 +1974,18 @@ impl Writer<'_> {
         let fx = vectorcraft_effects::raster_effects(effects);
         if self.tiny() {
             if !fx.is_empty() {
-                self.warn("SVG Tiny 1.2 has no filters: shadows, glows, blurs and feathers are left out");
+                self.warn(
+                    "SVG Tiny 1.2 has no filters: shadows, glows, blurs and feathers are left out",
+                );
             }
             return 0;
         }
         let bounds = n.visual_bounds();
-        let reach: f64 = fx.iter().map(|f| f.outset(bounds.unwrap_or_default())).sum::<f64>() + 2.0;
+        let reach: f64 = fx
+            .iter()
+            .map(|f| f.outset(bounds.unwrap_or_default()))
+            .sum::<f64>()
+            + 2.0;
         let region = bounds.map(|b| self.xf.transform_rect_bbox(b).inflate(reach, reach));
         let mut opened = 0;
         for f in fx.iter().rev() {
@@ -1611,25 +2006,48 @@ impl Writer<'_> {
             };
             let sd = |blur: f64| fmt_num((blur / 2.0).max(0.0), 3);
             let flood = |c: &vectorcraft_color::Color, o: f32| {
-                format!("<feFlood flood-color=\"{}\" flood-opacity=\"{}\"/>", c.to_hex(), fmt_num(o as f64, 3))
+                format!(
+                    "<feFlood flood-color=\"{}\" flood-opacity=\"{}\"/>",
+                    c.to_hex(),
+                    fmt_num(o as f64, 3)
+                )
             };
             let body = match f {
-                RasterFx::DropShadow { opacity, dx, dy, blur, color, .. } => format!(
+                RasterFx::DropShadow {
+                    opacity,
+                    dx,
+                    dy,
+                    blur,
+                    color,
+                    ..
+                } => format!(
                     "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"{}\"/><feOffset dx=\"{}\" dy=\"{}\" result=\"shadow\"/>{}<feComposite in2=\"shadow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
                     sd(*blur),
                     self.num(*dx),
                     self.num(*dy),
                     flood(color, *opacity)
                 ),
-                RasterFx::OuterGlow { opacity, blur, color, .. } => format!(
+                RasterFx::OuterGlow {
+                    opacity,
+                    blur,
+                    color,
+                    ..
+                } => format!(
                     "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"{}\" result=\"glow\"/>{}<feComposite in2=\"glow\" operator=\"in\" result=\"paint\"/><feMerge><feMergeNode in=\"paint\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>",
                     sd(*blur),
                     flood(color, *opacity)
                 ),
-                RasterFx::InnerGlow { opacity, blur, color, center, .. } => {
+                RasterFx::InnerGlow {
+                    opacity,
+                    blur,
+                    color,
+                    center,
+                    ..
+                } => {
                     // Edge: the blurred inverse silhouette; Center: the blurred silhouette; both clipped to the shape.
                     let src = if *center {
-                        "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"SD\" result=\"glow\"/>".replace("SD", &sd(*blur))
+                        "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"SD\" result=\"glow\"/>"
+                            .replace("SD", &sd(*blur))
                     } else {
                         format!(
                             "<feComponentTransfer in=\"SourceAlpha\"><feFuncA type=\"table\" tableValues=\"1 0\"/></feComponentTransfer><feGaussianBlur stdDeviation=\"{}\" result=\"glow\"/>",
@@ -1645,12 +2063,17 @@ impl Writer<'_> {
                     "<feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"{}\" result=\"soft\"/><feComposite in=\"SourceGraphic\" in2=\"soft\" operator=\"in\" result=\"f\"/><feComposite in=\"f\" in2=\"SourceAlpha\" operator=\"in\"/>",
                     sd(*radius)
                 ),
-                RasterFx::GaussianBlur { radius } => format!("<feGaussianBlur in=\"SourceGraphic\" stdDeviation=\"{}\"/>", sd(*radius)),
+                RasterFx::GaussianBlur { radius } => format!(
+                    "<feGaussianBlur in=\"SourceGraphic\" stdDeviation=\"{}\"/>",
+                    sd(*radius)
+                ),
                 RasterFx::Pixel(_) => continue,
             };
             // Filters composite normally: a shadow's or glow's other blend mode is recorded for import.
             let mode = match f {
-                RasterFx::DropShadow { mode, .. } | RasterFx::OuterGlow { mode, .. } | RasterFx::InnerGlow { mode, .. }
+                RasterFx::DropShadow { mode, .. }
+                | RasterFx::OuterGlow { mode, .. }
+                | RasterFx::InnerGlow { mode, .. }
                     if *mode != BlendMode::Normal =>
                 {
                     format!(" {}=\"{}\"", crate::import::BLEND, blend_css(*mode))
@@ -1688,7 +2111,12 @@ impl Writer<'_> {
             // Weight, cap, join, miter limit and dashes as for object strokes; a gradient spans
             // the text grown by half the weight, as on the canvas.
             let layer = st.stroke_layer();
-            self.stroke_props(&layer, layer.width, Some(layer.paint_bounds(bounds)), &mut p);
+            self.stroke_props(
+                &layer,
+                layer.width,
+                Some(layer.paint_bounds(bounds)),
+                &mut p,
+            );
         }
         self.xf = saved;
         p.extend(css::type_props(st, &len));
@@ -1709,9 +2137,21 @@ impl Writer<'_> {
         let resolved = doc.inline_resolved(t);
         let t = &*resolved;
         let inline = t.runs.iter().any(|r| r.inline.is_some());
-        let outlined = self.opts.outline_text || t.vertical || (inline && matches!(t.kind, TextKind::OnPath { .. }));
-        let chars = |w: &mut Self, n: &Node| if outlined { w.text_outlines(n, t) } else { w.text(n, t) };
-        let painted = n.appearance.items.iter().any(|i| i.visible() && !i.paint().is_none());
+        let outlined = self.opts.outline_text
+            || t.vertical
+            || (inline && matches!(t.kind, TextKind::OnPath { .. }));
+        let chars = |w: &mut Self, n: &Node| {
+            if outlined {
+                w.text_outlines(n, t)
+            } else {
+                w.text(n, t)
+            }
+        };
+        let painted = n
+            .appearance
+            .items
+            .iter()
+            .any(|i| i.visible() && !i.paint().is_none());
         if !painted && !inline {
             return chars(self, n);
         }
@@ -1731,8 +2171,17 @@ impl Writer<'_> {
         let (below, above) = n.appearance.split_contents();
         let glyphs = |w: &mut Self, items: &[AppearanceItem]| {
             if !items.is_empty() {
-                let ap = vectorcraft_doc::Appearance { items: items.to_vec(), ..Default::default() };
-                w.shape(&Node::path(NodeId(u64::MAX), pd.clone(), ap), &d, &[&pd], FillRule::NonZero, tb);
+                let ap = vectorcraft_doc::Appearance {
+                    items: items.to_vec(),
+                    ..Default::default()
+                };
+                w.shape(
+                    &Node::path(NodeId(u64::MAX), pd.clone(), ap),
+                    &d,
+                    &[&pd],
+                    FillRule::NonZero,
+                    tb,
+                );
             }
         };
         glyphs(self, below);
@@ -1742,10 +2191,15 @@ impl Writer<'_> {
         let anonymous = std::mem::replace(&mut self.anonymous, true);
         chars(self, &bare);
         for ig in &lay.inlines {
-            let Some(art) = t.runs.get(ig.run).and_then(|r| r.inline.as_ref()) else { continue };
+            let Some(art) = t.runs.get(ig.run).and_then(|r| r.inline.as_ref()) else {
+                continue;
+            };
             let inst = Node::new(
                 NodeId(u64::MAX),
-                NodeKind::SymbolInstance { symbol: art.symbol.clone(), xf: t.xf * ig.xf * doc.symbol_natural_xf(&art.symbol) },
+                NodeKind::SymbolInstance {
+                    symbol: art.symbol.clone(),
+                    xf: t.xf * ig.xf * doc.symbol_natural_xf(&art.symbol),
+                },
             );
             self.node(&inst);
         }
@@ -1763,7 +2217,12 @@ impl Writer<'_> {
         let mut runs: Vec<(usize, kurbo::BezPath)> = vec![];
         // Underline and strikethrough bars join their run's outlines.
         let bars = vectorcraft_text::decorations(&lay, db, t);
-        for (run, outline) in lay.glyphs.iter().map(|g| (g.run, &g.outline)).chain(bars.iter().map(|(r, b)| (*r, b))) {
+        for (run, outline) in lay
+            .glyphs
+            .iter()
+            .map(|g| (g.run, &g.outline))
+            .chain(bars.iter().map(|(r, b)| (*r, b)))
+        {
             match runs.iter_mut().find(|(r, _)| *r == run) {
                 Some((_, bp)) => bp.extend(outline.iter()),
                 None => runs.push((run, outline.clone())),
@@ -1805,7 +2264,10 @@ impl Writer<'_> {
         if let TextKind::OnPath { path, start, end } = &t.kind {
             // `<textPath>` has a start offset only: an end bracket, Align to Path and Spacing
             // keep their look as outlines.
-            if end.is_some() || t.path_align != vectorcraft_doc::PathAlign::Baseline || t.path_spacing != 0.0 {
+            if end.is_some()
+                || t.path_align != vectorcraft_doc::PathAlign::Baseline
+                || t.path_spacing != 0.0
+            {
                 self.warn("type on a path with an end bracket, Align to Path or Spacing is outlined to keep its look");
                 return self.text_outlines(n, t);
             }
@@ -1830,10 +2292,18 @@ impl Writer<'_> {
             .collect();
         // Every line anchored alike (the text's only paragraph style, typically): the <text>
         // carries the anchor. Otherwise each anchored line is a <tspan> carrying its own.
-        let uniform = anchors.first().copied().filter(|a| a.is_some() && anchors.iter().all(|b| b == a)).flatten();
+        let uniform = anchors
+            .first()
+            .copied()
+            .filter(|a| a.is_some() && anchors.iter().all(|b| b == a))
+            .flatten();
         // The <text> element's user space is text space.
         let space = (lay.bounds, Affine::IDENTITY);
-        let base = TextBase { props: self.char_props(&t.first_style(), space), space, anchored: uniform.is_some() };
+        let base = TextBase {
+            props: self.char_props(&t.first_style(), space),
+            space,
+            anchored: uniform.is_some(),
+        };
         let mut props = base.props.clone();
         if let Some((a, _)) = uniform {
             props.push(("text-anchor", a.into()));
@@ -1842,8 +2312,16 @@ impl Writer<'_> {
         let id = self.id_attr(n);
         let a = self.attrs(&props);
         let m = self.xf * t.xf;
-        let tr = if m == Affine::IDENTITY { String::new() } else { format!(" transform=\"{}\"", self.matrix(m)) };
-        let starts: Vec<Option<(f64, f64)>> = lines.iter().zip(&anchors).map(|(l, a)| line_start(&l.segs, a.map(|a| a.1))).collect();
+        let tr = if m == Affine::IDENTITY {
+            String::new()
+        } else {
+            format!(" transform=\"{}\"", self.matrix(m))
+        };
+        let starts: Vec<Option<(f64, f64)>> = lines
+            .iter()
+            .zip(&anchors)
+            .map(|(l, a)| line_start(&l.segs, a.map(|a| a.1)))
+            .collect();
         // The `<text>` carries the first line's position too, so readers that place text by its
         // own x/y start where the first line does.
         let at = match starts.iter().flatten().next() {
@@ -1856,8 +2334,15 @@ impl Writer<'_> {
             match anchor.filter(|_| uniform.is_none()) {
                 // A line anchored on its own: one positioned <tspan> with the anchor around it.
                 Some((a, _)) => {
-                    s.push_str(&format!("<tspan x=\"{}\" y=\"{}\" text-anchor=\"{a}\">", self.num(start.0), self.num(start.1)));
-                    let inner = TextBase { anchored: true, ..base.clone() };
+                    s.push_str(&format!(
+                        "<tspan x=\"{}\" y=\"{}\" text-anchor=\"{a}\">",
+                        self.num(start.0),
+                        self.num(start.1)
+                    ));
+                    let inner = TextBase {
+                        anchored: true,
+                        ..base.clone()
+                    };
                     self.text_line(&mut s, t, &line.segs, start, &inner, false);
                     s.push_str("</tspan>");
                 }
@@ -1873,17 +2358,31 @@ impl Writer<'_> {
     /// the style changes nested in it, positioned again only after tabs and justified word spaces.
     /// Baseline shifts are relative (`dy`), undone by the next segment that isn't shifted.
     /// `positioned`: false when the caller already positioned the line (an outer `<tspan>`).
-    fn text_line(&mut self, s: &mut String, t: &TextObject, line: &[Segment], start: (f64, f64), base: &TextBase, positioned: bool) {
+    fn text_line(
+        &mut self,
+        s: &mut String,
+        t: &TextObject,
+        line: &[Segment],
+        start: (f64, f64),
+        base: &TextBase,
+        positioned: bool,
+    ) {
         let fewer = self.opts.fewer_tspans && positioned;
         if fewer {
-            s.push_str(&format!("<tspan x=\"{}\" y=\"{}\">", self.num(start.0), self.num(start.1)));
+            s.push_str(&format!(
+                "<tspan x=\"{}\" y=\"{}\">",
+                self.num(start.0),
+                self.num(start.1)
+            ));
         }
         let mut place = !fewer && positioned;
         let mut first = true;
         // The baseline shift the current text position carries.
         let mut shift = 0.0;
         for seg in line {
-            let Some(st) = t.runs.get(seg.run).map(|r| &r.style) else { continue };
+            let Some(st) = t.runs.get(seg.run).map(|r| &r.style) else {
+                continue;
+            };
             let mut attrs = String::new();
             if place {
                 let (x, y) = if first { start } else { (seg.x, seg.y) };
@@ -1898,7 +2397,10 @@ impl Writer<'_> {
             // After a tab or a justified word space the next segment is placed.
             place = seg.brk || (!fewer && !base.anchored && positioned);
             if (st.h_scale - st.v_scale).abs() > 1e-9 {
-                attrs.push_str(&format!(" textLength=\"{}\" lengthAdjust=\"spacingAndGlyphs\"", self.num(seg.advance)));
+                attrs.push_str(&format!(
+                    " textLength=\"{}\" lengthAdjust=\"spacingAndGlyphs\"",
+                    self.num(seg.advance)
+                ));
             }
             if st.rotation != 0.0 {
                 attrs.push_str(&format!(" rotate=\"{}\"", self.num(-st.rotation)));
@@ -1930,22 +2432,44 @@ impl Writer<'_> {
         let plain = t.plain_text();
         let mut face: Option<Arc<FontFace>> = None;
         for g in &lay.glyphs {
-            let Some(st) = t.runs.get(g.run).map(|r| &r.style) else { continue };
+            let Some(st) = t.runs.get(g.run).map(|r| &r.style) else {
+                continue;
+            };
             if face.as_ref().is_none_or(|f| f.id() != g.font_id) {
                 face = db.face_by_id(g.font_id);
             }
             let Some(f) = &face else { continue };
             let (weight, italic) = font_descriptor(st);
-            let at = self.fonts.iter().position(|u| u.face.id() == f.id() && (u.weight, u.italic) == (weight, italic) && u.family == st.font_family);
+            let at = self.fonts.iter().position(|u| {
+                u.face.id() == f.id()
+                    && (u.weight, u.italic) == (weight, italic)
+                    && u.family == st.font_family
+            });
             let at = at.unwrap_or_else(|| {
                 let family = st.font_family.clone();
-                self.fonts.push(FontUse { family, weight, italic, face: f.clone(), chars: BTreeSet::new() });
+                self.fonts.push(FontUse {
+                    family,
+                    weight,
+                    italic,
+                    face: f.clone(),
+                    chars: BTreeSet::new(),
+                });
                 self.fonts.len() - 1
             });
-            let Some(chars) = self.fonts.get_mut(at).map(|u| &mut u.chars) else { continue };
+            let Some(chars) = self.fonts.get_mut(at).map(|u| &mut u.chars) else {
+                continue;
+            };
             // As written: a hyphen where a line breaks, capitals for All Caps, the style's Digits.
-            let src = if g.len == 0 { "-" } else { plain.get(g.byte..g.byte + g.len).unwrap_or("") };
-            for c in src.chars().filter(|c| !c.is_control() && *c != '\u{ad}').map(|c| st.digits.map(c)) {
+            let src = if g.len == 0 {
+                "-"
+            } else {
+                plain.get(g.byte..g.byte + g.len).unwrap_or("")
+            };
+            for c in src
+                .chars()
+                .filter(|c| !c.is_control() && *c != '\u{ad}')
+                .map(|c| st.digits.map(c))
+            {
                 if st.all_caps {
                     chars.extend(c.to_uppercase());
                 } else {
@@ -1970,11 +2494,25 @@ impl Writer<'_> {
                 continue;
             };
             if !font.subset {
-                self.warn(&format!("the font {name} is embedded whole: its licence doesn't allow subsetting"));
+                self.warn(&format!(
+                    "the font {name} is embedded whole: its licence doesn't allow subsetting"
+                ));
             }
-            let shared = uses.iter().filter(|o| (&o.family, o.weight, o.italic) == (&u.family, u.weight, u.italic)).count() > 1;
-            let range = if shared { format!(";unicode-range:{}", unicode_range(&u.chars)) } else { String::new() };
-            let (mime, format) = if font.cff { ("font/otf", "opentype") } else { ("font/ttf", "truetype") };
+            let shared = uses
+                .iter()
+                .filter(|o| (&o.family, o.weight, o.italic) == (&u.family, u.weight, u.italic))
+                .count()
+                > 1;
+            let range = if shared {
+                format!(";unicode-range:{}", unicode_range(&u.chars))
+            } else {
+                String::new()
+            };
+            let (mime, format) = if font.cff {
+                ("font/otf", "opentype")
+            } else {
+                ("font/ttf", "truetype")
+            };
             rules.push(format!(
                 "@font-face{{font-family:{};font-weight:{};font-style:{};src:url(data:{mime};base64,{}) format(\"{format}\"){range}}}",
                 css_string(&u.family),
@@ -1999,18 +2537,25 @@ impl Writer<'_> {
         let base = self.char_props(&t.first_style(), space);
         let mut props = base.clone();
         match t.para_at(0).justify {
-            Justify::Center | Justify::JustifyCenter => props.push(("text-anchor", "middle".into())),
+            Justify::Center | Justify::JustifyCenter => {
+                props.push(("text-anchor", "middle".into()))
+            }
             Justify::Right | Justify::JustifyRight => props.push(("text-anchor", "end".into())),
             _ => {}
         }
         props.extend(css::transparency(n));
         let a = self.attrs(&props);
         let offset = fmt_num(start * 100.0, 3);
-        let mut s = format!("<text{id} xml:space=\"preserve\"{a}><textPath xlink:href=\"#{pid}\" startOffset=\"{offset}%\">");
+        let mut s = format!(
+            "<text{id} xml:space=\"preserve\"{a}><textPath xlink:href=\"#{pid}\" startOffset=\"{offset}%\">"
+        );
         for run in &t.runs {
             let diff = run_diff(&base, self.char_props(&run.style, space));
             let a = self.attrs(&diff);
-            s.push_str(&format!("<tspan{a}>{}</tspan>", xml_escape(&run.text.replace('\n', " "))));
+            s.push_str(&format!(
+                "<tspan{a}>{}</tspan>",
+                xml_escape(&run.text.replace('\n', " "))
+            ));
         }
         s.push_str("</textPath></text>");
         self.line(&s);
@@ -2020,9 +2565,15 @@ impl Writer<'_> {
 /// What the `<tspan>` of a run whose properties are `run` sets over its `<text>`'s `base`: the
 /// properties that differ, and the initial value of each one `base` sets and the run doesn't.
 fn run_diff(base: &Props, run: Props) -> Props {
-    let reset: Props =
-        base.iter().filter(|(k, _)| !run.iter().any(|(r, _)| r == k)).filter_map(|(k, _)| initial_value(k).map(|v| (*k, v.to_string()))).collect();
-    run.into_iter().filter(|kv| !base.contains(kv)).chain(reset).collect()
+    let reset: Props = base
+        .iter()
+        .filter(|(k, _)| !run.iter().any(|(r, _)| r == k))
+        .filter_map(|(k, _)| initial_value(k).map(|v| (*k, v.to_string())))
+        .collect();
+    run.into_iter()
+        .filter(|kv| !base.contains(kv))
+        .chain(reset)
+        .collect()
 }
 
 /// The initial value of an inherited property a run may leave unset (decorations can't be undone
@@ -2063,7 +2614,9 @@ fn freeform(p: &Paint) -> Option<&GradientPaint> {
 
 /// Any visible raster effect (shadow, glow, blur, feather) in `effects`?
 fn has_raster(effects: &[vectorcraft_doc::Effect]) -> bool {
-    effects.iter().any(|e| e.visible && vectorcraft_effects::is_raster(&e.id))
+    effects
+        .iter()
+        .any(|e| e.visible && vectorcraft_effects::is_raster(&e.id))
 }
 
 /// What the lines of one `<text>` share.
@@ -2105,21 +2658,45 @@ fn text_lines(t: &TextObject, lay: &vectorcraft_text::TextLayout, fewer: bool) -
     let plain = t.plain_text();
     let mut lines = Vec::with_capacity(lay.lines.len());
     for line in &lay.lines {
-        let para = plain.as_bytes().get(..line.start).map_or(0, |b| b.iter().filter(|&&c| c == b'\n').count());
-        let split_words = !fewer && !matches!(t.para_at(para).justify, Justify::Auto | Justify::Left | Justify::Center | Justify::Right);
+        let para = plain
+            .as_bytes()
+            .get(..line.start)
+            .map_or(0, |b| b.iter().filter(|&&c| c == b'\n').count());
+        let split_words = !fewer
+            && !matches!(
+                t.para_at(para).justify,
+                Justify::Auto | Justify::Left | Justify::Center | Justify::Right
+            );
         let mut segs: Vec<Segment> = Vec::new();
         let mut cluster = None;
-        let source = |g: &vectorcraft_text::PositionedGlyph| if g.len == 0 { "-" } else { plain.get(g.byte..g.byte + g.len).unwrap_or("") };
-        let mut glyphs = lay.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or_default();
+        let source = |g: &vectorcraft_text::PositionedGlyph| {
+            if g.len == 0 {
+                "-"
+            } else {
+                plain.get(g.byte..g.byte + g.len).unwrap_or("")
+            }
+        };
+        let mut glyphs = lay
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or_default();
         // Spaces where the line wrapped (it doesn't end its paragraph) don't belong to the line.
-        if plain.get(line.end..).is_some_and(|rest| !rest.is_empty() && !rest.starts_with('\n')) {
-            while let Some((_, rest)) = glyphs.split_last().filter(|(g, _)| source(g).chars().all(|c| c.is_whitespace() && c != '\t')) {
+        if plain
+            .get(line.end..)
+            .is_some_and(|rest| !rest.is_empty() && !rest.starts_with('\n'))
+        {
+            while let Some((_, rest)) = glyphs
+                .split_last()
+                .filter(|(g, _)| source(g).chars().all(|c| c.is_whitespace() && c != '\t'))
+            {
                 glyphs = rest;
             }
         }
         let mut after_inline = false;
         for g in glyphs {
-            let Some(run) = t.runs.get(g.run) else { continue };
+            let Some(run) = t.runs.get(g.run) else {
+                continue;
+            };
             if run.inline.is_some() {
                 // An inline graphic (written as art): the text after it is placed anew.
                 if let Some(last) = segs.last_mut() {
@@ -2137,9 +2714,18 @@ fn text_lines(t: &TextObject, lay: &vectorcraft_text::TextLayout, fewer: bool) -
                 continue;
             }
             cluster = Some(g.byte);
-            let src: String = source(g).chars().filter(|c| *c != '\u{ad}').map(|c| run.style.digits.map(c)).collect();
-            let piece = if run.style.all_caps { src.to_uppercase() } else { src };
-            let brk = piece == "\t" || (split_words && !piece.is_empty() && piece.chars().all(char::is_whitespace));
+            let src: String = source(g)
+                .chars()
+                .filter(|c| *c != '\u{ad}')
+                .map(|c| run.style.digits.map(c))
+                .collect();
+            let piece = if run.style.all_caps {
+                src.to_uppercase()
+            } else {
+                src
+            };
+            let brk = piece == "\t"
+                || (split_words && !piece.is_empty() && piece.chars().all(char::is_whitespace));
             let fresh = std::mem::take(&mut after_inline);
             match segs.last_mut() {
                 Some(last) if last.run == g.run && !last.brk && !fresh => {
@@ -2147,7 +2733,14 @@ fn text_lines(t: &TextObject, lay: &vectorcraft_text::TextLayout, fewer: bool) -
                     last.advance += g.advance;
                     last.brk = brk;
                 }
-                _ => segs.push(Segment { run: g.run, x: g.origin.x, y: g.origin.y, text: piece, advance: g.advance, brk }),
+                _ => segs.push(Segment {
+                    run: g.run,
+                    x: g.origin.x,
+                    y: g.origin.y,
+                    text: piece,
+                    advance: g.advance,
+                    brk,
+                }),
             }
         }
         segs.retain(|s| !s.text.is_empty());
@@ -2179,16 +2772,33 @@ fn paints_opaque(n: &Node) -> bool {
         _ => false,
     };
     let items = n.appearance.items.iter().all(|i| match i {
-        AppearanceItem::Fill(f) => !f.visible || (f.opacity >= 1.0 && f.blend == BlendMode::Normal && f.effects.is_empty() && paint(&f.paint)),
+        AppearanceItem::Fill(f) => {
+            !f.visible
+                || (f.opacity >= 1.0
+                    && f.blend == BlendMode::Normal
+                    && f.effects.is_empty()
+                    && paint(&f.paint))
+        }
         // Brush art draws as pieces with opacities of their own (bristles vary theirs).
         AppearanceItem::Stroke(s) => {
-            !s.visible || (s.opacity >= 1.0 && s.blend == BlendMode::Normal && s.effects.is_empty() && s.brush.is_none() && paint(&s.paint))
+            !s.visible
+                || (s.opacity >= 1.0
+                    && s.blend == BlendMode::Normal
+                    && s.effects.is_empty()
+                    && s.brush.is_none()
+                    && paint(&s.paint))
         }
     });
-    let own = n.opacity >= 1.0 && n.blend == BlendMode::Normal && n.extras().mask.is_none() && n.appearance.effects.is_empty() && items;
+    let own = n.opacity >= 1.0
+        && n.blend == BlendMode::Normal
+        && n.extras().mask.is_none()
+        && n.appearance.effects.is_empty()
+        && items;
     own && match &n.kind {
         NodeKind::Path { .. } => true,
-        NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => children.iter().all(|c| paints_opaque(c)),
+        NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
+            children.iter().all(|c| paints_opaque(c))
+        }
         NodeKind::Mesh(m) => m.points.iter().all(|p| p.opacity >= 1.0),
         _ => false,
     }

@@ -23,13 +23,23 @@ pub const EDGE_PX: f32 = 7.0;
 /// The trim the Selection tool starts at an edit point: Cmd+Shift = roll, Cmd = ripple. With the
 /// Trim setting on (`no_modifier`), no modifier is needed: right on the cut (when a clip is on the
 /// other side) rolls, elsewhere on the edge ripples. Otherwise a plain drag is a regular trim.
-pub fn selection_trim_kind(no_modifier: bool, cmd: bool, shift: bool, dist_px: f32, has_neighbour: bool) -> &'static str {
+pub fn selection_trim_kind(
+    no_modifier: bool,
+    cmd: bool,
+    shift: bool,
+    dist_px: f32,
+    has_neighbour: bool,
+) -> &'static str {
     if cmd && shift {
         "roll"
     } else if cmd {
         "ripple"
     } else if no_modifier {
-        if has_neighbour && dist_px <= ROLL_PX { "roll" } else { "ripple" }
+        if has_neighbour && dist_px <= ROLL_PX {
+            "roll"
+        } else {
+            "ripple"
+        }
     } else {
         "trim"
     }
@@ -37,9 +47,20 @@ pub fn selection_trim_kind(no_modifier: bool, cmd: bool, shift: bool, dist_px: f
 
 /// Distance (px) from `x` to the cut at `clip`'s `edge`, and whether a clip touches that cut on
 /// the other side.
-pub(crate) fn edge_geometry(seq: &Sequence, layout: &Layout, track: TrackId, clip: ClipId, edge: Edge, x: f32) -> (f32, bool) {
-    let Some(tr) = seq.track(track) else { return (f32::MAX, false) };
-    let Some(it) = tr.item(clip) else { return (f32::MAX, false) };
+pub(crate) fn edge_geometry(
+    seq: &Sequence,
+    layout: &Layout,
+    track: TrackId,
+    clip: ClipId,
+    edge: Edge,
+    x: f32,
+) -> (f32, bool) {
+    let Some(tr) = seq.track(track) else {
+        return (f32::MAX, false);
+    };
+    let Some(it) = tr.item(clip) else {
+        return (f32::MAX, false);
+    };
     let (cut, neighbour) = match edge {
         Edge::Out => (it.end(), tr.items.iter().any(|x| x.start == it.end())),
         Edge::In => (it.start, tr.items.iter().any(|x| x.end() == it.start)),
@@ -71,24 +92,38 @@ pub enum Hit {
 
 /// Where the Timeline ruler draws (and hit-tests) the pentagon of a marker at `start`.
 pub fn marker_rect(layout: &Layout, start: Tick) -> Rect {
-    Rect::from_center_size(pos2(layout.x_of(start), layout.ruler.min.y + 8.0), vec2(10.0, 13.0))
+    Rect::from_center_size(
+        pos2(layout.x_of(start), layout.ruler.min.y + 8.0),
+        vec2(10.0, 13.0),
+    )
 }
 
 /// The visible duration band, shared by painting and hit testing (#1143).
 pub fn marker_range_rect(layout: &Layout, marker: &filmcraft_project::Marker) -> Option<Rect> {
     (marker.duration > Tick::ZERO).then(|| {
         let y = layout.ruler.min.y + 2.0;
-        Rect::from_min_max(pos2(layout.x_of(marker.start), y), pos2(layout.x_of(marker.start + marker.duration), y + 8.0)).intersect(layout.ruler)
+        Rect::from_min_max(
+            pos2(layout.x_of(marker.start), y),
+            pos2(layout.x_of(marker.start + marker.duration), y + 8.0),
+        )
+        .intersect(layout.ruler)
     })
 }
 
 /// The topmost marker under the pointer, including its range band. Preserve its id when opening
 /// a context menu: several markers can share a start, and the playhead can move while it is open.
-pub fn marker_under_pointer<'a>(seq: &'a Sequence, layout: &Layout, pos: Pos2) -> Option<&'a filmcraft_project::Marker> {
+pub fn marker_under_pointer<'a>(
+    seq: &'a Sequence,
+    layout: &Layout,
+    pos: Pos2,
+) -> Option<&'a filmcraft_project::Marker> {
     if !layout.ruler.contains(pos) {
         return None;
     }
-    seq.markers.iter().rev().find(|m| marker_rect(layout, m.start).contains(pos) || marker_range_rect(layout, m).is_some_and(|r| r.contains(pos)))
+    seq.markers.iter().rev().find(|m| {
+        marker_rect(layout, m.start).contains(pos)
+            || marker_range_rect(layout, m).is_some_and(|r| r.contains(pos))
+    })
 }
 
 /// A press on a marker puts the playhead on its start for Clear Selected Marker (#695).
@@ -103,8 +138,12 @@ pub fn hit(seq: &Sequence, layout: &Layout, pos: Pos2) -> Hit {
     if !layout.content.contains(pos) {
         return Hit::None;
     }
-    let Some(row) = layout.row_at(pos.y) else { return Hit::None };
-    let Some(tr) = seq.track(row.track) else { return Hit::None };
+    let Some(row) = layout.row_at(pos.y) else {
+        return Hit::None;
+    };
+    let Some(tr) = seq.track(row.track) else {
+        return Hit::None;
+    };
     for trn in &tr.transitions {
         let x0 = layout.x_of(trn.start);
         let x1 = layout.x_of(trn.end());
@@ -118,14 +157,26 @@ pub fn hit(seq: &Sequence, layout: &Layout, pos: Pos2) -> Hit {
             } else {
                 None
             };
-            return Hit::Transition { track: row.track, id: trn.id, edge };
+            return Hit::Transition {
+                track: row.track,
+                id: trn.id,
+                edge,
+            };
         }
     }
     if let Some((clip, edge)) = edge_at(tr, layout, pos.x) {
-        return Hit::Clip { track: row.track, clip, edge: Some(edge) };
+        return Hit::Clip {
+            track: row.track,
+            clip,
+            edge: Some(edge),
+        };
     }
     match tr.item_at(layout.tick_at(pos.x)) {
-        Some(it) => Hit::Clip { track: row.track, clip: it.id, edge: None },
+        Some(it) => Hit::Clip {
+            track: row.track,
+            clip: it.id,
+            edge: None,
+        },
         None => Hit::Empty { track: row.track },
     }
 }
@@ -161,7 +212,11 @@ impl Reach {
 /// clip, at most [`EDGE_PX`], so the middle third of a narrow clip still moves it. `None` when the
 /// clip has no usable width (zoomed far out, or a broken zoom): it has no edges then.
 fn zone(w: f32) -> Option<f32> {
-    if w.is_finite() && w > 0.0 { Some(EDGE_PX.min(w / 3.0)) } else { None }
+    if w.is_finite() && w > 0.0 {
+        Some(EDGE_PX.min(w / 3.0))
+    } else {
+        None
+    }
 }
 
 /// The clip edge on `tr` a pointer at `x` grabs (#259), whatever the order of `tr.items`.
@@ -175,7 +230,12 @@ fn edge_at(tr: &Track, layout: &Layout, x: f32) -> Option<(ClipId, Edge)> {
             if !(-e..=e).contains(&d) {
                 continue;
             }
-            let r = Reach { clip: it.id, edge, inside: d >= 0.0, dist: d.abs() };
+            let r = Reach {
+                clip: it.id,
+                edge,
+                inside: d >= 0.0,
+                dist: d.abs(),
+            };
             if best.is_none_or(|b| r.beats(&b)) {
                 best = Some(r);
             }
@@ -224,10 +284,7 @@ pub enum Grab {
     },
     /// An audio clip's Volume line (Selection and Pen tools): a drag changes the level, a Pen or
     /// Cmd/Ctrl click adds a keyframe.
-    Volume {
-        track: TrackId,
-        clip: ClipId,
-    },
+    Volume { track: TrackId, clip: ClipId },
     /// Not an edge this tool trims: a clip body, a transition, an empty track, the ruler or
     /// nothing. A clip's `edge` may still be set, for tools that do something else there (Razor,
     /// Slip…).
@@ -238,8 +295,18 @@ impl Grab {
     /// What is under the pointer, whatever the tool does with it.
     pub fn hit(self) -> Hit {
         match self {
-            Grab::Edge { track, clip, edge, .. } => Hit::Clip { track, clip, edge: Some(edge) },
-            Grab::Volume { track, clip } => Hit::Clip { track, clip, edge: None },
+            Grab::Edge {
+                track, clip, edge, ..
+            } => Hit::Clip {
+                track,
+                clip,
+                edge: Some(edge),
+            },
+            Grab::Volume { track, clip } => Hit::Clip {
+                track,
+                clip,
+                edge: None,
+            },
             Grab::Other(h) => h,
         }
     }
@@ -248,15 +315,33 @@ impl Grab {
 /// What a press of `tool` with `mods` at `pos` grabs (#259): the one place that decides which
 /// tools trim at a clip edge and which trim they start. `roll_ripple` is Settings ▸ Trim ▸ "Allow
 /// Selection tool to choose Roll and Ripple trims without modifier key".
-pub fn grab_at(seq: &Sequence, layout: &Layout, pos: Pos2, tool: Tool, mods: Modifiers, roll_ripple: bool) -> Grab {
+pub fn grab_at(
+    seq: &Sequence,
+    layout: &Layout,
+    pos: Pos2,
+    tool: Tool,
+    mods: Modifiers,
+    roll_ripple: bool,
+) -> Grab {
     let h = hit(seq, layout, pos);
-    if let Hit::Clip { track, clip, edge: None } = h
+    if let Hit::Clip {
+        track,
+        clip,
+        edge: None,
+    } = h
         && matches!(tool, Tool::Selection | Tool::Pen)
         && super::timeline_volume::on_line(seq, layout, clip, pos)
     {
         return Grab::Volume { track, clip };
     }
-    let Hit::Clip { track, clip, edge: Some(edge) } = h else { return Grab::Other(h) };
+    let Hit::Clip {
+        track,
+        clip,
+        edge: Some(edge),
+    } = h
+    else {
+        return Grab::Other(h);
+    };
     let kind = match tool {
         Tool::Selection => {
             let (dist, neighbour) = edge_geometry(seq, layout, track, clip, edge, pos.x);
@@ -272,17 +357,34 @@ pub fn grab_at(seq: &Sequence, layout: &Layout, pos: Pos2, tool: Tool, mods: Mod
         Tool::Remix if edge == Edge::Out => EdgeKind::Remix,
         _ => return Grab::Other(h),
     };
-    Grab::Edge { track, clip, edge, kind }
+    Grab::Edge {
+        track,
+        clip,
+        edge,
+        kind,
+    }
 }
 
 /// A roll of the cut at `clip`'s `edge`, or a regular trim when no clip touches that cut on the
 /// other side (there is nothing to roll against).
 fn roll(seq: &Sequence, track: TrackId, clip: ClipId, edge: Edge) -> EdgeKind {
-    let Some(tr) = seq.track(track) else { return EdgeKind::Trim };
-    let Some(it) = tr.item(clip) else { return EdgeKind::Trim };
+    let Some(tr) = seq.track(track) else {
+        return EdgeKind::Trim;
+    };
+    let Some(it) = tr.item(clip) else {
+        return EdgeKind::Trim;
+    };
     let pair = match edge {
-        Edge::Out => tr.items.iter().find(|x| x.start == it.end()).map(|r| (clip, r.id)),
-        Edge::In => tr.items.iter().find(|x| x.end() == it.start).map(|l| (l.id, clip)),
+        Edge::Out => tr
+            .items
+            .iter()
+            .find(|x| x.start == it.end())
+            .map(|r| (clip, r.id)),
+        Edge::In => tr
+            .items
+            .iter()
+            .find(|x| x.end() == it.start)
+            .map(|l| (l.id, clip)),
     };
     match pair {
         Some((left, right)) => EdgeKind::Roll { left, right },
@@ -336,13 +438,27 @@ mod tests {
     /// A: 100–300, B: 300–500 (sharing a cut with A), C: 504–700 (after a 4 px gap), D: 800–809
     /// (9 px wide, so its zones are 3 px).
     fn clips() -> Vec<TrackItem> {
-        vec![clip(1, 100.0, 300.0), clip(2, 300.0, 500.0), clip(3, 504.0, 700.0), clip(4, 800.0, 809.0)]
+        vec![
+            clip(1, 100.0, 300.0),
+            clip(2, 300.0, 500.0),
+            clip(3, 504.0, 700.0),
+            clip(4, 800.0, 809.0),
+        ]
     }
 
     /// One video track holding `items`, laid out at 100 px/s from x = 0.
     fn fixture(items: Vec<TrackItem>) -> (Sequence, Layout, TrackId) {
         let mut p = Project::new("t");
-        let s = p.new_sequence("s", SequenceSettings { frame_rate: FrameRate::FPS_24, ..Default::default() }, 1, 0, None);
+        let s = p.new_sequence(
+            "s",
+            SequenceSettings {
+                frame_rate: FrameRate::FPS_24,
+                ..Default::default()
+            },
+            1,
+            0,
+            None,
+        );
         let mut seq = p.sequence(s).cloned().expect("sequence");
         let track = seq.video_tracks[0].id;
         seq.video_tracks[0].items = items;
@@ -350,7 +466,13 @@ mod tests {
         let layout = Layout {
             content: row,
             ruler: Rect::from_min_max(pos2(0.0, 0.0), pos2(2000.0, 40.0)),
-            rows: vec![Row { track, kind: TrackKind::Video, index: 0, rect: row, lane: false }],
+            rows: vec![Row {
+                track,
+                kind: TrackKind::Video,
+                index: 0,
+                rect: row,
+                lane: false,
+            }],
             pps: 100.0,
             scroll: 0.0,
             split_y: TOP + 60.0,
@@ -363,7 +485,11 @@ mod tests {
     }
 
     fn edge_hit(track: TrackId, clip: u64, edge: Edge) -> Hit {
-        Hit::Clip { track, clip: ClipId(clip), edge: Some(edge) }
+        Hit::Clip {
+            track,
+            clip: ClipId(clip),
+            edge: Some(edge),
+        }
     }
 
     #[test]
@@ -390,7 +516,14 @@ mod tests {
         assert_eq!(hit(&seq, &l, at(95.0)), edge_hit(tr, 1, Edge::In));
         assert_eq!(hit(&seq, &l, at(705.0)), edge_hit(tr, 3, Edge::Out));
         assert_eq!(hit(&seq, &l, at(92.0)), Hit::Empty { track: tr });
-        assert_eq!(hit(&seq, &l, at(200.0)), Hit::Clip { track: tr, clip: ClipId(1), edge: None });
+        assert_eq!(
+            hit(&seq, &l, at(200.0)),
+            Hit::Clip {
+                track: tr,
+                clip: ClipId(1),
+                edge: None
+            }
+        );
     }
 
     #[test]
@@ -400,7 +533,9 @@ mod tests {
         let (a, la, _) = fixture(clips());
         let (b, lb, _) = fixture(reversed);
         // edge points only: finding the clip under a body point relies on the items being sorted
-        for x in [297.0, 300.0, 303.0, 501.0, 502.0, 503.0, 95.0, 705.0, 802.0, 807.0] {
+        for x in [
+            297.0, 300.0, 303.0, 501.0, 502.0, 503.0, 95.0, 705.0, 802.0, 807.0,
+        ] {
             assert_eq!(hit(&a, &la, at(x)), hit(&b, &lb, at(x)), "x = {x}");
         }
     }
@@ -410,7 +545,14 @@ mod tests {
         let (seq, l, tr) = fixture(clips());
         assert_eq!(hit(&seq, &l, at(802.0)), edge_hit(tr, 4, Edge::In));
         assert_eq!(hit(&seq, &l, at(807.0)), edge_hit(tr, 4, Edge::Out));
-        assert_eq!(hit(&seq, &l, at(804.5)), Hit::Clip { track: tr, clip: ClipId(4), edge: None });
+        assert_eq!(
+            hit(&seq, &l, at(804.5)),
+            Hit::Clip {
+                track: tr,
+                clip: ClipId(4),
+                edge: None
+            }
+        );
         // 4 px outside it is beyond its 3 px zone
         assert_eq!(hit(&seq, &l, at(796.0)), Hit::Empty { track: tr });
     }
@@ -420,15 +562,26 @@ mod tests {
         let (seq, l, tr) = fixture(vec![clip(5, 1000.0, 1000.0)]);
         // a zero-length clip has no edges, even right on it
         assert_eq!(hit(&seq, &l, at(1000.0)), Hit::Empty { track: tr });
-        for p in [pos2(f32::NAN, TOP + 10.0), pos2(f32::INFINITY, TOP + 10.0), pos2(f32::NEG_INFINITY, TOP + 10.0), pos2(300.0, f32::NAN), pos2(300.0, 5000.0)]
-        {
+        for p in [
+            pos2(f32::NAN, TOP + 10.0),
+            pos2(f32::INFINITY, TOP + 10.0),
+            pos2(f32::NEG_INFINITY, TOP + 10.0),
+            pos2(300.0, f32::NAN),
+            pos2(300.0, 5000.0),
+        ] {
             assert_eq!(hit(&seq, &l, p), Hit::None, "{p:?}");
         }
         let (seq, l, _) = fixture(clips());
         assert_eq!(hit(&seq, &l, pos2(300.0, 20.0)), Hit::Ruler);
         for pps in [0.0, f64::NAN, f64::INFINITY] {
             let broken = Layout { pps, ..l.clone() };
-            assert!(!matches!(hit(&seq, &broken, at(300.0)), Hit::Clip { edge: Some(_), .. }), "pps {pps}");
+            assert!(
+                !matches!(
+                    hit(&seq, &broken, at(300.0)),
+                    Hit::Clip { edge: Some(_), .. }
+                ),
+                "pps {pps}"
+            );
         }
     }
 
@@ -481,54 +634,128 @@ mod tests {
 
     use crate::state::Tool;
 
-    const ROLL_AB: EdgeKind = EdgeKind::Roll { left: ClipId(1), right: ClipId(2) };
+    const ROLL_AB: EdgeKind = EdgeKind::Roll {
+        left: ClipId(1),
+        right: ClipId(2),
+    };
 
-    fn grab(seq: &Sequence, l: &Layout, tool: Tool, x: f32, mods: Modifiers, roll_ripple: bool) -> Grab {
+    fn grab(
+        seq: &Sequence,
+        l: &Layout,
+        tool: Tool,
+        x: f32,
+        mods: Modifiers,
+        roll_ripple: bool,
+    ) -> Grab {
         grab_at(seq, l, at(x), tool, mods, roll_ripple)
     }
 
     fn edge_grab(track: TrackId, clip: u64, edge: Edge, kind: EdgeKind) -> Grab {
-        Grab::Edge { track, clip: ClipId(clip), edge, kind }
+        Grab::Edge {
+            track,
+            clip: ClipId(clip),
+            edge,
+            kind,
+        }
     }
 
     #[test]
     fn selection_tool_trims_by_modifier_and_setting() {
         let (seq, l, tr) = fixture(clips());
-        let (none, cmd, cmd_shift) = (Modifiers::NONE, Modifiers::COMMAND, Modifiers::COMMAND | Modifiers::SHIFT);
+        let (none, cmd, cmd_shift) = (
+            Modifiers::NONE,
+            Modifiers::COMMAND,
+            Modifiers::COMMAND | Modifiers::SHIFT,
+        );
         let sel = |x, mods, pref| grab(&seq, &l, Tool::Selection, x, mods, pref);
-        assert_eq!(sel(297.0, none, false), edge_grab(tr, 1, Edge::Out, EdgeKind::Trim));
-        assert_eq!(sel(303.0, cmd, false), edge_grab(tr, 2, Edge::In, EdgeKind::Ripple));
-        assert_eq!(sel(303.0, cmd_shift, false), edge_grab(tr, 2, Edge::In, ROLL_AB));
+        assert_eq!(
+            sel(297.0, none, false),
+            edge_grab(tr, 1, Edge::Out, EdgeKind::Trim)
+        );
+        assert_eq!(
+            sel(303.0, cmd, false),
+            edge_grab(tr, 2, Edge::In, EdgeKind::Ripple)
+        );
+        assert_eq!(
+            sel(303.0, cmd_shift, false),
+            edge_grab(tr, 2, Edge::In, ROLL_AB)
+        );
         // Settings ▸ Trim: right on the cut rolls, elsewhere on the edge ripples
         assert_eq!(sel(298.0, none, true), edge_grab(tr, 1, Edge::Out, ROLL_AB));
         assert_eq!(sel(302.0, none, true), edge_grab(tr, 2, Edge::In, ROLL_AB));
-        assert_eq!(sel(305.0, none, true), edge_grab(tr, 2, Edge::In, EdgeKind::Ripple));
+        assert_eq!(
+            sel(305.0, none, true),
+            edge_grab(tr, 2, Edge::In, EdgeKind::Ripple)
+        );
         // a roll with no clip on the other side of the cut is a regular trim
-        assert_eq!(sel(102.0, cmd_shift, false), edge_grab(tr, 1, Edge::In, EdgeKind::Trim));
+        assert_eq!(
+            sel(102.0, cmd_shift, false),
+            edge_grab(tr, 1, Edge::In, EdgeKind::Trim)
+        );
         // mid-clip: the clip itself
-        assert_eq!(sel(200.0, none, false), Grab::Other(Hit::Clip { track: tr, clip: ClipId(1), edge: None }));
+        assert_eq!(
+            sel(200.0, none, false),
+            Grab::Other(Hit::Clip {
+                track: tr,
+                clip: ClipId(1),
+                edge: None
+            })
+        );
     }
 
     #[test]
     fn which_tools_trim_at_an_edge() {
         let (seq, l, tr) = fixture(clips());
         let g = |tool, x| grab(&seq, &l, tool, x, Modifiers::NONE, false);
-        assert_eq!(g(Tool::Ripple, 297.0), edge_grab(tr, 1, Edge::Out, EdgeKind::Ripple));
+        assert_eq!(
+            g(Tool::Ripple, 297.0),
+            edge_grab(tr, 1, Edge::Out, EdgeKind::Ripple)
+        );
         assert_eq!(g(Tool::Rolling, 303.0), edge_grab(tr, 2, Edge::In, ROLL_AB));
-        assert_eq!(g(Tool::Rolling, 102.0), edge_grab(tr, 1, Edge::In, EdgeKind::Trim));
-        assert_eq!(g(Tool::RateStretch, 297.0), edge_grab(tr, 1, Edge::Out, EdgeKind::Stretch));
-        assert_eq!(g(Tool::Remix, 297.0), edge_grab(tr, 1, Edge::Out, EdgeKind::Remix));
+        assert_eq!(
+            g(Tool::Rolling, 102.0),
+            edge_grab(tr, 1, Edge::In, EdgeKind::Trim)
+        );
+        assert_eq!(
+            g(Tool::RateStretch, 297.0),
+            edge_grab(tr, 1, Edge::Out, EdgeKind::Stretch)
+        );
+        assert_eq!(
+            g(Tool::Remix, 297.0),
+            edge_grab(tr, 1, Edge::Out, EdgeKind::Remix)
+        );
         // Remix has Out edges only
-        assert_eq!(g(Tool::Remix, 303.0), Grab::Other(edge_hit(tr, 2, Edge::In)));
-        for tool in [Tool::Razor, Tool::Slip, Tool::Slide, Tool::Hand, Tool::Zoom, Tool::TrackSelectForward] {
-            assert_eq!(g(tool, 297.0), Grab::Other(edge_hit(tr, 1, Edge::Out)), "{tool:?}");
+        assert_eq!(
+            g(Tool::Remix, 303.0),
+            Grab::Other(edge_hit(tr, 2, Edge::In))
+        );
+        for tool in [
+            Tool::Razor,
+            Tool::Slip,
+            Tool::Slide,
+            Tool::Hand,
+            Tool::Zoom,
+            Tool::TrackSelectForward,
+        ] {
+            assert_eq!(
+                g(tool, 297.0),
+                Grab::Other(edge_hit(tr, 1, Edge::Out)),
+                "{tool:?}"
+            );
         }
     }
 
     #[test]
     fn edge_kind_names_for_the_control_channel() {
         assert_eq!(
-            [EdgeKind::Trim, EdgeKind::Ripple, ROLL_AB, EdgeKind::Stretch, EdgeKind::Remix].map(EdgeKind::name),
+            [
+                EdgeKind::Trim,
+                EdgeKind::Ripple,
+                ROLL_AB,
+                EdgeKind::Stretch,
+                EdgeKind::Remix
+            ]
+            .map(EdgeKind::name),
             ["trim", "ripple", "roll", "rateStretch", "remix"]
         );
     }
@@ -536,7 +763,13 @@ mod tests {
     #[test]
     fn a_grab_reports_what_is_under_it() {
         let (seq, l, tr) = fixture(clips());
-        assert_eq!(grab(&seq, &l, Tool::Selection, 303.0, Modifiers::NONE, false).hit(), edge_hit(tr, 2, Edge::In));
-        assert_eq!(grab(&seq, &l, Tool::Razor, 303.0, Modifiers::NONE, false).hit(), edge_hit(tr, 2, Edge::In));
+        assert_eq!(
+            grab(&seq, &l, Tool::Selection, 303.0, Modifiers::NONE, false).hit(),
+            edge_hit(tr, 2, Edge::In)
+        );
+        assert_eq!(
+            grab(&seq, &l, Tool::Razor, 303.0, Modifiers::NONE, false).hit(),
+            edge_hit(tr, 2, Edge::In)
+        );
     }
 }

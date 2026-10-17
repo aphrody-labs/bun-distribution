@@ -103,10 +103,22 @@ impl DsSlot {
         arm7_schedule: &mut arm7::Schedule,
         arm9_schedule: &mut arm9::Schedule,
     ) -> Self {
-        arm7_schedule.set_event(arm7::event_slots::DS_SLOT_ROM, arm7::Event::DsSlotRomDataReady);
-        arm9_schedule.set_event(arm9::event_slots::DS_SLOT_ROM, arm9::Event::DsSlotRomDataReady);
-        arm7_schedule.set_event(arm7::event_slots::DS_SLOT_SPI, arm7::Event::DsSlotSpiDataReady);
-        arm9_schedule.set_event(arm9::event_slots::DS_SLOT_SPI, arm9::Event::DsSlotSpiDataReady);
+        arm7_schedule.set_event(
+            arm7::event_slots::DS_SLOT_ROM,
+            arm7::Event::DsSlotRomDataReady,
+        );
+        arm9_schedule.set_event(
+            arm9::event_slots::DS_SLOT_ROM,
+            arm9::Event::DsSlotRomDataReady,
+        );
+        arm7_schedule.set_event(
+            arm7::event_slots::DS_SLOT_SPI,
+            arm7::Event::DsSlotSpiDataReady,
+        );
+        arm9_schedule.set_event(
+            arm9::event_slots::DS_SLOT_SPI,
+            arm9::Event::DsSlotSpiDataReady,
+        );
         DsSlot {
             rom,
             spi,
@@ -152,7 +164,11 @@ impl DsSlot {
         // might not abort the previous transfer and start a new one if set while busy)
         // TODO: What's the actual behavior if AUXSPICNT.bit15 is 0?
         self.rom_control.0 = (self.rom_control.0 & 0x8080_0000) | (value.0 & !0x0080_8000);
-        self.rom_clk_pulse_duration = if self.rom_control.transfer_clock_rate() { 8 } else { 5 };
+        self.rom_clk_pulse_duration = if self.rom_control.transfer_clock_rate() {
+            8
+        } else {
+            5
+        };
         if !self.spi_control.ds_slot_enabled() || !self.rom_control.busy() {
             return;
         }
@@ -212,12 +228,18 @@ impl DsSlot {
             if emu.ds_slot.spi_control.rom_transfer_complete_irq_enabled() {
                 if emu.ds_slot.arm7_access {
                     emu.arm7.irqs.write_requested(
-                        emu.arm7.irqs.requested().with_ds_slot_transfer_complete(true),
+                        emu.arm7
+                            .irqs
+                            .requested()
+                            .with_ds_slot_transfer_complete(true),
                         (),
                     );
                 } else {
                     emu.arm9.irqs.write_requested(
-                        emu.arm9.irqs.requested().with_ds_slot_transfer_complete(true),
+                        emu.arm9
+                            .irqs
+                            .requested()
+                            .with_ds_slot_transfer_complete(true),
                         (),
                     );
                 }
@@ -225,12 +247,16 @@ impl DsSlot {
             emu.ds_slot.rom_data_out = 0;
         } else {
             // Postpone ending the ROM transfer to when the data word will actually be read
-            emu.ds_slot.rom_data_out =
-                emu.ds_slot.rom_output_buffer.read_le(emu.ds_slot.rom_output_pos.get() as usize);
+            emu.ds_slot.rom_data_out = emu
+                .ds_slot
+                .rom_output_buffer
+                .read_le(emu.ds_slot.rom_output_pos.get() as usize);
             if emu.ds_slot.arm7_access {
-                emu.arm7.start_dma_transfers_with_timing::<{ arm7::dma::Timing::DsSlot }>();
+                emu.arm7
+                    .start_dma_transfers_with_timing::<{ arm7::dma::Timing::DsSlot }>();
             } else {
-                emu.arm9.start_dma_transfers_with_timing::<{ arm9::dma::Timing::DsSlot }>();
+                emu.arm9
+                    .start_dma_transfers_with_timing::<{ arm9::dma::Timing::DsSlot }>();
             }
         }
     }

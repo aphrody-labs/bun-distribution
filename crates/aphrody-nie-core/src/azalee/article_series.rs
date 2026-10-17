@@ -126,9 +126,15 @@ mod tests {
     #[test]
     fn validates_series_keys_and_int32_order() {
         assert_eq!(normalize_series_id(" s1 ").unwrap(), "s1");
-        assert_eq!(normalize_series_order(i64::from(i32::MAX)).unwrap(), i32::MAX);
+        assert_eq!(
+            normalize_series_order(i64::from(i32::MAX)).unwrap(),
+            i32::MAX
+        );
         assert_eq!(normalize_series_order(-1), Err(SeriesError::InvalidOrder));
-        assert_eq!(normalize_series_order(i64::from(i32::MAX) + 1), Err(SeriesError::InvalidOrder));
+        assert_eq!(
+            normalize_series_order(i64::from(i32::MAX) + 1),
+            Err(SeriesError::InvalidOrder)
+        );
         assert!(matches!(
             normalize_series_slug(""),
             Err(SeriesError::InvalidIdentifier { field: "slug" })
@@ -145,7 +151,10 @@ mod tests {
         ];
         let ordered = order_series_articles(&articles);
         assert_eq!(
-            ordered.iter().map(|article| article.id.as_str()).collect::<Vec<_>>(),
+            ordered
+                .iter()
+                .map(|article| article.id.as_str())
+                .collect::<Vec<_>>(),
             ["missing", "zero", "first", "third"]
         );
         assert_eq!(series_article_index(&articles, "first").unwrap(), 2);

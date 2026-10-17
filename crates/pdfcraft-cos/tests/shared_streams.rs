@@ -12,7 +12,11 @@ fn fixture() -> Vec<u8> {
         "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
         "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 50] >>".to_string(),
         "<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>".to_string(),
-        format!("<< /Length {} >>\nstream\n{}\nendstream", CONTENT.len(), String::from_utf8_lossy(CONTENT)),
+        format!(
+            "<< /Length {} >>\nstream\n{}\nendstream",
+            CONTENT.len(),
+            String::from_utf8_lossy(CONTENT)
+        ),
     ];
     let mut out = b"%PDF-1.4\n".to_vec();
     let mut offsets = Vec::new();
@@ -25,11 +29,20 @@ fn fixture() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
-const CONTENTS: ObjRef = ObjRef { num: 4, generation: 0 };
+const CONTENTS: ObjRef = ObjRef {
+    num: 4,
+    generation: 0,
+};
 
 fn stream_bytes(doc: &Document, r: ObjRef) -> (Vec<u8>, *const u8) {
     match &*doc.get(r) {
@@ -47,7 +60,10 @@ fn cached_streams_are_the_files_own_bytes() {
     assert!(file.as_ptr_range().contains(&at), "not a copy");
     // A full save reads and caches every object; the cache still holds no copy of stream data.
     let full = write_full(&doc, &SaveOptions::default()).unwrap();
-    assert!(file.as_ptr_range().contains(&stream_bytes(&doc, CONTENTS).1));
+    assert!(
+        file.as_ptr_range()
+            .contains(&stream_bytes(&doc, CONTENTS).1)
+    );
     // Saves are unchanged: the stream is written as it was read.
     let back = Document::open(Arc::new(full)).unwrap();
     assert_eq!(stream_bytes(&back, ObjRef::new(4, 0)).0, CONTENT);
@@ -57,8 +73,12 @@ fn cached_streams_are_the_files_own_bytes() {
 fn edits_within_a_document_keep_pointing_into_its_file() {
     let file = Arc::new(fixture());
     let mut doc = Document::open(file.clone()).unwrap();
-    doc.update_dict(CONTENTS, |d| d.set(b"Marked".to_vec(), Object::Bool(true))).unwrap();
-    assert!(file.as_ptr_range().contains(&stream_bytes(&doc, CONTENTS).1));
+    doc.update_dict(CONTENTS, |d| d.set(b"Marked".to_vec(), Object::Bool(true)))
+        .unwrap();
+    assert!(
+        file.as_ptr_range()
+            .contains(&stream_bytes(&doc, CONTENTS).1)
+    );
     let updated = write_incremental(&doc, &SaveOptions::default()).unwrap();
     let back = Document::open(Arc::new(updated)).unwrap();
     assert_eq!(stream_bytes(&back, CONTENTS).0, CONTENT);

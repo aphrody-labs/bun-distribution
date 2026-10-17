@@ -60,7 +60,10 @@ pub struct HdrOptions {
 
 impl Default for HdrOptions {
     fn default() -> Self {
-        HdrOptions { align: true, deghost: Deghost::None }
+        HdrOptions {
+            align: true,
+            deghost: Deghost::None,
+        }
     }
 }
 
@@ -97,22 +100,33 @@ fn maxc(p: [f32; 3]) -> f32 {
 }
 
 /// Merge exposure brackets. Frames must share their pixel size (and orientation).
-pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress) -> Result<HdrResult> {
+pub fn merge_hdr(
+    mut frames: Vec<Frame>,
+    opts: &HdrOptions,
+    progress: &Progress,
+) -> Result<HdrResult> {
     let n = frames.len();
     if n < 2 {
         return Err(MergeError::TooFew(n, 2));
     }
     let (w, h) = (frames[0].width(), frames[0].height());
     if frames.iter().any(|f| f.width() != w || f.height() != h) {
-        return Err(MergeError::Mismatch("HDR merge needs photos of the same size".into()));
+        return Err(MergeError::Mismatch(
+            "HDR merge needs photos of the same size".into(),
+        ));
     }
-    if frames.iter().any(|f| f.orientation != frames[0].orientation) {
+    if frames
+        .iter()
+        .any(|f| f.orientation != frames[0].orientation)
+    {
         for f in frames.iter_mut() {
             f.orient();
         }
         let (w0, h0) = (frames[0].width(), frames[0].height());
         if frames.iter().any(|f| f.width() != w0 || f.height() != h0) {
-            return Err(MergeError::Mismatch("HDR merge needs photos of the same size".into()));
+            return Err(MergeError::Mismatch(
+                "HDR merge needs photos of the same size".into(),
+            ));
         }
     }
     let (w, h) = (frames[0].width(), frames[0].height());
@@ -120,7 +134,10 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
 
     // 1. brightness order and reference
     let exif: Option<Vec<f64>> = frames.iter().map(|f| f.exposure).collect();
-    let medians: Vec<f32> = frames.par_iter().map(|f| align::median_luma(&f.image, f.clip)).collect();
+    let medians: Vec<f32> = frames
+        .par_iter()
+        .map(|f| align::median_luma(&f.image, f.clip))
+        .collect();
     let brightness: Vec<f64> = match &exif {
         Some(e) if e.iter().any(|v| (v - e[0]).abs() > 0.1) => e.clone(),
         _ => medians.iter().map(|m| (*m as f64).log2()).collect(),
@@ -135,12 +152,17 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
     if opts.align {
         check(progress, 0.05, "Aligning")?;
         let g0 = 0.18 / medians[reference].max(1e-6);
-        let rel: Vec<f32> = (0..n).map(|i| 2f64.powf(brightness[reference] - brightness[i]) as f32).collect();
-        let rel: Vec<f32> = if exif.is_some() && brightness.iter().any(|b| (b - brightness[0]).abs() > 0.1) {
-            rel
-        } else {
-            (0..n).map(|i| medians[reference] / medians[i].max(1e-6)).collect()
-        };
+        let rel: Vec<f32> = (0..n)
+            .map(|i| 2f64.powf(brightness[reference] - brightness[i]) as f32)
+            .collect();
+        let rel: Vec<f32> =
+            if exif.is_some() && brightness.iter().any(|b| (b - brightness[0]).abs() > 0.1) {
+                rel
+            } else {
+                (0..n)
+                    .map(|i| medians[reference] / medians[i].max(1e-6))
+                    .collect()
+            };
         let feats: Vec<(crate::features::Features, f64)> = frames
             .par_iter()
             .enumerate()
@@ -153,7 +175,19 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
         let al: Vec<(usize, Alignment)> = (0..n)
             .into_par_iter()
             .filter(|&i| i != reference)
-            .map(|i| (i, align::align_pair(&feats[reference].0, &feats[i].0, feats[i].1, w, h, i as u64 + 1)))
+            .map(|i| {
+                (
+                    i,
+                    align::align_pair(
+                        &feats[reference].0,
+                        &feats[i].0,
+                        feats[i].1,
+                        w,
+                        h,
+                        i as u64 + 1,
+                    ),
+                )
+            })
             .collect();
         for (i, a) in al {
             alignments[i] = a;
@@ -178,7 +212,12 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
     let mut step_ln = vec![0f64; n.saturating_sub(1)];
     for p in 0..n - 1 {
         let (a, b) = (order[p], order[p + 1]);
-        let est = log_ratio(&frames[a], valid[a].as_deref(), &frames[b], valid[b].as_deref());
+        let est = log_ratio(
+            &frames[a],
+            valid[a].as_deref(),
+            &frames[b],
+            valid[b].as_deref(),
+        );
         step_ln[p] = match (est, &exif) {
             (Some(r), _) => r,
             (None, Some(e)) => (e[b] - e[a]) * std::f64::consts::LN_2,
@@ -195,11 +234,16 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
     }
     let k: Vec<f32> = ln_k.iter().map(|v| v.exp() as f32).collect();
     let ev: Vec<f64> = ln_k.iter().map(|v| v / std::f64::consts::LN_2).collect();
-    let ev_exif = exif.as_ref().map(|e| e.iter().map(|v| v - e[reference]).collect());
+    let ev_exif = exif
+        .as_ref()
+        .map(|e| e.iter().map(|v| v - e[reference]).collect());
 
     // 4./5. deghost maps (small scale)
     check(progress, 0.55, "Deghosting")?;
-    let ghost_small: Option<(Vec<Plane>, usize)> = opts.deghost.params().map(|(thr, r)| deghost_maps(&frames, &valid, &k, &order, reference, thr, r));
+    let ghost_small: Option<(Vec<Plane>, usize)> = opts
+        .deghost
+        .params()
+        .map(|(thr, r)| deghost_maps(&frames, &valid, &k, &order, reference, thr, r));
     check(progress, 0.7, "Merging")?;
 
     let darkest = order[0];
@@ -229,7 +273,11 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
                 if i != reference
                     && let Some((maps, fac)) = gs
                 {
-                    let g = sample_plane(&maps[i], (x as f32 + 0.5) / *fac as f32, (y as f32 + 0.5) / *fac as f32);
+                    let g = sample_plane(
+                        &maps[i],
+                        (x as f32 + 0.5) / *fac as f32,
+                        (y as f32 + 0.5) / *fac as f32,
+                    );
                     wt *= 1.0 - g;
                 }
                 if wt <= 0.0 {
@@ -257,7 +305,10 @@ pub fn merge_hdr(mut frames: Vec<Frame>, opts: &HdrOptions, progress: &Progress)
             g.data.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
                 for (x, o) in row.iter_mut().enumerate() {
                     let (sx, sy) = ((x as f32 + 0.5) / fac, (y as f32 + 0.5) / fac);
-                    *o = (0..n).filter(|&i| i != reference).map(|i| sample_plane(&maps[i], sx, sy)).fold(0.0, f32::max);
+                    *o = (0..n)
+                        .filter(|&i| i != reference)
+                        .map(|i| sample_plane(&maps[i], sx, sy))
+                        .fold(0.0, f32::max);
                 }
             });
             g
@@ -321,29 +372,33 @@ fn shrink(img: &Rgb32f, valid: Option<&[bool]>, fac: usize) -> (Rgb32f, Vec<f32>
     let (w, h) = (img.width.div_ceil(fac), img.height.div_ceil(fac));
     let mut out = Rgb32f::new(w, h);
     let mut vf = vec![0f32; w * h];
-    out.data.par_chunks_mut(w).zip(vf.par_chunks_mut(w)).enumerate().for_each(|(y, (row, vrow))| {
-        for x in 0..w {
-            let mut s = [0f32; 3];
-            let (mut nv, mut nt) = (0usize, 0usize);
-            for sy in y * fac..((y + 1) * fac).min(img.height) {
-                for sx in x * fac..((x + 1) * fac).min(img.width) {
-                    let i = sy * img.width + sx;
-                    nt += 1;
-                    if valid.is_none_or(|v| v[i]) {
-                        let p = img.data[i];
-                        for c in 0..3 {
-                            s[c] += p[c];
+    out.data
+        .par_chunks_mut(w)
+        .zip(vf.par_chunks_mut(w))
+        .enumerate()
+        .for_each(|(y, (row, vrow))| {
+            for x in 0..w {
+                let mut s = [0f32; 3];
+                let (mut nv, mut nt) = (0usize, 0usize);
+                for sy in y * fac..((y + 1) * fac).min(img.height) {
+                    for sx in x * fac..((x + 1) * fac).min(img.width) {
+                        let i = sy * img.width + sx;
+                        nt += 1;
+                        if valid.is_none_or(|v| v[i]) {
+                            let p = img.data[i];
+                            for c in 0..3 {
+                                s[c] += p[c];
+                            }
+                            nv += 1;
                         }
-                        nv += 1;
                     }
                 }
+                if nv > 0 {
+                    row[x] = s.map(|v| v / nv as f32);
+                }
+                vrow[x] = nv as f32 / nt.max(1) as f32;
             }
-            if nv > 0 {
-                row[x] = s.map(|v| v / nv as f32);
-            }
-            vrow[x] = nv as f32 / nt.max(1) as f32;
-        }
-    });
+        });
     (out, vf)
 }
 
@@ -360,7 +415,10 @@ fn deghost_maps(
     let n = frames.len();
     let (w, h) = (frames[0].width(), frames[0].height());
     let fac = w.max(h).div_ceil(1024).max(1);
-    let small: Vec<(Rgb32f, Vec<f32>)> = (0..n).into_par_iter().map(|i| shrink(&frames[i].image, valid[i].as_deref(), fac)).collect();
+    let small: Vec<(Rgb32f, Vec<f32>)> = (0..n)
+        .into_par_iter()
+        .map(|i| shrink(&frames[i].image, valid[i].as_deref(), fac))
+        .collect();
     let (sw, sh) = (small[0].0.width, small[0].0.height);
     let rpos = order.iter().position(|&i| i == reference).unwrap_or(0);
     let good = |i: usize, p: usize| -> bool {
@@ -435,7 +493,10 @@ fn dilate(p: &Plane, r: usize) -> Plane {
     for y in 0..h {
         for x in 0..w {
             let (a, b) = (x.saturating_sub(r), (x + r).min(w - 1));
-            tmp.data[y * w + x] = p.data[y * w + a..=y * w + b].iter().copied().fold(0.0, f32::max);
+            tmp.data[y * w + x] = p.data[y * w + a..=y * w + b]
+                .iter()
+                .copied()
+                .fold(0.0, f32::max);
         }
     }
     let mut out = Plane::new(w, h);

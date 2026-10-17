@@ -11,7 +11,9 @@
 //! Laid out after PowerPoint for Windows (observed black-box): a 160-point side menu darker than
 //! the page, 40-point entries with an outline icon, the current page in the accent colour.
 
-use egui::{Align2, Color32, CornerRadius, Key, Rect, RichText, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
+use egui::{
+    Align2, Color32, CornerRadius, Key, Rect, RichText, Sense, Stroke, StrokeKind, Ui, pos2, vec2,
+};
 use serde_json::{Value, json};
 
 use crate::SlideApp;
@@ -40,7 +42,16 @@ pub enum Page {
 }
 
 impl Page {
-    pub const ALL: [Page; 8] = [Page::Home, Page::New, Page::Open, Page::Info, Page::SaveAs, Page::Print, Page::Export, Page::Account];
+    pub const ALL: [Page; 8] = [
+        Page::Home,
+        Page::New,
+        Page::Open,
+        Page::Info,
+        Page::SaveAs,
+        Page::Print,
+        Page::Export,
+        Page::Account,
+    ];
 
     /// The id `app.backstage {page}` takes.
     pub fn id(self) -> &'static str {
@@ -58,7 +69,9 @@ impl Page {
 
     pub fn parse(id: &str) -> Option<Page> {
         let id = id.trim();
-        Page::ALL.into_iter().find(|p| p.id().eq_ignore_ascii_case(id))
+        Page::ALL
+            .into_iter()
+            .find(|p| p.id().eq_ignore_ascii_case(id))
     }
 
     /// Side-menu label and page heading.
@@ -125,9 +138,20 @@ impl Nav {
 /// The side menu, top group then bottom group, in keyboard order. PowerPoint's Share (cloud) is
 /// left out; with nothing open only Home, New and Open stay at the top.
 pub fn entries(has_doc: bool) -> (Vec<Nav>, Vec<Nav>) {
-    let mut top = vec![Nav::Page(Page::Home), Nav::Page(Page::New), Nav::Page(Page::Open)];
+    let mut top = vec![
+        Nav::Page(Page::Home),
+        Nav::Page(Page::New),
+        Nav::Page(Page::Open),
+    ];
     if has_doc {
-        top.extend([Nav::Page(Page::Info), Nav::Save, Nav::Page(Page::SaveAs), Nav::Page(Page::Print), Nav::Page(Page::Export), Nav::Close]);
+        top.extend([
+            Nav::Page(Page::Info),
+            Nav::Save,
+            Nav::Page(Page::SaveAs),
+            Nav::Page(Page::Print),
+            Nav::Page(Page::Export),
+            Nav::Close,
+        ]);
     }
     (top, vec![Nav::Page(Page::Account), Nav::Options])
 }
@@ -207,12 +231,36 @@ impl Backstage {
 
 /// Save As and Change File Type: (id for [`SlideApp::export_as`], label, detail).
 pub const SAVE_TYPES: [(&str, &str, &str); 6] = [
-    ("pptx", "PowerPoint Presentation (*.pptx)", "Opens in PowerPoint and other presentation apps"),
-    ("deckcraft", "DeckCraft Presentation (*.deckcraft)", "DeckCraft's own format: everything is kept"),
-    ("pdf", "PDF (*.pdf)", "A fixed copy that keeps its layout on any device"),
-    ("outline", "Outline (*.txt)", "The slide titles and bullet text as plain text"),
-    ("png", "PNG Picture (*.png)", "The current slide as a picture"),
-    ("jpeg", "JPEG Picture (*.jpg)", "The current slide as a compressed picture"),
+    (
+        "pptx",
+        "PowerPoint Presentation (*.pptx)",
+        "Opens in PowerPoint and other presentation apps",
+    ),
+    (
+        "deckcraft",
+        "DeckCraft Presentation (*.deckcraft)",
+        "DeckCraft's own format: everything is kept",
+    ),
+    (
+        "pdf",
+        "PDF (*.pdf)",
+        "A fixed copy that keeps its layout on any device",
+    ),
+    (
+        "outline",
+        "Outline (*.txt)",
+        "The slide titles and bullet text as plain text",
+    ),
+    (
+        "png",
+        "PNG Picture (*.png)",
+        "The current slide as a picture",
+    ),
+    (
+        "jpeg",
+        "JPEG Picture (*.jpg)",
+        "The current slide as a compressed picture",
+    ),
 ];
 
 /// Info page properties: (`file.properties` key, label, hint).
@@ -276,14 +324,18 @@ pub fn key(app: &mut SlideApp, key: Key, mods: deckcraft_engine::Mods) -> bool {
     let has_doc = app.session.active().is_some();
     let (top, bottom) = entries(has_doc);
     let all: Vec<Nav> = top.into_iter().chain(bottom).collect();
-    let Some(bs) = app.backstage.as_mut() else { return false };
+    let Some(bs) = app.backstage.as_mut() else {
+        return false;
+    };
     match key {
         Key::Escape => {
             app.close_backstage();
             true
         }
         Key::ArrowDown | Key::ArrowUp => {
-            let cur = bs.focus.or_else(|| all.iter().position(|n| *n == Nav::Page(bs.page)));
+            let cur = bs
+                .focus
+                .or_else(|| all.iter().position(|n| *n == Nav::Page(bs.page)));
             let n = all.len();
             let next = match (cur, key == Key::ArrowDown) {
                 (None, _) => 0,
@@ -297,7 +349,9 @@ pub fn key(app: &mut SlideApp, key: Key, mods: deckcraft_engine::Mods) -> bool {
             true
         }
         Key::Enter | Key::Space => {
-            let Some(nav) = bs.focus.and_then(|i| all.get(i)).copied() else { return false };
+            let Some(nav) = bs.focus.and_then(|i| all.get(i)).copied() else {
+                return false;
+            };
             let current = bs.page;
             match act(app, nav, current) {
                 None => app.close_backstage(),
@@ -315,7 +369,9 @@ pub fn key(app: &mut SlideApp, key: Key, mods: deckcraft_engine::Mods) -> bool {
 
 /// Draws the File tab in place of the ribbon, slides and status bar.
 pub fn show(app: &mut SlideApp, ui: &mut Ui) {
-    let Some(mut bs) = app.backstage.take() else { return };
+    let Some(mut bs) = app.backstage.take() else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
     let has_doc = app.session.active().is_some();
     if !has_doc && bs.page.needs_doc() {
@@ -324,86 +380,114 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     let (nav_bg, page_bg) = colours(&t);
     let mut out = Outcome::default();
     let (top, bottom) = entries(has_doc);
-    egui::Panel::left("backstage_nav").exact_size(NAV_W).resizable(false).frame(egui::Frame::NONE.fill(nav_bg)).show(ui, |ui| {
-        ui.spacing_mut().item_spacing.y = 0.0;
-        if has_doc {
-            let (r, resp) = ui.allocate_exact_size(vec2(NAV_W, BACK_H), Sense::click());
-            resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Back"));
-            let hovered = resp.hovered();
-            if hovered {
-                ui.painter().rect_filled(Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(34.0, 34.0)), 17.0, t.hover);
-            }
-            icons::paint(
-                ui.painter(),
-                Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(22.0, 22.0)),
-                Icon::BackCircle,
-                t.text,
-                false,
-            );
-            if resp.on_hover_text("Back (Esc)").clicked() {
-                out.close = true;
-            }
-        } else {
-            ui.add_space(BACK_H);
-        }
-        let mut index = 0;
-        for (k, nav) in top.iter().enumerate() {
-            if k == 3 {
-                separator(ui, &t);
-            }
-            if nav_item(ui, *nav, &bs, index, &t).clicked() {
-                bs.focus = None;
-                match act(app, *nav, bs.page) {
-                    None => out.close = true,
-                    Some(p) => out.page = Some(p),
+    egui::Panel::left("backstage_nav")
+        .exact_size(NAV_W)
+        .resizable(false)
+        .frame(egui::Frame::NONE.fill(nav_bg))
+        .show(ui, |ui| {
+            ui.spacing_mut().item_spacing.y = 0.0;
+            if has_doc {
+                let (r, resp) = ui.allocate_exact_size(vec2(NAV_W, BACK_H), Sense::click());
+                resp.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Back")
+                });
+                let hovered = resp.hovered();
+                if hovered {
+                    ui.painter().rect_filled(
+                        Rect::from_center_size(
+                            pos2(r.left() + 26.0, r.center().y),
+                            vec2(34.0, 34.0),
+                        ),
+                        17.0,
+                        t.hover,
+                    );
                 }
+                icons::paint(
+                    ui.painter(),
+                    Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(22.0, 22.0)),
+                    Icon::BackCircle,
+                    t.text,
+                    false,
+                );
+                if resp.on_hover_text("Back (Esc)").clicked() {
+                    out.close = true;
+                }
+            } else {
+                ui.add_space(BACK_H);
             }
-            index += 1;
-        }
-        let first_bottom = index;
-        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-            ui.add_space(8.0);
-            // Bottom-up: draw the last entry first.
-            for (k, nav) in bottom.iter().enumerate().rev() {
-                if nav_item(ui, *nav, &bs, first_bottom + k, &t).clicked() {
+            let mut index = 0;
+            for (k, nav) in top.iter().enumerate() {
+                if k == 3 {
+                    separator(ui, &t);
+                }
+                if nav_item(ui, *nav, &bs, index, &t).clicked() {
                     bs.focus = None;
                     match act(app, *nav, bs.page) {
                         None => out.close = true,
                         Some(p) => out.page = Some(p),
                     }
                 }
+                index += 1;
             }
-            separator(ui, &t);
-        });
-    });
-    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(page_bg)).show(ui, |ui| {
-        // Fields, boxes and buttons sit on the page's own colour: outline them, as PowerPoint does.
-        let w = &mut ui.visuals_mut().widgets;
-        w.inactive.bg_fill = t.field_bg;
-        w.inactive.weak_bg_fill = t.field_bg;
-        w.inactive.bg_stroke = Stroke::new(1.0, t.border);
-        w.hovered.bg_stroke = Stroke::new(1.0, t.accent);
-        w.active.bg_stroke = Stroke::new(1.0, t.accent);
-        egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-            egui::Frame::NONE.inner_margin(egui::Margin { left: 48, right: 36, top: 22, bottom: 32 }).show(ui, |ui| {
-                ui.set_max_width(CONTENT_W);
-                if bs.page != Page::Home {
-                    ui.label(RichText::new(bs.page.label()).font(theme::bold(22.0)).color(t.text));
-                    ui.add_space(16.0);
+            let first_bottom = index;
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+                ui.add_space(8.0);
+                // Bottom-up: draw the last entry first.
+                for (k, nav) in bottom.iter().enumerate().rev() {
+                    if nav_item(ui, *nav, &bs, first_bottom + k, &t).clicked() {
+                        bs.focus = None;
+                        match act(app, *nav, bs.page) {
+                            None => out.close = true,
+                            Some(p) => out.page = Some(p),
+                        }
+                    }
                 }
-                match bs.page {
-                    Page::Home => home(app, ui, &mut bs, &mut out),
-                    Page::New => new_page(app, ui, &mut bs),
-                    Page::Open => open_page(app, ui, &mut bs),
-                    Page::Info => info(app, ui, &mut bs),
-                    Page::SaveAs => save_as(app, ui, &mut bs, &mut out),
-                    Page::Print => print(app, ui, &mut bs),
-                    Page::Export => export(app, ui, &mut bs),
-                    Page::Account => account(app, ui),
-                }
+                separator(ui, &t);
             });
         });
-    });
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE.fill(page_bg))
+        .show(ui, |ui| {
+            // Fields, boxes and buttons sit on the page's own colour: outline them, as PowerPoint does.
+            let w = &mut ui.visuals_mut().widgets;
+            w.inactive.bg_fill = t.field_bg;
+            w.inactive.weak_bg_fill = t.field_bg;
+            w.inactive.bg_stroke = Stroke::new(1.0, t.border);
+            w.hovered.bg_stroke = Stroke::new(1.0, t.accent);
+            w.active.bg_stroke = Stroke::new(1.0, t.accent);
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    egui::Frame::NONE
+                        .inner_margin(egui::Margin {
+                            left: 48,
+                            right: 36,
+                            top: 22,
+                            bottom: 32,
+                        })
+                        .show(ui, |ui| {
+                            ui.set_max_width(CONTENT_W);
+                            if bs.page != Page::Home {
+                                ui.label(
+                                    RichText::new(bs.page.label())
+                                        .font(theme::bold(22.0))
+                                        .color(t.text),
+                                );
+                                ui.add_space(16.0);
+                            }
+                            match bs.page {
+                                Page::Home => home(app, ui, &mut bs, &mut out),
+                                Page::New => new_page(app, ui, &mut bs),
+                                Page::Open => open_page(app, ui, &mut bs),
+                                Page::Info => info(app, ui, &mut bs),
+                                Page::SaveAs => save_as(app, ui, &mut bs, &mut out),
+                                Page::Print => print(app, ui, &mut bs),
+                                Page::Export => export(app, ui, &mut bs),
+                                Page::Account => account(app, ui),
+                            }
+                        });
+                });
+        });
     if let Some(page) = out.page {
         bs.go(page);
     }
@@ -421,7 +505,9 @@ fn nav_item(ui: &mut Ui, nav: Nav, bs: &Backstage, index: usize, t: &Tokens) -> 
     let (rect, resp) = ui.allocate_exact_size(vec2(NAV_W, ITEM_H), Sense::click());
     let selected = nav == Nav::Page(bs.page);
     let label = nav.label();
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label)
+    });
     let p = ui.painter();
     let row = rect.shrink2(vec2(6.0, 1.0));
     if resp.hovered() {
@@ -429,19 +515,43 @@ fn nav_item(ui: &mut Ui, nav: Nav, bs: &Backstage, index: usize, t: &Tokens) -> 
     }
     if bs.focus == Some(index) || selected {
         // The current page (and the keyboard focus) is outlined, as in PowerPoint.
-        let ink = if bs.focus == Some(index) { t.text } else { t.border };
-        p.rect_stroke(row, CornerRadius::same(2), Stroke::new(1.0, ink), StrokeKind::Inside);
+        let ink = if bs.focus == Some(index) {
+            t.text
+        } else {
+            t.border
+        };
+        p.rect_stroke(
+            row,
+            CornerRadius::same(2),
+            Stroke::new(1.0, ink),
+            StrokeKind::Inside,
+        );
     }
     let ink = if selected { t.accent } else { t.text };
-    icons::paint(p, Rect::from_center_size(pos2(rect.left() + 26.0, rect.center().y), vec2(16.0, 16.0)), nav.icon(), ink, false);
-    p.text(pos2(rect.left() + 44.0, rect.center().y), Align2::LEFT_CENTER, label, theme::font(13.0), ink);
+    icons::paint(
+        p,
+        Rect::from_center_size(pos2(rect.left() + 26.0, rect.center().y), vec2(16.0, 16.0)),
+        nav.icon(),
+        ink,
+        false,
+    );
+    p.text(
+        pos2(rect.left() + 44.0, rect.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        theme::font(13.0),
+        ink,
+    );
     resp
 }
 
 fn separator(ui: &mut Ui, t: &Tokens) {
     let (rect, _) = ui.allocate_exact_size(vec2(NAV_W, 13.0), Sense::hover());
     let y = rect.center().y;
-    ui.painter().line_segment([pos2(rect.left() + 20.0, y), pos2(rect.right() - 14.0, y)], Stroke::new(1.0, t.separator));
+    ui.painter().line_segment(
+        [pos2(rect.left() + 20.0, y), pos2(rect.right() - 14.0, y)],
+        Stroke::new(1.0, t.separator),
+    );
 }
 
 // ---------------------------------------------------------------- shared pieces
@@ -454,45 +564,94 @@ fn heading(ui: &mut Ui, text: &str) {
 
 fn dim(ui: &mut Ui, text: &str) {
     let t = Tokens::get(ui.ctx());
-    ui.label(RichText::new(text).font(theme::font(12.5)).color(t.text_dim));
+    ui.label(
+        RichText::new(text)
+            .font(theme::font(12.5))
+            .color(t.text_dim),
+    );
 }
 
 /// A link with an arrow (More themes →): true when clicked.
 fn arrow_link(ui: &mut Ui, text: &str) -> bool {
     let t = Tokens::get(ui.ctx());
-    ui.add(egui::Label::new(RichText::new(format!("{text}  →")).font(theme::font(12.5)).color(t.accent)).sense(Sense::click()))
-        .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .clicked()
+    ui.add(
+        egui::Label::new(
+            RichText::new(format!("{text}  →"))
+                .font(theme::font(12.5))
+                .color(t.accent),
+        )
+        .sense(Sense::click()),
+    )
+    .on_hover_cursor(egui::CursorIcon::PointingHand)
+    .clicked()
 }
 
 /// A search box; true when its text changed.
 fn search(ui: &mut Ui, query: &mut String, hint: &str, width: f32) -> bool {
-    ui.add(egui::TextEdit::singleline(query).hint_text(hint).desired_width(width)).changed()
+    ui.add(
+        egui::TextEdit::singleline(query)
+            .hint_text(hint)
+            .desired_width(width),
+    )
+    .changed()
 }
 
 /// A new-presentation tile: a theme preview drawn in code (or a blank slide) over its name.
-fn tile(ui: &mut Ui, label: &str, theme: Option<&deckcraft_model::Theme>, big: bool) -> egui::Response {
+fn tile(
+    ui: &mut Ui,
+    label: &str,
+    theme: Option<&deckcraft_model::Theme>,
+    big: bool,
+) -> egui::Response {
     let t = Tokens::get(ui.ctx());
     let thumb_w = if big { 200.0 } else { 160.0 };
-    let (rect, resp) = ui.allocate_exact_size(vec2(thumb_w + 16.0, thumb_w * 9.0 / 16.0 + 44.0), Sense::click());
+    let (rect, resp) = ui.allocate_exact_size(
+        vec2(thumb_w + 16.0, thumb_w * 9.0 / 16.0 + 44.0),
+        Sense::click(),
+    );
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
     let p = ui.painter();
     if resp.hovered() {
         p.rect_filled(rect, CornerRadius::same(4), t.hover);
     }
-    let thumb = Rect::from_min_size(rect.min + vec2(8.0, 10.0), vec2(thumb_w, thumb_w * 9.0 / 16.0));
+    let thumb = Rect::from_min_size(
+        rect.min + vec2(8.0, 10.0),
+        vec2(thumb_w, thumb_w * 9.0 / 16.0),
+    );
     match theme {
         Some(th) => crate::ribbon::paint_theme_tile(p, thumb, th),
         None => {
             p.rect_filled(thumb, CornerRadius::same(2), Color32::WHITE);
-            p.rect_stroke(thumb, CornerRadius::same(2), Stroke::new(1.0, Color32::from_gray(200)), StrokeKind::Inside);
+            p.rect_stroke(
+                thumb,
+                CornerRadius::same(2),
+                Stroke::new(1.0, Color32::from_gray(200)),
+                StrokeKind::Inside,
+            );
         }
     }
     if resp.hovered() {
-        p.rect_stroke(thumb, CornerRadius::same(2), Stroke::new(2.0, t.accent), StrokeKind::Outside);
+        p.rect_stroke(
+            thumb,
+            CornerRadius::same(2),
+            Stroke::new(2.0, t.accent),
+            StrokeKind::Outside,
+        );
     }
-    let galley = p.layout(label.to_string(), theme::font(12.0), t.text, rect.width() - 8.0);
-    p.galley(pos2(rect.center().x - galley.size().x / 2.0, thumb.bottom() + 8.0), galley, t.text);
+    let galley = p.layout(
+        label.to_string(),
+        theme::font(12.0),
+        t.text,
+        rect.width() - 8.0,
+    );
+    p.galley(
+        pos2(
+            rect.center().x - galley.size().x / 2.0,
+            thumb.bottom() + 8.0,
+        ),
+        galley,
+        t.text,
+    );
     resp
 }
 
@@ -500,8 +659,10 @@ fn tile(ui: &mut Ui, label: &str, theme: Option<&deckcraft_model::Theme>, big: b
 /// `blank`); at most `limit` theme tiles.
 fn new_tiles(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize, blank: bool) {
     let q = query.trim().to_lowercase();
-    let themes: Vec<deckcraft_model::Theme> =
-        deckcraft_model::theme::builtin_themes().into_iter().filter(|th| q.is_empty() || th.name.to_lowercase().contains(&q)).collect();
+    let themes: Vec<deckcraft_model::Theme> = deckcraft_model::theme::builtin_themes()
+        .into_iter()
+        .filter(|th| q.is_empty() || th.name.to_lowercase().contains(&q))
+        .collect();
     let sample = q.is_empty() || "sample deck northern lights".contains(&q);
     if themes.is_empty() && !sample {
         dim(ui, &format!("No themes match “{}”.", query.trim()));
@@ -523,7 +684,9 @@ fn new_tiles(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize, blank: 
             shown += 1;
         }
         if sample && shown < limit {
-            let th = deckcraft_model::theme::builtin_themes().into_iter().find(|t| t.name == "DeckCraft");
+            let th = deckcraft_model::theme::builtin_themes()
+                .into_iter()
+                .find(|t| t.name == "DeckCraft");
             if tile(ui, "Sample deck: Northern Lights", th.as_ref(), false).clicked()
                 && let Err(e) = deckcraft_engine::sample::open_sample(&mut app.session)
             {
@@ -536,8 +699,16 @@ fn new_tiles(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize, blank: 
 /// File name and folder of a recent path, split as text (nothing on disk is read).
 pub fn split_path(path: &str) -> (String, String) {
     let p = std::path::Path::new(path);
-    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or(path).to_string();
-    let folder = p.parent().and_then(|f| f.to_str()).unwrap_or("").to_string();
+    let name = p
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(path)
+        .to_string();
+    let folder = p
+        .parent()
+        .and_then(|f| f.to_str())
+        .unwrap_or("")
+        .to_string();
     (name, folder)
 }
 
@@ -546,14 +717,26 @@ pub fn split_path(path: &str) -> (String, String) {
 fn recent_list(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize) {
     let t = Tokens::get(ui.ctx());
     if app.ui.recent.is_empty() {
-        dim(ui, "Presentations you open show up here. Use Open to browse for one.");
+        dim(
+            ui,
+            "Presentations you open show up here. Use Open to browse for one.",
+        );
         return;
     }
     let q = query.trim().to_lowercase();
-    let list: Vec<String> =
-        app.ui.recent.iter().filter(|p| q.is_empty() || split_path(p).0.to_lowercase().contains(&q)).take(limit).cloned().collect();
+    let list: Vec<String> = app
+        .ui
+        .recent
+        .iter()
+        .filter(|p| q.is_empty() || split_path(p).0.to_lowercase().contains(&q))
+        .take(limit)
+        .cloned()
+        .collect();
     if list.is_empty() {
-        dim(ui, &format!("No recent presentations match “{}”.", query.trim()));
+        dim(
+            ui,
+            &format!("No recent presentations match “{}”.", query.trim()),
+        );
         return;
     }
     let width = ui.available_width().min(CONTENT_W);
@@ -565,9 +748,27 @@ fn recent_list(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize) {
         if resp.hovered() {
             p.rect_filled(rect, CornerRadius::same(3), t.hover);
         }
-        icons::paint(p, Rect::from_center_size(pos2(rect.left() + 20.0, rect.center().y), vec2(22.0, 22.0)), Icon::Slide, t.text, false);
-        p.text(pos2(rect.left() + 44.0, rect.center().y - 8.0), Align2::LEFT_CENTER, &name, theme::font(13.0), t.text);
-        p.text(pos2(rect.left() + 44.0, rect.center().y + 9.0), Align2::LEFT_CENTER, &folder, theme::font(11.0), t.text_dim);
+        icons::paint(
+            p,
+            Rect::from_center_size(pos2(rect.left() + 20.0, rect.center().y), vec2(22.0, 22.0)),
+            Icon::Slide,
+            t.text,
+            false,
+        );
+        p.text(
+            pos2(rect.left() + 44.0, rect.center().y - 8.0),
+            Align2::LEFT_CENTER,
+            &name,
+            theme::font(13.0),
+            t.text,
+        );
+        p.text(
+            pos2(rect.left() + 44.0, rect.center().y + 9.0),
+            Align2::LEFT_CENTER,
+            &folder,
+            theme::font(11.0),
+            t.text_dim,
+        );
         if resp.on_hover_text(&path).clicked()
             && let Err(e) = app.open_path(&path)
         {
@@ -579,15 +780,57 @@ fn recent_list(app: &mut SlideApp, ui: &mut Ui, query: &str, limit: usize) {
 /// A large square command button (Print, Create PDF, Check for Issues…).
 fn square_button(ui: &mut Ui, icon: Icon, label: &str, enabled: bool) -> egui::Response {
     let t = Tokens::get(ui.ctx());
-    let (rect, resp) = ui.allocate_exact_size(vec2(88.0, 80.0), if enabled { Sense::click() } else { Sense::hover() });
+    let (rect, resp) = ui.allocate_exact_size(
+        vec2(88.0, 80.0),
+        if enabled {
+            Sense::click()
+        } else {
+            Sense::hover()
+        },
+    );
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
     let p = ui.painter();
-    p.rect_filled(rect, CornerRadius::same(3), if resp.hovered() && enabled { t.hover } else { t.card });
-    p.rect_stroke(rect, CornerRadius::same(3), Stroke::new(1.0, if resp.hovered() && enabled { t.accent } else { t.border }), StrokeKind::Inside);
-    icons::paint(p, Rect::from_center_size(pos2(rect.center().x, rect.top() + 26.0), vec2(26.0, 26.0)), icon, t.text, !enabled);
+    p.rect_filled(
+        rect,
+        CornerRadius::same(3),
+        if resp.hovered() && enabled {
+            t.hover
+        } else {
+            t.card
+        },
+    );
+    p.rect_stroke(
+        rect,
+        CornerRadius::same(3),
+        Stroke::new(
+            1.0,
+            if resp.hovered() && enabled {
+                t.accent
+            } else {
+                t.border
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    icons::paint(
+        p,
+        Rect::from_center_size(pos2(rect.center().x, rect.top() + 26.0), vec2(26.0, 26.0)),
+        icon,
+        t.text,
+        !enabled,
+    );
     let ink = if enabled { t.text } else { t.text_faint };
-    let galley = p.layout(label.to_string(), theme::font(12.0), ink, rect.width() - 8.0);
-    p.galley(pos2(rect.center().x - galley.size().x / 2.0, rect.top() + 46.0), galley, ink);
+    let galley = p.layout(
+        label.to_string(),
+        theme::font(12.0),
+        ink,
+        rect.width() - 8.0,
+    );
+    p.galley(
+        pos2(rect.center().x - galley.size().x / 2.0, rect.top() + 46.0),
+        galley,
+        ink,
+    );
     resp
 }
 
@@ -595,16 +838,35 @@ fn square_button(ui: &mut Ui, icon: Icon, label: &str, enabled: bool) -> egui::R
 fn place_row(ui: &mut Ui, icon: Icon, label: &str, selected: bool, width: f32) -> egui::Response {
     let t = Tokens::get(ui.ctx());
     let (rect, resp) = ui.allocate_exact_size(vec2(width, 44.0), Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label)
+    });
     let p = ui.painter();
     if selected {
         p.rect_filled(rect, CornerRadius::same(2), t.selected);
-        p.rect_stroke(rect, CornerRadius::same(2), Stroke::new(1.0, t.border), StrokeKind::Inside);
+        p.rect_stroke(
+            rect,
+            CornerRadius::same(2),
+            Stroke::new(1.0, t.border),
+            StrokeKind::Inside,
+        );
     } else if resp.hovered() {
         p.rect_filled(rect, CornerRadius::same(2), t.hover);
     }
-    icons::paint(p, Rect::from_center_size(pos2(rect.left() + 22.0, rect.center().y), vec2(24.0, 24.0)), icon, t.text, false);
-    p.text(pos2(rect.left() + 46.0, rect.center().y), Align2::LEFT_CENTER, label, theme::font(13.5), t.text);
+    icons::paint(
+        p,
+        Rect::from_center_size(pos2(rect.left() + 22.0, rect.center().y), vec2(24.0, 24.0)),
+        icon,
+        t.text,
+        false,
+    );
+    p.text(
+        pos2(rect.left() + 46.0, rect.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        theme::font(13.5),
+        t.text,
+    );
     resp
 }
 
@@ -634,7 +896,11 @@ fn home(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) 
     ui.horizontal(|ui| {
         let (r, _) = ui.allocate_exact_size(vec2(36.0, 36.0), Sense::hover());
         crate::dialogs::paint_logo(ui.painter(), r);
-        ui.label(RichText::new("DeckCraft").font(theme::bold(24.0)).color(t.text));
+        ui.label(
+            RichText::new("DeckCraft")
+                .font(theme::bold(24.0))
+                .color(t.text),
+        );
     });
     ui.add_space(18.0);
     ui.horizontal(|ui| {
@@ -649,7 +915,11 @@ fn home(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) 
     new_tiles(app, ui, "", 5, true);
     ui.add_space(22.0);
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Recent").font(theme::bold(16.0)).color(t.text));
+        ui.label(
+            RichText::new("Recent")
+                .font(theme::bold(16.0))
+                .color(t.text),
+        );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             search(ui, &mut bs.query, "Search for a file", 280.0);
         });
@@ -665,7 +935,10 @@ fn home(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) 
         });
     }
     ui.add_space(30.0);
-    ui.hyperlink_to("Join the ArtCraft community on Discord", deckcraft_engine::links::DISCORD);
+    ui.hyperlink_to(
+        "Join the ArtCraft community on Discord",
+        deckcraft_engine::links::DISCORD,
+    );
 }
 
 /// New: a blank presentation, then every theme with a search box.
@@ -677,7 +950,10 @@ fn new_page(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
     ui.add_space(8.0);
     let w = ui.available_width();
     let (r, _) = ui.allocate_exact_size(vec2(w, 1.0), Sense::hover());
-    ui.painter().line_segment([r.left_center(), r.right_center()], Stroke::new(1.0, t.separator));
+    ui.painter().line_segment(
+        [r.left_center(), r.right_center()],
+        Stroke::new(1.0, t.separator),
+    );
     ui.add_space(14.0);
     search(ui, &mut bs.query, "Search for themes", 380.0);
     ui.add_space(14.0);
@@ -692,14 +968,21 @@ fn open_page(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
         ui.vertical(|ui| {
             ui.set_width(230.0);
             place_row(ui, Icon::Recent, "Recent", true, 220.0);
-            if place_row(ui, Icon::OpenFolder, "Browse", false, 220.0).on_hover_text("Open a presentation from a folder (Ctrl+O)").clicked() {
+            if place_row(ui, Icon::OpenFolder, "Browse", false, 220.0)
+                .on_hover_text("Open a presentation from a folder (Ctrl+O)")
+                .clicked()
+            {
                 let _ = app.run("app.openDialog", json!({}));
             }
             if app.session.recovery_dir.is_some() {
                 ui.add_space(24.0);
                 if ui.button("Recover Unsaved Presentations").clicked() {
                     match app.run("file.recovery.open", json!({})) {
-                        Ok(v) if v.get("opened").and_then(Value::as_array).is_some_and(|a| a.is_empty()) => {
+                        Ok(v)
+                            if v.get("opened")
+                                .and_then(Value::as_array)
+                                .is_some_and(|a| a.is_empty()) =>
+                        {
                             app.set_status("There are no unsaved presentations to recover");
                         }
                         _ => {}
@@ -709,7 +992,10 @@ fn open_page(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
         });
         let h = ui.available_height().max(320.0);
         let (r, _) = ui.allocate_exact_size(vec2(1.0, h), Sense::hover());
-        ui.painter().line_segment([r.center_top(), r.center_bottom()], Stroke::new(1.0, t.separator));
+        ui.painter().line_segment(
+            [r.center_top(), r.center_bottom()],
+            Stroke::new(1.0, t.separator),
+        );
         ui.add_space(24.0);
         ui.vertical(|ui| {
             search(ui, &mut bs.query, "Search for a file", 380.0);
@@ -730,9 +1016,17 @@ fn info(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
         return;
     };
     let path = v.get("path").and_then(Value::as_str).map(str::to_string);
-    let title = v.get("title").and_then(Value::as_str).unwrap_or("").to_string();
+    let title = v
+        .get("title")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     let dirty = v.get("dirty").and_then(Value::as_bool).unwrap_or(false);
-    ui.label(RichText::new(&title).font(theme::font(24.0)).color(t.accent));
+    ui.label(
+        RichText::new(&title)
+            .font(theme::font(24.0))
+            .color(t.accent),
+    );
     match &path {
         Some(p) => dim(ui, p),
         None => dim(ui, "Not saved yet"),
@@ -748,7 +1042,10 @@ fn info(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
             if let Some(dir) = std::path::Path::new(p).parent().and_then(|d| d.to_str())
                 && ui.button("Open file location").clicked()
             {
-                app.open_url(&format!("file:///{}", dir.replace('\\', "/").trim_start_matches('/')));
+                app.open_url(&format!(
+                    "file:///{}",
+                    dir.replace('\\', "/").trim_start_matches('/')
+                ));
             }
         });
     }
@@ -827,23 +1124,44 @@ pub fn format_bytes(b: u64) -> String {
 /// presentation saved as .pptx or .deckcraft takes the new file; the other types are copies.
 fn save_as(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) {
     let t = Tokens::get(ui.ctx());
-    let (title, path) = app.session.active().map(|d| (d.title(), d.path.clone())).unwrap_or_default();
+    let (title, path) = app
+        .session
+        .active()
+        .map(|d| (d.title(), d.path.clone()))
+        .unwrap_or_default();
     ui.label(RichText::new(&title).font(theme::font(15.0)).color(t.text));
     dim(ui, path.as_deref().unwrap_or("Not saved yet"));
     ui.add_space(14.0);
-    let current = SAVE_TYPES.iter().find(|s| s.0 == bs.file_type).map_or(SAVE_TYPES[0].1, |s| s.1);
+    let current = SAVE_TYPES
+        .iter()
+        .find(|s| s.0 == bs.file_type)
+        .map_or(SAVE_TYPES[0].1, |s| s.1);
     ui.horizontal(|ui| {
-        egui::ComboBox::from_id_salt("backstage_save_type").width(340.0).selected_text(current).show_ui(ui, |ui| {
-            for (id, label, _) in SAVE_TYPES {
-                if ui.selectable_label(bs.file_type == id, label).clicked() {
-                    bs.file_type = id;
+        egui::ComboBox::from_id_salt("backstage_save_type")
+            .width(340.0)
+            .selected_text(current)
+            .show_ui(ui, |ui| {
+                for (id, label, _) in SAVE_TYPES {
+                    if ui.selectable_label(bs.file_type == id, label).clicked() {
+                        bs.file_type = id;
+                    }
                 }
-            }
-        });
+            });
         let web = app.services.pick_save.is_none();
         let label = if web { "Download" } else { "Save" };
-        let save = ui.add(egui::Button::new(RichText::new(label).color(t.accent_text)).fill(t.accent).min_size(vec2(84.0, 26.0)));
-        if save.on_hover_text(if web { "Download the file" } else { "Choose where to save" }).clicked() {
+        let save = ui.add(
+            egui::Button::new(RichText::new(label).color(t.accent_text))
+                .fill(t.accent)
+                .min_size(vec2(84.0, 26.0)),
+        );
+        if save
+            .on_hover_text(if web {
+                "Download the file"
+            } else {
+                "Choose where to save"
+            })
+            .clicked()
+        {
             let fmt = bs.file_type;
             let done = if matches!(fmt, "pptx" | "deckcraft") {
                 let before = app.session.active().map(|d| (d.path.clone(), d.is_dirty()));
@@ -864,12 +1182,17 @@ fn save_as(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcom
 }
 
 /// The slides the Print page prints, in order (0-based).
-pub fn print_slides(doc: &deckcraft_model::Presentation, bs: &Backstage, current: usize) -> Result<Vec<usize>, String> {
+pub fn print_slides(
+    doc: &deckcraft_model::Presentation,
+    bs: &Backstage,
+    current: usize,
+) -> Result<Vec<usize>, String> {
     let n = doc.slides.len();
     let mut v: Vec<usize> = match bs.print_scope {
         PrintScope::All => (0..n).collect(),
         PrintScope::Current => vec![current.min(n.saturating_sub(1))],
-        PrintScope::Custom => deckcraft_engine::cmd::file::parse_slide_range(&bs.print_range, n).map_err(|e| e.to_string())?,
+        PrintScope::Custom => deckcraft_engine::cmd::file::parse_slide_range(&bs.print_range, n)
+            .map_err(|e| e.to_string())?,
     };
     if !bs.print_hidden && bs.print_scope != PrintScope::Current {
         v.retain(|i| doc.slides.get(*i).is_some_and(|s| !s.hidden));
@@ -879,7 +1202,11 @@ pub fn print_slides(doc: &deckcraft_model::Presentation, bs: &Backstage, current
 
 /// Handout slides per page for a `print_layout` id (`h3` → 3).
 fn per_page(layout: &str) -> usize {
-    layout.strip_prefix('h').and_then(|n| n.parse::<usize>().ok()).filter(|n| matches!(n, 1 | 2 | 3 | 4 | 6 | 9)).unwrap_or(1)
+    layout
+        .strip_prefix('h')
+        .and_then(|n| n.parse::<usize>().ok())
+        .filter(|n| matches!(n, 1 | 2 | 3 | 4 | 6 | 9))
+        .unwrap_or(1)
 }
 
 /// The `file.export` / `app.print` params for the Print page's settings.
@@ -907,7 +1234,11 @@ const LAYOUTS: [(&str, &str); 8] = [
 /// Print: the Print button and settings on the left, a preview of each page on the right.
 fn print(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
     let t = Tokens::get(ui.ctx());
-    let Some((doc, current)) = app.session.active().map(|d| (d.doc.clone(), d.selection.slide)) else {
+    let Some((doc, current)) = app
+        .session
+        .active()
+        .map(|d| (d.doc.clone(), d.selection.slide))
+    else {
         dim(ui, "No presentation is open.");
         return;
     };
@@ -990,7 +1321,13 @@ fn print(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
 }
 
 /// One printed page in miniature, with a pager under it.
-fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_model::Presentation, slides: &[usize]) {
+fn preview(
+    app: &mut SlideApp,
+    ui: &mut Ui,
+    bs: &mut Backstage,
+    doc: &deckcraft_model::Presentation,
+    slides: &[usize],
+) {
     let t = Tokens::get(ui.ctx());
     let per = match bs.print_layout {
         "slides" | "notes" => 1,
@@ -999,13 +1336,20 @@ fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_
     let pages: Vec<&[usize]> = slides.chunks(per.max(1)).collect();
     let last = pages.len().saturating_sub(1);
     bs.preview_page = bs.preview_page.min(last);
-    let Some(on_page) = pages.get(bs.preview_page).copied() else { return };
+    let Some(on_page) = pages.get(bs.preview_page).copied() else {
+        return;
+    };
     // Full-page slides print on slide-shaped pages; notes and handouts on portrait Letter.
-    let (pw, ph) = if bs.print_layout == "slides" { (doc.slide_size.width as f32, doc.slide_size.height as f32) } else { (612.0, 792.0) };
+    let (pw, ph) = if bs.print_layout == "slides" {
+        (doc.slide_size.width as f32, doc.slide_size.height as f32)
+    } else {
+        (612.0, 792.0)
+    };
     let avail_w = ui.available_width().clamp(200.0, 760.0);
     let scale = (avail_w / pw.max(1.0)).min(520.0 / ph.max(1.0));
     let (area, _) = ui.allocate_exact_size(vec2(avail_w, ph * scale + 24.0), Sense::hover());
-    ui.painter().rect_filled(area, CornerRadius::same(2), t.canvas);
+    ui.painter()
+        .rect_filled(area, CornerRadius::same(2), t.canvas);
     let page = Rect::from_center_size(area.center(), vec2(pw * scale, ph * scale));
     let p = ui.painter();
     p.rect_filled(page.translate(vec2(2.0, 3.0)), 0.0, t.shadow);
@@ -1013,15 +1357,27 @@ fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_
     let aspect = (doc.slide_size.height / doc.slide_size.width.max(1.0)) as f32;
     let mut budget = 4u32;
     let mut draw_slide = |ui: &mut Ui, i: usize, r: Rect| {
-        let px = (r.width() * ui.ctx().pixels_per_point()).round().clamp(16.0, 1600.0) as u32;
+        let px = (r.width() * ui.ctx().pixels_per_point())
+            .round()
+            .clamp(16.0, 1600.0) as u32;
         match app.textures.thumb(ui.ctx(), doc, i, px, &mut budget) {
             Some(tex) => {
-                ui.painter().image(tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                ui.painter().image(
+                    tex.id(),
+                    r,
+                    Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                    Color32::WHITE,
+                );
             }
             None => ui.ctx().request_repaint(),
         }
         if bs.print_frame || bs.print_layout != "slides" {
-            ui.painter().rect_stroke(r, 0.0, Stroke::new(1.0, Color32::from_gray(120)), StrokeKind::Outside);
+            ui.painter().rect_stroke(
+                r,
+                0.0,
+                Stroke::new(1.0, Color32::from_gray(120)),
+                StrokeKind::Outside,
+            );
         }
     };
     match bs.print_layout {
@@ -1033,16 +1389,29 @@ fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_
         "notes" => {
             if let Some(i) = on_page.first() {
                 let w = page.width() * 0.75;
-                let r = Rect::from_min_size(pos2(page.center().x - w / 2.0, page.top() + page.height() * 0.08), vec2(w, w * aspect));
+                let r = Rect::from_min_size(
+                    pos2(page.center().x - w / 2.0, page.top() + page.height() * 0.08),
+                    vec2(w, w * aspect),
+                );
                 draw_slide(ui, *i, r);
-                let notes = doc.slides.get(*i).map(|s| s.notes_text()).unwrap_or_default();
+                let notes = doc
+                    .slides
+                    .get(*i)
+                    .map(|s| s.notes_text())
+                    .unwrap_or_default();
                 let font = theme::font((11.0 * scale).clamp(5.0, 13.0));
                 let text_rect = Rect::from_min_max(
                     pos2(page.left() + page.width() * 0.12, r.bottom() + 20.0 * scale),
                     page.max - vec2(page.width() * 0.12, 30.0 * scale),
                 );
-                let galley = ui.painter().layout(notes, font, Color32::from_gray(30), text_rect.width());
-                ui.painter().with_clip_rect(text_rect).galley(text_rect.min, galley, Color32::from_gray(30));
+                let galley =
+                    ui.painter()
+                        .layout(notes, font, Color32::from_gray(30), text_rect.width());
+                ui.painter().with_clip_rect(text_rect).galley(
+                    text_rect.min,
+                    galley,
+                    Color32::from_gray(30),
+                );
             }
         }
         l => {
@@ -1057,19 +1426,30 @@ fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_
             };
             let inner = page.shrink2(vec2(page.width() * 0.08, page.height() * 0.07));
             // Three a page leaves lines for notes beside each slide, as PowerPoint's handouts do.
-            let slide_area = if n == 3 { Rect::from_min_size(inner.min, vec2(inner.width() * 0.5, inner.height())) } else { inner };
-            let cell = vec2(slide_area.width() / cols as f32, slide_area.height() / rows as f32);
+            let slide_area = if n == 3 {
+                Rect::from_min_size(inner.min, vec2(inner.width() * 0.5, inner.height()))
+            } else {
+                inner
+            };
+            let cell = vec2(
+                slide_area.width() / cols as f32,
+                slide_area.height() / rows as f32,
+            );
             for (k, i) in on_page.iter().enumerate() {
                 let (c, r) = ((k % cols) as f32, (k / cols) as f32);
-                let cell_rect = Rect::from_min_size(slide_area.min + vec2(c * cell.x, r * cell.y), cell).shrink(cell.x.min(cell.y) * 0.08);
+                let cell_rect =
+                    Rect::from_min_size(slide_area.min + vec2(c * cell.x, r * cell.y), cell)
+                        .shrink(cell.x.min(cell.y) * 0.08);
                 let w = cell_rect.width().min(cell_rect.height() / aspect.max(0.01));
                 let sr = Rect::from_center_size(cell_rect.center(), vec2(w, w * aspect));
                 draw_slide(ui, *i, sr);
                 if n == 3 {
                     for line in 1..=5 {
                         let y = sr.top() + sr.height() * line as f32 / 6.0;
-                        ui.painter()
-                            .line_segment([pos2(inner.center().x + 10.0, y), pos2(inner.right(), y)], Stroke::new(0.8, Color32::from_gray(150)));
+                        ui.painter().line_segment(
+                            [pos2(inner.center().x + 10.0, y), pos2(inner.right(), y)],
+                            Stroke::new(0.8, Color32::from_gray(150)),
+                        );
                     }
                 }
             }
@@ -1090,7 +1470,14 @@ fn preview(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage, doc: &deckcraft_
 
 fn icon_button(ui: &mut Ui, icon: Icon, label: &str, enabled: bool) -> bool {
     let t = Tokens::get(ui.ctx());
-    let (r, resp) = ui.allocate_exact_size(vec2(22.0, 22.0), if enabled { Sense::click() } else { Sense::hover() });
+    let (r, resp) = ui.allocate_exact_size(
+        vec2(22.0, 22.0),
+        if enabled {
+            Sense::click()
+        } else {
+            Sense::hover()
+        },
+    );
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
     if resp.hovered() && enabled {
         ui.painter().rect_filled(r, CornerRadius::same(3), t.hover);
@@ -1118,16 +1505,27 @@ fn export(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
             }
         });
         let (r, _) = ui.allocate_exact_size(vec2(1.0, 420.0), Sense::hover());
-        ui.painter().line_segment([r.center_top(), r.center_bottom()], Stroke::new(1.0, t.separator));
+        ui.painter().line_segment(
+            [r.center_top(), r.center_bottom()],
+            Stroke::new(1.0, t.separator),
+        );
         ui.add_space(24.0);
         ui.vertical(|ui| {
             ui.set_max_width(560.0);
             match bs.export {
                 ExportTask::Pdf => {
-                    ui.label(RichText::new("Create a PDF Document").font(theme::font(16.0)).color(t.text));
+                    ui.label(
+                        RichText::new("Create a PDF Document")
+                            .font(theme::font(16.0))
+                            .color(t.text),
+                    );
                     bullets(
                         ui,
-                        &["Keeps the layout, fonts and pictures", "Opens on any device with a PDF viewer", "The presentation keeps its own file"],
+                        &[
+                            "Keeps the layout, fonts and pictures",
+                            "Opens on any device with a PDF viewer",
+                            "The presentation keeps its own file",
+                        ],
                     );
                     ui.checkbox(&mut bs.pdf_hidden, "Include hidden slides");
                     ui.add_space(10.0);
@@ -1136,38 +1534,82 @@ fn export(app: &mut SlideApp, ui: &mut Ui, bs: &mut Backstage) {
                     }
                 }
                 ExportTask::Handouts => {
-                    ui.label(RichText::new("Create Handouts").font(theme::font(16.0)).color(t.text));
-                    bullets(ui, &["Several slides on each page of a PDF", "Three a page leaves lines for notes", "Print them for your audience"]);
+                    ui.label(
+                        RichText::new("Create Handouts")
+                            .font(theme::font(16.0))
+                            .color(t.text),
+                    );
+                    bullets(
+                        ui,
+                        &[
+                            "Several slides on each page of a PDF",
+                            "Three a page leaves lines for notes",
+                            "Print them for your audience",
+                        ],
+                    );
                     egui::ComboBox::from_id_salt("backstage_handouts")
                         .width(240.0)
                         .selected_text(format!("{} slides per page", bs.handouts_per_page))
                         .show_ui(ui, |ui| {
                             for n in [1u8, 2, 3, 4, 6, 9] {
-                                if ui.selectable_label(bs.handouts_per_page == n, format!("{n} slides per page")).clicked() {
+                                if ui
+                                    .selectable_label(
+                                        bs.handouts_per_page == n,
+                                        format!("{n} slides per page"),
+                                    )
+                                    .clicked()
+                                {
                                     bs.handouts_per_page = n;
                                 }
                             }
                         });
                     ui.add_space(10.0);
                     if square_button(ui, Icon::Notes, "Create Handouts", true).clicked() {
-                        app.export_as("pdf", json!({"layout": "handouts", "perPage": bs.handouts_per_page}));
+                        app.export_as(
+                            "pdf",
+                            json!({"layout": "handouts", "perPage": bs.handouts_per_page}),
+                        );
                     }
                 }
                 ExportTask::FileType => {
-                    ui.label(RichText::new("Change File Type").font(theme::font(16.0)).color(t.text));
+                    ui.label(
+                        RichText::new("Change File Type")
+                            .font(theme::font(16.0))
+                            .color(t.text),
+                    );
                     ui.add_space(8.0);
                     for (id, label, detail) in SAVE_TYPES.iter().filter(|s| s.0 != "pdf") {
                         let selected = bs.file_type == *id;
-                        let (rect, resp) = ui.allocate_exact_size(vec2(520.0, 46.0), Sense::click());
-                        resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, *label));
+                        let (rect, resp) =
+                            ui.allocate_exact_size(vec2(520.0, 46.0), Sense::click());
+                        resp.widget_info(|| {
+                            egui::WidgetInfo::selected(
+                                egui::WidgetType::Button,
+                                true,
+                                selected,
+                                *label,
+                            )
+                        });
                         let p = ui.painter();
                         if selected {
                             p.rect_filled(rect, CornerRadius::same(2), t.selected);
                         } else if resp.hovered() {
                             p.rect_filled(rect, CornerRadius::same(2), t.hover);
                         }
-                        p.text(pos2(rect.left() + 12.0, rect.center().y - 8.0), Align2::LEFT_CENTER, *label, theme::font(13.0), t.text);
-                        p.text(pos2(rect.left() + 12.0, rect.center().y + 9.0), Align2::LEFT_CENTER, *detail, theme::font(11.5), t.text_dim);
+                        p.text(
+                            pos2(rect.left() + 12.0, rect.center().y - 8.0),
+                            Align2::LEFT_CENTER,
+                            *label,
+                            theme::font(13.0),
+                            t.text,
+                        );
+                        p.text(
+                            pos2(rect.left() + 12.0, rect.center().y + 9.0),
+                            Align2::LEFT_CENTER,
+                            *detail,
+                            theme::font(11.5),
+                            t.text_dim,
+                        );
                         if resp.clicked() {
                             bs.file_type = id;
                         }

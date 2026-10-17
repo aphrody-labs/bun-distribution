@@ -9,7 +9,7 @@ use crate::{
         GetTypeRegistration, ReflectDeserialize, ReflectFromPtr, ReflectSerialize,
         TypeRegistration, TypeRegistry,
     },
-    utility::{reflect_hasher, GenericTypeInfoCell, GenericTypePathCell, NonGenericTypeInfoCell},
+    utility::{GenericTypeInfoCell, GenericTypePathCell, NonGenericTypeInfoCell, reflect_hasher},
 };
 use bevy_platform::prelude::*;
 use bevy_reflect_derive::{impl_reflect_opaque, impl_type_path};
@@ -701,12 +701,12 @@ mod tests {
     };
 
     use crate::{
+        Reflect, TypeRegistry,
         prelude::{
             ReflectAdd, ReflectDivAssign, ReflectMulAssign, ReflectRem, ReflectRemAssign,
             ReflectSubAssign,
         },
         std_traits::{ReflectAddAssign, ReflectDiv, ReflectMul, ReflectSub},
-        Reflect, TypeRegistry,
     };
 
     #[test]
@@ -792,12 +792,16 @@ mod tests {
 
             assert!(reflect_add.add(Box::new(a), Box::new("not a T")).is_err());
             assert!(reflect_add.add(Box::new("not a T"), Box::new(b)).is_err());
-            assert!(reflect_add_assign
-                .add_assign(&mut a, Box::new("not a T"))
-                .is_err());
-            assert!(reflect_add_assign
-                .add_assign(&mut "not a T", Box::new(b))
-                .is_err());
+            assert!(
+                reflect_add_assign
+                    .add_assign(&mut a, Box::new("not a T"))
+                    .is_err()
+            );
+            assert!(
+                reflect_add_assign
+                    .add_assign(&mut "not a T", Box::new(b))
+                    .is_err()
+            );
         }
 
         let registry = TypeRegistry::new();
@@ -845,12 +849,16 @@ mod tests {
 
             assert!(reflect_sub.sub(Box::new(a), Box::new("not a T")).is_err());
             assert!(reflect_sub.sub(Box::new("not a T"), Box::new(b)).is_err());
-            assert!(reflect_sub_assign
-                .sub_assign(&mut a, Box::new("not a T"))
-                .is_err());
-            assert!(reflect_sub_assign
-                .sub_assign(&mut "not a T", Box::new(b))
-                .is_err());
+            assert!(
+                reflect_sub_assign
+                    .sub_assign(&mut a, Box::new("not a T"))
+                    .is_err()
+            );
+            assert!(
+                reflect_sub_assign
+                    .sub_assign(&mut "not a T", Box::new(b))
+                    .is_err()
+            );
         }
 
         let registry = TypeRegistry::new();
@@ -898,12 +906,16 @@ mod tests {
 
             assert!(reflect_mul.mul(Box::new(a), Box::new("not a T")).is_err());
             assert!(reflect_mul.mul(Box::new("not a T"), Box::new(b)).is_err());
-            assert!(reflect_mul_assign
-                .mul_assign(&mut a, Box::new("not a T"))
-                .is_err());
-            assert!(reflect_mul_assign
-                .mul_assign(&mut "not a T", Box::new(b))
-                .is_err());
+            assert!(
+                reflect_mul_assign
+                    .mul_assign(&mut a, Box::new("not a T"))
+                    .is_err()
+            );
+            assert!(
+                reflect_mul_assign
+                    .mul_assign(&mut "not a T", Box::new(b))
+                    .is_err()
+            );
         }
 
         let registry = TypeRegistry::new();
@@ -951,12 +963,16 @@ mod tests {
 
             assert!(reflect_div.div(Box::new(a), Box::new("not a T")).is_err());
             assert!(reflect_div.div(Box::new("not a T"), Box::new(b)).is_err());
-            assert!(reflect_div_assign
-                .div_assign(&mut a, Box::new("not a T"))
-                .is_err());
-            assert!(reflect_div_assign
-                .div_assign(&mut "not a T", Box::new(b))
-                .is_err());
+            assert!(
+                reflect_div_assign
+                    .div_assign(&mut a, Box::new("not a T"))
+                    .is_err()
+            );
+            assert!(
+                reflect_div_assign
+                    .div_assign(&mut "not a T", Box::new(b))
+                    .is_err()
+            );
         }
 
         let registry = TypeRegistry::new();
@@ -1004,12 +1020,16 @@ mod tests {
 
             assert!(reflect_rem.rem(Box::new(a), Box::new("not a T")).is_err());
             assert!(reflect_rem.rem(Box::new("not a T"), Box::new(b)).is_err());
-            assert!(reflect_rem_assign
-                .rem_assign(&mut a, Box::new("not a T"))
-                .is_err());
-            assert!(reflect_rem_assign
-                .rem_assign(&mut "not a T", Box::new(b))
-                .is_err());
+            assert!(
+                reflect_rem_assign
+                    .rem_assign(&mut a, Box::new("not a T"))
+                    .is_err()
+            );
+            assert!(
+                reflect_rem_assign
+                    .rem_assign(&mut "not a T", Box::new(b))
+                    .is_err()
+            );
         }
 
         let registry = TypeRegistry::new();

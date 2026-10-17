@@ -30,23 +30,42 @@ const BASE_WPM: f32 = 180.0;
 
 /// Words that end with a full stop without ending the sentence.
 const ABBREVIATIONS: &[&str] = &[
-    "al", "e.g", "i.e", "eg", "ie", "cf", "vs", "etc", "fig", "figs", "eq", "eqs", "no", "nos", "p", "pp", "vol", "vols", "ch", "chap", "sec", "tab",
-    "ref", "refs", "dr", "mr", "mrs", "ms", "prof", "st", "approx", "ca", "resp", "ed", "eds", "suppl", "jr", "sr", "inc", "ltd", "co", "dept",
-    "est", "min", "max", "viz", "ibid",
+    "al", "e.g", "i.e", "eg", "ie", "cf", "vs", "etc", "fig", "figs", "eq", "eqs", "no", "nos",
+    "p", "pp", "vol", "vols", "ch", "chap", "sec", "tab", "ref", "refs", "dr", "mr", "mrs", "ms",
+    "prof", "st", "approx", "ca", "resp", "ed", "eds", "suppl", "jr", "sr", "inc", "ltd", "co",
+    "dept", "est", "min", "max", "viz", "ibid",
 ];
 
 /// Is this field code a citation or a bibliography (Zotero, Mendeley, EndNote, Word)?
 pub fn is_citation_code(instr: &str) -> bool {
     let code = instr.trim_start();
-    let word = code.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+    let word = code
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase();
     if word == "CITATION" || word == "BIBLIOGRAPHY" {
         return true;
     }
     if word != "ADDIN" {
         return false;
     }
-    let rest = code.get(5..).unwrap_or("").trim_start().to_ascii_uppercase();
-    ["ZOTERO_ITEM", "ZOTERO_BIBL", "CSL_CITATION", "CSL_BIBLIOGRAPHY", "MENDELEY", "EN.CITE", "EN.REFLIST"].iter().any(|k| rest.starts_with(k))
+    let rest = code
+        .get(5..)
+        .unwrap_or("")
+        .trim_start()
+        .to_ascii_uppercase();
+    [
+        "ZOTERO_ITEM",
+        "ZOTERO_BIBL",
+        "CSL_CITATION",
+        "CSL_BIBLIOGRAPHY",
+        "MENDELEY",
+        "EN.CITE",
+        "EN.REFLIST",
+    ]
+    .iter()
+    .any(|k| rest.starts_with(k))
 }
 
 /// One sentence to speak: its text and where it is in the document.
@@ -65,11 +84,20 @@ impl Utterance {
 
 /// The sentences from `from` (to `to`, if given) in `from`'s story, in reading order.
 /// With `skip_citations`, citation and bibliography fields are left out.
-pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: bool) -> Vec<Utterance> {
+pub fn sentences(
+    doc: &Document,
+    from: &Pos,
+    to: Option<&Pos>,
+    skip_citations: bool,
+) -> Vec<Utterance> {
     let story = from.story;
     // Spans to leave out: whole range fields, both markers included.
     let skipped: Vec<(Pos, Pos)> = if skip_citations {
-        doc.field_ranges(story).into_iter().filter(|r| is_citation_code(&r.instr)).map(|r| (r.start, r.end)).collect()
+        doc.field_ranges(story)
+            .into_iter()
+            .filter(|r| is_citation_code(&r.instr))
+            .map(|r| (r.start, r.end))
+            .collect()
     } else {
         Vec::new()
     };
@@ -84,7 +112,9 @@ pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: b
         {
             break;
         }
-        let Some(para) = doc.para(story, &path) else { continue };
+        let Some(para) = doc.para(story, &path) else {
+            continue;
+        };
         // The spoken text, and for each char the paragraph offset it came from.
         let mut text = String::new();
         let mut map: Vec<(usize, usize)> = Vec::new(); // (start, end) offsets in the paragraph
@@ -97,7 +127,9 @@ pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: b
             } else {
                 None
             };
-            if (path == from.path && off < from.off) || to.is_some_and(|t| path == t.path && off >= t.off) {
+            if (path == from.path && off < from.off)
+                || to.is_some_and(|t| path == t.path && off >= t.off)
+            {
                 continue;
             }
             let pos = Pos::new(story, path.clone(), off);
@@ -105,7 +137,8 @@ pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: b
                 continue;
             }
             match obj {
-                Some(InlineObject::Field { instr, .. }) if skip_citations && is_citation_code(instr) => {}
+                Some(InlineObject::Field { instr, .. })
+                    if skip_citations && is_citation_code(instr) => {}
                 Some(o) => {
                     for ch in o.plain_text().chars() {
                         text.push(ch);
@@ -114,7 +147,11 @@ pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: b
                 }
                 None if c == OBJ => {}
                 None => {
-                    let ch = if matches!(c, LINE_BREAK | PAGE_BREAK | COLUMN_BREAK | '\t') { ' ' } else { c };
+                    let ch = if matches!(c, LINE_BREAK | PAGE_BREAK | COLUMN_BREAK | '\t') {
+                        ' '
+                    } else {
+                        c
+                    };
                     text.push(ch);
                     map.push((off, end));
                 }
@@ -129,8 +166,14 @@ pub fn sentences(doc: &Document, from: &Pos, to: Option<&Pos>, skip_citations: b
             if !spoken.chars().any(char::is_alphanumeric) {
                 continue;
             }
-            let (Some(first), Some(last)) = (map.get(a), map.get(b.saturating_sub(1))) else { continue };
-            out.push(Utterance { text: spoken, start: Pos::new(story, path.clone(), first.0), end: Pos::new(story, path.clone(), last.1) });
+            let (Some(first), Some(last)) = (map.get(a), map.get(b.saturating_sub(1))) else {
+                continue;
+            };
+            out.push(Utterance {
+                text: spoken,
+                start: Pos::new(story, path.clone(), first.0),
+                end: Pos::new(story, path.clone(), last.1),
+            });
         }
     }
     out
@@ -148,7 +191,12 @@ fn split_sentences(text: &str) -> Vec<(usize, usize)> {
         if matches!(c, '.' | '!' | '?' | '…' | '。' | '！' | '？') {
             // Include closing quotes and brackets.
             let mut j = i + 1;
-            while chars.get(j).is_some_and(|c| matches!(c, '"' | '\'' | '”' | '’' | ')' | ']' | '»' | '.' | '!' | '?')) {
+            while chars.get(j).is_some_and(|c| {
+                matches!(
+                    c,
+                    '"' | '\'' | '”' | '’' | ')' | ']' | '»' | '.' | '!' | '?'
+                )
+            }) {
                 j += 1;
             }
             let at_end = j >= chars.len();
@@ -161,7 +209,10 @@ fn split_sentences(text: &str) -> Vec<(usize, usize)> {
             i += 1;
         }
         // Very long sentences are split at a space so skipping stays fine-grained.
-        if end.is_none() && i - start >= MAX_SENTENCE && chars.get(i).is_some_and(|c| c.is_whitespace()) {
+        if end.is_none()
+            && i - start >= MAX_SENTENCE
+            && chars.get(i).is_some_and(|c| c.is_whitespace())
+        {
             end = Some(i);
         }
         if let Some(e) = end {
@@ -188,10 +239,19 @@ fn push_trimmed(chars: &[char], mut a: usize, mut b: usize, out: &mut Vec<(usize
 /// Does the full stop at `dot` end an abbreviation ("et al.", "Fig.", "J. Smith") rather than a sentence?
 fn is_abbreviation(chars: &[char], start: usize, dot: usize) -> bool {
     let mut w = dot;
-    while w > start && chars.get(w - 1).is_some_and(|c| c.is_alphanumeric() || *c == '.') {
+    while w > start
+        && chars
+            .get(w - 1)
+            .is_some_and(|c| c.is_alphanumeric() || *c == '.')
+    {
         w -= 1;
     }
-    let word: String = chars.get(w..dot).unwrap_or(&[]).iter().collect::<String>().to_lowercase();
+    let word: String = chars
+        .get(w..dot)
+        .unwrap_or(&[])
+        .iter()
+        .collect::<String>()
+        .to_lowercase();
     if word.is_empty() {
         return false;
     }
@@ -208,7 +268,17 @@ fn tidy(s: &str) -> String {
     let mut t: String = s.split_whitespace().collect::<Vec<_>>().join(" ");
     loop {
         let before = t.len();
-        for (from, to) in [("()", ""), ("[]", ""), ("( )", ""), ("[ ]", ""), (" .", "."), (" ,", ","), (" ;", ";"), (" :", ":"), ("  ", " ")] {
+        for (from, to) in [
+            ("()", ""),
+            ("[]", ""),
+            ("( )", ""),
+            ("[ ]", ""),
+            (" .", "."),
+            (" ,", ","),
+            (" ;", ";"),
+            (" :", ":"),
+            ("  ", " "),
+        ] {
             t = t.replace(from, to);
         }
         if t.len() == before {
@@ -274,7 +344,15 @@ impl Default for ReadAloud {
         let off = cfg!(test) || std::env::var("WORDCRAFT_SPEECH").is_ok_and(|v| v == "off");
         ReadAloud {
             shared: Arc::new((
-                Mutex::new(Shared { queue: Vec::new(), index: 0, state: State::Stopped, rate: 1.0, generation: 0, error: None, running: false }),
+                Mutex::new(Shared {
+                    queue: Vec::new(),
+                    index: 0,
+                    state: State::Stopped,
+                    rate: 1.0,
+                    generation: 0,
+                    error: None,
+                    running: false,
+                }),
                 Condvar::new(),
             )),
             backend: if off { Backend::Hold } else { Backend::System },
@@ -305,7 +383,11 @@ impl ReadAloud {
     pub fn start(&mut self, queue: Vec<Utterance>) {
         self.open = true;
         self.change(|s| {
-            s.state = if queue.is_empty() { State::Stopped } else { State::Playing };
+            s.state = if queue.is_empty() {
+                State::Stopped
+            } else {
+                State::Playing
+            };
             s.queue = queue;
             s.index = 0;
             s.error = None;
@@ -332,7 +414,9 @@ impl ReadAloud {
     pub fn skip(&mut self, delta: i64) {
         self.change(|s| {
             let last = s.queue.len().saturating_sub(1) as i64;
-            let at = (s.index.min(s.queue.len()) as i64).saturating_add(delta).clamp(0, last.max(0));
+            let at = (s.index.min(s.queue.len()) as i64)
+                .saturating_add(delta)
+                .clamp(0, last.max(0));
             s.index = at as usize;
             if s.state == State::Stopped && !s.queue.is_empty() {
                 s.state = State::Playing;
@@ -342,7 +426,11 @@ impl ReadAloud {
 
     /// Set the speed (1.0 = normal); the current sentence restarts at the new speed.
     pub fn set_rate(&mut self, rate: f32) {
-        let r = if rate.is_finite() { rate.clamp(MIN_RATE, MAX_RATE) } else { 1.0 };
+        let r = if rate.is_finite() {
+            rate.clamp(MIN_RATE, MAX_RATE)
+        } else {
+            1.0
+        };
         let playing = self.state() == State::Playing;
         if playing {
             self.change(|s| s.rate = r);
@@ -366,7 +454,11 @@ impl ReadAloud {
     /// The sentence being read (or paused on).
     pub fn current(&self) -> Option<Utterance> {
         let s = lock(&self.shared.0);
-        if s.state == State::Stopped { None } else { s.queue.get(s.index).cloned() }
+        if s.state == State::Stopped {
+            None
+        } else {
+            s.queue.get(s.index).cloned()
+        }
     }
     /// (index, number of sentences).
     pub fn progress(&self) -> (usize, usize) {
@@ -380,7 +472,11 @@ impl ReadAloud {
 
     pub fn status(&self) -> Value {
         let s = lock(&self.shared.0);
-        let current = if s.state == State::Stopped { None } else { s.queue.get(s.index) };
+        let current = if s.state == State::Stopped {
+            None
+        } else {
+            s.queue.get(s.index)
+        };
         json!({
             "state": s.state.name(),
             "open": self.open,
@@ -412,7 +508,10 @@ impl ReadAloud {
         s.running = true;
         let shared = Arc::clone(&self.shared);
         let backend = self.backend;
-        if let Err(e) = std::thread::Builder::new().name("read-aloud".into()).spawn(move || worker(&shared, backend)) {
+        if let Err(e) = std::thread::Builder::new()
+            .name("read-aloud".into())
+            .spawn(move || worker(&shared, backend))
+        {
             s.running = false;
             s.state = State::Stopped;
             s.error = Some(format!("couldn't start Read Aloud: {e}"));
@@ -501,8 +600,14 @@ fn worker(shared: &(Mutex<Shared>, Condvar), backend: Backend) {
 /// finds first.
 #[cfg(any(target_os = "windows", test))]
 fn windows_powershell(system_root: Option<std::ffi::OsString>) -> std::path::PathBuf {
-    let root = system_root.filter(|r| !r.is_empty()).unwrap_or_else(|| "C:\\Windows".into());
-    std::path::Path::new(&root).join("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe")
+    let root = system_root
+        .filter(|r| !r.is_empty())
+        .unwrap_or_else(|| "C:\\Windows".into());
+    std::path::Path::new(&root)
+        .join("System32")
+        .join("WindowsPowerShell")
+        .join("v1.0")
+        .join("powershell.exe")
 }
 
 /// Speak one sentence with the system's speech program, stopping early when `changed()`.
@@ -542,7 +647,12 @@ fn speak(text: &str, rate: f32, changed: &dyn Fn() -> bool) -> Spoken {
     let mut child = None;
     let mut last_err = String::from("no speech program on this system");
     for mut c in tries {
-        match c.stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn() {
+        match c
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
             Ok(ch) => {
                 child = Some(ch);
                 break;
@@ -551,7 +661,9 @@ fn speak(text: &str, rate: f32, changed: &dyn Fn() -> bool) -> Spoken {
         }
     }
     let Some(mut child) = child else {
-        return Spoken::Failed(format!("Read Aloud couldn't start the speech program: {last_err}"));
+        return Spoken::Failed(format!(
+            "Read Aloud couldn't start the speech program: {last_err}"
+        ));
     };
     if let Some(mut stdin) = child.stdin.take() {
         let _ = stdin.write_all(text.as_bytes());
@@ -582,13 +694,24 @@ mod tests {
 
     #[test]
     fn powershell_is_launched_from_the_system_folder() {
-        let tail = std::path::Path::new("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe");
+        let tail = std::path::Path::new("System32")
+            .join("WindowsPowerShell")
+            .join("v1.0")
+            .join("powershell.exe");
         let p = windows_powershell(Some("D:\\Win".into()));
-        assert!(p.starts_with("D:\\Win") && p.ends_with(&tail), "{}", p.display());
+        assert!(
+            p.starts_with("D:\\Win") && p.ends_with(&tail),
+            "{}",
+            p.display()
+        );
         // No SystemRoot, or an empty one: the default Windows folder.
         for root in [None, Some("".into())] {
             let p = windows_powershell(root);
-            assert!(p.starts_with("C:\\Windows") && p.ends_with(&tail), "{}", p.display());
+            assert!(
+                p.starts_with("C:\\Windows") && p.ends_with(&tail),
+                "{}",
+                p.display()
+            );
         }
     }
 
@@ -596,8 +719,20 @@ mod tests {
     fn splits_sentences_but_not_abbreviations() {
         let t = "Smith et al. found 3.5 times more (see Fig. 2). J. Smith agreed! Did they? Yes… Pick one, e.g. this one.";
         let spans = split_sentences(t);
-        let got: Vec<String> = spans.iter().map(|(a, b)| t.chars().skip(*a).take(b - a).collect()).collect();
-        assert_eq!(got, ["Smith et al. found 3.5 times more (see Fig. 2).", "J. Smith agreed!", "Did they?", "Yes…", "Pick one, e.g. this one."]);
+        let got: Vec<String> = spans
+            .iter()
+            .map(|(a, b)| t.chars().skip(*a).take(b - a).collect())
+            .collect();
+        assert_eq!(
+            got,
+            [
+                "Smith et al. found 3.5 times more (see Fig. 2).",
+                "J. Smith agreed!",
+                "Did they?",
+                "Yes…",
+                "Pick one, e.g. this one."
+            ]
+        );
     }
 
     #[test]
@@ -617,7 +752,9 @@ mod tests {
     #[test]
     fn citation_codes() {
         assert!(is_citation_code(" ADDIN ZOTERO_ITEM CSL_CITATION {}"));
-        assert!(is_citation_code("ADDIN ZOTERO_BIBL {\"uncited\":[]} CSL_BIBLIOGRAPHY"));
+        assert!(is_citation_code(
+            "ADDIN ZOTERO_BIBL {\"uncited\":[]} CSL_BIBLIOGRAPHY"
+        ));
         assert!(is_citation_code("ADDIN EN.CITE <EndNote>"));
         assert!(is_citation_code("ADDIN CSL_CITATION {}"));
         assert!(is_citation_code("CITATION Smi20 \\l 1033"));

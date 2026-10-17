@@ -6,8 +6,12 @@ use figcraft_doc::{Document, Effect, NodeKind};
 fn export_basic_shapes() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "Card", 0.0, 0.0, 200.0, 100.0).unwrap();
-    let r = d.create(f, NodeKind::Rectangle, "R", 10.0, 10.0, 50.0, 50.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "Card", 0.0, 0.0, 200.0, 100.0)
+        .unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "R", 10.0, 10.0, 50.0, 50.0)
+        .unwrap();
     d.get_mut(r).unwrap().fills = vec![Paint::solid(Color::from_hex("FF0000").unwrap())];
     d.get_mut(r).unwrap().effects.push(Effect::drop_shadow());
     let svg = export_svg(&d, &[f], &SvgOptions::default()).unwrap();
@@ -39,7 +43,14 @@ fn import_gradient_and_groups() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
     let f = import_svg(&mut d, svg, p, 0.0, 0.0, "x").unwrap();
-    let kinds: Vec<&str> = d.subtree(f).iter().map(|i| d.node(*i).unwrap().kind.type_name()).collect();
+    let kinds: Vec<&str> = d
+        .subtree(f)
+        .iter()
+        .map(|i| d.node(*i).unwrap().kind.type_name())
+        .collect();
     assert!(kinds.contains(&"GROUP"));
-    assert!(kinds.contains(&"RECTANGLE") && kinds.contains(&"ELLIPSE"), "{kinds:?}");
+    assert!(
+        kinds.contains(&"RECTANGLE") && kinds.contains(&"ELLIPSE"),
+        "{kinds:?}"
+    );
 }

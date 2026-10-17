@@ -22,13 +22,25 @@ fn err(name: &str, what: &str) -> MediaError {
 /// has no signature) a `.tga` name and a plausible header.
 pub fn sniff(name: &str, bytes: &[u8]) -> bool {
     let header_ok = || {
-        let Some(h) = bytes.first_chunk::<HEADER>() else { return false };
+        let Some(h) = bytes.first_chunk::<HEADER>() else {
+            return false;
+        };
         let (map_type, kind, depth) = (h[1], h[2], h[16]);
-        let (w, ht) = (u16::from_le_bytes([h[12], h[13]]), u16::from_le_bytes([h[14], h[15]]));
-        map_type <= 1 && matches!(kind, 1 | 2 | 3 | 9 | 10 | 11) && w > 0 && ht > 0 && matches!(depth, 8 | 15 | 16 | 24 | 32)
+        let (w, ht) = (
+            u16::from_le_bytes([h[12], h[13]]),
+            u16::from_le_bytes([h[14], h[15]]),
+        );
+        map_type <= 1
+            && matches!(kind, 1 | 2 | 3 | 9 | 10 | 11)
+            && w > 0
+            && ht > 0
+            && matches!(depth, 8 | 15 | 16 | 24 | 32)
     };
     let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase());
-    let named = matches!(ext.as_deref(), Some("tga" | "targa" | "icb" | "vda" | "vst"));
+    let named = matches!(
+        ext.as_deref(),
+        Some("tga" | "targa" | "icb" | "vda" | "vst")
+    );
     header_ok() && (named || bytes.ends_with(FOOTER))
 }
 
@@ -49,7 +61,9 @@ impl Layout {
     fn true_colour(depth: u8, attr_bits: u8) -> Option<Self> {
         Some(match depth {
             15 => Layout::Rgb555 { alpha: false },
-            16 => Layout::Rgb555 { alpha: attr_bits == 1 },
+            16 => Layout::Rgb555 {
+                alpha: attr_bits == 1,
+            },
             24 => Layout::Bgr24,
             32 => Layout::Bgra32,
             _ => return None,
@@ -88,49 +102,89 @@ impl Layout {
 
 /// Decode a Targa file to straight-alpha RGBA8, top row first.
 pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
-    let h = bytes.first_chunk::<HEADER>().ok_or_else(|| err(name, "truncated header"))?;
+    let h = bytes
+        .first_chunk::<HEADER>()
+        .ok_or_else(|| err(name, "truncated header"))?;
     let (id_len, map_type, kind) = (usize::from(h[0]), h[1], h[2]);
     let map_first = usize::from(u16::from_le_bytes([h[3], h[4]]));
     let map_len = usize::from(u16::from_le_bytes([h[5], h[6]]));
     let map_depth = h[7];
-    let (w, ht) = (usize::from(u16::from_le_bytes([h[12], h[13]])), usize::from(u16::from_le_bytes([h[14], h[15]])));
+    let (w, ht) = (
+        usize::from(u16::from_le_bytes([h[12], h[13]])),
+        usize::from(u16::from_le_bytes([h[14], h[15]])),
+    );
     let (depth, descriptor) = (h[16], h[17]);
     let attr_bits = descriptor & 0x0F;
     let (right_to_left, top_to_bottom) = (descriptor & 0x10 != 0, descriptor & 0x20 != 0);
     if w == 0 || ht == 0 {
         return Err(err(name, "empty picture"));
     }
-    let pixels = w.checked_mul(ht).filter(|&n| n <= MAX_PIXELS).ok_or_else(|| err(name, "picture too large"))?;
+    let pixels = w
+        .checked_mul(ht)
+        .filter(|&n| n <= MAX_PIXELS)
+        .ok_or_else(|| err(name, "picture too large"))?;
     let rle = kind >= 9;
     // stored value layout and, for colour-mapped images, the palette
     let mut palette: Vec<[u8; 4]> = Vec::new();
     let map_entry_layout = if map_type == 1 {
-        Some(Layout::true_colour(map_depth, if map_depth == 16 { attr_bits.min(1) } else { 0 }).ok_or_else(|| err(name, "colour map entry size"))?)
+        Some(
+            Layout::true_colour(
+                map_depth,
+                if map_depth == 16 { attr_bits.min(1) } else { 0 },
+            )
+            .ok_or_else(|| err(name, "colour map entry size"))?,
+        )
     } else {
         None
     };
-    let mut at = HEADER.checked_add(id_len).ok_or_else(|| err(name, "header"))?;
+    let mut at = HEADER
+        .checked_add(id_len)
+        .ok_or_else(|| err(name, "header"))?;
     if let Some(l) = map_entry_layout {
-        let size = map_len.checked_mul(l.bytes()).ok_or_else(|| err(name, "colour map"))?;
-        let end = at.checked_add(size).ok_or_else(|| err(name, "colour map"))?;
-        let map = bytes.get(at..end).ok_or_else(|| err(name, "truncated colour map"))?;
+        let size = map_len
+            .checked_mul(l.bytes())
+            .ok_or_else(|| err(name, "colour map"))?;
+        let end = at
+            .checked_add(size)
+            .ok_or_else(|| err(name, "colour map"))?;
+        let map = bytes
+            .get(at..end)
+            .ok_or_else(|| err(name, "truncated colour map"))?;
         palette = map.chunks_exact(l.bytes()).map(|e| l.rgba(e)).collect();
         at = end;
     }
     let (layout, mapped) = match kind & 7 {
         1 => {
             if map_type != 1 || !matches!(depth, 8 | 16) {
-                return Err(err(name, "colour-mapped picture without an 8/16-bit index and a colour map"));
+                return Err(err(
+                    name,
+                    "colour-mapped picture without an 8/16-bit index and a colour map",
+                ));
             }
-            (if depth == 8 { Layout::Gray8 } else { Layout::GrayAlpha16 }, true)
+            (
+                if depth == 8 {
+                    Layout::Gray8
+                } else {
+                    Layout::GrayAlpha16
+                },
+                true,
+            )
         }
-        2 => (Layout::true_colour(depth, attr_bits).ok_or_else(|| err(name, "true-colour pixel depth"))?, false),
+        2 => (
+            Layout::true_colour(depth, attr_bits)
+                .ok_or_else(|| err(name, "true-colour pixel depth"))?,
+            false,
+        ),
         3 => match depth {
             8 => (Layout::Gray8, false),
             16 => (Layout::GrayAlpha16, false),
             _ => return Err(err(name, "grayscale pixel depth")),
         },
-        _ => return Err(MediaError::Unsupported(format!("{name}: Targa image type {kind}"))),
+        _ => {
+            return Err(MediaError::Unsupported(format!(
+                "{name}: Targa image type {kind}"
+            )));
+        }
     };
     let data = bytes.get(at..).unwrap_or_default();
     let bpp = layout.bytes();
@@ -138,8 +192,12 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     let stored: Vec<u8> = if rle {
         unpack_rle(name, data, pixels, bpp)?
     } else {
-        let n = pixels.checked_mul(bpp).ok_or_else(|| err(name, "picture too large"))?;
-        data.get(..n).ok_or_else(|| err(name, "truncated pixel data"))?.to_vec()
+        let n = pixels
+            .checked_mul(bpp)
+            .ok_or_else(|| err(name, "picture too large"))?;
+        data.get(..n)
+            .ok_or_else(|| err(name, "truncated pixel data"))?
+            .to_vec()
     };
     let mut rgba = vec![0u8; pixels * 4];
     for (i, v) in stored.chunks_exact(bpp).enumerate().take(pixels) {
@@ -148,8 +206,15 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
         let y = if top_to_bottom { y } else { ht - 1 - y };
         let px = if mapped {
             let byte = |i: usize| v.get(i).copied().unwrap_or(0);
-            let index = if bpp == 1 { usize::from(byte(0)) } else { usize::from(u16::from_le_bytes([byte(0), byte(1)])) };
-            *index.checked_sub(map_first).and_then(|k| palette.get(k)).ok_or_else(|| err(name, "colour index outside the colour map"))?
+            let index = if bpp == 1 {
+                usize::from(byte(0))
+            } else {
+                usize::from(u16::from_le_bytes([byte(0), byte(1)]))
+            };
+            *index
+                .checked_sub(map_first)
+                .and_then(|k| palette.get(k))
+                .ok_or_else(|| err(name, "colour index outside the colour map"))?
         } else {
             layout.rgba(v)
         };
@@ -161,14 +226,24 @@ pub fn decode(name: &str, bytes: &[u8]) -> Result<Raster> {
     // 32-bit files from writers that leave the attribute bits unset often store zero alpha
     // everywhere: such a picture is opaque, not invisible
     let alpha_used = match (layout, mapped) {
-        (Layout::Bgra32, false) => attr_bits != 0 || rgba.as_chunks::<4>().0.iter().any(|p| p[3] != 0),
+        (Layout::Bgra32, false) => {
+            attr_bits != 0 || rgba.as_chunks::<4>().0.iter().any(|p| p[3] != 0)
+        }
         _ => true,
     };
     if !alpha_used {
-        rgba.as_chunks_mut::<4>().0.iter_mut().for_each(|p| p[3] = 255);
+        rgba.as_chunks_mut::<4>()
+            .0
+            .iter_mut()
+            .for_each(|p| p[3] = 255);
     }
     let has_alpha = rgba.as_chunks::<4>().0.iter().any(|p| p[3] != 255);
-    Ok(Raster { width: w as u32, height: ht as u32, rgba, has_alpha })
+    Ok(Raster {
+        width: w as u32,
+        height: ht as u32,
+        rgba,
+        has_alpha,
+    })
 }
 
 /// Expand run-length packets into `pixels` stored values of `bpp` bytes each. Packets may span
@@ -179,21 +254,29 @@ fn unpack_rle(name: &str, mut data: &[u8], pixels: usize, bpp: usize) -> Result<
     if pixels > bound {
         return Err(err(name, "truncated run-length data"));
     }
-    let total = pixels.checked_mul(bpp).ok_or_else(|| err(name, "picture too large"))?;
+    let total = pixels
+        .checked_mul(bpp)
+        .ok_or_else(|| err(name, "picture too large"))?;
     let mut out = Vec::with_capacity(total);
     while out.len() < total {
-        let (&head, rest) = data.split_first().ok_or_else(|| err(name, "truncated run-length data"))?;
+        let (&head, rest) = data
+            .split_first()
+            .ok_or_else(|| err(name, "truncated run-length data"))?;
         let count = usize::from(head & 0x7F) + 1;
         let want = (total - out.len()).min(count * bpp);
         if head & 0x80 != 0 {
-            let v = rest.get(..bpp).ok_or_else(|| err(name, "truncated run-length data"))?;
+            let v = rest
+                .get(..bpp)
+                .ok_or_else(|| err(name, "truncated run-length data"))?;
             for _ in 0..want / bpp {
                 out.extend_from_slice(v);
             }
             data = rest.get(bpp..).unwrap_or_default();
         } else {
             let n = count * bpp;
-            let v = rest.get(..n).ok_or_else(|| err(name, "truncated run-length data"))?;
+            let v = rest
+                .get(..n)
+                .ok_or_else(|| err(name, "truncated run-length data"))?;
             out.extend_from_slice(v.get(..want).unwrap_or(v));
             data = rest.get(n..).unwrap_or_default();
         }
@@ -220,7 +303,12 @@ mod tests {
         f.extend_from_slice(&[255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255]);
         let r = decode("a.tga", &f).unwrap();
         assert_eq!((r.width, r.height, r.has_alpha), (2, 2, false));
-        assert_eq!(r.rgba, [255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 255, 255, 0, 255, 0, 255]);
+        assert_eq!(
+            r.rgba,
+            [
+                255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 255, 255, 0, 255, 0, 255
+            ]
+        );
     }
 
     #[test]
@@ -259,7 +347,10 @@ mod tests {
         let mut f = header(2, 1, 1, 32, 0);
         f.extend_from_slice(&[1, 2, 3, 0]);
         let r = decode("a.tga", &f).unwrap();
-        assert_eq!((r.rgba.as_slice(), r.has_alpha), (&[3, 2, 1, 255][..], false));
+        assert_eq!(
+            (r.rgba.as_slice(), r.has_alpha),
+            (&[3, 2, 1, 255][..], false)
+        );
     }
 
     #[test]

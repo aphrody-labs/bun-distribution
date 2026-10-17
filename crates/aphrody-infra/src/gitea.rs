@@ -21,7 +21,8 @@ pub struct Report {
 /// Protected VPS credentials are never returned; the dedicated mirror owner remains separate.
 pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<Report> {
     let client = include_str!("../../../scripts/aphrody/tools/infra/gitea-provision.ts");
-    let remote_program = include_str!("../../../scripts/aphrody/tools/infra/gitea-provision-remote.ts");
+    let remote_program =
+        include_str!("../../../scripts/aphrody/tools/infra/gitea-provision-remote.ts");
     let mut command = Command::new("bun").no_window();
     command
         .current_dir(root)
@@ -38,7 +39,9 @@ pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<R
     if let Some(repository) = repository {
         command.args(["--repository", repository]);
     }
-    let mut child = command.spawn().context("propriétaire Bun Infra indisponible")?;
+    let mut child = command
+        .spawn()
+        .context("propriétaire Bun Infra indisponible")?;
     let start = std::time::Instant::now();
     let output = loop {
         if let Some(status) = child.try_wait()? {
@@ -49,7 +52,9 @@ pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<R
             break output;
         }
         if start.elapsed() > std::time::Duration::from_secs(120) {
-            child.kill().context("arrêt propriétaire Bun après délai dépassé")?;
+            child
+                .kill()
+                .context("arrêt propriétaire Bun après délai dépassé")?;
             let _ = child.wait();
             bail!("provisionnement Gitea dépassant la limite de 120 secondes");
         }
@@ -62,7 +67,9 @@ pub fn provision(root: &Path, apply: bool, repository: Option<&str>) -> Result<R
 fn valid_repo(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 100
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-')
 }
 
 #[derive(Debug, Deserialize)]
@@ -205,7 +212,10 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
     {
         bail!("catalogue de miroirs hors contrat autorisé");
     }
-    let names = catalog.batches.get(batch).context("lot de miroirs inconnu")?;
+    let names = catalog
+        .batches
+        .get(batch)
+        .context("lot de miroirs inconnu")?;
     if names.is_empty() || names.len() > catalog.batch_limit {
         bail!("taille de lot de miroirs invalide");
     }
@@ -216,9 +226,14 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             .iter()
             .find(|repo| &repo.name == name)
             .context("dépôt absent du catalogue")?;
-        let target_owner = entry.target_owner.as_deref().unwrap_or(&catalog.target_owner);
-        if !matches!(target_owner, "aphrody-labs" | "aphrody-dev" | "aphrody-labs-native")
-            || (target_owner == "aphrody-dev" && entry.name != "bun-distribution")
+        let target_owner = entry
+            .target_owner
+            .as_deref()
+            .unwrap_or(&catalog.target_owner);
+        if !matches!(
+            target_owner,
+            "aphrody-labs" | "aphrody-dev" | "aphrody-labs-native"
+        ) || (target_owner == "aphrody-dev" && entry.name != "bun-distribution")
             || (entry.name == "bun-distribution" && target_owner != "aphrody-dev")
             || (target_owner == "aphrody-labs-native"
                 && (entry.name != catalog.native_storage.repository
@@ -238,8 +253,10 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         {
             bail!("entrée de miroir non admissible");
         }
-        let qualification =
-            entry.source_qualification.as_ref().context("qualification de source absente")?;
+        let qualification = entry
+            .source_qualification
+            .as_ref()
+            .context("qualification de source absente")?;
         let default_ref = format!("refs/heads/{}", entry.default_branch);
         let valid_sha =
             |sha: &str| sha.len() == 40 && sha.bytes().all(|byte| byte.is_ascii_hexdigit());
@@ -255,7 +272,10 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         } else {
             qualification.ref_shas.len() != qualification.refs.len()
                 || qualification.refs.iter().any(|reference| {
-                    qualification.ref_shas.get(reference).is_none_or(|sha| !valid_sha(sha))
+                    qualification
+                        .ref_shas
+                        .get(reference)
+                        .is_none_or(|sha| !valid_sha(sha))
                 })
                 || qualification.ref_shas.get(&default_ref) != qualification.head.as_ref()
         };
@@ -504,7 +524,11 @@ BUN
         .spawn()
         .context("ssh vps indisponible")?;
     use std::io::Write;
-    child.stdin.take().context("stdin ssh absent")?.write_all(script.as_bytes())?;
+    child
+        .stdin
+        .take()
+        .context("stdin ssh absent")?
+        .write_all(script.as_bytes())?;
     let start = std::time::Instant::now();
     loop {
         if let Some(status) = child.try_wait()? {
@@ -529,9 +553,12 @@ BUN
             let remote: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .context("réponse Gitea distante invalide")?;
             report.capacity_free_kib = remote.get("freeKiB").and_then(serde_json::Value::as_u64);
-            report.organization_runner_available =
-                remote.get("organizationRunnerAvailable").and_then(serde_json::Value::as_bool);
-            if remote.get("runnerJobQualification").and_then(serde_json::Value::as_str)
+            report.organization_runner_available = remote
+                .get("organizationRunnerAvailable")
+                .and_then(serde_json::Value::as_bool);
+            if remote
+                .get("runnerJobQualification")
+                .and_then(serde_json::Value::as_str)
                 != Some("not-run")
             {
                 bail!("qualification d'un job runner absente du reçu distant");

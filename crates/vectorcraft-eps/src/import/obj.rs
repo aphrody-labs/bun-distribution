@@ -64,11 +64,17 @@ impl Obj {
     }
 
     pub fn array(items: Vec<Obj>) -> Self {
-        Self::Array { items: Shared::new(items), exec: false }
+        Self::Array {
+            items: Shared::new(items),
+            exec: false,
+        }
     }
 
     pub fn proc(items: Vec<Obj>) -> Self {
-        Self::Array { items: Shared::new(items), exec: true }
+        Self::Array {
+            items: Shared::new(items),
+            exec: true,
+        }
     }
 
     pub fn dict(d: Dict) -> Self {
@@ -88,7 +94,9 @@ impl Obj {
     pub fn text(&self) -> Option<Rc<str>> {
         match self {
             Self::Name(n) | Self::Exec(n) => Some(n.clone()),
-            Self::Str(s) | Self::ExecStr(s) => Some(Rc::from(String::from_utf8_lossy(&s.borrow()).as_ref())),
+            Self::Str(s) | Self::ExecStr(s) => {
+                Some(Rc::from(String::from_utf8_lossy(&s.borrow()).as_ref()))
+            }
             _ => None,
         }
     }
@@ -143,7 +151,11 @@ pub(crate) struct Shared<T> {
 
 impl<T: Clone> Shared<T> {
     pub fn new(v: Vec<T>) -> Self {
-        Self { len: v.len(), buf: Rc::new(RefCell::new(v)), at: 0 }
+        Self {
+            len: v.len(),
+            buf: Rc::new(RefCell::new(v)),
+            at: 0,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -167,7 +179,11 @@ impl<T: Clone> Shared<T> {
 
     /// `n` values from `at`, sharing the storage (`getinterval`); `None` past the end.
     pub fn sub(&self, at: usize, n: usize) -> Option<Self> {
-        (at.checked_add(n)? <= self.len).then(|| Self { buf: self.buf.clone(), at: self.at + at, len: n })
+        (at.checked_add(n)? <= self.len).then(|| Self {
+            buf: self.buf.clone(),
+            at: self.at + at,
+            len: n,
+        })
     }
 
     /// Write `vals` from `at`: false when they don't fit (or `vals` is borrowed from the storage).
@@ -176,7 +192,9 @@ impl<T: Clone> Shared<T> {
             return false;
         }
         let start = self.at + at;
-        let Ok(mut v) = self.buf.try_borrow_mut() else { return false };
+        let Ok(mut v) = self.buf.try_borrow_mut() else {
+            return false;
+        };
         match v.get_mut(start..start + vals.len()) {
             Some(d) => {
                 d.clone_from_slice(vals);

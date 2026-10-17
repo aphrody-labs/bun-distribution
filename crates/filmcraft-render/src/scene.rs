@@ -61,8 +61,20 @@ pub fn signature(rgba: &[u8], w: usize, h: usize) -> Signature {
 /// How different two frames look, 0 (identical) … 1.
 pub fn difference(a: &Signature, b: &Signature) -> f32 {
     // per channel: half the L1 distance of two distributions is in 0..1
-    let h: f32 = a.hist.iter().zip(&b.hist).map(|(x, y)| (x - y).abs()).sum::<f32>() / 6.0;
-    let g: f32 = a.grid.iter().zip(&b.grid).map(|(x, y)| (x - y).abs()).sum::<f32>() / (GW * GH) as f32;
+    let h: f32 = a
+        .hist
+        .iter()
+        .zip(&b.hist)
+        .map(|(x, y)| (x - y).abs())
+        .sum::<f32>()
+        / 6.0;
+    let g: f32 = a
+        .grid
+        .iter()
+        .zip(&b.grid)
+        .map(|(x, y)| (x - y).abs())
+        .sum::<f32>()
+        / (GW * GH) as f32;
     // the grid term rarely exceeds ~0.5 even between unrelated shots: weigh it up
     (0.5 * h + 0.5 * (2.0 * g).min(1.0)).clamp(0.0, 1.0)
 }
@@ -78,7 +90,10 @@ pub struct SceneOptions {
 
 impl Default for SceneOptions {
     fn default() -> Self {
-        SceneOptions { sensitivity: 50.0, min_shot_frames: 6 }
+        SceneOptions {
+            sensitivity: 50.0,
+            min_shot_frames: 6,
+        }
     }
 }
 
@@ -115,7 +130,9 @@ pub fn detect_cuts(diffs: &[f32], opt: &SceneOptions) -> Vec<usize> {
             continue;
         }
         // a local maximum (two-frame dissolves report their larger step once)
-        if diffs.get(i + 1).is_some_and(|n| *n > d) || (i > 1 && diffs[i - 1] > d && cuts.last() != Some(&(i - 1))) {
+        if diffs.get(i + 1).is_some_and(|n| *n > d)
+            || (i > 1 && diffs[i - 1] > d && cuts.last() != Some(&(i - 1)))
+        {
             continue;
         }
         let since = cuts.last().copied().unwrap_or(0);
@@ -143,7 +160,11 @@ impl SceneDetector {
         self.push(signature(rgba, w, h))
     }
     pub fn push(&mut self, sig: Signature) -> f32 {
-        let d = self.prev.as_ref().map(|p| difference(p, &sig)).unwrap_or(0.0);
+        let d = self
+            .prev
+            .as_ref()
+            .map(|p| difference(p, &sig))
+            .unwrap_or(0.0);
         self.diffs.push(d);
         self.prev = Some(sig);
         d
@@ -171,9 +192,25 @@ mod tests {
                 let xx = (x as u32 + 2 * t) as f32;
                 let (r, g, b) = match shot % 4 {
                     0 => (40.0 + 150.0 * (xx * 0.05).sin().abs(), 90.0, 160.0),
-                    1 => (200.0, 180.0 - (y as f32) * 0.5, 40.0 + (xx * 0.1).cos().abs() * 60.0),
-                    2 => (if (xx as usize / 8 + y / 8).is_multiple_of(2) { 230.0 } else { 20.0 }, 120.0, 60.0),
-                    _ => (30.0, 30.0 + (y as f32 * 1.5).min(200.0), 30.0 + (xx * 0.03).sin().abs() * 200.0),
+                    1 => (
+                        200.0,
+                        180.0 - (y as f32) * 0.5,
+                        40.0 + (xx * 0.1).cos().abs() * 60.0,
+                    ),
+                    2 => (
+                        if (xx as usize / 8 + y / 8).is_multiple_of(2) {
+                            230.0
+                        } else {
+                            20.0
+                        },
+                        120.0,
+                        60.0,
+                    ),
+                    _ => (
+                        30.0,
+                        30.0 + (y as f32 * 1.5).min(200.0),
+                        30.0 + (xx * 0.03).sin().abs() * 200.0,
+                    ),
                 };
                 let i = (y * w + x) * 4;
                 v[i] = (r as i32 + noise).clamp(0, 255) as u8;
@@ -199,11 +236,24 @@ mod tests {
 
     #[test]
     fn finds_hard_cuts_and_ignores_motion() {
-        let cuts = run(&[(0, 20), (1, 15), (2, 25), (3, 12), (0, 10)], &SceneOptions::default());
+        let cuts = run(
+            &[(0, 20), (1, 15), (2, 25), (3, 12), (0, 10)],
+            &SceneOptions::default(),
+        );
         assert_eq!(cuts, vec![20, 35, 60, 72]);
         // one continuous moving shot: no cuts at any sensitivity
         for s in [0.0, 50.0, 100.0] {
-            assert!(run(&[(2, 60)], &SceneOptions { sensitivity: s, ..Default::default() }).is_empty(), "sensitivity {s}");
+            assert!(
+                run(
+                    &[(2, 60)],
+                    &SceneOptions {
+                        sensitivity: s,
+                        ..Default::default()
+                    }
+                )
+                .is_empty(),
+                "sensitivity {s}"
+            );
         }
     }
 
@@ -213,7 +263,13 @@ mod tests {
         // back out (2 frames later) is closer than the minimum shot length
         let cuts = run(&[(0, 20), (1, 2), (0, 20)], &SceneOptions::default());
         assert_eq!(cuts, vec![20]);
-        let cuts = run(&[(0, 20), (1, 2), (0, 20)], &SceneOptions { min_shot_frames: 1, ..Default::default() });
+        let cuts = run(
+            &[(0, 20), (1, 2), (0, 20)],
+            &SceneOptions {
+                min_shot_frames: 1,
+                ..Default::default()
+            },
+        );
         assert_eq!(cuts, vec![20, 22]);
     }
 
@@ -222,7 +278,8 @@ mod tests {
         // a subtle cut: the same pattern with a small global brightness change
         let mk = |k: i32| {
             let mut f = frame(0, 0, 64, 36);
-            f.chunks_mut(4).for_each(|p| (0..3).for_each(|c| p[c] = (p[c] as i32 + k).clamp(0, 255) as u8));
+            f.chunks_mut(4)
+                .for_each(|p| (0..3).for_each(|c| p[c] = (p[c] as i32 + k).clamp(0, 255) as u8));
             signature(&f, 64, 36)
         };
         let mut d = SceneDetector::new();
@@ -231,9 +288,28 @@ mod tests {
         }
         let diff = d.diffs()[15];
         assert!(diff > 0.1 && diff < 0.4, "subtle diff {diff}");
-        assert!(d.cuts(&SceneOptions { sensitivity: 0.0, ..Default::default() }).is_empty());
-        assert_eq!(d.cuts(&SceneOptions { sensitivity: 100.0, ..Default::default() }), vec![15]);
-        assert!(SceneOptions { sensitivity: 100.0, ..Default::default() }.threshold() < SceneOptions::default().threshold());
+        assert!(
+            d.cuts(&SceneOptions {
+                sensitivity: 0.0,
+                ..Default::default()
+            })
+            .is_empty()
+        );
+        assert_eq!(
+            d.cuts(&SceneOptions {
+                sensitivity: 100.0,
+                ..Default::default()
+            }),
+            vec![15]
+        );
+        assert!(
+            SceneOptions {
+                sensitivity: 100.0,
+                ..Default::default()
+            }
+            .threshold()
+                < SceneOptions::default().threshold()
+        );
     }
 
     #[test]

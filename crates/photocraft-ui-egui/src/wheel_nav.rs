@@ -67,7 +67,11 @@ pub fn classify(i: Input) -> Option<Wheel> {
     }
     // One notch (`notch` points) is one ×1.1 step.
     let step = |dy: f32| {
-        let notch = if i.notch.is_finite() && i.notch > 0.0 { i.notch } else { 40.0 };
+        let notch = if i.notch.is_finite() && i.notch > 0.0 {
+            i.notch
+        } else {
+            40.0
+        };
         let f = NOTCH.powf(dy / notch);
         (f.is_finite() && f > 0.0 && f != 1.0).then_some(Wheel::Zoom(f))
     };
@@ -95,17 +99,36 @@ pub fn configure(ctx: &Context) {
 /// `speed` per point). Ctrl + wheel in whole notches (a mouse wheel) is left to scroll sideways,
 /// unless it comes within [`PINCH_GAP`] of a pinch step. `last` is the time of the previous pinch
 /// step; returns the time of the latest one.
-pub fn legacy_pinch_to_zoom(events: &mut [Event], now: f64, last: Option<f64>, notch: f32, speed: f32) -> Option<f64> {
+pub fn legacy_pinch_to_zoom(
+    events: &mut [Event],
+    now: f64,
+    last: Option<f64>,
+    notch: f32,
+    speed: f32,
+) -> Option<f64> {
     let ctrl_wheel = |e: &Event| match e {
-        Event::MouseWheel { unit: MouseWheelUnit::Line, delta, modifiers, .. } if modifiers.ctrl => Some((*delta, false)),
+        Event::MouseWheel {
+            unit: MouseWheelUnit::Line,
+            delta,
+            modifiers,
+            ..
+        } if modifiers.ctrl => Some((*delta, false)),
         // Wayland precision touchpads can use point units. These are already actual
         // screen points, not line notches; normalize before the exponential below.
-        Event::MouseWheel { unit: MouseWheelUnit::Point, delta, modifiers, .. } if modifiers.ctrl => Some((*delta / notch.max(1.0), true)),
+        Event::MouseWheel {
+            unit: MouseWheelUnit::Point,
+            delta,
+            modifiers,
+            ..
+        } if modifiers.ctrl => Some((*delta / notch.max(1.0), true)),
         _ => None,
     };
     let fraction = |d: Vec2| d.x.fract() != 0.0 || d.y.fract() != 0.0;
-    let pinching =
-        last.is_some_and(|t| (0.0..PINCH_GAP).contains(&(now - t))) || events.iter().filter_map(ctrl_wheel).any(|(d, high_res)| high_res || fraction(d));
+    let pinching = last.is_some_and(|t| (0.0..PINCH_GAP).contains(&(now - t)))
+        || events
+            .iter()
+            .filter_map(ctrl_wheel)
+            .any(|(d, high_res)| high_res || fraction(d));
     if !pinching {
         return last;
     }
@@ -126,7 +149,12 @@ fn pinch_id() -> Id {
 
 /// [`legacy_pinch_to_zoom`] for one frame's raw input (`raw_input_hook`, Windows and Linux).
 pub fn fold_legacy_pinch(ctx: &Context, raw: &mut RawInput) {
-    let (notch, speed) = ctx.options(|o| (o.input_options.line_scroll_speed, o.input_options.scroll_zoom_speed));
+    let (notch, speed) = ctx.options(|o| {
+        (
+            o.input_options.line_scroll_speed,
+            o.input_options.scroll_zoom_speed,
+        )
+    });
     let now = raw.time.unwrap_or_else(|| ctx.input(|i| i.time));
     let last = ctx.data(|d| d.get_temp::<f64>(pinch_id()));
     let latest = legacy_pinch_to_zoom(&mut raw.events, now, last, notch, speed);
@@ -147,18 +175,31 @@ pub fn read(ctx: &Context, zoom_with_wheel: bool, pinch_zooms: bool) -> Option<W
     let notch = ctx.options(|o| o.input_options.line_scroll_speed);
     let (scroll, zoom_delta, latest, wheel, page) = ctx.input(|i| {
         let latest = i.events.iter().rev().find_map(|e| match e {
-            Event::MouseWheel { modifiers, .. } => Some(modifiers.alt && !modifiers.command && !modifiers.ctrl),
+            Event::MouseWheel { modifiers, .. } => {
+                Some(modifiers.alt && !modifiers.command && !modifiers.ctrl)
+            }
             _ => None,
         });
         let wheel: Vec<(MouseWheelUnit, Vec2, Modifiers)> = i
             .events
             .iter()
             .filter_map(|e| match e {
-                Event::MouseWheel { unit, delta, modifiers, .. } => Some((*unit, *delta, *modifiers)),
+                Event::MouseWheel {
+                    unit,
+                    delta,
+                    modifiers,
+                    ..
+                } => Some((*unit, *delta, *modifiers)),
                 _ => None,
             })
             .collect();
-        (i.smooth_scroll_delta, i.zoom_delta(), latest, wheel, i.content_rect().height())
+        (
+            i.smooth_scroll_delta,
+            i.zoom_delta(),
+            latest,
+            wheel,
+            i.content_rect().height(),
+        )
     });
     let alt = match latest {
         Some(a) => {
@@ -169,18 +210,32 @@ pub fn read(ctx: &Context, zoom_with_wheel: bool, pinch_zooms: bool) -> Option<W
     };
     // The wheel events that belong to the gesture in progress: Alt ones, or plain ones (⇧ and
     // ⌘/Ctrl wheel scroll sideways and never zoom).
-    let raw = wheel.iter().filter(|(_, _, m)| if alt { m.alt && !m.command && !m.ctrl } else { !m.alt && !m.shift && !m.command && !m.ctrl }).fold(
-        Vec2::ZERO,
-        |sum, (unit, delta, _)| {
+    let raw = wheel
+        .iter()
+        .filter(|(_, _, m)| {
+            if alt {
+                m.alt && !m.command && !m.ctrl
+            } else {
+                !m.alt && !m.shift && !m.command && !m.ctrl
+            }
+        })
+        .fold(Vec2::ZERO, |sum, (unit, delta, _)| {
             sum + *delta
                 * match unit {
                     MouseWheelUnit::Point => 1.0,
                     MouseWheelUnit::Line => notch,
                     MouseWheelUnit::Page => page,
                 }
-        },
-    );
-    classify(Input { scroll, raw, zoom_delta, alt, zoom_with_wheel, pinch_zooms, notch })
+        });
+    classify(Input {
+        scroll,
+        raw,
+        zoom_delta,
+        alt,
+        zoom_with_wheel,
+        pinch_zooms,
+        notch,
+    })
 }
 
 #[cfg(test)]
@@ -190,15 +245,36 @@ mod tests {
     use super::*;
 
     fn input(scroll: Vec2, alt: bool) -> Input {
-        Input { scroll, raw: scroll, zoom_delta: 1.0, alt, zoom_with_wheel: false, pinch_zooms: true, notch: 40.0 }
+        Input {
+            scroll,
+            raw: scroll,
+            zoom_delta: 1.0,
+            alt,
+            zoom_with_wheel: false,
+            pinch_zooms: true,
+            notch: 40.0,
+        }
     }
 
     fn wheel(delta: Vec2, modifiers: Modifiers) -> Event {
-        Event::MouseWheel { unit: MouseWheelUnit::Line, delta, phase: TouchPhase::Move, modifiers }
+        Event::MouseWheel {
+            unit: MouseWheelUnit::Line,
+            delta,
+            phase: TouchPhase::Move,
+            modifiers,
+        }
     }
 
-    const CTRL: Modifiers = Modifiers { ctrl: true, command: true, ..Modifiers::NONE };
-    const CMD: Modifiers = Modifiers { mac_cmd: true, command: true, ..Modifiers::NONE };
+    const CTRL: Modifiers = Modifiers {
+        ctrl: true,
+        command: true,
+        ..Modifiers::NONE
+    };
+    const CMD: Modifiers = Modifiers {
+        mac_cmd: true,
+        command: true,
+        ..Modifiers::NONE
+    };
 
     /// Feed `events` through an egui context set up like the app's (`legacy`: the Windows pinch
     /// fold on) and add up what the wheel did to the view over the following second.
@@ -208,8 +284,12 @@ mod tests {
         let (mut pan, mut zoom) = (Vec2::ZERO, 1.0);
         let mut frames = frames.into_iter();
         for n in 0..60 {
-            let mut raw =
-                RawInput { time: Some(f64::from(n) / 60.0), predicted_dt: 1.0 / 60.0, events: frames.next().unwrap_or_default(), ..Default::default() };
+            let mut raw = RawInput {
+                time: Some(f64::from(n) / 60.0),
+                predicted_dt: 1.0 / 60.0,
+                events: frames.next().unwrap_or_default(),
+                ..Default::default()
+            };
             if legacy {
                 fold_legacy_pinch(&ctx, &mut raw);
             }
@@ -229,18 +309,27 @@ mod tests {
 
     #[test]
     fn plain_scroll_pans() {
-        assert_eq!(classify(input(Vec2::new(3.0, -40.0), false)), Some(Wheel::Pan(Vec2::new(3.0, -40.0))));
+        assert_eq!(
+            classify(input(Vec2::new(3.0, -40.0), false)),
+            Some(Wheel::Pan(Vec2::new(3.0, -40.0)))
+        );
         assert_eq!(classify(input(Vec2::ZERO, false)), None);
     }
 
     #[test]
     fn alt_scroll_zooms_ten_percent_per_notch() {
-        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, 40.0), true)) else { panic!("zoom") };
+        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, 40.0), true)) else {
+            panic!("zoom")
+        };
         assert!((f - 1.1).abs() < 1e-5, "{f}");
-        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, -40.0), true)) else { panic!("zoom") };
+        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, -40.0), true)) else {
+            panic!("zoom")
+        };
         assert!((f - 1.0 / 1.1).abs() < 1e-5, "{f}");
         // Two notches in one frame are two steps, x1.1 each.
-        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, 80.0), true)) else { panic!("zoom") };
+        let Some(Wheel::Zoom(f)) = classify(input(Vec2::new(0.0, 80.0), true)) else {
+            panic!("zoom")
+        };
         assert!((f - 1.21).abs() < 1e-4, "{f}");
     }
 
@@ -248,21 +337,37 @@ mod tests {
     fn a_notch_zooms_the_frame_it_arrives_and_its_smoothed_tail_does_nothing() {
         // egui keeps feeding a smoothed delta for several frames after the wheel event. Zooming
         // must not follow it (that would ease the zoom), nor turn it into a pan.
-        let tail = Input { raw: Vec2::ZERO, ..input(Vec2::new(0.0, 12.0), true) };
+        let tail = Input {
+            raw: Vec2::ZERO,
+            ..input(Vec2::new(0.0, 12.0), true)
+        };
         assert_eq!(classify(tail), None);
-        let tail = Input { raw: Vec2::ZERO, zoom_with_wheel: true, ..input(Vec2::new(0.0, 12.0), false) };
+        let tail = Input {
+            raw: Vec2::ZERO,
+            zoom_with_wheel: true,
+            ..input(Vec2::new(0.0, 12.0), false)
+        };
         assert_eq!(classify(tail), None);
         // Plain scrolling without the preference still pans from the smoothed delta.
-        let pan = Input { raw: Vec2::ZERO, ..input(Vec2::new(0.0, 12.0), false) };
+        let pan = Input {
+            raw: Vec2::ZERO,
+            ..input(Vec2::new(0.0, 12.0), false)
+        };
         assert_eq!(classify(pan), Some(Wheel::Pan(Vec2::new(0.0, 12.0))));
     }
 
     #[test]
     fn pinch_zooms() {
-        let i = Input { zoom_delta: 1.2, ..input(Vec2::ZERO, false) };
+        let i = Input {
+            zoom_delta: 1.2,
+            ..input(Vec2::ZERO, false)
+        };
         assert_eq!(classify(i), Some(Wheel::Zoom(1.2)));
         // The pinch wins over Alt.
-        let i = Input { zoom_delta: 0.8, ..input(Vec2::new(0.0, 40.0), true) };
+        let i = Input {
+            zoom_delta: 0.8,
+            ..input(Vec2::new(0.0, 40.0), true)
+        };
         assert_eq!(classify(i), Some(Wheel::Zoom(0.8)));
     }
 
@@ -270,12 +375,24 @@ mod tests {
     /// a scroll in the same frame pans as it would without a pinch.
     #[test]
     fn the_pinch_preference_switches_pinch_zooming() {
-        let i = Input { zoom_delta: 1.2, pinch_zooms: false, ..input(Vec2::ZERO, false) };
+        let i = Input {
+            zoom_delta: 1.2,
+            pinch_zooms: false,
+            ..input(Vec2::ZERO, false)
+        };
         assert_eq!(classify(i), None);
-        let i = Input { zoom_delta: 1.2, pinch_zooms: false, ..input(Vec2::new(0.0, 12.0), false) };
+        let i = Input {
+            zoom_delta: 1.2,
+            pinch_zooms: false,
+            ..input(Vec2::new(0.0, 12.0), false)
+        };
         assert_eq!(classify(i), Some(Wheel::Pan(Vec2::new(0.0, 12.0))));
         // On (the default) the pinch still zooms.
-        let i = Input { zoom_delta: 1.2, pinch_zooms: true, ..input(Vec2::ZERO, false) };
+        let i = Input {
+            zoom_delta: 1.2,
+            pinch_zooms: true,
+            ..input(Vec2::ZERO, false)
+        };
         assert_eq!(classify(i), Some(Wheel::Zoom(1.2)));
     }
 
@@ -287,30 +404,70 @@ mod tests {
         if !cfg!(target_os = "windows") {
             return;
         }
-        let mut app = crate::PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = crate::PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         let ctx = Context::default();
         let event = || Event::MouseWheel {
             unit: MouseWheelUnit::Line,
             delta: egui::vec2(0.0, 0.25),
             phase: egui::TouchPhase::Move,
-            modifiers: Modifiers { ctrl: true, command: true, ..Modifiers::NONE },
+            modifiers: Modifiers {
+                ctrl: true,
+                command: true,
+                ..Modifiers::NONE
+            },
         };
-        let mut raw = RawInput { time: Some(1.0), events: vec![event()], ..Default::default() };
+        let mut raw = RawInput {
+            time: Some(1.0),
+            events: vec![event()],
+            ..Default::default()
+        };
         app.raw_input_hook(&ctx, &mut raw);
-        assert!(matches!(raw.events[0], Event::Zoom(_)), "the fraction is a pinch: {:?}", raw.events[0]);
-        app.run("prefs.set", serde_json::json!({"path": "enhancedControls.zoomWithTrackpadPinch", "value": false})).unwrap();
-        let mut raw = RawInput { time: Some(2.0), events: vec![event()], ..Default::default() };
+        assert!(
+            matches!(raw.events[0], Event::Zoom(_)),
+            "the fraction is a pinch: {:?}",
+            raw.events[0]
+        );
+        app.run(
+            "prefs.set",
+            serde_json::json!({"path": "enhancedControls.zoomWithTrackpadPinch", "value": false}),
+        )
+        .unwrap();
+        let mut raw = RawInput {
+            time: Some(2.0),
+            events: vec![event()],
+            ..Default::default()
+        };
         app.raw_input_hook(&ctx, &mut raw);
-        assert!(matches!(raw.events[0], Event::MouseWheel { .. }), "off: it stays a wheel event: {:?}", raw.events[0]);
+        assert!(
+            matches!(raw.events[0], Event::MouseWheel { .. }),
+            "off: it stays a wheel event: {:?}",
+            raw.events[0]
+        );
     }
 
     #[test]
     fn zoom_with_scroll_wheel_preference_swaps_wheel_and_alt_wheel() {
-        let pref = |scroll, alt| Input { zoom_with_wheel: true, ..input(scroll, alt) };
-        let Some(Wheel::Zoom(f)) = classify(pref(Vec2::new(0.0, 40.0), false)) else { panic!("zoom") };
+        let pref = |scroll, alt| Input {
+            zoom_with_wheel: true,
+            ..input(scroll, alt)
+        };
+        let Some(Wheel::Zoom(f)) = classify(pref(Vec2::new(0.0, 40.0), false)) else {
+            panic!("zoom")
+        };
         assert!((f - 1.1).abs() < 1e-5, "{f}");
-        assert_eq!(classify(pref(Vec2::new(0.0, 40.0), true)), Some(Wheel::Pan(Vec2::new(0.0, 40.0))), "⌥ + wheel scrolls");
-        assert_eq!(classify(pref(Vec2::new(40.0, 0.0), false)), Some(Wheel::Pan(Vec2::new(40.0, 0.0))), "sideways still scrolls");
+        assert_eq!(
+            classify(pref(Vec2::new(0.0, 40.0), true)),
+            Some(Wheel::Pan(Vec2::new(0.0, 40.0))),
+            "⌥ + wheel scrolls"
+        );
+        assert_eq!(
+            classify(pref(Vec2::new(40.0, 0.0), false)),
+            Some(Wheel::Pan(Vec2::new(40.0, 0.0))),
+            "sideways still scrolls"
+        );
     }
 
     #[test]
@@ -318,45 +475,97 @@ mod tests {
         let notch = Vec2::new(0.0, 1.0);
         let one = |m: Modifiers| gesture(vec![vec![wheel(notch, m)]], false, false);
         let (pan, zoom) = one(Modifiers::NONE);
-        assert!(near(pan, Vec2::new(0.0, 40.0)) && zoom == 1.0, "wheel scrolls vertically: {pan:?} {zoom}");
+        assert!(
+            near(pan, Vec2::new(0.0, 40.0)) && zoom == 1.0,
+            "wheel scrolls vertically: {pan:?} {zoom}"
+        );
         for m in [Modifiers::SHIFT, CTRL, CMD, Modifiers::CTRL] {
             let (pan, zoom) = one(m);
-            assert!(near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0, "{m:?} + wheel scrolls sideways: {pan:?} {zoom}");
+            assert!(
+                near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0,
+                "{m:?} + wheel scrolls sideways: {pan:?} {zoom}"
+            );
         }
         let (pan, zoom) = one(Modifiers::ALT);
-        assert!(pan == Vec2::ZERO && (zoom - 1.1).abs() < 1e-4, "⌥ + wheel zooms 10%, at once: {pan:?} {zoom}");
+        assert!(
+            pan == Vec2::ZERO && (zoom - 1.1).abs() < 1e-4,
+            "⌥ + wheel zooms 10%, at once: {pan:?} {zoom}"
+        );
         // Zoom with Scroll Wheel on: swapped.
         let (pan, zoom) = gesture(vec![vec![wheel(notch, Modifiers::ALT)]], true, false);
-        assert!(near(pan, Vec2::new(0.0, 40.0)) && zoom == 1.0, "{pan:?} {zoom}");
+        assert!(
+            near(pan, Vec2::new(0.0, 40.0)) && zoom == 1.0,
+            "{pan:?} {zoom}"
+        );
         let (pan, zoom) = gesture(vec![vec![wheel(notch, Modifiers::NONE)]], true, false);
-        assert!(pan == Vec2::ZERO && (zoom - 1.1).abs() < 1e-4, "{pan:?} {zoom}");
+        assert!(
+            pan == Vec2::ZERO && (zoom - 1.1).abs() < 1e-4,
+            "{pan:?} {zoom}"
+        );
         let (pan, zoom) = gesture(vec![vec![wheel(notch, CTRL)]], true, false);
-        assert!(near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0, "⌘/Ctrl + wheel still scrolls sideways: {pan:?} {zoom}");
+        assert!(
+            near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0,
+            "⌘/Ctrl + wheel still scrolls sideways: {pan:?} {zoom}"
+        );
     }
 
     #[test]
     fn pinch_zooms_and_ctrl_wheel_pans() {
         // macOS trackpad and browsers: the pinch is its own event.
-        let (pan, zoom) = gesture(vec![vec![Event::Zoom(1.1)], vec![Event::Zoom(1.1)]], false, false);
-        assert!(pan == Vec2::ZERO && (zoom - 1.21).abs() < 1e-4, "{pan:?} {zoom}");
+        let (pan, zoom) = gesture(
+            vec![vec![Event::Zoom(1.1)], vec![Event::Zoom(1.1)]],
+            false,
+            false,
+        );
+        assert!(
+            pan == Vec2::ZERO && (zoom - 1.21).abs() < 1e-4,
+            "{pan:?} {zoom}"
+        );
         // Windows: a touchpad pinch is Ctrl + wheel in fractions of a notch, a mouse wheel whole notches.
-        let (pan, zoom) = gesture(vec![vec![wheel(Vec2::new(0.0, 0.25), CTRL)], vec![wheel(Vec2::new(0.0, 0.5), CTRL)]], false, true);
+        let (pan, zoom) = gesture(
+            vec![
+                vec![wheel(Vec2::new(0.0, 0.25), CTRL)],
+                vec![wheel(Vec2::new(0.0, 0.5), CTRL)],
+            ],
+            false,
+            true,
+        );
         let speed = egui::InputOptions::default().scroll_zoom_speed;
-        assert!(pan == Vec2::ZERO && (zoom - (speed * 40.0 * 0.75).exp()).abs() < 1e-4, "the pinch zooms: {pan:?} {zoom}");
+        assert!(
+            pan == Vec2::ZERO && (zoom - (speed * 40.0 * 0.75).exp()).abs() < 1e-4,
+            "the pinch zooms: {pan:?} {zoom}"
+        );
         let (pan, zoom) = gesture(vec![vec![wheel(Vec2::new(0.0, 1.0), CTRL)]], false, true);
-        assert!(near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0, "Ctrl + mouse wheel scrolls sideways: {pan:?} {zoom}");
+        assert!(
+            near(pan, Vec2::new(40.0, 0.0)) && zoom == 1.0,
+            "Ctrl + mouse wheel scrolls sideways: {pan:?} {zoom}"
+        );
     }
 
     #[test]
     fn linux_wayland_point_unit_pinch_keeps_mouse_notches_for_sideways_scroll() {
         // Some Wayland compositors report fractional Ctrl-wheel pinch steps in points
         // rather than line units. The delta must not be multiplied by notch twice.
-        let mut point = [Event::MouseWheel { unit: MouseWheelUnit::Point, delta: Vec2::new(0.0, 8.0), phase: TouchPhase::Move, modifiers: CTRL }];
-        assert_eq!(legacy_pinch_to_zoom(&mut point, 1.0, None, 40.0, 0.005), Some(1.0));
+        let mut point = [Event::MouseWheel {
+            unit: MouseWheelUnit::Point,
+            delta: Vec2::new(0.0, 8.0),
+            phase: TouchPhase::Move,
+            modifiers: CTRL,
+        }];
+        assert_eq!(
+            legacy_pinch_to_zoom(&mut point, 1.0, None, 40.0, 0.005),
+            Some(1.0)
+        );
         assert!(matches!(point[0], Event::Zoom(f) if (f - (8.0f32 * 0.005).exp()).abs() < 1e-5));
         let mut wheel_only = [wheel(Vec2::new(0.0, 1.0), CTRL)];
-        assert_eq!(legacy_pinch_to_zoom(&mut wheel_only, 2.0, Some(1.0), 40.0, 0.005), Some(1.0));
-        assert!(matches!(wheel_only[0], Event::MouseWheel { .. }), "whole mouse notch is not a pinch");
+        assert_eq!(
+            legacy_pinch_to_zoom(&mut wheel_only, 2.0, Some(1.0), 40.0, 0.005),
+            Some(1.0)
+        );
+        assert!(
+            matches!(wheel_only[0], Event::MouseWheel { .. }),
+            "whole mouse notch is not a pinch"
+        );
     }
 
     #[test]
@@ -364,14 +573,23 @@ mod tests {
         let mut ev = [wheel(Vec2::new(0.0, 0.5), CTRL)];
         let t = legacy_pinch_to_zoom(&mut ev, 1.0, None, 40.0, 0.005);
         assert_eq!(t, Some(1.0));
-        assert!(matches!(ev[0], Event::Zoom(f) if (f - 0.1f32.exp()).abs() < 1e-5), "{ev:?}");
+        assert!(
+            matches!(ev[0], Event::Zoom(f) if (f - 0.1f32.exp()).abs() < 1e-5),
+            "{ev:?}"
+        );
         // The next step lands on a whole notch: still the pinch.
         let mut ev = [wheel(Vec2::new(0.0, -1.0), CTRL)];
-        assert_eq!(legacy_pinch_to_zoom(&mut ev, 1.1, t, 40.0, 0.005), Some(1.1));
+        assert_eq!(
+            legacy_pinch_to_zoom(&mut ev, 1.1, t, 40.0, 0.005),
+            Some(1.1)
+        );
         assert!(matches!(ev[0], Event::Zoom(f) if f < 1.0), "{ev:?}");
         // Long after: a mouse wheel notch, untouched.
         let mut ev = [wheel(Vec2::new(0.0, -1.0), CTRL)];
-        assert_eq!(legacy_pinch_to_zoom(&mut ev, 2.0, Some(1.1), 40.0, 0.005), Some(1.1));
+        assert_eq!(
+            legacy_pinch_to_zoom(&mut ev, 2.0, Some(1.1), 40.0, 0.005),
+            Some(1.1)
+        );
         assert!(matches!(ev[0], Event::MouseWheel { .. }));
         // Without Ctrl nothing is a pinch.
         let mut ev = [wheel(Vec2::new(0.0, 0.5), Modifiers::NONE)];
@@ -385,8 +603,15 @@ mod tests {
             for alt in [false, true] {
                 for notch in [0.0, -1.0, f32::NAN, 40.0] {
                     for zd in [f32::NAN, 0.0, -1.0, f32::INFINITY, 1.0] {
-                        let i =
-                            Input { scroll: Vec2::new(0.0, s), raw: Vec2::new(0.0, s), zoom_delta: zd, alt, zoom_with_wheel: !alt, pinch_zooms: true, notch };
+                        let i = Input {
+                            scroll: Vec2::new(0.0, s),
+                            raw: Vec2::new(0.0, s),
+                            zoom_delta: zd,
+                            alt,
+                            zoom_with_wheel: !alt,
+                            pinch_zooms: true,
+                            notch,
+                        };
                         if let Some(Wheel::Zoom(f)) = classify(i) {
                             assert!(f.is_finite() && f > 0.0, "{f} from {i:?}");
                         }

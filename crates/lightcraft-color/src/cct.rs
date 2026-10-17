@@ -48,7 +48,11 @@ fn locus_uv(t: f64) -> (f64, f64) {
     if (MIN_K..=MAX_K).contains(&t) {
         return xy_to_uv(kim_xy(t));
     }
-    let (a, b) = if t < MIN_K { (MIN_K, MIN_K + 50.0) } else { (MAX_K - 500.0, MAX_K) };
+    let (a, b) = if t < MIN_K {
+        (MIN_K, MIN_K + 50.0)
+    } else {
+        (MAX_K - 500.0, MAX_K)
+    };
     let (ua, va) = xy_to_uv(kim_xy(a));
     let (ub, vb) = xy_to_uv(kim_xy(b));
     let (ma, mb, m) = (1e6 / a, 1e6 / b, 1e6 / t);
@@ -130,7 +134,9 @@ mod tests {
 
     #[test]
     fn roundtrip_temp_tint() {
-        for t in [2000.0, 2856.0, 4000.0, 5003.0, 6500.0, 9000.0, 15000.0, 30000.0, 50000.0] {
+        for t in [
+            2000.0, 2856.0, 4000.0, 5003.0, 6500.0, 9000.0, 15000.0, 30000.0, 50000.0,
+        ] {
             for tint in [-100.0, -20.0, 0.0, 35.0, 150.0] {
                 let (t2, tint2) = xy_to_temp_tint(temp_tint_to_xy(t, tint));
                 assert!((t2 - t).abs() / t < 0.01, "{t} {tint} -> {t2}");
@@ -166,6 +172,9 @@ mod tests {
         // RGB of the source white in the space:
         let rgb = sp.from_xyz().apply(src.to_xyz());
         let out = m.apply(rgb);
-        assert!((out[0] - out[1]).abs() < 1e-6 && (out[1] - out[2]).abs() < 1e-6, "{out:?}");
+        assert!(
+            (out[0] - out[1]).abs() < 1e-6 && (out[1] - out[2]).abs() < 1e-6,
+            "{out:?}"
+        );
     }
 }

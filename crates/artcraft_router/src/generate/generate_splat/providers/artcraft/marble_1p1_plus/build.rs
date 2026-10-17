@@ -7,8 +7,12 @@ use crate::generate::generate_splat::providers::artcraft::marble_1p1_plus::reque
 use crate::generate::generate_splat::splat_generation_draft_or_request::SplatGenerationDraftOrRequest;
 use crate::generate::generate_splat::splat_generation_request::SplatGenerationRequest;
 
-pub fn build_artcraft_marble_1p1_plus(builder: GenerateSplatRequestBuilder) -> Result<SplatGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_splat_request(builder, CommonSplatModelEnum::Marble1p1Plus)?;
-  let state = ArtcraftMarble1p1PlusRequestState { request };
-  Ok(SplatGenerationDraftOrRequest::Request(SplatGenerationRequest::ArtcraftMarble1p1Plus(state)))
+pub fn build_artcraft_marble_1p1_plus(
+    builder: GenerateSplatRequestBuilder,
+) -> Result<SplatGenerationDraftOrRequest, ArtcraftRouterError> {
+    let request = build_artcraft_omni_splat_request(builder, CommonSplatModelEnum::Marble1p1Plus)?;
+    let state = ArtcraftMarble1p1PlusRequestState { request };
+    Ok(SplatGenerationDraftOrRequest::Request(
+        SplatGenerationRequest::ArtcraftMarble1p1Plus(state),
+    ))
 }

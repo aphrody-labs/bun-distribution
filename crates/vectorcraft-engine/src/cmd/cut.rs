@@ -85,7 +85,14 @@ impl Axis {
         let (x, y) = (self.d.x, self.d.y);
         let (a, b, d) = (2.0 * x * x - 1.0, 2.0 * x * y, 2.0 * y * y - 1.0);
         let p = self.p;
-        Affine::new([a, b, b, d, p.x - (a * p.x + b * p.y), p.y - (b * p.x + d * p.y)])
+        Affine::new([
+            a,
+            b,
+            b,
+            d,
+            p.x - (a * p.x + b * p.y),
+            p.y - (b * p.x + d * p.y),
+        ])
     }
 
     /// A polygon covering everything in `around` on one side of the line (`sign` > 0: where
@@ -99,12 +106,16 @@ impl Axis {
 }
 
 fn polygon(pts: &[Point]) -> PathData {
-    PathData::single(SubPath::new(pts.iter().map(|p| Anchor::corner(*p)).collect(), true))
+    PathData::single(SubPath::new(
+        pts.iter().map(|p| Anchor::corner(*p)).collect(),
+        true,
+    ))
 }
 
 /// A point param that must be finite and within [`MAX_COORD`].
 fn point_req(p: &Value, key: &str, cmd: &str) -> Result<Point> {
-    let q = point_param(p, key).ok_or_else(|| bad(cmd, format!("missing point `{key}` ([x, y])")))?;
+    let q =
+        point_param(p, key).ok_or_else(|| bad(cmd, format!("missing point `{key}` ([x, y])")))?;
     if q.x.abs() > MAX_COORD || q.y.abs() > MAX_COORD {
         return Err(bad(cmd, format!("`{key}` is out of range")));
     }
@@ -116,8 +127,15 @@ fn point_req(p: &Value, key: &str, cmd: &str) -> Result<Point> {
 fn cut_targets(s: &Session) -> Result<Vec<NodeId>> {
     fn visit(n: &Node, out: &mut Vec<NodeId>) {
         match &n.kind {
-            NodeKind::Path { guide: false, clipping: false, .. } | NodeKind::Compound { .. } => out.push(n.id),
-            NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => children.iter().for_each(|c| visit(c, out)),
+            NodeKind::Path {
+                guide: false,
+                clipping: false,
+                ..
+            }
+            | NodeKind::Compound { .. } => out.push(n.id),
+            NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => {
+                children.iter().for_each(|c| visit(c, out))
+            }
             _ => {}
         }
     }
@@ -138,7 +156,12 @@ fn cut_targets(s: &Session) -> Result<Vec<NodeId>> {
 type Plan = Vec<(NodeId, Vec<PathData>)>;
 
 /// Run `cut` on every target's geometry (`None`: unchanged) and apply the result as one undo step.
-fn run_cut(s: &mut Session, cmd: &str, label: &str, cut: &dyn Fn(&PathData, FillRule) -> Option<Vec<PathData>>) -> Result<Value> {
+fn run_cut(
+    s: &mut Session,
+    cmd: &str,
+    label: &str,
+    cut: &dyn Fn(&PathData, FillRule) -> Option<Vec<PathData>>,
+) -> Result<Value> {
     let targets = cut_targets(s)?;
     if targets.is_empty() {
         return Err(bad(cmd, "select paths or compound paths"));
@@ -146,8 +169,15 @@ fn run_cut(s: &mut Session, cmd: &str, label: &str, cut: &dyn Fn(&PathData, Fill
     let doc = &s.doc()?.doc;
     let mut plan: Plan = vec![];
     for id in targets {
-        let Some((pd, rule)) = doc.node(id).and_then(node_path) else { continue };
-        if pd.subpaths.iter().flat_map(|sp| &sp.anchors).any(|a| !(a.p.x.is_finite() && a.p.y.is_finite())) {
+        let Some((pd, rule)) = doc.node(id).and_then(node_path) else {
+            continue;
+        };
+        if pd
+            .subpaths
+            .iter()
+            .flat_map(|sp| &sp.anchors)
+            .any(|a| !(a.p.x.is_finite() && a.p.y.is_finite()))
+        {
             return Err(bad(cmd, "paths contain invalid coordinates"));
         }
         if let Some(pieces) = cut(&pd, rule) {
@@ -185,14 +215,19 @@ fn reach(pd: &PathData) -> Rect {
 /// `pd ∩ region`, dropping slivers.
 fn intersect(pd: &PathData, rule: FillRule, region: &PathData) -> PathData {
     let r = po::boolean(pd, rule, region, FillRule::NonZero, BoolOp::Intersect);
-    if po::area(&r, FillRule::NonZero) <= 1e-6 { PathData::default() } else { r }
+    if po::area(&r, FillRule::NonZero) <= 1e-6 {
+        PathData::default()
+    } else {
+        r
+    }
 }
 
 // ---------- Line Cut ----------
 
 fn line_cut(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "path.lineCut";
-    let axis = Axis::through(point_req(p, "from", C)?, point_req(p, "to", C)?).ok_or_else(|| bad(C, "`from` and `to` must differ"))?;
+    let axis = Axis::through(point_req(p, "from", C)?, point_req(p, "to", C)?)
+        .ok_or_else(|| bad(C, "`from` and `to` must differ"))?;
     run_cut(s, C, "Line Cut", &|pd, rule| split_by_line(pd, rule, &axis))
 }
 
@@ -213,7 +248,9 @@ fn split_by_line(pd: &PathData, rule: FillRule, axis: &Axis) -> Option<Vec<PathD
     Some(if pd.subpaths.len() == 1 {
         a.into_iter().chain(b).collect()
     } else {
-        vec![PathData::new(a.into_iter().chain(b).flat_map(|p| p.subpaths).collect())]
+        vec![PathData::new(
+            a.into_iter().chain(b).flat_map(|p| p.subpaths).collect(),
+        )]
     })
 }
 
@@ -224,12 +261,15 @@ fn rect_cut(s: &mut Session, p: &Value) -> Result<Value> {
     let rect = match p.get("rect") {
         Some(v) => {
             // All four or nothing: a malformed entry dropped would cut a different region.
-            let [x, y, w, h] = finite_numbers(v).ok_or_else(|| bad(C, "rect must be [x, y, width, height]"))?;
+            let [x, y, w, h] =
+                finite_numbers(v).ok_or_else(|| bad(C, "rect must be [x, y, width, height]"))?;
             Rect::new(x, y, x + w, y + h).abs()
         }
         None => Rect::from_points(point_req(p, "from", C)?, point_req(p, "to", C)?),
     };
-    let finite = [rect.x0, rect.y0, rect.x1, rect.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_COORD);
+    let finite = [rect.x0, rect.y0, rect.x1, rect.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= MAX_COORD);
     if !finite || rect.width() <= 1e-9 || rect.height() <= 1e-9 {
         return Err(bad(C, "the rectangle must have a width and a height"));
     }
@@ -243,16 +283,28 @@ fn crop(pd: &PathData, rule: FillRule, rect: Rect) -> Option<Vec<PathData>> {
         return None;
     }
     if pd.is_closed() {
-        let r =
-            intersect(pd, rule, &polygon(&[rect.origin(), Point::new(rect.x1, rect.y0), Point::new(rect.x1, rect.y1), Point::new(rect.x0, rect.y1)]));
+        let r = intersect(
+            pd,
+            rule,
+            &polygon(&[
+                rect.origin(),
+                Point::new(rect.x1, rect.y0),
+                Point::new(rect.x1, rect.y1),
+                Point::new(rect.x0, rect.y1),
+            ]),
+        );
         return Some(if r.is_empty() { vec![] } else { vec![r] });
     }
     let inside = rect.inflate(1e-9, 1e-9);
-    let pieces = erase_outline(pd, &|q| !(q.x >= inside.x0 && q.x <= inside.x1 && q.y >= inside.y0 && q.y <= inside.y1))?;
+    let pieces = erase_outline(pd, &|q| {
+        !(q.x >= inside.x0 && q.x <= inside.x1 && q.y >= inside.y0 && q.y <= inside.y1)
+    })?;
     Some(if pd.subpaths.len() == 1 || pieces.is_empty() {
         pieces
     } else {
-        vec![PathData::new(pieces.into_iter().flat_map(|p| p.subpaths).collect())]
+        vec![PathData::new(
+            pieces.into_iter().flat_map(|p| p.subpaths).collect(),
+        )]
     })
 }
 
@@ -266,7 +318,11 @@ fn mirror_cut(s: &mut Session, p: &Value) -> Result<Value> {
             Some(_) => point_req(p, "from", C),
             None => {
                 let roots = selected_roots(s)?;
-                let b = s.doc()?.doc.bounds_of(&roots, false).ok_or_else(|| bad(C, "the selection has no bounds"))?;
+                let b = s
+                    .doc()?
+                    .doc
+                    .bounds_of(&roots, false)
+                    .ok_or_else(|| bad(C, "the selection has no bounds"))?;
                 Ok(b.center())
             }
         }
@@ -274,23 +330,41 @@ fn mirror_cut(s: &mut Session, p: &Value) -> Result<Value> {
     let axis = match kind {
         "vertical" => {
             let a = at()?;
-            Axis { p: a, d: Vec2::new(0.0, 1.0) }
+            Axis {
+                p: a,
+                d: Vec2::new(0.0, 1.0),
+            }
         }
         "horizontal" => {
             let a = at()?;
-            Axis { p: a, d: Vec2::new(1.0, 0.0) }
+            Axis {
+                p: a,
+                d: Vec2::new(1.0, 0.0),
+            }
         }
-        "free" => Axis::through(point_req(p, "from", C)?, point_req(p, "to", C)?).ok_or_else(|| bad(C, "`from` and `to` must differ"))?,
-        other => return Err(bad(C, format!("unknown axis `{other}` (vertical|horizontal|free)"))),
+        "free" => Axis::through(point_req(p, "from", C)?, point_req(p, "to", C)?)
+            .ok_or_else(|| bad(C, "`from` and `to` must differ"))?,
+        other => {
+            return Err(bad(
+                C,
+                format!("unknown axis `{other}` (vertical|horizontal|free)"),
+            ));
+        }
     };
     let sign = keep_sign(&axis, str_param(p, "keep")).map_err(|e| bad(C, e))?;
-    run_cut(s, C, "Mirror & Cut", &|pd, rule| Some(mirror(pd, rule, &axis, sign)))
+    run_cut(s, C, "Mirror & Cut", &|pd, rule| {
+        Some(mirror(pd, rule, &axis, sign))
+    })
 }
 
 /// The sign of [`Axis::side`] on the side `keep` names (default: left, or top when the axis runs
 /// more across than down).
 fn keep_sign(axis: &Axis, keep: Option<&str>) -> std::result::Result<f64, String> {
-    let keep = keep.unwrap_or(if axis.d.x.abs() > axis.d.y.abs() { "top" } else { "left" });
+    let keep = keep.unwrap_or(if axis.d.x.abs() > axis.d.y.abs() {
+        "top"
+    } else {
+        "left"
+    });
     let toward = match keep {
         "left" => Vec2::new(-1.0, 0.0),
         "right" => Vec2::new(1.0, 0.0),
@@ -313,15 +387,32 @@ fn mirror(pd: &PathData, rule: FillRule, axis: &Axis, sign: f64) -> Vec<PathData
         if kept.is_empty() {
             return vec![];
         }
-        let joined = po::boolean(&kept, FillRule::NonZero, &kept.transformed(m), FillRule::NonZero, BoolOp::Union);
-        return if joined.is_empty() { vec![] } else { vec![joined] };
+        let joined = po::boolean(
+            &kept,
+            FillRule::NonZero,
+            &kept.transformed(m),
+            FillRule::NonZero,
+            BoolOp::Union,
+        );
+        return if joined.is_empty() {
+            vec![]
+        } else {
+            vec![joined]
+        };
     }
     let kept = match erase_outline(pd, &|q| axis.side(q) * sign < 0.0) {
         Some(pieces) => pieces.into_iter().flat_map(|p| p.subpaths).collect(),
         None => pd.subpaths.clone(),
     };
-    let subs: Vec<SubPath> = kept.iter().flat_map(|sp| mirror_open(sp, axis, m)).collect();
-    if subs.is_empty() { vec![] } else { vec![PathData::new(subs)] }
+    let subs: Vec<SubPath> = kept
+        .iter()
+        .flat_map(|sp| mirror_open(sp, axis, m))
+        .collect();
+    if subs.is_empty() {
+        vec![]
+    } else {
+        vec![PathData::new(subs)]
+    }
 }
 
 /// An open run and its reflection, joined where its ends touch the axis (closed when both do);
@@ -330,18 +421,30 @@ fn mirror_open(sp: &SubPath, axis: &Axis, m: Affine) -> Vec<SubPath> {
     let on = |a: Option<&Anchor>| a.is_some_and(|a| axis.side(a.p).abs() <= AXIS_TOL);
     let (start_on, end_on) = (on(sp.anchors.first()), on(sp.anchors.last()));
     if sp.closed || sp.anchors.len() < 2 || !(start_on || end_on) {
-        return vec![sp.clone(), SubPath::new(sp.anchors.iter().map(|a| a.transform(m)).collect(), sp.closed)];
+        return vec![
+            sp.clone(),
+            SubPath::new(
+                sp.anchors.iter().map(|a| a.transform(m)).collect(),
+                sp.closed,
+            ),
+        ];
     }
     // The run ends on the axis; the reflection comes back from there.
     let mut run = sp.clone();
     if !end_on {
         run.reverse();
     }
-    let Some((last, body)) = run.anchors.split_last() else { return vec![] };
+    let Some((last, body)) = run.anchors.split_last() else {
+        return vec![];
+    };
     let q = axis.project(last.p);
     let mut anchors = body.to_vec();
     anchors.push(Anchor::with_handles(q, last.h_in, m * last.h_in));
-    anchors.extend(body.iter().rev().map(|a| Anchor::with_handles(m * a.p, m * a.h_out, m * a.h_in)));
+    anchors.extend(
+        body.iter()
+            .rev()
+            .map(|a| Anchor::with_handles(m * a.p, m * a.h_out, m * a.h_in)),
+    );
     let closed = start_on && end_on && anchors.len() > 2;
     if closed && let (Some(first), Some(back)) = (anchors.first().copied(), anchors.pop()) {
         // The start and its reflection meet on the axis: one closed shape.
@@ -360,20 +463,32 @@ mod tests {
     fn reflection_maps_across_the_axis() {
         let a = Axis::through(Point::new(0.0, 0.0), Point::new(10.0, 10.0)).unwrap();
         let q = a.reflection() * Point::new(5.0, 0.0);
-        assert!((q.x - 0.0).abs() < 1e-9 && (q.y - 5.0).abs() < 1e-9, "{q:?}");
-        let v = Axis { p: Point::new(100.0, 0.0), d: Vec2::new(0.0, 1.0) };
+        assert!(
+            (q.x - 0.0).abs() < 1e-9 && (q.y - 5.0).abs() < 1e-9,
+            "{q:?}"
+        );
+        let v = Axis {
+            p: Point::new(100.0, 0.0),
+            d: Vec2::new(0.0, 1.0),
+        };
         let q = v.reflection() * Point::new(90.0, 7.0);
         assert!((q.x - 110.0).abs() < 1e-9 && (q.y - 7.0).abs() < 1e-9);
     }
 
     #[test]
     fn keep_names_a_side_of_the_axis() {
-        let v = Axis { p: Point::ZERO, d: Vec2::new(0.0, 1.0) };
+        let v = Axis {
+            p: Point::ZERO,
+            d: Vec2::new(0.0, 1.0),
+        };
         let left = keep_sign(&v, Some("left")).unwrap();
         assert!(v.side(Point::new(-5.0, 0.0)) * left > 0.0);
         assert_eq!(keep_sign(&v, None).unwrap(), left);
         assert!(keep_sign(&v, Some("top")).is_err());
-        let h = Axis { p: Point::ZERO, d: Vec2::new(1.0, 0.0) };
+        let h = Axis {
+            p: Point::ZERO,
+            d: Vec2::new(1.0, 0.0),
+        };
         let top = keep_sign(&h, None).unwrap();
         assert!(h.side(Point::new(0.0, -5.0)) * top > 0.0);
     }
@@ -381,9 +496,16 @@ mod tests {
     #[test]
     fn open_half_mirrors_into_a_closed_shape() {
         // An arch from the axis and back to it: its reflection closes it.
-        let axis = Axis { p: Point::new(50.0, 0.0), d: Vec2::new(0.0, 1.0) };
+        let axis = Axis {
+            p: Point::new(50.0, 0.0),
+            d: Vec2::new(0.0, 1.0),
+        };
         let sp = SubPath::new(
-            vec![Anchor::corner(Point::new(50.0, 0.0)), Anchor::corner(Point::new(10.0, 50.0)), Anchor::corner(Point::new(50.0, 100.0))],
+            vec![
+                Anchor::corner(Point::new(50.0, 0.0)),
+                Anchor::corner(Point::new(10.0, 50.0)),
+                Anchor::corner(Point::new(50.0, 100.0)),
+            ],
             false,
         );
         let out = mirror_open(&sp, &axis, axis.reflection());
@@ -392,8 +514,17 @@ mod tests {
         assert_eq!(out[0].anchors.len(), 4);
         assert!(out[0].anchors.iter().any(|a| (a.p.x - 90.0).abs() < 1e-9));
         // One end on the axis: one open path through it.
-        let sp = SubPath::new(vec![Anchor::corner(Point::new(10.0, 0.0)), Anchor::corner(Point::new(50.0, 40.0))], false);
+        let sp = SubPath::new(
+            vec![
+                Anchor::corner(Point::new(10.0, 0.0)),
+                Anchor::corner(Point::new(50.0, 40.0)),
+            ],
+            false,
+        );
         let out = mirror_open(&sp, &axis, axis.reflection());
-        assert_eq!((out.len(), out[0].closed, out[0].anchors.len()), (1, false, 3));
+        assert_eq!(
+            (out.len(), out[0].closed, out[0].anchors.len()),
+            (1, false, 3)
+        );
     }
 }

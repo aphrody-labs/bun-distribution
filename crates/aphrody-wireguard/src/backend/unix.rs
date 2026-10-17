@@ -98,7 +98,12 @@ impl Handle {
     }
 
     pub(super) fn dns(&self, cfg: &Config) -> Result<()> {
-        let search: Vec<&str> = cfg.interface.dns_search.iter().map(String::as_str).collect();
+        let search: Vec<&str> = cfg
+            .interface
+            .dns_search
+            .iter()
+            .map(String::as_str)
+            .collect();
         let dns = DnsConfig {
             servers: &cfg.interface.dns,
             search_domains: &search,
@@ -110,7 +115,10 @@ impl Handle {
 
     pub(super) fn status(&self) -> Result<InterfaceStatus> {
         let host = with_api!(self, a => a.read_interface_data().map_err(err))?;
-        let public_key = host.private_key.as_ref().map(|k| Key(k.as_array()).public());
+        let public_key = host
+            .private_key
+            .as_ref()
+            .map(|k| Key(k.as_array()).public());
         let peers = host
             .peers
             .values()
@@ -141,7 +149,10 @@ impl Handle {
 
     pub(super) fn patch_peer(&self, patch: &PeerPatch) -> Result<()> {
         let host = with_api!(self, a => a.read_interface_data().map_err(err))?;
-        let current = host.peers.values().find(|p| p.public_key.as_array() == patch.public_key.0);
+        let current = host
+            .peers
+            .values()
+            .find(|p| p.public_key.as_array() == patch.public_key.0);
         let current = current.map(|p| Peer {
             public_key: Key(p.public_key.as_array()),
             preshared_key: p.preshared_key.as_ref().map(|key| Key(key.as_array())),

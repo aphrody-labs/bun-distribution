@@ -20,8 +20,8 @@ use openssl::ssl::{
 };
 
 use crate::hle::result::ResultCode;
-use crate::internal_network::sockets::SocketBase;
 use crate::internal_network::network::Errno as NetworkErrno;
+use crate::internal_network::sockets::SocketBase;
 
 use super::ssl_backend::{SslConnectionBackend, RESULT_INTERNAL_ERROR, RESULT_WOULD_BLOCK};
 
@@ -89,11 +89,16 @@ impl IoRead for SocketAdapter {
         let (actual, error) = self.socket.lock().unwrap().recv(0, buf);
         match error {
             NetworkErrno::Success => {
-                if actual == 0 { self.got_read_eof = true; }
+                if actual == 0 {
+                    self.got_read_eof = true;
+                }
                 Ok(actual as usize)
             }
             NetworkErrno::Again => Err(io::ErrorKind::WouldBlock.into()),
-            _ => Err(io::Error::new(io::ErrorKind::Other, format!("Socket recv returned {error:?}"))),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Socket recv returned {error:?}"),
+            )),
         }
     }
 }
@@ -104,7 +109,10 @@ impl IoWrite for SocketAdapter {
         match error {
             NetworkErrno::Success => Ok(actual as usize),
             NetworkErrno::Again => Err(io::ErrorKind::WouldBlock.into()),
-            _ => Err(io::Error::new(io::ErrorKind::Other, format!("Socket send returned {error:?}"))),
+            _ => Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Socket send returned {error:?}"),
+            )),
         }
     }
 
@@ -152,15 +160,22 @@ impl SslConnectionBackendOpenSsl {
 
     // Same decision table as upstream HandleReturn, including WANT_WRITE
     // during a read and protocol errors (which must not be reported as EOF).
-    fn handle_return(&self, result: Result<usize, openssl::ssl::Error>) -> Result<usize, ResultCode> {
+    fn handle_return(
+        &self,
+        result: Result<usize, openssl::ssl::Error>,
+    ) -> Result<usize, ResultCode> {
         use openssl::ssl::ErrorCode;
         match result {
             Ok(actual) => Ok(actual),
             Err(error) => match error.code() {
                 ErrorCode::ZERO_RETURN => Ok(0),
                 ErrorCode::WANT_READ | ErrorCode::WANT_WRITE => Err(RESULT_WOULD_BLOCK),
-                ErrorCode::SYSCALL if matches!(self.stream_state.as_ref(),
-                    Some(TlsStreamState::Connected(stream)) if stream.get_ref().got_read_eof) => Ok(0),
+                ErrorCode::SYSCALL
+                    if matches!(self.stream_state.as_ref(),
+                    Some(TlsStreamState::Connected(stream)) if stream.get_ref().got_read_eof) =>
+                {
+                    Ok(0)
+                }
                 _ => {
                     log::error!("SSL I/O failed: {error}");
                     Err(RESULT_INTERNAL_ERROR)
@@ -336,14 +351,20 @@ pub fn create_ssl_connection_backend() -> Result<Box<dyn SslConnectionBackend>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::TcpStream;
     use crate::internal_network::sockets::Socket;
+    use std::net::TcpStream;
 
     fn shared_tcp_socket(stream: TcpStream) -> Arc<Mutex<Box<dyn SocketBase>>> {
         #[cfg(unix)]
-        let handle = { use std::os::fd::IntoRawFd; stream.into_raw_fd() };
+        let handle = {
+            use std::os::fd::IntoRawFd;
+            stream.into_raw_fd()
+        };
         #[cfg(windows)]
-        let handle = { use std::os::windows::io::IntoRawSocket; stream.into_raw_socket() as usize };
+        let handle = {
+            use std::os::windows::io::IntoRawSocket;
+            stream.into_raw_socket() as usize
+        };
         Arc::new(Mutex::new(Box::new(Socket::from_fd(handle))))
     }
 
@@ -352,16 +373,30 @@ mod tests {
         use std::net::TcpListener;
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
-        client.set_read_timeout(Some(std::time::Duration::from_secs(2))).unwrap();
+        client
+            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
+            .unwrap();
         let (peer, _) = listener.accept().unwrap();
         let socket = shared_tcp_socket(client);
         let weak = Arc::downgrade(&socket);
-        let mut adapter = SocketAdapter { socket: Arc::clone(&socket), got_read_eof: false };
-        assert_eq!(socket.lock().unwrap().set_non_block(true), NetworkErrno::Success);
-        assert_eq!(adapter.read(&mut [0; 1]).unwrap_err().kind(), io::ErrorKind::WouldBlock);
+        let mut adapter = SocketAdapter {
+            socket: Arc::clone(&socket),
+            got_read_eof: false,
+        };
+        assert_eq!(
+            socket.lock().unwrap().set_non_block(true),
+            NetworkErrno::Success
+        );
+        assert_eq!(
+            adapter.read(&mut [0; 1]).unwrap_err().kind(),
+            io::ErrorKind::WouldBlock
+        );
         assert!(!adapter.got_read_eof);
         peer.shutdown(std::net::Shutdown::Write).unwrap();
-        assert_eq!(socket.lock().unwrap().set_non_block(false), NetworkErrno::Success);
+        assert_eq!(
+            socket.lock().unwrap().set_non_block(false),
+            NetworkErrno::Success
+        );
         assert_eq!(adapter.read(&mut [0; 1]).unwrap(), 0);
         assert!(adapter.got_read_eof);
         assert_eq!(socket.lock().unwrap().close(), NetworkErrno::Success);
@@ -379,7 +414,10 @@ mod tests {
         let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
         let (_peer, _) = listener.accept().unwrap();
         let socket = shared_tcp_socket(client);
-        assert_eq!(socket.lock().unwrap().set_non_block(true), NetworkErrno::Success);
+        assert_eq!(
+            socket.lock().unwrap().set_non_block(true),
+            NetworkErrno::Success
+        );
         let mut backend = SslConnectionBackendOpenSsl::new().unwrap();
         backend.set_socket(Arc::clone(&socket));
         backend.set_host_name("localhost");
@@ -419,8 +457,10 @@ mod tests {
         cert.set_subject_name(&name).unwrap();
         cert.set_issuer_name(&name).unwrap();
         cert.set_pubkey(&key).unwrap();
-        cert.set_not_before(&Asn1Time::days_from_now(0).unwrap()).unwrap();
-        cert.set_not_after(&Asn1Time::days_from_now(1).unwrap()).unwrap();
+        cert.set_not_before(&Asn1Time::days_from_now(0).unwrap())
+            .unwrap();
+        cert.set_not_after(&Asn1Time::days_from_now(1).unwrap())
+            .unwrap();
         cert.sign(&key, MessageDigest::sha256()).unwrap();
         let mut acceptor = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
         acceptor.set_private_key(&key).unwrap();
@@ -430,8 +470,12 @@ mod tests {
         let socket = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
         let (peer, _) = listener.accept().unwrap();
         for stream in [&socket, &peer] {
-            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-            stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
         }
         let server = std::thread::spawn(move || {
             let mut stream = acceptor.accept(peer).unwrap();
@@ -442,7 +486,10 @@ mod tests {
             assert_eq!(ack, [1]);
             // Deliberately violate TLS framing after a valid exchange. This
             // must be an SSL protocol error, not a successful EOF.
-            stream.get_mut().write_all(b"HTTP/1.1 200 OK\r\n\r\n").unwrap();
+            stream
+                .get_mut()
+                .write_all(b"HTTP/1.1 200 OK\r\n\r\n")
+                .unwrap();
         });
         let shared_socket = shared_tcp_socket(socket);
         backend.set_socket(Arc::clone(&shared_socket));
@@ -453,7 +500,9 @@ mod tests {
         let mut config = backend.connector.configure().unwrap();
         // The local fixture is self-signed; production verification is unchanged.
         config.set_verify(SslVerifyMode::NONE);
-        let stream = config.connect("localhost", adapter).unwrap_or_else(|_| panic!("local TLS handshake failed"));
+        let stream = config
+            .connect("localhost", adapter)
+            .unwrap_or_else(|_| panic!("local TLS handshake failed"));
         backend.stream_state = Some(TlsStreamState::Connected(stream));
         let mut first = [0];
         assert_eq!(backend.read(&mut first).unwrap(), 1);

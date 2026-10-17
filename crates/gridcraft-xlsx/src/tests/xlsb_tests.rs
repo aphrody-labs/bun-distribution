@@ -99,7 +99,14 @@ fn sst() -> Vec<u8> {
     out.extend(record(160, &[]));
     out
 }
-fn package(book: &[u8], sheet: &[u8], strings: &[u8], roots: &str, rels: &str, types: &str) -> Vec<u8> {
+fn package(
+    book: &[u8],
+    sheet: &[u8],
+    strings: &[u8],
+    roots: &str,
+    rels: &str,
+    types: &str,
+) -> Vec<u8> {
     make_zip(&[
         ("[Content_Types].xml", types.as_bytes()),
         ("_rels/.rels", roots.as_bytes()),
@@ -167,11 +174,21 @@ fn xlsb_scalar_caches_rk_unicode_visibility_and_epochs_survive_xlsx_save() {
         let bytes = package(&book(epoch), &sheet, &sst(), ROOT, RELS, TYPES);
         assert_eq!(sniff(&bytes), Format::Xlsb);
         let (wb, report) = read_xlsb(&bytes).unwrap();
-        assert_eq!(wb.date_system, if epoch { DateSystem::D1904 } else { DateSystem::D1900 });
+        assert_eq!(
+            wb.date_system,
+            if epoch {
+                DateSystem::D1904
+            } else {
+                DateSystem::D1900
+            }
+        );
         assert_eq!(wb.sheets.len(), 2);
         assert_eq!(wb.sheets[1].visibility, Visibility::Hidden);
         assert_eq!(wb.sheets[0].cells.len(), 14);
-        assert_eq!(wb.sheets[0].merges, vec![RangeRef::new(CellRef::new(5, 0), CellRef::new(6, 1))]);
+        assert_eq!(
+            wb.sheets[0].merges,
+            vec![RangeRef::new(CellRef::new(5, 0), CellRef::new(6, 1))]
+        );
         assert!(report.warnings.iter().any(|w| w.contains("will not recalculate") && w.contains("may display as numbers")));
         for (col, expected) in expected.iter().enumerate() {
             assert_eq!(&wb.sheets[0].value(CellRef::new(2, col as u32)), expected);
@@ -180,7 +197,10 @@ fn xlsb_scalar_caches_rk_unicode_visibility_and_epochs_survive_xlsx_save() {
         let (roundtrip, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
         assert_eq!(roundtrip.date_system, wb.date_system);
         for (col, expected) in expected.iter().enumerate() {
-            assert_eq!(&roundtrip.sheets[0].value(CellRef::new(2, col as u32)), expected);
+            assert_eq!(
+                &roundtrip.sheets[0].value(CellRef::new(2, col as u32)),
+                expected
+            );
         }
     }
 }
@@ -200,7 +220,12 @@ fn xlsb_extension_blocks_are_skipped_with_strict_boundaries_and_record_framing()
     let (wb, report) = read_xlsb(&file(&worksheet(&data, &[]))).unwrap();
     assert_eq!(wb.sheets[0].cells.len(), 2);
     assert_eq!(wb.sheets[0].value(CellRef::new(0, 1)), Value::Number(2.0));
-    assert!(report.warnings.iter().any(|w| w.contains("blocks were skipped")));
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("blocks were skipped"))
+    );
     for bad in [
         vec![0x81],
         vec![0x81, 0],
@@ -214,7 +239,12 @@ fn xlsb_extension_blocks_are_skipped_with_strict_boundaries_and_record_framing()
         assert!(read_xlsb(&file(&worksheet(&bad, &[]))).is_err(), "{bad:?}");
     }
     let nested = record(35, &[0; 4]).repeat(65);
-    assert!(read_xlsb(&file(&worksheet(&nested, &[]))).unwrap_err().to_string().contains("nested too deeply"));
+    assert!(
+        read_xlsb(&file(&worksheet(&nested, &[])))
+            .unwrap_err()
+            .to_string()
+            .contains("nested too deeply")
+    );
     let mut missing_end = worksheet(&[], &[]);
     missing_end.truncate(missing_end.len() - record(130, &[]).len());
     assert!(read_xlsb(&file(&missing_end)).is_err());
@@ -239,44 +269,122 @@ fn xlsb_bad_values_strings_and_coordinates_fail_without_silent_data_loss() {
     }
     assert!(read_xlsb(&file(&worksheet(&cell(5, 0, &1.0f64.to_le_bytes()), &[]))).is_err());
     assert!(read_xlsb(&file(&worksheet(&row(1048576), &[]))).is_err());
-    let repeated = [row(0), cell(5, 0, &1.0f64.to_le_bytes()), cell(5, 0, &2.0f64.to_le_bytes())].concat();
+    let repeated = [
+        row(0),
+        cell(5, 0, &1.0f64.to_le_bytes()),
+        cell(5, 0, &2.0f64.to_le_bytes()),
+    ]
+    .concat();
     assert!(read_xlsb(&file(&worksheet(&repeated, &[]))).is_err());
     let mut formula_payload = [0u8; 18].to_vec(); // Cell header + f64 cache + flags, but no parsed-formula structure.
-    assert!(read_xlsb(&file(&worksheet(&[row(0), record(9, &formula_payload)].concat(), &[]))).is_err());
+    assert!(
+        read_xlsb(&file(&worksheet(
+            &[row(0), record(9, &formula_payload)].concat(),
+            &[]
+        )))
+        .is_err()
+    );
     formula_payload.extend(0u32.to_le_bytes()); // Invalid zero token count.
-    assert!(read_xlsb(&file(&worksheet(&[row(0), record(9, &formula_payload)].concat(), &[]))).is_err());
+    assert!(
+        read_xlsb(&file(&worksheet(
+            &[row(0), record(9, &formula_payload)].concat(),
+            &[]
+        )))
+        .is_err()
+    );
     let bad_sst = [record(159, &[1, 0, 0, 0, 2, 0, 0, 0]), record(160, &[])].concat();
-    assert!(read_xlsb(&package(&book(false), &worksheet(&[], &[]), &bad_sst, ROOT, RELS, TYPES)).is_err());
+    assert!(
+        read_xlsb(&package(
+            &book(false),
+            &worksheet(&[], &[]),
+            &bad_sst,
+            ROOT,
+            RELS,
+            TYPES
+        ))
+        .is_err()
+    );
 }
 
 #[test]
 fn xlsb_requires_internal_typed_relationships_and_sniffs_only_root_workbook() {
     let sheet = worksheet(&[], &[]);
     for (roots, rels, types) in [
-        (ROOT.replace("officeDocument\"", "wrong\""), RELS.to_owned(), TYPES.to_owned()),
-        (ROOT.replace("Target=", "TargetMode=\"External\" Target="), RELS.to_owned(), TYPES.to_owned()),
-        (ROOT.to_owned(), RELS.replace("Target=\"../data/one.bin\"", "Target=\"missing.bin\""), TYPES.to_owned()),
         (
-            ROOT.to_owned(),
-            RELS.replace("Target=\"../data/one.bin\"", "TargetMode=\"External\" Target=\"https://example.com/data.bin\""),
+            ROOT.replace("officeDocument\"", "wrong\""),
+            RELS.to_owned(),
+            TYPES.to_owned(),
+        ),
+        (
+            ROOT.replace("Target=", "TargetMode=\"External\" Target="),
+            RELS.to_owned(),
             TYPES.to_owned(),
         ),
         (
             ROOT.to_owned(),
-            RELS.replace("Target=\"../text/strings.bin\"", "TargetMode=\"External\" Target=\"https://example.com/strings.bin\""),
+            RELS.replace("Target=\"../data/one.bin\"", "Target=\"missing.bin\""),
             TYPES.to_owned(),
         ),
-        (ROOT.to_owned(), RELS.to_owned(), TYPES.replace("application/vnd.ms-excel.worksheet", "application/xml")),
-        (ROOT.to_owned(), RELS.trim_end_matches("</Relationships>").to_owned(), TYPES.to_owned()),
-        (ROOT.to_owned(), RELS.to_owned(), TYPES.replace("http://schemas.openxmlformats.org/package/2006/content-types", "wrong")),
+        (
+            ROOT.to_owned(),
+            RELS.replace(
+                "Target=\"../data/one.bin\"",
+                "TargetMode=\"External\" Target=\"https://example.com/data.bin\"",
+            ),
+            TYPES.to_owned(),
+        ),
+        (
+            ROOT.to_owned(),
+            RELS.replace(
+                "Target=\"../text/strings.bin\"",
+                "TargetMode=\"External\" Target=\"https://example.com/strings.bin\"",
+            ),
+            TYPES.to_owned(),
+        ),
+        (
+            ROOT.to_owned(),
+            RELS.to_owned(),
+            TYPES.replace("application/vnd.ms-excel.worksheet", "application/xml"),
+        ),
+        (
+            ROOT.to_owned(),
+            RELS.trim_end_matches("</Relationships>").to_owned(),
+            TYPES.to_owned(),
+        ),
+        (
+            ROOT.to_owned(),
+            RELS.to_owned(),
+            TYPES.replace(
+                "http://schemas.openxmlformats.org/package/2006/content-types",
+                "wrong",
+            ),
+        ),
     ] {
-        assert!(read_xlsb(&package(&book(false), &sheet, &sst(), &roots, &rels, &types)).is_err());
+        assert!(
+            read_xlsb(&package(
+                &book(false),
+                &sheet,
+                &sst(),
+                &roots,
+                &rels,
+                &types
+            ))
+            .is_err()
+        );
     }
     let chartsheet = RELS.replace(
         "Id=\"two\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
         "Id=\"two\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet",
     );
-    let (wb, report) = read_xlsb(&package(&book(false), &sheet, &sst(), ROOT, &chartsheet, TYPES)).unwrap();
+    let (wb, report) = read_xlsb(&package(
+        &book(false),
+        &sheet,
+        &sst(),
+        ROOT,
+        &chartsheet,
+        TYPES,
+    ))
+    .unwrap();
     assert_eq!(wb.sheets.len(), 1);
     assert!(report.warnings.iter().any(|w| w.contains("non-worksheet")));
     // An unrelated binary part must not change the format of an XML workbook package.
@@ -284,25 +392,83 @@ fn xlsb_requires_internal_typed_relationships_and_sniffs_only_root_workbook() {
         "/records/book.bin\" ContentType=\"application/vnd.ms-excel.sheet.binary.macroEnabled.main",
         "/elsewhere.bin\" ContentType=\"application/vnd.ms-excel.sheet.binary.macroEnabled.main",
     );
-    assert_eq!(sniff(&package(&book(false), &sheet, &sst(), ROOT, RELS, &xml_book)), Format::Xlsx);
-    let spec_type = TYPES.replace("application/vnd.ms-excel.sheet.binary.macroEnabled.main", "application/vnd.ms-excel.main");
-    assert_eq!(sniff(&package(&book(false), &sheet, &sst(), ROOT, RELS, &spec_type)), Format::Xlsb);
-    assert!(read_xlsb(&package(&book(false), &sheet, &sst(), ROOT, RELS, &spec_type)).is_ok());
+    assert_eq!(
+        sniff(&package(
+            &book(false),
+            &sheet,
+            &sst(),
+            ROOT,
+            RELS,
+            &xml_book
+        )),
+        Format::Xlsx
+    );
+    let spec_type = TYPES.replace(
+        "application/vnd.ms-excel.sheet.binary.macroEnabled.main",
+        "application/vnd.ms-excel.main",
+    );
+    assert_eq!(
+        sniff(&package(
+            &book(false),
+            &sheet,
+            &sst(),
+            ROOT,
+            RELS,
+            &spec_type
+        )),
+        Format::Xlsb
+    );
+    assert!(
+        read_xlsb(&package(
+            &book(false),
+            &sheet,
+            &sst(),
+            ROOT,
+            RELS,
+            &spec_type
+        ))
+        .is_ok()
+    );
 }
 
 #[test]
 fn xlsb_declared_counts_and_decoded_text_are_bounded() {
     let bad_sst = record(159, &[0xff; 8]);
-    assert!(read_xlsb(&package(&book(false), &worksheet(&[], &[]), &bad_sst, ROOT, RELS, TYPES)).is_err());
+    assert!(
+        read_xlsb(&package(
+            &book(false),
+            &worksheet(&[], &[]),
+            &bad_sst,
+            ROOT,
+            RELS,
+            TYPES
+        ))
+        .is_err()
+    );
     let mut count_mismatch = record(159, &[1, 0, 0, 0, 1, 0, 0, 0]);
     count_mismatch.extend(record(160, &[]));
-    assert!(read_xlsb(&package(&book(false), &worksheet(&[], &[]), &count_mismatch, ROOT, RELS, TYPES)).is_err());
+    assert!(
+        read_xlsb(&package(
+            &book(false),
+            &worksheet(&[], &[]),
+            &count_mismatch,
+            ROOT,
+            RELS,
+            TYPES
+        ))
+        .is_err()
+    );
     let mut data = row(0);
     let text = wide(&"x".repeat(32767));
     for col in 0..2050 {
         data.extend(cell(6, col, &text));
     }
-    assert!(read_xlsb(&file(&worksheet(&data, &[]))).unwrap_err().to_string().contains("64 MiB"));
+    assert!(
+        read_xlsb(&file(&worksheet(&data, &[])))
+            .unwrap_err()
+            .to_string()
+            .contains("64 MiB")
+    );
 }
 
 #[test]
@@ -319,8 +485,18 @@ fn xlsb_phonetic_runs_use_documented_size_and_tolerate_padding() {
         out
     };
     for padded in [phonetic(1, 10), phonetic(1, 12), phonetic(2, 24)] {
-        let (wb, _) = read_xlsb(&file(&worksheet(&[row(0), cell(62, 0, &padded)].concat(), &[]))).unwrap();
+        let (wb, _) = read_xlsb(&file(&worksheet(
+            &[row(0), cell(62, 0, &padded)].concat(),
+            &[],
+        )))
+        .unwrap();
         assert_eq!(wb.sheets[0].value(CellRef::new(0, 0)), text("ruby"));
     }
-    assert!(read_xlsb(&file(&worksheet(&[row(0), cell(62, 0, &phonetic(2, 12))].concat(), &[]))).is_err());
+    assert!(
+        read_xlsb(&file(&worksheet(
+            &[row(0), cell(62, 0, &phonetic(2, 12))].concat(),
+            &[]
+        )))
+        .is_err()
+    );
 }

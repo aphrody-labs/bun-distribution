@@ -21,8 +21,21 @@ use rayon::prelude::*;
 use crate::util::{Plane, gauss_plane, hash1, premul, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "3D Channel", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "3D Channel",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn aux(ctx: &EffectCtx) -> Option<Arc<AuxChannels>> {
@@ -49,7 +62,11 @@ fn index_map_at(b: &Buf, a: &AuxChannels, at: [f64; 2]) -> Vec<Option<usize>> {
 
 /// A channel sampled into the buffer grid (`fill` outside).
 fn plane_of(b: &Buf, idx: &[Option<usize>], ch: &[f32], fill: f32) -> Plane {
-    Plane { w: b.img.width as usize, h: b.img.height as usize, data: idx.par_iter().map(|i| i.map_or(fill, |i| ch[i])).collect() }
+    Plane {
+        w: b.img.width as usize,
+        h: b.img.height as usize,
+        data: idx.par_iter().map(|i| i.map_or(fill, |i| ch[i])).collect(),
+    }
 }
 
 /// Distinct colour for an ID (hash → hue).
@@ -61,14 +78,27 @@ pub fn id_color(id: f32) -> [f32; 3] {
 
 // ---------------------------------------------------------------- 3D Channel Extract
 
-pub const EXTRACT_CHANNELS: [&str; 8] = ["Z-Depth", "Object ID", "Texture UV", "Surface Normals", "Coverage", "Background RGB", "Unclamped RGB", "Material ID"];
+pub const EXTRACT_CHANNELS: [&str; 8] = [
+    "Z-Depth",
+    "Object ID",
+    "Texture UV",
+    "Surface Normals",
+    "Coverage",
+    "Background RGB",
+    "Unclamped RGB",
+    "Material ID",
+];
 
 fn channel_extract(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let Some(a) = aux(ctx) else { return b };
     if ctx.params.b("antialias") {
         // Anti-alias: average four sub-pixel samples of the channel.
         let subs = [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
-        let imgs: Vec<Image> = subs.iter().map(|s| channel_extract_at(ctx, &b, &a, &index_map_at(&b, &a, *s))).collect::<Option<Vec<_>>>().unwrap_or_default();
+        let imgs: Vec<Image> = subs
+            .iter()
+            .map(|s| channel_extract_at(ctx, &b, &a, &index_map_at(&b, &a, *s)))
+            .collect::<Option<Vec<_>>>()
+            .unwrap_or_default();
         if imgs.len() == 4 {
             let mut out = imgs[0].clone();
             out.data.par_iter_mut().enumerate().for_each(|(i, p)| {
@@ -86,28 +116,72 @@ fn channel_extract(ctx: &EffectCtx, mut b: Buf) -> Buf {
 }
 
 /// 3D Channel Extract through one index map (None when the channel is missing).
-fn channel_extract_at(ctx: &EffectCtx, b: &Buf, a: &AuxChannels, idx: &[Option<usize>]) -> Option<Image> {
-    let (bp, wp) = (ctx.params.f("blackPoint") as f32, ctx.params.f("whitePoint") as f32);
+fn channel_extract_at(
+    ctx: &EffectCtx,
+    b: &Buf,
+    a: &AuxChannels,
+    idx: &[Option<usize>],
+) -> Option<Image> {
+    let (bp, wp) = (
+        ctx.params.f("blackPoint") as f32,
+        ctx.params.f("whitePoint") as f32,
+    );
     // Clamp Output limits the mapped values to 0..1; Invert Depth Map flips them.
     let (clamp, invert) = (ctx.params.b("clampOutput"), ctx.params.b("invertDepthMap"));
     let cl = move |v: f32| if clamp { v.clamp(0.0, 1.0) } else { v };
     let lv = |v: f32| cl((v - bp) / (wp - bp).abs().max(1e-9) * (wp - bp).signum());
-    let lv = |v: f32| if wp >= bp { lv(v) } else { 1.0 - cl((v - wp) / (bp - wp).max(1e-9)) };
+    let lv = |v: f32| {
+        if wp >= bp {
+            lv(v)
+        } else {
+            1.0 - cl((v - wp) / (bp - wp).max(1e-9))
+        }
+    };
     let lv = |v: f32| if invert { 1.0 - lv(v) } else { lv(v) };
-    let get3 = |names: [&[&str]; 3]| -> Option<[&[f32]; 3]> { Some([a.find(names[0])?, a.find(names[1])?, a.find(names[2])?]) };
+    let get3 = |names: [&[&str]; 3]| -> Option<[&[f32]; 3]> {
+        Some([a.find(names[0])?, a.find(names[1])?, a.find(names[2])?])
+    };
     match ctx.params.e("channel") {
         0 => a.depth().map(|z| map_grey(b, idx, |i| lv(z[i]))),
         1 => a.object_id().map(|c| map_grey(b, idx, |i| lv(c[i]))),
         7 => a.material_id().map(|c| map_grey(b, idx, |i| lv(c[i]))),
         4 => a.coverage().map(|c| map_grey(b, idx, |i| lv(c[i]))),
-        2 => get3([&["UV.U", "U", "uv.x"], &["UV.V", "V", "uv.y"], &["UV.W", "W", "uv.z"]])
-            .or_else(|| Some([a.find(&["UV.U", "U", "uv.x"])?, a.find(&["UV.V", "V", "uv.y"])?, a.find(&["UV.V", "V", "uv.y"])?]))
-            .map(|c| map_rgb(b, idx, |i| [lv(c[0][i]), lv(c[1][i]), 0.0])),
-        3 => get3([&["N.X", "Normal.X", "normals.x"], &["N.Y", "Normal.Y", "normals.y"], &["N.Z", "Normal.Z", "normals.z"]])
-            .map(|c| map_rgb(b, idx, |i| [lv(c[0][i] * 0.5 + 0.5), lv(c[1][i] * 0.5 + 0.5), lv(c[2][i] * 0.5 + 0.5)])),
-        5 => get3([&["BG.R", "Background.R"], &["BG.G", "Background.G"], &["BG.B", "Background.B"]])
-            .map(|c| map_rgb(b, idx, |i| [lv(c[0][i]), lv(c[1][i]), lv(c[2][i])])),
-        _ => get3([&["R"], &["G"], &["B"]]).map(|c| map_rgb(b, idx, |i| [c[0][i], c[1][i], c[2][i]])),
+        2 => get3([
+            &["UV.U", "U", "uv.x"],
+            &["UV.V", "V", "uv.y"],
+            &["UV.W", "W", "uv.z"],
+        ])
+        .or_else(|| {
+            Some([
+                a.find(&["UV.U", "U", "uv.x"])?,
+                a.find(&["UV.V", "V", "uv.y"])?,
+                a.find(&["UV.V", "V", "uv.y"])?,
+            ])
+        })
+        .map(|c| map_rgb(b, idx, |i| [lv(c[0][i]), lv(c[1][i]), 0.0])),
+        3 => get3([
+            &["N.X", "Normal.X", "normals.x"],
+            &["N.Y", "Normal.Y", "normals.y"],
+            &["N.Z", "Normal.Z", "normals.z"],
+        ])
+        .map(|c| {
+            map_rgb(b, idx, |i| {
+                [
+                    lv(c[0][i] * 0.5 + 0.5),
+                    lv(c[1][i] * 0.5 + 0.5),
+                    lv(c[2][i] * 0.5 + 0.5),
+                ]
+            })
+        }),
+        5 => get3([
+            &["BG.R", "Background.R"],
+            &["BG.G", "Background.G"],
+            &["BG.B", "Background.B"],
+        ])
+        .map(|c| map_rgb(b, idx, |i| [lv(c[0][i]), lv(c[1][i]), lv(c[2][i])])),
+        _ => {
+            get3([&["R"], &["G"], &["B"]]).map(|c| map_rgb(b, idx, |i| [c[0][i], c[1][i], c[2][i]]))
+        }
     }
 }
 
@@ -120,12 +194,15 @@ fn map_grey(b: &Buf, idx: &[Option<usize>], f: impl Fn(usize) -> f32 + Sync) -> 
 
 fn map_rgb(b: &Buf, idx: &[Option<usize>], f: impl Fn(usize) -> [f32; 3] + Sync) -> Image {
     let mut img = Image::new(b.img.width, b.img.height);
-    img.data.par_iter_mut().zip(idx.par_iter()).for_each(|(p, i)| {
-        if let Some(i) = i {
-            let c = f(*i);
-            *p = [c[0], c[1], c[2], 1.0];
-        }
-    });
+    img.data
+        .par_iter_mut()
+        .zip(idx.par_iter())
+        .for_each(|(p, i)| {
+            if let Some(i) = i {
+                let c = f(*i);
+                *p = [c[0], c[1], c[2], 1.0];
+            }
+        });
     img
 }
 
@@ -141,17 +218,21 @@ fn depth_matte(ctx: &EffectCtx, mut b: Buf) -> Buf {
     // Keeps what lies at or beyond Depth (Invert keeps what is in front), with a soft ramp of
     // `feather` depth units centred on the threshold.
     let zp = plane_of(&b, &idx, z, BACKGROUND_DEPTH);
-    b.img.data.par_iter_mut().zip(zp.data.par_iter()).for_each(|(px, &zv)| {
-        let k = if feather > 0.0 {
-            ((zv - depth) / feather + 0.5).clamp(0.0, 1.0)
-        } else if zv >= depth {
-            1.0
-        } else {
-            0.0
-        };
-        let k = if invert { 1.0 - k } else { k };
-        *px = px.map(|v| v * k);
-    });
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(zp.data.par_iter())
+        .for_each(|(px, &zv)| {
+            let k = if feather > 0.0 {
+                ((zv - depth) / feather + 0.5).clamp(0.0, 1.0)
+            } else if zv >= depth {
+                1.0
+            } else {
+                0.0
+            };
+            let k = if invert { 1.0 - k } else { k };
+            *px = px.map(|v| v * k);
+        });
     b
 }
 
@@ -185,7 +266,11 @@ fn depth_of_field(ctx: &EffectCtx, mut b: Buf) -> Buf {
         .into_par_iter()
         .map(|k| {
             let r = max_r * k as f32 / (LEVELS - 1) as f32;
-            if r < 0.3 { b.img.clone() } else { gaussian_blur(&b.img, (r / 2.0) as f64, (r / 2.0) as f64, true) }
+            if r < 0.3 {
+                b.img.clone()
+            } else {
+                gaussian_blur(&b.img, (r / 2.0) as f64, (r / 2.0) as f64, true)
+            }
         })
         .collect();
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
@@ -211,7 +296,12 @@ fn fog_3d(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let density = (pr.f("scatteringDensity") / 100.0) as f32;
     let foggy_bg = pr.b("foggyBackground");
     let contrib = (pr.f("layerContribution") / 100.0) as f32;
-    let grad = if contrib > 0.0 { ctx.layer_param("gradientLayer", true).map(|o| crate::util::fit_layer(ctx, &b, &o, true)) } else { None };
+    let grad = if contrib > 0.0 {
+        ctx.layer_param("gradientLayer", true)
+            .map(|o| crate::util::fit_layer(ctx, &b, &o, true))
+    } else {
+        None
+    };
     let idx = index_map(&b, &a);
     let zp = plane_of(&b, &idx, z, BACKGROUND_DEPTH);
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
@@ -231,7 +321,11 @@ fn fog_3d(ctx: &EffectCtx, mut b: Buf) -> Buf {
         }
         let f = (f * opacity).clamp(0.0, 1.0);
         let (c, al) = unpremul(*px);
-        let al2 = if bg && foggy_bg { al + (1.0 - al) * f } else { al };
+        let al2 = if bg && foggy_bg {
+            al + (1.0 - al) * f
+        } else {
+            al
+        };
         let out = [0, 1, 2].map(|k| c[k] + (fc[k] - c[k]) * f);
         *px = premul(out, al2);
     });
@@ -241,35 +335,62 @@ fn fog_3d(ctx: &EffectCtx, mut b: Buf) -> Buf {
 // ---------------------------------------------------------------- ID Matte / IDentifier
 
 fn id_channel(a: &AuxChannels, which: u32) -> Option<&[f32]> {
-    if which == 1 { a.material_id() } else { a.object_id() }
+    if which == 1 {
+        a.material_id()
+    } else {
+        a.object_id()
+    }
 }
 
 fn id_matte(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let Some(a) = aux(ctx) else { return b };
-    let Some(ids) = id_channel(&a, ctx.params.e("auxChannel")) else { return b };
+    let Some(ids) = id_channel(&a, ctx.params.e("auxChannel")) else {
+        return b;
+    };
     let idx = index_map(&b, &a);
     let sel = ctx.params.f("idSelection").round() as f32;
-    let cov = if ctx.params.b("useCoverage") { a.coverage() } else { None };
+    let cov = if ctx.params.b("useCoverage") {
+        a.coverage()
+    } else {
+        None
+    };
     let mut m = Plane {
         w: b.img.width as usize,
         h: b.img.height as usize,
-        data: idx.par_iter().map(|i| i.map_or(0.0, |i| if ids[i].round() == sel { cov.map_or(1.0, |c| c[i].clamp(0.0, 1.0)) } else { 0.0 })).collect(),
+        data: idx
+            .par_iter()
+            .map(|i| {
+                i.map_or(0.0, |i| {
+                    if ids[i].round() == sel {
+                        cov.map_or(1.0, |c| c[i].clamp(0.0, 1.0))
+                    } else {
+                        0.0
+                    }
+                })
+            })
+            .collect(),
     };
     let feather = ctx.params.f("feather").max(0.0) * b.scale;
     if feather > 0.0 {
         m = gauss_plane(&m, feather * 0.5, feather * 0.5);
     }
     let invert = ctx.params.b("invert");
-    b.img.data.par_iter_mut().zip(m.data.par_iter()).for_each(|(px, &k)| {
-        let k = if invert { 1.0 - k } else { k };
-        *px = px.map(|v| v * k);
-    });
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(m.data.par_iter())
+        .for_each(|(px, &k)| {
+            let k = if invert { 1.0 - k } else { k };
+            *px = px.map(|v| v * k);
+        });
     b
 }
 
 fn identifier(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let Some(a) = aux(ctx) else { return b };
-    let Some(ids) = id_channel(&a, ctx.params.e("channelType")) else { return b };
+    let Some(ids) = id_channel(&a, ctx.params.e("channelType")) else {
+        return b;
+    };
     let idx = index_map(&b, &a);
     let sel = ctx.params.f("id").round() as f32;
     let display = ctx.params.e("display");
@@ -287,7 +408,11 @@ fn identifier(ctx: &EffectCtx, mut b: Buf) -> Buf {
         *px = match display {
             // Colors: every ID in its own colour, the selected one highlighted white.
             0 => {
-                let c = if hit && sel != 0.0 { [1.0; 3] } else { id_color(id) };
+                let c = if hit && sel != 0.0 {
+                    [1.0; 3]
+                } else {
+                    id_color(id)
+                };
                 [c[0], c[1], c[2], 1.0]
             }
             1 => {
@@ -314,11 +439,15 @@ fn wild(pat: &str, name: &str) -> bool {
     match pat.split_once('*') {
         None => pat == name,
         Some((pre, rest)) => {
-            let Some(tail) = name.strip_prefix(pre) else { return false };
+            let Some(tail) = name.strip_prefix(pre) else {
+                return false;
+            };
             if rest.is_empty() {
                 return true;
             }
-            (0..=tail.len()).filter(|&k| tail.is_char_boundary(k)).any(|k| wild(rest, &tail[k..]))
+            (0..=tail.len())
+                .filter(|&k| tail.is_char_boundary(k))
+                .any(|k| wild(rest, &tail[k..]))
         }
     }
 }
@@ -372,7 +501,11 @@ pub fn selection_hashes(sel: &str, manifest: Option<&[(String, u32)]>) -> Vec<u3
             out.push(h);
             continue;
         }
-        out.push(manifest.and_then(|m| m.iter().find(|(n, _)| n == t).map(|(_, h)| *h)).unwrap_or_else(|| crypto_hash(t)));
+        out.push(
+            manifest
+                .and_then(|m| m.iter().find(|(n, _)| n == t).map(|(_, h)| *h))
+                .unwrap_or_else(|| crypto_hash(t)),
+        );
     }
     out
 }
@@ -386,16 +519,31 @@ fn cryptomatte(ctx: &EffectCtx, mut b: Buf) -> Buf {
         return b;
     }
     let want = CRYPTO_LAYERS[(ctx.params.e("layer") as usize).min(2)];
-    let layer = layers.iter().find(|l| l.as_str() == want || l.ends_with(want)).unwrap_or(&layers[0]).clone();
-    let manifest = a.manifests.iter().find(|(l, _)| *l == layer).map(|(_, m)| m.as_slice());
+    let layer = layers
+        .iter()
+        .find(|l| l.as_str() == want || l.ends_with(want))
+        .unwrap_or(&layers[0])
+        .clone();
+    let manifest = a
+        .manifests
+        .iter()
+        .find(|(l, _)| *l == layer)
+        .map(|(_, m)| m.as_slice());
     let sel = selection_hashes(ctx.params.s("selection"), manifest);
     let idx = index_map(&b, &a);
     let display = ctx.params.e("display");
     let matte_only = ctx.params.b("matteOnly");
     let src = b.img.clone();
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
-        let ranks = idx[i].map(|k| a.crypto_ranks(&layer, k)).unwrap_or_default();
-        let m: f32 = ranks.iter().filter(|(id, c)| *c > 0.0 && sel.contains(&id.to_bits())).map(|(_, c)| *c).sum::<f32>().clamp(0.0, 1.0);
+        let ranks = idx[i]
+            .map(|k| a.crypto_ranks(&layer, k))
+            .unwrap_or_default();
+        let m: f32 = ranks
+            .iter()
+            .filter(|(id, c)| *c > 0.0 && sel.contains(&id.to_bits()))
+            .map(|(_, c)| *c)
+            .sum::<f32>()
+            .clamp(0.0, 1.0);
         if matte_only {
             *px = [m, m, m, m];
             return;
@@ -418,7 +566,12 @@ fn cryptomatte(ctx: &EffectCtx, mut b: Buf) -> Buf {
             // Preview: the layer with the selection tinted.
             _ => {
                 let s = src.data[i];
-                [s[0] * (1.0 - 0.5 * m) + 0.5 * m * s[3], s[1] * (1.0 - 0.5 * m) + 0.5 * m * s[3], s[2] * (1.0 - 0.5 * m), s[3]]
+                [
+                    s[0] * (1.0 - 0.5 * m) + 0.5 * m * s[3],
+                    s[1] * (1.0 - 0.5 * m) + 0.5 * m * s[3],
+                    s[2] * (1.0 - 0.5 * m),
+                    s[3],
+                ]
             }
         };
     });
@@ -429,8 +582,16 @@ fn cryptomatte(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 fn extractor(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let a = aux(ctx);
-    let names = [ctx.params.s("red"), ctx.params.s("green"), ctx.params.s("blue"), ctx.params.s("alpha")];
-    let (bp, wp) = (ctx.params.f("blackPoint") as f32, ctx.params.f("whitePoint") as f32);
+    let names = [
+        ctx.params.s("red"),
+        ctx.params.s("green"),
+        ctx.params.s("blue"),
+        ctx.params.s("alpha"),
+    ];
+    let (bp, wp) = (
+        ctx.params.f("blackPoint") as f32,
+        ctx.params.f("whitePoint") as f32,
+    );
     let unmult = ctx.params.b("unMult");
     let clip = ctx.params.b("clip");
     let idx = a.as_ref().map(|a| index_map(&b, a));
@@ -443,8 +604,24 @@ fn extractor(ctx: &EffectCtx, mut b: Buf) -> Buf {
         "" => None,
         _ => None,
     };
-    let src_ch: Vec<Option<&[f32]>> = names.iter().map(|n| a.as_ref().and_then(|a| if n.trim().is_empty() { None } else { a.get(n.trim()) })).collect();
-    if src_ch.iter().all(Option::is_none) && bp == 0.0 && wp == 1.0 && !unmult && names.iter().enumerate().all(|(k, n)| own(n) == Some(k)) {
+    let src_ch: Vec<Option<&[f32]>> = names
+        .iter()
+        .map(|n| {
+            a.as_ref().and_then(|a| {
+                if n.trim().is_empty() {
+                    None
+                } else {
+                    a.get(n.trim())
+                }
+            })
+        })
+        .collect();
+    if src_ch.iter().all(Option::is_none)
+        && bp == 0.0
+        && wp == 1.0
+        && !unmult
+        && names.iter().enumerate().all(|(k, n)| own(n) == Some(k))
+    {
         return b;
     }
     let src = b.img.clone();
@@ -476,25 +653,61 @@ fn extractor(ctx: &EffectCtx, mut b: Buf) -> Buf {
             }
         }
         let al = o[3].clamp(0.0, 1.0);
-        let c = if unmult && al > 1e-6 { [o[0] / al, o[1] / al, o[2] / al] } else { [o[0], o[1], o[2]] };
+        let c = if unmult && al > 1e-6 {
+            [o[0] / al, o[1] / al, o[2] / al]
+        } else {
+            [o[0], o[1], o[2]]
+        };
         *px = premul(c, al);
     });
     b
 }
 
 pub fn specs() -> Vec<EffectSpec> {
-    let text = |id: &'static str, name: &'static str, d: &str| p(id, name, Value::Str(d.into()), ParamUi::Text);
+    let text = |id: &'static str, name: &'static str, d: &str| {
+        p(id, name, Value::Str(d.into()), ParamUi::Text)
+    };
     vec![
         spec(
             "ec.3d.channelextract",
             "3D Channel Extract",
             vec![
-                p("channel", "3D Channel", Value::Enum(0), popup(&EXTRACT_CHANNELS)),
-                p("blackPoint", "Black Point", num(0.0), slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2)),
-                p("whitePoint", "White Point", num(10000.0), slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2)),
-                p("clampOutput", "Clamp Output", Value::Bool(true), ParamUi::Checkbox),
-                p("invertDepthMap", "Invert Depth Map", Value::Bool(false), ParamUi::Checkbox),
-                p("antialias", "Anti-alias", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "channel",
+                    "3D Channel",
+                    Value::Enum(0),
+                    popup(&EXTRACT_CHANNELS),
+                ),
+                p(
+                    "blackPoint",
+                    "Black Point",
+                    num(0.0),
+                    slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2),
+                ),
+                p(
+                    "whitePoint",
+                    "White Point",
+                    num(10000.0),
+                    slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2),
+                ),
+                p(
+                    "clampOutput",
+                    "Clamp Output",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "invertDepthMap",
+                    "Invert Depth Map",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "antialias",
+                    "Anti-alias",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             channel_extract,
         ),
@@ -504,8 +717,18 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("layer", "Layer", Value::Enum(0), popup(&CRYPTO_LAYERS)),
                 text("selection", "Selection", ""),
-                p("display", "Display", Value::Enum(2), popup(&["Colors", "Matte", "Preview"])),
-                p("matteOnly", "Matte Only", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "display",
+                    "Display",
+                    Value::Enum(2),
+                    popup(&["Colors", "Matte", "Preview"]),
+                ),
+                p(
+                    "matteOnly",
+                    "Matte Only",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             cryptomatte,
         ),
@@ -513,8 +736,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.3d.depthmatte",
             "Depth Matte",
             vec![
-                p("depth", "Depth", num(0.0), slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2)),
-                p("feather", "Feather", num(0.0), slider(0.0, 1.0e6, 0.0, 1000.0, 2)),
+                p(
+                    "depth",
+                    "Depth",
+                    num(0.0),
+                    slider(-1.0e6, 1.0e6, -10000.0, 10000.0, 2),
+                ),
+                p(
+                    "feather",
+                    "Feather",
+                    num(0.0),
+                    slider(0.0, 1.0e6, 0.0, 1000.0, 2),
+                ),
                 p("invert", "Invert", Value::Bool(false), ParamUi::Checkbox),
             ],
             depth_matte,
@@ -523,10 +756,30 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.3d.depthoffield",
             "Depth of Field",
             vec![
-                p("focalPlane", "Focal Plane", num(0.0), slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2)),
-                p("maximumRadius", "Maximum Radius", num(0.0), slider(0.0, 500.0, 0.0, 50.0, 2)),
-                p("focalPlaneThickness", "Focal Plane Thickness", num(0.0), slider(0.0, 1.0e6, 0.0, 1000.0, 2)),
-                p("focalBias", "Focal Bias", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 2)),
+                p(
+                    "focalPlane",
+                    "Focal Plane",
+                    num(0.0),
+                    slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2),
+                ),
+                p(
+                    "maximumRadius",
+                    "Maximum Radius",
+                    num(0.0),
+                    slider(0.0, 500.0, 0.0, 50.0, 2),
+                ),
+                p(
+                    "focalPlaneThickness",
+                    "Focal Plane Thickness",
+                    num(0.0),
+                    slider(0.0, 1.0e6, 0.0, 1000.0, 2),
+                ),
+                p(
+                    "focalBias",
+                    "Focal Bias",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 2),
+                ),
             ],
             depth_of_field,
         ),
@@ -538,8 +791,18 @@ pub fn specs() -> Vec<EffectSpec> {
                 text("green", "Green", "G"),
                 text("blue", "Blue", "B"),
                 text("alpha", "Alpha", "A"),
-                p("blackPoint", "Black Point", num(0.0), slider(-1.0e6, 1.0e6, -1.0, 2.0, 3)),
-                p("whitePoint", "White Point", num(1.0), slider(-1.0e6, 1.0e6, -1.0, 2.0, 3)),
+                p(
+                    "blackPoint",
+                    "Black Point",
+                    num(0.0),
+                    slider(-1.0e6, 1.0e6, -1.0, 2.0, 3),
+                ),
+                p(
+                    "whitePoint",
+                    "White Point",
+                    num(1.0),
+                    slider(-1.0e6, 1.0e6, -1.0, 2.0, 3),
+                ),
                 p("unMult", "UnMult", Value::Bool(false), ParamUi::Checkbox),
                 p("clip", "Clip", Value::Bool(false), ParamUi::Checkbox),
             ],
@@ -550,13 +813,48 @@ pub fn specs() -> Vec<EffectSpec> {
             "Fog 3D",
             vec![
                 p("fogColor", "Fog Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("fogStartDepth", "Fog Start Depth", num(0.0), slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2)),
-                p("fogEndDepth", "Fog End Depth", num(3000.0), slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2)),
-                p("fogOpacity", "Fog Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("scatteringDensity", "Scattering Density", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("foggyBackground", "Foggy Background", Value::Bool(true), ParamUi::Checkbox),
-                p("gradientLayer", "Gradient Layer", Value::Layer(None), ParamUi::Layer),
-                p("layerContribution", "Layer Contribution", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "fogStartDepth",
+                    "Fog Start Depth",
+                    num(0.0),
+                    slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2),
+                ),
+                p(
+                    "fogEndDepth",
+                    "Fog End Depth",
+                    num(3000.0),
+                    slider(-1.0e6, 1.0e6, 0.0, 10000.0, 2),
+                ),
+                p(
+                    "fogOpacity",
+                    "Fog Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "scatteringDensity",
+                    "Scattering Density",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "foggyBackground",
+                    "Foggy Background",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "gradientLayer",
+                    "Gradient Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
+                p(
+                    "layerContribution",
+                    "Layer Contribution",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             fog_3d,
         ),
@@ -564,11 +862,31 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.3d.idmatte",
             "ID Matte",
             vec![
-                p("auxChannel", "Aux. Channel", Value::Enum(0), popup(&["Object ID", "Material ID"])),
-                p("idSelection", "ID Selection", num(0.0), slider(0.0, 65535.0, 0.0, 100.0, 0)),
-                p("feather", "Feather", num(0.0), slider(0.0, 100.0, 0.0, 10.0, 2)),
+                p(
+                    "auxChannel",
+                    "Aux. Channel",
+                    Value::Enum(0),
+                    popup(&["Object ID", "Material ID"]),
+                ),
+                p(
+                    "idSelection",
+                    "ID Selection",
+                    num(0.0),
+                    slider(0.0, 65535.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "feather",
+                    "Feather",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 10.0, 2),
+                ),
                 p("invert", "Invert", Value::Bool(false), ParamUi::Checkbox),
-                p("useCoverage", "Use Coverage", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "useCoverage",
+                    "Use Coverage",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             id_matte,
         ),
@@ -576,8 +894,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.3d.identifier",
             "IDentifier",
             vec![
-                p("channelType", "Channel Type", Value::Enum(0), popup(&["Object ID", "Material ID"])),
-                p("display", "Display", Value::Enum(0), popup(&["Colors", "Luma Matte", "Alpha Matte", "Raw"])),
+                p(
+                    "channelType",
+                    "Channel Type",
+                    Value::Enum(0),
+                    popup(&["Object ID", "Material ID"]),
+                ),
+                p(
+                    "display",
+                    "Display",
+                    Value::Enum(0),
+                    popup(&["Colors", "Luma Matte", "Alpha Matte", "Raw"]),
+                ),
                 p("id", "ID", num(0.0), slider(0.0, 65535.0, 0.0, 100.0, 0)),
             ],
             identifier,
@@ -609,7 +937,12 @@ mod tests {
     fn scene() -> AuxHost {
         let (w, h) = (20usize, 10usize);
         let mut a = AuxChannels::new(w as u32, h as u32, 1.0);
-        let (mut z, mut id, mut r, mut g) = (vec![0.0; w * h], vec![0.0; w * h], vec![0.0; w * h], vec![0.0; w * h]);
+        let (mut z, mut id, mut r, mut g) = (
+            vec![0.0; w * h],
+            vec![0.0; w * h],
+            vec![0.0; w * h],
+            vec![0.0; w * h],
+        );
         let (hl, hr) = (crypto_hash("left"), crypto_hash("right"));
         for y in 0..h {
             for x in 0..w {
@@ -629,8 +962,16 @@ mod tests {
                 }
             }
         }
-        a.channels = vec![("Z".into(), z), ("ObjectID".into(), id), ("CryptoObject00.R".into(), r), ("CryptoObject00.G".into(), g)];
-        a.manifests = vec![("CryptoObject".into(), vec![("left".into(), hl), ("right".into(), hr)])];
+        a.channels = vec![
+            ("Z".into(), z),
+            ("ObjectID".into(), id),
+            ("CryptoObject00.R".into(), r),
+            ("CryptoObject00.G".into(), g),
+        ];
+        a.manifests = vec![(
+            "CryptoObject".into(),
+            vec![("left".into(), hl), ("right".into(), hr)],
+        )];
         AuxHost(Arc::new(a))
     }
 
@@ -639,7 +980,17 @@ mod tests {
     }
 
     fn run(id: &str, vals: &[(&str, Value)], host: &AuxHost) -> Image {
-        run_fx(id, vals, img(), 0.0, EffectEnv { host: Some(host), ..Default::default() }).img
+        run_fx(
+            id,
+            vals,
+            img(),
+            0.0,
+            EffectEnv {
+                host: Some(host),
+                ..Default::default()
+            },
+        )
+        .img
     }
 
     #[test]
@@ -656,26 +1007,58 @@ mod tests {
         let o = run("ec.3d.depthmatte", &[("depth", num(300.0))], &h);
         assert_eq!(o.get(2, 5)[3], 0.0);
         assert_eq!(o.get(12, 5)[3], 1.0);
-        let inv = run("ec.3d.depthmatte", &[("depth", num(300.0)), ("invert", Value::Bool(true))], &h);
+        let inv = run(
+            "ec.3d.depthmatte",
+            &[("depth", num(300.0)), ("invert", Value::Bool(true))],
+            &h,
+        );
         assert_eq!(inv.get(2, 5)[3], 1.0);
         assert_eq!(inv.get(12, 5)[3], 0.0);
         // Feather: a ramp of 800 units centred on 300 → depth 100 at 0.25, 500 at 0.75.
-        let f = run("ec.3d.depthmatte", &[("depth", num(300.0)), ("feather", num(800.0))], &h);
+        let f = run(
+            "ec.3d.depthmatte",
+            &[("depth", num(300.0)), ("feather", num(800.0))],
+            &h,
+        );
         assert!((f.get(2, 5)[3] - 0.25).abs() < 1e-5 && (f.get(12, 5)[3] - 0.75).abs() < 1e-5);
     }
 
     #[test]
     fn channel_extract_maps_depth_and_ids() {
         let h = scene();
-        let o = run("ec.3d.channelextract", &[("blackPoint", num(0.0)), ("whitePoint", num(1000.0))], &h);
+        let o = run(
+            "ec.3d.channelextract",
+            &[("blackPoint", num(0.0)), ("whitePoint", num(1000.0))],
+            &h,
+        );
         assert!((o.get(2, 5)[0] - 0.1).abs() < 1e-6 && (o.get(12, 5)[0] - 0.5).abs() < 1e-6);
         assert_eq!(o.get(17, 1)[0], 1.0);
-        let ids = run("ec.3d.channelextract", &[("channel", Value::Enum(1)), ("whitePoint", num(2.0))], &h);
+        let ids = run(
+            "ec.3d.channelextract",
+            &[("channel", Value::Enum(1)), ("whitePoint", num(2.0))],
+            &h,
+        );
         assert_eq!(ids.get(2, 5)[0], 0.5);
         // Invert Depth Map flips the ramp; without Clamp Output values run past 1.
-        let inv = run("ec.3d.channelextract", &[("blackPoint", num(0.0)), ("whitePoint", num(1000.0)), ("invertDepthMap", Value::Bool(true))], &h);
+        let inv = run(
+            "ec.3d.channelextract",
+            &[
+                ("blackPoint", num(0.0)),
+                ("whitePoint", num(1000.0)),
+                ("invertDepthMap", Value::Bool(true)),
+            ],
+            &h,
+        );
         assert!((inv.get(2, 5)[0] - 0.9).abs() < 1e-6);
-        let raw = run("ec.3d.channelextract", &[("blackPoint", num(0.0)), ("whitePoint", num(100.0)), ("clampOutput", Value::Bool(false))], &h);
+        let raw = run(
+            "ec.3d.channelextract",
+            &[
+                ("blackPoint", num(0.0)),
+                ("whitePoint", num(100.0)),
+                ("clampOutput", Value::Bool(false)),
+            ],
+            &h,
+        );
         assert!(raw.get(12, 5)[0] > 1.5);
     }
 
@@ -685,7 +1068,11 @@ mod tests {
         let o = run("ec.3d.idmatte", &[("idSelection", num(2.0))], &h);
         assert_eq!(o.get(2, 5)[3], 0.0);
         assert_eq!(o.get(12, 5)[3], 1.0);
-        let l = run("ec.3d.identifier", &[("display", Value::Enum(1)), ("id", num(1.0))], &h);
+        let l = run(
+            "ec.3d.identifier",
+            &[("display", Value::Enum(1)), ("id", num(1.0))],
+            &h,
+        );
         assert_eq!(l.get(2, 5)[0], 1.0);
         assert_eq!(l.get(12, 5)[0], 0.0);
         let c = run("ec.3d.identifier", &[], &h);
@@ -695,10 +1082,24 @@ mod tests {
     #[test]
     fn cryptomatte_selects_by_name_and_wildcard() {
         let h = scene();
-        let m = run("ec.3d.cryptomatte", &[("selection", Value::Str("right".into())), ("matteOnly", Value::Bool(true))], &h);
+        let m = run(
+            "ec.3d.cryptomatte",
+            &[
+                ("selection", Value::Str("right".into())),
+                ("matteOnly", Value::Bool(true)),
+            ],
+            &h,
+        );
         assert_eq!(m.get(2, 5)[3], 0.0);
         assert_eq!(m.get(12, 5)[3], 1.0);
-        let w = run("ec.3d.cryptomatte", &[("selection", Value::Str("l*".into())), ("display", Value::Enum(1))], &h);
+        let w = run(
+            "ec.3d.cryptomatte",
+            &[
+                ("selection", Value::Str("l*".into())),
+                ("display", Value::Enum(1)),
+            ],
+            &h,
+        );
         assert_eq!(w.get(2, 5)[3], 1.0);
         assert_eq!(w.get(12, 5)[3], 0.0);
         assert!(wild("*ight", "right") && wild("r*t", "right") && !wild("x*", "right"));
@@ -710,17 +1111,28 @@ mod tests {
     /// quoted or its comma escaped, instead of being cut into two names that match nothing.
     #[test]
     fn cryptomatte_selection_keeps_quoted_names_with_commas_whole() {
-        let manifest = vec![("Green, Glossy".to_string(), 7), ("Green".to_string(), 1), ("Glossy".to_string(), 2), ("ring".to_string(), 3)];
+        let manifest = vec![
+            ("Green, Glossy".to_string(), 7),
+            ("Green".to_string(), 1),
+            ("Glossy".to_string(), 2),
+            ("ring".to_string(), 3),
+        ];
         let m = Some(manifest.as_slice());
         assert_eq!(selection_hashes(r#""Green, Glossy""#, m), vec![7]);
         assert_eq!(selection_hashes("'Green, Glossy', ring", m), vec![7, 3]);
         assert_eq!(selection_hashes(r"Green\, Glossy", m), vec![7]);
         assert_eq!(selection_hashes(r#"ring , "Green, Glossy""#, m), vec![3, 7]);
         // Without a manifest the whole name is hashed.
-        assert_eq!(selection_hashes(r#""Green, Glossy""#, None), vec![crypto_hash("Green, Glossy")]);
+        assert_eq!(
+            selection_hashes(r#""Green, Glossy""#, None),
+            vec![crypto_hash("Green, Glossy")]
+        );
         // Plain lists, apostrophes inside names and an unclosed quote still parse.
         assert_eq!(selection_hashes("Green, Glossy", m), vec![1, 2]);
-        assert_eq!(selection_names("Bob's mat, ring"), vec!["Bob's mat", "ring"]);
+        assert_eq!(
+            selection_names("Bob's mat, ring"),
+            vec!["Bob's mat", "ring"]
+        );
         assert_eq!(selection_names(r#""Green, Glossy"#), vec!["Green, Glossy"]);
         assert_eq!(selection_names(r#"say \"hi\""#), vec![r#"say "hi""#]);
     }
@@ -728,7 +1140,15 @@ mod tests {
     #[test]
     fn fog_and_depth_of_field_follow_depth() {
         let h = scene();
-        let f = run("ec.3d.fog3d", &[("fogColor", col(1.0, 0.0, 0.0)), ("fogEndDepth", num(1000.0)), ("scatteringDensity", num(0.0))], &h);
+        let f = run(
+            "ec.3d.fog3d",
+            &[
+                ("fogColor", col(1.0, 0.0, 0.0)),
+                ("fogEndDepth", num(1000.0)),
+                ("scatteringDensity", num(0.0)),
+            ],
+            &h,
+        );
         // Linear fog: 10 % at depth 100, 50 % at 500, full on the background.
         assert!((f.get(2, 5)[0] - 0.55).abs() < 1e-4, "{:?}", f.get(2, 5));
         assert!((f.get(12, 5)[0] - 0.75).abs() < 1e-4);
@@ -744,8 +1164,18 @@ mod tests {
                 pic.set(x, y, [v, v, v, 1.0]);
             }
         }
-        let env = EffectEnv { host: Some(&h), ..Default::default() };
-        let d = run_fx("ec.3d.depthoffield", &[("focalPlane", num(100.0)), ("maximumRadius", num(4.0))], pic.clone(), 0.0, env).img;
+        let env = EffectEnv {
+            host: Some(&h),
+            ..Default::default()
+        };
+        let d = run_fx(
+            "ec.3d.depthoffield",
+            &[("focalPlane", num(100.0)), ("maximumRadius", num(4.0))],
+            pic.clone(),
+            0.0,
+            env,
+        )
+        .img;
         assert_eq!(d.get(4, 5), pic.get(4, 5));
         assert!((d.get(12, 5)[0] - 0.5).abs() < 0.3 && d.get(12, 5) != pic.get(12, 5));
     }
@@ -753,11 +1183,21 @@ mod tests {
     #[test]
     fn extractor_maps_named_channels() {
         let h = scene();
-        let o = run("ec.3d.extractor", &[("red", Value::Str("Z".into())), ("whitePoint", num(1000.0))], &h);
+        let o = run(
+            "ec.3d.extractor",
+            &[("red", Value::Str("Z".into())), ("whitePoint", num(1000.0))],
+            &h,
+        );
         assert!((o.get(2, 5)[0] - 0.1).abs() < 1e-6);
         assert!((o.get(2, 5)[1] - 0.0005).abs() < 1e-6);
         // Without aux: the layer's own channels can be swapped.
-        let s = run_fx("ec.3d.extractor", &[("red", Value::Str("A".into()))], Image::filled(2, 2, [0.2, 0.3, 0.4, 1.0]), 0.0, EffectEnv::default());
+        let s = run_fx(
+            "ec.3d.extractor",
+            &[("red", Value::Str("A".into()))],
+            Image::filled(2, 2, [0.2, 0.3, 0.4, 1.0]),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(s.img.get(0, 0), [1.0, 0.3, 0.4, 1.0]);
     }
 
@@ -765,13 +1205,26 @@ mod tests {
     fn channel_extract_antialias_averages_sub_pixels() {
         // Depth at twice the layer resolution, alternating 0 / 1000 per aux column.
         let mut a = AuxChannels::new(40, 20, 2.0);
-        a.channels = vec![("Z".into(), (0..800).map(|i| if i % 2 == 0 { 0.0 } else { 1000.0 }).collect())];
+        a.channels = vec![(
+            "Z".into(),
+            (0..800)
+                .map(|i| if i % 2 == 0 { 0.0 } else { 1000.0 })
+                .collect(),
+        )];
         let host = AuxHost(Arc::new(a));
         let vals = [("blackPoint", num(0.0)), ("whitePoint", num(1000.0))];
         let hard = run("ec.3d.channelextract", &vals, &host);
         let v = hard.get(5, 5)[0];
         assert!(v == 0.0 || v == 1.0, "{v}");
-        let soft = run("ec.3d.channelextract", &[vals.as_slice(), &[("antialias", Value::Bool(true))]].concat(), &host);
-        assert!((soft.get(5, 5)[0] - 0.5).abs() < 1e-5, "{:?}", soft.get(5, 5));
+        let soft = run(
+            "ec.3d.channelextract",
+            &[vals.as_slice(), &[("antialias", Value::Bool(true))]].concat(),
+            &host,
+        );
+        assert!(
+            (soft.get(5, 5)[0] - 0.5).abs() < 1e-5,
+            "{:?}",
+            soft.get(5, 5)
+        );
     }
 }

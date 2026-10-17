@@ -28,13 +28,19 @@ pub struct Prompt {
 
 /// `true` when `path` names a Targa (`.tga`, and the rarer `.icb`, `.vda`, `.vst`).
 pub fn is_tga_path(path: &str) -> bool {
-    photocraft_engine::file_cmds::extension(path).and_then(|e| photocraft_codecs::from_extension(&e)) == Some(photocraft_codecs::Format::Tga)
+    photocraft_engine::file_cmds::extension(path)
+        .and_then(|e| photocraft_codecs::from_extension(&e))
+        == Some(photocraft_codecs::Format::Tga)
 }
 
 /// Whether saving the active document to `path` asks for Targa Options: an RGB Targa. Grayscale
 /// Targas are 8-bit, with nothing to choose.
 pub fn wants_prompt(app: &PhotocraftApp, path: &str) -> bool {
-    is_tga_path(path) && app.session.active().is_some_and(|st| st.doc.mode != photocraft_color::ColorMode::Grayscale)
+    is_tga_path(path)
+        && app
+            .session
+            .active()
+            .is_some_and(|st| st.doc.mode != photocraft_color::ColorMode::Grayscale)
 }
 
 /// The Targa bits a command or control call asks for (`"tgaBits": 24 | 32`), which skip the prompt.
@@ -44,18 +50,33 @@ pub fn bits_param(params: &serde_json::Value, cmd: &str) -> Result<Option<TgaBit
 
 /// Parks the save behind the prompt, starting at 32 bits when the document has an alpha channel.
 /// A prompt already waiting is never replaced (a shortcut can still reach Save a Copy).
-pub fn park(app: &mut PhotocraftApp, path: String, copy: bool, record: &'static str) -> Result<(), String> {
+pub fn park(
+    app: &mut PhotocraftApp,
+    path: String,
+    copy: bool,
+    record: &'static str,
+) -> Result<(), String> {
     if app.save_options_open() {
         return Err("Answer TIFF or Targa Options before starting another save".into());
     }
     let doc = app.active_doc_id()?;
-    let bits = app.session.active().map_or(TgaBits::Bits24, |st| photocraft_io::tga_default_bits(&st.doc));
-    app.targa_options = Some(Prompt { doc, path, bits, copy, record });
+    let bits = app.session.active().map_or(TgaBits::Bits24, |st| {
+        photocraft_io::tga_default_bits(&st.doc)
+    });
+    app.targa_options = Some(Prompt {
+        doc,
+        path,
+        bits,
+        copy,
+        record,
+    });
     Ok(())
 }
 
 pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(p) = &mut app.targa_options else { return };
+    let Some(p) = &mut app.targa_options else {
+        return;
+    };
     let (mut ok, mut cancel) = (false, false);
     let mut bits = p.bits;
     let modal = egui::Modal::new(egui::Id::new("targa-options")).show(ctx, |ui| {
@@ -77,8 +98,13 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
     cancel |= modal.should_close();
     p.bits = bits;
     if ok || ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter)) {
-        let Some(p) = app.targa_options.take() else { return };
-        let settings = ExportSettings { tga_bits: Some(p.bits), ..app.save_settings() };
+        let Some(p) = app.targa_options.take() else {
+            return;
+        };
+        let settings = ExportSettings {
+            tga_bits: Some(p.bits),
+            ..app.save_settings()
+        };
         let step = serde_json::json!({"path": p.path, "tgaBits": p.bits.bits()});
         let written = app.with_document(p.doc, |app| app.write_document(p.path, &settings, p.copy));
         if written.is_ok() {
@@ -120,11 +146,23 @@ mod tests {
     fn bits_params() {
         use serde_json::json;
         assert_eq!(bits_param(&json!({}), "file.saveAs"), Ok(None));
-        assert_eq!(bits_param(&json!({"tgaBits": null}), "file.saveAs"), Ok(None));
-        assert_eq!(bits_param(&json!({"tgaBits": 24}), "file.saveAs"), Ok(Some(TgaBits::Bits24)));
-        assert_eq!(bits_param(&json!({"tgaBits": 32}), "file.saveAs"), Ok(Some(TgaBits::Bits32)));
+        assert_eq!(
+            bits_param(&json!({"tgaBits": null}), "file.saveAs"),
+            Ok(None)
+        );
+        assert_eq!(
+            bits_param(&json!({"tgaBits": 24}), "file.saveAs"),
+            Ok(Some(TgaBits::Bits24))
+        );
+        assert_eq!(
+            bits_param(&json!({"tgaBits": 32}), "file.saveAs"),
+            Ok(Some(TgaBits::Bits32))
+        );
         for bad in [json!(16), json!("32"), json!(32.5), json!(false)] {
-            assert!(bits_param(&json!({"tgaBits": bad}), "file.saveAs").is_err(), "{bad}");
+            assert!(
+                bits_param(&json!({"tgaBits": bad}), "file.saveAs").is_err(),
+                "{bad}"
+            );
         }
     }
 }

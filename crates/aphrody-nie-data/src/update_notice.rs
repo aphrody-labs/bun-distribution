@@ -67,7 +67,10 @@ impl UpdateNoticeData {
         if texture_name.is_zero() {
             return None;
         }
-        Some(Self { texture_name, text_id: field_hash(v, "textId") })
+        Some(Self {
+            texture_name,
+            text_id: field_hash(v, "textId"),
+        })
     }
 }
 
@@ -106,8 +109,14 @@ impl UpdateNoticeInfo {
             return None;
         }
         let arr = v.get("updateNoticeData").and_then(Value::as_array);
-        let data_start = arr.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0);
-        let data_count = arr.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0);
+        let data_start = arr
+            .and_then(|a| a.first())
+            .and_then(Value::as_i64)
+            .unwrap_or(0);
+        let data_count = arr
+            .and_then(|a| a.get(1))
+            .and_then(Value::as_i64)
+            .unwrap_or(0);
         Some(Self {
             update_id,
             global_bit_flag_id: field_hash(v, "globalBitFlagId"),

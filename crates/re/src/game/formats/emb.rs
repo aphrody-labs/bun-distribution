@@ -80,7 +80,8 @@ impl EmbFile {
         if offset_table > 0 && offset_table + count * 4 <= buffer.len() {
             for i in 0..count {
                 let off_pos = offset_table + i * 4;
-                let data_offset = u32::from_le_bytes(buffer[off_pos..off_pos + 4].try_into().unwrap()) as usize;
+                let data_offset =
+                    u32::from_le_bytes(buffer[off_pos..off_pos + 4].try_into().unwrap()) as usize;
 
                 let data_size = if size_table > 0 && size_table + count * 4 <= buffer.len() {
                     let sz_pos = size_table + i * 4;
@@ -134,12 +135,19 @@ impl EmbFile {
 
     /// Extracts and decodes the texture at the specified index into RGBA8 raster pixels.
     pub fn decode_rgba(&self, index: usize) -> Result<EmbRgbaTexture> {
-        let entry = self.textures.get(index).ok_or_else(|| ReError::ParseError {
-            context: "emb_decode_rgba",
-            details: format!("Texture index {index} out of bounds (count {})", self.textures.len()),
-        })?;
+        let entry = self
+            .textures
+            .get(index)
+            .ok_or_else(|| ReError::ParseError {
+                context: "emb_decode_rgba",
+                details: format!(
+                    "Texture index {index} out of bounds (count {})",
+                    self.textures.len()
+                ),
+            })?;
 
-        let (width, height, rgba) = decode_dds_to_rgba(&entry.data, entry.width, entry.height, entry.format);
+        let (width, height, rgba) =
+            decode_dds_to_rgba(&entry.data, entry.width, entry.height, entry.format);
 
         Ok(EmbRgbaTexture {
             width,

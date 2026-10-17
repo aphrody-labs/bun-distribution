@@ -1,5 +1,5 @@
 use bevy_math::{MismatchedUnitsError, StableInterpolate as _, TryStableInterpolate, Vec2};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_text::{EmSize, FontSize, RemSize};
 use bevy_utils::default;
 use core::ops::{Div, DivAssign, Mul, MulAssign, Neg};

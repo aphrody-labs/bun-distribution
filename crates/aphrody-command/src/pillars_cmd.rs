@@ -40,7 +40,10 @@ pub(crate) fn handle_native(action: NativeAction) -> miette::Result<()> {
             });
 
             if json {
-                println!("{}", serde_json::to_string_pretty(&summary).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&summary).into_diagnostic()?
+                );
             } else {
                 println!("=== Aphrody Native Platform ===");
                 let topology = &summary["platform"]["topology"];
@@ -52,7 +55,7 @@ pub(crate) fn handle_native(action: NativeAction) -> miette::Result<()> {
                 println!("  * AVX2: {}", topology["has_avx2"]);
                 println!("  * CUDA devices: {}", topology["cuda_device_count"]);
             }
-        },
+        }
         NativeAction::SelfTest => {
             let clock_before = aphrody_native::NativePlatform::time_monotonic_ns();
             let topology = aphrody_native::NativePlatform::get_topology();
@@ -75,7 +78,7 @@ pub(crate) fn handle_native(action: NativeAction) -> miette::Result<()> {
                 "Native probes passed: monotonic clock, {} CPU(s), {} MiB memory.",
                 topology.cpu_count, topology.memory_total_mb
             );
-        },
+        }
     }
     Ok(())
 }
@@ -99,7 +102,10 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
             let mut status = aphrody_diagnostics::os_status().await;
             merge_in_process_winclean(&mut status, in_process_winclean_tools());
             if json {
-                println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&status).into_diagnostic()?
+                );
             } else {
                 println!("=== Aphrody OS System Layer ===");
                 println!(
@@ -116,7 +122,7 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
                 );
                 println!("  * Process Isolation: not enforced by kernel");
             }
-        },
+        }
         OsAction::Doctor => {
             let client = aphrody_diagnostics::os::os_client().await?;
             let snapshot = aphrody_diagnostics::os::os_snapshot(&client).await?;
@@ -138,7 +144,7 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
                 "Kernel and WinClean OS inventory: healthy ({} tools observed).",
                 snapshot["winclean_tools"]
             );
-        },
+        }
     }
     Ok(())
 }
@@ -275,15 +281,18 @@ fn bun_exec(script: &str, root: &std::path::Path, json: bool) -> miette::Result<
     let mut cmd = std::process::Command::new(&bun).no_window();
     cmd.arg("exec").arg(script).current_dir(root);
     if !json {
-        let status =
-            cmd.status().map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
+        let status = cmd
+            .status()
+            .map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
         if !status.success() {
             std::process::exit(status.code().unwrap_or(1));
         }
         return Ok(());
     }
     let started = std::time::Instant::now();
-    let out = cmd.output().map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
+    let out = cmd
+        .output()
+        .map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
     let exit_code = out.status.code().unwrap_or(1);
     let report = serde_json::json!({
         "exit_code": exit_code,
@@ -291,7 +300,10 @@ fn bun_exec(script: &str, root: &std::path::Path, json: bool) -> miette::Result<
         "stderr": String::from_utf8_lossy(&out.stderr),
         "duration_ms": started.elapsed().as_secs_f64() * 1000.0,
     });
-    println!("{}", serde_json::to_string_pretty(&report).into_diagnostic()?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).into_diagnostic()?
+    );
     if exit_code != 0 {
         std::process::exit(exit_code);
     }
@@ -311,7 +323,10 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 "status": "capabilities_declared_not_probed"
             });
             if json {
-                println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&status).into_diagnostic()?
+                );
             } else {
                 println!("=== Aphrody Shell & Terminal Environment ===");
                 println!("  * Terminal:      aphrody-term");
@@ -320,12 +335,13 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 println!("  * TUI:           Dashboard not wired");
                 println!("  * PTY Bridge:    aphrody-terminal-backend (WebSocket/Local)");
             }
-        },
+        }
         ShellAction::Start { args } => {
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
             let mut cmd = std::process::Command::new(&nu_path).no_window();
-            let root =
-                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
+            let root = std::env::var("APHRODY_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| {
                     std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
             cmd.current_dir(&root);
@@ -338,14 +354,21 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             let mut child = cmd
                 .spawn()
                 .map_err(|e| miette::miette!("Failed to launch Aphrody shell: {}", e))?;
-            let status = child.wait().map_err(|e| miette::miette!("Shell session error: {}", e))?;
+            let status = child
+                .wait()
+                .map_err(|e| miette::miette!("Shell session error: {}", e))?;
             if !status.success() {
                 std::process::exit(status.code().unwrap_or(1));
             }
-        },
-        ShellAction::Eval { pipeline, json, bun } => {
-            let root =
-                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
+        }
+        ShellAction::Eval {
+            pipeline,
+            json,
+            bun,
+        } => {
+            let root = std::env::var("APHRODY_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| {
                     std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
 
@@ -355,31 +378,43 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
 
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
             let mut cmd = std::process::Command::new(&nu_path).no_window();
-            let code = if json { format!("{} | to json", pipeline) } else { pipeline };
+            let code = if json {
+                format!("{} | to json", pipeline)
+            } else {
+                pipeline
+            };
             cmd.arg("-c").arg(&code);
             cmd.current_dir(&root);
             cmd.stdin(std::process::Stdio::inherit())
                 .stdout(std::process::Stdio::inherit())
                 .stderr(std::process::Stdio::inherit());
-            let mut child =
-                cmd.spawn().map_err(|e| miette::miette!("Failed to launch Nushell eval: {}", e))?;
-            let status = child.wait().map_err(|e| miette::miette!("Shell eval error: {}", e))?;
+            let mut child = cmd
+                .spawn()
+                .map_err(|e| miette::miette!("Failed to launch Nushell eval: {}", e))?;
+            let status = child
+                .wait()
+                .map_err(|e| miette::miette!("Shell eval error: {}", e))?;
             if !status.success() {
                 std::process::exit(status.code().unwrap_or(1));
             }
-        },
+        }
         ShellAction::Bun { command, json } => {
-            let root =
-                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
+            let root = std::env::var("APHRODY_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| {
                     std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
 
             bun_exec(&command, &root, json)?;
-        },
+        }
         ShellAction::Term { args } => {
             let cols = 80;
             let rows = 24;
-            let config = aphrody_term::TermConfig { cols, rows, ..Default::default() };
+            let config = aphrody_term::TermConfig {
+                cols,
+                rows,
+                ..Default::default()
+            };
             let term = match args.split_first() {
                 Some((program, rest)) => {
                     let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
@@ -387,15 +422,19 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                         .map_err(|e| miette!("cannot start {program} in a PTY: {e}"))?;
                     settle_term(&term, Duration::from_secs(10));
                     term
-                },
+                }
                 None => aphrody_term::AphrodyTerm::new(config),
             };
             let (col, row, visible) = term.cursor();
             println!("=== Aphrody Term {cols}x{rows} (cursor {col}:{row}, visible: {visible}) ===");
             println!("{}", term.scrape_text());
-        },
+        }
         ShellAction::ComputerUse { action, json } => {
-            let config = aphrody_term::TermConfig { cols: 80, rows: 24, ..Default::default() };
+            let config = aphrody_term::TermConfig {
+                cols: 80,
+                rows: 24,
+                ..Default::default()
+            };
             #[cfg(windows)]
             let shell = std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into());
             #[cfg(not(windows))]
@@ -413,7 +452,9 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                         "unknown action {act:?}: expected \"type <text>\" or \"key <key>\""
                     ));
                 };
-                term.computer_use().dispatch_action(action).into_diagnostic()?;
+                term.computer_use()
+                    .dispatch_action(action)
+                    .into_diagnostic()?;
                 settle_term(&term, Duration::from_secs(5));
             }
             let text = term.scrape_text();
@@ -432,7 +473,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 println!("--- Screen Buffer ---");
                 println!("{}", text);
             }
-        },
+        }
         ShellAction::Serve { host, port } => {
             let addr: std::net::SocketAddr = format!("{}:{}", host, port)
                 .parse()
@@ -446,7 +487,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                     aphrody_terminal_backend::serve(addr, cfg).await
                 })
                 .map_err(|e| miette::miette!("Terminal server error: {}", e))?;
-        },
+        }
     }
     Ok(())
 }

@@ -90,7 +90,10 @@ fn documents(help: &str, flag: &str) -> bool {
 
 /// The first of `candidates` this help text documents.
 fn first_documented(help: &str, candidates: &[&str]) -> Option<String> {
-    candidates.iter().find(|flag| documents(help, flag)).map(|flag| (*flag).to_string())
+    candidates
+        .iter()
+        .find(|flag| documents(help, flag))
+        .map(|flag| (*flag).to_string())
 }
 
 impl ServerCapabilities {
@@ -102,7 +105,11 @@ impl ServerCapabilities {
             let valued = help
                 .lines()
                 .any(|line| line.contains("--flash-attn") && line.contains("[on|off|auto]"));
-            if valued { FlashAttnSyntax::Valued } else { FlashAttnSyntax::Switch }
+            if valued {
+                FlashAttnSyntax::Valued
+            } else {
+                FlashAttnSyntax::Switch
+            }
         } else {
             FlashAttnSyntax::Absent
         };
@@ -140,20 +147,26 @@ impl ServerCapabilities {
     /// llama-server usage text.
     pub fn probe(binary: &Path) -> Result<Self, CapabilityError> {
         let run = |flag: &str| {
-            Command::new(binary).no_window().arg(flag).output().map(|output| {
-                // llama.cpp prints usage on stdout and its banner on stderr;
-                // older builds mix the two.
-                let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
-                text.push_str(&String::from_utf8_lossy(&output.stderr));
-                text
-            })
+            Command::new(binary)
+                .no_window()
+                .arg(flag)
+                .output()
+                .map(|output| {
+                    // llama.cpp prints usage on stdout and its banner on stderr;
+                    // older builds mix the two.
+                    let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
+                    text.push_str(&String::from_utf8_lossy(&output.stderr));
+                    text
+                })
         };
         let help = run("--help").map_err(|source| CapabilityError::Spawn {
             binary: binary.display().to_string(),
             source,
         })?;
         if !(documents(&help, "--model") && documents(&help, "--port")) {
-            return Err(CapabilityError::NotLlamaServer { binary: binary.display().to_string() });
+            return Err(CapabilityError::NotLlamaServer {
+                binary: binary.display().to_string(),
+            });
         }
         let version = run("--version").ok();
         Ok(Self::parse(&help, version.as_deref()))

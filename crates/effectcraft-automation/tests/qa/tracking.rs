@@ -36,25 +36,50 @@ fn write_plate(qa: &Qa, dir: &str, shake: bool) -> String {
             if !shake && (x as f64 - cx).abs() < 10.0 && (y as f64 - cy).abs() < 10.0 {
                 // The object: white with a dark centre dot (a trackable feature).
                 let dot = (x as f64 - cx).abs() < 3.0 && (y as f64 - cy).abs() < 3.0;
-                return if dot { image::Rgba([20, 20, 20, 255]) } else { image::Rgba([250, 250, 250, 255]) };
+                return if dot {
+                    image::Rgba([20, 20, 20, 255])
+                } else {
+                    image::Rgba([250, 250, 250, 255])
+                };
             }
             let v = texture(px, py);
             image::Rgba([v, v / 2 + 30, 255 - v, 255])
         });
-        img.save(qa.dir.join(format!("{dir}/f_{f:03}.png"))).unwrap();
+        img.save(qa.dir.join(format!("{dir}/f_{f:03}.png")))
+            .unwrap();
     }
     qa.path(&format!("{dir}/f_000.png"))
 }
 
 fn shake_offset(f: u32) -> (i64, i64) {
-    [(0, 0), (3, -2), (-2, 3), (4, 1), (-3, -3), (2, 2), (-4, 0), (1, -4), (3, 3), (-2, -1), (0, 4), (-3, 2)][f as usize]
+    [
+        (0, 0),
+        (3, -2),
+        (-2, 3),
+        (4, 1),
+        (-3, -3),
+        (2, 2),
+        (-4, 0),
+        (1, -4),
+        (3, 3),
+        (-2, -1),
+        (0, 4),
+        (-3, 2),
+    ][f as usize]
 }
 
 /// Import a sequence at 12 fps and make a comp of it; returns (comp, layer).
 fn plate_comp(qa: &mut Qa, first: &str, name: &str) -> (Value, Value) {
     let item = qa.exec("file.import", json!({"paths": [first]}))["items"][0].clone();
-    qa.exec("file.interpretFootage", json!({"items": [item.clone()], "frameRate": 12}));
-    let comp = qa.exec("comp.new", json!({"name": name, "width": 160, "height": 90, "frameRate": 12, "duration": 1}))["comp"].clone();
+    qa.exec(
+        "file.interpretFootage",
+        json!({"items": [item.clone()], "frameRate": 12}),
+    );
+    let comp = qa.exec(
+        "comp.new",
+        json!({"name": name, "width": 160, "height": 90, "frameRate": 12, "duration": 1}),
+    )["comp"]
+        .clone();
     let layer = qa.exec("layer.addItem", json!({"item": item}))["layer"].clone();
     (comp, layer)
 }
@@ -66,21 +91,44 @@ fn point_track_to_null() {
     let (_, plate) = plate_comp(&mut qa, &first, "Track");
     let follow = qa.exec("layer.newNull", json!({"name": "Follow"}))["layer"].clone();
     // Track the plate; the Motion Target is the null.
-    qa.exec("track.new", json!({"layer": plate.clone(), "kind": "transform", "target": follow.clone()}));
+    qa.exec(
+        "track.new",
+        json!({"layer": plate.clone(), "kind": "transform", "target": follow.clone()}),
+    );
     let (cx, cy) = square_center(0);
     qa.exec("track.setPoint", json!({"layer": plate.clone(), "point": 1, "center": [cx, cy], "featureSize": [24, 24], "searchSize": [48, 48], "time": 0}));
     qa.exec("time.set", json!({"time": 0}));
-    qa.exec("track.analyze", json!({"layer": plate.clone(), "direction": "forward", "wait": true}));
+    qa.exec(
+        "track.analyze",
+        json!({"layer": plate.clone(), "direction": "forward", "wait": true}),
+    );
     let st = qa.exec("track.status", json!({"layer": plate.clone()}));
-    assert!(st.to_string().contains("featureCenter") || st.is_object(), "{st}");
-    qa.exec("track.apply", json!({"layer": plate.clone(), "dimensions": "xy"}));
+    assert!(
+        st.to_string().contains("featureCenter") || st.is_object(),
+        "{st}"
+    );
+    qa.exec(
+        "track.apply",
+        json!({"layer": plate.clone(), "dimensions": "xy"}),
+    );
     // The null now follows the square, frame by frame, to within a pixel.
     for f in [0u32, 5, 11] {
         let t = f as f64 / 12.0;
-        let p = qa.tool("get_property", json!({"layer": follow.clone(), "path": "transform/position", "time": t}));
-        let v = p["value"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect::<Vec<_>>();
+        let p = qa.tool(
+            "get_property",
+            json!({"layer": follow.clone(), "path": "transform/position", "time": t}),
+        );
+        let v = p["value"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect::<Vec<_>>();
         let (ex, ey) = square_center(f);
-        assert!((v[0] - ex).abs() < 1.0 && (v[1] - ey).abs() < 1.0, "frame {f}: null at {v:?}, square at ({ex}, {ey})");
+        assert!(
+            (v[0] - ex).abs() < 1.0 && (v[1] - ey).abs() < 1.0,
+            "frame {f}: null at {v:?}, square at ({ex}, {ey})"
+        );
     }
 }
 
@@ -106,12 +154,21 @@ fn warp_stabilizer_steadies_a_shaking_plate() {
         s / (N - 1) as f64
     };
     let before = jitter(&mut qa);
-    qa.exec("track.warpStabilizer", json!({"layer": plate.clone(), "wait": true}));
-    qa.tool("set_property", json!({"layer": plate.clone(), "path": "effects/#1/stabilization/result", "value": 1}));
+    qa.exec(
+        "track.warpStabilizer",
+        json!({"layer": plate.clone(), "wait": true}),
+    );
+    qa.tool(
+        "set_property",
+        json!({"layer": plate.clone(), "path": "effects/#1/stabilization/result", "value": 1}),
+    );
     let st = qa.exec("warp.status", json!({"layer": plate.clone()}));
     assert_eq!(st["analyzed"], true, "{st}");
     let after = jitter(&mut qa);
-    assert!(after < before * 0.5, "No Motion stabilisation removes most of the shake: {before} → {after}");
+    assert!(
+        after < before * 0.5,
+        "No Motion stabilisation removes most of the shake: {before} → {after}"
+    );
 }
 
 #[test]
@@ -129,19 +186,36 @@ fn roto_brush_propagates_and_content_aware_fill_removes_the_object() {
         "roto.stroke",
         json!({"layer": plate.clone(), "kind": "bg", "frame": 0, "radius": 4, "points": [[5, 5], [150, 5], [150, 85], [5, 85], [5, 5], [cx + 25.0, cy]]}),
     );
-    qa.exec("roto.propagate", json!({"layer": plate.clone(), "direction": "forward", "to": N - 1, "wait": true}));
+    qa.exec(
+        "roto.propagate",
+        json!({"layer": plate.clone(), "direction": "forward", "to": N - 1, "wait": true}),
+    );
     for f in [0u32, 6, 11] {
-        let st = qa.exec("roto.status", json!({"layer": plate.clone(), "frame": f, "compute": true}));
+        let st = qa.exec(
+            "roto.status",
+            json!({"layer": plate.clone(), "frame": f, "compute": true}),
+        );
         let (ex, ey) = square_center(f);
-        let c = st["centroid"].as_array().unwrap_or_else(|| panic!("frame {f}: {st}"));
+        let c = st["centroid"]
+            .as_array()
+            .unwrap_or_else(|| panic!("frame {f}: {st}"));
         let (mx, my) = (c[0].as_f64().unwrap(), c[1].as_f64().unwrap());
-        assert!((mx - ex).abs() < 3.0 && (my - ey).abs() < 3.0, "frame {f}: matte centroid ({mx}, {my}) vs square ({ex}, {ey})");
+        assert!(
+            (mx - ex).abs() < 3.0 && (my - ey).abs() < 3.0,
+            "frame {f}: matte centroid ({mx}, {my}) vs square ({ex}, {ey})"
+        );
         let area = st["area"].as_f64().unwrap();
-        assert!((area - 400.0).abs() < 160.0, "frame {f}: matte area {area} ≈ 20×20");
+        assert!(
+            (area - 400.0).abs() < 160.0,
+            "frame {f}: matte area {area} ≈ 20×20"
+        );
     }
 
     // Content-Aware Fill: a mask around the object's path, Object fill, then the square is gone.
-    let roto_fx = qa.exec("effect.remove", json!({"layer": plate.clone(), "effect": 1}));
+    let roto_fx = qa.exec(
+        "effect.remove",
+        json!({"layer": plate.clone(), "effect": 1}),
+    );
     let _ = roto_fx;
     qa.exec("layer.addMask", json!({"layer": plate.clone(), "shape": "rect", "rect": [20, 25, 120, 40], "mode": "Subtract"}));
     let caf =
@@ -151,6 +225,9 @@ fn roto_brush_propagates_and_content_aware_fill_removes_the_object() {
         let img = qa.frame(None, f as f64 / 12.0);
         let (ex, ey) = square_center(f);
         let p = img.get_pixel(ex as u32 + 6, ey as u32 + 6);
-        assert!(luma(p) < 200.0, "frame {f}: the white square is filled with plate texture: {p:?}");
+        assert!(
+            luma(p) < 200.0,
+            "frame {f}: the white square is filled with plate texture: {p:?}"
+        );
     }
 }

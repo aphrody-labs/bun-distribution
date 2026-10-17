@@ -1,4 +1,6 @@
 use crate::{
+    AssetLoadError, AssetLoader, AssetPath, DeserializeMetaError, ErasedLoadedAsset,
+    MissingAssetLoaderForExtensionError, MissingAssetLoaderForTypeNameError,
     io::{
         AssetReaderError, AssetWriterError, MissingAssetWriterError,
         MissingProcessedAssetReaderError, MissingProcessedAssetWriterError, Reader, Writer,
@@ -7,8 +9,6 @@ use crate::{
     processor::AssetProcessor,
     saver::{AssetSaver, SavedAsset},
     transformer::{AssetTransformer, IdentityAssetTransformer, TransformedAsset},
-    AssetLoadError, AssetLoader, AssetPath, DeserializeMetaError, ErasedLoadedAsset,
-    MissingAssetLoaderForExtensionError, MissingAssetLoaderForTypeNameError,
 };
 use alloc::{
     borrow::ToOwned,
@@ -100,10 +100,10 @@ pub struct LoadTransformAndSaveSettings<LoaderSettings, TransformerSettings, Sav
 }
 
 impl<
-        L: AssetLoader,
-        T: AssetTransformer<AssetInput = L::Asset>,
-        S: AssetSaver<Asset = T::AssetOutput>,
-    > LoadTransformAndSave<L, T, S>
+    L: AssetLoader,
+    T: AssetTransformer<AssetInput = L::Asset>,
+    S: AssetSaver<Asset = T::AssetOutput>,
+> LoadTransformAndSave<L, T, S>
 {
     pub fn new(transformer: T, saver: S) -> Self {
         LoadTransformAndSave {
@@ -126,7 +126,9 @@ pub enum ProcessError {
     #[from(ignore)]
     MissingProcessor(String),
     /// The given short name is ambiguous between several processors.
-    #[error("The processor '{processor_short_name}' is ambiguous between several processors: {ambiguous_processor_names:?}")]
+    #[error(
+        "The processor '{processor_short_name}' is ambiguous between several processors: {ambiguous_processor_names:?}"
+    )]
     AmbiguousProcessor {
         /// The given string for the processor name.
         processor_short_name: String,
@@ -166,7 +168,9 @@ pub enum ProcessError {
     AssetLoadError(#[from] AssetLoadError),
     /// The wrong meta type was passed into a processor.
     /// This is probably an internal implementation error.
-    #[error("The wrong meta type was passed into a processor. This is probably an internal implementation error.")]
+    #[error(
+        "The wrong meta type was passed into a processor. This is probably an internal implementation error."
+    )]
     WrongMetaType,
     /// Encountered an error while saving the asset.
     #[error("Encountered an error while saving the asset: {0}")]

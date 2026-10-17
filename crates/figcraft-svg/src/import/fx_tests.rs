@@ -15,7 +15,13 @@ fn effects(filter: &str, transform: &str) -> (Vec<EffectKind>, Vec<String>) {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
     let i = import_svg_with_notes(&mut d, svg.as_bytes(), p, 0.0, 0.0, "x").unwrap();
-    let rect = d.subtree(i.frame).into_iter().filter_map(|id| d.node(id)).find(|n| n.kind == NodeKind::Rectangle).unwrap().clone();
+    let rect = d
+        .subtree(i.frame)
+        .into_iter()
+        .filter_map(|id| d.node(id))
+        .find(|n| n.kind == NodeKind::Rectangle)
+        .unwrap()
+        .clone();
     (rect.effects.into_iter().map(|e| e.kind).collect(), i.notes)
 }
 
@@ -29,8 +35,14 @@ fn shadow(k: &EffectKind) -> &Shadow {
 #[test]
 fn blurs_and_drop_shadows() {
     let (fx, _) = effects(r##"<feGaussianBlur stdDeviation="3"/>"##, "");
-    assert!(matches!(&fx[..], [EffectKind::LayerBlur(b)] if b.radius == 6.0), "{fx:?}");
-    let (fx, _) = effects(r##"<feDropShadow dx="2" dy="3" stdDeviation="1.5" flood-color="#00f" flood-opacity="0.4"/>"##, "");
+    assert!(
+        matches!(&fx[..], [EffectKind::LayerBlur(b)] if b.radius == 6.0),
+        "{fx:?}"
+    );
+    let (fx, _) = effects(
+        r##"<feDropShadow dx="2" dy="3" stdDeviation="1.5" flood-color="#00f" flood-opacity="0.4"/>"##,
+        "",
+    );
     let s = shadow(&fx[0]);
     assert!(matches!(fx[0], EffectKind::DropShadow(_)));
     assert_eq!((s.offset, s.radius, s.spread), ((2.0, 3.0), 3.0, 0.0));
@@ -40,13 +52,22 @@ fn blurs_and_drop_shadows() {
 
 #[test]
 fn effects_scale_with_their_layer() {
-    let (fx, _) = effects(r##"<feDropShadow dx="2" dy="0" stdDeviation="1"/>"##, "scale(2)");
+    let (fx, _) = effects(
+        r##"<feDropShadow dx="2" dy="0" stdDeviation="1"/>"##,
+        "scale(2)",
+    );
     let s = shadow(&fx[0]);
     assert_eq!((s.offset, s.radius), ((4.0, 0.0), 4.0));
     // Turned with the layer.
-    let (fx, _) = effects(r##"<feDropShadow dx="2" dy="0" stdDeviation="1"/>"##, "rotate(90)");
+    let (fx, _) = effects(
+        r##"<feDropShadow dx="2" dy="0" stdDeviation="1"/>"##,
+        "rotate(90)",
+    );
     let s = shadow(&fx[0]);
-    assert!(s.offset.0.abs() < 1e-9 && (s.offset.1 - 2.0).abs() < 1e-9, "{s:?}");
+    assert!(
+        s.offset.0.abs() < 1e-9 && (s.offset.1 - 2.0).abs() < 1e-9,
+        "{s:?}"
+    );
 }
 
 #[test]
@@ -76,15 +97,26 @@ fn colour_matrix_shadows_inner_and_drop() {
         ),
         "",
     );
-    let [EffectKind::DropShadow(d), EffectKind::InnerShadow(i)] = &fx[..] else { panic!("{fx:?}") };
-    assert_eq!((d.offset, d.radius, d.color.a, d.show_behind), ((0.0, 4.0), 4.0, 0.25, false));
-    assert_eq!((i.offset, i.radius, i.color), ((-1.0, 0.0), 1.0, Color::new(1.0, 1.0, 1.0, 0.5)));
+    let [EffectKind::DropShadow(d), EffectKind::InnerShadow(i)] = &fx[..] else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (d.offset, d.radius, d.color.a, d.show_behind),
+        ((0.0, 4.0), 4.0, 0.25, false)
+    );
+    assert_eq!(
+        (i.offset, i.radius, i.color),
+        ((-1.0, 0.0), 1.0, Color::new(1.0, 1.0, 1.0, 0.5))
+    );
     // The flood-out-in way of writing an inner shadow.
     let (fx, _) = effects(
         r##"<feOffset in="SourceAlpha" dx="2" dy="2"/><feGaussianBlur stdDeviation="1" result="b"/><feFlood flood-color="#000" flood-opacity="0.6"/><feComposite in2="b" operator="out"/><feComposite in2="SourceAlpha" operator="in" result="inner"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="inner"/></feMerge>"##,
         "",
     );
-    assert!(matches!(&fx[..], [EffectKind::InnerShadow(s)] if s.offset == (2.0, 2.0) && (s.color.a - 0.6).abs() < 1e-6), "{fx:?}");
+    assert!(
+        matches!(&fx[..], [EffectKind::InnerShadow(s)] if s.offset == (2.0, 2.0) && (s.color.a - 0.6).abs() < 1e-6),
+        "{fx:?}"
+    );
 }
 
 #[test]
@@ -108,23 +140,58 @@ fn filters_that_arent_shadows_or_blurs_are_left_out_and_reported() {
 fn exported_effects_come_back_as_they_were() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let r = d.create(p, NodeKind::Rectangle, "R", 20.0, 20.0, 60.0, 40.0).unwrap();
-    let shadow = Shadow { color: Color::new(0.1, 0.2, 0.3, 0.4), offset: (3.0, 5.0), radius: 6.0, ..Shadow::default() };
+    let r = d
+        .create(p, NodeKind::Rectangle, "R", 20.0, 20.0, 60.0, 40.0)
+        .unwrap();
+    let shadow = Shadow {
+        color: Color::new(0.1, 0.2, 0.3, 0.4),
+        offset: (3.0, 5.0),
+        radius: 6.0,
+        ..Shadow::default()
+    };
     let node = d.get_mut(r).unwrap();
     node.fills = vec![Paint::solid(Color::from_hex("336699").unwrap())];
     node.effects = vec![
-        Effect { kind: EffectKind::DropShadow(shadow.clone()), visible: true },
-        Effect { kind: EffectKind::LayerBlur(Blur { radius: 4.0, ..Blur::default() }), visible: true },
+        Effect {
+            kind: EffectKind::DropShadow(shadow.clone()),
+            visible: true,
+        },
+        Effect {
+            kind: EffectKind::LayerBlur(Blur {
+                radius: 4.0,
+                ..Blur::default()
+            }),
+            visible: true,
+        },
     ];
     let svg = crate::export_svg(&d, &[r], &crate::SvgOptions::default()).unwrap();
     let mut d2 = Document::new("back");
     let p2 = d2.first_page().unwrap();
     let f = crate::import_svg(&mut d2, svg.as_bytes(), p2, 0.0, 0.0, "x").unwrap();
-    let back = d2.subtree(f).into_iter().filter_map(|i| d2.node(i)).find(|n| n.kind == NodeKind::Rectangle).unwrap();
-    let [EffectKind::DropShadow(s), EffectKind::LayerBlur(b)] = &back.effects.iter().map(|e| e.kind.clone()).collect::<Vec<_>>()[..] else {
+    let back = d2
+        .subtree(f)
+        .into_iter()
+        .filter_map(|i| d2.node(i))
+        .find(|n| n.kind == NodeKind::Rectangle)
+        .unwrap();
+    let [EffectKind::DropShadow(s), EffectKind::LayerBlur(b)] = &back
+        .effects
+        .iter()
+        .map(|e| e.kind.clone())
+        .collect::<Vec<_>>()[..]
+    else {
         panic!("{:?}", back.effects)
     };
-    assert_eq!((s.offset, s.radius, b.radius), (shadow.offset, shadow.radius, 4.0));
+    assert_eq!(
+        (s.offset, s.radius, b.radius),
+        (shadow.offset, shadow.radius, 4.0)
+    );
     let c = s.color;
-    assert!((c.r - 0.1).abs() < 1e-3 && (c.g - 0.2).abs() < 1e-3 && (c.b - 0.3).abs() < 1e-3 && (c.a - 0.4).abs() < 1e-3, "{c:?}");
+    assert!(
+        (c.r - 0.1).abs() < 1e-3
+            && (c.g - 0.2).abs() < 1e-3
+            && (c.b - 0.3).abs() < 1e-3
+            && (c.a - 0.4).abs() < 1e-3,
+        "{c:?}"
+    );
 }

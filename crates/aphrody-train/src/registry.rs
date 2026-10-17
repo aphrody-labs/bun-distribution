@@ -241,11 +241,16 @@ pub struct PromotedArtifact {
 }
 
 fn validate_sha256(label: &str, value: &str) -> Result<()> {
-    if value.len() == 64 && value.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    if value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
     {
         Ok(())
     } else {
-        Err(RegistryError::Invalid(format!("{label} must be 64 lower-case hex digits")))
+        Err(RegistryError::Invalid(format!(
+            "{label} must be 64 lower-case hex digits"
+        )))
     }
 }
 
@@ -283,8 +288,10 @@ impl Registry {
         let Some(resolved) = DatabaseEnv::new(ENV_PREFIX).runtime() else {
             return Ok(None);
         };
-        let pool =
-            PgPool::builder(resolved.url).application_name("aphrody-train").max_size(4).build()?;
+        let pool = PgPool::builder(resolved.url)
+            .application_name("aphrody-train")
+            .max_size(4)
+            .build()?;
         Ok(Some(Self::new(pool)))
     }
 
@@ -313,9 +320,12 @@ impl Registry {
             .max_size(1)
             .build()?;
         let mut client = pool.get().await?;
-        let report =
-            migrate_postgres(&mut client, &migrations(), &MigrateOptions::in_schema(SCHEMA))
-                .await?;
+        let report = migrate_postgres(
+            &mut client,
+            &migrations(),
+            &MigrateOptions::in_schema(SCHEMA),
+        )
+        .await?;
         Ok(report)
     }
 
@@ -444,7 +454,11 @@ impl Registry {
     /// Database errors.
     pub async fn start_run(&self, run: &NewRun) -> Result<String> {
         validate_label("run kind", &run.kind)?;
-        let params = if run.params.is_null() { json!({}) } else { run.params.clone() };
+        let params = if run.params.is_null() {
+            json!({})
+        } else {
+            run.params.clone()
+        };
         self.query_id(
             "INSERT INTO training.runs \
              (kind, dataset_version_id, base_model, params, code_commit, job_id) \
@@ -477,7 +491,11 @@ impl Registry {
             .execute(
                 "UPDATE training.runs SET status = $2, finished_at = now(), error = $3 \
                  WHERE id = $1::text::uuid AND status IN ('queued', 'running')",
-                &[(&run_id, Type::TEXT), (&status, Type::TEXT), (&error, Type::TEXT)],
+                &[
+                    (&run_id, Type::TEXT),
+                    (&status, Type::TEXT),
+                    (&error, Type::TEXT),
+                ],
             )
             .await?;
         Ok(updated == 1)
@@ -495,8 +513,11 @@ impl Registry {
         validate_label("uri", &artifact.uri)?;
         let size = i64::try_from(artifact.size_bytes)
             .map_err(|_| RegistryError::Invalid("size_bytes exceeds i64".into()))?;
-        let metadata =
-            if artifact.metadata.is_null() { json!({}) } else { artifact.metadata.clone() };
+        let metadata = if artifact.metadata.is_null() {
+            json!({})
+        } else {
+            artifact.metadata.clone()
+        };
         self.query_id(
             "INSERT INTO training.artifacts (run_id, format, uri, content_sha256, size_bytes, metadata) \
              VALUES ($1::text::uuid, $2, $3, $4, $5, $6) \
@@ -522,12 +543,20 @@ impl Registry {
     pub async fn record_metric(&self, metric: &NewMetric) -> Result<String> {
         validate_label("metric", &metric.metric)?;
         if !metric.value.is_finite() || metric.baseline.is_some_and(|b| !b.is_finite()) {
-            return Err(RegistryError::Invalid("metric values must be finite".into()));
+            return Err(RegistryError::Invalid(
+                "metric values must be finite".into(),
+            ));
         }
         if metric.run_id.is_none() && metric.artifact_id.is_none() {
-            return Err(RegistryError::Invalid("a metric needs a run_id or an artifact_id".into()));
+            return Err(RegistryError::Invalid(
+                "a metric needs a run_id or an artifact_id".into(),
+            ));
         }
-        let params = if metric.params.is_null() { json!({}) } else { metric.params.clone() };
+        let params = if metric.params.is_null() {
+            json!({})
+        } else {
+            metric.params.clone()
+        };
         self.query_id(
             "INSERT INTO training.eval_metrics \
              (run_id, artifact_id, eval_dataset_version_id, metric, value, baseline, params) \
@@ -587,7 +616,9 @@ impl Registry {
                 &[(&promotion_id, Type::TEXT)],
             )
             .await?;
-        let row = found.first().ok_or_else(|| RegistryError::NotFound(promotion_id.to_owned()))?;
+        let row = found
+            .first()
+            .ok_or_else(|| RegistryError::NotFound(promotion_id.to_owned()))?;
         let kind: String = row.try_get(0)?;
         let alias: String = row.try_get(1)?;
         let status: String = row.try_get(2)?;
@@ -637,10 +668,18 @@ impl Registry {
                 "UPDATE training.promotions SET status = 'rejected', decided_by = $2, \
                  reason = COALESCE($3, reason), decided_at = now() \
                  WHERE id = $1::text::uuid AND status = 'proposed'",
-                &[(&promotion_id, Type::TEXT), (&decided_by, Type::TEXT), (&reason, Type::TEXT)],
+                &[
+                    (&promotion_id, Type::TEXT),
+                    (&decided_by, Type::TEXT),
+                    (&reason, Type::TEXT),
+                ],
             )
             .await?;
-        if updated == 1 { Ok(()) } else { Err(RegistryError::Conflict(promotion_id.to_owned())) }
+        if updated == 1 {
+            Ok(())
+        } else {
+            Err(RegistryError::Conflict(promotion_id.to_owned()))
+        }
     }
 
     /// The artifact currently promoted for `(kind, alias)`.
@@ -687,10 +726,14 @@ impl Registry {
         decided_by: &str,
     ) -> Result<String> {
         let (delta, reason) = match verdict {
-            PromoteVerdict::Promoted { delta_recall_at_5, .. } => (*delta_recall_at_5, None),
-            PromoteVerdict::Rejected { delta_recall_at_5, reason, .. } => {
-                (*delta_recall_at_5, Some(reason.clone()))
-            },
+            PromoteVerdict::Promoted {
+                delta_recall_at_5, ..
+            } => (*delta_recall_at_5, None),
+            PromoteVerdict::Rejected {
+                delta_recall_at_5,
+                reason,
+                ..
+            } => (*delta_recall_at_5, Some(reason.clone())),
         };
         let metric_id = self
             .record_metric(&NewMetric {
@@ -715,7 +758,10 @@ impl Registry {
             .await?;
         match reason {
             None => self.promote(&promotion_id, decided_by).await?,
-            Some(reason) => self.reject_promotion(&promotion_id, decided_by, &reason).await?,
+            Some(reason) => {
+                self.reject_promotion(&promotion_id, decided_by, &reason)
+                    .await?
+            }
         }
         Ok(promotion_id)
     }
@@ -734,7 +780,9 @@ pub struct RunRecorder {
 }
 
 async fn bounded<T>(future: impl Future<Output = Result<T>>) -> Result<T> {
-    tokio::time::timeout(CALL_TIMEOUT, future).await.map_err(|_| RegistryError::Timeout)?
+    tokio::time::timeout(CALL_TIMEOUT, future)
+        .await
+        .map_err(|_| RegistryError::Timeout)?
 }
 
 async fn git_head(repo_root: &Path) -> Option<String> {
@@ -744,7 +792,8 @@ async fn git_head(repo_root: &Path) -> Option<String> {
             return Some(commit);
         }
     }
-    let output = tokio::process::Command::new("git").no_window()
+    let output = tokio::process::Command::new("git")
+        .no_window()
         .arg("-C")
         .arg(repo_root)
         .args(["rev-parse", "HEAD"])
@@ -783,7 +832,11 @@ async fn fingerprint(path: PathBuf) -> Option<(String, Option<i64>)> {
             .extension()
             .and_then(|ext| ext.to_str())
             .is_some_and(|ext| matches!(ext, "jsonl" | "ndjson" | "txt" | "tsv" | "csv"));
-        let rows = if counts_lines { count_lines(&path) } else { None };
+        let rows = if counts_lines {
+            count_lines(&path)
+        } else {
+            None
+        };
         Some((sha256.to_ascii_lowercase(), rows))
     })
     .await
@@ -813,7 +866,7 @@ impl RunRecorder {
             Err(error) => {
                 tracing::warn!(%error, "training registry disabled: invalid database URL");
                 return None;
-            },
+            }
         };
         let code_commit = git_head(repo_root).await;
         let dataset_version_id =
@@ -832,7 +885,7 @@ impl RunRecorder {
             Err(error) => {
                 tracing::warn!(%error, job = %job.id, "training registry unreachable: run not recorded");
                 None
-            },
+            }
         }
     }
 
@@ -846,7 +899,12 @@ impl RunRecorder {
         let name = std::env::var("APHRODY_TRAINING_DATASET")
             .ok()
             .filter(|name| !name.trim().is_empty())
-            .or_else(|| input.file_stem().and_then(|stem| stem.to_str()).map(str::to_owned))?;
+            .or_else(|| {
+                input
+                    .file_stem()
+                    .and_then(|stem| stem.to_str())
+                    .map(str::to_owned)
+            })?;
         let result = async {
             let dataset_id = registry.upsert_dataset(&name, None).await?;
             registry
@@ -867,7 +925,7 @@ impl RunRecorder {
             Err(error) => {
                 tracing::warn!(%error, "training registry: dataset version not recorded");
                 None
-            },
+            }
         }
     }
 
@@ -884,7 +942,7 @@ impl RunRecorder {
             Ok(outcome) => {
                 self.record_success(outcome).await;
                 RunOutcome::Succeeded
-            },
+            }
             Err(error) => RunOutcome::Failed(error.to_string()),
         };
         if let Err(error) = bounded(self.registry.finish_run(&self.run_id, &outcome)).await {
@@ -931,7 +989,10 @@ mod tests {
         let set = migrations();
         assert_eq!(set.len(), 1);
         let migration = set.iter().next().unwrap();
-        assert_eq!((migration.version, migration.name.as_str()), (1, "registry"));
+        assert_eq!(
+            (migration.version, migration.name.as_str()),
+            (1, "registry")
+        );
         let sql = &migration.sql;
         for needle in [
             "CREATE SCHEMA IF NOT EXISTS training",
@@ -976,8 +1037,14 @@ mod tests {
 
     #[test]
     fn artifact_format_prefers_the_extension() {
-        assert_eq!(artifact_format("onnx_model", Path::new("/m/model.ONNX")), "onnx");
-        assert_eq!(artifact_format("lora_adapter", Path::new("/m/adapter")), "lora_adapter");
+        assert_eq!(
+            artifact_format("onnx_model", Path::new("/m/model.ONNX")),
+            "onnx"
+        );
+        assert_eq!(
+            artifact_format("lora_adapter", Path::new("/m/adapter")),
+            "lora_adapter"
+        );
     }
 
     #[test]
@@ -1024,7 +1091,9 @@ mod tests {
             Err(RegistryError::Invalid(_))
         ));
         assert!(matches!(
-            registry.record_text_hashes("v", Split::Train, &["zz".to_owned()]).await,
+            registry
+                .record_text_hashes("v", Split::Train, &["zz".to_owned()])
+                .await,
             Err(RegistryError::Invalid(_))
         ));
     }

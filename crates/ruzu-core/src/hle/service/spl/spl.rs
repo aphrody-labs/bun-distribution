@@ -21,46 +21,106 @@ pub mod spl_functions {
     /// "spl:" -- basic SPL interface.
     pub const SPL_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
     ];
 
     /// "spl:mig" -- migration SPL interface.
     pub const SPL_MIG_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
-        FunctionInfo::new(2, Some(ModuleInterface::generate_aes_kek_callback), "GenerateAesKek"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
+        FunctionInfo::new(
+            2,
+            Some(ModuleInterface::generate_aes_kek_callback),
+            "GenerateAesKek",
+        ),
         FunctionInfo::new(3, None, "LoadAesKey"),
-        FunctionInfo::new(4, Some(ModuleInterface::generate_aes_key_callback), "GenerateAesKey"),
+        FunctionInfo::new(
+            4,
+            Some(ModuleInterface::generate_aes_key_callback),
+            "GenerateAesKey",
+        ),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
         FunctionInfo::new(14, None, "DecryptAesKey"),
         FunctionInfo::new(15, None, "CryptAesCtr"),
         FunctionInfo::new(16, None, "ComputeCmac"),
         FunctionInfo::new(21, None, "AllocateAesKeyslot"),
         FunctionInfo::new(22, None, "DeallocateAesKeySlot"),
         FunctionInfo::new(23, None, "GetAesKeyslotAvailableEvent"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
     ];
 
     /// "spl:fs" -- filesystem SPL interface.
     pub const SPL_FS_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
         FunctionInfo::new(2, None, "GenerateAesKek"),
         FunctionInfo::new(3, None, "LoadAesKey"),
         FunctionInfo::new(4, None, "GenerateAesKey"),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
         FunctionInfo::new(9, None, "ImportLotusKey"),
         FunctionInfo::new(10, None, "DecryptLotusMessage"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
         FunctionInfo::new(12, None, "GenerateSpecificAesKey"),
         FunctionInfo::new(14, None, "DecryptAesKey"),
         FunctionInfo::new(15, None, "CryptAesCtr"),
@@ -69,21 +129,41 @@ pub mod spl_functions {
         FunctionInfo::new(21, None, "AllocateAesKeyslot"),
         FunctionInfo::new(22, None, "DeallocateAesKeySlot"),
         FunctionInfo::new(23, None, "GetAesKeyslotAvailableEvent"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
         FunctionInfo::new(31, None, "GetPackage2Hash"),
     ];
 
     /// "spl:ssl" -- SSL SPL interface.
     pub const SPL_SSL_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
         FunctionInfo::new(2, None, "GenerateAesKek"),
         FunctionInfo::new(3, None, "LoadAesKey"),
         FunctionInfo::new(4, None, "GenerateAesKey"),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
         FunctionInfo::new(13, None, "DecryptDeviceUniqueData"),
         FunctionInfo::new(14, None, "DecryptAesKey"),
         FunctionInfo::new(15, None, "CryptAesCtr"),
@@ -91,8 +171,16 @@ pub mod spl_functions {
         FunctionInfo::new(21, None, "AllocateAesKeyslot"),
         FunctionInfo::new(22, None, "DeallocateAesKeySlot"),
         FunctionInfo::new(23, None, "GetAesKeyslotAvailableEvent"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
         FunctionInfo::new(26, None, "DecryptAndStoreSslClientCertKey"),
         FunctionInfo::new(27, None, "ModularExponentiateWithSslClientCertKey"),
     ];
@@ -100,13 +188,25 @@ pub mod spl_functions {
     /// "spl:es" -- ES SPL interface.
     pub const SPL_ES_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
         FunctionInfo::new(2, None, "GenerateAesKek"),
         FunctionInfo::new(3, None, "LoadAesKey"),
         FunctionInfo::new(4, None, "GenerateAesKey"),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
         FunctionInfo::new(13, None, "DecryptDeviceUniqueData"),
         FunctionInfo::new(14, None, "DecryptAesKey"),
         FunctionInfo::new(15, None, "CryptAesCtr"),
@@ -117,8 +217,16 @@ pub mod spl_functions {
         FunctionInfo::new(21, None, "AllocateAesKeyslot"),
         FunctionInfo::new(22, None, "DeallocateAesKeySlot"),
         FunctionInfo::new(23, None, "GetAesKeyslotAvailableEvent"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
         FunctionInfo::new(28, None, "DecryptAndStoreDrmDeviceCertKey"),
         FunctionInfo::new(29, None, "ModularExponentiateWithDrmDeviceCertKey"),
         FunctionInfo::new(31, None, "PrepareEsArchiveKey"),
@@ -128,13 +236,25 @@ pub mod spl_functions {
     /// "spl:manu" -- manufacturing SPL interface.
     pub const SPL_MANU_COMMANDS: &[FunctionInfo] = &[
         FunctionInfo::new(0, Some(ModuleInterface::get_config_callback), "GetConfig"),
-        FunctionInfo::new(1, Some(ModuleInterface::modular_exponentiate_callback), "ModularExponentiate"),
+        FunctionInfo::new(
+            1,
+            Some(ModuleInterface::modular_exponentiate_callback),
+            "ModularExponentiate",
+        ),
         FunctionInfo::new(2, None, "GenerateAesKek"),
         FunctionInfo::new(3, None, "LoadAesKey"),
         FunctionInfo::new(4, None, "GenerateAesKey"),
         FunctionInfo::new(5, Some(ModuleInterface::set_config_callback), "SetConfig"),
-        FunctionInfo::new(7, Some(ModuleInterface::generate_random_bytes_callback), "GenerateRandomBytes"),
-        FunctionInfo::new(11, Some(ModuleInterface::is_development_callback), "IsDevelopment"),
+        FunctionInfo::new(
+            7,
+            Some(ModuleInterface::generate_random_bytes_callback),
+            "GenerateRandomBytes",
+        ),
+        FunctionInfo::new(
+            11,
+            Some(ModuleInterface::is_development_callback),
+            "IsDevelopment",
+        ),
         FunctionInfo::new(13, None, "DecryptDeviceUniqueData"),
         FunctionInfo::new(14, None, "DecryptAesKey"),
         FunctionInfo::new(15, None, "CryptAesCtr"),
@@ -142,8 +262,16 @@ pub mod spl_functions {
         FunctionInfo::new(21, None, "AllocateAesKeyslot"),
         FunctionInfo::new(22, None, "DeallocateAesKeySlot"),
         FunctionInfo::new(23, None, "GetAesKeyslotAvailableEvent"),
-        FunctionInfo::new(24, Some(ModuleInterface::set_boot_reason_callback), "SetBootReason"),
-        FunctionInfo::new(25, Some(ModuleInterface::get_boot_reason_callback), "GetBootReason"),
+        FunctionInfo::new(
+            24,
+            Some(ModuleInterface::set_boot_reason_callback),
+            "SetBootReason",
+        ),
+        FunctionInfo::new(
+            25,
+            Some(ModuleInterface::get_boot_reason_callback),
+            "GetBootReason",
+        ),
         FunctionInfo::new(30, None, "ReencryptDeviceUniqueData"),
     ];
 }
@@ -334,9 +462,12 @@ mod tests {
             let mut expected = [0; 32];
             reference.generate_random_bytes(&mut expected);
             for module in [
-                Spl::new(None).module, SplMig::new(None).module,
-                SplFs::new(None).module, SplSsl::new(None).module,
-                SplEs::new(None).module, SplManu::new(None).module,
+                Spl::new(None).module,
+                SplMig::new(None).module,
+                SplFs::new(None).module,
+                SplSsl::new(None).module,
+                SplEs::new(None).module,
+                SplManu::new(None).module,
             ] {
                 let mut actual = [0; 32];
                 module.generate_random_bytes(&mut actual);
@@ -362,9 +493,13 @@ mod tests {
             assert_eq!(service.service_name(), name);
             assert_eq!(service.handlers().len(), count);
             for (&id, entry) in service.handlers() {
-                let implemented = [0, 1, 5, 7, 11, 24, 25].contains(&id)
-                    || (migration && [2, 4].contains(&id));
-                assert_eq!(entry.handler_callback.is_some(), implemented, "{name} command {id}");
+                let implemented =
+                    [0, 1, 5, 7, 11, 24, 25].contains(&id) || (migration && [2, 4].contains(&id));
+                assert_eq!(
+                    entry.handler_callback.is_some(),
+                    implemented,
+                    "{name} command {id}"
+                );
             }
             let mut actual = [0; 64];
             service.generate_random_bytes(&mut actual[..32]);

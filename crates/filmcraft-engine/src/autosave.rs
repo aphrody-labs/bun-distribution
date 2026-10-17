@@ -54,7 +54,14 @@ pub struct AutoSavePrefs {
 
 impl Default for AutoSavePrefs {
     fn default() -> Self {
-        Self { enabled: true, interval_minutes: 5, max_versions: 20, save_current_project: false, recovery_journal: true, recovery_interval_seconds: 5 }
+        Self {
+            enabled: true,
+            interval_minutes: 5,
+            max_versions: 20,
+            save_current_project: false,
+            recovery_journal: true,
+            recovery_interval_seconds: 5,
+        }
     }
 }
 
@@ -369,8 +376,16 @@ impl AudioPrefs {
         }
     }
     fn clamp(&mut self) {
-        self.automatch_time = if self.automatch_time.is_finite() { self.automatch_time.clamp(0.0, 30.0) } else { 1.0 };
-        self.large_volume_adjustment = if self.large_volume_adjustment.is_finite() { self.large_volume_adjustment.clamp(0.0, 96.0) } else { 6.0 };
+        self.automatch_time = if self.automatch_time.is_finite() {
+            self.automatch_time.clamp(0.0, 30.0)
+        } else {
+            1.0
+        };
+        self.large_volume_adjustment = if self.large_volume_adjustment.is_finite() {
+            self.large_volume_adjustment.clamp(0.0, 96.0)
+        } else {
+            6.0
+        };
         self.minimum_time_ms = self.minimum_time_ms.clamp(1, 10_000);
         for (v, d) in [
             (&mut self.dialogue_target_lufs, -23.0),
@@ -378,7 +393,11 @@ impl AudioPrefs {
             (&mut self.sfx_target_lufs, -21.0),
             (&mut self.ambience_target_lufs, -30.0),
         ] {
-            *v = if v.is_finite() { v.clamp(-60.0, 0.0) } else { d };
+            *v = if v.is_finite() {
+                v.clamp(-60.0, 0.0)
+            } else {
+                d
+            };
         }
     }
 }
@@ -387,7 +406,13 @@ impl Preferences {
     fn clamp(&mut self) {
         self.auto_save.clamp();
         self.audio.clamp();
-        let secs = |v: f64| if v.is_finite() { v.clamp(0.0, 60.0) } else { 0.0 };
+        let secs = |v: f64| {
+            if v.is_finite() {
+                v.clamp(0.0, 60.0)
+            } else {
+                0.0
+            }
+        };
         self.playback.preroll_seconds = secs(self.playback.preroll_seconds);
         self.playback.postroll_seconds = secs(self.playback.postroll_seconds);
         self.trim.large_trim_offset = self.trim.large_trim_offset.clamp(1, 1000);
@@ -415,7 +440,15 @@ impl Preferences {
             match v {
                 Value::Object(m) => {
                     for (k, c) in m {
-                        walk(&if prefix.is_empty() { k.clone() } else { format!("{prefix}.{k}") }, c, out);
+                        walk(
+                            &if prefix.is_empty() {
+                                k.clone()
+                            } else {
+                                format!("{prefix}.{k}")
+                            },
+                            c,
+                            out,
+                        );
                     }
                 }
                 _ => out.push(prefix.to_string()),
@@ -436,7 +469,9 @@ impl Preferences {
         let mut v = self.to_value();
         let mut slot = &mut v;
         for k in key.split('.') {
-            slot = slot.get_mut(k).ok_or_else(|| format!("unknown preference `{key}`"))?;
+            slot = slot
+                .get_mut(k)
+                .ok_or_else(|| format!("unknown preference `{key}`"))?;
         }
         if slot.is_object() {
             return Err(format!("`{key}` is a group; set one of its keys"));
@@ -444,15 +479,21 @@ impl Preferences {
         settings::validate(key, &value)?;
         let value = match (&*slot, value) {
             // Numeric choices (buffer size, sample rate) arrive as strings from the dialog.
-            (Value::Number(_), Value::String(t)) if t.parse::<u64>().is_ok() => Value::from(t.parse::<u64>().unwrap_or_default()),
-            // Accept 5.0 for integer prefs (agents often send floats).
-            (Value::Number(n), Value::Number(m)) if n.is_u64() && !m.is_u64() => {
-                Value::from(m.as_f64().filter(|f| f.is_finite() && *f >= 0.0).ok_or_else(|| format!("`{key}` must be a non-negative number"))?.round() as u64)
+            (Value::Number(_), Value::String(t)) if t.parse::<u64>().is_ok() => {
+                Value::from(t.parse::<u64>().unwrap_or_default())
             }
+            // Accept 5.0 for integer prefs (agents often send floats).
+            (Value::Number(n), Value::Number(m)) if n.is_u64() && !m.is_u64() => Value::from(
+                m.as_f64()
+                    .filter(|f| f.is_finite() && *f >= 0.0)
+                    .ok_or_else(|| format!("`{key}` must be a non-negative number"))?
+                    .round() as u64,
+            ),
             (_, v) => v,
         };
         *slot = value;
-        let _: Preferences = serde_json::from_value(v.clone()).map_err(|e| format!("`{key}`: {e}"))?;
+        let _: Preferences =
+            serde_json::from_value(v.clone()).map_err(|e| format!("`{key}`: {e}"))?;
         settings::sanitize(&mut v, &Self::default().to_value());
         let mut p: Preferences = serde_json::from_value(v).map_err(|e| format!("`{key}`: {e}"))?;
         // Old clients that set the single Color Theme still pick the theme they name (before
@@ -467,7 +508,11 @@ impl Preferences {
     }
 
     pub fn load(path: &Path) -> Self {
-        fs::read(path).ok().and_then(|b| serde_json::from_slice::<Value>(&b).ok()).map(Self::from_value).unwrap_or_default()
+        fs::read(path)
+            .ok()
+            .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+            .map(Self::from_value)
+            .unwrap_or_default()
     }
 
     pub fn save(&self, path: &Path) -> io::Result<()> {
@@ -484,7 +529,10 @@ pub const PORTABLE_MARKER: &str = "portable.txt";
 
 /// `<exe_dir>/data` when `exe_dir` holds [`PORTABLE_MARKER`], else `None`.
 pub fn portable_data_dir(exe_dir: &Path) -> Option<PathBuf> {
-    exe_dir.join(PORTABLE_MARKER).is_file().then(|| exe_dir.join("data"))
+    exe_dir
+        .join(PORTABLE_MARKER)
+        .is_file()
+        .then(|| exe_dir.join("data"))
 }
 
 /// The data directory. `FILMCRAFT_DATA_DIR` overrides; a portable install ([`PORTABLE_MARKER`] next
@@ -492,11 +540,18 @@ pub fn portable_data_dir(exe_dir: &Path) -> Option<PathBuf> {
 /// macOS `~/Library/Application Support/FilmCraft`, Windows `%APPDATA%\FilmCraft`,
 /// elsewhere `$XDG_DATA_HOME/filmcraft` or `~/.local/share/filmcraft`.
 pub fn default_data_dir() -> Option<PathBuf> {
-    let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
+    let env = |k: &str| {
+        std::env::var_os(k)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
     if let Some(d) = env("FILMCRAFT_DATA_DIR") {
         return Some(d);
     }
-    if let Some(d) = std::env::current_exe().ok().and_then(|exe| exe.parent().and_then(portable_data_dir)) {
+    if let Some(d) = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().and_then(portable_data_dir))
+    {
         return Some(d);
     }
     if cfg!(target_os = "macos") {
@@ -505,11 +560,16 @@ pub fn default_data_dir() -> Option<PathBuf> {
     if cfg!(windows) {
         return env("APPDATA").map(|h| h.join("FilmCraft"));
     }
-    env("XDG_DATA_HOME").map(|d| d.join("filmcraft")).or_else(|| env("HOME").map(|h| h.join(".local/share/filmcraft")))
+    env("XDG_DATA_HOME")
+        .map(|d| d.join("filmcraft"))
+        .or_else(|| env("HOME").map(|h| h.join(".local/share/filmcraft")))
 }
 
 pub fn unix_now() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
 }
 
 // ------------------------------------------------------------------ recovery candidates
@@ -552,7 +612,9 @@ pub fn recovery_root(data_dir: &Path) -> PathBuf {
 
 /// Is the session directory's lock free (owner gone)?
 fn lock_is_stale(dir: &Path) -> bool {
-    let Ok(f) = File::options().read(true).write(true).open(dir.join(LOCK)) else { return true };
+    let Ok(f) = File::options().read(true).write(true).open(dir.join(LOCK)) else {
+        return true;
+    };
     match f.try_lock() {
         Ok(()) => true,
         Err(fs::TryLockError::WouldBlock) => false,
@@ -565,7 +627,9 @@ fn lock_is_stale(dir: &Path) -> bool {
 /// Find snapshots of sessions that are no longer running. Stale session directories without a
 /// snapshot (nothing unsaved) are removed. `skip` is the caller's own session directory.
 pub fn scan_candidates(data_dir: &Path, skip: Option<&Path>) -> Vec<RecoveryCandidate> {
-    let Ok(rd) = fs::read_dir(recovery_root(data_dir)) else { return Vec::new() };
+    let Ok(rd) = fs::read_dir(recovery_root(data_dir)) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for e in rd.filter_map(|e| e.ok()) {
         let dir = e.path();
@@ -580,10 +644,22 @@ pub fn scan_candidates(data_dir: &Path, skip: Option<&Path>) -> Vec<RecoveryCand
         }
         // Keep the snapshot even when session.json is missing or unreadable: the project
         // is still recoverable. Meta fields fall back to defaults.
-        let meta = fs::read(dir.join(META)).ok().and_then(|b| serde_json::from_slice::<JournalMeta>(&b).ok()).unwrap_or_default();
-        out.push(RecoveryCandidate { id: e.file_name().to_string_lossy().into_owned(), dir, meta });
+        let meta = fs::read(dir.join(META))
+            .ok()
+            .and_then(|b| serde_json::from_slice::<JournalMeta>(&b).ok())
+            .unwrap_or_default();
+        out.push(RecoveryCandidate {
+            id: e.file_name().to_string_lossy().into_owned(),
+            dir,
+            meta,
+        });
     }
-    out.sort_by(|a, b| b.meta.saved_unix.cmp(&a.meta.saved_unix).then(b.id.cmp(&a.id)));
+    out.sort_by(|a, b| {
+        b.meta
+            .saved_unix
+            .cmp(&a.meta.saved_unix)
+            .then(b.id.cmp(&a.id))
+    });
     out
 }
 
@@ -611,7 +687,11 @@ pub struct AutosaveConfig {
 
 impl AutosaveConfig {
     pub fn new(data_dir: impl Into<PathBuf>) -> Self {
-        Self { data_dir: data_dir.into(), local_offset: |_| 0, journal_debounce: Duration::from_millis(1000) }
+        Self {
+            data_dir: data_dir.into(),
+            local_offset: |_| 0,
+            journal_debounce: Duration::from_millis(1000),
+        }
     }
 }
 
@@ -708,9 +788,18 @@ impl Persistence {
         // Unique even for several sessions in one process within a second (tests, future multi-window).
         static SEQ: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
         let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let session_dir = root.join(if seq == 0 { format!("{started}-{pid}") } else { format!("{started}-{pid}-{seq}") });
+        let session_dir = root.join(if seq == 0 {
+            format!("{started}-{pid}")
+        } else {
+            format!("{started}-{pid}-{seq}")
+        });
         fs::create_dir_all(&session_dir)?;
-        let lock = File::options().create(true).truncate(false).read(true).write(true).open(session_dir.join(LOCK))?;
+        let lock = File::options()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(session_dir.join(LOCK))?;
         // Unsupported locking only weakens stale detection; it must not stop the app.
         let _ = lock.try_lock();
         let candidates = scan_candidates(&cfg.data_dir, Some(&session_dir));
@@ -729,10 +818,17 @@ impl Persistence {
             first_pending: None,
             last_change: Instant::now(),
             next_autosave: Instant::now(),
-            meta: JournalMeta { pid, started_unix: started, generator: filmcraft_format::generator(), ..Default::default() },
+            meta: JournalMeta {
+                pid,
+                started_unix: started,
+                generator: filmcraft_format::generator(),
+                ..Default::default()
+            },
         };
         w.next_autosave = Instant::now() + w.autosave_interval();
-        let thread = std::thread::Builder::new().name("filmcraft-autosave".into()).spawn(move || w.run(rx))?;
+        let thread = std::thread::Builder::new()
+            .name("filmcraft-autosave".into())
+            .spawn(move || w.run(rx))?;
         Ok(Self {
             data_dir: cfg.data_dir.clone(),
             session_dir,
@@ -748,7 +844,11 @@ impl Persistence {
     }
 
     pub(crate) fn send_dirty(&self, project: Arc<Project>, revision: u64, path: Option<String>) {
-        let _ = self.tx.send(Msg::Dirty(Snapshot { project, revision, path }));
+        let _ = self.tx.send(Msg::Dirty(Snapshot {
+            project,
+            revision,
+            path,
+        }));
     }
 
     pub(crate) fn send_clean(&self) {
@@ -770,7 +870,9 @@ impl Persistence {
     /// Write an auto-save now (if there are unsaved changes) and wait for the result.
     pub fn auto_save_now(&self) -> Result<Option<PathBuf>, String> {
         let (tx, rx) = channel();
-        self.tx.send(Msg::AutoSaveNow(tx)).map_err(|_| "auto-save worker stopped".to_string())?;
+        self.tx
+            .send(Msg::AutoSaveNow(tx))
+            .map_err(|_| "auto-save worker stopped".to_string())?;
         match rx.recv_timeout(Duration::from_secs(60)) {
             Ok(Ok(p)) => Ok(Some(p)),
             Ok(Err(e)) if e.is_empty() => Ok(None),
@@ -783,17 +885,38 @@ impl Persistence {
         let ev: Vec<_> = self.events.try_iter().collect();
         for e in &ev {
             match e {
-                WorkerEvent::Journaled { revision, unix, serialize_ms, write_ms, bytes } => {
+                WorkerEvent::Journaled {
+                    revision,
+                    unix,
+                    serialize_ms,
+                    write_ms,
+                    bytes,
+                } => {
                     self.status.last_journal_unix = Some(*unix);
                     self.status.journaled_revision = *revision;
                     self.status.journals_written += 1;
-                    (self.status.last_serialize_ms, self.status.last_write_ms, self.status.last_bytes) = (*serialize_ms, *write_ms, *bytes);
+                    (
+                        self.status.last_serialize_ms,
+                        self.status.last_write_ms,
+                        self.status.last_bytes,
+                    ) = (*serialize_ms, *write_ms, *bytes);
                 }
-                WorkerEvent::AutoSaved { path, unix, serialize_ms, write_ms, bytes, .. } => {
+                WorkerEvent::AutoSaved {
+                    path,
+                    unix,
+                    serialize_ms,
+                    write_ms,
+                    bytes,
+                    ..
+                } => {
                     self.status.last_auto_save = Some(path.to_string_lossy().into_owned());
                     self.status.last_auto_save_unix = Some(*unix);
                     self.status.auto_saves_written += 1;
-                    (self.status.last_serialize_ms, self.status.last_write_ms, self.status.last_bytes) = (*serialize_ms, *write_ms, *bytes);
+                    (
+                        self.status.last_serialize_ms,
+                        self.status.last_write_ms,
+                        self.status.last_bytes,
+                    ) = (*serialize_ms, *write_ms, *bytes);
                 }
                 WorkerEvent::SavedProject { .. } => {}
                 WorkerEvent::Error(m) => self.status.last_error = Some(m.clone()),
@@ -811,9 +934,15 @@ impl Persistence {
         let snap = self.session_dir.join(SNAPSHOT);
         self.lock.take();
         if snap.is_file() {
-            if let Some(mut m) = fs::read(self.session_dir.join(META)).ok().and_then(|b| serde_json::from_slice::<JournalMeta>(&b).ok()) {
+            if let Some(mut m) = fs::read(self.session_dir.join(META))
+                .ok()
+                .and_then(|b| serde_json::from_slice::<JournalMeta>(&b).ok())
+            {
                 m.clean_exit = true;
-                let _ = filmcraft_format::atomic_write(&self.session_dir.join(META), &serde_json::to_vec_pretty(&m).unwrap_or_default());
+                let _ = filmcraft_format::atomic_write(
+                    &self.session_dir.join(META),
+                    &serde_json::to_vec_pretty(&m).unwrap_or_default(),
+                );
             }
         } else {
             let _ = fs::remove_dir_all(&self.session_dir);
@@ -888,13 +1017,20 @@ impl Worker {
         if !self.prefs.recovery_journal || s.revision == self.journaled {
             return None;
         }
-        let max = self.first_pending.unwrap_or(self.last_change) + Duration::from_secs(self.prefs.recovery_interval_seconds as u64);
+        let max = self.first_pending.unwrap_or(self.last_change)
+            + Duration::from_secs(self.prefs.recovery_interval_seconds as u64);
         Some((self.last_change + self.debounce).min(max))
     }
 
     fn run(mut self, rx: Receiver<Msg>) {
         loop {
-            let due = [self.journal_due(), self.prefs.enabled.then_some(self.next_autosave)].into_iter().flatten().min();
+            let due = [
+                self.journal_due(),
+                self.prefs.enabled.then_some(self.next_autosave),
+            ]
+            .into_iter()
+            .flatten()
+            .min();
             let msg = match due {
                 Some(d) => match rx.recv_timeout(d.saturating_duration_since(Instant::now())) {
                     Ok(m) => Some(m),
@@ -930,7 +1066,11 @@ impl Worker {
                     }
                 }
                 Some(Msg::AutoSaveNow(reply)) => {
-                    let r = if self.latest.is_some() { self.auto_save() } else { Err(String::new()) };
+                    let r = if self.latest.is_some() {
+                        self.auto_save()
+                    } else {
+                        Err(String::new())
+                    };
                     let _ = reply.send(r);
                 }
                 Some(Msg::Flush(ack)) => {
@@ -947,7 +1087,11 @@ impl Worker {
                 self.write_journal();
             }
             if self.prefs.enabled && self.next_autosave <= now {
-                if self.latest.as_ref().is_some_and(|s| s.revision != self.autosaved) {
+                if self
+                    .latest
+                    .as_ref()
+                    .is_some_and(|s| s.revision != self.autosaved)
+                {
                     let _ = self.auto_save();
                 }
                 self.next_autosave = now + self.autosave_interval();
@@ -974,14 +1118,26 @@ impl Worker {
         meta.project_path = s.path.clone();
         meta.bytes = bytes.len();
         // Snapshot first, then the meta that makes it a candidate.
-        let r = filmcraft_format::atomic_write(&self.session_dir.join(SNAPSHOT), &bytes)
-            .and_then(|_| filmcraft_format::atomic_write(&self.session_dir.join(META), &serde_json::to_vec_pretty(&meta).unwrap_or_default()));
+        let r = filmcraft_format::atomic_write(&self.session_dir.join(SNAPSHOT), &bytes).and_then(
+            |_| {
+                filmcraft_format::atomic_write(
+                    &self.session_dir.join(META),
+                    &serde_json::to_vec_pretty(&meta).unwrap_or_default(),
+                )
+            },
+        );
         let write_ms = t1.elapsed().as_secs_f64() * 1000.0;
         match r {
             Ok(()) => {
                 self.journaled = s.revision;
                 self.first_pending = None;
-                let _ = self.events.send(WorkerEvent::Journaled { revision: s.revision, unix, serialize_ms, write_ms, bytes: bytes.len() });
+                let _ = self.events.send(WorkerEvent::Journaled {
+                    revision: s.revision,
+                    unix,
+                    serialize_ms,
+                    write_ms,
+                    bytes: bytes.len(),
+                });
             }
             Err(e) => {
                 // Try again at the next interval rather than spinning.
@@ -999,40 +1155,75 @@ impl Worker {
     }
 
     fn auto_save(&mut self) -> Result<PathBuf, String> {
-        let Some(s) = &self.latest else { return Err("nothing to save".into()) };
-        let scratch = s.project.settings.scratch.auto_save.clone().filter(|d| !d.is_empty());
+        let Some(s) = &self.latest else {
+            return Err("nothing to save".into());
+        };
+        let scratch = s
+            .project
+            .settings
+            .scratch
+            .auto_save
+            .clone()
+            .filter(|d| !d.is_empty());
         let (dir, name) = match &s.path {
             // Project Settings ▸ Scratch Disks ▸ Project Auto Save
             Some(p) if scratch.is_some() => {
                 let p = Path::new(p);
                 (
                     PathBuf::from(scratch.clone().unwrap_or_default()),
-                    p.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| s.project.name.clone()),
+                    p.file_stem()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| s.project.name.clone()),
                 )
             }
             Some(p) => {
                 let p = Path::new(p);
-                (names::auto_save_dir(p), p.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| s.project.name.clone()))
+                (
+                    names::auto_save_dir(p),
+                    p.file_stem()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| s.project.name.clone()),
+                )
             }
-            None => (self.data_dir.join(names::AUTO_SAVE_DIR), s.project.name.clone()),
+            None => (
+                self.data_dir.join(names::AUTO_SAVE_DIR),
+                s.project.name.clone(),
+            ),
         };
         let t0 = Instant::now();
         let bytes = filmcraft_format::encode(&s.project, false);
         let serialize_ms = t0.elapsed().as_secs_f64() * 1000.0;
         let t1 = Instant::now();
         let unix = unix_now();
-        let r = names::write_auto_save(&dir, &name, unix, (self.local_offset)(unix), &bytes, self.prefs.max_versions as usize);
+        let r = names::write_auto_save(
+            &dir,
+            &name,
+            unix,
+            (self.local_offset)(unix),
+            &bytes,
+            self.prefs.max_versions as usize,
+        );
         let write_ms = t1.elapsed().as_secs_f64() * 1000.0;
         match r {
             Ok(path) => {
                 self.autosaved = s.revision;
-                let _ = self.events.send(WorkerEvent::AutoSaved { path: path.clone(), revision: s.revision, unix, serialize_ms, write_ms, bytes: bytes.len() });
+                let _ = self.events.send(WorkerEvent::AutoSaved {
+                    path: path.clone(),
+                    revision: s.revision,
+                    unix,
+                    serialize_ms,
+                    write_ms,
+                    bytes: bytes.len(),
+                });
                 if self.prefs.save_current_project
                     && let Some(p) = &s.path
                 {
                     match filmcraft_format::atomic_write(Path::new(p), &bytes) {
                         Ok(()) => {
-                            let _ = self.events.send(WorkerEvent::SavedProject { path: p.clone(), revision: s.revision });
+                            let _ = self.events.send(WorkerEvent::SavedProject {
+                                path: p.clone(),
+                                revision: s.revision,
+                            });
                         }
                         Err(e) => self.error(format!("saving {p}: {e}")),
                     }

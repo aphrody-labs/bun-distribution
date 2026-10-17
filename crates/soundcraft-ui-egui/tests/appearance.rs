@@ -12,23 +12,35 @@ fn frame(h: &mut Harness<'_, SoundApp>, px: Pos2, pressed: Option<bool>) {
     let pos = (px.to_vec2() / zoom).to_pos2();
     h.input_mut().events.push(Event::PointerMoved(pos));
     if let Some(pressed) = pressed {
-        h.input_mut().events.push(Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        });
     }
     h.step();
 }
 
 #[test]
 fn interface_scale_slider_follows_the_pointer() {
-    let mut app = SoundApp::new(soundcraft_engine::demo::demo_engine(), None, Services::default());
-    app.extra.show_ui_customization = true;
-    let mut h = Harness::builder().with_size(WINDOW_PX).with_pixels_per_point(1.0).build_ui_state(
-        |ui, app: &mut SoundApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        app,
+    let mut app = SoundApp::new(
+        soundcraft_engine::demo::demo_engine(),
+        None,
+        Services::default(),
     );
+    app.extra.show_ui_customization = true;
+    let mut h = Harness::builder()
+        .with_size(WINDOW_PX)
+        .with_pixels_per_point(1.0)
+        .build_ui_state(
+            |ui, app: &mut SoundApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            app,
+        );
     h.run_steps(6);
     let rail = h.get_by_role(Role::Slider).rect();
     let start = pos2(rail.left() + rail.width() / 3.0, rail.center().y);

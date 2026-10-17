@@ -9,7 +9,8 @@ use std::sync::Arc;
 use kurbo::Shape;
 use vectorcraft_color::{BlendMode, Color, GradientKind, GradientPaint, Paint};
 use vectorcraft_doc::{
-    AppearanceItem, ColorMode, Document, Effect, ImageObject, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, TextObject,
+    AppearanceItem, ColorMode, Document, Effect, ImageObject, LineCap, LineJoin, Node, NodeKind,
+    StrokeAlign, StrokeLayer, TextObject,
 };
 use vectorcraft_effects::stroke::{self, WrittenShape};
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Vec2};
@@ -28,10 +29,10 @@ const MIN_BAND: f64 = 0.25;
 /// Largest image written (pixels).
 const MAX_IMAGE_PIXELS: u64 = 1 << 26;
 
-const TRANSPARENCY: &str =
-    "transparency (opacity, blending modes, opacity masks, see-through gradients) is written opaque: EPS has none, flatten it first";
+const TRANSPARENCY: &str = "transparency (opacity, blending modes, opacity masks, see-through gradients) is written opaque: EPS has none, flatten it first";
 const RASTER_FX: &str = "raster effects (shadows, glows, blurs, feathering) are left out: EPS has no transparency, flatten them first";
-const IMAGE_ALPHA_L2: &str = "transparent image pixels are written white at PostScript Level 2 (Level 3 masks them out)";
+const IMAGE_ALPHA_L2: &str =
+    "transparent image pixels are written white at PostScript Level 2 (Level 3 masks them out)";
 const IMAGE_PARTLY: &str = "partly transparent image pixels are written over white";
 const SPOT_GRADIENTS: &str = "gradients of spot colours are written in process colours";
 const MISSING_PATTERN: &str = "missing patterns are written as mid-grey";
@@ -79,7 +80,11 @@ enum Ink {
 }
 
 fn unit(v: f32) -> f32 {
-    if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 }
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 /// Can `a` be drawn through (a finite, non-flat map)?
@@ -142,8 +147,18 @@ impl<'a> Scene<'a> {
     }
 
     fn page(self) -> Page {
-        let custom = self.spots.iter().filter(|(n, _)| n != vectorcraft_color::swatch::REGISTRATION).cloned().collect();
-        Page { setup: self.setup, body: self.body, custom, warnings: self.warnings }
+        let custom = self
+            .spots
+            .iter()
+            .filter(|(n, _)| n != vectorcraft_color::swatch::REGISTRATION)
+            .cloned()
+            .collect();
+        Page {
+            setup: self.setup,
+            body: self.body,
+            custom,
+            warnings: self.warnings,
+        }
     }
 
     fn warn(&mut self, w: &str) {
@@ -165,7 +180,10 @@ impl<'a> Scene<'a> {
             Color::Cmyk { c, m, y, k } => Ink::Process(Space::Cmyk, [c, m, y, k].map(unit)),
             // Grey is ink coverage; PostScript's grey is lightness.
             Color::Gray { k } => Ink::Process(Space::Gray, [unit(1.0 - k), 0.0, 0.0, 0.0]),
-            _ if self.cmyk => Ink::Process(Space::Cmyk, self.cms.to_cmyk(c, self.cms.settings().intent).map(unit)),
+            _ if self.cmyk => Ink::Process(
+                Space::Cmyk,
+                self.cms.to_cmyk(c, self.cms.settings().intent).map(unit),
+            ),
             Color::Rgb { r, g, b } => Ink::Process(Space::Rgb, [r, g, b, 0.0].map(unit)),
             Color::Lab { .. } => {
                 let [r, g, b] = c.to_rgb();
@@ -178,7 +196,10 @@ impl<'a> Scene<'a> {
     /// to one, else a process colour.
     fn solid(&mut self, c: &Color, link: Option<&str>, tint: f32) -> Ink {
         match link.and_then(|n| self.spot_space(n)) {
-            Some(space) => Ink::Spot { space, tint: unit(tint) },
+            Some(space) => Ink::Spot {
+                space,
+                tint: unit(tint),
+            },
             None => self.process(c),
         }
     }
@@ -196,7 +217,9 @@ impl<'a> Scene<'a> {
             let doc = self.doc;
             let sw = doc.swatch(name).filter(|s| s.spot)?;
             let color = doc.linked_color(sw.paint.color()?, true);
-            self.cms.to_cmyk(&color, self.cms.settings().intent).map(unit)
+            self.cms
+                .to_cmyk(&color, self.cms.settings().intent)
+                .map(unit)
         };
         let i = self.spots.len();
         let _ = write!(self.setup, "/VCsp{i} [/Separation ");
@@ -204,7 +227,11 @@ impl<'a> Scene<'a> {
             self.setup.push_str("/All /DeviceCMYK {dup dup dup}");
         } else {
             let [c, m, y, k] = cmyk.map(|v| ps::num(f64::from(v)));
-            let _ = write!(self.setup, "{} cvn /DeviceCMYK {{dup {c} mul exch dup {m} mul exch dup {y} mul exch {k} mul}}", ps::string(name));
+            let _ = write!(
+                self.setup,
+                "{} cvn /DeviceCMYK {{dup {c} mul exch dup {m} mul exch dup {y} mul exch {k} mul}}",
+                ps::string(name)
+            );
         }
         self.setup.push_str("] def\n");
         self.spots.push((name.to_string(), cmyk));
@@ -225,7 +252,11 @@ impl<'a> Scene<'a> {
                 });
             }
             Ink::Spot { space, tint } => {
-                let _ = writeln!(self.body, "VCsp{space} setcolorspace {} setcolor", ps::num(f64::from(tint)));
+                let _ = writeln!(
+                    self.body,
+                    "VCsp{space} setcolorspace {} setcolor",
+                    ps::num(f64::from(tint))
+                );
             }
         }
     }
@@ -261,11 +292,29 @@ impl<'a> Scene<'a> {
         }
         self.note_losses(n);
         match &n.kind {
-            NodeKind::Layer { children, clip: false, .. } | NodeKind::Group { children, clip: false } => {
+            NodeKind::Layer {
+                children,
+                clip: false,
+                ..
+            }
+            | NodeKind::Group {
+                children,
+                clip: false,
+            } => {
                 children.iter().for_each(|c| self.node(c, false));
             }
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => self.clip_group(children),
-            NodeKind::Path { path, rule, guide, .. } => {
+            NodeKind::Group {
+                children,
+                clip: true,
+            }
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } => self.clip_group(children),
+            NodeKind::Path {
+                path, rule, guide, ..
+            } => {
                 if !*guide {
                     self.shape(n, &path.to_bezpath(), *rule);
                 }
@@ -291,7 +340,11 @@ impl<'a> Scene<'a> {
                 }
             }
             // Live blends, envelopes, meshes and repeats are written as their evaluated art.
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_) => {
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_)
+            | NodeKind::PlacedDocument(_) => {
                 let g = vectorcraft_effects::expand_live_deep(Some(self.doc), n);
                 for c in g.children().into_iter().flatten() {
                     self.node(c, false);
@@ -303,9 +356,13 @@ impl<'a> Scene<'a> {
     /// A clipping group: the art inside its first child's outline. The clipping path's fills
     /// paint behind the art (clipped) and its strokes over it (not clipped).
     fn clip_group(&mut self, children: &[Arc<Node>]) {
-        let Some((clip, rest)) = children.split_first() else { return };
+        let Some((clip, rest)) = children.split_first() else {
+            return;
+        };
         // Nothing to clip by hides the clipped art.
-        let Some((outline, rule)) = vectorcraft_effects::clip_outline(clip) else { return };
+        let Some((outline, rule)) = vectorcraft_effects::clip_outline(clip) else {
+            return;
+        };
         let paint = clip.clip_paint();
         self.line("q");
         push_path(&mut self.body, &outline);
@@ -322,10 +379,16 @@ impl<'a> Scene<'a> {
 
     /// Warn about what EPS can't hold in `n`'s look.
     fn note_losses(&mut self, n: &Node) {
-        if n.opacity < 1.0 || n.blend != BlendMode::Normal || n.extras().mask.as_ref().is_some_and(|m| !m.disabled) {
+        if n.opacity < 1.0
+            || n.blend != BlendMode::Normal
+            || n.extras().mask.as_ref().is_some_and(|m| !m.disabled)
+        {
             self.warn(TRANSPARENCY);
         }
-        let raster = |fx: &[Effect]| fx.iter().any(|e| e.visible && vectorcraft_effects::is_raster(&e.id));
+        let raster = |fx: &[Effect]| {
+            fx.iter()
+                .any(|e| e.visible && vectorcraft_effects::is_raster(&e.id))
+        };
         if raster(&n.appearance.effects) || n.appearance.items.iter().any(|i| raster(i.effects())) {
             self.warn(RASTER_FX);
         }
@@ -350,7 +413,12 @@ impl<'a> Scene<'a> {
                     self.note_item(fl.opacity, fl.blend);
                     self.fill(bp, rule, &fl.paint, bounds, fl.overprint);
                 }
-                AppearanceItem::Stroke(st) if st.visible && !st.paint.is_none() && st.width > 0.0 && st.width.is_finite() => {
+                AppearanceItem::Stroke(st)
+                    if st.visible
+                        && !st.paint.is_none()
+                        && st.width > 0.0
+                        && st.width.is_finite() =>
+                {
                     self.stroke(bp, rule, st, bounds);
                 }
                 _ => {}
@@ -366,7 +434,11 @@ impl<'a> Scene<'a> {
         let on = self.overprint_on(overprint);
         match p {
             Paint::None => {}
-            Paint::Solid { color, swatch, tint } => {
+            Paint::Solid {
+                color,
+                swatch,
+                tint,
+            } => {
                 let ink = self.solid(color, swatch.as_deref(), *tint);
                 self.set_ink(ink);
                 push_path(&mut self.body, bp);
@@ -388,7 +460,9 @@ impl<'a> Scene<'a> {
     fn paint_area(&mut self, p: &Paint, bounds: Rect, area: Rect) {
         let doc = self.doc;
         match p {
-            Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => self.field_image(g, bounds, area),
+            Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => {
+                self.field_image(g, bounds, area)
+            }
             Paint::Gradient(g) => self.gradient(g, bounds, area),
             Paint::Pattern { pattern, xf } => match doc.pattern(pattern) {
                 Some(def) => {
@@ -402,7 +476,11 @@ impl<'a> Scene<'a> {
                     self.rect_fill(area);
                 }
             },
-            Paint::Solid { color, swatch, tint } => {
+            Paint::Solid {
+                color,
+                swatch,
+                tint,
+            } => {
                 let ink = self.solid(color, swatch.as_deref(), *tint);
                 self.set_ink(ink);
                 self.rect_fill(area);
@@ -434,7 +512,13 @@ impl<'a> Scene<'a> {
             // The area the stroke paints, as Outline Stroke makes it, painted with the pattern's
             // tiles or the freeform's image.
             let region = stroke::outline_region(&PathData::from_bezpath(bp), rule, st).to_bezpath();
-            self.fill(&region, FillRule::NonZero, &st.paint, paint_bounds, st.overprint);
+            self.fill(
+                &region,
+                FillRule::NonZero,
+                &st.paint,
+                paint_bounds,
+                st.overprint,
+            );
             return;
         }
         let w = stroke::for_writer(bp, st);
@@ -462,7 +546,11 @@ impl<'a> Scene<'a> {
                 let on = self.overprint_on(st.overprint);
                 self.line_style(st, *width);
                 match &st.paint {
-                    Paint::Solid { color, swatch, tint } => {
+                    Paint::Solid {
+                        color,
+                        swatch,
+                        tint,
+                    } => {
                         let ink = self.solid(color, swatch.as_deref(), *tint);
                         self.set_ink(ink);
                         push_path(&mut self.body, bp);
@@ -486,7 +574,13 @@ impl<'a> Scene<'a> {
                     push_path(&mut self.body, &ws.clip);
                     self.body.push_str(clip_op(FillRule::NonZero));
                     for (shape, paint) in &ws.slices {
-                        self.fill(shape, FillRule::NonZero, paint, shape.bounding_box(), st.overprint);
+                        self.fill(
+                            shape,
+                            FillRule::NonZero,
+                            paint,
+                            shape.bounding_box(),
+                            st.overprint,
+                        );
                     }
                     self.line("Q");
                 }
@@ -517,7 +611,14 @@ impl<'a> Scene<'a> {
         let s = &mut self.body;
         ps::push_num(s, width);
         let _ = write!(s, " w {cap} J {join} j ");
-        ps::push_num(s, if st.miter_limit.is_finite() { st.miter_limit.max(1.0) } else { 10.0 });
+        ps::push_num(
+            s,
+            if st.miter_limit.is_finite() {
+                st.miter_limit.max(1.0)
+            } else {
+                10.0
+            },
+        );
         s.push_str(" M [");
         let dash = st.dash.as_ref().filter(|d| d.is_dashed());
         if let Some(d) = dash {
@@ -534,8 +635,16 @@ impl<'a> Scene<'a> {
             return false;
         }
         let doc = self.doc;
-        let brushes = self.brushes.get_or_insert_with(|| vectorcraft_brush::library(doc));
-        let Some(b) = st.brush.as_deref().and_then(|name| brushes.iter().find(|b| b.name == name)) else { return false };
+        let brushes = self
+            .brushes
+            .get_or_insert_with(|| vectorcraft_brush::library(doc));
+        let Some(b) = st
+            .brush
+            .as_deref()
+            .and_then(|name| brushes.iter().find(|b| b.name == name))
+        else {
+            return false;
+        };
         let art = vectorcraft_brush::stroke_pieces(b, bp, st);
         self.note_item(st.opacity, st.blend);
         self.nest += 1;
@@ -575,10 +684,21 @@ impl<'a> Scene<'a> {
             if bp.elements().is_empty() {
                 continue;
             }
-            self.fill(&bp, FillRule::NonZero, &run.style.fill, layout.bounds, run.style.overprint_fill);
+            self.fill(
+                &bp,
+                FillRule::NonZero,
+                &run.style.fill,
+                layout.bounds,
+                run.style.overprint_fill,
+            );
             if run.style.has_stroke() {
                 // Character strokes are drawn in text space, with their cap, join and dashes.
-                self.stroke(&bp, FillRule::NonZero, &run.style.stroke_layer(), layout.bounds);
+                self.stroke(
+                    &bp,
+                    FillRule::NonZero,
+                    &run.style.stroke_layer(),
+                    layout.bounds,
+                );
             }
         }
         self.line("Q");
@@ -595,7 +715,12 @@ impl<'a> Scene<'a> {
                     self.note_item(fl.opacity, fl.blend);
                     self.fill(bp, FillRule::NonZero, &fl.paint, tb, fl.overprint);
                 }
-                AppearanceItem::Stroke(st) if st.visible && !st.paint.is_none() && st.width > 0.0 && st.width.is_finite() => {
+                AppearanceItem::Stroke(st)
+                    if st.visible
+                        && !st.paint.is_none()
+                        && st.width > 0.0
+                        && st.width.is_finite() =>
+                {
                     self.stroke(bp, FillRule::NonZero, st, tb);
                 }
                 _ => {}
@@ -612,13 +737,24 @@ impl<'a> Scene<'a> {
             self.warn(TRANSPARENCY);
         }
         let doc = self.doc;
-        if g.stops.iter().any(|s| s.swatch.as_deref().is_some_and(|n| doc.swatch(n).is_some_and(|w| w.spot))) {
+        if g.stops.iter().any(|s| {
+            s.swatch
+                .as_deref()
+                .is_some_and(|n| doc.swatch(n).is_some_and(|w| w.spot))
+        }) {
             self.warn(SPOT_GRADIENTS);
         }
         let stops = g.expanded_stops();
-        let space = if self.cmyk || stops.iter().any(|(_, c, _)| matches!(c, Color::Cmyk { .. })) {
+        let space = if self.cmyk
+            || stops
+                .iter()
+                .any(|(_, c, _)| matches!(c, Color::Cmyk { .. }))
+        {
             Space::Cmyk
-        } else if stops.iter().all(|(_, c, _)| matches!(c, Color::Gray { .. })) {
+        } else if stops
+            .iter()
+            .all(|(_, c, _)| matches!(c, Color::Gray { .. }))
+        {
             Space::Gray
         } else {
             Space::Rgb
@@ -637,7 +773,11 @@ impl<'a> Scene<'a> {
         let mut out: Vec<(f64, [f32; 4])> = vec![];
         let mut last = 0.0f64;
         for (o, c, _) in &stops {
-            let o = if o.is_finite() { f64::from(*o).clamp(last, 1.0) } else { last };
+            let o = if o.is_finite() {
+                f64::from(*o).clamp(last, 1.0)
+            } else {
+                last
+            };
             last = o;
             out.push((o, comps(c)));
         }
@@ -702,13 +842,22 @@ impl<'a> Scene<'a> {
         let n = space.n();
         let comps = |c: &[f32; 4]| -> String {
             let mut s = String::from("[");
-            push_nums(&mut s, &c.iter().take(n).map(|v| f64::from(*v)).collect::<Vec<_>>());
+            push_nums(
+                &mut s,
+                &c.iter().take(n).map(|v| f64::from(*v)).collect::<Vec<_>>(),
+            );
             s.pop();
             s.push(']');
             s
         };
         let segments: Vec<_> = stops.windows(2).filter(|w| w[1].0 > w[0].0).collect();
-        let interp = |w: &&[(f64, [f32; 4])]| format!("<< /FunctionType 2 /Domain [0 1] /C0 {} /C1 {} /N 1 >>", comps(&w[0].1), comps(&w[1].1));
+        let interp = |w: &&[(f64, [f32; 4])]| {
+            format!(
+                "<< /FunctionType 2 /Domain [0 1] /C0 {} /C1 {} /N 1 >>",
+                comps(&w[0].1),
+                comps(&w[1].1)
+            )
+        };
         let function = match segments.as_slice() {
             [one] => interp(one),
             many => {
@@ -726,18 +875,32 @@ impl<'a> Scene<'a> {
                 f
             }
         };
-        let _ = write!(self.body, "<< /ShadingType {kind} /ColorSpace {} /Coords [", space.name());
+        let _ = write!(
+            self.body,
+            "<< /ShadingType {kind} /ColorSpace {} /Coords [",
+            space.name()
+        );
         push_nums(&mut self.body, coords);
-        let _ = writeln!(self.body, "] /Extend [true true]\n/Function {function} >> shfill");
+        let _ = writeln!(
+            self.body,
+            "] /Extend [true true]\n/Function {function} >> shfill"
+        );
     }
 
     /// The bands of each stretch between stops: how many, for colours `a` to `b` over `length`
     /// points (one per colour level, none thinner than [`MIN_BAND`]).
     fn bands(a: &[f32; 4], b: &[f32; 4], length: f64, segments: usize) -> usize {
-        let delta = a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0f32, f32::max);
+        let delta = a
+            .iter()
+            .zip(b)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0f32, f32::max);
         let by_color = (f64::from(delta) * 255.0).ceil().max(1.0) as usize;
         let by_size = (length / MIN_BAND).ceil().max(1.0) as usize;
-        by_color.min(by_size).min(MAX_STEPS / segments.max(1)).max(1)
+        by_color
+            .min(by_size)
+            .min(MAX_STEPS / segments.max(1))
+            .max(1)
     }
 
     fn set_comps(&mut self, space: Space, c: [f32; 4]) {
@@ -746,7 +909,14 @@ impl<'a> Scene<'a> {
 
     /// A linear gradient from `s` to `e` as bands across it, covering `area`: each band painted
     /// from where it starts to the far end, so the next one leaves no seam.
-    fn linear_steps(&mut self, s: Point, e: Point, area: Rect, space: Space, stops: &[(f64, [f32; 4])]) {
+    fn linear_steps(
+        &mut self,
+        s: Point,
+        e: Point,
+        area: Rect,
+        space: Space,
+        stops: &[(f64, [f32; 4])],
+    ) {
         let d = e - s;
         let len = d.hypot();
         // Gradient space: x along the gradient (0 to 1), y across it in points.
@@ -782,7 +952,15 @@ impl<'a> Scene<'a> {
 
     /// A radial gradient from focal point `f` to the circle of radius `r` around `c` as discs,
     /// largest first, over the last colour across `area` (all in the gradient's own space).
-    fn radial_steps(&mut self, f: Point, c: Point, r: f64, area: Rect, space: Space, stops: &[(f64, [f32; 4])]) {
+    fn radial_steps(
+        &mut self,
+        f: Point,
+        c: Point,
+        r: f64,
+        area: Rect,
+        space: Space,
+        stops: &[(f64, [f32; 4])],
+    ) {
         if let Some((_, last)) = stops.last() {
             self.set_comps(space, *last);
             self.rect_fill(area);
@@ -816,10 +994,16 @@ impl<'a> Scene<'a> {
         let k = (self.doc.raster_effects_ppi / 72.0).min(MAX_FIELD_PX / long);
         let along = |len: f64| (len * k).ceil().clamp(1.0, MAX_FIELD_PX) as u16;
         let (cols, rows) = (along(area.width()), along(area.height()));
-        let field = g.freeform_on(b).field_with(spread_scale(b), &|c| c.to_rgb());
+        let field = g
+            .freeform_on(b)
+            .field_with(spread_scale(b), &|c| c.to_rgb());
         let q = |v: f32| (unit(v) * 255.0).round() as u8;
-        let rgba: Vec<u8> = field.grid(area, cols, rows).flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)]).collect();
-        let place = Affine::translate(area.origin().to_vec2()) * Affine::scale_non_uniform(area.width(), area.height());
+        let rgba: Vec<u8> = field
+            .grid(area, cols, rows)
+            .flat_map(|(c, a)| [q(c[0]), q(c[1]), q(c[2]), q(a)])
+            .collect();
+        let place = Affine::translate(area.origin().to_vec2())
+            * Affine::scale_non_uniform(area.width(), area.height());
         if let Some(image) = self.encode_image(&rgba, u32::from(cols), u32::from(rows)) {
             self.place_image(&image, place);
         }
@@ -828,14 +1012,18 @@ impl<'a> Scene<'a> {
     /// A placed image: its pixel grid stretched over its `width` × `height` (each image file
     /// encoded once).
     fn image(&mut self, im: &ImageObject) {
-        let place = im.xf * Affine::scale_non_uniform(f64::from(im.width.max(1)), f64::from(im.height.max(1)));
+        let place = im.xf
+            * Affine::scale_non_uniform(f64::from(im.width.max(1)), f64::from(im.height.max(1)));
         if !invertible(place) {
             return;
         }
         let encoded = match self.images.get(&im.key) {
             Some(e) => e.clone(),
             None => {
-                let e = self.decode_image(&im.key).and_then(|img| self.encode_image(img.as_raw(), img.width(), img.height())).map(Arc::new);
+                let e = self
+                    .decode_image(&im.key)
+                    .and_then(|img| self.encode_image(img.as_raw(), img.width(), img.height()))
+                    .map(Arc::new);
                 self.images.insert(im.key.clone(), e.clone());
                 e
             }
@@ -847,12 +1035,21 @@ impl<'a> Scene<'a> {
 
     /// Image `key` as RGBA pixels; `None` (with a warning) when it can't be written.
     fn decode_image(&mut self, key: &str) -> Option<image::RgbaImage> {
-        let Some(img) = self.doc.images.get(key).and_then(|blob| image::load_from_memory(&blob.bytes).ok()) else {
-            self.warn(&format!("image '{key}' could not be decoded and was left out"));
+        let Some(img) = self
+            .doc
+            .images
+            .get(key)
+            .and_then(|blob| image::load_from_memory(&blob.bytes).ok())
+        else {
+            self.warn(&format!(
+                "image '{key}' could not be decoded and was left out"
+            ));
             return None;
         };
         if u64::from(img.width()) * u64::from(img.height()) > MAX_IMAGE_PIXELS {
-            self.warn(&format!("image '{key}' is too large for EPS and was left out"));
+            self.warn(&format!(
+                "image '{key}' is too large for EPS and was left out"
+            ));
             return None;
         }
         Some(img.to_rgba8())
@@ -891,7 +1088,11 @@ impl<'a> Scene<'a> {
         // The key colour, which opaque pixels that happen to have it are nudged off.
         let key: [u8; 4] = [255, 0, 255, 0];
         // White: no ink, or full light.
-        let white: [u8; 4] = if space == Space::Cmyk { [0; 4] } else { [255; 4] };
+        let white: [u8; 4] = if space == Space::Cmyk {
+            [0; 4]
+        } else {
+            [255; 4]
+        };
         let mut cache: HashMap<[u8; 3], [u8; 4]> = HashMap::new();
         let cms = self.cms.clone();
         let intent = cms.settings().intent;
@@ -902,11 +1103,13 @@ impl<'a> Scene<'a> {
                 continue;
             }
             let al = u32::from(p[3]);
-            let rgb = [0, 1, 2].map(|i| ((u32::from(p[i]) * al + 255 * (255 - al) + 127) / 255) as u8);
+            let rgb =
+                [0, 1, 2].map(|i| ((u32::from(p[i]) * al + 255 * (255 - al) + 127) / 255) as u8);
             let mut v = match space {
-                Space::Cmyk => *cache
-                    .entry(rgb)
-                    .or_insert_with(|| cms.srgb_to_cmyk(rgb.map(|x| f32::from(x) / 255.0), intent).map(|x| (unit(x) * 255.0).round() as u8)),
+                Space::Cmyk => *cache.entry(rgb).or_insert_with(|| {
+                    cms.srgb_to_cmyk(rgb.map(|x| f32::from(x) / 255.0), intent)
+                        .map(|x| (unit(x) * 255.0).round() as u8)
+                }),
                 _ => [rgb[0], rgb[1], rgb[2], 0],
             };
             if keyed && v.iter().take(n).eq(key.iter().take(n)) {
@@ -939,7 +1142,10 @@ impl<'a> Scene<'a> {
         }
         // The procedure is read whole before it runs: the image data follows it, and flushing the
         // ASCII85 filter afterwards reads past its end marker.
-        let _ = writeln!(out, "\n/DataSource VCsrc {filter} filter >> image\nVCsrc flushfile }} exec");
+        let _ = writeln!(
+            out,
+            "\n/DataSource VCsrc {filter} filter >> image\nVCsrc flushfile }} exec"
+        );
         out.push_str(&ps::ascii85(&encoded));
         Some(out)
     }

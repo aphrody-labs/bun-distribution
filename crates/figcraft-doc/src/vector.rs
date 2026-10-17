@@ -29,7 +29,13 @@ impl HandleMirroring {
         }
     }
     pub fn from_id(s: &str) -> Option<Self> {
-        [HandleMirroring::None, HandleMirroring::Angle, HandleMirroring::AngleAndLength].into_iter().find(|m| m.id().eq_ignore_ascii_case(s))
+        [
+            HandleMirroring::None,
+            HandleMirroring::Angle,
+            HandleMirroring::AngleAndLength,
+        ]
+        .into_iter()
+        .find(|m| m.id().eq_ignore_ascii_case(s))
     }
 }
 
@@ -53,7 +59,14 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn new(x: f64, y: f64) -> Self {
-        Self { x, y, radius: 0.0, mirror: None, cap: None, join: None }
+        Self {
+            x,
+            y,
+            radius: 0.0,
+            mirror: None,
+            cap: None,
+            join: None,
+        }
     }
     pub fn point(&self) -> Point {
         Point::new(self.x, self.y)
@@ -73,7 +86,12 @@ pub struct Segment {
 
 impl Segment {
     pub fn line(a: usize, b: usize) -> Self {
-        Self { a, b, ta: (0.0, 0.0), tb: (0.0, 0.0) }
+        Self {
+            a,
+            b,
+            ta: (0.0, 0.0),
+            tb: (0.0, 0.0),
+        }
     }
     pub fn is_straight(&self) -> bool {
         self.ta == (0.0, 0.0) && self.tb == (0.0, 0.0)
@@ -143,9 +161,16 @@ impl VectorNetwork {
         let mut regions = Vec::new();
         if closed && n > 2 {
             segments.push(Segment::line(n - 1, 0));
-            regions.push(Region { loops: vec![(0..segments.len()).collect()], winding: WindingRule::NonZero });
+            regions.push(Region {
+                loops: vec![(0..segments.len()).collect()],
+                winding: WindingRule::NonZero,
+            });
         }
-        Self { vertices, segments, regions }
+        Self {
+            vertices,
+            segments,
+            regions,
+        }
     }
 
     /// A network from a bezier path: each subpath becomes a chain (closed subpaths a loop + region).
@@ -162,21 +187,35 @@ impl VectorNetwork {
         };
         // A subpath that ends back on its start point without a ClosePath (e.g. ellipse outlines)
         // is closed too, so it keeps its fill.
-        let close_open =
-            |net: &mut VectorNetwork, loop_segs: &mut Vec<usize>, all_loops: &mut Vec<Vec<usize>>, first_v: Option<usize>, cur_v: Option<usize>| {
-                let (Some(a), Some(f)) = (cur_v, first_v) else { return };
-                let (Some(pa), Some(pf)) = (net.vertices.get(a).map(Vertex::point), net.vertices.get(f).map(Vertex::point)) else { return };
-                if a == f || loop_segs.len() < 2 || (pa - pf).hypot() > 1e-6 || a + 1 != net.vertices.len() {
-                    return;
-                }
-                for s in net.segments.iter_mut() {
-                    if s.b == a {
-                        s.b = f;
-                    }
-                }
-                net.vertices.pop();
-                all_loops.push(std::mem::take(loop_segs));
+        let close_open = |net: &mut VectorNetwork,
+                          loop_segs: &mut Vec<usize>,
+                          all_loops: &mut Vec<Vec<usize>>,
+                          first_v: Option<usize>,
+                          cur_v: Option<usize>| {
+            let (Some(a), Some(f)) = (cur_v, first_v) else {
+                return;
             };
+            let (Some(pa), Some(pf)) = (
+                net.vertices.get(a).map(Vertex::point),
+                net.vertices.get(f).map(Vertex::point),
+            ) else {
+                return;
+            };
+            if a == f
+                || loop_segs.len() < 2
+                || (pa - pf).hypot() > 1e-6
+                || a + 1 != net.vertices.len()
+            {
+                return;
+            }
+            for s in net.segments.iter_mut() {
+                if s.b == a {
+                    s.b = f;
+                }
+            }
+            net.vertices.pop();
+            all_loops.push(std::mem::take(loop_segs));
+        };
         for el in path.elements() {
             match *el {
                 PathEl::MoveTo(p) => {
@@ -195,24 +234,40 @@ impl VectorNetwork {
                 }
                 PathEl::QuadTo(c, p) => {
                     let Some(a) = cur_v else { continue };
-                    let Some(pa) = net.vertices.get(a).map(Vertex::point) else { continue };
+                    let Some(pa) = net.vertices.get(a).map(Vertex::point) else {
+                        continue;
+                    };
                     let c1 = pa + (c - pa) * (2.0 / 3.0);
                     let c2 = p + (c - p) * (2.0 / 3.0);
                     let b = push_v(&mut net, p);
-                    net.segments.push(Segment { a, b, ta: (c1.x - pa.x, c1.y - pa.y), tb: (c2.x - p.x, c2.y - p.y) });
+                    net.segments.push(Segment {
+                        a,
+                        b,
+                        ta: (c1.x - pa.x, c1.y - pa.y),
+                        tb: (c2.x - p.x, c2.y - p.y),
+                    });
                     loop_segs.push(net.segments.len() - 1);
                     cur_v = Some(b);
                 }
                 PathEl::CurveTo(c1, c2, p) => {
                     let Some(a) = cur_v else { continue };
-                    let Some(pa) = net.vertices.get(a).map(Vertex::point) else { continue };
+                    let Some(pa) = net.vertices.get(a).map(Vertex::point) else {
+                        continue;
+                    };
                     let b = push_v(&mut net, p);
-                    net.segments.push(Segment { a, b, ta: (c1.x - pa.x, c1.y - pa.y), tb: (c2.x - p.x, c2.y - p.y) });
+                    net.segments.push(Segment {
+                        a,
+                        b,
+                        ta: (c1.x - pa.x, c1.y - pa.y),
+                        tb: (c2.x - p.x, c2.y - p.y),
+                    });
                     loop_segs.push(net.segments.len() - 1);
                     cur_v = Some(b);
                 }
                 PathEl::ClosePath => {
-                    let (Some(a), Some(f)) = (cur_v, first_v) else { continue };
+                    let (Some(a), Some(f)) = (cur_v, first_v) else {
+                        continue;
+                    };
                     let close_pt = net.vertices.get(a).map(Vertex::point);
                     let first_pt = net.vertices.get(f).map(Vertex::point);
                     // The end vertex lands on the start (up to float noise): merge them.
@@ -240,7 +295,10 @@ impl VectorNetwork {
         }
         close_open(&mut net, &mut loop_segs, &mut all_loops, first_v, cur_v);
         if !all_loops.is_empty() {
-            net.regions.push(Region { loops: all_loops, winding: WindingRule::NonZero });
+            net.regions.push(Region {
+                loops: all_loops,
+                winding: WindingRule::NonZero,
+            });
         }
         net
     }
@@ -285,8 +343,12 @@ impl VectorNetwork {
             return m;
         }
         let inc = self.incident(v);
-        let [(s1, a1), (s2, a2)] = inc.as_slice() else { return HandleMirroring::None };
-        let (Some(h1), Some(h2)) = (self.handle(*s1, *a1), self.handle(*s2, *a2)) else { return HandleMirroring::None };
+        let [(s1, a1), (s2, a2)] = inc.as_slice() else {
+            return HandleMirroring::None;
+        };
+        let (Some(h1), Some(h2)) = (self.handle(*s1, *a1), self.handle(*s2, *a2)) else {
+            return HandleMirroring::None;
+        };
         let (l1, l2) = (h1.0.hypot(h1.1), h2.0.hypot(h2.1));
         if l1 < 1e-9 || l2 < 1e-9 {
             return HandleMirroring::None;
@@ -322,17 +384,32 @@ impl VectorNetwork {
         use figcraft_geom::Shape;
         let path = self.fill_path();
         let w = path.winding(p);
-        if self.regions.iter().any(|r| r.winding == WindingRule::EvenOdd) { w % 2 != 0 } else { w != 0 }
+        if self
+            .regions
+            .iter()
+            .any(|r| r.winding == WindingRule::EvenOdd)
+        {
+            w % 2 != 0
+        } else {
+            w != 0
+        }
     }
 
     fn seg_points(&self, s: &Segment) -> Option<(Point, Point, Point, Point)> {
         let a = self.vertices.get(s.a)?.point();
         let b = self.vertices.get(s.b)?.point();
-        Some((a, Point::new(a.x + s.ta.0, a.y + s.ta.1), Point::new(b.x + s.tb.0, b.y + s.tb.1), b))
+        Some((
+            a,
+            Point::new(a.x + s.ta.0, a.y + s.ta.1),
+            Point::new(b.x + s.tb.0, b.y + s.tb.1),
+            b,
+        ))
     }
 
     fn push_seg(&self, path: &mut BezPath, s: &Segment, reversed: bool) {
-        let Some((a, c1, c2, b)) = self.seg_points(s) else { return };
+        let Some((a, c1, c2, b)) = self.seg_points(s) else {
+            return;
+        };
         let (c1, c2, b) = if reversed { (c2, c1, a) } else { (c1, c2, b) };
         if s.is_straight() {
             path.line_to(b);
@@ -358,7 +435,9 @@ impl VectorNetwork {
                 }
             }
         }
-        let corners: Vec<Corner> = (0..self.vertices.len()).filter_map(|v| self.corner(v, incident.get(v)?)).collect();
+        let corners: Vec<Corner> = (0..self.vertices.len())
+            .filter_map(|v| self.corner(v, incident.get(v)?))
+            .collect();
         let mut out = self.clone();
         for v in &mut out.vertices {
             v.radius = 0.0;
@@ -377,7 +456,9 @@ impl VectorNetwork {
             }
         }
         for (i, &(t0, t1)) in cuts.iter().enumerate() {
-            let (Some(c), Some(s)) = (self.cubic(i), out.segments.get_mut(i)) else { continue };
+            let (Some(c), Some(s)) = (self.cubic(i), out.segments.get_mut(i)) else {
+                continue;
+            };
             if (t0, t1) == (0.0, 1.0) || s.is_straight() {
                 continue;
             }
@@ -398,13 +479,17 @@ impl VectorNetwork {
                     s.b = nb;
                 }
             }
-            out.segments.push(Segment { a: c.v, b: nb, ta: c.ta, tb: c.tb });
+            out.segments.push(Segment {
+                a: c.v,
+                b: nb,
+                ta: c.ta,
+                tb: c.tb,
+            });
             let arc = out.segments.len() - 1;
             // The arc goes between the two segments wherever a loop walks through the point.
             for lp in out.regions.iter_mut().flat_map(|r| r.loops.iter_mut()) {
                 let n = lp.len();
-                let between =
-                    |k: usize| matches!((lp.get(k), lp.get((k + 1) % n)), (Some(&x), Some(&y)) if (x, y) == (c.s1, c.s2) || (x, y) == (c.s2, c.s1));
+                let between = |k: usize| matches!((lp.get(k), lp.get((k + 1) % n)), (Some(&x), Some(&y)) if (x, y) == (c.s1, c.s2) || (x, y) == (c.s2, c.s1));
                 if let Some(k) = (0..n).find(|k| between(*k)) {
                     lp.insert(k + 1, arc);
                 }
@@ -417,7 +502,9 @@ impl VectorNetwork {
     /// run on smoothly or fold back.
     fn corner(&self, v: usize, incident: &[(usize, bool)]) -> Option<Corner> {
         let r = self.vertices.get(v)?.radius;
-        let [(s1, a1), (s2, a2)] = *incident else { return None };
+        let [(s1, a1), (s2, a2)] = *incident else {
+            return None;
+        };
         if !(r > 0.0 && r.is_finite()) || s1 == s2 {
             return None;
         }
@@ -437,8 +524,17 @@ impl VectorNetwork {
         // them and ρ the radius of the circle through both ends (the corner radius between lines).
         let turn = (-d1.dot(d2)).clamp(-1.0, 1.0).acos();
         let chord = (b - a).hypot();
-        let k = if turn < 1e-9 { chord / 3.0 } else { 4.0 / 3.0 * (turn / 4.0).tan() * chord / (2.0 * (turn / 2.0).sin()) };
-        if !(k.is_finite() && a.x.is_finite() && a.y.is_finite() && b.x.is_finite() && b.y.is_finite()) {
+        let k = if turn < 1e-9 {
+            chord / 3.0
+        } else {
+            4.0 / 3.0 * (turn / 4.0).tan() * chord / (2.0 * (turn / 2.0).sin())
+        };
+        if !(k.is_finite()
+            && a.x.is_finite()
+            && a.y.is_finite()
+            && b.x.is_finite()
+            && b.y.is_finite())
+        {
             return None;
         }
         let own = |at_a: bool, t: f64| if at_a { t } else { 1.0 - t };
@@ -460,7 +556,11 @@ impl VectorNetwork {
     /// Segment `seg` as a cubic running away from its `a` end (`at_a`) or from its `b` end.
     fn outward(&self, seg: usize, at_a: bool) -> Option<CubicBez> {
         let c = self.cubic(seg)?;
-        Some(if at_a { c } else { CubicBez::new(c.p3, c.p2, c.p1, c.p0) })
+        Some(if at_a {
+            c
+        } else {
+            CubicBez::new(c.p3, c.p2, c.p1, c.p0)
+        })
     }
 
     /// The unit direction segment `seg` leaves its `a` end (`at_a`) or its `b` end in.
@@ -470,7 +570,9 @@ impl VectorNetwork {
 
     /// Whether any point has a stroke cap or join of its own.
     pub fn has_point_styles(&self) -> bool {
-        self.vertices.iter().any(|v| v.cap.is_some() || v.join.is_some())
+        self.vertices
+            .iter()
+            .any(|v| v.cap.is_some() || v.join.is_some())
     }
 
     /// The fill path: every region's loops.
@@ -495,7 +597,9 @@ impl VectorNetwork {
             Some(second) if first.a == second.a || first.a == second.b => first.b,
             _ => first.a,
         };
-        let Some(start) = self.vertices.get(start_v) else { return };
+        let Some(start) = self.vertices.get(start_v) else {
+            return;
+        };
         path.move_to(start.point());
         let mut cur = start_v;
         for s in segs {
@@ -567,7 +671,9 @@ impl VectorNetwork {
         starts.extend((0..self.vertices.len()).filter(|v| !stop(*v)));
         for v0 in starts {
             while let Some((si, rev)) = next_from(v0, &used) {
-                let Some(start) = self.vertices.get(v0) else { break };
+                let Some(start) = self.vertices.get(v0) else {
+                    break;
+                };
                 let mut path = BezPath::new();
                 path.move_to(start.point());
                 let mut cur = v0;
@@ -585,9 +691,18 @@ impl VectorNetwork {
                         closed = true;
                         break;
                     }
-                    seg = if stop(cur) { None } else { next_from(cur, &used) };
+                    seg = if stop(cur) {
+                        None
+                    } else {
+                        next_from(cur, &used)
+                    };
                 }
-                out.push(StrokeRun { path, start: v0, end: cur, closed });
+                out.push(StrokeRun {
+                    path,
+                    start: v0,
+                    end: cur,
+                    closed,
+                });
             }
         }
         out
@@ -616,7 +731,11 @@ impl VectorNetwork {
     pub fn bounds(&self) -> Option<figcraft_geom::Rect> {
         use figcraft_geom::Shape;
         let p = self.stroke_path();
-        if p.elements().is_empty() { None } else { Some(p.bounding_box()) }
+        if p.elements().is_empty() {
+            None
+        } else {
+            Some(p.bounding_box())
+        }
     }
 
     /// Remove segments that reference missing vertices, and regions referencing missing segments.
@@ -642,7 +761,10 @@ impl VectorNetwork {
         }
         self.segments = out;
         for r in &mut self.regions {
-            r.loops.retain(|l| l.iter().all(|i| remap.get(*i).is_some_and(|m| *m != usize::MAX)));
+            r.loops.retain(|l| {
+                l.iter()
+                    .all(|i| remap.get(*i).is_some_and(|m| *m != usize::MAX))
+            });
             for l in &mut r.loops {
                 for i in l.iter_mut() {
                     *i = remap.get(*i).copied().unwrap_or(0);
@@ -655,7 +777,10 @@ impl VectorNetwork {
 /// The direction a curve leaves its start in: along its first handle, else toward its second
 /// control point or its end; `None` for a curve of no length.
 fn start_dir(c: &CubicBez) -> Option<Vec2> {
-    [c.p1 - c.p0, c.p2 - c.p0, c.p3 - c.p0].into_iter().find(|d| d.hypot() > 1e-9).map(|d| d / d.hypot())
+    [c.p1 - c.p0, c.p2 - c.p0, c.p3 - c.p0]
+        .into_iter()
+        .find(|d| d.hypot() > 1e-9)
+        .map(|d| d / d.hypot())
 }
 
 /// Whether a cubic is a straight segment (no handles).
@@ -664,7 +789,11 @@ fn is_line(c: &CubicBez) -> bool {
 }
 
 fn length(c: &CubicBez) -> f64 {
-    if is_line(c) { (c.p3 - c.p0).hypot() } else { c.arclen(ARCLEN_ACC) }
+    if is_line(c) {
+        (c.p3 - c.p0).hypot()
+    } else {
+        c.arclen(ARCLEN_ACC)
+    }
 }
 
 /// The point `t` along curve `c` (`len` long) from its start, the unit direction back toward the
@@ -676,6 +805,10 @@ fn trim(c: &CubicBez, t: f64, len: f64) -> (Point, Vec2, f64) {
     }
     let k = c.inv_arclen(t, ARCLEN_ACC).clamp(0.0, 1.0);
     let d = c.deriv().eval(k).to_vec2();
-    let back = if d.hypot() > 1e-9 { -d / d.hypot() } else { start_dir(c).map(|u| -u).unwrap_or_default() };
+    let back = if d.hypot() > 1e-9 {
+        -d / d.hypot()
+    } else {
+        start_dir(c).map(|u| -u).unwrap_or_default()
+    };
     (c.eval(k), back, k)
 }

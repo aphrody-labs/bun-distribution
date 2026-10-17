@@ -106,7 +106,7 @@ fn serialize_transform(
                 "anchorX": 0.5,
                 "anchorY": 0.5,
             })
-        },
+        }
         (None, Some((x, y))) => json!({
             "x": x,
             "y": y,
@@ -183,7 +183,11 @@ fn sprite_of_region(sprite: &Value, region: &str) -> Value {
 /// `aphrody-nie-data` — la table est une simple liste de couples, et l'ordre inverse est ce qui donne la
 /// priorité à la dernière définition, comme le fait le jeu.
 fn find_text(entries: &[(u32, String)], hash: u32) -> Option<&str> {
-    entries.iter().rev().find(|(candidate, _)| *candidate == hash).map(|(_, text)| text.as_str())
+    entries
+        .iter()
+        .rev()
+        .find(|(candidate, _)| *candidate == hash)
+        .map(|(_, text)| text.as_str())
 }
 
 /// Construit le layout d'un écran.
@@ -229,7 +233,10 @@ pub fn build(
             continue;
         };
         for slot in placement::attach_slots(object, &layout) {
-            attaches.entry(slot.target_hash).or_default().push(slot.to_css());
+            attaches
+                .entry(slot.target_hash)
+                .or_default()
+                .push(slot.to_css());
         }
     }
 
@@ -251,21 +258,27 @@ pub fn build(
                     draw_priority = render.draw_priority;
                     draw_type = render.draw_type;
                     camera = render.camera_name_hash;
-                },
+                }
                 objbin::MenuComponent::Animation(animation) => {
                     let hash = |value: u32| {
-                        if value == 0 { Value::Null } else { json!(format!("0x{value:08X}")) }
+                        if value == 0 {
+                            Value::Null
+                        } else {
+                            json!(format!("0x{value:08X}"))
+                        }
                     };
                     anim = json!({
                         "open": hash(animation.mot_open_hash),
                         "loop": hash(animation.mot_loop_hash),
                         "close": hash(animation.mot_close_hash),
                     });
-                },
+                }
                 objbin::MenuComponent::Text(text) => {
                     for entry in &text.entries {
-                        if let Some(value) =
-                            entry.hashes.iter().find_map(|hash| find_text(menu_text, *hash))
+                        if let Some(value) = entry
+                            .hashes
+                            .iter()
+                            .find_map(|hash| find_text(menu_text, *hash))
                         {
                             text_labels.push(json!({
                                 "slot": entry.key,
@@ -273,8 +286,8 @@ pub fn build(
                             }));
                         }
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -348,7 +361,7 @@ pub fn build(
         let parts = match (&skeleton, static_transform) {
             (Some(layout), None) if !regions.is_empty() => {
                 placement::bone_region_parts(layout, &regions)
-            },
+            }
             _ => Vec::new(),
         };
 
@@ -454,7 +467,10 @@ pub fn build(
     }
     objects.sort_by_key(|object| object["drawPriority"].as_i64().unwrap_or(0));
 
-    let visibility_resolved = objects.iter().filter(|object| !object["visible"].is_null()).count();
+    let visibility_resolved = objects
+        .iter()
+        .filter(|object| !object["visible"].is_null())
+        .count();
     json!({
         "schema": "nie.menu.layout/v1",
         "screen": spec.screen.clone(),
@@ -508,7 +524,10 @@ mod tests {
                     layer: "base".to_string(),
                     objbin: Some("data/absent.objbin".to_string()),
                 },
-                ScreenItem { layer: "sans_objbin".to_string(), objbin: None },
+                ScreenItem {
+                    layer: "sans_objbin".to_string(),
+                    objbin: None,
+                },
             ],
             layers_missing: vec!["declare_mais_absent".to_string()],
         }
@@ -522,7 +541,10 @@ mod tests {
         assert_eq!(layout["diagnostics"]["objectsUnreadable"], json!(["base"]));
         // Le calque sans `.objbin` n'est PAS illisible : il n'y avait rien à lire.
         assert_eq!(layout["diagnostics"]["layersDeclared"], 2);
-        assert_eq!(layout["diagnostics"]["layersMissing"], json!(["declare_mais_absent"]));
+        assert_eq!(
+            layout["diagnostics"]["layersMissing"],
+            json!(["declare_mais_absent"])
+        );
         assert_eq!(layout["objects"], json!([]));
     }
 
@@ -562,7 +584,10 @@ mod tests {
     /// La table de texte rend la DERNIÈRE définition d'un hash, comme le jeu.
     #[test]
     fn un_hash_redefini_prend_la_derniere_valeur() {
-        let table = [(0x1234_5678, "premier".to_string()), (0x1234_5678, "dernier".to_string())];
+        let table = [
+            (0x1234_5678, "premier".to_string()),
+            (0x1234_5678, "dernier".to_string()),
+        ];
         assert_eq!(find_text(&table, 0x1234_5678), Some("dernier"));
         assert_eq!(find_text(&table, 0x0000_0001), None);
     }
@@ -574,7 +599,10 @@ mod tests {
         assert_eq!(attache["x"], 12.0);
         assert_eq!(attache["y"], 34.0);
         for composante in ["scaleX", "scaleY", "rot", "anchorX", "anchorY"] {
-            assert!(attache[composante].is_null(), "{composante} n'est prouvée par aucun locator");
+            assert!(
+                attache[composante].is_null(),
+                "{composante} n'est prouvée par aucun locator"
+            );
         }
         assert!(serialize_transform(None, None).is_null());
     }
@@ -635,7 +663,10 @@ mod tests {
         let serialise = serialize_transform(Some(transform), Some((100.0, 200.0)));
         assert_eq!(serialise["x"], 100.0);
         assert_eq!(serialise["y"], 200.0);
-        assert_eq!(serialise["scaleX"], 1.5, "l'échelle vient toujours de la pose");
+        assert_eq!(
+            serialise["scaleX"], 1.5,
+            "l'échelle vient toujours de la pose"
+        );
         assert_eq!(serialise["rot"], 0.25);
     }
 }

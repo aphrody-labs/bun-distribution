@@ -15,8 +15,20 @@ fn id(v: serde_json::Value) -> NodeId {
 
 fn press(u: &mut Ui, key: Key, modifiers: Modifiers) {
     u.frame(vec![
-        Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers },
-        Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        },
+        Event::Key {
+            key,
+            physical_key: None,
+            pressed: false,
+            repeat: false,
+            modifiers,
+        },
     ]);
 }
 
@@ -35,10 +47,25 @@ fn renaming(u: &Ui) -> Option<NodeId> {
 /// Rows top to bottom: `c` (rectangle), `frame` (collapsed, holding `child`), `a` (rectangle).
 fn setup() -> (Ui, NodeId, NodeId, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id(s.execute("node.create", &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10})).unwrap());
-    let frame = id(s.execute("node.create", &json!({"type": "frame", "x": 50, "y": 0, "width": 100, "height": 100})).unwrap());
+    let a = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
+    let frame = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "frame", "x": 50, "y": 0, "width": 100, "height": 100}),
+        )
+        .unwrap());
     let child = id(s.execute("node.create", &json!({"type": "ellipse", "parent": frame, "x": 10, "y": 10, "width": 10, "height": 10})).unwrap());
-    let c = id(s.execute("node.create", &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10})).unwrap());
+    let c = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 200, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
     s.execute("select.none", &json!({})).unwrap();
     let mut u = Ui::new(s);
     u.app.ui.expanded.clear();
@@ -55,7 +82,10 @@ fn double_click(u: &mut Ui, id: NodeId) {
     }
     u.frame(vec![]);
     assert_eq!(renaming(u), Some(id));
-    assert!(u.ctx.memory(|m| m.focused().is_some()), "the name field has the keyboard");
+    assert!(
+        u.ctx.memory(|m| m.focused().is_some()),
+        "the name field has the keyboard"
+    );
 }
 
 #[test]
@@ -66,7 +96,11 @@ fn tab_and_shift_tab_commit_and_rename_the_next_and_previous_rows() {
     press(&mut u, Key::Tab, Modifiers::NONE);
     assert_eq!(name(&u, c), "Top");
     assert_eq!(renaming(&u), Some(frame), "Tab renames the row below");
-    assert_eq!(u.app.session.selection(), vec![frame], "the selection follows the rename");
+    assert_eq!(
+        u.app.session.selection(),
+        vec![frame],
+        "the selection follows the rename"
+    );
     u.frame(vec![]);
     // The whole name is selected: typing replaces it.
     type_text(&mut u, "Box");
@@ -79,7 +113,11 @@ fn tab_and_shift_tab_commit_and_rename_the_next_and_previous_rows() {
     press(&mut u, Key::Escape, Modifiers::NONE);
     assert_eq!(renaming(&u), None, "Escape ends the rename");
     assert_eq!(name(&u, c), "Top", "Escape keeps the old name");
-    assert_eq!(u.app.session.selection(), vec![c], "Escape only ends the rename");
+    assert_eq!(
+        u.app.session.selection(),
+        vec![c],
+        "Escape only ends the rename"
+    );
     // A later rename of the same row starts from its name again.
     double_click(&mut u, c);
     press(&mut u, Key::Enter, Modifiers::NONE);
@@ -101,16 +139,29 @@ fn tab_on_the_last_row_commits_and_ends() {
 #[test]
 fn cmd_r_renames_the_selection_and_opens_its_parents() {
     // Cmd+R on macOS; Ctrl+R elsewhere, where egui sets both `ctrl` and `command`.
-    let ctrl = Modifiers { ctrl: true, command: true, ..Default::default() };
-    for (k, held) in [Modifiers::MAC_CMD | Modifiers::COMMAND, ctrl].into_iter().enumerate() {
+    let ctrl = Modifiers {
+        ctrl: true,
+        command: true,
+        ..Default::default()
+    };
+    for (k, held) in [Modifiers::MAC_CMD | Modifiers::COMMAND, ctrl]
+        .into_iter()
+        .enumerate()
+    {
         let (mut u, _, frame, child, _) = setup();
-        u.app.session.execute("select.set", &json!({"ids": [child]})).unwrap();
+        u.app
+            .session
+            .execute("select.set", &json!({"ids": [child]}))
+            .unwrap();
         u.frame(vec![]);
         // Collapsed again after the selection was revealed.
         u.app.ui.expanded.clear();
         u.frame(vec![]);
         press(&mut u, Key::R, held);
-        assert!(u.app.ui.expanded.contains(&frame), "the renamed layer's parent opens ({k})");
+        assert!(
+            u.app.ui.expanded.contains(&frame),
+            "the renamed layer's parent opens ({k})"
+        );
         assert_eq!(renaming(&u), Some(child), "({k})");
         u.frame(vec![]);
         type_text(&mut u, "Dot");
@@ -131,11 +182,19 @@ fn rename_without_a_name_renames_one_row_or_opens_the_dialog() {
     // Several layers: the Rename layers dialog instead (layers_behaviour_tests).
     u.app.run("object.rename", json!({"ids": [a, c]}));
     assert_eq!(renaming(&u), None);
-    assert!(u.app.ui.batch_rename.is_some(), "several layers open the Rename layers dialog");
+    assert!(
+        u.app.ui.batch_rename.is_some(),
+        "several layers open the Rename layers dialog"
+    );
     assert_eq!(name(&u, a), before, "nothing renamed yet");
     // Headless, the command changes nothing and leaves no undo step.
     let mut s = Session::new();
-    let r = id(s.execute("node.create", &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10})).unwrap());
+    let r = id(s
+        .execute(
+            "node.create",
+            &json!({"type": "rectangle", "x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap());
     let doc = s.ds().unwrap().doc.clone();
     s.execute("object.rename", &json!({"ids": [r]})).unwrap();
     assert!(std::sync::Arc::ptr_eq(&doc, &s.ds().unwrap().doc));
@@ -145,7 +204,13 @@ fn rename_without_a_name_renames_one_row_or_opens_the_dialog() {
 fn a_rename_scrolled_out_of_view_goes_on() {
     let mut s = Session::new();
     let ids: Vec<NodeId> = (0..60)
-        .map(|k| id(s.execute("node.create", &json!({"type": "rectangle", "x": k * 20, "y": 0, "width": 10, "height": 10})).unwrap()))
+        .map(|k| {
+            id(s.execute(
+                "node.create",
+                &json!({"type": "rectangle", "x": k * 20, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap())
+        })
         .collect();
     s.execute("select.none", &json!({})).unwrap();
     let mut u = Ui::new(s);

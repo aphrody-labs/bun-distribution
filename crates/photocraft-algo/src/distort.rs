@@ -9,7 +9,13 @@ use crate::noise::hash01;
 use crate::other::edge_of;
 use crate::{Ctx, PolarMode, RippleSize, SpherizeMode, UndefinedAreas, WaveType};
 
-pub(crate) fn remap(src: &Image, out: Rect, ctx: &Ctx, edge: Edge, f: impl Fn(f32, f32) -> (f32, f32)) -> Vec<f32> {
+pub(crate) fn remap(
+    src: &Image,
+    out: Rect,
+    ctx: &Ctx,
+    edge: Edge,
+    f: impl Fn(f32, f32) -> (f32, f32),
+) -> Vec<f32> {
     let n = src.ch;
     let mut res = Vec::with_capacity(out.width() as usize * out.height() as usize * n);
     let mut tmp = vec![0.0f32; n];
@@ -59,11 +65,21 @@ pub(crate) fn pinch(src: &Image, out: Rect, ctx: &Ctx, amount: f32) -> Vec<f32> 
 
 fn sphere_1d(rn: f32, a: f32) -> f32 {
     // rn in [0,1): positive amount magnifies the centre (samples closer in).
-    let target = if a >= 0.0 { rn.asin() * 2.0 / std::f32::consts::PI } else { (rn * std::f32::consts::FRAC_PI_2).sin() };
+    let target = if a >= 0.0 {
+        rn.asin() * 2.0 / std::f32::consts::PI
+    } else {
+        (rn * std::f32::consts::FRAC_PI_2).sin()
+    };
     rn + a.abs() * (target - rn)
 }
 
-pub(crate) fn spherize(src: &Image, out: Rect, ctx: &Ctx, amount: f32, mode: SpherizeMode) -> Vec<f32> {
+pub(crate) fn spherize(
+    src: &Image,
+    out: Rect,
+    ctx: &Ctx,
+    amount: f32,
+    mode: SpherizeMode,
+) -> Vec<f32> {
     let b = ctx.bounds;
     let (cx, cy, rr) = centre(b);
     let (hx, hy) = (b.width() as f32 / 2.0, b.height() as f32 / 2.0);
@@ -126,7 +142,12 @@ pub(crate) fn wave(src: &Image, out: Rect, ctx: &Ctx, w: WaveSpec) -> Vec<f32> {
     let gens: Vec<(f32, f32, f32, f32)> = (0..n)
         .map(|i| {
             let r = |k: u32| hash01(i as i32, k as i32, 7, w.seed);
-            (lerp(w.wavelength, r(1)).max(1.0), lerp(w.amplitude, r(2)), r(3) * std::f32::consts::TAU, r(4) * std::f32::consts::TAU)
+            (
+                lerp(w.wavelength, r(1)).max(1.0),
+                lerp(w.amplitude, r(2)),
+                r(3) * std::f32::consts::TAU,
+                r(4) * std::f32::consts::TAU,
+            )
         })
         .collect();
     let b = ctx.bounds;
@@ -151,7 +172,10 @@ pub(crate) fn ripple(src: &Image, out: Rect, ctx: &Ctx, amount: f32, size: Rippl
     let b = ctx.bounds;
     remap(src, out, ctx, Edge::Repeat, |x, y| {
         let (lx, ly) = (x - b.x0 as f32, y - b.y0 as f32);
-        (x + amp * (std::f32::consts::TAU * ly / len).sin(), y + amp * (std::f32::consts::TAU * lx / len).sin())
+        (
+            x + amp * (std::f32::consts::TAU * ly / len).sin(),
+            y + amp * (std::f32::consts::TAU * lx / len).sin(),
+        )
     })
 }
 
@@ -167,7 +191,10 @@ pub(crate) fn polar(src: &Image, out: Rect, ctx: &Ctx, mode: PolarMode) -> Vec<f
             let (dx, dy) = (x - cx, y - cy);
             let theta = dx.atan2(-dy).rem_euclid(std::f32::consts::TAU);
             let r = (dx * dx + dy * dy).sqrt();
-            (b.x0 as f32 + theta / std::f32::consts::TAU * w, b.y0 as f32 + r / rmax * h)
+            (
+                b.x0 as f32 + theta / std::f32::consts::TAU * w,
+                b.y0 as f32 + r / rmax * h,
+            )
         }
         PolarMode::PolarToRectangular => {
             let theta = (x - b.x0 as f32) / w * std::f32::consts::TAU;

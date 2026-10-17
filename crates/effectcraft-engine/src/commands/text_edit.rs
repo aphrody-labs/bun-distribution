@@ -42,7 +42,11 @@ impl TextEdit {
 /// The Source Text document of a layer in the active comp at the CTI (keyframed value).
 pub fn layer_doc(s: &Session, lid: LayerId) -> Option<TextDoc> {
     let l = s.active_comp()?.layer(lid)?;
-    match l.props.prop("text/sourceText")?.value_at(l.layer_time(s.time())) {
+    match l
+        .props
+        .prop("text/sourceText")?
+        .value_at(l.layer_time(s.time()))
+    {
         KV::Text(d) => Some(*d),
         KV::Str(t) => Some(TextDoc::plain(&t)),
         _ => None,
@@ -62,7 +66,10 @@ fn target(s: &Session, p: &Value, cmd: &str) -> Result<LayerId> {
                 .selected_layers
                 .iter()
                 .copied()
-                .find(|id| comp.layer(*id).is_some_and(|l| matches!(l.source, LayerSource::Text)))
+                .find(|id| {
+                    comp.layer(*id)
+                        .is_some_and(|l| matches!(l.source, LayerSource::Text))
+                })
                 .ok_or_else(|| bad(cmd, "select a text layer"))?,
         },
     };
@@ -78,7 +85,12 @@ fn session_on(s: &mut Session, lid: LayerId) -> TextEdit {
         Some(e) if e.layer == lid => e.clone(),
         _ => {
             let n = layer_doc(s, lid).map_or(0, |d| d.char_len());
-            let e = TextEdit { layer: lid, anchor: n, caret: n, ..Default::default() };
+            let e = TextEdit {
+                layer: lid,
+                anchor: n,
+                caret: n,
+                ..Default::default()
+            };
             s.state.selected_layers = vec![lid];
             s.state.text_edit = Some(e.clone());
             e
@@ -104,7 +116,10 @@ pub(crate) fn edit_doc(
     s.edit(label, merge, |proj, st| {
         let l = layer_mut(proj, cid, lid)?;
         let lt = l.layer_time(t);
-        let pr = l.props.prop_mut("text/sourceText").ok_or_else(|| bad("text", "not a text layer"))?;
+        let pr = l
+            .props
+            .prop_mut("text/sourceText")
+            .ok_or_else(|| bad("text", "not a text layer"))?;
         let mut doc = match pr.value_at(lt) {
             KV::Text(d) => *d,
             KV::Str(t) => TextDoc::plain(&t),
@@ -115,7 +130,10 @@ pub(crate) fn edit_doc(
         let after = first_line_name(&doc.text);
         pr.set_value_at(lt, KV::Text(Box::new(doc)));
         // Text layers are named after their text until renamed.
-        if before != after && !after.is_empty() && (l.name == before || l.name.starts_with("Text") || l.name.is_empty()) {
+        if before != after
+            && !after.is_empty()
+            && (l.name == before || l.name.starts_with("Text") || l.name.is_empty())
+        {
             l.name = after;
         }
         Ok(())
@@ -131,7 +149,9 @@ fn range_p(p: &Value) -> Option<std::ops::Range<usize>> {
 
 fn state_json(s: &Session) -> Value {
     match &s.state.text_edit {
-        Some(e) => json!({"layer": e.layer.0, "anchor": e.anchor, "caret": e.caret, "start": e.range().start, "end": e.range().end}),
+        Some(e) => {
+            json!({"layer": e.layer.0, "anchor": e.anchor, "caret": e.caret, "start": e.range().start, "end": e.range().end})
+        }
         None => Value::Null,
     }
 }
@@ -142,7 +162,11 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     let n = layer_doc(s, lid).map_or(0, |d| d.char_len());
     let (anchor, caret) = match p.get("select") {
         Some(Value::Array(a)) => {
-            let g = |i: usize| a.get(i).and_then(Value::as_u64).map_or(n, |x| (x as usize).min(n));
+            let g = |i: usize| {
+                a.get(i)
+                    .and_then(Value::as_u64)
+                    .map_or(n, |x| (x as usize).min(n))
+            };
             (g(0), g(1))
         }
         Some(Value::String(x)) if x == "none" => (n, n),
@@ -153,14 +177,22 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let created = b_p(p, "created").unwrap_or(false);
     s.state.selected_layers = vec![lid];
-    s.state.text_edit = Some(TextEdit { layer: lid, anchor, caret, created, ..Default::default() });
+    s.state.text_edit = Some(TextEdit {
+        layer: lid,
+        anchor,
+        caret,
+        created,
+        ..Default::default()
+    });
     s.bump();
     Ok(state_json(s))
 }
 
 /// `text.endEdit`: stop editing (a Type-tool layer left empty is deleted).
 fn end_edit(s: &mut Session, _: &Value) -> Result<Value> {
-    let Some(e) = s.state.text_edit.take() else { return Ok(Value::Null) };
+    let Some(e) = s.state.text_edit.take() else {
+        return Ok(Value::Null);
+    };
     if e.created && layer_doc(s, e.layer).is_some_and(|d| d.text.is_empty()) {
         let cid = s.active_comp_id().ok_or(EngineError::NoComp)?;
         s.edit("Delete Empty Text Layer", None, |proj, st| {
@@ -179,13 +211,22 @@ fn set_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let lid = target(s, p, "text.setSelection")?;
     let n = layer_doc(s, lid).map_or(0, |d| d.char_len());
     let mut e = session_on(s, lid);
-    let g = |k: &str| p.get(k).and_then(Value::as_u64).map(|x| (x as usize).min(n));
+    let g = |k: &str| {
+        p.get(k)
+            .and_then(Value::as_u64)
+            .map(|x| (x as usize).min(n))
+    };
     let (a, c) = match (g("start").or(g("anchor")), g("end").or(g("caret"))) {
         (Some(a), Some(c)) => (a, c),
         (Some(a), None) | (None, Some(a)) => (a, a),
         (None, None) => match str_p(p, "select") {
             Some("all") => (0, n),
-            _ => return Err(bad("text.setSelection", "give start/end (or anchor/caret), or select: \"all\"")),
+            _ => {
+                return Err(bad(
+                    "text.setSelection",
+                    "give start/end (or anchor/caret), or select: \"all\"",
+                ));
+            }
         },
     };
     if (e.anchor, e.caret) != (a, c) {
@@ -210,8 +251,14 @@ fn move_target(s: &Session, e: &TextEdit, doc: &TextDoc, to: &str) -> Result<(us
         "right" if collapse => (hi, None),
         "left" => (e.caret.saturating_sub(1), None),
         "right" => ((e.caret + 1).min(n), None),
-        "wordLeft" => (effectcraft_keyframe::text_doc::word_left(&doc.text, e.caret), None),
-        "wordRight" => (effectcraft_keyframe::text_doc::word_right(&doc.text, e.caret), None),
+        "wordLeft" => (
+            effectcraft_keyframe::text_doc::word_left(&doc.text, e.caret),
+            None,
+        ),
+        "wordRight" => (
+            effectcraft_keyframe::text_doc::word_right(&doc.text, e.caret),
+            None,
+        ),
         "lineStart" | "home" => (lay().line_span(e.caret).0, None),
         "lineEnd" => (lay().line_span(e.caret).1, None),
         "up" | "down" => {
@@ -221,12 +268,20 @@ fn move_target(s: &Session, e: &TextEdit, doc: &TextDoc, to: &str) -> Result<(us
         "paraStart" | "paraUp" => {
             let r = &doc.para_ranges()[doc.para_of(e.caret)];
             let pi = doc.para_of(e.caret);
-            if e.caret == r.start && pi > 0 { (doc.para_ranges()[pi - 1].start, None) } else { (r.start, None) }
+            if e.caret == r.start && pi > 0 {
+                (doc.para_ranges()[pi - 1].start, None)
+            } else {
+                (r.start, None)
+            }
         }
         "paraEnd" | "paraDown" => {
             let ranges = doc.para_ranges();
             let pi = doc.para_of(e.caret);
-            if e.caret == ranges[pi].end && pi + 1 < ranges.len() { (ranges[pi + 1].end, None) } else { (ranges[pi].end, None) }
+            if e.caret == ranges[pi].end && pi + 1 < ranges.len() {
+                (ranges[pi + 1].end, None)
+            } else {
+                (ranges[pi].end, None)
+            }
         }
         "start" => (0, None),
         "end" | "docEnd" => (n, None),
@@ -245,7 +300,14 @@ fn move_caret(s: &mut Session, p: &Value) -> Result<Value> {
         str_p(p, "to").ok_or_else(|| bad("text.moveCaret", "give to: left|right|wordLeft|wordRight|lineStart|lineEnd|up|down|paraStart|paraEnd|start|end"))?;
     let extend = b_p(p, "extend").unwrap_or(false);
     // Extending moves the caret itself, not the collapsed selection edge.
-    let probe = if extend { TextEdit { anchor: e.caret, ..e.clone() } } else { e.clone() };
+    let probe = if extend {
+        TextEdit {
+            anchor: e.caret,
+            ..e.clone()
+        }
+    } else {
+        e.clone()
+    };
     let (c, goal) = move_target(s, &probe, &doc, to)?;
     let mut e = e;
     e.caret = c;
@@ -262,7 +324,10 @@ fn move_caret(s: &mut Session, p: &Value) -> Result<Value> {
 /// Replace the selection (or `range`) with `text`; the caret goes after it.
 fn insert(s: &mut Session, p: &Value) -> Result<Value> {
     let lid = target(s, p, "text.insert")?;
-    let text = str_p(p, "text").ok_or_else(|| bad("text.insert", "give text"))?.replace("\r\n", "\n").replace('\r', "\n");
+    let text = str_p(p, "text")
+        .ok_or_else(|| bad("text.insert", "give text"))?
+        .replace("\r\n", "\n")
+        .replace('\r', "\n");
     let e = session_on(s, lid);
     let r = range_p(p).unwrap_or_else(|| e.range());
     let pending = e.pending.clone();
@@ -294,8 +359,20 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     let r = match range_p(p) {
         Some(r) => r.start.min(n)..r.end.min(n),
         None if !e.is_empty() => e.range(),
-        None if forward => e.caret..if word { effectcraft_keyframe::text_doc::word_right(&doc.text, e.caret) } else { (e.caret + 1).min(n) },
-        None => (if word { effectcraft_keyframe::text_doc::word_left(&doc.text, e.caret) } else { e.caret.saturating_sub(1) })..e.caret,
+        None if forward => {
+            e.caret..if word {
+                effectcraft_keyframe::text_doc::word_right(&doc.text, e.caret)
+            } else {
+                (e.caret + 1).min(n)
+            }
+        }
+        None => {
+            (if word {
+                effectcraft_keyframe::text_doc::word_left(&doc.text, e.caret)
+            } else {
+                e.caret.saturating_sub(1)
+            })..e.caret
+        }
     };
     if r.is_empty() {
         return Ok(state_json(s));
@@ -339,7 +416,9 @@ pub(crate) fn cut(s: &mut Session) -> Result<Value> {
 /// Edit ▸ Paste while editing text: the copied text with its formatting, or `text` (from the
 /// system clipboard) in the caret's style when it's something else.
 pub(crate) fn paste(s: &mut Session, p: &Value) -> Result<Value> {
-    let Some(e) = s.state.text_edit.clone() else { return Err(bad("edit.paste", "not editing text")) };
+    let Some(e) = s.state.text_edit.clone() else {
+        return Err(bad("edit.paste", "not editing text"));
+    };
     let clip = s.state.text_clipboard.clone();
     match (str_p(p, "text"), clip) {
         (Some(t), Some(c)) if t.replace("\r\n", "\n") != c.text => insert(s, &json!({"text": t})),
@@ -368,7 +447,10 @@ fn editing_or_text_layer(s: &Session) -> std::result::Result<(), String> {
     }
     super::has_comp(s)?;
     let comp = s.active_comp().ok_or("no composition")?;
-    if s.state.selected_layers.iter().any(|id| comp.layer(*id).is_some_and(|l| matches!(l.source, LayerSource::Text))) {
+    if s.state.selected_layers.iter().any(|id| {
+        comp.layer(*id)
+            .is_some_and(|l| matches!(l.source, LayerSource::Text))
+    }) {
         Ok(())
     } else {
         Err("edit text or select a text layer".into())
@@ -377,14 +459,23 @@ fn editing_or_text_layer(s: &Session) -> std::result::Result<(), String> {
 
 fn has_text_clip(s: &Session) -> std::result::Result<(), String> {
     editing_or_text_layer(s)?;
-    if s.state.text_clipboard.is_some() { Ok(()) } else { Err("copy some text first".into()) }
+    if s.state.text_clipboard.is_some() {
+        Ok(())
+    } else {
+        Err("copy some text first".into())
+    }
 }
 
 /// Edit ▸ Paste Text and Match Formatting: the clipboard's plain text in the style at the caret.
 fn paste_match(s: &mut Session, p: &Value) -> Result<Value> {
     let text = match str_p(p, "text") {
         Some(t) => t.to_string(),
-        None => s.state.text_clipboard.as_ref().map(|c| c.text.clone()).ok_or_else(|| bad("edit.pasteTextMatchFormatting", "nothing to paste"))?,
+        None => s
+            .state
+            .text_clipboard
+            .as_ref()
+            .map(|c| c.text.clone())
+            .ok_or_else(|| bad("edit.pasteTextMatchFormatting", "nothing to paste"))?,
     };
     if s.state.text_edit.is_none() {
         // Not editing: replace the selected text layers' text, keeping their formatting.
@@ -396,26 +487,43 @@ fn paste_match(s: &mut Session, p: &Value) -> Result<Value> {
         return Ok(Value::Null);
     }
     let e = session_on(s, target(s, p, "edit.pasteTextMatchFormatting")?);
-    let doc = layer_doc(s, e.layer).ok_or_else(|| bad("edit.pasteTextMatchFormatting", "not a text layer"))?;
-    let style = e.pending.clone().unwrap_or_else(|| if e.is_empty() { doc.insertion_style(e.caret) } else { doc.style_at(e.range().start) });
-    let r = e.range();
-    edit_doc(s, "Paste Text and Match Formatting", None, e.layer, |doc, st| {
-        doc.replace_range(r.clone(), &text, Some(&style));
-        let at = r.start + text.chars().count();
-        if let Some(ed) = st.text_edit.as_mut() {
-            ed.anchor = at;
-            ed.caret = at;
-            ed.pending = None;
+    let doc = layer_doc(s, e.layer)
+        .ok_or_else(|| bad("edit.pasteTextMatchFormatting", "not a text layer"))?;
+    let style = e.pending.clone().unwrap_or_else(|| {
+        if e.is_empty() {
+            doc.insertion_style(e.caret)
+        } else {
+            doc.style_at(e.range().start)
         }
-        Ok(())
-    })?;
+    });
+    let r = e.range();
+    edit_doc(
+        s,
+        "Paste Text and Match Formatting",
+        None,
+        e.layer,
+        |doc, st| {
+            doc.replace_range(r.clone(), &text, Some(&style));
+            let at = r.start + text.chars().count();
+            if let Some(ed) = st.text_edit.as_mut() {
+                ed.anchor = at;
+                ed.caret = at;
+                ed.pending = None;
+            }
+            Ok(())
+        },
+    )?;
     Ok(state_json(s))
 }
 
 /// Edit ▸ Paste Text Formatting Only: the copied text's character style (its first character)
 /// and paragraph settings on the selected text, or on the whole of the selected text layers.
 fn paste_formatting(s: &mut Session, p: &Value) -> Result<Value> {
-    let clip = s.state.text_clipboard.clone().ok_or_else(|| bad("edit.pasteTextFormattingOnly", "copy some text first"))?;
+    let clip = s
+        .state
+        .text_clipboard
+        .clone()
+        .ok_or_else(|| bad("edit.pasteTextFormattingOnly", "copy some text first"))?;
     let style = clip.style_at(0);
     let para = clip.para(0);
     let targets: Vec<(LayerId, Option<std::ops::Range<usize>>)> = match &s.state.text_edit {
@@ -424,7 +532,16 @@ fn paste_formatting(s: &mut Session, p: &Value) -> Result<Value> {
             let comp = s.active_comp().ok_or(EngineError::NoComp)?;
             let ids: Vec<LayerId> = match p.get("layer") {
                 Some(_) => vec![target(s, p, "edit.pasteTextFormattingOnly")?],
-                None => s.state.selected_layers.iter().copied().filter(|id| comp.layer(*id).is_some_and(|l| matches!(l.source, LayerSource::Text))).collect(),
+                None => s
+                    .state
+                    .selected_layers
+                    .iter()
+                    .copied()
+                    .filter(|id| {
+                        comp.layer(*id)
+                            .is_some_and(|l| matches!(l.source, LayerSource::Text))
+                    })
+                    .collect(),
             };
             ids.into_iter().map(|l| (l, None)).collect()
         }
@@ -451,7 +568,9 @@ fn paste_formatting(s: &mut Session, p: &Value) -> Result<Value> {
 /// Keep the session valid after undo / external edits: clamp the selection, drop it when the
 /// layer is gone or not in the active comp.
 pub(crate) fn sanitize(s: &mut Session) {
-    let Some(e) = s.state.text_edit.clone() else { return };
+    let Some(e) = s.state.text_edit.clone() else {
+        return;
+    };
     match layer_doc(s, e.layer) {
         Some(d) => {
             let n = d.char_len();
@@ -471,11 +590,23 @@ pub(crate) fn sanitize(s: &mut Session) {
 /// (the others are synthesized or have no effect).
 pub fn font_features(s: &mut Session, p: &Value) -> Result<Value> {
     let (family, style) = match p.get("font").and_then(Value::as_str) {
-        Some(f) => (f.to_string(), p.get("style").and_then(Value::as_str).unwrap_or("Regular").to_string()),
+        Some(f) => (
+            f.to_string(),
+            p.get("style")
+                .and_then(Value::as_str)
+                .unwrap_or("Regular")
+                .to_string(),
+        ),
         None => {
             let lid = target(s, p, "text.fontFeatures")?;
-            let doc = layer_doc(s, lid).ok_or_else(|| bad("text.fontFeatures", "not a text layer"))?;
-            let at = s.state.text_edit.as_ref().filter(|e| e.layer == lid).map_or(0, |e| e.range().start);
+            let doc =
+                layer_doc(s, lid).ok_or_else(|| bad("text.fontFeatures", "not a text layer"))?;
+            let at = s
+                .state
+                .text_edit
+                .as_ref()
+                .filter(|e| e.layer == lid)
+                .map_or(0, |e| e.range().start);
             let st = doc.style_at(at);
             (st.font, st.style)
         }
@@ -504,8 +635,16 @@ pub fn font_features(s: &mut Session, p: &Value) -> Result<Value> {
 /// started.
 pub fn fonts(_s: &mut Session, p: &Value) -> Result<Value> {
     use effectcraft_text::fonts;
-    let added = if p.get("rescan").and_then(Value::as_bool).unwrap_or(false) { fonts::rescan_system() } else { 0 };
-    let query = p.get("query").and_then(Value::as_str).map(str::to_lowercase).unwrap_or_default();
+    let added = if p.get("rescan").and_then(Value::as_bool).unwrap_or(false) {
+        fonts::rescan_system()
+    } else {
+        0
+    };
+    let query = p
+        .get("query")
+        .and_then(Value::as_str)
+        .map(str::to_lowercase)
+        .unwrap_or_default();
     let only_variable = p.get("variable").and_then(Value::as_bool).unwrap_or(false);
     let native = fonts::native_families();
     let variable = fonts::variable_families();
@@ -533,7 +672,11 @@ fn always_ok(_: &Session) -> std::result::Result<(), String> {
 }
 
 fn editing(s: &Session) -> std::result::Result<(), String> {
-    if s.state.text_edit.is_some() { Ok(()) } else { Err("not editing text".into()) }
+    if s.state.text_edit.is_some() {
+        Ok(())
+    } else {
+        Err("not editing text".into())
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -547,7 +690,15 @@ pub fn specs() -> Vec<CommandSpec> {
             editing_or_text_layer,
             edit
         ),
-        cmd!("text.endEdit", "Exit Text Editing", [], None, "{}", always_ok, end_edit),
+        cmd!(
+            "text.endEdit",
+            "Exit Text Editing",
+            [],
+            None,
+            "{}",
+            always_ok,
+            end_edit
+        ),
         cmd!(
             "text.fontFeatures",
             "OpenType Features",
@@ -584,7 +735,15 @@ pub fn specs() -> Vec<CommandSpec> {
             editing,
             move_caret
         ),
-        cmd!("text.insert", "Type Text", [], None, "{layer?, text, range?: [start, end], merge?} (replaces the selection)", editing_or_text_layer, insert),
+        cmd!(
+            "text.insert",
+            "Type Text",
+            [],
+            None,
+            "{layer?, text, range?: [start, end], merge?} (replaces the selection)",
+            editing_or_text_layer,
+            insert
+        ),
         cmd!(
             "text.delete",
             "Delete Text",

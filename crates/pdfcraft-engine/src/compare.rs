@@ -19,23 +19,41 @@ pub fn colour(kind: Kind) -> crate::Rgb {
 impl crate::Document {
     /// Standards ▸ Verify PDF/A: the rules the document breaks for `level`.
     pub fn pdfa_verify(&self, level: pdfcraft_preflight::Level) -> Vec<pdfcraft_preflight::Issue> {
-        self.editor.as_ref().map(|e| pdfcraft_preflight::verify(&e.cos, level)).unwrap_or_default()
+        self.editor
+            .as_ref()
+            .map(|e| pdfcraft_preflight::verify(&e.cos, level))
+            .unwrap_or_default()
     }
 
     /// The standards the document declares (Standards panel).
     pub fn standards(&self) -> pdfcraft_preflight::Declared {
-        self.editor.as_ref().map(|e| pdfcraft_preflight::declared(&e.cos)).unwrap_or_default()
+        self.editor
+            .as_ref()
+            .map(|e| pdfcraft_preflight::declared(&e.cos))
+            .unwrap_or_default()
     }
 
     /// Every word of the document in reading order, with page and box.
     pub fn words(&self) -> Vec<pdfcraft_compare::Word> {
-        let config = pdfcraft_render::RenderConfig { password: self.password.as_deref().map(Arc::from), ..Default::default() };
+        let config = pdfcraft_render::RenderConfig {
+            password: self.password.as_deref().map(Arc::from),
+            ..Default::default()
+        };
         let mut r = pdfcraft_render::PageRenderer::new(self.bytes.clone(), config);
         let mut out = Vec::new();
         for (page, info) in self.info.pages.iter().enumerate() {
-            let res = r.render(pdfcraft_render::RenderRequest { page, kind: pdfcraft_render::RequestKind::Text, scale: 1.0, ..Default::default() });
+            let res = r.render(pdfcraft_render::RenderRequest {
+                page,
+                kind: pdfcraft_render::RequestKind::Text,
+                scale: 1.0,
+                ..Default::default()
+            });
             if let Some(t) = res.text {
-                out.extend(crate::js::page_words(&t, info).into_iter().map(|(text, rect)| pdfcraft_compare::Word { text, page, rect }));
+                out.extend(
+                    crate::js::page_words(&t, info)
+                        .into_iter()
+                        .map(|(text, rect)| pdfcraft_compare::Word { text, page, rect }),
+                );
             }
         }
         out
@@ -52,29 +70,53 @@ impl Session {
 
     /// Visual compare: regions where page n of `new` looks different from page n of `old`
     /// (rendered at `dpi`), as (page, user-space box in `new`).
-    pub fn compare_visual(&self, old: DocId, new: DocId, dpi: f32) -> Result<Vec<(usize, [f64; 4])>, EditError> {
+    pub fn compare_visual(
+        &self,
+        old: DocId,
+        new: DocId,
+        dpi: f32,
+    ) -> Result<Vec<(usize, [f64; 4])>, EditError> {
         let a = self.get(old).ok_or(EditError::NoDocument)?;
         let b = self.get(new).ok_or(EditError::NoDocument)?;
         let renderer = |d: &crate::Document| {
             pdfcraft_render::PageRenderer::new(
                 d.bytes.clone(),
-                pdfcraft_render::RenderConfig { password: d.password.as_deref().map(Arc::from), ..Default::default() },
+                pdfcraft_render::RenderConfig {
+                    password: d.password.as_deref().map(Arc::from),
+                    ..Default::default()
+                },
             )
         };
         let (mut ra, mut rb) = (renderer(a), renderer(b));
         let scale = dpi.clamp(18.0, 150.0) / 72.0;
         let mut out = Vec::new();
         for (page, info) in b.info.pages.iter().enumerate().take(a.info.pages.len()) {
-            let req = pdfcraft_render::RenderRequest { page, scale, ..Default::default() };
+            let req = pdfcraft_render::RenderRequest {
+                page,
+                scale,
+                ..Default::default()
+            };
             let (x, y) = (ra.render(req), rb.render(req));
             if x.error.is_some() || y.error.is_some() {
                 continue;
             }
             let s = y.width as f32 / info.width.max(1e-3);
-            for r in pdfcraft_compare::visual_regions((&y.rgba, y.width, y.height), (&x.rgba, x.width, x.height), 24) {
+            for r in pdfcraft_compare::visual_regions(
+                (&y.rgba, y.width, y.height),
+                (&x.rgba, x.width, x.height),
+                24,
+            ) {
                 let p = info.view_to_user(r[0] as f32 / s, r[1] as f32 / s);
                 let q = info.view_to_user(r[2] as f32 / s, r[3] as f32 / s);
-                out.push((page, [p[0].min(q[0]) as f64, p[1].min(q[1]) as f64, p[0].max(q[0]) as f64, p[1].max(q[1]) as f64]));
+                out.push((
+                    page,
+                    [
+                        p[0].min(q[0]) as f64,
+                        p[1].min(q[1]) as f64,
+                        p[0].max(q[0]) as f64,
+                        p[1].max(q[1]) as f64,
+                    ],
+                ));
             }
         }
         Ok(out)
@@ -84,7 +126,10 @@ impl Session {
     pub fn compare_report(&self, old: DocId, new: DocId) -> Result<Arc<Vec<u8>>, EditError> {
         let c = self.compare(old, new)?;
         let name = |id| self.get(id).map(|d| d.name.clone()).unwrap_or_default();
-        self.create_report("Compare Report", &pdfcraft_compare::report(&c, &name(old), &name(new)))
+        self.create_report(
+            "Compare Report",
+            &pdfcraft_compare::report(&c, &name(old), &name(new)),
+        )
     }
 
     /// Mark the differences in `new` as comments: highlights over replaced and inserted text
@@ -102,20 +147,40 @@ impl Session {
             };
             let shape = if ch.new.rects.is_empty() {
                 let Some(r) = ch.new.near else { continue };
-                Shape::Note { at: [r[0], r[3]], icon: NoteIcon::Note }
+                Shape::Note {
+                    at: [r[0], r[3]],
+                    icon: NoteIcon::Note,
+                }
             } else {
                 Shape::TextMarkup {
                     kind: Markup::Highlight,
-                    quads: ch.new.rects.iter().map(|r| [r[0], r[3], r[2], r[3], r[0], r[1], r[2], r[1]]).collect(),
+                    quads: ch
+                        .new
+                        .rects
+                        .iter()
+                        .map(|r| [r[0], r[3], r[2], r[3], r[0], r[1], r[2], r[1]])
+                        .collect(),
                 }
             };
             let mut style = crate::Style::default_for(&shape);
             style.color = color;
-            edits.push(Edit::AddAnnotation(NewAnnotation { page: ch.new.page, shape, style, contents, author: "Compare".into() }));
+            edits.push(Edit::AddAnnotation(NewAnnotation {
+                page: ch.new.page,
+                shape,
+                style,
+                contents,
+                author: "Compare".into(),
+            }));
         }
         let n = edits.len();
         if n > 0 {
-            self.apply(new, Edit::Batch { label: "Mark differences".into(), edits })?;
+            self.apply(
+                new,
+                Edit::Batch {
+                    label: "Mark differences".into(),
+                    edits,
+                },
+            )?;
         }
         Ok(n)
     }
@@ -155,7 +220,9 @@ impl crate::Document {
     /// The pages as paragraphs and images (for Word, HTML and RTF export), including what
     /// form XObjects draw.
     pub fn export_pages(&self) -> Vec<pdfcraft_export::Page> {
-        let Some(cos) = self.editor.as_ref().map(|e| &e.cos) else { return Vec::new() };
+        let Some(cos) = self.editor.as_ref().map(|e| &e.cos) else {
+            return Vec::new();
+        };
         self.info
             .pages
             .iter()
@@ -166,11 +233,25 @@ impl crate::Document {
                 let visible_rect = |r: [f64; 4]| {
                     let a = info.user_to_view(r[0] as f32, r[1] as f32);
                     let b = info.user_to_view(r[2] as f32, r[3] as f32);
-                    [a[0].min(b[0]) as f64, (info.height - a[1].max(b[1])) as f64, a[0].max(b[0]) as f64, (info.height - a[1].min(b[1])) as f64]
+                    [
+                        a[0].min(b[0]) as f64,
+                        (info.height - a[1].max(b[1])) as f64,
+                        a[0].max(b[0]) as f64,
+                        (info.height - a[1].min(b[1])) as f64,
+                    ]
                 };
                 let crop_width = f64::from(info.crop[2] - info.crop[0]);
-                let display_width = f64::from(if info.rotation % 180 == 0 { info.width } else { info.height });
-                let unit = if crop_width > 0.0 && crop_width.is_finite() && display_width.is_finite() { display_width / crop_width } else { 1.0 };
+                let display_width = f64::from(if info.rotation % 180 == 0 {
+                    info.width
+                } else {
+                    info.height
+                });
+                let unit =
+                    if crop_width > 0.0 && crop_width.is_finite() && display_width.is_finite() {
+                        display_width / crop_width
+                    } else {
+                        1.0
+                    };
                 let blocks = pdfcraft_edit::reading_blocks(cos, i)
                     .unwrap_or_default()
                     .into_iter()
@@ -197,12 +278,21 @@ impl crate::Document {
                             ext: if ext == "jpg" { "jpg" } else { "png" },
                             bytes,
                             rect: visible_rect(im.rect),
-                            size: [im.matrix[0].hypot(im.matrix[1]) * unit, im.matrix[2].hypot(im.matrix[3]) * unit],
-                            rotation: im.matrix[1].atan2(im.matrix[0]).to_degrees() - f64::from(info.rotation),
+                            size: [
+                                im.matrix[0].hypot(im.matrix[1]) * unit,
+                                im.matrix[2].hypot(im.matrix[3]) * unit,
+                            ],
+                            rotation: im.matrix[1].atan2(im.matrix[0]).to_degrees()
+                                - f64::from(info.rotation),
                         })
                     })
                     .collect();
-                pdfcraft_export::Page { width: info.width as f64, height: info.height as f64, blocks, images }
+                pdfcraft_export::Page {
+                    width: info.width as f64,
+                    height: info.height as f64,
+                    blocks,
+                    images,
+                }
             })
             .collect()
     }
@@ -210,7 +300,11 @@ impl crate::Document {
     /// The document as a Word, PowerPoint, HTML or RTF file.
     pub fn export_office(&self, format: OfficeFormat) -> Vec<u8> {
         let pages = self.export_pages();
-        let title = self.info.title.clone().unwrap_or_else(|| self.name.trim_end_matches(".pdf").to_string());
+        let title = self
+            .info
+            .title
+            .clone()
+            .unwrap_or_else(|| self.name.trim_end_matches(".pdf").to_string());
         match format {
             OfficeFormat::Docx => pdfcraft_export::docx(&pages, &title),
             OfficeFormat::Pptx => pdfcraft_export::pptx(&pages, &title),

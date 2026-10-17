@@ -11,7 +11,13 @@ pub struct DetectedNote {
 }
 
 /// Fundamental frequency of one frame, or None when unvoiced. `threshold` ≈ 0.1–0.2.
-pub fn yin(frame: &[f32], sample_rate: f32, min_hz: f32, max_hz: f32, threshold: f32) -> Option<f32> {
+pub fn yin(
+    frame: &[f32],
+    sample_rate: f32,
+    min_hz: f32,
+    max_hz: f32,
+    threshold: f32,
+) -> Option<f32> {
     if !(sample_rate.is_finite() && sample_rate > 0.0) || frame.len() < 64 {
         return None;
     }
@@ -25,7 +31,9 @@ pub fn yin(frame: &[f32], sample_rate: f32, min_hz: f32, max_hz: f32, threshold:
     for (tau, dv) in d.iter_mut().enumerate().skip(1) {
         let mut sum = 0.0f32;
         for j in 0..w {
-            let (Some(a), Some(b)) = (frame.get(j), frame.get(j + tau)) else { break };
+            let (Some(a), Some(b)) = (frame.get(j), frame.get(j + tau)) else {
+                break;
+            };
             let diff = a - b;
             sum += diff * diff;
         }
@@ -38,7 +46,11 @@ pub fn yin(frame: &[f32], sample_rate: f32, min_hz: f32, max_hz: f32, threshold:
         let v = d.get(tau).copied().unwrap_or(0.0);
         running += v;
         if let Some(c) = cmnd.get_mut(tau) {
-            *c = if running > 0.0 { v * tau as f32 / running } else { 1.0 };
+            *c = if running > 0.0 {
+                v * tau as f32 / running
+            } else {
+                1.0
+            };
         }
     }
     let mut tau = min_tau;
@@ -46,14 +58,23 @@ pub fn yin(frame: &[f32], sample_rate: f32, min_hz: f32, max_hz: f32, threshold:
         let c = cmnd.get(tau).copied().unwrap_or(1.0);
         if c < threshold {
             // Walk to the local minimum.
-            while tau + 1 < max_tau && cmnd.get(tau + 1).copied().unwrap_or(1.0) < cmnd.get(tau).copied().unwrap_or(1.0) {
+            while tau + 1 < max_tau
+                && cmnd.get(tau + 1).copied().unwrap_or(1.0) < cmnd.get(tau).copied().unwrap_or(1.0)
+            {
                 tau += 1;
             }
             // Parabolic interpolation.
-            let (a, b, c) =
-                (cmnd.get(tau - 1).copied().unwrap_or(1.0), cmnd.get(tau).copied().unwrap_or(1.0), cmnd.get(tau + 1).copied().unwrap_or(1.0));
+            let (a, b, c) = (
+                cmnd.get(tau - 1).copied().unwrap_or(1.0),
+                cmnd.get(tau).copied().unwrap_or(1.0),
+                cmnd.get(tau + 1).copied().unwrap_or(1.0),
+            );
             let denom = a - 2.0 * b + c;
-            let shift = if denom.abs() > 1e-9 { 0.5 * (a - c) / denom } else { 0.0 };
+            let shift = if denom.abs() > 1e-9 {
+                0.5 * (a - c) / denom
+            } else {
+                0.0
+            };
             let t = tau as f32 + shift.clamp(-1.0, 1.0);
             return (t > 0.0).then_some(sample_rate / t);
         }
@@ -65,17 +86,24 @@ pub fn yin(frame: &[f32], sample_rate: f32, min_hz: f32, max_hz: f32, threshold:
 /// Convert mono audio to notes: frames of `hop` samples, pitch per frame, then runs of the same
 /// semitone at least `min_frames` long become notes.
 pub fn audio_to_notes(audio: &[f32], sample_rate: f32) -> Vec<DetectedNote> {
-    let sr = if sample_rate.is_finite() && sample_rate > 0.0 { sample_rate } else { 48_000.0 };
+    let sr = if sample_rate.is_finite() && sample_rate > 0.0 {
+        sample_rate
+    } else {
+        48_000.0
+    };
     let win = ((sr * 0.046) as usize).clamp(256, 8192);
     let hop = win / 4;
     let min_frames = 3;
     let mut frames: Vec<(usize, Option<u8>, f32)> = Vec::new();
     let mut pos = 0usize;
     while pos + win <= audio.len() && frames.len() < 2_000_000 {
-        let Some(frame) = audio.get(pos..pos + win) else { break };
+        let Some(frame) = audio.get(pos..pos + win) else {
+            break;
+        };
         let rms = (frame.iter().map(|x| x * x).sum::<f32>() / win as f32).sqrt();
         let pitch = if rms > 0.01 {
-            yin(frame, sr, 50.0, 1600.0, 0.15).map(|f| (69.0 + 12.0 * (f / 440.0).log2()).round().clamp(0.0, 127.0) as u8)
+            yin(frame, sr, 50.0, 1600.0, 0.15)
+                .map(|f| (69.0 + 12.0 * (f / 440.0).log2()).round().clamp(0.0, 127.0) as u8)
         } else {
             None
         };
@@ -101,7 +129,12 @@ pub fn audio_to_notes(audio: &[f32], sample_rate: f32) -> Vec<DetectedNote> {
         if j - i >= min_frames {
             let end = frames.get(j).map_or(audio.len(), |f| f.0);
             let velocity = (40.0 + 87.0 * (peak / 0.5).min(1.0)) as u8;
-            notes.push(DetectedNote { start, end, pitch: p, velocity: velocity.clamp(1, 127) });
+            notes.push(DetectedNote {
+                start,
+                end,
+                pitch: p,
+                velocity: velocity.clamp(1, 127),
+            });
         }
         i = j.max(i + 1);
     }
@@ -113,7 +146,9 @@ mod tests {
     use super::*;
 
     fn tone(f: f32, secs: f32, sr: f32) -> Vec<f32> {
-        (0..(secs * sr) as usize).map(|i| (i as f32 * f * std::f32::consts::TAU / sr).sin() * 0.5).collect()
+        (0..(secs * sr) as usize)
+            .map(|i| (i as f32 * f * std::f32::consts::TAU / sr).sin() * 0.5)
+            .collect()
     }
 
     #[test]

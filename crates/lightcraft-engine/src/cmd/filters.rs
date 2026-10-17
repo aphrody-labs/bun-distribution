@@ -20,12 +20,23 @@ fn list(s: &Session) -> Value {
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "filter.savePreset";
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(C, "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(C, "missing `name`"))?
+        .to_string();
     if s.filter == Filter::default() {
         return Err(bad(C, "the filter is empty: set some filters first"));
     }
-    let preset = FilterPreset { name: name.clone(), filter: s.filter.clone() };
-    match s.filter_presets.iter_mut().find(|f| f.name.eq_ignore_ascii_case(&name)) {
+    let preset = FilterPreset {
+        name: name.clone(),
+        filter: s.filter.clone(),
+    };
+    match s
+        .filter_presets
+        .iter_mut()
+        .find(|f| f.name.eq_ignore_ascii_case(&name))
+    {
         Some(f) => *f = preset,
         None => s.filter_presets.push(preset),
     }
@@ -36,7 +47,11 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
 fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "filter.applyPreset";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing `name`"))?;
-    let f = s.filter_presets.iter().find(|f| f.name.eq_ignore_ascii_case(name)).ok_or_else(|| bad(C, format!("no filter preset `{name}`")))?;
+    let f = s
+        .filter_presets
+        .iter()
+        .find(|f| f.name.eq_ignore_ascii_case(name))
+        .ok_or_else(|| bad(C, format!("no filter preset `{name}`")))?;
     s.filter = f.filter.clone();
     Ok(json!({"photos": s.visible().len()}))
 }
@@ -45,7 +60,8 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "filter.deletePreset";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing `name`"))?;
     let n = s.filter_presets.len();
-    s.filter_presets.retain(|f| !f.name.eq_ignore_ascii_case(name));
+    s.filter_presets
+        .retain(|f| !f.name.eq_ignore_ascii_case(name));
     if n == s.filter_presets.len() {
         return Err(bad(C, format!("no filter preset `{name}`")));
     }
@@ -65,7 +81,23 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             save
         ),
-        cmd!("filter.applyPreset", "Apply Filter Preset", [], None, "{name} — replaces the current filter → {photos}", always, apply),
-        cmd!("filter.deletePreset", "Delete Filter Preset", [], None, "{name}", always, delete),
+        cmd!(
+            "filter.applyPreset",
+            "Apply Filter Preset",
+            [],
+            None,
+            "{name} — replaces the current filter → {photos}",
+            always,
+            apply
+        ),
+        cmd!(
+            "filter.deletePreset",
+            "Delete Filter Preset",
+            [],
+            None,
+            "{name}",
+            always,
+            delete
+        ),
     ]
 }

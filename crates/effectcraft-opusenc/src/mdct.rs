@@ -18,11 +18,17 @@ pub struct Cpx {
 impl Cpx {
     #[inline]
     fn mul(self, o: Cpx) -> Cpx {
-        Cpx { re: self.re * o.re - self.im * o.im, im: self.re * o.im + self.im * o.re }
+        Cpx {
+            re: self.re * o.re - self.im * o.im,
+            im: self.re * o.im + self.im * o.re,
+        }
     }
     #[inline]
     fn add(self, o: Cpx) -> Cpx {
-        Cpx { re: self.re + o.re, im: self.im + o.im }
+        Cpx {
+            re: self.re + o.re,
+            im: self.im + o.im,
+        }
     }
 }
 
@@ -47,10 +53,17 @@ impl Fft {
         let twiddle = (0..n)
             .map(|k| {
                 let ph = -2.0 * std::f64::consts::PI * k as f64 / n as f64;
-                Cpx { re: ph.cos() as f32, im: ph.sin() as f32 }
+                Cpx {
+                    re: ph.cos() as f32,
+                    im: ph.sin() as f32,
+                }
             })
             .collect();
-        Fft { n, factors, twiddle }
+        Fft {
+            n,
+            factors,
+            twiddle,
+        }
     }
 
     pub fn process(&self, data: &mut [Cpx], scratch: &mut Vec<Cpx>) {
@@ -59,7 +72,15 @@ impl Fft {
         self.rec(&mut data[..self.n], scratch, 1, self.n, 0, 1);
     }
 
-    fn rec(&self, out: &mut [Cpx], inp: &[Cpx], in_stride: usize, n: usize, fi: usize, tw_stride: usize) {
+    fn rec(
+        &self,
+        out: &mut [Cpx],
+        inp: &[Cpx],
+        in_stride: usize,
+        n: usize,
+        fi: usize,
+        tw_stride: usize,
+    ) {
         let p = self.factors[fi];
         let m = n / p;
         if m == 1 {
@@ -68,7 +89,14 @@ impl Fft {
             }
         } else {
             for q in 0..p {
-                self.rec(&mut out[q * m..(q + 1) * m], &inp[q * in_stride..], in_stride * p, m, fi + 1, tw_stride * p);
+                self.rec(
+                    &mut out[q * m..(q + 1) * m],
+                    &inp[q * in_stride..],
+                    in_stride * p,
+                    m,
+                    fi + 1,
+                    tw_stride * p,
+                );
             }
         }
         let big = self.n;
@@ -110,13 +138,19 @@ impl Mdct {
         let pre = (0..n2)
             .map(|m| {
                 let ph = -pi * m as f64 / n as f64;
-                Cpx { re: ph.cos() as f32, im: ph.sin() as f32 }
+                Cpx {
+                    re: ph.cos() as f32,
+                    im: ph.sin() as f32,
+                }
             })
             .collect();
         let post = (0..n2)
             .map(|p| {
                 let ph = -pi * (p as f64 + 0.25) / n as f64;
-                Cpx { re: ph.cos() as f32, im: ph.sin() as f32 }
+                Cpx {
+                    re: ph.cos() as f32,
+                    im: ph.sin() as f32,
+                }
             })
             .collect();
         let mut window = [0f32; OVERLAP];
@@ -125,7 +159,17 @@ impl Mdct {
             let s = x.sin();
             *w = (std::f64::consts::FRAC_PI_2 * s * s).sin() as f32;
         }
-        Mdct { n, fft: Fft::new(n2), pre, post, window, scale: 2.0 / n as f32, z: Vec::new(), scratch: Vec::new(), v: vec![0.0; n] }
+        Mdct {
+            n,
+            fft: Fft::new(n2),
+            pre,
+            post,
+            window,
+            scale: 2.0 / n as f32,
+            z: Vec::new(),
+            scratch: Vec::new(),
+            v: vec![0.0; n],
+        }
     }
 
     /// Transforms `block` (`n + OVERLAP` samples: the previous frame's last `OVERLAP` samples, then
@@ -160,7 +204,10 @@ impl Mdct {
         // DCT-IV via an n/2-point complex FFT.
         self.z.clear();
         for m in 0..n2 {
-            let wv = Cpx { re: self.v[2 * m], im: self.v[n - 1 - 2 * m] };
+            let wv = Cpx {
+                re: self.v[2 * m],
+                im: self.v[n - 1 - 2 * m],
+            };
             self.z.push(wv.mul(self.pre[m]));
         }
         self.fft.process(&mut self.z, &mut self.scratch);
@@ -192,7 +239,15 @@ mod tests {
         }
         (0..n)
             .map(|k| {
-                (0..2 * n).map(|t| u[t] * (std::f64::consts::PI / n as f64 * (t as f64 + 0.5 + n as f64 / 2.0) * (k as f64 + 0.5)).cos()).sum::<f64>() * 2.0
+                (0..2 * n)
+                    .map(|t| {
+                        u[t] * (std::f64::consts::PI / n as f64
+                            * (t as f64 + 0.5 + n as f64 / 2.0)
+                            * (k as f64 + 0.5))
+                            .cos()
+                    })
+                    .sum::<f64>()
+                    * 2.0
                     / n as f64
             })
             .collect()
@@ -201,13 +256,20 @@ mod tests {
     #[test]
     fn matches_direct_formula() {
         for &n in &[240usize, 960] {
-            let block: Vec<f32> = (0..n + OVERLAP).map(|i| ((i * 37 % 101) as f32 - 50.0) / 7.0).collect();
+            let block: Vec<f32> = (0..n + OVERLAP)
+                .map(|i| ((i * 37 % 101) as f32 - 50.0) / 7.0)
+                .collect();
             let mut m = Mdct::new(n);
             let mut out = vec![0f32; n];
             m.forward(&block, &mut out);
             let d = direct(&block, n, &m.window);
             for k in 0..n {
-                assert!((out[k] as f64 - d[k]).abs() < 1e-2, "n={n} k={k}: {} vs {}", out[k], d[k]);
+                assert!(
+                    (out[k] as f64 - d[k]).abs() < 1e-2,
+                    "n={n} k={k}: {} vs {}",
+                    out[k],
+                    d[k]
+                );
             }
         }
     }
@@ -217,7 +279,9 @@ mod tests {
     fn imdct_backward(n_full: usize, input: &[f32], out: &mut [f32], window: &[f32]) {
         let n2 = n_full >> 1;
         let n4 = n_full >> 2;
-        let t: Vec<f32> = (0..n2).map(|i| (2.0 * std::f64::consts::PI * (i as f64 + 0.125) / n_full as f64).cos() as f32).collect();
+        let t: Vec<f32> = (0..n2)
+            .map(|i| (2.0 * std::f64::consts::PI * (i as f64 + 0.125) / n_full as f64).cos() as f32)
+            .collect();
         let fft = Fft::new(n4);
         let mut z = Vec::new();
         for i in 0..n4 {
@@ -263,7 +327,9 @@ mod tests {
     fn perfect_reconstruction_through_decoder_imdct() {
         let n = 960;
         let frames = 5;
-        let sig: Vec<f32> = (0..n * frames).map(|i| (i as f32 * 0.013).sin() * 1000.0 + ((i * 7919) % 211) as f32 - 105.0).collect();
+        let sig: Vec<f32> = (0..n * frames)
+            .map(|i| (i as f32 * 0.013).sin() * 1000.0 + ((i * 7919) % 211) as f32 - 105.0)
+            .collect();
         let mut m = Mdct::new(n);
         let mut hist = vec![0f32; OVERLAP];
         // Decoder memory: [frame output n][folded tail OVERLAP/2] laid out like decode_mem.

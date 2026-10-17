@@ -30,7 +30,11 @@ pub(super) fn defaults(id: &str, cmyk: bool, o: &mut Map<String, Value>) {
     match id {
         "tiff" => {
             let t = TiffOptions::default();
-            let model = if cmyk { ColorModel::Cmyk } else { t.color_model };
+            let model = if cmyk {
+                ColorModel::Cmyk
+            } else {
+                t.color_model
+            };
             o.extend([
                 ("colorModel".into(), json!(model.id())),
                 ("byteOrder".into(), json!(t.byte_order.id())),
@@ -77,7 +81,9 @@ pub(super) fn rows(ui: &mut egui::Ui, d: &mut Dialog, id: &str, label: Label) {
         "bmp" => bmp_rows(ui, d, label),
         "tga" => {
             label(ui, tl!("Depth:"));
-            depth_row(ui, d, "tga-depth", &tga::DEPTHS, &TGA_DEPTH_LABELS, |_| true);
+            depth_row(ui, d, "tga-depth", &tga::DEPTHS, &TGA_DEPTH_LABELS, |_| {
+                true
+            });
             ui.end_row();
         }
         _ => {}
@@ -86,11 +92,23 @@ pub(super) fn rows(ui: &mut egui::Ui, d: &mut Dialog, id: &str, label: Label) {
 
 fn tiff_rows(ui: &mut egui::Ui, d: &mut Dialog, label: Label) {
     label(ui, tl!("Color Model:"));
-    choice(ui, d, "colorModel", &ColorModel::ALL.map(ColorModel::id), &ColorModel::ALL.map(ColorModel::label));
+    choice(
+        ui,
+        d,
+        "colorModel",
+        &ColorModel::ALL.map(ColorModel::id),
+        &ColorModel::ALL.map(ColorModel::label),
+    );
     ui.end_row();
 
     label(ui, tl!("Byte Order:"));
-    choice(ui, d, "byteOrder", &ByteOrder::ALL.map(ByteOrder::id), &ByteOrder::ALL.map(ByteOrder::label));
+    choice(
+        ui,
+        d,
+        "byteOrder",
+        &ByteOrder::ALL.map(ByteOrder::id),
+        &ByteOrder::ALL.map(ByteOrder::label),
+    );
     ui.end_row();
 
     ui.label("");
@@ -112,24 +130,47 @@ fn bmp_rows(ui: &mut egui::Ui, d: &mut Dialog, label: Label) {
 
     let os2 = d.str("fileFormat") == LAYOUTS[1];
     label(ui, tl!("Depth:"));
-    depth_row(ui, d, "bmp-depth", &bmp::DEPTHS, &BMP_DEPTH_LABELS, |depth| !os2 || bmp::OS2_DEPTHS.contains(&depth));
+    depth_row(
+        ui,
+        d,
+        "bmp-depth",
+        &bmp::DEPTHS,
+        &BMP_DEPTH_LABELS,
+        |depth| !os2 || bmp::OS2_DEPTHS.contains(&depth),
+    );
     ui.end_row();
 
     // The palette of a colour image at 4 or 8 bits (1 bit is black and white; greys are fixed).
     let depth = d.f64("depth", 24.0) as u8;
     if matches!(depth, 4 | 8) && d.str("colorModel") != BMP_MODELS[1] {
         label(ui, tl!("Color Reduction:"));
-        choice(ui, d, "reduction", &Reduction::ALL.map(Reduction::id), &Reduction::ALL.map(Reduction::label));
+        choice(
+            ui,
+            d,
+            "reduction",
+            &Reduction::ALL.map(Reduction::id),
+            &Reduction::ALL.map(Reduction::label),
+        );
         ui.end_row();
         label(ui, tl!("Dither:"));
-        choice(ui, d, "dither", &Dither::ALL.map(Dither::id), &Dither::ALL.map(Dither::label));
+        choice(
+            ui,
+            d,
+            "dither",
+            &Dither::ALL.map(Dither::id),
+            &Dither::ALL.map(Dither::label),
+        );
         ui.end_row();
     }
 
     ui.label("");
     ui.horizontal(|ui| {
-        ui.add_enabled_ui(!os2 && matches!(depth, 4 | 8), |ui| form::check(ui, d, "rle", tl!("Compress (RLE)")));
-        ui.add_enabled_ui(!os2 && !d.bool("rle"), |ui| form::check(ui, d, "flipRows", tl!("Flip Row Order")));
+        ui.add_enabled_ui(!os2 && matches!(depth, 4 | 8), |ui| {
+            form::check(ui, d, "rle", tl!("Compress (RLE)"))
+        });
+        ui.add_enabled_ui(!os2 && !d.bool("rle"), |ui| {
+            form::check(ui, d, "flipRows", tl!("Flip Row Order"))
+        });
     });
     ui.end_row();
     normalize_bmp(d);
@@ -145,7 +186,10 @@ fn normalize_bmp(d: &mut Dialog) {
         d.fields.insert("depth".into(), json!(depth));
     }
     let rle = d.bool("rle") && !os2 && matches!(depth, 4 | 8);
-    for (key, on) in [("rle", rle), ("flipRows", d.bool("flipRows") && !os2 && !rle)] {
+    for (key, on) in [
+        ("rle", rle),
+        ("flipRows", d.bool("flipRows") && !os2 && !rle),
+    ] {
         if d.bool(key) != on {
             d.fields.insert(key.into(), json!(on));
         }
@@ -154,11 +198,25 @@ fn normalize_bmp(d: &mut Dialog) {
 
 /// A bits-per-pixel dropdown bound to `d.fields["depth"]` (`depths` shown as `labels`); `enabled`
 /// greys out depths.
-fn depth_row(ui: &mut egui::Ui, d: &mut Dialog, id: &str, depths: &[u8], labels: &[&str], enabled: impl Fn(u8) -> bool) {
+fn depth_row(
+    ui: &mut egui::Ui,
+    d: &mut Dialog,
+    id: &str,
+    depths: &[u8],
+    labels: &[&str],
+    enabled: impl Fn(u8) -> bool,
+) {
     let cur = d.f64("depth", 24.0);
-    let shown = depths.iter().position(|b| f64::from(*b) == cur).and_then(|i| labels.get(i)).copied().unwrap_or_default();
-    if let Some(depth) =
-        widgets::dropdown_with(ui, id, shown, labels, 150.0, |i| depths.get(i).is_some_and(|b| enabled(*b))).and_then(|i| depths.get(i))
+    let shown = depths
+        .iter()
+        .position(|b| f64::from(*b) == cur)
+        .and_then(|i| labels.get(i))
+        .copied()
+        .unwrap_or_default();
+    if let Some(depth) = widgets::dropdown_with(ui, id, shown, labels, 150.0, |i| {
+        depths.get(i).is_some_and(|b| enabled(*b))
+    })
+    .and_then(|i| depths.get(i))
     {
         d.fields.insert("depth".into(), json!(depth));
     }

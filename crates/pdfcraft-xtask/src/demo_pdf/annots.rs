@@ -2,7 +2,9 @@
 
 use lopdf::{Dictionary, Document, Object, ObjectId, Stream, dictionary};
 
-use super::pdf::{Content, Font, Fonts, Rgb, Stamp, colors, floats, form_xobject, name, rect, text};
+use super::pdf::{
+    Content, Font, Fonts, Rgb, Stamp, colors, floats, form_xobject, name, rect, text,
+};
 
 /// An axis-aligned rectangle in PDF user space.
 #[derive(Clone, Copy, Debug)]
@@ -15,7 +17,12 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x0: f32, y0: f32, x1: f32, y1: f32) -> Self {
-        Rect { x0: x0.min(x1), y0: y0.min(y1), x1: x0.max(x1), y1: y0.max(y1) }
+        Rect {
+            x0: x0.min(x1),
+            y0: y0.min(y1),
+            x1: x0.max(x1),
+            y1: y0.max(y1),
+        }
     }
     pub fn xywh(x: f32, y: f32, w: f32, h: f32) -> Self {
         Rect::new(x, y, x + w, y + h)
@@ -104,7 +111,15 @@ impl Annotator {
     }
 
     /// Common markup-annotation entries.
-    fn base(&mut self, subtype: &str, r: Rect, color: Rgb, author: &str, contents: &str, page: ObjectId) -> Dictionary {
+    fn base(
+        &mut self,
+        subtype: &str,
+        r: Rect,
+        color: Rgb,
+        author: &str,
+        contents: &str,
+        page: ObjectId,
+    ) -> Dictionary {
         self.seq += 1;
         let when = self.now.plus_minutes(i64::from(self.seq));
         dictionary! {
@@ -123,7 +138,14 @@ impl Annotator {
         }
     }
 
-    fn set_ap(&self, doc: &mut Document, dict: &mut Dictionary, r: Rect, content: Content, resources: Dictionary) {
+    fn set_ap(
+        &self,
+        doc: &mut Document,
+        dict: &mut Dictionary,
+        r: Rect,
+        content: Content,
+        resources: Dictionary,
+    ) {
         let id = form_xobject(doc, r.w(), r.h(), content, resources);
         dict.set("AP", dictionary! { "N" => id });
     }
@@ -136,10 +158,19 @@ impl Annotator {
 
     /// Build the annotation of `kind` whose geometry is derived from `r`.
     /// `self_id` is the object id the returned dictionary will be stored under.
-    pub fn build(&mut self, doc: &mut Document, page: ObjectId, self_id: ObjectId, kind: Kind, r: Rect) -> Built {
+    pub fn build(
+        &mut self,
+        doc: &mut Document,
+        page: ObjectId,
+        self_id: ObjectId,
+        kind: Kind,
+        r: Rect,
+    ) -> Built {
         let mut extra = Vec::new();
         let dict = match kind {
-            Kind::Highlight | Kind::Underline | Kind::StrikeOut | Kind::Squiggly => self.text_markup(doc, page, kind, r),
+            Kind::Highlight | Kind::Underline | Kind::StrikeOut | Kind::Squiggly => {
+                self.text_markup(doc, page, kind, r)
+            }
             Kind::Caret => self.caret(doc, page, r),
             Kind::Note => {
                 let (dict, more) = self.sticky_note(doc, page, self_id, r);
@@ -157,16 +188,33 @@ impl Annotator {
         Built { dict, extra }
     }
 
-    fn text_markup(&mut self, doc: &mut Document, page: ObjectId, kind: Kind, r: Rect) -> Dictionary {
+    fn text_markup(
+        &mut self,
+        doc: &mut Document,
+        page: ObjectId,
+        kind: Kind,
+        r: Rect,
+    ) -> Dictionary {
         let (subtype, color, contents) = match kind {
-            Kind::Highlight => ("Highlight", colors::HIGHLIGHT, "Key phrase - keep this wording."),
-            Kind::Underline => ("Underline", colors::BLUE, "Please cite a source for this claim."),
+            Kind::Highlight => (
+                "Highlight",
+                colors::HIGHLIGHT,
+                "Key phrase - keep this wording.",
+            ),
+            Kind::Underline => (
+                "Underline",
+                colors::BLUE,
+                "Please cite a source for this claim.",
+            ),
             Kind::StrikeOut => ("StrikeOut", colors::ACCENT, "Redundant; suggest deleting."),
             _ => ("Squiggly", colors::TEAL, "Check the spelling here."),
         };
         let mut dict = self.base(subtype, r, color, AUTHOR, contents, page);
         // QuadPoints order used by every mainstream viewer: TL, TR, BL, BR.
-        dict.set("QuadPoints", floats(&[r.x0, r.y1, r.x1, r.y1, r.x0, r.y0, r.x1, r.y0]));
+        dict.set(
+            "QuadPoints",
+            floats(&[r.x0, r.y1, r.x1, r.y1, r.x0, r.y0, r.x1, r.y0]),
+        );
         dict.set("CA", 1.0);
 
         let (w, h) = (r.w(), r.h());
@@ -179,15 +227,26 @@ impl Annotator {
             }
             Kind::Underline => {
                 let t = (h / 16.0).max(0.8);
-                c.stroke_color(color).line_width(t).move_to(0.0, h * 0.17).line_to(w, h * 0.17).stroke();
+                c.stroke_color(color)
+                    .line_width(t)
+                    .move_to(0.0, h * 0.17)
+                    .line_to(w, h * 0.17)
+                    .stroke();
             }
             Kind::StrikeOut => {
                 let t = (h / 16.0).max(0.8);
-                c.stroke_color(color).line_width(t).move_to(0.0, h * 0.44).line_to(w, h * 0.44).stroke();
+                c.stroke_color(color)
+                    .line_width(t)
+                    .move_to(0.0, h * 0.44)
+                    .line_to(w, h * 0.44)
+                    .stroke();
             }
             _ => {
                 let (base, amp, period) = (h * 0.12, 1.4, 4.0);
-                c.stroke_color(color).line_width(0.9).round_caps().move_to(0.0, base);
+                c.stroke_color(color)
+                    .line_width(0.9)
+                    .round_caps()
+                    .move_to(0.0, base);
                 let mut x = 0.0;
                 let mut up = true;
                 while x < w {
@@ -204,8 +263,20 @@ impl Annotator {
 
     fn caret(&mut self, doc: &mut Document, page: ObjectId, anchor: Rect) -> Dictionary {
         let cx = (anchor.x0 + anchor.x1) / 2.0;
-        let r = Rect::new(cx - 6.0, anchor.y0 + 1.0, cx + 6.0, anchor.y0 + anchor.h() * 0.62);
-        let mut dict = self.base("Caret", r, colors::BLUE, AUTHOR, "Insert: \"automatically\"", page);
+        let r = Rect::new(
+            cx - 6.0,
+            anchor.y0 + 1.0,
+            cx + 6.0,
+            anchor.y0 + anchor.h() * 0.62,
+        );
+        let mut dict = self.base(
+            "Caret",
+            r,
+            colors::BLUE,
+            AUTHOR,
+            "Insert: \"automatically\"",
+            page,
+        );
         dict.set("Sy", "None");
         dict.set("RD", floats(&[0.0, 0.0, 0.0, 0.0]));
         let (w, h) = (r.w(), r.h());
@@ -223,7 +294,11 @@ impl Annotator {
     fn note_icon(&self, doc: &mut Document, r: Rect, fill: Rgb) -> ObjectId {
         let (w, h) = (r.w(), r.h());
         let mut c = Content::new();
-        c.fill_color(fill).stroke_color(colors::INK).line_width(0.8).rounded_rect(0.5, 0.5, w - 1.0, h - 1.0, 3.0).fill_stroke();
+        c.fill_color(fill)
+            .stroke_color(colors::INK)
+            .line_width(0.8)
+            .rounded_rect(0.5, 0.5, w - 1.0, h - 1.0, 3.0)
+            .fill_stroke();
         c.line_width(1.0).round_caps();
         for i in 1..=3 {
             let y = h - 0.5 - (h - 1.0) * i as f32 / 4.2;
@@ -234,9 +309,22 @@ impl Annotator {
         form_xobject(doc, w, h, c, Dictionary::new())
     }
 
-    fn sticky_note(&mut self, doc: &mut Document, page: ObjectId, self_id: ObjectId, r: Rect) -> (Dictionary, Vec<ObjectId>) {
+    fn sticky_note(
+        &mut self,
+        doc: &mut Document,
+        page: ObjectId,
+        self_id: ObjectId,
+        r: Rect,
+    ) -> (Dictionary, Vec<ObjectId>) {
         let r = Rect::xywh(r.x0, r.y1 - 20.0, 20.0, 20.0);
-        let mut dict = self.base("Text", r, colors::GOLD, AUTHOR, "Sticky notes hold threaded discussions. This one has two replies.", page);
+        let mut dict = self.base(
+            "Text",
+            r,
+            colors::GOLD,
+            AUTHOR,
+            "Sticky notes hold threaded discussions. This one has two replies.",
+            page,
+        );
         dict.set("F", 28); // Print | NoZoom | NoRotate
         dict.set("Name", "Comment");
         dict.set("Open", false);
@@ -269,7 +357,14 @@ impl Annotator {
         reply.set("AP", dictionary! { "N" => icon });
         let reply_id = doc.add_object(reply);
 
-        let mut state = self.base("Text", r, colors::TEAL, AUTHOR, "Accepted set by PdfCraft Reviewer", page);
+        let mut state = self.base(
+            "Text",
+            r,
+            colors::TEAL,
+            AUTHOR,
+            "Accepted set by PdfCraft Reviewer",
+            page,
+        );
         state.set("F", 30); // hidden: review-state annotations are shown only in the comments list
         state.set("Name", "Comment");
         state.set("IRT", self_id);
@@ -282,7 +377,14 @@ impl Annotator {
     }
 
     /// A standalone sticky note (no replies) at the given top-left corner.
-    pub fn simple_note(&mut self, doc: &mut Document, page: ObjectId, x: f32, y_top: f32, contents: &str) -> ObjectId {
+    pub fn simple_note(
+        &mut self,
+        doc: &mut Document,
+        page: ObjectId,
+        x: f32,
+        y_top: f32,
+        contents: &str,
+    ) -> ObjectId {
         let r = Rect::xywh(x, y_top - 20.0, 20.0, 20.0);
         let mut dict = self.base("Text", r, colors::GOLD, AUTHOR, contents, page);
         dict.set("F", 28);
@@ -301,11 +403,22 @@ impl Annotator {
     }
 
     fn free_text(&mut self, doc: &mut Document, page: ObjectId, r: Rect) -> Dictionary {
-        let lines = ["FreeText: typed straight onto", "the page, with a /DA and rich text."];
+        let lines = [
+            "FreeText: typed straight onto",
+            "the page, with a /DA and rich text.",
+        ];
         let contents = lines.join(" ");
         let mut dict = self.base("FreeText", r, colors::FIELD, AUTHOR, &contents, page);
-        dict.set("DA", Object::string_literal("/Helv 9 Tf 0.086 0.129 0.231 rg"));
-        dict.set("DS", Object::string_literal("font: Helvetica,sans-serif 9.0pt; text-align:left; color:#16213B"));
+        dict.set(
+            "DA",
+            Object::string_literal("/Helv 9 Tf 0.086 0.129 0.231 rg"),
+        );
+        dict.set(
+            "DS",
+            Object::string_literal(
+                "font: Helvetica,sans-serif 9.0pt; text-align:left; color:#16213B",
+            ),
+        );
         dict.set(
             "RC",
             text(
@@ -317,14 +430,24 @@ impl Annotator {
         dict.set("BS", dictionary! { "W" => 1, "S" => "S" });
         let (w, h) = (r.w(), r.h());
         let mut c = Content::new();
-        c.fill_color(colors::FIELD).stroke_color(colors::BLUE).line_width(1.0).rect(0.5, 0.5, w - 1.0, h - 1.0).fill_stroke();
+        c.fill_color(colors::FIELD)
+            .stroke_color(colors::BLUE)
+            .line_width(1.0)
+            .rect(0.5, 0.5, w - 1.0, h - 1.0)
+            .fill_stroke();
         c.save().rect(2.0, 2.0, w - 4.0, h - 4.0).clip();
         c.fill_color(colors::INK);
         c.text(Font::HelvBold, 9.0, 6.0, h - 15.0, "FreeText:");
         let lead = Font::HelvBold.width("FreeText: ", 9.0);
         c.text(Font::Helv, 9.0, 6.0 + lead, h - 15.0, "typed straight onto");
         c.text(Font::Helv, 9.0, 6.0, h - 27.0, "the page, with a /DA and");
-        c.fill_color(colors::ACCENT).text(Font::Helv, 9.0, 6.0 + Font::Helv.width("the page, with a /DA and ", 9.0), h - 27.0, "rich text.");
+        c.fill_color(colors::ACCENT).text(
+            Font::Helv,
+            9.0,
+            6.0 + Font::Helv.width("the page, with a /DA and ", 9.0),
+            h - 27.0,
+            "rich text.",
+        );
         c.restore();
         self.set_ap(doc, &mut dict, r, c, self.fonts.resources());
         dict
@@ -332,7 +455,14 @@ impl Annotator {
 
     fn line(&mut self, doc: &mut Document, page: ObjectId, r: Rect) -> Dictionary {
         let (x0, y0, x1, y1) = (r.x0 + 6.0, r.y0 + 8.0, r.x1 - 6.0, r.y1 - 8.0);
-        let mut dict = self.base("Line", r, colors::INK, AUTHOR, "Line annotation with a circle start and closed arrow end.", page);
+        let mut dict = self.base(
+            "Line",
+            r,
+            colors::INK,
+            AUTHOR,
+            "Line annotation with a circle start and closed arrow end.",
+            page,
+        );
         dict.set("L", floats(&[x0, y0, x1, y1]));
         dict.set("LE", vec![name("Circle"), name("ClosedArrow")]);
         dict.set("IC", colors::ACCENT.array());
@@ -346,7 +476,12 @@ impl Annotator {
         let mut c = Content::new();
         c.stroke_color(colors::INK).line_width(1.5).round_caps();
         c.move_to(lx0, ly0).line_to(bx, by).stroke();
-        c.fill_color(colors::ACCENT).move_to(lx1, ly1).line_to(bx - uy * aw, by + ux * aw).line_to(bx + uy * aw, by - ux * aw).close().fill_stroke();
+        c.fill_color(colors::ACCENT)
+            .move_to(lx1, ly1)
+            .line_to(bx - uy * aw, by + ux * aw)
+            .line_to(bx + uy * aw, by - ux * aw)
+            .close()
+            .fill_stroke();
         c.ellipse(lx0, ly0, 3.0, 3.0).fill_stroke();
         self.set_ap(doc, &mut dict, r, c, Dictionary::new());
         dict
@@ -354,9 +489,19 @@ impl Annotator {
 
     fn shape(&mut self, doc: &mut Document, page: ObjectId, kind: Kind, r: Rect) -> Dictionary {
         let (subtype, stroke, fill, contents) = if kind == Kind::Square {
-            ("Square", colors::TEAL, Rgb::hex(0xd8efe9), "Square annotation, dashed border, tinted interior.")
+            (
+                "Square",
+                colors::TEAL,
+                Rgb::hex(0xd8efe9),
+                "Square annotation, dashed border, tinted interior.",
+            )
         } else {
-            ("Circle", colors::ACCENT, Rgb::hex(0xfbeccc), "Circle annotation with interior colour.")
+            (
+                "Circle",
+                colors::ACCENT,
+                Rgb::hex(0xfbeccc),
+                "Circle annotation with interior colour.",
+            )
         };
         let bw = 2.0;
         let mut dict = self.base(subtype, r, stroke, AUTHOR, contents, page);
@@ -364,13 +509,19 @@ impl Annotator {
         dict.set("CA", 0.85);
         let (w, h) = (r.w(), r.h());
         let mut c = Content::new();
-        c.gs("A").stroke_color(stroke).fill_color(fill).line_width(bw);
+        c.gs("A")
+            .stroke_color(stroke)
+            .fill_color(fill)
+            .line_width(bw);
         if kind == Kind::Square {
             dict.set("BS", dictionary! { "W" => bw, "S" => "D", "D" => vec![Object::from(4), Object::from(2)] });
-            c.dash(4.0, 2.0).rect(bw / 2.0, bw / 2.0, w - bw, h - bw).fill_stroke();
+            c.dash(4.0, 2.0)
+                .rect(bw / 2.0, bw / 2.0, w - bw, h - bw)
+                .fill_stroke();
         } else {
             dict.set("BS", dictionary! { "W" => bw, "S" => "S" });
-            c.ellipse(w / 2.0, h / 2.0, w / 2.0 - bw / 2.0, h / 2.0 - bw / 2.0).fill_stroke();
+            c.ellipse(w / 2.0, h / 2.0, w / 2.0 - bw / 2.0, h / 2.0 - bw / 2.0)
+                .fill_stroke();
         }
         let res = dictionary! {
             "ExtGState" => dictionary! { "A" => dictionary! { "Type" => "ExtGState", "CA" => 0.85, "ca" => 0.85 } },
@@ -383,19 +534,43 @@ impl Annotator {
         let (w, h) = (r.w(), r.h());
         let local: Vec<(f32, f32)> = if kind == Kind::Polygon {
             // An irregular hexagon.
-            vec![(0.5, 0.95), (0.93, 0.7), (0.85, 0.18), (0.45, 0.05), (0.08, 0.28), (0.1, 0.72)]
+            vec![
+                (0.5, 0.95),
+                (0.93, 0.7),
+                (0.85, 0.18),
+                (0.45, 0.05),
+                (0.08, 0.28),
+                (0.1, 0.72),
+            ]
         } else {
-            vec![(0.06, 0.2), (0.3, 0.8), (0.5, 0.35), (0.72, 0.9), (0.94, 0.45)]
+            vec![
+                (0.06, 0.2),
+                (0.3, 0.8),
+                (0.5, 0.35),
+                (0.72, 0.9),
+                (0.94, 0.45),
+            ]
         }
         .into_iter()
         .map(|(fx, fy)| (4.0 + fx * (w - 8.0), 4.0 + fy * (h - 8.0)))
         .collect();
-        let vertices: Vec<f32> = local.iter().flat_map(|&(x, y)| [r.x0 + x, r.y0 + y]).collect();
+        let vertices: Vec<f32> = local
+            .iter()
+            .flat_map(|&(x, y)| [r.x0 + x, r.y0 + y])
+            .collect();
 
         let (subtype, stroke, contents) = if kind == Kind::Polygon {
-            ("Polygon", colors::BLUE, "Polygon annotation (six vertices).")
+            (
+                "Polygon",
+                colors::BLUE,
+                "Polygon annotation (six vertices).",
+            )
         } else {
-            ("PolyLine", colors::INK, "PolyLine annotation ending in an open arrow.")
+            (
+                "PolyLine",
+                colors::INK,
+                "PolyLine annotation ending in an open arrow.",
+            )
         };
         let mut dict = self.base(subtype, r, stroke, AUTHOR, contents, page);
         dict.set("Vertices", floats(&vertices));
@@ -418,7 +593,11 @@ impl Annotator {
             let len = (dx * dx + dy * dy).sqrt();
             let (ux, uy) = (dx / len, dy / len);
             let (bx, by) = (b.0 - ux * 9.0, b.1 - uy * 9.0);
-            c.round_caps().move_to(bx - uy * 5.0, by + ux * 5.0).line_to(b.0, b.1).line_to(bx + uy * 5.0, by - ux * 5.0).stroke();
+            c.round_caps()
+                .move_to(bx - uy * 5.0, by + ux * 5.0)
+                .line_to(b.0, b.1)
+                .line_to(bx + uy * 5.0, by - ux * 5.0)
+                .stroke();
         }
         self.set_ap(doc, &mut dict, r, c, Dictionary::new());
         dict
@@ -439,12 +618,30 @@ impl Annotator {
         let swoosh: Vec<(f32, f32)> = (0..=30)
             .map(|i| {
                 let t = i as f32 / 30.0;
-                (w * 0.1 + t * w * 0.85, h * 0.14 + 5.0 * (t * std::f32::consts::PI).sin())
+                (
+                    w * 0.1 + t * w * 0.85,
+                    h * 0.14 + 5.0 * (t * std::f32::consts::PI).sin(),
+                )
             })
             .collect();
-        let mut dict = self.base("Ink", r, colors::ACCENT, AUTHOR, "Freehand ink: two strokes.", page);
-        let ink_list: Vec<Object> =
-            [&scribble, &swoosh].iter().map(|pts| floats(&pts.iter().flat_map(|&(x, y)| [r.x0 + x, r.y0 + y]).collect::<Vec<_>>())).collect();
+        let mut dict = self.base(
+            "Ink",
+            r,
+            colors::ACCENT,
+            AUTHOR,
+            "Freehand ink: two strokes.",
+            page,
+        );
+        let ink_list: Vec<Object> = [&scribble, &swoosh]
+            .iter()
+            .map(|pts| {
+                floats(
+                    &pts.iter()
+                        .flat_map(|&(x, y)| [r.x0 + x, r.y0 + y])
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect();
         dict.set("InkList", ink_list);
         dict.set("BS", dictionary! { "W" => 1.8, "S" => "S" });
         let mut c = Content::new();
@@ -462,7 +659,14 @@ impl Annotator {
 
     fn stamp(&mut self, doc: &mut Document, page: ObjectId, r: Rect) -> Dictionary {
         let green = Rgb::hex(0x1d7f4e);
-        let mut dict = self.base("Stamp", r, green, AUTHOR, "Approved for the showcase.", page);
+        let mut dict = self.base(
+            "Stamp",
+            r,
+            green,
+            AUTHOR,
+            "Approved for the showcase.",
+            page,
+        );
         dict.set("Name", "PdfCraftApproved");
         dict.set("CA", 0.92);
         let (w, h) = (r.w(), r.h());
@@ -471,9 +675,21 @@ impl Annotator {
         let (sin, cos) = (-4.0f32).to_radians().sin_cos();
         let s = 0.9;
         let (cx, cy) = (w / 2.0, h / 2.0);
-        c.cm(cos * s, sin * s, -sin * s, cos * s, cx - s * (cos * cx - sin * cy), cy - s * (sin * cx + cos * cy));
-        c.stroke_color(green).line_width(2.5).rounded_rect(2.0, 2.0, w - 4.0, h - 4.0, 8.0).stroke();
-        c.line_width(0.8).rounded_rect(6.0, 6.0, w - 12.0, h - 12.0, 5.0).stroke();
+        c.cm(
+            cos * s,
+            sin * s,
+            -sin * s,
+            cos * s,
+            cx - s * (cos * cx - sin * cy),
+            cy - s * (sin * cx + cos * cy),
+        );
+        c.stroke_color(green)
+            .line_width(2.5)
+            .rounded_rect(2.0, 2.0, w - 4.0, h - 4.0, 8.0)
+            .stroke();
+        c.line_width(0.8)
+            .rounded_rect(6.0, 6.0, w - 12.0, h - 12.0, 5.0)
+            .stroke();
         c.fill_color(green);
         let title = "APPROVED";
         let size = 22.0;
@@ -491,8 +707,22 @@ impl Annotator {
         let note = "Review notes for the PdfCraft showcase.\n\n\
                     - Page 9 exercises every common annotation type.\n\
                     - Each annotation carries its own appearance stream.\n";
-        let fs = embedded_file(doc, "review-notes.txt", "text/plain", note.as_bytes(), "Notes attached to a comment", &self.now);
-        let mut dict = self.base("FileAttachment", r, colors::BLUE, AUTHOR, "Attached: review-notes.txt", page);
+        let fs = embedded_file(
+            doc,
+            "review-notes.txt",
+            "text/plain",
+            note.as_bytes(),
+            "Notes attached to a comment",
+            &self.now,
+        );
+        let mut dict = self.base(
+            "FileAttachment",
+            r,
+            colors::BLUE,
+            AUTHOR,
+            "Attached: review-notes.txt",
+            page,
+        );
         dict.set("FS", fs);
         dict.set("Name", "Paperclip");
         dict.set("F", 28);
@@ -515,7 +745,13 @@ impl Annotator {
     }
 
     /// A link annotation (no border) to a page or a URI.
-    pub fn link(&mut self, doc: &mut Document, page: ObjectId, r: Rect, target: LinkTarget) -> ObjectId {
+    pub fn link(
+        &mut self,
+        doc: &mut Document,
+        page: ObjectId,
+        r: Rect,
+        target: LinkTarget,
+    ) -> ObjectId {
         let mut dict = dictionary! {
             "Type" => "Annot",
             "Subtype" => "Link",
@@ -526,8 +762,20 @@ impl Annotator {
             "H" => "I",
         };
         match target {
-            LinkTarget::Page(p) => dict.set("Dest", vec![Object::Reference(p), name("XYZ"), Object::Null, Object::Null, Object::Null]),
-            LinkTarget::Uri(uri) => dict.set("A", dictionary! { "S" => "URI", "URI" => Object::string_literal(uri) }),
+            LinkTarget::Page(p) => dict.set(
+                "Dest",
+                vec![
+                    Object::Reference(p),
+                    name("XYZ"),
+                    Object::Null,
+                    Object::Null,
+                    Object::Null,
+                ],
+            ),
+            LinkTarget::Uri(uri) => dict.set(
+                "A",
+                dictionary! { "S" => "URI", "URI" => Object::string_literal(uri) },
+            ),
         }
         doc.add_object(dict)
     }
@@ -539,7 +787,14 @@ pub enum LinkTarget<'a> {
 }
 
 /// Create an embedded file stream and its file specification; returns the filespec id.
-pub fn embedded_file(doc: &mut Document, file_name: &str, mime: &str, data: &[u8], desc: &str, now: &Stamp) -> ObjectId {
+pub fn embedded_file(
+    doc: &mut Document,
+    file_name: &str,
+    mime: &str,
+    data: &[u8],
+    desc: &str,
+    now: &Stamp,
+) -> ObjectId {
     let stream = Stream::new(
         dictionary! {
             "Type" => "EmbeddedFile",

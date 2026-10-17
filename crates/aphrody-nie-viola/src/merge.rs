@@ -102,7 +102,7 @@ fn fusion_t2b(
                 .filter(|v| !t2b_egal(v, valeur_base))
                 .collect();
             match modifs.len() {
-                0 => {},
+                0 => {}
                 _ => {
                     // Les versions sont ordonnées par priorité décroissante : la première gagne.
                     let gagnante = modifs[0];
@@ -112,7 +112,7 @@ fn fusion_t2b(
                         *desaccords += 1;
                     }
                     fusionnee.variables[k] = gagnante.clone();
-                },
+                }
             }
         }
 
@@ -151,7 +151,7 @@ fn fusion_rdbn(
                         match &gagnante {
                             None => gagnante = Some(champ.1.clone()),
                             Some(g) if g != &champ.1 => accord = false,
-                            Some(_) => {},
+                            Some(_) => {}
                         }
                     }
                 }
@@ -262,17 +262,17 @@ pub fn merge_dirs(
                                 Err(e) => {
                                     erreur = Some(format!("{} : {e}", p.display()));
                                     break;
-                                },
+                                }
                             }
                         }
                         match erreur {
                             Some(e) => Err(e),
                             None => fusionner_cfgbin(&vanilla, &octets),
                         }
-                    },
+                    }
                     None => Err("aucune version vanilla de ce fichier".to_string()),
                 }
-            },
+            }
             MergeStrategy::Semantique(_) => Err("format non fusionnable au champ".to_string()),
             MergeStrategy::Fichier => Err("fusion au fichier demandée".to_string()),
         };
@@ -283,14 +283,14 @@ pub fn merge_dirs(
                 conflit.champs_fusionnes = f;
                 conflit.champs_en_desaccord = d;
                 rapport.fusionnes += 1;
-            },
+            }
             Err(raison) => {
                 // Repli explicite : le mod prioritaire emporte le fichier, et on dit pourquoi.
                 std::fs::copy(&versions[0].1, &dest)
                     .map_err(|e| format!("{} : {e}", dest.display()))?;
                 conflit.repli = Some(raison);
                 rapport.copies += 1;
-            },
+            }
         }
         rapport.conflits.push(conflit);
     }
@@ -317,7 +317,10 @@ mod tests {
         let b = vec![entree("PERSO", &[1, 2, 77])];
         let (mut f, mut d) = (0, 0);
         let out = fusion_t2b(&base, &[&a, &b], &mut f, &mut d).expect("structures identiques");
-        assert_eq!(out[0].variables, vec![Value::Int(99), Value::Int(2), Value::Int(77)]);
+        assert_eq!(
+            out[0].variables,
+            vec![Value::Int(99), Value::Int(2), Value::Int(77)]
+        );
         assert_eq!((f, d), (2, 0), "deux changements retenus, aucun désaccord");
     }
 
@@ -328,7 +331,11 @@ mod tests {
         let b = vec![entree("PERSO", &[20])];
         let (mut f, mut d) = (0, 0);
         let out = fusion_t2b(&base, &[&a, &b], &mut f, &mut d).expect("structures identiques");
-        assert_eq!(out[0].variables, vec![Value::Int(10)], "le plus prioritaire gagne");
+        assert_eq!(
+            out[0].variables,
+            vec![Value::Int(10)],
+            "le plus prioritaire gagne"
+        );
         assert_eq!((f, d), (0, 1), "et le désaccord est signalé, pas masqué");
     }
 
@@ -340,7 +347,11 @@ mod tests {
         let b = vec![entree("PERSO", &[1])];
         let (mut f, mut d) = (0, 0);
         let out = fusion_t2b(&base, &[&b, &a], &mut f, &mut d).expect("structures identiques");
-        assert_eq!(out[0].variables, vec![Value::Int(42)], "seul un vrai changement compte");
+        assert_eq!(
+            out[0].variables,
+            vec![Value::Int(42)],
+            "seul un vrai changement compte"
+        );
         assert_eq!((f, d), (1, 0));
     }
 

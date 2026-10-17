@@ -28,7 +28,11 @@ impl ArcPath {
                 cum += l;
             }
         }
-        Self { segs, len: cum, closed: path.is_closed() }
+        Self {
+            segs,
+            len: cum,
+            closed: path.is_closed(),
+        }
     }
 
     /// The path's length.
@@ -48,15 +52,31 @@ impl ArcPath {
     /// Point and unit tangent at distance `s` along the path: round and round a closed path, held
     /// at an open one's ends.
     pub fn at(&self, s: f64) -> (Point, Vec2) {
-        let s = if self.closed && self.len > 0.0 { s.rem_euclid(self.len) } else { s.clamp(0.0, self.len) };
-        let i = self.segs.partition_point(|(_, c, _)| *c <= s).saturating_sub(1);
-        let Some(&(seg, c, l)) = self.segs.get(i) else { return (Point::ZERO, Vec2::new(1.0, 0.0)) };
+        let s = if self.closed && self.len > 0.0 {
+            s.rem_euclid(self.len)
+        } else {
+            s.clamp(0.0, self.len)
+        };
+        let i = self
+            .segs
+            .partition_point(|(_, c, _)| *c <= s)
+            .saturating_sub(1);
+        let Some(&(seg, c, l)) = self.segs.get(i) else {
+            return (Point::ZERO, Vec2::new(1.0, 0.0));
+        };
         let t = seg.inv_arclen((s - c).min(l), ACCURACY).clamp(0.0, 1.0);
         let p = seg.eval(t);
         let (t0, t1) = ((t - 1e-4).max(0.0), (t + 1e-4).min(1.0));
         let d = seg.eval(t1) - seg.eval(t0);
         let len = d.hypot();
-        (p, if len > 1e-12 { d / len } else { Vec2::new(1.0, 0.0) })
+        (
+            p,
+            if len > 1e-12 {
+                d / len
+            } else {
+                Vec2::new(1.0, 0.0)
+            },
+        )
     }
 
     /// The distance along the path of its point nearest `p`.
@@ -65,7 +85,10 @@ impl ArcPath {
             .iter()
             .map(|(seg, c, l)| {
                 let n = seg.nearest(p, ACCURACY);
-                (n.distance_sq, c + seg.subsegment(0.0..n.t).arclen(ACCURACY).min(*l))
+                (
+                    n.distance_sq,
+                    c + seg.subsegment(0.0..n.t).arclen(ACCURACY).min(*l),
+                )
             })
             .min_by(|a, b| a.0.total_cmp(&b.0))
             .map(|(_, s)| s)
@@ -73,7 +96,10 @@ impl ArcPath {
 
     /// [`Self::nearest`] as a fraction (0..1) of the path's length.
     pub fn fraction_at(&self, p: Point) -> Option<f64> {
-        (self.len > 0.0).then(|| self.nearest(p)).flatten().map(|s| (s / self.len).clamp(0.0, 1.0))
+        (self.len > 0.0)
+            .then(|| self.nearest(p))
+            .flatten()
+            .map(|s| (s / self.len).clamp(0.0, 1.0))
     }
 }
 

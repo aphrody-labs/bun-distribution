@@ -38,12 +38,17 @@ impl MediaInfo {
     }
     /// Something in it can be played.
     pub fn playable(&self) -> bool {
-        self.audio.as_ref().is_some_and(|a| a.decodable) || self.video.as_ref().is_some_and(|v| v.decodable)
+        self.audio.as_ref().is_some_and(|a| a.decodable)
+            || self.video.as_ref().is_some_and(|v| v.decodable)
     }
 }
 
 fn ms(secs: f64) -> u64 {
-    if secs.is_finite() && secs > 0.0 { (secs * 1000.0).round() as u64 } else { 0 }
+    if secs.is_finite() && secs > 0.0 {
+        (secs * 1000.0).round() as u64
+    } else {
+        0
+    }
 }
 
 /// Probe `bytes`.
@@ -53,14 +58,27 @@ pub fn probe(bytes: &Bytes) -> Result<MediaInfo> {
         Container::Mp4 => probe_mp4(bytes)?,
         Container::Matroska => probe_mkv(bytes)?,
         Container::Asf => probe_asf(bytes)?,
-        Container::Ogg => probe_ogg(bytes).unwrap_or_else(|| MediaInfo { container: "ogg", ..Default::default() }),
-        _ => MediaInfo { container: c.name(), ..Default::default() },
+        Container::Ogg => probe_ogg(bytes).unwrap_or_else(|| MediaInfo {
+            container: "ogg",
+            ..Default::default()
+        }),
+        _ => MediaInfo {
+            container: c.name(),
+            ..Default::default()
+        },
     };
-    if info.audio.is_none() && info.video.is_none() || info.audio.as_ref().is_some_and(|a| a.sample_rate == 0) {
+    if info.audio.is_none() && info.video.is_none()
+        || info.audio.as_ref().is_some_and(|a| a.sample_rate == 0)
+    {
         // Plain audio files (and anything our demuxers didn't describe): symphonia's probe.
-        let (codec, rate, channels, frames) =
-            crate::audio::probe_symphonia(bytes, c.name()).ok_or_else(|| MediaError::Unsupported("this kind of media file".into()))?;
-        info.audio = Some(AudioInfo { codec: codec_label(&codec), sample_rate: rate, channels, decodable: true });
+        let (codec, rate, channels, frames) = crate::audio::probe_symphonia(bytes, c.name())
+            .ok_or_else(|| MediaError::Unsupported("this kind of media file".into()))?;
+        info.audio = Some(AudioInfo {
+            codec: codec_label(&codec),
+            sample_rate: rate,
+            channels,
+            decodable: true,
+        });
         if info.duration_ms == 0
             && let Some(n) = frames
             && rate > 0
@@ -68,7 +86,10 @@ pub fn probe(bytes: &Bytes) -> Result<MediaInfo> {
             info.duration_ms = ms(n as f64 / rate as f64);
         }
     }
-    if info.duration_ms == 0 && info.audio.as_ref().is_some_and(|a| a.decodable) && info.video.is_none() {
+    if info.duration_ms == 0
+        && info.audio.as_ref().is_some_and(|a| a.decodable)
+        && info.video.is_none()
+    {
         // No length in the header (raw MP3 / ADTS without an index): decode to measure.
         if let Ok(pcm) = crate::audio::decode(bytes) {
             info.duration_ms = ms(pcm.duration());
@@ -96,20 +117,45 @@ fn probe_mp4(bytes: &Bytes) -> Result<MediaInfo> {
     use filmcraft_isobmff::{CodecConfig, TrackKind};
     let src: &[u8] = bytes;
     let f = filmcraft_isobmff::open(src).map_err(|e| MediaError::Corrupt(e.to_string()))?;
-    let mut info = MediaInfo { container: if f.is_quicktime { "mov" } else { "mp4" }, ..Default::default() };
-    let mut dur = if f.timescale > 0 { f.duration as f64 / f.timescale as f64 } else { 0.0 };
+    let mut info = MediaInfo {
+        container: if f.is_quicktime { "mov" } else { "mp4" },
+        ..Default::default()
+    };
+    let mut dur = if f.timescale > 0 {
+        f.duration as f64 / f.timescale as f64
+    } else {
+        0.0
+    };
     if let Some(ti) = f.track_of_kind(TrackKind::Video) {
         let t = &f.tracks[ti];
-        let secs = if t.timescale > 0 { t.duration as f64 / t.timescale as f64 } else { 0.0 };
+        let secs = if t.timescale > 0 {
+            t.duration as f64 / t.timescale as f64
+        } else {
+            0.0
+        };
         if let Some(e) = t.entries.first() {
-            let (w, h) = e.video.as_ref().map(|v| (v.width as u32, v.height as u32)).unwrap_or((t.width, t.height));
-            let decodable = matches!(e.codec, CodecConfig::Avc(_) | CodecConfig::Hevc(_) | CodecConfig::Vp9(_) | CodecConfig::Av1(_));
+            let (w, h) = e
+                .video
+                .as_ref()
+                .map(|v| (v.width as u32, v.height as u32))
+                .unwrap_or((t.width, t.height));
+            let decodable = matches!(
+                e.codec,
+                CodecConfig::Avc(_)
+                    | CodecConfig::Hevc(_)
+                    | CodecConfig::Vp9(_)
+                    | CodecConfig::Av1(_)
+            );
             let frames = t.samples.len() as u64;
             info.video = Some(VideoInfo {
                 codec: codec_name(&e.codec),
                 width: w,
                 height: h,
-                fps: if secs > 0.0 { frames as f64 / secs } else { 0.0 },
+                fps: if secs > 0.0 {
+                    frames as f64 / secs
+                } else {
+                    0.0
+                },
                 frames,
                 decodable,
             });
@@ -119,10 +165,25 @@ fn probe_mp4(bytes: &Bytes) -> Result<MediaInfo> {
     if let Some(ti) = f.track_of_kind(TrackKind::Audio) {
         let t = &f.tracks[ti];
         if let Some(e) = t.entries.first() {
-            let (rate, channels) = e.audio.as_ref().map(|a| (a.sample_rate.round() as u32, a.channels as u16)).unwrap_or((0, 0));
-            let decodable =
-                matches!(e.codec, CodecConfig::Aac(_) | CodecConfig::Mp3 | CodecConfig::Pcm(_) | CodecConfig::Alac { .. } | CodecConfig::Flac(_));
-            info.audio = Some(AudioInfo { codec: codec_name(&e.codec), sample_rate: rate, channels, decodable });
+            let (rate, channels) = e
+                .audio
+                .as_ref()
+                .map(|a| (a.sample_rate.round() as u32, a.channels as u16))
+                .unwrap_or((0, 0));
+            let decodable = matches!(
+                e.codec,
+                CodecConfig::Aac(_)
+                    | CodecConfig::Mp3
+                    | CodecConfig::Pcm(_)
+                    | CodecConfig::Alac { .. }
+                    | CodecConfig::Flac(_)
+            );
+            info.audio = Some(AudioInfo {
+                codec: codec_name(&e.codec),
+                sample_rate: rate,
+                channels,
+                decodable,
+            });
         }
         if t.timescale > 0 {
             dur = dur.max(t.duration as f64 / t.timescale as f64);
@@ -136,30 +197,70 @@ fn probe_mkv(bytes: &Bytes) -> Result<MediaInfo> {
     use filmcraft_matroska::{Codec, TrackKind};
     let src: &[u8] = bytes;
     let f = filmcraft_matroska::open(src).map_err(|e| MediaError::Corrupt(e.to_string()))?;
-    let mut info = MediaInfo { container: if f.is_webm() { "webm" } else { "matroska" }, ..Default::default() };
+    let mut info = MediaInfo {
+        container: if f.is_webm() { "webm" } else { "matroska" },
+        ..Default::default()
+    };
     let dur = f.duration_ns().map(|n| n as f64 / 1e9).unwrap_or(0.0);
     info.duration_ms = ms(dur);
     if let Some(t) = f.tracks.iter().find(|t| t.kind == TrackKind::Video) {
-        let (w, h) = t.video.as_ref().map(|v| (v.pixel_width, v.pixel_height)).unwrap_or((0, 0));
+        let (w, h) = t
+            .video
+            .as_ref()
+            .map(|v| (v.pixel_width, v.pixel_height))
+            .unwrap_or((0, 0));
         let frames = t.samples.len() as u64;
         let fps = match t.default_duration_ns {
             Some(d) if d > 0 => 1e9 / d as f64,
             _ if dur > 0.0 => frames as f64 / dur,
             _ => 0.0,
         };
-        let decodable = matches!(t.codec, Codec::Avc { .. } | Codec::Hevc { .. } | Codec::Vp9 { .. } | Codec::Av1 { .. });
-        info.video = Some(VideoInfo { codec: mkv_codec_name(&t.codec), width: w, height: h, fps, frames, decodable });
+        let decodable = matches!(
+            t.codec,
+            Codec::Avc { .. } | Codec::Hevc { .. } | Codec::Vp9 { .. } | Codec::Av1 { .. }
+        );
+        info.video = Some(VideoInfo {
+            codec: mkv_codec_name(&t.codec),
+            width: w,
+            height: h,
+            fps,
+            frames,
+            decodable,
+        });
     }
     if let Some(t) = f.tracks.iter().find(|t| t.kind == TrackKind::Audio) {
         let (rate, channels) = t
             .audio
             .as_ref()
-            .map(|a| (a.output_sampling_frequency.unwrap_or(a.sampling_frequency).round() as u32, a.channels as u16))
+            .map(|a| {
+                (
+                    a.output_sampling_frequency
+                        .unwrap_or(a.sampling_frequency)
+                        .round() as u32,
+                    a.channels as u16,
+                )
+            })
             .unwrap_or((0, 0));
-        let rate = if matches!(t.codec, Codec::Opus { .. }) { 48_000 } else { rate };
-        let decodable =
-            matches!(t.codec, Codec::Opus { .. } | Codec::Vorbis { .. } | Codec::Aac { .. } | Codec::Flac { .. } | Codec::Mp3 | Codec::Pcm { .. });
-        info.audio = Some(AudioInfo { codec: mkv_codec_name(&t.codec), sample_rate: rate, channels, decodable });
+        let rate = if matches!(t.codec, Codec::Opus { .. }) {
+            48_000
+        } else {
+            rate
+        };
+        let decodable = matches!(
+            t.codec,
+            Codec::Opus { .. }
+                | Codec::Vorbis { .. }
+                | Codec::Aac { .. }
+                | Codec::Flac { .. }
+                | Codec::Mp3
+                | Codec::Pcm { .. }
+        );
+        info.audio = Some(AudioInfo {
+            codec: mkv_codec_name(&t.codec),
+            sample_rate: rate,
+            channels,
+            decodable,
+        });
     }
     Ok(info)
 }
@@ -174,25 +275,58 @@ fn probe_ogg(bytes: &Bytes) -> Option<MediaInfo> {
     Some(MediaInfo {
         container: "ogg",
         duration_ms: ms(timing.total as f64 / 48_000.0),
-        audio: Some(AudioInfo { codec: "Opus".into(), sample_rate: 48_000, channels: head.channels as u16, decodable: true }),
+        audio: Some(AudioInfo {
+            codec: "Opus".into(),
+            sample_rate: 48_000,
+            channels: head.channels as u16,
+            decodable: true,
+        }),
         video: None,
     })
 }
 
 /// Windows Media (ASF): enough of the header to describe the file. We have no WMA/WMV decoder.
 fn probe_asf(b: &[u8]) -> Result<MediaInfo> {
-    const FILE_PROPS: [u8; 16] = [0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65];
-    const STREAM_PROPS: [u8; 16] = [0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53, 0x65];
-    const AUDIO_MEDIA: [u8; 16] = [0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B];
-    const VIDEO_MEDIA: [u8; 16] = [0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44, 0x2B];
-    let u16le = |o: usize| b.get(o..o + 2).map(|s| u16::from_le_bytes([s[0], s[1]])).unwrap_or(0);
-    let u32le = |o: usize| b.get(o..o + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]])).unwrap_or(0);
-    let u64le = |o: usize| b.get(o..o + 8).and_then(|s| s.try_into().ok()).map(u64::from_le_bytes).unwrap_or(0);
+    const FILE_PROPS: [u8; 16] = [
+        0xA1, 0xDC, 0xAB, 0x8C, 0x47, 0xA9, 0xCF, 0x11, 0x8E, 0xE4, 0x00, 0xC0, 0x0C, 0x20, 0x53,
+        0x65,
+    ];
+    const STREAM_PROPS: [u8; 16] = [
+        0x91, 0x07, 0xDC, 0xB7, 0xB7, 0xA9, 0xCF, 0x11, 0x8E, 0xE6, 0x00, 0xC0, 0x0C, 0x20, 0x53,
+        0x65,
+    ];
+    const AUDIO_MEDIA: [u8; 16] = [
+        0x40, 0x9E, 0x69, 0xF8, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44,
+        0x2B,
+    ];
+    const VIDEO_MEDIA: [u8; 16] = [
+        0xC0, 0xEF, 0x19, 0xBC, 0x4D, 0x5B, 0xCF, 0x11, 0xA8, 0xFD, 0x00, 0x80, 0x5F, 0x5C, 0x44,
+        0x2B,
+    ];
+    let u16le = |o: usize| {
+        b.get(o..o + 2)
+            .map(|s| u16::from_le_bytes([s[0], s[1]]))
+            .unwrap_or(0)
+    };
+    let u32le = |o: usize| {
+        b.get(o..o + 4)
+            .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
+            .unwrap_or(0)
+    };
+    let u64le = |o: usize| {
+        b.get(o..o + 8)
+            .and_then(|s| s.try_into().ok())
+            .map(u64::from_le_bytes)
+            .unwrap_or(0)
+    };
     if b.get(..16) != Some(&ASF_HEADER[..]) {
         return Err(MediaError::Corrupt("not an ASF file".into()));
     }
     let header_end = (u64le(16) as usize).min(b.len());
-    let mut info = MediaInfo { container: "asf", ..Default::default() };
+    let mut info = MediaInfo {
+        container: "asf",
+        ..Default::default()
+    };
     let mut pos = 30;
     while pos + 24 <= header_end {
         let guid = &b[pos..pos + 16];
@@ -220,9 +354,20 @@ fn probe_asf(b: &[u8]) -> Result<MediaInfo> {
                     0x000A => "WMA Voice",
                     _ => "WMA",
                 };
-                info.audio = Some(AudioInfo { codec: codec.into(), sample_rate: u32le(td + 4), channels: u16le(td + 2), decodable: false });
+                info.audio = Some(AudioInfo {
+                    codec: codec.into(),
+                    sample_rate: u32le(td + 4),
+                    channels: u16le(td + 2),
+                    decodable: false,
+                });
             } else if kind == Some(&VIDEO_MEDIA[..]) {
-                info.video = Some(VideoInfo { codec: "WMV".into(), width: u32le(td), height: u32le(td + 4), decodable: false, ..Default::default() });
+                info.video = Some(VideoInfo {
+                    codec: "WMV".into(),
+                    width: u32le(td),
+                    height: u32le(td + 4),
+                    decodable: false,
+                    ..Default::default()
+                });
             }
         }
         pos += size;

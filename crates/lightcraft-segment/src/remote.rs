@@ -37,12 +37,16 @@ impl Request {
         }
         match &self.operation {
             Operation::Prepare => {}
-            Operation::Text(text) if text.len() <= 4096 && text.split([',', ';']).any(|p| !p.trim().is_empty()) => {}
+            Operation::Text(text)
+                if text.len() <= 4096 && text.split([',', ';']).any(|p| !p.trim().is_empty()) => {}
             Operation::Clicks(clicks)
                 if !clicks.is_empty()
                     && clicks.len() <= 64
                     && clicks.iter().all(|c| {
-                        c.iter().all(|v| v.is_finite()) && (0.0..=1.0).contains(&c[0]) && (0.0..=1.0).contains(&c[1]) && (c[2] == 0.0 || c[2] == 1.0)
+                        c.iter().all(|v| v.is_finite())
+                            && (0.0..=1.0).contains(&c[0])
+                            && (0.0..=1.0).contains(&c[1])
+                            && (c[2] == 0.0 || c[2] == 1.0)
                     })
                     && clicks.iter().any(|c| c[2] == 1.0) => {}
             _ => return Err("invalid SAM prompt".into()),
@@ -60,7 +64,10 @@ pub fn read_frame(reader: &mut impl Read, limit: usize) -> io::Result<Vec<u8>> {
     reader.read_exact(&mut size)?;
     let size = u32::from_be_bytes(size) as usize;
     if size > limit {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "SAM frame exceeds limit"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "SAM frame exceeds limit",
+        ));
     }
     let mut data = vec![0; size];
     reader.read_exact(&mut data)?;
@@ -80,13 +87,22 @@ pub struct Client {
 
 impl Client {
     pub fn connect(endpoint: &str) -> Result<Self, String> {
-        let address: SocketAddr = endpoint.parse().map_err(|e| format!("SAM endpoint must be an IP:port: {e}"))?;
+        let address: SocketAddr = endpoint
+            .parse()
+            .map_err(|e| format!("SAM endpoint must be an IP:port: {e}"))?;
         if !address.ip().is_loopback() {
-            return Err("SAM endpoint must be loopback; use an SSH tunnel for remote access".into());
+            return Err(
+                "SAM endpoint must be loopback; use an SSH tunnel for remote access".into(),
+            );
         }
-        let stream = TcpStream::connect_timeout(&address, Duration::from_secs(5)).map_err(|e| e.to_string())?;
-        stream.set_read_timeout(Some(TIMEOUT)).map_err(|e| e.to_string())?;
-        stream.set_write_timeout(Some(Duration::from_secs(30))).map_err(|e| e.to_string())?;
+        let stream = TcpStream::connect_timeout(&address, Duration::from_secs(5))
+            .map_err(|e| e.to_string())?;
+        stream
+            .set_read_timeout(Some(TIMEOUT))
+            .map_err(|e| e.to_string())?;
+        stream
+            .set_write_timeout(Some(Duration::from_secs(30)))
+            .map_err(|e| e.to_string())?;
         Ok(Self { stream, key: None })
     }
 
@@ -99,19 +115,34 @@ impl Client {
         write_frame(&mut self.stream, &bytes).map_err(|e| e.to_string())?;
         write_frame(&mut self.stream, rgb).map_err(|e| e.to_string())?;
         let response = read_frame(&mut self.stream, RESPONSE_LIMIT).map_err(|e| e.to_string())?;
-        let result: Result<Option<Vec<f32>>, String> = serde_json::from_slice(&response).map_err(|e| e.to_string())?;
+        let result: Result<Option<Vec<f32>>, String> =
+            serde_json::from_slice(&response).map_err(|e| e.to_string())?;
         let logits = result?;
-        if logits.as_ref().is_some_and(|v| v.len() != MASK_SIDE * MASK_SIDE || v.iter().any(|n| !n.is_finite())) {
+        if logits
+            .as_ref()
+            .is_some_and(|v| v.len() != MASK_SIDE * MASK_SIDE || v.iter().any(|n| !n.is_finite()))
+        {
             return Err("invalid SAM mask response".into());
         }
         Ok(logits)
     }
 }
 
-pub fn text_logits(model: &mut Sam3, enc: &mut Encoded, text: &str) -> Result<Option<Vec<f32>>, String> {
+pub fn text_logits(
+    model: &mut Sam3,
+    enc: &mut Encoded,
+    text: &str,
+) -> Result<Option<Vec<f32>>, String> {
     let mut merged: Option<Vec<f32>> = None;
-    for phrase in text.split([',', ';']).map(str::trim).filter(|p| !p.is_empty()) {
-        if let Some(p) = model.segment_text(enc, phrase, 0.5).map_err(|e| e.to_string())? {
+    for phrase in text
+        .split([',', ';'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+    {
+        if let Some(p) = model
+            .segment_text(enc, phrase, 0.5)
+            .map_err(|e| e.to_string())?
+        {
             if let Some(m) = &mut merged {
                 for (a, b) in m.iter_mut().zip(p.logits) {
                     *a = a.max(b);
@@ -124,7 +155,11 @@ pub fn text_logits(model: &mut Sam3, enc: &mut Encoded, text: &str) -> Result<Op
     Ok(merged)
 }
 
-fn predict(model: &mut Sam3, enc: &mut Encoded, operation: Operation) -> Result<Option<Vec<f32>>, String> {
+fn predict(
+    model: &mut Sam3,
+    enc: &mut Encoded,
+    operation: Operation,
+) -> Result<Option<Vec<f32>>, String> {
     match operation {
         Operation::Prepare => {
             model.prepare_clicks(enc).map_err(|e| e.to_string())?;
@@ -132,22 +167,43 @@ fn predict(model: &mut Sam3, enc: &mut Encoded, operation: Operation) -> Result<
         }
         Operation::Text(text) => text_logits(model, enc, &text),
         Operation::Clicks(points) => {
-            let clicks: Vec<_> = points.into_iter().map(|p| Click { x: p[0], y: p[1], positive: p[2] == 1.0 }).collect();
-            Ok(Some(model.segment_clicks(enc, &clicks).map_err(|e| e.to_string())?.logits))
+            let clicks: Vec<_> = points
+                .into_iter()
+                .map(|p| Click {
+                    x: p[0],
+                    y: p[1],
+                    positive: p[2] == 1.0,
+                })
+                .collect();
+            Ok(Some(
+                model
+                    .segment_clicks(enc, &clicks)
+                    .map_err(|e| e.to_string())?
+                    .logits,
+            ))
         }
     }
 }
 
-fn serve_client(stream: &mut TcpStream, dir: &Path, device: candle_core::Device) -> Result<(), String> {
-    stream.set_read_timeout(Some(Duration::from_secs(10 * 60))).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(Duration::from_secs(30))).map_err(|e| e.to_string())?;
+fn serve_client(
+    stream: &mut TcpStream,
+    dir: &Path,
+    device: candle_core::Device,
+) -> Result<(), String> {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10 * 60)))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(30)))
+        .map_err(|e| e.to_string())?;
     let mut model = None;
     let mut cache = None;
     loop {
         let frame = read_frame(stream, CONTROL_LIMIT).map_err(|e| e.to_string())?;
         let request: Request = serde_json::from_slice(&frame).map_err(|e| e.to_string())?;
         request.validate()?;
-        let rgb = read_frame(stream, request.width * request.height * 3).map_err(|e| e.to_string())?;
+        let rgb =
+            read_frame(stream, request.width * request.height * 3).map_err(|e| e.to_string())?;
         if rgb.len() != request.width * request.height * 3 {
             return Err("invalid RGB payload".into());
         }
@@ -159,14 +215,21 @@ fn serve_client(stream: &mut TcpStream, dir: &Path, device: candle_core::Device)
             let m = model.as_mut().ok_or("SAM model unavailable")?;
             let mut temporary = None;
             if request.width > 0 {
-                let encoded = m.encode(&rgb, request.width, request.height).map_err(|e| e.to_string())?;
+                let encoded = m
+                    .encode(&rgb, request.width, request.height)
+                    .map_err(|e| e.to_string())?;
                 if request.temporary {
                     temporary = Some(encoded);
                 } else {
                     cache = Some(encoded);
                 }
             }
-            let enc = if request.temporary { temporary.as_mut() } else { cache.as_mut() }.ok_or("SAM image cache empty")?;
+            let enc = if request.temporary {
+                temporary.as_mut()
+            } else {
+                cache.as_mut()
+            }
+            .ok_or("SAM image cache empty")?;
             predict(m, enc, request.operation)
         })();
         eprintln!(
@@ -196,7 +259,9 @@ pub fn serve(address: SocketAddr, dir: &Path, device: candle_core::Device) -> Re
     eprintln!("SAM3 worker listening on {address}; device=Metal; idle unload=600s");
     for stream in listener.incoming() {
         let mut stream = stream.map_err(|e| e.to_string())?;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| serve_client(&mut stream, dir, device.clone())));
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            serve_client(&mut stream, dir, device.clone())
+        }));
         match result {
             Ok(Err(error)) => eprintln!("SAM3 session closed: {error}"),
             Err(_) => eprintln!("SAM3 session panicked; model released"),

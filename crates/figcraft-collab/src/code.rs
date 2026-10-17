@@ -35,7 +35,10 @@ fn value(c: char) -> Option<u8> {
         'I' | 'L' => '1',
         c => c,
     };
-    ALPHABET.iter().position(|a| char::from(*a) == c).and_then(|i| u8::try_from(i).ok())
+    ALPHABET
+        .iter()
+        .position(|a| char::from(*a) == c)
+        .and_then(|i| u8::try_from(i).ok())
 }
 
 /// The symbol for the low five bits of `v`.
@@ -45,7 +48,10 @@ fn symbol(v: u8) -> char {
 
 /// The lowest `n` symbols of `v`, most significant first.
 fn symbols(v: u128, n: usize) -> String {
-    (0..n).rev().map(|i| symbol((v >> (5 * i)).to_le_bytes()[0])).collect()
+    (0..n)
+        .rev()
+        .map(|i| symbol((v >> (5 * i)).to_le_bytes()[0]))
+        .collect()
 }
 
 /// What someone typed, as a code's symbols: capitals, without spaces and dashes, look-alikes
@@ -54,7 +60,9 @@ pub fn normalize(text: &str) -> Result<String, String> {
     if text.len() > MAX_TYPED {
         return Err("that is too long to be a join code".into());
     }
-    let typed = text.chars().filter(|c| !c.is_whitespace() && !matches!(c, '-' | '–' | '—' | '_' | '.'));
+    let typed = text
+        .chars()
+        .filter(|c| !c.is_whitespace() && !matches!(c, '-' | '–' | '—' | '_' | '.'));
     let code = typed
         .map(|c| value(c).map(symbol))
         .collect::<Option<String>>()
@@ -69,7 +77,11 @@ pub fn normalize(text: &str) -> Result<String, String> {
 pub fn grouped(code: &str) -> String {
     let n = if code.len() == ONLINE_LEN { 3 } else { 5 };
     let chars: Vec<char> = code.chars().collect();
-    chars.chunks(n).map(|c| c.iter().collect::<String>()).collect::<Vec<_>>().join("-")
+    chars
+        .chunks(n)
+        .map(|c| c.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 /// An online code from 45 random bits (the rest of `random` is ignored).
@@ -89,12 +101,18 @@ pub struct Local {
 impl Local {
     /// For a session at `ip:port` with a secret made from `random` (its low 44 bits).
     pub fn new(ip: Ipv4Addr, port: u16, random: u64) -> Self {
-        Self { ip, port, secret: random & ((1 << SECRET_BITS) - 1) }
+        Self {
+            ip,
+            port,
+            secret: random & ((1 << SECRET_BITS) - 1),
+        }
     }
 
     /// Address, port and secret as one number (92 bits).
     fn bits(&self) -> u128 {
-        (u128::from(u32::from(self.ip)) << 60) | (u128::from(self.port) << SECRET_BITS) | u128::from(self.secret)
+        (u128::from(u32::from(self.ip)) << 60)
+            | (u128::from(self.port) << SECRET_BITS)
+            | u128::from(self.secret)
     }
 
     /// The code's symbols (show them [`grouped`]).
@@ -106,7 +124,10 @@ impl Local {
     /// Read a [`normalize`]d local code.
     fn read(code: &str) -> Result<Local, String> {
         const TYPO: &str = "that local network code has a typing mistake: check it and try again";
-        let v = code.chars().try_fold(0u128, |v, c| value(c).map(|s| (v << 5) | u128::from(s))).ok_or(TYPO)?;
+        let v = code
+            .chars()
+            .try_fold(0u128, |v, c| value(c).map(|s| (v << 5) | u128::from(s)))
+            .ok_or(TYPO)?;
         let bits = v >> 8;
         let local = Local {
             ip: Ipv4Addr::from(u32::try_from(bits >> 60).map_err(|_| TYPO)?),
@@ -126,24 +147,43 @@ impl Local {
 
     /// The session's invite link (what a joiner's app connects with).
     pub fn link(&self) -> String {
-        format!("figcraft://join?host={}:{}&file={LOCAL_FILE}&token={}", self.ip, self.port, self.token())
+        format!(
+            "figcraft://join?host={}:{}&file={LOCAL_FILE}&token={}",
+            self.ip,
+            self.port,
+            self.token()
+        )
     }
 
     /// The session behind a local session's invite link (`None` for any other link: only IPv4
     /// hosts with a code-sized secret have a code).
     pub fn from_link(link: &str) -> Option<Local> {
         let query = link.strip_prefix("figcraft://join?")?;
-        let get = |key: &str| query.split('&').find_map(|kv| kv.split_once('=').filter(|(k, _)| *k == key).map(|(_, v)| v));
+        let get = |key: &str| {
+            query.split('&').find_map(|kv| {
+                kv.split_once('=')
+                    .filter(|(k, _)| *k == key)
+                    .map(|(_, v)| v)
+            })
+        };
         let addr: std::net::SocketAddrV4 = get("host")?.parse().ok()?;
-        let hex = get("token")?.strip_prefix(TOKEN_PREFIX).filter(|h| h.len() == 11)?;
-        let local = Local { ip: *addr.ip(), port: addr.port(), secret: u64::from_str_radix(hex, 16).ok()? };
+        let hex = get("token")?
+            .strip_prefix(TOKEN_PREFIX)
+            .filter(|h| h.len() == 11)?;
+        let local = Local {
+            ip: *addr.ip(),
+            port: addr.port(),
+            secret: u64::from_str_radix(hex, 16).ok()?,
+        };
         (get("file") == Some(LOCAL_FILE) && local.port != 0).then_some(local)
     }
 }
 
 /// Eight check bits over a local code's 92 bits (FNV-1a, folded): not a secret, only a typo catcher.
 fn check(bits: u128) -> u8 {
-    let h = bits.to_be_bytes().iter().fold(0x811C_9DC5_u32, |h, b| (h ^ u32::from(*b)).wrapping_mul(0x0100_0193));
+    let h = bits.to_be_bytes().iter().fold(0x811C_9DC5_u32, |h, b| {
+        (h ^ u32::from(*b)).wrapping_mul(0x0100_0193)
+    });
     h.to_be_bytes().iter().fold(0, |a, b| a ^ b)
 }
 
@@ -161,7 +201,9 @@ pub fn parse(text: &str) -> Result<Code, String> {
     match code.len() {
         ONLINE_LEN => Ok(Code::Online(code)),
         LOCAL_LEN => Local::read(&code).map(Code::Local),
-        n => Err(format!("a join code has {ONLINE_LEN} characters ({LOCAL_LEN} on the local network); that one has {n}")),
+        n => Err(format!(
+            "a join code has {ONLINE_LEN} characters ({LOCAL_LEN} on the local network); that one has {n}"
+        )),
     }
 }
 

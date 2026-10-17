@@ -63,7 +63,12 @@ impl Space {
     /// One interleaved Krita pixel as straight RGBA (0..1).
     fn rgba(self, px: &[u8]) -> [f32; 4] {
         let b = |i: usize| f32::from(px.get(i).copied().unwrap_or(0)) / 255.0;
-        let w = |i: usize| f32::from(u16::from_le_bytes([px.get(i).copied().unwrap_or(0), px.get(i + 1).copied().unwrap_or(0)])) / 65535.0;
+        let w = |i: usize| {
+            f32::from(u16::from_le_bytes([
+                px.get(i).copied().unwrap_or(0),
+                px.get(i + 1).copied().unwrap_or(0),
+            ])) / 65535.0
+        };
         match self {
             Space::Rgba8 => [b(2), b(1), b(0), b(3)],
             Space::Rgba16 => [w(4), w(2), w(0), w(6)],
@@ -88,16 +93,24 @@ impl Space {
         if fmt == self.native() {
             for px in src.chunks_exact(ps) {
                 match self {
-                    Space::Rgba8 => out.extend([2, 1, 0, 3].map(|i| px.get(i).copied().unwrap_or(0))),
+                    Space::Rgba8 => {
+                        out.extend([2, 1, 0, 3].map(|i| px.get(i).copied().unwrap_or(0)))
+                    }
                     Space::Rgba16 => {
                         for i in [4, 2, 0, 6] {
-                            let v = u16::from_le_bytes([px.get(i).copied().unwrap_or(0), px.get(i + 1).copied().unwrap_or(0)]);
+                            let v = u16::from_le_bytes([
+                                px.get(i).copied().unwrap_or(0),
+                                px.get(i + 1).copied().unwrap_or(0),
+                            ]);
                             out.extend(v.to_ne_bytes());
                         }
                     }
                     Space::Gray16 => {
                         for i in [0, 2] {
-                            let v = u16::from_le_bytes([px.get(i).copied().unwrap_or(0), px.get(i + 1).copied().unwrap_or(0)]);
+                            let v = u16::from_le_bytes([
+                                px.get(i).copied().unwrap_or(0),
+                                px.get(i + 1).copied().unwrap_or(0),
+                            ]);
                             out.extend(v.to_ne_bytes());
                         }
                     }
@@ -152,7 +165,10 @@ pub(crate) fn lzf_decompress(src: &[u8], expected: usize) -> Result<Vec<u8>> {
         }
     }
     if out.len() != expected {
-        return Err(invalid(format!("LZF tile data decodes to {} bytes, expected {expected}", out.len())));
+        return Err(invalid(format!(
+            "LZF tile data decodes to {} bytes, expected {expected}",
+            out.len()
+        )));
     }
     Ok(out)
 }
@@ -166,16 +182,29 @@ pub(crate) struct TileFile<'a> {
 }
 
 fn line<'a>(bytes: &'a [u8], pos: &mut usize) -> Result<&'a str> {
-    let rest = bytes.get(*pos..).ok_or_else(|| invalid("truncated tile file"))?;
-    let end = rest.iter().take(256).position(|b| *b == b'\n').ok_or_else(|| invalid("truncated or malformed tile file header"))?;
+    let rest = bytes
+        .get(*pos..)
+        .ok_or_else(|| invalid("truncated tile file"))?;
+    let end = rest
+        .iter()
+        .take(256)
+        .position(|b| *b == b'\n')
+        .ok_or_else(|| invalid("truncated or malformed tile file header"))?;
     *pos += end + 1;
-    std::str::from_utf8(rest.get(..end).unwrap_or_default()).map_err(|_| invalid("tile file header is not text"))
+    std::str::from_utf8(rest.get(..end).unwrap_or_default())
+        .map_err(|_| invalid("tile file header is not text"))
 }
 
 fn header_value(bytes: &[u8], pos: &mut usize, key: &str, max: usize) -> Result<usize> {
     let l = line(bytes, pos)?;
-    let v = l.strip_prefix(key).map(str::trim).ok_or_else(|| invalid(format!("tile file: expected {key}, found `{l}`")))?;
-    v.parse::<usize>().ok().filter(|v| (1..=max).contains(v)).ok_or_else(|| invalid(format!("tile file: invalid {key} `{v}`")))
+    let v = l
+        .strip_prefix(key)
+        .map(str::trim)
+        .ok_or_else(|| invalid(format!("tile file: expected {key}, found `{l}`")))?;
+    v.parse::<usize>()
+        .ok()
+        .filter(|v| (1..=max).contains(v))
+        .ok_or_else(|| invalid(format!("tile file: invalid {key} `{v}`")))
 }
 
 impl<'a> TileFile<'a> {
@@ -183,7 +212,10 @@ impl<'a> TileFile<'a> {
         let mut pos = 0;
         let version = line(bytes, &mut pos)?;
         if version.trim() != "VERSION 2" {
-            return Err(IoError::Unsupported(format!("Krita tile file `{}` (only VERSION 2, Krita 2.0 and later)", version.trim())));
+            return Err(IoError::Unsupported(format!(
+                "Krita tile file `{}` (only VERSION 2, Krita 2.0 and later)",
+                version.trim()
+            )));
         }
         let width = header_value(bytes, &mut pos, "TILEWIDTH", 1024)?;
         let height = header_value(bytes, &mut pos, "TILEHEIGHT", 1024)?;
@@ -203,26 +235,55 @@ impl<'a> TileFile<'a> {
             let l = line(bytes, &mut pos)?;
             let mut f = l.split(',');
             let (x, y, method, len) = (f.next(), f.next(), f.next(), f.next());
-            let coord = |v: Option<&str>| v.and_then(|v| v.trim().parse::<i32>().ok()).filter(|v| v.unsigned_abs() <= super::MAX_SIDE * 4);
-            let (Some(x), Some(y), Some("LZF"), Some(len), None) =
-                (coord(x), coord(y), method.map(str::trim), len.and_then(|v| v.trim().parse::<usize>().ok()), f.next())
-            else {
+            let coord = |v: Option<&str>| {
+                v.and_then(|v| v.trim().parse::<i32>().ok())
+                    .filter(|v| v.unsigned_abs() <= super::MAX_SIDE * 4)
+            };
+            let (Some(x), Some(y), Some("LZF"), Some(len), None) = (
+                coord(x),
+                coord(y),
+                method.map(str::trim),
+                len.and_then(|v| v.trim().parse::<usize>().ok()),
+                f.next(),
+            ) else {
                 return Err(invalid(format!("tile file: malformed tile header `{l}`")));
             };
-            let data = bytes.get(pos..pos.checked_add(len).ok_or_else(|| invalid("tile size overflow"))?).ok_or_else(|| invalid("truncated tile data"))?;
+            let data = bytes
+                .get(
+                    pos..pos
+                        .checked_add(len)
+                        .ok_or_else(|| invalid("tile size overflow"))?,
+                )
+                .ok_or_else(|| invalid("truncated tile data"))?;
             pos += len;
             tiles.push((x, y, data));
         }
-        Ok(TileFile { width, height, pixel_size, tiles })
+        Ok(TileFile {
+            width,
+            height,
+            pixel_size,
+            tiles,
+        })
     }
 
     /// Bytes the decoded tiles take at `bpp` bytes per pixel.
     pub(crate) fn decoded_bytes(&self, bpp: usize) -> Result<usize> {
-        self.tiles.len().checked_mul(self.width * self.height).and_then(|n| n.checked_mul(bpp)).ok_or_else(|| invalid("tile size overflow"))
+        self.tiles
+            .len()
+            .checked_mul(self.width * self.height)
+            .and_then(|n| n.checked_mul(bpp))
+            .ok_or_else(|| invalid("tile size overflow"))
     }
 
     /// Writes every tile into `surface` (format `surface.format()`), offset by (`dx`, `dy`).
-    pub(crate) fn decode_into(&self, surface: &mut Surface, space: Space, dx: i32, dy: i32, ctl: &Interrupt<'_>) -> Result<()> {
+    pub(crate) fn decode_into(
+        &self,
+        surface: &mut Surface,
+        space: Space,
+        dx: i32,
+        dy: i32,
+        ctl: &Interrupt<'_>,
+    ) -> Result<()> {
         let fmt = surface.format();
         let n = self.width * self.height;
         let expected = n * self.pixel_size;
@@ -246,10 +307,17 @@ impl<'a> TileFile<'a> {
                 }
             }
             space.convert(&interleaved, fmt, &mut out);
-            let (x0, y0) =
-                (x.checked_add(dx).ok_or_else(|| invalid("tile offset overflow"))?, y.checked_add(dy).ok_or_else(|| invalid("tile offset overflow"))?);
+            let (x0, y0) = (
+                x.checked_add(dx)
+                    .ok_or_else(|| invalid("tile offset overflow"))?,
+                y.checked_add(dy)
+                    .ok_or_else(|| invalid("tile offset overflow"))?,
+            );
             let rect = Rect::from_xywh(x0, y0, self.width as u32, self.height as u32);
-            if rect.width() as usize != self.width || rect.height() as usize != self.height || out.len() != n * fmt.bytes_per_pixel() {
+            if rect.width() as usize != self.width
+                || rect.height() as usize != self.height
+                || out.len() != n * fmt.bytes_per_pixel()
+            {
                 return Err(invalid("tile does not fit its position"));
             }
             surface.write_interleaved(rect, &out);

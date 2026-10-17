@@ -7,16 +7,41 @@ use serde::{Deserialize, Serialize};
 pub use crate::stacks::iso_seconds;
 use crate::{Catalog, PhotoId, SortKey};
 
-pub const WEEKDAYS: [&str; 7] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-pub const MONTHS: [&str; 12] =
-    ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+pub const WEEKDAYS: [&str; 7] = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+];
+pub const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
 
 /// Unix seconds → `YYYY-MM-DDTHH:MM:SS` (proleptic Gregorian; H. Hinnant's algorithm).
 pub fn civil(secs: i64) -> String {
     let days = secs.div_euclid(86_400);
     let rem = secs.rem_euclid(86_400);
     let (y, m, d) = civil_from_days(days);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}", rem / 3600, rem % 3600 / 60, rem % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
 }
 
 /// Days since 1970-01-01 → (year, month 1..=12, day 1..=31).
@@ -45,7 +70,10 @@ pub fn weekday(iso: &str) -> Option<&'static str> {
 /// anything, it never overflows.
 pub fn shift_iso(iso: &str, secs: i64) -> Option<String> {
     let t = iso_seconds(iso)?.checked_add(secs)?;
-    let (first, last) = (iso_seconds("0000-01-01T00:00:00")?, iso_seconds("9999-12-31T23:59:59")?);
+    let (first, last) = (
+        iso_seconds("0000-01-01T00:00:00")?,
+        iso_seconds("9999-12-31T23:59:59")?,
+    );
     if !(first..=last).contains(&t) {
         return None;
     }
@@ -115,8 +143,12 @@ pub struct DateRun {
 /// date alone when there is no time; the input unchanged when it doesn't parse).
 pub fn display_time(iso: &str) -> String {
     let num = |r: std::ops::Range<usize>| iso.get(r).and_then(|v| v.parse::<u32>().ok());
-    let (Some(y), Some(mo), Some(d)) = (num(0..4), num(5..7), num(8..10)) else { return iso.to_string() };
-    let Some(month) = MONTHS.get((mo as usize).wrapping_sub(1)) else { return iso.to_string() };
+    let (Some(y), Some(mo), Some(d)) = (num(0..4), num(5..7), num(8..10)) else {
+        return iso.to_string();
+    };
+    let Some(month) = MONTHS.get((mo as usize).wrapping_sub(1)) else {
+        return iso.to_string();
+    };
     let date = format!("{month} {d}, {y}");
     match (num(11..13), num(14..16), num(17..19)) {
         (Some(h), Some(mi), s) => {
@@ -134,15 +166,25 @@ pub fn display_time(iso: &str) -> String {
 
 /// Header text for a group key.
 pub fn group_label(key: &str) -> String {
-    let month = |k: &str| k.get(5..7).and_then(|m| m.parse::<usize>().ok()).and_then(|m| MONTHS.get(m.wrapping_sub(1)));
+    let month = |k: &str| {
+        k.get(5..7)
+            .and_then(|m| m.parse::<usize>().ok())
+            .and_then(|m| MONTHS.get(m.wrapping_sub(1)))
+    };
     // `get` rather than `[..]`: a non-ASCII key must not split a character
     let year = key.get(..4).unwrap_or(key);
     match key.len() {
-        10 => match (weekday(key), month(key), key.get(8..10).and_then(|d| d.parse::<u32>().ok())) {
+        10 => match (
+            weekday(key),
+            month(key),
+            key.get(8..10).and_then(|d| d.parse::<u32>().ok()),
+        ) {
             (Some(w), Some(m), Some(d)) => format!("{w}, {d} {m} {year}"),
             _ => key.to_string(),
         },
-        7 => month(key).map(|m| format!("{m} {year}")).unwrap_or_else(|| key.to_string()),
+        7 => month(key)
+            .map(|m| format!("{m} {year}"))
+            .unwrap_or_else(|| key.to_string()),
         4 => key.to_string(),
         _ => "Unknown Date".into(),
     }
@@ -159,16 +201,24 @@ impl Catalog {
         }
         let n = by.prefix();
         let date_of = |id: &PhotoId| -> String {
-            let Some(p) = self.photo(*id) else { return String::new() };
+            let Some(p) = self.photo(*id) else {
+                return String::new();
+            };
             let d = match key {
                 SortKey::CaptureDate => p.captured.as_deref(),
                 SortKey::ImportDate => Some(p.imported.as_str()),
                 SortKey::EditDate => p.edited.as_deref(),
                 _ => None,
             };
-            d.filter(|d| iso_seconds(d.get(..10).unwrap_or("")).is_some()).and_then(|d| d.get(..n)).unwrap_or("").to_string()
+            d.filter(|d| iso_seconds(d.get(..10).unwrap_or("")).is_some())
+                .and_then(|d| d.get(..n))
+                .unwrap_or("")
+                .to_string()
         };
-        if !matches!(key, SortKey::CaptureDate | SortKey::ImportDate | SortKey::EditDate) {
+        if !matches!(
+            key,
+            SortKey::CaptureDate | SortKey::ImportDate | SortKey::EditDate
+        ) {
             return Vec::new();
         }
         let stacks = self.stack_index();
@@ -181,7 +231,12 @@ impl Catalog {
             };
             match runs.last_mut() {
                 Some(r) if r.key == k => r.count += 1,
-                _ => runs.push(DateRun { label: group_label(&k), key: k, start: i, count: 1 }),
+                _ => runs.push(DateRun {
+                    label: group_label(&k),
+                    key: k,
+                    start: i,
+                    count: 1,
+                }),
             }
         }
         runs
@@ -207,8 +262,14 @@ mod tests {
         // non-ASCII keys of a date's length used to be sliced mid-character
         assert_eq!(group_label("2024-01é0"), "2024-01é0");
         assert_eq!(group_label("202é01"), "January 202é01");
-        assert_eq!(shift_iso("2026-12-31T23:30:00", 3600).as_deref(), Some("2027-01-01T00:30:00"));
-        assert_eq!(shift_iso("2026-03-01T00:00:00.25+02:00", -1).as_deref(), Some("2026-02-28T23:59:59.25+02:00"));
+        assert_eq!(
+            shift_iso("2026-12-31T23:30:00", 3600).as_deref(),
+            Some("2027-01-01T00:30:00")
+        );
+        assert_eq!(
+            shift_iso("2026-03-01T00:00:00.25+02:00", -1).as_deref(),
+            Some("2026-02-28T23:59:59.25+02:00")
+        );
         assert_eq!(shift_iso("nope", 5), None);
         // hostile shifts never overflow, and a result outside years 0000–9999 (which no ISO date
         // here can read back) is refused rather than stored
@@ -217,24 +278,49 @@ mod tests {
         }
         assert_eq!(shift_iso("9999-12-31T23:59:59", 1), None);
         assert_eq!(shift_iso("0000-01-01T00:00:00", -1), None);
-        assert_eq!(shift_iso("9999-12-31T23:59:58", 1).as_deref(), Some("9999-12-31T23:59:59"));
-        assert_eq!(normalize_iso("2026-04-01 10:05").as_deref(), Some("2026-04-01T10:05:00"));
+        assert_eq!(
+            shift_iso("9999-12-31T23:59:58", 1).as_deref(),
+            Some("9999-12-31T23:59:59")
+        );
+        assert_eq!(
+            normalize_iso("2026-04-01 10:05").as_deref(),
+            Some("2026-04-01T10:05:00")
+        );
         assert_eq!(normalize_iso("2026-02-30"), None);
     }
 
     #[test]
     fn runs_by_day_month_year_keep_stacks_together() {
         let mut c = Catalog::new();
-        let times = ["2026-09-30T18:00:00", "2026-09-30T09:00:00", "2026-09-29T23:59:00", "2026-08-01T10:00:00", "2025-12-31T10:00:00", ""];
+        let times = [
+            "2026-09-30T18:00:00",
+            "2026-09-30T09:00:00",
+            "2026-09-29T23:59:00",
+            "2026-08-01T10:00:00",
+            "2025-12-31T10:00:00",
+            "",
+        ];
         let mut ids = Vec::new();
         for t in times {
             let id = c.alloc_photo_id();
-            let mut p = Photo::new(id, Source::Demo { scene: 1 }, "a.jpg", "JPEG", 3, 2, "2026-10-01T00:00:00");
+            let mut p = Photo::new(
+                id,
+                Source::Demo { scene: 1 },
+                "a.jpg",
+                "JPEG",
+                3,
+                2,
+                "2026-10-01T00:00:00",
+            );
             p.captured = (!t.is_empty()).then(|| t.to_string());
             c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
             ids.push(id);
         }
-        let shape = |r: &[DateRun]| r.iter().map(|r| (r.key.clone(), r.start, r.count)).collect::<Vec<_>>();
+        let shape = |r: &[DateRun]| {
+            r.iter()
+                .map(|r| (r.key.clone(), r.start, r.count))
+                .collect::<Vec<_>>()
+        };
         let day = c.date_runs(&ids, SortKey::CaptureDate, GroupBy::Day);
         // the undated photo is grouped under Unknown Date
         assert_eq!(
@@ -252,14 +338,29 @@ mod tests {
         assert_eq!(c.date_runs(&ids, SortKey::CaptureDate, GroupBy::Auto), day);
         assert_eq!(
             shape(&c.date_runs(&ids, SortKey::CaptureDate, GroupBy::Month)),
-            vec![("2026-09".into(), 0, 3), ("2026-08".into(), 3, 1), ("2025-12".into(), 4, 1), (String::new(), 5, 1)]
+            vec![
+                ("2026-09".into(), 0, 3),
+                ("2026-08".into(), 3, 1),
+                ("2025-12".into(), 4, 1),
+                (String::new(), 5, 1)
+            ]
         );
         assert_eq!(
             shape(&c.date_runs(&ids, SortKey::CaptureDate, GroupBy::Year)),
-            vec![("2026".into(), 0, 4), ("2025".into(), 4, 1), (String::new(), 5, 1)]
+            vec![
+                ("2026".into(), 0, 4),
+                ("2025".into(), 4, 1),
+                (String::new(), 5, 1)
+            ]
         );
-        assert!(c.date_runs(&ids, SortKey::FileName, GroupBy::Day).is_empty());
-        assert!(c.date_runs(&ids, SortKey::CaptureDate, GroupBy::None).is_empty());
+        assert!(
+            c.date_runs(&ids, SortKey::FileName, GroupBy::Day)
+                .is_empty()
+        );
+        assert!(
+            c.date_runs(&ids, SortKey::CaptureDate, GroupBy::None)
+                .is_empty()
+        );
         // edit date: unedited photos have no date
         let r = c.date_runs(&ids, SortKey::EditDate, GroupBy::Day);
         assert_eq!(shape(&r), vec![(String::new(), 0, 6)]);

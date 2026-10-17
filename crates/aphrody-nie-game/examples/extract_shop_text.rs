@@ -44,9 +44,12 @@ fn load(vfs: &Vfs, pred: impl Fn(&str) -> bool, what: &str) -> serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let cfg = load(
         &vfs,
@@ -74,16 +77,25 @@ fn main() {
     ));
     eprintln!("[shop_text fr] entrées = {}", text.len());
 
-    let named =
-        shops.iter().filter(|s| aphrody_nie_data::shop::resolve_name(s, &text).is_some()).count();
+    let named = shops
+        .iter()
+        .filter(|s| aphrody_nie_data::shop::resolve_name(s, &text).is_some())
+        .count();
     eprintln!("noms de boutique résolus = {named}/{}", shops.len());
     assert!(named > 0, "au moins un nom de boutique résolu");
 
-    for s in
-        shops.iter().filter(|s| aphrody_nie_data::shop::resolve_name(s, &text).is_some()).take(8)
+    for s in shops
+        .iter()
+        .filter(|s| aphrody_nie_data::shop::resolve_name(s, &text).is_some())
+        .take(8)
     {
         let n = aphrody_nie_data::shop::resolve_name(s, &text).unwrap_or("");
-        eprintln!("  shop {} ({} items) → {:?}", s.shop_id.to_hex(), s.items.len(), n);
+        eprintln!(
+            "  shop {} ({} items) → {:?}",
+            s.shop_id.to_hex(),
+            s.items.len(),
+            n
+        );
     }
     eprintln!("✓ END-TO-END OK : {named} noms de boutique résolus");
 }

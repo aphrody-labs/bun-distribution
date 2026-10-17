@@ -20,7 +20,11 @@ const WINCLEAN_ROOT_ENV: &str = "APHRODY_WINCLEAN_ROOT";
 fn winclean_path(default: &str) -> String {
     match std::env::var(WINCLEAN_ROOT_ENV) {
         Ok(root) if !root.trim().is_empty() => {
-            format!("{}{}", root.trim().trim_end_matches(['/', '\\']), &default["C:/winclean".len()..])
+            format!(
+                "{}{}",
+                root.trim().trim_end_matches(['/', '\\']),
+                &default["C:/winclean".len()..]
+            )
         }
         _ => default.to_string(),
     }
@@ -108,8 +112,11 @@ impl DoctorReport {
         let r = self;
         // Build structured JSON without deriving Serialize on internal types, to
         // keep the data model self-contained in this function.
-        let env_obj: serde_json::Map<String, Value> =
-            r.env_vars.iter().map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone()))).collect();
+        let env_obj: serde_json::Map<String, Value> = r
+            .env_vars
+            .iter()
+            .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+            .collect();
 
         // Extract heartbeat age_s and is_stale from the peer_heartbeat check value.
         // The text carries "N s ago" — parse it back for the JSON field.
@@ -171,7 +178,12 @@ pub async fn collect_diagnostics(binary_version: String) -> DoctorReport {
 
     let env_vars = ["RUST_BACKTRACE", "RUST_LOG", "TERM", "TZ"]
         .iter()
-        .map(|v| (v.to_string(), std::env::var(v).unwrap_or_else(|_| "not set".to_string())))
+        .map(|v| {
+            (
+                v.to_string(),
+                std::env::var(v).unwrap_or_else(|_| "not set".to_string()),
+            )
+        })
         .collect();
 
     DoctorReport {
@@ -198,13 +210,13 @@ fn check_workspace() -> CheckResult {
         Ok(config) => config,
         Err(error) => {
             return CheckResult::Warn(format!("agent home profile config not loadable: {error}"));
-        },
+        }
     };
     let workspace = match crate::config::profile_workspace(&config) {
         Ok(workspace) => workspace,
         Err(error) => {
             return CheckResult::Warn(format!("agent home profile not resolvable: {error}"));
-        },
+        }
     };
     let home = match aphrody_agent_home::AgentHome::open(aphrody_agent_home::HomeOptions {
         workspace: Some(workspace),
@@ -223,9 +235,10 @@ fn check_workspace() -> CheckResult {
     }
 
     let mut missing_required: Vec<&str> = Vec::new();
-    for file in
-        [aphrody_agent_home::BootstrapFile::Agents, aphrody_agent_home::BootstrapFile::Tools]
-    {
+    for file in [
+        aphrody_agent_home::BootstrapFile::Agents,
+        aphrody_agent_home::BootstrapFile::Tools,
+    ] {
         if !root.join(file.filename()).is_file() {
             missing_required.push(file.filename());
         }
@@ -262,7 +275,11 @@ fn check_workspace() -> CheckResult {
 
 /// Render a char count compactly (e.g. `12.0k chars`).
 fn human_chars(n: usize) -> String {
-    if n >= 1000 { format!("{:.1}k chars", n as f64 / 1000.0) } else { format!("{n} chars") }
+    if n >= 1000 {
+        format!("{:.1}k chars", n as f64 / 1000.0)
+    } else {
+        format!("{n} chars")
+    }
 }
 
 /// Extract age in seconds from a `CheckResult` value string of the form
@@ -325,7 +342,7 @@ fn check_ai_json() -> CheckResult {
         Some(r) => r,
         None => {
             return CheckResult::Warn("repo root not found — skip".to_string());
-        },
+        }
     };
     let path = root.join("ai.json");
     if !path.exists() {
@@ -345,7 +362,7 @@ fn check_ai_json() -> CheckResult {
                 "A2A unknown"
             };
             format!("{schema_ver}, {a2a_ver}")
-        },
+        }
         Err(e) => return CheckResult::Warn(format!("unreadable ({e})")),
     };
     CheckResult::Ok(format!("present at {} ({schema_v})", path.display()))
@@ -368,7 +385,7 @@ fn check_well_known_ai_json() -> CheckResult {
             } else {
                 "present".to_string()
             }
-        },
+        }
         Err(e) => return CheckResult::Warn(format!("unreadable ({e})")),
     };
     CheckResult::Ok(detail)
@@ -388,7 +405,7 @@ fn check_peer_heartbeat() -> CheckResult {
             return CheckResult::Warn(format!(
                 "absent at {WINCLEAN_HEARTBEAT_PATH} — peer offline"
             ));
-        },
+        }
     };
 
     let text = match std::fs::read_to_string(&path) {
@@ -415,8 +432,12 @@ fn check_peer_heartbeat() -> CheckResult {
                 ("fresh".to_string(), false)
             };
             let result = format!("heartbeat {ts_str} ({age_secs} s ago — {freshness})");
-            if is_stale { CheckResult::Warn(result) } else { CheckResult::Ok(result) }
-        },
+            if is_stale {
+                CheckResult::Warn(result)
+            } else {
+                CheckResult::Ok(result)
+            }
+        }
     }
 }
 
@@ -425,7 +446,11 @@ fn check_inbox() -> CheckResult {
     // (channels[type=file_jsonl].outbox).  We resolve the platform-specific
     // equivalent of the C:/ path rather than looking in the aphrody repo root.
     let inbox = host_candidates(&winclean_path(WINCLEAN_INBOX_PATH));
-    let path = inbox.iter().find(|candidate| candidate.exists()).unwrap_or(&inbox[inbox.len() - 1]).clone();
+    let path = inbox
+        .iter()
+        .find(|candidate| candidate.exists())
+        .unwrap_or(&inbox[inbox.len() - 1])
+        .clone();
 
     if !path.exists() {
         return CheckResult::Warn(format!("absent at {WINCLEAN_INBOX_PATH}"));
@@ -450,22 +475,26 @@ async fn check_http_listener() -> CheckResult {
     let url = "http://localhost:8788/ping";
     // Build a reqwest client with a short timeout so we don't block the
     // user for multi-second hangs when the peer listener is down.
-    let client = match reqwest::Client::builder().timeout(std::time::Duration::from_secs(2)).build()
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
     {
         Ok(c) => c,
         Err(e) => return CheckResult::Warn(format!("could not build HTTP client: {e}")),
     };
 
     match client.get(url).send().await {
-        Ok(resp) if resp.status().is_success() => {
-            CheckResult::Ok(format!("localhost:8788 (alive, /ping -> {})", resp.status().as_u16()))
-        },
-        Ok(resp) => {
-            CheckResult::Warn(format!("localhost:8788 (non-200: {})", resp.status().as_u16()))
-        },
+        Ok(resp) if resp.status().is_success() => CheckResult::Ok(format!(
+            "localhost:8788 (alive, /ping -> {})",
+            resp.status().as_u16()
+        )),
+        Ok(resp) => CheckResult::Warn(format!(
+            "localhost:8788 (non-200: {})",
+            resp.status().as_u16()
+        )),
         Err(_) => {
             CheckResult::Warn("localhost:8788 (no response — listener not running)".to_string())
-        },
+        }
     }
 }
 

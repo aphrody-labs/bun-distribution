@@ -18,12 +18,18 @@ use std::sync::Arc;
 use photocraft_doc::{Document, LayerContent, SmartObject, SmartSource};
 
 fn collect(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
             collect(&p, out);
-        } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb")) {
+        } else if p
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb"))
+        {
             out.push(p);
         }
     }
@@ -42,7 +48,9 @@ fn smarts(doc: &Document) -> Vec<(String, SmartObject)> {
 fn source_file(doc: &Document, sm: &SmartObject) -> Option<Vec<u8>> {
     match &sm.source {
         SmartSource::Embedded { bytes, .. } => Some(bytes.to_vec()),
-        SmartSource::Linked { path } => photocraft_io::linked::find_linked_file(&doc.metadata, path).map(|f| f.bytes),
+        SmartSource::Linked { path } => {
+            photocraft_io::linked::find_linked_file(&doc.metadata, path).map(|f| f.bytes)
+        }
     }
 }
 
@@ -67,18 +75,31 @@ fn compare(a: &Document, b: &Document, same_files: bool) -> Vec<String> {
         let fa = source_file(a, x);
         let fb = source_file(b, y);
         match (&fa, &fb) {
-            (Some(p), Some(q)) if same_files && p != q => errs.push(format!("{name}: embedded file changed")),
+            (Some(p), Some(q)) if same_files && p != q => {
+                errs.push(format!("{name}: embedded file changed"))
+            }
             (Some(_), None) => errs.push(format!("{name}: embedded file lost")),
             _ => {}
         }
         if x.smart_filters != y.smart_filters {
-            errs.push(format!("{name}: filters {:?} became {:?}", x.smart_filters, y.smart_filters));
+            errs.push(format!(
+                "{name}: filters {:?} became {:?}",
+                x.smart_filters, y.smart_filters
+            ));
         }
         if x.filters_enabled != y.filters_enabled {
             errs.push(format!("{name}: filters enabled changed"));
         }
-        if x.transform.m.iter().zip(y.transform.m).any(|(p, q)| (p - q).abs() > 1e-6) {
-            errs.push(format!("{name}: transform {:?} became {:?}", x.transform, y.transform));
+        if x.transform
+            .m
+            .iter()
+            .zip(y.transform.m)
+            .any(|(p, q)| (p - q).abs() > 1e-6)
+        {
+            errs.push(format!(
+                "{name}: transform {:?} became {:?}",
+                x.transform, y.transform
+            ));
         }
         if x.warp != y.warp {
             errs.push(format!("{name}: warp changed"));
@@ -87,7 +108,9 @@ fn compare(a: &Document, b: &Document, same_files: bool) -> Vec<String> {
         if !x.smart_filters.is_empty() && mask_values(x, area) != mask_values(y, area) {
             errs.push(format!("{name}: filter mask changed"));
         }
-        if x.filter_mask.as_ref().map(|m| (m.enabled, m.linked)) != y.filter_mask.as_ref().map(|m| (m.enabled, m.linked)) {
+        if x.filter_mask.as_ref().map(|m| (m.enabled, m.linked))
+            != y.filter_mask.as_ref().map(|m| (m.enabled, m.linked))
+        {
             errs.push(format!("{name}: filter mask switches changed"));
         }
     }
@@ -96,20 +119,31 @@ fn compare(a: &Document, b: &Document, same_files: bool) -> Vec<String> {
 
 fn round_trip(doc: &Document) -> Result<(Document, Vec<u8>), String> {
     let out = photocraft_io::export(doc, "psd", &Default::default()).map_err(|e| e.to_string())?;
-    if let Some(w) = out.warnings.iter().find(|w| w.contains("smart object written as pixels")) {
+    if let Some(w) = out
+        .warnings
+        .iter()
+        .find(|w| w.contains("smart object written as pixels"))
+    {
         return Err(w.clone());
     }
     let errs = common::strict_block_errors(&out.bytes);
     if !errs.is_empty() {
         return Err(format!("strict structure: {errs:?}"));
     }
-    let back = photocraft_io::import("x.psd", &out.bytes).map_err(|e| e.to_string())?.document;
+    let back = photocraft_io::import("x.psd", &out.bytes)
+        .map_err(|e| e.to_string())?
+        .document;
     Ok((back, out.bytes))
 }
 
 fn edit_filters(doc: &mut Document) -> bool {
     let mut any = false;
-    for id in doc.walk().into_iter().map(|(_, _, l)| l.id).collect::<Vec<_>>() {
+    for id in doc
+        .walk()
+        .into_iter()
+        .map(|(_, _, l)| l.id)
+        .collect::<Vec<_>>()
+    {
         if let Some(l) = doc.layer_mut(id)
             && let LayerContent::Smart(sm) = &mut l.content
             && let Some(f) = sm.smart_filters.first_mut()
@@ -126,15 +160,24 @@ fn edit_filters(doc: &mut Document) -> bool {
 fn re_embed(doc: &mut Document) -> bool {
     let meta = doc.metadata.clone();
     let mut any = false;
-    for id in doc.walk().into_iter().map(|(_, _, l)| l.id).collect::<Vec<_>>() {
+    for id in doc
+        .walk()
+        .into_iter()
+        .map(|(_, _, l)| l.id)
+        .collect::<Vec<_>>()
+    {
         if let Some(l) = doc.layer_mut(id)
             && let LayerContent::Smart(sm) = &mut l.content
             && let SmartSource::Linked { path } = &sm.source
             && let Some(f) = photocraft_io::linked::find_linked_file(&meta, path)
         {
-            sm.source = SmartSource::Embedded { file_name: f.file_name, bytes: Arc::new(f.bytes) };
+            sm.source = SmartSource::Embedded {
+                file_name: f.file_name,
+                bytes: Arc::new(f.bytes),
+            };
             sm.psd_raw = None;
-            l.psd_blocks.retain(|(k, _)| !matches!(k, b"SoLd" | b"PlLd" | b"SoLE"));
+            l.psd_blocks
+                .retain(|(k, _)| !matches!(k, b"SoLd" | b"PlLd" | b"SoLE"));
             any = true;
         }
     }
@@ -144,7 +187,11 @@ fn re_embed(doc: &mut Document) -> bool {
 #[test]
 fn smart_objects_round_trip_through_psd() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus");
-    assert!(root.join("photoshop").is_dir(), "{} is missing: run `cargo xtask corpus --all`", root.display());
+    assert!(
+        root.join("photoshop").is_dir(),
+        "{} is missing: run `cargo xtask corpus --all`",
+        root.display()
+    );
     let mut files = Vec::new();
     for d in ["psd", "psd-tools", "photoshop"] {
         collect(&root.join(d), &mut files);
@@ -155,7 +202,9 @@ fn smart_objects_round_trip_through_psd() {
     for p in &files {
         let name = p.strip_prefix(&root).unwrap_or(p).display().to_string();
         let bytes = std::fs::read(p).unwrap_or_default();
-        let Ok(imp) = photocraft_io::import(&name, &bytes) else { continue };
+        let Ok(imp) = photocraft_io::import(&name, &bytes) else {
+            continue;
+        };
         let doc = imp.document;
         let n = smarts(&doc).len();
         if n == 0 {
@@ -163,17 +212,24 @@ fn smart_objects_round_trip_through_psd() {
         }
         checked += 1;
         objects += n;
-        with_filters += smarts(&doc).iter().filter(|(_, s)| !s.smart_filters.is_empty()).count();
+        with_filters += smarts(&doc)
+            .iter()
+            .filter(|(_, s)| !s.smart_filters.is_empty())
+            .count();
         let mut fail = |what: &str, e: String| failures.push(format!("{name} ({what}): {e}"));
         match round_trip(&doc) {
-            Ok((back, _)) => compare(&doc, &back, true).into_iter().for_each(|e| fail("as imported", e)),
+            Ok((back, _)) => compare(&doc, &back, true)
+                .into_iter()
+                .for_each(|e| fail("as imported", e)),
             Err(e) => fail("as imported", e),
         }
         let mut ed = doc.clone();
         if edit_filters(&mut ed) {
             edited += 1;
             match round_trip(&ed) {
-                Ok((back, _)) => compare(&ed, &back, true).into_iter().for_each(|e| fail("filters edited", e)),
+                Ok((back, _)) => compare(&ed, &back, true)
+                    .into_iter()
+                    .for_each(|e| fail("filters edited", e)),
                 Err(e) => fail("filters edited", e),
             }
         }
@@ -182,7 +238,9 @@ fn smart_objects_round_trip_through_psd() {
             embedded += 1;
             match round_trip(&em) {
                 Ok((back, out)) => {
-                    compare(&em, &back, true).into_iter().for_each(|e| fail("re-embedded", e));
+                    compare(&em, &back, true)
+                        .into_iter()
+                        .for_each(|e| fail("re-embedded", e));
                     // The old files are gone: one lnk2 item per distinct source.
                     let f = photocraft_psd::PsdFile::from_bytes(&out).unwrap();
                     let items: Vec<String> = f
@@ -202,8 +260,13 @@ fn smart_objects_round_trip_through_psd() {
                     used.dedup();
                     let mut items_sorted = items.clone();
                     items_sorted.sort();
-                    if !used.iter().all(|u| items_sorted.contains(u)) || items_sorted.len() > used.len() {
-                        fail("re-embedded", format!("lnk2 items {items:?} for sources {used:?}"));
+                    if !used.iter().all(|u| items_sorted.contains(u))
+                        || items_sorted.len() > used.len()
+                    {
+                        fail(
+                            "re-embedded",
+                            format!("lnk2 items {items:?} for sources {used:?}"),
+                        );
                     }
                 }
                 Err(e) => fail("re-embedded", e),
@@ -218,6 +281,9 @@ fn smart_objects_round_trip_through_psd() {
     for f in &failures {
         eprintln!("  FAIL {f}");
     }
-    assert!(checked >= 30, "only {checked} corpus files with smart objects");
+    assert!(
+        checked >= 30,
+        "only {checked} corpus files with smart objects"
+    );
     assert!(failures.is_empty(), "{} failures", failures.len());
 }

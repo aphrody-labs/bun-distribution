@@ -49,10 +49,16 @@ pub fn is_g4mt(data: &[u8]) -> bool {
 /// [`FormatError::TooShort`] si < 0x40 octets, [`FormatError::BadMagic`] si le magic ≠ « G4MT ».
 pub fn parse(data: &[u8]) -> Result<G4mt, FormatError> {
     if data.len() < HEADER_LEN {
-        return Err(FormatError::TooShort { got: data.len(), need: HEADER_LEN });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: HEADER_LEN,
+        });
     }
     let header = level5::parse_header(data, MAGIC, "G4MT")?;
-    Ok(G4mt { header, file_size: data.len() })
+    Ok(G4mt {
+        header,
+        file_size: data.len(),
+    })
 }
 
 // ============================================================================
@@ -88,16 +94,19 @@ fn u16_at(d: &[u8], o: usize) -> Option<u16> {
     d.get(o..o + 2).map(|b| u16::from_le_bytes([b[0], b[1]]))
 }
 fn u32_at(d: &[u8], o: usize) -> Option<u32> {
-    d.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    d.get(o..o + 4)
+        .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 fn f32_at(d: &[u8], o: usize) -> Option<f32> {
-    d.get(o..o + 4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    d.get(o..o + 4)
+        .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 fn i8_at(d: &[u8], o: usize) -> Option<f32> {
     u8_at(d, o).map(|v| f32::from(v as i8))
 }
 fn i16_at(d: &[u8], o: usize) -> Option<f32> {
-    d.get(o..o + 2).map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])))
+    d.get(o..o + 2)
+        .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])))
 }
 
 /// Un clip nommé d'un conteneur G4MT. Un fichier en contient couramment plusieurs (cf. module doc).
@@ -235,7 +244,7 @@ fn find_name_table(data: &[u8], start: usize, count: usize) -> Option<(usize, Ve
                 None => {
                     valid = false;
                     break;
-                },
+                }
             }
         }
         if valid {
@@ -258,7 +267,11 @@ fn read_utf8_cstr(data: &[u8], start: usize) -> Option<String> {
 
 fn normalize_quat(q: [f32; 4]) -> [f32; 4] {
     let n = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).sqrt();
-    if n <= 1e-9 { [0.0, 0.0, 0.0, 1.0] } else { [q[0] / n, q[1] / n, q[2] / n, q[3] / n] }
+    if n <= 1e-9 {
+        [0.0, 0.0, 0.0, 1.0]
+    } else {
+        [q[0] / n, q[1] / n, q[2] / n, q[3] / n]
+    }
 }
 
 fn slerp(a: [f32; 4], b: [f32; 4], t: f32) -> [f32; 4] {
@@ -437,8 +450,11 @@ impl Motion {
             });
         }
 
-        let key_count =
-            channels.iter().map(|c| c.key_start + c.key_count).max().unwrap_or(0) as usize;
+        let key_count = channels
+            .iter()
+            .map(|c| c.key_start + c.key_count)
+            .max()
+            .unwrap_or(0) as usize;
         let mut keys = Vec::with_capacity(key_count);
         for i in 0..key_count {
             keys.push(u16_at(data, key_offset + i * 2)?);
@@ -547,12 +563,17 @@ impl Motion {
             let keyframes = source_frames
                 .into_iter()
                 .map(|frame| {
-                    self.sample_local_trs(data, clip, target, f32::from(frame), rest).map(|pose| {
-                        DecodedMotionKeyframe { time_seconds: f32::from(frame - start) / fps, pose }
-                    })
+                    self.sample_local_trs(data, clip, target, f32::from(frame), rest)
+                        .map(|pose| DecodedMotionKeyframe {
+                            time_seconds: f32::from(frame - start) / fps,
+                            pose,
+                        })
                 })
                 .collect::<Option<Vec<_>>>()?;
-            tracks.push(DecodedMotionTrack { bone_index, keyframes });
+            tracks.push(DecodedMotionTrack {
+                bone_index,
+                keyframes,
+            });
         }
         Some(DecodedMotionClip {
             name: clip.name.clone(),
@@ -564,15 +585,25 @@ impl Motion {
     fn rotation_channel(&self, clip: &Clip, target_index: u16) -> Option<&RawChannel> {
         let start = clip.target_info_start as usize;
         let end = start + clip.target_info_count as usize;
-        let info =
-            self.target_infos.get(start..end)?.iter().find(|t| t.target_index == target_index)?;
+        let info = self
+            .target_infos
+            .get(start..end)?
+            .iter()
+            .find(|t| t.target_index == target_index)?;
         let cs = info.channel_start as usize;
         let ce = cs + info.channel_count as usize;
-        self.channels.get(cs..ce)?.iter().find(|c| c.channel_type == 9)
+        self.channels
+            .get(cs..ce)?
+            .iter()
+            .find(|c| c.channel_type == 9)
     }
 
     fn decode_key(&self, data: &[u8], channel: &RawChannel, key_index: u32) -> Option<[f32; 4]> {
-        let scale = self.scales.get(channel.scale_index as usize).copied().unwrap_or(1.0);
+        let scale = self
+            .scales
+            .get(channel.scale_index as usize)
+            .copied()
+            .unwrap_or(1.0);
         let base = self.data_offset
             + channel.data_offset as usize
             + key_index as usize * channel.stride as usize;
@@ -589,7 +620,7 @@ impl Motion {
                 (2, 1) => f32::from(u8_at(data, base + c)?) * f32::from_bits(0x3b80_8081) * scale,
                 (2, 2) => {
                     f32::from(u16_at(data, base + c * 2)?) * f32::from_bits(0x3780_0080) * scale
-                },
+                }
                 (3, 1) => i8_at(data, base + c)? * f32::from_bits(0x3c01_0204) * scale,
                 (3, 2) => i16_at(data, base + c * 2)? * f32::from_bits(0x3800_0100) * scale,
                 _ => return None,
@@ -617,10 +648,18 @@ impl Motion {
             return self.decode_key(data, channel, left as u32);
         }
         let span = f32::from(keys[left + 1]) - f32::from(keys[left]);
-        let t = if span > 0.0 { (frame - f32::from(keys[left])) / span } else { 0.0 };
+        let t = if span > 0.0 {
+            (frame - f32::from(keys[left])) / span
+        } else {
+            0.0
+        };
         let a = self.decode_key(data, channel, left as u32)?;
         let b = self.decode_key(data, channel, left as u32 + 1)?;
-        Some(if channel.channel_type == 9 { slerp(a, b, t) } else { lerp4(a, b, t) })
+        Some(if channel.channel_type == 9 {
+            slerp(a, b, t)
+        } else {
+            lerp4(a, b, t)
+        })
     }
 
     /// Échantillonne le quaternion de rotation (xyzw normalisé) d'une cible animée à la frame
@@ -636,7 +675,8 @@ impl Motion {
         frame: f32,
     ) -> Option<[f32; 4]> {
         let channel = self.rotation_channel(clip, target_index)?;
-        self.sample_channel(data, channel, frame).map(normalize_quat)
+        self.sample_channel(data, channel, frame)
+            .map(normalize_quat)
     }
 
     /// Sample local TRS, retaining rest components when no corresponding channels
@@ -656,8 +696,11 @@ impl Motion {
         }
         let start = clip.target_info_start as usize;
         let end = start + clip.target_info_count as usize;
-        let info =
-            self.target_infos.get(start..end)?.iter().find(|t| t.target_index == target_index)?;
+        let info = self
+            .target_infos
+            .get(start..end)?
+            .iter()
+            .find(|t| t.target_index == target_index)?;
         let cs = info.channel_start as usize;
         let ce = cs + info.channel_count as usize;
         let mut pose = rest;
@@ -676,13 +719,13 @@ impl Motion {
                         return None;
                     }
                     *axis = Some(value[0]);
-                },
+                }
                 9 => {
                     quaternion = true;
                     pose.quat = normalize_quat(value);
-                },
+                }
                 10..=12 => pose.translation[channel.channel_type as usize - 10] = value[0],
-                _ => {},
+                _ => {}
             }
         }
         if euler.iter().any(Option::is_some) {
@@ -719,7 +762,9 @@ pub fn resolve_targets(target_hashes: &[u32], bone_names: &[&str]) -> Vec<Option
     target_hashes
         .iter()
         .map(|&hash| {
-            bone_names.iter().position(|name| crate::cfgbin::crc32(name.as_bytes()) == hash)
+            bone_names
+                .iter()
+                .position(|name| crate::cfgbin::crc32(name.as_bytes()) == hash)
         })
         .collect()
 }
@@ -793,8 +838,13 @@ mod tests {
             quat: [0.0, 0.0, 0.0, 1.0],
             translation: [5.0, 6.0, 7.0],
         };
-        let bytes: Vec<_> = [0.3f32, 0.5, 0.7].into_iter().flat_map(f32::to_le_bytes).collect();
-        let pose = motion.sample_local_trs(&bytes, &clip, 0, 0.0, rest).unwrap();
+        let bytes: Vec<_> = [0.3f32, 0.5, 0.7]
+            .into_iter()
+            .flat_map(f32::to_le_bytes)
+            .collect();
+        let pose = motion
+            .sample_local_trs(&bytes, &clip, 0, 0.0, rest)
+            .unwrap();
         // Native PE instructions emulated with sin/cos helpers unchanged; only
         // unsupported SIMD permutations/FMA received instruction-semantic shims.
         let native = [0.052132413, 0.27944386, 0.29377714, 0.912627];
@@ -804,12 +854,24 @@ mod tests {
         assert_eq!(pose.scale, rest.scale);
         assert_eq!(pose.translation, rest.translation);
         motion.target_infos[0].channel_count = 2;
-        assert!(motion.sample_local_trs(&bytes, &clip, 0, 0.0, rest).is_none());
+        assert!(
+            motion
+                .sample_local_trs(&bytes, &clip, 0, 0.0, rest)
+                .is_none()
+        );
         motion.target_infos[0].channel_count = 3;
         motion.channels[2].channel_type = 9;
-        assert!(motion.sample_local_trs(&bytes, &clip, 0, 0.0, rest).is_none());
+        assert!(
+            motion
+                .sample_local_trs(&bytes, &clip, 0, 0.0, rest)
+                .is_none()
+        );
         motion.channels[2].channel_type = 7;
-        assert!(motion.sample_local_trs(&bytes, &clip, 0, 0.0, rest).is_none());
+        assert!(
+            motion
+                .sample_local_trs(&bytes, &clip, 0, 0.0, rest)
+                .is_none()
+        );
     }
 
     #[test]
@@ -825,8 +887,18 @@ mod tests {
             assert_eq!(motion.decode_key(&bytes, &channel, 0).unwrap()[0], 2.0);
         }
         // Signed minimum is not clamped: native signed normalization exceeds -1.
-        assert!(motion.decode_key(&[128], &scalar_channel(3, 1, 1), 0).unwrap()[0] < -2.0);
-        assert!(motion.decode_key(&[0, 128], &scalar_channel(3, 2, 1), 0).unwrap()[0] < -2.0);
+        assert!(
+            motion
+                .decode_key(&[128], &scalar_channel(3, 1, 1), 0)
+                .unwrap()[0]
+                < -2.0
+        );
+        assert!(
+            motion
+                .decode_key(&[0, 128], &scalar_channel(3, 2, 1), 0)
+                .unwrap()[0]
+                < -2.0
+        );
     }
 
     #[test]
@@ -836,15 +908,27 @@ mod tests {
         let bytes = [0, 0, 0, 128, 255, 255];
         let middle = motion.decode_key(&bytes, &channel, 1).unwrap()[0];
         assert_eq!(middle.to_bits(), 0x3f80_0080);
-        assert_eq!(motion.sample_channel(&bytes, &channel, 4.5).unwrap()[0], middle * 0.5);
+        assert_eq!(
+            motion.sample_channel(&bytes, &channel, 4.5).unwrap()[0],
+            middle * 0.5
+        );
         assert_eq!(
             motion.sample_channel(&bytes, &channel, 9.5).unwrap()[0],
             middle + (2.0 - middle) * 0.5
         );
-        assert_eq!(motion.sample_channel(&bytes, &channel, 10.0).unwrap()[0], 2.0);
+        assert_eq!(
+            motion.sample_channel(&bytes, &channel, 10.0).unwrap()[0],
+            2.0
+        );
         channel.step = true;
-        assert_eq!(motion.sample_channel(&bytes, &channel, 4.5).unwrap()[0], 0.0);
-        assert_eq!(motion.sample_channel(&bytes, &channel, 9.5).unwrap()[0], middle);
+        assert_eq!(
+            motion.sample_channel(&bytes, &channel, 4.5).unwrap()[0],
+            0.0
+        );
+        assert_eq!(
+            motion.sample_channel(&bytes, &channel, 9.5).unwrap()[0],
+            middle
+        );
     }
 
     #[test]
@@ -864,7 +948,10 @@ mod tests {
 
     #[test]
     fn rejette_magic_et_court() {
-        assert!(matches!(parse(&[0u8; HEADER_LEN]), Err(FormatError::BadMagic { .. })));
+        assert!(matches!(
+            parse(&[0u8; HEADER_LEN]),
+            Err(FormatError::BadMagic { .. })
+        ));
         assert!(matches!(parse(b"G4MT"), Err(FormatError::TooShort { .. })));
         assert!(is_g4mt(b"G4MT____"));
         assert!(!is_g4mt(b"G4CM"));
@@ -875,8 +962,14 @@ mod tests {
     #[test]
     fn golden_g4mt_reels() {
         for (bytes, size) in [
-            (include_bytes!("../tests/fixtures/g4mt/small.g4mt").as_slice(), 2176usize),
-            (include_bytes!("../tests/fixtures/g4mt/med.g4mt").as_slice(), 41280usize),
+            (
+                include_bytes!("../tests/fixtures/g4mt/small.g4mt").as_slice(),
+                2176usize,
+            ),
+            (
+                include_bytes!("../tests/fixtures/g4mt/med.g4mt").as_slice(),
+                41280usize,
+            ),
         ] {
             let g = parse(bytes).expect("g4mt réel");
             assert_eq!(&g.header.magic.to_le_bytes(), b"G4MT");
@@ -977,8 +1070,16 @@ mod tests {
         let resolved = resolve_targets(&motion.target_hashes, &bones);
         assert_eq!(resolved, alloc::vec![Some(0)]);
 
-        assert_eq!(motion.find_clip_by_name("clip").map(|c| c.crc32), Some(clip.crc32));
-        assert_eq!(motion.find_clip_by_hash(clip.crc32).map(|c| c.name.as_str()), Some("clip"));
+        assert_eq!(
+            motion.find_clip_by_name("clip").map(|c| c.crc32),
+            Some(clip.crc32)
+        );
+        assert_eq!(
+            motion
+                .find_clip_by_hash(clip.crc32)
+                .map(|c| c.name.as_str()),
+            Some("clip")
+        );
         assert!(motion.find_clip_by_name("inconnu").is_none());
         assert!(motion.find_clip_by_hash(0xdead_beef).is_none());
 
@@ -1012,8 +1113,15 @@ mod tests {
         assert_eq!(decoded.tracks[0].keyframes.len(), 2);
         assert_eq!(decoded.tracks[0].keyframes[0].time_seconds, 0.0);
         assert!((decoded.tracks[0].keyframes[1].time_seconds - 1.0 / 60.0).abs() < 1e-7);
-        assert_eq!(decoded.tracks[0].keyframes[0].pose.translation, rest.translation);
-        assert!(motion.sample_local_trs(&buf, clip, 0, f32::NAN, rest).is_none());
+        assert_eq!(
+            decoded.tracks[0].keyframes[0].pose.translation,
+            rest.translation
+        );
+        assert!(
+            motion
+                .sample_local_trs(&buf, clip, 0, f32::NAN, rest)
+                .is_none()
+        );
 
         // Un canal scalaire ne normalise pas sa valeur comme un quaternion ; les axes
         // non animés restent ceux de repos, y compris pour translation et échelle.
@@ -1030,7 +1138,9 @@ mod tests {
         assert_eq!(local.translation[2], 7.0);
         assert_eq!(local.quat, rest.quat);
         motion.channels[0].channel_type = 3;
-        let local = motion.sample_local_trs(&buf, &motion.clips[0], 0, 1.0, rest).unwrap();
+        let local = motion
+            .sample_local_trs(&buf, &motion.clips[0], 0, 1.0, rest)
+            .unwrap();
         assert_eq!(&local.scale[..2], &[2.0, 3.0]);
         assert_eq!(local.scale[2], 6.0);
         // G4MA uses the same structural tables, while arbitrary magic is rejected.
@@ -1039,7 +1149,11 @@ mod tests {
         buf[..4].copy_from_slice(b"G4TP");
         assert!(Motion::parse(&buf).is_none());
         motion.clips[0].flags = 1;
-        assert!(motion.sample_local_trs(&buf, &motion.clips[0], 0, 0.0, rest).is_none());
+        assert!(
+            motion
+                .sample_local_trs(&buf, &motion.clips[0], 0, 0.0, rest)
+                .is_none()
+        );
     }
 
     /// Golden croisé contre l'implémentation Python indépendante (`plugins/nie-blender`, submodule)
@@ -1084,6 +1198,9 @@ mod tests {
                 }
             }
         }
-        assert!(sampled > 20, "trop peu de rotations résolues sur le clip long ({sampled})");
+        assert!(
+            sampled > 20,
+            "trop peu de rotations résolues sur le clip long ({sampled})"
+        );
     }
 }

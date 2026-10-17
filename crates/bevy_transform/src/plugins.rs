@@ -1,8 +1,8 @@
 use crate::{
     prelude::GlobalTransform,
     systems::{
-        mark_dirty_trees, propagate_parent_transforms, sync_simple_transforms,
-        StaticTransformOptimizations,
+        StaticTransformOptimizations, mark_dirty_trees, propagate_parent_transforms,
+        sync_simple_transforms,
     },
 };
 use bevy_app::{App, Plugin, PostStartup, PostUpdate, ValidateParentHasComponentPlugin};

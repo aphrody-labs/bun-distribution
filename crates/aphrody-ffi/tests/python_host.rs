@@ -30,12 +30,18 @@ fn find() -> Option<String> {
 fn load_missing_reports_error() {
     let bad = CString::new("/nonexistent/libpython-none.so").unwrap();
     // SAFETY: valid C string.
-    assert_eq!(unsafe { aphrody_py_load(bad.as_ptr()) }, APHRODY_PY_ERR_LOAD);
+    assert_eq!(
+        unsafe { aphrody_py_load(bad.as_ptr()) },
+        APHRODY_PY_ERR_LOAD
+    );
     assert!(take(aphrody_py_last_error()).contains("libpython"));
     // Not initialised: state error rather than a crash.
     let code = CString::new("1").unwrap();
     // SAFETY: valid C string.
-    assert_eq!(unsafe { aphrody_py_run(code.as_ptr()) }, APHRODY_PY_ERR_STATE);
+    assert_eq!(
+        unsafe { aphrody_py_run(code.as_ptr()) },
+        APHRODY_PY_ERR_STATE
+    );
 }
 
 #[test]
@@ -60,7 +66,10 @@ fn host_runs_code_and_calls_module() {
     assert_eq!(unsafe { aphrody_py_run(run.as_ptr()) }, APHRODY_PY_OK);
     let expr = CString::new("value").unwrap();
     // SAFETY: valid pointers.
-    assert_eq!(unsafe { aphrody_py_eval(expr.as_ptr(), &mut out) }, APHRODY_PY_OK);
+    assert_eq!(
+        unsafe { aphrody_py_eval(expr.as_ptr(), &mut out) },
+        APHRODY_PY_OK
+    );
     assert_eq!(take(out), "42");
 
     let (m, f, a) = (c"os.path", c"basename", c"/a/b/file.txt");
@@ -76,7 +85,10 @@ fn host_runs_code_and_calls_module() {
         let mut o = std::ptr::null_mut();
         let e = CString::new("'ab' * 2").unwrap();
         // SAFETY: valid pointers.
-        assert_eq!(unsafe { aphrody_py_eval(e.as_ptr(), &mut o) }, APHRODY_PY_OK);
+        assert_eq!(
+            unsafe { aphrody_py_eval(e.as_ptr(), &mut o) },
+            APHRODY_PY_OK
+        );
         assert_eq!(take(o), "abab");
     })
     .join()
@@ -84,7 +96,10 @@ fn host_runs_code_and_calls_module() {
 
     let bad = CString::new("1/0").unwrap();
     // SAFETY: valid pointers.
-    assert_eq!(unsafe { aphrody_py_eval(bad.as_ptr(), &mut out) }, APHRODY_PY_ERR_PYTHON);
+    assert_eq!(
+        unsafe { aphrody_py_eval(bad.as_ptr(), &mut out) },
+        APHRODY_PY_ERR_PYTHON
+    );
     assert!(take(aphrody_py_last_error()).contains("division"));
 
     assert_eq!(aphrody_py_finalize(), APHRODY_PY_OK);

@@ -9,8 +9,21 @@ use rayon::prelude::*;
 use crate::util::layer_rect;
 use crate::{Buf, EffectCtx, EffectSpec, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Obsolete", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Obsolete",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 // ---------------------------------------------------------------- Basic 3D
@@ -57,7 +70,11 @@ fn basic_3d(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 *px = [0.0; 4];
                 continue;
             }
-            let hit = [o[0] + d[0] * t - pc[0], o[1] + d[1] * t - pc[1], o[2] + d[2] * t - pc[2]];
+            let hit = [
+                o[0] + d[0] * t - pc[0],
+                o[1] + d[1] * t - pc[1],
+                o[2] + d[2] * t - pc[2],
+            ];
             let (u, v) = (dot(hit, ux), dot(hit, uy));
             let mut c = src.sample_bilinear(cx + u, cy + v);
             if spec_on && c[3] > 0.0 {
@@ -111,9 +128,24 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("swivel", "Swivel", num(0.0), ParamUi::Angle),
                 p("tilt", "Tilt", num(0.0), ParamUi::Angle),
-                p("distanceToImage", "Distance to Image", num(0.0), slider(-1000.0, 30000.0, -100.0, 100.0, 1)),
-                p("specularHighlight", "Specular Highlight", Value::Bool(false), ParamUi::Checkbox),
-                p("preview/drawPreviewWireframe", "Draw Preview Wireframe", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "distanceToImage",
+                    "Distance to Image",
+                    num(0.0),
+                    slider(-1000.0, 30000.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "specularHighlight",
+                    "Specular Highlight",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "preview/drawPreviewWireframe",
+                    "Draw Preview Wireframe",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             basic_3d,
         ),
@@ -121,8 +153,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.obsolete.gaussianlegacy",
             "Gaussian Blur (Legacy)",
             vec![
-                p("blurriness", "Blurriness", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 1)),
-                p("blurDimensions", "Blur Dimensions", Value::Enum(0), popup(&["Horizontal and Vertical", "Horizontal", "Vertical"])),
+                p(
+                    "blurriness",
+                    "Blurriness",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 1),
+                ),
+                p(
+                    "blurDimensions",
+                    "Blur Dimensions",
+                    Value::Enum(0),
+                    popup(&["Horizontal and Vertical", "Horizontal", "Vertical"]),
+                ),
             ],
             gaussian_legacy,
         ),
@@ -148,17 +190,49 @@ mod tests {
     #[test]
     fn basic_3d_zero_identity_swivel_narrows_and_is_deterministic() {
         let img = ramp();
-        let id = run_fx("ec.obsolete.basic3d", &[], img.clone(), 0.0, EffectEnv::default());
+        let id = run_fx(
+            "ec.obsolete.basic3d",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(id.img.data, img.data);
-        let flat =
-            run_fx("ec.obsolete.basic3d", &[("distanceToImage", num(0.0)), ("specularHighlight", Value::Bool(false))], img.clone(), 0.0, EffectEnv::default());
+        let flat = run_fx(
+            "ec.obsolete.basic3d",
+            &[
+                ("distanceToImage", num(0.0)),
+                ("specularHighlight", Value::Bool(false)),
+            ],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(flat.img.data, img.data);
-        let sw = run_fx("ec.obsolete.basic3d", &[("swivel", num(60.0))], img.clone(), 0.0, EffectEnv::default());
+        let sw = run_fx(
+            "ec.obsolete.basic3d",
+            &[("swivel", num(60.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(sw.img.get(0, 6)[3], 0.0, "edges uncovered after swivel");
         assert!(sw.img.get(10, 6)[3] > 0.99);
-        let again = run_fx("ec.obsolete.basic3d", &[("swivel", num(60.0))], img.clone(), 0.0, EffectEnv::default());
+        let again = run_fx(
+            "ec.obsolete.basic3d",
+            &[("swivel", num(60.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(sw.img.data, again.img.data);
-        let far = run_fx("ec.obsolete.basic3d", &[("distanceToImage", num(20.0))], img, 0.0, EffectEnv::default());
+        let far = run_fx(
+            "ec.obsolete.basic3d",
+            &[("distanceToImage", num(20.0))],
+            img,
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(far.img.get(0, 0)[3], 0.0, "farther image is smaller");
     }
 
@@ -166,9 +240,21 @@ mod tests {
     fn gaussian_legacy_zero_identity_and_blurs() {
         let mut img = Image::new(15, 15);
         img.set(7, 7, [1.0, 1.0, 1.0, 1.0]);
-        let id = run_fx("ec.obsolete.gaussianlegacy", &[], img.clone(), 0.0, EffectEnv::default());
+        let id = run_fx(
+            "ec.obsolete.gaussianlegacy",
+            &[],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(id.img.data, img.data);
-        let out = run_fx("ec.obsolete.gaussianlegacy", &[("blurriness", num(4.0))], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.obsolete.gaussianlegacy",
+            &[("blurriness", num(4.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         let total: f32 = out.img.data.iter().map(|p| p[3]).sum();
         assert!((total - 1.0).abs() < 1e-3, "{total}");
         let c = out.img.width / 2;

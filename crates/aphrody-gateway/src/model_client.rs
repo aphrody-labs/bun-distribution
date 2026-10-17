@@ -55,20 +55,22 @@ impl ModelClientAdapter {
                         system.push('\n');
                     }
                     system.push_str(&text);
-                },
-                Message::User(text) => turn
-                    .messages
-                    .push(ChatMessage { role: Role::User, parts: vec![Part::Text(text)] }),
-                Message::Assistant(text) => turn
-                    .messages
-                    .push(ChatMessage { role: Role::Model, parts: vec![Part::Text(text)] }),
+                }
+                Message::User(text) => turn.messages.push(ChatMessage {
+                    role: Role::User,
+                    parts: vec![Part::Text(text)],
+                }),
+                Message::Assistant(text) => turn.messages.push(ChatMessage {
+                    role: Role::Model,
+                    parts: vec![Part::Text(text)],
+                }),
                 Message::Tool(..) => {
                     // The legacy gateway has no tool_call_id to pair this
                     // result with. Refuse it instead of inventing a call.
                     return Err(GatewayError::Config(
                         "tool results require the ModelClient/MCP tool-call contract".into(),
                     ));
-                },
+                }
             }
         }
         Ok(turn)
@@ -91,13 +93,13 @@ impl GatewayAdapter for ModelClientAdapter {
                         usage.map(|usage| u32::try_from(usage.total_tokens).unwrap_or(u32::MAX));
                     completed = true;
                     break;
-                },
+                }
                 ModelStreamEvent::ToolCall { .. } | ModelStreamEvent::ToolCallDelta { .. } => {
                     return Err(tool_call_error());
-                },
+                }
                 ModelStreamEvent::Created
                 | ModelStreamEvent::ReasoningDelta(_)
-                | ModelStreamEvent::ReasoningItem { .. } => {},
+                | ModelStreamEvent::ReasoningItem { .. } => {}
             }
         }
         if !completed {
@@ -105,7 +107,11 @@ impl GatewayAdapter for ModelClientAdapter {
                 "provider stream ended before completion".into(),
             ));
         }
-        Ok(ChatResponse { content, model: Some(self.client.model_id().to_owned()), total_tokens })
+        Ok(ChatResponse {
+            content,
+            model: Some(self.client.model_id().to_owned()),
+            total_tokens,
+        })
     }
 
     async fn chat_stream(&self, request: ChatRequest) -> Result<ChunkStream, GatewayError> {
@@ -121,11 +127,18 @@ impl GatewayAdapter for ModelClientAdapter {
             loop {
                 let chunk = match events.next().await {
                     Some(Ok(ModelStreamEvent::TextDelta(delta))) => {
-                        return Some((Ok(ChatChunk { delta, finish: false }), (events, false)));
-                    },
-                    Some(Ok(ModelStreamEvent::Completed { .. })) => {
-                        Ok(ChatChunk { delta: String::new(), finish: true })
-                    },
+                        return Some((
+                            Ok(ChatChunk {
+                                delta,
+                                finish: false,
+                            }),
+                            (events, false),
+                        ));
+                    }
+                    Some(Ok(ModelStreamEvent::Completed { .. })) => Ok(ChatChunk {
+                        delta: String::new(),
+                        finish: true,
+                    }),
                     Some(Ok(
                         ModelStreamEvent::ToolCall { .. } | ModelStreamEvent::ToolCallDelta { .. },
                     )) => Err(tool_call_error()),
@@ -169,7 +182,9 @@ mod tests {
     impl ModelClient for RecordingClient {
         async fn stream(&self, turn: ChatTurn) -> Result<ModelStream, ModelError> {
             self.turns.lock().expect("turns").push(turn);
-            Ok(Box::pin(futures::stream::iter(self.events.clone().into_iter().map(Ok))))
+            Ok(Box::pin(futures::stream::iter(
+                self.events.clone().into_iter().map(Ok),
+            )))
         }
 
         fn model_id(&self) -> &str {
@@ -178,7 +193,10 @@ mod tests {
     }
 
     fn adapter(events: Vec<ModelStreamEvent>) -> (ModelClientAdapter, Arc<RecordingClient>) {
-        let client = Arc::new(RecordingClient { turns: Mutex::new(Vec::new()), events });
+        let client = Arc::new(RecordingClient {
+            turns: Mutex::new(Vec::new()),
+            events,
+        });
         (ModelClientAdapter::new(client.clone()), client)
     }
 
@@ -221,7 +239,10 @@ mod tests {
     #[tokio::test]
     async fn rejects_unknown_model_before_issuing_provider_request() {
         let (adapter, client) = adapter(vec![completed()]);
-        let error = adapter.chat(ChatRequest::new("other", Vec::new())).await.expect_err("model");
+        let error = adapter
+            .chat(ChatRequest::new("other", Vec::new()))
+            .await
+            .expect_err("model");
         assert!(error.to_string().contains("not served"));
         assert!(client.turns.lock().expect("turns").is_empty());
     }
@@ -229,8 +250,10 @@ mod tests {
     #[tokio::test]
     async fn truncated_stream_is_an_error_instead_of_success() {
         let (adapter, _) = adapter(vec![ModelStreamEvent::TextDelta("partial".into())]);
-        let error =
-            adapter.chat(ChatRequest::new("gemma4-e2b", Vec::new())).await.expect_err("truncated");
+        let error = adapter
+            .chat(ChatRequest::new("gemma4-e2b", Vec::new()))
+            .await
+            .expect_err("truncated");
         assert!(error.to_string().contains("before completion"));
     }
 
@@ -246,7 +269,11 @@ mod tests {
         assert_eq!(chunks.len(), 2);
         assert_eq!(chunks[0].as_ref().expect("partial").delta, "partial");
         assert!(
-            chunks[1].as_ref().expect_err("truncated").to_string().contains("before completion")
+            chunks[1]
+                .as_ref()
+                .expect_err("truncated")
+                .to_string()
+                .contains("before completion")
         );
     }
 

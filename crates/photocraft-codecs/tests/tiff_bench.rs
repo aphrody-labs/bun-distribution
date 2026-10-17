@@ -38,7 +38,9 @@ fn legacy(bytes: &[u8]) -> Result<Image, String> {
     let mut l = TLimits::default();
     l.decoding_buffer_size = 8 << 30;
     l.intermediate_buffer_size = 1 << 30;
-    let mut dec = Decoder::new(std::io::Cursor::new(bytes)).map_err(|e| e.to_string())?.with_limits(l);
+    let mut dec = Decoder::new(std::io::Cursor::new(bytes))
+        .map_err(|e| e.to_string())?
+        .with_limits(l);
     let (w, h) = dec.dimensions().map_err(|e| e.to_string())?;
     let layout = match dec.colortype().map_err(|e| e.to_string())? {
         tiff::ColorType::RGB(_) => ChannelLayout::Rgb,
@@ -70,7 +72,12 @@ fn time(name: &str, bytes: &[u8]) {
         Ok(ms) => format!("{ms:>7.1} ms"),
         Err(e) => format!("error ({})", e.chars().take(48).collect::<String>()),
     };
-    println!("{name:<34} new {}   before {}   ({:.1} MB file)", show(&new), show(&old), bytes.len() as f64 / 1e6);
+    println!(
+        "{name:<34} new {}   before {}   ({:.1} MB file)",
+        show(&new),
+        show(&old),
+        bytes.len() as f64 / 1e6
+    );
 }
 
 #[test]
@@ -78,16 +85,42 @@ fn time(name: &str, bytes: &[u8]) {
 fn decode_30mp() {
     let rgb = pixels(3);
     let img = Image::from_u8(W, H, ChannelLayout::Rgb, rgb.clone()).unwrap();
-    for (name, c) in
-        [("strips, none", TiffCompression::None), ("strips, LZW + predictor", TiffCompression::Lzw), ("strips, Deflate + predictor", TiffCompression::Deflate)]
-    {
-        let bytes = encode(&img, Format::Tiff, &EncodeOptions { tiff_compression: c, ..Default::default() }).unwrap();
+    for (name, c) in [
+        ("strips, none", TiffCompression::None),
+        ("strips, LZW + predictor", TiffCompression::Lzw),
+        ("strips, Deflate + predictor", TiffCompression::Deflate),
+    ] {
+        let bytes = encode(
+            &img,
+            Format::Tiff,
+            &EncodeOptions {
+                tiff_compression: c,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         time(&format!("RGB 8 {name}"), &bytes);
     }
     let img16 = img.convert(ChannelLayout::Rgb, SampleType::U16);
-    let bytes = encode(&img16, Format::Tiff, &EncodeOptions { tiff_compression: TiffCompression::Deflate, ..Default::default() }).unwrap();
+    let bytes = encode(
+        &img16,
+        Format::Tiff,
+        &EncodeOptions {
+            tiff_compression: TiffCompression::Deflate,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     time("RGB 16 strips, Deflate + predictor", &bytes);
-    let bytes = encode(&img16, Format::Tiff, &EncodeOptions { tiff_compression: TiffCompression::None, ..Default::default() }).unwrap();
+    let bytes = encode(
+        &img16,
+        Format::Tiff,
+        &EncodeOptions {
+            tiff_compression: TiffCompression::None,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     time("RGB 16 strips, none", &bytes);
 
     // Hand-built layouts the encoder does not write: one big strip, tiles, planar.
@@ -95,13 +128,27 @@ fn decode_30mp() {
     let one = build(le, false, &[strips(W, H, 8, 3, 2, H, &rgb)], &[0]);
     time("RGB 8 one strip, none", &one.bytes);
     let tiles = tile_split(&rgb, W as usize, H as usize, 3, 1, 256, 256, false);
-    let mut d = Dir { entries: base(W, H, 8, 3, 2), chunks: tiles, tiled: true };
+    let mut d = Dir {
+        entries: base(W, H, 8, 3, 2),
+        chunks: tiles,
+        tiled: true,
+    };
     d = d.tag(322, LONG, &[256]).tag(323, LONG, &[256]);
     time("RGB 8 tiles 256, none", &build(le, false, &[d], &[0]).bytes);
     let planes = planar_strips(&rgb, W as usize, H as usize, 3, 1, 64);
-    let mut d = Dir { entries: base(W, H, 8, 3, 2), chunks: planes, tiled: false };
+    let mut d = Dir {
+        entries: base(W, H, 8, 3, 2),
+        chunks: planes,
+        tiled: false,
+    };
     d = d.tag(278, LONG, &[64]).tag(284, SHORT, &[2]);
-    time("RGB 8 planar strips, none", &build(le, false, &[d], &[0]).bytes);
+    time(
+        "RGB 8 planar strips, none",
+        &build(le, false, &[d], &[0]).bytes,
+    );
     let d = strips(W, H, 8, 3, 2, 64, &rgb);
-    time("RGB 8 BigTIFF strips, none", &build(le, true, &[d], &[0]).bytes);
+    time(
+        "RGB 8 BigTIFF strips, none",
+        &build(le, true, &[d], &[0]).bytes,
+    );
 }

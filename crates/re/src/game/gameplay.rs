@@ -50,11 +50,13 @@ impl Py {
 
     fn json(&self) -> Value {
         match self {
-            Self::Int(value) => {
-                i64::try_from(*value).map(Value::from).unwrap_or_else(|_| Value::from(*value as u64))
-            },
+            Self::Int(value) => i64::try_from(*value)
+                .map(Value::from)
+                .unwrap_or_else(|_| Value::from(*value as u64)),
             // Python writes NaN/Infinity tokens; JSON has no such literal, so they become null.
-            Self::Float(value) => serde_json::Number::from_f64(*value).map_or(Value::Null, Value::Number),
+            Self::Float(value) => {
+                serde_json::Number::from_f64(*value).map_or(Value::Null, Value::Number)
+            }
             Self::Bytes(bytes) => Value::String(hex::encode(bytes)),
         }
     }
@@ -69,17 +71,28 @@ struct Record {
 
 impl Record {
     fn get(&self, name: &str) -> &Py {
-        let index = self.fields.iter().position(|field| *field == name).expect("known field");
+        let index = self
+            .fields
+            .iter()
+            .position(|field| *field == name)
+            .expect("known field");
         &self.values[index]
     }
 
     fn zero(fields: &'static [&'static str]) -> Self {
-        Self { fields, values: vec![Py::Int(0); fields.len()] }
+        Self {
+            fields,
+            values: vec![Py::Int(0); fields.len()],
+        }
     }
 
     fn json(&self) -> Value {
         Value::Object(
-            self.fields.iter().zip(&self.values).map(|(name, value)| ((*name).to_owned(), value.json())).collect(),
+            self.fields
+                .iter()
+                .zip(&self.values)
+                .map(|(name, value)| ((*name).to_owned(), value.json()))
+                .collect(),
         )
     }
 }
@@ -93,7 +106,11 @@ struct File<'a> {
 
 impl<'a> File<'a> {
     fn new(data: &'a [u8]) -> Self {
-        Self { data, position: 0, big_endian: false }
+        Self {
+            data,
+            position: 0,
+            big_endian: false,
+        }
     }
 
     fn seek(&mut self, position: i128) -> Load<()> {
@@ -146,7 +163,8 @@ impl<'a> File<'a> {
             return Err(error("unterminated name at end of file"));
         };
         self.position = start + length + 1;
-        String::from_utf8(self.data[start..start + length].to_vec()).map_err(|_| error("invalid UTF-8 name"))
+        String::from_utf8(self.data[start..start + length].to_vec())
+            .map_err(|_| error("invalid UTF-8 name"))
     }
 }
 
@@ -212,17 +230,29 @@ fn unpack(format: &str, bytes: &[u8], big_endian: bool) -> Vec<Py> {
                 'x' => {
                     cursor += 1;
                     continue;
-                },
+                }
                 'b' => Py::Int(i128::from(take(&mut cursor, 1)[0] as i8)),
                 'B' | 'c' | '?' => Py::Int(i128::from(take(&mut cursor, 1)[0])),
-                'h' => Py::Int(i128::from(i16::from_le_bytes(take(&mut cursor, 2)[..2].try_into().unwrap()))),
-                'H' => Py::Int(i128::from(u16::from_le_bytes(take(&mut cursor, 2)[..2].try_into().unwrap()))),
-                'i' | 'l' => Py::Int(i128::from(i32::from_le_bytes(take(&mut cursor, 4)[..4].try_into().unwrap()))),
-                'I' | 'L' => Py::Int(i128::from(u32::from_le_bytes(take(&mut cursor, 4)[..4].try_into().unwrap()))),
+                'h' => Py::Int(i128::from(i16::from_le_bytes(
+                    take(&mut cursor, 2)[..2].try_into().unwrap(),
+                ))),
+                'H' => Py::Int(i128::from(u16::from_le_bytes(
+                    take(&mut cursor, 2)[..2].try_into().unwrap(),
+                ))),
+                'i' | 'l' => Py::Int(i128::from(i32::from_le_bytes(
+                    take(&mut cursor, 4)[..4].try_into().unwrap(),
+                ))),
+                'I' | 'L' => Py::Int(i128::from(u32::from_le_bytes(
+                    take(&mut cursor, 4)[..4].try_into().unwrap(),
+                ))),
                 'q' => Py::Int(i128::from(i64::from_le_bytes(take(&mut cursor, 8)))),
                 'Q' => Py::Int(i128::from(u64::from_le_bytes(take(&mut cursor, 8)))),
-                'e' => Py::Float(half_to_f64(u16::from_le_bytes(take(&mut cursor, 2)[..2].try_into().unwrap()))),
-                'f' => Py::Float(f64::from(f32::from_le_bytes(take(&mut cursor, 4)[..4].try_into().unwrap()))),
+                'e' => Py::Float(half_to_f64(u16::from_le_bytes(
+                    take(&mut cursor, 2)[..2].try_into().unwrap(),
+                ))),
+                'f' => Py::Float(f64::from(f32::from_le_bytes(
+                    take(&mut cursor, 4)[..4].try_into().unwrap(),
+                ))),
                 'd' => Py::Float(f64::from_le_bytes(take(&mut cursor, 8))),
                 other => panic!("unsupported struct code {other}"),
             };
@@ -247,13 +277,20 @@ fn half_to_f64(bits: u16) -> f64 {
 /// Python `bytes.decode()` (strict UTF-8).
 fn decode(value: &Py) -> Load<String> {
     match value {
-        Py::Bytes(bytes) => String::from_utf8(bytes.clone()).map_err(|_| error("invalid UTF-8 field")),
+        Py::Bytes(bytes) => {
+            String::from_utf8(bytes.clone()).map_err(|_| error("invalid UTF-8 field"))
+        }
         other => Ok(other.int().to_string()),
     }
 }
 
 fn top(entries: Vec<(&str, Value)>) -> Value {
-    Value::Object(entries.into_iter().map(|(key, value)| (key.to_owned(), value)).collect::<Map<_, _>>())
+    Value::Object(
+        entries
+            .into_iter()
+            .map(|(key, value)| (key.to_owned(), value))
+            .collect::<Map<_, _>>(),
+    )
 }
 
 fn endian_of(file: &mut File<'_>) -> &'static str {
@@ -265,7 +302,12 @@ fn endian_of(file: &mut File<'_>) -> &'static str {
 
 // ----------------------------------------------------------------------------------- EMM ----
 
-const EMM_HEADER: &[&str] = &["endianess_check", "u_06", "num_entries", "material_base_address"];
+const EMM_HEADER: &[&str] = &[
+    "endianess_check",
+    "u_06",
+    "num_entries",
+    "material_base_address",
+];
 const EMM_MATERIAL: &[&str] = &["name", "shader_name", "param_count", "u_42"];
 
 fn emm(data: &[u8], filename: &str) -> Load<Loaded> {
@@ -284,8 +326,12 @@ fn emm(data: &[u8], filename: &str) -> Load<Loaded> {
     for offset in offsets {
         file.seek(base + offset)?;
         let material = file.record(EMM_MATERIAL, "32s32sHH")?;
-        let name = decode(material.get("name"))?.trim_end_matches('\0').to_owned();
-        let shader = decode(material.get("shader_name"))?.trim_end_matches('\0').to_owned();
+        let name = decode(material.get("name"))?
+            .trim_end_matches('\0')
+            .to_owned();
+        let shader = decode(material.get("shader_name"))?
+            .trim_end_matches('\0')
+            .to_owned();
         for _ in 0..material.get("param_count").int() {
             let parameter = file.unpack("32sIf")?;
             decode(&parameter[0])?;
@@ -414,7 +460,7 @@ fn ean(data: &[u8]) -> Load<Loaded> {
                     match index_size {
                         0 => drop(file.unpack("B")?),
                         1 => drop(file.unpack("H")?),
-                        _ => {},
+                        _ => {}
                     }
                 }
                 file.seek(keyframed_base + keyframed[2].int())?;
@@ -440,10 +486,19 @@ const BDM_TYPE1: &str = "HHHHfhhhhhHhhhHffHHHHHHffffHHfHHHHHHHHHHHhHhhH";
 /// `to_serial` of the pyxenoverse `Type0`/`Type1` sub-entry classes, as written by dbxv2.
 fn bdm_type_json(type1: bool) -> Value {
     let record = if type1 { "BDMType1" } else { "BDMType0" };
-    let fields: &[&str] = if type1 { BDM_TYPE1_FIELDS } else { BDM_TYPE0_FIELDS };
+    let fields: &[&str] = if type1 {
+        BDM_TYPE1_FIELDS
+    } else {
+        BDM_TYPE0_FIELDS
+    };
     let descriptors: Map<String, Value> = fields
         .iter()
-        .map(|field| ((*field).to_owned(), Value::String(format!("<member '{field}' of '{record}' objects>"))))
+        .map(|field| {
+            (
+                (*field).to_owned(),
+                Value::String(format!("<member '{field}' of '{record}' objects>")),
+            )
+        })
         .collect();
     // `vars(Type0)` also holds the `convert_type1_to_type0` method, serialized as `{}`.
     if type1 {
@@ -459,32 +514,110 @@ fn bdm_type_json(type1: bool) -> Value {
 }
 
 const BDM_TYPE0_FIELDS: &[&str] = &[
-    "damage_type", "u_02", "damage_amount", "u_06", "f_08", "sound_type", "sound_id",
-    "effect_1_eepk_id", "effect_1_skill_id", "effect_1_skill_type", "u_16", "effect_2_eepk_id",
-    "effect_2_skill_id", "effect_2_skill_type", "u_1e", "effect_3_eepk_id", "effect_3_skill_id",
-    "effect_3_skill_type", "u_26", "pushback_speed", "pushback_acceleration_percent", "user_stun",
-    "victim_stun", "knockback_duration", "knockback_recovery_after_impact_time",
-    "knockback_ground_impact_time", "u_3a", "knockback_strength_x", "knockback_strength_y",
-    "knockback_strength_z", "knockback_drag_y", "u_4c", "knockback_gravity_time",
-    "victim_invincibility_time", "u_52", "transformation_type", "ailment_type", "u_58_1", "u_58_2",
-    "u_58_3", "damage_special", "u_60_1", "damage_special2", "stumble_type", "secondary_type",
-    "camera_shake_type", "camera_shake_time", "user_screen_flash_transparency",
-    "victim_screen_flash_transparency", "stamina_broken_bdm_id_override",
-    "time_before_z_vanish_enabled", "user_animation_time", "victim_animation_time",
-    "user_animation_speed", "victim_animation_speed",
+    "damage_type",
+    "u_02",
+    "damage_amount",
+    "u_06",
+    "f_08",
+    "sound_type",
+    "sound_id",
+    "effect_1_eepk_id",
+    "effect_1_skill_id",
+    "effect_1_skill_type",
+    "u_16",
+    "effect_2_eepk_id",
+    "effect_2_skill_id",
+    "effect_2_skill_type",
+    "u_1e",
+    "effect_3_eepk_id",
+    "effect_3_skill_id",
+    "effect_3_skill_type",
+    "u_26",
+    "pushback_speed",
+    "pushback_acceleration_percent",
+    "user_stun",
+    "victim_stun",
+    "knockback_duration",
+    "knockback_recovery_after_impact_time",
+    "knockback_ground_impact_time",
+    "u_3a",
+    "knockback_strength_x",
+    "knockback_strength_y",
+    "knockback_strength_z",
+    "knockback_drag_y",
+    "u_4c",
+    "knockback_gravity_time",
+    "victim_invincibility_time",
+    "u_52",
+    "transformation_type",
+    "ailment_type",
+    "u_58_1",
+    "u_58_2",
+    "u_58_3",
+    "damage_special",
+    "u_60_1",
+    "damage_special2",
+    "stumble_type",
+    "secondary_type",
+    "camera_shake_type",
+    "camera_shake_time",
+    "user_screen_flash_transparency",
+    "victim_screen_flash_transparency",
+    "stamina_broken_bdm_id_override",
+    "time_before_z_vanish_enabled",
+    "user_animation_time",
+    "victim_animation_time",
+    "user_animation_speed",
+    "victim_animation_speed",
 ];
 
 const BDM_TYPE1_FIELDS: &[&str] = &[
-    "damage_type", "u_02", "damage_amount", "u_06", "f_08", "sound_type", "sound_id",
-    "effect_1_eepk_id", "effect_1_skill_id", "effect_1_skill_type", "u_16", "effect_2_eepk_id",
-    "effect_2_skill_id", "effect_2_skill_type", "u_1e", "pushback_speed",
-    "pushback_acceleration_percent", "user_stun", "victim_stun", "knockback_duration",
-    "knockback_recovery_after_impact_time", "knockback_ground_impact_time", "u_32",
-    "knockback_strength_x", "knockback_strength_y", "knockback_strength_z", "knockback_drag_y",
-    "u_44", "knockback_gravity_time", "victim_invincibility_time", "u_4a", "transformation_type",
-    "ailment_type", "u_50_1", "u_50_2", "u_50_3", "damage_special", "u_58_1", "u_58_2",
-    "stumble_type", "secondary_type", "camera_shake_type", "camera_shake_time",
-    "user_screen_flash_transparency", "victim_screen_flash_transparency", "u_68",
+    "damage_type",
+    "u_02",
+    "damage_amount",
+    "u_06",
+    "f_08",
+    "sound_type",
+    "sound_id",
+    "effect_1_eepk_id",
+    "effect_1_skill_id",
+    "effect_1_skill_type",
+    "u_16",
+    "effect_2_eepk_id",
+    "effect_2_skill_id",
+    "effect_2_skill_type",
+    "u_1e",
+    "pushback_speed",
+    "pushback_acceleration_percent",
+    "user_stun",
+    "victim_stun",
+    "knockback_duration",
+    "knockback_recovery_after_impact_time",
+    "knockback_ground_impact_time",
+    "u_32",
+    "knockback_strength_x",
+    "knockback_strength_y",
+    "knockback_strength_z",
+    "knockback_drag_y",
+    "u_44",
+    "knockback_gravity_time",
+    "victim_invincibility_time",
+    "u_4a",
+    "transformation_type",
+    "ailment_type",
+    "u_50_1",
+    "u_50_2",
+    "u_50_3",
+    "damage_special",
+    "u_58_1",
+    "u_58_2",
+    "stumble_type",
+    "secondary_type",
+    "camera_shake_type",
+    "camera_shake_time",
+    "user_screen_flash_transparency",
+    "victim_screen_flash_transparency",
+    "u_68",
 ];
 
 fn bdm(data: &[u8], filename: &str) -> Load<Loaded> {
@@ -525,13 +658,42 @@ fn bdm(data: &[u8], filename: &str) -> Load<Loaded> {
 
 const BCM_HEADER: &[&str] = &["endianess_check", "u_06", "num_entries", "data_start"];
 const BCM_ENTRY: &[&str] = &[
-    "address", "u_00", "directional_input", "button_input", "hold_down_conditions",
-    "opponent_size_conditions", "minimum_loop_duration", "maximum_loop_duration",
-    "primary_activator_conditions", "activator_state", "bac_entry_primary", "bac_entry_charge",
-    "u_24", "bac_entry_user_connect", "bac_entry_victim_connect", "bac_entry_airborne",
-    "bac_entry_unknown", "random_flag", "sibling", "child", "parent", "root", "ki_cost", "u_44",
-    "u_48", "receiver_link_id", "u_50", "stamina_cost", "u_58", "ki_required", "health_required",
-    "trans_stage", "cus_aura", "u_68", "u_6a", "u_6c",
+    "address",
+    "u_00",
+    "directional_input",
+    "button_input",
+    "hold_down_conditions",
+    "opponent_size_conditions",
+    "minimum_loop_duration",
+    "maximum_loop_duration",
+    "primary_activator_conditions",
+    "activator_state",
+    "bac_entry_primary",
+    "bac_entry_charge",
+    "u_24",
+    "bac_entry_user_connect",
+    "bac_entry_victim_connect",
+    "bac_entry_airborne",
+    "bac_entry_unknown",
+    "random_flag",
+    "sibling",
+    "child",
+    "parent",
+    "root",
+    "ki_cost",
+    "u_44",
+    "u_48",
+    "receiver_link_id",
+    "u_50",
+    "stamina_cost",
+    "u_58",
+    "ki_required",
+    "health_required",
+    "trans_stage",
+    "cus_aura",
+    "u_68",
+    "u_6a",
+    "u_6c",
 ];
 
 fn bcm(data: &[u8], filename: &str) -> Load<Loaded> {
@@ -548,7 +710,13 @@ fn bcm(data: &[u8], filename: &str) -> Load<Loaded> {
         let address = if index == 0 { 0 } else { file.tell() as i128 };
         let mut values = vec![Py::Int(address)];
         values.extend(file.unpack("IIIIIhhIIHHHHHHHHIIIIIIIIIIIIfhhHHI")?);
-        entries.push(Record { fields: BCM_ENTRY, values }.json());
+        entries.push(
+            Record {
+                fields: BCM_ENTRY,
+                values,
+            }
+            .json(),
+        );
     }
     Ok(Loaded::Json(top(vec![
         ("header", header.json()),
@@ -560,11 +728,35 @@ fn bcm(data: &[u8], filename: &str) -> Load<Loaded> {
 
 // ----------------------------------------------------------------------------------- BSA ----
 
-const BSA_HEADER: &[&str] = &["endianess_check", "header_size", "i_08", "i_12", "i_16", "num_entries", "data_start"];
+const BSA_HEADER: &[&str] = &[
+    "endianess_check",
+    "header_size",
+    "i_08",
+    "i_12",
+    "i_16",
+    "num_entries",
+    "data_start",
+];
 const BSA_ENTRY: &[&str] = &[
-    "i_00", "collision_count", "expiration_count", "collision_offset", "expiration_offset",
-    "impact_properties", "i_17", "i_18", "lifetime", "i_24", "expires", "impact_projectile",
-    "impact_enemy", "impact_ground", "sub_entry_count", "sub_entry_offset", "i_40", "i_44", "i_48",
+    "i_00",
+    "collision_count",
+    "expiration_count",
+    "collision_offset",
+    "expiration_offset",
+    "impact_properties",
+    "i_17",
+    "i_18",
+    "lifetime",
+    "i_24",
+    "expires",
+    "impact_projectile",
+    "impact_enemy",
+    "impact_ground",
+    "sub_entry_count",
+    "sub_entry_offset",
+    "i_40",
+    "i_44",
+    "i_48",
 ];
 
 /// BSA item sizes per sub-entry type; `None` marks the `Collision`/`Expiration` classes, whose
@@ -592,7 +784,9 @@ fn bsa(data: &[u8], filename: &str) -> Load<Loaded> {
     let endian = endian_of(&mut file);
     file.seek(4)?;
     let header = file.record(BSA_HEADER, "HHIIHHI")?;
-    let offsets: Vec<i128> = (0..header.get("num_entries").int()).map(|_| file.u32()).collect::<Load<_>>()?;
+    let offsets: Vec<i128> = (0..header.get("num_entries").int())
+        .map(|_| file.u32())
+        .collect::<Load<_>>()?;
     let mut entries = Vec::new();
     for offset in offsets.into_iter().filter(|offset| *offset != 0) {
         file.seek(offset)?;
@@ -614,7 +808,8 @@ fn bsa(data: &[u8], filename: &str) -> Load<Loaded> {
         }
         for (position, sub_entry) in sub_entries {
             let kind = sub_entry[0].int();
-            let size = bsa_item_size(kind).ok_or_else(|| error(format!("unknown BSA item type {kind}")))?;
+            let size = bsa_item_size(kind)
+                .ok_or_else(|| error(format!("unknown BSA item type {kind}")))?;
             let count = sub_entry[3].int();
             if count == 0 {
                 continue;
@@ -646,11 +841,38 @@ fn bsa(data: &[u8], filename: &str) -> Load<Loaded> {
 // ----------------------------------------------------------------------------------- BAC ----
 
 const BAC_HEADER: &[&str] = &[
-    "endianess_check", "u_06", "num_entries", "u_0c", "data_start", "u_14", "u_18", "u_1c",
-    "f_20", "f_24", "f_28", "f_2c", "f_30", "f_34", "f_38", "f_3c", "f_40", "f_44", "f_48",
-    "f_4c", "u_50", "u_54", "u_58", "u_5c",
+    "endianess_check",
+    "u_06",
+    "num_entries",
+    "u_0c",
+    "data_start",
+    "u_14",
+    "u_18",
+    "u_1c",
+    "f_20",
+    "f_24",
+    "f_28",
+    "f_2c",
+    "f_30",
+    "f_34",
+    "f_38",
+    "f_3c",
+    "f_40",
+    "f_44",
+    "f_48",
+    "f_4c",
+    "u_50",
+    "u_54",
+    "u_58",
+    "u_5c",
 ];
-const BAC_ENTRY: &[&str] = &["flags", "num_sub_entries", "unk_06", "sub_entry_offset", "unk_0C"];
+const BAC_ENTRY: &[&str] = &[
+    "flags",
+    "num_sub_entries",
+    "unk_06",
+    "sub_entry_offset",
+    "unk_0C",
+];
 
 /// BAC item sizes per sub-entry type (type 17 grows by 12 bytes unless the file uses the small form).
 fn bac_item_size(kind: i128, type17_small: bool) -> Option<usize> {
@@ -668,7 +890,7 @@ fn bac_item_size(kind: i128, type17_small: bool) -> Option<usize> {
             } else {
                 32
             }
-        },
+        }
         24 => 56,
         26 => 80,
         27 => 24,
@@ -695,7 +917,10 @@ fn bac(data: &[u8], filename: &str) -> Load<Loaded> {
         .map(|entry| entry.get("sub_entry_offset").int())
         .find(|offset| *offset != 0)
         .ok_or_else(|| error("BAC has no sub-entry table (IndexError)"))?;
-    let total: i128 = entries.iter().map(|entry| entry.get("num_sub_entries").int()).sum();
+    let total: i128 = entries
+        .iter()
+        .map(|entry| entry.get("num_sub_entries").int())
+        .sum();
     let mut type17_small = false;
     let mut owner = 0usize;
     let mut filled = vec![0i128; entries.len()];
@@ -726,7 +951,9 @@ fn bac(data: &[u8], filename: &str) -> Load<Loaded> {
                 return Err(error("short BAC throw displacement"));
             }
         }
-        while filled.get(owner).ok_or_else(|| error("BAC sub-entry owner overflow (IndexError)"))?
+        while filled
+            .get(owner)
+            .ok_or_else(|| error("BAC sub-entry owner overflow (IndexError)"))?
             >= &entries[owner].get("num_sub_entries").int()
         {
             owner += 1;
@@ -739,7 +966,10 @@ fn bac(data: &[u8], filename: &str) -> Load<Loaded> {
     Ok(Loaded::Json(top(vec![
         ("header", header.json()),
         ("endian", Value::from(endian)),
-        ("entries", Value::Array(entries.iter().map(Record::json).collect())),
+        (
+            "entries",
+            Value::Array(entries.iter().map(Record::json).collect()),
+        ),
         ("has_comments", Value::Bool(false)),
         ("filename", Value::from(filename)),
     ])))
@@ -748,22 +978,64 @@ fn bac(data: &[u8], filename: &str) -> Load<Loaded> {
 // ----------------------------------------------------------------------------------- BCS ----
 
 const BCS_HEADER: &[&str] = &[
-    "endianess_check", "header_size", "u_08", "num_part_sets", "num_part_colors", "num_bodies",
-    "num_additional_skeletons", "u_14", "part_sets_table_offset", "part_colors_table_offset",
-    "bodies_table_offset", "additional_skeleton_table_offset", "skeleton_table_offset", "race",
-    "gender", "u_2e", "f_30", "f_34", "f_38", "f_3c", "f_40", "f_44", "f_48",
+    "endianess_check",
+    "header_size",
+    "u_08",
+    "num_part_sets",
+    "num_part_colors",
+    "num_bodies",
+    "num_additional_skeletons",
+    "u_14",
+    "part_sets_table_offset",
+    "part_colors_table_offset",
+    "bodies_table_offset",
+    "additional_skeleton_table_offset",
+    "skeleton_table_offset",
+    "race",
+    "gender",
+    "u_2e",
+    "f_30",
+    "f_34",
+    "f_38",
+    "f_3c",
+    "f_40",
+    "f_44",
+    "f_48",
 ];
 const BCS_PART_SET: &[&str] = &[
-    "u_00", "u_04", "u_08", "u_0c", "u_10", "num_parts", "table_start", "u_1c", "face_base_offset",
-    "face_forehead_offset", "eye_base_offset", "nose_offset", "ear_offset", "hair_offset",
-    "bust_offset", "pants_offset", "wrists_offset", "boots_offset",
+    "u_00",
+    "u_04",
+    "u_08",
+    "u_0c",
+    "u_10",
+    "num_parts",
+    "table_start",
+    "u_1c",
+    "face_base_offset",
+    "face_forehead_offset",
+    "eye_base_offset",
+    "nose_offset",
+    "ear_offset",
+    "hair_offset",
+    "bust_offset",
+    "pants_offset",
+    "wrists_offset",
+    "boots_offset",
 ];
 const BCS_PART_COLOR: &[&str] = &["name_offset", "u_04", "u_08", "num", "colors_offset"];
 const BCS_BODY: &[&str] = &["u_00", "num", "bone_scale_offset"];
 const BCS_SKELETON: &[&str] = &["u_00", "num", "bones_offset"];
 const BCS_PARTS: [&str; 10] = [
-    "face_base_offset", "face_forehead_offset", "eye_base_offset", "nose_offset", "ear_offset",
-    "hair_offset", "bust_offset", "pants_offset", "wrists_offset", "boots_offset",
+    "face_base_offset",
+    "face_forehead_offset",
+    "eye_base_offset",
+    "nose_offset",
+    "ear_offset",
+    "hair_offset",
+    "bust_offset",
+    "pants_offset",
+    "wrists_offset",
+    "boots_offset",
 ];
 
 fn bcs_names(file: &mut File<'_>, address: i128, offsets: &[i128]) -> Load<()> {
@@ -777,7 +1049,16 @@ fn bcs_part(file: &mut File<'_>) -> Load<()> {
     let address = file.tell() as i128;
     let part = file.unpack("HHHHQHHIIIIffII4sIIIIHHIHHI")?;
     decode(&part[15])?;
-    bcs_names(file, address, &[part[16].int(), part[17].int(), part[18].int(), part[19].int()])?;
+    bcs_names(
+        file,
+        address,
+        &[
+            part[16].int(),
+            part[17].int(),
+            part[18].int(),
+            part[19].int(),
+        ],
+    )?;
     for index in 0..part[6].int() {
         file.seek(address + part[7].int() + index * 4)?;
         file.unpack("HH")?;
@@ -927,7 +1208,10 @@ fn bcs(data: &[u8], filename: &str) -> Load<Loaded> {
     if header.get("additional_skeleton_table_offset").int() != 0 {
         for _ in 0..header.get("num_additional_skeletons").int() {
             // pyxenoverse re-reads the first table slot for every additional skeleton.
-            match read_skeleton(&mut file, header.get("additional_skeleton_table_offset").int())? {
+            match read_skeleton(
+                &mut file,
+                header.get("additional_skeleton_table_offset").int(),
+            )? {
                 Some(skeleton) => skeletons.push(skeleton),
                 None => skeletons.push(Record::zero(BCS_SKELETON).json()),
             }

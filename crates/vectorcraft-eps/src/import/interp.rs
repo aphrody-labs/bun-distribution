@@ -116,18 +116,33 @@ impl<'a> Interp<'a> {
             d.insert(Key::name("languagelevel"), Obj::Int(3));
         }
         // Each category's implementation dictionary (`/Generic /Category findresource`).
-        let categories: Dict =
-            CATEGORIES.split_whitespace().map(|c| (Key::name(c), Obj::dict(Dict::from([(Key::name("Category"), Obj::name(c))])))).collect();
+        let categories: Dict = CATEGORIES
+            .split_whitespace()
+            .map(|c| {
+                (
+                    Key::name(c),
+                    Obj::dict(Dict::from([(Key::name("Category"), Obj::name(c))])),
+                )
+            })
+            .collect();
         let resources = new_dict();
-        resources.borrow_mut().insert(Key::name("Category"), Obj::dict(categories));
+        resources
+            .borrow_mut()
+            .insert(Key::name("Category"), Obj::dict(categories));
         let fonts = new_dict();
-        system.borrow_mut().insert(Key::name("FontDirectory"), Obj::Dict(fonts.clone()));
+        system
+            .borrow_mut()
+            .insert(Key::name("FontDirectory"), Obj::Dict(fonts.clone()));
         for name in ["GlobalFontDirectory", "SharedFontDirectory"] {
-            system.borrow_mut().insert(Key::name(name), Obj::Dict(fonts.clone()));
+            system
+                .borrow_mut()
+                .insert(Key::name(name), Obj::Dict(fonts.clone()));
         }
         let (user, global, status, error) = (new_dict(), new_dict(), new_dict(), new_dict());
         // Errors don't reach the program's handler, but prologs wrap the one they find.
-        error.borrow_mut().insert(Key::name("handleerror"), Obj::proc(vec![]));
+        error
+            .borrow_mut()
+            .insert(Key::name("handleerror"), Obj::proc(vec![]));
         // The standard dictionaries are values in systemdict, so `get`, `load` and `where` find
         // them as dictionaries (`/globaldict where { /globaldict get begin } if`).
         for (name, d) in [
@@ -138,7 +153,9 @@ impl<'a> Interp<'a> {
             ("errordict", &error),
             ("$error", &error),
         ] {
-            system.borrow_mut().insert(Key::name(name), Obj::Dict(d.clone()));
+            system
+                .borrow_mut()
+                .insert(Key::name(name), Obj::Dict(d.clone()));
         }
         Self {
             lex: Lexer::new(src),
@@ -170,7 +187,9 @@ impl<'a> Interp<'a> {
     /// Run the program to its end, its first `showpage` or `quit`.
     pub fn run(&mut self) -> Res {
         loop {
-            let Some(o) = self.lex.next()? else { return Ok(()) };
+            let Some(o) = self.lex.next()? else {
+                return Ok(());
+            };
             let o = self.scanned(o, self.lex.immediate)?;
             // A group begins before its `u` runs (`Some(true)`) and ends after its `U`
             // has (`Some(false)`).
@@ -198,7 +217,16 @@ impl<'a> Interp<'a> {
     /// Empty the standard dictionaries, so the memory they hold is freed with the interpreter:
     /// systemdict holds itself, and programs link dictionaries into each other.
     pub fn release(&mut self) {
-        for d in [&self.system, &self.user, &self.global, &self.status, &self.error, &self.internal, &self.fonts, &self.resources] {
+        for d in [
+            &self.system,
+            &self.user,
+            &self.global,
+            &self.status,
+            &self.error,
+            &self.internal,
+            &self.fonts,
+            &self.resources,
+        ] {
             if let Ok(mut d) = d.try_borrow_mut() {
                 d.clear();
             }
@@ -219,11 +247,17 @@ impl<'a> Interp<'a> {
     }
 
     pub fn push_num(&mut self, v: f64) -> Res {
-        self.push(if v.is_finite() { Obj::Real(v) } else { Obj::Real(0.0) })
+        self.push(if v.is_finite() {
+            Obj::Real(v)
+        } else {
+            Obj::Real(0.0)
+        })
     }
 
     pub fn pop(&mut self) -> Res<Obj> {
-        self.stack.pop().ok_or(PsError::Ps("stackunderflow", String::new()))
+        self.stack
+            .pop()
+            .ok_or(PsError::Ps("stackunderflow", String::new()))
     }
 
     pub fn pop_num(&mut self) -> Res<f64> {
@@ -312,7 +346,10 @@ impl<'a> Interp<'a> {
 
     /// The value of any key (`load` takes numbers too) on the dictionary stack.
     fn lookup_key(&self, key: &Key) -> Option<Obj> {
-        self.dicts.iter().rev().find_map(|d| d.borrow().get(key).cloned())
+        self.dicts
+            .iter()
+            .rev()
+            .find_map(|d| d.borrow().get(key).cloned())
     }
 
     /// Count `bytes` the program makes against [`MAX_MEMORY`].
@@ -412,7 +449,10 @@ impl<'a> Interp<'a> {
         let r = loop {
             match lex.next() {
                 Ok(Some(o)) => {
-                    if let Err(e) = self.scanned(o, lex.immediate).and_then(|o| self.exec_token(o)) {
+                    if let Err(e) = self
+                        .scanned(o, lex.immediate)
+                        .and_then(|o| self.exec_token(o))
+                    {
                         break Err(e);
                     }
                 }
@@ -434,12 +474,15 @@ impl<'a> Interp<'a> {
         match o {
             Obj::Exec(n) if n.starts_with(IMMEDIATE) => {
                 let name = n.get(IMMEDIATE.len()..).unwrap_or_default();
-                self.lookup(&Rc::from(name)).ok_or_else(|| PsError::Ps("undefined", name.to_string()))
+                self.lookup(&Rc::from(name))
+                    .ok_or_else(|| PsError::Ps("undefined", name.to_string()))
             }
             Obj::Array { items, exec: true } if depth < MAX_DEPTH as usize => {
                 for i in 0..items.len() {
                     let Some(item) = items.get(i) else { break };
-                    if matches!(&item, Obj::Exec(n) if n.starts_with(IMMEDIATE)) || matches!(&item, Obj::Array { exec: true, .. }) {
+                    if matches!(&item, Obj::Exec(n) if n.starts_with(IMMEDIATE))
+                        || matches!(&item, Obj::Array { exec: true, .. })
+                    {
                         // A procedure the scanner just made: nothing else reads it.
                         items.write(i, &[self.resolve(item, depth + 1)?]);
                     }
@@ -484,8 +527,18 @@ impl<'a> Interp<'a> {
         self.op_inner(op).map_err(|e| match e {
             PsError::Ps(name, at) => {
                 // The innermost operator raised it (`exec` running a procedure doesn't).
-                self.fault.get_or_insert(Fault { op: Some(op.name()), procs: vec![] });
-                PsError::Ps(name, if at.is_empty() { op.name().to_string() } else { at })
+                self.fault.get_or_insert(Fault {
+                    op: Some(op.name()),
+                    procs: vec![],
+                });
+                PsError::Ps(
+                    name,
+                    if at.is_empty() {
+                        op.name().to_string()
+                    } else {
+                        at
+                    },
+                )
             }
             e => e,
         })
@@ -503,20 +556,36 @@ impl<'a> Interp<'a> {
                 self.push(a)?;
             }
             Dup => {
-                let a = self.stack.last().cloned().ok_or(PsError::Ps("stackunderflow", String::new()))?;
+                let a = self
+                    .stack
+                    .last()
+                    .cloned()
+                    .ok_or(PsError::Ps("stackunderflow", String::new()))?;
                 self.push(a)?;
             }
             Copy => self.copy()?,
             Index => {
                 let n = self.pop_count()?;
-                let at = self.stack.len().checked_sub(n + 1).ok_or(PsError::Ps("rangecheck", String::new()))?;
-                let o = self.stack.get(at).cloned().ok_or(PsError::Ps("rangecheck", String::new()))?;
+                let at = self
+                    .stack
+                    .len()
+                    .checked_sub(n + 1)
+                    .ok_or(PsError::Ps("rangecheck", String::new()))?;
+                let o = self
+                    .stack
+                    .get(at)
+                    .cloned()
+                    .ok_or(PsError::Ps("rangecheck", String::new()))?;
                 self.push(o)?;
             }
             Roll => {
                 let j = self.pop_int()?;
                 let n = self.pop_count()?;
-                let at = self.stack.len().checked_sub(n).ok_or(PsError::Ps("rangecheck", String::new()))?;
+                let at = self
+                    .stack
+                    .len()
+                    .checked_sub(n)
+                    .ok_or(PsError::Ps("rangecheck", String::new()))?;
                 if n > 0 {
                     let k = j.rem_euclid(n as i64) as usize;
                     if let Some(s) = self.stack.get_mut(at..) {
@@ -535,8 +604,13 @@ impl<'a> Interp<'a> {
                 let items = self.pop_to_mark()?;
                 let mut d = Dict::new();
                 for pair in items.chunks(2) {
-                    let [k, v] = pair else { return ps_err("rangecheck", ">>") };
-                    d.insert(k.key().ok_or(PsError::Ps("typecheck", ">>".into()))?, v.clone());
+                    let [k, v] = pair else {
+                        return ps_err("rangecheck", ">>");
+                    };
+                    d.insert(
+                        k.key().ok_or(PsError::Ps("typecheck", ">>".into()))?,
+                        v.clone(),
+                    );
                 }
                 self.push(Obj::dict(d))?;
             }
@@ -544,7 +618,12 @@ impl<'a> Interp<'a> {
                 self.pop_to_mark()?;
             }
             CountToMark => {
-                let n = self.stack.iter().rev().position(|o| matches!(o, Obj::Mark)).ok_or(PsError::Ps("unmatchedmark", String::new()))?;
+                let n = self
+                    .stack
+                    .iter()
+                    .rev()
+                    .position(|o| matches!(o, Obj::Mark))
+                    .ok_or(PsError::Ps("unmatchedmark", String::new()))?;
                 self.push(Obj::Int(n as i64))?;
             }
             Add | Sub | Mul => {
@@ -560,8 +639,10 @@ impl<'a> Interp<'a> {
                 let r = match r {
                     Some(r) => r,
                     None => {
-                        let (x, y) =
-                            (a.as_num().ok_or(PsError::Ps("typecheck", String::new()))?, b.as_num().ok_or(PsError::Ps("typecheck", String::new()))?);
+                        let (x, y) = (
+                            a.as_num().ok_or(PsError::Ps("typecheck", String::new()))?,
+                            b.as_num().ok_or(PsError::Ps("typecheck", String::new()))?,
+                        );
                         Obj::Real(match op {
                             Add => x + y,
                             Sub => x - y,
@@ -580,11 +661,21 @@ impl<'a> Interp<'a> {
             }
             Idiv | Mod => {
                 let (b, a) = (self.pop_int()?, self.pop_int()?);
-                let r = if op == Idiv { a.checked_div(b) } else { a.checked_rem(b) };
-                self.push(Obj::Int(r.ok_or(PsError::Ps("undefinedresult", String::new()))?))?;
+                let r = if op == Idiv {
+                    a.checked_div(b)
+                } else {
+                    a.checked_rem(b)
+                };
+                self.push(Obj::Int(
+                    r.ok_or(PsError::Ps("undefinedresult", String::new()))?,
+                ))?;
             }
             Neg | Abs => match self.pop()? {
-                Obj::Int(i) => self.push(Obj::Int(if op == Neg { i.saturating_neg() } else { i.saturating_abs() }))?,
+                Obj::Int(i) => self.push(Obj::Int(if op == Neg {
+                    i.saturating_neg()
+                } else {
+                    i.saturating_abs()
+                }))?,
                 Obj::Real(r) => self.push(Obj::Real(if op == Neg { -r } else { r.abs() }))?,
                 _ => return ps_err("typecheck", ""),
             },
@@ -621,7 +712,10 @@ impl<'a> Interp<'a> {
             },
             Cvi => {
                 let v = match self.pop()? {
-                    Obj::Str(s) => String::from_utf8_lossy(&s.borrow()).trim().parse::<f64>().map_err(|_| PsError::Ps("typecheck", String::new()))?,
+                    Obj::Str(s) => String::from_utf8_lossy(&s.borrow())
+                        .trim()
+                        .parse::<f64>()
+                        .map_err(|_| PsError::Ps("typecheck", String::new()))?,
                     o => o.as_num().ok_or(PsError::Ps("typecheck", String::new()))?,
                 };
                 if !(v.is_finite() && v.abs() < 9e15) {
@@ -631,7 +725,10 @@ impl<'a> Interp<'a> {
             }
             Cvr => {
                 let v = match self.pop()? {
-                    Obj::Str(s) => String::from_utf8_lossy(&s.borrow()).trim().parse::<f64>().map_err(|_| PsError::Ps("typecheck", String::new()))?,
+                    Obj::Str(s) => String::from_utf8_lossy(&s.borrow())
+                        .trim()
+                        .parse::<f64>()
+                        .map_err(|_| PsError::Ps("typecheck", String::new()))?,
                     o => o.as_num().ok_or(PsError::Ps("typecheck", String::new()))?,
                 };
                 self.push_num(v)?;
@@ -652,7 +749,10 @@ impl<'a> Interp<'a> {
                 let (b, a) = (self.pop()?, self.pop()?);
                 let ord = match (&a, &b) {
                     (Obj::Str(x), Obj::Str(y)) => x.borrow().partial_cmp(&*y.borrow()),
-                    _ => a.as_num().zip(b.as_num()).and_then(|(x, y)| x.partial_cmp(&y)),
+                    _ => a
+                        .as_num()
+                        .zip(b.as_num())
+                        .and_then(|(x, y)| x.partial_cmp(&y)),
                 }
                 .ok_or(PsError::Ps("typecheck", String::new()))?;
                 let r = match op {
@@ -687,7 +787,11 @@ impl<'a> Interp<'a> {
             },
             Bitshift => {
                 let (s, v) = (self.pop_int()?, self.pop_int()?);
-                let r = if s >= 0 { v.checked_shl(s.min(63) as u32) } else { v.checked_shr((-s).min(63) as u32) };
+                let r = if s >= 0 {
+                    v.checked_shl(s.min(63) as u32)
+                } else {
+                    v.checked_shr((-s).min(63) as u32)
+                };
                 self.push(Obj::Int(r.unwrap_or(0)))?;
             }
             True => self.push(Obj::Bool(true))?,
@@ -719,14 +823,20 @@ impl<'a> Interp<'a> {
                             if !self.body(&p)? {
                                 break;
                             }
-                            i = i.checked_add(d).ok_or(PsError::Ps("rangecheck", String::new()))?;
+                            i = i
+                                .checked_add(d)
+                                .ok_or(PsError::Ps("rangecheck", String::new()))?;
                             if d == 0 {
                                 self.tick()?;
                             }
                         }
                     }
                     _ => {
-                        let n = |o: &Obj| o.as_num().filter(|v| v.is_finite()).ok_or(PsError::Ps("typecheck", String::new()));
+                        let n = |o: &Obj| {
+                            o.as_num()
+                                .filter(|v| v.is_finite())
+                                .ok_or(PsError::Ps("typecheck", String::new()))
+                        };
                         let (i0, d, l) = (n(&init)?, n(&inc)?, n(&limit)?);
                         let mut k = 0.0;
                         loop {
@@ -794,7 +904,10 @@ impl<'a> Interp<'a> {
             Cvlit => {
                 let o = match self.pop()? {
                     Obj::Array { items, .. } => Obj::Array { items, exec: false },
-                    Obj::File { stream, .. } => Obj::File { stream, exec: false },
+                    Obj::File { stream, .. } => Obj::File {
+                        stream,
+                        exec: false,
+                    },
                     Obj::ExecStr(s) => Obj::Str(s),
                     Obj::Exec(n) => Obj::Name(n),
                     o => o,
@@ -805,7 +918,11 @@ impl<'a> Interp<'a> {
                 let o = self.pop()?;
                 self.push(Obj::Bool(matches!(
                     o,
-                    Obj::Array { exec: true, .. } | Obj::File { exec: true, .. } | Obj::ExecStr(_) | Obj::Exec(_) | Obj::Op(_)
+                    Obj::Array { exec: true, .. }
+                        | Obj::File { exec: true, .. }
+                        | Obj::ExecStr(_)
+                        | Obj::Exec(_)
+                        | Obj::Op(_)
                 )))?;
             }
             Cvn => {
@@ -847,7 +964,11 @@ impl<'a> Interp<'a> {
             }
             PackedArray => {
                 let n = self.pop_count()?;
-                let at = self.stack.len().checked_sub(n).ok_or(PsError::Ps("stackunderflow", String::new()))?;
+                let at = self
+                    .stack
+                    .len()
+                    .checked_sub(n)
+                    .ok_or(PsError::Ps("stackunderflow", String::new()))?;
                 let items = self.stack.split_off(at);
                 self.push(Obj::array(items))?;
             }
@@ -874,8 +995,13 @@ impl<'a> Interp<'a> {
             Get => {
                 let k = self.pop()?;
                 let o = match self.pop()? {
-                    Obj::Array { items, .. } => items.get(index(&k)?).ok_or(PsError::Ps("rangecheck", String::new()))?,
-                    Obj::Str(s) | Obj::ExecStr(s) => Obj::Int(i64::from(s.get(index(&k)?).ok_or(PsError::Ps("rangecheck", String::new()))?)),
+                    Obj::Array { items, .. } => items
+                        .get(index(&k)?)
+                        .ok_or(PsError::Ps("rangecheck", String::new()))?,
+                    Obj::Str(s) | Obj::ExecStr(s) => Obj::Int(i64::from(
+                        s.get(index(&k)?)
+                            .ok_or(PsError::Ps("rangecheck", String::new()))?,
+                    )),
                     Obj::Dict(d) => {
                         let key = k.key().ok_or(PsError::Ps("typecheck", String::new()))?;
                         let v = d.borrow().get(&key).cloned();
@@ -914,7 +1040,9 @@ impl<'a> Interp<'a> {
                 let src = self.pop()?;
                 let at = self.pop_count()?;
                 let written = match (self.pop()?, src) {
-                    (Obj::Array { items, .. }, Obj::Array { items: from, .. }) => items.write(at, &from.to_vec()),
+                    (Obj::Array { items, .. }, Obj::Array { items: from, .. }) => {
+                        items.write(at, &from.to_vec())
+                    }
                     (Obj::Str(s), Obj::Str(from)) => s.write(at, &from.to_vec()),
                     _ => return ps_err("typecheck", ""),
                 };
@@ -931,7 +1059,11 @@ impl<'a> Interp<'a> {
             }
             Astore => {
                 let items = self.pop_array()?;
-                let at = self.stack.len().checked_sub(items.len()).ok_or(PsError::Ps("stackunderflow", String::new()))?;
+                let at = self
+                    .stack
+                    .len()
+                    .checked_sub(items.len())
+                    .ok_or(PsError::Ps("stackunderflow", String::new()))?;
                 if !items.write(0, self.stack.get(at..).unwrap_or_default()) {
                     return ps_err("rangecheck", "");
                 }
@@ -942,12 +1074,20 @@ impl<'a> Interp<'a> {
                 let seek = self.pop_str()?.to_vec();
                 let s = self.pop_str()?;
                 let text = s.to_vec();
-                let at = if op == Search { super::lex::find(&text, &seek) } else { text.starts_with(&seek).then_some(0) };
+                let at = if op == Search {
+                    super::lex::find(&text, &seek)
+                } else {
+                    text.starts_with(&seek).then_some(0)
+                };
                 match at {
                     Some(i) => {
                         let o = Obj::Str(s);
                         if op == Search {
-                            self.push_interval(o.clone(), i + seek.len(), text.len() - i - seek.len())?;
+                            self.push_interval(
+                                o.clone(),
+                                i + seek.len(),
+                                text.len() - i - seek.len(),
+                            )?;
                             self.push_interval(o.clone(), i, seek.len())?;
                             self.push_interval(o, 0, i)?;
                         } else {
@@ -982,32 +1122,62 @@ impl<'a> Interp<'a> {
             }
             Def => {
                 let v = self.pop()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", String::new()))?;
-                let d = self.dicts.last().cloned().ok_or(PsError::Ps("dictstackunderflow", String::new()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", String::new()))?;
+                let d = self
+                    .dicts
+                    .last()
+                    .cloned()
+                    .ok_or(PsError::Ps("dictstackunderflow", String::new()))?;
                 self.insert(&d, k, Some(v))?;
             }
             Load => {
                 let k = self.pop()?;
                 let key = k.key().ok_or(PsError::Ps("typecheck", String::new()))?;
-                let v = self.lookup_key(&key).ok_or_else(|| PsError::Ps("undefined", show_text(&k)))?;
+                let v = self
+                    .lookup_key(&key)
+                    .ok_or_else(|| PsError::Ps("undefined", show_text(&k)))?;
                 self.push(v)?;
             }
             Store => {
                 let v = self.pop()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", String::new()))?;
-                let d = self.dicts.iter().rev().find(|d| d.borrow().contains_key(&k)).or(self.dicts.last()).cloned();
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", String::new()))?;
+                let d = self
+                    .dicts
+                    .iter()
+                    .rev()
+                    .find(|d| d.borrow().contains_key(&k))
+                    .or(self.dicts.last())
+                    .cloned();
                 let d = d.ok_or(PsError::Ps("dictstackunderflow", String::new()))?;
                 self.insert(&d, k, Some(v))?;
             }
             Known => {
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", String::new()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", String::new()))?;
                 let d = self.pop_dict()?;
                 let known = d.borrow().contains_key(&k);
                 self.push(Obj::Bool(known))?;
             }
             Where => {
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", String::new()))?;
-                match self.dicts.iter().rev().find(|d| d.borrow().contains_key(&k)).cloned() {
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", String::new()))?;
+                match self
+                    .dicts
+                    .iter()
+                    .rev()
+                    .find(|d| d.borrow().contains_key(&k))
+                    .cloned()
+                {
                     Some(d) => {
                         self.push(Obj::Dict(d))?;
                         self.push(Obj::Bool(true))?;
@@ -1016,12 +1186,19 @@ impl<'a> Interp<'a> {
                 }
             }
             Undef => {
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", String::new()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", String::new()))?;
                 let d = self.pop_dict()?;
                 self.insert(&d, k, None)?;
             }
             CurrentDict => {
-                let d = self.dicts.last().cloned().ok_or(PsError::Ps("dictstackunderflow", String::new()))?;
+                let d = self
+                    .dicts
+                    .last()
+                    .cloned()
+                    .ok_or(PsError::Ps("dictstackunderflow", String::new()))?;
                 self.push(Obj::Dict(d))?;
             }
             CountDictStack => self.push(Obj::Int(self.dicts.len() as i64))?,
@@ -1029,8 +1206,14 @@ impl<'a> Interp<'a> {
                 // The dictionary stack, bottom first, stored into the array's start.
                 let items = self.pop_array()?;
                 let dicts: Vec<Obj> = self.dicts.iter().map(|d| Obj::Dict(d.clone())).collect();
-                let part = items.sub(0, dicts.len()).filter(|p| p.write(0, &dicts)).ok_or(PsError::Ps("rangecheck", String::new()))?;
-                self.push(Obj::Array { items: part, exec: false })?;
+                let part = items
+                    .sub(0, dicts.len())
+                    .filter(|p| p.write(0, &dicts))
+                    .ok_or(PsError::Ps("rangecheck", String::new()))?;
+                self.push(Obj::Array {
+                    items: part,
+                    exec: false,
+                })?;
             }
             SystemDict => self.push(Obj::Dict(self.system.clone()))?,
             UserDict => self.push(Obj::Dict(self.user.clone()))?,
@@ -1052,13 +1235,22 @@ impl<'a> Interp<'a> {
             Save => {
                 self.gsave()?;
                 self.push(Obj::Save(self.saves.len()))?;
-                self.saves.push(SaveMark { gstates: self.saved.len(), journal: self.journal.len() });
+                self.saves.push(SaveMark {
+                    gstates: self.saved.len(),
+                    journal: self.journal.len(),
+                });
             }
             Restore => {
-                let Obj::Save(i) = self.pop()? else { return ps_err("typecheck", "") };
+                let Obj::Save(i) = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
                 // A save restored already (or through an outer one) is no longer valid: §3.7.3,
                 // `invalidrestore`.
-                let mark = self.saves.get(i).copied().ok_or(PsError::Ps("invalidrestore", String::new()))?;
+                let mark = self
+                    .saves
+                    .get(i)
+                    .copied()
+                    .ok_or(PsError::Ps("invalidrestore", String::new()))?;
                 self.saves.truncate(i);
                 // The dictionaries as they were at the save, newest change undone first.
                 for (d, k, old) in self.journal.drain(mark.journal..).rev() {
@@ -1142,7 +1334,11 @@ impl<'a> Interp<'a> {
 
     /// The objects above the topmost mark, which is removed.
     fn pop_to_mark(&mut self) -> Res<Vec<Obj>> {
-        let at = self.stack.iter().rposition(|o| matches!(o, Obj::Mark)).ok_or(PsError::Ps("unmatchedmark", String::new()))?;
+        let at = self
+            .stack
+            .iter()
+            .rposition(|o| matches!(o, Obj::Mark))
+            .ok_or(PsError::Ps("unmatchedmark", String::new()))?;
         let items = self.stack.split_off(at + 1);
         self.stack.pop();
         Ok(items)
@@ -1153,7 +1349,11 @@ impl<'a> Interp<'a> {
         match self.pop()? {
             Obj::Int(n) => {
                 let n = usize::try_from(n).map_err(|_| PsError::Ps("rangecheck", String::new()))?;
-                let at = self.stack.len().checked_sub(n).ok_or(PsError::Ps("stackunderflow", String::new()))?;
+                let at = self
+                    .stack
+                    .len()
+                    .checked_sub(n)
+                    .ok_or(PsError::Ps("stackunderflow", String::new()))?;
                 self.alloc(n * std::mem::size_of::<Obj>())?;
                 let top: Vec<Obj> = self.stack.get(at..).unwrap_or_default().to_vec();
                 for o in top {
@@ -1190,7 +1390,10 @@ impl<'a> Interp<'a> {
     pub fn push_interval(&mut self, o: Obj, at: usize, n: usize) -> Res {
         let range = || PsError::Ps("rangecheck", String::new());
         let r = match o {
-            Obj::Array { items, exec } => Obj::Array { items: items.sub(at, n).ok_or_else(range)?, exec },
+            Obj::Array { items, exec } => Obj::Array {
+                items: items.sub(at, n).ok_or_else(range)?,
+                exec,
+            },
             Obj::Str(s) => Obj::Str(s.sub(at, n).ok_or_else(range)?),
             Obj::ExecStr(s) => Obj::ExecStr(s.sub(at, n).ok_or_else(range)?),
             _ => return ps_err("typecheck", "getinterval"),
@@ -1220,7 +1423,11 @@ impl<'a> Interp<'a> {
                 }
             }
             Obj::Dict(d) => {
-                let pairs: Vec<(Key, Obj)> = d.borrow().iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+                let pairs: Vec<(Key, Obj)> = d
+                    .borrow()
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
                 for (k, v) in pairs {
                     self.push(k.obj())?;
                     self.push(v)?;
@@ -1248,7 +1455,10 @@ impl<'a> Interp<'a> {
                         items.write(i, &[o]);
                     }
                 }
-                Some(Obj::Array { items: inner, exec: true }) if !inner.shares(items) => self.bind(&inner, depth + 1),
+                Some(Obj::Array {
+                    items: inner,
+                    exec: true,
+                }) if !inner.shares(items) => self.bind(&inner, depth + 1),
                 _ => {}
             }
         }
@@ -1278,9 +1488,15 @@ impl<'a> Interp<'a> {
 
     /// The resources of `category`.
     pub fn category(&mut self, category: &Obj) -> Res<DictRef> {
-        let k = category.key().ok_or(PsError::Ps("typecheck", String::new()))?;
+        let k = category
+            .key()
+            .ok_or(PsError::Ps("typecheck", String::new()))?;
         let mut all = self.resources.borrow_mut();
-        Ok(all.entry(k).or_insert_with(|| Obj::Dict(new_dict())).clone()).and_then(|o| match o {
+        Ok(all
+            .entry(k)
+            .or_insert_with(|| Obj::Dict(new_dict()))
+            .clone())
+        .and_then(|o| match o {
             Obj::Dict(d) => Ok(d),
             _ => ps_err("typecheck", ""),
         })
@@ -1288,7 +1504,11 @@ impl<'a> Interp<'a> {
 
     /// The instances of `category`: `FontDirectory` for fonts.
     pub fn instances(&mut self, category: &Obj) -> Res<DictRef> {
-        if category.text().as_deref() == Some("Font") { Ok(self.fonts.clone()) } else { self.category(category) }
+        if category.text().as_deref() == Some("Font") {
+            Ok(self.fonts.clone())
+        } else {
+            self.category(category)
+        }
     }
 
     /// `template proc scratch category resourceforall`: `proc` run on each instance name that
@@ -1298,7 +1518,12 @@ impl<'a> Interp<'a> {
         let scratch = self.pop_str()?;
         let p = self.pop_proc()?;
         let template = self.pop_str()?.to_vec();
-        let mut names: Vec<Vec<u8>> = self.instances(&category)?.borrow().keys().map(|k| show_text(&k.obj()).into_bytes()).collect();
+        let mut names: Vec<Vec<u8>> = self
+            .instances(&category)?
+            .borrow()
+            .keys()
+            .map(|k| show_text(&k.obj()).into_bytes())
+            .collect();
         names.sort();
         for name in names {
             if !self.matches(&template, &name)? {
@@ -1324,7 +1549,11 @@ impl<'a> Interp<'a> {
         loop {
             self.tick()?;
             if n == name.len() {
-                return Ok(template.get(t..).unwrap_or_default().iter().all(|b| *b == b'*'));
+                return Ok(template
+                    .get(t..)
+                    .unwrap_or_default()
+                    .iter()
+                    .all(|b| *b == b'*'));
             }
             let (want, width) = match template.get(t) {
                 Some(b'*') => {
@@ -1341,7 +1570,9 @@ impl<'a> Interp<'a> {
                 continue;
             }
             // The last `*` takes one more byte, else there is no match.
-            let Some((st, sn)) = star else { return Ok(false) };
+            let Some((st, sn)) = star else {
+                return Ok(false);
+            };
             star = Some((st, sn + 1));
             (t, n) = (st, sn + 1);
         }
@@ -1377,7 +1608,11 @@ fn show_text(o: &Obj) -> String {
         Obj::Int(i) => i.to_string(),
         Obj::Real(r) => {
             let s = format!("{r}");
-            if s.contains('.') || s.contains('e') { s } else { format!("{s}.0") }
+            if s.contains('.') || s.contains('e') {
+                s
+            } else {
+                format!("{s}.0")
+            }
         }
         Obj::Bool(b) => b.to_string(),
         Obj::Name(n) | Obj::Exec(n) => n.to_string(),
@@ -1395,7 +1630,11 @@ fn radix_text(v: i64, radix: u32) -> String {
     }
     let mut digits = vec![];
     while n > 0 {
-        digits.push(std::char::from_digit((n % u64::from(radix)) as u32, radix).unwrap_or('0').to_ascii_uppercase());
+        digits.push(
+            std::char::from_digit((n % u64::from(radix)) as u32, radix)
+                .unwrap_or('0')
+                .to_ascii_uppercase(),
+        );
         n /= u64::from(radix);
     }
     digits.iter().rev().collect()
@@ -1403,9 +1642,13 @@ fn radix_text(v: i64, radix: u32) -> String {
 
 /// A matrix from six numbers.
 pub(crate) fn matrix_of(items: &[Obj]) -> Option<Affine> {
-    let [a, b, c, d, e, f] = items else { return None };
+    let [a, b, c, d, e, f] = items else {
+        return None;
+    };
     let v = [a, b, c, d, e, f].map(|o| o.as_num().filter(|v| v.is_finite()));
-    let [Some(a), Some(b), Some(c), Some(d), Some(e), Some(f)] = v else { return None };
+    let [Some(a), Some(b), Some(c), Some(d), Some(e), Some(f)] = v else {
+        return None;
+    };
     Some(Affine::new([a, b, c, d, e, f]))
 }
 

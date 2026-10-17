@@ -21,7 +21,12 @@ struct Reduction {
 
 impl FlattenReport {
     pub fn new(which: Which, doc: &Document) -> Self {
-        Self { which, requested_ppi: super::effects_scale(doc) * 72.0, reductions: vec![], first_new_id: doc.peek_next_id() }
+        Self {
+            which,
+            requested_ppi: super::effects_scale(doc) * 72.0,
+            reductions: vec![],
+            first_new_id: doc.peek_next_id(),
+        }
     }
 
     /// Note `image` (made for the raster effects of `original`) when the cap lowered its resolution.
@@ -30,7 +35,11 @@ impl FlattenReport {
             let [pixel_size, ..] = image.xf.as_coeffs();
             let achieved_ppi = 72.0 / pixel_size;
             if achieved_ppi + 1e-6 < self.requested_ppi {
-                self.reductions.push(Reduction { id: original.id, name: original.name.clone(), achieved_ppi });
+                self.reductions.push(Reduction {
+                    id: original.id,
+                    name: original.name.clone(),
+                    achieved_ppi,
+                });
             }
         }
     }
@@ -109,7 +118,11 @@ mod tests {
 
         let warnings = report.warnings();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("achieved 1200.0 ppi"), "{:?}", warnings);
+        assert!(
+            warnings[0].contains("achieved 1200.0 ppi"),
+            "{:?}",
+            warnings
+        );
     }
 
     #[test]
@@ -124,6 +137,10 @@ mod tests {
 
         let warnings = report.warnings();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains(&format!("object {}", original.id.0)), "{:?}", warnings);
+        assert!(
+            warnings[0].contains(&format!("object {}", original.id.0)),
+            "{:?}",
+            warnings
+        );
     }
 }

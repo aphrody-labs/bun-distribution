@@ -12,15 +12,21 @@ use std::path::Path;
 use std::process::Command;
 
 /// Image, icon and font extensions: an asset wherever it lives.
-const ASSET_EXT: &[&str] =
-    &["png", "jpg", "jpeg", "gif", "webp", "bmp", "tif", "tiff", "ico", "icns", "svg", "pdf", "ttf", "otf", "woff", "woff2", "xlsx", "xlsm", "xls"];
+const ASSET_EXT: &[&str] = &[
+    "png", "jpg", "jpeg", "gif", "webp", "bmp", "tif", "tiff", "ico", "icns", "svg", "pdf", "ttf",
+    "otf", "woff", "woff2", "xlsx", "xlsm", "xls",
+];
 /// Extra extensions that count as assets inside `examples/` (sample data).
 const EXAMPLE_EXT: &[&str] = &["csv", "tsv", "json"];
 /// Every file under these directories is an asset.
 const ASSET_DIRS: &[&str] = &["assets/", "docs/brand/", "docs/images/"];
 
 fn ext(path: &str) -> String {
-    Path::new(path).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).unwrap_or_default()
+    Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default()
 }
 
 pub fn is_asset(path: &str) -> bool {
@@ -28,12 +34,17 @@ pub fn is_asset(path: &str) -> bool {
     if ASSET_DIRS.iter().any(|d| path.starts_with(d)) || ASSET_EXT.contains(&e.as_str()) {
         return true;
     }
-    (path.starts_with("examples/") || path.contains("/examples/")) && EXAMPLE_EXT.contains(&e.as_str())
+    (path.starts_with("examples/") || path.contains("/examples/"))
+        && EXAMPLE_EXT.contains(&e.as_str())
 }
 
 /// Paths that need an ATTRIBUTION.md row but lack one.
 pub fn missing(files: &[String], attribution: &str) -> Vec<String> {
-    files.iter().filter(|f| is_asset(f) && !attribution.contains(&format!("`{f}`"))).cloned().collect()
+    files
+        .iter()
+        .filter(|f| is_asset(f) && !attribution.contains(&format!("`{f}`")))
+        .cloned()
+        .collect()
 }
 
 pub fn run(root: &Path) -> Result<(), String> {
@@ -43,16 +54,31 @@ pub fn run(root: &Path) -> Result<(), String> {
         .output()
         .map_err(|e| format!("git ls-files: {e}"))?;
     if !out.status.success() {
-        return Err(format!("git ls-files failed: {}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "git ls-files failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
-    let files: Vec<String> = String::from_utf8_lossy(&out.stdout).lines().filter(|l| root.join(l).exists()).map(str::to_owned).collect();
-    let md = std::fs::read_to_string(root.join("ATTRIBUTION.md")).map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
+    let files: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| root.join(l).exists())
+        .map(str::to_owned)
+        .collect();
+    let md = std::fs::read_to_string(root.join("ATTRIBUTION.md"))
+        .map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
     let miss = missing(&files, &md);
     if miss.is_empty() {
-        println!("assets: all {} asset files attributed in ATTRIBUTION.md", files.iter().filter(|f| is_asset(f)).count());
+        println!(
+            "assets: all {} asset files attributed in ATTRIBUTION.md",
+            files.iter().filter(|f| is_asset(f)).count()
+        );
         Ok(())
     } else {
-        Err(format!("{} asset file(s) lack an ATTRIBUTION.md row (author, source, licence):\n  {}", miss.len(), miss.join("\n  ")))
+        Err(format!(
+            "{} asset file(s) lack an ATTRIBUTION.md row (author, source, licence):\n  {}",
+            miss.len(),
+            miss.join("\n  ")
+        ))
     }
 }
 
@@ -70,7 +96,10 @@ mod tests {
             "docs/brand/LICENSE-brand.txt".into(),
         ];
         let md = "| `assets/app-icon/a.svg` | me | here | MIT |\n| `docs/brand/LICENSE-brand.txt` | x | y | z |";
-        assert_eq!(missing(&files, md), vec!["docs/images/b.png".to_string(), "tests/fixture.xlsx".into()]);
+        assert_eq!(
+            missing(&files, md),
+            vec!["docs/images/b.png".to_string(), "tests/fixture.xlsx".into()]
+        );
     }
 
     #[test]

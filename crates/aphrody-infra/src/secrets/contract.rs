@@ -67,18 +67,18 @@ impl SecretsContract {
             match env.get(&req.name) {
                 Some(val) if !val.trim().is_empty() => {
                     present_count += 1;
-                },
+                }
                 Some(_) => {
                     empty_values.push(req.name.clone());
                     if req.required {
                         missing_required.push(req.name.clone());
                     }
-                },
+                }
                 None => {
                     if req.required {
                         missing_required.push(req.name.clone());
                     }
-                },
+                }
             }
         }
 

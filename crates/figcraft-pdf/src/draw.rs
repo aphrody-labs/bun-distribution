@@ -2,8 +2,12 @@
 
 use std::collections::HashMap;
 
-use figcraft_color::{BlendMode, Gradient, GradientKind, ImagePaint, ImageScaleMode, Paint, PaintKind, PatternPaint};
-use figcraft_doc::{Document, EffectKind, MaskType as DocMaskType, Node, NodeId, NodeKind, StrokeAlign};
+use figcraft_color::{
+    BlendMode, Gradient, GradientKind, ImagePaint, ImageScaleMode, Paint, PaintKind, PatternPaint,
+};
+use figcraft_doc::{
+    Document, EffectKind, MaskType as DocMaskType, Node, NodeId, NodeKind, StrokeAlign,
+};
 use figcraft_geom::{Affine, BezPath, Rect, Shape};
 
 use crate::raster::Raster;
@@ -43,7 +47,14 @@ pub(crate) struct Exporter<'a> {
 
 pub(crate) fn to_xf(a: Affine) -> Transform {
     let c = a.as_coeffs();
-    Transform::from_row(c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32, c[4] as f32, c[5] as f32)
+    Transform::from_row(
+        c[0] as f32,
+        c[1] as f32,
+        c[2] as f32,
+        c[3] as f32,
+        c[4] as f32,
+        c[5] as f32,
+    )
 }
 
 /// Finite and in a range f32 PDF numbers can hold.
@@ -63,7 +74,14 @@ pub(crate) fn to_path(p: &BezPath) -> Option<Path> {
             PathEl::MoveTo(a) => b.move_to(a.x as f32, a.y as f32),
             PathEl::LineTo(a) => b.line_to(a.x as f32, a.y as f32),
             PathEl::QuadTo(c, a) => b.quad_to(c.x as f32, c.y as f32, a.x as f32, a.y as f32),
-            PathEl::CurveTo(c1, c2, a) => b.cubic_to(c1.x as f32, c1.y as f32, c2.x as f32, c2.y as f32, a.x as f32, a.y as f32),
+            PathEl::CurveTo(c1, c2, a) => b.cubic_to(
+                c1.x as f32,
+                c1.y as f32,
+                c2.x as f32,
+                c2.y as f32,
+                a.x as f32,
+                a.y as f32,
+            ),
             PathEl::ClosePath => b.close(),
         }
     }
@@ -76,7 +94,11 @@ pub(crate) fn above<T: PartialOrd>(v: T, min: T) -> bool {
 }
 
 pub(crate) fn norm(v: f32) -> NormalizedF32 {
-    let v = if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 };
+    let v = if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     NormalizedF32::new(v).unwrap_or(NormalizedF32::ONE)
 }
 
@@ -115,7 +137,9 @@ pub(crate) fn rule(r: figcraft_render::FillRule) -> FillRule {
 
 /// The renderer's stroke fill rule: even-odd ring paths for aligned strokes, else non-zero.
 fn stroke_rule(n: &Node, closed: bool) -> FillRule {
-    if n.stroke.sides.is_some() || (n.stroke.dashes.is_empty() && closed && n.stroke.align != StrokeAlign::Center) {
+    if n.stroke.sides.is_some()
+        || (n.stroke.dashes.is_empty() && closed && n.stroke.align != StrokeAlign::Center)
+    {
         FillRule::EvenOdd
     } else {
         FillRule::NonZero
@@ -132,7 +156,12 @@ fn handle_frame(g: &Gradient, w: f64, h: f64) -> Affine {
 
 /// A paint PDF can express directly (solid, linear, radial) on a w×h box, in `ink`, with its fill
 /// opacity.
-pub(crate) fn vector_paint(p: &Paint, w: f64, h: f64, ink: Ink) -> Option<(krilla::paint::Paint, NormalizedF32)> {
+pub(crate) fn vector_paint(
+    p: &Paint,
+    w: f64,
+    h: f64,
+    ink: Ink,
+) -> Option<(krilla::paint::Paint, NormalizedF32)> {
     if !p.visible || !above(p.opacity, 0.0) {
         return None;
     }
@@ -150,19 +179,39 @@ pub(crate) fn vector_paint(p: &Paint, w: f64, h: f64, ink: Ink) -> Option<(krill
             let mut stops: Vec<Stop> = g
                 .sorted_stops()
                 .into_iter()
-                .map(|s| Stop { offset: norm(s.position), color: ink.color(s.color), opacity: norm(s.color.a * op) })
+                .map(|s| Stop {
+                    offset: norm(s.position),
+                    color: ink.color(s.color),
+                    opacity: norm(s.color.a * op),
+                })
                 .collect();
             if stops.len() == 1
                 && let Some(only) = stops.first().cloned()
             {
-                stops = vec![Stop { offset: norm(0.0), ..only.clone() }, Stop { offset: norm(1.0), ..only }];
+                stops = vec![
+                    Stop {
+                        offset: norm(0.0),
+                        ..only.clone()
+                    },
+                    Stop {
+                        offset: norm(1.0),
+                        ..only
+                    },
+                ];
             }
             let transform = to_xf(frame);
             let paint: krilla::paint::Paint = match g.kind {
-                GradientKind::Linear => {
-                    LinearGradient { x1: 0.0, y1: 0.0, x2: 1.0, y2: 0.0, transform, spread_method: SpreadMethod::Pad, stops, anti_alias: false }
-                        .into()
+                GradientKind::Linear => LinearGradient {
+                    x1: 0.0,
+                    y1: 0.0,
+                    x2: 1.0,
+                    y2: 0.0,
+                    transform,
+                    spread_method: SpreadMethod::Pad,
+                    stops,
+                    anti_alias: false,
                 }
+                .into(),
                 _ => RadialGradient {
                     fx: 0.0,
                     fy: 0.0,
@@ -224,12 +273,23 @@ impl<'a> Exporter<'a> {
     /// The colour model of what's drawn now: CMYK when printing in it, but never in soft masks
     /// (they aren't printed).
     pub(crate) fn ink(&self) -> Ink {
-        if self.opts.print.cmyk && self.masking == 0 { Ink::Cmyk } else { Ink::Rgb }
+        if self.opts.print.cmyk && self.masking == 0 {
+            Ink::Cmyk
+        } else {
+            Ink::Rgb
+        }
     }
 
     /// Draw node `id`; `parent_xf` maps its parent's space to PDF page space. `as_mask` draws a
     /// mask layer itself (into a soft mask).
-    pub(crate) fn node(&mut self, s: &mut Surface, id: NodeId, parent_xf: Affine, depth: usize, as_mask: bool) {
+    pub(crate) fn node(
+        &mut self,
+        s: &mut Surface,
+        id: NodeId,
+        parent_xf: Affine,
+        depth: usize,
+        as_mask: bool,
+    ) {
         if depth > MAX_DEPTH {
             return;
         }
@@ -242,12 +302,26 @@ impl<'a> Exporter<'a> {
         if !affine_ok(xf) {
             return;
         }
-        let fx: Vec<&EffectKind> = n.effects.iter().filter(|e| e.visible).map(|e| &e.kind).collect();
+        let fx: Vec<&EffectKind> = n
+            .effects
+            .iter()
+            .filter(|e| e.visible)
+            .map(|e| &e.kind)
+            .collect();
         let op = n.opacity.clamp(0.0, 1.0);
         // Background blur and glass: an image drawn from what lies under the node, under its
         // content (nothing in a soft mask is seen).
-        let back = if !as_mask && self.masking == 0 && figcraft_render::backdrop::has_effects(n) { self.backdrop(id) } else { None };
-        if fx.iter().any(|k| matches!(k, EffectKind::LayerBlur { .. } | EffectKind::Noise(_) | EffectKind::Texture(_))) {
+        let back = if !as_mask && self.masking == 0 && figcraft_render::backdrop::has_effects(n) {
+            self.backdrop(id)
+        } else {
+            None
+        };
+        if fx.iter().any(|k| {
+            matches!(
+                k,
+                EffectKind::LayerBlur { .. } | EffectKind::Noise(_) | EffectKind::Texture(_)
+            )
+        }) {
             // Effects that change every pixel: the renderer draws the whole node.
             if let Some(b) = &back {
                 self.place_raster(s, b, op, n.blend);
@@ -255,7 +329,14 @@ impl<'a> Exporter<'a> {
             self.raster_node(s, id);
             return;
         }
-        let shadows = if fx.iter().any(|k| matches!(k, EffectKind::DropShadow(_) | EffectKind::InnerShadow(_))) { self.shadows(id) } else { None };
+        let shadows = if fx
+            .iter()
+            .any(|k| matches!(k, EffectKind::DropShadow(_) | EffectKind::InnerShadow(_)))
+        {
+            self.shadows(id)
+        } else {
+            None
+        };
         // Drop shadows go under the node, with its opacity.
         if let Some(sh) = &shadows {
             for (r, b) in &sh.drop {
@@ -277,7 +358,13 @@ impl<'a> Exporter<'a> {
         if let Some(b) = &back {
             self.place_raster(s, b, 1.0, BlendMode::Normal);
         }
-        self.content(s, n, xf, depth, shadows.as_ref().map_or(&[], |sh| sh.inner.as_slice()));
+        self.content(
+            s,
+            n,
+            xf,
+            depth,
+            shadows.as_ref().map_or(&[], |sh| sh.inner.as_slice()),
+        );
         if op < 1.0 {
             s.pop();
         }
@@ -303,9 +390,10 @@ impl<'a> Exporter<'a> {
             _ => {
                 // The page's frame reaches out to the bleed (fills and clip; paints keep their box).
                 let outline = match self.bleed_root {
-                    Some((id, b)) if id == n.id && n.kind.is_frame_like() => {
-                        Some((Rect::new(-b, -b, w + b, h + b).to_path(0.1), figcraft_render::FillRule::Winding))
-                    }
+                    Some((id, b)) if id == n.id && n.kind.is_frame_like() => Some((
+                        Rect::new(-b, -b, w + b, h + b).to_path(0.1),
+                        figcraft_render::FillRule::Winding,
+                    )),
                     _ => figcraft_render::node_outline(self.doc, n),
                 };
                 let is_bool = matches!(n.kind, NodeKind::BooleanOp { .. });
@@ -337,7 +425,11 @@ impl<'a> Exporter<'a> {
                     }
                 }
                 if n.has_visible_stroke() {
-                    let geom = if is_bool { outline.as_ref().map(|(p, _)| p.clone()) } else { figcraft_doc::geometry::stroke_geometry(n) };
+                    let geom = if is_bool {
+                        outline.as_ref().map(|(p, _)| p.clone())
+                    } else {
+                        figcraft_doc::geometry::stroke_geometry(n)
+                    };
                     if let Some(g) = geom {
                         let area = figcraft_render::draw::stroke_area(n, &g, closed);
                         for p in &n.strokes {
@@ -353,10 +445,18 @@ impl<'a> Exporter<'a> {
         let doc = self.doc;
         let kids = &n.children;
         for run in doc.paint_runs(n) {
-            let Some(&c) = kids.get(run.start) else { continue };
+            let Some(&c) = kids.get(run.start) else {
+                continue;
+            };
             if doc.node(c).is_some_and(|cn| cn.is_mask && cn.visible) {
                 // Everything above the mask (until the next mask) shows through its alpha.
-                self.masked(s, c, kids.get(run.start + 1..run.end).unwrap_or(&[]), xf, depth);
+                self.masked(
+                    s,
+                    c,
+                    kids.get(run.start + 1..run.end).unwrap_or(&[]),
+                    xf,
+                    depth,
+                );
             } else {
                 self.node(s, c, xf, depth + 1, false);
             }
@@ -365,17 +465,28 @@ impl<'a> Exporter<'a> {
 
     /// `content` drawn through mask layer `mask_id`: its alpha or luminance (a soft mask drawn from
     /// the mask layer, so vector, gradient and image masks all work), or its outline (a clip path).
-    fn masked(&mut self, s: &mut Surface, mask_id: NodeId, content: &[NodeId], xf: Affine, depth: usize) {
-        let Some(m) = self.doc.node(mask_id).filter(|_| !content.is_empty()) else { return };
+    fn masked(
+        &mut self,
+        s: &mut Surface,
+        mask_id: NodeId,
+        content: &[NodeId],
+        xf: Affine,
+        depth: usize,
+    ) {
+        let Some(m) = self.doc.node(mask_id).filter(|_| !content.is_empty()) else {
+            return;
+        };
         let kind = match m.mask_type {
             DocMaskType::Vector => {
                 // The outline, fully opaque; nothing shows through a mask without one.
                 let mut plain = m.clone();
                 plain.is_mask = false;
-                let clip = figcraft_render::subtree_outline(self.doc, &plain, depth + 1).and_then(|(mut p, r)| {
-                    p.apply_affine(xf * m.transform);
-                    Some((to_path(&p)?, rule(r)))
-                });
+                let clip = figcraft_render::subtree_outline(self.doc, &plain, depth + 1).and_then(
+                    |(mut p, r)| {
+                        p.apply_affine(xf * m.transform);
+                        Some((to_path(&p)?, rule(r)))
+                    },
+                );
                 if let Some((cp, r)) = clip {
                     s.push_clip_path(&cp, &r);
                     self.draw_all(s, content, xf, depth);
@@ -408,7 +519,16 @@ impl<'a> Exporter<'a> {
 
     /// Fill `path` (local space, mapped to the page by `xf`) with one paint on a w×h box.
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn fill(&mut self, s: &mut Surface, path: &BezPath, r: FillRule, p: &Paint, w: f64, h: f64, xf: Affine) {
+    pub(crate) fn fill(
+        &mut self,
+        s: &mut Surface,
+        path: &BezPath,
+        r: FillRule,
+        p: &Paint,
+        w: f64,
+        h: f64,
+        xf: Affine,
+    ) {
         if !p.visible || !above(p.opacity, 0.0) {
             return;
         }
@@ -419,18 +539,26 @@ impl<'a> Exporter<'a> {
         }
         s.push_transform(&to_xf(xf));
         match &p.kind {
-            PaintKind::Image(img) => self.image_fill(s, &kp, r, img, p.opacity.clamp(0.0, 1.0), w, h),
+            PaintKind::Image(img) => {
+                self.image_fill(s, &kp, r, img, p.opacity.clamp(0.0, 1.0), w, h)
+            }
             PaintKind::Pattern(pt) => {
                 if !self.pattern_fill(s, &kp, r, pt, p.opacity.clamp(0.0, 1.0), w, h) {
                     self.raster_paint(s, path, &kp, r, p, w, h, xf);
                 }
             }
-            PaintKind::Gradient(g) if !matches!(g.kind, GradientKind::Linear | GradientKind::Radial) => {
+            PaintKind::Gradient(g)
+                if !matches!(g.kind, GradientKind::Linear | GradientKind::Radial) =>
+            {
                 self.raster_paint(s, path, &kp, r, p, w, h, xf)
             }
             _ => {
                 if let Some((paint, opacity)) = vector_paint(p, w, h, self.ink()) {
-                    s.set_fill(Some(Fill { paint, opacity, rule: r }));
+                    s.set_fill(Some(Fill {
+                        paint,
+                        opacity,
+                        rule: r,
+                    }));
                     s.draw_path(&kp);
                 }
             }
@@ -450,33 +578,59 @@ impl<'a> Exporter<'a> {
         }
         let data = self.doc.images.get(&img.image);
         // Decoding through the renderer checks the image is readable and applies adjustments.
-        let made = figcraft_render::images::get(&img.image, data, &img.filters, self.doc.color_profile).map(|pm| {
-            let (pw, ph) = (pm.width(), pm.height());
-            // Unadjusted RGB images embed their original bytes (JPEG stays JPEG).
-            let original = data.filter(|_| img.filters.is_identity() && ink == Ink::Rgb).and_then(|d| {
-                let bytes = krilla::Data::from(d.bytes.clone());
-                match sniff(&d.bytes) {
-                    Sniffed::Png => Image::from_png(bytes, true).ok(),
-                    Sniffed::Jpeg => Image::from_jpeg(bytes, true).ok(),
-                    Sniffed::Gif => Image::from_gif(bytes, true).ok(),
-                    Sniffed::Webp => Image::from_webp(bytes, true).ok(),
-                    Sniffed::Other => None,
-                }
-            });
-            let image = original.filter(|i| i.size() == (pw, ph)).unwrap_or_else(|| ink.bitmap(figcraft_render::to_rgba8(&pm), pw, ph));
-            (image, pw, ph)
-        });
+        let made =
+            figcraft_render::images::get(&img.image, data, &img.filters, self.doc.color_profile)
+                .map(|pm| {
+                    let (pw, ph) = (pm.width(), pm.height());
+                    // Unadjusted RGB images embed their original bytes (JPEG stays JPEG).
+                    let original = data
+                        .filter(|_| img.filters.is_identity() && ink == Ink::Rgb)
+                        .and_then(|d| {
+                            let bytes = krilla::Data::from(d.bytes.clone());
+                            match sniff(&d.bytes) {
+                                Sniffed::Png => Image::from_png(bytes, true).ok(),
+                                Sniffed::Jpeg => Image::from_jpeg(bytes, true).ok(),
+                                Sniffed::Gif => Image::from_gif(bytes, true).ok(),
+                                Sniffed::Webp => Image::from_webp(bytes, true).ok(),
+                                Sniffed::Other => None,
+                            }
+                        });
+                    let image = original
+                        .filter(|i| i.size() == (pw, ph))
+                        .unwrap_or_else(|| ink.bitmap(figcraft_render::to_rgba8(&pm), pw, ph));
+                    (image, pw, ph)
+                });
         self.images.insert(key, made.clone());
         made
     }
 
     /// An image fill; the surface is in the node's local space.
     #[allow(clippy::too_many_arguments)]
-    fn image_fill(&mut self, s: &mut Surface, kp: &Path, r: FillRule, img: &ImagePaint, op: f32, w: f64, h: f64) {
-        let Some((image, iw, ih)) = self.image(img) else { return };
+    fn image_fill(
+        &mut self,
+        s: &mut Surface,
+        kp: &Path,
+        r: FillRule,
+        img: &ImagePaint,
+        op: f32,
+        w: f64,
+        h: f64,
+    ) {
+        let Some((image, iw, ih)) = self.image(img) else {
+            return;
+        };
         let t = figcraft_render::paint::image_transform(img, f64::from(iw), f64::from(ih), w, h);
-        let t = Affine::new([f64::from(t.sx), f64::from(t.ky), f64::from(t.kx), f64::from(t.sy), f64::from(t.tx), f64::from(t.ty)]);
-        let Some(size) = Size::from_wh(iw as f32, ih as f32) else { return };
+        let t = Affine::new([
+            f64::from(t.sx),
+            f64::from(t.ky),
+            f64::from(t.kx),
+            f64::from(t.sy),
+            f64::from(t.tx),
+            f64::from(t.ty),
+        ]);
+        let Some(size) = Size::from_wh(iw as f32, ih as f32) else {
+            return;
+        };
         if !affine_ok(t) || !above(t.determinant().abs(), 1e-12) {
             return;
         }
@@ -491,8 +645,17 @@ impl<'a> Exporter<'a> {
                 ps.finish();
                 sb.finish()
             };
-            let pattern = Pattern { stream, transform: to_xf(t), width: iw as f32, height: ih as f32 };
-            s.set_fill(Some(Fill { paint: pattern.into(), opacity: NormalizedF32::ONE, rule: r }));
+            let pattern = Pattern {
+                stream,
+                transform: to_xf(t),
+                width: iw as f32,
+                height: ih as f32,
+            };
+            s.set_fill(Some(Fill {
+                paint: pattern.into(),
+                opacity: NormalizedF32::ONE,
+                rule: r,
+            }));
             s.draw_path(kp);
         } else {
             s.push_clip_path(kp, &r);
@@ -509,13 +672,31 @@ impl<'a> Exporter<'a> {
     /// A pattern fill as a PDF tiling pattern of the source's vectors; false (draw it as an image
     /// instead) when the source has effects, which the PDF draws as page-placed images.
     #[allow(clippy::too_many_arguments)]
-    fn pattern_fill(&mut self, s: &mut Surface, kp: &Path, r: FillRule, pt: &PatternPaint, op: f32, w: f64, h: f64) -> bool {
+    fn pattern_fill(
+        &mut self,
+        s: &mut Surface,
+        kp: &Path,
+        r: FillRule,
+        pt: &PatternPaint,
+        op: f32,
+        w: f64,
+        h: f64,
+    ) -> bool {
         let doc = self.doc;
-        let Some(src) = doc.node(NodeId(pt.source)).filter(|n| !n.is_page()) else { return true };
-        if doc.subtree(src.id).iter().filter_map(|i| doc.node(*i)).any(|n| n.effects.iter().any(|e| e.visible)) {
+        let Some(src) = doc.node(NodeId(pt.source)).filter(|n| !n.is_page()) else {
+            return true;
+        };
+        if doc
+            .subtree(src.id)
+            .iter()
+            .filter_map(|i| doc.node(*i))
+            .any(|n| n.effects.iter().any(|e| e.visible))
+        {
             return false;
         }
-        let Some(cell) = pt.cell(src.width, src.height, w, h) else { return true };
+        let Some(cell) = pt.cell(src.width, src.height, w, h) else {
+            return true;
+        };
         let unrotated = src.transform.inverse();
         let stream = {
             let mut sb = s.stream_builder();
@@ -524,7 +705,13 @@ impl<'a> Exporter<'a> {
             self.masking += 1;
             let _ = figcraft_render::pattern::nested(|| {
                 for (tx, ty) in &cell.tiles {
-                    self.node(&mut ps, src.id, Affine::translate((*tx, *ty)) * Affine::scale(cell.scale) * unrotated, 0, false);
+                    self.node(
+                        &mut ps,
+                        src.id,
+                        Affine::translate((*tx, *ty)) * Affine::scale(cell.scale) * unrotated,
+                        0,
+                        false,
+                    );
                 }
                 Some(())
             });
@@ -535,8 +722,17 @@ impl<'a> Exporter<'a> {
         if op < 1.0 {
             s.push_opacity(norm(op));
         }
-        let pattern = Pattern { stream, transform: to_xf(Affine::translate(cell.origin)), width: cell.size.0 as f32, height: cell.size.1 as f32 };
-        s.set_fill(Some(Fill { paint: pattern.into(), opacity: NormalizedF32::ONE, rule: r }));
+        let pattern = Pattern {
+            stream,
+            transform: to_xf(Affine::translate(cell.origin)),
+            width: cell.size.0 as f32,
+            height: cell.size.1 as f32,
+        };
+        s.set_fill(Some(Fill {
+            paint: pattern.into(),
+            opacity: NormalizedF32::ONE,
+            rule: r,
+        }));
         s.draw_path(kp);
         if op < 1.0 {
             s.pop();
@@ -547,27 +743,76 @@ impl<'a> Exporter<'a> {
     /// Angular and diamond gradients, and patterns of sources with effects: an image of the paint
     /// over the path's bounds, clipped to it. The surface is in the node's local space; `xf` (local → page) sets the resolution.
     #[allow(clippy::too_many_arguments)]
-    fn raster_paint(&mut self, s: &mut Surface, path: &BezPath, kp: &Path, r: FillRule, p: &Paint, w: f64, h: f64, xf: Affine) {
+    fn raster_paint(
+        &mut self,
+        s: &mut Surface,
+        path: &BezPath,
+        kp: &Path,
+        r: FillRule,
+        p: &Paint,
+        w: f64,
+        h: f64,
+        xf: Affine,
+    ) {
         let bb = path.bounding_box();
         if !(bb.width() > 0.0 && bb.height() > 0.0 && crate::rect_finite(bb)) {
             return;
         }
         let page_scale = xf.determinant().abs().sqrt();
-        let mut k = self.raster_scale() * if page_scale.is_finite() && page_scale > 0.0 { page_scale } else { 1.0 };
+        let mut k = self.raster_scale()
+            * if page_scale.is_finite() && page_scale > 0.0 {
+                page_scale
+            } else {
+                1.0
+            };
         let side = bb.width().max(bb.height()) * k;
         if side > MAX_RASTER_SIDE {
             k *= MAX_RASTER_SIDE / side;
         }
-        let (pw, ph) = ((bb.width() * k).ceil().max(1.0) as u32, (bb.height() * k).ceil().max(1.0) as u32);
-        let Some(prep) = figcraft_render::paint::prepare(p, w, h, k, self.doc) else { return };
-        let Some(mut pix) = tiny_skia::Pixmap::new(pw, ph) else { return };
-        let paint = tiny_skia::Paint { shader: prep.shader(), anti_alias: false, ..Default::default() };
-        let Some(rect) = tiny_skia::Rect::from_xywh(bb.x0 as f32, bb.y0 as f32, bb.width() as f32, bb.height() as f32) else { return };
-        pix.fill_rect(rect, &paint, tiny_skia::Transform::from_row(k as f32, 0.0, 0.0, k as f32, (-bb.x0 * k) as f32, (-bb.y0 * k) as f32), None);
-        let Some(size) = Size::from_wh(pw as f32, ph as f32) else { return };
+        let (pw, ph) = (
+            (bb.width() * k).ceil().max(1.0) as u32,
+            (bb.height() * k).ceil().max(1.0) as u32,
+        );
+        let Some(prep) = figcraft_render::paint::prepare(p, w, h, k, self.doc) else {
+            return;
+        };
+        let Some(mut pix) = tiny_skia::Pixmap::new(pw, ph) else {
+            return;
+        };
+        let paint = tiny_skia::Paint {
+            shader: prep.shader(),
+            anti_alias: false,
+            ..Default::default()
+        };
+        let Some(rect) = tiny_skia::Rect::from_xywh(
+            bb.x0 as f32,
+            bb.y0 as f32,
+            bb.width() as f32,
+            bb.height() as f32,
+        ) else {
+            return;
+        };
+        pix.fill_rect(
+            rect,
+            &paint,
+            tiny_skia::Transform::from_row(
+                k as f32,
+                0.0,
+                0.0,
+                k as f32,
+                (-bb.x0 * k) as f32,
+                (-bb.y0 * k) as f32,
+            ),
+            None,
+        );
+        let Some(size) = Size::from_wh(pw as f32, ph as f32) else {
+            return;
+        };
         let image = self.ink().bitmap(figcraft_render::to_rgba8(&pix), pw, ph);
         s.push_clip_path(kp, &r);
-        s.push_transform(&to_xf(Affine::translate((bb.x0, bb.y0)) * Affine::scale(1.0 / k)));
+        s.push_transform(&to_xf(
+            Affine::translate((bb.x0, bb.y0)) * Affine::scale(1.0 / k),
+        ));
         s.draw_image(image, size);
         s.pop();
         s.pop();
@@ -575,6 +820,10 @@ impl<'a> Exporter<'a> {
 
     pub(crate) fn raster_scale(&self) -> f64 {
         let k = self.opts.raster_scale;
-        if k.is_finite() { k.clamp(0.25, 8.0) } else { 2.0 }
+        if k.is_finite() {
+            k.clamp(0.25, 8.0)
+        } else {
+            2.0
+        }
     }
 }

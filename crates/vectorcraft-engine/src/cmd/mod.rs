@@ -147,38 +147,70 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 pub fn has_selection(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.selection.is_empty() { Err("nothing selected".into()) } else { Ok(()) }
+    if st.selection.is_empty() {
+        Err("nothing selected".into())
+    } else {
+        Ok(())
+    }
 }
 /// Objects are selected, or the Artboard tool is chosen (Copy and Cut take its artboard).
 pub fn has_selection_or_artboard_tool(s: &Session) -> std::result::Result<(), String> {
-    if s.tool_id() == "artboard" { has_doc(s) } else { has_selection(s) }
+    if s.tool_id() == "artboard" {
+        has_doc(s)
+    } else {
+        has_selection(s)
+    }
 }
 /// Objects or ruler guides are selected (what Delete and the arrow keys act on).
 pub fn has_selection_or_guides(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.selection.has_objects_or_guides() { Ok(()) } else { Err("nothing selected".into()) }
+    if st.selection.has_objects_or_guides() {
+        Ok(())
+    } else {
+        Err("nothing selected".into())
+    }
 }
 pub fn has_anchors(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.selection.anchors.values().all(|a| a.is_empty()) { Err("no anchor points selected".into()) } else { Ok(()) }
+    if st.selection.anchors.values().all(|a| a.is_empty()) {
+        Err("no anchor points selected".into())
+    } else {
+        Ok(())
+    }
 }
 pub fn has_multi(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.selection.len() < 2 { Err("select at least two objects".into()) } else { Ok(()) }
+    if st.selection.len() < 2 {
+        Err("select at least two objects".into())
+    } else {
+        Ok(())
+    }
 }
 pub fn can_undo(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| !d.history.undo.is_empty()).map(|_| ()).ok_or_else(|| "nothing to undo".into())
+    s.active()
+        .filter(|d| !d.history.undo.is_empty())
+        .map(|_| ())
+        .ok_or_else(|| "nothing to undo".into())
 }
 pub fn can_redo(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| !d.history.redo.is_empty()).map(|_| ()).ok_or_else(|| "nothing to redo".into())
+    s.active()
+        .filter(|d| !d.history.redo.is_empty())
+        .map(|_| ())
+        .ok_or_else(|| "nothing to redo".into())
 }
 pub fn has_clipboard(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.clipboard.is_empty() { Err("clipboard is empty".into()) } else { Ok(()) }
+    if s.clipboard.is_empty() {
+        Err("clipboard is empty".into())
+    } else {
+        Ok(())
+    }
 }
 
 macro_rules! cmd {
@@ -294,13 +326,18 @@ pub fn find_command(id: &str) -> Option<&'static CommandSpec> {
 // ---------- param helpers ----------
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 pub(crate) fn f64_or(p: &Value, key: &str, default: f64) -> f64 {
     p.get(key).and_then(Value::as_f64).unwrap_or(default)
 }
 pub(crate) fn f64_req(p: &Value, key: &str, cmd: &str) -> Result<f64> {
-    p.get(key).and_then(Value::as_f64).ok_or_else(|| bad(cmd, format!("missing number `{key}`")))
+    p.get(key)
+        .and_then(Value::as_f64)
+        .ok_or_else(|| bad(cmd, format!("missing number `{key}`")))
 }
 pub(crate) fn bool_or(p: &Value, key: &str, default: bool) -> bool {
     p.get(key).and_then(Value::as_bool).unwrap_or(default)
@@ -312,22 +349,49 @@ pub(crate) fn id_param(p: &Value, key: &str) -> Option<NodeId> {
     p.get(key).and_then(Value::as_u64).map(NodeId)
 }
 pub(crate) fn ids_param(p: &Value, key: &str) -> Option<Vec<NodeId>> {
-    p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(NodeId).collect())
+    p.get(key)
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(NodeId).collect())
 }
 /// Validate all explicit targets before a command changes the document or selection.
-pub(crate) fn checked_ids_param(s: &Session, p: &Value, key: &str, command: &str) -> Result<Vec<NodeId>> {
-    let values =
-        p.get(key).and_then(Value::as_array).ok_or_else(|| bad(command, format!("{key} must be an array of non-negative integer object ids")))?;
-    values.iter().map(|value| checked_id(s, value, command)).collect()
+pub(crate) fn checked_ids_param(
+    s: &Session,
+    p: &Value,
+    key: &str,
+    command: &str,
+) -> Result<Vec<NodeId>> {
+    let values = p.get(key).and_then(Value::as_array).ok_or_else(|| {
+        bad(
+            command,
+            format!("{key} must be an array of non-negative integer object ids"),
+        )
+    })?;
+    values
+        .iter()
+        .map(|value| checked_id(s, value, command))
+        .collect()
 }
 
 /// The objects a command acts on: `ids` when given (every one checked), else the selected objects.
-pub(crate) fn checked_ids_or_selection(s: &Session, p: &Value, command: &str) -> Result<Vec<NodeId>> {
-    if p.get("ids").is_some() { checked_ids_param(s, p, "ids", command) } else { edit::selected_roots(s) }
+pub(crate) fn checked_ids_or_selection(
+    s: &Session,
+    p: &Value,
+    command: &str,
+) -> Result<Vec<NodeId>> {
+    if p.get("ids").is_some() {
+        checked_ids_param(s, p, "ids", command)
+    } else {
+        edit::selected_roots(s)
+    }
 }
 
 pub(crate) fn checked_id(s: &Session, value: &Value, command: &str) -> Result<NodeId> {
-    let id = value.as_u64().map(NodeId).ok_or_else(|| bad(command, format!("invalid object id {value}: expected a non-negative integer")))?;
+    let id = value.as_u64().map(NodeId).ok_or_else(|| {
+        bad(
+            command,
+            format!("invalid object id {value}: expected a non-negative integer"),
+        )
+    })?;
     if s.doc()?.doc.node(id).is_none() {
         return Err(bad(command, format!("no such object id {value}")));
     }
@@ -348,7 +412,10 @@ pub(crate) fn finite_numbers<const N: usize>(v: &Value) -> Option<[f64; N]> {
 /// `v` as a list of point indices: `None` unless it is an array of non-negative integers, so no
 /// malformed index is dropped or wrapped round.
 pub(crate) fn point_indices(v: &Value) -> Option<Vec<usize>> {
-    v.as_array()?.iter().map(|i| usize::try_from(i.as_u64()?).ok()).collect()
+    v.as_array()?
+        .iter()
+        .map(|i| usize::try_from(i.as_u64()?).ok())
+        .collect()
 }
 
 pub(crate) fn point_param(p: &Value, key: &str) -> Option<Point> {
@@ -373,14 +440,25 @@ pub fn matrix_param(p: &Value, key: &str) -> Option<Affine> {
 pub fn color_value(v: &Value) -> Option<Color> {
     match v {
         // A hex, or a colour key ("cmyk 0 100 100 0", as Recolor Artwork lists colours).
-        Value::String(s) => Color::from_hex(s).or_else(|| vectorcraft_color::recolor::ColorKey::parse(s).map(|k| k.color())),
-        Value::Array(a) if a.len() >= 3 => Some(Color::rgb(a[0].as_f64()? as f32, a[1].as_f64()? as f32, a[2].as_f64()? as f32)),
+        Value::String(s) => Color::from_hex(s)
+            .or_else(|| vectorcraft_color::recolor::ColorKey::parse(s).map(|k| k.color())),
+        Value::Array(a) if a.len() >= 3 => Some(Color::rgb(
+            a[0].as_f64()? as f32,
+            a[1].as_f64()? as f32,
+            a[2].as_f64()? as f32,
+        )),
         Value::Object(o) => {
-            if let (Some(c), Some(m), Some(y), Some(k)) = (o.get("c"), o.get("m"), o.get("y"), o.get("k")) {
+            if let (Some(c), Some(m), Some(y), Some(k)) =
+                (o.get("c"), o.get("m"), o.get("y"), o.get("k"))
+            {
                 // One scale for the whole colour: percent when any component is above 1, else 0..1.
                 // Deciding per component read {c: 18, k: 0.79} as K 79 %.
                 let v = [c.as_f64()?, m.as_f64()?, y.as_f64()?, k.as_f64()?];
-                let scale = if v.iter().any(|x| *x > 1.0) { 100.0 } else { 1.0 };
+                let scale = if v.iter().any(|x| *x > 1.0) {
+                    100.0
+                } else {
+                    1.0
+                };
                 let f = |x: f64| (x / scale) as f32;
                 return Some(Color::cmyk(f(v[0]), f(v[1]), f(v[2]), f(v[3])));
             }
@@ -388,8 +466,14 @@ pub fn color_value(v: &Value) -> Option<Color> {
                 let g = g.as_f64()?;
                 return Some(Color::gray(if g > 1.0 { g / 100.0 } else { g } as f32));
             }
-            if let (Some(l), Some(a), Some(b), None) = (o.get("l"), o.get("a"), o.get("b"), o.get("model")) {
-                return Some(Color::lab(l.as_f64()? as f32, a.as_f64()? as f32, b.as_f64()? as f32));
+            if let (Some(l), Some(a), Some(b), None) =
+                (o.get("l"), o.get("a"), o.get("b"), o.get("model"))
+            {
+                return Some(Color::lab(
+                    l.as_f64()? as f32,
+                    a.as_f64()? as f32,
+                    b.as_f64()? as f32,
+                ));
             }
             serde_json::from_value(v.clone()).ok()
         }
@@ -401,19 +485,27 @@ pub fn color_value(v: &Value) -> Option<Color> {
 pub(crate) fn targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     // Objects given are used as given: a value that isn't an object id fails rather than the
     // command acting on the selection instead (#785).
-    let object_id = |v: &Value| v.as_u64().map(NodeId).ok_or_else(|| EngineError::Other(format!("object ids are non-negative integers, not {v}")));
+    let object_id = |v: &Value| {
+        v.as_u64().map(NodeId).ok_or_else(|| {
+            EngineError::Other(format!("object ids are non-negative integers, not {v}"))
+        })
+    };
     match p.get("ids").filter(|v| !v.is_null()) {
         Some(Value::Array(a)) => return a.iter().map(object_id).collect(),
-        Some(v) => return Err(EngineError::Other(format!("`ids` must be an array of object ids, not {v}"))),
+        Some(v) => {
+            return Err(EngineError::Other(format!(
+                "`ids` must be an array of object ids, not {v}"
+            )));
+        }
         None => {}
     }
     match p.get("id").filter(|v| !v.is_null()) {
         Some(v @ Value::Number(_)) => Ok(vec![object_id(v)?]),
         // A step reference a batch couldn't resolve (other strings are other ids, such as an
         // effect's).
-        Some(Value::String(r)) if r.starts_with('$') => {
-            Err(EngineError::Other(format!("`id` is the step reference {r:?}, which only `run` and `command_batch` resolve")))
-        }
+        Some(Value::String(r)) if r.starts_with('$') => Err(EngineError::Other(format!(
+            "`id` is the step reference {r:?}, which only `run` and `command_batch` resolve"
+        ))),
         _ => Ok(s.doc()?.selection.objects.clone()),
     }
 }
@@ -439,7 +531,16 @@ pub(crate) fn leaf_targets(s: &Session, ids: &[NodeId]) -> Result<Vec<NodeId>> {
             _ => out.push(*id),
         }
     }
-    let comp: Vec<NodeId> = out.iter().filter(|id| matches!(d.node(**id).map(|n| &n.kind), Some(NodeKind::Compound { .. }))).copied().collect();
+    let comp: Vec<NodeId> = out
+        .iter()
+        .filter(|id| {
+            matches!(
+                d.node(**id).map(|n| &n.kind),
+                Some(NodeKind::Compound { .. })
+            )
+        })
+        .copied()
+        .collect();
     out.retain(|id| !comp.iter().any(|c| d.parent_of(*id) == Some(*c)));
     Ok(out)
 }
@@ -454,7 +555,10 @@ pub(crate) fn unique_name(base: &str, taken: impl Fn(&str) -> bool) -> String {
     if !taken(base) {
         return base.to_string();
     }
-    (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+    (2..)
+        .map(|i| format!("{base} {i}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| base.to_string())
 }
 
 pub(crate) use vectorcraft_doc::range::parse_range;
@@ -465,7 +569,12 @@ pub(crate) fn date_param(p: &Value, key: &str, cmd: &str) -> Result<Option<Optio
     match p.get(key) {
         None => Ok(None),
         Some(Value::Null) => Ok(Some(None)),
-        Some(v) => v.as_i64().map(|t| Some(Some(t))).ok_or_else(|| bad(cmd, format!("{key} must be Unix seconds (an integer) or null"))),
+        Some(v) => v.as_i64().map(|t| Some(Some(t))).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("{key} must be Unix seconds (an integer) or null"),
+            )
+        }),
     }
 }
 
@@ -495,7 +604,8 @@ pub use flatten::FlattenerPreset;
 
 /// Command ids kept only so older scripts keep working: `(alias, the command it duplicates)`.
 /// They run as before but the command palette leaves them out (it lists the command once).
-pub const ALIASES: &[(&str, &str)] = &[("object.convertDocumentColorMode", "file.documentColorMode")];
+pub const ALIASES: &[(&str, &str)] =
+    &[("object.convertDocumentColorMode", "file.documentColorMode")];
 
 /// Is `id` an [`ALIASES`] entry?
 pub fn is_alias(id: &str) -> bool {

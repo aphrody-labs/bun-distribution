@@ -19,7 +19,10 @@ pub fn counter_rom() -> Vec<u8> {
         rom[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
     }
     for offset in [0x200, 0x300] {
-        for (index, word) in [0xe3a0_0000_u32, 0xe280_0001, 0xeaff_fffd].into_iter().enumerate() {
+        for (index, word) in [0xe3a0_0000_u32, 0xe280_0001, 0xeaff_fffd]
+            .into_iter()
+            .enumerate()
+        {
             rom[offset + index * 4..offset + index * 4 + 4].copy_from_slice(&word.to_le_bytes());
         }
     }

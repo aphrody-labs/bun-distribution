@@ -14,7 +14,12 @@ fn bad(m: impl Into<String>) -> ToolError {
 
 /// Top-left view rect [x0 y0 x1 y1] ↔ display space [x0 y0 x1 y1] (y up).
 fn to_display(r: [f64; 4], ph: f64) -> [f64; 4] {
-    [r[0].min(r[2]), ph - r[1].max(r[3]), r[0].max(r[2]), ph - r[1].min(r[3])]
+    [
+        r[0].min(r[2]),
+        ph - r[1].max(r[3]),
+        r[0].max(r[2]),
+        ph - r[1].min(r[3]),
+    ]
 }
 
 fn to_view(r: [f64; 4], ph: f64) -> [f64; 4] {
@@ -24,7 +29,10 @@ fn to_view(r: [f64; 4], ph: f64) -> [f64; 4] {
 fn rect_arg(a: &Args, key: &str) -> Result<Option<[f64; 4]>> {
     a.get(key)
         .map(|v| {
-            let r: Vec<f64> = v.as_array().map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+            let r: Vec<f64> = v
+                .as_array()
+                .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                .unwrap_or_default();
             <[f64; 4]>::try_from(r).map_err(|_| bad(format!("{key} must be 4 numbers")))
         })
         .transpose()
@@ -40,7 +48,11 @@ fn style(a: &Args, t: &mut AddedText) -> Result<()> {
             "helvetica" | "sans" | "arial" => FontFamily::Helvetica,
             "times" | "serif" => FontFamily::Times,
             "courier" | "mono" | "monospace" => FontFamily::Courier,
-            other => return Err(bad(format!("unknown font {other:?} (helvetica, times, courier)"))),
+            other => {
+                return Err(bad(format!(
+                    "unknown font {other:?} (helvetica, times, courier)"
+                )));
+            }
         };
     }
     if let Some(b) = a.opt_bool("bold")? {
@@ -100,14 +112,21 @@ impl Automation {
         let rect = match (rect_arg(a, "rect")?, a.get("at")) {
             (Some(r), _) => to_display(r, ph),
             (None, Some(v)) => {
-                let p: Vec<f64> = v.as_array().map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+                let p: Vec<f64> = v
+                    .as_array()
+                    .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                    .unwrap_or_default();
                 let [x, y]: [f64; 2] = p.try_into().map_err(|_| bad("at must be [x, y]"))?;
                 let w = a.opt_num("width")?.unwrap_or(200.0);
                 [x, ph - y - 20.0, x + w, ph - y]
             }
             (None, None) => return Err(bad("pass at [x, y] (the text's top-left) or rect")),
         };
-        let mut t = AddedText { rect, text: a.str("text")?.to_string(), ..AddedText::default() };
+        let mut t = AddedText {
+            rect,
+            text: a.str("text")?.to_string(),
+            ..AddedText::default()
+        };
         style(a, &mut t)?;
         let mut out = self.apply(a, Edit::AddText { page, text: t })?;
         out["index"] = json!(self.doc(a)?.added.iter().filter(|x| x.page == page).count());
@@ -119,9 +138,20 @@ impl Automation {
         let ph = self.doc(a)?.info.pages[page].height as f64;
         let path = self.resolve(a.str("path")?, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
         let rect = rect_arg(a, "rect")?.map(|r| to_display(r, ph));
-        let mut out = self.apply(a, Edit::AddImage { page, rect, name, bytes: std::sync::Arc::new(bytes) })?;
+        let mut out = self.apply(
+            a,
+            Edit::AddImage {
+                page,
+                rect,
+                name,
+                bytes: std::sync::Arc::new(bytes),
+            },
+        )?;
         let doc = self.doc(a)?;
         let mine: Vec<_> = doc.added.iter().filter(|x| x.page == page).collect();
         out["index"] = json!(mine.len());
@@ -140,7 +170,12 @@ impl Automation {
             .filter(|x| x.page == page)
             .nth((index - 1).max(0) as usize)
             .filter(|_| index >= 1)
-            .ok_or_else(|| failed(format!("page {} has no added item {index} (see content_list)", page + 1)))?;
+            .ok_or_else(|| {
+                failed(format!(
+                    "page {} has no added item {index} (see content_list)",
+                    page + 1
+                ))
+            })?;
         Ok((page, index as usize - 1, it.content.clone(), ph))
     }
 
@@ -156,7 +191,10 @@ impl Automation {
                     t.text = s.to_string();
                 }
                 style(a, t)?;
-                if ["rotate", "flip_h", "flip_v", "crop", "image"].iter().any(|k| a.get(k).is_some()) {
+                if ["rotate", "flip_h", "flip_v", "crop", "image"]
+                    .iter()
+                    .any(|k| a.get(k).is_some())
+                {
                     return Err(bad("rotate, flip, crop and image apply to images"));
                 }
             }
@@ -164,8 +202,13 @@ impl Automation {
                 if a.get("text").is_some() {
                     return Err(bad("images have no text"));
                 }
-                if ["font", "size", "bold", "italic", "color", "align"].iter().any(|k| a.get(k).is_some()) {
-                    return Err(bad("font, size, bold, italic, color and align apply to text"));
+                if ["font", "size", "bold", "italic", "color", "align"]
+                    .iter()
+                    .any(|k| a.get(k).is_some())
+                {
+                    return Err(bad(
+                        "font, size, bold, italic, color and align apply to text",
+                    ));
                 }
                 if let Some(deg) = a.opt_int("rotate")? {
                     if deg.rem_euclid(90) != 0 {
@@ -181,21 +224,49 @@ impl Automation {
                 }
                 if let Some(c) = rect_arg(a, "crop")? {
                     if !c.iter().all(|v| (0.0..0.5).contains(v)) {
-                        return Err(bad("crop takes fractions from 0 to under 0.5 (left, bottom, right, top)"));
+                        return Err(bad(
+                            "crop takes fractions from 0 to under 0.5 (left, bottom, right, top)",
+                        ));
                     }
                     i.crop = c;
                 }
                 if let Some(p) = a.opt_str("image")? {
                     let path = self.resolve(p, false)?;
-                    let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-                    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let bytes = std::fs::read(&path)
+                        .map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                    let name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     // Box and transforms first, then the new picture.
-                    self.apply(a, Edit::UpdateContent { page, index, content: content.clone() })?;
-                    return self.apply(a, Edit::ReplaceImage { page, index, name, bytes: std::sync::Arc::new(bytes) });
+                    self.apply(
+                        a,
+                        Edit::UpdateContent {
+                            page,
+                            index,
+                            content: content.clone(),
+                        },
+                    )?;
+                    return self.apply(
+                        a,
+                        Edit::ReplaceImage {
+                            page,
+                            index,
+                            name,
+                            bytes: std::sync::Arc::new(bytes),
+                        },
+                    );
                 }
             }
         }
-        self.apply(a, Edit::UpdateContent { page, index, content })
+        self.apply(
+            a,
+            Edit::UpdateContent {
+                page,
+                index,
+                content,
+            },
+        )
     }
 
     pub(crate) fn content_delete(&mut self, a: &Args) -> Result<Value> {
@@ -209,7 +280,11 @@ impl Automation {
     pub(crate) fn object_list(&self, a: &Args) -> Result<Value> {
         let page = self.page(a)?;
         let doc = self.doc(a)?;
-        let info = doc.info.pages.get(page).ok_or_else(|| bad("the page no longer exists"))?;
+        let info = doc
+            .info
+            .pages
+            .get(page)
+            .ok_or_else(|| bad("the page no longer exists"))?;
         let objects = doc.editable_objects(page).map_err(failed)?;
         let items = objects
             .iter()
@@ -219,7 +294,9 @@ impl Automation {
                 "rect":rect.map(|v|(f64::from(v)*100.0).round()/100.0),"text":o.text})
             })
             .collect::<Vec<_>>();
-        Ok(json!({"page":page+1,"generation":doc.edit_generation(),"count":items.len(),"objects":items}))
+        Ok(
+            json!({"page":page+1,"generation":doc.edit_generation(),"count":items.len(),"objects":items}),
+        )
     }
 
     pub(crate) fn object_move(&mut self, a: &Args) -> Result<Value> {
@@ -232,7 +309,9 @@ impl Automation {
             .ok_or_else(|| bad("objects must contain 1–1000 references from object_list"))?;
         let mut targets = Vec::with_capacity(rows.len());
         for row in rows {
-            let row = row.as_object().ok_or_else(|| bad("each object must contain kind and index"))?;
+            let row = row
+                .as_object()
+                .ok_or_else(|| bad("each object must contain kind and index"))?;
             if row.keys().any(|k| k != "kind" && k != "index") {
                 return Err(bad("an object reference accepts only kind and index"));
             }
@@ -240,7 +319,11 @@ impl Automation {
                 Some("added") => ObjectKind::Added,
                 Some("text") => ObjectKind::Text,
                 Some("image") => ObjectKind::Image,
-                _ => return Err(bad("object kind must be added, text or image (see object_list)")),
+                _ => {
+                    return Err(bad(
+                        "object kind must be added, text or image (see object_list)",
+                    ));
+                }
             };
             let index = row
                 .get("index")
@@ -256,17 +339,30 @@ impl Automation {
             .filter(|v| v.len() == 2)
             .and_then(|v| Some([v.first()?.as_f64()?, v.get(1)?.as_f64()?]))
             .filter(|v| v.iter().all(|n| n.is_finite() && n.abs() <= 1e9))
-            .ok_or_else(|| bad("offset must contain two finite numbers [dx, dy] in displayed points"))?;
+            .ok_or_else(|| {
+                bad("offset must contain two finite numbers [dx, dy] in displayed points")
+            })?;
         let doc = self.doc(a)?;
         if let Some(g) = a.get("generation") {
-            let g = g.as_u64().ok_or_else(|| bad("generation must be a non-negative integer from object_list"))?;
+            let g = g
+                .as_u64()
+                .ok_or_else(|| bad("generation must be a non-negative integer from object_list"))?;
             if g != doc.edit_generation() {
-                return Err(failed("the document changed; call object_list again before moving"));
+                return Err(failed(
+                    "the document changed; call object_list again before moving",
+                ));
             }
         }
         let offset = doc.object_move_offset(page, delta).map_err(failed)?;
         let count = targets.len();
-        let mut result = self.apply(a, Edit::MoveObjects { page, objects: targets, offset })?;
+        let mut result = self.apply(
+            a,
+            Edit::MoveObjects {
+                page,
+                objects: targets,
+                offset,
+            },
+        )?;
         result["moved"] = json!(count);
         Ok(result)
     }

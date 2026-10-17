@@ -32,9 +32,15 @@ const BUILTIN_FORMATS: [(u32, &str); 36] = [
     (39, "#,##0.00;(#,##0.00)"),
     (40, "#,##0.00;[Red](#,##0.00)"),
     (41, "_(* #,##0_);_(* \\(#,##0\\);_(* \"-\"_);_(@_)"),
-    (42, "_(\"$\"* #,##0_);_(\"$\"* \\(#,##0\\);_(\"$\"* \"-\"_);_(@_)"),
+    (
+        42,
+        "_(\"$\"* #,##0_);_(\"$\"* \\(#,##0\\);_(\"$\"* \"-\"_);_(@_)",
+    ),
     (43, "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)"),
-    (44, "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)"),
+    (
+        44,
+        "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+    ),
     (45, "mm:ss"),
     (46, "[h]:mm:ss"),
     (47, "mmss.0"),
@@ -43,13 +49,19 @@ const BUILTIN_FORMATS: [(u32, &str); 36] = [
 ];
 
 pub fn builtin_format(id: u32) -> Option<&'static str> {
-    BUILTIN_FORMATS.iter().find(|(i, _)| *i == id).map(|(_, c)| *c)
+    BUILTIN_FORMATS
+        .iter()
+        .find(|(i, _)| *i == id)
+        .map(|(_, c)| *c)
 }
 
 /// Id to write for a format code when it is a locale-independent built-in (currency formats 5–8
 /// are written as custom formats because their meaning depends on the reader's locale).
 pub fn builtin_id(code: &str) -> Option<u32> {
-    BUILTIN_FORMATS.iter().find(|(i, c)| *c == code && !(5..=8).contains(i)).map(|(i, _)| *i)
+    BUILTIN_FORMATS
+        .iter()
+        .find(|(i, c)| *c == code && !(5..=8).contains(i))
+        .map(|(i, _)| *i)
 }
 
 /// The 64-entry legacy palette (`indexed` colours), RRGGBB.
@@ -87,7 +99,10 @@ pub fn paper_name(id: u32) -> Option<&'static str> {
 }
 
 pub fn paper_id(name: &str) -> Option<u32> {
-    PAPERS.iter().find(|(_, n)| n.eq_ignore_ascii_case(name.trim())).map(|(i, _)| *i)
+    PAPERS
+        .iter()
+        .find(|(_, n)| n.eq_ignore_ascii_case(name.trim()))
+        .map(|(i, _)| *i)
 }
 
 /// Functions introduced after Excel 2007 that files store with the `_xlfn.` prefix. Entries with
@@ -289,7 +304,11 @@ pub fn col_width_to_px(w: f64) -> f32 {
 pub fn px_to_col_width(px: f32) -> f64 {
     let px = (px.max(0.0) as f64).round().min(1790.0);
     let back = |w: f64| col_width_to_px(w) as f64;
-    let chars = if px > 12.0 { ((px - 5.0) / 7.0 * 100.0 + 0.5).trunc() / 100.0 } else { px / 12.0 };
+    let chars = if px > 12.0 {
+        ((px - 5.0) / 7.0 * 100.0 + 0.5).trunc() / 100.0
+    } else {
+        px / 12.0
+    };
     let w = ((chars * 7.0 + 5.0) / 7.0 * 256.0).trunc() / 256.0;
     if back(w) == px {
         return w;
@@ -301,7 +320,11 @@ pub fn px_to_col_width(px: f32) -> f64 {
 
 /// Row height in typographic points → model px.
 pub fn pt_to_px(pt: f64) -> f32 {
-    if !pt.is_finite() || pt <= 0.0 { 0.0 } else { (pt.min(409.5) * 4.0 / 3.0) as f32 }
+    if !pt.is_finite() || pt <= 0.0 {
+        0.0
+    } else {
+        (pt.min(409.5) * 4.0 / 3.0) as f32
+    }
 }
 
 pub fn px_to_pt(px: f32) -> f64 {
@@ -320,7 +343,11 @@ mod tests {
         assert_eq!(col_width_to_px(9.140625), 64.0);
         assert_eq!(px_to_col_width(64.0), 9.140625);
         for px in 0..400 {
-            assert_eq!(col_width_to_px(px_to_col_width(px as f32)), px as f32, "px {px}");
+            assert_eq!(
+                col_width_to_px(px_to_col_width(px as f32)),
+                px as f32,
+                "px {px}"
+            );
         }
         assert_eq!(pt_to_px(15.0), 20.0);
         assert_eq!(px_to_pt(20.0), 15.0);
@@ -328,11 +355,26 @@ mod tests {
 
     #[test]
     fn functions() {
-        assert_eq!(file_function_name("xlookup").as_deref(), Some("_xlfn.XLOOKUP"));
-        assert_eq!(file_function_name("forecast.ets.confint").as_deref(), Some("_xlfn.FORECAST.ETS.CONFINT"));
-        assert_eq!(file_function_name("FILTER").as_deref(), Some("_xlfn._xlws.FILTER"));
-        assert_eq!(file_function_name("PERCENTOF").as_deref(), Some("_xlfn.PERCENTOF"));
-        assert_eq!(file_function_name("TRIMRANGE").as_deref(), Some("_xlfn.TRIMRANGE"));
+        assert_eq!(
+            file_function_name("xlookup").as_deref(),
+            Some("_xlfn.XLOOKUP")
+        );
+        assert_eq!(
+            file_function_name("forecast.ets.confint").as_deref(),
+            Some("_xlfn.FORECAST.ETS.CONFINT")
+        );
+        assert_eq!(
+            file_function_name("FILTER").as_deref(),
+            Some("_xlfn._xlws.FILTER")
+        );
+        assert_eq!(
+            file_function_name("PERCENTOF").as_deref(),
+            Some("_xlfn.PERCENTOF")
+        );
+        assert_eq!(
+            file_function_name("TRIMRANGE").as_deref(),
+            Some("_xlfn.TRIMRANGE")
+        );
         assert_eq!(file_function_name("SUM"), None);
         assert_eq!(builtin_format(14), Some("m/d/yyyy"));
         assert_eq!(builtin_id("0.00%"), Some(10));

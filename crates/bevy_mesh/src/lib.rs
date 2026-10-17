@@ -35,7 +35,7 @@ pub mod prelude {
     #[cfg(feature = "morph")]
     pub use crate::morph::MorphWeights;
     #[doc(hidden)]
-    pub use crate::{primitives::MeshBuilder, primitives::Meshable, Mesh, Mesh2d, Mesh3d};
+    pub use crate::{Mesh, Mesh2d, Mesh3d, primitives::MeshBuilder, primitives::Meshable};
 }
 
 bitflags! {

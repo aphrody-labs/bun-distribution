@@ -59,13 +59,19 @@ pub fn set(pref: &str, system: Option<&str>) {
 
 /// The [`LANGS`] index for a preference: the first language in it the UI has, else English.
 fn resolve(pref: &str, system: Option<&str>) -> usize {
-    let want = if pref.is_empty() || pref == "system" { system.unwrap_or("en") } else { pref };
+    let want = if pref.is_empty() || pref == "system" {
+        system.unwrap_or("en")
+    } else {
+        pref
+    };
     want.split(',').find_map(resolve_one).unwrap_or(0)
 }
 
 /// Regions whose Spanish reads the Latin American catalog (es-419): Latin America and the US.
-const LATIN_AMERICA: &[&str] =
-    &["419", "AR", "BO", "CL", "CO", "CR", "CU", "DO", "EC", "GT", "HN", "MX", "NI", "PA", "PE", "PR", "PY", "SV", "US", "UY", "VE"];
+const LATIN_AMERICA: &[&str] = &[
+    "419", "AR", "BO", "CL", "CO", "CR", "CU", "DO", "EC", "GT", "HN", "MX", "NI", "PA", "PE",
+    "PR", "PY", "SV", "US", "UY", "VE",
+];
 
 /// The [`LANGS`] index for one tag: the exact tag ("pt-BR"), else its base language ("es" for
 /// "es_ES.UTF-8"), else a regional catalog of that language ("pt-BR" for "pt-PT"); Latin American
@@ -73,20 +79,49 @@ const LATIN_AMERICA: &[&str] =
 /// has no catalog and Simplified isn't a stand-in. A language the UI can't draw (CJK on the web
 /// without CJK faces built in) doesn't count.
 fn resolve_one(want: &str) -> Option<usize> {
-    let tag = want.trim().split(['.', '@']).next().unwrap_or("").replace('_', "-");
+    let tag = want
+        .trim()
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .replace('_', "-");
     let base = tag.split('-').next().unwrap_or("");
-    let has = |subtags: &[&str]| tag.split('-').skip(1).any(|t| subtags.iter().any(|s| s.eq_ignore_ascii_case(t)));
-    if base.eq_ignore_ascii_case("zh") && (has(&["Hant"]) || (!has(&["Hans"]) && has(&["TW", "HK", "MO"]))) {
+    let has = |subtags: &[&str]| {
+        tag.split('-')
+            .skip(1)
+            .any(|t| subtags.iter().any(|s| s.eq_ignore_ascii_case(t)))
+    };
+    if base.eq_ignore_ascii_case("zh")
+        && (has(&["Hant"]) || (!has(&["Hans"]) && has(&["TW", "HK", "MO"])))
+    {
         return None;
     }
     let find = |t: &str| LANGS.iter().position(|l| l.code.eq_ignore_ascii_case(t));
-    let alias = (base.eq_ignore_ascii_case("es") && has(LATIN_AMERICA)).then(|| find("es-419")).flatten();
-    let regional = || LANGS.iter().position(|l| !base.is_empty() && l.code.split('-').next().is_some_and(|b| b.eq_ignore_ascii_case(base)));
-    alias.or_else(|| find(&tag)).or_else(|| find(base)).or_else(regional).filter(|i| LANGS.get(*i).is_some_and(|l| crate::cjk::can_show(l.code)))
+    let alias = (base.eq_ignore_ascii_case("es") && has(LATIN_AMERICA))
+        .then(|| find("es-419"))
+        .flatten();
+    let regional = || {
+        LANGS.iter().position(|l| {
+            !base.is_empty()
+                && l.code
+                    .split('-')
+                    .next()
+                    .is_some_and(|b| b.eq_ignore_ascii_case(base))
+        })
+    };
+    alias
+        .or_else(|| find(&tag))
+        .or_else(|| find(base))
+        .or_else(regional)
+        .filter(|i| LANGS.get(*i).is_some_and(|l| crate::cjk::can_show(l.code)))
 }
 
 fn find(table: &'static [(&'static str, Text)], key: &str) -> Option<&'static Text> {
-    table.binary_search_by(|(k, _)| (*k).cmp(key)).ok().and_then(|i| table.get(i)).map(|(_, t)| t)
+    table
+        .binary_search_by(|(k, _)| (*k).cmp(key))
+        .ok()
+        .and_then(|i| table.get(i))
+        .map(|(_, t)| t)
 }
 
 /// Language `lang`, the catalog it overlays ("es" under "es-419"), then English.
@@ -154,7 +189,9 @@ fn fill(text: &str, args: &[(&str, &dyn Display)]) -> String {
         out.push_str(before);
         let arg = tail.find('}').and_then(|close| {
             let name = tail.get(1..close)?;
-            args.iter().find(|(k, _)| *k == name).map(|(_, v)| (close, v))
+            args.iter()
+                .find(|(k, _)| *k == name)
+                .map(|(_, v)| (close, v))
         });
         match arg {
             Some((close, v)) => {
@@ -184,9 +221,17 @@ pub fn menu_item<'a>(id: &str, english: &'a str) -> Cow<'a, str> {
 }
 
 fn label<'a>(menu: bool, id: &str, english: &'a str) -> Cow<'a, str> {
-    let text = chain(CURRENT.load(Ordering::Relaxed)).find_map(|l| menu.then(|| find(l.menu, id)).flatten().or_else(|| find(l.commands, id)));
+    let text = chain(CURRENT.load(Ordering::Relaxed)).find_map(|l| {
+        menu.then(|| find(l.menu, id))
+            .flatten()
+            .or_else(|| find(l.commands, id))
+    });
     match text {
-        Some(Text::Plain(s) | Text::Plural(_, s)) if english.ends_with('…') && !s.ends_with('…') => Cow::Owned(format!("{s}…")),
+        Some(Text::Plain(s) | Text::Plural(_, s))
+            if english.ends_with('…') && !s.ends_with('…') =>
+        {
+            Cow::Owned(format!("{s}…"))
+        }
         Some(Text::Plain(s) | Text::Plural(_, s)) => Cow::Borrowed(s),
         None => Cow::Borrowed(english),
     }

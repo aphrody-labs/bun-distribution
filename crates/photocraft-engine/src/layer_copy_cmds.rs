@@ -21,21 +21,34 @@ use crate::{EngineError, Result, Session};
 const CMD: &str = "layer.copyToDocument";
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: CMD.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: CMD.into(),
+        msg: msg.into(),
+    }
 }
 
 fn enabled(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
     d.active_layer.ok_or("no active layer")?;
-    if s.documents().len() < 2 { Err("no other document is open".into()) } else { Ok(()) }
+    if s.documents().len() < 2 {
+        Err("no other document is open".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// A document index param (`None` when absent), checked against the open documents.
 fn doc_index(s: &Session, p: &Value, key: &str) -> Result<Option<usize>> {
     let Some(v) = p.get(key) else { return Ok(None) };
-    let i = v.as_u64().and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(format!("`{key}` must be a document index")))?;
+    let i = v
+        .as_u64()
+        .and_then(|i| usize::try_from(i).ok())
+        .ok_or_else(|| bad(format!("`{key}` must be a document index")))?;
     if i >= s.documents().len() {
-        return Err(bad(format!("no document {i} (there are {})", s.documents().len())));
+        return Err(bad(format!(
+            "no document {i} (there are {})",
+            s.documents().len()
+        )));
     }
     Ok(Some(i))
 }
@@ -43,7 +56,10 @@ fn doc_index(s: &Session, p: &Value, key: &str) -> Result<Option<usize>> {
 /// An `[x, y]` param of finite numbers within ±10⁷ pixels.
 fn point(p: &Value, key: &str) -> Result<Option<[f64; 2]>> {
     let Some(v) = p.get(key) else { return Ok(None) };
-    let xy = v.as_array().filter(|a| a.len() == 2).and_then(|a| Some([a[0].as_f64()?, a[1].as_f64()?]));
+    let xy = v
+        .as_array()
+        .filter(|a| a.len() == 2)
+        .and_then(|a| Some([a[0].as_f64()?, a[1].as_f64()?]));
     match xy {
         Some(xy) if xy.iter().all(|c| c.is_finite() && c.abs() <= 1e7) => Ok(Some(xy)),
         _ => Err(bad(format!("`{key}` must be [x, y] (pixels)"))),
@@ -52,11 +68,17 @@ fn point(p: &Value, key: &str) -> Result<Option<[f64; 2]>> {
 
 /// Modes whose layers convert through the colour engine.
 pub(crate) fn layered(mode: ColorMode) -> bool {
-    matches!(mode, ColorMode::Rgb | ColorMode::Grayscale | ColorMode::Cmyk | ColorMode::Lab)
+    matches!(
+        mode,
+        ColorMode::Rgb | ColorMode::Grayscale | ColorMode::Cmyk | ColorMode::Lab
+    )
 }
 
 fn center(r: Rect) -> [f64; 2] {
-    [(f64::from(r.x0) + f64::from(r.x1)) / 2.0, (f64::from(r.y0) + f64::from(r.y1)) / 2.0]
+    [
+        (f64::from(r.x0) + f64::from(r.x1)) / 2.0,
+        (f64::from(r.y0) + f64::from(r.y1)) / 2.0,
+    ]
 }
 
 /// Readies `copies` (a scratch document of the source's colour holding duplicated layers) for
@@ -68,9 +90,19 @@ pub(crate) fn adapt_copies(s: &Session, copies: &mut Document, dest: &Document) 
     // Link-group IDs are scoped to a document. Two independently linked pairs can both
     // use group 1; copying one must not link it to the other's existing layers (#3045).
     // Remap each imported group once so links within the copied batch stay intact.
-    let mut used: HashSet<u64> = dest.walk().into_iter().filter_map(|(_, _, l)| l.link_group).collect();
-    let mut next_group = dest.unused_link_group().ok_or_else(|| EngineError::Other("no free linked-layer group id".into()))?;
-    let groups: Vec<_> = copies.walk().into_iter().filter_map(|(_, _, l)| l.link_group.map(|group| (l.id, group))).collect();
+    let mut used: HashSet<u64> = dest
+        .walk()
+        .into_iter()
+        .filter_map(|(_, _, l)| l.link_group)
+        .collect();
+    let mut next_group = dest
+        .unused_link_group()
+        .ok_or_else(|| EngineError::Other("no free linked-layer group id".into()))?;
+    let groups: Vec<_> = copies
+        .walk()
+        .into_iter()
+        .filter_map(|(_, _, l)| l.link_group.map(|group| (l.id, group)))
+        .collect();
     let mut remapped = HashMap::new();
     for (_, group) in &groups {
         if remapped.contains_key(group) {
@@ -89,17 +121,28 @@ pub(crate) fn adapt_copies(s: &Session, copies: &mut Document, dest: &Document) 
         }
     }
     let mut contents = HashMap::new();
-    let smart_ids: Vec<_> = copies.walk().into_iter().filter_map(|(_, _, l)| matches!(l.content, LayerContent::Smart(_)).then_some(l.id)).collect();
+    let smart_ids: Vec<_> = copies
+        .walk()
+        .into_iter()
+        .filter_map(|(_, _, l)| matches!(l.content, LayerContent::Smart(_)).then_some(l.id))
+        .collect();
     for id in smart_ids {
         if let Some(l) = copies.layer_mut(id)
             && let LayerContent::Smart(sm) = &mut l.content
         {
-            sm.contents_id = *contents.entry(sm.contents_id).or_insert_with(SmartContentsId::fresh);
+            sm.contents_id = *contents
+                .entry(sm.contents_id)
+                .or_insert_with(SmartContentsId::fresh);
         }
     }
     if (copies.mode, &copies.icc_profile) != (dest.mode, &dest.icc_profile) {
         let profile = crate::color_cmds::document_profile(dest);
-        crate::color_cmds::convert_document(copies, &profile, s.color.settings.intent(), s.color.settings.bpc)?;
+        crate::color_cmds::convert_document(
+            copies,
+            &profile,
+            s.color.settings.intent(),
+            s.color.settings.bpc,
+        )?;
     }
     if copies.depth != dest.depth {
         crate::image_cmds::for_each_surface(&mut copies.layers, true, &mut |surf, _| {
@@ -123,13 +166,16 @@ pub(crate) fn translate_copies(copies: &mut Document, dx: i32, dy: i32) {
 
 /// `layer.copyToDocument`.
 fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
-    let dest = doc_index(s, p, "document")?.ok_or_else(|| bad("missing `document` (the destination's index)"))?;
+    let dest = doc_index(s, p, "document")?
+        .ok_or_else(|| bad("missing `document` (the destination's index)"))?;
     let src = match doc_index(s, p, "source")? {
         Some(i) => i,
         None => s.active_index().ok_or(EngineError::NoDocument)?,
     };
     if src == dest {
-        return Err(bad("the destination is the source document (use layer.duplicate)"));
+        return Err(bad(
+            "the destination is the source document (use layer.duplicate)",
+        ));
     }
     let (from, to) = (&s.documents()[src], &s.documents()[dest]);
     let (sdoc, ddoc) = (from.doc.clone(), to.doc.clone());
@@ -137,7 +183,11 @@ fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
         None => from.selected_layers(),
         Some(v) => v
             .as_array()
-            .map(|a| a.iter().map(|id| id.as_u64().map(LayerId)).collect::<Option<Vec<_>>>())
+            .map(|a| {
+                a.iter()
+                    .map(|id| id.as_u64().map(LayerId))
+                    .collect::<Option<Vec<_>>>()
+            })
             .and_then(|ids| ids)
             .ok_or_else(|| bad("`layers` must be an array of layer ids"))?,
     };
@@ -150,7 +200,10 @@ fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
     }
     for (doc, role) in [(&sdoc, "source"), (&ddoc, "destination")] {
         if !layered(doc.mode) {
-            return Err(EngineError::Other(format!("layers can't be copied with a {:?} {role} document", doc.mode)));
+            return Err(EngineError::Other(format!(
+                "layers can't be copied with a {:?} {role} document",
+                doc.mode
+            )));
         }
     }
     // The copies, bottom to top, in a scratch document of the source's colour so they convert
@@ -169,14 +222,27 @@ fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
         }
         copies.layers.push(l);
     }
-    if let (Some(name), [l]) = (p.get("name").and_then(Value::as_str).filter(|n| !n.is_empty()), copies.layers.as_mut_slice()) {
+    if let (Some(name), [l]) = (
+        p.get("name")
+            .and_then(Value::as_str)
+            .filter(|n| !n.is_empty()),
+        copies.layers.as_mut_slice(),
+    ) {
         l.name = name.to_string();
     }
     adapt_copies(s, &mut copies, &ddoc)?;
     // Placement: centred on the destination's canvas, centred on a point, or offset from where
     // the layers are in the source (default: the same canvas position).
-    let bounds = copies.layers.iter().filter_map(crate::layer_multi_cmds::layer_bounds).fold(Rect::EMPTY, |a, b| a.union(&b));
-    let content = if bounds.is_empty() { sdoc.bounds() } else { bounds };
+    let bounds = copies
+        .layers
+        .iter()
+        .filter_map(crate::layer_multi_cmds::layer_bounds)
+        .fold(Rect::EMPTY, |a, b| a.union(&b));
+    let content = if bounds.is_empty() {
+        sdoc.bounds()
+    } else {
+        bounds
+    };
     let (dx, dy) = if p.get("center").and_then(Value::as_bool).unwrap_or(false) {
         let (c, d) = (center(content), center(ddoc.bounds()));
         (d[0] - c[0], d[1] - c[1])
@@ -188,9 +254,18 @@ fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let (dx, dy) = (dx.round() as i32, dy.round() as i32);
     translate_copies(&mut copies, dx, dy);
-    let patterns: Vec<_> = sdoc.patterns.iter().filter(|pat| !ddoc.patterns.iter().any(|d| d.id == pat.id)).cloned().collect();
+    let patterns: Vec<_> = sdoc
+        .patterns
+        .iter()
+        .filter(|pat| !ddoc.patterns.iter().any(|d| d.id == pat.id))
+        .cloned()
+        .collect();
     s.set_active(dest);
-    let label = if ids.len() == 1 { "Duplicate Layer" } else { "Duplicate Layers" };
+    let label = if ids.len() == 1 {
+        "Duplicate Layer"
+    } else {
+        "Duplicate Layers"
+    };
     let edited = s.edit(label, |doc, active| {
         doc.patterns.extend(patterns);
         let mut above = *active;
@@ -210,7 +285,9 @@ fn copy_to_document(s: &mut Session, p: &Value) -> Result<Value> {
     let new = edited?;
     let last = new.last().copied();
     crate::layer_multi_cmds::reselect(s, new.clone(), last);
-    Ok(json!({"document": dest, "layers": new.iter().map(|l| l.0).collect::<Vec<_>>(), "offset": [dx, dy]}))
+    Ok(
+        json!({"document": dest, "layers": new.iter().map(|l| l.0).collect::<Vec<_>>(), "offset": [dx, dy]}),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {

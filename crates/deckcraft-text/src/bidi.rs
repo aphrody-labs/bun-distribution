@@ -6,13 +6,20 @@
 //! [`visual_order`] rule L2). Rule L4 (mirrored brackets) is applied by the shaper, which draws
 //! mirrorable characters in right-to-left items with their mirrored glyphs.
 
-use unicode_bidi::BidiClass::{self, AL, AN, B, BN, FSI, LRE, LRI, LRO, PDF, PDI, R, RLE, RLI, RLO, S, WS};
+use unicode_bidi::BidiClass::{
+    self, AL, AN, B, BN, FSI, LRE, LRI, LRO, PDF, PDI, R, RLE, RLI, RLO, S, WS,
+};
 use unicode_bidi::{BidiInfo, Level, bidi_class};
 
 /// Does anything in the text need the full algorithm? (Strong right-to-left, Arabic numbers or
 /// explicit embeddings.)
 fn needs_bidi(chars: &[char]) -> bool {
-    chars.iter().any(|c| matches!(bidi_class(*c), R | AL | AN | LRE | RLE | LRO | RLO | PDF | LRI | RLI | FSI | PDI))
+    chars.iter().any(|c| {
+        matches!(
+            bidi_class(*c),
+            R | AL | AN | LRE | RLE | LRO | RLO | PDF | LRI | RLI | FSI | PDI
+        )
+    })
 }
 
 /// Resolved embedding level of every character of a paragraph (before the line rules), with the
@@ -24,13 +31,18 @@ pub(crate) fn levels(text: &str, chars: &[char], rtl: bool) -> Vec<u8> {
     }
     let info = BidiInfo::new(text, Some(if rtl { Level::rtl() } else { Level::ltr() }));
     // `levels` is per byte; take each character's first byte.
-    text.char_indices().map(|(b, _)| info.levels.get(b).map(|l| l.number()).unwrap_or(base)).collect()
+    text.char_indices()
+        .map(|(b, _)| info.levels.get(b).map(|l| l.number()).unwrap_or(base))
+        .collect()
 }
 
 /// Whitespace-like for rule L1: reset to the paragraph level when trailing a line or preceding a
 /// segment/paragraph separator.
 fn l1_whitespace(c: BidiClass) -> bool {
-    matches!(c, WS | FSI | LRI | RLI | PDI | BN | LRE | RLE | LRO | RLO | PDF)
+    matches!(
+        c,
+        WS | FSI | LRI | RLI | PDI | BN | LRE | RLE | LRO | RLO | PDF
+    )
 }
 
 /// Rule L1 for one line: segment and paragraph separators, any whitespace run before them, and
@@ -64,13 +76,26 @@ pub(crate) fn line_levels(chars: &[char], levels: &[u8], para_level: u8) -> Vec<
 /// reversed.
 pub(crate) fn visual_order(levels: &[u8]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..levels.len()).collect();
-    let Some(&max) = levels.iter().max() else { return order };
-    let min_odd = levels.iter().copied().filter(|l| l % 2 == 1).min().unwrap_or(max.saturating_add(1));
+    let Some(&max) = levels.iter().max() else {
+        return order;
+    };
+    let min_odd = levels
+        .iter()
+        .copied()
+        .filter(|l| l % 2 == 1)
+        .min()
+        .unwrap_or(max.saturating_add(1));
     let mut lvl = max;
     while lvl >= min_odd && lvl > 0 {
         let mut i = 0;
         while i < order.len() {
-            let at = |k: usize| order.get(k).and_then(|&j| levels.get(j)).copied().unwrap_or(0);
+            let at = |k: usize| {
+                order
+                    .get(k)
+                    .and_then(|&j| levels.get(j))
+                    .copied()
+                    .unwrap_or(0)
+            };
             if at(i) >= lvl {
                 let start = i;
                 while i < order.len() && at(i) >= lvl {

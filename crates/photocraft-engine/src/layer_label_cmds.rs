@@ -10,12 +10,19 @@ use crate::{EngineError, Result, Session};
 const ID: &str = "layer.setLabelColor";
 
 fn bad(message: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: ID.into(), msg: message.into() }
+    EngineError::BadParams {
+        cmd: ID.into(),
+        msg: message.into(),
+    }
 }
 
 fn enabled(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.selected_layers().is_empty() { Err("no layer selected".into()) } else { Ok(()) }
+    if st.selected_layers().is_empty() {
+        Err("no layer selected".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
@@ -26,7 +33,10 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
         })?;
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let roots = match p.get("layer") {
-        Some(v) => vec![LayerId(v.as_u64().ok_or_else(|| bad("`layer` must be an unsigned integer"))?)],
+        Some(v) => vec![LayerId(
+            v.as_u64()
+                .ok_or_else(|| bad("`layer` must be an unsigned integer"))?,
+        )],
         None => st.selected_layers(),
     };
     if roots.is_empty() {
@@ -35,7 +45,10 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
     let walk = st.doc.walk();
     let mut paths = Vec::with_capacity(roots.len());
     for id in roots {
-        let (path, _, _) = walk.iter().find(|(_, _, l)| l.id == id).ok_or(EngineError::NoLayer(id))?;
+        let (path, _, _) = walk
+            .iter()
+            .find(|(_, _, l)| l.id == id)
+            .ok_or(EngineError::NoLayer(id))?;
         paths.push(path);
     }
     // A single walk also deduplicates a selected child whose parent is selected.
@@ -51,7 +64,9 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
     if changed {
         s.edit("Layer Color", |doc, _| {
             for (path, id) in &targets {
-                doc.layer_at_mut(path).ok_or(EngineError::NoLayer(*id))?.label = color;
+                doc.layer_at_mut(path)
+                    .ok_or(EngineError::NoLayer(*id))?
+                    .label = color;
             }
             Ok(())
         })?;
@@ -60,7 +75,9 @@ fn set_label(s: &mut Session, p: &Value) -> Result<Value> {
             st.last_damage = Some(photocraft_geom::Rect::EMPTY);
         }
     }
-    Ok(json!({"color": color.id(), "layers": targets.iter().map(|(_, id)| id.0).collect::<Vec<_>>(), "changed": changed}))
+    Ok(
+        json!({"color": color.id(), "layers": targets.iter().map(|(_, id)| id.0).collect::<Vec<_>>(), "changed": changed}),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {

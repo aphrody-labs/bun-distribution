@@ -57,7 +57,9 @@ fn bench_cache_hit(c: &mut Criterion) {
 
     c.bench_function("cache/hit", |b| {
         b.iter(|| {
-            let hit = cache.load(black_box("SOUL.md"), black_box(&path)).expect("hit");
+            let hit = cache
+                .load(black_box("SOUL.md"), black_box(&path))
+                .expect("hit");
             black_box(hit.from_cache)
         });
     });
@@ -83,9 +85,11 @@ fn bench_assemble(c: &mut Criterion) {
 
     // Also bench just the assembly off an already-open home (the hot path when
     // the home is shared via arc-swap and only re-rendered).
-    let home =
-        AgentHome::open(HomeOptions { workspace: Some(ws.clone()), ..HomeOptions::default() })
-            .expect("open");
+    let home = AgentHome::open(HomeOptions {
+        workspace: Some(ws.clone()),
+        ..HomeOptions::default()
+    })
+    .expect("open");
     c.bench_function("assemble/render_only", |b| {
         b.iter(|| {
             let view = home.system_prompt(black_box(&budget));

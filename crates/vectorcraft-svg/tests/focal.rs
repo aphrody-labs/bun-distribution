@@ -9,15 +9,28 @@ use vectorcraft_svg::{ExportOptions, export, import};
 
 /// One square filled with a radial on `start`→`end` at `aspect`, its focal point at `focal`.
 fn doc(start: Point, end: Point, aspect: f64, focal: Point) -> Document {
-    let mut geom = GradientGeom { start, end, aspect, focal: None };
+    let mut geom = GradientGeom {
+        start,
+        end,
+        aspect,
+        focal: None,
+    };
     geom.set_focal(Some(focal));
-    let mut gp = GradientPaint::new(Gradient { kind: GradientKind::Radial, ..Gradient::default() });
+    let mut gp = GradientPaint::new(Gradient {
+        kind: GradientKind::Radial,
+        ..Gradient::default()
+    });
     gp.geom = Some(geom);
     let mut d = Document::new(200.0, 200.0);
     let l = d.layers[0].id;
     let id = d.alloc_id();
     let ap = Appearance::basic(Paint::Gradient(Box::new(gp)), Paint::None, 0.0);
-    d.insert(Some(l), 0, Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)), ap)).unwrap();
+    d.insert(
+        Some(l),
+        0,
+        Node::path(id, shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 200.0)), ap),
+    )
+    .unwrap();
     d
 }
 
@@ -37,13 +50,30 @@ fn close(a: Point, b: Point) -> bool {
 
 #[test]
 fn a_circle_writes_its_focal_point_as_fx_fy_and_reads_it_back() {
-    let d = doc(Point::new(100.0, 100.0), Point::new(180.0, 100.0), 1.0, Point::new(70.0, 110.0));
+    let d = doc(
+        Point::new(100.0, 100.0),
+        Point::new(180.0, 100.0),
+        1.0,
+        Point::new(70.0, 110.0),
+    );
     let svg = export(&d, &ExportOptions::default());
-    assert!(svg.contains("cx=\"100\" cy=\"100\" r=\"80\" fx=\"70\" fy=\"110\""), "{svg}");
+    assert!(
+        svg.contains("cx=\"100\" cy=\"100\" r=\"80\" fx=\"70\" fy=\"110\""),
+        "{svg}"
+    );
     let g = geom(&import(&svg).unwrap());
-    assert!(close(g.start, Point::new(100.0, 100.0)) && close(g.focal.expect("focal kept"), Point::new(70.0, 110.0)), "{g:?}");
+    assert!(
+        close(g.start, Point::new(100.0, 100.0))
+            && close(g.focal.expect("focal kept"), Point::new(70.0, 110.0)),
+        "{g:?}"
+    );
     // A centred radial writes none.
-    let centred = doc(Point::new(100.0, 100.0), Point::new(180.0, 100.0), 1.0, Point::new(100.0, 100.0));
+    let centred = doc(
+        Point::new(100.0, 100.0),
+        Point::new(180.0, 100.0),
+        1.0,
+        Point::new(100.0, 100.0),
+    );
     let svg = export(&centred, &ExportOptions::default());
     assert!(!svg.contains("fx="), "{svg}");
     assert_eq!(geom(&import(&svg).unwrap()).focal, None);
@@ -51,11 +81,22 @@ fn a_circle_writes_its_focal_point_as_fx_fy_and_reads_it_back() {
 
 #[test]
 fn an_ellipse_writes_its_focal_point_in_the_gradient_space() {
-    let d = doc(Point::new(100.0, 100.0), Point::new(100.0, 40.0), 0.5, Point::new(110.0, 120.0));
+    let d = doc(
+        Point::new(100.0, 100.0),
+        Point::new(100.0, 40.0),
+        0.5,
+        Point::new(110.0, 120.0),
+    );
     let svg = export(&d, &ExportOptions::default());
-    assert!(svg.contains("fx=") && svg.contains("gradientTransform"), "{svg}");
+    assert!(
+        svg.contains("fx=") && svg.contains("gradientTransform"),
+        "{svg}"
+    );
     let g = geom(&import(&svg).unwrap());
-    assert!(close(g.focal.expect("focal kept"), Point::new(110.0, 120.0)), "{g:?}");
+    assert!(
+        close(g.focal.expect("focal kept"), Point::new(110.0, 120.0)),
+        "{g:?}"
+    );
     assert!((g.aspect - 0.5).abs() < 1e-3, "{g:?}");
 }
 

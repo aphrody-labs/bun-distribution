@@ -65,7 +65,9 @@ fn shortcut_matches(shortcut: &str, key: &str, mods: Mods) -> bool {
     let parts: Vec<&str> = shortcut.split('+').collect();
     // "Cmd+=": the last part is the key even if it's punctuation; "Cmd++" would split oddly but
     // no shortcut uses it.
-    let Some((k, ms)) = parts.split_last() else { return false };
+    let Some((k, ms)) = parts.split_last() else {
+        return false;
+    };
     let has = |m: &str| ms.iter().any(|x| x.eq_ignore_ascii_case(m));
     k.eq_ignore_ascii_case(key)
         && has("cmd") == mods.cmd
@@ -76,13 +78,22 @@ fn shortcut_matches(shortcut: &str, key: &str, mods: Mods) -> bool {
 
 fn mods_from(p: &Value) -> Mods {
     let b = |n: &str| p.get(n).and_then(Value::as_bool).unwrap_or(false);
-    Mods { shift: b("shift"), alt: b("alt"), cmd: b("cmd"), ctrl: b("ctrl"), space: false }
+    Mods {
+        shift: b("shift"),
+        alt: b("alt"),
+        cmd: b("cmd"),
+        ctrl: b("ctrl"),
+        space: false,
+    }
 }
 
 impl Headless {
     /// A session with no document (the first `file.new` / `file.open` creates one).
     pub fn new() -> Self {
-        Self { session: Session::new(), renderer: Renderer::new() }
+        Self {
+            session: Session::new(),
+            renderer: Renderer::new(),
+        }
     }
 
     /// A session with a fresh default (Letter) document, ready to lay out.
@@ -96,8 +107,14 @@ impl Headless {
 
     fn exec(&mut self, id: &str, params: &Value) -> Result<Value, String> {
         let r = self.session.execute(id, params).map_err(|e| {
-            let ui_only = ["app.", "view.", "window."].iter().any(|p| id.starts_with(p));
-            if ui_only && designcraft_engine::find_command(id).is_none() { format!("`{id}` is a UI command; {NEEDS_APP}") } else { e.to_string() }
+            let ui_only = ["app.", "view.", "window."]
+                .iter()
+                .any(|p| id.starts_with(p));
+            if ui_only && designcraft_engine::find_command(id).is_none() {
+                format!("`{id}` is a UI command; {NEEDS_APP}")
+            } else {
+                e.to_string()
+            }
         });
         // Requests for a UI (file pickers, dialogs) have nobody to serve them here.
         self.session.ui_requests.clear();
@@ -105,28 +122,67 @@ impl Headless {
     }
 
     fn selection(&self) -> Value {
-        self.session.active().map(|d| serde_json::to_value(&d.selection).unwrap_or_default()).unwrap_or(Value::Null)
+        self.session
+            .active()
+            .map(|d| serde_json::to_value(&d.selection).unwrap_or_default())
+            .unwrap_or(Value::Null)
     }
 
     fn pointer(&mut self, p: &Value) -> Result<Value, String> {
-        let events = p.get("events").and_then(Value::as_array).ok_or("missing `events`")?;
-        let base: Mods = p.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or_default();
+        let events = p
+            .get("events")
+            .and_then(Value::as_array)
+            .ok_or("missing `events`")?;
+        let base: Mods = p
+            .get("mods")
+            .and_then(|m| serde_json::from_value(m.clone()).ok())
+            .unwrap_or_default();
         if self.session.active().is_none() {
             return Err("no document open (use new_document first)".into());
         }
         for e in events {
             let kind = s(e, "kind").unwrap_or("");
-            let kind = pointer_kind(kind).ok_or_else(|| format!("unknown pointer kind `{kind}` (down|drag|up|move|doubleclick)"))?;
+            let kind = pointer_kind(kind).ok_or_else(|| {
+                format!("unknown pointer kind `{kind}` (down|drag|up|move|doubleclick)")
+            })?;
             if s(e, "space") == Some("screen") {
-                return Err(format!("screen-space pointer events: {NEEDS_APP}. Use spread coordinates instead"));
+                return Err(format!(
+                    "screen-space pointer events: {NEEDS_APP}. Use spread coordinates instead"
+                ));
             }
-            let x = e.get("x").and_then(Value::as_f64).ok_or("pointer event needs numeric `x`")?;
-            let y = e.get("y").and_then(Value::as_f64).ok_or("pointer event needs numeric `y`")?;
-            let mods = e.get("mods").and_then(|m| serde_json::from_value(m.clone()).ok()).unwrap_or(base);
-            self.session.pointer(&PointerEvent { kind, pos: Point::new(x, y), mods, clicks: 0 }, VIEW).map_err(|e| e.to_string())?;
+            let x = e
+                .get("x")
+                .and_then(Value::as_f64)
+                .ok_or("pointer event needs numeric `x`")?;
+            let y = e
+                .get("y")
+                .and_then(Value::as_f64)
+                .ok_or("pointer event needs numeric `y`")?;
+            let mods = e
+                .get("mods")
+                .and_then(|m| serde_json::from_value(m.clone()).ok())
+                .unwrap_or(base);
+            self.session
+                .pointer(
+                    &PointerEvent {
+                        kind,
+                        pos: Point::new(x, y),
+                        mods,
+                        clicks: 0,
+                    },
+                    VIEW,
+                )
+                .map_err(|e| e.to_string())?;
         }
-        let requests: Vec<Value> = self.session.ui_requests.drain(..).map(|r| serde_json::to_value(r).unwrap_or_default()).collect();
-        Ok(json!({"selection": self.selection(), "tool": self.session.tool_id(), "requests": requests}))
+        let requests: Vec<Value> = self
+            .session
+            .ui_requests
+            .drain(..)
+            .map(|r| serde_json::to_value(r).unwrap_or_default())
+            .collect();
+        Ok(
+            json!({"selection": self.selection(), "tool": self.session.tool_id(), "requests": requests}),
+        )
     }
 
     /// Keyboard input: the active tool (caret movement, Enter/Tab/Backspace while typing), then
@@ -138,34 +194,55 @@ impl Headless {
         let tk = tool_key(key);
         if let Some(k) = tk
             && (typing || self.session.tool_busy())
-            && self.session.tool_key(k, mods, VIEW).map_err(|e| e.to_string())?
+            && self
+                .session
+                .tool_key(k, mods, VIEW)
+                .map_err(|e| e.to_string())?
         {
             self.session.ui_requests.clear();
-            return Ok(json!({"handledBy": "tool", "tool": self.session.tool_id(), "selection": self.selection()}));
+            return Ok(
+                json!({"handledBy": "tool", "tool": self.session.tool_id(), "selection": self.selection()}),
+            );
         }
         // While typing, plain keys are text, not shortcuts.
         let plain = !mods.cmd && !mods.ctrl && !mods.alt;
         if !(typing && plain)
-            && let Some(c) = designcraft_engine::command_specs().iter().find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods)))
+            && let Some(c) = designcraft_engine::command_specs()
+                .iter()
+                .find(|c| c.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods)))
         {
             let r = self.exec(c.id, &json!({}))?;
             return Ok(json!({"handledBy": "command", "command": c.id, "result": r}));
         }
-        if !typing && let Some(t) = TOOL_GROUPS.iter().flat_map(|g| g.iter()).find(|t| t.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods))) {
+        if !typing
+            && let Some(t) = TOOL_GROUPS
+                .iter()
+                .flat_map(|g| g.iter())
+                .find(|t| t.shortcut.is_some_and(|sc| shortcut_matches(sc, key, mods)))
+        {
             self.session.set_tool(t.id);
             return Ok(json!({"handledBy": "tool.select", "tool": t.id}));
         }
         if let Some(k) = tk
-            && self.session.tool_key(k, mods, VIEW).map_err(|e| e.to_string())?
+            && self
+                .session
+                .tool_key(k, mods, VIEW)
+                .map_err(|e| e.to_string())?
         {
             self.session.ui_requests.clear();
-            return Ok(json!({"handledBy": "tool", "tool": self.session.tool_id(), "selection": self.selection()}));
+            return Ok(
+                json!({"handledBy": "tool", "tool": self.session.tool_id(), "selection": self.selection()}),
+            );
         }
         if typing && plain {
             let text = s(p, "text").map(str::to_string).or_else(|| {
                 let mut c = key.chars();
                 match (c.next(), c.next()) {
-                    (Some(ch), None) => Some(if mods.shift { ch.to_uppercase().collect() } else { ch.to_lowercase().collect() }),
+                    (Some(ch), None) => Some(if mods.shift {
+                        ch.to_uppercase().collect()
+                    } else {
+                        ch.to_lowercase().collect()
+                    }),
                     _ if key.eq_ignore_ascii_case("space") => Some(" ".into()),
                     _ => None,
                 }
@@ -175,12 +252,18 @@ impl Headless {
                 return Ok(json!({"handledBy": "text", "text": t}));
             }
         }
-        Err(format!("key `{key}` does nothing here (no tool, command or tool shortcut bound to it)"))
+        Err(format!(
+            "key `{key}` does nothing here (no tool, command or tool shortcut bound to it)"
+        ))
     }
 
     fn text(&mut self, p: &Value) -> Result<Value, String> {
         let t = s(p, "text").ok_or("missing `text`")?;
-        if self.session.active().is_none_or(|st| st.selection.text.is_none_or(|t| st.doc.text_story(t.story, t.cell).is_none())) {
+        if self.session.active().is_none_or(|st| {
+            st.selection
+                .text
+                .is_none_or(|t| st.doc.text_story(t.story, t.cell).is_none())
+        }) {
             return Err("no text insertion point: click into a text frame with the type tool first (pointer with tool \"type\"), \
                 or select text with execute text.select, or use set_story_text"
                 .into());
@@ -192,19 +275,41 @@ impl Headless {
     fn render(&mut self, p: &Value) -> Result<Value, String> {
         let st = self.session.active().ok_or("no document open")?;
         let page = page_index(p, st.doc.page_count())?;
-        let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(1.0).clamp(0.05, 16.0);
+        let scale = p
+            .get("scale")
+            .and_then(Value::as_f64)
+            .unwrap_or(1.0)
+            .clamp(0.05, 16.0);
         let bleed = p.get("bleed").and_then(Value::as_bool).unwrap_or(false);
         let img = self
             .renderer
-            .render_page(&st.doc, &self.session.cache, page, scale, bleed, &RenderOptions { printing_only: true, ..Default::default() })
-            .ok_or_else(|| format!("no page {page} (the document has {} pages, indices are 0-based)", st.doc.page_count()))?;
+            .render_page(
+                &st.doc,
+                &self.session.cache,
+                page,
+                scale,
+                bleed,
+                &RenderOptions {
+                    printing_only: true,
+                    ..Default::default()
+                },
+            )
+            .ok_or_else(|| {
+                format!(
+                    "no page {page} (the document has {} pages, indices are 0-based)",
+                    st.doc.page_count()
+                )
+            })?;
         let png = img.to_png();
         match s(p, "path") {
             Some(path) => {
-                designcraft_engine::atomic::write_atomic(std::path::Path::new(path), &png).map_err(|e| format!("write {path}: {e}"))?;
+                designcraft_engine::atomic::write_atomic(std::path::Path::new(path), &png)
+                    .map_err(|e| format!("write {path}: {e}"))?;
                 Ok(json!({"path": path, "width": img.width, "height": img.height}))
             }
-            None => Ok(json!({"width": img.width, "height": img.height, "pngBase64": designcraft_engine::cmd::base64_encode(&png)})),
+            None => Ok(
+                json!({"width": img.width, "height": img.height, "pngBase64": designcraft_engine::cmd::base64_encode(&png)}),
+            ),
         }
     }
 
@@ -214,14 +319,33 @@ impl Headless {
         let path = s(p, "path").ok_or("missing `path`")?;
         let st = self.session.active().ok_or("no document open")?;
         let page = page_index(p, st.doc.page_count())?;
-        let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(2.0).clamp(0.05, 16.0);
+        let scale = p
+            .get("scale")
+            .and_then(Value::as_f64)
+            .unwrap_or(2.0)
+            .clamp(0.05, 16.0);
         let img = self
             .renderer
-            .render_page(&st.doc, &self.session.cache, page, scale, false, &RenderOptions { printing_only: true, ..Default::default() })
+            .render_page(
+                &st.doc,
+                &self.session.cache,
+                page,
+                scale,
+                false,
+                &RenderOptions {
+                    printing_only: true,
+                    ..Default::default()
+                },
+            )
             .ok_or_else(|| format!("no page {page}"))?;
         let lower = path.to_ascii_lowercase();
-        let bytes = if lower.ends_with(".jpg") || lower.ends_with(".jpeg") { img.to_jpeg(90) } else { img.to_png() };
-        designcraft_engine::atomic::write_atomic(std::path::Path::new(path), &bytes).map_err(|e| format!("write {path}: {e}"))?;
+        let bytes = if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+            img.to_jpeg(90)
+        } else {
+            img.to_png()
+        };
+        designcraft_engine::atomic::write_atomic(std::path::Path::new(path), &bytes)
+            .map_err(|e| format!("write {path}: {e}"))?;
         Ok(json!({"path": path, "width": img.width, "height": img.height}))
     }
 }
@@ -231,16 +355,23 @@ impl Backend for Headless {
         let p = &params;
         match method {
             "engine.execute" | "ui.menu.invoke" | "command" => {
-                let id = s(p, "command").or(s(p, "id")).ok_or("missing `command`")?.to_string();
+                let id = s(p, "command")
+                    .or(s(p, "id"))
+                    .ok_or("missing `command`")?
+                    .to_string();
                 let params = match p.get("params") {
                     None | Some(Value::Null) => json!({}),
                     Some(v) => v.clone(),
                 };
                 self.exec(&id, &params)
             }
-            "engine.commands" => Ok(serde_json::to_value(self.session.commands()).unwrap_or_default()),
+            "engine.commands" => {
+                Ok(serde_json::to_value(self.session.commands()).unwrap_or_default())
+            }
             "document.inspect" => self.exec("document.inspect", &json!({})),
-            "ui.tool.select" => self.exec("tool.select", &json!({"tool": s(p, "tool").unwrap_or("")})),
+            "ui.tool.select" => {
+                self.exec("tool.select", &json!({"tool": s(p, "tool").unwrap_or("")}))
+            }
             "ui.tool.list" => Ok(serde_json::to_value(TOOL_GROUPS).unwrap_or_default()),
             "ui.pointer" => self.pointer(p),
             "ui.key" => self.key(p),
@@ -250,7 +381,9 @@ impl Backend for Headless {
             "app.save" => self.exec("file.save", &json!({"path": s(p, "path")})),
             "app.export" => self.export(p),
             "app.quit" => Ok(Value::Null),
-            m if m.starts_with("ui.") => Err(format!("`{m}` is not available headless; {NEEDS_APP}")),
+            m if m.starts_with("ui.") => {
+                Err(format!("`{m}` is not available headless; {NEEDS_APP}"))
+            }
             other => Err(format!("unknown method `{other}`")),
         }
     }
@@ -268,10 +401,15 @@ impl Backend for Headless {
 fn page_index(p: &Value, count: usize) -> Result<usize, String> {
     let page = match p.get("page") {
         None => 0,
-        Some(v) => v.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or("`page` must be a nonnegative integer representable as a page index")?,
+        Some(v) => v
+            .as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+            .ok_or("`page` must be a nonnegative integer representable as a page index")?,
     };
     if page >= count {
-        return Err(format!("no page {page} (the document has {count} pages, indices are 0-based)"));
+        return Err(format!(
+            "no page {page} (the document has {count} pages, indices are 0-based)"
+        ));
     }
     Ok(page)
 }

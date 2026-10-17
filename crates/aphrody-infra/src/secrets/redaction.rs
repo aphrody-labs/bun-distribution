@@ -12,7 +12,9 @@ pub struct SecretString {
 
 impl SecretString {
     pub fn new(s: impl AsRef<str>) -> Self {
-        Self { inner: s.as_ref().as_bytes().to_vec() }
+        Self {
+            inner: s.as_ref().as_bytes().to_vec(),
+        }
     }
 
     /// Explicitly borrow the underlying secret plaintext.

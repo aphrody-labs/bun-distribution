@@ -62,7 +62,11 @@ pub fn dash(bp: &BezPath, d: &Dash) -> Option<Dashed> {
         .map(|(r, closed)| {
             let segs = segments(&bp.elements()[r]);
             let lens = segs.iter().map(|s| s.arclen(ARCLEN_ACCURACY)).collect();
-            if d.align_corners { Plan::fitted(segs, lens, closed, period) } else { Plan::exact(segs, lens, closed, period) }
+            if d.align_corners {
+                Plan::fitted(segs, lens, closed, period)
+            } else {
+                Plan::exact(segs, lens, closed, period)
+            }
         })
         .collect();
     if plans.iter().map(|p| p.periods).sum::<f64>() * pat.len() as f64 > MAX_DASHES {
@@ -75,7 +79,11 @@ pub fn dash(bp: &BezPath, d: &Dash) -> Option<Dashed> {
         off -= pat[ix0];
         ix0 = (ix0 + 1) % pat.len();
     }
-    let phase = Phase { ix: ix0, rem: pat[ix0] - off, on: ix0 % 2 == 0 };
+    let phase = Phase {
+        ix: ix0,
+        rem: pat[ix0] - off,
+        on: ix0 % 2 == 0,
+    };
     let mut out = Dashed::default();
     for plan in &plans {
         dash_subpath(&mut out, plan, &pat, phase);
@@ -104,14 +112,26 @@ impl Plan {
     fn exact(segs: Vec<PathSeg>, lens: Vec<f64>, closed: bool, period: f64) -> Self {
         let n = segs.len();
         let periods = lens.iter().sum::<f64>() / period;
-        Plan { segs, lens, closed, scale: vec![1.0; n], restart: vec![false; n], shift: 0.0, periods }
+        Plan {
+            segs,
+            lens,
+            closed,
+            scale: vec![1.0; n],
+            restart: vec![false; n],
+            shift: 0.0,
+            periods,
+        }
     }
 
     fn fitted(mut segs: Vec<PathSeg>, mut lens: Vec<f64>, closed: bool, period: f64) -> Self {
         let n = segs.len();
         // Corners: where segments with length meet at a kink (zero-length ones have no direction).
         let live: Vec<usize> = (0..n).filter(|&i| lens[i] > EPS).collect();
-        let mut corners: Vec<usize> = live.windows(2).filter(|w| kink(&segs[w[0]], &segs[w[1]])).map(|w| w[1]).collect();
+        let mut corners: Vec<usize> = live
+            .windows(2)
+            .filter(|w| kink(&segs[w[0]], &segs[w[1]]))
+            .map(|w| w[1])
+            .collect();
         let mut rot = 0;
         if closed && let (Some(&first), Some(&last)) = (live.first(), live.last()) {
             if kink(&segs[last], &segs[first]) {
@@ -142,7 +162,15 @@ impl Plan {
             }
             i = j;
         }
-        Plan { segs, lens, closed, scale, restart, shift, periods }
+        Plan {
+            segs,
+            lens,
+            closed,
+            scale,
+            restart,
+            shift,
+            periods,
+        }
     }
 }
 
@@ -193,7 +221,11 @@ fn dash_subpath(out: &mut Dashed, plan: &Plan, pat: &[f64], mut ph: Phase) {
                 cur.end = acc;
                 dashes.push(std::mem::take(&mut cur));
             }
-            ph = Phase { ix: 0, rem: pat[0] * k / 2.0, on: true };
+            ph = Phase {
+                ix: 0,
+                rem: pat[0] * k / 2.0,
+                on: true,
+            };
         }
         if i == 0 {
             starts_on = ph.on && ph.rem > 0.0;
@@ -220,7 +252,15 @@ fn dash_subpath(out: &mut Dashed, plan: &Plan, pat: &[f64], mut ph: Phase) {
                     }
                 } else {
                     let t = param(seg, len, end);
-                    push_dot(out, first_dot, Dot { at: seg.eval(t), dir: tangent(seg, t), t: frac(acc + end) });
+                    push_dot(
+                        out,
+                        first_dot,
+                        Dot {
+                            at: seg.eval(t),
+                            dir: tangent(seg, t),
+                            t: frac(acc + end),
+                        },
+                    );
                 }
             }
             cuts += 1;
@@ -237,7 +277,15 @@ fn dash_subpath(out: &mut Dashed, plan: &Plan, pat: &[f64], mut ph: Phase) {
         && pat[0] <= 0.0
         && let Some(seg) = plan.segs.last()
     {
-        push_dot(out, first_dot, Dot { at: seg.end(), dir: tangent(seg, 1.0), t: 1.0 });
+        push_dot(
+            out,
+            first_dot,
+            Dot {
+                at: seg.end(),
+                dir: tangent(seg, 1.0),
+                t: 1.0,
+            },
+        );
     }
     let ends_on = !cur.segs.is_empty();
     if ends_on {
@@ -257,24 +305,43 @@ fn dash_subpath(out: &mut Dashed, plan: &Plan, pat: &[f64], mut ph: Phase) {
             // The dash running through the start point is one dash.
             let mut last = dashes.pop().unwrap_or_default();
             last.segs.append(&mut dashes[0].segs);
-            dashes[0] = Piece { segs: last.segs, start: last.start, end: dashes[0].end + total };
+            dashes[0] = Piece {
+                segs: last.segs,
+                start: last.start,
+                end: dashes[0].end + total,
+            };
         }
         // A dot on the start point is reached again at the end.
-        if out.dots.len() > first_dot + 1 && out.dots[first_dot].at.distance(out.dots[out.dots.len() - 1].at) < 1e-6 {
+        if out.dots.len() > first_dot + 1
+            && out.dots[first_dot]
+                .at
+                .distance(out.dots[out.dots.len() - 1].at)
+                < 1e-6
+        {
             out.dots.pop();
         }
     }
     for d in &dashes {
         write(&mut out.path, &d.segs);
         let t0 = frac(d.start);
-        out.spans.push((t0, if total > 0.0 { t0 + (d.end - d.start) / total } else { t0 }));
+        out.spans.push((
+            t0,
+            if total > 0.0 {
+                t0 + (d.end - d.start) / total
+            } else {
+                t0
+            },
+        ));
     }
 }
 
 /// Add `dot` unless the subpath's last dot (from index `first`) is already there: a run ending on
 /// a dot meets the next one starting on it.
 fn push_dot(out: &mut Dashed, first: usize, dot: Dot) {
-    if out.dots[first..].last().is_none_or(|d| d.at.distance(dot.at) > 1e-6) {
+    if out.dots[first..]
+        .last()
+        .is_none_or(|d| d.at.distance(dot.at) > 1e-6)
+    {
         out.dots.push(dot);
     }
 }

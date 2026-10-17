@@ -2,8 +2,8 @@ use crate::derive_data::ReflectMeta;
 use bevy_macro_utils::fq_std::{FQAny, FQSend, FQSync};
 use indexmap::IndexSet;
 use proc_macro2::{TokenStream, TokenTree};
-use quote::{quote, ToTokens};
-use syn::{punctuated::Punctuated, Ident, Token, Type, WhereClause};
+use quote::{ToTokens, quote};
+use syn::{Ident, Token, Type, WhereClause, punctuated::Punctuated};
 
 /// Options defining how to extend the `where` clause for reflection.
 pub(crate) struct WhereClauseOptions<'a, 'b> {

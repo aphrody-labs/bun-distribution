@@ -15,7 +15,9 @@ use vectorcraft_geom::{Anchor, AnchorKind, BezPath, Point, SubPath};
 use crate::{Action, Tool, ToolContext};
 
 pub use anchor::AnchorTool;
-pub use curvature::{CurvatureTool, EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move};
+pub use curvature::{
+    CurvatureTool, EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move,
+};
 pub use family::FamilyTool;
 pub use gesture::GestureTool;
 
@@ -25,7 +27,8 @@ pub const FEEDBACK: [u8; 3] = [0x4f, 0x9d, 0xff];
 /// Create a drawing tool by id (None = not one of ours).
 pub fn create(id: &str) -> Option<Box<dyn Tool>> {
     Some(match id {
-        "pencil" | "paintbrush" | "blobBrush" | "eraser" | "knife" | "smooth" | "pathEraser" | "join" => Box::new(GestureTool::new(id)),
+        "pencil" | "paintbrush" | "blobBrush" | "eraser" | "knife" | "smooth" | "pathEraser"
+        | "join" => Box::new(GestureTool::new(id)),
         "curvature" => Box::new(CurvatureTool::default()),
         "addAnchor" | "deleteAnchor" | "anchorPoint" | "scissors" => Box::new(AnchorTool::new(id)),
         "arc" | "spiral" | "rectangularGrid" | "polarGrid" => Box::new(FamilyTool::new(id)),
@@ -53,7 +56,12 @@ pub fn catmull_rom(points: &[(Point, bool)], closed: bool) -> SubPath {
             anchors.push(Anchor::corner(p));
             continue;
         }
-        anchors.push(Anchor { p, h_in: p - t, h_out: p + t, kind: AnchorKind::Smooth });
+        anchors.push(Anchor {
+            p,
+            h_in: p - t,
+            h_out: p + t,
+            kind: AnchorKind::Smooth,
+        });
     }
     SubPath::new(anchors, closed && n > 2)
 }
@@ -77,7 +85,13 @@ pub fn polyline(pts: &[Point]) -> BezPath {
 
 /// Editable path nodes, selected ones first, then the rest top-most first.
 fn candidate_paths(cx: &ToolContext) -> Vec<NodeId> {
-    let mut v: Vec<NodeId> = cx.selection.objects.iter().copied().filter(|id| cx.doc.node(*id).is_some_and(|n| n.path_data().is_some())).collect();
+    let mut v: Vec<NodeId> = cx
+        .selection
+        .objects
+        .iter()
+        .copied()
+        .filter(|id| cx.doc.node(*id).is_some_and(|n| n.path_data().is_some()))
+        .collect();
     let mut rest = vec![];
     cx.doc.walk(|n| {
         if let NodeKind::Path { guide: false, .. } = &n.kind {
@@ -96,11 +110,13 @@ fn candidate_paths(cx: &ToolContext) -> Vec<NodeId> {
 
 /// The selected paths the Pen and the Curvature tool edit (not guides, nor locked or hidden ones).
 pub(crate) fn editable_paths<'a>(cx: &'a ToolContext) -> impl Iterator<Item = NodeId> + 'a {
-    cx.selection
-        .objects
-        .iter()
-        .copied()
-        .filter(|&id| cx.doc.is_editable(id) && cx.doc.node(id).is_some_and(|n| matches!(n.kind, NodeKind::Path { guide: false, .. })))
+    cx.selection.objects.iter().copied().filter(|&id| {
+        cx.doc.is_editable(id)
+            && cx
+                .doc
+                .node(id)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Path { guide: false, .. }))
+    })
 }
 
 /// The paths whose anchors show with the Pen: the selected ones, and those inside selected groups
@@ -111,7 +127,10 @@ pub(crate) fn shown_paths(cx: &ToolContext) -> Vec<NodeId> {
             NodeKind::Path { guide: false, .. } => v.push(n.id),
             // A Shape Builder group's first child is its shaper, not art.
             NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
-                for c in children.iter().skip(usize::from(n.extras().shaper.is_some())) {
+                for c in children
+                    .iter()
+                    .skip(usize::from(n.extras().shaper.is_some()))
+                {
                     inside(c, v);
                 }
             }
@@ -119,7 +138,12 @@ pub(crate) fn shown_paths(cx: &ToolContext) -> Vec<NodeId> {
         }
     }
     let mut v = vec![];
-    for n in cx.selection.objects.iter().filter_map(|id| cx.doc.node(*id)) {
+    for n in cx
+        .selection
+        .objects
+        .iter()
+        .filter_map(|id| cx.doc.node(*id))
+    {
         inside(n, &mut v);
     }
     v.retain(|id| cx.doc.is_editable(*id));
@@ -132,10 +156,17 @@ pub(crate) fn hit_anchor(cx: &ToolContext, p: Point, tol: f64) -> Option<(NodeId
 }
 
 /// Nearest anchor within `tol` on the first of `ids` that has one: (path, subpath, anchor).
-pub(crate) fn anchor_in(cx: &ToolContext, ids: impl IntoIterator<Item = NodeId>, p: Point, tol: f64) -> Option<(NodeId, usize, usize)> {
+pub(crate) fn anchor_in(
+    cx: &ToolContext,
+    ids: impl IntoIterator<Item = NodeId>,
+    p: Point,
+    tol: f64,
+) -> Option<(NodeId, usize, usize)> {
     let mut best: Option<((NodeId, usize, usize), f64)> = None;
     for id in ids {
-        let Some(pd) = cx.doc.node(id).and_then(|n| n.path_data()) else { continue };
+        let Some(pd) = cx.doc.node(id).and_then(|n| n.path_data()) else {
+            continue;
+        };
         for (si, ai, a) in pd.anchors() {
             let d = a.p.distance(p);
             if d <= tol && best.is_none_or(|b| d < b.1 - 1e-9) {
@@ -150,15 +181,26 @@ pub(crate) fn anchor_in(cx: &ToolContext, ids: impl IntoIterator<Item = NodeId>,
 }
 
 /// Nearest point on a path segment within `tol`: (path, subpath, segment, t).
-pub(crate) fn hit_segment(cx: &ToolContext, p: Point, tol: f64) -> Option<(NodeId, usize, usize, f64)> {
+pub(crate) fn hit_segment(
+    cx: &ToolContext,
+    p: Point,
+    tol: f64,
+) -> Option<(NodeId, usize, usize, f64)> {
     segment_in(cx, candidate_paths(cx), p, tol)
 }
 
 /// Nearest point within `tol` on a segment of the first of `ids` that passes there: (path,
 /// subpath, segment, t).
-pub(crate) fn segment_in(cx: &ToolContext, ids: impl IntoIterator<Item = NodeId>, p: Point, tol: f64) -> Option<(NodeId, usize, usize, f64)> {
+pub(crate) fn segment_in(
+    cx: &ToolContext,
+    ids: impl IntoIterator<Item = NodeId>,
+    p: Point,
+    tol: f64,
+) -> Option<(NodeId, usize, usize, f64)> {
     for id in ids {
-        let Some(pd) = cx.doc.node(id).and_then(|n| n.path_data()) else { continue };
+        let Some(pd) = cx.doc.node(id).and_then(|n| n.path_data()) else {
+            continue;
+        };
         if let Some((si, seg, t, _, d)) = pd.nearest(p)
             && d <= tol
         {
@@ -170,12 +212,18 @@ pub(crate) fn segment_in(cx: &ToolContext, ids: impl IntoIterator<Item = NodeId>
 
 /// Add an anchor where [`hit_segment`] or [`segment_in`] found a segment.
 pub(crate) fn insert_anchor((id, si, seg, t): (NodeId, usize, usize, f64)) -> Action {
-    Action::Exec("path.insertAnchor".into(), json!({"id": id.0, "subpath": si, "segment": seg, "t": t}))
+    Action::Exec(
+        "path.insertAnchor".into(),
+        json!({"id": id.0, "subpath": si, "segment": seg, "t": t}),
+    )
 }
 
 /// Delete the anchor [`hit_anchor`] or [`anchor_in`] found.
 pub(crate) fn remove_anchor((id, si, ai): (NodeId, usize, usize)) -> Action {
-    Action::Exec("path.removeAnchor".into(), json!({"id": id.0, "subpath": si, "anchor": ai}))
+    Action::Exec(
+        "path.removeAnchor".into(),
+        json!({"id": id.0, "subpath": si, "anchor": ai}),
+    )
 }
 
 #[cfg(test)]
@@ -184,7 +232,11 @@ mod tests {
 
     #[test]
     fn catmull_rom_passes_through_points() {
-        let pts = [(Point::new(0.0, 0.0), false), (Point::new(50.0, 50.0), false), (Point::new(100.0, 0.0), false)];
+        let pts = [
+            (Point::new(0.0, 0.0), false),
+            (Point::new(50.0, 50.0), false),
+            (Point::new(100.0, 0.0), false),
+        ];
         let sp = catmull_rom(&pts, false);
         assert_eq!(sp.anchors.len(), 3);
         assert_eq!(sp.anchors[1].p, Point::new(50.0, 50.0));

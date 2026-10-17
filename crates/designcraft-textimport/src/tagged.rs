@@ -40,7 +40,9 @@ pub fn tagged_text(doc: &Document, story: &Story) -> String {
             if a >= b {
                 continue;
             }
-            if doc.conditions_hide(f.over.conditions.as_deref().unwrap_or(&[])) || f.over.change == Some(designcraft_doc::ChangeMark::Deleted) {
+            if doc.conditions_hide(f.over.conditions.as_deref().unwrap_or(&[]))
+                || f.over.change == Some(designcraft_doc::ChangeMark::Deleted)
+            {
                 continue;
             }
             let mut open = Vec::new();
@@ -79,11 +81,19 @@ fn decode(bytes: &[u8]) -> String {
             .as_chunks::<2>()
             .0
             .iter()
-            .map(|c| if le { u16::from_le_bytes([c[0], c[1]]) } else { u16::from_be_bytes([c[0], c[1]]) })
+            .map(|c| {
+                if le {
+                    u16::from_le_bytes([c[0], c[1]])
+                } else {
+                    u16::from_be_bytes([c[0], c[1]])
+                }
+            })
             .collect();
         return String::from_utf16_lossy(&units);
     }
-    String::from_utf8_lossy(bytes).trim_start_matches('\u{FEFF}').to_string()
+    String::from_utf8_lossy(bytes)
+        .trim_start_matches('\u{FEFF}')
+        .to_string()
 }
 
 /// Is this Tagged Text (by its header)?
@@ -105,7 +115,9 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
     let mut char_styles: Vec<String> = Vec::new();
     let mut warnings = Vec::new();
     let push = |paras: &mut Vec<(String, Vec<(String, CharFormat)>)>, c: char, fmt: &CharFormat| {
-        let Some((_, runs)) = paras.last_mut() else { return };
+        let Some((_, runs)) = paras.last_mut() else {
+            return;
+        };
         match runs.last_mut() {
             Some((t, f)) if f == fmt => t.push(c),
             _ => runs.push((c.to_string(), fmt.clone())),
@@ -142,7 +154,9 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
                 }
                 let tag: String = chars[i + 1..j.min(chars.len())].iter().collect();
                 i = j + 1;
-                let (name, value) = tag.split_once(':').map_or((tag.as_str(), ""), |(a, b)| (a, b));
+                let (name, value) = tag
+                    .split_once(':')
+                    .map_or((tag.as_str(), ""), |(a, b)| (a, b));
                 match name {
                     n if n.starts_with("0x") => {
                         if let Ok(u) = u32::from_str_radix(&n[2..], 16)
@@ -163,22 +177,37 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
                     }
                     "CharStyle" => {
                         let v = value.trim();
-                        fmt.style = if v.is_empty() { NO_CHAR_STYLE.into() } else { v.to_string() };
+                        fmt.style = if v.is_empty() {
+                            NO_CHAR_STYLE.into()
+                        } else {
+                            v.to_string()
+                        };
                         if !v.is_empty() && !char_styles.contains(&v.to_string()) {
                             char_styles.push(v.to_string());
                         }
                     }
-                    "cFont" => fmt.over.font_family = (!value.is_empty()).then(|| value.to_string()),
-                    "cTypeface" => fmt.over.font_style = (!value.is_empty()).then(|| value.to_string()),
+                    "cFont" => {
+                        fmt.over.font_family = (!value.is_empty()).then(|| value.to_string())
+                    }
+                    "cTypeface" => {
+                        fmt.over.font_style = (!value.is_empty()).then(|| value.to_string())
+                    }
                     "cSize" => fmt.over.size = value.trim().parse().ok(),
                     "DefineParaStyle" | "DefineCharStyle" => {
                         let nm = value.split('=').next().unwrap_or("").trim().to_string();
-                        let list = if name == "DefineParaStyle" { &mut para_styles } else { &mut char_styles };
+                        let list = if name == "DefineParaStyle" {
+                            &mut para_styles
+                        } else {
+                            &mut char_styles
+                        };
                         if !nm.is_empty() && !list.contains(&nm) {
                             list.push(nm);
                         }
                     }
-                    n if n.starts_with("ASCII-") || n.starts_with("UNICODE-") || n.starts_with("ANSI-") || n == "Version" => {}
+                    n if n.starts_with("ASCII-")
+                        || n.starts_with("UNICODE-")
+                        || n.starts_with("ANSI-")
+                        || n == "Version" => {}
                     _ => skipped += 1,
                 }
             }
@@ -223,8 +252,16 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
             p.style = style.clone();
         }
     }
-    let mk = |n: &String| ImportedStyle { name: n.clone(), ..Default::default() };
-    Ok(Imported { story: st, para_styles: para_styles.iter().map(mk).collect(), char_styles: char_styles.iter().map(mk).collect(), warnings })
+    let mk = |n: &String| ImportedStyle {
+        name: n.clone(),
+        ..Default::default()
+    };
+    Ok(Imported {
+        story: st,
+        para_styles: para_styles.iter().map(mk).collect(),
+        char_styles: char_styles.iter().map(mk).collect(),
+        warnings,
+    })
 }
 
 #[cfg(test)]
@@ -242,7 +279,13 @@ mod tests {
         let back = import(tagged_text(&doc, &i.story).as_bytes()).unwrap();
         assert_eq!(back.story.text, i.story.text);
         // Half a pair is not a character: it is still left out.
-        assert_eq!(import("<ASCII-WIN>\r\n<ParaStyle:Body>A<0xD83D>B<0xDE00>C".as_bytes()).unwrap().story.text, "ABC");
+        assert_eq!(
+            import("<ASCII-WIN>\r\n<ParaStyle:Body>A<0xD83D>B<0xDE00>C".as_bytes())
+                .unwrap()
+                .story
+                .text,
+            "ABC"
+        );
     }
 
     #[test]
@@ -265,13 +308,35 @@ mod tests {
         assert_eq!(i.story.text, "Café <1>\nA word and big text");
         assert_eq!(i.story.paras[0].style, "Head");
         assert_eq!(i.story.paras[1].style, "Body");
-        assert_eq!(i.story.char_format_at(i.story.text.find("word").unwrap() + 1).style, "Em");
-        assert_eq!(i.story.char_format_at(i.story.text.find("big").unwrap() + 1).over.size, Some(18.0));
-        assert_eq!(i.para_styles.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["Head", "Body"]);
+        assert_eq!(
+            i.story
+                .char_format_at(i.story.text.find("word").unwrap() + 1)
+                .style,
+            "Em"
+        );
+        assert_eq!(
+            i.story
+                .char_format_at(i.story.text.find("big").unwrap() + 1)
+                .over
+                .size,
+            Some(18.0)
+        );
+        assert_eq!(
+            i.para_styles
+                .iter()
+                .map(|s| s.name.as_str())
+                .collect::<Vec<_>>(),
+            ["Head", "Body"]
+        );
         // Export and back.
         let doc = Document::new(&designcraft_doc::build::NewDocument::default());
         let out = tagged_text(&doc, &i.story);
-        assert!(out.starts_with("<ASCII-WIN>") && out.contains("Caf<0x00E9>") && out.contains("<CharStyle:Em>word<CharStyle:>"), "{out}");
+        assert!(
+            out.starts_with("<ASCII-WIN>")
+                && out.contains("Caf<0x00E9>")
+                && out.contains("<CharStyle:Em>word<CharStyle:>"),
+            "{out}"
+        );
         let back = import(out.as_bytes()).unwrap();
         assert_eq!(back.story.text, i.story.text);
         assert_eq!(back.story.paras[1].style, "Body");

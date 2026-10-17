@@ -22,14 +22,21 @@ fn parse_decls(s: &str) -> Vec<(String, String, bool)> {
         .filter_map(|d| {
             let (k, v) = d.split_once(':')?;
             let v = v.trim();
-            let (v, important) = match v.strip_suffix("important").map(str::trim_end).and_then(|v| v.strip_suffix('!')) {
+            let (v, important) = match v
+                .strip_suffix("important")
+                .map(str::trim_end)
+                .and_then(|v| v.strip_suffix('!'))
+            {
                 Some(v) => (v.trim_end(), true),
                 None => (v, false),
             };
             Some((k.trim().to_ascii_lowercase(), v.to_string(), important))
         })
         .flat_map(|(k, v, important)| match k.as_str() {
-            "font" => font_longhands(&v).into_iter().map(|(k, v)| (k.to_string(), v, important)).collect(),
+            "font" => font_longhands(&v)
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v, important))
+                .collect(),
             _ => vec![(k, v, important)],
         })
         .collect()
@@ -38,7 +45,9 @@ fn parse_decls(s: &str) -> Vec<(String, String, bool)> {
 /// The longhands of a `font` shorthand: those it leaves out back to their initial values. None
 /// when it doesn't parse (it is then ignored, as in CSS).
 fn font_longhands(v: &str) -> Vec<(&'static str, String)> {
-    let Ok(f) = svgtypes::FontShorthand::from_str(v) else { return Vec::new() };
+    let Ok(f) = svgtypes::FontShorthand::from_str(v) else {
+        return Vec::new();
+    };
     let or = |o: Option<&str>| o.unwrap_or("normal").to_string();
     vec![
         ("font-style", or(f.font_style)),
@@ -62,9 +71,20 @@ struct Compound {
 impl Compound {
     fn matches(&self, n: XNode) -> bool {
         self.tag.as_deref().is_none_or(|t| n.tag_name().name() == t)
-            && self.id.as_deref().is_none_or(|id| n.attribute("id") == Some(id))
-            && (self.classes.is_empty() || n.attribute("class").is_some_and(|c| self.classes.iter().all(|k| c.split_whitespace().any(|x| x == k))))
-            && self.attrs.iter().all(|(a, v)| n.attribute(a.as_str()).is_some_and(|x| v.as_deref().is_none_or(|v| x == v)))
+            && self
+                .id
+                .as_deref()
+                .is_none_or(|id| n.attribute("id") == Some(id))
+            && (self.classes.is_empty()
+                || n.attribute("class").is_some_and(|c| {
+                    self.classes
+                        .iter()
+                        .all(|k| c.split_whitespace().any(|x| x == k))
+                }))
+            && self.attrs.iter().all(|(a, v)| {
+                n.attribute(a.as_str())
+                    .is_some_and(|x| v.as_deref().is_none_or(|v| x == v))
+            })
     }
 }
 
@@ -133,7 +153,10 @@ impl Selector {
                     chars.next();
                     let body: String = chars.by_ref().take_while(|c| *c != ']').collect();
                     let (name, value) = match body.split_once('=') {
-                        Some((n, v)) => (n.trim(), Some(v.trim().trim_matches(|c| c == '"' || c == '\'').to_string())),
+                        Some((n, v)) => (
+                            n.trim(),
+                            Some(v.trim().trim_matches(|c| c == '"' || c == '\'').to_string()),
+                        ),
                         None => (body.trim(), None),
                     };
                     if name.is_empty() || !name.chars().all(is_ident) {
@@ -160,13 +183,27 @@ impl Selector {
             specificity.2 += c.tag.is_some() as u32;
         }
         // Rightmost first, each with its link to the compound on its left.
-        let parts = comps.into_iter().enumerate().rev().map(|(i, c)| (c, i.checked_sub(1).and_then(|k| links.get(k)).is_some_and(|l| *l))).collect();
+        let parts = comps
+            .into_iter()
+            .enumerate()
+            .rev()
+            .map(|(i, c)| {
+                (
+                    c,
+                    i.checked_sub(1)
+                        .and_then(|k| links.get(k))
+                        .is_some_and(|l| *l),
+                )
+            })
+            .collect();
         Some(Self { parts, specificity })
     }
 
     fn matches(&self, n: XNode) -> bool {
         fn go(parts: &[(Compound, bool)], n: XNode) -> bool {
-            let Some(((c, child), rest)) = parts.split_first() else { return true };
+            let Some(((c, child), rest)) = parts.split_first() else {
+                return true;
+            };
             if !c.matches(n) {
                 return false;
             }
@@ -176,7 +213,10 @@ impl Selector {
             if *child {
                 n.parent_element().is_some_and(|p| go(rest, p))
             } else {
-                n.ancestors().skip(1).filter(|a| a.is_element()).any(|a| go(rest, a))
+                n.ancestors()
+                    .skip(1)
+                    .filter(|a| a.is_element())
+                    .any(|a| go(rest, a))
             }
         }
         go(&self.parts, n)
@@ -195,7 +235,9 @@ fn parse_sheet(css: &str, out: &mut Vec<Rule>) {
     let mut rest = css;
     while let Some(i) = rest.find("/*") {
         text.push_str(&rest[..i]);
-        rest = rest[i + 2..].find("*/").map_or("", |j| &rest[i + 2 + j + 2..]);
+        rest = rest[i + 2..]
+            .find("*/")
+            .map_or("", |j| &rest[i + 2 + j + 2..]);
     }
     text.push_str(rest);
     let mut s = text.as_str();
@@ -235,7 +277,10 @@ fn parse_sheet(css: &str, out: &mut Vec<Rule>) {
         let decls = Rc::new(parse_decls(&s[open + 1..close]));
         for sel in head.split(',') {
             if let Some(selector) = Selector::parse(sel) {
-                out.push(Rule { selector, decls: decls.clone() });
+                out.push(Rule {
+                    selector,
+                    decls: decls.clone(),
+                });
             }
         }
         s = s.get(close + 1..).unwrap_or("");
@@ -252,14 +297,23 @@ pub(super) struct Styles {
 impl Styles {
     pub(super) fn new(doc: &roxmltree::Document) -> Self {
         let mut rules = vec![];
-        for st in doc.descendants().filter(|n| n.is_element() && n.tag_name().name() == "style") {
-            if st.attribute("type").is_some_and(|t| !t.trim().is_empty() && t.trim() != "text/css") {
+        for st in doc
+            .descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "style")
+        {
+            if st
+                .attribute("type")
+                .is_some_and(|t| !t.trim().is_empty() && t.trim() != "text/css")
+            {
                 continue;
             }
             let css: String = st.children().filter_map(|c| c.text()).collect();
             parse_sheet(&css, &mut rules);
         }
-        Self { rules, cache: RefCell::default() }
+        Self {
+            rules,
+            cache: RefCell::default(),
+        }
     }
 
     /// Properties set on `n` by rules and its `style` attribute, after the cascade.
@@ -288,19 +342,25 @@ impl Styles {
                 put(&k, &v, (imp, true, (0, 0, 0), order));
             }
         }
-        let m: Rc<HashMap<String, String>> = Rc::new(best.into_iter().map(|(k, (_, v))| (k, v)).collect());
+        let m: Rc<HashMap<String, String>> =
+            Rc::new(best.into_iter().map(|(k, (_, v))| (k, v)).collect());
         self.cache.borrow_mut().insert(n.id(), m.clone());
         m
     }
 
     /// A property specified on this element (rules and `style` beat the presentation attribute).
     pub(super) fn own(&self, n: XNode, name: &str) -> Option<String> {
-        self.declared(n).get(name).cloned().or_else(|| n.attribute(name).map(|v| v.trim().to_string()))
+        self.declared(n)
+            .get(name)
+            .cloned()
+            .or_else(|| n.attribute(name).map(|v| v.trim().to_string()))
     }
 
     /// An inherited property: the nearest specified value other than `inherit`.
     pub(super) fn prop(&self, n: XNode, name: &str) -> Option<String> {
-        n.ancestors().filter(|a| a.is_element()).find_map(|a| self.own(a, name).filter(|v| v != "inherit"))
+        n.ancestors()
+            .filter(|a| a.is_element())
+            .find_map(|a| self.own(a, name).filter(|v| v != "inherit"))
     }
 }
 
@@ -315,7 +375,9 @@ mod tests {
     }
 
     fn by_id<'a, 'i>(doc: &'a roxmltree::Document<'i>, id: &str) -> XNode<'a, 'i> {
-        doc.descendants().find(|n| n.attribute("id") == Some(id)).unwrap()
+        doc.descendants()
+            .find(|n| n.attribute("id") == Some(id))
+            .unwrap()
     }
 
     #[test]
@@ -341,13 +403,39 @@ mod tests {
             </svg>"#,
             |doc, st| {
                 assert_eq!(st.own(by_id(doc, "t0"), "fill").as_deref(), Some("#111"));
-                assert_eq!(st.own(by_id(doc, "t1"), "fill").as_deref(), Some("#333"), "child + class beats descendant");
-                assert_eq!(st.own(by_id(doc, "t1"), "stroke").as_deref(), Some("blue"), "multiple classes");
-                assert_eq!(st.own(by_id(doc, "t2"), "fill").as_deref(), Some("#666"), "style attribute beats #id");
-                assert_eq!(st.own(by_id(doc, "t3"), "fill").as_deref(), Some("#555"), "!important beats style");
-                assert_eq!(st.own(by_id(doc, "t3"), "font-weight").as_deref(), Some("bold"));
-                assert_eq!(st.own(by_id(doc, "t2"), "stroke"), None, "`.a.b` needs both classes");
-                assert_eq!(st.prop(by_id(doc, "t2"), "font-size").as_deref(), Some("9px"));
+                assert_eq!(
+                    st.own(by_id(doc, "t1"), "fill").as_deref(),
+                    Some("#333"),
+                    "child + class beats descendant"
+                );
+                assert_eq!(
+                    st.own(by_id(doc, "t1"), "stroke").as_deref(),
+                    Some("blue"),
+                    "multiple classes"
+                );
+                assert_eq!(
+                    st.own(by_id(doc, "t2"), "fill").as_deref(),
+                    Some("#666"),
+                    "style attribute beats #id"
+                );
+                assert_eq!(
+                    st.own(by_id(doc, "t3"), "fill").as_deref(),
+                    Some("#555"),
+                    "!important beats style"
+                );
+                assert_eq!(
+                    st.own(by_id(doc, "t3"), "font-weight").as_deref(),
+                    Some("bold")
+                );
+                assert_eq!(
+                    st.own(by_id(doc, "t2"), "stroke"),
+                    None,
+                    "`.a.b` needs both classes"
+                );
+                assert_eq!(
+                    st.prop(by_id(doc, "t2"), "font-size").as_deref(),
+                    Some("9px")
+                );
             },
         );
     }
@@ -365,8 +453,15 @@ mod tests {
 
     #[test]
     fn the_font_shorthand_sets_its_longhands() {
-        let d = parse_decls("fill: red; font: italic bold 30px 'DejaVu Sans' ; font-weight: 300 !important; font: nonsense");
-        let get = |k: &str| d.iter().filter(|(n, ..)| n == k).map(|(_, v, i)| (v.as_str(), *i)).collect::<Vec<_>>();
+        let d = parse_decls(
+            "fill: red; font: italic bold 30px 'DejaVu Sans' ; font-weight: 300 !important; font: nonsense",
+        );
+        let get = |k: &str| {
+            d.iter()
+                .filter(|(n, ..)| n == k)
+                .map(|(_, v, i)| (v.as_str(), *i))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(get("font-style"), [("italic", false)]);
         assert_eq!(get("font-weight"), [("bold", false), ("300", true)]);
         assert_eq!(get("font-size"), [("30px", false)]);

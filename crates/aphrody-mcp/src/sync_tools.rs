@@ -16,21 +16,32 @@ use rmcp::schemars;
 
 #[derive(Debug, Default, serde::Deserialize, schemars::JsonSchema)]
 pub(crate) struct SyncExternalAgentsRequest {
-    #[schemars(description = "Only sync this agent: \"agy\" (Antigravity CLI), \"codex\" or \
-                              \"claude\" (Claude Code). Omit to sync all three.")]
+    #[schemars(
+        description = "Only sync this agent: \"agy\" (Antigravity CLI), \"codex\" or \
+                              \"claude\" (Claude Code). Omit to sync all three."
+    )]
     pub(crate) agent: Option<String>,
-    #[schemars(description = "Match running agent processes to the sessions they write \
-                              (sysinfo). Default true.")]
+    #[schemars(
+        description = "Match running agent processes to the sessions they write \
+                              (sysinfo). Default true."
+    )]
     pub(crate) live: Option<bool>,
-    #[schemars(description = "Also feed user/assistant turns into the local memory store \
+    #[schemars(
+        description = "Also feed user/assistant turns into the local memory store \
                               (~/.aphrody/memory/memory.sqlite, owner id external:<agent>). \
-                              Default true.")]
+                              Default true."
+    )]
     pub(crate) memory: Option<bool>,
 }
 
 /// Run one sync pass and render its summary (or the error) as JSON text.
 pub(crate) async fn sync_external_agents(request: SyncExternalAgentsRequest) -> String {
-    let agents = match request.agent.as_deref().map(str::trim).filter(|raw| !raw.is_empty()) {
+    let agents = match request
+        .agent
+        .as_deref()
+        .map(str::trim)
+        .filter(|raw| !raw.is_empty())
+    {
         Some(raw) => match raw.parse::<AgentKind>() {
             Ok(agent) => vec![agent],
             Err(error) => return error_json(&error.to_string()),
@@ -38,9 +49,9 @@ pub(crate) async fn sync_external_agents(request: SyncExternalAgentsRequest) -> 
         None => AgentKind::ALL.to_vec(),
     };
     let options = match SyncOptions::discover() {
-        Ok(options) => {
-            options.with_agents(agents).with_probe_processes(request.live.unwrap_or(true))
-        },
+        Ok(options) => options
+            .with_agents(agents)
+            .with_probe_processes(request.live.unwrap_or(true)),
         Err(error) => return error_json(&error.to_string()),
     };
     let feed_memory = request.memory.unwrap_or(true);
@@ -80,7 +91,10 @@ fn open_sync_memory(options: &SyncOptions) -> Result<SqliteLocalProvider, String
     }
     let (config, _) = aphrody_config::resolve(
         layers,
-        &aphrody_config::CliOverrides { profile: Some(domain.to_owned()), ..Default::default() },
+        &aphrody_config::CliOverrides {
+            profile: Some(domain.to_owned()),
+            ..Default::default()
+        },
         "llama",
         &std::collections::BTreeMap::new(),
     )
@@ -106,15 +120,28 @@ mod tests {
         })
         .await;
         let value: serde_json::Value = serde_json::from_str(&out).expect("json");
-        assert!(value["error"].as_str().is_some_and(|error| error.contains("cursor")), "{out}");
+        assert!(
+            value["error"]
+                .as_str()
+                .is_some_and(|error| error.contains("cursor")),
+            "{out}"
+        );
     }
 
     #[test]
     fn the_tool_is_annotated_local_and_non_destructive() {
         let hints = crate::protocol::annotations_for("sync_external_agents");
-        assert_eq!(hints.open_world_hint, Some(false), "reads only this machine");
+        assert_eq!(
+            hints.open_world_hint,
+            Some(false),
+            "reads only this machine"
+        );
         assert_eq!(hints.destructive_hint, Some(false), "append-only mirror");
-        assert_eq!(hints.read_only_hint, Some(false), "writes the mirror and the memory store");
+        assert_eq!(
+            hints.read_only_hint,
+            Some(false),
+            "writes the mirror and the memory store"
+        );
     }
 
     #[test]
@@ -122,7 +149,10 @@ mod tests {
         let schema = rmcp::schemars::schema_for!(SyncExternalAgentsRequest);
         let json = serde_json::to_value(&schema).expect("schema");
         for field in ["agent", "live", "memory"] {
-            assert!(json["properties"].get(field).is_some(), "{field} missing: {json}");
+            assert!(
+                json["properties"].get(field).is_some(),
+                "{field} missing: {json}"
+            );
         }
     }
 }

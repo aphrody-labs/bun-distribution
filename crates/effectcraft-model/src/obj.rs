@@ -15,7 +15,11 @@ use std::sync::Arc;
 use crate::{AlphaMode, Material, Mesh, Model, Primitive, Result, TexRef, Texture, perr};
 
 /// Parse MTL text into named materials (textures appended to `textures`).
-pub fn parse_mtl(text: &str, resolve: &dyn Fn(&str) -> Option<Vec<u8>>, textures: &mut Vec<Arc<Texture>>) -> Vec<Material> {
+pub fn parse_mtl(
+    text: &str,
+    resolve: &dyn Fn(&str) -> Option<Vec<u8>>,
+    textures: &mut Vec<Arc<Texture>>,
+) -> Vec<Material> {
     let mut out: Vec<Material> = vec![];
     let mut loaded: HashMap<String, Option<usize>> = HashMap::new();
     let mut tex = |name: &str, textures: &mut Vec<Arc<Texture>>| -> Option<TexRef> {
@@ -33,30 +37,50 @@ pub fn parse_mtl(text: &str, resolve: &dyn Fn(&str) -> Option<Vec<u8>>, textures
     let mut pr_seen = false;
     for line in text.lines() {
         let line = line.trim();
-        let (key, rest) = line.split_once(char::is_whitespace).map(|(k, r)| (k, r.trim())).unwrap_or((line, ""));
+        let (key, rest) = line
+            .split_once(char::is_whitespace)
+            .map(|(k, r)| (k, r.trim()))
+            .unwrap_or((line, ""));
         let f3 = || -> [f32; 3] {
-            let v: Vec<f32> = rest.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+            let v: Vec<f32> = rest
+                .split_whitespace()
+                .filter_map(|x| x.parse().ok())
+                .collect();
             match v.len() {
                 0 => [0.0; 3],
                 1 | 2 => [v[0]; 3],
                 _ => [v[0], v[1], v[2]],
             }
         };
-        let f1 = || rest.split_whitespace().next().and_then(|x| x.parse::<f32>().ok());
+        let f1 = || {
+            rest.split_whitespace()
+                .next()
+                .and_then(|x| x.parse::<f32>().ok())
+        };
         if key == "newmtl" {
             if let Some(m) = out.last_mut() {
                 finish(m, ns_seen, pr_seen);
             }
             ns_seen = false;
             pr_seen = false;
-            out.push(Material { name: rest.to_string(), metallic: 0.0, roughness: 0.5, ..Material::default() });
+            out.push(Material {
+                name: rest.to_string(),
+                metallic: 0.0,
+                roughness: 0.5,
+                ..Material::default()
+            });
             continue;
         }
         let Some(m) = out.last_mut() else { continue };
         match key {
             "Kd" => {
                 let c = f3();
-                m.base_color = [srgb_to_linear(c[0]), srgb_to_linear(c[1]), srgb_to_linear(c[2]), m.base_color[3]];
+                m.base_color = [
+                    srgb_to_linear(c[0]),
+                    srgb_to_linear(c[1]),
+                    srgb_to_linear(c[2]),
+                    m.base_color[3],
+                ];
             }
             "Ke" => m.emissive = f3().map(srgb_to_linear),
             "d" => m.base_color[3] = f1().unwrap_or(1.0),
@@ -98,7 +122,11 @@ fn finish(m: &mut Material, _ns: bool, _pr: bool) {
 
 /// sRGB-encoded component → linear (MTL colours are display colours).
 pub fn srgb_to_linear(c: f32) -> f32 {
-    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -136,9 +164,17 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
         let rest: Vec<&str> = it.collect();
         let fl = |i: usize| rest.get(i).and_then(|x| x.parse::<f32>().ok());
         match key {
-            "v" => v.push([fl(0).unwrap_or(0.0), fl(1).unwrap_or(0.0), fl(2).unwrap_or(0.0)]),
+            "v" => v.push([
+                fl(0).unwrap_or(0.0),
+                fl(1).unwrap_or(0.0),
+                fl(2).unwrap_or(0.0),
+            ]),
             "vt" => vt.push([fl(0).unwrap_or(0.0), fl(1).unwrap_or(0.0)]),
-            "vn" => vn.push([fl(0).unwrap_or(0.0), fl(1).unwrap_or(0.0), fl(2).unwrap_or(1.0)]),
+            "vn" => vn.push([
+                fl(0).unwrap_or(0.0),
+                fl(1).unwrap_or(0.0),
+                fl(2).unwrap_or(1.0),
+            ]),
             "s" => {
                 smooth = match rest.first().copied() {
                     None | Some("off") | Some("0") => 0,
@@ -149,7 +185,8 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 let name = line["mtllib".len()..].trim();
                 for file in std::iter::once(name).chain(name.split_whitespace()) {
                     if let Some(b) = resolve(file) {
-                        let mut ms = parse_mtl(&String::from_utf8_lossy(&b), resolve, &mut textures);
+                        let mut ms =
+                            parse_mtl(&String::from_utf8_lossy(&b), resolve, &mut textures);
                         materials.append(&mut ms);
                         break;
                     }
@@ -160,7 +197,13 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 current = materials.iter().position(|m| m.name == name);
                 if current.is_none() {
                     // Unknown material: a named grey default.
-                    materials.push(Material { name: name.to_string(), metallic: 0.0, roughness: 0.5, base_color: [0.8, 0.8, 0.8, 1.0], ..Material::default() });
+                    materials.push(Material {
+                        name: name.to_string(),
+                        metallic: 0.0,
+                        roughness: 0.5,
+                        base_color: [0.8, 0.8, 0.8, 1.0],
+                        ..Material::default()
+                    });
                     current = Some(materials.len() - 1);
                 }
             }
@@ -180,7 +223,8 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 let mut refs = vec![];
                 for r in &rest {
                     let mut parts = r.split('/');
-                    let vi = resolve_i(parts.next().unwrap_or(""), v.len()).ok_or_else(|| perr(format!("line {}: bad vertex index `{r}`", ln + 1)))?;
+                    let vi = resolve_i(parts.next().unwrap_or(""), v.len())
+                        .ok_or_else(|| perr(format!("line {}: bad vertex index `{r}`", ln + 1)))?;
                     let ti = parts.next().and_then(|s| resolve_i(s, vt.len()));
                     let ni = parts.next().and_then(|s| resolve_i(s, vn.len()));
                     refs.push((vi, ti, ni));
@@ -198,14 +242,27 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 let slot = match prims.iter().position(|p| p.0 == current) {
                     Some(i) => i,
                     None => {
-                        prims.push((current, Primitive { material: current, ..Default::default() }, HashMap::new(), vec![]));
+                        prims.push((
+                            current,
+                            Primitive {
+                                material: current,
+                                ..Default::default()
+                            },
+                            HashMap::new(),
+                            vec![],
+                        ));
                         prims.len() - 1
                     }
                 };
                 let (_, prim, map, need) = &mut prims[slot];
                 let mut ids = vec![];
                 for (vi, ti, ni) in refs {
-                    let k = Key { v: vi, t: ti.unwrap_or(u32::MAX), n: ni.unwrap_or(u32::MAX), s };
+                    let k = Key {
+                        v: vi,
+                        t: ti.unwrap_or(u32::MAX),
+                        n: ni.unwrap_or(u32::MAX),
+                        s,
+                    };
                     let id = *map.entry(k).or_insert_with(|| {
                         prim.positions.push(v[vi as usize]);
                         prim.uvs.push(ti.map_or([0.0, 0.0], |t| vt[t as usize]));
@@ -226,7 +283,10 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
         return Err(perr("OBJ file without faces"));
     }
     let any_uv = !vt.is_empty();
-    let mut mesh = Mesh { name: String::new(), primitives: vec![] };
+    let mut mesh = Mesh {
+        name: String::new(),
+        primitives: vec![],
+    };
     for (_, mut p, _, need) in prims {
         if need.iter().any(|&b| b) {
             // Fill missing normals from the triangles (area weighted), keep given ones.
@@ -246,7 +306,9 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 uv[1] = 1.0 - uv[1];
             }
         }
-        if p.material.is_some_and(|m| materials[m].normal_tex.is_some()) {
+        if p.material
+            .is_some_and(|m| materials[m].normal_tex.is_some())
+        {
             p.compute_tangents();
         }
         mesh.primitives.push(p);

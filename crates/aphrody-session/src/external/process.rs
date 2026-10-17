@@ -52,7 +52,10 @@ pub fn classify_process(
 ) -> Option<(AgentKind, bool)> {
     // Chromium/Electron helpers (renderer, GPU, utility) share the main
     // executable's name; only the main process is the agent.
-    if cmd.iter().any(|arg| arg.to_str().is_some_and(|arg| arg.starts_with("--type="))) {
+    if cmd
+        .iter()
+        .any(|arg| arg.to_str().is_some_and(|arg| arg.starts_with("--type=")))
+    {
         return None;
     }
     let stem = exe
@@ -67,13 +70,19 @@ pub fn classify_process(
         return Some((agent, false));
     }
     if stem == "node" || file_stem_lower(name) == "node" {
-        return node_script(cmd).and_then(agent_from_script).map(|agent| (agent, true));
+        return node_script(cmd)
+            .and_then(agent_from_script)
+            .map(|agent| (agent, true));
     }
     None
 }
 
 fn file_stem_lower(name: &str) -> String {
-    Path::new(name).file_stem().and_then(|stem| stem.to_str()).unwrap_or(name).to_ascii_lowercase()
+    Path::new(name)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or(name)
+        .to_ascii_lowercase()
 }
 
 fn agent_from_executable_stem(stem: &str) -> Option<AgentKind> {
@@ -89,7 +98,7 @@ fn agent_from_executable_stem(stem: &str) -> Option<AgentKind> {
                 .any(|marker| stem.contains(marker)) =>
         {
             Some(AgentKind::Codex)
-        },
+        }
         _ => None,
     }
 }
@@ -102,9 +111,13 @@ fn agent_from_executable_stem(stem: &str) -> Option<AgentKind> {
 /// elsewhere (`~/.local/bin`, `~/.claude/local`, a package manager's bin).
 fn is_claude_desktop(exe: &Path) -> bool {
     let lower = exe.to_string_lossy().to_ascii_lowercase();
-    let components: Vec<&str> =
-        lower.split(['/', '\\']).filter(|component| !component.is_empty()).collect();
-    components.iter().any(|component| matches!(*component, "anthropicclaude" | "claude.app"))
+    let components: Vec<&str> = lower
+        .split(['/', '\\'])
+        .filter(|component| !component.is_empty())
+        .collect();
+    components
+        .iter()
+        .any(|component| matches!(*component, "anthropicclaude" | "claude.app"))
         || components
             .windows(2)
             .any(|pair| pair[0] == "windowsapps" && pair[1].starts_with("claude_"))
@@ -113,23 +126,37 @@ fn is_claude_desktop(exe: &Path) -> bool {
 /// The script a `node` command line runs: the first argument after the
 /// interpreter that is not an option.
 fn node_script(cmd: &[OsString]) -> Option<&str> {
-    cmd.iter().skip(1).filter_map(|arg| arg.to_str()).find(|arg| !arg.starts_with('-'))
+    cmd.iter()
+        .skip(1)
+        .filter_map(|arg| arg.to_str())
+        .find(|arg| !arg.starts_with('-'))
 }
 
 fn agent_from_script(script: &str) -> Option<AgentKind> {
     let lower = script.to_ascii_lowercase();
-    let components: Vec<&str> =
-        lower.split(['/', '\\']).filter(|component| !component.is_empty()).collect();
-    let stem = components.last().map(|last| file_stem_lower(last)).unwrap_or_default();
+    let components: Vec<&str> = lower
+        .split(['/', '\\'])
+        .filter(|component| !component.is_empty())
+        .collect();
+    let stem = components
+        .last()
+        .map(|last| file_stem_lower(last))
+        .unwrap_or_default();
     if stem == "claude" || components.contains(&"claude-code") {
         return Some(AgentKind::Claude);
     }
     if stem == "codex"
-        || components.windows(2).any(|pair| pair[0] == "@openai" && pair[1] == "codex")
+        || components
+            .windows(2)
+            .any(|pair| pair[0] == "@openai" && pair[1] == "codex")
     {
         return Some(AgentKind::Codex);
     }
-    if stem == "agy" || components.iter().any(|component| component.contains("antigravity")) {
+    if stem == "agy"
+        || components
+            .iter()
+            .any(|component| component.contains("antigravity"))
+    {
         return Some(AgentKind::Agy);
     }
     None
@@ -139,7 +166,9 @@ fn agent_from_script(script: &str) -> Option<AgentKind> {
 fn is_candidate_name(name: &str) -> bool {
     let stem = file_stem_lower(name);
     stem == "node"
-        || ["claude", "codex", "agy", "antigravity"].iter().any(|prefix| stem.starts_with(prefix))
+        || ["claude", "codex", "agy", "antigravity"]
+            .iter()
+            .any(|prefix| stem.starts_with(prefix))
 }
 
 /// Every agent process running now.

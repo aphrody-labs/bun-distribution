@@ -31,9 +31,13 @@ pub fn default_dir() -> Option<PathBuf> {
         return home.map(|h| h.join("Library/Application Support/DesignCraft/Recovery"));
     }
     if cfg!(target_os = "windows") {
-        return std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("DesignCraft").join("Recovery"));
+        return std::env::var_os("APPDATA")
+            .map(|a| PathBuf::from(a).join("DesignCraft").join("Recovery"));
     }
-    std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).or_else(|| home.map(|h| h.join(".local/share"))).map(|d| d.join("designcraft/recovery"))
+    std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| home.map(|h| h.join(".local/share")))
+        .map(|d| d.join("designcraft/recovery"))
 }
 
 /// This process's folder in a recovery folder, with the lock that says it is still running.
@@ -59,7 +63,9 @@ const LOCK: &str = "lock";
 /// the folder of one that is still running alone.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_dir(root: &Path) -> Result<PathBuf> {
-    let mut runs = RUNS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut runs = RUNS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(run) = runs.iter().find(|r| r.root == root) {
         return Ok(run.dir.clone());
     }
@@ -83,14 +89,17 @@ pub fn run_dir(root: &Path) -> Result<PathBuf> {
             Err(e) => return Err(EngineError::Other(format!("{}: {e}", dir.display()))),
         }
         let locked = validate_recovery_dir(&dir).and_then(|()| {
-            let lock = new_lock(&dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+            let lock = new_lock(&dir)
+                .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
             match lock.try_lock() {
                 Ok(()) => {
                     validate_lock(&dir, &lock)?;
                     Ok(Some(lock))
                 }
                 Err(std::fs::TryLockError::WouldBlock) => Ok(None),
-                Err(std::fs::TryLockError::Error(e)) => Err(EngineError::Other(format!("{}: {e}", dir.display()))),
+                Err(std::fs::TryLockError::Error(e)) => {
+                    Err(EngineError::Other(format!("{}: {e}", dir.display())))
+                }
             }
         });
         match locked {
@@ -98,7 +107,8 @@ pub fn run_dir(root: &Path) -> Result<PathBuf> {
             // it before the lock is held: then the lock is gone, or that app holds it.
             Ok(Some(lock)) => {
                 #[cfg(unix)]
-                let directory = std::fs::File::open(&dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+                let directory = std::fs::File::open(&dir)
+                    .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
                 runs.push(Run {
                     root: root.to_path_buf(),
                     dir: dir.clone(),
@@ -116,7 +126,10 @@ pub fn run_dir(root: &Path) -> Result<PathBuf> {
             }
         }
     }
-    Err(EngineError::Other(format!("{}: no free folder for this run", root.display())))
+    Err(EngineError::Other(format!(
+        "{}: no free folder for this run",
+        root.display()
+    )))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -132,8 +145,15 @@ fn new_lock(dir: &Path) -> std::io::Result<std::fs::File> {
     // A marker distinguishes the held handle from a replacement at the same pathname on
     // platforms without portable file-identity metadata. Empty older-version locks remain valid.
     static NEXT_LOCK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(std::io::Error::other)?.as_nanos();
-    let marker = format!("{}:{}:{now}", std::process::id(), NEXT_LOCK.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(std::io::Error::other)?
+        .as_nanos();
+    let marker = format!(
+        "{}:{}:{now}",
+        std::process::id(),
+        NEXT_LOCK.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    );
     file.write_all(marker.as_bytes())?;
     file.sync_all()?;
     Ok(file)
@@ -144,7 +164,12 @@ fn new_lock(dir: &Path) -> std::io::Result<std::fs::File> {
 #[cfg(not(target_arch = "wasm32"))]
 fn validate_lock(dir: &Path, lock: &std::fs::File) -> Result<()> {
     let path = dir.join(LOCK);
-    let fail = || EngineError::Other(format!("{}: this run no longer owns its recovery lock", path.display()));
+    let fail = || {
+        EngineError::Other(format!(
+            "{}: this run no longer owns its recovery lock",
+            path.display()
+        ))
+    };
     let before = std::fs::symlink_metadata(&path).map_err(|_| fail())?;
     if is_link_like(&before) || !before.file_type().is_file() {
         return Err(fail());
@@ -155,7 +180,11 @@ fn validate_lock(dir: &Path, lock: &std::fs::File) -> Result<()> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
-        if held.dev() != before.dev() || held.ino() != before.ino() || held.dev() != current.dev() || held.ino() != current.ino() {
+        if held.dev() != before.dev()
+            || held.ino() != before.ino()
+            || held.dev() != current.dev()
+            || held.ino() != current.ino()
+        {
             return Err(fail());
         }
     }
@@ -194,18 +223,26 @@ fn lock_marker(file: &std::fs::File) -> std::io::Result<Vec<u8>> {
 /// A run's folder that was removed while it runs is made again by the next save: so is its lock.
 #[cfg(not(target_arch = "wasm32"))]
 fn relock(dir: &Path, created: bool) -> Result<()> {
-    let mut runs = RUNS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    let Some(run) = runs.iter_mut().find(|r| r.dir == dir) else { return Ok(()) };
+    let mut runs = RUNS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let Some(run) = runs.iter_mut().find(|r| r.dir == dir) else {
+        return Ok(());
+    };
     validate_recovery_dir(&run.root)?;
     #[cfg(unix)]
-    let directory = std::fs::symlink_metadata(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    let directory = std::fs::symlink_metadata(dir)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     // Reclaim a newly recreated folder only when this operation actually created it. Existing
     // replacements, including ones without a lock, may contain somebody else's documents.
     let same_directory = {
         #[cfg(unix)]
         {
             use std::os::unix::fs::MetadataExt;
-            let held = run.directory.metadata().map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+            let held = run
+                .directory
+                .metadata()
+                .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
             held.dev() == directory.dev() && held.ino() == directory.ino()
         }
         #[cfg(not(unix))]
@@ -216,7 +253,10 @@ fn relock(dir: &Path, created: bool) -> Result<()> {
         }
     };
     if !created && !same_directory {
-        return Err(EngineError::Other(format!("{}: this run no longer owns its recovery folder", dir.display())));
+        return Err(EngineError::Other(format!(
+            "{}: this run no longer owns its recovery folder",
+            dir.display()
+        )));
     }
     match std::fs::symlink_metadata(dir.join(LOCK)) {
         Ok(_) => return validate_lock(dir, &run.lock),
@@ -224,16 +264,23 @@ fn relock(dir: &Path, created: bool) -> Result<()> {
         Err(e) => return Err(EngineError::Other(format!("{}: {e}", dir.display()))),
     }
     let lock = new_lock(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
-    lock.try_lock().map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    lock.try_lock()
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     validate_lock(dir, &lock)?;
     #[cfg(unix)]
-    let replacement_directory = std::fs::File::open(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    let replacement_directory = std::fs::File::open(dir)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
-        let held = replacement_directory.metadata().map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+        let held = replacement_directory
+            .metadata()
+            .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
         if held.dev() != directory.dev() || held.ino() != directory.ino() {
-            return Err(EngineError::Other(format!("{}: recovery folder changed while restoring its lock", dir.display())));
+            return Err(EngineError::Other(format!(
+                "{}: recovery folder changed while restoring its lock",
+                dir.display()
+            )));
         }
     }
     validate_lock(dir, &lock)?;
@@ -250,23 +297,40 @@ fn relock(dir: &Path, created: bool) -> Result<()> {
 #[cfg(not(target_arch = "wasm32"))]
 fn take_over(own: &Path) {
     let root = {
-        let runs = RUNS.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let Some(run) = runs.iter().find(|r| r.dir == own) else { return };
+        let runs = RUNS
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Some(run) = runs.iter().find(|r| r.dir == own) else {
+            return;
+        };
         run.root.clone()
     };
     move_entries(&root, own);
-    let Ok(rd) = std::fs::read_dir(&root) else { return };
+    let Ok(rd) = std::fs::read_dir(&root) else {
+        return;
+    };
     for e in rd.flatten() {
         let dir = e.path();
-        if dir == own || !e.file_name().to_string_lossy().starts_with("run-") || validate_recovery_dir(&dir).is_err() {
+        if dir == own
+            || !e.file_name().to_string_lossy().starts_with("run-")
+            || validate_recovery_dir(&dir).is_err()
+        {
             continue;
         }
         // Opened for writing: over NFS an exclusive lock on a file opened for reading is refused.
-        let Ok(metadata) = std::fs::symlink_metadata(dir.join(LOCK)) else { continue };
+        let Ok(metadata) = std::fs::symlink_metadata(dir.join(LOCK)) else {
+            continue;
+        };
         if is_link_like(&metadata) || !metadata.file_type().is_file() {
             continue;
         }
-        let Ok(lock) = std::fs::OpenOptions::new().read(true).write(true).open(dir.join(LOCK)) else { continue };
+        let Ok(lock) = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(dir.join(LOCK))
+        else {
+            continue;
+        };
         match lock.try_lock() {
             // Free: the run has ended. Holding it keeps another starting app out.
             Ok(()) => {}
@@ -289,16 +353,23 @@ fn take_over(own: &Path) {
 /// document still in it, or a file the app did not write, keeps the folder as it is.
 #[cfg(not(target_arch = "wasm32"))]
 fn remove_emptied(dir: &Path) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut left = Vec::new();
     for e in rd {
         let Ok(e) = e else { return };
         let path = e.path();
         let name = e.file_name();
         let name = name.to_string_lossy();
-        let numbered = path.file_stem().and_then(|s| s.to_str()).is_some_and(|s| s.parse::<u64>().is_ok());
+        let numbered = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .is_some_and(|s| s.parse::<u64>().is_ok());
         // Metadata whose document has gone, and a file a crash left half written.
-        if (numbered && name.ends_with(".json")) || (name.starts_with(".designcraft-recovery-") && name.ends_with(".tmp")) {
+        if (numbered && name.ends_with(".json"))
+            || (name.starts_with(".designcraft-recovery-") && name.ends_with(".tmp"))
+        {
             left.push(path);
         } else if name != LOCK {
             return;
@@ -317,7 +388,10 @@ fn move_entries(from: &Path, own: &Path) {
     for (uid, _) in list(from) {
         let (doc, meta) = files(from, uid);
         // Under a uid no document of this run has or gets.
-        let (own_doc, own_meta) = files(own, crate::NEXT_UID.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
+        let (own_doc, own_meta) = files(
+            own,
+            crate::NEXT_UID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        );
         // The document first: its metadata is optional.
         if std::fs::rename(&doc, &own_doc).is_ok() {
             let _ = std::fs::rename(&meta, &own_meta);
@@ -326,7 +400,10 @@ fn move_entries(from: &Path, own: &Path) {
 }
 
 fn files(dir: &Path, uid: u64) -> (PathBuf, PathBuf) {
-    (dir.join(format!("{uid}.designcraft")), dir.join(format!("{uid}.json")))
+    (
+        dir.join(format!("{uid}.designcraft")),
+        dir.join(format!("{uid}.json")),
+    )
 }
 
 /// Remove a document's recovery entry (it was saved or closed).
@@ -343,13 +420,17 @@ pub fn discard(dir: &Path, uid: u64) {
 /// Consume this document's checkpoint provenance after Save/Close/Revert. A default-directory
 /// uid may also be another live recovered document's retained source after a failed republish.
 pub(crate) fn discard_document(s: &mut Session, index: usize, default_dir: Option<&Path>) {
-    let Some(doc) = s.docs.get_mut(index) else { return };
+    let Some(doc) = s.docs.get_mut(index) else {
+        return;
+    };
     let uid = doc.uid;
     // A completed Save/Close/Revert consumes the provenance, even when removal fails. A stale
     // source uid must never become a future claim on another document's checkpoint.
     let mut entries = std::mem::take(&mut doc.recovery_entries);
     if let Some(dir) = default_dir
-        && !entries.iter().any(|(entry_dir, entry_uid)| *entry_uid == uid && same_directory(entry_dir, dir))
+        && !entries
+            .iter()
+            .any(|(entry_dir, entry_uid)| *entry_uid == uid && same_directory(entry_dir, dir))
     {
         entries.push((dir.to_path_buf(), uid));
     }
@@ -357,7 +438,10 @@ pub(crate) fn discard_document(s: &mut Session, index: usize, default_dir: Optio
         // Session ownership governs deletion as well as writes: never consume another live
         // document's only source merely because its old uid matches this unrelated document.
         if !s.docs.iter().enumerate().any(|(other_index, owner)| {
-            other_index != index && owner.recovery_entries.iter().any(|(entry_dir, entry_uid)| *entry_uid == uid && same_directory(entry_dir, &dir))
+            other_index != index
+                && owner.recovery_entries.iter().any(|(entry_dir, entry_uid)| {
+                    *entry_uid == uid && same_directory(entry_dir, &dir)
+                })
         }) {
             discard(&dir, uid);
         }
@@ -367,19 +451,32 @@ pub(crate) fn discard_document(s: &mut Session, index: usize, default_dir: Optio
 const MAX_RECOVERY_ENTRIES: usize = 16;
 
 fn same_directory(a: &Path, b: &Path) -> bool {
-    a == b || std::fs::canonicalize(a).ok().zip(std::fs::canonicalize(b).ok()).is_some_and(|(a, b)| a == b)
+    a == b
+        || std::fs::canonicalize(a)
+            .ok()
+            .zip(std::fs::canonicalize(b).ok())
+            .is_some_and(|(a, b)| a == b)
 }
 
 fn has_checkpoint(doc: &DocState, dir: &Path) -> bool {
-    doc.recovery_entries.iter().any(|(entry_dir, uid)| *uid == doc.uid && same_directory(entry_dir, dir))
+    doc.recovery_entries
+        .iter()
+        .any(|(entry_dir, uid)| *uid == doc.uid && same_directory(entry_dir, dir))
 }
 
 fn protect_retained_sources(s: &Session, dir: &Path) -> Result<()> {
     for document in &s.docs {
         if let Some(owner) = s.docs.iter().find(|owner| {
-            owner.uid != document.uid && owner.recovery_entries.iter().any(|(entry_dir, uid)| *uid == document.uid && same_directory(entry_dir, dir))
+            owner.uid != document.uid
+                && owner
+                    .recovery_entries
+                    .iter()
+                    .any(|(entry_dir, uid)| *uid == document.uid && same_directory(entry_dir, dir))
         }) {
-            return Err(EngineError::Other(format!("save or close recovered document {} before reusing its recovery folder", owner.title())));
+            return Err(EngineError::Other(format!(
+                "save or close recovered document {} before reusing its recovery folder",
+                owner.title()
+            )));
         }
     }
     Ok(())
@@ -418,7 +515,10 @@ pub fn save(s: &Session, dir: &Path) -> Result<usize> {
 pub(crate) fn save_tracked(s: &mut Session, dir: &Path) -> Result<usize> {
     // Reject the complete batch before writing rather than silently losing old ownership records.
     for document in &s.docs {
-        if document.is_dirty() && !has_checkpoint(document, dir) && document.recovery_entries.len() >= MAX_RECOVERY_ENTRIES {
+        if document.is_dirty()
+            && !has_checkpoint(document, dir)
+            && document.recovery_entries.len() >= MAX_RECOVERY_ENTRIES
+        {
             return Err(EngineError::Other(
                 "too many recovery checkpoints; save or close the document before choosing another recovery folder".into(),
             ));
@@ -427,18 +527,30 @@ pub(crate) fn save_tracked(s: &mut Session, dir: &Path) -> Result<usize> {
     prepare_save(s, dir)?;
     let mut n = 0;
     for index in 0..s.docs.len() {
-        if s.docs.get(index).is_some_and(|document| !document.is_dirty()) {
+        if s.docs
+            .get(index)
+            .is_some_and(|document| !document.is_dirty())
+        {
             discard_document(s, index, Some(dir));
             continue;
         }
-        let Some(document) = s.docs.get_mut(index) else { continue };
+        let Some(document) = s.docs.get_mut(index) else {
+            continue;
+        };
         let (doc, meta) = files(dir, document.uid);
-        let bytes = designcraft_format::save(document.preview_stash.as_deref().unwrap_or(document.doc.as_ref()))
-            .map_err(|e| EngineError::Other(e.to_string()))?;
+        let bytes = designcraft_format::save(
+            document
+                .preview_stash
+                .as_deref()
+                .unwrap_or(document.doc.as_ref()),
+        )
+        .map_err(|e| EngineError::Other(e.to_string()))?;
         write_recovery_file(&doc, &bytes)?;
         // The primary is useful even if optional metadata fails next. Track it immediately.
         if !has_checkpoint(document, dir) {
-            document.recovery_entries.push((dir.to_path_buf(), document.uid));
+            document
+                .recovery_entries
+                .push((dir.to_path_buf(), document.uid));
         }
         let metadata = json!({"path": document.path, "title": document.title(), "saved": designcraft_doc::vars::now()});
         write_recovery_file(&meta, metadata.to_string().as_bytes())?;
@@ -450,9 +562,11 @@ pub(crate) fn save_tracked(s: &mut Session, dir: &Path) -> Result<usize> {
 /// Publish a document's recovery entry before its optional metadata.
 fn write_entry(dir: &Path, d: &DocState) -> Result<()> {
     let (doc, meta) = files(dir, d.uid);
-    let bytes = designcraft_format::save(d.preview_stash.as_deref().unwrap_or(d.doc.as_ref())).map_err(|e| EngineError::Other(e.to_string()))?;
+    let bytes = designcraft_format::save(d.preview_stash.as_deref().unwrap_or(d.doc.as_ref()))
+        .map_err(|e| EngineError::Other(e.to_string()))?;
     write_recovery_file(&doc, &bytes)?;
-    let metadata = json!({"path": d.path, "title": d.title(), "saved": designcraft_doc::vars::now()});
+    let metadata =
+        json!({"path": d.path, "title": d.title(), "saved": designcraft_doc::vars::now()});
     write_recovery_file(&meta, metadata.to_string().as_bytes())
 }
 
@@ -481,7 +595,8 @@ fn secure_recovery_dir(dir: &Path) -> Result<bool> {
     #[cfg(not(unix))]
     let create_result = {
         if let Some(parent) = dir.parent().filter(|p| !p.as_os_str().is_empty()) {
-            std::fs::create_dir_all(parent).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
         }
         std::fs::create_dir(dir)
     };
@@ -496,7 +611,9 @@ fn secure_recovery_dir(dir: &Path) -> Result<bool> {
 
 #[cfg(target_arch = "wasm32")]
 fn secure_recovery_dir(_dir: &Path) -> Result<bool> {
-    Err(EngineError::Other("recovery files are unavailable on the web".into()))
+    Err(EngineError::Other(
+        "recovery files are unavailable on the web".into(),
+    ))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -507,7 +624,10 @@ fn write_recovery_file(path: &Path, bytes: &[u8]) -> Result<()> {
 #[cfg(not(target_arch = "wasm32"))]
 fn publish_recovery_file(path: &Path, bytes: &[u8], replace: bool) -> Result<()> {
     let Some(dir) = path.parent() else {
-        return Err(EngineError::Other(format!("{} has no parent folder", path.display())));
+        return Err(EngineError::Other(format!(
+            "{} has no parent folder",
+            path.display()
+        )));
     };
     validate_recovery_dir(dir)?;
     let mut tmp = tempfile::Builder::new()
@@ -518,14 +638,24 @@ fn publish_recovery_file(path: &Path, bytes: &[u8], replace: bool) -> Result<()>
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        tmp.as_file().set_permissions(std::fs::Permissions::from_mode(0o600)).map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
+        tmp.as_file()
+            .set_permissions(std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
     }
-    tmp.as_file_mut().write_all(bytes).map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
-    tmp.as_file_mut().sync_all().map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
+    tmp.as_file_mut()
+        .write_all(bytes)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
+    tmp.as_file_mut()
+        .sync_all()
+        .map_err(|e| EngineError::Other(format!("{}: {e}", path.display())))?;
     // Validate the non-followed leaf again immediately before renaming the randomized temporary
     // file to its fixed sibling destination.
     validate_recovery_dir(dir)?;
-    let published = if replace { tmp.persist(path) } else { tmp.persist_noclobber(path) };
+    let published = if replace {
+        tmp.persist(path)
+    } else {
+        tmp.persist_noclobber(path)
+    };
     published.map_err(|e| EngineError::Other(format!("{}: {}", path.display(), e.error)))?;
     sync_recovery_dir(dir)?;
     Ok(())
@@ -533,12 +663,19 @@ fn publish_recovery_file(path: &Path, bytes: &[u8], replace: bool) -> Result<()>
 
 #[cfg(not(target_arch = "wasm32"))]
 fn validate_recovery_dir(dir: &Path) -> Result<()> {
-    let metadata = std::fs::symlink_metadata(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    let metadata = std::fs::symlink_metadata(dir)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     if is_link_like(&metadata) {
-        return Err(EngineError::Other(format!("{} must not be a symbolic link or reparse point", dir.display())));
+        return Err(EngineError::Other(format!(
+            "{} must not be a symbolic link or reparse point",
+            dir.display()
+        )));
     }
     if !metadata.file_type().is_dir() {
-        return Err(EngineError::Other(format!("{} is not a directory", dir.display())));
+        return Err(EngineError::Other(format!(
+            "{} is not a directory",
+            dir.display()
+        )));
     }
     Ok(())
 }
@@ -564,8 +701,11 @@ fn sync_recovery_dir(dir: &Path) -> Result<()> {
 
     #[cfg(unix)]
     {
-        let directory = std::fs::File::open(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
-        directory.sync_all().map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+        let directory = std::fs::File::open(dir)
+            .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+        directory
+            .sync_all()
+            .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     }
 
     #[cfg(not(unix))]
@@ -583,12 +723,16 @@ fn sync_recovery_dir(dir: &Path) -> Result<()> {
 
 #[cfg(target_arch = "wasm32")]
 fn write_recovery_file(_path: &Path, _bytes: &[u8]) -> Result<()> {
-    Err(EngineError::Other("recovery files are unavailable on the web".into()))
+    Err(EngineError::Other(
+        "recovery files are unavailable on the web".into(),
+    ))
 }
 
 #[cfg(target_arch = "wasm32")]
 fn publish_recovery_file(_path: &Path, _bytes: &[u8], _replace: bool) -> Result<()> {
-    Err(EngineError::Other("recovery files are unavailable on the web".into()))
+    Err(EngineError::Other(
+        "recovery files are unavailable on the web".into(),
+    ))
 }
 
 /// Canonical keys are only for alias comparison; operational paths stay unchanged so run
@@ -600,13 +744,19 @@ fn directory_key(dir: &Path) -> Result<PathBuf> {
 /// Include metadata-only entries as occupied, so publication cannot attach a new document to
 /// somebody else's orphan metadata. No filename-derived maximum changes the uid allocator.
 fn occupied_uids(dir: &Path) -> Result<std::collections::HashSet<u64>> {
-    let entries = std::fs::read_dir(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    let entries = std::fs::read_dir(dir)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     let mut ids = std::collections::HashSet::new();
     for entry in entries {
         let entry = entry.map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
         let path = entry.path();
-        if matches!(path.extension().and_then(|s| s.to_str()), Some("json" | "designcraft"))
-            && let Some(uid) = path.file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse().ok())
+        if matches!(
+            path.extension().and_then(|s| s.to_str()),
+            Some("json" | "designcraft")
+        ) && let Some(uid) = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .and_then(|s| s.parse().ok())
         {
             ids.insert(uid);
         }
@@ -632,13 +782,21 @@ pub fn list(dir: &Path) -> Vec<(u64, Value)> {
     if validate_recovery_dir(dir).is_err() || relock(dir, false).is_err() {
         return out;
     }
-    let Ok(rd) = std::fs::read_dir(dir) else { return out };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return out;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.extension().and_then(|x| x.to_str()) != Some("designcraft") {
             continue;
         }
-        let Some(uid) = p.file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse::<u64>().ok()) else { continue };
+        let Some(uid) = p
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .and_then(|s| s.parse::<u64>().ok())
+        else {
+            continue;
+        };
         // Metadata is a file on disk: anything but an object (corrupt, hand-edited) counts as none.
         let meta = std::fs::read_to_string(p.with_extension("json"))
             .ok()
@@ -656,10 +814,16 @@ pub fn list(dir: &Path) -> Vec<(u64, Value)> {
 /// Entries belonging to documents already open in this session's recovery folder are left alone.
 /// Returns the opened documents' indices.
 pub fn open(s: &mut Session, dir: &Path) -> Result<Vec<usize>> {
-    open_with_publisher(s, dir, |path, bytes| publish_recovery_file(path, bytes, false))
+    open_with_publisher(s, dir, |path, bytes| {
+        publish_recovery_file(path, bytes, false)
+    })
 }
 
-fn open_with_publisher(s: &mut Session, dir: &Path, mut publish: impl FnMut(&Path, &[u8]) -> Result<()>) -> Result<Vec<usize>> {
+fn open_with_publisher(
+    s: &mut Session,
+    dir: &Path,
+    mut publish: impl FnMut(&Path, &[u8]) -> Result<()>,
+) -> Result<Vec<usize>> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         validate_recovery_dir(dir)?;
@@ -687,21 +851,27 @@ fn open_with_publisher(s: &mut Session, dir: &Path, mut publish: impl FnMut(&Pat
     occupied.extend(s.docs.iter().map(|d| d.uid));
     for (uid, meta) in entries {
         if s.docs.iter().any(|d| {
-            d.recovery_entries.iter().any(|(entry_dir, entry_uid)| *entry_uid == uid && directory_key(entry_dir).is_ok_and(|key| key == source_key))
+            d.recovery_entries.iter().any(|(entry_dir, entry_uid)| {
+                *entry_uid == uid && directory_key(entry_dir).is_ok_and(|key| key == source_key)
+            })
         }) {
             continue;
         }
         #[cfg(not(target_arch = "wasm32"))]
         validate_recovery_dir(dir)?;
         let (doc, _) = files(dir, uid);
-        let Ok(bytes) = std::fs::read(&doc) else { continue };
+        let Ok(bytes) = std::fs::read(&doc) else {
+            continue;
+        };
         let mut d = match crate::cmd::from_bytes(&bytes) {
             Ok(d) => d,
             Err(_) => continue,
         };
         let path = meta.get("path").and_then(Value::as_str).map(str::to_string);
         // Skipped font files are logged; the document opens without them.
-        let fonts = path.as_deref().and_then(|p| crate::cmd::load_document_fonts(&mut d, p).0);
+        let fonts = path
+            .as_deref()
+            .and_then(|p| crate::cmd::load_document_fonts(&mut d, p).0);
         let mut st = DocState::new(d, path);
         reserve_uid(&mut st, &mut occupied)?;
         st.recovery_entries.push((dir.to_path_buf(), uid));
@@ -721,7 +891,9 @@ fn open_with_publisher(s: &mut Session, dir: &Path, mut publish: impl FnMut(&Pat
                 .and_then(|bytes| publish(&document, &bytes));
             match published {
                 Ok(()) => {
-                    state.recovery_entries.push((destination.clone(), state.uid));
+                    state
+                        .recovery_entries
+                        .push((destination.clone(), state.uid));
                     let meta = json!({"path": state.path, "title": state.title(), "saved": designcraft_doc::vars::now()});
                     match publish(&metadata, meta.to_string().as_bytes()) {
                         Ok(()) => {
@@ -745,7 +917,9 @@ mod tests {
     fn dirty_session() -> Session {
         let mut session = Session::new();
         session.execute("file.new", &json!({})).unwrap();
-        session.execute("frame.create", &json!({"rect": [10, 10, 100, 100]})).unwrap();
+        session
+            .execute("frame.create", &json!({"rect": [10, 10, 100, 100]}))
+            .unwrap();
         session
     }
 
@@ -757,7 +931,8 @@ mod tests {
         s.execute("file.new", &json!({})).unwrap();
         s.execute("file.new", &json!({})).unwrap();
         // Only the edited document is written.
-        s.execute("frame.create", &json!({"rect": [10, 10, 100, 100]})).unwrap();
+        s.execute("frame.create", &json!({"rect": [10, 10, 100, 100]}))
+            .unwrap();
         assert_eq!(save(&s, &dir).unwrap(), 1);
         assert_eq!(list(&dir).len(), 1);
         // "Crash": a new session reopens it, unsaved, with the item.
@@ -767,13 +942,18 @@ mod tests {
         let st = s2.doc().unwrap();
         assert!(st.is_dirty());
         assert_eq!(st.doc.spreads[0].items.len(), 1);
-        assert_eq!(list(&dir).iter().map(|e| e.0).collect::<Vec<_>>(), [st.uid], "the entry follows its reopened document");
+        assert_eq!(
+            list(&dir).iter().map(|e| e.0).collect::<Vec<_>>(),
+            [st.uid],
+            "the entry follows its reopened document"
+        );
         discard(&dir, st.uid);
         // Saving a document drops its entry.
         s.recovery_dir = Some(dir.clone());
         assert_eq!(save(&s, &dir).unwrap(), 1);
         let path = dir.join("saved.designcraft");
-        s.execute("file.saveAs", &json!({"path": path.to_string_lossy()})).unwrap();
+        s.execute("file.saveAs", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert!(list(&dir).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -788,7 +968,10 @@ mod tests {
         drop(reopened);
         let mut recovered_again = Session::new();
         assert_eq!(open(&mut recovered_again, dir.path()).unwrap().len(), 1);
-        assert_eq!(texts(&recovered_again), ["edits preserved after a second crash"]);
+        assert_eq!(
+            texts(&recovered_again),
+            ["edits preserved after a second crash"]
+        );
         assert!(recovered_again.documents().iter().all(DocState::is_dirty));
         assert_eq!(list(dir.path()).len(), 1);
     }
@@ -796,7 +979,10 @@ mod tests {
     #[test]
     fn opening_recovery_again_does_not_duplicate_live_documents() {
         let dir = tempfile::tempdir().unwrap();
-        assert_eq!(save(&unsaved("one recovered document"), dir.path()).unwrap(), 1);
+        assert_eq!(
+            save(&unsaved("one recovered document"), dir.path()).unwrap(),
+            1
+        );
         let mut reopened = Session::new();
         reopened.recovery_dir = Some(dir.path().to_path_buf());
         assert_eq!(open(&mut reopened, dir.path()).unwrap().len(), 1);
@@ -810,15 +996,24 @@ mod tests {
     fn open_with_failed_republication(s: &mut Session, dir: &Path) -> Result<Vec<usize>> {
         let mut attempts = 0;
         let opened = open_with_publisher(s, dir, |path, bytes| {
-            assert_eq!(path.extension().and_then(|extension| extension.to_str()), Some("designcraft"));
+            assert_eq!(
+                path.extension().and_then(|extension| extension.to_str()),
+                Some("designcraft")
+            );
             std::fs::create_dir(path).unwrap();
             let result = publish_recovery_file(path, bytes, false);
             std::fs::remove_dir(path).unwrap();
-            assert!(result.is_err(), "a directory must obstruct actual recovery publication");
+            assert!(
+                result.is_err(),
+                "a directory must obstruct actual recovery publication"
+            );
             attempts += 1;
             result
         });
-        assert_eq!(attempts, 1, "the fixture must exercise the actual failed publication");
+        assert_eq!(
+            attempts, 1,
+            "the fixture must exercise the actual failed publication"
+        );
         opened
     }
 
@@ -851,12 +1046,18 @@ mod tests {
         let s = dirty_session();
         assert_eq!(save(&s, &dir).unwrap(), 1);
 
-        assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+        assert_eq!(
+            std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
         let entries: Vec<_> = std::fs::read_dir(&dir).unwrap().collect();
         assert_eq!(entries.len(), 2);
         for entry in entries {
             let entry = entry.unwrap();
-            assert_eq!(entry.metadata().unwrap().permissions().mode() & 0o777, 0o600);
+            assert_eq!(
+                entry.metadata().unwrap().permissions().mode() & 0o777,
+                0o600
+            );
         }
     }
 
@@ -868,7 +1069,12 @@ mod tests {
 
         assert_eq!(save(&dirty_session(), &dir).unwrap(), 1);
         assert_eq!(list(&dir).len(), 1);
-        assert!(std::fs::symlink_metadata(&dir).unwrap().file_type().is_dir());
+        assert!(
+            std::fs::symlink_metadata(&dir)
+                .unwrap()
+                .file_type()
+                .is_dir()
+        );
     }
 
     #[test]
@@ -892,7 +1098,10 @@ mod tests {
         std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o750)).unwrap();
 
         assert_eq!(save(&dirty_session(), &dir).unwrap(), 1);
-        assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o750);
+        assert_eq!(
+            std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+            0o750
+        );
     }
 
     #[cfg(unix)]
@@ -912,9 +1121,17 @@ mod tests {
         std::fs::write(destination.join("7.json"), b"{}").unwrap();
         assert!(list(&link).is_empty());
         discard(&link, 7);
-        assert_eq!(std::fs::read(destination.join("7.designcraft")).unwrap(), b"unchanged");
+        assert_eq!(
+            std::fs::read(destination.join("7.designcraft")).unwrap(),
+            b"unchanged"
+        );
         assert!(open(&mut Session::new(), &link).is_err());
-        assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+        assert!(
+            std::fs::symlink_metadata(&link)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
     }
 
     #[test]
@@ -925,12 +1142,25 @@ mod tests {
         assert_eq!(own.parent(), Some(dir.as_path()));
         assert_eq!(run_dir(&dir).unwrap(), own, "one for the whole run");
         let lock = std::fs::File::open(own.join(LOCK)).unwrap();
-        assert!(matches!(lock.try_lock(), Err(std::fs::TryLockError::WouldBlock)), "held while the run lives");
+        assert!(
+            matches!(lock.try_lock(), Err(std::fs::TryLockError::WouldBlock)),
+            "held while the run lives"
+        );
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            assert_eq!(std::fs::metadata(&own).unwrap().permissions().mode() & 0o777, 0o700);
-            assert_eq!(std::fs::metadata(own.join(LOCK)).unwrap().permissions().mode() & 0o777, 0o600);
+            assert_eq!(
+                std::fs::metadata(&own).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+            assert_eq!(
+                std::fs::metadata(own.join(LOCK))
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777,
+                0o600
+            );
         }
     }
 
@@ -955,10 +1185,27 @@ mod tests {
         let original = std::fs::read(files(root.path(), live_uid).0).unwrap();
         let recovered_uid = session.docs[1].uid;
         std::fs::create_dir(files(root.path(), recovered_uid).0).unwrap();
-        session.execute("file.activate", &json!({"index": 0})).unwrap();
-        session.execute("frame.create", &json!({"rect": [0,0,100,100], "content": "text", "text": "other live work"})).unwrap();
-        assert!(session.execute("file.recovery.save", &json!({"dir": root.path().to_string_lossy()})).is_err());
-        assert_eq!(std::fs::read(files(root.path(), live_uid).0).unwrap(), original);
+        session
+            .execute("file.activate", &json!({"index": 0}))
+            .unwrap();
+        session
+            .execute(
+                "frame.create",
+                &json!({"rect": [0,0,100,100], "content": "text", "text": "other live work"}),
+            )
+            .unwrap();
+        assert!(
+            session
+                .execute(
+                    "file.recovery.save",
+                    &json!({"dir": root.path().to_string_lossy()})
+                )
+                .is_err()
+        );
+        assert_eq!(
+            std::fs::read(files(root.path(), live_uid).0).unwrap(),
+            original
+        );
     }
 
     #[test]
@@ -986,8 +1233,15 @@ mod tests {
         let (mut session, root, live_uid) = failed_republication_session();
         let checkpoint = files(root.path(), live_uid).0;
         let original = std::fs::read(&checkpoint).unwrap();
-        session.execute("file.activate", &json!({"index": 0})).unwrap();
-        session.execute("file.saveAs", &json!({"path": root.path().join("saved-other.designcraft").to_string_lossy()})).unwrap();
+        session
+            .execute("file.activate", &json!({"index": 0}))
+            .unwrap();
+        session
+            .execute(
+                "file.saveAs",
+                &json!({"path": root.path().join("saved-other.designcraft").to_string_lossy()}),
+            )
+            .unwrap();
         assert_eq!(std::fs::read(checkpoint).unwrap(), original);
     }
 
@@ -997,10 +1251,18 @@ mod tests {
         let checkpoint = files(root.path(), live_uid).0;
         let original = std::fs::read(&checkpoint).unwrap();
         let saved = root.path().join("saved-other.designcraft");
-        std::fs::write(&saved, designcraft_format::save(&session.docs[0].doc).unwrap()).unwrap();
+        std::fs::write(
+            &saved,
+            designcraft_format::save(&session.docs[0].doc).unwrap(),
+        )
+        .unwrap();
         session.docs[0].path = Some(saved.to_string_lossy().into_owned());
-        session.execute("file.activate", &json!({"index": 0})).unwrap();
-        session.execute("frame.create", &json!({"rect": [0,0,100,100]})).unwrap();
+        session
+            .execute("file.activate", &json!({"index": 0}))
+            .unwrap();
+        session
+            .execute("frame.create", &json!({"rect": [0,0,100,100]}))
+            .unwrap();
         session.execute("file.revert", &json!({})).unwrap();
         assert_eq!(std::fs::read(checkpoint).unwrap(), original);
     }
@@ -1008,10 +1270,27 @@ mod tests {
     #[test]
     fn retained_source_provenance_is_consumed_before_its_uid_is_reused() {
         let (mut session, root, live_uid) = failed_republication_session();
-        session.execute("file.saveAs", &json!({"path": root.path().join("saved.designcraft").to_string_lossy()})).unwrap();
-        session.execute("file.activate", &json!({"index": 0})).unwrap();
-        session.execute("frame.create", &json!({"rect": [0,0,100,100], "content": "text", "text": "other live work"})).unwrap();
-        session.execute("file.recovery.save", &json!({"dir": root.path().to_string_lossy()})).unwrap();
+        session
+            .execute(
+                "file.saveAs",
+                &json!({"path": root.path().join("saved.designcraft").to_string_lossy()}),
+            )
+            .unwrap();
+        session
+            .execute("file.activate", &json!({"index": 0}))
+            .unwrap();
+        session
+            .execute(
+                "frame.create",
+                &json!({"rect": [0,0,100,100], "content": "text", "text": "other live work"}),
+            )
+            .unwrap();
+        session
+            .execute(
+                "file.recovery.save",
+                &json!({"dir": root.path().to_string_lossy()}),
+            )
+            .unwrap();
         let checkpoint = files(root.path(), live_uid).0;
         let expected = std::fs::read(&checkpoint).unwrap();
         session.execute("file.close", &json!({"index": 1})).unwrap();
@@ -1027,15 +1306,38 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let mut session = unsaved("bounded checkpoints");
         for n in 0..MAX_RECOVERY_ENTRIES {
-            session.execute("file.recovery.save", &json!({"dir": root.path().join(n.to_string()).to_string_lossy()})).unwrap();
+            session
+                .execute(
+                    "file.recovery.save",
+                    &json!({"dir": root.path().join(n.to_string()).to_string_lossy()}),
+                )
+                .unwrap();
         }
         let excess = root.path().join("excess");
-        assert!(session.execute("file.recovery.save", &json!({"dir": excess.to_string_lossy()})).is_err());
-        assert!(!excess.exists(), "reject before creating or writing the next directory");
+        assert!(
+            session
+                .execute(
+                    "file.recovery.save",
+                    &json!({"dir": excess.to_string_lossy()})
+                )
+                .is_err()
+        );
+        assert!(
+            !excess.exists(),
+            "reject before creating or writing the next directory"
+        );
         let first_alias = root.path().join("0").join(".");
-        session.execute("file.recovery.save", &json!({"dir": first_alias.to_string_lossy()})).unwrap();
+        session
+            .execute(
+                "file.recovery.save",
+                &json!({"dir": first_alias.to_string_lossy()}),
+            )
+            .unwrap();
         for n in 0..MAX_RECOVERY_ENTRIES {
-            assert_eq!(persisted_texts(&root.path().join(n.to_string())), ["bounded checkpoints"]);
+            assert_eq!(
+                persisted_texts(&root.path().join(n.to_string())),
+                ["bounded checkpoints"]
+            );
         }
         assert!(session.recovery_dir.is_none());
         session.execute("file.close", &json!({})).unwrap();
@@ -1085,10 +1387,20 @@ mod tests {
             assert_eq!(opened.len(), 2);
             assert_eq!(texts(&session), ["restart first", "restart second"]);
             assert!(session.docs.iter().all(|document| document.uid != 3));
-            assert_eq!(persisted_texts(&destination), ["already in destination", "restart first", "restart second"]);
+            assert_eq!(
+                persisted_texts(&destination),
+                ["already in destination", "restart first", "restart second"]
+            );
             assert!(list(&source).is_empty());
-            session.execute("file.saveAs", &json!({"path": source.join("saved.designcraft").to_string_lossy()})).unwrap();
-            session.execute("file.close", &json!({"index": opened[0]})).unwrap();
+            session
+                .execute(
+                    "file.saveAs",
+                    &json!({"path": source.join("saved.designcraft").to_string_lossy()}),
+                )
+                .unwrap();
+            session
+                .execute("file.close", &json!({"index": opened[0]}))
+                .unwrap();
             assert_eq!(list(&destination).len(), 1);
             assert_eq!(std::fs::read(existing_doc).unwrap(), doc_bytes);
             assert_eq!(std::fs::read(existing_meta).unwrap(), meta_bytes);
@@ -1121,7 +1433,10 @@ mod tests {
         let opened = open(&mut session, &source).unwrap();
         assert_eq!(opened.len(), 2);
         assert_eq!(texts(&session), ["restart first", "restart second"]);
-        assert_eq!(persisted_texts(&destination), ["restart first", "restart second"]);
+        assert_eq!(
+            persisted_texts(&destination),
+            ["restart first", "restart second"]
+        );
         assert!(session.docs.iter().all(|d| d.uid > 0 && d.uid < u64::MAX));
         if matches!(mode.as_str(), "cross_dir" | "manual" | "alias" | "revert") {
             let was_disabled = session.recovery_dir.is_none();
@@ -1129,21 +1444,42 @@ mod tests {
                 assert!(list(&source).is_empty());
             }
             // A copy does not consume recovery. A successful Save and a Close do.
-            session.execute("file.saveACopy", &json!({"path": source.join("copy.designcraft").to_string_lossy()})).unwrap();
+            session
+                .execute(
+                    "file.saveACopy",
+                    &json!({"path": source.join("copy.designcraft").to_string_lossy()}),
+                )
+                .unwrap();
             assert_eq!(list(&destination).len(), 2);
-            session.execute("file.saveAs", &json!({"path": source.join("saved.designcraft").to_string_lossy()})).unwrap();
+            session
+                .execute(
+                    "file.saveAs",
+                    &json!({"path": source.join("saved.designcraft").to_string_lossy()}),
+                )
+                .unwrap();
             assert_eq!(list(&destination).len(), 1);
             if mode == "revert" {
                 session.execute("frame.create", &json!({"rect": [0, 0, 100, 100], "content": "text", "text": "after saving"})).unwrap();
-                session.execute("file.recovery.save", &json!({"dir": destination.to_string_lossy()})).unwrap();
+                session
+                    .execute(
+                        "file.recovery.save",
+                        &json!({"dir": destination.to_string_lossy()}),
+                    )
+                    .unwrap();
                 assert_eq!(list(&destination).len(), 2);
                 session.execute("file.revert", &json!({})).unwrap();
                 assert_eq!(list(&destination).len(), 1);
             }
-            session.execute("file.close", &json!({"index": opened[0]})).unwrap();
+            session
+                .execute("file.close", &json!({"index": opened[0]}))
+                .unwrap();
             assert!(list(&destination).is_empty());
             assert!(list(&source).is_empty());
-            assert_eq!(session.recovery_dir.is_none(), was_disabled, "manual recovery must not configure autosave");
+            assert_eq!(
+                session.recovery_dir.is_none(),
+                was_disabled,
+                "manual recovery must not configure autosave"
+            );
         }
     }
 
@@ -1156,7 +1492,12 @@ mod tests {
             std::fs::rename(meta, max_meta).unwrap();
         }
         let output = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", "recovery::tests::restart_recovery_child", "--ignored", "--nocapture"])
+            .args([
+                "--exact",
+                "recovery::tests::restart_recovery_child",
+                "--ignored",
+                "--nocapture",
+            ])
             .env("DESIGNCRAFT_TEST_RECOVERY_SOURCE", source.path())
             .env("DESIGNCRAFT_TEST_RECOVERY_MODE", mode)
             .output()
@@ -1168,7 +1509,10 @@ mod tests {
             String::from_utf8_lossy(&output.stderr)
         );
         let child_stdout = String::from_utf8_lossy(&output.stdout);
-        assert!(child_stdout.contains("test result: ok. 1 passed; 0 failed;"), "the fresh-process helper did not run exactly once: {child_stdout}");
+        assert!(
+            child_stdout.contains("test result: ok. 1 passed; 0 failed;"),
+            "the fresh-process helper did not run exactly once: {child_stdout}"
+        );
     }
 
     #[test]
@@ -1218,7 +1562,10 @@ mod tests {
         std::fs::remove_dir_all(&own).unwrap();
         assert_eq!(save(&dirty_session(), &own).unwrap(), 1);
         let lock = std::fs::File::open(own.join(LOCK)).unwrap();
-        assert!(matches!(lock.try_lock(), Err(std::fs::TryLockError::WouldBlock)));
+        assert!(matches!(
+            lock.try_lock(),
+            Err(std::fs::TryLockError::WouldBlock)
+        ));
     }
 
     /// Replacing the name of a live run's lock must not authorize writes under the old handle.
@@ -1231,7 +1578,10 @@ mod tests {
         let replacement = new_lock(&own).unwrap();
         replacement.try_lock().unwrap();
         assert!(save(&dirty_session(), &own).is_err());
-        assert!(list(&own).is_empty(), "another owner's folder must not receive our recovery data");
+        assert!(
+            list(&own).is_empty(),
+            "another owner's folder must not receive our recovery data"
+        );
     }
 
     /// A blocked attempt to recreate a run's lock must stop the save before it writes documents.
@@ -1258,7 +1608,10 @@ mod tests {
         std::fs::write(&doc, b"the replacement owner's document").unwrap();
         std::fs::write(&meta, b"{}").unwrap();
         discard(&own, 1);
-        assert_eq!(std::fs::read(doc).unwrap(), b"the replacement owner's document");
+        assert_eq!(
+            std::fs::read(doc).unwrap(),
+            b"the replacement owner's document"
+        );
         assert!(meta.exists());
     }
 
@@ -1309,12 +1662,21 @@ mod tests {
     fn unsaved(text: &str) -> Session {
         let mut session = Session::new();
         session.execute("file.new", &json!({})).unwrap();
-        session.execute("frame.create", &json!({"rect": [10, 10, 100, 100], "content": "text", "text": text})).unwrap();
+        session
+            .execute(
+                "frame.create",
+                &json!({"rect": [10, 10, 100, 100], "content": "text", "text": text}),
+            )
+            .unwrap();
         session
     }
 
     fn texts(s: &Session) -> Vec<String> {
-        let mut texts: Vec<String> = s.documents().iter().flat_map(|d| d.doc.stories.values().map(|st| st.text.clone())).collect();
+        let mut texts: Vec<String> = s
+            .documents()
+            .iter()
+            .flat_map(|d| d.doc.stories.values().map(|st| st.text.clone()))
+            .collect();
         texts.sort();
         texts
     }
@@ -1343,7 +1705,10 @@ mod tests {
         assert_eq!(open(&mut s, &own).unwrap().len(), 2);
         assert_eq!(texts(&s), ["first app", "second app"]);
         assert!(s.documents().iter().all(DocState::is_dirty));
-        assert!(!first.exists() && !second.exists(), "nothing is left of the runs that ended");
+        assert!(
+            !first.exists() && !second.exists(),
+            "nothing is left of the runs that ended"
+        );
     }
 
     /// An app that started reopened the unsaved documents of one still running, and removed
@@ -1369,7 +1734,12 @@ mod tests {
     #[test]
     fn a_folder_left_under_this_process_id_is_not_reused() {
         let root = tempfile::tempdir().unwrap();
-        let left = run_left(root.path(), &format!("run-{}-0", std::process::id()), "left behind", 1);
+        let left = run_left(
+            root.path(),
+            &format!("run-{}-0", std::process::id()),
+            "left behind",
+            1,
+        );
         let own = run_dir(root.path()).unwrap();
         assert_ne!(own, left);
         let mut s = Session::new();
@@ -1398,7 +1768,11 @@ mod tests {
         let own = run_dir(root.path()).unwrap();
         let mut s = Session::new();
         assert_eq!(open(&mut s, &own).unwrap().len(), 1);
-        assert!(list(&own).iter().any(|e| std::fs::read(files(&own, e.0).0).unwrap() == b"not a document"));
+        assert!(
+            list(&own)
+                .iter()
+                .any(|e| std::fs::read(files(&own, e.0).0).unwrap() == b"not a document")
+        );
         assert!(!left.exists());
     }
 
@@ -1437,13 +1811,18 @@ mod tests {
         std::fs::create_dir_all(&left).unwrap();
         std::fs::write(left.join(LOCK), b"").unwrap();
         let mut a = unsaved("saved once");
-        a.execute("file.saveAs", &json!({"path": file.to_string_lossy()})).unwrap();
-        a.execute("frame.create", &json!({"rect": [10, 10, 100, 100]})).unwrap();
+        a.execute("file.saveAs", &json!({"path": file.to_string_lossy()}))
+            .unwrap();
+        a.execute("frame.create", &json!({"rect": [10, 10, 100, 100]}))
+            .unwrap();
         assert_eq!(save(&a, &left).unwrap(), 1);
         let own = run_dir(&recovery).unwrap();
         let mut s = Session::new();
         assert_eq!(open(&mut s, &own).unwrap().len(), 1);
-        assert_eq!(s.doc().unwrap().path.as_deref(), Some(file.to_string_lossy().as_ref()));
+        assert_eq!(
+            s.doc().unwrap().path.as_deref(),
+            Some(file.to_string_lossy().as_ref())
+        );
     }
 
     /// The folder of a run that ended goes with what the app left in it. A file the app did not
@@ -1453,15 +1832,25 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let emptied = run_left(root.path(), "run-7-0", "moved", 1);
         std::fs::write(emptied.join("9.json"), b"{}").unwrap();
-        std::fs::write(emptied.join(".designcraft-recovery-abc.tmp"), b"half written").unwrap();
+        std::fs::write(
+            emptied.join(".designcraft-recovery-abc.tmp"),
+            b"half written",
+        )
+        .unwrap();
         let kept = run_left(root.path(), "run-8-0", "moved too", 1);
         std::fs::write(kept.join("copy.designcraft"), b"a copy someone put here").unwrap();
         let own = run_dir(root.path()).unwrap();
         let mut s = Session::new();
         assert_eq!(open(&mut s, &own).unwrap().len(), 2);
         assert!(!emptied.exists());
-        assert_eq!(std::fs::read(kept.join("copy.designcraft")).unwrap(), b"a copy someone put here");
-        assert!(kept.join(LOCK).exists(), "still the folder of a run that ended");
+        assert_eq!(
+            std::fs::read(kept.join("copy.designcraft")).unwrap(),
+            b"a copy someone put here"
+        );
+        assert!(
+            kept.join(LOCK).exists(),
+            "still the folder of a run that ended"
+        );
     }
 
     /// A folder that is there is another app's or was left behind, lock or no lock: a run's own
@@ -1475,7 +1864,10 @@ mod tests {
         let own = run_dir(root.path()).unwrap();
         assert_ne!(own, left);
         assert!(!left.join(LOCK).exists());
-        assert_eq!(std::fs::read(left.join("1.designcraft")).unwrap(), b"left with no lock");
+        assert_eq!(
+            std::fs::read(left.join("1.designcraft")).unwrap(),
+            b"left with no lock"
+        );
     }
 }
 
@@ -1507,13 +1899,19 @@ mod file_tests {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         assert!(s.execute("file.revert", &json!({})).is_err(), "never saved");
-        s.execute("file.saveAs", &json!({"path": a.to_string_lossy()})).unwrap();
-        s.execute("frame.create", &json!({"rect": [10, 10, 100, 100]})).unwrap();
+        s.execute("file.saveAs", &json!({"path": a.to_string_lossy()}))
+            .unwrap();
+        s.execute("frame.create", &json!({"rect": [10, 10, 100, 100]}))
+            .unwrap();
         // A copy keeps the document unsaved and on its own file.
-        s.execute("file.saveACopy", &json!({"path": copy.to_string_lossy()})).unwrap();
+        s.execute("file.saveACopy", &json!({"path": copy.to_string_lossy()}))
+            .unwrap();
         assert!(copy.exists());
         assert!(s.doc().unwrap().is_dirty());
-        assert_eq!(s.doc().unwrap().path.as_deref(), Some(a.to_string_lossy().as_ref()));
+        assert_eq!(
+            s.doc().unwrap().path.as_deref(),
+            Some(a.to_string_lossy().as_ref())
+        );
         // Revert drops the frame.
         s.execute("file.revert", &json!({})).unwrap();
         assert!(s.doc().unwrap().doc.spreads[0].items.is_empty());

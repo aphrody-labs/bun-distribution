@@ -15,16 +15,25 @@ fn err(e: impl std::fmt::Display) -> Error {
 }
 
 pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
-    let mut d = Decoder::new(std::io::Cursor::new(bytes)).map_err(err)?.with_limits(limits(opts));
+    let mut d = Decoder::new(std::io::Cursor::new(bytes))
+        .map_err(err)?
+        .with_limits(limits(opts));
     let (w, h) = d.dimensions().map_err(err)?;
     check_size(F, w as u64, h as u64, opts)?;
     let ct = d.colortype().map_err(err)?;
 
     let icc = tag_bytes(&mut d, Tag::IccProfile);
-    let xmp = tag_bytes(&mut d, Tag::from_u16_exhaustive(700)).map(|v| String::from_utf8_lossy(&v).trim_end_matches('\0').to_string());
+    let xmp = tag_bytes(&mut d, Tag::from_u16_exhaustive(700)).map(|v| {
+        String::from_utf8_lossy(&v)
+            .trim_end_matches('\0')
+            .to_string()
+    });
     let orientation = d.get_tag_u32(Tag::Orientation).ok().map(|v| v as u16);
     let planar = d.get_tag_u32(Tag::PlanarConfiguration).ok() == Some(2);
-    let extra = d.get_tag_u16_vec(Tag::ExtraSamples).ok().unwrap_or_default();
+    let extra = d
+        .get_tag_u16_vec(Tag::ExtraSamples)
+        .ok()
+        .unwrap_or_default();
     let colormap = d.get_tag_u16_vec(Tag::ColorMap).ok();
     let compression = d.get_tag_u32(Tag::Compression).ok();
 
@@ -44,8 +53,12 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
         DecodingResult::U64(v) => Buf::U16(v.into_iter().map(|x| (x >> 48) as u16).collect()),
         DecodingResult::I8(v) => Buf::U8(v.into_iter().map(|x| (x.max(0) as u8) << 1).collect()),
         DecodingResult::I16(v) => Buf::U16(v.into_iter().map(|x| (x.max(0) as u16) << 1).collect()),
-        DecodingResult::I32(v) => Buf::U16(v.into_iter().map(|x| (x.max(0) >> 15) as u16).collect()),
-        DecodingResult::I64(v) => Buf::U16(v.into_iter().map(|x| (x.max(0) >> 47) as u16).collect()),
+        DecodingResult::I32(v) => {
+            Buf::U16(v.into_iter().map(|x| (x.max(0) >> 15) as u16).collect())
+        }
+        DecodingResult::I64(v) => {
+            Buf::U16(v.into_iter().map(|x| (x.max(0) >> 47) as u16).collect())
+        }
         DecodingResult::F16(v) => Buf::F32(v.into_iter().map(|x| x.to_f32()).collect()),
         DecodingResult::F32(v) => Buf::F32(v),
         DecodingResult::F64(v) => Buf::F32(v.into_iter().map(|x| x as f32).collect()),
@@ -74,8 +87,21 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
             out.extend_from_slice(&[map[i], map[entries + i], map[2 * entries + i]]);
         }
         buf = Buf::U16(out);
-        let raw = Raw { width: wu, height: hu, model: Model::Rgb, alpha: false, premultiplied: false, buf, bit_depth };
-        let meta = Meta { icc, xmp, orientation, ..Default::default() };
+        let raw = Raw {
+            width: wu,
+            height: hu,
+            model: Model::Rgb,
+            alpha: false,
+            premultiplied: false,
+            buf,
+            bit_depth,
+        };
+        let meta = Meta {
+            icc,
+            xmp,
+            orientation,
+            ..Default::default()
+        };
         return finish(F, raw, meta, (w, h), opts);
     }
 
@@ -87,21 +113,39 @@ pub(crate) fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Decoded> {
     if n_samples != keep {
         buf = select_channels(buf, n, n_samples, keep);
     }
-    let raw = Raw { width: wu, height: hu, model, alpha: has_alpha, premultiplied, buf, bit_depth };
-    let meta = Meta { icc, xmp, orientation, ..Default::default() };
+    let raw = Raw {
+        width: wu,
+        height: hu,
+        model,
+        alpha: has_alpha,
+        premultiplied,
+        buf,
+        bit_depth,
+    };
+    let meta = Meta {
+        icc,
+        xmp,
+        orientation,
+        ..Default::default()
+    };
     finish(F, raw, meta, (w, h), opts)
 }
 
 fn limits(opts: &DecodeOptions) -> Limits {
     let mut limits = Limits::default();
-    limits.decoding_buffer_size = opts.max_pixels.saturating_mul(4 * 8).min(usize::MAX as u64) as usize;
+    limits.decoding_buffer_size =
+        opts.max_pixels.saturating_mul(4 * 8).min(usize::MAX as u64) as usize;
     limits.ifd_value_size = 32 << 20;
     limits
 }
 
 /// The sample layout of a colour type we can decode: (model, colour samples, samples per pixel,
 /// bits per sample).
-fn layout(ct: ColorType, compression: Option<u32>, planar: bool) -> Result<(Model, usize, usize, u8)> {
+fn layout(
+    ct: ColorType,
+    compression: Option<u32>,
+    planar: bool,
+) -> Result<(Model, usize, usize, u8)> {
     let l = match ct {
         ColorType::Gray(b) => (Model::Gray, 1, 1, b),
         ColorType::GrayA(b) => (Model::Gray, 1, 2, b),
@@ -112,12 +156,21 @@ fn layout(ct: ColorType, compression: Option<u32>, planar: bool) -> Result<(Mode
         ColorType::Palette(b) => (Model::Rgb, 1, 1, b),
         // JPEG-compressed YCbCr is converted to RGB by the JPEG decoder.
         ColorType::YCbCr(b) if compression == Some(7) => (Model::Rgb, 3, 3, b),
-        ColorType::Multiband { bit_depth, num_samples } if num_samples >= 3 => (Model::Rgb, 3, num_samples as usize, bit_depth),
-        ColorType::Multiband { bit_depth, num_samples } if num_samples >= 1 => (Model::Gray, 1, num_samples as usize, bit_depth),
+        ColorType::Multiband {
+            bit_depth,
+            num_samples,
+        } if num_samples >= 3 => (Model::Rgb, 3, num_samples as usize, bit_depth),
+        ColorType::Multiband {
+            bit_depth,
+            num_samples,
+        } if num_samples >= 1 => (Model::Gray, 1, num_samples as usize, bit_depth),
         other => return Err(Error::Unsupported(F, unsupported_name(other))),
     };
     if l.3 < 8 && planar && l.2 > 1 {
-        return Err(Error::Unsupported(F, "planar TIFF with samples narrower than a byte"));
+        return Err(Error::Unsupported(
+            F,
+            "planar TIFF with samples narrower than a byte",
+        ));
     }
     Ok(l)
 }
@@ -126,7 +179,9 @@ fn layout(ct: ColorType, compression: Option<u32>, planar: bool) -> Result<(Mode
 /// as a decode would refuse it: a layout or compression we can't decode, or strips/tiles that
 /// start past the end of the file (truncated). The compressed data itself is not checked.
 pub(crate) fn header(bytes: &[u8]) -> Result<(u32, u32, u16)> {
-    let mut d = Decoder::new(std::io::Cursor::new(bytes)).map_err(err)?.with_limits(limits(&DecodeOptions::default()));
+    let mut d = Decoder::new(std::io::Cursor::new(bytes))
+        .map_err(err)?
+        .with_limits(limits(&DecodeOptions::default()));
     let (w, h) = d.dimensions().map_err(err)?;
     check_size(F, w as u64, h as u64, &DecodeOptions::default())?;
     let ct = d.colortype().map_err(err)?;
@@ -138,7 +193,10 @@ pub(crate) fn header(bytes: &[u8]) -> Result<(u32, u32, u16)> {
         return Err(Error::Unsupported(F, "compression method"));
     }
     let chunks = |offsets: Tag, counts: Tag, d: &mut Decoder<std::io::Cursor<&[u8]>>| {
-        Some((d.get_tag_u64_vec(offsets).ok()?, d.get_tag_u64_vec(counts).ok()?))
+        Some((
+            d.get_tag_u64_vec(offsets).ok()?,
+            d.get_tag_u64_vec(counts).ok()?,
+        ))
     };
     let (offsets, counts) = chunks(Tag::StripOffsets, Tag::StripByteCounts, &mut d)
         .or_else(|| chunks(Tag::TileOffsets, Tag::TileByteCounts, &mut d))
@@ -146,10 +204,20 @@ pub(crate) fn header(bytes: &[u8]) -> Result<(u32, u32, u16)> {
     // Only where each chunk starts: some writers overstate StripByteCounts, and the `tiff` crate
     // decodes such files (it stops once it has the pixels), so a chunk's end proves nothing.
     let len = bytes.len() as u64;
-    if offsets.is_empty() || offsets.iter().zip(&counts).any(|(&o, &c)| c > 0 && o >= len) {
+    if offsets.is_empty()
+        || offsets
+            .iter()
+            .zip(&counts)
+            .any(|(&o, &c)| c > 0 && o >= len)
+    {
         return Err(err("truncated: image data past the end of the file"));
     }
-    let orientation = d.get_tag_u32(Tag::Orientation).ok().map(|v| v as u16).filter(|o| (1..=8).contains(o)).unwrap_or(1);
+    let orientation = d
+        .get_tag_u32(Tag::Orientation)
+        .ok()
+        .map(|v| v as u16)
+        .filter(|o| (1..=8).contains(o))
+        .unwrap_or(1);
     Ok((w, h, orientation))
 }
 
@@ -188,8 +256,13 @@ fn unpack(packed: &[u8], width: usize, height: usize, samples: usize, bits: u8) 
         return Err(Error::Unsupported(F, "TIFF samples of 3, 5, 6 or 7 bits"));
     }
     let bits = bits as usize;
-    let per_row = width.checked_mul(samples).ok_or_else(|| err("row too wide"))?;
-    let row_bytes = per_row.checked_mul(bits).ok_or_else(|| err("row too wide"))?.div_ceil(8);
+    let per_row = width
+        .checked_mul(samples)
+        .ok_or_else(|| err("row too wide"))?;
+    let row_bytes = per_row
+        .checked_mul(bits)
+        .ok_or_else(|| err("row too wide"))?
+        .div_ceil(8);
     if row_bytes == 0 || packed.len() / row_bytes < height {
         return Err(err("sample buffer too short"));
     }
@@ -197,7 +270,9 @@ fn unpack(packed: &[u8], width: usize, height: usize, samples: usize, bits: u8) 
     let scale = 255 / max; // 255, 85, 17: exact
     let mut out = Vec::with_capacity(per_row.saturating_mul(height));
     for row in packed.chunks_exact(row_bytes).take(height) {
-        let values = row.iter().flat_map(|&b| (1..=8 / bits).map(move |i| (b >> (8 - bits * i)) & max));
+        let values = row
+            .iter()
+            .flat_map(|&b| (1..=8 / bits).map(move |i| (b >> (8 - bits * i)) & max));
         out.extend(values.take(per_row).map(|v| v * scale));
     }
     Ok(out)

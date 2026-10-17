@@ -63,6 +63,17 @@ impl PadStatus {
 
     // recalibration payload
     pub fn encode_origin() -> [u8; 10] {
-        [0x00, 0x00, STICK_CENTER, STICK_CENTER, STICK_CENTER, STICK_CENTER, 0x00, 0x00, 0x00, 0x00]
+        [
+            0x00,
+            0x00,
+            STICK_CENTER,
+            STICK_CENTER,
+            STICK_CENTER,
+            STICK_CENTER,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+        ]
     }
 }

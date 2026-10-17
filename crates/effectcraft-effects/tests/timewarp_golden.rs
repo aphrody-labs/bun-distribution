@@ -6,7 +6,9 @@
 //! it bit-identical. Same hashing and re-pinning (`SIM_GOLDEN_PRINT=1`) as `sim_golden.rs`;
 //! pinned for aarch64 macOS.
 
-use effectcraft_effects::{Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find};
+use effectcraft_effects::{
+    Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find,
+};
 use effectcraft_keyframe::Value;
 use effectcraft_raster::Image;
 
@@ -26,7 +28,11 @@ fn texture(dx: f64) -> Image {
         for x in 0..W {
             let u = x as f64 - dx;
             let a = if (10..14).contains(&y) { 0.5 } else { 1.0 };
-            let c = [(0.5 + 0.4 * (u * 0.4).sin()) as f32, (0.5 + 0.4 * (y as f64 * 0.3 + u * 0.1).cos()) as f32, ((u * 0.05).rem_euclid(1.0)) as f32];
+            let c = [
+                (0.5 + 0.4 * (u * 0.4).sin()) as f32,
+                (0.5 + 0.4 * (y as f64 * 0.3 + u * 0.1).cos()) as f32,
+                ((u * 0.05).rem_euclid(1.0)) as f32,
+            ];
             img.set(x, y, [c[0] * a, c[1] * a, c[2] * a, a]);
         }
     }
@@ -42,7 +48,11 @@ impl EffectHost for Host {
         None
     }
     fn self_at(&self, t: f64, _: usize) -> Option<Buf> {
-        Some(Buf { img: texture((t * FPS).round() * 2.0), offset: [0.0; 2], scale: 1.0 })
+        Some(Buf {
+            img: texture((t * FPS).round() * 2.0),
+            offset: [0.0; 2],
+            scale: 1.0,
+        })
     }
     fn layer_at(&self, id: u64, t: f64, _: bool) -> Option<LayerPixels> {
         let img = match id {
@@ -69,7 +79,14 @@ impl EffectHost for Host {
                 m
             }
         };
-        Some(LayerPixels { buf: Buf { img, offset: [0.0; 2], scale: 1.0 }, size: [W as f64, H as f64] })
+        Some(LayerPixels {
+            buf: Buf {
+                img,
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+            size: [W as f64, H as f64],
+        })
     }
 }
 
@@ -89,17 +106,49 @@ fn cases() -> Vec<Set> {
     let mut v: Vec<Set> = vec![vec![], vec![("method", e(0))], vec![("method", e(1))]];
     for method in 0..3 {
         for show in 0..4 {
-            v.push(vec![("method", e(method)), ("matteLayer", l(MATTE)), ("show", e(show)), ("speed", n(37.0))]);
+            v.push(vec![
+                ("method", e(method)),
+                ("matteLayer", l(MATTE)),
+                ("show", e(show)),
+                ("speed", n(37.0)),
+            ]);
         }
     }
     for ch in 1..4 {
-        v.push(vec![("matteLayer", l(LUMA)), ("matteChannel", e(ch)), ("speed", n(63.0))]);
+        v.push(vec![
+            ("matteLayer", l(LUMA)),
+            ("matteChannel", e(ch)),
+            ("speed", n(63.0)),
+        ]);
     }
-    v.push(vec![("matteLayer", l(MATTE)), ("warpLayer", l(STILL)), ("speed", n(41.0))]);
-    v.push(vec![("matteLayer", l(MATTE)), ("motionBlur/enableMotionBlur", Value::Bool(true)), ("motionBlur/shutterSamples", n(3.0)), ("show", e(1))]);
-    v.push(vec![("matteLayer", l(MATTE)), ("method", e(1)), ("tuning/buildFromOneImage", Value::Bool(true)), ("show", e(2))]);
-    v.push(vec![("matteLayer", l(MATTE)), ("tuning/buildFromOneImage", Value::Bool(true)), ("speed", n(28.0))]);
-    v.push(vec![("matteLayer", l(MATTE)), ("adjustTimeBy", e(1)), ("sourceFrame", n(4.4)), ("show", e(3))]);
+    v.push(vec![
+        ("matteLayer", l(MATTE)),
+        ("warpLayer", l(STILL)),
+        ("speed", n(41.0)),
+    ]);
+    v.push(vec![
+        ("matteLayer", l(MATTE)),
+        ("motionBlur/enableMotionBlur", Value::Bool(true)),
+        ("motionBlur/shutterSamples", n(3.0)),
+        ("show", e(1)),
+    ]);
+    v.push(vec![
+        ("matteLayer", l(MATTE)),
+        ("method", e(1)),
+        ("tuning/buildFromOneImage", Value::Bool(true)),
+        ("show", e(2)),
+    ]);
+    v.push(vec![
+        ("matteLayer", l(MATTE)),
+        ("tuning/buildFromOneImage", Value::Bool(true)),
+        ("speed", n(28.0)),
+    ]);
+    v.push(vec![
+        ("matteLayer", l(MATTE)),
+        ("adjustTimeBy", e(1)),
+        ("sourceFrame", n(4.4)),
+        ("show", e(3)),
+    ]);
     v
 }
 
@@ -123,15 +172,42 @@ fn fnv(img: &Image) -> u64 {
 fn render(set: &Set, time: f64) -> Image {
     let spec = find("ec.time.timewarp").unwrap();
     let size = [W as f64, H as f64];
-    let mut params = Params { values: spec.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: spec
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (k, v) in set {
         assert!(params.values.contains_key(*k), "unknown param {k}");
         params.values.insert(k.to_string(), v.clone());
     }
     let host = Host;
-    let env = EffectEnv { host: Some(&host), frame_rate: FPS, comp_time: time, ..Default::default() };
-    let ctx = EffectCtx { params: &params, time, layer_size: size, seed: 1, adjustment: false, env };
-    apply(spec, &ctx, Buf { img: texture(0.0), offset: [0.0; 2], scale: 1.0 }).img
+    let env = EffectEnv {
+        host: Some(&host),
+        frame_rate: FPS,
+        comp_time: time,
+        ..Default::default()
+    };
+    let ctx = EffectCtx {
+        params: &params,
+        time,
+        layer_size: size,
+        seed: 1,
+        adjustment: false,
+        env,
+    };
+    apply(
+        spec,
+        &ctx,
+        Buf {
+            img: texture(0.0),
+            offset: [0.0; 2],
+            scale: 1.0,
+        },
+    )
+    .img
 }
 
 fn hashes() -> Vec<(String, u64)> {

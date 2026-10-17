@@ -108,7 +108,12 @@ impl Lexicon {
             }
             // `WORD(2)` alternates fold into the same key.
             let key = match (head.find('('), head.rfind(')')) {
-                (Some(open), Some(close)) if close > open + 1 && head.get(open + 1..close).is_some_and(|d| d.chars().all(|c| c.is_ascii_digit())) => {
+                (Some(open), Some(close))
+                    if close > open + 1
+                        && head
+                            .get(open + 1..close)
+                            .is_some_and(|d| d.chars().all(|c| c.is_ascii_digit())) =>
+                {
                     head.get(..open).unwrap_or(head)
                 }
                 (Some(_), _) => {
@@ -153,7 +158,11 @@ impl Lexicon {
 
 /// One ARPAbet token: a known symbol with an optional stress digit.
 fn is_arpabet_token(token: &str) -> bool {
-    let (letters, digits) = token.split_at(token.find(|c: char| c.is_ascii_digit()).unwrap_or(token.len()));
+    let (letters, digits) = token.split_at(
+        token
+            .find(|c: char| c.is_ascii_digit())
+            .unwrap_or(token.len()),
+    );
     if !matches!(digits, "" | "0" | "1" | "2") {
         return false;
     }
@@ -222,7 +231,12 @@ pub enum Chunk {
 /// Script → chunks: normalize, then phonemize each sentence (one
 /// [`Chunk::Phonemes`] per sentence, split when over [`MAX_CHUNK_CHARS`]).
 /// Never crashes; hostile input degrades (AGENTS.md §0).
-pub fn phonemize(text: &str, lang: Lang, lex: &Lexicon, overrides: &Overrides) -> Result<Vec<Chunk>, NormalizeError> {
+pub fn phonemize(
+    text: &str,
+    lang: Lang,
+    lex: &Lexicon,
+    overrides: &Overrides,
+) -> Result<Vec<Chunk>, NormalizeError> {
     let tokens = normalize::normalize(text, lang)?;
     let overrides = bounded_overrides(overrides);
     let mut chunks: Vec<Chunk> = Vec::new();
@@ -268,13 +282,21 @@ fn bounded_overrides(overrides: &Overrides) -> BTreeMap<String, String> {
 }
 
 /// Phonemize one buffered sentence into zero or more `Phonemes` chunks.
-fn flush_sentence(sentence: &mut Vec<Token>, chunks: &mut Vec<Chunk>, lex: &Lexicon, overrides: &BTreeMap<String, String>, lang: Lang) {
+fn flush_sentence(
+    sentence: &mut Vec<Token>,
+    chunks: &mut Vec<Chunk>,
+    lex: &Lexicon,
+    overrides: &BTreeMap<String, String>,
+    lang: Lang,
+) {
     let tokens = std::mem::take(sentence);
     let mut out = String::new();
     for token in &tokens {
         match token {
             Token::Word(w) => {
-                let Some(p) = word_phonemes(w, lex, Some(overrides), lang) else { continue };
+                let Some(p) = word_phonemes(w, lex, Some(overrides), lang) else {
+                    continue;
+                };
                 if !out.is_empty() {
                     out.push(' ');
                 }
@@ -301,11 +323,22 @@ fn split_long_chunk(s: String) -> Vec<String> {
     if s.chars().count() <= MAX_CHUNK_CHARS {
         return vec![s];
     }
-    let limit = s.char_indices().map(|(i, _)| i).nth(MAX_CHUNK_CHARS).unwrap_or(s.len());
+    let limit = s
+        .char_indices()
+        .map(|(i, _)| i)
+        .nth(MAX_CHUNK_CHARS)
+        .unwrap_or(s.len());
     let head_boundary = s.get(..limit).and_then(|head| {
-        head.char_indices().rev().find(|&(_, c)| matches!(c, ',' | ';' | ':')).map(|(i, _)| i + 1).or_else(|| head.rfind(' ').map(|i| i + 1)).or(Some(limit))
+        head.char_indices()
+            .rev()
+            .find(|&(_, c)| matches!(c, ',' | ';' | ':'))
+            .map(|(i, _)| i + 1)
+            .or_else(|| head.rfind(' ').map(|i| i + 1))
+            .or(Some(limit))
     });
-    let Some(cut) = head_boundary else { return vec![s] };
+    let Some(cut) = head_boundary else {
+        return vec![s];
+    };
     let head = s.get(..cut).unwrap_or("").trim_end().to_string();
     let tail = s.get(cut..).unwrap_or("").trim_start().to_string();
     let mut out = vec![head];
@@ -321,7 +354,12 @@ fn is_output_char(c: char) -> bool {
 
 /// Phonemes for one word: overrides → dictionary → morphology → letter-to-sound.
 /// `overrides` is `None` while expanding a respelling, so overrides can't loop.
-fn word_phonemes(word: &str, lex: &Lexicon, overrides: Option<&BTreeMap<String, String>>, lang: Lang) -> Option<String> {
+fn word_phonemes(
+    word: &str,
+    lex: &Lexicon,
+    overrides: Option<&BTreeMap<String, String>>,
+    lang: Lang,
+) -> Option<String> {
     let lower = word.to_lowercase();
     if lower.is_empty() {
         return None;
@@ -437,7 +475,10 @@ const LETTER_NAMES: [(&str, &str); 26] = [
 /// the letter name second), else the first entry, else the built-in name.
 fn letter_phonemes(word: &str, lex: &Lexicon) -> String {
     let upper = word.to_uppercase();
-    let letter_name = LETTER_NAMES.iter().find(|(l, _)| *l == upper).map(|(_, p)| *p);
+    let letter_name = LETTER_NAMES
+        .iter()
+        .find(|(l, _)| *l == upper)
+        .map(|(_, p)| *p);
     if let Some(pron) = lex.pronunciations(&upper) {
         if let Some(name) = letter_name
             && let Some(matched) = pron.iter().find(|p| p.as_str() == name)
@@ -492,13 +533,18 @@ struct Phone {
 fn parse_arpabet(pron: &str) -> Vec<Phone> {
     pron.split_whitespace()
         .map(|token| {
-            let cut = token.find(|c: char| c.is_ascii_digit()).unwrap_or(token.len());
+            let cut = token
+                .find(|c: char| c.is_ascii_digit())
+                .unwrap_or(token.len());
             let symbol = match token.get(..cut) {
                 Some(s) => s,
                 None => token,
             };
             let stress = token.get(cut..).and_then(|d| d.parse::<u8>().ok());
-            Phone { symbol: symbol.to_string(), stress }
+            Phone {
+                symbol: symbol.to_string(),
+                stress,
+            }
         })
         .collect()
 }
@@ -553,7 +599,23 @@ fn kokoro_symbol(symbol: &str, stress: Option<u8>) -> &'static str {
 
 /// Whether an ARPAbet symbol is a vowel (carries stress).
 fn is_vowel_symbol(symbol: &str) -> bool {
-    matches!(symbol, "AA" | "AE" | "AH" | "AO" | "AW" | "AY" | "EH" | "ER" | "EY" | "IH" | "IY" | "OW" | "OY" | "UH" | "UW")
+    matches!(
+        symbol,
+        "AA" | "AE"
+            | "AH"
+            | "AO"
+            | "AW"
+            | "AY"
+            | "EH"
+            | "ER"
+            | "EY"
+            | "IH"
+            | "IY"
+            | "OW"
+            | "OY"
+            | "UH"
+            | "UW"
+    )
 }
 
 /// ARPAbet → Kokoro symbols, with `ˈ`/`ˌ` immediately before the stressed vowel
@@ -584,7 +646,14 @@ fn arpabet_to_kokoro(pron: &str, strip_stress: bool) -> String {
 /// prefixes `un-`, `re-`. Only fires when the stem is in the dictionary.
 fn morphology(word: &str, lex: &Lexicon) -> Option<String> {
     // Possessive / plural.
-    for stem in [strip_suffix(word, "'s"), strip_suffix(word, "s"), strip_suffix(word, "es")].into_iter().flatten() {
+    for stem in [
+        strip_suffix(word, "'s"),
+        strip_suffix(word, "s"),
+        strip_suffix(word, "es"),
+    ]
+    .into_iter()
+    .flatten()
+    {
         if let Some(pron) = lex.pronunciations(&stem.to_uppercase())
             && let Some(first) = pron.first()
             && let Some(last) = parse_arpabet(first).last()
@@ -594,7 +663,10 @@ fn morphology(word: &str, lex: &Lexicon) -> Option<String> {
         }
     }
     // -ed.
-    for stem in [strip_suffix(word, "ed"), strip_suffix(word, "d")].into_iter().flatten() {
+    for stem in [strip_suffix(word, "ed"), strip_suffix(word, "d")]
+        .into_iter()
+        .flatten()
+    {
         if let Some(pron) = lex.pronunciations(&stem.to_uppercase())
             && let Some(first) = pron.first()
             && let Some(last) = parse_arpabet(first).last()
@@ -604,7 +676,10 @@ fn morphology(word: &str, lex: &Lexicon) -> Option<String> {
         }
     }
     // -ing (stem may need its silent e back: making → make).
-    let ing_stems: [Option<String>; 2] = [strip_suffix(word, "ing").map(|s| s.to_string()), strip_suffix(word, "ing").map(|s| format!("{s}e"))];
+    let ing_stems: [Option<String>; 2] = [
+        strip_suffix(word, "ing").map(|s| s.to_string()),
+        strip_suffix(word, "ing").map(|s| format!("{s}e")),
+    ];
     for stem in ing_stems.into_iter().flatten() {
         let stem = stem.as_str();
         if let Some(pron) = lex.pronunciations(&stem.to_uppercase())
@@ -712,7 +787,12 @@ fn letter_to_sound(word: &str) -> Option<String> {
             let mut body = letter_to_sound(&head).unwrap_or_default();
             if !body.is_empty() && !body.contains('ˈ') {
                 // mark the head's first vowel
-                if let Some(pos) = body.chars().collect::<Vec<_>>().iter().position(|c| is_vowel_kokoro(&c.to_string())) {
+                if let Some(pos) = body
+                    .chars()
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .position(|c| is_vowel_kokoro(&c.to_string()))
+                {
                     let mut v: Vec<char> = body.chars().collect();
                     v.insert(pos, 'ˈ');
                     body = v.into_iter().collect();
@@ -729,8 +809,16 @@ fn letter_to_sound(word: &str) -> Option<String> {
     let ends_consonant_le = chars.len() >= 3
         && chars.last() == Some(&'e')
         && chars.get(chars.len() - 2) == Some(&'l')
-        && chars.get(chars.len() - 3).is_some_and(|c| !is_vowel_letter(*c));
-    if !ends_consonant_le && chars.len() >= 3 && chars.last() == Some(&'e') && chars.get(chars.len() - 2).is_some_and(|c| !is_vowel_letter(*c)) {
+        && chars
+            .get(chars.len() - 3)
+            .is_some_and(|c| !is_vowel_letter(*c));
+    if !ends_consonant_le
+        && chars.len() >= 3
+        && chars.last() == Some(&'e')
+        && chars
+            .get(chars.len() - 2)
+            .is_some_and(|c| !is_vowel_letter(*c))
+    {
         chars.pop();
         long_last = true;
         last_vowel_index = chars.iter().rposition(|c| is_vowel_letter(*c));
@@ -937,7 +1025,8 @@ fn letter_to_sound(word: &str) -> Option<String> {
                 continue;
             }
             // A doubled consonant after the vowel keeps it short (little → ˈlɪtəl).
-            let doubled = chars.get(i + 1) == chars.get(i + 2) && chars.get(i + 1).is_some_and(|c| !is_vowel_letter(*c));
+            let doubled = chars.get(i + 1) == chars.get(i + 2)
+                && chars.get(i + 1).is_some_and(|c| !is_vowel_letter(*c));
             let long = long_last && last_vowel_index == Some(i) && !doubled;
             let sym = match (c, long) {
                 ('a', true) => "A",
@@ -960,11 +1049,15 @@ fn letter_to_sound(word: &str) -> Option<String> {
         // Consonants.
         match c {
             'c' => {
-                let soft = chars.get(i + 1).is_some_and(|n| matches!(n, 'e' | 'i' | 'y'));
+                let soft = chars
+                    .get(i + 1)
+                    .is_some_and(|n| matches!(n, 'e' | 'i' | 'y'));
                 out.push(if soft { "s".into() } else { "k".into() });
             }
             'g' => {
-                let soft = chars.get(i + 1).is_some_and(|n| matches!(n, 'e' | 'i' | 'y'));
+                let soft = chars
+                    .get(i + 1)
+                    .is_some_and(|n| matches!(n, 'e' | 'i' | 'y'));
                 out.push(if soft { "ʤ".into() } else { "ɡ".into() });
             }
             'x' => {
@@ -975,7 +1068,11 @@ fn letter_to_sound(word: &str) -> Option<String> {
             'q' => {
                 out.push("k".into());
             }
-            'l' if i + 2 == n && chars.get(i + 1) == Some(&'e') && i > 0 && chars.get(i - 1).is_some_and(|c| !is_vowel_letter(*c)) => {
+            'l' if i + 2 == n
+                && chars.get(i + 1) == Some(&'e')
+                && i > 0
+                && chars.get(i - 1).is_some_and(|c| !is_vowel_letter(*c)) =>
+            {
                 // "little", "castle": the final "le" is a syllable əl.
                 out.push("ə".into());
                 out.push("l".into());
@@ -1045,9 +1142,47 @@ fn is_vowel_kokoro(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
         Some('ˈ') | Some('ˌ') => {
-            matches!(chars.next(), Some('ɑ' | 'æ' | 'ə' | 'ʌ' | 'ɔ' | 'ɛ' | 'ɚ' | 'ɜ' | 'ɪ' | 'ʊ' | 'i' | 'u' | 'A' | 'I' | 'O' | 'W' | 'Y'))
+            matches!(
+                chars.next(),
+                Some(
+                    'ɑ' | 'æ'
+                        | 'ə'
+                        | 'ʌ'
+                        | 'ɔ'
+                        | 'ɛ'
+                        | 'ɚ'
+                        | 'ɜ'
+                        | 'ɪ'
+                        | 'ʊ'
+                        | 'i'
+                        | 'u'
+                        | 'A'
+                        | 'I'
+                        | 'O'
+                        | 'W'
+                        | 'Y'
+                )
+            )
         }
-        Some(c) => matches!(c, 'ɑ' | 'æ' | 'ə' | 'ʌ' | 'ɔ' | 'ɛ' | 'ɚ' | 'ɜ' | 'ɪ' | 'ʊ' | 'i' | 'u' | 'A' | 'I' | 'O' | 'W' | 'Y'),
+        Some(c) => matches!(
+            c,
+            'ɑ' | 'æ'
+                | 'ə'
+                | 'ʌ'
+                | 'ɔ'
+                | 'ɛ'
+                | 'ɚ'
+                | 'ɜ'
+                | 'ɪ'
+                | 'ʊ'
+                | 'i'
+                | 'u'
+                | 'A'
+                | 'I'
+                | 'O'
+                | 'W'
+                | 'Y'
+        ),
         None => false,
     }
 }
@@ -1152,7 +1287,10 @@ PERCENT  P ER0 S EH1 N T
         assert_eq!(lex.len(), 53);
         assert_eq!(lex.skipped(), 0);
         // Alternates fold into one key; lookup uses the first pronunciation.
-        assert_eq!(lex.pronunciations("READ").map(Vec::as_slice), Some(&["R IY1 D".to_string(), "R EH D".to_string()][..]));
+        assert_eq!(
+            lex.pronunciations("READ").map(Vec::as_slice),
+            Some(&["R IY1 D".to_string(), "R EH D".to_string()][..])
+        );
         assert_eq!(lex.pronunciations("A").map(|v| v.len()), Some(2));
         assert!(lex.pronunciations("MISSING").is_none());
         assert!(Lexicon::parse_cmudict(b"").unwrap().is_empty());
@@ -1165,21 +1303,35 @@ PERCENT  P ER0 S EH1 N T
         let lex = Lexicon::parse_cmudict(input).unwrap();
         assert_eq!(lex.len(), 3); // GOOD, WORD (two pronunciations), TRAIL
         assert_eq!(lex.skipped(), 4); // BADLINE, ONLYWORD, WORD XX1 YY2, BAD(
-        assert_eq!(lex.pronunciations("WORD").map(|v| v.first().map(String::as_str)), Some(Some("AA1")));
+        assert_eq!(
+            lex.pronunciations("WORD")
+                .map(|v| v.first().map(String::as_str)),
+            Some(Some("AA1"))
+        );
         // The trailing comment is stripped, not part of the pronunciation.
-        assert_eq!(lex.pronunciations("TRAIL").map(|v| v.first().map(String::as_str)), Some(Some("AE1 T")));
+        assert_eq!(
+            lex.pronunciations("TRAIL")
+                .map(|v| v.first().map(String::as_str)),
+            Some(Some("AE1 T"))
+        );
     }
 
     #[test]
     fn refuses_oversized_dictionaries() {
         let oversized = vec![b'a'; MAX_DICT_BYTES + 1];
-        assert!(matches!(Lexicon::parse_cmudict(&oversized), Err(LexError::TooLarge)));
+        assert!(matches!(
+            Lexicon::parse_cmudict(&oversized),
+            Err(LexError::TooLarge)
+        ));
         let mut big = String::new();
         for i in 0..MAX_DICT_ENTRIES + 1 {
             big.push_str(&format!("W{i}  AE1\n"));
         }
         let big = big.into_bytes();
-        assert!(matches!(Lexicon::parse_cmudict(&big), Err(LexError::TooManyEntries)));
+        assert!(matches!(
+            Lexicon::parse_cmudict(&big),
+            Err(LexError::TooManyEntries)
+        ));
     }
 
     #[test]
@@ -1201,7 +1353,10 @@ PERCENT  P ER0 S EH1 N T
             ("$3.50", "θɹˈi dˈɑlɚz ænd fˈɪfti sˈɛnts"),
             ("in 1999.", "ɪn nˈIntˈin nˈInti nˈIn."),
             ("5 cats", "fˈIv kˈæts"),
-            ("Call 555-0134.", "kˈɔl fˈIv fˈIv fˈIv zˈɪɹO wˈʌn θɹˈi fˈɔɹ."),
+            (
+                "Call 555-0134.",
+                "kˈɔl fˈIv fˈIv fˈIv zˈɪɹO wˈʌn θɹˈi fˈɔɹ.",
+            ),
             ("At 3:30.", "æt θɹˈi tˈɜɹti."),
             ("Up 20%.", "ˈʌp twˈɛnti pɚsˈɛnt."),
             ("On 10/7/2026.", "ɑn ɑktˈObɚ sˈɛvɛnθ twˈɛnti twˈɛnti sˈɪks."),
@@ -1235,7 +1390,10 @@ PERCENT  P ER0 S EH1 N T
             ("Version 2. Next.", "vˈɛɹʒən tˈu. nˈɛkst."),
             ("It was 3.5 percent.", "ɪt wˈæs θɹˈi pˈYnt fˈIv pɚsˈɛnt."),
             // The review's two sentences, end to end.
-            ("Dr. Smith lives on Main St. in 1999.", "dˈɑktɑɹ smˈɪθ lˈɪvɛs ɑn mˈAn stɹˈit ɪn nˈIntˈin nˈInti nˈIn."),
+            (
+                "Dr. Smith lives on Main St. in 1999.",
+                "dˈɑktɑɹ smˈɪθ lˈɪvɛs ɑn mˈAn stɹˈit ɪn nˈIntˈin nˈInti nˈIn.",
+            ),
             (
                 "The TDA project for NASA costs $1,234,567.",
                 "ðə tˈi dˈi ˈA pɹˈɑʤɛkt fɔɹ nˈæsæ kˈɑsts wˈʌn mˈɪlɪɑn tˈu hˈʌndɹɛd tˈɜɹti fˈɔɹ θˈWsænd fˈIv hˈʌndɹɛd sˈɪkstɪ sˈɛvən dˈɑlɚz.",
@@ -1249,13 +1407,24 @@ PERCENT  P ER0 S EH1 N T
     #[test]
     fn overrides_both_forms_and_caps() {
         // Raw Kokoro phonemes and a respelling.
-        let ov = Overrides([("kokoro".into(), "/kˈOkOɹO/".into()), ("tda".into(), "tee dee ay".into())].into_iter().collect());
+        let ov = Overrides(
+            [
+                ("kokoro".into(), "/kˈOkOɹO/".into()),
+                ("tda".into(), "tee dee ay".into()),
+            ]
+            .into_iter()
+            .collect(),
+        );
         assert_eq!(speak_with(&ov, "kokoro"), "kˈOkOɹO");
         assert_eq!(speak_with(&ov, "TDA"), "tˈi dˈi ˈA");
         // Case-insensitive keys.
         assert_eq!(speak_with(&ov, "KOKORO"), "kˈOkOɹO");
         // A raw value with a character outside SYMBOLS falls back to respelling.
-        let bad = Overrides([("kokoro".into(), "/kəmˈpuːtər/".into())].into_iter().collect());
+        let bad = Overrides(
+            [("kokoro".into(), "/kəmˈpuːtər/".into())]
+                .into_iter()
+                .collect(),
+        );
         assert_eq!(speak_with(&bad, "kokoro"), "kˈɑkɑɹɑ");
     }
 
@@ -1307,7 +1476,10 @@ PERCENT  P ER0 S EH1 N T
             assert_eq!(&letter_to_sound(word).unwrap(), expected, "word {word}");
         }
         // More, checked for pronounceability and non-emptiness rather than exact form.
-        for w in ["lamb", "climb", "song", "bank", "laugh", "tough", "cough", "plague", "guard", "business", "colonel", "smile", "bridge", "wrist", "knock"] {
+        for w in [
+            "lamb", "climb", "song", "bank", "laugh", "tough", "cough", "plague", "guard",
+            "business", "colonel", "smile", "bridge", "wrist", "knock",
+        ] {
             let out = letter_to_sound(w).unwrap();
             assert!(!out.is_empty(), "{w} produced nothing");
             assert!(out.chars().all(|c| SYMBOLS.contains(c)), "{w} → {out:?}");
@@ -1320,16 +1492,31 @@ PERCENT  P ER0 S EH1 N T
         // A long sentence with many commas: splits at commas, each chunk ≤ 400.
         let sentence = "one, two, three, ".repeat(200);
         let chunks = phonemize(&sentence, Lang::EnUs, &test_lex(), &Overrides::default()).unwrap();
-        assert!(chunks.len() > 1, "expected a split, got {} chunk(s)", chunks.len());
+        assert!(
+            chunks.len() > 1,
+            "expected a split, got {} chunk(s)",
+            chunks.len()
+        );
         for c in &chunks {
-            let Chunk::Phonemes(p) = c else { panic!("not phonemes") };
-            assert!(p.chars().count() <= MAX_CHUNK_CHARS, "chunk of {} chars", p.chars().count());
+            let Chunk::Phonemes(p) = c else {
+                panic!("not phonemes")
+            };
+            assert!(
+                p.chars().count() <= MAX_CHUNK_CHARS,
+                "chunk of {} chars",
+                p.chars().count()
+            );
         }
         // The split happened at commas: no chunk ends mid-word.
         for c in &chunks[..chunks.len() - 1] {
             let Chunk::Phonemes(p) = c else { continue };
             assert!(
-                p.ends_with(',') || p.ends_with(';') || p.ends_with(':') || p.ends_with('w') || p.ends_with("ʌn") || p.ends_with("tˈu"),
+                p.ends_with(',')
+                    || p.ends_with(';')
+                    || p.ends_with(':')
+                    || p.ends_with('w')
+                    || p.ends_with("ʌn")
+                    || p.ends_with("tˈu"),
                 "bad split: {p:?}"
             );
         }
@@ -1368,11 +1555,18 @@ PERCENT  P ER0 S EH1 N T
             "The TDA project for NASA costs $1,234,567.",
         ];
         for input in &inputs {
-            let Ok(chunks) = phonemize(input, Lang::EnUs, &test_lex(), &Overrides::default()) else { continue };
+            let Ok(chunks) = phonemize(input, Lang::EnUs, &test_lex(), &Overrides::default())
+            else {
+                continue;
+            };
             for c in chunks {
                 let Chunk::Phonemes(p) = c else { continue };
                 for ch in p.chars() {
-                    assert!(SYMBOLS.contains(ch), "{input:?} produced {p:?} — bad char {ch:?} U+{:04X}", ch as u32);
+                    assert!(
+                        SYMBOLS.contains(ch),
+                        "{input:?} produced {p:?} — bad char {ch:?} U+{:04X}",
+                        ch as u32
+                    );
                 }
             }
         }
@@ -1380,7 +1574,11 @@ PERCENT  P ER0 S EH1 N T
 
     #[test]
     fn hostile_inputs_do_not_panic() {
-        let ov_big = Overrides((0..1001).map(|i| (format!("w{i}"), "/ɑ/".to_string())).collect());
+        let ov_big = Overrides(
+            (0..1001)
+                .map(|i| (format!("w{i}"), "/ɑ/".to_string()))
+                .collect(),
+        );
         let ov_long = Overrides([("x".into(), "a".repeat(201))].into_iter().collect());
         let huge = "a".repeat(2 * 1024 * 1024);
         let long_word = "a".repeat(10_000);
@@ -1456,7 +1654,9 @@ PERCENT  P ER0 S EH1 N T
         let mut phoneme_total = 0usize;
         let mut phoneme_errors = 0usize;
         for (word, truth) in &held_out {
-            let Some(guess) = letter_to_sound(&word.to_lowercase()) else { continue };
+            let Some(guess) = letter_to_sound(&word.to_lowercase()) else {
+                continue;
+            };
             let expected = arpabet_to_kokoro(truth, false);
             let g: Vec<char> = guess.chars().collect();
             let e: Vec<char> = expected.chars().collect();
@@ -1469,7 +1669,12 @@ PERCENT  P ER0 S EH1 N T
         let n = held_out.len().max(1);
         let accuracy = words_hit as f64 / n as f64;
         let per = phoneme_errors as f64 / phoneme_total as f64;
-        println!("held out {} words: word accuracy {:.1}%, phoneme error rate {:.1}%", words_hit, accuracy * 100.0, per * 100.0);
+        println!(
+            "held out {} words: word accuracy {:.1}%, phoneme error rate {:.1}%",
+            words_hit,
+            accuracy * 100.0,
+            per * 100.0
+        );
         assert!(!held_out.is_empty());
     }
 

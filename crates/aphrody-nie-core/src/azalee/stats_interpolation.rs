@@ -66,8 +66,11 @@ pub fn interpolate_variant_stats(variant: &StatCurveVariant, level: f64) -> Char
         return lv1;
     }
 
-    let Some((lv1, lv30, lv50)) =
-        levels.lv1.zip(levels.lv30).zip(levels.lv50).map(|((a, b), c)| (a, b, c))
+    let Some((lv1, lv30, lv50)) = levels
+        .lv1
+        .zip(levels.lv30)
+        .zip(levels.lv50)
+        .map(|((a, b), c)| (a, b, c))
     else {
         let start = levels.lv1.unwrap_or(lv99);
         let t = (level - 1.0) / 98.0;
@@ -168,10 +171,22 @@ mod tests {
     fn truncates_each_segment_with_floor() {
         let variant = StatCurveVariant {
             stats: Some(VariantStatLevels {
-                lv1: Some(CharaStats { kick: 0, ..stats(0) }),
-                lv30: Some(CharaStats { kick: 10, ..stats(0) }),
-                lv50: Some(CharaStats { kick: 11, ..stats(0) }),
-                lv99: Some(CharaStats { kick: 13, ..stats(0) }),
+                lv1: Some(CharaStats {
+                    kick: 0,
+                    ..stats(0)
+                }),
+                lv30: Some(CharaStats {
+                    kick: 10,
+                    ..stats(0)
+                }),
+                lv50: Some(CharaStats {
+                    kick: 11,
+                    ..stats(0)
+                }),
+                lv99: Some(CharaStats {
+                    kick: 13,
+                    ..stats(0)
+                }),
             }),
         };
         assert_eq!(interpolate_variant_stats(&variant, 2.0).kick, 0);
@@ -203,7 +218,10 @@ mod tests {
         assert_eq!(interpolate_variant_stats(&no_lv1, 50.0).kick, 100);
 
         let no_lv99 = StatCurveVariant {
-            stats: Some(VariantStatLevels { lv1: Some(stats(10)), ..VariantStatLevels::default() }),
+            stats: Some(VariantStatLevels {
+                lv1: Some(stats(10)),
+                ..VariantStatLevels::default()
+            }),
         };
         assert_eq!(interpolate_variant_stats(&no_lv99, 50.0).kick, 5);
 
@@ -217,7 +235,10 @@ mod tests {
                 ..VariantStatLevels::default()
             }),
         };
-        assert_eq!(interpolate_variant_stats(&no_lv99_complete, 99.0), CharaStats::default());
+        assert_eq!(
+            interpolate_variant_stats(&no_lv99_complete, 99.0),
+            CharaStats::default()
+        );
         assert_eq!(interpolate_variant_stats(&no_lv99_complete, 75.0).kick, 29);
     }
 

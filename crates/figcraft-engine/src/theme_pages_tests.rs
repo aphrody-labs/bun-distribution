@@ -23,14 +23,21 @@ fn background(s: &Session, page: NodeId) -> Color {
 }
 
 fn backgrounds(s: &Session) -> Vec<String> {
-    s.doc().unwrap().pages.iter().map(|p| background(s, *p).to_css_hex().to_uppercase()).collect()
+    s.doc()
+        .unwrap()
+        .pages
+        .iter()
+        .map(|p| background(s, *p).to_css_hex().to_uppercase())
+        .collect()
 }
 
 /// Click with the Text tool at (x, y) on the current page; the new text layer.
 fn draw_text(s: &mut Session, x: f64, y: f64) -> NodeId {
     ex(s, "tool.text", json!({}));
-    s.pointer(&PointerEvent::at(PointerKind::Down, x, y, 1.0)).unwrap();
-    s.pointer(&PointerEvent::at(PointerKind::Up, x, y, 1.0)).unwrap();
+    s.pointer(&PointerEvent::at(PointerKind::Down, x, y, 1.0))
+        .unwrap();
+    s.pointer(&PointerEvent::at(PointerKind::Up, x, y, 1.0))
+        .unwrap();
     let id = s.selection()[0];
     ex(s, "text.edit.insert", json!({"text": "Hi"}));
     ex(s, "text.edit.end", json!({}));
@@ -40,7 +47,11 @@ fn draw_text(s: &mut Session, x: f64, y: f64) -> NodeId {
 #[test]
 fn new_files_and_pages_take_the_theme_they_are_made_in() {
     // (theme the interface reported, colour of a new file's page and of an added page)
-    for (dark, want) in [(None, "#F5F5F5"), (Some(false), "#F5F5F5"), (Some(true), "#1E1E1E")] {
+    for (dark, want) in [
+        (None, "#F5F5F5"),
+        (Some(false), "#F5F5F5"),
+        (Some(true), "#1E1E1E"),
+    ] {
         let mut s = Session::empty();
         if let Some(d) = dark {
             s.set_ui_dark(d);
@@ -51,7 +62,11 @@ fn new_files_and_pages_take_the_theme_they_are_made_in() {
         // One undo step for the page, with its colour.
         ex(&mut s, "edit.undo", json!({}));
         ex(&mut s, "edit.redo", json!({}));
-        assert_eq!(backgrounds(&s), [want, want], "theme {dark:?} after undo and redo");
+        assert_eq!(
+            backgrounds(&s),
+            [want, want],
+            "theme {dark:?} after undo and redo"
+        );
     }
 }
 
@@ -63,7 +78,11 @@ fn a_change_of_theme_leaves_existing_pages_alone() {
     s.set_ui_dark(false);
     ex(&mut s, "page.add", json!({}));
     s.set_ui_dark(true);
-    assert_eq!(backgrounds(&s), ["#1E1E1E", "#F5F5F5"], "each page keeps the colour it was made with");
+    assert_eq!(
+        backgrounds(&s),
+        ["#1E1E1E", "#F5F5F5"],
+        "each page keeps the colour it was made with"
+    );
     // A copy of a page is that page's colour, whatever the theme.
     let first = s.doc().unwrap().pages[0];
     s.set_ui_dark(false);
@@ -81,7 +100,11 @@ fn the_file_the_app_opened_with_takes_the_theme_once_it_is_known() {
     assert!(s.ds().unwrap().history.undo.is_empty());
     // A file with something in it, or one whose page colour was chosen, is left as it is.
     let mut s = Session::new();
-    ex(&mut s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10}));
+    ex(
+        &mut s,
+        "shape.rectangle",
+        json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+    );
     s.set_ui_dark(true);
     assert_eq!(backgrounds(&s), ["#F5F5F5"]);
     let mut s = Session::new();
@@ -101,7 +124,11 @@ fn opened_files_keep_their_page_colour() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("light.figcraft");
     let mut s = Session::new();
-    ex(&mut s, "file.saveAs", json!({"path": path.to_string_lossy()}));
+    ex(
+        &mut s,
+        "file.saveAs",
+        json!({"path": path.to_string_lossy()}),
+    );
     let mut s = Session::empty();
     s.set_ui_dark(true);
     ex(&mut s, "file.open", json!({"path": path.to_string_lossy()}));
@@ -112,19 +139,45 @@ fn opened_files_keep_their_page_colour() {
 #[test]
 fn text_drawn_on_a_dark_page_is_white_and_on_a_light_page_black() {
     // (page colour, the new text's fill): by the page, not the theme.
-    for (page, want) in [("#1E1E1E", Color::WHITE), ("#F5F5F5", Color::BLACK), ("#0B1F3A", Color::WHITE), ("#FFE08A", Color::BLACK)] {
+    for (page, want) in [
+        ("#1E1E1E", Color::WHITE),
+        ("#F5F5F5", Color::BLACK),
+        ("#0B1F3A", Color::WHITE),
+        ("#FFE08A", Color::BLACK),
+    ] {
         let mut s = Session::new();
         ex(&mut s, "page.setBackground", json!({"color": page}));
         let t = draw_text(&mut s, 40.0, 40.0);
-        assert_eq!(s.doc().unwrap().node(t).unwrap().fills, vec![Paint::solid(want)], "text drawn on {page}");
+        assert_eq!(
+            s.doc().unwrap().node(t).unwrap().fills,
+            vec![Paint::solid(want)],
+            "text drawn on {page}"
+        );
     }
     // In a frame on a dark page too; so is text a command makes in the app (`dark_page_text_tests`).
     let mut s = Session::empty();
     s.set_ui_dark(true);
     ex(&mut s, "file.new", json!({}));
-    ex(&mut s, "frame.create", json!({"x": 0, "y": 0, "width": 200, "height": 200}));
+    ex(
+        &mut s,
+        "frame.create",
+        json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+    );
     let t = draw_text(&mut s, 50.0, 50.0);
-    assert_eq!(s.doc().unwrap().node(t).unwrap().fills, vec![Paint::solid(Color::WHITE)]);
-    let made = id_of(&ex(&mut s, "text.create", json!({"text": "Hi", "x": 0, "y": 300}))["id"]).unwrap();
-    assert_eq!(s.doc().unwrap().node(made).unwrap().fills, vec![Paint::solid(Color::WHITE)]);
+    assert_eq!(
+        s.doc().unwrap().node(t).unwrap().fills,
+        vec![Paint::solid(Color::WHITE)]
+    );
+    let made = id_of(
+        &ex(
+            &mut s,
+            "text.create",
+            json!({"text": "Hi", "x": 0, "y": 300}),
+        )["id"],
+    )
+    .unwrap();
+    assert_eq!(
+        s.doc().unwrap().node(made).unwrap().fills,
+        vec![Paint::solid(Color::WHITE)]
+    );
 }

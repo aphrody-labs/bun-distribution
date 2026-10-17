@@ -4,8 +4,8 @@
 use std::sync::Arc;
 
 use figcraft_doc::{
-    DecorationLength, DecorationStyle, LeadingTrim, ListStyle, ParaList, TextAlignH, TextAutoResize, TextCase, TextData, TextDecoration, TextStyle,
-    valid_feature_tag,
+    DecorationLength, DecorationStyle, LeadingTrim, ListStyle, ParaList, TextAlignH,
+    TextAutoResize, TextCase, TextData, TextDecoration, TextStyle, valid_feature_tag,
 };
 use figcraft_geom::{Affine, BezPath, Rect};
 use harfrust::{Direction, Feature, ShapeOptions, ShaperInstance, Tag, UnicodeBuffer, Variation};
@@ -100,7 +100,11 @@ impl Decoration {
                 let n = (((r.width() / period) * 8.0).ceil() as usize).clamp(2, MAX_DECO_STEPS);
                 let at = |i: usize, side: f64| {
                     let x = r.x0 + r.width() * i as f64 / n as f64;
-                    figcraft_geom::Point::new(x, cy + amp * (std::f64::consts::TAU * (x - r.x0) / period).sin() + side * th / 2.0)
+                    figcraft_geom::Point::new(
+                        x,
+                        cy + amp * (std::f64::consts::TAU * (x - r.x0) / period).sin()
+                            + side * th / 2.0,
+                    )
                 };
                 let mut p = BezPath::new();
                 p.move_to(at(0, -1.0));
@@ -135,7 +139,21 @@ fn deco_len(m: DecorationLength, size: f64, auto: f64) -> f64 {
 
 /// Opening punctuation, which hangs outside a line's start.
 fn opens(c: char) -> bool {
-    matches!(c, '"' | '\'' | '\u{201C}' | '\u{2018}' | '\u{201E}' | '\u{201A}' | '\u{00AB}' | '\u{2039}' | '(' | '[' | '{' | '\u{00BF}' | '\u{00A1}')
+    matches!(
+        c,
+        '"' | '\''
+            | '\u{201C}'
+            | '\u{2018}'
+            | '\u{201E}'
+            | '\u{201A}'
+            | '\u{00AB}'
+            | '\u{2039}'
+            | '('
+            | '['
+            | '{'
+            | '\u{00BF}'
+            | '\u{00A1}'
+    )
 }
 
 /// Closing punctuation and stops, which hang outside a line's end.
@@ -187,7 +205,11 @@ fn natural_ratio(face: &Face) -> f64 {
 /// A line's height: whole pixels (halves round up), whatever unit it was given in. Heights under a
 /// pixel stay as they are, so tiny text keeps its lines apart.
 fn whole_px(line_height: f64) -> f64 {
-    if line_height >= 1.0 { (line_height + 0.5).floor() } else { line_height }
+    if line_height >= 1.0 {
+        (line_height + 0.5).floor()
+    } else {
+        line_height
+    }
 }
 
 /// Advances sit on a grid of this many steps per em, then scale with the font size.
@@ -259,9 +281,17 @@ pub(crate) fn is_rtl_char(c: char) -> bool {
 /// lowest odd one, reverse every run at that level or above).
 pub(crate) fn visual_order(levels: &[u8]) -> Vec<usize> {
     let mut order: Vec<usize> = (0..levels.len()).collect();
-    let Some(lowest_odd) = levels.iter().copied().filter(|l| l % 2 == 1).min() else { return order };
+    let Some(lowest_odd) = levels.iter().copied().filter(|l| l % 2 == 1).min() else {
+        return order;
+    };
     let highest = levels.iter().copied().max().unwrap_or(0);
-    let level = |order: &[usize], i: usize| order.get(i).and_then(|k| levels.get(*k)).copied().unwrap_or(0);
+    let level = |order: &[usize], i: usize| {
+        order
+            .get(i)
+            .and_then(|k| levels.get(*k))
+            .copied()
+            .unwrap_or(0)
+    };
     for lvl in (lowest_odd..=highest).rev() {
         let mut i = 0;
         while i < order.len() {
@@ -298,11 +328,16 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         };
         span_style.push(idx);
     }
-    let mut dbw = db().write().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut dbw = db()
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let fallbacks = dbw.fallbacks();
     let mut faces: Vec<Option<Arc<Face>>> = Vec::with_capacity(styles.len());
     for s in &styles {
-        faces.push(dbw.find(&s.font_family, &s.font_style).or_else(|| dbw.default_face()));
+        faces.push(
+            dbw.find(&s.font_family, &s.font_style)
+                .or_else(|| dbw.default_face()),
+        );
     }
     drop(dbw);
 
@@ -311,20 +346,38 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         .features
         .iter()
         .filter(|(k, _)| valid_feature_tag(k))
-        .filter_map(|(k, on)| <[u8; 4]>::try_from(k.as_bytes()).ok().map(|t| Feature::new(Tag::new(&t), u32::from(*on), ..)))
+        .filter_map(|(k, on)| {
+            <[u8; 4]>::try_from(k.as_bytes())
+                .ok()
+                .map(|t| Feature::new(Tag::new(&t), u32::from(*on), ..))
+        })
         .collect();
 
     // Shape each span, split by paragraph, bidi run and fallback face.
     let bidi = Bidi::of(&text.characters);
-    let level_at = |i: usize| bidi.as_ref().and_then(|b| b.levels.get(i)).copied().unwrap_or(0);
-    let rtl_para_at = |i: usize| bidi.as_ref().and_then(|b| b.rtl_para.get(i)).copied().unwrap_or(false);
+    let level_at = |i: usize| {
+        bidi.as_ref()
+            .and_then(|b| b.levels.get(i))
+            .copied()
+            .unwrap_or(0)
+    };
+    let rtl_para_at = |i: usize| {
+        bidi.as_ref()
+            .and_then(|b| b.rtl_para.get(i))
+            .copied()
+            .unwrap_or(false)
+    };
     // A grapheme cluster (emoji sequence, letter with marks) is shaped with one face.
     let cluster_start = crate::breaks::grapheme_starts(&text.characters);
     let mut items: Vec<Item> = Vec::with_capacity(chars.len());
     for (si, (start, end, _)) in spans.iter().enumerate() {
         let st_idx = span_style.get(si).copied().unwrap_or(0);
-        let Some(style) = styles.get(st_idx) else { continue };
-        let Some(Some(primary)) = faces.get(st_idx) else { continue };
+        let Some(style) = styles.get(st_idx) else {
+            continue;
+        };
+        let Some(Some(primary)) = faces.get(st_idx) else {
+            continue;
+        };
         let size = sanitize_size(style.font_size);
         let spacing = style.letter_spacing.resolve(size);
         // Segment by face.
@@ -334,7 +387,11 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                 if c == '\n' || primary.has_char(c) {
                     return primary.clone();
                 }
-                fallbacks.iter().find(|f| f.has_char(c)).cloned().unwrap_or_else(|| primary.clone())
+                fallbacks
+                    .iter()
+                    .find(|f| f.has_char(c))
+                    .cloned()
+                    .unwrap_or_else(|| primary.clone())
             };
             let first = chars.get(seg_start).copied().unwrap_or(' ');
             let face = face_for(first);
@@ -342,7 +399,10 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
             let mut seg_end = seg_start + 1;
             while seg_end < *end
                 && chars.get(seg_end).is_some_and(|c| {
-                    *c != '\n' && first != '\n' && (!cluster_start.get(seg_end).copied().unwrap_or(true) || face_for(*c).id == face.id)
+                    *c != '\n'
+                        && first != '\n'
+                        && (!cluster_start.get(seg_end).copied().unwrap_or(true)
+                            || face_for(*c).id == face.id)
                 })
                 && level_at(seg_end) == level
             {
@@ -365,7 +425,15 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                     level,
                 });
             } else {
-                let seg = Segment { start: seg_start, end: seg_end, style, size, spacing, st_idx, level };
+                let seg = Segment {
+                    start: seg_start,
+                    end: seg_end,
+                    style,
+                    size,
+                    spacing,
+                    st_idx,
+                    level,
+                };
                 shape_segment(&chars, &seg, &face, &features, &mut items);
             }
             seg_start = seg_end;
@@ -376,14 +444,29 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
     // text start; a hanging list puts the outermost gutter outside the box. Paragraph indent
     // applies to plain paragraphs only. Right-to-left paragraphs mirror both: the gutter and the
     // indent are on the right, the text ends where they start.
-    let lists: Vec<ParaList> = (0..text.paragraph_count()).map(|p| text.para_list(p)).collect();
+    let lists: Vec<ParaList> = (0..text.paragraph_count())
+        .map(|p| text.para_list(p))
+        .collect();
     let markers = list_markers(&lists);
-    let step = list_step(&lists, &markers, styles.first(), faces.first().cloned().flatten().as_ref());
+    let step = list_step(
+        &lists,
+        &markers,
+        styles.first(),
+        faces.first().cloned().flatten().as_ref(),
+    );
     let hang_list = if text.hanging_list { step } else { 0.0 };
     // Paragraph indent applies to start-aligned text only (left, or right for a right-to-left paragraph).
-    let indent_px = if text.paragraph_indent.is_finite() { text.paragraph_indent.clamp(0.0, 10_000.0) } else { 0.0 };
+    let indent_px = if text.paragraph_indent.is_finite() {
+        text.paragraph_indent.clamp(0.0, 10_000.0)
+    } else {
+        0.0
+    };
     let indent_at = |char_idx: usize| {
-        let start_aligned = if rtl_para_at(char_idx) { text.align_h == TextAlignH::Right } else { text.align_h == TextAlignH::Left };
+        let start_aligned = if rtl_para_at(char_idx) {
+            text.align_h == TextAlignH::Right
+        } else {
+            text.align_h == TextAlignH::Left
+        };
         if start_aligned { indent_px } else { 0.0 }
     };
     let list_of = |p: usize| lists.get(p).copied().unwrap_or_default();
@@ -398,8 +481,10 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
     };
     // Hanging punctuation: at the start edge of left-aligned and justified lines, at the end edge
     // of right-aligned and justified ones (left-to-right paragraphs).
-    let hang_start = text.hanging_punctuation && matches!(text.align_h, TextAlignH::Left | TextAlignH::Justified);
-    let hang_end = text.hanging_punctuation && matches!(text.align_h, TextAlignH::Right | TextAlignH::Justified);
+    let hang_start = text.hanging_punctuation
+        && matches!(text.align_h, TextAlignH::Left | TextAlignH::Justified);
+    let hang_end = text.hanging_punctuation
+        && matches!(text.align_h, TextAlignH::Right | TextAlignH::Justified);
 
     // Line breaking.
     let wrap = match text.auto_resize {
@@ -429,14 +514,24 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         let w = it.adv;
         // Hanging punctuation takes no room inside the box.
         let ltr = !rtl_para_at(it.char_start);
-        let hung = items.get(line_start).filter(|f| hang_start && ltr && opens(f.ch)).map_or(0.0, |f| f.adv)
-            + if hang_end && ltr && closes(it.ch) { w } else { 0.0 };
+        let hung = items
+            .get(line_start)
+            .filter(|f| hang_start && ltr && opens(f.ch))
+            .map_or(0.0, |f| f.adv)
+            + if hang_end && ltr && closes(it.ch) {
+                w
+            } else {
+                0.0
+            };
         if let Some(maxw) = wrap
             && x + w - it.spacing > maxw - line_indent + hung + 1e-6
             && i > line_start
             && !it.is_space()
         {
-            let brk = last_break.filter(|b| *b >= line_start).map(|b| b + 1).unwrap_or(i);
+            let brk = last_break
+                .filter(|b| *b >= line_start)
+                .map(|b| b + 1)
+                .unwrap_or(i);
             lines.push((line_start, brk, false, para));
             line_start = brk;
             i = brk;
@@ -446,7 +541,10 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
             continue;
         }
         x += w;
-        if items.get(i + 1).is_some_and(|next| crate::breaks::break_between(it.ch, next.ch)) {
+        if items
+            .get(i + 1)
+            .is_some_and(|next| crate::breaks::break_between(it.ch, next.ch))
+        {
             last_break = Some(i);
         }
         i += 1;
@@ -458,21 +556,42 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
     // Line metrics and positions.
     let default_style = styles.first().cloned().unwrap_or_default();
     let default_face = faces.first().cloned().flatten();
-    let mut out = TextLayout { styles: styles.clone(), ..Default::default() };
+    let mut out = TextLayout {
+        styles: styles.clone(),
+        ..Default::default()
+    };
     let mut y = 0.0;
     let mut para_start_line = true;
-    let max_lines = if text.max_lines > 0 && matches!(text.auto_resize, TextAutoResize::Truncate) { text.max_lines as usize } else { usize::MAX };
+    let max_lines = if text.max_lines > 0 && matches!(text.auto_resize, TextAutoResize::Truncate) {
+        text.max_lines as usize
+    } else {
+        usize::MAX
+    };
     // A style's vertical metrics (ascent, descent, line height, cap height) come from its own
     // font, never a fallback face, so lines mixing scripts keep the spacing of lines that don't.
     let metrics = |st_idx: usize| -> [f64; 4] {
         let st = styles.get(st_idx).unwrap_or(&default_style);
         let size = sanitize_size(st.font_size);
-        match faces.get(st_idx).and_then(Option::as_ref).or(default_face.as_ref()) {
+        match faces
+            .get(st_idx)
+            .and_then(Option::as_ref)
+            .or(default_face.as_ref())
+        {
             Some(f) => {
                 let k = size / f.upem;
-                [f.ascent * k, f.descent * k, whole_px(st.line_height.resolve(size, natural_ratio(f))), f.cap_height * k]
+                [
+                    f.ascent * k,
+                    f.descent * k,
+                    whole_px(st.line_height.resolve(size, natural_ratio(f))),
+                    f.cap_height * k,
+                ]
             }
-            None => [size * 0.8, size * 0.2, whole_px(st.line_height.resolve(size, 1.2)), size * 0.7],
+            None => [
+                size * 0.8,
+                size * 0.2,
+                whole_px(st.line_height.resolve(size, 1.2)),
+                size * 0.7,
+            ],
         }
     };
     let mut first_cap = 0.0;
@@ -500,30 +619,64 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         if para_start_line && li > 0 {
             // Between two items of a list: the list spacing.
             let in_list = |p: usize| list_of(p).list != ListStyle::None;
-            let gap = if in_list(*para) && para.checked_sub(1).is_some_and(in_list) { text.list_spacing } else { text.paragraph_spacing };
-            y += if gap.is_finite() { gap.clamp(0.0, 10_000.0) } else { 0.0 };
+            let gap = if in_list(*para) && para.checked_sub(1).is_some_and(in_list) {
+                text.list_spacing
+            } else {
+                text.paragraph_spacing
+            };
+            y += if gap.is_finite() {
+                gap.clamp(0.0, 10_000.0)
+            } else {
+                0.0
+            };
         }
         let baseline = y + (lh - (asc + desc)) / 2.0 + asc;
         // Trailing spaces don't count for width/alignment.
         let mut vis_end = *e;
-        while vis_end > *s && items.get(vis_end - 1).is_some_and(|it| it.is_space() || it.ch == '\n') {
+        while vis_end > *s
+            && items
+                .get(vis_end - 1)
+                .is_some_and(|it| it.is_space() || it.ch == '\n')
+        {
             vis_end -= 1;
         }
         // Letter spacing separates glyphs: none after the line's last visible one.
-        let end_spacing = vis_end.checked_sub(1).filter(|i| *i >= *s).and_then(|i| items.get(i)).map_or(0.0, |it| it.spacing);
-        let width: f64 = items.get(*s..vis_end).unwrap_or(&[]).iter().map(|it| it.adv).sum::<f64>() - end_spacing;
+        let end_spacing = vis_end
+            .checked_sub(1)
+            .filter(|i| *i >= *s)
+            .and_then(|i| items.get(i))
+            .map_or(0.0, |it| it.spacing);
+        let width: f64 = items
+            .get(*s..vis_end)
+            .unwrap_or(&[])
+            .iter()
+            .map(|it| it.adv)
+            .sum::<f64>()
+            - end_spacing;
         let first_char = items.get(*s).map(|it| it.char_start).unwrap_or(0);
         let rtl_line = rtl_para_at(first_char);
         let line_indent = line_indent_of(*para, para_start_line, first_char);
         // Hanging punctuation at the line's edges (the visible text's first and last chars).
-        let hang_l = items.get(*s).filter(|it| hang_start && !rtl_line && vis_end > *s && opens(it.ch)).map_or(0.0, |it| it.adv);
-        let hang_r =
-            items.get(vis_end.wrapping_sub(1)).filter(|it| hang_end && !rtl_line && vis_end > *s + 1 && closes(it.ch)).map_or(0.0, |it| it.adv);
+        let hang_l = items
+            .get(*s)
+            .filter(|it| hang_start && !rtl_line && vis_end > *s && opens(it.ch))
+            .map_or(0.0, |it| it.adv);
+        let hang_r = items
+            .get(vis_end.wrapping_sub(1))
+            .filter(|it| hang_end && !rtl_line && vis_end > *s + 1 && closes(it.ch))
+            .map_or(0.0, |it| it.adv);
         let gstart = out.glyphs.len();
         // Justify: extra space per gap.
-        let gaps = items.get(*s..vis_end).unwrap_or(&[]).iter().filter(|it| it.is_space()).count();
+        let gaps = items
+            .get(*s..vis_end)
+            .unwrap_or(&[])
+            .iter()
+            .filter(|it| it.is_space())
+            .count();
         let justify_extra = match (text.align_h, wrap) {
-            (TextAlignH::Justified, Some(maxw)) if !para_end && gaps > 0 => ((maxw - line_indent + hang_l + hang_r - width) / gaps as f64).max(0.0),
+            (TextAlignH::Justified, Some(maxw)) if !para_end && gaps > 0 => {
+                ((maxw - line_indent + hang_l + hang_r - width) / gaps as f64).max(0.0)
+            }
             _ => 0.0,
         };
         // Where the visible text ends once justified.
@@ -537,7 +690,11 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
             .filter(|it| it.ch != '\n')
             .map(|it| it.adv + if it.is_space() { justify_extra } else { 0.0 })
             .sum();
-        let mut pen = if rtl_line { -trailing } else { line_indent - hang_l };
+        let mut pen = if rtl_line {
+            -trailing
+        } else {
+            line_indent - hang_l
+        };
         // List marker (before the line's text; zero-length char range so carets skip it).
         let pl = list_of(*para);
         if para_start_line && pl.list != ListStyle::None {
@@ -566,7 +723,11 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                 let k = size / face.upem;
                 let numbered = pl.list == ListStyle::Numbered;
                 // Right to left, the number reads "1." with its full stop on the left (".1").
-                let marker = if rtl_line && numbered { format!(".{}", marker.trim_end_matches('.')) } else { marker };
+                let marker = if rtl_line && numbered {
+                    format!(".{}", marker.trim_end_matches('.'))
+                } else {
+                    marker
+                };
                 let advance = marker_advance(&face, &coords, &marker, size);
                 // Numbers end (start, right to left) half an em from the text; bullets sit at the
                 // gutter's outer edge.
@@ -603,7 +764,17 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         let line_items = items.get(*s..*e).unwrap_or(&[]);
         let order: Vec<usize> = if bidi.is_some() {
             let para_level = u8::from(rtl_line);
-            let levels: Vec<u8> = line_items.iter().enumerate().map(|(k, it)| if *s + k >= vis_end { para_level } else { it.level }).collect();
+            let levels: Vec<u8> = line_items
+                .iter()
+                .enumerate()
+                .map(|(k, it)| {
+                    if *s + k >= vis_end {
+                        para_level
+                    } else {
+                        it.level
+                    }
+                })
+                .collect();
             visual_order(&levels)
         } else {
             (0..line_items.len()).collect()
@@ -612,7 +783,11 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
             if it.ch == '\n' {
                 continue;
             }
-            let size = styles.get(it.style).map(|st| sanitize_size(st.font_size)).unwrap_or(12.0) * it.scale;
+            let size = styles
+                .get(it.style)
+                .map(|st| sanitize_size(st.font_size))
+                .unwrap_or(12.0)
+                * it.scale;
             if it.gid != 0 || !it.is_space() {
                 out.glyphs.push(Glyph {
                     face: it.face.clone(),
@@ -634,8 +809,15 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                 pen += justify_extra;
             }
         }
-        let char_start = items.get(*s).map(|it| it.char_start).unwrap_or_else(|| chars.len());
-        let char_end = items.get(e.saturating_sub(1)).map(|it| it.char_end).unwrap_or(char_start).max(char_start);
+        let char_start = items
+            .get(*s)
+            .map(|it| it.char_start)
+            .unwrap_or_else(|| chars.len());
+        let char_end = items
+            .get(e.saturating_sub(1))
+            .map(|it| it.char_end)
+            .unwrap_or(char_start)
+            .max(char_start);
         out.lines.push(Line {
             glyph_start: gstart,
             glyph_end: out.glyphs.len(),
@@ -673,7 +855,12 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         && let Some(h) = box_height
         && out.height > h + 0.5
     {
-        let keep = out.lines.iter().take_while(|l| bottom(l) <= h + 0.5).count().max(1);
+        let keep = out
+            .lines
+            .iter()
+            .take_while(|l| bottom(l) <= h + 0.5)
+            .count()
+            .max(1);
         if keep < out.lines.len() {
             out.lines.truncate(keep);
             let gend = out.lines.last().map(|l| l.glyph_end).unwrap_or(0);
@@ -692,7 +879,9 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
         _ => box_width.unwrap_or(out.width),
     };
     for li in 0..out.lines.len() {
-        let Some(line) = out.lines.get(li) else { continue };
+        let Some(line) = out.lines.get(li) else {
+            continue;
+        };
         let dx = match text.align_h {
             TextAlignH::Left | TextAlignH::Justified => 0.0,
             TextAlignH::Center => (align_width - line.width) / 2.0,
@@ -714,7 +903,10 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
     let mut decos = Vec::new();
     let mut deco_styles: Vec<TextStyle> = Vec::new();
     for line in &out.lines {
-        let gl = out.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
+        let gl = out
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[]);
         let mut j = 0;
         while j < gl.len() {
             let Some(g0) = gl.get(j) else { break };
@@ -725,7 +917,10 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
             }
             let st = out.styles.get(g0.style).cloned().unwrap_or_default();
             let mut k = j + 1;
-            while gl.get(k).is_some_and(|g| g.style == g0.style && g.char_end > g.char_start) {
+            while gl
+                .get(k)
+                .is_some_and(|g| g.style == g0.style && g.char_end > g.char_start)
+            {
                 k += 1;
             }
             if st.decoration != TextDecoration::None
@@ -735,34 +930,61 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                 let x1 = last.x + last.advance;
                 // The style's own font and size (not a fallback face or a small-cap scale), so the
                 // line runs at one height and weight through mixed scripts.
-                let f = faces.get(g0.style).and_then(Option::as_ref).unwrap_or(&g0.face);
+                let f = faces
+                    .get(g0.style)
+                    .and_then(Option::as_ref)
+                    .unwrap_or(&g0.face);
                 let size = sanitize_size(st.font_size);
                 let s = size / f.upem;
                 let look = st.look();
-                let th = deco_len(look.thickness, size, (f.underline_thickness * s).max(0.5)).clamp(0.1, size);
+                let th = deco_len(look.thickness, size, (f.underline_thickness * s).max(0.5))
+                    .clamp(0.1, size);
                 let underline = st.decoration == TextDecoration::Underline;
                 // The line's top edge (an underline's own offset is measured from the baseline).
                 let top = match look.offset {
-                    DecorationLength::Auto => line.baseline - if underline { f.underline_pos } else { f.strike_pos } * s - th / 2.0,
+                    DecorationLength::Auto => {
+                        line.baseline
+                            - if underline {
+                                f.underline_pos
+                            } else {
+                                f.strike_pos
+                            } * s
+                            - th / 2.0
+                    }
                     m if underline => line.baseline + deco_len(m, size, 0.0).clamp(-size, size),
                     _ => line.baseline - f.strike_pos * s - th / 2.0,
                 };
                 let style = match look.color {
                     Some(c) => {
-                        let own = TextStyle { fills: Some(vec![figcraft_doc::color::Paint::solid(c)]), ..st.clone() };
-                        let k = deco_styles.iter().position(|d| *d == own).unwrap_or_else(|| {
-                            deco_styles.push(own);
-                            deco_styles.len() - 1
-                        });
+                        let own = TextStyle {
+                            fills: Some(vec![figcraft_doc::color::Paint::solid(c)]),
+                            ..st.clone()
+                        };
+                        let k = deco_styles
+                            .iter()
+                            .position(|d| *d == own)
+                            .unwrap_or_else(|| {
+                                deco_styles.push(own);
+                                deco_styles.len() - 1
+                            });
                         out.styles.len() + k
                     }
                     None => g0.style,
                 };
-                let swing = if look.style == DecorationStyle::Wavy { wave(th).0 } else { 0.0 };
+                let swing = if look.style == DecorationStyle::Wavy {
+                    wave(th).0
+                } else {
+                    0.0
+                };
                 // Skip ink: the underline stops a little before each glyph crossing it.
                 let gap = th.max(1.0);
                 let cuts = if underline && look.skip_ink {
-                    ink_cuts(gl.get(j..k).unwrap_or(&[]), top - gap / 2.0 - swing, top + th + gap / 2.0 + swing, gap)
+                    ink_cuts(
+                        gl.get(j..k).unwrap_or(&[]),
+                        top - gap / 2.0 - swing,
+                        top + th + gap / 2.0 + swing,
+                        gap,
+                    )
                 } else {
                     Vec::new()
                 };
@@ -770,7 +992,12 @@ pub fn layout(text: &TextData, box_width: Option<f64>, box_height: Option<f64>) 
                 for (c0, c1) in cuts.into_iter().chain([(x1, x1)]) {
                     if c0.min(x1) > from + 0.5 {
                         let rect = Rect::new(from, top - swing, c0.min(x1), top + th + swing);
-                        decos.push(Decoration { rect, style, kind: look.style, thickness: th });
+                        decos.push(Decoration {
+                            rect,
+                            style,
+                            kind: look.style,
+                            thickness: th,
+                        });
                     }
                     from = from.max(c1);
                 }
@@ -803,13 +1030,23 @@ pub(crate) fn list_markers(lists: &[ParaList]) -> Vec<String> {
             for c in count.iter_mut().skip(d + 1) {
                 *c = (ListStyle::None, 0);
             }
-            let Some(c) = count.get_mut(d) else { return String::new() };
-            *c = if c.0 == pl.list { (pl.list, c.1 + 1) } else { (pl.list, 1) };
+            let Some(c) = count.get_mut(d) else {
+                return String::new();
+            };
+            *c = if c.0 == pl.list {
+                (pl.list, c.1 + 1)
+            } else {
+                (pl.list, 1)
+            };
             match (pl.list, d % 3) {
                 (ListStyle::Numbered, 1) => format!("{}.", alpha(c.1)),
                 (ListStyle::Numbered, 2) => format!("{}.", roman(c.1)),
                 (ListStyle::Numbered, _) => format!("{}.", c.1),
-                _ => BULLETS.get(d % 3).copied().unwrap_or("\u{2022}").to_string(),
+                _ => BULLETS
+                    .get(d % 3)
+                    .copied()
+                    .unwrap_or("\u{2022}")
+                    .to_string(),
             }
         })
         .collect()
@@ -857,7 +1094,12 @@ fn roman(mut n: usize) -> String {
 
 /// The width of one list level's gutter: room for the widest number plus half an em, at least one
 /// and a half ems (0 without lists).
-fn list_step(lists: &[ParaList], markers: &[String], style: Option<&TextStyle>, face: Option<&Arc<Face>>) -> f64 {
+fn list_step(
+    lists: &[ParaList],
+    markers: &[String],
+    style: Option<&TextStyle>,
+    face: Option<&Arc<Face>>,
+) -> f64 {
     if lists.iter().all(|l| l.list == ListStyle::None) {
         return 0.0;
     }
@@ -866,14 +1108,19 @@ fn list_step(lists: &[ParaList], markers: &[String], style: Option<&TextStyle>, 
         .iter()
         .zip(markers)
         .filter(|(l, _)| l.list == ListStyle::Numbered)
-        .map(|(_, m)| face.map(|f| marker_advance(f, &no_coords(), m, size)).unwrap_or(size * 0.6 * m.chars().count() as f64))
+        .map(|(_, m)| {
+            face.map(|f| marker_advance(f, &no_coords(), m, size))
+                .unwrap_or(size * 0.6 * m.chars().count() as f64)
+        })
         .fold(0.0, f64::max);
     (widest + size * 0.5).max(size * 1.5)
 }
 
 fn marker_advance(face: &Face, coords: &Coords, s: &str, size: f64) -> f64 {
     let k = size / face.upem;
-    s.chars().map(|c| face.advance_at(face.glyph_for(c), coords) * k).sum()
+    s.chars()
+        .map(|c| face.advance_at(face.glyph_for(c), coords) * k)
+        .sum()
 }
 
 /// Where glyphs' outlines cross the band `y0..y1`: one x range per glyph, widened by `gap`.
@@ -895,7 +1142,11 @@ fn ink_cuts(glyphs: &[Glyph], y0: f64, y1: f64, gap: f64) -> Vec<(f64, f64)> {
             if let Some(a) = prev {
                 // The part of segment a-p inside the band.
                 let (t0, t1) = if (p.y - a.y).abs() < 1e-12 {
-                    if (y0..=y1).contains(&a.y) { (0.0, 1.0) } else { (1.0, 0.0) }
+                    if (y0..=y1).contains(&a.y) {
+                        (0.0, 1.0)
+                    } else {
+                        (1.0, 0.0)
+                    }
                 } else {
                     let (ta, tb) = ((y0 - a.y) / (p.y - a.y), (y1 - a.y) / (p.y - a.y));
                     (ta.min(tb).max(0.0), ta.max(tb).min(1.0))
@@ -918,8 +1169,12 @@ fn ink_cuts(glyphs: &[Glyph], y0: f64, y1: f64, gap: f64) -> Vec<(f64, f64)> {
 }
 
 fn add_ellipsis(out: &mut TextLayout, wrap: Option<f64>) {
-    let Some(line) = out.lines.last().cloned() else { return };
-    let Some(last) = out.glyphs.get(line.glyph_end.saturating_sub(1)).cloned() else { return };
+    let Some(line) = out.lines.last().cloned() else {
+        return;
+    };
+    let Some(last) = out.glyphs.get(line.glyph_end.saturating_sub(1)).cloned() else {
+        return;
+    };
     let face = last.face.clone();
     let gid = face.glyph_for('…');
     let gid = if gid == 0 { face.glyph_for('.') } else { gid };
@@ -927,13 +1182,28 @@ fn add_ellipsis(out: &mut TextLayout, wrap: Option<f64>) {
     let adv = face.advance_at(gid, &last.coords) * k;
     let limit = wrap.unwrap_or(f64::INFINITY);
     // Drop glyphs until the ellipsis fits, then any trailing spaces ("word…", not "word …").
-    while out.glyphs.len() > line.glyph_start && out.glyphs.last().is_some_and(|g| g.x + g.advance + adv > limit) {
+    while out.glyphs.len() > line.glyph_start
+        && out
+            .glyphs
+            .last()
+            .is_some_and(|g| g.x + g.advance + adv > limit)
+    {
         out.glyphs.pop();
     }
-    while out.glyphs.len() > line.glyph_start && out.glyphs.last().is_some_and(|g| g.char_end > g.char_start && g.gid == g.face.glyph_for(' ')) {
+    while out.glyphs.len() > line.glyph_start
+        && out
+            .glyphs
+            .last()
+            .is_some_and(|g| g.char_end > g.char_start && g.gid == g.face.glyph_for(' '))
+    {
         out.glyphs.pop();
     }
-    let x = out.glyphs.last().filter(|_| out.glyphs.len() > line.glyph_start).map(|g| g.x + g.advance).unwrap_or(0.0);
+    let x = out
+        .glyphs
+        .last()
+        .filter(|_| out.glyphs.len() > line.glyph_start)
+        .map(|g| g.x + g.advance)
+        .unwrap_or(0.0);
     out.glyphs.push(Glyph {
         face,
         coords: last.coords.clone(),
@@ -955,7 +1225,11 @@ fn add_ellipsis(out: &mut TextLayout, wrap: Option<f64>) {
 }
 
 fn sanitize_size(s: f64) -> f64 {
-    if s.is_finite() { s.clamp(0.5, 5000.0) } else { 12.0 }
+    if s.is_finite() {
+        s.clamp(0.5, 5000.0)
+    } else {
+        12.0
+    }
 }
 
 /// One run of chars shaped with a single face and style.
@@ -973,7 +1247,13 @@ struct Segment<'a> {
 /// Synthesised small caps: lower-case letters drawn as capitals at this fraction of the size.
 const SMALL_CAP_SCALE: f64 = 0.72;
 
-fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Feature], items: &mut Vec<Item>) {
+fn shape_segment(
+    chars: &[char],
+    seg: &Segment,
+    face: &Arc<Face>,
+    features: &[Feature],
+    items: &mut Vec<Item>,
+) {
     let (start, end, style) = (seg.start, seg.end, seg.style);
     let k = seg.size / face.upem;
     let small_caps = style.case == TextCase::SmallCaps;
@@ -990,7 +1270,11 @@ fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Fe
             }
         } else {
             let mut buf = [0u8; 4];
-            for u in style.case.apply_after(c.encode_utf8(&mut buf), prev).chars() {
+            for u in style
+                .case
+                .apply_after(c.encode_utf8(&mut buf), prev)
+                .chars()
+            {
                 mapped.push((u, src, false));
             }
         }
@@ -1002,7 +1286,12 @@ fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Fe
             *f = true;
         }
     }
-    let small_at = |src: usize| src.checked_sub(start).and_then(|i| small.get(i)).copied().unwrap_or(false);
+    let small_at = |src: usize| {
+        src.checked_sub(start)
+            .and_then(|i| small.get(i))
+            .copied()
+            .unwrap_or(false)
+    };
     let mut feats: Vec<Feature> = features.to_vec();
     if native_smcp {
         feats.push(Feature::new(Tag::new(b"smcp"), 1, ..));
@@ -1013,11 +1302,14 @@ fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Fe
     let mut raw: Vec<(u32, u32, i32, i32, i32)> = Vec::new();
     if let Some(hb) = face.hb() {
         let instance = (!coords.is_empty()).then(|| {
-            let vars = face
-                .axes
-                .iter()
-                .zip(&values)
-                .filter_map(|(a, v)| <[u8; 4]>::try_from(a.tag.as_bytes()).ok().map(|t| Variation { tag: Tag::new(&t), value: *v as f32 }));
+            let vars = face.axes.iter().zip(&values).filter_map(|(a, v)| {
+                <[u8; 4]>::try_from(a.tag.as_bytes())
+                    .ok()
+                    .map(|t| Variation {
+                        tag: Tag::new(&t),
+                        value: *v as f32,
+                    })
+            });
             ShaperInstance::from_variations(&hb, vars)
         });
         let shaper = face.shaper.shaper(&hb).instance(instance.as_ref()).build();
@@ -1026,11 +1318,21 @@ fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Fe
             buf.add(*u, *src as u32);
         }
         let rtl = seg.level % 2 == 1;
-        buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+        buf.set_direction(if rtl {
+            Direction::RightToLeft
+        } else {
+            Direction::LeftToRight
+        });
         buf.guess_segment_properties();
         let gb = shaper.shape(buf, ShapeOptions::new().features(&feats));
         for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
-            raw.push((info.glyph_id, info.cluster, pos.x_advance, pos.x_offset, pos.y_offset));
+            raw.push((
+                info.glyph_id,
+                info.cluster,
+                pos.x_advance,
+                pos.x_offset,
+                pos.y_offset,
+            ));
         }
         // Right-to-left glyphs come out in visual order; items are kept in logical order (lines
         // put runs back in visual order).
@@ -1045,17 +1347,31 @@ fn shape_segment(chars: &[char], seg: &Segment, face: &Arc<Face>, features: &[Fe
     }
     let n = raw.len();
     for gi in 0..n {
-        let Some(&(gid, cl, xa, xo, yo)) = raw.get(gi) else { continue };
+        let Some(&(gid, cl, xa, xo, yo)) = raw.get(gi) else {
+            continue;
+        };
         let cl = cl as usize;
         // Cluster end: the next larger cluster value, else the segment end.
-        let cend = raw.iter().skip(gi + 1).map(|r| r.1 as usize).find(|c| *c > cl).unwrap_or(end).max(cl + 1);
+        let cend = raw
+            .iter()
+            .skip(gi + 1)
+            .map(|r| r.1 as usize)
+            .find(|c| *c > cl)
+            .unwrap_or(end)
+            .max(cl + 1);
         let last_in_cluster = raw.get(gi + 1).is_none_or(|r| r.1 as usize != cl);
         let ch = chars.get(cl).copied().unwrap_or(' ');
         let scale = if small_at(cl) { SMALL_CAP_SCALE } else { 1.0 };
-        let spacing = if last_in_cluster { seg.spacing * (cend - cl) as f64 } else { 0.0 };
+        let spacing = if last_in_cluster {
+            seg.spacing * (cend - cl) as f64
+        } else {
+            0.0
+        };
         // The glyph's own advance and what shaping added to it (kerning) each land on the grid.
         let own = face.advance_at(gid, &coords);
-        let adv = (on_grid(own, face.upem) + on_grid(f64::from(xa) - own, face.upem)) * seg.size * scale + spacing;
+        let adv =
+            (on_grid(own, face.upem) + on_grid(f64::from(xa) - own, face.upem)) * seg.size * scale
+                + spacing;
         items.push(Item {
             face: face.clone(),
             coords: coords.clone(),
@@ -1079,22 +1395,36 @@ impl TextLayout {
     /// grown by half its size for ascenders, descenders and overhangs, plus decorations. None when
     /// nothing is laid out.
     pub fn ink_bounds(&self) -> Option<Rect> {
-        let lines = self.lines.iter().map(|l| (l, self.glyphs.get(l.glyph_start..l.glyph_end).unwrap_or(&[])));
+        let lines = self.lines.iter().map(|l| {
+            (
+                l,
+                self.glyphs.get(l.glyph_start..l.glyph_end).unwrap_or(&[]),
+            )
+        });
         let glyphs = lines.flat_map(|(l, gs)| {
             gs.iter().map(move |g| {
                 let pad = g.size.abs() * 0.5;
-                let r = Rect::new(g.x.min(g.x + g.advance) - pad, l.top - pad, g.x.max(g.x + g.advance) + pad, l.top + l.height + pad);
+                let r = Rect::new(
+                    g.x.min(g.x + g.advance) - pad,
+                    l.top - pad,
+                    g.x.max(g.x + g.advance) + pad,
+                    l.top + l.height + pad,
+                );
                 figcraft_geom::transform_rect_bbox(g.warp, r)
             })
         });
-        glyphs.chain(self.decorations.iter().map(|d| d.rect)).filter(|r| r.x0.is_finite() && r.y1.is_finite()).reduce(|a, b| a.union(b))
+        glyphs
+            .chain(self.decorations.iter().map(|d| d.rect))
+            .filter(|r| r.x0.is_finite() && r.y1.is_finite())
+            .reduce(|a, b| a.union(b))
     }
 
     /// The caret position (x, line index) before char `index`.
     pub fn caret(&self, index: usize) -> (f64, usize) {
         for (li, line) in self.lines.iter().enumerate() {
             let last_line = li + 1 == self.lines.len();
-            let in_line = index >= line.char_start && (index < line.char_end || (last_line && index <= line.char_end));
+            let in_line = index >= line.char_start
+                && (index < line.char_end || (last_line && index <= line.char_end));
             // A caret at the end of a soft-wrapped line belongs to the next line.
             if !(in_line || index == line.char_end && line.para_end && !last_line) {
                 continue;
@@ -1104,7 +1434,10 @@ impl TextLayout {
                 let x = self.line_end_x(line);
                 return (x, li);
             }
-            let gl = self.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
+            let gl = self
+                .glyphs
+                .get(line.glyph_start..line.glyph_end)
+                .unwrap_or(&[]);
             for g in gl {
                 if g.char_end == g.char_start {
                     continue;
@@ -1118,7 +1451,10 @@ impl TextLayout {
             return (self.line_end_x(line), li);
         }
         let li = self.lines.len().saturating_sub(1);
-        (self.lines.last().map(|l| self.line_end_x(l)).unwrap_or(0.0), li)
+        (
+            self.lines.last().map(|l| self.line_end_x(l)).unwrap_or(0.0),
+            li,
+        )
     }
 
     /// The caret one step left or right of `index` on screen, for lines with right-to-left runs
@@ -1132,22 +1468,49 @@ impl TextLayout {
             return None;
         }
         // The caret can't sit after a paragraph's newline on its own line.
-        let end = if line.para_end && li + 1 < self.lines.len() { line.char_end.saturating_sub(1) } else { line.char_end };
+        let end = if line.para_end && li + 1 < self.lines.len() {
+            line.char_end.saturating_sub(1)
+        } else {
+            line.char_end
+        };
         let next = (line.char_start..=end.max(line.char_start))
             .filter(|i| *i != index)
             .map(|i| (i, self.caret(i).0))
-            .filter(|(_, cx)| if right { *cx > x + 0.01 } else { *cx < x - 0.01 })
-            .min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs()).then(a.0.cmp(&b.0)))
+            .filter(|(_, cx)| {
+                if right {
+                    *cx > x + 0.01
+                } else {
+                    *cx < x - 0.01
+                }
+            })
+            .min_by(|a, b| {
+                (a.1 - x)
+                    .abs()
+                    .total_cmp(&(b.1 - x).abs())
+                    .then(a.0.cmp(&b.0))
+            })
             .map(|(i, _)| i);
         // At the edge: on to the next line in reading order.
-        Some(next.unwrap_or(if right != line.rtl { index + 1 } else { index.saturating_sub(1) }))
+        Some(next.unwrap_or(if right != line.rtl {
+            index + 1
+        } else {
+            index.saturating_sub(1)
+        }))
     }
 
     /// Where a line's text ends: its right edge, or its left edge for a right-to-left paragraph.
     fn line_end_x(&self, line: &Line) -> f64 {
-        let glyphs = self.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]).iter().filter(|g| g.char_end > g.char_start);
+        let glyphs = self
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[])
+            .iter()
+            .filter(|g| g.char_end > g.char_start);
         if line.rtl {
-            glyphs.map(|g| g.x).fold(f64::INFINITY, f64::min).min(line.x + line.width)
+            glyphs
+                .map(|g| g.x)
+                .fold(f64::INFINITY, f64::min)
+                .min(line.x + line.width)
         } else {
             glyphs.map(|g| g.x + g.advance).fold(line.x, f64::max)
         }
@@ -1157,19 +1520,32 @@ impl TextLayout {
     pub fn warp_point(&self, x: f64, y: f64) -> figcraft_geom::Point {
         let p = figcraft_geom::Point::new(x, y);
         let Some(on) = &self.on_path else { return p };
-        let baseline = self.lines.iter().find(|l| y <= l.top + l.height).or(self.lines.last()).map_or(y, |l| l.baseline);
+        let baseline = self
+            .lines
+            .iter()
+            .find(|l| y <= l.top + l.height)
+            .or(self.lines.last())
+            .map_or(y, |l| l.baseline);
         on.frame(x, baseline).map_or(p, |f| f * p)
     }
 
     /// Text on a path: the char nearest to where `(x, y)` shows, by the glyph it falls nearest to.
     fn hit_on_path(&self, x: f64, y: f64) -> usize {
         let p = figcraft_geom::Point::new(x, y);
-        let near = self.glyphs.iter().filter(|g| g.char_end > g.char_start && g.warp.determinant().abs() > 1e-12).map(|g| {
-            let q = g.warp.inverse() * p;
-            let mid = g.x + g.advance / 2.0;
-            ((q - figcraft_geom::Point::new(mid, g.y - g.size / 3.0)).hypot(), if q.x < mid { g.char_start } else { g.char_end })
-        });
-        near.min_by(|a, b| a.0.total_cmp(&b.0)).map_or(0, |(_, i)| i)
+        let near = self
+            .glyphs
+            .iter()
+            .filter(|g| g.char_end > g.char_start && g.warp.determinant().abs() > 1e-12)
+            .map(|g| {
+                let q = g.warp.inverse() * p;
+                let mid = g.x + g.advance / 2.0;
+                (
+                    (q - figcraft_geom::Point::new(mid, g.y - g.size / 3.0)).hypot(),
+                    if q.x < mid { g.char_start } else { g.char_end },
+                )
+            });
+        near.min_by(|a, b| a.0.total_cmp(&b.0))
+            .map_or(0, |(_, i)| i)
     }
 
     /// The char index nearest to `(x, y)` (layout coordinates).
@@ -1177,12 +1553,19 @@ impl TextLayout {
         if self.on_path.is_some() {
             return self.hit_on_path(x, y);
         }
-        let Some((li, line)) =
-            self.lines.iter().enumerate().find(|(_, l)| y < l.top + l.height).or_else(|| self.lines.iter().enumerate().next_back())
+        let Some((li, line)) = self
+            .lines
+            .iter()
+            .enumerate()
+            .find(|(_, l)| y < l.top + l.height)
+            .or_else(|| self.lines.iter().enumerate().next_back())
         else {
             return 0;
         };
-        let gl = self.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
+        let gl = self
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[]);
         for g in gl {
             if g.char_end <= g.char_start {
                 continue;
@@ -1193,7 +1576,11 @@ impl TextLayout {
             }
         }
         let last_line = li + 1 == self.lines.len();
-        let end = if line.para_end && !last_line { line.char_end.saturating_sub(1).max(line.char_start) } else { line.char_end };
+        let end = if line.para_end && !last_line {
+            line.char_end.saturating_sub(1).max(line.char_start)
+        } else {
+            line.char_end
+        };
         // Right of a right-to-left line is its start.
         if line.rtl { line.char_start } else { end }
     }
@@ -1203,21 +1590,37 @@ impl TextLayout {
         let (a, b) = (start.min(end), start.max(end));
         let mut out = Vec::new();
         for (li, line) in self.lines.iter().enumerate() {
-            if b <= line.char_start || a > line.char_end || (a == line.char_end && li + 1 < self.lines.len()) {
+            if b <= line.char_start
+                || a > line.char_end
+                || (a == line.char_end && li + 1 < self.lines.len())
+            {
                 continue;
             }
-            let gl = self.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
+            let gl = self
+                .glyphs
+                .get(line.glyph_start..line.glyph_end)
+                .unwrap_or(&[]);
             if line.rtl || gl.iter().any(|g| g.rtl) {
                 out.extend(Self::mixed_selection(gl, a, b, line));
                 continue;
             }
             let (x0, _) = self.caret(a.max(line.char_start));
             let x1 = if b >= line.char_end {
-                self.line_end_x(line) + if line.para_end && b > line.char_end.saturating_sub(1) { 4.0 } else { 0.0 }
+                self.line_end_x(line)
+                    + if line.para_end && b > line.char_end.saturating_sub(1) {
+                        4.0
+                    } else {
+                        0.0
+                    }
             } else {
                 self.caret(b).0
             };
-            out.push(Rect::new(x0, line.top, x1.max(x0 + 1.0), line.top + line.height));
+            out.push(Rect::new(
+                x0,
+                line.top,
+                x1.max(x0 + 1.0),
+                line.top + line.height,
+            ));
         }
         out
     }
@@ -1232,15 +1635,24 @@ impl TextLayout {
                 continue;
             }
             let n = (g.char_end - g.char_start) as f64;
-            let (f0, f1) = ((ga - g.char_start) as f64 / n, (gb - g.char_start) as f64 / n);
-            let (x0, x1) =
-                if g.rtl { (g.x + g.advance * (1.0 - f1), g.x + g.advance * (1.0 - f0)) } else { (g.x + g.advance * f0, g.x + g.advance * f1) };
+            let (f0, f1) = (
+                (ga - g.char_start) as f64 / n,
+                (gb - g.char_start) as f64 / n,
+            );
+            let (x0, x1) = if g.rtl {
+                (g.x + g.advance * (1.0 - f1), g.x + g.advance * (1.0 - f0))
+            } else {
+                (g.x + g.advance * f0, g.x + g.advance * f1)
+            };
             match spans.last_mut() {
                 Some(last) if (x0 - last.1).abs() < 0.5 => last.1 = last.1.max(x1),
                 _ => spans.push((x0, x1)),
             }
         }
-        spans.into_iter().map(|(x0, x1)| Rect::new(x0, line.top, x1.max(x0 + 1.0), line.top + line.height)).collect()
+        spans
+            .into_iter()
+            .map(|(x0, x1)| Rect::new(x0, line.top, x1.max(x0 + 1.0), line.top + line.height))
+            .collect()
     }
 
     /// All glyph outlines as one path (for outline/flatten and boolean ops).

@@ -9,7 +9,8 @@
 
 use photocraft_color::{BlendMode, Color, ColorMode, PixelFormat, SampleType};
 use photocraft_doc::{
-    Adjustment, ClippingPath, Effect, Fill, GlobalLight, Guides, LabelColor, LiveShape, Locks, Path, ShapeStroke, SmartFilter, VectorMask, text,
+    Adjustment, ClippingPath, Effect, Fill, GlobalLight, Guides, LabelColor, LiveShape, Locks,
+    Path, ShapeStroke, SmartFilter, VectorMask, text,
 };
 use photocraft_geom::{Affine, Size};
 use serde::{Deserialize, Serialize};
@@ -85,7 +86,10 @@ pub struct DocM {
     #[serde(default)]
     pub timeline: Option<photocraft_doc::Timeline>,
     /// The JPEG quality / WebP encoding File › Save reuses.
-    #[serde(default, skip_serializing_if = "photocraft_doc::FileEncoding::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "photocraft_doc::FileEncoding::is_empty"
+    )]
     pub file_encoding: photocraft_doc::FileEncoding,
     /// Image › Analysis: measurement scale, count groups, ruler.
     #[serde(default)]
@@ -235,7 +239,10 @@ pub struct LayerM {
     pub blend_if: photocraft_doc::BlendIf,
     /// Advanced Blending switches (knockout, as-group, transparency shapes, masks hide effects);
     /// omitted at Photoshop's defaults, and missing in older files = the defaults.
-    #[serde(default, skip_serializing_if = "photocraft_doc::AdvancedBlending::is_default")]
+    #[serde(
+        default,
+        skip_serializing_if = "photocraft_doc::AdvancedBlending::is_default"
+    )]
     pub advanced: photocraft_doc::AdvancedBlending,
     #[serde(default)]
     pub video: Option<VideoDataM>,

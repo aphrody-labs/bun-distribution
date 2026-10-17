@@ -12,12 +12,16 @@ use std::collections::HashMap;
 
 use filmcraft_media::MediaKind;
 use filmcraft_project::{
-    AudioChannels, ClipId, Interpolation, ItemId, ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, MediaRef, Param, ParamValue, Project, Sequence,
-    Track, TrackItem, TrackKind, Transition, TransitionAlign, TransitionId, find_effect,
+    AudioChannels, ClipId, Interpolation, ItemId, ItemKind, Keyframe, Label, Marker, MarkerId,
+    MarkerKind, MediaRef, Param, ParamValue, Project, Sequence, Track, TrackItem, TrackKind,
+    Transition, TransitionAlign, TransitionId, find_effect,
 };
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick};
 
-use crate::common::{Builder, MediaSpec, base_item, db_to_gain, file_name, file_stem, gain_to_db, param, set_param, settings_for, transition_effect};
+use crate::common::{
+    Builder, MediaSpec, base_item, db_to_gain, file_name, file_stem, gain_to_db, param, set_param,
+    settings_for, transition_effect,
+};
 use crate::essence::{EssenceData, EssenceKey, MediaOptions};
 use crate::{ImportOptions, Imported, Report};
 
@@ -201,11 +205,27 @@ struct Exporter<'a> {
     open: Vec<ItemId>,
 }
 
-pub(crate) fn from_project(p: &Project, seq_id: ItemId, name: &str, media: &MediaOptions, nests: Nests, report: &mut Report) -> crate::Result<Document> {
+pub(crate) fn from_project(
+    p: &Project,
+    seq_id: ItemId,
+    name: &str,
+    media: &MediaOptions,
+    nests: Nests,
+    report: &mut Report,
+) -> crate::Result<Document> {
     let seq = p.sequence(seq_id).ok_or(crate::Error::NoSequence(seq_id))?;
     let rate = seq.settings.frame_rate;
-    let mut ex =
-        Exporter { p, media, doc: Document::default(), memo: HashMap::new(), report, seq_rate: rate, nests, nested: HashMap::new(), open: vec![seq_id] };
+    let mut ex = Exporter {
+        p,
+        media,
+        doc: Document::default(),
+        memo: HashMap::new(),
+        report,
+        seq_rate: rate,
+        nests,
+        nested: HashMap::new(),
+        open: vec![seq_id],
+    };
     let comp = ex.composition(seq, name, true);
     ex.doc.compositions.push(comp);
     Ok(ex.doc)
@@ -267,12 +287,30 @@ impl Exporter<'_> {
                 if mix.start > Tick::ZERO {
                     items.push(CItem::Filler(mix.start));
                 }
-                items.push(CItem::Clip(CClip { len: mix.duration, source: src, start: Tick::ZERO, gain: None, name: format!("{name} (video mixdown)") }));
-                comp.tracks.push(CTrack { kind: CKind::Picture, name: "V1".into(), number: 1, channels: 0, items });
+                items.push(CItem::Clip(CClip {
+                    len: mix.duration,
+                    source: src,
+                    start: Tick::ZERO,
+                    gain: None,
+                    name: format!("{name} (video mixdown)"),
+                }));
+                comp.tracks.push(CTrack {
+                    kind: CKind::Picture,
+                    name: "V1".into(),
+                    number: 1,
+                    channels: 0,
+                    items,
+                });
             } else if media.mixdown_video.is_none() {
                 for (i, t) in seq.video_tracks.iter().enumerate() {
                     let items = self.track(t, TrackKind::Video, None);
-                    comp.tracks.push(CTrack { kind: CKind::Picture, name: format!("V{}", i + 1), number: i as u32 + 1, channels: 0, items });
+                    comp.tracks.push(CTrack {
+                        kind: CKind::Picture,
+                        name: format!("V{}", i + 1),
+                        number: i as u32 + 1,
+                        channels: 0,
+                        items,
+                    });
                 }
             }
         }
@@ -287,12 +325,24 @@ impl Exporter<'_> {
                 for c in 0..ch {
                     n += 1;
                     let items = self.track(t, TrackKind::Audio, Some(c));
-                    comp.tracks.push(CTrack { kind: CKind::Sound, name: format!("A{n}"), number: n, channels: 1, items });
+                    comp.tracks.push(CTrack {
+                        kind: CKind::Sound,
+                        name: format!("A{n}"),
+                        number: n,
+                        channels: 1,
+                        items,
+                    });
                 }
             } else {
                 n += 1;
                 let items = self.track(t, TrackKind::Audio, None);
-                comp.tracks.push(CTrack { kind: CKind::Sound, name: format!("A{n}"), number: n, channels: ch, items });
+                comp.tracks.push(CTrack {
+                    kind: CKind::Sound,
+                    name: format!("A{n}"),
+                    number: n,
+                    channels: ch,
+                    items,
+                });
             }
         }
         self.seq_rate = outer_rate;
@@ -302,7 +352,15 @@ impl Exporter<'_> {
     /// The source behind a clip of the nested sequence `nested` (project item `item`): the
     /// sequence's sound as the caller rendered it for this clip, or the sequence as a composition
     /// of its own.
-    fn nest_source(&mut self, c: &TrackItem, item: ItemId, name: &str, nested: &Sequence, ckind: CKind, channel: Option<u32>) -> Option<usize> {
+    fn nest_source(
+        &mut self,
+        c: &TrackItem,
+        item: ItemId,
+        name: &str,
+        nested: &Sequence,
+        ckind: CKind,
+        channel: Option<u32>,
+    ) -> Option<usize> {
         let clip_key = EssenceKey::Clip(c.id);
         if ckind == CKind::Sound
             && let Some(e) = self.media.essence_for(clip_key, channel).cloned()
@@ -343,7 +401,9 @@ impl Exporter<'_> {
             return Some(i);
         }
         if self.nests == Nests::Rendered {
-            self.report.warn(format!("the sound of the nested sequence \"{name}\" was not rendered (left as a gap)"));
+            self.report.warn(format!(
+                "the sound of the nested sequence \"{name}\" was not rendered (left as a gap)"
+            ));
             return None;
         }
         let memo_key = (format!("seq:{}", item.0), ckind, 0, channel);
@@ -406,14 +466,27 @@ impl Exporter<'_> {
         let m = match &it.kind {
             ItemKind::Media(m) => m,
             ItemKind::Sequence(nested) => {
-                let ckind = if kind == TrackKind::Video { CKind::Picture } else { CKind::Sound };
-                let channel = sub.map(|s| c.source_channels.get(s as usize).map(|&x| x as u32).unwrap_or(s));
+                let ckind = if kind == TrackKind::Video {
+                    CKind::Picture
+                } else {
+                    CKind::Sound
+                };
+                let channel = sub.map(|s| {
+                    c.source_channels
+                        .get(s as usize)
+                        .map(|&x| x as u32)
+                        .unwrap_or(s)
+                });
                 return self.nest_source(c, item, &it.name, nested, ckind, channel);
             }
             _ => {
                 match crate::common::uncarried_clip(self.p, c, self.seq_rate) {
-                    Some(clip) => self.report.warn(format!("{clip} is not exported (left as a gap)")),
-                    None => self.report.warn("graphics, titles and adjustment layers are not exported (left as gaps)"),
+                    Some(clip) => self
+                        .report
+                        .warn(format!("{clip} is not exported (left as a gap)")),
+                    None => self.report.warn(
+                        "graphics, titles and adjustment layers are not exported (left as gaps)",
+                    ),
                 }
                 return None;
             }
@@ -421,22 +494,39 @@ impl Exporter<'_> {
         let path = match &m.media {
             MediaRef::File { path } => path.clone(),
             MediaRef::Generator(_) => {
-                self.report.warn("synthetic media (bars, colour mattes, …) is not exported (left as gaps)");
+                self.report.warn(
+                    "synthetic media (bars, colour mattes, …) is not exported (left as gaps)",
+                );
                 return None;
             }
         };
-        let ckind = if kind == TrackKind::Video { CKind::Picture } else { CKind::Sound };
+        let ckind = if kind == TrackKind::Video {
+            CKind::Picture
+        } else {
+            CKind::Sound
+        };
         // the source channel this slot plays when broken out to mono
-        let channel = sub.map(|s| c.source_channels.get(s as usize).map(|&x| x as u32).unwrap_or(s));
+        let channel = sub.map(|s| {
+            c.source_channels
+                .get(s as usize)
+                .map(|&x| x as u32)
+                .unwrap_or(s)
+        });
         let clip_key = EssenceKey::Clip(c.id);
         let media_key = EssenceKey::media(item, c.audio_stream);
         let ess = (ckind == CKind::Sound)
-            .then(|| self.media.essence_for(clip_key, channel).or_else(|| self.media.essence_for(media_key, channel)))
+            .then(|| {
+                self.media
+                    .essence_for(clip_key, channel)
+                    .or_else(|| self.media.essence_for(media_key, channel))
+            })
             .flatten()
             .cloned();
         let key = match &ess {
             Some(e) if e.key == clip_key => format!("clip:{}", c.id.0),
-            _ if ckind == CKind::Sound && c.audio_stream > 0 => format!("item:{}:stream:{}", item.0, c.audio_stream),
+            _ if ckind == CKind::Sound && c.audio_stream > 0 => {
+                format!("item:{}:stream:{}", item.0, c.audio_stream)
+            }
             _ => format!("item:{}", item.0),
         };
         // Original linked file locators cannot name a container stream. Leave an explicit
@@ -445,7 +535,11 @@ impl Exporter<'_> {
             self.report.warn("selected container audio streams require separate or embedded audio essence (left as gaps)");
             return None;
         }
-        let stream = if ckind == CKind::Sound { c.audio_stream } else { 0 };
+        let stream = if ckind == CKind::Sound {
+            c.audio_stream
+        } else {
+            0
+        };
         let memo_key = (key.clone(), ckind, stream, channel);
         if let Some(&i) = self.memo.get(&memo_key) {
             return Some(i);
@@ -458,8 +552,16 @@ impl Exporter<'_> {
             CKind::Sound if audio.is_none() => return None,
             _ => {}
         }
-        let frame_rate = video.map(|v| v.frame_rate).filter(|r| r.num > 0).unwrap_or(self.seq_rate);
-        let mut markers: Vec<CMarker> = m.markers.iter().chain(c.markers.iter()).map(marker_out).collect();
+        let frame_rate = video
+            .map(|v| v.frame_rate)
+            .filter(|r| r.num > 0)
+            .unwrap_or(self.seq_rate);
+        let mut markers: Vec<CMarker> = m
+            .markers
+            .iter()
+            .chain(c.markers.iter())
+            .map(marker_out)
+            .collect();
         markers.sort_by(|a, b| (a.start, &a.name).cmp(&(b.start, &b.name)));
         markers.dedup();
         let mut s = Source {
@@ -474,7 +576,10 @@ impl Exporter<'_> {
             height: video.map_or(0, |v| v.height),
             frame_rate,
             sample_rate: audio.map_or(48_000, |a| a.sample_rate.max(1)),
-            bits: audio.and_then(|a| a.bits_per_sample).unwrap_or(16).clamp(8, 32) as u16,
+            bits: audio
+                .and_then(|a| a.bits_per_sample)
+                .unwrap_or(16)
+                .clamp(8, 32) as u16,
             length: if still { Tick::ZERO } else { m.info.duration },
             offset: Tick::ZERO,
             start_tc: m.info.start_timecode,
@@ -508,7 +613,11 @@ impl Exporter<'_> {
                 }
             }
         }
-        s.channels = if s.channel.is_some() { 1 } else { s.file_channels };
+        s.channels = if s.channel.is_some() {
+            1
+        } else {
+            s.file_channels
+        };
         let i = self.doc.sources.len();
         self.doc.sources.push(s);
         self.memo.insert(memo_key, i);
@@ -522,10 +631,18 @@ impl Exporter<'_> {
         let g = c.gain_db;
         match param(c, "volume", "level") {
             Some(p) if p.is_animated() => {
-                let speed = if c.speed.abs() > 1e-9 { c.speed.abs() } else { 1.0 };
+                let speed = if c.speed.abs() > 1e-9 {
+                    c.speed.abs()
+                } else {
+                    1.0
+                };
                 let linear = !p.keyframes.iter().all(|k| k.interp == Interpolation::Hold);
-                if p.keyframes.iter().any(|k| !matches!(k.interp, Interpolation::Linear | Interpolation::Hold)) {
-                    self.report.info("Bezier volume keyframes were exported as linear");
+                if p.keyframes
+                    .iter()
+                    .any(|k| !matches!(k.interp, Interpolation::Linear | Interpolation::Hold))
+                {
+                    self.report
+                        .info("Bezier volume keyframes were exported as linear");
                 }
                 let points = p
                     .keyframes
@@ -547,15 +664,28 @@ impl Exporter<'_> {
 
     fn track(&mut self, t: &Track, kind: TrackKind, sub: Option<u32>) -> Vec<CItem> {
         // exportable clips with their sources
-        let clips: Vec<(&TrackItem, usize)> = t.items.iter().filter_map(|c| self.source_of(c, kind, sub).map(|s| (c, s))).collect();
-        let idx_of: HashMap<ClipId, usize> = clips.iter().enumerate().map(|(i, (c, _))| (c.id, i)).collect();
+        let clips: Vec<(&TrackItem, usize)> = t
+            .items
+            .iter()
+            .filter_map(|c| self.source_of(c, kind, sub).map(|s| (c, s)))
+            .collect();
+        let idx_of: HashMap<ClipId, usize> = clips
+            .iter()
+            .enumerate()
+            .map(|(i, (c, _))| (c.id, i))
+            .collect();
         let mut tin: Vec<Option<(Side, &Transition)>> = vec![None; clips.len()];
         let mut tout: Vec<Option<(Side, &Transition)>> = vec![None; clips.len()];
         for tr in &t.transitions {
             let a = tr.from.and_then(|f| idx_of.get(&f).copied());
             let b = tr.to.and_then(|f| idx_of.get(&f).copied());
             match (a, b) {
-                (Some(a), Some(b)) if b == a + 1 && clips[a].0.end() == clips[b].0.start && tr.start <= clips[b].0.start && tr.end() >= clips[a].0.end() => {
+                (Some(a), Some(b))
+                    if b == a + 1
+                        && clips[a].0.end() == clips[b].0.start
+                        && tr.start <= clips[b].0.start
+                        && tr.end() >= clips[a].0.end() =>
+                {
                     tout[a] = Some((Side::TwoSided(tr.start, tr.end()), tr));
                     tin[b] = Some((Side::TwoSided(tr.start, tr.end()), tr));
                 }
@@ -579,7 +709,9 @@ impl Exporter<'_> {
                         tout[a] = Some((Side::OneSided(len), tr));
                     }
                 }
-                _ => self.report.warn("a transition without an exported clip was dropped"),
+                _ => self
+                    .report
+                    .warn("a transition without an exported clip was dropped"),
             }
         }
         let mut out = Vec::new();
@@ -596,7 +728,11 @@ impl Exporter<'_> {
                         out.push(CItem::Filler(fill_to - cursor));
                         cursor = fill_to;
                     }
-                    out.push(CItem::Transition(CTransition { len, cut: Tick::ZERO, effect: tr.effect.effect.clone() }));
+                    out.push(CItem::Transition(CTransition {
+                        len,
+                        cut: Tick::ZERO,
+                        effect: tr.effect.effect.clone(),
+                    }));
                     cursor -= len;
                 }
                 None => {
@@ -616,24 +752,43 @@ impl Exporter<'_> {
             // clips play at 100% here, so timeline and media advance together
             let start = c.source_in + (seg_start - s) - source.offset;
             if start < Tick::ZERO {
-                self.report.warn("a clip uses media before the start of its (trimmed) essence");
+                self.report
+                    .warn("a clip uses media before the start of its (trimmed) essence");
             }
-            let mut gain = if kind == TrackKind::Audio { self.gain_of(c, &source) } else { None };
+            let mut gain = if kind == TrackKind::Audio {
+                self.gain_of(c, &source)
+            } else {
+                None
+            };
             if let Some(Gain::Varying { points, .. }) = &mut gain {
                 for p in points.iter_mut() {
                     p.0 += s - seg_start;
                 }
             }
-            out.push(CItem::Clip(CClip { len: seg_end - seg_start, source: src, start, gain, name: c.name.clone() }));
+            out.push(CItem::Clip(CClip {
+                len: seg_end - seg_start,
+                source: src,
+                start,
+                gain,
+                name: c.name.clone(),
+            }));
             cursor = seg_end;
             match tout[i] {
                 Some((Side::TwoSided(ts, _), tr)) => {
-                    out.push(CItem::Transition(CTransition { len: seg_end - ts, cut: e - ts, effect: tr.effect.effect.clone() }));
+                    out.push(CItem::Transition(CTransition {
+                        len: seg_end - ts,
+                        cut: e - ts,
+                        effect: tr.effect.effect.clone(),
+                    }));
                     cursor = ts;
                     tail = tail.max(seg_end);
                 }
                 Some((Side::OneSided(len), tr)) => {
-                    out.push(CItem::Transition(CTransition { len, cut: len, effect: tr.effect.effect.clone() }));
+                    out.push(CItem::Transition(CTransition {
+                        len,
+                        cut: len,
+                        effect: tr.effect.effect.clone(),
+                    }));
                     cursor = e - len;
                     tail = tail.max(e);
                 }
@@ -648,7 +803,13 @@ impl Exporter<'_> {
 }
 
 fn marker_out(m: &Marker) -> CMarker {
-    CMarker { start: m.start, duration: m.duration, name: m.name.clone(), comment: m.comment.clone(), color: Some(m.color.name().to_string()) }
+    CMarker {
+        start: m.start,
+        duration: m.duration,
+        name: m.name.clone(),
+        comment: m.comment.clone(),
+        color: Some(m.color.name().to_string()),
+    }
 }
 
 fn marker_in(b: &mut Builder, m: &CMarker) -> Marker {
@@ -659,7 +820,11 @@ fn marker_in(b: &mut Builder, m: &CMarker) -> Marker {
         name: m.name.clone(),
         comment: m.comment.clone(),
         kind: MarkerKind::Comment,
-        color: m.color.as_deref().and_then(Label::from_name).unwrap_or(Label::Forest),
+        color: m
+            .color
+            .as_deref()
+            .and_then(Label::from_name)
+            .unwrap_or(Label::Forest),
     }
 }
 
@@ -677,11 +842,18 @@ pub struct ExtractedMedia {
     pub wav: Vec<u8>,
 }
 
-pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Report) -> crate::Result<(Imported, Vec<ExtractedMedia>)> {
+pub(crate) fn to_project(
+    doc: Document,
+    opts: &ImportOptions,
+    report: &mut Report,
+) -> crate::Result<(Imported, Vec<ExtractedMedia>)> {
     if doc.compositions.is_empty() {
         return Err(crate::Error::Empty);
     }
-    let name = opts.name.clone().unwrap_or_else(|| doc.compositions[0].name.clone());
+    let name = opts
+        .name
+        .clone()
+        .unwrap_or_else(|| doc.compositions[0].name.clone());
     let mut b = Builder::new(&name);
     let media_bin = b.bin("Media", None);
     let mut extracted = Vec::new();
@@ -692,7 +864,12 @@ pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Repor
         if s.nested.is_some() {
             continue; // a nested composition, not media: a sequence (below)
         }
-        let k = (s.key.clone(), s.path.clone().or_else(|| s.embedded.is_some().then(|| format!("embedded:{i}"))));
+        let k = (
+            s.key.clone(),
+            s.path
+                .clone()
+                .or_else(|| s.embedded.is_some().then(|| format!("embedded:{i}"))),
+        );
         match groups.iter_mut().find(|(g, _)| *g == k) {
             Some((_, v)) => v.push(i),
             None => groups.push((k, vec![i])),
@@ -709,9 +886,18 @@ pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Repor
             duration: Some(srcs.iter().map(|s| s.length).max().unwrap_or(Tick::ZERO)),
             video: pic.map(|p| (p.width.max(1), p.height.max(1), p.frame_rate)),
             audio: snd.map(|s| {
-                (s.sample_rate, srcs.iter().filter(|x| x.kind == CKind::Sound).map(|x| x.file_channels.max(x.channel.map_or(0, |c| c + 1))).max().unwrap_or(1))
+                (
+                    s.sample_rate,
+                    srcs.iter()
+                        .filter(|x| x.kind == CKind::Sound)
+                        .map(|x| x.file_channels.max(x.channel.map_or(0, |c| c + 1)))
+                        .max()
+                        .unwrap_or(1),
+                )
             }),
-            start_tc: first.start_tc.or_else(|| srcs.iter().find_map(|s| s.start_tc)),
+            start_tc: first
+                .start_tc
+                .or_else(|| srcs.iter().find_map(|s| s.start_tc)),
             kind: None,
         };
         if pic.is_some_and(|p| p.is_still()) {
@@ -720,31 +906,64 @@ pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Repor
         let embedded = snd.and_then(|s| s.embedded.as_ref().map(|d| (*s, d)));
         let (resolved, display) = match (path.as_deref(), embedded) {
             (_, Some((s, _))) => {
-                let safe: String = first.name.chars().map(|c| if c.is_alphanumeric() || " -_.".contains(c) { c } else { '_' }).collect();
-                let base = format!("{doc_stem} Media/{}{}", safe.trim(), s.channel.map(|c| format!(" ch{}", c + 1)).unwrap_or_default());
+                let safe: String = first
+                    .name
+                    .chars()
+                    .map(|c| {
+                        if c.is_alphanumeric() || " -_.".contains(c) {
+                            c
+                        } else {
+                            '_'
+                        }
+                    })
+                    .collect();
+                let base = format!(
+                    "{doc_stem} Media/{}{}",
+                    safe.trim(),
+                    s.channel
+                        .map(|c| format!(" ch{}", c + 1))
+                        .unwrap_or_default()
+                );
                 let mut rel = format!("{base}.wav");
                 let mut n = 1;
                 while !used_paths.insert(rel.to_ascii_lowercase()) {
                     n += 1;
                     rel = format!("{base} ({n}).wav");
                 }
-                (crate::common::resolve_path(&rel, opts.base_dir.as_deref()), first.name.clone())
+                (
+                    crate::common::resolve_path(&rel, opts.base_dir.as_deref()),
+                    first.name.clone(),
+                )
             }
-            (Some(p), None) => {
-                (crate::common::resolve_path(p, opts.base_dir.as_deref()), if first.name.is_empty() { file_name(p).to_string() } else { first.name.clone() })
-            }
+            (Some(p), None) => (
+                crate::common::resolve_path(p, opts.base_dir.as_deref()),
+                if first.name.is_empty() {
+                    file_name(p).to_string()
+                } else {
+                    first.name.clone()
+                },
+            ),
             (None, None) => (String::new(), first.name.clone()),
         };
-        let display = if display.is_empty() { file_stem(&resolved).to_string() } else { display };
+        let display = if display.is_empty() {
+            file_stem(&resolved).to_string()
+        } else {
+            display
+        };
         let key = format!("{}|{}", first.key, resolved);
         let id = b.file_media(&key, &display, &resolved, &spec, Some(media_bin));
         if resolved.is_empty()
             && let Some(m) = b.p.item_mut(id).and_then(|i| i.as_media_mut())
         {
             m.offline = true;
-            report.warn(format!("\"{display}\" has no media location; imported offline"));
+            report.warn(format!(
+                "\"{display}\" has no media location; imported offline"
+            ));
         }
-        let mut markers: Vec<CMarker> = srcs.iter().flat_map(|s| s.markers.iter().cloned()).collect();
+        let mut markers: Vec<CMarker> = srcs
+            .iter()
+            .flat_map(|s| s.markers.iter().cloned())
+            .collect();
         markers.sort_by(|a, b| (a.start, &a.name).cmp(&(b.start, &b.name)));
         markers.dedup();
         let mk: Vec<Marker> = markers.iter().map(|m| marker_in(&mut b, m)).collect();
@@ -755,7 +974,12 @@ pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Repor
             extracted.push(ExtractedMedia {
                 item: id,
                 path: resolved.clone(),
-                wav: crate::wav::wav_file(data, s.file_channels.max(1) as u16, s.sample_rate, s.bits),
+                wav: crate::wav::wav_file(
+                    data,
+                    s.file_channels.max(1) as u16,
+                    s.sample_rate,
+                    s.bits,
+                ),
             });
         }
         for &i in members {
@@ -765,23 +989,46 @@ pub(crate) fn to_project(doc: Document, opts: &ImportOptions, report: &mut Repor
     // nested compositions are sequences that clips use as their source: reserve them all first
     // (they may use each other), then build them
     let settings_of = |comp: &Composition| {
-        let mut settings = settings_for(comp.rate, comp.width.max(16), comp.height.max(16), comp.drop);
+        let mut settings = settings_for(
+            comp.rate,
+            comp.width.max(16),
+            comp.height.max(16),
+            comp.drop,
+        );
         settings.sample_rate = comp.sample_rate.max(1);
         settings
     };
-    let nested_ids: Vec<ItemId> = doc.nested.iter().map(|comp| b.reserve_sequence(&comp.name, settings_of(comp), None)).collect();
+    let nested_ids: Vec<ItemId> = doc
+        .nested
+        .iter()
+        .map(|comp| b.reserve_sequence(&comp.name, settings_of(comp), None))
+        .collect();
     for (i, s) in doc.sources.iter().enumerate() {
         if let Some(&id) = s.nested.and_then(|n| nested_ids.get(n)) {
             item_of.insert(i, id);
         }
     }
     for (comp, &seq_id) in doc.nested.iter().zip(&nested_ids) {
-        let seq = build_sequence(&mut b, comp, settings_of(comp), &doc.sources, &item_of, report);
+        let seq = build_sequence(
+            &mut b,
+            comp,
+            settings_of(comp),
+            &doc.sources,
+            &item_of,
+            report,
+        );
         b.put_sequence(seq_id, seq);
     }
     for comp in &doc.compositions {
         let seq_id = b.reserve_sequence(&comp.name, settings_of(comp), None);
-        let seq = build_sequence(&mut b, comp, settings_of(comp), &doc.sources, &item_of, report);
+        let seq = build_sequence(
+            &mut b,
+            comp,
+            settings_of(comp),
+            &doc.sources,
+            &item_of,
+            report,
+        );
         b.put_sequence(seq_id, seq);
         b.top.push(seq_id);
     }
@@ -800,7 +1047,11 @@ fn build_sequence(
     seq.start_timecode = comp.start_tc;
     seq.markers = comp.markers.iter().map(|m| marker_in(b, m)).collect();
     for t in &comp.tracks {
-        let kind = if t.kind == CKind::Picture { TrackKind::Video } else { TrackKind::Audio };
+        let kind = if t.kind == CKind::Picture {
+            TrackKind::Video
+        } else {
+            TrackKind::Audio
+        };
         let idx = seq.tracks(kind).len();
         let mut track = b.track(kind, idx);
         if kind == TrackKind::Audio {
@@ -828,10 +1079,23 @@ fn build_sequence(
 enum Placed {
     Gap,
     Clip(usize),
-    Tr { start: Tick, len: Tick, cut: Tick, effect: String },
+    Tr {
+        start: Tick,
+        len: Tick,
+        cut: Tick,
+        effect: String,
+    },
 }
 
-fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, sources: &[Source], item_of: &HashMap<usize, ItemId>, report: &mut Report) {
+fn build_track(
+    b: &mut Builder,
+    track: &mut Track,
+    kind: TrackKind,
+    t: &CTrack,
+    sources: &[Source],
+    item_of: &HashMap<usize, ItemId>,
+    report: &mut Report,
+) {
     let mut pos = Tick::ZERO;
     let mut placed: Vec<Placed> = Vec::new();
     let mut clips: Vec<TrackItem> = Vec::new();
@@ -847,7 +1111,12 @@ fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, 
             }
             CItem::Transition(tr) => {
                 pos -= tr.len;
-                placed.push(Placed::Tr { start: pos, len: tr.len, cut: tr.cut, effect: tr.effect.clone() });
+                placed.push(Placed::Tr {
+                    start: pos,
+                    len: tr.len,
+                    cut: tr.cut,
+                    effect: tr.effect.clone(),
+                });
             }
             CItem::Clip(c) => {
                 let Some(&item) = item_of.get(&c.source) else {
@@ -855,7 +1124,18 @@ fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, 
                     placed.push(Placed::Gap);
                     continue;
                 };
-                let mut ti = b.clip(item, kind, if c.name.is_empty() { &sources[c.source].name } else { &c.name }, pos, c.len, c.start);
+                let mut ti = b.clip(
+                    item,
+                    kind,
+                    if c.name.is_empty() {
+                        &sources[c.source].name
+                    } else {
+                        &c.name
+                    },
+                    pos,
+                    c.len,
+                    c.start,
+                );
                 if kind == TrackKind::Audio {
                     let src = &sources[c.source];
                     if t.channels == 1 && src.nested.is_none() {
@@ -874,7 +1154,15 @@ fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, 
     // resolve transitions against their neighbours
     let mut transitions = Vec::new();
     for k in 0..placed.len() {
-        let Placed::Tr { start, len, cut, effect } = &placed[k] else { continue };
+        let Placed::Tr {
+            start,
+            len,
+            cut,
+            effect,
+        } = &placed[k]
+        else {
+            continue;
+        };
         let prev = k.checked_sub(1).and_then(|i| match placed[i] {
             Placed::Clip(c) => Some(c),
             _ => None,
@@ -914,7 +1202,14 @@ fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, 
         };
         let audio = kind == TrackKind::Audio;
         let effect = match find_effect(effect) {
-            Some(d) if d.kind == if audio { filmcraft_project::EffectKind::AudioTransition } else { filmcraft_project::EffectKind::VideoTransition } => {
+            Some(d)
+                if d.kind
+                    == if audio {
+                        filmcraft_project::EffectKind::AudioTransition
+                    } else {
+                        filmcraft_project::EffectKind::VideoTransition
+                    } =>
+            {
                 d.instance()
             }
             _ => transition_effect(effect, audio, report),
@@ -938,13 +1233,24 @@ fn build_track(b: &mut Builder, track: &mut Track, kind: TrackKind, t: &CTrack, 
 
 fn apply_gain(ti: &mut TrackItem, g: &Gain) {
     match g {
-        Gain::Constant(a) => set_param(ti, "volume", "level", Param::new(ParamValue::Float(gain_to_db(*a)))),
+        Gain::Constant(a) => set_param(
+            ti,
+            "volume",
+            "level",
+            Param::new(ParamValue::Float(gain_to_db(*a))),
+        ),
         Gain::Varying { linear, points } => {
-            let mut p = Param::new(ParamValue::Float(points.first().map_or(0.0, |x| gain_to_db(x.1))));
+            let mut p = Param::new(ParamValue::Float(
+                points.first().map_or(0.0, |x| gain_to_db(x.1)),
+            ));
             for (off, a) in points {
                 let off = (*off).clamp(-MAX_TIME, MAX_TIME);
                 let mut k = Keyframe::new(ti.source_in + off, ParamValue::Float(gain_to_db(*a)));
-                k.interp = if *linear { Interpolation::Linear } else { Interpolation::Hold };
+                k.interp = if *linear {
+                    Interpolation::Linear
+                } else {
+                    Interpolation::Hold
+                };
                 p.keyframes.push(k);
             }
             p.keyframes.sort_by_key(|k| k.time);
@@ -955,11 +1261,15 @@ fn apply_gain(ti: &mut TrackItem, g: &Gain) {
 
 /// Link video and audio clips of the same media that start and end together.
 fn link_clips(b: &mut Builder, seq: &mut Sequence) {
-    let mut groups: HashMap<(ItemId, Tick, Tick, Tick), Vec<(TrackKind, usize, usize)>> = HashMap::new();
+    let mut groups: HashMap<(ItemId, Tick, Tick, Tick), Vec<(TrackKind, usize, usize)>> =
+        HashMap::new();
     for kind in [TrackKind::Video, TrackKind::Audio] {
         for (ti, t) in seq.tracks(kind).iter().enumerate() {
             for (ci, c) in t.items.iter().enumerate() {
-                groups.entry((c.item, c.start, c.duration, c.source_in)).or_default().push((kind, ti, ci));
+                groups
+                    .entry((c.item, c.start, c.duration, c.source_in))
+                    .or_default()
+                    .push((kind, ti, ci));
             }
         }
     }
@@ -989,7 +1299,10 @@ pub(crate) fn units_to_ticks(n: i64, num: i64, den: i64) -> Tick {
     let q = t.div_euclid(num as i128);
     let r = t.rem_euclid(num as i128);
     // documents are untrusted: keep every time far from overflow (±3 days)
-    Tick((q + if r * 2 >= num as i128 { 1 } else { 0 }).clamp(-MAX_TIME.0 as i128, MAX_TIME.0 as i128) as i64)
+    Tick(
+        (q + if r * 2 >= num as i128 { 1 } else { 0 })
+            .clamp(-MAX_TIME.0 as i128, MAX_TIME.0 as i128) as i64,
+    )
 }
 
 /// Edit units at rate `num/den` nearest to `t`; the flag is false when `t` is not on a unit.

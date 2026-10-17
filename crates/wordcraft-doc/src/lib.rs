@@ -8,7 +8,14 @@
 //!
 //! Positions ([`Pos`]) name a story, a [`Path`] to a paragraph and a byte offset in it. Paths
 //! compare in document order.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod bidi;
 pub mod chart;
@@ -155,7 +162,9 @@ pub fn para_block(p: Paragraph) -> Arc<Block> {
 }
 
 /// Which story a position is in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum StoryRef {
     #[default]
@@ -198,7 +207,11 @@ impl Path {
         }
         let n = self.0.len();
         let t = Path(self.0.get(..n - 3)?.to_vec());
-        Some((t, *self.0.get(n - 3)? as usize, *self.0.get(n - 2)? as usize))
+        Some((
+            t,
+            *self.0.get(n - 3)? as usize,
+            *self.0.get(n - 2)? as usize,
+        ))
     }
 }
 
@@ -222,7 +235,11 @@ impl Pos {
         Pos { story, path, off }
     }
     pub fn body(block: usize, off: usize) -> Pos {
-        Pos { story: StoryRef::Body, path: Path::top(block), off }
+        Pos {
+            story: StoryRef::Body,
+            path: Path::top(block),
+            off,
+        }
     }
 }
 
@@ -257,7 +274,9 @@ pub struct NoteSeparators {
 impl NoteSeparators {
     /// No separator of the document's own: the defaults apply.
     pub fn is_empty(&self) -> bool {
-        self.separator.is_none() && self.continuation_separator.is_none() && self.continuation_notice.is_none()
+        self.separator.is_none()
+            && self.continuation_separator.is_none()
+            && self.continuation_notice.is_none()
     }
 }
 
@@ -302,7 +321,9 @@ impl TextBody {
 
     /// The internal margins (left, top, right, bottom) in points.
     pub fn insets_pt(&self) -> [f32; 4] {
-        self.inset.unwrap_or(TEXT_BOX_INSET).map(|v| v.min(MAX_TEXT_BOX_INSET) as f32 / 12_700.0)
+        self.inset
+            .unwrap_or(TEXT_BOX_INSET)
+            .map(|v| v.min(MAX_TEXT_BOX_INSET) as f32 / 12_700.0)
     }
 }
 
@@ -347,14 +368,20 @@ pub struct Revision {
 
 impl Revision {
     pub fn new(kind: RevisionKind, author: impl Into<String>, date: impl Into<String>) -> Revision {
-        Revision { kind, author: author.into(), date: date.into(), move_name: None }
+        Revision {
+            kind,
+            author: author.into(),
+            date: date.into(),
+            move_name: None,
+        }
     }
 }
 
 impl Document {
     /// The move name of revision `idx`, when it is one end of a move.
     pub fn move_name(&self, idx: Option<u32>) -> Option<&str> {
-        idx.and_then(|i| self.revisions.get(i as usize)).and_then(|r| r.move_name.as_deref())
+        idx.and_then(|i| self.revisions.get(i as usize))
+            .and_then(|r| r.move_name.as_deref())
     }
 }
 
@@ -505,7 +532,13 @@ pub struct Watermark {
 
 impl Default for Watermark {
     fn default() -> Self {
-        Watermark { text: "DRAFT".into(), font: styles::BODY_FONT.into(), color: Rgb(0xC0, 0xC0, 0xC0), diagonal: true, semitransparent: true }
+        Watermark {
+            text: "DRAFT".into(),
+            font: styles::BODY_FONT.into(),
+            color: Rgb(0xC0, 0xC0, 0xC0),
+            diagonal: true,
+            semitransparent: true,
+        }
     }
 }
 
@@ -623,7 +656,15 @@ impl Document {
     /// A document from plain text, one paragraph per line.
     pub fn from_text(text: &str) -> Self {
         let mut d = Document::new();
-        d.body = text.split('\n').map(|l| para_block(Paragraph::with_text(l.trim_end_matches('\r'), CharProps::default()))).collect();
+        d.body = text
+            .split('\n')
+            .map(|l| {
+                para_block(Paragraph::with_text(
+                    l.trim_end_matches('\r'),
+                    CharProps::default(),
+                ))
+            })
+            .collect();
         d.ensure_nonempty();
         d
     }
@@ -631,15 +672,19 @@ impl Document {
     /// Every story must hold at least one paragraph, and every cell too.
     pub fn ensure_nonempty(&mut self) {
         fn fix(bl: &mut Blocks) {
-            if !bl.iter().any(|b| matches!(**b, Block::Para(_))) || matches!(bl.last().map(|b| &**b), Some(Block::Table(_))) {
+            if !bl.iter().any(|b| matches!(**b, Block::Para(_)))
+                || matches!(bl.last().map(|b| &**b), Some(Block::Table(_)))
+            {
                 bl.push(para_block(Paragraph::new()));
             }
             for b in bl.iter_mut() {
                 if let Block::Table(t) = &**b {
-                    let needs = t
-                        .rows
-                        .iter()
-                        .any(|r| r.cells.iter().any(|c| c.blocks.is_empty() || matches!(c.blocks.last().map(|b| &**b), Some(Block::Table(_)))));
+                    let needs = t.rows.iter().any(|r| {
+                        r.cells.iter().any(|c| {
+                            c.blocks.is_empty()
+                                || matches!(c.blocks.last().map(|b| &**b), Some(Block::Table(_)))
+                        })
+                    });
                     if needs && let Block::Table(t) = Arc::make_mut(b) {
                         for r in &mut t.rows {
                             for c in &mut r.cells {
@@ -672,7 +717,11 @@ impl Document {
     pub fn story_mut(&mut self, s: StoryRef) -> Result<&mut Blocks> {
         match s {
             StoryRef::Body => Ok(&mut self.body),
-            StoryRef::Part(id) => self.parts.get_mut(&id).map(|p| &mut p.blocks).ok_or(DocError::BadStory(s)),
+            StoryRef::Part(id) => self
+                .parts
+                .get_mut(&id)
+                .map(|p| &mut p.blocks)
+                .ok_or(DocError::BadStory(s)),
         }
     }
 
@@ -685,7 +734,9 @@ impl Document {
         }
         for ch in parent.chunks(3) {
             let [b, r, c] = ch else { return None };
-            let Block::Table(t) = &**bl.get(*b as usize)? else { return None };
+            let Block::Table(t) = &**bl.get(*b as usize)? else {
+                return None;
+            };
             bl = &t.rows.get(*r as usize)?.cells.get(*c as usize)?.blocks;
         }
         Some(bl)
@@ -701,8 +752,17 @@ impl Document {
         for ch in parent.chunks(3) {
             let [b, r, c] = ch else { return Err(bad()) };
             let blk = bl.get_mut(*b as usize).ok_or_else(bad)?;
-            let Block::Table(t) = Arc::make_mut(blk) else { return Err(bad()) };
-            bl = &mut t.rows.get_mut(*r as usize).ok_or_else(bad)?.cells.get_mut(*c as usize).ok_or_else(bad)?.blocks;
+            let Block::Table(t) = Arc::make_mut(blk) else {
+                return Err(bad());
+            };
+            bl = &mut t
+                .rows
+                .get_mut(*r as usize)
+                .ok_or_else(bad)?
+                .cells
+                .get_mut(*c as usize)
+                .ok_or_else(bad)?
+                .blocks;
         }
         Ok(bl)
     }
@@ -750,25 +810,50 @@ impl Document {
 
     /// First and last positions of a story.
     pub fn start_of(&self, s: StoryRef) -> Pos {
-        let path = self.para_paths(s).into_iter().next().unwrap_or_else(|| Path::top(0));
-        Pos { story: s, path, off: 0 }
+        let path = self
+            .para_paths(s)
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| Path::top(0));
+        Pos {
+            story: s,
+            path,
+            off: 0,
+        }
     }
     pub fn end_of(&self, s: StoryRef) -> Pos {
         let path = self.para_paths(s).pop().unwrap_or_else(|| Path::top(0));
         let off = self.para(s, &path).map(|p| p.len()).unwrap_or(0);
-        Pos { story: s, path, off }
+        Pos {
+            story: s,
+            path,
+            off,
+        }
     }
 
     /// The position just after the shape that owns text box story `part` (body first, then the
     /// other parts), for leaving the text box.
     pub fn text_box_anchor(&self, part: u32) -> Option<Pos> {
-        let stories = std::iter::once(StoryRef::Body).chain(self.parts.keys().filter(|k| **k != part).map(|k| StoryRef::Part(*k)));
+        let stories = std::iter::once(StoryRef::Body).chain(
+            self.parts
+                .keys()
+                .filter(|k| **k != part)
+                .map(|k| StoryRef::Part(*k)),
+        );
         for story in stories {
             for path in self.para_paths(story) {
-                let Some(p) = self.para(story, &path) else { continue };
+                let Some(p) = self.para(story, &path) else {
+                    continue;
+                };
                 for off in p.object_offsets() {
-                    if p.object_at(off).is_some_and(|o| o.text_boxes().contains(&part)) {
-                        return Some(Pos { story, path, off: off + para::OBJ.len_utf8() });
+                    if p.object_at(off)
+                        .is_some_and(|o| o.text_boxes().contains(&part))
+                    {
+                        return Some(Pos {
+                            story,
+                            path,
+                            off: off + para::OBJ.len_utf8(),
+                        });
                     }
                 }
             }
@@ -791,11 +876,25 @@ impl Document {
     /// Clamp a position into the document (valid path, char boundary).
     pub fn clamp(&self, p: &Pos) -> Pos {
         if let Some(para) = self.para_at(p) {
-            return Pos { story: p.story, path: p.path.clone(), off: para.clamp(p.off) };
+            return Pos {
+                story: p.story,
+                path: p.path.clone(),
+                off: para.clamp(p.off),
+            };
         }
-        let story = if self.story(p.story).is_some() { p.story } else { StoryRef::Body };
+        let story = if self.story(p.story).is_some() {
+            p.story
+        } else {
+            StoryRef::Body
+        };
         let all = self.para_paths(story);
-        let path = all.iter().rev().find(|q| **q <= p.path).or(all.first()).cloned().unwrap_or_else(|| Path::top(0));
+        let path = all
+            .iter()
+            .rev()
+            .find(|q| **q <= p.path)
+            .or(all.first())
+            .cloned()
+            .unwrap_or_else(|| Path::top(0));
         let off = self.para(story, &path).map(|q| q.clamp(p.off)).unwrap_or(0);
         Pos { story, path, off }
     }
@@ -844,33 +943,53 @@ impl Document {
     pub fn note_options(&self, sect: &SectionProps, endnote: bool) -> section::NoteOptions {
         use section::NotePos;
         let (own, doc, fmt) = if endnote {
-            (&sect.endnote_pr, &self.settings.endnote_pr, self.settings.endnote_format)
+            (
+                &sect.endnote_pr,
+                &self.settings.endnote_pr,
+                self.settings.endnote_format,
+            )
         } else {
-            (&sect.footnote_pr, &self.settings.footnote_pr, self.settings.footnote_format)
+            (
+                &sect.footnote_pr,
+                &self.settings.footnote_pr,
+                self.settings.footnote_format,
+            )
         };
         let pos = own.pos.or(doc.pos);
         let pos = if endnote {
-            pos.filter(|p| matches!(p, NotePos::SectEnd | NotePos::DocEnd)).unwrap_or(NotePos::DocEnd)
+            pos.filter(|p| matches!(p, NotePos::SectEnd | NotePos::DocEnd))
+                .unwrap_or(NotePos::DocEnd)
         } else {
-            pos.filter(|p| matches!(p, NotePos::PageBottom | NotePos::BeneathText)).unwrap_or(NotePos::PageBottom)
+            pos.filter(|p| matches!(p, NotePos::PageBottom | NotePos::BeneathText))
+                .unwrap_or(NotePos::PageBottom)
         };
         section::NoteOptions {
             pos,
             num_fmt: own.num_fmt.unwrap_or(fmt),
-            num_start: own.num_start.or(doc.num_start).unwrap_or(1).clamp(1, section::MAX_NOTE_START),
+            num_start: own
+                .num_start
+                .or(doc.num_start)
+                .unwrap_or(1)
+                .clamp(1, section::MAX_NOTE_START),
             num_restart: own.num_restart.or(doc.num_restart).unwrap_or_default(),
         }
     }
 
     /// The section that contains top-level body block `block` (index into `sections()`).
     pub fn section_index_of(&self, block: usize) -> usize {
-        self.sections().iter().position(|(end, _)| block <= *end).unwrap_or(0)
+        self.sections()
+            .iter()
+            .position(|(end, _)| block <= *end)
+            .unwrap_or(0)
     }
 
     /// Mutable section properties for the section containing body block `block`.
     pub fn section_mut(&mut self, block: usize) -> &mut SectionProps {
         let ends: Vec<usize> = self.sections().iter().map(|(e, _)| *e).collect();
-        let idx = ends.iter().position(|e| block <= *e).unwrap_or(ends.len().saturating_sub(1));
+        let idx = ends
+            .iter()
+            .position(|e| block <= *e)
+            .unwrap_or(ends.len().saturating_sub(1));
         if idx + 1 < ends.len()
             && let Some(e) = ends.get(idx)
             && let Some(Block::Para(p)) = self.body.get_mut(*e).map(Arc::make_mut)
@@ -884,7 +1003,11 @@ impl Document {
     /// Allocate a new part id and insert the part.
     pub fn add_part(&mut self, kind: PartKind, blocks: Blocks) -> u32 {
         let id = self.parts.keys().next_back().map(|k| k + 1).unwrap_or(1);
-        let mut part = Part { kind, blocks, body: TextBody::default() };
+        let mut part = Part {
+            kind,
+            blocks,
+            body: TextBody::default(),
+        };
         if part.blocks.is_empty() {
             part.blocks.push(para_block(Paragraph::new()));
         }
@@ -900,7 +1023,10 @@ impl Document {
 
     /// Word's default count: the body plus its text boxes, footnotes and endnotes.
     pub fn word_count_including_notes(&self) -> usize {
-        self.counted_stories().iter().map(|s| self.story_word_count(*s)).sum()
+        self.counted_stories()
+            .iter()
+            .map(|s| self.story_word_count(*s))
+            .sum()
     }
 
     /// Word count of one story, including generated numbered-list labels.
@@ -914,8 +1040,14 @@ impl Document {
     /// document order. Headers, footers, comments and stories nothing points at aren't included.
     pub fn counted_stories(&self) -> Vec<StoryRef> {
         self.reachable(vec![StoryRef::Body], &|o| match o {
-            InlineObject::NoteRef { id, .. } => vec![(*id, &[PartKind::Footnote, PartKind::Endnote][..])],
-            o => o.text_boxes().into_iter().map(|id| (id, &[PartKind::TextBox][..])).collect(),
+            InlineObject::NoteRef { id, .. } => {
+                vec![(*id, &[PartKind::Footnote, PartKind::Endnote][..])]
+            }
+            o => o
+                .text_boxes()
+                .into_iter()
+                .map(|id| (id, &[PartKind::TextBox][..]))
+                .collect(),
         })
     }
 
@@ -927,11 +1059,22 @@ impl Document {
             return 0;
         }
         let roots = std::iter::once(StoryRef::Body)
-            .chain(self.parts.iter().filter(|(_, p)| p.kind != PartKind::TextBox).map(|(id, _)| StoryRef::Part(*id)))
+            .chain(
+                self.parts
+                    .iter()
+                    .filter(|(_, p)| p.kind != PartKind::TextBox)
+                    .map(|(id, _)| StoryRef::Part(*id)),
+            )
             .collect();
-        let live = self.reachable(roots, &|o| o.text_boxes().into_iter().map(|id| (id, &[PartKind::TextBox][..])).collect());
+        let live = self.reachable(roots, &|o| {
+            o.text_boxes()
+                .into_iter()
+                .map(|id| (id, &[PartKind::TextBox][..]))
+                .collect()
+        });
         let before = self.parts.len();
-        self.parts.retain(|id, p| p.kind != PartKind::TextBox || live.contains(&StoryRef::Part(*id)));
+        self.parts
+            .retain(|id, p| p.kind != PartKind::TextBox || live.contains(&StoryRef::Part(*id)));
         let gone = before - self.parts.len();
         if gone > 0 {
             // A link to a box that went ends the chain there (its id may be reused).
@@ -950,7 +1093,11 @@ impl Document {
     /// already linked from another, or links running in a circle are ignored (those boxes show
     /// their own text); a chain stops after [`MAX_LINKED_BOXES`].
     pub fn text_box_chains(&self) -> Vec<Vec<u32>> {
-        let is_box = |id: u32| self.parts.get(&id).is_some_and(|p| p.kind == PartKind::TextBox);
+        let is_box = |id: u32| {
+            self.parts
+                .get(&id)
+                .is_some_and(|p| p.kind == PartKind::TextBox)
+        };
         // Who links to whom: the first box (by id) to link to a box wins.
         let mut prev: BTreeMap<u32, u32> = BTreeMap::new();
         for (id, p) in &self.parts {
@@ -961,7 +1108,12 @@ impl Document {
                 prev.entry(n).or_insert(*id);
             }
         }
-        let next = |id: u32| self.parts.get(&id).and_then(|p| p.body.next).filter(|n| prev.get(n) == Some(&id));
+        let next = |id: u32| {
+            self.parts
+                .get(&id)
+                .and_then(|p| p.body.next)
+                .filter(|n| prev.get(n) == Some(&id))
+        };
         let mut out = Vec::new();
         for (id, p) in &self.parts {
             if p.kind != PartKind::TextBox || prev.contains_key(id) || next(*id).is_none() {
@@ -983,12 +1135,17 @@ impl Document {
 
     /// The chain (see [`Document::text_box_chains`]) text box `part` belongs to, if linked.
     pub fn text_box_chain(&self, part: u32) -> Option<Vec<u32>> {
-        self.text_box_chains().into_iter().find(|c| c.contains(&part))
+        self.text_box_chains()
+            .into_iter()
+            .find(|c| c.contains(&part))
     }
 
     /// The size (width, height) of the shapes showing text boxes `ids`, in any story (a group
     /// member's as the group stretches it).
-    pub fn text_box_sizes(&self, ids: &std::collections::BTreeSet<u32>) -> BTreeMap<u32, (f32, f32)> {
+    pub fn text_box_sizes(
+        &self,
+        ids: &std::collections::BTreeSet<u32>,
+    ) -> BTreeMap<u32, (f32, f32)> {
         let mut out = BTreeMap::new();
         let stories = std::iter::once(&self.body).chain(self.parts.values().map(|p| &p.blocks));
         for blocks in stories {
@@ -996,7 +1153,12 @@ impl Document {
                 edit::each_para(b, 0, &mut |p| {
                     for o in &p.objects {
                         match o {
-                            InlineObject::Shape { story: Some(id), w, h, .. } if ids.contains(id) => {
+                            InlineObject::Shape {
+                                story: Some(id),
+                                w,
+                                h,
+                                ..
+                            } if ids.contains(id) => {
                                 out.entry(*id).or_insert((*w, *h));
                             }
                             InlineObject::Group { w, h, .. } => {
@@ -1034,7 +1196,10 @@ impl Document {
 
     /// Like [`Document::objects_in_reading_order_at`], also giving the top-level body block each
     /// object is in (for objects in text boxes, the block of the box's anchor).
-    pub fn objects_in_reading_order_by_block(&self, f: &mut dyn FnMut(usize, &Paragraph, usize) -> bool) {
+    pub fn objects_in_reading_order_by_block(
+        &self,
+        f: &mut dyn FnMut(usize, &Paragraph, usize) -> bool,
+    ) {
         let mut budget = BoxBudget::default();
         for (i, b) in self.body.iter().enumerate() {
             self.walk_objects(std::slice::from_ref(b), &mut budget, &mut |p, k| f(i, p, k));
@@ -1046,7 +1211,10 @@ impl Document {
     pub fn notes_in_text_box(&self, part: u32) -> Vec<u32> {
         let mut out = Vec::new();
         let mut budget = BoxBudget::default();
-        if let Some(p) = self.parts.get(&part).filter(|p| p.kind == PartKind::TextBox)
+        if let Some(p) = self
+            .parts
+            .get(&part)
+            .filter(|p| p.kind == PartKind::TextBox)
             && budget.enter(part)
         {
             self.walk_objects(&p.blocks, &mut budget, &mut |p, k| {
@@ -1060,7 +1228,12 @@ impl Document {
         out
     }
 
-    fn walk_objects(&self, blocks: &[Arc<Block>], budget: &mut BoxBudget, f: &mut dyn FnMut(&Paragraph, usize) -> bool) {
+    fn walk_objects(
+        &self,
+        blocks: &[Arc<Block>],
+        budget: &mut BoxBudget,
+        f: &mut dyn FnMut(&Paragraph, usize) -> bool,
+    ) {
         for b in blocks {
             edit::each_para(b, 0, &mut |p| {
                 for (k, o) in p.objects.iter().enumerate() {
@@ -1068,7 +1241,8 @@ impl Document {
                         continue;
                     }
                     for id in o.text_boxes() {
-                        if let Some(part) = self.parts.get(&id).filter(|p| p.kind == PartKind::TextBox)
+                        if let Some(part) =
+                            self.parts.get(&id).filter(|p| p.kind == PartKind::TextBox)
                             && budget.enter(id)
                         {
                             self.walk_objects(&part.blocks, budget, f);
@@ -1082,7 +1256,11 @@ impl Document {
 
     /// `roots`, then every story their objects lead to (`follow`: an object's story id and the
     /// part kinds that count), transitively, in the order found.
-    fn reachable(&self, roots: Vec<StoryRef>, follow: &dyn Fn(&InlineObject) -> Vec<(u32, &'static [PartKind])>) -> Vec<StoryRef> {
+    fn reachable(
+        &self,
+        roots: Vec<StoryRef>,
+        follow: &dyn Fn(&InlineObject) -> Vec<(u32, &'static [PartKind])>,
+    ) -> Vec<StoryRef> {
         let mut out = roots;
         let mut seen: std::collections::BTreeSet<StoryRef> = out.iter().copied().collect();
         let mut i = 0;
@@ -1095,7 +1273,9 @@ impl Document {
                 });
             }
             for (id, kinds) in found {
-                if self.parts.get(&id).is_some_and(|p| kinds.contains(&p.kind)) && seen.insert(StoryRef::Part(id)) {
+                if self.parts.get(&id).is_some_and(|p| kinds.contains(&p.kind))
+                    && seen.insert(StoryRef::Part(id))
+                {
                     out.push(StoryRef::Part(id));
                 }
             }
@@ -1127,7 +1307,11 @@ impl Document {
 
     /// Change every inline object in every story (paragraphs inside tables too), copying only
     /// the blocks whose paragraphs `wants` says have objects to change.
-    pub fn objects_mut(&mut self, wants: &dyn Fn(&InlineObject) -> bool, f: &mut dyn FnMut(&mut InlineObject)) {
+    pub fn objects_mut(
+        &mut self,
+        wants: &dyn Fn(&InlineObject) -> bool,
+        f: &mut dyn FnMut(&mut InlineObject),
+    ) {
         let mut stories: Vec<&mut Blocks> = vec![&mut self.body];
         stories.extend(self.parts.values_mut().map(|p| &mut p.blocks));
         for blocks in stories {
@@ -1153,7 +1337,11 @@ impl Document {
 
     /// Add a media item; returns its key (deduplicated by content).
     pub fn add_media(&mut self, bytes: Vec<u8>, ext: &str) -> String {
-        if let Some((k, _)) = self.media.iter().find(|(_, v)| v.as_slice() == bytes.as_slice()) {
+        if let Some((k, _)) = self
+            .media
+            .iter()
+            .find(|(_, v)| v.as_slice() == bytes.as_slice())
+        {
             return k.clone();
         }
         let n = self.media.len() + 1;
@@ -1169,24 +1357,36 @@ impl Document {
 
     /// The value of a custom property (names compare case-insensitively, as in Word).
     pub fn custom_prop(&self, name: &str) -> Option<&str> {
-        self.custom_props.iter().find(|p| p.name.eq_ignore_ascii_case(name)).map(|p| p.value.as_str())
+        self.custom_props
+            .iter()
+            .find(|p| p.name.eq_ignore_ascii_case(name))
+            .map(|p| p.value.as_str())
     }
 
     /// Set a custom text property, replacing one of the same name in place.
     pub fn set_custom_prop(&mut self, name: &str, value: &str) {
-        match self.custom_props.iter_mut().find(|p| p.name.eq_ignore_ascii_case(name)) {
+        match self
+            .custom_props
+            .iter_mut()
+            .find(|p| p.name.eq_ignore_ascii_case(name))
+        {
             Some(p) => {
                 p.kind = "lpwstr".into();
                 p.value = value.to_string();
             }
-            None => self.custom_props.push(CustomProp { name: name.to_string(), kind: "lpwstr".into(), value: value.to_string() }),
+            None => self.custom_props.push(CustomProp {
+                name: name.to_string(),
+                kind: "lpwstr".into(),
+                value: value.to_string(),
+            }),
         }
     }
 
     /// Remove a custom property. Returns whether it existed.
     pub fn remove_custom_prop(&mut self, name: &str) -> bool {
         let n = self.custom_props.len();
-        self.custom_props.retain(|p| !p.name.eq_ignore_ascii_case(name));
+        self.custom_props
+            .retain(|p| !p.name.eq_ignore_ascii_case(name));
         self.custom_props.len() != n
     }
 
@@ -1196,23 +1396,43 @@ impl Document {
     /// [`InlineObject::PermEnd`], or the end of the story when it has none).
     pub fn perm_ranges(&self) -> Vec<PermRange> {
         let mut out: Vec<PermRange> = Vec::new();
-        let stories = std::iter::once(StoryRef::Body).chain(self.parts.keys().map(|k| StoryRef::Part(*k)));
+        let stories =
+            std::iter::once(StoryRef::Body).chain(self.parts.keys().map(|k| StoryRef::Part(*k)));
         for story in stories {
             let mut open: Vec<usize> = Vec::new();
             for path in self.para_paths(story) {
-                let Some(p) = self.para(story, &path) else { continue };
+                let Some(p) = self.para(story, &path) else {
+                    continue;
+                };
                 for off in p.object_offsets() {
                     match p.object_at(off) {
                         Some(InlineObject::PermStart { id, group, editor }) => {
-                            let start = Pos { story, path: path.clone(), off: off + para::OBJ.len_utf8() };
+                            let start = Pos {
+                                story,
+                                path: path.clone(),
+                                off: off + para::OBJ.len_utf8(),
+                            };
                             open.push(out.len());
-                            out.push(PermRange { id: *id, group: group.clone(), editor: editor.clone(), start: start.clone(), end: start });
+                            out.push(PermRange {
+                                id: *id,
+                                group: group.clone(),
+                                editor: editor.clone(),
+                                start: start.clone(),
+                                end: start,
+                            });
                         }
                         Some(InlineObject::PermEnd { id }) => {
-                            if let Some(k) = open.iter().rposition(|i| out.get(*i).is_some_and(|r| r.id == *id)) {
+                            if let Some(k) = open
+                                .iter()
+                                .rposition(|i| out.get(*i).is_some_and(|r| r.id == *id))
+                            {
                                 let i = open.remove(k);
                                 if let Some(r) = out.get_mut(i) {
-                                    r.end = Pos { story, path: path.clone(), off };
+                                    r.end = Pos {
+                                        story,
+                                        path: path.clone(),
+                                        off,
+                                    };
                                 }
                             }
                         }
@@ -1238,7 +1458,14 @@ impl Document {
             if let Some(p) = self.para(StoryRef::Body, &path) {
                 for off in p.object_offsets() {
                     if let Some(InlineObject::BookmarkStart { name }) = p.object_at(off) {
-                        out.push((name.clone(), Pos { story: StoryRef::Body, path: path.clone(), off }));
+                        out.push((
+                            name.clone(),
+                            Pos {
+                                story: StoryRef::Body,
+                                path: path.clone(),
+                                off,
+                            },
+                        ));
                     }
                 }
             }
@@ -1268,7 +1495,9 @@ impl PermRange {
 
 /// Words in `s` (tokens separated by whitespace that contain at least one alphanumeric char).
 pub fn count_words(s: &str) -> usize {
-    s.split(|c: char| c.is_whitespace() || c == para::OBJ).filter(|w| w.chars().any(char::is_alphanumeric)).count()
+    s.split(|c: char| c.is_whitespace() || c == para::OBJ)
+        .filter(|w| w.chars().any(char::is_alphanumeric))
+        .count()
 }
 
 fn walk(bl: &Blocks, prefix: &mut Vec<u32>, out: &mut Vec<Path>, depth: usize) {
@@ -1302,7 +1531,11 @@ fn text_of(bl: &Blocks, out: &mut String, depth: usize, shown: bool) {
     for b in bl {
         match &**b {
             Block::Para(p) => {
-                out.push_str(&if shown { p.shown_text() } else { p.plain_text() });
+                out.push_str(&if shown {
+                    p.shown_text()
+                } else {
+                    p.plain_text()
+                });
                 out.push('\n');
             }
             Block::Table(t) => {
@@ -1321,7 +1554,13 @@ fn text_of(bl: &Blocks, out: &mut String, depth: usize, shown: bool) {
     }
 }
 
-fn story_word_count_of(bl: &Blocks, numbering: &Numbering, styles: &styles::StyleSheet, counters: &mut numbering::Counters, depth: usize) -> usize {
+fn story_word_count_of(
+    bl: &Blocks,
+    numbering: &Numbering,
+    styles: &styles::StyleSheet,
+    counters: &mut numbering::Counters,
+    depth: usize,
+) -> usize {
     if depth > 16 {
         return 0;
     }
@@ -1329,10 +1568,17 @@ fn story_word_count_of(bl: &Blocks, numbering: &Numbering, styles: &styles::Styl
     for b in bl {
         match &**b {
             Block::Para(p) => {
-                let n = p.props.numbering.or_else(|| styles.resolve_para(&p.props).numbering).filter(|n| n.num != 0);
+                let n = p
+                    .props
+                    .numbering
+                    .or_else(|| styles.resolve_para(&p.props).numbering)
+                    .filter(|n| n.num != 0);
                 if let Some(n) = n
                     && let Some((label, def)) = counters.next_label(numbering, n.num, n.level)
-                    && !matches!(def.format, section::NumFormat::Bullet | section::NumFormat::None)
+                    && !matches!(
+                        def.format,
+                        section::NumFormat::Bullet | section::NumFormat::None
+                    )
                 {
                     total = total.saturating_add(count_words(&label));
                 }
@@ -1341,7 +1587,13 @@ fn story_word_count_of(bl: &Blocks, numbering: &Numbering, styles: &styles::Styl
             Block::Table(t) => {
                 for row in &t.rows {
                     for c in &row.cells {
-                        total = total.saturating_add(story_word_count_of(&c.blocks, numbering, styles, counters, depth + 1));
+                        total = total.saturating_add(story_word_count_of(
+                            &c.blocks,
+                            numbering,
+                            styles,
+                            counters,
+                            depth + 1,
+                        ));
                     }
                 }
             }

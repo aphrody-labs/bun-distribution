@@ -13,7 +13,7 @@
 #[cfg(feature = "bevy_render")]
 use crate::setup_mailbox_channel;
 use crate::{
-    error_codes, BrpBatch, BrpError, BrpMessage, BrpRequest, BrpResponse, BrpResult, BrpSender,
+    BrpBatch, BrpError, BrpMessage, BrpRequest, BrpResponse, BrpResult, BrpSender, error_codes,
 };
 use anyhow::Result as AnyhowResult;
 use async_channel::{Receiver, Sender};
@@ -25,7 +25,7 @@ use bevy_ecs::schedule::IntoScheduleConfigs as _;
 use bevy_ecs::system::Res;
 #[cfg(feature = "bevy_render")]
 use bevy_render::{RenderApp, RenderStartup};
-use bevy_tasks::{futures_lite::StreamExt, IoTaskPool};
+use bevy_tasks::{IoTaskPool, futures_lite::StreamExt};
 use core::{
     convert::Infallible,
     net::{IpAddr, Ipv4Addr},
@@ -34,10 +34,11 @@ use core::{
 };
 use http_body_util::{BodyExt as _, Full};
 use hyper::{
+    Request, Response,
     body::{Body, Bytes, Frame, Incoming},
     header::{HeaderName, HeaderValue},
     server::conn::http1,
-    service, Request, Response,
+    service,
 };
 use serde_json::Value;
 use smol_hyper::rt::{FuturesIo, SmolTimer};

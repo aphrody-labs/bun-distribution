@@ -179,13 +179,20 @@ pub fn page(
         let input = Rc::clone(&input_subsystem);
         let hid_core = Arc::clone(&hid_core);
         button.connect_clicked(move |button| {
-            super::configure_debug_controller::present(button, Rc::clone(&input), std::sync::Arc::clone(&hid_core), Rc::clone(&profiles));
+            super::configure_debug_controller::present(
+                button,
+                Rc::clone(&input),
+                std::sync::Arc::clone(&hid_core),
+                Rc::clone(&profiles),
+            );
         });
     }
     if let Some(button) = &ring_controller.configure {
         let input = Rc::clone(&input_subsystem);
         let hid = Arc::clone(&hid_core);
-        button.connect_clicked(move |button| super::configure_ringcon::present(button, Rc::clone(&input), Arc::clone(&hid)));
+        button.connect_clicked(move |button| {
+            super::configure_ringcon::present(button, Rc::clone(&input), Arc::clone(&hid))
+        });
     }
     configure_motion_touch.connect_clicked(move |button| {
         super::configure_motion_touch::present(button, Rc::clone(&input_subsystem));
@@ -313,11 +320,24 @@ fn player_colors(index: usize, player: &PlayerInput) -> (gtk::Box, [gtk::ColorBu
     frame.set_child(Some(&content));
     cell.append(&frame);
     // Same order as upstream controllers_color_buttons, not visual row order.
-    (cell, [body[0].clone(), buttons[0].clone(), body[1].clone(), buttons[1].clone()])
+    (
+        cell,
+        [
+            body[0].clone(),
+            buttons[0].clone(),
+            body[1].clone(),
+            buttons[1].clone(),
+        ],
+    )
 }
 
 /// Two captioned swatches side by side.
-fn swatch_pair(left_label: &str, left: u32, right_label: &str, right: u32) -> (gtk::Box, [gtk::ColorButton; 2]) {
+fn swatch_pair(
+    left_label: &str,
+    left: u32,
+    right_label: &str,
+    right: u32,
+) -> (gtk::Box, [gtk::ColorButton; 2]) {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     let buttons = [(left_label, left), (right_label, right)].map(|(label, color)| {
         let block = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -373,10 +393,19 @@ fn player_input(index: usize) -> PlayerInput {
 mod tests {
     use super::*;
 
-    fn page(input: Rc<RefCell<input_common::InputSubsystem>>, hid: Arc<parking_lot::Mutex<hid_core::hid_core::HIDCore>>) -> Page {
-        super::page(input, hid, Rc::new(super::super::configure_input_player::InputProfileContext::new(
-            super::super::input_profiles::InputProfiles::new(),
-        )))
+    fn page(
+        input: Rc<RefCell<input_common::InputSubsystem>>,
+        hid: Arc<parking_lot::Mutex<hid_core::hid_core::HIDCore>>,
+    ) -> Page {
+        super::page(
+            input,
+            hid,
+            Rc::new(
+                super::super::configure_input_player::InputProfileContext::new(
+                    super::super::input_profiles::InputProfiles::new(),
+                ),
+            ),
+        )
     }
 
     #[test]
@@ -384,13 +413,18 @@ mod tests {
     fn raw_input_checkbox_loads_applies_and_has_platform_visibility() {
         fn find(widget: &gtk::Widget) -> Option<gtk::CheckButton> {
             if let Some(check) = widget.downcast_ref::<gtk::CheckButton>() {
-                if check.label().is_some_and(|label| label.starts_with("Enable XInput 8")) {
+                if check
+                    .label()
+                    .is_some_and(|label| label.starts_with("Enable XInput 8"))
+                {
                     return Some(check.clone());
                 }
             }
             let mut child = widget.first_child();
             while let Some(widget) = child {
-                if let Some(check) = find(&widget) { return Some(check); }
+                if let Some(check) = find(&widget) {
+                    return Some(check);
+                }
                 child = widget.next_sibling();
             }
             None
@@ -399,15 +433,23 @@ mod tests {
         let input = Rc::new(RefCell::new(input_common::InputSubsystem::new()));
         let hid = Arc::new(parking_lot::Mutex::new(hid_core::hid_core::HIDCore::new()));
         for initial in [false, true] {
-            common::settings::values_mut().enable_raw_input.set_value(initial);
+            common::settings::values_mut()
+                .enable_raw_input
+                .set_value(initial);
             let page = page(Rc::clone(&input), Arc::clone(&hid));
             let check = find(&page.widget).expect("raw input checkbox");
             assert_eq!(check.is_visible(), cfg!(target_os = "windows"));
             assert_eq!(check.is_active(), initial);
             check.set_active(!initial);
-            assert_eq!(*common::settings::values().enable_raw_input.get_value(), initial);
+            assert_eq!(
+                *common::settings::values().enable_raw_input.get_value(),
+                initial
+            );
             (page.apply)();
-            assert_eq!(*common::settings::values().enable_raw_input.get_value(), !initial);
+            assert_eq!(
+                *common::settings::values().enable_raw_input.get_value(),
+                !initial
+            );
         }
     }
 
@@ -483,7 +525,10 @@ mod tests {
         let colors = [0x123456, 0xABCDEF, 0x0AB9E6, 0xFF3C28];
         let mut player = PlayerInput::default();
         let original_buttons = player.buttons.clone();
-        set_player_colors(&mut player, colors.map(|color| rgb_from_rgba(&rgba_from_u32(color))));
+        set_player_colors(
+            &mut player,
+            colors.map(|color| rgb_from_rgba(&rgba_from_u32(color))),
+        );
         assert_eq!(player.body_color_left, 0xFF123456);
         assert_eq!(player.button_color_left, 0xFFABCDEF);
         assert_eq!(player.body_color_right, 0xFF0AB9E6);

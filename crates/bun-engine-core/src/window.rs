@@ -55,7 +55,10 @@ pub fn pad_from_bevy(pad: &crate::bevy::input::gamepad::Gamepad) -> Pad {
     let axis = |a: A| (pad.get(a).unwrap_or(0.0).clamp(-1.0, 1.0) * 32767.0) as i16;
     let trigger = |b: B| (pad.get(b).unwrap_or(0.0).clamp(0.0, 1.0) * 255.0) as u8;
     Pad {
-        buttons: MAP.iter().filter(|(b, _)| pad.pressed(*b)).fold(0, |acc, (_, bit)| acc | bit),
+        buttons: MAP
+            .iter()
+            .filter(|(b, _)| pad.pressed(*b))
+            .fold(0, |acc, (_, bit)| acc | bit),
         left_trigger: trigger(B::LeftTrigger2),
         right_trigger: trigger(B::RightTrigger2),
         left_stick: (axis(A::LeftStickX), axis(A::LeftStickY)),

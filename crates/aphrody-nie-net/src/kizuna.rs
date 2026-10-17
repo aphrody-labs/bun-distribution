@@ -137,7 +137,10 @@ impl KizunaHub {
     /// Creates an empty Kizuna Hub.
     #[must_use]
     pub fn new() -> Self {
-        Self { towns: HashMap::new(), player_towns: HashMap::new() }
+        Self {
+            towns: HashMap::new(),
+            player_towns: HashMap::new(),
+        }
     }
 
     /// Returns mutable reference to a player's town, creating it if not present.
@@ -151,7 +154,8 @@ impl KizunaHub {
     /// Adds a player as a visitor into a specific town.
     pub fn join_town(&mut self, town_owner_id: &str, visitor: TownVisitor) -> KizunaTownSnapshot {
         let player_id = visitor.player_id.clone();
-        self.player_towns.insert(player_id, town_owner_id.to_string());
+        self.player_towns
+            .insert(player_id, town_owner_id.to_string());
         let town = self.get_or_create_town(town_owner_id, &visitor.player_name);
         town.add_visitor(visitor);
         town.snapshot()
@@ -216,7 +220,10 @@ mod tests {
         let visitor2 = TownVisitor {
             player_id: "p_gouenji".to_string(),
             player_name: "Gouenji".to_string(),
-            avatar: KizunaAvatar { name: "Gouenji".to_string(), ..Default::default() },
+            avatar: KizunaAvatar {
+                name: "Gouenji".to_string(),
+                ..Default::default()
+            },
             ut_squad: None,
             position: [5.0, 0.0, 10.0],
             velocity: [1.0, 0.0, 0.0],

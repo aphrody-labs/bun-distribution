@@ -20,8 +20,9 @@ use bevy_ecs::{
     schedule::IntoScheduleConfigs,
     system::{Query, Res},
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     diagnostic::RecordDiagnostics,
     extract_component::{
         ComponentUniforms, ExtractComponent, ExtractComponentPlugin, UniformComponentPlugin,
@@ -33,8 +34,7 @@ use bevy_render::{
     },
     renderer::{RenderContext, ViewQuery},
     sync_component::SyncComponent,
-    view::{prepare_view_targets, Msaa, ViewDepthStencilTexture, ViewTarget},
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
+    view::{Msaa, ViewDepthStencilTexture, ViewTarget, prepare_view_targets},
 };
 
 pub mod pipeline;

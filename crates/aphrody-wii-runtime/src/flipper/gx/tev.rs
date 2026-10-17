@@ -25,7 +25,12 @@ impl GraphicsProcessor {
         std::array::from_fn(|i| {
             let lo = self.cur_tev_color_regs_lo[i];
             let hi = self.cur_tev_color_regs_hi[i];
-            [s11_to_f32(lo.r()), s11_to_f32(hi.g()), s11_to_f32(hi.b()), s11_to_f32(lo.a())]
+            [
+                s11_to_f32(lo.r()),
+                s11_to_f32(hi.g()),
+                s11_to_f32(hi.b()),
+                s11_to_f32(lo.a()),
+            ]
         })
     }
 
@@ -33,7 +38,12 @@ impl GraphicsProcessor {
         let kregs: [[f32; 4]; 4] = std::array::from_fn(|i| {
             let lo = self.cur_tev_const_regs_lo[i];
             let hi = self.cur_tev_const_regs_hi[i];
-            [s11_to_f32(lo.r()), s11_to_f32(hi.g()), s11_to_f32(hi.b()), s11_to_f32(lo.a())]
+            [
+                s11_to_f32(lo.r()),
+                s11_to_f32(hi.g()),
+                s11_to_f32(hi.b()),
+                s11_to_f32(lo.a()),
+            ]
         });
 
         for stage in 0..16usize {
@@ -52,7 +62,11 @@ impl GraphicsProcessor {
 }
 
 pub fn s11_to_f32(val: u16) -> f32 {
-    let signed = if val & 0x400 != 0 { val as i32 - 0x800 } else { val as i32 };
+    let signed = if val & 0x400 != 0 {
+        val as i32 - 0x800
+    } else {
+        val as i32
+    };
     signed as f32 / 255.0
 }
 

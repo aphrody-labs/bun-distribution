@@ -104,7 +104,11 @@ impl SpecialTacticsEffect {
                 conditions.push(HashId::from_i64(raw));
             }
         }
-        Some(Self { effect_id, power, conditions })
+        Some(Self {
+            effect_id,
+            power,
+            conditions,
+        })
     }
 }
 
@@ -131,7 +135,10 @@ impl SpecialTacticsCondId {
         if node.var_count() < 2 {
             return None;
         }
-        Some(Self { cond_id: node.int(0), cond_data: owned(node.string(1)) })
+        Some(Self {
+            cond_id: node.int(0),
+            cond_data: owned(node.string(1)),
+        })
     }
 }
 
@@ -234,7 +241,10 @@ impl SpecialTacticsRef {
         if node.var_count() < 2 {
             return None;
         }
-        Some(Self { offset: node.int(0), count: node.int(1) })
+        Some(Self {
+            offset: node.int(0),
+            count: node.int(1),
+        })
     }
 
     /// `true` si la tranche est vide (`count == 0`).
@@ -322,7 +332,11 @@ impl SpecialTacticsConfig {
     /// Conditions de réussite de la i-ème tactique (via `ref_success_cond_ids[i]`).
     #[must_use]
     pub fn success_cond_ids_of(&self, info_index: usize) -> &[SpecialTacticsCondId] {
-        slice_of(&self.success_cond_ids, &self.ref_success_cond_ids, info_index)
+        slice_of(
+            &self.success_cond_ids,
+            &self.ref_success_cond_ids,
+            info_index,
+        )
     }
 
     /// Recherche une tactique par son `tactics_id`. `None` si absente.

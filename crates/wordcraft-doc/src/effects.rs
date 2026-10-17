@@ -51,7 +51,14 @@ pub struct Shadow {
 impl Default for Shadow {
     /// "Offset: Bottom Right".
     fn default() -> Self {
-        Shadow { color: Rgb::BLACK, transparency: 60.0, blur: 4.0, distance: 3.0, angle: 45.0, rot_with_shape: false }
+        Shadow {
+            color: Rgb::BLACK,
+            transparency: 60.0,
+            blur: 4.0,
+            distance: 3.0,
+            angle: 45.0,
+            rot_with_shape: false,
+        }
     }
 }
 
@@ -66,7 +73,11 @@ pub struct Glow {
 
 impl Default for Glow {
     fn default() -> Self {
-        Glow { color: Rgb(0x15, 0x60, 0x82), size: 5.0, transparency: 60.0 }
+        Glow {
+            color: Rgb(0x15, 0x60, 0x82),
+            size: 5.0,
+            transparency: 60.0,
+        }
     }
 }
 
@@ -100,7 +111,13 @@ impl Shadow {
             "offsetTop" => 270.0,
             "offsetTopRight" => 315.0,
             "offsetRight" => 0.0,
-            "offsetCenter" => return Some(Shadow { distance: 0.0, blur: 5.0, ..d }),
+            "offsetCenter" => {
+                return Some(Shadow {
+                    distance: 0.0,
+                    blur: 5.0,
+                    ..d
+                });
+            }
             _ => return None,
         };
         Some(Shadow { angle, ..d })
@@ -113,7 +130,11 @@ impl Shadow {
             transparency: clamp(self.transparency, 0.0, 100.0, 60.0),
             blur: clamp(self.blur, 0.0, MAX_BLUR, 0.0),
             distance: clamp(self.distance, 0.0, MAX_DISTANCE, 0.0),
-            angle: if angle.is_finite() && angle < 360.0 { angle } else { 0.0 },
+            angle: if angle.is_finite() && angle < 360.0 {
+                angle
+            } else {
+                0.0
+            },
             rot_with_shape: self.rot_with_shape,
         }
     }
@@ -132,7 +153,11 @@ impl Shadow {
 impl Glow {
     /// Finite, in range.
     pub fn sanitized(self) -> Glow {
-        Glow { color: self.color, size: clamp(self.size, 0.0, MAX_GLOW, 0.0), transparency: clamp(self.transparency, 0.0, 100.0, 60.0) }
+        Glow {
+            color: self.color,
+            size: clamp(self.size, 0.0, MAX_GLOW, 0.0),
+            transparency: clamp(self.transparency, 0.0, 100.0, 60.0),
+        }
     }
     /// Opacity 0..1.
     pub fn opacity(&self) -> f32 {
@@ -149,7 +174,10 @@ impl ShapeEffects {
         ShapeEffects {
             shadow: self.shadow.map(Shadow::sanitized),
             glow: self.glow.map(Glow::sanitized).filter(|g| g.size > 0.0),
-            soft_edge: self.soft_edge.map(|r| clamp(r, 0.0, MAX_SOFT_EDGE, 0.0)).filter(|r| *r > 0.0),
+            soft_edge: self
+                .soft_edge
+                .map(|r| clamp(r, 0.0, MAX_SOFT_EDGE, 0.0))
+                .filter(|r| *r > 0.0),
         }
     }
     /// How far the effects reach beyond the shape's frame on each side (left, top, right,
@@ -176,7 +204,10 @@ impl ShapeEffects {
 /// grown outward by `grow` points (negative shrinks it), filled with opacity `alpha`; overlaid in
 /// any order, in one colour, they ramp linearly from `opacity` at `from` to nothing at `to`.
 pub fn bands(from: f32, to: f32, opacity: f32) -> Vec<(f32, f32)> {
-    let (from, to) = (clamp(from, -1000.0, 1000.0, 0.0), clamp(to, -1000.0, 1000.0, 0.0));
+    let (from, to) = (
+        clamp(from, -1000.0, 1000.0, 0.0),
+        clamp(to, -1000.0, 1000.0, 0.0),
+    );
     let opacity = clamp(opacity, 0.0, 1.0, 0.0);
     if opacity <= 0.0 {
         return Vec::new();
@@ -193,7 +224,11 @@ pub fn bands(from: f32, to: f32, opacity: f32) -> Vec<(f32, f32)> {
             let grow = to - span * (m as f32 - 0.5) / nf;
             let before = 1.0 - opacity * (m as f32 - 1.0) / nf;
             let after = 1.0 - opacity * m as f32 / nf;
-            let alpha = if before > 0.0 { 1.0 - after / before } else { 1.0 };
+            let alpha = if before > 0.0 {
+                1.0 - after / before
+            } else {
+                1.0
+            };
             (grow, alpha.clamp(0.0, 1.0))
         })
         .collect()
@@ -207,7 +242,10 @@ mod tests {
     fn bands_ramp_to_the_requested_opacity() {
         for (from, to, o) in [(-2.0, 2.0, 0.4), (-5.0, 0.0, 1.0), (0.0, 8.0, 0.6)] {
             let b = bands(from, to, o);
-            assert!(b.iter().all(|(g, a)| *g > from && *g < to && (0.0..=1.0).contains(a)));
+            assert!(
+                b.iter()
+                    .all(|(g, a)| *g > from && *g < to && (0.0..=1.0).contains(a))
+            );
             let covered = 1.0 - b.iter().map(|(_, a)| 1.0 - a).product::<f32>();
             assert!((covered - o).abs() < 1e-4, "{covered} vs {o}");
         }
@@ -217,12 +255,38 @@ mod tests {
 
     #[test]
     fn hostile_numbers_are_clamped() {
-        let s = Shadow { color: Rgb::BLACK, transparency: f32::NAN, blur: 1e9, distance: -4.0, angle: -90.0, rot_with_shape: false }.sanitized();
-        assert_eq!((s.transparency, s.blur, s.distance, s.angle), (60.0, MAX_BLUR, 0.0, 270.0));
-        let e = ShapeEffects { shadow: None, glow: Some(Glow { size: 1e9, ..Glow::default() }), soft_edge: Some(-1.0) }.sanitized();
+        let s = Shadow {
+            color: Rgb::BLACK,
+            transparency: f32::NAN,
+            blur: 1e9,
+            distance: -4.0,
+            angle: -90.0,
+            rot_with_shape: false,
+        }
+        .sanitized();
+        assert_eq!(
+            (s.transparency, s.blur, s.distance, s.angle),
+            (60.0, MAX_BLUR, 0.0, 270.0)
+        );
+        let e = ShapeEffects {
+            shadow: None,
+            glow: Some(Glow {
+                size: 1e9,
+                ..Glow::default()
+            }),
+            soft_edge: Some(-1.0),
+        }
+        .sanitized();
         assert_eq!(e.glow.map(|g| g.size), Some(MAX_GLOW));
         assert_eq!(e.soft_edge, None);
-        let e = ShapeEffects { glow: Some(Glow { size: f32::INFINITY, ..Glow::default() }), ..Default::default() }.sanitized();
+        let e = ShapeEffects {
+            glow: Some(Glow {
+                size: f32::INFINITY,
+                ..Glow::default()
+            }),
+            ..Default::default()
+        }
+        .sanitized();
         assert!(e.is_empty(), "a non-finite size is no glow");
         let (dx, dy) = Shadow::preset("offsetBottomRight").unwrap().offset();
         assert!(dx > 2.0 && dy > 2.0);

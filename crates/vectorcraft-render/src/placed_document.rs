@@ -100,7 +100,12 @@ impl Bitmaps {
         self.map
             .iter()
             .filter(|((k, _), _)| k == key)
-            .min_by(|a, b| (a.1.step / step).log2().abs().total_cmp(&(b.1.step / step).log2().abs()))
+            .min_by(|a, b| {
+                (a.1.step / step)
+                    .log2()
+                    .abs()
+                    .total_cmp(&(b.1.step / step).log2().abs())
+            })
             .map(|(_, b)| (b.pm.clone(), b.step))
     }
 
@@ -108,13 +113,31 @@ impl Bitmaps {
         self.clock += 1;
         let size = pm.width() as usize * pm.height() as usize * 4;
         self.bytes += size;
-        if let Some(old) = self.map.insert(k, Bitmap { pm: Arc::new(pm), step, used: self.clock }) {
-            self.bytes = self.bytes.saturating_sub(old.pm.width() as usize * old.pm.height() as usize * 4);
+        if let Some(old) = self.map.insert(
+            k,
+            Bitmap {
+                pm: Arc::new(pm),
+                step,
+                used: self.clock,
+            },
+        ) {
+            self.bytes = self
+                .bytes
+                .saturating_sub(old.pm.width() as usize * old.pm.height() as usize * 4);
         }
         while self.bytes > BUDGET && self.map.len() > 1 {
-            let Some(k) = self.map.iter().min_by_key(|(_, b)| b.used).map(|(k, _)| k.clone()) else { break };
+            let Some(k) = self
+                .map
+                .iter()
+                .min_by_key(|(_, b)| b.used)
+                .map(|(k, _)| k.clone())
+            else {
+                break;
+            };
             if let Some(b) = self.map.remove(&k) {
-                self.bytes = self.bytes.saturating_sub(b.pm.width() as usize * b.pm.height() as usize * 4);
+                self.bytes = self
+                    .bytes
+                    .saturating_sub(b.pm.width() as usize * b.pm.height() as usize * 4);
             }
         }
     }
@@ -130,7 +153,8 @@ struct Job {
 
 /// Device pixels per point of `object`'s box its preview `bytes` have.
 fn preview_density(object: &PlacedDocument, bytes: &[u8]) -> f64 {
-    vectorcraft_doc::placed_document::image_size(bytes).map_or(0.0, |(w, _)| w as f64 / object.width.max(1e-9))
+    vectorcraft_doc::placed_document::image_size(bytes)
+        .map_or(0.0, |(w, _)| w as f64 / object.width.max(1e-9))
 }
 
 thread_local! {
@@ -160,7 +184,14 @@ fn depth() -> usize {
 
 /// Render `art` of a placed document's file (`doc`, its resources) into `w`×`h` transparent
 /// pixels through `view`, the placed documents inside it one level deeper.
-pub fn render_inside(r: &mut Renderer, doc: &vectorcraft_doc::Document, art: &Arc<Node>, w: u16, h: u16, view: Affine) -> Option<crate::Rendered> {
+pub fn render_inside(
+    r: &mut Renderer,
+    doc: &vectorcraft_doc::Document,
+    art: &Arc<Node>,
+    w: u16,
+    h: u16,
+    view: Affine,
+) -> Option<crate::Rendered> {
     let _inside = Inside::enter();
     r.render_node(doc, art, w, h, view)
 }
@@ -170,19 +201,31 @@ pub fn render_inside(r: &mut Renderer, doc: &vectorcraft_doc::Document, art: &Ar
 /// needed; the preview when it can't be).
 fn make(r: &mut Renderer, object: &PlacedDocument, blob: &ImageBlob, step: f64) -> Option<Pixmap> {
     let (w, h) = (pixels(object.width * step), pixels(object.height * step));
-    let preview = if blob.is_proxy() { Some(blob.bytes.clone()) } else { blob.proxy.clone() };
+    let preview = if blob.is_proxy() {
+        Some(blob.bytes.clone())
+    } else {
+        blob.proxy.clone()
+    };
     let full = match blob.is_proxy() {
         true if step <= preview_density(object, &blob.bytes) * 1.01 => None,
         true => vectorcraft_doc::placed_document::full_bytes(object, blob),
         false => Some(blob.bytes.clone()),
     };
     let read = full.and_then(|bytes| vectorcraft_doc::placed_document::read(object, &bytes));
-    let Some(e) = read else { return crate::paint::decode_pixmap_fit(&preview?, w, h) };
+    let Some(e) = read else {
+        return crate::paint::decode_pixmap_fit(&preview?, w, h);
+    };
     let f = e.frame;
     let (sx, sy) = (w as f64 / f.width(), h as f64 / f.height());
     let view = Affine::scale_non_uniform(sx, sy) * Affine::translate((-f.x0, -f.y0));
     let img = render_inside(r, &e.doc, &e.art, w, h, view)?;
-    let data = img.pixels.as_chunks::<4>().0.iter().map(|&[r, g, b, a]| vello_cpu::color::PremulRgba8 { r, g, b, a }).collect();
+    let data = img
+        .pixels
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|&[r, g, b, a]| vello_cpu::color::PremulRgba8 { r, g, b, a })
+        .collect();
     Some(Pixmap::from_parts(data, w, h))
 }
 
@@ -215,19 +258,25 @@ mod workers {
         let mut started = 0;
         for i in 0..n {
             let rx = rx.clone();
-            let spawned = std::thread::Builder::new().name(format!("vectorcraft-placed-{i}")).spawn(move || {
-                let mut r = crate::Renderer::new();
-                r.threads = 0;
-                loop {
-                    let job = super::lock(&rx).recv();
-                    let Ok(job) = job else { break };
-                    // A panic loses this bitmap, not the worker.
-                    let key = job.key.clone();
-                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| super::run(&mut r, *job))).is_err() {
-                        super::lock(&super::PENDING).remove(&key);
+            let spawned = std::thread::Builder::new()
+                .name(format!("vectorcraft-placed-{i}"))
+                .spawn(move || {
+                    let mut r = crate::Renderer::new();
+                    r.threads = 0;
+                    loop {
+                        let job = super::lock(&rx).recv();
+                        let Ok(job) = job else { break };
+                        // A panic loses this bitmap, not the worker.
+                        let key = job.key.clone();
+                        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            super::run(&mut r, *job)
+                        }))
+                        .is_err()
+                        {
+                            super::lock(&super::PENDING).remove(&key);
+                        }
                     }
-                }
-            });
+                });
             started += usize::from(spawned.is_ok());
         }
         (started > 0).then(|| Mutex::new(tx))
@@ -263,11 +312,17 @@ fn mean_scale(a: Affine) -> f64 {
 impl Renderer {
     /// Draw placed document `p` in frame `f`: from a cached bitmap on screen, else exactly.
     pub(crate) fn draw_placed(&mut self, ctx: &mut RenderContext, f: &Frame, p: &PlacedDocument) {
-        let plain = f.ink == Ink::Display && !f.opts.outline && f.opts.proof.is_none() && !f.opts.overprint_preview;
-        if f.opts.progressive_placed && plain && depth() == 0 && self.draw_placed_bitmap(ctx, f, p) {
+        let plain = f.ink == Ink::Display
+            && !f.opts.outline
+            && f.opts.proof.is_none()
+            && !f.opts.overprint_preview;
+        if f.opts.progressive_placed && plain && depth() == 0 && self.draw_placed_bitmap(ctx, f, p)
+        {
             return;
         }
-        let Some(blob) = f.doc.images.get(&p.key) else { return };
+        let Some(blob) = f.doc.images.get(&p.key) else {
+            return;
+        };
         // The file's bytes: stored, read again already, or (inside another placed document, while
         // not too deep) read again now.
         let full = match depth() {
@@ -291,41 +346,72 @@ impl Renderer {
             return;
         }
         // The art in its own coordinates, with its own resources.
-        let inner = Frame { doc: &e.doc, view: f.view * m, visible: m.inverse().transform_rect_bbox(f.visible), px: f.px / k, ..*f };
+        let inner = Frame {
+            doc: &e.doc,
+            view: f.view * m,
+            visible: m.inverse().transform_rect_bbox(f.visible),
+            px: f.px / k,
+            ..*f
+        };
         let _inside = Inside::enter();
         self.draw_arc(ctx, &inner, &e.art);
     }
 
     /// Draw `p` from its bitmap at this zoom step, or (while that is made) another step's, or a
     /// placeholder. False when bitmaps don't suit (too large).
-    fn draw_placed_bitmap(&mut self, ctx: &mut RenderContext, f: &Frame, p: &PlacedDocument) -> bool {
+    fn draw_placed_bitmap(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        p: &PlacedDocument,
+    ) -> bool {
         let m = f.view * p.xf;
-        let Some(step) = step(mean_scale(m)) else { return false };
+        let Some(step) = step(mean_scale(m)) else {
+            return false;
+        };
         if p.width * step > MAX_SIDE || p.height * step > MAX_SIDE {
             return false;
         }
-        let Some(blob) = f.doc.images.get(&p.key).cloned() else { return true };
+        let Some(blob) = f.doc.images.get(&p.key).cloned() else {
+            return true;
+        };
         let key = (p.key.clone(), step.to_bits());
         let (found, nearest) = {
             let mut b = lock(&BITMAPS);
             let found = b.get(&key);
-            let nearest = if found.is_none() { b.nearest(&p.key, step) } else { None };
+            let nearest = if found.is_none() {
+                b.nearest(&p.key, step)
+            } else {
+                None
+            };
             (found, nearest)
         };
         let shown = match found {
             Some(pm) => Some(pm),
             None => {
-                schedule(Job { key, object: p.clone(), blob, step });
+                schedule(Job {
+                    key,
+                    object: p.clone(),
+                    blob,
+                    step,
+                });
                 // Made here and now (no threads) or meanwhile another step's.
                 let mut b = lock(&BITMAPS);
-                b.get(&(p.key.clone(), step.to_bits())).or(nearest.map(|n| n.0))
+                b.get(&(p.key.clone(), step.to_bits()))
+                    .or(nearest.map(|n| n.0))
             }
         };
         let rect = Rect::new(0.0, 0.0, p.width, p.height);
         match shown {
             Some(pm) => {
-                let (sx, sy) = (p.width / pm.width().max(1) as f64, p.height / pm.height().max(1) as f64);
-                ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(pm), sampler: peniko::ImageSampler::default() });
+                let (sx, sy) = (
+                    p.width / pm.width().max(1) as f64,
+                    p.height / pm.height().max(1) as f64,
+                );
+                ctx.set_paint(vello_cpu::Image {
+                    image: vello_cpu::ImageSource::Pixmap(pm),
+                    sampler: peniko::ImageSampler::default(),
+                });
                 ctx.set_transform(m);
                 ctx.set_paint_transform(Affine::scale_non_uniform(sx, sy));
                 ctx.fill_rect(&kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1));

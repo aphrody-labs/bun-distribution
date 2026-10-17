@@ -146,8 +146,18 @@ impl<'a> Rom<'a> {
             });
         };
 
-        add_region(RomRegionKind::Arm9, header.arm9.offset, header.arm9.size, true);
-        add_region(RomRegionKind::Arm7, header.arm7.offset, header.arm7.size, true);
+        add_region(
+            RomRegionKind::Arm9,
+            header.arm9.offset,
+            header.arm9.size,
+            true,
+        );
+        add_region(
+            RomRegionKind::Arm7,
+            header.arm7.offset,
+            header.arm7.size,
+            true,
+        );
         add_region(
             RomRegionKind::FileNameTable,
             header.file_names.offset,
@@ -178,8 +188,18 @@ impl<'a> Rom<'a> {
             banner_size,
             header.banner_offset != 0,
         );
-        add_region(RomRegionKind::Arm9i, header.arm9i.offset, header.arm9i.size, false);
-        add_region(RomRegionKind::Arm7i, header.arm7i.offset, header.arm7i.size, false);
+        add_region(
+            RomRegionKind::Arm9i,
+            header.arm9i.offset,
+            header.arm9i.size,
+            false,
+        );
+        add_region(
+            RomRegionKind::Arm7i,
+            header.arm7i.offset,
+            header.arm7i.size,
+            false,
+        );
         add_region(
             RomRegionKind::DsDigestArea,
             header.digest_ds_area.offset,
@@ -204,7 +224,12 @@ impl<'a> Rom<'a> {
             header.digest_block_hashtable.size,
             false,
         );
-        add_region(RomRegionKind::Debug, header.debug_rom_offset, header.debug_size, false);
+        add_region(
+            RomRegionKind::Debug,
+            header.debug_rom_offset,
+            header.debug_size,
+            false,
+        );
 
         let header_crc_end = std::mem::offset_of!(Header, header_crc);
         let header_crc_valid =
@@ -238,7 +263,11 @@ impl<'a> Rom<'a> {
         let end = start + header.arm9.size as usize;
         let data = &self.data[start..end];
 
-        let footer = if header.dsi_flags.is_dsi_title() { None } else { Some(self.arm9_footer()?) };
+        let footer = if header.dsi_flags.is_dsi_title() {
+            None
+        } else {
+            Some(self.arm9_footer()?)
+        };
 
         let (build_info_offset, overlay_signatures_offset) = if let Some(footer) = footer {
             let build_info_offset = if header.arm9_build_info_offset == 0 {
@@ -519,7 +548,10 @@ impl<'a> Rom<'a> {
     }
 
     fn get_overlays_padding(&self, overlays: &[Overlay], fat: &[FileAlloc]) -> Option<u8> {
-        let mut overlay_files = overlays.iter().map(|o| &fat[o.id as usize]).collect::<Vec<_>>();
+        let mut overlay_files = overlays
+            .iter()
+            .map(|o| &fat[o.id as usize])
+            .collect::<Vec<_>>();
         overlay_files.sort_unstable_by_key(|o| o.start);
         let mut overlay_files = overlay_files.into_iter();
         if let Some(mut prev_overlay) = overlay_files.next() {
@@ -542,10 +574,14 @@ impl<'a> Rom<'a> {
         let fat = self.fat()?;
         let arm9_overlays = self.arm9_overlays()?;
         let arm7_overlays = self.arm7_overlays()?;
-        let arm9_overlay_files =
-            arm9_overlays.iter().map(|overlay| overlay.file_id).collect::<BTreeSet<u32>>();
-        let arm7_overlay_files =
-            arm7_overlays.iter().map(|overlay| overlay.file_id).collect::<BTreeSet<u32>>();
+        let arm9_overlay_files = arm9_overlays
+            .iter()
+            .map(|overlay| overlay.file_id)
+            .collect::<BTreeSet<u32>>();
+        let arm7_overlay_files = arm7_overlays
+            .iter()
+            .map(|overlay| overlay.file_id)
+            .collect::<BTreeSet<u32>>();
 
         // Get sorted list of adjacent files that are in the file image block (i.e. not overlays)
         let mut files: Vec<&FileAlloc> = fat
@@ -588,14 +624,21 @@ impl<'a> Rom<'a> {
     pub fn alignments(&self) -> Result<RomConfigAlignment, RomAlignmentsError> {
         // Collect all overlay files into a set.
         fn get_overlay_files(overlay_table: &[Overlay]) -> BTreeSet<u32> {
-            overlay_table.iter().map(|overlay| overlay.file_id).collect()
+            overlay_table
+                .iter()
+                .map(|overlay| overlay.file_id)
+                .collect()
         }
 
         const DEFAULT_ALIGNMENT: u32 = 0x4;
 
         // Get the alignment of the current section, by looking at the address of the next section.
         fn get_alignment(next_section: u32) -> u32 {
-            if next_section.trailing_zeros() >= 9 { 0x200 } else { DEFAULT_ALIGNMENT }
+            if next_section.trailing_zeros() >= 9 {
+                0x200
+            } else {
+                DEFAULT_ALIGNMENT
+            }
         }
 
         let fat = self.fat()?;
@@ -751,7 +794,11 @@ impl RomInspection {
     /// Returns every invalid region so callers can report all malformed header ranges at once.
     pub fn validate_regions(&self) -> Result<(), Vec<RomRegion>> {
         let invalid = self.invalid_regions().copied().collect::<Vec<_>>();
-        if invalid.is_empty() { Ok(()) } else { Err(invalid) }
+        if invalid.is_empty() {
+            Ok(())
+        } else {
+            Err(invalid)
+        }
     }
 
     /// Returns whether the ROM passed all structural range and header checksum checks.

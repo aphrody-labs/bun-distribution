@@ -33,7 +33,10 @@ pub(crate) struct Probe {
 
 impl Probe {
     pub fn new() -> Self {
-        Self { inbox: Inbox::new(Arc::new(|| {})), events: Vec::new() }
+        Self {
+            inbox: Inbox::new(Arc::new(|| {})),
+            events: Vec::new(),
+        }
     }
 
     /// Wait until `f` holds for the events so far.
@@ -44,14 +47,28 @@ impl Probe {
             if f(&self.events) {
                 return;
             }
-            assert!(start.elapsed() < WAIT, "timed out waiting for {what}: {:#?}", self.events);
+            assert!(
+                start.elapsed() < WAIT,
+                "timed out waiting for {what}: {:#?}",
+                self.events
+            );
             std::thread::sleep(Duration::from_millis(5));
         }
     }
 
     /// The client id this guest was welcomed with (latest welcome).
     pub fn me(&self) -> u32 {
-        self.events.iter().rev().find_map(|e| if let Event::Welcome { info, .. } = e { Some(info.me) } else { None }).unwrap()
+        self.events
+            .iter()
+            .rev()
+            .find_map(|e| {
+                if let Event::Welcome { info, .. } = e {
+                    Some(info.me)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
     }
 
     pub fn presence_of(&self, id: u32) -> Option<&Presence> {
@@ -62,11 +79,29 @@ impl Probe {
     }
 
     fn joined(&self) -> Vec<u32> {
-        self.events.iter().filter_map(|e| if let Event::PeerJoined(p) = e { Some(p.client_id) } else { None }).collect()
+        self.events
+            .iter()
+            .filter_map(|e| {
+                if let Event::PeerJoined(p) = e {
+                    Some(p.client_id)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn left(&self) -> Vec<u32> {
-        self.events.iter().filter_map(|e| if let Event::PeerLeft(id) = e { Some(*id) } else { None }).collect()
+        self.events
+            .iter()
+            .filter_map(|e| {
+                if let Event::PeerLeft(id) = e {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
@@ -75,7 +110,10 @@ fn welcomed(e: &[Event]) -> bool {
 }
 
 pub(crate) fn fast_limits() -> NetLimits {
-    NetLimits { hello_timeout: Duration::from_secs(5), ..NetLimits::default() }
+    NetLimits {
+        hello_timeout: Duration::from_secs(5),
+        ..NetLimits::default()
+    }
 }
 
 fn start_with(limits: NetLimits, core: Limits) -> (Host, Probe, Invite) {
@@ -110,7 +148,11 @@ pub(crate) fn quick(mut c: GuestConfig) -> GuestConfig {
 
 fn join(invite: &Invite, name: &str) -> (Guest, Probe) {
     let probe = Probe::new();
-    let g = Guest::start(quick(GuestConfig::new(invite.clone(), name.into())), probe.inbox.clone()).unwrap();
+    let g = Guest::start(
+        quick(GuestConfig::new(invite.clone(), name.into())),
+        probe.inbox.clone(),
+    )
+    .unwrap();
     (g, probe)
 }
 
@@ -174,7 +216,11 @@ impl Raw {
 fn connections_settle(host: &Host, n: usize) {
     let start = Instant::now();
     while host.connections() != n {
-        assert!(start.elapsed() < WAIT, "{} connections, expected {n}", host.connections());
+        assert!(
+            start.elapsed() < WAIT,
+            "{} connections, expected {n}",
+            host.connections()
+        );
         std::thread::sleep(Duration::from_millis(5));
     }
 }
@@ -183,8 +229,20 @@ fn connections_settle(host: &Host, n: usize) {
 fn guests_join_and_see_each_other() {
     let (mut host, mut hp, invite) = start();
     let (_a, mut ap) = join(&invite, "Ada");
-    ap.wait("Ada's welcome and colour", |e| e.iter().filter(|e| matches!(e, Event::Welcome { .. })).count() >= 2);
-    let Some(Event::Welcome { info, peers }) = ap.events.iter().rev().find(|e| matches!(e, Event::Welcome { .. })) else { panic!("no welcome") };
+    ap.wait("Ada's welcome and colour", |e| {
+        e.iter()
+            .filter(|e| matches!(e, Event::Welcome { .. }))
+            .count()
+            >= 2
+    });
+    let Some(Event::Welcome { info, peers }) = ap
+        .events
+        .iter()
+        .rev()
+        .find(|e| matches!(e, Event::Welcome { .. }))
+    else {
+        panic!("no welcome")
+    };
     assert_eq!(info.name, "Ada");
     assert!(
         ap.events.iter().any(
@@ -192,24 +250,52 @@ fn guests_join_and_see_each_other() {
         ),
         "the welcome carries the document for the sync client"
     );
-    assert_eq!(peers.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), ["Hana"], "the host is already here");
+    assert_eq!(
+        peers.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+        ["Hana"],
+        "the host is already here"
+    );
     assert_eq!(peers[0].color, PEOPLE[0]);
-    assert_eq!(info.color, PEOPLE[1], "the host hands out the next free colour");
+    assert_eq!(
+        info.color, PEOPLE[1],
+        "the host hands out the next free colour"
+    );
     let ada = info.me;
     assert_ne!(ada, host.me().client_id);
     hp.wait("the host sees Ada", |_| true);
-    hp.wait("the host sees Ada", |e| e.iter().any(|e| matches!(e, Event::PeerJoined(p) if p.client_id == ada && p.name == "Ada")));
+    hp.wait("the host sees Ada", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerJoined(p) if p.client_id == ada && p.name == "Ada"))
+    });
 
     // A guest without a name gets one.
     let (_b, mut bp) = join(&invite, "");
-    bp.wait("the second guest's colour", |e| e.iter().filter(|e| matches!(e, Event::Welcome { .. })).count() >= 2);
-    let Some(Event::Welcome { info, peers }) = bp.events.iter().rev().find(|e| matches!(e, Event::Welcome { .. })) else { panic!("no welcome") };
+    bp.wait("the second guest's colour", |e| {
+        e.iter()
+            .filter(|e| matches!(e, Event::Welcome { .. }))
+            .count()
+            >= 2
+    });
+    let Some(Event::Welcome { info, peers }) = bp
+        .events
+        .iter()
+        .rev()
+        .find(|e| matches!(e, Event::Welcome { .. }))
+    else {
+        panic!("no welcome")
+    };
     assert_eq!(info.name, "Guest 1");
     assert_eq!(info.color, PEOPLE[2]);
     assert_eq!(peers.len(), 2);
     let b = info.me;
-    ap.wait("Ada sees the newcomer", |e| e.iter().any(|e| matches!(e, Event::PeerJoined(p) if p.client_id == b)));
-    assert!(!ap.joined().contains(&ada), "nobody is told about themselves as a peer");
+    ap.wait("Ada sees the newcomer", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerJoined(p) if p.client_id == b))
+    });
+    assert!(
+        !ap.joined().contains(&ada),
+        "nobody is told about themselves as a peer"
+    );
     host.stop();
     assert_eq!(host.connections(), 0);
 }
@@ -217,10 +303,26 @@ fn guests_join_and_see_each_other() {
 #[test]
 fn a_wrong_token_or_file_is_refused() {
     let (mut host, mut hp, invite) = start();
-    let (g, mut gp) = join(&Invite { token: "WrongWrongWrongWrong00".into(), ..invite.clone() }, "Eve");
-    gp.wait("a refusal", |e| e.iter().any(|e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains("token"))));
+    let (g, mut gp) = join(
+        &Invite {
+            token: "WrongWrongWrongWrong00".into(),
+            ..invite.clone()
+        },
+        "Eve",
+    );
+    gp.wait("a refusal", |e| {
+        e.iter().any(
+            |e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains("token")),
+        )
+    });
     assert!(!welcomed(&gp.events));
-    let (_g2, mut gp2) = join(&Invite { file: "ffffffffffffffff".into(), ..invite.clone() }, "Eve");
+    let (_g2, mut gp2) = join(
+        &Invite {
+            file: "ffffffffffffffff".into(),
+            ..invite.clone()
+        },
+        "Eve",
+    );
     gp2.wait("a refusal", |e| e.iter().any(|e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains("another file"))));
     // Nobody got in; the refused connections are closed.
     hp.events.extend(hp.inbox.drain());
@@ -232,17 +334,29 @@ fn a_wrong_token_or_file_is_refused() {
         std::thread::sleep(Duration::from_millis(5));
     }
     // The secret never shows in what the UI is told.
-    assert!(gp.events.iter().all(|e| !format!("{e:?}").contains("WrongWrong")));
+    assert!(
+        gp.events
+            .iter()
+            .all(|e| !format!("{e:?}").contains("WrongWrong"))
+    );
     host.stop();
 }
 
 #[test]
 fn unreachable_hosts_fail_at_once() {
     // A port nothing listens on.
-    let free = std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap();
+    let free = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap();
     let (_g, mut gp) = join(&Invite::new(free.to_string(), FILE, TOKEN), "Ada");
     gp.wait("a failure", |e| e.iter().any(|e| matches!(e, Event::Status(Status::Failed { reason }) if reason.starts_with("Couldn't join"))));
-    assert!(!gp.events.iter().any(|e| matches!(e, Event::Status(Status::Reconnecting { .. }))), "a first join doesn't retry");
+    assert!(
+        !gp.events
+            .iter()
+            .any(|e| matches!(e, Event::Status(Status::Reconnecting { .. }))),
+        "a first join doesn't retry"
+    );
 }
 
 #[test]
@@ -253,21 +367,35 @@ fn presence_is_relayed_both_ways() {
     ap.wait("welcome", welcomed);
     bp.wait("welcome", welcomed);
     let ada = ap.me();
-    hp.wait("both joined", |e| e.iter().filter(|e| matches!(e, Event::PeerJoined(_))).count() == 2);
+    hp.wait("both joined", |e| {
+        e.iter()
+            .filter(|e| matches!(e, Event::PeerJoined(_)))
+            .count()
+            == 2
+    });
     a.presence(presence(10.0, 20.0));
     hp.wait("Ada's cursor at the host", |e| {
         e.iter().any(|e| matches!(e, Event::Presence(id, p) if *id == ada && p.cursor == Some((NodeId(1), 10.0, 20.0))))
     });
     bp.wait("Ada's cursor at Bo", |e| e.iter().any(|e| matches!(e, Event::Presence(id, p) if *id == ada && p.selection == Some(vec![NodeId(7)]))));
     ap.events.extend(ap.inbox.drain());
-    assert!(ap.presence_of(ada).is_none(), "your own presence doesn't come back");
+    assert!(
+        ap.presence_of(ada).is_none(),
+        "your own presence doesn't come back"
+    );
     // The host's own presence reaches the guests.
     let hana = host.me().client_id;
     host.presence(presence(5.0, 6.0));
     ap.wait("the host's cursor", |e| e.iter().any(|e| matches!(e, Event::Presence(id, p) if *id == hana && p.cursor == Some((NodeId(1), 5.0, 6.0)))));
     // Non-finite numbers never travel.
-    a.presence(Presence { cursor: Some((NodeId(1), f64::NAN, 1.0)), ..presence(0.0, 0.0) });
-    bp.wait("the sanitised cursor", |e| e.iter().any(|e| matches!(e, Event::Presence(id, p) if *id == ada && p.cursor.is_none())));
+    a.presence(Presence {
+        cursor: Some((NodeId(1), f64::NAN, 1.0)),
+        ..presence(0.0, 0.0)
+    });
+    bp.wait("the sanitised cursor", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Presence(id, p) if *id == ada && p.cursor.is_none()))
+    });
     host.stop();
 }
 
@@ -296,7 +424,12 @@ fn presence_is_throttled_and_the_latest_wins() {
     let mut watcher = Raw::hello(addr, TOKEN);
     assert!(matches!(watcher.next(), Some(ServerMsg::Welcome { .. })));
     let mut sender = Raw::hello(addr, TOKEN);
-    let Some(ServerMsg::Welcome { client_id: from, .. }) = sender.next() else { panic!("no welcome") };
+    let Some(ServerMsg::Welcome {
+        client_id: from, ..
+    }) = sender.next()
+    else {
+        panic!("no welcome")
+    };
     // 200 updates as fast as the socket takes them.
     let t0 = Instant::now();
     for i in 0..200 {
@@ -306,14 +439,21 @@ fn presence_is_throttled_and_the_latest_wins() {
     let mut got = Vec::new();
     while got.last() != Some(&199.0) {
         match watcher.next() {
-            Some(ServerMsg::Presence { client_id, presence }) if client_id == from => got.push(presence.cursor.unwrap().1),
+            Some(ServerMsg::Presence {
+                client_id,
+                presence,
+            }) if client_id == from => got.push(presence.cursor.unwrap().1),
             Some(_) => {}
             None => panic!("the watcher was disconnected"),
         }
     }
     let span = t0.elapsed().max(sent_in);
     let most = (span.as_secs_f64() / 0.033).ceil() as usize + 2;
-    assert!(got.len() <= most, "{} updates relayed in {span:?} (at most {most})", got.len());
+    assert!(
+        got.len() <= most,
+        "{} updates relayed in {span:?} (at most {most})",
+        got.len()
+    );
     assert!(got.len() < 200, "coalesced");
     assert_eq!(got.last(), Some(&199.0), "the last update always arrives");
     assert!(got.windows(2).all(|w| w[0] < w[1]), "in order");
@@ -329,43 +469,82 @@ fn leaving_and_dropping_clean_up() {
     bp.wait("welcome", welcomed);
     let ada = ap.me();
     a.presence(presence(1.0, 1.0));
-    hp.wait("Ada's cursor", |e| e.iter().any(|e| matches!(e, Event::Presence(id, _) if *id == ada)));
+    hp.wait("Ada's cursor", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Presence(id, _) if *id == ada))
+    });
     connections_settle(&host, 2);
     a.leave();
-    hp.wait("Ada left", |e| e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == ada)));
-    bp.wait("Bo sees Ada leave", |e| e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == ada)));
+    hp.wait("Ada left", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == ada))
+    });
+    bp.wait("Bo sees Ada leave", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == ada))
+    });
     connections_settle(&host, 1);
     // A connection that just vanishes (no close) counts as leaving too.
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut raw = Raw::hello(addr, TOKEN);
-    let Some(ServerMsg::Welcome { client_id: rid, .. }) = raw.next() else { panic!("no welcome") };
+    let Some(ServerMsg::Welcome { client_id: rid, .. }) = raw.next() else {
+        panic!("no welcome")
+    };
     drop(raw);
-    hp.wait("the dropped one left", |e| e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == rid)));
+    hp.wait("the dropped one left", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == rid))
+    });
     connections_settle(&host, 1);
     // A later newcomer doesn't see the leavers.
     let (_c, mut cp) = join(&invite, "Cy");
     cp.wait("welcome", welcomed);
-    let Some(Event::Welcome { peers, .. }) = cp.events.iter().find(|e| matches!(e, Event::Welcome { .. })) else { panic!("no welcome") };
+    let Some(Event::Welcome { peers, .. }) = cp
+        .events
+        .iter()
+        .find(|e| matches!(e, Event::Welcome { .. }))
+    else {
+        panic!("no welcome")
+    };
     assert_eq!(peers.len(), 2, "the host and Bo: {peers:?}");
     assert!(hp.left().contains(&ada));
     host.stop();
-    bp.wait("the end of the session", |e| e.iter().any(|e| matches!(e, Event::Ended { reason } if reason == ENDED)));
+    bp.wait("the end of the session", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Ended { reason } if reason == ENDED))
+    });
     assert_eq!(host.connections(), 0);
 }
 
 #[test]
 fn a_full_session_refuses_more() {
-    let (mut host, _hp, invite) = start_with(fast_limits(), Limits { max_peers: 2, ..Limits::default() });
+    let (mut host, _hp, invite) = start_with(
+        fast_limits(),
+        Limits {
+            max_peers: 2,
+            ..Limits::default()
+        },
+    );
     let (_a, mut ap) = join(&invite, "Ada");
     ap.wait("welcome", welcomed);
     let (_b, mut bp) = join(&invite, "Bo");
-    bp.wait("a refusal", |e| e.iter().any(|e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains("full"))));
+    bp.wait("a refusal", |e| {
+        e.iter().any(
+            |e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains("full")),
+        )
+    });
     host.stop();
 }
 
 #[test]
 fn too_many_connections_are_turned_away() {
-    let (mut host, _hp, invite) = start_with(NetLimits { max_connections: 2, ..fast_limits() }, Limits::default());
+    let (mut host, _hp, invite) = start_with(
+        NetLimits {
+            max_connections: 2,
+            ..fast_limits()
+        },
+        Limits::default(),
+    );
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut a = Raw::hello(addr, TOKEN);
     let mut b = Raw::hello(addr, TOKEN);
@@ -379,13 +558,30 @@ fn too_many_connections_are_turned_away() {
 
 #[test]
 fn oversized_messages_end_the_connection() {
-    let (mut host, mut hp, invite) = start_with(NetLimits { max_client_message: 4096, ..fast_limits() }, Limits::default());
+    let (mut host, mut hp, invite) = start_with(
+        NetLimits {
+            max_client_message: 4096,
+            ..fast_limits()
+        },
+        Limits::default(),
+    );
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut raw = Raw::hello(addr, TOKEN);
-    let Some(ServerMsg::Welcome { client_id, .. }) = raw.next() else { panic!("no welcome") };
-    raw.send(&ClientMsg::Presence(Presence { selection: Some((0..5000).map(NodeId).collect()), ..Presence::default() }));
-    assert!(raw.refusal().is_some_and(|r| r.starts_with("message too large")));
-    hp.wait("it left", |e| e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == client_id)));
+    let Some(ServerMsg::Welcome { client_id, .. }) = raw.next() else {
+        panic!("no welcome")
+    };
+    raw.send(&ClientMsg::Presence(Presence {
+        selection: Some((0..5000).map(NodeId).collect()),
+        ..Presence::default()
+    }));
+    assert!(
+        raw.refusal()
+            .is_some_and(|r| r.starts_with("message too large"))
+    );
+    hp.wait("it left", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == client_id))
+    });
     // The host still serves others.
     let (_a, mut ap) = join(&invite, "Ada");
     ap.wait("welcome", welcomed);
@@ -394,7 +590,14 @@ fn oversized_messages_end_the_connection() {
 
 #[test]
 fn flooding_ends_the_connection() {
-    let (mut host, _hp, invite) = start_with(NetLimits { rate: 5.0, burst: 20.0, ..fast_limits() }, Limits::default());
+    let (mut host, _hp, invite) = start_with(
+        NetLimits {
+            rate: 5.0,
+            burst: 20.0,
+            ..fast_limits()
+        },
+        Limits::default(),
+    );
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut raw = Raw::hello(addr, TOKEN);
     assert!(matches!(raw.next(), Some(ServerMsg::Welcome { .. })));
@@ -414,7 +617,10 @@ fn malformed_frames_are_refused() {
     // Garbage instead of a hello, a wrong wire version, text, and something other than a hello.
     type Case = (Box<dyn Fn(&mut Raw)>, &'static str);
     let cases: Vec<Case> = vec![
-        (Box::new(|r| assert!(r.send_bytes(vec![1, 255, 255, 255, 255, 9]))), "that message couldn't be read"),
+        (
+            Box::new(|r| assert!(r.send_bytes(vec![1, 255, 255, 255, 255, 9]))),
+            "that message couldn't be read",
+        ),
         (
             Box::new(|r| {
                 let mut b = message::encode(&Client::hello(FILE, TOKEN, "x", "")).unwrap();
@@ -423,8 +629,14 @@ fn malformed_frames_are_refused() {
             }),
             "that message couldn't be read",
         ),
-        (Box::new(|r| assert!(r.0.send(Message::Text("hello".into())).is_ok())), "only binary messages are spoken here"),
-        (Box::new(|r| assert!(r.send(&ClientMsg::Ping))), "say hello first"),
+        (
+            Box::new(|r| assert!(r.0.send(Message::Text("hello".into())).is_ok())),
+            "only binary messages are spoken here",
+        ),
+        (
+            Box::new(|r| assert!(r.send(&ClientMsg::Ping))),
+            "say hello first",
+        ),
     ];
     for (send, why) in cases {
         let mut raw = Raw::connect(addr);
@@ -435,7 +647,10 @@ fn malformed_frames_are_refused() {
     let mut raw = Raw::hello(addr, TOKEN);
     assert!(matches!(raw.next(), Some(ServerMsg::Welcome { .. })));
     assert!(raw.send_bytes(vec![1, 2, 200, 200, 200]));
-    assert_eq!(raw.refusal().as_deref(), Some("that message couldn't be read"));
+    assert_eq!(
+        raw.refusal().as_deref(),
+        Some("that message couldn't be read")
+    );
     connections_settle(&host, 0);
     host.stop();
 }
@@ -448,7 +663,10 @@ fn random_frames_never_hurt_the_host() {
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut runner = TestRunner::deterministic();
     let mut join_first = false;
-    let frames = proptest::collection::vec(proptest::collection::vec(proptest::num::u8::ANY, 0..200), 1..6);
+    let frames = proptest::collection::vec(
+        proptest::collection::vec(proptest::num::u8::ANY, 0..200),
+        1..6,
+    );
     for _ in 0..40 {
         let tree = frames.new_tree(&mut runner).unwrap();
         let mut raw = Raw::connect(addr);
@@ -475,7 +693,13 @@ fn random_frames_never_hurt_the_host() {
 
 #[test]
 fn silent_connections_time_out() {
-    let (mut host, _hp, invite) = start_with(NetLimits { hello_timeout: Duration::from_millis(200), ..fast_limits() }, Limits::default());
+    let (mut host, _hp, invite) = start_with(
+        NetLimits {
+            hello_timeout: Duration::from_millis(200),
+            ..fast_limits()
+        },
+        Limits::default(),
+    );
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut s = TcpStream::connect(addr).unwrap();
     s.set_read_timeout(Some(WAIT)).unwrap();
@@ -495,23 +719,46 @@ fn guests_reconnect_after_a_network_failure() {
     gp.wait("welcome", welcomed);
     let first = gp.me();
     host.cut_connections();
-    gp.wait("reconnecting", |e| e.iter().any(|e| matches!(e, Event::Status(Status::Reconnecting { attempt: 1 }))));
-    gp.wait("welcome again", |e| e.iter().filter(|e| matches!(e, Event::Welcome { .. })).count() >= 3);
+    gp.wait("reconnecting", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Status(Status::Reconnecting { attempt: 1 })))
+    });
+    gp.wait("welcome again", |e| {
+        e.iter()
+            .filter(|e| matches!(e, Event::Welcome { .. }))
+            .count()
+            >= 3
+    });
     let second = gp.me();
     assert_eq!(first, second, "a reconnect resumes as the same client");
     assert!(
-        gp.events.iter().any(|e| matches!(e, Event::Sync(ServerMsg::Welcome { catch_up: figcraft_collab::CatchUp::Delta(_), .. }))),
+        gp.events.iter().any(|e| matches!(
+            e,
+            Event::Sync(ServerMsg::Welcome {
+                catch_up: figcraft_collab::CatchUp::Delta(_),
+                ..
+            })
+        )),
         "it catches up with what it missed, not the whole file"
     );
     hp.wait("it left and came back", |e| {
-        e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == first))
-            && e.iter().filter(|e| matches!(e, Event::PeerJoined(p) if p.client_id == second)).count() >= 2
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == first))
+            && e.iter()
+                .filter(|e| matches!(e, Event::PeerJoined(p) if p.client_id == second))
+                .count()
+                >= 2
     });
     // Presence flows again on the new connection.
     g.presence(presence(9.0, 9.0));
-    hp.wait("the cursor again", |e| e.iter().any(|e| matches!(e, Event::Presence(id, _) if *id == second)));
+    hp.wait("the cursor again", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Presence(id, _) if *id == second))
+    });
     host.stop();
-    gp.wait("the end", |e| e.iter().any(|e| matches!(e, Event::Ended { .. })));
+    gp.wait("the end", |e| {
+        e.iter().any(|e| matches!(e, Event::Ended { .. }))
+    });
 }
 
 #[test]
@@ -531,12 +778,19 @@ fn throttle_and_bucket() {
     let now = Instant::now();
     assert!(b.take(now) && b.take(now) && b.take(now));
     assert!(!b.take(now));
-    assert!(b.take(now + Duration::from_millis(150)), "refills at the rate");
+    assert!(
+        b.take(now + Duration::from_millis(150)),
+        "refills at the rate"
+    );
 }
 
 #[test]
 fn quiet_guests_stay_and_silent_connections_are_dropped() {
-    let limits = NetLimits { idle_timeout: Duration::from_millis(600), keepalive: Duration::from_millis(150), ..fast_limits() };
+    let limits = NetLimits {
+        idle_timeout: Duration::from_millis(600),
+        keepalive: Duration::from_millis(150),
+        ..fast_limits()
+    };
     let (mut host, mut hp, invite) = start_with(limits, Limits::default());
     let probe = Probe::new();
     let mut cfg = quick(GuestConfig::new(invite.clone(), "Ada".into()));
@@ -547,13 +801,27 @@ fn quiet_guests_stay_and_silent_connections_are_dropped() {
     // A joined raw client that never says anything again.
     let addr: SocketAddr = invite.server.host.parse().unwrap();
     let mut raw = Raw::hello(addr, TOKEN);
-    let Some(ServerMsg::Welcome { client_id: silent, .. }) = raw.next() else { panic!("no welcome") };
-    hp.wait("the silent one is dropped", |e| e.iter().any(|e| matches!(e, Event::PeerLeft(id) if *id == silent)));
+    let Some(ServerMsg::Welcome {
+        client_id: silent, ..
+    }) = raw.next()
+    else {
+        panic!("no welcome")
+    };
+    hp.wait("the silent one is dropped", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::PeerLeft(id) if *id == silent))
+    });
     std::thread::sleep(Duration::from_millis(1500));
     gp.events.extend(gp.inbox.drain());
     hp.events.extend(hp.inbox.drain());
     let ada = gp.me();
-    assert!(!gp.events.iter().any(|e| matches!(e, Event::Status(Status::Reconnecting { .. }))), "pings keep a quiet guest in: {:?}", gp.events);
+    assert!(
+        !gp.events
+            .iter()
+            .any(|e| matches!(e, Event::Status(Status::Reconnecting { .. }))),
+        "pings keep a quiet guest in: {:?}",
+        gp.events
+    );
     assert!(!hp.left().contains(&ada));
     host.stop();
 }
@@ -562,15 +830,31 @@ fn quiet_guests_stay_and_silent_connections_are_dropped() {
 fn signals_reach_only_clients_that_read_them_and_are_rate_limited() {
     let (mut host, mut hp, invite) = start();
     let addr: SocketAddr = invite.server.host.parse().unwrap();
-    hp.wait("the host's own ready", |e| e.iter().any(|e| matches!(e, Event::Signal(_, s) if s.kind == Signal::READY)));
+    hp.wait("the host's own ready", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Signal(_, s) if s.kind == Signal::READY))
+    });
     // A client from before signals: its hello doesn't announce them.
     let mut old = Raw::connect(addr);
-    let ClientMsg::Hello(h) = Client::hello(FILE, TOKEN, "Old", "") else { panic!("not a hello") };
-    assert!(old.send(&ClientMsg::Hello(Hello { client_version: "0.3.1".into(), ..h })));
+    let ClientMsg::Hello(h) = Client::hello(FILE, TOKEN, "Old", "") else {
+        panic!("not a hello")
+    };
+    assert!(old.send(&ClientMsg::Hello(Hello {
+        client_version: "0.3.1".into(),
+        ..h
+    })));
     assert!(matches!(old.next(), Some(ServerMsg::Welcome { .. })));
     let mut new = Raw::hello(addr, TOKEN);
-    let Some(ServerMsg::Welcome { client_id: me, .. }) = new.next() else { panic!("no welcome") };
-    assert_eq!(new.next(), Some(ServerMsg::Signal { client_id: me, signal: Signal::ready() }));
+    let Some(ServerMsg::Welcome { client_id: me, .. }) = new.next() else {
+        panic!("no welcome")
+    };
+    assert_eq!(
+        new.next(),
+        Some(ServerMsg::Signal {
+            client_id: me,
+            signal: Signal::ready()
+        })
+    );
     // The host chats, then moves its pointer: the old client gets the pointer only.
     host.send(ClientMsg::Signal(Signal::chat("hi")));
     host.presence(presence(1.0, 2.0));
@@ -584,21 +868,58 @@ fn signals_reach_only_clients_that_read_them_and_are_rate_limited() {
         }
     };
     let old_got = until_presence(&mut old);
-    assert!(!old_got.iter().any(|m| matches!(m, ServerMsg::Signal { .. })), "{old_got:?}");
+    assert!(
+        !old_got
+            .iter()
+            .any(|m| matches!(m, ServerMsg::Signal { .. })),
+        "{old_got:?}"
+    );
     let new_got = until_presence(&mut new);
     let hana = host.me().client_id;
-    assert!(new_got.contains(&ServerMsg::Signal { client_id: hana, signal: Signal::chat("hi") }), "{new_got:?}");
+    assert!(
+        new_got.contains(&ServerMsg::Signal {
+            client_id: hana,
+            signal: Signal::chat("hi")
+        }),
+        "{new_got:?}"
+    );
     // A flood of signals: the excess is dropped (the connection stays), the host gets them cleaned.
     for i in 0..200 {
         assert!(new.send(&ClientMsg::Signal(Signal::chat(&format!("{i}\u{7}")))));
     }
     assert!(new.send(&ClientMsg::Presence(presence(3.0, 4.0))));
-    hp.wait("the flood's end", |e| e.iter().any(|e| matches!(e, Event::Presence(id, _) if *id == me)));
-    let chats: Vec<&Signal> = hp.events.iter().filter_map(|e| if let Event::Signal(id, s) = e { (*id == me).then_some(s) } else { None }).collect();
-    assert!(chats.len() >= 40 && chats.len() < 200, "{} of 200 got through", chats.len());
-    assert!(chats.iter().all(|s| s.kind == Signal::CHAT && s.text.ends_with(' ')), "cleaned on the way");
+    hp.wait("the flood's end", |e| {
+        e.iter()
+            .any(|e| matches!(e, Event::Presence(id, _) if *id == me))
+    });
+    let chats: Vec<&Signal> = hp
+        .events
+        .iter()
+        .filter_map(|e| {
+            if let Event::Signal(id, s) = e {
+                (*id == me).then_some(s)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert!(
+        chats.len() >= 40 && chats.len() < 200,
+        "{} of 200 got through",
+        chats.len()
+    );
+    assert!(
+        chats
+            .iter()
+            .all(|s| s.kind == Signal::CHAT && s.text.ends_with(' ')),
+        "cleaned on the way"
+    );
     assert!(new.send(&ClientMsg::Ping));
-    assert_eq!(until_presence_or_pong(&mut new), Some(ServerMsg::Pong), "still connected");
+    assert_eq!(
+        until_presence_or_pong(&mut new),
+        Some(ServerMsg::Pong),
+        "still connected"
+    );
     host.stop();
 }
 

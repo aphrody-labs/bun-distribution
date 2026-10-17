@@ -14,7 +14,12 @@ const MAX_SIDES: i64 = 10_000;
 /// The last value of a tag: a shape changed from one kind to another keeps a stale first block.
 fn last<'a>(r: &'a Reader, id: ObjId, tag: &[u8; 4]) -> Option<&'a Value> {
     let t = Tag::of(tag);
-    r.s.object(id)?.fields.iter().rev().find(|(k, _)| *k == t).map(|(_, v)| v)
+    r.s.object(id)?
+        .fields
+        .iter()
+        .rev()
+        .find(|(k, _)| *k == t)
+        .map(|(_, v)| v)
 }
 
 fn num(r: &Reader, id: ObjId, tag: &[u8; 4]) -> Option<f64> {
@@ -39,7 +44,11 @@ fn polygon(pts: impl IntoIterator<Item = Point>) -> Option<SubPath> {
     let mut it = pts.into_iter();
     let start = it.next()?;
     let segments = it.map(|p| [p, p, p]).collect();
-    Some(SubPath { start, segments, closed: true })
+    Some(SubPath {
+        start,
+        segments,
+        closed: true,
+    })
 }
 
 /// Outline of `shape` (a `Shpe` object) in the node box `b` = (x0, y0, x1, y1).
@@ -52,11 +61,23 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
     let sub = match &class.0.to_be_bytes() {
         b"ShNR" | b"ShRR" => {
             let types = match last(r, shape, b"CTyp") {
-                Some(Value::Array(a)) => a.iter().map(|t| if let Value::Enum { id, .. } = t { Some(*id) } else { None }).collect(),
+                Some(Value::Array(a)) => a
+                    .iter()
+                    .map(|t| {
+                        if let Value::Enum { id, .. } = t {
+                            Some(*id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
                 _ => Vec::new(),
             };
             let radii = match last(r, shape, b"ShCR") {
-                Some(Value::Floats(v)) => v.iter().map(|f| if f.is_finite() && *f > 0.0 { *f } else { 0.0 }).collect(),
+                Some(Value::Floats(v)) => v
+                    .iter()
+                    .map(|f| if f.is_finite() && *f > 0.0 { *f } else { 0.0 })
+                    .collect(),
                 _ => Vec::new(),
             };
             // Corners follow the first one (top left) unless they were unlocked; then each has
@@ -64,12 +85,18 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
             let locked = !matches!(last(r, shape, b"Lock"), Some(Value::Bool(false)));
             let corners: [(f64, Option<u16>); 4] = std::array::from_fn(|i| {
                 let i = if locked { 0 } else { i };
-                (radii.get(i).copied().unwrap_or(0.0), types.get(i).copied().flatten())
+                (
+                    radii.get(i).copied().unwrap_or(0.0),
+                    types.get(i).copied().flatten(),
+                )
             });
             if types.is_empty() || corners.iter().all(|(f, _)| *f == 0.0) {
                 polygon([pt(x0, y0), pt(x1, y0), pt(x1, y1), pt(x0, y1)])?
             } else {
-                if corners.iter().any(|(f, t)| *f > 0.0 && !matches!(t, Some(0 | 1 | 4))) {
+                if corners
+                    .iter()
+                    .any(|(f, t)| *f > 0.0 && !matches!(t, Some(0 | 1 | 4)))
+                {
                     r.warn("rectangles with concave or other corner types (imported with round corners)");
                 }
                 let absolute = r.s.bool(shape, b"AbSz") == Some(true);
@@ -95,18 +122,30 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
         b"ShPy" => {
             let n = sides(r, shape, b"Side", 5.0);
             let a = |i: usize| -FRAC_PI_2 + TAU * i as f64 / n as f64;
-            if r.s.object(shape).is_some_and(|_| matches!(last(r, shape, b"Smth"), Some(Value::Bool(true)))) {
+            if r.s
+                .object(shape)
+                .is_some_and(|_| matches!(last(r, shape, b"Smth"), Some(Value::Bool(true))))
+            {
                 // Smoothed: tangent handles of length curv·4/3·tan(π/2n) along the inscribed ellipse.
-                let k = num(r, shape, b"Curv").unwrap_or(0.0) * 4.0 / 3.0 * (PI / (2.0 * n as f64)).tan();
+                let k = num(r, shape, b"Curv").unwrap_or(0.0) * 4.0 / 3.0
+                    * (PI / (2.0 * n as f64)).tan();
                 let v = |i: usize| on_ellipse(a(i), 1.0);
                 let t = |i: usize| pt(-rx * a(i).sin(), ry * a(i).cos());
                 let segments = (0..n)
                     .map(|i| {
                         let (p, q, tp, tq) = (v(i), v(i + 1), t(i), t(i + 1));
-                        [pt(p.x + k * tp.x, p.y + k * tp.y), pt(q.x - k * tq.x, q.y - k * tq.y), q]
+                        [
+                            pt(p.x + k * tp.x, p.y + k * tp.y),
+                            pt(q.x - k * tq.x, q.y - k * tq.y),
+                            q,
+                        ]
                     })
                     .collect();
-                SubPath { start: v(0), segments, closed: true }
+                SubPath {
+                    start: v(0),
+                    segments,
+                    closed: true,
+                }
             } else {
                 polygon((0..n).map(|i| on_ellipse(a(i), 1.0)))?
             }
@@ -114,10 +153,18 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
         b"ShSt" => {
             let n = sides(r, shape, b"Pnts", 5.0);
             let q = num(r, shape, b"IRad").unwrap_or(0.382).clamp(0.0, 1.0);
-            if [b"CrcI", b"CrcO", b"CrvL", b"CrvR"].iter().any(|t| num(r, shape, t).is_some_and(|v| v.abs() > 1e-9)) {
+            if [b"CrcI", b"CrcO", b"CrvL", b"CrvR"]
+                .iter()
+                .any(|t| num(r, shape, t).is_some_and(|v| v.abs() > 1e-9))
+            {
                 r.warn("stars with rounded or curved points (imported with sharp points)");
             }
-            polygon((0..2 * n).map(|i| on_ellipse(-FRAC_PI_2 + PI * i as f64 / n as f64, if i % 2 == 0 { 1.0 } else { q })))?
+            polygon((0..2 * n).map(|i| {
+                on_ellipse(
+                    -FRAC_PI_2 + PI * i as f64 / n as f64,
+                    if i % 2 == 0 { 1.0 } else { q },
+                )
+            }))?
         }
         b"ShSS" => {
             let n = sides(r, shape, b"Side", 5.0);
@@ -127,7 +174,8 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
             polygon((0..n).flat_map(|k| {
                 let phi = -FRAC_PI_2 + step + TAU * k as f64 / n as f64;
                 let (c, s) = (phi.cos(), phi.sin());
-                [(inner, -hw), (l, -hw), (l, hw), (inner, hw)].map(|(u, v)| pt(cx + rx * (u * c - v * s), cy + ry * (u * s + v * c)))
+                [(inner, -hw), (l, -hw), (l, hw), (inner, hw)]
+                    .map(|(u, v)| pt(cx + rx * (u * c - v * s), cy + ry * (u * s + v * c)))
             }))?
         }
         b"ShPi" => {
@@ -152,19 +200,35 @@ pub(crate) fn shape(r: &mut Reader, shape: ObjId, b: [f64; 4], world: Affine) ->
             polygon([pt(x0 + p * w, y0), pt(x1, y1), pt(x0, y1)])?
         }
         b"ShTz" => {
-            let (l, rr) = (num(r, shape, b"PosL").unwrap_or(0.25), num(r, shape, b"PosR").unwrap_or(0.75));
-            polygon([pt(x0 + l * w, y0), pt(x0 + rr * w, y0), pt(x1, y1), pt(x0, y1)])?
+            let (l, rr) = (
+                num(r, shape, b"PosL").unwrap_or(0.25),
+                num(r, shape, b"PosR").unwrap_or(0.75),
+            );
+            polygon([
+                pt(x0 + l * w, y0),
+                pt(x0 + rr * w, y0),
+                pt(x1, y1),
+                pt(x0, y1),
+            ])?
         }
         _ => {
             r.warn("cloud, heart, cog, callout, arrow, tear and other special shapes (imported as their bounding ellipse)");
             ellipse(cx, cy, rx, ry)
         }
     };
-    Some(Path { subpaths: vec![sub] })
+    Some(Path {
+        subpaths: vec![sub],
+    })
 }
 
 pub(crate) fn rectangle(x0: f64, y0: f64, x1: f64, y1: f64) -> SubPath {
-    SubPath { start: pt(x0, y0), segments: [pt(x1, y0), pt(x1, y1), pt(x0, y1)].map(|p| [p, p, p]).to_vec(), closed: true }
+    SubPath {
+        start: pt(x0, y0),
+        segments: [pt(x1, y0), pt(x1, y1), pt(x0, y1)]
+            .map(|p| [p, p, p])
+            .to_vec(),
+        closed: true,
+    }
 }
 
 fn ellipse(cx: f64, cy: f64, rx: f64, ry: f64) -> SubPath {
@@ -188,15 +252,45 @@ fn cornered_rect([x0, y0, x1, y1]: [f64; 4], corners: [(f64, f64, bool); 4]) -> 
     let fit = |r: f64, pair: f64, side: f64| if pair > side { side * (r / pair) } else { r };
     let [tl, tr, br, bl] = corners;
     let (w, h) = (x1 - x0, y1 - y0);
-    let rx = [fit(tl.0, tl.0 + tr.0, w), fit(tr.0, tl.0 + tr.0, w), fit(br.0, bl.0 + br.0, w), fit(bl.0, bl.0 + br.0, w)];
-    let ry = [fit(tl.1, tl.1 + bl.1, h), fit(tr.1, tr.1 + br.1, h), fit(br.1, tr.1 + br.1, h), fit(bl.1, tl.1 + bl.1, h)];
+    let rx = [
+        fit(tl.0, tl.0 + tr.0, w),
+        fit(tr.0, tl.0 + tr.0, w),
+        fit(br.0, bl.0 + br.0, w),
+        fit(bl.0, bl.0 + br.0, w),
+    ];
+    let ry = [
+        fit(tl.1, tl.1 + bl.1, h),
+        fit(tr.1, tr.1 + br.1, h),
+        fit(br.1, tr.1 + br.1, h),
+        fit(bl.1, tl.1 + bl.1, h),
+    ];
     let (kx, ky) = (rx.map(|r| (1.0 - KAPPA) * r), ry.map(|r| (1.0 - KAPPA) * r));
     // (where the corner leaves the previous side, its two handles, where it joins the next side)
     let arcs = [
-        [pt(x1 - rx[1], y0), pt(x1 - kx[1], y0), pt(x1, y0 + ky[1]), pt(x1, y0 + ry[1])],
-        [pt(x1, y1 - ry[2]), pt(x1, y1 - ky[2]), pt(x1 - kx[2], y1), pt(x1 - rx[2], y1)],
-        [pt(x0 + rx[3], y1), pt(x0 + kx[3], y1), pt(x0, y1 - ky[3]), pt(x0, y1 - ry[3])],
-        [pt(x0, y0 + ry[0]), pt(x0, y0 + ky[0]), pt(x0 + kx[0], y0), pt(x0 + rx[0], y0)],
+        [
+            pt(x1 - rx[1], y0),
+            pt(x1 - kx[1], y0),
+            pt(x1, y0 + ky[1]),
+            pt(x1, y0 + ry[1]),
+        ],
+        [
+            pt(x1, y1 - ry[2]),
+            pt(x1, y1 - ky[2]),
+            pt(x1 - kx[2], y1),
+            pt(x1 - rx[2], y1),
+        ],
+        [
+            pt(x0 + rx[3], y1),
+            pt(x0 + kx[3], y1),
+            pt(x0, y1 - ky[3]),
+            pt(x0, y1 - ry[3]),
+        ],
+        [
+            pt(x0, y0 + ry[0]),
+            pt(x0, y0 + ky[0]),
+            pt(x0 + kx[0], y0),
+            pt(x0 + rx[0], y0),
+        ],
     ];
     let mut segments = Vec::with_capacity(8);
     for ([s, c1, c2, e], straight) in arcs.into_iter().zip([tr.2, br.2, bl.2, tl.2]) {
@@ -205,7 +299,11 @@ fn cornered_rect([x0, y0, x1, y1]: [f64; 4], corners: [(f64, f64, bool); 4]) -> 
             segments.push(if straight { [e, e, e] } else { [c1, c2, e] });
         }
     }
-    SubPath { start: pt(x0 + rx[0], y0), segments, closed: true }
+    SubPath {
+        start: pt(x0 + rx[0], y0),
+        segments,
+        closed: true,
+    }
 }
 
 /// Elliptical arc from angle `a0` to `a1` (radians, measured y-up as Affinity's pie angles are),
@@ -219,7 +317,11 @@ fn arc(cx: f64, cy: f64, rx: f64, ry: f64, a0: f64, a1: f64, out: &mut Vec<[Poin
     for i in 0..n {
         let (s, e) = (a0 + step * i as f64, a0 + step * (i + 1) as f64);
         let (ps, pe, ds, de) = (p(s), p(e), d(s), d(e));
-        out.push([pt(ps.x + k * ds.x, ps.y + k * ds.y), pt(pe.x - k * de.x, pe.y - k * de.y), pe]);
+        out.push([
+            pt(ps.x + k * ds.x, ps.y + k * ds.y),
+            pt(pe.x - k * de.x, pe.y - k * de.y),
+            pe,
+        ]);
     }
 }
 
@@ -235,14 +337,25 @@ fn pie(cx: f64, cy: f64, rx: f64, ry: f64, a0: f64, a1: f64, inner: f64) -> SubP
         let c = pt(cx, cy);
         segments.push([c, c, c]);
     }
-    SubPath { start, segments, closed: true }
+    SubPath {
+        start,
+        segments,
+        closed: true,
+    }
 }
 
 /// A polyline with circular corners of the given radii (Affinity's live corners on curves).
 pub(crate) fn fillet(pts: &[(Point, f64)], closed: bool) -> SubPath {
     let n = pts.len();
     let get = |i: isize| -> Option<Point> {
-        if closed { pts.get(i.rem_euclid(n as isize) as usize).map(|p| p.0) } else { usize::try_from(i).ok().and_then(|i| pts.get(i)).map(|p| p.0) }
+        if closed {
+            pts.get(i.rem_euclid(n as isize) as usize).map(|p| p.0)
+        } else {
+            usize::try_from(i)
+                .ok()
+                .and_then(|i| pts.get(i))
+                .map(|p| p.0)
+        }
     };
     let mut corners: Vec<(Point, Point, Point, Point)> = Vec::with_capacity(n);
     for (i, (p, radius)) in pts.iter().enumerate() {
@@ -264,9 +377,20 @@ pub(crate) fn fillet(pts: &[(Point, f64)], closed: bool) -> SubPath {
         let k = 4.0 / 3.0 * ((PI - phi) / 4.0).tan() * r;
         let s = pt(p.x + u1.x * t, p.y + u1.y * t);
         let e = pt(p.x + u2.x * t, p.y + u2.y * t);
-        corners.push((s, pt(s.x - u1.x * k, s.y - u1.y * k), pt(e.x - u2.x * k, e.y - u2.y * k), e));
+        corners.push((
+            s,
+            pt(s.x - u1.x * k, s.y - u1.y * k),
+            pt(e.x - u2.x * k, e.y - u2.y * k),
+            e,
+        ));
     }
-    let Some(first) = corners.first().copied() else { return SubPath { start: pt(0.0, 0.0), segments: vec![], closed } };
+    let Some(first) = corners.first().copied() else {
+        return SubPath {
+            start: pt(0.0, 0.0),
+            segments: vec![],
+            closed,
+        };
+    };
     let mut segments = Vec::with_capacity(2 * n);
     let mut cur = first.0;
     let start = cur;
@@ -282,11 +406,19 @@ pub(crate) fn fillet(pts: &[(Point, f64)], closed: bool) -> SubPath {
     if closed && cur != start {
         segments.push([cur, start, start]);
     }
-    SubPath { start, segments, closed }
+    SubPath {
+        start,
+        segments,
+        closed,
+    }
 }
 
 fn unit(from: Point, to: Point) -> (Point, f64) {
     let (dx, dy) = (to.x - from.x, to.y - from.y);
     let l = (dx * dx + dy * dy).sqrt();
-    if l > 0.0 { (pt(dx / l, dy / l), l) } else { (pt(0.0, 0.0), 0.0) }
+    if l > 0.0 {
+        (pt(dx / l, dy / l), l)
+    } else {
+        (pt(0.0, 0.0), 0.0)
+    }
 }

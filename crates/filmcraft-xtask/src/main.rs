@@ -109,18 +109,33 @@ const SAME_LAYER: &[(&str, &str)] = &[
 ];
 
 /// Crates that must not appear below L5 (UI toolkits, windowing, OS audio/menus).
-const UI_ONLY: &[&str] = &["craft-ui", "egui", "eframe", "egui-wgpu", "winit", "rfd", "cpal", "muda"];
+const UI_ONLY: &[&str] = &[
+    "craft-ui",
+    "egui",
+    "eframe",
+    "egui-wgpu",
+    "winit",
+    "rfd",
+    "cpal",
+    "muda",
+];
 
 fn short(name: &str) -> &str {
     name.strip_prefix("filmcraft-").unwrap_or(name)
 }
 
 fn layer_of(name: &str) -> Option<u8> {
-    LAYERS.iter().find(|(n, _)| *n == short(name)).map(|(_, l)| *l)
+    LAYERS
+        .iter()
+        .find(|(n, _)| *n == short(name))
+        .map(|(_, l)| *l)
 }
 
 fn metadata() -> Result<Value, String> {
-    let out = Command::new(env!("CARGO")).args(["metadata", "--format-version", "1", "--no-deps"]).output().map_err(|e| e.to_string())?;
+    let out = Command::new(env!("CARGO"))
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .output()
+        .map_err(|e| e.to_string())?;
     if !out.status.success() {
         return Err(String::from_utf8_lossy(&out.stderr).into());
     }
@@ -151,7 +166,9 @@ fn layers() -> Result<(), String> {
     let mut errors = Vec::new();
     for (name, deps) in workspace_crates(&md) {
         let Some(l) = layer_of(&name) else {
-            errors.push(format!("{name}: not assigned a layer (add it to xtask LAYERS and docs/architecture.md §1)"));
+            errors.push(format!(
+                "{name}: not assigned a layer (add it to xtask LAYERS and docs/architecture.md §1)"
+            ));
             continue;
         };
         for d in &deps {
@@ -164,11 +181,15 @@ fn layers() -> Result<(), String> {
             let Some(dl) = layer_of(d) else { continue };
             let (a, b) = (short(&name), short(d));
             if l == 0 && !L0_FOUNDATION.contains(&a) && b != "bitstream" {
-                errors.push(format!("{a} (L0 codec/container) may depend only on bitstream, found {b}"));
+                errors.push(format!(
+                    "{a} (L0 codec/container) may depend only on bitstream, found {b}"
+                ));
             } else if dl > l {
                 errors.push(format!("{a} (L{l}) depends upward on {b} (L{dl})"));
             } else if dl == l && l > 0 && !SAME_LAYER.contains(&(a, b)) {
-                errors.push(format!("{a} → {b}: same-layer edge (L{l}) not in the allowed list"));
+                errors.push(format!(
+                    "{a} → {b}: same-layer edge (L{l}) not in the allowed list"
+                ));
             }
         }
     }
@@ -182,50 +203,78 @@ fn layers() -> Result<(), String> {
 
 /// File extensions that count as assets (AGENTS.md §1).
 const ASSET_EXT: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "icns", "bmp", "tif", "tiff", "heic", "avif", "exr", "ttf", "otf", "ttc", "woff", "woff2", "cube",
-    "3dl", "lut", "look", "wav", "mp3", "aac", "flac", "ogg", "opus", "m4a", "aif", "aiff", "mp4", "mov", "m4v", "mkv", "webm", "avi", "mxf", "psd", "ai",
-    "eps", "pdf", "prproj", "ffx", "prfpset", "mogrt", "aep",
+    "png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "icns", "bmp", "tif", "tiff", "heic",
+    "avif", "exr", "ttf", "otf", "ttc", "woff", "woff2", "cube", "3dl", "lut", "look", "wav",
+    "mp3", "aac", "flac", "ogg", "opus", "m4a", "aif", "aiff", "mp4", "mov", "m4v", "mkv", "webm",
+    "avi", "mxf", "psd", "ai", "eps", "pdf", "prproj", "ffx", "prfpset", "mogrt", "aep",
 ];
 
 /// Sidecar fields that must be present and non-empty.
 const REQUIRED_FIELDS: &[&str] = &["asset", "title", "author", "source", "license", "added"];
 
 fn repo_files() -> Result<Vec<String>, String> {
-    let out = Command::new("git").args(["ls-files", "--cached", "--others", "--exclude-standard"]).output().map_err(|e| e.to_string())?;
+    let out = Command::new("git")
+        .args(["ls-files", "--cached", "--others", "--exclude-standard"])
+        .output()
+        .map_err(|e| e.to_string())?;
     if !out.status.success() {
         return Err(String::from_utf8_lossy(&out.stderr).into());
     }
-    Ok(String::from_utf8_lossy(&out.stdout).lines().map(str::to_string).filter(|f| std::path::Path::new(f).exists()).collect())
+    Ok(String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(str::to_string)
+        .filter(|f| std::path::Path::new(f).exists())
+        .collect())
 }
 
 fn is_asset(path: &str) -> bool {
-    std::path::Path::new(path).extension().and_then(|e| e.to_str()).is_some_and(|e| ASSET_EXT.contains(&e.to_ascii_lowercase().as_str()))
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| ASSET_EXT.contains(&e.to_ascii_lowercase().as_str()))
 }
 
 fn assets() -> Result<(), String> {
     let files = repo_files()?;
-    let index = std::fs::read_to_string("ATTRIBUTION.md").map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
+    let index =
+        std::fs::read_to_string("ATTRIBUTION.md").map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
     let mut errors = Vec::new();
     let mut n = 0;
     for f in files.iter().filter(|f| is_asset(f)) {
         n += 1;
         let lower = f.to_ascii_lowercase();
         if lower.contains("adobe") || lower.contains("premiere") {
-            errors.push(format!("{f}: asset paths must not reference Adobe/Premiere (AGENTS.md §1)"));
+            errors.push(format!(
+                "{f}: asset paths must not reference Adobe/Premiere (AGENTS.md §1)"
+            ));
         }
         let side = format!("{f}.attribution");
         match std::fs::read_to_string(&side) {
             Err(_) => errors.push(format!("{f}: missing attribution sidecar {side}")),
             Ok(text) => {
                 for field in REQUIRED_FIELDS {
-                    let ok = text.lines().any(|l| l.split_once(':').is_some_and(|(k, v)| k.trim() == *field && !v.trim().is_empty()));
+                    let ok = text.lines().any(|l| {
+                        l.split_once(':')
+                            .is_some_and(|(k, v)| k.trim() == *field && !v.trim().is_empty())
+                    });
                     if !ok {
                         errors.push(format!("{side}: field `{field}` missing or empty"));
                     }
                 }
-                let lic = text.lines().find_map(|l| l.split_once(':').filter(|(k, _)| k.trim() == "license").map(|(_, v)| v.trim().to_ascii_lowercase()));
-                if lic.is_some_and(|l| l.contains("-nc") || l.contains("-nd") || l.contains("adobe") || l.contains("proprietary")) {
-                    errors.push(format!("{side}: licence not allowed (no NC/ND, Adobe or proprietary licences)"));
+                let lic = text.lines().find_map(|l| {
+                    l.split_once(':')
+                        .filter(|(k, _)| k.trim() == "license")
+                        .map(|(_, v)| v.trim().to_ascii_lowercase())
+                });
+                if lic.is_some_and(|l| {
+                    l.contains("-nc")
+                        || l.contains("-nd")
+                        || l.contains("adobe")
+                        || l.contains("proprietary")
+                }) {
+                    errors.push(format!(
+                        "{side}: licence not allowed (no NC/ND, Adobe or proprietary licences)"
+                    ));
                 }
             }
         }
@@ -250,7 +299,11 @@ fn assets() -> Result<(), String> {
 fn run(cmd: &mut Command) -> Result<(), String> {
     eprintln!("$ {cmd:?}");
     let st = cmd.status().map_err(|e| e.to_string())?;
-    if st.success() { Ok(()) } else { Err(format!("failed: {cmd:?}")) }
+    if st.success() {
+        Ok(())
+    } else {
+        Err(format!("failed: {cmd:?}"))
+    }
 }
 
 /// Crates above L4 that must also build for the web.
@@ -279,16 +332,30 @@ fn wasm() -> Result<(), String> {
 const WASM_BINDGEN: &str = "0.2.129";
 
 fn target_dir() -> std::path::PathBuf {
-    std::env::var_os("CARGO_TARGET_DIR").map(std::path::PathBuf::from).unwrap_or_else(|| std::path::PathBuf::from("target"))
+    std::env::var_os("CARGO_TARGET_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::PathBuf::from("target"))
 }
 
 /// Build the web app into `<target>/web/dist` (see docs/web.md).
 fn web(args: &[String]) -> Result<(), String> {
     let dev = args.iter().any(|a| a == "--dev");
-    let serve = args.iter().position(|a| a == "--serve").map(|i| args.get(i + 1).and_then(|p| p.parse::<u16>().ok()).unwrap_or(8765));
+    let serve = args.iter().position(|a| a == "--serve").map(|i| {
+        args.get(i + 1)
+            .and_then(|p| p.parse::<u16>().ok())
+            .unwrap_or(8765)
+    });
     let profile = if dev { "dev" } else { "release" };
     let mut build = Command::new(env!("CARGO"));
-    build.args(["build", "--target", "wasm32-unknown-unknown", "-p", "filmcraft-web", "--profile", profile]);
+    build.args([
+        "build",
+        "--target",
+        "wasm32-unknown-unknown",
+        "-p",
+        "filmcraft-web",
+        "--profile",
+        profile,
+    ]);
     run(&mut build)?;
     let out = Command::new("wasm-bindgen")
         .arg("--version")
@@ -302,17 +369,29 @@ fn web(args: &[String]) -> Result<(), String> {
         ));
     }
     let dir = if dev { "debug" } else { "release" };
-    let wasm = target_dir().join("wasm32-unknown-unknown").join(dir).join("filmcraft_web.wasm");
+    let wasm = target_dir()
+        .join("wasm32-unknown-unknown")
+        .join(dir)
+        .join("filmcraft_web.wasm");
     let dist = target_dir().join("web").join("dist");
     let _ = std::fs::remove_dir_all(&dist);
     std::fs::create_dir_all(&dist).map_err(|e| e.to_string())?;
-    run(Command::new("wasm-bindgen").args(["--target", "web", "--no-typescript", "--out-dir"]).arg(&dist).arg(&wasm))?;
+    run(Command::new("wasm-bindgen")
+        .args(["--target", "web", "--no-typescript", "--out-dir"])
+        .arg(&dist)
+        .arg(&wasm))?;
     let bg = dist.join("filmcraft_web_bg.wasm");
     if !dev && Command::new("wasm-opt").arg("--version").output().is_ok() {
         // optional: smaller and faster (binaryen); skipped when not installed
         let opt = dist.join("filmcraft_web_opt.wasm");
         run(Command::new("wasm-opt")
-            .args(["-O2", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-sign-ext", "--enable-mutable-globals"])
+            .args([
+                "-O2",
+                "--enable-bulk-memory",
+                "--enable-nontrapping-float-to-int",
+                "--enable-sign-ext",
+                "--enable-mutable-globals",
+            ])
             .arg(&bg)
             .arg("-o")
             .arg(&opt))?;
@@ -334,14 +413,24 @@ fn web(args: &[String]) -> Result<(), String> {
         let name = e.file_name().to_string_lossy().to_string();
         if name == "index.html" {
             let html = std::fs::read_to_string(e.path()).map_err(|e| format!("{name}: {e}"))?;
-            std::fs::write(dist.join(&name), html.replace("__FC_BUILD__", &build)).map_err(|e| format!("{name}: {e}"))?;
+            std::fs::write(dist.join(&name), html.replace("__FC_BUILD__", &build))
+                .map_err(|e| format!("{name}: {e}"))?;
         } else if !name.ends_with(".attribution") {
             std::fs::copy(e.path(), dist.join(&name)).map_err(|e| format!("{name}: {e}"))?;
         }
     }
     let size = |p: &std::path::Path| std::fs::metadata(p).map(|m| m.len()).unwrap_or(0);
-    let total: u64 = std::fs::read_dir(&dist).map_err(|e| e.to_string())?.flatten().map(|e| size(&e.path())).sum();
-    println!("web: {} ({:.1} MB wasm, {:.1} MB total)", dist.display(), size(&bg) as f64 / 1e6, total as f64 / 1e6);
+    let total: u64 = std::fs::read_dir(&dist)
+        .map_err(|e| e.to_string())?
+        .flatten()
+        .map(|e| size(&e.path()))
+        .sum();
+    println!(
+        "web: {} ({:.1} MB wasm, {:.1} MB total)",
+        dist.display(),
+        size(&bg) as f64 / 1e6,
+        total as f64 / 1e6
+    );
     if let Some(port) = serve {
         serve_dir(&dist, port)?;
     }
@@ -352,7 +441,8 @@ fn web(args: &[String]) -> Result<(), String> {
 /// isolation headers so `crossOriginIsolated` is true, like a production deployment would.
 fn serve_dir(dir: &std::path::Path, port: u16) -> Result<(), String> {
     use std::io::{BufRead, BufReader, Write};
-    let listener = std::net::TcpListener::bind(("127.0.0.1", port)).map_err(|e| format!("127.0.0.1:{port}: {e}"))?;
+    let listener = std::net::TcpListener::bind(("127.0.0.1", port))
+        .map_err(|e| format!("127.0.0.1:{port}: {e}"))?;
     println!("serving {} on http://127.0.0.1:{port}/", dir.display());
     for stream in listener.incoming().flatten() {
         let dir = dir.to_path_buf();
@@ -372,8 +462,19 @@ fn serve_dir(dir: &std::path::Path, port: u16) -> Result<(), String> {
                     break;
                 }
             }
-            let path = line.split_whitespace().nth(1).unwrap_or("/").split(['?', '#']).next().unwrap_or("/").to_string();
-            let rel = if path == "/" { "index.html".to_string() } else { path.trim_start_matches('/').replace("..", "") };
+            let path = line
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("/")
+                .split(['?', '#'])
+                .next()
+                .unwrap_or("/")
+                .to_string();
+            let rel = if path == "/" {
+                "index.html".to_string()
+            } else {
+                path.trim_start_matches('/').replace("..", "")
+            };
             let file = dir.join(&rel);
             let (status, body) = match std::fs::read(&file) {
                 Ok(b) => ("200 OK", b),
@@ -394,7 +495,9 @@ fn serve_dir(dir: &std::path::Path, port: u16) -> Result<(), String> {
                 "HTTP/1.1 {status}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nCross-Origin-Opener-Policy: same-origin\r\nCross-Origin-Embedder-Policy: require-corp\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n",
                 body.len()
             );
-            let _ = stream.write_all(head.as_bytes()).and_then(|_| stream.write_all(&body));
+            let _ = stream
+                .write_all(head.as_bytes())
+                .and_then(|_| stream.write_all(&body));
         });
     }
     Ok(())
@@ -417,27 +520,55 @@ const FIXTURE_GENERATORS: &[(&str, &str)] = &[
 ];
 
 fn fixtures(only: &[String]) -> Result<(), String> {
-    let unknown: Vec<&String> = only.iter().filter(|o| !FIXTURE_GENERATORS.iter().any(|(c, _)| *c == short(o))).collect();
+    let unknown: Vec<&String> = only
+        .iter()
+        .filter(|o| !FIXTURE_GENERATORS.iter().any(|(c, _)| *c == short(o)))
+        .collect();
     if !unknown.is_empty() {
         let known: Vec<&str> = FIXTURE_GENERATORS.iter().map(|(c, _)| *c).collect();
-        return Err(format!("no fixture generator for {unknown:?} (known: {})", known.join(", ")));
+        return Err(format!(
+            "no fixture generator for {unknown:?} (known: {})",
+            known.join(", ")
+        ));
     }
     let Some(ff) = filmcraft_testkit::ffmpeg() else {
-        return Err("ffmpeg not found: set FILMCRAFT_FFMPEG=/path/to/ffmpeg or put ffmpeg on PATH".into());
+        return Err(
+            "ffmpeg not found: set FILMCRAFT_FFMPEG=/path/to/ffmpeg or put ffmpeg on PATH".into(),
+        );
     };
     println!("ffmpeg:   {}", ff.display());
-    println!("fixtures: {}", filmcraft_testkit::fixtures::fixtures_root().display());
+    println!(
+        "fixtures: {}",
+        filmcraft_testkit::fixtures::fixtures_root().display()
+    );
     let (mut made, mut cached, mut skipped) = (0, 0, 0);
     let mut failed = Vec::new();
-    for (krate, target) in FIXTURE_GENERATORS.iter().filter(|(c, _)| only.is_empty() || only.iter().any(|o| short(o) == *c)) {
+    for (krate, target) in FIXTURE_GENERATORS
+        .iter()
+        .filter(|(c, _)| only.is_empty() || only.iter().any(|o| short(o) == *c))
+    {
         let pkg = format!("filmcraft-{krate}");
         println!("\n== {pkg} ({target})");
         let mut cmd = Command::new(env!("CARGO"));
-        cmd.args(["test", "--release", "-p", &pkg, "--test", target, "--", "--ignored", "--exact", "generate_fixtures", "--nocapture"]);
+        cmd.args([
+            "test",
+            "--release",
+            "-p",
+            &pkg,
+            "--test",
+            target,
+            "--",
+            "--ignored",
+            "--exact",
+            "generate_fixtures",
+            "--nocapture",
+        ]);
         cmd.stderr(std::process::Stdio::inherit());
         let out = cmd.output().map_err(|e| e.to_string())?;
         for line in String::from_utf8_lossy(&out.stdout).lines() {
-            let Some(rest) = line.strip_prefix("FIXTURE ") else { continue };
+            let Some(rest) = line.strip_prefix("FIXTURE ") else {
+                continue;
+            };
             match rest.split_whitespace().next() {
                 Some("made") => made += 1,
                 Some("cached") => cached += 1,
@@ -450,13 +581,28 @@ fn fixtures(only: &[String]) -> Result<(), String> {
         }
     }
     println!("\nfixtures: {made} made, {cached} already present, {skipped} skipped");
-    if failed.is_empty() { Ok(()) } else { Err(format!("fixture generation failed in {}", failed.join(", "))) }
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "fixture generation failed in {}",
+            failed.join(", ")
+        ))
+    }
 }
 
 fn ci() -> Result<(), String> {
     let cargo = env!("CARGO");
     run(Command::new(cargo).args(["fmt", "--check"]))?;
-    run(Command::new(cargo).args(["clippy", "--workspace", "--all-targets", "--release", "--", "-D", "warnings"]))?;
+    run(Command::new(cargo).args([
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--release",
+        "--",
+        "-D",
+        "warnings",
+    ]))?;
     run(Command::new(cargo).args(["test", "--workspace", "--release"]))?;
     layers()?;
     assets()?;
@@ -467,7 +613,17 @@ fn ci() -> Result<(), String> {
 /// arguments go to the benchmark (`cargo xtask bench-playback --scenario stack3 --res full`).
 fn bench_playback() -> Result<(), String> {
     let extra: Vec<String> = std::env::args().skip(2).collect();
-    run(Command::new(env!("CARGO")).args(["run", "--release", "-p", "filmcraft-ui-egui", "--example", "bench_playback", "--"]).args(&extra))
+    run(Command::new(env!("CARGO"))
+        .args([
+            "run",
+            "--release",
+            "-p",
+            "filmcraft-ui-egui",
+            "--example",
+            "bench_playback",
+            "--",
+        ])
+        .args(&extra))
 }
 
 /// The benchmark suite (`crates/ui-egui/examples/bench/`): decode, playback, scrubbing, timeline
@@ -475,12 +631,25 @@ fn bench_playback() -> Result<(), String> {
 /// (`cargo xtask bench --sections decode,scrub --repeat 3 --label after`). See docs/performance.md.
 fn bench() -> Result<(), String> {
     let extra: Vec<String> = std::env::args().skip(2).collect();
-    run(Command::new(env!("CARGO")).args(["run", "--release", "-p", "filmcraft-ui-egui", "--example", "bench", "--"]).args(&extra))
+    run(Command::new(env!("CARGO"))
+        .args([
+            "run",
+            "--release",
+            "-p",
+            "filmcraft-ui-egui",
+            "--example",
+            "bench",
+            "--",
+        ])
+        .args(&extra))
 }
 
 /// The workspace root (the parent of `xtask/`).
 fn root() -> std::path::PathBuf {
-    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("xtask lives in the workspace").to_path_buf()
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("xtask lives in the workspace")
+        .to_path_buf()
 }
 
 fn main() -> ExitCode {
@@ -525,9 +694,13 @@ mod tests {
     use std::path::Path;
 
     fn macos_packaging(file: &str) -> String {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../apps/filmcraft/packaging/macos").join(file);
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../apps/filmcraft/packaging/macos")
+            .join(file);
         // Git may check out packaging files with CRLF on Windows.
-        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display())).replace("\r\n", "\n")
+        std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+            .replace("\r\n", "\n")
     }
 
     /// Voice-over recording needs both halves on macOS: the usage string (else the permission
@@ -538,6 +711,8 @@ mod tests {
         let plist = macos_packaging("Info.plist.in");
         assert!(plist.contains("<key>NSMicrophoneUsageDescription</key>"));
         let entitlements = macos_packaging("entitlements.plist");
-        assert!(entitlements.contains("<key>com.apple.security.device.audio-input</key>\n  <true/>"));
+        assert!(
+            entitlements.contains("<key>com.apple.security.device.audio-input</key>\n  <true/>")
+        );
     }
 }

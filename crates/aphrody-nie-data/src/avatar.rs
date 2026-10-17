@@ -36,7 +36,7 @@ pub fn category_resource_prefix(config: &CharaEditConfig, setting_type: i64) -> 
                     .take_while(|(left, right)| left == right)
                     .count();
                 current[..bytes].to_string()
-            },
+            }
         });
     }
     match prefix {
@@ -65,7 +65,7 @@ pub fn numeric_table_by_hash(root: &Value, node_prefix: &str) -> BTreeMap<u32, V
             object.get("variables").and_then(Value::as_array),
         ) {
             match name.starts_with(node_prefix) {
-                false => {},
+                false => {}
                 true => {
                     let numbers: Vec<f64> = variables
                         .iter()
@@ -85,7 +85,7 @@ pub fn numeric_table_by_hash(root: &Value, node_prefix: &str) -> BTreeMap<u32, V
                         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                         out.insert(*hash as i64 as u32, remaining.to_vec());
                     }
-                },
+                }
             }
         }
         for key in ["children", "entries"] {
@@ -113,8 +113,12 @@ pub fn category_screen(resource_prefix: &str, screens: &[String]) -> Option<Stri
             .filter_map(|screen| {
                 let tail = screen.strip_prefix("chara_edit_parts_menu_")?;
                 let core = tail.strip_suffix("_list").unwrap_or(tail);
-                (if exact { core == stem } else { stem.starts_with(core) })
-                    .then(|| (core.len(), screen.clone()))
+                (if exact {
+                    core == stem
+                } else {
+                    stem.starts_with(core)
+                })
+                .then(|| (core.len(), screen.clone()))
             })
             .max_by_key(|(length, _)| *length)
             .map(|(_, screen)| screen)
@@ -178,7 +182,9 @@ pub fn unique_known_labels(
 #[must_use]
 pub fn asset_family(path: &str, prefix: &str) -> String {
     let remainder = path.split(prefix).nth(1).unwrap_or(path);
-    remainder.split_once('/').map_or_else(|| ".".to_string(), |(family, _)| family.to_string())
+    remainder
+        .split_once('/')
+        .map_or_else(|| ".".to_string(), |(family, _)| family.to_string())
 }
 
 /// Fields used from the existing resolved catalogue; unrelated export fields remain compatible.
@@ -432,12 +438,12 @@ impl fmt::Display for AvatarResolveError {
             Self::UnknownCategory { category } => write!(f, "Unknown avatar category: {category}"),
             Self::UnknownPart { category, id } => {
                 write!(f, "Unknown part {id} in category {category}")
-            },
+            }
             Self::InvalidResource { path } => write!(f, "Invalid avatar resource: {path}"),
             Self::MissingResource { kind } => write!(f, "Missing avatar resource: {kind}"),
             Self::InvalidColor { category } => {
                 write!(f, "Invalid avatar color in category {category}")
-            },
+            }
         }
     }
 }
@@ -445,7 +451,9 @@ impl fmt::Display for AvatarResolveError {
 impl core::error::Error for AvatarResolveError {}
 
 fn invalid_state(field: &str) -> AvatarResolveError {
-    AvatarResolveError::InvalidState { field: field.to_string() }
+    AvatarResolveError::InvalidState {
+        field: field.to_string(),
+    }
 }
 
 fn valid_profile_text(value: &str) -> bool {
@@ -472,17 +480,29 @@ fn validate_profile(
     if profile.element.is_some_and(|element| element > 3) {
         return Err(invalid_state("profile.element"));
     }
-    if profile.main_position.is_some_and(|position| !(1..=4).contains(&position)) {
+    if profile
+        .main_position
+        .is_some_and(|position| !(1..=4).contains(&position))
+    {
         return Err(invalid_state("profile.mainPosition"));
     }
-    if profile.sub_position.is_some_and(|position| !(1..=4).contains(&position)) {
+    if profile
+        .sub_position
+        .is_some_and(|position| !(1..=4).contains(&position))
+    {
         return Err(invalid_state("profile.subPosition"));
     }
-    if profile.personality.is_some_and(|index| index >= catalog.personalities.len()) {
+    if profile
+        .personality
+        .is_some_and(|index| index >= catalog.personalities.len())
+    {
         return Err(invalid_state("profile.personality"));
     }
     if let Some(index) = profile.voice {
-        let voice = catalog.voices.get(index).ok_or_else(|| invalid_state("profile.voice"))?;
+        let voice = catalog
+            .voices
+            .get(index)
+            .ok_or_else(|| invalid_state("profile.voice"))?;
         if voice.gender != i64::from(state.gender) + 1 {
             return Err(invalid_state("profile.voice"));
         }
@@ -504,7 +524,9 @@ fn validate_profile(
 }
 
 fn missing(kind: &str) -> AvatarResolveError {
-    AvatarResolveError::MissingResource { kind: kind.to_string() }
+    AvatarResolveError::MissingResource {
+        kind: kind.to_string(),
+    }
 }
 
 fn category(catalog: &AvatarCatalog, setting: u32) -> Result<&AvatarCategory, AvatarResolveError> {
@@ -519,10 +541,20 @@ fn selected<'a>(
     category: &'a AvatarCategory,
     state: &AvatarState,
 ) -> Result<Option<&'a AvatarPart>, AvatarResolveError> {
-    match state.selections.get(&category.setting_type).filter(|id| !id.is_empty()) {
-        Some(id) => category.parts.iter().find(|p| p.id == *id).map(Some).ok_or_else(|| {
-            AvatarResolveError::UnknownPart { category: category.setting_type, id: id.clone() }
-        }),
+    match state
+        .selections
+        .get(&category.setting_type)
+        .filter(|id| !id.is_empty())
+    {
+        Some(id) => category
+            .parts
+            .iter()
+            .find(|p| p.id == *id)
+            .map(Some)
+            .ok_or_else(|| AvatarResolveError::UnknownPart {
+                category: category.setting_type,
+                id: id.clone(),
+            }),
         None => Ok(None),
     }
 }
@@ -544,7 +576,11 @@ fn selected_or_default<'a>(
     }
     let first = category.parts.first();
     if first.is_some() {
-        warn(warnings, AvatarWarningCode::UnverifiedDefaultPart, Some(category.setting_type));
+        warn(
+            warnings,
+            AvatarWarningCode::UnverifiedDefaultPart,
+            Some(category.setting_type),
+        );
     }
     Ok(first)
 }
@@ -552,7 +588,9 @@ fn selected_or_default<'a>(
 fn token(value: &str, max: usize) -> bool {
     !value.is_empty()
         && value.len() <= max
-        && value.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }
 
 fn validate_path(path: &str) -> Result<(), AvatarResolveError> {
@@ -562,10 +600,14 @@ fn validate_path(path: &str) -> Result<(), AvatarResolveError> {
             segment.is_empty()
                 || segment == "."
                 || segment == ".."
-                || !segment.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'.')
+                || !segment
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'.')
         })
     {
-        return Err(AvatarResolveError::InvalidResource { path: path.to_string() });
+        return Err(AvatarResolveError::InvalidResource {
+            path: path.to_string(),
+        });
     }
     Ok(())
 }
@@ -576,9 +618,14 @@ fn add_piece(
     name: &str,
 ) -> Result<(), AvatarResolveError> {
     if !token(directory, 48) || !token(name, 48) {
-        return Err(AvatarResolveError::InvalidResource { path: format!("{directory}/{name}") });
+        return Err(AvatarResolveError::InvalidResource {
+            path: format!("{directory}/{name}"),
+        });
     }
-    let piece = AvatarPiece { directory: directory.to_string(), name: name.to_string() };
+    let piece = AvatarPiece {
+        directory: directory.to_string(),
+        name: name.to_string(),
+    };
     if !pieces.contains(&piece) {
         pieces.push(piece);
     }
@@ -595,14 +642,20 @@ fn color(
         Some(value.as_str())
     } else if let Some(index) = state.palette_selections.get(&setting) {
         let cat = category(catalog, setting)?;
-        let id =
-            cat.colors.get(*index).ok_or(AvatarResolveError::InvalidColor { category: setting })?;
+        let id = cat
+            .colors
+            .get(*index)
+            .ok_or(AvatarResolveError::InvalidColor { category: setting })?;
         match catalog.palette_colors.get(id) {
             Some(color) => Some(color.rgb.as_str()),
             None => {
-                warn(warnings, AvatarWarningCode::UnresolvedPaletteColor, Some(setting));
+                warn(
+                    warnings,
+                    AvatarWarningCode::UnresolvedPaletteColor,
+                    Some(setting),
+                );
                 None
-            },
+            }
         }
     } else {
         None
@@ -640,8 +693,11 @@ fn preset_state(
         return Ok(effective);
     };
     for entry in &preset.recipe {
-        if let Some(id) =
-            entry.part_id.as_deref().and_then(HashId::parse_hex).filter(|id| !id.is_zero())
+        if let Some(id) = entry
+            .part_id
+            .as_deref()
+            .and_then(HashId::parse_hex)
+            .filter(|id| !id.is_zero())
         {
             let mut matches = catalog.categories.iter().flat_map(|category| {
                 category
@@ -658,13 +714,20 @@ fn preset_state(
                     reason: "Ambiguous preset part identifier".to_string(),
                 });
             }
-            effective.selections.entry(setting).or_insert_with(|| selected_part.id.clone());
+            effective
+                .selections
+                .entry(setting)
+                .or_insert_with(|| selected_part.id.clone());
         } else if entry.part.is_some() {
             // Older exports discarded partsId. A name such as hairF003 occurs in both hair
             // categories, so treating its first match as identity would select the wrong slot.
             warn(warnings, AvatarWarningCode::UnresolvedPresetRecipe, Some(1));
         } else {
-            warn(warnings, AvatarWarningCode::UnsupportedPresetParameter, Some(1));
+            warn(
+                warnings,
+                AvatarWarningCode::UnsupportedPresetParameter,
+                Some(1),
+            );
         }
     }
     Ok(effective)
@@ -694,7 +757,13 @@ pub fn resolve_avatar(
     let mut seen_categories = BTreeSet::new();
     for cat in &catalog.categories {
         if !seen_categories.insert(cat.setting_type)
-            || cat.parts.iter().map(|p| &p.id).collect::<BTreeSet<_>>().len() != cat.parts.len()
+            || cat
+                .parts
+                .iter()
+                .map(|p| &p.id)
+                .collect::<BTreeSet<_>>()
+                .len()
+                != cat.parts.len()
         {
             return Err(AvatarResolveError::InvalidCatalog {
                 reason: "Duplicate category or part identifier".to_string(),
@@ -725,7 +794,11 @@ pub fn resolve_avatar(
         .position(|name| name == morphology)
         .ok_or_else(|| invalid_state("selections.17"))?;
     if state.gender == 1 && morphology != "female" {
-        warn(&mut warnings, AvatarWarningCode::UnresolvedGenderVariant, Some(17));
+        warn(
+            &mut warnings,
+            AvatarWarningCode::UnresolvedGenderVariant,
+            Some(17),
+        );
     }
     let body_name = format!("edit_body_{morphology}");
     let body = body_category
@@ -745,7 +818,9 @@ pub fn resolve_avatar(
         .and_then(|name| name.strip_suffix(".g4sk"))
         .ok_or_else(|| missing("body skeleton"))?;
     if !skeleton_path.contains("/20_EDIT/_bodySK/") {
-        return Err(AvatarResolveError::InvalidResource { path: skeleton_path.clone() });
+        return Err(AvatarResolveError::InvalidResource {
+            path: skeleton_path.clone(),
+        });
     }
     let mut pieces = Vec::new();
     add_piece(&mut pieces, "_bodySK", skeleton)?;
@@ -754,8 +829,11 @@ pub fn resolve_avatar(
         .ok_or_else(|| missing("nose selection"))?;
     let nose_hash = HashId::parse_hex(&nose.id).ok_or_else(|| missing("nose identifier"))?;
     let mut face_resource = None;
-    for face in
-        catalog.base_models.faces.iter().filter(|face| crc32_str(&face.nose_type) == nose_hash.0)
+    for face in catalog
+        .base_models
+        .faces
+        .iter()
+        .filter(|face| crc32_str(&face.nose_type) == nose_hash.0)
     {
         let resource = face
             .resources
@@ -765,17 +843,29 @@ pub fn resolve_avatar(
         if face_resource.is_some_and(|previous| previous != resource) {
             // The export flattened face-type groups. Preserve the former first-group choice,
             // while exposing the missing native face-type mapping instead of inventing one.
-            warn(&mut warnings, AvatarWarningCode::UnresolvedFaceVariant, Some(2));
+            warn(
+                &mut warnings,
+                AvatarWarningCode::UnresolvedFaceVariant,
+                Some(2),
+            );
         }
         face_resource.get_or_insert(resource);
     }
-    add_piece(&mut pieces, "_facebase", face_resource.ok_or_else(|| missing("face base"))?)?;
+    add_piece(
+        &mut pieces,
+        "_facebase",
+        face_resource.ok_or_else(|| missing("face base"))?,
+    )?;
 
     let mut layers = BTreeSet::new();
     for cat in &catalog.categories {
         if matches!(cat.setting_type, 1 | 2 | 16..=21) {
             if selected(cat, state)?.is_some() && !matches!(cat.setting_type, 1 | 17) {
-                warn(&mut warnings, AvatarWarningCode::UnsupportedSetting, Some(cat.setting_type));
+                warn(
+                    &mut warnings,
+                    AvatarWarningCode::UnsupportedSetting,
+                    Some(cat.setting_type),
+                );
             }
             continue;
         }
@@ -793,8 +883,9 @@ pub fn resolve_avatar(
                     .split_once('/')
                     .ok_or_else(|| AvatarResolveError::InvalidResource { path: path.clone() })?;
                 add_piece(&mut pieces, directory, name)?;
-            } else if let Some(layer) =
-                relative.strip_prefix("_facetex/").and_then(|p| p.strip_suffix(".g4tx"))
+            } else if let Some(layer) = relative
+                .strip_prefix("_facetex/")
+                .and_then(|p| p.strip_suffix(".g4tx"))
             {
                 if layer.len() > 40
                     || layer.split('/').count() != 2
@@ -811,7 +902,11 @@ pub fn resolve_avatar(
             && part.models.is_empty()
             && part.secondary_models.is_empty()
         {
-            warn(&mut warnings, AvatarWarningCode::UnsupportedSetting, Some(cat.setting_type));
+            warn(
+                &mut warnings,
+                AvatarWarningCode::UnsupportedSetting,
+                Some(cat.setting_type),
+            );
         }
     }
     if pieces.len() > 64 || layers.len() > 12 {
@@ -819,11 +914,19 @@ pub fn resolve_avatar(
             reason: "Avatar resource limit exceeded".to_string(),
         });
     }
-    for setting in state.palette_selections.keys().chain(state.custom_colors.keys()) {
+    for setting in state
+        .palette_selections
+        .keys()
+        .chain(state.custom_colors.keys())
+    {
         category(catalog, *setting)?;
         color(catalog, state, *setting, &mut warnings)?;
         if !matches!(*setting, 3 | 4 | 6) {
-            warn(&mut warnings, AvatarWarningCode::UnsupportedColor, Some(*setting));
+            warn(
+                &mut warnings,
+                AvatarWarningCode::UnsupportedColor,
+                Some(*setting),
+            );
         }
     }
     Ok(AvatarComposition {
@@ -875,7 +978,10 @@ mod catalog_tests {
             {"name": "OTHER_0", "variables": [{"value": 7}, {"value": 1}]},
             {"name": "POSE_0", "variables": [{"value": 8}, {"value": "bad"}, {"value": 2}]}
         ]});
-        assert_eq!(numeric_table_by_hash(&root, "POSE").get(&8), Some(&vec![2.0]));
+        assert_eq!(
+            numeric_table_by_hash(&root, "POSE").get(&8),
+            Some(&vec![2.0])
+        );
         assert!(!numeric_table_by_hash(&root, "POSE").contains_key(&7));
     }
 

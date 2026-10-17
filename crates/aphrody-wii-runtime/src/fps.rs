@@ -57,13 +57,21 @@ pub fn fps_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
     let now = Instant::now();
     let elapsed = now.duration_since(sys.fps_counter.last_tick).as_secs_f64();
     let vsyncs = sys.fps_counter.vsync_count;
-    let fps = if elapsed > 0.0 { vsyncs as f64 / elapsed } else { 0.0 };
+    let fps = if elapsed > 0.0 {
+        vsyncs as f64 / elapsed
+    } else {
+        0.0
+    };
 
     let native_hz = match sys.vi.dcr.video_format().refresh_rate() {
         RefreshRate::Hz60 => 60.0,
         RefreshRate::Hz50 => 50.0,
     };
-    let native_pct = if native_hz > 0.0 { (fps / native_hz) * 100.0 } else { 0.0 };
+    let native_pct = if native_hz > 0.0 {
+        (fps / native_hz) * 100.0
+    } else {
+        0.0
+    };
 
     tracing::info!(
         vsyncs,
@@ -77,14 +85,21 @@ pub fn fps_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         use std::io::Write;
 
         let t = now.duration_since(sys.fps_counter.run_start).as_secs_f64();
-        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+        {
             let _ = writeln!(f, "{t:.3},{fps:.2},{native_pct:.2},{vsyncs}");
         }
     }
 
-    sys.fps_counter.shared.store(self::pack(fps as f32, native_pct as f32), Ordering::Relaxed);
+    sys.fps_counter
+        .shared
+        .store(self::pack(fps as f32, native_pct as f32), Ordering::Relaxed);
 
     sys.fps_counter.vsync_count = 0;
     sys.fps_counter.last_tick = now;
-    sys.scheduler.schedule_in(cpu_clock(SYSTEM), crate::scheduler::Handler::Fps);
+    sys.scheduler
+        .schedule_in(cpu_clock(SYSTEM), crate::scheduler::Handler::Fps);
 }

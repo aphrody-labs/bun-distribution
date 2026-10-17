@@ -47,7 +47,11 @@ impl Arc {
 
     /// Whether `angle` falls on the arc (not in its gap).
     fn covers(&self, angle: f64) -> bool {
-        let along = if self.sweep >= 0.0 { angle - self.start } else { self.start - angle };
+        let along = if self.sweep >= 0.0 {
+            angle - self.start
+        } else {
+            self.start - angle
+        };
         self.full() || along.rem_euclid(TAU) <= self.sweep.abs()
     }
 
@@ -55,7 +59,10 @@ impl Arc {
     pub fn label(&self, h: ArcHandle) -> String {
         match h {
             ArcHandle::Sweep => format!("Sweep {}%", one_decimal(self.sweep / TAU * 100.0)),
-            ArcHandle::Start => format!("Start {}°", one_decimal(self.start.to_degrees().rem_euclid(360.0))),
+            ArcHandle::Start => format!(
+                "Start {}°",
+                one_decimal(self.start.to_degrees().rem_euclid(360.0))
+            ),
             ArcHandle::Ratio => format!("Ratio {}%", one_decimal(self.inner * 100.0)),
         }
     }
@@ -65,7 +72,11 @@ impl Arc {
 fn one_decimal(v: f64) -> String {
     let r = (v * 10.0).round() / 10.0;
     let r = if r == 0.0 { 0.0 } else { r };
-    if r.fract() == 0.0 { format!("{r:.0}") } else { format!("{r:.1}") }
+    if r.fract() == 0.0 {
+        format!("{r:.0}")
+    } else {
+        format!("{r:.1}")
+    }
 }
 
 /// The selected ellipse's handles as drawn at a zoom (page coordinates). Start shows once there
@@ -123,11 +134,27 @@ struct Ellipse {
 impl Ellipse {
     fn of(doc: &Document, id: NodeId) -> Option<Self> {
         let n = doc.node(id)?;
-        let NodeKind::Ellipse { start, sweep, inner } = n.kind else { return None };
+        let NodeKind::Ellipse {
+            start,
+            sweep,
+            inner,
+        } = n.kind
+        else {
+            return None;
+        };
         let (rx, ry) = (n.width / 2.0, n.height / 2.0);
         let t = doc.world_transform(id);
-        let ok = rx.is_finite() && ry.is_finite() && rx > 0.0 && ry > 0.0 && t.determinant().is_finite() && t.determinant().abs() > 1e-12;
-        let arc = Arc { start: finite(start), sweep: finite(sweep).clamp(-TAU, TAU), inner: finite(inner).clamp(0.0, 1.0) };
+        let ok = rx.is_finite()
+            && ry.is_finite()
+            && rx > 0.0
+            && ry > 0.0
+            && t.determinant().is_finite()
+            && t.determinant().abs() > 1e-12;
+        let arc = Arc {
+            start: finite(start),
+            sweep: finite(sweep).clamp(-TAU, TAU),
+            inner: finite(inner).clamp(0.0, 1.0),
+        };
         ok.then_some(Self { t, rx, ry, arc })
     }
 
@@ -177,7 +204,11 @@ fn finite(v: f64) -> f64 {
 
 /// `zoom` if usable, else 1.
 fn sane_zoom(zoom: f64) -> f64 {
-    if zoom.is_finite() && zoom > 0.0 { zoom } else { 1.0 }
+    if zoom.is_finite() && zoom > 0.0 {
+        zoom
+    } else {
+        1.0
+    }
 }
 
 fn pt(p: Point) -> [f64; 2] {
@@ -249,7 +280,15 @@ fn snap(v: f64, step: f64) -> f64 {
 
 /// The arc after dragging handle `h` of ellipse `id` to page point `p`, from `arc` (the arc so
 /// far in this drag, which keeps the sweep continuous). `shift` snaps.
-pub fn drag(doc: &Document, id: NodeId, h: ArcHandle, arc: Arc, p: Point, shift: bool, zoom: f64) -> Option<Arc> {
+pub fn drag(
+    doc: &Document,
+    id: NodeId,
+    h: ArcHandle,
+    arc: Arc,
+    p: Point,
+    shift: bool,
+    zoom: f64,
+) -> Option<Arc> {
     let e = Ellipse::of(doc, id)?;
     let zoom = sane_zoom(zoom);
     let u = e.unit(p);
@@ -261,13 +300,25 @@ pub fn drag(doc: &Document, id: NodeId, h: ArcHandle, arc: Arc, p: Point, shift:
     match h {
         ArcHandle::Sweep => {
             let sweep = nearest_sweep(arc.sweep, (angle - arc.start).rem_euclid(TAU));
-            let sweep = if shift { snap(sweep, SNAP_DEG.to_radians()) } else { sweep };
+            let sweep = if shift {
+                snap(sweep, SNAP_DEG.to_radians())
+            } else {
+                sweep
+            };
             // Back at the start (from the far side), it closes.
             let gap = (e.point(arc.start + sweep, 1.0) - e.point(arc.start, 1.0)).hypot() * zoom;
-            out.sweep = if sweep.abs() > TAU / 2.0 && gap <= CLOSE_PX { TAU.copysign(sweep) } else { sweep.clamp(-TAU, TAU) };
+            out.sweep = if sweep.abs() > TAU / 2.0 && gap <= CLOSE_PX {
+                TAU.copysign(sweep)
+            } else {
+                sweep.clamp(-TAU, TAU)
+            };
         }
         ArcHandle::Start => {
-            let a = if shift { snap(angle, SNAP_DEG.to_radians()) } else { angle };
+            let a = if shift {
+                snap(angle, SNAP_DEG.to_radians())
+            } else {
+                angle
+            };
             out.start = a.rem_euclid(TAU);
         }
         ArcHandle::Ratio => {
@@ -281,19 +332,34 @@ pub fn drag(doc: &Document, id: NodeId, h: ArcHandle, arc: Arc, p: Point, shift:
             }
         }
     }
-    [out.start, out.sweep, out.inner].iter().all(|v| v.is_finite()).then_some(out)
+    [out.start, out.sweep, out.inner]
+        .iter()
+        .all(|v| v.is_finite())
+        .then_some(out)
 }
 
 /// Where handle `h` of ellipse `id` is for `arc` at `zoom` (the readout's anchor while dragging).
-pub fn handle_at(doc: &Document, id: NodeId, h: ArcHandle, arc: Arc, zoom: f64) -> Option<[f64; 2]> {
+pub fn handle_at(
+    doc: &Document,
+    id: NodeId,
+    h: ArcHandle,
+    arc: Arc,
+    zoom: f64,
+) -> Option<[f64; 2]> {
     Ellipse::of(doc, id).map(|e| pt(e.handle(h, arc, sane_zoom(zoom))))
 }
 
 /// `arc` as `node.set` props (degrees and a ratio).
 pub fn props(arc: Arc) -> serde_json::Map<String, serde_json::Value> {
     serde_json::Map::from_iter([
-        ("arcStart".to_string(), serde_json::json!(arc.start.to_degrees())),
-        ("arcSweep".to_string(), serde_json::json!(arc.sweep.to_degrees())),
+        (
+            "arcStart".to_string(),
+            serde_json::json!(arc.start.to_degrees()),
+        ),
+        (
+            "arcSweep".to_string(),
+            serde_json::json!(arc.sweep.to_degrees()),
+        ),
         ("arcInner".to_string(), serde_json::json!(arc.inner)),
     ])
 }

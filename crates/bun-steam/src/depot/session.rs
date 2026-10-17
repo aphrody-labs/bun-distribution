@@ -71,7 +71,12 @@ impl SteamSession {
 
         let client = login_with_opts(opts, &token_store).await?;
 
-        Ok(Self { client, token_store, app_cache: HashMap::new(), depot_keys: HashMap::new() })
+        Ok(Self {
+            client,
+            token_store,
+            app_cache: HashMap::new(),
+            depot_keys: HashMap::new(),
+        })
     }
 
     /// Retourne une référence au token store (pour persister de nouveaux tokens).
@@ -100,16 +105,28 @@ impl SteamSession {
         let token = tokens
             .into_iter()
             .next()
-            .unwrap_or(steamroom::apps::AccessToken { app_id: steam_app_id, token: 0 });
+            .unwrap_or(steamroom::apps::AccessToken {
+                app_id: steam_app_id,
+                token: 0,
+            });
 
-        let infos =
-            self.client.pics_get_product_info(&[token]).await.context("PICS product info")?;
+        let infos = self
+            .client
+            .pics_get_product_info(&[token])
+            .await
+            .context("PICS product info")?;
 
         for info in infos {
             let id = info.app_id.map(|a| a.0).unwrap_or(app_id);
             if let Some(kv_data) = info.kv_data {
                 let kv = parse_app_kv(&kv_data).with_context(|| format!("parse KV app {id}"))?;
-                self.app_cache.insert(id, AppData { kv, change_number: info.change_number });
+                self.app_cache.insert(
+                    id,
+                    AppData {
+                        kv,
+                        change_number: info.change_number,
+                    },
+                );
             }
         }
 
@@ -135,15 +152,19 @@ impl SteamSession {
             return Ok(Some(key.clone()));
         }
 
-        match self.client.get_depot_decryption_key(DepotId(depot_id), AppId(app_id)).await {
+        match self
+            .client
+            .get_depot_decryption_key(DepotId(depot_id), AppId(app_id))
+            .await
+        {
             Ok(key) => {
                 self.depot_keys.insert(depot_id, key.clone());
                 Ok(Some(key))
-            },
+            }
             Err(e) => {
                 warn!("depot {depot_id} : clé indisponible ({e})");
                 Ok(None)
-            },
+            }
         }
     }
 
@@ -176,7 +197,7 @@ impl SteamSession {
             Err(e) => {
                 warn!("manifest request code pour depot {depot_id} : {e} — continuera sans code");
                 0
-            },
+            }
         }
     }
 
@@ -188,7 +209,10 @@ impl SteamSession {
         cell_id: u32,
         max: Option<u32>,
     ) -> Result<Vec<steamroom::cdn::CdnServer>> {
-        self.client.get_cdn_servers(CellId(cell_id), max).await.context("CDN servers")
+        self.client
+            .get_cdn_servers(CellId(cell_id), max)
+            .await
+            .context("CDN servers")
     }
 
     /// Retourne un jeton CDN auth pour un depot/host donné (optionnel).
@@ -196,12 +220,16 @@ impl SteamSession {
     /// Renvoie `None` si la requête échoue ; la plupart des CDN SteamPipe n'en
     /// requièrent pas et fonctionnent sans.
     pub async fn cdn_auth_token(&self, app_id: u32, depot_id: u32, host: &str) -> Option<String> {
-        match self.client.get_cdn_auth_token(AppId(app_id), DepotId(depot_id), host).await {
+        match self
+            .client
+            .get_cdn_auth_token(AppId(app_id), DepotId(depot_id), host)
+            .await
+        {
             Ok(t) => t.token,
             Err(e) => {
                 warn!("CDN auth token pour {host} : {e} — continuera sans");
                 None
-            },
+            }
         }
     }
 }
@@ -244,7 +272,7 @@ async fn login_with_opts(
             | Err(steamroom_client::login::LoginError::InvalidPassword) => {
                 warn!("refresh token rejeté pour {username}, re-authentification par mot de passe");
                 token_store.set(username, Some(""), None);
-            },
+            }
             Err(e) => return Err(anyhow::anyhow!("login token échoué : {e}")),
         }
     }
@@ -277,16 +305,16 @@ async fn login_with_opts(
                 Ok(a) => a,
                 Err((_, e)) => {
                     return Err(anyhow::anyhow!("code Steam Guard rejeté : {e}"));
-                },
+                }
             }
-        },
+        }
         CredentialsLoginFlow::NeedsMobileConfirm(mobile) => {
             info!("confirmez la connexion sur votre application Steam mobile…");
             mobile
                 .wait_for_confirmation()
                 .await
                 .map_err(|e| anyhow::anyhow!("confirmation mobile : {e}"))?
-        },
+        }
         _ => anyhow::bail!("flux d'authentification inattendu"),
     };
 
@@ -295,7 +323,10 @@ async fn login_with_opts(
     let account = tokens.account_name.as_deref().unwrap_or(username);
     token_store.set(account, Some(&tokens.refresh_token), None);
 
-    approved.finish().await.map_err(|e| anyhow::anyhow!("finalisation login : {e}"))
+    approved
+        .finish()
+        .await
+        .map_err(|e| anyhow::anyhow!("finalisation login : {e}"))
 }
 
 /// Convertit le premier `GuardType` steamroom disponible en `SteamGuardKind` iecode.
@@ -320,7 +351,9 @@ async fn get_guard_code(opts: &SteamDownloadOptions, kind: SteamGuardKind) -> Re
     if let Some(ref provider) = opts.guard_provider {
         provider.get_code(kind, None, false).await
     } else {
-        crate::depot::options::EnvGuardProvider.get_code(kind, None, false).await
+        crate::depot::options::EnvGuardProvider
+            .get_code(kind, None, false)
+            .await
     }
 }
 

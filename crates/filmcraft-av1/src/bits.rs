@@ -86,7 +86,11 @@ impl<'a> BitReader<'a> {
     pub fn su(&mut self, n: u32) -> Result<i32> {
         let v = self.f(n)? as i64;
         let sign = 1i64 << (n - 1);
-        Ok(if v & sign != 0 { (v - 2 * sign) as i32 } else { v as i32 })
+        Ok(if v & sign != 0 {
+            (v - 2 * sign) as i32
+        } else {
+            v as i32
+        })
     }
 
     /// `ns(n)`

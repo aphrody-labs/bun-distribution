@@ -24,7 +24,11 @@ impl ExternalKey for WindowsKey {
     fn sign(&self, alg: DigestAlg, msg: &[u8]) -> Result<Vec<u8>, SignError> {
         let digest = alg.digest(&[msg]);
         // CNG adds the DigestInfo for PKCS #1 v1.5 when given PKCS1 padding.
-        let padding = if matches!(self.public, PublicKey::Rsa { .. }) { SignaturePadding::Pkcs1 } else { SignaturePadding::None };
+        let padding = if matches!(self.public, PublicKey::Rsa { .. }) {
+            SignaturePadding::Pkcs1
+        } else {
+            SignaturePadding::None
+        };
         // A key handle acquired silently can never prompt: smart cards and tokens then refuse
         // to sign (NTE_SILENT_CONTEXT, 0x80090022) instead of asking for the PIN. Acquire the
         // signing handle without the silent flag so the provider can show its own dialog.
@@ -35,7 +39,10 @@ impl ExternalKey for WindowsKey {
             ))
         })?;
         let raw = key.sign(&digest, padding).map_err(|e| {
-            SignError::Crypto(format!("the Windows certificate store didn't sign (key use may have been cancelled): {}", describe(&e)))
+            SignError::Crypto(format!(
+                "the Windows certificate store didn't sign (key use may have been cancelled): {}",
+                describe(&e)
+            ))
         })?;
         self.public.store_signature_der(&raw)
     }
@@ -66,7 +73,13 @@ pub struct Listing {
 /// The `windows:<SHA-256 of the certificate DER>` reference kept for an identity.
 pub fn reference(certificate: &Certificate) -> String {
     let digest = DigestAlg::Sha256.digest(&[&certificate.raw]);
-    format!("windows:{}", digest.iter().map(|b| format!("{b:02x}")).collect::<String>())
+    format!(
+        "windows:{}",
+        digest
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    )
 }
 
 /// Find an identity by its reference or subject common name. Its `chain` holds the issuers
@@ -77,9 +90,18 @@ pub fn find(reference_or_name: &str) -> Result<DigitalId, SignError> {
         .into_iter()
         .find(|(_, id)| {
             reference(&id.certificate) == reference_or_name
-                || id.certificate.subject.common_name() == Some(reference_or_name.strip_prefix("windows:").unwrap_or(reference_or_name))
+                || id.certificate.subject.common_name()
+                    == Some(
+                        reference_or_name
+                            .strip_prefix("windows:")
+                            .unwrap_or(reference_or_name),
+                    )
         })
-        .ok_or_else(|| SignError::Crypto(format!("no Windows certificate store identity {reference_or_name}")))?;
+        .ok_or_else(|| {
+            SignError::Crypto(format!(
+                "no Windows certificate store identity {reference_or_name}"
+            ))
+        })?;
     id.chain = issuers(&context, &id.certificate);
     Ok(id)
 }
@@ -87,8 +109,14 @@ pub fn find(reference_or_name: &str) -> Result<DigitalId, SignError> {
 /// The certificates Windows chains `certificate` to, without the root. Best effort: an
 /// identity signs without them too.
 fn issuers(context: &CertContext, certificate: &Certificate) -> Vec<Certificate> {
-    let Ok(chain) = context.as_chain_der() else { return Vec::new() };
-    chain.iter().filter(|der| **der != certificate.raw).filter_map(|der| Certificate::parse(der).ok()).collect()
+    let Ok(chain) = context.as_chain_der() else {
+        return Vec::new();
+    };
+    chain
+        .iter()
+        .filter(|der| **der != certificate.raw)
+        .filter_map(|der| Certificate::parse(der).ok())
+        .collect()
 }
 
 /// List usable RSA, P-256 and P-384 CNG identities in Current User > Personal
@@ -102,7 +130,10 @@ pub fn identities() -> Result<Vec<DigitalId>, SignError> {
 /// to open counts as usable; the prompt appears at signing.
 pub fn list() -> Result<Listing, SignError> {
     let Entries { ids, unusable } = entries()?;
-    Ok(Listing { ids: ids.into_iter().map(|(_, id)| id).collect(), unusable })
+    Ok(Listing {
+        ids: ids.into_iter().map(|(_, id)| id).collect(),
+        unusable,
+    })
 }
 
 /// Each usable identity with the store's certificate context it came from, and the rest.
@@ -112,30 +143,60 @@ struct Entries {
 }
 
 fn entries() -> Result<Entries, SignError> {
-    let store = CertStore::open(CertStoreType::CurrentUser, "My")
-        .map_err(|e| SignError::Crypto(format!("the Windows Current User Personal store couldn't be opened: {}", describe(&e))))?;
-    let contexts =
-        store.find_all().map_err(|e| SignError::Crypto(format!("the Windows certificate store couldn't be searched: {}", describe(&e))))?;
+    let store = CertStore::open(CertStoreType::CurrentUser, "My").map_err(|e| {
+        SignError::Crypto(format!(
+            "the Windows Current User Personal store couldn't be opened: {}",
+            describe(&e)
+        ))
+    })?;
+    let contexts = store.find_all().map_err(|e| {
+        SignError::Crypto(format!(
+            "the Windows certificate store couldn't be searched: {}",
+            describe(&e)
+        ))
+    })?;
     let mut ids = Vec::new();
     let mut unusable = Vec::new();
     for context in contexts {
         let der = context.as_der();
-        let fingerprint = DigestAlg::Sha256.digest(&[der]).iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(" ");
+        let fingerprint = DigestAlg::Sha256
+            .digest(&[der])
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<Vec<_>>()
+            .join(" ");
         let mut skip = |subject: String, reason: String, no_private_key: bool| {
-            unusable.push(Unusable { subject, fingerprint: fingerprint.clone(), reason, no_private_key });
+            unusable.push(Unusable {
+                subject,
+                fingerprint: fingerprint.clone(),
+                reason,
+                no_private_key,
+            });
         };
         let certificate = match Certificate::parse(der) {
             Ok(c) => c,
             Err(e) => {
-                let subject = x509::subject_of(der).map(|n| n.display_name()).unwrap_or_else(|| "(unreadable certificate)".to_string());
-                skip(subject, format!("the certificate can't be read: {e}"), false);
+                let subject = x509::subject_of(der)
+                    .map(|n| n.display_name())
+                    .unwrap_or_else(|| "(unreadable certificate)".to_string());
+                skip(
+                    subject,
+                    format!("the certificate can't be read: {e}"),
+                    false,
+                );
                 continue;
             }
         };
         // P-521, brainpool and Ed25519 certificates parse (to verify with) but aren't signed with.
         let Some(want) = certificate.public_key.store_signing_key() else {
             let what = certificate.public_key.describe();
-            skip(certificate.display_name(), format!("its {what} key can't sign through PdfCraft yet (RSA, P-256 and P-384 only)"), false);
+            skip(
+                certificate.display_name(),
+                format!(
+                    "its {what} key can't sign through PdfCraft yet (RSA, P-256 and P-384 only)"
+                ),
+                false,
+            );
             continue;
         };
         // Enumeration must not open permission or PIN dialogs. Signing may prompt later.
@@ -162,16 +223,35 @@ fn entries() -> Result<Entries, SignError> {
             }
         }
         let public = certificate.public_key.clone();
-        let key = PrivateKey::external(public.clone(), Arc::new(WindowsKey { context: context.clone(), public }));
+        let key = PrivateKey::external(
+            public.clone(),
+            Arc::new(WindowsKey {
+                context: context.clone(),
+                public,
+            }),
+        );
         let friendly_name = Some(certificate.display_name());
-        ids.push((context, DigitalId { key, certificate, chain: Vec::new(), friendly_name }));
+        ids.push((
+            context,
+            DigitalId {
+                key,
+                certificate,
+                chain: Vec::new(),
+                friendly_name,
+            },
+        ));
     }
     Ok(Entries { ids, unusable })
 }
 
 /// Whether the store's key is what the certificate needs (RSA; ECDSA on its curve).
 fn matches_key(key: &NCryptKey, want: StoreKey) -> Result<(), String> {
-    let group = key.algorithm_group().map_err(|e| format!("its private key's algorithm couldn't be read: {}", describe(&e)))?;
+    let group = key.algorithm_group().map_err(|e| {
+        format!(
+            "its private key's algorithm couldn't be read: {}",
+            describe(&e)
+        )
+    })?;
     let name = |g: &AlgorithmGroup| match g {
         AlgorithmGroup::Rsa => "an RSA".to_string(),
         AlgorithmGroup::Ecdsa => "an ECDSA".to_string(),
@@ -182,12 +262,20 @@ fn matches_key(key: &NCryptKey, want: StoreKey) -> Result<(), String> {
         StoreKey::Ecdsa(_) => AlgorithmGroup::Ecdsa,
     };
     if group != expected {
-        return Err(format!("its certificate holds {} key but the store's private key is {} key", name(&expected), name(&group)));
+        return Err(format!(
+            "its certificate holds {} key but the store's private key is {} key",
+            name(&expected),
+            name(&group)
+        ));
     }
     if let StoreKey::Ecdsa(bits) = want {
-        let actual = key.bits().map_err(|e| format!("its private key's size couldn't be read: {}", describe(&e)))?;
+        let actual = key
+            .bits()
+            .map_err(|e| format!("its private key's size couldn't be read: {}", describe(&e)))?;
         if actual != bits {
-            return Err(format!("its certificate holds a P-{bits} key but the store's private key has {actual} bits"));
+            return Err(format!(
+                "its certificate holds a P-{bits} key but the store's private key has {actual} bits"
+            ));
         }
     }
     Ok(())
@@ -211,9 +299,13 @@ const CRYPT_E_NO_KEY_PROPERTY: u32 = 0x8009_200B;
 
 /// A CNG error with the Windows code and, for the usual ones, what it means.
 fn describe(e: &CngError) -> String {
-    let CngError::WindowsError(code) = e else { return e.to_string() };
+    let CngError::WindowsError(code) = e else {
+        return e.to_string();
+    };
     let meaning = match *code {
-        NTE_NO_KEY | NTE_BAD_KEYSET | NTE_NOT_FOUND => "the key is missing from its key store (deleted, or imported under another Windows account)",
+        NTE_NO_KEY | NTE_BAD_KEYSET | NTE_NOT_FOUND => {
+            "the key is missing from its key store (deleted, or imported under another Windows account)"
+        }
         NTE_PERM => "access to the key was denied",
         NTE_BAD_PROVIDER | NTE_BAD_PROV_TYPE | NTE_PROV_DLL_NOT_FOUND => {
             "its key provider isn't available to CNG (a legacy CryptoAPI-only provider, or its driver isn't installed)"
@@ -239,8 +331,17 @@ mod tests {
             describe(&CngError::WindowsError(NTE_BAD_KEYSET)),
             "the key is missing from its key store (deleted, or imported under another Windows account) (Windows error 0x80090016)"
         );
-        assert_eq!(describe(&CngError::WindowsError(0x8010_000C)), "the smart card isn't available (Windows error 0x8010000C)");
-        assert_eq!(describe(&CngError::WindowsError(0x57)), "Windows error 0x00000057");
-        assert_eq!(describe(&CngError::InvalidHashLength), "Invalid hash length");
+        assert_eq!(
+            describe(&CngError::WindowsError(0x8010_000C)),
+            "the smart card isn't available (Windows error 0x8010000C)"
+        );
+        assert_eq!(
+            describe(&CngError::WindowsError(0x57)),
+            "Windows error 0x00000057"
+        );
+        assert_eq!(
+            describe(&CngError::InvalidHashLength),
+            "Invalid hash length"
+        );
     }
 }

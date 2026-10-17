@@ -17,8 +17,7 @@ pub const INVENTORY_PATH: &str = "infra/config/host/wireguard/aphrody-tunnel.jso
 
 /// The declared tunnel compiled into the binary, used when no checkout is at hand (an operator
 /// PC running only the installed `aphrody`).
-pub const EMBEDDED: &str =
-    include_str!("../../../infra/config/host/wireguard/aphrody-tunnel.json");
+pub const EMBEDDED: &str = include_str!("../../../infra/config/host/wireguard/aphrody-tunnel.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,7 +71,8 @@ pub struct Inventory {
 }
 
 fn net(s: &str) -> Result<IpNet> {
-    s.parse().map_err(|_| Error::Config(format!("réseau invalide: {s}")))
+    s.parse()
+        .map_err(|_| Error::Config(format!("réseau invalide: {s}")))
 }
 
 fn host_net(addr: &str) -> Result<IpNet> {
@@ -109,7 +109,10 @@ impl Inventory {
         if self.hub.address == address {
             return Some(&self.hub.peer);
         }
-        self.peers.iter().find(|p| p.address == address).map(|p| p.id.as_str())
+        self.peers
+            .iter()
+            .find(|p| p.address == address)
+            .map(|p| p.id.as_str())
     }
 
     /// Services listening on a member, matched by tunnel address.
@@ -118,7 +121,10 @@ impl Inventory {
         let Some(address) = self.address_of(id) else {
             return Vec::new();
         };
-        self.services.iter().filter(|s| s.address == address).collect()
+        self.services
+            .iter()
+            .filter(|s| s.address == address)
+            .collect()
     }
 
     /// Ids of every member, hub first.
@@ -155,12 +161,20 @@ impl Inventory {
             });
         }
         let me = self.peers.iter().find(|p| p.id == id).ok_or_else(|| {
-            Error::Config(format!("pair inconnu: {id} (connus: {})", self.ids().join(", ")))
+            Error::Config(format!(
+                "pair inconnu: {id} (connus: {})",
+                self.ids().join(", ")
+            ))
         })?;
         let mut hub = Peer::new(self.hub.public_key.parse()?);
         hub.endpoint = Some(self.hub.endpoint.clone());
         hub.persistent_keepalive = Some(self.keepalive);
-        for a in self.client_allowed_ips.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+        for a in self
+            .client_allowed_ips
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             hub.allowed_ips.push(net(a)?);
         }
         Ok(Config {
@@ -179,14 +193,20 @@ impl Inventory {
         if id == self.hub.peer {
             return Some(&self.hub.address);
         }
-        self.peers.iter().find(|p| p.id == id).map(|p| p.address.as_str())
+        self.peers
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| p.address.as_str())
     }
 
     /// Services granted to `id`, with their tunnel address.
     #[must_use]
     pub fn reachable(&self, id: &str) -> Vec<&Service> {
         let granted = self.grants.get(id).cloned().unwrap_or_default();
-        self.services.iter().filter(|s| granted.contains(&s.id)).collect()
+        self.services
+            .iter()
+            .filter(|s| granted.contains(&s.id))
+            .collect()
     }
 
     /// Read-only summary (no key material beyond public keys).
@@ -211,7 +231,9 @@ mod tests {
     use super::*;
 
     fn repo_inventory() -> Inventory {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/aphrody/crates").join(INVENTORY_PATH);
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/aphrody/crates")
+            .join(INVENTORY_PATH);
         Inventory::load(&path).unwrap()
     }
 
@@ -221,11 +243,25 @@ mod tests {
         let embedded = Inventory::embedded().unwrap();
         assert_eq!(embedded.ids(), repo.ids());
         assert_eq!(embedded.id_of_address("10.200.77.10"), Some("omar"));
-        assert_eq!(embedded.id_of_address(&embedded.hub.address.clone()), Some("vps"));
-        let omar: Vec<_> = embedded.services_of("omar").iter().map(|s| s.id.clone()).collect();
+        assert_eq!(
+            embedded.id_of_address(&embedded.hub.address.clone()),
+            Some("vps")
+        );
+        let omar: Vec<_> = embedded
+            .services_of("omar")
+            .iter()
+            .map(|s| s.id.clone())
+            .collect();
         assert!(omar.contains(&"vnc-omar".to_owned()), "{omar:?}");
-        let vps: Vec<_> = embedded.reachable("vps").iter().map(|s| s.id.clone()).collect();
-        assert!(vps.contains(&"device-portal-aphro-pc".to_owned()), "{vps:?}");
+        let vps: Vec<_> = embedded
+            .reachable("vps")
+            .iter()
+            .map(|s| s.id.clone())
+            .collect();
+        assert!(
+            vps.contains(&"device-portal-aphro-pc".to_owned()),
+            "{vps:?}"
+        );
         assert!(Inventory::discover(Some(Path::new("/nonexistent"))).is_ok());
     }
 
@@ -235,14 +271,24 @@ mod tests {
         let hub = inv.render(&inv.hub.peer.clone(), None).unwrap();
         assert_eq!(hub.interface.listen_port, Some(inv.hub.listen_port));
         assert_eq!(hub.peers.len(), inv.peers.len());
-        assert!(hub.peers.iter().all(|p| p.allowed_ips[0].prefix_len() == 32));
+        assert!(
+            hub.peers
+                .iter()
+                .all(|p| p.allowed_ips[0].prefix_len() == 32)
+        );
         for id in inv.peers.iter().map(|p| p.id.clone()) {
-            let cfg = inv.render(&id, Some(Key::generate_private().unwrap())).unwrap();
+            let cfg = inv
+                .render(&id, Some(Key::generate_private().unwrap()))
+                .unwrap();
             assert_eq!(cfg.peers.len(), 1);
             assert_eq!(cfg.peers[0].persistent_keepalive, Some(inv.keepalive));
             assert_eq!(Config::parse(&cfg.render()).unwrap(), cfg);
         }
         assert!(inv.render("nope", None).is_err());
-        assert!(inv.plan()["members"].as_array().is_some_and(|m| !m.is_empty()));
+        assert!(
+            inv.plan()["members"]
+                .as_array()
+                .is_some_and(|m| !m.is_empty())
+        );
     }
 }

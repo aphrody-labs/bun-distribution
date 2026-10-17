@@ -77,10 +77,15 @@ impl OutlinePen for Pen {
         self.0.line_to((x as f64, y as f64));
     }
     fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
-        self.0.quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+        self.0
+            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
     }
     fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
-        self.0.curve_to((cx0 as f64, cy0 as f64), (cx1 as f64, cy1 as f64), (x as f64, y as f64));
+        self.0.curve_to(
+            (cx0 as f64, cy0 as f64),
+            (cx1 as f64, cy1 as f64),
+            (x as f64, y as f64),
+        );
     }
     fn close(&mut self) {
         self.0.close_path();
@@ -116,7 +121,11 @@ fn fallback(base: &str) -> &'static [u8] {
 }
 
 fn sfnt_upem(data: &[u8]) -> f64 {
-    FontRef::new(data).ok().and_then(|f| f.head().ok().map(|h| h.units_per_em() as f64)).filter(|u| *u > 0.0).unwrap_or(1000.0)
+    FontRef::new(data)
+        .ok()
+        .and_then(|f| f.head().ok().map(|h| h.units_per_em() as f64))
+        .filter(|u| *u > 0.0)
+        .unwrap_or(1000.0)
 }
 
 /// A TrueType / OpenType glyph's outline in font units.
@@ -124,13 +133,19 @@ fn sfnt_outline(data: &[u8], gid: u16) -> Option<BezPath> {
     let font = FontRef::new(data).ok()?;
     let g = font.outline_glyphs().get(GlyphId::new(gid as u32))?;
     let mut pen = Pen(BezPath::new());
-    g.draw(DrawSettings::unhinted(Size::unscaled(), LocationRef::default()), &mut pen).ok()?;
+    g.draw(
+        DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
+        &mut pen,
+    )
+    .ok()?;
     Some(pen.0)
 }
 
 fn sfnt_advance(data: &[u8], gid: u16) -> Option<f64> {
     let font = FontRef::new(data).ok()?;
-    font.glyph_metrics(Size::unscaled(), LocationRef::default()).advance_width(GlyphId::new(gid as u32)).map(|a| a as f64)
+    font.glyph_metrics(Size::unscaled(), LocationRef::default())
+        .advance_width(GlyphId::new(gid as u32))
+        .map(|a| a as f64)
 }
 
 /// A glyph of a TrueType font for a simple-font code (§9.6.6.4): the (3,1) subtable through
@@ -141,18 +156,27 @@ fn sfnt_glyph(data: &[u8], code: u8, name: Option<&str>, symbolic: bool) -> Opti
     let cmap = font.cmap().ok();
     let sub = |pid: PlatformId, eid: u16| {
         let cmap = cmap.as_ref()?;
-        cmap.encoding_records().iter().find(|r| r.platform_id() == pid && r.encoding_id() == eid).and_then(|r| r.subtable(cmap.offset_data()).ok())
+        cmap.encoding_records()
+            .iter()
+            .find(|r| r.platform_id() == pid && r.encoding_id() == eid)
+            .and_then(|r| r.subtable(cmap.offset_data()).ok())
     };
     let uni = name.and_then(name_to_unicode);
     let ok = |g: Option<GlyphId>| g.map(|g| g.to_u32() as u16).filter(|g| *g != 0);
     if !symbolic
         && let Some(u) = uni
-        && let Some(g) = ok(sub(PlatformId::Windows, 1).and_then(|s| s.map_codepoint(u as u32))).or_else(|| ok(font.charmap().map(u)))
+        && let Some(g) = ok(sub(PlatformId::Windows, 1).and_then(|s| s.map_codepoint(u as u32)))
+            .or_else(|| ok(font.charmap().map(u)))
     {
         return Some(g);
     }
     if let Some(s) = sub(PlatformId::Windows, 0) {
-        for c in [0xF000 + code as u32, 0xF100 + code as u32, 0xF200 + code as u32, code as u32] {
+        for c in [
+            0xF000 + code as u32,
+            0xF100 + code as u32,
+            0xF200 + code as u32,
+            code as u32,
+        ] {
             if let Some(g) = ok(s.map_codepoint(c)) {
                 return Some(g);
             }
@@ -175,7 +199,9 @@ fn sfnt_glyph(data: &[u8], code: u8, name: Option<&str>, symbolic: bool) -> Opti
 
 /// `/Differences [code /name /name … code /name …]`.
 fn differences(file: &File, enc: &Dict, names: &mut [Option<String>]) {
-    let Some(diffs) = file.get(enc, "Differences").and_then(Obj::array) else { return };
+    let Some(diffs) = file.get(enc, "Differences").and_then(Obj::array) else {
+        return;
+    };
     let mut code = 0usize;
     for d in diffs {
         match file.resolve(d) {
@@ -207,7 +233,10 @@ fn be(b: &[u8]) -> u32 {
 }
 
 fn utf16(b: &[u8]) -> String {
-    let u: Vec<u16> = b.chunks(2).map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)])).collect();
+    let u: Vec<u16> = b
+        .chunks(2)
+        .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+        .collect();
     String::from_utf16_lossy(&u)
 }
 
@@ -246,7 +275,9 @@ fn parse_cmap(data: &[u8]) -> CMap {
                     }
                     "bfrange" => {
                         for p in a.as_chunks::<3>().0 {
-                            let (Obj::Str(lo), Obj::Str(hi)) = (&p[0], &p[1]) else { continue };
+                            let (Obj::Str(lo), Obj::Str(hi)) = (&p[0], &p[1]) else {
+                                continue;
+                            };
                             let (lo, hi) = (be(lo), be(hi));
                             if hi < lo || hi - lo > 65535 {
                                 continue;
@@ -282,7 +313,9 @@ fn parse_cmap(data: &[u8]) -> CMap {
                     }
                     "cidrange" => {
                         for p in a.as_chunks::<3>().0 {
-                            if let (Obj::Str(lo), Obj::Str(hi), Some(cid)) = (&p[0], &p[1], p[2].num()) {
+                            if let (Obj::Str(lo), Obj::Str(hi), Some(cid)) =
+                                (&p[0], &p[1], p[2].num())
+                            {
                                 m.cids.push((be(lo), be(hi), cid as u32));
                             }
                         }
@@ -339,7 +372,11 @@ impl Font {
     /// the flag is set, else Type 1), otherwise the bundled stand-in for `name` is used;
     /// `names` is the encoding (code → glyph name), else the program's built-in encoding or
     /// StandardEncoding. Advances are the program's.
-    pub fn standalone(name: &str, program: Option<(&[u8], bool)>, names: Option<Vec<Option<String>>>) -> Font {
+    pub fn standalone(
+        name: &str,
+        program: Option<(&[u8], bool)>,
+        names: Option<Vec<Option<String>>>,
+    ) -> Font {
         let mut f = Font::blank(name, false);
         f.program = match program {
             Some((data, true)) => Cff::parse(data).map(|c| Program::Cff(Box::new(c))),
@@ -352,12 +389,24 @@ impl Font {
             Program::Type1(t) => f.matrix = t.font_matrix.map(Affine::new).unwrap_or(f.matrix),
             _ => {}
         }
-        let symbol = matches!(f.program, Program::Fallback(_)) && (name.contains("Symbol") || name.contains("Dingbats"));
+        let symbol = matches!(f.program, Program::Fallback(_))
+            && (name.contains("Symbol") || name.contains("Dingbats"));
         f.names = match names {
             // Unencoded codes draw .notdef (not the built-in encoding).
-            Some(n) => (0..256).map(|c| Some(n.get(c).cloned().flatten().unwrap_or_else(|| ".notdef".into()))).collect(),
+            Some(n) => (0..256)
+                .map(|c| {
+                    Some(
+                        n.get(c)
+                            .cloned()
+                            .flatten()
+                            .unwrap_or_else(|| ".notdef".into()),
+                    )
+                })
+                .collect(),
             None => match &f.program {
-                Program::Type1(t) if !t.encoding.is_empty() => (0..256).map(|c| t.encoding.get(&(c as u8)).cloned()).collect(),
+                Program::Type1(t) if !t.encoding.is_empty() => (0..256)
+                    .map(|c| t.encoding.get(&(c as u8)).cloned())
+                    .collect(),
                 _ if symbol => vec![None; 256],
                 _ => (0..256).map(|c| Base::Standard.name(c as u8)).collect(),
             },
@@ -366,8 +415,16 @@ impl Font {
     }
 
     pub fn load(file: &File, d: &Dict, skipped: &mut Vec<String>) -> Font {
-        let subtype = file.get(d, "Subtype").and_then(Obj::name).unwrap_or("Type1").to_string();
-        let base_name = file.get(d, "BaseFont").and_then(Obj::name).unwrap_or("").to_string();
+        let subtype = file
+            .get(d, "Subtype")
+            .and_then(Obj::name)
+            .unwrap_or("Type1")
+            .to_string();
+        let base_name = file
+            .get(d, "BaseFont")
+            .and_then(Obj::name)
+            .unwrap_or("")
+            .to_string();
         let mut f = Font::blank(&base_name, subtype == "Type0");
         if let Some(Obj::Stream(sd, raw)) = file.get(d, "ToUnicode")
             && let Some(data) = decode_stream(file, sd, raw)
@@ -389,7 +446,9 @@ impl Font {
             (d.clone(), file.get_dict(d, "FontDescriptor").cloned())
         };
         if let Some(fd) = &fd {
-            f.symbolic = file.get_num(fd, "Flags").is_some_and(|fl| (fl as u32) & 4 != 0);
+            f.symbolic = file
+                .get_num(fd, "Flags")
+                .is_some_and(|fl| (fl as u32) & 4 != 0);
         }
         // Widths.
         if f.composite {
@@ -401,12 +460,19 @@ impl Font {
                     match w.get(i + 1).map(|x| file.resolve(x)) {
                         Some(Obj::Array(list)) => {
                             for (k, v) in list.iter().enumerate() {
-                                f.cid_widths.insert(first + k as u32, file.resolve(v).num().unwrap_or(0.0) / 1000.0);
+                                f.cid_widths.insert(
+                                    first + k as u32,
+                                    file.resolve(v).num().unwrap_or(0.0) / 1000.0,
+                                );
                             }
                             i += 2;
                         }
                         Some(Obj::Num(last)) => {
-                            let wv = w.get(i + 2).and_then(|x| file.resolve(x).num()).unwrap_or(0.0) / 1000.0;
+                            let wv = w
+                                .get(i + 2)
+                                .and_then(|x| file.resolve(x).num())
+                                .unwrap_or(0.0)
+                                / 1000.0;
                             for c in first..=(*last as u32).min(first + 65535) {
                                 f.cid_widths.insert(c, wv);
                             }
@@ -418,7 +484,10 @@ impl Font {
             }
             // Vertical metrics (§9.7.4.3): /DW2 [vy w1y] and /W2 entries
             // `c [w1y vx vy …]` or `cfirst clast w1y vx vy`.
-            let dw2 = file.get(&desc_dict, "DW2").map(|x| file.nums(x)).unwrap_or_default();
+            let dw2 = file
+                .get(&desc_dict, "DW2")
+                .map(|x| file.nums(x))
+                .unwrap_or_default();
             if dw2.len() == 2 {
                 f.dw2 = (dw2[0] / 1000.0, dw2[1] / 1000.0);
             }
@@ -430,16 +499,25 @@ impl Font {
                     let first = first.max(0.0) as u32;
                     match w.get(i + 1).map(|x| file.resolve(x)) {
                         Some(Obj::Array(list)) => {
-                            let v: Vec<f64> = list.iter().filter_map(|x| file.resolve(x).num()).collect();
+                            let v: Vec<f64> =
+                                list.iter().filter_map(|x| file.resolve(x).num()).collect();
                             for (k, t) in v.as_chunks::<3>().0.iter().enumerate() {
-                                f.cid_vmetrics.insert(first + k as u32, (t[0] / 1000.0, t[1] / 1000.0, t[2] / 1000.0));
+                                f.cid_vmetrics.insert(
+                                    first + k as u32,
+                                    (t[0] / 1000.0, t[1] / 1000.0, t[2] / 1000.0),
+                                );
                             }
                             i += 2;
                         }
                         Some(Obj::Num(last)) => {
-                            let (Some(w1), Some(vx), Some(vy)) = (num(i + 2), num(i + 3), num(i + 4)) else { break };
+                            let (Some(w1), Some(vx), Some(vy)) =
+                                (num(i + 2), num(i + 3), num(i + 4))
+                            else {
+                                break;
+                            };
                             for c in first..=(last.max(0.0) as u32).min(first + 65535) {
-                                f.cid_vmetrics.insert(c, (w1 / 1000.0, vx / 1000.0, vy / 1000.0));
+                                f.cid_vmetrics
+                                    .insert(c, (w1 / 1000.0, vx / 1000.0, vy / 1000.0));
                             }
                             i += 5;
                         }
@@ -468,7 +546,13 @@ impl Font {
             }
             match file.get(&desc_dict, "CIDToGIDMap") {
                 Some(Obj::Stream(sd, raw)) => {
-                    f.cid_to_gid = decode_stream(file, sd, raw).map(|b| b.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect());
+                    f.cid_to_gid = decode_stream(file, sd, raw).map(|b| {
+                        b.as_chunks::<2>()
+                            .0
+                            .iter()
+                            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                            .collect()
+                    });
                 }
                 _ => f.cid_to_gid = None,
             }
@@ -507,7 +591,10 @@ impl Font {
                     }
                 }
             }
-            f.program = Program::Type3 { procs, resources: file.get_dict(d, "Resources").cloned() };
+            f.program = Program::Type3 {
+                procs,
+                resources: file.get_dict(d, "Resources").cloned(),
+            };
             // Type 3 widths are in glyph space.
             let m = f.matrix.as_coeffs()[0];
             for w in &mut f.widths {
@@ -519,7 +606,10 @@ impl Font {
             match file.get(&sd, "Subtype").and_then(Obj::name) {
                 Some("OpenType") => {
                     // An OpenType wrapper: TrueType outlines through skrifa, CFF through ours.
-                    let cff = FontRef::new(&data).ok().and_then(|fr| fr.table_data(skrifa::Tag::new(b"CFF ")).map(|t| t.as_bytes().to_vec()));
+                    let cff = FontRef::new(&data).ok().and_then(|fr| {
+                        fr.table_data(skrifa::Tag::new(b"CFF "))
+                            .map(|t| t.as_bytes().to_vec())
+                    });
                     match cff.and_then(|c| Cff::parse(&c)) {
                         Some(c) => f.program = Program::Cff(Box::new(c)),
                         None => f.program = Program::TrueType(Arc::new(data)),
@@ -552,14 +642,25 @@ impl Font {
             let enc = file.get(d, "Encoding").map(|e| file.resolve(e));
             let base = match enc {
                 Some(Obj::Name(n)) => Base::from_name(n),
-                Some(Obj::Dict(e)) => file.get(e, "BaseEncoding").and_then(Obj::name).and_then(Base::from_name),
+                Some(Obj::Dict(e)) => file
+                    .get(e, "BaseEncoding")
+                    .and_then(Obj::name)
+                    .and_then(Base::from_name),
                 _ => None,
             };
             let builtin: Option<Vec<Option<String>>> = match &f.program {
-                Program::Type1(t) if !t.encoding.is_empty() => Some((0..256).map(|c| t.encoding.get(&(c as u8)).cloned()).collect()),
+                Program::Type1(t) if !t.encoding.is_empty() => Some(
+                    (0..256)
+                        .map(|c| t.encoding.get(&(c as u8)).cloned())
+                        .collect(),
+                ),
                 _ => None,
             };
-            let fallback_base = if f.symbolic { None } else { Some(Base::Standard) };
+            let fallback_base = if f.symbolic {
+                None
+            } else {
+                Some(Base::Standard)
+            };
             for c in 0..256usize {
                 f.names[c] = match (base, &builtin) {
                     (Some(b), _) => b.name(c as u8),
@@ -567,8 +668,14 @@ impl Font {
                     (None, None) => match &f.program {
                         // TrueType symbolic fonts map codes directly; others use Standard.
                         Program::TrueType(_) if f.symbolic => None,
-                        Program::Fallback(_) if base_name.contains("Symbol") || base_name.contains("Dingbats") => None,
-                        _ => fallback_base.or(Some(Base::Standard)).and_then(|b| b.name(c as u8)),
+                        Program::Fallback(_)
+                            if base_name.contains("Symbol") || base_name.contains("Dingbats") =>
+                        {
+                            None
+                        }
+                        _ => fallback_base
+                            .or(Some(Base::Standard))
+                            .and_then(|b| b.name(c as u8)),
                     },
                 };
             }
@@ -593,7 +700,9 @@ impl Font {
                     .find(|&n| {
                         i + n <= s.len() && {
                             let v = be(&s[i..i + n]);
-                            self.codespace.iter().any(|(l, lo, hi)| *l == n && v >= *lo && v <= *hi)
+                            self.codespace
+                                .iter()
+                                .any(|(l, lo, hi)| *l == n && v >= *lo && v <= *hi)
                         }
                     })
                     .unwrap_or(1);
@@ -609,7 +718,11 @@ impl Font {
         if self.cid_ranges.is_empty() {
             return code;
         }
-        self.cid_ranges.iter().find(|(lo, hi, _)| code >= *lo && code <= *hi).map(|(lo, _, c)| c + (code - lo)).unwrap_or(0)
+        self.cid_ranges
+            .iter()
+            .find(|(lo, hi, _)| code >= *lo && code <= *hi)
+            .map(|(lo, _, c)| c + (code - lo))
+            .unwrap_or(0)
     }
 
     /// Vertical metrics of a code in text space (before the font size): the vertical
@@ -626,24 +739,44 @@ impl Font {
     /// The advance of a code in text space (before the font size).
     pub fn width(&self, code: u32) -> f64 {
         if self.composite {
-            return self.cid_widths.get(&self.cid(code)).copied().unwrap_or(self.default_width);
+            return self
+                .cid_widths
+                .get(&self.cid(code))
+                .copied()
+                .unwrap_or(self.default_width);
         }
         if self.has_widths {
-            return match code.checked_sub(self.first_char).and_then(|i| self.widths.get(i as usize)) {
+            return match code
+                .checked_sub(self.first_char)
+                .and_then(|i| self.widths.get(i as usize))
+            {
                 Some(w) => w / 1000.0,
                 None => self.default_width / 1000.0,
             };
         }
         // No /Widths (standard 14 fonts): the program's own advance.
         match &self.program {
-            Program::Fallback(data) => {
-                self.sfnt_gid(data, code).and_then(|g| sfnt_advance(data, g)).map(|a| a / sfnt_upem(data)).unwrap_or(if code == 32 { 0.25 } else { 0.5 })
-            }
-            Program::TrueType(data) => self.sfnt_gid(data, code).and_then(|g| sfnt_advance(data, g)).map(|a| a / sfnt_upem(data)).unwrap_or(0.5),
-            Program::Type1(t) => self.name(code).and_then(|n| t.outline(n)).map(|(_, w)| self.matrix.as_coeffs()[0] * w).unwrap_or(0.5),
-            Program::Cff(c) => {
-                self.name(code).and_then(|n| c.gid_by_name(n)).and_then(|g| c.outline(g)).map(|(_, w)| self.matrix.as_coeffs()[0] * w).unwrap_or(0.5)
-            }
+            Program::Fallback(data) => self
+                .sfnt_gid(data, code)
+                .and_then(|g| sfnt_advance(data, g))
+                .map(|a| a / sfnt_upem(data))
+                .unwrap_or(if code == 32 { 0.25 } else { 0.5 }),
+            Program::TrueType(data) => self
+                .sfnt_gid(data, code)
+                .and_then(|g| sfnt_advance(data, g))
+                .map(|a| a / sfnt_upem(data))
+                .unwrap_or(0.5),
+            Program::Type1(t) => self
+                .name(code)
+                .and_then(|n| t.outline(n))
+                .map(|(_, w)| self.matrix.as_coeffs()[0] * w)
+                .unwrap_or(0.5),
+            Program::Cff(c) => self
+                .name(code)
+                .and_then(|n| c.gid_by_name(n))
+                .and_then(|g| c.outline(g))
+                .map(|(_, w)| self.matrix.as_coeffs()[0] * w)
+                .unwrap_or(0.5),
             _ => 0.5,
         }
     }
@@ -667,12 +800,19 @@ impl Font {
             let font = FontRef::new(data).ok()?;
             return font.charmap().map(u).map(|g| g.to_u32() as u16);
         }
-        sfnt_glyph(data, code as u8, self.name(code), self.symbolic && !matches!(self.program, Program::Fallback(_)))
+        sfnt_glyph(
+            data,
+            code as u8,
+            self.name(code),
+            self.symbolic && !matches!(self.program, Program::Fallback(_)),
+        )
     }
 
     /// The Type 3 glyph procedure of a code.
     pub fn type3_proc(&self, code: u32) -> Option<(&[u8], Option<&Dict>)> {
-        let Program::Type3 { procs, resources } = &self.program else { return None };
+        let Program::Type3 { procs, resources } = &self.program else {
+            return None;
+        };
         let n = self.name(code)?;
         procs.get(n).map(|p| (p.as_slice(), resources.as_ref()))
     }
@@ -703,7 +843,10 @@ impl Font {
                 c.outline(g).map(|(p, _)| self.matrix * p)
             }
             Program::Type1(t) => {
-                let name = self.name(code).filter(|n| t.has_glyph(n)).or_else(|| t.encoding.get(&(code as u8)).map(String::as_str))?;
+                let name = self
+                    .name(code)
+                    .filter(|n| t.has_glyph(n))
+                    .or_else(|| t.encoding.get(&(code as u8)).map(String::as_str))?;
                 t.outline(name).map(|(p, _)| self.matrix * p)
             }
             Program::Type3 { .. } | Program::None => None,
@@ -724,6 +867,9 @@ impl Font {
         if self.composite {
             return String::new();
         }
-        self.name(code).and_then(name_to_unicode).map(String::from).unwrap_or_default()
+        self.name(code)
+            .and_then(name_to_unicode)
+            .map(String::from)
+            .unwrap_or_default()
     }
 }

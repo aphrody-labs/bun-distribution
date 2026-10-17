@@ -191,7 +191,10 @@ impl SdlJoystick {
                     sdl::SDL_SENSOR_ACCEL,
                     true,
                 ) {
-                    log::warn!("Failed to enable accelerometer sensor: {}", CStr::from_ptr(sdl::SDL_GetError()).to_string_lossy());
+                    log::warn!(
+                        "Failed to enable accelerometer sensor: {}",
+                        CStr::from_ptr(sdl::SDL_GetError()).to_string_lossy()
+                    );
                 }
             }
             if self.has_gyro {
@@ -200,11 +203,18 @@ impl SdlJoystick {
                     sdl::SDL_SENSOR_GYRO,
                     true,
                 ) {
-                    log::warn!("Failed to enable gyroscope sensor: {}", CStr::from_ptr(sdl::SDL_GetError()).to_string_lossy());
+                    log::warn!(
+                        "Failed to enable gyroscope sensor: {}",
+                        CStr::from_ptr(sdl::SDL_GetError()).to_string_lossy()
+                    );
                 }
             }
         }
-        log::info!("Controller motion capabilities: accel={} gyro={}", self.has_accel, self.has_gyro);
+        log::info!(
+            "Controller motion capabilities: accel={} gyro={}",
+            self.has_accel,
+            self.has_gyro
+        );
     }
 
     /// Upstream `SDLJoystick::HasMotion`.
@@ -443,7 +453,12 @@ mod tests {
 
     #[test]
     fn motion_zero_sample_recovery_matches_postincrement_threshold() {
-        let mut joystick = SdlJoystick::new(UUID::default(), 0, std::ptr::null_mut(), std::ptr::null_mut());
+        let mut joystick = SdlJoystick::new(
+            UUID::default(),
+            0,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        );
         let mut event: sdl::SDL_GamepadSensorEvent = unsafe { std::mem::zeroed() };
         event.sensor = sdl::SDL_SENSOR_GYRO.0;
         event.sensor_timestamp = 1_000;
@@ -460,21 +475,48 @@ mod tests {
 
     #[test]
     fn motion_samples_preserve_axes_units_and_timestamp_rules() {
-        let mut joystick = SdlJoystick::new(UUID::default(), 0, std::ptr::null_mut(), std::ptr::null_mut());
+        let mut joystick = SdlJoystick::new(
+            UUID::default(),
+            0,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        );
         let mut event: sdl::SDL_GamepadSensorEvent = unsafe { std::mem::zeroed() };
         event.sensor = sdl::SDL_SENSOR_ACCEL.0;
         event.timestamp = 1_000_000;
         assert!(!joystick.update_motion(event));
         event.timestamp += 2_000_000;
-        event.data = [GRAVITY_CONSTANT, 2.0 * GRAVITY_CONSTANT, 3.0 * GRAVITY_CONSTANT];
+        event.data = [
+            GRAVITY_CONSTANT,
+            2.0 * GRAVITY_CONSTANT,
+            3.0 * GRAVITY_CONSTANT,
+        ];
         assert!(joystick.update_motion(event));
         assert_eq!(joystick.motion.delta_timestamp, 2_000);
-        assert_eq!([joystick.motion.accel_x, joystick.motion.accel_y, joystick.motion.accel_z], [-1.0, 3.0, -2.0]);
+        assert_eq!(
+            [
+                joystick.motion.accel_x,
+                joystick.motion.accel_y,
+                joystick.motion.accel_z
+            ],
+            [-1.0, 3.0, -2.0]
+        );
         event.sensor = sdl::SDL_SENSOR_GYRO.0;
-        event.data = [std::f32::consts::TAU, 2.0 * std::f32::consts::TAU, 3.0 * std::f32::consts::TAU];
+        event.data = [
+            std::f32::consts::TAU,
+            2.0 * std::f32::consts::TAU,
+            3.0 * std::f32::consts::TAU,
+        ];
         // Same-timestamp data updates axes, but does not publish another sample.
         assert!(!joystick.update_motion(event));
-        assert_eq!([joystick.motion.gyro_x, joystick.motion.gyro_y, joystick.motion.gyro_z], [1.0, -3.0, 2.0]);
+        assert_eq!(
+            [
+                joystick.motion.gyro_x,
+                joystick.motion.gyro_y,
+                joystick.motion.gyro_z
+            ],
+            [1.0, -3.0, 2.0]
+        );
         event.sensor_timestamp = event.timestamp + 1_000_000;
         assert!(joystick.update_motion(event));
         assert_eq!(joystick.motion.delta_timestamp, 1_000);

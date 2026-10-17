@@ -32,10 +32,15 @@ fn main() {
     } else if let Some(q) = rate.strip_prefix("crf") {
         RateControl::Crf(q.parse().unwrap())
     } else if let Some(q) = rate.strip_prefix("cbr") {
-        RateControl::Cbr { kbps: q.parse().unwrap() }
+        RateControl::Cbr {
+            kbps: q.parse().unwrap(),
+        }
     } else {
         let k: u32 = rate.strip_prefix("vbr").unwrap().parse().unwrap();
-        RateControl::Vbr { target_kbps: k, max_kbps: k * 2 }
+        RateControl::Vbr {
+            target_kbps: k,
+            max_kbps: k * 2,
+        }
     };
     cfg.slices = arg(8, "0").parse().unwrap();
     let src_kind = arg(9, "synth");
@@ -49,9 +54,14 @@ fn main() {
         cfg.aq_strength = k.parse().unwrap();
     }
     // PERF=k: generate only k distinct pictures and cycle them (for long speed runs without verification).
-    let distinct = std::env::var("PERF").ok().map_or(n, |k| k.parse::<usize>().unwrap().min(n));
-    let base: Vec<common::Yuv> =
-        if src_kind == "synth" { (0..distinct).map(|t| common::synth(w, h, t)).collect() } else { common::ffmpeg_source(&src_kind, w, h, distinct) };
+    let distinct = std::env::var("PERF")
+        .ok()
+        .map_or(n, |k| k.parse::<usize>().unwrap().min(n));
+    let base: Vec<common::Yuv> = if src_kind == "synth" {
+        (0..distinct).map(|t| common::synth(w, h, t)).collect()
+    } else {
+        common::ffmpeg_source(&src_kind, w, h, distinct)
+    };
     let perf = distinct < n;
     let frames: Vec<&common::Yuv> = (0..n).map(|i| &base[i % distinct]).collect();
     let dir = common::out_dir("dev");
@@ -76,9 +86,20 @@ fn main() {
     let mut recon = enc.take_recon();
     recon.sort_by_key(|r| r.pts);
     let kbps = out.len() as f64 * 8.0 / (n as f64 / 30.0) / 1000.0;
-    println!("encoded {n} frames in {el:.3}s = {:.1} fps, {} bytes, {kbps:.1} kbps", n as f64 / el, out.len());
+    println!(
+        "encoded {n} frames in {el:.3}s = {:.1} fps, {} bytes, {kbps:.1} kbps",
+        n as f64 / el,
+        out.len()
+    );
     for p in pk.iter().take(12) {
-        print!("{:?}(pts{} dts{} qp{} {}B) ", p.frame_type, p.pts, p.dts, p.qp, p.data.len());
+        print!(
+            "{:?}(pts{} dts{} qp{} {}B) ",
+            p.frame_type,
+            p.pts,
+            p.dts,
+            p.qp,
+            p.data.len()
+        );
     }
     println!();
     if common::ffmpeg().is_none() || perf {
@@ -149,6 +170,9 @@ fn main() {
             }
         }
     }
-    println!("mean luma PSNR vs source: {:.2} dB", psnr_sum / recon.len() as f64);
+    println!(
+        "mean luma PSNR vs source: {:.2} dB",
+        psnr_sum / recon.len() as f64
+    );
     std::fs::write(dir.join("src.yuv"), &src_all).unwrap();
 }

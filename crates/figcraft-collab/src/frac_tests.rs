@@ -19,12 +19,31 @@ fn first_keys_count_up_and_down() {
 
 #[test]
 fn bad_keys_and_bounds_are_refused() {
-    for bad in ["", "a", "a00", "a0 ", "b1", "!0", "a0é", "A00000000000000000000000000"] {
+    for bad in [
+        "",
+        "a",
+        "a00",
+        "a0 ",
+        "b1",
+        "!0",
+        "a0é",
+        "A00000000000000000000000000",
+    ] {
         assert!(validate(bad).is_err(), "{bad:?}");
         assert!(between(Some(bad), None).is_err());
     }
-    assert!(validate(&format!("a0{}", "1".repeat(200))).is_err(), "too long");
-    for good in ["a0", "a0V", "Zz", "b00", "zzzzzzzzzzzzzzzzzzzzzzzzzzz", "A000000000000000000000000001"] {
+    assert!(
+        validate(&format!("a0{}", "1".repeat(200))).is_err(),
+        "too long"
+    );
+    for good in [
+        "a0",
+        "a0V",
+        "Zz",
+        "b00",
+        "zzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "A000000000000000000000000001",
+    ] {
         assert_eq!(validate(good), Ok(()), "{good:?}");
     }
     assert_eq!(between(Some("a1"), Some("a1")), Err(KeyError::Order));
@@ -39,12 +58,18 @@ fn bad_keys_and_bounds_are_refused() {
 fn many_keys_are_ordered_and_short() {
     let keys = n_between(None, None, 1000).unwrap();
     assert!(keys.windows(2).all(|w| w[0] < w[1]));
-    assert!(keys.iter().all(|k| k.len() <= 3), "counting up keeps keys short");
+    assert!(
+        keys.iter().all(|k| k.len() <= 3),
+        "counting up keeps keys short"
+    );
     let inside = n_between(Some("a0"), Some("a1"), 1000).unwrap();
     assert_eq!(inside.len(), 1000);
     assert!(inside.windows(2).all(|w| w[0] < w[1]));
     assert!(inside.first().unwrap().as_str() > "a0" && inside.last().unwrap().as_str() < "a1");
-    assert!(inside.iter().all(|k| k.len() <= 8), "bisection keeps keys short");
+    assert!(
+        inside.iter().all(|k| k.len() <= 8),
+        "bisection keeps keys short"
+    );
     let below = n_between(None, Some("a0"), 50).unwrap();
     assert!(below.windows(2).all(|w| w[0] < w[1]) && below.last().unwrap().as_str() < "a0");
     assert!(n_between(Some("a0"), Some("a1"), 0).unwrap().is_empty());
@@ -61,8 +86,15 @@ fn random_inserts_stay_ordered_valid_and_deterministic() {
             let hi = keys.get(i).cloned();
             let k = between(lo.as_deref(), hi.as_deref()).unwrap();
             assert_eq!(validate(&k), Ok(()));
-            assert_eq!(between(lo.as_deref(), hi.as_deref()).unwrap(), k, "deterministic");
-            assert!(lo.as_deref().is_none_or(|l| l < k.as_str()) && hi.as_deref().is_none_or(|h| k.as_str() < h));
+            assert_eq!(
+                between(lo.as_deref(), hi.as_deref()).unwrap(),
+                k,
+                "deterministic"
+            );
+            assert!(
+                lo.as_deref().is_none_or(|l| l < k.as_str())
+                    && hi.as_deref().is_none_or(|h| k.as_str() < h)
+            );
             keys.insert(i, k);
         }
         assert!(keys.windows(2).all(|w| w[0] < w[1]));
@@ -93,8 +125,12 @@ fn appending_and_prepending_forever_never_fails() {
 fn junk_keys_never_panic() {
     let mut rng = Rng::new(7);
     for _ in 0..5000 {
-        let a: String = (0..rng.below(12)).map(|_| char::from(rng.below(128) as u8)).collect();
-        let b: String = (0..rng.below(12)).map(|_| char::from(32 + rng.below(95) as u8)).collect();
+        let a: String = (0..rng.below(12))
+            .map(|_| char::from(rng.below(128) as u8))
+            .collect();
+        let b: String = (0..rng.below(12))
+            .map(|_| char::from(32 + rng.below(95) as u8))
+            .collect();
         let _ = validate(&a);
         let _ = between(Some(&a), Some(&b));
         let _ = between(None, Some(&b));

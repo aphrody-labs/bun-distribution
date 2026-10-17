@@ -61,7 +61,10 @@ impl PureIo for MemoryIo {
         if source == "-" {
             Ok(self.stdin.clone())
         } else {
-            self.files.get(source).cloned().ok_or_else(|| format!("no such file: {source}"))
+            self.files
+                .get(source)
+                .cloned()
+                .ok_or_else(|| format!("no such file: {source}"))
         }
     }
 }
@@ -93,7 +96,10 @@ pub struct PureArgs {
 
 /// Stand-alone parser for hosts that do not embed the full CLI (wasm packages).
 #[derive(Debug, Parser)]
-#[command(name = "aphrody pure", about = "Pure aphrody commands: no network, no processes.")]
+#[command(
+    name = "aphrody pure",
+    about = "Pure aphrody commands: no network, no processes."
+)]
 pub struct PureCli {
     #[command(subcommand)]
     pub command: PureCommand,
@@ -241,17 +247,33 @@ pub fn run_args(args: &[String], io: &mut dyn PureIo) -> Outcome {
     );
     match parsed {
         Ok(cli) => match run(&cli.command, io) {
-            Ok(stdout) => Outcome { code: 0, stdout, stderr: String::new() },
-            Err(e) => Outcome { code: 1, stdout: String::new(), stderr: format!("{e}\n") },
+            Ok(stdout) => Outcome {
+                code: 0,
+                stdout,
+                stderr: String::new(),
+            },
+            Err(e) => Outcome {
+                code: 1,
+                stdout: String::new(),
+                stderr: format!("{e}\n"),
+            },
         },
         Err(e) => {
             let text = e.render().to_string();
             if e.use_stderr() {
-                Outcome { code: e.exit_code(), stdout: String::new(), stderr: text }
+                Outcome {
+                    code: e.exit_code(),
+                    stdout: String::new(),
+                    stderr: text,
+                }
             } else {
-                Outcome { code: 0, stdout: text, stderr: String::new() }
+                Outcome {
+                    code: 0,
+                    stdout: text,
+                    stderr: String::new(),
+                }
             }
-        },
+        }
     }
 }
 
@@ -263,12 +285,14 @@ pub fn run(command: &PureCommand, io: &mut dyn PureIo) -> Result<String, PureErr
     let (mut out, is_json) = match command {
         PureCommand::Rag { command } => (rag(command, io)?, true),
         PureCommand::Toolcall { command } => (toolcall(command, io)?, true),
-        PureCommand::Html { command } => {
-            (html(command, io)?, matches!(command, HtmlCommand::Extract { .. }))
-        },
-        PureCommand::Text { command } => {
-            (text(command, io)?, matches!(command, TextCommand::Comments { .. }))
-        },
+        PureCommand::Html { command } => (
+            html(command, io)?,
+            matches!(command, HtmlCommand::Extract { .. }),
+        ),
+        PureCommand::Text { command } => (
+            text(command, io)?,
+            matches!(command, TextCommand::Comments { .. }),
+        ),
     };
     if is_json {
         out = canonical_json(&out);
@@ -289,7 +313,7 @@ fn canonical_json(text: &str) -> String {
                 let mut entries: Vec<(String, Value)> = map.into_iter().collect();
                 entries.sort_by(|a, b| a.0.cmp(&b.0));
                 Value::Object(entries.into_iter().map(|(k, v)| (k, sorted(v))).collect())
-            },
+            }
             Value::Array(items) => Value::Array(items.into_iter().map(sorted).collect()),
             other => other,
         }
@@ -317,11 +341,22 @@ fn rag(command: &RagCommand, io: &mut dyn PureIo) -> Result<String, PureError> {
         RagCommand::Call { op, input } => {
             let input = json_input(io, input.as_deref())?;
             Ok(aphrody_rag_core::api::call_json(op, &input)?)
-        },
-        RagCommand::Chunk { file, path, profile, max_chars, min_chars, overlap_pct } => {
+        }
+        RagCommand::Chunk {
+            file,
+            path,
+            profile,
+            max_chars,
+            min_chars,
+            overlap_pct,
+        } => {
             let text = io.read(file)?;
             let path = path.clone().unwrap_or_else(|| {
-                if file == "-" { "input.txt".into() } else { file_name(file).to_string() }
+                if file == "-" {
+                    "input.txt".into()
+                } else {
+                    file_name(file).to_string()
+                }
             });
             let mut options = serde_json::Map::new();
             if let Some(v) = profile {
@@ -337,8 +372,11 @@ fn rag(command: &RagCommand, io: &mut dyn PureIo) -> Result<String, PureError> {
                 options.insert("overlap_pct".into(), json!(v));
             }
             let input = json!({ "path": path, "text": text, "options": options });
-            Ok(aphrody_rag_core::api::call_json("chunk", &input.to_string())?)
-        },
+            Ok(aphrody_rag_core::api::call_json(
+                "chunk",
+                &input.to_string(),
+            )?)
+        }
     }
 }
 
@@ -353,7 +391,7 @@ fn toolcall(command: &ToolcallCommand, io: &mut dyn PureIo) -> Result<String, Pu
                 .map_err(|e| PureError(e.to_string()))?;
             let repairs: Vec<String> = report.repairs.iter().map(|k| format!("{k:?}")).collect();
             Ok(json!({ "value": report.value, "repairs": repairs }).to_string())
-        },
+        }
         ToolcallCommand::Validate { schema, file } => {
             let schema = parse_json("schema", &io.read(schema)?)?;
             let args = parse_json("arguments", &io.read(file)?)?;
@@ -363,31 +401,42 @@ fn toolcall(command: &ToolcallCommand, io: &mut dyn PureIo) -> Result<String, Pu
                     .map(|v| json!({ "pointer": v.pointer, "message": v.message }))
                     .collect();
             Ok(json!({ "violations": violations }).to_string())
-        },
+        }
         ToolcallCommand::Extract { file } => {
             let calls: Vec<Value> = aphrody_toolcall_repair::extract_any(&io.read(file)?)
                 .into_iter()
                 .map(|c| json!({ "name": c.name, "arguments": c.arguments, "span": [c.span.start, c.span.end] }))
                 .collect();
             Ok(Value::Array(calls).to_string())
-        },
+        }
     }
 }
 
 fn html(command: &HtmlCommand, io: &mut dyn PureIo) -> Result<String, PureError> {
     match command {
-        HtmlCommand::DragonBall { file, kind, base_url, slug } => Ok(
-            aphrody_web_extract::dragon_ball::project_json(kind, &io.read(file)?, base_url, slug)?,
-        ),
-        HtmlCommand::Extract { file, base_url } => {
-            Ok(aphrody_web_extract::extract_main_json(&io.read(file)?, base_url.as_deref()))
-        },
-        HtmlCommand::Markdown { file, base_url } => {
-            Ok(aphrody_web_extract::html_to_markdown(&io.read(file)?, base_url.as_deref()))
-        },
-        HtmlCommand::Simhash { file } => {
-            Ok(format!("{:016x}", aphrody_web_extract::simhash64(&io.read(file)?)))
-        },
+        HtmlCommand::DragonBall {
+            file,
+            kind,
+            base_url,
+            slug,
+        } => Ok(aphrody_web_extract::dragon_ball::project_json(
+            kind,
+            &io.read(file)?,
+            base_url,
+            slug,
+        )?),
+        HtmlCommand::Extract { file, base_url } => Ok(aphrody_web_extract::extract_main_json(
+            &io.read(file)?,
+            base_url.as_deref(),
+        )),
+        HtmlCommand::Markdown { file, base_url } => Ok(aphrody_web_extract::html_to_markdown(
+            &io.read(file)?,
+            base_url.as_deref(),
+        )),
+        HtmlCommand::Simhash { file } => Ok(format!(
+            "{:016x}",
+            aphrody_web_extract::simhash64(&io.read(file)?)
+        )),
     }
 }
 
@@ -403,7 +452,7 @@ fn text(command: &TextCommand, io: &mut dyn PureIo) -> Result<String, PureError>
                 .map(|c| json!({ "style": format!("{:?}", c.style), "start": c.start, "end": c.end, "body": c.body }))
                 .collect();
             Ok(Value::Array(comments).to_string())
-        },
+        }
         TextCommand::Scrub { file } => Ok(core::ai_patterns::scrub(&io.read(file)?)),
         TextCommand::Aphrodify { file } => Ok(core::aphrodify::aphrodify(&io.read(file)?)),
         TextCommand::IsJapanese { file } => Ok(core::is_japanese(&io.read(file)?).to_string()),
@@ -417,7 +466,10 @@ mod tests {
     fn run_with(args: &[&str], stdin: &str, files: &[(&str, &str)]) -> Outcome {
         let mut io = MemoryIo {
             stdin: stdin.to_string(),
-            files: files.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect(),
+            files: files
+                .iter()
+                .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                .collect(),
         };
         let args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
         run_args(&args, &mut io)
@@ -439,9 +491,17 @@ mod tests {
     fn rag_call_goes_through_the_single_api() {
         let direct =
             aphrody_rag_core::api::call_json("rrf", r#"{"lists":[["a","b"],["b"]]}"#).unwrap();
-        let out = run_with(&["rag", "call", "rrf", r#"{"lists":[["a","b"],["b"]]}"#], "", &[]);
+        let out = run_with(
+            &["rag", "call", "rrf", r#"{"lists":[["a","b"],["b"]]}"#],
+            "",
+            &[],
+        );
         assert_eq!(out.stdout.trim(), direct);
-        let stdin = run_with(&["rag", "call", "rrf", "-"], r#"{"lists":[["a","b"],["b"]]}"#, &[]);
+        let stdin = run_with(
+            &["rag", "call", "rrf", "-"],
+            r#"{"lists":[["a","b"],["b"]]}"#,
+            &[],
+        );
         assert_eq!(stdin.stdout.trim(), direct);
         let file = run_with(
             &["rag", "call", "rrf", "@in.json"],
@@ -450,16 +510,31 @@ mod tests {
         );
         assert_eq!(file.stdout.trim(), direct);
         let bad = run_with(&["rag", "call", "nope"], "", &[]);
-        assert_eq!((bad.code, bad.stderr.contains("unknown json operation")), (1, true));
+        assert_eq!(
+            (bad.code, bad.stderr.contains("unknown json operation")),
+            (1, true)
+        );
     }
 
     #[test]
     fn rag_chunk_picks_the_chunker_from_the_file_name() {
         let src = "fn greet() {\n    println!(\"hi\");\n}\n";
-        let v = json_of(&run_with(&["rag", "chunk", "src/lib.rs"], "", &[("src/lib.rs", src)]));
+        let v = json_of(&run_with(
+            &["rag", "chunk", "src/lib.rs"],
+            "",
+            &[("src/lib.rs", src)],
+        ));
         assert_eq!(v[0]["symbol"], "greet");
         let stdin = json_of(&run_with(
-            &["rag", "chunk", "-", "--path", "a.rs", "--profile", "shenron_parity"],
+            &[
+                "rag",
+                "chunk",
+                "-",
+                "--path",
+                "a.rs",
+                "--profile",
+                "shenron_parity",
+            ],
             src,
             &[],
         ));
@@ -477,15 +552,25 @@ mod tests {
     fn json_output_has_sorted_keys() {
         // The manifest inserts `version` before `oxc`; the canonical output sorts them.
         let out = run_with(&["rag", "ops"], "", &[]).stdout;
-        assert!(out.find("\"oxc\"").unwrap() < out.find("\"version\"").unwrap(), "{out}");
+        assert!(
+            out.find("\"oxc\"").unwrap() < out.find("\"version\"").unwrap(),
+            "{out}"
+        );
     }
 
     #[test]
     fn toolcall_commands() {
-        let repaired =
-            json_of(&run_with(&["toolcall", "repair", "-"], "```json\n{'a': 1,}\n```", &[]));
+        let repaired = json_of(&run_with(
+            &["toolcall", "repair", "-"],
+            "```json\n{'a': 1,}\n```",
+            &[],
+        ));
         assert_eq!(repaired["value"], json!({"a": 1}));
-        assert!(repaired["repairs"].as_array().is_some_and(|r| !r.is_empty()));
+        assert!(
+            repaired["repairs"]
+                .as_array()
+                .is_some_and(|r| !r.is_empty())
+        );
         assert_eq!(run_with(&["toolcall", "repair", "-"], "  ", &[]).code, 1);
         let v = json_of(&run_with(
             &["toolcall", "validate", "--schema", "s.json", "-"],
@@ -507,13 +592,20 @@ mod tests {
     #[test]
     fn html_commands() {
         let page = "<html><head><title>T</title></head><body><article><h1>Guide</h1><p>A long enough paragraph with substantial content for extraction, long enough to be kept as the main content.</p></article></body></html>";
-        let md = run_with(&["html", "markdown", "-", "--base-url", "https://x.test/"], page, &[]);
+        let md = run_with(
+            &["html", "markdown", "-", "--base-url", "https://x.test/"],
+            page,
+            &[],
+        );
         assert!(md.stdout.contains("# Guide"), "{}", md.stdout);
         let v = json_of(&run_with(&["html", "extract", "-"], page, &[]));
         assert_eq!(v["title"], "T");
         let hash = run_with(&["html", "simhash", "-"], "same text here", &[]);
         assert_eq!(hash.stdout.trim().len(), 16);
-        assert_eq!(hash, run_with(&["html", "simhash", "-"], "same text here", &[]));
+        assert_eq!(
+            hash,
+            run_with(&["html", "simhash", "-"], "same text here", &[])
+        );
     }
 
     #[test]
@@ -562,15 +654,28 @@ mod tests {
         ));
         assert_eq!(c[0]["body"], "hello world");
         assert_eq!(
-            run_with(&["text", "scrub", "-"], "note \u{1F916} here", &[]).stdout.trim(),
+            run_with(&["text", "scrub", "-"], "note \u{1F916} here", &[])
+                .stdout
+                .trim(),
             "note here"
         );
         assert_eq!(
-            run_with(&["text", "is-japanese", "-"], "こんにちは", &[]).stdout.trim(),
+            run_with(&["text", "is-japanese", "-"], "こんにちは", &[])
+                .stdout
+                .trim(),
             "true"
         );
-        assert_eq!(run_with(&["text", "is-japanese", "-"], "Hello", &[]).stdout.trim(), "false");
-        assert!(!run_with(&["text", "aphrodify", "-"], "Let's just do it", &[]).stdout.is_empty());
+        assert_eq!(
+            run_with(&["text", "is-japanese", "-"], "Hello", &[])
+                .stdout
+                .trim(),
+            "false"
+        );
+        assert!(
+            !run_with(&["text", "aphrodify", "-"], "Let's just do it", &[])
+                .stdout
+                .is_empty()
+        );
     }
 
     #[test]
@@ -580,6 +685,9 @@ mod tests {
         assert_eq!(help.code, 0);
         assert!(help.stdout.contains("toolcall"));
         let missing = run_with(&["html", "markdown", "gone.html"], "", &[]);
-        assert_eq!((missing.code, missing.stderr.contains("no such file")), (1, true));
+        assert_eq!(
+            (missing.code, missing.stderr.contains("no such file")),
+            (1, true)
+        );
     }
 }

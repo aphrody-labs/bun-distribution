@@ -33,13 +33,19 @@ fn setup(name: &str) -> (Session, Vec<ItemId>, ItemId, std::path::PathBuf) {
 }
 
 fn audio_of(s: &Session, item: ItemId, start: i64, n: usize) -> Vec<Vec<f32>> {
-    let src = s.media.full_res_source(&s.project, item, &*s.services).expect("online");
+    let src = s
+        .media
+        .full_res_source(&s.project, item, &*s.services)
+        .expect("online");
     src.audio(start, n, 48_000).unwrap().channels
 }
 
 fn imported_seq(r: &serde_json::Value) -> ItemId {
     let docs = r["documents"].as_array().cloned().unwrap_or_default();
-    let seq = r["sequences"][0].as_u64().or_else(|| docs.first().and_then(|d| d["sequences"][0].as_u64())).unwrap_or_else(|| panic!("no sequence in {r}"));
+    let seq = r["sequences"][0]
+        .as_u64()
+        .or_else(|| docs.first().and_then(|d| d["sequences"][0].as_u64()))
+        .unwrap_or_else(|| panic!("no sequence in {r}"));
     ItemId(seq)
 }
 
@@ -64,15 +70,33 @@ fn aaf_embedded_trimmed_audio_round_trips_sample_exact() {
     let q = s.project.sequence(n).unwrap().clone();
     let orig = s.project.sequence(seq).unwrap().clone();
     for kind in [TrackKind::Video, TrackKind::Audio] {
-        let a: Vec<_> = q.tracks(kind)[0].items.iter().map(|c| (c.start, c.duration)).collect();
-        let b: Vec<_> = orig.tracks(kind)[0].items.iter().map(|c| (c.start, c.duration)).collect();
+        let a: Vec<_> = q.tracks(kind)[0]
+            .items
+            .iter()
+            .map(|c| (c.start, c.duration))
+            .collect();
+        let b: Vec<_> = orig.tracks(kind)[0]
+            .items
+            .iter()
+            .map(|c| (c.start, c.duration))
+            .collect();
         assert_eq!(a, b, "{kind:?}");
     }
     // video links to the original movies, audio to WAV files extracted next to the AAF
-    assert_eq!(std::path::Path::new(&path_of(&s, q.video_tracks[0].items[0].item)), std::path::Path::new(&path_of(&s, items[0])));
-    for (c, oc) in q.audio_tracks[0].items.iter().zip(&orig.audio_tracks[0].items) {
+    assert_eq!(
+        std::path::Path::new(&path_of(&s, q.video_tracks[0].items[0].item)),
+        std::path::Path::new(&path_of(&s, items[0]))
+    );
+    for (c, oc) in q.audio_tracks[0]
+        .items
+        .iter()
+        .zip(&orig.audio_tracks[0].items)
+    {
         let p = path_of(&s, c.item);
-        assert!(p.ends_with(".wav") && std::path::Path::new(&p).exists(), "{p}");
+        assert!(
+            p.ends_with(".wav") && std::path::Path::new(&p).exists(),
+            "{p}"
+        );
         assert!(!s.project.item(c.item).unwrap().as_media().unwrap().offline);
         // trimmed: the essence starts 6 frames (handles) before the clip
         assert_eq!(c.source_in, FrameRate::FPS_24.tick_of(6));
@@ -80,7 +104,12 @@ fn aaf_embedded_trimmed_audio_round_trips_sample_exact() {
         let want = audio_of(&s, oc.item, oc.source_in.to_units_floor(48_000), 4800);
         for ch in 0..2 {
             for i in 0..4800 {
-                assert!((got[ch][i] - want[ch][i]).abs() <= 1.0 / 32_768.0 + 1e-6, "ch {ch} sample {i}: {} vs {}", got[ch][i], want[ch][i]);
+                assert!(
+                    (got[ch][i] - want[ch][i]).abs() <= 1.0 / 32_768.0 + 1e-6,
+                    "ch {ch} sample {i}: {} vs {}",
+                    got[ch][i],
+                    want[ch][i]
+                );
             }
         }
     }
@@ -97,25 +126,46 @@ fn aaf_separate_aiff_breakout_and_linked() {
             json!({"path": path, "audio": "separate", "audioFormat": "aiff", "bitDepth": 24, "breakoutToMono": true, "trimAudio": true, "handles": 0}),
         )
         .unwrap();
-    let files: Vec<String> = r["mediaFiles"].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+    let files: Vec<String> = r["mediaFiles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
     assert_eq!(files.len(), 4, "two media × two channels: {r}");
     for f in &files {
         let b = std::fs::read(f).unwrap();
         let (pcm, ch, sr, bits) = filmcraft_interchange::wav::parse_aiff(&b).unwrap();
         assert_eq!((ch, sr, bits), (1, 48_000, 24));
-        assert_eq!(pcm.len(), 24 * 2000 * 3, "one second of mono 24-bit audio (no handles)");
+        assert_eq!(
+            pcm.len(),
+            24 * 2000 * 3,
+            "one second of mono 24-bit audio (no handles)"
+        );
     }
     let r = s.execute("file.importAaf", json!({"path": path})).unwrap();
     let n = imported_seq(&r);
     let q = s.project.sequence(n).unwrap();
-    let mono: Vec<_> = q.audio_tracks.iter().filter(|t| !t.items.is_empty()).collect();
+    let mono: Vec<_> = q
+        .audio_tracks
+        .iter()
+        .filter(|t| !t.items.is_empty())
+        .collect();
     assert_eq!(mono.len(), 2);
-    assert!(mono.iter().all(|t| t.channels == filmcraft_project::AudioChannels::Mono));
+    assert!(
+        mono.iter()
+            .all(|t| t.channels == filmcraft_project::AudioChannels::Mono)
+    );
 
     // Avid-style consolidated OP-Atom MXF audio: our MXF reader opens every file
     let path = dir.join("mxf.aaf").to_string_lossy().into_owned();
     let r = s.execute("file.exportAaf", json!({"path": path, "audio": "separate", "audioFormat": "mxf", "breakoutToMono": true, "trimAudio": true})).unwrap();
-    let files: Vec<String> = r["mediaFiles"].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
+    let files: Vec<String> = r["mediaFiles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
     assert_eq!(files.len(), 4);
     for f in &files {
         let b = std::fs::read(f).unwrap();
@@ -128,17 +178,28 @@ fn aaf_separate_aiff_breakout_and_linked() {
     let n = imported_seq(&r);
     let a = &s.project.sequence(n).unwrap().audio_tracks[0].items[0];
     assert!(path_of(&s, a.item).ends_with(".mxf"));
-    assert!(!s.project.item(a.item).unwrap().as_media().unwrap().offline, "the MXF audio links");
+    assert!(
+        !s.project.item(a.item).unwrap().as_media().unwrap().offline,
+        "the MXF audio links"
+    );
 
     // linked: no media is written, the document points at the original movies
     let path = dir.join("linked.aaf").to_string_lossy().into_owned();
-    let r = s.execute("file.exportAaf", json!({"path": path, "audio": "linked", "sequence": seq.0})).unwrap();
+    let r = s
+        .execute(
+            "file.exportAaf",
+            json!({"path": path, "audio": "linked", "sequence": seq.0}),
+        )
+        .unwrap();
     assert!(r["mediaFiles"].as_array().unwrap().is_empty());
     let r = s.execute("file.import", json!({"paths": [path]})).unwrap();
     let n = imported_seq(&r);
     let q = s.project.sequence(n).unwrap();
     let a = &q.audio_tracks[0].items[0];
-    assert_eq!(std::path::Path::new(&path_of(&s, a.item)), std::path::Path::new(&path_of(&s, items[0])));
+    assert_eq!(
+        std::path::Path::new(&path_of(&s, a.item)),
+        std::path::Path::new(&path_of(&s, items[0]))
+    );
     assert_eq!(a.source_in, FrameRate::FPS_24.tick_of(12));
     assert!(!s.project.item(a.item).unwrap().as_media().unwrap().offline);
     let _ = std::fs::remove_dir_all(dir);
@@ -148,7 +209,12 @@ fn aaf_separate_aiff_breakout_and_linked() {
 fn aaf_video_mixdown() {
     let (mut s, _items, seq, dir) = setup("aaf-mixdown");
     let path = dir.join("mix.aaf").to_string_lossy().into_owned();
-    let r = s.execute("file.exportAaf", json!({"path": path, "mixdownVideo": true, "audio": "linked", "sequence": seq.0})).unwrap();
+    let r = s
+        .execute(
+            "file.exportAaf",
+            json!({"path": path, "mixdownVideo": true, "audio": "linked", "sequence": seq.0}),
+        )
+        .unwrap();
     let files = r["mediaFiles"].as_array().unwrap();
     assert_eq!(files.len(), 1);
     let mov = files[0].as_str().unwrap();
@@ -156,13 +222,22 @@ fn aaf_video_mixdown() {
     let r = s.execute("file.import", json!({"paths": [path]})).unwrap();
     let n = imported_seq(&r);
     let q = s.project.sequence(n).unwrap();
-    assert_eq!(q.video_tracks.iter().map(|t| t.items.len()).sum::<usize>(), 1);
+    assert_eq!(
+        q.video_tracks.iter().map(|t| t.items.len()).sum::<usize>(),
+        1
+    );
     let v = &q.video_tracks[0].items[0];
     assert_eq!(v.duration, FrameRate::FPS_24.tick_of(48));
-    assert_eq!(std::path::Path::new(&path_of(&s, v.item)), std::path::Path::new(mov));
+    assert_eq!(
+        std::path::Path::new(&path_of(&s, v.item)),
+        std::path::Path::new(mov)
+    );
     let m = s.project.item(v.item).unwrap().as_media().unwrap();
     assert!(!m.offline);
-    assert_eq!(m.info.video.as_ref().map(|v| (v.width, v.height)), Some((64, 36)));
+    assert_eq!(
+        m.info.video.as_ref().map(|v| (v.width, v.height)),
+        Some((64, 36))
+    );
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -172,12 +247,27 @@ fn omf_renders_clip_effects_into_embedded_audio() {
     // −6.0206 dB on the first audio clip: half amplitude
     let mut p = (*s.project).clone();
     let q = p.sequence_mut(seq).unwrap();
-    q.audio_tracks[0].items[0].effect_mut("volume").unwrap().params.insert("level".into(), Param::new(ParamValue::Float(-6.020_599_913)));
+    q.audio_tracks[0].items[0]
+        .effect_mut("volume")
+        .unwrap()
+        .params
+        .insert(
+            "level".into(),
+            Param::new(ParamValue::Float(-6.020_599_913)),
+        );
     s.project = Arc::new(p);
     let orig = s.project.sequence(seq).unwrap().clone();
     let path = dir.join("mix.omf").to_string_lossy().into_owned();
-    let r = s.execute("file.exportOmf", json!({"path": path, "renderAudioEffects": true, "handles": 0, "sequence": seq.0})).unwrap();
-    assert!(r["bytes"].as_u64().unwrap() > 48_000 * 2 * 2, "audio is encapsulated: {r}");
+    let r = s
+        .execute(
+            "file.exportOmf",
+            json!({"path": path, "renderAudioEffects": true, "handles": 0, "sequence": seq.0}),
+        )
+        .unwrap();
+    assert!(
+        r["bytes"].as_u64().unwrap() > 48_000 * 2 * 2,
+        "audio is encapsulated: {r}"
+    );
     let r = s.execute("file.importAaf", json!({"path": path})).unwrap();
     let n = imported_seq(&r);
     let q = s.project.sequence(n).unwrap().clone();
@@ -186,17 +276,30 @@ fn omf_renders_clip_effects_into_embedded_audio() {
     assert_eq!(a.len(), 2);
     assert_eq!(
         a.iter().map(|c| (c.start, c.duration)).collect::<Vec<_>>(),
-        orig.audio_tracks[0].items.iter().map(|c| (c.start, c.duration)).collect::<Vec<_>>()
+        orig.audio_tracks[0]
+            .items
+            .iter()
+            .map(|c| (c.start, c.duration))
+            .collect::<Vec<_>>()
     );
     // no gain left on the clips: it is in the samples
-    assert!(a.iter().all(|c| c.effect("volume").and_then(|e| e.param("level")).is_none_or(|p| p.value.as_f64() == Some(0.0))));
+    assert!(a.iter().all(|c| {
+        c.effect("volume")
+            .and_then(|e| e.param("level"))
+            .is_none_or(|p| p.value.as_f64() == Some(0.0))
+    }));
     let oc = &orig.audio_tracks[0].items[0];
     let got = audio_of(&s, a[0].item, a[0].source_in.to_units_floor(48_000), 2400);
     let want = audio_of(&s, oc.item, oc.source_in.to_units_floor(48_000), 2400);
     let peak = want[0].iter().fold(0f32, |m, x| m.max(x.abs()));
     assert!(peak > 0.01, "the demo scene has audio");
     for i in 0..2400 {
-        assert!((got[0][i] - want[0][i] * 0.5).abs() < 2e-3, "sample {i}: {} vs {}", got[0][i], want[0][i] * 0.5);
+        assert!(
+            (got[0][i] - want[0][i] * 0.5).abs() < 2e-3,
+            "sample {i}: {} vs {}",
+            got[0][i],
+            want[0][i] * 0.5
+        );
     }
     // the second clip is unchanged
     let oc2 = &orig.audio_tracks[0].items[1];
@@ -213,13 +316,35 @@ fn omf_renders_clip_effects_into_embedded_audio() {
 fn setup_nested(name: &str) -> (Session, Vec<ItemId>, ItemId, ItemId, std::path::PathBuf) {
     let (mut s, items, seq, dir) = setup(name);
     s.execute("sequence.open", json!({"item": seq.0})).unwrap();
-    let clips: Vec<u64> = s.project.sequence(seq).unwrap().all_tracks().flat_map(|t| t.items.iter().map(|c| c.id.0)).collect();
-    s.execute("timeline.select", json!({"clips": clips})).unwrap();
-    let inner = ItemId(s.execute("clip.nest", json!({"name": "Inner"})).unwrap()["sequence"].as_u64().unwrap());
+    let clips: Vec<u64> = s
+        .project
+        .sequence(seq)
+        .unwrap()
+        .all_tracks()
+        .flat_map(|t| t.items.iter().map(|c| c.id.0))
+        .collect();
+    s.execute("timeline.select", json!({"clips": clips}))
+        .unwrap();
+    let inner = ItemId(
+        s.execute("clip.nest", json!({"name": "Inner"})).unwrap()["sequence"]
+            .as_u64()
+            .unwrap(),
+    );
     let mut p = (*s.project).clone();
     let q = p.sequence_mut(seq).unwrap();
-    assert_eq!((q.video_tracks[0].items.len(), q.audio_tracks[0].items.len()), (1, 1), "one linked nest");
-    q.audio_tracks[0].items[0].effect_mut("volume").unwrap().params.insert("level".into(), Param::new(ParamValue::Float(-6.020_599_913)));
+    assert_eq!(
+        (q.video_tracks[0].items.len(), q.audio_tracks[0].items.len()),
+        (1, 1),
+        "one linked nest"
+    );
+    q.audio_tracks[0].items[0]
+        .effect_mut("volume")
+        .unwrap()
+        .params
+        .insert(
+            "level".into(),
+            Param::new(ParamValue::Float(-6.020_599_913)),
+        );
     s.project = Arc::new(p);
     (s, items, seq, inner, dir)
 }
@@ -231,16 +356,29 @@ fn omf_renders_the_sound_of_a_nested_sequence() {
     let (mut s, items, seq, inner, dir) = setup_nested("omf-nest");
     let nest = s.project.sequence(seq).unwrap().audio_tracks[0].items[0].clone();
     let path = dir.join("nest.omf").to_string_lossy().into_owned();
-    let r = s.execute("file.exportOmf", json!({"path": path, "handles": 0, "sequence": seq.0})).unwrap();
+    let r = s
+        .execute(
+            "file.exportOmf",
+            json!({"path": path, "handles": 0, "sequence": seq.0}),
+        )
+        .unwrap();
     assert!(!r["report"].to_string().contains("nested"), "{r}");
     let r = s.execute("file.importAaf", json!({"path": path})).unwrap();
     let q = s.project.sequence(imported_seq(&r)).unwrap().clone();
     let a = &q.audio_tracks[0].items;
     assert_eq!(a.len(), 1, "the nest is one clip");
-    assert_eq!((a[0].name.as_str(), a[0].start, a[0].duration), ("Inner", nest.start, nest.duration));
-    assert!(s.project.sequence(a[0].item).is_none(), "media in the document, not a sequence");
+    assert_eq!(
+        (a[0].name.as_str(), a[0].start, a[0].duration),
+        ("Inner", nest.start, nest.duration)
+    );
+    assert!(
+        s.project.sequence(a[0].item).is_none(),
+        "media in the document, not a sequence"
+    );
     // what it plays: the nested sequence's two clips one after the other, at half amplitude
-    let inside = s.project.sequence(inner).unwrap().audio_tracks[0].items.clone();
+    let inside = s.project.sequence(inner).unwrap().audio_tracks[0]
+        .items
+        .clone();
     assert_eq!(inside.len(), 2);
     let got = audio_of(&s, a[0].item, a[0].source_in.to_units_floor(48_000), 96_000);
     for (k, oc) in inside.iter().enumerate() {
@@ -251,7 +389,11 @@ fn omf_renders_the_sound_of_a_nested_sequence() {
         // (away from the cut between the two clips)
         for i in 480..47_520 {
             let g = got[0][k * 48_000 + i];
-            assert!((g - want[0][i] * 0.5).abs() < 2e-3, "clip {k} sample {i}: {g} vs {}", want[0][i] * 0.5);
+            assert!(
+                (g - want[0][i] * 0.5).abs() < 2e-3,
+                "clip {k} sample {i}: {g} vs {}",
+                want[0][i] * 0.5
+            );
         }
     }
     let _ = std::fs::remove_dir_all(dir);
@@ -272,26 +414,60 @@ fn aaf_keeps_a_nested_sequence_as_a_sequence() {
     assert_eq!((v.len(), a.len()), (1, 1));
     let nested = v[0].item;
     assert_ne!(nested, inner, "a sequence of the imported document");
-    assert_eq!((a[0].item, s.project.item(nested).unwrap().name.as_str()), (nested, "Inner"));
-    assert!(v[0].link.is_some() && v[0].link == a[0].link, "picture and sound of the nest are linked");
-    let level = a[0].effect("volume").and_then(|e| e.param("level")).and_then(|p| p.value.as_f64()).unwrap();
-    assert!((level + 6.0206).abs() < 1e-2, "the level stays on the nest's clip: {level}");
+    assert_eq!(
+        (a[0].item, s.project.item(nested).unwrap().name.as_str()),
+        (nested, "Inner")
+    );
+    assert!(
+        v[0].link.is_some() && v[0].link == a[0].link,
+        "picture and sound of the nest are linked"
+    );
+    let level = a[0]
+        .effect("volume")
+        .and_then(|e| e.param("level"))
+        .and_then(|p| p.value.as_f64())
+        .unwrap();
+    assert!(
+        (level + 6.0206).abs() < 1e-2,
+        "the level stays on the nest's clip: {level}"
+    );
     // inside: the two clips, their picture linked to the movies, their sound in the document
     let n = s.project.sequence(nested).unwrap().clone();
     let orig = s.project.sequence(inner).unwrap().clone();
     for kind in [TrackKind::Video, TrackKind::Audio] {
-        let got: Vec<_> = n.tracks(kind)[0].items.iter().map(|c| (c.start, c.duration)).collect();
-        let want: Vec<_> = orig.tracks(kind)[0].items.iter().map(|c| (c.start, c.duration)).collect();
+        let got: Vec<_> = n.tracks(kind)[0]
+            .items
+            .iter()
+            .map(|c| (c.start, c.duration))
+            .collect();
+        let want: Vec<_> = orig.tracks(kind)[0]
+            .items
+            .iter()
+            .map(|c| (c.start, c.duration))
+            .collect();
         assert_eq!(got, want, "{kind:?}");
     }
-    assert_eq!(std::path::Path::new(&path_of(&s, n.video_tracks[0].items[0].item)), std::path::Path::new(&path_of(&s, items[0])));
-    for (c, oc) in n.audio_tracks[0].items.iter().zip(&orig.audio_tracks[0].items) {
+    assert_eq!(
+        std::path::Path::new(&path_of(&s, n.video_tracks[0].items[0].item)),
+        std::path::Path::new(&path_of(&s, items[0]))
+    );
+    for (c, oc) in n.audio_tracks[0]
+        .items
+        .iter()
+        .zip(&orig.audio_tracks[0].items)
+    {
         let p = path_of(&s, c.item);
-        assert!(p.ends_with(".wav") && std::path::Path::new(&p).exists(), "{p}");
+        assert!(
+            p.ends_with(".wav") && std::path::Path::new(&p).exists(),
+            "{p}"
+        );
         let got = audio_of(&s, c.item, c.source_in.to_units_floor(48_000), 4800);
         let want = audio_of(&s, oc.item, oc.source_in.to_units_floor(48_000), 4800);
         for i in 0..4800 {
-            assert!((got[0][i] - want[0][i]).abs() <= 1.0 / 32_768.0 + 1e-6, "sample {i}");
+            assert!(
+                (got[0][i] - want[0][i]).abs() <= 1.0 / 32_768.0 + 1e-6,
+                "sample {i}"
+            );
         }
     }
     let _ = std::fs::remove_dir_all(dir);
@@ -299,16 +475,37 @@ fn aaf_keeps_a_nested_sequence_as_a_sequence() {
 
 #[test]
 fn commands_are_registered_with_menus_and_validate_params() {
-    for (id, menu) in [("file.exportAaf", &["File", "Export"][..]), ("file.exportOmf", &["File", "Export"][..]), ("file.importAaf", &[][..])] {
+    for (id, menu) in [
+        ("file.exportAaf", &["File", "Export"][..]),
+        ("file.exportOmf", &["File", "Export"][..]),
+        ("file.importAaf", &[][..]),
+    ] {
         let c = crate::commands::find(id).unwrap_or_else(|| panic!("{id}"));
         assert_eq!(c.menu, menu);
     }
     let (mut s, _, seq, dir) = setup("aaf-params");
     let path = dir.join("x.aaf").to_string_lossy().into_owned();
-    assert!(s.execute("file.exportAaf", json!({"sequence": seq.0})).is_err(), "path is required");
-    assert!(s.execute("file.exportAaf", json!({"path": path, "bitDepth": 20})).is_err());
-    assert!(s.execute("file.exportOmf", json!({"path": path, "audio": "linked"})).is_err(), "OMF has no linked mode");
-    assert!(s.execute("file.importAaf", json!({"path": dir.join("a.mov").to_string_lossy()})).is_err());
+    assert!(
+        s.execute("file.exportAaf", json!({"sequence": seq.0}))
+            .is_err(),
+        "path is required"
+    );
+    assert!(
+        s.execute("file.exportAaf", json!({"path": path, "bitDepth": 20}))
+            .is_err()
+    );
+    assert!(
+        s.execute("file.exportOmf", json!({"path": path, "audio": "linked"}))
+            .is_err(),
+        "OMF has no linked mode"
+    );
+    assert!(
+        s.execute(
+            "file.importAaf",
+            json!({"path": dir.join("a.mov").to_string_lossy()})
+        )
+        .is_err()
+    );
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -317,7 +514,9 @@ mod selected_streams {
     use crate::{Services, Session};
     use filmcraft_frame::{AudioBuffer, VideoFrame};
     use filmcraft_media::{FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource};
-    use filmcraft_project::{ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, SequenceSettings};
+    use filmcraft_project::{
+        ClipId, ItemId, ItemKind, Label, MediaClip, MediaRef, SequenceSettings,
+    };
     use filmcraft_time::{FrameRate, Tick};
     use serde_json::json;
     use std::sync::{Arc, Mutex};
@@ -342,13 +541,17 @@ mod selected_streams {
             info.kind = MediaKind::AudioOnly;
             info.video = None;
             info.audio_streams = vec![info.audio_streams[0].clone(); streams];
-            Self { info, calls: Arc::default() }
+            Self {
+                info,
+                calls: Arc::default(),
+            }
         }
 
         fn sample(stream: usize, channel: usize, frame: i64, rate: u32) -> f32 {
             let frequency = (stream * 2 + channel + 1) as f64 * 240.0;
             let amplitude = 0.05 * (stream + 1) as f64;
-            (amplitude * (std::f64::consts::TAU * frequency * frame as f64 / rate as f64).sin()) as f32
+            (amplitude * (std::f64::consts::TAU * frequency * frame as f64 / rate as f64).sin())
+                as f32
         }
     }
 
@@ -359,17 +562,37 @@ mod selected_streams {
         fn video_frame(&self, _: FrameRequest) -> filmcraft_media::Result<Arc<VideoFrame>> {
             Err(MediaError::NoStream("video"))
         }
-        fn audio(&self, start: i64, frames: usize, sample_rate: u32) -> filmcraft_media::Result<AudioBuffer> {
+        fn audio(
+            &self,
+            start: i64,
+            frames: usize,
+            sample_rate: u32,
+        ) -> filmcraft_media::Result<AudioBuffer> {
             self.audio_stream(0, start, frames, sample_rate)
         }
-        fn audio_stream(&self, stream: usize, start: i64, frames: usize, sample_rate: u32) -> filmcraft_media::Result<AudioBuffer> {
+        fn audio_stream(
+            &self,
+            stream: usize,
+            start: i64,
+            frames: usize,
+            sample_rate: u32,
+        ) -> filmcraft_media::Result<AudioBuffer> {
             if stream >= self.info.audio_streams.len() {
                 return Err(MediaError::NoStream("audio"));
             }
-            self.calls.lock().unwrap().push((stream, start, frames, sample_rate));
+            self.calls
+                .lock()
+                .unwrap()
+                .push((stream, start, frames, sample_rate));
             Ok(AudioBuffer {
                 sample_rate,
-                channels: (0..2).map(|channel| (0..frames).map(|i| Self::sample(stream, channel, start + i as i64, sample_rate)).collect()).collect(),
+                channels: (0..2)
+                    .map(|channel| {
+                        (0..frames)
+                            .map(|i| Self::sample(stream, channel, start + i as i64, sample_rate))
+                            .collect()
+                    })
+                    .collect(),
             })
         }
     }
@@ -383,7 +606,10 @@ mod selected_streams {
             Err(std::io::ErrorKind::NotFound.into())
         }
         fn write_file(&self, path: &str, bytes: &[u8]) -> std::io::Result<()> {
-            self.writes.lock().unwrap().push((path.to_owned(), bytes.to_vec()));
+            self.writes
+                .lock()
+                .unwrap()
+                .push((path.to_owned(), bytes.to_vec()));
             Ok(())
         }
         fn export_in_memory(&self) -> bool {
@@ -399,7 +625,9 @@ mod selected_streams {
             "distinct tones",
             Label::Iris,
             ItemKind::Media(MediaClip {
-                media: MediaRef::File { path: format!("tone-source-{streams}.wav") },
+                media: MediaRef::File {
+                    path: format!("tone-source-{streams}.wav"),
+                },
                 info: source.info.clone(),
                 interpret: Default::default(),
                 mark_in: None,
@@ -420,20 +648,42 @@ mod selected_streams {
         let files = Arc::new(MemoryFiles::default());
         let mut session = Session::new(files.clone());
         let mut project = (*session.project).clone();
-        let sequence =
-            project.new_sequence("streams", SequenceSettings { width: 32, height: 18, frame_rate: FrameRate::FPS_24, ..Default::default() }, 0, 1, None);
+        let sequence = project.new_sequence(
+            "streams",
+            SequenceSettings {
+                width: 32,
+                height: 18,
+                frame_rate: FrameRate::FPS_24,
+                ..Default::default()
+            },
+            0,
+            1,
+            None,
+        );
         session.project = Arc::new(project);
         session.state.active_sequence = Some(sequence);
         session.state.open_sequences = vec![sequence];
         let (item, calls) = add_source(&mut session, 3);
         session.state.project_selection = vec![item];
-        session.execute("sequence.linkedSelection", json!({"on": false})).unwrap();
+        session
+            .execute("sequence.linkedSelection", json!({"on": false}))
+            .unwrap();
         (session, item, sequence, calls, files)
     }
 
     fn place(s: &mut Session, item: ItemId, seconds: f64) -> Vec<ClipId> {
-        let result = s.execute("timeline.place", json!({"item": item.0, "track": "A1", "seconds": seconds})).unwrap();
-        result["clips"].as_array().unwrap().iter().map(|id| ClipId(id.as_u64().unwrap())).collect()
+        let result = s
+            .execute(
+                "timeline.place",
+                json!({"item": item.0, "track": "A1", "seconds": seconds}),
+            )
+            .unwrap();
+        result["clips"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|id| ClipId(id.as_u64().unwrap()))
+            .collect()
     }
 
     #[test]
@@ -454,39 +704,62 @@ mod selected_streams {
             breakout: false,
             nests: NestNeeds::Inside,
         };
-        let (essences, paths) = crate::aaf_omf::prepare_audio(&s, sequence, &plan, "ignored").unwrap();
+        let (essences, paths) =
+            crate::aaf_omf::prepare_audio(&s, sequence, &plan, "ignored").unwrap();
         assert!(paths.is_empty());
         assert_eq!(essences.len(), 3);
         for (stream, essence) in essences.iter().enumerate() {
             assert_eq!(essence.key, EssenceKey::media(item, stream));
-            let EssenceData::Embedded(bytes) = &essence.data else { panic!("expected embedded PCM") };
+            let EssenceData::Embedded(bytes) = &essence.data else {
+                panic!("expected embedded PCM")
+            };
             for channel in 0..2 {
                 let offset = (25 * 2 + channel) * 2;
                 let actual = i16::from_le_bytes([bytes[offset], bytes[offset + 1]]);
-                let expected = (Tones::sample(stream, channel, 25, 48_000) * 32767.0).round() as i16;
+                let expected =
+                    (Tones::sample(stream, channel, 25, 48_000) * 32767.0).round() as i16;
                 assert_eq!(actual, expected);
             }
         }
         let options = filmcraft_interchange::aaf::AafOptions {
-            media: filmcraft_interchange::essence::MediaOptions { essence: essences, ..Default::default() },
+            media: filmcraft_interchange::essence::MediaOptions {
+                essence: essences,
+                ..Default::default()
+            },
             ..Default::default()
         };
         let (aaf, _) = filmcraft_interchange::aaf::export(&s.project, sequence, &options).unwrap();
-        let omf_options = filmcraft_interchange::omf::OmfOptions { media: options.media.clone(), ..Default::default() };
-        let (omf, _) = filmcraft_interchange::omf::export(&s.project, sequence, &omf_options).unwrap();
+        let omf_options = filmcraft_interchange::omf::OmfOptions {
+            media: options.media.clone(),
+            ..Default::default()
+        };
+        let (omf, _) =
+            filmcraft_interchange::omf::export(&s.project, sequence, &omf_options).unwrap();
         for (kind, document) in [("AAF", aaf), ("OMF", omf)] {
             let (imported, extracted, _) = if kind == "AAF" {
                 filmcraft_interchange::aaf::import(&document, &Default::default()).unwrap()
             } else {
                 filmcraft_interchange::omf::import(&document, &Default::default()).unwrap()
             };
-            assert_eq!(extracted.len(), 3, "{kind}: composition memo must retain distinct selected-stream essence");
-            let tracks = &imported.project.sequence(imported.sequences[0]).unwrap().audio_tracks;
+            assert_eq!(
+                extracted.len(),
+                3,
+                "{kind}: composition memo must retain distinct selected-stream essence"
+            );
+            let tracks = &imported
+                .project
+                .sequence(imported.sequences[0])
+                .unwrap()
+                .audio_tracks;
             assert_eq!(tracks.len(), 3, "{kind}");
             let mut source_ids: Vec<_> = tracks.iter().map(|track| track.items[0].item).collect();
             source_ids.sort();
             source_ids.dedup();
-            assert_eq!(source_ids.len(), 3, "{kind}: each stream remains a distinct imported source");
+            assert_eq!(
+                source_ids.len(),
+                3,
+                "{kind}: each stream remains a distinct imported source"
+            );
             let mut waveforms: Vec<_> = extracted.iter().map(|media| media.wav.clone()).collect();
             waveforms.sort();
             waveforms.dedup();

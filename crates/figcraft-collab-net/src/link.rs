@@ -6,10 +6,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use figcraft_collab::code;
-use figcraft_collab::message::{Access, Admin, AdminReply, ClientMsg, LibraryReply, LibraryReq, PluginReply, PluginReq};
+use figcraft_collab::message::{
+    Access, Admin, AdminReply, ClientMsg, LibraryReply, LibraryReq, PluginReply, PluginReq,
+};
 use figcraft_engine::live::{
-    Bind, Event, HostInfo, HostOptions, LiveLink, NO_SESSION, NetReply, NetRequest, PageInfo, Presence, PublishOptions, Published, Resume, Role,
-    SessionId, SessionInfo, Shared,
+    Bind, Event, HostInfo, HostOptions, LiveLink, NO_SESSION, NetReply, NetRequest, PageInfo,
+    Presence, PublishOptions, Published, Resume, Role, SessionId, SessionInfo, Shared,
 };
 
 use crate::guest::{Guest, GuestConfig, Publish, upload_file};
@@ -58,7 +60,13 @@ impl NetLink {
     /// `wake` is called (from network threads) whenever something arrives for the UI.
     pub fn new(wake: Waker) -> Self {
         let libraries = Inbox::new(wake.clone());
-        Self { limits: NetLimits::default(), sessions: Sessions::new(wake), guest: |c| c, libraries, fetching: Arc::default() }
+        Self {
+            limits: NetLimits::default(),
+            sessions: Sessions::new(wake),
+            guest: |c| c,
+            libraries,
+            fetching: Arc::default(),
+        }
     }
 
     /// With other transport limits.
@@ -75,7 +83,10 @@ impl NetLink {
 
     /// How this link joins `invite` (after asking its server about `code`, if there is one).
     fn guest_config(&self, invite: Invite, code: Option<String>, name: &str) -> GuestConfig {
-        let mut cfg = (self.guest)(GuestConfig { code, ..GuestConfig::new(invite, name.to_string()) });
+        let mut cfg = (self.guest)(GuestConfig {
+            code,
+            ..GuestConfig::new(invite, name.to_string())
+        });
         cfg.limits = self.limits;
         cfg
     }
@@ -123,13 +134,23 @@ impl LiveLink for NetLink {
         // A session shared with a join code: its secret is short enough to be typed with the
         // address (see `figcraft_collab::code`); the code and the invite link name the same session.
         let (file, token) = if o.short {
-            (code::LOCAL_FILE.to_string(), code::Local::new(Ipv4Addr::UNSPECIFIED, 0, token::random()?).token())
+            (
+                code::LOCAL_FILE.to_string(),
+                code::Local::new(Ipv4Addr::UNSPECIFIED, 0, token::random()?).token(),
+            )
         } else {
             (token::file_id()?, token::secret()?)
         };
         let inbox = self.sessions.inbox();
         let doc = (*o.doc).clone();
-        let pages = doc.pages.iter().map(|p| PageInfo { id: p.0, name: doc.node(*p).map(|n| n.name.clone()).unwrap_or_default() }).collect();
+        let pages = doc
+            .pages
+            .iter()
+            .map(|p| PageInfo {
+                id: p.0,
+                name: doc.node(*p).map(|n| n.name.clone()).unwrap_or_default(),
+            })
+            .collect();
         let file_name = doc.name.clone();
         let cfg = HostConfig {
             addr: SocketAddr::new(ip, o.port.unwrap_or(DEFAULT_PORT)),
@@ -141,7 +162,8 @@ impl LiveLink for NetLink {
             limits: self.limits,
             core: figcraft_collab::Limits::default(),
         };
-        let host = Host::start(cfg, inbox.clone()).map_err(|e| format!("can't listen on {ip}: {e}"))?;
+        let host =
+            Host::start(cfg, inbox.clone()).map_err(|e| format!("can't listen on {ip}: {e}"))?;
         let invite = Invite::new(host.addr().to_string(), file, token);
         let info = SessionInfo {
             role: Role::Host,
@@ -164,11 +186,21 @@ impl LiveLink for NetLink {
         self.join_resuming(session, link, name, None)
     }
 
-    fn join_resuming(&mut self, session: SessionId, link: &str, name: &str, resume: Option<Resume>) -> Result<(), String> {
+    fn join_resuming(
+        &mut self,
+        session: SessionId,
+        link: &str,
+        name: &str,
+        resume: Option<Resume>,
+    ) -> Result<(), String> {
         let (invite, code) = Invite::parse_join(link)?;
-        let cfg = GuestConfig { resume, ..self.guest_config(invite, code, name) };
+        let cfg = GuestConfig {
+            resume,
+            ..self.guest_config(invite, code, name)
+        };
         let inbox = self.sessions.inbox();
-        let guest = Guest::start(cfg, inbox.clone()).map_err(|e| format!("can't start the connection: {e}"))?;
+        let guest = Guest::start(cfg, inbox.clone())
+            .map_err(|e| format!("can't start the connection: {e}"))?;
         self.started(session, Active::Guest(guest), inbox);
         Ok(())
     }
@@ -176,12 +208,30 @@ impl LiveLink for NetLink {
     fn publish(&mut self, session: SessionId, o: PublishOptions) -> Result<(), String> {
         let (server, query) = Endpoint::parse(&o.server)?;
         // Without a key: as anyone may, when the server is open to the public (it says if not).
-        let key = o.key.or_else(|| query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v)).filter(|k| !k.trim().is_empty());
+        let key = o
+            .key
+            .or_else(|| query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v))
+            .filter(|k| !k.trim().is_empty());
         // Until the upload is done the invite names only the server.
-        let cfg = self.guest_config(Invite { server: server.clone(), file: String::new(), token: String::new() }, None, &o.me);
+        let cfg = self.guest_config(
+            Invite {
+                server: server.clone(),
+                file: String::new(),
+                token: String::new(),
+            },
+            None,
+            &o.me,
+        );
         let inbox = self.sessions.inbox();
-        let job = Publish { server, key, name: o.name, doc: o.doc, share: o.share };
-        let guest = Guest::publish(job, cfg, inbox.clone()).map_err(|e| format!("can't start the connection: {e}"))?;
+        let job = Publish {
+            server,
+            key,
+            name: o.name,
+            doc: o.doc,
+            share: o.share,
+        };
+        let guest = Guest::publish(job, cfg, inbox.clone())
+            .map_err(|e| format!("can't start the connection: {e}"))?;
         self.started(session, Active::Guest(guest), inbox);
         Ok(())
     }
@@ -198,29 +248,67 @@ impl LiveLink for NetLink {
         plugins(server, req, &self.limits)
     }
 
-    fn hosting(&mut self, server: &str, file: &str, owner: &str, req: Option<Admin>) -> Result<(HostInfo, Option<AdminReply>), String> {
+    fn hosting(
+        &mut self,
+        server: &str,
+        file: &str,
+        owner: &str,
+        req: Option<Admin>,
+    ) -> Result<(HostInfo, Option<AdminReply>), String> {
         hosting(server, file, owner, req, &self.limits)
     }
 
-    fn share(&mut self, server: &str, file: &str, owner: &str, revoke: &[String], create: bool) -> Result<Option<Shared>, String> {
+    fn share(
+        &mut self,
+        server: &str,
+        file: &str,
+        owner: &str,
+        revoke: &[String],
+        create: bool,
+    ) -> Result<Option<Shared>, String> {
         share(server, file, owner, revoke, create, &self.limits)
     }
 
     fn background(&mut self, job: u64, req: NetRequest) -> bool {
         let (inbox, limits) = (self.libraries.clone(), self.limits);
         let (failed, failure) = (inbox.clone(), req.failure());
-        let spawned = std::thread::Builder::new().name("server-request".into()).spawn(move || {
-            let reply = match req {
-                NetRequest::Plugins { server, req } => NetReply::Plugins(plugins(&server, req, &limits)),
-                NetRequest::Library { link, req } => NetReply::Library(manage::library(&link, req, &limits, CONNECT)),
-                NetRequest::Upload(o) => NetReply::Upload(upload(o, &limits)),
-                NetRequest::Hosting { server, file, owner, req } => NetReply::Hosting(hosting(&server, &file, &owner, req, &limits)),
-                NetRequest::Share { server, file, owner, revoke, create } => NetReply::Share(share(&server, &file, &owner, &revoke, create, &limits)),
-            };
-            inbox.push(Event::Net { job, reply: Box::new(reply) });
-        });
+        let spawned = std::thread::Builder::new()
+            .name("server-request".into())
+            .spawn(move || {
+                let reply = match req {
+                    NetRequest::Plugins { server, req } => {
+                        NetReply::Plugins(plugins(&server, req, &limits))
+                    }
+                    NetRequest::Library { link, req } => {
+                        NetReply::Library(manage::library(&link, req, &limits, CONNECT))
+                    }
+                    NetRequest::Upload(o) => NetReply::Upload(upload(o, &limits)),
+                    NetRequest::Hosting {
+                        server,
+                        file,
+                        owner,
+                        req,
+                    } => NetReply::Hosting(hosting(&server, &file, &owner, req, &limits)),
+                    NetRequest::Share {
+                        server,
+                        file,
+                        owner,
+                        revoke,
+                        create,
+                    } => NetReply::Share(share(&server, &file, &owner, &revoke, create, &limits)),
+                };
+                inbox.push(Event::Net {
+                    job,
+                    reply: Box::new(reply),
+                });
+            });
         if let Err(e) = spawned {
-            failed.push(Event::Net { job, reply: Box::new(failure(format!("can't start a thread for the request: {e}"))) });
+            failed.push(Event::Net {
+                job,
+                reply: Box::new(failure(format!(
+                    "can't start a thread for the request: {e}"
+                ))),
+            });
         }
         true
     }
@@ -229,14 +317,17 @@ impl LiveLink for NetLink {
         if jobs.is_empty() || self.fetching.swap(true, Ordering::SeqCst) {
             return;
         }
-        let (inbox, fetching, limits) = (self.libraries.clone(), self.fetching.clone(), self.limits);
-        let spawned = std::thread::Builder::new().name("library-fetch".into()).spawn(move || {
-            for (link, req) in jobs {
-                let reply = manage::library(&link, req, &limits, CONNECT);
-                inbox.push(Event::Library { link, reply });
-            }
-            fetching.store(false, Ordering::SeqCst);
-        });
+        let (inbox, fetching, limits) =
+            (self.libraries.clone(), self.fetching.clone(), self.limits);
+        let spawned = std::thread::Builder::new()
+            .name("library-fetch".into())
+            .spawn(move || {
+                for (link, req) in jobs {
+                    let reply = manage::library(&link, req, &limits, CONNECT);
+                    inbox.push(Event::Library { link, reply });
+                }
+                fetching.store(false, Ordering::SeqCst);
+            });
         if let Err(e) = spawned {
             log::warn!("team libraries: can't start a thread: {e}");
             self.fetching.store(false, Ordering::SeqCst);
@@ -266,7 +357,12 @@ impl LiveLink for NetLink {
     }
 
     fn poll(&mut self) -> Vec<(SessionId, Event)> {
-        let mut out: Vec<(SessionId, Event)> = self.libraries.drain().into_iter().map(|e| (NO_SESSION, e)).collect();
+        let mut out: Vec<(SessionId, Event)> = self
+            .libraries
+            .drain()
+            .into_iter()
+            .map(|e| (NO_SESSION, e))
+            .collect();
         out.extend(self.sessions.poll());
         out
     }
@@ -275,19 +371,41 @@ impl LiveLink for NetLink {
 /// Keep `o.doc` on a server as a new file (see [`LiveLink::upload`]).
 fn upload(o: PublishOptions, limits: &NetLimits) -> Result<Published, String> {
     let (server, query) = Endpoint::parse(&o.server)?;
-    let key = o.key.or_else(|| query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v)).filter(|k| !k.trim().is_empty());
+    let key = o
+        .key
+        .or_else(|| query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v))
+        .filter(|k| !k.trim().is_empty());
     let key = key.ok_or("the server address needs the server's key (ws://host:port/?key=…; `figcraft-server key` prints it)")?;
-    upload_file(&server, Some(&key), &o.name, &o.doc, limits, CONNECT).map(|(_, published, _)| published)
+    upload_file(&server, Some(&key), &o.name, &o.doc, limits, CONNECT)
+        .map(|(_, published, _)| published)
 }
 
 /// What the server at `server` says about its hosting, and its answer to `req` about `file` with
 /// its owner token (see [`LiveLink::hosting`]). A new link comes back whole, in place of its token.
-fn hosting(server: &str, file: &str, owner: &str, req: Option<Admin>, limits: &NetLimits) -> Result<(HostInfo, Option<AdminReply>), String> {
+fn hosting(
+    server: &str,
+    file: &str,
+    owner: &str,
+    req: Option<Admin>,
+    limits: &NetLimits,
+) -> Result<(HostInfo, Option<AdminReply>), String> {
     let (endpoint, _) = Endpoint::parse(server)?;
-    let (info, replies) = manage::hosting(&endpoint, file, owner, req.into_iter().collect(), limits, CONNECT)?;
+    let (info, replies) = manage::hosting(
+        &endpoint,
+        file,
+        owner,
+        req.into_iter().collect(),
+        limits,
+        CONNECT,
+    )?;
     let reply = replies.into_iter().next().map(|r| match r {
         AdminReply::Link(mut l) => {
-            l.token = Invite { server: endpoint.clone(), file: l.link.file.clone(), token: l.token }.link();
+            l.token = Invite {
+                server: endpoint.clone(),
+                file: l.link.file.clone(),
+                token: l.token,
+            }
+            .link();
             AdminReply::Link(l)
         }
         other => other,
@@ -297,16 +415,40 @@ fn hosting(server: &str, file: &str, owner: &str, req: Option<Admin>, limits: &N
 
 /// See [`LiveLink::share`]: as the server's operator when the address carries its key, else as
 /// the file's owner.
-fn share(server: &str, file: &str, owner: &str, revoke: &[String], create: bool, limits: &NetLimits) -> Result<Option<Shared>, String> {
+fn share(
+    server: &str,
+    file: &str,
+    owner: &str,
+    revoke: &[String],
+    create: bool,
+    limits: &NetLimits,
+) -> Result<Option<Shared>, String> {
     let (endpoint, query) = Endpoint::parse(server)?;
-    let key = query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v).filter(|k| !k.trim().is_empty());
-    manage::share(&endpoint, key.as_deref(), file, owner, revoke, create, limits, CONNECT)
+    let key = query
+        .into_iter()
+        .find(|(k, _)| k == "key")
+        .map(|(_, v)| v)
+        .filter(|k| !k.trim().is_empty());
+    manage::share(
+        &endpoint,
+        key.as_deref(),
+        file,
+        owner,
+        revoke,
+        create,
+        limits,
+        CONNECT,
+    )
 }
 
 /// One request to the plugin directory at `server` (its key in the address's query, if any).
 fn plugins(server: &str, req: PluginReq, limits: &NetLimits) -> Result<PluginReply, String> {
     let (server, query) = Endpoint::parse(server)?;
-    let key = query.into_iter().find(|(k, _)| k == "key").map(|(_, v)| v).unwrap_or_default();
+    let key = query
+        .into_iter()
+        .find(|(k, _)| k == "key")
+        .map(|(_, v)| v)
+        .unwrap_or_default();
     manage::plugins(&server, key.trim(), req, limits, CONNECT)
 }
 

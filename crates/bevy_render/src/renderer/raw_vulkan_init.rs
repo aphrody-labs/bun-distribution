@@ -4,7 +4,7 @@ use bevy_platform::collections::HashSet;
 use core::any::{Any, TypeId};
 use thiserror::Error;
 use wgpu::{
-    hal::api::Vulkan, Adapter, Device, DeviceDescriptor, Instance, InstanceDescriptor, Queue,
+    Adapter, Device, DeviceDescriptor, Instance, InstanceDescriptor, Queue, hal::api::Vulkan,
 };
 
 /// When the `raw_vulkan_init` feature is enabled, these settings will be used to configure the raw vulkan instance.
@@ -41,10 +41,12 @@ impl RawVulkanInitSettings {
     /// - Callback must not change anything to what the instance does not support.
     pub unsafe fn add_create_instance_callback(
         &mut self,
-        callback: impl Fn(&mut wgpu::hal::vulkan::CreateInstanceCallbackArgs, &mut AdditionalVulkanFeatures)
-            + Send
-            + Sync
-            + 'static,
+        callback: impl Fn(
+            &mut wgpu::hal::vulkan::CreateInstanceCallbackArgs,
+            &mut AdditionalVulkanFeatures,
+        ) + Send
+        + Sync
+        + 'static,
     ) {
         self.create_instance_callbacks.push(Arc::new(callback));
     }
@@ -57,12 +59,12 @@ impl RawVulkanInitSettings {
     pub unsafe fn add_create_device_callback(
         &mut self,
         callback: impl Fn(
-                &mut wgpu::hal::vulkan::CreateDeviceCallbackArgs,
-                &wgpu::hal::vulkan::Adapter,
-                &mut AdditionalVulkanFeatures,
-            ) + Send
-            + Sync
-            + 'static,
+            &mut wgpu::hal::vulkan::CreateDeviceCallbackArgs,
+            &wgpu::hal::vulkan::Adapter,
+            &mut AdditionalVulkanFeatures,
+        ) + Send
+        + Sync
+        + 'static,
     ) {
         self.create_device_callbacks.push(Arc::new(callback));
     }

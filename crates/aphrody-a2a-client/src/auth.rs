@@ -22,11 +22,16 @@ pub struct InMemoryCredentialsStore {
 
 impl InMemoryCredentialsStore {
     pub fn new() -> Self {
-        InMemoryCredentialsStore { credentials: RwLock::new(HashMap::new()) }
+        InMemoryCredentialsStore {
+            credentials: RwLock::new(HashMap::new()),
+        }
     }
 
     pub fn set(&self, scheme: &str, credential: &str) {
-        self.credentials.write().unwrap().insert(scheme.to_string(), credential.to_string());
+        self.credentials
+            .write()
+            .unwrap()
+            .insert(scheme.to_string(), credential.to_string());
     }
 }
 
@@ -61,7 +66,10 @@ impl AuthInterceptor {
 
     /// Create an interceptor with a custom header.
     pub fn custom(header_name: impl Into<String>, header_value: impl Into<String>) -> Self {
-        AuthInterceptor { header_name: header_name.into(), header_value: header_value.into() }
+        AuthInterceptor {
+            header_name: header_name.into(),
+            header_value: header_value.into(),
+        }
     }
 }
 
@@ -69,7 +77,10 @@ impl AuthInterceptor {
 #[cfg_attr(target_family = "wasm", async_trait(?Send))]
 impl CallInterceptor for AuthInterceptor {
     async fn before(&self, _method: &str, params: &mut ServiceParams) -> Result<(), A2AError> {
-        params.entry(self.header_name.clone()).or_default().push(self.header_value.clone());
+        params
+            .entry(self.header_name.clone())
+            .or_default()
+            .push(self.header_value.clone());
         Ok(())
     }
 }
@@ -113,7 +124,10 @@ mod tests {
         let interceptor = AuthInterceptor::bearer("mytoken");
         let mut params = ServiceParams::new();
         interceptor.before("test", &mut params).await.unwrap();
-        assert_eq!(params.get("Authorization").unwrap(), &vec!["Bearer mytoken".to_string()]);
+        assert_eq!(
+            params.get("Authorization").unwrap(),
+            &vec!["Bearer mytoken".to_string()]
+        );
     }
 
     #[tokio::test]
@@ -121,6 +135,9 @@ mod tests {
         let interceptor = AuthInterceptor::custom("X-API-Key", "key123");
         let mut params = ServiceParams::new();
         interceptor.before("test", &mut params).await.unwrap();
-        assert_eq!(params.get("X-API-Key").unwrap(), &vec!["key123".to_string()]);
+        assert_eq!(
+            params.get("X-API-Key").unwrap(),
+            &vec!["key123".to_string()]
+        );
     }
 }

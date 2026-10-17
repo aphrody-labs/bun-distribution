@@ -14,7 +14,8 @@ use vectorcraft_doc::Document;
 
 use super::super::*;
 use super::{
-    ArtboardPick, Encoded, Format, Loaded, encode_all, file_stem, format, format_for_name, load, read_file, with_compression_pref, write_encoded,
+    ArtboardPick, Encoded, Format, Loaded, encode_all, file_stem, format, format_for_name, load,
+    read_file, with_compression_pref, write_encoded,
 };
 use crate::{DocState, Prefs};
 
@@ -27,10 +28,17 @@ pub const SAVE_FORMATS: &[&str] = &["vectorcraft", "template", "pdf", "svg", "sv
 /// leading (the panel's default type), else none (an export picks its own). Only the extension a
 /// save writes (never the former native name).
 pub fn save_filters(first: &str) -> Vec<(&'static str, &'static [&'static str])> {
-    let Some(first) = format_for_name(first).or_else(|| format(first)).filter(|f| SAVE_FORMATS.contains(&f.id)) else { return vec![] };
+    let Some(first) = format_for_name(first)
+        .or_else(|| format(first))
+        .filter(|f| SAVE_FORMATS.contains(&f.id))
+    else {
+        return vec![];
+    };
     let mut v: Vec<&'static Format> = SAVE_FORMATS.iter().filter_map(|id| format(id)).collect();
     v.sort_by_key(|f| f.id != first.id);
-    v.into_iter().map(|f| (f.label, &f.extensions[..1])).collect()
+    v.into_iter()
+        .map(|f| (f.label, &f.extensions[..1]))
+        .collect()
 }
 
 /// How a save treats the document.
@@ -59,7 +67,9 @@ impl SaveMode {
 
     /// The mode an engine command id runs.
     pub fn of(command: &str) -> Option<Self> {
-        [Self::Save, Self::SaveAs, Self::Copy, Self::Template].into_iter().find(|m| m.command() == command)
+        [Self::Save, Self::SaveAs, Self::Copy, Self::Template]
+            .into_iter()
+            .find(|m| m.command() == command)
     }
 }
 
@@ -104,7 +114,12 @@ pub fn templates_folder(prefs: &Prefs) -> Option<String> {
     if !prefs.templates_folder.is_empty() {
         return Some(prefs.templates_folder.clone());
     }
-    Some(documents_folder()?.join("VectorCraft Templates").to_string_lossy().to_string())
+    Some(
+        documents_folder()?
+            .join("VectorCraft Templates")
+            .to_string_lossy()
+            .to_string(),
+    )
 }
 
 /// The Templates folder for a file dialog to start in (#703): made when it's missing; where it
@@ -116,7 +131,11 @@ pub fn templates_dialog_folder(prefs: &Prefs) -> Option<String> {
         // Best effort: a folder that can't be made leaves the nearest one that exists.
         let _ = std::fs::create_dir_all(&folder);
     }
-    folder.ancestors().find(|a| a.is_dir()).map(|a| a.to_string_lossy().into_owned()).or_else(home_folder)
+    folder
+        .ancestors()
+        .find(|a| a.is_dir())
+        .map(|a| a.to_string_lossy().into_owned())
+        .or_else(home_folder)
 }
 
 /// The user's documents folder: on Linux and the BSDs the one the desktop names
@@ -125,9 +144,14 @@ pub fn templates_dialog_folder(prefs: &Prefs) -> Option<String> {
 fn documents_folder() -> Option<std::path::PathBuf> {
     let home = std::path::PathBuf::from(home_folder()?);
     if cfg!(all(unix, not(target_os = "macos"))) {
-        let config =
-            std::env::var_os("XDG_CONFIG_HOME").map(std::path::PathBuf::from).filter(|p| p.is_absolute()).unwrap_or_else(|| home.join(".config"));
-        if let Some(dir) = std::fs::read_to_string(config.join("user-dirs.dirs")).ok().and_then(|t| xdg_documents(&t, &home)) {
+        let config = std::env::var_os("XDG_CONFIG_HOME")
+            .map(std::path::PathBuf::from)
+            .filter(|p| p.is_absolute())
+            .unwrap_or_else(|| home.join(".config"));
+        if let Some(dir) = std::fs::read_to_string(config.join("user-dirs.dirs"))
+            .ok()
+            .and_then(|t| xdg_documents(&t, &home))
+        {
             return Some(dir);
         }
     }
@@ -137,7 +161,10 @@ fn documents_folder() -> Option<std::path::PathBuf> {
 /// `XDG_DOCUMENTS_DIR` in a `user-dirs.dirs` file's `text`, `$HOME` being `home`. None when it isn't
 /// set, is relative, or is the home folder itself (the spec's way of turning it off).
 fn xdg_documents(text: &str, home: &std::path::Path) -> Option<std::path::PathBuf> {
-    let line = text.lines().map(str::trim).find(|l| l.starts_with("XDG_DOCUMENTS_DIR="))?;
+    let line = text
+        .lines()
+        .map(str::trim)
+        .find(|l| l.starts_with("XDG_DOCUMENTS_DIR="))?;
     let value = line.split_once('=')?.1.trim().trim_matches('"');
     let dir = match value.strip_prefix("$HOME") {
         Some(rest) => home.join(rest.trim_start_matches('/')),
@@ -148,7 +175,10 @@ fn xdg_documents(text: &str, home: &std::path::Path) -> Option<std::path::PathBu
 
 /// The user's home folder (`HOME`, else `USERPROFILE` on Windows; none on the web).
 fn home_folder() -> Option<String> {
-    std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).ok().filter(|h| !h.is_empty())
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .filter(|h| !h.is_empty())
 }
 
 /// Where exports go by default (Export for Screens): the user's Desktop when there is one, else
@@ -156,27 +186,48 @@ fn home_folder() -> Option<String> {
 pub fn export_folder() -> Option<String> {
     let home = home_folder()?;
     let desktop = std::path::Path::new(&home).join("Desktop");
-    Some(if desktop.is_dir() { desktop.to_string_lossy().into_owned() } else { home })
+    Some(if desktop.is_dir() {
+        desktop.to_string_lossy().into_owned()
+    } else {
+        home
+    })
 }
 
 /// The folder of a path (`None` for a bare file name).
 fn parent_folder(path: &str) -> Option<String> {
-    std::path::Path::new(path).parent().map(|p| p.to_string_lossy().to_string()).filter(|p| !p.is_empty())
+    std::path::Path::new(path)
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .filter(|p| !p.is_empty())
 }
 
 /// A save format by id or extension, or why it isn't one.
 fn save_format_of(f: &str) -> std::result::Result<&'static Format, String> {
     match format(f) {
         Some(f) if SAVE_FORMATS.contains(&f.id) => Ok(f),
-        Some(f) => Err(format!("Save writes {}, not {}: use document.export for other formats", SAVE_FORMATS.join(", "), f.label)),
-        None => Err(format!("unknown format `{f}` (Save writes {})", SAVE_FORMATS.join(", "))),
+        Some(f) => Err(format!(
+            "Save writes {}, not {}: use document.export for other formats",
+            SAVE_FORMATS.join(", "),
+            f.label
+        )),
+        None => Err(format!(
+            "unknown format `{f}` (Save writes {})",
+            SAVE_FORMATS.join(", ")
+        )),
     }
 }
 
 /// The format Save writes for `format` (an id or extension), else the format `path`'s extension
 /// names, else native (see [`SAVE_FORMATS`]); other formats are exports.
-pub fn save_format(format: Option<&str>, path: Option<&str>) -> std::result::Result<&'static Format, String> {
-    save_format_of(format.or_else(|| path.and_then(format_for_name).map(|f| f.id)).unwrap_or("vectorcraft"))
+pub fn save_format(
+    format: Option<&str>,
+    path: Option<&str>,
+) -> std::result::Result<&'static Format, String> {
+    save_format_of(
+        format
+            .or_else(|| path.and_then(format_for_name).map(|f| f.id))
+            .unwrap_or("vectorcraft"),
+    )
 }
 
 /// [`save_format_of`] for command `cmd`.
@@ -190,16 +241,29 @@ pub fn save_plan(s: &Session, mode: SaveMode, p: &Value) -> Result<SavePlan> {
     let cmd = mode.command();
     let st = s.doc()?;
     let path = str_param(p, "path").map(str::to_string);
-    let format = match (mode, str_param(p, "format"), path.as_deref().and_then(format_for_name)) {
+    let format = match (
+        mode,
+        str_param(p, "format"),
+        path.as_deref().and_then(format_for_name),
+    ) {
         (SaveMode::Template, ..) => checked(cmd, "template")?,
         (_, Some(f), _) => checked(cmd, f)?,
         (_, None, Some(f)) => checked(cmd, f.id)?,
         (_, None, None) => checked(cmd, st.format)?,
     };
     let mut given: Map<String, Value> = match p.get("options") {
-        Some(Value::Object(o)) => o.iter().filter(|(k, _)| reads_option(format, k)).map(|(k, v)| (k.clone(), v.clone())).collect(),
+        Some(Value::Object(o)) => o
+            .iter()
+            .filter(|(k, _)| reads_option(format, k))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
         None | Some(Value::Null) => Map::new(),
-        Some(_) => return Err(bad(cmd, "options must be an object (see file.formatOptions)")),
+        Some(_) => {
+            return Err(bad(
+                cmd,
+                "options must be an object (see file.formatOptions)",
+            ));
+        }
     };
     if is_svg(format) {
         // SVG options also come flat or as `svg: {…}` beside the path; kept flat.
@@ -211,15 +275,26 @@ pub fn save_plan(s: &Session, mode: SaveMode, p: &Value) -> Result<SavePlan> {
         // native ones (compress, version, preview).
         if let Some(o) = p.as_object() {
             given.extend(
-                o.iter().filter(|(k, v)| !v.is_null() && k.as_str() != "path" && reads_option(format, k)).map(|(k, v)| (k.clone(), v.clone())),
+                o.iter()
+                    .filter(|(k, v)| {
+                        !v.is_null() && k.as_str() != "path" && reads_option(format, k)
+                    })
+                    .map(|(k, v)| (k.clone(), v.clone())),
             );
         }
     }
     // None given: the ones the document was last saved with in this format.
-    let options = if given.is_empty() && format.id == st.format { st.save_options.clone() } else { given };
+    let options = if given.is_empty() && format.id == st.format {
+        st.save_options.clone()
+    } else {
+        given
+    };
     // Save writes the document's own file; the other modes only where they are told to.
-    let path =
-        path.or_else(|| (mode == SaveMode::Save && !st.converted && !st.recovered && format.id == st.format).then(|| st.path.clone()).flatten());
+    let path = path.or_else(|| {
+        (mode == SaveMode::Save && !st.converted && !st.recovered && format.id == st.format)
+            .then(|| st.path.clone())
+            .flatten()
+    });
     let stem = file_stem(st.path.as_deref().unwrap_or(&st.doc.title));
     let ext = format.extensions[0];
     let name = match mode {
@@ -235,13 +310,23 @@ pub fn save_plan(s: &Session, mode: SaveMode, p: &Value) -> Result<SavePlan> {
     if let Some(path) = &path {
         super::check_not_lossy_overwrite(st, path, p, cmd)?;
     }
-    Ok(SavePlan { mode, path, format, options, name, folder, modified })
+    Ok(SavePlan {
+        mode,
+        path,
+        format,
+        options,
+        name,
+        folder,
+        modified,
+    })
 }
 
 /// Does a save in `f` read option `key`? PDF (and a .ai file, a PDF) also reads its General
 /// settings (`createLayers`…) and presets.
 fn reads_option(f: &Format, key: &str) -> bool {
-    f.options.iter().any(|o| o.name == key) || (is_pdf(f) && (super::pdf::OPTIONS.iter().any(|o| o.name == key) || super::pdf::is_setting(key)))
+    f.options.iter().any(|o| o.name == key)
+        || (is_pdf(f)
+            && (super::pdf::OPTIONS.iter().any(|o| o.name == key) || super::pdf::is_setting(key)))
 }
 
 /// Formats that carry the whole native document: they lose nothing, and record links relative to
@@ -302,7 +387,10 @@ pub struct SaveJob {
 
 /// Writes the file at a path with what the filler it is given writes into it
 /// ([`SaveJob::write_streamed`]).
-pub type StreamWrite<'a> = &'a mut dyn FnMut(&str, &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>) -> Result<()>;
+pub type StreamWrite<'a> = &'a mut dyn FnMut(
+    &str,
+    &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>,
+) -> Result<()>;
 
 /// Bytes gathered before a streamed save writes them to the file.
 const STREAM_BUFFER: usize = 256 << 10;
@@ -331,9 +419,16 @@ fn separate_boards(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result<V
     if !is_native(f) || !bool_or(p, "separateArtboards", false) {
         return Ok(vec![]);
     }
-    let range = str_param(p, "range").filter(|r| !r.trim().is_empty()).map(str::to_string);
+    let range = str_param(p, "range")
+        .filter(|r| !r.trim().is_empty())
+        .map(str::to_string);
     let n = doc.artboards.len();
-    let picked = ArtboardPick { range, ..Default::default() }.resolve(n).map_err(|e| bad(cmd, e))?;
+    let picked = ArtboardPick {
+        range,
+        ..Default::default()
+    }
+    .resolve(n)
+    .map_err(|e| bad(cmd, e))?;
     Ok(picked.unwrap_or_else(|| (0..n).collect()))
 }
 
@@ -341,7 +436,9 @@ fn separate_boards(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result<V
 /// objects whose bounds touch the artboard, in their layers; resources are kept.
 fn artboard_doc(doc: &Document, i: usize) -> Document {
     let mut d = doc.clone();
-    let Some(a) = doc.artboards.get(i) else { return d };
+    let Some(a) = doc.artboards.get(i) else {
+        return d;
+    };
     let r = a.rect;
     d.artboards = vec![a.clone()];
     // It opens fitted to its artboard, not at the master file's view.
@@ -355,7 +452,8 @@ fn artboard_doc(doc: &Document, i: usize) -> Document {
 
 /// Keep in layer `n` (and its sublayers) only the objects touching `r`.
 fn keep_on(n: &mut Arc<vectorcraft_doc::Node>, r: vectorcraft_geom::Rect) {
-    let touches = |b: vectorcraft_geom::Rect| b.x0 <= r.x1 && b.x1 >= r.x0 && b.y0 <= r.y1 && b.y1 >= r.y0;
+    let touches =
+        |b: vectorcraft_geom::Rect| b.x0 <= r.x1 && b.x1 >= r.x0 && b.y0 <= r.y1 && b.y1 >= r.y0;
     if let Some(children) = Arc::make_mut(n).children_mut() {
         children.retain(|c| c.is_layer() || c.visual_bounds().is_some_and(touches));
         for c in children.iter_mut().filter(|c| c.is_layer()) {
@@ -376,7 +474,8 @@ fn blank_pages(doc: &Document) -> Document {
 }
 
 /// Why a `.ai` file saved without PDF content looks empty elsewhere.
-const NOT_PDF_COMPATIBLE: &str = "saved without PDF content: VectorCraft opens it as before, other apps show empty pages";
+const NOT_PDF_COMPATIBLE: &str =
+    "saved without PDF content: VectorCraft opens it as before, other apps show empty pages";
 
 /// The shared Save and Export encoder for PDF-compatible `.ai` files.
 pub(super) fn encode_ai(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result<Encoded> {
@@ -398,23 +497,34 @@ pub(super) fn encode_ai(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Res
     let pdf_compatible = bool_or(&params, "pdfCompatible", true);
     if !pdf_compatible {
         let picked: ArtboardPick = super::encode::options(f, &params)?;
-        let picked = picked.resolve(doc.artboards.len()).map_err(|e| bad(cmd, e))?;
+        let picked = picked
+            .resolve(doc.artboards.len())
+            .map_err(|e| bad(cmd, e))?;
         if picked.is_some_and(|v| !v.into_iter().eq(0..doc.artboards.len())) {
-            return Err(bad(cmd, "pdfCompatible: false needs every artboard to keep the editable artwork"));
+            return Err(bad(
+                cmd,
+                "pdfCompatible: false needs every artboard to keep the editable artwork",
+            ));
         }
     }
     let pages = doc.without_edit_modes();
     // Resolve placed files only for the drawn pages. Missing files become preview images there;
     // the native attachment keeps the original placed objects and their relinkable metadata.
-    let (pages, placed_warnings) =
-        if pdf_compatible { crate::cmd::place::document::full_documents(&pages) } else { (std::borrow::Cow::Owned(blank_pages(&pages)), Vec::new()) };
+    let (pages, placed_warnings) = if pdf_compatible {
+        crate::cmd::place::document::full_documents(&pages)
+    } else {
+        (std::borrow::Cow::Owned(blank_pages(&pages)), Vec::new())
+    };
     let native = || super::native::ai_native(cmd, doc, &native_options);
     let (bytes, mut warnings) = super::pdf::encode_carrying(cmd, &pages, &params, native)?;
     warnings.extend(placed_warnings);
     if !pdf_compatible {
         warnings.push(NOT_PDF_COMPATIBLE.to_string());
     }
-    Ok(Encoded { warnings, ..Encoded::one(bytes) })
+    Ok(Encoded {
+        warnings,
+        ..Encoded::one(bytes)
+    })
 }
 
 /// Snapshot the active document for `plan` (stamping File Info's dates when the file becomes the
@@ -436,7 +546,11 @@ pub(crate) fn job_for(s: &Session, st: &DocState, plan: SavePlan) -> Result<Save
     let cmd = plan.mode.command();
     let own = doc_to_save(st, plan.format);
     // A native file records its links' paths relative to where it is written.
-    let relative = plan.path.as_deref().filter(|_| is_native(plan.format)).and_then(|p| crate::cmd::links::with_relative_paths(&own, p));
+    let relative = plan
+        .path
+        .as_deref()
+        .filter(|_| is_native(plan.format))
+        .and_then(|p| crate::cmd::links::with_relative_paths(&own, p));
     let doc = relative.map_or(own, Arc::new);
     let mut params = plan.options.clone();
     if is_svg(plan.format) {
@@ -455,7 +569,13 @@ pub(crate) fn job_for(s: &Session, st: &DocState, plan: SavePlan) -> Result<Save
         // Save keeps every artboard; exports may choose a subset instead.
         o.insert("range".into(), json!("all"));
     }
-    Ok(SaveJob { plan, doc, params, snapshot: st.doc.clone(), boards })
+    Ok(SaveJob {
+        plan,
+        doc,
+        params,
+        snapshot: st.doc.clone(),
+        boards,
+    })
 }
 
 impl SaveJob {
@@ -485,18 +605,27 @@ impl SaveJob {
         let mut enc = self.encode_one(&self.doc)?;
         for &b in &self.boards {
             let one = self.encode_one(&artboard_doc(&self.doc, b))?;
-            enc.files.extend(one.files.into_iter().map(|(_, bytes)| (Some(b), bytes)));
+            enc.files
+                .extend(one.files.into_iter().map(|(_, bytes)| (Some(b), bytes)));
         }
-        enc.warnings.splice(0..0, fidelity_warning(self.plan.format));
+        enc.warnings
+            .splice(0..0, fidelity_warning(self.plan.format));
         Ok(enc)
     }
 
     /// Encode one file of `doc` in the job's format.
     fn encode_one(&self, doc: &Document) -> Result<Encoded> {
         let (cmd, f) = (self.plan.mode.command(), self.plan.format);
-        let enc = if f.id == "ai" { encode_ai(cmd, f, doc, &self.params)? } else { encode_all(doc, f.id, &self.params)? };
+        let enc = if f.id == "ai" {
+            encode_ai(cmd, f, doc, &self.params)?
+        } else {
+            encode_all(doc, f.id, &self.params)?
+        };
         if enc.files.len() != 1 {
-            return Err(bad(cmd, "Save writes one artboard: name one, or export several with document.export"));
+            return Err(bad(
+                cmd,
+                "Save writes one artboard: name one, or export several with document.export",
+            ));
         }
         Ok(enc)
     }
@@ -538,7 +667,9 @@ impl SaveJob {
     /// Is the file written as it is encoded by [`SaveJob::write_streamed`]? A native file (or
     /// template) to a path, without a file per artboard.
     pub fn streams(&self) -> bool {
-        self.plan.path.is_some() && matches!(self.plan.format.id, "vectorcraft" | "template") && self.boards.is_empty()
+        self.plan.path.is_some()
+            && matches!(self.plan.format.id, "vectorcraft" | "template")
+            && self.boards.is_empty()
     }
 
     /// [`SaveJob::write`] through `stream`, which writes the file at a path with what the filler
@@ -565,7 +696,10 @@ impl SaveJob {
         let mut failed = None;
         let mut written = 0u64;
         let mut fill = |w: &mut dyn std::io::Write| {
-            let mut out = Counted { inner: std::io::BufWriter::with_capacity(STREAM_BUFFER, w), n: 0 };
+            let mut out = Counted {
+                inner: std::io::BufWriter::with_capacity(STREAM_BUFFER, w),
+                n: 0,
+            };
             let r = super::native::encode_to(cmd, f, &doc, &self.params, &mut out);
             written = out.n;
             match r {
@@ -602,7 +736,11 @@ impl SaveJob {
     pub fn complete(self, s: &mut Session, uid: u64) {
         let saved = self.plan.retargets() && self.plan.path.is_some();
         // The other open documents that place this one show the new version.
-        let written = self.plan.path.clone().filter(|_| matches!(self.plan.format.id, "vectorcraft" | "template"));
+        let written = self
+            .plan
+            .path
+            .clone()
+            .filter(|_| matches!(self.plan.format.id, "vectorcraft" | "template"));
         if let Some(st) = s.document_mut(uid) {
             self.finish(st);
         }
@@ -617,7 +755,11 @@ impl SaveJob {
 
 /// Encode `plan` and write it with `write`, then make the file the document's own (see
 /// [`SaveJob`]). Without a path the document is unchanged.
-pub fn save_with(s: &mut Session, plan: SavePlan, write: impl FnMut(&str, &[u8]) -> Result<()>) -> Result<Value> {
+pub fn save_with(
+    s: &mut Session,
+    plan: SavePlan,
+    write: impl FnMut(&str, &[u8]) -> Result<()>,
+) -> Result<Value> {
     let job = save_job(s, plan)?;
     let uid = s.doc()?.uid;
     let out = job.write(write)?;
@@ -648,7 +790,11 @@ fn can_revert(s: &Session) -> std::result::Result<(), String> {
 /// is), then replace the document in its tab.
 fn revert(s: &mut Session, _: &Value) -> Result<Value> {
     let index = s.active_index().ok_or(crate::EngineError::NoDocument)?;
-    let path = s.doc()?.path.clone().ok_or_else(|| bad("file.revert", "the document has never been saved"))?;
+    let path = s
+        .doc()?
+        .path
+        .clone()
+        .ok_or_else(|| bad("file.revert", "the document has never been saved"))?;
     let Loaded { mut doc, .. } = load(&path, &read_file(&path)?)?.with_grid_prefs(&s.prefs);
     doc.template = false;
     // Back to the saved file: its recovery copy has nothing left to recover.
@@ -662,22 +808,35 @@ fn revert(s: &mut Session, _: &Value) -> Result<Value> {
 fn format_options(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "file.formatOptions";
     let st = s.active();
-    let id = str_param(p, "format").or(st.map(|d| d.format)).unwrap_or("vectorcraft");
+    let id = str_param(p, "format")
+        .or(st.map(|d| d.format))
+        .unwrap_or("vectorcraft");
     let f = format(id)
         .filter(|f| f.write || SAVE_FORMATS.contains(&f.id))
-        .ok_or_else(|| bad(C, format!("`{id}` is no writable format (see document.formats)")))?;
+        .ok_or_else(|| {
+            bad(
+                C,
+                format!("`{id}` is no writable format (see document.formats)"),
+            )
+        })?;
     let saved = st.filter(|d| d.format == f.id).map(|d| &d.save_options);
     // A native save compresses as Use Compression says, unless told otherwise.
     let prefs = with_compression_pref(&s.prefs, &json!({}));
     let mut v = f.to_json();
     if let Some(options) = v["options"].as_object_mut() {
         for (name, o) in options.iter_mut() {
-            let default = prefs.get(name).filter(|_| matches!(f.id, "vectorcraft" | "template")).unwrap_or(&o["default"]);
+            let default = prefs
+                .get(name)
+                .filter(|_| matches!(f.id, "vectorcraft" | "template"))
+                .unwrap_or(&o["default"]);
             o["value"] = saved.and_then(|m| m.get(name)).unwrap_or(default).clone();
         }
     }
-    v["saveFormats"] =
-        SAVE_FORMATS.iter().filter_map(|id| format(id)).map(|f| json!({"id": f.id, "label": f.label, "extensions": f.extensions})).collect();
+    v["saveFormats"] = SAVE_FORMATS
+        .iter()
+        .filter_map(|id| format(id))
+        .map(|f| json!({"id": f.id, "label": f.label, "extensions": f.extensions}))
+        .collect();
     Ok(v)
 }
 
@@ -758,12 +917,27 @@ mod tests_folders {
     fn the_desktops_documents_folder_is_read_from_user_dirs() {
         let home = Path::new("/home/david");
         let file = "# comment\nXDG_DESKTOP_DIR=\"$HOME/Scrivania\"\nXDG_DOCUMENTS_DIR=\"$HOME/Documenti\"\n";
-        assert_eq!(super::xdg_documents(file, home), Some(PathBuf::from("/home/david/Documenti")));
-        assert_eq!(super::xdg_documents("XDG_DOCUMENTS_DIR=\"/data/docs\"", home), Some(PathBuf::from("/data/docs")));
+        assert_eq!(
+            super::xdg_documents(file, home),
+            Some(PathBuf::from("/home/david/Documenti"))
+        );
+        assert_eq!(
+            super::xdg_documents("XDG_DOCUMENTS_DIR=\"/data/docs\"", home),
+            Some(PathBuf::from("/data/docs"))
+        );
         // "$HOME/" turns it off; a relative or missing one isn't used.
-        assert_eq!(super::xdg_documents("XDG_DOCUMENTS_DIR=\"$HOME/\"", home), None);
-        assert_eq!(super::xdg_documents("XDG_DOCUMENTS_DIR=\"docs\"", home), None);
-        assert_eq!(super::xdg_documents("XDG_MUSIC_DIR=\"$HOME/Musica\"", home), None);
+        assert_eq!(
+            super::xdg_documents("XDG_DOCUMENTS_DIR=\"$HOME/\"", home),
+            None
+        );
+        assert_eq!(
+            super::xdg_documents("XDG_DOCUMENTS_DIR=\"docs\"", home),
+            None
+        );
+        assert_eq!(
+            super::xdg_documents("XDG_MUSIC_DIR=\"$HOME/Musica\"", home),
+            None
+        );
     }
 
     /// #703: the Templates folder a dialog starts in exists: made when missing, else the nearest
@@ -776,12 +950,22 @@ mod tests_folders {
         let mut prefs = crate::Prefs::default();
         let wanted = base.join("Modelli").join("VectorCraft Templates");
         prefs.templates_folder = wanted.to_string_lossy().into_owned();
-        assert_eq!(super::templates_dialog_folder(&prefs).map(PathBuf::from), Some(wanted.clone()));
+        assert_eq!(
+            super::templates_dialog_folder(&prefs).map(PathBuf::from),
+            Some(wanted.clone())
+        );
         assert!(wanted.is_dir(), "made");
         // A file in the way: the nearest folder that exists.
         std::fs::write(base.join("blocked"), b"x").unwrap();
-        prefs.templates_folder = base.join("blocked").join("Templates").to_string_lossy().into_owned();
-        assert_eq!(super::templates_dialog_folder(&prefs).map(PathBuf::from), Some(base.clone()));
+        prefs.templates_folder = base
+            .join("blocked")
+            .join("Templates")
+            .to_string_lossy()
+            .into_owned();
+        assert_eq!(
+            super::templates_dialog_folder(&prefs).map(PathBuf::from),
+            Some(base.clone())
+        );
         let _ = std::fs::remove_dir_all(&base);
     }
 }

@@ -33,7 +33,10 @@ impl MatchmakingQueue {
     /// Creates an empty queue.
     #[must_use]
     pub fn new() -> Self {
-        Self { tickets: Vec::new(), seed_generator: 777_000 }
+        Self {
+            tickets: Vec::new(),
+            seed_generator: 777_000,
+        }
     }
 
     /// Enqueues a player ticket into matchmaking.

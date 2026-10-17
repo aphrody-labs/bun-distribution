@@ -7,11 +7,14 @@ use crate::generate::generate_video::providers::artcraft::request_common::send_a
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftGrokImagineVideoRequestState {
-  pub request: OmniGenVideoCostAndGenerateRequest,
+    pub request: OmniGenVideoCostAndGenerateRequest,
 }
 
 impl ArtcraftGrokImagineVideoRequestState {
-  pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-    send_artcraft_omni_video_request(&self.request, client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterArtcraftClient,
+    ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+        send_artcraft_omni_video_request(&self.request, client).await
+    }
 }

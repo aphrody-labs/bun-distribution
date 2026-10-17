@@ -53,7 +53,9 @@ impl Machine for Gba {
     }
 
     fn load_state(&mut self, state: &[u8]) -> Result<(), String> {
-        self.gba.restore_state(state).map_err(|e| format!("GBA state: {e}"))
+        self.gba
+            .restore_state(state)
+            .map_err(|e| format!("GBA state: {e}"))
     }
 
     fn screens(&self) -> Vec<Screen> {

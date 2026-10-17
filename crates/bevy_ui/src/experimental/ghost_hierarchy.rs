@@ -1,8 +1,8 @@
 //! This module contains [`GhostNode`] and utilities to flatten the UI hierarchy, traversing past ghost nodes.
 
+use crate::Node;
 #[cfg(feature = "ghost_nodes")]
 use crate::ui_node::ComputedUiTargetCamera;
-use crate::Node;
 #[cfg(feature = "ghost_nodes")]
 use bevy_camera::visibility::Visibility;
 use bevy_ecs::{prelude::*, system::SystemParam};

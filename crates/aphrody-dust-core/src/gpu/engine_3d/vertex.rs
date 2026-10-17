@@ -23,7 +23,11 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn new() -> Self {
-        Vertex { coords: i32x4::splat(0), uv: TexCoords::splat(0), color: Color::splat(0) }
+        Vertex {
+            coords: i32x4::splat(0),
+            uv: TexCoords::splat(0),
+            color: Color::splat(0),
+        }
     }
 
     pub(super) fn interpolate(&self, other: &Self, numer: i64, denom: i64) -> Self {
@@ -89,7 +93,10 @@ pub fn culled(
     }
     let dot = (normal * simd_swizzle!(v1_64, [0, 1, 3, 2])).reduce_sum();
     let is_front_facing = dot > 0;
-    ((is_front_facing && !show_front) || (dot < 0 && !show_back), is_front_facing)
+    (
+        (is_front_facing && !show_front) || (dot < 0 && !show_back),
+        is_front_facing,
+    )
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Savestate)]

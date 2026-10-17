@@ -14,9 +14,9 @@ use crate::{
         Access, FilteredAccess, IterQueryData, QueryData, QueryFilter, QuerySingleError,
         QueryState, ReadOnlyQueryData,
     },
-    resource::{Resource, ResourceEntities, IS_RESOURCE},
+    resource::{IS_RESOURCE, Resource, ResourceEntities},
     system::{Query, Single, SystemAccess, SystemMeta, SystemState},
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, FromWorld, World},
+    world::{DeferredWorld, FromWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 #[expect(deprecated, reason = "`FilteredResources` will be removed.")]
@@ -698,7 +698,11 @@ unsafe impl<'a, T: Resource> SystemParam for Res<'a, T> {
             if !accesses.is_empty() {
                 accesses.push(' ');
             }
-            panic!("error[B0002]: Res<{}> in system {} conflicts with a previous system parameter. Consider removing the duplicate access using `Without<IsResource>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0002", DebugName::type_name::<T>(), system_meta.name);
+            panic!(
+                "error[B0002]: Res<{}> in system {} conflicts with a previous system parameter. Consider removing the duplicate access using `Without<IsResource>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0002",
+                DebugName::type_name::<T>(),
+                system_meta.name
+            );
         }
     }
 
@@ -751,7 +755,11 @@ unsafe impl<'a, T: Resource<Mutability = Mutable>> SystemParam for ResMut<'a, T>
             if !accesses.is_empty() {
                 accesses.push(' ');
             }
-            panic!("error[B0002]: ResMut<{}> in system {} conflicts with a previous system parameter. Consider removing the duplicate access or using `Without<IsResource>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0002", DebugName::type_name::<T>(), system_meta.name);
+            panic!(
+                "error[B0002]: ResMut<{}> in system {} conflicts with a previous system parameter. Consider removing the duplicate access or using `Without<IsResource>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0002",
+                DebugName::type_name::<T>(),
+                system_meta.name
+            );
         }
     }
 
@@ -1339,7 +1347,8 @@ unsafe impl<'a, T: 'static> SystemParam for NonSend<'a, T> {
         if system_access.try_add(filtered_access).is_err() {
             panic!(
                 "error[B0002]: NonSend<{}> in system {} conflicts with a previous system parameter's access. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002",
-                DebugName::type_name::<T>(), system_meta.name,
+                DebugName::type_name::<T>(),
+                system_meta.name,
             );
         }
     }
@@ -1385,7 +1394,8 @@ unsafe impl<'a, T: 'static> SystemParam for NonSendMut<'a, T> {
         if system_access.try_add(filtered_access).is_err() {
             panic!(
                 "error[B0002]: NonSendMut<{}> in system {} conflicts with a previous system parameter's access. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002",
-                DebugName::type_name::<T>(), system_meta.name,
+                DebugName::type_name::<T>(),
+                system_meta.name,
             );
         }
     }
@@ -2685,7 +2695,9 @@ unsafe impl SystemParam for FilteredResources<'_, '_> {
         if let Err(conflicts) = system_access.try_add(filtered_access) {
             let accesses = conflicts.format_conflict_list(world.into());
             let system_name = &system_meta.name;
-            panic!("error[B0002]: FilteredResources in system {system_name} accesses resources(s){accesses} in a way that conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002");
+            panic!(
+                "error[B0002]: FilteredResources in system {system_name} accesses resources(s){accesses} in a way that conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002"
+            );
         }
     }
 
@@ -2730,7 +2742,9 @@ unsafe impl SystemParam for FilteredResourcesMut<'_, '_> {
         if let Err(conflicts) = system_access.try_add(filtered_access) {
             let accesses = conflicts.format_conflict_list(world.into());
             let system_name = &system_meta.name;
-            panic!("error[B0002]: FilteredResourcesMut in system {system_name} accesses resources(s){accesses} in a way that conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002");
+            panic!(
+                "error[B0002]: FilteredResourcesMut in system {system_name} accesses resources(s){accesses} in a way that conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002"
+            );
         }
     }
 
@@ -2827,7 +2841,10 @@ impl Display for SystemParamValidationError {
             self.message
         )?;
         if !self.skipped {
-            write!(fmt, "\nIf this is an expected state, wrap the parameter in `Option<T>` and handle `None` when it happens, or wrap the parameter in `If<T>` to skip the system when it happens.")?;
+            write!(
+                fmt,
+                "\nIf this is an expected state, wrap the parameter in `Option<T>` and handle `None` when it happens, or wrap the parameter in `If<T>` to skip the system when it happens."
+            )?;
         }
         Ok(())
     }
@@ -2841,7 +2858,7 @@ mod tests {
     use crate::query::Without;
     use crate::resource::IsResource;
     use crate::schedule::Schedule;
-    use crate::system::{assert_is_system, Commands, IntoSystem, System};
+    use crate::system::{Commands, IntoSystem, System, assert_is_system};
     use crate::world::EntityMut;
     use core::cell::RefCell;
 

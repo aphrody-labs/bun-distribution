@@ -187,10 +187,14 @@ impl HelpInfo {
             match info.var(i) {
                 // Position 12 peut être une chaîne base64 : on la met de côté et on
                 // pousse 0 dans `raw` (la chaîne n'est pas un hash).
-                Some(Var { ty: "String", value, .. }) => {
+                Some(Var {
+                    ty: "String",
+                    value,
+                    ..
+                }) => {
                     blob = Some(String::from(value));
                     raw.push(HashId::ZERO);
-                },
+                }
                 Some(v) => raw.push(v.as_hash()),
                 None => raw.push(HashId::ZERO),
             }
@@ -306,7 +310,12 @@ impl HelpGuideInfo {
             Some(r) => (r.int(0), r.int(1)),
             None => (0, 0),
         };
-        Some(Self { guide_id, text_id: info.hash(1), layout_offset, layout_count })
+        Some(Self {
+            guide_id,
+            text_id: info.hash(1),
+            layout_offset,
+            layout_count,
+        })
     }
 }
 
@@ -396,8 +405,16 @@ pub fn parse_help_list_config(root: &Value) -> HelpListConfig {
         .filter_map(|(i, info)| HelpGuideInfo::from_nodes(info, ref_layout_nodes.get(i).copied()))
         .collect();
 
-    let sort_order: Vec<i64> =
-        collect_indexed(root, "__SORT_INDEX_").into_iter().map(|n| n.int(0)).collect();
+    let sort_order: Vec<i64> = collect_indexed(root, "__SORT_INDEX_")
+        .into_iter()
+        .map(|n| n.int(0))
+        .collect();
 
-    HelpListConfig { images, infos, guide_layouts, guide_infos, sort_order }
+    HelpListConfig {
+        images,
+        infos,
+        guide_layouts,
+        guide_infos,
+        sort_order,
+    }
 }

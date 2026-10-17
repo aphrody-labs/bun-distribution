@@ -68,7 +68,10 @@ pub enum VoiceError {
 
     /// A required environment variable (`OPENCLAW_GATEWAY_URL`, …) is absent.
     #[error("missing env var `{var}`: {source}")]
-    MissingEnv { var: &'static str, source: std::env::VarError },
+    MissingEnv {
+        var: &'static str,
+        source: std::env::VarError,
+    },
 
     /// Any other error not covered by the variants above.
     #[error("voice error: {0}")]

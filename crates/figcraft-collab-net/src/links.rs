@@ -37,7 +37,11 @@ pub struct UrlScheme<R> {
 impl<R: Registry> UrlScheme<R> {
     /// For the app at `exe`; `installed` sets the preference's default (see [`installed_build`]).
     pub fn new(reg: R, exe: PathBuf, installed: bool) -> Self {
-        Self { reg, exe, installed }
+        Self {
+            reg,
+            exe,
+            installed,
+        }
     }
 
     /// The command the shell runs for a link.
@@ -49,7 +53,11 @@ impl<R: Registry> UrlScheme<R> {
         [
             (KEY.into(), "", "URL:FigCraft invite link".into()),
             (KEY.into(), "URL Protocol", String::new()),
-            (format!(r"{KEY}\DefaultIcon"), "", format!("\"{}\",0", self.exe.display())),
+            (
+                format!(r"{KEY}\DefaultIcon"),
+                "",
+                format!("\"{}\",0", self.exe.display()),
+            ),
             (format!(r"{KEY}\shell\open\command"), "", self.command()),
         ]
     }
@@ -62,7 +70,9 @@ impl<R: Registry> UrlScheme<R> {
 
 impl<R: Registry> LinkRegistrar for UrlScheme<R> {
     fn registered(&self) -> bool {
-        self.reg.get(&format!(r"{KEY}\shell\open\command"), "").is_some_and(|c| c.eq_ignore_ascii_case(&self.command()))
+        self.reg
+            .get(&format!(r"{KEY}\shell\open\command"), "")
+            .is_some_and(|c| c.eq_ignore_ascii_case(&self.command()))
     }
 
     fn installed(&self) -> bool {
@@ -87,7 +97,11 @@ impl<R: Registry> LinkRegistrar for UrlScheme<R> {
 /// `exe` is an installed copy of the app: a release build that isn't inside a Cargo build
 /// directory (which holds a `CACHEDIR.TAG`), so `cargo run` and test builds never register.
 pub fn installed_build(exe: &Path) -> bool {
-    !cfg!(debug_assertions) && !exe.ancestors().skip(1).any(|d| d.join("CACHEDIR.TAG").is_file())
+    !cfg!(debug_assertions)
+        && !exe
+            .ancestors()
+            .skip(1)
+            .any(|d| d.join("CACHEDIR.TAG").is_file())
 }
 
 /// This machine's registrar for the running app, where the app registers the scheme itself
@@ -117,7 +131,10 @@ mod hkcu {
             CURRENT_USER.open(key).ok()?.get_string(name).ok()
         }
         fn set(&mut self, key: &str, name: &str, value: &str) -> Result<(), String> {
-            CURRENT_USER.create(key).and_then(|k| k.set_string(name, value)).map_err(|e| e.message())
+            CURRENT_USER
+                .create(key)
+                .and_then(|k| k.set_string(name, value))
+                .map_err(|e| e.message())
         }
         fn remove_tree(&mut self, key: &str) -> Result<(), String> {
             CURRENT_USER.remove_tree(key).map_err(|e| e.message())

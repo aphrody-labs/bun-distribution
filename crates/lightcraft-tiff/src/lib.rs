@@ -17,7 +17,14 @@
 //! Sources: TIFF 6.0 specification (Adobe, 1992), TIFF Technical Note / supplements, the BigTIFF
 //! design notes (AWare Systems), Adobe DNG specification 1.7 (tag numbers), CIPA DC-008 (Exif 2.32).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod image;
 pub mod makernote;
@@ -82,15 +89,18 @@ impl ByteOrder {
     /// Read a `u16` at `off`, or `None` if out of bounds.
     #[inline]
     pub fn read_u16(self, data: &[u8], off: usize) -> Option<u16> {
-        data.get(off..off.checked_add(2)?).map(|s| self.u16([s[0], s[1]]))
+        data.get(off..off.checked_add(2)?)
+            .map(|s| self.u16([s[0], s[1]]))
     }
     #[inline]
     pub fn read_u32(self, data: &[u8], off: usize) -> Option<u32> {
-        data.get(off..off.checked_add(4)?).map(|s| self.u32([s[0], s[1], s[2], s[3]]))
+        data.get(off..off.checked_add(4)?)
+            .map(|s| self.u32([s[0], s[1], s[2], s[3]]))
     }
     #[inline]
     pub fn read_u64(self, data: &[u8], off: usize) -> Option<u64> {
-        data.get(off..off.checked_add(8)?).map(|s| self.u64([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
+        data.get(off..off.checked_add(8)?)
+            .map(|s| self.u64([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
     }
     pub fn put_u16(self, out: &mut Vec<u8>, v: u16) {
         out.extend_from_slice(&match self {
@@ -291,12 +301,16 @@ impl Value {
 
     /// All values as `f64` (missing/invalid entries skipped for rationals with zero denominators → 0).
     pub fn to_f64_vec(&self) -> Vec<f64> {
-        (0..self.len_values()).map(|i| self.get_f64(i).unwrap_or(0.0)).collect()
+        (0..self.len_values())
+            .map(|i| self.get_f64(i).unwrap_or(0.0))
+            .collect()
     }
 
     /// All values as `u64` (integer types only; otherwise empty).
     pub fn to_u64_vec(&self) -> Vec<u64> {
-        (0..self.len_values()).map_while(|i| self.get_u64(i)).collect()
+        (0..self.len_values())
+            .map_while(|i| self.get_u64(i))
+            .collect()
     }
 
     fn len_values(&self) -> usize {
@@ -366,7 +380,10 @@ pub struct Ifd {
 
 impl Ifd {
     pub fn get(&self, tag: u16) -> Option<&Entry> {
-        self.entries.binary_search_by_key(&tag, |e| e.tag).ok().map(|i| &self.entries[i])
+        self.entries
+            .binary_search_by_key(&tag, |e| e.tag)
+            .ok()
+            .map(|i| &self.entries[i])
     }
     pub fn contains(&self, tag: u16) -> bool {
         self.get(tag).is_some()
@@ -376,13 +393,17 @@ impl Ifd {
     }
     /// First value as `u32` (integer types, saturating from wider types).
     pub fn u32(&self, tag: u16) -> Option<u32> {
-        self.value(tag)?.get_u64(0).map(|v| v.min(u32::MAX as u64) as u32)
+        self.value(tag)?
+            .get_u64(0)
+            .map(|v| v.min(u32::MAX as u64) as u32)
     }
     pub fn u64(&self, tag: u16) -> Option<u64> {
         self.value(tag)?.get_u64(0)
     }
     pub fn u16(&self, tag: u16) -> Option<u16> {
-        self.value(tag)?.get_u64(0).map(|v| v.min(u16::MAX as u64) as u16)
+        self.value(tag)?
+            .get_u64(0)
+            .map(|v| v.min(u16::MAX as u64) as u16)
     }
     pub fn i64(&self, tag: u16) -> Option<i64> {
         self.value(tag)?.get_i64(0)

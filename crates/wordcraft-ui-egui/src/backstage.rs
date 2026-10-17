@@ -25,20 +25,45 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         .exact_size(200.0)
         // Fixed width, as in Word: without this egui shows a resize handle that does nothing (#502).
         .resizable(false)
-        .frame(egui::Frame::NONE.fill(APP_COLOR).inner_margin(egui::Margin { left: 0, right: 0, top: if mac { 0 } else { 12 }, bottom: 12 }))
+        .frame(
+            egui::Frame::NONE
+                .fill(APP_COLOR)
+                .inner_margin(egui::Margin {
+                    left: 0,
+                    right: 0,
+                    top: if mac { 0 } else { 12 },
+                    bottom: 12,
+                }),
+        )
         .show(ui, |ui| {
             let back = if mac {
                 // macOS (#222): the Backstage covers the title bar, so its top band is the title
                 // bar: the back button sits beside the traffic lights, centred with them and as far
                 // from them as the title bar's own controls, and the rest of the band drags the window.
-                let (band, drag) = ui.allocate_exact_size(vec2(200.0, crate::chrome::MAC_TITLE_BAR), Sense::click_and_drag());
+                let (band, drag) = ui.allocate_exact_size(
+                    vec2(200.0, crate::chrome::MAC_TITLE_BAR),
+                    Sense::click_and_drag(),
+                );
                 if drag.drag_started() {
                     ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
                 }
                 // The chevron's stroke starts at the content edge.
-                let c = pos2(band.min.x + crate::chrome::MAC_CONTENT_LEFT + 3.0, band.center().y);
-                let resp = ui.interact(Rect::from_center_size(c, vec2(22.0, band.height())), ui.id().with("backstage_back"), Sense::click());
-                icons::paint(ui.painter(), Rect::from_center_size(c, vec2(18.0, 18.0)), "chevronLeft", egui::Color32::WHITE, egui::Color32::WHITE);
+                let c = pos2(
+                    band.min.x + crate::chrome::MAC_CONTENT_LEFT + 3.0,
+                    band.center().y,
+                );
+                let resp = ui.interact(
+                    Rect::from_center_size(c, vec2(22.0, band.height())),
+                    ui.id().with("backstage_back"),
+                    Sense::click(),
+                );
+                icons::paint(
+                    ui.painter(),
+                    Rect::from_center_size(c, vec2(18.0, 18.0)),
+                    "chevronLeft",
+                    egui::Color32::WHITE,
+                    egui::Color32::WHITE,
+                );
                 resp
             } else {
                 let (r, resp) = ui.allocate_exact_size(vec2(200.0, 40.0), Sense::click());
@@ -52,19 +77,25 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 resp
             };
             // Escape in the built-in file browser closes only the browser.
-            if back.clicked() || (!app.file_dialog_open() && ui.input(|i| i.key_pressed(egui::Key::Escape))) {
+            if back.clicked()
+                || (!app.file_dialog_open() && ui.input(|i| i.key_pressed(egui::Key::Escape)))
+            {
                 app.ui.backstage = false;
                 app.canvas.want_focus = true;
             }
             ui.add_space(if mac { 12.0 } else { 6.0 });
             for (id, label) in PAGES {
                 let (r, resp) = ui.allocate_exact_size(vec2(200.0, 38.0), Sense::click());
-                resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!(label)));
+                resp.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!(label))
+                });
                 let active = app.ui.backstage_page == id;
                 if active {
-                    ui.painter().rect_filled(r, 0.0, egui::Color32::from_white_alpha(46));
+                    ui.painter()
+                        .rect_filled(r, 0.0, egui::Color32::from_white_alpha(46));
                 } else if resp.hovered() {
-                    ui.painter().rect_filled(r, 0.0, egui::Color32::from_white_alpha(26));
+                    ui.painter()
+                        .rect_filled(r, 0.0, egui::Color32::from_white_alpha(26));
                 }
                 ui.painter().text(
                     pos2(r.min.x + 22.0, r.center().y),
@@ -83,7 +114,10 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                         }
                         "save" => {
                             let r = app.run("file.save", json!({}));
-                            if r.is_ok_and(|v| v.get("saved").and_then(serde_json::Value::as_bool) == Some(true) || v.get("downloaded").is_some()) {
+                            if r.is_ok_and(|v| {
+                                v.get("saved").and_then(serde_json::Value::as_bool) == Some(true)
+                                    || v.get("downloaded").is_some()
+                            }) {
                                 app.ui.backstage = false;
                                 app.canvas.want_focus = true;
                             } else {
@@ -100,11 +134,24 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                 for (label, id) in [("About", "about"), ("Discord community", "discord")] {
                     let (r, resp) = ui.allocate_exact_size(vec2(200.0, 32.0), Sense::click());
-                    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!(label)));
+                    resp.widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Button,
+                            ui.is_enabled(),
+                            tl!(label),
+                        )
+                    });
                     if resp.hovered() {
-                        ui.painter().rect_filled(r, 0.0, egui::Color32::from_white_alpha(26));
+                        ui.painter()
+                            .rect_filled(r, 0.0, egui::Color32::from_white_alpha(26));
                     }
-                    ui.painter().text(pos2(r.min.x + 22.0, r.center().y), Align2::LEFT_CENTER, tl!(label), regular(13.0), egui::Color32::WHITE);
+                    ui.painter().text(
+                        pos2(r.min.x + 22.0, r.center().y),
+                        Align2::LEFT_CENTER,
+                        tl!(label),
+                        regular(13.0),
+                        egui::Color32::WHITE,
+                    );
                     if resp.clicked() {
                         if id == "discord" {
                             let _ = app.run("ui.discord", json!({}));
@@ -115,18 +162,24 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 }
             });
         });
-    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.ribbon).inner_margin(egui::Margin::symmetric(40, 30))).show(ui, |ui| {
-        egui::ScrollArea::vertical().show(ui, |ui| match app.ui.backstage_page.as_str() {
-            "home" => home_page(app, ui),
-            "new" => new_page(app, ui),
-            "open" => open_page(app, ui),
-            "saveAs" => save_as_page(app, ui),
-            "info" => info_page(app, ui),
-            "print" | "export" => export_page(app, ui),
-            "options" => crate::options::page(app, ui),
-            _ => home_page(app, ui),
+    egui::CentralPanel::default()
+        .frame(
+            egui::Frame::NONE
+                .fill(t.ribbon)
+                .inner_margin(egui::Margin::symmetric(40, 30)),
+        )
+        .show(ui, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| match app.ui.backstage_page.as_str() {
+                "home" => home_page(app, ui),
+                "new" => new_page(app, ui),
+                "open" => open_page(app, ui),
+                "saveAs" => save_as_page(app, ui),
+                "info" => info_page(app, ui),
+                "print" | "export" => export_page(app, ui),
+                "options" => crate::options::page(app, ui),
+                _ => home_page(app, ui),
+            });
         });
-    });
 }
 
 fn heading(ui: &mut Ui, s: &str) {
@@ -144,31 +197,55 @@ fn template_tile(ui: &mut Ui, app: &mut WordApp, label: &str, template: &str) {
             r,
             2.0,
             egui::Color32::WHITE,
-            Stroke::new(if resp.hovered() { 2.0 } else { 1.0 }, if resp.hovered() { t.accent } else { t.border_strong }),
+            Stroke::new(
+                if resp.hovered() { 2.0 } else { 1.0 },
+                if resp.hovered() {
+                    t.accent
+                } else {
+                    t.border_strong
+                },
+            ),
             egui::StrokeKind::Inside,
         );
         let ppp = ui.ctx().pixels_per_point();
         let key = format!("tpl:{template}:{ppp}");
         let region = app.session.region();
-        let tex = ui.ctx().data(|d| d.get_temp::<egui::TextureHandle>(egui::Id::new(&key))).or_else(|| {
-            let mut s = wordcraft_engine::Session::new(wordcraft_doc::Document::new());
-            // The blank tile shows the region's paper (#838).
-            s.system_region = region;
-            let _ = s.run("file.new", &json!({"template": template}));
-            let l = s.export_layout();
-            let page = l.pages.first()?;
-            let img = wordcraft_render::render_page(&s.doc, page, 150.0 / page.w * ppp, &crate::canvas::screen_render_options());
-            let px = img.to_straight();
-            let h = ui.ctx().load_texture(
-                &key,
-                egui::ColorImage::from_rgba_unmultiplied([img.width as usize, img.height as usize], &px),
-                egui::TextureOptions::LINEAR,
-            );
-            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new(&key), h.clone()));
-            Some(h)
-        });
+        let tex = ui
+            .ctx()
+            .data(|d| d.get_temp::<egui::TextureHandle>(egui::Id::new(&key)))
+            .or_else(|| {
+                let mut s = wordcraft_engine::Session::new(wordcraft_doc::Document::new());
+                // The blank tile shows the region's paper (#838).
+                s.system_region = region;
+                let _ = s.run("file.new", &json!({"template": template}));
+                let l = s.export_layout();
+                let page = l.pages.first()?;
+                let img = wordcraft_render::render_page(
+                    &s.doc,
+                    page,
+                    150.0 / page.w * ppp,
+                    &crate::canvas::screen_render_options(),
+                );
+                let px = img.to_straight();
+                let h = ui.ctx().load_texture(
+                    &key,
+                    egui::ColorImage::from_rgba_unmultiplied(
+                        [img.width as usize, img.height as usize],
+                        &px,
+                    ),
+                    egui::TextureOptions::LINEAR,
+                );
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(egui::Id::new(&key), h.clone()));
+                Some(h)
+            });
         if let Some(h) = tex {
-            ui.painter().image(h.id(), r.shrink(1.0), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), egui::Color32::WHITE);
+            ui.painter().image(
+                h.id(),
+                r.shrink(1.0),
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
         }
         ui.label(egui::RichText::new(tl!(label)).font(regular(12.5)));
         if resp.clicked() {
@@ -180,8 +257,13 @@ fn template_tile(ui: &mut Ui, app: &mut WordApp, label: &str, template: &str) {
 }
 
 /// The built-in templates in gallery order: display label and the `file.new` template id.
-const TEMPLATES: [(&str, &str); 5] =
-    [("Blank document", "blank"), ("Studio handbook (sample)", "sample"), ("Letter", "letter"), ("Résumé", "resume"), ("Report", "report")];
+const TEMPLATES: [(&str, &str); 5] = [
+    ("Blank document", "blank"),
+    ("Studio handbook (sample)", "sample"),
+    ("Letter", "letter"),
+    ("Résumé", "resume"),
+    ("Report", "report"),
+];
 
 /// How many templates Home shows before "More templates" (the rest are on New).
 const HOME_TEMPLATES: usize = 4;
@@ -192,14 +274,22 @@ fn matching_templates(query: &str) -> Vec<(&'static str, &'static str)> {
     let q = query.trim().to_lowercase();
     TEMPLATES
         .into_iter()
-        .filter(|(label, id)| q.is_empty() || id.contains(&q) || label.to_lowercase().contains(&q) || tl!(label).to_lowercase().contains(&q))
+        .filter(|(label, id)| {
+            q.is_empty()
+                || id.contains(&q)
+                || label.to_lowercase().contains(&q)
+                || tl!(label).to_lowercase().contains(&q)
+        })
         .collect()
 }
 
 /// Home: a greeting, Blank plus a short row of templates with a link to New, then Recent.
 fn home_page(app: &mut WordApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    let hour = wordcraft_engine::cmd::now_iso().get(11..13).and_then(|h| h.parse::<u32>().ok()).unwrap_or(9);
+    let hour = wordcraft_engine::cmd::now_iso()
+        .get(11..13)
+        .and_then(|h| h.parse::<u32>().ok())
+        .unwrap_or(9);
     heading(
         ui,
         if hour < 12 {
@@ -217,8 +307,18 @@ fn home_page(app: &mut WordApp, ui: &mut Ui) {
         }
     });
     ui.add_space(8.0);
-    let more = ui.add(egui::Label::new(egui::RichText::new(tl!("More templates →")).font(medium(13.5)).color(t.accent)).sense(Sense::click()));
-    if more.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+    let more = ui.add(
+        egui::Label::new(
+            egui::RichText::new(tl!("More templates →"))
+                .font(medium(13.5))
+                .color(t.accent),
+        )
+        .sense(Sense::click()),
+    );
+    if more
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+        .clicked()
+    {
         app.ui.backstage_page = "new".into();
     }
     ui.add_space(24.0);
@@ -230,8 +330,15 @@ fn new_page(app: &mut WordApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     heading(ui, "New");
     let id = egui::Id::new("backstage_template_search");
-    let mut query = ui.ctx().data(|d| d.get_temp::<String>(id)).unwrap_or_default();
-    let search = ui.add(egui::TextEdit::singleline(&mut query).hint_text(tl!("Search for templates")).desired_width(360.0));
+    let mut query = ui
+        .ctx()
+        .data(|d| d.get_temp::<String>(id))
+        .unwrap_or_default();
+    let search = ui.add(
+        egui::TextEdit::singleline(&mut query)
+            .hint_text(tl!("Search for templates"))
+            .desired_width(360.0),
+    );
     if search.changed() {
         ui.ctx().data_mut(|d| d.insert_temp(id, query.clone()));
     }
@@ -254,17 +361,48 @@ fn open_list(app: &mut WordApp, ui: &mut Ui) {
     ui.label(egui::RichText::new(tl!("Recent")).font(semibold(16.0)));
     ui.add_space(6.0);
     if app.ui.recent.is_empty() {
-        ui.label(egui::RichText::new(tl!("Documents you open will show up here.")).color(t.text_dim));
+        ui.label(
+            egui::RichText::new(tl!("Documents you open will show up here.")).color(t.text_dim),
+        );
     }
-    for p in app.ui.recent.iter().take(app.ui.recent_shown()).cloned().collect::<Vec<_>>() {
-        let name = std::path::Path::new(&p).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or(p.clone());
-        let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width().min(700.0), 40.0), Sense::click());
+    for p in app
+        .ui
+        .recent
+        .iter()
+        .take(app.ui.recent_shown())
+        .cloned()
+        .collect::<Vec<_>>()
+    {
+        let name = std::path::Path::new(&p)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or(p.clone());
+        let (r, resp) =
+            ui.allocate_exact_size(vec2(ui.available_width().min(700.0), 40.0), Sense::click());
         if resp.hovered() {
             ui.painter().rect_filled(r, 4.0, t.hover);
         }
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 18.0, r.center().y), vec2(22.0, 22.0)), "printLayout", t.icon, t.accent);
-        ui.painter().text(pos2(r.min.x + 40.0, r.min.y + 13.0), Align2::LEFT_CENTER, &name, medium(13.0), t.text);
-        ui.painter().text(pos2(r.min.x + 40.0, r.min.y + 29.0), Align2::LEFT_CENTER, &p, regular(11.0), t.text_dim);
+        icons::paint(
+            ui.painter(),
+            Rect::from_center_size(pos2(r.min.x + 18.0, r.center().y), vec2(22.0, 22.0)),
+            "printLayout",
+            t.icon,
+            t.accent,
+        );
+        ui.painter().text(
+            pos2(r.min.x + 40.0, r.min.y + 13.0),
+            Align2::LEFT_CENTER,
+            &name,
+            medium(13.0),
+            t.text,
+        );
+        ui.painter().text(
+            pos2(r.min.x + 40.0, r.min.y + 29.0),
+            Align2::LEFT_CENTER,
+            &p,
+            regular(11.0),
+            t.text_dim,
+        );
         if resp.clicked() {
             let _ = app.run("file.open", json!({"path": p}));
             app.ui.backstage = false;
@@ -275,7 +413,10 @@ fn open_list(app: &mut WordApp, ui: &mut Ui) {
 
 fn open_page(app: &mut WordApp, ui: &mut Ui) {
     heading(ui, "Open");
-    if ui.button(egui::RichText::new(tl!("Browse…")).font(medium(14.0))).clicked() {
+    if ui
+        .button(egui::RichText::new(tl!("Browse…")).font(medium(14.0)))
+        .clicked()
+    {
         let _ = app.run("ui.openFileDialog", json!({}));
     }
     // Linux and the BSDs (#576): the system dialog needs a file chooser portal or zenity; when it
@@ -283,7 +424,9 @@ fn open_page(app: &mut WordApp, ui: &mut Ui) {
     #[cfg(all(unix, not(target_os = "macos"), not(target_arch = "wasm32")))]
     if ui
         .button(egui::RichText::new(tl!("Browse in WordCraft…")).font(medium(14.0)))
-        .on_hover_text(tl!("Open a file with WordCraft's own browser when the system file dialog doesn't appear."))
+        .on_hover_text(tl!(
+            "Open a file with WordCraft's own browser when the system file dialog doesn't appear."
+        ))
         .clicked()
     {
         let _ = app.run("ui.fileBrowser", json!({}));
@@ -296,7 +439,10 @@ fn open_page(app: &mut WordApp, ui: &mut Ui) {
 /// opens it, which is not what Save As is for.
 fn save_as_page(app: &mut WordApp, ui: &mut Ui) {
     heading(ui, "Save As");
-    if ui.button(egui::RichText::new(tl!("Browse…")).font(medium(14.0))).clicked() {
+    if ui
+        .button(egui::RichText::new(tl!("Browse…")).font(medium(14.0)))
+        .clicked()
+    {
         app.save_as_dialog();
     }
 }
@@ -384,7 +530,9 @@ fn export_page(app: &mut WordApp, ui: &mut Ui) {
         return;
     }
     heading(ui, "Export");
-    ui.label(tl!("Save a copy in another format. Printing goes through a PDF you can print from any viewer."));
+    ui.label(tl!(
+        "Save a copy in another format. Printing goes through a PDF you can print from any viewer."
+    ));
     ui.add_space(12.0);
     crate::print_page::export_formats(app, ui);
 }
@@ -399,7 +547,12 @@ mod tests {
 
     #[test]
     fn template_search_matches_labels_case_insensitively() {
-        let ids = |q: &str| matching_templates(q).into_iter().map(|(_, id)| id).collect::<Vec<_>>();
+        let ids = |q: &str| {
+            matching_templates(q)
+                .into_iter()
+                .map(|(_, id)| id)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(ids(""), ["blank", "sample", "letter", "resume", "report"]);
         assert_eq!(ids("  LETTER "), ["letter"]);
         assert_eq!(ids("re"), ["resume", "report"]);
@@ -411,25 +564,46 @@ mod tests {
     /// and Recent; New has every template and no Recent list.
     #[test]
     fn home_and_new_show_different_sections() {
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default());
-        a.run("ui.backstage", json!({"value": true, "page": "home"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
         );
+        a.run("ui.backstage", json!({"value": true, "page": "home"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
-        assert!(h.query_by_label("Recent").is_some(), "Home lists recent documents");
-        assert!(h.query_by_label("Letter").is_some(), "Home shows the first templates");
-        assert!(h.query_by_label("Report").is_none(), "Home shows only a short row of templates");
+        assert!(
+            h.query_by_label("Recent").is_some(),
+            "Home lists recent documents"
+        );
+        assert!(
+            h.query_by_label("Letter").is_some(),
+            "Home shows the first templates"
+        );
+        assert!(
+            h.query_by_label("Report").is_none(),
+            "Home shows only a short row of templates"
+        );
         h.get_by_label("More templates →").click();
         h.run_steps(4);
         assert_eq!(h.state().ui.backstage_page, "new", "the link opens New");
-        assert!(h.query_by_label("Report").is_some(), "New shows every template");
-        assert!(h.query_by_label("Recent").is_none(), "New has no Recent list");
+        assert!(
+            h.query_by_label("Report").is_some(),
+            "New shows every template"
+        );
+        assert!(
+            h.query_by_label("Recent").is_none(),
+            "New has no Recent list"
+        );
     }
 
     /// #260: File › Info's Title and Author fields dropped every keystroke (they edited a copy
@@ -448,30 +622,49 @@ mod tests {
             })),
             ..Default::default()
         };
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::from_text("XYZ")), services);
-        a.session.author = "GAMMA".into();
-        a.run("ui.backstage", json!({"value": true, "page": "info"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::from_text("XYZ")),
+            services,
         );
+        a.session.author = "GAMMA".into();
+        a.run("ui.backstage", json!({"value": true, "page": "info"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         for (field, text) in [("Title", "ALPHA"), ("Author", "BETA")] {
             h.get_by_role_and_label(Role::TextInput, field).click();
             h.run_steps(2);
             for c in text.chars() {
-                h.get_by_role_and_label(Role::TextInput, field).type_text(&c.to_string());
+                h.get_by_role_and_label(Role::TextInput, field)
+                    .type_text(&c.to_string());
                 h.run_steps(2);
             }
-            assert_eq!(h.get_by_role_and_label(Role::TextInput, field).value().as_deref(), Some(text), "{field} shows what was typed");
+            assert_eq!(
+                h.get_by_role_and_label(Role::TextInput, field)
+                    .value()
+                    .as_deref(),
+                Some(text),
+                "{field} shows what was typed"
+            );
         }
         let core = h.state().session.doc.core.clone();
-        assert_eq!((core.title.as_str(), core.creator.as_str()), ("ALPHA", "BETA"));
-        assert!(h.state().session.dirty, "the property edits are unsaved changes");
+        assert_eq!(
+            (core.title.as_str(), core.creator.as_str()),
+            ("ALPHA", "BETA")
+        );
+        assert!(
+            h.state().session.dirty,
+            "the property edits are unsaved changes"
+        );
 
         // Save (web: a download) writes them into docProps/core.xml, with fresh save stamps.
         let a = h.state_mut();
@@ -480,53 +673,91 @@ mod tests {
         a.run("file.save", json!({})).unwrap();
         let (name, bytes) = got.borrow_mut().pop().unwrap();
         let back = wordcraft_engine::io::open_bytes(&name, &bytes).unwrap();
-        assert_eq!((back.core.title.as_str(), back.core.creator.as_str()), ("ALPHA", "BETA"));
+        assert_eq!(
+            (back.core.title.as_str(), back.core.creator.as_str()),
+            ("ALPHA", "BETA")
+        );
         assert_eq!(back.core.last_modified_by, "GAMMA");
-        assert_eq!(back.core.revision, core.revision + 2, "each save advances the revision");
-        assert!(created.is_empty() && !back.core.created.is_empty(), "the first save sets the creation time");
+        assert_eq!(
+            back.core.revision,
+            core.revision + 2,
+            "each save advances the revision"
+        );
+        assert!(
+            created.is_empty() && !back.core.created.is_empty(),
+            "the first save sets the creation time"
+        );
         assert!(!back.core.modified.is_empty());
         assert!(!a.session.dirty);
 
         // Each field's typing is one undo step.
         a.session.run("edit.undo", &json!({})).unwrap();
-        assert_eq!((a.session.doc.core.title.as_str(), a.session.doc.core.creator.as_str()), ("ALPHA", ""));
+        assert_eq!(
+            (
+                a.session.doc.core.title.as_str(),
+                a.session.doc.core.creator.as_str()
+            ),
+            ("ALPHA", "")
+        );
         a.session.run("edit.undo", &json!({})).unwrap();
         assert_eq!(a.session.doc.core.title, "");
     }
 
     #[test]
     fn save_as_page_shows_browse_and_no_open_list() {
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default());
-        a.run("ui.backstage", json!({"value": true, "page": "saveAs"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
         );
+        a.run("ui.backstage", json!({"value": true, "page": "saveAs"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
-        assert!(h.query_by_label("Browse…").is_some(), "Save As has Browse button");
-        assert!(h.query_by_label("Recent").is_none(), "Save As has no list that opens documents");
+        assert!(
+            h.query_by_label("Browse…").is_some(),
+            "Save As has Browse button"
+        );
+        assert!(
+            h.query_by_label("Recent").is_none(),
+            "Save As has no list that opens documents"
+        );
     }
 
     #[test]
     fn backstage_save_navigates_to_save_as_when_unnamed() {
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default());
-        a.run("ui.backstage", json!({"value": true, "page": "home"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
         );
+        a.run("ui.backstage", json!({"value": true, "page": "home"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         h.get_by_label("Save").click();
         h.run_steps(4);
-        assert_eq!(h.state().ui.backstage_page, "saveAs", "unnamed Save opens Save As page");
+        assert_eq!(
+            h.state().ui.backstage_page,
+            "saveAs",
+            "unnamed Save opens Save As page"
+        );
         assert!(h.state().ui.backstage, "backstage remains open");
     }
 
@@ -542,16 +773,22 @@ mod tests {
             })),
             ..Default::default()
         };
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), services);
-        a.run("ui.backstage", json!({"value": true, "page": "home"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            services,
         );
+        a.run("ui.backstage", json!({"value": true, "page": "home"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         h.get_by_label("Save").click();
         h.run_steps(4);
@@ -571,16 +808,22 @@ mod tests {
             })),
             ..Default::default()
         };
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), services);
-        a.run("ui.backstage", json!({"value": true, "page": "home"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            services,
         );
+        a.run("ui.backstage", json!({"value": true, "page": "home"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         h.get_by_label("Save").click();
         h.run_steps(4);
@@ -589,16 +832,22 @@ mod tests {
 
     #[test]
     fn backstage_save_as_sidebar_opens_save_as_page() {
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default());
-        a.run("ui.backstage", json!({"value": true, "page": "home"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
         );
+        a.run("ui.backstage", json!({"value": true, "page": "home"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         h.get_by_label("Save As").click();
         h.run_steps(4);

@@ -99,9 +99,12 @@ pub fn default_data_dir(name: &str) -> Option<PathBuf> {
     let base = if cfg!(windows) {
         std::env::var_os("APPDATA").map(PathBuf::from)
     } else {
-        std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).or_else(|| {
-            std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local").join("share"))
-        })
+        std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME")
+                    .map(|home| PathBuf::from(home).join(".local").join("share"))
+            })
     };
     base.map(|base| base.join("bun-engine").join(name))
 }
@@ -110,7 +113,9 @@ pub fn default_data_dir(name: &str) -> Option<PathBuf> {
 /// its format from the content.
 pub fn boot(name: &str, image: &[u8], options: &Options) -> Result<Box<dyn Handheld>> {
     let format = Format::detect(image).ok_or_else(|| {
-        Error(format!("{name}: not a Nintendo DS or 3DS image (NDS, CCI, CIA, CXI or 3DSX)"))
+        Error(format!(
+            "{name}: not a Nintendo DS or 3DS image (NDS, CCI, CIA, CXI or 3DSX)"
+        ))
     })?;
     match format.platform() {
         #[cfg(feature = "nds")]
@@ -118,7 +123,9 @@ pub fn boot(name: &str, image: &[u8], options: &Options) -> Result<Box<dyn Handh
         #[cfg(feature = "ctr")]
         Platform::Ctr => Ok(Box::new(ctr::Ctr::from_image(name, image, options)?)),
         #[allow(unreachable_patterns)]
-        other => Err(Error(format!("{name}: the {other:?} core is disabled in this build"))),
+        other => Err(Error(format!(
+            "{name}: the {other:?} core is disabled in this build"
+        ))),
     }
 }
 

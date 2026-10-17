@@ -42,7 +42,7 @@ impl RomExt for Rom<'_> {
                     .find(|a| a.kind() == autoload_kind)
                     .ok_or_else(|| RomGetCodeError::ModuleNotFound { module_kind: kind })?;
                 Ok(autoload.code().to_owned().into())
-            },
+            }
         }
     }
 }

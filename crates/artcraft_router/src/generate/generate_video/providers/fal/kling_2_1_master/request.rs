@@ -10,36 +10,41 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
-  FalVideoResponsePayload, GenerateVideoResponse,
+    FalVideoResponsePayload, GenerateVideoResponse,
 };
 
 #[derive(Clone, Debug)]
 pub struct FalKling21MasterRequestState {
-  pub request: Kling2p1MasterRequest,
+    pub request: Kling2p1MasterRequest,
 }
 
 impl FalKling21MasterRequestState {
-  pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-    let webhook_url = client.webhook_url.as_deref()
-      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
-    let outbound_request: Arc<dyn Debug + Send + Sync> = Arc::new(self.request.clone());
+    pub async fn send(
+        &self,
+        client: &RouterFalClient,
+    ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+        let webhook_url = client
+            .webhook_url
+            .as_deref()
+            .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
+        let outbound_request: Arc<dyn Debug + Send + Sync> = Arc::new(self.request.clone());
 
-    let args = Kling2p1MasterArgs {
-      request: self.request.clone(),
-      webhook_url,
-      api_key: &client.api_key,
-    };
+        let args = Kling2p1MasterArgs {
+            request: self.request.clone(),
+            webhook_url,
+            api_key: &client.api_key,
+        };
 
-    let webhook_response = enqueue_kling_v2p1_master_image_to_video_webhook(args)
-      .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+        let webhook_response = enqueue_kling_v2p1_master_image_to_video_webhook(args)
+            .await
+            .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
 
-    Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
-      request_id: webhook_response.request_id,
-      gateway_request_id: webhook_response.gateway_request_id,
-      maybe_status_url: None,
-      maybe_response_url: None,
-      maybe_outbound_request: Some(outbound_request),
-    }))
-  }
+        Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
+            request_id: webhook_response.request_id,
+            gateway_request_id: webhook_response.gateway_request_id,
+            maybe_status_url: None,
+            maybe_response_url: None,
+            maybe_outbound_request: Some(outbound_request),
+        }))
+    }
 }

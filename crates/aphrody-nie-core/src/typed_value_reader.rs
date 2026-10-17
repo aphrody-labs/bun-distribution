@@ -68,7 +68,7 @@ impl TypedValueList<'_> {
                 } else {
                     cvttss2si(f32::from_bits(raw)) // float → int x86 (troncature/indefinite)
                 }
-            },
+            }
             _ => 0, // tag 0/3 : ne lit même pas `data`
         })
     }
@@ -89,7 +89,7 @@ impl TypedValueList<'_> {
                 } else {
                     f32::from_bits(raw) // f32 brut
                 }
-            },
+            }
             _ => 0.0, // tag 0/3 : ne lit même pas `data`
         })
     }
@@ -131,10 +131,22 @@ mod tests {
         assert_eq!(cvttss2si(0.0), 0);
         assert_eq!(cvttss2si(255.0), 255);
         assert_eq!(cvttss2si(-2_147_483_648.0), i32::MIN, "-2^31 représentable");
-        assert_eq!(cvttss2si(2_147_483_648.0), i32::MIN, "+2^31 hors i32 → indefinite");
-        assert_eq!(cvttss2si(1e20), i32::MIN, "overflow → indefinite (≠ saturation)");
+        assert_eq!(
+            cvttss2si(2_147_483_648.0),
+            i32::MIN,
+            "+2^31 hors i32 → indefinite"
+        );
+        assert_eq!(
+            cvttss2si(1e20),
+            i32::MIN,
+            "overflow → indefinite (≠ saturation)"
+        );
         assert_eq!(cvttss2si(-1e20), i32::MIN);
-        assert_eq!(cvttss2si(f32::NAN), i32::MIN, "NaN → indefinite (≠ 0 de `as`)");
+        assert_eq!(
+            cvttss2si(f32::NAN),
+            i32::MIN,
+            "NaN → indefinite (≠ 0 de `as`)"
+        );
         assert_eq!(cvttss2si(f32::INFINITY), i32::MIN);
         assert_eq!(cvttss2si(f32::NEG_INFINITY), i32::MIN);
     }
@@ -160,12 +172,20 @@ mod tests {
             (2u8, 2_147_483_648.0f32.to_bits().to_le_bytes()),
         ];
         let (tags, data) = build(&entries);
-        let mut r = TypedValueList { tags: &tags, data: &data, index: 0 };
+        let mut r = TypedValueList {
+            tags: &tags,
+            data: &data,
+            index: 0,
+        };
         assert_eq!(r.read_next_int(), Some(42));
         assert_eq!(r.index, 1, "index avancé");
         assert_eq!(r.read_next_int(), Some(1), "cvttss2si(1.5)=1");
         assert_eq!(r.read_next_int(), Some(0), "tag 0 → 0");
-        assert_eq!(r.read_next_int(), Some(i32::MIN), "cvttss2si(2^31)=indefinite");
+        assert_eq!(
+            r.read_next_int(),
+            Some(i32::MIN),
+            "cvttss2si(2^31)=indefinite"
+        );
         assert_eq!(r.index, 4);
     }
 
@@ -180,23 +200,38 @@ mod tests {
             (1u8, 16_777_219i32.to_le_bytes()),    // > 2^24 → arrondi cvtsi2ss
         ];
         let (tags, data) = build(&entries);
-        let mut r = TypedValueList { tags: &tags, data: &data, index: 0 };
+        let mut r = TypedValueList {
+            tags: &tags,
+            data: &data,
+            index: 0,
+        };
         assert_eq!(r.read_next_float(), Some(42.0));
         assert_eq!(r.index, 1);
         assert_eq!(r.read_next_float(), Some(1.5));
         assert_eq!(r.read_next_float(), Some(0.0), "tag 0 → 0.0");
         assert_eq!(r.read_next_float(), Some(-7.0));
-        assert_eq!(r.read_next_float(), Some(16_777_219i32 as f32), "cvtsi2ss arrondi RNE");
+        assert_eq!(
+            r.read_next_float(),
+            Some(16_777_219i32 as f32),
+            "cvtsi2ss arrondi RNE"
+        );
         assert_eq!(r.index, 5);
     }
 
     /// Lecture à un index de départ non nul.
     #[test]
     fn read_next_int_midlist() {
-        let entries =
-            [(1u8, 10i32.to_le_bytes()), (1u8, 20i32.to_le_bytes()), (1u8, (-5i32).to_le_bytes())];
+        let entries = [
+            (1u8, 10i32.to_le_bytes()),
+            (1u8, 20i32.to_le_bytes()),
+            (1u8, (-5i32).to_le_bytes()),
+        ];
         let (tags, data) = build(&entries);
-        let mut r = TypedValueList { tags: &tags, data: &data, index: 2 };
+        let mut r = TypedValueList {
+            tags: &tags,
+            data: &data,
+            index: 2,
+        };
         assert_eq!(r.read_next_int(), Some(-5));
         assert_eq!(r.index, 3);
     }

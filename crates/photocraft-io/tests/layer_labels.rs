@@ -38,9 +38,18 @@ fn layer_labels_psd_roundtrip_all_colors_and_depths() {
             group.label = color;
             doc.layers.push(group);
         }
-        let bytes = photocraft_io::export(&doc, "labels.psd", &Default::default()).unwrap().bytes;
-        let back = photocraft_io::import("labels.psd", &bytes).unwrap().document;
-        let labels = |d: &Document| d.walk().into_iter().map(|(_, _, l)| (l.name.clone(), l.label)).collect::<Vec<_>>();
+        let bytes = photocraft_io::export(&doc, "labels.psd", &Default::default())
+            .unwrap()
+            .bytes;
+        let back = photocraft_io::import("labels.psd", &bytes)
+            .unwrap()
+            .document;
+        let labels = |d: &Document| {
+            d.walk()
+                .into_iter()
+                .map(|(_, _, l)| (l.name.clone(), l.label))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(labels(&back), labels(&doc), "{depth:?}");
         assert_eq!(back.depth, depth);
     }

@@ -71,7 +71,10 @@ pub fn id(widget: &str) -> egui::Id {
 /// Whether the field had an unfinished edit on the immediately preceding egui pass.
 pub(crate) fn was_editing(ctx: &egui::Context, widget: &str) -> bool {
     let pass = ctx.cumulative_pass_nr();
-    ctx.data(|d| d.get_temp::<Memo>(id(widget).with("memo")).is_some_and(|memo| memo.before.is_some() && memo.pass.checked_add(1) == Some(pass)))
+    ctx.data(|d| {
+        d.get_temp::<Memo>(id(widget).with("memo"))
+            .is_some_and(|memo| memo.before.is_some() && memo.pass.checked_add(1) == Some(pass))
+    })
 }
 
 impl<'a> TextField<'a> {
@@ -97,7 +100,10 @@ impl<'a> TextField<'a> {
 
     /// A multi-line field: Return starts a new line; leaving the field ends the edit.
     pub fn multiline(widget: &'a str, text: &'a mut String) -> Self {
-        TextField { multiline: true, ..Self::singleline(widget, text) }
+        TextField {
+            multiline: true,
+            ..Self::singleline(widget, text)
+        }
     }
 
     /// Grey text shown while the field is empty.
@@ -164,7 +170,9 @@ impl<'a> TextField<'a> {
 
     pub fn show(self, ui: &mut Ui) -> TextFieldResponse {
         let id = id(self.widget);
-        let mut memo: Memo = ui.data_mut(|d| d.get_temp(id.with("memo"))).unwrap_or_default();
+        let mut memo: Memo = ui
+            .data_mut(|d| d.get_temp(id.with("memo")))
+            .unwrap_or_default();
         // a field not drawn last frame (its dialog or panel closed) starts afresh: an edit, a menu
         // or a choice from it that was under way is gone with it
         let pass = ui.ctx().cumulative_pass_nr();
@@ -186,13 +194,19 @@ impl<'a> TextField<'a> {
                 Action::Cut => ui.input_mut(|i| i.events.push(egui::Event::Cut)),
                 Action::Copy => ui.input_mut(|i| i.events.push(egui::Event::Copy)),
                 // only the host can read the clipboard: it answers with a paste event
-                Action::Paste => ui.ctx().send_viewport_cmd(egui::ViewportCommand::RequestPaste),
+                Action::Paste => ui
+                    .ctx()
+                    .send_viewport_cmd(egui::ViewportCommand::RequestPaste),
                 Action::SelectAll => select_all(ui.ctx(), id, self.text),
                 Action::Refocus => {}
             }
         }
         let name = self.label.clone().or_else(|| self.hint.clone());
-        let mut edit = if self.multiline { egui::TextEdit::multiline(self.text) } else { egui::TextEdit::singleline(self.text) };
+        let mut edit = if self.multiline {
+            egui::TextEdit::multiline(self.text)
+        } else {
+            egui::TextEdit::singleline(self.text)
+        };
         edit = edit.id(id);
         if let Some(hint) = self.hint {
             edit = edit.hint_text(hint);
@@ -218,20 +232,31 @@ impl<'a> TextField<'a> {
         if let Some(rows) = self.rows {
             edit = edit.desired_rows(rows);
         }
-        let (escape, enter) = ui.input(|i| (i.key_pressed(egui::Key::Escape), i.key_pressed(egui::Key::Enter)));
+        let (escape, enter) = ui.input(|i| {
+            (
+                i.key_pressed(egui::Key::Escape),
+                i.key_pressed(egui::Key::Enter),
+            )
+        });
         // a right-click places the cursor as a left one does: the selection the menu acts on
         // would be gone
-        let right = ui.input(|i| i.pointer.button_down(egui::PointerButton::Secondary) || i.pointer.button_released(egui::PointerButton::Secondary));
-        let selection = egui::text_edit::TextEditState::load(ui.ctx(), id).and_then(|s| s.cursor.char_range());
+        let right = ui.input(|i| {
+            i.pointer.button_down(egui::PointerButton::Secondary)
+                || i.pointer.button_released(egui::PointerButton::Secondary)
+        });
+        let selection =
+            egui::text_edit::TextEditState::load(ui.ctx(), id).and_then(|s| s.cursor.char_range());
         let mut response = ui.add(edit);
         // screen readers: the field by its caption, even once it holds text (egui names it by
         // nothing but its contents)
         if let Some(name) = name.filter(|n| !n.trim().is_empty()) {
-            ui.ctx().accesskit_node_builder(response.id, |node| node.set_label(name));
+            ui.ctx()
+                .accesskit_node_builder(response.id, |node| node.set_label(name));
         }
         // The menu may take focus on a primary-button release. egui collapses a
         // TextEdit selection when focus leaves; retain the range our own menu acts on.
-        if right && response.contains_pointer() || memo.menu_open && !ui.memory(|m| m.has_focus(id)) {
+        if right && response.contains_pointer() || memo.menu_open && !ui.memory(|m| m.has_focus(id))
+        {
             let mut state = egui::text_edit::TextEditState::load(ui.ctx(), id).unwrap_or_default();
             state.cursor.set_char_range(selection);
             state.store(ui.ctx(), id);
@@ -279,7 +304,8 @@ impl<'a> TextField<'a> {
             .is_some();
 
         let mut ending = None;
-        let close_menu = |ui: &Ui| egui::Popup::close_id(ui.ctx(), egui::Popup::default_response_id(&response));
+        let close_menu =
+            |ui: &Ui| egui::Popup::close_id(ui.ctx(), egui::Popup::default_response_id(&response));
         // egui reports a lost focus on two frames: only an edit under way ends
         if response.lost_focus() && memo.before.is_some() {
             if escape && menu_was_open {
@@ -314,11 +340,19 @@ impl<'a> TextField<'a> {
             memo.away = false;
         }
         if ending.is_some() {
-            memo = Memo { pass, ..Memo::default() };
+            memo = Memo {
+                pass,
+                ..Memo::default()
+            };
         }
-        let editing = ending.is_none() && (focused || memo.away || memo.menu_open || memo.action.is_some());
+        let editing =
+            ending.is_none() && (focused || memo.away || memo.menu_open || memo.action.is_some());
         ui.data_mut(|d| d.insert_temp(id.with("memo"), memo));
-        TextFieldResponse { response, ending, editing }
+        TextFieldResponse {
+            response,
+            ending,
+            editing,
+        }
     }
 }
 
@@ -353,13 +387,20 @@ enum Action {
 fn select_all(ctx: &egui::Context, id: egui::Id, text: &str) {
     let mut state = egui::text_edit::TextEditState::load(ctx, id).unwrap_or_default();
     let end = egui::text::CCursor::new(text.chars().count());
-    state.cursor.set_char_range(Some(egui::text::CCursorRange::two(egui::text::CCursor::new(0), end)));
+    state
+        .cursor
+        .set_char_range(Some(egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            end,
+        )));
     state.store(ctx, id);
 }
 
 /// Some text is selected in the field.
 fn has_selection(ctx: &egui::Context, id: egui::Id) -> bool {
-    egui::text_edit::TextEditState::load(ctx, id).and_then(|s| s.cursor.char_range()).is_some_and(|r| !r.is_empty())
+    egui::text_edit::TextEditState::load(ctx, id)
+        .and_then(|s| s.cursor.char_range())
+        .is_some_and(|r| !r.is_empty())
 }
 
 /// The field's context menu: Cut, Copy, Paste, Select All, with the keyboard's shortcuts beside them.
@@ -370,8 +411,20 @@ fn menu(ui: &mut Ui, widget: &str, id: egui::Id, text: &str, action: &mut Option
         (Action::Cut, "cut", "Cut", "Cmd+X", selected),
         (Action::Copy, "copy", "Copy", "Cmd+C", selected),
         // a browser only pastes from its own paste event, never on request
-        (Action::Paste, "paste", "Paste", "Cmd+V", !cfg!(target_arch = "wasm32")),
-        (Action::SelectAll, "selectAll", "Select All", "Cmd+A", !text.is_empty()),
+        (
+            Action::Paste,
+            "paste",
+            "Paste",
+            "Cmd+V",
+            !cfg!(target_arch = "wasm32"),
+        ),
+        (
+            Action::SelectAll,
+            "selectAll",
+            "Select All",
+            "Cmd+A",
+            !text.is_empty(),
+        ),
     ];
     for (a, key, label, shortcut, enabled) in items {
         if a == Action::Paste && cfg!(target_arch = "wasm32") {
@@ -380,7 +433,8 @@ fn menu(ui: &mut Ui, widget: &str, id: egui::Id, text: &str, action: &mut Option
         if a == Action::SelectAll {
             ui.separator();
         }
-        let button = egui::Button::new(crate::i18n::tr(label)).shortcut_text(crate::menubar::shortcut_text(shortcut, mac));
+        let button = egui::Button::new(crate::i18n::tr(label))
+            .shortcut_text(crate::menubar::shortcut_text(shortcut, mac));
         let r = ui.add_enabled(enabled, button);
         crate::widgets::register(ui.ctx(), format!("{widget}:{key}"), r.rect);
         if r.clicked() {
@@ -436,13 +490,22 @@ mod tests {
             self.time += 1.0 / 60.0;
             let mut raw = HeadlessView::raw_input(egui::vec2(400.0, 300.0), 1.0, self.time, events);
             raw.focused = self.window_focused;
-            let (text, select, shown, endings, editing) = (&mut self.text, self.select_on_focus, self.shown, &mut self.endings, &mut self.editing);
+            let (text, select, shown, endings, editing) = (
+                &mut self.text,
+                self.select_on_focus,
+                self.shown,
+                &mut self.endings,
+                &mut self.editing,
+            );
             self.view.run(raw, |ui| {
                 ui.add_space(20.0);
                 if !shown {
                     return;
                 }
-                let r = TextField::singleline(FIELD, text).width(200.0).select_on_focus(select).show(ui);
+                let r = TextField::singleline(FIELD, text)
+                    .width(200.0)
+                    .select_on_focus(select)
+                    .show(ui);
                 endings.extend(r.ending);
                 *editing = r.editing;
             });
@@ -457,25 +520,42 @@ mod tests {
         }
 
         fn rect(&self, id: &str) -> Option<Rect> {
-            self.widgets.iter().rev().find(|(w, _)| w == id).map(|(_, r)| *r)
+            self.widgets
+                .iter()
+                .rev()
+                .find(|(w, _)| w == id)
+                .map(|(_, r)| *r)
         }
 
         fn click_at(&mut self, at: Pos2, button: PointerButton) {
             // far apart in time from the last click: two clicks never make a double-click
             self.time += 1.0;
-            let press = |pressed| Event::PointerButton { pos: at, button, pressed, modifiers: Modifiers::NONE };
+            let press = |pressed| Event::PointerButton {
+                pos: at,
+                button,
+                pressed,
+                modifiers: Modifiers::NONE,
+            };
             self.frame(vec![Event::PointerMoved(at), press(true)]);
             self.frame(vec![press(false)]);
             self.settle();
         }
 
         fn click(&mut self, id: &str, button: PointerButton) {
-            let r = self.rect(id).unwrap_or_else(|| panic!("no {id} on screen: {:?}", self.widgets));
+            let r = self
+                .rect(id)
+                .unwrap_or_else(|| panic!("no {id} on screen: {:?}", self.widgets));
             self.click_at(r.center(), button);
         }
 
         fn key(&mut self, key: Key, modifiers: Modifiers) {
-            let ev = |pressed| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers };
+            let ev = |pressed| Event::Key {
+                key,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers,
+            };
             self.frame(vec![ev(true), ev(false)]);
             self.settle();
         }
@@ -508,7 +588,11 @@ mod tests {
         let mut rig = Rig::new("Lisbon");
         rig.click(FIELD, PointerButton::Secondary);
         for item in ["cut", "copy", "paste", "selectAll"] {
-            assert!(rig.rect(&format!("{FIELD}:{item}")).is_some(), "{item}: {:?}", rig.widgets);
+            assert!(
+                rig.rect(&format!("{FIELD}:{item}")).is_some(),
+                "{item}: {:?}",
+                rig.widgets
+            );
         }
     }
 
@@ -522,7 +606,11 @@ mod tests {
         assert_eq!(rig.view.clipboard, "Lisbon");
         assert_eq!(rig.text, "Lisbon");
         assert!(rig.focused(), "still editing");
-        assert_eq!(rig.endings, vec![], "using the menu is not leaving the field");
+        assert_eq!(
+            rig.endings,
+            vec![],
+            "using the menu is not leaving the field"
+        );
     }
 
     /// Cut in the menu puts the selected text on the clipboard and takes it out of the field.
@@ -561,12 +649,25 @@ mod tests {
         rig.select_all_by_keys();
         rig.click(FIELD, PointerButton::Secondary);
         let rect = rig.rect(FIELD).unwrap();
-        rig.click_at(egui::pos2(rect.left() + 2.0, rect.center().y), PointerButton::Primary);
-        let range = egui::text_edit::TextEditState::load(&rig.view.ctx, id(FIELD)).unwrap().cursor.char_range().unwrap();
-        assert!(range.is_empty(), "a click back in the field places a caret: {range:?}");
+        rig.click_at(
+            egui::pos2(rect.left() + 2.0, rect.center().y),
+            PointerButton::Primary,
+        );
+        let range = egui::text_edit::TextEditState::load(&rig.view.ctx, id(FIELD))
+            .unwrap()
+            .cursor
+            .char_range()
+            .unwrap();
+        assert!(
+            range.is_empty(),
+            "a click back in the field places a caret: {range:?}"
+        );
         rig.type_text("X");
         assert_eq!(rig.text, "XLisbon");
-        assert!(rig.endings.is_empty(), "dismissing into the field keeps the edit open");
+        assert!(
+            rig.endings.is_empty(),
+            "dismissing into the field keeps the edit open"
+        );
     }
 
     /// With nothing selected, Cut and Copy are greyed out: clicking one does nothing, as in a native
@@ -578,9 +679,15 @@ mod tests {
         rig.click(FIELD, PointerButton::Secondary);
         for item in ["cut", "copy"] {
             rig.click(&format!("{FIELD}:{item}"), PointerButton::Primary);
-            assert!(rig.rect(&format!("{FIELD}:{item}")).is_some(), "{item}: the menu is still open");
+            assert!(
+                rig.rect(&format!("{FIELD}:{item}")).is_some(),
+                "{item}: the menu is still open"
+            );
         }
-        assert_eq!((rig.text.as_str(), rig.view.clipboard.as_str()), ("Lisbon", ""));
+        assert_eq!(
+            (rig.text.as_str(), rig.view.clipboard.as_str()),
+            ("Lisbon", "")
+        );
         assert_eq!(rig.endings, vec![], "still editing");
         rig.menu("selectAll");
         rig.type_text("Kyoto");
@@ -620,7 +727,10 @@ mod tests {
         rig.key(Key::Enter, Modifiers::NONE);
         assert_eq!(rig.endings, vec![Ending::Return]);
         assert_eq!(rig.text, "Rome");
-        assert!(rig.rect(&format!("{FIELD}:cut")).is_none(), "the menu closed");
+        assert!(
+            rig.rect(&format!("{FIELD}:cut")).is_none(),
+            "the menu closed"
+        );
     }
 
     /// Esc with the menu open closes only the menu, as in native menus: the edit goes on, and a
@@ -632,11 +742,21 @@ mod tests {
         rig.type_text("Rome");
         rig.click(FIELD, PointerButton::Secondary);
         rig.key(Key::Escape, Modifiers::NONE);
-        assert!(rig.rect(&format!("{FIELD}:cut")).is_none(), "the menu closed");
-        assert_eq!((rig.text.as_str(), rig.endings.clone()), ("Rome", vec![]), "the edit goes on");
+        assert!(
+            rig.rect(&format!("{FIELD}:cut")).is_none(),
+            "the menu closed"
+        );
+        assert_eq!(
+            (rig.text.as_str(), rig.endings.clone()),
+            ("Rome", vec![]),
+            "the edit goes on"
+        );
         assert!(rig.focused());
         rig.key(Key::Escape, Modifiers::NONE);
-        assert_eq!((rig.text.as_str(), rig.endings.clone()), ("Lisbon", vec![Ending::Escape]));
+        assert_eq!(
+            (rig.text.as_str(), rig.endings.clone()),
+            ("Lisbon", vec![Ending::Escape])
+        );
     }
 
     /// Esc after Tab took the focus into the open menu also closes only the menu.
@@ -648,7 +768,11 @@ mod tests {
         rig.click(FIELD, PointerButton::Secondary);
         rig.key(Key::Tab, Modifiers::NONE);
         rig.key(Key::Escape, Modifiers::NONE);
-        assert_eq!((rig.text.as_str(), rig.endings.clone()), ("Rome", vec![]), "the edit goes on");
+        assert_eq!(
+            (rig.text.as_str(), rig.endings.clone()),
+            ("Rome", vec![]),
+            "the edit goes on"
+        );
         assert!(rig.focused());
     }
 
@@ -723,12 +847,18 @@ mod tests {
         rig.type_text("Rome");
         rig.window_focused = false;
         rig.settle();
-        assert!(rig.editing, "still being edited while the app is in the background");
+        assert!(
+            rig.editing,
+            "still being edited while the app is in the background"
+        );
         assert_eq!(rig.endings, vec![]);
         rig.window_focused = true;
         rig.settle();
         rig.key(Key::Escape, Modifiers::NONE);
-        assert_eq!((rig.text.as_str(), rig.endings.clone()), ("Lisbon", vec![Ending::Escape]));
+        assert_eq!(
+            (rig.text.as_str(), rig.endings.clone()),
+            ("Lisbon", vec![Ending::Escape])
+        );
     }
 
     /// A field that goes away while its menu is open starts afresh too when it comes back.
@@ -761,14 +891,25 @@ mod tests {
         rig.select_on_focus = true;
         let r = rig.rect(FIELD).expect("the field");
         let (from, to) = (r.center(), egui::pos2(r.right() + 40.0, r.center().y));
-        let press = |at, pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
+        let press = |at, pressed| Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        };
         rig.frame(vec![Event::PointerMoved(from), press(from, true)]);
         for i in 1..=5 {
-            rig.frame(vec![Event::PointerMoved(from + (to - from) * (i as f32 / 5.0))]);
+            rig.frame(vec![Event::PointerMoved(
+                from + (to - from) * (i as f32 / 5.0),
+            )]);
         }
         rig.frame(vec![press(to, false)]);
         rig.settle();
         rig.type_text("X");
-        assert!(rig.text.starts_with("Lisbon") && rig.text.ends_with('X') && rig.text != "X", "{:?}", rig.text);
+        assert!(
+            rig.text.starts_with("Lisbon") && rig.text.ends_with('X') && rig.text != "X",
+            "{:?}",
+            rig.text
+        );
     }
 }

@@ -178,10 +178,16 @@ pub fn parse_override_skill_config(root: &Value) -> OverrideSkillDatabase {
             let [skill_start, skill_count] = cond.ref_condition_skill_data;
             let skill_start = skill_start.max(0) as usize;
             let skill_end = skill_start.saturating_add(skill_count.max(0) as usize);
-            let required_skills: Vec<OverrideConditionSkillInfo> =
-                condition_skills.iter().take(skill_end).skip(skill_start).copied().collect();
-            resolved_conditions
-                .push(ResolvedCondition { condition_type: cond.condition_type, required_skills });
+            let required_skills: Vec<OverrideConditionSkillInfo> = condition_skills
+                .iter()
+                .take(skill_end)
+                .skip(skill_start)
+                .copied()
+                .collect();
+            resolved_conditions.push(ResolvedCondition {
+                condition_type: cond.condition_type,
+                required_skills,
+            });
         }
 
         resolved.push(ResolvedOverride {
@@ -190,5 +196,10 @@ pub fn parse_override_skill_config(root: &Value) -> OverrideSkillDatabase {
         });
     }
 
-    OverrideSkillDatabase { condition_skills, conditions, overrides, resolved }
+    OverrideSkillDatabase {
+        condition_skills,
+        conditions,
+        overrides,
+        resolved,
+    }
 }

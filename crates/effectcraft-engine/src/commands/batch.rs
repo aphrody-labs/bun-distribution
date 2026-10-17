@@ -18,11 +18,20 @@ fn reference(s: &str, results: &[Value]) -> Option<Result<Value>> {
     let mut parts = rest.split('.');
     let n: usize = parts.next()?.parse().ok()?;
     let path: Vec<&str> = parts.collect();
-    if path.iter().any(|p| p.is_empty() || !p.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')) {
+    if path
+        .iter()
+        .any(|p| p.is_empty() || !p.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
+    {
         return None;
     }
     let Some(mut v) = n.checked_sub(1).and_then(|i| results.get(i)) else {
-        return Some(Err(bad("engine.batch", format!("`{s}` refers to step {n}, but only {} step(s) ran before", results.len()))));
+        return Some(Err(bad(
+            "engine.batch",
+            format!(
+                "`{s}` refers to step {n}, but only {} step(s) ran before",
+                results.len()
+            ),
+        )));
     };
     for p in &path {
         let next = match (v, p.parse::<usize>()) {
@@ -32,7 +41,12 @@ fn reference(s: &str, results: &[Value]) -> Option<Result<Value>> {
         };
         match next {
             Some(x) => v = x,
-            None => return Some(Err(bad("engine.batch", format!("`{s}`: step {n} returned {v}, which has no `{p}`")))),
+            None => {
+                return Some(Err(bad(
+                    "engine.batch",
+                    format!("`{s}`: step {n} returned {v}, which has no `{p}`"),
+                )));
+            }
         }
     }
     Some(Ok(v.clone()))
@@ -45,14 +59,26 @@ fn substitute(v: &Value, results: &[Value]) -> Result<Value> {
             Some(r) => r?,
             None => v.clone(),
         },
-        Value::Array(a) => Value::Array(a.iter().map(|x| substitute(x, results)).collect::<Result<_>>()?),
-        Value::Object(o) => Value::Object(o.iter().map(|(k, x)| Ok((k.clone(), substitute(x, results)?))).collect::<Result<_>>()?),
+        Value::Array(a) => Value::Array(
+            a.iter()
+                .map(|x| substitute(x, results))
+                .collect::<Result<_>>()?,
+        ),
+        Value::Object(o) => Value::Object(
+            o.iter()
+                .map(|(k, x)| Ok((k.clone(), substitute(x, results)?)))
+                .collect::<Result<_>>()?,
+        ),
         _ => v.clone(),
     })
 }
 
 fn batch(s: &mut Session, p: &Value) -> Result<Value> {
-    let steps = p.get("steps").and_then(Value::as_array).ok_or_else(|| bad("engine.batch", "missing `steps`: [{command, params?}, …]"))?.clone();
+    let steps = p
+        .get("steps")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("engine.batch", "missing `steps`: [{command, params?}, …]"))?
+        .clone();
     let label = str_p(p, "label").unwrap_or("Batch").to_string();
     let atomic = p.get("atomic").and_then(Value::as_bool).unwrap_or(true);
     let (project, history, state) = (s.project.clone(), s.history.clone(), s.state.clone());
@@ -65,7 +91,10 @@ fn batch(s: &mut Session, p: &Value) -> Result<Value> {
                 .and_then(Value::as_str)
                 .ok_or_else(|| bad("engine.batch", "each step needs `command` (a command id)"))?;
             if NOT_IN_BATCH.contains(&id) {
-                return Err(bad("engine.batch", format!("`{id}` can't run inside a batch")));
+                return Err(bad(
+                    "engine.batch",
+                    format!("`{id}` can't run inside a batch"),
+                ));
             }
             let params = substitute(step.get("params").unwrap_or(&json!({})), results)?;
             s.execute_checked(id, params)
@@ -73,7 +102,11 @@ fn batch(s: &mut Session, p: &Value) -> Result<Value> {
         match run(s, &results) {
             Ok(r) => results.push(r),
             Err(e) => {
-                let id = step.get("command").or_else(|| step.get("id")).and_then(Value::as_str).unwrap_or("?");
+                let id = step
+                    .get("command")
+                    .or_else(|| step.get("id"))
+                    .and_then(Value::as_str)
+                    .unwrap_or("?");
                 let note = if atomic {
                     s.project = project;
                     s.history = history;
@@ -85,7 +118,10 @@ fn batch(s: &mut Session, p: &Value) -> Result<Value> {
                     fold(s, &project, &label);
                     format!("; steps 1–{i} were applied")
                 };
-                return Err(EngineError::Other(format!("step {} ({id}): {e}{note}", i + 1)));
+                return Err(EngineError::Other(format!(
+                    "step {} ({id}): {e}{note}",
+                    i + 1
+                )));
             }
         }
     }
@@ -96,7 +132,9 @@ fn batch(s: &mut Session, p: &Value) -> Result<Value> {
 /// Fold the undo steps recorded since the project was `snap` into one step called `label`.
 fn fold(s: &mut Session, snap: &Arc<effectcraft_project::Project>, label: &str) {
     let h = &mut s.history;
-    let Some(start) = h.undo.iter().rposition(|(_, p)| Arc::ptr_eq(p, snap)) else { return };
+    let Some(start) = h.undo.iter().rposition(|(_, p)| Arc::ptr_eq(p, snap)) else {
+        return;
+    };
     let first = h.undo[start].1.clone();
     h.undo.truncate(start);
     h.undo.push((label.to_string(), first));
@@ -127,7 +165,11 @@ mod tests {
     #[test]
     fn batch_refs_one_undo_step_and_rollback() {
         let mut s = Session::default();
-        s.execute("comp.new", json!({"name": "B", "width": 100, "height": 100})).unwrap();
+        s.execute(
+            "comp.new",
+            json!({"name": "B", "width": 100, "height": 100}),
+        )
+        .unwrap();
         let undo_before = s.history.undo.len();
         let r = s
             .execute_checked(
@@ -144,7 +186,10 @@ mod tests {
         let comp = s.active_comp().unwrap();
         let l = comp.layer(effectcraft_project::LayerId(lid)).unwrap();
         assert_eq!(l.name, "Red Box");
-        assert_eq!(l.props.prop("transform/opacity").unwrap().value.as_f64(), 40.0);
+        assert_eq!(
+            l.props.prop("transform/opacity").unwrap().value.as_f64(),
+            40.0
+        );
         assert_eq!(s.history.undo.len(), undo_before + 1, "one undo step");
         assert_eq!(s.history.undo.last().unwrap().0, "Build");
         assert!(s.undo());
@@ -163,7 +208,10 @@ mod tests {
             )
             .unwrap_err()
             .to_string();
-        assert!(e.starts_with("step 2 (prop.set)") && e.contains("rolled back"), "{e}");
+        assert!(
+            e.starts_with("step 2 (prop.set)") && e.contains("rolled back"),
+            "{e}"
+        );
         assert_eq!(s.active_comp().unwrap().layers.len(), n);
         // Bad references are reported.
         let e = s.execute_checked("engine.batch", json!({"steps": [{"command": "layer.rename", "params": {"layer": "$3.layer", "name": "x"}}]})).unwrap_err();

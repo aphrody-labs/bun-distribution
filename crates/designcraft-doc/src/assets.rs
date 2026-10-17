@@ -34,7 +34,8 @@ impl Asset {
     }
 
     fn same_bytes(&self, other: &Asset) -> bool {
-        Arc::ptr_eq(&self.data, &other.data) || (self.data.len() == other.data.len() && *self.data == *other.data)
+        Arc::ptr_eq(&self.data, &other.data)
+            || (self.data.len() == other.data.len() && *self.data == *other.data)
     }
 }
 
@@ -158,7 +159,12 @@ fn remap_story(st: &mut Story, map: &HashMap<AssetId, AssetId>, depth: usize) {
         }
     }
     for t in st.tables.values_mut() {
-        if !t.cells.iter().any(|c| c.graphic.as_ref().is_some_and(|g| map.contains_key(&g.asset)) || story_uses(&c.text, map)) {
+        if !t.cells.iter().any(|c| {
+            c.graphic
+                .as_ref()
+                .is_some_and(|g| map.contains_key(&g.asset))
+                || story_uses(&c.text, map)
+        }) {
             continue;
         }
         for c in &mut Arc::make_mut(t).cells {
@@ -190,7 +196,10 @@ impl Document {
             return Some(same);
         }
         let fresh = AssetId(self.alloc());
-        Some(self.add_asset(Asset { id: fresh, ..(**a).clone() }))
+        Some(self.add_asset(Asset {
+            id: fresh,
+            ..(**a).clone()
+        }))
     }
 
     /// Calls `f` with every asset reference: graphics on document and parent spreads (in
@@ -249,7 +258,9 @@ impl Document {
         let mut reps: HashMap<(usize, &str, u32), Vec<&Arc<Asset>>> = HashMap::new();
         let mut map = HashMap::new();
         for a in self.assets.values() {
-            let bucket = reps.entry((a.data.len(), a.mime.as_str(), a.page)).or_default();
+            let bucket = reps
+                .entry((a.data.len(), a.mime.as_str(), a.page))
+                .or_default();
             match bucket.iter().find(|r| r.same_file(a)) {
                 Some(r) => {
                     map.insert(a.id, r.id);
@@ -277,11 +288,24 @@ mod tests {
     use designcraft_geom::{Affine, Rect, shapes};
 
     fn asset(id: u64, data: &[u8]) -> Asset {
-        Asset { id: AssetId(id), name: "p.png".into(), mime: "image/png".into(), link: None, data: Arc::new(data.to_vec()), pixels: None, page: 0 }
+        Asset {
+            id: AssetId(id),
+            name: "p.png".into(),
+            mime: "image/png".into(),
+            link: None,
+            data: Arc::new(data.to_vec()),
+            pixels: None,
+            page: 0,
+        }
     }
 
     fn graphic_item(id: u64, asset: u64, crop: f64) -> Item {
-        let mut it = Item::new(ItemId(id), LayerId(1), Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)));
+        let mut it = Item::new(
+            ItemId(id),
+            LayerId(1),
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+        );
         it.content = Content::Graphic(Graphic {
             asset: AssetId(asset),
             size: (10.0, 10.0),
@@ -299,14 +323,23 @@ mod tests {
         let a = d.add_asset(asset(1, b"same"));
         let b = d.add_asset(asset(2, b"same"));
         let c = d.add_asset(asset(3, b"diff"));
-        let p = d.add_asset(Asset { page: 1, ..asset(4, b"same") });
+        let p = d.add_asset(Asset {
+            page: 1,
+            ..asset(4, b"same")
+        });
         assert_eq!(a, b);
         assert_ne!(a, c);
         assert_ne!(a, p);
         assert_eq!(d.assets.len(), 3);
         // Unreadable links match by path only.
-        let m1 = d.add_asset(Asset { link: Some("/m/1.png".into()), ..asset(5, b"") });
-        let m2 = d.add_asset(Asset { link: Some("/m/2.png".into()), ..asset(6, b"") });
+        let m1 = d.add_asset(Asset {
+            link: Some("/m/1.png".into()),
+            ..asset(5, b"")
+        });
+        let m2 = d.add_asset(Asset {
+            link: Some("/m/2.png".into()),
+            ..asset(6, b"")
+        });
         let m3 = d.add_asset(asset(7, b""));
         let m4 = d.add_asset(asset(8, b""));
         assert_ne!(m1, m2);
@@ -316,16 +349,26 @@ mod tests {
     #[test]
     fn files_at_different_paths_stay_separate_assets() {
         let mut d = Document::new(&Default::default());
-        let linked = |id, path: &str| Asset { link: Some(path.into()), ..asset(id, b"same") };
+        let linked = |id, path: &str| Asset {
+            link: Some(path.into()),
+            ..asset(id, b"same")
+        };
         let embedded = d.add_asset(asset(1, b"same"));
         let a = d.add_asset(linked(2, "/p/a.png"));
         let b = d.add_asset(linked(3, "/q/b.png"));
-        assert_eq!(d.add_asset(linked(4, "/p/a.png")), a, "the same path placed again");
+        assert_eq!(
+            d.add_asset(linked(4, "/p/a.png")),
+            a,
+            "the same path placed again"
+        );
         assert_eq!(d.assets.len(), 3);
         assert!(embedded != a && a != b && embedded != b);
         assert_eq!(d.assets[&embedded].link, None);
         assert_eq!(d.assets[&b].link.as_deref(), Some("/q/b.png"));
-        assert!(Arc::ptr_eq(&d.assets[&a].data, &d.assets[&b].data), "identical bytes share one buffer");
+        assert!(
+            Arc::ptr_eq(&d.assets[&a].data, &d.assets[&b].data),
+            "identical bytes share one buffer"
+        );
     }
 
     #[test]
@@ -339,13 +382,26 @@ mod tests {
         sp.items.push(Arc::new(graphic_item(11, 2, 2.0)));
         // A graphic cell and an anchored object in a story.
         let mut st = Story::new(StoryId(20));
-        st.objects.push(Arc::new(crate::AnchoredObject::new(graphic_item(12, 3, 3.0), Default::default())));
+        st.objects.push(Arc::new(crate::AnchoredObject::new(
+            graphic_item(12, 3, 3.0),
+            Default::default(),
+        )));
         d.stories.insert(StoryId(20), Arc::new(st));
-        assert_eq!(d.used_assets(), [1, 2, 3].map(AssetId).into_iter().collect());
+        assert_eq!(
+            d.used_assets(),
+            [1, 2, 3].map(AssetId).into_iter().collect()
+        );
 
         d.compact_assets();
-        assert_eq!(d.assets.keys().copied().collect::<Vec<_>>(), vec![AssetId(1), AssetId(3)]);
-        let crops: Vec<(AssetId, f64)> = d.spreads[0].items.iter().filter_map(|i| i.graphic().map(|g| (g.asset, g.crop[0]))).collect();
+        assert_eq!(
+            d.assets.keys().copied().collect::<Vec<_>>(),
+            vec![AssetId(1), AssetId(3)]
+        );
+        let crops: Vec<(AssetId, f64)> = d.spreads[0]
+            .items
+            .iter()
+            .filter_map(|i| i.graphic().map(|g| (g.asset, g.crop[0])))
+            .collect();
         assert_eq!(crops, vec![(AssetId(1), 1.0), (AssetId(1), 2.0)]);
     }
 }

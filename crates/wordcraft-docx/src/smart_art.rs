@@ -17,7 +17,9 @@
 
 use wordcraft_doc::graphic::GraphicItem;
 use wordcraft_doc::props::Rgb;
-use wordcraft_doc::smart_art::{MAX_ITEMS, SmartArtColors, SmartArtItem, SmartArtLayout, SmartArtSpec};
+use wordcraft_doc::smart_art::{
+    MAX_ITEMS, SmartArtColors, SmartArtItem, SmartArtLayout, SmartArtSpec,
+};
 
 use crate::read::diagram::{text_width, wrap};
 use crate::xml::{self, El, MAX_DEPTH, Node, W};
@@ -29,10 +31,14 @@ const NS_R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relati
 /// `a:graphicData` URI of a diagram.
 pub(crate) const DIAGRAM_URI: &str = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 /// Content types of the five parts.
-pub(crate) const DATA_CT: &str = "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml";
-pub(crate) const LAYOUT_CT: &str = "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml";
-pub(crate) const STYLE_CT: &str = "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml";
-pub(crate) const COLORS_CT: &str = "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml";
+pub(crate) const DATA_CT: &str =
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml";
+pub(crate) const LAYOUT_CT: &str =
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml";
+pub(crate) const STYLE_CT: &str =
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml";
+pub(crate) const COLORS_CT: &str =
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml";
 pub(crate) const DRAWING_CT: &str = "application/vnd.ms-office.drawingml.diagramDrawing+xml";
 /// The extension a data model names its drawing in (ECMA-376 extension list, `dsp:dataModelExt`).
 const DRAWING_EXT_URI: &str = "http://schemas.microsoft.com/office/drawing/2008/diagram";
@@ -51,24 +57,54 @@ const SHAPE_IDS: usize = 0x10000;
 /// The layout's identifier and its gallery category.
 fn layout_id(l: SmartArtLayout) -> (&'static str, &'static str) {
     match l {
-        SmartArtLayout::BasicList => ("urn:microsoft.com/office/officeart/2005/8/layout/default", "list"),
-        SmartArtLayout::Process => ("urn:microsoft.com/office/officeart/2005/8/layout/process1", "process"),
-        SmartArtLayout::Cycle => ("urn:microsoft.com/office/officeart/2005/8/layout/cycle2", "cycle"),
-        SmartArtLayout::Hierarchy => ("urn:microsoft.com/office/officeart/2005/8/layout/hierarchy1", "hierarchy"),
-        SmartArtLayout::Pyramid => ("urn:microsoft.com/office/officeart/2005/8/layout/pyramid1", "pyramid"),
-        SmartArtLayout::Radial => ("urn:microsoft.com/office/officeart/2005/8/layout/radial1", "cycle"),
-        SmartArtLayout::Matrix => ("urn:microsoft.com/office/officeart/2005/8/layout/matrix3", "matrix"),
-        SmartArtLayout::Venn => ("urn:microsoft.com/office/officeart/2005/8/layout/venn1", "relationship"),
+        SmartArtLayout::BasicList => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/default",
+            "list",
+        ),
+        SmartArtLayout::Process => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/process1",
+            "process",
+        ),
+        SmartArtLayout::Cycle => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/cycle2",
+            "cycle",
+        ),
+        SmartArtLayout::Hierarchy => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/hierarchy1",
+            "hierarchy",
+        ),
+        SmartArtLayout::Pyramid => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/pyramid1",
+            "pyramid",
+        ),
+        SmartArtLayout::Radial => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/radial1",
+            "cycle",
+        ),
+        SmartArtLayout::Matrix => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/matrix3",
+            "matrix",
+        ),
+        SmartArtLayout::Venn => (
+            "urn:microsoft.com/office/officeart/2005/8/layout/venn1",
+            "relationship",
+        ),
     }
 }
 
 /// The colour definition's identifier and category.
 fn colors_id(c: SmartArtColors) -> (String, String) {
     match c {
-        SmartArtColors::Colorful => ("urn:microsoft.com/office/officeart/2005/8/colors/colorful1".into(), "colorful".into()),
+        SmartArtColors::Colorful => (
+            "urn:microsoft.com/office/officeart/2005/8/colors/colorful1".into(),
+            "colorful".into(),
+        ),
         _ => {
             let n = c.accent(0);
-            (format!("urn:microsoft.com/office/officeart/2005/8/colors/accent{n}_2"), format!("accent{n}"))
+            (
+                format!("urn:microsoft.com/office/officeart/2005/8/colors/accent{n}_2"),
+                format!("accent{n}"),
+            )
         }
     }
 }
@@ -163,7 +199,12 @@ impl Sh {
 
 /// `b` shrunk by `f` of its width and height on every side.
 fn inset(b: [f32; 4], f: f32) -> [f32; 4] {
-    [b[0] + b[2] * f, b[1] + b[3] * f, b[2] * (1.0 - 2.0 * f), b[3] * (1.0 - 2.0 * f)]
+    [
+        b[0] + b[2] * f,
+        b[1] + b[3] * f,
+        b[2] * (1.0 - 2.0 * f),
+        b[3] * (1.0 - 2.0 * f),
+    ]
 }
 
 /// The inscribed square's share of a circle's box to leave on each side.
@@ -171,7 +212,13 @@ const ROUND_INSET: f32 = 0.15;
 
 /// The text of item `i`: its own line, then the items under it as bulleted sub-items.
 fn paras(spec: &SmartArtSpec, i: usize, with_children: bool) -> Vec<(String, bool)> {
-    let mut out = vec![(spec.items.get(i).map(|it| it.text.clone()).unwrap_or_default(), false)];
+    let mut out = vec![(
+        spec.items
+            .get(i)
+            .map(|it| it.text.clone())
+            .unwrap_or_default(),
+        false,
+    )];
     if with_children {
         for j in spec.descendants(i) {
             if let Some(it) = spec.items.get(j) {
@@ -184,12 +231,23 @@ fn paras(spec: &SmartArtSpec, i: usize, with_children: bool) -> Vec<(String, boo
 
 /// The top-level items.
 fn tops(spec: &SmartArtSpec) -> Vec<usize> {
-    spec.items.iter().enumerate().filter(|(_, it)| it.level == 0).map(|(i, _)| i).collect()
+    spec.items
+        .iter()
+        .enumerate()
+        .filter(|(_, it)| it.level == 0)
+        .map(|(i, _)| i)
+        .collect()
 }
 
 /// The shapes of `spec` laid out in a `w` × `h` points box, back to front.
 fn layout(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
-    let ok = |v: f32| if v.is_finite() { v.clamp(0.0, 20_000.0) } else { 0.0 };
+    let ok = |v: f32| {
+        if v.is_finite() {
+            v.clamp(0.0, 20_000.0)
+        } else {
+            0.0
+        }
+    };
     let (w, h) = (ok(w), ok(h));
     if spec.items.is_empty() || w < 1.0 || h < 1.0 {
         return Vec::new();
@@ -215,7 +273,9 @@ fn basic_list(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
         let bw = (w / c as f32 * 0.9).min(h / r as f32 * 0.9 * 1.5);
         (bw, bw / 1.5)
     };
-    let cols = (1..=n).max_by(|a, b| (size(*a).0).total_cmp(&size(*b).0)).unwrap_or(1);
+    let cols = (1..=n)
+        .max_by(|a, b| (size(*a).0).total_cmp(&size(*b).0))
+        .unwrap_or(1);
     let rows = n.div_ceil(cols);
     let (bw, bh) = size(cols);
     let (gx, gy) = (bw * 0.1, bh * 0.1);
@@ -244,7 +304,11 @@ fn process(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     for (k, _) in tops.iter().enumerate().skip(1) {
         let gx = k as f32 * (nw + gap) - gap;
         let (aw, ah) = (gap * 0.62, (nh * 0.35).min(gap * 0.7));
-        let mut a = Sh::node("rightArrow", [gx + (gap - aw) / 2.0, h / 2.0 - ah / 2.0, aw, ah], spec.colors.accent(k - 1));
+        let mut a = Sh::node(
+            "rightArrow",
+            [gx + (gap - aw) / 2.0, h / 2.0 - ah / 2.0, aw, ah],
+            spec.colors.accent(k - 1),
+        );
         a.fill = Paint::Accent(spec.colors.accent(k - 1), Some(60_000));
         a.line = Paint::None;
         out.push(a);
@@ -278,7 +342,11 @@ fn cycle(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     let mut d = m * 0.32;
     for _ in 0..4 {
         let r = (m - d) / 2.0;
-        d = if n == 1 { m * 0.5 } else { (m * 0.32).min(2.0 * r * step * 0.62) };
+        d = if n == 1 {
+            m * 0.5
+        } else {
+            (m * 0.32).min(2.0 * r * step * 0.62)
+        };
     }
     let r = (m - d) / 2.0;
     let mut out = Vec::new();
@@ -290,7 +358,11 @@ fn cycle(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
             for k in 0..n {
                 let mid = angle(k, n) + 180.0 / n as f32;
                 let (x, y) = polar(cx, cy, r, mid);
-                let mut a = Sh::node("rightArrow", [x - len / 2.0, y - thick / 2.0, len, thick], spec.colors.accent(k));
+                let mut a = Sh::node(
+                    "rightArrow",
+                    [x - len / 2.0, y - thick / 2.0, len, thick],
+                    spec.colors.accent(k),
+                );
                 a.rot = (mid + 90.0).rem_euclid(360.0);
                 a.fill = Paint::Accent(spec.colors.accent(k), Some(60_000));
                 a.line = Paint::None;
@@ -299,9 +371,17 @@ fn cycle(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
         }
     }
     for (k, &i) in tops.iter().enumerate() {
-        let (x, y) = if n == 1 { (cx, cy) } else { polar(cx, cy, r, angle(k, n)) };
+        let (x, y) = if n == 1 {
+            (cx, cy)
+        } else {
+            polar(cx, cy, r, angle(k, n))
+        };
         let b = [x - d / 2.0, y - d / 2.0, d, d];
-        out.push(Sh::node("ellipse", b, spec.colors.accent(k)).with_text(paras(spec, i, true)).text_box(inset(b, ROUND_INSET)));
+        out.push(
+            Sh::node("ellipse", b, spec.colors.accent(k))
+                .with_text(paras(spec, i, true))
+                .text_box(inset(b, ROUND_INSET)),
+        );
     }
     out
 }
@@ -321,15 +401,27 @@ fn hierarchy(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     // Leaves under each item (children come after their parent, so from the end).
     let mut leaves = vec![1usize; n];
     for i in (0..n).rev() {
-        let sum: usize = kids.get(i).map_or(0, |k| k.iter().map(|&c| leaves.get(c).copied().unwrap_or(1)).sum());
+        let sum: usize = kids.get(i).map_or(0, |k| {
+            k.iter().map(|&c| leaves.get(c).copied().unwrap_or(1)).sum()
+        });
         if sum > 0
             && let Some(l) = leaves.get_mut(i)
         {
             *l = sum;
         }
     }
-    let depth = spec.items.iter().map(|it| usize::from(it.level)).max().unwrap_or(0) + 1;
-    let total: usize = roots.iter().map(|&r| leaves.get(r).copied().unwrap_or(1)).sum::<usize>().max(1);
+    let depth = spec
+        .items
+        .iter()
+        .map(|it| usize::from(it.level))
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let total: usize = roots
+        .iter()
+        .map(|&r| leaves.get(r).copied().unwrap_or(1))
+        .sum::<usize>()
+        .max(1);
     let unit = w / total as f32;
     let rh = h / depth as f32;
     let nw = (unit * 0.88).min(rh * 0.62 * 1.8);
@@ -351,18 +443,29 @@ fn hierarchy(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
             at += leaves.get(k).copied().unwrap_or(1) as f32 * unit;
         }
     }
-    let cx = |i: usize| start.get(i).copied().unwrap_or(0.0) + leaves.get(i).copied().unwrap_or(1) as f32 * unit / 2.0;
-    let top = |i: usize| spec.items.get(i).map_or(0.0, |it| f32::from(it.level) * rh + (rh - nh) / 2.0);
+    let cx = |i: usize| {
+        start.get(i).copied().unwrap_or(0.0)
+            + leaves.get(i).copied().unwrap_or(1) as f32 * unit / 2.0
+    };
+    let top = |i: usize| {
+        spec.items
+            .get(i)
+            .map_or(0.0, |it| f32::from(it.level) * rh + (rh - nh) / 2.0)
+    };
     let mut out = Vec::new();
     for i in 0..n {
-        let Some(ks) = kids.get(i).filter(|k| !k.is_empty()) else { continue };
+        let Some(ks) = kids.get(i).filter(|k| !k.is_empty()) else {
+            continue;
+        };
         let accent = spec.colors.accent(i);
         let (px, pb) = (cx(i), top(i) + nh);
         let ct = ks.first().map_or(pb, |&k| top(k));
         let mid = (pb + ct) / 2.0;
         out.push(Sh::line(px, pb, px, mid, accent));
         let xs: Vec<f32> = ks.iter().map(|&k| cx(k)).collect();
-        let (lo, hi) = xs.iter().fold((px, px), |(lo, hi), &x| (lo.min(x), hi.max(x)));
+        let (lo, hi) = xs
+            .iter()
+            .fold((px, px), |(lo, hi), &x| (lo.min(x), hi.max(x)));
         if hi - lo > 0.5 {
             out.push(Sh::line(lo, mid, hi, mid, accent));
         }
@@ -390,7 +493,12 @@ fn pyramid(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
         let b = [x0 + (tw - bot_w) / 2.0, k as f32 * bh, bot_w, bh];
         let accent = spec.colors.accent(k);
         let sh = if k == 0 {
-            let tb = [b[0] + bot_w * 0.22, b[1] + bh * 0.4, bot_w * 0.56, bh * 0.56];
+            let tb = [
+                b[0] + bot_w * 0.22,
+                b[1] + bh * 0.4,
+                bot_w * 0.56,
+                bh * 0.56,
+            ];
             Sh::node("triangle", b, accent).text_box(tb)
         } else {
             let inset_x = (bot_w - top_w) / 2.0;
@@ -410,7 +518,9 @@ fn pyramid(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
 fn radial(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     let n_items = spec.items.len();
     let parents = spec.parents();
-    let spokes: Vec<usize> = (1..n_items).filter(|&i| matches!(parents.get(i), Some(Some(0)) | Some(None))).collect();
+    let spokes: Vec<usize> = (1..n_items)
+        .filter(|&i| matches!(parents.get(i), Some(Some(0)) | Some(None)))
+        .collect();
     let n = spokes.len();
     let m = w.min(h);
     let (cx, cy) = (w / 2.0, h / 2.0);
@@ -418,28 +528,46 @@ fn radial(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     if n == 0 {
         let d = m * 0.5;
         let b = [cx - d / 2.0, cy - d / 2.0, d, d];
-        out.push(Sh::node("ellipse", b, spec.colors.accent(0)).with_text(paras(spec, 0, false)).text_box(inset(b, ROUND_INSET)));
+        out.push(
+            Sh::node("ellipse", b, spec.colors.accent(0))
+                .with_text(paras(spec, 0, false))
+                .text_box(inset(b, ROUND_INSET)),
+        );
         return out;
     }
-    let step = if n == 1 { 1.0 } else { (std::f32::consts::PI / n as f32).sin() };
+    let step = if n == 1 {
+        1.0
+    } else {
+        (std::f32::consts::PI / n as f32).sin()
+    };
     let mut ds = m * 0.24;
     for _ in 0..4 {
         let r = (m - ds) / 2.0;
         ds = (m * 0.24).min(2.0 * r * step * 0.85);
     }
     let r = (m - ds) / 2.0;
-    let dc = (m * 0.36).min(2.0 * (r - ds / 2.0 - m * 0.03)).max(m * 0.05);
+    let dc = (m * 0.36)
+        .min(2.0 * (r - ds / 2.0 - m * 0.03))
+        .max(m * 0.05);
     let at = |k: usize| polar(cx, cy, r, angle(k, n));
     for k in 0..n {
         let (x, y) = at(k);
         out.push(Sh::line(cx, cy, x, y, spec.colors.accent(0)));
     }
     let bc = [cx - dc / 2.0, cy - dc / 2.0, dc, dc];
-    out.push(Sh::node("ellipse", bc, spec.colors.accent(0)).with_text(paras(spec, 0, false)).text_box(inset(bc, ROUND_INSET)));
+    out.push(
+        Sh::node("ellipse", bc, spec.colors.accent(0))
+            .with_text(paras(spec, 0, false))
+            .text_box(inset(bc, ROUND_INSET)),
+    );
     for (k, &i) in spokes.iter().enumerate() {
         let (x, y) = at(k);
         let b = [x - ds / 2.0, y - ds / 2.0, ds, ds];
-        out.push(Sh::node("ellipse", b, spec.colors.accent(k + 1)).with_text(paras(spec, i, true)).text_box(inset(b, ROUND_INSET)));
+        out.push(
+            Sh::node("ellipse", b, spec.colors.accent(k + 1))
+                .with_text(paras(spec, i, true))
+                .text_box(inset(b, ROUND_INSET)),
+        );
     }
     out
 }
@@ -452,12 +580,24 @@ fn matrix(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     let rows = n.div_ceil(cols);
     let cell = (w / cols as f32).min(h / rows as f32);
     let gap = cell * 0.04;
-    let (x0, y0) = ((w - cols as f32 * cell) / 2.0, (h - rows as f32 * cell) / 2.0);
+    let (x0, y0) = (
+        (w - cols as f32 * cell) / 2.0,
+        (h - rows as f32 * cell) / 2.0,
+    );
     let mut out = Vec::new();
     for (k, &i) in tops.iter().enumerate() {
         let (r, c) = (k / cols, k % cols);
-        let b = [x0 + c as f32 * cell + gap / 2.0, y0 + r as f32 * cell + gap / 2.0, cell - gap, cell - gap];
-        out.push(Sh::node("roundRect", b, spec.colors.accent(k)).with_text(paras(spec, i, true)).text_box(inset(b, 0.1)));
+        let b = [
+            x0 + c as f32 * cell + gap / 2.0,
+            y0 + r as f32 * cell + gap / 2.0,
+            cell - gap,
+            cell - gap,
+        ];
+        out.push(
+            Sh::node("roundRect", b, spec.colors.accent(k))
+                .with_text(paras(spec, i, true))
+                .text_box(inset(b, 0.1)),
+        );
     }
     out
 }
@@ -469,7 +609,11 @@ fn venn(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     let m = w.min(h);
     let (cx, cy) = (w / 2.0, h / 2.0);
     // Ring radius against circle radius: neighbours' centres 1.5 radii apart.
-    let k = if n == 1 { 0.0 } else { (0.75 / (std::f32::consts::PI / n as f32).sin()).max(0.6) };
+    let k = if n == 1 {
+        0.0
+    } else {
+        (0.75 / (std::f32::consts::PI / n as f32).sin()).max(0.6)
+    };
     let r = m / (2.0 * (k + 1.0));
     let start = if n == 2 { 180.0 } else { -90.0 };
     let place = |j: usize| -> (f32, f32, f32) {
@@ -480,7 +624,11 @@ fn venn(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     let mut out = Vec::new();
     for (j, _) in tops.iter().enumerate() {
         let (x, y, _) = place(j);
-        let mut s = Sh::node("ellipse", [x - r, y - r, 2.0 * r, 2.0 * r], spec.colors.accent(j));
+        let mut s = Sh::node(
+            "ellipse",
+            [x - r, y - r, 2.0 * r, 2.0 * r],
+            spec.colors.accent(j),
+        );
         s.fill = Paint::Accent(spec.colors.accent(j), Some(40_000));
         s.alpha = Some(60_000);
         s.line = Paint::None;
@@ -489,7 +637,11 @@ fn venn(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     // Every outline over every fill, so each circle shows whole.
     for (j, _) in tops.iter().enumerate() {
         let (x, y, _) = place(j);
-        let mut s = Sh::node("ellipse", [x - r, y - r, 2.0 * r, 2.0 * r], spec.colors.accent(j));
+        let mut s = Sh::node(
+            "ellipse",
+            [x - r, y - r, 2.0 * r, 2.0 * r],
+            spec.colors.accent(j),
+        );
         s.fill = Paint::None;
         s.line = Paint::Accent(spec.colors.accent(j), None);
         s.line_w = 1.5;
@@ -497,10 +649,16 @@ fn venn(spec: &SmartArtSpec, w: f32, h: f32) -> Vec<Sh> {
     }
     for (j, &i) in tops.iter().enumerate() {
         let (x, y, deg) = place(j);
-        let (tx, ty) = if n == 1 { (x, y) } else { polar(x, y, r * 0.35, deg) };
+        let (tx, ty) = if n == 1 {
+            (x, y)
+        } else {
+            polar(x, y, r * 0.35, deg)
+        };
         let (bw, bh) = (r * 1.1, r * 0.8);
         let b = [tx - bw / 2.0, ty - bh / 2.0, bw, bh];
-        let mut s = Sh::node("rect", b, spec.colors.accent(j)).with_text(paras(spec, i, true)).text_box(b);
+        let mut s = Sh::node("rect", b, spec.colors.accent(j))
+            .with_text(paras(spec, i, true))
+            .text_box(b);
         s.fill = Paint::None;
         s.line = Paint::None;
         s.dark_text = true;
@@ -532,7 +690,12 @@ fn child_size(size: f32) -> f32 {
 /// The largest text size (half points, [`MIN_SIZE`]–[`MAX_SIZE`]) at which every shape's text fits.
 fn text_size(shapes: &[Sh]) -> f32 {
     let mut size = MAX_SIZE;
-    while size > MIN_SIZE && !shapes.iter().filter(|s| !s.text.is_empty()).all(|s| fits(&s.text, size, s.tb[2], s.tb[3])) {
+    while size > MIN_SIZE
+        && !shapes
+            .iter()
+            .filter(|s| !s.text.is_empty())
+            .all(|s| fits(&s.text, size, s.tb[2], s.tb[3]))
+    {
         size -= 0.5;
     }
     size
@@ -542,7 +705,11 @@ fn text_size(shapes: &[Sh]) -> f32 {
 
 /// A length in points as EMU text, bounded.
 fn emu(pt: f32) -> String {
-    let v = if pt.is_finite() { (pt * EMU_PT).round() } else { 0.0 };
+    let v = if pt.is_finite() {
+        (pt * EMU_PT).round()
+    } else {
+        0.0
+    };
     format!("{}", v.clamp(-1.0e9, 1.0e9) as i64)
 }
 
@@ -579,7 +746,14 @@ pub fn drawing_xml(spec: &SmartArtSpec, w: f32, h: f32) -> String {
     let shapes = layout(spec, w, h);
     let size = text_size(&shapes);
     let mut x = W::new();
-    x.open("dsp:drawing", &[("xmlns:dgm", NS_DGM), ("xmlns:dsp", NS_DSP), ("xmlns:a", NS_A)]);
+    x.open(
+        "dsp:drawing",
+        &[
+            ("xmlns:dgm", NS_DGM),
+            ("xmlns:dsp", NS_DSP),
+            ("xmlns:a", NS_A),
+        ],
+    );
     x.open("dsp:spTree", &[]);
     x.open("dsp:nvGrpSpPr", &[]);
     x.empty("dsp:cNvPr", &[("id", "0"), ("name", "")]);
@@ -611,7 +785,13 @@ fn shape_xml(x: &mut W, sh: &Sh, id: &str, size: f32) {
     }
     x.open("a:xfrm", &attrs);
     x.empty("a:off", &[("x", &emu(sh.b[0])), ("y", &emu(sh.b[1]))]);
-    x.empty("a:ext", &[("cx", &emu(sh.b[2].max(0.0))), ("cy", &emu(sh.b[3].max(0.0)))]);
+    x.empty(
+        "a:ext",
+        &[
+            ("cx", &emu(sh.b[2].max(0.0))),
+            ("cy", &emu(sh.b[3].max(0.0))),
+        ],
+    );
     x.close("a:xfrm");
     x.open("a:prstGeom", &[("prst", sh.prst)]);
     match sh.adj {
@@ -669,14 +849,32 @@ fn shape_xml(x: &mut W, sh: &Sh, id: &str, size: f32) {
         for (t, child) in &sh.text {
             let s = if *child { child_size(size) } else { size };
             x.open("a:p", &[]);
-            x.open("a:pPr", &[("lvl", if *child { "1" } else { "0" }), ("algn", if *child { "l" } else { "ctr" })]);
+            x.open(
+                "a:pPr",
+                &[
+                    ("lvl", if *child { "1" } else { "0" }),
+                    ("algn", if *child { "l" } else { "ctr" }),
+                ],
+            );
             x.empty("a:buNone", &[]);
             x.close("a:pPr");
             if t.is_empty() {
-                x.empty("a:endParaRPr", &[("lang", "en-US"), ("sz", &((s * 100.0).round() as i64).to_string())]);
+                x.empty(
+                    "a:endParaRPr",
+                    &[
+                        ("lang", "en-US"),
+                        ("sz", &((s * 100.0).round() as i64).to_string()),
+                    ],
+                );
             } else {
                 x.open("a:r", &[]);
-                x.open("a:rPr", &[("lang", "en-US"), ("sz", &((s * 100.0).round() as i64).to_string())]);
+                x.open(
+                    "a:rPr",
+                    &[
+                        ("lang", "en-US"),
+                        ("sz", &((s * 100.0).round() as i64).to_string()),
+                    ],
+                );
                 x.open("a:solidFill", &[]);
                 x.empty("a:schemeClr", &[("val", text_clr)]);
                 x.close("a:solidFill");
@@ -689,7 +887,13 @@ fn shape_xml(x: &mut W, sh: &Sh, id: &str, size: f32) {
         x.close("dsp:txBody");
         x.open("dsp:txXfrm", &[]);
         x.empty("a:off", &[("x", &emu(sh.tb[0])), ("y", &emu(sh.tb[1]))]);
-        x.empty("a:ext", &[("cx", &emu(sh.tb[2].max(0.0))), ("cy", &emu(sh.tb[3].max(0.0)))]);
+        x.empty(
+            "a:ext",
+            &[
+                ("cx", &emu(sh.tb[2].max(0.0))),
+                ("cy", &emu(sh.tb[3].max(0.0))),
+            ],
+        );
         x.close("dsp:txXfrm");
     }
     x.close("dsp:sp");
@@ -708,7 +912,12 @@ pub fn smart_art_items(spec: &SmartArtSpec, theme: &[Rgb], w: f32, h: f32) -> Ve
 /// transition).
 fn item_ids(i: usize) -> (String, String, String, String) {
     let b = 1 + 4 * i;
-    (model_id(b), model_id(b + 1), model_id(b + 2), model_id(b + 3))
+    (
+        model_id(b),
+        model_id(b + 1),
+        model_id(b + 2),
+        model_id(b + 3),
+    )
 }
 
 /// An empty point text body.
@@ -734,7 +943,14 @@ pub fn data_xml(spec: &SmartArtSpec, drawing_rel: &str) -> String {
     w.open("dgm:pt", &[("modelId", &doc), ("type", "doc")]);
     w.empty(
         "dgm:prSet",
-        &[("loTypeId", lo), ("loCatId", lo_cat), ("qsTypeId", QUICK_STYLE_ID), ("qsCatId", "simple"), ("csTypeId", &cs), ("csCatId", &cs_cat)],
+        &[
+            ("loTypeId", lo),
+            ("loCatId", lo_cat),
+            ("qsTypeId", QUICK_STYLE_ID),
+            ("qsCatId", "simple"),
+            ("csTypeId", &cs),
+            ("csCatId", &cs_cat),
+        ],
     );
     w.empty("dgm:spPr", &[]);
     empty_t(&mut w);
@@ -795,7 +1011,14 @@ pub fn data_xml(spec: &SmartArtSpec, drawing_rel: &str) -> String {
     w.open("a:ext", &[("uri", DRAWING_EXT_URI)]);
     w.empty(
         "dsp:dataModelExt",
-        &[("xmlns:dsp", NS_DSP), ("relId", drawing_rel), ("minVer", "http://schemas.openxmlformats.org/drawingml/2006/diagram")],
+        &[
+            ("xmlns:dsp", NS_DSP),
+            ("relId", drawing_rel),
+            (
+                "minVer",
+                "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+            ),
+        ],
     );
     w.close("a:ext");
     w.close("dgm:extLst");
@@ -844,23 +1067,44 @@ fn layout_node(
 }
 
 /// The text node of an item: its own text and the items under it as bullets.
-const ITEM_TEXT: &[(&str, &str)] = &[("axis", "desc;self"), ("ptType", "node;node"), ("st", "1;1"), ("cnt", "0;1")];
+const ITEM_TEXT: &[(&str, &str)] = &[
+    ("axis", "desc;self"),
+    ("ptType", "node;node"),
+    ("st", "1;1"),
+    ("cnt", "0;1"),
+];
 
 /// A layout definition (`dgm:layoutDef`) of our own for `l`, named by its layout identifier.
 pub fn layout_xml(l: SmartArtLayout) -> String {
     let (id, cat) = layout_id(l);
     let mut w = W::new();
-    w.open("dgm:layoutDef", &[("xmlns:dgm", NS_DGM), ("xmlns:a", NS_A), ("xmlns:r", NS_R), ("uniqueId", id)]);
+    w.open(
+        "dgm:layoutDef",
+        &[
+            ("xmlns:dgm", NS_DGM),
+            ("xmlns:a", NS_A),
+            ("xmlns:r", NS_R),
+            ("uniqueId", id),
+        ],
+    );
     w.empty("dgm:title", &[("val", l.label())]);
     w.empty("dgm:desc", &[("val", l.description())]);
     w.open("dgm:catLst", &[]);
     w.empty("dgm:cat", &[("type", cat), ("pri", "1000")]);
     w.close("dgm:catLst");
     let (alg, params): (&str, &[(&str, &str)]) = match l {
-        SmartArtLayout::BasicList | SmartArtLayout::Matrix => ("snake", &[("grDir", "tL"), ("flowDir", "row"), ("contDir", "sameDir")]),
+        SmartArtLayout::BasicList | SmartArtLayout::Matrix => (
+            "snake",
+            &[("grDir", "tL"), ("flowDir", "row"), ("contDir", "sameDir")],
+        ),
         SmartArtLayout::Process => ("lin", &[("linDir", "fromL"), ("nodeVertAlign", "mid")]),
-        SmartArtLayout::Cycle | SmartArtLayout::Venn => ("cycle", &[("stAng", "0"), ("spanAng", "360")]),
-        SmartArtLayout::Radial => ("cycle", &[("stAng", "0"), ("spanAng", "360"), ("ctrShpMap", "fNode")]),
+        SmartArtLayout::Cycle | SmartArtLayout::Venn => {
+            ("cycle", &[("stAng", "0"), ("spanAng", "360")])
+        }
+        SmartArtLayout::Radial => (
+            "cycle",
+            &[("stAng", "0"), ("spanAng", "360"), ("ctrShpMap", "fNode")],
+        ),
         SmartArtLayout::Hierarchy => ("hierChild", &[("linDir", "fromL"), ("chAlign", "t")]),
         SmartArtLayout::Pyramid => ("pyra", &[("linDir", "fromT")]),
     };
@@ -870,50 +1114,150 @@ pub fn layout_xml(l: SmartArtLayout) -> String {
         SmartArtLayout::Cycle | SmartArtLayout::Radial | SmartArtLayout::Venn => "ellipse",
         SmartArtLayout::Pyramid => "trapezoid",
     };
-    layout_node(&mut w, "diagram", None, alg, params, None, &[], |w| match l {
-        SmartArtLayout::Hierarchy => {
-            w.open("dgm:forEach", &[("name", "branches"), ("axis", "ch"), ("ptType", "node")]);
-            layout_node(w, "branch", None, "hierRoot", &[], None, &[], |w| {
-                layout_node(w, "item", Some("node1"), "tx", &[], Some(shape), &[("axis", "self")], |_| {});
-                layout_node(w, "below", None, "hierChild", &[("chAlign", "t")], None, &[], |w| {
-                    w.open("dgm:forEach", &[("name", "joins"), ("axis", "ch"), ("ptType", "parTrans")]);
+    layout_node(
+        &mut w,
+        "diagram",
+        None,
+        alg,
+        params,
+        None,
+        &[],
+        |w| match l {
+            SmartArtLayout::Hierarchy => {
+                w.open(
+                    "dgm:forEach",
+                    &[("name", "branches"), ("axis", "ch"), ("ptType", "node")],
+                );
+                layout_node(w, "branch", None, "hierRoot", &[], None, &[], |w| {
                     layout_node(
                         w,
-                        "join",
+                        "item",
+                        Some("node1"),
+                        "tx",
+                        &[],
+                        Some(shape),
+                        &[("axis", "self")],
+                        |_| {},
+                    );
+                    layout_node(
+                        w,
+                        "below",
+                        None,
+                        "hierChild",
+                        &[("chAlign", "t")],
+                        None,
+                        &[],
+                        |w| {
+                            w.open(
+                                "dgm:forEach",
+                                &[("name", "joins"), ("axis", "ch"), ("ptType", "parTrans")],
+                            );
+                            layout_node(
+                                w,
+                                "join",
+                                Some("connector"),
+                                "conn",
+                                &[
+                                    ("dim", "1D"),
+                                    ("connRout", "bend"),
+                                    ("begPts", "bCtr"),
+                                    ("endPts", "tCtr"),
+                                ],
+                                Some("conn"),
+                                &[("axis", "self")],
+                                |_| {},
+                            );
+                            w.close("dgm:forEach");
+                            w.empty("dgm:forEach", &[("name", "deeper"), ("ref", "branches")]);
+                        },
+                    );
+                });
+                w.close("dgm:forEach");
+            }
+            SmartArtLayout::Radial => {
+                w.open(
+                    "dgm:forEach",
+                    &[
+                        ("name", "middle"),
+                        ("axis", "ch"),
+                        ("ptType", "node"),
+                        ("cnt", "1"),
+                    ],
+                );
+                layout_node(
+                    w,
+                    "centre",
+                    Some("node1"),
+                    "tx",
+                    &[],
+                    Some(shape),
+                    &[("axis", "self")],
+                    |w| {
+                        w.open(
+                            "dgm:forEach",
+                            &[("name", "around"), ("axis", "ch"), ("ptType", "node")],
+                        );
+                        layout_node(
+                            w,
+                            "spoke",
+                            Some("node1"),
+                            "tx",
+                            &[],
+                            Some(shape),
+                            ITEM_TEXT,
+                            |_| {},
+                        );
+                        w.close("dgm:forEach");
+                    },
+                );
+                w.close("dgm:forEach");
+            }
+            _ => {
+                w.open(
+                    "dgm:forEach",
+                    &[("name", "items"), ("axis", "ch"), ("ptType", "node")],
+                );
+                let style = if l == SmartArtLayout::Venn {
+                    "venn"
+                } else {
+                    "node1"
+                };
+                layout_node(
+                    w,
+                    "item",
+                    Some(style),
+                    "tx",
+                    &[],
+                    Some(shape),
+                    ITEM_TEXT,
+                    |_| {},
+                );
+                if matches!(l, SmartArtLayout::Process | SmartArtLayout::Cycle) {
+                    w.open(
+                        "dgm:forEach",
+                        &[
+                            ("name", "arrows"),
+                            ("axis", "followSib"),
+                            ("ptType", "sibTrans"),
+                            ("cnt", "1"),
+                        ],
+                    );
+                    layout_node(
+                        w,
+                        "arrow",
                         Some("connector"),
                         "conn",
-                        &[("dim", "1D"), ("connRout", "bend"), ("begPts", "bCtr"), ("endPts", "tCtr")],
-                        Some("conn"),
+                        &[("dim", "2D")],
+                        Some("rightArrow"),
                         &[("axis", "self")],
                         |_| {},
                     );
                     w.close("dgm:forEach");
-                    w.empty("dgm:forEach", &[("name", "deeper"), ("ref", "branches")]);
-                });
-            });
-            w.close("dgm:forEach");
-        }
-        SmartArtLayout::Radial => {
-            w.open("dgm:forEach", &[("name", "middle"), ("axis", "ch"), ("ptType", "node"), ("cnt", "1")]);
-            layout_node(w, "centre", Some("node1"), "tx", &[], Some(shape), &[("axis", "self")], |w| {
-                w.open("dgm:forEach", &[("name", "around"), ("axis", "ch"), ("ptType", "node")]);
-                layout_node(w, "spoke", Some("node1"), "tx", &[], Some(shape), ITEM_TEXT, |_| {});
-                w.close("dgm:forEach");
-            });
-            w.close("dgm:forEach");
-        }
-        _ => {
-            w.open("dgm:forEach", &[("name", "items"), ("axis", "ch"), ("ptType", "node")]);
-            let style = if l == SmartArtLayout::Venn { "venn" } else { "node1" };
-            layout_node(w, "item", Some(style), "tx", &[], Some(shape), ITEM_TEXT, |_| {});
-            if matches!(l, SmartArtLayout::Process | SmartArtLayout::Cycle) {
-                w.open("dgm:forEach", &[("name", "arrows"), ("axis", "followSib"), ("ptType", "sibTrans"), ("cnt", "1")]);
-                layout_node(w, "arrow", Some("connector"), "conn", &[("dim", "2D")], Some("rightArrow"), &[("axis", "self")], |_| {});
+                }
                 w.close("dgm:forEach");
             }
-            w.close("dgm:forEach");
-        }
-    });
+        },
+    );
     w.close("dgm:layoutDef");
     w.s
 }
@@ -936,9 +1280,16 @@ pub fn colors_xml(c: SmartArtColors) -> String {
         SmartArtColors::Colorful => (1..=6).map(|n| format!("accent{n}")).collect(),
         _ => vec![format!("accent{}", c.accent(0))],
     };
-    let meth = if c == SmartArtColors::Colorful { "cycle" } else { "repeat" };
+    let meth = if c == SmartArtColors::Colorful {
+        "cycle"
+    } else {
+        "repeat"
+    };
     let mut w = W::new();
-    w.open("dgm:colorsDef", &[("xmlns:dgm", NS_DGM), ("xmlns:a", NS_A), ("uniqueId", &id)]);
+    w.open(
+        "dgm:colorsDef",
+        &[("xmlns:dgm", NS_DGM), ("xmlns:a", NS_A), ("uniqueId", &id)],
+    );
     w.empty("dgm:title", &[("val", c.label())]);
     w.empty("dgm:desc", &[("val", "")]);
     w.open("dgm:catLst", &[]);
@@ -950,7 +1301,12 @@ pub fn colors_xml(c: SmartArtColors) -> String {
         scheme_list(&mut w, "dgm:linClrLst", "repeat", &["lt1".to_string()]);
         w.empty("dgm:effectClrLst", &[]);
         w.empty("dgm:txLinClrLst", &[]);
-        scheme_list(&mut w, "dgm:txFillClrLst", "repeat", &[if lbl == "venn" { "tx1" } else { "lt1" }.to_string()]);
+        scheme_list(
+            &mut w,
+            "dgm:txFillClrLst",
+            "repeat",
+            &[if lbl == "venn" { "tx1" } else { "lt1" }.to_string()],
+        );
         w.empty("dgm:txEffectClrLst", &[]);
         w.close("dgm:styleLbl");
     }
@@ -961,7 +1317,14 @@ pub fn colors_xml(c: SmartArtColors) -> String {
 /// The quick style (`dgm:styleDef`) of our own: flat shapes in the theme's plain line and fill.
 pub fn quick_style_xml() -> String {
     let mut w = W::new();
-    w.open("dgm:styleDef", &[("xmlns:dgm", NS_DGM), ("xmlns:a", NS_A), ("uniqueId", QUICK_STYLE_ID)]);
+    w.open(
+        "dgm:styleDef",
+        &[
+            ("xmlns:dgm", NS_DGM),
+            ("xmlns:a", NS_A),
+            ("uniqueId", QUICK_STYLE_ID),
+        ],
+    );
     w.empty("dgm:title", &[("val", "Flat")]);
     w.empty("dgm:desc", &[("val", "")]);
     w.open("dgm:catLst", &[]);
@@ -986,7 +1349,10 @@ pub fn quick_style_xml() -> String {
             w.close(name);
         }
         w.open("a:fontRef", &[("idx", "minor")]);
-        w.empty("a:schemeClr", &[("val", if lbl == "venn" { "tx1" } else { "lt1" })]);
+        w.empty(
+            "a:schemeClr",
+            &[("val", if lbl == "venn" { "tx1" } else { "lt1" })],
+        );
         w.close("a:fontRef");
         w.close("dgm:style");
         w.close("dgm:styleLbl");
@@ -1001,22 +1367,36 @@ pub fn quick_style_xml() -> String {
 /// editing and saving it loses nothing). `None` for any other diagram.
 pub(crate) fn spec_of(data: &El) -> Option<SmartArtSpec> {
     let pts = data.child("dgm:ptLst")?;
-    let doc = pts.children("dgm:pt").find(|p| p.attr("type") == Some("doc"))?;
+    let doc = pts
+        .children("dgm:pt")
+        .find(|p| p.attr("type") == Some("doc"))?;
     let pr = doc.child("dgm:prSet")?;
     let lo = pr.attr("loTypeId")?;
-    let layout = SmartArtLayout::ALL.into_iter().find(|l| layout_id(*l).0 == lo)?;
+    let layout = SmartArtLayout::ALL
+        .into_iter()
+        .find(|l| layout_id(*l).0 == lo)?;
     let cs = pr.attr("csTypeId")?;
-    let colors = SmartArtColors::ALL.into_iter().find(|c| colors_id(*c).0 == cs)?;
+    let colors = SmartArtColors::ALL
+        .into_iter()
+        .find(|c| colors_id(*c).0 == cs)?;
     let rel = data.find("dsp:dataModelExt")?.attr("relId")?.to_string();
     // Items are node points (no type) in order; more than the model holds can't be ours.
-    let nodes: Vec<&El> = pts.children("dgm:pt").filter(|p| p.attr("type").is_none()).take(MAX_ITEMS + 1).collect();
+    let nodes: Vec<&El> = pts
+        .children("dgm:pt")
+        .filter(|p| p.attr("type").is_none())
+        .take(MAX_ITEMS + 1)
+        .collect();
     if nodes.len() > MAX_ITEMS {
         return None;
     }
     let doc_id = doc.attr("modelId")?;
     let index: Vec<&str> = nodes.iter().filter_map(|p| p.attr("modelId")).collect();
     let mut levels: Vec<Option<u8>> = vec![None; nodes.len()];
-    for c in data.child("dgm:cxnLst")?.children("dgm:cxn").take(MAX_ITEMS + 1) {
+    for c in data
+        .child("dgm:cxnLst")?
+        .children("dgm:cxn")
+        .take(MAX_ITEMS + 1)
+    {
         let dest = index.iter().position(|id| Some(*id) == c.attr("destId"))?;
         let src = c.attr("srcId")?;
         let level = if src == doc_id {
@@ -1031,11 +1411,22 @@ pub(crate) fn spec_of(data: &El) -> Option<SmartArtSpec> {
         .iter()
         .zip(&levels)
         .map(|(p, l)| {
-            let text: String = p.child("dgm:t")?.child("a:p")?.children("a:r").filter_map(|r| r.child("a:t")).map(|t| t.text()).collect();
+            let text: String = p
+                .child("dgm:t")?
+                .child("a:p")?
+                .children("a:r")
+                .filter_map(|r| r.child("a:t"))
+                .map(|t| t.text())
+                .collect();
             Some(SmartArtItem { text, level: (*l)? })
         })
         .collect::<Option<Vec<_>>>()?;
-    let spec = SmartArtSpec { layout, items, colors }.sanitized();
+    let spec = SmartArtSpec {
+        layout,
+        items,
+        colors,
+    }
+    .sanitized();
     // Editable only when nothing would be lost: writing the model again gives the same part.
     let again = xml::parse(data_xml(&spec, &rel).as_bytes()).ok()?;
     same(data, &again, 0).then_some(spec)
@@ -1093,13 +1484,23 @@ mod tests {
                 spec.colors = colors;
                 spec.items.push(SmartArtItem::new("Under <last> & more", 1));
                 let spec = spec.sanitized();
-                assert_eq!(spec_of(&parse(&data_xml(&spec, "rId9"))).as_ref(), Some(&spec), "{layout:?}");
+                assert_eq!(
+                    spec_of(&parse(&data_xml(&spec, "rId9"))).as_ref(),
+                    Some(&spec),
+                    "{layout:?}"
+                );
                 let items = smart_art_items(&spec, &THEME_COLORS, 400.0, 250.0);
-                assert!(items.iter().any(|i| matches!(i, GraphicItem::Text { .. })), "{layout:?} has text");
+                assert!(
+                    items.iter().any(|i| matches!(i, GraphicItem::Text { .. })),
+                    "{layout:?} has text"
+                );
                 for it in &items {
                     if let GraphicItem::Shape { rect, .. } = it {
                         assert!(
-                            rect[0] >= -0.5 && rect[1] >= -0.5 && rect[0] + rect[2] <= 400.5 && rect[1] + rect[3] <= 250.5,
+                            rect[0] >= -0.5
+                                && rect[1] >= -0.5
+                                && rect[0] + rect[2] <= 400.5
+                                && rect[1] + rect[3] <= 250.5,
                             "{layout:?}: {rect:?}"
                         );
                     }
@@ -1112,8 +1513,16 @@ mod tests {
     fn a_diagram_with_more_than_the_model_stays_read_only() {
         let spec = SmartArtSpec::sample(SmartArtLayout::Process);
         let x = data_xml(&spec, "rId4");
-        assert_eq!(spec_of(&parse(&x.replace("<dgm:bg/>", "<dgm:bg><a:noFill/></dgm:bg>"))), None);
-        assert_eq!(spec_of(&parse(&x.replace("layout/process1", "layout/process9"))), None);
+        assert_eq!(
+            spec_of(&parse(
+                &x.replace("<dgm:bg/>", "<dgm:bg><a:noFill/></dgm:bg>")
+            )),
+            None
+        );
+        assert_eq!(
+            spec_of(&parse(&x.replace("layout/process1", "layout/process9"))),
+            None
+        );
         // A run split in two (as another program might save it) isn't ours either.
         let split = x.replace(
             "<a:r><a:rPr lang=\"en-US\"/><a:t>Plan</a:t></a:r>",
@@ -1127,7 +1536,16 @@ mod tests {
     fn parts_come_in_schema_order() {
         let spec = SmartArtSpec::sample(SmartArtLayout::Hierarchy);
         let data = parse(&data_xml(&spec, "rId1"));
-        assert_eq!(names(&data), ["dgm:ptLst", "dgm:cxnLst", "dgm:bg", "dgm:whole", "dgm:extLst"]);
+        assert_eq!(
+            names(&data),
+            [
+                "dgm:ptLst",
+                "dgm:cxnLst",
+                "dgm:bg",
+                "dgm:whole",
+                "dgm:extLst"
+            ]
+        );
         let pt = data.child("dgm:ptLst").unwrap().els().nth(1).unwrap();
         assert_eq!(names(pt), ["dgm:prSet", "dgm:spPr", "dgm:t"]);
         // Each item's connection names its parent: Design (item 1) under Lead (item 0).
@@ -1137,9 +1555,25 @@ mod tests {
         let tree = drawing.child("dsp:spTree").unwrap();
         assert_eq!(names(tree).first(), Some(&"dsp:nvGrpSpPr"));
         let sp = tree.children("dsp:sp").last().unwrap();
-        assert_eq!(names(sp), ["dsp:nvSpPr", "dsp:spPr", "dsp:style", "dsp:txBody", "dsp:txXfrm"]);
-        assert_eq!(names(sp.child("dsp:spPr").unwrap()), ["a:xfrm", "a:prstGeom", "a:solidFill", "a:ln"]);
-        for part in [layout_xml(SmartArtLayout::Radial), colors_xml(SmartArtColors::Colorful), quick_style_xml()] {
+        assert_eq!(
+            names(sp),
+            [
+                "dsp:nvSpPr",
+                "dsp:spPr",
+                "dsp:style",
+                "dsp:txBody",
+                "dsp:txXfrm"
+            ]
+        );
+        assert_eq!(
+            names(sp.child("dsp:spPr").unwrap()),
+            ["a:xfrm", "a:prstGeom", "a:solidFill", "a:ln"]
+        );
+        for part in [
+            layout_xml(SmartArtLayout::Radial),
+            colors_xml(SmartArtColors::Colorful),
+            quick_style_xml(),
+        ] {
             let el = parse(&part);
             assert_eq!(&names(&el)[..3], ["dgm:title", "dgm:desc", "dgm:catLst"]);
         }
@@ -1147,11 +1581,18 @@ mod tests {
 
     #[test]
     fn hostile_sizes_and_many_items_stay_finite() {
-        let spec =
-            SmartArtSpec { items: (0..MAX_ITEMS).map(|i| SmartArtItem::new("word ".repeat(50), (i % 9) as u8)).collect(), ..Default::default() }
-                .sanitized();
+        let spec = SmartArtSpec {
+            items: (0..MAX_ITEMS)
+                .map(|i| SmartArtItem::new("word ".repeat(50), (i % 9) as u8))
+                .collect(),
+            ..Default::default()
+        }
+        .sanitized();
         for layout in SmartArtLayout::ALL {
-            let spec = SmartArtSpec { layout, ..spec.clone() };
+            let spec = SmartArtSpec {
+                layout,
+                ..spec.clone()
+            };
             for (w, h) in [(f32::NAN, 10.0), (0.0, 0.0), (1.0e30, 5.0), (300.0, 200.0)] {
                 for it in smart_art_items(&spec, &THEME_COLORS, w, h) {
                     if let GraphicItem::Shape { rect, .. } | GraphicItem::Text { rect, .. } = it {

@@ -73,9 +73,9 @@
 // and `bevy_ui`, such as text layout and font management.
 
 use crate::{
-    scroll::TextViewport,
-    text_edit::{poll_and_apply_paste, reveal_cursor, TextEdit},
     FontCx, FontHinting, LayoutCx, LineHeight, TextBrush, TextColor, TextFont, TextLayout,
+    scroll::TextViewport,
+    text_edit::{TextEdit, poll_and_apply_paste, reveal_cursor},
 };
 use alloc::sync::Arc;
 use bevy_clipboard::ClipboardRead;

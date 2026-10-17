@@ -11,7 +11,9 @@ pub const MAX_ROWS: u32 = 1_048_576;
 pub const MAX_COLS: u32 = 16_384;
 
 /// A cell position (0-based).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default,
+)]
 pub struct CellRef {
     pub row: u32,
     pub col: u32,
@@ -32,12 +34,20 @@ impl CellRef {
     pub fn offset(&self, dr: i64, dc: i64) -> Option<CellRef> {
         let r = (self.row as i64).checked_add(dr)?;
         let c = (self.col as i64).checked_add(dc)?;
-        if (0..MAX_ROWS as i64).contains(&r) && (0..MAX_COLS as i64).contains(&c) { Some(CellRef::new(r as u32, c as u32)) } else { None }
+        if (0..MAX_ROWS as i64).contains(&r) && (0..MAX_COLS as i64).contains(&c) {
+            Some(CellRef::new(r as u32, c as u32))
+        } else {
+            None
+        }
     }
     /// Moved by `(dr, dc)` and clamped to the sheet.
     pub fn offset_clamped(&self, dr: i64, dc: i64) -> CellRef {
-        let r = (self.row as i64).saturating_add(dr).clamp(0, MAX_ROWS as i64 - 1);
-        let c = (self.col as i64).saturating_add(dc).clamp(0, MAX_COLS as i64 - 1);
+        let r = (self.row as i64)
+            .saturating_add(dr)
+            .clamp(0, MAX_ROWS as i64 - 1);
+        let c = (self.col as i64)
+            .saturating_add(dc)
+            .clamp(0, MAX_COLS as i64 - 1);
         CellRef::new(r as u32, c as u32)
     }
     /// Parses `A1`, `$A$1`, `xfd1048576` (case-insensitive). `None` if malformed or out of range.
@@ -130,7 +140,10 @@ pub struct RangeRef {
 
 impl RangeRef {
     pub fn new(a: CellRef, b: CellRef) -> Self {
-        RangeRef { start: CellRef::new(a.row.min(b.row), a.col.min(b.col)), end: CellRef::new(a.row.max(b.row), a.col.max(b.col)) }
+        RangeRef {
+            start: CellRef::new(a.row.min(b.row), a.col.min(b.col)),
+            end: CellRef::new(a.row.max(b.row), a.col.max(b.col)),
+        }
     }
     pub fn cell(c: CellRef) -> Self {
         RangeRef { start: c, end: c }
@@ -165,26 +178,38 @@ impl RangeRef {
         self.start.row == 0 && self.end.row == MAX_ROWS - 1
     }
     pub fn contains(&self, c: CellRef) -> bool {
-        c.row >= self.start.row && c.row <= self.end.row && c.col >= self.start.col && c.col <= self.end.col
+        c.row >= self.start.row
+            && c.row <= self.end.row
+            && c.col >= self.start.col
+            && c.col <= self.end.col
     }
     pub fn contains_range(&self, o: &RangeRef) -> bool {
         self.contains(o.start) && self.contains(o.end)
     }
     pub fn intersects(&self, o: &RangeRef) -> bool {
-        self.start.row <= o.end.row && o.start.row <= self.end.row && self.start.col <= o.end.col && o.start.col <= self.end.col
+        self.start.row <= o.end.row
+            && o.start.row <= self.end.row
+            && self.start.col <= o.end.col
+            && o.start.col <= self.end.col
     }
     pub fn intersection(&self, o: &RangeRef) -> Option<RangeRef> {
         if !self.intersects(o) {
             return None;
         }
         Some(RangeRef {
-            start: CellRef::new(self.start.row.max(o.start.row), self.start.col.max(o.start.col)),
+            start: CellRef::new(
+                self.start.row.max(o.start.row),
+                self.start.col.max(o.start.col),
+            ),
             end: CellRef::new(self.end.row.min(o.end.row), self.end.col.min(o.end.col)),
         })
     }
     pub fn union(&self, o: &RangeRef) -> RangeRef {
         RangeRef {
-            start: CellRef::new(self.start.row.min(o.start.row), self.start.col.min(o.start.col)),
+            start: CellRef::new(
+                self.start.row.min(o.start.row),
+                self.start.col.min(o.start.col),
+            ),
             end: CellRef::new(self.end.row.max(o.end.row), self.end.col.max(o.end.col)),
         }
     }
@@ -199,9 +224,17 @@ impl RangeRef {
             return format!("{}:{}", self.start.row + 1, self.end.row + 1);
         }
         if self.is_full_cols() && !self.is_full_rows() {
-            return format!("{}:{}", col_to_letters(self.start.col), col_to_letters(self.end.col));
+            return format!(
+                "{}:{}",
+                col_to_letters(self.start.col),
+                col_to_letters(self.end.col)
+            );
         }
-        if self.is_single() { self.start.a1() } else { format!("{}:{}", self.start.a1(), self.end.a1()) }
+        if self.is_single() {
+            self.start.a1()
+        } else {
+            format!("{}:{}", self.start.a1(), self.end.a1())
+        }
     }
     /// Parses `A1`, `A1:B2`, `$A$1:$B$2`, `A:C`, `3:5` (no sheet prefix).
     pub fn parse(s: &str) -> Option<RangeRef> {
@@ -236,7 +269,16 @@ mod tests {
 
     #[test]
     fn letters_roundtrip() {
-        for (c, s) in [(0, "A"), (25, "Z"), (26, "AA"), (51, "AZ"), (52, "BA"), (701, "ZZ"), (702, "AAA"), (16383, "XFD")] {
+        for (c, s) in [
+            (0, "A"),
+            (25, "Z"),
+            (26, "AA"),
+            (51, "AZ"),
+            (52, "BA"),
+            (701, "ZZ"),
+            (702, "AAA"),
+            (16383, "XFD"),
+        ] {
             assert_eq!(col_to_letters(c), s);
             assert_eq!(letters_to_col(s), Some(c));
         }
@@ -249,7 +291,10 @@ mod tests {
     fn parse_cells() {
         assert_eq!(CellRef::parse("B7"), Some(CellRef::new(6, 1)));
         assert_eq!(CellRef::parse("$b$7"), Some(CellRef::new(6, 1)));
-        assert_eq!(CellRef::parse("XFD1048576"), Some(CellRef::new(MAX_ROWS - 1, MAX_COLS - 1)));
+        assert_eq!(
+            CellRef::parse("XFD1048576"),
+            Some(CellRef::new(MAX_ROWS - 1, MAX_COLS - 1))
+        );
         assert_eq!(CellRef::parse("A0"), None);
         assert_eq!(CellRef::parse("A1048577"), None);
         assert_eq!(CellRef::parse("A1x"), None);
@@ -280,10 +325,19 @@ mod tests {
             assert_eq!(cell.offset(0, delta), None);
             assert_eq!(cell.offset(delta, delta), None);
         }
-        assert_eq!(cell.offset_clamped(i64::MAX, i64::MAX), CellRef::new(MAX_ROWS - 1, MAX_COLS - 1));
+        assert_eq!(
+            cell.offset_clamped(i64::MAX, i64::MAX),
+            CellRef::new(MAX_ROWS - 1, MAX_COLS - 1)
+        );
         assert_eq!(cell.offset_clamped(i64::MIN, i64::MIN), CellRef::new(0, 0));
-        assert_eq!(cell.offset_clamped(i64::MAX, i64::MIN), CellRef::new(MAX_ROWS - 1, 0));
-        assert_eq!(cell.offset_clamped(i64::MIN, i64::MAX), CellRef::new(0, MAX_COLS - 1));
+        assert_eq!(
+            cell.offset_clamped(i64::MAX, i64::MIN),
+            CellRef::new(MAX_ROWS - 1, 0)
+        );
+        assert_eq!(
+            cell.offset_clamped(i64::MIN, i64::MAX),
+            CellRef::new(0, MAX_COLS - 1)
+        );
         assert_eq!(cell.offset(2, -1), Some(CellRef::new(3, 0)));
     }
 

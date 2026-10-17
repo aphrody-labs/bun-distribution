@@ -38,7 +38,10 @@ impl ByteReader for MemReader {
     }
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
         let a = usize::try_from(offset).map_err(|_| eof())?;
-        let src = self.0.get(a..a.checked_add(buf.len()).ok_or_else(eof)?).ok_or_else(eof)?;
+        let src = self
+            .0
+            .get(a..a.checked_add(buf.len()).ok_or_else(eof)?)
+            .ok_or_else(eof)?;
         buf.copy_from_slice(src);
         Ok(())
     }
@@ -69,11 +72,16 @@ struct PoolState {
 #[cfg(any(unix, windows))]
 impl FilePool {
     pub(crate) fn new(cap: usize) -> Self {
-        Self { cap: cap.max(1), state: Default::default() }
+        Self {
+            cap: cap.max(1),
+            state: Default::default(),
+        }
     }
 
     fn state(&self) -> std::sync::MutexGuard<'_, PoolState> {
-        self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     fn next_id(&self) -> u64 {
@@ -118,7 +126,8 @@ impl FilePool {
 }
 
 #[cfg(any(unix, windows))]
-static FILE_POOL: std::sync::LazyLock<Arc<FilePool>> = std::sync::LazyLock::new(|| Arc::new(FilePool::new(MAX_OPEN_FILES)));
+static FILE_POOL: std::sync::LazyLock<Arc<FilePool>> =
+    std::sync::LazyLock::new(|| Arc::new(FilePool::new(MAX_OPEN_FILES)));
 
 /// A file on disk, read in place: only the requested ranges are read, so opening a clip costs its
 /// index rather than its size. The file is kept open in a shared pool of at most
@@ -142,11 +151,19 @@ impl FileReader {
         let file = std::fs::File::open(path)?;
         let m = file.metadata()?;
         if !m.is_file() {
-            return Err(io::Error::new(io::ErrorKind::NotFound, format!("{} is not a file", path.display())));
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("{} is not a file", path.display()),
+            ));
         }
         let id = pool.next_id();
         pool.insert(id, file);
-        Ok(Self { path: path.to_path_buf(), len: m.len(), id, pool: pool.clone() })
+        Ok(Self {
+            path: path.to_path_buf(),
+            len: m.len(),
+            id,
+            pool: pool.clone(),
+        })
     }
 
     /// The open file, reopened when the pool closed it. A file now shorter than when it was opened
@@ -159,7 +176,10 @@ impl FileReader {
         let file = std::fs::File::open(&self.path)?;
         let m = file.metadata()?;
         if !m.is_file() || m.len() < self.len {
-            return Err(io::Error::other(format!("{} changed since it was opened", self.path.display())));
+            return Err(io::Error::other(format!(
+                "{} changed since it was opened",
+                self.path.display()
+            )));
         }
         Ok(self.pool.insert(self.id, file))
     }
@@ -213,14 +233,20 @@ pub fn read_range(r: &dyn ByteReader, offset: u64, len: usize) -> io::Result<Vec
 
 /// Opens a container from a reader: `head` is the first bytes of the file (for sniffing).
 /// Returns `None` when the format is not this opener's.
-pub type ReaderOpener = fn(name: &str, head: &[u8], reader: &SharedReader) -> Option<Result<SharedSource>>;
+pub type ReaderOpener =
+    fn(name: &str, head: &[u8], reader: &SharedReader) -> Option<Result<SharedSource>>;
 
 /// Bytes sniffed by [`open_reader`].
 pub const HEAD_LEN: usize = 64 * 1024;
 
 /// Open media from a reader: reader openers first, then WAV (read in place); otherwise read the
 /// whole file and use the byte openers (`extra`, then stills).
-pub fn open_reader(name: &str, reader: SharedReader, reader_openers: &[ReaderOpener], extra: &[Opener]) -> Result<SharedSource> {
+pub fn open_reader(
+    name: &str,
+    reader: SharedReader,
+    reader_openers: &[ReaderOpener],
+    extra: &[Opener],
+) -> Result<SharedSource> {
     open_reader_within(name, reader, reader_openers, extra, u64::MAX)
 }
 
@@ -228,8 +254,15 @@ pub fn open_reader(name: &str, reader: SharedReader, reader_openers: &[ReaderOpe
 /// bytes; a larger one is refused instead. For looking at files rather than importing them (the
 /// Media Browser's properties and thumbnails, #157): reading a multi-gigabyte AVI into
 /// memory to show its duration, or to find out it isn't supported, thrashes the disk.
-pub fn open_reader_within(name: &str, reader: SharedReader, reader_openers: &[ReaderOpener], extra: &[Opener], max_whole: u64) -> Result<SharedSource> {
-    let head = read_range(&*reader, 0, HEAD_LEN).map_err(|e| MediaError::Io(format!("{name}: {e}")))?;
+pub fn open_reader_within(
+    name: &str,
+    reader: SharedReader,
+    reader_openers: &[ReaderOpener],
+    extra: &[Opener],
+    max_whole: u64,
+) -> Result<SharedSource> {
+    let head =
+        read_range(&*reader, 0, HEAD_LEN).map_err(|e| MediaError::Io(format!("{name}: {e}")))?;
     for o in reader_openers {
         if let Some(r) = o(name, &head, &reader) {
             return r;
@@ -239,9 +272,16 @@ pub fn open_reader_within(name: &str, reader: SharedReader, reader_openers: &[Re
         return Ok(Arc::new(crate::wav::WavSource::open(name, reader)?));
     }
     if reader.len() > max_whole {
-        return Err(MediaError::Unsupported(format!("{name}: no streaming reader for this format, and it is too large to read whole here")));
+        return Err(MediaError::Unsupported(format!(
+            "{name}: no streaming reader for this format, and it is too large to read whole here"
+        )));
     }
-    let all = read_range(&*reader, 0, usize::try_from(reader.len()).unwrap_or(usize::MAX)).map_err(|e| MediaError::Io(format!("{name}: {e}")))?;
+    let all = read_range(
+        &*reader,
+        0,
+        usize::try_from(reader.len()).unwrap_or(usize::MAX),
+    )
+    .map_err(|e| MediaError::Io(format!("{name}: {e}")))?;
     crate::open_bytes(name, all.into(), extra)
 }
 
@@ -255,14 +295,18 @@ mod tests {
         let mut b = [0u8; 3];
         r.read_at(4, &mut b).unwrap();
         assert_eq!(&b, b"456");
-        assert_eq!(r.read_at(8, &mut b).unwrap_err().kind(), io::ErrorKind::UnexpectedEof);
+        assert_eq!(
+            r.read_at(8, &mut b).unwrap_err().kind(),
+            io::ErrorKind::UnexpectedEof
+        );
         assert_eq!(read_range(&r, 8, 100).unwrap(), b"89");
     }
 
     #[cfg(any(unix, windows))]
     #[test]
     fn file_reader_reads_ranges_in_place() {
-        let dir = std::env::temp_dir().join(format!("filmcraft-file-reader-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-file-reader-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("bytes.bin");
         std::fs::write(&path, b"0123456789").unwrap();
@@ -274,10 +318,19 @@ mod tests {
         // reads are positional: an earlier offset after a later one
         r.read_at(0, &mut b).unwrap();
         assert_eq!(&b, b"012");
-        assert_eq!(r.read_at(8, &mut b).unwrap_err().kind(), io::ErrorKind::UnexpectedEof);
+        assert_eq!(
+            r.read_at(8, &mut b).unwrap_err().kind(),
+            io::ErrorKind::UnexpectedEof
+        );
         assert_eq!(read_range(&r, 8, 100).unwrap(), b"89");
-        assert!(FileReader::open(&dir).is_err(), "a directory is not a media file");
-        assert_eq!(FileReader::open(&dir.join("missing")).unwrap_err().kind(), io::ErrorKind::NotFound);
+        assert!(
+            FileReader::open(&dir).is_err(),
+            "a directory is not a media file"
+        );
+        assert_eq!(
+            FileReader::open(&dir.join("missing")).unwrap_err().kind(),
+            io::ErrorKind::NotFound
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -293,7 +346,10 @@ mod tests {
         for (i, p) in paths.iter().enumerate() {
             std::fs::write(p, format!("file{i}-0123456789")).unwrap();
         }
-        let readers: Vec<_> = paths.iter().map(|p| FileReader::open_in(p, &pool).unwrap()).collect();
+        let readers: Vec<_> = paths
+            .iter()
+            .map(|p| FileReader::open_in(p, &pool).unwrap())
+            .collect();
         assert_eq!(pool.open_count(), 2);
         for _ in 0..2 {
             for (i, r) in readers.iter().enumerate() {
@@ -319,7 +375,8 @@ mod tests {
             self.0.len()
         }
         fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
-            self.1.fetch_add(buf.len() as u64, std::sync::atomic::Ordering::SeqCst);
+            self.1
+                .fetch_add(buf.len() as u64, std::sync::atomic::Ordering::SeqCst);
             self.0.read_at(offset, buf)
         }
     }
@@ -332,7 +389,9 @@ mod tests {
         avi[..4].copy_from_slice(b"RIFF");
         avi[8..12].copy_from_slice(b"AVI ");
         let r = Arc::new(Counting(MemReader(Arc::from(avi)), Default::default()));
-        let e = open_reader_within("a.avi", r.clone(), &[], &[], HEAD_LEN as u64).err().unwrap();
+        let e = open_reader_within("a.avi", r.clone(), &[], &[], HEAD_LEN as u64)
+            .err()
+            .unwrap();
         assert!(matches!(e, MediaError::Unsupported(_)), "{e:?}");
         assert!(r.1.load(std::sync::atomic::Ordering::SeqCst) <= HEAD_LEN as u64);
     }
@@ -343,7 +402,9 @@ mod tests {
     #[test]
     fn wav_opens_in_place_and_reads_only_requested_samples() {
         let rate = 48_000usize;
-        let samples: Vec<f32> = (0..rate * 2 * 20).map(|i| ((i / 2) % 100) as f32 / 200.0).collect();
+        let samples: Vec<f32> = (0..rate * 2 * 20)
+            .map(|i| ((i / 2) % 100) as f32 / 200.0)
+            .collect();
         let wav = crate::wav::write_wav16(&samples, 2, rate as u32);
         let size = wav.len() as u64;
         assert!(size > 3 * HEAD_LEN as u64);
@@ -372,10 +433,16 @@ mod tests {
     fn falls_back_to_byte_openers() {
         // a format without a reader opener is read whole and handed to the byte openers
         fn whole(_: &str, bytes: Arc<[u8]>) -> Option<Result<SharedSource>> {
-            Some(Err(MediaError::Unsupported(format!("got {} bytes", bytes.len()))))
+            Some(Err(MediaError::Unsupported(format!(
+                "got {} bytes",
+                bytes.len()
+            ))))
         }
         let r: SharedReader = Arc::new(MemReader(Arc::from(&b"bytes"[..])));
         let e = open_reader("a.xyz", r, &[], &[whole]).err().unwrap();
-        assert!(matches!(&e, MediaError::Unsupported(m) if m == "got 5 bytes"), "{e:?}");
+        assert!(
+            matches!(&e, MediaError::Unsupported(m) if m == "got 5 bytes"),
+            "{e:?}"
+        );
     }
 }

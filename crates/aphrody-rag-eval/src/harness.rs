@@ -30,7 +30,12 @@ pub struct EvalOptions {
 
 impl Default for EvalOptions {
     fn default() -> Self {
-        Self { limit_k: 10, allow_mixed: false, gates: Vec::new(), tag_filter: None }
+        Self {
+            limit_k: 10,
+            allow_mixed: false,
+            gates: Vec::new(),
+            tag_filter: None,
+        }
     }
 }
 
@@ -62,7 +67,10 @@ impl EvalSummary {
     /// Format the evaluation results as a clean GitHub-flavored markdown table.
     pub fn format_markdown(&self) -> String {
         let mut out = String::new();
-        out.push_str(&format!("## RAG Evaluation Report: `{}`\n\n", self.target_name));
+        out.push_str(&format!(
+            "## RAG Evaluation Report: `{}`\n\n",
+            self.target_name
+        ));
         out.push_str(&format!(
             "- **Cases evaluated**: {}\n- **Condition served**: `{}`\n- **Latency**: p50 = \
              {:.1}ms, p95 = {:.1}ms\n- **Status**: {}\n\n",
@@ -70,7 +78,11 @@ impl EvalSummary {
             self.dominant_mode,
             self.latency.p50_ms,
             self.latency.p95_ms,
-            if self.passed_gates { "**PASSED**" } else { "**GATE FAILED**" }
+            if self.passed_gates {
+                "**PASSED**"
+            } else {
+                "**GATE FAILED**"
+            }
         ));
 
         if !self.gate_failures.is_empty() {
@@ -84,10 +96,18 @@ impl EvalSummary {
         out.push_str("### Overall Metrics\n\n");
         out.push_str("| Metric | Value |\n|---|---|\n");
         for (&k, &val) in &self.report.overall.recall {
-            out.push_str(&format!("| **Recall@{}** | {:.4} ({:.1}%) |\n", k, val, val * 100.0));
+            out.push_str(&format!(
+                "| **Recall@{}** | {:.4} ({:.1}%) |\n",
+                k,
+                val,
+                val * 100.0
+            ));
         }
         out.push_str(&format!("| **MRR** | {:.4} |\n", self.report.overall.mrr));
-        out.push_str(&format!("| **nDCG@10** | {:.4} |\n\n", self.report.overall.ndcg));
+        out.push_str(&format!(
+            "| **nDCG@10** | {:.4} |\n\n",
+            self.report.overall.ndcg
+        ));
 
         if !self.report.by_tag.is_empty() {
             out.push_str("### Per-Tag Breakdown\n\n");
@@ -118,7 +138,10 @@ pub async fn run_eval(
     opts: &EvalOptions,
 ) -> Result<EvalSummary> {
     let filtered_cases: Vec<&GoldCase> = if let Some(ref filter) = opts.tag_filter {
-        cases.iter().filter(|c| c.tags.iter().any(|t| t == filter)).collect()
+        cases
+            .iter()
+            .filter(|c| c.tags.iter().any(|t| t == filter))
+            .collect()
     } else {
         cases.iter().collect()
     };
@@ -178,10 +201,10 @@ pub async fn run_eval(
                 if let Err(failure) = gate.check(&report.overall) {
                     gate_failures.push(failure.to_string());
                 }
-            },
+            }
             Err(err) => {
                 gate_failures.push(format!("Invalid gate '{gate_expr}': {err}"));
-            },
+            }
         }
     }
 

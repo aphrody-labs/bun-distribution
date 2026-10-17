@@ -24,15 +24,24 @@ struct Row {
 
 /// Rows per column of the fullest tab, so switching tabs doesn't resize the panel.
 fn tallest_column() -> usize {
-    let count = |g: Group| KEYS.iter().filter(|b| b.group == g).count() + GESTURES.iter().filter(|x| x.0 == g).count();
-    Group::ALL.iter().map(|g| count(*g).div_ceil(COLUMNS)).max().unwrap_or(1)
+    let count = |g: Group| {
+        KEYS.iter().filter(|b| b.group == g).count() + GESTURES.iter().filter(|x| x.0 == g).count()
+    };
+    Group::ALL
+        .iter()
+        .map(|g| count(*g).div_ceil(COLUMNS))
+        .max()
+        .unwrap_or(1)
 }
 
 fn rows(group: Option<Group>, query: &str, platform: Platform) -> Vec<Row> {
     let q = query.trim().to_lowercase();
     // Labels match in the UI language and in English.
     let wanted = |g: Group, label: &str, english: &str| {
-        group.is_none_or(|x| x == g) && (q.is_empty() || label.to_lowercase().contains(&q) || english.to_lowercase().contains(&q))
+        group.is_none_or(|x| x == g)
+            && (q.is_empty()
+                || label.to_lowercase().contains(&q)
+                || english.to_lowercase().contains(&q))
     };
     let mut out: Vec<Row> = KEYS
         .iter()
@@ -50,21 +59,44 @@ fn rows(group: Option<Group>, query: &str, platform: Platform) -> Vec<Row> {
             Row { label, keys }
         })
         .collect();
-    out.extend(GESTURES.iter().filter(|(g, label, ..)| wanted(*g, tr(label), label)).map(|(_, label, mac, other)| Row {
-        label: tr(label).into(),
-        keys: vec![tr(if platform == Platform::Mac { mac } else { other }).to_string()],
-    }));
+    out.extend(
+        GESTURES
+            .iter()
+            .filter(|(g, label, ..)| wanted(*g, tr(label), label))
+            .map(|(_, label, mac, other)| Row {
+                label: tr(label).into(),
+                keys: vec![
+                    tr(if platform == Platform::Mac {
+                        mac
+                    } else {
+                        other
+                    })
+                    .to_string(),
+                ],
+            }),
+    );
     out
 }
 
 /// Paint `text` as a keycap ending at `right`; returns its left edge.
 fn keycap(ui: &Ui, t: &Tokens, text: &str, right: f32, cy: f32) -> f32 {
-    let galley = ui.painter().layout_no_wrap(text.to_string(), regular(11.0), t.text);
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.to_string(), regular(11.0), t.text);
     let w = galley.size().x + 10.0;
     let r = egui::Rect::from_min_size(pos2(right - w, cy - 10.0), vec2(w, 20.0));
     ui.painter().rect_filled(r, CornerRadius::same(4), t.field);
-    ui.painter().rect_stroke(r, CornerRadius::same(4), Stroke::new(1.0, t.border), StrokeKind::Inside);
-    ui.painter().galley(pos2(r.min.x + 5.0, cy - galley.size().y / 2.0), galley, t.text);
+    ui.painter().rect_stroke(
+        r,
+        CornerRadius::same(4),
+        Stroke::new(1.0, t.border),
+        StrokeKind::Inside,
+    );
+    ui.painter().galley(
+        pos2(r.min.x + 5.0, cy - galley.size().y / 2.0),
+        galley,
+        t.text,
+    );
     r.min.x
 }
 
@@ -78,9 +110,12 @@ fn row(ui: &mut Ui, t: &Tokens, row: &Row, width: f32) {
     for (i, k) in row.keys.iter().enumerate().rev() {
         right = keycap(ui, t, k, right, cy);
         if i > 0 {
-            let or = ui.painter().layout_no_wrap(tr("or").into(), regular(10.0), t.text_tertiary);
+            let or = ui
+                .painter()
+                .layout_no_wrap(tr("or").into(), regular(10.0), t.text_tertiary);
             right -= 4.0 + or.size().x;
-            ui.painter().galley(pos2(right, cy - or.size().y / 2.0), or, t.text_tertiary);
+            ui.painter()
+                .galley(pos2(right, cy - or.size().y / 2.0), or, t.text_tertiary);
             right -= 4.0;
         }
     }
@@ -91,7 +126,13 @@ fn row(ui: &mut Ui, t: &Tokens, row: &Row, width: f32) {
     if label != row.label {
         resp.on_hover_text(&*row.label);
     }
-    ui.painter().text(pos2(r.min.x + 6.0, cy), Align2::LEFT_CENTER, label, regular(12.0), t.text);
+    ui.painter().text(
+        pos2(r.min.x + 6.0, cy),
+        Align2::LEFT_CENTER,
+        label,
+        regular(12.0),
+        t.text,
+    );
 }
 
 pub fn show(app: &mut FigApp, ctx: &Context) {
@@ -102,44 +143,68 @@ pub fn show(app: &mut FigApp, ctx: &Context) {
     let platform = crate::shortcuts::platform();
     let width = (ctx.content_rect().width() - 48.0).clamp(480.0, 1040.0);
     let mut open = true;
-    crate::dialogs::window(tr("Keyboard shortcuts"), ctx).anchor(Align2::CENTER_BOTTOM, vec2(0.0, -16.0)).open(&mut open).show(ctx, |ui| {
-        ui.set_width(width);
-        ui.horizontal(|ui| {
-            crate::dialogs::tab_strip(ui, &t, &Group::ALL, |g| tr(g.label()), &mut app.ui.shortcuts_tab);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.add(egui::TextEdit::singleline(&mut app.ui.shortcuts_query).hint_text(tr("Search shortcuts")).desired_width(180.0));
+    crate::dialogs::window(tr("Keyboard shortcuts"), ctx)
+        .anchor(Align2::CENTER_BOTTOM, vec2(0.0, -16.0))
+        .open(&mut open)
+        .show(ctx, |ui| {
+            ui.set_width(width);
+            ui.horizontal(|ui| {
+                crate::dialogs::tab_strip(
+                    ui,
+                    &t,
+                    &Group::ALL,
+                    |g| tr(g.label()),
+                    &mut app.ui.shortcuts_tab,
+                );
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut app.ui.shortcuts_query)
+                            .hint_text(tr("Search shortcuts"))
+                            .desired_width(180.0),
+                    );
+                });
             });
-        });
-        ui.add_space(10.0);
-        let searching = !app.ui.shortcuts_query.trim().is_empty();
-        let list = rows((!searching).then_some(app.ui.shortcuts_tab), &app.ui.shortcuts_query, platform);
-        let body_h = (ROW_H + 2.0) * tallest_column().min(MAX_ROWS) as f32;
-        if list.is_empty() {
-            ui.allocate_ui(vec2(width, body_h), |ui| {
-                ui.set_min_height(body_h);
-                ui.label(egui::RichText::new(tr("No shortcuts match")).color(t.text_secondary).font(regular(12.0)));
-            });
-            return;
-        }
-        let gap = 24.0;
-        let col_w = (width - gap * (COLUMNS as f32 - 1.0)) / COLUMNS as f32;
-        let per = list.len().div_ceil(COLUMNS);
-        egui::ScrollArea::vertical().min_scrolled_height(body_h).max_height(body_h).show(ui, |ui| {
-            ui.set_min_height(body_h);
-            ui.horizontal_top(|ui| {
-                ui.spacing_mut().item_spacing = vec2(gap, 0.0);
-                for chunk in list.chunks(per.max(1)) {
-                    ui.vertical(|ui| {
-                        ui.set_width(col_w);
-                        ui.spacing_mut().item_spacing.y = 2.0;
-                        for r in chunk {
-                            row(ui, &t, r, col_w);
+            ui.add_space(10.0);
+            let searching = !app.ui.shortcuts_query.trim().is_empty();
+            let list = rows(
+                (!searching).then_some(app.ui.shortcuts_tab),
+                &app.ui.shortcuts_query,
+                platform,
+            );
+            let body_h = (ROW_H + 2.0) * tallest_column().min(MAX_ROWS) as f32;
+            if list.is_empty() {
+                ui.allocate_ui(vec2(width, body_h), |ui| {
+                    ui.set_min_height(body_h);
+                    ui.label(
+                        egui::RichText::new(tr("No shortcuts match"))
+                            .color(t.text_secondary)
+                            .font(regular(12.0)),
+                    );
+                });
+                return;
+            }
+            let gap = 24.0;
+            let col_w = (width - gap * (COLUMNS as f32 - 1.0)) / COLUMNS as f32;
+            let per = list.len().div_ceil(COLUMNS);
+            egui::ScrollArea::vertical()
+                .min_scrolled_height(body_h)
+                .max_height(body_h)
+                .show(ui, |ui| {
+                    ui.set_min_height(body_h);
+                    ui.horizontal_top(|ui| {
+                        ui.spacing_mut().item_spacing = vec2(gap, 0.0);
+                        for chunk in list.chunks(per.max(1)) {
+                            ui.vertical(|ui| {
+                                ui.set_width(col_w);
+                                ui.spacing_mut().item_spacing.y = 2.0;
+                                for r in chunk {
+                                    row(ui, &t, r, col_w);
+                                }
+                            });
                         }
                     });
-                }
-            });
+                });
         });
-    });
     if !open {
         app.ui.shortcuts_panel = false;
     }

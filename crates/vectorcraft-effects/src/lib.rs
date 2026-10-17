@@ -58,12 +58,17 @@ use serde_json::{Map, Value, json};
 use vectorcraft_doc::{AppearanceItem, Effect, Node, NodeKind, StrokeLayer};
 use vectorcraft_geom::{BezPath, FillRule, PathData, Rect};
 
-pub use adjust::{ADJUSTMENTS, ColorMap, ImageHook, adjust, adjust_in_document, color_map, curve_at, curve_points, has_adjustment, is_adjustment};
-pub use bake::{StrokeArt, bake_appearance, bake_document, expand_art, expand_leaf, fresh_ids, needs_bake};
+pub use adjust::{
+    ADJUSTMENTS, ColorMap, ImageHook, adjust, adjust_in_document, color_map, curve_at,
+    curve_points, has_adjustment, is_adjustment,
+};
+pub use bake::{
+    StrokeArt, bake_appearance, bake_document, expand_art, expand_leaf, fresh_ids, needs_bake,
+};
 pub use clip::clip_outline;
 pub use group::{
-    OutlineHook, PATHFINDER_EFFECTS, evaluate_container, has_container_appearance, has_pathfinder, is_pathfinder, member_shapes, paints,
-    pathfinder_children,
+    OutlineHook, PATHFINDER_EFFECTS, evaluate_container, has_container_appearance, has_pathfinder,
+    is_pathfinder, member_shapes, paints, pathfinder_children,
 };
 pub use live::{expand_live, expand_live_deep, expanded_live_group, text_outliner};
 pub use marks::{CROP_MARKS, crop_marks_art, has_crop_marks};
@@ -72,8 +77,8 @@ pub use raster::{RasterFx, outset, raster_effects};
 pub use reshape::{expand_outlined, needs_outline, outline_art, outline_text, reshape};
 pub use revolve::{REVOLVE, has_revolve, revolve_art, revolve_options, validate_revolve};
 pub use solids::{
-    EXTRUDE, INFLATE, ROTATE, ROTATION_PRESETS, SOLIDS, extrude_options, has_solid, inflate_options, is_three_d, solid_art, validate_solid,
-    view_options,
+    EXTRUDE, INFLATE, ROTATE, ROTATION_PRESETS, SOLIDS, extrude_options, has_solid,
+    inflate_options, is_three_d, solid_art, validate_solid, view_options,
 };
 pub use warp::{WarpStyle, warp_point};
 
@@ -109,37 +114,61 @@ pub struct Lengths {
 impl Lengths {
     /// The distance parameters while the effect's `relative` parameter is `relative`.
     pub fn keys(&self, relative: bool) -> impl Iterator<Item = &'static str> + '_ {
-        self.always.iter().chain(if relative { &[][..] } else { self.absolute }).copied()
+        self.always
+            .iter()
+            .chain(if relative { &[][..] } else { self.absolute })
+            .copied()
     }
 }
 
 /// Is parameter `key` of effect `id` a distance in points while its `relative` parameter is
 /// `relative`?
 pub fn is_length(id: &str, key: &str, relative: bool) -> bool {
-    catalog_index().get(id).is_some_and(|info| info.lengths.keys(relative).any(|k| k == key))
+    catalog_index()
+        .get(id)
+        .is_some_and(|info| info.lengths.keys(relative).any(|k| k == key))
 }
 
 /// The distance parameters of effect `id` (none for unknown effects).
 fn lengths_of(id: &str) -> Lengths {
-    let always = |always| Lengths { always, absolute: &[] };
+    let always = |always| Lengths {
+        always,
+        absolute: &[],
+    };
     match id {
-        "convertToShape.rectangle" | "convertToShape.ellipse" => always(&["extraW", "extraH", "width", "height"]),
-        "convertToShape.roundedRectangle" => always(&["extraW", "extraH", "width", "height", "radius"]),
-        "distort.roughen" | "distort.zigZag" => Lengths { always: &[], absolute: &["size"] },
-        "distort.tweak" => Lengths { always: &[], absolute: &["h", "v"] },
+        "convertToShape.rectangle" | "convertToShape.ellipse" => {
+            always(&["extraW", "extraH", "width", "height"])
+        }
+        "convertToShape.roundedRectangle" => {
+            always(&["extraW", "extraH", "width", "height", "radius"])
+        }
+        "distort.roughen" | "distort.zigZag" => Lengths {
+            always: &[],
+            absolute: &["size"],
+        },
+        "distort.tweak" => Lengths {
+            always: &[],
+            absolute: &["h", "v"],
+        },
         "distort.transform" => always(&["moveH", "moveV"]),
         "path.offsetPath" => always(&["offset"]),
         "threeD.revolve" => always(&["offset"]),
         "threeD.extrude" => always(&["depth", "bevelWidth", "bevelHeight"]),
         "threeD.inflate" => always(&["depth"]),
         "path.outlineStroke" => always(&["width"]),
-        "stylize.roundCorners" | "stylize.feather" | "blur.gaussian" | "blur.smart" | "sharpen.unsharpMask" => always(&["radius"]),
+        "stylize.roundCorners"
+        | "stylize.feather"
+        | "blur.gaussian"
+        | "blur.smart"
+        | "sharpen.unsharpMask" => always(&["radius"]),
         "stylize.scribble" => always(&["overlap", "strokeWidth", "spacing", "variation"]),
         "stylize.dropShadow" => always(&["x", "y", "blur"]),
         "stylize.innerGlow" | "stylize.outerGlow" => always(&["blur"]),
         "stylize.glowingEdges" => always(&["edgeWidth", "smoothness"]),
         "brushStrokes.accentedEdges" => always(&["edgeWidth"]),
-        "brushStrokes.angledStrokes" | "brushStrokes.crosshatch" | "brushStrokes.inkOutlines" => always(&["strokeLength"]),
+        "brushStrokes.angledStrokes" | "brushStrokes.crosshatch" | "brushStrokes.inkOutlines" => {
+            always(&["strokeLength"])
+        }
         "brushStrokes.spatter" => always(&["sprayRadius"]),
         "brushStrokes.sprayedStrokes" => always(&["strokeLength", "sprayRadius"]),
         "brushStrokes.sumiE" => always(&["strokeWidth"]),
@@ -153,8 +182,7 @@ fn lengths_of(id: &str) -> Lengths {
     }
 }
 
-const WARP_DOC: &str =
-    "{bend: % (-100..100, 50), horizontal: % distortion (0), vertical: % distortion (0), orientation: \"horizontal\"|\"vertical\"}";
+const WARP_DOC: &str = "{bend: % (-100..100, 50), horizontal: % distortion (0), vertical: % distortion (0), orientation: \"horizontal\"|\"vertical\"}";
 const DT: &[&str] = &["Effect", "Distort & Transform"];
 const PATH: &[&str] = &["Effect", "Path"];
 const SHAPE: &[&str] = &["Effect", "Convert to Shape"];
@@ -193,8 +221,24 @@ pub const WARP_STYLES: [(&str, &str); 15] = [
 
 /// Every supported effect with its dialog defaults.
 pub fn effect_catalog() -> Vec<EffectInfo> {
-    let g = |id, label, menu, params, defaults| EffectInfo { id, label, menu, params, defaults, raster: false, lengths: lengths_of(id) };
-    let r = |id, label, menu, params, defaults| EffectInfo { id, label, menu, params, defaults, raster: true, lengths: lengths_of(id) };
+    let g = |id, label, menu, params, defaults| EffectInfo {
+        id,
+        label,
+        menu,
+        params,
+        defaults,
+        raster: false,
+        lengths: lengths_of(id),
+    };
+    let r = |id, label, menu, params, defaults| EffectInfo {
+        id,
+        label,
+        menu,
+        params,
+        defaults,
+        raster: true,
+        lengths: lengths_of(id),
+    };
     let mut v = vec![
         g(
             REVOLVE,
@@ -252,7 +296,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "{corners: [[x,y]×4] (new positions of the bounding-box corners TL, TR, BR, BL in unit box coordinates; identity [[0,0],[1,0],[1,1],[0,1]])}",
             json!({"corners": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]}),
         ),
-        g("distort.puckerBloat", "Pucker & Bloat…", DT, "{amount: % (-200 pucker … 200 bloat, default 0)}", json!({"amount": 0.0})),
+        g(
+            "distort.puckerBloat",
+            "Pucker & Bloat…",
+            DT,
+            "{amount: % (-200 pucker … 200 bloat, default 0)}",
+            json!({"amount": 0.0}),
+        ),
         g(
             "distort.roughen",
             "Roughen…",
@@ -274,7 +324,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "{h: amount (10), v: amount (10), relative: bool (true: % of size), anchors: bool (true), in: bool (true), out: bool (true), seed: int (0)}",
             json!({"h": 10.0, "v": 10.0, "relative": true, "anchors": true, "in": true, "out": true, "seed": 0}),
         ),
-        g("distort.twist", "Twist…", DT, "{angle: deg (-3600..3600, 10)}", json!({"angle": 10.0})),
+        g(
+            "distort.twist",
+            "Twist…",
+            DT,
+            "{angle: deg (-3600..3600, 10)}",
+            json!({"angle": 10.0}),
+        ),
         g(
             "distort.zigZag",
             "Zig Zag…",
@@ -296,7 +352,13 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "{width?: pt (defaults to the stroke's weight)} the outline of the stroke the effect is on (on a fill or the object: the top stroke), with its caps, joins, dashes, alignment, width profile and arrowheads",
             json!({}),
         ),
-        g("stylize.roundCorners", "Round Corners…", STYLIZE, "{radius: pt (10)}", json!({"radius": 10.0})),
+        g(
+            "stylize.roundCorners",
+            "Round Corners…",
+            STYLIZE,
+            "{radius: pt (10)}",
+            json!({"radius": 10.0}),
+        ),
         g(
             "stylize.scribble",
             "Scribble…",
@@ -325,8 +387,20 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "{mode: blend mode (\"screen\"), opacity: % (75), blur: pt (5), color: \"#rrggbb\" (\"#ffff00\")}",
             json!({"mode": "screen", "opacity": 75.0, "blur": 5.0, "color": "#ffff00"}),
         ),
-        r("stylize.feather", "Feather…", STYLIZE, "{radius: pt (5)}", json!({"radius": 5.0})),
-        r("blur.gaussian", "Gaussian Blur…", BLUR, "{radius: pt (5)}", json!({"radius": 5.0})),
+        r(
+            "stylize.feather",
+            "Feather…",
+            STYLIZE,
+            "{radius: pt (5)}",
+            json!({"radius": 5.0}),
+        ),
+        r(
+            "blur.gaussian",
+            "Gaussian Blur…",
+            BLUR,
+            "{radius: pt (5)}",
+            json!({"radius": 5.0}),
+        ),
         r(
             "artistic.filmGrain",
             "Film Grain…",
@@ -586,10 +660,22 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
             "squeeze" => "warp.squeeze",
             _ => "warp.twist",
         };
-        v.push(g(id, label, WARP, WARP_DOC, json!({"bend": 50.0, "horizontal": 0.0, "vertical": 0.0, "orientation": "horizontal"})));
+        v.push(g(
+            id,
+            label,
+            WARP,
+            WARP_DOC,
+            json!({"bend": 50.0, "horizontal": 0.0, "vertical": 0.0, "orientation": "horizontal"}),
+        ));
     }
     for (id, label, _) in PATHFINDER_EFFECTS {
-        v.push(g(id, label, PATHFINDER, "{} (groups and layers: live Pathfinder over the members)", json!({})));
+        v.push(g(
+            id,
+            label,
+            PATHFINDER,
+            "{} (groups and layers: live Pathfinder over the members)",
+            json!({}),
+        ));
     }
     v.push(g(
         CROP_MARKS,
@@ -603,7 +689,8 @@ pub fn effect_catalog() -> Vec<EffectInfo> {
 
 /// The catalogue built once, indexed by id (lookups run per effect per rendered frame).
 fn catalog_index() -> &'static std::collections::HashMap<&'static str, EffectInfo> {
-    static INDEX: std::sync::OnceLock<std::collections::HashMap<&'static str, EffectInfo>> = std::sync::OnceLock::new();
+    static INDEX: std::sync::OnceLock<std::collections::HashMap<&'static str, EffectInfo>> =
+        std::sync::OnceLock::new();
     INDEX.get_or_init(|| effect_catalog().into_iter().map(|e| (e.id, e)).collect())
 }
 
@@ -617,7 +704,11 @@ fn plugin_info(id: &str) -> Option<EffectInfo> {
     use vectorcraft_plugins::registry::intern;
     let p = vectorcraft_plugins::effect::installed(id)?;
     let m = p.manifest();
-    let dots = if m.params.is_empty() || m.name.ends_with('…') { "" } else { "…" };
+    let dots = if m.params.is_empty() || m.name.ends_with('…') {
+        ""
+    } else {
+        "…"
+    };
     Some(EffectInfo {
         id: intern(id),
         label: intern(&format!("{}{dots}", m.name)),
@@ -631,7 +722,10 @@ fn plugin_info(id: &str) -> Option<EffectInfo> {
 
 /// The installed effect plug-ins as catalogue entries (Effect › Plug-ins), by plug-in id.
 pub fn plugin_effects() -> Vec<EffectInfo> {
-    vectorcraft_plugins::registry::list().iter().filter_map(|p| plugin_info(&vectorcraft_plugins::effect::effect_id(p.id()))).collect()
+    vectorcraft_plugins::registry::list()
+        .iter()
+        .filter_map(|p| plugin_info(&vectorcraft_plugins::effect::effect_id(p.id())))
+        .collect()
 }
 
 /// Dialog defaults for `id` (`None` for unknown effects).
@@ -647,7 +741,9 @@ pub fn merged_params(id: &str, params: &Value) -> Value {
     let mut out = match catalog_index().get(id).map(|e| &e.defaults) {
         Some(Value::Object(m)) => m.clone(),
         Some(_) => Map::new(),
-        None => vectorcraft_plugins::effect::installed(id).map(|p| p.manifest().defaults()).unwrap_or_default(),
+        None => vectorcraft_plugins::effect::installed(id)
+            .map(|p| p.manifest().defaults())
+            .unwrap_or_default(),
     };
     if let Value::Object(p) = params {
         for (k, v) in p {
@@ -662,14 +758,20 @@ pub fn new_effect(id: &str, params: &Value) -> Option<Effect> {
     if !catalog_index().contains_key(id) {
         vectorcraft_plugins::effect::installed(id)?;
     }
-    Some(Effect { id: id.to_string(), params: merged_params(id, params), visible: true })
+    Some(Effect {
+        id: id.to_string(),
+        params: merged_params(id, params),
+        visible: true,
+    })
 }
 
 /// Scale the distance parameters of `e` by `s` (Scale Strokes & Effects; see
 /// [`EffectInfo::lengths`]). A distance left at its default is written out scaled; one the
 /// effect doesn't have (Outline Stroke's weight following its stroke) stays absent.
 pub fn scale_effect(e: &mut Effect, s: f64) {
-    let Some(info) = catalog_index().get(e.id.as_str()) else { return };
+    let Some(info) = catalog_index().get(e.id.as_str()) else {
+        return;
+    };
     let merged = merged_params(&e.id, &e.params);
     let relative = util::flag(&merged, "relative", false);
     for k in info.lengths.keys(relative) {
@@ -685,8 +787,14 @@ pub fn scale_effect(e: &mut Effect, s: f64) {
 
 /// Is `id` a raster (painted) effect?
 pub fn is_raster(id: &str) -> bool {
-    matches!(id, "stylize.dropShadow" | "stylize.innerGlow" | "stylize.outerGlow" | "stylize.feather" | "blur.gaussian")
-        || PIXEL_EFFECTS.contains(&id)
+    matches!(
+        id,
+        "stylize.dropShadow"
+            | "stylize.innerGlow"
+            | "stylize.outerGlow"
+            | "stylize.feather"
+            | "blur.gaussian"
+    ) || PIXEL_EFFECTS.contains(&id)
 }
 
 /// Does `id` change geometry? (Crop Marks adds art of its own instead, [`crop_marks_art`]; colour
@@ -698,7 +806,8 @@ pub fn is_geometry(id: &str) -> bool {
         && !is_adjustment(id)
         && id != CROP_MARKS
         && !is_three_d(id)
-        && (catalog_index().contains_key(id) || vectorcraft_plugins::effect::plugin_id(id).is_some())
+        && (catalog_index().contains_key(id)
+            || vectorcraft_plugins::effect::plugin_id(id).is_some())
 }
 
 /// Any visible geometry effect in the list?
@@ -727,14 +836,24 @@ impl<'a> GeomContext<'a> {
             NodeKind::Path { rule, .. } | NodeKind::Compound { rule, .. } => *rule,
             _ => FillRule::NonZero,
         };
-        Self { stroke: n.appearance.stroke().filter(|s| !s.paint.is_none() && s.width > 0.0), rule, seed: n.id.0 }
+        Self {
+            stroke: n
+                .appearance
+                .stroke()
+                .filter(|s| !s.paint.is_none() && s.width > 0.0),
+            rule,
+            seed: n.id.0,
+        }
     }
 
     /// The context of the effects on `item`, one of the same object's appearance items: a
     /// stroke's own effects outline that stroke.
     pub fn item(self, item: &'a AppearanceItem) -> Self {
         match item {
-            AppearanceItem::Stroke(s) => Self { stroke: Some(s), ..self },
+            AppearanceItem::Stroke(s) => Self {
+                stroke: Some(s),
+                ..self
+            },
             AppearanceItem::Fill(_) => self,
         }
     }
@@ -748,7 +867,12 @@ pub fn apply_geometry(effects: &[Effect], path: &PathData, bounds: Rect) -> Path
 }
 
 /// [`apply_geometry`] with an explicit [`GeomContext`].
-pub fn apply_geometry_with(effects: &[Effect], path: &PathData, bounds: Rect, ctx: &GeomContext) -> PathData {
+pub fn apply_geometry_with(
+    effects: &[Effect],
+    path: &PathData,
+    bounds: Rect,
+    ctx: &GeomContext,
+) -> PathData {
     let mut cur = path.clone();
     let mut b = bounds;
     let mut first = true;
@@ -767,14 +891,26 @@ pub fn apply_geometry_with(effects: &[Effect], path: &PathData, bounds: Rect, ct
 }
 
 /// Convenience wrapper on kurbo paths.
-pub fn apply_geometry_bez(effects: &[Effect], path: &BezPath, bounds: Rect, ctx: &GeomContext) -> BezPath {
+pub fn apply_geometry_bez(
+    effects: &[Effect],
+    path: &BezPath,
+    bounds: Rect,
+    ctx: &GeomContext,
+) -> BezPath {
     apply_geometry_with(effects, &PathData::from_bezpath(path), bounds, ctx).to_bezpath()
 }
 
-pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &GeomContext) -> PathData {
+pub(crate) fn apply_one(
+    id: &str,
+    p: &Value,
+    path: &PathData,
+    b: Rect,
+    ctx: &GeomContext,
+) -> PathData {
     use util::*;
     if let Some(plugin) = vectorcraft_plugins::effect::plugin_id(id) {
-        return vectorcraft_plugins::effect::apply(plugin, p, path, b, ctx.rule).unwrap_or_else(|| path.clone());
+        return vectorcraft_plugins::effect::apply(plugin, p, path, b, ctx.rule)
+            .unwrap_or_else(|| path.clone());
     }
     match id {
         "distort.freeDistort" => distort::free_distort(path, b, p),
@@ -789,7 +925,12 @@ pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &Geo
             if off.abs() < 1e-9 {
                 return path.clone();
             }
-            vectorcraft_pathops::offset_path(path, off, join(p, "joins"), num(p, "miterLimit", 4.0).clamp(1.0, 500.0))
+            vectorcraft_pathops::offset_path(
+                path,
+                off,
+                join(p, "joins"),
+                num(p, "miterLimit", 4.0).clamp(1.0, 500.0),
+            )
         }
         "path.outlineStroke" => {
             let fallback;
@@ -801,7 +942,10 @@ pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &Geo
                 }
             };
             let st = match p.get("width").and_then(Value::as_f64) {
-                Some(w) => std::borrow::Cow::Owned(StrokeLayer { width: w, ..base.clone() }),
+                Some(w) => std::borrow::Cow::Owned(StrokeLayer {
+                    width: w,
+                    ..base.clone()
+                }),
                 None => std::borrow::Cow::Borrowed(base),
             };
             if st.width.is_nan() || st.width <= 0.0 {
@@ -809,7 +953,9 @@ pub(crate) fn apply_one(id: &str, p: &Value, path: &PathData, b: Rect, ctx: &Geo
             }
             stroke::outline_region(path, ctx.rule, &st)
         }
-        "convertToShape.rectangle" | "convertToShape.roundedRectangle" | "convertToShape.ellipse" => stylize::convert_to_shape(id, b, p),
+        "convertToShape.rectangle"
+        | "convertToShape.roundedRectangle"
+        | "convertToShape.ellipse" => stylize::convert_to_shape(id, b, p),
         "stylize.roundCorners" => stylize::round_corners(path, num(p, "radius", 10.0)),
         "stylize.scribble" => stylize::scribble(path, b, p),
         _ => match id.strip_prefix("warp.").and_then(WarpStyle::from_id) {

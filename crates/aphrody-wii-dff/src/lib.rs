@@ -102,8 +102,11 @@ impl std::fmt::Display for DffError {
             DffError::Io(e) => write!(f, "io error: {e}"),
             DffError::BadMagic(m) => write!(f, "bad DFF magic {m:#010x}, expected {FILE_ID:#010x}"),
             DffError::UnsupportedVersion(v) => {
-                write!(f, "DFF min loader version {v} exceeds supported {VERSION_NUMBER}")
-            },
+                write!(
+                    f,
+                    "DFF min loader version {v} exceeds supported {VERSION_NUMBER}"
+                )
+            }
             DffError::Truncated => write!(f, "DFF file truncated"),
         }
     }
@@ -147,7 +150,10 @@ impl DffFile {
             out.extend_from_slice(&frame.fifo_data);
 
             let updates_offset = out.len() as u64;
-            out.resize(out.len() + frame.memory_updates.len() * MEMORY_UPDATE_SIZE, 0);
+            out.resize(
+                out.len() + frame.memory_updates.len() * MEMORY_UPDATE_SIZE,
+                0,
+            );
 
             for (j, update) in frame.memory_updates.iter().enumerate() {
                 let data_offset = out.len() as u64;
@@ -228,7 +234,11 @@ impl DffFile {
         let mem2_size = r.u32()?;
         let game_id_raw = r.bytes(8)?;
 
-        let mut file = DffFile { is_wii: flags & FLAG_IS_WII != 0, version, ..DffFile::default() };
+        let mut file = DffFile {
+            is_wii: flags & FLAG_IS_WII != 0,
+            version,
+            ..DffFile::default()
+        };
 
         if version >= 5 {
             file.mem1_size = mem1_size;
@@ -253,8 +263,10 @@ impl DffFile {
 
         for i in 0..frame_count as usize {
             let entry = frame_list_offset as usize + i * FRAME_INFO_SIZE;
-            let mut fr =
-                Reader { bytes: self::slice_at(bytes, entry as u64, FRAME_INFO_SIZE)?, pos: 0 };
+            let mut fr = Reader {
+                bytes: self::slice_at(bytes, entry as u64, FRAME_INFO_SIZE)?,
+                pos: 0,
+            };
             let fifo_data_offset = fr.u64()?;
             let fifo_data_size = fr.u32()? as usize;
             let fifo_start = fr.u32()?;
@@ -345,7 +357,11 @@ impl<'a> HeaderWriter<'a> {
     }
 
     fn game_id(&mut self, id: &str) {
-        let id = if id.len() > 8 || !id.is_ascii() { DEFAULT_GAME_ID } else { id };
+        let id = if id.len() > 8 || !id.is_ascii() {
+            DEFAULT_GAME_ID
+        } else {
+            id
+        };
 
         let bytes = id.as_bytes();
         self.out[self.pos..self.pos + bytes.len()].copy_from_slice(bytes);
@@ -360,7 +376,10 @@ struct Reader<'a> {
 
 impl<'a> Reader<'a> {
     fn bytes(&mut self, n: usize) -> Result<&'a [u8], DffError> {
-        let s = self.bytes.get(self.pos..self.pos + n).ok_or(DffError::Truncated)?;
+        let s = self
+            .bytes
+            .get(self.pos..self.pos + n)
+            .ok_or(DffError::Truncated)?;
         self.pos += n;
         Ok(s)
     }

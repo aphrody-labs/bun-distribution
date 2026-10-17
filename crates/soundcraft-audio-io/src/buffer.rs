@@ -15,7 +15,10 @@ pub struct AudioBuffer {
 impl AudioBuffer {
     /// A silent buffer with `channels` channels of `frames` frames each.
     pub fn new(sample_rate: u32, channels: usize, frames: usize) -> Self {
-        Self { sample_rate, channels: vec![vec![0.0; frames]; channels] }
+        Self {
+            sample_rate,
+            channels: vec![vec![0.0; frames]; channels],
+        }
     }
 
     /// Number of frames (the length of the shortest channel; 0 when there are no channels).
@@ -52,7 +55,10 @@ impl AudioBuffer {
     /// `channels == 0` yields an empty buffer.
     pub fn from_interleaved(sr: u32, channels: usize, data: &[f32]) -> Self {
         if channels == 0 {
-            return Self { sample_rate: sr, channels: Vec::new() };
+            return Self {
+                sample_rate: sr,
+                channels: Vec::new(),
+            };
         }
         let frames = data.len() / channels;
         let mut out: Vec<Vec<f32>> = (0..channels).map(|_| Vec::with_capacity(frames)).collect();
@@ -61,11 +67,17 @@ impl AudioBuffer {
                 ch.push(s);
             }
         }
-        Self { sample_rate: sr, channels: out }
+        Self {
+            sample_rate: sr,
+            channels: out,
+        }
     }
 
     /// Absolute peak over all channels (NaN samples are ignored).
     pub fn peak(&self) -> f32 {
-        self.channels.iter().flat_map(|c| c.iter()).fold(0.0f32, |acc, &s| acc.max(s.abs()))
+        self.channels
+            .iter()
+            .flat_map(|c| c.iter())
+            .fold(0.0f32, |acc, &s| acc.max(s.abs()))
     }
 }

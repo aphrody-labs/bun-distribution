@@ -13,12 +13,17 @@ use photocraft_psd::PsdFile;
 
 #[cfg(feature = "corpus")]
 fn corpus(rel: &str) -> Vec<u8> {
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../corpus/psd").join(rel);
-    std::fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()))
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../corpus/psd")
+        .join(rel);
+    std::fs::read(&p)
+        .unwrap_or_else(|e| panic!("{}: {e}: run `cargo xtask corpus --all`", p.display()))
 }
 
 fn to_psd(doc: &Document) -> Vec<u8> {
-    export(doc, "x.psd", &ExportOptions::default()).expect("export").bytes
+    export(doc, "x.psd", &ExportOptions::default())
+        .expect("export")
+        .bytes
 }
 
 #[cfg(feature = "corpus")]
@@ -31,11 +36,19 @@ fn corpus_notes_import_and_verbatim_export() {
     assert_eq!(doc.notes[1].text, "open note");
     let out = to_psd(&doc);
     let f = PsdFile::from_bytes(&out).unwrap();
-    assert_eq!(f.global_block(b"Anno").unwrap().data, src.global_block(b"Anno").unwrap().data);
+    assert_eq!(
+        f.global_block(b"Anno").unwrap().data,
+        src.global_block(b"Anno").unwrap().data
+    );
 
     // Edit a note: the block is regenerated and reads back with the change.
     doc.notes[0].text = "changed".into();
-    doc.notes.push(Note { author: "agent".into(), text: "third".into(), position: [5.0, 6.0], ..Default::default() });
+    doc.notes.push(Note {
+        author: "agent".into(),
+        text: "third".into(),
+        position: [5.0, 6.0],
+        ..Default::default()
+    });
     let back = import("x.psd", &to_psd(&doc)).unwrap().document;
     assert_eq!(back.notes.len(), 3);
     assert_eq!(back.notes[0].text, "changed");
@@ -49,18 +62,41 @@ fn corpus_notes_import_and_verbatim_export() {
 #[test]
 fn measurement_scale_roundtrips_through_psd() {
     for depth in [SampleType::U8, SampleType::U16, SampleType::F32] {
-        let mut doc = Document::with_background("m", Size::new(16, 8), ColorMode::Rgb, depth, photocraft_color::Color::rgb(1.0, 1.0, 1.0));
+        let mut doc = Document::with_background(
+            "m",
+            Size::new(16, 8),
+            ColorMode::Rgb,
+            depth,
+            photocraft_color::Color::rgb(1.0, 1.0, 1.0),
+        );
         let f = PsdFile::from_bytes(&to_psd(&doc)).unwrap();
         assert!(f.resource(MEASUREMENT_SCALE).is_none());
-        doc.measurement.scale = MeasurementScale { pixel_length: 120.0, logical_length: 3.0, units: "cm".into() };
-        doc.notes.push(Note { text: "n".into(), ..Default::default() });
+        doc.measurement.scale = MeasurementScale {
+            pixel_length: 120.0,
+            logical_length: 3.0,
+            units: "cm".into(),
+        };
+        doc.notes.push(Note {
+            text: "n".into(),
+            ..Default::default()
+        });
         let back = import("x.psd", &to_psd(&doc)).unwrap().document;
         assert_eq!(back.measurement.scale, doc.measurement.scale);
         assert_eq!(back.notes.len(), 1);
-        assert_eq!((back.notes[0].text.as_str(), back.notes[0].position), ("n", [0.0, 0.0]));
+        assert_eq!(
+            (back.notes[0].text.as_str(), back.notes[0].position),
+            ("n", [0.0, 0.0])
+        );
         // Unchanged → the preserved resource is written byte-exact (once).
         let again = PsdFile::from_bytes(&to_psd(&back)).unwrap();
-        assert_eq!(again.resources.iter().filter(|r| r.id == MEASUREMENT_SCALE).count(), 1);
+        assert_eq!(
+            again
+                .resources
+                .iter()
+                .filter(|r| r.id == MEASUREMENT_SCALE)
+                .count(),
+            1
+        );
     }
 }
 
@@ -101,7 +137,10 @@ fn anno_with_icon(top: i32, left: i32) -> Vec<u8> {
 
 fn psd_with_anno(anno: Vec<u8>) -> Vec<u8> {
     let mut doc = Document::new("notes", Size::new(16, 16), ColorMode::Rgb, SampleType::U8);
-    doc.layers.push(photocraft_doc::Layer::raster("Background", doc.pixel_format()));
+    doc.layers.push(photocraft_doc::Layer::raster(
+        "Background",
+        doc.pixel_format(),
+    ));
     let mut file = PsdFile::from_bytes(&to_psd(&doc)).unwrap();
     let mut tb = photocraft_psd::TaggedBlock::new(*b"Anno", anno.clone());
     tb.padding = Some(vec![0; (4 - anno.len() % 4) % 4]);
@@ -129,16 +168,35 @@ fn exported_icon(doc: &Document) -> [i32; 4] {
 fn a_note_icon_near_i32_max_saves_with_representable_geometry() {
     for (top, left) in [(i32::MAX - 5, 0), (0, i32::MAX - 3), (i32::MIN, i32::MIN)] {
         let imp = import("notes.psd", &psd_with_anno(anno_with_icon(top, left))).expect("import");
-        assert_eq!(imp.document.notes[0].position, [f64::from(left), f64::from(top)]);
+        assert_eq!(
+            imp.document.notes[0].position,
+            [f64::from(left), f64::from(top)]
+        );
         let icon = exported_icon(&imp.document);
-        assert_eq!(icon, [top, left, top.saturating_add(20), left.saturating_add(16)], "{top},{left}");
-        let back = import("notes.psd", &to_psd(&imp.document)).unwrap().document;
-        assert_eq!((back.notes[0].text.as_str(), back.notes[0].position), ("A", [f64::from(left), f64::from(top)]));
+        assert_eq!(
+            icon,
+            [top, left, top.saturating_add(20), left.saturating_add(16)],
+            "{top},{left}"
+        );
+        let back = import("notes.psd", &to_psd(&imp.document))
+            .unwrap()
+            .document;
+        assert_eq!(
+            (back.notes[0].text.as_str(), back.notes[0].position),
+            ("A", [f64::from(left), f64::from(top)])
+        );
     }
     // The same through the model: a position a command could set beyond i32 saturates, NaN is 0.
     let mut doc = Document::new("notes", Size::new(16, 16), ColorMode::Rgb, SampleType::U8);
-    doc.notes.push(Note { text: "far".into(), position: [1e300, f64::INFINITY], ..Default::default() });
-    assert_eq!(exported_icon(&doc), [i32::MAX, i32::MAX, i32::MAX, i32::MAX]);
+    doc.notes.push(Note {
+        text: "far".into(),
+        position: [1e300, f64::INFINITY],
+        ..Default::default()
+    });
+    assert_eq!(
+        exported_icon(&doc),
+        [i32::MAX, i32::MAX, i32::MAX, i32::MAX]
+    );
     doc.notes[0].position = [f64::NAN, -1e300];
     assert_eq!(exported_icon(&doc), [i32::MIN, 0, i32::MIN + 20, 16]);
     // Control: an ordinary note is unchanged.
@@ -157,9 +215,16 @@ fn an_unreadable_anno_block_warns_and_survives_a_save() {
     broken[4..8].copy_from_slice(&2u32.to_be_bytes());
     let imp = import("notes.psd", &psd_with_anno(broken.clone())).expect("import");
     assert!(imp.document.notes.is_empty());
-    assert!(imp.warnings.iter().any(|w| w.contains("Anno")), "{:?}", imp.warnings);
+    assert!(
+        imp.warnings.iter().any(|w| w.contains("Anno")),
+        "{:?}",
+        imp.warnings
+    );
     let f = PsdFile::from_bytes(&to_psd(&imp.document)).unwrap();
-    assert_eq!(f.global_block(b"Anno").expect("Anno block kept").data, broken);
+    assert_eq!(
+        f.global_block(b"Anno").expect("Anno block kept").data,
+        broken
+    );
     // Control: the intact block reads with no warning.
     let ok = import("notes.psd", &psd_with_anno(anno_with_icon(28, 42))).expect("import");
     assert_eq!(ok.document.notes.len(), 1);

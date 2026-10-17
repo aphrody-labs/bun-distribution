@@ -102,9 +102,18 @@ impl PlayerPlacement {
     /// (corner, pk, bustup) ne sont pas stockés car hors scope de la simulation actuelle.
     fn from_slot(slot: &SoccerFormPlacementInfo) -> Self {
         Self {
-            start_pos: FieldPos { x: slot.start_pos.x, y: slot.start_pos.y },
-            defense_pos: FieldPos { x: slot.defense_pos.x, y: slot.defense_pos.y },
-            offense_pos: FieldPos { x: slot.offense_pos.x, y: slot.offense_pos.y },
+            start_pos: FieldPos {
+                x: slot.start_pos.x,
+                y: slot.start_pos.y,
+            },
+            defense_pos: FieldPos {
+                x: slot.defense_pos.x,
+                y: slot.defense_pos.y,
+            },
+            offense_pos: FieldPos {
+                x: slot.offense_pos.x,
+                y: slot.offense_pos.y,
+            },
             position_no: slot.position_no,
             position_id: slot.position_id,
             b_kickoff: slot.b_kickoff,
@@ -158,7 +167,11 @@ impl TeamSetup {
     /// Crée une équipe depuis ses stats agrégées (chemin nominal, placements absents).
     #[must_use]
     pub fn new(name: impl Into<String>, stats: StatBlock) -> Self {
-        Self { name: name.into(), aggregate_stats: stats, placements: None }
+        Self {
+            name: name.into(),
+            aggregate_stats: stats,
+            placements: None,
+        }
     }
 
     /// Crée une équipe depuis une liste de joueurs (moyenne des stats).
@@ -248,7 +261,10 @@ impl TeamSetup {
         players: &[(crate::growth::GrowthParams, u8)],
     ) -> Self {
         use crate::growth::{GrowthTables, calculate_stats};
-        assert!(!players.is_empty(), "TeamSetup::from_growth_params : liste vide");
+        assert!(
+            !players.is_empty(),
+            "TeamSetup::from_growth_params : liste vide"
+        );
         let tables = GrowthTables::load_embedded();
         let stats: Vec<StatBlock> = players
             .iter()
@@ -286,7 +302,10 @@ impl TeamSetup {
         players: &[(&aphrody_nie_data::chara_param::CharaParam, u8)],
     ) -> Self {
         use crate::growth::{GrowthParams, GrowthTables, calculate_stats};
-        assert!(!players.is_empty(), "TeamSetup::from_chara_params_and_levels : liste vide");
+        assert!(
+            !players.is_empty(),
+            "TeamSetup::from_chara_params_and_levels : liste vide"
+        );
         let tables = GrowthTables::load_embedded();
         // Les codes de position (1-4), sous-position (0-4) et growth_pattern (0-2)
         // tiennent tous dans un u8 (données réelles bornées, vérifiées via les golden
@@ -499,19 +518,31 @@ pub fn simulate_match(home: TeamSetup, away: TeamSetup, seed: u64) -> MatchResul
 
         if rng.next_f32() < p_home {
             home_score = home_score.saturating_add(1);
-            events.push(MatchEvent::Goal { minute, is_home: true });
+            events.push(MatchEvent::Goal {
+                minute,
+                is_home: true,
+            });
         }
         if rng.next_f32() < p_away {
             away_score = away_score.saturating_add(1);
-            events.push(MatchEvent::Goal { minute, is_home: false });
+            events.push(MatchEvent::Goal {
+                minute,
+                is_home: false,
+            });
         }
 
         if minute == 45 {
-            events.push(MatchEvent::Halftime { home_score, away_score });
+            events.push(MatchEvent::Halftime {
+                home_score,
+                away_score,
+            });
         }
     }
 
-    events.push(MatchEvent::FinalWhistle { home_score, away_score });
+    events.push(MatchEvent::FinalWhistle {
+        home_score,
+        away_score,
+    });
 
     // ------------------------------------------------------------------
     // Score horloge : final_score(90, 0) = 900_000.
@@ -524,18 +555,31 @@ pub fn simulate_match(home: TeamSetup, away: TeamSetup, seed: u64) -> MatchResul
     // CONFIRMÉ (match normal, is_training=false) sauf PostMatch→FadeOut
     // marqué « nominal » dans match_fsm.rs.
     // ------------------------------------------------------------------
-    let ctx = MatchContext { is_training: false, end_counter: 0 };
+    let ctx = MatchContext {
+        is_training: false,
+        end_counter: 0,
+    };
     let mut fsm_state = MatchState::Init;
     loop {
         let t = tick(fsm_state, ctx);
-        events.push(MatchEvent::FsmTransition { from: fsm_state, to: t.next });
+        events.push(MatchEvent::FsmTransition {
+            from: fsm_state,
+            to: t.next,
+        });
         fsm_state = t.next;
         if t.immediate {
             break;
         }
     }
 
-    MatchResult { home_score, away_score, final_clock, events, home_placements, away_placements }
+    MatchResult {
+        home_score,
+        away_score,
+        final_clock,
+        events,
+        home_placements,
+        away_placements,
+    }
 }
 
 // ============================================================================
@@ -598,8 +642,14 @@ mod tests {
         let (h2, a2) = equipes_identiques();
         let r1 = simulate_match(h1, a1, 0xDEAD_BEEF_1234_5678);
         let r2 = simulate_match(h2, a2, 0xDEAD_BEEF_1234_5678);
-        assert_eq!(r1.home_score, r2.home_score, "score domicile doit être reproductible");
-        assert_eq!(r1.away_score, r2.away_score, "score visiteur doit être reproductible");
+        assert_eq!(
+            r1.home_score, r2.home_score,
+            "score domicile doit être reproductible"
+        );
+        assert_eq!(
+            r1.away_score, r2.away_score,
+            "score visiteur doit être reproductible"
+        );
         assert_eq!(r1.final_clock, r2.final_clock);
         assert_eq!(r1.events.len(), r2.events.len());
         // Événements identiques dans l'ordre
@@ -618,14 +668,23 @@ mod tests {
         let r2 = simulate_match(h2, a2, 2);
         // Les événements de but ne peuvent pas tous être identiques
         // sauf collision de PRNG (probabilité négligeable).
-        let buts1: Vec<_> =
-            r1.events.iter().filter(|e| matches!(e, MatchEvent::Goal { .. })).collect();
-        let buts2: Vec<_> =
-            r2.events.iter().filter(|e| matches!(e, MatchEvent::Goal { .. })).collect();
+        let buts1: Vec<_> = r1
+            .events
+            .iter()
+            .filter(|e| matches!(e, MatchEvent::Goal { .. }))
+            .collect();
+        let buts2: Vec<_> = r2
+            .events
+            .iter()
+            .filter(|e| matches!(e, MatchEvent::Goal { .. }))
+            .collect();
         // Au moins l'un des deux doit différer (longueur ou contenu).
         let identiques =
             buts1.len() == buts2.len() && buts1.iter().zip(buts2.iter()).all(|(a, b)| a == b);
-        assert!(!identiques, "graines différentes doivent produire des buts différents");
+        assert!(
+            !identiques,
+            "graines différentes doivent produire des buts différents"
+        );
     }
 
     // ------------------------------------------------------------------
@@ -656,7 +715,11 @@ mod tests {
         let (home, away) = equipes_identiques();
         let res = simulate_match(home, away, 99);
         let whistle = res.events.iter().find_map(|e| {
-            if let MatchEvent::FinalWhistle { home_score, away_score } = e {
+            if let MatchEvent::FinalWhistle {
+                home_score,
+                away_score,
+            } = e
+            {
                 Some((*home_score, *away_score))
             } else {
                 None
@@ -672,12 +735,20 @@ mod tests {
     fn halftime_une_fois_avant_final_whistle() {
         let (home, away) = equipes_identiques();
         let res = simulate_match(home, away, 7);
-        let halftime_idx = res.events.iter().position(|e| matches!(e, MatchEvent::Halftime { .. }));
-        let whistle_idx =
-            res.events.iter().position(|e| matches!(e, MatchEvent::FinalWhistle { .. }));
+        let halftime_idx = res
+            .events
+            .iter()
+            .position(|e| matches!(e, MatchEvent::Halftime { .. }));
+        let whistle_idx = res
+            .events
+            .iter()
+            .position(|e| matches!(e, MatchEvent::FinalWhistle { .. }));
         assert!(halftime_idx.is_some(), "Halftime présent");
         assert!(whistle_idx.is_some(), "FinalWhistle présent");
-        assert!(halftime_idx.unwrap() < whistle_idx.unwrap(), "Halftime < FinalWhistle");
+        assert!(
+            halftime_idx.unwrap() < whistle_idx.unwrap(),
+            "Halftime < FinalWhistle"
+        );
     }
 
     /// Tous les buts ont une minute dans [1, 90].
@@ -734,7 +805,11 @@ mod tests {
             (MatchState::LoadNext, MatchState::LoadNext), // case 10 return 1 (CONFIRMÉ)
         ];
 
-        assert_eq!(transitions.len(), attendu.len(), "nombre de transitions FSM");
+        assert_eq!(
+            transitions.len(),
+            attendu.len(),
+            "nombre de transitions FSM"
+        );
         for (i, (got, exp)) in transitions.iter().zip(attendu.iter()).enumerate() {
             assert_eq!(got, exp, "transition FSM #{i}");
         }
@@ -745,8 +820,11 @@ mod tests {
     fn fsm_huit_transitions_match_normal() {
         let (home, away) = equipes_identiques();
         let res = simulate_match(home, away, 1);
-        let count =
-            res.events.iter().filter(|e| matches!(e, MatchEvent::FsmTransition { .. })).count();
+        let count = res
+            .events
+            .iter()
+            .filter(|e| matches!(e, MatchEvent::FsmTransition { .. }))
+            .count();
         assert_eq!(count, 8, "8 transitions FSM pour un match normal");
     }
 
@@ -769,8 +847,16 @@ mod tests {
         for seed in [0u64, 1, 42, 9999, 0xFFFF_FFFF] {
             let (home, away) = equipes_identiques();
             let res = simulate_match(home, away, seed);
-            assert!(res.home_score <= 20, "seed={seed}: home_score={} > 20", res.home_score);
-            assert!(res.away_score <= 20, "seed={seed}: away_score={} > 20", res.away_score);
+            assert!(
+                res.home_score <= 20,
+                "seed={seed}: home_score={} > 20",
+                res.home_score
+            );
+            assert!(
+                res.away_score <= 20,
+                "seed={seed}: away_score={} > 20",
+                res.away_score
+            );
         }
     }
 
@@ -814,8 +900,16 @@ mod tests {
         let attaquants = TeamSetup::new("Attaquants", fw_stats);
         let res = simulate_match(attaquants.clone(), defenseurs.clone(), 42);
         // La simulation produit des scores raisonnables avec ces stats réelles
-        assert!(res.home_score <= 15, "home_score={} avec stats réelles", res.home_score);
-        assert!(res.away_score <= 15, "away_score={} avec stats réelles", res.away_score);
+        assert!(
+            res.home_score <= 15,
+            "home_score={} avec stats réelles",
+            res.home_score
+        );
+        assert!(
+            res.away_score <= 15,
+            "away_score={} avec stats réelles",
+            res.away_score
+        );
     }
 
     // ------------------------------------------------------------------
@@ -827,8 +921,14 @@ mod tests {
     fn sans_formation_placements_none() {
         let (home, away) = equipes_identiques();
         let res = simulate_match(home, away, 42);
-        assert!(res.home_placements.is_none(), "home_placements = None sans formation");
-        assert!(res.away_placements.is_none(), "away_placements = None sans formation");
+        assert!(
+            res.home_placements.is_none(),
+            "home_placements = None sans formation"
+        );
+        assert!(
+            res.away_placements.is_none(),
+            "away_placements = None sans formation"
+        );
     }
 
     /// TeamSetup::new() initialise placements = None.
@@ -856,8 +956,14 @@ mod tests {
         let (h2, a2) = equipes_identiques();
         let r1 = simulate_match(h1, a1, 0xABCD_EF01);
         let r2 = simulate_match(h2, a2, 0xABCD_EF01);
-        assert_eq!(r1.home_placements, r2.home_placements, "home_placements identiques");
-        assert_eq!(r1.away_placements, r2.away_placements, "away_placements identiques");
+        assert_eq!(
+            r1.home_placements, r2.home_placements,
+            "home_placements identiques"
+        );
+        assert_eq!(
+            r1.away_placements, r2.away_placements,
+            "away_placements identiques"
+        );
     }
 
     /// FieldPos::ZERO est correctement défini.
@@ -890,8 +996,14 @@ mod tests {
         };
         let equipe = TeamSetup::from_growth_params("Test", &[(params, 99)]);
         // Kc à lv99 pour FW UR pattern 0 = 261 (golden growth.rs)
-        assert_eq!(equipe.aggregate_stats.kc, 261, "Kc FW UR lv99 depuis tables réelles = 261");
-        assert!(equipe.placements.is_none(), "from_growth_params ne fixe pas les placements");
+        assert_eq!(
+            equipe.aggregate_stats.kc, 261,
+            "Kc FW UR lv99 depuis tables réelles = 261"
+        );
+        assert!(
+            equipe.placements.is_none(),
+            "from_growth_params ne fixe pas les placements"
+        );
     }
 
     /// from_growth_params sur plusieurs joueurs calcule la moyenne correctement.
@@ -908,6 +1020,9 @@ mod tests {
         };
         // Deux fois le même joueur → moyenne = stats individuelles
         let equipe = TeamSetup::from_growth_params("Test", &[(params_fw, 99), (params_fw, 99)]);
-        assert_eq!(equipe.aggregate_stats.kc, 261, "moyenne de deux fois le même Kc = 261");
+        assert_eq!(
+            equipe.aggregate_stats.kc, 261,
+            "moyenne de deux fois le même Kc = 261"
+        );
     }
 }

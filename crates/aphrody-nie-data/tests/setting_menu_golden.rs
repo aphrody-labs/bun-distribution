@@ -43,8 +43,10 @@ use serde_json::{Value, json};
 
 /// Construit un noeud `{name, variables:[Int...], children:[...]}`.
 fn node(name: &str, vars: &[i64], children: Value) -> Value {
-    let variables: Vec<Value> =
-        vars.iter().map(|v| json!({"type": "Int", "value": v.to_string()})).collect();
+    let variables: Vec<Value> = vars
+        .iter()
+        .map(|v| json!({"type": "Int", "value": v.to_string()}))
+        .collect();
     json!({"name": name, "variables": variables, "children": children})
 }
 
@@ -131,7 +133,14 @@ fn fixture_obj_info_ref_resolue() {
     let cfg = parse_setting_list_config(&fixture());
     let o = &cfg.obj_infos[0];
     assert_eq!(o.key, HashId(0x6D40_83D3));
-    assert_eq!(o.objects, vec![HashId(0x9CEB_E295), HashId(0x05E2_B32F), HashId(0x72E5_83B9)]);
+    assert_eq!(
+        o.objects,
+        vec![
+            HashId(0x9CEB_E295),
+            HashId(0x05E2_B32F),
+            HashId(0x72E5_83B9)
+        ]
+    );
 }
 
 #[test]
@@ -188,7 +197,11 @@ fn real_comptes_logiques() {
     assert_eq!(cfg.platform_types.len(), 7, "SETTING_PLATFORM_TYPE_INFO");
     assert_eq!(cfg.obj_infos.len(), 29, "SETTING_OBJ_INFO");
     assert_eq!(cfg.mapping_infos.len(), 86, "KEYCONFIG_MAPPING_LIST_INFO");
-    assert_eq!(cfg.explanation_texts.len(), 90, "EXPLANATION_TEXT_LIST_INFO");
+    assert_eq!(
+        cfg.explanation_texts.len(),
+        90,
+        "EXPLANATION_TEXT_LIST_INFO"
+    );
     assert_eq!(cfg.pad_groupkeys.len(), 11, "PAD_GROUPKEY_LIST_INFO");
 }
 
@@ -253,7 +266,14 @@ fn real_obj_info_2_ref_resolue() {
     // SETTING_OBJ_INFO_2 : clé 0x6D4083D3, ref [0,3].
     let o = &cfg.obj_infos[2];
     assert_eq!(o.key, HashId(0x6D40_83D3));
-    assert_eq!(o.objects, vec![HashId(0x9CEB_E295), HashId(0x05E2_B32F), HashId(0x72E5_83B9)]);
+    assert_eq!(
+        o.objects,
+        vec![
+            HashId(0x9CEB_E295),
+            HashId(0x05E2_B32F),
+            HashId(0x72E5_83B9)
+        ]
+    );
     // Les deux premières entrées ont une plage vide ([0,0]).
     assert!(cfg.obj_infos[0].objects.is_empty());
     assert!(cfg.obj_infos[1].objects.is_empty());

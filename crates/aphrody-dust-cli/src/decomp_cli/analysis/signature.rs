@@ -81,7 +81,11 @@ impl Signatures {
         let mut parser = function.parser(function_code, function.start_address());
         let mut bitmask = Vec::new();
         let mut pattern = Vec::new();
-        let bl_offset_bits = if function.is_thumb() { 0x07ff07ff } else { 0x00ffffff };
+        let bl_offset_bits = if function.is_thumb() {
+            0x07ff07ff
+        } else {
+            0x00ffffff
+        };
         loop {
             let address = parser.pc();
             let Some(ins) = parser.next() else {
@@ -99,13 +103,23 @@ impl Signatures {
             }
 
             // Mask out function call addresses
-            let is_bl_immediate =
-                matches!(ins, Ins::Bl { .. } | Ins::Blx { target: BlxTarget::Direct(_), .. });
+            let is_bl_immediate = matches!(
+                ins,
+                Ins::Bl { .. }
+                    | Ins::Blx {
+                        target: BlxTarget::Direct(_),
+                        ..
+                    }
+            );
             if is_bl_immediate {
                 ins_bitmask &= !bl_offset_bits;
             }
 
-            let ins_size = if !function.is_thumb() || is_bl_immediate { 4 } else { 2 };
+            let ins_size = if !function.is_thumb() || is_bl_immediate {
+                4
+            } else {
+                2
+            };
             let start = address - function.start_address();
             let end = start + ins_size as u32;
             let code = &function_code[start as usize..end as usize];
@@ -138,7 +152,10 @@ impl Signatures {
 
         Ok(Self {
             name: function.name().to_string(),
-            signatures: vec![Signature { mask: SignatureMask { bitmask, pattern }, relocations }],
+            signatures: vec![Signature {
+                mask: SignatureMask { bitmask, pattern },
+                relocations,
+            }],
         })
     }
 
@@ -158,16 +175,21 @@ impl Signatures {
             let offset = (address - function.start_address()) as usize;
             let (ins_bitmask, code) = if function.is_thumb() {
                 match &call.ins {
-                    Ins::Bl { .. } | Ins::Blx { target: BlxTarget::Direct(_), .. } => {
-                        (0xf800f800, call.ins_code)
-                    },
+                    Ins::Bl { .. }
+                    | Ins::Blx {
+                        target: BlxTarget::Direct(_),
+                        ..
+                    } => (0xf800f800, call.ins_code),
                     op => bail!("Unexpected Thumb opcode {op:?} for function call"),
                 }
             } else {
                 match &call.ins {
                     Ins::B { .. }
                     | Ins::Bl { .. }
-                    | Ins::Blx { target: BlxTarget::Direct(_), .. } => (0xff000000, call.ins_code),
+                    | Ins::Blx {
+                        target: BlxTarget::Direct(_),
+                        ..
+                    } => (0xff000000, call.ins_code),
                     op => bail!("Unexpected ARM opcode {op:?} for function call"),
                 }
             };
@@ -176,10 +198,20 @@ impl Signatures {
             pattern[offset..offset + 4].copy_from_slice(&ins_pattern.to_le_bytes());
 
             let info = get_relocation(address, Some(&call.ins)).with_context(|| {
-                format!("No relocation found for function call at address {:#x}", address)
+                format!(
+                    "No relocation found for function call at address {:#x}",
+                    address
+                )
             })?;
-            let Some(SignatureRelocationInfo { name, kind, addend }) = info else { continue };
-            relocations.push(SignatureRelocation { offset, name, kind, addend });
+            let Some(SignatureRelocationInfo { name, kind, addend }) = info else {
+                continue;
+            };
+            relocations.push(SignatureRelocation {
+                offset,
+                name,
+                kind,
+                addend,
+            });
         }
 
         for &address in function.pool_constants().keys() {
@@ -188,17 +220,28 @@ impl Signatures {
             pattern[offset..offset + 4].fill(0);
 
             let info = get_relocation(address, None).with_context(|| {
-                format!("No relocation found for pool constant at address {:#x}", address)
+                format!(
+                    "No relocation found for pool constant at address {:#x}",
+                    address
+                )
             })?;
             let Some(SignatureRelocationInfo { name, kind, addend }) = info else {
                 continue;
             };
-            relocations.push(SignatureRelocation { offset, name, kind, addend });
+            relocations.push(SignatureRelocation {
+                offset,
+                name,
+                kind,
+                addend,
+            });
         }
 
         Ok(Self {
             name: function.name().to_string(),
-            signatures: vec![Signature { mask: SignatureMask { bitmask, pattern }, relocations }],
+            signatures: vec![Signature {
+                mask: SignatureMask { bitmask, pattern },
+                relocations,
+            }],
         })
     }
 
@@ -338,14 +381,20 @@ impl Signatures {
         module: &'a Module,
     ) -> impl Iterator<Item = (&'a Function, SignatureIndex)> + 'a {
         module.sections().functions().filter_map(|function| {
-            self.match_signature(function, module).map(|signature| (function, signature))
+            self.match_signature(function, module)
+                .map(|signature| (function, signature))
         })
     }
 
     pub fn match_signature(&self, function: &Function, module: &Module) -> Option<SignatureIndex> {
-        self.signatures.iter().enumerate().find_map(|(index, signature)| {
-            signature.matches(function, module).then_some(SignatureIndex(index))
-        })
+        self.signatures
+            .iter()
+            .enumerate()
+            .find_map(|(index, signature)| {
+                signature
+                    .matches(function, module)
+                    .then_some(SignatureIndex(index))
+            })
     }
 }
 
@@ -388,8 +437,12 @@ impl<'de> Deserialize<'de> for SignatureMask {
         D: serde::Deserializer<'de>,
     {
         let data = SignatureMaskData::deserialize(deserializer)?;
-        let bitmask = STANDARD.decode(data.bitmask).map_err(serde::de::Error::custom)?;
-        let pattern = STANDARD.decode(data.pattern).map_err(serde::de::Error::custom)?;
+        let bitmask = STANDARD
+            .decode(data.bitmask)
+            .map_err(serde::de::Error::custom)?;
+        let pattern = STANDARD
+            .decode(data.pattern)
+            .map_err(serde::de::Error::custom)?;
         Ok(SignatureMask { bitmask, pattern })
     }
 }

@@ -44,7 +44,11 @@ pub fn walk_callstack<const SYSTEM: SystemId>(
 
     let push = |frames: &mut Vec<CallFrame>, addr: u32| {
         let (sym, off) = resolve(addr);
-        frames.push(CallFrame { addr, symbol: sym, offset: off });
+        frames.push(CallFrame {
+            addr,
+            symbol: sym,
+            offset: off,
+        });
     };
 
     // Frame 0: current PC
@@ -112,49 +116,52 @@ pub fn show_callstack<const SYSTEM: SystemId>(
 
         ui.separator();
 
-        ScrollArea::vertical().id_salt("callstack_scroll").show(ui, |ui| {
-            egui::Grid::new("callstack_grid").num_columns(3).striped(true).min_col_width(0.0).show(
-                ui,
-                |ui| {
-                    for (i, frame) in frames.iter().enumerate() {
-                        // Frame index
-                        ui.label(
-                            RichText::new(format!("#{i}"))
-                                .monospace()
-                                .color(Color32::from_rgb(100, 100, 100)),
-                        );
-
-                        // Address
-                        ui.label(
-                            RichText::new(format!("{:#010X}", frame.addr))
-                                .monospace()
-                                .color(Color32::from_rgb(150, 220, 150)),
-                        );
-
-                        // Symbol name + offset
-                        if let Some(name) = &frame.symbol {
-                            let label = if frame.offset > 0 {
-                                format!("{}+{:#X}", name, frame.offset)
-                            } else {
-                                name.clone()
-                            };
+        ScrollArea::vertical()
+            .id_salt("callstack_scroll")
+            .show(ui, |ui| {
+                egui::Grid::new("callstack_grid")
+                    .num_columns(3)
+                    .striped(true)
+                    .min_col_width(0.0)
+                    .show(ui, |ui| {
+                        for (i, frame) in frames.iter().enumerate() {
+                            // Frame index
                             ui.label(
-                                RichText::new(label)
-                                    .monospace()
-                                    .color(Color32::from_rgb(100, 180, 255)),
-                            );
-                        } else {
-                            ui.label(
-                                RichText::new("???")
+                                RichText::new(format!("#{i}"))
                                     .monospace()
                                     .color(Color32::from_rgb(100, 100, 100)),
                             );
-                        }
 
-                        ui.end_row();
-                    }
-                },
-            );
-        });
+                            // Address
+                            ui.label(
+                                RichText::new(format!("{:#010X}", frame.addr))
+                                    .monospace()
+                                    .color(Color32::from_rgb(150, 220, 150)),
+                            );
+
+                            // Symbol name + offset
+                            if let Some(name) = &frame.symbol {
+                                let label = if frame.offset > 0 {
+                                    format!("{}+{:#X}", name, frame.offset)
+                                } else {
+                                    name.clone()
+                                };
+                                ui.label(
+                                    RichText::new(label)
+                                        .monospace()
+                                        .color(Color32::from_rgb(100, 180, 255)),
+                                );
+                            } else {
+                                ui.label(
+                                    RichText::new("???")
+                                        .monospace()
+                                        .color(Color32::from_rgb(100, 100, 100)),
+                                );
+                            }
+
+                            ui.end_row();
+                        }
+                    });
+            });
     });
 }

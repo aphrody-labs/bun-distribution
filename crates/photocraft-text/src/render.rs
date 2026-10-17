@@ -37,7 +37,9 @@ impl<S: LineSink> LineSink for WarpSink<'_, S> {
         let len = ((p1.0 - p0.0).powi(2) + (p1.1 - p0.1).powi(2)).sqrt();
         let n = ((len / self.warp.max_segment()).ceil() as usize).clamp(1, 256);
         let map = |t: f64| {
-            let (x, y) = self.warp.apply(p0.0 + (p1.0 - p0.0) * t, p0.1 + (p1.1 - p0.1) * t);
+            let (x, y) = self
+                .warp
+                .apply(p0.0 + (p1.0 - p0.0) * t, p0.1 + (p1.1 - p0.1) * t);
             self.post.apply(x, y)
         };
         let mut a = map(0.0);
@@ -52,7 +54,13 @@ impl<S: LineSink> LineSink for WarpSink<'_, S> {
 /// Draws every glyph and decoration of `layout` whose style colour is `color` (or all of them
 /// when `color` is `None`) into `sink`, through `transform` (text space → sink space), bending
 /// the outlines with `warp` first (in text space).
-fn draw(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, only_color: Option<&Color>, warp: Option<&Warp>) {
+fn draw(
+    layout: &TextLayout,
+    transform: &Xform,
+    sink: &mut impl LineSink,
+    only_color: Option<&Color>,
+    warp: Option<&Warp>,
+) {
     draw_pass(layout, transform, sink, only_color, warp, Pass::All);
 }
 
@@ -69,14 +77,37 @@ enum Pass {
     Bold(usize),
 }
 
-const BOLD_OFFSETS: [(f64, f64); 8] = [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0), (0.7, 0.7), (-0.7, -0.7), (0.7, -0.7), (-0.7, 0.7)];
+const BOLD_OFFSETS: [(f64, f64); 8] = [
+    (-1.0, 0.0),
+    (1.0, 0.0),
+    (0.0, -1.0),
+    (0.0, 1.0),
+    (0.7, 0.7),
+    (-0.7, -0.7),
+    (0.7, -0.7),
+    (-0.7, 0.7),
+];
 
 fn is_bold(layout: &TextLayout, g: &PlacedGlyph) -> bool {
-    let face_bold = layout.faces.get(g.face as usize).is_some_and(|f| f.embolden);
-    layout.styles.get(g.style as usize).is_some_and(|s| s.faux_bold) || face_bold
+    let face_bold = layout
+        .faces
+        .get(g.face as usize)
+        .is_some_and(|f| f.embolden);
+    layout
+        .styles
+        .get(g.style as usize)
+        .is_some_and(|s| s.faux_bold)
+        || face_bold
 }
 
-fn draw_pass(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, only_color: Option<&Color>, warp: Option<&Warp>, pass: Pass) {
+fn draw_pass(
+    layout: &TextLayout,
+    transform: &Xform,
+    sink: &mut impl LineSink,
+    only_color: Option<&Color>,
+    warp: Option<&Warp>,
+    pass: Pass,
+) {
     for g in &layout.glyphs {
         let st = &layout.styles[g.style as usize];
         if only_color.is_some_and(|c| c != &st.color) {
@@ -89,7 +120,11 @@ fn draw_pass(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, o
         let Some(outline) = font.outline_glyphs().get(GlyphId::new(g.id)) else {
             continue;
         };
-        let coords: Vec<NormalizedCoord> = face.coords.iter().map(|&c| NormalizedCoord::from_bits(c)).collect();
+        let coords: Vec<NormalizedCoord> = face
+            .coords
+            .iter()
+            .map(|&c| NormalizedCoord::from_bits(c))
+            .collect();
         let mut glyph = glyph_xform(layout, g, face.skew_deg);
         // Type on a path moves each glyph rigidly: turned to the curve at its centre.
         let mut bend = warp;
@@ -118,10 +153,15 @@ fn draw_pass(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, o
         };
         for &(ox, oy) in offsets {
             let local = glyph.mul(&Xform([1.0, 0.0, 0.0, 1.0, ox * r, oy * r]));
-            let settings = DrawSettings::unhinted(Size::new(face.size_px), LocationRef::new(&coords));
+            let settings =
+                DrawSettings::unhinted(Size::new(face.size_px), LocationRef::new(&coords));
             match bend {
                 Some(w) => {
-                    let mut ws = WarpSink { inner: &mut *sink, warp: w, post: *transform };
+                    let mut ws = WarpSink {
+                        inner: &mut *sink,
+                        warp: w,
+                        post: *transform,
+                    };
                     let mut pen = Pen::new(&mut ws, local);
                     if outline.draw(settings, &mut pen).is_ok() {
                         skrifa::outline::OutlinePen::close(&mut pen);
@@ -146,10 +186,28 @@ fn draw_pass(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, o
         }
         match warp {
             Some(w) => {
-                let mut ws = WarpSink { inner: &mut *sink, warp: w, post: *transform };
-                rect_to(&mut ws, &Xform::IDENTITY, d.x0 as f64, d.y0 as f64, d.x1 as f64, d.y1 as f64);
+                let mut ws = WarpSink {
+                    inner: &mut *sink,
+                    warp: w,
+                    post: *transform,
+                };
+                rect_to(
+                    &mut ws,
+                    &Xform::IDENTITY,
+                    d.x0 as f64,
+                    d.y0 as f64,
+                    d.x1 as f64,
+                    d.y1 as f64,
+                );
             }
-            None => rect_to(sink, transform, d.x0 as f64, d.y0 as f64, d.x1 as f64, d.y1 as f64),
+            None => rect_to(
+                sink,
+                transform,
+                d.x0 as f64,
+                d.y0 as f64,
+                d.x1 as f64,
+                d.y1 as f64,
+            ),
         }
     }
 }
@@ -157,9 +215,19 @@ fn draw_pass(layout: &TextLayout, transform: &Xform, sink: &mut impl LineSink, o
 /// Font units (scaled to px, y up) → text space for a placed glyph: scales, faux italic,
 /// baseline shift, and the vertical-type orientation.
 fn glyph_xform(layout: &TextLayout, g: &PlacedGlyph, face_skew_deg: f32) -> Xform {
-    let Some(st) = layout.styles.get(g.style as usize) else { return Xform([1.0, 0.0, 0.0, -1.0, g.x as f64, g.y as f64]) };
-    let hs = if st.horizontal_scale > 0.0 { st.horizontal_scale } else { 1.0 } as f64;
-    let vs = if st.vertical_scale > 0.0 { st.vertical_scale } else { 1.0 } as f64;
+    let Some(st) = layout.styles.get(g.style as usize) else {
+        return Xform([1.0, 0.0, 0.0, -1.0, g.x as f64, g.y as f64]);
+    };
+    let hs = if st.horizontal_scale > 0.0 {
+        st.horizontal_scale
+    } else {
+        1.0
+    } as f64;
+    let vs = if st.vertical_scale > 0.0 {
+        st.vertical_scale
+    } else {
+        1.0
+    } as f64;
     let skew_deg = if st.faux_italic { FAUX_ITALIC_DEG } else { 0.0 } + face_skew_deg;
     let skew = (skew_deg as f64).to_radians().tan() * vs;
     let shift = (st.baseline_shift_pt * layout.px_per_pt) as f64;
@@ -169,15 +237,32 @@ fn glyph_xform(layout: &TextLayout, g: &PlacedGlyph, face_skew_deg: f32) -> Xfor
         // Baseline shift moves upright glyphs in vertical type to the right.
         GlyphOrient::Upright => Xform([hs, 0.0, skew, -vs, x + shift, y]),
         // 90° clockwise: the glyph's up direction (and its baseline shift) points right.
-        GlyphOrient::Rotated => Xform([0.0, 1.0, -1.0, 0.0, x, y]).mul(&Xform([hs, 0.0, skew, -vs, 0.0, -shift])),
+        GlyphOrient::Rotated => {
+            Xform([0.0, 1.0, -1.0, 0.0, x, y]).mul(&Xform([hs, 0.0, skew, -vs, 0.0, -shift]))
+        }
     }
 }
 
 /// The horizontal centre (text space) of a placed glyph: the pen position plus half its advance.
-fn glyph_center(layout: &TextLayout, g: &PlacedGlyph, font: &skrifa::FontRef, size_px: f32, coords: &[NormalizedCoord]) -> f64 {
-    let hs = layout.styles.get(g.style as usize).map_or(1.0, |st| if st.horizontal_scale > 0.0 { st.horizontal_scale } else { 1.0 });
+fn glyph_center(
+    layout: &TextLayout,
+    g: &PlacedGlyph,
+    font: &skrifa::FontRef,
+    size_px: f32,
+    coords: &[NormalizedCoord],
+) -> f64 {
+    let hs = layout.styles.get(g.style as usize).map_or(1.0, |st| {
+        if st.horizontal_scale > 0.0 {
+            st.horizontal_scale
+        } else {
+            1.0
+        }
+    });
     let advance = match g.orient {
-        GlyphOrient::Horizontal => font.glyph_metrics(Size::new(size_px), LocationRef::new(coords)).advance_width(GlyphId::new(g.id)).unwrap_or(0.0),
+        GlyphOrient::Horizontal => font
+            .glyph_metrics(Size::new(size_px), LocationRef::new(coords))
+            .advance_width(GlyphId::new(g.id))
+            .unwrap_or(0.0),
         _ => 0.0,
     };
     f64::from(g.x) + f64::from(advance * hs) / 2.0
@@ -190,7 +275,10 @@ pub fn layout_deform(layout: &TextLayout, layer: &photocraft_doc::TextLayer) -> 
 }
 
 /// The warp to apply to `layout` (None when `warp` is absent, `warpNone` or flat).
-pub fn layout_warp(layout: &TextLayout, warp: Option<&photocraft_doc::text::TextWarp>) -> Option<Warp> {
+pub fn layout_warp(
+    layout: &TextLayout,
+    warp: Option<&photocraft_doc::text::TextWarp>,
+) -> Option<Warp> {
     Warp::new(warp?, layout.bounds()?)
 }
 
@@ -201,7 +289,13 @@ fn color_in(format: &PixelFormat, c: &Color) -> Vec<f32> {
         c.c[..n].to_vec()
     } else {
         let [r, g, b] = c.to_rgb();
-        let mut v = photocraft_raster::from_rgba(&PixelFormat { alpha: false, ..*format }, [r, g, b, 1.0]);
+        let mut v = photocraft_raster::from_rgba(
+            &PixelFormat {
+                alpha: false,
+                ..*format
+            },
+            [r, g, b, 1.0],
+        );
         v.truncate(n);
         v
     }
@@ -219,8 +313,12 @@ fn rect_from_bounds([x0, y0, x1, y1]: [f64; 4]) -> Rect {
 
     let min = f64::from(i32::MIN);
     let max = f64::from(i32::MAX);
-    let (x0, y0, x1, y1) =
-        ((x0.floor() - 1.0).clamp(min, max), (y0.floor() - 1.0).clamp(min, max), (x1.ceil() + 1.0).clamp(min, max), (y1.ceil() + 1.0).clamp(min, max));
+    let (x0, y0, x1, y1) = (
+        (x0.floor() - 1.0).clamp(min, max),
+        (y0.floor() - 1.0).clamp(min, max),
+        (x1.ceil() + 1.0).clamp(min, max),
+        (y1.ceil() + 1.0).clamp(min, max),
+    );
     if x1 <= x0 || y1 <= y0 || x1 - x0 > MAX_PIXELS as f64 || y1 - y0 > MAX_PIXELS as f64 {
         return Rect::EMPTY;
     }
@@ -237,18 +335,35 @@ pub fn ink_rect_warped(layout: &TextLayout, transform: &Affine, warp: Option<&Wa
 
 /// Rasterizes `layout` through `transform` (text space → document pixels). The result always
 /// has an alpha channel; colour is written in `format`'s colour model and sample depth.
-pub fn rasterize(layout: &TextLayout, transform: &Affine, format: PixelFormat, antialias: AntiAlias) -> Rendered {
+pub fn rasterize(
+    layout: &TextLayout,
+    transform: &Affine,
+    format: PixelFormat,
+    antialias: AntiAlias,
+) -> Rendered {
     rasterize_warped(layout, transform, format, antialias, None)
 }
 
 /// [`rasterize`] with the glyph outlines bent by `warp` (Type › Warp Text).
-pub fn rasterize_warped(layout: &TextLayout, transform: &Affine, format: PixelFormat, antialias: AntiAlias, warp: Option<&Warp>) -> Rendered {
-    let format = PixelFormat { alpha: true, ..format };
+pub fn rasterize_warped(
+    layout: &TextLayout,
+    transform: &Affine,
+    format: PixelFormat,
+    antialias: AntiAlias,
+    warp: Option<&Warp>,
+) -> Rendered {
+    let format = PixelFormat {
+        alpha: true,
+        ..format
+    };
     let rect = ink_rect_warped(layout, transform, warp);
     let (w, h) = (rect.width() as usize, rect.height() as usize);
     let mut surface = Surface::new(format);
     if w == 0 || h == 0 || (w as u64) * (h as u64) > MAX_PIXELS {
-        return Rendered { surface, rect: Rect::new(0, 0, 0, 0) };
+        return Rendered {
+            surface,
+            rect: Rect::new(0, 0, 0, 0),
+        };
     }
     let n = format.mode.color_channels();
     let stride = n + 1;
@@ -277,7 +392,11 @@ pub fn rasterize_warped(layout: &TextLayout, transform: &Affine, format: PixelFo
         let comps = color_in(&format, c);
         let a = c.alpha.clamp(0.0, 1.0);
         for (i, &cv) in cov.iter().enumerate() {
-            let cv = if antialias == AntiAlias::None { if cv >= 0.5 { 1.0 } else { 0.0 } } else { cv };
+            let cv = if antialias == AntiAlias::None {
+                if cv >= 0.5 { 1.0 } else { 0.0 }
+            } else {
+                cv
+            };
             let s = cv * a;
             if s <= 0.0 {
                 continue;
@@ -298,7 +417,11 @@ pub fn rasterize_warped(layout: &TextLayout, transform: &Affine, format: PixelFo
                 let straight = *v / a;
                 // Float text can carry HDR and signed colours. Keep integer output bounded
                 // and retain the old handling of non-finite intermediate values.
-                *v = if format.sample == SampleType::F32 && straight.is_finite() { straight } else { straight.clamp(0.0, 1.0) };
+                *v = if format.sample == SampleType::F32 && straight.is_finite() {
+                    straight
+                } else {
+                    straight.clamp(0.0, 1.0)
+                };
             }
         }
     }
@@ -374,7 +497,11 @@ pub fn outlines(layout: &TextLayout, transform: &Affine, warp: Option<&Warp>) ->
         let Some(outline) = font.outline_glyphs().get(GlyphId::new(g.id)) else {
             continue;
         };
-        let coords: Vec<NormalizedCoord> = face.coords.iter().map(|&c| NormalizedCoord::from_bits(c)).collect();
+        let coords: Vec<NormalizedCoord> = face
+            .coords
+            .iter()
+            .map(|&c| NormalizedCoord::from_bits(c))
+            .collect();
         let mut glyph = glyph_xform(layout, g, face.skew_deg);
         let mut bend = warp;
         if let Some(w) = warp {
@@ -387,7 +514,12 @@ pub fn outlines(layout: &TextLayout, transform: &Affine, warp: Option<&Warp>) ->
                 }
             }
         }
-        let mut rec = Recorder { glyph, post: Xform(transform.m), warp: bend, out: Vec::new() };
+        let mut rec = Recorder {
+            glyph,
+            post: Xform(transform.m),
+            warp: bend,
+            out: Vec::new(),
+        };
         let settings = DrawSettings::unhinted(Size::new(face.size_px), LocationRef::new(&coords));
         if outline.draw(settings, &mut rec).is_ok() && !rec.out.is_empty() {
             glyphs.push(rec.out);
@@ -406,8 +538,14 @@ mod tests {
         let min = f64::from(i32::MIN);
         let max = f64::from(i32::MAX);
         let cases = [
-            ([min, 0.0, min + 8.0, 8.0], Rect::new(i32::MIN, -1, i32::MIN + 9, 9)),
-            ([max - 8.0, 0.0, max, 8.0], Rect::new(i32::MAX - 9, -1, i32::MAX, 9)),
+            (
+                [min, 0.0, min + 8.0, 8.0],
+                Rect::new(i32::MIN, -1, i32::MIN + 9, 9),
+            ),
+            (
+                [max - 8.0, 0.0, max, 8.0],
+                Rect::new(i32::MAX - 9, -1, i32::MAX, 9),
+            ),
             ([-f64::MAX, 0.0, f64::MAX, 8.0], Rect::EMPTY),
             ([0.0, 0.0, MAX_PIXELS as f64, 8.0], Rect::EMPTY),
             ([0.25, -3.25, 10.1, 8.8], Rect::new(-1, -5, 12, 10)),

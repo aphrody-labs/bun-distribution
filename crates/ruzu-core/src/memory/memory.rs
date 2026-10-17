@@ -2209,8 +2209,8 @@ impl Memory {
         let mut checked = ((PAGE_SIZE - (src_addr & PAGE_MASK)) as usize).min(size);
         while contiguous && checked < size {
             let ptr = self.get_pointer_impl(src_addr + checked as u64);
-            contiguous = !ptr.is_null()
-                && (first_ptr as usize).checked_add(checked) == Some(ptr as usize);
+            contiguous =
+                !ptr.is_null() && (first_ptr as usize).checked_add(checked) == Some(ptr as usize);
             checked += (PAGE_SIZE as usize).min(size - checked);
         }
         if contiguous {
@@ -3073,9 +3073,12 @@ mod process_fastmem_tests {
         memory.set_current_page_table(&mut page_table, false);
         for (guest, physical, value) in [(0x4000, 0x2000, 0x31), (0x5000, 0x6000, 0x72)] {
             memory.map_memory_region(
-                &mut page_table, guest, PAGE_SIZE,
+                &mut page_table,
+                guest,
+                PAGE_SIZE,
                 dram_memory_map::BASE + physical,
-                MemoryPermission::READ_WRITE, false,
+                MemoryPermission::READ_WRITE,
+                false,
             );
             assert!(memory.write_block(guest, &vec![value; PAGE_SIZE as usize]));
         }
@@ -3100,14 +3103,22 @@ mod process_fastmem_tests {
         memory.set_current_page_table(&mut page_table, false);
 
         memory.map_pages(
-            &mut page_table, 4, 1, dram_memory_map::BASE + 0x2000, PageType::Memory,
+            &mut page_table,
+            4,
+            1,
+            dram_memory_map::BASE + 0x2000,
+            PageType::Memory,
         );
         assert!(memory.write_block(0x4000, &[0x31; PAGE_SIZE as usize]));
         // Keep the first mapping alive while issuing a full cycle of tags.
         // The final mapping deliberately shares its tag, but not its backing.
         for _ in 0..=u16::MAX {
             memory.map_pages(
-                &mut page_table, 5, 1, dram_memory_map::BASE + 0x6000, PageType::Memory,
+                &mut page_table,
+                5,
+                1,
+                dram_memory_map::BASE + 0x6000,
+                PageType::Memory,
             );
         }
         assert_eq!(page_table.entries[4].block(), page_table.entries[5].block());

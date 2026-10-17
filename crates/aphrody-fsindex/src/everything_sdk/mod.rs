@@ -218,7 +218,10 @@ static GLOBAL: OnceLock<Result<Library, EverythingError>> = OnceLock::new();
 ///
 /// Any [`EverythingError`] when the backend is unusable.
 pub fn global() -> Result<&'static Library, EverythingError> {
-    GLOBAL.get_or_init(Library::load).as_ref().map_err(Clone::clone)
+    GLOBAL
+        .get_or_init(Library::load)
+        .as_ref()
+        .map_err(Clone::clone)
 }
 
 /// True when the SDK DLL loads and the Everything service answers IPC.

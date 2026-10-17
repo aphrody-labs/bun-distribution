@@ -1,6 +1,8 @@
 //! Edit › Free Transform / Transform: projective transforms of layers (and the selection).
 
-use photocraft_algo::transform::{Homography, Interp, warp_output_bounds, warp_surface, warp_surface_with};
+use photocraft_algo::transform::{
+    Homography, Interp, warp_output_bounds, warp_surface, warp_surface_with,
+};
 use photocraft_color::PixelFormat;
 use photocraft_doc::{Document, Layer, LayerContent, LayerId, Locks};
 use photocraft_geom::{Affine, Rect};
@@ -11,18 +13,30 @@ use crate::commands::CommandSpec;
 use crate::{EngineError, Result, Session};
 
 fn has_layer(s: &Session) -> std::result::Result<(), String> {
-    s.active().and_then(|d| d.active_layer).map(|_| ()).ok_or_else(|| "no active layer".into())
+    s.active()
+        .and_then(|d| d.active_layer)
+        .map(|_| ())
+        .ok_or_else(|| "no active layer".into())
 }
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: "edit.transform".into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: "edit.transform".into(),
+        msg: msg.into(),
+    }
 }
 
 /// Layers a transform moves as a whole, even with a selection: groups, and the kinds that keep the
 /// transform instead of pixels (type, shapes, smart objects). Only pixel layers move just the
 /// selected pixels.
 pub fn moves_whole(layer: &Layer) -> bool {
-    matches!(layer.content, LayerContent::Group(_) | LayerContent::Text(_) | LayerContent::Shape(_) | LayerContent::Smart(_))
+    matches!(
+        layer.content,
+        LayerContent::Group(_)
+            | LayerContent::Text(_)
+            | LayerContent::Shape(_)
+            | LayerContent::Smart(_)
+    )
 }
 
 /// Document-space bounds a transform of `layer` starts from (what Free Transform frames): the
@@ -39,10 +53,22 @@ pub fn transform_bounds(doc: &Document, layer: &Layer) -> Rect {
 /// A group moves all its descendants, so its frame must not clip raster children to the selection.
 fn whole_layer_bounds(layer: &Layer) -> Rect {
     let content = match &layer.content {
-        LayerContent::Group(g) => g.children.iter().map(whole_layer_bounds).fold(Rect::EMPTY, |a, b| a.union(&b)),
-        _ => layer.surface().map_or(Rect::EMPTY, photocraft_compose::bounds::content_bounds),
+        LayerContent::Group(g) => g
+            .children
+            .iter()
+            .map(whole_layer_bounds)
+            .fold(Rect::EMPTY, |a, b| a.union(&b)),
+        _ => layer
+            .surface()
+            .map_or(Rect::EMPTY, photocraft_compose::bounds::content_bounds),
     };
-    if content.is_empty() { layer.mask.as_ref().map_or(Rect::EMPTY, |m| photocraft_compose::bounds::content_bounds(&m.surface)) } else { content }
+    if content.is_empty() {
+        layer.mask.as_ref().map_or(Rect::EMPTY, |m| {
+            photocraft_compose::bounds::content_bounds(&m.surface)
+        })
+    } else {
+        content
+    }
 }
 
 /// Warp a surface whose pixels outside the content read as `default` (masks, selections):
@@ -59,8 +85,13 @@ pub(crate) fn warp_gray(s: &Surface, h: &Homography, interp: Interp) -> Result<S
     let with_alpha = PixelFormat::new(fmt.mode, fmt.sample, true);
     let mut tmp = Surface::new(with_alpha);
     let v = crate::allocation::read_region(s, src, "transforming a mask or channel")?;
-    let mut lifted =
-        crate::allocation::filled(v.len().checked_mul(2).ok_or_else(|| bad("the mask is too large to transform"))?, 0.0, "transforming a mask or channel")?;
+    let mut lifted = crate::allocation::filled(
+        v.len()
+            .checked_mul(2)
+            .ok_or_else(|| bad("the mask is too large to transform"))?,
+        0.0,
+        "transforming a mask or channel",
+    )?;
     let (lifted_pairs, _) = lifted.as_chunks_mut::<2>();
     for (g, px) in v.iter().zip(lifted_pairs) {
         px.copy_from_slice(&[*g, 1.0]);
@@ -71,13 +102,19 @@ pub(crate) fn warp_gray(s: &Surface, h: &Homography, interp: Interp) -> Result<S
     // two sparse regions rather than one dense `src ∪ warped` block: a transform that moves the
     // content far away (e.g. a huge translation) would otherwise allocate a buffer spanning both and
     // hang/OOM. `Surface` is tile-sparse, so distant regions cost only their own tiles.
-    let old_len = (src.width() as usize).checked_mul(src.height() as usize).ok_or_else(|| bad("the mask is too large to transform"))?;
+    let old_len = (src.width() as usize)
+        .checked_mul(src.height() as usize)
+        .ok_or_else(|| bad("the mask is too large to transform"))?;
     let old = crate::allocation::filled(old_len, default, "transforming a mask or channel")?;
     out.try_write_region(src, &old)?;
     let b = w.content_bounds();
     if !b.is_empty() {
         let px = crate::allocation::read_region(&w, b, "flattening a transformed mask or channel")?;
-        let mut flat = crate::allocation::filled(px.len() / 2, 0.0, "flattening a transformed mask or channel")?;
+        let mut flat = crate::allocation::filled(
+            px.len() / 2,
+            0.0,
+            "flattening a transformed mask or channel",
+        )?;
         for (p, f) in px.as_chunks::<2>().0.iter().zip(&mut flat) {
             *f = p[0] * p[1] + default * (1.0 - p[1]);
         }
@@ -107,7 +144,9 @@ pub fn split_gray_selected(s: &Surface, sel: &Surface) -> Result<Option<(Surface
     let v = crate::allocation::read_region(s, area, "transforming a selected mask or channel")?;
     let w = area.width() as usize;
     let mut lp = crate::allocation::capacity(
-        v.len().checked_mul(2).ok_or_else(|| bad("the selected mask is too large to transform"))?,
+        v.len()
+            .checked_mul(2)
+            .ok_or_else(|| bad("the selected mask is too large to transform"))?,
         "transforming a selected mask or channel",
     )?;
     let mut rp = crate::allocation::capacity(v.len(), "transforming a selected mask or channel")?;
@@ -126,8 +165,18 @@ pub fn split_gray_selected(s: &Surface, sel: &Surface) -> Result<Option<(Surface
 
 /// [`warp_gray`] limited to a selection: only the selected values move (the vacated area reads as
 /// the default), as the selected pixels of the layer do.
-pub(crate) fn warp_gray_selected(s: &Surface, sel: &Surface, h: &Homography, interp: Interp) -> Result<Surface> {
-    move_gray_selected(s, sel, &|lifted, src| Ok(warp_surface(lifted, src, h, interp)?), &|s| warp_gray(s, h, interp))
+pub(crate) fn warp_gray_selected(
+    s: &Surface,
+    sel: &Surface,
+    h: &Homography,
+    interp: Interp,
+) -> Result<Surface> {
+    move_gray_selected(
+        s,
+        sel,
+        &|lifted, src| Ok(warp_surface(lifted, src, h, interp)?),
+        &|s| warp_gray(s, h, interp),
+    )
 }
 
 /// [`warp_gray_selected`] with any geometric warp: `warp` moves the lifted grey + alpha values
@@ -138,7 +187,9 @@ pub(crate) fn move_gray_selected(
     warp: &dyn Fn(&Surface, Rect) -> Result<Surface>,
     whole: &dyn Fn(&Surface) -> Result<Surface>,
 ) -> Result<Surface> {
-    let Some((lifted, mut out)) = split_gray_selected(s, sel)? else { return whole(s) };
+    let Some((lifted, mut out)) = split_gray_selected(s, sel)? else {
+        return whole(s);
+    };
     let src = lifted.content_bounds();
     if src.is_empty() {
         return Ok(out);
@@ -148,7 +199,8 @@ pub(crate) fn move_gray_selected(
     if !b.is_empty() {
         let moved = crate::allocation::read_region(&w, b, "compositing transformed mask pixels")?;
         let under = crate::allocation::read_region(&out, b, "compositing transformed mask pixels")?;
-        let mut flat = crate::allocation::filled(under.len(), 0.0, "compositing transformed mask pixels")?;
+        let mut flat =
+            crate::allocation::filled(under.len(), 0.0, "compositing transformed mask pixels")?;
         for (i, (p, u)) in moved.as_chunks::<2>().0.iter().zip(&under).enumerate() {
             flat[i] = p[0] * p[1] + u * (1.0 - p[1]);
         }
@@ -161,27 +213,47 @@ pub(crate) fn move_gray_selected(
 /// The surface Free Transform moves by itself when the params target one (`"target"`): an
 /// unlinked layer mask, an alpha channel or the Quick Mask. `None` means the layer, with its
 /// linked masks (a targeted *linked* mask moves together with its layer, as in Photoshop).
-pub fn lone_target<'a>(doc: &'a Document, layer: Option<LayerId>, p: &Value) -> Result<Option<&'a Surface>> {
+pub fn lone_target<'a>(
+    doc: &'a Document,
+    layer: Option<LayerId>,
+    p: &Value,
+) -> Result<Option<&'a Surface>> {
     use crate::channel_cmds::Target;
     match crate::channel_cmds::target_of(p) {
         Target::Pixels => Ok(None),
         Target::Mask => {
             let id = layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
             let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
-            let m = l.mask.as_ref().ok_or_else(|| EngineError::Other("layer has no mask".into()))?;
+            let m = l
+                .mask
+                .as_ref()
+                .ok_or_else(|| EngineError::Other("layer has no mask".into()))?;
             Ok((!m.linked).then_some(&m.surface))
         }
         Target::Alpha(i) => doc
             .channels
             .get(i)
             .map(|c| Some(&c.surface))
-            .ok_or_else(|| EngineError::Other(format!("no alpha channel {i} (document has {})", doc.channels.len()))),
-        Target::QuickMask => doc.quick_mask.as_ref().map(|c| Some(&c.surface)).ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
+            .ok_or_else(|| {
+                EngineError::Other(format!(
+                    "no alpha channel {i} (document has {})",
+                    doc.channels.len()
+                ))
+            }),
+        Target::QuickMask => doc
+            .quick_mask
+            .as_ref()
+            .map(|c| Some(&c.surface))
+            .ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
     }
 }
 
 /// [`lone_target`], mutably.
-pub fn lone_target_mut<'a>(doc: &'a mut Document, layer: Option<LayerId>, p: &Value) -> Result<Option<&'a mut Surface>> {
+pub fn lone_target_mut<'a>(
+    doc: &'a mut Document,
+    layer: Option<LayerId>,
+    p: &Value,
+) -> Result<Option<&'a mut Surface>> {
     if lone_target(doc, layer, p)?.is_none() {
         return Ok(None);
     }
@@ -192,7 +264,11 @@ pub fn lone_target_mut<'a>(doc: &'a mut Document, layer: Option<LayerId>, p: &Va
 /// when nothing is painted), within the selection.
 pub fn target_bounds(doc: &Document, surf: &Surface) -> Rect {
     let content = surf.content_bounds();
-    let content = if content.is_empty() { doc.bounds() } else { content };
+    let content = if content.is_empty() {
+        doc.bounds()
+    } else {
+        content
+    };
     match &doc.selection {
         Some(sel) => content.intersect(&sel.content_bounds()),
         None => content,
@@ -201,7 +277,9 @@ pub fn target_bounds(doc: &Document, surf: &Surface) -> Rect {
 
 /// The locks `id` inherits from the groups around it.
 pub(crate) fn group_locks(doc: &Document, id: LayerId) -> Locks {
-    doc.path_of(id).and_then(|p| Some(doc.locks_at(p.split_last()?.1))).unwrap_or_default()
+    doc.path_of(id)
+        .and_then(|p| Some(doc.locks_at(p.split_last()?.1)))
+        .unwrap_or_default()
 }
 
 /// The locks a transform of `l` meets: its own and `group`'s (those it inherits). The Background's
@@ -250,10 +328,14 @@ const BUDGET: u64 = 1 << 20;
 /// Refuse a warp of the content inside `src` by `h` whose result would exceed the pixel budget,
 /// before anything is built. `what` names the surface in the message.
 pub(crate) fn check_budget(src: Rect, h: &Homography, what: &str) -> Result<()> {
-    let Some(b) = warp_output_bounds(src, h) else { return Ok(()) };
+    let Some(b) = warp_output_bounds(src, h) else {
+        return Ok(());
+    };
     let (w, ht) = (u64::from(b.width()), u64::from(b.height()));
     if w.saturating_mul(ht) > BUDGET {
-        let detail = format!("the transformed {what} would be {w} x {ht} px, more than the {BUDGET} px limit");
+        let detail = format!(
+            "the transformed {what} would be {w} x {ht} px, more than the {BUDGET} px limit"
+        );
         return Err(crate::allocation::error("transforming pixels", &detail));
     }
     Ok(())
@@ -303,7 +385,14 @@ fn check_layer_budget(doc_sel: Option<&Surface>, l: &Layer, h: &Homography) -> R
 /// `group` holds the locks `l` inherits from the groups around it ([`group_locks`]). A Background
 /// is turned into a normal layer by the caller first ([`crate::extra_cmds::background_to_layer`]).
 /// Refused, with `l` untouched, when a result would exceed [`MAX_TRANSFORM_PIXELS`].
-pub(crate) fn transform_layer(doc_sel: Option<&Surface>, group: Locks, l: &mut Layer, h: &Homography, affine: Option<Affine>, interp: Interp) -> Result<()> {
+pub(crate) fn transform_layer(
+    doc_sel: Option<&Surface>,
+    group: Locks,
+    l: &mut Layer,
+    h: &Homography,
+    affine: Option<Affine>,
+    interp: Interp,
+) -> Result<()> {
     transform_layer_with(doc_sel, group, l, h, affine, interp, &Interrupt::NONE)
 }
 
@@ -334,7 +423,10 @@ fn apply_transform(
     crate::allocation::checkpoint("transforming pixels")?;
     let locks = transform_locks(l, group, false);
     if locks.position || locks.all {
-        return Err(EngineError::Other(format!("layer \"{}\" is locked", l.name)));
+        return Err(EngineError::Other(format!(
+            "layer \"{}\" is locked",
+            l.name
+        )));
     }
     if h.is_identity() {
         if let LayerContent::Group(g) = &mut l.content {
@@ -355,7 +447,10 @@ fn apply_transform(
         }
         LayerContent::Text(t) => {
             let Some(a) = affine else {
-                return Err(EngineError::Other("Distort and Perspective need rasterized type (Type › Rasterize Type Layer)".into()));
+                return Err(EngineError::Other(
+                    "Distort and Perspective need rasterized type (Type › Rasterize Type Layer)"
+                        .into(),
+                ));
             };
             t.transform = a.mul(&t.transform);
         }
@@ -370,7 +465,9 @@ fn apply_transform(
             // Perspective keep the full projective map, so the fourth corner survives re-renders.
             match affine {
                 Some(a) => crate::smart_cmds::transform_placement(sm, &a),
-                None => crate::smart_cmds::set_placement(sm, h.mul(&crate::smart_cmds::placement(sm))),
+                None => {
+                    crate::smart_cmds::set_placement(sm, h.mul(&crate::smart_cmds::placement(sm)))
+                }
             }
             // Fallback appearance for sources that can't be re-rendered.
             if let Some(c) = &mut sm.cache {
@@ -388,12 +485,14 @@ fn apply_transform(
                     // Only the selected pixels move: lift them, clear them, warp and paste back.
                     Some(sel) => {
                         let (lifted, mut rest) = split_selected(surf, sel)?;
-                        let moved = warp_surface_with(&lifted, src, h, interp, ctl)?.ok_or(EngineError::Cancelled)?;
+                        let moved = warp_surface_with(&lifted, src, h, interp, ctl)?
+                            .ok_or(EngineError::Cancelled)?;
                         composite_over(&mut rest, &moved);
                         rest.prune();
                         rest
                     }
-                    None => warp_surface_with(surf, src, h, interp, ctl)?.ok_or(EngineError::Cancelled)?,
+                    None => warp_surface_with(surf, src, h, interp, ctl)?
+                        .ok_or(EngineError::Cancelled)?,
                 };
             }
         }
@@ -440,7 +539,11 @@ pub fn split_selected(surf: &Surface, sel: &Surface) -> Result<(Surface, Surface
     if rest_clear.last().is_some_and(|a| *a > 0.0) {
         rest_clear.fill(0.0);
     }
-    for (i, (l, r)) in lp.chunks_exact_mut(n).zip(rp.chunks_exact_mut(n)).enumerate() {
+    for (i, (l, r)) in lp
+        .chunks_exact_mut(n)
+        .zip(rp.chunks_exact_mut(n))
+        .enumerate()
+    {
         let (x, y) = (src.x0 + (i % w) as i32, src.y0 + (i / w) as i32);
         let k = sel.sample_channel(x, y, 0);
         l[n - 1] *= k;
@@ -498,10 +601,20 @@ fn relative_matrix(p: &Value, rect: [f64; 4]) -> Result<Option<Homography>> {
     let num = |k: &str| -> Result<Option<f64>> {
         match p.get(k) {
             None | Some(Value::Null) => Ok(None),
-            Some(v) => v.as_f64().filter(|f| f.is_finite()).map(Some).ok_or_else(|| bad(format!("`{k}` must be a finite number"))),
+            Some(v) => v
+                .as_f64()
+                .filter(|f| f.is_finite())
+                .map(Some)
+                .ok_or_else(|| bad(format!("`{k}` must be a finite number"))),
         }
     };
-    let (sx, sy, rot, dx, dy) = (num("scaleX")?, num("scaleY")?, num("rotate")?, num("dx")?, num("dy")?);
+    let (sx, sy, rot, dx, dy) = (
+        num("scaleX")?,
+        num("scaleY")?,
+        num("rotate")?,
+        num("dx")?,
+        num("dy")?,
+    );
     if sx.is_none() && sy.is_none() && rot.is_none() && dx.is_none() && dy.is_none() {
         return Ok(None);
     }
@@ -537,7 +650,8 @@ fn with_panel_target(s: &Session, p: &Value) -> Value {
     let mut p = if p.is_object() { p.clone() } else { json!({}) };
     if p.get("target").is_none()
         && p.get("layer").is_none()
-        && let (Some(m), Some(Value::Object(t))) = (p.as_object_mut(), crate::channel_cmds::targeted_channel(s))
+        && let (Some(m), Some(Value::Object(t))) =
+            (p.as_object_mut(), crate::channel_cmds::targeted_channel(s))
     {
         m.extend(t);
     }
@@ -549,7 +663,10 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let id = crate::commands::explicit_layer(s, p)?.or(st.active_layer);
     let lone = lone_target(&st.doc, id, p)?;
-    let id = match (id, lone.is_some() && crate::channel_cmds::is_channel_target(p)) {
+    let id = match (
+        id,
+        lone.is_some() && crate::channel_cmds::is_channel_target(p),
+    ) {
         (_, true) => None,
         (Some(id), false) => Some(id),
         (None, false) => return Err(EngineError::Other("no active layer".into())),
@@ -562,7 +679,9 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
         _ => {
             let b = match (lone, id) {
                 (Some(surf), _) => target_bounds(&st.doc, surf),
-                (None, Some(id)) => transform_bounds(&st.doc, st.doc.layer(id).ok_or(EngineError::NoLayer(id))?),
+                (None, Some(id)) => {
+                    transform_bounds(&st.doc, st.doc.layer(id).ok_or(EngineError::NoLayer(id))?)
+                }
                 (None, None) => Rect::EMPTY,
             };
             if b.is_empty() {
@@ -583,15 +702,29 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
     } else if let Some(m) = relative_matrix(p, rect)? {
         m
     } else {
-        return Err(bad("pass `quad` (where the rect's corners go), `matrix`, or `scaleX`/`scaleY`/`rotate`/`dx`/`dy`"));
+        return Err(bad(
+            "pass `quad` (where the rect's corners go), `matrix`, or `scaleX`/`scaleY`/`rotate`/`dx`/`dy`",
+        ));
     };
     if h.inverse().is_none() {
         return Err(bad("the transform collapses the layer"));
     }
     let m = h.0;
-    let affine =
-        (m[6].abs() < 1e-12 && m[7].abs() < 1e-12).then(|| Affine { m: [m[0] / m[8], m[3] / m[8], m[1] / m[8], m[4] / m[8], m[2] / m[8], m[5] / m[8]] });
-    let interp = Interp::parse(p.get("interpolation").and_then(Value::as_str).unwrap_or("bicubic"));
+    let affine = (m[6].abs() < 1e-12 && m[7].abs() < 1e-12).then(|| Affine {
+        m: [
+            m[0] / m[8],
+            m[3] / m[8],
+            m[1] / m[8],
+            m[4] / m[8],
+            m[2] / m[8],
+            m[5] / m[8],
+        ],
+    });
+    let interp = Interp::parse(
+        p.get("interpolation")
+            .and_then(Value::as_str)
+            .unwrap_or("bicubic"),
+    );
     let lone = lone.is_some();
     let p = p.clone();
     // A background job when started with `Session::start` (#1015): the warp of a large layer runs
@@ -599,7 +732,11 @@ fn transform(s: &mut Session, p: &Value) -> Result<Value> {
     crate::jobs::edit_job(
         s,
         "Free Transform",
-        move |doc, _, ctx| ctx.stage(0.0, 1.0, "Transforming", |ctl| transform_doc(doc, id, &p, lone, &h, affine, interp, ctl)),
+        move |doc, _, ctx| {
+            ctx.stage(0.0, 1.0, "Transforming", |ctl| {
+                transform_doc(doc, id, &p, lone, &h, affine, interp, ctl)
+            })
+        },
         move |()| json!({"rect": rect}),
     )
 }
@@ -625,14 +762,17 @@ fn transform_doc(
         // A targeted unlinked mask, alpha channel or Quick Mask transforms by itself.
         if !h.is_identity() {
             let (surf, _) = crate::channel_cmds::target_surface(doc, id, p)?;
-            let src = sel.as_ref().map_or_else(|| surf.content_bounds(), Surface::content_bounds);
+            let src = sel
+                .as_ref()
+                .map_or_else(|| surf.content_bounds(), Surface::content_bounds);
             check_budget(src, h, "mask or channel")?;
             *surf = match &sel {
                 Some(sel) => warp_gray_selected(surf, sel, h, interp)?,
                 None => warp_gray(surf, h, interp)?,
             };
             if let Some(sel) = &doc.selection {
-                doc.selection = Some(warp_gray(sel, h, Interp::Bilinear)?).filter(|s| !s.content_bounds().is_empty());
+                doc.selection = Some(warp_gray(sel, h, Interp::Bilinear)?)
+                    .filter(|s| !s.content_bounds().is_empty());
             }
         }
         return Ok(());
@@ -643,7 +783,15 @@ fn transform_doc(
     // Photoshop turns the Background into a normal layer before transforming it.
     crate::extra_cmds::background_to_layer(doc, id);
     let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
-    transform_layer_with(if is_group { None } else { sel.as_ref() }, group, l, h, affine, interp, ctl)?;
+    transform_layer_with(
+        if is_group { None } else { sel.as_ref() },
+        group,
+        l,
+        h,
+        affine,
+        interp,
+        ctl,
+    )?;
     if !h.is_identity() {
         // Type layers re-render from their new transform.
         let snapshot = doc.clone();
@@ -652,7 +800,8 @@ fn transform_doc(
         }
         // The selection outline moves with the pixels.
         if let Some(sel) = &doc.selection {
-            doc.selection = Some(warp_gray(sel, h, Interp::Bilinear)?).filter(|s| !s.content_bounds().is_empty());
+            doc.selection = Some(warp_gray(sel, h, Interp::Bilinear)?)
+                .filter(|s| !s.content_bounds().is_empty());
         }
     }
     Ok(())
@@ -681,11 +830,17 @@ mod tests {
 
     fn session_depth(depth: u32) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 100, "height": 100, "depth": depth})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 100, "height": 100, "depth": depth}),
+        )
+        .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         s.edit("paint", |doc, active| {
             let l = doc.layer_mut(active.unwrap()).unwrap();
-            l.surface_mut().unwrap().fill_rect(Rect::new(10, 10, 30, 20), &[1.0, 0.0, 0.0, 1.0]);
+            l.surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 10, 30, 20), &[1.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
@@ -694,7 +849,12 @@ mod tests {
 
     fn active_bounds(s: &Session) -> Rect {
         let st = s.active().unwrap();
-        st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap().content_bounds()
+        st.doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .content_bounds()
     }
 
     // ---- Pixel budget (#3773). Tests run with a 2²⁰ px budget, so nothing here comes near the real one. ----
@@ -702,10 +862,15 @@ mod tests {
     /// A 16 x 16 document whose active layer is a 1 x 8 column at x = 10.
     fn column() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 16}))
+            .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         s.edit("paint", |doc, active| {
-            doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap().fill_rect(Rect::new(10, 2, 11, 10), &[1.0, 0.0, 0.0, 1.0]);
+            doc.layer_mut(active.unwrap())
+                .unwrap()
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 2, 11, 10), &[1.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
@@ -723,9 +888,19 @@ mod tests {
         let st = s.active().unwrap();
         let (before, revision, steps) = (st.doc.clone(), st.revision, st.history.past_len());
         // 200000 x 10 px of output: twice the test budget.
-        let err = s.execute("edit.transform", stretch(2e5)).unwrap_err().to_string();
-        assert!(err.starts_with("not enough memory for transforming pixels"), "{err}");
-        assert!(err.contains("would be 200002 x 10 px") && err.ends_with("the document was not changed"), "{err}");
+        let err = s
+            .execute("edit.transform", stretch(2e5))
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.starts_with("not enough memory for transforming pixels"),
+            "{err}"
+        );
+        assert!(
+            err.contains("would be 200002 x 10 px")
+                && err.ends_with("the document was not changed"),
+            "{err}"
+        );
         let st = s.active().unwrap();
         assert!(st.doc == before, "the document is untouched");
         assert_eq!((st.revision, st.history.past_len()), (revision, steps));
@@ -742,56 +917,112 @@ mod tests {
         s.execute("layer.new.layer", json!({})).unwrap();
         let dot = s.active().unwrap().active_layer.unwrap();
         s.edit("paint", |doc, _| {
-            doc.layer_mut(dot).unwrap().surface_mut().unwrap().fill_rect(Rect::new(10, 12, 11, 13), &[0.0, 1.0, 0.0, 1.0]);
+            doc.layer_mut(dot)
+                .unwrap()
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 12, 11, 13), &[0.0, 1.0, 0.0, 1.0]);
             // Widen the column to 8 px (x 2..10), so it alone needs 400002 x 10 px.
-            doc.layer_mut(wide).unwrap().surface_mut().unwrap().fill_rect(Rect::new(2, 2, 10, 10), &[1.0, 0.0, 0.0, 1.0]);
+            doc.layer_mut(wide)
+                .unwrap()
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(2, 2, 10, 10), &[1.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
         s.execute("layer.select", json!({"layer": wide.0})).unwrap();
-        s.execute("layer.select", json!({"layer": dot.0, "mode": "add"})).unwrap();
-        let group = LayerId(s.execute("layer.groupLayers", json!({})).unwrap()["layer"].as_u64().unwrap());
+        s.execute("layer.select", json!({"layer": dot.0, "mode": "add"}))
+            .unwrap();
+        let group = LayerId(
+            s.execute("layer.groupLayers", json!({})).unwrap()["layer"]
+                .as_u64()
+                .unwrap(),
+        );
         let st = s.active().unwrap();
-        assert!(matches!(&st.doc.layer(group).unwrap().content, LayerContent::Group(g) if g.children.len() == 2));
+        assert!(
+            matches!(&st.doc.layer(group).unwrap().content, LayerContent::Group(g) if g.children.len() == 2)
+        );
         let (before, revision) = (st.doc.clone(), st.revision);
         let k = 5e4;
-        assert!(s.execute("edit.transform", json!({"layer": group.0, "matrix": [k, 0, 0, 1, -10.0 * k, 0]})).is_err());
+        assert!(
+            s.execute(
+                "edit.transform",
+                json!({"layer": group.0, "matrix": [k, 0, 0, 1, -10.0 * k, 0]})
+            )
+            .is_err()
+        );
         let st = s.active().unwrap();
-        assert!(st.doc == before && st.revision == revision, "nothing changed");
+        assert!(
+            st.doc == before && st.revision == revision,
+            "nothing changed"
+        );
         // The layer-level check runs before any child is warped, so even the layer itself
         // (not just the edit's copy of the document) is left as it was.
         let mut l = st.doc.layer(group).unwrap().clone();
         let h = Homography([k, 0.0, -10.0 * k, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
-        assert!(transform_layer(None, Locks::default(), &mut l, &h, None, Interp::Nearest).is_err());
-        assert!(&l == st.doc.layer(group).unwrap(), "no child was transformed");
+        assert!(
+            transform_layer(None, Locks::default(), &mut l, &h, None, Interp::Nearest).is_err()
+        );
+        assert!(
+            &l == st.doc.layer(group).unwrap(),
+            "no child was transformed"
+        );
     }
 
     #[test]
     fn moving_a_small_layer_far_off_the_canvas_is_within_budget() {
         let mut s = session();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 900_000, -900_000]})).unwrap();
-        assert_eq!(active_bounds(&s), Rect::new(900_010, -899_990, 900_030, -899_980));
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, -900_000, 900_000]})).unwrap();
-        assert_eq!(active_bounds(&s), Rect::new(10, 10, 30, 20), "and back, every pixel kept");
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 900_000, -900_000]}),
+        )
+        .unwrap();
+        assert_eq!(
+            active_bounds(&s),
+            Rect::new(900_010, -899_990, 900_030, -899_980)
+        );
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, -900_000, 900_000]}),
+        )
+        .unwrap();
+        assert_eq!(
+            active_bounds(&s),
+            Rect::new(10, 10, 30, 20),
+            "and back, every pixel kept"
+        );
     }
 
     #[test]
     fn selections_masks_and_channels_have_the_same_budget() {
         // The selection outline of a layer transform.
         let mut s = column();
-        s.execute("select.rect", json!({"x": 10, "y": 2, "width": 1, "height": 8})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 2, "width": 1, "height": 8}),
+        )
+        .unwrap();
         let before = s.active().unwrap().doc.clone();
-        let err = s.execute("edit.transform", stretch(2e5)).unwrap_err().to_string();
+        let err = s
+            .execute("edit.transform", stretch(2e5))
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("transformed selection would be"), "{err}");
         // Transform Selection.
-        let err = s.execute("select.transformSelection", stretch(2e5)).unwrap_err().to_string();
+        let err = s
+            .execute("select.transformSelection", stretch(2e5))
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("transformed selection would be"), "{err}");
         assert!(s.active().unwrap().doc == before);
         // A targeted alpha channel.
         let mut s = column();
         s.execute("channel.new", json!({})).unwrap();
         s.edit("paint channel", |doc, _| {
-            doc.channels[0].surface.fill_rect(Rect::new(10, 2, 11, 10), &[1.0]);
+            doc.channels[0]
+                .surface
+                .fill_rect(Rect::new(10, 2, 11, 10), &[1.0]);
             Ok(())
         })
         .unwrap();
@@ -799,16 +1030,26 @@ mod tests {
         let mut p = stretch(2e5);
         p["target"] = json!({"channel": 0});
         let err = s.execute("edit.transform", p).unwrap_err().to_string();
-        assert!(err.contains("transformed mask or channel would be"), "{err}");
+        assert!(
+            err.contains("transformed mask or channel would be"),
+            "{err}"
+        );
         assert!(s.active().unwrap().doc == before);
     }
 
     #[test]
     fn scale_via_quad_and_undo() {
         let mut s = session();
-        s.execute("edit.transform", json!({"quad": [[10, 10], [50, 10], [50, 30], [10, 30]]})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"quad": [[10, 10], [50, 10], [50, 30], [10, 30]]}),
+        )
+        .unwrap();
         let b = active_bounds(&s);
-        assert!(b.width().abs_diff(40) <= 2 && b.height().abs_diff(20) <= 2, "{b:?}");
+        assert!(
+            b.width().abs_diff(40) <= 2 && b.height().abs_diff(20) <= 2,
+            "{b:?}"
+        );
         s.undo();
         assert_eq!(active_bounds(&s), Rect::new(10, 10, 30, 20));
     }
@@ -817,25 +1058,45 @@ mod tests {
     fn affine_matrix_and_perspective() {
         let mut s = session();
         // Translate by (40, 50).
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]})).unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(50, 60, 70, 70));
         // Perspective: top edge narrower than the bottom.
-        s.execute("edit.transform", json!({"quad": [[55, 60], [65, 60], [75, 70], [45, 70]]})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"quad": [[55, 60], [65, 60], [75, 70], [45, 70]]}),
+        )
+        .unwrap();
         let b = active_bounds(&s);
         assert!(b.x0 <= 46 && b.x1 >= 74, "{b:?}");
-        assert!(s.execute("edit.transform", json!({"quad": [[0, 0], [0, 0], [0, 0], [0, 0]]})).is_err());
+        assert!(
+            s.execute(
+                "edit.transform",
+                json!({"quad": [[0, 0], [0, 0], [0, 0], [0, 0]]})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn background_becomes_layer_0() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 40, "height": 40})).unwrap();
-        s.execute("edit.transform", json!({"quad": [[0, 0], [20, 0], [20, 20], [0, 20]]})).unwrap();
+        s.execute("file.new", json!({"width": 40, "height": 40}))
+            .unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"quad": [[0, 0], [20, 0], [20, 20], [0, 20]]}),
+        )
+        .unwrap();
         let st = s.active().unwrap();
         let l = &st.doc.layers[0];
         assert_eq!(l.name, "Layer 0");
         assert!(l.surface().unwrap().format().alpha);
-        assert_eq!(l.surface().unwrap().pixel(30, 30)[3], 0.0, "revealed area is transparent");
+        assert_eq!(
+            l.surface().unwrap().pixel(30, 30)[3],
+            0.0,
+            "revealed area is transparent"
+        );
     }
 
     /// `locked_for_transform` (what Free Transform asks before its box opens, #2585) agrees with
@@ -857,22 +1118,44 @@ mod tests {
         assert!(locked_for_transform(&s.active().unwrap().doc, layer));
         assert!(s.execute("edit.transform", quad.clone()).is_err());
         lock(&mut s, layer, false);
-        let group = LayerId(s.execute("layer.groupLayers", json!({"layer": layer.0})).unwrap()["layer"].as_u64().unwrap());
+        let group = LayerId(
+            s.execute("layer.groupLayers", json!({"layer": layer.0}))
+                .unwrap()["layer"]
+                .as_u64()
+                .unwrap(),
+        );
         lock(&mut s, group, true);
-        s.execute("layer.select", json!({"layer": layer.0})).unwrap();
-        assert!(locked_for_transform(&s.active().unwrap().doc, layer), "the group's lock reaches the layer");
+        s.execute("layer.select", json!({"layer": layer.0}))
+            .unwrap();
+        assert!(
+            locked_for_transform(&s.active().unwrap().doc, layer),
+            "the group's lock reaches the layer"
+        );
         assert!(s.execute("edit.transform", quad.clone()).is_err());
         let bg = s.active().unwrap().doc.layers[0].id;
-        assert!(!locked_for_transform(&s.active().unwrap().doc, bg), "the Background transforms");
+        assert!(
+            !locked_for_transform(&s.active().unwrap().doc, bg),
+            "the Background transforms"
+        );
     }
 
     #[test]
     fn with_selection_only_selected_pixels_move() {
         let mut s = session();
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 10, "height": 10})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]}))
+            .unwrap();
         let st = s.active().unwrap();
-        let surf = st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap();
+        let surf = st
+            .doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap();
         assert_eq!(surf.pixel(15, 15)[3], 0.0, "lifted area is cleared");
         assert_eq!(surf.pixel(25, 15)[3], 1.0, "unselected part stays");
         assert_eq!(surf.pixel(15, 65)[3], 1.0, "moved pixels land");
@@ -885,62 +1168,118 @@ mod tests {
         // #1097: moving every pixel through a selection left transparent but coloured pixels
         // behind, so the layer bounds were the union of the old and new positions.
         let mut s = session();
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 20, "height": 10})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 50, 0]})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 20, "height": 10}),
+        )
+        .unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 50, 0]}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(60, 10, 80, 20));
     }
 
     #[test]
     fn type_layers_transform_as_vectors() {
         let mut s = session();
-        let r = s.execute("type.create", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
+        let r = s
+            .execute(
+                "type.create",
+                json!({"x": 10, "y": 50, "text": "Hi", "size": 20}),
+            )
+            .unwrap();
         let id = r["layer"].as_u64().unwrap();
         let w0 = active_bounds(&s).width();
-        s.execute("edit.transform", json!({"layer": id, "matrix": [2, 0, 0, 2, -10, -50]})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"layer": id, "matrix": [2, 0, 0, 2, -10, -50]}),
+        )
+        .unwrap();
         let w1 = active_bounds(&s).width();
         assert!(w1 as f32 > w0 as f32 * 1.8, "{w0} → {w1}");
         let st = s.active().unwrap();
-        let LayerContent::Text(t) = &st.doc.layer(LayerId(id)).unwrap().content else { panic!() };
+        let LayerContent::Text(t) = &st.doc.layer(LayerId(id)).unwrap().content else {
+            panic!()
+        };
         assert!((t.transform.m[0] - 2.0).abs() < 1e-9);
         // Perspective on type is refused, like Photoshop.
-        assert!(s.execute("edit.transform", json!({"layer": id, "quad": [[0, 0], [10, 0], [12, 10], [-2, 10]]})).is_err());
+        assert!(
+            s.execute(
+                "edit.transform",
+                json!({"layer": id, "quad": [[0, 0], [10, 0], [12, 10], [-2, 10]]})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn shapes_move_and_transform_as_vectors() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 200, "height": 200})).unwrap();
-        s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
-        s.execute("layer.translate", json!({"dx": 30, "dy": 5})).unwrap();
+        s.execute("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
+        s.execute(
+            "shape.create",
+            json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"}),
+        )
+        .unwrap();
+        s.execute("layer.translate", json!({"dx": 30, "dy": 5}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(40, 15, 80, 35));
-        s.execute("edit.transform", json!({"matrix": [2, 0, 0, 2, -40, -15]})).unwrap();
+        s.execute("edit.transform", json!({"matrix": [2, 0, 0, 2, -40, -15]}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(40, 15, 120, 55));
         // Distort maps the path and keeps a live shape (#3009): the rectangle's corners go to the quad.
         let quad = [[40.0, 15.0], [120.0, 15.0], [130.0, 55.0], [30.0, 55.0]];
-        s.execute("edit.transform", json!({ "quad": quad })).unwrap();
+        s.execute("edit.transform", json!({ "quad": quad }))
+            .unwrap();
         let st = s.active().unwrap();
-        let LayerContent::Shape(sh) = &st.doc.layer(st.active_layer.unwrap()).unwrap().content else { panic!("still a shape layer") };
-        let mut anchors: Vec<[f64; 2]> = sh.path.subpaths[0].knots.iter().map(|k| [k.anchor.x, k.anchor.y]).collect();
+        let LayerContent::Shape(sh) = &st.doc.layer(st.active_layer.unwrap()).unwrap().content
+        else {
+            panic!("still a shape layer")
+        };
+        let mut anchors: Vec<[f64; 2]> = sh.path.subpaths[0]
+            .knots
+            .iter()
+            .map(|k| [k.anchor.x, k.anchor.y])
+            .collect();
         let mut want = quad.to_vec();
         anchors.sort_by(|a, b| a.partial_cmp(b).unwrap());
         want.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        assert!(anchors.iter().zip(&want).all(|(a, b)| (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6), "{anchors:?}");
+        assert!(
+            anchors
+                .iter()
+                .zip(&want)
+                .all(|(a, b)| (a[0] - b[0]).abs() < 1e-6 && (a[1] - b[1]).abs() < 1e-6),
+            "{anchors:?}"
+        );
         assert!(sh.live.is_none(), "the live rectangle is now a path");
         assert_eq!(active_bounds(&s), Rect::new(30, 15, 130, 55));
         // Warp bends the path too: the arc adds anchors along the curved edges.
-        s.execute("edit.transform.warp", json!({"style": "arc", "bend": 50})).unwrap();
+        s.execute("edit.transform.warp", json!({"style": "arc", "bend": 50}))
+            .unwrap();
         let st = s.active().unwrap();
-        let LayerContent::Shape(sh) = &st.doc.layer(st.active_layer.unwrap()).unwrap().content else { panic!("still a shape layer") };
-        assert!(sh.path.subpaths[0].knots.len() > 4, "{}", sh.path.subpaths[0].knots.len());
+        let LayerContent::Shape(sh) = &st.doc.layer(st.active_layer.unwrap()).unwrap().content
+        else {
+            panic!("still a shape layer")
+        };
+        assert!(
+            sh.path.subpaths[0].knots.len() > 4,
+            "{}",
+            sh.path.subpaths[0].knots.len()
+        );
         assert!(!active_bounds(&s).is_empty());
     }
 
     #[test]
     fn type_moves_with_the_move_command() {
         let mut s = session();
-        s.execute("type.create", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
+        s.execute(
+            "type.create",
+            json!({"x": 10, "y": 50, "text": "Hi", "size": 20}),
+        )
+        .unwrap();
         let b0 = active_bounds(&s);
-        s.execute("layer.translate", json!({"dx": 20, "dy": 10})).unwrap();
+        s.execute("layer.translate", json!({"dx": 20, "dy": 10}))
+            .unwrap();
         let b1 = active_bounds(&s);
         assert_eq!((b1.x0 - b0.x0, b1.y0 - b0.y0), (20, 10));
     }
@@ -956,7 +1295,12 @@ mod tests {
         let mut s = session_depth(depth);
         s.execute("layer.layerMask.revealAll", json!({})).unwrap();
         s.edit("mask", |doc, active| {
-            let m = doc.layer_mut(active.unwrap()).unwrap().mask.as_mut().unwrap();
+            let m = doc
+                .layer_mut(active.unwrap())
+                .unwrap()
+                .mask
+                .as_mut()
+                .unwrap();
             for r in hide {
                 m.surface.fill_rect(*r, &[0.0]);
             }
@@ -969,20 +1313,36 @@ mod tests {
 
     fn mask_at(s: &Session, x: i32, y: i32) -> f32 {
         let st = s.active().unwrap();
-        st.doc.layer(st.active_layer.unwrap()).unwrap().mask.as_ref().unwrap().surface.sample_channel(x, y, 0)
+        st.doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .mask
+            .as_ref()
+            .unwrap()
+            .surface
+            .sample_channel(x, y, 0)
     }
 
     fn alpha_at(s: &Session, x: i32, y: i32) -> f32 {
         let st = s.active().unwrap();
-        st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap().pixel(x, y)[3]
+        st.doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .pixel(x, y)[3]
     }
 
     #[test]
     fn linked_raster_mask_moves_with_the_pixels() {
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], true);
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]})).unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(50, 60, 70, 70));
-        assert!(mask_at(&s, 55, 65) < 0.01, "the hidden half moved with the pixels");
+        assert!(
+            mask_at(&s, 55, 65) < 0.01,
+            "the hidden half moved with the pixels"
+        );
         assert!(mask_at(&s, 65, 65) > 0.99);
         assert!(mask_at(&s, 15, 15) > 0.99, "nothing hidden left behind");
     }
@@ -991,9 +1351,17 @@ mod tests {
     fn linked_mask_with_a_selection_moves_only_the_selected_region() {
         // The selection covers the left half of the red rect; the mask hides its left quarter
         // (selected) and its right quarter (not selected).
-        let mut s = masked(&[Rect::new(10, 10, 15, 20), Rect::new(25, 10, 30, 20)], true);
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 10, "height": 10})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]})).unwrap();
+        let mut s = masked(
+            &[Rect::new(10, 10, 15, 20), Rect::new(25, 10, 30, 20)],
+            true,
+        );
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]}))
+            .unwrap();
         // Moved pixels and their mask line up.
         assert_eq!(alpha_at(&s, 12, 65), 1.0);
         assert!(mask_at(&s, 12, 65) < 0.01, "selected hidden quarter moved");
@@ -1015,39 +1383,72 @@ mod tests {
     #[test]
     fn unlinked_mask_stays_put() {
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], false);
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]})).unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50]}))
+            .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(50, 60, 70, 70));
         assert!(mask_at(&s, 15, 15) < 0.01);
         assert!(mask_at(&s, 55, 65) > 0.99);
         // With a selection too.
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], false);
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 10, "height": 10})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50]}))
+            .unwrap();
         assert!(mask_at(&s, 15, 15) < 0.01 && mask_at(&s, 15, 65) > 0.99);
     }
 
     #[test]
     fn targeted_unlinked_mask_transforms_alone() {
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], false);
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50], "target": "mask"})).unwrap();
-        assert_eq!(active_bounds(&s), Rect::new(10, 10, 30, 20), "pixels untouched");
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 40, 50], "target": "mask"}),
+        )
+        .unwrap();
+        assert_eq!(
+            active_bounds(&s),
+            Rect::new(10, 10, 30, 20),
+            "pixels untouched"
+        );
         assert!(mask_at(&s, 55, 65) < 0.01, "mask moved");
-        assert!(mask_at(&s, 15, 15) > 0.99, "vacated area reads as the default");
+        assert!(
+            mask_at(&s, 15, 15) > 0.99,
+            "vacated area reads as the default"
+        );
         s.undo();
         assert!(mask_at(&s, 15, 15) < 0.01, "one undo step");
         // With a selection, only its part of the mask.
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 5, "height": 10})).unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 50], "target": "mask"})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 5, "height": 10}),
+        )
+        .unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 0, 50], "target": "mask"}),
+        )
+        .unwrap();
         assert!(mask_at(&s, 12, 65) < 0.01 && mask_at(&s, 12, 15) > 0.99);
         assert!(mask_at(&s, 17, 15) < 0.01, "unselected mask stays");
-        assert_eq!(active_bounds(&s), Rect::new(10, 10, 30, 20), "pixels untouched");
+        assert_eq!(
+            active_bounds(&s),
+            Rect::new(10, 10, 30, 20),
+            "pixels untouched"
+        );
     }
 
     #[test]
     fn targeted_linked_mask_moves_with_its_layer() {
         // Photoshop: a linked mask can't move without its layer.
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], true);
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50], "target": "mask"})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 40, 50], "target": "mask"}),
+        )
+        .unwrap();
         assert_eq!(active_bounds(&s), Rect::new(50, 60, 70, 70));
         assert!(mask_at(&s, 55, 65) < 0.01);
     }
@@ -1057,15 +1458,25 @@ mod tests {
         let mut s = session();
         s.execute("channel.new", json!({})).unwrap();
         s.edit("paint channel", |doc, _| {
-            doc.channels[0].surface.fill_rect(Rect::new(10, 10, 20, 20), &[1.0]);
+            doc.channels[0]
+                .surface
+                .fill_rect(Rect::new(10, 10, 20, 20), &[1.0]);
             Ok(())
         })
         .unwrap();
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 40, 50], "target": {"channel": 0}})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 40, 50], "target": {"channel": 0}}),
+        )
+        .unwrap();
         let st = s.active().unwrap();
         let ch = &st.doc.channels[0].surface;
         assert!(ch.sample_channel(55, 65, 0) > 0.99 && ch.sample_channel(15, 15, 0) < 0.01);
-        assert_eq!(active_bounds(&s), Rect::new(10, 10, 30, 20), "layer untouched");
+        assert_eq!(
+            active_bounds(&s),
+            Rect::new(10, 10, 30, 20),
+            "layer untouched"
+        );
     }
 
     /// The Channels panel targets an alpha channel: Edit › Transform › Flip Horizontal and a
@@ -1082,16 +1493,46 @@ mod tests {
         })
         .unwrap();
         s.execute("channel.target", json!({"channel": 0})).unwrap();
-        let layer = |s: &Session| crate::active_layer_of(s).unwrap().surface().unwrap().read_region(Rect::new(0, 0, 100, 100));
+        let layer = |s: &Session| {
+            crate::active_layer_of(s)
+                .unwrap()
+                .surface()
+                .unwrap()
+                .read_region(Rect::new(0, 0, 100, 100))
+        };
         let (pixels, past) = (layer(&s), s.active().unwrap().history.past_len());
-        s.execute("edit.transform.flipHorizontal", json!({})).unwrap();
+        s.execute("edit.transform.flipHorizontal", json!({}))
+            .unwrap();
         // 8-bit channel: 0.5 is stored as 128/255.
-        let ch = |s: &Session, x, y| (s.active().unwrap().doc.channels[0].surface.sample_channel(x, y, 0) * 10.0).round() / 10.0;
-        assert_eq!((ch(&s, 19, 15), ch(&s, 10, 15)), (0.5, 1.0), "the channel flips within its frame");
+        let ch = |s: &Session, x, y| {
+            (s.active().unwrap().doc.channels[0]
+                .surface
+                .sample_channel(x, y, 0)
+                * 10.0)
+                .round()
+                / 10.0
+        };
+        assert_eq!(
+            (ch(&s, 19, 15), ch(&s, 10, 15)),
+            (0.5, 1.0),
+            "the channel flips within its frame"
+        );
         assert!(layer(&s) == pixels, "the layer is untouched");
-        assert_eq!(s.active().unwrap().history.past_len(), past + 1, "one undo step");
-        s.execute("edit.transform", json!({"matrix": [0.5, 0, 0, 0.5, 0, 0], "interpolation": "nearest"})).unwrap();
-        assert_eq!((ch(&s, 7, 7), ch(&s, 15, 15)), (1.0, 0.0), "the channel scales to 50%");
+        assert_eq!(
+            s.active().unwrap().history.past_len(),
+            past + 1,
+            "one undo step"
+        );
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [0.5, 0, 0, 0.5, 0, 0], "interpolation": "nearest"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (ch(&s, 7, 7), ch(&s, 15, 15)),
+            (1.0, 0.0),
+            "the channel scales to 50%"
+        );
         assert!(layer(&s) == pixels, "the layer is untouched");
         s.undo();
         s.undo();
@@ -1102,17 +1543,48 @@ mod tests {
     fn transform_targets_fail_gracefully() {
         let mut s = session();
         let m = json!([1, 0, 0, 1, 5, 5]);
-        assert!(s.execute("edit.transform", json!({"matrix": m, "target": "mask"})).is_err(), "no mask");
-        assert!(s.execute("edit.transform", json!({"matrix": m, "target": {"channel": 9}})).is_err());
-        assert!(s.execute("edit.transform", json!({"matrix": m, "target": "quickMask"})).is_err());
+        assert!(
+            s.execute("edit.transform", json!({"matrix": m, "target": "mask"}))
+                .is_err(),
+            "no mask"
+        );
+        assert!(
+            s.execute(
+                "edit.transform",
+                json!({"matrix": m, "target": {"channel": 9}})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "edit.transform",
+                json!({"matrix": m, "target": "quickMask"})
+            )
+            .is_err()
+        );
         // Unknown target shapes fall back to the pixels.
-        s.execute("edit.transform", json!({"matrix": m, "target": 7})).unwrap();
-        s.execute("edit.transform", json!({"matrix": m, "target": {"channel": "x"}})).unwrap();
+        s.execute("edit.transform", json!({"matrix": m, "target": 7}))
+            .unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": m, "target": {"channel": "x"}}),
+        )
+        .unwrap();
         // Selections that miss the mask entirely transform nothing, without panicking.
         let mut s = masked(&[Rect::new(10, 10, 20, 20)], false);
-        s.execute("select.rect", json!({"x": 80, "y": 80, "width": 5, "height": 5})).unwrap();
-        let _ = s.execute("edit.transform", json!({"matrix": [1e9, 0, 0, 1e9, 0, 0], "target": "mask"}));
-        let _ = s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 1e12, 0], "target": "mask"}));
+        s.execute(
+            "select.rect",
+            json!({"x": 80, "y": 80, "width": 5, "height": 5}),
+        )
+        .unwrap();
+        let _ = s.execute(
+            "edit.transform",
+            json!({"matrix": [1e9, 0, 0, 1e9, 0, 0], "target": "mask"}),
+        );
+        let _ = s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 1e12, 0], "target": "mask"}),
+        );
     }
 
     #[test]
@@ -1128,27 +1600,54 @@ mod tests {
     #[test]
     fn a_selection_does_not_narrow_a_type_layers_frame() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 200, "height": 120})).unwrap();
-        s.execute("type.create", json!({"x": 20, "y": 60, "text": "Hello", "size": 36})).unwrap();
+        s.execute("file.new", json!({"width": 200, "height": 120}))
+            .unwrap();
+        s.execute(
+            "type.create",
+            json!({"x": 20, "y": 60, "text": "Hello", "size": 36}),
+        )
+        .unwrap();
         let whole = active_bounds(&s);
         s.execute("select.rect", json!({"x": whole.x0, "y": whole.y0, "width": whole.width() / 2, "height": whole.height()})).unwrap();
         let st = s.active().unwrap();
         let l = st.doc.layer(st.active_layer.unwrap()).unwrap();
-        assert_eq!(transform_bounds(&st.doc, l), whole, "the frame is the whole type layer");
+        assert_eq!(
+            transform_bounds(&st.doc, l),
+            whole,
+            "the frame is the whole type layer"
+        );
         // Corners of the frame moved 10 px right: a pure translation of the whole text.
-        let q = [[whole.x0 + 10, whole.y0], [whole.x1 + 10, whole.y0], [whole.x1 + 10, whole.y1], [whole.x0 + 10, whole.y1]];
+        let q = [
+            [whole.x0 + 10, whole.y0],
+            [whole.x1 + 10, whole.y0],
+            [whole.x1 + 10, whole.y1],
+            [whole.x0 + 10, whole.y1],
+        ];
         s.execute("edit.transform", json!({"quad": q})).unwrap();
         let moved = active_bounds(&s);
-        assert!(moved.x0.abs_diff(whole.x0 + 10) <= 1 && moved.width().abs_diff(whole.width()) <= 1, "{whole:?} -> {moved:?}");
+        assert!(
+            moved.x0.abs_diff(whole.x0 + 10) <= 1 && moved.width().abs_diff(whole.width()) <= 1,
+            "{whole:?} -> {moved:?}"
+        );
         // Rotate 180° turns it about its own centre, not the selection's.
         s.execute("edit.transform.rotate180", json!({})).unwrap();
         let turned = active_bounds(&s);
-        assert!(turned.x0.abs_diff(moved.x0) <= 2 && turned.x1.abs_diff(moved.x1) <= 2, "{moved:?} -> {turned:?}");
+        assert!(
+            turned.x0.abs_diff(moved.x0) <= 2 && turned.x1.abs_diff(moved.x1) <= 2,
+            "{moved:?} -> {turned:?}"
+        );
         // A pixel layer still frames only the selected pixels.
         let mut s = session();
-        s.execute("select.rect", json!({"x": 10, "y": 10, "width": 5, "height": 10})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 5, "height": 10}),
+        )
+        .unwrap();
         let st = s.active().unwrap();
-        assert_eq!(transform_bounds(&st.doc, st.doc.layer(st.active_layer.unwrap()).unwrap()), Rect::new(10, 10, 15, 20));
+        assert_eq!(
+            transform_bounds(&st.doc, st.doc.layer(st.active_layer.unwrap()).unwrap()),
+            Rect::new(10, 10, 15, 20)
+        );
     }
 
     #[test]
@@ -1168,10 +1667,18 @@ mod tests {
                 let mut s = masked_depth(&[Rect::new(10, 10, 15, 20)], true, depth);
                 let child = s.active().unwrap().active_layer.unwrap();
                 s.execute("layer.groupLayers", json!({})).unwrap();
-                s.execute("select.rect", json!({"x": x, "y": 10, "width": 5, "height": 5})).unwrap();
+                s.execute(
+                    "select.rect",
+                    json!({"x": x, "y": 10, "width": 5, "height": 5}),
+                )
+                .unwrap();
                 s.execute("edit.transform.rotate180", json!({})).unwrap();
                 let layer = s.active().unwrap().doc.layer(child).unwrap();
-                assert_eq!(layer.surface().unwrap().content_bounds(), Rect::new(10, 10, 30, 20), "rotate about the group's centre, not the selection's");
+                assert_eq!(
+                    layer.surface().unwrap().content_bounds(),
+                    Rect::new(10, 10, 30, 20),
+                    "rotate about the group's centre, not the selection's"
+                );
                 let mask = &layer.mask.as_ref().unwrap().surface;
                 assert_eq!(mask.sample_channel(27, 15, 0), 0.0);
                 assert_eq!(mask.sample_channel(12, 15, 0), 1.0);
@@ -1191,22 +1698,57 @@ mod tests {
                 s.execute("select.rect", json!({"x": selection.x0, "y": selection.y0, "width": selection.width(), "height": selection.height()})).unwrap();
                 let steps = s.active().unwrap().history.entries().len();
                 let result = s.execute("edit.transform", json!({"quad": [[10, 10], [50, 10], [50, 30], [10, 30]], "interpolation": "nearest"})).unwrap();
-                assert_eq!(result["rect"], json!([10.0, 10.0, 30.0, 20.0]), "frame must include the whole group (nested={nested})");
+                assert_eq!(
+                    result["rect"],
+                    json!([10.0, 10.0, 30.0, 20.0]),
+                    "frame must include the whole group (nested={nested})"
+                );
                 let st = s.active().unwrap();
                 let layer = st.doc.layer(child).unwrap();
-                assert_eq!(layer.surface().unwrap().content_bounds(), Rect::new(10, 10, 50, 30));
+                assert_eq!(
+                    layer.surface().unwrap().content_bounds(),
+                    Rect::new(10, 10, 50, 30)
+                );
                 let mask = &layer.mask.as_ref().unwrap().surface;
-                assert_eq!(mask.sample_channel(19, 20, 0), 0.0, "the linked mask scales with its complete layer");
+                assert_eq!(
+                    mask.sample_channel(19, 20, 0),
+                    0.0,
+                    "the linked mask scales with its complete layer"
+                );
                 assert_eq!(mask.sample_channel(21, 20, 0), 1.0);
                 assert_eq!(st.history.entries().len(), steps + 1);
                 assert!(s.undo());
                 let st = s.active().unwrap();
                 let layer = st.doc.layer(child).unwrap();
-                assert_eq!(layer.surface().unwrap().content_bounds(), Rect::new(10, 10, 30, 20));
-                assert_eq!(layer.mask.as_ref().unwrap().surface.sample_channel(19, 15, 0), 1.0);
-                assert_eq!(st.doc.selection.as_ref().unwrap().content_bounds(), selection);
+                assert_eq!(
+                    layer.surface().unwrap().content_bounds(),
+                    Rect::new(10, 10, 30, 20)
+                );
+                assert_eq!(
+                    layer
+                        .mask
+                        .as_ref()
+                        .unwrap()
+                        .surface
+                        .sample_channel(19, 15, 0),
+                    1.0
+                );
+                assert_eq!(
+                    st.doc.selection.as_ref().unwrap().content_bounds(),
+                    selection
+                );
                 assert!(s.redo());
-                assert_eq!(s.active().unwrap().doc.layer(child).unwrap().surface().unwrap().content_bounds(), Rect::new(10, 10, 50, 30));
+                assert_eq!(
+                    s.active()
+                        .unwrap()
+                        .doc
+                        .layer(child)
+                        .unwrap()
+                        .surface()
+                        .unwrap()
+                        .content_bounds(),
+                    Rect::new(10, 10, 50, 30)
+                );
             }
         }
     }
@@ -1214,53 +1756,103 @@ mod tests {
     #[test]
     fn feathered_selection_identity_transform_preserves_pixels() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 16, "background": "transparent"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 16, "height": 16, "background": "transparent"}),
+        )
+        .unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        s.execute("select.rect", json!({"x": 4, "y": 4, "width": 8, "height": 8})).unwrap();
-        s.execute("select.modify.feather", json!({"radius": 1})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 4, "y": 4, "width": 8, "height": 8}),
+        )
+        .unwrap();
+        s.execute("select.modify.feather", json!({"radius": 1}))
+            .unwrap();
 
         let mut before_px = Vec::new();
         for y in 0..16 {
             for x in 0..16 {
-                before_px.push(s.execute("document.pixel", json!({"x": x, "y": y})).unwrap());
+                before_px.push(
+                    s.execute("document.pixel", json!({"x": x, "y": y}))
+                        .unwrap(),
+                );
             }
         }
 
-        s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 0], "interpolation": "nearest"})).unwrap();
+        s.execute(
+            "edit.transform",
+            json!({"matrix": [1, 0, 0, 1, 0, 0], "interpolation": "nearest"}),
+        )
+        .unwrap();
 
         let mut after_px = Vec::new();
         for y in 0..16 {
             for x in 0..16 {
-                after_px.push(s.execute("document.pixel", json!({"x": x, "y": y})).unwrap());
+                after_px.push(
+                    s.execute("document.pixel", json!({"x": x, "y": y}))
+                        .unwrap(),
+                );
             }
         }
 
-        assert_eq!(before_px, after_px, "feathered selection identity transform must preserve all pixels");
-        let p4_8 = s.execute("document.pixel", json!({"x": 4, "y": 8})).unwrap();
-        assert_eq!(p4_8, json!([1.0, 0.0, 0.0, 1.0]), "(4,8) must remain opaque red");
+        assert_eq!(
+            before_px, after_px,
+            "feathered selection identity transform must preserve all pixels"
+        );
+        let p4_8 = s
+            .execute("document.pixel", json!({"x": 4, "y": 8}))
+            .unwrap();
+        assert_eq!(
+            p4_8,
+            json!([1.0, 0.0, 0.0, 1.0]),
+            "(4,8) must remain opaque red"
+        );
 
         // Undo restores original document.
         s.execute("edit.undo", json!({})).unwrap();
-        let undo_p4_8 = s.execute("document.pixel", json!({"x": 4, "y": 8})).unwrap();
+        let undo_p4_8 = s
+            .execute("document.pixel", json!({"x": 4, "y": 8}))
+            .unwrap();
         assert_eq!(undo_p4_8, json!([1.0, 0.0, 0.0, 1.0]));
 
         // Locked layer still refuses transform even if identity.
-        s.execute("layer.setProps", json!({"locks": {"position": true}})).unwrap();
-        assert!(s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 0]})).is_err(), "locked layer refuses identity transform");
+        s.execute("layer.setProps", json!({"locks": {"position": true}}))
+            .unwrap();
+        assert!(
+            s.execute("edit.transform", json!({"matrix": [1, 0, 0, 1, 0, 0]}))
+                .is_err(),
+            "locked layer refuses identity transform"
+        );
     }
 
     #[test]
     fn relative_params_scale_and_rotate_about_the_frame_centre() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 100, "height": 100})).unwrap();
+        s.execute("file.new", json!({"width": 100, "height": 100}))
+            .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
-        s.execute("select.rect", json!({"x": 20, "y": 30, "width": 40, "height": 20})).unwrap();
-        s.execute("edit.fill", json!({"contents": "black"})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 20, "y": 30, "width": 40, "height": 20}),
+        )
+        .unwrap();
+        s.execute("edit.fill", json!({"contents": "black"}))
+            .unwrap();
         s.execute("select.deselect", json!({})).unwrap();
         // 50% about the centre (40, 40), then 10 px right: the content ends at x 40..60, y 35..45.
-        let r = s.execute("edit.transform", json!({"scaleX": 50, "scaleY": 50, "dx": 10})).unwrap();
+        let r = s
+            .execute(
+                "edit.transform",
+                json!({"scaleX": 50, "scaleY": 50, "dx": 10}),
+            )
+            .unwrap();
         let rect: Vec<f64> = serde_json::from_value(r["rect"].clone()).unwrap();
-        assert_eq!(rect, [20.0, 30.0, 60.0, 50.0], "the reported frame is the source frame");
+        assert_eq!(
+            rect,
+            [20.0, 30.0, 60.0, 50.0],
+            "the reported frame is the source frame"
+        );
         let bounds = |s: &Session| {
             let d = s.active().unwrap();
             let b = transform_bounds(&d.doc, d.doc.layer(d.active_layer.unwrap()).unwrap());
@@ -1270,7 +1862,11 @@ mod tests {
         // A quarter turn about the centre (50, 40) swaps the frame's sides.
         s.execute("edit.transform", json!({"rotate": 90})).unwrap();
         assert_eq!(bounds(&s), (45, 30, 55, 50));
-        for bad in [json!({"scaleX": 0}), json!({"rotate": "x"}), json!({"dx": f64::NAN})] {
+        for bad in [
+            json!({"scaleX": 0}),
+            json!({"rotate": "x"}),
+            json!({"dx": f64::NAN}),
+        ] {
             assert!(s.execute("edit.transform", bad.clone()).is_err(), "{bad}");
         }
     }

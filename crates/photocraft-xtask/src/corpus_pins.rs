@@ -43,7 +43,8 @@ pub const PNGSUITE_URL: &str = "http://www.schaik.com/pngsuite/PngSuite-2017jul1
 /// Fixed archive, corroborated by HTTPS records in opencodecs at 6f070029 and rivet-png at
 /// 134faad8 (corpus/checksums.json and tests/pngsuite/SHA256SUMS). Check the legacy HTTP
 /// download against this committed digest before extraction.
-pub const PNGSUITE_SHA256: &str = "0294b244c95a8342c01b00010cf34abdcabc7c6a34fd0fe1bd963917537bfdc8";
+pub const PNGSUITE_SHA256: &str =
+    "0294b244c95a8342c01b00010cf34abdcabc7c6a34fd0fe1bd963917537bfdc8";
 
 /// `corpus/photoshop`: 258 PSDs authored with Photoshop by the photocraft-corpus generator.
 pub const PHOTOSHOP: PinnedCorpus = PinnedCorpus {
@@ -54,7 +55,11 @@ pub const PHOTOSHOP: PinnedCorpus = PinnedCorpus {
         repo: "storytold/photocraft-corpus",
         commit: PHOTOCRAFT_CORPUS_COMMIT,
         subdir: "photoshop",
-        extras: &[("README.md", "README.md"), ("LICENSE-MIT", "LICENSE-MIT"), ("LICENSE-APACHE", "LICENSE-APACHE")],
+        extras: &[
+            ("README.md", "README.md"),
+            ("LICENSE-MIT", "LICENSE-MIT"),
+            ("LICENSE-APACHE", "LICENSE-APACHE"),
+        ],
     }],
     manifest: "xtask/photoshop-corpus.sha256",
     exts: &["psd", "psb"],
@@ -73,7 +78,13 @@ pub const PHOTOSHOP: PinnedCorpus = PinnedCorpus {
 pub const PSD_TOOLS: PinnedCorpus = PinnedCorpus {
     name: "psd-tools",
     dest: "psd-tools",
-    upstreams: &[Upstream { prefix: "", repo: "psd-tools/psd-tools", commit: PSD_TOOLS_COMMIT, subdir: "tests/psd_files", extras: &[("LICENSE", "LICENSE")] }],
+    upstreams: &[Upstream {
+        prefix: "",
+        repo: "psd-tools/psd-tools",
+        commit: PSD_TOOLS_COMMIT,
+        subdir: "tests/psd_files",
+        extras: &[("LICENSE", "LICENSE")],
+    }],
     manifest: "xtask/psd-tools-corpus.sha256",
     exts: &["psd", "psb"],
     subset: false,
@@ -100,7 +111,13 @@ pub const PSD_MIXED: PinnedCorpus = PinnedCorpus {
             subdir: "tests/psd_files",
             extras: &[("LICENSE", "psd-tools/LICENSE")],
         },
-        Upstream { prefix: "ag-psd/", repo: "Agamnentzar/ag-psd", commit: AG_PSD_COMMIT, subdir: "test", extras: &[("LICENSE", "ag-psd/LICENSE")] },
+        Upstream {
+            prefix: "ag-psd/",
+            repo: "Agamnentzar/ag-psd",
+            commit: AG_PSD_COMMIT,
+            subdir: "test",
+            extras: &[("LICENSE", "ag-psd/LICENSE")],
+        },
     ],
     manifest: "xtask/psd-corpus.sha256",
     exts: &["psd", "psb"],
@@ -129,7 +146,10 @@ pub const HEIF: PinnedCorpus = PinnedCorpus {
             repo: "tbraun96/heic-rs",
             commit: HEIC_RS_COMMIT,
             subdir: "tests/fixtures",
-            extras: &[("LICENSE-MIT", "heic-rs/LICENSE-MIT"), ("LICENSE-APACHE", "heic-rs/LICENSE-APACHE")],
+            extras: &[
+                ("LICENSE-MIT", "heic-rs/LICENSE-MIT"),
+                ("LICENSE-APACHE", "heic-rs/LICENSE-APACHE"),
+            ],
         },
         Upstream {
             prefix: "pillow-heif/",
@@ -220,7 +240,10 @@ pub const AFFINITY: PinnedCorpus = PinnedCorpus {
             repo: "satoshoe-dev/affinity-samples",
             commit: AFFINITY_SAMPLES_COMMIT,
             subdir: "",
-            extras: &[("LICENSE", "affinity-samples/LICENSE"), ("README.md", "affinity-samples/README.md")],
+            extras: &[
+                ("LICENSE", "affinity-samples/LICENSE"),
+                ("README.md", "affinity-samples/README.md"),
+            ],
         },
     ],
     manifest: "xtask/affinity-corpus.sha256",
@@ -255,6 +278,9 @@ pub const PIXLS_FILES: &[(&str, &str)] = &[
     ("Nikon/D3/JD1_8203.NEF", "JD1_8203.NEF"),
     ("Sony/DSC-RX0/DSC00009.ARW", "DSC00009.ARW"),
     ("Panasonic/DC-G9/P1000475.RW2", "P1000475.RW2"),
-    ("Olympus/E-1/E_1__C106743_gredos.ORF", "E_1__C106743_gredos.ORF"),
+    (
+        "Olympus/E-1/E_1__C106743_gredos.ORF",
+        "E_1__C106743_gredos.ORF",
+    ),
     ("Olympus/E-5/_7061961_copy.ORF", "_7061961_copy.ORF"),
 ];

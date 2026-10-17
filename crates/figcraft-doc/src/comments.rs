@@ -37,12 +37,20 @@ fn is_zero(v: &u64) -> bool {
 
 impl Message {
     pub fn new(author: impl Into<String>, text: impl Into<String>, created: u64) -> Self {
-        Self { author: author.into(), text: text.into(), created, edited: 0, reactions: Vec::new() }
+        Self {
+            author: author.into(),
+            text: text.into(),
+            created,
+            edited: 0,
+            reactions: Vec::new(),
+        }
     }
 
     /// `user` left the `emoji` reaction.
     pub fn reacted(&self, emoji: &str, user: &str) -> bool {
-        self.reactions.iter().any(|r| r.emoji == emoji && r.users.iter().any(|u| u == user))
+        self.reactions
+            .iter()
+            .any(|r| r.emoji == emoji && r.users.iter().any(|u| u == user))
     }
 
     /// Add `user`'s `emoji` reaction, or take it back (`on`: None toggles). True when it changed.
@@ -65,7 +73,10 @@ impl Message {
                     }
                 }
             }
-            None => self.reactions.push(Reaction { emoji: emoji.to_string(), users: vec![user.to_string()] }),
+            None => self.reactions.push(Reaction {
+                emoji: emoji.to_string(),
+                users: vec![user.to_string()],
+            }),
         }
         true
     }
@@ -145,12 +156,15 @@ impl Comment {
 
     /// `user` wrote in the thread or is @mentioned in it.
     pub fn involves(&self, user: &str) -> bool {
-        self.messages().any(|m| m.author == user || !mention_ranges(&m.text, &[user]).is_empty())
+        self.messages()
+            .any(|m| m.author == user || !mention_ranges(&m.text, &[user]).is_empty())
     }
 
     /// The thread has something `user` hasn't read.
     pub fn is_unread(&self, user: &str) -> bool {
-        self.read_by.as_ref().is_some_and(|r| !r.iter().any(|u| u == user))
+        self.read_by
+            .as_ref()
+            .is_some_and(|r| !r.iter().any(|u| u == user))
     }
 
     /// Mark the thread read or unread for `user`. True when it changed.
@@ -189,7 +203,10 @@ pub fn mention_ranges(text: &str, people: &[&str]) -> Vec<Range<usize>> {
     while let Some(off) = text.get(from..).and_then(|t| t.find('@')) {
         let at = from + off;
         from = at + 1;
-        let starts = text.get(..at).and_then(|t| t.chars().next_back()).is_none_or(|c| !c.is_alphanumeric());
+        let starts = text
+            .get(..at)
+            .and_then(|t| t.chars().next_back())
+            .is_none_or(|c| !c.is_alphanumeric());
         if !starts {
             continue;
         }
@@ -197,8 +214,15 @@ pub fn mention_ranges(text: &str, people: &[&str]) -> Vec<Range<usize>> {
         let best = people
             .iter()
             .filter(|n| !n.is_empty())
-            .filter(|n| rest.get(..n.len()).is_some_and(|h| h.eq_ignore_ascii_case(n)))
-            .filter(|n| rest.get(n.len()..).and_then(|t| t.chars().next()).is_none_or(|c| !c.is_alphanumeric()))
+            .filter(|n| {
+                rest.get(..n.len())
+                    .is_some_and(|h| h.eq_ignore_ascii_case(n))
+            })
+            .filter(|n| {
+                rest.get(n.len()..)
+                    .and_then(|t| t.chars().next())
+                    .is_none_or(|c| !c.is_alphanumeric())
+            })
             .map(|n| n.len())
             .max();
         if let Some(len) = best {
@@ -221,7 +245,12 @@ impl Document {
     /// The next free comment id outside a live session (one above the highest; see
     /// [`new_comment_id`](Self::new_comment_id)).
     pub fn next_comment_id(&self) -> u64 {
-        self.comments.iter().map(|c| c.id).max().unwrap_or(0).saturating_add(1)
+        self.comments
+            .iter()
+            .map(|c| c.id)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1)
     }
 
     /// Everyone named in the file's comments (authors and those who reacted), sorted.
@@ -230,11 +259,17 @@ impl Document {
             .comments
             .iter()
             .flat_map(|c| c.messages())
-            .flat_map(|m| std::iter::once(&m.author).chain(m.reactions.iter().flat_map(|r| r.users.iter())))
+            .flat_map(|m| {
+                std::iter::once(&m.author).chain(m.reactions.iter().flat_map(|r| r.users.iter()))
+            })
             .filter(|n| !n.trim().is_empty())
             .cloned()
             .collect();
-        out.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()).then_with(|| a.cmp(b)));
+        out.sort_by(|a, b| {
+            a.to_lowercase()
+                .cmp(&b.to_lowercase())
+                .then_with(|| a.cmp(b))
+        });
         out.dedup();
         out
     }

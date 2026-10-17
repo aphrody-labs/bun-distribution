@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct TtsRenderTaskToken(pub String);
 
 impl_string_token!(TtsRenderTaskToken);
-impl_crockford_generator!(TtsRenderTaskToken, 32usize, TokenPrefix::TtsRenderTask, CrockfordMixed);
+impl_crockford_generator!(
+    TtsRenderTaskToken,
+    32usize,
+    TokenPrefix::TtsRenderTask,
+    CrockfordMixed
+);

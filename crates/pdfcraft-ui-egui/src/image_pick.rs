@@ -31,7 +31,9 @@ pub(crate) fn page_input(
     pointer: Option<Pos2>,
     view: &mut DocView,
 ) {
-    let Some(p) = pointer.filter(|p| xf.rect.contains(*p)) else { return };
+    let Some(p) = pointer.filter(|p| xf.rect.contains(*p)) else {
+        return;
+    };
     if resp.drag_started() || resp.double_clicked() || resp.triple_clicked() {
         view.picked_image = None;
         return;
@@ -39,30 +41,68 @@ pub(crate) fn page_input(
     if !resp.clicked() {
         return;
     }
-    let Some(info_page) = info.pages.get(page) else { return };
+    let Some(info_page) = info.pages.get(page) else {
+        return;
+    };
     let (vx, vy) = xf.screen_to_view(p);
     let u = info_page.view_to_user(vx, vy);
     let at = [f64::from(u[0]), f64::from(u[1])];
-    view.picked_image =
-        doc.page_image_at(page, at).and_then(|index| doc.page_images(page).get(index).map(|i| PickedImage { page, index, rect: i.rect }));
+    view.picked_image = doc.page_image_at(page, at).and_then(|index| {
+        doc.page_images(page).get(index).map(|i| PickedImage {
+            page,
+            index,
+            rect: i.rect,
+        })
+    });
 }
 
 /// The selected picture's highlight on page `page`.
-pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: &DocInfo, view: &DocView) {
-    let Some(picked) = view.picked_image.filter(|p| p.page == page) else { return };
+pub(crate) fn paint(
+    painter: &egui::Painter,
+    xf: &PageXform,
+    page: usize,
+    info: &DocInfo,
+    view: &DocView,
+) {
+    let Some(picked) = view.picked_image.filter(|p| p.page == page) else {
+        return;
+    };
     if info.pages.get(page).is_none() || !picked.rect.iter().all(|v| v.is_finite()) {
         return;
     }
     let r = xf.user_rect(info, page, picked.rect.map(|v| v as f32));
-    painter.rect_filled(r, CornerRadius::ZERO, Color32::from_rgba_unmultiplied(0x3A, 0x7B, 0xF0, 50));
-    painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(2.0, BLUE), egui::StrokeKind::Outside);
+    painter.rect_filled(
+        r,
+        CornerRadius::ZERO,
+        Color32::from_rgba_unmultiplied(0x3A, 0x7B, 0xF0, 50),
+    );
+    painter.rect_stroke(
+        r,
+        CornerRadius::ZERO,
+        Stroke::new(2.0, BLUE),
+        egui::StrokeKind::Outside,
+    );
 }
 
 /// A file name without characters file systems refuse.
 fn safe_name(s: &str) -> String {
-    let cleaned: String = s.chars().map(|c| if c.is_control() || r#"/\:*?"<>|"#.contains(c) { '_' } else { c }).take(80).collect();
+    let cleaned: String = s
+        .chars()
+        .map(|c| {
+            if c.is_control() || r#"/\:*?"<>|"#.contains(c) {
+                '_'
+            } else {
+                c
+            }
+        })
+        .take(80)
+        .collect();
     let cleaned = cleaned.trim().trim_matches('.').to_string();
-    if cleaned.is_empty() { "PdfCraft".into() } else { cleaned }
+    if cleaned.is_empty() {
+        "PdfCraft".into()
+    } else {
+        cleaned
+    }
 }
 
 /// The per-user folder that holds the file of the last Copy Image in Original Format: `Clipboard`
@@ -77,13 +117,20 @@ fn clipboard_dir() -> Option<std::path::PathBuf> {
     if let Some(dir) = crate::portable::data_dir() {
         return Some(dir.join("Clipboard"));
     }
-    let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from).filter(|p| p.is_absolute());
+    let env = |k: &str| {
+        std::env::var_os(k)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+            .filter(|p| p.is_absolute())
+    };
     if cfg!(target_os = "macos") {
         env("HOME").map(|h| h.join("Library/Caches/PdfCraft/Clipboard"))
     } else if cfg!(windows) {
         env("LOCALAPPDATA").map(|d| d.join("PdfCraft").join("Clipboard"))
     } else {
-        env("XDG_CACHE_HOME").or_else(|| env("HOME").map(|h| h.join(".cache"))).map(|d| d.join("pdfcraft/clipboard"))
+        env("XDG_CACHE_HOME")
+            .or_else(|| env("HOME").map(|h| h.join(".cache")))
+            .map(|d| d.join("pdfcraft/clipboard"))
     }
 }
 
@@ -92,12 +139,18 @@ fn clipboard_dir() -> Option<std::path::PathBuf> {
 #[cfg(not(target_arch = "wasm32"))]
 fn is_copied_image_name(name: &str) -> bool {
     let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
-    let Some((rest, ext)) = name.rsplit_once('.') else { return false };
+    let Some((rest, ext)) = name.rsplit_once('.') else {
+        return false;
+    };
     if !matches!(ext, "jpg" | "png") {
         return false;
     }
-    let Some((rest, index)) = rest.rsplit_once(" img") else { return false };
-    let Some((stem, page)) = rest.rsplit_once(" p") else { return false };
+    let Some((rest, index)) = rest.rsplit_once(" img") else {
+        return false;
+    };
+    let Some((stem, page)) = rest.rsplit_once(" p") else {
+        return false;
+    };
     !stem.is_empty() && digits(index) && digits(page)
 }
 
@@ -105,7 +158,11 @@ fn is_copied_image_name(name: &str) -> bool {
 /// earlier copies PdfCraft wrote there, and writes `bytes` as a new file `name`. Links are never
 /// followed and nothing else in the folder is touched.
 #[cfg(not(target_arch = "wasm32"))]
-fn write_clipboard_file(dir: &std::path::Path, name: &str, bytes: &[u8]) -> Result<std::path::PathBuf, String> {
+fn write_clipboard_file(
+    dir: &std::path::Path,
+    name: &str,
+    bytes: &[u8],
+) -> Result<std::path::PathBuf, String> {
     use std::io::Write;
     if !is_copied_image_name(name) || name.contains(['/', '\\']) {
         return Err("the file name is not valid".into());
@@ -120,7 +177,8 @@ fn write_clipboard_file(dir: &std::path::Path, name: &str, bytes: &[u8]) -> Resu
         use std::os::unix::fs::PermissionsExt;
         // Only the owner may change a folder's permissions, so this also refuses a folder that
         // belongs to someone else.
-        std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700)).map_err(|e| format!("{}: {e}", dir.display()))?;
+        std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))
+            .map_err(|e| format!("{}: {e}", dir.display()))?;
     }
     // Only the latest copy needs to exist; older ones are removed (best effort). Only regular
     // files with the copy's name pattern: links and anything else are left alone.
@@ -134,7 +192,11 @@ fn write_clipboard_file(dir: &std::path::Path, name: &str, bytes: &[u8]) -> Resu
     }
     let path = dir.join(name);
     // `create_new` fails on anything already there, a link included, instead of following it.
-    let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path).map_err(|e| e.to_string())?;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .map_err(|e| e.to_string())?;
     if let Err(e) = file.write_all(bytes) {
         drop(file);
         let _ = std::fs::remove_file(&path);
@@ -146,7 +208,9 @@ fn write_clipboard_file(dir: &std::path::Path, name: &str, bytes: &[u8]) -> Resu
 impl PdfCraftApp {
     /// ⌘C / Ctrl+C copies the selected picture in its original format; Escape deselects it.
     pub(crate) fn image_pick_keys(&mut self, i: usize, ctx: &egui::Context) {
-        let Some(picked) = self.views.get(i).and_then(|v| v.picked_image) else { return };
+        let Some(picked) = self.views.get(i).and_then(|v| v.picked_image) else {
+            return;
+        };
         if ctx.egui_wants_keyboard_input() {
             return;
         }
@@ -159,7 +223,11 @@ impl PdfCraftApp {
             return;
         }
         // The document may have changed since the click: the same picture must still be there.
-        let current = self.session.get(self.views[i].id).and_then(|d| d.page_images(picked.page).get(picked.index).map(|im| im.rect));
+        let current = self.session.get(self.views[i].id).and_then(|d| {
+            d.page_images(picked.page)
+                .get(picked.index)
+                .map(|im| im.rect)
+        });
         if current == Some(picked.rect) {
             self.copy_page_image_file(picked.page, picked.index);
         } else {
@@ -171,21 +239,36 @@ impl PdfCraftApp {
     /// Copy Image in Original Format: image `index` on `page` as a file on the clipboard (JPEG
     /// as stored in the PDF, otherwise PNG).
     pub(crate) fn copy_page_image_file(&mut self, page: usize, index: usize) {
-        let Some((_, id)) = self.active_ids() else { return };
+        let Some((_, id)) = self.active_ids() else {
+            return;
+        };
         if !self.may_copy(id) {
             return;
         }
-        let Some(doc) = self.session.get(id) else { return };
-        let stem = safe_name(doc.name.rsplit_once('.').map_or(doc.name.as_str(), |(s, _)| s));
+        let Some(doc) = self.session.get(id) else {
+            return;
+        };
+        let stem = safe_name(
+            doc.name
+                .rsplit_once('.')
+                .map_or(doc.name.as_str(), |(s, _)| s),
+        );
         let file = doc.page_image_copy_file(page, index);
         let copied = file.and_then(|(ext, bytes)| {
-            let name = format!("{stem} p{} img{}.{ext}", page.saturating_add(1), index.saturating_add(1));
+            let name = format!(
+                "{stem} p{} img{}.{ext}",
+                page.saturating_add(1),
+                index.saturating_add(1)
+            );
             self.put_file_on_clipboard(&name, &bytes)?;
             self.last_copied_file = Some((name, bytes));
             Ok(ext)
         });
         match copied {
-            Ok(ext) => self.notify_fmt("The image has been copied as a {ext} file", &[("ext", &ext.to_uppercase())]),
+            Ok(ext) => self.notify_fmt(
+                "The image has been copied as a {ext} file",
+                &[("ext", &ext.to_uppercase())],
+            ),
             Err(e) => self.notify_fmt("Couldn't copy the image: {e}", &[("e", &e)]),
         }
     }
@@ -199,13 +282,18 @@ impl PdfCraftApp {
         }
         let dir = clipboard_dir().ok_or("there is no folder for the copied file")?;
         let path = write_clipboard_file(&dir, name, bytes)?;
-        arboard::Clipboard::new().and_then(|mut c| c.set().file_list(&[path])).map_err(|e| e.to_string())
+        arboard::Clipboard::new()
+            .and_then(|mut c| c.set().file_list(&[path]))
+            .map_err(|e| e.to_string())
     }
 
     #[cfg(target_arch = "wasm32")]
     fn put_file_on_clipboard(&self, _name: &str, _bytes: &[u8]) -> Result<(), String> {
         if self.system_clipboard {
-            return Err("the web version can't put files on the clipboard yet; use Save Image As".to_string());
+            return Err(
+                "the web version can't put files on the clipboard yet; use Save Image As"
+                    .to_string(),
+            );
         }
         Ok(())
     }
@@ -238,31 +326,50 @@ mod tests {
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn clipboard_folder_only_replaces_our_own_copies() {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-clipboard-test-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-clipboard-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("keep.txt"), b"other").unwrap();
         std::fs::write(dir.join("Old p1 img1.png"), b"old").unwrap();
         let path = write_clipboard_file(&dir, "New p2 img1.jpg", b"new").unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"new");
-        assert!(dir.join("keep.txt").exists(), "files PdfCraft didn't write are kept");
-        assert!(!dir.join("Old p1 img1.png").exists(), "the previous copy is removed");
+        assert!(
+            dir.join("keep.txt").exists(),
+            "files PdfCraft didn't write are kept"
+        );
+        assert!(
+            !dir.join("Old p1 img1.png").exists(),
+            "the previous copy is removed"
+        );
         assert!(write_clipboard_file(&dir, "../escape p1 img1.png", b"x").is_err());
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+            assert_eq!(
+                std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
             // A link with a copy's name is neither followed nor removed.
             let target = dir.join("keep.txt");
             let link = dir.join("Link p1 img1.png");
             std::os::unix::fs::symlink(&target, &link).unwrap();
             write_clipboard_file(&dir, "Again p1 img1.png", b"again").unwrap();
-            assert!(std::fs::symlink_metadata(&link).is_ok(), "links are left alone");
+            assert!(
+                std::fs::symlink_metadata(&link).is_ok(),
+                "links are left alone"
+            );
             assert_eq!(std::fs::read(&target).unwrap(), b"other");
-            assert!(write_clipboard_file(&dir, "Link p1 img1.png", b"x").is_err(), "writing never follows a link");
+            assert!(
+                write_clipboard_file(&dir, "Link p1 img1.png", b"x").is_err(),
+                "writing never follows a link"
+            );
             assert_eq!(std::fs::read(&target).unwrap(), b"other");
             // A link in place of the folder is refused.
-            let linked = std::env::temp_dir().join(format!("pdfcraft-clipboard-test-link-{}", std::process::id()));
+            let linked = std::env::temp_dir().join(format!(
+                "pdfcraft-clipboard-test-link-{}",
+                std::process::id()
+            ));
             let _ = std::fs::remove_file(&linked);
             std::os::unix::fs::symlink(&dir, &linked).unwrap();
             assert!(write_clipboard_file(&linked, "X p1 img1.png", b"x").is_err());

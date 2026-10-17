@@ -31,11 +31,19 @@ struct Calls {
 
 impl Calls {
     fn record(&self) {
-        self.threads.lock().unwrap().push(std::thread::current().id());
+        self.threads
+            .lock()
+            .unwrap()
+            .push(std::thread::current().id());
         self.n.fetch_add(1, Ordering::SeqCst);
     }
     fn on(&self, t: ThreadId) -> usize {
-        self.threads.lock().unwrap().iter().filter(|x| **x == t).count()
+        self.threads
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|x| **x == t)
+            .count()
     }
 }
 
@@ -45,8 +53,18 @@ fn offline_library(calls: &Calls) -> Session {
     let mut s = Session::new();
     for i in 0..N {
         let path = format!("/lightcraft-offline-nas/IMG_{i:03}.jpg");
-        let p = Photo::new(PhotoId(i + 1), Source::File { path }, &format!("IMG_{i:03}.jpg"), "JPEG", 600, 400, "2026-01-01T00:00:00");
-        s.catalog.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
+        let p = Photo::new(
+            PhotoId(i + 1),
+            Source::File { path },
+            &format!("IMG_{i:03}.jpg"),
+            "JPEG",
+            600,
+            400,
+            "2026-01-01T00:00:00",
+        );
+        s.catalog
+            .apply(Op::AddPhoto { photo: Box::new(p) })
+            .unwrap();
     }
     s.media.smart_dir = Some(std::env::temp_dir().join("lightcraft-offline-smart-previews-none"));
     let c = calls.clone();
@@ -71,18 +89,33 @@ fn max_frame(h: &mut Headless, frames: usize) -> Duration {
 #[test]
 fn offline_originals_never_block_a_frame() {
     let calls = Calls::default();
-    let app = LightcraftApp::new(offline_library(&calls), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        offline_library(&calls),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     let ui_thread = std::thread::current().id();
     h.app.ui.view = ViewMode::PhotoGrid;
     h.step();
     // The first frame installs fonts; finish the first layout before timing the views.
     h.step();
-    assert!(h.app.fonts_ready, "the UI is initialized before frame timing starts");
-    assert!(h.app.session.media.availability.is_background(), "the app checks files off the UI thread");
+    assert!(
+        h.app.fonts_ready,
+        "the UI is initialized before frame timing starts"
+    );
+    assert!(
+        h.app.session.media.availability.is_background(),
+        "the app checks files off the UI thread"
+    );
 
     // the grid: every cell asks for its thumbnail (which asks whether the original is there)
-    h.app.session.execute("library.select", &json!({"ids": [1]})).unwrap();
+    h.app
+        .session
+        .execute("library.select", &json!({"ids": [1]}))
+        .unwrap();
     let worst = max_frame(&mut h, 20);
     assert!(worst < FRAME_LIMIT, "grid frame took {worst:?}");
 
@@ -95,7 +128,10 @@ fn offline_originals_never_block_a_frame() {
     // the Missing Photos view fills in as the background checks find the files gone
     h.app.ui.view = ViewMode::PhotoGrid;
     h.app.ui.right = RightPanel::None;
-    h.app.session.execute("library.source", &json!({"kind": "missing"})).unwrap();
+    h.app
+        .session
+        .execute("library.source", &json!({"kind": "missing"}))
+        .unwrap();
     assert_eq!(h.app.session.source, LibrarySource::Missing);
     let t0 = Instant::now();
     let mut worst = Duration::ZERO;
@@ -105,17 +141,31 @@ fn offline_originals_never_block_a_frame() {
         worst = worst.max(f.elapsed());
         std::thread::sleep(Duration::from_millis(5));
     }
-    assert_eq!(h.app.session.visible().len(), N as usize, "every photo found missing in the end");
+    assert_eq!(
+        h.app.session.visible().len(),
+        N as usize,
+        "every photo found missing in the end"
+    );
     assert!(worst < FRAME_LIMIT, "Missing Photos frame took {worst:?}");
 
     // the Rename dialog's preview (it checks which names are taken on disk)
-    h.app.session.execute("library.select", &json!({"ids": [1, 2, 3]})).unwrap();
-    h.app.ui.dialog = Some(crate::state::Dialog::Rename { template: "Trip-{seq:3}".into(), start: 1 });
+    h.app
+        .session
+        .execute("library.select", &json!({"ids": [1, 2, 3]}))
+        .unwrap();
+    h.app.ui.dialog = Some(crate::state::Dialog::Rename {
+        template: "Trip-{seq:3}".into(),
+        start: 1,
+    });
     let worst = max_frame(&mut h, 20);
     assert!(worst < FRAME_LIMIT, "Rename dialog frame took {worst:?}");
 
     assert!(calls.n.load(Ordering::SeqCst) > 0, "the probe was asked");
-    assert_eq!(calls.on(ui_thread), 0, "the slow probe never ran on the UI thread");
+    assert_eq!(
+        calls.on(ui_thread),
+        0,
+        "the slow probe never ran on the UI thread"
+    );
 }
 
 /// An import whose files take long to read (probe: decoding headers and hashing on a slow drive)
@@ -129,7 +179,11 @@ fn import_reads_files_off_the_ui_thread_and_can_be_cancelled() {
     // enough files that the import is still running when its activity row shows (after 0.5 s)
     let n = 120;
     for i in 0..n {
-        std::fs::write(dir.join(format!("IMG_{i:03}.jpg")), format!("not really a jpeg {i}")).unwrap();
+        std::fs::write(
+            dir.join(format!("IMG_{i:03}.jpg")),
+            format!("not really a jpeg {i}"),
+        )
+        .unwrap();
     }
     let calls = Calls::default();
     let mut s = Session::new();
@@ -145,19 +199,30 @@ fn import_reads_files_off_the_ui_thread_and_can_be_cancelled() {
             ..Default::default()
         })
     }));
-    let app = LightcraftApp::new(s, Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        s,
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     let ui_thread = std::thread::current().id();
     h.step();
     // The first frame installs fonts; finish the first layout before timing the import.
     h.step();
-    assert!(h.app.fonts_ready, "the UI is initialized before import timing starts");
+    assert!(
+        h.app.fonts_ready,
+        "the UI is initialized before import timing starts"
+    );
     let undo0 = h.app.session.undo.len();
     crate::import::start_paths(&mut h.app, vec![dir.to_string_lossy().to_string()]).unwrap();
     // some batches arrive; meanwhile every frame is quick
     let t0 = Instant::now();
     let mut worst = Duration::ZERO;
-    while h.app.import.as_ref().is_some_and(|t| t.imported < 8) && t0.elapsed() < Duration::from_secs(60) {
+    while h.app.import.as_ref().is_some_and(|t| t.imported < 8)
+        && t0.elapsed() < Duration::from_secs(60)
+    {
         let f = Instant::now();
         h.step();
         worst = worst.max(f.elapsed());
@@ -165,13 +230,36 @@ fn import_reads_files_off_the_ui_thread_and_can_be_cancelled() {
     }
     assert!(worst < FRAME_LIMIT, "import frame took {worst:?}");
     assert!(h.app.import.is_some(), "still importing");
-    let status = h.app.import.as_ref().map(crate::import::ImportTask::status).unwrap_or_default();
+    let status = h
+        .app
+        .import
+        .as_ref()
+        .map(crate::import::ImportTask::status)
+        .unwrap_or_default();
     assert!(status["total"].as_u64().unwrap_or(0) >= 8, "{status}");
     // Cancel (the ✕ of its row in the activity stack): the files being read finish, nothing new starts
-    let id = h.app.session.activity.list().first().map(|t| t.id).expect("an import row");
+    let id = h
+        .app
+        .session
+        .activity
+        .list()
+        .first()
+        .map(|t| t.id)
+        .expect("an import row");
     let cross = format!("activity:cancel:{id}");
-    assert!(h.step_until(Duration::from_secs(10), |h| h.app.widgets.iter().any(|(w, _)| *w == cross)), "the row shows");
-    let r = h.request("ui.clickWidget", json!({"id": cross}), Duration::from_secs(10));
+    assert!(
+        h.step_until(Duration::from_secs(10), |h| h
+            .app
+            .widgets
+            .iter()
+            .any(|(w, _)| *w == cross)),
+        "the row shows"
+    );
+    let r = h.request(
+        "ui.clickWidget",
+        json!({"id": cross}),
+        Duration::from_secs(10),
+    );
     assert_eq!(r["ok"], true, "{r}");
     let t0 = Instant::now();
     while h.app.import.is_some() && t0.elapsed() < Duration::from_secs(60) {
@@ -180,8 +268,15 @@ fn import_reads_files_off_the_ui_thread_and_can_be_cancelled() {
     }
     assert!(h.app.import.is_none(), "stopped");
     let added = h.app.session.catalog.len();
-    assert!((8..n).contains(&added), "cancelled part-way: {added} of {n} added");
+    assert!(
+        (8..n).contains(&added),
+        "cancelled part-way: {added} of {n} added"
+    );
     assert_eq!(h.app.session.undo.len(), undo0 + 1, "one undo step");
-    assert_eq!(calls.on(ui_thread), 0, "files were never read on the UI thread");
+    assert_eq!(
+        calls.on(ui_thread),
+        0,
+        "files were never read on the UI thread"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }

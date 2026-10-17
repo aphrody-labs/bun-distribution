@@ -5,7 +5,14 @@ use crate::Need;
 
 // The preprocessor directives, written `#name` or `//@name`:
 // https://extendscript.docsforadobe.dev/extendscript-tools-features/preprocessor-directives/
-pub(crate) const DIRECTIVES: &[&str] = &["include", "includepath", "script", "strict", "target", "targetengine"];
+pub(crate) const DIRECTIVES: &[&str] = &[
+    "include",
+    "includepath",
+    "script",
+    "strict",
+    "target",
+    "targetengine",
+];
 
 // The `$` object's environment and file functions:
 // https://extendscript.docsforadobe.dev/extendscript-tools-features/dollar-object/
@@ -29,12 +36,31 @@ pub(crate) const FILE: &str = "File";
 pub(crate) const FOLDER: &str = "Folder";
 pub(crate) const FILE_READS: &[&str] = &["read", "readch", "readln"];
 pub(crate) const FOLDER_READS: &[&str] = &["getFiles"];
-pub(crate) const FILE_WRITES: &[&str] = &["write", "writeln", "remove", "rename", "copy", "createAlias", "create"];
+pub(crate) const FILE_WRITES: &[&str] = &[
+    "write",
+    "writeln",
+    "remove",
+    "rename",
+    "copy",
+    "createAlias",
+    "create",
+];
 pub(crate) const FILE_DIALOGS: &[&str] = &["openDialog", "saveDialog"];
 pub(crate) const FOLDER_DIALOGS: &[&str] = &["selectDialog"];
 pub(crate) const INSTANCE_DIALOGS: &[&str] = &["openDlg", "saveDlg", "selectDlg"];
-pub(crate) const FOLDER_PLACES: &[&str] =
-    &["appData", "appPackage", "commonFiles", "current", "desktop", "myDocuments", "startup", "system", "temp", "trash", "userData"];
+pub(crate) const FOLDER_PLACES: &[&str] = &[
+    "appData",
+    "appPackage",
+    "commonFiles",
+    "current",
+    "desktop",
+    "myDocuments",
+    "startup",
+    "system",
+    "temp",
+    "trash",
+    "userData",
+];
 pub(crate) const EXECUTE: &str = "execute";
 pub(crate) const OPEN: &str = "open";
 /// The open modes that write: write, append and edit.
@@ -60,7 +86,9 @@ pub(crate) const XMP: &[&str] = &["XMPMeta", "XMPFile", "XMPUtils", "XMPConst", 
 pub(crate) const XML: &[&str] = &["XML", "XMLList"];
 // The operators a script can define for its own classes:
 // https://extendscript.docsforadobe.dev/extendscript-tools-features/operator-overloading/
-pub(crate) const OPERATORS: &[&str] = &["+", "-", "*", "/", "%", "^", "<", "<=", "==", "<<", ">>", ">>>", "&", "|", "===", "~"];
+pub(crate) const OPERATORS: &[&str] = &[
+    "+", "-", "*", "/", "%", "^", "<", "<=", "==", "<<", ">>", ">>>", "&", "|", "===", "~",
+];
 // https://extendscript.docsforadobe.dev/extendscript-tools-features/extendscript-reflection-interface/
 pub(crate) const REFLECT: &str = "reflect";
 
@@ -76,7 +104,13 @@ pub(crate) const MENU_COMMAND: &str = "executeMenuCommand";
 pub(crate) const ACTIONS: &[&str] = &["doScript", "loadAction", "unloadAction"];
 pub(crate) const SELECT_TOOL: &str = "selectTool";
 /// The application methods above, which the report lists as features, not as member chains.
-pub(crate) const APP_METHODS: &[&str] = &["executeMenuCommand", "doScript", "loadAction", "unloadAction", "selectTool"];
+pub(crate) const APP_METHODS: &[&str] = &[
+    "executeMenuCommand",
+    "doScript",
+    "loadAction",
+    "unloadAction",
+    "selectTool",
+];
 /// Text an action set written out at run time holds.
 pub(crate) const ACTION_TEXT: &str = "/actionCount";
 
@@ -155,11 +189,10 @@ pub const FEATURES: &[&str] = &[
 /// The need feature `id` sets.
 pub(crate) fn need(id: &str) -> Option<Need> {
     Some(match id {
-        "directive.target" | "directive.include" | "directive.other" | "dollar" | "dynamicCode" | "notify" | "localize" | "unitValue"
-        | "preferences" | "hostCheck" => Need::Language,
-        "dollar.env" | "dollar.evalFile" | "file.objects" | "file.read" | "file.write" | "file.dialog" | "file.places" | "file.execute" => {
-            Need::Files
-        }
+        "directive.target" | "directive.include" | "directive.other" | "dollar" | "dynamicCode"
+        | "notify" | "localize" | "unitValue" | "preferences" | "hostCheck" => Need::Language,
+        "dollar.env" | "dollar.evalFile" | "file.objects" | "file.read" | "file.write"
+        | "file.dialog" | "file.places" | "file.execute" => Need::Files,
         "menuCommand" => Need::MenuCommands,
         "scriptui.dialog" | "scriptui.window" | "scriptui.drawing" => Need::Dialogs,
         "directive.targetengine"

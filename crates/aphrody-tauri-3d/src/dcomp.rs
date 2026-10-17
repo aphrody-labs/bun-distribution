@@ -50,7 +50,11 @@ impl Composition {
             let visual = device.CreateVisual()?;
             target.SetRoot(&visual)?;
             device.Commit()?;
-            Ok(Self { device, _target: target, visual })
+            Ok(Self {
+                device,
+                _target: target,
+                visual,
+            })
         }
     }
 

@@ -40,7 +40,11 @@ impl RomFsController {
         factory.open_current_process(self.program_id)
     }
 
-    pub fn open_patched_romfs(&self, title_id: u64, type_: ContentRecordType) -> Option<VirtualFile> {
+    pub fn open_patched_romfs(
+        &self,
+        title_id: u64,
+        type_: ContentRecordType,
+    ) -> Option<VirtualFile> {
         let factory = self.factory.as_ref()?;
         factory.open_patched_romfs(title_id, type_)
     }
@@ -52,11 +56,7 @@ impl RomFsController {
         type_: ContentRecordType,
     ) -> Option<VirtualFile> {
         let factory = self.factory.as_ref()?;
-        factory.open_patched_romfs_with_program_index(
-            title_id,
-            program_index,
-            type_,
-        )
+        factory.open_patched_romfs_with_program_index(title_id, program_index, type_)
     }
 
     pub fn open_romfs(

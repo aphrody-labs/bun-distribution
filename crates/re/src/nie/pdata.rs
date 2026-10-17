@@ -72,8 +72,13 @@ pub fn discover_into(
     let total_entries = {
         // recompte les entrées brutes pour le rapport
         let pe = PE::parse(&bytes).context("parse PE")?;
-        let pdata = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(".pdata")));
-        pdata.map_or(0, |s| (s.virtual_size.min(s.size_of_raw_data)) as usize / 12)
+        let pdata = pe
+            .sections
+            .iter()
+            .find(|s| s.name().is_ok_and(|n| n.starts_with(".pdata")));
+        pdata.map_or(0, |s| {
+            (s.virtual_size.min(s.size_of_raw_data)) as usize / 12
+        })
     };
 
     // Insertion des racines.
@@ -94,8 +99,9 @@ pub fn discover_into(
 
     // Mesure du désalignement Ghidra.
     let ghidra: Vec<i64> = {
-        let mut stmt =
-            db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1 ORDER BY vaddr")?;
+        let mut stmt = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1 ORDER BY vaddr")?;
         stmt.query_map([binary_id], |r| r.get::<_, i64>(0))?
             .collect::<std::result::Result<_, _>>()?
     };
@@ -196,22 +202,28 @@ pub fn rebuild_from_pdata(
         let mut q = db.conn().prepare(
             "SELECT f.vaddr, s.value FROM func_str_ref s JOIN function f ON f.id=s.function_id WHERE f.binary_id=?1",
         )?;
-        q.query_map([src_bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, String>(1)?)))?
-            .collect::<std::result::Result<_, _>>()?
+        q.query_map([src_bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, String>(1)?))
+        })?
+        .collect::<std::result::Result<_, _>>()?
     };
     let const_rows: Vec<(u64, i64)> = {
         let mut q = db.conn().prepare(
             "SELECT f.vaddr, c.value FROM func_const c JOIN function f ON f.id=c.function_id WHERE f.binary_id=?1",
         )?;
-        q.query_map([src_bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)?)))?
-            .collect::<std::result::Result<_, _>>()?
+        q.query_map([src_bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)?))
+        })?
+        .collect::<std::result::Result<_, _>>()?
     };
     let ce_rows: Vec<(u64, u64)> = {
         let mut q = db
             .conn()
             .prepare("SELECT from_addr, to_addr FROM xref WHERE binary_id=?1 AND kind='call'")?;
-        q.query_map([src_bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64)))?
-            .collect::<std::result::Result<_, _>>()?
+        q.query_map([src_bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64))
+        })?
+        .collect::<std::result::Result<_, _>>()?
     };
     let rtti_rows: Vec<(String, Option<String>, Option<String>)> = {
         let mut q = db
@@ -227,7 +239,10 @@ pub fn rebuild_from_pdata(
         .collect::<std::result::Result<_, _>>()?
     };
 
-    let mut stats = RebuildStats { roots: roots.len(), ..Default::default() };
+    let mut stats = RebuildStats {
+        roots: roots.len(),
+        ..Default::default()
+    };
     let tx = db.conn_mut().transaction()?;
 
     // --- 1. Insère les fonctions racines (vraies entrées + tailles) -----------
@@ -237,15 +252,20 @@ pub fn rebuild_from_pdata(
              VALUES(?1,?2,?3,'pdata','standalone',0.0)",
         )?;
         for r in &roots {
-            ins.execute(rusqlite::params![dst_bin, r.start as i64, (r.end - r.start) as i64])?;
+            ins.execute(rusqlite::params![
+                dst_bin,
+                r.start as i64,
+                (r.end - r.start) as i64
+            ])?;
         }
     }
     // Carte vaddr → function_id pour la cible.
     let mut root_fid: hashbrown::HashMap<u64, i64> = hashbrown::HashMap::with_capacity(roots.len());
     {
         let mut q = tx.prepare("SELECT vaddr, id FROM function WHERE binary_id=?1")?;
-        let rows =
-            q.query_map([dst_bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)?)))?;
+        let rows = q.query_map([dst_bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)?))
+        })?;
         for row in rows {
             let (v, id) = row?;
             root_fid.insert(v, id);
@@ -262,7 +282,7 @@ pub fn rebuild_from_pdata(
                 Some(&fid) => {
                     ins.execute(rusqlite::params![dst_bin, fid, val])?;
                     stats.str_refs_moved += 1;
-                },
+                }
                 None => stats.unmapped += 1,
             }
         }
@@ -315,4 +335,3 @@ pub fn rebuild_from_pdata(
     );
     Ok(stats)
 }
-

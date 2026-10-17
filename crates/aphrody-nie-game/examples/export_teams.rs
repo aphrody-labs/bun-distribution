@@ -101,10 +101,15 @@ fn load_t2b(vfs: &Vfs, prefix: &str, must: &str) -> serde_json::Value {
 }
 
 fn main() {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "var/teams-resolved.json".into());
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "var/teams-resolved.json".into());
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let teams = aphrody_nie_data::belong_team::parse_belong_team_config(&load_rdbn(
         &vfs,
@@ -134,5 +139,9 @@ fn main() {
     let txt = serde_json::to_string_pretty(&doc).expect("serialize");
     std::fs::create_dir_all(Path::new(&out).parent().unwrap_or(Path::new("."))).ok();
     std::fs::write(&out, &txt).unwrap_or_else(|e| panic!("écriture {out} : {e}"));
-    eprintln!("✓ export-teams: {} équipes résolues → {out} ({} octets)", doc["count"], txt.len());
+    eprintln!(
+        "✓ export-teams: {} équipes résolues → {out} ({} octets)",
+        doc["count"],
+        txt.len()
+    );
 }

@@ -7,9 +7,20 @@ const MAX: usize = 10_000;
 /// Parse the note reference/story PLCs. `ref_pair`/`txt_pair` are the FIB pair indices
 /// (`(2, 3)` for footnotes, `(46, 47)` for endnotes); story ranges are relative to the
 /// note subdocument.
-pub(crate) fn parse_notes(table: &[u8], fib: &crate::fib::Fib, ref_pair: usize, txt_pair: usize) -> Vec<(u32, (u32, u32))> {
-    let refs = fib.pair(ref_pair).and_then(|(fc, lcb)| plc_of(table, fc, lcb, 2)).unwrap_or_default();
-    let txts = fib.pair(txt_pair).and_then(|(fc, lcb)| plc_of(table, fc, lcb, 0)).unwrap_or_default();
+pub(crate) fn parse_notes(
+    table: &[u8],
+    fib: &crate::fib::Fib,
+    ref_pair: usize,
+    txt_pair: usize,
+) -> Vec<(u32, (u32, u32))> {
+    let refs = fib
+        .pair(ref_pair)
+        .and_then(|(fc, lcb)| plc_of(table, fc, lcb, 2))
+        .unwrap_or_default();
+    let txts = fib
+        .pair(txt_pair)
+        .and_then(|(fc, lcb)| plc_of(table, fc, lcb, 0))
+        .unwrap_or_default();
     if txts.len() < 2 {
         return Vec::new();
     }
@@ -59,13 +70,29 @@ pub(crate) enum Mark {
 /// Parse `SttbfBkmk` + `Plcfbkf` + `Plcfbkl` into (cp, event) pairs sorted for a sequential
 /// walk. Hidden bookmarks (leading `_`) are kept: the engine can decide.
 pub(crate) fn parse_bookmarks(table: &[u8], fib: &crate::fib::Fib) -> Vec<(u32, Mark)> {
-    let names = fib.pair(crate::fib::pair::STTBF_BKMK).and_then(|(fc, lcb)| sttb_strings(table, fc, lcb)).unwrap_or_default();
-    let starts = fib.pair(crate::fib::pair::PLCF_BKF).and_then(|(fc, lcb)| plc_of(table, fc, lcb, 4)).unwrap_or_default();
-    let ends = fib.pair(crate::fib::pair::PLCF_BKL).and_then(|(fc, lcb)| plc_of(table, fc, lcb, 2)).unwrap_or_default();
-    let n = starts.len().saturating_sub(1).min(ends.len().saturating_sub(1)).min(names.len()).min(MAX);
+    let names = fib
+        .pair(crate::fib::pair::STTBF_BKMK)
+        .and_then(|(fc, lcb)| sttb_strings(table, fc, lcb))
+        .unwrap_or_default();
+    let starts = fib
+        .pair(crate::fib::pair::PLCF_BKF)
+        .and_then(|(fc, lcb)| plc_of(table, fc, lcb, 4))
+        .unwrap_or_default();
+    let ends = fib
+        .pair(crate::fib::pair::PLCF_BKL)
+        .and_then(|(fc, lcb)| plc_of(table, fc, lcb, 2))
+        .unwrap_or_default();
+    let n = starts
+        .len()
+        .saturating_sub(1)
+        .min(ends.len().saturating_sub(1))
+        .min(names.len())
+        .min(MAX);
     let mut out = Vec::with_capacity(n * 2);
     for i in 0..n {
-        let (Some(&a), Some(&b)) = (starts.get(i), ends.get(i)) else { break };
+        let (Some(&a), Some(&b)) = (starts.get(i), ends.get(i)) else {
+            break;
+        };
         if b < a {
             continue;
         }
@@ -102,7 +129,12 @@ fn sttb_strings(table: &[u8], fc: u32, lcb: u32) -> Option<Vec<String>> {
         let cch = cch.min(40);
         let chars = b.get(at..at + cch * 2)?;
         at += cch * 2;
-        let s: String = chars.as_chunks::<2>().0.iter().map(|c| char::from_u32(u16::from_le_bytes(*c) as u32).unwrap_or('\u{FFFD}')).collect();
+        let s: String = chars
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| char::from_u32(u16::from_le_bytes(*c) as u32).unwrap_or('\u{FFFD}'))
+            .collect();
         out.push(s);
     }
     Some(out)

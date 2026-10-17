@@ -28,7 +28,13 @@ pub struct Iris {
 
 impl Default for Iris {
     fn default() -> Self {
-        Iris { sides: 0, rotation: 0.0, roundness: 0.0, aspect: 1.0, fringe: 0.0 }
+        Iris {
+            sides: 0,
+            rotation: 0.0,
+            roundness: 0.0,
+            aspect: 1.0,
+            fringe: 0.0,
+        }
     }
 }
 
@@ -55,7 +61,11 @@ impl Iris {
         let r = self.roundness.clamp(-1.0, 1.0);
         // Positive: towards the circumscribed circle; negative: the sides bow inwards (the
         // vertices stay put, the edge midpoints move in).
-        if r >= 0.0 { poly + (1.0 - poly) * r } else { (poly + (1.0 - poly) * r * 2.0).max(0.05) }
+        if r >= 0.0 {
+            poly + (1.0 - poly) * r
+        } else {
+            (poly + (1.0 - poly) * r * 2.0).max(0.05)
+        }
     }
 
     /// Whether the kernel offset (dx, dy) lies inside an iris of radius `r`.
@@ -87,7 +97,9 @@ impl Iris {
                 }
                 x += step;
             }
-            let (Some(f), Some(l)) = (first, last) else { continue };
+            let (Some(f), Some(l)) = (first, last) else {
+                continue;
+            };
             let refine = |inside_x: f64, outside_x: f64| {
                 let (mut i, mut o) = (inside_x, outside_x);
                 for _ in 0..12 {
@@ -135,7 +147,12 @@ fn prefix_at(p: &[[f32; 4]], t: f64) -> [f32; 4] {
     let i = t.floor() as usize;
     let f = (t - i as f64) as f32;
     let (a, b) = (p[i], p[i + 1]);
-    [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f]
+    [
+        a[0] + (b[0] - a[0]) * f,
+        a[1] + (b[1] - a[1]) * f,
+        a[2] + (b[2] - a[2]) * f,
+        a[3] + (b[3] - a[3]) * f,
+    ]
 }
 
 /// Gather with span kernels: `(weight, spans)` pairs summed, then normalised by `norm`.
@@ -144,25 +161,31 @@ fn span_gather(img: &Image, kernels: &[(f32, Vec<(i32, f64, f64)>)], norm: f32) 
     let (w, h) = (img.width as usize, img.height as i64);
     let mut out = Image::new(img.width, img.height);
     let inv = 1.0 / norm;
-    out.data.par_chunks_mut(w.max(1)).enumerate().for_each(|(y, row)| {
-        for (x, o) in row.iter_mut().enumerate() {
-            let mut acc = [0.0f32; 4];
-            for (wt, spans) in kernels {
-                for &(dy, x0, x1) in spans {
-                    let sy = y as i64 + dy as i64;
-                    if sy < 0 || sy >= h {
-                        continue;
-                    }
-                    let pr = &pre[sy as usize];
-                    let (hi, lo) = (prefix_at(pr, x as f64 + x1 + 0.5), prefix_at(pr, x as f64 + x0 + 0.5));
-                    for c in 0..4 {
-                        acc[c] += (hi[c] - lo[c]) * wt;
+    out.data
+        .par_chunks_mut(w.max(1))
+        .enumerate()
+        .for_each(|(y, row)| {
+            for (x, o) in row.iter_mut().enumerate() {
+                let mut acc = [0.0f32; 4];
+                for (wt, spans) in kernels {
+                    for &(dy, x0, x1) in spans {
+                        let sy = y as i64 + dy as i64;
+                        if sy < 0 || sy >= h {
+                            continue;
+                        }
+                        let pr = &pre[sy as usize];
+                        let (hi, lo) = (
+                            prefix_at(pr, x as f64 + x1 + 0.5),
+                            prefix_at(pr, x as f64 + x0 + 0.5),
+                        );
+                        for c in 0..4 {
+                            acc[c] += (hi[c] - lo[c]) * wt;
+                        }
                     }
                 }
+                *o = acc.map(|v| v * inv);
             }
-            *o = acc.map(|v| v * inv);
-        }
-    });
+        });
     out
 }
 
@@ -182,7 +205,11 @@ pub fn boost_highlights(img: &mut Image, h: &Highlight) {
         if l < thr || (thr >= 1.0 && l < 1.0) {
             return;
         }
-        let over = if thr < 1.0 { ((l - thr) / (1.0 - thr)).clamp(0.0, 1.0) } else { 1.0 };
+        let over = if thr < 1.0 {
+            ((l - thr) / (1.0 - thr)).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
         let k = 1.0 + h.gain as f32 * 4.0 * over.max(0.25);
         let sat = 1.0 + h.saturation as f32;
         let c = [r, g, b].map(|c| (l + (c - l) * sat).max(0.0) * k);
@@ -209,7 +236,9 @@ pub fn kernel_spans(iris: &Iris, r: f64) -> Option<Kernels> {
         if rx == 0 && ry == 0 {
             return None;
         }
-        let spans = (-ry..=ry).map(|dy| (dy, -rx as f64 - 0.5, rx as f64 + 0.5)).collect();
+        let spans = (-ry..=ry)
+            .map(|dy| (dy, -rx as f64 - 0.5, rx as f64 + 0.5))
+            .collect();
         return Some((vec![(1.0, spans)], ((2 * rx + 1) * (2 * ry + 1)) as f32));
     }
     let outer = iris.spans(r);
@@ -217,7 +246,11 @@ pub fn kernel_spans(iris: &Iris, r: f64) -> Option<Kernels> {
     let mut kernels = vec![(1.0f32, outer)];
     if iris.fringe > 0.0 {
         let rim = (r * 0.15).max(1.0);
-        let inner = if r - rim > 0.5 { iris.spans(r - rim) } else { Vec::new() };
+        let inner = if r - rim > 0.5 {
+            iris.spans(r - rim)
+        } else {
+            Vec::new()
+        };
         let f = iris.fringe as f32;
         kernels[0].0 = 1.0 + f;
         kernels.push((-f, inner));
@@ -249,7 +282,9 @@ pub fn bokeh_blur(img: &Image, iris: &Iris, r: f64) -> Image {
 /// The blur levels of a depth-varying blur ([`progressive_blur`]): `None` when nothing blurs,
 /// one level for a near-constant radius, else up to eight radii spanning the range.
 pub fn blur_levels(radius: &[f32]) -> Option<Vec<f32>> {
-    let (lo, hi) = radius.iter().fold((f32::INFINITY, 0.0f32), |(a, b), &r| (a.min(r), b.max(r)));
+    let (lo, hi) = radius
+        .iter()
+        .fold((f32::INFINITY, 0.0f32), |(a, b), &r| (a.min(r), b.max(r)));
     if !lo.is_finite() || hi < 0.3 {
         return None;
     }
@@ -257,7 +292,11 @@ pub fn blur_levels(radius: &[f32]) -> Option<Vec<f32>> {
         return Some(vec![(lo + hi) * 0.5]);
     }
     let n = (((hi - lo) / 2.0).ceil() as usize + 1).clamp(2, 8);
-    Some((0..n).map(|i| lo + (hi - lo) * i as f32 / (n - 1) as f32).collect())
+    Some(
+        (0..n)
+            .map(|i| lo + (hi - lo) * i as f32 / (n - 1) as f32)
+            .collect(),
+    )
 }
 
 /// How much level `k` of `levels` contributes at radius `r` (the two levels bracketing `r`
@@ -284,12 +323,17 @@ pub fn level_weight(levels: &[f32], k: usize, r: f32) -> f32 {
 /// eight radii spanning the range and each pixel interpolates between the two levels around
 /// its own radius.
 pub fn progressive_blur(img: &Image, iris: &Iris, radius: &[f32]) -> Image {
-    let Some(levels) = blur_levels(radius) else { return img.clone() };
+    let Some(levels) = blur_levels(radius) else {
+        return img.clone();
+    };
     if levels.len() == 1 {
         return bokeh_blur(img, iris, levels[0] as f64);
     }
     let (lo, hi, n) = (levels[0], levels[levels.len() - 1], levels.len());
-    let blurred: Vec<Image> = levels.par_iter().map(|&r| bokeh_blur(img, iris, r as f64)).collect();
+    let blurred: Vec<Image> = levels
+        .par_iter()
+        .map(|&r| bokeh_blur(img, iris, r as f64))
+        .collect();
     let mut out = Image::new(img.width, img.height);
     out.data.par_iter_mut().enumerate().for_each(|(i, o)| {
         let r = radius[i];
@@ -323,27 +367,50 @@ mod tests {
     fn kernel_shapes() {
         // A hexagon with a vertex on +x (rotation 0): the point at 0.97 r on +x is inside, the
         // point at 0.97 r at 30° (an edge midpoint at cos 30° = 0.866 r) is outside.
-        let hex = Iris { sides: 6, ..Default::default() };
+        let hex = Iris {
+            sides: 6,
+            ..Default::default()
+        };
         let b = bokeh_blur(&dot(81), &hex, 20.0);
         assert!(lit(&b, 19, 0));
-        let (x, y) = ((19.4f64 * 30f64.to_radians().cos()).round() as i32, (19.4f64 * 30f64.to_radians().sin()).round() as i32);
+        let (x, y) = (
+            (19.4f64 * 30f64.to_radians().cos()).round() as i32,
+            (19.4f64 * 30f64.to_radians().sin()).round() as i32,
+        );
         assert!(!lit(&b, x, y), "edge midpoint beyond the apothem");
         // Rotating by 30° swaps them.
-        let rot = Iris { rotation: 30.0, ..hex };
+        let rot = Iris {
+            rotation: 30.0,
+            ..hex
+        };
         let b = bokeh_blur(&dot(81), &rot, 20.0);
         assert!(!lit(&b, 19, 0) && lit(&b, x, y));
         // Full roundness: a circle.
-        let round = Iris { roundness: 1.0, ..hex };
+        let round = Iris {
+            roundness: 1.0,
+            ..hex
+        };
         let b = bokeh_blur(&dot(81), &round, 20.0);
         assert!(lit(&b, 19, 0) && lit(&b, x, y));
         // Triangle: far less area than a decagon of the same radius.
         let area = |sides| {
-            let b = bokeh_blur(&dot(81), &Iris { sides, ..Default::default() }, 20.0);
+            let b = bokeh_blur(
+                &dot(81),
+                &Iris {
+                    sides,
+                    ..Default::default()
+                },
+                20.0,
+            );
             b.data.iter().filter(|p| p[3] > 1e-4).count()
         };
         assert!(area(3) * 2 < area(10), "{} vs {}", area(3), area(10));
         // Aspect ratio 4 makes it twice as wide and half as tall.
-        let wide = Iris { sides: 8, aspect: 4.0, ..Default::default() };
+        let wide = Iris {
+            sides: 8,
+            aspect: 4.0,
+            ..Default::default()
+        };
         let b = bokeh_blur(&dot(121), &wide, 15.0);
         assert!(lit(&b, 28, 0) && !lit(&b, 0, 10));
         // Energy is preserved.
@@ -353,23 +420,61 @@ mod tests {
 
     #[test]
     fn diffraction_fringe_brightens_the_rim() {
-        let plain = bokeh_blur(&dot(81), &Iris { sides: 8, ..Default::default() }, 20.0);
-        let fringe = bokeh_blur(&dot(81), &Iris { sides: 8, fringe: 2.0, ..Default::default() }, 20.0);
+        let plain = bokeh_blur(
+            &dot(81),
+            &Iris {
+                sides: 8,
+                ..Default::default()
+            },
+            20.0,
+        );
+        let fringe = bokeh_blur(
+            &dot(81),
+            &Iris {
+                sides: 8,
+                fringe: 2.0,
+                ..Default::default()
+            },
+            20.0,
+        );
         let at = |img: &Image, x: i32| img.data[(40 * 81 + 40 + x) as usize][3];
         assert!((at(&plain, 0) - at(&plain, 17)).abs() < 1e-6, "flat disc");
-        assert!(at(&fringe, 18) > at(&fringe, 0) * 1.5, "{} vs {}", at(&fringe, 18), at(&fringe, 0));
+        assert!(
+            at(&fringe, 18) > at(&fringe, 0) * 1.5,
+            "{} vs {}",
+            at(&fringe, 18),
+            at(&fringe, 0)
+        );
     }
 
     #[test]
     fn highlights_boost_only_above_threshold() {
         let mut img = Image::new(2, 1);
         img.data = vec![[0.9, 0.9, 0.9, 1.0], [0.3, 0.3, 0.3, 1.0]];
-        boost_highlights(&mut img, &Highlight { gain: 0.5, threshold: 0.8, saturation: 0.0 });
+        boost_highlights(
+            &mut img,
+            &Highlight {
+                gain: 0.5,
+                threshold: 0.8,
+                saturation: 0.0,
+            },
+        );
         assert!(img.data[0][0] > 1.2 && img.data[1][0] == 0.3);
         let mut c = Image::new(1, 1);
         c.data = vec![[1.0, 0.8, 0.8, 1.0]];
-        boost_highlights(&mut c, &Highlight { gain: 0.1, threshold: 0.5, saturation: 1.0 });
-        assert!(c.data[0][0] - c.data[0][1] > 0.3, "more saturated: {:?}", c.data[0]);
+        boost_highlights(
+            &mut c,
+            &Highlight {
+                gain: 0.1,
+                threshold: 0.5,
+                saturation: 1.0,
+            },
+        );
+        assert!(
+            c.data[0][0] - c.data[0][1] > 0.3,
+            "more saturated: {:?}",
+            c.data[0]
+        );
     }
 
     #[test]
@@ -380,9 +485,23 @@ mod tests {
         for y in 0..h as usize {
             img.data[y * w as usize + 20] = [1.0; 4];
         }
-        let radius: Vec<f32> = (0..(w * h) as usize).map(|i| (i / w as usize) as f32 / 40.0 * 8.0).collect();
-        let out = progressive_blur(&img, &Iris { sides: 6, roundness: 1.0, ..Default::default() }, &radius);
-        let spread = |y: usize| (0..w as usize).filter(|&x| out.data[y * w as usize + x][3] > 0.03).count();
+        let radius: Vec<f32> = (0..(w * h) as usize)
+            .map(|i| (i / w as usize) as f32 / 40.0 * 8.0)
+            .collect();
+        let out = progressive_blur(
+            &img,
+            &Iris {
+                sides: 6,
+                roundness: 1.0,
+                ..Default::default()
+            },
+            &radius,
+        );
+        let spread = |y: usize| {
+            (0..w as usize)
+                .filter(|&x| out.data[y * w as usize + x][3] > 0.03)
+                .count()
+        };
         assert!(spread(1) <= 3, "top stays sharp: {}", spread(1));
         assert!(spread(39) >= 13, "bottom is wide: {}", spread(39));
         assert!(spread(20) > spread(1) && spread(20) < spread(39));

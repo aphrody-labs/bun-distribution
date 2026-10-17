@@ -62,11 +62,17 @@ pub struct TileInput {
 /// Comma-separated records, for the existing parser test. Errors become an empty table.
 #[cfg(test)]
 pub fn parse_csv(s: &str) -> Vec<Vec<String>> {
-    parse_delimited(s, ',').map(|rows| rows.into_iter().map(|r| r.cells).collect()).unwrap_or_default()
+    parse_delimited(s, ',')
+        .map(|rows| rows.into_iter().map(|r| r.cells).collect())
+        .unwrap_or_default()
 }
 
 /// UTF-8 text (optional BOM) into a table. `delimiter` overrides sniffing.
-pub fn table_from_bytes(bytes: &[u8], name: &str, delimiter: Option<Delimiter>) -> Result<Table, String> {
+pub fn table_from_bytes(
+    bytes: &[u8],
+    name: &str,
+    delimiter: Option<Delimiter>,
+) -> Result<Table, String> {
     let text = decode_utf8(bytes, name)?;
     let delim = match delimiter {
         Some(d) => d,
@@ -81,9 +87,15 @@ pub fn table_from_bytes(bytes: &[u8], name: &str, delimiter: Option<Delimiter>) 
 /// Grid rows whose first row is the header. Used for Excel and for tests.
 pub fn table_from_grid(grid: Vec<Vec<String>>, delimiter: Delimiter) -> Result<Table, String> {
     if grid.len() > DATA_MERGE_MAX_ROWS.saturating_add(1) {
-        return Err(format!("the file has more than {DATA_MERGE_MAX_ROWS} data rows"));
+        return Err(format!(
+            "the file has more than {DATA_MERGE_MAX_ROWS} data rows"
+        ));
     }
-    let raw = grid.into_iter().enumerate().map(|(i, cells)| RawRow { line: i + 1, cells }).collect::<Vec<_>>();
+    let raw = grid
+        .into_iter()
+        .enumerate()
+        .map(|(i, cells)| RawRow { line: i + 1, cells })
+        .collect::<Vec<_>>();
     let mut table = table_from_raw(&raw)?;
     table.delimiter = delimiter;
     Ok(table)
@@ -95,12 +107,20 @@ pub fn table_from_objects(rows: &[Value]) -> Result<Table, String> {
         return Err("no records".into());
     }
     if rows.len() > DATA_MERGE_MAX_ROWS {
-        return Err(format!("the file has more than {DATA_MERGE_MAX_ROWS} data rows"));
+        return Err(format!(
+            "the file has more than {DATA_MERGE_MAX_ROWS} data rows"
+        ));
     }
-    let first = rows.first().and_then(Value::as_object).ok_or_else(|| "each row must be an object".to_string())?;
+    let first = rows
+        .first()
+        .and_then(Value::as_object)
+        .ok_or_else(|| "each row must be an object".to_string())?;
     let keys: Vec<String> = first.keys().cloned().collect();
     if keys.len() > DATA_MERGE_MAX_COLS {
-        return Err(format!("the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}", keys.len()));
+        return Err(format!(
+            "the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}",
+            keys.len()
+        ));
     }
     if keys.is_empty() {
         return Err("a field name is empty".into());
@@ -118,14 +138,19 @@ pub fn table_from_objects(rows: &[Value]) -> Result<Table, String> {
     let mut out = Vec::new();
     let mut warnings = Vec::new();
     for (i, row) in rows.iter().enumerate() {
-        let obj = row.as_object().ok_or_else(|| "each row must be an object".to_string())?;
+        let obj = row
+            .as_object()
+            .ok_or_else(|| "each row must be an object".to_string())?;
         let mut cells = Vec::with_capacity(keys.len());
         for key in &keys {
             cells.push(cell_string(obj.get(key))?);
         }
         for key in obj.keys() {
             if !keys.iter().any(|k| k == key) {
-                warnings.push(format!("Row {} has an extra field \"{key}\". It was ignored.", i + 1));
+                warnings.push(format!(
+                    "Row {} has an extra field \"{key}\". It was ignored.",
+                    i + 1
+                ));
             }
         }
         if cells.iter().all(|c| c.is_empty()) {
@@ -133,7 +158,12 @@ pub fn table_from_objects(rows: &[Value]) -> Result<Table, String> {
         }
         out.push(cells);
     }
-    Ok(Table { fields, rows: out, warnings, delimiter: Delimiter::Comma })
+    Ok(Table {
+        fields,
+        rows: out,
+        warnings,
+        delimiter: Delimiter::Comma,
+    })
 }
 
 fn cell_string(v: Option<&Value>) -> Result<String, String> {
@@ -150,7 +180,13 @@ fn cell_string(v: Option<&Value>) -> Result<String, String> {
 }
 
 /// 0-based indexes into `count` rows, in first-seen order.
-pub fn select_records(count: usize, records: &str, one: u32, range: &str, limit: Option<u32>) -> Result<Vec<usize>, String> {
+pub fn select_records(
+    count: usize,
+    records: &str,
+    one: u32,
+    range: &str,
+    limit: Option<u32>,
+) -> Result<Vec<usize>, String> {
     let mut idx = Vec::new();
     let mut seen = std::collections::HashSet::new();
     match records {
@@ -220,31 +256,49 @@ fn record_index(n: u32, count: usize) -> Result<usize, String> {
 pub fn tile(input: &TileInput) -> TilePlan {
     let n = input.count;
     if n == 0 {
-        return TilePlan { hits: Vec::new(), pages: 0, one_per_page: false };
+        return TilePlan {
+            hits: Vec::new(),
+            pages: 0,
+            one_per_page: false,
+        };
     }
     let step_x = input.block.width() + input.column_spacing;
     let step_y = input.block.height() + input.row_spacing;
     let right = input.page_width - input.insets[1];
     let bottom = input.page_height - input.insets[2];
-    let fits_col = |col: i32| step_x > 0.01 && input.block.x1 + f64::from(col) * step_x <= right + 0.01;
-    let fits_row = |row: i32| step_y > 0.01 && input.block.y1 + f64::from(row) * step_y <= bottom + 0.01;
+    let fits_col =
+        |col: i32| step_x > 0.01 && input.block.x1 + f64::from(col) * step_x <= right + 0.01;
+    let fits_row =
+        |row: i32| step_y > 0.01 && input.block.y1 + f64::from(row) * step_y <= bottom + 0.01;
     let second_fits = fits_col(1) || fits_row(1);
     let mut hits = Vec::with_capacity(n);
     let push = |hits: &mut Vec<TileHit>, index: usize, page: usize, col: i32, row: i32| {
-        hits.push(TileHit { index, page, col, row, dx: f64::from(col) * step_x, dy: f64::from(row) * step_y });
+        hits.push(TileHit {
+            index,
+            page,
+            col,
+            row,
+            dx: f64::from(col) * step_x,
+            dy: f64::from(row) * step_y,
+        });
     };
     if n > 1 && !second_fits {
         for i in 0..n {
             push(&mut hits, i, i, 0, 0);
         }
-        return TilePlan { hits, pages: n, one_per_page: true };
+        return TilePlan {
+            hits,
+            pages: n,
+            one_per_page: true,
+        };
     }
     let mut col = 0i32;
     let mut row = 0i32;
     let mut page = 0usize;
     push(&mut hits, 0, 0, 0, 0);
     for i in 1..n {
-        let (next_col, next_row, new_page) = next_slot(col, row, input.rows_first, &fits_col, &fits_row);
+        let (next_col, next_row, new_page) =
+            next_slot(col, row, input.rows_first, &fits_col, &fits_row);
         if new_page {
             page = page.saturating_add(1);
             col = 0;
@@ -255,10 +309,20 @@ pub fn tile(input: &TileInput) -> TilePlan {
         }
         push(&mut hits, i, page, col, row);
     }
-    TilePlan { hits, pages: page.saturating_add(1), one_per_page: false }
+    TilePlan {
+        hits,
+        pages: page.saturating_add(1),
+        one_per_page: false,
+    }
 }
 
-fn next_slot(col: i32, row: i32, rows_first: bool, fits_col: &impl Fn(i32) -> bool, fits_row: &impl Fn(i32) -> bool) -> (i32, i32, bool) {
+fn next_slot(
+    col: i32,
+    row: i32,
+    rows_first: bool,
+    fits_col: &impl Fn(i32) -> bool,
+    fits_row: &impl Fn(i32) -> bool,
+) -> (i32, i32, bool) {
     if rows_first {
         if fits_col(col.saturating_add(1)) {
             return (col.saturating_add(1), row, false);
@@ -279,7 +343,11 @@ fn next_slot(col: i32, row: i32, rows_first: bool, fits_col: &impl Fn(i32) -> bo
 
 /// Files to try for an image cell. `http` and `https` are not candidates. Relative paths are
 /// not resolved against the process working directory.
-pub fn image_candidates(cell: &str, data_dir: Option<&Path>, doc_dir: Option<&Path>) -> Vec<PathBuf> {
+pub fn image_candidates(
+    cell: &str,
+    data_dir: Option<&Path>,
+    doc_dir: Option<&Path>,
+) -> Vec<PathBuf> {
     let cell = cell.trim();
     if cell.is_empty() {
         return Vec::new();
@@ -323,7 +391,10 @@ pub fn relative_between(from_dir: &Path, target: &Path) -> String {
         out.push(c);
     }
     if out.as_os_str().is_empty() {
-        target.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+        target
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
     } else {
         out.to_string_lossy().into_owned()
     }
@@ -337,7 +408,10 @@ pub fn fingerprint_of(path: &Path) -> Option<Fingerprint> {
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| i64::try_from(d.as_secs()).unwrap_or(i64::MAX))
         .unwrap_or(0);
-    Some(Fingerprint { size: meta.len(), mtime })
+    Some(Fingerprint {
+        size: meta.len(),
+        mtime,
+    })
 }
 
 pub fn status_of(path: &Path, previous: Option<Fingerprint>) -> SourceStatus {
@@ -372,7 +446,9 @@ fn sniff(name: &str, text: &str) -> Delimiter {
     let comma = header_delimiter_candidate(text, ',');
     // Prefer formats with coherent quoted-field boundaries. If none separates fields,
     // retain the legacy permissive choice; this is detection, not record validation.
-    let prefer_coherent = [&tab, &semicolon, &comma].iter().any(|c| c.found && c.coherent);
+    let prefer_coherent = [&tab, &semicolon, &comma]
+        .iter()
+        .any(|c| c.found && c.coherent);
     let eligible = |c: &HeaderDelimiterCandidate| c.found && (!prefer_coherent || c.coherent);
     if eligible(&tab) {
         Delimiter::Tab
@@ -384,7 +460,11 @@ fn sniff(name: &str, text: &str) -> Delimiter {
 }
 
 pub fn extension(name: &str) -> String {
-    Path::new(name).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase()
+    Path::new(name)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
 }
 
 struct HeaderDelimiterCandidate {
@@ -446,7 +526,10 @@ fn header_delimiter_candidate(text: &str, delimiter: char) -> HeaderDelimiterCan
             }
         }
     }
-    HeaderDelimiterCandidate { found, coherent: coherent && !quoted }
+    HeaderDelimiterCandidate {
+        found,
+        coherent: coherent && !quoted,
+    }
 }
 
 /// Header cell: trim, drop one leading apostrophe, then `@` is image and `#` is qr.
@@ -471,7 +554,10 @@ fn table_from_raw(raw: &[RawRow]) -> Result<Table, String> {
         return Err("the file has no header".into());
     };
     if header.cells.len() > DATA_MERGE_MAX_COLS {
-        return Err(format!("the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}", header.cells.len()));
+        return Err(format!(
+            "the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}",
+            header.cells.len()
+        ));
     }
     if header.cells.is_empty() {
         return Err("a field name is empty".into());
@@ -494,7 +580,10 @@ fn table_from_raw(raw: &[RawRow]) -> Result<Table, String> {
             continue;
         }
         if raw_row.cells.len() > width {
-            warnings.push(format!("Row {} has cells past the header. Those cells were ignored.", raw_row.line));
+            warnings.push(format!(
+                "Row {} has cells past the header. Those cells were ignored.",
+                raw_row.line
+            ));
         }
         let mut cells = Vec::with_capacity(width);
         for i in 0..width {
@@ -502,10 +591,17 @@ fn table_from_raw(raw: &[RawRow]) -> Result<Table, String> {
         }
         rows.push(cells);
         if rows.len() > DATA_MERGE_MAX_ROWS {
-            return Err(format!("the file has more than {DATA_MERGE_MAX_ROWS} data rows"));
+            return Err(format!(
+                "the file has more than {DATA_MERGE_MAX_ROWS} data rows"
+            ));
         }
     }
-    Ok(Table { fields, rows, warnings, delimiter: Delimiter::Comma })
+    Ok(Table {
+        fields,
+        rows,
+        warnings,
+        delimiter: Delimiter::Comma,
+    })
 }
 
 /// Split `s` on `delim`. Quoted fields keep commas, doubled quotes, and newlines.
@@ -546,20 +642,31 @@ fn parse_delimited(s: &str, delim: char) -> Result<Vec<RawRow>, String> {
         match *header_width {
             None => {
                 if row.len() > DATA_MERGE_MAX_COLS {
-                    return Err(format!("the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}", row.len()));
+                    return Err(format!(
+                        "the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}",
+                        row.len()
+                    ));
                 }
                 *header_width = Some(row.len());
-                rows.push(RawRow { line: row_line, cells: std::mem::take(row) });
+                rows.push(RawRow {
+                    line: row_line,
+                    cells: std::mem::take(row),
+                });
             }
             Some(width) => {
                 *data_rows = data_rows.saturating_add(1);
                 if *data_rows > DATA_MERGE_MAX_ROWS {
-                    return Err(format!("the file has more than {DATA_MERGE_MAX_ROWS} data rows"));
+                    return Err(format!(
+                        "the file has more than {DATA_MERGE_MAX_ROWS} data rows"
+                    ));
                 }
                 if row.len() > width.saturating_add(1) {
                     row.truncate(width.saturating_add(1));
                 }
-                rows.push(RawRow { line: row_line, cells: std::mem::take(row) });
+                rows.push(RawRow {
+                    line: row_line,
+                    cells: std::mem::take(row),
+                });
             }
         }
         Ok(())
@@ -591,7 +698,10 @@ fn parse_delimited(s: &str, delim: char) -> Result<Vec<RawRow>, String> {
             }
             row.push(std::mem::take(&mut field));
             if header_width.is_none() && row.len() > DATA_MERGE_MAX_COLS {
-                return Err(format!("the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}", row.len()));
+                return Err(format!(
+                    "the file has {} columns; the limit is {DATA_MERGE_MAX_COLS}",
+                    row.len()
+                ));
             }
             if header_width.is_some_and(|w| row.len() > w.saturating_add(1)) {
                 row.pop();
@@ -609,7 +719,15 @@ fn parse_delimited(s: &str, delim: char) -> Result<Vec<RawRow>, String> {
                     chars.next();
                     line = line.saturating_add(1);
                 }
-                finish(&mut row, &mut field, &mut rows, &mut data_rows, &mut header_width, row_line, &mut discarding)?;
+                finish(
+                    &mut row,
+                    &mut field,
+                    &mut rows,
+                    &mut data_rows,
+                    &mut header_width,
+                    row_line,
+                    &mut discarding,
+                )?;
                 row_line = line;
                 field_start = true;
             }
@@ -622,7 +740,15 @@ fn parse_delimited(s: &str, delim: char) -> Result<Vec<RawRow>, String> {
         }
     }
     if !field.is_empty() || !row.is_empty() || discarding {
-        finish(&mut row, &mut field, &mut rows, &mut data_rows, &mut header_width, row_line, &mut discarding)?;
+        finish(
+            &mut row,
+            &mut field,
+            &mut rows,
+            &mut data_rows,
+            &mut header_width,
+            row_line,
+            &mut discarding,
+        )?;
     }
     Ok(rows)
 }

@@ -15,19 +15,50 @@ const MAX_DEPTH: usize = 64;
 /// Paint `gid` of `face` as a colour glyph, its origin mapped by `at` (y down, points) at `scale`
 /// points per font unit. `fg` is the text colour (palette index 0xFFFF) and `alpha` fades it all.
 /// False when the glyph has no colour version, so the caller draws the plain outline.
-pub fn paint(ctx: &mut RenderContext, face: &FontFace, gid: u32, at: Affine, scale: f64, fg: Rgba, alpha: f64) -> bool {
-    let Some(font) = face.skrifa() else { return false };
+pub fn paint(
+    ctx: &mut RenderContext,
+    face: &FontFace,
+    gid: u32,
+    at: Affine,
+    scale: f64,
+    fg: Rgba,
+    alpha: f64,
+) -> bool {
+    let Some(font) = face.skrifa() else {
+        return false;
+    };
     let glyphs = font.color_glyphs();
-    let Some(glyph) = glyphs.get(GlyphId::new(gid)) else { return false };
+    let Some(glyph) = glyphs.get(GlyphId::new(gid)) else {
+        return false;
+    };
     let palette: Vec<Rgba> = font
         .color_palettes()
         .get(0)
-        .map(|p| p.colors().iter().map(|c| Rgba { r: c.red, g: c.green, b: c.blue, a: c.alpha }).collect())
+        .map(|p| {
+            p.colors()
+                .iter()
+                .map(|c| Rgba {
+                    r: c.red,
+                    g: c.green,
+                    b: c.blue,
+                    a: c.alpha,
+                })
+                .collect()
+        })
         .unwrap_or_default();
     // Font units are y up; the slide is y down.
     let base = at * Affine::scale(scale) * Affine::scale_non_uniform(1.0, -1.0);
-    let mut p = Painter { ctx, face, base, stack: vec![Affine::IDENTITY], palette, fg, opened: Vec::new() };
-    p.ctx.push_layer(None, None, Some(alpha.clamp(0.0, 1.0) as f32), None, None);
+    let mut p = Painter {
+        ctx,
+        face,
+        base,
+        stack: vec![Affine::IDENTITY],
+        palette,
+        fg,
+        opened: Vec::new(),
+    };
+    p.ctx
+        .push_layer(None, None, Some(alpha.clamp(0.0, 1.0) as f32), None, None);
     let ok = glyph.paint(face.location(), &mut p).is_ok();
     // A malformed glyph may leave layers open: close them all.
     while let Some(open) = p.opened.pop() {
@@ -53,7 +84,14 @@ struct Painter<'a> {
 }
 
 fn affine(t: &Transform) -> Affine {
-    Affine::new([t.xx as f64, t.yx as f64, t.xy as f64, t.yy as f64, t.dx as f64, t.dy as f64])
+    Affine::new([
+        t.xx as f64,
+        t.yx as f64,
+        t.xy as f64,
+        t.yy as f64,
+        t.dx as f64,
+        t.dy as f64,
+    ])
 }
 
 fn pt(p: skrifa::raw::types::Point<f32>) -> Point {
@@ -109,13 +147,25 @@ impl Painter<'_> {
     }
 
     fn color(&self, index: u16, alpha: f32) -> peniko::Color {
-        let c = if index == 0xFFFF { self.fg } else { self.palette.get(index as usize).copied().unwrap_or(self.fg) };
-        let a = (c.a as f64 * (alpha as f64).clamp(0.0, 1.0)).round().clamp(0.0, 255.0) as u8;
+        let c = if index == 0xFFFF {
+            self.fg
+        } else {
+            self.palette.get(index as usize).copied().unwrap_or(self.fg)
+        };
+        let a = (c.a as f64 * (alpha as f64).clamp(0.0, 1.0))
+            .round()
+            .clamp(0.0, 255.0) as u8;
         peniko::Color::from_rgba8(c.r, c.g, c.b, a)
     }
 
     fn stops(&self, stops: &[ColorStop]) -> Vec<peniko::ColorStop> {
-        stops.iter().map(|s| peniko::ColorStop { offset: s.offset.clamp(0.0, 1.0), color: self.color(s.palette_index, s.alpha).into() }).collect()
+        stops
+            .iter()
+            .map(|s| peniko::ColorStop {
+                offset: s.offset.clamp(0.0, 1.0),
+                color: self.color(s.palette_index, s.alpha).into(),
+            })
+            .collect()
     }
 
     /// The glyph outline in font units, y up.
@@ -165,7 +215,12 @@ impl ColorPainter for Painter<'_> {
     }
 
     fn push_clip_box(&mut self, b: BoundingBox<f32>) {
-        let r = Rect::new(b.x_min as f64, b.y_min as f64, b.x_max as f64, b.y_max as f64);
+        let r = Rect::new(
+            b.x_min as f64,
+            b.y_min as f64,
+            b.x_max as f64,
+            b.y_max as f64,
+        );
         self.push_clip(&kurbo::Shape::to_path(&r, 0.1));
     }
 
@@ -175,24 +230,56 @@ impl ColorPainter for Painter<'_> {
 
     fn fill(&mut self, brush: Brush<'_>) {
         match brush {
-            Brush::Solid { palette_index, alpha } => {
+            Brush::Solid {
+                palette_index,
+                alpha,
+            } => {
                 let c = self.color(palette_index, alpha);
                 self.cover(c);
             }
-            Brush::LinearGradient { p0, p1, color_stops, extend: e } => {
-                let g = peniko::Gradient::new_linear(pt(p0), pt(p1)).with_stops(self.stops(color_stops).as_slice()).with_extend(extend(e));
-                self.cover(g);
-            }
-            Brush::RadialGradient { c0, r0, c1, r1, color_stops, extend: e } => {
-                let g = peniko::Gradient::new_two_point_radial(pt(c0), r0.max(0.0), pt(c1), r1.max(0.0))
+            Brush::LinearGradient {
+                p0,
+                p1,
+                color_stops,
+                extend: e,
+            } => {
+                let g = peniko::Gradient::new_linear(pt(p0), pt(p1))
                     .with_stops(self.stops(color_stops).as_slice())
                     .with_extend(extend(e));
                 self.cover(g);
             }
-            Brush::SweepGradient { c0, start_angle, end_angle, color_stops, extend: e } => {
-                let g = peniko::Gradient::new_sweep(pt(c0), start_angle.to_radians(), end_angle.to_radians())
-                    .with_stops(self.stops(color_stops).as_slice())
-                    .with_extend(extend(e));
+            Brush::RadialGradient {
+                c0,
+                r0,
+                c1,
+                r1,
+                color_stops,
+                extend: e,
+            } => {
+                let g = peniko::Gradient::new_two_point_radial(
+                    pt(c0),
+                    r0.max(0.0),
+                    pt(c1),
+                    r1.max(0.0),
+                )
+                .with_stops(self.stops(color_stops).as_slice())
+                .with_extend(extend(e));
+                self.cover(g);
+            }
+            Brush::SweepGradient {
+                c0,
+                start_angle,
+                end_angle,
+                color_stops,
+                extend: e,
+            } => {
+                let g = peniko::Gradient::new_sweep(
+                    pt(c0),
+                    start_angle.to_radians(),
+                    end_angle.to_radians(),
+                )
+                .with_stops(self.stops(color_stops).as_slice())
+                .with_extend(extend(e));
                 self.cover(g);
             }
         }

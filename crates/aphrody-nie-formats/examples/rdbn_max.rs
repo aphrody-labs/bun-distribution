@@ -42,10 +42,10 @@ fn octets(v: &RdbnValue, n: i64) -> Option<Vec<u8>> {
         RdbnValue::Byte(_) | RdbnValue::Bool(_) => u8::try_from(n).ok().map(|x| vec![x]),
         RdbnValue::Short(_) | RdbnValue::ActType(_) => {
             i16::try_from(n).ok().map(|x| x.to_le_bytes().to_vec())
-        },
+        }
         RdbnValue::Int(_) | RdbnValue::Flag(_) => {
             i32::try_from(n).ok().map(|x| x.to_le_bytes().to_vec())
-        },
+        }
         _ => None,
     }
 }
@@ -55,7 +55,10 @@ fn main() {
     let liste = opt(&mut args, "--list").expect("--list <nom>");
     let filtre = opt(&mut args, "--where").unwrap_or_default();
     let set = opt(&mut args, "--set").expect("--set <champs séparés par des virgules>");
-    let to: i64 = opt(&mut args, "--to").expect("--to <valeur>").parse().expect("valeur entière");
+    let to: i64 = opt(&mut args, "--to")
+        .expect("--to <valeur>")
+        .parse()
+        .expect("valeur entière");
     let src = args.first().expect("usage: rdbn_max <in> <out> …").clone();
     let dst = args.get(1).expect("usage: rdbn_max <in> <out> …").clone();
 
@@ -72,7 +75,10 @@ fn main() {
     let data = std::fs::read(&src).expect("lecture");
     let rdbn = aphrody_nie_formats::cfgbin::parse(&data).expect("pas un RDBN");
     let lists = aphrody_nie_formats::cfgbin::read_values(&rdbn, &data);
-    let l: &RdbnList = lists.iter().find(|l| l.name == liste).expect("liste introuvable");
+    let l: &RdbnList = lists
+        .iter()
+        .find(|l| l.name == liste)
+        .expect("liste introuvable");
     println!("{src}\n  liste « {} » — {} ligne(s)", l.name, l.rows.len());
 
     let mut out = data.clone();
@@ -81,7 +87,10 @@ fn main() {
         let idx: HashMap<&str, &RdbnValue> =
             row.fields.iter().map(|(k, v)| (k.as_str(), v)).collect();
         // La ligne doit satisfaire tout le filtre.
-        if !conds.iter().all(|(k, want)| idx.get(k.as_str()).and_then(|v| num(v)) == Some(*want)) {
+        if !conds
+            .iter()
+            .all(|(k, want)| idx.get(k.as_str()).and_then(|v| num(v)) == Some(*want))
+        {
             continue;
         }
         // Signature : les champs visés, consécutifs, dans leur encodage d'origine.
@@ -104,12 +113,18 @@ fn main() {
             println!("  row{i} : champ(s) absent(s) ou non numérique(s) — ignorée");
             continue;
         }
-        let occurrences = out.windows(sig.len()).filter(|w| *w == sig.as_slice()).count();
+        let occurrences = out
+            .windows(sig.len())
+            .filter(|w| *w == sig.as_slice())
+            .count();
         if occurrences != 1 {
             println!("  row{i} : signature vue {occurrences}× — ambiguë, non écrite");
             continue;
         }
-        let pos = out.windows(sig.len()).position(|w| w == sig.as_slice()).expect("déjà compté");
+        let pos = out
+            .windows(sig.len())
+            .position(|w| w == sig.as_slice())
+            .expect("déjà compté");
         out[pos..pos + rempl.len()].copy_from_slice(&rempl);
         touchees += 1;
         ecrits += rempl.len();

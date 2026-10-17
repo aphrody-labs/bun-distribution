@@ -37,7 +37,10 @@ pub(super) struct Token<'a> {
 }
 
 /// A placed file's preview (binary): (begin, end) markers.
-const PREVIEW: (&[u8], &[u8]) = (b"%AI26_BeginPlacedObjectPreview", b"%AI26_EndPlacedObjectPreview");
+const PREVIEW: (&[u8], &[u8]) = (
+    b"%AI26_BeginPlacedObjectPreview",
+    b"%AI26_EndPlacedObjectPreview",
+);
 /// A binary section skipped whole: (begin, end) markers.
 const DOCUMENT: (&[u8], &[u8]) = (b"%%BeginDocument", b"%%EndDocument");
 
@@ -46,7 +49,10 @@ fn is_space(b: u8) -> bool {
 }
 
 fn is_delim(b: u8) -> bool {
-    matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        b,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 fn is_eol(b: u8) -> bool {
@@ -62,7 +68,11 @@ pub(super) struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(src: &'a [u8]) -> Self {
-        Self { src, pos: 0, hidden: false }
+        Self {
+            src,
+            pos: 0,
+            hidden: false,
+        }
     }
 
     fn peek(&self) -> Option<u8> {
@@ -124,15 +134,23 @@ impl<'a> Lexer<'a> {
                     continue;
                 }
                 // Right after `%_` a section still starts (a hidden image's data, #1264).
-                let prefixed = self.hidden && self.pos >= 2 && self.src.get(self.pos - 2..self.pos) == Some(b"%_");
+                let prefixed = self.hidden
+                    && self.pos >= 2
+                    && self.src.get(self.pos - 2..self.pos) == Some(b"%_");
                 let line = self.line();
                 if (start || prefixed)
                     && let Some(t) = self.special(line)
                 {
-                    return Some(Token { hidden: prefixed, ..t });
+                    return Some(Token {
+                        hidden: prefixed,
+                        ..t
+                    });
                 }
                 if start {
-                    return Some(Token { tok: Tok::Comment(line.get(1..).unwrap_or_default()), hidden: false });
+                    return Some(Token {
+                        tok: Tok::Comment(line.get(1..).unwrap_or_default()),
+                        hidden: false,
+                    });
                 }
                 // A comment later in a line.
                 continue;
@@ -148,7 +166,9 @@ impl<'a> Lexer<'a> {
                     // Malformed digits read as an empty string.
                     Tok::Hex(rest.get(..end).and_then(hex_decode).unwrap_or_default())
                 }
-                b'[' | b']' | b'{' | b'}' | b')' | b'>' => Tok::Word(self.src.get(self.pos - 1..self.pos).unwrap_or_default()),
+                b'[' | b']' | b'{' | b'}' | b')' | b'>' => {
+                    Tok::Word(self.src.get(self.pos - 1..self.pos).unwrap_or_default())
+                }
                 b'/' => Tok::Name(self.word()),
                 _ => {
                     self.pos -= 1;
@@ -166,16 +186,28 @@ impl<'a> Lexer<'a> {
     /// The token a comment line stands for when it starts a section read differently: image data
     /// (`%%BeginData:` followed by `XI`), a placed file's preview and skipped binary sections.
     fn special(&mut self, line: &'a [u8]) -> Option<Token<'a>> {
-        if let Some((_, end)) = [PREVIEW, DOCUMENT].iter().find(|(b, _)| line.starts_with(b)) {
+        if let Some((_, end)) = [PREVIEW, DOCUMENT]
+            .iter()
+            .find(|(b, _)| line.starts_with(b))
+        {
             let from = self.pos;
             let after = find(self.rest(), end).map_or(self.src.len(), |i| self.pos + i);
             self.pos = after;
             self.line();
-            let tok = if *end == PREVIEW.1 { Tok::Preview(self.slice(from, after)) } else { Tok::Comment(line.get(1..).unwrap_or_default()) };
+            let tok = if *end == PREVIEW.1 {
+                Tok::Preview(self.slice(from, after))
+            } else {
+                Tok::Comment(line.get(1..).unwrap_or_default())
+            };
             return Some(Token { tok, hidden: false });
         }
         let n = line.strip_prefix(b"%%BeginData:")?;
-        let n: usize = std::str::from_utf8(n).ok()?.split_whitespace().next()?.parse().ok()?;
+        let n: usize = std::str::from_utf8(n)
+            .ok()?
+            .split_whitespace()
+            .next()?
+            .parse()
+            .ok()?;
         // The count starts after the comment's line end character (a following `\n` counts).
         let from = self.pos + 1;
         let region = self.src.get(from..)?;
@@ -195,16 +227,28 @@ impl<'a> Lexer<'a> {
         }
         // The count leaves out an alpha channel: the data ends where `%%EndData` starts.
         let declared = from.saturating_add(n).min(self.src.len()).max(data);
-        let window =
-            self.src.get(declared.saturating_sub(4).max(data)..declared.saturating_add(n.saturating_mul(2)).saturating_add(64).min(self.src.len()));
+        let window = self.src.get(
+            declared.saturating_sub(4).max(data)
+                ..declared
+                    .saturating_add(n.saturating_mul(2))
+                    .saturating_add(64)
+                    .min(self.src.len()),
+        );
         let end = match window.and_then(|w| find(w, b"%%EndData")) {
             Some(i) => declared.saturating_sub(4).max(data) + i,
             None => declared,
         };
         self.pos = end;
         let samples = self.src.get(data..end).unwrap_or_default();
-        let samples = if hidden { samples.strip_suffix(b"%_").unwrap_or(samples) } else { samples };
-        Some(Token { tok: Tok::Data(samples), hidden: false })
+        let samples = if hidden {
+            samples.strip_suffix(b"%_").unwrap_or(samples)
+        } else {
+            samples
+        };
+        Some(Token {
+            tok: Tok::Data(samples),
+            hidden: false,
+        })
     }
 
     /// A regular token's characters.
@@ -279,7 +323,9 @@ pub(super) fn number(w: &[u8]) -> Option<f64> {
     if !(first.is_ascii_digit() || matches!(first, b'+' | b'-' | b'.')) {
         return None;
     }
-    if w.iter().any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E')) {
+    if w.iter()
+        .any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E'))
+    {
         return None;
     }
     let v: f64 = std::str::from_utf8(w).ok()?.parse().ok()?;
@@ -335,16 +381,31 @@ mod tests {
         assert_eq!(toks.last(), Some(&t(Tok::Num(1.0), false)));
         // On `%_` lines (an opacity mask's image, say) too: a `(` in the samples starts no string.
         let toks = all(b"%_XI\r%_%%BeginData: 4\r%_XI\r(\x00\x00\x00%_%%EndData\r%_XH\r1\r");
-        assert!(toks.contains(&t(Tok::Data(b"(\x00\x00\x00"), true)), "{toks:?}");
+        assert!(
+            toks.contains(&t(Tok::Data(b"(\x00\x00\x00"), true)),
+            "{toks:?}"
+        );
         assert_eq!(toks.last(), Some(&t(Tok::Num(1.0), false)));
     }
 
     #[test]
     fn binary_sections_are_one_token() {
         let toks = all(b"%AI26_BeginPlacedObjectPreview\r\n2 1 (\x00\xff\r\n%AI26_EndPlacedObjectPreview\r\nN\r\n");
-        assert_eq!(toks, vec![t(Tok::Preview(b"\r\n2 1 (\x00\xff\r\n"), false), t(Tok::Word(b"N"), false)]);
+        assert_eq!(
+            toks,
+            vec![
+                t(Tok::Preview(b"\r\n2 1 (\x00\xff\r\n"), false),
+                t(Tok::Word(b"N"), false)
+            ]
+        );
         let toks = all(b"%%BeginDocument: a.eps\n(\x00 frobnicate\n%%EndDocument\nN\n");
-        assert_eq!(toks, vec![t(Tok::Comment(b"%BeginDocument: a.eps"), false), t(Tok::Word(b"N"), false)]);
+        assert_eq!(
+            toks,
+            vec![
+                t(Tok::Comment(b"%BeginDocument: a.eps"), false),
+                t(Tok::Word(b"N"), false)
+            ]
+        );
         // One that doesn't end takes the rest.
         assert_eq!(all(b"%AI26_BeginPlacedObjectPreview\r1 (").len(), 1);
     }
@@ -362,7 +423,14 @@ mod tests {
 
     #[test]
     fn hostile_input_ends() {
-        for src in [&b"(unterminated \\"[..], b"<12", b"%%BeginData: 99999999999\r\nXI", b"%%BeginData: 5\rXI\r", b"/", b"1e999 nan"] {
+        for src in [
+            &b"(unterminated \\"[..],
+            b"<12",
+            b"%%BeginData: 99999999999\r\nXI",
+            b"%%BeginData: 5\rXI\r",
+            b"/",
+            b"1e999 nan",
+        ] {
             let toks = all(src);
             assert!(toks.len() < 10);
         }

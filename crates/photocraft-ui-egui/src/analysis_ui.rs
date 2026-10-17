@@ -88,8 +88,12 @@ pub fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
         _ => {
             // View › Proof Setup simulations: checked while that proof is shown.
             // A check item with no document too: an item's kind never changes (native menus).
-            let kind = id.strip_prefix("view.proofSetup.").and_then(photocraft_engine::proof_sim::ProofKind::from_id)?;
-            let Some(d) = app.session.active() else { return Some(false) };
+            let kind = id
+                .strip_prefix("view.proofSetup.")
+                .and_then(photocraft_engine::proof_sim::ProofKind::from_id)?;
+            let Some(d) = app.session.active() else {
+                return Some(false);
+            };
             let pv = app.session.color.proof(d.doc.id);
             Some(pv.enabled && pv.setup.kind == kind)
         }
@@ -110,8 +114,15 @@ pub fn menu(app: &mut PhotocraftApp, id: &str, params: &Value) -> Option<Result<
     let a = &mut app.ui.analysis;
     match id {
         "window.panel.measurementLog" | "window.panel.notes" => {
-            let slot = if id.ends_with("measurementLog") { &mut a.measurement_log } else { &mut a.notes };
-            *slot = params.get("show").and_then(Value::as_bool).unwrap_or(!*slot);
+            let slot = if id.ends_with("measurementLog") {
+                &mut a.measurement_log
+            } else {
+                &mut a.notes
+            };
+            *slot = params
+                .get("show")
+                .and_then(Value::as_bool)
+                .unwrap_or(!*slot);
             return Some(Ok(json!({"visible": *slot})));
         }
         _ => {}
@@ -167,7 +178,12 @@ pub fn menu(app: &mut PhotocraftApp, id: &str, params: &Value) -> Option<Result<
         "file.import.notes" => match app.active_doc_id() {
             Ok(doc) => app.pick_file_bytes(move |app, name, bytes| {
                 app.refocus(doc)?;
-                let r = photocraft_engine::notes_cmds::import_notes_from(&mut app.session, &name, &bytes).map_err(|e| e.to_string());
+                let r = photocraft_engine::notes_cmds::import_notes_from(
+                    &mut app.session,
+                    &name,
+                    &bytes,
+                )
+                .map_err(|e| e.to_string());
                 if r.is_ok() {
                     app.ui.analysis.notes = true;
                     app.sync_views();
@@ -190,7 +206,11 @@ fn open(app: &mut PhotocraftApp, kind: &str, f: Value) -> Result<Value, String> 
 fn suggested_length(d: &Document) -> f64 {
     let target = f64::from(d.size.width) / 5.0 * d.measurement.scale.factor();
     let e = 10f64.powf(target.log10().floor());
-    [5.0, 2.0, 1.0].into_iter().map(|m| m * e).find(|v| *v <= target).unwrap_or(e)
+    [5.0, 2.0, 1.0]
+        .into_iter()
+        .map(|m| m * e)
+        .find(|v| *v <= target)
+        .unwrap_or(e)
 }
 
 /// Export the Measurement Log (or the given rows) as CSV through the save picker.
@@ -227,13 +247,19 @@ fn constrain(from: [f64; 2], to: [f64; 2], shift: bool) -> [f64; 2] {
 }
 
 fn set_ruler(app: &mut PhotocraftApp, r: Ruler) {
-    let _ = app.run("image.analysis.rulerTool", json!({"start": r.start, "end": r.end, "protractor": r.protractor}));
+    let _ = app.run(
+        "image.analysis.rulerTool",
+        json!({"start": r.start, "end": r.end, "protractor": r.protractor}),
+    );
 }
 
 /// Pointer input for the Ruler, Count, Note and Color Sampler tools. Returns true when consumed.
 pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) -> bool {
     let tool = app.active_tool();
-    if !matches!(tool, Tool::Ruler | Tool::Count | Tool::Note | Tool::ColorSampler) {
+    if !matches!(
+        tool,
+        Tool::Ruler | Tool::Count | Tool::Note | Tool::ColorSampler
+    ) {
         return false;
     }
     let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
@@ -245,7 +271,11 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
         return true;
     };
     let tol = tolerance(app);
-    let samplers: Vec<[f64; 2]> = app.session.active().map(|d| d.color_samplers.clone()).unwrap_or_default();
+    let samplers: Vec<[f64; 2]> = app
+        .session
+        .active()
+        .map(|d| d.color_samplers.clone())
+        .unwrap_or_default();
     match (tool, ev) {
         (Tool::Ruler, ToolEvent::Down { x, y, .. }) => {
             let p = [x, y];
@@ -261,19 +291,32 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
                     set_ruler(app, r);
                     app.ui.analysis.drag = Some(Drag::RulerHandle(2));
                 }
-                Some(r) if r.protractor.is_some_and(near) => app.ui.analysis.drag = Some(Drag::RulerHandle(2)),
+                Some(r) if r.protractor.is_some_and(near) => {
+                    app.ui.analysis.drag = Some(Drag::RulerHandle(2))
+                }
                 Some(r) if near(r.end) => app.ui.analysis.drag = Some(Drag::RulerHandle(1)),
                 Some(r) if near(r.start) => app.ui.analysis.drag = Some(Drag::RulerHandle(0)),
                 _ => {
-                    set_ruler(app, Ruler { start: p, end: p, protractor: None });
+                    set_ruler(
+                        app,
+                        Ruler {
+                            start: p,
+                            end: p,
+                            protractor: None,
+                        },
+                    );
                     app.ui.analysis.drag = Some(Drag::RulerNew);
                 }
             }
         }
         (Tool::Ruler, ToolEvent::Move { x, y, .. }) => {
-            let (Some(drag), Some(mut r)) = (app.ui.analysis.drag, doc.measurement.ruler) else { return true };
+            let (Some(drag), Some(mut r)) = (app.ui.analysis.drag, doc.measurement.ruler) else {
+                return true;
+            };
             match drag {
-                Drag::RulerNew | Drag::RulerHandle(1) => r.end = constrain(r.start, [x, y], mods.shift),
+                Drag::RulerNew | Drag::RulerHandle(1) => {
+                    r.end = constrain(r.start, [x, y], mods.shift)
+                }
                 Drag::RulerHandle(0) => r.start = constrain(r.end, [x, y], mods.shift),
                 Drag::RulerHandle(_) => r.protractor = Some(constrain(r.start, [x, y], mods.shift)),
                 _ => return true,
@@ -281,7 +324,12 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
             set_ruler(app, r);
         }
         (Tool::Ruler, ToolEvent::Up { .. }) => {
-            if app.ui.analysis.drag.take() == Some(Drag::RulerNew) && doc.measurement.ruler.is_some_and(|r| dist(r.start, r.end) < 0.5) {
+            if app.ui.analysis.drag.take() == Some(Drag::RulerNew)
+                && doc
+                    .measurement
+                    .ruler
+                    .is_some_and(|r| dist(r.start, r.end) < 0.5)
+            {
                 let _ = app.run("image.analysis.rulerTool", json!({"clear": true}));
             }
         }
@@ -307,13 +355,20 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
         }
         (Tool::Note, ToolEvent::Down { x, y, .. }) => {
             let z = f64::from(app.point_zoom().max(0.01));
-            let hit =
-                doc.notes.iter().rposition(|n| x >= n.position[0] && x <= n.position[0] + 16.0 / z && y >= n.position[1] && y <= n.position[1] + 20.0 / z);
+            let hit = doc.notes.iter().rposition(|n| {
+                x >= n.position[0]
+                    && x <= n.position[0] + 16.0 / z
+                    && y >= n.position[1]
+                    && y <= n.position[1] + 20.0 / z
+            });
             match hit {
                 Some(i) => {
                     app.ui.analysis.note_selected = Some(i);
                     app.ui.analysis.notes = true;
-                    app.ui.analysis.drag = Some(Drag::Note(i, [x - doc.notes[i].position[0], y - doc.notes[i].position[1]]));
+                    app.ui.analysis.drag = Some(Drag::Note(
+                        i,
+                        [x - doc.notes[i].position[0], y - doc.notes[i].position[1]],
+                    ));
                 }
                 None => {
                     let a = &app.ui.analysis;
@@ -328,7 +383,11 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
         (Tool::Note, ToolEvent::Up { x, y }) => {
             if let Some(Drag::Note(i, off)) = app.ui.analysis.drag.take() {
                 let to = [(x - off[0]).round(), (y - off[1]).round()];
-                if doc.notes.get(i).is_some_and(|n| dist(n.position, to) >= 1.0) {
+                if doc
+                    .notes
+                    .get(i)
+                    .is_some_and(|n| dist(n.position, to) >= 1.0)
+                {
                     let _ = app.run("notes.set", json!({"index": i, "x": to[0], "y": to[1]}));
                 }
             }
@@ -344,7 +403,9 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
                 Some(i) => app.ui.analysis.drag = Some(Drag::Sampler(i, p)),
                 // ⌥-click on empty space does nothing; a plain click inside places a new point.
                 None if mods.alt => {}
-                None if (0.0..f64::from(doc.size.width)).contains(&x) && (0.0..f64::from(doc.size.height)).contains(&y) => {
+                None if (0.0..f64::from(doc.size.width)).contains(&x)
+                    && (0.0..f64::from(doc.size.height)).contains(&y) =>
+                {
                     let r = app.run("view.colorSamplers.add", json!({"x": x, "y": y}));
                     status_on_err(app, r);
                 }
@@ -358,9 +419,13 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
                     return true; // a click on a point, not a drag: nothing to do
                 }
                 // Dropped inside the canvas: move it. Dropped outside: remove just that point.
-                let inside = (0.0..f64::from(doc.size.width)).contains(&x) && (0.0..f64::from(doc.size.height)).contains(&y);
+                let inside = (0.0..f64::from(doc.size.width)).contains(&x)
+                    && (0.0..f64::from(doc.size.height)).contains(&y);
                 let r = if inside {
-                    app.run("view.colorSamplers.move", json!({"index": i, "x": x, "y": y}))
+                    app.run(
+                        "view.colorSamplers.move",
+                        json!({"index": i, "x": x, "y": y}),
+                    )
                 } else {
                     app.run("view.colorSamplers.delete", json!({"index": i}))
                 };
@@ -375,7 +440,12 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: egui::Modifiers) ->
 
 /// The nearest Color Sampler point within `tol` document pixels, or `None`.
 fn nearest_sampler(points: &[[f64; 2]], at: [f64; 2], tol: f64) -> Option<usize> {
-    points.iter().enumerate().filter(|(_, q)| dist(**q, at) <= tol).min_by(|a, b| dist(*a.1, at).total_cmp(&dist(*b.1, at))).map(|(i, _)| i)
+    points
+        .iter()
+        .enumerate()
+        .filter(|(_, q)| dist(**q, at) <= tol)
+        .min_by(|a, b| dist(*a.1, at).total_cmp(&dist(*b.1, at)))
+        .map(|(i, _)| i)
 }
 
 /// Show a command error in the status bar without treating the sample-limit message as a fault.
@@ -388,7 +458,13 @@ fn status_on_err(app: &mut PhotocraftApp, r: Result<Value, String>) {
 
 fn nearest_marker(d: &Document, at: [f64; 2], tol: f64) -> Option<(usize, usize)> {
     let mut best: Option<(f64, usize, usize)> = None;
-    for (gi, g) in d.measurement.count_groups.iter().enumerate().filter(|(_, g)| g.visible) {
+    for (gi, g) in d
+        .measurement
+        .count_groups
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| g.visible)
+    {
         for (pi, q) in g.points.iter().enumerate() {
             let dd = dist(*q, at);
             if dd <= tol && best.is_none_or(|b| dd < b.0) {
@@ -400,7 +476,11 @@ fn nearest_marker(d: &Document, at: [f64; 2], tol: f64) -> Option<(usize, usize)
 }
 
 fn color32(c: [f32; 3]) -> Color32 {
-    Color32::from_rgb((c[0].clamp(0.0, 1.0) * 255.0) as u8, (c[1].clamp(0.0, 1.0) * 255.0) as u8, (c[2].clamp(0.0, 1.0) * 255.0) as u8)
+    Color32::from_rgb(
+        (c[0].clamp(0.0, 1.0) * 255.0) as u8,
+        (c[1].clamp(0.0, 1.0) * 255.0) as u8,
+        (c[2].clamp(0.0, 1.0) * 255.0) as u8,
+    )
 }
 
 fn handle(painter: &egui::Painter, p: Pos2) {
@@ -412,7 +492,9 @@ fn handle(painter: &egui::Painter, p: Pos2) {
 
 /// Ruler line (while the Ruler tool is active), count markers and note icons.
 pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform) {
-    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else { return };
+    let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
+        return;
+    };
     let v = &app.ui.view;
     if app.ui.tool == Tool::Ruler
         && let Some(r) = doc.measurement.ruler
@@ -437,7 +519,13 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
                 let at = xf.to_screen(p[0] as f32, p[1] as f32);
                 painter.circle_filled(at, 1.0 + g.marker_size as f32, c);
                 let font = FontId::proportional(g.label_size as f32);
-                painter.text(at + vec2(2.0 + g.marker_size as f32, -1.0), Align2::LEFT_BOTTOM, format!("{}", i + 1), font, c);
+                painter.text(
+                    at + vec2(2.0 + g.marker_size as f32, -1.0),
+                    Align2::LEFT_BOTTOM,
+                    format!("{}", i + 1),
+                    font,
+                    c,
+                );
             }
         }
     }
@@ -451,34 +539,81 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
             painter.rect_stroke(
                 r,
                 CornerRadius::same(2),
-                Stroke::new(if sel { 2.0 } else { 1.0 }, if sel { Color32::WHITE } else { Color32::from_black_alpha(200) }),
+                Stroke::new(
+                    if sel { 2.0 } else { 1.0 },
+                    if sel {
+                        Color32::WHITE
+                    } else {
+                        Color32::from_black_alpha(200)
+                    },
+                ),
                 egui::StrokeKind::Outside,
             );
             // Folded corner and text lines.
             let ink = Color32::from_black_alpha(140);
-            painter.line_segment([r.right_top() + vec2(-5.0, 0.0), r.right_top() + vec2(0.0, 5.0)], Stroke::new(1.0, ink));
+            painter.line_segment(
+                [
+                    r.right_top() + vec2(-5.0, 0.0),
+                    r.right_top() + vec2(0.0, 5.0),
+                ],
+                Stroke::new(1.0, ink),
+            );
             for k in 0..3 {
                 let y = r.top() + 7.0 + 4.0 * k as f32;
-                painter.line_segment([pos2(r.left() + 3.0, y), pos2(r.right() - 3.0, y)], Stroke::new(1.0, ink));
+                painter.line_segment(
+                    [pos2(r.left() + 3.0, y), pos2(r.right() - 3.0, y)],
+                    Stroke::new(1.0, ink),
+                );
             }
         }
     }
     // Color Sampler points (#1046): persistent numbered markers, drawn whatever the active tool is.
-    for (i, p) in app.session.active().map(|d| d.color_samplers.clone()).unwrap_or_default().iter().enumerate() {
+    for (i, p) in app
+        .session
+        .active()
+        .map(|d| d.color_samplers.clone())
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+    {
         let at = xf.to_screen(p[0] as f32, p[1] as f32);
         // A small target reticle, double-stroked so it reads on any pixel.
         for (w, c) in [(3.0, Color32::from_black_alpha(170)), (1.0, Color32::WHITE)] {
             painter.circle_stroke(at, 5.0, Stroke::new(w, c));
-            painter.line_segment([at - vec2(8.0, 0.0), at - vec2(6.0, 0.0)], Stroke::new(w, c));
-            painter.line_segment([at + vec2(6.0, 0.0), at + vec2(8.0, 0.0)], Stroke::new(w, c));
-            painter.line_segment([at - vec2(0.0, 8.0), at - vec2(0.0, 6.0)], Stroke::new(w, c));
-            painter.line_segment([at + vec2(0.0, 6.0), at + vec2(0.0, 8.0)], Stroke::new(w, c));
+            painter.line_segment(
+                [at - vec2(8.0, 0.0), at - vec2(6.0, 0.0)],
+                Stroke::new(w, c),
+            );
+            painter.line_segment(
+                [at + vec2(6.0, 0.0), at + vec2(8.0, 0.0)],
+                Stroke::new(w, c),
+            );
+            painter.line_segment(
+                [at - vec2(0.0, 8.0), at - vec2(0.0, 6.0)],
+                Stroke::new(w, c),
+            );
+            painter.line_segment(
+                [at + vec2(0.0, 6.0), at + vec2(0.0, 8.0)],
+                Stroke::new(w, c),
+            );
         }
         // The number, upper right so several points stay readable when they overlap.
         let font = FontId::proportional(11.0);
         let anchor = at + vec2(7.0, -7.0);
-        painter.text(anchor + vec2(1.0, 1.0), Align2::LEFT_BOTTOM, format!("{}", i + 1), font.clone(), Color32::from_black_alpha(180));
-        painter.text(anchor, Align2::LEFT_BOTTOM, format!("{}", i + 1), font, Color32::WHITE);
+        painter.text(
+            anchor + vec2(1.0, 1.0),
+            Align2::LEFT_BOTTOM,
+            format!("{}", i + 1),
+            font.clone(),
+            Color32::from_black_alpha(180),
+        );
+        painter.text(
+            anchor,
+            Align2::LEFT_BOTTOM,
+            format!("{}", i + 1),
+            font,
+            Color32::WHITE,
+        );
     }
 }
 
@@ -487,20 +622,35 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
 fn readout(ui: &mut egui::Ui, label: &str, value: Option<f64>) {
     let t = Tokens::get(ui.ctx());
     ui.label(RichText::new(tl!(&label)).color(t.text_dim).size(11.0));
-    ui.label(RichText::new(value.map_or(String::new(), |v| format!("{v:.2}"))).color(t.text).size(11.0).monospace());
+    ui.label(
+        RichText::new(value.map_or(String::new(), |v| format!("{v:.2}")))
+            .color(t.text)
+            .size(11.0)
+            .monospace(),
+    );
     ui.add_space(6.0);
 }
 
 /// Options bar of the Ruler, Count, Note and Color Sampler tools. Returns true when drawn.
 pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bool {
     let Some(doc) = app.session.active().map(|d| d.doc.clone()) else {
-        return matches!(tool, Tool::Ruler | Tool::Count | Tool::Note | Tool::ColorSampler);
+        return matches!(
+            tool,
+            Tool::Ruler | Tool::Count | Tool::Note | Tool::ColorSampler
+        );
     };
     match tool {
         Tool::Ruler => {
             let sc = doc.measurement.scale.clone();
-            let f = if app.ui.analysis.use_measurement_scale { sc.factor() } else { 1.0 };
-            let info = doc.measurement.ruler.map(|r| photocraft_engine::analysis_cmds::ruler_info(&r, &sc));
+            let f = if app.ui.analysis.use_measurement_scale {
+                sc.factor()
+            } else {
+                1.0
+            };
+            let info = doc
+                .measurement
+                .ruler
+                .map(|r| photocraft_engine::analysis_cmds::ruler_info(&r, &sc));
             let g = |k: &str| info.as_ref().and_then(|i| i[k].as_f64());
             readout(ui, "X:", g("x").map(|v| v * f));
             readout(ui, "Y:", g("y").map(|v| v * f));
@@ -510,12 +660,28 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
             readout(ui, "L1:", g("l1").map(|v| v * f));
             readout(ui, "L2:", g("l2").map(|v| v * f));
             crate::widgets::vline(ui, 22.0);
-            crate::widgets::checkbox(ui, &mut app.ui.analysis.use_measurement_scale, tl!("Use Measurement Scale"));
+            crate::widgets::checkbox(
+                ui,
+                &mut app.ui.analysis.use_measurement_scale,
+                tl!("Use Measurement Scale"),
+            );
             let has = doc.measurement.ruler.is_some();
-            if ui.add_enabled_ui(has, |ui| crate::widgets::secondary_button(ui, tl!("Straighten Layer"), 0.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(has, |ui| {
+                    crate::widgets::secondary_button(ui, tl!("Straighten Layer"), 0.0)
+                })
+                .inner
+                .clicked()
+            {
                 let _ = app.run("image.analysis.straightenLayer", json!({}));
             }
-            if ui.add_enabled_ui(has, |ui| crate::widgets::secondary_button(ui, tl!("Clear"), 0.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(has, |ui| {
+                    crate::widgets::secondary_button(ui, tl!("Clear"), 0.0)
+                })
+                .inner
+                .clicked()
+            {
                 let _ = app.run("image.analysis.rulerTool", json!({"clear": true}));
             }
             true
@@ -523,18 +689,35 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
         Tool::Count => {
             let t = Tokens::get(ui.ctx());
             let m = &doc.measurement;
-            ui.label(RichText::new(crate::i18n::fmt(tl!("Count: {n}"), &[("n", &m.count_total().to_string())])).color(t.text).size(11.0));
+            ui.label(
+                RichText::new(crate::i18n::fmt(
+                    tl!("Count: {n}"),
+                    &[("n", &m.count_total().to_string())],
+                ))
+                .color(t.text)
+                .size(11.0),
+            );
             crate::widgets::vline(ui, 22.0);
             if !m.count_groups.is_empty() {
                 let mut gi = m.active_count_group.min(m.count_groups.len() - 1);
-                let opts: Vec<(usize, &str)> = m.count_groups.iter().enumerate().map(|(i, g)| (i, g.name.as_str())).collect();
+                let opts: Vec<(usize, &str)> = m
+                    .count_groups
+                    .iter()
+                    .enumerate()
+                    .map(|(i, g)| (i, g.name.as_str()))
+                    .collect();
                 if crate::widgets::dropdown(ui, "count-group", &mut gi, &opts, 140.0) {
                     let _ = app.run("count.setGroup", json!({"group": gi, "active": true}));
                 }
                 let g = &m.count_groups[gi];
                 let eye = if g.visible { "eye" } else { "eye-off" };
-                if crate::icons::button(ui, eye, 22.0, false, tl!("Toggle count group visibility")).clicked() {
-                    let _ = app.run("count.setGroup", json!({"group": gi, "visible": !g.visible}));
+                if crate::icons::button(ui, eye, 22.0, false, tl!("Toggle count group visibility"))
+                    .clicked()
+                {
+                    let _ = app.run(
+                        "count.setGroup",
+                        json!({"group": gi, "visible": !g.visible}),
+                    );
                 }
                 let rgb = g.color.to_rgb();
                 // PhotoCraft's Color Picker (sRGB), as everywhere else (#2144).
@@ -547,22 +730,42 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
                         json!({"group": gi}),
                     );
                 }
-                if crate::icons::button(ui, "trash", 22.0, false, tl!("Delete count group")).clicked() {
+                if crate::icons::button(ui, "trash", 22.0, false, tl!("Delete count group"))
+                    .clicked()
+                {
                     let _ = app.run("count.deleteGroup", json!({"group": gi}));
                 }
             }
-            if crate::icons::button(ui, "folder-plus", 22.0, false, tl!("Create a new count group")).clicked() {
+            if crate::icons::button(
+                ui,
+                "folder-plus",
+                22.0,
+                false,
+                tl!("Create a new count group"),
+            )
+            .clicked()
+            {
                 let _ = app.run("count.newGroup", json!({}));
             }
-            if crate::widgets::secondary_button(ui, tl!("Clear"), 0.0).clicked() && m.count_total() > 0 {
+            if crate::widgets::secondary_button(ui, tl!("Clear"), 0.0).clicked()
+                && m.count_total() > 0
+            {
                 let _ = app.run("count.clear", json!({}));
             }
             if let Some(g) = m.count_groups.get(m.active_count_group) {
                 crate::widgets::vline(ui, 22.0);
                 let (mut ms, mut ls) = (g.marker_size as f32, g.label_size as f32);
-                ui.label(RichText::new(tl!("Marker Size")).color(t.text_dim).size(11.0));
+                ui.label(
+                    RichText::new(tl!("Marker Size"))
+                        .color(t.text_dim)
+                        .size(11.0),
+                );
                 let a = crate::widgets::value_field(ui, &mut ms, 1.0..=10.0, "", 40.0).changed();
-                ui.label(RichText::new(tl!("Label Size")).color(t.text_dim).size(11.0));
+                ui.label(
+                    RichText::new(tl!("Label Size"))
+                        .color(t.text_dim)
+                        .size(11.0),
+                );
                 let b = crate::widgets::value_field(ui, &mut ls, 8.0..=72.0, "", 44.0).changed();
                 if a || b {
                     let _ = app.run("count.setGroup", count_size_params(ms, ls));
@@ -573,17 +776,38 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
         Tool::Note => {
             let t = Tokens::get(ui.ctx());
             ui.label(RichText::new(tl!("Author:")).color(t.text_dim).size(11.0));
-            ui.add(egui::TextEdit::singleline(&mut app.ui.analysis.note_author).desired_width(120.0));
+            ui.add(
+                egui::TextEdit::singleline(&mut app.ui.analysis.note_author).desired_width(120.0),
+            );
             ui.label(RichText::new(tl!("Color:")).color(t.text_dim).size(11.0));
             let rgb = app.ui.analysis.note_color;
             if crate::widgets::color_swatch_button(ui, color32(rgb), tl!("Color")).clicked() {
-                crate::color_picker_ui::open_for_target(app, "noteColor", &crate::color_picker_ui::title_for(tl!("Color")), rgb);
+                crate::color_picker_ui::open_for_target(
+                    app,
+                    "noteColor",
+                    &crate::color_picker_ui::title_for(tl!("Color")),
+                    rgb,
+                );
             }
-            if ui.add_enabled_ui(!doc.notes.is_empty(), |ui| crate::widgets::secondary_button(ui, tl!("Clear All"), 0.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(!doc.notes.is_empty(), |ui| {
+                    crate::widgets::secondary_button(ui, tl!("Clear All"), 0.0)
+                })
+                .inner
+                .clicked()
+            {
                 let _ = app.run("notes.delete", json!({"all": true}));
                 app.ui.analysis.note_selected = None;
             }
-            if crate::icons::button(ui, "message-square", 22.0, app.ui.analysis.notes, tl!("Show or hide the Notes panel")).clicked() {
+            if crate::icons::button(
+                ui,
+                "message-square",
+                22.0,
+                app.ui.analysis.notes,
+                tl!("Show or hide the Notes panel"),
+            )
+            .clicked()
+            {
                 app.ui.analysis.notes = !app.ui.analysis.notes;
             }
             true
@@ -594,17 +818,35 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
             ui.label(
                 RichText::new(crate::i18n::fmt(
                     tl!("{n} of {max} sample points"),
-                    &[("n", &n.to_string()), ("max", &photocraft_engine::sampler_cmds::MAX_SAMPLERS.to_string())],
+                    &[
+                        ("n", &n.to_string()),
+                        (
+                            "max",
+                            &photocraft_engine::sampler_cmds::MAX_SAMPLERS.to_string(),
+                        ),
+                    ],
                 ))
                 .color(t.text)
                 .size(11.0),
             );
             crate::widgets::vline(ui, 22.0);
-            if ui.add_enabled_ui(n > 0, |ui| crate::widgets::secondary_button(ui, tl!("Clear All"), 0.0)).inner.clicked() {
+            if ui
+                .add_enabled_ui(n > 0, |ui| {
+                    crate::widgets::secondary_button(ui, tl!("Clear All"), 0.0)
+                })
+                .inner
+                .clicked()
+            {
                 let _ = app.run("view.colorSamplers.clear", json!({}));
             }
             crate::widgets::vline(ui, 22.0);
-            ui.label(RichText::new(tl!("Click to place · Alt-click or drag off-canvas to remove")).color(t.text_dim).size(11.0));
+            ui.label(
+                RichText::new(tl!(
+                    "Click to place · Alt-click or drag off-canvas to remove"
+                ))
+                .color(t.text_dim)
+                .size(11.0),
+            );
             true
         }
         _ => false,
@@ -616,7 +858,13 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
 /// `count.setGroup` params for the options bar's Marker Size and Label Size fields, sent as JSON
 /// integers (the fields edit `f32`s; `8.0` is a float on the wire).
 fn count_size_params(marker: f32, label: f32) -> Value {
-    let whole = |v: f32, lo: f32, hi: f32| if v.is_finite() { v.round().clamp(lo, hi) as u32 } else { lo as u32 };
+    let whole = |v: f32, lo: f32, hi: f32| {
+        if v.is_finite() {
+            v.round().clamp(lo, hi) as u32
+        } else {
+            lo as u32
+        }
+    };
     json!({"markerSize": whole(marker, 1.0, 10.0), "labelSize": whole(label, 8.0, 72.0)})
 }
 
@@ -625,7 +873,12 @@ fn float_frame(t: &Tokens) -> egui::Frame {
         .fill(t.card)
         .stroke(Stroke::new(1.0, t.card_border))
         .corner_radius(CornerRadius::same(t.radius_lg as u8))
-        .shadow(egui::Shadow { offset: [0, 10], blur: 30, spread: 0, color: t.shadow })
+        .shadow(egui::Shadow {
+            offset: [0, 10],
+            blur: 30,
+            spread: 0,
+            color: t.shadow,
+        })
         .inner_margin(egui::Margin::same(8))
 }
 
@@ -647,7 +900,15 @@ pub(crate) fn title_row(ui: &mut egui::Ui, title: &str) -> bool {
 }
 
 /// A floating panel window; `movable` follows Window › Workspace › Lock Workspace.
-pub(crate) fn panel_window(app: &PhotocraftApp, ctx: &egui::Context, id: &str, title: &str, offset: egui::Vec2, width: f32, body: impl FnOnce(&mut egui::Ui)) {
+pub(crate) fn panel_window(
+    app: &PhotocraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    title: &str,
+    offset: egui::Vec2,
+    width: f32,
+    body: impl FnOnce(&mut egui::Ui),
+) {
     let t = Tokens::get(ctx);
     let canvas = app.last_canvas_rect;
     egui::Window::new(title)
@@ -658,7 +919,10 @@ pub(crate) fn panel_window(app: &PhotocraftApp, ctx: &egui::Context, id: &str, t
         .min_width(width)
         .max_width(width)
         .frame(float_frame(&t))
-        .default_pos(pos2((canvas.right() - width - 16.0 + offset.x).max(canvas.left() + 8.0), canvas.top() + offset.y))
+        .default_pos(pos2(
+            (canvas.right() - width - 16.0 + offset.x).max(canvas.left() + 8.0),
+            canvas.top() + offset.y,
+        ))
         .show(ctx, |ui| {
             ui.set_width(width);
             ui.set_max_width(width);
@@ -674,68 +938,122 @@ pub fn windows(app: &mut PhotocraftApp, ctx: &egui::Context) {
         let rows = app.session.analysis.log.clone();
         let mut sel = app.ui.analysis.log_selected.clone();
         let t = Tokens::get(ctx);
-        panel_window(app, ctx, "measurement-log", tl!("Measurement Log"), vec2(-300.0, 470.0), 620.0, |ui| {
-            close = title_row(ui, tl!("Measurement Log"));
-            ui.horizontal(|ui| {
-                if crate::widgets::secondary_button(ui, tl!("Record Measurements"), 0.0).clicked() {
-                    act = Some(("record", Value::Null));
-                }
-                if crate::widgets::secondary_button(ui, tl!("Select All"), 0.0).clicked() {
-                    sel = rows.iter().map(|r| r.id).collect();
-                }
-                if crate::widgets::secondary_button(ui, tl!("Deselect All"), 0.0).clicked() {
-                    sel.clear();
-                }
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if crate::icons::button(ui, "trash", 22.0, false, tl!("Delete selected measurements")).clicked() && !sel.is_empty() {
-                        act = Some(("measurementLog.delete", json!({"rows": sel.clone()})));
+        panel_window(
+            app,
+            ctx,
+            "measurement-log",
+            tl!("Measurement Log"),
+            vec2(-300.0, 470.0),
+            620.0,
+            |ui| {
+                close = title_row(ui, tl!("Measurement Log"));
+                ui.horizontal(|ui| {
+                    if crate::widgets::secondary_button(ui, tl!("Record Measurements"), 0.0)
+                        .clicked()
+                    {
+                        act = Some(("record", Value::Null));
                     }
-                    if crate::icons::button(ui, "file", 22.0, false, tl!("Export selected measurements (CSV)")).clicked() {
-                        act = Some(("export", json!(sel.clone())));
+                    if crate::widgets::secondary_button(ui, tl!("Select All"), 0.0).clicked() {
+                        sel = rows.iter().map(|r| r.id).collect();
                     }
-                });
-            });
-            let cols: Vec<&str> = photocraft_engine::analysis_cmds::log_columns(&rows).into_iter().filter(|c| *c != "histogram").collect();
-            egui::ScrollArea::both().max_height(220.0).max_width(620.0).show(ui, |ui| {
-                egui::Grid::new("mlog-grid").striped(true).spacing(vec2(10.0, 2.0)).show(ui, |ui| {
-                    for c in &cols {
-                        let name = photocraft_engine::analysis_cmds::COLUMNS.iter().find(|x| x.0 == *c).map_or(*c, |x| x.1);
-                        ui.label(RichText::new(tl!(name)).color(t.text_dim).size(10.5).strong());
+                    if crate::widgets::secondary_button(ui, tl!("Deselect All"), 0.0).clicked() {
+                        sel.clear();
                     }
-                    ui.end_row();
-                    for r in &rows {
-                        let on = sel.contains(&r.id);
-                        for (k, c) in cols.iter().enumerate() {
-                            let v = r.values.get(*c).map(|v| match v {
-                                Value::String(s) => s.clone(),
-                                Value::Null => String::new(),
-                                other => other.to_string(),
-                            });
-                            let txt = RichText::new(v.unwrap_or_default()).size(10.5).color(if on { t.accent_text } else { t.text });
-                            let resp = if k == 0 { ui.selectable_label(on, txt) } else { ui.label(txt) };
-                            if k == 0 && resp.clicked() {
-                                if on {
-                                    sel.retain(|x| *x != r.id);
-                                } else {
-                                    sel.push(r.id);
-                                }
-                            }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if crate::icons::button(
+                            ui,
+                            "trash",
+                            22.0,
+                            false,
+                            tl!("Delete selected measurements"),
+                        )
+                        .clicked()
+                            && !sel.is_empty()
+                        {
+                            act = Some(("measurementLog.delete", json!({"rows": sel.clone()})));
                         }
-                        ui.end_row();
-                    }
+                        if crate::icons::button(
+                            ui,
+                            "file",
+                            22.0,
+                            false,
+                            tl!("Export selected measurements (CSV)"),
+                        )
+                        .clicked()
+                        {
+                            act = Some(("export", json!(sel.clone())));
+                        }
+                    });
                 });
-            });
-        });
+                let cols: Vec<&str> = photocraft_engine::analysis_cmds::log_columns(&rows)
+                    .into_iter()
+                    .filter(|c| *c != "histogram")
+                    .collect();
+                egui::ScrollArea::both()
+                    .max_height(220.0)
+                    .max_width(620.0)
+                    .show(ui, |ui| {
+                        egui::Grid::new("mlog-grid")
+                            .striped(true)
+                            .spacing(vec2(10.0, 2.0))
+                            .show(ui, |ui| {
+                                for c in &cols {
+                                    let name = photocraft_engine::analysis_cmds::COLUMNS
+                                        .iter()
+                                        .find(|x| x.0 == *c)
+                                        .map_or(*c, |x| x.1);
+                                    ui.label(
+                                        RichText::new(tl!(name))
+                                            .color(t.text_dim)
+                                            .size(10.5)
+                                            .strong(),
+                                    );
+                                }
+                                ui.end_row();
+                                for r in &rows {
+                                    let on = sel.contains(&r.id);
+                                    for (k, c) in cols.iter().enumerate() {
+                                        let v = r.values.get(*c).map(|v| match v {
+                                            Value::String(s) => s.clone(),
+                                            Value::Null => String::new(),
+                                            other => other.to_string(),
+                                        });
+                                        let txt = RichText::new(v.unwrap_or_default())
+                                            .size(10.5)
+                                            .color(if on { t.accent_text } else { t.text });
+                                        let resp = if k == 0 {
+                                            ui.selectable_label(on, txt)
+                                        } else {
+                                            ui.label(txt)
+                                        };
+                                        if k == 0 && resp.clicked() {
+                                            if on {
+                                                sel.retain(|x| *x != r.id);
+                                            } else {
+                                                sel.push(r.id);
+                                            }
+                                        }
+                                    }
+                                    ui.end_row();
+                                }
+                            });
+                    });
+            },
+        );
         app.ui.analysis.log_selected = sel;
         if close {
             app.ui.analysis.measurement_log = false;
         }
         match act {
             Some(("record", _)) => {
-                let _ = crate::menus::invoke(app, ctx, "image.analysis.recordMeasurements", json!({}));
+                let _ =
+                    crate::menus::invoke(app, ctx, "image.analysis.recordMeasurements", json!({}));
             }
             Some(("export", rows)) => {
-                let ids: Vec<u64> = rows.as_array().map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default();
+                let ids: Vec<u64> = rows
+                    .as_array()
+                    .map(|a| a.iter().filter_map(Value::as_u64).collect())
+                    .unwrap_or_default();
                 if let Err(e) = export_log(app, (!ids.is_empty()).then_some(ids))
                     && e != "cancelled"
                 {
@@ -759,46 +1077,108 @@ pub fn windows(app: &mut PhotocraftApp, ctx: &egui::Context) {
 }
 
 fn notes_panel(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let notes = app.session.active().map(|d| d.doc.notes.clone()).unwrap_or_default();
+    let notes = app
+        .session
+        .active()
+        .map(|d| d.doc.notes.clone())
+        .unwrap_or_default();
     let n = notes.len();
-    let mut sel = app.ui.analysis.note_selected.filter(|i| *i < n).or((n > 0).then_some(0));
+    let mut sel = app
+        .ui
+        .analysis
+        .note_selected
+        .filter(|i| *i < n)
+        .or((n > 0).then_some(0));
     let mut close = false;
     let mut edit: Option<Value> = None;
     let mut delete = false;
     let t = Tokens::get(ctx);
-    panel_window(app, ctx, "notes-panel", tl!("Notes"), vec2(-40.0, 300.0), 260.0, |ui| {
-        close = title_row(ui, tl!("Notes"));
-        match sel {
-            None => {
-                ui.label(RichText::new(tl!("Click with the Note tool to add a note.")).color(t.text_dim).size(11.0));
-            }
-            Some(i) => {
-                let note = &notes[i];
-                ui.label(RichText::new(if note.author.is_empty() { tl!("No author").to_string() } else { note.author.clone() }).color(t.text_dim).size(11.0));
-                let mut text = note.text.clone();
-                if ui.add(egui::TextEdit::multiline(&mut text).desired_rows(6).desired_width(f32::INFINITY)).changed() {
-                    edit = Some(json!({"index": i, "text": text, "coalesce": format!("note-{i}")}));
+    panel_window(
+        app,
+        ctx,
+        "notes-panel",
+        tl!("Notes"),
+        vec2(-40.0, 300.0),
+        260.0,
+        |ui| {
+            close = title_row(ui, tl!("Notes"));
+            match sel {
+                None => {
+                    ui.label(
+                        RichText::new(tl!("Click with the Note tool to add a note."))
+                            .color(t.text_dim)
+                            .size(11.0),
+                    );
+                }
+                Some(i) => {
+                    let note = &notes[i];
+                    ui.label(
+                        RichText::new(if note.author.is_empty() {
+                            tl!("No author").to_string()
+                        } else {
+                            note.author.clone()
+                        })
+                        .color(t.text_dim)
+                        .size(11.0),
+                    );
+                    let mut text = note.text.clone();
+                    if ui
+                        .add(
+                            egui::TextEdit::multiline(&mut text)
+                                .desired_rows(6)
+                                .desired_width(f32::INFINITY),
+                        )
+                        .changed()
+                    {
+                        edit = Some(
+                            json!({"index": i, "text": text, "coalesce": format!("note-{i}")}),
+                        );
+                    }
                 }
             }
-        }
-        crate::widgets::hairline(ui);
-        ui.horizontal(|ui| {
-            if ui.add_enabled_ui(n > 1, |ui| crate::icons::button(ui, "chevrons-left", 22.0, false, tl!("Previous note"))).inner.clicked() {
-                sel = sel.map(|i| (i + n - 1) % n);
-            }
-            if ui.add_enabled_ui(n > 1, |ui| crate::icons::button(ui, "chevrons-right", 22.0, false, tl!("Next note"))).inner.clicked() {
-                sel = sel.map(|i| (i + 1) % n);
-            }
-            let template = "{index} of {total}";
-            let position = crate::i18n::fmt(tl!(template), &[("index", &sel.map_or(0, |i| i + 1).to_string()), ("total", &n.to_string())]);
-            ui.label(RichText::new(position).color(t.text_dim).size(11.0));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.add_enabled_ui(sel.is_some(), |ui| crate::icons::button(ui, "trash", 22.0, false, tl!("Delete note"))).inner.clicked() {
-                    delete = true;
+            crate::widgets::hairline(ui);
+            ui.horizontal(|ui| {
+                if ui
+                    .add_enabled_ui(n > 1, |ui| {
+                        crate::icons::button(ui, "chevrons-left", 22.0, false, tl!("Previous note"))
+                    })
+                    .inner
+                    .clicked()
+                {
+                    sel = sel.map(|i| (i + n - 1) % n);
                 }
+                if ui
+                    .add_enabled_ui(n > 1, |ui| {
+                        crate::icons::button(ui, "chevrons-right", 22.0, false, tl!("Next note"))
+                    })
+                    .inner
+                    .clicked()
+                {
+                    sel = sel.map(|i| (i + 1) % n);
+                }
+                let template = "{index} of {total}";
+                let position = crate::i18n::fmt(
+                    tl!(template),
+                    &[
+                        ("index", &sel.map_or(0, |i| i + 1).to_string()),
+                        ("total", &n.to_string()),
+                    ],
+                );
+                ui.label(RichText::new(position).color(t.text_dim).size(11.0));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui
+                        .add_enabled_ui(sel.is_some(), |ui| {
+                            crate::icons::button(ui, "trash", 22.0, false, tl!("Delete note"))
+                        })
+                        .inner
+                        .clicked()
+                    {
+                        delete = true;
+                    }
+                });
             });
-        });
-    });
+        },
+    );
     app.ui.analysis.note_selected = sel;
     if let Some(p) = edit {
         let _ = app.run("notes.set", p);
@@ -814,10 +1194,20 @@ fn notes_panel(app: &mut PhotocraftApp, ctx: &egui::Context) {
     }
 }
 
-fn num_field(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &str, range: std::ops::RangeInclusive<f32>, suffix: &str) {
+fn num_field(
+    ui: &mut egui::Ui,
+    f: &mut Map<String, Value>,
+    key: &str,
+    label: &str,
+    range: std::ops::RangeInclusive<f32>,
+    suffix: &str,
+) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.add_sized(vec2(110.0, 18.0), egui::Label::new(RichText::new(tl!(&label)).color(t.text_dim).size(11.0)));
+        ui.add_sized(
+            vec2(110.0, 18.0),
+            egui::Label::new(RichText::new(tl!(&label)).color(t.text_dim).size(11.0)),
+        );
         let mut v = f.get(key).and_then(Value::as_f64).unwrap_or(0.0) as f32;
         if crate::widgets::value_field(ui, &mut v, range, suffix, 80.0).changed() {
             f.insert(key.into(), json!(v));
@@ -825,11 +1215,24 @@ fn num_field(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &s
     });
 }
 
-fn choice(ui: &mut egui::Ui, f: &mut Map<String, Value>, key: &str, label: &str, opts: &[(&str, &str)]) {
+fn choice(
+    ui: &mut egui::Ui,
+    f: &mut Map<String, Value>,
+    key: &str,
+    label: &str,
+    opts: &[(&str, &str)],
+) {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.add_sized(vec2(110.0, 18.0), egui::Label::new(RichText::new(tl!(&label)).color(t.text_dim).size(11.0)));
-        let mut cur = f.get(key).and_then(Value::as_str).unwrap_or(opts[0].0).to_string();
+        ui.add_sized(
+            vec2(110.0, 18.0),
+            egui::Label::new(RichText::new(tl!(&label)).color(t.text_dim).size(11.0)),
+        );
+        let mut cur = f
+            .get(key)
+            .and_then(Value::as_str)
+            .unwrap_or(opts[0].0)
+            .to_string();
         let list: Vec<(String, &str)> = opts.iter().map(|(k, l)| (k.to_string(), *l)).collect();
         if crate::widgets::dropdown(ui, &format!("an-{key}"), &mut cur, &list, 120.0) {
             f.insert(key.into(), json!(cur));
@@ -842,7 +1245,10 @@ pub fn dialog_command(kind: &str, f: &Map<String, Value>) -> Option<(&'static st
     Some(match kind {
         "scale" => {
             if f.get("preset").and_then(Value::as_str) == Some("default") {
-                ("image.analysis.setMeasurementScale", json!({"preset": "default"}))
+                (
+                    "image.analysis.setMeasurementScale",
+                    json!({"preset": "default"}),
+                )
             } else {
                 (
                     "image.analysis.setMeasurementScale",
@@ -850,7 +1256,10 @@ pub fn dialog_command(kind: &str, f: &Map<String, Value>) -> Option<(&'static st
                 )
             }
         }
-        "dataPoints" => ("image.analysis.selectDataPoints", json!({"selection": f.get("selection"), "ruler": f.get("ruler"), "count": f.get("count")})),
+        "dataPoints" => (
+            "image.analysis.selectDataPoints",
+            json!({"selection": f.get("selection"), "ruler": f.get("ruler"), "count": f.get("count")}),
+        ),
         "scaleMarker" => (
             "image.analysis.placeScaleMarker",
             json!({"length": f.get("length"), "fontSize": f.get("fontSize"), "displayText": f.get("displayText"), "textPosition": f.get("textPosition"), "color": f.get("color")}),
@@ -860,7 +1269,9 @@ pub fn dialog_command(kind: &str, f: &Map<String, Value>) -> Option<(&'static st
 }
 
 fn dialog(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some((kind, mut f)) = app.ui.analysis.dialog.clone() else { return };
+    let Some((kind, mut f)) = app.ui.analysis.dialog.clone() else {
+        return;
+    };
     let t = Tokens::get(ctx);
     let title = match kind.as_str() {
         "scale" => "Measurement Scale",
@@ -880,37 +1291,94 @@ fn dialog(app: &mut PhotocraftApp, ctx: &egui::Context) {
             ui.add_space(6.0);
             match kind.as_str() {
                 "scale" => {
-                    choice(ui, &mut f, "preset", tl!("Presets:"), &[("custom", tl!("Custom")), ("default", tl!("Default"))]);
+                    choice(
+                        ui,
+                        &mut f,
+                        "preset",
+                        tl!("Presets:"),
+                        &[("custom", tl!("Custom")), ("default", tl!("Default"))],
+                    );
                     let custom = f.get("preset").and_then(Value::as_str) != Some("default");
                     ui.add_enabled_ui(custom, |ui| {
-                        num_field(ui, &mut f, "pixelLength", tl!("Pixel Length:"), 0.001..=1e7, "");
-                        num_field(ui, &mut f, "logicalLength", tl!("Logical Length:"), 0.0001..=1e7, "");
+                        num_field(
+                            ui,
+                            &mut f,
+                            "pixelLength",
+                            tl!("Pixel Length:"),
+                            0.001..=1e7,
+                            "",
+                        );
+                        num_field(
+                            ui,
+                            &mut f,
+                            "logicalLength",
+                            tl!("Logical Length:"),
+                            0.0001..=1e7,
+                            "",
+                        );
                         ui.horizontal(|ui| {
-                            ui.add_sized(vec2(110.0, 18.0), egui::Label::new(RichText::new(tl!("Logical Units:")).color(t.text_dim).size(11.0)));
-                            let mut u = f.get("units").and_then(Value::as_str).unwrap_or("pixels").to_string();
-                            if ui.add(egui::TextEdit::singleline(&mut u).desired_width(80.0)).changed() {
+                            ui.add_sized(
+                                vec2(110.0, 18.0),
+                                egui::Label::new(
+                                    RichText::new(tl!("Logical Units:"))
+                                        .color(t.text_dim)
+                                        .size(11.0),
+                                ),
+                            );
+                            let mut u = f
+                                .get("units")
+                                .and_then(Value::as_str)
+                                .unwrap_or("pixels")
+                                .to_string();
+                            if ui
+                                .add(egui::TextEdit::singleline(&mut u).desired_width(80.0))
+                                .changed()
+                            {
                                 f.insert("units".into(), json!(u));
                             }
                         });
                     });
-                    let (pl, ll) = (f.get("pixelLength").and_then(Value::as_f64).unwrap_or(1.0), f.get("logicalLength").and_then(Value::as_f64).unwrap_or(1.0));
+                    let (pl, ll) = (
+                        f.get("pixelLength").and_then(Value::as_f64).unwrap_or(1.0),
+                        f.get("logicalLength")
+                            .and_then(Value::as_f64)
+                            .unwrap_or(1.0),
+                    );
                     let u = f.get("units").and_then(Value::as_str).unwrap_or("pixels");
-                    let text = if custom { format!("{pl} pixels = {ll:.4} {u}") } else { "1 pixels = 1.0000 pixels".into() };
+                    let text = if custom {
+                        format!("{pl} pixels = {ll:.4} {u}")
+                    } else {
+                        "1 pixels = 1.0000 pixels".into()
+                    };
                     ui.label(RichText::new(tl!(&text)).color(t.text_dim).size(11.0));
                 }
                 "dataPoints" => {
                     ui.horizontal_top(|ui| {
-                        for (source, label) in [("selection", tl!("Selections")), ("ruler", tl!("Ruler Tool")), ("count", tl!("Count Tool"))] {
+                        for (source, label) in [
+                            ("selection", tl!("Selections")),
+                            ("ruler", tl!("Ruler Tool")),
+                            ("count", tl!("Count Tool")),
+                        ] {
                             ui.vertical(|ui| {
-                                ui.label(RichText::new(tl!(&label)).color(t.text).size(11.0).strong());
+                                ui.label(
+                                    RichText::new(tl!(&label)).color(t.text).size(11.0).strong(),
+                                );
                                 let mut list: Vec<String> = f
                                     .get(source)
                                     .and_then(Value::as_array)
-                                    .map(|a| a.iter().filter_map(Value::as_str).map(String::from).collect())
+                                    .map(|a| {
+                                        a.iter()
+                                            .filter_map(Value::as_str)
+                                            .map(String::from)
+                                            .collect()
+                                    })
                                     .unwrap_or_default();
                                 let mut changed = false;
                                 for key in photocraft_engine::analysis_cmds::available(source) {
-                                    let name = photocraft_engine::analysis_cmds::COLUMNS.iter().find(|c| c.0 == key).map_or(key, |c| c.1);
+                                    let name = photocraft_engine::analysis_cmds::COLUMNS
+                                        .iter()
+                                        .find(|c| c.0 == key)
+                                        .map_or(key, |c| c.1);
                                     let mut on = list.iter().any(|x| x == key);
                                     if crate::widgets::checkbox(ui, &mut on, name).changed() {
                                         list.retain(|x| x != key);
@@ -929,15 +1397,41 @@ fn dialog(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     });
                 }
                 _ => {
-                    let units = f.get("units").and_then(Value::as_str).unwrap_or("pixels").to_string();
+                    let units = f
+                        .get("units")
+                        .and_then(Value::as_str)
+                        .unwrap_or("pixels")
+                        .to_string();
                     num_field(ui, &mut f, "length", tl!("Length:"), 0.0001..=1e7, &units);
-                    num_field(ui, &mut f, "fontSize", tl!("Font Size:"), 1.0..=1000.0, "pt");
-                    let mut show = f.get("displayText").and_then(Value::as_bool).unwrap_or(true);
+                    num_field(
+                        ui,
+                        &mut f,
+                        "fontSize",
+                        tl!("Font Size:"),
+                        1.0..=1000.0,
+                        "pt",
+                    );
+                    let mut show = f
+                        .get("displayText")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(true);
                     if crate::widgets::checkbox(ui, &mut show, tl!("Display Text")).changed() {
                         f.insert("displayText".into(), json!(show));
                     }
-                    choice(ui, &mut f, "textPosition", tl!("Text Position:"), &[("bottom", tl!("Bottom")), ("top", tl!("Top"))]);
-                    choice(ui, &mut f, "color", tl!("Color:"), &[("black", tl!("Black")), ("white", tl!("White"))]);
+                    choice(
+                        ui,
+                        &mut f,
+                        "textPosition",
+                        tl!("Text Position:"),
+                        &[("bottom", tl!("Bottom")), ("top", tl!("Top"))],
+                    );
+                    choice(
+                        ui,
+                        &mut f,
+                        "color",
+                        tl!("Color:"),
+                        &[("black", tl!("Black")), ("white", tl!("White"))],
+                    );
                 }
             }
             ui.add_space(8.0);
@@ -946,8 +1440,16 @@ fn dialog(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     if let Some(role) = crate::widgets::dialog_buttons(
                         ui,
                         &[
-                            crate::widgets::DialogButton::new(crate::widgets::ButtonRole::Default, tl!("OK"), 70.0),
-                            crate::widgets::DialogButton::new(crate::widgets::ButtonRole::Cancel, tl!("Cancel"), 70.0),
+                            crate::widgets::DialogButton::new(
+                                crate::widgets::ButtonRole::Default,
+                                tl!("OK"),
+                                70.0,
+                            ),
+                            crate::widgets::DialogButton::new(
+                                crate::widgets::ButtonRole::Cancel,
+                                tl!("Cancel"),
+                                70.0,
+                            ),
                         ],
                     ) {
                         result = Some(role == crate::widgets::ButtonRole::Default);
@@ -972,13 +1474,21 @@ pub(crate) mod tests {
     use super::*;
 
     fn app() -> (PhotocraftApp, egui::Context) {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
         (app, egui::Context::default())
     }
 
     /// Draw `f` for a few frames (fonts load on the first).
-    pub(crate) fn render(app: &mut PhotocraftApp, ctx: &egui::Context, f: fn(&mut PhotocraftApp, &egui::Context)) {
+    pub(crate) fn render(
+        app: &mut PhotocraftApp,
+        ctx: &egui::Context,
+        f: fn(&mut PhotocraftApp, &egui::Context),
+    ) {
         PhotocraftApp::setup_context(ctx, Default::default());
         for _ in 0..3 {
             let mut o = ctx.run_ui(Default::default(), |ui| f(app, ui.ctx()));
@@ -987,10 +1497,26 @@ pub(crate) mod tests {
     }
 
     fn down(app: &mut PhotocraftApp, x: f64, y: f64, m: egui::Modifiers) {
-        crate::canvas::tool_event(app, ToolEvent::Down { x, y, pressure: 1.0 }, m);
+        crate::canvas::tool_event(
+            app,
+            ToolEvent::Down {
+                x,
+                y,
+                pressure: 1.0,
+            },
+            m,
+        );
     }
     fn mv(app: &mut PhotocraftApp, x: f64, y: f64, m: egui::Modifiers) {
-        crate::canvas::tool_event(app, ToolEvent::Move { x, y, pressure: 1.0 }, m);
+        crate::canvas::tool_event(
+            app,
+            ToolEvent::Move {
+                x,
+                y,
+                pressure: 1.0,
+            },
+            m,
+        );
     }
     fn up(app: &mut PhotocraftApp, x: f64, y: f64) {
         crate::canvas::tool_event(app, ToolEvent::Up { x, y }, egui::Modifiers::NONE);
@@ -1030,15 +1556,26 @@ pub(crate) mod tests {
         let (mut app, ctx) = app();
         let open = |app: &mut PhotocraftApp| {
             let r = crate::menus::invoke(app, &ctx, "image.rotation.arbitrary", json!({})).unwrap();
-            let f = &app.ui.dialog_mut(r["dialog"].as_u64().unwrap()).unwrap().fields;
+            let f = &app
+                .ui
+                .dialog_mut(r["dialog"].as_u64().unwrap())
+                .unwrap()
+                .fields;
             (f["angle"].as_f64().unwrap(), f["direction"].clone())
         };
         assert_eq!(open(&mut app), (0.0, json!("cw")));
         // A line falling to the right straightens counter-clockwise, a near-vertical one to the y axis.
         for (end, dir) in [([150, 60], "ccw"), ([150, 40], "cw"), ([60, -50], "ccw")] {
-            app.run("image.analysis.rulerTool", json!({"start": [50, 50], "end": end})).unwrap();
+            app.run(
+                "image.analysis.rulerTool",
+                json!({"start": [50, 50], "end": end}),
+            )
+            .unwrap();
             let (a, d) = open(&mut app);
-            assert!((a - 5.7106).abs() < 1e-3 && d == json!(dir), "{end:?}: {a} {d}");
+            assert!(
+                (a - 5.7106).abs() < 1e-3 && d == json!(dir),
+                "{end:?}: {a} {d}"
+            );
         }
     }
 
@@ -1061,13 +1598,23 @@ pub(crate) mod tests {
         down(&mut app, 10.0, 10.0, egui::Modifiers::ALT);
         mv(&mut app, 60.0, 10.0, none);
         up(&mut app, 60.0, 10.0);
-        let info = photocraft_engine::analysis_cmds::ruler_info(&ruler(&app).unwrap(), &Default::default());
-        assert!((info["angle"].as_f64().unwrap() - 90.0).abs() < 1e-6, "{info}");
+        let info = photocraft_engine::analysis_cmds::ruler_info(
+            &ruler(&app).unwrap(),
+            &Default::default(),
+        );
+        assert!(
+            (info["angle"].as_f64().unwrap() - 90.0).abs() < 1e-6,
+            "{info}"
+        );
         // A click without a drag far away starts a new line and clears it.
         down(&mut app, 150.0, 80.0, none);
         up(&mut app, 150.0, 80.0);
         assert!(ruler(&app).is_none());
-        assert_eq!(app.session.active().unwrap().history.past_len(), 0, "the ruler adds no history");
+        assert_eq!(
+            app.session.active().unwrap().history.past_len(),
+            0,
+            "the ruler adds no history"
+        );
     }
 
     #[test]
@@ -1078,7 +1625,11 @@ pub(crate) mod tests {
         up(&mut app, 20.0, 20.0);
         down(&mut app, 50.0, 50.0, egui::Modifiers::NONE);
         up(&mut app, 50.0, 50.0);
-        let pts = |app: &PhotocraftApp| app.session.active().unwrap().doc.measurement.count_groups[0].points.clone();
+        let pts = |app: &PhotocraftApp| {
+            app.session.active().unwrap().doc.measurement.count_groups[0]
+                .points
+                .clone()
+        };
         assert_eq!(pts(&app).len(), 2);
         // Drag marker 1.
         down(&mut app, 20.5, 20.5, egui::Modifiers::NONE);
@@ -1104,7 +1655,10 @@ pub(crate) mod tests {
         // Drag the icon.
         down(&mut app, 32.0, 42.0, egui::Modifiers::NONE);
         up(&mut app, 62.0, 52.0);
-        assert_eq!(app.session.active().unwrap().doc.notes[0].position, [60.0, 50.0]);
+        assert_eq!(
+            app.session.active().unwrap().doc.notes[0].position,
+            [60.0, 50.0]
+        );
         // The panel renders without panicking.
         render(&mut app, &ctx, windows);
     }
@@ -1112,7 +1666,13 @@ pub(crate) mod tests {
     #[test]
     fn dialogs_open_and_run_their_commands() {
         let (mut app, ctx) = app();
-        let r = crate::menus::invoke(&mut app, &ctx, "image.analysis.setMeasurementScale", json!({})).unwrap();
+        let r = crate::menus::invoke(
+            &mut app,
+            &ctx,
+            "image.analysis.setMeasurementScale",
+            json!({}),
+        )
+        .unwrap();
         assert_eq!(r["dialog"], "scale");
         let (kind, mut f) = app.ui.analysis.dialog.clone().unwrap();
         f.insert("preset".into(), json!("custom"));
@@ -1121,7 +1681,10 @@ pub(crate) mod tests {
         f.insert("units".into(), json!("cm"));
         let (id, p) = dialog_command(&kind, &f).unwrap();
         app.run(id, p).unwrap();
-        assert_eq!(app.session.active().unwrap().doc.measurement.scale.units, "cm");
+        assert_eq!(
+            app.session.active().unwrap().doc.measurement.scale.units,
+            "cm"
+        );
         crate::menus::invoke(&mut app, &ctx, "image.analysis.placeScaleMarker", json!({})).unwrap();
         let (kind, f) = app.ui.analysis.dialog.clone().unwrap();
         assert_eq!(f["length"], 1.0);
@@ -1135,9 +1698,18 @@ pub(crate) mod tests {
         assert_eq!(app.session.analysis.data_points.ruler, ["label", "length"]);
         // Record from the Count tool records counts and opens the log.
         app.ui.tool = Tool::Count;
-        crate::menus::invoke(&mut app, &ctx, "image.analysis.recordMeasurements", json!({})).unwrap();
+        crate::menus::invoke(
+            &mut app,
+            &ctx,
+            "image.analysis.recordMeasurements",
+            json!({}),
+        )
+        .unwrap();
         assert!(app.ui.analysis.measurement_log);
-        assert_eq!(app.session.analysis.log.last().unwrap().values["source"], "Count Tool");
+        assert_eq!(
+            app.session.analysis.log.last().unwrap().values["source"],
+            "Count Tool"
+        );
         render(&mut app, &ctx, windows);
     }
 
@@ -1169,7 +1741,11 @@ pub(crate) mod tests {
         mv(&mut app, -50.0, 25.0, egui::Modifiers::NONE);
         up(&mut app, -50.0, 25.0);
         assert!(pts(&app).is_empty());
-        assert_eq!(app.session.active().unwrap().history.past_len(), 0, "sampling adds no history");
+        assert_eq!(
+            app.session.active().unwrap().history.past_len(),
+            0,
+            "sampling adds no history"
+        );
         // The overlay and the options bar render without panicking.
         down(&mut app, 10.0, 10.0, egui::Modifiers::NONE);
         up(&mut app, 10.0, 10.0);
@@ -1182,7 +1758,9 @@ pub(crate) mod tests {
             rotation: 0.0,
             aspect: 1.0,
         };
-        let mut o = ctx.run_ui(Default::default(), |ui| draw_overlay(&app, ui.painter(), &xf));
+        let mut o = ctx.run_ui(Default::default(), |ui| {
+            draw_overlay(&app, ui.painter(), &xf)
+        });
         o.textures_delta.clear();
     }
 
@@ -1199,10 +1777,21 @@ pub(crate) mod tests {
         assert_eq!(l["samplers"].as_array().unwrap().len(), 2);
         assert_eq!(l["samplers"][0]["number"], 1);
         assert_eq!(l["samplers"][1]["position"], json!([150.0, 90.0]));
-        assert!(l["samplers"][0]["rgb"].as_array().is_some_and(|a| a.len() == 3));
+        assert!(
+            l["samplers"][0]["rgb"]
+                .as_array()
+                .is_some_and(|a| a.len() == 3)
+        );
         // Cropping to the top-left drops the outside point and reports how many went.
-        app.run("image.crop", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
-        assert_eq!(app.session.active().unwrap().color_samplers, vec![[5.0, 5.0]]);
+        app.run(
+            "image.crop",
+            json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        assert_eq!(
+            app.session.active().unwrap().color_samplers,
+            vec![[5.0, 5.0]]
+        );
         assert!(app.ui.status.contains("removed"), "{}", app.ui.status);
         assert!(!app.ui.status_error);
     }
@@ -1214,20 +1803,35 @@ pub(crate) mod tests {
         down(&mut app, 10.0, 10.0, egui::Modifiers::NONE);
         up(&mut app, 10.0, 10.0);
         // A second document starts empty; the first keeps its own point.
-        app.run("file.new", json!({"width": 50, "height": 50})).unwrap();
+        app.run("file.new", json!({"width": 50, "height": 50}))
+            .unwrap();
         assert!(app.session.active().unwrap().color_samplers.is_empty());
         down(&mut app, 20.0, 20.0, egui::Modifiers::NONE);
         up(&mut app, 20.0, 20.0);
-        assert_eq!(app.session.active().unwrap().color_samplers, vec![[20.0, 20.0]]);
-        app.run("document.activate", json!({"document": 0})).unwrap();
-        assert_eq!(app.session.active().unwrap().color_samplers, vec![[10.0, 10.0]]);
+        assert_eq!(
+            app.session.active().unwrap().color_samplers,
+            vec![[20.0, 20.0]]
+        );
+        app.run("document.activate", json!({"document": 0}))
+            .unwrap();
+        assert_eq!(
+            app.session.active().unwrap().color_samplers,
+            vec![[10.0, 10.0]]
+        );
         // With no document the tool says so (no dialog, no panic) and the commands error.
-        let mut empty = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut empty = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         empty.ui.tool = Tool::ColorSampler;
         down(&mut empty, 5.0, 5.0, egui::Modifiers::NONE);
         assert_eq!(empty.ui.status, "No document open");
         assert!(!empty.ui.status_error);
-        assert!(empty.run("view.colorSamplers.add", json!({"x": 1, "y": 1})).is_err());
+        assert!(
+            empty
+                .run("view.colorSamplers.add", json!({"x": 1, "y": 1}))
+                .is_err()
+        );
         assert!(empty.run("view.colorSamplers.list", json!({})).is_err());
     }
 
@@ -1236,10 +1840,14 @@ pub(crate) mod tests {
         let p = count_size_params(7.6, 20.0);
         assert_eq!(p, json!({"markerSize": 8, "labelSize": 20}));
         assert!(p["markerSize"].is_u64() && p["labelSize"].is_u64());
-        assert_eq!(count_size_params(f32::NAN, 500.0), json!({"markerSize": 1, "labelSize": 72}));
+        assert_eq!(
+            count_size_params(f32::NAN, 500.0),
+            json!({"markerSize": 1, "labelSize": 72})
+        );
         let (mut app, _ctx) = app();
         app.run("count.add", json!({"x": 10, "y": 10})).unwrap();
-        app.run("count.setGroup", count_size_params(8.0, 20.0)).unwrap();
+        app.run("count.setGroup", count_size_params(8.0, 20.0))
+            .unwrap();
         let g = &app.session.active().unwrap().doc.measurement.count_groups[0];
         assert_eq!((g.marker_size, g.label_size), (8, 20));
     }

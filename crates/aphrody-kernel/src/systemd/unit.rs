@@ -134,15 +134,18 @@ impl Unit {
                     "unit" => match k.as_str() {
                         "description" => unit.description = v.to_owned(),
                         "after" => {
-                            unit.after.extend(v.split_whitespace().map(ToString::to_string));
-                        },
+                            unit.after
+                                .extend(v.split_whitespace().map(ToString::to_string));
+                        }
                         "requires" => {
-                            unit.requires.extend(v.split_whitespace().map(ToString::to_string));
-                        },
+                            unit.requires
+                                .extend(v.split_whitespace().map(ToString::to_string));
+                        }
                         "wants" => {
-                            unit.wants.extend(v.split_whitespace().map(ToString::to_string));
-                        },
-                        _ => {},
+                            unit.wants
+                                .extend(v.split_whitespace().map(ToString::to_string));
+                        }
+                        _ => {}
                     },
                     "service" => match k.as_str() {
                         "execstart" => unit.exec_start = Some(v.to_owned()),
@@ -157,7 +160,7 @@ impl Unit {
                             if let Ok(sec) = v.parse::<u64>() {
                                 unit.restart_sec = sec;
                             }
-                        },
+                        }
                         "environment" => {
                             if let Some((env_k, env_v)) = v.split_once('=') {
                                 unit.environment.insert(
@@ -165,13 +168,14 @@ impl Unit {
                                     env_v.trim().trim_matches('"').to_owned(),
                                 );
                             }
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     },
                     "install" if k.as_str() == "wantedby" => {
-                        unit.wanted_by.extend(v.split_whitespace().map(ToString::to_string));
-                    },
-                    _ => {},
+                        unit.wanted_by
+                            .extend(v.split_whitespace().map(ToString::to_string));
+                    }
+                    _ => {}
                 }
             }
         }

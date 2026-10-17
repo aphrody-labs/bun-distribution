@@ -105,7 +105,10 @@ mod preview {
         for at in [130, b.len() - 1] {
             let mut damaged = b.clone();
             damaged[at] ^= 1;
-            assert_eq!(preview(&damaged).unwrap_err(), Error::Malformed("PNG chunk checksum"));
+            assert_eq!(
+                preview(&damaged).unwrap_err(),
+                Error::Malformed("PNG chunk checksum")
+            );
         }
         let mut ancillary = vec![0; 4];
         ancillary.extend(b"tEXt");
@@ -118,7 +121,10 @@ mod preview {
         with_ancillary[96..100].copy_from_slice(&png_length.to_le_bytes());
         assert!(preview(&with_ancillary).is_ok());
         with_ancillary[at + 8] ^= 1;
-        assert_eq!(preview(&with_ancillary).unwrap_err(), Error::Malformed("PNG chunk checksum"));
+        assert_eq!(
+            preview(&with_ancillary).unwrap_err(),
+            Error::Malformed("PNG chunk checksum")
+        );
     }
 
     #[test]
@@ -197,13 +203,41 @@ mod archive {
             (tag(b"Desc"), F::Str("Document".into())),
             (tag(b"Visi"), F::Bool(true)),
             (tag(b"Xfrm"), F::F64s(vec![1.0, 0.0, 5.0, 0.0, 1.0, -2.0])),
-            (tag(b"Colr"), F::Def(7, vec![tag(b"RGBA")], vec![(tag(b"_col"), F::Struct([0u8; 16].to_vec()))])),
+            (
+                tag(b"Colr"),
+                F::Def(
+                    7,
+                    vec![tag(b"RGBA")],
+                    vec![(tag(b"_col"), F::Struct([0u8; 16].to_vec()))],
+                ),
+            ),
             (tag(b"Same"), F::Ref(7)),
             (tag(b"Null"), F::Null),
-            (tag(b"Kids"), F::Shared(vec![F::Def(8, vec![tag(b"Grup"), tag(b"Node")], vec![(tag(b"Desc"), F::Str("g".into()))]), F::Ref(8)])),
+            (
+                tag(b"Kids"),
+                F::Shared(vec![
+                    F::Def(
+                        8,
+                        vec![tag(b"Grup"), tag(b"Node")],
+                        vec![(tag(b"Desc"), F::Str("g".into()))],
+                    ),
+                    F::Ref(8),
+                ]),
+            ),
             (
                 tag(b"Crvs"),
-                F::Obj(tag(b"PCvD"), vec![(tag(b"Data"), F::Pos(vec![F::U8(0), F::U32(1), F::Bool(true), F::Records(18, vec![vec![0; 18]; 4])]))]),
+                F::Obj(
+                    tag(b"PCvD"),
+                    vec![(
+                        tag(b"Data"),
+                        F::Pos(vec![
+                            F::U8(0),
+                            F::U32(1),
+                            F::Bool(true),
+                            F::Records(18, vec![vec![0; 18]; 4]),
+                        ]),
+                    )],
+                ),
             ),
             (tag(b"Enum"), F::Enum(2, 1)),
             (tag(b"Tile"), F::Entry("d/3".into())),
@@ -230,18 +264,38 @@ mod archive {
         let s = stream::parse(&doc()).unwrap();
         let root = &s.objects[s.root];
         assert_eq!(root.class, Tag::of(b"Pers"));
-        assert_eq!(root.get(Tag::of(b"Desc")), Some(&Value::Str("Document".into())));
-        assert_eq!(root.get(Tag::of(b"Xfrm")), Some(&Value::Floats(vec![1.0, 0.0, 5.0, 0.0, 1.0, -2.0])));
-        let (Some(Value::Obj(Some(a))), Some(Value::Obj(Some(b)))) = (root.get(Tag::of(b"Colr")), root.get(Tag::of(b"Same"))) else { panic!() };
+        assert_eq!(
+            root.get(Tag::of(b"Desc")),
+            Some(&Value::Str("Document".into()))
+        );
+        assert_eq!(
+            root.get(Tag::of(b"Xfrm")),
+            Some(&Value::Floats(vec![1.0, 0.0, 5.0, 0.0, 1.0, -2.0]))
+        );
+        let (Some(Value::Obj(Some(a))), Some(Value::Obj(Some(b)))) =
+            (root.get(Tag::of(b"Colr")), root.get(Tag::of(b"Same")))
+        else {
+            panic!()
+        };
         assert_eq!(a, b);
         assert_eq!(s.objects[*a].class, Tag::of(b"RGBA"));
         assert_eq!(s.objects[*a].kind, Kind::Shared);
-        let Some(Value::Array(kids)) = root.get(Tag::of(b"Kids")) else { panic!() };
+        let Some(Value::Array(kids)) = root.get(Tag::of(b"Kids")) else {
+            panic!()
+        };
         assert_eq!(kids[0], kids[1]);
-        let Value::Obj(Some(g)) = kids[0] else { panic!() };
+        let Value::Obj(Some(g)) = kids[0] else {
+            panic!()
+        };
         assert_eq!(s.objects[g].chain, vec![Tag::of(b"Grup"), Tag::of(b"Node")]);
-        assert_eq!(root.get(Tag::of(b"Enum")), Some(&Value::Enum { id: 2, version: 1 }));
-        assert_eq!(root.get(Tag::of(b"Tile")), Some(&Value::Entry("d/3".into())));
+        assert_eq!(
+            root.get(Tag::of(b"Enum")),
+            Some(&Value::Enum { id: 2, version: 1 })
+        );
+        assert_eq!(
+            root.get(Tag::of(b"Tile")),
+            Some(&Value::Entry("d/3".into()))
+        );
         assert_eq!(root.get(Tag::of(b"Null")), Some(&Value::Obj(None)));
     }
 
@@ -254,9 +308,23 @@ mod archive {
         broken[90] ^= 0x55;
         let mut a = Archive::open(&broken, Limits::default()).unwrap();
         assert!(a.read("doc.dat").is_err());
-        let mut a = Archive::open(&file, Limits { max_entry: d.len() - 1, max_total: usize::MAX }).unwrap();
+        let mut a = Archive::open(
+            &file,
+            Limits {
+                max_entry: d.len() - 1,
+                max_total: usize::MAX,
+            },
+        )
+        .unwrap();
         assert!(matches!(a.read("doc.dat"), Err(Error::Limit(_))));
-        let mut a = Archive::open(&file, Limits { max_entry: usize::MAX, max_total: d.len() + 1 }).unwrap();
+        let mut a = Archive::open(
+            &file,
+            Limits {
+                max_entry: usize::MAX,
+                max_total: d.len() + 1,
+            },
+        )
+        .unwrap();
         a.read("doc.dat").unwrap();
         assert!(matches!(a.read("doc.dat"), Err(Error::Limit(_))));
     }
@@ -270,7 +338,10 @@ mod archive {
         let size_at = fat + 59 + 5 + 8;
         file[size_at..size_at + 8].copy_from_slice(&1024u64.to_le_bytes());
         let mut a = Archive::open(&file, Limits::default()).unwrap();
-        assert_eq!(a.read("doc.dat").unwrap_err(), Error::Malformed("archive entry size mismatch"));
+        assert_eq!(
+            a.read("doc.dat").unwrap_err(),
+            Error::Malformed("archive entry size mismatch")
+        );
     }
 
     #[test]
@@ -279,26 +350,51 @@ mod archive {
         let mut file = synth::container(&[("doc.dat", &d, Method::Stored)], None);
         let mut library = file.clone();
         library[8..12].copy_from_slice(b"rAsA");
-        assert!(matches!(Archive::open(&library, Limits::default()), Err(Error::Unsupported(_))));
+        assert!(matches!(
+            Archive::open(&library, Limits::default()),
+            Err(Error::Unsupported(_))
+        ));
         let fat = u64::from_le_bytes(file[16..24].try_into().unwrap());
         let at = fat as usize + 4;
         file[at..at + 8].copy_from_slice(&fat.to_le_bytes());
-        assert_eq!(Archive::open(&file, Limits::default()).unwrap_err(), Error::Malformed("allocation tables form a cycle"));
+        assert_eq!(
+            Archive::open(&file, Limits::default()).unwrap_err(),
+            Error::Malformed("allocation tables form a cycle")
+        );
     }
 
     #[test]
     fn hostile_streams_fail_cleanly() {
-        let deep = (0..2000).fold(Vec::new(), |inner, _| vec![(tag(b"Chld"), F::Obj(tag(b"Grup"), inner))]);
-        assert_eq!(stream::parse(&synth::stream(&deep)).unwrap_err(), Error::Limit("objects nested too deeply"));
+        let deep = (0..2000).fold(Vec::new(), |inner, _| {
+            vec![(tag(b"Chld"), F::Obj(tag(b"Grup"), inner))]
+        });
+        assert_eq!(
+            stream::parse(&synth::stream(&deep)).unwrap_err(),
+            Error::Limit("objects nested too deeply")
+        );
         // An array claiming four billion elements in a few bytes.
-        let huge = synth::stream(&[(tag(b"Big_"), F::Raw(vec![0x81, b'_', b'g', b'i', b'B', 0xff, 0xff, 0xff, 0xff, 0]))]);
-        assert_eq!(stream::parse(&huge).unwrap_err(), Error::Malformed("array longer than its data"));
+        let huge = synth::stream(&[(
+            tag(b"Big_"),
+            F::Raw(vec![
+                0x81, b'_', b'g', b'i', b'B', 0xff, 0xff, 0xff, 0xff, 0,
+            ]),
+        )]);
+        assert_eq!(
+            stream::parse(&huge).unwrap_err(),
+            Error::Malformed("array longer than its data")
+        );
         let forward = synth::stream(&[(tag(b"Link"), F::Ref(99))]);
         assert!(stream::parse(&forward).is_err());
-        let twice = synth::stream(&[(tag(b"A___"), F::Def(1, vec![tag(b"RGBA")], vec![])), (tag(b"B___"), F::Def(1, vec![tag(b"RGBA")], vec![]))]);
+        let twice = synth::stream(&[
+            (tag(b"A___"), F::Def(1, vec![tag(b"RGBA")], vec![])),
+            (tag(b"B___"), F::Def(1, vec![tag(b"RGBA")], vec![])),
+        ]);
         assert!(stream::parse(&twice).is_err());
         let unknown = synth::stream(&[(tag(b"X___"), F::Raw(vec![0x0b, 1, 2, 3, 4]))]);
-        assert!(matches!(stream::parse(&unknown), Err(Error::Unsupported(_))));
+        assert!(matches!(
+            stream::parse(&unknown),
+            Err(Error::Unsupported(_))
+        ));
         let d = doc();
         for end in 0..d.len() {
             assert!(stream::parse(&d[..end]).is_err(), "{end}");
@@ -319,12 +415,21 @@ mod archive {
         };
         let bools = 1u32 << 27;
         let bytes = u32::try_from(stream::MAX_VALUES).unwrap() + 1;
-        for f in [field(0x29, bools, (bools / 8) as usize), field(0x01, bytes, bytes as usize)] {
+        for f in [
+            field(0x29, bools, (bools / 8) as usize),
+            field(0x01, bytes, bytes as usize),
+        ] {
             let d = synth::stream(&[(tag(b"Big_"), f)]);
             let file = synth::container(&[("doc.dat", &d, Method::Zstd)], None);
             assert!(file.len() < d.len() / 100, "{} of {}", file.len(), d.len());
-            let entry = Archive::open(&file, Limits::default()).unwrap().read("doc.dat").unwrap();
-            assert_eq!(stream::parse(&entry).unwrap_err(), Error::Limit("too many values in the document stream"));
+            let entry = Archive::open(&file, Limits::default())
+                .unwrap()
+                .read("doc.dat")
+                .unwrap();
+            assert_eq!(
+                stream::parse(&entry).unwrap_err(),
+                Error::Limit("too many values in the document stream")
+            );
         }
     }
 

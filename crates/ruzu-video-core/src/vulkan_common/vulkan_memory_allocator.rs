@@ -16,8 +16,8 @@ use crate::gpu_logging::{get_instance, is_active};
 
 use super::vma::VmaAllocator;
 use super::vulkan_device::Device;
-use super::vulkan_wrapper::VulkanError;
 use super::vulkan_wrapper::MemoryLocation;
+use super::vulkan_wrapper::VulkanError;
 
 // ---------------------------------------------------------------------------
 // MemoryUsage — port of `Vulkan::MemoryUsage`

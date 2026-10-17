@@ -14,7 +14,11 @@ impl Matrix {
     /// BT.601 (SD) or BT.709 (HD) coefficients.
     pub fn new(bt709: bool, full_range: bool) -> Matrix {
         // Kr/Kb: 601 = 0.299/0.114, 709 = 0.2126/0.0722.
-        let (kr, kb) = if bt709 { (0.2126f64, 0.0722f64) } else { (0.299, 0.114) };
+        let (kr, kb) = if bt709 {
+            (0.2126f64, 0.0722f64)
+        } else {
+            (0.299, 0.114)
+        };
         let kg = 1.0 - kr - kb;
         let s = 65536.0;
         Matrix {
@@ -50,7 +54,11 @@ impl Matrix {
         let r = (y + self.cr_r * cr) >> 16;
         let g = (y - self.cb_g * cb - self.cr_g * cr) >> 16;
         let b = (y + self.cb_b * cb) >> 16;
-        [r.clamp(0, 255) as u8, g.clamp(0, 255) as u8, b.clamp(0, 255) as u8]
+        [
+            r.clamp(0, 255) as u8,
+            g.clamp(0, 255) as u8,
+            b.clamp(0, 255) as u8,
+        ]
     }
 }
 
@@ -70,7 +78,11 @@ pub fn planar_to_rgba(
 ) -> Vec<u8> {
     let (cx, cy) = (cx.max(1), cy.max(1));
     let mut out = vec![0u8; width.saturating_mul(height).saturating_mul(4)];
-    for (row, line) in out.chunks_exact_mut(width.max(1) * 4).enumerate().take(height) {
+    for (row, line) in out
+        .chunks_exact_mut(width.max(1) * 4)
+        .enumerate()
+        .take(height)
+    {
         let yl = y.get(row * y_stride..).unwrap_or(&[]);
         let crow = (row / cy) * uv_stride;
         let ul = u.get(crow..).unwrap_or(&[]);

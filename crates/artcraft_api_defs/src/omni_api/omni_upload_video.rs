@@ -10,6 +10,6 @@ use tokens::tokens::media_files::MediaFileToken;
 /// web framework, it is declared alongside the handler in `storyteller_web` rather than here.
 #[derive(Clone, Serialize, Deserialize, ToSchema, Debug)]
 pub struct OmniUploadVideoMediaFileSuccessResponse {
-  pub success: bool,
-  pub media_file_token: MediaFileToken,
+    pub success: bool,
+    pub media_file_token: MediaFileToken,
 }

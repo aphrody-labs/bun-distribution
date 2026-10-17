@@ -210,7 +210,7 @@ impl ValueKind {
             "function_call" => Self::Call,
             "identifier" | "dot_index_expression" | "bracket_index_expression" | "global" => {
                 Self::Reference
-            },
+            }
             _ => Self::Other,
         }
     }
@@ -294,8 +294,10 @@ impl LuaAnalysis {
         for call in &self.calls {
             *counts.entry(call.name()).or_insert(0) += 1;
         }
-        let mut out: Vec<(String, usize)> =
-            counts.into_iter().map(|(k, v)| (k.to_string(), v)).collect();
+        let mut out: Vec<(String, usize)> = counts
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v))
+            .collect();
         out.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
         out
     }
@@ -323,7 +325,9 @@ const RAW_VALUE_MAX: usize = 120;
 pub fn analyze(source: &str) -> Result<LuaAnalysis, StaticAnalysisError> {
     let mut parser = Parser::new();
     parser.set_language(&tree_sitter_lua::LANGUAGE.into())?;
-    let tree = parser.parse(source, None).ok_or(StaticAnalysisError::NoTree)?;
+    let tree = parser
+        .parse(source, None)
+        .ok_or(StaticAnalysisError::NoTree)?;
 
     let mut analysis = LuaAnalysis {
         line_count: u32::try_from(source.lines().count()).unwrap_or(u32::MAX),
@@ -340,8 +344,10 @@ pub fn analyze(source: &str) -> Result<LuaAnalysis, StaticAnalysisError> {
 pub fn analyze_file(path: &Path) -> Result<LuaAnalysis, StaticAnalysisError> {
     // `from_utf8_lossy` : certains scripts décompilés portent des libellés japonais mal
     // ré-encodés ; les rejeter ferait perdre tout le fichier pour quelques octets.
-    let bytes = fs::read(path)
-        .map_err(|source| StaticAnalysisError::Io { path: path.to_path_buf(), source })?;
+    let bytes = fs::read(path).map_err(|source| StaticAnalysisError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
     let source = String::from_utf8_lossy(&bytes);
     let mut analysis = analyze(&source)?;
     analysis.path = Some(path.to_path_buf());
@@ -389,7 +395,7 @@ pub fn analyze_dir(dir: &Path) -> Result<Vec<LuaAnalysis>, StaticAnalysisError> 
     for path in collect_lua_files(dir) {
         match analyze_file(&path) {
             Ok(a) => out.push(a),
-            Err(StaticAnalysisError::Io { .. }) => {},
+            Err(StaticAnalysisError::Io { .. }) => {}
             Err(e) => return Err(e),
         }
     }
@@ -514,11 +520,14 @@ impl<'s> Walker<'s> {
             "string" => Some(Binding::Str(self.string_value(value))),
             "identifier" => {
                 let raw = self.text(value);
-                Some(self.resolve_name(&raw).map_or(Binding::Alias(raw), Binding::Alias))
-            },
+                Some(
+                    self.resolve_name(&raw)
+                        .map_or(Binding::Alias(raw), Binding::Alias),
+                )
+            }
             "dot_index_expression" | "method_index_expression" => {
                 Some(Binding::Alias(self.text(value)))
-            },
+            }
             _ => None,
         }
     }
@@ -531,11 +540,11 @@ impl<'s> Walker<'s> {
                 Work::Bind(name, Some(b)) => {
                     self.env.insert(name, b);
                     continue;
-                },
+                }
                 Work::Bind(name, None) => {
                     self.env.remove(&name);
                     continue;
-                },
+                }
                 Work::Visit(n) => n,
             };
 
@@ -550,8 +559,8 @@ impl<'s> Walker<'s> {
                     if is_interesting_string(&v) {
                         self.strings.push(v);
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
 
             // Enfants en ordre inverse : la pile les ressort en ordre de source.
@@ -588,7 +597,9 @@ impl<'s> Walker<'s> {
         out.errors.push(LuaSyntaxError {
             kind,
             line: u32::try_from(pos.row).unwrap_or(u32::MAX).saturating_add(1),
-            column: u32::try_from(pos.column).unwrap_or(u32::MAX).saturating_add(1),
+            column: u32::try_from(pos.column)
+                .unwrap_or(u32::MAX)
+                .saturating_add(1),
             text,
         });
     }
@@ -652,7 +663,9 @@ impl<'s> Walker<'s> {
         let list = node.parent().filter(|p| p.kind() == "expression_list")?;
         let index = (0..named_count(list))
             .find(|&i| list.named_child(i).is_some_and(|c| c.id() == node.id()))?;
-        let assignment = list.parent().filter(|p| p.kind() == "assignment_statement")?;
+        let assignment = list
+            .parent()
+            .filter(|p| p.kind() == "assignment_statement")?;
         let vars = (0..named_count(assignment))
             .filter_map(|i| assignment.named_child(i))
             .find(|c| c.kind() == "variable_list")?;
@@ -688,7 +701,13 @@ impl<'s> Walker<'s> {
         }
 
         let line = Self::line_span(node).0;
-        out.calls.push(LuaCall { callee, resolved, arg_count, string_args, line });
+        out.calls.push(LuaCall {
+            callee,
+            resolved,
+            arg_count,
+            string_args,
+            line,
+        });
     }
 
     /// Enregistre les couples `variable = valeur` d'une affectation, les tables qu'ils
@@ -708,14 +727,16 @@ impl<'s> Walker<'s> {
             match child.kind() {
                 "variable_list" => vars = Some(child),
                 "expression_list" => values = Some(child),
-                _ => {},
+                _ => {}
             }
         }
         let (Some(vars), Some(values)) = (vars, values) else {
             return;
         };
         // `local x = …` : la grammaire enveloppe l'affectation dans un `variable_declaration`.
-        let is_local = node.parent().is_some_and(|p| p.kind() == "variable_declaration");
+        let is_local = node
+            .parent()
+            .is_some_and(|p| p.kind() == "variable_declaration");
         let line = Self::line_span(node).0;
 
         let pairs = named_count(vars).min(named_count(values));
@@ -759,11 +780,17 @@ impl<'s> Walker<'s> {
                 continue;
             }
             let key = field.child_by_field_name("name").map(|n| self.text(n));
-            let value = field.child_by_field_name("value").or_else(|| field.named_child(0));
+            let value = field
+                .child_by_field_name("value")
+                .or_else(|| field.named_child(0));
             let (value_kind, raw_value) = value.map_or((ValueKind::Other, String::new()), |v| {
                 (ValueKind::of(v), self.short_text(v))
             });
-            out.push(LuaTableField { key, value_kind, raw_value });
+            out.push(LuaTableField {
+                key,
+                value_kind,
+                raw_value,
+            });
         }
         out
     }
@@ -828,7 +855,10 @@ INCLUDE("LUA_LISTVIEW_INC")
         assert!(a.is_valid(), "{:?}", a.errors);
 
         let noms: Vec<&str> = a.calls.iter().map(LuaCall::name).collect();
-        assert_eq!(noms, vec!["INCLUDE", "CRC32", "SetObjectVisible", "INCLUDE"]);
+        assert_eq!(
+            noms,
+            vec!["INCLUDE", "CRC32", "SetObjectVisible", "INCLUDE"]
+        );
         assert_eq!(a.calls[2].arg_count, 2);
         assert_eq!(a.calls[0].string_args, vec!["LUA_PROG_BASE"]);
         assert_eq!(a.crc32_strings, vec!["chara_filter_menu_tab_text_element"]);
@@ -873,13 +903,16 @@ L2_1 = L2_1(L3_1)
         assert!(!a.is_valid(), "la source est fautive");
         let e = &a.errors[0];
         assert!(e.line >= 2, "l'erreur est en ligne 2 ou après : {e:?}");
-        assert!(
-            a.errors
-                .iter()
-                .any(|e| matches!(e.kind, SyntaxErrorKind::Unparsable | SyntaxErrorKind::Missing))
-        );
+        assert!(a.errors.iter().any(|e| matches!(
+            e.kind,
+            SyntaxErrorKind::Unparsable | SyntaxErrorKind::Missing
+        )));
         // Extraction partielle : la fonction saine avant l'erreur est quand même vue.
-        assert!(a.function_names().contains(&"bon"), "{:?}", a.function_names());
+        assert!(
+            a.function_names().contains(&"bon"),
+            "{:?}",
+            a.function_names()
+        );
     }
 
     /// Un `end` manquant produit un nœud `MISSING`, pas un `ERROR`.
@@ -887,7 +920,11 @@ L2_1 = L2_1(L3_1)
     fn detecte_un_jeton_manquant() {
         let a = analyze("function f()\n  return 1\n").expect("analyse");
         assert!(!a.is_valid());
-        assert!(a.errors.iter().any(|e| e.kind == SyntaxErrorKind::Missing), "{:?}", a.errors);
+        assert!(
+            a.errors.iter().any(|e| e.kind == SyntaxErrorKind::Missing),
+            "{:?}",
+            a.errors
+        );
     }
 
     /// Affectations et tables sont relevées avec leur classe de valeur.
@@ -900,13 +937,21 @@ GLOBAL_FLAG = true
         let a = analyze(src).expect("analyse");
         assert!(a.is_valid(), "{:?}", a.errors);
 
-        let conf = a.tables.iter().find(|t| t.name == "conf").expect("table conf");
+        let conf = a
+            .tables
+            .iter()
+            .find(|t| t.name == "conf")
+            .expect("table conf");
         assert_eq!(conf.fields.len(), 3);
         assert_eq!(conf.fields[0].key.as_deref(), Some("tabIconType"));
         assert_eq!(conf.fields[1].value_kind, ValueKind::Str);
         assert_eq!(conf.fields[2].key, None, "champ positionnel");
 
-        let g = a.assignments.iter().find(|x| x.name == "GLOBAL_FLAG").expect("GLOBAL_FLAG");
+        let g = a
+            .assignments
+            .iter()
+            .find(|x| x.name == "GLOBAL_FLAG")
+            .expect("GLOBAL_FLAG");
         assert_eq!(g.value_kind, ValueKind::Bool);
         assert!(!g.is_local);
         assert!(a.assignments.iter().any(|x| x.name == "conf" && x.is_local));
@@ -928,7 +973,10 @@ GLOBAL_FLAG = true
     fn analyse_les_scripts_decompiles_du_jeu() {
         let dir = Path::new("../../../data/lua_scripts/decompiled");
         if !dir.is_dir() {
-            eprintln!("skip analyse_les_scripts_decompiles_du_jeu : {} absent", dir.display());
+            eprintln!(
+                "skip analyse_les_scripts_decompiles_du_jeu : {} absent",
+                dir.display()
+            );
             return;
         }
         let fichiers = collect_lua_files(dir);
@@ -954,7 +1002,10 @@ GLOBAL_FLAG = true
              crc32={total_crc32} fautifs={fautifs}",
             fichiers.len().min(40)
         );
-        assert!(total_appels > 0, "les scripts du jeu doivent contenir des appels");
+        assert!(
+            total_appels > 0,
+            "les scripts du jeu doivent contenir des appels"
+        );
         assert!(
             total_crc32 > 0,
             "la résolution d'alias doit retrouver des chaînes CRC32 dans les scripts décompilés"
